@@ -1,57 +1,57 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Thu, 27 Dec 2007 19:11:54 +0000
+From: Jens Axboe <jens.axboe@oracle.com>
+Date: Thu, 27 Dec 2007 19:52:24 +0000
 Subject: Re: [PATCH] SH/Dreamcast - add support for GD-Rom device
-Message-Id: <200712271411.55677.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1744597.mj4YYZDJtH"
+Message-Id: <20071227195224.GG26896@kernel.dk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8b67d60712261726l28960f69u2eb2756a6f5176e1@mail.gmail.com> <20071227081822.GA22693@linux-sh.org>
-In-Reply-To: <20071227081822.GA22693@linux-sh.org>
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Adrian McMenamin <lkmladrian@gmail.com>, Jens Axboe <jens.axboe@oracle.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-
---nextPart1744597.mj4YYZDJtH
-Content-Type: text/plain;
-  charset="iso-8859-1"
+References: <8b67d60712261726l28960f69u2eb2756a6f5176e1@mail.gmail.com> <20071227081822.GA22693@linux-sh.org> <1198759779.6170.4.camel@localhost.localdomain>
+In-Reply-To: <1198759779.6170.4.camel@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Cc: Paul Mundt <lethal@linux-sh.org>, Adrian McMenamin <lkmladrian@gmail.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thursday 27 December 2007, Paul Mundt wrote:
-> On Thu, Dec 27, 2007 at 01:26:47AM +0000, Adrian McMenamin wrote:
-> > +static int gdrom_get_last_session(struct cdrom_device_info *cd_info,
-> > struct cdrom_multisession *ms_info) +{
-> > +	int fentry, lentry, track, data, tocuse, err;
-> > +	kfree(gd.toc);
-> > +	gd.toc = kzalloc(sizeof(struct gdromtoc), GFP_KERNEL);
->
-> Er, what? The size of this never changes, allocate it once, and just
-> overload it every time you step in to this function. There's no reason to
-> free it and reallocate every time. Shove it in your probe routine with
-> the rest of your kzallocs.
+On Thu, Dec 27 2007, Adrian McMenamin wrote:
+> 
+> On Thu, 2007-12-27 at 17:18 +0900, Paul Mundt wrote:
+> > On Thu, Dec 27, 2007 at 01:26:47AM +0000, Adrian McMenamin wrote:
+> 
+> > 
+> > > +		/* now seek to take the request spinlock
+> > > + 		 * before handling ending the request */
+> > > +		spin_lock(&gdrom_lock);
+> > > +		list_del_init(&req->queuelist);
+> > > +		blk_requeue_request(gd.gdrom_rq, req);
+> > > +		if (err)
+> > > +			end_request(req, 0);
+> > > +		else
+> > > +			end_request(req, 1);
+> > > +	}
+> > > +	spin_unlock(&gdrom_lock);
+> > > +	kfree(read_command);
+> > > +}	
+> > > +
+> > This locking is all over the place. What is this lock supposed to be
+> > accomplishing?
+> > -
+> 
+> I have to hold the lock to access the request queue. As the linked list
+> of deferred requests is under the control of code also protected by the
+> lock, it is also held to ensure manipulation of that list is serialised.
+> 
+> The first step of the loop manipulates that linked list - so it is held
+> as we re-iterate over the loop.
+> 
+> This is pretty much the way Jens recommended I do it.
 
-since gd is a global, just dont declare toc as a pointer ...
--mike
+I didn't recommend the last requeue bit, it looks like a work-around due
+to the way that end_request() works. The kerneldoc comment for that
+function also tells you NOT to use this in new code. Use
+end_dequeued_request() and get rid of the requeue, and streamline 'err'
+so you can just pass it directly in.
 
---nextPart1744597.mj4YYZDJtH
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+The locking otherwise looks fine to me.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.8 (GNU/Linux)
+-- 
+Jens Axboe
 
-iQIcBAABAgAGBQJHc/j7AAoJEEFjO5/oN/WBaD8QALFJnSolyfgpFX7dsk8Bn8pZ
-t9FtWWMHvQuUI2m5HNKkQSLkJtFRMk/EWl4YBb1zaRc1+s3Wgxq9GC3NsJo6CgLj
-0Q6rmyOI9QJHKygGtUEz2ab0Dv28QY35WkOKN70JwiA1DiIBzG5S3KE7Ih4mst7O
-lus0NaCRD3c0Rn6m+IL31gHvhwYE0K+2XLMluM+WTFGx15DBfHlwUQJH+G2AQIXF
-vxJlyzIIbEufe5JEVPIP3FKi9hwyjrSNmhUprotfY3O7AbOx8Fw7JseOXmxH/SG4
-1+jlJbYm8Uj3Ate01R3/P3Tr6oiiLMUoCepkO8BKPq9PgaNFrD5YqkhKIQgaDok0
-NHTR/gOSDuHgiYf7/iXhJs9S01pPqaG2be438SS1W5C6mV8npKYPxN7Q6GSn1BZF
-CKvipNn446QrhbfEOqnvETkzEPRnmgk171avApKFpnh/s+Gr8gtj8PBPr+sQ5U/N
-ZfX708XUUmYVD3chjtn7cDvxScJIO5IDUg03D5mp+TpD5smjpbUOXRPGLApBRkB1
-F1okBqTfflNcqF6AZrZnPuQlY+OceiafXMambMQcOrqCrmGTLU9+FYvM8yV4c2tZ
-MZjGRxLWbX2+Ki53ElpNbnaw93neseZwcnkjlTseFPllAb/YV86UDPWjM8okdHso
-EDvGuU0nDjOVcwYHZSzn
-=hAqC
------END PGP SIGNATURE-----
-
---nextPart1744597.mj4YYZDJtH--
