@@ -1,64 +1,38 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Fri, 28 Dec 2007 00:49:01 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 28 Dec 2007 03:41:36 +0000
 Subject: Re: [PATCH] SH/Dreamcast - add support for GD-Rom device
-Message-Id: <200712271949.02942.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1620347.NXWMkVdv5Z"
+Message-Id: <20071228034136.GA27806@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1198774339.6170.11.camel@localhost.localdomain> <1198796281.4833.31.camel@localhost>
-In-Reply-To: <1198796281.4833.31.camel@localhost>
-To: Joe Perches <joe@perches.com>
-Cc: Adrian McMenamin <adrian@newgolddream.dyndns.info>, Paul Mundt <lethal@linux-sh.org>, Jens Axboe <jens.axboe@oracle.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
+References: <1198774339.6170.11.camel@localhost.localdomain> <1198796281.4833.31.camel@localhost> <200712271949.02942.vapier@gentoo.org>
+In-Reply-To: <200712271949.02942.vapier@gentoo.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mike Frysinger <vapier@gentoo.org>
+Cc: Joe Perches <joe@perches.com>, Adrian McMenamin <adrian@newgolddream.dyndns.info>, Jens Axboe <jens.axboe@oracle.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
 
---nextPart1620347.NXWMkVdv5Z
-Content-Type: text/plain;
-  charset="iso-8859-6"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+On Thu, Dec 27, 2007 at 07:49:01PM -0500, Mike Frysinger wrote:
+> On Thursday 27 December 2007, Joe Perches wrote:
+> > I also added a function gdrom_is_busy() to make a couple of tests
+> > fit on a single line and perhaps easier to read.
+> 
+> i'd tend to agree it does make it easier to read, however you didnt make it 
+> inline which means gcc may not inline it which means there's pointless 
+> overhead of doing a function call.
+> 
+These days GCC is usually smart enough to automatically inline things
+that are that small, it doesn't need to be explicitly labelled. If your
+toolchain doesn't inline that gdrom_is_busy() implementation, get a
+better toolchain.
 
-On Thursday 27 December 2007, Joe Perches wrote:
-> On Thu, 2007-12-27 at 16:52 +0000, Adrian McMenamin wrote:
-> > This patch adds support for the CD-Rom drive on the SEGA Dreamcast.
->
-> Because it was already so close, might as well make it checkpatch clean.
+> otherwise, arbitrary breaking on 80 cols actually makes the code harder to 
+> read for no gain.
 
-for the 80 col limit, that's up to the author.  if Adrian is happy with it =
-as=20
-is, that's fine.
+Hey now, some of us have no intention of giving up our 80x25 consoles,
+not everyone buys in to this whole newfangled X thing. ;-)
 
-> I also added a function gdrom_is_busy() to make a couple of tests
-> fit on a single line and perhaps easier to read.
-
-i'd tend to agree it does make it easier to read, however you didnt make it=
-=20
-inline which means gcc may not inline it which means there's pointless=20
-overhead of doing a function call.
-
-otherwise, arbitrary breaking on 80 cols actually makes the code harder to=
-=20
-read for no gain.
-=2Dmike
-
---nextPart1620347.NXWMkVdv5Z
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.8 (GNU/Linux)
-
-iQIcBAABAgAGBQJHdEf+AAoJEEFjO5/oN/WBg0QQAMXtMlJ8mZx5ZunuBJZm0S9f
-CCXzQIdDdeTiVhWRjELWD9DLjZckxVn9XUOKwKh1S+Q1cDXUXbtpL0QA/ipzRmq0
-tR1yzJCrkXvr5847oevEiyXjgwAGsCVZaSor1tv6/vrfUaiOO21WGtAEoh8v0mxx
-MmFgei+0nHvS88WpGfj6dPDFStBBj+mAHweyO348VK+QCv4Sv4WTwURsc5f2BZ9B
-uoIQt9txFUAKaEe1sRDGiXxYK24AKNk8mmf91ioXEnJpPj5HJC2j+iQkiocba7uN
-Fo16MBj2/npjbnz1sq5ZR0WS5kUDwHT4ksPxYRD7YVpviTRn8nCIxwKSUbx6qdb7
-n3x9qjlipsNqGGro2ooBXJTm4bEAVUSi1Iezcar4kOWwOLUcGbIaXZxnI6qf91DM
-DXZtom1G7XuAfaPgkSj7ssd7ChTnXorUkFksdicxrZNMwBxE6Sd9LAJCv8Cttehf
-zPVHndfVBtIcXGNbXCH6ni1lTgMZlhpIkUxh07xV83zt7qx0bah/fz+tBjiJsWvq
-RSQGzDUviL1/nZZCE+yjxMa5AXOnaqGjwdBqiY6ENzAoyYvEGODiK9O7umD1UYAz
-p8eoBuIcVRhwQNJrvieZMFc7bg/W7V3Bbnm6pyxck1JwlFaUoqZxFdTGd4+BE0oZ
-S69TkVEGQdycrNIVhp6j
-=MvCa
------END PGP SIGNATURE-----
-
---nextPart1620347.NXWMkVdv5Z--
+More than 80 columns is generally fine so long as it's done so tastefully
+rather than arbitrarily based on a larger console width. However, if it
+can be split up cleanly for 80 columns, then it should be. ie, use common
+sense, rather than blindly adhering to the whims of an anal-retentive
+script.
