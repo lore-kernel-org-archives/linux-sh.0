@@ -1,37 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 23 Jan 2008 06:58:26 +0000
-Subject: [PATCH][0/2] usb: sm501 ohci controller patches V4/V2
-Message-Id: <20080123065826.488.14168.sendpatchset@clockwork.opensource.se>
+From: "Andrew Murray" <amurray@mpc-data.co.uk>
+Date: Wed, 02 Jan 2008 11:43:39 +0000
+Subject: [PATCH] sh: sh7712 defconfig
+Message-Id: <0C997DD87CC88A4F86C897F52650B52B820E95@MOLSON.mpc-data.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-usb: sm501 ohci controller patches V4/V2
+From: Andrew Murray <amurray@mpc-data.co.uk>
 
- [1/2] usb: dma bounce buffer support V4
- [2/2] usb: ohci-sm501 driver V2
+This patch provides a correct value for CONFIG_SH_PCLK_FREQ for the SH7712 solution engine when used with the board's default factory settings. This results in the board running at its maximum CPU clock rate (200 MHz).
 
-The sm501 usb host controller is a regular ohci implementation but with the
-exception that it can only do dma to a certain area of memory. This memory is
-sm501 specific and the mfd driver for sm501 currently divides this memory
-between the framebuffer and the usb host controller.
+The board I have is a Japanese Solution Engine with a 66 MHz (extal) crystal. Is this the only variant of the Solution Engine for the SH7712?
 
-To support the sm501 usb host controller we need to allocate all usb data from
-this sm501 memory. The function dma_declare_coherent_memory() helps us with
-that - all dma_alloc_coherent() calls will end up allocating such memory.
-
-The USB core does however allocate data using kmalloc, so to fully support
-such a behaviour we need dma bounce buffer support. These bounce buffers
-can be requested using the flag HCD_LOCAL_MEM.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Andrew Murray <amurray@mpc-data.co.uk>
 ---
+diff -uprN -X sh-2.6/Documentation/dontdiff sh-2.6/arch/sh/configs/se7712_defconfig sh-2.6-devel/arch/sh/configs/se7712_defconfig
+--- sh-2.6/arch/sh/configs/se7712_defconfig     2008-01-02 10:13:44.000000000 +0000
++++ sh-2.6-devel/arch/sh/configs/se7712_defconfig       2008-01-02 10:28:32.000000000 +0000
+@@ -237,7 +237,7 @@ CONFIG_CPU_HAS_SR_RB=y
+ CONFIG_SH_TMU=y
+ CONFIG_SH_TIMER_IRQ
+ # CONFIG_NO_IDLE_HZ is not set
+-CONFIG_SH_PCLK_FREQ3333333
++CONFIG_SH_PCLK_FREQf666666
 
- drivers/usb/core/buffer.c     |    9 -
- drivers/usb/core/hcd.c        |  176 ++++++++++++++++++++++++---
- drivers/usb/core/hcd.h        |    1 
- drivers/usb/host/ohci-hcd.c   |    5 
- drivers/usb/host/ohci-sm501.c |  264 +++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 432 insertions(+), 23 deletions(-)
+ #
+ # CPU Frequency scaling
+
+Internal Virus Database is out-of-date.
+Checked by AVG Free Edition. 
+Version: 7.5.516 / Virus Database: 269.17.8 - Release Date: 24/12/2007 00:00
+ 
