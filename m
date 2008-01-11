@@ -1,33 +1,41 @@
 From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Thu, 10 Jan 2008 23:25:48 +0000
-Subject: [PATCH] SH/Dreamcast - add support for GD-Rom CDROM drive on SEGA
-Message-Id: <1200007549.6349.16.camel@localhost.localdomain>
+Date: Fri, 11 Jan 2008 21:56:49 +0000
+Subject: Re: [PATCH] SH/Dreamcast - add support for GD-Rom CDROM drive on
+Message-Id: <1200088609.6213.3.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8b67d60712261726l28960f69u2eb2756a6f5176e1@mail.gmail.com>
-In-Reply-To: <8b67d60712261726l28960f69u2eb2756a6f5176e1@mail.gmail.com>
+References: <1200007549.6349.16.camel@localhost.localdomain>
+In-Reply-To: <1200007549.6349.16.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Jens Axboe <jens.axboe@oracle.com>
 Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-From: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 
-This patch adds support for the GD-Rom drive, SEGA's proprietary implementation of an IDE CD Rom for the SEGA Dreamcast. This driver implements Sega's Packet Interface (SPI) - at least partially. It will also read disks in SEGA's propreitary GD format.
+On Thu, 2008-01-10 at 23:25 +0000, Adrian McMenamin wrote:
+> From: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+> 
+> This patch adds support for the GD-Rom drive, SEGA's proprietary implementation of an IDE CD Rom for the SEGA Dreamcast. This driver implements Sega's Packet Interface (SPI) - at least partially. It will also read disks in SEGA's propreitary GD format.
+> 
+> Unlike previous drivers (which were never in mainline) this uses DMA and not PIO to read disks. It is a new driver, not a refactoring of old drivers. 
+> 
+> Signed-off by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+> 
+> (Jens - this awaits your ack before going in Paul's queue for the 2.6.25 window)
+> 
+> --------
+> 
+> 
 
-Unlike previous drivers (which were never in mainline) this uses DMA and not PIO to read disks. It is a new driver, not a refactoring of old drivers. 
+Unfortunately, there was one small mistake (a repeated assignment), in
+the patch posted yesterday. Here is a corrected version.
 
 Signed-off by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 
-(Jens - this awaits your ack before going in Paul's queue for the 2.6.25 window)
 
---------
-
-
-
-diff -rupN linux-2.6/drivers/block/Kconfig linux-2.6-new/drivers/block/Kconfig
---- linux-2.6/drivers/block/Kconfig	2008-01-10 22:25:43.000000000 +0000
-+++ linux-2.6-new/drivers/block/Kconfig	2008-01-10 23:05:10.000000000 +0000
+diff -rupN a/drivers/block/Kconfig b/drivers/block/Kconfig
+--- a/drivers/block/Kconfig	2008-01-11 21:33:18.000000000 +0000
++++ b/drivers/block/Kconfig	2008-01-11 20:55:40.000000000 +0000
 @@ -105,6 +105,17 @@ config PARIDE
  	  "MicroSolutions backpack protocol", "DataStor Commuter protocol"
  	  etc.).
@@ -46,10 +54,10 @@ diff -rupN linux-2.6/drivers/block/Kconfig linux-2.6-new/drivers/block/Kconfig
  source "drivers/block/paride/Kconfig"
  
  config BLK_CPQ_DA
-diff -rupN linux-2.6/drivers/cdrom/gdrom.c linux-2.6-new/drivers/cdrom/gdrom.c
---- linux-2.6/drivers/cdrom/gdrom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6-new/drivers/cdrom/gdrom.c	2008-01-10 23:05:11.000000000 +0000
-@@ -0,0 +1,786 @@
+diff -rupN a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
+--- a/drivers/cdrom/gdrom.c	1970-01-01 01:00:00.000000000 +0100
++++ b/drivers/cdrom/gdrom.c	2008-01-11 20:55:40.000000000 +0000
+@@ -0,0 +1,785 @@
 +/* GD ROM driver for the SEGA Dreamcast
 + * copyright Adrian McMenamin, 2007
 + * With thanks to Marcus Comstedt and Nathan Keynes
@@ -612,7 +620,6 @@ diff -rupN linux-2.6/drivers/cdrom/gdrom.c linux-2.6-new/drivers/cdrom/gdrom.c
 +		ctrl_outb(1, GDROM_DMA_STATUS_REG);
 +		/* 5 second error margin here seems more reasonable */
 +		wait_event_interruptible_timeout(request_queue, gd.transfer = 0, HZ * 5);
-+		err = ctrl_inb(GDROM_DMA_STATUS_REG);
 +		err = gd.transfer;
 +		gd.transfer = 0;
 +		gd.pending = 0;
@@ -836,13 +843,14 @@ diff -rupN linux-2.6/drivers/cdrom/gdrom.c linux-2.6-new/drivers/cdrom/gdrom.c
 +MODULE_AUTHOR("Adrian McMenamin <adrian@mcmen.demon.co.uk>");
 +MODULE_DESCRIPTION("SEGA Dreamcast GD-ROM Driver");
 +MODULE_LICENSE("GPL");
-diff -rupN linux-2.6/drivers/cdrom/Makefile linux-2.6-new/drivers/cdrom/Makefile
---- linux-2.6/drivers/cdrom/Makefile	2008-01-10 22:25:43.000000000 +0000
-+++ linux-2.6-new/drivers/cdrom/Makefile	2008-01-10 23:05:11.000000000 +0000
+diff -rupN a/drivers/cdrom/Makefile b/drivers/cdrom/Makefile
+--- a/drivers/cdrom/Makefile	2008-01-11 21:33:18.000000000 +0000
++++ b/drivers/cdrom/Makefile	2008-01-11 20:55:40.000000000 +0000
 @@ -11,3 +11,4 @@ obj-$(CONFIG_PARIDE_PCD)	+=		cdrom.o
  obj-$(CONFIG_CDROM_PKTCDVD)	+=		cdrom.o
  
  obj-$(CONFIG_VIOCD)		+= viocd.o      cdrom.o
 +obj-$(CONFIG_GDROM)		+= gdrom.o      cdrom.o
+
 
 
