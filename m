@@ -1,64 +1,44 @@
-From: Katsuya MATSUBARA <matsu@igel.co.jp>
-Date: Mon, 21 Jan 2008 03:05:08 +0000
-Subject: [PATCH] sh: pci - fix the start address of IO ports area in
-Message-Id: <20080121.120508.143310092.matsu@igel.co.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 13 Jan 2008 14:01:37 +0000
+Subject: [PATCH] sh: declared coherent memory fixes
+Message-Id: <20080113140137.30501.95132.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+sh: declared coherent memory fixes
 
-sh: pci - fix the start address of IO ports area in RTS7751R2D.
+Two minor fixes for the recently added declared coherent memory implementation:
+ - move the WARN_ON() to avoid triggering with usb storage and bounce buffer
+ - add a BUG_ON() to make sure DMA_MEMORY_EXCLUSIVE isn't set
 
-This patch replaces the start address in 'sh7751_io_resource'
-in arch/sh/drivers/pci/ops-rts7751r2d.c. The value must be
-used for any PCI IO port access such as in*()/out*().
+These may be of interest for x86 as well.
 
-I drew upon the following patch:
-
-[PATCH] [RFC] Support PCI IO access of SH7780 base boards
-http://www.spinics.net/lists/linux-sh/msg00006.html
-
-Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- ops-rts7751r2d.c |    4 ++--
- pci-sh7751.c     |    9 ---------
- 2 files changed, 2 insertions(+), 11 deletions(-)
 
-diff --git a/arch/sh/drivers/pci/ops-rts7751r2d.c b/arch/sh/drivers/pci/ops-rts7751r2d.c
-index ec8430c..692bea4 100644
---- a/arch/sh/drivers/pci/ops-rts7751r2d.c
-+++ b/arch/sh/drivers/pci/ops-rts7751r2d.c
-@@ -32,8 +32,8 @@ int __init pcibios_map_platform_irq(struct pci_dev *pdev, u8 slot, u8 pin)
+ arch/sh/mm/consistent.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- 0005/arch/sh/mm/consistent.c
++++ work/arch/sh/mm/consistent.c	2008-01-13 21:30:11.000000000 +0900
+@@ -64,13 +64,15 @@ void dma_free_coherent(struct device *de
+ 	struct dma_coherent_mem *mem = dev ? dev->dma_mem : NULL;
+ 	int order = get_order(size);
  
- static struct resource sh7751_io_resource = {
- 	.name	= "SH7751_IO",
--	.start	= 0x4000,
--	.end	= 0x4000 + SH7751_PCI_IO_SIZE - 1,
-+	.start	= SH7751_PCI_IO_BASE,
-+	.end	= SH7751_PCI_IO_BASE + SH7751_PCI_IO_SIZE - 1,
- 	.flags	= IORESOURCE_IO
- };
+-	WARN_ON(irqs_disabled());	/* for portability */
+ 	if (mem && vaddr >= mem->virt_base && vaddr < (mem->virt_base + (mem->size << PAGE_SHIFT))) {
+ 		int page = (vaddr - mem->virt_base) >> PAGE_SHIFT;
  
-diff --git a/arch/sh/drivers/pci/pci-sh7751.c b/arch/sh/drivers/pci/pci-sh7751.c
-index 1aca7fe..cd47dc6 100644
---- a/arch/sh/drivers/pci/pci-sh7751.c
-+++ b/arch/sh/drivers/pci/pci-sh7751.c
-@@ -147,15 +147,6 @@ int __init sh7751_pcic_init(struct sh4_pci_address_map *map)
- 	pr_debug("PCI: Setting upper bits of Memory window to 0x%x\n", word);
- 	pci_write_reg(word , SH4_PCIMBR);
+ 		bitmap_release_region(mem->bitmap, page, order);
+-	} else
++	} else {
++		WARN_ON(irqs_disabled());	/* for portability */
++		BUG_ON(mem && mem->flags & DMA_MEMORY_EXCLUSIVE);
+ 		free_pages((unsigned long)vaddr, order);
++	}
+ }
+ EXPORT_SYMBOL(dma_free_coherent);
  
--	/* Map IO space into PCI IO window
--	 * The IO window is 64K-PCIBIOS_MIN_IO in size
--	 * IO addresses will be translated to the
--	 * PCI IO window base address
--	 */
--	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%x\n",
--		 PCIBIOS_MIN_IO, (64 << 10),
--		 SH7751_PCI_IO_BASE + PCIBIOS_MIN_IO);
--
- 	/* Make sure the MSB's of IO window are set to access PCI space
- 	 * correctly */
- 	word = PCIBIOS_MIN_IO & SH4_PCIIOBR_MASK;
