@@ -1,40 +1,50 @@
 From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Mon, 14 Jan 2008 23:00:07 +0000
+Date: Mon, 14 Jan 2008 23:17:15 +0000
 Subject: Re: [PATCH] SH/Dreamcast - add support for GD-Rom CDROM drive on
-Message-Id: <1200351607.6196.4.camel@localhost.localdomain>
+Message-Id: <1200352635.6196.8.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1200007549.6349.16.camel@localhost.localdomain>
 	 <1200088609.6213.3.camel@localhost.localdomain>
 	 <20080112053630.0ccb290e.akpm@linux-foundation.org>
-In-Reply-To: <20080112053630.0ccb290e.akpm@linux-foundation.org>
+	 <1200351607.6196.4.camel@localhost.localdomain>
+In-Reply-To: <1200351607.6196.4.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Jens Axboe <jens.axboe@oracle.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-From: Adrian McMenamin <adrian@mcmen.demon.co.uk>
- 
-This patch adds support for the GD-Rom drive, SEGA's proprietary
-implementation of an IDE CD Rom for the SEGA Dreamcast. This driver
-implements Sega's Packet Interface (SPI) - at least partially. It will
-also read disks in SEGA's propreitary GD format.
 
-Unlike previous drivers (which were never in mainline) this uses DMA and
-not PIO to read disks. It is a new driver, not a refactoring of old
-drivers. 
+On Mon, 2008-01-14 at 23:00 +0000, Adrian McMenamin wrote:
+> From: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+>  
+> This patch adds support for the GD-Rom drive, SEGA's proprietary
+> implementation of an IDE CD Rom for the SEGA Dreamcast. This driver
+> implements Sega's Packet Interface (SPI) - at least partially. It will
+> also read disks in SEGA's propreitary GD format.
+> 
+> Unlike previous drivers (which were never in mainline) this uses DMA and
+> not PIO to read disks. It is a new driver, not a refactoring of old
+> drivers. 
+> 
+> Hopefully this patch addresses some issues that have been raised by
+> Andrew. Jens previously ack'ed this, but I've left that off (though the
+> IO code hasn't really been touched).
+>  
+> Signed-off by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+>  
+> (Jens - this awaits your ack before going in Paul's queue for the 2.6.25
+> window)
+>  
 
-Hopefully this patch addresses some issues that have been raised by
-Andrew. Jens previously ack'ed this, but I've left that off (though the
-IO code hasn't really been touched).
- 
-Signed-off by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
- 
-(Jens - this awaits your ack before going in Paul's queue for the 2.6.25
-window)
- 
- --------
- 
+Apologies. Obviously something extraeous from loop.c slipped in the
+previous patch - presumably resulting from the differences between the
+2.6.25 queue and 2.6.24-rc7.
+
+Here's a corrected version.
+
+
+
 diff -rupN a/drivers/block/Kconfig b/drivers/block/Kconfig
 --- a/drivers/block/Kconfig	2008-01-14 22:32:26.000000000 +0000
 +++ b/drivers/block/Kconfig	2008-01-14 22:35:38.000000000 +0000
@@ -56,18 +66,6 @@ diff -rupN a/drivers/block/Kconfig b/drivers/block/Kconfig
  source "drivers/block/paride/Kconfig"
  
  config BLK_CPQ_DA
-diff -rupN a/drivers/block/loop.c b/drivers/block/loop.c
---- a/drivers/block/loop.c	2008-01-14 22:32:26.000000000 +0000
-+++ b/drivers/block/loop.c	2008-01-14 22:35:38.000000000 +0000
-@@ -610,7 +610,7 @@ static int loop_thread(void *data)
- static int loop_switch(struct loop_device *lo, struct file *file)
- {
- 	struct switch_request w;
--	struct bio *bio = bio_alloc(GFP_KERNEL, 1);
-+	struct bio *bio = bio_alloc(GFP_KERNEL, 0);
- 	if (!bio)
- 		return -ENOMEM;
- 	init_completion(&w.wait);
 diff -rupN a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
 --- a/drivers/cdrom/gdrom.c	1970-01-01 01:00:00.000000000 +0100
 +++ b/drivers/cdrom/gdrom.c	2008-01-14 22:35:39.000000000 +0000
@@ -947,6 +945,5 @@ diff -rupN a/drivers/cdrom/Makefile b/drivers/cdrom/Makefile
  
  obj-$(CONFIG_VIOCD)		+= viocd.o      cdrom.o
 +obj-$(CONFIG_GDROM)		+= gdrom.o      cdrom.o
- 
 
 
