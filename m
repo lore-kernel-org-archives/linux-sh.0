@@ -1,7 +1,7 @@
 From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Fri, 18 Jan 2008 17:14:47 +0000
+Date: Fri, 18 Jan 2008 17:22:43 +0000
 Subject: Re: Hi all, a question about sh2a 7203
-Message-Id: <200801181814.48488.fabio.giovagnini@aurion-tech.com>
+Message-Id: <200801181822.43916.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200801181748.25790.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <200801181748.25790.fabio.giovagnini@aurion-tech.com>
@@ -10,76 +10,90 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-I'm not so familiar with patchs and other similar programs; so I produce the 
-patch and we can work togheter for interting it into buildroot.
-Could it sound good for you?
+Befor producing the patch I have to ask one thing.
+During the building process I nedd to modify manually the Makefiles produced 
+by configure into build/stage/gcc/sh-linux/libiberty and into all the 
+libiberty of the subdirectories.
+I have to add the -ml -m3e -m4 -fPIC options manualli because configure do not 
+do it automatically.
+Where do I have to act to modify' configure.ac to obtain such a behaviour 
+automatically?
 
-Ciao
+Thanks
 
 
-Alle 17:59, venerdì 18 gennaio 2008, Kieran Bingham ha scritto:
-> Yes please - would be appreciated.
+
+
+Alle 18:14, venerdì 18 gennaio 2008, Fabio Giovagnini ha scritto:
+> I'm not so familiar with patchs and other similar programs; so I produce
+> the patch and we can work togheter for interting it into buildroot.
+> Could it sound good for you?
 >
-> I was thinking it would be good if we could roll this into buildroot
-> somehow too.
+> Ciao
 >
-> --
-> Kieran
->
-> On Fri, 2008-01-18 at 17:48 +0100, Fabio Giovagnini wrote:
-> > I got the c,c++ compilers, on top of uClibc.
+> Alle 17:59, venerdì 18 gennaio 2008, Kieran Bingham ha scritto:
+> > Yes please - would be appreciated.
 > >
-> > If you like I send you the patch.
+> > I was thinking it would be good if we could roll this into buildroot
+> > somehow too.
 > >
-> > Best regards
+> > --
+> > Kieran
 > >
-> > Alle 11:44, domenica 9 dicembre 2007, Fabio Giovagnini ha scritto:
-> > > Hi Julian,
-> > > BSP for sh7263 which linux branch is part of?
-> > > Is it public and available the access to the toolchain source?
+> > On Fri, 2008-01-18 at 17:48 +0100, Fabio Giovagnini wrote:
+> > > I got the c,c++ compilers, on top of uClibc.
 > > >
-> > > Thanks a lot
+> > > If you like I send you the patch.
 > > >
-> > > Alle 16:16, venerdì 7 dicembre 2007, Julian Back ha scritto:
-> > > > Hi Fabio,
+> > > Best regards
+> > >
+> > > Alle 11:44, domenica 9 dicembre 2007, Fabio Giovagnini ha scritto:
+> > > > Hi Julian,
+> > > > BSP for sh7263 which linux branch is part of?
+> > > > Is it public and available the access to the toolchain source?
 > > > >
-> > > > No we did not start with buildroot.   The SH7203 BSP was derived from
-> > > > a BSP for SH7263 which was not developed by us.  Whether that was
-> > > > derived from buildroot I don't know.
+> > > > Thanks a lot
 > > > >
-> > > > Julian
-> > > >
-> > > > Fabio Giovagnini wrote:
-> > > > > Hi Julian,
-> > > > > only a simple question.
-> > > > > Is your uClinux environemnt derived directly from build root?
+> > > > Alle 16:16, venerdì 7 dicembre 2007, Julian Back ha scritto:
+> > > > > Hi Fabio,
 > > > > >
-> > > > > Thanks in advance.
+> > > > > No we did not start with buildroot.   The SH7203 BSP was derived
+> > > > > from a BSP for SH7263 which was not developed by us.  Whether that
+> > > > > was derived from buildroot I don't know.
 > > > > >
-> > > > > Alle 17:53, mercoledì 5 dicembre 2007, Julian Back ha scritto:
-> > > > >> Fabio Giovagnini wrote:
-> > > > >>> I bought an evaluation bouard made by MPC data.
-> > > > >>> For 7203 the suggest  to use uCLinux.
-> > > > >>> But they are sponsor of shlinux.com and if I remember properly
-> > > > >>> they suggestied to use linux-sh for the other eva boards than
-> > > > >>> 7203. According to you is uCLinux the best available choice for
-> > > > >>> sh2a 7203?
-> > > > >>
-> > > > >> The board is actually made by Renesas, we (MPC Data) have done the
-> > > > >> Linux BSP.
-> > > > >>
-> > > > >> One of my colleagues has been tasked with integrating some of our
-> > > > >> BSPs with the main sh tree, this includes SH7203.  It's at an
-> > > > >> early stage at the moment, he's just working out what needs to be
-> > > > >> done, but I hope you will see some submissions from him in the not
-> > > > >> too distant future.
-> > > > >>
-> > > > >> Julian
->
-> -
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > > > > Julian
+> > > > >
+> > > > > Fabio Giovagnini wrote:
+> > > > > > Hi Julian,
+> > > > > > only a simple question.
+> > > > > > Is your uClinux environemnt derived directly from build root?
+> > > > > >
+> > > > > > Thanks in advance.
+> > > > > >
+> > > > > > Alle 17:53, mercoledì 5 dicembre 2007, Julian Back ha scritto:
+> > > > > >> Fabio Giovagnini wrote:
+> > > > > >>> I bought an evaluation bouard made by MPC data.
+> > > > > >>> For 7203 the suggest  to use uCLinux.
+> > > > > >>> But they are sponsor of shlinux.com and if I remember properly
+> > > > > >>> they suggestied to use linux-sh for the other eva boards than
+> > > > > >>> 7203. According to you is uCLinux the best available choice for
+> > > > > >>> sh2a 7203?
+> > > > > >>
+> > > > > >> The board is actually made by Renesas, we (MPC Data) have done
+> > > > > >> the Linux BSP.
+> > > > > >>
+> > > > > >> One of my colleagues has been tasked with integrating some of
+> > > > > >> our BSPs with the main sh tree, this includes SH7203.  It's at
+> > > > > >> an early stage at the moment, he's just working out what needs
+> > > > > >> to be done, but I hope you will see some submissions from him in
+> > > > > >> the not too distant future.
+> > > > > >>
+> > > > > >> Julian
+> >
+> > -
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 -- 
 Fabio Giovagnini
