@@ -1,45 +1,116 @@
-From: Sam Ravnborg <sam@ravnborg.org>
-Date: Wed, 16 Jan 2008 10:17:47 +0000
-Subject: Re: What's in sh-2.6.git for 2.6.25?
-Message-Id: <20080116101747.GA26235@uranus.ravnborg.org>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Fri, 18 Jan 2008 08:40:05 +0000
+Subject: [PATCH] sh: Add SH Ethernet platform device for Solution Engine
+Message-Id: <479065E5.70109@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080116070403.GA14107@linux-sh.org> <20080116073844.GA25205@uranus.ravnborg.org> <20080116093718.GB14107@linux-sh.org>
-In-Reply-To: <20080116093718.GB14107@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 16, 2008 at 06:37:18PM +0900, Paul Mundt wrote:
-> On Wed, Jan 16, 2008 at 08:38:44AM +0100, Sam Ravnborg wrote:
-> > On Wed, Jan 16, 2008 at 04:04:03PM +0900, Paul Mundt wrote:
-> > > This is a brief summary of the changes that are sitting in the sh queue
-> > > for 2.6.25.
-> > > 
-> > > The main points to note are as follows:
-> > > 
-> > > 	- sh64->sh integration.
-> > > 	- A handful of new CPUs (SH7721, SH7763, SH7203, SH7263).
-> > > 	- SH-2A FPU support.
-> > > 	- Board support updates (R2D, R7785RP).
-> > > 
-> > > The sh64->sh integration is basically the only thing that's really
-> > > interesting, and so it's worth summarizing that a bit.
-> > 
-> > Any kbuild bits that needs an extra pair of eyes before
-> > integration or can I postpone my review until it hits mainline?
-> > If you feel confident I prefer to wait as I'm busy atm.
-> > 
-> Most of the kbuild bits have been pretty painless. I started out going
-> the SRCARCH route, but that ended up creating a lot of additional
-> duplication, so I opted to just roll them together and stick with abusing
-> KCONFIG_ALLCONFIG for restricting the options. Based on the heavy sharing
-> between the Kconfig options, this seemed to be the best way to go.
-> 
-> So, I'm reasonably content with it the way it is, but any input you have
-> on cleaning it up is certainly welcome at any time :-)
+Add SH Ethernet platform device for Solution Engine.
 
-I will take a look when it hits mainline then.
-Ping me if you do not hear from me.
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ arch/sh/boards/se/770x/setup.c |   53 +++++++++++++++++++++++++++++++
+ include/asm-sh/se.h            |   15 ++++++++
+ 2 files changed, 68 insertions(+)
 
-	Sam
+diff -uprN a/arch/sh/boards/se/770x/setup.c b/arch/sh/boards/se/770x/setup.c
+--- a/arch/sh/boards/se/770x/setup.c	2008-01-18 10:53:54.000000000 +0900
++++ b/arch/sh/boards/se/770x/setup.c	2008-01-18 16:49:15.000000000 +0900
+@@ -2,6 +2,7 @@
+  * linux/arch/sh/boards/se/770x/setup.c
+  *
+  * Copyright (C) 2000  Kazumoto Kojima
++ * Copyright (C) 2007,2008  Nobuhiro Iwamatsu
+  *
+  * Hitachi SolutionEngine Support.
+  *
+@@ -115,9 +116,61 @@ static struct platform_device heartbeat_
+ 	.resource	= heartbeat_resources,
+ };
+
++#if defined(CONFIG_SH_ETH)
++static struct resource sh_eth0_resources[] = {
++	[0] = {
++		.start	= SH_ETH0_BASE,
++		.end	= SH_ETH0_BASE + 0x1B8,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= IRQ_SH_ETH0,
++		.end	= IRQ_SH_ETH0,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sh_eth0_device = {
++	.name	= "sh-eth",
++	.id	= 0,
++	.dev	= {
++		.platform_data = (void *)PHY_ID,
++	},
++	.num_resources	= ARRAY_SIZE(sh_eth0_resources),
++	.resource	= sh_eth0_resources,
++};
++
++static struct resource sh_eth1_resources[] = {
++	[0] = {
++		.start  = SH_ETH1_BASE,
++		.end    = SH_ETH1_BASE + 0x1B8,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= IRQ_SH_ETH1,
++		.end	= IRQ_SH_ETH1,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sh_eth1_device = {
++	.name	= "sh-eth",
++	.id	= 1,
++	.dev	= {
++		.platform_data = (void *)PHY_ID,
++	},
++	.num_resources	= ARRAY_SIZE(sh_eth1_resources),
++	.resource	= sh_eth1_resources,
++};
++#endif /* CONFIG_SH_ETH */
++
+ static struct platform_device *se_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&cf_ide_device,
++#if defined(CONFIG_SH_ETH)
++	&sh_eth0_device,
++	&sh_eth1_device,
++#endif
+ };
+
+ static int __init se_devices_setup(void)
+diff -uprN a/include/asm-sh/se.h b/include/asm-sh/se.h
+--- a/include/asm-sh/se.h	2008-01-18 10:55:02.000000000 +0900
++++ b/include/asm-sh/se.h	2008-01-18 16:36:53.000000000 +0900
+@@ -76,6 +76,21 @@
+ #define IRQ_CFCARD	7
+ #endif
+
++/* SH Ethernet */
++#if defined(CONFIG_CPU_SUBTYPE_SH7710)
++#define PHY_ID	0x00
++#elif defined(CONFIG_CPU_SUBTYPE_SH7712)
++#define PHY_ID	0x01
++#endif
++/* Ether Base Address */
++#define SH_ETH0_BASE	0xA7000000
++#define SH_ETH1_BASE	0xA7000400
++#define SH_TSU_ADDR	0xA7000804
++/* Ether IRQs */
++#define IRQ_SH_ETH0	80
++#define IRQ_SH_ETH1	81
++#define IRQ_SH_TSU	82
++
+ #define __IO_PREFIX	se
+ #include <asm/io_generic.h>
+
