@@ -1,36 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 24 Jan 2008 09:45:45 +0000
-Subject: [PATCH] sh: remove consistent alloc stuff from the machine vector
-Message-Id: <20080124094545.25820.12273.sendpatchset@clockwork.opensource.se>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Sun, 20 Jan 2008 20:42:09 +0000
+Subject: Fwd: Hi, all,
+Message-Id: <200801202142.10091.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sh: remove consistent alloc stuff from the machine vector
+I have such a problem with.
+sh-uclibc-g++ 3.4.6
 
-Now with the voyagergx cruft gone and the dreamcast using declared
-coherent memory for pci there are no users of the consistent alloc and
-free functions pointers in the machine vector.
+/home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/gcc/unwind-dw2-fde-gl
+ibc.c:291: undefined reference to `dl_iterate_phdr'
 
-So this little patch simply removes these function pointers from the macvec.
+How can I solve.
+Any suggestion will be appreciated.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Best reagrds and good nigth.
 
- include/asm-sh/machvec.h |    3 ---
- 1 file changed, 3 deletions(-)
 
---- 0001/include/asm-sh/machvec.h
-+++ work/include/asm-sh/machvec.h	2008-01-24 17:04:11.000000000 +0900
-@@ -56,9 +56,6 @@ struct sh_machine_vector {
- 
- 	void (*mv_heartbeat)(void);
- 
--	void *(*mv_consistent_alloc)(struct device *, size_t, dma_addr_t *, gfp_t);
--	int (*mv_consistent_free)(struct device *, size_t, void *, dma_addr_t);
--
- 	void __iomem *(*mv_ioport_map)(unsigned long port, unsigned int size);
- 	void (*mv_ioport_unmap)(void __iomem *);
- };
+
+--
+Fabio Giovagnini
+
+Aurion s.r.l.
+via degli orti 11,
+40050 Funo di Argelato (BO)
+P.I e C.F.
+00885711200
+Tel. +39.335.8350919
+Fax +39.051.8659009
+
+www.aurion-tech.com
+
+account telefono VoIP skype (www.skype.com):
+aurion.giovagnini
+
