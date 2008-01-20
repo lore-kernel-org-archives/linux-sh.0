@@ -1,27 +1,54 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 29 Jan 2008 00:46:34 +0000
-Subject: Re: [PATCH] sh: declared coherent memory support V2 fix
-Message-Id: <20080129004634.GB9937@linux-sh.org>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sun, 20 Jan 2008 22:30:06 +0000
+Subject: Re: Hi, all,
+Message-Id: <200801201730.07407.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart1310403.37qOyN3tfd"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080113135447.30289.54583.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080113135447.30289.54583.sendpatchset@clockwork.opensource.se>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jan 25, 2008 at 12:42:48PM +0900, Magnus Damm wrote:
-> sh: declared coherent memory support V2 fix
-> 
-> This patch fixes the recently introduced declared coherent memory support.
-> Without this fix a cached memory area is returned by dma_alloc_coherent() -
-> unless dma_declare_coherent_memory() has setup a separate area.
-> 
-> This patch makes sure an uncached memory area is returned. With this patch
-> it is now possible to ping through an rtl8139 interface on r2d-plus.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+--nextPart1310403.37qOyN3tfd
+Content-Type: text/plain;
+  charset="iso-8859-6"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-Grr, missed this one. For some reason my eyes stopped at 'V2' and didn't
-see the 'fix' part, so I thought I had already applied this one. I'll
-roll it in to the next -rc1 batch.
+On Sunday 20 January 2008, Fabio Giovagnini wrote:
+> I have such a problem with.
+> sh-uclibc-g++ 3.4.6
+>
+> /home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/gcc/unwind-dw2-fd=
+e-
+>glibc.c:291: undefined reference to `dl_iterate_phdr'
+>
+> How can I solve.
+> Any suggestion will be appreciated.
+
+a one line error isnt exactly useful ... you didnt say what version of uCli=
+bc=20
+you're using or what you're using for a build system.
+=2Dmike
+
+--nextPart1310403.37qOyN3tfd
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.7 (GNU/Linux)
+
+iQIVAwUAR5PLb0FjO5/oN/WBAQLpwRAAnSo/ObzckdJtELc3miOTMN4TqWld6mWi
+IS08ZO2TEplaLVBFndi2/PzT8Rdaq8vbJsVcnZ5SwIjssdK1UNi7q+34Ficctcml
+61ewqat43Or9VIY5AgXDR1JOJFErP6z3FrmxWH68iUtzcpvQMNHls3J4BYZ1m3ep
+qL3bgTi+K7EUqFxsMojEL582ONRpCst+HOUEQknJuPpy6QBu+vW7/tEgLmtEBra2
+MMy2nGh5PvhQ6QzYRoO3QAg57B4NKJptkg1eOy5Fm8C9ps2qPVVC1NUzGjppe29e
+AWiXKOr3YgBmdzh+5qVrIe1hi5nDMYiazzT9b57Ko9coYt41QdCMf1SCAfRbmznB
+Vy4JQu4lUAS4aC6hx2KeXvsIqJqq9vLGq7vIKdFUlkiIqrI5H0p0hLVimq2Br8M4
+ZEdO3mAltF9I/OICXhcmChzsddq0/rf4V+bu1zVf9sqjAZX2O1NZfuPS1tkekTnD
+b8j6fR5l8z6z9qRxX4G0gfifhJ6ON32ajECR/lgHGwFgZaVQDLuKzukF/SoG2oX4
+gC+yiGJ8RGjKe+fZB5iIucDmMXs9y3uUTTEvWbNpdwRWEO7/upRZHaHmoZSz8+AM
+YVgtSSHnOCt+iGT/GunjcL+S5KAPfIOFxSRk2Uir1Ni07ulBlNFw9N2eT6qWj1T/
+J2Ae+JGOE98=
+=99+U
+-----END PGP SIGNATURE-----
+
+--nextPart1310403.37qOyN3tfd--
