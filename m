@@ -1,57 +1,50 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Mon, 21 Jan 2008 01:55:46 +0000
+From: Carmelo AMOROSO <carmelo.amoroso@st.com>
+Date: Mon, 21 Jan 2008 07:46:21 +0000
 Subject: Re: Hi, all,
-Message-Id: <200801202055.47353.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2536112.zCECWdQhk0"
+Message-Id: <47944DCD.5070406@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200801201730.07407.vapier@gentoo.org>
 In-Reply-To: <200801201730.07407.vapier@gentoo.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---nextPart2536112.zCECWdQhk0
-Content-Type: text/plain;
-  charset="iso-8859-6"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-On Sunday 20 January 2008, Mike Frysinger wrote:
-> On Sunday 20 January 2008, Fabio Giovagnini wrote:
-> > I have such a problem with.
-> > sh-uclibc-g++ 3.4.6
-> >
-> > /home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/gcc/unwind-dw2-fd
-> >e- glibc.c:291: undefined reference to `dl_iterate_phdr'
-> >
-> > How can I solve.
-> > Any suggestion will be appreciated.
+Mike Frysinger wrote:
+> On Sunday 20 January 2008, Mike Frysinger wrote:
+>   
+>> On Sunday 20 January 2008, Fabio Giovagnini wrote:
+>>     
+>>> I have such a problem with.
+>>> sh-uclibc-g++ 3.4.6
+>>>
+>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/gcc/unwind-dw2-fd
+>>> e- glibc.c:291: undefined reference to `dl_iterate_phdr'
+>>>
+>>> How can I solve.
+>>> Any suggestion will be appreciated.
+>>>       
+>> a one line error isnt exactly useful ... you didnt say what version of
+>> uClibc you're using or what you're using for a build system.
+>>     
 >
-> a one line error isnt exactly useful ... you didnt say what version of
-> uClibc you're using or what you're using for a build system.
+> and more importantly, what exactly are you doing
+> -mike
+>   
+Hi Mike,
+I think that Fabio is trying to linking statically a C++ application
+against uClibc. If so, (Fabio please clarify), the problem is extactly 
+the same
+I posted on uClibc list last week (mmove _dl_iterate_phdr from libdl.a 
+to libc.a).
 
-and more importantly, what exactly are you doing
--mike
+I have a already fixed it for nptl/sh4 branch... I'm just now merging 
+the patch
+for the uClibc branch and post it for a wider review on uClibc.
 
---nextPart2536112.zCECWdQhk0
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+I'll put Fabio into the loop.. anyway Fabio should post his full command 
+line
+used to build/link his application.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.7 (GNU/Linux)
-
-iQIVAwUAR5P7o0FjO5/oN/WBAQKZ0A//RQ/FJVI7xB4KiU8tWq/KW9yDc+hITInP
-U9y6xddF+pnzB7/tXwmMmrol6FWIYTaIaKIG5oEvLS+QiqXfOo8qgUVb/a00TEMl
-EUEWXcEIYNJYfJkz10byy6mn3ky24NOOJyoHnFPKGiCWwH2VdLx1dOwAVUvIHVG5
-lvnfslaMBqryMEuvg9H0mQ5KmMIEOvuyMf7+P2zzJXmSf8DziVQE2pP9uJndF1BU
-T0DOWuxcEEJuinSqofQBIypBWx8eM1mMSLZtVpb39jDY4mZHCkyXx3hBCrYAwiKC
-zWMeu/YFcYa3j9LUxzDAItLMgOiAL3bUYuJB47Sfo7Z5tF6/Pp5A+Tc0SycbWLf1
-RyhfyRG4M+ZfIX7+11ITN4fBRW2Y4Mkp+t605CVNZfTddc8K/rY0UjH/pjl5JXRs
-tGpOVsStEiuu5FPifMb2j7oIpJqxAIIxq5UXUGqdwwbJwSA9RfYYBbXmSRF3G+g+
-vR1nqtbXgODUvHk+gq/w3nOFSuslkzF6tiSXTkJ2hSGWhLX2O0sPx/XbEEu+x9vP
-sJDUULfpsy6Lj/744alKAu9PTVWS8LMuXJjKdhGNNTPedoTi3Bdp2tv0TwGg8bQ9
-H/xlf1+rNJ5sXnGzv8G23XyMeEgd8lGr1cXTvoKVUFsriE9Svzzi1FhafrsQstkx
-qmYH6lpgCKs=
-=l/df
------END PGP SIGNATURE-----
-
---nextPart2536112.zCECWdQhk0--
+Cheers,
+Carmelo
