@@ -1,54 +1,34 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Tue, 29 Jan 2008 08:32:33 +0000
-Subject: Re: Hi all, how could I check if my compiler use fpu instruction?
-Message-Id: <200801290932.33223.fabio.giovagnini@aurion-tech.com>
+From: Katsuya MATSUBARA <matsu@igel.co.jp>
+Date: Mon, 21 Jan 2008 06:25:50 +0000
+Subject: [BUG] cannot access IO ports in CMI8738 sound chip.
+Message-Id: <20080121.152550.68560038.matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <200801282208.08210.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <200801282208.08210.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Sorry Paul, sorry everybody.
-When I'm tierd I'm not so smart.
 
-Thanks a lot for the answer.
-arch/sh/Makefile is related to kernel tree, rigth?
+ Hi all,
 
-Thanks and sorry again.
+ I am writing a code to use a CMI8738 sound chip, which is
+ widely used on Intel x86. I am using such a chip through
+ a PCI slot on R2D-PLUS.
+ The CMI8738 has IO ports. The pci_resource_start() gives
+ an IO port number (0x4000), however, this number cannot be
+ used for IO accessing by in*()/out*().
 
-
-
-Alle 01:49, marted=EC 29 gennaio 2008, Paul Mundt ha scritto:
-> It is incredibly difficult to reply to your mail when you insist on
-> putting the body of your text in the subject line. Please use a more
-> meaningful subject and actually use the body for something other than
-> your .sig, thanks.
->
-> Regarding FP use, this depends on your target, and on your CFLAGS. If
-> you're using a target that supports an FPU, FP instructions are generated
-> by default. You will need to explicitly inhibit FP instruction generation
-> if you do not want it. You can look at arch/sh/Makefile for various ways
-> we try to prevent the compiler from generating FP instructions ("try" is
-> operative here, since GCC often has its own ideas about things).
-> -
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---=20
-Fabio Giovagnini
-
-Aurion s.r.l.
-via degli orti 11,
-40050 Funo di Argelato (BO)
-P.I e C.F.
-00885711200
-Tel. +39.335.8350919
-Fax +39.051.8659009
-
-www.aurion-tech.com
-
-account telefono VoIP skype (www.skype.com):
-aurion.giovagnini
+ I found a patch for fixing PCI IO port accessing in some SH7780
+ platforms and then submitted a similar patch for RTS7751R2D;
+ http://www.spinics.net/lists/linux-sh/msg00254.html
+ In my understanding, these patch substitute memory addresses
+ for IO port numbers. Is it correct?
+ Unfortunately CMI8738 cannot treat (large) memory addresses
+ as IO port numers because some upper bits of 'Base Address
+ Register 0' in the PCI configuration space cannot be updated.
+ (pcibios_setup_bars() in arch/sh/drivers/pci/pci-auto.c
+ updates the register with the memory address.)
+ 
+ How should I fix the problem?
+---
+ Katsuya Matsubara
