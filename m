@@ -1,7 +1,7 @@
 From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Mon, 21 Jan 2008 08:39:46 +0000
+Date: Mon, 21 Jan 2008 14:29:25 +0000
 Subject: Re: Hi, all,
-Message-Id: <200801210939.46332.fabio.giovagnini@aurion-tech.com>
+Message-Id: <200801211529.25821.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200801201730.07407.vapier@gentoo.org>
 In-Reply-To: <200801201730.07407.vapier@gentoo.org>
@@ -10,19 +10,9 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-This is the error
-make[2]: Entering directory `/home/fgiovagnini/sh7203-uClinux-1.4/c++1stApp'
-sh-linux-g++ -m3e -mb -Wl,-EB -Wl,-elf2flt=3D-s65536  -o c++1stApp main.o
-c++1stApp.elf2flt: In function `_Unwind_Find_FDE':
-/home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/gcc/unwind-dw2-fde-=
-glibc.c:291:=20
-undefined reference to `dl_iterate_phdr'
-collect2: ld returned 1 exit status
-make[2]: *** [c++1stApp] Error 1
-make[2]: Leaving directory `/home/fgiovagnini/sh7203-uClinux-1.4/c++1stApp'
-make[1]: *** [build] Error 2
-make[1]: Leaving directory `/home/fgiovagnini/sh7203-uClinux-1.4/build'
-make: *** [c++1stApp] Error 2
+Sorry Carmelo,
+could you explain me better how you solved the problem?
+Regards
 
 
 Alle 08:46, luned=EC 21 gennaio 2008, Carmelo AMOROSO ha scritto:
@@ -62,6 +52,10 @@ Alle 08:46, luned=EC 21 gennaio 2008, Carmelo AMOROSO ha scritto:
 >
 > Cheers,
 > Carmelo
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 --=20
 Fabio Giovagnini
