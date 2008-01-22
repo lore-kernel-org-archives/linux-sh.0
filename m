@@ -1,78 +1,55 @@
 From: David Brownell <david-b@pacbell.net>
-Date: Tue, 22 Jan 2008 04:22:22 +0000
+Date: Tue, 22 Jan 2008 04:38:48 +0000
 Subject: Re: [PATCH] spi: add support for SPI over SuperH SCI pins
-Message-Id: <200801212022.23139.david-b@pacbell.net>
+Message-Id: <200801212038.48423.david-b@pacbell.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080121104913.11908.50319.sendpatchset@clockwork.opensource.se>
-	<200801211429.29906.david-b@pacbell.net>
-	<20080122031114.GA2062@linux-sh.org>
-In-Reply-To: <20080122031114.GA2062-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
+References: <20080121104913.11908.50319.sendpatchset@clockwork.opensource.se> <200801211429.29906.david-b@pacbell.net> <aec7e5c30801211956p285de9a6gfb8debafbb876c37@mail.gmail.com>
+In-Reply-To: <aec7e5c30801211956p285de9a6gfb8debafbb876c37@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
-Cc: spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: spi-devel-general@lists.sourceforge.net, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-On Monday 21 January 2008, Paul Mundt wrote:
-
-> > > +#define spidelay(x) ndelay(x)
-> > > +
-> > > +#define	EXPAND_BITBANG_TXRX
-> > > +#include <linux/spi/spi_bitbang.h>
-> > > +
+On Monday 21 January 2008, Magnus Damm wrote:
+> On Jan 22, 2008 7:29 AM, David Brownell <david-b@pacbell.net> wrote:
+> >
+> > You should consider adding yourself to MAINTAINERS for
+> > this driver...
 > 
-> This is rather unorthodox..
+> Yes. If it's ok with you then i'll send a separate patch for that. I
+> should probably add more than one entry there.
 
-return -ENOPATCH;)
+Fine by me.  
 
-I've seen similar idioms used for years.  It's not dissimilar
-to "#ifdef __KERNEL__" except for the code audiences:  two
-different drivers, vs two different address spaces.
 
-Similar approaches have been used to expand bit manipulation
-algorithms in other contexts ... like some X11 servers I once
-had to cope with.  In fact that was infamous for breaking CPP
-on new platforms; that was before C grew inlines!  But the
-rationale is still the same:  make sure the compiler has every
-opportunity to optimize each variant of those inner loops,
-since they're performance-critical.
+> > > +     /* register the chips to go with the board */
+> > > +
+> > > +     for (i = 0; i < sp->info->board_size; i++) {
+> > > +             dev_info(&dev->dev, "registering %p: %s\n",
+> > > +                      &sp->info->board_info[i],
+> > > +                      sp->info->board_info[i].modalias);
+> > > +
+> > > +             sp->info->board_info[i].controller_data = sp;
+> > > +             spi_new_device(master, sp->info->board_info + i);
+> >
+> > NO -- this doesn't belong here at all.  Such registration is handled
+> > by the SPI core code, according to what the board init code told it.
+> 
+> Hehe. My gut reaction was the same when i read the s3c24xx drivers,
 
-And it works.  I append the code generated on one ARM which
-inlines the bitops ... the inner loop isn't as fast as one
-could code by hand, but if you consider it's four GPIO ops
-then it's not bad.  And it's twice as fast as going through
-a subroutine call for each bitop.  That's easily visible on
-block I/O paths that unfortunately can't use hardware SPI
-on that system.
+Gaak.  How did those get in with such crap?
+
+Aaaah, I see ... I never signed off on their original merge.  Hmm.
+
+
+
+> but then I decided to follow their style. I'll remove that part then
+> and instead register the spi devices from the board code using
+> spi_register_board_info().
+> 
+> I'll fix up the code and repost in a bit. Thanks for your review!
+
+Sure.
 
 - Dave
-
-
-000001cc <XX_spi_txrx_word_mode0>:
- 1cc:	e1a0c00d 	mov	ip, sp
- 1d0:	e92dd810 	push	{r4, fp, ip, lr, pc}
- 1d4:	e24cb004 	sub	fp, ip, #4	; 0x4
- 1d8:	e3a04008 	mov	r4, #8	; 0x8
- 1dc:	e1a0ec02 	lsl	lr, r2, #24
-
- 1e0:	e35e0000 	cmp	lr, #0	; 0x0
- 1e4:	e59f303c 	ldr	r3, [pc, #60]	; 228
- 1e8:	e3e01401 	mvn	r1, #16777216	; 0x1000000
- 1ec:	a3a00034 	movge	r0, #52	; 0x34
- 1f0:	b3a00030 	movlt	r0, #48	; 0x30
- 1f4:	e3a0c004 	mov	ip, #4	; 0x4
- 1f8:	e3a02002 	mov	r2, #2	; 0x2
- 1fc:	e7802003 	str	r2, [r0, r3]
- 200:	e501cdcf 	str	ip, [r1, #-3535]
- 204:	e5113dc3 	ldr	r3, [r1, #-3523]
- 208:	e2442001 	sub	r2, r4, #1	; 0x1
- 20c:	e2033001 	and	r3, r3, #1	; 0x1
- 210:	e21240ff 	ands	r4, r2, #255	; 0xff
- 214:	e501cdcb 	str	ip, [r1, #-3531]
- 218:	e183e08e 	orr	lr, r3, lr, lsl #1
- 21c:	1affffef 	bne	1e0
-
- 220:	e1a0000e 	mov	r0, lr
- 224:	e89da810 	ldm	sp, {r4, fp, sp, pc}
-
- 228:	fefff200 	.word	0xfefff200
