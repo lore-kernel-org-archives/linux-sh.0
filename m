@@ -1,24 +1,199 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 22 Jan 2008 09:57:49 +0000
-Subject: Re: Re: Hi, all,
-Message-Id: <20080122095749.GA8303@linux-sh.org>
+From: Carmelo AMOROSO <carmelo.amoroso@st.com>
+Date: Tue, 22 Jan 2008 10:13:39 +0000
+Subject: Re: Hi, all,
+Message-Id: <4795C1D3.1090304@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200801201730.07407.vapier@gentoo.org>
 In-Reply-To: <200801201730.07407.vapier@gentoo.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 22, 2008 at 09:34:28AM +0000, Kieran Bingham wrote:
-> The SH2/SH2a does not have any support for shared librarys yet. I
-> think its something renesas are thinking about but they haven't got to
-> yet.
-> 
-> This was a problem we hit while working on the board too.
-> 
-Correct, there's no plan to support shared flat. Shared libraries via ELF
-FDPIC will be forthcoming, and we'll keep uClibc updated as that work
-moves along. That's not to say that shared flat can't be made to work, we
-simply have no plans of supporting it. If someone else wants to work on
-this, there's no technical reason why we can't support it.
+Fabio Giovagnini wrote:
+> Ok, so to solve my problem of linking statically  a c++ application with =
+
+> uclibc I need to move the function
+> dl_iterate_phdr
+> form=20
+> libdl=20
+> to libc=20
+> ar Carmelo suggest.
+> Is it correct?
+>  =20
+Yes, you should.. but I suggest you waiting for the the patched uClibc.
+
+I could suggest another work-around. You may patch your gcc to use the=20
+generic
+unwind implementation instead unwind-dw2-fde instead of the glibc
+one unwind-dw2-fde-glibc.
+Patch gcc/config/t-linux (from gcc source) changing the line
+
+# Use unwind-dw2-fde-glibc
+LIB2ADDEH =3D $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde-glibc.c \
+
+with
+# Use unwind-dw2-fde
+LIB2ADDEH =3D $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde.c \
+
+This temporary work-around worked for me before fixing uClibc.
+Generic unwind-dw2-fde doesn't use the _dl_iterate_phdr.
+
+Carmelo
+>
+> Alle 10:34, marted=EC 22 gennaio 2008, Kieran Bingham ha scritto:
+>  =20
+>> Hi Fabio,
+>>
+>> The SH2/SH2a does not have any support for shared librarys yet. I
+>> think its something renesas are thinking about but they haven't got to
+>> yet.
+>>
+>> This was a problem we hit while working on the board too.
+>>
+>>    =20
+>>> 3) I looked for ARCH_HAS_NO_LDSO and I found in extra/Configs/Config.sh
+>>> config CONFIG_SH2
+>>>         select ARCH_HAS_NO_MMU
+>>>         select ARCH_HAS_NO_LDSO
+>>>         bool "SH2"
+>>>
+>>> so I got the answer to my question.
+>>>
+>>> Well.
+>>> Setting ARCH_HAS_NO_LDSO is needed by my sh27203 target or is a choice =
+of
+>>> MCP data for building the minimal sysstem?
+>>>      =20
+>> No, this was not a choice of MPC Data. We didn't change anything in
+>> that uClibc source tree.
+>>
+>> Carmello: What is this `dl_iterate_phdr' - is it something that is
+>> part of dynamic linking / shared libraries?
+>> --
+>> Kieran
+>>
+>>    =20
+>>> Thanks a lot.
+>>>
+>>> Ciao
+>>>
+>>> Alle 08:58, marted=EC 22 gennaio 2008, Carmelo AMOROSO ha scritto:
+>>>      =20
+>>>> Fabio Giovagnini wrote:
+>>>>        =20
+>>>>> You understood properly about what I have been trying to do. Iwas
+>>>>> trying to link a simple c++ application staticxally using uclibc.
+>>>>>
+>>>>> This is the output you are asking for.
+>>>>> If it is not enogh tell me what to add more.
+>>>>>
+>>>>> fgiovagnini@aurio02:~/sh7203-uClinux-1.4/build> make c++1stApp
+>>>>> make -f Makefile.c++1stApp
+>>>>> make[1]: Entering directory
+>>>>> `/home/fgiovagnini/sh7203-uClinux-1.4/build' make -e -C
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/../c++1stApp make[2]:
+>>>>> Entering directory
+>>>>> `/home/fgiovagnini/sh7203-uClinux-1.4/c++1stApp' sh-linux-g++ -m3e
+>>>>> -mb -v -DGNU_SOURCE -Wall   -c -o main.o main.cpp Reading specs from
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3.
+>>>>> 4.6/ spe cs Configured with:
+>>>>>  /home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/configure
+>>>>>  --prefix=3D/home/fgiovagnini/sh7203-uClinux-1.4/build/target
+>>>>> --target=3Dsh-linux
+>>>>> --with-sysroot=3D/home/fgiovagnini/sh7203-uClinux-1.4/build/target
+>>>>> --enable-languages=3Dc,c++ --disable-shared Thread model: posix
+>>>>> gcc version 3.4.6
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/libexec/gcc/sh-linu
+>>>>> x/3. 4.6 /cc1plus -quiet -v -D_GNU_SOURCE -DGNU_SOURCE main.cpp -quiet
+>>>>> -dumpbase main.cpp -m3e -mb -auxbase-strip main.o -Wall -version -o
+>>>>> /tmp/ccik376j.s ignoring nonexistent directory
+>>>>>
+>>>>> "/home/fgiovagnini/sh7203-uClinux-1.4/build/target/usr/local/include"
+>>>>> ignoring nonexistent directory
+>>>>>
+>>>>> "/home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3
+>>>>> .4.6 /.. /../../../sh-linux/include" #include "..." search starts
+>>>>> here: #include <...> search starts here:
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3.
+>>>>> 4.6/ ../ ../../../include/c++/3.4.6
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3.
+>>>>> 4.6/ ../ ../../../include/c++/3.4.6/sh-linux
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3.
+>>>>> 4.6/ ../ ../../../include/c++/3.4.6/backward
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3.
+>>>>> 4.6/ inc lude
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/usr/include End of
+>>>>> search list.
+>>>>> GNU C++ version 3.4.6 (sh-linux)
+>>>>>         compiled by GNU C version 4.1.0 (SUSE Linux).
+>>>>> GGC heuristics: --param ggc-min-expand=99 --param
+>>>>> ggc-min-heapsize=129238
+>>>>>
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/target/lib/gcc/sh-linux/3.
+>>>>> 4.6/ ../ ../../../sh-linux/bin/as -big -o main.o /tmp/ccik376j.s
+>>>>> sh-linux-g++ -m3e -mb -Wl,-EB -Wl,-elf2flt=3D-s65536  -o c++1stApp
+>>>>> main.o
+>>>>> c++1stApp.elf2flt: In function `_Unwind_Find_FDE':
+>>>>> /home/fgiovagnini/sh7203-uClinux-1.4/build/../gcc-3.4.6/gcc/unwind-dw
+>>>>> 2-fd e-gl ibc.c:291: undefined reference to `dl_iterate_phdr'
+>>>>> collect2: ld returned 1 exit status
+>>>>> make[2]: *** [c++1stApp] Error 1
+>>>>> make[2]: Leaving directory
+>>>>> `/home/fgiovagnini/sh7203-uClinux-1.4/c++1stApp' make[1]: *** [build]
+>>>>> Error 2
+>>>>> make[1]: Leaving directory
+>>>>> `/home/fgiovagnini/sh7203-uClinux-1.4/build' make: *** [c++1stApp]
+>>>>> Error 2
+>>>>>
+>>>>> Thanks a lot and best regards
+>>>>>          =20
+>>>> As a work-around, you may try to arrange your makefile to link
+>>>> statically against libdl.a where actually _dl_iterate_phdr is defined.
+>>>> The final solution consists of moving the _dl_iterate_phdr from libdl.a
+>>>> to libc.a,
+>>>> but it needs some other changes. I've already have a working solution
+>>>> for uClibc-nptl
+>>>> for sh4, but this is still missing from the trunk.
+>>>> I'm working to merge it to trunk asas. Then you need to use the latest
+>>>> uClibc.
+>>>>
+>>>> See if the work-around works for you.
+>>>>
+>>>> Carmelo
+>>>> -
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>        =20
+>>> --
+>>> Fabio Giovagnini
+>>>
+>>> Aurion s.r.l.
+>>> via degli orti 11,
+>>> 40050 Funo di Argelato (BO)
+>>> P.I e C.F.
+>>> 00885711200
+>>> Tel. +39.335.8350919
+>>> Fax +39.051.8659009
+>>>
+>>> www.aurion-tech.com
+>>>
+>>> account telefono VoIP skype (www.skype.com):
+>>> aurion.giovagnini
+>>>
+>>> aurion.giovagnini
+>>> -
+>>> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>      =20
+>
+>  =20
+
