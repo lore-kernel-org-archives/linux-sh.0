@@ -1,71 +1,57 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Wed, 23 Jan 2008 12:16:43 +0000
+From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
+Date: Wed, 23 Jan 2008 13:30:19 +0000
 Subject: Re: debian etch sh3 and sh4
-Message-Id: <200801230716.44071.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1646709.E1ejBXX6th"
+Message-Id: <20080123143019.a9b6f4cd.Kristoffer.ericson@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <82C85C285793D5ebiharaml@si-linux.com>
 In-Reply-To: <82C85C285793D5ebiharaml@si-linux.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---nextPart1646709.E1ejBXX6th
-Content-Type: text/plain;
-  charset="iso-8859-15"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+On Wed, 23 Jan 2008 07:16:43 -0500
+Mike Frysinger <vapier@gentoo.org> wrote:
 
-On Wednesday 23 January 2008, Adrian McMenamin wrote:
-> On Wed, January 23, 2008 9:53 am, Paul Mundt wrote:
-> > In 16MB you will always be bordering on thrashing just trying to do _an=
-y_
-> > basic tasks. Your options are realistically limited to busybox or
-> > throwing the damn thing out (the recommended option). Doing anything mo=
-re
-> > involved than that was pretty questionable back when the kernel used a
-> > lot less memory, and trying to do builds in that environment is well pa=
-st
-> > absurdity these days. 64MB is painful, but at least workable.
->
-> You really are like the Kerryman who, when asked how to get to Dublin said
-> "well, I wouldn't start from here." :)
->
-> I don't mind the thrashing if it gets me something that works and which
-> can later be used as the basis of a "distro" - which is my aim here.
->
-> Anyone know how stable swap over nfs is these days? Speed is a secondary
-> consideration.
->
-> NB: CF or similar isn't an option. In theory you could put a very small
-> swap partition on the Dreamcast's VMUs but access to that is likely to be
-> much slower even than NFS - as it would be rationed to 60 times per
-> second.
+> On Wednesday 23 January 2008, Adrian McMenamin wrote:
+> > On Wed, January 23, 2008 9:53 am, Paul Mundt wrote:
+> > > In 16MB you will always be bordering on thrashing just trying to do _any_
+> > > basic tasks. Your options are realistically limited to busybox or
+> > > throwing the damn thing out (the recommended option). Doing anything more
+> > > involved than that was pretty questionable back when the kernel used a
+> > > lot less memory, and trying to do builds in that environment is well past
+> > > absurdity these days. 64MB is painful, but at least workable.
+> >
+> > You really are like the Kerryman who, when asked how to get to Dublin said
+> > "well, I wouldn't start from here." :)
+> >
+> > I don't mind the thrashing if it gets me something that works and which
+> > can later be used as the basis of a "distro" - which is my aim here.
+> >
+> > Anyone know how stable swap over nfs is these days? Speed is a secondary
+> > consideration.
+> >
+> > NB: CF or similar isn't an option. In theory you could put a very small
+> > swap partition on the Dreamcast's VMUs but access to that is likely to be
+> > much slower even than NFS - as it would be rationed to 60 times per
+> > second.
+> 
+> i used to build on the dreamcast, but the swapping was terrible so i gave up 
+> and just bought a lantank as it has 64megs ;)
+> -mike
+> 
 
-i used to build on the dreamcast, but the swapping was terrible so i gave u=
-p=20
-and just bought a lantank as it has 64megs ;)
-=2Dmike
+We've used ipkg for jlime, which basicly is a minimal version of apt. One would expect great speed, but unfortunantly
+that isn't the case. It seems to have a hard time handling the database which is why we've split it up into
+smaller pieces.
+ipkg is borderline usable on an jornada with 16mb/133mhz so I doubt apt will be any better.
 
---nextPart1646709.E1ejBXX6th
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+Personally I believe that slackware + some minimal packagemanager is the way to go. Doesn't simplify much for the user
+but will be easy to access packages and also maintain diffs against the main sources. Archlinux might also be an option since
+I have greater faith in pacman as a package manager, but currently there's no superH port.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.7 (GNU/Linux)
+I agree with paul that we need to see some commitment to getting stuff into the true release instead of providing "unsupported"/"unofficial" branches which pop up every year or so. 
 
-iQIVAwUAR5cwLEFjO5/oN/WBAQK7Lg//dHgn3J/B1+BurO2V1KeH6Gde8tIgzQP3
-HKe3TUIP0+3BHDS66sl5R0WUouqx0w3wixD8G3rlTUB/YZ7NXtPMEJSBRVvDFuvw
-ARiXe4uVVjdOQ9pEEnqd10pa6iXHyQmecvEGWJGzEYkZyN6r+x5GUlVRmkuZle+a
-G0huM5HtCaGv+jw7S+JNoAUeRK0Ar+j/3is7YGEWWoVUpx/AAImbDDqVfQ9Ltet7
-0OspRWNsDGYpc7+ZOQChTygz/CJAleopS6lazZ7+497ppQl+s8XocXztz84QZnSz
-5VttmjpBOymUJxmZsVpaiwMwnieV1jR/wqc8Zsc/gHXBAeVIJZE8VIZcZOa4DQl/
-A0NNvnaI797I7mtgLefsaQJBINSHgChvHMZRVYwrNDqnVQvo5b79PxBbBsISRHgV
-5HYv2DnF+44hdE8zf2PM9Y1ZLyJuXzaJUmbZ9Km8xkHhHaWdod4Lw9gRDSpuZs+x
-YX1l2QIdFb3dlaGzek2UUsAgQgmtJYL0EJEhJwQdMfF8VWPN+Pd7kSELlehhJhZl
-hs6B0l8SQux7ngB7oy4Duv++epNVeHq5cgeYJDUyvF4jsGdZbbCSsig3VaaRXRb7
-rFYx3Sc6H3kxfhFs1gyWH+zvQv69GebVpC+z8+lRQ6Wf+hjPSKUvIeIP6SU6U1Hz
-DBOF7uTQVWs=
-=OeJ7
------END PGP SIGNATURE-----
 
---nextPart1646709.E1ejBXX6th--
+
+
