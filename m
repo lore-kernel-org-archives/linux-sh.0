@@ -1,69 +1,269 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 22 Jan 2008 06:03:11 +0000
-Subject: Re: [PATCH] spi: add support for SPI over SuperH SCI pins
-Message-Id: <20080122060311.GA5322@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 23 Jan 2008 04:14:18 +0000
+Subject: [PATCH] spi: add support for SPI over SuperH SCI pins V2
+Message-Id: <20080123041418.16082.43143.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080121104913.11908.50319.sendpatchset@clockwork.opensource.se>
-	<20080122031114.GA2062@linux-sh.org>
-	<200801212022.23139.david-b@pacbell.net>
-	<200801212126.32727.david-b@pacbell.net>
-	<20080121104913.11908.50319.sendpatchset@clockwork.opensource.se>
-	<200801211429.29906.david-b@pacbell.net>
-	<20080122031114.GA2062@linux-sh.org>
-	<200801212022.23139.david-b@pacbell.net>
-In-Reply-To: <200801212126.32727.david-b-yBeKhBN/0LDR7s880joybQ@public.gmane.org>
-	<200801212022.23139.david-b-yBeKhBN/0LDR7s880joybQ@public.gmane.org>
+In-Reply-To: <20080121104913.11908.50319.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Brownell <david-b-yBeKhBN/0LDR7s880joybQ@public.gmane.org>
-Cc: spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+Cc: lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, dbrownell-Rn4VEauK+AKRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, Jan 21, 2008 at 08:22:22PM -0800, David Brownell wrote:
-> On Monday 21 January 2008, Paul Mundt wrote:
-> 
-> > > > +#define spidelay(x) ndelay(x)
-> > > > +
-> > > > +#define	EXPAND_BITBANG_TXRX
-> > > > +#include <linux/spi/spi_bitbang.h>
-> > > > +
-> > 
-> > This is rather unorthodox..
-> 
-> return -ENOPATCH;)
-> 
-> I've seen similar idioms used for years.  It's not dissimilar
-> to "#ifdef __KERNEL__" except for the code audiences:  two
-> different drivers, vs two different address spaces.
-> 
-> Similar approaches have been used to expand bit manipulation
-> algorithms in other contexts ... like some X11 servers I once
-> had to cope with.  In fact that was infamous for breaking CPP
-> on new platforms; that was before C grew inlines!  But the
-> rationale is still the same:  make sure the compiler has every
-> opportunity to optimize each variant of those inner loops,
-> since they're performance-critical.
-> 
-> And it works.  I append the code generated on one ARM which
-> inlines the bitops ... the inner loop isn't as fast as one
-> could code by hand, but if you consider it's four GPIO ops
-> then it's not bad.  And it's twice as fast as going through
-> a subroutine call for each bitop.  That's easily visible on
-> block I/O paths that unfortunately can't use hardware SPI
-> on that system.
+spi: add support for SPI over SuperH SCI pins V2
 
-On Mon, Jan 21, 2008 at 09:26:32PM -0800, David Brownell wrote:
-> Minor clarification:  twice as fast for loads involving lots
-> of medium-size buffers (1K+).  Down from one minute(!) to put
-> new kernels to the only place that they can boot from ... it's
-> the usual case where a 5x speedup at one place is very visible,
-> but doesn't add up to 5x overall; other issues start to show
-> up more (like unchanged per-byte overheads).
-> 
+This patch adds support for SPI over SCI pins. SCI is a very simple serial
+controller block that can be found on older SuperH processors. In theory it
+is possible to use the SCI hardware block in syncronous mode, but this version
+of the driver simply hooks up the bit banging code on the SCI pins.
 
-The -ENOPATCH thing was intentional, I was more fishing for an
-explanation of why this magical sequence existed than lobbying for its
-replacement. drivers/spi/ isn't in danger of looking like crypto/ in the
-name of code generation just yet, at least. ;-)
+Changes since V1 include:
+ - Comment and copyright fixes.
+ - Use ioremap() together with ioread8()/iowrite8().
+ - Store register value copy in sp->val.
+ - Remove spi device registration code.
 
-Thanks for the clarification.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ drivers/spi/Kconfig      |    7 +
+ drivers/spi/Makefile     |    1 
+ drivers/spi/spi_sh_sci.c |  206 ++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 214 insertions(+)
+
+--- 0001/drivers/spi/Kconfig
++++ work/drivers/spi/Kconfig	2008-01-23 12:40:15.000000000 +0900
+@@ -175,6 +175,13 @@ config SPI_S3C24XX_GPIO
+ 	  the inbuilt hardware cannot provide the transfer mode, or
+ 	  where the board is using non hardware connected pins.
+ 
++config SPI_SH_SCI
++	tristate "SuperH SCI SPI controller"
++	depends on SPI_MASTER && SUPERH
++	select SPI_BITBANG
++	help
++	  SPI driver for SuperH SCI blocks.
++
+ config SPI_TXX9
+ 	tristate "Toshiba TXx9 SPI controller"
+ 	depends on SPI_MASTER && GENERIC_GPIO && CPU_TX49XX
+--- 0001/drivers/spi/Makefile
++++ work/drivers/spi/Makefile	2008-01-23 12:40:15.000000000 +0900
+@@ -27,6 +27,7 @@ obj-$(CONFIG_SPI_S3C24XX_GPIO)		+= spi_s
+ obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24xx.o
+ obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
+ obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
++obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.o
+ # 	... add above this line ...
+ 
+ # SPI protocol drivers (device/link on bus)
+--- /dev/null
++++ work/drivers/spi/spi_sh_sci.c	2008-01-23 13:05:05.000000000 +0900
+@@ -0,0 +1,206 @@
++/*
++ * SH SCI SPI interface
++ *
++ * Copyright (c) 2008 Magnus Damm
++ *
++ * Based on S3C24XX GPIO based SPI driver
++ *
++ * Copyright (c) 2006 Ben Dooks
++ * Copyright (c) 2006 Simtec Electronics
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++*/
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
++#include <linux/platform_device.h>
++
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_bitbang.h>
++
++#include <asm/spi.h>
++#include <asm/io.h>
++
++struct sh_sci_spi {
++	struct spi_bitbang bitbang;
++
++	void __iomem *membase;
++	unsigned char val;
++	struct sh_spi_info *info;
++	struct platform_device *dev;
++};
++
++#define SCSPTR(sp) (sp->membase + 0x1c)
++#define PIN_SCK (1 << 2)
++#define PIN_TXD (1 << 0)
++#define PIN_RXD PIN_TXD
++#define PIN_INIT ((1 << 1) | (1 << 3) | PIN_SCK | PIN_TXD)
++
++static inline void setbits(struct sh_sci_spi *sp, int bits, int on)
++{
++	/*
++	 * We are the only user of SCSPTR so no locking is required.
++	 * Reading bit 2 and 0 in SCSPTR gives pin state as input.
++	 * Writing the same bits sets the output value.
++	 * This makes regular read-modify-write difficult so we
++	 * use sp->val to keep track of the latest register value.
++	 */
++
++	if (on)
++		sp->val |= bits;
++	else
++		sp->val &= ~bits;
++
++	iowrite8(sp->val, SCSPTR(sp));
++}
++
++static inline void setsck(struct spi_device *dev, int on)
++{
++	setbits(spi_master_get_devdata(dev->master), PIN_SCK, on);
++}
++
++static inline void setmosi(struct spi_device *dev, int on)
++{
++	setbits(spi_master_get_devdata(dev->master), PIN_TXD, on);
++}
++
++static inline u32 getmiso(struct spi_device *dev)
++{
++	struct sh_sci_spi *sp = spi_master_get_devdata(dev->master);
++
++	return (ioread8(SCSPTR(sp)) & PIN_RXD) ? 1 : 0;
++}
++
++#define spidelay(x) ndelay(x)
++#define EXPAND_BITBANG_TXRX
++#include <linux/spi/spi_bitbang.h>
++
++static u32 sh_sci_spi_txrx_mode0(struct spi_device *spi,
++				      unsigned nsecs, u32 word, u8 bits)
++{
++	return bitbang_txrx_be_cpha0(spi, nsecs, 0, word, bits);
++}
++
++static u32 sh_sci_spi_txrx_mode1(struct spi_device *spi,
++				      unsigned nsecs, u32 word, u8 bits)
++{
++	return bitbang_txrx_be_cpha1(spi, nsecs, 0, word, bits);
++}
++
++static u32 sh_sci_spi_txrx_mode2(struct spi_device *spi,
++				      unsigned nsecs, u32 word, u8 bits)
++{
++	return bitbang_txrx_be_cpha0(spi, nsecs, 1, word, bits);
++}
++
++static u32 sh_sci_spi_txrx_mode3(struct spi_device *spi,
++				      unsigned nsecs, u32 word, u8 bits)
++{
++	return bitbang_txrx_be_cpha1(spi, nsecs, 1, word, bits);
++}
++
++static void sh_sci_spi_chipselect(struct spi_device *dev, int value)
++{
++	struct sh_sci_spi *sp = spi_master_get_devdata(dev->master);
++
++	if (sp->info && sp->info->chip_select)
++		(sp->info->chip_select)(sp->info, dev->chip_select, value);
++}
++
++static int sh_sci_spi_probe(struct platform_device *dev)
++{
++	struct resource	*r;
++	struct spi_master *master;
++	struct sh_sci_spi *sp;
++	int ret;
++
++	master = spi_alloc_master(&dev->dev, sizeof(struct sh_sci_spi));
++	if (master = NULL) {
++		dev_err(&dev->dev, "failed to allocate spi master\n");
++		ret = -ENOMEM;
++		goto err0;
++	}
++
++	sp = spi_master_get_devdata(master);
++
++	platform_set_drvdata(dev, sp);
++	sp->info = dev->dev.platform_data;
++
++	/* setup spi bitbang adaptor */
++	sp->bitbang.master = spi_master_get(master);
++	sp->bitbang.master->bus_num = sp->info->bus_num;
++	sp->bitbang.master->num_chipselect = sp->info->num_chipselect;
++	sp->bitbang.chipselect = sh_sci_spi_chipselect;
++
++	sp->bitbang.txrx_word[SPI_MODE_0] = sh_sci_spi_txrx_mode0;
++	sp->bitbang.txrx_word[SPI_MODE_1] = sh_sci_spi_txrx_mode1;
++	sp->bitbang.txrx_word[SPI_MODE_2] = sh_sci_spi_txrx_mode2;
++	sp->bitbang.txrx_word[SPI_MODE_3] = sh_sci_spi_txrx_mode3;
++
++	r = platform_get_resource(dev, IORESOURCE_MEM, 0);
++	if (r = NULL) {
++		ret = -ENOENT;
++		goto err1;
++	}
++	sp->membase = ioremap(r->start, r->end - r->start + 1);
++	if (!sp->membase) {
++		ret = -ENXIO;
++		goto err1;
++	}
++	sp->val = ioread8(SCSPTR(sp));
++	setbits(sp, PIN_INIT, 1);
++
++	ret = spi_bitbang_start(&sp->bitbang);
++	if (!ret)
++		return 0;
++
++	setbits(sp, PIN_INIT, 0);
++	iounmap(sp->membase);
++ err1:
++	spi_master_put(sp->bitbang.master);
++ err0:
++	return ret;
++}
++
++static int sh_sci_spi_remove(struct platform_device *dev)
++{
++	struct sh_sci_spi *sp = platform_get_drvdata(dev);
++
++	iounmap(sp->membase);
++	setbits(sp, PIN_INIT, 0);
++	spi_bitbang_stop(&sp->bitbang);
++	spi_master_put(sp->bitbang.master);
++	return 0;
++}
++
++static struct platform_driver sh_sci_spi_drv = {
++	.probe		= sh_sci_spi_probe,
++	.remove		= sh_sci_spi_remove,
++	.driver		= {
++		.name	= "spi_sh_sci",
++		.owner	= THIS_MODULE,
++	},
++};
++
++static int __init sh_sci_spi_init(void)
++{
++	return platform_driver_register(&sh_sci_spi_drv);
++}
++
++static void __exit sh_sci_spi_exit(void)
++{
++	platform_driver_unregister(&sh_sci_spi_drv);
++}
++
++module_init(sh_sci_spi_init);
++module_exit(sh_sci_spi_exit);
++
++MODULE_DESCRIPTION("SH SCI SPI Driver");
++MODULE_AUTHOR("Magnus Damm <damm@opensource.se>");
++MODULE_LICENSE("GPL");
