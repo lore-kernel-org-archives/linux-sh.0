@@ -1,107 +1,307 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Mon, 28 Jan 2008 11:42:29 +0000
-Subject: Re: About sh7203 framebuffer driver.
-Message-Id: <200801281242.29414.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 23 Jan 2008 06:58:46 +0000
+Subject: [PATCH][2/2] usb: ohci-sm501 driver V2
+Message-Id: <20080123065846.488.67995.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <200801281105.03067.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <200801281105.03067.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I have to develop some SDL based widget; so It could be usefull for me to s=
-ee=20
-how they appear in portrait and landscape orientation;
-Thia is why I'd like to use hw to rotate; the widget har fixed size and and=
-=20
-none adatptive strategy is planned to be implemented.
-Our application is performaces oriented and this is way I'd like to operate=
- on=20
-HW directly. But for doing this I need to know what is the best way to=20
-communicate between user space and kerel space.
+usb: ohci-sm501 driver V2
 
-Regards
+This patch adds sm501 ohci support. It's all very straightforward with the
+exception of dma_declare_coherent_memory() and HCD_LOCAL_MEM. Together they
+are used to ensure that usb data is allocated using dma_alloc_coherent(),
+and that only valid dma memory is used to allocate from. This driver is
+a platform device, and the mfd driver sm501.c is already creating one
+usb host controller instance per sm501.
 
-P.S.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Do you have an idea of when the toolchain upgrade will be ready on website?
+ drivers/usb/host/ohci-hcd.c   |    5 
+ drivers/usb/host/ohci-sm501.c |  264 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 269 insertions(+)
 
-
-Alle 12:22, luned=EC 28 gennaio 2008, Kieran Bingham ha scritto:
-> Hi Fabio,
->
-> I believe the rotate function on the LCDC changed the way it read the
-> pixels from memory.
->
-> I think it turned the display from a 320x240 to a 240x320 display.
-> Useful for setting up the LCD panel in a different orientation etc..
->
-> I don't think the hardware can be used to perform rotation of an
-> image. that poses questions like
->  - how would it stretch the image.
-> or
->  - would it crop the image?
->
-> You can play with changing this register setting on the fly while the
-> board is running using HEW and choosing View --> CPU --> IO from the
-> menu's.
->
-> This gives you a view of all the on chip peripherals and access to
-> their registers.
->
-> Cheers
-> --
-> Kieran
->
-> On 28/01/2008, Fabio Giovagnini <fabio.giovagnini@aurion-tech.com> wrote:
-> > Hi All,
-> > I read the source code of sh7203 framebuffer driver made I suppose by M=
-CP
-> > Data.
-> > I had a question: Is it possible to tell the driver to rotate the image
-> > usign the LCDC native register instructions?
-> > If yes how? Do I need to implemnet an iocontrol funcrion or what is the
-> > way?
-> >
-> >
-> > --
-> > Fabio Giovagnini
-> >
-> > Aurion s.r.l.
-> > via degli orti 11,
-> > 40050 Funo di Argelato (BO)
-> > P.I e C.F.
-> > 00885711200
-> > Tel. +39.335.8350919
-> > Fax +39.051.8659009
-> >
-> > www.aurion-tech.com
-> >
-> > account telefono VoIP skype (www.skype.com):
-> > aurion.giovagnini
-> > -
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> -
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---=20
-Fabio Giovagnini
-
-Aurion s.r.l.
-via degli orti 11,
-40050 Funo di Argelato (BO)
-P.I e C.F.
-00885711200
-Tel. +39.335.8350919
-Fax +39.051.8659009
-
-www.aurion-tech.com
-
-account telefono VoIP skype (www.skype.com):
-aurion.giovagnini
+--- 0001/drivers/usb/host/ohci-hcd.c
++++ work/drivers/usb/host/ohci-hcd.c	2008-01-17 15:29:48.000000000 +0900
+@@ -1048,6 +1048,11 @@ MODULE_LICENSE ("GPL");
+ #define SSB_OHCI_DRIVER		ssb_ohci_driver
+ #endif
+ 
++#ifdef CONFIG_MFD_SM501
++#include "ohci-sm501.c"
++#define PLATFORM_DRIVER		ohci_hcd_sm501_driver
++#endif
++
+ #if	!defined(PCI_DRIVER) &&		\
+ 	!defined(PLATFORM_DRIVER) &&	\
+ 	!defined(OF_PLATFORM_DRIVER) &&	\
+--- /dev/null
++++ work/drivers/usb/host/ohci-sm501.c	2008-01-17 15:32:26.000000000 +0900
+@@ -0,0 +1,264 @@
++/*
++ * OHCI HCD (Host Controller Driver) for USB.
++ *
++ * (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
++ * (C) Copyright 2000-2005 David Brownell
++ * (C) Copyright 2002 Hewlett-Packard Company
++ * (C) Copyright 2008 Magnus Damm
++ *
++ * SM501 Bus Glue - based on ohci-omap.c
++ *
++ * This file is licenced under the GPL.
++ */
++
++#include <linux/interrupt.h>
++#include <linux/jiffies.h>
++#include <linux/platform_device.h>
++#include <linux/dma-mapping.h>
++#include <linux/sm501.h>
++#include <linux/sm501-regs.h>
++
++static int ohci_sm501_init(struct usb_hcd *hcd)
++{
++	return ohci_init(hcd_to_ohci(hcd));
++}
++
++static int ohci_sm501_start(struct usb_hcd *hcd)
++{
++	struct device *dev = hcd->self.controller;
++	int ret;
++
++	ret = ohci_run(hcd_to_ohci(hcd));
++	if (ret < 0) {
++		dev_err(dev, "can't start %s", hcd->self.bus_name);
++		ohci_stop(hcd);
++	}
++
++	return ret;
++}
++
++/*-------------------------------------------------------------------------*/
++
++static const struct hc_driver ohci_sm501_hc_driver = {
++	.description =		hcd_name,
++	.product_desc =		"SM501 OHCI",
++	.hcd_priv_size =	sizeof(struct ohci_hcd),
++
++	/*
++	 * generic hardware linkage
++	 */
++	.irq =			ohci_irq,
++	.flags =		HCD_USB11 | HCD_MEMORY | HCD_LOCAL_MEM,
++
++	/*
++	 * basic lifecycle operations
++	 */
++	.reset =		ohci_sm501_init,
++	.start =		ohci_sm501_start,
++	.stop =			ohci_stop,
++	.shutdown =		ohci_shutdown,
++
++	/*
++	 * managing i/o requests and associated device resources
++	 */
++	.urb_enqueue =		ohci_urb_enqueue,
++	.urb_dequeue =		ohci_urb_dequeue,
++	.endpoint_disable =	ohci_endpoint_disable,
++
++	/*
++	 * scheduling support
++	 */
++	.get_frame_number =	ohci_get_frame,
++
++	/*
++	 * root hub support
++	 */
++	.hub_status_data =	ohci_hub_status_data,
++	.hub_control =		ohci_hub_control,
++	.hub_irq_enable =	ohci_rhsc_enable,
++#ifdef	CONFIG_PM
++	.bus_suspend =		ohci_bus_suspend,
++	.bus_resume =		ohci_bus_resume,
++#endif
++	.start_port_reset =	ohci_start_port_reset,
++};
++
++/*-------------------------------------------------------------------------*/
++
++static int ohci_hcd_sm501_drv_probe(struct platform_device *pdev)
++{
++	const struct hc_driver *driver = &ohci_sm501_hc_driver;
++	struct device *dev = &pdev->dev;
++	struct resource	*res, *mem;
++	int retval, irq;
++	struct usb_hcd *hcd = 0;
++
++	irq = retval = platform_get_irq(pdev, 0);
++	if (retval < 0)
++		goto err0;
++
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (mem = NULL) {
++		dev_err(dev, "no resource definition for memory\n");
++		retval = -ENOENT;
++		goto err0;
++	}
++
++	if (!request_mem_region(mem->start, mem->end - mem->start + 1,
++				pdev->name)) {
++		dev_err(dev, "request_mem_region failed\n");
++		retval = -EBUSY;
++		goto err0;
++	}
++
++	/* The sm501 chip is equipped with local memory that may be used
++	 * by on-chip devices such as the video controller and the usb host.
++	 * This driver uses dma_declare_coherent_memory() to make sure
++	 * usb allocations with dma_alloc_coherent() allocate from
++	 * this local memory. The dma_handle returned by dma_alloc_coherent()
++	 * will be an offset starting from 0 for the first local memory byte.
++	 *
++	 * So as long as data is allocated using dma_alloc_coherent() all is
++	 * fine. This is however not always the case - buffers may be allocated
++	 * using kmalloc() - so the usb core needs to be told that it must copy
++	 * data into our local memory if the buffers happen to be placed in
++	 * regular memory. The HCD_BOUNCE flag does just that.
++	 */
++
++	if (!dma_declare_coherent_memory(dev, mem->start,
++					 mem->start - mem->parent->start,
++					 (mem->end - mem->start) + 1,
++					 DMA_MEMORY_MAP |
++					 DMA_MEMORY_EXCLUSIVE)) {
++		dev_err(dev, "cannot declare coherent memory\n");
++		retval = -ENXIO;
++		goto err1;
++	}
++
++	/* allocate, reserve and remap resources for registers */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (res = NULL) {
++		dev_err(dev, "no resource definition for registers\n");
++		retval = -ENOENT;
++		goto err2;
++	}
++
++	hcd = usb_create_hcd(driver, &pdev->dev, pdev->dev.bus_id);
++	if (!hcd) {
++		retval = -ENOMEM;
++		goto err2;
++	}
++
++	hcd->rsrc_start = res->start;
++	hcd->rsrc_len = res->end - res->start + 1;
++
++	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len,	pdev->name)) {
++		dev_err(dev, "request_mem_region failed\n");
++		retval = -EBUSY;
++		goto err3;
++	}
++
++	hcd->regs = ioremap(hcd->rsrc_start, hcd->rsrc_len);
++	if (hcd->regs = NULL) {
++		dev_err(dev, "cannot remap registers\n");
++		retval = -ENXIO;
++		goto err4;
++	}
++
++	ohci_hcd_init(hcd_to_ohci(hcd));
++
++	retval = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
++	if (retval)
++		goto err4;
++
++	/* enable power and unmask interrupts */
++
++	sm501_unit_power(dev->parent, SM501_GATE_USB_HOST, 1);
++	sm501_modify_reg(dev->parent, SM501_IRQ_MASK, 1 << 6, 0);
++
++	return 0;
++err4:
++	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
++err3:
++	usb_put_hcd(hcd);
++err2:
++	dma_release_declared_memory(dev);
++err1:
++	release_mem_region(mem->start, mem->end - mem->start + 1);
++err0:
++	return retval;
++}
++
++static int ohci_hcd_sm501_drv_remove(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd = platform_get_drvdata(pdev);
++	struct resource	*mem;
++
++	usb_remove_hcd(hcd);
++	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
++	usb_put_hcd(hcd);
++	dma_release_declared_memory(&pdev->dev);
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	release_mem_region(mem->start, mem->end - mem->start + 1);
++
++	/* mask interrupts and disable power */
++
++	sm501_modify_reg(pdev->dev.parent, SM501_IRQ_MASK, 0, 1 << 6);
++	sm501_unit_power(pdev->dev.parent, SM501_GATE_USB_HOST, 0);
++
++	platform_set_drvdata(pdev, NULL);
++	return 0;
++}
++
++/*-------------------------------------------------------------------------*/
++
++#ifdef CONFIG_PM
++static int ohci_sm501_suspend(struct platform_device *pdev, pm_message_t msg)
++{
++	struct device *dev = &pdev->dev;
++	struct ohci_hcd	*ohci = hcd_to_ohci(platform_get_drvdata(pdev));
++
++	if (time_before(jiffies, ohci->next_statechange))
++		msleep(5);
++	ohci->next_statechange = jiffies;
++
++	sm501_unit_power(dev->parent, SM501_GATE_USB_HOST, 0);
++	ohci_to_hcd(ohci)->state = HC_STATE_SUSPENDED;
++	dev->power.power_state = PMSG_SUSPEND;
++	return 0;
++}
++
++static int ohci_sm501_resume(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct ohci_hcd	*ohci = hcd_to_ohci(platform_get_drvdata(pdev));
++
++	if (time_before(jiffies, ohci->next_statechange))
++		msleep(5);
++	ohci->next_statechange = jiffies;
++
++	sm501_unit_power(dev->parent, SM501_GATE_USB_HOST, 1);
++	dev->power.power_state = PMSG_ON;
++	usb_hcd_resume_root_hub(platform_get_drvdata(pdev));
++	return 0;
++}
++#endif
++
++/*-------------------------------------------------------------------------*/
++
++/*
++ * Driver definition to register with the SM501 bus
++ */
++static struct platform_driver ohci_hcd_sm501_driver = {
++	.probe		= ohci_hcd_sm501_drv_probe,
++	.remove		= ohci_hcd_sm501_drv_remove,
++	.shutdown	= usb_hcd_platform_shutdown,
++#ifdef	CONFIG_PM
++	.suspend	= ohci_sm501_suspend,
++	.resume		= ohci_sm501_resume,
++#endif
++	.driver		= {
++		.owner	= THIS_MODULE,
++		.name	= "sm501-usb",
++	},
++};
