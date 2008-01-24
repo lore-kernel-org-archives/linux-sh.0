@@ -1,26 +1,36 @@
-From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Tue, 22 Jan 2008 15:06:02 +0000
-Subject: Re: HD64461 + HD64465  = hd6446x ?
-Message-Id: <20080122160602.a2f90a2a.Kristoffer.ericson@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 24 Jan 2008 09:45:45 +0000
+Subject: [PATCH] sh: remove consistent alloc stuff from the machine vector
+Message-Id: <20080124094545.25820.12273.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, 18 Dec 2007 08:08:56 +0900
-Paul Mundt <lethal@linux-sh.org> wrote:
+sh: remove consistent alloc stuff from the machine vector
 
-> On Mon, Dec 17, 2007 at 07:37:30PM -0800, Kristoffer Ericson wrote:
-> > Is it worth the trouble of merging all hd64461/hd64465 stuff into same include file (and maybe cchip init file)? 
-> > From what I've seen so far they are quite similiar and alot of lines could be saved, but still not sure
-> > if its a good approach.
-> > 
-> > For pcmcia I believe they could be merged without any issues.
-> > 
-> > Thoughts?
-> > 
-> Patches please. If the patches look clean, there's no reason not to at
-> least.
+Now with the voyagergx cruft gone and the dreamcast using declared
+coherent memory for pci there are no users of the consistent alloc and
+free functions pointers in the machine vector.
 
-You had a chance to browse the patch I sent you?
+So this little patch simply removes these function pointers from the macvec.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ include/asm-sh/machvec.h |    3 ---
+ 1 file changed, 3 deletions(-)
+
+--- 0001/include/asm-sh/machvec.h
++++ work/include/asm-sh/machvec.h	2008-01-24 17:04:11.000000000 +0900
+@@ -56,9 +56,6 @@ struct sh_machine_vector {
+ 
+ 	void (*mv_heartbeat)(void);
+ 
+-	void *(*mv_consistent_alloc)(struct device *, size_t, dma_addr_t *, gfp_t);
+-	int (*mv_consistent_free)(struct device *, size_t, void *, dma_addr_t);
+-
+ 	void __iomem *(*mv_ioport_map)(unsigned long port, unsigned int size);
+ 	void (*mv_ioport_unmap)(void __iomem *);
+ };
