@@ -1,7 +1,7 @@
 From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 24 Jan 2008 12:16:07 +0000
+Date: Mon, 28 Jan 2008 10:05:49 +0000
 Subject: Re: Hi, all,
-Message-Id: <200801241316.07413.fabio.giovagnini@aurion-tech.com>
+Message-Id: <200801281105.50145.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200801201730.07407.vapier@gentoo.org>
 In-Reply-To: <200801201730.07407.vapier@gentoo.org>
@@ -10,10 +10,11 @@ Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Ok.
-I'll send you infos as soon as it will be availables.
+Hi Kieran, did you receive all the suff to update the toolchain?
 
-Regards
+Let me know.
+
+Thanks
 
 
 Alle 00:47, gioved=EC 24 gennaio 2008, Kieran Bingham ha scritto:
@@ -236,6 +237,11 @@ h"
 > >
 > > account telefono VoIP skype (www.skype.com):
 > > aurion.giovagnini
+>
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 --=20
 Fabio Giovagnini
