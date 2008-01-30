@@ -1,72 +1,40 @@
-From: Greg KH <greg@kroah.com>
-Date: Mon, 28 Jan 2008 19:23:45 +0000
-Subject: Re: kobject oops with maple bus
-Message-Id: <20080128192345.GA5006@kroah.com>
+From: "Ha Nguyen" <hanguytv@gmail.com>
+Date: Wed, 30 Jan 2008 09:32:37 +0000
+Subject: mem-to-mem copy using fdma ...
+Message-Id: <4d014b890801300132g48a88a0ejb3a64ebe697d3835@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1201377200.6672.10.camel@localhost.localdomain> <20080126204402.GA30867@kroah.com> <26713.85.118.17.158.1201513309.squirrel@newgolddream.dyndns.info>
-In-Reply-To: <26713.85.118.17.158.1201513309.squirrel@newgolddream.dyndns.info>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Jan 28, 2008 at 09:41:49AM -0000, Adrian McMenamin wrote:
-> On Sat, January 26, 2008 8:44 pm, Greg KH wrote:
-> > On Sat, Jan 26, 2008 at 07:53:20PM +0000, Adrian McMenamin wrote:
-> >> Greg,
-> >>
-> >> Just updated my git to the latest sources and get these (seemingly
-> >> non-fatal) oops with the Dreamcast maple bus. I'll investigate further,
-> >> but they may mean something to out out of the box.
-> >>
-> >> Adrian
-> 
-> ....
-> 
-> >> [    0.000000] kobject (8cc2d360): tried to init an initialized object,
-> >> something is seriously wrong.
-> >
-> > The problem is here.  You have possibly already initialized this object,
-> > or called 'kobject_get' on it before registering it with the driver
-> > core.  This is a new sanity check that has been in the -mm tree for
-> > years :)
-> >
-> > So I think something needs to be fixed in the code.  Do you want me to
-> > take a look at it?
-> >
-> > thanks,
-> >
-> > greg k-h
-> > -
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> 
-> Greg,
-> 
-> Have now patched that. But I am trying to hunt down another bug - which
-> seems memory related. After N hotplug events (where N is greater than two
-> and less than about 100) I get this below - either indicating something
-> very wrong in SLUB (unlikely) or a memory leak in my driver (sadly, much
-> more likely).
-> 
-> I cannot see anything obvious and my best guess is that I am freeing up
-> the underlying struct device incorrectly - this is allocated currently as
-> staticly allocated member of a dynamically allocated struct maple_device.
-> It gets hit by the kfree(mdev) - is that going to cause a problem?
+Hi all,
 
-Yes, you can not free the struct device on your own, you must let the
-release function clean it up for you.
+I have to read UDP packets from sk_buff to my module in kernel space
+and the udp stack uses copy_to_user() to do my task. I'm wondering if
+using dma for mem-to-mem copy can improve data transfer performance
+instead of using copy_to_user()???
 
-Try enabling CONFIG_KOBJECT_DEBUG as well as CONFIG_DEBUG_DRIVER and see
-if that shows you some more clues as to what you are doing wrong here.
+If yes, could someone gives me some hints to go with it. I'm currently
+working on ST7109 and stlinux 2.6.17.14. I have tried the guide at
+http://www.stlinux.com/docs/manual/distribution/fdma_legacy.php and
+http://www.stlinux.com/docs/manual/distribution/fdma_sh_exmpl1.php but
+not succeeded, kernel crashed with the following error:
 
-And please let me know what you find, in talking to Ingo, I need to find
-all the "wrong cases" that this code is being used in to try to make it
-easier to prevent this from happening again.
+Unable to handle kernel NULL pointer dereference at virtual address 00000000
+pc = 86cd56aa
+*pde = 00000000
+Oops: 0001 [#1]
 
-thanks,
+Pid : 818, Comm: udhcpc
+PC is at create_llu_list+0x86/0x8c
+PC : 86cd56aa SP : 8f633d38 SR : 40008001 TEA : c0103a64 Not tainted
+R0 : 00000000 R1 : 00000000 R2 : 8f633d80 R3 : 00000001
+R4 : 8f633d80 R5 : 00000000 R6 : 00000000 R7 : 00000000
+R8 : 00000001 R9 : 8f633d40 R10 : 00000030 R11 : 86d6616c
+R12 : 0f516ae0 R13 : 86d6616c R14 : 8fbc6000
+MACH: 00000000 MACL: 00000000 GBR : 295737e8 PR : 86cd696c
 
-greg k-h
+I would really appreciate any feedback! Thanks!
+
+/ha
