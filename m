@@ -1,64 +1,49 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Sun, 27 Jan 2008 04:37:40 +0000
-Subject: Re: [PATCH] sh: use declared coherent memory for dreamcast pci ethernet adapter
-Message-Id: <aec7e5c30801262037w23d99912n13414aa9f5e2667d@mail.gmail.com>
+From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
+Date: Thu, 31 Jan 2008 21:58:11 +0000
+Subject: [PATCH/KCONFIG] - Add SUPERH depends to sound/soc/sh/Kconfig
+Message-Id: <20080131225811.a175de2c.Kristoffer.ericson@gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Multipart=_Thu__31_Jan_2008_22_58_11_+0100_T.LFLr8sW.nawaOg"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080124094050.25814.40528.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080124094050.25814.40528.sendpatchset@clockwork.opensource.se>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh <linux-sh@vger.kernel.org>, linux-main <linux-kernel@vger.kernel.org>
+
+This is a multi-part message in MIME format.
+
+--Multipart=_Thu__31_Jan_2008_22_58_11_+0100_T.LFLr8sW.nawaOg
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
 
-Adrian,
+Currently you will see an empty "SoC Audio support for SuperH" menu 
+when building for other archs (example pxa).
+This patch adds "depends on SUPERH" to remove that empty menu.
 
-Thanks for testing and posting the results.
+signed-off-by: Kristoffer Ericson <kristoffer.ericson@gmail.com>
 
-On Jan 26, 2008 6:46 AM, Adrian McMenamin
-<adrian@newgolddream.dyndns.info> wrote:
->
-> On Fri, 2008-01-25 at 21:00 +0000, Adrian McMenamin wrote:
-> > On Fri, 2008-01-25 at 13:16 +0900, Magnus Damm wrote:
-> >
-> > > Can you please apply the attached patch and test both with and without
-> > > the 3 declared coherent patches? I'd like to see the values printed
-> > > out by printk() both with and without the declared coherent patches.
-> > >
-> > > Thank you.
-> > >
-> > > / magnus
-> >
-> > Without the coherency patches...
-> > [    2.833387] zzzzzzzz:tx_bufs = 0xa1840000/0x01840000, rx_ring > > 0xa1842000/0x01842000, (0x00000000)
-> >
-> With the coherency patches...
->
->
-> [    2.890870] zzzzzzzz:tx_bufs = 0xa1840000/0x01840000, rx_ring = 0x00000000/0x00000000, (0x8cd010e0)
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index f03220d..4c1e013 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -1,4 +1,5 @@
+ menu "SoC Audio support for SuperH"
++	depends on SUPERH
+ 
+ config SND_SOC_PCM_SH7760
+ 	tristate "SoC Audio support for Renesas SH7760"
 
-Ok, it looks like i got the dma values right at least, but that the rx
-ring allocation fails.
 
-The amount of dma memory for the dreamcast ethernet adapter seems to
-be 8 pages (32k), and for dreamcast the 8139too driver allocates 2
-pages (4*1536) for tx and 5 pages (16k+16+2048) for rx. It all adds up
-to 7 pages (tx+rx) which in theory should fit within 8 pages of
-available dma memory.
+--Multipart=_Thu__31_Jan_2008_22_58_11_+0100_T.LFLr8sW.nawaOg
+Content-Type: application/octet-stream;
+ name="SoC-SuperH-add-depends.patch"
+Content-Disposition: attachment;
+ filename="SoC-SuperH-add-depends.patch"
+Content-Transfer-Encoding: base64
 
-It does however look like the bitmap code operates on order
-granularity both when it comes to size and alignment which means that
-the rx allocation of 5 pages becomes an order 3 allocation - 8 pages
-aligned to 8 pages - which in turn results in that we can't fulfill
-the allocation request. At least that's my theory. =)
+ZGlmZiAtLWdpdCBhL3NvdW5kL3NvYy9zaC9LY29uZmlnIGIvc291bmQvc29jL3NoL0tjb25maWcK
+aW5kZXggZjAzMjIwZC4uNGMxZTAxMyAxMDA2NDQKLS0tIGEvc291bmQvc29jL3NoL0tjb25maWcK
+KysrIGIvc291bmQvc29jL3NoL0tjb25maWcKQEAgLTEsNCArMSw1IEBACiBtZW51ICJTb0MgQXVk
+aW8gc3VwcG9ydCBmb3IgU3VwZXJIIgorCWRlcGVuZHMgb24gU1VQRVJICiAKIGNvbmZpZyBTTkRf
+U09DX1BDTV9TSDc3NjAKIAl0cmlzdGF0ZSAiU29DIEF1ZGlvIHN1cHBvcnQgZm9yIFJlbmVzYXMg
+U0g3NzYwIgo=
 
-As a test and/or workaround, can you try changing RX_BUF_IDX in
-8139too.c from 1 in the dreamcast case to 0? That should result in 3
-pages for the rx buffer which should lead to an order 2 allocation
-unless I'm mistaken. And we should be able to fulfill that request
-without problems.
-
-Does the RX_BUF_IDX change make the declared coherent patches work?
-
-Thank you!
-
-/ magnus
+--Multipart=_Thu__31_Jan_2008_22_58_11_+0100_T.LFLr8sW.nawaOg--
