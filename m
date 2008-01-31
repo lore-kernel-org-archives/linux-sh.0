@@ -1,32 +1,52 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 27 Dec 2007 22:24:09 +0000
-Subject: Re: Cache coherency problem in do_execve while passing arguments
-Message-Id: <20071227222409.GB26382@linux-sh.org>
+From: Kieran Bingham <kieranbingham@gmail.com>
+Date: Thu, 31 Jan 2008 10:44:10 +0000
+Subject: SH-Sci(f) driver as console
+Message-Id: <1201776250.20171.72.camel@Atlas>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4773DD12.9000001@gmail.com>
-In-Reply-To: <4773DD12.9000001@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Dec 27, 2007 at 06:12:50PM +0100, Carmelo Amoroso wrote:
-> The following patch into cacheflush.h solves the problem and the test ran 
-> for 2 days without problem
-> 
-> I'm not sure if this fix should be applied to the common header 
-> include/asm-sh/cacheflush.h (being valid for all
-> sh subarch) or to the sh4 specific one include/asm-sh/cpu-sh4/cacheflush.h
-> 
-> +#define ARCH_HAS_FLUSH_KERNEL_DCACHE_PAGE
-> +static inline void flush_kernel_dcache_page(struct page *page)
-> +{
-> +   flush_dcache_page(page);
-> +}
-> +
-> 
-> Your comments are welcome
-> 
-This can be done generically, since the same problem is going to apply to
-SH7705, and flush_dcache_page() is a nop for the platforms where we have
-physical caches. I'll queue the patch up for 2.6.24, thanks.
+I'm having problems with the sh-sci driver as a console.
+
+The early printk code works for my board; I added the register
+definitions into the sh-sci.h file.
+
+However, When it comes to register_console for the ttySC - at that
+point, the uart's havent been registered, so the console doesn't attach,
+failing at the line :
+
+
+static int __init serial_console_setup(struct console *co, char
+*options)
+{
+.
+.
+.
+/*
+ * Also need to check port->type, we don't actually have any
+ * UPIO_PORT ports, but uart_report_port() handily misreports
+ * it anyways if we don't have a port available by the time this is
+ * called.
+ */
+
+ if (!port->type)
+	return -ENODEV;
+
+.
+.
+.
+}
+
+ only later does uart_register_driver get called when static int __init
+sci_init(void) runs.
+
+Do I need to change something to make the call to sci_init occur earlier
+in the kernel ? or should I just call register console again later on
+perhaps?
+
+Cheers
+-- 
+Kieran Bingham <kieranbingham@gmail.com>
+
