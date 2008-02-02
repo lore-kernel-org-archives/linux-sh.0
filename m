@@ -1,32 +1,42 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 07 Feb 2008 11:42:07 +0000
-Subject: Re: [PATCH] sh: make copy_to/from_user() static inline
-Message-Id: <20080207114207.GA16769@linux-sh.org>
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Date: Sat, 02 Feb 2008 12:03:47 +0000
+Subject: [PATCH] [SH] remove unneeded cast
+Message-Id: <20080202230347.a126a143.sfr@canb.auug.org.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080207105052.9553.69636.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080207105052.9553.69636.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
 
-On Thu, Feb 07, 2008 at 07:50:52PM +0900, Magnus Damm wrote:
-> This patch changes copy_from_user() and copy_to_user() from macros
-> into static inline functions. This way we can use them as function
-> pointers. Also unify the 64 bit and 32 bit versions.
+now that platform_device_register_simple() takes a "const chat *".
 
-On Thu, Feb 07, 2008 at 07:58:46PM +0900, Magnus Damm wrote:
-> This patch adds byte support to the sign extension code. Unaligned access
-> traps should never be generated on 8-bit io operations, but we will use this
-> code for trapped io and we do need byte support there.
+Signed-off-by: Stephen Rothwell <sfr@canb.auug.org.au>
+---
+ arch/sh/drivers/dma/dma-api.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-On Thu, Feb 07, 2008 at 08:04:12PM +0900, Magnus Damm wrote:
-> This patch converts the unaligned access handling code to use opcode_t
-> instead of u16. While at it, enable unaligned access handling for sh2a.
+This hasn't even been built, but is straight forward.
 
-On Thu, Feb 07, 2008 at 08:08:46PM +0900, Magnus Damm wrote:
-> Update the defconfigs for r2d-plus and r2d-1 since we now have new drivers
-> for sm501 usb, spi-over-sci and epson r9701 rtc in mainline.
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index 76ed816..727126e 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -350,7 +350,7 @@ int register_dmac(struct dma_info *info)
+ 
+ 	BUG_ON((info->flags & DMAC_CHANNELS_CONFIGURED) && !info->channels);
+ 
+-	info->pdev = platform_device_register_simple((char *)info->name, -1,
++	info->pdev = platform_device_register_simple(info->name, -1,
+ 						     NULL, 0);
+ 	if (IS_ERR(info->pdev))
+ 		return PTR_ERR(info->pdev);
+-- 
+1.5.3.8
 
-These I've applied, thans. I'll have a look at the trapped I/O V2 bits in
-the morning.
+
+
+-- 
+Cheers,
+Stephen Rothwell                    sfr@canb.auug.org.au
+http://www.canb.auug.org.au/~sfr/
