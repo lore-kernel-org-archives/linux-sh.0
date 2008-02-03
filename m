@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 01 Feb 2008 03:00:24 +0000
-Subject: Re: [PATCH] sh: use declared coherent memory for dreamcast pci ethernet adapter
-Message-Id: <20080201030024.GA2150@linux-sh.org>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 03 Feb 2008 21:32:15 +0000
+Subject: Re: [PATCH] sh: use declared coherent memory for dreamcast pci
+Message-Id: <1202074335.9936.1.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080124094050.25814.40528.sendpatchset@clockwork.opensource.se>
 In-Reply-To: <20080124094050.25814.40528.sendpatchset@clockwork.opensource.se>
@@ -10,7 +10,12 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Jan 27, 2008 at 01:37:40PM +0900, Magnus Damm wrote:
+
+On Sun, 2008-01-27 at 13:37 +0900, Magnus Damm wrote:
+> Adrian,
+> 
+> Thanks for testing and posting the results.
+> 
 > On Jan 26, 2008 6:46 AM, Adrian McMenamin
 > <adrian@newgolddream.dyndns.info> wrote:
 > >
@@ -56,9 +61,59 @@ On Sun, Jan 27, 2008 at 01:37:40PM +0900, Magnus Damm wrote:
 > 
 > Does the RX_BUF_IDX change make the declared coherent patches work?
 > 
-Adrian? It would be nice to know if dropping RX_BUF_IDX works for you.
-The other alternative is to break this down on to a single page boundary,
-but that requires that we change the bitmap management approach away from
-order-granularity. I've hacked together some changes in the bitmap API to
-handle this as a proof of concept, so at least it's doable, and it may
-make sense to try and extend the API in this way in the future.
+
+
+
+I am afraid the short answer is "no".
+
+[    2.749341] eth0: link up, 100Mbps, full-duplex, lpa 0x41E1
+[    3.756113] Sending DHCP requests .<3>eth0: PCI Bus error 2200.
+[    3.760108] eth0: PCI Bus error 2200.
+[    3.764106] eth0: PCI Bus error 2200.
+[    3.768130] eth0: PCI Bus error 2200.
+[    3.772120] eth0: PCI Bus error 2200.
+[    3.776112] eth0: PCI Bus error 2200.
+[    3.780113] eth0: PCI Bus error 2200.
+[    3.784113] eth0: PCI Bus error 2200.
+[    3.788090] eth0: PCI Bus error 2200.
+[    3.791806] eth0: PCI Bus error 2200.
+[    3.792113] eth0: PCI Bus error 2200.
+[    3.796113] eth0: PCI Bus error 2200.
+[    3.800118] eth0: PCI Bus error 2200.
+[    3.804117] eth0: PCI Bus error 2200.
+[    3.808113] eth0: PCI Bus error 2200.
+[    3.812113] eth0: PCI Bus error 2200.
+[    3.816113] eth0: PCI Bus error 2200.
+[    3.820122] eth0: PCI Bus error 2200.
+[    3.824113] eth0: PCI Bus error 2200.
+[    3.828113] eth0: PCI Bus error 2200.
+[    3.832113] eth0: PCI Bus error 2200.
+[    3.836118] eth0: PCI Bus error 2200.
+[    3.840117] eth0: PCI Bus error 2200.
+[    3.844114] eth0: PCI Bus error 2200.
+[    3.848113] eth0: PCI Bus error 2200.
+[    3.852113] eth0: PCI Bus error 2200.
+[    3.856122] eth0: PCI Bus error 2200.
+[    3.859835] eth0: PCI Bus error 2200.
+[    3.860114] eth0: PCI Bus error 2200.
+[    3.864114] eth0: PCI Bus error 2200.
+[    3.868122] eth0: PCI Bus error 2200.
+[    3.872114] eth0: PCI Bus error 2200.
+[    3.876114] eth0: PCI Bus error 2200.
+[    3.880114] eth0: PCI Bus error 2200.
+[    3.884119] eth0: PCI Bus error 2200.
+[    3.888118] eth0: PCI Bus error 2200.
+[    3.892114] eth0: PCI Bus error 2200.
+[    3.896114] eth0: PCI Bus error 2200.
+[    3.900114] eth0: PCI Bus error 2200.
+[    3.904123] eth0: PCI Bus error 2200.
+[    3.908114] eth0: PCI Bus error 2200.
+[    3.912115] eth0: PCI Bus error 2200.
+[    3.916115] eth0: PCI Bus error 2200.
+[    3.920120] eth0: PCI Bus error 2200.
+[    3.924119] eth0: PCI Bus error 2200.
+[    3.928114] eth0: PCI Bus error 2200.
+
+
+And so on, seemingly for ever.
+
