@@ -1,169 +1,121 @@
-From: Jean Delvare <khali@linux-fr.org>
-Date: Thu, 28 Feb 2008 20:43:08 +0000
-Subject: Re: [i2c] [PATCH] I2C bus driver for SH7760 SoC, #3
-Message-Id: <20080228214308.56123f61@hyperion.delvare>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 03 Feb 2008 23:21:02 +0000
+Subject: Various section mismatches
+Message-Id: <1202080862.9936.4.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080228133330.GA3288@roarinelk.homelinux.net>
-In-Reply-To: <20080228133330.GA3288-nEyxjcs6f3Vin2gBucwGBecsttgLyre6@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Manuel Lauss <mano-nEyxjcs6f3Vin2gBucwGBecsttgLyre6@public.gmane.org>
-Cc: i2c-GZX6beZjE8VD60Wz+7aTrA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-Hi Manuel,
+I am going to bed now, so won't try to fix these now...
 
-On Thu, 28 Feb 2008 14:33:30 +0100, Manuel Lauss wrote:
-> Good Day,
-> 
-> Version 3 of the SH7760 I2C master driver.
-> 
-> Changes V2->V3:
-> 	- removed the SMBUS quick emulation hack.
-> 	- implemented Jean Delvare's suggestions.
-> 
-> Changes V1->V2:
-> 	- implement Paul Mundt'S suggestions.
-> 
-> Comments, flames, welcome!
-> 
-> Thanks,
-> 	Manuel Lauss
-> 
-> --- 
-> 
-> >From c7cf5ec922e59e54275fe9977c14399a8ff79114 Mon Sep 17 00:00:00 2001
-> From: Manuel Lauss <mlau@msc-ge.com>
-> Date: Thu, 28 Feb 2008 14:24:29 +0100
-> Subject: [PATCH] Renesas SH7760 I2C master driver
-> 
-> Driver for I2C interfaces in master mode on SH7760.
-> 
-> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
-> ---
->  drivers/i2c/busses/Kconfig      |    9 +
->  drivers/i2c/busses/Makefile     |    1 +
->  drivers/i2c/busses/i2c-sh7760.c |  578 +++++++++++++++++++++++++++++++++++++++
->  include/asm-sh/i2c-sh7760.h     |   22 ++
->  4 files changed, 610 insertions(+), 0 deletions(-)
->  create mode 100644 drivers/i2c/busses/i2c-sh7760.c
->  create mode 100644 include/asm-sh/i2c-sh7760.h
 
-Thanks for the quick update. I've added your patch to my i2c tree. I've
-only changed one thing:
+adrian@bossclass:~/gdrom-dev$ make ARCH=sh CROSS_COMPILE=/home/adrian/dreamy-linux/buildroot/build_sh4/staging_dir/bin/sh4-linux- modules zImage -j3
 
-> +static int __devinit sh7760_i2c_probe(struct platform_device *pdev)
-> +{
-> +	struct sh7760_i2c_platdata *pd;
-> +	struct resource *res;
-> +	struct cami2c *id;
-> +	int ret;
-> +
-> +	pd = pdev->dev.platform_data;
-> +	if (!pd) {
-> +		dev_err(&pdev->dev, "no platform_data!\n");
-> +		ret = -ENODEV;
-> +		goto out0;
-> +	}
-> +
-> +	id = kzalloc(sizeof(struct cami2c), GFP_KERNEL);
-> +	if (!id) {
-> +		dev_err(&pdev->dev, "no mem for private data\n");
-> +		ret = -ENOMEM;
-> +		goto out0;
-> +	}
-> +
-> +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +	if (!res) {
-> +		dev_err(&pdev->dev, "no mmio resources\n");
-> +		ret = -ENODEV;
-> +		goto out1;
-> +	}
-> +
-> +	id->ioarea = request_mem_region(res->start, REGSIZE, pdev->name);
-> +	if (!id->ioarea) {
-> +		dev_err(&pdev->dev, "mmio already reserved\n");
-> +		ret = -EBUSY;
-> +		goto out1;
-> +	}
-> +
-> +	id->iobase = ioremap(res->start, REGSIZE);
-> +	if (!id->iobase) {
-> +		dev_err(&pdev->dev, "cannot ioremap\n");
-> +		ret = -ENODEV;
-> +		goto out2;
-> +	}
-> +
-> +	id->irq = platform_get_irq(pdev, 0);
-> +
-> +	id->adap.nr = pdev->id;
-> +	id->adap.algo = &sh7760_i2c_algo;
-> +	id->adap.class = I2C_CLASS_ALL;
-> +	id->adap.retries = 3;
-> +	id->adap.algo_data = id;
-> +	id->adap.dev.parent = &pdev->dev;
-> +	strcpy(id->adap.name, SH7760_I2C_DEVNAME);
-> +	snprintf(id->adap.name, sizeof(id->adap.name),
-> +		"SH7760 I2C at %08lx", (unsigned long)res->start);
+...
 
-Obviously the strcpy is superfluous.
+  LD      arch/sh/kernel/cpu/built-in.o
+WARNING: arch/sh/kernel/cpu/built-in.o(.cpuinit.text+0x164): Section mismatch in reference from the function sh_cpu_init() to the function .init.text:detect_cpu_and_cache_system()
+The function __cpuinit sh_cpu_init() references
+a function __init detect_cpu_and_cache_system().
+If sh_cpu_init is only used by detect_cpu_and_cache_system then
+annotate sh_cpu_init with a matching annotation.
 
-> +
-> +	OUT32(id, I2CMCR, 0);
-> +	OUT32(id, I2CMSR, 0);
-> +	OUT32(id, I2CMIER, 0);
-> +	OUT32(id, I2CMAR, 0);
-> +	OUT32(id, I2CSIER, 0);
-> +	OUT32(id, I2CSAR, 0);
-> +	OUT32(id, I2CSCR, 0);
-> +	OUT32(id, I2CSSR, 0);
-> +	OUT32(id, I2CFIER, 0);
-> +	OUT32(id, I2CFCR, FCR_RFRST | FCR_TFRST);
-> +	OUT32(id, I2CFSR, 0);
-> +
-> +	ret = calc_CCR(pd->speed_khz * 1000);
-> +	if (ret < 0) {
-> +		dev_err(&pdev->dev, "invalid SCL clock: %dkHz\n",
-> +			pd->speed_khz);
-> +		goto out3;
-> +	}
-> +	OUT32(id, I2CCCR, ret);
-> +
-> +	if (request_irq(id->irq, sh7760_i2c_irq, IRQF_DISABLED,
-> +			SH7760_I2C_DEVNAME, id)) {
-> +		dev_err(&pdev->dev, "cannot get irq %d\n", id->irq);
-> +		ret = -EBUSY;
-> +		goto out3;
-> +	}
-> +
-> +	ret = i2c_add_numbered_adapter(&id->adap);
-> +	if (ret < 0) {
-> +		dev_err(&pdev->dev, "reg adap failed: %d\n", ret);
-> +		goto out4;
-> +	}
-> +
-> +	platform_set_drvdata(pdev, id);
-> +
-> +	dev_info(&pdev->dev, "%d kHz mmio %08x irq %d\n",
-> +		 pd->speed_khz, res->start, id->irq);
-> +
-> +	return 0;
-> +
-> +out4:
-> +	free_irq(id->irq, id);
-> +out3:
-> +	iounmap(id->iobase);
-> +out2:
-> +	release_resource(id->ioarea);
-> +	kfree(id->ioarea);
-> +out1:
-> +	kfree(id);
-> +out0:
-> +	return ret;
-> +}
+WARNING: arch/sh/kernel/cpu/built-in.o(.cpuinit.text+0x2f0): Section mismatch in reference from the function sh_cpu_init() to the variable .init.data:sh7750_devices
+The function __cpuinit sh_cpu_init() references
+a variable __initdata sh7750_devices.
+If sh_cpu_init is only used by sh7750_devices then
+annotate sh_cpu_init with a matching annotation.
 
-The rest looks alright now. No need to resend, I've fixed the above
-myself.
+  
+  LD      arch/sh/kernel/built-in.o
+WARNING: arch/sh/kernel/built-in.o(.cpuinit.text+0x184): Section mismatch in reference from the function sh_cpu_init() to the function .init.text:detect_cpu_and_cache_system()
+The function __cpuinit sh_cpu_init() references
+a function __init detect_cpu_and_cache_system().
+If sh_cpu_init is only used by detect_cpu_and_cache_system then
+annotate sh_cpu_init with a matching annotation.
 
--- 
-Jean Delvare
+WARNING: arch/sh/kernel/built-in.o(.cpuinit.text+0x310): Section mismatch in reference from the function sh_cpu_init() to the variable .init.data:__setup_str_early_parse_mv
+The function __cpuinit sh_cpu_init() references
+a variable __initdata __setup_str_early_parse_mv.
+If sh_cpu_init is only used by __setup_str_early_parse_mv then
+annotate sh_cpu_init with a matching annotation.
+
+ 
+  LD      mm/built-in.o
+WARNING: mm/built-in.o(.meminit.text+0x8e4): Section mismatch in reference from the function free_area_init_node() to the function .init.text:__alloc_bootmem_node()
+The function __meminit free_area_init_node() references
+a function __init __alloc_bootmem_node().
+If free_area_init_node is only used by __alloc_bootmem_node then
+annotate free_area_init_node with a matching annotation.
+
+  
+  LD      drivers/pci/built-in.o
+WARNING: drivers/pci/built-in.o(__ksymtab+0x58): Section mismatch in reference from the variable __ksymtab_pci_do_scan_bus to the function .devinit.text:pci_do_scan_bus()
+The symbol pci_do_scan_bus is exported and annotated __devinit 
+Fix this by removing the __devinit annotation of pci_do_scan_bus or drop the export.
+
+  
+  LD      drivers/video/built-in.o
+WARNING: drivers/video/built-in.o(.text+0xd980): Section mismatch in reference from the function pvr2fb_check_var() to the variable .devinit.data:pvr2fb_pci_tbl
+The function  pvr2fb_check_var() references
+the variable __devinitdata pvr2fb_pci_tbl.
+This is often because pvr2fb_check_var lacks a __devinitdata 
+annotation or the annotation of pvr2fb_pci_tbl is wrong.
+
+  LD      drivers/built-in.o
+  CC      net/core/netevent.o
+WARNING: drivers/built-in.o(.text+0x15bc0): Section mismatch in reference from the function pvr2fb_check_var() to the variable .devinit.data:pvr2fb_pci_tbl
+The function  pvr2fb_check_var() references
+the variable __devinitdata pvr2fb_pci_tbl.
+This is often because pvr2fb_check_var lacks a __devinitdata 
+annotation or the annotation of pvr2fb_pci_tbl is wrong.
+
+WARNING: drivers/built-in.o(__ksymtab+0x58): Section mismatch in reference from the variable __ksymtab_pci_do_scan_bus to the function .devinit.text:pci_do_scan_bus()
+The symbol pci_do_scan_bus is exported and annotated __devinit 
+Fix this by removing the __devinit annotation of pci_do_scan_bus or drop the export.
+
+  
+  LD      vmlinux.o
+  MODPOST vmlinux.o
+  GEN     .version
+  CHK     include/linux/compile.h
+WARNING: vmlinux.o(.text+0x1095f8): Section mismatch in reference from the function pci_scan_child_bus() to the function .devinit.text:pcibios_fixup_bus()
+The function  pci_scan_child_bus() references
+the function __devinit pcibios_fixup_bus().
+This is often because pci_scan_child_bus lacks a __devinit 
+annotation or the annotation of pcibios_fixup_bus is wrong.
+
+WARNING: vmlinux.o(.text+0x11d3c0): Section mismatch in reference from the function pvr2fb_check_var() to the variable .devinit.data:pvr2fb_pci_tbl
+The function  pvr2fb_check_var() references
+the variable __devinitdata pvr2fb_pci_tbl.
+This is often because pvr2fb_check_var lacks a __devinitdata 
+annotation or the annotation of pvr2fb_pci_tbl is wrong.
+
+  UPD     include/linux/compile.h
+  CC      init/version.o
+WARNING: vmlinux.o(.cpuinit.text+0x184): Section mismatch in reference from the function sh_cpu_init() to the function .init.text:detect_cpu_and_cache_system()
+The function __cpuinit sh_cpu_init() references
+a function __init detect_cpu_and_cache_system().
+If sh_cpu_init is only used by detect_cpu_and_cache_system then
+annotate sh_cpu_init with a matching annotation.
+
+WARNING: vmlinux.o(.cpuinit.text+0x310): Section mismatch in reference from the function sh_cpu_init() to the variable .init.data:__setup_str_nosoftlockup_setup
+The function __cpuinit sh_cpu_init() references
+a variable __initdata __setup_str_nosoftlockup_setup.
+If sh_cpu_init is only used by __setup_str_nosoftlockup_setup then
+annotate sh_cpu_init with a matching annotation.
+
+WARNING: vmlinux.o(.meminit.text+0x8e4): Section mismatch in reference from the function free_area_init_node() to the function .init.text:__alloc_bootmem_node()
+The function __meminit free_area_init_node() references
+a function __init __alloc_bootmem_node().
+If free_area_init_node is only used by __alloc_bootmem_node then
+annotate free_area_init_node with a matching annotation.
+
+WARNING: vmlinux.o(__ksymtab+0x2440): Section mismatch in reference from the variable __ksymtab_pci_do_scan_bus to the function .devinit.text:pci_do_scan_bus()
+The symbol pci_do_scan_bus is exported and annotated __devinit 
+Fix this by removing the __devinit annotation of pci_do_scan_bus or drop the export.
+
+  
+
