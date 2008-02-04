@@ -1,51 +1,28 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 14 Feb 2008 10:14:50 +0000
-Subject: Re: [PATCH] SH/Dreamcast - improve detection of attached peripherals
-Message-Id: <20080214101450.GA14287@linux-sh.org>
+From: "Adrian McMenamin" <adrian@newgolddream.dyndns.info>
+Date: Mon, 04 Feb 2008 09:35:11 +0000
+Subject: Re: [PATCH] SH/Dreamcast - fix regressions,
+Message-Id: <49521.85.118.17.158.1202117711.squirrel@newgolddream.dyndns.info>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1202689502.6237.23.camel@localhost.localdomain>
-In-Reply-To: <1202689502.6237.23.camel@localhost.localdomain>
+References: <1202068847.6262.7.camel@localhost.localdomain>
+    <20080204011034.GA22021@linux-sh.org>
+    <1202113424.6489.1.camel@localhost.localdomain>
+    <20080204090203.GA28102@linux-sh.org>
+In-Reply-To: <20080204090203.GA28102@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, Adrian McMenamin <adrian@newgolddream.dyndns.info>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Greg KH <greg@kroah.com>
 
-On Thu, Feb 14, 2008 at 10:34:20AM +0100, Kristoffer Ericson wrote:
-> On Tue, 12 Feb 2008 10:23:40 -0500
-> Mike Frysinger <vapier@gentoo.org> wrote:
-> > 1. < make changes to git repo >
-> > 2. git add < files you want to commit >
-> > 3. git commit -s
-> >  - first line is the subject (so you have to follow convention yourself)
-> >  - one blank line
-> >  - paragraph for body of changelog
-> > so the example commit log would be (just the stuff between the dashes):
-> > ----------------------------
-> > SH/Maple/Dreamcast: improve detection of attached peripherals
-> > 
-> > Blah blah blah this is the long subject explaining why this is wanted.
-> > 
-> > Signed-off-line: automatically-added-by-the-s-flag
-> > ----------------------------
-> > 4. git-format-patch HEAD^
-> 
-> This assumes that your patch is the only diff against current HEAD right? I have loads of changes, so need
-> to pick out the certain commit. I usually do "git diff origin > mypatch.patch" The format patch adds other stuff?
-> 
-git-format-patch will generate a diff for the range you specify. You can
-either use a commit-id as a reference, or track the SH tree in a separate
-branch and use the symbolic branch name as a reference. HEAD^ will just
-pop one off of HEAD.
+On Mon, February 4, 2008 9:02 am, Paul Mundt wrote:
 
-> > 5. git-send-email --to linux-sh@vger.kernel.org <list of patches produced>
-> 
-> That I should use more often.
-> 
-As git-send-email takes a list of patches, you don't need to bother with
-cherry picking or anything like that, you can explicitly just select the
-ones to send.
+> My previous commit was directly from _your_ patch, given that your
+> patches have a history of whitespace damage, this doesn't seem like much
+> of a stretch. It's true I neglected to run it through checkpatch, I'll be
+> more careful with that in the future when applying patches from certain
+> parties.
+>
 
-git is there to make your life easier, not harder. It helps to use it for
-what you can. Note however that I do rebase my tree frequently, so I
-don't particularly encourage people to branch off of it. During non
-merge-window times, there's basically no reason to reference my tree.
+I'm sorry. But that's garbage.
+
+I'm prepared to admit I made a mistake. Clearly you aren't.
+
