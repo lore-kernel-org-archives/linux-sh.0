@@ -1,32 +1,32 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Sun, 03 Feb 2008 23:34:50 +0000
-Subject: [PATCH] Fix 8139too for Dreamcast
-Message-Id: <1202081690.9936.11.camel@localhost.localdomain>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 04 Feb 2008 00:55:26 +0000
+Subject: Re: [PATCH] Fix 8139too for Dreamcast
+Message-Id: <20080204005526.GA21788@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1202081690.9936.11.camel@localhost.localdomain>
+In-Reply-To: <1202081690.9936.11.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Adrian McMenamin
+On Sun, Feb 03, 2008 at 11:34:50PM +0000, Adrian McMenamin wrote:
+> From: Adrian McMenamin
+> 
+You only need this if you're submitting a patch from someone else, and
+then you still need the email address, or git-am has no idea what to do.
 
-This fixes the 8139too driver for the Dreamcast to work with the recent coherency patches. All Magnus's work, I just tested it.
+> This fixes the 8139too driver for the Dreamcast to work with the recent coherency patches. All Magnus's work, I just tested it.
+> 
+> Suggested-by: Magnus Damm
 
-Suggested-by: Magnus Damm
-Submitted-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+Mail address missing again.
 
-========
+> Submitted-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+> 
+Do not arbitrarily invent new sign-off tags, read
+Documentation/SubmittingPatches.
 
-
---- a/drivers/net/8139too.c
-+++ b/drivers/net/8139too.c
-@@ -168,7 +168,7 @@ static int debug = -1;
-  * Warning: 64K ring has hardware issues and may lock up.
-  */
- #if defined(CONFIG_SH_DREAMCAST)
--#define RX_BUF_IDX     1       /* 16K ring */
-+#define RX_BUF_IDX     0       /* 8K ring */
- #else
- #define RX_BUF_IDX     2       /* 32K ring */
- #endif
-
+This patch should also be sent to Jeff Garzik if you actually want it
+applied. It also helps to point out the commit-id that broke so it's
+clear that this is fixing a regression.
