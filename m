@@ -1,52 +1,57 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Wed, 06 Feb 2008 23:05:14 +0000
+From: Greg KH <greg@kroah.com>
+Date: Wed, 06 Feb 2008 23:23:49 +0000
 Subject: Re: [PATCH 2/2] - SH/Dreamcast - fix maple bus bugs
-Message-Id: <1202339114.6162.17.camel@localhost.localdomain>
+Message-Id: <20080206232349.GA15654@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1202337981.6162.8.camel@localhost.localdomain>
-	 <1202338431.6162.15.camel@localhost.localdomain>
-	 <20080206230127.GA9614@kroah.com>
-In-Reply-To: <20080206230127.GA9614@kroah.com>
+References: <1202337981.6162.8.camel@localhost.localdomain> <1202338431.6162.15.camel@localhost.localdomain> <20080206230127.GA9614@kroah.com> <1202339114.6162.17.camel@localhost.localdomain>
+In-Reply-To: <1202339114.6162.17.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg KH <greg@kroah.com>
+To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
 Cc: Paul Mundt <lethal@users.sourceforge.net>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
 
-
-On Wed, 2008-02-06 at 15:01 -0800, Greg KH wrote:
-> On Wed, Feb 06, 2008 at 10:53:51PM +0000, Adrian McMenamin wrote:
-> > -	dev->function = function;
-> > -	dev->dev.bus = &maple_bus_type;
-> > -	dev->dev.parent = &maple_bus;
-> > -	dev->dev.release = &maple_release_device;
-> > -	retval = device_register(&dev->dev);
-> > -	if (retval) {
-> > -		printk(KERN_INFO
-> > -		       "Maple bus: Attempt to register device (%x, %x) failed.\n",
-> > -		       dev->port, dev->unit);
-> > -		maple_free_dev(dev);
-> > +	mdev->function = function;
-> > +	mdev->dev.release = &maple_release_device;
-> > +	if (mdev->registered = 0) {
-> > +		retval = device_register(&mdev->dev);
-> > +		if (retval) {
-> > +			printk(KERN_INFO
-> > +			"Maple bus: Attempt to register device"
-> > +			" (%x, %x) failed.\n",
-> > +			mdev->port, mdev->unit);
-> > +			maple_free_dev(mdev);
-> > +			mdev = NULL;
-> > +			return;
-> > +		}
-> > +		mdev->registered = 1;
-> >  	}
-> > -	dev->registered = 1;
+On Wed, Feb 06, 2008 at 11:05:14PM +0000, Adrian McMenamin wrote:
 > 
-> I think you are still papering over the real problem here of trying to
-> register a device twice.  That's something you should never be doing,
-> and your bus walking logic must be incorrect...
-> 
-I just left that in as a sanity check. It should never be acted on. I
-can remove it if you prefer.
+> On Wed, 2008-02-06 at 15:01 -0800, Greg KH wrote:
+> > On Wed, Feb 06, 2008 at 10:53:51PM +0000, Adrian McMenamin wrote:
+> > > -	dev->function = function;
+> > > -	dev->dev.bus = &maple_bus_type;
+> > > -	dev->dev.parent = &maple_bus;
+> > > -	dev->dev.release = &maple_release_device;
+> > > -	retval = device_register(&dev->dev);
+> > > -	if (retval) {
+> > > -		printk(KERN_INFO
+> > > -		       "Maple bus: Attempt to register device (%x, %x) failed.\n",
+> > > -		       dev->port, dev->unit);
+> > > -		maple_free_dev(dev);
+> > > +	mdev->function = function;
+> > > +	mdev->dev.release = &maple_release_device;
+> > > +	if (mdev->registered = 0) {
+> > > +		retval = device_register(&mdev->dev);
+> > > +		if (retval) {
+> > > +			printk(KERN_INFO
+> > > +			"Maple bus: Attempt to register device"
+> > > +			" (%x, %x) failed.\n",
+> > > +			mdev->port, mdev->unit);
+> > > +			maple_free_dev(mdev);
+> > > +			mdev = NULL;
+> > > +			return;
+> > > +		}
+> > > +		mdev->registered = 1;
+> > >  	}
+> > > -	dev->registered = 1;
+> > 
+> > I think you are still papering over the real problem here of trying to
+> > register a device twice.  That's something you should never be doing,
+> > and your bus walking logic must be incorrect...
+> > 
+> I just left that in as a sanity check. It should never be acted on. I
+> can remove it if you prefer.
 
+Please do, that way, and real problems will show up with that warning
+you were getting that started all of this work :)
+
+thanks,
+
+greg k-h
