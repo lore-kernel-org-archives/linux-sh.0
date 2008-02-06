@@ -1,28 +1,22 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Feb 2008 14:54:23 +0000
-Subject: [PATCH] sh: add sh7722 support to EARLY_SCIF_CONSOLE
-Message-Id: <20080206145423.27046.98635.sendpatchset@clockwork.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 06 Feb 2008 21:05:26 +0000
+Subject: Re: [PATCH] sh: add sh7722 support to EARLY_SCIF_CONSOLE
+Message-Id: <20080206210526.GA13945@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080206145423.27046.98635.sendpatchset@clockwork.opensource.se>
+In-Reply-To: <20080206145423.27046.98635.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds the base address of SCIF0 in the case of sh7722.
+On Wed, Feb 06, 2008 at 11:54:23PM +0900, Magnus Damm wrote:
+> This patch adds the base address of SCIF0 in the case of sh7722.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Wed, Feb 06, 2008 at 11:57:57PM +0900, Magnus Damm wrote:
+> This patch adds support for sh7722 devices with prr value 0xa1.
 
- arch/sh/Kconfig.debug |    1 +
- 1 file changed, 1 insertion(+)
+On Thu, Feb 07, 2008 at 12:02:50AM +0900, Magnus Damm wrote:
+> Break out the sign extension code since it's used in multiple places.
 
---- 0001/arch/sh/Kconfig.debug
-+++ work/arch/sh/Kconfig.debug	2008-02-06 21:11:08.000000000 +0900
-@@ -30,6 +30,7 @@ config EARLY_SCIF_CONSOLE_PORT
- 	hex
- 	depends on EARLY_SCIF_CONSOLE
-  	default "0xffe00000" if CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7763
-+ 	default "0xffe00000" if CPU_SUBTYPE_SH7722
- 	default "0xffea0000" if CPU_SUBTYPE_SH7785
- 	default "0xfffe8000" if CPU_SUBTYPE_SH7203
- 	default "0xfffe9800" if CPU_SUBTYPE_SH7206 || CPU_SUBTYPE_SH7263
+Applied, thanks.
