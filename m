@@ -1,105 +1,38 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 29 Feb 2008 10:49:16 +0000
-Subject: [PATCH 03/03] sh: SuperH KEYSC keypad data for Solution Engine 7722
-Message-Id: <20080229104916.22537.64480.sendpatchset@clockwork.opensource.se>
+Date: Fri, 08 Feb 2008 08:26:54 +0000
+Subject: [PATCH] sh: fix ptrace copy_from/to_user() compilation error
+Message-Id: <20080208082654.32594.98688.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080229104847.22537.66432.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080229104847.22537.66432.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, akpm@linux-foundation.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch adds KEYSC platform data for the Solution Engine 7722 board.
+This patch makes the 32-bit ptrace code compile again.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/boards/se/7722/setup.c |   41 ++++++++++++++++++++++++++++++++++++++++
- include/asm-sh/se7722.h        |    2 +
- 2 files changed, 43 insertions(+)
+ arch/sh/kernel/ptrace_32.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
---- 0001/arch/sh/boards/se/7722/setup.c
-+++ work/arch/sh/boards/se/7722/setup.c	2008-02-28 18:05:09.000000000 +0900
-@@ -13,10 +13,12 @@
- #include <linux/init.h>
- #include <linux/platform_device.h>
- #include <linux/ata_platform.h>
-+#include <linux/input.h>
- #include <asm/machvec.h>
- #include <asm/se7722.h>
- #include <asm/io.h>
- #include <asm/heartbeat.h>
-+#include <asm/sh_keysc.h>
- 
- /* Heartbeat */
- static struct heartbeat_data heartbeat_data = {
-@@ -92,10 +94,47 @@ static struct platform_device cf_ide_dev
- 	.resource       = cf_ide_resources,
- };
- 
-+static struct sh_keysc_info sh_keysc_info = {
-+	.mode = SH_KEYSC_MODE_1, /* KEYOUT0->5, KEYIN0->4 */
-+	.scan_timing = 3,
-+	.delay = 5,
-+	.keycodes = { /* SW1 -> SW30 */
-+		KEY_A, KEY_B, KEY_C, KEY_D, KEY_E,
-+		KEY_F, KEY_G, KEY_H, KEY_I, KEY_J,
-+		KEY_K, KEY_L, KEY_M, KEY_N, KEY_O,
-+		KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T,
-+		KEY_U, KEY_V, KEY_W, KEY_X, KEY_Y,
-+		KEY_Z,
-+		KEY_HOME, KEY_SLEEP, KEY_WAKEUP, KEY_COFFEE, /* life */
-+	},
-+};
-+
-+static struct resource sh_keysc_resources[] = {
-+	[0] = {
-+		.start  = 0x044b0000,
-+		.end    = 0x044b000f,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 79,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device sh_keysc_device = {
-+	.name           = "sh_keysc",
-+	.num_resources  = ARRAY_SIZE(sh_keysc_resources),
-+	.resource       = sh_keysc_resources,
-+	.dev	= {
-+		.platform_data	= &sh_keysc_info,
-+	},
-+};
-+
- static struct platform_device *se7722_devices[] __initdata = {
- 	&heartbeat_device,
- 	&smc91x_eth_device,
- 	&cf_ide_device,
-+	&sh_keysc_device,
- };
- 
- static int __init se7722_devices_setup(void)
-@@ -136,6 +175,8 @@ static void __init se7722_setup(char **c
- 	ctrl_outw(0x0A10, PORT_PSELA); /* BS,SHHID2 */
- 	ctrl_outw(0x0000, PORT_PYCR);
- 	ctrl_outw(0x0000, PORT_PZCR);
-+	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x4000, PORT_HIZCRA);
-+	ctrl_outw(ctrl_inw(PORT_HIZCRC) & ~0xc000, PORT_HIZCRC);
- }
- 
- /*
---- 0001/include/asm-sh/se7722.h
-+++ work/include/asm-sh/se7722.h	2008-02-28 18:05:09.000000000 +0900
-@@ -77,6 +77,8 @@
- #define PORT_PSELA      0xA405014EUL
- #define PORT_PYCR       0xA405014AUL
- #define PORT_PZCR       0xA405014CUL
-+#define PORT_HIZCRA     0xA4050158UL
-+#define PORT_HIZCRC     0xA405015CUL
- 
- /* IRQ */
- #define IRQ0_IRQ        32
+--- 0001/arch/sh/kernel/ptrace_32.c
++++ work/arch/sh/kernel/ptrace_32.c	2008-02-08 14:57:44.000000000 +0900
+@@ -220,7 +220,7 @@ long arch_ptrace(struct task_struct *chi
+ 		dp = ((unsigned long) child) + THREAD_SIZE -
+ 			 sizeof(struct pt_dspregs);
+ 		if (*((int *) (dp - 4)) = SR_FD) {
+-			copy_to_user(addr, (void *) dp,
++			copy_to_user((void *)addr, (void *) dp,
+ 				sizeof(struct pt_dspregs));
+ 			ret = 0;
+ 		}
+@@ -234,7 +234,7 @@ long arch_ptrace(struct task_struct *chi
+ 		dp = ((unsigned long) child) + THREAD_SIZE -
+ 			 sizeof(struct pt_dspregs);
+ 		if (*((int *) (dp - 4)) = SR_FD) {
+-			copy_from_user((void *) dp, addr,
++			copy_from_user((void *) dp, (void *)addr,
+ 				sizeof(struct pt_dspregs));
+ 			ret = 0;
+ 		}
