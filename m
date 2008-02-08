@@ -1,63 +1,52 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 07 Feb 2008 20:28:34 +0000
-Subject: Sorry but I do not understand.
-Message-Id: <200802072128.34795.fabio.giovagnini@aurion-tech.com>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 08 Feb 2008 00:26:46 +0000
+Subject: Re: Sorry but I do not understand.
+Message-Id: <200802071926.46952.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart4027167.jY42TH85hV"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <200802072128.34795.fabio.giovagnini@aurion-tech.com>
+In-Reply-To: <200802072128.34795.fabio.giovagnini@aurion-tech.com>
 To: linux-sh@vger.kernel.org
 
-What exaclty means this following:
-root:/home> cp nfs/sdl5thApp .
-root:/home> ./sdl5thApp
-Allocation of length 1072838 from process 48 failed
-DMA per-cpu: empty
-DMA32 per-cpu: empty
-Normal per-cpu:
-cpu 0 hot: high 0, batch 1 used:0
-cpu 0 cold: high 0, batch 1 used:0
-HighMem per-cpu: empty
-Free pages:        9244kB (0kB HighMem)
-Active:0 inactive:4 dirty:0 writeback:0 unstable:0 free:2311 slab:1073 
-mapped:0 pagetables:0
-DMA free:0kB min:0kB low:0kB high:0kB active:0kB inactive:0kB present:0kB 
-pages_scanned:0 all_unreclaimable? no
-lowmem_reserve[]: 0 0 16 16
-DMA32 free:0kB min:0kB low:0kB high:0kB active:0kB inactive:0kB present:0kB 
-pages_scanned:0 all_unreclaimable? no
-lowmem_reserve[]: 0 0 16 16
-Normal free:9244kB min:2560kB low:10368kB high:10496kB active:0kB 
-inactive:16kB present:16384kB pages_scanned:0 all_unreclaimable? yes
-lowmem_reserve[]: 0 0 0 0
-HighMem free:0kB min:640kB low:2560kB high:2560kB active:0kB inactive:0kB 
-present:0kB pages_scanned:0 all_unreclaimable? no
-lowmem_reserve[]: 0 0 0 0
-DMA: empty
-DMA32: empty
-Normal: 7*4kB 6*8kB 3*16kB 3*32kB 1*64kB 0*128kB 1*256kB 1*512kB 0*1024kB 
-0*2048kB 2*4096kB = 9244kB
-HighMem: empty
-Unable to allocate RAM for process text/data, errno 12
-root:/home>
- 
+--nextPart4027167.jY42TH85hV
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-Thanks if anyone can explain to me.
+On Thursday 07 February 2008, Fabio Giovagnini wrote:
+> What exaclty means this following:
+> root:/home> cp nfs/sdl5thApp .
+> root:/home> ./sdl5thApp
+> Allocation of length 1072838 from process 48 failed
 
-Regards
+your memory is full and/or fragmented and cannot satisfy the request for=20
+1072838 bytes.  the rest of the message just describes the exact memory sta=
+te=20
+in the system at the time of failure.
+=2Dmike
 
--- 
-Fabio Giovagnini
+--nextPart4027167.jY42TH85hV
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Aurion s.r.l.
-via degli orti 11,
-40050 Funo di Argelato (BO)
-P.I e C.F.
-00885711200
-Tel. +39.335.8350919
-Fax +39.051.8659009
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.7 (GNU/Linux)
 
-www.aurion-tech.com
+iQIVAwUAR6uhxkFjO5/oN/WBAQIhgRAAyhaFvfv3oOBpEJX8qQoLypndWOwqNnJD
+4GJi+/MdwIDVG0ufe6A8pJaiMsR7S0OBC7KDDLHb1AFEZ6q7P/v8eH8im4ih1u6g
+vcbjGKbmESCI1vVxY3/P6oo/gzhjQj8wDHq9OQSRiDo873NFJHWT0sTnypmY2Yki
+HMEOZRfw+Q4STAzGBZ4nIJ3mdk1J0iCyeuEcfMpIz55MrOhHTyG8hBVdqNr0R6GB
+v3S1D74bD9ko2xu/ttzStuBF8NwvNtGzCYFvxkk++Kr0fMRvz7j/q6sR+D5qjM6D
+PxmnZbmKjd1TIbTNa5WtnI1R47GVXdwGsUz5OAABrQ3tpHoHsPf7F6O2sXzsQEfe
+AmFrddOJcGi1R6vOcRX2JFTFuvSSzrmVazj5D2RgYIx45j4JyIoeGE0psTHs/EDt
+hvXPV98GYu1NGKf6INizIaLwUe+nNbKnGWKXK6OHY1mxh9m+bPtiOzuLvuHDXh7b
+ME6pvfnZmH3hLpr77QSK+r9Nvcda7n9K2BXDCd7mcr63DGYIWShzfzLYq/a4BGq0
+/cs0/s4pctBaRh3/89aclTr8u6Pv6db0mLPXzCX5ecOGemIq+7nK6cFwGpp+QXOb
+AZlm+hNkkITzpAsbCtrCG0IqiSlfMY8kFKgJyumF+D7aFMQKtU2A7oev9ven58Ov
+gnM7Qb/W3Ko=
+=EKxJ
+-----END PGP SIGNATURE-----
 
-account telefono VoIP skype (www.skype.com):
-aurion.giovagnini
+--nextPart4027167.jY42TH85hV--
