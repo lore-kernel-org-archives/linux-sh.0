@@ -1,18 +1,30 @@
-From: Paul Mundt <paul.mundt@renesas.com>
-Date: Wed, 20 Feb 2008 02:20:21 +0000
-Subject: Re: SH4 RTC periodic mode
-Message-Id: <20080220022021.GB16458@renesas.com>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sat, 09 Feb 2008 12:14:05 +0000
+Subject: [PATCH] Dreamcast - fix spelling
+Message-Id: <1202559245.6282.1.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Feb 18, 2008 at 04:21:08PM +0100, Giuseppe Cavallaro wrote:
-> I wonder why the sh4 rtc driver (drivers/rtc/rtc-sh.c) doesn't implement the
-> periodic ioctls (RTC_IRQP_SET...) currently implemented in other drivers.
-> Is there a specific reason?
+Fix the spelling in a variable name.
 
-These are trivially added. There is no particular reason why they are
-unimplemented in the current driver, I just havent gotten around to
-adding them. Feel free to submit a patch.
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+
+==
+
+diff --git a/include/linux/maple.h b/include/linux/maple.h
+index 35c3474..34578c2 100644
+--- a/include/linux/maple.h
++++ b/include/linux/maple.h
+@@ -39,7 +39,7 @@ struct maple_devinfo {
+ 	unsigned long function;
+ 	unsigned long function_data[3];
+ 	unsigned char area_code;
+-	unsigned char connector_directon;
++	unsigned char connector_direction;
+ 	char product_name[31];
+ 	char product_licence[61];
+ 	unsigned short standby_power;
+
