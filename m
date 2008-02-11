@@ -1,155 +1,56 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Mon, 11 Feb 2008 16:13:55 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 11 Feb 2008 16:19:22 +0000
 Subject: Re: [PATCH 1/2] SH/Dreamcast - joystick (Control pad)
-Message-Id: <20080211110202.ZZRA012@mailhub.coreip.homeip.net>
+Message-Id: <200802111119.23841.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart5009716.3X8OWOap2R"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1202684222.6237.9.camel@localhost.localdomain>
-In-Reply-To: <1202684222.6237.9.camel@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1202684222.6237.9.camel@localhost.localdomain> <200802101922.29214.vapier@gentoo.org> <15561.85.118.17.158.1202739603.squirrel@newgolddream.dyndns.info>
+In-Reply-To: <15561.85.118.17.158.1202739603.squirrel@newgolddream.dyndns.info>
 To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Paul Mundt <lethal@users.sourceforge.net>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+Cc: dtor@insightbb.com, Paul Mundt <lethal@users.sourceforge.net>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Hi Adrian,
+--nextPart5009716.3X8OWOap2R
+Content-Type: text/plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-On Sun, Feb 10, 2008 at 10:57:01PM +0000, Adrian McMenamin wrote:
-> +
-> +static int dc_pad_open(struct input_dev *dev)
-> +{
-> +	struct dc_pad *pad = dev->private;
-> +	pad->open++;
-> +	return 0;
-> +}
-> +
-> +static void dc_pad_close(struct input_dev *dev)
-> +{
-> +	struct dc_pad *pad = dev->private;
-> +	pad->open--;
-> +}
+On Monday 11 February 2008, Adrian McMenamin wrote:
+> On Mon, February 11, 2008 12:22 am, Mike Frysinger wrote:
+> > no remove function ?  looks like the probe() forces a connect, but
+> > there's no remove() to force a disconnect ...
+>
+> Removing these devices (or any other plugged directly into the maple
+> ports) is a quick way to destroy your Dreamcast: hence they were never
+> implemented I guess. But there is no convincing reason for the software
+> not doing so, I suppose. I can just put in comments about it.
 
-What is the point of the above 2 functions?
+and not allow the driver to be built as a module until the comments become=
+=20
+code ...
+=2Dmike
 
-> +
-> +static int dc_pad_connect(struct maple_device *mdev)
-> +{
-> +	int i, error;
-> +	unsigned long data = be32_to_cpu(mdev->devinfo.function_data[0]);
-> +	struct dc_pad *pad;
-> +	struct input_dev *dev;
-> +
-> +	const short btn_bit[32] = {
-> +		BTN_C, BTN_B, BTN_A, BTN_START, -1, -1, -1, -1,
-> +		BTN_Z, BTN_Y, BTN_X, BTN_SELECT, -1, -1, -1, -1,
-> +		-1, -1, -1, -1, -1, -1, -1, -1,
-> +		-1, -1, -1, -1, -1, -1, -1, -1,
-> +	};
-> +
-> +	const short abs_bit[32] = {
-> +		-1, -1, -1, -1, ABS_HAT0Y, ABS_HAT0Y, ABS_HAT0X, ABS_HAT0X,
-> +		-1, -1, -1, -1, ABS_HAT1Y, ABS_HAT1Y, ABS_HAT1X, ABS_HAT1X,
-> +		ABS_GAS, ABS_BRAKE, ABS_X, ABS_Y, ABS_RX, ABS_RY, -1, -1,
-> +		-1, -1, -1, -1, -1, -1, -1, -1,
-> +	};
-> +
-> +	pad = kzalloc(sizeof(struct dc_pad), GFP_KERNEL);
-> +	if (!pad)
-> +		return -ENOMEM;
-> +
-> +	dev = input_allocate_device();
-> +	if (!dev) {
-> +		kfree(pad);
-> +		return -ENOMEM;
-> +	}
-> +
-> +	pad->dev = dev;
-> +
-> +	mdev->private_data = pad;
-> +
-> +	for (i = 0; i < 32; i++)
-> +		if (data & (1<<i) && btn_bit[i] >= 0)
-> +			pad->dev->keybit[BTN_JOYSTICK/32] |= BIT(btn_bit[i]);
-> +
-> +	if (pad->dev->keybit[BTN_JOYSTICK/32])
-> +		pad->dev->evbit[0] |= BIT(EV_KEY);
-> +
-> +	for (i = 0; i < 32; i++)
-> +		if (data&(1<<i) && abs_bit[i] >= 0)
-> +			pad->dev->absbit[0] |= BIT(abs_bit[i]);
-> +
-> +	if (pad->dev->absbit[0])
-> +		pad->dev->evbit[0] |= BIT(EV_ABS);
-> +
-> +	for (i = ABS_X; i <= ABS_BRAKE; i++) {
-> +		pad->dev->absmax[i] = 255;
-> +		pad->dev->absmin[i] = 0;
-> +		pad->dev->absfuzz[i] = 0;
-> +		pad->dev->absflat[i] = 0;
-> +	}
-> +
-> +	for (i = ABS_HAT0X; i <= ABS_HAT3Y; i++) {
-> +		pad->dev->absmax[i] = 1;
-> +		pad->dev->absmin[i] = -1;
-> +		pad->dev->absfuzz[i] = 0;
-> +		pad->dev->absflat[i] = 0;
-> +	}
-> +
-> +	pad->dev->private = pad;
+--nextPart5009716.3X8OWOap2R
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-input_set_drvdata().. Oh, wait, you are doing it below...
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.7 (GNU/Linux)
 
-> +	pad->dev->open = dc_pad_open;
-> +	pad->dev->close = dc_pad_close;
-> +	pad->dev->event = NULL;
+iQIVAwUAR7B1i0FjO5/oN/WBAQLYOxAArM49XymmM75twU8GipLDQtGuiZ+0WFdM
+ixM5yJ++MpyoxW2lS1I7a1C08CDDWrAaLu9jkQiQSf5HnnUBfif8l8Yo0wSFC3wg
+8xZyOe3ZoOInID5eI3FakCoOj9jB2l2EbbQK7OtfI9x/BtVxnCG4ZjttNgG7AbwW
+6hPaV1dkEbWClN26U4NLI96c0FH3udM6APMNvc/he1cFe2wJSy1Bb35rKiQIIjqo
+yc4fDuwFpwUH/B7tniGbAbE+aJmIqi0qUkspVbWmkom+284wVTMrnn/6/7NSbplL
+811sdDKW0kPllFbUlnVjItVNHdKxJiBFBSlBtx49kGXDBsWS06m2dg5RtQ1x8IEC
+hnJKD8R0z2F4Flvb6r4HPYF7of+A6fNVXkJlGwKFUHsYfB9sl9DyDzaT5zRVNdmE
+DhRptIBWgoQ2ztwghTAAvz+vv3Vf1mk3DcjjWQ7d+Vm/ywalj3yDJUbt4V14d6SY
+qCBQZkmqfG3L08VaKsqHzIfAmhOGu0adt/V3Crdwoto4S4L5FiSEOqPYCgwkkcF4
+fMrF8gzp0WBwB3Jczr8fZCffKYNrCNpjPJnrFjO8noko9lNeSfqLZKPqu1euQvDp
+w6mhsetfUoXuJ8eCTNuYz8EQvmXgNgJ4noXaeMJ6BGkchhYZxNIT8uceAepkl71Z
+zv1o+cMtn+s=
+=mcbu
+-----END PGP SIGNATURE-----
 
-input_dev is zeroes upon initialization, no need to set unused methods
-to NULL. Also please consider using a temp for input_dev, it should
-reduce generated code a bit.
-
-> +	pad->dev->dev.parent = &mdev->dev;
-> +	pad->dev->name = mdev->product_name;
-> +	pad->dev->id.bustype = BUS_HOST;
-> +	input_set_capability(pad->dev, EV_ABS, MSC_SCAN);
-
-I did not see the driver reporting MSC_SCAN events. Also, MSC_SCAN is
-usually reprted as EV_MSC, not EV_ABS.
-
-> +	input_set_drvdata(dev, pad);
-> +
-> +	error = input_register_device(pad->dev);
-> +	if (error) {
-> +		input_free_device(pad->dev);
-> +		kfree(pad);
-> +		return -ENODEV;
-
-		return error;
-
-There is no reason to "hide" real error reported by input_register_device.
-
-> +	}
-> +
-> +	maple_getcond_callback(mdev, dc_pad_callback, HZ/50,
-> +		MAPLE_FUNC_CONTROLLER);
-
-Hmm, this could probably go into dc_pad_open so we dont poll hardware
-if there are no users.
-
-> +
-> +	return 0;
-> +}
-> +
-> +static void dc_pad_disconnect(struct maple_device *mdev)
-> +{
-> +	struct dc_pad *pad = mdev->private_data;
-> +
-
-Don't you need to stop polling callback? Either here ot in dc_pad_stop,
-depending on where maple_getcond_callback() is.
-
-> +	input_unregister_device(pad->dev);
-> +	kfree(pad);
-> +}
-> +
-
--- 
-Dmitry
+--nextPart5009716.3X8OWOap2R--
