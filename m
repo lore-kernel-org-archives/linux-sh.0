@@ -1,32 +1,41 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 04 Feb 2008 00:55:26 +0000
-Subject: Re: [PATCH] Fix 8139too for Dreamcast
-Message-Id: <20080204005526.GA21788@linux-sh.org>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Mon, 11 Feb 2008 00:25:02 +0000
+Subject: [PATCH] SH/Dreamcast - improve detection of attached peripherals
+Message-Id: <1202689502.6237.23.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1202081690.9936.11.camel@localhost.localdomain>
-In-Reply-To: <1202081690.9936.11.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Feb 03, 2008 at 11:34:50PM +0000, Adrian McMenamin wrote:
-> From: Adrian McMenamin
-> 
-You only need this if you're submitting a patch from someone else, and
-then you still need the email address, or git-am has no idea what to do.
+Improve device detection for maple through longer delay
 
-> This fixes the 8139too driver for the Dreamcast to work with the recent coherency patches. All Magnus's work, I just tested it.
-> 
-> Suggested-by: Magnus Damm
+Experience suggests that a much longer delay in setting up the Maple bus
+on the Dreamcast leads to better hardware detection.
 
-Mail address missing again.
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 
-> Submitted-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
-> 
-Do not arbitrarily invent new sign-off tags, read
-Documentation/SubmittingPatches.
+-----
 
-This patch should also be sent to Jeff Garzik if you actually want it
-applied. It also helps to point out the commit-id that broke so it's
-clear that this is fixing a regression.
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index fbca7f8..afb5362 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -658,7 +658,6 @@ static int __init maple_bus_init(void)
+ 		goto cleanup_device;
+ 
+ 	retval = driver_register(&maple_dummy_driver.drv);
+-
+ 	if (retval)
+ 		goto cleanup_bus;
+ 
+@@ -704,7 +703,7 @@ static int __init maple_bus_init(void)
+ 		mdev[i]->mq->length = 0;
+ 		maple_add_packet(mdev[i]->mq);
+ 		/* delay aids hardware detection */
+-		udelay(20);
++		mdelay(5);
+ 		subdevice_map[i] = 0;
+ 	}
+ 
+
