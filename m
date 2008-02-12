@@ -1,38 +1,74 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 12 Feb 2008 09:48:12 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Tue, 12 Feb 2008 15:23:40 +0000
 Subject: Re: [PATCH] SH/Dreamcast - improve detection of attached peripherals
-Message-Id: <20080212094812.GA3265@linux-sh.org>
+Message-Id: <200802121023.41473.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart1318018.jkP6kEZZUg"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1202689502.6237.23.camel@localhost.localdomain>
 In-Reply-To: <1202689502.6237.23.camel@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Feb 12, 2008 at 10:36:12AM +0100, Kristoffer Ericson wrote:
-> On Tue, 12 Feb 2008 17:24:25 +0900
-> Paul Mundt <lethal@linux-sh.org> wrote:
-> > Also, no attachments or MIME damage of any sort. If you aren't sure
-> > whether your mailer will mangle the inline patch or not, send it to
-> > yourself until you have it working.
-> 
-> I wasn't aware my attachments was being mangled in anyway, I'll test on 
-> myself until I got it sorted.
-> 
-My point is that you should not be attaching patches in the first place.
-The only reason people have for sending patches as attachments is because
-the inline patch gets mangled. There is never a valid reason for sending
-a patch as an attachment to the mailing list, it's just a lot more
-tedious to deal with. Unfortunately there are valid reasons for sending
-an attachment to the list, so we can't just have messages with
-attachments auto-discarded, which would be preferable otherwise.
+--nextPart1318018.jkP6kEZZUg
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-text/plain attachments can occasionally be tolerated, but most mailers
-tend to use some ridiculous mime type for patches, which means one has to
-mangle the type back to something sensible before it can be worked with
-anyways, which is also quite irritating.
+is there a reason you guys dont use git to submit your patches ?  it does t=
+ake=20
+time to learn if you arent familiar, but the time spent more than pays off =
+in=20
+the long wrong ... it takes care of all these fun bits for you.  a shortene=
+d=20
+list for arbitrary developers:
+1. < make changes to git repo >
+2. git add < files you want to commit >
+3. git commit -s
+ - first line is the subject (so you have to follow convention yourself)
+ - one blank line
+ - paragraph for body of changelog
+so the example commit log would be (just the stuff between the dashes):
+=2D---------------------------
+SH/Maple/Dreamcast: improve detection of attached peripherals
 
-Logs and .configs and things of that nature can be attached just fine,
-since they're not fed through scripts as the patches are, and rarely need
-to be replied to in-line.
+Blah blah blah this is the long subject explaining why this is wanted.
+
+Signed-off-line: automatically-added-by-the-s-flag
+=2D---------------------------
+4. git-format-patch HEAD^
+5. git-send-email --to linux-sh@vger.kernel.org <list of patches produced>
+6. git reset --hard HEAD^
+
+i'm lazy and dont create branches for the small one-off changes.  so you gu=
+ys=20
+doing more work would probably want to create a branch before doing the wor=
+k. =20
+in that case, just replace "HEAD^" with like "master" to generate patches o=
+f=20
+all the commits made to your branch.
+=2Dmike
+
+--nextPart1318018.jkP6kEZZUg
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.7 (GNU/Linux)
+
+iQIVAwUAR7G5/UFjO5/oN/WBAQIzWA//SfRioyWl64ISsPBCTbSSUNcmq97a7/VS
+dXW06C7xZq9oI+ChHw1ujS7qiC/ko4yBeie/M9mXb9qMXIM+RJHpuCIynC00JJsh
+sjE+DIv0bG9+CUE7XNLkl0qh4WvcKYtlvgQmjDFpdAeIRde3zIgk3OlTIhtyu5yb
+mgETBQic9ndDVSm1eKxvTDhqdWMHD6iKUtGVDUK2oDMwl5NvTGA9FGoY1c2I+UvW
+ktmYXDdBL6rQHL1x72EJQGFfPsWT26gomYiR3cJ5NHYOlqcN5K8X8rdr3ZSU/+wx
+JJzJ15e6a516iMJ+cCWR45Y8ms85AqxDm0/Wc9um+w/g8EidVYP7E9WcGvKUET4p
+OQqvKN8cR9faCAkc+m2z0LbOdqrjPecIywRl4d6VFvzG0Ba3tUCh9upb732oufUk
+VRFOwE7vTID2dSjSfU0FGNJCiaruQxqB/OKvhlRYVSlsKt0jNrJL5bAi3VcLliFR
+JnW90zrTh/hD32aWYYtXqQEIg0y32WMBWJHkQLMePXUUBugUrhpWKmBx+iR/GEo1
+GNRLHIs2bQfbzxR9VRrcOHEkhvtImOAIyqdnhM1PHg4luEglRGUl8wreMLgAPhzK
+hyrMIA/TWlb+X//Cz/+qa+AVT4VIazPdMwDik0aBmyOPbPlnUq1IFzmnFvOKFtqt
+FzBaNnzrtsI=
+=axza
+-----END PGP SIGNATURE-----
+
+--nextPart1318018.jkP6kEZZUg--
