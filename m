@@ -1,108 +1,168 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 19 Feb 2008 12:35:04 +0000
-Subject: [PATCH 05/09] sh: add reg_base member to pci_channel
-Message-Id: <20080219123504.4266.46496.sendpatchset@clockwork.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 14 Feb 2008 05:57:44 +0000
+Subject: [GIT PULL] sh updates for 2.6.25-rc2
+Message-Id: <20080214055744.GD12436@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Store the base address of the pci host controller registers in struct
-pci_channel and use the address in pci_read_reg() and pci_write_reg().
+Please pull from:
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
- arch/sh/drivers/pci/ops-sh4.c    |    4 ++--
- arch/sh/drivers/pci/pci-sh4.h    |    4 ++--
- arch/sh/drivers/pci/pci-sh7751.c |    2 ++
- arch/sh/drivers/pci/pci-sh7751.h |    1 -
- arch/sh/drivers/pci/pci-sh7780.c |    2 ++
- arch/sh/drivers/pci/pci-sh7780.h |    1 -
- include/asm-sh/pci.h             |    1 +
- 7 files changed, 9 insertions(+), 6 deletions(-)
+Which contains:
 
---- 0007/arch/sh/drivers/pci/ops-sh4.c
-+++ work/arch/sh/drivers/pci/ops-sh4.c	2008-02-14 16:45:07.000000000 +0900
-@@ -121,8 +121,8 @@ int __init sh4_pci_check_direct(struct p
- 		if (pci_read_reg(chan, SH4_PCIPAR) = P1SEG) {
- 			pci_write_reg(chan, tmp, SH4_PCIPAR);
- 			printk(KERN_INFO "PCI: Using configuration type 1\n");
--			request_region(PCI_REG(SH4_PCIPAR), 8, "PCI conf1");
--
-+			request_region(chan->reg_base + SH4_PCIPAR, 8,
-+				       "PCI conf1");
- 			return 0;
- 		}
- 
---- 0005/arch/sh/drivers/pci/pci-sh4.h
-+++ work/arch/sh/drivers/pci/pci-sh4.h	2008-02-14 16:45:55.000000000 +0900
-@@ -173,13 +173,13 @@ struct sh4_pci_address_map {
- static inline void pci_write_reg(struct pci_channel *chan,
- 				 unsigned long val, unsigned long reg)
- {
--	ctrl_outl(val, PCI_REG(reg));
-+	ctrl_outl(val, chan->reg_base + reg);
- }
- 
- static inline unsigned long pci_read_reg(struct pci_channel *chan,
- 					 unsigned long reg)
- {
--	return ctrl_inl(PCI_REG(reg));
-+	return ctrl_inl(chan->reg_base + reg);
- }
- 
- #endif /* __PCI_SH4_H */
---- 0006/arch/sh/drivers/pci/pci-sh7751.c
-+++ work/arch/sh/drivers/pci/pci-sh7751.c	2008-02-14 16:43:10.000000000 +0900
-@@ -39,6 +39,8 @@ int __init sh7751_pci_init(struct pci_ch
- 
- 	pr_debug("PCI: Starting intialization.\n");
- 
-+	chan->reg_base = 0xfe200000;
-+
- 	/* check for SH7751/SH7751R hardware */
- 	id = pci_read_reg(chan, SH7751_PCICONF0);
- 	if (id != ((SH7751_DEVICE_ID << 16) | SH7751_VENDOR_ID) &&
---- 0006/arch/sh/drivers/pci/pci-sh7751.h
-+++ work/arch/sh/drivers/pci/pci-sh7751.h	2008-02-14 16:42:47.000000000 +0900
-@@ -26,7 +26,6 @@
- #define SH7751_PCI_IO_SIZE           0x40000     /* Size of IO window */
- 
- #define SH7751_PCIREG_BASE           0xFE200000  /* PCI regs base address */
--#define PCI_REG(n)                  (SH7751_PCIREG_BASE+ n)
- 
- #define SH7751_PCICONF0            0x0           /* PCI Config Reg 0 */
-   #define SH7751_PCICONF0_DEVID      0xFFFF0000  /* Device ID */
---- 0006/arch/sh/drivers/pci/pci-sh7780.c
-+++ work/arch/sh/drivers/pci/pci-sh7780.c	2008-02-14 16:43:45.000000000 +0900
-@@ -52,6 +52,8 @@ int __init sh7780_pci_init(struct pci_ch
- 
- 	pr_debug("PCI: Starting intialization.\n");
- 
-+	chan->reg_base = 0xfe040000;
-+
- 	ctrl_outl(0x00000001, SH7780_PCI_VCR2); /* Enable PCIC */
- 
- 	/* check for SH7780/SH7780R hardware */
---- 0006/arch/sh/drivers/pci/pci-sh7780.h
-+++ work/arch/sh/drivers/pci/pci-sh7780.h	2008-02-14 16:43:49.000000000 +0900
-@@ -35,7 +35,6 @@
- #define SH7780_PCI_IO_SIZE	0x00400000	/* Size of IO window */
- 
- #define SH7780_PCIREG_BASE	0xFE040000	/* PCI regs base address */
--#define PCI_REG(n)		(SH7780_PCIREG_BASE+n)
- 
- /* SH7780 PCI Config Registers */
- #define SH7780_PCIVID		0x000		/* Vendor ID */
---- 0006/include/asm-sh/pci.h
-+++ work/include/asm-sh/pci.h	2008-02-14 16:39:38.000000000 +0900
-@@ -24,6 +24,7 @@ struct pci_channel {
- 	int first_devfn;
- 	int last_devfn;
- 	int enabled;
-+	unsigned long reg_base;
- };
- 
- /*
+Adrian McMenamin (4):
+      maple: fix up whitespace damage.
+      maple: more robust device detection.
+      maple: Drop unused prototypes from linux/maple.h.
+      maple: improve detection of attached peripherals
+
+Alan Cox (1):
+      sh: termios ioctl definitions
+
+Hideo Saito (1):
+      sh: Fix multiple UTLB hit on UP SH-4.
+
+Kristoffer Ericson (1):
+      sh: Tidy include/asm-sh/hp6xx.h
+
+Magnus Damm (18):
+      sh: declared coherent memory support V2 fix
+      sh: add sh7722 support to EARLY_SCIF_CONSOLE
+      sh: add probe support for new sh7722 cut
+      sh: break out unaligned sign extension code
+      sh: migor board support
+      sh: make copy_to/from_user() static inline
+      sh: add byte support to the sign extension code
+      sh: use opcode_t and enable unaligned code for sh2a
+      sh: update r2d defconfigs with usb, spi and rtc
+      sh: trapped io support V2
+      sh: trapped io support for r2d V2
+      sh: trapped io support for highlander V2
+      sh: fix ptrace copy_from/to_user() compilation error
+      sh: remove maskreg irq code
+      sh: add support for sh7366 processor
+      sh: use ctrl_in/out for on chip pci access
+      sh: fix ioreadN_rep and iowriteN_rep
+      sh: fix pci io access for r2d boards
+
+Paul Mundt (19):
+      sh: Wire up new timerfd syscalls.
+      sh: Add mach-type entries for MigoR and SDK7780.
+      sh: Use max_t in io_trapped.
+      sh: Clean up whitespace damage in Kconfig.debug.
+      sh: Symbol exports for trapped I/O.
+      sh: Handle SH7366 CPU in check_bugs().
+      sh: Disable big endian for SH-5.
+      sh: Fix up pte_mkhuge() build breakage for SH-5.
+      sh: Fix up set_fixmap_nocache() for SH-5.
+      sh: Update SH-5 flush_cache_sigtramp() for API changes.
+      sh: Shut up some trivial build warnings.
+      sh: asm/tlb.h needs linux/pagemap.h for CONFIG_SWAP=n.
+      sh: Kill off bogus SH_SDK7780_STANDALONE symbol.
+      maple: Fix up maple build failure.
+      sh: Get SH-5 caches working again post-unification.
+      serial: sh-sci: Fix up SH-5 build.
+      sh: asm/irq.h needs asm/cpu/irq.h.
+      sh: __uncached_start only on sh32.
+      sh: Kill off more dead symbols.
+
+Peter Zijlstra (1):
+      sh: fix xtime_lock deadlocking.
+
+Stephen Rothwell (1):
+      sh: remove unneeded cast
+
+ arch/sh/Kconfig                           |   19 +
+ arch/sh/Kconfig.cpu                       |    4 +-
+ arch/sh/Kconfig.debug                     |    3 +-
+ arch/sh/Makefile                          |    1 +
+ arch/sh/boards/renesas/migor/Makefile     |    1 +
+ arch/sh/boards/renesas/migor/setup.c      |   61 ++
+ arch/sh/boards/renesas/r7780rp/setup.c    |   47 +-
+ arch/sh/boards/renesas/rts7751r2d/setup.c |   45 +-
+ arch/sh/boards/renesas/sdk7780/Kconfig    |    7 -
+ arch/sh/cchips/hd6446x/hd64465/setup.c    |   47 +-
+ arch/sh/configs/migor_defconfig           |  824 +++++++++++++++++++++++
+ arch/sh/configs/rts7751r2d1_defconfig     |  340 ++++++++---
+ arch/sh/configs/rts7751r2dplus_defconfig  |  340 ++++++++---
+ arch/sh/configs/se7705_defconfig          |    1 -
+ arch/sh/drivers/dma/dma-api.c             |    2 +-
+ arch/sh/drivers/pci/fixups-lboxre2.c      |    4 +-
+ arch/sh/drivers/pci/fixups-rts7751r2d.c   |    4 +-
+ arch/sh/drivers/pci/ops-dreamcast.c       |   44 +-
+ arch/sh/drivers/pci/ops-rts7751r2d.c      |    3 +-
+ arch/sh/drivers/pci/pci-sh4.h             |    4 +-
+ arch/sh/drivers/pci/pci-sh7751.c          |   16 +-
+ arch/sh/drivers/pci/pci-sh7780.c          |    2 +-
+ arch/sh/kernel/Makefile_32                |    1 +
+ arch/sh/kernel/Makefile_64                |    1 +
+ arch/sh/kernel/cpu/irq/Makefile           |    1 -
+ arch/sh/kernel/cpu/irq/intc-sh5.c         |   27 +-
+ arch/sh/kernel/cpu/irq/maskreg.c          |   93 ---
+ arch/sh/kernel/cpu/sh4/probe.c            |    8 +-
+ arch/sh/kernel/cpu/sh4a/Makefile          |    2 +
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c    |   10 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c    |  177 +++++
+ arch/sh/kernel/cpu/sh5/probe.c            |   61 +-
+ arch/sh/kernel/io.c                       |    8 +-
+ arch/sh/kernel/io_generic.c               |   24 +-
+ arch/sh/kernel/io_trapped.c               |  276 ++++++++
+ arch/sh/kernel/irq.c                      |    3 -
+ arch/sh/kernel/process_64.c               |    9 +-
+ arch/sh/kernel/ptrace_32.c                |    4 +-
+ arch/sh/kernel/setup.c                    |    2 +-
+ arch/sh/kernel/syscalls_32.S              |    4 +-
+ arch/sh/kernel/syscalls_64.S              |    4 +-
+ arch/sh/kernel/time_32.c                  |   19 +-
+ arch/sh/kernel/time_64.c                  |   31 +-
+ arch/sh/kernel/timers/timer-mtu2.c        |    1 -
+ arch/sh/kernel/traps_32.c                 |  164 +++---
+ arch/sh/kernel/traps_64.c                 |    4 +-
+ arch/sh/kernel/vmlinux_64.lds.S           |    2 +-
+ arch/sh/mm/cache-sh5.c                    | 1019 ++++++++++++-----------------
+ arch/sh/mm/consistent.c                   |   30 +-
+ arch/sh/mm/fault_32.c                     |   11 +
+ arch/sh/mm/init.c                         |    2 +
+ arch/sh/tools/mach-types                  |    2 +
+ drivers/serial/sh-sci.c                   |    2 +-
+ drivers/serial/sh-sci.h                   |    9 +-
+ drivers/sh/maple/maple.c                  |  981 ++++++++++++++--------------
+ include/asm-sh/bugs.h                     |    2 +-
+ include/asm-sh/cpu-sh4/freq.h             |    4 +-
+ include/asm-sh/cpu-sh5/cacheflush.h       |    6 +-
+ include/asm-sh/cpu-sh5/mmu_context.h      |    6 -
+ include/asm-sh/hp6xx.h                    |   28 +-
+ include/asm-sh/io.h                       |   22 +-
+ include/asm-sh/io_trapped.h               |   58 ++
+ include/asm-sh/ioctls.h                   |    4 +
+ include/asm-sh/irq.h                      |    4 +
+ include/asm-sh/mmu_context_64.h           |    3 +
+ include/asm-sh/page.h                     |    7 +-
+ include/asm-sh/pgtable_64.h               |   13 +
+ include/asm-sh/processor.h                |    2 +-
+ include/asm-sh/r7780rp.h                  |    3 -
+ include/asm-sh/rts7751r2d.h               |    3 -
+ include/asm-sh/system.h                   |    5 +
+ include/asm-sh/system_32.h                |    3 +
+ include/asm-sh/termbits.h                 |    5 +-
+ include/asm-sh/termios.h                  |    6 +-
+ include/asm-sh/tlb.h                      |    1 +
+ include/asm-sh/uaccess.h                  |   29 +
+ include/asm-sh/uaccess_32.h               |   24 +-
+ include/asm-sh/uaccess_64.h               |   19 -
+ include/asm-sh/unistd_32.h                |    6 +-
+ include/asm-sh/unistd_64.h                |    6 +-
+ include/linux/maple.h                     |  100 ++--
+ 81 files changed, 3351 insertions(+), 1829 deletions(-)
+ create mode 100644 arch/sh/boards/renesas/migor/Makefile
+ create mode 100644 arch/sh/boards/renesas/migor/setup.c
+ create mode 100644 arch/sh/configs/migor_defconfig
+ delete mode 100644 arch/sh/kernel/cpu/irq/maskreg.c
+ create mode 100644 arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+ create mode 100644 arch/sh/kernel/io_trapped.c
+ create mode 100644 include/asm-sh/io_trapped.h
