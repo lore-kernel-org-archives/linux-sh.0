@@ -1,38 +1,55 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Wed, 13 Feb 2008 00:04:07 +0000
-Subject: Re: [PATCH] sm501: Add uart support
-Message-Id: <20080212160407.2e2f64ce.akpm@linux-foundation.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 14 Feb 2008 05:04:11 +0000
+Subject: [PATCH] sh: fix pci io access for r2d boards
+Message-Id: <20080214050411.6870.20292.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080208095742.2041.46016.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080208095742.2041.46016.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, ben@fluff.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, 08 Feb 2008 18:57:42 +0900
-Magnus Damm <magnus.damm@gmail.com> wrote:
+This patch is a fix to make sure readsN/writesN are used over insN/outsN for
+ioreadN_rep/iowriteN_rep.
 
->  	smdev = kzalloc(sizeof(struct sm501_device) +
-> -			sizeof(struct resource) * res_count, GFP_KERNEL);
-> +			(sizeof(struct resource) * res_count) +
-> +			platform_data_size, GFP_KERNEL);
->
-> ...
->
-> +		smdev->pdev.resource = (struct resource *)(smdev+1);
+The current state of the sh io code is that mmio operations like readN/writeN
+and ioreadN/iowriteN are unaffected by the value of generic_io_base. This is
+different fom port based io like inN/outN which gets adjusted using the value
+in generic_io_base.
 
-So this driver plays party tricks with memory allocation and the C type
-system.
+Without this patch ioreadN_rep/iowriteN_rep get their addresses adjusted.
+The address for mmio access is adjusted using generic_io_base. This is wrong.
+The ata core code currently crashes if generic_io_base is set.
 
-We could at least add
+This patch changes ioreadN_rep/iowriteN_rep to follow the same rules as the
+rest of the mmio operations, ie don't adjust using generic_io_base.
 
-	struct resource resources[0];
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Acked-by: Katsuya MATSUBARA <matsu@igel.co.jp>
+---
 
-to the end of `struct sm501_device' to avoid the type abuse.  Or we could
-even get radical and splurge four bytes on a `struct resource *'.  But
-please, not this.
+ include/asm-sh/io.h |   14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-
-Oh well. A pre-existing problem.
+--- 0001/include/asm-sh/io.h
++++ work/include/asm-sh/io.h	2008-02-14 12:58:07.000000000 +0900
+@@ -182,13 +182,13 @@ __BUILD_MEMORY_STRING(w, u16)
+ #define iowrite32(v,a)		writel((v),(a))
+ #define iowrite32be(v,a)	__raw_writel(cpu_to_be32((v)),(a))
+ 
+-#define ioread8_rep(a,d,c)	insb((a),(d),(c))
+-#define ioread16_rep(a,d,c)	insw((a),(d),(c))
+-#define ioread32_rep(a,d,c)	insl((a),(d),(c))
+-
+-#define iowrite8_rep(a,s,c)	outsb((a),(s),(c))
+-#define iowrite16_rep(a,s,c)	outsw((a),(s),(c))
+-#define iowrite32_rep(a,s,c)	outsl((a),(s),(c))
++#define ioread8_rep(a, d, c)	readsb((a), (d), (c))
++#define ioread16_rep(a, d, c)	readsw((a), (d), (c))
++#define ioread32_rep(a, d, c)	readsl((a), (d), (c))
++
++#define iowrite8_rep(a, s, c)	writesb((a), (s), (c))
++#define iowrite16_rep(a, s, c)	writesw((a), (s), (c))
++#define iowrite32_rep(a, s, c)	writesl((a), (s), (c))
+ 
+ #define mmiowb()	wmb()	/* synco on SH-4A, otherwise a nop */
+ 
