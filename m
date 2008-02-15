@@ -1,27 +1,43 @@
-From: Richard Purdie <rpurdie@openedhand.com>
-Date: Thu, 07 Feb 2008 10:15:31 +0000
-Subject: Re: [PATCH/HP6XX] - Add leds support to the HP Jornada 6xx handheld
-Message-Id: <1202379331.9519.14.camel@dax.rpnet.com>
+From: Hideo Saito <saito@densan.co.jp>
+Date: Fri, 15 Feb 2008 00:52:54 +0000
+Subject: needs writeback on ptrace
+Message-Id: <20080215.095254.68562685.saito@densan.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080205191356.ae2e8948.Kristoffer.ericson@gmail.com>
-In-Reply-To: <20080205191356.ae2e8948.Kristoffer.ericson@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Cc: linux-main <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, 2008-02-05 at 19:13 +0100, Kristoffer Ericson wrote:
-> Richard, I've been told from paul that I should seek another solution
-> for my hd6446x.h merger (perhaps mfd driver). So this patch
-> is against linux-2.6.git with the header and defines changed back to
-> old style. Tested to compile. I tested the "old" patch and that worked
-> and I've only changed 5-6 names so it really should work as before.
+Hi Paul,
 
-I've added this to the LED tree with a couple of tweaks to the Kconfig
-entry.
+When I test gdb on linux-2.6.24 for SH7780, the gdb can't step the program.
+I think inserted breakpoints can't write back to the physical memory.
 
-Cheers,
+Following changes is available for this problem.
 
-Richard
-
+--- ./arch/sh/mm/pg-sh4.c.org	2008-01-25 07:58:37.000000000 +0900
++++ ./arch/sh/mm/pg-sh4.c	2008-02-06 17:19:58.000000000 +0900
+@@ -87,18 +109,21 @@ void copy_to_user_page(struct vm_area_st
+ 	void *vto;
+ 
+ 	__set_bit(PG_mapped, &page->flags);
+ 
+ 	vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
+ 	memcpy(vto, src, len);
+ 	kunmap_coherent(vto);
+ 
+-	if (vma->vm_flags & VM_EXEC)
+-		flush_cache_page(vma, vaddr, page_to_pfn(page));
++	if (vma->vm_flags & VM_EXEC) {
++		extern void __flush_invalidate_region_icache(void *start, int size);
++		__flush_wback_region(vto, len);
++		__flush_invalidate_region_icache(vto, len);
++	}
+ }
+ 
+ void copy_from_user_page(struct vm_area_struct *vma, struct page *page,
+ 			 unsigned long vaddr, void *dst, const void *src,
+ 			 unsigned long len)
+ {
+ 	void *vfrom;
+ 
