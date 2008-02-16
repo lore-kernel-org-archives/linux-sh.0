@@ -1,134 +1,228 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 19 Feb 2008 12:34:46 +0000
-Subject: [PATCH 03/09] sh: avoid using PCIBIOS_MIN_xxx
-Message-Id: <20080219123446.4266.65644.sendpatchset@clockwork.opensource.se>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sat, 16 Feb 2008 23:43:40 +0000
+Subject: [PATCH] maple: allow removal and reinsertion of keyboard driver
+Message-Id: <1203205420.6737.24.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Replaces PCIBIOS_MIN_IO and PCIBIOS_MIN_MEM with direct struct pci_channel
-access. This allows us to have more than one pci channel.
+Allow the removal (and subsequent reinsertion) of the maple_keyb (maple keyboard) driver by adding a working removal function.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Also tidy long lines.
+
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+
 ---
 
- arch/sh/drivers/pci/fixups-r7780rp.c |    2 +-
- arch/sh/drivers/pci/fixups-sdk7780.c |    2 +-
- arch/sh/drivers/pci/fixups-se7780.c  |    2 +-
- arch/sh/drivers/pci/pci-sh5.c        |    9 ++++++---
- arch/sh/drivers/pci/pci-sh7751.c     |   14 ++++++--------
- arch/sh/drivers/pci/pci-sh7780.c     |   10 ++++------
- 6 files changed, 19 insertions(+), 20 deletions(-)
 
---- 0004/arch/sh/drivers/pci/fixups-r7780rp.c
-+++ work/arch/sh/drivers/pci/fixups-r7780rp.c	2008-02-19 15:46:51.000000000 +0900
-@@ -37,7 +37,7 @@ int pci_fixup_pcic(struct pci_channel *c
- #endif
+
+diff -ruN a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
+--- a/drivers/input/keyboard/maple_keyb.c	2008-02-16 20:51:49.000000000 +0000
++++ b/drivers/input/keyboard/maple_keyb.c	2008-02-16 21:41:52.000000000 +0000
+@@ -2,7 +2,7 @@
+  * SEGA Dreamcast keyboard driver
+  * Based on drivers/usb/usbkbd.c
+  * Copyright YAEGASHI Takeshi, 2001
+- * Porting to 2.6 Copyright Adrian McMenamin, 2007
++ * Porting to 2.6 Copyright Adrian McMenamin, 2007, 2008
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -46,39 +46,51 @@
+ };
  
- 	/* Set IOBR for windows containing area specified in pci.h */
--	pci_write_reg(chan, (PCIBIOS_MIN_IO & ~(SH7780_PCI_IO_SIZE - 1)),
-+	pci_write_reg(chan, chan->io_resource->start & ~(SH7780_PCI_IO_SIZE-1),
- 		      SH7780_PCIIOBR);
- 	pci_write_reg(chan, ((SH7780_PCI_IO_SIZE-1) & (7<<18)),
- 		      SH7780_PCIIOBMR);
---- 0004/arch/sh/drivers/pci/fixups-sdk7780.c
-+++ work/arch/sh/drivers/pci/fixups-sdk7780.c	2008-02-19 15:46:51.000000000 +0900
-@@ -50,7 +50,7 @@ int pci_fixup_pcic(struct pci_channel *c
- 	pci_write_reg(chan, 0x00FC0000 , SH7780_PCIMBMR0);	/* 16M */
+ static const unsigned short dc_kbd_keycode[NR_SCANCODES] = {
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_A, KEY_B, KEY_C, KEY_D,
+-	KEY_E, KEY_F, KEY_G, KEY_H, KEY_I, KEY_J, KEY_K, KEY_L,
+-	KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T,
+-	KEY_U, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z, KEY_1, KEY_2,
+-	KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0,
+-	KEY_ENTER, KEY_ESC, KEY_BACKSPACE, KEY_TAB, KEY_SPACE, KEY_MINUS, KEY_EQUAL, KEY_LEFTBRACE,
+-	KEY_RIGHTBRACE, KEY_BACKSLASH, KEY_BACKSLASH, KEY_SEMICOLON, KEY_APOSTROPHE, KEY_GRAVE, KEY_COMMA,
+-	KEY_DOT, KEY_SLASH, KEY_CAPSLOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_A, KEY_B,
++	KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H, KEY_I, KEY_J, KEY_K, KEY_L,
++	KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U, KEY_V,
++	KEY_W, KEY_X, KEY_Y, KEY_Z, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6,
++	KEY_7, KEY_8, KEY_9, KEY_0, KEY_ENTER, KEY_ESC, KEY_BACKSPACE,
++	KEY_TAB, KEY_SPACE, KEY_MINUS, KEY_EQUAL, KEY_LEFTBRACE,
++	KEY_RIGHTBRACE, KEY_BACKSLASH, KEY_BACKSLASH, KEY_SEMICOLON,
++	KEY_APOSTROPHE, KEY_GRAVE, KEY_COMMA, KEY_DOT, KEY_SLASH,
++	KEY_CAPSLOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6,
+ 	KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12, KEY_SYSRQ,
+-	KEY_SCROLLLOCK, KEY_PAUSE, KEY_INSERT, KEY_HOME, KEY_PAGEUP, KEY_DELETE,
+-	KEY_END, KEY_PAGEDOWN, KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP,
+-	KEY_NUMLOCK, KEY_KPSLASH, KEY_KPASTERISK, KEY_KPMINUS, KEY_KPPLUS, KEY_KPENTER, KEY_KP1, KEY_KP2,
+-	KEY_KP3, KEY_KP4, KEY_KP5, KEY_KP6, KEY_KP7, KEY_KP8, KEY_KP9, KEY_KP0, KEY_KPDOT,
+-	KEY_102ND, KEY_COMPOSE, KEY_POWER, KEY_KPEQUAL, KEY_F13, KEY_F14, KEY_F15,
+-	KEY_F16, KEY_F17, KEY_F18, KEY_F19, KEY_F20,
+-	KEY_F21, KEY_F22, KEY_F23, KEY_F24, KEY_OPEN, KEY_HELP, KEY_PROPS, KEY_FRONT,
+-	KEY_STOP, KEY_AGAIN, KEY_UNDO, KEY_CUT, KEY_COPY, KEY_PASTE, KEY_FIND, KEY_MUTE,
+-	KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_KPCOMMA, KEY_RESERVED, KEY_RO, KEY_KATAKANAHIRAGANA , KEY_YEN,
+-	KEY_HENKAN, KEY_MUHENKAN, KEY_KPJPCOMMA, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_HANGEUL, KEY_HANJA, KEY_KATAKANA, KEY_HIRAGANA, KEY_ZENKAKUHANKAKU, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
+-	KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTALT, KEY_LEFTMETA, KEY_RIGHTCTRL, KEY_RIGHTSHIFT, KEY_RIGHTALT, KEY_RIGHTMETA,
+-	KEY_PLAYPAUSE, KEY_STOPCD, KEY_PREVIOUSSONG, KEY_NEXTSONG, KEY_EJECTCD, KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_MUTE,
+-	KEY_WWW, KEY_BACK, KEY_FORWARD, KEY_STOP, KEY_FIND, KEY_SCROLLUP, KEY_SCROLLDOWN, KEY_EDIT, KEY_SLEEP,
+-	KEY_SCREENLOCK, KEY_REFRESH, KEY_CALC, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED
++	KEY_SCROLLLOCK, KEY_PAUSE, KEY_INSERT, KEY_HOME, KEY_PAGEUP,
++	KEY_DELETE, KEY_END, KEY_PAGEDOWN, KEY_RIGHT, KEY_LEFT, KEY_DOWN,
++	KEY_UP, KEY_NUMLOCK, KEY_KPSLASH, KEY_KPASTERISK, KEY_KPMINUS,
++	KEY_KPPLUS, KEY_KPENTER, KEY_KP1, KEY_KP2, KEY_KP3, KEY_KP4, KEY_KP5,
++	KEY_KP6, KEY_KP7, KEY_KP8, KEY_KP9, KEY_KP0, KEY_KPDOT, KEY_102ND,
++	KEY_COMPOSE, KEY_POWER, KEY_KPEQUAL, KEY_F13, KEY_F14, KEY_F15,
++	KEY_F16, KEY_F17, KEY_F18, KEY_F19, KEY_F20, KEY_F21, KEY_F22,
++	KEY_F23, KEY_F24, KEY_OPEN, KEY_HELP, KEY_PROPS, KEY_FRONT, KEY_STOP,
++	KEY_AGAIN, KEY_UNDO, KEY_CUT, KEY_COPY, KEY_PASTE, KEY_FIND, KEY_MUTE,
++	KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_KPCOMMA, KEY_RESERVED, KEY_RO, KEY_KATAKANAHIRAGANA , KEY_YEN,
++	KEY_HENKAN, KEY_MUHENKAN, KEY_KPJPCOMMA, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_HANGEUL, KEY_HANJA, KEY_KATAKANA, KEY_HIRAGANA,
++	KEY_ZENKAKUHANKAKU, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
++	KEY_RESERVED, KEY_RESERVED, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTALT,
++	KEY_LEFTMETA, KEY_RIGHTCTRL, KEY_RIGHTSHIFT, KEY_RIGHTALT,
++	KEY_RIGHTMETA, KEY_PLAYPAUSE, KEY_STOPCD, KEY_PREVIOUSSONG,
++	KEY_NEXTSONG, KEY_EJECTCD, KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_MUTE,
++	KEY_WWW, KEY_BACK, KEY_FORWARD, KEY_STOP, KEY_FIND, KEY_SCROLLUP,
++	KEY_SCROLLDOWN, KEY_EDIT, KEY_SLEEP, KEY_SCREENLOCK, KEY_REFRESH,
++	KEY_CALC, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED
+ };
  
- 	/* Set IOBR for window containing area specified in pci.h */
--	pci_write_reg(chan, PCIBIOS_MIN_IO & ~(SH7780_PCI_IO_SIZE-1),
-+	pci_write_reg(chan, chan->io_resource->start & ~(SH7780_PCI_IO_SIZE-1),
- 		      SH7780_PCIIOBR);
- 	pci_write_reg(chan, (SH7780_PCI_IO_SIZE-1) & (7 << 18),
- 		      SH7780_PCIIOBMR);
---- 0004/arch/sh/drivers/pci/fixups-se7780.c
-+++ work/arch/sh/drivers/pci/fixups-se7780.c	2008-02-19 15:46:51.000000000 +0900
-@@ -51,7 +51,7 @@ int pci_fixup_pcic(struct pci_channel *c
- 	pci_write_reg(chan, 0x00FC0000 , SH7780_PCIMBMR0);    /* 16M */
+ static void dc_scan_kbd(struct dc_kbd *kbd)
+@@ -152,14 +164,15 @@
+ 	struct dc_kbd *kbd;
+ 	struct input_dev *dev;
  
- 	/* Set IOBR for window containing area specified in pci.h */
--	pci_write_reg(chan, PCIBIOS_MIN_IO & ~(SH7780_PCI_IO_SIZE-1),
-+	pci_write_reg(chan, chan->io_resource->start & ~(SH7780_PCI_IO_SIZE-1),
- 		      SH7780_PCIIOBR);
- 	pci_write_reg(chan, (SH7780_PCI_IO_SIZE-1) & (7 << 18),
- 		      SH7780_PCIIOBMR);
---- 0005/arch/sh/drivers/pci/pci-sh5.c
-+++ work/arch/sh/drivers/pci/pci-sh5.c	2008-02-19 15:46:51.000000000 +0900
-@@ -206,6 +206,9 @@ int __init sh5pci_init(unsigned long mem
+-	if (!(mdev->function & MAPLE_FUNC_KEYBOARD))
+-		return -EINVAL;
+-
+ 	kbd = kzalloc(sizeof(struct dc_kbd), GFP_KERNEL);
++	if (!kbd) {
++		error = -ENOMEM;
++		goto fail_kbd;
++	}
+ 	dev = input_allocate_device();
+-	if (!kbd || !dev) {
++	if (!dev) {
+ 		error = -ENOMEM;
+-		goto fail;
++		goto fail_dev;
+ 	}
+ 
+ 	mdev->private_data = kbd;
+@@ -170,7 +183,7 @@
+ 	dev->name = mdev->product_name;
+ 	dev->evbit[0] = BIT(EV_KEY) | BIT(EV_REP);
+ 	dev->keycode = kbd->keycode;
+-	dev->keycodesize = sizeof (unsigned short);
++	dev->keycodesize = sizeof(unsigned short);
+ 	dev->keycodemax = ARRAY_SIZE(kbd->keycode);
+ 	dev->id.bustype = BUS_HOST;
+ 	dev->dev.parent = &mdev->dev;
+@@ -187,12 +200,15 @@
+ 		goto fail;
+ 
+ 	/* Maple polling is locked to VBLANK - which may be just 50/s */
+-	maple_getcond_callback(mdev, dc_kbd_callback, HZ/50, MAPLE_FUNC_KEYBOARD);
++	maple_getcond_callback(mdev, dc_kbd_callback, HZ/50,
++		MAPLE_FUNC_KEYBOARD);
+ 	return 0;
+ 
+- fail:
++fail:
+ 	input_free_device(dev);
++fail_dev:
+ 	kfree(kbd);
++fail_kbd:
+ 	mdev->private_data = NULL;
+ 	return error;
+ }
+@@ -202,7 +218,7 @@
+ 	struct dc_kbd *kbd;
+ 
+ 	mutex_lock(&maple_keyb_mutex);
+-
++	mdev->callback = NULL;
+ 	kbd = mdev->private_data;
+ 	mdev->private_data = NULL;
+ 	input_unregister_device(kbd->dev);
+@@ -223,11 +239,18 @@
+ 		return error;
+ 
+ 	mdev->driver = mdrv;
+-	mdev->registered = 1;
+ 
  	return 0;
  }
  
-+#define xPCIBIOS_MIN_IO		board_pci_channels->io_resource->start
-+#define xPCIBIOS_MIN_MEM	board_pci_channels->mem_resource->start
++static int remove_maple_kbd(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
 +
- void __devinit pcibios_fixup_bus(struct pci_bus *bus)
++	dc_kbd_disconnect(mdev);
++	return 0;
++}
++
+ static struct maple_driver dc_kbd_driver = {
+ 	.function = MAPLE_FUNC_KEYBOARD,
+ 	.connect = dc_kbd_connect,
+@@ -235,9 +258,23 @@
+ 	.drv = {
+ 		.name = "Dreamcast_keyboard",
+ 		.probe = probe_maple_kbd,
++		.remove = remove_maple_kbd,
+        },
+ };
+ 
++static int unplug_maple_keyb(struct device *dev, void *ignored)
++{
++	/* Please DO NOT really unplug your keyboard */
++	struct maple_device *mdev;
++
++	mdev = to_maple_dev(dev);
++	if ((mdev->function & MAPLE_FUNC_KEYBOARD)
++		&& (mdev->driver = &dc_kbd_driver))
++		remove_maple_kbd(dev);
++
++	return 0;
++}
++
+ static int __init dc_kbd_init(void)
  {
- 	struct pci_dev *dev = bus->self;
-@@ -223,9 +226,9 @@ void __devinit pcibios_fixup_bus(struct 
- 		/* For now, propagate host limits to the bus;
- 		 * we'll adjust them later. */
- 		bus->resource[0]->end = 64*1024 - 1 ;
--		bus->resource[1]->end = PCIBIOS_MIN_MEM+(256*1024*1024)-1;
--		bus->resource[0]->start = PCIBIOS_MIN_IO;
--		bus->resource[1]->start = PCIBIOS_MIN_MEM;
-+		bus->resource[1]->end = xPCIBIOS_MIN_MEM+(256*1024*1024)-1;
-+		bus->resource[0]->start = xPCIBIOS_MIN_IO;
-+		bus->resource[1]->start = xPCIBIOS_MIN_MEM;
+ 	return maple_driver_register(&dc_kbd_driver.drv);
+@@ -245,6 +282,7 @@
  
- 		/* Turn off downstream PF memory address range by default */
- 		bus->resource[2]->start = 1024*1024;
---- 0006/arch/sh/drivers/pci/pci-sh7751.c
-+++ work/arch/sh/drivers/pci/pci-sh7751.c	2008-02-19 15:46:51.000000000 +0900
-@@ -146,22 +146,20 @@ int __init sh7751_pcic_init(struct pci_c
- 	/* Set the local 16MB PCI memory space window to
- 	 * the lowest PCI mapped address
- 	 */
--	word = PCIBIOS_MIN_MEM & SH4_PCIMBR_MASK;
-+	word = chan->mem_resource->start & SH4_PCIMBR_MASK;
- 	pr_debug("PCI: Setting upper bits of Memory window to 0x%x\n", word);
- 	pci_write_reg(chan, word , SH4_PCIMBR);
+ static void __exit dc_kbd_exit(void)
+ {
++	bus_for_each_dev(&maple_bus_type, NULL, NULL, unplug_maple_keyb);
+ 	driver_unregister(&dc_kbd_driver.drv);
+ }
  
--	/* Map IO space into PCI IO window
--	 * The IO window is 64K-PCIBIOS_MIN_IO in size
--	 * IO addresses will be translated to the
--	 * PCI IO window base address
-+	/* Map IO space into PCI IO window:
-+	 * IO addresses will be translated to the PCI IO window base address
- 	 */
- 	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%x\n",
--		 PCIBIOS_MIN_IO, (64 << 10),
--		 SH7751_PCI_IO_BASE + PCIBIOS_MIN_IO);
-+		 chan->io_resource->start, chan->io_resource->end,
-+		 SH7751_PCI_IO_BASE + chan->io_resource->start);
- 
- 	/* Make sure the MSB's of IO window are set to access PCI space
- 	 * correctly */
--	word = PCIBIOS_MIN_IO & SH4_PCIIOBR_MASK;
-+	word = chan->io_resource->start & SH4_PCIIOBR_MASK;
- 	pr_debug("PCI: Setting upper bits of IO window to 0x%x\n", word);
- 	pci_write_reg(chan, word, SH4_PCIIOBR);
- 
---- 0006/arch/sh/drivers/pci/pci-sh7780.c
-+++ work/arch/sh/drivers/pci/pci-sh7780.c	2008-02-19 15:46:51.000000000 +0900
-@@ -138,14 +138,12 @@ int __init sh7780_pcic_init(struct pci_c
- 	pci_write_reg(chan, 0x00000000, SH4_PCILAR1);
- 	pci_write_reg(chan, 0x00000000, SH7780_PCIMBAR1);
- 
--	/* Map IO space into PCI IO window
--	 * The IO window is 64K-PCIBIOS_MIN_IO in size
--	 * IO addresses will be translated to the
--	 * PCI IO window base address
-+	/* Map IO space into PCI IO window:
-+	 * IO addresses will be translated to the PCI IO window base address
- 	 */
- 	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%x\n",
--		 PCIBIOS_MIN_IO, (64 << 10),
--		 SH7780_PCI_IO_BASE + PCIBIOS_MIN_IO);
-+		 chan->io_resource->start, chan->io_resource->end,
-+		 SH7780_PCI_IO_BASE + chan->io_resource->start);
- 
- 	/* NOTE: I'm ignoring the PCI error IRQs for now..
- 	 * TODO: add support for the internal error interrupts and
+
+
