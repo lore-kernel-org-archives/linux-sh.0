@@ -1,7 +1,7 @@
 From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Sun, 17 Feb 2008 19:42:14 +0000
+Date: Sun, 17 Feb 2008 19:55:37 +0000
 Subject: Re: Current git very broken on the Dreamcast
-Message-Id: <20080217204214.de9c4612.Kristoffer.ericson@gmail.com>
+Message-Id: <20080217205537.db59a1f3.Kristoffer.ericson@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1203187080.6737.3.camel@localhost.localdomain>
 	<1203191304.6737.5.camel@localhost.localdomain>
@@ -32,10 +32,11 @@ Adrian McMenamin <adrian@newgolddream.dyndns.info> wrote:
 > 
 > Reverting this commit *will* let my Dreamcast boot - can it be rolled
 > back pending further testing for a patch please?
-
-Since you know the cause I'm sure Magnus will have some ideas about why it broke, so just hold on for him to reply.
-
 > 
+
+Just had a look at the patch. If that patch made your dreamcast not boot then you had somekind of
+io_base that was used in in/out. Perhaps its better to adjust your PORT defines than work around the issue?
+
 > Adrian
 > 
 > -
