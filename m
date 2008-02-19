@@ -1,46 +1,58 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 14 Feb 2008 05:05:57 +0000
-Subject: [PATCH] sh: fix pci io access for r2d boards
-Message-Id: <20080214050557.6873.78234.sendpatchset@clockwork.opensource.se>
+Date: Tue, 19 Feb 2008 12:34:20 +0000
+Subject: [PATCH 00/09] sh: clean up pci code
+Message-Id: <20080219123420.4266.2965.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080214050411.6870.20292.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080214050411.6870.20292.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Use generic_io_base to point out the pci io window, and make sure the
-highest port address used is SH7751_PCI_IO_SIZE - 1.
+These patches rework the pci code for the sh architecture.
 
-This patch fixes pci io port access for the r2d boards - CONFIG_8139TOO_PIO
-now works as expected. So does the alsa driver for CMI8738.
+Currently each board implements some kind of ioport to address mapping. Some
+boards use generic_io_base others try passing addresses as io ports. This is
+the first set of patches that try to unify the pci code as much as possible
+to avoid duplicated code. This will in the end lead to fewer lines board
+specific code and more generic code.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
-Acked-by: Katsuya MATSUBARA <matsu@igel.co.jp>
----
+Only high level stuff so far. These patches avoid changing low level bits,
+I have patches for sh7751 and sh7780 doing that already. I'll post then 
+later on this week after some more testing.
 
- (This is the correct patch, sorry about that)
+Have fun and people with pci host controllers - please test!
 
- arch/sh/drivers/pci/ops-rts7751r2d.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+/ magnus
 
---- 0001/arch/sh/drivers/pci/ops-rts7751r2d.c
-+++ work/arch/sh/drivers/pci/ops-rts7751r2d.c	2008-02-14 13:00:01.000000000 +0900
-@@ -33,7 +33,7 @@ int __init pcibios_map_platform_irq(stru
- static struct resource sh7751_io_resource = {
- 	.name	= "SH7751_IO",
- 	.start	= 0x4000,
--	.end	= 0x4000 + SH7751_PCI_IO_SIZE - 1,
-+	.end	= SH7751_PCI_IO_SIZE - 1,
- 	.flags	= IORESOURCE_IO
- };
- 
-@@ -68,6 +68,7 @@ static struct sh4_pci_address_map sh7751
- 
- int __init pcibios_init_platform(void)
- {
-+	__set_io_port_base(SH7751_PCI_IO_BASE);
- 	return sh7751_pcic_init(&sh7751_pci_map);
- }
- 
+ arch/sh/boards/dreamcast/setup.c        |    6 -
+ arch/sh/boards/titan/io.c               |    2 
+ arch/sh/drivers/pci/fixups-lboxre2.c    |   23 +++----
+ arch/sh/drivers/pci/fixups-r7780rp.c    |   35 +++++-----
+ arch/sh/drivers/pci/fixups-rts7751r2d.c |   23 +++----
+ arch/sh/drivers/pci/fixups-sdk7780.c    |   52 ++++++++--------
+ arch/sh/drivers/pci/fixups-se7780.c     |   36 +++++------
+ arch/sh/drivers/pci/ops-cayman.c        |    3 
+ arch/sh/drivers/pci/ops-dreamcast.c     |   17 ++---
+ arch/sh/drivers/pci/ops-landisk.c       |    4 -
+ arch/sh/drivers/pci/ops-lboxre2.c       |    6 -
+ arch/sh/drivers/pci/ops-r7780rp.c       |    5 -
+ arch/sh/drivers/pci/ops-rts7751r2d.c    |    6 -
+ arch/sh/drivers/pci/ops-sdk7780.c       |    5 -
+ arch/sh/drivers/pci/ops-se7780.c        |    5 -
+ arch/sh/drivers/pci/ops-sh03.c          |    2 
+ arch/sh/drivers/pci/ops-sh4.c           |   40 ++++++------
+ arch/sh/drivers/pci/ops-snapgear.c      |    4 -
+ arch/sh/drivers/pci/ops-titan.c         |    5 -
+ arch/sh/drivers/pci/pci-auto.c          |    1 
+ arch/sh/drivers/pci/pci-sh4.h           |   15 ++--
+ arch/sh/drivers/pci/pci-sh5.c           |   15 +++-
+ arch/sh/drivers/pci/pci-sh5.h           |    1 
+ arch/sh/drivers/pci/pci-sh7751.c        |  100 +++++++++++++++----------------
+ arch/sh/drivers/pci/pci-sh7751.h        |    5 -
+ arch/sh/drivers/pci/pci-sh7780.c        |   57 ++++++++---------
+ arch/sh/drivers/pci/pci-sh7780.h        |    5 -
+ arch/sh/drivers/pci/pci.c               |   30 ++++++---
+ arch/sh/kernel/io.c                     |    5 +
+ arch/sh/mm/ioremap_32.c                 |    4 -
+ include/asm-sh/pci.h                    |   80 ++++++++++++++----------
+ 31 files changed, 321 insertions(+), 276 deletions(-)
