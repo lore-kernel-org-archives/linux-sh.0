@@ -1,123 +1,33 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Mon, 18 Feb 2008 13:02:04 +0000
-Subject: Re: [PATCH] maple: add driver for Sega Dreamcast controller
-Message-Id: <20080218050204.61261d93.akpm@linux-foundation.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Feb 2008 10:28:53 +0000
+Subject: [PATCH] sh: fix readsl/writesl argument
+Message-Id: <20080220102853.22714.57848.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1203205815.6737.31.camel@localhost.localdomain>
-In-Reply-To: <1203205815.6737.31.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Sat, 16 Feb 2008 23:50:15 +0000 Adrian McMenamin <adrian@newgolddream.dyndns.info> wrote:
+writesl() and readsl() use void __iomem * as argument but the current sh 
+version of __raw_writesl()/__rawreadsl() takes unsigned long. Casting the
+pointer fixes smc91x warnings.
 
-> Add support for the SEGA Dreamcast controller as a joystick device. Based on Yaegashi Takeshi's old 2.4 driver (never in mainline) with the addition of functioning removal (and reinsertion) code.
-> 
-> ...
->
-> +static void dc_pad_callback(struct mapleq *mq)
-> +{
-> +	unsigned short buttons;
-> +	struct maple_device *mapledev = mq->dev;
-> +	struct dc_pad *pad = mapledev->private_data;
-> +	struct input_dev *dev = pad->dev;
-> +	unsigned char *res = mq->recvbuf;
-> +
-> +	buttons = ~*(unsigned short *)(res+8);
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-This is endianness-dependent.  Presumably it "works", but it's pretty poor
-practice.
+ include/asm-sh/io.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> ...
->
->> +static int dc_pad_connect(struct maple_device *mdev)
-> +{
-> +	int i, error;
-> +	unsigned long data = be32_to_cpu(mdev->devinfo.function_data[0]);
-> +	struct dc_pad *pad;
-> +	struct input_dev *dev;
-> +
-> +	const short btn_bit[32] = {
-> +		BTN_C, BTN_B, BTN_A, BTN_START, -1, -1, -1, -1,
-> +		BTN_Z, BTN_Y, BTN_X, BTN_SELECT, -1, -1, -1, -1,
-> +		-1, -1, -1, -1, -1, -1, -1, -1,
-> +		-1, -1, -1, -1, -1, -1, -1, -1,
-> +	};
-> +
-> +	const short abs_bit[32] = {
-> +		-1, -1, -1, -1, ABS_HAT0Y, ABS_HAT0Y, ABS_HAT0X, ABS_HAT0X,
-> +		-1, -1, -1, -1, ABS_HAT1Y, ABS_HAT1Y, ABS_HAT1X, ABS_HAT1X,
-> +		ABS_GAS, ABS_BRAKE, ABS_X, ABS_Y, ABS_RX, ABS_RY, -1, -1,
-> +		-1, -1, -1, -1, -1, -1, -1, -1,
-> +	};
-> +
-> +	pad = kzalloc(sizeof(struct dc_pad), GFP_KERNEL);
-> +	if (!pad)
-> +		return -ENOMEM;
-> +
-> +	dev = input_allocate_device();
-> +	if (!dev) {
-> +		kfree(pad);
-> +		return -ENOMEM;
-> +	}
-> +
-> +	pad->dev = dev;
-> +	pad->mdev = mdev;
-> +	mdev->private_data = pad;
-> +
-> +	for (i = 0; i < 32; i++)
-> +		if (data & (1<<i) && btn_bit[i] >= 0)
-> +			pad->dev->keybit[BTN_JOYSTICK/32] |= BIT(btn_bit[i]);
-> +
-> +	if (pad->dev->keybit[BTN_JOYSTICK/32])
-> +		pad->dev->evbit[0] |= BIT(EV_KEY);
-> +
-> +	for (i = 0; i < 32; i++)
-> +		if (data & (1<<i) && abs_bit[i] >= 0)
-> +			pad->dev->absbit[0] |= BIT(abs_bit[i]);
-> +
-> +	if (pad->dev->absbit[0])
-> +		pad->dev->evbit[0] |= BIT(EV_ABS);
-> +
-> +	for (i = ABS_X; i <= ABS_BRAKE; i++) {
-> +		pad->dev->absmax[i] = 255;
-> +		pad->dev->absmin[i] = 0;
-> +		pad->dev->absfuzz[i] = 0;
-> +		pad->dev->absflat[i] = 0;
-> +	}
-> +
-> +	for (i = ABS_HAT0X; i <= ABS_HAT3Y; i++) {
-> +		pad->dev->absmax[i] = 1;
-> +		pad->dev->absmin[i] = -1;
-> +		pad->dev->absfuzz[i] = 0;
-> +		pad->dev->absflat[i] = 0;
-> +	}
-> +
-> +	pad->dev->open = dc_pad_open;
-> +	pad->dev->close = dc_pad_close;
-> +	pad->dev->private = pad;
-> +	pad->dev->event = NULL;
-> +	pad->dev->dev.parent = &mdev->dev;
-> +	pad->dev->name = mdev->product_name;
-> +	pad->dev->id.bustype = BUS_HOST;
-> +	input_set_drvdata(dev, pad);
-> +
-> +	error = input_register_device(pad->dev);
-> +	if (error) {
-> +		input_free_device(pad->dev);
-> +		kfree(pad);
-> +		return -error;
-> +	}
-> +
-> +	maple_getcond_callback(mdev, dc_pad_callback_idle, 0xFFFFFFFF,
-> +		MAPLE_FUNC_CONTROLLER);
-> +
-> +	return 0;
-> +}
-
-The error handling in here would be more maintainable if it were to use the
-usual `goto err_foo' approach - aim for only a single return statement per
-function.
-
+--- 0001/include/asm-sh/io.h
++++ work/include/asm-sh/io.h	2008-02-20 16:34:28.000000000 +0900
+@@ -162,8 +162,8 @@ static inline void reads##bwlq(volatile 
+ 
+ __BUILD_MEMORY_STRING(b, u8)
+ __BUILD_MEMORY_STRING(w, u16)
+-#define writesl __raw_writesl
+-#define readsl  __raw_readsl
++#define writesl(m, a, c) __raw_writesl((unsigned long)(m), (a), (c))
++#define readsl(m, a, c)  __raw_readsl((unsigned long)(m), (a), (c))
+ 
+ #define readb_relaxed(a) readb(a)
+ #define readw_relaxed(a) readw(a)
