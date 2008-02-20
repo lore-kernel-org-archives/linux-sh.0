@@ -1,58 +1,101 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 19 Feb 2008 12:34:20 +0000
-Subject: [PATCH 00/09] sh: clean up pci code
-Message-Id: <20080219123420.4266.2965.sendpatchset@clockwork.opensource.se>
+Date: Wed, 20 Feb 2008 09:10:21 +0000
+Subject: [PATCH 2.6.25] sh: revert dreamcast pci change
+Message-Id: <20080220091021.20631.4358.sendpatchset@clockwork.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-These patches rework the pci code for the sh architecture.
+Commit e036eaa681a17f71b64f6d9040fe605555623919 broke dreamcast pci, this
+patch fixes that by reverting the dreamcast specific bits.
 
-Currently each board implements some kind of ioport to address mapping. Some
-boards use generic_io_base others try passing addresses as io ports. This is
-the first set of patches that try to unify the pci code as much as possible
-to avoid duplicated code. This will in the end lead to fewer lines board
-specific code and more generic code.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Acked-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
 
-Only high level stuff so far. These patches avoid changing low level bits,
-I have patches for sh7751 and sh7780 doing that already. I'll post then 
-later on this week after some more testing.
+ arch/sh/drivers/pci/ops-dreamcast.c |   44 +++++++++++++++++------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
 
-Have fun and people with pci host controllers - please test!
-
-/ magnus
-
- arch/sh/boards/dreamcast/setup.c        |    6 -
- arch/sh/boards/titan/io.c               |    2 
- arch/sh/drivers/pci/fixups-lboxre2.c    |   23 +++----
- arch/sh/drivers/pci/fixups-r7780rp.c    |   35 +++++-----
- arch/sh/drivers/pci/fixups-rts7751r2d.c |   23 +++----
- arch/sh/drivers/pci/fixups-sdk7780.c    |   52 ++++++++--------
- arch/sh/drivers/pci/fixups-se7780.c     |   36 +++++------
- arch/sh/drivers/pci/ops-cayman.c        |    3 
- arch/sh/drivers/pci/ops-dreamcast.c     |   17 ++---
- arch/sh/drivers/pci/ops-landisk.c       |    4 -
- arch/sh/drivers/pci/ops-lboxre2.c       |    6 -
- arch/sh/drivers/pci/ops-r7780rp.c       |    5 -
- arch/sh/drivers/pci/ops-rts7751r2d.c    |    6 -
- arch/sh/drivers/pci/ops-sdk7780.c       |    5 -
- arch/sh/drivers/pci/ops-se7780.c        |    5 -
- arch/sh/drivers/pci/ops-sh03.c          |    2 
- arch/sh/drivers/pci/ops-sh4.c           |   40 ++++++------
- arch/sh/drivers/pci/ops-snapgear.c      |    4 -
- arch/sh/drivers/pci/ops-titan.c         |    5 -
- arch/sh/drivers/pci/pci-auto.c          |    1 
- arch/sh/drivers/pci/pci-sh4.h           |   15 ++--
- arch/sh/drivers/pci/pci-sh5.c           |   15 +++-
- arch/sh/drivers/pci/pci-sh5.h           |    1 
- arch/sh/drivers/pci/pci-sh7751.c        |  100 +++++++++++++++----------------
- arch/sh/drivers/pci/pci-sh7751.h        |    5 -
- arch/sh/drivers/pci/pci-sh7780.c        |   57 ++++++++---------
- arch/sh/drivers/pci/pci-sh7780.h        |    5 -
- arch/sh/drivers/pci/pci.c               |   30 ++++++---
- arch/sh/kernel/io.c                     |    5 +
- arch/sh/mm/ioremap_32.c                 |    4 -
- include/asm-sh/pci.h                    |   80 ++++++++++++++----------
- 31 files changed, 321 insertions(+), 276 deletions(-)
+--- 0001/arch/sh/drivers/pci/ops-dreamcast.c
++++ work/arch/sh/drivers/pci/ops-dreamcast.c	2008-02-20 17:56:48.000000000 +0900
+@@ -83,9 +83,9 @@ static int gapspci_read(struct pci_bus *
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
+ 	switch (size) {
+-		case 1: *val = ctrl_inb(GAPSPCI_BBA_CONFIG+where); break;
+-		case 2: *val = ctrl_inw(GAPSPCI_BBA_CONFIG+where); break;
+-		case 4: *val = ctrl_inl(GAPSPCI_BBA_CONFIG+where); break;
++		case 1: *val = inb(GAPSPCI_BBA_CONFIG+where); break;
++		case 2: *val = inw(GAPSPCI_BBA_CONFIG+where); break;
++		case 4: *val = inl(GAPSPCI_BBA_CONFIG+where); break;
+ 	}	
+ 
+         return PCIBIOS_SUCCESSFUL;
+@@ -97,9 +97,9 @@ static int gapspci_write(struct pci_bus 
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
+ 	switch (size) {
+-		case 1: ctrl_outb(( u8)val, GAPSPCI_BBA_CONFIG+where); break;
+-		case 2: ctrl_outw((u16)val, GAPSPCI_BBA_CONFIG+where); break;
+-		case 4: ctrl_outl((u32)val, GAPSPCI_BBA_CONFIG+where); break;
++		case 1: outb(( u8)val, GAPSPCI_BBA_CONFIG+where); break;
++		case 2: outw((u16)val, GAPSPCI_BBA_CONFIG+where); break;
++		case 4: outl((u32)val, GAPSPCI_BBA_CONFIG+where); break;
+ 	}
+ 
+         return PCIBIOS_SUCCESSFUL;
+@@ -127,36 +127,36 @@ int __init gapspci_init(void)
+ 	 */
+ 
+ 	for (i=0; i<16; i++)
+-		idbuf[i] = ctrl_inb(GAPSPCI_REGS+i);
++		idbuf[i] = inb(GAPSPCI_REGS+i);
+ 
+ 	if (strncmp(idbuf, "GAPSPCI_BRIDGE_2", 16))
+ 		return -ENODEV;
+ 
+-	ctrl_outl(0x5a14a501, GAPSPCI_REGS+0x18);
++	outl(0x5a14a501, GAPSPCI_REGS+0x18);
+ 
+ 	for (i=0; i<1000000; i++)
+ 		;
+ 
+-	if (ctrl_inl(GAPSPCI_REGS+0x18) != 1)
++	if (inl(GAPSPCI_REGS+0x18) != 1)
+ 		return -EINVAL;
+ 
+-	ctrl_outl(0x01000000, GAPSPCI_REGS+0x20);
+-	ctrl_outl(0x01000000, GAPSPCI_REGS+0x24);
++	outl(0x01000000, GAPSPCI_REGS+0x20);
++	outl(0x01000000, GAPSPCI_REGS+0x24);
+ 
+-	ctrl_outl(GAPSPCI_DMA_BASE, GAPSPCI_REGS+0x28);
+-	ctrl_outl(GAPSPCI_DMA_BASE+GAPSPCI_DMA_SIZE, GAPSPCI_REGS+0x2c);
++	outl(GAPSPCI_DMA_BASE, GAPSPCI_REGS+0x28);
++	outl(GAPSPCI_DMA_BASE+GAPSPCI_DMA_SIZE, GAPSPCI_REGS+0x2c);
+ 
+-	ctrl_outl(1, GAPSPCI_REGS+0x14);
+-	ctrl_outl(1, GAPSPCI_REGS+0x34);
++	outl(1, GAPSPCI_REGS+0x14);
++	outl(1, GAPSPCI_REGS+0x34);
+ 
+ 	/* Setting Broadband Adapter */
+-	ctrl_outw(0xf900, GAPSPCI_BBA_CONFIG+0x06);
+-	ctrl_outl(0x00000000, GAPSPCI_BBA_CONFIG+0x30);
+-	ctrl_outb(0x00, GAPSPCI_BBA_CONFIG+0x3c);
+-	ctrl_outb(0xf0, GAPSPCI_BBA_CONFIG+0x0d);
+-	ctrl_outw(0x0006, GAPSPCI_BBA_CONFIG+0x04);
+-	ctrl_outl(0x00002001, GAPSPCI_BBA_CONFIG+0x10);
+-	ctrl_outl(0x01000000, GAPSPCI_BBA_CONFIG+0x14);
++	outw(0xf900, GAPSPCI_BBA_CONFIG+0x06);
++	outl(0x00000000, GAPSPCI_BBA_CONFIG+0x30);
++	outb(0x00, GAPSPCI_BBA_CONFIG+0x3c);
++	outb(0xf0, GAPSPCI_BBA_CONFIG+0x0d);
++	outw(0x0006, GAPSPCI_BBA_CONFIG+0x04);
++	outl(0x00002001, GAPSPCI_BBA_CONFIG+0x10);
++	outl(0x01000000, GAPSPCI_BBA_CONFIG+0x14);
+ 
+ 	return 0;
+ }
