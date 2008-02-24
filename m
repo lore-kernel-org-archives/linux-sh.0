@@ -1,23 +1,31 @@
-From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Mon, 04 Feb 2008 11:37:14 +0000
-Subject: Questions regarding mfd drivers
-Message-Id: <20080204123714.4be6e10c.Kristoffer.ericson@gmail.com>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 24 Feb 2008 13:49:14 +0000
+Subject: [PATCH 2/3] input: support maple mouse on Dreamcast
+Message-Id: <1203860954.6474.9.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1203860828.6474.6.camel@localhost.localdomain>
+In-Reply-To: <1203860828.6474.6.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ben@simtech.co.uk, Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh <linux-sh@vger.kernel.org>, linux-main <linux-kernel@vger.kernel.org>
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Greetings,
 
-Trying to wrap my head around sm501. From what I can tell an mfd driver is a "master" driver that takes control of all
-memory and io areas. It then hands out areas of those to drivers. Anywhere near correct?
+input: update Makefile to support maple mouse on Dreamcast
 
-I can see some benefit but still hard for me to motivate. What am I missing? What will the mfd be able to do, that I lack now?
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
 
-The sm501 driver seems way more advanced than I will need for hd64461/hd64465 anyhow, but still need to understand sm501 completely before
-attempting to write one on my own. Anyone know any documentation aside from example drivers?
+diff --git a/drivers/input/mouse/Makefile b/drivers/input/mouse/Makefile
+index 9e6e363..5d35939 100644
+--- a/drivers/input/mouse/Makefile
++++ b/drivers/input/mouse/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_MOUSE_SERIAL)	+= sermouse.o
+ obj-$(CONFIG_MOUSE_HIL)		+= hil_ptr.o
+ obj-$(CONFIG_MOUSE_VSXXXAA)	+= vsxxxaa.o
+ obj-$(CONFIG_MOUSE_GPIO)	+= gpio_mouse.o
++obj-$(CONFIG_MOUSE_MAPLE)	+= maplemouse.o
+ 
+ psmouse-objs := psmouse-base.o synaptics.o
 
-Best wishes
-Kristoffer
