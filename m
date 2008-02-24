@@ -1,19 +1,19 @@
 From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Sun, 24 Feb 2008 14:18:46 +0000
-Subject: [PATCH] input: support maple controller on SEGA Dreamcast
-Message-Id: <1203862726.6474.18.camel@localhost.localdomain>
+Date: Sun, 24 Feb 2008 23:10:22 +0000
+Subject: Re: [PATCH] input: support maple controller on SEGA Dreamcast
+Message-Id: <1203894622.6299.6.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1203862726.6474.18.camel@localhost.localdomain>
+In-Reply-To: <1203862726.6474.18.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Andrew Morton <akpm@osdl.org>
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Andrew Morton <akpm@osdl.org>
 
-This is a port of the old (never in mainline) 2.4 driver.
+Add support for the Dreamcast maple controller (as a joystick).
 
-(It also fixes some issues with earlier patches which should be
-discarded for this)
-
+Earlier patches caused subdevice detection headaches. Please use this one.
 
 Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 ---
@@ -51,8 +51,8 @@ diff -ruN ./a/drivers/input/joystick/Makefile ./b/drivers/input/joystick/Makefil
  obj-$(CONFIG_JOYSTICK_IFORCE)		+= iforce/
 diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/maplecontrol.c
 --- ./a/drivers/input/joystick/maplecontrol.c	1970-01-01 01:00:00.000000000 +0100
-+++ ./b/drivers/input/joystick/maplecontrol.c	2008-02-24 13:59:04.000000000 +0000
-@@ -0,0 +1,252 @@
++++ ./b/drivers/input/joystick/maplecontrol.c	2008-02-24 22:56:31.000000000 +0000
+@@ -0,0 +1,222 @@
 +/*
 + * 	SEGA Dreamcast controller driver
 + *	Based on drivers/usb/iforce.c
@@ -79,10 +79,6 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +	struct maple_device *mdev;
 +	int open;
 +};
-+
-+static void dc_pad_callback_idle(struct mapleq *mq)
-+{
-+}
 +
 +static void dc_pad_callback(struct mapleq *mq)
 +{
@@ -118,30 +114,6 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +	input_report_abs(dev, ABS_Y,     res[13]);
 +	input_report_abs(dev, ABS_RX,    res[14]);
 +	input_report_abs(dev, ABS_RY,    res[15]);
-+}
-+
-+static int dc_pad_open(struct input_dev *dev)
-+{
-+	struct dc_pad *pad = dev->private;
-+	if (!pad->open)
-+		maple_getcond_callback(pad->mdev, dc_pad_callback, HZ/50,
-+			MAPLE_FUNC_CONTROLLER);
-+	pad->open++;
-+	return 0;
-+
-+}
-+
-+static void dc_pad_close(struct input_dev *dev)
-+{
-+	struct dc_pad *pad = dev->private;
-+
-+	pad->open--;
-+	if (pad->open)
-+		return;
-+
-+	/* Almost never call something that does nothing */
-+	maple_getcond_callback(pad->mdev, dc_pad_callback_idle, 0xFFFFFFFF,
-+		MAPLE_FUNC_CONTROLLER);
 +}
 +
 +static int dc_pad_connect(struct maple_device *mdev)
@@ -209,8 +181,6 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +		pad->dev->absflat[i] = 0;
 +	}
 +
-+	pad->dev->open = dc_pad_open;
-+	pad->dev->close = dc_pad_close;
 +	pad->dev->private = pad;
 +	pad->dev->event = NULL;
 +	pad->dev->dev.parent = &mdev->dev;
@@ -222,7 +192,7 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +	if (error)
 +		goto fail_register;
 +
-+	maple_getcond_callback(mdev, dc_pad_callback_idle, 0xFFFFFFFF,
++	maple_getcond_callback(mdev, dc_pad_callback, HZ/50,
 +		MAPLE_FUNC_CONTROLLER);
 +	
 +	return error;
@@ -305,5 +275,4 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +
 +module_init(dc_pad_init);
 +module_exit(dc_pad_exit);
-
 
