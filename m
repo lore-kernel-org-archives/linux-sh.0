@@ -1,376 +1,184 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Thu, 07 Feb 2008 05:17:32 +0000
-Subject: Re: [PATCH] sh: trapped io support
-Message-Id: <aec7e5c30802062117u50fa6343xc315a097782d2fa6@mail.gmail.com>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 24 Feb 2008 14:30:23 +0000
+Subject: [PATCH] maple: fix device detection
+Message-Id: <1203863423.6474.27.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080206151929.27099.5627.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080206151929.27099.5627.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg KH <greg@kroah.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
 
-Hi Paul,
+The maple bus driver that went into the kernel mainline in September 2007 contained some bugs which were revealed by the update of the kobj code for the current release series. Unfortunately those bugs also helped ensure maple devices were properly detected. This patch (against the current git) now ensures that devices are properly detected again.
 
-Sorry about the rough quality, but the code started to rot so I had to
-get it out...  =)
+(A previous attempt to fix this by delaying initialisation only partially fixed this - as became apparent when the bus was fully loaded)
 
-On Feb 7, 2008 6:44 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Thu, Feb 07, 2008 at 12:19:29AM +0900, Magnus Damm wrote:
-> > --- 0001/arch/sh/Kconfig
-> > +++ work/arch/sh/Kconfig      2008-02-06 22:57:22.000000000 +0900
-> > @@ -324,6 +324,9 @@ source "arch/sh/Kconfig.cpu"
-> >
-> >  menu "Board support"
-> >
-> > +config IO_TRAPPED
-> > +     bool
-> > +
-> >  config SOLUTION_ENGINE
-> >       bool
-> >
-> This is a pretty bizarre place to put this symbol.
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
 
-Yep, will fix.
 
-> > --- 0001/arch/sh/kernel/io.c
-> > +++ work/arch/sh/kernel/io.c  2008-02-06 22:57:22.000000000 +0900
-> > @@ -63,6 +63,14 @@ EXPORT_SYMBOL(memset_io);
-> >
-> >  void __iomem *ioport_map(unsigned long port, unsigned int nr)
-> >  {
-> > +     void __iomem *ret;
-> > +
-> > +     if (nr > 4) {
-> > +             ret = ioremap_trapped(port, nr, IORESOURCE_IO);
-> > +             if (ret)
-> > +                     return ret;
-> > +     }
-> > +
-> >       return sh_mv.mv_ioport_map(port, nr);
-> >  }
-> >  EXPORT_SYMBOL(ioport_map);
->
-> SH-5 needs 64-bit I/O, as do some of the SH-5 blocks that have showed up
-> on SH-4 parts (ie, the SH4-202 SuperHyway CVRs and so on). I don't know
-> that there's any point in tying to hook this in here for unhandled sizes.
 
-Ok, I added that ugly (nr > 4) hack to avoid getting called by the io
-routines in io_generic.c. They call ioport_map() on every memory
-access. I'll make them use __ioport_map instead which won't include
-the call to ioremap_trapped().
+diff -ruN ./a/drivers/sh/maple/maple.c ./b/drivers/sh/maple/maple.c
+--- ./a/drivers/sh/maple/maple.c	2008-02-21 20:42:17.000000000 +0000
++++ ./b/drivers/sh/maple/maple.c	2008-02-24 13:59:09.000000000 +0000
+@@ -1,7 +1,7 @@
+ /*
+  * Core maple bus functionality
+  *
+- *  Copyright (C) 2007 Adrian McMenamin
++ *  Copyright (C) 2007, 2008 Adrian McMenamin
+  *
+  * Based on 2.4 code by:
+  *
+@@ -18,7 +18,6 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/device.h>
+-#include <linux/module.h>
+ #include <linux/interrupt.h>
+ #include <linux/list.h>
+ #include <linux/io.h>
+@@ -54,7 +53,7 @@
+ static int subdevice_map[MAPLE_PORTS];
+ static unsigned long *maple_sendbuf, *maple_sendptr, *maple_lastptr;
+ static unsigned long maple_pnp_time;
+-static int started, scanning, liststatus, realscan;
++static int started, scanning, liststatus, fullscan;
+ static struct kmem_cache *maple_queue_cache;
+ 
+ struct maple_device_specify {
+@@ -62,6 +61,9 @@
+ 	int unit;
+ };
+ 
++static bool checked[4];
++static struct maple_device *baseunits[4];
++
+ /**
+  *  maple_driver_register - register a device driver
+  *  automatically makes the driver bus a maple bus
+@@ -309,11 +311,9 @@
+ 		else
+ 			break;
+ 
+-	if (realscan) {
+-		printk(KERN_INFO "Maple device detected: %s\n",
+-			mdev->product_name);
+-		printk(KERN_INFO "Maple device: %s\n", mdev->product_licence);
+-	}
++	printk(KERN_INFO "Maple device detected: %s\n",
++		mdev->product_name);
++	printk(KERN_INFO "Maple device: %s\n", mdev->product_licence);
+ 
+ 	function = be32_to_cpu(mdev->devinfo.function);
+ 
+@@ -323,10 +323,9 @@
+ 		mdev->driver = &maple_dummy_driver;
+ 		sprintf(mdev->dev.bus_id, "%d:0.port", mdev->port);
+ 	} else {
+-		if (realscan)
+-			printk(KERN_INFO
+-				"Maple bus at (%d, %d): Function 0x%lX\n",
+-				mdev->port, mdev->unit, function);
++		printk(KERN_INFO
++			"Maple bus at (%d, %d): Function 0x%lX\n",
++			mdev->port, mdev->unit, function);
+ 
+ 		matched  		    bus_for_each_drv(&maple_bus_type, NULL, mdev,
+@@ -334,9 +333,8 @@
+ 
+ 		if (matched = 0) {
+ 			/* Driver does not exist yet */
+-			if (realscan)
+-				printk(KERN_INFO
+-					"No maple driver found.\n");
++			printk(KERN_INFO
++				"No maple driver found.\n");
+ 			mdev->driver = &maple_dummy_driver;
+ 		}
+ 		sprintf(mdev->dev.bus_id, "%d:0%d.%lX", mdev->port,
+@@ -472,9 +470,12 @@
+ 		maple_detach_driver(mdev);
+ 		return;
+ 	}
+-	if (!started) {
+-		printk(KERN_INFO "No maple devices attached to port %d\n",
+-		       mdev->port);
++	if (!started || !fullscan) {
++		if (checked[mdev->port] = false) {
++			checked[mdev->port] = true;
++			printk(KERN_INFO "No maple devices attached"
++				" to port %d\n", mdev->port);
++		}
+ 		return;
+ 	}
+ 	maple_clean_submap(mdev);
+@@ -485,8 +486,14 @@
+ 				   char *recvbuf)
+ {
+ 	char submask;
+-	if ((!started) || (scanning = 2)) {
+-		maple_attach_driver(mdev);
++	if (!started || (scanning = 2) || !fullscan) {
++		if ((mdev->unit = 0) && (checked[mdev->port] = false)) {
++			checked[mdev->port] = true;
++			maple_attach_driver(mdev);
++		} else {
++			if (mdev->unit != 0)
++				maple_attach_driver(mdev);
++		}
+ 		return;
+ 	}
+ 	if (mdev->unit = 0) {
+@@ -505,6 +512,7 @@
+ 	struct maple_device *dev;
+ 	char *recvbuf;
+ 	enum maple_code code;
++	int i;
+ 
+ 	if (!maple_dma_done())
+ 		return;
+@@ -557,6 +565,19 @@
+ 		} else
+ 			scanning = 0;
+ 
++		if (!fullscan) {
++			fullscan = 1;
++			for (i = 0; i < MAPLE_PORTS; i++) {
++				if (checked[i] = false) {
++					fullscan = 0;
++					dev = baseunits[i];
++					dev->mq->command +						MAPLE_COMMAND_DEVINFO;
++					dev->mq->length = 0;
++					maple_add_packet(dev->mq);
++				}
++			}
++		}
+ 		if (started = 0)
+ 			started = 1;
+ 	}
+@@ -694,7 +715,9 @@
+ 
+ 	/* setup maple ports */
+ 	for (i = 0; i < MAPLE_PORTS; i++) {
++		checked[i] = false;
+ 		mdev[i] = maple_alloc_dev(i, 0);
++		baseunits[i] = mdev[i];
+ 		if (!mdev[i]) {
+ 			while (i-- > 0)
+ 				maple_free_dev(mdev[i]);
+@@ -703,12 +726,9 @@
+ 		mdev[i]->mq->command = MAPLE_COMMAND_DEVINFO;
+ 		mdev[i]->mq->length = 0;
+ 		maple_add_packet(mdev[i]->mq);
+-		/* delay aids hardware detection */
+-		mdelay(5);
+ 		subdevice_map[i] = 0;
+ 	}
+ 
+-	realscan = 1;
+ 	/* setup maplebus hardware */
+ 	maplebus_dma_reset();
+ 	/* initial detection */
 
-> > +unsigned int trapped_ioread8(void __iomem *addr)
-> > +{
-> > +     return ctrl_inb((unsigned long __force)addr);
-> > +}
-> > +
-> > +unsigned int trapped_ioread16(void __iomem *addr)
-> > +{
-> > +     return ctrl_inw((unsigned long __force)addr);
-> > +}
-> > +
-> > +unsigned int trapped_ioread32(void __iomem *addr)
-> > +{
-> > +     return ctrl_inl((unsigned long __force)addr);
-> > +}
-> > +
-> > +void trapped_iowrite8(unsigned int data, void __iomem *addr)
-> > +{
-> > +     ctrl_outb(data, (unsigned long __force)addr);
-> > +}
-> > +
-> > +void trapped_iowrite16(unsigned int data, void __iomem *addr)
-> > +{
-> > +     ctrl_outw(data, (unsigned long __force)addr);
-> > +}
-> > +
-> > +void trapped_iowrite32(unsigned int data, void __iomem *addr)
-> > +{
-> > +     ctrl_outl(data, (unsigned long __force)addr);
-> > +}
-> > +
-> It would be nice to ioport_map() these directly and do away with the
-> __force casting, as per generic I/O.
 
-Yep, good idea.
-
-> > +LIST_HEAD(trapped_io);
-> > +LIST_HEAD(trapped_mem);
->
-> These should probably be conditionalized on CONFIG_HAS_IOPORT and
-> CONFIG_HAS_IOMEM, so at least boards that don't have any use for the
-> ioport stuff can save some space here.
-
-Sure, will do.
-
-> > +static DEFINE_SPINLOCK(trapped_lock);
-> > +
-> > +#define TRAPPED_PAGES_MAX 16
-> > +
-> > +void __init register_trapped_io_handler(struct trapped_io *tiop)
-> > +{
-> There are a lot of things that can fail in here, please make this an int
-> and actually pass back the return value as opposed to just BUG'ing out at
-> the first sign of trouble.
->
-> Perhaps it's worth splitting out the platform devices in to a set of
-> trapped devices and non-trapped, then only registering the trapped ones
-> when the trapped page setup succeeds. There's no reason to bring down the
-> rest of the system because you can't trap non-standard writes to a mostly
-> broken SuperIO.
-
-It's better to let the register_trapped_io_handler() function return an int.
-
-> > +static int from_device(void *dst, void *src, int cnt)
-> > +{
-> > +     struct trapped_io *tiop;
-> > +     unsigned long addr = (unsigned long)src;
-> > +     unsigned int tmp = 0;
-> > +
-> > +     tiop = lookup_tiop(addr);
-> > +     BUG_ON(!tiop);
-> > +     BUG_ON(tiop->magic != IO_TRAPPED_MAGIC);
-> > +
-> Same deal here. You can in fact pass back an error code without
-> BUG()'ing.
-
-I'll replace those with WARN_ON().
-
-> > +     addr = lookup_address(tiop, addr);
-> > +#ifdef DEBUG
-> > +     printk(KERN_DEBUG "trapped io read! 0x%08x, %d",
-> > +            (unsigned int)src, cnt);
-> > +#endif
->
-> pr_debug().
-
-Gotcha.
-
-> > +     switch (cnt) {
-> > +     case 1:
-> > +             tmp = tiop->read8((void __iomem *)addr);
-> > +             *(unsigned char *)dst = tmp & 0xff;
-> > +             break;
-> > +     case 2:
-> > +             tmp = tiop->read16((void __iomem *)addr);
-> > +             *(unsigned short *)dst = tmp & 0xffff;
-> > +             break;
-> > +     case 4:
-> > +             tmp = tiop->read32((void __iomem *)addr);
-> > +             *(unsigned int *)dst = tmp;
-> > +             break;
-> > +     default:
-> > +             BUG();
-> > +     }
-> ctrl_outX() for these. The __iomem cast back and forth is also fairly
-> ugly. Since you force an unsigned long to a void __iomem * here and then
-> back to an unsigned long in the routines themselves. Grr.
-
-I'll get rid of the ugly casting and I'll replace with *dst/*src code
-with ctrl_outX/inX().
-
-> > +int handle_trapped_io(struct pt_regs *regs, unsigned long address)
-> > +{
-> > +     mm_segment_t oldfs;
-> > +     u16 instruction;
-> > +     int tmp;
-> > +
-> opcode_size_t.
-
-Yeah, i'll use that one instead.
-
-> > +     if (!lookup_tiop(address))
-> > +             return 0;
-> > +
-> > +     BUG_ON(user_mode(regs));
-> > +
-> > +     oldfs = get_fs();
-> > +     set_fs(KERNEL_DS);
-> > +     if (copy_from_user(&instruction, (u16 *)(regs->pc), 2)) {
-> > +             set_fs(oldfs);
-> > +             BUG();
-> > +             return 0;
-> > +     }
-> > +
-> opcode_size_t and instruction_size(). The BUG()'s here are also far too
-> aggressive, neither one looks helpful.
-
-I'll replace the BUG()'s with WARN().
-
-> > +     tmp = handle_unaligned_access(instruction, regs, &trapped_mem_access);
-> > +     set_fs(oldfs);
-> > +     return !tmp;
->
-> return tmp = 0 is a bit less ugly in these sorts of cases.
-
-Whatever makes you happy. =)
-
-> > --- 0005/arch/sh/kernel/traps_32.c
-> > +++ work/arch/sh/kernel/traps_32.c    2008-02-06 22:57:22.000000000 +0900
-> > @@ -150,18 +150,43 @@ static int die_if_no_fixup(const char *
-> >  static inline void sign_extend(unsigned int count, unsigned char *dst)
-> >  {
-> >  #ifdef __LITTLE_ENDIAN__
-> > +     if ((count = 1) && dst[0] & 0x80) {
-> > +             dst[1] = 0xff;
-> > +             dst[2] = 0xff;
-> > +             dst[3] = 0xff;
-> > +     }
-> >       if ((count = 2) && dst[1] & 0x80) {
-> >               dst[2] = 0xff;
-> >               dst[3] = 0xff;
-> >       }
-> >  #else
-> > -     if ((count = 2) && dst[2] & 0x80) {
-> > +     if ((count = 1) && dst[3] & 0x80) {
-> > +             dst[2] = 0xff;
-> > +             dst[1] = 0xff;
-> >               dst[0] = 0xff;
-> > +     }
-> > +     if ((count = 2) && dst[2] & 0x80) {
-> >               dst[1] = 0xff;
-> > +             dst[0] = 0xff;
-> >       }
-> >  #endif
-> >  }
-> >
-> Shouldn't this be a separate patch?
-
-It could be, but the regular unaligned code won't need byte sized sign
-extension. =)
-
-> > +static int from_user(void *dst, void *src, int cnt)
-> > +{
-> > +     return copy_from_user(dst, src, cnt);
-> > +}
-> > +
-> > +static int to_user(void *dst, void *src, int cnt)
-> > +{
-> > +     return copy_to_user(dst, src, cnt);
-> > +}
-> > +
-> > +static struct mem_access user_mem_access = {
-> > +     from_user,
-> > +     to_user,
-> > +};
-> > +
-> The argument ordering and everything in these is exactly the same, why
-> don't you use copy_to_user()/copy_from_user() in your structure here
-> instead of these no-op wrappers?
-
-I'll make copy_from_user() and copy_to_user() inlines and use them directly.
-
-> > --- 0001/arch/sh/mm/fault_32.c
-> > +++ work/arch/sh/mm/fault_32.c        2008-02-06 22:57:22.000000000 +0900
-> > @@ -15,6 +15,7 @@
-> >  #include <linux/mm.h>
-> >  #include <linux/hardirq.h>
-> >  #include <linux/kprobes.h>
-> > +#include <asm/io_trapped.h>
-> >  #include <asm/system.h>
-> >  #include <asm/mmu_context.h>
-> >  #include <asm/tlbflush.h>
-> > @@ -163,6 +164,8 @@ no_context:
-> >       if (fixup_exception(regs))
-> >               return;
-> >
-> > +     if (handle_trapped_io(regs, address))
-> > +             return;
-> >  /*
-> >   * Oops. The kernel tried to access some bad page. We'll have to
-> >   * terminate things with extreme prejudice.
->
-> This looks like a good candidate for page fault notifiers..
-
-Yeah, maybe we can use that framework later on.
-
-> > --- 0001/include/asm-sh/io.h
-> > +++ work/include/asm-sh/io.h  2008-02-06 22:57:22.000000000 +0900
-> > @@ -38,6 +38,7 @@
-> >   */
-> >  #define __IO_PREFIX  generic
-> >  #include <asm/io_generic.h>
-> > +#include <asm/io_trapped.h>
-> >
-> >  #define maybebadio(port) \
-> >    printk(KERN_ERR "bad PC-like io %s:%u for port 0x%lx at 0x%08x\n", \
-> > @@ -309,7 +310,15 @@ __ioremap_mode(unsigned long offset, uns
-> >  {
-> >  #ifdef CONFIG_SUPERH32
-> >       unsigned long last_addr = offset + size - 1;
-> > +#endif
-> > +     void __iomem *ret = NULL;
-> > +
-> > +     if (!(flags & _PAGE_CACHABLE))
-> > +             ret = ioremap_trapped(offset, size, IORESOURCE_MEM);
-> > +     if (ret)
-> > +             return ret;
-> >
-> > +#ifdef CONFIG_SUPERH32
-> >       /*
-> >        * For P1 and P2 space this is trivial, as everything is already
-> >        * mapped. Uncached access for P1 addresses are done through P2.
->
-> This is also a bit of a mess. Why are you handing off IORESOURCE_MEM here
-> when y ou don't know whether it's an IORESOURCE_MEM or IORESOURCE_IO? The
-> pgprot validation here is also non-obvious, you may as well just
-> unconditionally call ioremap_trapped() (or __ioremap_trapped(), as it
-> shouuld be considered an internal API), and bail out early if it's happy.
-
-I'll call __ioremap_trapped() all the time then. But I'll keep
-IORESOURCE_MEM since IORESOURCE_IO should be mapped with ioport_map()
-instead of ioremap().
-
-> > --- /dev/null
-> > +++ work/include/asm-sh/io_trapped.h  2008-02-06 23:34:23.000000000 +0900
-> > @@ -0,0 +1,59 @@
-> > +#ifndef __ASM_SH_IO_TRAPPED_H
-> > +#define __ASM_SH_IO_TRAPPED_H
-> > +
-> > +#include <linux/list.h>
-> > +#include <linux/ioport.h>
-> > +#include <asm/page.h>
-> > +
-> > +#define IO_TRAPPED_MAGIC 0xfeedbeef
-> > +
-> > +struct trapped_io {
-> > +     unsigned int magic;
-> > +     struct resource *resource;
-> > +     unsigned int num_resources;
-> > +     struct list_head list;
-> > +     void __iomem *virt_base;
-> > +     unsigned int (*read8)(void __iomem *addr);
-> > +     unsigned int (*read16)(void __iomem *addr);
-> > +     unsigned int (*read32)(void __iomem *addr);
-> > +     void (*write8)(unsigned int data, void __iomem *addr);
-> > +     void (*write16)(unsigned int data, void __iomem *addr);
-> > +     void (*write32)(unsigned int data, void __iomem *addr);
-> > +} __attribute__ ((aligned(PAGE_SIZE)));;
-> > +
-> Should probably add 64-bit versions here also. Double ;'s, and this
-> really wants a __page_aligned.
-
-I'll fix that. Hm...
-
-> > +#ifdef CONFIG_IO_TRAPPED
-> > +void __init register_trapped_io_handler(struct trapped_io *tiop);
-> > +int handle_trapped_io(struct pt_regs *regs, unsigned long address);
-> > +#else
-> > +#define register_trapped_io_handler(tiop) while (0)
->
-> do { } while (0) might even work!
-
-Yes !!
-
-> > +int handle_unaligned_access(u16 instruction, struct pt_regs *regs,
-> > +                         struct mem_access *ma);
-> > +
-> This too should use opcode_size_t. New code has to live with the fact
-> that we have mixed instruction sizes these days.
-
-Sure, will do.
-
-Thanks for the review!
-
-/ magnus
