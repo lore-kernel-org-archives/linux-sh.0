@@ -1,75 +1,174 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 19 Feb 2008 12:35:14 +0000
-Subject: [PATCH 06/09] sh: add io_base member to pci_channel
-Message-Id: <20080219123514.4266.45284.sendpatchset@clockwork.opensource.se>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 24 Feb 2008 13:51:26 +0000
+Subject: [PATCH 3/3] input: support maple mouse on Dreamcast
+Message-Id: <1203861086.6474.12.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1203860828.6474.6.camel@localhost.localdomain>
+	 <1203860954.6474.9.camel@localhost.localdomain>
+In-Reply-To: <1203860954.6474.9.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Store the io window base address in struct pci_channel and use that one
-instead of SH77xx_PCI_IO_BASE.
+input: add support for maple mouse on Dreamcast
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 ---
 
- arch/sh/drivers/pci/pci-sh7751.c |    5 +++--
- arch/sh/drivers/pci/pci-sh7780.c |    5 +++--
- include/asm-sh/pci.h             |    1 +
- 3 files changed, 7 insertions(+), 4 deletions(-)
+diff --git a/drivers/input/mouse/maplemouse.c b/drivers/input/mouse/maplemouse.c
+new file mode 100644
+index 0000000..08cfb6f
+--- /dev/null
++++ b/drivers/input/mouse/maplemouse.c
+@@ -0,0 +1,148 @@
++/*
++ *	SEGA Dreamcast mouse driver
++ *	Based on drivers/usb/usbmouse.c
++ *
++ *	Copyright Yaegashi Takeshi, 2001
++ *	Porting to 2.6 and other fixes
++ *	copyright, Adrian McMenamin, 2008
++ */
++
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/timer.h>
++#include <linux/maple.h>
++#include <asm/mach/maple.h>
++
++MODULE_AUTHOR("YAEGASHI Takeshi <t@keshi.org>");
++MODULE_DESCRIPTION("SEGA Dreamcast mouse driver");
++MODULE_LICENSE("GPL");
++
++static void dc_mouse_callback(struct mapleq *mq)
++{
++	int buttons, relx, rely, relz;
++	struct maple_device *mapledev = mq->dev;
++	struct input_dev *dev = mapledev->private_data;
++	unsigned char *res = mq->recvbuf;
++
++	buttons = ~res[8];
++	relx = *(unsigned short *)(res + 12) - 512;
++	rely = *(unsigned short *)(res + 14) - 512;
++	relz = *(unsigned short *)(res + 16) - 512;
++
++	input_report_key(dev, BTN_LEFT,   buttons & 4);
++	input_report_key(dev, BTN_MIDDLE, buttons & 9);
++	input_report_key(dev, BTN_RIGHT,  buttons & 2);
++	input_report_rel(dev, REL_X,      relx);
++	input_report_rel(dev, REL_Y,      rely);
++	input_report_rel(dev, REL_WHEEL,  relz);
++	input_sync(dev);
++}
++
++static int dc_mouse_connect(struct maple_device *mdev)
++{
++	struct input_dev *input_dev;
++	int error;
++
++	input_dev = input_allocate_device();
++	if (!input_dev) {
++		error = ENOMEM;
++		goto fail_nomem;
++	}
++	mdev->private_data = input_dev;
++
++	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
++	input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) | BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
++
++	input_dev->relbit[0] = BIT_MASK(REL_X) | BIT_MASK(REL_Y) | BIT_MASK(REL_WHEEL);
++
++	input_dev->name = mdev->product_name;
++	input_dev->id.bustype = BUS_HOST;
++
++	error =	input_register_device(input_dev);
++	if (error)
++		goto fail_regdev;
++
++	maple_getcond_callback(mdev, dc_mouse_callback, HZ/50, MAPLE_FUNC_MOUSE);
++
++	return error;
++
++fail_regdev:
++	input_free_device(input_dev);
++fail_nomem:
++	return error;
++}
++
++static void dc_mouse_disconnect(struct maple_device *dev)
++{
++	struct input_dev *input_dev = dev->private_data;
++
++	input_unregister_device(input_dev);
++	kfree(input_dev);
++}
++
++/* allow the mouse to be used */
++static int probe_maple_mouse(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++	struct maple_driver *mdrv = to_maple_driver(dev->driver);
++	int error;
++
++	error = dc_mouse_connect(mdev);
++	if (error)
++		return error;
++
++	mdev->driver = mdrv;
++
++	return 0;
++}
++
++
++static int remove_maple_mouse(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++
++	dc_mouse_disconnect(mdev);
++	return 0;
++}
++
++static struct maple_driver dc_mouse_driver = {
++	.function =	MAPLE_FUNC_MOUSE,
++	.connect =	dc_mouse_connect,
++	.disconnect =	dc_mouse_disconnect,
++	.drv = {
++		.name = "Dreamcast_mouse",
++		.probe = probe_maple_mouse,
++		.remove = remove_maple_mouse,
++	},
++};
++
++static int unplug_maple_mouse(struct device *dev, void *ignored)
++{
++	/* Please DO NOT really unplug your mouse */
++	struct maple_device *mdev;
++
++	mdev = to_maple_dev(dev);
++	if ((mdev->function & MAPLE_FUNC_MOUSE)
++		&& (mdev->driver = &dc_mouse_driver))
++		remove_maple_mouse(dev);
++
++	return 0;
++}
++
++static int __init dc_mouse_init(void)
++{
++	maple_driver_register(&dc_mouse_driver.drv);
++	return 0;
++}
++
++static void __exit dc_mouse_exit(void)
++{
++	bus_for_each_dev(&maple_bus_type, NULL, NULL, unplug_maple_mouse);
++	driver_unregister(&dc_mouse_driver.drv);
++}
++
++module_init(dc_mouse_init);
++module_exit(dc_mouse_exit);
 
---- 0007/arch/sh/drivers/pci/pci-sh7751.c
-+++ work/arch/sh/drivers/pci/pci-sh7751.c	2008-02-19 16:44:19.000000000 +0900
-@@ -40,6 +40,7 @@ int __init sh7751_pci_init(struct pci_ch
- 	pr_debug("PCI: Starting intialization.\n");
- 
- 	chan->reg_base = 0xfe200000;
-+	chan->io_base = 0xfe240000;
- 
- 	/* check for SH7751/SH7751R hardware */
- 	id = pci_read_reg(chan, SH7751_PCICONF0);
-@@ -153,9 +154,9 @@ int __init sh7751_pcic_init(struct pci_c
- 	/* Map IO space into PCI IO window:
- 	 * IO addresses will be translated to the PCI IO window base address
- 	 */
--	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%x\n",
-+	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%lx\n",
- 		 chan->io_resource->start, chan->io_resource->end,
--		 SH7751_PCI_IO_BASE + chan->io_resource->start);
-+		 chan->io_base + chan->io_resource->start);
- 
- 	/* Make sure the MSB's of IO window are set to access PCI space
- 	 * correctly */
---- 0007/arch/sh/drivers/pci/pci-sh7780.c
-+++ work/arch/sh/drivers/pci/pci-sh7780.c	2008-02-19 16:44:29.000000000 +0900
-@@ -53,6 +53,7 @@ int __init sh7780_pci_init(struct pci_ch
- 	pr_debug("PCI: Starting intialization.\n");
- 
- 	chan->reg_base = 0xfe040000;
-+	chan->io_base = 0xfe200000;
- 
- 	ctrl_outl(0x00000001, SH7780_PCI_VCR2); /* Enable PCIC */
- 
-@@ -141,9 +142,9 @@ int __init sh7780_pcic_init(struct pci_c
- 	/* Map IO space into PCI IO window:
- 	 * IO addresses will be translated to the PCI IO window base address
- 	 */
--	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%x\n",
-+	pr_debug("PCI: Mapping IO address 0x%x - 0x%x to base 0x%lx\n",
- 		 chan->io_resource->start, chan->io_resource->end,
--		 SH7780_PCI_IO_BASE + chan->io_resource->start);
-+		 chan->io_base + chan->io_resource->start);
- 
- 	/* NOTE: I'm ignoring the PCI error IRQs for now..
- 	 * TODO: add support for the internal error interrupts and
---- 0006/include/asm-sh/pci.h
-+++ work/include/asm-sh/pci.h	2008-02-19 16:36:14.000000000 +0900
-@@ -25,6 +25,7 @@ struct pci_channel {
- 	int last_devfn;
- 	int enabled;
- 	unsigned long reg_base;
-+	unsigned long io_base;
- };
- 
- /*
