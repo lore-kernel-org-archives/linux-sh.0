@@ -1,124 +1,309 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 07 Feb 2008 11:23:53 +0000
-Subject: [PATCH] sh: trapped io support for highlander V2
-Message-Id: <20080207112353.9748.54200.sendpatchset@clockwork.opensource.se>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 24 Feb 2008 14:18:46 +0000
+Subject: [PATCH] input: support maple controller on SEGA Dreamcast
+Message-Id: <1203862726.6474.18.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080206152342.27118.35156.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080206152342.27118.35156.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Andrew Morton <akpm@osdl.org>
 
-This patch converts the highlander CF device from good old machvec readb/writeb
-to the new shiny trapped io.
+This is a port of the old (never in mainline) 2.4 driver.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+(It also fixes some issues with earlier patches which should be
+discarded for this)
+
+
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 ---
 
- arch/sh/Kconfig                        |    1 
- arch/sh/boards/renesas/r7780rp/setup.c |   47 ++++++++++----------------------
- include/asm-sh/r7780rp.h               |    3 --
- 3 files changed, 17 insertions(+), 34 deletions(-)
-
---- 0007/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-02-07 19:18:21.000000000 +0900
-@@ -472,6 +472,7 @@ config SH_HIGHLANDER
- 	bool "Highlander"
- 	depends on CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785
- 	select SYS_SUPPORTS_PCI
-+	select IO_TRAPPED
+diff -ruN ./a/drivers/input/joystick/Kconfig ./b/drivers/input/joystick/Kconfig
+--- ./a/drivers/input/joystick/Kconfig	2008-02-21 20:42:07.000000000 +0000
++++ ./b/drivers/input/joystick/Kconfig	2008-02-24 13:59:04.000000000 +0000
+@@ -282,4 +282,17 @@
+ 	  This option enables support for the LED which surrounds the Big X on
+ 	  XBox 360 controller.
  
- config SH_MIGOR
- 	bool "Migo-R"
---- 0001/arch/sh/boards/renesas/r7780rp/setup.c
-+++ work/arch/sh/boards/renesas/r7780rp/setup.c	2008-02-07 19:20:09.000000000 +0900
-@@ -23,6 +23,7 @@
- #include <asm/clock.h>
- #include <asm/heartbeat.h>
- #include <asm/io.h>
-+#include <asm/io_trapped.h>
++config JOYSTICK_MAPLE
++	tristate "Dreamcast control pad"
++	depends on SH_DREAMCAST
++	select MAPLE
++	help
++	  Say Y here if you have a SEGA Dreamcast and want to use your
++	  controller.
++
++	  Most Dreamcast users will say Y.
++
++	  To compile this as a module choose M here: the
++	  module will be called maplecontrol.
++
+ endif
+diff -ruN ./a/drivers/input/joystick/Makefile ./b/drivers/input/joystick/Makefile
+--- ./a/drivers/input/joystick/Makefile	2008-02-21 20:42:07.000000000 +0000
++++ ./b/drivers/input/joystick/Makefile	2008-02-24 13:59:04.000000000 +0000
+@@ -27,5 +27,6 @@
+ obj-$(CONFIG_JOYSTICK_TWIDJOY)		+= twidjoy.o
+ obj-$(CONFIG_JOYSTICK_WARRIOR)		+= warrior.o
+ obj-$(CONFIG_JOYSTICK_XPAD)		+= xpad.o
++obj-$(CONFIG_JOYSTICK_MAPLE)		+= maplecontrol.o
  
- static struct resource r8a66597_usb_host_resources[] = {
- 	[0] = {
-@@ -181,13 +182,27 @@ static struct platform_device *r7780rp_d
- 	&m66592_usb_peripheral_device,
- 	&heartbeat_device,
- #ifndef CONFIG_SH_R7780RP
--	&cf_ide_device,
- 	&ax88796_device,
- #endif
- };
- 
+ obj-$(CONFIG_JOYSTICK_IFORCE)		+= iforce/
+diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/maplecontrol.c
+--- ./a/drivers/input/joystick/maplecontrol.c	1970-01-01 01:00:00.000000000 +0100
++++ ./b/drivers/input/joystick/maplecontrol.c	2008-02-24 13:59:04.000000000 +0000
+@@ -0,0 +1,252 @@
 +/*
-+ * The CF is connected using a 16-bit bus where 8-bit operations are
-+ * unsupported. The linux ata driver is however using 8-bit operations, so
-+ * insert a trapped io filter to convert 8-bit operations into 16-bit.
++ * 	SEGA Dreamcast controller driver
++ *	Based on drivers/usb/iforce.c
++ *
++ * 	Copyright Yaegashi Takeshi, 2001
++ *	Porting to 2.6 by Adrian McMenamin, copyright 2008
 + */
-+static struct trapped_io cf_trapped_io = {
-+	.resource		= cf_ide_resources,
-+	.num_resources		= 2,
-+	.minimum_bus_width	= 16,
++
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/timer.h>
++#include <linux/maple.h>
++#include <asm/mach/maple.h>
++
++MODULE_AUTHOR("YAEGASHI Takeshi <t@keshi.org>");
++MODULE_DESCRIPTION("SEGA Dreamcast controller driver");
++MODULE_LICENSE("GPL");
++
++struct dc_pad {
++	struct input_dev *dev;
++	struct maple_device *mdev;
++	int open;
 +};
 +
- static int __init r7780rp_devices_setup(void)
- {
-+#ifndef CONFIG_SH_R7780RP
-+	if (register_trapped_io(&cf_trapped_io) = 0)
-+		platform_device_register(&cf_ide_device);
-+#endif
- 	return platform_add_devices(r7780rp_devices,
- 				    ARRAY_SIZE(r7780rp_devices));
- }
-@@ -226,34 +241,6 @@ static void r7780rp_power_off(void)
- 		ctrl_outw(0x0001, PA_POFF);
- }
- 
--static inline unsigned char is_ide_ioaddr(unsigned long addr)
--{
--	return ((cf_ide_resources[0].start <= addr &&
--		 addr <= cf_ide_resources[0].end) ||
--		(cf_ide_resources[1].start <= addr &&
--		 addr <= cf_ide_resources[1].end));
--}
--
--void highlander_writeb(u8 b, void __iomem *addr)
--{
--	unsigned long tmp = (unsigned long __force)addr;
--
--	if (is_ide_ioaddr(tmp))
--		ctrl_outw((u16)b, tmp);
--	else
--		ctrl_outb(b, tmp);
--}
--
--u8 highlander_readb(void __iomem *addr)
--{
--	unsigned long tmp = (unsigned long __force)addr;
--
--	if (is_ide_ioaddr(tmp))
--		return ctrl_inw(tmp) & 0xff;
--	else
--		return ctrl_inb(tmp);
--}
--
- /*
-  * Initialize the board
-  */
-@@ -338,6 +325,4 @@ static struct sh_machine_vector mv_highl
- 	.mv_setup		= highlander_setup,
- 	.mv_init_irq		= highlander_init_irq,
- 	.mv_irq_demux		= highlander_irq_demux,
--	.mv_readb		= highlander_readb,
--	.mv_writeb		= highlander_writeb,
- };
---- 0001/include/asm-sh/r7780rp.h
-+++ work/include/asm-sh/r7780rp.h	2008-02-07 19:18:21.000000000 +0900
-@@ -195,7 +195,4 @@ unsigned char *highlander_init_irq_r7780
- unsigned char *highlander_init_irq_r7780rp(void);
- unsigned char *highlander_init_irq_r7785rp(void);
- 
--#define __IO_PREFIX	r7780rp
--#include <asm/io_generic.h>
--
- #endif  /* __ASM_SH_RENESAS_R7780RP */
++static void dc_pad_callback_idle(struct mapleq *mq)
++{
++}
++
++static void dc_pad_callback(struct mapleq *mq)
++{
++	unsigned short buttons;
++	struct maple_device *mapledev = mq->dev;
++	struct dc_pad *pad = mapledev->private_data;
++	struct input_dev *dev = pad->dev;
++	unsigned char *res = mq->recvbuf;
++
++	buttons = ~cpu_to_le16(*(unsigned short *)(res + 8));
++
++	input_report_abs(dev, ABS_HAT0Y,
++			 (buttons & 0x0010 ? -1:0) + (buttons & 0x0020 ? 1:0));
++	input_report_abs(dev, ABS_HAT0X,
++			 (buttons & 0x0040 ? -1:0) + (buttons & 0x0080 ? 1:0));
++	input_report_abs(dev, ABS_HAT1Y,
++			 (buttons & 0x1000 ? -1:0) + (buttons & 0x2000 ? 1:0));
++	input_report_abs(dev, ABS_HAT1X,
++			 (buttons & 0x4000 ? -1:0) + (buttons & 0x8000 ? 1:0));
++
++	input_report_key(dev, BTN_C,      buttons & 0x0001);
++	input_report_key(dev, BTN_B,      buttons & 0x0002);
++	input_report_key(dev, BTN_A,      buttons & 0x0004);
++	input_report_key(dev, BTN_START,  buttons & 0x0008);
++	input_report_key(dev, BTN_Z,      buttons & 0x0100);
++	input_report_key(dev, BTN_Y,      buttons & 0x0200);
++	input_report_key(dev, BTN_X,      buttons & 0x0400);
++	input_report_key(dev, BTN_SELECT, buttons & 0x0800);
++
++	input_report_abs(dev, ABS_GAS,   res[10]);
++	input_report_abs(dev, ABS_BRAKE, res[11]);
++	input_report_abs(dev, ABS_X,     res[12]);
++	input_report_abs(dev, ABS_Y,     res[13]);
++	input_report_abs(dev, ABS_RX,    res[14]);
++	input_report_abs(dev, ABS_RY,    res[15]);
++}
++
++static int dc_pad_open(struct input_dev *dev)
++{
++	struct dc_pad *pad = dev->private;
++	if (!pad->open)
++		maple_getcond_callback(pad->mdev, dc_pad_callback, HZ/50,
++			MAPLE_FUNC_CONTROLLER);
++	pad->open++;
++	return 0;
++
++}
++
++static void dc_pad_close(struct input_dev *dev)
++{
++	struct dc_pad *pad = dev->private;
++
++	pad->open--;
++	if (pad->open)
++		return;
++
++	/* Almost never call something that does nothing */
++	maple_getcond_callback(pad->mdev, dc_pad_callback_idle, 0xFFFFFFFF,
++		MAPLE_FUNC_CONTROLLER);
++}
++
++static int dc_pad_connect(struct maple_device *mdev)
++{
++	int i, error;
++	unsigned long data = be32_to_cpu(mdev->devinfo.function_data[0]);
++	struct dc_pad *pad;
++	struct input_dev *dev;
++
++	const short btn_bit[32] = {
++		BTN_C, BTN_B, BTN_A, BTN_START, -1, -1, -1, -1,
++		BTN_Z, BTN_Y, BTN_X, BTN_SELECT, -1, -1, -1, -1,
++		-1, -1, -1, -1, -1, -1, -1, -1,
++		-1, -1, -1, -1, -1, -1, -1, -1,
++	};
++
++	const short abs_bit[32] = {
++		-1, -1, -1, -1, ABS_HAT0Y, ABS_HAT0Y, ABS_HAT0X, ABS_HAT0X,
++		-1, -1, -1, -1, ABS_HAT1Y, ABS_HAT1Y, ABS_HAT1X, ABS_HAT1X,
++		ABS_GAS, ABS_BRAKE, ABS_X, ABS_Y, ABS_RX, ABS_RY, -1, -1,
++		-1, -1, -1, -1, -1, -1, -1, -1,
++	};
++
++	pad = kzalloc(sizeof(struct dc_pad), GFP_KERNEL);
++	if (!pad){
++		error = ENOMEM;
++		goto fail_nomem_1;
++	}
++
++	dev = input_allocate_device();
++	if (!dev) {
++		error = ENOMEM;
++		goto fail_nomem_2;
++	}
++
++	pad->dev = dev;
++	pad->mdev = mdev;
++	mdev->private_data = pad;
++
++	for (i = 0; i < 32; i++)
++		if (data & (1<<i) && btn_bit[i] >= 0)
++			pad->dev->keybit[BIT_WORD(BTN_JOYSTICK)] |= BIT_MASK(btn_bit[i]);
++
++	if (pad->dev->keybit[BTN_JOYSTICK/32])
++		pad->dev->evbit[0] |= BIT_MASK(EV_KEY);
++
++	for (i = 0; i < 32; i++)
++		if (data & (1<<i) && abs_bit[i] >= 0)
++			pad->dev->absbit[0] |= BIT_MASK(abs_bit[i]);
++
++	if (pad->dev->absbit[0])
++		pad->dev->evbit[0] |= BIT_MASK(EV_ABS);
++
++	for (i = ABS_X; i <= ABS_BRAKE; i++) {
++		pad->dev->absmax[i] = 255;
++		pad->dev->absmin[i] = 0;
++		pad->dev->absfuzz[i] = 0;
++		pad->dev->absflat[i] = 0;
++	}
++
++	for (i = ABS_HAT0X; i <= ABS_HAT3Y; i++) {
++		pad->dev->absmax[i] = 1;
++		pad->dev->absmin[i] = -1;
++		pad->dev->absfuzz[i] = 0;
++		pad->dev->absflat[i] = 0;
++	}
++
++	pad->dev->open = dc_pad_open;
++	pad->dev->close = dc_pad_close;
++	pad->dev->private = pad;
++	pad->dev->event = NULL;
++	pad->dev->dev.parent = &mdev->dev;
++	pad->dev->name = mdev->product_name;
++	pad->dev->id.bustype = BUS_HOST;
++	input_set_drvdata(dev, pad);
++
++	error = input_register_device(pad->dev);
++	if (error)
++		goto fail_register;
++
++	maple_getcond_callback(mdev, dc_pad_callback_idle, 0xFFFFFFFF,
++		MAPLE_FUNC_CONTROLLER);
++	
++	return error;
++
++fail_register:
++	input_free_device(pad->dev);
++fail_nomem_2:
++	kfree(pad);
++fail_nomem_1:
++	return -error;
++}
++
++static void dc_pad_disconnect(struct maple_device *mdev)
++{
++	struct dc_pad *pad = mdev->private_data;
++
++	mdev->callback = NULL;
++	input_unregister_device(pad->dev);
++	kfree(pad);
++}
++
++/* allow the controller to be used */
++static int probe_maple_controller(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++	struct maple_driver *mdrv = to_maple_driver(dev->driver);
++	int error;
++
++	error = dc_pad_connect(mdev);
++	if (error)
++		return error;
++
++	mdev->driver = mdrv;
++
++	return 0;
++}
++
++static int remove_maple_controller(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++
++	dc_pad_disconnect(mdev);
++	return 0;
++}
++
++static struct maple_driver dc_pad_driver = {
++	.function =	MAPLE_FUNC_CONTROLLER,
++	.connect =	dc_pad_connect,
++	.disconnect =	dc_pad_disconnect,
++	.drv = {
++		.name = "Dreamcast_controller",
++		.probe = probe_maple_controller,
++		.remove = remove_maple_controller,
++	},
++};
++
++static int unplug_maple_control(struct device *dev, void *ignored)
++{
++	/* Please DO NOT really unplug your controller */
++	struct maple_device *mdev;
++
++	mdev = to_maple_dev(dev);
++	if ((mdev->function & MAPLE_FUNC_CONTROLLER)
++		&& (mdev->driver = &dc_pad_driver))
++		remove_maple_controller(dev);
++
++	return 0;
++}
++
++static int __init dc_pad_init(void)
++{
++	return 	maple_driver_register(&dc_pad_driver.drv);
++}
++
++static void __exit dc_pad_exit(void)
++{
++	bus_for_each_dev(&maple_bus_type, NULL, NULL, unplug_maple_control);
++	driver_unregister(&dc_pad_driver.drv);
++}
++
++module_init(dc_pad_init);
++module_exit(dc_pad_exit);
+
+
