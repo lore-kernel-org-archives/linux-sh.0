@@ -1,27 +1,48 @@
-From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Fri, 01 Feb 2008 12:54:37 +0000
-Subject: Re: [PATCH/KCONFIG] - Add SUPERH depends to sound/soc/sh/Kconfig
-Message-Id: <20080201135437.02fcdeb1.Kristoffer.ericson@gmail.com>
+From: Julia Lawall <julia@diku.dk>
+Date: Tue, 26 Feb 2008 20:42:11 +0000
+Subject: [PATCH 1/9] arch/sh/drivers/dma/dma-sh.c: Correct use of.and &
+Message-Id: <Pine.LNX.4.64.0802262141450.18200@ask.diku.dk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080131225811.a175de2c.Kristoffer.ericson@gmail.com>
-	<20080131231715.GB16399@linux-sh.org>
-In-Reply-To: <20080131231715.GB16399@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Kristoffer Ericson <kristoffer.ericson@gmail.com>, linux-sh <linux-sh@vger.kernel.org>, linux-main <linux-kernel@vger.kernel.org>
+To: lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
 
-On Fri, 1 Feb 2008 08:17:15 +0900
-Paul Mundt <lethal@linux-sh.org> wrote:
+From: Julia Lawall <julia@diku.dk>
 
-> On Thu, Jan 31, 2008 at 10:58:11PM +0100, Kristoffer Ericson wrote:
-> > Currently you will see an empty "SoC Audio support for SuperH" menu 
-> > when building for other archs (example pxa).
-> > This patch adds "depends on SUPERH" to remove that empty menu.
-> > 
-> > signed-off-by: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-> > 
-> Yeah, I noticed that too. Please send this to the ALSA folks.
+In commit e6bafba5b4765a5a252f1b8d31cbf6d2459da337, a bug was fixed that
+involved converting !x & y to !(x & y).  The code below shows the same
+pattern, and thus should perhaps be fixed in the same way.
 
-Done, just got message from takashi that its applied. Thx
+This is not tested and clearly changes the semantics, so it is only
+something to consider.
+
+The semantic patch that makes this change is as follows:
+(http://www.emn.fr/x-info/coccinelle/)
+
+// <smpl>
+@@ expression E1,E2; @@
+(
+  !E1 & !E2
+|
+- !E1 & E2
++ !(E1 & E2)
+)
+// </smpl>
+
+Signed-off-by: Julia Lawall <julia@diku.dk>
+
+---
+
+diff -u -p a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
+--- a/arch/sh/drivers/dma/dma-sh.c 2008-02-02 16:08:46.000000000 +0100
++++ b/arch/sh/drivers/dma/dma-sh.c 2008-02-26 08:00:00.000000000 +0100
+@@ -90,7 +90,7 @@ static irqreturn_t dma_tei(int irq, void
+ 
+ static int sh_dmac_request_dma(struct dma_channel *chan)
+ {
+-	if (unlikely(!chan->flags & DMA_TEI_CAPABLE))
++	if (unlikely(!(chan->flags & DMA_TEI_CAPABLE)))
+ 		return 0;
+ 
+ 	return request_irq(get_dmte_irq(chan->chan), dma_tei,
