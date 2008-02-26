@@ -1,7 +1,7 @@
 From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Sun, 24 Feb 2008 23:10:22 +0000
-Subject: Re: [PATCH] input: support maple controller on SEGA Dreamcast
-Message-Id: <1203894622.6299.6.camel@localhost.localdomain>
+Date: Tue, 26 Feb 2008 20:30:17 +0000
+Subject: [PATCH] input: support maple controller on SEGA Dreamcast
+Message-Id: <1204057817.6388.5.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1203862726.6474.18.camel@localhost.localdomain>
 In-Reply-To: <1203862726.6474.18.camel@localhost.localdomain>
@@ -11,16 +11,18 @@ Content-Transfer-Encoding: 7bit
 To: Paul Mundt <lethal@linux-sh.org>
 Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Andrew Morton <akpm@osdl.org>
 
-Add support for the Dreamcast maple controller (as a joystick).
+This adds support for the maple controller (as a joystick) on the SEGA
+Dreamcast.
 
-Earlier patches caused subdevice detection headaches. Please use this one.
+I've adjusted the polling rate for the controller in comparison to
+earlier patches and the high rate of polling was locking out hotplugging
+updates.
 
 Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 ---
-
-diff -ruN ./a/drivers/input/joystick/Kconfig ./b/drivers/input/joystick/Kconfig
---- ./a/drivers/input/joystick/Kconfig	2008-02-21 20:42:07.000000000 +0000
-+++ ./b/drivers/input/joystick/Kconfig	2008-02-24 13:59:04.000000000 +0000
+diff -ruN a/drivers/input/joystick/Kconfig b/drivers/input/joystick/Kconfig
+--- a/drivers/input/joystick/Kconfig	2008-02-21 20:42:07.000000000 +0000
++++ b/drivers/input/joystick/Kconfig	2008-02-24 13:59:04.000000000 +0000
 @@ -282,4 +282,17 @@
  	  This option enables support for the LED which surrounds the Big X on
  	  XBox 360 controller.
@@ -39,9 +41,9 @@ diff -ruN ./a/drivers/input/joystick/Kconfig ./b/drivers/input/joystick/Kconfig
 +	  module will be called maplecontrol.
 +
  endif
-diff -ruN ./a/drivers/input/joystick/Makefile ./b/drivers/input/joystick/Makefile
---- ./a/drivers/input/joystick/Makefile	2008-02-21 20:42:07.000000000 +0000
-+++ ./b/drivers/input/joystick/Makefile	2008-02-24 13:59:04.000000000 +0000
+diff -ruN a/drivers/input/joystick/Makefile b/drivers/input/joystick/Makefile
+--- a/drivers/input/joystick/Makefile	2008-02-21 20:42:07.000000000 +0000
++++ b/drivers/input/joystick/Makefile	2008-02-24 13:59:04.000000000 +0000
 @@ -27,5 +27,6 @@
  obj-$(CONFIG_JOYSTICK_TWIDJOY)		+= twidjoy.o
  obj-$(CONFIG_JOYSTICK_WARRIOR)		+= warrior.o
@@ -49,9 +51,9 @@ diff -ruN ./a/drivers/input/joystick/Makefile ./b/drivers/input/joystick/Makefil
 +obj-$(CONFIG_JOYSTICK_MAPLE)		+= maplecontrol.o
  
  obj-$(CONFIG_JOYSTICK_IFORCE)		+= iforce/
-diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/maplecontrol.c
---- ./a/drivers/input/joystick/maplecontrol.c	1970-01-01 01:00:00.000000000 +0100
-+++ ./b/drivers/input/joystick/maplecontrol.c	2008-02-24 22:56:31.000000000 +0000
+diff -ruN a/drivers/input/joystick/maplecontrol.c b/drivers/input/joystick/maplecontrol.c
+--- a/drivers/input/joystick/maplecontrol.c	1970-01-01 01:00:00.000000000 +0100
++++ b/drivers/input/joystick/maplecontrol.c	2008-02-24 22:56:31.000000000 +0000
 @@ -0,0 +1,222 @@
 +/*
 + * 	SEGA Dreamcast controller driver
@@ -192,7 +194,7 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +	if (error)
 +		goto fail_register;
 +
-+	maple_getcond_callback(mdev, dc_pad_callback, HZ/50,
++	maple_getcond_callback(mdev, dc_pad_callback, HZ/10,
 +		MAPLE_FUNC_CONTROLLER);
 +	
 +	return error;
@@ -275,4 +277,7 @@ diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/m
 +
 +module_init(dc_pad_init);
 +module_exit(dc_pad_exit);
+
+
+
 
