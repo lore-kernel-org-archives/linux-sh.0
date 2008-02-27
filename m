@@ -1,7 +1,7 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 14 Feb 2008 05:57:44 +0000
-Subject: [GIT PULL] sh updates for 2.6.25-rc2
-Message-Id: <20080214055744.GD12436@linux-sh.org>
+Date: Wed, 27 Feb 2008 08:35:21 +0000
+Subject: [GIT PULL] sh updates for 2.6.25-rc4
+Message-Id: <20080227083521.GA405@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -15,154 +15,62 @@ Please pull from:
 
 Which contains:
 
-Adrian McMenamin (4):
-      maple: fix up whitespace damage.
-      maple: more robust device detection.
-      maple: Drop unused prototypes from linux/maple.h.
-      maple: improve detection of attached peripherals
-
-Alan Cox (1):
-      sh: termios ioctl definitions
+Adrian McMenamin (2):
+      maple: remove unused variable
+      maple: fix device detection
 
 Hideo Saito (1):
-      sh: Fix multiple UTLB hit on UP SH-4.
+      sh: Fix up HAS_SR_RB typo in entry-macros.
 
-Kristoffer Ericson (1):
-      sh: Tidy include/asm-sh/hp6xx.h
+Julia Lawall (1):
+      arch/sh/drivers/dma/dma-sh.c: Correct use of ! and &
 
-Magnus Damm (18):
-      sh: declared coherent memory support V2 fix
-      sh: add sh7722 support to EARLY_SCIF_CONSOLE
-      sh: add probe support for new sh7722 cut
-      sh: break out unaligned sign extension code
-      sh: migor board support
-      sh: make copy_to/from_user() static inline
-      sh: add byte support to the sign extension code
-      sh: use opcode_t and enable unaligned code for sh2a
-      sh: update r2d defconfigs with usb, spi and rtc
-      sh: trapped io support V2
-      sh: trapped io support for r2d V2
-      sh: trapped io support for highlander V2
-      sh: fix ptrace copy_from/to_user() compilation error
-      sh: remove maskreg irq code
-      sh: add support for sh7366 processor
-      sh: use ctrl_in/out for on chip pci access
-      sh: fix ioreadN_rep and iowriteN_rep
-      sh: fix pci io access for r2d boards
+Magnus Damm (1):
+      sh: revert dreamcast pci change
 
-Paul Mundt (19):
-      sh: Wire up new timerfd syscalls.
-      sh: Add mach-type entries for MigoR and SDK7780.
-      sh: Use max_t in io_trapped.
-      sh: Clean up whitespace damage in Kconfig.debug.
-      sh: Symbol exports for trapped I/O.
-      sh: Handle SH7366 CPU in check_bugs().
-      sh: Disable big endian for SH-5.
-      sh: Fix up pte_mkhuge() build breakage for SH-5.
-      sh: Fix up set_fixmap_nocache() for SH-5.
-      sh: Update SH-5 flush_cache_sigtramp() for API changes.
-      sh: Shut up some trivial build warnings.
-      sh: asm/tlb.h needs linux/pagemap.h for CONFIG_SWAP=n.
-      sh: Kill off bogus SH_SDK7780_STANDALONE symbol.
-      maple: Fix up maple build failure.
-      sh: Get SH-5 caches working again post-unification.
-      serial: sh-sci: Fix up SH-5 build.
-      sh: asm/irq.h needs asm/cpu/irq.h.
-      sh: __uncached_start only on sh32.
-      sh: Kill off more dead symbols.
+Paul Mundt (3):
+      sh: Rename SH-3 CCR3 reg to avoid synclink_cs clash.
+      sh: SH5-103 needs to select CPU_SH5.
+      serial: Move asm-sh/sci.h to linux/serial_sci.h.
 
-Peter Zijlstra (1):
-      sh: fix xtime_lock deadlocking.
+Rafael Ignacio Zurita (1):
+      sh: fix rtc_resources setup for sh770x
 
-Stephen Rothwell (1):
-      sh: remove unneeded cast
+Roel Kluin (1):
+      sh: heartbeat: ioremap is expected to succeed
 
- arch/sh/Kconfig                           |   19 +
- arch/sh/Kconfig.cpu                       |    4 +-
- arch/sh/Kconfig.debug                     |    3 +-
- arch/sh/Makefile                          |    1 +
- arch/sh/boards/renesas/migor/Makefile     |    1 +
- arch/sh/boards/renesas/migor/setup.c      |   61 ++
- arch/sh/boards/renesas/r7780rp/setup.c    |   47 +-
- arch/sh/boards/renesas/rts7751r2d/setup.c |   45 +-
- arch/sh/boards/renesas/sdk7780/Kconfig    |    7 -
- arch/sh/cchips/hd6446x/hd64465/setup.c    |   47 +-
- arch/sh/configs/migor_defconfig           |  824 +++++++++++++++++++++++
- arch/sh/configs/rts7751r2d1_defconfig     |  340 ++++++++---
- arch/sh/configs/rts7751r2dplus_defconfig  |  340 ++++++++---
- arch/sh/configs/se7705_defconfig          |    1 -
- arch/sh/drivers/dma/dma-api.c             |    2 +-
- arch/sh/drivers/pci/fixups-lboxre2.c      |    4 +-
- arch/sh/drivers/pci/fixups-rts7751r2d.c   |    4 +-
- arch/sh/drivers/pci/ops-dreamcast.c       |   44 +-
- arch/sh/drivers/pci/ops-rts7751r2d.c      |    3 +-
- arch/sh/drivers/pci/pci-sh4.h             |    4 +-
- arch/sh/drivers/pci/pci-sh7751.c          |   16 +-
- arch/sh/drivers/pci/pci-sh7780.c          |    2 +-
- arch/sh/kernel/Makefile_32                |    1 +
- arch/sh/kernel/Makefile_64                |    1 +
- arch/sh/kernel/cpu/irq/Makefile           |    1 -
- arch/sh/kernel/cpu/irq/intc-sh5.c         |   27 +-
- arch/sh/kernel/cpu/irq/maskreg.c          |   93 ---
- arch/sh/kernel/cpu/sh4/probe.c            |    8 +-
- arch/sh/kernel/cpu/sh4a/Makefile          |    2 +
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c    |   10 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c    |  177 +++++
- arch/sh/kernel/cpu/sh5/probe.c            |   61 +-
- arch/sh/kernel/io.c                       |    8 +-
- arch/sh/kernel/io_generic.c               |   24 +-
- arch/sh/kernel/io_trapped.c               |  276 ++++++++
- arch/sh/kernel/irq.c                      |    3 -
- arch/sh/kernel/process_64.c               |    9 +-
- arch/sh/kernel/ptrace_32.c                |    4 +-
- arch/sh/kernel/setup.c                    |    2 +-
- arch/sh/kernel/syscalls_32.S              |    4 +-
- arch/sh/kernel/syscalls_64.S              |    4 +-
- arch/sh/kernel/time_32.c                  |   19 +-
- arch/sh/kernel/time_64.c                  |   31 +-
- arch/sh/kernel/timers/timer-mtu2.c        |    1 -
- arch/sh/kernel/traps_32.c                 |  164 +++---
- arch/sh/kernel/traps_64.c                 |    4 +-
- arch/sh/kernel/vmlinux_64.lds.S           |    2 +-
- arch/sh/mm/cache-sh5.c                    | 1019 ++++++++++++-----------------
- arch/sh/mm/consistent.c                   |   30 +-
- arch/sh/mm/fault_32.c                     |   11 +
- arch/sh/mm/init.c                         |    2 +
- arch/sh/tools/mach-types                  |    2 +
- drivers/serial/sh-sci.c                   |    2 +-
- drivers/serial/sh-sci.h                   |    9 +-
- drivers/sh/maple/maple.c                  |  981 ++++++++++++++--------------
- include/asm-sh/bugs.h                     |    2 +-
- include/asm-sh/cpu-sh4/freq.h             |    4 +-
- include/asm-sh/cpu-sh5/cacheflush.h       |    6 +-
- include/asm-sh/cpu-sh5/mmu_context.h      |    6 -
- include/asm-sh/hp6xx.h                    |   28 +-
- include/asm-sh/io.h                       |   22 +-
- include/asm-sh/io_trapped.h               |   58 ++
- include/asm-sh/ioctls.h                   |    4 +
- include/asm-sh/irq.h                      |    4 +
- include/asm-sh/mmu_context_64.h           |    3 +
- include/asm-sh/page.h                     |    7 +-
- include/asm-sh/pgtable_64.h               |   13 +
- include/asm-sh/processor.h                |    2 +-
- include/asm-sh/r7780rp.h                  |    3 -
- include/asm-sh/rts7751r2d.h               |    3 -
- include/asm-sh/system.h                   |    5 +
- include/asm-sh/system_32.h                |    3 +
- include/asm-sh/termbits.h                 |    5 +-
- include/asm-sh/termios.h                  |    6 +-
- include/asm-sh/tlb.h                      |    1 +
- include/asm-sh/uaccess.h                  |   29 +
- include/asm-sh/uaccess_32.h               |   24 +-
- include/asm-sh/uaccess_64.h               |   19 -
- include/asm-sh/unistd_32.h                |    6 +-
- include/asm-sh/unistd_64.h                |    6 +-
- include/linux/maple.h                     |  100 ++--
- 81 files changed, 3351 insertions(+), 1829 deletions(-)
- create mode 100644 arch/sh/boards/renesas/migor/Makefile
- create mode 100644 arch/sh/boards/renesas/migor/setup.c
- create mode 100644 arch/sh/configs/migor_defconfig
- delete mode 100644 arch/sh/kernel/cpu/irq/maskreg.c
- create mode 100644 arch/sh/kernel/cpu/sh4a/setup-sh7366.c
- create mode 100644 arch/sh/kernel/io_trapped.c
- create mode 100644 include/asm-sh/io_trapped.h
+Tobias Klauser (1):
+      sh: Storage class should be before const qualifier
+
+ arch/sh/Kconfig                              |    1 +
+ arch/sh/drivers/dma/dma-sh.c                 |    2 +-
+ arch/sh/drivers/heartbeat.c                  |    2 +-
+ arch/sh/drivers/pci/ops-dreamcast.c          |   44 +++++++++---------
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c        |    2 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7203.c       |    4 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c       |    2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c       |    2 +-
+ arch/sh/kernel/cpu/sh3/probe.c               |    4 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c        |    2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c        |    8 ++--
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c        |    2 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c        |    2 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c       |    2 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c        |    2 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c        |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c       |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c         |    2 +-
+ drivers/serial/sh-sci.c                      |    2 +-
+ drivers/sh/maple/maple.c                     |   66 +++++++++++++++++---------
+ include/asm-sh/cpu-sh3/cache.h               |    2 +-
+ include/asm-sh/entry-macros.S                |    4 +-
+ include/linux/maple.h                        |    1 -
+ include/{asm-sh/sci.h => linux/serial_sci.h} |   10 ++--
+ 30 files changed, 101 insertions(+), 83 deletions(-)
+ rename include/{asm-sh/sci.h => linux/serial_sci.h} (73%)
