@@ -1,68 +1,40 @@
-From: Greg KH <greg@kroah.com>
-Date: Tue, 05 Feb 2008 04:57:59 +0000
-Subject: Re: [PATCH] SH/Dreamcast - fix regressions, whitespace and memory
-Message-Id: <20080205045759.GA19282@kroah.com>
+From: Hideo Saito <saito@densan.co.jp>
+Date: Thu, 28 Feb 2008 09:45:40 +0000
+Subject: TLB reset on SH7780
+Message-Id: <20080228.184540.68563408.saito@densan.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1202068847.6262.7.camel@localhost.localdomain> <20080204052900.GB7585@kroah.com> <1202113675.6489.6.camel@localhost.localdomain> <20080204161437.GA20739@kroah.com> <1202164657.7046.5.camel@localhost.localdomain>
-In-Reply-To: <1202164657.7046.5.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 04, 2008 at 10:37:37PM +0000, Adrian McMenamin wrote:
-> 
-> On Mon, 2008-02-04 at 08:14 -0800, Greg KH wrote:
-> > On Mon, Feb 04, 2008 at 08:27:55AM +0000, Adrian McMenamin wrote:
-> > > 
-> > > On Sun, 2008-02-03 at 21:29 -0800, Greg KH wrote:
-> > > > On Sun, Feb 03, 2008 at 08:00:47PM +0000, Adrian McMenamin wrote:
-> > > > > From: Adrian McMenamin
-> > > > > 
-> > > > > This patch fixes the regression noted here:
-> > > > > http://lkml.org/lkml/2008/1/26/189 as well as whitespace issues in the
-> > > > > previous commit of this driver and the memory leaks noted here:
-> > > > > http://lkml.org/lkml/2008/2/2/143 (as well as one or two other minor
-> > > > > cleanups).
-> > > > 
-> > > > Which portion of the patch fixes the kobject WARN_ON()?
-> > > 
-> > > 
-> > > 
-> > > +	if (mdev->registered = 0) {
-> > > +		retval = device_register(&mdev->dev);
-> > > +		if (retval) {
-> > > +			printk(KERN_INFO
-> > > +			"Maple bus: Attempt to register device"
-> > > +			" (%x, %x) failed.\n",
-> > > +			mdev->port, mdev->unit);
-> > > +			maple_free_dev(mdev);
-> > > +			mdev = NULL;
-> > > +			return;
-> > > +		}
-> > > +		mdev->registered = 1;
-> > > +	}
-> > >  }
-> > > 
-> > > 
-> > > Specifically the check on mdev->registered
-> > 
-> > So the code path could cause devices to be registered more than once?
-> > That seems broken, as no other bus that I know of needs such a check :(
-> > 
-> > Is there a way to fix the root problem here, instead of this type of
-> > change?
-> > 
-> 
-> The hardware is very flaky. If I add in delays to the bus start, it will
-> detect the devices, but it's not brilliant. Registering an empty device
-> got round that problem, at the price of testing for the earlier
-> registration.
+Hi Paul,
 
-That sounds like you are just papering over the problem.  Just delay
-and let the hardware settle down if needed :)
+When /dev/mem is accessed as follows, it causes TLB reset on SH7780, because our physical memory is mapped from 0x08000000, the PMB entry does not map all of the P1 area.
 
-thanks,
+# dd if=/dev/mem <return>
 
-greg k-h
+How about following changes though the code is in the machine independent part?
+
+--- ./drivers/char/mem.c.org	2008-01-25 07:58:37.000000000 +0900
++++ ./drivers/char/mem.c	2008-02-28 17:56:11.000000000 +0900
+@@ -91,17 +91,18 @@ static inline int uncached_access(struct
+ 		return 1;
+ 	return addr >= __pa(high_memory);
+ #endif
+ }
+ 
+ #ifndef ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ static inline int valid_phys_addr_range(unsigned long addr, size_t count)
+ {
+-	if (addr + count > __pa(high_memory))
++	if (addr < __pa(high_memory - (num_physpages << PAGE_SHIFT)) ||
++	    addr + count > __pa(high_memory))
+ 		return 0;
+ 
+ 	return 1;
+ }
+ 
+ static inline int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
+ {
+ 	return 1;
