@@ -1,33 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 29 Feb 2008 10:48:47 +0000
-Subject: [PATCH 00/03] sh: SuperH KEYSC keypad support
-Message-Id: <20080229104847.22537.66432.sendpatchset@clockwork.opensource.se>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Fri, 29 Feb 2008 22:01:47 +0000
+Subject: Re: [PATCH 00/03] sh: SuperH KEYSC keypad support
+Message-Id: <20080229140147.0d01afad.akpm@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080229104847.22537.66432.sendpatchset@clockwork.opensource.se>
+In-Reply-To: <20080229104847.22537.66432.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, akpm@linux-foundation.org, linux-sh@vger.kernel.org
+Cc: linux-input@vger.kernel.org, magnus.damm@gmail.com, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-These patches add support for keypads attached to the SuperH KEYSC block.
+On Fri, 29 Feb 2008 19:48:47 +0900
+Magnus Damm <magnus.damm@gmail.com> wrote:
 
-[PATCH 01/03] sh: SuperH KEYSC platform driver
-[PATCH 02/03] sh: SuperH KEYSC support for MigoR
-[PATCH 03/03] sh: SuperH KEYSC support for Solution Engine 7722
+> These patches add support for keypads attached to the SuperH KEYSC block.
+> 
+> [PATCH 01/03] sh: SuperH KEYSC platform driver
+> [PATCH 02/03] sh: SuperH KEYSC support for MigoR
+> [PATCH 03/03] sh: SuperH KEYSC support for Solution Engine 7722
+> 
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> ---
+> 
+>  Please note that the board patches need the header file provided by
+>  the first patch to compile. So maybe this is suitable for -mm?
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+The diffstat looks pretty tame to me - this could be merged via either
+git-input or git-sh.  Probably the latter.
 
- Please note that the board patches need the header file provided by
- the first patch to compile. So maybe this is suitable for -mm?
- If it is better to merge the driver in some subsystem tree then I'll
- just resend the board code to the linux-sh list during late -rc1 merge.
- 
- arch/sh/boards/renesas/migor/setup.c |   56 ++++++
- arch/sh/boards/se/7722/setup.c       |   41 ++++
- drivers/input/keyboard/Kconfig       |    9 +
- drivers/input/keyboard/Makefile      |    1 
- drivers/input/keyboard/sh_keysc.c    |  281 ++++++++++++++++++++++++++++++++++
- include/asm-sh/se7722.h              |    2 
- include/asm-sh/sh_keysc.h            |   13 +
- 7 files changed, 402 insertions(+), 1 deletion(-)
+>  If it is better to merge the driver in some subsystem tree then I'll
+>  just resend the board code to the linux-sh list during late -rc1 merge.
+
+That would be a bad time to send it.  We should get patches into the
+subsystem trees (and linux-next and -mm!) prior to the 2.6.x release.  A
+subsystem maintainer who receives feature work during the 2.6.x merge
+window could/shouidl/would schedule it for 2.6.x+1.
+
+>  arch/sh/boards/renesas/migor/setup.c |   56 ++++++
+>  arch/sh/boards/se/7722/setup.c       |   41 ++++
+>  drivers/input/keyboard/Kconfig       |    9 +
+>  drivers/input/keyboard/Makefile      |    1 
+>  drivers/input/keyboard/sh_keysc.c    |  281 ++++++++++++++++++++++++++++++++++
+>  include/asm-sh/se7722.h              |    2 
+>  include/asm-sh/sh_keysc.h            |   13 +
+>  7 files changed, 402 insertions(+), 1 deletion(-)
