@@ -1,7 +1,7 @@
 From: Manuel Lauss <mano@roarinelk.homelinux.net>
-Date: Fri, 29 Feb 2008 17:20:57 +0000
+Date: Fri, 29 Feb 2008 17:29:21 +0000
 Subject: Re: Questions about the interrupt controller
-Message-Id: <47C83EF9.6040901@roarinelk.homelinux.net>
+Message-Id: <47C840F1.6010404@roarinelk.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <38b2ab8a0802290508t5e20a0cmfd04e35f0fc533a3@mail.gmail.com>
 In-Reply-To: <38b2ab8a0802290508t5e20a0cmfd04e35f0fc533a3@mail.gmail.com>
@@ -10,41 +10,14 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Francis Moreau wrote:
-> Hello Manuel,
+I wrote:
+>> But couldn't you use make_imask_irq() instead ?
 > 
-> On Fri, Feb 29, 2008 at 4:32 PM, Manuel Lauss
-> <mano@roarinelk.homelinux.net> wrote:
->>  Again, I can only tell for my SH7760 platform. You need to register your
->>  own irq_chip with mask/unmask/mask_ack callbacks. On the SH7760, the
->>  IRLs trigger as vectors 0-15, and one has to provide external logic to
->>  do the irq masking/acking. SH7780 and newer IIRC provide an INTC
->>  register for that.
->>
->>  This is code I use:
->>
-> 
-> [snip]
-> 
-> But couldn't you use make_imask_irq() instead ?
+> Yes, that works too; at least for the IRL irqs if the source does not
+> have to be acked (CF cards).
 
-Yes, that works too; at least for the IRL irqs if the source does not
-have to be acked (CF cards).
-
-
->>  > The documentation says: "Other compatible interrupt controllers can be
->>  > cascaded with INTC.". Where can I find some details about that ?
->>
->>  have a look at set_irq_chained_handler() function, for example:
->>
-> 
-> [snip]
-> 
-> Actually I'm wondering what does 'compatible' mean.... ?
-
-4 lines which are pulled low to signal IRQ condition and the ~bitmask of 
-those 4 lines indicates the number of the irq to trigger?
-Thats my understanding of how it works...
+Now I'm not so sure about that. Paul or Magnus can probably give you
+better advice.  I'm curious why you'd want to use IMASK?
 
 -- 
   ml.
