@@ -1,7 +1,7 @@
-From: "Francis Moreau" <francis.moro@gmail.com>
-Date: Fri, 29 Feb 2008 20:05:12 +0000
+From: Manuel Lauss <mano@roarinelk.homelinux.net>
+Date: Fri, 29 Feb 2008 20:35:14 +0000
 Subject: Re: Questions about the interrupt controller
-Message-Id: <38b2ab8a0802291205v5bc2f389k658d906c162d1a01@mail.gmail.com>
+Message-Id: <47C86C82.3060908@roarinelk.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <38b2ab8a0802290508t5e20a0cmfd04e35f0fc533a3@mail.gmail.com>
 In-Reply-To: <38b2ab8a0802290508t5e20a0cmfd04e35f0fc533a3@mail.gmail.com>
@@ -10,21 +10,46 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Feb 29, 2008 at 6:35 PM, Manuel Lauss
-<mano@roarinelk.homelinux.net> wrote:
-> Manuel Lauss wrote:
->  >> But couldn't you use make_imask_irq() instead ?
->
->  Ah now I understand. You are talking about the 4 IMASK bits in the
->  SR register, right?  If yes then disregard all I wrote earlier.
->
+  > The possible case where it couldn't be used is when the irqs are edge
+> triggered.
+> 
+> Another drawback is that we can't mask one single IRL irq but we have
+> to mask all IRQs whose priority are less than the IRL irq's priority,
 
-Yes.
+According to the SH7760 datasheet, the INTC compares the priority of 
+_every_ interrupt (IRL, On-chip peripheral) to the IMASK register. If 
+IRQ priority is HIGHER than the level set in IMASK then the interrupt is
+accepted and the exception handler is invoked.
 
->  I'm going to shut up now. ;-)
->
+So no, I don't believen you can have a "sane" IRL irq handling scheme
+only with IMASK irq chip.
 
-Well what you wrote earlier is still usefull.
+>>  >>  > The documentation says: "Other compatible interrupt controllers can be
+>>  >>  > cascaded with INTC.". Where can I find some details about that ?
+>>  >>
+>>  >>  have a look at set_irq_chained_handler() function, for example:
+>>  >>
+>>  >
+>>  > [snip]
+>>  >
+>>  > Actually I'm wondering what does 'compatible' mean.... ?
+>>
+>>  4 lines which are pulled low to signal IRQ condition and the ~bitmask of
+>>  those 4 lines indicates the number of the irq to trigger?
+>>  Thats my understanding of how it works...
+>>
+> 
+> Do you know any datasheets out there describing this ?
+
+Take the SH7751/SH7760/SH7780 datasheets for example, it's described in 
+the INTC chapter (Page 217 of the 7760 manual).
+
+> In the same vein, could you point out some good documents about the SH
+> architecture ? The ones available from Renesas web site aren't very good
+> IMHO
+
+Maybe ST has some manuals for their ST40 based parts (also SH4 variants)
+on their site.
 
 -- 
-Francis
+  ml.
