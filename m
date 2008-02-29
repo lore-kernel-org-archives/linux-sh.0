@@ -1,35 +1,27 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Fri, 29 Feb 2008 21:57:51 +0000
-Subject: Re: [PATCH 01/03] sh: SuperH KEYSC platform driver
-Message-Id: <20080229135751.c94862be.akpm@linux-foundation.org>
+From: "Francis Moreau" <francis.moro@gmail.com>
+Date: Fri, 29 Feb 2008 13:08:21 +0000
+Subject: Questions about the interrupt controller
+Message-Id: <38b2ab8a0802290508t5e20a0cmfd04e35f0fc533a3@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080229104847.22537.66432.sendpatchset@clockwork.opensource.se>
-	<20080229104856.22537.77214.sendpatchset@clockwork.opensource.se>
-In-Reply-To: <20080229104856.22537.77214.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: linux-input@vger.kernel.org, magnus.damm@gmail.com, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, 29 Feb 2008 19:48:56 +0900
-Magnus Damm <magnus.damm@gmail.com> wrote:
+Hello,
 
-> This patch adds a platform driver for the SuperH KEYSC block. The driver
-> expects to get mode, timing information and keypad layout from the board
-> code as platform data. The board code is resonsible for pin configuration.
-> 
-> Both sh7343 and sh7722 should be supported, but only the sh7722 processor
-> has been tested so far. SH_KEYSC_MODE_3 is yet to be tested.
-> 
-> ...
->
-> +#define res_size(res) ((res)->end - (res)->start + 1)
+I read the sh4 core peripherals manual avalaible on renesas web site
+(BTW do you know other 'good' documentations on the sh4 architecture ?)
+in order to understand how the 'intc' works.
 
-- buggy macro references its argument more than once
-- could be implemented in C
-- perhaps should be implemented in <linux/ioport.h>
+My question is: are there any examples in the linux kernel which use the
+IRL interrupts when *not* configured as 4 independent interrupt requests ?
 
-> +	input->phys = "sh-keysc-keys/input0";
+Do such interrupts need to use make_imask_irq() ?
 
-Is the "/" in here safe?  I trust we don't try to create a
-sysfs/procfs/whatever file based off this string.
+The documentation says: "Other compatible interrupt controllers can be
+cascaded with INTC.". Where can I find some details about that ?
+
+Thanks !
+-- 
+Francis
