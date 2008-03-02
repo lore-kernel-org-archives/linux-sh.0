@@ -1,38 +1,39 @@
-From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
-Date: Mon, 03 Mar 2008 14:01:56 +0000
-Subject: Re: MTD types
-Message-Id: <20080303140155.GA17732@lazybastard.org>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Sun, 02 Mar 2008 21:35:06 +0000
+Subject: sh r7780mp_defconfig compile error
+Message-Id: <20080302213506.GD25484@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8b67d60803021219k23ca6c6bt2ce2fb2c61cda42e@mail.gmail.com>
-In-Reply-To: <8b67d60803021219k23ca6c6bt2ce2fb2c61cda42e@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Adrian McMenamin <lkmladrian@gmail.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, dwmw2@infradead.org, linux-sh <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Stuart Menefy <stuart.menefy@st.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sun, 2 March 2008 20:19:09 +0000, Adrian McMenamin wrote:
->=20
-> I am loathe to just post a patch adding it back, so does it make any
-> difference if I use another type (I really have no idea of what the
-> physical type used in the Dreamcast is, though possibly someone here
-> might?)
+Commit d02b08f6e8b184ffef349e395210a5e82ff4f4bc causes the following 
+compile error with r7780mp_defconfig:
 
-There is also a bit of confusion about what any specific time should
-_mean_.  Once upon a time NAND flash had ECC, could be written only once
-(i.e. not write single bits by cleverly masking and rewriting), had a
-well-known amount of OOB for general use, etc. while NOR could be
-written bit-by-bit, rewritten, did not have ECC, had a higher quality
-and all that.
+<--  snip  -->
 
-These days you can buy NOR flashes that have all attributes of NAND
-except OOB, NAND flashes may use all OOB area for error correction, etc.
-etc.  In short, there is just about nothing left you can use the type
-for.  And when it is used in JFFS2, you will find lots of code like "if
-it is this type, but not that exception, then...".
+...
+  CC      init/main.o
+In file included from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/linux/clocksource.h:18,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/linux/clockchips.h:13,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/linux/tick.h:9,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/init/main.c:44:
+include2/asm/io.h: In function '__ioremap_mode':
+include2/asm/io.h:331: error: implicit declaration of function 'P1SEGADDR'
+include2/asm/io.h:333: error: implicit declaration of function 'P2SEGADDR'
+make[2]: *** [init/main.o] Error 1
 
-J=C3=B6rn
+<--  snip  -->
 
---=20
-"Translations are and will always be problematic. They inflict violence
-upon two languages." (translation from German)
+cu
+Adrian
+
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
+
