@@ -1,25 +1,40 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 26 Mar 2008 09:24:29 +0000
-Subject: Re: [PATCH] sh: Add I2C platform data to sh7722
-Message-Id: <20080326092429.GC7867@linux-sh.org>
+From: Adrian Bunk <adrian.bunk@movial.fi>
+Date: Mon, 03 Mar 2008 18:07:42 +0000
+Subject: [2.6 patch] sh/mm/pg-sh7705.c must #include <linux/fs.h>
+Message-Id: <20080303180742.GJ26072@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080325081403.10579.23375.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080325081403.10579.23375.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Tue, Mar 25, 2008 at 05:14:03PM +0900, Magnus Damm wrote:
-> Add platform data for the SuperH Mobile I2C block to sh7722.
+This patch fixes the following compile error:
 
-On Tue, Mar 25, 2008 at 05:20:24PM +0900, Magnus Damm wrote:
-> Enable the sh7722 I2C controller on the MigoR board.
+<--  snip  -->
 
-On Tue, Mar 25, 2008 at 05:24:31PM +0900, Magnus Damm wrote:
-> Add support for the rs5c372b RTC chip to MigoR.
+...
+  CC      arch/sh/mm/pg-sh7705.o
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/mm/pg-sh7705.c: In function 'ptep_get_and_clear':
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/mm/pg-sh7705.c:130: error: implicit declaration of function 'mapping_writably_mapped'
+make[2]: *** [arch/sh/mm/pg-sh7705.o] Error 1
 
-On Tue, Mar 25, 2008 at 05:30:45PM +0900, Magnus Damm wrote:
-> Add support for the migor_ts touch panel to the MigoR board.
+<--  snip  -->
 
-Applied, thanks.
+Signed-off-by: Adrian Bunk <adrian.bunk@movial.fi>
+
+---
+abeeede2889319116acd5969913c5fe3c78ead05 foobar
+diff --git a/arch/sh/mm/pg-sh7705.c b/arch/sh/mm/pg-sh7705.c
+index a4b015f..7f885b7 100644
+--- a/arch/sh/mm/pg-sh7705.c
++++ b/arch/sh/mm/pg-sh7705.c
+@@ -14,6 +14,7 @@
+ #include <linux/mman.h>
+ #include <linux/mm.h>
+ #include <linux/threads.h>
++#include <linux/fs.h>
+ #include <asm/addrspace.h>
+ #include <asm/page.h>
+ #include <asm/pgtable.h>
+
