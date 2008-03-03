@@ -1,18 +1,41 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 21 Mar 2008 08:25:45 +0000
-Subject: Re: [PATCH v2] sh: Add support for Solution Engine SH7721 board
-Message-Id: <20080321082545.GA17623@linux-sh.org>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Mon, 03 Mar 2008 15:38:43 +0000
+Subject: sh sh7710voipgw_defconfig compile error
+Message-Id: <20080303153843.GD26072@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <47E35B95.9080000@renesas.com>
-In-Reply-To: <47E35B95.9080000@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Fri, Mar 21, 2008 at 03:54:13PM +0900, Yoshihiro Shimoda wrote:
-> Add support for Solution Engine SH7721 board(MS7721RP01).
-> 
-> Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+It seems commit 9a7ef6d59f9d4780ff5bc9c4d05266b52dcb9211 broke the 
+support for this board:
 
-Applied, thanks.
+<--  snip  -->
+
+...
+  CC      arch/sh/boards/renesas/sh7710voipgw/setup.o
+arch/sh/boards/renesas/sh7710voipgw/setup.c:15: error: array type has incomplete element type
+arch/sh/boards/renesas/sh7710voipgw/setup.c:16: error: 'TIMER2_IRQ' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:16: error: 'TIMER2_IPR_ADDR' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:16: error: 'TIMER2_IPR_POS' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:16: error: 'TIMER2_PRIORITY' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:17: error: 'WDT_IRQ' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:17: error: 'WDT_IPR_ADDR' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:17: error: 'WDT_IPR_POS' undeclared here (not in a function)
+arch/sh/boards/renesas/sh7710voipgw/setup.c:17: error: 'WDT_PRIORITY' undeclared here (not in a function)
+...
+
+<--  snip  -->
+
+cu
+Adrian
+
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
+
