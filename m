@@ -1,58 +1,95 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Thu, 20 Mar 2008 22:34:02 +0000
-Subject: Re: [PATCH] 2/2 mtd: Add support for the Dreamcast VMU flash
-Message-Id: <1206052442.6274.26.camel@localhost.localdomain>
+From: "Adrian McMenamin" <lkmladrian@gmail.com>
+Date: Wed, 05 Mar 2008 21:55:09 +0000
+Subject: Getting probing to work
+Message-Id: <8b67d60803051355s4d498bd2mf9006e9d72409b22@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1205879413.6250.13.camel@localhost.localdomain>
-	 <1205880554.6250.25.camel@localhost.localdomain>
-	 <1205880982.6250.32.camel@localhost.localdomain>
-	 <20080320141018.34127f0d.akpm@linux-foundation.org>
-In-Reply-To: <20080320141018.34127f0d.akpm@linux-foundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: dwmw2@infradead.org, greg@kroah.com, lethal@linux-sh.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mtd@vger.kernel.org
+To: linux-sh@vger.kernel.org
+
+I am working on a device driver for flash (the so-called "Visual
+Memory Unit") on the Sega Dreamcast but I've hit a problem which, I
+assume, is due to some way the device driver susbsystem works, but I
+cannot see why...
+
+These devices are hotpluggable. To determine how big they are etc I
+need to pass them a message on the Dreamcast's "maple" bus and then
+wait for a reply, which will contain the information I need.
+
+If the device is plugged in before the device driver is loaded it
+works like this:
+
+System start up  --> detect device  ---> Is there a maple driver for
+this function? --->
+
+no, so load the dummy driver.
+
+Then, when a proper device driver is loaded
+
+We have driver for this function now  --> probe device by sending
+messages---> get data needed to register for mtd subsys --> register
+
+All fine (the dummy driver does nothing except be there)
 
 
-On Thu, 2008-03-20 at 14:10 -0700, Andrew Morton wrote:
+But if I load the driver and then plug the device in, then I get this:
 
-> If this error is taken, vmu_flash_write() (at least) will not call
-> maple_vmu_write_block() and hence mdev->mq->sem never gets up()ed.  As far
-> as I can tell.
-> 
-> Also, when this function is called from vmu_flash_read_char() I can't see
-> where mdev->mq->sem gets up()ed ever.  But I didn't look too hard.
-> 
-
-It's not an issue - the bus will report "a no reply" at the end of the
-bus read and that will result in an automatic up.
+We have driver ---> attempt to probe  --->probe fails  --> oops
 
 
-<snip>
-> > +
-> > +	for (x = 0; x < card->writecnt; x++) {
-> > +		/* take the lock to protect the contents of sendbuf */
-> > +		locking = down_interruptible(&mdev->mq->sem);
-> > +		if (locking) {
-> > +			error = -EBUSY;
-> > +			goto fail_nolock;
-> > +		}
-> 
-> Confused.  Where within this loop does the up(&mdev->mq->sem) happen?
-> 
+And the oops appears to be because it is impossible to send messages
+to the device while inside register_driver so the result is that the
+system is flooded with them as soon as the registration fails.
 
-It's in the bus code.
+This is what the code looks like now - the message packet is added to
+the queue and then the calling function sleeps in anticipation of a
+reply. This seems to work fine when the device is already in situ but
+fails on hotplugs... any clues as to why?
 
+static void vmu_queryblocks(struct mapleq *mq)
+{
+	struct maple_device *mdev;
+	unsigned short *res;
+	struct memcard *card;
 
-> > +		((unsigned long *)sendbuf)[1] > > +			cpu_to_be32(partition << 24 | x << 16 | num);
-> > +		memcpy(sendbuf + 8, buf + phaselen * x, phaselen);
-> > +		mdev->mq->sendbuf = sendbuf;
-> > +		/* wait for the mutex to be available */
-> > +		maple_add_packet(mdev->mq);
-> 
-> Within here, I guess, via a workqueue or timer function?
+	if (!block_query_running)
+		return; /* Not ready */
+	block_query_running = 0;
 
+	mdev = mq->dev;
+	card = mdev->private_data;
+	res = mq->recvbuf;
+	card->tempA = res[12];
+	card->tempB = res[6];
+	
+	printk("Maple: VMU device has %d user blocks with a root"
+		" block at %d\n", card->tempA, card->tempB);
+	wake_up_interruptible(&vmuflash_query);
+}
 
-It's handled in a workqueue in the main bus code, yes.
+...
 
+	for (c = 0; c < card->partitions; c++)
+	{
+		/* Set the callback */
+		z = 0;
+		block_query_running = 1;
+		do {
+			z++;
+			maple_getcond_callback(mdev, vmu_queryblocks, 0,
+				MAPLE_FUNC_MEMCARD);
+			mdev->mq->waiting = 1;
+			maple_add_packet(mdev->mq);
+			wait_event_interruptible_timeout(vmuflash_query,
+				block_query_running = 0, HZ);
+			mdev->mq->waiting = 0;
+			maple_getcond_callback(mdev, NULL, 0, MAPLE_FUNC_MEMCARD);
+			if (block_query_running = 0)
+				break;
+		} while (z < 5); /* try a few times */
+		
+		if (block_query_running) {
+			printk(KERN_WARNING "Maple: Could not query flash "
+				"memory card at (%d, %d)\n", mdev->port,
+				mdev->unit);
