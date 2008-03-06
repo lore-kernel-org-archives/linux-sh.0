@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 Mar 2008 06:38:39 +0000
+From: Hideo Saito <saito@densan.co.jp>
+Date: Thu, 06 Mar 2008 07:55:04 +0000
 Subject: Re: TLB reset on SH7780
-Message-Id: <20080306063839.GA19770@linux-sh.org>
+Message-Id: <20080306.165504.46638303.saito@densan.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080228.184540.68563408.saito@densan.co.jp>
 In-Reply-To: <20080228.184540.68563408.saito@densan.co.jp>
@@ -10,37 +10,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 28, 2008 at 07:04:20PM +0900, Paul Mundt wrote:
-> On Thu, Feb 28, 2008 at 06:45:40PM +0900, Hideo Saito wrote:
-> > Hi Paul,
-> > 
-> > When /dev/mem is accessed as follows, it causes TLB reset on SH7780, because our physical memory is mapped from 0x08000000, the PMB entry does not map all of the P1 area.
-> > 
-> > # dd if=/dev/mem <return>
-> > 
-> > How about following changes though the code is in the machine independent part?
-> > 
-> > --- ./drivers/char/mem.c.org	2008-01-25 07:58:37.000000000 +0900
-> > +++ ./drivers/char/mem.c	2008-02-28 17:56:11.000000000 +0900
-> > @@ -91,17 +91,18 @@ static inline int uncached_access(struct
-> >  		return 1;
-> >  	return addr >= __pa(high_memory);
-> >  #endif
-> >  }
-> >  
-> >  #ifndef ARCH_HAS_VALID_PHYS_ADDR_RANGE
-> >  static inline int valid_phys_addr_range(unsigned long addr, size_t count)
-> >  {
-> > -	if (addr + count > __pa(high_memory))
-> > +	if (addr < __pa(high_memory - (num_physpages << PAGE_SHIFT)) ||
-> > +	    addr + count > __pa(high_memory))
-> >  		return 0;
-> >  
-> >  	return 1;
-> >  }
-> >  
-> Given that this is under an ARCH_HAS_VALID_PHYS_ADDR_RANGE check, how
-> about just defining this and providing a custom implementation?
+On Thu, 6 Mar 2008 15:38:39 +0900, Paul Mundt wrote:
+> Note that I'm also unable to reproduce this on SH7785. I assume this is
+> only a problem if you have the PMB enabled?
 
-Note that I'm also unable to reproduce this on SH7785. I assume this is
-only a problem if you have the PMB enabled?
+Yes, the PMB is enabled.
+I doesn't map all of the P1 area because there is no memory on the top of the P1 area, however, the driver for /dev/mem accesses from top of the P1 area, if I don't specify offset of the area. It causes TLB reset.
