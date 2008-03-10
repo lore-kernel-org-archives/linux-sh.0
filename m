@@ -1,25 +1,18 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 25 Mar 2008 07:56:11 +0000
-Subject: Re: [PATCH 05/06] sh: MigoR NOR flash support using physmap-flash
-Message-Id: <20080325075611.GA29509@linux-sh.org>
+From: "Jeongdo Son" <sohn9086@gmail.com>
+Date: Mon, 10 Mar 2008 08:59:05 +0000
+Subject: Is SH7727 supported by linux?
+Message-Id: <59fd4ce80803100159o6c178fdajefa5ffdc2a8b811a@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080321094355.10532.43880.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080321094355.10532.43880.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Mar 21, 2008 at 06:43:55PM +0900, Magnus Damm wrote:
-> Add NOR flash support to the MigoR board by giving board specific data
-> to the physmap-flash platform driver.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Hi, there
 
-On Fri, Mar 21, 2008 at 06:44:04PM +0900, Magnus Damm wrote:
-> Add NAND flash support to the MigoR board by giving board specific data
-> to the gen_nand platform driver.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+I'm planning to port linux on a SH7727 based board,
+but I couldn't find CPU_SUBTYPE_SH7727 from arch/sh/Kconfig.
+Is SH7727 supported?
 
-After some mangling, these are now applied also.
+Regards,
+Jeongdo Son
