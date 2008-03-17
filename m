@@ -1,57 +1,54 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 Mar 2008 02:22:56 +0000
-Subject: Re: [2.6 patch] sh_ksyms_32.c update for gcc 4.3
-Message-Id: <20080306022256.GC31163@linux-sh.org>
+From: Franck Bui-Huu <vagabon.xyz@gmail.com>
+Date: Mon, 17 Mar 2008 19:25:08 +0000
+Subject: [PATCH] Use relative path when creating include/asm/{mach,cpu} symlinks
+Message-Id: <47DEC594.6010502@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080304223958.GA2136@cs181133002.pp.htv.fi>
-In-Reply-To: <20080304223958.GA2136@cs181133002.pp.htv.fi>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian Bunk <adrian.bunk@movial.fi>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 05, 2008 at 12:39:58AM +0200, Adrian Bunk wrote:
-> This patch fixes the following build error with landisk_defconfig when 
-> using gcc 4.3:
-> 
-> <--  snip  -->
-> 
-> ...
->   MODPOST 50 modules
-> ERROR: "__udivsi3_i4i" [net/sunrpc/sunrpc.ko] undefined!
-> ERROR: "__udivsi3_i4i" [net/appletalk/appletalk.ko] undefined!
-> ERROR: "__udivsi3_i4i" [fs/ufs/ufs.ko] undefined!
-> ERROR: "__udivsi3_i4i" [fs/ntfs/ntfs.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [fs/ntfs/ntfs.ko] undefined!
-> ERROR: "__udivsi3_i4i" [fs/nfsd/nfsd.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [fs/nfsd/nfsd.ko] undefined!
-> ERROR: "__udivsi3_i4i" [fs/nfs/nfs.ko] undefined!
-> ERROR: "__udivsi3_i4i" [fs/lockd/lockd.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/usb/storage/usb-storage.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/usb/serial/pl2303.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/usb/serial/pl2303.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/usb/serial/ftdi_sio.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/usb/misc/sisusbvga/sisusbvga.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/usb/misc/sisusbvga/sisusbvga.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/media/video/v4l1-compat.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/media/video/v4l1-compat.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/media/video/usbvideo/vicam.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/media/video/usbvideo/usbvideo.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/media/video/usbvideo/usbvideo.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/media/video/sn9c102/sn9c102.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/media/video/sn9c102/sn9c102.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/media/video/se401.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/media/video/pwc/pwc.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/md/raid0.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/md/md-mod.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/md/md-mod.ko] undefined!
-> ERROR: "__udivsi3_i4i" [drivers/md/linear.ko] undefined!
-> ERROR: "__sdivsi3_i4i" [drivers/hid/usbhid/usbhid.ko] undefined!
-> make[2]: *** [__modpost] Error 1
-> 
-> <--  snip  -->
-> 
-> Signed-off-by: Adrian Bunk <adrian.bunk@movial.fi>
-> 
-Applied, thanks.
+From: Franck Bui-Huu <fbuihuu@gmail.com>
+
+Usually relative paths are preferred because they survive directory
+moves, work across networked file systems/chrooted environments.
+
+And in this case, there's no point to use absolute paths.
+
+Signed-off-by: Franck Bui-Huu <fbuihuu@gmail.com>
+---
+ arch/sh/Makefile |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index c510c22..14b39b1 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -164,7 +164,7 @@ include/asm-sh/.cpu: $(wildcard include/config/cpu/*.h) \
+ 		     include/config/auto.conf FORCE
+ 	@echo '  SYMLINK include/asm-sh/cpu -> include/asm-sh/$(cpuincdir-y)'
+ 	$(Q)if [ ! -d include/asm-sh ]; then mkdir -p include/asm-sh; fi
+-	$(Q)ln -fsn $(incdir-prefix)$(cpuincdir-y) include/asm-sh/cpu
++	$(Q)ln -fsn $(cpuincdir-y) include/asm-sh/cpu
+ 	@touch $@
+ 
+ #	Most boards have their own mach directories.  For the ones that
+@@ -185,13 +185,12 @@ include/asm-sh/.mach: $(wildcard include/config/sh/*.h) \
+ 	if [ -d $(incdir-prefix)$$i ]; then \
+ 		echo -n '  SYMLINK include/asm-sh/mach -> '; \
+ 		echo -e "include/asm-sh/$$i"; \
+-		ln -fsn $(incdir-prefix)$$i \
+-			include/asm-sh/mach; \
++		ln -fsn $$i include/asm-sh/mach; \
+ 	else \
+ 		if [ ! -d include/asm-sh/mach ]; then \
+ 			echo -n '  SYMLINK include/asm-sh/mach -> '; \
+ 			echo -e 'include/asm-sh'; \
+-			ln -fsn $(incdir-prefix) include/asm-sh/mach; \
++			ln -fsn ../asm-sh include/asm-sh/mach; \
+ 		fi; \
+ 	fi; \
+ 	done
+-- 
+1.5.4.4.GIT
+
