@@ -1,32 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 21 Mar 2008 09:43:46 +0000
-Subject: [PATCH 04/06] sh: Use phyical addresses for MigoR smc91x resources
-Message-Id: <20080321094346.10532.23730.sendpatchset@rx1.opensource.se>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Thu, 20 Mar 2008 18:46:20 +0000
+Subject: Hi Kieran, could you suggest to me how to proceed?
+Message-Id: <200803201946.20807.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Use physical addresses and change resource name of MigoR ethernet chip.
+Hi Kieram,
+I connected a 640x480 16 bpp LGH screen (LB104V03-A1)
+It work fine.
+Now I'd like to enable a mouse on USB controller.
+How can I modify /etc/rc to make the mouse working?
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
- arch/sh/boards/renesas/migor/setup.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+Thanks a lot in advance.
 
---- 0005/arch/sh/boards/renesas/migor/setup.c
-+++ work/arch/sh/boards/renesas/migor/setup.c	2008-03-20 17:31:56.000000000 +0900
-@@ -27,9 +27,9 @@
- 
- static struct resource smc91x_eth_resources[] = {
- 	[0] = {
--		.name   = "smc91x-regs" ,
--		.start  = P2SEGADDR(0x10000300),
--		.end    = P2SEGADDR(0x1000030f),
-+		.name   = "SMC91C111" ,
-+		.start  = 0x10000300,
-+		.end    = 0x1000030f,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
+Regards
+
+-- 
+Fabio Giovagnini
+
+Aurion s.r.l.
+via degli orti 11,
+40050 Funo di Argelato (BO)
+P.I e C.F.
+00885711200
+Tel. +39.335.8350919
+Fax +39.051.8659009
+
+www.aurion-tech.com
+
+account telefono VoIP skype (www.skype.com):
+aurion.giovagnini
