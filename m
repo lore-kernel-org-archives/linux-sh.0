@@ -1,10 +1,9 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Mon, 24 Mar 2008 12:06:24 +0000
-Subject: Re: [PATCH] 2/3 mtd: add support for flash on the SEGA Dreamcast
-Message-Id: <1206360384.6283.11.camel@localhost.localdomain>
+From: =?utf-8?B?SsO2cm4=?= Engel <joern@logfs.org>
+Date: Mon, 24 Mar 2008 13:21:02 +0000
+Subject: Re: [PATCH] 2/3 mtd: add support for flash on the SEGA Dreamcast Visual Memory Unit
+Message-Id: <20080324132101.GA2899@logfs.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1206207805.6324.13.camel@localhost.localdomain>
-	<1206209035.6324.29.camel@localhost.localdomain>
+References: <1206209035.6324.29.camel@localhost.localdomain>
 	<20080322183200.GD19347@logfs.org>
 	<1206211147.6324.48.camel@localhost.localdomain>
 	<20080322185600.GE19347@logfs.org>
@@ -13,66 +12,50 @@ References: <1206207805.6324.13.camel@localhost.localdomain>
 	<20080322183200.GD19347@logfs.org>
 	<1206211147.6324.48.camel@localhost.localdomain>
 	<20080324020832.GA13935@linux-sh.org>
-In-Reply-To: <20080324020832.GA13935@linux-sh.org>
+	<1206360384.6283.11.camel@localhost.localdomain>
+In-Reply-To: <1206360384.6283.11.camel@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: J??rn Engel <joern@logfs.org>, MTD <linux-mtd@lists.infradead.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Cc: Paul Mundt <lethal@linux-sh.org>, MTD <linux-mtd@lists.infradead.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
 
-[Recipient list cut somewhat]
+On Mon, 24 March 2008 12:06:24 +0000, Adrian McMenamin wrote:
+>=20
+> I have no desire to have a flame war over this. But I didn't understand
+> the sentence, was told twice that I should act on it and asked twice
+> simply what it meant. Eg the second time...
+>=20
+> "I'm sorry, but the comment above <snap> isn't good english. What do you
+> mean?"
 
+Just for reference, I had no bloody idea what the "<snap>" in your
+sentence meant.  Or what the comment as a whole was referring to.  In
+other words, we could't communicate.
 
-On Mon, 2008-03-24 at 11:08 +0900, Paul Mundt wrote:
-> On Sat, Mar 22, 2008 at 06:39:07PM +0000, Adrian McMenamin wrote:
-> > On Sat, 2008-03-22 at 19:32 +0100, J??rn Engel wrote:
+Probably more important is the thing you didn't ask about.  The cast is
+- to use a techinical term - crap.  And when someone ignores such
+things, but instead makes a comment about my English language skills, my
+natural response is to suspect a troll.  Trolls tend to replace "I don't
+understand <foo>" with "you are an idiot" in some disguise like a
+comment about hairstyle or language skills.
 
-> > >  I don't mind merging code that isn't up to our standards yet.  But I
-> > >  have a bad feeling about a maintainer that does not understand
-> > >  review comments.  Since you had similar problems understanding
-> > >  Andrew, part of the blame may sit on your side.
-> > 
-> > I'm sorry that you feel that way, but as you took the hump when I said
-> > that this:
-> > 
-> > "Possibly the big-endian annotations need to trickly though the layers
-> > here as well."
-> > 
-> > Isn't good english (and it's not) and asked you - twice - to explain
-> > what you meant. I cannot accept your summary.
-> > 
-> Just as there's no motivation for others to accept merging your code. You
-> really need to work on handling feedback in a less oppositional way if
-> you ever want to have your changes merged.
-> 
-> As far as "good" english goes, this is l-k, hang your degree at the
-> door and get off your high horse. Even the native speakers perform
-> horrendous atrocities against the english language, that's life, deal
-> with it. In technical discussions this doesn't tend to matter at all, as
-> long as the meaning is obvious -- which in this case it certainly seems
-> to be. If you're speaking a different language, perhaps it's a
-> miscommunication or misinterpretation of technical terms rather than
-> anything else. Do not automatically assume the blame lies with people who
-> are trying to help you.
+You ignored other things as well.  In general, the things you ignored
+are a lot more important than the things you didn't ignore.  Which again
+is a good recipe for fruitless discussions, if not flamewars.  As is a
+metadiscussion about previous discussions - like this one.
 
+> Not unreasonable I think. After the second time I was told  all
+> communication would cease. And, yes, that did annoy me, especially when
+> the next thing I get is someone telling me I didn't listen to them.
 
-I have no desire to have a flame war over this. But I didn't understand
-the sentence, was told twice that I should act on it and asked twice
-simply what it meant. Eg the second time...
+Then maybe we can end the digressions and get back to the code and
+improving it?  I would welcome that.  Would you mind if I sent you
+patches against your code?  Might be a way to avoid metadiscussions as
+much as possible.
 
+J=C3=B6rn
 
-"I'm sorry, but the comment above <snap> isn't good english. What do you
-mean?"
-
-Not unreasonable I think. After the second time I was told  all
-communication would cease. And, yes, that did annoy me, especially when
-the next thing I get is someone telling me I didn't listen to them.
-
-I certainly don't expect people to be flawless speakers or writers of
-English. But I don't think it is wrong to ask for clarity when something
-that doesn't make sense is written.
-
-Bluntly I almost always think the blame lies with me when people point
-out mistakes or imperfections in my code - because it usually is. But I
-don't think it is unreasonable to ask what people mean.
-
+--=20
+Doubt is not a pleasant condition, but certainty is an absurd one.
+-- Voltaire
