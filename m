@@ -1,35 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 21 Mar 2008 12:07:18 +0000
-Subject: [PATCH] i2c: SuperH Mobile I2C Bus Controller V2
-Message-Id: <20080321120718.1348.99530.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 25 Mar 2008 10:55:59 +0000
+Subject: [PATCH] i2c: SuperH Mobile I2C Bus Controller V3
+Message-Id: <20080325105559.GA30232@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080320141840.13560.24850.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20080320141840.13560.24850.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-To: i2c@lm-sensors.org
-Cc: khali@linux-fr.org, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: i2c@lm-sensors.org, khali@linux-fr.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org
 
-This is V2 of the SuperH Mobile I2C Controller Driver. A simple Master
+This is V3 of the SuperH Mobile I2C Controller Driver. A simple Master
 only driver for the I2C block included in processors such as sh7343,
-sh7722 and sh7723. Tested on a sh7722 MigoR using a rs5c732b rtc.
+sh7722 and sh7723. Tested on a sh7722 MigoR using a rs5c372b rtc.
 
+Changes since V2:
+ - dev_xxx() use
+ - Kill off superfluous ioarea resource
+ - Add SMBus emulation
 Changes since V1:
  - Use clk_get()/clk_put()/clk_get_rate() to get peripheral clock rate.
  - Use pdev->dev.bus_id instead of dev->name
 
+Verified with the rtc-rs5c372 SMBus conversion patches currently in -mm.
+
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+
 ---
 
- drivers/i2c/busses/Kconfig         |    8 
+ drivers/i2c/busses/Kconfig         |    9 
  drivers/i2c/busses/Makefile        |    1 
- drivers/i2c/busses/i2c-sh_mobile.c |  504 ++++++++++++++++++++++++++++++++++++
+ drivers/i2c/busses/i2c-sh_mobile.c |  504 +++++++++++++++++++++++++++++++++++++
  3 files changed, 513 insertions(+)
 
---- 0001/drivers/i2c/busses/Kconfig
-+++ work/drivers/i2c/busses/Kconfig	2008-03-21 20:22:54.000000000 +0900
-@@ -672,4 +672,12 @@ config I2C_PMCMSP
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 3376d53..80b426c 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -684,4 +684,13 @@ config I2C_PMCMSP
  	  This driver can also be built as module. If so, the module
  	  will be called i2c-pmcmsp.
  
@@ -41,10 +51,13 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 +	  This driver can also be built as a module.  If so, the module
 +	  will be called i2c-sh_mobile.
++
  endmenu
---- 0001/drivers/i2c/busses/Makefile
-+++ work/drivers/i2c/busses/Makefile	2008-03-21 20:22:54.000000000 +0900
-@@ -52,6 +52,7 @@ obj-$(CONFIG_I2C_VIAPRO)	+= i2c-viapro.o
+diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
+index d179bce..5fe799d 100644
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_I2C_VIAPRO)	+= i2c-viapro.o
  obj-$(CONFIG_I2C_VOODOO3)	+= i2c-voodoo3.o
  obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
  obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
@@ -52,9 +65,12 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  
  ifeq ($(CONFIG_I2C_DEBUG_BUS),y)
  EXTRA_CFLAGS += -DDEBUG
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+new file mode 100644
+index 0000000..ff7f69e
 --- /dev/null
-+++ work/drivers/i2c/busses/i2c-sh_mobile.c	2008-03-21 20:48:36.000000000 +0900
-@@ -0,0 +1,504 @@
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -0,0 +1,497 @@
 +/*
 + * SuperH Mobile I2C Controller
 + *
@@ -78,7 +94,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 + * You should have received a copy of the GNU General Public License
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+*/
++ */
 +
 +#include <linux/kernel.h>
 +#include <linux/module.h>
@@ -101,7 +117,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +};
 +
 +struct sh_mobile_i2c_data {
-+	struct resource	*ioarea;
++	struct device *dev;
 +	void __iomem *reg;
 +	struct i2c_adapter adap;
 +
@@ -180,7 +196,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +{
 +	unsigned char ret = 0;
 +
-+	pr_debug("op %d, data in 0x%02x\n", op, data);
++	dev_dbg(pd->dev, "op %d, data in 0x%02x\n", op, data);
 +
 +	spin_lock_irq(&pd->lock);
 +
@@ -211,7 +227,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 +	spin_unlock_irq(&pd->lock);
 +
-+	pr_debug("op %d, data out 0x%02x\n", op, ret);
++	dev_dbg(pd->dev, "op %d, data out 0x%02x\n", op, ret);
 +	return ret;
 +}
 +
@@ -226,7 +242,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	sr = ioread8(ICSR(pd));
 +	pd->sr |= sr;
 +
-+	pr_debug("i2c_isr 0x%02x 0x%02x %s %d %d!\n", sr, pd->sr,
++	dev_dbg(pd->dev, "i2c_isr 0x%02x 0x%02x %s %d %d!\n", sr, pd->sr,
 +	       (msg->flags & I2C_M_RD) ? "read" : "write",
 +	       pd->pos, msg->len);
 +
@@ -302,7 +318,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +			      struct i2c_msg *msgs,
 +			      int num)
 +{
-+	struct sh_mobile_i2c_data *pd = adapter->algo_data;
++	struct sh_mobile_i2c_data *pd = i2c_get_adapdata(adapter);
 +	struct i2c_msg	*msg;
 +	int err = 0;
 +	u_int8_t val;
@@ -325,13 +341,13 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +				       pd->sr & (ICSR_TACK | SW_DONE),
 +				       5 * HZ);
 +		if (!k)
-+			pr_err("Transfer request timed out\n");
++			dev_err(pd->dev, "Transfer request timed out\n");
 +
 +		k = 10;
 +	again:
 +		val = ioread8(ICSR(pd));
 +
-+		pr_debug("val 0x%02x pd->sr 0x%02x!\n", val, pd->sr);
++		dev_dbg(pd->dev, "val 0x%02x pd->sr 0x%02x!\n", val, pd->sr);
 +
 +		if ((val | pd->sr) & (ICSR_TACK | ICSR_AL)) {
 +			err = -EIO;
@@ -345,7 +361,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +				goto again;
 +
 +			err = -EIO;
-+			pr_err("Polling timed out\n");
++			dev_err(pd->dev, "Polling timed out\n");
 +			break;
 +		}
 +	}
@@ -357,9 +373,9 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	return err;
 +}
 +
-+u32 sh_mobile_i2c_func(struct i2c_adapter *adapter)
++static u32 sh_mobile_i2c_func(struct i2c_adapter *adapter)
 +{
-+	return I2C_FUNC_I2C;
++	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
 +}
 +
 +static struct i2c_algorithm sh_mobile_i2c_algorithm = {
@@ -441,6 +457,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +static int sh_mobile_i2c_probe(struct platform_device *dev)
 +{
 +	struct sh_mobile_i2c_data *pd;
++	struct i2c_adapter *adap;
 +	struct resource *res;
 +	int size;
 +	int ret;
@@ -464,6 +481,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +		goto err_clk;
 +	}
 +
++	pd->dev = &dev->dev;
 +	platform_set_drvdata(dev, pd);
 +
 +	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
@@ -475,34 +493,28 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 +	size = (res->end - res->start) + 1;
 +
-+	pd->ioarea = request_mem_region(res->start, size, dev->dev.bus_id);
-+	if (pd->ioarea = NULL) {
-+		dev_err(&dev->dev, "cannot request IO\n");
-+		ret = -ENXIO;
-+		goto err_irq;
-+	}
-+
 +	pd->reg = ioremap(res->start, size);
 +	if (pd->reg = NULL) {
 +		dev_err(&dev->dev, "cannot map IO\n");
 +		ret = -ENXIO;
-+		goto err_res;
++		goto err_irq;
 +	}
 +
 +	/* setup the private data */
++	adap = &pd->adap;
++	i2c_set_adapdata(adap, pd);
 +
-+	pd->adap.owner = THIS_MODULE;
-+	pd->adap.algo = &sh_mobile_i2c_algorithm;
-+	pd->adap.algo_data = pd;
-+	pd->adap.dev.parent = &dev->dev;
-+	pd->adap.retries = 5;
-+	pd->adap.nr = dev->id;
++	adap->owner = THIS_MODULE;
++	adap->algo = &sh_mobile_i2c_algorithm;
++	adap->dev.parent = &dev->dev;
++	adap->retries = 5;
++	adap->nr = dev->id;
 +
-+	strlcpy(pd->adap.name, dev->name, sizeof(pd->adap.name));
++	strlcpy(adap->name, dev->name, sizeof(adap->name));
 +
 +	sh_mobile_i2c_setup_channel(dev);
 +
-+	ret = i2c_add_numbered_adapter(&pd->adap);
++	ret = i2c_add_numbered_adapter(adap);
 +	if (ret < 0)
 +		goto err_all;
 +
@@ -510,8 +522,6 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 + err_all:
 +	iounmap(pd->reg);
-+ err_res:
-+	release_resource(pd->ioarea);
 + err_irq:
 +	sh_mobile_i2c_hook_irqs(dev, 0);
 + err_clk:
@@ -527,7 +537,6 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 +	i2c_del_adapter(&pd->adap);
 +	iounmap(pd->reg);
-+	release_resource(pd->ioarea);
 +	sh_mobile_i2c_hook_irqs(dev, 0);
 +	clk_put(pd->clk);
 +	kfree(pd);
