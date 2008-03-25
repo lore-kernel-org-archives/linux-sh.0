@@ -1,35 +1,53 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 20 Mar 2008 18:46:20 +0000
-Subject: Hi Kieran, could you suggest to me how to proceed?
-Message-Id: <200803201946.20807.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 25 Mar 2008 08:20:24 +0000
+Subject: [PATCH] sh: Add I2C support to MigoR
+Message-Id: <20080325082024.10598.25130.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Kieram,
-I connected a 640x480 16 bpp LGH screen (LB104V03-A1)
-It work fine.
-Now I'd like to enable a mouse on USB controller.
-How can I modify /etc/rc to make the mouse working?
+Enable the sh7722 I2C controller on the MigoR board.
 
-Thanks a lot in advance.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Regards
+ arch/sh/boards/renesas/migor/setup.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
--- 
-Fabio Giovagnini
-
-Aurion s.r.l.
-via degli orti 11,
-40050 Funo di Argelato (BO)
-P.I e C.F.
-00885711200
-Tel. +39.335.8350919
-Fax +39.051.8659009
-
-www.aurion-tech.com
-
-account telefono VoIP skype (www.skype.com):
-aurion.giovagnini
+--- 0008/arch/sh/boards/renesas/migor/setup.c
++++ work/arch/sh/boards/renesas/migor/setup.c	2008-03-21 10:48:14.000000000 +0900
+@@ -13,6 +13,7 @@
+ #include <linux/input.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/nand.h>
++#include <linux/i2c.h>
+ #include <asm/machvec.h>
+ #include <asm/io.h>
+ #include <asm/sh_keysc.h>
+@@ -174,8 +175,14 @@ static struct platform_device *migor_dev
+ 	&migor_nand_flash_device,
+ };
+ 
++static struct i2c_board_info __initdata migor_i2c_devices[] = {
++};
++
+ static int __init migor_devices_setup(void)
+ {
++	i2c_register_board_info(0, migor_i2c_devices,
++				ARRAY_SIZE(migor_i2c_devices));
++ 
+ 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
+ }
+ __initcall(migor_devices_setup);
+@@ -197,6 +204,9 @@ static void __init migor_setup(char **cm
+ 	ctrl_outw(ctrl_inw(PORT_PXCR) & 0x0fff, PORT_PXCR);
+ 	ctrl_outl((ctrl_inl(BSC_CS6ABCR) & ~0x00000600) | 0x00000200,
+ 		  BSC_CS6ABCR);
++
++	/* I2C */
++	ctrl_outl(ctrl_inl(MSTPCR1) & ~0x00000200, MSTPCR1);
+ }
+ 
+ static struct sh_machine_vector mv_migor __initmv = {
