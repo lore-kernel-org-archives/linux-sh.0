@@ -1,124 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Feb 2008 15:02:50 +0000
-Subject: [PATCH] sh: break out unaligned sign extension code
-Message-Id: <20080206150250.27073.50160.sendpatchset@clockwork.opensource.se>
+From: Jesper Juhl <jesper.juhl@gmail.com>
+Date: Wed, 26 Mar 2008 01:16:32 +0000
+Subject: [PATCH] SuperH floppy: kill 'register' keyword from floppy.h
+Message-Id: <alpine.LNX.1.00.0803260213550.1901@dragon.funnycrock.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Ian Molton <spyro@f2s.com>, Alain L Knaff <Alain.Knaff@lll.lu>, David C Niemi <niemi@tux.org>, Trivial Patch Monkey <trivial@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
 
-Break out the sign extension code since it's used in multiple places.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+When compilers became generally better at optimizing code than humans, the
+register keyword became mostly useless. For the floppy driver it certainly
+is since it's so slow compared to the rest of the system that optimizing
+access to a single variable or two isn't going to make any real
+difference
+So let's just leave it to the compiler - it'll do a better job anyway.
+
+This patch does away with a few register keywords in the SuperH floppy
+driver.
+
+
+Signed-off-by: Jesper Juhl <jesper.juhl@gmail.com>
 ---
 
- arch/sh/kernel/traps_32.c |   68 +++++++++++++++------------------------------
- 1 file changed, 23 insertions(+), 45 deletions(-)
+ floppy.h |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
---- 0001/arch/sh/kernel/traps_32.c
-+++ work/arch/sh/kernel/traps_32.c	2008-02-05 14:18:19.000000000 +0900
-@@ -147,6 +147,21 @@ static int die_if_no_fixup(const char * 
- 	return -EFAULT;
- }
+diff --git a/include/asm-sh/floppy.h b/include/asm-sh/floppy.h
+index 59fbfdc..afa7f8f 100644
+--- a/include/asm-sh/floppy.h
++++ b/include/asm-sh/floppy.h
+@@ -54,7 +54,7 @@ static int doing_pdma;
  
-+static inline void sign_extend(unsigned int count, unsigned char *dst)
-+{
-+#ifdef __LITTLE_ENDIAN__
-+	if ((count = 2) && dst[1] & 0x80) {
-+		dst[2] = 0xff;
-+		dst[3] = 0xff;
-+	}
-+#else
-+	if ((count = 2) && dst[2] & 0x80) {
-+		dst[0] = 0xff;
-+		dst[1] = 0xff;
-+	}
-+#endif
-+}
-+
- /*
-  * handle an instruction that does an unaligned memory access by emulating the
-  * desired behaviour
-@@ -178,25 +193,13 @@ static int handle_unaligned_ins(u16 inst
- 			dst = (unsigned char*) rn;
- 			*(unsigned long*)dst = 0;
+ static void floppy_hardint(int irq, void *dev_id, struct pt_regs * regs)
+ {
+-	register unsigned char st;
++	unsigned char st;
  
--#ifdef __LITTLE_ENDIAN__
--			if (copy_from_user(dst, src, count))
--				goto fetch_fault;
--
--			if ((count = 2) && dst[1] & 0x80) {
--				dst[2] = 0xff;
--				dst[3] = 0xff;
--			}
--#else
-+#if !defined(__LITTLE_ENDIAN__)
- 			dst += 4-count;
--
--			if (__copy_user(dst, src, count))
-+#endif
-+			if (copy_from_user(dst, src, count))
- 				goto fetch_fault;
+ #undef TRACE_FLPY_INT
  
--			if ((count = 2) && dst[2] & 0x80) {
--				dst[0] = 0xff;
--				dst[1] = 0xff;
--			}
--#endif
-+			sign_extend(count, dst);
- 		} else {
- 			/* to memory */
- 			src = (unsigned char*) rm;
-@@ -253,25 +256,12 @@ static int handle_unaligned_ins(u16 inst
- 		dst = (unsigned char*) rn;
- 		*(unsigned long*)dst = 0;
- 
--#ifdef __LITTLE_ENDIAN__
--		if (copy_from_user(dst, src, count))
--			goto fetch_fault;
--
--		if ((count = 2) && dst[1] & 0x80) {
--			dst[2] = 0xff;
--			dst[3] = 0xff;
--		}
--#else
-+#if !defined(__LITTLE_ENDIAN__)
- 		dst += 4-count;
--
-+#endif
- 		if (copy_from_user(dst, src, count))
- 			goto fetch_fault;
--
--		if ((count = 2) && dst[2] & 0x80) {
--			dst[0] = 0xff;
--			dst[1] = 0xff;
--		}
--#endif
-+		sign_extend(count, dst);
- 		ret = 0;
- 		break;
- 
-@@ -299,21 +289,9 @@ static int handle_unaligned_ins(u16 inst
- #if !defined(__LITTLE_ENDIAN__)
- 			dst += 2;
+@@ -74,8 +74,8 @@ static void floppy_hardint(int irq, void *dev_id, struct pt_regs * regs)
  #endif
--
- 			if (copy_from_user(dst, src, 2))
- 				goto fetch_fault;
--
--#ifdef __LITTLE_ENDIAN__
--			if (dst[1] & 0x80) {
--				dst[2] = 0xff;
--				dst[3] = 0xff;
--			}
--#else
--			if (dst[2] & 0x80) {
--				dst[0] = 0xff;
--				dst[1] = 0xff;
--			}
--#endif
-+			sign_extend(2, dst);
- 			ret = 0;
- 			break;
- 		}
+ 
+ 	{
+-		register int lcount;
+-		register char *lptr;
++		int lcount;
++		char *lptr;
+ 
+ 		st = 1;
+ 		for(lcount=virtual_dma_count, lptr=virtual_dma_addr; 
+
+
+
