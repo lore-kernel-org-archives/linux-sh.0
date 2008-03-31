@@ -1,7 +1,7 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 21 Mar 2008 03:41:24 +0000
-Subject: [GIT PULL] sh updates for 2.6.25-rc7
-Message-Id: <20080321034124.GB16295@linux-sh.org>
+Date: Mon, 31 Mar 2008 07:20:09 +0000
+Subject: [GIT PULL] sh updates for 2.6.25-rc8
+Message-Id: <20080331072009.GC16398@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -15,29 +15,28 @@ Please pull from:
 
 Which contains:
 
-Franck Bui-Huu (1):
-      sh: Use relative paths for mach/cpu symlinks.
+Adrian Bunk (1):
+      remove include/asm-sh/floppy.h
 
-Kieran Bingham (1):
-      sh: Fix up the address error exception handler for SH-2.
+Paul Mundt (2):
+      sh: Fix occasional FPU register corruption under preempt.
+      sh: Fix TIF_USEDFPU clearing under FPU emulation.
 
-Paul Mundt (3):
-      sh: Fix up the timer IRQ definition for SH7203.
-      sh: Fix uImage build error.
-      sh: Fix more user header breakage from sh64 integration.
+Yoshihiro Shimoda (1):
+      sh: Fix up uImage compression type
 
-Robert P. J. Day (1):
-      SH: Use newer, non-deprecated __SPIN_LOCK_UNLOCKED macro.
-
-Yutaro Ebihara (1):
-      serial: sh-sci: Fix fifo stall on SH7760/SH7780/SH7785 SCIF.
-
- arch/sh/Kconfig                |    1 +
- arch/sh/Makefile               |    8 ++++++--
- arch/sh/boot/Makefile          |    4 ++--
- arch/sh/kernel/cpu/sh2/entry.S |    1 -
- arch/sh/kernel/smp.c           |    2 +-
- drivers/serial/sh-sci.c        |    4 ++--
- include/asm-sh/byteorder.h     |   15 +++++++--------
- include/asm-sh/posix_types.h   |    6 ++++++
- 8 files changed, 25 insertions(+), 16 deletions(-)
+ arch/sh/Kconfig               |    3 -
+ arch/sh/boot/Makefile         |    2 +-
+ arch/sh/kernel/cpu/sh2a/fpu.c |    1 +
+ arch/sh/kernel/cpu/sh4/fpu.c  |    1 +
+ arch/sh/kernel/cpu/sh5/fpu.c  |    1 +
+ arch/sh/kernel/dump_task.c    |    1 +
+ arch/sh/kernel/process_32.c   |    1 +
+ arch/sh/kernel/signal_32.c    |    1 +
+ include/asm-sh/floppy.h       |  268 -----------------------------------------
+ include/asm-sh/fpu.h          |   39 ++++---
+ include/asm-sh/processor.h    |    1 -
+ include/asm-sh/processor_32.h |    1 +
+ include/asm-sh/processor_64.h |    1 +
+ 13 files changed, 33 insertions(+), 288 deletions(-)
+ delete mode 100644 include/asm-sh/floppy.h
