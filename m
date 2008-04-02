@@ -1,30 +1,38 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Date: Sun, 27 Apr 2008 19:04:29 +0000
-Subject: Re: [GIT PULL] sh updates for 2.6.25
-Message-Id: <1209323069.25560.88.camel@pmac.infradead.org>
+From: "Magnus Damm" <magnus.damm@gmail.com>
+Date: Wed, 02 Apr 2008 02:09:00 +0000
+Subject: Re: Please add ack in intc
+Message-Id: <aec7e5c30804011909i406eb925wbc24899364813954@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080415172333.GA29489@linux-sh.org>
-	 <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
-In-Reply-To: <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
+References: <20080322222933.af8a3f29.Kristoffer.Ericson@Gmail.com>
+In-Reply-To: <20080322222933.af8a3f29.Kristoffer.Ericson@Gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>, Junio C Hamano <gitster@pobox.com>
+To: linux-sh@vger.kernel.org
 
-On Tue, 2008-04-15 at 11:01 -0700, Linus Torvalds wrote:
-> Paul, your git tree is odd. Not quite corrupt, but it doesn't really 
-> follow the rules either.
-> 
-> In particular, it has empty lines at the top of those commits, and I 
-> wonder how you created them. 
+Hi Kristoffer,
 
-Hm, I noticed those go past on the commits list and meant to
-investigate, but got distracted before I got round to it. Should I
-assume there's nothing to fix in the script which feeds the list, then?
+On Sun, Mar 23, 2008 at 2:29 PM, Kristoffer Ericson
+<kristoffer.ericson@gmail.com> wrote:
+> Magnus could you please add an ack into the intc IRQ code, so far I've been unable to silence the interrupts (IRQ0->IRQ5) by any
+>  other means. This should affect 7705-7709-7729 atleast, so would be worth it.
 
-$todo--; :)
+Yeah, adding code to ack the edge triggered interrupts sounds like a good idea.
 
--- 
-dwmw2
+>  Ive tried all modes (level / edge) but it only seems to work right when I use edge and ack the interrupt. without it I get endless
+>  interrupts that basicly freeze the hardware.
 
+To get level triggered interrupt support you may have to configure the
+chip itself that is hooked up to the IRQ. Do you have any data sheets
+for the chips hooked up to the IRQs?
+
+Also, which drivers are using these interrupts at this point? As a
+stop-gap solution, is it possible to ack the the interrupt from the
+driver? Or are you using some standard driver?
+
+I remember some broken PINT code in older kernels. Is your hardware
+platform using PINT?
+
+Thanks,
+
+/ magnus
