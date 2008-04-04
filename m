@@ -1,98 +1,42 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Fri, 04 Apr 2008 08:21:48 +0000
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Fri, 04 Apr 2008 16:14:47 +0000
 Subject: Re: [PATCH] Touch screen driver for the SuperH MigoR board V2
-Message-Id: <aec7e5c30804040121k584a0ae5o909b48fbd970245d@mail.gmail.com>
+Message-Id: <20080404120837.ZZRA012@mailhub.coreip.homeip.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080328095101.8825.48353.sendpatchset@rx1.opensource.se>
-	 <20080402060819.GB14189@anvil.corenet.prv>
-In-Reply-To: <20080402060819.GB14189@anvil.corenet.prv>
+References: <20080328095101.8825.48353.sendpatchset@rx1.opensource.se> <20080402060819.GB14189@anvil.corenet.prv> <aec7e5c30804040121k584a0ae5o909b48fbd970245d@mail.gmail.com>
+In-Reply-To: <aec7e5c30804040121k584a0ae5o909b48fbd970245d@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: Magnus Damm <magnus.damm@gmail.com>
 Cc: linux-input@vger.kernel.org, linux-sh@vger.kernel.org, lethal@linux-sh.org, broonie@sirena.org.uk, akpm@linux-foundation.org
 
-Hi Dmitry,
+Hi Magnus,
 
-On Wed, Apr 2, 2008 at 3:08 PM, Dmitry Torokhov
-<dmitry.torokhov@gmail.com> wrote:
->  On Fri, Mar 28, 2008 at 06:51:01PM +0900, Magnus Damm wrote:
->  > This is V2 of the MigoR touch screen driver. The chip we interface to
->  > is unfortunately a custom designed microcontroller speaking some
->  > undocumented protocol over i2c.
->
->  Thank you for the patch, I just have a couple of comments below...
+On Fri, Apr 04, 2008 at 05:21:48PM +0900, Magnus Damm wrote:
+> I just tested using latest sh-2.6 git with evtest. Everything seems to
+> work well. The patch is much cleaner now. Please apply.
+> 
 
-Your comments are much appreciated.
+I was just looking the driver over one more time before applying it
+and I think there is a race in migor_ts_remove():
 
->  > +     if ((event = EVENT_PENDOWN) || (event = EVENT_REPEAT)) {
->  > +             input_report_key(priv->input, BTN_TOUCH, 1);
->  > +             input_report_abs(priv->input, ABS_X, ypos); /*X-Y swap*/
->  > +             input_report_abs(priv->input, ABS_Y, xpos);
->  > +             input_report_abs(priv->input, ABS_PRESSURE, 120);
->  > +             input_sync(priv->input);
->  > +     } else if (event = EVENT_PENUP) {
->  > +             input_report_abs(priv->input, ABS_PRESSURE, 0);
->
->  Don't you need to signal BTN_TOUCH release here?
++       /* cancel pending work and wait for migor_ts_poscheck() to finish */
++       cancel_delayed_work_sync(&priv->work);
++
 
-Yes, you are correct. It is missing.
+What if interrupt comes here, before we got a chance to shut off the
+device? IRQ is still enabled and it will schedule migor_ts_poscheck()
+again. I think we need to call disable_irq() before canceling the work.
+Since the driver does not support sharing IRQs that should be allright.
+What do you think?
 
->  > +     input_set_abs_params(priv->input, ABS_X, 95, 955, 0, 0);
->  > +     input_set_abs_params(priv->input, ABS_Y, 85, 935, 0, 0);
->  > +     input_set_abs_params(priv->input, ABS_PRESSURE, 0, 0, 0, 0);
->
->  The device does not support pressure reporting so don't pretend
->  to send one. If this was done because of tslib please fix tslib
->  instead.
++       /* disable controller */
++       i2c_master_send(client, migor_ts_dis_seq, sizeof(migor_ts_dis_seq));
++
++       free_irq(priv->irq, priv);
 
-Right, there is no need to pretend.
+Thank you.
 
->  > +     priv->input->name = client->driver_name;
->  > +     priv->input->phys = "input/event0";
->
->  Normally we encode bus slot or port in phys. If this data
->  is unavailable it is better to omit phys altogether.
->
->  What we can and should do is properly set up input device in
->  sysfs hierarchy by parenting it to the i2c client:
->
->         input->dev.parent = &client->dev;
-
-Much better, thank you.
-
->  > +     priv->input->id.bustype = BUS_ISA;
->
->  Not BUS_i2C?
-
-Yes please, BUS_I2C. =)
-
->  > +     if (request_irq(priv->irq, migor_ts_isr, IRQF_TRIGGER_LOW,
->  > +                     client->driver_name, priv)) {
->  > +             dev_err(&client->dev, "Unable to request touchscreen IRQ.\n");
->  > +             res = -EBUSY;
->  > +             goto err2;
->  > +     }
->  > +
->  > +     /* enable controller */
->  > +     if (i2c_master_send(client, migor_ts_ena_seq, sizeof(migor_ts_ena_seq))
->  > +         = sizeof(migor_ts_ena_seq))
->  > +             return 0;
->  > +
->  > +     dev_err(&client->dev, "Unable to enable touchscreen.\n");
->  > +
->
->  Since you are not setting res here you will signal success the module
->  loader and bad things will happen.
-
-Yeah. Good catch.
-
->  I tried implementing my suggestions in the patch below, please let me
->  know if it still works for you and I will apply it.
-
-I just tested using latest sh-2.6 git with evtest. Everything seems to
-work well. The patch is much cleaner now. Please apply.
-
-Thank you!
-
-/ magnus
+-- 
+Dmitry
