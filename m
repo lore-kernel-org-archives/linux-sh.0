@@ -1,35 +1,338 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 24 Apr 2008 12:47:15 +0000
-Subject: [PATCH] sh: no high level trigger on some sh3 cpus
-Message-Id: <20080424124715.19669.78584.sendpatchset@rx1.opensource.se>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Thu, 10 Apr 2008 12:05:58 +0000
+Subject: [PATCH 3/3] r8a66597-hcd: Add support for SH7366 USB host
+Message-Id: <47FE02A6.1070400@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The processor models sh7706, sh7707 and sh7709 don't support high
-level trigger sense configuration. And the intc code looks like
-crap these days so what's the difference.
+R8A66597 is similar to SH7366 USB 2.0 Host/Function module. It can
+support SH7366 USB host by changing several R8A66597 code.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 ---
+ drivers/usb/host/Kconfig        |    6 +
+ drivers/usb/host/r8a66597-hcd.c |  126 +++++++++++++++++++++---------
+ drivers/usb/host/r8a66597.h     |   45 ++++++++++
+ 3 files changed, 142 insertions(+), 35 deletions(-)
 
- arch/sh/kernel/cpu/irq/intc.c |    5 +++++
- 1 file changed, 5 insertions(+)
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 27f295b..0b87480 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -260,3 +260,9 @@ config USB_R8A66597_HCD
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called r8a66597-hcd.
 
---- 0011/arch/sh/kernel/cpu/irq/intc.c
-+++ work/arch/sh/kernel/cpu/irq/intc.c	2008-04-24 20:40:56.000000000 +0900
-@@ -302,7 +302,12 @@ static unsigned char intc_irq_sense_tabl
- 	[IRQ_TYPE_EDGE_FALLING] = VALID(0),
- 	[IRQ_TYPE_EDGE_RISING] = VALID(1),
- 	[IRQ_TYPE_LEVEL_LOW] = VALID(2),
-+	/* SH7706, SH7707 and SH7709 do not support high level triggered */
-+#if !defined(CONFIG_CPU_SUBTYPE_SH7706) && \
-+    !defined(CONFIG_CPU_SUBTYPE_SH7707) && \
-+    !defined(CONFIG_CPU_SUBTYPE_SH7709)
- 	[IRQ_TYPE_LEVEL_HIGH] = VALID(3),
++config SUPERH_ON_CHIP_R8A66597
++	boolean "Enable SuperH on-chip USB like the R8A66597"
++	depends on USB_R8A66597_HCD && CPU_SUBTYPE_SH7366
++	help
++	   Renesas SuperH processor has USB like the R8A66597.
++	   This driver supported processor is SH7366.
+diff --git a/drivers/usb/host/r8a66597-hcd.c b/drivers/usb/host/r8a66597-hcd.c
+index c14fe49..bab170c 100644
+--- a/drivers/usb/host/r8a66597-hcd.c
++++ b/drivers/usb/host/r8a66597-hcd.c
+@@ -50,10 +50,12 @@ MODULE_AUTHOR("Yoshihiro Shimoda");
+ static const char hcd_name[] = "r8a66597_hcd";
+
+ /* module parameters */
++#if !defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+ static unsigned short clock = XTAL12;
+ module_param(clock, ushort, 0644);
+ MODULE_PARM_DESC(clock, "input clock: 48MHz2768, 24MHz384, 12MHz=0 "
+ 		"(default=0)");
 +#endif
- };
- 
- static int intc_set_sense(unsigned int irq, unsigned int type)
+
+ static unsigned short vif = LDRV;
+ module_param(vif, ushort, 0644);
+@@ -105,11 +107,22 @@ static void set_devadd_reg(struct r8a66597 *r8a66597, u8 r8a66597_address,
+ 	r8a66597_write(r8a66597, val, devadd_reg);
+ }
+
+-static int enable_controller(struct r8a66597 *r8a66597)
++static int r8a66597_clock_enable(struct r8a66597 *r8a66597)
+ {
+ 	u16 tmp;
+ 	int i = 0;
+
++#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
++	do {
++		r8a66597_write(r8a66597, SCKE, SYSCFG0);
++		tmp = r8a66597_read(r8a66597, SYSCFG0);
++		if (i++ > 1000) {
++			err("register access fail.");
++			return -ENXIO;
++		}
++	} while ((tmp & SCKE) != SCKE);
++	r8a66597_write(r8a66597, 0x04, 0x02);
++#else
+ 	do {
+ 		r8a66597_write(r8a66597, USBE, SYSCFG0);
+ 		tmp = r8a66597_read(r8a66597, SYSCFG0);
+@@ -131,13 +144,63 @@ static int enable_controller(struct r8a66597 *r8a66597)
+ 			return -ENXIO;
+ 		}
+ 	} while ((tmp & SCKE) != SCKE);
++#endif	/* #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) */
++
++	return 0;
++}
++
++static void r8a66597_clock_disable(struct r8a66597 *r8a66597)
++{
++	r8a66597_bclr(r8a66597, SCKE, SYSCFG0);
++	udelay(1);
++#if !defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
++	r8a66597_bclr(r8a66597, PLLC, SYSCFG0);
++	r8a66597_bclr(r8a66597, XCKE, SYSCFG0);
++	r8a66597_bclr(r8a66597, USBE, SYSCFG0);
++#endif
++}
++
++static void r8a66597_enable_port(struct r8a66597 *r8a66597, int port)
++{
++	u16 val;
++
++	val = port ? DRPD : DCFM | DRPD;
++	r8a66597_bset(r8a66597, val, get_syscfg_reg(port));
++	r8a66597_bset(r8a66597, HSE, get_syscfg_reg(port));
++
++	r8a66597_write(r8a66597, BURST | CPU_ADR_RD_WR, get_dmacfg_reg(port));
++	r8a66597_bclr(r8a66597, DTCHE, get_intenb_reg(port));
++	r8a66597_bset(r8a66597, ATTCHE, get_intenb_reg(port));
++}
++
++static void r8a66597_disable_port(struct r8a66597 *r8a66597, int port)
++{
++	u16 val, tmp;
++
++	r8a66597_write(r8a66597, 0, get_intenb_reg(port));
++	r8a66597_write(r8a66597, 0, get_intsts_reg(port));
++
++	r8a66597_port_power(r8a66597, port, 0);
++
++	do {
++		tmp = r8a66597_read(r8a66597, SOFCFG) & EDGESTS;
++		udelay(640);
++	} while (tmp = EDGESTS);
+
+-	r8a66597_bset(r8a66597, DCFM | DRPD, SYSCFG0);
+-	r8a66597_bset(r8a66597, DRPD, SYSCFG1);
++	val = port ? DRPD : DCFM | DRPD;
++	r8a66597_bclr(r8a66597, val, get_syscfg_reg(port));
++	r8a66597_bclr(r8a66597, HSE, get_syscfg_reg(port));
++}
++
++static int enable_controller(struct r8a66597 *r8a66597)
++{
++	int ret, port;
++
++	ret = r8a66597_clock_enable(r8a66597);
++	if (ret < 0)
++		return ret;
+
+ 	r8a66597_bset(r8a66597, vif & LDRV, PINCFG);
+-	r8a66597_bset(r8a66597, HSE, SYSCFG0);
+-	r8a66597_bset(r8a66597, HSE, SYSCFG1);
+ 	r8a66597_bset(r8a66597, USBE, SYSCFG0);
+
+ 	r8a66597_bset(r8a66597, BEMPE | NRDYE | BRDYE, INTENB0);
+@@ -145,53 +208,45 @@ static int enable_controller(struct r8a66597 *r8a66597)
+ 	r8a66597_bset(r8a66597, BRDY0, BRDYENB);
+ 	r8a66597_bset(r8a66597, BEMP0, BEMPENB);
+
+-	r8a66597_write(r8a66597, BURST | CPU_ADR_RD_WR, DMA0CFG);
+-	r8a66597_write(r8a66597, BURST | CPU_ADR_RD_WR, DMA1CFG);
+-
+ 	r8a66597_bset(r8a66597, endian & BIGEND, CFIFOSEL);
+ 	r8a66597_bset(r8a66597, endian & BIGEND, D0FIFOSEL);
+ 	r8a66597_bset(r8a66597, endian & BIGEND, D1FIFOSEL);
+-
+ 	r8a66597_bset(r8a66597, TRNENSEL, SOFCFG);
+
+ 	r8a66597_bset(r8a66597, SIGNE | SACKE, INTENB1);
+-	r8a66597_bclr(r8a66597, DTCHE, INTENB1);
+-	r8a66597_bset(r8a66597, ATTCHE, INTENB1);
+-	r8a66597_bclr(r8a66597, DTCHE, INTENB2);
+-	r8a66597_bset(r8a66597, ATTCHE, INTENB2);
++
++	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
++		r8a66597_enable_port(r8a66597, port);
+
+ 	return 0;
+ }
+
+ static void disable_controller(struct r8a66597 *r8a66597)
+ {
+-	u16 tmp;
++	int port;
+
+ 	r8a66597_write(r8a66597, 0, INTENB0);
+-	r8a66597_write(r8a66597, 0, INTENB1);
+-	r8a66597_write(r8a66597, 0, INTENB2);
+ 	r8a66597_write(r8a66597, 0, INTSTS0);
+-	r8a66597_write(r8a66597, 0, INTSTS1);
+-	r8a66597_write(r8a66597, 0, INTSTS2);
+
+-	r8a66597_port_power(r8a66597, 0, 0);
+-	r8a66597_port_power(r8a66597, 1, 0);
++	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
++		r8a66597_disable_port(r8a66597, port);
+
+-	do {
+-		tmp = r8a66597_read(r8a66597, SOFCFG) & EDGESTS;
+-		udelay(640);
+-	} while (tmp = EDGESTS);
++	r8a66597_clock_disable(r8a66597);
++}
+
+-	r8a66597_bclr(r8a66597, DCFM | DRPD, SYSCFG0);
+-	r8a66597_bclr(r8a66597, DRPD, SYSCFG1);
+-	r8a66597_bclr(r8a66597, HSE, SYSCFG0);
+-	r8a66597_bclr(r8a66597, HSE, SYSCFG1);
++static int get_parent_r8a66597_address(struct r8a66597 *r8a66597,
++				       struct usb_device *udev)
++{
++	struct r8a66597_device *dev;
+
+-	r8a66597_bclr(r8a66597, SCKE, SYSCFG0);
+-	udelay(1);
+-	r8a66597_bclr(r8a66597, PLLC, SYSCFG0);
+-	r8a66597_bclr(r8a66597, XCKE, SYSCFG0);
+-	r8a66597_bclr(r8a66597, USBE, SYSCFG0);
++	if (udev->parent && udev->parent->devnum != 1)
++		udev = udev->parent;
++
++	dev = dev_get_drvdata(&udev->dev);
++	if (dev)
++		return dev->address;
++	else
++		return 0;
+ }
+
+ static int get_parent_r8a66597_address(struct r8a66597 *r8a66597,
+@@ -710,6 +765,7 @@ static void enable_r8a66597_pipe_dma(struct r8a66597 *r8a66597,
+ 				     struct r8a66597_pipe *pipe,
+ 				     struct urb *urb)
+ {
++#if !defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+ 	int i;
+ 	struct r8a66597_pipe_info *info = &pipe->info;
+
+@@ -737,6 +793,7 @@ static void enable_r8a66597_pipe_dma(struct r8a66597 *r8a66597,
+ 			break;
+ 		}
+ 	}
++#endif	/* #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) */
+ }
+
+ /* this function must be called with interrupt disabled */
+@@ -1053,8 +1110,7 @@ static void prepare_status_packet(struct r8a66597 *r8a66597,
+ 		r8a66597_mdfy(r8a66597, ISEL, ISEL | CURPIPE, CFIFOSEL);
+ 		r8a66597_reg_wait(r8a66597, CFIFOSEL, CURPIPE, 0);
+ 		r8a66597_write(r8a66597, ~BEMP0, BEMPSTS);
+-		r8a66597_write(r8a66597, BCLR, CFIFOCTR);
+-		r8a66597_write(r8a66597, BVAL, CFIFOCTR);
++		r8a66597_write(r8a66597, BCLR | BVAL, CFIFOCTR);
+ 		enable_irq_empty(r8a66597, 0);
+ 	} else {
+ 		r8a66597_bclr(r8a66597, R8A66597_DIR, DCPCFG);
+diff --git a/drivers/usb/host/r8a66597.h b/drivers/usb/host/r8a66597.h
+index f46f7dd..84ee014 100644
+--- a/drivers/usb/host/r8a66597.h
++++ b/drivers/usb/host/r8a66597.h
+@@ -187,7 +187,11 @@
+ #define	REW		0x4000	/* b14: Buffer rewind */
+ #define	DCLRM		0x2000	/* b13: DMA buffer clear mode */
+ #define	DREQE		0x1000	/* b12: DREQ output enable */
++#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
++#define	MBW		0x0800
++#else
+ #define	MBW		0x0400	/* b10: Maximum bit width for FIFO access */
++#endif
+ #define	  MBW_8		 0x0000	  /*  8bit */
+ #define	  MBW_16	 0x0400	  /* 16bit */
+ #define	BIGEND		0x0100	/* b8: Big endian mode */
+@@ -395,7 +399,11 @@
+ #define R8A66597_MAX_NUM_PIPE		10
+ #define R8A66597_BUF_BSIZE		8
+ #define R8A66597_MAX_DEVICE		10
++#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
++#define R8A66597_MAX_ROOT_HUB		1
++#else
+ #define R8A66597_MAX_ROOT_HUB		2
++#endif
+ #define R8A66597_MAX_SAMPLING		5
+ #define R8A66597_RH_POLL_TIME		10
+ #define R8A66597_MAX_DMA_CHANNEL	2
+@@ -530,8 +538,21 @@ static inline void r8a66597_read_fifo(struct r8a66597 *r8a66597,
+ 				      unsigned long offset, u16 *buf,
+ 				      int len)
+ {
++#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
++	unsigned long fifoaddr = r8a66597->reg + offset;
++	unsigned long count;
++
++	count = len / 4;
++	insl(fifoaddr, buf, count);
++
++	if (len & 0x00000003) {
++		unsigned long tmp = inl(fifoaddr);
++		memcpy((unsigned char *)buf + count * 4, &tmp, len & 0x03);
++	}
++#else
+ 	len = (len + 1) / 2;
+ 	insw(r8a66597->reg + offset, buf, len);
++#endif
+ }
+
+ static inline void r8a66597_write(struct r8a66597 *r8a66597, u16 val,
+@@ -545,6 +566,24 @@ static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
+ 				       int len)
+ {
+ 	unsigned long fifoaddr = r8a66597->reg + offset;
++#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
++	unsigned long count;
++	unsigned char *pb;
++	int i;
++
++	count = len / 4;
++	outsl(fifoaddr, buf, count);
++
++	if (len & 0x00000003) {
++		pb = (unsigned char *)buf + count * 4;
++		for (i = 0; i < (len & 0x00000003); i++) {
++			if (r8a66597_read(r8a66597, CFIFOSEL) & BIGEND)
++				outb(pb[i], fifoaddr + i);
++			else
++				outb(pb[i], fifoaddr + 3 - i);
++		}
++	}
++#else
+ 	int odd = len & 0x0001;
+
+ 	len = len / 2;
+@@ -553,6 +592,7 @@ static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
+ 		buf = &buf[len];
+ 		outb((unsigned char)*buf, fifoaddr);
+ 	}
++#endif
+ }
+
+ static inline void r8a66597_mdfy(struct r8a66597 *r8a66597,
+@@ -585,6 +625,11 @@ static inline unsigned long get_dvstctr_reg(int port)
+ 	return port = 0 ? DVSTCTR0 : DVSTCTR1;
+ }
+
++static inline unsigned long get_dmacfg_reg(int port)
++{
++	return port = 0 ? DMA0CFG : DMA1CFG;
++}
++
+ static inline unsigned long get_intenb_reg(int port)
+ {
+ 	return port = 0 ? INTENB1 : INTENB2;
