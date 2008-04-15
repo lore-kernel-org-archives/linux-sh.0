@@ -1,37 +1,83 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 15 Apr 2008 17:23:33 +0000
-Subject: [GIT PULL] sh updates for 2.6.25
-Message-Id: <20080415172333.GA29489@linux-sh.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Tue, 15 Apr 2008 18:01:36 +0000
+Subject: Re: [GIT PULL] sh updates for 2.6.25
+Message-Id: <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080415172333.GA29489@linux-sh.org>
+In-Reply-To: <20080415172333.GA29489@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>, Junio C Hamano <gitster@pobox.com>
 
-Please pull from:
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.25.git
 
-Which contains:
+On Wed, 16 Apr 2008, Paul Mundt wrote:
+>
+> Please pull from:
+> 
+> 	git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.25.git
 
-Adrian Bunk (1):
-      sh64: add missing #include <asm/fpu.h>'s
+Paul, your git tree is odd. Not quite corrupt, but it doesn't really 
+follow the rules either.
 
-Andrew Morton (2):
-      sh: arch/sh/kernel/traps_32.c needs asm/fpu.h
-      sh: export empty_zero_page
+In particular, it has empty lines at the top of those commits, and I 
+wonder how you created them. 
 
-Manuel Lauss (1):
-      sh: fix compressed kernel build
+Doing things like "git log" will ignore the spurious empty lines, but they 
+can be seen with things like "git cat-file", eg
 
- arch/sh/boot/compressed/head_32.S |    1 -
- arch/sh/boot/compressed/head_64.S |    1 -
- arch/sh/kernel/process_64.c       |    1 +
- arch/sh/kernel/ptrace_64.c        |    1 +
- arch/sh/kernel/sh_ksyms_32.c      |    1 +
- arch/sh/kernel/sh_ksyms_64.c      |    1 +
- arch/sh/kernel/signal_64.c        |    1 +
- arch/sh/kernel/traps_32.c         |    1 +
- arch/sh/kernel/traps_64.c         |    1 +
- 9 files changed, 7 insertions(+), 2 deletions(-)
+	git cat-file commit fd785d6b18b930b76ad5076eed6e9af43195b281 
+
+and I wonder if you used a buggy version of git, or whether you perhaps 
+have some scripts that import these commits from the outside and uses some 
+low-level commands that can generate these kinds of subtly bogus commits.
+
+The reason I noticed is that it screws up the git merge summary, which 
+will take the first line of each commit it merges (_without_ the "skip 
+empty lines" logic) to generate the summary of the merge.
+
+I think we should fix that git merge summary code to allow for this bad 
+behaviour, but I also want to know why such corrupt commits exist in the 
+first place. What toolchain do you use to create that commit? We should 
+fix that too!
+
+Junio? Something like this for the merge summary code? (It also turns an 
+empty commit message with just whitespace in the commit message into the 
+SHA1 hex string)
+
+		Linus
+
+----
+ builtin-fmt-merge-msg.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/builtin-fmt-merge-msg.c b/builtin-fmt-merge-msg.c
+index ebb3f37..7077d52 100644
+--- a/builtin-fmt-merge-msg.c
++++ b/builtin-fmt-merge-msg.c
+@@ -201,6 +201,15 @@ static void shortlog(const char *name, unsigned char *sha1,
+ 			continue;
+ 
+ 		bol = strstr(commit->buffer, "\n\n");
++		if (bol) {
++			unsigned char c;
++			do {
++				c = *++bol;
++			} while (isspace(c));
++			if (!c)
++				bol = NULL;
++		}
++
+ 		if (!bol) {
+ 			append_to_list(&subjects, xstrdup(sha1_to_hex(
+ 							commit->object.sha1)),
+@@ -208,7 +217,6 @@ static void shortlog(const char *name, unsigned char *sha1,
+ 			continue;
+ 		}
+ 
+-		bol += 2;
+ 		eol = strchr(bol, '\n');
+ 		if (eol) {
+ 			oneline = xmemdupz(bol, eol - bol);
