@@ -1,10 +1,10 @@
 From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Tue, 15 Apr 2008 18:01:36 +0000
+Date: Tue, 15 Apr 2008 18:18:39 +0000
 Subject: Re: [GIT PULL] sh updates for 2.6.25
-Message-Id: <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
+Message-Id: <alpine.LFD.1.00.0804151115250.2879@woody.linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080415172333.GA29489@linux-sh.org>
-In-Reply-To: <20080415172333.GA29489@linux-sh.org>
+References: <20080415172333.GA29489@linux-sh.org> <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
+In-Reply-To: <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,71 +13,17 @@ Cc: linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>, Junio C Ha
 
 
 
-On Wed, 16 Apr 2008, Paul Mundt wrote:
->
-> Please pull from:
+On Tue, 15 Apr 2008, Linus Torvalds wrote:
 > 
-> 	git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.25.git
+> Paul, your git tree is odd. Not quite corrupt, but it doesn't really 
+> follow the rules either.
 
-Paul, your git tree is odd. Not quite corrupt, but it doesn't really 
-follow the rules either.
+Anyway, I pulled the result (with my version of git that removes empty 
+space at the beginning for the merge summary), and pushed it out. So it's 
+merged, but I'd still like to know what tool actually created those extra 
+spaces in the commit..
 
-In particular, it has empty lines at the top of those commits, and I 
-wonder how you created them. 
+A regular "git commit" or "git am" should always strip whitespace. I 
+assume it's something like stgit or other?
 
-Doing things like "git log" will ignore the spurious empty lines, but they 
-can be seen with things like "git cat-file", eg
-
-	git cat-file commit fd785d6b18b930b76ad5076eed6e9af43195b281 
-
-and I wonder if you used a buggy version of git, or whether you perhaps 
-have some scripts that import these commits from the outside and uses some 
-low-level commands that can generate these kinds of subtly bogus commits.
-
-The reason I noticed is that it screws up the git merge summary, which 
-will take the first line of each commit it merges (_without_ the "skip 
-empty lines" logic) to generate the summary of the merge.
-
-I think we should fix that git merge summary code to allow for this bad 
-behaviour, but I also want to know why such corrupt commits exist in the 
-first place. What toolchain do you use to create that commit? We should 
-fix that too!
-
-Junio? Something like this for the merge summary code? (It also turns an 
-empty commit message with just whitespace in the commit message into the 
-SHA1 hex string)
-
-		Linus
-
-----
- builtin-fmt-merge-msg.c |   10 +++++++++-
- 1 files changed, 9 insertions(+), 1 deletions(-)
-
-diff --git a/builtin-fmt-merge-msg.c b/builtin-fmt-merge-msg.c
-index ebb3f37..7077d52 100644
---- a/builtin-fmt-merge-msg.c
-+++ b/builtin-fmt-merge-msg.c
-@@ -201,6 +201,15 @@ static void shortlog(const char *name, unsigned char *sha1,
- 			continue;
- 
- 		bol = strstr(commit->buffer, "\n\n");
-+		if (bol) {
-+			unsigned char c;
-+			do {
-+				c = *++bol;
-+			} while (isspace(c));
-+			if (!c)
-+				bol = NULL;
-+		}
-+
- 		if (!bol) {
- 			append_to_list(&subjects, xstrdup(sha1_to_hex(
- 							commit->object.sha1)),
-@@ -208,7 +217,6 @@ static void shortlog(const char *name, unsigned char *sha1,
- 			continue;
- 		}
- 
--		bol += 2;
- 		eol = strchr(bol, '\n');
- 		if (eol) {
- 			oneline = xmemdupz(bol, eol - bol);
+				Linus
