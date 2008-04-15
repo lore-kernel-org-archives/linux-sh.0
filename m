@@ -1,60 +1,137 @@
-From: Junio C Hamano <gitster@pobox.com>
-Date: Tue, 15 Apr 2008 18:41:52 +0000
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Tue, 15 Apr 2008 19:56:50 +0000
 Subject: Re: [GIT PULL] sh updates for 2.6.25
-Message-Id: <7vr6d7x8nj.fsf@gitster.siamese.dyndns.org>
+Message-Id: <alpine.LFD.1.00.0804151222350.2879@woody.linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080415172333.GA29489@linux-sh.org>
- <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
-In-Reply-To: <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
- (Linus Torvalds's message of "Tue, 15 Apr 2008 11:01:36 -0700 (PDT)")
+References: <20080415172333.GA29489@linux-sh.org> <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org> <20080415183023.GA23098@linux-sh.org>
+In-Reply-To: <20080415183023.GA23098@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>, Junio C Hamano <gitster@pobox.com>
 
-Linus Torvalds <torvalds@linux-foundation.org> writes:
 
-> Junio? Something like this for the merge summary code? (It also turns an 
-> empty commit message with just whitespace in the commit message into the 
-> SHA1 hex string)
 
-Yeah, your patch makes sense, but it also makes me wonder if we should fix
-the code in pretty.c::parse_commit_header() that grabs the "subject" line,
-and use format_commit_message() with "%s" format here.  Interested people
-then can enhance it to take custom format string.
+On Wed, 16 Apr 2008, Paul Mundt wrote:
+> 
+> It was a combination of mbox munging and git-am, I checked with git log
+> and thought things were ok, but I wasn't aware that it stripped out empty
+> lines. cat-file shows that it was just the 2 patches from Andrew that had
+> this particular problem. I had stripped out the subject and thought the
+> first line would be used for the merge summary, but it looks like git-am
+> simply wrote out an empty line and inserted one after that before the
+> rest of the summary.
 
-> 		Linus
->
-> ----
->  builtin-fmt-merge-msg.c |   10 +++++++++-
->  1 files changed, 9 insertions(+), 1 deletions(-)
->
-> diff --git a/builtin-fmt-merge-msg.c b/builtin-fmt-merge-msg.c
-> index ebb3f37..7077d52 100644
-> --- a/builtin-fmt-merge-msg.c
-> +++ b/builtin-fmt-merge-msg.c
-> @@ -201,6 +201,15 @@ static void shortlog(const char *name, unsigned char *sha1,
->  			continue;
->  
->  		bol = strstr(commit->buffer, "\n\n");
-> +		if (bol) {
-> +			unsigned char c;
-> +			do {
-> +				c = *++bol;
-> +			} while (isspace(c));
-> +			if (!c)
-> +				bol = NULL;
-> +		}
-> +
->  		if (!bol) {
->  			append_to_list(&subjects, xstrdup(sha1_to_hex(
->  							commit->object.sha1)),
-> @@ -208,7 +217,6 @@ static void shortlog(const char *name, unsigned char *sha1,
->  			continue;
->  		}
->  
-> -		bol += 2;
->  		eol = strchr(bol, '\n');
->  		if (eol) {
->  			oneline = xmemdupz(bol, eol - bol);
+Ahh, looks like a git-am buglet then. It will indeed turn an empty subject 
+line into an empty first line.
+
+We should run "git stripspace" on the whole thing, so maybe a patch 
+something like the appended will help.
+
+NOTE! Totally untested! Beware the patch!
+
+> I've pushed out updated patches that have this corrected, so please pull
+> again.
+
+Well, since I pulled your previous one anyway, and since we should fix 
+git for any fallout like this _anyway_, I didn't so much worry about this 
+one-time event, as about avoiding this happening a lot in the future.
+
+We've had other workflows generate empty lines in commits, so we already 
+support stripping them out for other reasons.
+
+			Linus
+---
+ git-am.sh |   23 +++++++++--------------
+ 1 files changed, 9 insertions(+), 14 deletions(-)
+
+diff --git a/git-am.sh b/git-am.sh
+index ac5c388..432d9fe 100755
+--- a/git-am.sh
++++ b/git-am.sh
+@@ -107,7 +107,7 @@ It does not apply to blobs recorded in its index."
+     # patch did not touch, so recursive ends up canceling them,
+     # saying that we reverted all those changes.
+ 
+-    eval GITHEAD_$his_tree='"$SUBJECT"'
++    eval GITHEAD_$his_tree='"$FIRSTLINE"'
+     export GITHEAD_$his_tree
+     git-merge-recursive $orig_tree -- HEAD $his_tree || {
+ 	    git rerere
+@@ -117,10 +117,6 @@ It does not apply to blobs recorded in its index."
+     unset GITHEAD_$his_tree
+ }
+ 
+-reread_subject () {
+-	git stripspace <"$1" | sed -e 1q
+-}
+-
+ prec=4
+ dotest=".dotest"
+ sign= utf8=t keep= skip= interactive= resolved= binary= rebasing@@ -331,7 +327,11 @@ do
+ 			echo "Patch is empty.  Was it split wrong?"
+ 			stop_here $this
+ 		}
+-		git stripspace < "$dotest/msg" > "$dotest/msg-clean"
++		SUBJECT="$(sed -n '/^Subject/ s/Subject: //p' "$dotest/info")"
++		case "$keep_subject" in -k)  SUBJECT="[PATCH] $SUBJECT" ;; esac
++
++		(echo "$SUBJECT" ; echo ; cat "$dotest/msg") |
++			git stripspace > "$dotest/msg-clean"
+ 		;;
+ 	esac
+ 
+@@ -347,9 +347,6 @@ do
+ 
+ 	export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_AUTHOR_DATE
+ 
+-	SUBJECT="$(sed -n '/^Subject/ s/Subject: //p' "$dotest/info")"
+-	case "$keep_subject" in -k)  SUBJECT="[PATCH] $SUBJECT" ;; esac
+-
+ 	case "$resume" in
+ 	'')
+ 	    if test '' != "$SIGNOFF"
+@@ -368,10 +365,8 @@ do
+ 		ADD_SIGNOFF 	    fi
+ 	    {
+-		printf '%s\n' "$SUBJECT"
+ 		if test -s "$dotest/msg-clean"
+ 		then
+-			echo
+ 			cat "$dotest/msg-clean"
+ 		fi
+ 		if test '' != "$ADD_SIGNOFF"
+@@ -388,6 +383,7 @@ do
+ 			;;
+ 		esac
+ 	esac
++	FIRSTLINE=$(head -1 "$dotest/final-commit")
+ 
+ 	resume 	if test "$interactive" = t
+@@ -408,7 +404,6 @@ do
+ 		[aA]*) action=yes interactive= ;;
+ 		[nN]*) action=skip ;;
+ 		[eE]*) git_editor "$dotest/final-commit"
+-		       SUBJECT=$(reread_subject "$dotest/final-commit")
+ 		       action=again ;;
+ 		[vV]*) action=again
+ 		       LESS=-S ${PAGER:-less} "$dotest/patch" ;;
+@@ -431,7 +426,7 @@ do
+ 		stop_here $this
+ 	fi
+ 
+-	printf 'Applying %s\n' "$SUBJECT"
++	printf 'Applying %s\n' "$FIRSTLINE"
+ 
+ 	case "$resolved" in
+ 	'')
+@@ -489,7 +484,7 @@ do
+ 	tree=$(git write-tree) &&
+ 	parent=$(git rev-parse --verify HEAD) &&
+ 	commit=$(git commit-tree $tree -p $parent <"$dotest/final-commit") &&
+-	git update-ref -m "$GIT_REFLOG_ACTION: $SUBJECT" HEAD $commit $parent ||
++	git update-ref -m "$GIT_REFLOG_ACTION: $FIRSTLINE" HEAD $commit $parent ||
+ 	stop_here $this
+ 
+ 	if test -x "$GIT_DIR"/hooks/post-applypatch
