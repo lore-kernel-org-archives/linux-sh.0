@@ -1,32 +1,37 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 25 Apr 2008 09:02:07 +0000
-Subject: Re: [RFC patch 8/9] SH remove -traditional
-Message-Id: <20080425090207.GB30569@linux-sh.org>
+Date: Tue, 15 Apr 2008 17:23:33 +0000
+Subject: [GIT PULL] sh updates for 2.6.25
+Message-Id: <20080415172333.GA29489@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080422172404.502954084@polymtl.ca> <20080422172843.205481136@polymtl.ca>
-In-Reply-To: <20080422172843.205481136@polymtl.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-Cc: Sam Ravnborg <sam@ravnborg.org>, akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Tue, Apr 22, 2008 at 01:24:12PM -0400, Mathieu Desnoyers wrote:
-> Subject: [RFC patch 8/9] Re: [PATCH] Stringify support commas
->  > This is a no-no for those archs that still use -traditional.
->  > > I dunno if this is a problem for you at the moment and the
->  > > right fix is anyway to nuke -traditional.
->  > > 
->  > >     Sam
-> 
-> Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-> CC: Sam Ravnborg <sam@ravnborg.org>
-> CC: lethal@linux-sh.org
-> CC: linux-sh@vger.kernel.org
-> ---
->  arch/sh/boot/compressed/Makefile_32 |    1 -
->  arch/sh/boot/compressed/Makefile_64 |    1 -
->  2 files changed, 2 deletions(-)
-> 
-Oops, these must have snuck back in during the sh64 integration, I
-thought I had killed them all off already. Applied, thanks.
+Please pull from:
+
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.25.git
+
+Which contains:
+
+Adrian Bunk (1):
+      sh64: add missing #include <asm/fpu.h>'s
+
+Andrew Morton (2):
+      sh: arch/sh/kernel/traps_32.c needs asm/fpu.h
+      sh: export empty_zero_page
+
+Manuel Lauss (1):
+      sh: fix compressed kernel build
+
+ arch/sh/boot/compressed/head_32.S |    1 -
+ arch/sh/boot/compressed/head_64.S |    1 -
+ arch/sh/kernel/process_64.c       |    1 +
+ arch/sh/kernel/ptrace_64.c        |    1 +
+ arch/sh/kernel/sh_ksyms_32.c      |    1 +
+ arch/sh/kernel/sh_ksyms_64.c      |    1 +
+ arch/sh/kernel/signal_64.c        |    1 +
+ arch/sh/kernel/traps_32.c         |    1 +
+ arch/sh/kernel/traps_64.c         |    1 +
+ 9 files changed, 7 insertions(+), 2 deletions(-)
