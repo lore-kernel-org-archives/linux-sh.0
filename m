@@ -1,45 +1,60 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 15 Apr 2008 18:30:23 +0000
+From: Junio C Hamano <gitster@pobox.com>
+Date: Tue, 15 Apr 2008 18:41:52 +0000
 Subject: Re: [GIT PULL] sh updates for 2.6.25
-Message-Id: <20080415183023.GA23098@linux-sh.org>
+Message-Id: <7vr6d7x8nj.fsf@gitster.siamese.dyndns.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080415172333.GA29489@linux-sh.org> <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
+References: <20080415172333.GA29489@linux-sh.org>
+ <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
 In-Reply-To: <alpine.LFD.1.00.0804151048060.2879@woody.linux-foundation.org>
+ (Linus Torvalds's message of "Tue, 15 Apr 2008 11:01:36 -0700 (PDT)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>, Junio C Hamano <gitster@pobox.com>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Git Mailing List <git@vger.kernel.org>
 
-On Tue, Apr 15, 2008 at 11:01:36AM -0700, Linus Torvalds wrote:
-> On Wed, 16 Apr 2008, Paul Mundt wrote:
-> >
-> > Please pull from:
-> > 
-> > 	git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.25.git
-> 
-> Paul, your git tree is odd. Not quite corrupt, but it doesn't really 
-> follow the rules either.
-> 
-> In particular, it has empty lines at the top of those commits, and I 
-> wonder how you created them. 
-> 
-> Doing things like "git log" will ignore the spurious empty lines, but they 
-> can be seen with things like "git cat-file", eg
-> 
-> 	git cat-file commit fd785d6b18b930b76ad5076eed6e9af43195b281 
-> 
-> and I wonder if you used a buggy version of git, or whether you perhaps 
-> have some scripts that import these commits from the outside and uses some 
-> low-level commands that can generate these kinds of subtly bogus commits.
+Linus Torvalds <torvalds@linux-foundation.org> writes:
 
-It was a combination of mbox munging and git-am, I checked with git log
-and thought things were ok, but I wasn't aware that it stripped out empty
-lines. cat-file shows that it was just the 2 patches from Andrew that had
-this particular problem. I had stripped out the subject and thought the
-first line would be used for the merge summary, but it looks like git-am
-simply wrote out an empty line and inserted one after that before the
-rest of the summary.
+> Junio? Something like this for the merge summary code? (It also turns an 
+> empty commit message with just whitespace in the commit message into the 
+> SHA1 hex string)
 
-I've pushed out updated patches that have this corrected, so please pull
-again.
+Yeah, your patch makes sense, but it also makes me wonder if we should fix
+the code in pretty.c::parse_commit_header() that grabs the "subject" line,
+and use format_commit_message() with "%s" format here.  Interested people
+then can enhance it to take custom format string.
+
+> 		Linus
+>
+> ----
+>  builtin-fmt-merge-msg.c |   10 +++++++++-
+>  1 files changed, 9 insertions(+), 1 deletions(-)
+>
+> diff --git a/builtin-fmt-merge-msg.c b/builtin-fmt-merge-msg.c
+> index ebb3f37..7077d52 100644
+> --- a/builtin-fmt-merge-msg.c
+> +++ b/builtin-fmt-merge-msg.c
+> @@ -201,6 +201,15 @@ static void shortlog(const char *name, unsigned char *sha1,
+>  			continue;
+>  
+>  		bol = strstr(commit->buffer, "\n\n");
+> +		if (bol) {
+> +			unsigned char c;
+> +			do {
+> +				c = *++bol;
+> +			} while (isspace(c));
+> +			if (!c)
+> +				bol = NULL;
+> +		}
+> +
+>  		if (!bol) {
+>  			append_to_list(&subjects, xstrdup(sha1_to_hex(
+>  							commit->object.sha1)),
+> @@ -208,7 +217,6 @@ static void shortlog(const char *name, unsigned char *sha1,
+>  			continue;
+>  		}
+>  
+> -		bol += 2;
+>  		eol = strchr(bol, '\n');
+>  		if (eol) {
+>  			oneline = xmemdupz(bol, eol - bol);
