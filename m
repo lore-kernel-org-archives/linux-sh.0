@@ -1,182 +1,278 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Tue, 15 Apr 2008 18:25:18 +0000
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Mon, 21 Apr 2008 22:43:30 +0000
 Subject: Re: [PATCH] input: support maple controller on SEGA Dreamcast
-Message-Id: <20080415141746.ZZRA012@mailhub.coreip.homeip.net>
+Message-Id: <1208817810.6383.3.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1203862726.6474.18.camel@localhost.localdomain> <1204057817.6388.5.camel@localhost.localdomain>
-In-Reply-To: <1204057817.6388.5.camel@localhost.localdomain>
+References: <1203862726.6474.18.camel@localhost.localdomain>
+	 <1204057817.6388.5.camel@localhost.localdomain>
+	 <20080415141746.ZZRA012@mailhub.coreip.homeip.net>
+In-Reply-To: <20080415141746.ZZRA012@mailhub.coreip.homeip.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 Cc: Paul Mundt <lethal@linux-sh.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Andrew Morton <akpm@osdl.org>
 
-Hi Adrian,
-
-On Tue, Feb 26, 2008 at 08:30:17PM +0000, Adrian McMenamin wrote:
-> This adds support for the maple controller (as a joystick) on the SEGA
-> Dreamcast.
-> 
-> I've adjusted the polling rate for the controller in comparison to
-> earlier patches and the high rate of polling was locking out hotplugging
-> updates.
-> 
-> Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
-
-Sorry for sittign on the patches for so long, just catching up with
-my long backlog... Several comments:
-
-> +
-> +struct dc_pad {
-> +	struct input_dev *dev;
-> +	struct maple_device *mdev;
-> +	int open;
-
-I don't see "open" being used.
-
-> +	for (i = 0; i < 32; i++)
-> +		if (data & (1<<i) && btn_bit[i] >= 0)
-> +			pad->dev->keybit[BIT_WORD(BTN_JOYSTICK)] |= BIT_MASK(btn_bit[i]);
-> +
-> +	if (pad->dev->keybit[BTN_JOYSTICK/32])
-> +		pad->dev->evbit[0] |= BIT_MASK(EV_KEY);
-> +
-> +	for (i = 0; i < 32; i++)
-> +		if (data & (1<<i) && abs_bit[i] >= 0)
-> +			pad->dev->absbit[0] |= BIT_MASK(abs_bit[i]);
-> +
-> +	if (pad->dev->absbit[0])
-> +		pad->dev->evbit[0] |= BIT_MASK(EV_ABS);
-> +
-
-Just use dev->.. instead of pad->dev->.., it will save a few bytes.
-
-> +	for (i = ABS_X; i <= ABS_BRAKE; i++) {
-> +		pad->dev->absmax[i] = 255;
-> +		pad->dev->absmin[i] = 0;
-> +		pad->dev->absfuzz[i] = 0;
-> +		pad->dev->absflat[i] = 0;
-> +	}
-> +
-
-I like input_set_abs_params(...), it is more concise and you don't need a
-separate loop to set up absbits.
-
-> +	for (i = ABS_HAT0X; i <= ABS_HAT3Y; i++) {
-> +		pad->dev->absmax[i] = 1;
-> +		pad->dev->absmin[i] = -1;
-> +		pad->dev->absfuzz[i] = 0;
-> +		pad->dev->absflat[i] = 0;
-> +	}
-> +
-> +	pad->dev->private = pad;
-> +	pad->dev->event = NULL;
-> +	pad->dev->dev.parent = &mdev->dev;
-> +	pad->dev->name = mdev->product_name;
-> +	pad->dev->id.bustype = BUS_HOST;
-> +	input_set_drvdata(dev, pad);
-> +
-> +	error = input_register_device(pad->dev);
-> +	if (error)
-> +		goto fail_register;
-> +
-> +	maple_getcond_callback(mdev, dc_pad_callback, HZ/10,
-> +		MAPLE_FUNC_CONTROLLER);
-> +	
-
-May I recommend creating maple_open and maple_close and start polling from
-there? This way we only poll if we have users.
-
-> +	return error;
-> +
-> +fail_register:
-> +	input_free_device(pad->dev);
-> +fail_nomem_2:
-> +	kfree(pad);
-> +fail_nomem_1:
-> +	return -error;
-> +}
-> +
-> +static void dc_pad_disconnect(struct maple_device *mdev)
-> +{
-> +	struct dc_pad *pad = mdev->private_data;
-> +
-> +	mdev->callback = NULL;
-> +	input_unregister_device(pad->dev);
-> +	kfree(pad);
-> +}
-> +
-> +/* allow the controller to be used */
-> +static int probe_maple_controller(struct device *dev)
-> +{
-> +	struct maple_device *mdev = to_maple_dev(dev);
-> +	struct maple_driver *mdrv = to_maple_driver(dev->driver);
-> +	int error;
-> +
-> +	error = dc_pad_connect(mdev);
-> +	if (error)
-> +		return error;
-> +
-> +	mdev->driver = mdrv;
-> +
-> +	return 0;
-> +}
-> +
-> +static int remove_maple_controller(struct device *dev)
-> +{
-> +	struct maple_device *mdev = to_maple_dev(dev);
-> +
-> +	dc_pad_disconnect(mdev);
-> +	return 0;
-> +}
-> +
-> +static struct maple_driver dc_pad_driver = {
-> +	.function =	MAPLE_FUNC_CONTROLLER,
-> +	.connect =	dc_pad_connect,
-> +	.disconnect =	dc_pad_disconnect,
-> +	.drv = {
-> +		.name = "Dreamcast_controller",
-> +		.probe = probe_maple_controller,
-> +		.remove = remove_maple_controller,
-> +	},
-> +};
-> +
-> +static int unplug_maple_control(struct device *dev, void *ignored)
-> +{
-> +	/* Please DO NOT really unplug your controller */
-> +	struct maple_device *mdev;
-> +
-> +	mdev = to_maple_dev(dev);
-> +	if ((mdev->function & MAPLE_FUNC_CONTROLLER)
-> +		&& (mdev->driver = &dc_pad_driver))
-> +		remove_maple_controller(dev);
-> +
-> +	return 0;
-> +}
-> +
-> +static int __init dc_pad_init(void)
-> +{
-> +	return 	maple_driver_register(&dc_pad_driver.drv);
-> +}
-> +
-> +static void __exit dc_pad_exit(void)
-> +{
-> +	bus_for_each_dev(&maple_bus_type, NULL, NULL, unplug_maple_control);
-
-Why is this needed? As far as I know most driver core will automatically
-disconnect devices form driver upon driver unregistration, so manually
-iteracting through all devices on bus is not needed.
-
-> +	driver_unregister(&dc_pad_driver.drv);
-> +}
-> +
-> +module_init(dc_pad_init);
-> +module_exit(dc_pad_exit);
-> 
-> 
-
-Thank you.
+Have reworked this in (I hope) ways suggested)
 
 
--- 
-Dmitry
+Add support for the maple control pad (as a joystick)
+
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
+
+diff -ruN ./a/drivers/input/joystick/Kconfig ./b/drivers/input/joystick/Kconfig
+--- ./a/drivers/input/joystick/Kconfig	2008-04-21 23:32:42.000000000 +0100
++++ ./b/drivers/input/joystick/Kconfig	2008-04-21 21:17:17.000000000 +0100
+@@ -282,4 +282,17 @@
+ 	  This option enables support for the LED which surrounds the Big X on
+ 	  XBox 360 controller.
+ 
++config JOYSTICK_MAPLE
++	tristate "Dreamcast control pad"
++	depends on SH_DREAMCAST
++	select MAPLE
++	help
++	  Say Y here if you have a SEGA Dreamcast and want to use your
++	  controller.
++
++	  Most Dreamcast users will say Y.
++
++	  To compile this as a module choose M here: the
++	  module will be called maplecontrol.
++
+ endif
+diff -ruN ./a/drivers/input/joystick/Makefile ./b/drivers/input/joystick/Makefile
+--- ./a/drivers/input/joystick/Makefile	2008-04-21 23:32:42.000000000 +0100
++++ ./b/drivers/input/joystick/Makefile	2008-04-21 21:17:17.000000000 +0100
+@@ -27,5 +27,6 @@
+ obj-$(CONFIG_JOYSTICK_TWIDJOY)		+= twidjoy.o
+ obj-$(CONFIG_JOYSTICK_WARRIOR)		+= warrior.o
+ obj-$(CONFIG_JOYSTICK_XPAD)		+= xpad.o
++obj-$(CONFIG_JOYSTICK_MAPLE)		+= maplecontrol.o
+ 
+ obj-$(CONFIG_JOYSTICK_IFORCE)		+= iforce/
+diff -ruN ./a/drivers/input/joystick/maplecontrol.c ./b/drivers/input/joystick/maplecontrol.c
+--- ./a/drivers/input/joystick/maplecontrol.c	1970-01-01 01:00:00.000000000 +0100
++++ ./b/drivers/input/joystick/maplecontrol.c	2008-04-21 21:17:17.000000000 +0100
+@@ -0,0 +1,217 @@
++/*
++ * 	SEGA Dreamcast controller driver
++ *	Based on drivers/usb/iforce.c
++ *
++ * 	Copyright Yaegashi Takeshi, 2001
++ *	Porting to 2.6 by Adrian McMenamin, copyright 2008
++ */
++
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/timer.h>
++#include <linux/maple.h>
++#include <asm/mach/maple.h>
++
++MODULE_AUTHOR("YAEGASHI Takeshi <t@keshi.org>");
++MODULE_DESCRIPTION("SEGA Dreamcast controller driver");
++MODULE_LICENSE("GPL");
++
++struct dc_pad {
++	struct input_dev *dev;
++	struct maple_device *mdev;
++};
++
++static void dc_pad_callback(struct mapleq *mq)
++{
++	unsigned short buttons;
++	struct maple_device *mapledev = mq->dev;
++	struct dc_pad *pad = mapledev->private_data;
++	struct input_dev *dev = pad->dev;
++	unsigned char *res = mq->recvbuf;
++
++	buttons = ~cpu_to_le16(*(unsigned short *)(res + 8));
++
++	input_report_abs(dev, ABS_HAT0Y,
++			 (buttons & 0x0010 ? -1:0) + (buttons & 0x0020 ? 1:0));
++	input_report_abs(dev, ABS_HAT0X,
++			 (buttons & 0x0040 ? -1:0) + (buttons & 0x0080 ? 1:0));
++	input_report_abs(dev, ABS_HAT1Y,
++			 (buttons & 0x1000 ? -1:0) + (buttons & 0x2000 ? 1:0));
++	input_report_abs(dev, ABS_HAT1X,
++			 (buttons & 0x4000 ? -1:0) + (buttons & 0x8000 ? 1:0));
++
++	input_report_key(dev, BTN_C,      buttons & 0x0001);
++	input_report_key(dev, BTN_B,      buttons & 0x0002);
++	input_report_key(dev, BTN_A,      buttons & 0x0004);
++	input_report_key(dev, BTN_START,  buttons & 0x0008);
++	input_report_key(dev, BTN_Z,      buttons & 0x0100);
++	input_report_key(dev, BTN_Y,      buttons & 0x0200);
++	input_report_key(dev, BTN_X,      buttons & 0x0400);
++	input_report_key(dev, BTN_SELECT, buttons & 0x0800);
++
++	input_report_abs(dev, ABS_GAS,   res[10]);
++	input_report_abs(dev, ABS_BRAKE, res[11]);
++	input_report_abs(dev, ABS_X,     res[12]);
++	input_report_abs(dev, ABS_Y,     res[13]);
++	input_report_abs(dev, ABS_RX,    res[14]);
++	input_report_abs(dev, ABS_RY,    res[15]);
++}
++
++static void dc_pad_disconnect(struct maple_device *mdev)
++{
++	struct dc_pad *pad = mdev->private_data;
++
++	mdev->callback = NULL;
++	input_unregister_device(pad->dev);
++	kfree(pad);
++}
++
++static int dc_pad_open(struct input_dev *dev)
++{
++	struct dc_pad *pad;
++
++	pad = dev->private;
++	maple_getcond_callback(pad->mdev, dc_pad_callback, HZ/20,
++		MAPLE_FUNC_CONTROLLER);
++	return 0;
++}
++
++static void dc_pad_close(struct input_dev *dev)
++{
++	struct dc_pad *pad;
++	
++	pad = dev->private;
++	maple_getcond_callback(pad->mdev, dc_pad_callback, 0,
++		MAPLE_FUNC_CONTROLLER);
++}
++
++static int dc_pad_connect(struct maple_device *mdev)
++{
++	int i, error;
++	unsigned long data = be32_to_cpu(mdev->devinfo.function_data[0]);
++	struct dc_pad *pad;
++	struct input_dev *dev;
++
++	const short btn_bit[32] = {
++		BTN_C, BTN_B, BTN_A, BTN_START, -1, -1, -1, -1,
++		BTN_Z, BTN_Y, BTN_X, BTN_SELECT, -1, -1, -1, -1,
++		-1, -1, -1, -1, -1, -1, -1, -1,
++		-1, -1, -1, -1, -1, -1, -1, -1,
++	};
++
++	const short abs_bit[32] = {
++		-1, -1, -1, -1, ABS_HAT0Y, ABS_HAT0Y, ABS_HAT0X, ABS_HAT0X,
++		-1, -1, -1, -1, ABS_HAT1Y, ABS_HAT1Y, ABS_HAT1X, ABS_HAT1X,
++		ABS_GAS, ABS_BRAKE, ABS_X, ABS_Y, ABS_RX, ABS_RY, -1, -1,
++		-1, -1, -1, -1, -1, -1, -1, -1,
++	};
++
++	pad = kzalloc(sizeof(struct dc_pad), GFP_KERNEL);
++	if (!pad){
++		error = ENOMEM;
++		goto fail_nomem_1;
++	}
++
++	dev = input_allocate_device();
++	if (!dev) {
++		error = ENOMEM;
++		goto fail_nomem_2;
++	}
++
++	pad->dev = dev;
++	pad->mdev = mdev;
++	mdev->private_data = pad;
++	dev->open = dc_pad_open;
++	dev->close = dc_pad_close;
++
++	for (i = 0; i < 32; i++)
++		if (data & (1<<i) && btn_bit[i] >= 0)
++			dev->keybit[BIT_WORD(BTN_JOYSTICK)] |= BIT_MASK(btn_bit[i]);
++
++	if (dev->keybit[BTN_JOYSTICK/32])
++		dev->evbit[0] |= BIT_MASK(EV_KEY);
++
++	for (i = 0; i < 32; i++)
++		if (data & (1<<i) && abs_bit[i] >= 0)
++			dev->absbit[0] |= BIT_MASK(abs_bit[i]);
++
++	if (dev->absbit[0])
++		dev->evbit[0] |= BIT_MASK(EV_ABS);
++
++	for (i = ABS_X; i <= ABS_BRAKE; i++)
++		input_set_abs_params(dev, i, 0, 255, 0, 0);
++
++	for (i = ABS_HAT0X; i <= ABS_HAT3Y; i++)
++		input_set_abs_params(dev, i, 1, -1, 0, 0);
++
++	dev->private = pad;
++	dev->event = NULL;
++	dev->dev.parent = &mdev->dev;
++	dev->name = mdev->product_name;
++	dev->id.bustype = BUS_HOST;
++	input_set_drvdata(dev, pad);
++
++	error = input_register_device(dev);
++	if (error)
++		goto fail_register;
++
++	return error;
++
++fail_register:
++	input_free_device(pad->dev);
++fail_nomem_2:
++	kfree(pad);
++fail_nomem_1:
++	return -error;
++}
++
++/* allow the controller to be used */
++static int probe_maple_controller(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++	struct maple_driver *mdrv = to_maple_driver(dev->driver);
++	int error;
++
++	error = dc_pad_connect(mdev);
++	if (error)
++		return error;
++
++	mdev->driver = mdrv;
++
++	return 0;
++}
++
++static int remove_maple_controller(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++
++	dc_pad_disconnect(mdev);
++	return 0;
++}
++
++static struct maple_driver dc_pad_driver = {
++	.function =	MAPLE_FUNC_CONTROLLER,
++	.connect =	dc_pad_connect,
++	.disconnect =	dc_pad_disconnect,
++	.drv = {
++		.name = "Dreamcast_controller",
++		.probe = probe_maple_controller,
++		.remove = remove_maple_controller,
++	},
++};
++
++static int __init dc_pad_init(void)
++{
++	return 	maple_driver_register(&dc_pad_driver.drv);
++}
++
++static void __exit dc_pad_exit(void)
++{
++	driver_unregister(&dc_pad_driver.drv);
++}
++
++module_init(dc_pad_init);
++module_exit(dc_pad_exit);
+
+
+
