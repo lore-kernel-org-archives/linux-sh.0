@@ -1,59 +1,55 @@
-From: Jean Delvare <khali@linux-fr.org>
-Date: Sat, 05 Apr 2008 08:50:33 +0000
-Subject: Re: [PATCH] i2c: SuperH Mobile I2C Bus Controller V5
-Message-Id: <20080405105033.3687c785@hyperion.delvare>
+From: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+Date: Tue, 22 Apr 2008 17:24:12 +0000
+Subject: [RFC patch 8/9] SH remove -traditional
+Message-Id: <20080422172843.205481136@polymtl.ca>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080402025950.1026.44461.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080402025950.1026.44461.sendpatchset@rx1.opensource.se>
+References: <20080422172404.502954084@polymtl.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: i2c@lm-sensors.org, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Ben Dooks <ben-linux@fluff.org>, Andrew Morton <akpm@linux-foundation.org>
+To: Sam Ravnborg <sam@ravnborg.org>, akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>, linux-kernel@vger.kernel.org
+Cc: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-Hi Magnus,
+Subject: [RFC patch 8/9] Re: [PATCH] Stringify support commas
+ > This is a no-no for those archs that still use -traditional.
+ > > I dunno if this is a problem for you at the moment and the
+ > > right fix is anyway to nuke -traditional.
+ > > 
+ > >     Sam
 
-On Wed, 02 Apr 2008 11:59:50 +0900, Magnus Damm wrote:
-> This is V5 of the SuperH Mobile I2C Controller Driver. A simple Master
-> only driver for the I2C block included in processors such as sh7343,
-> sh7722 and sh7723. Tested on a sh7722 MigoR using a rs5c732b rtc.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-> ---
-> 
->  Changes since V4:
->   - Use sh_mobile_i2c_op enum
->   - Remove fast_mode and rx_ack_high code
->   - Use variable name retry_count instead of k
->   - Encoding fixes
->   - Use clk_enable() and clk_disable()
->   - Remove deactivate_ch() call from setup_channel()
->   - Use dev_err() if i2c_add_numbered_adapter() fails
->   - MODULE_LICENSE("GPL v2")
->   - Comment fix, cleaned up header
->  Changes since V3:
->   - Added SUPERH Kconfig dependency
->   - Use spin_lock_irqsave() and spin_unlock_irqrestore()
->   - Use IRQF_DISABLED
->   - Checkpatch fixes
->  Changes since V2:
->   - dev_xxx() use
->   - Kill off superfluous ioarea resource
->   - Add SMBus emulation
->  Changes since V1:
->   - Use clk_get()/clk_put()/clk_get_rate() to get peripheral clock rate.
->   - Use pdev->dev.bus_id instead of dev->name
-> 
->  Verified with the rtc-rs5c372 SMBus conversion patches currently in -mm.
-> 
->  drivers/i2c/busses/Kconfig         |   10 
->  drivers/i2c/busses/Makefile        |    1 
->  drivers/i2c/busses/i2c-sh_mobile.c |  500 ++++++++++++++++++++++++++++++++++++
->  3 files changed, 511 insertions(+)
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+CC: Sam Ravnborg <sam@ravnborg.org>
+CC: lethal@linux-sh.org
+CC: linux-sh@vger.kernel.org
+---
+ arch/sh/boot/compressed/Makefile_32 |    1 -
+ arch/sh/boot/compressed/Makefile_64 |    1 -
+ 2 files changed, 2 deletions(-)
 
-Patch added to my i2c tree and queued up for merge in 2.6.26-rc1.
-Thanks to everyone who reviewed the previous versions of the driver.
+Index: linux-2.6-lttng/arch/sh/boot/compressed/Makefile_32
+=================================--- linux-2.6-lttng.orig/arch/sh/boot/compressed/Makefile_32	2008-04-21 10:07:12.000000000 -0400
++++ linux-2.6-lttng/arch/sh/boot/compressed/Makefile_32	2008-04-21 10:07:17.000000000 -0400
+@@ -6,7 +6,6 @@
+ 
+ targets		:= vmlinux vmlinux.bin vmlinux.bin.gz \
+ 		   head_32.o misc_32.o piggy.o
+-EXTRA_AFLAGS	:= -traditional
+ 
+ OBJECTS = $(obj)/head_32.o $(obj)/misc_32.o
+ 
+Index: linux-2.6-lttng/arch/sh/boot/compressed/Makefile_64
+=================================--- linux-2.6-lttng.orig/arch/sh/boot/compressed/Makefile_64	2008-04-21 10:07:12.000000000 -0400
++++ linux-2.6-lttng/arch/sh/boot/compressed/Makefile_64	2008-04-21 10:07:17.000000000 -0400
+@@ -13,7 +13,6 @@
+ 
+ targets		:= vmlinux vmlinux.bin vmlinux.bin.gz \
+ 		   head_64.o misc_64.o cache.o piggy.o
+-EXTRA_AFLAGS	:= -traditional
+ 
+ OBJECTS		:= $(obj)/vmlinux_64.lds $(obj)/head_64.o $(obj)/misc_64.o \
+ 		   $(obj)/cache.o
 
 -- 
-Jean Delvare
+Mathieu Desnoyers
+Computer Engineering Ph.D. Student, Ecole Polytechnique de Montreal
+OpenPGP key fingerprint: 8CD5 52C3 8E3C 4140 715F  BA06 3F25 A8FE 3BAE 9A68
