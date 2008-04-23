@@ -1,75 +1,59 @@
-From: Adrian Bunk <adrian.bunk@movial.fi>
-Date: Sun, 13 Apr 2008 18:15:38 +0000
-Subject: [2.6.25 patch] sh64: add missing #include <asm/fpu.h>'s
-Message-Id: <20080413181538.GE2182@cs181133002.pp.htv.fi>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 23 Apr 2008 12:00:54 +0000
+Subject: [PATCH] sh: use sci_out() for early printk
+Message-Id: <20080423120054.3919.65164.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Takuo Koguchi <takuo.koguchi.sw@hitachi.com>, Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch fixes some compile errors due to missing save_fpu() 
-prototypes on sh64 caused by
-commit 9bbafce2eec190ef7e44b0eb1095ba17ce6ad3af
-(sh: Fix occasional FPU register corruption under preempt).
+Use sci_out() instead of ctrl_outw() for early printk setup code.
 
-Signed-off-by: Adrian Bunk <adrian.bunk@movial.fi>
-
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/process_64.c |    1 +
- arch/sh/kernel/ptrace_64.c  |    1 +
- arch/sh/kernel/signal_64.c  |    1 +
- arch/sh/kernel/traps_64.c   |    1 +
- 4 files changed, 4 insertions(+)
+ arch/sh/kernel/early_printk.c |   22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
 
-f98fec7956bd7156a11c42acdcf49dc41c5df61e diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
-index 046999b..0283d81 100644
---- a/arch/sh/kernel/process_64.c
-+++ b/arch/sh/kernel/process_64.c
-@@ -28,6 +28,7 @@
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
- #include <asm/mmu_context.h>
-+#include <asm/fpu.h>
+--- 0001/arch/sh/kernel/early_printk.c
++++ work/arch/sh/kernel/early_printk.c	2008-04-22 18:00:42.000000000 +0900
+@@ -141,6 +141,7 @@ static void scif_sercon_init(char *s)
+  */
+ static void scif_sercon_init(char *s)
+ {
++	struct uart_port *port = &scif_port;
+ 	unsigned baud = DEFAULT_BAUD;
+ 	char *e;
  
- struct task_struct *last_task_used_math = NULL;
+@@ -160,19 +161,20 @@ static void scif_sercon_init(char *s)
+ 			baud = DEFAULT_BAUD;
+ 	}
  
-diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
-index f6fbdfa..d453c47 100644
---- a/arch/sh/kernel/ptrace_64.c
-+++ b/arch/sh/kernel/ptrace_64.c
-@@ -33,6 +33,7 @@
- #include <asm/system.h>
- #include <asm/processor.h>
- #include <asm/mmu_context.h>
-+#include <asm/fpu.h>
+-	ctrl_outw(0, scif_port.mapbase + 8);
+-	ctrl_outw(0, scif_port.mapbase);
++	sci_out(port, SCSCR, 0);	 /* TE=0, RE=0 */
++	sci_out(port, SCSMR, 0);
  
- /* This mask defines the bits of the SR which the user is not allowed to
-    change, which are everything except S, Q, M, PR, SZ, FR. */
-diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
-index 80bde19..552eb81 100644
---- a/arch/sh/kernel/signal_64.c
-+++ b/arch/sh/kernel/signal_64.c
-@@ -26,6 +26,7 @@
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
- #include <asm/cacheflush.h>
-+#include <asm/fpu.h>
+ 	/* Set baud rate */
+-	ctrl_outb((CONFIG_SH_PCLK_FREQ + 16 * baud) /
+-		  (32 * baud) - 1, scif_port.mapbase + 4);
++	sci_out(port, SCBRR, (CONFIG_SH_PCLK_FREQ + 16 * baud) /
++		(32 * baud) - 1);
  
- #define REG_RET 9
- #define REG_ARG1 2
-diff --git a/arch/sh/kernel/traps_64.c b/arch/sh/kernel/traps_64.c
-index 1b58a74..a85831c 100644
---- a/arch/sh/kernel/traps_64.c
-+++ b/arch/sh/kernel/traps_64.c
-@@ -30,6 +30,7 @@
- #include <asm/atomic.h>
- #include <asm/processor.h>
- #include <asm/pgtable.h>
-+#include <asm/fpu.h>
- 
- #undef DEBUG_EXCEPTION
- #ifdef DEBUG_EXCEPTION
-
+-	ctrl_outw(12, scif_port.mapbase + 24);
+-	ctrl_outw(8, scif_port.mapbase + 24);
+-	ctrl_outw(0, scif_port.mapbase + 32);
+-	ctrl_outw(0x60, scif_port.mapbase + 16);
+-	ctrl_outw(0, scif_port.mapbase + 36);
+-	ctrl_outw(0x30, scif_port.mapbase + 8);
++	sci_out(port, SCFCR, 12);
++	sci_out(port, SCFCR, 8);
++
++	sci_out(port, SCSPTR, 0);
++	sci_out(port, SCxSR, 0x60);
++	sci_out(port, SCLSR, 0);
++	sci_out(port, SCSCR, 0x30);	 /* TE=1, RE=1 */
+ }
+ #endif /* defined(CONFIG_CPU_SUBTYPE_SH7720) */
+ #endif /* !defined(CONFIG_SH_STANDARD_BIOS) */
