@@ -1,29 +1,33 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 23 Apr 2008 11:24:52 +0000
-Subject: [PATCH] sh: fix sh7705 interrupt vector typo
-Message-Id: <20080423112452.3835.15995.sendpatchset@rx1.opensource.se>
+Date: Wed, 23 Apr 2008 12:31:14 +0000
+Subject: [PATCH] sh-sci: sh7722 lacks scsptr registers
+Message-Id: <20080423123114.7704.15221.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Fix sh7705 interrupt sources for vectors 0xc80 and 0xca0.
+The sh7722 serial ports all lack SCSPTR registers, so mark them as
+nonexistent in the register table.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh3/setup-sh7705.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/serial/sh-sci.h |    4 ++++
+ 1 file changed, 4 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-+++ work/arch/sh/kernel/cpu/sh3/setup-sh7705.c	2008-04-22 17:27:15.000000000 +0900
-@@ -48,7 +48,7 @@ static struct intc_vect vectors[] __init
- 	INTC_VECT(ADC_ADI, 0x980),
- 	INTC_VECT(USB_USI0, 0xa20), INTC_VECT(USB_USI1, 0xa40),
- 	INTC_VECT(TPU0, 0xc00), INTC_VECT(TPU1, 0xc20),
--	INTC_VECT(TPU3, 0xc80), INTC_VECT(TPU1, 0xca0),
-+	INTC_VECT(TPU2, 0xc80), INTC_VECT(TPU3, 0xca0),
- 	INTC_VECT(TMU0, 0x400), INTC_VECT(TMU1, 0x420),
- 	INTC_VECT(TMU2_TUNI, 0x440), INTC_VECT(TMU2_TICPI, 0x460),
- 	INTC_VECT(RTC_ATI, 0x480), INTC_VECT(RTC_PRI, 0x4a0),
+--- 0010/drivers/serial/sh-sci.h
++++ work/drivers/serial/sh-sci.h	2008-04-23 19:44:12.000000000 +0900
+@@ -452,7 +452,11 @@ SCIF_FNS(SCSPTR,			0,  0, 0x24, 16)
+ SCIF_FNS(SCLSR,				0,  0, 0x28, 16)
+ #else
+ SCIF_FNS(SCFDR,                      0x0e, 16, 0x1C, 16)
++#if defined(CONFIG_CPU_SUBTYPE_SH7722)
++SCIF_FNS(SCSPTR,                        0,  0, 0, 0)
++#else
+ SCIF_FNS(SCSPTR,                        0,  0, 0x20, 16)
++#endif
+ SCIF_FNS(SCLSR,                         0,  0, 0x24, 16)
+ #endif
+ #endif
