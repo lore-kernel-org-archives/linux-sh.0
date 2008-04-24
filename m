@@ -1,109 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 19 Apr 2008 13:25:49 +0000
-Subject: [GIT PULL] sh updates for 2.6.26-rc1
-Message-Id: <20080419132548.GA23092@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 24 Apr 2008 12:53:07 +0000
+Subject: [PATCH] sh: intc register modify fix
+Message-Id: <20080424125307.19688.80999.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+Make sure register modifications stay atomic. Fixes processors with
+shared priority register masking. Dual bitmap masking is unaffected.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Which contains:
+ arch/sh/kernel/cpu/irq/intc.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-Angelo Castello (1):
-      rtc: rtc-sh: Add support for periodic IRQs.
-
-Magnus Damm (13):
-      sh: SuperH KEYSC platform driver
-      sh: SuperH KEYSC keypad data for MigoR
-      sh: SuperH KEYSC keypad data for Solution Engine 7722
-      Fix sh_keysc double free
-      sh: Add MigoR header file
-      sh: Use physical addresses for sh7722 USBF resources
-      sh: Use phyical addresses for MigoR smc91x resources
-      sh: MigoR NOR flash support using physmap-flash
-      sh: MigoR NAND flash support using gen_flash
-      sh: Add I2C platform data to sh7722
-      sh: Add I2C support to MigoR
-      sh: Add rs5c732b RTC support to MigoR
-      sh: Add migor_ts support to MigoR
-
-Masayuki Hosokawa (1):
-      sh: Hook up remaining IRQ sources for R7780MP FPGA.
-
-Paul Mundt (11):
-      sh: Create an sh debugfs root.
-      sh: Initial support for the MX-G CPU.
-      sh: Hook up the rest of the SH7770 serial ports.
-      sh: Allow optimized clear/copy page routines to be used on SH-2.
-      sh: Fix up __access_ok() check for nommu.
-      sh: r7780rp: Hook up the I2C and SMBus platform devices.
-      sh: Fix up mach-types formatting from merge damage.
-      sh: Fix up SH7763 build.
-      sh: Add support for SH7723 CPU subtype.
-      sh: Fix up SH-4A part probe.
-      sh: Fix up L2 cache probe.
-
-Yoshihiro Shimoda (1):
-      sh: Add support for Solution Engine SH7721 board
-
- arch/sh/Kconfig                              |   30 +-
- arch/sh/Kconfig.debug                        |   13 +-
- arch/sh/Makefile                             |    1 +
- arch/sh/boards/renesas/migor/setup.c         |  197 +++++-
- arch/sh/boards/renesas/r7780rp/irq-r7780mp.c |   39 +-
- arch/sh/boards/renesas/r7780rp/setup.c       |   42 +-
- arch/sh/boards/se/7721/Makefile              |    1 +
- arch/sh/boards/se/7721/irq.c                 |   45 ++
- arch/sh/boards/se/7721/setup.c               |   99 +++
- arch/sh/boards/se/7722/setup.c               |   41 +
- arch/sh/configs/se7721_defconfig             | 1085 ++++++++++++++++++++++++++
- arch/sh/kernel/cf-enabler.c                  |   15 +-
- arch/sh/kernel/cpu/sh2a/Makefile             |    7 +-
- arch/sh/kernel/cpu/sh2a/probe.c              |    3 +
- arch/sh/kernel/cpu/sh2a/setup-mxg.c          |  168 ++++
- arch/sh/kernel/cpu/sh4/probe.c               |   33 +-
- arch/sh/kernel/cpu/sh4a/Makefile             |    2 +
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c       |   28 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c       |  300 +++++++
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c       |   10 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c       |   37 +-
- arch/sh/kernel/setup.c                       |   15 +
- arch/sh/lib/clear_page.S                     |    6 +-
- arch/sh/lib/copy_page.S                      |    6 +-
- arch/sh/mm/cache-debugfs.c                   |    4 +-
- arch/sh/mm/pmb.c                             |    2 +-
- arch/sh/tools/mach-types                     |    5 +-
- drivers/input/keyboard/Kconfig               |    9 +
- drivers/input/keyboard/Makefile              |    1 +
- drivers/input/keyboard/sh_keysc.c            |  280 +++++++
- drivers/rtc/rtc-sh.c                         |  296 +++++---
- drivers/serial/sh-sci.c                      |    7 +-
- drivers/serial/sh-sci.h                      |   60 ++-
- include/asm-sh/bugs.h                        |    2 +-
- include/asm-sh/cpu-sh4/freq.h                |    6 +-
- include/asm-sh/cpu-sh4/rtc.h                 |    5 +
- include/asm-sh/migor.h                       |   58 ++
- include/asm-sh/processor.h                   |    5 +-
- include/asm-sh/r7780rp.h                     |   22 +-
- include/asm-sh/se7721.h                      |   70 ++
- include/asm-sh/se7722.h                      |    2 +
- include/asm-sh/sh_keysc.h                    |   13 +
- include/asm-sh/system.h                      |    2 +
- include/asm-sh/uaccess_32.h                  |    5 +-
- 44 files changed, 2858 insertions(+), 219 deletions(-)
- create mode 100644 arch/sh/boards/se/7721/Makefile
- create mode 100644 arch/sh/boards/se/7721/irq.c
- create mode 100644 arch/sh/boards/se/7721/setup.c
- create mode 100644 arch/sh/configs/se7721_defconfig
- create mode 100644 arch/sh/kernel/cpu/sh2a/setup-mxg.c
- create mode 100644 arch/sh/kernel/cpu/sh4a/setup-sh7723.c
- create mode 100644 drivers/input/keyboard/sh_keysc.c
- create mode 100644 include/asm-sh/migor.h
- create mode 100644 include/asm-sh/se7721.h
- create mode 100644 include/asm-sh/sh_keysc.h
+--- 0013/arch/sh/kernel/cpu/irq/intc.c
++++ work/arch/sh/kernel/cpu/irq/intc.c	2008-04-24 20:44:38.000000000 +0900
+@@ -101,17 +101,26 @@ static void write_32(unsigned long addr,
+ 
+ static void modify_8(unsigned long addr, unsigned long h, unsigned long data)
+ {
++	unsigned long flags;
++	local_irq_save(flags);
+ 	ctrl_outb(set_field(ctrl_inb(addr), data, h), addr);
++	local_irq_restore(flags);
+ }
+ 
+ static void modify_16(unsigned long addr, unsigned long h, unsigned long data)
+ {
++	unsigned long flags;
++	local_irq_save(flags);
+ 	ctrl_outw(set_field(ctrl_inw(addr), data, h), addr);
++	local_irq_restore(flags);
+ }
+ 
+ static void modify_32(unsigned long addr, unsigned long h, unsigned long data)
+ {
++	unsigned long flags;
++	local_irq_save(flags);
+ 	ctrl_outl(set_field(ctrl_inl(addr), data, h), addr);
++	local_irq_restore(flags);
+ }
+ 
+ enum {	REG_FN_ERR = 0, REG_FN_WRITE_BASE = 1, REG_FN_MODIFY_BASE = 5 };
