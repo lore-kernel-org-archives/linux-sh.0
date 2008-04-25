@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 23 Apr 2008 11:18:04 +0000
-Subject: [PATCH] sh: update smc91x platform data for se7722
-Message-Id: <20080423111804.3816.74432.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 25 Apr 2008 09:06:01 +0000
+Subject: Re: [PATCH] sh: update smc91x platform data for MigoR
+Message-Id: <20080425090601.GC30569@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080423111359.3386.28006.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20080423111359.3386.28006.sendpatchset@rx1.opensource.se>
@@ -10,41 +10,68 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Select smc91x bus width using platform data for se7722 now when the
-smc91x header file is in place.
+On Wed, Apr 23, 2008 at 08:13:59PM +0900, Magnus Damm wrote:
+> Select smc91x bus width and irg flags using platform data for MigoR
+> now when the smc91x header file is in place.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Wed, Apr 23, 2008 at 08:18:04PM +0900, Magnus Damm wrote:
+> Select smc91x bus width using platform data for se7722 now when the
+> smc91x header file is in place.
 
- arch/sh/boards/se/7722/setup.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+On Wed, Apr 23, 2008 at 08:24:52PM +0900, Magnus Damm wrote:
+> Fix sh7705 interrupt sources for vectors 0xc80 and 0xca0.
 
---- 0001/arch/sh/boards/se/7722/setup.c
-+++ work/arch/sh/boards/se/7722/setup.c	2008-04-23 19:18:46.000000000 +0900
-@@ -14,6 +14,7 @@
- #include <linux/platform_device.h>
- #include <linux/ata_platform.h>
- #include <linux/input.h>
-+#include <linux/smc91x.h>
- #include <asm/machvec.h>
- #include <asm/se7722.h>
- #include <asm/io.h>
-@@ -44,6 +45,10 @@ static struct platform_device heartbeat_
- };
- 
- /* SMC91x */
-+static struct smc91x_platdata smc91x_info = {
-+	.flags = SMC91X_USE_16BIT,
-+};
-+
- static struct resource smc91x_eth_resources[] = {
- 	[0] = {
- 		.name   = "smc91x-regs" ,
-@@ -64,6 +69,7 @@ static struct platform_device smc91x_eth
- 	.dev = {
- 		.dma_mask               = NULL,         /* don't use dma */
- 		.coherent_dma_mask      = 0xffffffff,
-+		.platform_data	= &smc91x_info,
- 	},
- 	.num_resources  = ARRAY_SIZE(smc91x_eth_resources),
- 	.resource       = smc91x_eth_resources,
+On Wed, Apr 23, 2008 at 08:50:27PM +0900, Magnus Damm wrote:
+> Do like everyone else and have a struct resource for kernel bss.
+
+On Wed, Apr 23, 2008 at 08:56:44PM +0900, Magnus Damm wrote:
+> Add physical memory resources such as System RAM, Kernel code/data/bss
+> and reserved crash dump area to /proc/iomem. Same strategy as on x86.
+
+On Wed, Apr 23, 2008 at 09:00:54PM +0900, Magnus Damm wrote:
+> Use sci_out() instead of ctrl_outw() for early printk setup code.
+
+On Wed, Apr 23, 2008 at 09:05:11PM +0900, Magnus Damm wrote:
+> Drain by waiting for all characters to be sent, and make sure to
+> wait a little bit after setting up the baud rate.
+
+On Wed, Apr 23, 2008 at 09:16:06PM +0900, Magnus Damm wrote:
+> Reset the transmitter and receiver when setting up early printk.
+
+On Wed, Apr 23, 2008 at 09:25:29PM +0900, Magnus Damm wrote:
+> Improve sh7722 support for SCIF1 and SCIF2 and separate code
+> from sh7366 implementation.
+
+On Wed, Apr 23, 2008 at 09:31:14PM +0900, Magnus Damm wrote:
+> The sh7722 serial ports all lack SCSPTR registers, so mark them as
+> nonexistent in the register table.
+
+On Wed, Apr 23, 2008 at 09:37:39PM +0900, Magnus Damm wrote:
+> Only write to hardware in SCI_OUT() if the register size is valid.
+
+On Thu, Apr 24, 2008 at 09:30:09PM +0900, Magnus Damm wrote:
+> This patch unifies the sh3 external irq pin code. It buys us some
+> savings with reduced code redundancy, but the main feature with
+> this change is irq sense selection support for all sh3 processors.
+
+On Thu, Apr 24, 2008 at 09:36:34PM +0900, Magnus Damm wrote:
+> This patch adds interrupt acknowledge code for external interrupt
+> sources on sh3 processors. Only really required for edge triggered
+> interrupts, but we ack regardless of sense configuration.
+
+On Thu, Apr 24, 2008 at 09:41:12PM +0900, Magnus Damm wrote:
+> Clean up the intc tables by removing unneeded #ifdefs. The vector
+> list is what selects which interrupt sources that should be added,
+> having unsupported bitfields listed is ok as long as the vector
+> is excluded from the list.
+
+On Thu, Apr 24, 2008 at 09:47:15PM +0900, Magnus Damm wrote:
+> The processor models sh7706, sh7707 and sh7709 don't support high
+> level trigger sense configuration. And the intc code looks like
+> crap these days so what's the difference.
+
+On Thu, Apr 24, 2008 at 09:53:07PM +0900, Magnus Damm wrote:
+> Make sure register modifications stay atomic. Fixes processors with
+> shared priority register masking. Dual bitmap masking is unaffected.
+
+All applied, thanks.
