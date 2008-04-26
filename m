@@ -1,72 +1,138 @@
-From: Jean Delvare <khali@linux-fr.org>
-Date: Fri, 25 Apr 2008 10:03:49 +0000
-Subject: Re: [PATCH] i2c: Renesas Highlander FPGA SMBus support.
-Message-Id: <20080425120349.32aa94a9@hyperion.delvare>
+From: Trent Piepho <xyzzy@speakeasy.org>
+Date: Sat, 26 Apr 2008 07:26:25 +0000
+Subject: Re: [i2c] [PATCH] i2c: Renesas Highlander FPGA SMBus support.
+Message-Id: <Pine.LNX.4.58.0804252329110.598@shell2.speakeasy.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080325063236.GA29012@linux-sh.org>
-	<20080423134156.1b368163@hyperion.delvare>
-	<20080423181101.GA2931@roarinelk.homelinux.net>
-	<20080423203104.0ca0f301@hyperion.delvare>
-	<20080425013011.GA27359@linux-sh.org>
-	<20080424231207.11a03f3d.akpm@linux-foundation.org>
-	<20080425062208.GA29452@linux-sh.org>
-In-Reply-To: <20080425062208.GA29452@linux-sh.org>
+	<20080425113835.5c212918@hyperion.delvare>
+In-Reply-To: <20080425113835.5c212918-ig7AzVSIIG7kN2dkZ6Wm7A@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, mano@roarinelk.homelinux.net, i2c@lm-sensors.org, linux-sh@vger.kernel.org, damm@igel.co.jp
+To: Jean Delvare <khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, i2c list <i2c-GZX6beZjE8VD60Wz+7aTrA@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, 25 Apr 2008 15:22:08 +0900, Paul Mundt wrote:
-> On Thu, Apr 24, 2008 at 11:12:07PM -0700, Andrew Morton wrote:
-> > > On Fri, 25 Apr 2008 10:30:11 +0900 Paul Mundt <lethal@linux-sh.org> wrote:
-> > > On Wed, Apr 23, 2008 at 08:31:04PM +0200, Jean Delvare wrote:
-> > > > On Wed, 23 Apr 2008 20:11:01 +0200, Manuel Lauss wrote:
-> > > > > I don't think I'm qualified to review other peoples' code (it looks
-> > > > > fine to me).
-> > 
-> > I looked through it when I merged it - believe it or not, I always do
-> > (well, except for some dopey mechanical code transformation patches where
-> > I'll just believe the changelog).  I saw nothing worth commenting on.  As
-> > is always the case when I don't comment ;)
-> > 
-> > So here's a
-> > Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
-> > 
-> > Although that is of course of limited use, coming from a person
-> > who isn't terribly sure what an i2c is.
-> 
-> This is the root of the issue, none of the people asked to review the
-> code are i2c people either. This is a pretty sad state for the subsystem
-> if the subsystem maintainer needs to defer to people with little to no
-> knowledge of the subsystem to "review" a driver before it can be merged.
+On Fri, 25 Apr 2008, Jean Delvare wrote:
+> > +static void smbus_write_data(u8 *src, u16 *dst, int len)
+> > +{
+> > +	int i, j;
+> > +
+> > +	if (len = 1)
+> > +		*dst = *src << 8;
+> > +	else {
+> > +		j = 0;
+> > +		for (i = 0; i < len; i += 2) {
+> > +			*(dst + j) = *(src + i) << 8 | *(src + i + 1);
+> > +			j++;
+> > +		}
+> > +	}
+> > +}
+
+	for (; len > 1; len -= 2) {
+		*dst++ = be16_to_cpup((u16*)src);
+		src += 2;
+	}
+	if (len)
+		*dst = *src << 8;
+
+> > +static void smbus_read_data(u16 *src, u8 *dst, int len)
+> > +{
+> > +	int i, j;
+> > +
+> > +	if (len = 1)
+> > +		*dst = *src >> 8;
+> > +	else {
+> > +		j = 0;
+> > +		for (i = 0; i < len; i += 2) {
+> > +			*(dst + i) = *(src + j) >> 8;
+> > +			*(dst + i + 1) = *(src + j) & 0x00ff;
+> > +			j++;
+> > +		}
+> > +	}
+> > +}
 >
-> While Manuel, Magnus, and I can easily review and ack our patches, none
-> of this changes the fact that outside of the platform and architecture
-> specific bits in the driver, there's very little we can generally comment
-> on. The reason for soliciting feedback from the i2c list in the first
-> place was to get review and comments on the subsystem-specific bits from
-> the people who are obviously far more familiar with these things. I
-> understand that Jean isn't an embedded person and therefore isn't
-> comfortable reviewing those sorts of drivers, but in these cases it's the
-> bus-specific stuff where the review really matters, which obviously the
-> rest of us aren't in the best position to self-review.
+> If I read the code above correctly, you are merely converting 16-bit
+> words from cpu-endian to long-endian and back, so using be16_to_cpu and
+> cpu_to_be16 would perform better. If the Highlander is big-endian, you
+> should be able to let the compiler optimize out most of the code.
 
-OK, I just reviewed your driver. I had 20 comments, only 6 of them
-required knowledge about the i2c subsystem. The 14 remaining comments
-could have been made by about anybody with some experience with Linux
-kernel development.
+	for (; len > 1; len -= 2) {
+		*(u16*)dst = cpu_to_be16p(src++);
+		dst += 2;
+	}
+	if (len)
+		*dst = *src >> 8;
 
-Given the limited time I have to review new i2c drivers, my hope was
-some other people could take care of the first review catching most of
-the non-i2c-related issues, and then I could just focus on the i2c side
-of things. But I guess I'm asking for too much.
+> > +static void highlander_i2c_command(struct highlander_i2c_dev *dev, u8 command, int len)
+> > +{
+> > +	u16 cmd[32];
+> > +	int i, j;
+> > +
+> > +	j = 0;
+> > +	if (len = 1)
+> > +		cmd[j++] = (command << 8);
+> > +	else
+> > +		for (i = 0; i < len; i += 2)
+> > +			cmd[j++] = (command << 8) | command;
+> > +
+> > +	for (i = 0; i < j; i++) {
+> > +		iowrite16(cmd[i], dev->base + SMSADR + (i * sizeof(u16)));
+> > +		dev_dbg(dev->dev, "command data[%x] 0x%04x\n", i, cmd[i]);
+> > +	}
+> > +}
 
-> If it's not possible to get a subsystem maintainer to review a patch,
-> what's the point of having a centralized subsystem in the first place?
+Is there a reason to have a 32 element array for cmd?  Each element is the
+same.
 
-I don't even understand your question, but I doubt it deserves an
-answer anyway.
+	unsigned int i;
+	u16 cmd = (command << 8) | command;
+	for (i = 0; i < len; i += 2) {
+		if (len - i = 1)
+			cmd = command << 8;
+		iowrite16(cmd, dev->base + SMSADR + i);
+		dev_dbg(dev->dev, "command data[%x] 0x%04x\n", i/2, cmd);
+	}
 
--- 
-Jean Delvare
+These versions will work for odd values of len.  If the hardware can't
+handle this, except when len = 1, it would probably make more sense to
+catch the error sooner and never call them with unsupported values of len.
+
+> > +static int highlander_i2c_wait_for_bbsy(struct highlander_i2c_dev *dev)
+> > +{
+> > +	unsigned long timeout;
+> > +
+> > +	timeout = jiffies + msecs_to_jiffies(iic_timeout);
+> > +	while (ioread16(dev->base + SMCR) & SMCR_BBSY) {
+
+If there is some delay here (interrupt or kernel preemption for example),
+then the timeout could be triggered incorrectly.
+
+> > +		if (time_after(jiffies, timeout)) {
+> > +			dev_warn(dev->dev, "timeout waiting for bus ready\n");
+> > +			return -ETIMEDOUT;
+> > +		}
+> > +
+> > +		msleep(1);
+> > +	}
+> > +
+> > +	return 0;
+> > +}
+
+> > +	/*
+> > +	 * The R0P7780LC0011RL FPGA on the SH7780-based Highlanders
+> > +	 * needs a significant delay in the read path. SH7785 Highlanders
+> > +	 * don't have this issue, so restrict it entirely to those.
+> > +	 */
+> > +	if (mach_is_r7780rp() || mach_is_r7780mp())
+> > +		mdelay(1000);
+>
+> A one second busy-wait is nasty. Can't you use msleep here instead?
+>
+> Having to wait for 1 second after each read makes this driver pretty
+> unusable on these machines anyway, doesn't it? :(
+
+Does it need to wait 1 sec after each read, or does it really need a 1 sec
+delay _between_ reads?  If it's the later, you would be much better off
+storing the time of the last read, and delaying one second from this time
+before starting a new read.  If you're only trying to poll a sensor chip
+every second, you won't need to busy wait at all this way.
