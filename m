@@ -1,18 +1,45 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 11 Apr 2008 06:25:58 +0000
-Subject: Re: sh: fix compressed kernel build
-Message-Id: <20080411062558.GA18977@linux-sh.org>
+From: "Roni Feldman" <roni.feldman+lkml@gmail.com>
+Date: Mon, 28 Apr 2008 19:04:49 +0000
+Subject: initramfs /init freeze
+Message-Id: <7b5883fc0804281204l7bf2f9e8me942dfc0628f30@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080411062144.GA2136@roarinelk.homelinux.net>
-In-Reply-To: <20080411062144.GA2136@roarinelk.homelinux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Apr 11, 2008 at 08:21:44AM +0200, Manuel Lauss wrote:
-> This should probably go to Linus before he releases 2.6.25.  I'm also
-> not sure about the sh64 bit since I don't have a working toolchain for
-> it.
-> 
-I'll queue it up, thanks.
+Hello everyone,
+
+I'm experiencing odd behavior on an SH4 setup: I have an embedded
+initramfs in the kernel image.
+The kernel boots fine but the sequence freezes after
+run_init_process("/init") is executed.
+
+I say "freeze" because I tried code that only does "return 0;" and I
+even wrote an init.s with
+a _start function that jmp's to address 0 (and was supposed to cause
+an exception, but nothing
+appeared in ttySC1, not even a panic for the exit of the init process).
+
+All the printk()'s are visible, and the console handover from sercon0
+to ttySC1 seems to work
+fine (I have no trouble doing printk's before the call to kernel_execve).
+
+I also tried both static and dynamic linking when I wrote the empty main().
+
+Busybox as a shell and an /init shell script seems to suffer from the
+same symptoms.
+
+My setup:
+cpu: SH7751R LE configuration
+kernel: 2.6.25-rc8
+gcc: Gentoo 4.1.2 p1.0.2 with glibc 2.7
+
+I started to suspect my too-new glibc, so now I'm struggling with
+crossdev to compile a uclibc
+toolchain.
+
+Do you guys have any tips for me?
+
+Best regards,
+Roni
