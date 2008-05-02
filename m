@@ -1,121 +1,94 @@
-From: Krzysztof Helt <krzysztof.h1@poczta.fm>
-Date: Fri, 30 May 2008 04:26:26 +0000
-Subject: Re: [Linux-fbdev-devel] [PATCH] video: SuperH Mobile LCDC Driver
-Message-Id: <20080530062626.2834df6e.krzysztof.h1@poczta.fm>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 02 May 2008 01:22:16 +0000
+Subject: Re: initramfs /init freeze
+Message-Id: <200805012122.17186.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart5494074.7ogSmHIMG5"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080529092451.19666.91541.sendpatchset@rx1.opensource.se>
-	<20080529200951.434093d3.krzysztof.h1@poczta.fm>
-	<20080529210736.GA13663@linux-sh.org>
-In-Reply-To: <20080529210736.GA13663@linux-sh.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-fbdev-devel@lists.sourceforge.net, akpm@linux-foundation.org, linux-sh@vger.kernel.org
+References: <7b5883fc0804281204l7bf2f9e8me942dfc0628f30@mail.gmail.com>
+In-Reply-To: <7b5883fc0804281204l7bf2f9e8me942dfc0628f30@mail.gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Fri, 30 May 2008 06:07:36 +0900
-Paul Mundt <lethal@linux-sh.org> wrote:
+--nextPart5494074.7ogSmHIMG5
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-> On Thu, May 29, 2008 at 08:09:51PM +0200, Krzysztof Helt wrote:
-> > > --- /dev/null
-> > > +++ work/drivers/video/sh_mobile_lcdcfb.c	2008-05-29 17:21:48.000000000 +0900
-> > > @@ -0,0 +1,742 @@
-> > > +/*
-> > > + * SuperH Mobile LCDC Framebuffer
-> > > + *
-> > > + * Copyright (c) 2008 Magnus Damm
-> > > + *
-> > > + * This program is free software; you can redistribute it and/or modify
-> > > + * it under the terms of the GNU General Public License as published by
-> > > + * the Free Software Foundation; either version 2 of the License
-> > > + *
-> > 
-> > English is not my native language but the last line sounds suspicious (either what?)
-> > 
-> Yes, there's overzealous trimming here. This should be amended to refer
-> to GPLv2 only, though as the MODULE_LICENSE() its already get this right,
-> it's mostly a cosmetic change.
-> 
+On Monday 28 April 2008, Kristoffer Ericson wrote:
+> On Mon, 28 Apr 2008 21:04:49 "Roni Feldman" wrote:
+> > I'm experiencing odd behavior on an SH4 setup: I have an embedded
+> > initramfs in the kernel image.
+> > The kernel boots fine but the sequence freezes after
+> > run_init_process("/init") is executed.
+> >
+> > I say "freeze" because I tried code that only does "return 0;" and I
+> > even wrote an init.s with
+> > a _start function that jmp's to address 0 (and was supposed to cause
+> > an exception, but nothing
+> > appeared in ttySC1, not even a panic for the exit of the init process).
+> >
+> > All the printk()'s are visible, and the console handover from sercon0
+> > to ttySC1 seems to work
+> > fine (I have no trouble doing printk's before the call to kernel_execve=
+).
+> >
+> > I also tried both static and dynamic linking when I wrote the empty
+> > main().
+>
+> I believe the dynamic linking issue was in pre glibc 2.3.4 (atleast on SH=
+3)
+> so shouldn't be an issue atm.
 
-I am not a lawyer and I simply afraid errors in the legal statements.
-I just pointed a mistake here.
+and static seems to fail the same way ...
 
-> > put lcdc_priv and channel number (or base address and and channel pointer) 
-> > as arguments to break the circular link. 
-> > You can make these functions inline as well.
-> > 
-> As the 'circular' link is being used in a pre-defined way, it's not clear
-> that there's a problem with it existing in the first place. It's
-> obviously a matter of convenience.
-> 
+you could try enabling magic sysrq on your system.  otherwise, jtag/kgdb wo=
+uld=20
+be very useful just to see where the processor is stuck.
 
-It is not that big problem so if it is required to simplify the driver it is fine.
-It seems it is  access to only the lcdc_priv->base field is needed
-from the channel structure. Just take a second look at it if it can be done
-differently without adding to much complexity to the driver.
+> > Busybox as a shell and an /init shell script seems to suffer from the
+> > same symptoms.
+> >
+> > My setup:
+> > cpu: SH7751R LE configuration
+> > kernel: 2.6.25-rc8
+> > gcc: Gentoo 4.1.2 p1.0.2 with glibc 2.7
+> >
+> > I started to suspect my too-new glibc, so now I'm struggling with
+> > crossdev to compile a uclibc
+> > toolchain.
+>
+> I know glibc 2.3.x / 2.4.x / 2.5.x works well, but never tried 2.7. Usual=
+ly
+> though its gcc thats causing the issues. But you should step back and bui=
+ld
+> it with older gcc/glibc just to make sure.
+>
+> For reference I usually use gcc 3.4.5 & glibc 2.3.6 for kernel builds.
 
-> > > +static void lcdc_write(struct sh_mobile_lcdc_priv *priv,
-> > > +		       int reg_offs, unsigned long data)
-> > > +{
-> > > +	iowrite32(data, priv->base + reg_offs);
-> > > +}
-> > > +
-> > > +static unsigned long lcdc_read(struct sh_mobile_lcdc_priv *priv,
-> > > +			       unsigned long reg_offs)
-> > > +{
-> > > +	return ioread32(priv->base + reg_offs);
-> > > +}
-> > > +
-> > 
-> > These two functions can be inline.
-> > 
-> The compiler will do this automatically, there's no need to mark it
-> explicity.
-> 
+glibc-2.7 seems to work fine on my systems ...
+=2Dmike
 
-I don't know the SuperH compiler but I saw things like not inlined functions
-like this on PC (checked by disassembling the module object):
+--nextPart5494074.7ogSmHIMG5
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-static void t_outb(struct tridentfb_par *p, u8 val, u16 reg)
-{
-        fb_writeb(val, p->io_virt + reg);
-}
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.7 (GNU/Linux)
 
-I didn't know why, so safer was just to mark it inline then 
-the function was inlined. That was x86 gcc 3.4.6 compiler.
-Before the check I believed that compiler did the right thing all the time.
-You can check the objdump of the compiled module.
+iQIVAwUASBpsyUFjO5/oN/WBAQKeWxAAqrXqVtgyOhm6FLCv3BZYX5rDXCgeJws1
+c/13/dtEjjnW3f55DB69wgXY1jiDCdg2UbMuLfjBX4qRSynm8LLNdnvv1kApThrV
+o6mzcS2dt1mMU79+UtZYq7O9FetcRyHBFK5VyNJPOM+40+vdFiG1H64B3yDif6V8
+CBcRjoFqylDeotJBR0iWAiHoVFi9jV1yggnqF7gBC9Ym238CP1pBO3ynRNwtGmFv
+q/2VsYmBIDkhYvAPo5s7BmnjaFvZ4OiYpELRmU0i1vX/x6tIYCQomdxWczUf+Cvm
+BwXJmRmMdHZ+Xl9uMTvp6FkUZVFNIDlb1MPtATrsPS9ouWOd/ey+5G1M+3FTU/yY
+oBOFPnN5neV5Sl+jgmYqbRmgSF00vJbl3qJfwjhGVfE0DFcOfnnmDibwxXRnGgH1
+cr19IqMyzmAxhQ4jXcqvkbUiZJWxQLEw3JWxsLBszXbGDMN9wpX7G2JFvURKD7yb
+Sn071c4DIk190khAynmt9hjmR9qayta3DcoBEsVg/HyjEOh6Dt/YiD38qVM/vGQ9
+dEn/o5+iU2OvYLbP1aH2qNWNK1Qp8mErSF4EQ8dc9lXUhzSAV3XaxmLEz4KIZ9Pq
+/v6cAqUSaV3UDLfgENbJJsdygLZzuW5HPdLtdTKDefFdskHx2FUA+/ifTww2clP6
+DgSqCGx2Yrk=
+=rp3T
+-----END PGP SIGNATURE-----
 
-> > > +static void lcdc_sys_write_index(void *handle, unsigned long data)
-> > > +{
-> > > +	struct sh_mobile_lcdc_chan *ch = handle;
-> > > +
-> > > +	lcdc_write(ch->lcdc, _LDDWD0R, data | 0x10000000);
-> > > +
-> > > +	while (lcdc_read(ch->lcdc, _LDSR) & 2)
-> > > +	  ;
-> > > +
-> > 
-> > As Andrew Morton put it it would be better to put
-> > cpu_relax() inside this loop (or do some other
-> > cpu releasing). There are more busy loops
-> > in the driver's code.
-> > 
-> cpu_relax() doesn't really matter here. It's good to include for general
-> coherency, since we don't have the same barriers in the ioread() path,
-> but it's hardly critical.
-> 
-
-No, it is not critical. It is improvement.
-
-The driver code is very clean. All above are just hints for possible 
-improvements.
-
-Regards,
-Krzysztof
-
-
-----------------------------------------------------------------------
-Mucha powraca!
-Sprawdz >>> http://link.interia.pl/f1e0d
-
+--nextPart5494074.7ogSmHIMG5--
