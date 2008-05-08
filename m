@@ -1,34 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 26 May 2008 10:09:16 +0000
-Subject: [GIT PULL] sh updates for 2.6.26-rc4
-Message-Id: <20080526100916.GA18102@linux-sh.org>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Thu, 08 May 2008 22:03:34 +0000
+Subject: sh cayman_defconfig build error
+Message-Id: <20080508220334.GF22887@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
+To: lethal@linux-sh.org
 Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Please pull from:
+With recent gcc versions (I'm using 4.3) the compilation of 
+cayman_defconfig fails with the following error:
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.26.git
+<--  snip  -->
 
-Which contains:
+...
+  CC      arch/sh/kernel/signal_64.o
+cc1: warnings being treated as errors
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/kernel/signal_64.c: In function 'setup_frame':
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/kernel/signal_64.c:477: error: cast from pointer to integer of different size
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/kernel/signal_64.c: In function 'setup_rt_frame':
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/kernel/signal_64.c:595: error: cast from pointer to integer of different size
+make[2]: *** [arch/sh/kernel/signal_64.o] Error 1
 
-Magnus Damm (5):
-      sh: fix USBF resource for sh7722
-      sh: fix VPU interrupt vector for sh7723
-      sh: add probe support for new sh7723 cut
-      sh: use sm501 8250 mfd support on r2d boards
-      sh: update Migo-R defconfig
+<--  snip  -->
 
-Paul Mundt (1):
-      sh: Drop broken URAM support on SH7723.
+cu
+Adrian
 
- arch/sh/Kconfig                           |    1 -
- arch/sh/boards/renesas/rts7751r2d/setup.c |   39 +----
- arch/sh/configs/migor_defconfig           |  294 +++++++++++++++++++++++------
- arch/sh/kernel/cpu/sh4/probe.c            |    1 +
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c    |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c    |    8 +-
- 6 files changed, 241 insertions(+), 104 deletions(-)
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
+
