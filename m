@@ -1,104 +1,179 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 23 Apr 2008 11:56:44 +0000
-Subject: [PATCH] sh: add memory resources to /proc/iomem
-Message-Id: <20080423115644.3899.43399.sendpatchset@rx1.opensource.se>
+From: Mike Travis <travis@sgi.com>
+Date: Fri, 09 May 2008 21:39:23 +0000
+Subject: Re: + mm-define-default-cpu_to_node-checkpatch-fixes.patch added
+Message-Id: <4824C48B.6030808@sgi.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add physical memory resources such as System RAM, Kernel code/data/bss
-and reserved crash dump area to /proc/iomem. Same strategy as on x86.
+Hi Andrew,
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+I thought Paul had submitted a patch to add the stubs from
+asm-generic/topology.h to asm-sh/topology.h, replacing this
+patch entirely?
 
- arch/sh/kernel/setup.c  |   38 +++++++++++++++++++++++++++++++++++++-
- arch/sh/mm/numa.c       |    2 +-
- include/asm-sh/mmzone.h |    2 ++
- 3 files changed, 40 insertions(+), 2 deletions(-)
+Thanks,
+Mike
 
---- 0004/arch/sh/kernel/setup.c
-+++ work/arch/sh/kernel/setup.c	2008-04-22 17:57:37.000000000 +0900
-@@ -86,6 +86,8 @@ EXPORT_SYMBOL(memory_start);
- unsigned long memory_end = 0;
- EXPORT_SYMBOL(memory_end);
- 
-+static struct resource mem_resources[MAX_NUMNODES];
-+
- int l1i_cache_shape, l1d_cache_shape, l2_cache_shape;
- 
- static int __init early_parse_mem(char *p)
-@@ -174,6 +176,40 @@ static inline void __init reserve_crashk
- {}
- #endif
- 
-+void __init __add_active_range(unsigned int nid, unsigned long start_pfn,
-+						unsigned long end_pfn)
-+{
-+	struct resource *res = &mem_resources[nid];
-+
-+	WARN_ON(res->name); /* max one active range per node for now */
-+
-+	res->name = "System RAM";
-+	res->start = start_pfn << PAGE_SHIFT;
-+	res->end = (end_pfn << PAGE_SHIFT) - 1;
-+	res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
-+	if (request_resource(&iomem_resource, res)) {
-+		pr_err("unable to request memory_resource 0x%lx 0x%lx\n",
-+		       start_pfn, end_pfn);
-+		return;
-+	}
-+
-+	/*
-+	 *  We don't know which RAM region contains kernel data,
-+	 *  so we try it repeatedly and let the resource manager
-+	 *  test it.
-+	 */
-+	request_resource(res, &code_resource);
-+	request_resource(res, &data_resource);
-+	request_resource(res, &bss_resource);
-+
-+#ifdef CONFIG_KEXEC
-+	if (crashk_res.start != crashk_res.end)
-+		request_resource(res, &crashk_res);
-+#endif
-+
-+	add_active_range(nid, start_pfn, end_pfn);
-+}
-+
- void __init setup_bootmem_allocator(unsigned long free_pfn)
- {
- 	unsigned long bootmap_size;
-@@ -186,7 +222,7 @@ void __init setup_bootmem_allocator(unsi
- 	bootmap_size = init_bootmem_node(NODE_DATA(0), free_pfn,
- 					 min_low_pfn, max_low_pfn);
- 
--	add_active_range(0, min_low_pfn, max_low_pfn);
-+	__add_active_range(0, min_low_pfn, max_low_pfn);
- 	register_bootmem_low_pages();
- 
- 	node_set_online(0);
---- 0001/arch/sh/mm/numa.c
-+++ work/arch/sh/mm/numa.c	2008-04-22 17:57:37.000000000 +0900
-@@ -59,7 +59,7 @@ void __init setup_bootmem_node(int nid, 
- 	free_pfn = start_pfn = start >> PAGE_SHIFT;
- 	end_pfn = end >> PAGE_SHIFT;
- 
--	add_active_range(nid, start_pfn, end_pfn);
-+	__add_active_range(nid, start_pfn, end_pfn);
- 
- 	/* Node-local pgdat */
- 	NODE_DATA(nid) = pfn_to_kaddr(free_pfn);
---- 0001/include/asm-sh/mmzone.h
-+++ work/include/asm-sh/mmzone.h	2008-04-22 17:57:37.000000000 +0900
-@@ -41,6 +41,8 @@ void __init plat_mem_setup(void);
- 
- /* arch/sh/kernel/setup.c */
- void __init setup_bootmem_allocator(unsigned long start_pfn);
-+void __init __add_active_range(unsigned int nid, unsigned long start_pfn,
-+			       unsigned long end_pfn);
- 
- #endif /* __KERNEL__ */
- #endif /* __ASM_SH_MMZONE_H */
+akpm@linux-foundation.org wrote:
+> The patch titled
+>      mm-define-default-cpu_to_node-checkpatch-fixes
+> has been added to the -mm tree.  Its filename is
+>      mm-define-default-cpu_to_node-checkpatch-fixes.patch
+> 
+> Before you just go and hit "reply", please:
+>    a) Consider who else should be cc'ed
+>    b) Prefer to cc a suitable mailing list as well
+>    c) Ideally: find the original patch on the mailing list and do a
+>       reply-to-all to that, adding suitable additional cc's
+> 
+> *** Remember to use Documentation/SubmitChecklist when testing your code ***
+> 
+> See http://www.zip.com.au/~akpm/linux/patches/stuff/added-to-mm.txt to find
+> out what to do about this
+> 
+> The current -mm tree may be found at http://userweb.kernel.org/~akpm/mmotm/
+> 
+> ------------------------------------------------------
+> Subject: mm-define-default-cpu_to_node-checkpatch-fixes
+> From: Andrew Morton <akpm@linux-foundation.org>
+> 
+> ERROR: space required after that ',' (ctx:VxV)
+> #60: FILE: include/asm-generic/topology.h:35:
+> +#define cpu_to_node(cpu)	((void)(cpu),0)
+>                          	            ^
+> 
+> total: 1 errors, 0 warnings, 66 lines checked
+> 
+> ./patches/mm-define-default-cpu_to_node.patch has style problems, please review.  If any of these errors
+> are false positives report them to the maintainer, see
+> CHECKPATCH in MAINTAINERS.
+> 
+> Please run checkpatch prior to sending patches
+> 
+> Cc: Mike Travis <travis@sgi.com>
+> Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+> ---
+> 
+>  include/asm-generic/topology.h |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff -puN include/asm-generic/topology.h~mm-define-default-cpu_to_node-checkpatch-fixes include/asm-generic/topology.h
+> --- a/include/asm-generic/topology.h~mm-define-default-cpu_to_node-checkpatch-fixes
+> +++ a/include/asm-generic/topology.h
+> @@ -32,7 +32,7 @@
+>   * have CONFIG_NUMA=y
+>   */
+>  #ifndef cpu_to_node
+> -#define cpu_to_node(cpu)	((void)(cpu),0)
+> +#define cpu_to_node(cpu)	((void)(cpu), 0)
+>  #endif
+>  
+>  #ifndef	CONFIG_NUMA
+> _
+> 
+> Patches currently in -mm which might be from akpm@linux-foundation.org are
+> 
+> origin.patch
+> sxc-fix-printk-warnings-on-sparc32.patch
+> drivers-scsi-dpt_i2oc-fix-build-on-alpha.patch
+> quota-dont-call-sync_fs-from-vfs_quota_off-when-theres-no-quota-turn-off-fix.patch
+> fix-hfsplus-oops-on-image-without-extents-fix.patch
+> rtc-rtc_time_to_tm-use-unsigned-arithmetic-fix.patch
+> atmel_lcdfb-fix-pixclok-divider-calculation-checkpatch-fixes.patch
+> memcg-fix-possible-panic-when-config_mm_owner=y-checkpatch-fixes.patch
+> linux-next.patch
+> revert-9p-convert-from-semaphore-to-spinlock.patch
+> revert-vt-fix-background-color-on-line-feed.patch
+> revert-lxfb-extend-pll-table-to-support-dotclocks-below-25-mhz.patch
+> revert-acpica-fixes-for-unload-and-ddbhandles.patch
+> acpi-enable-c3-power-state-on-dell-inspiron-8200.patch
+> acpi-video-balcklist-fujitsu-lifebook-s6410.patch
+> git-x86.patch
+> git-x86-fixup.patch
+> arch-x86-kernel-setupc-printk-warning-fix.patch
+> arch-x86-mm-patc-use-boot_cpu_has.patch
+> x86-setup_force_cpu_cap-dont-do-clear_bitnon-unsigned-long.patch
+> lguest-use-cpu-capability-accessors.patch
+> x86-set_restore_sigmask-avoid-bitop-on-a-u32.patch
+> x86-bitops-take-an-unsigned-long.patch
+> arm-omap1-n770-convert-audio_pwr_sem-in-a-mutex-fix.patch
+> cifs-suppress-warning.patch
+> sysfs-provide-a-clue-about-the-effects-of-config_usb_device_class=y.patch
+> fix-driver-core-prepare-for-removal-of-20-char-limit-from-struct-device.patch
+> i2c-renesas-highlander-fpga-smbus-support.patch
+> dlm-convert-connections_lock-in-a-mutex-fix.patch
+> git-input.patch
+> git-jg-misc-git-rejects.patch
+> revert-git-kbuild.patch
+> git-mmc.patch
+> ubifs-fix-printk-warnings.patch
+> sundance-set-carrier-status-on-link-change-events.patch
+> dm9000-use-delayed-work-to-update-mii-phy-state-fix.patch
+> pcnet32-fix-warning.patch
+> update-smc91x-driver-with-arm-versatile-board-info.patch
+> git-battery.patch
+> fs-nfs-callback_xdrc-suppress-uninitialiized-variable-warnings.patch
+> arch-parisc-kernel-unalignedc-use-time_-macros.patch
+> pci-hotplug-introduce-pci_slot.patch
+> pci-hotplug-acpi-pci-slot-detection-driver.patch
+> revert-git-block.patch
+> git-unionfs.patch
+> git-unionfs-fixup.patch
+> unionfs-broke.patch
+> git-logfs-fixup.patch
+> logfs-unbork.patch
+> logfs-is-busted.patch
+> drivers-usb-core-sysfsc-fix-types.patch
+> drivers-uwb-nehc-processor-flags-have-type-unsigned-long.patch
+> drivers-usb-host-isp1760-hcdc-procesxor-flags-have-type-unsigned-long.patch
+> uwb-fix-scscanf-warning.patch
+> drivers-uwb-wlp-sysfsc-dead-code.patch
+> git-v9fs.patch
+> revert-git-v9fs.patch
+> git-vfs-cleanups-unbork.patch
+> git-watchdog.patch
+> git-watchdog-git-rejects.patch
+> watchdog-fix-booke_wdtc-on-mpc85xx-smp-system.patch
+> xfs-suppress-uninitialized-var-warnings.patch
+> git-xtensa.patch
+> ext4-is-busted-on-m68k.patch
+> common-implementation-of-iterative-div-mod-fix.patch
+> common-implementation-of-iterative-div-mod-checkpatch-fixes.patch
+> common-implementation-of-iterative-div-mod-fix-2.patch
+> mm-define-default-cpu_to_node-checkpatch-fixes.patch
+> colibri-fix-support-for-dm9000-ethernet-device-fix.patch
+> mm-verify-the-page-links-and-memory-model-fix.patch
+> mm-verify-the-page-links-and-memory-model-fix-fix.patch
+> page-allocator-inlnie-some-__alloc_pages-wrappers-fix.patch
+> vmscan-give-referenced-active-and-unmapped-pages-a-second-trip-around-the-lru.patch
+> vm-dont-run-touch_buffer-during-buffercache-lookups.patch
+> locking-add-typecheck-on-irqsave-and-friends-for-correct-flags-checkpatch-fixes.patch
+> remove-apparently-unused-fd1772h-header-file.patch
+> lib-allow-memparse-to-accept-a-null-and-ignorable-second-parm-checkpatch-fixes.patch
+> rename-warn-to-warning-to-clear-the-namespace-fix.patch
+> add-a-warn-macro-this-is-warn_on-printk-arguments-fix.patch
+> flag-parameters-paccept-fix.patch
+> flag-parameters-anon_inode_getfd-extension-fix.patch
+> flag-parameters-inotify_init-fix.patch
+> hysdn-no-longer-broken-on-smp.patch
+> drivers-video-aty-radeon_basec-notify-user-if-sysfs_create_bin_file-failed-checkpatch-fixes.patch
+> reiserfs-convert-j_commit_lock-to-mutex-checkpatch-fixes.patch
+> documentation-build-source-files-in-documentation-sub-dir-disable.patch
+> reiser4.patch
+> reiser4-semaphore-fix.patch
+> page-owner-tracking-leak-detector.patch
+> nr_blockdev_pages-in_interrupt-warning.patch
+> slab-leaks3-default-y.patch
+> put_bh-debug.patch
+> shrink_slab-handle-bad-shrinkers.patch
+> getblk-handle-2tb-devices.patch
+> getblk-handle-2tb-devices-fix.patch
+> undeprecate-pci_find_device.patch
+> notify_change-callers-must-hold-i_mutex.patch
+> profile-likely-unlikely-macros.patch
+> drivers-net-bonding-bond_sysfsc-suppress-uninitialized-var-warning.patch
+> w1-build-fix.patch
+
