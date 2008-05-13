@@ -1,52 +1,103 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Sat, 03 May 2008 23:40:17 +0000
-Subject: Re: initramfs /init freeze
-Message-Id: <200805031940.18758.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1234604.Z6PypWWSeH"
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 13 May 2008 08:38:07 +0000
+Subject: Re: SH7751R - STRANGE initramfs/rootfs behavior
+Message-Id: <20080513083807.GA24089@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <7b5883fc0804281204l7bf2f9e8me942dfc0628f30@mail.gmail.com>
-In-Reply-To: <7b5883fc0804281204l7bf2f9e8me942dfc0628f30@mail.gmail.com>
+References: <9e0cf0bf0804070616y72f1bf4er6dcbb23188937543@mail.gmail.com>
+In-Reply-To: <9e0cf0bf0804070616y72f1bf4er6dcbb23188937543@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---nextPart1234604.Z6PypWWSeH
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+On Mon, Apr 07, 2008 at 04:16:01PM +0300, Alon Bar-Lev wrote:
+> Hello,
+> 
+> I am trying to boot 2.6.24 kernel on SH7751R big endian (sh4eb) using
+> embedded initramfs, anyone have this configuration working?
+> 
+> I use zImage converted to srec using objcopy, load the srec into
+> memory and jump to the load address of the kernel.
+> 
+> The kernel boots, but when trying to decompress the initramfs image it
+>  fails with "crc error",  resulting from lib/inflate.c::gunzip:1250.
+> 
+> Has anyone got this error? The initramfs image is correct. I also
+> dumped the memory of __initramfs_start->__initramfs_start and verified
+> that it matches the initramfs image on usr/initramfs_data.cpio.gz.
+> 
+> I then noticed that the kernel code at
+> init/initramfs::unpack_to_rootfs:459 supports handling  uncompressed
+> archives. So I compiled a kernel with uncompressed archived.
+> 
+> I also hooked the init/initramfs::do_name:585 functions, and see that
+> "/init' is passed to sys_open, and sys_open returns with -EOENT (-2).
+> 
+>  How can it be? shouldn't rootfs always be available?
+> 
+>  The same attempt on i586, mipsel is working as expected.
+> 
+>  Any ideas?
+>  1. Why decompression working for kernel and not for initramfs (crc error).
+>  2. Why files cannot be created on rootfs?
+> 
+Ok, this was fun to debug. The problem was related to initrd handling,
+not the initramfs bits itself. init/initramfs.c:populate_rootfs() itself
+has no problems on the __initramfs_start -> __initramfs_end unpack, but
+after this, initrd_start is tested unconditionally and triggers an
+additional call in to unpack_to_rootfs().
 
-On Friday 02 May 2008, Roni Feldman wrote:
-> I tried generating an sh4-softfloat-linux-gnu toolchain (gcc 4.1.2 libc
-> 2.7) with crossdev but I failed.
-> I'm probably missing something obvious, but I didn't work on it for too
-> long...
+Inserting a dump_mem() in unpack_to_rootfs() after the inbuf pointer has
+been assigned (prior to the gunzip()), you can see that there are
+multiple invocations, and while the first is correct, the second one is
+complete garbage -- which is ultimately what causes it to bail out with a
+vague crc or header magic mismatch error.
 
-ive only ever attempted softfloat on arm targets and with gcc-3.4.x.  i'd=20
-suggest you do a quicktest and see if gcc 3.4.x works with=20
-sh4-softfloat-linux-gnu ... if it doesnt, then something needs a little=20
-TLC ...
-=2Dmike
+The reason for this is that the default values in .empty_zero_page
+contain an initrd start/size and valid loader type, and while some boot
+loader and kernel configurations fix this up correctly, others do not,
+which cause the defaults to be used instead.
 
---nextPart1234604.Z6PypWWSeH
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+This should fix it up, and also provide some more debugging information
+so it's more obvious how the boot params in .empty_zero_page look on
+entry.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.7 (GNU/Linux)
+---
 
-iQIVAwUASBz34kFjO5/oN/WBAQLOAA//RM1g6of4ndxGlhox/6hKb50OaiDfx7Ov
-4/Jyb8fcRAL18rqfYSPpkcSvD3D6GTp3VpnMu6uQhHZ5gDXP3X0SCAr8G6BsnyNh
-YMLjmsWCNjqCbjH8VKCF+SozD5M0HpIDeUvfWMTJNjqP4i25Q2edOdcziXKuBXcm
-qxYzLAdLO3u3cfTLk/+yO7ag6saM/l/tOVD59hYT0f+nD9Ep9aAvukzh7cseMpfH
-a1/W7Ypcws3mVQ07VIkm70TJe1GJZG7CPsnUi9n3F47xTec+T1T4iOnL/kYNAcZK
-2mQrkUwgfuWXsD29Tb89wU/hhDFWllwk9AUi74vXdbZPgLsP5NDyF4aBGdy6g12c
-0GEXoosj7Vxyl6DNtQM3GezNiZ3wNDE+vyvaWcuPgScxLBL54UkeilxcYPPhKipY
-oeutOBVdyOoVDULutjB+iKFszXdcub+A4QWAN5XeoXFQJHFbQjPo3mZjCNrXK8u5
-0YKrYDA00KzELKQGup8Plg94ZP2Q8b++jgfFnyDwIS3N4cmvX//UVHpeUZ4utvS0
-p1MuNw+iYzONn+a0qqhpPcJBZJayfDmhqK456AxF7RZ/5QEwN5Mbrs3mURa+AX88
-G49ZY5fPOlgJclr/zSOX1YGHkRgB40HIebkAoPqfC+KnchtOrsnhNQcSDtkoa8eE
-lRnJxkt6Srg=
-=jgZD
------END PGP SIGNATURE-----
-
---nextPart1234604.Z6PypWWSeH--
+diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+index d67d7ed..ae0a382 100644
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -30,8 +30,8 @@ ENTRY(empty_zero_page)
+ 	.long	0		/* RAMDISK_FLAGS */
+ 	.long	0x0200		/* ORIG_ROOT_DEV */
+ 	.long	1		/* LOADER_TYPE */
+-	.long	0x00360000	/* INITRD_START */
+-	.long	0x000a0000	/* INITRD_SIZE */
++	.long	0x00000000	/* INITRD_START */
++	.long	0x00000000	/* INITRD_SIZE */
+ #ifdef CONFIG_32BIT
+ 	.long	0x53453f00 + 32	/* "SE?" = 32 bit */
+ #else
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 516bde9..bca2bbc 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -292,6 +292,17 @@ void __init setup_arch(char **cmdline_p)
+ 
+ 	ROOT_DEV = old_decode_dev(ORIG_ROOT_DEV);
+ 
++	printk(KERN_NOTICE "Boot params:\n"
++			   "... MOUNT_ROOT_RDONLY - %08lx\n"
++			   "... RAMDISK_FLAGS     - %08lx\n"
++			   "... ORIG_ROOT_DEV     - %08lx\n"
++			   "... LOADER_TYPE       - %08lx\n"
++			   "... INITRD_START      - %08lx\n"
++			   "... INITRD_SIZE       - %08lx\n",
++			   MOUNT_ROOT_RDONLY, RAMDISK_FLAGS,
++			   ORIG_ROOT_DEV, LOADER_TYPE,
++			   INITRD_START, INITRD_SIZE);
++
+ #ifdef CONFIG_BLK_DEV_RAM
+ 	rd_image_start = RAMDISK_FLAGS & RAMDISK_IMAGE_START_MASK;
+ 	rd_prompt = ((RAMDISK_FLAGS & RAMDISK_PROMPT_FLAG) != 0);
