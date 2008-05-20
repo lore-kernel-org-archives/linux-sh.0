@@ -1,76 +1,55 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Mon, 19 May 2008 15:47:08 +0000
-Subject: Re: [PATCH] input: add support for SEGA Dreamcast controller as
-Message-Id: <20080519114515.ZZRA012@mailhub.coreip.homeip.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 20 May 2008 10:51:40 +0000
+Subject: [PATCH 01/03] uio: Add enable_irq() callback
+Message-Id: <20080520105140.1474.59715.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1211138322.6354.5.camel@localhost.localdomain> <20080519010928.GA8797@linux-sh.org>
-In-Reply-To: <20080519010928.GA8797@linux-sh.org>
+References: <20080520105132.1474.73941.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080520105132.1474.73941.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Adrian McMenamin <adrian@newgolddream.dyndns.info>, LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@osdl.org>, linux-sh <linux-sh@vger.kern>
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, hjk@linutronix.de, gregkh@suse.de
 
-On Mon, May 19, 2008 at 10:09:28AM +0900, Paul Mundt wrote:
-> On Sun, May 18, 2008 at 08:18:42PM +0100, Adrian McMenamin wrote:
-> > +MODULE_AUTHOR("YAEGASHI Takeshi <t@keshi.org>");
-> > +MODULE_DESCRIPTION("SEGA Dreamcast controller driver");
-> > +MODULE_LICENSE("GPL");
-> > +
-> MODULE_AUTHOR() is a bit ambiguous here. As this is user-visible by way
-> of modinfo, it really doesn't make any sense to list someone who has
-> nothing to do with the driver in its present form here. Especially since
-> it's been 7 years since their last contribution or even basic list
-> activity, I think it's safe to say that you are going to be the only one
-> that users wish to contact about this.
-> 
-> In this case, the copyright should suffice. You may wish to add a bit of
-> a note there indicating where the driver came from, but there's not much
-> point in going beyond that.
-> 
-> Note that if you aren't comfortable with being in MODULE_AUTHOR(), you
-> can also make this more generic and attribute it to the LinuxDC or
-> Linux/SH teams respectively, as that's a bit more true to form as far as
-> all copyright holders are concerned, and gives people a pointer to a list
-> to go to with problems.
-> 
-> It's probably more reasonable to treat MODULE_AUTHOR() as
-> MODULE_MAINTAINER() rather than the literal original author, as the
-> latter is of zero interest or relevance to users that are looking at
-> this information on the other side of the fence.
-> 
-> > +struct dc_pad {
-> > +	struct input_dev *dev;
-> > +	struct maple_device *mdev;
-> > +};
-> > +
-> This is pretty ugly, you should really fix up your private device
-> pointer layering to get around having to use this structure at all.
-> 
-> > +static struct maple_driver dc_pad_driver = {
-> > +	.function =	MAPLE_FUNC_CONTROLLER,
-> > +	.connect =	dc_pad_connect,
-> > +	.disconnect =	dc_pad_disconnect,
-> > +	.drv = {
-> > +		.name = "Dreamcast_controller",
-> 
-> Is there some particular reason why the driver name can't reflect the
-> module name? There's no reason to have such sickeningly verbose driver
-> names.
-> 
-> > +		.probe = probe_maple_controller,
-> > +		.remove = remove_maple_controller,
-> > +	},
-> > +};
-> > +
-> These should be __devinit/__devexit at least, with the latter being
-> __devexit_p() wrapped..
-> 
+Add enable_irq() callback to struct uio_info. This callback is needed by
+the uio_platform driver so interrupts can be enabled before blocking.
 
-In addition to Pauls comments - is there a reson why maple drivers
-need to brovide both connect/disconnect and probe/remove functions?
-Normally the layer has generic probe/remove defined on bus level and
-individual drivers provide connect/disconnect (or their equivalent)
-which is called from the bus's probe/remove.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
--- 
-Dmitry
+ drivers/uio/uio.c          |    6 ++++++
+ include/linux/uio_driver.h |    1 +
+ 2 files changed, 7 insertions(+)
+
+--- 0001/drivers/uio/uio.c
++++ work/drivers/uio/uio.c	2008-05-19 14:52:08.000000000 +0900
+@@ -365,6 +365,9 @@ static unsigned int uio_poll(struct file
+ 	if (idev->info->irq = UIO_IRQ_NONE)
+ 		return -EIO;
+ 
++	if (idev->info->enable_irq)
++		idev->info->enable_irq(idev->info);
++
+ 	poll_wait(filep, &idev->wait, wait);
+ 	if (listener->event_count != atomic_read(&idev->event))
+ 		return POLLIN | POLLRDNORM;
+@@ -391,6 +394,9 @@ static ssize_t uio_read(struct file *fil
+ 	do {
+ 		set_current_state(TASK_INTERRUPTIBLE);
+ 
++		if (idev->info->enable_irq)
++			idev->info->enable_irq(idev->info);
++
+ 		event_count = atomic_read(&idev->event);
+ 		if (event_count != listener->event_count) {
+ 			if (copy_to_user(buf, &event_count, count))
+--- 0001/include/linux/uio_driver.h
++++ work/include/linux/uio_driver.h	2008-05-19 14:52:08.000000000 +0900
+@@ -64,6 +64,7 @@ struct uio_info {
+ 	void			*priv;
+ 	irqreturn_t (*handler)(int irq, struct uio_info *dev_info);
+ 	int (*mmap)(struct uio_info *info, struct vm_area_struct *vma);
++	void (*enable_irq)(struct uio_info *info);
+ 	int (*open)(struct uio_info *info, struct inode *inode);
+ 	int (*release)(struct uio_info *info, struct inode *inode);
+ };
