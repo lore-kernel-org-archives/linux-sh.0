@@ -1,40 +1,107 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= <Uwe.Kleine-Koenig@digi.com>
-Date: Wed, 21 May 2008 08:05:03 +0000
+From: "Magnus Damm" <magnus.damm@gmail.com>
+Date: Wed, 21 May 2008 08:09:51 +0000
 Subject: Re: [PATCH 00/03][RFC] Reusable UIO Platform Driver
-Message-Id: <20080521080503.GA28751@digi.com>
+Message-Id: <aec7e5c30805210109p664fd917r32f8dc6aa1c4c746@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080520105132.1474.73941.sendpatchset@rx1.opensource.se> <20080520210713.GE3220@local> <aec7e5c30805202031x62b3b463lfde0b9e7eb32d35@mail.gmail.com> <20080521064938.GA11580@digi.com> <20080521074950.GA27310@linux-sh.org>
-In-Reply-To: <20080521074950.GA27310@linux-sh.org>
+References: <20080520105132.1474.73941.sendpatchset@rx1.opensource.se>
+	 <20080520210713.GE3220@local>
+	 <aec7e5c30805202031x62b3b463lfde0b9e7eb32d35@mail.gmail.com>
+	 <20080521064938.GA11580@digi.com>
+In-Reply-To: <20080521064938.GA11580@digi.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
-To: Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, "Hans J. Koch" <hjk@linutronix.de>, linux-kernel@vger.kernel.org, gregkh@suse.de, linux-sh@vger.kernel.org
+To: =?ISO-8859-1?Q?Uwe_Kleine-K=F6nig?= <Uwe.Kleine-Koenig@digi.com>
+Cc: "Hans J. Koch" <hjk@linutronix.de>, linux-kernel@vger.kernel.org, lethal@linux-sh.org, gregkh@suse.de, linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Wed, May 21, 2008 at 08:49:38AM +0200, Uwe Kleine-K?nig wrote:
-> > Magnus Damm wrote:
-> > >         Extending uio_pdrv driver with a chunk of physically
-> > > contiguous memory isn't a big deal though.
-> > I wonder how you use that memory.  Isn't it just some kind of shared
-> > memory?  If so, why not use normal shared memory?  Do you really need
-> > that?
-> >=20
-> Physically contiguous memory is a real requirement, especially for DMA.
-> I'm not sure what's confusing about that?
-I got that, yes.  The problem is I don't see how you can use it for DMA.
-The physical address is stored in info->mem[$last].internal_addr and if
-there is a way to access that variable from user space, I don't see it
-and would appretiate a hint.  Sorry for not expressing my concern more
-clear at the first go.  I hope it's understandable now.
+Hi Uwe!
 
-@Magnus: Maybe you can provide the userspace part of the driver?
-How is that mapping used there?
+Thanks for your email.
 
-Best regards
-Uwe
+On Wed, May 21, 2008 at 3:49 PM, Uwe Kleine-K=F6nig
+<Uwe.Kleine-Koenig@digi.com> wrote:
+> Magnus Damm wrote:
+>> The uio_pdrv driver doesn't do what I need at this point, though I may
+>> be able to extend it with the following:
+>> - Interrupt enable/disable code
+>> - Physically contiguous memory support
+>>
+>> The interrupt code may be placed in the board/cpu code, but I need to
+>> share that code between multiple UIO driver instances. We want to use
+>> the same UIO driver for many different processor models and hardware
+>> blocks.
+> What about adding uio_platform_handler (with a different name) to
+> uio_pdrv.c?
 
---=20
-Uwe Kleine-K=F6nig, Software Engineer
-Digi International GmbH Branch Breisach, K=FCferstrasse 8, 79206 Breisach, =
-Germany
-Tax: 315/5781/0242 / VAT: DE153662976 / Reg. Amtsgericht Dortmund HRB 13962
+I'm not sure if it will help. What would such function do? Please explain.
+
+> OTOH I don't see why you want to disable the irq.  Can you describe the
+> reason?
+
+Most UIO kernel drivers today contain hardware device specific code to
+acknowledge interrupts. In other words, most UIO interrupt handlers
+touches some device specific bits so the interrupt gets deasserted.
+
+My uio_platform driver handles interrupts in a different way. The
+kernel UIO driver is not aware of the hardware device specific method
+to acknowledge the interrupt, instead it simply disables the interrupt
+and notifies user space which instead will acknowledge the interrupt.
+Next time a read() or poll() call gets made, the interrupt is enabled
+again.
+
+This allows us to export a hardware device to user space and allow
+user space to handle interrupts without knowing in kernel space how to
+acknowledge interrupts.
+
+>>         Extending uio_pdrv driver with a chunk of physically
+>> contiguous memory isn't a big deal though.
+> I wonder how you use that memory.  Isn't it just some kind of shared
+> memory?  If so, why not use normal shared memory?  Do you really need
+> that?
+
+Yes, I need that to give the exported hardware device some physically
+contiguous memory for DMA. At this point our hardware is missing IOMMU
+so physically contiguous memory is needed.
+
+>> To be frank, I have my doubts in adding an extra forwarding-only
+>> platform layer on top of UIO compared to using uio_register_device()
+>> directly from the board code. I like that the platform layer is using
+>> struct resource and handles resource ranges for us automatically, but
+>> wouldn't it make more sense to extend the UIO core to always use
+>> struct resource instead of struct uio_mem? I'd be happy to help out -
+>> just point me in the right direction.
+> That alone doesn't help.  You need a struct device to register a uio
+> device.  So a platform device is the straight forward approach.
+
+I don't mind that you are using platform devices. Actually, I think
+platform devices are great. We use them for all sorts of things on the
+SuperH architecture. I'm trying to suggest that maybe it's a good idea
+to change the UIO core code to use struct resource instead of struct
+uio_mem. Or maybe that's not a good idea, I'm not sure.
+
+>> >> The interrupt handling code in uio_platform assumes the device is the
+>> >> only user of the assigned interrupt.
+>> >
+>> > Uwe's approach doesn't have this limitation.
+>>
+>> True, but the uio_pdrv driver is choosing to not deal with interrupts
+>> at all. I'd like to have shared interrupt handling code. With my
+>> driver, you just feed it io memory window parameters and an interrupt
+>> number and off you go. No need for any callbacks.
+> In my eyes this isn't completly correct.  Just the way you specify your
+> handler is a bit different.  You can pass a handler via platform data
+> with my driver, too.
+
+I don't want to pass any handler. All devices share the same interrupt
+handler, the only thing that differs between multiple uio_platform
+devices on one system is memory window information and irq number.
+
+> BTW, you don't need "depends on UIO" (because it's in a if UIO/endif
+> block) and "default n" (as this is the default anyhow).  See also
+> http://thread.gmane.org/gmane.linux.kernel/663884/focush3097
+
+Ah, thanks for pointing that out!
+
+Thank you for your feedback!
+
+/ magnus
