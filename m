@@ -1,228 +1,97 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 20 May 2008 10:51:48 +0000
-Subject: [PATCH 02/03] uio: Add uio_platform driver
-Message-Id: <20080520105148.1474.9734.sendpatchset@rx1.opensource.se>
+Date: Thu, 22 May 2008 13:34:28 +0000
+Subject: [PATCH] sh: use sm501 8250 mfd support on r2d boards
+Message-Id: <20080522133428.12549.14671.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080520105132.1474.73941.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080520105132.1474.73941.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, gregkh@suse.de, hjk@linutronix.de, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch implements a reusable UIO platform driver. Only memory mapped
-hardware devices with unique IRQs are supported.
+Make use of recently added sm501 8250 uart support, commit
+61711f8fd8180e458cfb6846bcf4fc636a95f3db makes the mfd code
+handle 8250 uarts so there is no longer need to do it from
+the r2d board code.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Tested using the VEU on a SuperH sh7722.
+ arch/sh/boards/renesas/rts7751r2d/setup.c |   39 -----------------------------
+ 1 file changed, 1 insertion(+), 38 deletions(-)
 
- drivers/uio/Kconfig          |   10 ++
- drivers/uio/Makefile         |    1 
- drivers/uio/uio_platform.c   |  161 ++++++++++++++++++++++++++++++++++++++++++
- include/linux/uio_platform.h |   10 ++
- 4 files changed, 182 insertions(+)
-
---- 0001/drivers/uio/Kconfig
-+++ work/drivers/uio/Kconfig	2008-05-20 17:20:18.000000000 +0900
-@@ -39,4 +39,14 @@ config UIO_SMX
+--- 0001/arch/sh/boards/renesas/rts7751r2d/setup.c
++++ work/arch/sh/boards/renesas/rts7751r2d/setup.c	2008-05-15 19:18:43.000000000 +0900
+@@ -11,7 +11,6 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/ata_platform.h>
+-#include <linux/serial_8250.h>
+ #include <linux/sm501.h>
+ #include <linux/sm501-regs.h>
+ #include <linux/pm.h>
+@@ -109,27 +108,6 @@ static struct platform_device heartbeat_
+ 	.resource	= heartbeat_resources,
+ };
  
- 	  If you compile this as a module, it will be called uio_smx.
+-static struct plat_serial8250_port uart_platform_data[] = {
+-	{
+-		.membase	= (void __iomem *)0xb3e30000,
+-		.mapbase	= 0xb3e30000,
+-		.iotype		= UPIO_MEM,
+-		.irq		= IRQ_VOYAGER,
+-		.flags		= UPF_BOOT_AUTOCONF | UPF_SHARE_IRQ,
+-		.regshift	= 2,
+-		.uartclk	= (9600 * 16),
+-	},
+-	{ 0 },
+-};
+-
+-static struct platform_device uart_device = {
+-	.name		= "serial8250",
+-	.id		= PLAT8250_DEV_PLATFORM,
+-	.dev		= {
+-		.platform_data	= uart_platform_data,
+-	},
+-};
+-
+ static struct resource sm501_resources[] = {
+ 	[0]	= {
+ 		.start	= 0x10000000,
+@@ -185,11 +163,7 @@ static struct sm501_platdata_fb sm501_fb
+ };
  
-+config UIO_PLATFORM
-+	tristate "Userspace I/O Platform driver"
-+	depends on UIO
-+	default n
-+	help
-+	  Reusable userspace IO interface for memory mapped devices
-+	  equipped with an unique IRQ. IRQ sharing is not supported.
-+
-+	  To compile this driver as a module, choose M here: the module
-+	  will be called uio_platform.
- endif
---- 0001/drivers/uio/Makefile
-+++ work/drivers/uio/Makefile	2008-05-20 17:20:18.000000000 +0900
-@@ -1,3 +1,4 @@
- obj-$(CONFIG_UIO)	+= uio.o
- obj-$(CONFIG_UIO_CIF)	+= uio_cif.o
- obj-$(CONFIG_UIO_SMX)	+= uio_smx.o
-+obj-$(CONFIG_UIO_PLATFORM)	+= uio_platform.o
---- /dev/null
-+++ work/drivers/uio/uio_platform.c	2008-05-20 18:06:08.000000000 +0900
-@@ -0,0 +1,161 @@
-+/*
-+ * Userspace I/O Platform Driver
-+ *
-+ * Copyright(C) 2008 Magnus Damm
-+ *
-+ * Platform data driven UIO kernel glue, only memory mapped I/O devices
-+ * with unique IRQs are supported.
-+ *
-+ * Licensed under the GPLv2 only.
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/delay.h>
-+#include <linux/spinlock.h>
-+#include <linux/workqueue.h>
-+#include <linux/interrupt.h>
-+#include <linux/platform_device.h>
-+#include <linux/uio_driver.h>
-+#include <linux/uio_platform.h>
-+#include <linux/bitops.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/mm.h>
-+
-+struct uio_platform_priv {
-+	struct uio_info info;
-+	unsigned long irq_disabled;
-+};
-+
-+#define to_priv(uinfo) container_of(uinfo, struct uio_platform_priv, info)
-+
-+static irqreturn_t uio_platform_handler(int irq, struct uio_info *dev_info)
-+{
-+	struct uio_platform_priv *priv = to_priv(dev_info);
-+
-+	/* Since we are the only user of this interrupt, just disable
-+	 * it and remember the state so we can enable it later.
-+	 */
-+
-+	disable_irq(irq);
-+	set_bit(0, &priv->irq_disabled);
-+	return IRQ_HANDLED;
-+}
-+
-+static void uio_platform_enable_irq(struct uio_info *dev_info)
-+{
-+	struct uio_platform_priv *priv = to_priv(dev_info);
-+
-+	if (test_and_clear_bit(0, &priv->irq_disabled))
-+		enable_irq(dev_info->irq);
-+}
-+
-+static int uio_platform_probe(struct platform_device *dev)
-+{
-+	struct uio_platform_info *platform_info = dev->dev.platform_data;
-+	struct uio_platform_priv *priv;
-+	struct uio_info *info;
-+	struct resource	*r;
-+	int ret, k;
-+
-+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-+	if (!priv)
-+		return -ENOMEM;
-+
-+	info = &priv->info;
-+
-+	for (k = 0; k < MAX_UIO_MAPS; k++) {
-+		r = platform_get_resource(dev, IORESOURCE_MEM, k);
-+		if (r = NULL)
-+			break;
-+
-+		info->mem[k].memtype = UIO_MEM_PHYS;
-+		info->mem[k].addr = r->start;
-+		info->mem[k].size = r->end - r->start + 1;
-+	}
-+
-+	if (platform_info->memsize && k < MAX_UIO_MAPS) {
-+		dma_addr_t dma_handle;
-+		void *buf;
-+
-+		buf = dma_alloc_coherent(&dev->dev, platform_info->memsize,
-+					 &dma_handle, GFP_KERNEL);
-+		if (buf = NULL) {
-+			kfree(priv);
-+			return -ENOMEM;
-+		}
-+
-+		info->mem[k].memtype = UIO_MEM_PHYS;
-+		info->mem[k].addr = dma_handle;
-+		info->mem[k].internal_addr = buf;
-+		info->mem[k].size = platform_info->memsize;
-+
-+		memset(buf, 0, info->mem[k].size);
-+	}
-+
-+	info->name = platform_info->name;
-+	info->version = platform_info->version;
-+	info->irq = platform_get_irq(dev, 0);
-+	info->irq_flags = IRQF_DISABLED;
-+	info->handler = uio_platform_handler;
-+	info->enable_irq = uio_platform_enable_irq;
-+
-+	platform_set_drvdata(dev, info);
-+
-+	ret = uio_register_device(&dev->dev, info);
-+	if (ret)
-+		goto err;
-+
-+	return 0;
-+ err:
-+	for (k = 0; k < MAX_UIO_MAPS; k++)
-+		if (info->mem[k].memtype = UIO_MEM_PHYS)
-+			dma_free_coherent(&dev->dev, info->mem[k].size,
-+					  info->mem[k].internal_addr,
-+					  info->mem[k].addr);
-+	kfree(priv);
-+	return ret;
-+}
-+
-+static int uio_platform_remove(struct platform_device *dev)
-+{
-+	struct uio_info *info = platform_get_drvdata(dev);
-+	struct uio_platform_priv *priv = to_priv(info);
-+	int k;
-+
-+	uio_unregister_device(&priv->info);
-+
-+	for (k = 0; k < MAX_UIO_MAPS; k++)
-+		if (info->mem[k].memtype = UIO_MEM_PHYS)
-+			dma_free_coherent(&dev->dev, info->mem[k].size,
-+					  info->mem[k].internal_addr,
-+					  info->mem[k].addr);
-+
-+	kfree(priv);
-+	return 0;
-+}
-+
-+static struct platform_driver uio_platform_drv = {
-+	.probe		= uio_platform_probe,
-+	.remove		= uio_platform_remove,
-+	.driver		= {
-+		.name	= "uio-platform",
-+		.owner	= THIS_MODULE,
-+	},
-+};
-+
-+static int __init uio_platform_init(void)
-+{
-+	return platform_driver_register(&uio_platform_drv);
-+}
-+module_init(uio_platform_init);
-+
-+static void __exit uio_platform_exit(void)
-+{
-+	platform_driver_unregister(&uio_platform_drv);
-+}
-+module_exit(uio_platform_exit);
-+
-+MODULE_DESCRIPTION("UIO Platform Driver");
-+MODULE_AUTHOR("Magnus Damm <damm@opensource.se>");
-+MODULE_LICENSE("GPL v2");
---- /dev/null
-+++ work/include/linux/uio_platform.h	2008-05-20 17:20:18.000000000 +0900
-@@ -0,0 +1,10 @@
-+#ifndef __LINUX_UIO_PLATFORM_H__
-+#define __LINUX_UIO_PLATFORM_H__
-+
-+struct uio_platform_info {
-+	char *name;
-+	char *version;
-+	unsigned long memsize;
-+};
-+
-+#endif /* __LINUX_UIO_PLATFORM_H__ */
+ static struct sm501_initdata sm501_initdata = {
+-	.gpio_high	= {
+-		.set	= 0x00001fe0,
+-		.mask	= 0x0,
+-	},
+-	.devices	= SM501_USE_USB_HOST,
++	.devices	= SM501_USE_USB_HOST | SM501_USE_UART0,
+ };
+ 
+ static struct sm501_platdata sm501_platform_data = {
+@@ -208,7 +182,6 @@ static struct platform_device sm501_devi
+ };
+ 
+ static struct platform_device *rts7751r2d_devices[] __initdata = {
+-	&uart_device,
+ 	&sm501_device,
+ 	&heartbeat_device,
+ 	&spi_sh_sci_device,
+@@ -272,16 +245,6 @@ static void __init rts7751r2d_setup(char
+ 
+ 	sm501_reg = (void __iomem *)0xb3e00000 + SM501_DRAM_CONTROL;
+ 	writel(readl(sm501_reg) | 0x00f107c0, sm501_reg);
+-
+-	/*
+-	 * Power Mode Gate - Enable UART0
+-	 */
+-
+-	sm501_reg = (void __iomem *)0xb3e00000 + SM501_POWER_MODE_0_GATE;
+-	writel(readl(sm501_reg) | (1 << SM501_GATE_UART0), sm501_reg);
+-
+-	sm501_reg = (void __iomem *)0xb3e00000 + SM501_POWER_MODE_1_GATE;
+-	writel(readl(sm501_reg) | (1 << SM501_GATE_UART0), sm501_reg);
+ }
+ 
+ /*
