@@ -1,43 +1,30 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 19 May 2008 10:47:11 +0000
-Subject: [GIT PULL] sh updates for 2.6.26-rc3
-Message-Id: <20080519104711.GA11875@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 May 2008 13:19:39 +0000
+Subject: [PATCH] sh: fix VPU interrupt vector for sh7723
+Message-Id: <20080522131939.12232.9743.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+This patch fixes a VPU vector typo for sh7723. The correct value is 0x980,
+the same as for sh7722.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Which contains:
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Harvey Harrison (1):
-      sh: use the common ascii hex helpers
-
-Hideo Saito (2):
-      sh: Fix up optimized SH-4 memcpy on big endian.
-      sh: Fix up thread info pointer in syscall_badsys resume path.
-
-Paul Mundt (4):
-      sh: display boot params by default on entry.
-      sh: disable initrd defaults in .empty_zero_page.
-      sh: Make is_valid_bugaddr() more intelligent on nommu.
-      sh: Fix up restorer in debug_trap exception return path.
-
-Yoshihiro Shimoda (1):
-      sh: fix sh7785 master clock value
-
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c |    2 +-
- arch/sh/kernel/entry-common.S          |   12 ++++++------
- arch/sh/kernel/head_32.S               |    4 ++--
- arch/sh/kernel/kgdb_stub.c             |   11 +++++------
- arch/sh/kernel/setup.c                 |   11 +++++++++++
- arch/sh/kernel/traps.c                 |   10 +++++++++-
- arch/sh/lib/memcpy-sh4.S               |   22 +++++++++++-----------
- drivers/serial/sh-sci.c                |    8 ++++----
- include/asm-sh/kgdb.h                  |   14 --------------
- 9 files changed, 49 insertions(+), 45 deletions(-)
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-05-22 14:20:33.000000000 +0900
+@@ -153,7 +153,7 @@ static struct intc_vect vectors[] __init
+ 	INTC_VECT(VIO_VOUI,0x8E0),
+ 
+ 	INTC_VECT(SCIFA_SCIFA0,0x900),
+-	INTC_VECT(VPU_VPUI,0x920),
++	INTC_VECT(VPU_VPUI,0x980),
+ 	INTC_VECT(TPU_TPUI,0x9A0),
+ 	INTC_VECT(ADC_ADI,0x9E0),
+ 	INTC_VECT(USB_USI0,0xA20),
