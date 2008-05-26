@@ -1,30 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 May 2008 13:19:39 +0000
-Subject: [PATCH] sh: fix VPU interrupt vector for sh7723
-Message-Id: <20080522131939.12232.9743.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 26 May 2008 10:09:16 +0000
+Subject: [GIT PULL] sh updates for 2.6.26-rc4
+Message-Id: <20080526100916.GA18102@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-This patch fixes a VPU vector typo for sh7723. The correct value is 0x980,
-the same as for sh7722.
+Please pull from:
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.26.git
 
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Which contains:
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-05-22 14:20:33.000000000 +0900
-@@ -153,7 +153,7 @@ static struct intc_vect vectors[] __init
- 	INTC_VECT(VIO_VOUI,0x8E0),
- 
- 	INTC_VECT(SCIFA_SCIFA0,0x900),
--	INTC_VECT(VPU_VPUI,0x920),
-+	INTC_VECT(VPU_VPUI,0x980),
- 	INTC_VECT(TPU_TPUI,0x9A0),
- 	INTC_VECT(ADC_ADI,0x9E0),
- 	INTC_VECT(USB_USI0,0xA20),
+Magnus Damm (5):
+      sh: fix USBF resource for sh7722
+      sh: fix VPU interrupt vector for sh7723
+      sh: add probe support for new sh7723 cut
+      sh: use sm501 8250 mfd support on r2d boards
+      sh: update Migo-R defconfig
+
+Paul Mundt (1):
+      sh: Drop broken URAM support on SH7723.
+
+ arch/sh/Kconfig                           |    1 -
+ arch/sh/boards/renesas/rts7751r2d/setup.c |   39 +----
+ arch/sh/configs/migor_defconfig           |  294 +++++++++++++++++++++++------
+ arch/sh/kernel/cpu/sh4/probe.c            |    1 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c    |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c    |    8 +-
+ 6 files changed, 241 insertions(+), 104 deletions(-)
