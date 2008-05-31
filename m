@@ -1,59 +1,87 @@
-From: Krzysztof Helt <krzysztof.h1@poczta.fm>
-Date: Fri, 30 May 2008 19:44:18 +0000
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Sat, 31 May 2008 14:25:26 +0000
 Subject: Re: [PATCH] video: SuperH Mobile LCDC Driver V2
-Message-Id: <20080530214418.f024ba0c.krzysztof.h1@poczta.fm>
+Message-Id: <200805311625.27018.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080530110239.21680.46731.sendpatchset@rx1.opensource.se>
-	<20080530182803.5d599d21.krzysztof.h1@poczta.fm>
-	<20080530120606.9ff1b384.akpm@linux-foundation.org>
-In-Reply-To: <20080530120606.9ff1b384.akpm@linux-foundation.org>
+References: <20080530110239.21680.46731.sendpatchset@rx1.opensource.se> <20080530120606.9ff1b384.akpm@linux-foundation.org> <20080530214418.f024ba0c.krzysztof.h1@poczta.fm>
+In-Reply-To: <20080530214418.f024ba0c.krzysztof.h1@poczta.fm>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-fbdev-devel@lists.sourceforge.net, iwamatsu@nigauri.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Krzysztof Helt <krzysztof.h1@poczta.fm>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Magnus Damm <magnus.damm@gmail.com>, linux-fbdev-devel@lists.sourceforge.net, iwamatsu@nigauri.org, linux-sh@vger.kernel.org, mano@roarinelk.homelinux.net, lethal@linux-sh.org
 
-On Fri, 30 May 2008 12:06:06 -0700
-Andrew Morton <akpm@linux-foundation.org> wrote:
+Which differences are bteween SuperH Mobile LCDC frame buffer and SH2A 7203=
+=20
+LCDC controller?
 
-> On Fri, 30 May 2008 18:28:03 +0200 Krzysztof Helt <krzysztof.h1@poczta.fm> wrote:
-> 
-> > On Fri, 30 May 2008 20:02:39 +0900
-> > Magnus Damm <magnus.damm@gmail.com> wrote:
-> > 
-> > > This is the SuperH Mobile LCDC frame buffer driver V2, adding
-> > > support for the LCDC block found in SuperH Mobile processors. The
-> > > hardware supports up to two LCD panels per LCDC block, and both RGB
-> > > and SYS interfaces can be used to hook up LCD panels/modules.
-> > > 
-> > > The device driver is a regular platform driver, so LCD configuration
-> > > and board specific hooks are passed to the driver using platform data.
-> > > LCD modules using SYS interface often require special configuration
-> > > using the SYS bus, and to solve this cleanly the driver provides SYS
-> > > interface operations to the board code.
-> > > 
-> > > Tested on sh7723 and sh7722 processors with a SYS16A QVGA panel and
-> > > WVGA panels using RGB16 and RGB18 interfaces.
-> > > 
-> > > Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> > > ---
-> > 
-> > Acked-by: Krzysztof Helt<krzysztof.h1@wp.pl>
-> > 
-> > Does anybody know which tag is better for a reviewed patch:
-> > "Acked-by" or "Reviewed-by" ?
-> > 
-> 
-> I consider Reviewed-by: to be much stronger that Acked-by:
-> 
+Thanks a lot.
 
-This driver has been really carefully checked.
+Best regards
 
-Reviewed-by: Krzysztof Helt<krzysztof.h1@wp.pl>
 
-Krzysztof
+Alle 21:44, venerd=EC 30 maggio 2008, Krzysztof Helt ha scritto:
+> On Fri, 30 May 2008 12:06:06 -0700
+>
+> Andrew Morton <akpm@linux-foundation.org> wrote:
+> > On Fri, 30 May 2008 18:28:03 +0200 Krzysztof Helt <krzysztof.h1@poczta.=
+fm>=20
+wrote:
+> > > On Fri, 30 May 2008 20:02:39 +0900
+> > >
+> > > Magnus Damm <magnus.damm@gmail.com> wrote:
+> > > > This is the SuperH Mobile LCDC frame buffer driver V2, adding
+> > > > support for the LCDC block found in SuperH Mobile processors. The
+> > > > hardware supports up to two LCD panels per LCDC block, and both RGB
+> > > > and SYS interfaces can be used to hook up LCD panels/modules.
+> > > >
+> > > > The device driver is a regular platform driver, so LCD configuration
+> > > > and board specific hooks are passed to the driver using platform
+> > > > data. LCD modules using SYS interface often require special
+> > > > configuration using the SYS bus, and to solve this cleanly the driv=
+er
+> > > > provides SYS interface operations to the board code.
+> > > >
+> > > > Tested on sh7723 and sh7722 processors with a SYS16A QVGA panel and
+> > > > WVGA panels using RGB16 and RGB18 interfaces.
+> > > >
+> > > > Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> > > > ---
+> > >
+> > > Acked-by: Krzysztof Helt<krzysztof.h1@wp.pl>
+> > >
+> > > Does anybody know which tag is better for a reviewed patch:
+> > > "Acked-by" or "Reviewed-by" ?
+> >
+> > I consider Reviewed-by: to be much stronger that Acked-by:
+>
+> This driver has been really carefully checked.
+>
+> Reviewed-by: Krzysztof Helt<krzysztof.h1@wp.pl>
+>
+> Krzysztof
+>
+> ----------------------------------------------------------------------
+> Tanie rozmowy!
+> Sprawdz >>> http://link.interia.pl/f1e13
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-----------------------------------------------------------------------
-Tanie rozmowy!
-Sprawdz >>> http://link.interia.pl/f1e13  
+--=20
+Fabio Giovagnini
 
+Aurion s.r.l.
+via degli orti 11,
+40050 Funo di Argelato (BO)
+P.I e C.F.
+00885711200
+Tel. +39.335.8350919
+Fax +39.051.8659009
+
+www.aurion-tech.com
+
+account telefono VoIP skype (www.skype.com):
+aurion.giovagnini
