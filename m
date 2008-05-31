@@ -1,32 +1,55 @@
-From: Mike Travis <travis@sgi.com>
-Date: Fri, 09 May 2008 15:01:29 +0000
-Subject: Re: [PATCH 1/1] mm: define default cpu_to_node
-Message-Id: <48246749.9000101@sgi.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Sat, 31 May 2008 20:22:39 +0000
+Subject: sh64 build error - sh, kbuild or binutils problem?
+Message-Id: <20080531202239.GB7347@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080508230238.468043000@polaris-admin.engr.sgi.com> <20080508230238.649815000@polaris-admin.engr.sgi.com> <20080509052049.GA2161@linux-sh.org>
-In-Reply-To: <20080509052049.GA2161@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Mike Travis <travis@sgi.com>, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, bunk@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Richard Henderson <rth@twiddle.net>, Paul Mackerras <paulus@samba.org>, Anton Blanchard <anton@samba.org>, "David S. Miller" <davem@davemloft.net>, "William L. Irwin" <wli@holomorphy.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>
+To: sam@ravnborg.org, hjl.tools@gmail.com, lethal@linux-sh.org
+Cc: linux-kbuild@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Paul Mundt wrote:
-> On Thu, May 08, 2008 at 04:02:39PM -0700, Mike Travis wrote:
->>   * Some architectures have CONFIG_NUMA=y but do not define a
->>     default cpu_to_node macro.  This provides the default in
->>     asm-generic/topology.h but it relies on the fact that
->>     cpu_to_node is a defined macro (and not an inline function).
->>
-> NACK.. This isn't going to work anyways, cpu_to_node() is just where the
-> first build error occurs. If you do this, then parent_node() is the next
-> one to blow up, node_to_cpumask() after that, etc, etc. For now I've just
-> stubbed the asm-generic/topology.h definitions in to asm-sh/topology.h.
+cayman_defconfig fails to build with the following error
+(using binutils 2.18.50.0.7):
+
+<--  snip  -->
+
+...
+  LD      drivers/macintosh/built-in.o
+  LD      drivers/media/common/tuners/built-in.o
+  CC [M]  drivers/media/common/tuners/tuner-xc2028.o
+  CC [M]  drivers/media/common/tuners/tuner-simple.o
+  CC [M]  drivers/media/common/tuners/tuner-types.o
+  CC [M]  drivers/media/common/tuners/mt20xx.o
+  CC [M]  drivers/media/common/tuners/tda8290.o
+  CC [M]  drivers/media/common/tuners/tea5767.o
+  CC [M]  drivers/media/common/tuners/tea5761.o
+  CC [M]  drivers/media/common/tuners/tda9887.o
+  CC [M]  drivers/media/common/tuners/xc5000.o
+  LD      drivers/media/common/built-in.o
+...
+  LD      drivers/media/built-in.o
+sh64-linux-ld: sh3 architecture of input file `drivers/media/common/built-in.o' is incompatible with sh5 outputmake[3]: *** [drivers/media/built-in.o] Error 1
+
+<--  snip  -->
 
 
-Ok, Thanks!  I was looking at that but without being able to compile it,
-it was just a wild swing towards the fence... ;-)  And your rationale makes
-sense, if an arch really has numa topology then it should define what that is.
+Minimal example demonstrating the problem:
 
-Cheers,
-Mike
+$ sh64-linux-ar rcs tmp.o
+$ sh64-linux-ld -EL -r -o tmp2.o tmp.o
+$ sh64-linux-ld -EL -r -o out.o tmp2.o 
+sh64-linux-ld: sh3 architecture of input file `tmp2.o' is incompatible with sh5 output
+$ 
+
+
+cu
+Adrian
+
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
 
