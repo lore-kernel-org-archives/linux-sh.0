@@ -1,28 +1,34 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Wed, 25 Jun 2008 07:24:59 +0000
-Subject: Re: [git patches] net driver updates for .27
-Message-Id: <4861F2CB.6010008@renesas.com>
+From: "Magnus Damm" <magnus.damm@gmail.com>
+Date: Mon, 02 Jun 2008 01:43:57 +0000
+Subject: Re: [PATCH] video: SuperH Mobile LCDC Driver V2
+Message-Id: <aec7e5c30806011843k32b692e3q3105b20d7611781a@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080625031508.GA29896@havoc.gtf.org>
- <4861C5EA.1050900@renesas.com> <4861F1CD.4080706@garzik.org>
-In-Reply-To: <4861F1CD.4080706@garzik.org>
+References: <20080530110239.21680.46731.sendpatchset@rx1.opensource.se>
+	<20080530120606.9ff1b384.akpm@linux-foundation.org>
+	<20080530214418.f024ba0c.krzysztof.h1@poczta.fm>
+	<200805311625.27018.fabio.giovagnini@aurion-tech.com>
+In-Reply-To: <200805311625.27018.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jeff Garzik <jeff@garzik.org>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, Linux-sh <linux-sh@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>
+To: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Cc: linux-fbdev-devel@lists.sourceforge.net, iwamatsu@nigauri.org, linux-sh@vger.kernel.org, lethal@linux-sh.org, Andrew Morton <akpm@linux-foundation.org>
 
-Jeff Garzik wrote:
->>
->> Could you take in these paches for .27 ?
->> [PATCH] net: sh_eth: Fix compile error sh_eth
->>   http://marc.info/?l=linux-netdev&m1378156319203
->> [PATCH] net: sh_eth: Add support of SH7763 to sh_eth
->>   http://marc.info/?l=linux-netdev&m1387121430572
-> 
-> Yes, they are already in the queue.  The above is just the first batch.
-> 
-OK, Thank you for your work.
+On Sat, May 31, 2008 at 11:25 PM, Fabio Giovagnini
+<fabio.giovagnini@aurion-tech.com> wrote:
+> Which differences are bteween SuperH Mobile LCDC frame buffer and SH2A 7203
+> LCDC controller?
 
-Best regards,
-  Nobuhiro
+Judging from the data sheets the LCDC block in sh7203, sh7763 and
+sh7720 are identical. Except different base address for registers and
+palette. And maybe IRQ number and pin configuration. =) Anyway, the
+sh7760 LCDC is very similar but seems to be missing a few registers.
+I'm sure there are other parts that are using this LCDC block as well.
+Having a shared driver for sh7203/sh7763/sh7720 and sh7760 makes
+sense.
+
+The SuperH Mobile LCDC block (sh7723/sh7722/sh7343) is very different:
+Supported pixel formats, hardware interfaces, number of channels,
+register layout and register width.
+
+/ magnus
