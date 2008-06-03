@@ -1,54 +1,37 @@
-From: Adrian Bunk <bunk@kernel.org>
-Date: Tue, 17 Jun 2008 22:30:40 +0000
-Subject: [2.6 patch] sh dreamcast: export board_pci_channels
-Message-Id: <20080617223040.GI25911@cs181133002.pp.htv.fi>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 03 Jun 2008 11:32:49 +0000
+Subject: [GIT PULL] sh updates for 2.6.26-rc5
+Message-Id: <20080603113249.GA15541@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-This patch fixes the following build error:
+Please pull from:
 
-<--  snip  -->
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.26.git
 
-...
-  MODPOST 1837 modules
-ERROR: "board_pci_channels" [drivers/pcmcia/yenta_socket.ko] undefined!
-...
-make[2]: *** [__modpost] Error 1
+Which contains:
 
-<--  snip  -->
+Adrian Bunk (1):
+      sh/kernel/cpu/irq/intc-sh5.c build fix
 
-I freely admit that it's a pathological configuration, but as long as 
-it is allowed it should build.
+Harvey Harrison (1):
+      sh: module.c use kernel unaligned helpers
 
-Reported-by: Adrian Bunk <bunk@kernel.org>
-Signed-off-by: Adrian Bunk <bunk@kernel.org>
+Paul Mundt (4):
+      sh: fix miscompilation of ip_fast_csum with gcc >= 4.3
+      sh: Disable 4KSTACKS on nommu.
+      sh: Update SE7206 defconfig.
+      sh: Add defconfig for RSK7203.
 
----
-
- arch/sh/drivers/pci/ops-dreamcast.c |    2 ++
- 1 file changed, 2 insertions(+)
-
-632d9b2b1d3b5f3c0fed0353b098f92e28c4217d diff --git a/arch/sh/drivers/pci/ops-dreamcast.c b/arch/sh/drivers/pci/ops-dreamcast.c
-index e1284fc..f54c291 100644
---- a/arch/sh/drivers/pci/ops-dreamcast.c
-+++ b/arch/sh/drivers/pci/ops-dreamcast.c
-@@ -22,6 +22,7 @@
- #include <linux/init.h>
- #include <linux/irq.h>
- #include <linux/pci.h>
-+#include <linux/module.h>
- 
- #include <asm/io.h>
- #include <asm/irq.h>
-@@ -48,6 +49,7 @@ struct pci_channel board_pci_channels[] = {
- 	  &gapspci_mem_resource, 0, 1 },
- 	{ 0, }
- };
-+EXPORT_SYMBOL(board_pci_channels);
- 
- /*
-  * The !gapspci_config_access case really shouldn't happen, ever, unless
+ arch/sh/Kconfig.debug             |    2 +-
+ arch/sh/configs/rsk7203_defconfig |  841 +++++++++++++++++++++++++++++++++++++
+ arch/sh/configs/se7206_defconfig  |  475 ++++++++++++++-------
+ arch/sh/kernel/cpu/irq/intc-sh5.c |    1 +
+ arch/sh/kernel/module.c           |   39 +--
+ include/asm-sh/checksum_32.h      |    2 +-
+ 6 files changed, 1164 insertions(+), 196 deletions(-)
+ create mode 100644 arch/sh/configs/rsk7203_defconfig
