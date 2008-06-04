@@ -1,47 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 05 Jun 2008 05:42:51 +0000
-Subject: Re: [PATCH v2] sh: Add support Renesas Solutions AP-325RXA board
-Message-Id: <20080605054251.GA29591@linux-sh.org>
+From: "Yusuke.Goda" <goda.yusuke@renesas.com>
+Date: Wed, 04 Jun 2008 10:54:03 +0000
+Subject: smc911x: Add AP325RXA board support
+Message-Id: <4846744B.4000407@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <484777EB.3@renesas.com>
-In-Reply-To: <484777EB.3@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Thu, Jun 05, 2008 at 02:21:47PM +0900, Yusuke.Goda wrote:
-> I added math-type to v1.
-> This board is SH7723 base board.
-> This has SCIF, LCDC, USB Host controler, NOR/NAND Flash, Sound, Ether and other.
-> This patch supports SCIF, NOR Flash.
-> 
-> Signed-off-by: Yusuke Goda <goda.yusuke@renesas.com>
+This patch adds AP325RXA board support to scc911x driver.
 
-Looks good.
+Signed-off-by: Yusuke Goda <goda.yusuke@renesas.com>
+---
+ drivers/net/Kconfig   |    2 +-
+ drivers/net/smc911x.h |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-[snip]
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index dd0ec9e..b618d8e 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -955,7 +955,7 @@ config SMC911X
+ 	tristate "SMSC LAN911[5678] support"
+ 	select CRC32
+ 	select MII
+-	depends on ARCH_PXA || SH_MAGIC_PANEL_R2
++	depends on ARCH_PXA || SH_MAGIC_PANEL_R2 || SH_AP325RXA
+ 	help
+ 	  This is a driver for SMSC's LAN911x series of Ethernet chipsets
+ 	  including the new LAN9115, LAN9116, LAN9117, and LAN9118.
+diff --git a/drivers/net/smc911x.h b/drivers/net/smc911x.h
+index 7defa63..d45be9c 100644
+--- a/drivers/net/smc911x.h
++++ b/drivers/net/smc911x.h
+@@ -37,7 +37,7 @@
+   #define SMC_USE_16BIT		0
+   #define SMC_USE_32BIT		1
+   #define SMC_IRQ_SENSE		IRQF_TRIGGER_FALLING
+-#elif defined(CONFIG_SH_MAGIC_PANEL_R2)
++#elif defined(CONFIG_SH_MAGIC_PANEL_R2) || defined(CONFIG_SH_AP325RXA)
+   #define SMC_USE_SH_DMA	0
+   #define SMC_USE_16BIT		0
+   #define SMC_USE_32BIT		1
+-- 
+1.5.4.5
 
-> +static struct mtd_partition ap325rxa_nor_flash_partitions[] = {
-> +	{
-> +		 .name = "uboot",
-> +		 .offset = 0,
-> +		 .size = (1 * 1024 * 1024),
-> +		 .mask_flags = MTD_WRITEABLE,	/* Read-only */
-> +	 },
-> +	{
-> +		 .name = "kernel",
-> +		 .offset = MTDPART_OFS_APPEND,
-> +		 .size = (2 * 1024 * 1024),
-> +	 },
-> +	{
-> +		 .name = "other",
-> +		 .offset = MTDPART_OFS_APPEND,
-> +		 .size = MTDPART_SIZ_FULL,
-> +	 },
-> +};
-> +
-There's some whitespace damage here. Make sure your text editor has these
-as tabs, not spaces.
-
-I'll tidy it up and add it to the 2.6.27 queue, thanks.
