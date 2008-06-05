@@ -1,20 +1,23 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 07 Jun 2008 02:39:36 +0000
-Subject: Re: [PATCH] sh: Renesas Solutions SH7763RDP board support
-Message-Id: <20080607023936.GB6961@linux-sh.org>
+From: "Nobuhiro Iwamatsu" <iwamatsu@nigauri.org>
+Date: Thu, 05 Jun 2008 11:32:28 +0000
+Subject: Re: Question on SH7763
+Message-Id: <29ab51dc0806050432i51cb4a38tcedca20496d61131@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4848E3AD.6020507@renesas.com>
-In-Reply-To: <4848E3AD.6020507@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 06, 2008 at 04:13:49PM +0900, Nobuhiro Iwamatsu wrote:
-> This patch adds basic support for the SH7763RDP board.
-> This supports a basic stuff provided in SH7763, like SCIF,
-> NOR Flash and USB host.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Hi,
 
-Applied to the 2.6.27 queue, thanks.
+I m U-Boot-SH Maintainer.
+
+2008/6/5  <pavan_savoy@indiatimes.com>:
+
+> I wanted to know, what boot-loader would suit best, for a board based on SH7763, I couldnt not find an u-boot for this CPU, RedBoot although has support for SH4a, couldnt find any for this specific cpu.
+
+I'm writing it. I will commit my git repositry in this week.
+Please wait.
+
+Best regards,
+ Nobuhiro
