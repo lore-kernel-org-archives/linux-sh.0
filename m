@@ -1,41 +1,53 @@
-From: "Nobuhiro Iwamatsu" <iwamatsu@nigauri.org>
-Date: Wed, 18 Jun 2008 09:43:45 +0000
-Subject: Re: Change console to another UART
-Message-Id: <29ab51dc0806180243h46b4373ej1e29dcf425eef994@mail.gmail.com>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Thu, 05 Jun 2008 12:21:04 +0000
+Subject: [PATCH] sh: add resource of USB host for SH7723
+Message-Id: <4847DA30.4030608@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080617223023.GH25911@cs181133002.pp.htv.fi>
-	 <1213773664.15059.26.camel@localhost.localdomain>
-In-Reply-To: <1213773664.15059.26.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: oihana <munoz.o@ikusi.es>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   26 +++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-2008/6/18 oihana <munoz.o@ikusi.es>:
-> Hello,
->
-> I am working with a STi7109 and mb411. The STi7109 has 4 UARTs and they
-> are configured by default as follow....
-> - UART0 is reserved for SC0
-> - UART1 is reserved for SC1
-> - UART2 is reserved for console
-> - UART3 is reserved for KGDB
->
-> What I need is to have the Console in the UART1 because I need the UART2
-> free, and I have enough with one SC (SC0).
->
-> I realized that if I change on my STWorkBench the Kernel Debug
-> configuration, from ttyAS0 to ttyAS1, the console comes out from the
-> other serial port, but it still uses the UART2.
->
-> So I tried to change the configuration in the stasc.c
-> (kernel/src/drivers/serial/stasc.c).
-Hmm? I could not find it.
-Is this a thing peculiar to ST?
-You should send an email to support of ST if so.
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-06-05 20:26:09.000000000 +0900
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-06-05 20:48:08.000000000 +0900
+@@ -73,9 +73,35 @@ static struct platform_device rtc_device
+ 	.resource	= rtc_resources,
+ };
 
-Best regards,
- Nobuhiro
++static struct resource sh7723_usb_host_resources[] = {
++	[0] = {
++		.name	= "r8a66597_hcd",
++		.start	= 0xa4d80000,
++		.end	= 0xa4d800ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 65,
++		.end	= 65,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sh7723_usb_host_device = {
++	.name		= "r8a66597_hcd",
++	.id		= 0,
++	.dev = {
++		.dma_mask		= NULL,         /*  not use dma */
++		.coherent_dma_mask	= 0xffffffff,
++	},
++	.num_resources	= ARRAY_SIZE(sh7723_usb_host_resources),
++	.resource	= sh7723_usb_host_resources,
++};
++
+ static struct platform_device *sh7723_devices[] __initdata = {
+ 	&sci_device,
+ 	&rtc_device,
++	&sh7723_usb_host_device,
+ };
+
+ static int __init sh7723_devices_setup(void)
