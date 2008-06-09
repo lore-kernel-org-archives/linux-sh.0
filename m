@@ -1,59 +1,35 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Wed, 25 Jun 2008 07:38:56 +0000
-Subject: [PATCH 3/4] video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver
-Message-Id: <4861F610.3060404@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 09 Jun 2008 09:58:51 +0000
+Subject: [GIT PULL] sh updates for 2.6.26-rc6
+Message-Id: <20080609095851.GA12763@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-fbdev-devel@lists.sourceforge.net
-Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Makefile and Kconfig of driver for LCDC interface on SH7760 and SH7763 SoCs.
+Please pull from:
 
-Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
----
- drivers/video/Kconfig  |   13 +++++++++++++
- drivers/video/Makefile |    1 +
- 2 files changed, 14 insertions(+), 0 deletions(-)
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.26.git
 
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index 002b61b..f79634d 100644
---- a/drivers/video/Kconfig
-+++ b/drivers/video/Kconfig
-@@ -1950,6 +1950,19 @@ config FB_AM200EPD
-          This enables support for the Metronome display controller used on
-          the E-Ink AM-200 EPD devkit.
+Which contains:
 
-+config FB_SH7760
-+	bool "SH7760/SH7763 LCDC support"
-+	depends on FB && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763)
-+	select FB_CFB_FILLRECT
-+	select FB_CFB_COPYAREA
-+	select FB_CFB_IMAGEBLIT
-+	help
-+	  Support for the SH7760/SH7763 integrated (D)STN/TFT LCD Controller.
-+	  Supports display resolutions up to 1024x1024 pixel, grayscale and
-+	  color operation, with depths ranging from 1 bpp to 8 bpp monochrome
-+	  and 8, 15 or 16 bpp color; 90 degrees clockwise display rotation for
-+	  panels <= 320 pixel horizontal resolution.
-+
- config FB_VIRTUAL
- 	tristate "Virtual Frame Buffer support (ONLY FOR TESTING!)"
- 	depends on FB
-diff --git a/drivers/video/Makefile b/drivers/video/Makefile
-index 04bca35..0dcd740 100644
---- a/drivers/video/Makefile
-+++ b/drivers/video/Makefile
-@@ -117,6 +117,7 @@ obj-$(CONFIG_FB_SM501)            += sm501fb.o
- obj-$(CONFIG_FB_XILINX)           += xilinxfb.o
- obj-$(CONFIG_FB_OMAP)             += omap/
- obj-$(CONFIG_XEN_FBDEV_FRONTEND)  += xen-fbfront.o
-+obj-$(CONFIG_FB_SH7760)		  += sh7760fb.o
+Nobuhiro Iwamatsu (1):
+      sh: Fix compile error SH7763 setup code
 
- # Platform or fallback drivers go here
- obj-$(CONFIG_FB_UVESA)            += uvesafb.o
--- 
-1.5.5.1
+Paul Mundt (1):
+      sh: Add -mno-fdpic to default flags.
 
+Yoshihiro Shimoda (2):
+      usb: r8a66597-hcd: Add support for SH7723 USB host
+      sh: add resource of USB host for SH7723
+
+Yusuke.Goda (1):
+      sh: Add SH7723 SCIF support
+
+ arch/sh/Makefile                       |    2 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   41 ++++++++++++++++++++++++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    9 ++++---
+ drivers/usb/host/Kconfig               |    8 +++---
+ 4 files changed, 52 insertions(+), 8 deletions(-)
