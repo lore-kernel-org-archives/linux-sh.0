@@ -1,30 +1,44 @@
-From: Matthew Wilcox <matthew@wil.cx>
-Date: Tue, 17 Jun 2008 11:28:36 +0000
+From: Sam Ravnborg <sam@ravnborg.org>
+Date: Tue, 17 Jun 2008 12:23:46 +0000
 Subject: Re: architectures with ARCH_SUPPORTS_AOUT but no binfmt_aout
-Message-Id: <20080617112835.GB4392@parisc-linux.org>
+Message-Id: <20080617122346.GA10598@uranus.ravnborg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1213565555.26255.522.camel@pmac.infradead.org> <1213604973-7073-1-git-send-email-jacmet@sunsite.dk> <1213617663.26255.708.camel@pmac.infradead.org> <20080616121727.GB10854@cs181133002.pp.htv.fi> <1213619214.26255.721.camel@pmac.infradead.org> <20080617084235.GA20169@cs181133002.pp.htv.fi>
-In-Reply-To: <20080617084235.GA20169@cs181133002.pp.htv.fi>
+References: <1213565555.26255.522.camel@pmac.infradead.org> <1213604973-7073-1-git-send-email-jacmet@sunsite.dk> <1213617663.26255.708.camel@pmac.infradead.org> <20080616121727.GB10854@cs181133002.pp.htv.fi> <1213619214.26255.721.camel@pmac.infradead.org> <20080617084235.GA20169@cs181133002.pp.htv.fi> <1213696004.26255.960.camel@pmac.infradead.org> <20080617101112.GE20169@cs181133002.pp.htv.fi> <1213702113.26255.996.camel@pmac.infradead.org>
+In-Reply-To: <1213702113.26255.996.camel@pmac.infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Adrian Bunk <bunk@kernel.org>
-Cc: David Woodhouse <dwmw2@infradead.org>, Peter Korsgaard <jacmet@sunsite.dk>, linux-kernel@vger.kernel.org, sam@ravnborg.org, dhowells@redhat.com, andi@firstfloor.org, "Kirill A. Shutemov" <k.shutemov@gmail.com>, ysato@users.sourceforge.jp, takata@linux-m32r.org, linux-m32r@ml.linux-m32r.org, kyle@mcmartin.ca, grundler@parisc-linux.org, linux-parisc@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: David Woodhouse <dwmw2@infradead.org>
+Cc: Adrian Bunk <bunk@kernel.org>, Peter Korsgaard <jacmet@sunsite.dk>, linux-kernel@vger.kernel.org, dhowells@redhat.com, andi@firstfloor.org, "Kirill A. Shutemov" <k.shutemov@gmail.com>, ysato@users.sourceforge.jp, takata@linux-m32r.org, linux-m32r@ml.linux-m32r.org, kyle@mcmartin.ca, matthew@wil.cx, grundler@parisc-linux.org, linux-parisc@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 
-On Tue, Jun 17, 2008 at 11:42:35AM +0300, Adrian Bunk wrote:
-> On Mon, Jun 16, 2008 at 01:26:54PM +0100, David Woodhouse wrote:
-> > Why _are_ there architectures which define ARCH_SUPPORTS_AOUT and have
-> > <asm/a.out.h> but don't support binfmt_aout, anyway? How does that make
-> > sense?
-> 
-> My guess would be that binfmt_aout isn't actually used there.
+On Tue, Jun 17, 2008 at 12:28:33PM +0100, David Woodhouse wrote:
+> On Tue, 2008-06-17 at 13:11 +0300, Adrian Bunk wrote:
+> > The pattern for this stuff is to provide a HAVE_AOUT kconfig variable=20
+> > that gets select'ed by these architectures.
+>=20
+> http://git.infradead.org/users/dwmw2/aout-2.6.git?a=3Dcommitdiff;h=A5db51=
+79
+>=20
+> Subject: [PATCH] Introduce HAVE_AOUT symbol to remove hard-coded arch lis=
+t for BINFMT_AOUT
+>=20
+> HAVE_AOUT doesn't quite do the same thing as the recently removed
+> ARCH_SUPPORTS_AOUT config option. That was set even on platforms where
+> binfmt_aout isn't supported, although it's not entirely clear why.
+>=20
+> So it's best just to introduce a new symbol, handled consistently with
+> other similar HAVE_xxx symbols; with a simple 'select' the arch Kconfig.
 
-It was probably copied from MIPS in the early days of the parisc port
-and nobody ever b othered to look at it before.  There was never an
-a.out format for parisc.
+Looks good.
+One minor issue...
 
--- 
-Intel are signing my paycheques ... these opinions are still mine
-"Bill, look, we understand that you're interested in selling us this
-operating system, but compare it to ours.  We can't possibly take such
-a retrograde step."
+
+> @@ -7,6 +7,7 @@ config ALPHA
+>  	default y
+>  	select HAVE_IDE
+>  	select HAVE_OPROFILE
+> +	select HAVE_AOUT
+Sorting these alphabetically will result in less merge conflicts when the l=
+ist grows.
+
+	Sam
