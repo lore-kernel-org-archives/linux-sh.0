@@ -1,55 +1,44 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Wed, 18 Jun 2008 09:32:03 +0000
-Subject: [PATCH] sh: Clean up code of Solution Engine 770x
-Message-Id: <4858D613.3090902@renesas.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Tue, 17 Jun 2008 22:30:57 +0000
+Subject: [2.6 patch] sh/boards/dreamcast/rtc.c: make 2 functions static
+Message-Id: <20080617223057.GK25911@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+This patch makes the needlessly global aica_rtc_{get,set}timeofday() 
+static.
+
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
+
 ---
- arch/sh/boards/se/770x/setup.c |    4 +---
- include/asm-sh/se.h            |    2 ++
- 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/boards/se/770x/setup.c b/arch/sh/boards/se/770x/setup.c
-index 25767cc..cf4a5ba 100644
---- a/arch/sh/boards/se/770x/setup.c
-+++ b/arch/sh/boards/se/770x/setup.c
-@@ -14,8 +14,6 @@
- #include <asm/smc37c93x.h>
- #include <asm/heartbeat.h>
+ arch/sh/boards/dreamcast/rtc.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
--void init_se_IRQ(void);
--
- /*
-  * Configure the Super I/O chip
+1716a5d5a29b5a2c16713e34465558cce3895545 diff --git a/arch/sh/boards/dreamcast/rtc.c b/arch/sh/boards/dreamcast/rtc.c
+index b3a876a..a743368 100644
+--- a/arch/sh/boards/dreamcast/rtc.c
++++ b/arch/sh/boards/dreamcast/rtc.c
+@@ -30,7 +30,7 @@
+  *
+  * Grabs the current RTC seconds counter and adjusts it to the Unix Epoch.
   */
-@@ -73,7 +71,7 @@ static struct resource cf_ide_resources[] = {
- 	},
- 	[1] = {
- 		.start  = PA_MRSHPC_IO + 0x1f0 + 0x206,
--		.end    = PA_MRSHPC_IO + 0x1f0 +8 + 0x206 + 8,
-+		.end    = PA_MRSHPC_IO + 0x1f0 + 8 + 0x206 + 8,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[2] = {
-diff --git a/include/asm-sh/se.h b/include/asm-sh/se.h
-index 0e2f720..eb23000 100644
---- a/include/asm-sh/se.h
-+++ b/include/asm-sh/se.h
-@@ -91,6 +91,8 @@
- #define SH_ETH1_IRQ	81
- #define SH_TSU_IRQ	82
-
-+void init_se_IRQ(void);
-+
- #define __IO_PREFIX	se
- #include <asm/io_generic.h>
-
--- 
-1.5.5.1
-
+-void aica_rtc_gettimeofday(struct timespec *ts)
++static void aica_rtc_gettimeofday(struct timespec *ts)
+ {
+ 	unsigned long val1, val2;
+ 
+@@ -54,7 +54,7 @@ void aica_rtc_gettimeofday(struct timespec *ts)
+  *
+  * Adjusts the given @tv to the AICA Epoch and sets the RTC seconds counter.
+  */
+-int aica_rtc_settimeofday(const time_t secs)
++static int aica_rtc_settimeofday(const time_t secs)
+ {
+ 	unsigned long val1, val2;
+ 	unsigned long adj = secs + TWENTY_YEARS;
 
