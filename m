@@ -1,211 +1,55 @@
-From: Adrian Bunk <bunk@kernel.org>
-Date: Wed, 18 Jun 2008 00:36:50 +0000
-Subject: [2.6 patch] sh/kernel/ cleanups
-Message-Id: <20080618003650.GO25911@cs181133002.pp.htv.fi>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Wed, 18 Jun 2008 09:32:03 +0000
+Subject: [PATCH] sh: Clean up code of Solution Engine 770x
+Message-Id: <4858D613.3090902@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch contains the following cleanups:
-- make the following needlessly global code static:
-  - cf-enabler.c: cf_init()
-  - cpu/clock.c: __clk_enable()
-  - cpu/clock.c: __clk_disable()
-  - process_32.c: default_idle()
-  - time_32.c: struct clocksource_sh
-  - timers/timer-tmu.c: struct tmu_timer_ops
-- remove the following unused functions (no CONFIG_BLK_DEV_FD on sh):
-  - process_{32,64}.c: disable_hlt()
-  - process_{32,64}.c: enable_hlt()
-
-Signed-off-by: Adrian Bunk <bunk@kernel.org>
-
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
 ---
+ arch/sh/boards/se/770x/setup.c |    4 +---
+ include/asm-sh/se.h            |    2 ++
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
- arch/sh/kernel/cf-enabler.c       |    2 +-
- arch/sh/kernel/cpu/clock.c        |    6 ++----
- arch/sh/kernel/process_32.c       |   14 +-------------
- arch/sh/kernel/process_64.c       |   10 ----------
- arch/sh/kernel/time_32.c          |    2 +-
- arch/sh/kernel/timers/timer-tmu.c |    2 +-
- include/asm-sh/clock.h            |    3 ---
- include/asm-sh/system.h           |    8 --------
- include/asm-sh/timer.h            |    1 -
- 9 files changed, 6 insertions(+), 42 deletions(-)
+diff --git a/arch/sh/boards/se/770x/setup.c b/arch/sh/boards/se/770x/setup.c
+index 25767cc..cf4a5ba 100644
+--- a/arch/sh/boards/se/770x/setup.c
++++ b/arch/sh/boards/se/770x/setup.c
+@@ -14,8 +14,6 @@
+ #include <asm/smc37c93x.h>
+ #include <asm/heartbeat.h>
 
-6afa3ab285425364d3764cb8f9bd3b054405ecc1 diff --git a/arch/sh/kernel/cf-enabler.c b/arch/sh/kernel/cf-enabler.c
-index 01ff4d0..d3d9f32 100644
---- a/arch/sh/kernel/cf-enabler.c
-+++ b/arch/sh/kernel/cf-enabler.c
-@@ -157,7 +157,7 @@ static int __init cf_init_se(void)
- }
- #endif
- 
--int __init cf_init(void)
-+static int __init cf_init(void)
- {
- 	if (mach_is_se() || mach_is_7722se() || mach_is_7721se())
- 		return cf_init_se();
-diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
-index b5f1e23..73334c6 100644
---- a/arch/sh/kernel/cpu/clock.c
-+++ b/arch/sh/kernel/cpu/clock.c
-@@ -88,7 +88,7 @@ static void propagate_rate(struct clk *clk)
- 	}
- }
- 
--int __clk_enable(struct clk *clk)
-+static int __clk_enable(struct clk *clk)
- {
- 	/*
- 	 * See if this is the first time we're enabling the clock, some
-@@ -111,7 +111,6 @@ int __clk_enable(struct clk *clk)
- 
- 	return 0;
- }
--EXPORT_SYMBOL_GPL(__clk_enable);
- 
- int clk_enable(struct clk *clk)
- {
-@@ -131,7 +130,7 @@ static void clk_kref_release(struct kref *kref)
- 	/* Nothing to do */
- }
- 
--void __clk_disable(struct clk *clk)
-+static void __clk_disable(struct clk *clk)
- {
- 	int count = kref_put(&clk->kref, clk_kref_release);
- 
-@@ -143,7 +142,6 @@ void __clk_disable(struct clk *clk)
- 			clk->ops->disable(clk);
- 	}
- }
--EXPORT_SYMBOL_GPL(__clk_disable);
- 
- void clk_disable(struct clk *clk)
- {
-diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-index b98e37a..e15086a 100644
---- a/arch/sh/kernel/process_32.c
-+++ b/arch/sh/kernel/process_32.c
-@@ -34,18 +34,6 @@ void (*pm_idle)(void);
- void (*pm_power_off)(void);
- EXPORT_SYMBOL(pm_power_off);
- 
--void disable_hlt(void)
--{
--	hlt_counter++;
--}
--EXPORT_SYMBOL(disable_hlt);
+-void init_se_IRQ(void);
 -
--void enable_hlt(void)
--{
--	hlt_counter--;
--}
--EXPORT_SYMBOL(enable_hlt);
--
- static int __init nohlt_setup(char *__unused)
- {
- 	hlt_counter = 1;
-@@ -60,7 +48,7 @@ static int __init hlt_setup(char *__unused)
- }
- __setup("hlt", hlt_setup);
- 
--void default_idle(void)
-+static void default_idle(void)
- {
- 	if (!hlt_counter) {
- 		clear_thread_flag(TIF_POLLING_NRFLAG);
---- a/arch/sh/kernel/process_64.c
-+++ b/arch/sh/kernel/process_64.c
-@@ -36,16 +36,6 @@ static int hlt_counter = 1;
- 
- #define HARD_IDLE_TIMEOUT (HZ / 3)
- 
--void disable_hlt(void)
--{
--	hlt_counter++;
--}
--
--void enable_hlt(void)
--{
--	hlt_counter--;
--}
--
- static int __init nohlt_setup(char *__unused)
- {
- 	hlt_counter = 1;
-diff --git a/arch/sh/kernel/time_32.c b/arch/sh/kernel/time_32.c
-index 7281342..0758b5e 100644
---- a/arch/sh/kernel/time_32.c
-+++ b/arch/sh/kernel/time_32.c
-@@ -211,7 +211,7 @@ unsigned long sh_hpt_frequency = 0;
- 
- #define NSEC_PER_CYC_SHIFT	10
- 
--struct clocksource clocksource_sh = {
-+static struct clocksource clocksource_sh = {
- 	.name		= "SuperH",
- 	.rating		= 200,
- 	.mask		= CLOCKSOURCE_MASK(32),
-diff --git a/arch/sh/kernel/timers/timer-tmu.c b/arch/sh/kernel/timers/timer-tmu.c
-index 8935570..1ca9ad4 100644
---- a/arch/sh/kernel/timers/timer-tmu.c
-+++ b/arch/sh/kernel/timers/timer-tmu.c
-@@ -209,7 +209,7 @@ static int tmu_timer_init(void)
- 	return 0;
- }
- 
--struct sys_timer_ops tmu_timer_ops = {
-+static struct sys_timer_ops tmu_timer_ops = {
- 	.init		= tmu_timer_init,
- 	.start		= tmu_timer_start,
- 	.stop		= tmu_timer_stop,
-diff --git a/include/asm-sh/clock.h b/include/asm-sh/clock.h
-index b550a27..608fda5 100644
---- a/include/asm-sh/clock.h
-+++ b/include/asm-sh/clock.h
-@@ -41,9 +41,6 @@ void arch_init_clk_ops(struct clk_ops **, int type);
- /* arch/sh/kernel/cpu/clock.c */
- int clk_init(void);
- 
--int __clk_enable(struct clk *);
--void __clk_disable(struct clk *);
--
- void clk_recalc_rate(struct clk *);
- 
- int clk_register(struct clk *);
-diff --git a/include/asm-sh/system.h b/include/asm-sh/system.h
-index e65b6b8..056d68c 100644
---- a/include/asm-sh/system.h
-+++ b/include/asm-sh/system.h
-@@ -148,14 +148,6 @@ extern unsigned long cached_to_uncached;
- 
- extern struct dentry *sh_debugfs_root;
- 
--/* XXX
-- * disable hlt during certain critical i/o operations
-- */
--#define HAVE_DISABLE_HLT
--void disable_hlt(void);
--void enable_hlt(void);
--
--void default_idle(void);
- void per_cpu_trap_init(void);
- 
- asmlinkage void break_point_trap(void);
-diff --git a/include/asm-sh/timer.h b/include/asm-sh/timer.h
-index 701ba84..327f7eb 100644
---- a/include/asm-sh/timer.h
-+++ b/include/asm-sh/timer.h
-@@ -40,6 +40,5 @@ struct sys_timer *get_sys_timer(void);
- /* arch/sh/kernel/time.c */
- void handle_timer_tick(void);
- extern unsigned long sh_hpt_frequency;
--extern struct clocksource clocksource_sh;
- 
- #endif /* __ASM_SH_TIMER_H */
+ /*
+  * Configure the Super I/O chip
+  */
+@@ -73,7 +71,7 @@ static struct resource cf_ide_resources[] = {
+ 	},
+ 	[1] = {
+ 		.start  = PA_MRSHPC_IO + 0x1f0 + 0x206,
+-		.end    = PA_MRSHPC_IO + 0x1f0 +8 + 0x206 + 8,
++		.end    = PA_MRSHPC_IO + 0x1f0 + 8 + 0x206 + 8,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[2] = {
+diff --git a/include/asm-sh/se.h b/include/asm-sh/se.h
+index 0e2f720..eb23000 100644
+--- a/include/asm-sh/se.h
++++ b/include/asm-sh/se.h
+@@ -91,6 +91,8 @@
+ #define SH_ETH1_IRQ	81
+ #define SH_TSU_IRQ	82
+
++void init_se_IRQ(void);
++
+ #define __IO_PREFIX	se
+ #include <asm/io_generic.h>
+
+-- 
+1.5.5.1
+
 
