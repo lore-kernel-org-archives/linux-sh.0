@@ -1,35 +1,64 @@
-From: Paul Mundt <paul.mundt@renesas.com>
-Date: Tue, 24 Jun 2008 20:01:08 +0000
-Subject: Re: [PATCH] maple: tidy  maple_driver code by removing redundant
-Message-Id: <20080624200108.GC11705@renesas.com>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Wed, 18 Jun 2008 09:32:09 +0000
+Subject: [PATCH] net: sh_eth: Fix compile error sh_eth
+Message-Id: <4858D619.80403@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1213559289.22707.15.camel@localhost.localdomain> <20080624040128.GB22526@linux-sh.org> <5703.85.118.17.158.1214305147.squirrel@newgolddream.dyndns.info>
-In-Reply-To: <5703.85.118.17.158.1214305147.squirrel@newgolddream.dyndns.info>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: lkml <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
+To: netdev@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>, jeff@garzik.org, shimoda.yoshihiro@renesas.com
 
-On Tue, Jun 24, 2008 at 11:59:07AM +0100, Adrian McMenamin wrote:
-> On Tue, June 24, 2008 5:01 am, Paul Mundt wrote:
-> > On Sun, Jun 15, 2008 at 08:48:09PM +0100, Adrian McMenamin wrote:
-> >> The connect and disconnect functions are unnecessary - everything they
-> >> do can be
-> >> accomplished in the initial probe - so remove them.
-> >>
-> >> Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
-> >
-> > Applied, thanks.
-> >
-> Paul,
-> 
-> Just to note that this (http://lkml.org/lkml/2008/6/15/122) will break the
-> keyboard driver unless this (http://lkml.org/lkml/2008/6/15/121) is also
-> applied.
-> 
-> I haven't heard back from Dmitry on the keyboard patch yet.
-> 
-Yes, I'm aware of that. This should fix itself in linux-next once it is
-merged in the input tree, and I don't intend on pushing my changes until
-that's in place, so we don't break bisection.
+Fix compile error on sh_eth and remove base address macro.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ drivers/net/sh_eth.c |    4 ++--
+ drivers/net/sh_eth.h |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index f64d987..37f3116 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -322,7 +322,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ 	ctrl_outl((FIFO_SIZE_T | FIFO_SIZE_R), ioaddr + FDR);
+ 	ctrl_outl(0, ioaddr + TFTR);
+
+-	ctrl_outl(RMCR_RST, ioaddr + RMCR);
++	ctrl_outl(0, ioaddr + RMCR);
+
+ 	rx_int_var = mdp->rx_int_var = DESC_I_RINT8 | DESC_I_RINT5;
+ 	tx_int_var = mdp->tx_int_var = DESC_I_TINT2;
+@@ -994,7 +994,7 @@ static int sh_mdio_init(struct net_device *ndev, int id)
+ 	/* Hook up MII support for ethtool */
+ 	mdp->mii_bus->name = "sh_mii";
+ 	mdp->mii_bus->dev = &ndev->dev;
+-	mdp->mii_bus->id = id;
++	mdp->mii_bus->id[0] = id;
+
+ 	/* PHY IRQ */
+ 	mdp->mii_bus->irq = kmalloc(sizeof(int)*PHY_MAX_ADDR, GFP_KERNEL);
+diff --git a/drivers/net/sh_eth.h b/drivers/net/sh_eth.h
+index ca2db6b..e01e1c3 100644
+--- a/drivers/net/sh_eth.h
++++ b/drivers/net/sh_eth.h
+@@ -40,8 +40,6 @@
+ #define PKT_BUF_SZ		1538
+
+ /* Chip Base Address */
+-#define SH_ETH0_BASE 0xA7000000
+-#define SH_ETH1_BASE 0xA7000400
+ #define SH_TSU_ADDR 0xA7000804
+
+ /* Chip Registers */
+@@ -462,3 +460,5 @@ static void swaps(char *src, int len)
+ 		*p = swab32(*p);
+ #endif
+ }
++
++#endif
+-- 
+1.5.5.1
+
+
