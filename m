@@ -1,149 +1,211 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Wed, 18 Jun 2008 09:32:14 +0000
-Subject: [PATCH] sh: Remove sh_pcic_io_xxx function from Solution Engine IO code
-Message-Id: <4858D61E.6050204@renesas.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Wed, 18 Jun 2008 00:36:50 +0000
+Subject: [2.6 patch] sh/kernel/ cleanups
+Message-Id: <20080618003650.GO25911@cs181133002.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-sh_pcic_io_xxx function are very old.
-In linux-2.4, mrshpc_ss socket driver used this function.
-But there is not this driver to the present kernel.
-I deleted these cords and checked operation.
+This patch contains the following cleanups:
+- make the following needlessly global code static:
+  - cf-enabler.c: cf_init()
+  - cpu/clock.c: __clk_enable()
+  - cpu/clock.c: __clk_disable()
+  - process_32.c: default_idle()
+  - time_32.c: struct clocksource_sh
+  - timers/timer-tmu.c: struct tmu_timer_ops
+- remove the following unused functions (no CONFIG_BLK_DEV_FD on sh):
+  - process_{32,64}.c: disable_hlt()
+  - process_{32,64}.c: enable_hlt()
 
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
+
 ---
- arch/sh/boards/se/770x/io.c |   44 ++++++++----------------------------------
- 1 files changed, 9 insertions(+), 35 deletions(-)
 
-diff --git a/arch/sh/boards/se/770x/io.c b/arch/sh/boards/se/770x/io.c
-index c455047..388a0dc 100644
---- a/arch/sh/boards/se/770x/io.c
-+++ b/arch/sh/boards/se/770x/io.c
-@@ -13,13 +13,6 @@
- #include <asm/io.h>
- #include <asm/se.h>
+ arch/sh/kernel/cf-enabler.c       |    2 +-
+ arch/sh/kernel/cpu/clock.c        |    6 ++----
+ arch/sh/kernel/process_32.c       |   14 +-------------
+ arch/sh/kernel/process_64.c       |   10 ----------
+ arch/sh/kernel/time_32.c          |    2 +-
+ arch/sh/kernel/timers/timer-tmu.c |    2 +-
+ include/asm-sh/clock.h            |    3 ---
+ include/asm-sh/system.h           |    8 --------
+ include/asm-sh/timer.h            |    1 -
+ 9 files changed, 6 insertions(+), 42 deletions(-)
 
--/* SH pcmcia io window base, start and end.  */
--int sh_pcic_io_wbase = 0xb8400000;
--int sh_pcic_io_start;
--int sh_pcic_io_stop;
--int sh_pcic_io_type;
--int sh_pcic_io_dummy;
+6afa3ab285425364d3764cb8f9bd3b054405ecc1 diff --git a/arch/sh/kernel/cf-enabler.c b/arch/sh/kernel/cf-enabler.c
+index 01ff4d0..d3d9f32 100644
+--- a/arch/sh/kernel/cf-enabler.c
++++ b/arch/sh/kernel/cf-enabler.c
+@@ -157,7 +157,7 @@ static int __init cf_init_se(void)
+ }
+ #endif
+ 
+-int __init cf_init(void)
++static int __init cf_init(void)
+ {
+ 	if (mach_is_se() || mach_is_7722se() || mach_is_7721se())
+ 		return cf_init_se();
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index b5f1e23..73334c6 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
+@@ -88,7 +88,7 @@ static void propagate_rate(struct clk *clk)
+ 	}
+ }
+ 
+-int __clk_enable(struct clk *clk)
++static int __clk_enable(struct clk *clk)
+ {
+ 	/*
+ 	 * See if this is the first time we're enabling the clock, some
+@@ -111,7 +111,6 @@ int __clk_enable(struct clk *clk)
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL_GPL(__clk_enable);
+ 
+ int clk_enable(struct clk *clk)
+ {
+@@ -131,7 +130,7 @@ static void clk_kref_release(struct kref *kref)
+ 	/* Nothing to do */
+ }
+ 
+-void __clk_disable(struct clk *clk)
++static void __clk_disable(struct clk *clk)
+ {
+ 	int count = kref_put(&clk->kref, clk_kref_release);
+ 
+@@ -143,7 +142,6 @@ void __clk_disable(struct clk *clk)
+ 			clk->ops->disable(clk);
+ 	}
+ }
+-EXPORT_SYMBOL_GPL(__clk_disable);
+ 
+ void clk_disable(struct clk *clk)
+ {
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index b98e37a..e15086a 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -34,18 +34,6 @@ void (*pm_idle)(void);
+ void (*pm_power_off)(void);
+ EXPORT_SYMBOL(pm_power_off);
+ 
+-void disable_hlt(void)
+-{
+-	hlt_counter++;
+-}
+-EXPORT_SYMBOL(disable_hlt);
 -
- /* MS7750 requires special versions of in*, out* routines, since
-    PC-like io ports are located at upper half byte of 16-bit word which
-    can be accessed only with 16-bit wide.  */
-@@ -33,8 +26,6 @@ port2adr(unsigned int port)
- 		return (volatile __u16 *) (PA_MRSHPC + (port - 0x2000));
- 	else if (port >= 0x1000)
- 		return (volatile __u16 *) (PA_83902 + (port << 1));
--	else if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop)
--		return (volatile __u16 *) (sh_pcic_io_wbase + (port &~ 1));
- 	else
- 		return (volatile __u16 *) (PA_SUPERIO + (port << 1));
+-void enable_hlt(void)
+-{
+-	hlt_counter--;
+-}
+-EXPORT_SYMBOL(enable_hlt);
+-
+ static int __init nohlt_setup(char *__unused)
+ {
+ 	hlt_counter = 1;
+@@ -60,7 +48,7 @@ static int __init hlt_setup(char *__unused)
  }
-@@ -51,9 +42,7 @@ shifted_port(unsigned long port)
-
- unsigned char se_inb(unsigned long port)
+ __setup("hlt", hlt_setup);
+ 
+-void default_idle(void)
++static void default_idle(void)
  {
--	if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop)
--		return *(__u8 *) (sh_pcic_io_wbase + 0x40000 + port);
--	else if (shifted_port(port))
-+	if (shifted_port(port))
- 		return (*port2adr(port) >> 8);
- 	else
- 		return (*port2adr(port))&0xff;
-@@ -63,9 +52,7 @@ unsigned char se_inb_p(unsigned long port)
+ 	if (!hlt_counter) {
+ 		clear_thread_flag(TIF_POLLING_NRFLAG);
+--- a/arch/sh/kernel/process_64.c
++++ b/arch/sh/kernel/process_64.c
+@@ -36,16 +36,6 @@ static int hlt_counter = 1;
+ 
+ #define HARD_IDLE_TIMEOUT (HZ / 3)
+ 
+-void disable_hlt(void)
+-{
+-	hlt_counter++;
+-}
+-
+-void enable_hlt(void)
+-{
+-	hlt_counter--;
+-}
+-
+ static int __init nohlt_setup(char *__unused)
  {
- 	unsigned long v;
-
--	if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop)
--		v = *(__u8 *) (sh_pcic_io_wbase + 0x40000 + port);
--	else if (shifted_port(port))
-+	if (shifted_port(port))
- 		v = (*port2adr(port) >> 8);
- 	else
- 		v = (*port2adr(port))&0xff;
-@@ -75,8 +62,7 @@ unsigned char se_inb_p(unsigned long port)
-
- unsigned short se_inw(unsigned long port)
- {
--	if (port >= 0x2000 ||
--	    (sh_pcic_io_start <= port && port <= sh_pcic_io_stop))
-+	if (port >= 0x2000)
- 		return *port2adr(port);
- 	else
- 		maybebadio(port);
-@@ -91,9 +77,7 @@ unsigned int se_inl(unsigned long port)
-
- void se_outb(unsigned char value, unsigned long port)
- {
--	if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop)
--		*(__u8 *)(sh_pcic_io_wbase + port) = value;
--	else if (shifted_port(port))
-+	if (shifted_port(port))
- 		*(port2adr(port)) = value << 8;
- 	else
- 		*(port2adr(port)) = value;
-@@ -101,9 +85,7 @@ void se_outb(unsigned char value, unsigned long port)
-
- void se_outb_p(unsigned char value, unsigned long port)
- {
--	if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop)
--		*(__u8 *)(sh_pcic_io_wbase + port) = value;
--	else if (shifted_port(port))
-+	if (shifted_port(port))
- 		*(port2adr(port)) = value << 8;
- 	else
- 		*(port2adr(port)) = value;
-@@ -112,8 +94,7 @@ void se_outb_p(unsigned char value, unsigned long port)
-
- void se_outw(unsigned short value, unsigned long port)
- {
--	if (port >= 0x2000 ||
--	    (sh_pcic_io_start <= port && port <= sh_pcic_io_stop))
-+	if (port >= 0x2000)
- 		*port2adr(port) = value;
- 	else
- 		maybebadio(port);
-@@ -129,11 +110,7 @@ void se_insb(unsigned long port, void *addr, unsigned long count)
- 	volatile __u16 *p = port2adr(port);
- 	__u8 *ap = addr;
-
--	if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop) {
--		volatile __u8 *bp = (__u8 *) (sh_pcic_io_wbase + 0x40000 + port);
--		while (count--)
--			*ap++ = *bp;
--	} else if (shifted_port(port)) {
-+	if (shifted_port(port)) {
- 		while (count--)
- 			*ap++ = *p >> 8;
- 	} else {
-@@ -160,11 +137,7 @@ void se_outsb(unsigned long port, const void *addr, unsigned long count)
- 	volatile __u16 *p = port2adr(port);
- 	const __u8 *ap = addr;
-
--	if (sh_pcic_io_start <= port && port <= sh_pcic_io_stop) {
--		volatile __u8 *bp = (__u8 *) (sh_pcic_io_wbase + port);
--		while (count--)
--			*bp = *ap++;
--	} else if (shifted_port(port)) {
-+	if (shifted_port(port)) {
- 		while (count--)
- 			*p = *ap++ << 8;
- 	} else {
-@@ -177,6 +150,7 @@ void se_outsw(unsigned long port, const void *addr, unsigned long count)
- {
- 	volatile __u16 *p = port2adr(port);
- 	const __u16 *ap = addr;
-+
- 	while (count--)
- 		*p = *ap++;
+ 	hlt_counter = 1;
+diff --git a/arch/sh/kernel/time_32.c b/arch/sh/kernel/time_32.c
+index 7281342..0758b5e 100644
+--- a/arch/sh/kernel/time_32.c
++++ b/arch/sh/kernel/time_32.c
+@@ -211,7 +211,7 @@ unsigned long sh_hpt_frequency = 0;
+ 
+ #define NSEC_PER_CYC_SHIFT	10
+ 
+-struct clocksource clocksource_sh = {
++static struct clocksource clocksource_sh = {
+ 	.name		= "SuperH",
+ 	.rating		= 200,
+ 	.mask		= CLOCKSOURCE_MASK(32),
+diff --git a/arch/sh/kernel/timers/timer-tmu.c b/arch/sh/kernel/timers/timer-tmu.c
+index 8935570..1ca9ad4 100644
+--- a/arch/sh/kernel/timers/timer-tmu.c
++++ b/arch/sh/kernel/timers/timer-tmu.c
+@@ -209,7 +209,7 @@ static int tmu_timer_init(void)
+ 	return 0;
  }
--- 
-1.5.5.1
-
+ 
+-struct sys_timer_ops tmu_timer_ops = {
++static struct sys_timer_ops tmu_timer_ops = {
+ 	.init		= tmu_timer_init,
+ 	.start		= tmu_timer_start,
+ 	.stop		= tmu_timer_stop,
+diff --git a/include/asm-sh/clock.h b/include/asm-sh/clock.h
+index b550a27..608fda5 100644
+--- a/include/asm-sh/clock.h
++++ b/include/asm-sh/clock.h
+@@ -41,9 +41,6 @@ void arch_init_clk_ops(struct clk_ops **, int type);
+ /* arch/sh/kernel/cpu/clock.c */
+ int clk_init(void);
+ 
+-int __clk_enable(struct clk *);
+-void __clk_disable(struct clk *);
+-
+ void clk_recalc_rate(struct clk *);
+ 
+ int clk_register(struct clk *);
+diff --git a/include/asm-sh/system.h b/include/asm-sh/system.h
+index e65b6b8..056d68c 100644
+--- a/include/asm-sh/system.h
++++ b/include/asm-sh/system.h
+@@ -148,14 +148,6 @@ extern unsigned long cached_to_uncached;
+ 
+ extern struct dentry *sh_debugfs_root;
+ 
+-/* XXX
+- * disable hlt during certain critical i/o operations
+- */
+-#define HAVE_DISABLE_HLT
+-void disable_hlt(void);
+-void enable_hlt(void);
+-
+-void default_idle(void);
+ void per_cpu_trap_init(void);
+ 
+ asmlinkage void break_point_trap(void);
+diff --git a/include/asm-sh/timer.h b/include/asm-sh/timer.h
+index 701ba84..327f7eb 100644
+--- a/include/asm-sh/timer.h
++++ b/include/asm-sh/timer.h
+@@ -40,6 +40,5 @@ struct sys_timer *get_sys_timer(void);
+ /* arch/sh/kernel/time.c */
+ void handle_timer_tick(void);
+ extern unsigned long sh_hpt_frequency;
+-extern struct clocksource clocksource_sh;
+ 
+ #endif /* __ASM_SH_TIMER_H */
 
