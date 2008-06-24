@@ -1,7 +1,7 @@
-From: Greg Ungerer <gerg@snapgear.com>
-Date: Thu, 19 Jun 2008 12:08:29 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 24 Jun 2008 03:48:06 +0000
 Subject: Re: [2.6 patch] remove pcibios_update_resource() functions
-Message-Id: <485A4C3D.5050909@snapgear.com>
+Message-Id: <20080624034806.GA22526@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080617223332.GM25911@cs181133002.pp.htv.fi>
 In-Reply-To: <20080617223332.GM25911@cs181133002.pp.htv.fi>
@@ -9,9 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Adrian Bunk <bunk@kernel.org>
-Cc: jbarnes@virtuousgeek.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, dhowells@redhat.com, ralf@linux-mips.org, linux-mips@linux-mips.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, Russell King <rmk+lkml@arm.linux.org.uk>
+Cc: jbarnes@virtuousgeek.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, dhowells@redhat.com, gerg@uclinux.org, ralf@linux-mips.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, Russell King <rmk+lkml@arm.linux.org.uk>
 
-Adrian Bunk wrote:
+On Wed, Jun 18, 2008 at 01:33:32AM +0300, Adrian Bunk wrote:
 > Russell King did the following back in 2003:
 > 
 > <--  snip  -->
@@ -49,178 +49,7 @@ Adrian Bunk wrote:
 > 
 > 
 > Signed-off-by: Adrian Bunk <bunk@kernel.org>
-
-The comempci.c change looks fine, for that part:
-
-Acked-by: Greg Ungerer <gerg@uclinux.org>
-
-
-> ---
 > 
->  arch/frv/mb93090-mb00/pci-frv.c    |   30 ------------------------
->  arch/m68knommu/kernel/comempci.c   |    9 -------
->  arch/mips/pmc-sierra/yosemite/ht.c |   36 -----------------------------
->  arch/sh/drivers/pci/pci.c          |   32 -------------------------
->  4 files changed, 107 deletions(-)
-> 
-> ebd37440bafbb6f9f5ecd6315ac9953cf97f20e9 diff --git a/arch/frv/mb93090-mb00/pci-frv.c b/arch/frv/mb93090-mb00/pci-frv.c
-> index 4f165c9..edae117 100644
-> --- a/arch/frv/mb93090-mb00/pci-frv.c
-> +++ b/arch/frv/mb93090-mb00/pci-frv.c
-> @@ -19,36 +19,6 @@
->  
->  #include "pci-frv.h"
->  
-> -#if 0
-> -void
-> -pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-> -			struct resource *res, int resource)
-> -{
-> -	u32 new, check;
-> -	int reg;
-> -
-> -	new = res->start | (res->flags & PCI_REGION_FLAG_MASK);
-> -	if (resource < 6) {
-> -		reg = PCI_BASE_ADDRESS_0 + 4*resource;
-> -	} else if (resource = PCI_ROM_RESOURCE) {
-> -		res->flags |= IORESOURCE_ROM_ENABLE;
-> -		new |= PCI_ROM_ADDRESS_ENABLE;
-> -		reg = dev->rom_base_reg;
-> -	} else {
-> -		/* Somebody might have asked allocation of a non-standard resource */
-> -		return;
-> -	}
-> -
-> -	pci_write_config_dword(dev, reg, new);
-> -	pci_read_config_dword(dev, reg, &check);
-> -	if ((new ^ check) & ((new & PCI_BASE_ADDRESS_SPACE_IO) ? PCI_BASE_ADDRESS_IO_MASK : PCI_BASE_ADDRESS_MEM_MASK)) {
-> -		printk(KERN_ERR "PCI: Error while updating region "
-> -		       "%s/%d (%08x != %08x)\n", pci_name(dev), resource,
-> -		       new, check);
-> -	}
-> -}
-> -#endif
-> -
->  /*
->   * We need to avoid collisions with `mirrored' VGA ports
->   * and other strange ISA hardware, so we always want the
-> diff --git a/arch/m68knommu/kernel/comempci.c b/arch/m68knommu/kernel/comempci.c
-> index 6ee00ef..0a68b5a 100644
-> --- a/arch/m68knommu/kernel/comempci.c
-> +++ b/arch/m68knommu/kernel/comempci.c
-> @@ -375,15 +375,6 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
->  
->  /*****************************************************************************/
->  
-> -void pcibios_update_resource(struct pci_dev *dev, struct resource *root, struct resource *r, int resource)
-> -{
-> -	printk(KERN_WARNING "%s(%d): no support for changing PCI resources...\n",
-> -		__FILE__, __LINE__);
-> -}
-> -
-> -
-> -/*****************************************************************************/
-> -
->  /*
->   *	Local routines to interrcept the standard I/O and vector handling
->   *	code. Don't include this 'till now - initialization code above needs
-> diff --git a/arch/mips/pmc-sierra/yosemite/ht.c b/arch/mips/pmc-sierra/yosemite/ht.c
-> index 6380662..678388f 100644
-> --- a/arch/mips/pmc-sierra/yosemite/ht.c
-> +++ b/arch/mips/pmc-sierra/yosemite/ht.c
-> @@ -345,42 +345,6 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
->          return pcibios_enable_resources(dev);
->  }
->  
-> -
-> -
-> -void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-> -                             struct resource *res, int resource)
-> -{
-> -        u32 new, check;
-> -        int reg;
-> -
-> -        return;
-> -
-> -        new = res->start | (res->flags & PCI_REGION_FLAG_MASK);
-> -        if (resource < 6) {
-> -                reg = PCI_BASE_ADDRESS_0 + 4 * resource;
-> -        } else if (resource = PCI_ROM_RESOURCE) {
-> -		res->flags |= IORESOURCE_ROM_ENABLE;
-> -                reg = dev->rom_base_reg;
-> -        } else {
-> -                /*
-> -                 * Somebody might have asked allocation of a non-standard
-> -                 * resource
-> -                 */
-> -                return;
-> -        }
-> -
-> -        pci_write_config_dword(dev, reg, new);
-> -        pci_read_config_dword(dev, reg, &check);
-> -        if ((new ^ check) &
-> -            ((new & PCI_BASE_ADDRESS_SPACE_IO) ? PCI_BASE_ADDRESS_IO_MASK :
-> -             PCI_BASE_ADDRESS_MEM_MASK)) {
-> -                printk(KERN_ERR "PCI: Error while updating region "
-> -                       "%s/%d (%08x != %08x)\n", pci_name(dev), resource,
-> -                       new, check);
-> -        }
-> -}
-> -
-> -
->  void pcibios_align_resource(void *data, struct resource *res,
->                              resource_size_t size, resource_size_t align)
->  {
-> diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-> index 08d2e73..f57095a 100644
-> --- a/arch/sh/drivers/pci/pci.c
-> +++ b/arch/sh/drivers/pci/pci.c
-> @@ -76,38 +76,6 @@ void __devinit __weak pcibios_fixup_bus(struct pci_bus *bus)
->  	pci_read_bridge_bases(bus);
->  }
->  
-> -void
-> -pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-> -			struct resource *res, int resource)
-> -{
-> -	u32 new, check;
-> -	int reg;
-> -
-> -	new = res->start | (res->flags & PCI_REGION_FLAG_MASK);
-> -	if (resource < 6) {
-> -		reg = PCI_BASE_ADDRESS_0 + 4*resource;
-> -	} else if (resource = PCI_ROM_RESOURCE) {
-> -		res->flags |= IORESOURCE_ROM_ENABLE;
-> -		new |= PCI_ROM_ADDRESS_ENABLE;
-> -		reg = dev->rom_base_reg;
-> -	} else {
-> -		/*
-> -		 * Somebody might have asked allocation of a non-standard
-> -		 * resource
-> -		 */
-> -		return;
-> -	}
-> -
-> -	pci_write_config_dword(dev, reg, new);
-> -	pci_read_config_dword(dev, reg, &check);
-> -	if ((new ^ check) & ((new & PCI_BASE_ADDRESS_SPACE_IO) ?
-> -		PCI_BASE_ADDRESS_IO_MASK : PCI_BASE_ADDRESS_MEM_MASK)) {
-> -		printk(KERN_ERR "PCI: Error while updating region "
-> -		       "%s/%d (%08x != %08x)\n", pci_name(dev), resource,
-> -		       new, check);
-> -	}
-> -}
-> -
->  void pcibios_align_resource(void *data, struct resource *res,
->  			    resource_size_t size, resource_size_t align)
->  			    __attribute__ ((weak));
-> 
-> 
+sh parts -
 
-
--- 
-------------------------------------------------------------------------
-Greg Ungerer  --  Chief Software Dude       EMAIL:     gerg@snapgear.com
-SnapGear -- a Secure Computing Company      PHONE:       +61 7 3435 2888
-825 Stanley St,                             FAX:         +61 7 3891 3630
-Woolloongabba, QLD, 4102, Australia         WEB: http://www.SnapGear.com
+Acked-by: Paul Mundt <lethal@linux-sh.org>
