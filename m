@@ -1,7 +1,7 @@
 From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Wed, 25 Jun 2008 07:38:25 +0000
-Subject: [PATCH 1/4] video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver
-Message-Id: <4861F5F1.3030003@renesas.com>
+Date: Wed, 25 Jun 2008 07:39:09 +0000
+Subject: [PATCH 4/4] video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver's
+Message-Id: <4861F61D.1080008@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -9,737 +9,149 @@ Content-Transfer-Encoding: 7bit
 To: Linux-fbdev-devel@lists.sourceforge.net
 Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>
 
-Main source code of Driver for the LCDC interface on the SH7760 and SH7763 SoCs.
+Document for the LCDC interface on the SH7760 and SH7763 SoCs.
 
 Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
 Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
 ---
- drivers/video/sh7760fb.c |  717 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 717 insertions(+), 0 deletions(-)
- create mode 100644 drivers/video/sh7760fb.c
+ Documentation/fb/sh7760fb.txt |  129 +++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 129 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/fb/sh7760fb.txt
 
-diff --git a/drivers/video/sh7760fb.c b/drivers/video/sh7760fb.c
+diff --git a/Documentation/fb/sh7760fb.txt b/Documentation/fb/sh7760fb.txt
 new file mode 100644
-index 0000000..57b1dfb
+index 0000000..b8bf844
 --- /dev/null
-+++ b/drivers/video/sh7760fb.c
-@@ -0,0 +1,717 @@
-+/*
-+ * SH7760/63 LCDC Framebuffer driver.
-+ *
-+ * (c) 2006-2008 MSC Vertriebsges.m.b.H., Manuel Lauss.
-+ * (c) 2008 Nobuhiro Iwamatsu
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License. See the file COPYING in the main directory of this archive for
-+ *  more details.
-+ *
-+ * PLEASE HAVE A LOOK AT Documentation/fb/sh7760fb.txt!
-+ *
-+ * Thanks to Siegfried Schaefer <s.schaefer schaefer-edv.de>
-+ *     for his original source and testing!
-+ */
++++ b/Documentation/fb/sh7760fb.txt
+@@ -0,0 +1,129 @@
++SH7760 integrated LCDC Framebuffer driver
++====================+
++0. Overwiew
++-----------
++The SH7760/SH7763 have an integrated LCD Display controller (LCDC) which
++supports (in theory) resolutions ranging from 1x1 to 1024x1024,
++with color depths ranging from 1 to 16 bit.
++Supports STN, DSTN and TFT Panels.
 +
-+#include <linux/delay.h>
-+#include <linux/dma-mapping.h>
++* Framebuffer memory must be a large chunk allocated at the top
++  of Area3 (HW requirement). Because of this requirement you should NOT
++  make the driver a module since at runtime it may become impossible to
++  get a large enough contiguous chunk of memory.
++
++* The driver does not support changing resolution while loaded
++  (LCD's aren't hotpluggable anyway)
++
++* Heavy flickering may be observed
++  a) if you're using 15/16bit color modes at >= 640x480 px resolutions,
++  b) during PCMCIA (or any other slow bus) activity.
++
++* Rotation works only 90degress clockwise, and only if horizontal
++  resolution is <= 320 pixels.
++
++files:   drivers/video/sh7760fb.c
++	 include/asm-sh/sh7760fb.h
++	 Documentation/fb/sh7760fb.txt
++
++1. Platform setup
++-----------------
++Video data is fetched via the DMABRG DMA engine, so you have to
++configure the SH DMAC for DMABRG mode (write 0x94808080 to the
++DMARSRA register somewhere at boot).
++
++PFC registers PCCR and PCDR must be set to peripheral mode.
++(write zeros to both).
++
++The driver does NOT do the above for you (since board setup is, well, job
++of the board setup code).
++
++2. Panel definitions
++--------------------
++The LCDC must explicitly be told about the type of LCD panel
++attached. Data must be wrapped in a "struct sh7760fb_platdata" and
++passed to the driver as platform_data.
++
++Suggest you take a closer look at the SH7760 Manual, Section 30.
++(http://documentation.renesas.com/eng/products/mpumcu/e602291_sh7760.pdf)
++
++The following code illustrates what needs to be done to
++get the framebuffer working on a 640x480 TFT:
++
++=========== cut here ===================
++
 +#include <linux/fb.h>
-+#include <linux/gfp.h>
-+#include <linux/interrupt.h>
-+#include <linux/kernel.h>
-+#include <linux/mm.h>
-+#include <linux/module.h>
-+#include <linux/platform_device.h>
-+
-+#include <linux/io.h>
 +#include <asm/sh7760fb.h>
 +
-+#define fb_msg(args...)        \
-+       do { printk(KERN_ALERT "sh7760fb: " args); } while (0)
-+#if 0
-+#define dbg(args...) fb_msg(args)
-+#else
-+#define dbg(fmt, args...) do { } while (0)
-+#endif
-+
-+/* palette */
-+#define LDPR(x)		(((x) << 2))
-+
-+/* registers and bits */
-+#define LDICKR		0x400
-+#define LDMTR		0x402
-+/* see sh7760fb.h for LDMTR bits */
-+#define LDDFR		0x404
-+#define LDDFR_PABD	(1 << 8)
-+#define LDDFR_COLOR_MASK	0x7F
-+#define LDSMR		0x406
-+#define LDSMR_ROT	(1 << 13)
-+#define LDSARU		0x408
-+#define LDSARL		0x40c
-+#define LDLAOR		0x410
-+#define LDPALCR		0x412
-+#define LDHCNR		0x414
-+#define LDHSYNR		0x416
-+#define LDVDLNR		0x418
-+#define LDVTLNR		0x41a
-+#define LDVSYNR		0x41c
-+#define LDACLNR		0x41e
-+#define LDINTR		0x420
-+#define LDPMMR		0x424
-+#define LDPSPR		0x426
-+#define LDCNTR		0x428
-+#define LDCNTR_DON	(1 << 0)
-+#define LDCNTR_DON2	(1 << 4)
-+#ifdef CONFIG_CPU_SUBTYPE_SH7763
-+# define LDLIRNR	0x440
-+#endif
-+
 +/*
-+ * some bits of the colormap registers should be written as zero.
-+ * create a mask for that.
-+ */
-+#define SH7760FB_PALETTE_MASK    0x00f8fcf8
-+
-+/* The LCDC dma engine always sets bits 27-26 to 1: this is Area3 */
-+#define SH7760FB_DMA_MASK      0x0C000000
-+
-+struct sh7760fb_par {
-+	void __iomem *base;
-+	struct sh7760fb_platdata *pd;	/* display information */
-+
-+	/* framebuffer memory information */
-+	void *fbmem;		/* alloced framebuffer */
-+	dma_addr_t fbdma;	/* physical address */
-+	unsigned long vram;	/* size, in bytes */
-+	unsigned long stride;
-+
-+	int rot;		/* rotation enabled? */
-+	int disp_set;	/* parameters already set? */
-+	u32 pseudo_palette[16];
-+	struct platform_device *dev;
-+	struct resource *ioarea;
-+};
-+
-+static inline void OUT16(struct sh7760fb_par *par, int reg, unsigned short v)
-+{
-+	iowrite16(v, par->base + reg);
-+}
-+
-+static inline unsigned short IN16(struct sh7760fb_par *par, int reg)
-+{
-+	return ioread16(par->base + reg);
-+}
-+
-+static inline void OUT32(struct sh7760fb_par *par, int reg, unsigned long v)
-+{
-+	iowrite32(v, par->base + reg);
-+}
-+
-+static inline unsigned long IN32(struct sh7760fb_par *par, int reg)
-+{
-+	return ioread32(par->base + reg);
-+}
-+
-+static void sh7760fb_wait_vsync(struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
-+
-+	if (par->pd->novsync)
-+		return;
-+/*
-+	while (IN16(par, LDINTR) & 1)
-+		OUT16(par, LDINTR, 0x1100);
-+*/
-+}
-+
-+
-+/*
-+ * wait_for_lps - wait until power supply has reached a certain state.
-+ * @val:       bitmask to wait for.
-+ */
-+static void wait_for_lps(struct sh7760fb_par *par, int val)
-+{
-+	int i = 100;
-+	while (--i && ((IN16(par, LDPMMR) & 3) != val))
-+		msleep(1);
-+}
-+
-+/* en/disable the LCDC */
-+static int sh7760fb_blank(int blank, struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
-+	struct sh7760fb_platdata *pd = par->pd;
-+	unsigned short cntr = IN16(par, LDCNTR);
-+	int lps;
-+
-+	if (blank = FB_BLANK_UNBLANK) {
-+		cntr = LDCNTR_DON2 | LDCNTR_DON;
-+		lps = 3;
-+		if (pd->blank)
-+			pd->blank(blank);
-+	} else {
-+		if (pd->blank)
-+			pd->blank(blank);
-+		cntr = LDCNTR_DON2;
-+		lps = 0;
-+	}
-+
-+	OUT16(par, LDCNTR, cntr);
-+
-+	wait_for_lps(par, lps);
-+
-+	return 0;
-+}
-+
-+/* set color registers */
-+static int sh7760fb_setcmap(struct fb_cmap *cmap, struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
-+	u32 s = cmap->start;
-+	u32 l = cmap->len;
-+	u16 *r = cmap->red;
-+	u16 *g = cmap->green;
-+	u16 *b = cmap->blue;
-+	u32 col, tmo;
-+	int ret;
-+
-+	ret = 0;
-+
-+	/* wait for vsync */
-+	sh7760fb_wait_vsync(info);
-+
-+	/* request palette access */
-+	OUT16(par, LDPALCR, 1);
-+
-+	/* poll for access grant */
-+	tmo = 100;
-+	while (!(IN16(par, LDPALCR) & (1 << 4)) && (--tmo))
-+		msleep(0);
-+
-+	if (!tmo) {
-+		ret = 1;
-+		pr_debug("sh7760fb: no palette access!\n");
-+		goto out;
-+	}
-+
-+	while (l && (s < 256)) {
-+		col = ((*r) & 0xff) << 16;
-+		col |= ((*g) & 0xff) << 8;
-+		col |= ((*b) & 0xff);
-+		col &= SH7760FB_PALETTE_MASK;
-+		OUT32(par, LDPR(s), col);
-+		if (s < 16)
-+			((u32 *) (info->pseudo_palette))[s] = s;
-+
-+		s++;
-+		l--;
-+		r++;
-+		g++;
-+		b++;
-+	}
-+out:
-+	OUT16(par, LDPALCR, 0);
-+	return ret;
-+}
-+
-+static void encode_fix(struct fb_fix_screeninfo *fix, struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
-+	struct fb_var_screeninfo *var = &info->var;
-+
-+	memset(fix, 0, sizeof(struct fb_fix_screeninfo));
-+	strcpy(fix->id, "sh7760fb");
-+
-+	fix->smem_start = (unsigned long)par->fbmem;
-+	fix->smem_len = par->vram;
-+
-+	if ((var->grayscale) && (var->bits_per_pixel = 1))
-+		fix->visual = FB_VISUAL_MONO10;
-+	else if (var->bits_per_pixel >= 15)
-+		fix->visual = FB_VISUAL_TRUECOLOR;
-+	else
-+		fix->visual = FB_VISUAL_PSEUDOCOLOR;
-+
-+	fix->line_length = par->stride;
-+}
-+
-+/**
-+ * sh7760fb_set_par - set videomode.
-+ * @info:      ptr to fb_info structure with mode info.
-+ * @return:    success.
++ * NEC NL6440bc26-01 640x480 TFT
++ * dotclock 25175 kHz
++ * Xres		640	Yres		480
++ * Htotal	800	Vtotal		525
++ * HsynStart	656	VsynStart	490
++ * HsynLenn	30	VsynLenn	2
 + *
-+ * Set up video mode as described in info->var.
-+ * NOTE: The rotation, grayscale and DSTN codepaths are
-+ *     totally untested!
++ * The linux framebuffer layer does not use the syncstart/synclen
++ * values but right/left/upper/lower margin values. The comments
++ * for the x_margin explain how to calculate those from given
++ * panel sync timings.
 + */
-+static int sh7760fb_set_par(struct fb_info *info)
-+{
-+	struct fb_var_screeninfo *var = &info->var;
-+	struct sh7760fb_par *par = info->par;
-+	struct fb_videomode *vm = par->pd->def_mode;
-+	unsigned long sbase, dstn_off, ldsarl, stride;
-+	unsigned short hsynp, hsynw, htcn, hdcn;
-+	unsigned short vsynp, vsynw, vtln, vdln;
-+	unsigned short lddfr, ldmtr;
-+	int bpp, gray;
-+
-+	if (par->disp_set)
-+		return 0;
-+
-+	par->rot = par->pd->rotate;
-+
-+	/* rotate only works with xres <= 320 */
-+	if (par->rot && (vm->xres > 320)) {
-+		fb_msg("rotation disabled due to display size\n");
-+		par->rot = 0;
-+	}
-+
-+	/* calculate LCDC reg vals from display parameters */
-+	hsynp = vm->right_margin + vm->xres;
-+	hsynw = vm->hsync_len;
-+	htcn = vm->left_margin + hsynp + hsynw;
-+	hdcn = vm->xres;
-+	vsynp = vm->lower_margin + vm->yres;
-+	vsynw = vm->vsync_len;
-+	vtln = vm->upper_margin + vsynp + vsynw;
-+	vdln = vm->yres;
-+
-+	bpp = gray = 0;
-+	switch (par->pd->lddfr & LDDFR_COLOR_MASK) {
-+	case LDDFR_1BPP_MONO:
-+		gray = 1;
-+		bpp = 1;
-+		break;
-+	case LDDFR_2BPP_MONO:
-+		gray = 1;
-+		bpp = 2;
-+		break;
-+	case LDDFR_4BPP_MONO:
-+		gray = 1;
-+	case LDDFR_4BPP:
-+		bpp = 4;
-+		break;
-+	case LDDFR_6BPP_MONO:
-+		gray = 1;
-+	case LDDFR_8BPP:
-+		bpp = 8;
-+		break;
-+	case LDDFR_16BPP_RGB555:
-+	case LDDFR_16BPP_RGB565:
-+		bpp = 16;
-+		break;
-+	}
-+
-+	var->bits_per_pixel = bpp;
-+
-+	fb_msg("%dx%d %dbpp %s (orientation %s)\n", hdcn, vdln, bpp,
-+	       gray ? "grayscale" : "color", par->rot ? "rotated" : "normal");
-+
-+#ifdef CONFIG_CPU_LITTLE_ENDIAN
-+	lddfr = par->pd->lddfr | (1 << 8);
-+#else
-+	lddfr = par->pd->lddfr & ~(1 << 8);
-+#endif
-+
-+	ldmtr = par->pd->ldmtr;
-+
-+	if (!(vm->sync & FB_SYNC_HOR_HIGH_ACT))
-+		ldmtr |= LDMTR_CL1POL;
-+	if (!(vm->sync & FB_SYNC_VERT_HIGH_ACT))
-+		ldmtr |= LDMTR_FLMPOL;
-+
-+	/* shut down LCDC before changing display parameters */
-+	sh7760fb_blank(FB_BLANK_POWERDOWN, info);
-+
-+	OUT16(par, LDICKR, par->pd->ldickr); /* pixclock */
-+	OUT16(par, LDMTR, ldmtr); /* polarities */
-+	OUT16(par, LDDFR, lddfr); /* color/depth */
-+	OUT16(par, LDSMR, (par->rot ? 1 << 13 : 0)); /* rotate */
-+	OUT16(par, LDPMMR, par->pd->ldpmmr); /* Power Management */
-+	OUT16(par, LDPSPR, par->pd->ldpspr); /* Power Supply Ctrl */
-+
-+	/* display resolution */
-+	OUT16(par, LDHCNR, ((htcn >> 3) - 1) | (((hdcn >> 3) - 1) << 8));
-+	OUT16(par, LDVDLNR, vdln - 1);
-+	OUT16(par, LDVTLNR, vtln - 1);
-+	/* h/v sync signals */
-+	OUT16(par, LDVSYNR, (vsynp - 1) | ((vsynw - 1) << 12));
-+	OUT16(par, LDHSYNR, ((hsynp >> 3) - 1) | (((hsynw >> 3) - 1) << 12));
-+	OUT16(par, LDACLNR, par->pd->ldaclnr);	/* AC modulation sig */
-+
-+	stride = (par->rot) ? vtln : hdcn;
-+	if (!gray)
-+		stride *= (bpp + 7) >> 3;
-+	else {
-+		if (bpp = 1)
-+			stride >>= 3;
-+		else if (bpp = 2)
-+			stride >>= 2;
-+		else if (bpp = 4)
-+			stride >>= 1;
-+		/* 6 bpp = 8 bpp */
-+	}
-+
-+	/* if rotated, stride must be power of 2 */
-+	if (par->rot) {
-+		unsigned long bit = 1 << 31;
-+		while (bit) {
-+			if (stride & bit)
-+				break;
-+			bit >>= 1;
-+		}
-+		if (stride & ~bit)
-+			stride = bit << 1;	/* not P-o-2, round up */
-+	}
-+	OUT16(par, LDLAOR, stride);
-+	par->stride = stride;
-+	/* set display mem start address */
-+	sbase = (unsigned long)par->fbdma;
-+	if (par->rot)
-+		sbase += (hdcn - 1) * stride;
-+
-+	OUT32(par, LDSARU, sbase);
-+
-+	/*
-+	 * for DSTN need to set address for lower half.
-+	 * I (mlau) don't know which address to set it to,
-+	 * so I guessed at (stride * yres/2).
-+	 */
-+	if (((ldmtr & 0x003f) >= LDMTR_DSTN_MONO_8) &&
-+	    ((ldmtr & 0x003f) <= LDMTR_DSTN_COLOR_16)) {
-+
-+		pr_debug(" ***** DSTN untested! *****\n");
-+
-+		dstn_off = stride;
-+		if (par->rot)
-+			dstn_off *= hdcn >> 1;
-+		else
-+			dstn_off *= vdln >> 1;
-+
-+		ldsarl = sbase + dstn_off;
-+	} else
-+		ldsarl = 0;
-+
-+	OUT32(par, LDSARL, ldsarl);	/* mem for lower half of DSTN */
-+
-+	encode_fix(&info->fix, info);
-+
-+	sh7760fb_blank(FB_BLANK_UNBLANK, info);	/* panel on! */
-+
-+	par->disp_set = 1;
-+
-+	dbg("hdcn  : %6d htcn  : %6d\n", hdcn, htcn);
-+	dbg("hsynw : %6d hsynp : %6d\n", hsynw, hsynp);
-+	dbg("vdln  : %6d vtln  : %6d\n", vdln, vtln);
-+	dbg("vsynw : %6d vsynp : %6d\n", vsynw, vsynp);
-+	dbg("clksrc: %6d clkdiv: %6d\n", (par->pd->ldickr >> 12) & 3,
-+	    par->pd->ldickr & 0x1f);
-+	dbg("ldpmmr: 0x%04x ldpspr: 0x%04x\n", par->pd->ldpmmr,
-+	    par->pd->ldpspr);
-+	dbg("ldmtr : 0x%04x lddfr : 0x%04x\n", ldmtr, lddfr);
-+	dbg("ldlaor: %6d\n", stride);
-+	dbg("ldsaru: 0x%08lx ldsarl: 0x%08lx\n", sbase, ldsarl);
-+
-+	return 0;
-+}
-+
-+static int sh7760fb_check_var(struct fb_var_screeninfo *var,
-+			      struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
-+
-+	/* validate LDDFR bit depth setting */
-+	switch (par->pd->lddfr & LDDFR_COLOR_MASK) {
-+	case LDDFR_1BPP_MONO:
-+	case LDDFR_2BPP_MONO:
-+	case LDDFR_4BPP_MONO:
-+	case LDDFR_4BPP:
-+	case LDDFR_6BPP_MONO:
-+	case LDDFR_8BPP:
-+	case LDDFR_16BPP_RGB555:
-+	case LDDFR_16BPP_RGB565:
-+		break;
-+	default:
-+		fb_msg("unsupported LDDFR bit depth.\n");
-+		return -EINVAL;
-+	}
-+
-+	/* TODO: add some more validation here */
-+	return 0;
-+}
-+
-+static struct fb_ops sh7760fb_ops = {
-+	.owner = THIS_MODULE,
-+	.fb_blank = sh7760fb_blank,
-+	.fb_check_var = sh7760fb_check_var,
-+	.fb_setcmap = sh7760fb_setcmap,
-+	.fb_set_par = sh7760fb_set_par,
-+	.fb_fillrect = cfb_fillrect,
-+	.fb_copyarea = cfb_copyarea,
-+	.fb_imageblit = cfb_imageblit,
++static struct fb_videomode nl6448bc26 = {
++/*	.name		= "NL6448BC26",*/
++/*	.refresh	= 60,	*/
++	.xres		= 640,
++	.yres		= 480,
++	.pixclock	= 39683,	/* in picoseconds! */
++	.hsync_len	= 30,
++	.vsync_len	= 2,
++	.left_margin	= 114,	/* HTOT - (HSYNSLEN + HSYNSTART) */
++	.right_margin	= 16,	/* HSYNSTART - XRES */
++	.upper_margin	= 33,	/* VTOT - (VSYNLEN + VSYNSTART) */
++	.lower_margin	= 10,	/* VSYNSTART - YRES */
++	.sync		= FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	.vmode		= FB_VMODE_NONINTERLACED,
++	.flag		= 0,
 +};
 +
-+/* free framebuffer memory */
-+static void sh7760fb_free_mem(struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
++static struct sh7760fb_platdata sh7760fb_nl6448 = {
++	.def_mode	= &nl6448bc26,
++	.ldmtr		= LDMTR_TFT_COLOR_16,	/* 16bit TFT panel */
++	.lddfr		= LDDFR_8BPP,		/* we want 8bit output */
++	.ldpmmr		= 0x0070,
++	.ldpspr		= 0x0500,
++	.ldaclnr	= 0,
++	.ldickr		= LDICKR_CLKSRC(LCDC_CLKSRC_EXTERNAL) |
++			  LDICKR_CLKDIV(1),
++	.rotate		= 0,
++	.novsync	= 1,
++	.blank		= NULL,
++};
 +
-+	if (!par->fbmem)
-+		return;
-+
-+	dma_free_coherent(info->dev, par->vram, par->fbmem, par->fbdma);
-+
-+	par->fbmem = NULL;
-+	par->fbdma = 0;
-+	info->screen_base = NULL;
-+	info->screen_size = 0;
-+}
-+
-+/* allocate the framebuffer memory. This memory must be in Area3,
-+ * (dictated by the DMA engine) and contiguous, at a 512 byte boundary.
++/* 0xFE300800: 256 * 4byte xRGB palette ram
++ * 0xFE300C00: 42 bytes ctrl registers
 + */
-+static int sh7760fb_alloc_mem(struct fb_info *info)
-+{
-+	struct sh7760fb_par *par = info->par;
-+	unsigned long vram;
-+	int bpp;
-+
-+	if (info->screen_base)
-+		return 0;
-+
-+	bpp = 1;
-+	switch (par->pd->lddfr & LDDFR_COLOR_MASK) {
-+	case LDDFR_1BPP_MONO:
-+		bpp = 1;
-+		break;
-+	case LDDFR_2BPP_MONO:
-+		bpp = 2;
-+		break;
-+	case LDDFR_4BPP_MONO:
-+	case LDDFR_4BPP:
-+		bpp = 4;
-+		break;
-+	case LDDFR_6BPP_MONO:
-+	case LDDFR_8BPP:
-+		bpp = 8;
-+		break;
-+	case LDDFR_16BPP_RGB555:
-+	case LDDFR_16BPP_RGB565:
-+		bpp = 16;
-+		break;
-+	default:
-+		fb_msg("unsupported LDDFR bit depth.\n");
-+		return -ENOMEM;
-+	}
-+
-+	/* min VRAM: xres_min = 16, yres_min = 1, bpp = 1: 2byte -> 1 page
-+	   max VRAM: xres_max = 1024, yres_max = 1024, bpp = 16: 2MB */
-+
-+	vram = info->var.xres * info->var.yres;
-+	if (info->var.grayscale) {
-+		if (bpp = 1)
-+			vram >>= 3;
-+		else if (bpp = 2)
-+			vram >>= 2;
-+		else if (bpp = 4)
-+			vram >>= 1;
-+	} else if (bpp > 8)
-+		vram *= 2;
-+	if ((vram < 1) || (vram > 1024 * 2048)) {
-+		fb_msg("too much VRAM required. Check settings\n");
-+		return -ENODEV;
-+	}
-+
-+	if (vram < PAGE_SIZE)
-+		vram = PAGE_SIZE;
-+
-+	par->vram = vram;
-+	par->fbmem +	    dma_alloc_coherent(info->dev, vram, &par->fbdma, GFP_KERNEL);
-+
-+	if (!par->fbmem)
-+		return -ENOMEM;
-+
-+	if ((par->fbdma & SH7760FB_DMA_MASK) != SH7760FB_DMA_MASK) {
-+		sh7760fb_free_mem(info);
-+		fb_msg("kernel gave me memory at 0x%08lx, which is"
-+		       "unusable for the LCDC\n", (unsigned long)par->fbdma);
-+		return -ENOMEM;
-+	}
-+
-+	info->screen_base = par->fbmem;
-+	info->screen_size = par->vram;
-+
-+	return 0;
-+}
-+
-+/* register the framebuffer device */
-+static int __devinit sh7760fb_probe(struct platform_device *pdev)
-+{
-+	struct fb_info *info;
-+	struct resource *res;
-+	struct sh7760fb_par *par;
-+	int ret;
-+
-+	/* Get base addr */
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (unlikely(res = NULL)) {
-+		dev_err(&pdev->dev, "invalid resource\n");
-+		return -EINVAL;
-+	}
-+
-+	info = framebuffer_alloc(sizeof(struct sh7760fb_par), &pdev->dev);
-+	if (!info)
-+		return -ENOMEM;
-+
-+	par = info->par;
-+	par->dev = pdev;
-+
-+	info->pseudo_palette = par->pseudo_palette;
-+	par->pd = pdev->dev.platform_data;
-+	if (!par->pd) {
-+		fb_msg("no display setup data!\n");
-+		ret = -ENODEV;
-+		goto out_fb;
-+	}
-+
-+	fb_videomode_to_var(&info->var, par->pd->def_mode);
-+
-+	/* fixup color register bitpositions. These are fixed by hardware */
-+	info->var.red.offset = 11;
-+	info->var.red.length = 5;
-+	info->var.red.msb_right = 0;
-+
-+	info->var.green.offset = 5;
-+	info->var.green.length = 6;
-+	info->var.green.msb_right = 0;
-+
-+	info->var.blue.offset = 0;
-+	info->var.blue.length = 5;
-+	info->var.blue.msb_right = 0;
-+
-+	info->var.transp.offset = 0;
-+	info->var.transp.length = 0;
-+	info->var.transp.msb_right = 0;
-+
-+	par->ioarea = request_mem_region(res->start,
-+			(res->end - res->start), pdev->name);
-+	if (!par->ioarea) {
-+		dev_err(&pdev->dev, "mmio area busy\n");
-+		ret = -EBUSY;
-+		goto out_fb;
-+	}
-+
-+	par->base = ioremap_nocache(res->start, (res->end - res->start));
-+	if (!par->base) {
-+		dev_err(&pdev->dev, "cannot remap\n");
-+		ret = -ENODEV;
-+		goto out_res;
-+	}
-+
-+	ret = sh7760fb_alloc_mem(info);
-+	if (ret) {
-+		fb_msg("framebuffer memory allocation failed!\n");
-+		goto out_unmap;
-+	}
-+
-+	/* set the DON2 bit now; this will randomize palette memory.
-+	 * do it now so the palette does not get destroyed when blanking
-+	 */
-+	OUT16(par, LDCNTR_DON2, LDCNTR);
-+	info->fbops = &sh7760fb_ops;
-+	fb_alloc_cmap(&info->cmap, 256, 0);
-+
-+	/* activate, get info->fix */
-+	sh7760fb_set_par(info);
-+
-+	ret = register_framebuffer(info);
-+	if (ret < 0) {
-+		/* stop LCDC before freeing ram */
-+		sh7760fb_blank(FB_BLANK_POWERDOWN, info);
-+		fb_msg("cannot register fb!\n");
-+		goto out_mem;
-+	}
-+	platform_set_drvdata(pdev, info);
-+
-+	fb_msg("memory at phys 0x%08lx-0x%08lx, size %ld KiB\n",
-+	       (unsigned long)par->fbdma,
-+	       (unsigned long)(par->fbdma + par->vram - 1), par->vram >> 10);
-+
-+	return 0;
-+
-+out_mem:
-+	sh7760fb_free_mem(info);
-+out_unmap:
-+	iounmap(par->base);
-+out_res:
-+	release_resource(par->ioarea);
-+	kfree(par->ioarea);
-+out_fb:
-+	framebuffer_release(info);
-+	return ret;
-+}
-+
-+static int __devexit sh7760fb_remove(struct platform_device *dev)
-+{
-+	struct fb_info *info = platform_get_drvdata(dev);
-+	struct sh7760fb_par *par = info->par;
-+
-+	sh7760fb_blank(FB_BLANK_POWERDOWN, info);
-+	unregister_framebuffer(info);
-+	fb_dealloc_cmap(&info->cmap);
-+	sh7760fb_free_mem(info);
-+	iounmap(par->base);
-+	release_resource(par->ioarea);
-+	kfree(par->ioarea);
-+	framebuffer_release(info);
-+	platform_set_drvdata(dev, NULL);
-+
-+	return 0;
-+}
-+
-+#ifdef CONFIG_PM
-+static int sh7760fb_suspend(struct platform_device *dev, u32 level)
-+{
-+	dbg("sh7760fb_suspend()\n");
-+	return 0;
-+}
-+
-+static int sh7760fb_resume(struct platform_device *dev, u32 level)
-+{
-+	dbg("sh7760fb_resume()\n");
-+	return 0;
-+}
-+#else
-+#define sh7760fb_suspend	NULL
-+#define sh7760fb_resume		NULL
-+#endif
-+
-+static struct platform_driver sh7760_lcdc_driver = {
-+	.driver	= {
-+		.name	= "sh7760-lcdc",
-+		.owner	= THIS_MODULE,
++static struct resource sh7760_lcdc_res[] = {
++	[0] = {
++		.start	= 0xFE300800,
++		.end	= 0xFE300CFF,
++		.flags	= IORESOURCE_MEM,
 +	},
-+	.probe		= sh7760fb_probe,
-+	.remove		= __devexit_p(sh7760fb_remove),
-+	.suspend	= sh7760fb_suspend,
-+	.resume		= sh7760fb_resume,
++	[1] = {
++		.start	= 65,
++		.end	= 65,
++		.flags	= IORESOURCE_IRQ,
++	},
 +};
 +
-+static int __init sh7760fb_init(void)
-+{
-+	return platform_driver_register(&sh7760_lcdc_driver);
-+}
++static struct platform_device sh7760_lcdc_dev = {
++	.dev	= {
++		.platform_data = &sh7760fb_nl6448,
++	},
++	.name		= "sh7760-lcdc",
++	.id		= -1,
++	.resource	= sh7760_lcdc_res,
++	.num_resources	= ARRAY_SIZE(sh7760_lcdc_res),
++};
 +
-+static void __exit sh7760fb_exit(void)
-+{
-+	platform_driver_unregister(&sh7760_lcdc_driver);
-+}
-+
-+module_init(sh7760fb_init);
-+module_exit(sh7760fb_exit);
-+
-+MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
-+MODULE_DESCRIPTION("FBdev for SH7760/63 integrated LCD Controller");
-+MODULE_LICENSE("GPL");
++=========== cut here ===================
 -- 
 1.5.5.1
 
