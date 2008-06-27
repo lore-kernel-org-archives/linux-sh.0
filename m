@@ -1,195 +1,575 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Thu, 26 Jun 2008 05:44:19 +0000
-Subject: [PATCH v2 2/4] video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver
-Message-Id: <48632CB3.508@renesas.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Fri, 27 Jun 2008 21:12:52 +0000
+Subject: [2.6 patch] remove unused asm/a.out.h files
+Message-Id: <20080627211252.GA16545@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1213565555.26255.522.camel@pmac.infradead.org> <1213604973-7073-1-git-send-email-jacmet@sunsite.dk> <1213617663.26255.708.camel@pmac.infradead.org> <20080616121727.GB10854@cs181133002.pp.htv.fi> <1213619214.26255.721.camel@pmac.infradead.org> <20080617084235.GA20169@cs181133002.pp.htv.fi> <1213696004.26255.960.camel@pmac.infradead.org>
+In-Reply-To: <1213696004.26255.960.camel@pmac.infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linuc-fbdev <Linux-fbdev-devel@lists.sourceforge.net>
-Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>
+To: David Woodhouse <dwmw2@infradead.org>
+Cc: Peter Korsgaard <jacmet@sunsite.dk>, linux-kernel@vger.kernel.org, sam@ravnborg.org, dhowells@redhat.com, andi@firstfloor.org, "Kirill A. Shutemov" <k.shutemov@gmail.com>, ysato@users.sourceforge.jp, takata@linux-m32r.org, linux-m32r@ml.linux-m32r.org, kyle@mcmartin.ca, matthew@wil.cx, grundler@parisc-linux.org, linux-parisc@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 
-Header file of driver for the LCDC interface on the SH7760 and SH7763 SoCs.
+On Tue, Jun 17, 2008 at 10:46:44AM +0100, David Woodhouse wrote:
+>...
+> I think we can probably get away with removing <asm/a.out.h> from every
+> architecture other than Alpha, ARM, m68k and x86,
+>...
 
-Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Patch below.
+
+> dwmw2
+
+cu
+Adrian
+
+
+<--  snip  -->
+
+
+This patch removes asm/a.out.h from all architectures that do not
+provide a.out support.
+
+This patch also includes the required removal of (unused)
+#include <asm/a.out.h>'s and #include <linux/a.out.h>'s in the arch/
+code for these architectures.
+
+The ppc and v850 architectures that should anyway be removed in 2.6.27 
+are not touched by this patch to avoid needless merge conflicts.
+
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
+
 ---
- include/asm-sh/sh7760fb.h |  166 +++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 166 insertions(+), 0 deletions(-)
- create mode 100644 include/asm-sh/sh7760fb.h
 
-diff --git a/include/asm-sh/sh7760fb.h b/include/asm-sh/sh7760fb.h
-new file mode 100644
-index 0000000..34cbbda
---- /dev/null
-+++ b/include/asm-sh/sh7760fb.h
-@@ -0,0 +1,166 @@
-+/*
-+ * sh7760fb.h -- platform data for SH7760/SH7763 LCDC framebuffer driver.
-+ *
-+ * (c) 2006 - 2008 Manuel Lauss.
-+ * (c) 2008 Nobuhiro Iwamatsu
-+ */
-+
-+#ifndef _ASM_SH_SH7760FB_H
-+#define _ASM_SH_SH7760FB_H
-+
-+/* palette */
-+#define LDPR(x)	(((x) << 2))
-+
-+/* framebuffer registers and bits*/
-+#define LDICKR	0x400
-+#define LDMTR	0x402
-+/* see sh7760fb.h for LDMTR bits */
-+#define LDDFR	0x404
-+#define LDDFR_PABD  (1 << 8)
-+#define LDDFR_COLOR_MASK    0x7F
-+#define LDSMR	0x406
-+#define LDSMR_ROT	(1 << 13)
-+#define LDSARU	0x408
-+#define LDSARL	0x40c
-+#define LDLAOR	0x410
-+#define LDPALCR	0x412
-+#define LDHCNR	0x414
-+#define LDHSYNR	0x416
-+#define LDVDLNR	0x418
-+#define LDVTLNR	0x41a
-+#define LDVSYNR	0x41c
-+#define LDACLNR	0x41e
-+#define LDINTR	0x420
-+#define LDPMMR	0x424
-+#define LDPSPR	0x426
-+#define LDCNTR	0x428
-+#define LDCNTR_DON	(1 << 0)
-+#define LDCNTR_DON2	(1 << 4)
-+#ifdef CONFIG_CPU_SUBTYPE_SH7763
-+# define LDLIRNR	0x440
-+#endif
-+
-+/* HSYNC polarity inversion */
-+#define LDMTR_FLMPOL		(1 << 15)
-+
-+/* VSYNC polarity inversion */
-+#define LDMTR_CL1POL		(1 << 14)
-+
-+/* DISPLAY-ENABLE polarity inversion */
-+#define LDMTR_DISPEN_LOWACT	(1 << 13)
-+
-+/* DISPLAY DATA BUS polarity inversion */
-+#define LDMTR_DPOL_LOWACT	(1 << 12)
-+
-+/* AC modulation signal enable */
-+#define LDMTR_MCNT		(1 << 10)
-+
-+/* Disable output of HSYNC during VSYNC period */
-+#define LDMTR_CL1CNT		(1 << 9)
-+
-+/* Disable output of VSYNC during VSYNC period */
-+#define LDMTR_CL2CNT		(1 << 8)
-+
-+/* Display types supported by the LCDC */
-+#define LDMTR_STN_MONO_4	0x00
-+#define LDMTR_STN_MONO_8	0x01
-+#define LDMTR_STN_COLOR_4	0x08
-+#define LDMTR_STN_COLOR_8	0x09
-+#define LDMTR_STN_COLOR_12	0x0A
-+#define LDMTR_STN_COLOR_16	0x0B
-+#define LDMTR_DSTN_MONO_8	0x11
-+#define LDMTR_DSTN_MONO_16	0x13
-+#define LDMTR_DSTN_COLOR_8	0x19
-+#define LDMTR_DSTN_COLOR_12	0x1A
-+#define LDMTR_DSTN_COLOR_16	0x1B
-+#define LDMTR_TFT_COLOR_16	0x2B
-+
-+/* framebuffer color layout */
-+#define LDDFR_1BPP_MONO		0x00
-+#define LDDFR_2BPP_MONO		0x01
-+#define LDDFR_4BPP_MONO		0x02
-+#define LDDFR_6BPP_MONO		0x04
-+#define LDDFR_4BPP		0x0A
-+#define LDDFR_8BPP		0x0C
-+#define LDDFR_16BPP_RGB555	0x1D
-+#define LDDFR_16BPP_RGB565	0x2D
-+
-+/* LCDC Pixclock sources */
-+#define LCDC_CLKSRC_BUSCLOCK	0
-+#define LCDC_CLKSRC_PERIPHERAL	1
-+#define LCDC_CLKSRC_EXTERNAL	2
-+
-+#define LDICKR_CLKSRC(x)	\
-+	(((x) & 3) << 12)
-+
-+/* LCDC pixclock input divider. Set to 1 at a minimum! */
-+#define LDICKR_CLKDIV(x)	\
-+	((x) & 0x1f)
-+
-+struct sh7760fb_platdata {
-+
-+	/* Set this member to a valid fb_videmode for the display you
-+	 * wish to use.  The following members must be initialized:
-+	 * xres, yres, hsync_len, vsync_len, sync,
-+	 * {left,right,upper,lower}_margin.
-+	 * The driver uses the above members to calculate register values
-+	 * and memory requirements. Other members are ignored but may
-+	 * be used by other framebuffer layer components.
-+	 */
-+	struct fb_videomode *def_mode;
-+
-+	/* LDMTR includes display type and signal polarity.  The
-+	 * HSYNC/VSYNC polarities are derived from the fb_var_screeninfo
-+	 * data above; however the polarities of the following signals
-+	 * must be encoded in the ldmtr member:
-+	 * Display Enable signal (default high-active)  DISPEN_LOWACT
-+	 * Display Data signals (default high-active)   DPOL_LOWACT
-+	 * AC Modulation signal (default off)           MCNT
-+	 * Hsync-During-Vsync suppression (default off) CL1CNT
-+	 * Vsync-during-vsync suppression (default off) CL2CNT
-+	 * NOTE: also set a display type!
-+	 * (one of LDMTR_{STN,DSTN,TFT}_{MONO,COLOR}_{4,8,12,16})
-+	 */
-+	u16 ldmtr;
-+
-+	/* LDDFR controls framebuffer image format (depth, organization)
-+	 * Use ONE of the LDDFR_?BPP_* macros!
-+	 */
-+	u16 lddfr;
-+
-+	/* LDPMMR and LDPSPR control the timing of the power signals
-+	 * for the display. Please read the SH7760 Hardware Manual,
-+	 * Chapters 30.3.17, 30.3.18 and 30.4.6!
-+	 */
-+	u16 ldpmmr;
-+	u16 ldpspr;
-+
-+	/* LDACLNR contains the line numbers after which the AC modulation
-+	 * signal is to toggle. Set to ZERO for TFTs or displays which
-+	 * do not need it. (Chapter 30.3.15 in SH7760 Hardware Manual).
-+	 */
-+	u16 ldaclnr;
-+
-+	/* LDICKR contains information on pixelclock source and config.
-+	 * Please use the LDICKR_CLKSRC() and LDICKR_CLKDIV() macros.
-+	 * minimal value for CLKDIV() must be 1!.
-+	 */
-+	u16 ldickr;
-+
-+	/* set this member to 1 if you wish to use the LCDC's hardware
-+	 * rotation function.  This is limited to displays <= 320x200
-+	 * pixels resolution!
-+	 */
-+	int rotate;		/* set to 1 to rotate 90 CCW */
-+
-+	/* set this to 1 to suppress vsync irq use. */
-+	int novsync;
-+
-+	/* blanking hook for platform. Set this if your platform can do
-+	 * more than the LCDC in terms of blanking (e.g. disable clock
-+	 * generator / backlight power supply / etc.
-+	 */
-+	void (*blank) (int);
-+};
-+
-+#endif /* _ASM_SH_SH7760FB_H */
--- 
-1.5.5.1
+ arch/cris/arch-v10/boot/tools/build.c   |    1 
+ arch/h8300/kernel/process.c             |    1 
+ arch/ia64/mm/init.c                     |    1 
+ arch/m68knommu/kernel/process.c         |    1 
+ arch/m68knommu/kernel/traps.c           |    1 
+ arch/mips/kernel/irixelf.c              |    1 
+ arch/mips/kernel/process.c              |    1 
+ arch/mips/kernel/syscall.c              |    1 
+ arch/powerpc/kernel/softemu8xx.c        |    1 
+ arch/powerpc/kernel/traps.c             |    1 
+ arch/powerpc/platforms/chrp/setup.c     |    1 
+ arch/powerpc/platforms/maple/setup.c    |    1 
+ arch/powerpc/platforms/powermac/setup.c |    1 
+ arch/powerpc/platforms/pseries/setup.c  |    1 
+ include/asm-avr32/a.out.h               |   20 -------------
+ include/asm-blackfin/a.out.h            |   19 -------------
+ include/asm-cris/a.out.h                |   26 -----------------
+ include/asm-h8300/a.out.h               |   20 -------------
+ include/asm-ia64/a.out.h                |   32 ---------------------
+ include/asm-m32r/a.out.h                |   20 -------------
+ include/asm-m68knommu/a.out.h           |    1 
+ include/asm-mips/a.out.h                |   35 ------------------------
+ include/asm-parisc/a.out.h              |   20 -------------
+ include/asm-powerpc/a.out.h             |   20 -------------
+ include/asm-sh/a.out.h                  |   20 -------------
+ include/asm-xtensa/a.out.h              |   29 -------------------
+ 26 files changed, 276 deletions(-)
+
+9cd72b780be8d25cd2deb99a923030f2fe2aeba4 diff --git a/arch/cris/arch-v10/boot/tools/build.c b/arch/cris/arch-v10/boot/tools/build.c
+index 2f9bbb2..c8adef3 100644
+--- a/arch/cris/arch-v10/boot/tools/build.c
++++ b/arch/cris/arch-v10/boot/tools/build.c
+@@ -30,7 +30,6 @@
+ #include <sys/sysmacros.h>
+ #include <unistd.h>	/* contains read/write */
+ #include <fcntl.h>
+-#include <linux/a.out.h>
+ #include <errno.h>
+ 
+ #define MINIX_HEADER 32
+diff --git a/arch/h8300/kernel/process.c b/arch/h8300/kernel/process.c
+index dfbe7ab..a8ef654 100644
+--- a/arch/h8300/kernel/process.c
++++ b/arch/h8300/kernel/process.c
+@@ -34,7 +34,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/interrupt.h>
+ #include <linux/reboot.h>
+ #include <linux/fs.h>
+diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
+index 200100e..f482a90 100644
+--- a/arch/ia64/mm/init.c
++++ b/arch/ia64/mm/init.c
+@@ -21,7 +21,6 @@
+ #include <linux/bitops.h>
+ #include <linux/kexec.h>
+ 
+-#include <asm/a.out.h>
+ #include <asm/dma.h>
+ #include <asm/ia32.h>
+ #include <asm/io.h>
+diff --git a/arch/m68knommu/kernel/process.c b/arch/m68knommu/kernel/process.c
+index 47502d5..3f2d774 100644
+--- a/arch/m68knommu/kernel/process.c
++++ b/arch/m68knommu/kernel/process.c
+@@ -25,7 +25,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/interrupt.h>
+ #include <linux/reboot.h>
+ #include <linux/fs.h>
+diff --git a/arch/m68knommu/kernel/traps.c b/arch/m68knommu/kernel/traps.c
+index ec9aea6..0157b9d 100644
+--- a/arch/m68knommu/kernel/traps.c
++++ b/arch/m68knommu/kernel/traps.c
+@@ -22,7 +22,6 @@
+ #include <linux/mm.h>
+ #include <linux/module.h>
+ #include <linux/types.h>
+-#include <linux/a.out.h>
+ #include <linux/user.h>
+ #include <linux/string.h>
+ #include <linux/linkage.h>
+diff --git a/arch/mips/kernel/irixelf.c b/arch/mips/kernel/irixelf.c
+index 469c723..e068a72 100644
+--- a/arch/mips/kernel/irixelf.c
++++ b/arch/mips/kernel/irixelf.c
+@@ -18,7 +18,6 @@
+ #include <linux/sched.h>
+ #include <linux/mm.h>
+ #include <linux/mman.h>
+-#include <linux/a.out.h>
+ #include <linux/errno.h>
+ #include <linux/init.h>
+ #include <linux/signal.h>
+diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
+index 2c09a44..2040fc5 100644
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -22,7 +22,6 @@
+ #include <linux/personality.h>
+ #include <linux/sys.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/init.h>
+ #include <linux/completion.h>
+ #include <linux/kallsyms.h>
+diff --git a/arch/mips/kernel/syscall.c b/arch/mips/kernel/syscall.c
+index af1bdc8..0d2b609 100644
+--- a/arch/mips/kernel/syscall.c
++++ b/arch/mips/kernel/syscall.c
+@@ -7,7 +7,6 @@
+  * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
+  * Copyright (C) 2001 MIPS Technologies, Inc.
+  */
+-#include <linux/a.out.h>
+ #include <linux/capability.h>
+ #include <linux/errno.h>
+ #include <linux/linkage.h>
+diff --git a/arch/powerpc/kernel/softemu8xx.c b/arch/powerpc/kernel/softemu8xx.c
+index 67d6f68..2489493 100644
+--- a/arch/powerpc/kernel/softemu8xx.c
++++ b/arch/powerpc/kernel/softemu8xx.c
+@@ -23,7 +23,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/interrupt.h>
+ 
+ #include <asm/pgtable.h>
+diff --git a/arch/powerpc/kernel/traps.c b/arch/powerpc/kernel/traps.c
+index 4b5b7ff..c7e499e 100644
+--- a/arch/powerpc/kernel/traps.c
++++ b/arch/powerpc/kernel/traps.c
+@@ -23,7 +23,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/interrupt.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+diff --git a/arch/powerpc/platforms/chrp/setup.c b/arch/powerpc/platforms/chrp/setup.c
+index 116babb..e6b3fac 100644
+--- a/arch/powerpc/platforms/chrp/setup.c
++++ b/arch/powerpc/platforms/chrp/setup.c
+@@ -17,7 +17,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/tty.h>
+ #include <linux/major.h>
+ #include <linux/interrupt.h>
+diff --git a/arch/powerpc/platforms/maple/setup.c b/arch/powerpc/platforms/maple/setup.c
+index 3647147..d4c61c3 100644
+--- a/arch/powerpc/platforms/maple/setup.c
++++ b/arch/powerpc/platforms/maple/setup.c
+@@ -23,7 +23,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/tty.h>
+ #include <linux/string.h>
+ #include <linux/delay.h>
+diff --git a/arch/powerpc/platforms/powermac/setup.c b/arch/powerpc/platforms/powermac/setup.c
+index 00bd016..19c287a 100644
+--- a/arch/powerpc/platforms/powermac/setup.c
++++ b/arch/powerpc/platforms/powermac/setup.c
+@@ -33,7 +33,6 @@
+ #include <linux/ptrace.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/tty.h>
+ #include <linux/string.h>
+ #include <linux/delay.h>
+diff --git a/arch/powerpc/platforms/pseries/setup.c b/arch/powerpc/platforms/pseries/setup.c
+index f5d29f5..577efcd 100644
+--- a/arch/powerpc/platforms/pseries/setup.c
++++ b/arch/powerpc/platforms/pseries/setup.c
+@@ -25,7 +25,6 @@
+ #include <linux/unistd.h>
+ #include <linux/slab.h>
+ #include <linux/user.h>
+-#include <linux/a.out.h>
+ #include <linux/tty.h>
+ #include <linux/major.h>
+ #include <linux/interrupt.h>
+diff --git a/include/asm-avr32/a.out.h b/include/asm-avr32/a.out.h
+deleted file mode 100644
+index e46375a..0000000
+--- a/include/asm-avr32/a.out.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#ifndef __ASM_AVR32_A_OUT_H
+-#define __ASM_AVR32_A_OUT_H
+-
+-struct exec
+-{
+-  unsigned long a_info;		/* Use macros N_MAGIC, etc for access */
+-  unsigned a_text;		/* length of text, in bytes */
+-  unsigned a_data;		/* length of data, in bytes */
+-  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-  unsigned a_syms;		/* length of symbol table data in file, in bytes */
+-  unsigned a_entry;		/* start address */
+-  unsigned a_trsize;		/* length of relocation info for text, in bytes */
+-  unsigned a_drsize;		/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* __ASM_AVR32_A_OUT_H */
+diff --git a/include/asm-blackfin/a.out.h b/include/asm-blackfin/a.out.h
+deleted file mode 100644
+index 6c3d652..0000000
+--- a/include/asm-blackfin/a.out.h
++++ /dev/null
+@@ -1,19 +0,0 @@
+-#ifndef __BFIN_A_OUT_H__
+-#define __BFIN_A_OUT_H__
+-
+-struct exec {
+-	unsigned long a_info;	/* Use macros N_MAGIC, etc for access */
+-	unsigned a_text;	/* length of text, in bytes */
+-	unsigned a_data;	/* length of data, in bytes */
+-	unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-	unsigned a_syms;	/* length of symbol table data in file, in bytes */
+-	unsigned a_entry;	/* start address */
+-	unsigned a_trsize;	/* length of relocation info for text, in bytes */
+-	unsigned a_drsize;	/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif				/* __BFIN_A_OUT_H__ */
+diff --git a/include/asm-cris/a.out.h b/include/asm-cris/a.out.h
+deleted file mode 100644
+index c82e9f9..0000000
+--- a/include/asm-cris/a.out.h
++++ /dev/null
+@@ -1,26 +0,0 @@
+-#ifndef __CRIS_A_OUT_H__
+-#define __CRIS_A_OUT_H__
+-
+-/* we don't support a.out binaries on Linux/CRIS anyway, so this is
+- * not really used but still needed because binfmt_elf.c for some reason
+- * wants to know about a.out even if there is no interpreter available...
+- */
+-
+-struct exec
+-{
+-  unsigned long a_info;		/* Use macros N_MAGIC, etc for access */
+-  unsigned a_text;		/* length of text, in bytes */
+-  unsigned a_data;		/* length of data, in bytes */
+-  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-  unsigned a_syms;		/* length of symbol table data in file, in bytes */
+-  unsigned a_entry;		/* start address */
+-  unsigned a_trsize;		/* length of relocation info for text, in bytes */
+-  unsigned a_drsize;		/* length of relocation info for data, in bytes */
+-};
+-
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif
+diff --git a/include/asm-h8300/a.out.h b/include/asm-h8300/a.out.h
+deleted file mode 100644
+index ded780f..0000000
+--- a/include/asm-h8300/a.out.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#ifndef __H8300_A_OUT_H__
+-#define __H8300_A_OUT_H__
+-
+-struct exec
+-{
+-  unsigned long a_info;		/* Use macros N_MAGIC, etc for access */
+-  unsigned a_text;		/* length of text, in bytes */
+-  unsigned a_data;		/* length of data, in bytes */
+-  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-  unsigned a_syms;		/* length of symbol table data in file, in bytes */
+-  unsigned a_entry;		/* start address */
+-  unsigned a_trsize;		/* length of relocation info for text, in bytes */
+-  unsigned a_drsize;		/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* __H8300_A_OUT_H__ */
+diff --git a/include/asm-ia64/a.out.h b/include/asm-ia64/a.out.h
+deleted file mode 100644
+index 193dcfb..0000000
+--- a/include/asm-ia64/a.out.h
++++ /dev/null
+@@ -1,32 +0,0 @@
+-#ifndef _ASM_IA64_A_OUT_H
+-#define _ASM_IA64_A_OUT_H
+-
+-/*
+- * No a.out format has been (or should be) defined so this file is
+- * just a dummy that allows us to get binfmt_elf compiled.  It
+- * probably would be better to clean up binfmt_elf.c so it does not
+- * necessarily depend on there being a.out support.
+- *
+- * Modified 1998-2002
+- *	David Mosberger-Tang <davidm@hpl.hp.com>, Hewlett-Packard Co.
+- */
+-
+-#include <linux/types.h>
+-
+-struct exec {
+-	unsigned long a_info;
+-	unsigned long a_text;
+-	unsigned long a_data;
+-	unsigned long a_bss;
+-	unsigned long a_entry;
+-};
+-
+-#define N_TXTADDR(x)	0
+-#define N_DATADDR(x)	0
+-#define N_BSSADDR(x)	0
+-#define N_DRSIZE(x)	0
+-#define N_TRSIZE(x)	0
+-#define N_SYMSIZE(x)	0
+-#define N_TXTOFF(x)	0
+-
+-#endif /* _ASM_IA64_A_OUT_H */
+diff --git a/include/asm-m32r/a.out.h b/include/asm-m32r/a.out.h
+deleted file mode 100644
+index ab150f5..0000000
+--- a/include/asm-m32r/a.out.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#ifndef _ASM_M32R_A_OUT_H
+-#define _ASM_M32R_A_OUT_H
+-
+-struct exec
+-{
+-  unsigned long a_info;		/* Use macros N_MAGIC, etc for access */
+-  unsigned a_text;		/* length of text, in bytes */
+-  unsigned a_data;		/* length of data, in bytes */
+-  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-  unsigned a_syms;		/* length of symbol table data in file, in bytes */
+-  unsigned a_entry;		/* start address */
+-  unsigned a_trsize;		/* length of relocation info for text, in bytes */
+-  unsigned a_drsize;		/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* _ASM_M32R_A_OUT_H */
+diff --git a/include/asm-m68knommu/a.out.h b/include/asm-m68knommu/a.out.h
+deleted file mode 100644
+index ce18ef9..0000000
+--- a/include/asm-m68knommu/a.out.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <asm-m68k/a.out.h>
+diff --git a/include/asm-mips/a.out.h b/include/asm-mips/a.out.h
+deleted file mode 100644
+index cad8371..0000000
+--- a/include/asm-mips/a.out.h
++++ /dev/null
+@@ -1,35 +0,0 @@
+-/*
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- * Copyright (C) 1994 - 1999, 2003 by Ralf Baechle
+- */
+-#ifndef _ASM_A_OUT_H
+-#define _ASM_A_OUT_H
+-
+-#ifdef __KERNEL__
+-
+-
+-#endif
+-
+-struct exec
+-{
+-	unsigned long a_info;	/* Use macros N_MAGIC, etc for access */
+-	unsigned a_text;	/* length of text, in bytes */
+-	unsigned a_data;	/* length of data, in bytes */
+-	unsigned a_bss;		/* length of uninitialized data area for
+-				    file, in bytes */
+-	unsigned a_syms;	/* length of symbol table data in file,
+-				   in bytes */
+-	unsigned a_entry;	/* start address */
+-	unsigned a_trsize;	/* length of relocation info for text, in
+-				    bytes */
+-	unsigned a_drsize;	/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* _ASM_A_OUT_H */
+diff --git a/include/asm-parisc/a.out.h b/include/asm-parisc/a.out.h
+deleted file mode 100644
+index eb04e34..0000000
+--- a/include/asm-parisc/a.out.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#ifndef __PARISC_A_OUT_H__
+-#define __PARISC_A_OUT_H__
+-
+-struct exec
+-{
+-  unsigned int a_info;		/* Use macros N_MAGIC, etc for access */
+-  unsigned a_text;		/* length of text, in bytes */
+-  unsigned a_data;		/* length of data, in bytes */
+-  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-  unsigned a_syms;		/* length of symbol table data in file, in bytes */
+-  unsigned a_entry;		/* start address */
+-  unsigned a_trsize;		/* length of relocation info for text, in bytes */
+-  unsigned a_drsize;		/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* __A_OUT_GNU_H__ */
+diff --git a/include/asm-powerpc/a.out.h b/include/asm-powerpc/a.out.h
+deleted file mode 100644
+index 89cead6..0000000
+--- a/include/asm-powerpc/a.out.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#ifndef _ASM_POWERPC_A_OUT_H
+-#define _ASM_POWERPC_A_OUT_H
+-
+-struct exec
+-{
+-	unsigned long a_info;	/* Use macros N_MAGIC, etc for access */
+-	unsigned a_text;	/* length of text, in bytes */
+-	unsigned a_data;	/* length of data, in bytes */
+-	unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-	unsigned a_syms;	/* length of symbol table data in file, in bytes */
+-	unsigned a_entry;	/* start address */
+-	unsigned a_trsize;	/* length of relocation info for text, in bytes */
+-	unsigned a_drsize;	/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* _ASM_POWERPC_A_OUT_H */
+diff --git a/include/asm-sh/a.out.h b/include/asm-sh/a.out.h
+deleted file mode 100644
+index 1f93130..0000000
+--- a/include/asm-sh/a.out.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-#ifndef __ASM_SH_A_OUT_H
+-#define __ASM_SH_A_OUT_H
+-
+-struct exec
+-{
+-  unsigned long a_info;		/* Use macros N_MAGIC, etc for access */
+-  unsigned a_text;		/* length of text, in bytes */
+-  unsigned a_data;		/* length of data, in bytes */
+-  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
+-  unsigned a_syms;		/* length of symbol table data in file, in bytes */
+-  unsigned a_entry;		/* start address */
+-  unsigned a_trsize;		/* length of relocation info for text, in bytes */
+-  unsigned a_drsize;		/* length of relocation info for data, in bytes */
+-};
+-
+-#define N_TRSIZE(a)	((a).a_trsize)
+-#define N_DRSIZE(a)	((a).a_drsize)
+-#define N_SYMSIZE(a)	((a).a_syms)
+-
+-#endif /* __ASM_SH_A_OUT_H */
+diff --git a/include/asm-xtensa/a.out.h b/include/asm-xtensa/a.out.h
+deleted file mode 100644
+index fdf1370..0000000
+--- a/include/asm-xtensa/a.out.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * include/asm-xtensa/a.out.h
+- *
+- * Dummy a.out file. Xtensa does not support the a.out format, but the kernel
+- * seems to depend on it.
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- * Copyright (C) 2001 - 2005 Tensilica Inc.
+- */
+-
+-#ifndef _XTENSA_A_OUT_H
+-#define _XTENSA_A_OUT_H
+-
+-struct exec
+-{
+-  unsigned long a_info;
+-  unsigned a_text;
+-  unsigned a_data;
+-  unsigned a_bss;
+-  unsigned a_syms;
+-  unsigned a_entry;
+-  unsigned a_trsize;
+-  unsigned a_drsize;
+-};
+-
+-#endif /* _XTENSA_A_OUT_H */
 
