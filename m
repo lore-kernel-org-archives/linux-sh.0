@@ -1,40 +1,45 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 01 Jul 2008 12:46:38 +0000
-Subject: [PATCH 00/07] soc_camera: SuperH Mobile CEU support
-Message-Id: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
+Date: Tue, 01 Jul 2008 12:47:07 +0000
+Subject: [PATCH 03/07] soc_camera: Remove vbq_ops and msize
+Message-Id: <20080701124707.30446.214.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: video4linux-list@redhat.com
-Cc: akpm@linux-foundation.org, lethal@linux-sh.org, mchehab@infradead.org, linux-sh@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, akpm@linux-foundation.org, lethal@linux-sh.org, mchehab@infradead.org
 
-These patches add support for the SuperH Mobile CEU interface.
-
-[PATCH 01/07] soc_camera: Remove default spinlock operations
-[PATCH 02/07] soc_camera: Let the host select videobuf_queue type
-[PATCH 03/07] soc_camera: Remove vbq_ops and msize
-[PATCH 04/07] soc_camera: Remove unused file lock pointer
-[PATCH 05/07] soc_camera: Add 16-bit bus width support
-[PATCH 06/07] videobuf: Add physically contiguous queue code
-[PATCH 07/07] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver
-
-The patches can be divided in 3 groups:
- - soc_camera - make videobuf_queue host specific + minor changes
- - videobuf - add support for physically contiguous memory buffers
- - new driver - add the SuperH Mobile CEU driver 
+The struct soc_camera_host members vbq_ops and msize are not needed
+anymore since we now let the soc_camera host manage the videobuf queue.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/media/video/Kconfig                |   16 
- drivers/media/video/Makefile               |    2 
- drivers/media/video/pxa_camera.c           |   21 
- drivers/media/video/sh_mobile_ceu_camera.c |  622 ++++++++++++++++++++++++++++
- drivers/media/video/soc_camera.c           |   52 --
- drivers/media/video/videobuf-dma-contig.c  |  413 ++++++++++++++++++
- include/asm-sh/sh_mobile_ceu.h             |   10 
- include/media/soc_camera.h                 |   16 
- include/media/videobuf-dma-contig.h        |   39 +
- 9 files changed, 1129 insertions(+), 62 deletions(-)
+ drivers/media/video/pxa_camera.c |    2 --
+ include/media/soc_camera.h       |    2 --
+ 2 files changed, 4 deletions(-)
 
+--- 0007/drivers/media/video/pxa_camera.c
++++ work/drivers/media/video/pxa_camera.c	2008-06-12 14:30:25.000000000 +0900
+@@ -1018,8 +1018,6 @@ static struct soc_camera_host_ops pxa_so
+ /* Should be allocated dynamically too, but we have only one. */
+ static struct soc_camera_host pxa_soc_camera_host = {
+ 	.drv_name		= PXA_CAM_DRV_NAME,
+-	.vbq_ops		= &pxa_videobuf_ops,
+-	.msize			= sizeof(struct pxa_buffer),
+ 	.ops			= &pxa_soc_camera_host_ops,
+ };
+ 
+--- 0007/include/media/soc_camera.h
++++ work/include/media/soc_camera.h	2008-06-12 14:30:18.000000000 +0900
+@@ -55,8 +55,6 @@ struct soc_camera_host {
+ 	struct list_head list;
+ 	struct device dev;
+ 	unsigned char nr;				/* Host number */
+-	size_t msize;
+-	struct videobuf_queue_ops *vbq_ops;
+ 	void *priv;
+ 	char *drv_name;
+ 	struct soc_camera_host_ops *ops;
