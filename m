@@ -1,28 +1,40 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 28 Jul 2008 15:03:59 +0000
-Subject: [PATCH 0/3] binfmt_elf_fdpic: auxvec updates.
-Message-Id: <20080728150359.GA16555@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Jul 2008 12:47:26 +0000
+Subject: [PATCH 05/07] soc_camera: Add 16-bit bus width support
+Message-Id: <20080701124726.30446.19600.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Howells <dhowells@redhat.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: video4linux-list@redhat.com
+Cc: linux-sh@vger.kernel.org, akpm@linux-foundation.org, lethal@linux-sh.org, mchehab@infradead.org
 
-This is a tiny series of patches for bringing binfmt_elf_fdpic back in
-line with binfmt_elf in terms of auxiliary vector layout, particularly
-for the new entries that have popped up recently.
+The SuperH Mobile CEU hardware supports 16-bit width bus,
+so extend the soc_camera code with SOCAM_DATAWIDTH_16.
 
-[PATCH 1/3] binfmt_elf_fdpic: Support auxvec base platform string.
-[PATCH 2/3] binfmt_elf_fdpic: Convert initial stack alignment to arch_align_stack().
-[PATCH 3/3] binfmt_elf_fdpic: Wire up AT_EXECFD, AT_EXECFN, AT_SECURE.
-
-These depend on the refactored NEW_AUX_ENT(), so against -next or -mm
-presently.
-
-Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- fs/binfmt_elf_fdpic.c |   91 ++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 66 insertions(+), 25 deletions(-)
+ include/media/soc_camera.h |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- 0008/include/media/soc_camera.h
++++ work/include/media/soc_camera.h	2008-07-01 14:38:34.000000000 +0900
+@@ -153,11 +153,12 @@ static inline struct v4l2_queryctrl cons
+ #define SOCAM_DATAWIDTH_8		(1 << 6)
+ #define SOCAM_DATAWIDTH_9		(1 << 7)
+ #define SOCAM_DATAWIDTH_10		(1 << 8)
+-#define SOCAM_PCLK_SAMPLE_RISING	(1 << 9)
+-#define SOCAM_PCLK_SAMPLE_FALLING	(1 << 10)
++#define SOCAM_DATAWIDTH_16		(1 << 9)
++#define SOCAM_PCLK_SAMPLE_RISING	(1 << 10)
++#define SOCAM_PCLK_SAMPLE_FALLING	(1 << 11)
+ 
+ #define SOCAM_DATAWIDTH_MASK (SOCAM_DATAWIDTH_8 | SOCAM_DATAWIDTH_9 | \
+-			      SOCAM_DATAWIDTH_10)
++			      SOCAM_DATAWIDTH_10 | SOCAM_DATAWIDTH_16)
+ 
+ static inline unsigned long soc_camera_bus_param_compatible(
+ 			unsigned long camera_flags, unsigned long bus_flags)
