@@ -1,66 +1,40 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 01 Jul 2008 05:25:43 +0000
-Subject: follow_page() performance regressions
-Message-Id: <20080701052543.GA4726@linux-sh.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Tue, 01 Jul 2008 15:43:26 +0000
+Subject: Re: follow_page() performance regressions
+Message-Id: <alpine.LFD.1.10.0807010837510.20870@hp.linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080701.132439.68562265.saito@densan.co.jp>
-In-Reply-To: <20080701.132439.68562265.saito@densan.co.jp>
+References: <20080701.132439.68562265.saito@densan.co.jp> <20080701052543.GA4726@linux-sh.org>
+In-Reply-To: <20080701052543.GA4726@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hideo Saito <saito@densan.co.jp>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Hideo Saito <saito@densan.co.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-(adding Linus and l-k to Cc..)
 
-On Tue, Jul 01, 2008 at 01:24:39PM +0900, Hideo Saito wrote:
-> I have a question as to performance of kernel on linux-2.6.25.9, but
-> this may be off-topic, because the problem is not related to the SH
-> architecture directly.
+
+On Tue, 1 Jul 2008, Paul Mundt wrote:
 > 
-> When I tested Hackbench benchmark test on our platform(SH7780, 400MHz),
-> the performance decreases as follows.
-> 
-> The result on linux-2.6.25.9:
-> #tcsh> ./hackbench 40 ; time ./hackbench 40 ; time ./hackbench 40
-> Time: 69.858
-> Time: 69.810
-> Time: 70.356
-> 
-> The result on linux-2.6.25.8:
-> #tcsh> ./hackbench 40 ; time ./hackbench 40 ; time ./hackbench 40
-> Time: 65.353
-> Time: 65.622
-> Time: 65.413
-> 
-> I confirmed that the cause is in the following changes. Isn't this
-> decrease of performance avoided, though it seems that this code is
-> changed in order to handle ZERO_PAGE?
-> 
-> --- a/mm/memory.c
-> +++ b/mm/memory.c
->     pte = *ptep;
->     if (!pte_present(pte))
-> -       goto unlock;
-> +       goto no_page;
->     if ((flags & FOLL_WRITE) && !pte_write(pte))
->         goto unlock;
->     page = vm_normal_page(vma, address, pte);
->     if (unlikely(!page))
-> -       goto unlock;
-> +       goto bad_page;
-> 
->     if (flags & FOLL_GET)
->         get_page(page);
+> So yes, the ZERO_PAGE handling in follow_page() is causing the slow-down here.
 
-git blame points to:
+I suspect it could be any of:
 
-commit 89f5b7da2a6bad2e84670422ab8192382a5aeb9f
-Author: Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Fri Jun 20 11:18:25 2008 -0700
+ - actual code generation differences in follow_page() (some SH person 
+   needs to check that)
 
-    Reinstate ZERO_PAGE optimization in 'get_user_pages()' and fix XIP
+ - some cache issue on SH. ZERO_PAGE is a single page at a fixed virtual 
+   address, while it used to populate the page tables with individual 
+   pages. Normally, this should be *better* for caching, but maybe there 
+   is some conflict? What kind of caches does SH have (virtually indexed?)
 
-...
+ - hackbench relying on follow_page() to populate the page tables, which 
+   it no longer does for anonymous areas (using ZERO_PAGE directly 
+   instead).
 
-So yes, the ZERO_PAGE handling in follow_page() is causing the slow-down here.
+   Again, normally this would speed things up (fewer TLB misses etc), but 
+   if it then causes a new page fault that used to have been covered by 
+   follow_page(), who knows?
+
+What does hackbench actually do? Anybody?
+
+			Linus
