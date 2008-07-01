@@ -1,41 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 05 Jul 2008 02:53:35 +0000
-Subject: [PATCH 00/04] soc_camera: SuperH Mobile CEU support V2
-Message-Id: <20080705025335.27137.98068.sendpatchset@rx1.opensource.se>
+From: Hideo Saito <saito@densan.co.jp>
+Date: Tue, 01 Jul 2008 04:24:39 +0000
+Subject: decrease of performance on linux-2.6.25.9
+Message-Id: <20080701.132439.68562265.saito@densan.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: video4linux-list@redhat.com
-Cc: paulius.zaleckas@teltonika.lt, linux-sh@vger.kernel.org, mchehab@infradead.org, lethal@linux-sh.org, akpm@linux-foundation.org, g.liakhovetski@gmx.de
+To: linux-sh@vger.kernel.org
 
-This is V2 of the SuperH Mobile CEU interface patches.
+Hi all,
 
-[PATCH 01/04] soc_camera: Move spinlocks
-[PATCH 02/04] soc_camera: Add 16-bit bus width support
-[PATCH 03/04] videobuf: Add physically contiguous queue code V2
-[PATCH 04/04] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver V2
+I have a question as to performance of kernel on linux-2.6.25.9, but this may be off-topic, because the problem is not related to the SH architecture directly.
 
-Changes since V1:
- - dropped former V1 patches [01/07]->[04/07]
- - rebased on top of [PATCH] soc_camera: make videobuf independent
- - rewrote spinlock changes into the new [01/04] patch
- - updated the videobuf-dma-contig code with feeback from Paulius Zaleckas
- - fixed the CEU driver to work with the newly updated patches
+When I tested Hackbench benchmark test on our platform(SH7780, 400MHz), the performance decreases as follows.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+The result on linux-2.6.25.9:
+#tcsh> ./hackbench 40 ; time ./hackbench 40 ; time ./hackbench 40
+Time: 69.858
+Time: 69.810
+Time: 70.356
 
- Applies on top of 2.6.26-rc8-next-20080703 together with
- "[PATCH] soc_camera: make videobuf independent".
+The result on linux-2.6.25.8:
+#tcsh> ./hackbench 40 ; time ./hackbench 40 ; time ./hackbench 40
+Time: 65.353
+Time: 65.622
+Time: 65.413
 
- drivers/media/video/Kconfig                |   13 
- drivers/media/video/Makefile               |    2 
- drivers/media/video/pxa_camera.c           |   17 
- drivers/media/video/sh_mobile_ceu_camera.c |  623 ++++++++++++++++++++++++++++
- drivers/media/video/soc_camera.c           |   39 -
- drivers/media/video/videobuf-dma-contig.c  |  417 ++++++++++++++++++
- include/asm-sh/sh_mobile_ceu.h             |   10 
- include/media/soc_camera.h                 |   12 
- include/media/videobuf-dma-contig.h        |   32 +
- 9 files changed, 1108 insertions(+), 57 deletions(-)
+I confirmed that the cause is in the following changes. Isn't this decrease of performance avoided, though it seems that this code is changed in order to handle ZERO_PAGE?
+
+--- a/mm/memory.c
++++ b/mm/memory.c
+    pte = *ptep;
+    if (!pte_present(pte))
+-       goto unlock;
++       goto no_page;
+    if ((flags & FOLL_WRITE) && !pte_write(pte))
+        goto unlock;
+    page = vm_normal_page(vma, address, pte);
+    if (unlikely(!page))
+-       goto unlock;
++       goto bad_page;
+
+    if (flags & FOLL_GET)
+        get_page(page);
