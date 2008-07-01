@@ -1,63 +1,184 @@
-From: Ben Dooks <ben-linux@fluff.org>
-Date: Fri, 18 Jul 2008 07:54:26 +0000
-Subject: Re: [PATCH 01/05] resource: add resource_size()
-Message-Id: <20080718075426.GK24620@fluff.org.uk>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Tue, 01 Jul 2008 02:04:29 +0000
+Subject: Re: [PATCH v2 1/4] video: sh7760fb: SH7760/SH7763 LCDC framebuffer
+Message-Id: <486990AD.2040503@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080718074002.32713.73442.sendpatchset@rx1.opensource.se> <20080718074010.32713.22016.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080718074010.32713.22016.sendpatchset@rx1.opensource.se>
+References: <48632CAF.3090703@renesas.com> <20080626074555.GA408@linux-sh.org>
+In-Reply-To: <20080626074555.GA408@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, gregkh@suse.de, lethal@linux-sh.org, i2c@lm-sensors.org, akpm@linux-foundation.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, linuc-fbdev <Linux-fbdev-devel@lists.sourceforge.net>, Linux-sh <linux-sh@vger.kernel.org>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Manuel Lauss <mano@roarinelk.homelinux.net>
 
-On Fri, Jul 18, 2008 at 04:40:10PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
+Paul Mundt wrote:
+> On Thu, Jun 26, 2008 at 02:44:15PM +0900, Nobuhiro Iwamatsu wrote:
+>> Main source code of Driver for the LCDC interface on the SH7760 and SH7763 SoCs.
+>>
+>> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
+>> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+>> ---
+>>  drivers/video/sh7760fb.c |  671 ++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 files changed, 671 insertions(+), 0 deletions(-)
+>>  create mode 100644 drivers/video/sh7760fb.c
+>>
+> It really doesn't make any sense to split this patch up in to parts, as
+> none of the parts is useful or insular without the rest. The whole point
+> of splitting a patch out in to a series is to isolate changes logically
+> and in an incremental fashion, which obviously doesn't apply here.
 > 
-> Avoid one-off errors by introducing a resource_size() function.
+>> +#include <linux/delay.h>
+>> +#include <linux/dma-mapping.h>
+>> +#include <linux/fb.h>
+>> +#include <linux/gfp.h>
+>> +#include <linux/interrupt.h>
+>> +#include <linux/kernel.h>
+>> +#include <linux/mm.h>
+>> +#include <linux/module.h>
+>> +#include <linux/platform_device.h>
+>> +
+>> +#include <linux/io.h>
+>> +#include <asm/sh7760fb.h>
+>> +
+>> +#define fb_msg(args...)        \
+>> +       do { printk(KERN_ALERT "sh7760fb: " args); } while (0)
+>> +#if 0
+>> +#define dbg(args...) fb_msg(args)
+>> +#else
+>> +#define dbg(fmt, args...) do { } while (0)
+>> +#endif
+>> +
+> Use dev_dbg() instead, then you get the pretty printing with the driver
+> name from the struct device.
 > 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-
-A resource_size definition is a good idea, given the number of
-times it has been re-implemented throughout the kernel.
-
-> ---
+>> +/*
+>> + * some bits of the colormap registers should be written as zero.
+>> + * create a mask for that.
+>> + */
+>> +#define SH7760FB_PALETTE_MASK    0x00f8fcf8
+>> +
+>> +/* The LCDC dma engine always sets bits 27-26 to 1: this is Area3 */
+>> +#define SH7760FB_DMA_MASK      0x0C000000
+>> +
+> These should probably be in the header with all of the other related
+> bits.
 > 
->  include/linux/ioport.h |    4 ++++
->  kernel/resource.c      |    2 +-
->  2 files changed, 5 insertions(+), 1 deletion(-)
+>> +static inline void OUT16(struct sh7760fb_par *par, int reg, unsigned short v)
+>> +{
+>> +	iowrite16(v, par->base + reg);
+>> +}
+>> +
+>> +static inline unsigned short IN16(struct sh7760fb_par *par, int reg)
+>> +{
+>> +	return ioread16(par->base + reg);
+>> +}
+>> +
+>> +static inline void OUT32(struct sh7760fb_par *par, int reg, unsigned long v)
+>> +{
+>> +	iowrite32(v, par->base + reg);
+>> +}
+>> +
+>> +static inline unsigned long IN32(struct sh7760fb_par *par, int reg)
+>> +{
+>> +	return ioread32(par->base + reg);
+>> +}
+>> +
+> There is effectively no point in using wrappers here, just use the
+> ioreadX() routines directly.
 > 
-> --- 0001/include/linux/ioport.h
-> +++ work/include/linux/ioport.h	2008-07-09 12:59:04.000000000 +0900
-> @@ -113,6 +113,10 @@ extern int allocate_resource(struct reso
->  int adjust_resource(struct resource *res, resource_size_t start,
->  		    resource_size_t size);
->  resource_size_t resource_alignment(struct resource *res);
-> +static inline resource_size_t resource_size(struct resource *res)
-> +{
-> +	return res->end - res->start + 1;
-> +}
->  
->  /* Convenience shorthand with allocation */
->  #define request_region(start,n,name)	__request_region(&ioport_resource, (start), (n), (name))
-> --- 0001/kernel/resource.c
-> +++ work/kernel/resource.c	2008-07-09 12:59:41.000000000 +0900
-> @@ -490,7 +490,7 @@ resource_size_t resource_alignment(struc
->  {
->  	switch (res->flags & (IORESOURCE_SIZEALIGN | IORESOURCE_STARTALIGN)) {
->  	case IORESOURCE_SIZEALIGN:
-> -		return res->end - res->start + 1;
-> +		return resource_size(res);
->  	case IORESOURCE_STARTALIGN:
->  		return res->start;
->  	default:
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+>> +static void sh7760fb_wait_vsync(struct fb_info *info)
+>> +{
+>> +	struct sh7760fb_par *par = info->par;
+>> +
+>> +	if (par->pd->novsync)
+>> +		return;
+>> +/*
+>> +	while (IN16(par, LDINTR) & 1)
+>> +		OUT16(par, LDINTR, 0x1100);
+>> +*/
+>> +}
+>> +
+> This function doesn't actually do anything, so just kill it off.
+> 
+>> +
+>> +/*
+>> + * wait_for_lps - wait until power supply has reached a certain state.
+>> + * @val:       bitmask to wait for.
+>> + */
+>> +static void wait_for_lps(struct sh7760fb_par *par, int val)
+>> +{
+>> +	int i = 100;
+>> +	while (--i && ((IN16(par, LDPMMR) & 3) != val))
+>> +		msleep(1);
+>> +}
+>> +
+> You don't check for a timeout here, which you can easily check for and
+> hand down an error value for sh7760fb_blank() to return.
+> 
+>> +	if (!tmo) {
+>> +		ret = 1;
+>> +		pr_debug("sh7760fb: no palette access!\n");
+>> +		goto out;
+>> +	}
+>> +
+> Here also, switch to dev_dbg() so you can get rid of the sh7760fb:
+> prefixing and be consistent with the other debug messages.
+> 
+>> +	par->ioarea = request_mem_region(res->start,
+>> +			(res->end - res->start), pdev->name);
+>> +	if (!par->ioarea) {
+>> +		dev_err(&pdev->dev, "mmio area busy\n");
+>> +		ret = -EBUSY;
+>> +		goto out_fb;
+>> +	}
+>> +
+>> +	par->base = ioremap_nocache(res->start, (res->end - res->start));
+>> +	if (!par->base) {
+>> +		dev_err(&pdev->dev, "cannot remap\n");
+>> +		ret = -ENODEV;
+>> +		goto out_res;
+>> +	}
+>> +
+> You have an off-by-1 error here, ioremap() needs (res->end - res->start) + 1,
+> while request_mem_region() wants (res->end - res->start).
+> 
+>> +	fb_msg("memory at phys 0x%08lx-0x%08lx, size %ld KiB\n",
+>> +	       (unsigned long)par->fbdma,
+>> +	       (unsigned long)(par->fbdma + info->screen_size - 1),
+>> +		   info->screen_size >> 10);
+>> +
+> This is probably useful to have as a dev_info() or so instead of a debug
+> message..
+> 
+>> +#ifdef CONFIG_PM
+>> +static int sh7760fb_suspend(struct platform_device *dev, u32 level)
+>> +{
+>> +	dbg("sh7760fb_suspend()\n");
+>> +	return 0;
+>> +}
+>> +
+>> +static int sh7760fb_resume(struct platform_device *dev, u32 level)
+>> +{
+>> +	dbg("sh7760fb_resume()\n");
+>> +	return 0;
+>> +}
+> 
+> Fascinating messages. Please kill them.
+> 
+>> +MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
+>> +MODULE_DESCRIPTION("FBdev for SH7760/63 integrated LCD Controller");
+>> +MODULE_LICENSE("GPL");
+> 
+> Despite the fact that Manuel wrote the initial version, you seem to be
+> the one hacking on it and posting it for submission. MODULE_AUTHOR()
+> should reflect the active maintainer or at least point to a neutral place
+> where users can get help, as this is the first thing users will see with
+> modinfo and such. If you are going to maintain this together, also add
+> your name in to MODULE_AUTHOR().
+> 
+Thank you for your comments.
+I will apply your comment and update this.
 
--- 
-Ben (ben@fluff.org, http://www.fluff.org/)
+Best regards,
+  Nobuhiro
 
-  'a smiley only costs 4 bytes'
