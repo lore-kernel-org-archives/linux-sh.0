@@ -1,31 +1,32 @@
-From: Manuel Lauss <mano@roarinelk.homelinux.net>
-Date: Tue, 15 Jul 2008 10:47:34 +0000
-Subject: Re: [Fwd: Gentoo install]
-Message-Id: <20080715104734.GB27297@roarinelk.homelinux.net>
+From: Nicholas Beck <nbeck@mpc-data.co.uk>
+Date: Tue, 01 Jul 2008 10:33:11 +0000
+Subject: Re: [PATCH] Touch screen driver for the SuperH MigoR board
+Message-Id: <486A07E7.1070906@mpc-data.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1216070824.6459.6.camel@localhost.localdomain>
-In-Reply-To: <1216070824.6459.6.camel@localhost.localdomain>
+References: <20080321111630.13138.14500.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080321111630.13138.14500.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: magnus.damm@gmail.com
+Cc: linux-sh@vger.kernel.org, linux-input@vger.kernel.org
 
-On Tue, Jul 15, 2008 at 11:42:36AM +0100, Adrian McMenamin wrote:
-> On Tue, July 15, 2008 10:08 am, Paul Mundt wrote:
-> > On Mon, Jul 14, 2008 at 10:27:04PM +0100, Adrian McMenamin wrote:
-> >>
-> >> Is there a guide anywhere to how I can install gentoo on my Dreamcast?
-> >>
-> > What you are probably going to end up having to do is stick with binary
-> > distributions of the packages anyways. While you can toss everything over
-> > the fence to a cross-compiler on a slightly less neutered host, you are
-> > still going to run in to a world of pain on the target side with things
-> > like updating the portage cache.
-> 
-> I am right in thinking, though, aren't I, that there is no automatic way
-> of pulling in binary packages?
+Hi Magnus,
 
-there's "emerge -K <pkg>" provided you have a repository.
+Firstly, thanks for the great work. I have one issue with the touch
+screen driver for the MigoR board though.
 
--- 
- Manuel Lauss
+I don't get any BTN_TOUCH release events using the touch screen driver
+for the MigoR board. Do you experience the same problem?
+
+I only see the first BTN_TOUCH down and then the absolute x-y pairs. The
+input framework gobbles up the subsequent BTN_TOUCH down events until it
+detects a BTN_TOUCH release event, as it should do. But the release
+event does not occur at the moment (for me at least), so a tap cannot be
+performed.
+
+I have a patch that adds a timer to perform the BTN_TOUCH release event
+(kind of like a WDT), that I can submit if this is of any interest?
+
+Thanks in advance,
+Nicholas Beck
