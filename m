@@ -1,23 +1,66 @@
-From: Manuel Lauss <mlau@msc-ge.com>
-Date: Thu, 31 Jul 2008 05:13:19 +0000
-Subject: Re: i2c_board_info use
-Message-Id: <489149EF.3050501@msc-ge.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 01 Jul 2008 05:25:43 +0000
+Subject: follow_page() performance regressions
+Message-Id: <20080701052543.GA4726@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48906795.9040101@spesonline.com>
-In-Reply-To: <48906795.9040101@spesonline.com>
+References: <20080701.132439.68562265.saito@densan.co.jp>
+In-Reply-To: <20080701.132439.68562265.saito@densan.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Hideo Saito <saito@densan.co.jp>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>
 
-Luca Santini wrote:
-> Thanks Manuel.
-> I'm trying the conversion.
-> A last (i hope for you) question: i cross-compiled alsa-lib and 
-> alsa-utils but i don't know how to configure alsa without alsaconf and 
-> alsamixer (no lspci, no lsmod, no ncurses avaiable)
+(adding Linus and l-k to Cc..)
 
-As far as I know, you just need to install alsa-lib correctly on the
-target (make sure you have a /usr/share/alsa/alsa.conf file).
+On Tue, Jul 01, 2008 at 01:24:39PM +0900, Hideo Saito wrote:
+> I have a question as to performance of kernel on linux-2.6.25.9, but
+> this may be off-topic, because the problem is not related to the SH
+> architecture directly.
+> 
+> When I tested Hackbench benchmark test on our platform(SH7780, 400MHz),
+> the performance decreases as follows.
+> 
+> The result on linux-2.6.25.9:
+> #tcsh> ./hackbench 40 ; time ./hackbench 40 ; time ./hackbench 40
+> Time: 69.858
+> Time: 69.810
+> Time: 70.356
+> 
+> The result on linux-2.6.25.8:
+> #tcsh> ./hackbench 40 ; time ./hackbench 40 ; time ./hackbench 40
+> Time: 65.353
+> Time: 65.622
+> Time: 65.413
+> 
+> I confirmed that the cause is in the following changes. Isn't this
+> decrease of performance avoided, though it seems that this code is
+> changed in order to handle ZERO_PAGE?
+> 
+> --- a/mm/memory.c
+> +++ b/mm/memory.c
+>     pte = *ptep;
+>     if (!pte_present(pte))
+> -       goto unlock;
+> +       goto no_page;
+>     if ((flags & FOLL_WRITE) && !pte_write(pte))
+>         goto unlock;
+>     page = vm_normal_page(vma, address, pte);
+>     if (unlikely(!page))
+> -       goto unlock;
+> +       goto bad_page;
+> 
+>     if (flags & FOLL_GET)
+>         get_page(page);
 
-Manuel Lauss
+git blame points to:
+
+commit 89f5b7da2a6bad2e84670422ab8192382a5aeb9f
+Author: Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Fri Jun 20 11:18:25 2008 -0700
+
+    Reinstate ZERO_PAGE optimization in 'get_user_pages()' and fix XIP
+
+...
+
+So yes, the ZERO_PAGE handling in follow_page() is causing the slow-down here.
