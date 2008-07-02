@@ -1,32 +1,55 @@
-From: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
-Date: Mon, 14 Jul 2008 12:20:34 +0000
-Subject: Re: [PATCH 04/06] videobuf: Add physically contiguous queue code
-Message-Id: <487B4492.2020301@teltonika.lt>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Wed, 02 Jul 2008 02:20:24 +0000
+Subject: [PATCH] SH7619 add ethernet controler support
+Message-Id: <87iqvp6n87.wl%ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
-	<20080714120240.4806.15664.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080714120240.4806.15664.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: video4linux-list@redhat.com
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Magnus Damm wrote:
-> This is V3 of the physically contiguous videobuf queues patch.
-> Useful for hardware such as the SuperH Mobile CEU which doesn't
-> support scatter gatter bus mastering.
-                   gather
-                      ^
-> 
-> Since it may be difficult to allocate large chunks of physically
-> contiguous memory after some uptime due to fragmentation, this code
-> allocates memory using dma_alloc_coherent(). Architectures supporting
-> dma_declare_coherent_memory() can easily avoid fragmentation issues
-> by using dma_declare_coherent_memory() to force dma_alloc_coherent()
-> to allocate from a certain pre-allocated memory area.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+- Add EtherC + PHY resource define.
 
-Tested-by: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
+diff --git a/arch/sh/kernel/cpu/sh2/setup-sh7619.c b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+index cc530f4..56e5878 100644
+--- a/arch/sh/kernel/cpu/sh2/setup-sh7619.c
++++ b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+@@ -96,8 +96,32 @@ static struct platform_device sci_device = {
+ 	},
+ };
+ 
++static struct resource eth_resources[] = {
++	[0] = {
++		.start = 0xfb000000,
++		.end =   0xfb0001c8,
++		.flags = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start = 85,
++		.end = 85,
++		.flags = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device eth_device = {
++	.name = "sh-eth",
++	.id	= -1,
++	.dev = {
++		.platform_data = (void *)1,
++	},
++	.num_resources = ARRAY_SIZE(eth_resources),
++	.resource = eth_resources,
++};
++
+ static struct platform_device *sh7619_devices[] __initdata = {
+ 	&sci_device,
++	&eth_device,
+ };
+ 
+ static int __init sh7619_devices_setup(void)
+
+-- 
+Yoshinori Sato
+<ysato@users.sourceforge.jp>
