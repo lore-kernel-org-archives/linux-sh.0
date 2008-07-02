@@ -1,53 +1,46 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Wed, 02 Jul 2008 02:50:28 +0000
-Subject: Re: [PATCH 02/07] soc_camera: Let the host select videobuf_queue type
-Message-Id: <aec7e5c30807011950u1ae2cf63u9ac03cdcd50fb755@mail.gmail.com>
+From: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
+Date: Wed, 02 Jul 2008 07:27:12 +0000
+Subject: Re: [PATCH 02/07] soc_camera: Let the host select videobuf_queue
+Message-Id: <486B2DD0.7060903@teltonika.lt>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
 	<20080701124657.30446.28078.sendpatchset@rx1.opensource.se>
-	<Pine.LNX.4.64.0807012158510.4203@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0807012158510.4203@axis700.grange>
+In-Reply-To: <20080701124657.30446.28078.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: video4linux-list@redhat.com, linux-sh@vger.kernel.org, lethal@linux-sh.org, mchehab@infradead.org, paulius.zaleckas@teltonika.lt, akpm@linux-foundation.org
+To: video4linux-list@redhat.com
+Cc: linux-sh@vger.kernel.org
 
-[CC Paulius]
+Magnus Damm wrote:
+> This patch makes it possible for hosts (soc_camera drivers for the soc)
+> to select a different videobuf queue than VIDEOBUF_DMA_SG. This is needed
+> by the SuperH Mobile CEU hardware which requires physically contiguous
+> buffers. While at it, rename the spinlock callbacks to file callbacks.
+> 
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> ---
+> 
+>  drivers/media/video/Kconfig      |    4 ++--
+>  drivers/media/video/pxa_camera.c |   15 ++++++++++++---
+>  drivers/media/video/soc_camera.c |   27 +++++++--------------------
+>  include/media/soc_camera.h       |    6 +++---
+>  4 files changed, 24 insertions(+), 28 deletions(-)
+> 
+> --- 0001/drivers/media/video/Kconfig
+> +++ work/drivers/media/video/Kconfig	2008-07-01 13:05:48.000000000 +0900
+> @@ -901,8 +901,7 @@ endif # V4L_USB_DRIVERS
+>  
+>  config SOC_CAMERA
+>  	tristate "SoC camera support"
+> -	depends on VIDEO_V4L2 && HAS_DMA
+> -	select VIDEOBUF_DMA_SG
+> +	depends on VIDEO_V4L2
 
-On Wed, Jul 2, 2008 at 5:02 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Tue, 1 Jul 2008, Magnus Damm wrote:
->
->> This patch makes it possible for hosts (soc_camera drivers for the soc)
->> to select a different videobuf queue than VIDEOBUF_DMA_SG. This is needed
->> by the SuperH Mobile CEU hardware which requires physically contiguous
->> buffers. While at it, rename the spinlock callbacks to file callbacks.
->>
->> Signed-off-by: Magnus Damm <damm@igel.co.jp>
->
-> I'm afraid, this patch conflicts with an earlier one by Paulius Zaleckas:
-> http://marc.info/?l=linux-video&m1438688924771&w=2, which I've already
-> acked, and which, I think, makes videobuf handling more generic than
-> yours. Could you please have a look if you can use it, if yes - rebase
-> your patch-set on it (I think, some other your patches will have to be
-> changed then too). If there's anything that you cannot use there, we'll
-> have to see how we can satisfy all the requirements.
+Bug here. You won't be able to compile soc_camera without host driver
+or host driver as module. SOC_CAMERA has to select VIDEOBUF_GEN!
 
-My patches are similar to Paulius change above, but I also clean up
-the spinlock handling - since the videobuf queue stuff is moved into
-the host driver there is no longer any point to keep the spinlock
-callbacks and the icf->lock pointer inside soc_camera.c.
+>  	help
+>  	  SoC Camera is a common API to several cameras, not connecting
+>  	  over a bus like PCI or USB. For example some i2c camera connected
 
-If you're interested in cleaning up the spinlock stuff then it's a tad
-difficult to do that on top of Paulius code IMO. I'd say my patches
-01-04 does the same as Paulis patch, but also removes redundant
-spinlock code.
-
-Let me know what you think. I'm more than happy to build on top of
-Paulius patch, but I wonder if we really should keep the redundant
-spinlock code...
-
-Thanks!
-
-/ magnus
