@@ -1,36 +1,67 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 18 Jul 2008 22:48:08 +0000
-Subject: Re: [PATCH 05/06] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver
-Message-Id: <Pine.LNX.4.64.0807190046260.32334@axis700.grange>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Thu, 03 Jul 2008 01:45:27 +0000
+Subject: Re: sh64 build error - sh, kbuild or binutils problem?
+Message-Id: <8763rng2q0.wl%ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
-	<20080714120249.4806.66136.sendpatchset@rx1.opensource.se>
-	<Pine.LNX.4.64.0807180918160.13569@axis700.grange>
-	<aec7e5c30807180107g6d2f55fdh917da10963f3df20@mail.gmail.com>
-	<Pine.LNX.4.64.0807181015470.14224@axis700.grange>
-	<20080718214644.GB21846@linux-sh.org>
-	<Pine.LNX.4.64.0807190009550.32334@axis700.grange>
-	<20080718222713.GA18822@linux-sh.org>
-In-Reply-To: <20080718222713.GA18822@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: video4linux-list@redhat.com, linux-sh@vger.kernel.org, Mauro Carvalho Chehab <mchehab@infradead.org>, paulius.zaleckas@teltonika.lt, akpm@linux-foundation.org
+To: linux-sh@vger.kernel.org
 
-On Sat, 19 Jul 2008, Paul Mundt wrote:
+At Sun, 1 Jun 2008 14:30:47 +0900,
+Paul Mundt wrote:
+> 
+> On Sat, May 31, 2008 at 11:22:39PM +0300, Adrian Bunk wrote:
+> > Minimal example demonstrating the problem:
+> > 
+> > $ sh64-linux-ar rcs tmp.o
+> > $ sh64-linux-ld -EL -r -o tmp2.o tmp.o
+> > $ sh64-linux-ld -EL -r -o out.o tmp2.o 
+> > sh64-linux-ld: sh3 architecture of input file `tmp2.o' is incompatible with sh5 output
+> > $ 
+> > 
+> Yes, it's a binutils bug. I've hit this on SH-2A zImage builds too, and
+> hacked together a patch for it. I'll see about fixing it up fo sh64 too
+> and then posting it to the list.
 
-> If you have an IORESOURCE_MEM resource in your platform device, the
-> iomem_resource pointer gets referenced, just as with
-> request_mem_region(), and they both go through __request_region(). The
-> only difference is that request_mem_region() doesn't permit nesting,
-> while insert_resource() does. There's nothing else going on here.
+I think ld is strict machine type check.
 
-Indeed, I was so used to request_mem_region() that I didn't think about it 
-in terms of "struct resource" management. I stand corrected.
+This is workaround.
+SH-2A build success.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
+diff -uN ../org/arch/sh/boot/compressed/Makefile_32 arch/sh/boot/compressed/Makefile_32
+--- org/arch/sh/boot/compressed/Makefile_32	2008-07-01 00:34:41.000000000 -0400
++++ arch/sh/boot/compressed/Makefile_32	2008-07-02 21:21:57.000000000 -0400
+@@ -35,8 +35,7 @@
+ $(obj)/vmlinux.bin.gz: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,gzip)
+ 
+-LDFLAGS_piggy.o := -r --format binary --oformat elf32-sh-linux -T
+ OBJCOPYFLAGS += -R .empty_zero_page
+ 
+-$(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/vmlinux.bin.gz FORCE
+-	$(call if_changed,ld)
++$(obj)/piggy.o: $(obj)/piggy.S $(obj)/vmlinux.bin.gz FORCE
++	$(call if_changed,as_o_S)
+diff -uN ../org/arch/sh/boot/compressed/piggy.S arch/sh/boot/compressed/piggy.S
+--- ../org/arch/sh/boot/compressed/piggy.S	1969-12-31 19:00:00.000000000 -0500
++++ arch/sh/boot/compressed/piggy.S	2008-07-02 21:15:05.000000000 -0400
+@@ -0,0 +1,8 @@
++	.global	input_len, input_data
++	.data
++input_len:
++	.long	input_data_end - input_data
++input_data:
++	.incbin	"arch/sh/boot/compressed/vmlinux.bin.gz"
++input_data_end:
++	.end
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+
+-- 
+Yoshinori Sato
+<ysato@users.sourceforge.jp>
