@@ -1,37 +1,188 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Fri, 18 Jul 2008 01:14:02 +0000
-Subject: Re: [PATCH] sh: Add SuperH Mobile MSTPCR bits to clock framework
-Message-Id: <aec7e5c30807171814k490e1fe9p4a0d35455314ca3f@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 05 Jul 2008 02:53:45 +0000
+Subject: [PATCH 01/04] soc_camera: Move spinlocks
+Message-Id: <20080705025345.27137.74420.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080717095615.19566.83528.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080717095615.19566.83528.sendpatchset@rx1.opensource.se>
+References: <20080705025335.27137.98068.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080705025335.27137.98068.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: video4linux-list@redhat.com
+Cc: paulius.zaleckas@teltonika.lt, linux-sh@vger.kernel.org, mchehab@infradead.org, lethal@linux-sh.org, akpm@linux-foundation.org, g.liakhovetski@gmx.de
 
-On Fri, Jul 18, 2008 at 7:41 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Thu, Jul 17, 2008 at 06:56:15PM +0900, Magnus Damm wrote:
->> +#define DECLARE_MSTPCRN(regnr, bitnr, bitstr)                \
->> +{                                                    \
->> +     .name = "mstp" __stringify(regnr) bitstr,       \
->> +     .arch_flags = bitnr,                            \
->> +     .ops = &sh7722_mstpcr ## regnr ## _clk_ops,     \
->> +}
->> +
->> +#define DECLARE_MSTPCR(regnr) \
->> +     DECLARE_MSTPCRN(regnr, 31, "31"), \
->
-> This looks a bit clumsy. Why can't you __stringify bitnr and paste that
-> against the stringified regnr? You may not be able to use the helper
-> macros directly, but you can certainly abuse the pre-processor in such a
-> way.
+This patch moves the spinlock handling from soc_camera.c to the actual
+camera host driver. The spinlock alloc/free callbacks are replaced with
+code in init_videobuf().
 
-I wanted to do it that way but I couldn't figure out how to create
-clock names identical to the data sheet - for instance "mstp209".
-Using stringified regnr and bitnr i could only come up with "mstp29",
-ie the prefix "0" in bitnr is missing.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Thanks,
+ drivers/media/video/pxa_camera.c |   17 ++++------------
+ drivers/media/video/soc_camera.c |   39 --------------------------------------
+ include/media/soc_camera.h       |    5 ----
+ 3 files changed, 7 insertions(+), 54 deletions(-)
 
-/ magnus
+--- 0002/drivers/media/video/pxa_camera.c
++++ work/drivers/media/video/pxa_camera.c	2008-07-04 17:24:53.000000000 +0900
+@@ -583,12 +583,15 @@ static struct videobuf_queue_ops pxa_vid
+ 	.buf_release    = pxa_videobuf_release,
+ };
+ 
+-static void pxa_camera_init_videobuf(struct videobuf_queue *q, spinlock_t *lock,
++static void pxa_camera_init_videobuf(struct videobuf_queue *q,
+ 			      struct soc_camera_device *icd)
+ {
++	struct soc_camera_host *ici = to_soc_camera_host(icd->dev.parent);
++	struct pxa_camera_dev *pcdev = ici->priv;
++
+ 	/* We must pass NULL as dev pointer, then all pci_* dma operations
+ 	 * transform to normal dma_* ones. */
+-	videobuf_queue_sg_init(q, &pxa_videobuf_ops, NULL, lock,
++	videobuf_queue_sg_init(q, &pxa_videobuf_ops, NULL, &pcdev->lock,
+ 				V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_FIELD_NONE,
+ 				sizeof(struct pxa_buffer), icd);
+ }
+@@ -994,15 +997,6 @@ static int pxa_camera_querycap(struct so
+ 	return 0;
+ }
+ 
+-static spinlock_t *pxa_camera_spinlock_alloc(struct soc_camera_file *icf)
+-{
+-	struct soc_camera_host *ici -		to_soc_camera_host(icf->icd->dev.parent);
+-	struct pxa_camera_dev *pcdev = ici->priv;
+-
+-	return &pcdev->lock;
+-}
+-
+ static struct soc_camera_host_ops pxa_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= pxa_camera_add_device,
+@@ -1015,7 +1009,6 @@ static struct soc_camera_host_ops pxa_so
+ 	.querycap	= pxa_camera_querycap,
+ 	.try_bus_param	= pxa_camera_try_bus_param,
+ 	.set_bus_param	= pxa_camera_set_bus_param,
+-	.spinlock_alloc	= pxa_camera_spinlock_alloc,
+ };
+ 
+ /* Should be allocated dynamically too, but we have only one. */
+--- 0002/drivers/media/video/soc_camera.c
++++ work/drivers/media/video/soc_camera.c	2008-07-04 17:24:53.000000000 +0900
+@@ -183,7 +183,6 @@ static int soc_camera_open(struct inode 
+ 	struct soc_camera_device *icd;
+ 	struct soc_camera_host *ici;
+ 	struct soc_camera_file *icf;
+-	spinlock_t *lock;
+ 	int ret;
+ 
+ 	icf = vmalloc(sizeof(*icf));
+@@ -210,13 +209,6 @@ static int soc_camera_open(struct inode 
+ 	}
+ 
+ 	icf->icd = icd;
+-
+-	icf->lock = ici->ops->spinlock_alloc(icf);
+-	if (!icf->lock) {
+-		ret = -ENOMEM;
+-		goto esla;
+-	}
+-
+ 	icd->use_count++;
+ 
+ 	/* Now we really have to activate the camera */
+@@ -234,17 +226,12 @@ static int soc_camera_open(struct inode 
+ 	file->private_data = icf;
+ 	dev_dbg(&icd->dev, "camera device open\n");
+ 
+-	ici->ops->init_videobuf(&icf->vb_vidq, icf->lock, icd);
++	ici->ops->init_videobuf(&icf->vb_vidq, icd);
+ 
+ 	return 0;
+ 
+ 	/* All errors are entered with the video_lock held */
+ eiciadd:
+-	lock = icf->lock;
+-	icf->lock = NULL;
+-	if (ici->ops->spinlock_free)
+-		ici->ops->spinlock_free(lock);
+-esla:
+ 	module_put(ici->ops->owner);
+ emgi:
+ 	module_put(icd->ops->owner);
+@@ -260,15 +247,11 @@ static int soc_camera_close(struct inode
+ 	struct soc_camera_device *icd = icf->icd;
+ 	struct soc_camera_host *ici = to_soc_camera_host(icd->dev.parent);
+ 	struct video_device *vdev = icd->vdev;
+-	spinlock_t *lock = icf->lock;
+ 
+ 	mutex_lock(&video_lock);
+ 	icd->use_count--;
+ 	if (!icd->use_count)
+ 		ici->ops->remove(icd);
+-	icf->lock = NULL;
+-	if (ici->ops->spinlock_free)
+-		ici->ops->spinlock_free(lock);
+ 	module_put(icd->ops->owner);
+ 	module_put(ici->ops->owner);
+ 	mutex_unlock(&video_lock);
+@@ -764,21 +747,6 @@ static void dummy_release(struct device 
+ {
+ }
+ 
+-static spinlock_t *spinlock_alloc(struct soc_camera_file *icf)
+-{
+-	spinlock_t *lock = kmalloc(sizeof(spinlock_t), GFP_KERNEL);
+-
+-	if (lock)
+-		spin_lock_init(lock);
+-
+-	return lock;
+-}
+-
+-static void spinlock_free(spinlock_t *lock)
+-{
+-	kfree(lock);
+-}
+-
+ int soc_camera_host_register(struct soc_camera_host *ici)
+ {
+ 	int ret;
+@@ -808,11 +776,6 @@ int soc_camera_host_register(struct soc_
+ 	if (ret)
+ 		goto edevr;
+ 
+-	if (!ici->ops->spinlock_alloc) {
+-		ici->ops->spinlock_alloc = spinlock_alloc;
+-		ici->ops->spinlock_free = spinlock_free;
+-	}
+-
+ 	scan_add_host(ici);
+ 
+ 	return 0;
+--- 0002/include/media/soc_camera.h
++++ work/include/media/soc_camera.h	2008-07-04 18:06:00.000000000 +0900
+@@ -48,7 +48,6 @@ struct soc_camera_device {
+ struct soc_camera_file {
+ 	struct soc_camera_device *icd;
+ 	struct videobuf_queue vb_vidq;
+-	spinlock_t *lock;
+ };
+ 
+ struct soc_camera_host {
+@@ -67,15 +66,13 @@ struct soc_camera_host_ops {
+ 	int (*set_fmt_cap)(struct soc_camera_device *, __u32,
+ 			   struct v4l2_rect *);
+ 	int (*try_fmt_cap)(struct soc_camera_device *, struct v4l2_format *);
+-	void (*init_videobuf)(struct videobuf_queue*, spinlock_t *,
++	void (*init_videobuf)(struct videobuf_queue *,
+ 			      struct soc_camera_device *);
+ 	int (*reqbufs)(struct soc_camera_file *, struct v4l2_requestbuffers *);
+ 	int (*querycap)(struct soc_camera_host *, struct v4l2_capability *);
+ 	int (*try_bus_param)(struct soc_camera_device *, __u32);
+ 	int (*set_bus_param)(struct soc_camera_device *, __u32);
+ 	unsigned int (*poll)(struct file *, poll_table *);
+-	spinlock_t* (*spinlock_alloc)(struct soc_camera_file *);
+-	void (*spinlock_free)(spinlock_t *);
+ };
+ 
+ struct soc_camera_link {
