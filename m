@@ -1,45 +1,76 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 17 Jul 2008 05:54:05 +0000
-Subject: Re: [PATCH] sh: Export sh7343 VPU and VEU using uio_pdrv_genirq
-Message-Id: <20080717055405.GB12007@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 05 Jul 2008 03:31:46 +0000
+Subject: [PATCH] sh: add SuperH Mobile I2C platform data to sh7343
+Message-Id: <20080705033146.17251.47676.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080715125139.10218.34702.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080715125139.10218.34702.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jul 15, 2008 at 09:51:39PM +0900, Magnus Damm wrote:
-> This patch exports the VPU and VEU blocks of the sh7343 to user space
-> using the uio_pdrv_genirq platform driver.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+This patch adds platform data for two I2C channels to the sh7343.
 
-On Tue, Jul 15, 2008 at 09:52:19PM +0900, Magnus Damm wrote:
-> This patch exports the VPU and VEU blocks of the sh7722 to user space
-> using the uio_pdrv_genirq platform driver.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-On Tue, Jul 15, 2008 at 09:53:33PM +0900, Magnus Damm wrote:
-> This patch exports the VPU, VEU2H0 and VEU2H1 blocks of the sh7723
-> to user space using the uio_pdrv_genirq platform driver.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   42 ++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-On Tue, Jul 15, 2008 at 09:55:03PM +0900, Magnus Damm wrote:
-> This patch exports the VPU, VEU(1) and VEU(2) blocks of the sh7366
-> to user space using the uio_pdrv_genirq platform driver.
-> 
-> While at it, fix up the VEU(2) interrupt vector.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-
-On Wed, Jul 16, 2008 at 07:02:54PM +0900, Magnus Damm wrote:
-> This patch adds physically contiguous memory chunks to the UIO devices.
-> The same strategy can be used in the future for the CEU as well.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-
-Applied, thanks.
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2008-07-01 19:50:43.000000000 +0900
+@@ -12,6 +12,46 @@
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
+ 
++static struct resource iic0_resources[] = {
++	[0] = {
++		.name	= "IIC0",
++		.start  = 0x04470000,
++		.end    = 0x04470017,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 96,
++		.end    = 99,
++		.flags  = IORESOURCE_IRQ,
++       },
++};
++
++static struct platform_device iic0_device = {
++	.name           = "i2c-sh_mobile",
++	.num_resources  = ARRAY_SIZE(iic0_resources),
++	.resource       = iic0_resources,
++};
++
++static struct resource iic1_resources[] = {
++	[0] = {
++		.name	= "IIC1",
++		.start  = 0x04750000,
++		.end    = 0x04750017,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 44,
++		.end    = 47,
++		.flags  = IORESOURCE_IRQ,
++       },
++};
++
++static struct platform_device iic1_device = {
++	.name           = "i2c-sh_mobile",
++	.num_resources  = ARRAY_SIZE(iic1_resources),
++	.resource       = iic1_resources,
++};
++
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+ 		.mapbase	= 0xffe00000,
+@@ -32,6 +72,8 @@ static struct platform_device sci_device
+ };
+ 
+ static struct platform_device *sh7343_devices[] __initdata = {
++	&iic0_device,
++	&iic1_device,
+ 	&sci_device,
+ };
+ 
