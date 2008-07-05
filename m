@@ -1,118 +1,60 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Jul 2008 12:53:33 +0000
-Subject: [PATCH] sh: Export sh7723 VPU, VEU2H0, VEU2H1 using uio_pdrv_genirq
-Message-Id: <20080715125333.10220.40672.sendpatchset@rx1.opensource.se>
+Date: Sat, 05 Jul 2008 03:32:44 +0000
+Subject: [PATCH] sh: enable I2C on the ap325rxa board
+Message-Id: <20080705033244.17254.72036.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
-
-This patch exports the VPU, VEU2H0 and VEU2H1 blocks of the sh7723
-to user space using the uio_pdrv_genirq platform driver.
+This patch enables I2C on the sh7723-based ap325rxa board.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   79 ++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
+ arch/sh/boards/renesas/ap325rxa/setup.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-07-15 21:14:10.000000000 +0900
-@@ -12,8 +12,84 @@
- #include <linux/serial.h>
- #include <linux/mm.h>
- #include <linux/serial_sci.h>
-+#include <linux/uio_driver.h>
- #include <asm/mmzone.h>
+--- 0001/arch/sh/boards/renesas/ap325rxa/setup.c
++++ work/arch/sh/boards/renesas/ap325rxa/setup.c	2008-07-02 12:58:29.000000000 +0900
+@@ -15,6 +15,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/delay.h>
++#include <linux/i2c.h>
+ #include <asm/io.h>
  
-+static struct uio_info vpu_platform_data = {
-+	.name = "VPU5",
-+	.version = "0",
-+	.irq = 60,
-+};
-+
-+static struct resource vpu_resources[] = {
-+	[0] = {
-+		.name	= "VPU",
-+		.start	= 0xfe900000,
-+		.end	= 0xfe902807,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device vpu_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &vpu_platform_data,
-+	},
-+	.resource	= vpu_resources,
-+	.num_resources	= ARRAY_SIZE(vpu_resources),
-+};
-+
-+static struct uio_info veu0_platform_data = {
-+	.name = "VEU",
-+	.version = "0",
-+	.irq = 54,
-+};
-+
-+static struct resource veu0_resources[] = {
-+	[0] = {
-+		.name	= "VEU2H0",
-+		.start	= 0xfe920000,
-+		.end	= 0xfe92027b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device veu0_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &veu0_platform_data,
-+	},
-+	.resource	= veu0_resources,
-+	.num_resources	= ARRAY_SIZE(veu0_resources),
-+};
-+
-+static struct uio_info veu1_platform_data = {
-+	.name = "VEU",
-+	.version = "0",
-+	.irq = 27,
-+};
-+
-+static struct resource veu1_resources[] = {
-+	[0] = {
-+		.name	= "VEU2H1",
-+		.start	= 0xfe924000,
-+		.end	= 0xfe92427b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device veu1_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 2,
-+	.dev = {
-+		.platform_data	= &veu1_platform_data,
-+	},
-+	.resource	= veu1_resources,
-+	.num_resources	= ARRAY_SIZE(veu1_resources),
-+};
-+
- static struct plat_sci_port sci_platform_data[] = {
- 	{
- 		.mapbase        = 0xffe00000,
-@@ -138,6 +214,9 @@ static struct platform_device *sh7723_de
- 	&rtc_device,
- 	&iic_device,
- 	&sh7723_usb_host_device,
-+	&vpu_device,
-+	&veu0_device,
-+	&veu1_device,
+ static struct resource smc9118_resources[] = {
+@@ -83,14 +84,21 @@ static struct platform_device *ap325rxa_
+ 	&ap325rxa_nor_flash_device
  };
  
- static int __init sh7723_devices_setup(void)
++static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
++};
++
+ static int __init ap325rxa_devices_setup(void)
+ {
++	i2c_register_board_info(0, ap325rxa_i2c_devices,
++				ARRAY_SIZE(ap325rxa_i2c_devices));
++ 
+ 	return platform_add_devices(ap325rxa_devices,
+ 				ARRAY_SIZE(ap325rxa_devices));
+ }
+ device_initcall(ap325rxa_devices_setup);
+ 
+ #define MSTPCR0		(0xA4150030)
++#define MSTPCR1		(0xA4150034)
+ #define MSTPCR2		(0xA4150038)
+ 
+ static void __init ap325rxa_setup(char **cmdline_p)
+@@ -100,6 +108,9 @@ static void __init ap325rxa_setup(char *
+ 
+ 	/* enable MERAM */
+ 	ctrl_outl(ctrl_inl(MSTPCR0) & ~0x00000001, MSTPCR0);	/* bit 0 */
++
++	/* I2C */
++	ctrl_outl(ctrl_inl(MSTPCR1) & ~0x00000200, MSTPCR1);
+ }
+ 
+ static struct sh_machine_vector mv_ap325rxa __initmv = {
