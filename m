@@ -1,16 +1,17 @@
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 06 Jul 2008 04:50:45 +0000
-Subject: [PATCH] SH2(A) cache update
-Message-Id: <87hcb37h0a.wl%ysato@users.sourceforge.jp>
+Date: Tue, 08 Jul 2008 20:20:31 +0000
+Subject: Re: [PATCH] SH2(A) cache update
+Message-Id: <87skukp1ps.wl%ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87hcb37h0a.wl%ysato@users.sourceforge.jp>
+In-Reply-To: <87hcb37h0a.wl%ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Include 
-- SH2 (7619) Writeback support.
-- SH2A cache handling fix.
+Sorry I forget flush_icache_region.
+Update patch.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
@@ -27,20 +28,29 @@ index 29d8e3c..a84a104 100644
  config CACHE_WRITETHROUGH
  	bool "Write-through"
 diff --git a/arch/sh/mm/Makefile_32 b/arch/sh/mm/Makefile_32
-index e295db6..e3f95b2 100644
+index e295db6..70e0906 100644
 --- a/arch/sh/mm/Makefile_32
 +++ b/arch/sh/mm/Makefile_32
-@@ -5,7 +5,9 @@
+@@ -5,12 +5,15 @@
  obj-y			:= init.o extable_32.o consistent.o
  
  ifndef CONFIG_CACHE_OFF
 -obj-$(CONFIG_CPU_SH2)		+= cache-sh2.o
-+sh2-$(CONFIG_CPU_SH2)		:= cache-sh2.o
-+sh2-$(CONFIG_CPU_SH2A)		:= cache-sh2a.o
-+obj-$(CONFIG_CPU_SH2)		+= $(sh2-y)
- obj-$(CONFIG_CPU_SH3)		+= cache-sh3.o
- obj-$(CONFIG_CPU_SH4)		+= cache-sh4.o
- obj-$(CONFIG_SH7705_CACHE_32KB)	+= cache-sh7705.o
+-obj-$(CONFIG_CPU_SH3)		+= cache-sh3.o
+-obj-$(CONFIG_CPU_SH4)		+= cache-sh4.o
+-obj-$(CONFIG_SH7705_CACHE_32KB)	+= cache-sh7705.o
++cache-$(CONFIG_CPU_SH2)		:= cache-sh2.o
++cache-$(CONFIG_CPU_SH2A)	:= cache-sh2a.o
++cache-$(CONFIG_CPU_SH3)		:= cache-sh3.o
++cache-$(CONFIG_CPU_SH4)		:= cache-sh4.o
++cache-$(CONFIG_SH7705_CACHE_32KB)	+= cache-sh7705.o
+ endif
+ 
++obj-y			+= $(cache-y)
++
+ mmu-y			:= tlb-nommu.o pg-nommu.o
+ mmu-$(CONFIG_MMU)	:= fault_32.o tlbflush_32.o ioremap_32.o
+ 
 diff --git a/arch/sh/mm/cache-sh2.c b/arch/sh/mm/cache-sh2.c
 index 6614033..cfa5d80 100644
 --- a/arch/sh/mm/cache-sh2.c
@@ -136,10 +146,10 @@ index 6614033..cfa5d80 100644
  
 diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
 new file mode 100644
-index 0000000..6d8da5c
+index 0000000..c35fa24
 --- /dev/null
 +++ b/arch/sh/mm/cache-sh2a.c
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,134 @@
 +/*
 + * arch/sh/mm/cache-sh2a.c
 + *
@@ -241,6 +251,39 @@ index 0000000..6d8da5c
 +	back_to_cached();
 +	local_irq_restore(flags);
 +}
++
++/* WBack O-Cache and flush I-Cache */
++void flush_icache_range(unsigned long start, unsigned long end)
++{
++	unsigned long v;
++	unsigned long flags;
++
++	start = start & ~(L1_CACHE_BYTES-1);
++	end = (end + L1_CACHE_BYTES-1) & ~(L1_CACHE_BYTES-1);
++
++	local_irq_save(flags);
++	jump_to_uncached();
++
++	for (v = start; v < end; v+=L1_CACHE_BYTES) {
++		unsigned long addr = (v & 0x000007f0);
++		int way;
++		/* O-Cache writeback */
++		for (way = 0; way < 4; way++) {
++			unsigned long data =  ctrl_inl(CACHE_OC_ADDRESS_ARRAY | addr | (way << 11));
++			if ((data & CACHE_PHYSADDR_MASK) = (v & CACHE_PHYSADDR_MASK)) {
++				data &= ~SH_CACHE_UPDATED;
++				ctrl_outl(data, CACHE_OC_ADDRESS_ARRAY | addr | (way << 11));
++			}
++		}
++		/* I-Cache invalidate */
++		ctrl_outl(addr,
++			  CACHE_IC_ADDRESS_ARRAY | addr | 0x00000008);
++	}
++
++	back_to_cached();
++	local_irq_restore(flags);
++}
++
 diff --git a/include/asm-sh/cpu-sh2/cache.h b/include/asm-sh/cpu-sh2/cache.h
 index 4e0b165..673515b 100644
 --- a/include/asm-sh/cpu-sh2/cache.h
@@ -281,6 +324,55 @@ index afe228b..defb0ba 100644
 +#define CACHE_PHYSADDR_MASK	0x1ffffc00
  
  #endif /* __ASM_CPU_SH2A_CACHE_H */
+diff --git a/include/asm-sh/cpu-sh2a/cacheflush.h b/include/asm-sh/cpu-sh2a/cacheflush.h
+index fa3186c..ca679ff 100644
+--- a/include/asm-sh/cpu-sh2a/cacheflush.h
++++ b/include/asm-sh/cpu-sh2a/cacheflush.h
+@@ -1 +1,43 @@
+-#include <asm/cpu-sh2/cacheflush.h>
++/*
++ * include/asm-sh/cpu-sh2a/cacheflush.h
++ *
++ * Copyright (C) 2003 Paul Mundt
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#ifndef __ASM_CPU_SH2A_CACHEFLUSH_H
++#define __ASM_CPU_SH2A_CACHEFLUSH_H
++
++/* 
++ * Cache flushing:
++ *
++ *  - flush_cache_all() flushes entire cache
++ *  - flush_cache_mm(mm) flushes the specified mm context's cache lines
++ *  - flush_cache_dup mm(mm) handles cache flushing when forking
++ *  - flush_cache_page(mm, vmaddr, pfn) flushes a single page
++ *  - flush_cache_range(vma, start, end) flushes a range of pages
++ *
++ *  - flush_dcache_page(pg) flushes(wback&invalidates) a page for dcache
++ *  - flush_icache_range(start, end) flushes(invalidates) a range for icache
++ *  - flush_icache_page(vma, pg) flushes(invalidates) a page for icache
++ *
++ *  Caches are indexed (effectively) by physical address on SH-2, so
++ *  we don't need them.
++ */
++#define flush_cache_all()			do { } while (0)
++#define flush_cache_mm(mm)			do { } while (0)
++#define flush_cache_dup_mm(mm)			do { } while (0)
++#define flush_cache_range(vma, start, end)	do { } while (0)
++#define flush_cache_page(vma, vmaddr, pfn)	do { } while (0)
++#define flush_dcache_page(page)			do { } while (0)
++#define flush_dcache_mmap_lock(mapping)		do { } while (0)
++#define flush_dcache_mmap_unlock(mapping)	do { } while (0)
++void flush_icache_range(unsigned long start, unsigned long end);
++#define flush_icache_page(vma,pg)		do { } while (0)
++#define flush_icache_user_range(vma,pg,adr,len)	do { } while (0)
++#define flush_cache_sigtramp(vaddr)		do { } while (0)
++
++#define p3_cache_init()				do { } while (0)
++#endif /* __ASM_CPU_SH2A_CACHEFLUSH_H */
 
 -- 
 Yoshinori Sato
