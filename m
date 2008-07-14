@@ -1,251 +1,270 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 31 Jul 2008 01:22:09 +0000
-Subject: [patch 1/6] kdump: Make elfcorehdr_addr independent of CONFIG_PROC_VMCORE
-Message-Id: <20080731012927.076924783@vergenet.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 Jul 2008 12:02:59 +0000
+Subject: [PATCH 06/06] soc_camera_platform: Add SoC Camera Platform driver
+Message-Id: <20080714120259.4806.60521.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080731012208.115225969@vergenet.net>
+References: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kexec@lists.infradead.org, linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@ozlabs.org, linux-sh@vger.kernel.org
-Cc: Tony Luck <tony.luck@intel.com>, Terry Loftin <terry.loftin@hp.com>, Paul Mundt <lethal@linux-sh.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Vivek Goyal <vgoyal@redhat.com>
+To: video4linux-list@redhat.com
+Cc: paulius.zaleckas@teltonika.lt, linux-sh@vger.kernel.org, mchehab@infradead.org, lethal@linux-sh.org, akpm@linux-foundation.org, g.liakhovetski@gmx.de
 
-From: Vivek Goyal <vgoyal@redhat.com>
+This patch adds a simple platform camera device. Useful for testing
+cameras with SoC camera host drivers. Only one single pixel format
+and resolution combination is supported.
 
-o elfcorehdr_addr is used by not only the code under CONFIG_PROC_VMCORE but
-  also by the code which is not inside CONFIG_PROC_VMCORE. For example,
-  is_kdump_kernel() is used by powerpc code to determine if kernel is booting
-  after a panic then use previous kernel's TCE table. So even if
-  CONFIG_PROC_VMCORE is not set in second kernel, one should be able to
-  correctly determine that we are booting after a panic and setup calgary
-  iommu accordingly.
-
-o So remove the assumption that elfcorehdr_addr is under CONFIG_PROC_VMCORE.
-
-o Move definition of elfcorehdr_addr to arch dependent crash files.
-  (Unfortunately crash dump does not have an arch independent file otherwise
-   that would have been the best place).
-
-o kexec.c is not the right place as one can Have CRASH_DUMP enabled in
-  second kernel without KEXEC being enabled.
-
-o I don't see sh setup code parsing the command line for elfcorehdr_addr. I 
-  am wondering how does vmcore interface work on sh. Anyway, I am atleast
-  defining elfcoredhr_addr so that compilation is not broken on sh.
-
-Signed-off-by: Vivek Goyal <vgoyal@redhat.com>
-Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
-Acked-by: Simon Horman <horms@verge.net.au>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/ia64/kernel/crash_dump.c    |    4 ++++
- arch/ia64/kernel/setup.c         |    9 ++++++++-
- arch/powerpc/kernel/crash_dump.c |   10 ++++++++--
- arch/sh/kernel/crash_dump.c      |    3 +++
- arch/x86/kernel/crash_dump_32.c  |    3 +++
- arch/x86/kernel/crash_dump_64.c  |    3 +++
- arch/x86/kernel/setup.c          |    8 +++++++-
- fs/proc/vmcore.c                 |    3 ---
- include/linux/crash_dump.h       |   14 ++++++++++----
- 9 files changed, 46 insertions(+), 11 deletions(-)
+ drivers/media/video/Kconfig               |    6 
+ drivers/media/video/Makefile              |    1 
+ drivers/media/video/soc_camera_platform.c |  198 +++++++++++++++++++++++++++++
+ include/media/soc_camera_platform.h       |   15 ++
+ 4 files changed, 220 insertions(+)
 
-Andrew, this patch is a clean-up and is not required by other patches,
-so it could wait until post 2.6.27 if you prefer. However, it is a
-valuable cleanup that removes messiness and should remove some of
-the confusion around elfcorehdr_addr and is_kdump_kernel(). So I
-would prefer it to be included in 2.6.27.
-
-sh setup code has been added in a separate patch that will
-be merged by Paul Mundt.
-
-- Simon Horman
-
-diff -puN include/linux/crash_dump.h~remove-elfcore-hdr-addr-definition-vmcore include/linux/crash_dump.h
---- linux-2.6.27-pre-rc1/include/linux/crash_dump.h~remove-elfcore-hdr-addr-definition-vmcore	2008-07-28 12:00:44.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/include/linux/crash_dump.h	2008-07-28 12:00:56.000000000 -0400
-@@ -9,11 +9,7 @@
+--- 0011/drivers/media/video/Kconfig
++++ work/drivers/media/video/Kconfig	2008-07-14 20:31:16.000000000 +0900
+@@ -950,6 +950,12 @@ config MT9V022_PCA9536_SWITCH
+ 	  Select this if your MT9V022 camera uses a PCA9536 I2C GPIO
+ 	  extender to switch between 8 and 10 bit datawidth modes
  
- #define ELFCORE_ADDR_MAX	(-1ULL)
++config SOC_CAMERA_PLATFORM
++	tristate "platform camera support"
++	depends on SOC_CAMERA
++	help
++	  This is a generic SoC camera platform driver, useful for testing
++
+ config VIDEO_PXA27x
+ 	tristate "PXA27x Quick Capture Interface driver"
+ 	depends on VIDEO_DEV && PXA27x
+--- 0011/drivers/media/video/Makefile
++++ work/drivers/media/video/Makefile	2008-07-14 20:31:16.000000000 +0900
+@@ -135,6 +135,7 @@ obj-$(CONFIG_VIDEO_SH_MOBILE_CEU)	+= sh_
+ obj-$(CONFIG_SOC_CAMERA)	+= soc_camera.o
+ obj-$(CONFIG_SOC_CAMERA_MT9M001)	+= mt9m001.o
+ obj-$(CONFIG_SOC_CAMERA_MT9V022)	+= mt9v022.o
++obj-$(CONFIG_SOC_CAMERA_PLATFORM)	+= soc_camera_platform.o
  
--#ifdef CONFIG_PROC_VMCORE
- extern unsigned long long elfcorehdr_addr;
--#else
--static const unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
--#endif
+ obj-$(CONFIG_VIDEO_AU0828) += au0828/
  
- extern ssize_t copy_oldmem_page(unsigned long, char *, size_t,
- 						unsigned long, int);
-@@ -28,6 +24,16 @@ extern struct proc_dir_entry *proc_vmcor
- 
- #define vmcore_elf_check_arch(x) (elf_check_arch(x) || vmcore_elf_check_arch_cross(x))
- 
+--- /dev/null
++++ work/drivers/media/video/soc_camera_platform.c	2008-07-14 20:32:06.000000000 +0900
+@@ -0,0 +1,198 @@
 +/*
-+ * is_kdump_kernel() checks whether this kernel is booting after a panic of
-+ * previous kernel or not. This is determined by checking if previous kernel
-+ * has passed the elf core header address on command line.
++ * Generic Platform Camera Driver
 + *
-+ * This is not just a test if CONFIG_CRASH_DUMP is enabled or not. It will
-+ * return 1 if CONFIG_CRASH_DUMP=y and if kernel is booting after a panic of
-+ * previous kernel.
++ * Copyright (C) 2008 Magnus Damm
++ * Based on mt9m001 driver,
++ * Copyright (C) 2008, Guennadi Liakhovetski <kernel@pengutronix.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
 + */
 +
- static inline int is_kdump_kernel(void)
- {
- 	return (elfcorehdr_addr != ELFCORE_ADDR_MAX) ? 1 : 0;
-diff -puN fs/proc/vmcore.c~remove-elfcore-hdr-addr-definition-vmcore fs/proc/vmcore.c
---- linux-2.6.27-pre-rc1/fs/proc/vmcore.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-28 09:19:50.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/fs/proc/vmcore.c	2008-07-28 09:20:10.000000000 -0400
-@@ -32,9 +32,6 @@ static size_t elfcorebuf_sz;
- /* Total size of vmcore file. */
- static u64 vmcore_size;
- 
--/* Stores the physical address of elf header of crash image. */
--unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
--
- struct proc_dir_entry *proc_vmcore = NULL;
- 
- /* Reads a page from the oldmem device from given offset. */
-diff -puN arch/x86/kernel/crash_dump_32.c~remove-elfcore-hdr-addr-definition-vmcore arch/x86/kernel/crash_dump_32.c
---- linux-2.6.27-pre-rc1/arch/x86/kernel/crash_dump_32.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:28:26.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/x86/kernel/crash_dump_32.c	2008-07-29 05:28:26.000000000 -0400
-@@ -13,6 +13,9 @@
- 
- static void *kdump_buf_page;
- 
-+/* Stores the physical address of elf header of crash image. */
-+unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/platform_device.h>
++#include <linux/videodev2.h>
++#include <media/v4l2-common.h>
++#include <media/soc_camera.h>
 +
- /**
-  * copy_oldmem_page - copy one page from "oldmem"
-  * @pfn: page frame number to be copied
-diff -puN arch/x86/kernel/crash_dump_64.c~remove-elfcore-hdr-addr-definition-vmcore arch/x86/kernel/crash_dump_64.c
---- linux-2.6.27-pre-rc1/arch/x86/kernel/crash_dump_64.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:28:26.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/x86/kernel/crash_dump_64.c	2008-07-29 05:28:26.000000000 -0400
-@@ -11,6 +11,9 @@
- #include <asm/uaccess.h>
- #include <asm/io.h>
- 
-+/* Stores the physical address of elf header of crash image. */
-+unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
++struct soc_camera_platform_info {
++	int iface;
++	char *format_name;
++	unsigned long format_depth;
++	struct v4l2_pix_format format;
++	unsigned long bus_param;
++	int (*set_capture)(struct soc_camera_platform_info *info, int enable);
++};
 +
- /**
-  * copy_oldmem_page - copy one page from "oldmem"
-  * @pfn: page frame number to be copied
-diff -puN arch/x86/kernel/setup.c~remove-elfcore-hdr-addr-definition-vmcore arch/x86/kernel/setup.c
---- linux-2.6.27-pre-rc1/arch/x86/kernel/setup.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:28:26.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/x86/kernel/setup.c	2008-07-29 05:28:26.000000000 -0400
-@@ -558,7 +558,13 @@ static void __init reserve_standard_io_r
- 
- }
- 
--#ifdef CONFIG_PROC_VMCORE
-+/*
-+ * Note: elfcorehdr_addr is not just limited to vmcore. It is also used by
-+ * is_kdump_kernel() to determine if we are booting after a panic. Hence
-+ * ifdef it under CONFIG_CRASH_DUMP and not CONFIG_PROC_VMCORE.
-+ */
++struct soc_camera_platform_priv {
++	struct soc_camera_platform_info *info;
++	struct soc_camera_device icd;
++	struct soc_camera_data_format format;
++};
 +
-+#ifdef CONFIG_CRASH_DUMP
- /* elfcorehdr= specifies the location of elf core header
-  * stored by the crashed kernel. This option will be passed
-  * by kexec loader to the capture kernel.
-diff -puN arch/powerpc/kernel/crash_dump.c~remove-elfcore-hdr-addr-definition-vmcore arch/powerpc/kernel/crash_dump.c
---- linux-2.6.27-pre-rc1/arch/powerpc/kernel/crash_dump.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:30:33.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/powerpc/kernel/crash_dump.c	2008-07-29 05:30:33.000000000 -0400
-@@ -27,6 +27,9 @@
- #define DBG(fmt...)
- #endif
- 
-+/* Stores the physical address of elf header of crash image. */
-+unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
++static struct soc_camera_platform_info *
++soc_camera_platform_get_info(struct soc_camera_device *icd)
++{
++	struct soc_camera_platform_priv *priv;
++	priv = container_of(icd, struct soc_camera_platform_priv, icd);
++	return priv->info;
++}
 +
- void __init reserve_kdump_trampoline(void)
- {
- 	lmb_reserve(0, KDUMP_RESERVE_LIMIT);
-@@ -66,7 +69,11 @@ void __init setup_kdump_trampoline(void)
- 	DBG(" <- setup_kdump_trampoline()\n");
- }
- 
--#ifdef CONFIG_PROC_VMCORE
-+/*
-+ * Note: elfcorehdr_addr is not just limited to vmcore. It is also used by
-+ * is_kdump_kernel() to determine if we are booting after a panic. Hence
-+ * ifdef it under CONFIG_CRASH_DUMP and not CONFIG_PROC_VMCORE.
-+ */
- static int __init parse_elfcorehdr(char *p)
- {
- 	if (p)
-@@ -75,7 +82,6 @@ static int __init parse_elfcorehdr(char 
- 	return 1;
- }
- __setup("elfcorehdr=", parse_elfcorehdr);
--#endif
- 
- static int __init parse_savemaxmem(char *p)
- {
-diff -puN arch/ia64/kernel/setup.c~remove-elfcore-hdr-addr-definition-vmcore arch/ia64/kernel/setup.c
---- linux-2.6.27-pre-rc1/arch/ia64/kernel/setup.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:30:54.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/ia64/kernel/setup.c	2008-07-29 05:30:54.000000000 -0400
-@@ -478,7 +478,12 @@ static __init int setup_nomca(char *s)
- }
- early_param("nomca", setup_nomca);
- 
--#ifdef CONFIG_PROC_VMCORE
-+/*
-+ * Note: elfcorehdr_addr is not just limited to vmcore. It is also used by
-+ * is_kdump_kernel() to determine if we are booting after a panic. Hence
-+ * ifdef it under CONFIG_CRASH_DUMP and not CONFIG_PROC_VMCORE.
-+ */
-+#ifdef CONFIG_CRASH_DUMP
- /* elfcorehdr= specifies the location of elf core header
-  * stored by the crashed kernel.
-  */
-@@ -491,7 +496,9 @@ static int __init parse_elfcorehdr(char 
- 	return 0;
- }
- early_param("elfcorehdr", parse_elfcorehdr);
-+#endif
- 
-+#ifdef CONFIG_PROC_VMCORE
- int __init reserve_elfcorehdr(unsigned long *start, unsigned long *end)
- {
- 	unsigned long length;
-diff -puN arch/ia64/kernel/crash_dump.c~remove-elfcore-hdr-addr-definition-vmcore arch/ia64/kernel/crash_dump.c
---- linux-2.6.27-pre-rc1/arch/ia64/kernel/crash_dump.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:37:10.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/ia64/kernel/crash_dump.c	2008-07-29 05:37:58.000000000 -0400
-@@ -8,10 +8,14 @@
- 
- #include <linux/errno.h>
- #include <linux/types.h>
-+#include <linux/crash_dump.h>
- 
- #include <asm/page.h>
- #include <asm/uaccess.h>
- 
-+/* Stores the physical address of elf header of crash image. */
-+unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
++static int soc_camera_platform_init(struct soc_camera_device *icd)
++{
++	return 0;
++}
 +
- /**
-  * copy_oldmem_page - copy one page from "oldmem"
-  * @pfn: page frame number to be copied
-diff -puN arch/sh/kernel/crash_dump.c~remove-elfcore-hdr-addr-definition-vmcore arch/sh/kernel/crash_dump.c
---- linux-2.6.27-pre-rc1/arch/sh/kernel/crash_dump.c~remove-elfcore-hdr-addr-definition-vmcore	2008-07-29 05:31:04.000000000 -0400
-+++ linux-2.6.27-pre-rc1-root/arch/sh/kernel/crash_dump.c	2008-07-29 05:31:04.000000000 -0400
-@@ -10,6 +10,9 @@
- #include <linux/io.h>
- #include <asm/uaccess.h>
- 
-+/* Stores the physical address of elf header of crash image. */
-+unsigned long long elfcorehdr_addr = ELFCORE_ADDR_MAX;
++static int soc_camera_platform_release(struct soc_camera_device *icd)
++{
++	return 0;
++}
 +
- /**
-  * copy_oldmem_page - copy one page from "oldmem"
-  * @pfn: page frame number to be copied
-_
-
--- 
-
--- 
-Horms
-
++static int soc_camera_platform_start_capture(struct soc_camera_device *icd)
++{
++	struct soc_camera_platform_info *p = soc_camera_platform_get_info(icd);
++	return p->set_capture(p, 1);
++}
++
++static int soc_camera_platform_stop_capture(struct soc_camera_device *icd)
++{
++	struct soc_camera_platform_info *p = soc_camera_platform_get_info(icd);
++	return p->set_capture(p, 0);
++}
++
++static int soc_camera_platform_set_bus_param(struct soc_camera_device *icd,
++					     unsigned long flags)
++{
++	return 0;
++}
++
++static unsigned long
++soc_camera_platform_query_bus_param(struct soc_camera_device *icd)
++{
++	struct soc_camera_platform_info *p = soc_camera_platform_get_info(icd);
++	return p->bus_param;
++}
++
++static int soc_camera_platform_set_fmt_cap(struct soc_camera_device *icd,
++					   __u32 pixfmt, struct v4l2_rect *rect)
++{
++	return 0;
++}
++
++static int soc_camera_platform_try_fmt_cap(struct soc_camera_device *icd,
++					   struct v4l2_format *f)
++{
++	struct soc_camera_platform_info *p = soc_camera_platform_get_info(icd);
++
++	f->fmt.pix.width = p->format.width;
++	f->fmt.pix.height = p->format.height;
++	return 0;
++}
++
++static int soc_camera_platform_video_probe(struct soc_camera_device *icd)
++{
++	struct soc_camera_platform_priv *priv;
++	priv = container_of(icd, struct soc_camera_platform_priv, icd);
++
++	priv->format.name = priv->info->format_name;
++	priv->format.depth = priv->info->format_depth;
++	priv->format.fourcc = priv->info->format.pixelformat;
++	priv->format.colorspace = priv->info->format.colorspace;
++
++	icd->formats = &priv->format;
++	icd->num_formats = 1;
++
++	return soc_camera_video_start(icd);
++}
++
++static void soc_camera_platform_video_remove(struct soc_camera_device *icd)
++{
++	soc_camera_video_stop(icd);
++}
++
++static struct soc_camera_ops soc_camera_platform_ops = {
++	.owner			= THIS_MODULE,
++	.probe			= soc_camera_platform_video_probe,
++	.remove			= soc_camera_platform_video_remove,
++	.init			= soc_camera_platform_init,
++	.release		= soc_camera_platform_release,
++	.start_capture		= soc_camera_platform_start_capture,
++	.stop_capture		= soc_camera_platform_stop_capture,
++	.set_fmt_cap		= soc_camera_platform_set_fmt_cap,
++	.try_fmt_cap		= soc_camera_platform_try_fmt_cap,
++	.set_bus_param		= soc_camera_platform_set_bus_param,
++	.query_bus_param	= soc_camera_platform_query_bus_param,
++};
++
++static int soc_camera_platform_probe(struct platform_device *pdev)
++{
++	struct soc_camera_platform_priv *priv;
++	struct soc_camera_platform_info *p;
++	struct soc_camera_device *icd;
++	int ret;
++
++	p = pdev->dev.platform_data;
++	if (!p)
++		return -EINVAL;
++
++	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->info = p;
++	platform_set_drvdata(pdev, priv);
++
++	icd = &priv->icd;
++	icd->ops	= &soc_camera_platform_ops;
++	icd->control	= &pdev->dev;
++	icd->width_min	= 0;
++	icd->width_max	= priv->info->format.width;
++	icd->height_min	= 0;
++	icd->height_max	= priv->info->format.height;
++	icd->y_skip_top	= 0;
++	icd->iface	= priv->info->iface;
++
++	ret = soc_camera_device_register(icd);
++	if (ret)
++		kfree(priv);
++
++	return ret;
++}
++
++static int soc_camera_platform_remove(struct platform_device *pdev)
++{
++	struct soc_camera_platform_priv *priv = platform_get_drvdata(pdev);
++
++	soc_camera_device_unregister(&priv->icd);
++	kfree(priv);
++	return 0;
++}
++
++static struct platform_driver soc_camera_platform_driver = {
++	.driver 	= {
++		.name	= "soc_camera_platform",
++	},
++	.probe		= soc_camera_platform_probe,
++	.remove		= soc_camera_platform_remove,
++};
++
++static int __init soc_camera_platform_module_init(void)
++{
++	return platform_driver_register(&soc_camera_platform_driver);
++}
++
++static void __exit soc_camera_platform_module_exit(void)
++{
++	return platform_driver_unregister(&soc_camera_platform_driver);
++}
++
++module_init(soc_camera_platform_module_init);
++module_exit(soc_camera_platform_module_exit);
++
++MODULE_DESCRIPTION("SoC Camera Platform driver");
++MODULE_AUTHOR("Magnus Damm");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ work/include/media/soc_camera_platform.h	2008-07-14 20:31:16.000000000 +0900
+@@ -0,0 +1,15 @@
++#ifndef __SOC_CAMERA_H__
++#define __SOC_CAMERA_H__
++
++#include <linux/videodev2.h>
++
++struct soc_camera_platform_info {
++	int iface;
++	char *format_name;
++	unsigned long format_depth;
++	struct v4l2_pix_format format;
++	unsigned long bus_param;
++	int (*set_capture)(struct soc_camera_platform_info *info, int enable);
++};
++
++#endif /* __SOC_CAMERA_H__ */
