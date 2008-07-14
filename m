@@ -1,54 +1,40 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Jul 2008 10:09:51 +0000
-Subject: [PATCH] sh: Introduce clk_always_enable() function
-Message-Id: <20080717100951.19598.70512.sendpatchset@rx1.opensource.se>
+Date: Mon, 14 Jul 2008 12:02:22 +0000
+Subject: [PATCH 02/06] soc_camera: Add 16-bit bus width support
+Message-Id: <20080714120222.4806.24019.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: video4linux-list@redhat.com
+Cc: paulius.zaleckas@teltonika.lt, linux-sh@vger.kernel.org, mchehab@infradead.org, lethal@linux-sh.org, akpm@linux-foundation.org, g.liakhovetski@gmx.de
 
-From: Magnus Damm <damm@igel.co.jp>
-
-Add SuperH specific funcion clk_always_enable(), useful to enable MSTPCR
-bits in processor or board specific code. 
+The SuperH Mobile CEU hardware supports 16-bit width bus,
+so extend the soc_camera code with SOCAM_DATAWIDTH_16.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- include/asm-sh/clock.h |   17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ include/media/soc_camera.h |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
---- 0008/include/asm-sh/clock.h
-+++ work/include/asm-sh/clock.h	2008-07-17 12:42:28.000000000 +0900
-@@ -5,6 +5,7 @@
- #include <linux/list.h>
- #include <linux/seq_file.h>
- #include <linux/clk.h>
-+#include <linux/err.h>
+--- 0008/include/media/soc_camera.h
++++ work/include/media/soc_camera.h	2008-07-01 14:38:34.000000000 +0900
+@@ -153,11 +153,12 @@ static inline struct v4l2_queryctrl cons
+ #define SOCAM_DATAWIDTH_8		(1 << 6)
+ #define SOCAM_DATAWIDTH_9		(1 << 7)
+ #define SOCAM_DATAWIDTH_10		(1 << 8)
+-#define SOCAM_PCLK_SAMPLE_RISING	(1 << 9)
+-#define SOCAM_PCLK_SAMPLE_FALLING	(1 << 10)
++#define SOCAM_DATAWIDTH_16		(1 << 9)
++#define SOCAM_PCLK_SAMPLE_RISING	(1 << 10)
++#define SOCAM_PCLK_SAMPLE_FALLING	(1 << 11)
  
- struct clk;
+ #define SOCAM_DATAWIDTH_MASK (SOCAM_DATAWIDTH_8 | SOCAM_DATAWIDTH_9 | \
+-			      SOCAM_DATAWIDTH_10)
++			      SOCAM_DATAWIDTH_10 | SOCAM_DATAWIDTH_16)
  
-@@ -47,6 +48,22 @@ void clk_recalc_rate(struct clk *);
- int clk_register(struct clk *);
- void clk_unregister(struct clk *);
- 
-+static inline int clk_always_enable(const char *id)
-+{
-+	struct clk *clk;
-+	int ret;
-+
-+	clk = clk_get(NULL, id);
-+	if (IS_ERR(clk))
-+		return PTR_ERR(clk);
-+
-+	ret = clk_enable(clk);
-+	if (ret)
-+		clk_put(clk);
-+
-+	return ret;
-+}
-+
- /* the exported API, in addition to clk_set_rate */
- /**
-  * clk_set_rate_ex - set the clock rate for a clock source, with additional parameter
+ static inline unsigned long soc_camera_bus_param_compatible(
+ 			unsigned long camera_flags, unsigned long bus_flags)
