@@ -1,22 +1,57 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 29 Jul 2008 08:39:56 +0000
-Subject: Re: [PATCH] sh: Fix compile error of Solution Engine
-Message-Id: <20080729083956.GC29389@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 Jul 2008 12:02:04 +0000
+Subject: [PATCH 00/06] soc_camera: SuperH Mobile CEU patches V3
+Message-Id: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <488EAC95.4060507@renesas.com>
-In-Reply-To: <488EAC95.4060507@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Cc: linux-sh@vger.kernel.org, Adrian Bunk <bunk@kernel.org>, linux-kernel@vger.kernel.org
+To: video4linux-list@redhat.com
+Cc: paulius.zaleckas@teltonika.lt, linux-sh@vger.kernel.org, mchehab@infradead.org, lethal@linux-sh.org, akpm@linux-foundation.org, g.liakhovetski@gmx.de
 
-On Tue, Jul 29, 2008 at 02:37:25PM +0900, Nobuhiro Iwamatsu wrote:
-> When I compiled Solution Engine, this become compile error
-> because plaform device of sh_eth device becomes enable.
-> When sh7710/sh7712 which could use sh_eth was chosen,
-> revised it so that platform device of sh_eth device became enable.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+This is V3 of the SuperH Mobile CEU interface patches.
 
-Applied, thanks.
+[PATCH 01/06] soc_camera: Move spinlocks
+[PATCH 02/06] soc_camera: Add 16-bit bus width support
+[PATCH 03/06] videobuf: Fix gather spelling
+[PATCH 04/06] videobuf: Add physically contiguous queue code V3
+[PATCH 05/06] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver V3
+[PATCH 06/06] soc_camera_platform: Add SoC Camera Platform driver
+
+Changes since V2:
+ - use dma_handle for physical address for videobuf-dma-contig
+ - spell gather correctly
+ - remove SUPERH Kconfig dependency
+ - move sh_mobile_ceu.h to include/media
+ - add board callback support with enable_camera()/disable_camera()
+ - add support for declare_coherent_memory
+ - rework video memory limit
+ - more verbose error messages
+ - add soc_camera_platform driver for simple camera devices
+
+Changes since V1:
+ - dropped former V1 patches [01/07]->[04/07]
+ - rebased on top of [PATCH] soc_camera: make videobuf independent
+ - rewrote spinlock changes into the new [01/04] patch
+ - updated the videobuf-dma-contig code with feeback from Paulius Zaleckas
+ - fixed the CEU driver to work with the newly updated patches
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ drivers/media/video/Kconfig                |   19 
+ drivers/media/video/Makefile               |    3 
+ drivers/media/video/pxa_camera.c           |   17 
+ drivers/media/video/sh_mobile_ceu_camera.c |  657 ++++++++++++++++++++++++++++
+ drivers/media/video/soc_camera.c           |   39 -
+ drivers/media/video/soc_camera_platform.c  |  198 ++++++++
+ drivers/media/video/videobuf-dma-contig.c  |  417 +++++++++++++++++
+ drivers/media/video/videobuf-dma-sg.c      |    2 
+ drivers/media/video/videobuf-vmalloc.c     |    2 
+ include/media/sh_mobile_ceu.h              |   12 
+ include/media/soc_camera.h                 |   12 
+ include/media/soc_camera_platform.h        |   15 
+ include/media/videobuf-dma-contig.h        |   32 +
+ include/media/videobuf-dma-sg.h            |    2 
+ include/media/videobuf-vmalloc.h           |    2 
+ 15 files changed, 1368 insertions(+), 61 deletions(-)
