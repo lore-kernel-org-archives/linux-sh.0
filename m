@@ -1,56 +1,99 @@
-From: Pierre Ossman <drzeus@drzeus.cx>
-Date: Sat, 19 Jul 2008 12:02:05 +0000
-Subject: Re: [PATCH] sh7760mmc: host driver for SH7760 MMC interface
-Message-Id: <20080719140205.05eac25e@mjolnir.drzeus.cx>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=_freyr.drzeus.cx-30376-1216468930-0001-2"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Jul 2008 12:51:39 +0000
+Subject: [PATCH] sh: Export sh7343 VPU and VEU using uio_pdrv_genirq
+Message-Id: <20080715125139.10218.34702.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080717110119.GA14949@roarinelk.homelinux.net>
-In-Reply-To: <20080717110119.GA14949@roarinelk.homelinux.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+From: Magnus Damm <damm@igel.co.jp>
 
---=_freyr.drzeus.cx-30376-1216468930-0001-2
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+This patch exports the VPU and VEU blocks of the sh7343 to user space
+using the uio_pdrv_genirq platform driver.
 
-On Sat, 19 Jul 2008 09:04:09 +0200
-Manuel Lauss <mano@roarinelk.homelinux.net> wrote:
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-> Pierre Ossman wrote:
-> >=20
-> > Seems more likely that this flag should be set on any stop command.
->=20
-> There are other stop commands?
+ Applies on top of current sh-2.6 git plus Shimoda-sans sh7343 changes.
 
-In theory. :)
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   53 ++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-I don't think there's any (publicly at least) defined stop command
-besides CMD12, but the MMC layer has been designed on the assumption
-that any future unbounded transfers will follow the same principle
-(which would seem reasonable as that's how the hardware is built).
-
---=20
-     -- Pierre Ossman
-
-  WARNING: This correspondence is being monitored by the
-  Swedish government. Make sure your server uses encryption
-  for SMTP traffic and consider using PGP for end-to-end
-  encryption.
-
---=_freyr.drzeus.cx-30376-1216468930-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.9 (GNU/Linux)
-
-iEYEARECAAYFAkiB18AACgkQ7b8eESbyJLgy9QCeJPw9E30JjhzcpNT2+XO3RlRO
-DXwAoN4n9E+O+P7zx8IKaUHSvYPVyjML
-=Oekq
------END PGP SIGNATURE-----
-
---=_freyr.drzeus.cx-30376-1216468930-0001-2--
+--- 0002/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2008-07-15 21:05:44.000000000 +0900
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
++#include <linux/uio_driver.h>
+ 
+ static struct resource iic0_resources[] = {
+ 	[0] = {
+@@ -52,6 +53,56 @@ static struct platform_device iic1_devic
+ 	.resource       = iic1_resources,
+ };
+ 
++static struct uio_info vpu_platform_data = {
++	.name = "VPU4",
++	.version = "0",
++	.irq = 60,
++};
++
++static struct resource vpu_resources[] = {
++	[0] = {
++		.name	= "VPU",
++		.start	= 0xfe900000,
++		.end	= 0xfe9022eb,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device vpu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &vpu_platform_data,
++	},
++	.resource	= vpu_resources,
++	.num_resources	= ARRAY_SIZE(vpu_resources),
++};
++
++static struct uio_info veu_platform_data = {
++	.name = "VEU",
++	.version = "0",
++	.irq = 54,
++};
++
++static struct resource veu_resources[] = {
++	[0] = {
++		.name	= "VEU",
++		.start	= 0xfe920000,
++		.end	= 0xfe9200b7,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device veu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 1,
++	.dev = {
++		.platform_data	= &veu_platform_data,
++	},
++	.resource	= veu_resources,
++	.num_resources	= ARRAY_SIZE(veu_resources),
++};
++
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+ 		.mapbase	= 0xffe00000,
+@@ -75,6 +126,8 @@ static struct platform_device *sh7343_de
+ 	&iic0_device,
+ 	&iic1_device,
+ 	&sci_device,
++	&vpu_device,
++	&veu_device,
+ };
+ 
+ static int __init sh7343_devices_setup(void)
