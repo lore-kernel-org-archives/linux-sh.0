@@ -1,185 +1,118 @@
-From: Jaswinder Singh <jaswinder@infradead.org>
-Date: Mon, 21 Jul 2008 00:04:03 +0000
-Subject: [PATCH 17/22] sh: Introducing asm/syscalls.h
-Message-Id: <1216597923.3679.141.camel@jaswinder.satnam>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Jul 2008 12:53:33 +0000
+Subject: [PATCH] sh: Export sh7723 VPU, VEU2H0, VEU2H1 using uio_pdrv_genirq
+Message-Id: <20080715125333.10220.40672.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1216592500.3679.14.camel@jaswinder.satnam>
-	 <1216592798.3679.22.camel@jaswinder.satnam>
-	 <1216592879.3679.24.camel@jaswinder.satnam>
-	 <1216593035.3679.27.camel@jaswinder.satnam>
-	 <1216596035.3679.95.camel@jaswinder.satnam>
-	 <1216596106.3679.98.camel@jaswinder.satnam>
-	 <1216596325.3679.104.camel@jaswinder.satnam>
-	 <1216596669.3679.112.camel@jaswinder.satnam>
-	 <1216596749.3679.115.camel@jaswinder.satnam>
-	 <1216596835.3679.117.camel@jaswinder.satnam>
-	 <1216596932.3679.120.camel@jaswinder.satnam>
-	 <1216597066.3679.123.camel@jaswinder.satnam>
-	 <1216597151.3679.125.camel@jaswinder.satnam>
-	 <1216597237.3679.128.camel@jaswinder.satnam>
-	 <1216597352.3679.131.camel@jaswinder.satnam>
-	 <1216597566.3679.135.camel@jaswinder.satnam>
-	 <1216597856.3679.139.camel@jaswinder.satnam>
-In-Reply-To: <1216597856.3679.139.camel@jaswinder.satnam>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>, kernelnewbies <kernelnewbies@nl.linux.org>, David Woodhouse <dwmw2@infradead.org>, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Declaring arch-dependent syscalls for sh architecture
+From: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Jaswinder Singh <jaswinder@infradead.org>
+This patch exports the VPU, VEU2H0 and VEU2H1 blocks of the sh7723
+to user space using the uio_pdrv_genirq platform driver.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/kernel/process_32.c |    1 +
- arch/sh/kernel/process_64.c |    1 +
- arch/sh/kernel/signal_32.c  |    1 +
- arch/sh/kernel/signal_64.c  |    1 +
- include/asm-sh/syscalls.h   |   88 +++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 92 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-index b98e37a..b6fb73e 100644
---- a/arch/sh/kernel/process_32.c
-+++ b/arch/sh/kernel/process_32.c
-@@ -20,6 +20,7 @@
- #include <linux/reboot.h>
- #include <linux/fs.h>
- #include <linux/preempt.h>
-+#include <linux/syscalls.h>
- #include <asm/uaccess.h>
- #include <asm/mmu_context.h>
- #include <asm/pgalloc.h>
-diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
-index 0283d81..f0b249f 100644
---- a/arch/sh/kernel/process_64.c
-+++ b/arch/sh/kernel/process_64.c
-@@ -25,6 +25,7 @@
- #include <linux/module.h>
- #include <linux/proc_fs.h>
- #include <linux/io.h>
-+#include <linux/syscalls.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
- #include <asm/mmu_context.h>
-diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
-index f311551..852c81b 100644
---- a/arch/sh/kernel/signal_32.c
-+++ b/arch/sh/kernel/signal_32.c
-@@ -24,6 +24,7 @@
- #include <linux/binfmts.h>
- #include <linux/freezer.h>
- #include <linux/io.h>
-+#include <linux/syscalls.h>
- #include <asm/system.h>
- #include <asm/ucontext.h>
- #include <asm/uaccess.h>
-diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
-index 552eb81..b2be648 100644
---- a/arch/sh/kernel/signal_64.c
-+++ b/arch/sh/kernel/signal_64.c
-@@ -22,6 +22,7 @@
- #include <linux/ptrace.h>
- #include <linux/unistd.h>
- #include <linux/stddef.h>
-+#include <linux/syscalls.h>
- #include <asm/ucontext.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
-diff --git a/include/asm-sh/syscalls.h b/include/asm-sh/syscalls.h
-index e69de29..8966e00 100644
---- a/include/asm-sh/syscalls.h
-+++ b/include/asm-sh/syscalls.h
-@@ -0,0 +1,88 @@
-+/*
-+ * syscalls.h - Linux syscall interfaces (arch-specific)
-+ *
-+ * Copyright (c) 2008 Jaswinder Singh
-+ *
-+ * This file is released under the GPLv2.
-+ * See the file COPYING for more details.
-+ *
-+ * Please do not call me directly, include linux/syscalls.h
-+ */
-+
-+#ifndef _ASM_SH_SYSCALLS_H
-+#define _ASM_SH_SYSCALLS_H
-+
-+#ifdef CONFIG_SUPERH32
-+/* kernel/process_32.c */
-+asmlinkage int sys_fork(unsigned long, unsigned long, unsigned long,
-+			unsigned long, struct pt_regs);
-+asmlinkage int sys_sigaction(int,
-+			     const struct old_sigaction __user *,
-+			     struct old_sigaction __user *);
-+asmlinkage int sys_clone(unsigned long, unsigned long, unsigned long,
-+			 unsigned long, struct pt_regs);
-+asmlinkage int sys_vfork(unsigned long, unsigned long, unsigned long,
-+			 unsigned long, struct pt_regs);
-+asmlinkage int sys_execve(char __user *, char __user * __user *,
-+			  char __user * __user *, unsigned long,
-+			  struct pt_regs);
-+
-+/* kernel/signal_32.c */
-+asmlinkage int sys_sigsuspend(old_sigset_t, unsigned long,
-+			      unsigned long, unsigned long,
-+			      struct pt_regs);
-+asmlinkage int sys_sigaltstack(const stack_t __user *, stack_t __user *,
-+			       unsigned long, unsigned long,
-+			       struct pt_regs);
-+asmlinkage int sys_sigreturn(unsigned long, unsigned long, unsigned long,
-+			     unsigned long, struct pt_regs);
-+asmlinkage int sys_rt_sigreturn(unsigned long, unsigned long,
-+				unsigned long, unsigned long,
-+				struct pt_regs);
-+
-+/* kernel/sys_sh32.c */
-+asmlinkage int sys_pipe(unsigned long, unsigned long, unsigned long,
-+			unsigned long, struct pt_regs);
-+asmlinkage ssize_t sys_pread_wrapper(unsigned int, char *, size_t,
-+				     long, loff_t);
-+asmlinkage ssize_t sys_pwrite_wrapper(unsigned int, const char *,
-+				      size_t, long, loff_t);
-+asmlinkage int sys_fadvise64_64_wrapper(int, u32, u32, u32, u32, int);
-+
-+#else /* CONFIG_SUPERH32 */
-+
-+/* kernel/process_64.c */
-+asmlinkage int sys_fork(unsigned long, unsigned long, unsigned long,
-+			unsigned long, unsigned long, unsigned long,
-+			struct pt_regs *);
-+asmlinkage int sys_clone(unsigned long, unsigned long, unsigned long,
-+			 unsigned long, unsigned long, unsigned long,
-+			 struct pt_regs *);
-+asmlinkage int sys_vfork(unsigned long, unsigned long, unsigned long,
-+			 unsigned long, unsigned long, unsigned long,
-+			 struct pt_regs *);
-+asmlinkage int sys_execve(char *, char **, char **, unsigned long,
-+			  unsigned long, unsigned long, struct pt_regs *);
-+
-+/* kernel/signal_64.c */
-+asmlinkage int sys_sigsuspend(old_sigset_t, unsigned long, unsigned long,
-+			      unsigned long, unsigned long, unsigned long,
-+			      struct pt_regs *);
-+asmlinkage int sys_rt_sigsuspend(sigset_t *, size_t, unsigned long,
-+				 unsigned long, unsigned long, unsigned long,
-+				 struct pt_regs *);
-+asmlinkage int sys_sigaction(int,
-+			     const struct old_sigaction __user *,
-+			     struct old_sigaction __user *);
-+asmlinkage int sys_sigaltstack(const stack_t __user *, stack_t __user *,
-+			       unsigned long, unsigned long, unsigned long,
-+			       unsigned long, struct pt_regs *);
-+asmlinkage int sys_sigreturn(unsigned long, unsigned long, unsigned long,
-+			     unsigned long, unsigned long, unsigned long,
-+			     struct pt_regs *);
-+asmlinkage int sys_rt_sigreturn(unsigned long, unsigned long, unsigned long,
-+				unsigned long, unsigned long, unsigned long,
-+				struct pt_regs *);
-+
-+#endif /* CONFIG_SUPERH32 */
-+#endif /* _ASM_SH_SYSCALLS_H */
--- 
-1.5.5.1
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   79 ++++++++++++++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
 
-
-
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-07-15 21:14:10.000000000 +0900
+@@ -12,8 +12,84 @@
+ #include <linux/serial.h>
+ #include <linux/mm.h>
+ #include <linux/serial_sci.h>
++#include <linux/uio_driver.h>
+ #include <asm/mmzone.h>
+ 
++static struct uio_info vpu_platform_data = {
++	.name = "VPU5",
++	.version = "0",
++	.irq = 60,
++};
++
++static struct resource vpu_resources[] = {
++	[0] = {
++		.name	= "VPU",
++		.start	= 0xfe900000,
++		.end	= 0xfe902807,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device vpu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &vpu_platform_data,
++	},
++	.resource	= vpu_resources,
++	.num_resources	= ARRAY_SIZE(vpu_resources),
++};
++
++static struct uio_info veu0_platform_data = {
++	.name = "VEU",
++	.version = "0",
++	.irq = 54,
++};
++
++static struct resource veu0_resources[] = {
++	[0] = {
++		.name	= "VEU2H0",
++		.start	= 0xfe920000,
++		.end	= 0xfe92027b,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device veu0_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 1,
++	.dev = {
++		.platform_data	= &veu0_platform_data,
++	},
++	.resource	= veu0_resources,
++	.num_resources	= ARRAY_SIZE(veu0_resources),
++};
++
++static struct uio_info veu1_platform_data = {
++	.name = "VEU",
++	.version = "0",
++	.irq = 27,
++};
++
++static struct resource veu1_resources[] = {
++	[0] = {
++		.name	= "VEU2H1",
++		.start	= 0xfe924000,
++		.end	= 0xfe92427b,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device veu1_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 2,
++	.dev = {
++		.platform_data	= &veu1_platform_data,
++	},
++	.resource	= veu1_resources,
++	.num_resources	= ARRAY_SIZE(veu1_resources),
++};
++
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+ 		.mapbase        = 0xffe00000,
+@@ -138,6 +214,9 @@ static struct platform_device *sh7723_de
+ 	&rtc_device,
+ 	&iic_device,
+ 	&sh7723_usb_host_device,
++	&vpu_device,
++	&veu0_device,
++	&veu1_device,
+ };
+ 
+ static int __init sh7723_devices_setup(void)
