@@ -1,39 +1,97 @@
-From: "Nobuhiro Iwamatsu" <iwamatsu@nigauri.org>
-Date: Wed, 30 Jul 2008 02:44:22 +0000
-Subject: Re: SH7760: early_printk build broken
-Message-Id: <29ab51dc0807291944r20232d1apd7d67ad3d71916de@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Jul 2008 12:52:19 +0000
+Subject: [PATCH] sh: Export sh7722 VPU and VEU using uio_pdrv_genirq
+Message-Id: <20080715125219.10219.14074.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080729142743.GA7017@roarinelk.homelinux.net>
-In-Reply-To: <20080729142743.GA7017@roarinelk.homelinux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi, Manuel and Paul.
+From: Magnus Damm <damm@igel.co.jp>
 
-2008/7/30 Manuel Lauss <mano@roarinelk.homelinux.net>:
->
->> > > > Commit c63847a3621d2bac054f5709783860ecabd0ee7e ("sh: Add SCIF2 support for SH7763.")
->> > > > broke build with CONFIG_EARLY_PRINTK enabled for me (SH7760):
->> > > >
->> > > >   CC      arch/sh/kernel/early_printk.o
->> > > > /mnt/work/sh7760/kernel/linux-2.6.git/arch/sh/kernel/early_printk.c: In function 'scif_sercon_putc':
->> > > > /mnt/work/sh7760/kernel/linux-2.6.git/arch/sh/kernel/early_printk.c:84: error: implicit declaration of function 'sci_SCFDR_in'
->> > > >
->> > > > I don't know immediately how to fix it though, could you please take a look?
->> > > >
->> > > I see what happened. Proof that this file is such a ridiculous
->> > > clusterfuck it's hard to know where to even begin.
->> > >
-Sorry, This is a problem of my patch.
-I forgot a movement check of early_printk.
-Because there is not SCFDR in SH7760 etc.
-Of cource this problem has SH7760, SH7780 and SH7785.
+This patch exports the VPU and VEU blocks of the sh7722 to user space
+using the uio_pdrv_genirq platform driver.
 
-I confirmed that I worked without a problem with the patch which
-Paul wrote.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Thank you.
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   53 ++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-Nobuhiro
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2008-07-15 21:07:13.000000000 +0900
+@@ -12,6 +12,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
+ #include <linux/mm.h>
++#include <linux/uio_driver.h>
+ #include <asm/mmzone.h>
+ 
+ static struct resource usbf_resources[] = {
+@@ -59,6 +60,56 @@ static struct platform_device iic_device
+ 	.resource       = iic_resources,
+ };
+ 
++static struct uio_info vpu_platform_data = {
++	.name = "VPU4",
++	.version = "0",
++	.irq = 60,
++};
++
++static struct resource vpu_resources[] = {
++	[0] = {
++		.name	= "VPU",
++		.start	= 0xfe900000,
++		.end	= 0xfe9022eb,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device vpu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &vpu_platform_data,
++	},
++	.resource	= vpu_resources,
++	.num_resources	= ARRAY_SIZE(vpu_resources),
++};
++
++static struct uio_info veu_platform_data = {
++	.name = "VEU",
++	.version = "0",
++	.irq = 54,
++};
++
++static struct resource veu_resources[] = {
++	[0] = {
++		.name	= "VEU",
++		.start	= 0xfe920000,
++		.end	= 0xfe9200b7,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device veu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 1,
++	.dev = {
++		.platform_data	= &veu_platform_data,
++	},
++	.resource	= veu_resources,
++	.num_resources	= ARRAY_SIZE(veu_resources),
++};
++
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+ 		.mapbase	= 0xffe00000,
+@@ -95,6 +146,8 @@ static struct platform_device *sh7722_de
+ 	&usbf_device,
+ 	&iic_device,
+ 	&sci_device,
++	&vpu_device,
++	&veu_device,
+ };
+ 
+ static int __init sh7722_devices_setup(void)
