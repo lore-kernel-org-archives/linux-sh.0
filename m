@@ -1,26 +1,64 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 15 Jul 2008 09:02:02 +0000
-Subject: Re: Search for SH4 pipeline good description
-Message-Id: <20080715090202.GB23440@linux-sh.org>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Wed, 16 Jul 2008 16:45:40 +0000
+Subject: [2.6 patch] fix sh ptep_get_and_clear breakage
+Message-Id: <20080716164540.GF17329@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <38b2ab8a0807110116t7df8b3d2i7bd5afe08f5b87e4@mail.gmail.com>
-In-Reply-To: <38b2ab8a0807110116t7df8b3d2i7bd5afe08f5b87e4@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Jeremy Fitzhardinge <jeremy@goop.org>, lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Fri, Jul 11, 2008 at 10:16:27AM +0200, Francis Moreau wrote:
-> I'm struggling to understand how memcpy-sh4.S works and the reason is probably
-> my lack of understanding of the pipeline and which instructions can be executed
-> while a cache line is loaded.
-> 
-> I already read "sh4 core architecture manual" but I find it really bad.
-> 
-> Could anybody point me a good doc about this ?
-> 
-Read the SH-4 or SH-4A software manual, there is a detailed chapter on
-pipelining. The ST parts don't do anything too profoundly different in
-terms of pipelining anyways.
+Commit 1ea0704e0da65b2b46f9142ff1391163aac24060
+(mm: add a ptep_modify_prot transaction abstraction)
+triggered on sh build errors like the following:
 
-http://documentation.renesas.com/eng/products/mpumcu/rej09b0003_sh4a.pdf
+<--  snip  -->
+
+...
+  CC      arch/sh/mm/pg-sh4.o
+cc1: warnings being treated as errors
+include2/asm/pgtable.h:139: error: 'ptep_get_and_clear' declared inline after being called
+include2/asm/pgtable.h:139: error: previous declaration of 'ptep_get_and_clear' was here
+make[2]: *** [arch/sh/mm/pg-sh4.o] Error 1
+
+<--  snip  -->
+
+Since there's no good reason for marking these global functions as 
+"inline" this patch therefore removes the inline's.
+
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
+
+---
+
+ arch/sh/mm/pg-sh4.c    |    2 +-
+ arch/sh/mm/pg-sh7705.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+c11efb5cb7b6455f6478b3f300c96b7a6778450c 
+diff --git a/arch/sh/mm/pg-sh4.c b/arch/sh/mm/pg-sh4.c
+index 8c7a9ca..38870e0 100644
+--- a/arch/sh/mm/pg-sh4.c
++++ b/arch/sh/mm/pg-sh4.c
+@@ -111,7 +111,7 @@ EXPORT_SYMBOL(copy_user_highpage);
+ /*
+  * For SH-4, we have our own implementation for ptep_get_and_clear
+  */
+-inline pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
++pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	pte_t pte = *ptep;
+ 
+diff --git a/arch/sh/mm/pg-sh7705.c b/arch/sh/mm/pg-sh7705.c
+index 7f885b7..eaf2514 100644
+--- a/arch/sh/mm/pg-sh7705.c
++++ b/arch/sh/mm/pg-sh7705.c
+@@ -118,7 +118,7 @@ void copy_user_page(void *to, void *from, unsigned long address, struct page *pg
+  * For SH7705, we have our own implementation for ptep_get_and_clear
+  * Copied from pg-sh4.c
+  */
+-inline pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
++pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+ {
+ 	pte_t pte = *ptep;
+ 
