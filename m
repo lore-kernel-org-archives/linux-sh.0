@@ -1,8 +1,10 @@
 From: Manuel Lauss <mano@roarinelk.homelinux.net>
-Date: Thu, 17 Jul 2008 11:01:19 +0000
+Date: Thu, 17 Jul 2008 11:03:53 +0000
 Subject: [PATCH] sh7760mmc: host driver for SH7760 MMC interface
-Message-Id: <20080717110119.GA14949@roarinelk.homelinux.net>
+Message-Id: <20080717110353.GB14949@roarinelk.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080717110119.GA14949@roarinelk.homelinux.net>
+In-Reply-To: <20080717110119.GA14949@roarinelk.homelinux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,7 +24,7 @@ MMCIF should theoretically work with some minor adjustments.
 Patch is against latest linus git.
 
 Thanks!
-	Manuel Lauss
+        Manuel Lauss
 
 --- 
 From: Manuel Lauss <mano@roarinelk.homelinux.net>
