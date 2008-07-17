@@ -1,48 +1,80 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Fri, 18 Jul 2008 09:05:35 +0000
-Subject: Re: [PATCH 02/05] resource: add resource_type() and IORESOURCE_TYPE_BITS
-Message-Id: <aec7e5c30807180205k4aef2224ne4d0c2f7b0cd3dbb@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Jul 2008 10:13:34 +0000
+Subject: [PATCH] sh: Use clk_always_enable() on sh7723 / ap325rxa
+Message-Id: <20080717101334.19615.87712.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080718074002.32713.73442.sendpatchset@rx1.opensource.se>
-	 <20080718074018.32713.11976.sendpatchset@rx1.opensource.se>
-	 <20080718075601.GL24620@fluff.org.uk>
-	 <aec7e5c30807180124j3623675fwaeedcaf23e4b0b05@mail.gmail.com>
-	 <20080718083317.GN24620@fluff.org.uk>
-In-Reply-To: <20080718083317.GN24620@fluff.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben-linux@fluff.org>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, gregkh@suse.de, lethal@linux-sh.org, i2c@lm-sensors.org, akpm@linux-foundation.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jul 18, 2008 at 5:33 PM, Ben Dooks <ben-linux@fluff.org> wrote:
-> On Fri, Jul 18, 2008 at 05:24:59PM +0900, Magnus Damm wrote:
->> On Fri, Jul 18, 2008 at 4:56 PM, Ben Dooks <ben-linux@fluff.org> wrote:
->> > You are changing a simple test to a mask and compare, is anyone going
->> > to produce resources with an IORESOURCE_MEM and an IORESOURCE_IO
->> > together?
->>
->> Actually, I'd like to replace the one-bit-per-type strategy with a
->> N-bit counter. But that is not very compatible with the case you are
->> pointing out. I'm not sure if that's a combination we really want to
->> support though. Both IRQ and DMA doesn't make much sense to me. =)
->
-> I'm not saying it is a bad idea, I just do not know if anyone is
-> currently relying on this to work...
+From: Magnus Damm <damm@igel.co.jp>
 
-In V1 I posted both a mega patch that went through and converted arch/
-and also a patch that converted the type into a N-bit counter. In V2
-I've taken more of a step-by-step approach and not converted into a
-N-bit counter.
+Use clk_always_enable() on the sh7723 processor and in the ap325rxa
+board code. Remove duplicate MSTPCR register definitions.
 
-I'm thinking that this patch shouldn't break anything since the bits
-are left exactly like before. And the code in drivers/base/platform.c
-seems to treat the bits as only one should be set anyway. For instance
-platform_device_add() seems to prioritize IORESOURCE_MEM over
-IORESOURCE_IO.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Or did I change the logic in drivers/base/platform without realizing it?
+ arch/sh/boards/renesas/ap325rxa/setup.c |   12 ------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c  |   16 ++++++++++++++++
+ 2 files changed, 16 insertions(+), 12 deletions(-)
 
-Cheers,
-
-/ magnus
+--- 0001/arch/sh/boards/renesas/ap325rxa/setup.c
++++ work/arch/sh/boards/renesas/ap325rxa/setup.c	2008-07-17 12:43:05.000000000 +0900
+@@ -97,20 +97,8 @@ static int __init ap325rxa_devices_setup
+ }
+ device_initcall(ap325rxa_devices_setup);
+ 
+-#define MSTPCR0		(0xA4150030)
+-#define MSTPCR1		(0xA4150034)
+-#define MSTPCR2		(0xA4150038)
+-
+ static void __init ap325rxa_setup(char **cmdline_p)
+ {
+-	/* enable VEU0 + VEU1 */
+-	ctrl_outl(ctrl_inl(MSTPCR2) & ~0x00000044, MSTPCR2);	/* bit 2 + 6 */
+-
+-	/* enable MERAM */
+-	ctrl_outl(ctrl_inl(MSTPCR0) & ~0x00000001, MSTPCR0);	/* bit 0 */
+-
+-	/* I2C */
+-	ctrl_outl(ctrl_inl(MSTPCR1) & ~0x00000200, MSTPCR1);
+ }
+ 
+ static struct sh_machine_vector mv_ap325rxa __initmv = {
+--- 0007/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-07-17 13:05:10.000000000 +0900
+@@ -13,6 +13,7 @@
+ #include <linux/mm.h>
+ #include <linux/serial_sci.h>
+ #include <linux/uio_driver.h>
++#include <asm/clock.h>
+ #include <asm/mmzone.h>
+ 
+ static struct uio_info vpu_platform_data = {
+@@ -230,9 +231,24 @@ static struct platform_device *sh7723_de
+ 
+ static int __init sh7723_devices_setup(void)
+ {
++	clk_always_enable("mstp031"); /* TLB */
++	clk_always_enable("mstp030"); /* IC */
++	clk_always_enable("mstp029"); /* OC */
++	clk_always_enable("mstp024"); /* FPU */
++	clk_always_enable("mstp022"); /* INTC */
++	clk_always_enable("mstp020"); /* SuperHyway */
++	clk_always_enable("mstp000"); /* MERAM */
++	clk_always_enable("mstp109"); /* I2C */
++	clk_always_enable("mstp108"); /* RTC */
++	clk_always_enable("mstp211"); /* USB */
++	clk_always_enable("mstp206"); /* VEU2H1 */
++	clk_always_enable("mstp202"); /* VEU2H0 */
++	clk_always_enable("mstp201"); /* VPU */
++
+ 	platform_resource_setup_memory(&vpu_device, "vpu", 2 << 20);
+ 	platform_resource_setup_memory(&veu0_device, "veu0", 2 << 20);
+ 	platform_resource_setup_memory(&veu1_device, "veu1", 2 << 20);
++
+ 	return platform_add_devices(sh7723_devices,
+ 				    ARRAY_SIZE(sh7723_devices));
+ }
