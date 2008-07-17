@@ -1,184 +1,173 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Tue, 01 Jul 2008 02:04:29 +0000
-Subject: Re: [PATCH v2 1/4] video: sh7760fb: SH7760/SH7763 LCDC framebuffer
-Message-Id: <486990AD.2040503@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Jul 2008 09:56:15 +0000
+Subject: [PATCH] sh: Add SuperH Mobile MSTPCR bits to clock framework
+Message-Id: <20080717095615.19566.83528.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48632CAF.3090703@renesas.com> <20080626074555.GA408@linux-sh.org>
-In-Reply-To: <20080626074555.GA408@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, linuc-fbdev <Linux-fbdev-devel@lists.sourceforge.net>, Linux-sh <linux-sh@vger.kernel.org>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Manuel Lauss <mano@roarinelk.homelinux.net>
+To: linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Thu, Jun 26, 2008 at 02:44:15PM +0900, Nobuhiro Iwamatsu wrote:
->> Main source code of Driver for the LCDC interface on the SH7760 and SH7763 SoCs.
->>
->> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
->> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->> ---
->>  drivers/video/sh7760fb.c |  671 ++++++++++++++++++++++++++++++++++++++++++++++
->>  1 files changed, 671 insertions(+), 0 deletions(-)
->>  create mode 100644 drivers/video/sh7760fb.c
->>
-> It really doesn't make any sense to split this patch up in to parts, as
-> none of the parts is useful or insular without the rest. The whole point
-> of splitting a patch out in to a series is to isolate changes logically
-> and in an incremental fashion, which obviously doesn't apply here.
-> 
->> +#include <linux/delay.h>
->> +#include <linux/dma-mapping.h>
->> +#include <linux/fb.h>
->> +#include <linux/gfp.h>
->> +#include <linux/interrupt.h>
->> +#include <linux/kernel.h>
->> +#include <linux/mm.h>
->> +#include <linux/module.h>
->> +#include <linux/platform_device.h>
->> +
->> +#include <linux/io.h>
->> +#include <asm/sh7760fb.h>
->> +
->> +#define fb_msg(args...)        \
->> +       do { printk(KERN_ALERT "sh7760fb: " args); } while (0)
->> +#if 0
->> +#define dbg(args...) fb_msg(args)
->> +#else
->> +#define dbg(fmt, args...) do { } while (0)
->> +#endif
->> +
-> Use dev_dbg() instead, then you get the pretty printing with the driver
-> name from the struct device.
-> 
->> +/*
->> + * some bits of the colormap registers should be written as zero.
->> + * create a mask for that.
->> + */
->> +#define SH7760FB_PALETTE_MASK    0x00f8fcf8
->> +
->> +/* The LCDC dma engine always sets bits 27-26 to 1: this is Area3 */
->> +#define SH7760FB_DMA_MASK      0x0C000000
->> +
-> These should probably be in the header with all of the other related
-> bits.
-> 
->> +static inline void OUT16(struct sh7760fb_par *par, int reg, unsigned short v)
->> +{
->> +	iowrite16(v, par->base + reg);
->> +}
->> +
->> +static inline unsigned short IN16(struct sh7760fb_par *par, int reg)
->> +{
->> +	return ioread16(par->base + reg);
->> +}
->> +
->> +static inline void OUT32(struct sh7760fb_par *par, int reg, unsigned long v)
->> +{
->> +	iowrite32(v, par->base + reg);
->> +}
->> +
->> +static inline unsigned long IN32(struct sh7760fb_par *par, int reg)
->> +{
->> +	return ioread32(par->base + reg);
->> +}
->> +
-> There is effectively no point in using wrappers here, just use the
-> ioreadX() routines directly.
-> 
->> +static void sh7760fb_wait_vsync(struct fb_info *info)
->> +{
->> +	struct sh7760fb_par *par = info->par;
->> +
->> +	if (par->pd->novsync)
->> +		return;
->> +/*
->> +	while (IN16(par, LDINTR) & 1)
->> +		OUT16(par, LDINTR, 0x1100);
->> +*/
->> +}
->> +
-> This function doesn't actually do anything, so just kill it off.
-> 
->> +
->> +/*
->> + * wait_for_lps - wait until power supply has reached a certain state.
->> + * @val:       bitmask to wait for.
->> + */
->> +static void wait_for_lps(struct sh7760fb_par *par, int val)
->> +{
->> +	int i = 100;
->> +	while (--i && ((IN16(par, LDPMMR) & 3) != val))
->> +		msleep(1);
->> +}
->> +
-> You don't check for a timeout here, which you can easily check for and
-> hand down an error value for sh7760fb_blank() to return.
-> 
->> +	if (!tmo) {
->> +		ret = 1;
->> +		pr_debug("sh7760fb: no palette access!\n");
->> +		goto out;
->> +	}
->> +
-> Here also, switch to dev_dbg() so you can get rid of the sh7760fb:
-> prefixing and be consistent with the other debug messages.
-> 
->> +	par->ioarea = request_mem_region(res->start,
->> +			(res->end - res->start), pdev->name);
->> +	if (!par->ioarea) {
->> +		dev_err(&pdev->dev, "mmio area busy\n");
->> +		ret = -EBUSY;
->> +		goto out_fb;
->> +	}
->> +
->> +	par->base = ioremap_nocache(res->start, (res->end - res->start));
->> +	if (!par->base) {
->> +		dev_err(&pdev->dev, "cannot remap\n");
->> +		ret = -ENODEV;
->> +		goto out_res;
->> +	}
->> +
-> You have an off-by-1 error here, ioremap() needs (res->end - res->start) + 1,
-> while request_mem_region() wants (res->end - res->start).
-> 
->> +	fb_msg("memory at phys 0x%08lx-0x%08lx, size %ld KiB\n",
->> +	       (unsigned long)par->fbdma,
->> +	       (unsigned long)(par->fbdma + info->screen_size - 1),
->> +		   info->screen_size >> 10);
->> +
-> This is probably useful to have as a dev_info() or so instead of a debug
-> message..
-> 
->> +#ifdef CONFIG_PM
->> +static int sh7760fb_suspend(struct platform_device *dev, u32 level)
->> +{
->> +	dbg("sh7760fb_suspend()\n");
->> +	return 0;
->> +}
->> +
->> +static int sh7760fb_resume(struct platform_device *dev, u32 level)
->> +{
->> +	dbg("sh7760fb_resume()\n");
->> +	return 0;
->> +}
-> 
-> Fascinating messages. Please kill them.
-> 
->> +MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
->> +MODULE_DESCRIPTION("FBdev for SH7760/63 integrated LCD Controller");
->> +MODULE_LICENSE("GPL");
-> 
-> Despite the fact that Manuel wrote the initial version, you seem to be
-> the one hacking on it and posting it for submission. MODULE_AUTHOR()
-> should reflect the active maintainer or at least point to a neutral place
-> where users can get help, as this is the first thing users will see with
-> modinfo and such. If you are going to maintain this together, also add
-> your name in to MODULE_AUTHOR().
-> 
-Thank you for your comments.
-I will apply your comment and update this.
+From: Magnus Damm <damm@igel.co.jp>
 
-Best regards,
-  Nobuhiro
+Handle module stop clock bits in MSTPCRn through the clock framework.
+The clocks are named after the bits in the data sheet. The association
+between bit number and hardware block is processor specific.
 
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |  116 ++++++++++++++++++++++++++++++++
+ include/asm-sh/cpu-sh4/freq.h          |    3 
+ 2 files changed, 119 insertions(+)
+
+--- 0009/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2008-07-17 12:11:54.000000000 +0900
+@@ -14,6 +14,7 @@
+ #include <linux/kernel.h>
+ #include <linux/io.h>
+ #include <linux/errno.h>
++#include <linux/stringify.h>
+ #include <asm/clock.h>
+ #include <asm/freq.h>
+ 
+@@ -558,6 +559,115 @@ static struct clk sh7722_video_clock = {
+ 	.ops = &sh7722_video_clk_ops,
+ };
+ 
++static int sh7722_mstpcr_start_stop(struct clk *clk, unsigned long reg,
++				    int enable)
++{
++	unsigned long bit = clk->arch_flags;
++	unsigned long r;
++
++	r = ctrl_inl(reg);
++
++	if (enable)
++		r &= ~(1 << bit);
++	else
++		r |= (1 << bit);
++
++	ctrl_outl(r, reg);
++	return 0;
++}
++
++static void sh7722_mstpcr0_enable(struct clk *clk)
++{
++	sh7722_mstpcr_start_stop(clk, MSTPCR0, 1);
++}
++
++static void sh7722_mstpcr0_disable(struct clk *clk)
++{
++	sh7722_mstpcr_start_stop(clk, MSTPCR0, 0);
++}
++
++static void sh7722_mstpcr1_enable(struct clk *clk)
++{
++	sh7722_mstpcr_start_stop(clk, MSTPCR1, 1);
++}
++
++static void sh7722_mstpcr1_disable(struct clk *clk)
++{
++	sh7722_mstpcr_start_stop(clk, MSTPCR1, 0);
++}
++
++static void sh7722_mstpcr2_enable(struct clk *clk)
++{
++	sh7722_mstpcr_start_stop(clk, MSTPCR2, 1);
++}
++
++static void sh7722_mstpcr2_disable(struct clk *clk)
++{
++	sh7722_mstpcr_start_stop(clk, MSTPCR2, 0);
++}
++
++static struct clk_ops sh7722_mstpcr0_clk_ops = {
++	.enable = sh7722_mstpcr0_enable,
++	.disable = sh7722_mstpcr0_disable,
++};
++
++static struct clk_ops sh7722_mstpcr1_clk_ops = {
++	.enable = sh7722_mstpcr1_enable,
++	.disable = sh7722_mstpcr1_disable,
++};
++
++static struct clk_ops sh7722_mstpcr2_clk_ops = {
++	.enable = sh7722_mstpcr2_enable,
++	.disable = sh7722_mstpcr2_disable,
++};
++
++#define DECLARE_MSTPCRN(regnr, bitnr, bitstr)		\
++{							\
++	.name = "mstp" __stringify(regnr) bitstr,	\
++	.arch_flags = bitnr,				\
++	.ops = &sh7722_mstpcr ## regnr ## _clk_ops,	\
++}
++
++#define DECLARE_MSTPCR(regnr) \
++	DECLARE_MSTPCRN(regnr, 31, "31"), \
++	DECLARE_MSTPCRN(regnr, 30, "30"), \
++	DECLARE_MSTPCRN(regnr, 29, "29"), \
++	DECLARE_MSTPCRN(regnr, 28, "28"), \
++	DECLARE_MSTPCRN(regnr, 27, "27"), \
++	DECLARE_MSTPCRN(regnr, 26, "26"), \
++	DECLARE_MSTPCRN(regnr, 25, "25"), \
++	DECLARE_MSTPCRN(regnr, 24, "24"), \
++	DECLARE_MSTPCRN(regnr, 23, "23"), \
++	DECLARE_MSTPCRN(regnr, 22, "22"), \
++	DECLARE_MSTPCRN(regnr, 21, "21"), \
++	DECLARE_MSTPCRN(regnr, 20, "20"), \
++	DECLARE_MSTPCRN(regnr, 19, "19"), \
++	DECLARE_MSTPCRN(regnr, 18, "18"), \
++	DECLARE_MSTPCRN(regnr, 17, "17"), \
++	DECLARE_MSTPCRN(regnr, 16, "16"), \
++	DECLARE_MSTPCRN(regnr, 15, "15"), \
++	DECLARE_MSTPCRN(regnr, 14, "14"), \
++	DECLARE_MSTPCRN(regnr, 13, "13"), \
++	DECLARE_MSTPCRN(regnr, 12, "12"), \
++	DECLARE_MSTPCRN(regnr, 11, "11"), \
++	DECLARE_MSTPCRN(regnr, 10, "10"), \
++	DECLARE_MSTPCRN(regnr, 9, "09"), \
++	DECLARE_MSTPCRN(regnr, 8, "08"), \
++	DECLARE_MSTPCRN(regnr, 7, "07"), \
++	DECLARE_MSTPCRN(regnr, 6, "06"), \
++	DECLARE_MSTPCRN(regnr, 5, "05"), \
++	DECLARE_MSTPCRN(regnr, 4, "04"), \
++	DECLARE_MSTPCRN(regnr, 3, "03"), \
++	DECLARE_MSTPCRN(regnr, 2, "02"), \
++	DECLARE_MSTPCRN(regnr, 1, "01"), \
++	DECLARE_MSTPCRN(regnr, 0, "00")
++
++static struct clk sh7722_mstpcr[] = {
++	DECLARE_MSTPCR(0),
++	DECLARE_MSTPCR(1),
++	DECLARE_MSTPCR(2),
++};
++
+ static struct clk *sh7722_clocks[] = {
+ 	&sh7722_umem_clock,
+ 	&sh7722_sh_clock,
+@@ -600,5 +710,11 @@ int __init arch_clk_init(void)
+ 		clk_register(sh7722_clocks[i]);
+ 	}
+ 	clk_put(master);
++
++	for (i = 0; i < ARRAY_SIZE(sh7722_mstpcr); i++) {
++		pr_debug( "Registering mstpcr '%s'\n", sh7722_mstpcr[i].name);
++		clk_register(&sh7722_mstpcr[i]);
++	}
++
+ 	return 0;
+ }
+--- 0002/include/asm-sh/cpu-sh4/freq.h
++++ work/include/asm-sh/cpu-sh4/freq.h	2008-07-16 18:33:24.000000000 +0900
+@@ -19,6 +19,9 @@
+ #define SCLKACR			0xa4150008
+ #define SCLKBCR			0xa415000c
+ #define IrDACLKCR		0xa4150010
++#define MSTPCR0			0xa4150030
++#define MSTPCR1			0xa4150034
++#define MSTPCR2			0xa4150038
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7780)
+ #define	FRQCR			0xffc80000
