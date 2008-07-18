@@ -1,58 +1,66 @@
-From: Ben Dooks <ben-linux@fluff.org>
-Date: Mon, 28 Jul 2008 22:38:28 +0000
-Subject: Re: [2.6 patch] SH_AP325RXA must select I2C
-Message-Id: <20080728223828.GF8301@fluff.org.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 18 Jul 2008 07:40:27 +0000
+Subject: [PATCH 03/05] resource: add new IORESOURCE_CLK type V2
+Message-Id: <20080718074027.32713.15674.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080728201705.GC7713@cs181140183.pp.htv.fi>
-In-Reply-To: <20080728201705.GC7713@cs181140183.pp.htv.fi>
+References: <20080718074002.32713.73442.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080718074002.32713.73442.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian Bunk <bunk@kernel.org>
-Cc: lethal@linux-sh.org, Yusuke Goda <goda.yusuke@renesas.com>, Magnus Damm <damm@igel.co.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, gregkh@suse.de, lethal@linux-sh.org, i2c@lm-sensors.org, Magnus Damm <magnus.damm@gmail.com>, akpm@linux-foundation.org
 
-On Mon, Jul 28, 2008 at 11:17:05PM +0300, Adrian Bunk wrote:
-> This patch fixes the following build error:
-> 
-> <--  snip  -->
-> 
-> ...
->   LD      vmlinux
-> arch/sh/boards/renesas/ap325rxa/built-in.o: In function `camera_set_capture':
-> setup.c:(.text+0x80): undefined reference to `i2c_get_adapter'
-> setup.c:(.text+0x88): undefined reference to `i2c_transfer'
-> make[1]: *** [vmlinux] Error 1
-> 
-> <--  snip  -->
-> 
-> Reported-by: Adrian Bunk <bunk@kernel.org>
-> Signed-off-by: Adrian Bunk <bunk@kernel.org>
+From: Magnus Damm <damm@igel.co.jp>
 
-I suggest fixing the code or moving out to something that
-depends on having I2C available.
+So far struct resource has been used with the types IORESOURCE_MEM,
+IORESOURCE_IO and IORESOUCE_IRQ to pass I/O and interrupt parameters
+to platform drivers. This patch extends this with IORESOURCE_CLK which
+should be used to pass a clock string to the platform driver. This
+string points out which specific clock that should be used with clk_get()
+for a certain driver instance.
+
+Using a hard coded strings in the device driver won't do since we may
+have multiple instances of drivers that need to use different clocks.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Changes since V1:
+ - Use a new bit for IORESOURCE_CLK instead of switching to a counter
+
+ include/linux/ioport.h |   17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+--- 0003/include/linux/ioport.h
++++ work/include/linux/ioport.h	2008-07-18 14:29:48.000000000 +0900
+@@ -34,20 +34,21 @@ struct resource_list {
+  */
+ #define IORESOURCE_BITS		0x000000ff	/* Bus-specific bits */
  
-> ---
-> cdcb22706c51f0ae44946f4c3826cc3658960eba 
-> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-> index 7bfb0d2..6f77d0a 100644
-> --- a/arch/sh/Kconfig
-> +++ b/arch/sh/Kconfig
-> @@ -520,6 +520,7 @@ config SH_MIGOR
->  config SH_AP325RXA
->  	bool "AP-325RXA"
->  	depends on CPU_SUBTYPE_SH7723
-> +	select I2C
->  	help
->  	  Renesas "AP-325RXA" support.
->  	  Compatible with ALGO SYSTEM CO.,LTD. "AP-320A"
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-
--- 
-Ben (ben@fluff.org, http://www.fluff.org/)
-
-  'a smiley only costs 4 bytes'
+-#define IORESOURCE_TYPE_BITS	0x00000f00	/* Resource type */
++#define IORESOURCE_TYPE_BITS	0x00001f00	/* Resource type */
+ #define IORESOURCE_IO		0x00000100
+ #define IORESOURCE_MEM		0x00000200
+ #define IORESOURCE_IRQ		0x00000400
+ #define IORESOURCE_DMA		0x00000800
++#define IORESOURCE_CLK		0x00001000
+ 
+-#define IORESOURCE_PREFETCH	0x00001000	/* No side effects */
+-#define IORESOURCE_READONLY	0x00002000
+-#define IORESOURCE_CACHEABLE	0x00004000
+-#define IORESOURCE_RANGELENGTH	0x00008000
+-#define IORESOURCE_SHADOWABLE	0x00010000
++#define IORESOURCE_PREFETCH	0x00002000	/* No side effects */
++#define IORESOURCE_READONLY	0x00004000
++#define IORESOURCE_CACHEABLE	0x00008000
++#define IORESOURCE_RANGELENGTH	0x00010000
++#define IORESOURCE_SHADOWABLE	0x00020000
+ 
+-#define IORESOURCE_SIZEALIGN	0x00020000	/* size indicates alignment */
+-#define IORESOURCE_STARTALIGN	0x00040000	/* start field is alignment */
++#define IORESOURCE_SIZEALIGN	0x00040000	/* size indicates alignment */
++#define IORESOURCE_STARTALIGN	0x00080000	/* start field is alignment */
+ 
+ #define IORESOURCE_DISABLED	0x10000000
+ #define IORESOURCE_UNSET	0x20000000
