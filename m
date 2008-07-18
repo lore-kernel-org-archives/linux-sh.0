@@ -1,158 +1,97 @@
-From: Manuel Lauss <mano@roarinelk.homelinux.net>
-Date: Fri, 18 Jul 2008 05:12:21 +0000
+From: Pierre Ossman <drzeus@drzeus.cx>
+Date: Fri, 18 Jul 2008 23:49:33 +0000
 Subject: Re: [PATCH] sh7760mmc: host driver for SH7760 MMC interface
-Message-Id: <20080718051221.GA22279@roarinelk.homelinux.net>
+Message-Id: <20080719014933.18b9eba4@mjolnir.drzeus.cx>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=_freyr.drzeus.cx-24192-1216424977-0001-2"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080717110119.GA14949@roarinelk.homelinux.net>
 In-Reply-To: <20080717110119.GA14949@roarinelk.homelinux.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Paul,
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-On Fri, Jul 18, 2008 at 08:09:16AM +0900, Paul Mundt wrote:
-> On Thu, Jul 17, 2008 at 01:03:53PM +0200, Manuel Lauss wrote:
-> > Here is my latest attempt at an MMC host driver for the MMCIF interface
-> > found on many SH-4 socs, particularly the SH7760, SH778x, and SH7763.
-> > 
-> > This is a very basic driver, without DMA support and crippled performance
-> > due to hardware or driver bugs wrt. multiblock writes.
-> > 
-> > The driver has been extensively tested on SH7760 only.  The SH7780 and 7763
-> > MMCIF should theoretically work with some minor adjustments.
-> > 
-> > Patch is against latest linus git.
-> > 
-> Looks good to me in general, though a few minor nits.
-> 
-> > +/* The MMCIF does not provide any facilities for card- and read-only
-> > + * detection as well as voltage setting. Use GPIOs in the board-specific
-> > + * code for that. PLEASE READ Documentation/sh/sh7760-mmc.txt if you
-> > + * want to use this driver with your board!
-> > + *
-> This document appears to be missing in your patch.
+--=_freyr.drzeus.cx-24192-1216424977-0001-2
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Will be in my next patch.
+On Thu, 17 Jul 2008 13:03:53 +0200
+Manuel Lauss <mano@roarinelk.homelinux.net> wrote:
 
- 
-> > +static inline unsigned short MMC_INW(struct shmmc_host *h, unsigned int reg)
-> > +{
-> > +	return ioread16(h->iobase + reg);
-> > +}
-> > +
-> > +static inline void MMC_OUTW(struct shmmc_host *h, int reg, unsigned short val)
-> > +{
-> > +	iowrite16(val, h->iobase + reg);
-> > +}
-> > +
-> > +static inline unsigned char MMC_INB(struct shmmc_host *h, unsigned int reg)
-> > +{
-> > +	return ioread8(h->iobase + reg);
-> > +}
-> > +
-> > +static inline void MMC_OUTB(struct shmmc_host *h, int reg, unsigned char val)
-> > +{
-> > +	iowrite8(val, h->iobase + reg);
-> > +}
-> > +
-> These accessors seem pretty pointless, any reason you don't just use
-> ioread/writeX() directly?
+> From: Manuel Lauss <mano@roarinelk.homelinux.net>
+>=20
+> Host driver for SH7760 on-chip MMCIF interface.
+>=20
+> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
+> ---
 
-makes it easier to spot accesses to the peripheral in code. Other than
-readability issues, no reason.  I'll replace them all if necessary.
+Just some minor things:
 
+> +static void shmmc_cmd(struct shmmc_host *host, struct mmc_command *cmd)
+> +{
+> +	unsigned char cmdtyr, rsptyr, i;
+> +
+> +	shmmc_clock(host, 0);
+> +	host->cmd =3D cmd;
+> +
+> +	/* enable MMCIF and "cmd xfer timeout" irqs */
+> +	host->ien1 |=3D INTCR1_IRQEN | INTCR1_CTERIE;
+> +
+> +	/* setup command type */
+> +	cmdtyr =3D 0;
+> +	if (cmd->opcode =3D=3D 12)
+> +		cmdtyr =3D CMDTYR_CMD12;
+> +
 
-> > +static void shmmc_done_tasklet(unsigned long arg)
-> > +{
-> > +	struct shmmc_host *host = (struct shmmc_host *)arg;
-> > +	struct mmc_request *mrq;
-> > +
-> > +	mrq = host->mrq;
-> > +
-> > +	/* should not happen, but I've seen it once or twice */
-> > +	if (!mrq) {
-> > +		pr_debug("%s: mrq = 0!\n", mmc_hostname(host->mmc));
-> > +		return;
-> > +	}
-> > +	host->mrq = NULL;
-> > +
-> > +	/* HACK ALERT: I need this cache flush on my SH7760 system because
-> > +	 * otherwise bits of the card response will be corrupted,
-> > +	 * preventing card identification due to malformed CID/SCR/...
-> > +	 * Don't know why, but it has been this way all the way back to
-> > +	 * 2.6.17.  -- mlau
-> > +	 */
-> > +	flush_dcache_all();
-> > +
-> flush_dcache_all() seems a bit heavy-handed, even for a hack. Though it
-> would be good to know why this is occuring in the first place..
-> 
-> Also, is the implication that you didn't need this in 2.6.16 and earlier,
-> or that 2.6.17 was the first kernel you tested this driver on?
+Seems more likely that this flag should be set on any stop command.
 
-I think I originally wrote it for 2.6.16, which worked pretty well. 
-Sometimes however, when inserting a card, random kernel was (is) printed
-instead of the card name (most of the time an empty string, but on rare
-occasions random memory dumps and a kernel hang afterwards).  It never
-really was a huge problem until around 2.6.22 when the MMC core was unable
-to detect my cards. So I stuck this cache flush in there and voila, working
-mmc and happy customers ;-)
+> +
+> +	blksz_bits =3D ffs(data->blksz) - 1;
+> +	BUG_ON((1 << blksz_bits) !=3D data->blksz);
 
-I also tried to flush_dcache_page() the various pointers the mmc core hands
-to a driver, but nothing helps except for the sledgehammer approach.
+This is not a bug. You should fail the request with -EINVAL if you
+cannot handle it.
 
-I didn't investigate it in deep but the MMC core debug output shows intact
-response values, however the sysfs nodes only show truncated garbage (i.e.
-instead of a cid 03534453443031478040cab522007ce5 only the upper 3-4 bytes
-are intact and the rest zeroes).
+> +static int __devexit shmmc_remove(struct platform_device *dev)
+> +{
+> +	struct mmc_host *mmc =3D platform_get_drvdata(dev);
+> +	struct shmmc_host *host =3D mmc_priv(mmc);
+> +	struct resource *r;
+> +
+> +	MMC_OUTB(host, INTCR0, 0);
+> +	MMC_OUTB(host, INTCR1, 0);
+> +	MMC_OUTB(host, INTCR2, 0);
+> +	shmmc_clrirq(host);
+> +	tasklet_disable(&host->done_task);
+> +	mmc_remove_host(mmc);
 
- 
-> > +static inline void
-> > +shmmc_write_fifo(struct shmmc_host *host, unsigned long cnt)
-> > +{
-> > +	unsigned short *sga;
-> > +
-> > +	/* get a pointer to physical RAM */
-> > +	sga = (unsigned short *)P2SEGADDR(sg_dma_address(host->data->sg)
-> > +					  + host->xfered);
-> > +
-> P2SEGADDR is going away in the future completely, so it would be
-> preferable not to opencode more instances of it in new code.
+Don't free up any resources needed to handle requests before
+mmc_remove_host() has returned.
 
-What is the preferred method now to get a pointer to do PIO on SH?
+Also, remember to run the mmc_test test suite on the driver. It tends
+to find a lot of problems.
 
-I'm looking into refreshing the SH DMA api, since a lot of other drivers
-could benefit from it as well.  Using DMA would also simplify the drivers'
-irq handlers.
+Rgds
+--=20
+     -- Pierre Ossman
 
+  WARNING: This correspondence is being monitored by the
+  Swedish government. Make sure your server uses encryption
+  for SMTP traffic and consider using PGP for end-to-end
+  encryption.
 
-> > +	host->ioarea = request_mem_region(r->start, r->end - r->start + 1,
-> > +					  dev->name);
-> > +	if (!host->ioarea)
-> > +		goto out0;
-> > +
-> > +	host->iobase = ioremap(r->start, r->end - r->start + 1);
-> > +	if (!host->iobase)
-> > +		goto out1;
-> > +
-> Off-by-1 on resource size. request_mem_region() wants r->end - r->start
-> while ioremap wants the + 1.
+--=_freyr.drzeus.cx-24192-1216424977-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=signature.asc
 
-Gaah. This inconsistency sucks. Fixed.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
 
- 
-> > +MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
-> > +MODULE_DESCRIPTION("SH7760 MMCIF driver");
-> > +MODULE_LICENSE("GPL");
-> 
-> Your boilerplate at the top suggests v2 only, while MODULE_LICENSE("GPL")
-> implies "or any later version". You may want to revise this to be "GPL
-> v2" if restricting it is indeed your intention.
+iEYEARECAAYFAkiBLBAACgkQ7b8eESbyJLhwoACfaAJEaD5S7NeVi7dKp4ZJIhGM
+/S0An38v2no0T3CPYfkq+uGXgTLjHKzx
+=2dJj
+-----END PGP SIGNATURE-----
 
-Done.
-
-
-Thanks Paul!
-	Manuel Lauss
+--=_freyr.drzeus.cx-24192-1216424977-0001-2--
