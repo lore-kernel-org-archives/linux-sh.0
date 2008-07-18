@@ -1,53 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 18 Jul 2008 22:27:13 +0000
-Subject: Re: [PATCH 05/06] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver V3
-Message-Id: <20080718222713.GA18822@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 18 Jul 2008 22:48:08 +0000
+Subject: Re: [PATCH 05/06] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver
+Message-Id: <Pine.LNX.4.64.0807190046260.32334@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080714120249.4806.66136.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080714120249.4806.66136.sendpatchset@rx1.opensource.se>
+References: <20080714120204.4806.87287.sendpatchset@rx1.opensource.se>
+	<20080714120249.4806.66136.sendpatchset@rx1.opensource.se>
+	<Pine.LNX.4.64.0807180918160.13569@axis700.grange>
+	<aec7e5c30807180107g6d2f55fdh917da10963f3df20@mail.gmail.com>
+	<Pine.LNX.4.64.0807181015470.14224@axis700.grange>
+	<20080718214644.GB21846@linux-sh.org>
+	<Pine.LNX.4.64.0807190009550.32334@axis700.grange>
+	<20080718222713.GA18822@linux-sh.org>
+In-Reply-To: <20080718222713.GA18822@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: video4linux-list@redhat.com, linux-sh@vger.kernel.org, Mauro Carvalho Chehab <mchehab@infradead.org>, paulius.zaleckas@teltonika.lt, akpm@linux-foundation.org
 
-On Sat, Jul 19, 2008 at 12:14:42AM +0200, Guennadi Liakhovetski wrote:
-> On Sat, 19 Jul 2008, Paul Mundt wrote:
-> 
-> > On Fri, Jul 18, 2008 at 10:23:14AM +0200, Guennadi Liakhovetski wrote:
-> > > On Fri, 18 Jul 2008, Magnus Damm wrote:
-> > > > Regarding request_mem_region() - I used to add that here and there,
-> > > > but I think the platform driver layer should handle that for us
-> > > > automatically these days. I'm not 100% sure though. =)
-> > > 
-> > > I had a short look and didn't find anything like that there... So, you 
-> > > might want to double-check and add if needed.
-> > > 
-> > It's a bit obscured, but it's certainly handled generically these days.
-> > 
-> > Look at drivers/base/platform.c:platform_device_add(). The resource type
-> > is checked there and handed off to insert_resource().
-> > platform_device_add() is likewise wrapped in to from
-> > platform_device_register(), so everyone claims the resources
-> > unconditionally.
-> 
-> Sorry, I still don't qite follow. _Resources_ get accounted with the 
-> platform_device_add() / platform_device_del(), and are searched by 
-> platform_get_resource(), but even this doesn't lock the resource like 
-> some other "get" methods. I can see that. But we are talking not about 
-> "struct resource" accounting, but about memory regions. And I don't see 
-> this done anywhere in platform-device / resource handling.
+On Sat, 19 Jul 2008, Paul Mundt wrote:
 
-Uhm, what? What do you think request_mem_region() does? It most certainly
-is about struct resource accounting, and the use of insert_resource() is
-very clearly documented in kernel/resource.c.
+> If you have an IORESOURCE_MEM resource in your platform device, the
+> iomem_resource pointer gets referenced, just as with
+> request_mem_region(), and they both go through __request_region(). The
+> only difference is that request_mem_region() doesn't permit nesting,
+> while insert_resource() does. There's nothing else going on here.
 
-If you have an IORESOURCE_MEM resource in your platform device, the
-iomem_resource pointer gets referenced, just as with
-request_mem_region(), and they both go through __request_region(). The
-only difference is that request_mem_region() doesn't permit nesting,
-while insert_resource() does. There's nothing else going on here.
+Indeed, I was so used to request_mem_region() that I didn't think about it 
+in terms of "struct resource" management. I stand corrected.
 
-platform_get_resource() has nothing to do with platform_device_add()
-setting up resources, it's just a helper to find a struct resource by its
-IORESOURCE type nested in the platform device, as they are very often out
-of order. platform_get_irq() tends to be the most useful of these.
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
