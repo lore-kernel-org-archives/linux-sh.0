@@ -1,87 +1,56 @@
-From: Manuel Lauss <mano@roarinelk.homelinux.net>
-Date: Sat, 19 Jul 2008 07:04:09 +0000
+From: Pierre Ossman <drzeus@drzeus.cx>
+Date: Sat, 19 Jul 2008 12:02:05 +0000
 Subject: Re: [PATCH] sh7760mmc: host driver for SH7760 MMC interface
-Message-Id: <488191E9.6020904@roarinelk.homelinux.net>
+Message-Id: <20080719140205.05eac25e@mjolnir.drzeus.cx>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=_freyr.drzeus.cx-30376-1216468930-0001-2"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080717110119.GA14949@roarinelk.homelinux.net>
 In-Reply-To: <20080717110119.GA14949@roarinelk.homelinux.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Pierre Ossman wrote:
-> On Thu, 17 Jul 2008 13:03:53 +0200
-> Manuel Lauss <mano@roarinelk.homelinux.net> wrote:
-> 
->> From: Manuel Lauss <mano@roarinelk.homelinux.net>
->>
->> Host driver for SH7760 on-chip MMCIF interface.
->>
->> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
->> ---
-> 
-> Just some minor things:
-> 
->> +static void shmmc_cmd(struct shmmc_host *host, struct mmc_command *cmd)
->> +{
->> +	unsigned char cmdtyr, rsptyr, i;
->> +
->> +	shmmc_clock(host, 0);
->> +	host->cmd = cmd;
->> +
->> +	/* enable MMCIF and "cmd xfer timeout" irqs */
->> +	host->ien1 |= INTCR1_IRQEN | INTCR1_CTERIE;
->> +
->> +	/* setup command type */
->> +	cmdtyr = 0;
->> +	if (cmd->opcode = 12)
->> +		cmdtyr = CMDTYR_CMD12;
->> +
-> 
-> Seems more likely that this flag should be set on any stop command.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-There are other stop commands?
-Anyway, changed to a check for the "mrq->stop" command.
+--=_freyr.drzeus.cx-30376-1216468930-0001-2
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
+On Sat, 19 Jul 2008 09:04:09 +0200
+Manuel Lauss <mano@roarinelk.homelinux.net> wrote:
 
->> +
->> +	blksz_bits = ffs(data->blksz) - 1;
->> +	BUG_ON((1 << blksz_bits) != data->blksz);
-> 
-> This is not a bug. You should fail the request with -EINVAL if you
-> cannot handle it.
+> Pierre Ossman wrote:
+> >=20
+> > Seems more likely that this flag should be set on any stop command.
+>=20
+> There are other stop commands?
 
-Actually this is just a test of ffs() on SH ;-)
-Gone now.
+In theory. :)
 
+I don't think there's any (publicly at least) defined stop command
+besides CMD12, but the MMC layer has been designed on the assumption
+that any future unbounded transfers will follow the same principle
+(which would seem reasonable as that's how the hardware is built).
 
->> +static int __devexit shmmc_remove(struct platform_device *dev)
->> +{
->> +	struct mmc_host *mmc = platform_get_drvdata(dev);
->> +	struct shmmc_host *host = mmc_priv(mmc);
->> +	struct resource *r;
->> +
->> +	MMC_OUTB(host, INTCR0, 0);
->> +	MMC_OUTB(host, INTCR1, 0);
->> +	MMC_OUTB(host, INTCR2, 0);
->> +	shmmc_clrirq(host);
->> +	tasklet_disable(&host->done_task);
->> +	mmc_remove_host(mmc);
-> 
-> Don't free up any resources needed to handle requests before
-> mmc_remove_host() has returned.
+--=20
+     -- Pierre Ossman
 
-Okay, done.
+  WARNING: This correspondence is being monitored by the
+  Swedish government. Make sure your server uses encryption
+  for SMTP traffic and consider using PGP for end-to-end
+  encryption.
 
+--=_freyr.drzeus.cx-30376-1216468930-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=signature.asc
 
-> Also, remember to run the mmc_test test suite on the driver. It tends
-> to find a lot of problems.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
 
-Will do.
+iEYEARECAAYFAkiB18AACgkQ7b8eESbyJLgy9QCeJPw9E30JjhzcpNT2+XO3RlRO
+DXwAoN4n9E+O+P7zx8IKaUHSvYPVyjML
+=Oekq
+-----END PGP SIGNATURE-----
 
-I'll resend a new and tested patch after the weekend.
-
-Thanks Pierre!
-	Manuel Lauss
-
+--=_freyr.drzeus.cx-30376-1216468930-0001-2--
