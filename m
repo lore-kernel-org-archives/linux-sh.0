@@ -1,249 +1,126 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Thu, 31 Jul 2008 23:35:33 +0000
-Subject: [PATCH] sh_eth Add SH7619 support
-Message-Id: <878wvhtynu.wl%ysato@users.sourceforge.jp>
+From: Luca Santini <luca.santini@spesonline.com>
+Date: Mon, 21 Jul 2008 09:16:11 +0000
+Subject: where are initcalls defined?
+Message-Id: <488453DB.70101@spesonline.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Jeff Garzik <jeff@garzik.org>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: linux-sh@vger.kernel.org
 
-SH7619 have same SH7710 ethernet controler.
-Add support for sh_eth driver.
-
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-
----
- drivers/net/Kconfig  |    5 +++--
- drivers/net/sh_eth.c |   34 ++++++++++++++++++----------------
- drivers/net/sh_eth.h |   25 +++++++++++++++++++++++--
- 3 files changed, 44 insertions(+), 20 deletions(-)
-
-diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
-index 8a03875..1a6cf24 100644
---- a/drivers/net/Kconfig
-+++ b/drivers/net/Kconfig
-@@ -510,14 +510,15 @@ config STNIC
- config SH_ETH
- 	tristate "Renesas SuperH Ethernet support"
- 	depends on SUPERH && \
--		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || CPU_SUBTYPE_SH7763)
-+		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || \
-+		 CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619)
- 	select CRC32
- 	select MII
- 	select MDIO_BITBANG
- 	select PHYLIB
- 	help
- 	  Renesas SuperH Ethernet device driver.
--	  This driver support SH7710, SH7712 and SH7763.
-+	  This driver support SH7710, SH7712, SH7763 and SH7619.
- 
- config SUNLANCE
- 	tristate "Sun LANCE support"
-diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
-index 6a06b95..9661e2d 100644
---- a/drivers/net/sh_eth.c
-+++ b/drivers/net/sh_eth.c
-@@ -240,7 +240,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
- 		/* RX descriptor */
- 		rxdesc = &mdp->rx_ring[i];
- 		rxdesc->addr = (u32)skb->data & ~0x3UL;
--		rxdesc->status = cpu_to_le32(RD_RACT | RD_RFP);
-+		rxdesc->status = cpu_to_edmac(RD_RACT | RD_RFP);
- 
- 		/* The size of the buffer is 16 byte boundary. */
- 		rxdesc->buffer_length = (mdp->rx_buf_sz + 16) & ~0x0F;
-@@ -262,7 +262,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
- 	mdp->dirty_rx = (u32) (i - RX_RING_SIZE);
- 
- 	/* Mark the last entry as wrapping the ring. */
--	rxdesc->status |= cpu_to_le32(RD_RDEL);
-+	rxdesc->status |= cpu_to_edmac(RD_RDEL);
- 
- 	memset(mdp->tx_ring, 0, tx_ringsize);
- 
-@@ -270,7 +270,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
- 	for (i = 0; i < TX_RING_SIZE; i++) {
- 		mdp->tx_skbuff[i] = NULL;
- 		txdesc = &mdp->tx_ring[i];
--		txdesc->status = cpu_to_le32(TD_TFP);
-+		txdesc->status = cpu_to_edmac(TD_TFP);
- 		txdesc->buffer_length = 0;
- 		if (i = 0) {
- 			/* Rx descriptor address set */
-@@ -287,7 +287,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
- 	ctrl_outl(0x1, ioaddr + TDFFR);
- #endif
- 
--	txdesc->status |= cpu_to_le32(TD_TDLE);
-+	txdesc->status |= cpu_to_edmac(TD_TDLE);
- }
- 
- /* Get skb and descriptor buffer */
-@@ -455,7 +455,7 @@ static int sh_eth_txfree(struct net_device *ndev)
- 	for (; mdp->cur_tx - mdp->dirty_tx > 0; mdp->dirty_tx++) {
- 		entry = mdp->dirty_tx % TX_RING_SIZE;
- 		txdesc = &mdp->tx_ring[entry];
--		if (txdesc->status & cpu_to_le32(TD_TACT))
-+		if (txdesc->status & cpu_to_edmac(TD_TACT))
- 			break;
- 		/* Free the original skb. */
- 		if (mdp->tx_skbuff[entry]) {
-@@ -463,9 +463,9 @@ static int sh_eth_txfree(struct net_device *ndev)
- 			mdp->tx_skbuff[entry] = NULL;
- 			freeNum++;
- 		}
--		txdesc->status = cpu_to_le32(TD_TFP);
-+		txdesc->status = cpu_to_edmac(TD_TFP);
- 		if (entry >= TX_RING_SIZE - 1)
--			txdesc->status |= cpu_to_le32(TD_TDLE);
-+			txdesc->status |= cpu_to_edmac(TD_TDLE);
- 
- 		mdp->stats.tx_packets++;
- 		mdp->stats.tx_bytes += txdesc->buffer_length;
-@@ -486,8 +486,8 @@ static int sh_eth_rx(struct net_device *ndev)
- 	u32 desc_status, reserve = 0;
- 
- 	rxdesc = &mdp->rx_ring[entry];
--	while (!(rxdesc->status & cpu_to_le32(RD_RACT))) {
--		desc_status = le32_to_cpu(rxdesc->status);
-+	while (!(rxdesc->status & cpu_to_edmac(RD_RACT))) {
-+		desc_status = edmac_to_cpu(rxdesc->status);
- 		pkt_len = rxdesc->frame_length;
- 
- 		if (--boguscnt < 0)
-@@ -522,7 +522,7 @@ static int sh_eth_rx(struct net_device *ndev)
- 			mdp->stats.rx_packets++;
- 			mdp->stats.rx_bytes += pkt_len;
- 		}
--		rxdesc->status |= cpu_to_le32(RD_RACT);
-+		rxdesc->status |= cpu_to_edmac(RD_RACT);
- 		entry = (++mdp->cur_rx) % RX_RING_SIZE;
- 	}
- 
-@@ -552,10 +552,10 @@ static int sh_eth_rx(struct net_device *ndev)
- 		}
- 		if (entry >= RX_RING_SIZE - 1)
- 			rxdesc->status |-				cpu_to_le32(RD_RACT | RD_RFP | RD_RDEL);
-+				cpu_to_edmac(RD_RACT | RD_RFP | RD_RDEL);
- 		else
- 			rxdesc->status |-				cpu_to_le32(RD_RACT | RD_RFP);
-+				cpu_to_edmac(RD_RACT | RD_RFP);
- 	}
- 
- 	/* Restart Rx engine if stopped. */
-@@ -931,9 +931,9 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		txdesc->buffer_length = skb->len;
- 
- 	if (entry >= TX_RING_SIZE - 1)
--		txdesc->status |= cpu_to_le32(TD_TACT | TD_TDLE);
-+		txdesc->status |= cpu_to_edmac(TD_TACT | TD_TDLE);
- 	else
--		txdesc->status |= cpu_to_le32(TD_TACT);
-+		txdesc->status |= cpu_to_edmac(TD_TACT);
- 
- 	mdp->cur_tx++;
- 
-@@ -1217,12 +1217,14 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 
- 	/* First device only init */
- 	if (!devno) {
-+#if defined(SH_TSU_ADDR)
- 		/* reset device */
- 		ctrl_outl(ARSTR_ARSTR, ARSTR);
- 		mdelay(1);
- 
- 		/* TSU init (Init only)*/
- 		sh_eth_tsu_init(SH_TSU_ADDR);
-+#endif
- 	}
- 
- 	/* network device register */
-@@ -1240,8 +1242,8 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 	       ndev->name, CARDNAME, (u32) ndev->base_addr);
- 
- 	for (i = 0; i < 5; i++)
--		printk(KERN_INFO "%02X:", ndev->dev_addr[i]);
--	printk(KERN_INFO "%02X, IRQ %d.\n", ndev->dev_addr[i], ndev->irq);
-+		printk("%02X:", ndev->dev_addr[i]);
-+	printk("%02X, IRQ %d.\n", ndev->dev_addr[i], ndev->irq);
- 
- 	platform_set_drvdata(pdev, ndev);
- 
-diff --git a/drivers/net/sh_eth.h b/drivers/net/sh_eth.h
-index 45ad1b0..ca3cc5f 100644
---- a/drivers/net/sh_eth.h
-+++ b/drivers/net/sh_eth.h
-@@ -143,10 +143,11 @@
- 
- #else /* CONFIG_CPU_SUBTYPE_SH7763 */
- # define RX_OFFSET 2	/* skb offset */
-+#ifndef CONFIG_CPU_SUBTYPE_SH7619
- /* Chip base address */
- # define SH_TSU_ADDR  0xA7000804
- # define ARSTR		  0xA7000800
--
-+#endif
- /* Chip Registers */
- /* E-DMAC */
- # define EDMR	0x0000
-@@ -384,7 +385,11 @@ enum FCFTR_BIT {
- 	FCFTR_RFD1 = 0x00000002, FCFTR_RFD0 = 0x00000001,
- };
- #define FIFO_F_D_RFF	(FCFTR_RFF2|FCFTR_RFF1|FCFTR_RFF0)
-+#ifndef CONFIG_CPU_SUBTYPE_SH7619
- #define FIFO_F_D_RFD	(FCFTR_RFD2|FCFTR_RFD1|FCFTR_RFD0)
-+#else
-+#define FIFO_F_D_RFD	(FCFTR_RFD0)
-+#endif
- 
- /* Transfer descriptor bit */
- enum TD_STS_BIT {
-@@ -411,9 +416,11 @@ enum FELIC_MODE_BIT {
- 	ECMR_PRM = 0x00000001,
- };
- 
--#ifdef CONFIG_CPU_SUBTYPE_SH7763
-+#if defined(CONFIG_CPU_SUBTYPE_SH7763)
- #define ECMR_CHG_DM	(ECMR_TRCCM | ECMR_RZPF | ECMR_ZPF |\
- 			ECMR_PFR | ECMR_RXF | ECMR_TXF | ECMR_MCT)
-+#elif defined(CONFIG_CPU_SUBTYPE_SH7619)
-+#define ECMR_CHG_DM	(ECMR_ZPF | ECMR_PFR ECMR_RXF | ECMR_TXF)
- #else
- #define ECMR_CHG_DM	(ECMR_ZPF | ECMR_PFR ECMR_RXF | ECMR_TXF | ECMR_MCT)
- #endif
-@@ -485,7 +492,11 @@ enum RPADIR_BIT {
- 
- /* FDR */
- enum FIFO_SIZE_BIT {
-+#if defined(CONFIG_CPU_SUBTYPE_SH7619)
-+	FIFO_SIZE_T = 0x00000100, FIFO_SIZE_R = 0x00000001,
-+#else
- 	FIFO_SIZE_T = 0x00000700, FIFO_SIZE_R = 0x00000007,
-+#endif
- };
- enum phy_offsets {
- 	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
-@@ -663,4 +674,14 @@ static void swaps(char *src, int len)
- #endif
- }
- #endif /* CONFIG_CPU_SUBTYPE_SH7763 */
-+
-+/* CPU endian from/to EDMAC endian */
-+#if !defined(CONFIG_CPU_SUBTYPE_SH7619)
-+#define cpu_to_edmac(x) cpu_to_le32(x)
-+#define edmac_to_cpu(x) le32_to_cpu(x)
-+#else
-+#define cpu_to_edmac(x) cpu_to_be32(x)
-+#define edmac_to_cpu(x) be32_to_cpu(x)
-+#endif
-+
- #endif
--- 
-1.5.6.3
-
--- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+SSdtIHRyeWluZyB0byBwb3J0IGtlcm5lbCAyLjYuMjYgdG8gZWRvc2s3NzYwIGJvYXJkLgpteSBr
+ZXJuZWwgaGFuZ3MgdXAgZHVyaW5nIGluaXRjYWxsczsKd2l0aCBhIGxpdHRsZSBkZWJ1Z2dpbmcg
+aSBmb3VuZCB0aGF0IHdpdGggYSBtaW5pbWFsIGNvbmZpZyAob25seSBleHQyIGZzIApmb3IgZXhh
+bXBsZSkKc2tpcHBpbmcgdGhlIDcxdGggaW5pdGNhbGxzIG15IGtlcm5lbCBjb250aW51ZXMgdG8g
+Ym9vdCB1bnRpbAoKClsgICAgMS42NjUwMzJdIE5vIGZpbGVzeXN0ZW0gY291bGQgbW91bnQgcm9v
+dCwgdHJpZWQ6ICBleHQyClsgICAgMS42NzAzMzBdIEtlcm5lbCBwYW5pYyAtIG5vdCBzeW5jaW5n
+OiBWRlM6IFVuYWJsZSB0byBtb3VudCByb290IGZzIApvbiB1bmtub3duLWJsb2NrKDEsMCkKCgp3
+aGVyZSBjYW4gaSBmb3VuZCB0aGUgaW5pdGNhbGxzIHZlY3RvciBsaXN0ID8KCgpzb21lb25lIGNh
+biBoZWxwIG1lPwoKCgoKaGVyZSBhdHRhY2hlZCB0aGUgY29tcGxldGUgYm9vdCBsb2cgKCB3aGVy
+ZSBTUEVTIGxpbmVzIGFyZSBteSBhZGRlZCAKZGVidWcgaW5mb3MpOgoKClN0YXJ0aW5nIHByb2dy
+YW0gYXQgOEMyMTAwMDAKWyAgICAwLjAwMDAwMF0gU1BFUyBzdGFydF9rZXJuZWwKWyAgICAwLjAw
+MDAwMF0gTGludXggdmVyc2lvbiAyLjYuMjYtcmM4LTAwMjEwLWczNTUzNGFkLWRpcnR5IAooc0Bz
+LWxhcHRvcCkgKGdjYyB2ZXJzaW9uIDMuNC41IDIwMDYwMTAzICgzLjQuNS0xMC4xYSkpICMyMDYg
+OApbICAgIDAuMDAwMDAwXSBTUEVTIHF1aSBkb3ZyZWkgdmVkZXJlIDoKWyAgICAwLjAwMDAwMF0g
+ICAgTGludXggdmVyc2lvbiAyLjYuMjYtcmM4LTAwMjEwLWczNTUzNGFkLWRpcnR5IAooc0BzLWxh
+cHRvcCkgKGdjYyB2ZXJzaW9uIDMuNC41IDIwMDYwMTAzICgzLjQuNS0xMC4xYSkpICMyOApbICAg
+IDAuMDAwMDAwXQpbICAgIDAuMDAwMDAwXSBCb290IHBhcmFtczoKWyAgICAwLjAwMDAwMF0gLi4u
+IE1PVU5UX1JPT1RfUkRPTkxZIC0gMDAwMDAwMDEKWyAgICAwLjAwMDAwMF0gLi4uIFJBTURJU0tf
+RkxBR1MgICAgIC0gMDAwMDAwMDAKWyAgICAwLjAwMDAwMF0gLi4uIE9SSUdfUk9PVF9ERVYgICAg
+IC0gMDAwMDAyMDAKWyAgICAwLjAwMDAwMF0gLi4uIExPQURFUl9UWVBFICAgICAgIC0gMDAwMDAw
+MDEKWyAgICAwLjAwMDAwMF0gLi4uIElOSVRSRF9TVEFSVCAgICAgIC0gMDAzNjAwMDAKWyAgICAw
+LjAwMDAwMF0gLi4uIElOSVRSRF9TSVpFICAgICAgIC0gMDAyMWRlMWEKWyAgICAwLjAwMDAwMF0g
+Qm9vdGluZyBtYWNodmVjOiBFRE9TSzc3NjAKWyAgICAwLjAwMDAwMF0gU1BFUyBtYWNodmVjLmMg
+Qm9vdGluZyBtYWNodmVjOiBFRE9TSzc3NjAKWyAgICAwLjAwMDAwMF0gU1BFUyBub24gZGljaGlh
+cmF0byAyNSA7c29zdGl0dWl0byBjb24gZ2VuZXJpYwpbICAgIDAuMDAwMDAwXSBTUEVTIG5vbiBk
+aWNoaWFyYXRvIDI2IDtzb3N0aXR1aXRvIGNvbiBnZW5lcmljClsgICAgMC4wMDAwMDBdIFNQRVMg
+bm9uIGRpY2hpYXJhdG8gMjcgO3Nvc3RpdHVpdG8gY29uIGdlbmVyaWMKWyAgICAwLjAwMDAwMF0g
+Tm9kZSAwOiBzdGFydF9wZm4gPSAweGMwMDAsIGxvdyA9IDB4MTAwMDAKWyAgICAwLjAwMDAwMF0g
+Wm9uZSBQRk4gcmFuZ2VzOgpbICAgIDAuMDAwMDAwXSAgIE5vcm1hbCAgICAgIDQ5MTUyIC0+ICAg
+IDY1NTM2ClsgICAgMC4wMDAwMDBdIE1vdmFibGUgem9uZSBzdGFydCBQRk4gZm9yIGVhY2ggbm9k
+ZQpbICAgIDAuMDAwMDAwXSBlYXJseV9ub2RlX21hcFsxXSBhY3RpdmUgUEZOIHJhbmdlcwpbICAg
+IDAuMDAwMDAwXSAgICAgMDogICAgNDkxNTIgLT4gICAgNjU1MzYKWyAgICAwLjAwMDAwMF0gQnVp
+bHQgMSB6b25lbGlzdHMgaW4gWm9uZSBvcmRlciwgbW9iaWxpdHkgZ3JvdXBpbmcgb24uICAKVG90
+YWwgcGFnZXM6IDE2MjU2ClsgICAgMC4wMDAwMDBdIEtlcm5lbCBjb21tYW5kIGxpbmU6IG1lbWRN
+IHNoX2127U9TSzc3NjAgCmNvbnNvbGU9dHR5U0MyLDExNTIwMCBydyBzaF9wY2xrMzMzNTAwMCBy
+b290PS9kZXYvcmFtClsgICAgMC4wMDAwMDBdIFNQRVMgcXVpIGRvdnJlaSB2ZWRlcmUgOgpbICAg
+IDAuMDAwMDAwXSAgIDw1Pktlcm5lbCBjb21tYW5kIGxpbmU6IG1lbWRNIHNoX2127U9TSzc3NjAg
+CmNvbnNvbGU9dHR5U0MyLDExNTIwMCBydyBzaF9wY2xrMzMzNTAwMCByb290PS9kZXYvcmFtClsg
+ICAgMC4wMDAwMDBdICBTUEVTICBpbml0X2Vkb3NrNzc2MApbICAgIDAuMDAwMDAwXSAgICAgICAg
+ICBTUEVTICBpbml0X2Vkb3NrNzc2MCAtPiBzZXR1cCBzY2lmMiBpcnEKWyAgICAwLjAwMDAwMF0g
+ICAgICAgICAgU1BFUyAgaW5pdF9lZG9zazc3NjAgLT4gc2V0dXAgdXNiaGkgaXJxClsgICAgMC4w
+MDAwMDBdICAgICAgICAgIFNQRVMgIGluaXRfZWRvc2s3NzYwIC0+IHNldHVwIGRtYWJyZyBpcnEK
+WyAgICAwLjAwMDAwMF0gIFNQRVMgIGluaXRfZWRvc2s3NzYwIHVzY2l0YQpbICAgIDAuMDAwMDAw
+XSBQSUQgaGFzaCB0YWJsZSBlbnRyaWVzOiAyNTYgKG9yZGVyOiA4LCAxMDI0IGJ5dGVzKQpbICAg
+IDAuMDAwMDAwXSBVc2luZyB0bXUgZm9yIHN5c3RlbSB0aW1lcgpbICAgIDAuMDAwMTY5XSBVc2lu
+ZyA4LjMzMyBNSHogaGlnaCBwcmVjaXNpb24gdGltZXIuClsgICAgMC4wMDAyNjRdIHNoLXNjaS5j
+IFNQRVMgc2NpX2luaXRfcG9ydHMKWyAgICAwLjAwMDM2MV0gc2gtc2NpLmMgU1BFUyBzY2lfaW5p
+dF9wb3J0cyBmYXR0bwpbICAgIDAuMDAwNDQ4XSBTUEVTIHNlcmlhbF9jb25zb2xlX3NldHVwClsg
+ICAgMC4wMDA1MjhdICAgICAgICAgIFNQRVMgY28tPmluZGV4WzJdClsgICAgMC4wMDA2MTBdIGNs
+a1szMzMzMzMzM10KWyAgICAwLjAwMDY4M10gc2NpX3NldF90ZXJtaW9zClsgICAgMC4wMDA3NTdd
+ICBiYXVkWzExNTIwMF0KWyAgICAwLjAwMTA1MF0gc2NpX2luaXRfcGluc19zY2lmClsgICAgMC4w
+MDExMTVdIHNjaV9pbml0X3BpbnNfc2NpZiBmYXR0YQpbICAgIDAuMDAxMTgzXSBzY2lfc2V0X3Rl
+cm1pb3MgZmF0dG8KWyAgICAwLjAwMTI1M10gU1BFUyBzZXJpYWxfY29uc29sZV9zZXR1cCBmYXR0
+bwpbICAgIDAuMDAxMzMzXSBjb25zb2xlIFt0dHlTQzJdIGVuYWJsZWQKWyAgICAwLjIxNzcyM10g
+U1BFUyBmYXR0byBzY2lfY29uc29sZV9pbml0ClsgICAgMC4yMjI3MjldIERlbnRyeSBjYWNoZSBo
+YXNoIHRhYmxlIGVudHJpZXM6IDgxOTIgKG9yZGVyOiAzLCAzMjc2OCBieXRlcykKWyAgICAwLjIz
+MDAyNl0gSW5vZGUtY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVzOiA0MDk2IChvcmRlcjogMiwgMTYz
+ODQgYnl0ZXMpClsgICAgMC4yNDk1MDBdIE1lbW9yeTogNjI0ODhrLzY1NTM2ayBhdmFpbGFibGUg
+KDE3OThrIGtlcm5lbCBjb2RlLCA0MjlrIApkYXRhLCA5NmsgaW5pdCkKWyAgICAwLjI1MTc2Ml0g
+UFZSBDA1MDE4NyBDVlIgNDgwMDAwIFBSUgAwMDA1MTAKWyAgICAwLjI1NjQ3NF0gSS1jYWNoZSA6
+IG5fd2F5cz0yIG5fc2V0cyU2IHdheV9pbmNygTkyClsgICAgMC4yNjE2NjhdIEktY2FjaGUgOiBl
+bnRyeV9tYXNrPTB4MDAwMDFmZTAgYWxpYXNfbWFzaz0weDAwMDAxMDAwIApuX2FsaWFzZXM9Mgpb
+ICAgIDAuMjY4NzQwXSBELWNhY2hlIDogbl93YXlzPTIgbl9zZXRzUTIgd2F5X2luY3IWMzg0Clsg
+ICAgMC4yNzQwMTldIEQtY2FjaGUgOiBlbnRyeV9tYXNrPTB4MDAwMDNmZTAgYWxpYXNfbWFzaz0w
+eDAwMDAzMDAwIApuX2FsaWFzZXM9NApbICAgIDAuMzU3NzA2XSBNb3VudC1jYWNoZSBoYXNoIHRh
+YmxlIGVudHJpZXM6IDUxMgpbICAgIDAuMzYxNjEyXSBDUFU6IFNINzc2MApbICAgIDAuMzYyNDU0
+XSBTUEVTICAgICBrZXJuZWxfaW5pdApbICAgIDAuMzYzNjEzXSBTUEVTICAgICBkb19iYXNpY19z
+ZXR1cApbICAgIDAuMzY1MDc5XSBTUEVTIGRvX2Jhc2ljX3NldHVwClsgICAgMC4zNzYxMDVdIFNQ
+RVMgZG9faW5pdGNhbGxzClsgICAgMC4zNzYyMTldIG5ldF9uYW1lc3BhY2U6IDE5MiBieXRlcwpb
+ICAgIDAuMzc4MjM0XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wgZmFtaWx5IDE2ClsgICAgMC40
+MTE0NjhdIFNDU0kgc3Vic3lzdGVtIGluaXRpYWxpemVkClsgICAgMC40NDI2MjVdIE5FVDogUmVn
+aXN0ZXJlZCBwcm90b2NvbCBmYW1pbHkgMgpbICAgIDAuNDgwMTU1XSBJUCByb3V0ZSBjYWNoZSBo
+YXNoIHRhYmxlIGVudHJpZXM6IDEwMjQgKG9yZGVyOiAwLCA0MDk2IApieXRlcykKWyAgICAwLjQ4
+MzA4MV0gVENQIGVzdGFibGlzaGVkIGhhc2ggdGFibGUgZW50cmllczogMjA0OCAob3JkZXI6IDIs
+IDE2Mzg0IApieXRlcykKWyAgICAwLjQ4OTE0OF0gVENQIGJpbmQgaGFzaCB0YWJsZSBlbnRyaWVz
+OiAyMDQ4IChvcmRlcjogMSwgODE5MiBieXRlcykKWyAgICAwLjQ5NTA5M10gVENQOiBIYXNoIHRh
+YmxlcyBjb25maWd1cmVkIChlc3RhYmxpc2hlZCAyMDQ4IGJpbmQgMjA0OCkKWyAgICAwLjUwMTA5
+M10gVENQIHJlbm8gcmVnaXN0ZXJlZApbICAgIDAuNTE1ODUxXSBORVQ6IFJlZ2lzdGVyZWQgcHJv
+dG9jb2wgZmFtaWx5IDEKWyAgICAwLjUyMDEwNF0gU1BFUyAgaW5pdF9lZG9zazc3NjBfZmxhc2gK
+WyAgICAwLjUyMDI4OV0gU1BFUyAgaW5pdF9lZG9zazc3NjBfZmxhc2ggZmF0dG8gRFVNTVkKU1BF
+UyBkb19pbml0Y2FsbHM6IGluaXRjYWxsWzcxXSBzYWx0YXRhIQpbICAgIDAuNTMzNTE3XSBtc2dt
+bmkgaGFzIGJlZW4gc2V0IHRvIDEyMgpbICAgIDAuNTM0NTQ3XSBpbyBzY2hlZHVsZXIgbm9vcCBy
+ZWdpc3RlcmVkIChkZWZhdWx0KQpbICAgIDEuNDg4MTY1XSBTdXBlckggU0NJKEYpIGRyaXZlciBp
+bml0aWFsaXplZApbICAgIDEuNDg4Mjg5XSBTUEVTIHNjaV9pbml0ClsgICAgMS40ODk4NTBdIFNQ
+RVMgc2NpX3Byb2JlClsgICAgMS40OTIxNzRdIFNQRVMgc2NpX2NvbmZpZ19wb3J0ClsgICAgMS40
+OTU0ODVdIHNoLXNjaTogdHR5U0MwIGF0IE1NSU8gMHhmZTYwMDAwMCAoaXJxID0gNTUpIGlzIGEg
+c2NpZgpbICAgIDEuNTAzNDg3XSBTUEVTIHNjaV9jb25maWdfcG9ydApbICAgIDEuNTA0NzMyXSBz
+aC1zY2k6IHR0eVNDMSBhdCBNTUlPIDB4ZmU2MTAwMDAgKGlycSA9IDc1KSBpcyBhIHNjaWYKWyAg
+ICAxLjUxMjkwOF0gU1BFUyBzY2lfY29uZmlnX3BvcnQKWyAgICAxLjUxNDIzMF0gc2gtc2NpOiB0
+dHlTQzIgYXQgTU1JTyAweGZlNjIwMDAwIChpcnEgPSA3OSkgaXMgYSBzY2lmClsgICAgMS41MjIy
+MjFdIHNoLXNjaSBzaC1zY2k6IEF0dGVtcHRpbmcgdG8gcmVnaXN0ZXIgcG9ydCA0IHdoZW4gb25s
+eSAzIAphcmUgYXZhaWxhYmxlLgpbICAgIDEuNTI3ODc2XSBzaC1zY2kgc2gtc2NpOiBDb25zaWRl
+ciBidW1waW5nIApDT05GSUdfU0VSSUFMX1NIX1NDSV9OUl9VQVJUUyEKWyAgICAxLjUzNDY5NF0g
+RmF0dGEgc2NpX3Byb2JlClsgICAgMS41Mzg3NTBdIFNQRVMgc2NpX2luaXQ6IHBsYXRmb3JtX2Ry
+aXZlcl9yZWdpc3RlcgpbICAgIDEuNTQyNDY1XSBTUEVTIGZhdHRhIHNjaV9pbml0ClsgICAgMS41
+OTg5ODNdIGJyZDogbW9kdWxlIGxvYWRlZApbICAgIDEuNjAwNzE0XSBEcml2ZXIgJ3NkJyBuZWVk
+cyB1cGRhdGluZyAtIHBsZWFzZSB1c2UgYnVzX3R5cGUgbWV0aG9kcwpbICAgIDEuNjA0MDE1XSBE
+cml2ZXIgJ3NyJyBuZWVkcyB1cGRhdGluZyAtIHBsZWFzZSB1c2UgYnVzX3R5cGUgbWV0aG9kcwpb
+ICAgIDEuNjE1NDcyXSBwaHlzbWFwIHBsYXRmb3JtIGZsYXNoIGRldmljZTogMDEwMDAwMDAgYXQg
+YTAwMDAwMDAKWyAgICAxLjYxNTg3Ml0gcGh5c21hcC1mbGFzaC4wOiBGb3VuZCAxIHgzMiBkZXZp
+Y2VzIGF0IDB4MCBpbiAxNi1iaXQgYmFuawpbICAgIDEuNjI1MDQxXSBTdXBwb3J0IGZvciBjb21t
+YW5kIHNldCAwMDAxIG5vdCBwcmVzZW50ClsgICAgMS42MjcxODJdIGdlbl9wcm9iZTogTm8gc3Vw
+cG9ydGVkIFZlbmRvciBDb21tYW5kIFNldCBmb3VuZApbICAgIDEuNjM1MzgzXSBwaHlzbWFwLWZs
+YXNoIHBoeXNtYXAtZmxhc2guMDogbWFwX3Byb2JlIGZhaWxlZApbICAgIDEuNjM5MTcxXSBUQ1Ag
+Y3ViaWMgcmVnaXN0ZXJlZApbICAgIDEuNjQxNjM1XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wg
+ZmFtaWx5IDE3ClNQRVMgZG9faW5pdGNhbGxzOiBpbml0Y2FsbHMgY291bnRbMTExXSAhClNQRVMg
+Zmx1c2hfc2NoZWR1bGVkX3dvcmsKWyAgICAxLjY1MjA0OV0gU1BFUyBkb19iYXNpY19zZXR1cEZJ
+TkUKWyAgICAxLjY1NTQyMV0gU1BFUyAgICAgc3lzX2FjY2VzcwpbICAgIDEuNjU4MzI2XSBTUEVT
+ICAgICBwcmVwYXJlX25hbWVzcGFjZQpbICAgIDEuNjY0NDc4XSBMaXN0IG9mIGFsbCBwYXJ0aXRp
+b25zOgpbICAgIDEuNjY1MDMyXSBObyBmaWxlc3lzdGVtIGNvdWxkIG1vdW50IHJvb3QsIHRyaWVk
+OiAgZXh0MgpbICAgIDEuNjcwMzMwXSBLZXJuZWwgcGFuaWMgLSBub3Qgc3luY2luZzogVkZTOiBV
+bmFibGUgdG8gbW91bnQgcm9vdCBmcyAKb24gdW5rbm93bi1ibG9jaygxLDApCgoKCgoKLS0KVG8g
+dW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxp
+bnV4LXNoIiBpbgp0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVs
+Lm9yZwpNb3JlIG1ham9yZG9tbyBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9y
+ZG9tby1pbmZvLmh0bWw=
