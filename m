@@ -1,52 +1,43 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Wed, 02 Jul 2008 03:08:46 +0000
-Subject: Re: [PATCH 07/07] sh_mobile_ceu_camera: Add SuperH Mobile CEU driver
-Message-Id: <aec7e5c30807012008y6d5a16f0h9c634d79f0de37ba@mail.gmail.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Sun, 27 Jul 2008 13:04:38 +0000
+Subject: [2.6 patch] mm/hugetlb.c must #include <asm/io.h>
+Message-Id: <20080727130438.GJ9301@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
-	<20080701124745.30446.27603.sendpatchset@rx1.opensource.se>
-	<Pine.LNX.4.64.0807012205511.4203@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0807012205511.4203@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: video4linux-list@redhat.com, lethal@linux-sh.org, akpm@linux-foundation.org, mchehab@infradead.org, linux-sh@vger.kernel.org
+To: Andi Kleen <ak@suse.de>, Nick Piggin <npiggin@suse.de>, Andrew Morton <akpm@linux-foundation.org>
+Cc: wli@holomorphy.com, linux-kernel@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-On Wed, Jul 2, 2008 at 5:07 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Tue, 1 Jul 2008, Magnus Damm wrote:
->
->> This patch adds support for the SuperH Mobile CEU interface.
->>
->> The hardware is configured in a transparent data fetch mode,
->> and frames are captured from the attached camera and written
->> to physically contiguous memory buffers provided by the
->> videobuf-dma-contig queue.
->>
->> Signed-off-by: Magnus Damm <damm@igel.co.jp>
->
-> Great to see new soc-camera host drivers! Just out of curiousity - can you
-> tell us, with which camera drivers you tested / used it?
+This patch fixes the following build error on sh caused by
+commit aa888a74977a8f2120ae9332376e179c39a6b07d
+(hugetlb: support larger than MAX_ORDER):
 
-Uh, I knew that question would come up... =)
+<--  snip  -->
 
-So far I've mainly tried the SuperH Mobile CEU driver on a MigoR QVGA
-board, which means a sh7722 processor (which includes the CEU) and a
-ov7725 camera. I also have a sh7723 board with a ncm03j camera (i
-think, no docs), but that combination isn't up an running yet.
+...
+  CC      mm/hugetlb.o
+/home/bunk/linux/kernel-2.6/git/linux-2.6/mm/hugetlb.c: In function 'alloc_bootmem_huge_page':
+/home/bunk/linux/kernel-2.6/git/linux-2.6/mm/hugetlb.c:958: error: implicit declaration of function 'virt_to_phys'
+make[2]: *** [mm/hugetlb.o] Error 1
 
-As for camera drivers, I'm sorry to say that I've been using hacked-up
-out-of-tree drivers. I'd like to add upstream support for both camera
-types, but I'm not sure if I have enough time before the merge window
-closes for 2.6.27. So I've prioritized the CEU driver so far since
-it's easy to reuse.
+<--  snip  -->
 
-Regarding the ov7725 driver - there seem to be quite a few
-half-fitting candidates out there already. I'm thinking about the
-ovcamchip/ code and the ov7670.c driver. I need something for the
-soc_camera framework though. What to do? Any recommendations?
+Reported-by: Adrian Bunk <bunk@kernel.org>
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
 
-Thanks,
+---
+98c5be88abb276588ea1f377f08726308765aa3c 
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index a8bf4ab..6101012 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -19,6 +19,7 @@
+ 
+ #include <asm/page.h>
+ #include <asm/pgtable.h>
++#include <asm/io.h>
+ 
+ #include <linux/hugetlb.h>
+ #include "internal.h"
 
-/ magnus
