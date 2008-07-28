@@ -1,29 +1,43 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Tue, 29 Jul 2008 05:41:18 +0000
-Subject: Re: [PATCH] sh7760fb: write colormap value to hardware.
-Message-Id: <488EAD7E.1080804@renesas.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Mon, 28 Jul 2008 21:40:39 +0000
+Subject: sh se7750_defconfig compile error
+Message-Id: <20080728214039.GE7713@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <486B39E3.60601@renesas.com>
-	<20080728180513.GA31478@roarinelk.homelinux.net>
-In-Reply-To: <20080728180513.GA31478@roarinelk.homelinux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Manuel Lauss <mano@roarinelk.homelinux.net>
-Cc: linuc-fbdev <Linux-fbdev-devel@lists.sourceforge.net>, Linux-sh <linux-sh@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@linux-foundation.org>, Munakata Hisao <munakata.hisao@renesas.com>
+To: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi, Manuel.
+Commit ffb91ad2751723bcc9925cd38e37013e2169e256
+(sh: Solution Enginge 7710/7712 SH-Ether support)
+causes the following compile error with se7750_defconfig:
 
-Thank you for your work.
-I checked this patch, there was not a problem.
+<--  snip  -->
 
-Best regards,
-  Nobuhiro
+...
+  CC      arch/sh/boards/se/770x/setup.o
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/boards/se/770x/setup.c:134: error: 'PHY_ID' undeclared here (not in a function)
+make[2]: *** [arch/sh/boards/se/770x/setup.o] Error 1
 
-Manuel Lauss wrote:
-> The computed color value is never actually written to hardware
-> colormap register.
-> 
-> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
-Acked-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+<--  snip  -->
+
+The patch did:
+#if defined(CONFIG_CPU_SUBTYPE_SH7710)
+# define PHY_ID 0x00
+#elif defined(CONFIG_CPU_SUBTYPE_SH7712)
+# define PHY_ID 0x01
+#endif
+
+But in this case we have CONFIG_CPU_SUBTYPE_SH7750.
+
+cu
+Adrian
+
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
 
