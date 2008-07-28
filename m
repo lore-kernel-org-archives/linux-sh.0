@@ -1,64 +1,1449 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 28 Jul 2008 09:45:27 +0000
+From: Luca Santini <luca.santini@spesonline.com>
+Date: Mon, 28 Jul 2008 14:38:26 +0000
 Subject: Re: kernel (sometimes) boot
-Message-Id: <20080728094526.GB32151@linux-sh.org>
+Message-Id: <488DD9E2.10808@spesonline.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------070204050704090605000701"
 List-Id: <linux-sh.vger.kernel.org>
 References: <488D864C.30808@spesonline.com>
 In-Reply-To: <488D864C.30808@spesonline.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Jul 28, 2008 at 11:30:21AM +0200, Manuel Lauss wrote:
+This is a multi-part message in MIME format.
+--------------070204050704090605000701
+Content-Type: text/plain; charset="windows-1252"; format="flowed"
+Content-Transfer-Encoding: quoted-printable
+
+
+
+Manuel Lauss wrote:
+> Hi Luca,
+>=20
 > On Mon, Jul 28, 2008 at 10:41:48AM +0200, Luca Santini wrote:
-> > . loading smc91c96 driver fails at probe()
-> 
+>> Hi Manuel,
+>> sorry for my continous s_p_a_m but i'm ignorant and i need a lot of=20
+>> support...
+>>
+>> what currently i have:
+>> a  (sometimes) booting 2.6.26-rc8_edosk7760-00210-g35534ad-dirty kernel =
+on=20
+>> a edosk_sh7760 board, with compiled-in:
+>> SCIF console
+>> smc eth91x support
+>> i2c-sh7760
+>> SoC sound support for sh7760 (NOT AC97)
+>>
+>>
+>> what currently i miss:
+>>
+>> . enabling " kernel modules versioning support" results in unbootable=20
+>> kernel
+>=20
+> That seems strange..  (There are other features which result in ubootable
+> kernels, notably every cache mode other than the default "write-back").
+>=20
+
+cache mode is "write-back"
+and this option isn't the only that makes the kernel unbootable...
+
+
+>=20
+>> . enabling features as <M> results in unloadable modules: (insmod: could=
+n't=20
+>> find the kernel version the module was compiled for)
+>=20
+> modules installed into wrong directory?  incorrect modules in rootfs?
+>=20
+
+i was copying my .ko modules directly into the rootfs-image ' / ' .
+But also making install_modules and copying entire=20
+/lib/modules/<kernel_version> into <rootfs>/lib/modules i obtain the same.
+
+
+
+>=20
+>> . loading smc91c96 driver fails at probe()
+>=20
 > Check MMIO area (chip is at 0x02000000 - 0x0200001f according to the
-> ESDOK7760 manual available from renesas website if you didn't change any of
+> ESDOK7760 manual available from renesas website if you didn't change any =
+of
 > the DIP switches on the board), and correct IRQ (9 if I interpret the
 > schematics correctly)
-> 
-> Also, you need to edit drivers/net/smc91x.h and add an entry for your board
-> to the jungle of ifdefs in there.
-> I.e. like this:
-> 
-This isn't necessary anymore, you are able to specificy everything you
-need through the platform data these days (this is true for smc91x as
-well as smc911x). So you can reduce the following:
+>=20
 
-> ---- 8< ----
-> [...]
-> #elif defined(CONFIG_SH_EDOSK7760)
-> 
-> #define SMC_CAN_USE_8BIT        0
-> #define SMC_CAN_USE_16BIT       1
-> #define SMC_CAN_USE_32BIT       0
-> #define SMC_NOWAIT              1
-> 
-> #define SMC_IO_SHIFT            0
-> 
-> #define SMC_inw(a, r)           inw((unsigned long)((a) + (r)))
-> #define SMC_outw(v, a, r)       outw(v, (unsigned long)((a) + (r)))
-> #define SMC_insw(a, r, p, l)    insw( (unsigned long)((a) + (r)), p, l)
-> #define SMC_outsw(a, r, p, l)   outsw((unsigned long)((a) + (r)), p, l)
-> 
-> #define RPC_LSA_DEFAULT         RPC_LED_TX_RX
-> #define RPC_LSB_DEFAULT         RPC_LED_100_10
-> 
-> #define SMC_IRQ_FLAGS           (0)
-> 
-> #define set_irq_type(irq, type) do { } while (0)
-> 
-> #elif defined(....
-> 
-> ---- 8< ----
-> 
-to:
 
-static struct smc91x_platdata smc91x_info = {
-	.flags = SMC91X_USE_16BIT,
+I modified things according to Paul Mundt's suggestions but i have=20
+always the same result... i think i make some mistake in addressing the=20
+chip; edosk7760 manual says:
+
+"
+
+The LAN IC (Standard Microsystems Corporation (SMSC) - LAN91C96QFP)=20
+operates in 16-bit mode by pulling pin
+=91nEN16=92 ground via a resistor. Removal of the resistor enables the=20
+option of the LAN device operating with an 8-bit
+data bus.
+
+...
+
+In this way the LAN IC, which has a default base address of H=9200300,=20
+will be accessed when the micon addresses
+H=920200 0000 to H=920200 003F.
+
+
+"
+
+so what are the right SMC_ADDRESS_START and SMC_ADDRESS_END addresses i=20
+have to write in this structure?
+
+
+static struct resource smc91x_res[] =3D {
+         [0] =3D {
+		.start  =3D SMC_ADDRESS_START,
+		.end    =3D SMC_ADDRESS_END,
+		.flags  =3D IORESOURCE_MEM,
+         },
+         [1] =3D {
+		.start  =3D IRQ_ETHERNET,
+		.end    =3D IRQ_ETHERNET,
+		.flags  =3D IORESOURCE_IRQ,
+         }
 };
 
-And then pass that in under the platform device. We already do that today
-for migor, se7722, etc.
+
+
+
+
+
+>=20
+>=20
+>> . alsa answer is "no soundcards found"
+>=20
+> That's expected;  you need to write ASoC "machine" code (that is, code
+> which knows which codec and audio unit to use).  Use the "sh7760-ac97.c"
+> file as a template; replace the "ac97_dai" with something appropriate for
+> the wm8731, and don't forget to change IPSELR to enable the I2S pins.
+>=20
+
+i'm trying....
+
+
+>=20
+>> . every kernel option i enable often results in an unbootable kernel:=20
+>> /dev/i2c support; sh7760_AC97; alsa debug, scsi support (needed by usb m=
+ass=20
+>> storage): every of these i try to enable results in a kernel with  no=20
+>> console output.
+>=20
+> Do you get any output with early_printk and sh_bios enabled?
+>=20
+>=20
+
+No, enabling these options results in unbootable kernel (mute - neither=20
+the SpesPrint output is showed -- see the patch) .
+
+
+
+ >
+ >> Do you have some suggestions? my kernel seems very very delicate.....
+ >> i attach my .config and my edosk7760/setup.c
+ >
+ > Could you please post a complete patch of your edosk7760 against
+ > vanilla-2.6.26?
+
+
+This is a dirty patch for edosk7760 with something wrong in smc91x=20
+support (wrong addresses?)
+
+
+
+ > What toolchain are you using?
+ >
+
+sh4-linux-gcc (GCC) 3.4.5 20060103 (3.4.5-10.1a) from MPC site
+
+
+>> . i need to communicate (via i2c and i2S) to a wm8731 codec (on my custo=
+m=20
+>> board) ... i imagine i have to write a driver or something like to conne=
+ct=20
+>> the codec and the sh sound interface. where to start?
+>=20
+> see above.
+>=20
+> 	Manuel Lauss
+>=20
+
+A lot of Thanks .
+
+Luca Santini
+
+>=20
+
+--------------070204050704090605000701
+Content-Type: text/x-diff;
+ name="edosk7760.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="edosk7760.patch"
+
+diff -uNr linux-2.6.26-vanilla/arch/sh/boards/renesas/edosk7760/Makefile linux-2.6.26-spes/arch/sh/boards/renesas/edosk7760/Makefile
+--- linux-2.6.26-vanilla/arch/sh/boards/renesas/edosk7760/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.26-spes/arch/sh/boards/renesas/edosk7760/Makefile	2008-07-28 15:32:09.000000000 +0200
+@@ -0,0 +1,9 @@
++#
++# Makefile for HMSE EDOSK7760 board specific parts of the kernel
++#
++# Note! Dependencies are done automagically by 'make dep', which also
++# removes any old dependencies. DON'T put your own dependencies here
++# unless it's something special (ie not a .c file).
++#
++
++obj-y := setup.o
+diff -uNr linux-2.6.26-vanilla/arch/sh/boards/renesas/edosk7760/setup.c linux-2.6.26-spes/arch/sh/boards/renesas/edosk7760/setup.c
+--- linux-2.6.26-vanilla/arch/sh/boards/renesas/edosk7760/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.26-spes/arch/sh/boards/renesas/edosk7760/setup.c	2008-07-28 15:39:02.000000000 +0200
+@@ -0,0 +1,83 @@
++/* 
++ * linux/arch/sh/edosk7760/setup.c
++ *
++ * Copyright (C) 2000  Kazumoto Kojima
++ *
++ *
++ * Modified for EDOSK7760 by
++ * Richard Bister
++ * 
++ * Port to 2.6 by
++ * Luca Santini www.spesonline.com
++ */
++#include <linux/init.h>
++#include <linux/types.h>
++#include <linux/platform_device.h>
++#include <asm/machvec.h>
++#include <asm/edosk7760.h>
++#include <asm/io.h>
++#include <asm/addrspace.h>
++#include <asm/delay.h>
++#include <linux/smc91x.h>
++
++#include <linux/spes.h>
++
++/* eth initialization functions */
++
++
++static struct smc91x_platdata smc91x_info = {
++	.flags = SMC91X_USE_16BIT,
++};
++
++static struct resource smc91x_res[] = {
++        [0] = {
++		.start  = SMC_IOADDR,
++		.end    = SMC_IOADDR + 0x1f, //0xff,
++		.flags  = IORESOURCE_MEM,
++        },
++        [1] = {
++		.start  = IRQ_ETHERNET,
++		.end    = IRQ_ETHERNET,
++		.flags  = IORESOURCE_IRQ,
++        }
++};
++
++static struct platform_device smc91x_dev = {
++
++        .name           = "smc91x",
++        .id             = -1,
++        .num_resources  = ARRAY_SIZE(smc91x_res),
++        .resource       = smc91x_res,
++		.dev	= {
++			.platform_data	= &smc91x_info,
++		},
++
++
++};
++
++static struct platform_device *edosk7760_devices[] __initdata = {
++	&smc91x_dev,
++};
++
++
++static int __init init_edosk7760_devices(void){
++	int ret = -1;
++	
++	/* Setup smc91c96 Ethernet card: */
++	ret = platform_add_devices(edosk7760_devices, ARRAY_SIZE(edosk7760_devices));
++	SpesPrint("SPES init_edosk7760 - platform_add_devices \n "); //ret[%d] \n",ret);
++
++	return 0;
++}
++__initcall(init_edosk7760_devices);
++
++
++/*
++ * The Machine Vector
++ */
++
++/// have a look to include/asm-sh/machvec.h 
++struct sh_machine_vector mv_edosk7760 __initmv = {
++	mv_name:		"EDOSK7760",
++	mv_nr_irqs:		128,
++};
+I file binari linux-2.6.26-vanilla/arch/sh/boot/compressed/vmlinux e linux-2.6.26-spes/arch/sh/boot/compressed/vmlinux differiscono
+I file binari linux-2.6.26-vanilla/arch/sh/boot/compressed/vmlinux.bin e linux-2.6.26-spes/arch/sh/boot/compressed/vmlinux.bin differiscono
+I file binari linux-2.6.26-vanilla/arch/sh/boot/compressed/vmlinux.bin.gz e linux-2.6.26-spes/arch/sh/boot/compressed/vmlinux.bin.gz differiscono
+I file binari linux-2.6.26-vanilla/arch/sh/boot/zImage e linux-2.6.26-spes/arch/sh/boot/zImage differiscono
+diff -uNr linux-2.6.26-vanilla/arch/sh/configs/edosk7760_defconfig linux-2.6.26-spes/arch/sh/configs/edosk7760_defconfig
+--- linux-2.6.26-vanilla/arch/sh/configs/edosk7760_defconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.26-spes/arch/sh/configs/edosk7760_defconfig	2008-07-28 15:37:04.000000000 +0200
+@@ -0,0 +1,1037 @@
++#
++# Automatically generated make config: don't edit
++# Linux kernel version: 2.6.26-rc8
++# Mon Jul 28 15:17:53 2008
++#
++CONFIG_SUPERH=y
++CONFIG_SUPERH32=y
++CONFIG_RWSEM_GENERIC_SPINLOCK=y
++CONFIG_GENERIC_BUG=y
++CONFIG_GENERIC_FIND_NEXT_BIT=y
++CONFIG_GENERIC_HWEIGHT=y
++CONFIG_GENERIC_HARDIRQS=y
++CONFIG_GENERIC_IRQ_PROBE=y
++CONFIG_GENERIC_CALIBRATE_DELAY=y
++CONFIG_GENERIC_TIME=y
++CONFIG_GENERIC_CLOCKEVENTS=y
++CONFIG_STACKTRACE_SUPPORT=y
++CONFIG_LOCKDEP_SUPPORT=y
++# CONFIG_ARCH_HAS_ILOG2_U32 is not set
++# CONFIG_ARCH_HAS_ILOG2_U64 is not set
++CONFIG_ARCH_NO_VIRT_TO_BUS=y
++CONFIG_ARCH_SUPPORTS_AOUT=y
++CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
++
++#
++# General setup
++#
++CONFIG_EXPERIMENTAL=y
++CONFIG_BROKEN_ON_SMP=y
++CONFIG_LOCK_KERNEL=y
++CONFIG_INIT_ENV_ARG_LIMIT=32
++CONFIG_LOCALVERSION="_edosk7760"
++CONFIG_LOCALVERSION_AUTO=y
++CONFIG_SWAP=y
++CONFIG_SYSVIPC=y
++CONFIG_SYSVIPC_SYSCTL=y
++CONFIG_POSIX_MQUEUE=y
++CONFIG_BSD_PROCESS_ACCT=y
++# CONFIG_BSD_PROCESS_ACCT_V3 is not set
++# CONFIG_TASKSTATS is not set
++# CONFIG_AUDIT is not set
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
++CONFIG_LOG_BUF_SHIFT=17
++# CONFIG_CGROUPS is not set
++# CONFIG_GROUP_SCHED is not set
++CONFIG_SYSFS_DEPRECATED=y
++CONFIG_SYSFS_DEPRECATED_V2=y
++# CONFIG_RELAY is not set
++# CONFIG_NAMESPACES is not set
++CONFIG_BLK_DEV_INITRD=y
++CONFIG_INITRAMFS_SOURCE=""
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_SYSCTL=y
++CONFIG_EMBEDDED=y
++CONFIG_UID16=y
++CONFIG_SYSCTL_SYSCALL=y
++CONFIG_SYSCTL_SYSCALL_CHECK=y
++CONFIG_KALLSYMS=y
++CONFIG_KALLSYMS_ALL=y
++# CONFIG_KALLSYMS_EXTRA_PASS is not set
++CONFIG_HOTPLUG=y
++CONFIG_PRINTK=y
++CONFIG_BUG=y
++CONFIG_ELF_CORE=y
++CONFIG_COMPAT_BRK=y
++CONFIG_BASE_FULL=y
++CONFIG_FUTEX=y
++CONFIG_ANON_INODES=y
++CONFIG_EPOLL=y
++CONFIG_SIGNALFD=y
++CONFIG_TIMERFD=y
++CONFIG_EVENTFD=y
++CONFIG_SHMEM=y
++CONFIG_VM_EVENT_COUNTERS=y
++CONFIG_SLUB_DEBUG=y
++# CONFIG_SLAB is not set
++CONFIG_SLUB=y
++# CONFIG_SLOB is not set
++# CONFIG_PROFILING is not set
++# CONFIG_MARKERS is not set
++CONFIG_HAVE_OPROFILE=y
++# CONFIG_HAVE_KPROBES is not set
++# CONFIG_HAVE_KRETPROBES is not set
++# CONFIG_HAVE_DMA_ATTRS is not set
++CONFIG_PROC_PAGE_MONITOR=y
++CONFIG_SLABINFO=y
++CONFIG_RT_MUTEXES=y
++# CONFIG_TINY_SHMEM is not set
++CONFIG_BASE_SMALL=0
++CONFIG_MODULES=y
++# CONFIG_MODULE_FORCE_LOAD is not set
++CONFIG_MODULE_UNLOAD=y
++CONFIG_MODULE_FORCE_UNLOAD=y
++# CONFIG_MODVERSIONS is not set
++# CONFIG_MODULE_SRCVERSION_ALL is not set
++CONFIG_KMOD=y
++CONFIG_BLOCK=y
++# CONFIG_LBD is not set
++# CONFIG_BLK_DEV_IO_TRACE is not set
++# CONFIG_LSF is not set
++# CONFIG_BLK_DEV_BSG is not set
++
++#
++# IO Schedulers
++#
++CONFIG_IOSCHED_NOOP=y
++CONFIG_IOSCHED_AS=y
++CONFIG_IOSCHED_DEADLINE=y
++CONFIG_IOSCHED_CFQ=y
++# CONFIG_DEFAULT_AS is not set
++# CONFIG_DEFAULT_DEADLINE is not set
++CONFIG_DEFAULT_CFQ=y
++# CONFIG_DEFAULT_NOOP is not set
++CONFIG_DEFAULT_IOSCHED="cfq"
++CONFIG_CLASSIC_RCU=y
++
++#
++# System type
++#
++CONFIG_CPU_SH4=y
++# CONFIG_CPU_SUBTYPE_SH7619 is not set
++# CONFIG_CPU_SUBTYPE_SH7203 is not set
++# CONFIG_CPU_SUBTYPE_SH7206 is not set
++# CONFIG_CPU_SUBTYPE_SH7263 is not set
++# CONFIG_CPU_SUBTYPE_MXG is not set
++# CONFIG_CPU_SUBTYPE_SH7705 is not set
++# CONFIG_CPU_SUBTYPE_SH7706 is not set
++# CONFIG_CPU_SUBTYPE_SH7707 is not set
++# CONFIG_CPU_SUBTYPE_SH7708 is not set
++# CONFIG_CPU_SUBTYPE_SH7709 is not set
++# CONFIG_CPU_SUBTYPE_SH7710 is not set
++# CONFIG_CPU_SUBTYPE_SH7712 is not set
++# CONFIG_CPU_SUBTYPE_SH7720 is not set
++# CONFIG_CPU_SUBTYPE_SH7721 is not set
++# CONFIG_CPU_SUBTYPE_SH7750 is not set
++# CONFIG_CPU_SUBTYPE_SH7091 is not set
++# CONFIG_CPU_SUBTYPE_SH7750R is not set
++# CONFIG_CPU_SUBTYPE_SH7750S is not set
++# CONFIG_CPU_SUBTYPE_SH7751 is not set
++# CONFIG_CPU_SUBTYPE_SH7751R is not set
++CONFIG_CPU_SUBTYPE_SH7760=y
++# CONFIG_CPU_SUBTYPE_SH4_202 is not set
++# CONFIG_CPU_SUBTYPE_SH7723 is not set
++# CONFIG_CPU_SUBTYPE_SH7763 is not set
++# CONFIG_CPU_SUBTYPE_SH7770 is not set
++# CONFIG_CPU_SUBTYPE_SH7780 is not set
++# CONFIG_CPU_SUBTYPE_SH7785 is not set
++# CONFIG_CPU_SUBTYPE_SHX3 is not set
++# CONFIG_CPU_SUBTYPE_SH7343 is not set
++# CONFIG_CPU_SUBTYPE_SH7722 is not set
++# CONFIG_CPU_SUBTYPE_SH7366 is not set
++# CONFIG_CPU_SUBTYPE_SH5_101 is not set
++# CONFIG_CPU_SUBTYPE_SH5_103 is not set
++
++#
++# Memory management options
++#
++CONFIG_QUICKLIST=y
++CONFIG_MMU=y
++CONFIG_PAGE_OFFSET=0x80000000
++CONFIG_MEMORY_START=0x0c000000
++CONFIG_MEMORY_SIZE=0x04000000
++CONFIG_29BIT=y
++CONFIG_VSYSCALL=y
++CONFIG_ARCH_FLATMEM_ENABLE=y
++CONFIG_ARCH_SPARSEMEM_ENABLE=y
++CONFIG_ARCH_SPARSEMEM_DEFAULT=y
++CONFIG_MAX_ACTIVE_REGIONS=1
++CONFIG_ARCH_POPULATES_NODE_MAP=y
++CONFIG_ARCH_SELECT_MEMORY_MODEL=y
++CONFIG_PAGE_SIZE_4KB=y
++# CONFIG_PAGE_SIZE_8KB is not set
++# CONFIG_PAGE_SIZE_64KB is not set
++CONFIG_SELECT_MEMORY_MODEL=y
++CONFIG_FLATMEM_MANUAL=y
++# CONFIG_DISCONTIGMEM_MANUAL is not set
++# CONFIG_SPARSEMEM_MANUAL is not set
++CONFIG_FLATMEM=y
++CONFIG_FLAT_NODE_MEM_MAP=y
++CONFIG_SPARSEMEM_STATIC=y
++# CONFIG_SPARSEMEM_VMEMMAP_ENABLE is not set
++CONFIG_PAGEFLAGS_EXTENDED=y
++CONFIG_SPLIT_PTLOCK_CPUS=4
++# CONFIG_RESOURCES_64BIT is not set
++CONFIG_ZONE_DMA_FLAG=0
++CONFIG_NR_QUICK=2
++
++#
++# Cache configuration
++#
++# CONFIG_SH_DIRECT_MAPPED is not set
++CONFIG_CACHE_WRITEBACK=y
++# CONFIG_CACHE_WRITETHROUGH is not set
++# CONFIG_CACHE_OFF is not set
++
++#
++# Processor features
++#
++CONFIG_CPU_LITTLE_ENDIAN=y
++# CONFIG_CPU_BIG_ENDIAN is not set
++CONFIG_SH_FPU=y
++CONFIG_SH_STORE_QUEUES=y
++CONFIG_CPU_HAS_INTEVT=y
++CONFIG_CPU_HAS_SR_RB=y
++CONFIG_CPU_HAS_PTEA=y
++CONFIG_CPU_HAS_FPU=y
++
++#
++# Board support
++#
++CONFIG_SH_EDOSK7760=y
++
++#
++# Timer and clock configuration
++#
++CONFIG_SH_TMU=y
++CONFIG_SH_TIMER_IRQ=16
++CONFIG_SH_PCLK_FREQ=33333333
++CONFIG_TICK_ONESHOT=y
++# CONFIG_NO_HZ is not set
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_GENERIC_CLOCKEVENTS_BUILD=y
++
++#
++# CPU Frequency scaling
++#
++# CONFIG_CPU_FREQ is not set
++
++#
++# DMA support
++#
++# CONFIG_SH_DMA is not set
++CONFIG_SH_DMABRG=y
++
++#
++# Companion Chips
++#
++
++#
++# Additional SuperH Device Drivers
++#
++# CONFIG_HEARTBEAT is not set
++# CONFIG_PUSH_SWITCH is not set
++
++#
++# Kernel features
++#
++# CONFIG_HZ_100 is not set
++CONFIG_HZ_250=y
++# CONFIG_HZ_300 is not set
++# CONFIG_HZ_1000 is not set
++CONFIG_HZ=250
++# CONFIG_SCHED_HRTICK is not set
++# CONFIG_KEXEC is not set
++# CONFIG_CRASH_DUMP is not set
++# CONFIG_PREEMPT_NONE is not set
++# CONFIG_PREEMPT_VOLUNTARY is not set
++CONFIG_PREEMPT=y
++# CONFIG_PREEMPT_RCU is not set
++CONFIG_GUSA=y
++# CONFIG_GUSA_RB is not set
++
++#
++# Boot options
++#
++CONFIG_ZERO_PAGE_OFFSET=0x00001000
++CONFIG_BOOT_LINK_OFFSET=0x02000000
++# CONFIG_UBC_WAKEUP is not set
++CONFIG_CMDLINE_BOOL=y
++CONFIG_CMDLINE="mem=32M console=ttySC2,115200 root=/dev/ram rw "
++
++#
++# Bus options
++#
++# CONFIG_ARCH_SUPPORTS_MSI is not set
++# CONFIG_PCCARD is not set
++
++#
++# Executable file formats
++#
++CONFIG_BINFMT_ELF=y
++# CONFIG_BINFMT_MISC is not set
++
++#
++# Networking
++#
++CONFIG_NET=y
++
++#
++# Networking options
++#
++CONFIG_PACKET=y
++# CONFIG_PACKET_MMAP is not set
++CONFIG_UNIX=y
++# CONFIG_NET_KEY is not set
++CONFIG_INET=y
++# CONFIG_IP_MULTICAST is not set
++# CONFIG_IP_ADVANCED_ROUTER is not set
++CONFIG_IP_FIB_HASH=y
++CONFIG_IP_PNP=y
++# CONFIG_IP_PNP_DHCP is not set
++CONFIG_IP_PNP_BOOTP=y
++# CONFIG_IP_PNP_RARP is not set
++# CONFIG_NET_IPIP is not set
++# CONFIG_NET_IPGRE is not set
++# CONFIG_ARPD is not set
++# CONFIG_SYN_COOKIES is not set
++# CONFIG_INET_AH is not set
++# CONFIG_INET_ESP is not set
++# CONFIG_INET_IPCOMP is not set
++# CONFIG_INET_XFRM_TUNNEL is not set
++# CONFIG_INET_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
++# CONFIG_INET_XFRM_MODE_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_BEET is not set
++# CONFIG_INET_LRO is not set
++CONFIG_INET_DIAG=y
++CONFIG_INET_TCP_DIAG=y
++# CONFIG_TCP_CONG_ADVANCED is not set
++CONFIG_TCP_CONG_CUBIC=y
++CONFIG_DEFAULT_TCP_CONG="cubic"
++# CONFIG_TCP_MD5SIG is not set
++# CONFIG_IPV6 is not set
++# CONFIG_NETWORK_SECMARK is not set
++# CONFIG_NETFILTER is not set
++# CONFIG_IP_DCCP is not set
++# CONFIG_IP_SCTP is not set
++# CONFIG_TIPC is not set
++# CONFIG_ATM is not set
++# CONFIG_BRIDGE is not set
++# CONFIG_VLAN_8021Q is not set
++# CONFIG_DECNET is not set
++# CONFIG_LLC2 is not set
++# CONFIG_IPX is not set
++# CONFIG_ATALK is not set
++# CONFIG_X25 is not set
++# CONFIG_LAPB is not set
++# CONFIG_ECONET is not set
++# CONFIG_WAN_ROUTER is not set
++# CONFIG_NET_SCHED is not set
++
++#
++# Network testing
++#
++# CONFIG_NET_PKTGEN is not set
++# CONFIG_HAMRADIO is not set
++# CONFIG_CAN is not set
++# CONFIG_IRDA is not set
++# CONFIG_BT is not set
++# CONFIG_AF_RXRPC is not set
++
++#
++# Wireless
++#
++# CONFIG_CFG80211 is not set
++# CONFIG_WIRELESS_EXT is not set
++# CONFIG_MAC80211 is not set
++# CONFIG_IEEE80211 is not set
++# CONFIG_RFKILL is not set
++# CONFIG_NET_9P is not set
++
++#
++# Device Drivers
++#
++
++#
++# Generic Driver Options
++#
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_STANDALONE=y
++CONFIG_PREVENT_FIRMWARE_BUILD=y
++# CONFIG_FW_LOADER is not set
++CONFIG_DEBUG_DRIVER=y
++CONFIG_DEBUG_DEVRES=y
++# CONFIG_SYS_HYPERVISOR is not set
++# CONFIG_CONNECTOR is not set
++CONFIG_MTD=y
++CONFIG_MTD_DEBUG=y
++CONFIG_MTD_DEBUG_VERBOSE=3
++CONFIG_MTD_CONCAT=y
++CONFIG_MTD_PARTITIONS=y
++# CONFIG_MTD_REDBOOT_PARTS is not set
++# CONFIG_MTD_CMDLINE_PARTS is not set
++# CONFIG_MTD_AR7_PARTS is not set
++
++#
++# User Modules And Translation Layers
++#
++CONFIG_MTD_CHAR=y
++CONFIG_MTD_BLKDEVS=y
++CONFIG_MTD_BLOCK=y
++# CONFIG_FTL is not set
++# CONFIG_NFTL is not set
++# CONFIG_INFTL is not set
++# CONFIG_RFD_FTL is not set
++# CONFIG_SSFDC is not set
++# CONFIG_MTD_OOPS is not set
++
++#
++# RAM/ROM/Flash chip drivers
++#
++CONFIG_MTD_CFI=y
++CONFIG_MTD_JEDECPROBE=y
++CONFIG_MTD_GEN_PROBE=y
++CONFIG_MTD_CFI_ADV_OPTIONS=y
++CONFIG_MTD_CFI_NOSWAP=y
++# CONFIG_MTD_CFI_BE_BYTE_SWAP is not set
++# CONFIG_MTD_CFI_LE_BYTE_SWAP is not set
++CONFIG_MTD_CFI_GEOMETRY=y
++# CONFIG_MTD_MAP_BANK_WIDTH_1 is not set
++CONFIG_MTD_MAP_BANK_WIDTH_2=y
++# CONFIG_MTD_MAP_BANK_WIDTH_4 is not set
++# CONFIG_MTD_MAP_BANK_WIDTH_8 is not set
++# CONFIG_MTD_MAP_BANK_WIDTH_16 is not set
++# CONFIG_MTD_MAP_BANK_WIDTH_32 is not set
++CONFIG_MTD_CFI_I1=y
++# CONFIG_MTD_CFI_I2 is not set
++# CONFIG_MTD_CFI_I4 is not set
++# CONFIG_MTD_CFI_I8 is not set
++# CONFIG_MTD_OTP is not set
++CONFIG_MTD_CFI_INTELEXT=y
++CONFIG_MTD_CFI_AMDSTD=y
++CONFIG_MTD_CFI_STAA=y
++CONFIG_MTD_CFI_UTIL=y
++CONFIG_MTD_RAM=y
++CONFIG_MTD_ROM=y
++CONFIG_MTD_ABSENT=y
++
++#
++# Mapping drivers for chip access
++#
++# CONFIG_MTD_COMPLEX_MAPPINGS is not set
++CONFIG_MTD_PHYSMAP=y
++CONFIG_MTD_PHYSMAP_START=0xA0000000
++CONFIG_MTD_PHYSMAP_LEN=0x01000000
++CONFIG_MTD_PHYSMAP_BANKWIDTH=2
++# CONFIG_MTD_PLATRAM is not set
++
++#
++# Self-contained MTD device drivers
++#
++# CONFIG_MTD_SLRAM is not set
++# CONFIG_MTD_PHRAM is not set
++# CONFIG_MTD_MTDRAM is not set
++# CONFIG_MTD_BLOCK2MTD is not set
++
++#
++# Disk-On-Chip Device Drivers
++#
++# CONFIG_MTD_DOC2000 is not set
++# CONFIG_MTD_DOC2001 is not set
++# CONFIG_MTD_DOC2001PLUS is not set
++# CONFIG_MTD_NAND is not set
++# CONFIG_MTD_ONENAND is not set
++
++#
++# UBI - Unsorted block images
++#
++# CONFIG_MTD_UBI is not set
++# CONFIG_PARPORT is not set
++CONFIG_BLK_DEV=y
++# CONFIG_BLK_DEV_COW_COMMON is not set
++# CONFIG_BLK_DEV_LOOP is not set
++# CONFIG_BLK_DEV_NBD is not set
++CONFIG_BLK_DEV_RAM=y
++CONFIG_BLK_DEV_RAM_COUNT=16
++CONFIG_BLK_DEV_RAM_SIZE=12000
++# CONFIG_BLK_DEV_XIP is not set
++# CONFIG_CDROM_PKTCDVD is not set
++# CONFIG_ATA_OVER_ETH is not set
++# CONFIG_MISC_DEVICES is not set
++CONFIG_HAVE_IDE=y
++# CONFIG_IDE is not set
++
++#
++# SCSI device support
++#
++# CONFIG_RAID_ATTRS is not set
++# CONFIG_SCSI is not set
++# CONFIG_SCSI_DMA is not set
++# CONFIG_SCSI_NETLINK is not set
++# CONFIG_ATA is not set
++# CONFIG_MD is not set
++CONFIG_NETDEVICES=y
++# CONFIG_NETDEVICES_MULTIQUEUE is not set
++# CONFIG_DUMMY is not set
++# CONFIG_BONDING is not set
++# CONFIG_MACVLAN is not set
++# CONFIG_EQUALIZER is not set
++# CONFIG_TUN is not set
++# CONFIG_VETH is not set
++# CONFIG_PHYLIB is not set
++CONFIG_NET_ETHERNET=y
++CONFIG_MII=y
++# CONFIG_AX88796 is not set
++# CONFIG_STNIC is not set
++# CONFIG_SMC9194 is not set
++CONFIG_SMC91X=y
++# CONFIG_IBM_NEW_EMAC_ZMII is not set
++# CONFIG_IBM_NEW_EMAC_RGMII is not set
++# CONFIG_IBM_NEW_EMAC_TAH is not set
++# CONFIG_IBM_NEW_EMAC_EMAC4 is not set
++# CONFIG_B44 is not set
++# CONFIG_NETDEV_1000 is not set
++# CONFIG_NETDEV_10000 is not set
++
++#
++# Wireless LAN
++#
++# CONFIG_WLAN_PRE80211 is not set
++# CONFIG_WLAN_80211 is not set
++# CONFIG_IWLWIFI_LEDS is not set
++# CONFIG_WAN is not set
++# CONFIG_PPP is not set
++# CONFIG_SLIP is not set
++# CONFIG_NETCONSOLE is not set
++# CONFIG_NETPOLL is not set
++# CONFIG_NET_POLL_CONTROLLER is not set
++# CONFIG_ISDN is not set
++# CONFIG_PHONE is not set
++
++#
++# Input device support
++#
++CONFIG_INPUT=y
++# CONFIG_INPUT_FF_MEMLESS is not set
++# CONFIG_INPUT_POLLDEV is not set
++
++#
++# Userland interfaces
++#
++# CONFIG_INPUT_MOUSEDEV is not set
++# CONFIG_INPUT_JOYDEV is not set
++# CONFIG_INPUT_EVDEV is not set
++# CONFIG_INPUT_EVBUG is not set
++
++#
++# Input Device Drivers
++#
++# CONFIG_INPUT_KEYBOARD is not set
++# CONFIG_INPUT_MOUSE is not set
++# CONFIG_INPUT_JOYSTICK is not set
++# CONFIG_INPUT_TABLET is not set
++# CONFIG_INPUT_TOUCHSCREEN is not set
++# CONFIG_INPUT_MISC is not set
++
++#
++# Hardware I/O ports
++#
++# CONFIG_SERIO is not set
++# CONFIG_GAMEPORT is not set
++
++#
++# Character devices
++#
++CONFIG_VT=y
++CONFIG_VT_CONSOLE=y
++CONFIG_HW_CONSOLE=y
++# CONFIG_VT_HW_CONSOLE_BINDING is not set
++CONFIG_DEVKMEM=y
++# CONFIG_SERIAL_NONSTANDARD is not set
++
++#
++# Serial drivers
++#
++# CONFIG_SERIAL_8250 is not set
++
++#
++# Non-8250 serial port support
++#
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS=3
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++CONFIG_SERIAL_CORE=y
++CONFIG_SERIAL_CORE_CONSOLE=y
++CONFIG_UNIX98_PTYS=y
++CONFIG_LEGACY_PTYS=y
++CONFIG_LEGACY_PTY_COUNT=256
++# CONFIG_IPMI_HANDLER is not set
++CONFIG_HW_RANDOM=y
++# CONFIG_R3964 is not set
++# CONFIG_RAW_DRIVER is not set
++# CONFIG_TCG_TPM is not set
++CONFIG_I2C=y
++CONFIG_I2C_BOARDINFO=y
++# CONFIG_I2C_CHARDEV is not set
++
++#
++# I2C Hardware Bus support
++#
++# CONFIG_I2C_OCORES is not set
++# CONFIG_I2C_PARPORT_LIGHT is not set
++# CONFIG_I2C_SIMTEC is not set
++# CONFIG_I2C_TAOS_EVM is not set
++# CONFIG_I2C_STUB is not set
++# CONFIG_I2C_PCA_PLATFORM is not set
++CONFIG_I2C_SH7760=y
++# CONFIG_I2C_SH_MOBILE is not set
++
++#
++# Miscellaneous I2C Chip support
++#
++# CONFIG_DS1682 is not set
++# CONFIG_SENSORS_EEPROM is not set
++# CONFIG_SENSORS_PCF8574 is not set
++# CONFIG_PCF8575 is not set
++# CONFIG_SENSORS_PCF8591 is not set
++# CONFIG_SENSORS_MAX6875 is not set
++# CONFIG_SENSORS_TSL2550 is not set
++CONFIG_I2C_DEBUG_CORE=y
++CONFIG_I2C_DEBUG_ALGO=y
++CONFIG_I2C_DEBUG_BUS=y
++CONFIG_I2C_DEBUG_CHIP=y
++# CONFIG_SPI is not set
++# CONFIG_W1 is not set
++# CONFIG_POWER_SUPPLY is not set
++# CONFIG_HWMON is not set
++# CONFIG_THERMAL is not set
++# CONFIG_THERMAL_HWMON is not set
++# CONFIG_WATCHDOG is not set
++
++#
++# Sonics Silicon Backplane
++#
++CONFIG_SSB_POSSIBLE=y
++# CONFIG_SSB is not set
++
++#
++# Multifunction device drivers
++#
++# CONFIG_MFD_SM501 is not set
++# CONFIG_HTC_PASIC3 is not set
++
++#
++# Multimedia devices
++#
++
++#
++# Multimedia core support
++#
++# CONFIG_VIDEO_DEV is not set
++# CONFIG_DVB_CORE is not set
++# CONFIG_VIDEO_MEDIA is not set
++
++#
++# Multimedia drivers
++#
++# CONFIG_DAB is not set
++
++#
++# Graphics support
++#
++# CONFIG_VGASTATE is not set
++# CONFIG_VIDEO_OUTPUT_CONTROL is not set
++# CONFIG_FB is not set
++# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
++
++#
++# Display device support
++#
++# CONFIG_DISPLAY_SUPPORT is not set
++
++#
++# Console display driver support
++#
++CONFIG_DUMMY_CONSOLE=y
++
++#
++# Sound
++#
++CONFIG_SOUND=y
++
++#
++# Advanced Linux Sound Architecture
++#
++CONFIG_SND=y
++CONFIG_SND_TIMER=y
++CONFIG_SND_PCM=y
++# CONFIG_SND_SEQUENCER is not set
++# CONFIG_SND_MIXER_OSS is not set
++# CONFIG_SND_PCM_OSS is not set
++# CONFIG_SND_DYNAMIC_MINORS is not set
++# CONFIG_SND_SUPPORT_OLD_API is not set
++# CONFIG_SND_VERBOSE_PROCFS is not set
++CONFIG_SND_VERBOSE_PRINTK=y
++# CONFIG_SND_DEBUG is not set
++
++#
++# Generic devices
++#
++# CONFIG_SND_DUMMY is not set
++# CONFIG_SND_MTPAV is not set
++# CONFIG_SND_SERIAL_U16550 is not set
++# CONFIG_SND_MPU401 is not set
++
++#
++# SUPERH devices
++#
++
++#
++# System on Chip audio support
++#
++CONFIG_SND_SOC=y
++
++#
++# SoC Audio support for SuperH
++#
++CONFIG_SND_SOC_PCM_SH7760=y
++# CONFIG_SND_SH7760_AC97 is not set
++CONFIG_SPES297_WM8731=y
++
++#
++# ALSA SoC audio for Freescale SOCs
++#
++
++#
++# SoC Audio for the Texas Instruments OMAP
++#
++CONFIG_SND_SOC_WM8731=y
++
++#
++# Open Sound System
++#
++# CONFIG_SOUND_PRIME is not set
++# CONFIG_HID_SUPPORT is not set
++CONFIG_USB_SUPPORT=y
++CONFIG_USB_ARCH_HAS_HCD=y
++# CONFIG_USB_ARCH_HAS_OHCI is not set
++# CONFIG_USB_ARCH_HAS_EHCI is not set
++# CONFIG_USB is not set
++# CONFIG_USB_OTG_WHITELIST is not set
++# CONFIG_USB_OTG_BLACKLIST_HUB is not set
++
++#
++# NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
++#
++# CONFIG_USB_GADGET is not set
++# CONFIG_MMC is not set
++# CONFIG_MEMSTICK is not set
++# CONFIG_NEW_LEDS is not set
++# CONFIG_ACCESSIBILITY is not set
++# CONFIG_RTC_CLASS is not set
++# CONFIG_UIO is not set
++
++#
++# File systems
++#
++CONFIG_EXT2_FS=y
++CONFIG_EXT2_FS_XATTR=y
++# CONFIG_EXT2_FS_POSIX_ACL is not set
++# CONFIG_EXT2_FS_SECURITY is not set
++CONFIG_EXT2_FS_XIP=y
++CONFIG_FS_XIP=y
++CONFIG_EXT3_FS=y
++CONFIG_EXT3_FS_XATTR=y
++# CONFIG_EXT3_FS_POSIX_ACL is not set
++# CONFIG_EXT3_FS_SECURITY is not set
++# CONFIG_EXT4DEV_FS is not set
++CONFIG_JBD=y
++CONFIG_FS_MBCACHE=y
++# CONFIG_REISERFS_FS is not set
++# CONFIG_JFS_FS is not set
++CONFIG_FS_POSIX_ACL=y
++# CONFIG_XFS_FS is not set
++# CONFIG_OCFS2_FS is not set
++CONFIG_DNOTIFY=y
++CONFIG_INOTIFY=y
++CONFIG_INOTIFY_USER=y
++# CONFIG_QUOTA is not set
++# CONFIG_AUTOFS_FS is not set
++# CONFIG_AUTOFS4_FS is not set
++# CONFIG_FUSE_FS is not set
++CONFIG_GENERIC_ACL=y
++
++#
++# CD-ROM/DVD Filesystems
++#
++# CONFIG_ISO9660_FS is not set
++# CONFIG_UDF_FS is not set
++
++#
++# DOS/FAT/NT Filesystems
++#
++# CONFIG_MSDOS_FS is not set
++# CONFIG_VFAT_FS is not set
++# CONFIG_NTFS_FS is not set
++
++#
++# Pseudo filesystems
++#
++CONFIG_PROC_FS=y
++# CONFIG_PROC_KCORE is not set
++CONFIG_PROC_SYSCTL=y
++CONFIG_SYSFS=y
++CONFIG_TMPFS=y
++CONFIG_TMPFS_POSIX_ACL=y
++# CONFIG_HUGETLBFS is not set
++# CONFIG_HUGETLB_PAGE is not set
++# CONFIG_CONFIGFS_FS is not set
++
++#
++# Miscellaneous filesystems
++#
++# CONFIG_ADFS_FS is not set
++# CONFIG_AFFS_FS is not set
++# CONFIG_HFS_FS is not set
++# CONFIG_HFSPLUS_FS is not set
++# CONFIG_BEFS_FS is not set
++# CONFIG_BFS_FS is not set
++# CONFIG_EFS_FS is not set
++# CONFIG_JFFS2_FS is not set
++# CONFIG_CRAMFS is not set
++# CONFIG_VXFS_FS is not set
++# CONFIG_MINIX_FS is not set
++# CONFIG_HPFS_FS is not set
++# CONFIG_QNX4FS_FS is not set
++# CONFIG_ROMFS_FS is not set
++# CONFIG_SYSV_FS is not set
++# CONFIG_UFS_FS is not set
++CONFIG_NETWORK_FILESYSTEMS=y
++CONFIG_NFS_FS=y
++# CONFIG_NFS_V3 is not set
++# CONFIG_NFS_V4 is not set
++# CONFIG_NFSD is not set
++CONFIG_ROOT_NFS=y
++CONFIG_LOCKD=y
++CONFIG_NFS_COMMON=y
++CONFIG_SUNRPC=y
++# CONFIG_SUNRPC_BIND34 is not set
++# CONFIG_RPCSEC_GSS_KRB5 is not set
++# CONFIG_RPCSEC_GSS_SPKM3 is not set
++# CONFIG_SMB_FS is not set
++# CONFIG_CIFS is not set
++# CONFIG_NCP_FS is not set
++# CONFIG_CODA_FS is not set
++# CONFIG_AFS_FS is not set
++
++#
++# Partition Types
++#
++# CONFIG_PARTITION_ADVANCED is not set
++CONFIG_MSDOS_PARTITION=y
++CONFIG_NLS=y
++CONFIG_NLS_DEFAULT="iso8859-1"
++CONFIG_NLS_CODEPAGE_437=y
++# CONFIG_NLS_CODEPAGE_737 is not set
++# CONFIG_NLS_CODEPAGE_775 is not set
++# CONFIG_NLS_CODEPAGE_850 is not set
++# CONFIG_NLS_CODEPAGE_852 is not set
++# CONFIG_NLS_CODEPAGE_855 is not set
++# CONFIG_NLS_CODEPAGE_857 is not set
++# CONFIG_NLS_CODEPAGE_860 is not set
++# CONFIG_NLS_CODEPAGE_861 is not set
++# CONFIG_NLS_CODEPAGE_862 is not set
++# CONFIG_NLS_CODEPAGE_863 is not set
++# CONFIG_NLS_CODEPAGE_864 is not set
++# CONFIG_NLS_CODEPAGE_865 is not set
++# CONFIG_NLS_CODEPAGE_866 is not set
++# CONFIG_NLS_CODEPAGE_869 is not set
++# CONFIG_NLS_CODEPAGE_936 is not set
++# CONFIG_NLS_CODEPAGE_950 is not set
++# CONFIG_NLS_CODEPAGE_932 is not set
++# CONFIG_NLS_CODEPAGE_949 is not set
++# CONFIG_NLS_CODEPAGE_874 is not set
++# CONFIG_NLS_ISO8859_8 is not set
++# CONFIG_NLS_CODEPAGE_1250 is not set
++# CONFIG_NLS_CODEPAGE_1251 is not set
++CONFIG_NLS_ASCII=y
++CONFIG_NLS_ISO8859_1=y
++# CONFIG_NLS_ISO8859_2 is not set
++# CONFIG_NLS_ISO8859_3 is not set
++# CONFIG_NLS_ISO8859_4 is not set
++# CONFIG_NLS_ISO8859_5 is not set
++# CONFIG_NLS_ISO8859_6 is not set
++# CONFIG_NLS_ISO8859_7 is not set
++# CONFIG_NLS_ISO8859_9 is not set
++# CONFIG_NLS_ISO8859_13 is not set
++# CONFIG_NLS_ISO8859_14 is not set
++CONFIG_NLS_ISO8859_15=y
++# CONFIG_NLS_KOI8_R is not set
++# CONFIG_NLS_KOI8_U is not set
++CONFIG_NLS_UTF8=y
++# CONFIG_DLM is not set
++
++#
++# Kernel hacking
++#
++CONFIG_TRACE_IRQFLAGS_SUPPORT=y
++CONFIG_PRINTK_TIME=y
++CONFIG_ENABLE_WARN_DEPRECATED=y
++# CONFIG_ENABLE_MUST_CHECK is not set
++CONFIG_FRAME_WARN=1024
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_UNUSED_SYMBOLS=y
++# CONFIG_DEBUG_FS is not set
++# CONFIG_HEADERS_CHECK is not set
++CONFIG_DEBUG_KERNEL=y
++# CONFIG_DEBUG_SHIRQ is not set
++CONFIG_DETECT_SOFTLOCKUP=y
++# CONFIG_SCHED_DEBUG is not set
++# CONFIG_SCHEDSTATS is not set
++CONFIG_TIMER_STATS=y
++# CONFIG_DEBUG_OBJECTS is not set
++# CONFIG_SLUB_DEBUG_ON is not set
++# CONFIG_SLUB_STATS is not set
++CONFIG_DEBUG_PREEMPT=y
++# CONFIG_DEBUG_RT_MUTEXES is not set
++# CONFIG_RT_MUTEX_TESTER is not set
++# CONFIG_DEBUG_SPINLOCK is not set
++# CONFIG_DEBUG_MUTEXES is not set
++# CONFIG_DEBUG_LOCK_ALLOC is not set
++# CONFIG_PROVE_LOCKING is not set
++# CONFIG_LOCK_STAT is not set
++# CONFIG_DEBUG_SPINLOCK_SLEEP is not set
++# CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
++# CONFIG_DEBUG_KOBJECT is not set
++CONFIG_DEBUG_BUGVERBOSE=y
++CONFIG_DEBUG_INFO=y
++# CONFIG_DEBUG_VM is not set
++# CONFIG_DEBUG_WRITECOUNT is not set
++# CONFIG_DEBUG_LIST is not set
++# CONFIG_DEBUG_SG is not set
++# CONFIG_FRAME_POINTER is not set
++# CONFIG_BOOT_PRINTK_DELAY is not set
++# CONFIG_RCU_TORTURE_TEST is not set
++# CONFIG_BACKTRACE_SELF_TEST is not set
++# CONFIG_FAULT_INJECTION is not set
++# CONFIG_SAMPLES is not set
++# CONFIG_SH_STANDARD_BIOS is not set
++CONFIG_EARLY_SCIF_CONSOLE=y
++CONFIG_EARLY_SCIF_CONSOLE_PORT=0xffe80000
++CONFIG_EARLY_PRINTK=y
++# CONFIG_DEBUG_BOOTMEM is not set
++CONFIG_DEBUG_STACKOVERFLOW=y
++# CONFIG_DEBUG_STACK_USAGE is not set
++# CONFIG_4KSTACKS is not set
++# CONFIG_IRQSTACKS is not set
++# CONFIG_SH_KGDB is not set
++
++#
++# Security options
++#
++# CONFIG_KEYS is not set
++# CONFIG_SECURITY is not set
++# CONFIG_SECURITY_FILE_CAPABILITIES is not set
++CONFIG_CRYPTO=y
++
++#
++# Crypto core or helper
++#
++CONFIG_CRYPTO_ALGAPI=y
++# CONFIG_CRYPTO_MANAGER is not set
++# CONFIG_CRYPTO_GF128MUL is not set
++# CONFIG_CRYPTO_NULL is not set
++# CONFIG_CRYPTO_CRYPTD is not set
++# CONFIG_CRYPTO_AUTHENC is not set
++# CONFIG_CRYPTO_TEST is not set
++
++#
++# Authenticated Encryption with Associated Data
++#
++# CONFIG_CRYPTO_CCM is not set
++# CONFIG_CRYPTO_GCM is not set
++# CONFIG_CRYPTO_SEQIV is not set
++
++#
++# Block modes
++#
++# CONFIG_CRYPTO_CBC is not set
++# CONFIG_CRYPTO_CTR is not set
++# CONFIG_CRYPTO_CTS is not set
++# CONFIG_CRYPTO_ECB is not set
++# CONFIG_CRYPTO_LRW is not set
++# CONFIG_CRYPTO_PCBC is not set
++# CONFIG_CRYPTO_XTS is not set
++
++#
++# Hash modes
++#
++# CONFIG_CRYPTO_HMAC is not set
++# CONFIG_CRYPTO_XCBC is not set
++
++#
++# Digest
++#
++# CONFIG_CRYPTO_CRC32C is not set
++# CONFIG_CRYPTO_MD4 is not set
++CONFIG_CRYPTO_MD5=y
++# CONFIG_CRYPTO_MICHAEL_MIC is not set
++# CONFIG_CRYPTO_SHA1 is not set
++# CONFIG_CRYPTO_SHA256 is not set
++# CONFIG_CRYPTO_SHA512 is not set
++# CONFIG_CRYPTO_TGR192 is not set
++# CONFIG_CRYPTO_WP512 is not set
++
++#
++# Ciphers
++#
++# CONFIG_CRYPTO_AES is not set
++# CONFIG_CRYPTO_ANUBIS is not set
++# CONFIG_CRYPTO_ARC4 is not set
++# CONFIG_CRYPTO_BLOWFISH is not set
++# CONFIG_CRYPTO_CAMELLIA is not set
++# CONFIG_CRYPTO_CAST5 is not set
++# CONFIG_CRYPTO_CAST6 is not set
++CONFIG_CRYPTO_DES=y
++# CONFIG_CRYPTO_FCRYPT is not set
++# CONFIG_CRYPTO_KHAZAD is not set
++# CONFIG_CRYPTO_SALSA20 is not set
++# CONFIG_CRYPTO_SEED is not set
++# CONFIG_CRYPTO_SERPENT is not set
++# CONFIG_CRYPTO_TEA is not set
++# CONFIG_CRYPTO_TWOFISH is not set
++
++#
++# Compression
++#
++# CONFIG_CRYPTO_DEFLATE is not set
++# CONFIG_CRYPTO_LZO is not set
++CONFIG_CRYPTO_HW=y
++
++#
++# Library routines
++#
++CONFIG_BITREVERSE=y
++# CONFIG_GENERIC_FIND_FIRST_BIT is not set
++# CONFIG_CRC_CCITT is not set
++# CONFIG_CRC16 is not set
++# CONFIG_CRC_ITU_T is not set
++CONFIG_CRC32=y
++# CONFIG_CRC7 is not set
++# CONFIG_LIBCRC32C is not set
++CONFIG_PLIST=y
++CONFIG_HAS_IOMEM=y
++CONFIG_HAS_IOPORT=y
++CONFIG_HAS_DMA=y
+diff -uNr linux-2.6.26-vanilla/arch/sh/Kconfig linux-2.6.26-spes/arch/sh/Kconfig
+--- linux-2.6.26-vanilla/arch/sh/Kconfig	2008-07-13 23:51:29.000000000 +0200
++++ linux-2.6.26-spes/arch/sh/Kconfig	2008-07-28 15:35:00.000000000 +0200
+@@ -553,6 +553,12 @@
+ 	depends on CPU_SUBTYPE_SH5_101 || CPU_SUBTYPE_SH5_103
+ 	select SYS_SUPPORTS_PCI
+ 
++config SH_EDOSK7760
++	bool "edosk7760"
++	help
++		"SPES support for edosk7760 board"
++
++
+ endmenu
+ 
+ source "arch/sh/boards/renesas/rts7751r2d/Kconfig"
+diff -uNr linux-2.6.26-vanilla/arch/sh/Makefile linux-2.6.26-spes/arch/sh/Makefile
+--- linux-2.6.26-vanilla/arch/sh/Makefile	2008-07-13 23:51:29.000000000 +0200
++++ linux-2.6.26-spes/arch/sh/Makefile	2008-07-28 15:33:04.000000000 +0200
+@@ -130,6 +130,7 @@
+ machdir-$(CONFIG_SH_LBOX_RE2)			+= lboxre2
+ machdir-$(CONFIG_SH_MAGIC_PANEL_R2)		+= magicpanelr2
+ machdir-$(CONFIG_SH_CAYMAN)			+= cayman
++machdir-$(CONFIG_SH_EDOSK7760)			+= renesas/edosk7760
+ 
+ incdir-y	:= $(notdir $(machdir-y))
+ 
+diff -uNr linux-2.6.26-vanilla/include/asm-sh/edosk7760.h linux-2.6.26-spes/include/asm-sh/edosk7760.h
+--- linux-2.6.26-vanilla/include/asm-sh/edosk7760.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.26-spes/include/asm-sh/edosk7760.h	2008-07-28 15:38:18.000000000 +0200
+@@ -0,0 +1,16 @@
++#ifndef ASM_SH_EDOSK7760
++#define  ASM_SH_EDOSK7760
++
++#include <asm/addrspace.h>
++
++/* Bus state controller registers for CS4 area */
++#define BSC_CS4BCR    0xA4FD0010
++#define BSC_CS4WCR    0xA4FD0030 
++
++#define SMC_IOBASE  0xA2000000
++
++#define SMC_IO_OFFSET 0x300
++#define SMC_IOADDR	SMC_IOBASE +	SMC_IO_OFFSET
++#define IRQ_ETHERNET 0x9
++
++#endif //ASM_SH_EDOSK7760
+diff -uNr linux-2.6.26-vanilla/include/linux/spes.h linux-2.6.26-spes/include/linux/spes.h
+--- linux-2.6.26-vanilla/include/linux/spes.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.26-spes/include/linux/spes.h	2008-07-28 15:41:08.000000000 +0200
+@@ -0,0 +1,62 @@
++#ifndef SPES_H
++#define SPES_H
++
++
++#define SPES_SCIF_BASE 0xFE620000 /* Used for low-level debug output */
++
++#define SPES_SC_TDR (volatile unsigned char *)(SPES_SCIF_BASE + 0x0C)
++#define SPES_SC_SR  (volatile unsigned short *)(SPES_SCIF_BASE + 0x10)
++
++#define SPES_SCI_TD_E  0x0020
++#define SPES_SCI_TDRE_CLEAR		0x00df
++
++
++// ************************************************************
++// DEBUG FUNCTIONS
++//
++
++
++static 
++inline int 
++SpesDebugCharReady (void)
++{
++  unsigned short status;
++
++  status = *SPES_SC_SR;
++  return (status & SPES_SCI_TD_E);
++}
++
++static 
++inline void
++SpesDebugChar (char ch)
++{
++  while (!SpesDebugCharReady())
++    ;
++
++  *SPES_SC_TDR = ch;
++  *SPES_SC_SR;
++  *SPES_SC_SR = SPES_SCI_TDRE_CLEAR;
++}
++
++static 
++inline void
++SpesDebugString (char *str)
++{
++  char *p;
++
++  for (p = str; *p; p++)
++    {
++      if (*p == '\n')
++	SpesDebugChar ('\r');
++      SpesDebugChar (*p);
++    }
++}
++
++
++#define SpesPrint SpesDebugString
++
++#endif
++
++
++
++
+
+--------------070204050704090605000701--
