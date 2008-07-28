@@ -1,45 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 01 Jul 2008 12:47:07 +0000
-Subject: [PATCH 03/07] soc_camera: Remove vbq_ops and msize
-Message-Id: <20080701124707.30446.214.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 28 Jul 2008 12:32:29 +0000
+Subject: [PATCH] USB: m66592-udc: Fix up dev_set_name() badness.
+Message-Id: <20080728123229.GA15202@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080701124638.30446.81449.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: video4linux-list@redhat.com
-Cc: linux-sh@vger.kernel.org, akpm@linux-foundation.org, lethal@linux-sh.org, mchehab@infradead.org
+To: Greg Kroah-Hartman <gregkh@suse.de>, Kay Sievers <kay.sievers@vrfy.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-The struct soc_camera_host members vbq_ops and msize are not needed
-anymore since we now let the soc_camera host manage the videobuf queue.
+Commit 0031a06e2f07ab0d1bc98c31dbb6801f95f4bf01 converted all of the USB
+drivers to use dev_set_name(), though there was a typo on the m66592-udc
+conversion that handed off the wrong pointer (we want the struct device
+here obviously, not the struct usb_gadget).
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+
 ---
 
- drivers/media/video/pxa_camera.c |    2 --
- include/media/soc_camera.h       |    2 --
- 2 files changed, 4 deletions(-)
+ drivers/usb/gadget/m66592-udc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---- 0007/drivers/media/video/pxa_camera.c
-+++ work/drivers/media/video/pxa_camera.c	2008-06-12 14:30:25.000000000 +0900
-@@ -1018,8 +1018,6 @@ static struct soc_camera_host_ops pxa_so
- /* Should be allocated dynamically too, but we have only one. */
- static struct soc_camera_host pxa_soc_camera_host = {
- 	.drv_name		= PXA_CAM_DRV_NAME,
--	.vbq_ops		= &pxa_videobuf_ops,
--	.msize			= sizeof(struct pxa_buffer),
- 	.ops			= &pxa_soc_camera_host_ops,
- };
+diff --git a/drivers/usb/gadget/m66592-udc.c b/drivers/usb/gadget/m66592-udc.c
+index 8da7535..77b44fb 100644
+--- a/drivers/usb/gadget/m66592-udc.c
++++ b/drivers/usb/gadget/m66592-udc.c
+@@ -1593,7 +1593,7 @@ static int __init m66592_probe(struct platform_device *pdev)
  
---- 0007/include/media/soc_camera.h
-+++ work/include/media/soc_camera.h	2008-06-12 14:30:18.000000000 +0900
-@@ -55,8 +55,6 @@ struct soc_camera_host {
- 	struct list_head list;
- 	struct device dev;
- 	unsigned char nr;				/* Host number */
--	size_t msize;
--	struct videobuf_queue_ops *vbq_ops;
- 	void *priv;
- 	char *drv_name;
- 	struct soc_camera_host_ops *ops;
+ 	m66592->gadget.ops = &m66592_gadget_ops;
+ 	device_initialize(&m66592->gadget.dev);
+-	dev_set_name(&m66592->gadget, "gadget");
++	dev_set_name(&m66592->gadget.dev, "gadget");
+ 	m66592->gadget.is_dualspeed = 1;
+ 	m66592->gadget.dev.parent = &pdev->dev;
+ 	m66592->gadget.dev.dma_mask = pdev->dev.dma_mask;
