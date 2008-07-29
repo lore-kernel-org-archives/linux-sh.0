@@ -1,29 +1,52 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 07 Jul 2008 04:08:19 +0000
-Subject: Re: [PATCH] sh: add SuperH Mobile I2C platform data to sh7343
-Message-Id: <20080707040819.GB7601@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Tue, 29 Jul 2008 05:37:25 +0000
+Subject: [PATCH] sh: Fix compile error of Solution Engine
+Message-Id: <488EAC95.4060507@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080705033146.17251.47676.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080705033146.17251.47676.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Adrian Bunk <bunk@kernel.org>, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Sat, Jul 05, 2008 at 12:31:46PM +0900, Magnus Damm wrote:
-> This patch adds platform data for two I2C channels to the sh7343.
+When I compiled Solution Engine, this become compile error
+because plaform device of sh_eth device becomes enable.
+When sh7710/sh7712 which could use sh_eth was chosen,
+revised it so that platform device of sh_eth device became enable.
 
-On Sat, Jul 05, 2008 at 12:32:06PM +0900, Magnus Damm wrote:
-> This patch adds platform data for the single I2C channel on sh7723.
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ arch/sh/boards/se/770x/setup.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-On Sat, Jul 05, 2008 at 12:32:23PM +0900, Magnus Damm wrote:
-> This patch adds platform data for the single I2C channel on sh7366.
+diff --git a/arch/sh/boards/se/770x/setup.c b/arch/sh/boards/se/770x/setup.c
+index cf4a5ba..6c64d77 100644
+--- a/arch/sh/boards/se/770x/setup.c
++++ b/arch/sh/boards/se/770x/setup.c
+@@ -113,6 +113,8 @@ static struct platform_device heartbeat_device = {
+ 	.resource	= heartbeat_resources,
+ };
 
-On Sat, Jul 05, 2008 at 12:32:44PM +0900, Magnus Damm wrote:
-> This patch enables I2C on the sh7723-based ap325rxa board.
++#if defined(CONFIG_CPU_SUBTYPE_SH7710) ||\
++	defined(CONFIG_CPU_SUBTYPE_SH7712)
+ /* SH771X Ethernet driver */
+ static struct resource sh_eth0_resources[] = {
+ 	[0] = {
+@@ -159,12 +161,16 @@ static struct platform_device sh_eth1_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth1_resources),
+ 	.resource = sh_eth1_resources,
+ };
++#endif
 
-On Sat, Jul 05, 2008 at 12:33:30PM +0900, Magnus Damm wrote:
-> Remove inline from ptep_get_and_clean() to match with header file prototype.
-> Makes linux-next build.
+ static struct platform_device *se_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&cf_ide_device,
++#if defined(CONFIG_CPU_SUBTYPE_SH7710) ||\
++	defined(CONFIG_CPU_SUBTYPE_SH7712)
+ 	&sh_eth0_device,
+ 	&sh_eth1_device,
++#endif
+ };
 
-Applied, thanks.
+ static int __init se_devices_setup(void)
+-- 1.5.6.2
