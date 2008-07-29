@@ -1,258 +1,852 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 28 Jul 2008 09:51:01 +0000
-Subject: [PATCH] sh: Add SuperH Mobile CEU platform data for Migo-R
-Message-Id: <20080728095101.4257.1820.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 29 Jul 2008 17:28:42 +0000
+Subject: [GIT PULL] sh updates for 2.6.27-rc2
+Message-Id: <20080729172842.GA4461@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+This is a rather disruptive set of changes, so I'm sending these out
+early. This includes the migration from include/asm-sh to arch/sh/include,
+as well as some mach group shuffling to go along with it. I figured it
+made more sense to get this all out of the way in one shot.
 
-Add Migo-R specific platform data for on-chip sh7722 CEU and ov772x camera.
+Beyond that, lots of minor build fixes, defconfig updates for all the
+platforms I built, and so on. Outside of the renames, most of the churn
+is obviously in the defconfigs.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Please pull from:
 
- arch/sh/boards/renesas/migor/setup.c |  173 +++++++++++++++++++++++++++++++++-
- include/asm-sh/migor.h               |    5 
- 2 files changed, 177 insertions(+), 1 deletion(-)
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
---- 0009/arch/sh/boards/renesas/migor/setup.c
-+++ work/arch/sh/boards/renesas/migor/setup.c	2008-07-28 16:24:51.000000000 +0900
-@@ -15,6 +15,10 @@
- #include <linux/mtd/nand.h>
- #include <linux/i2c.h>
- #include <linux/smc91x.h>
-+#include <linux/delay.h>
-+#include <linux/clk.h>
-+#include <media/soc_camera_platform.h>
-+#include <media/sh_mobile_ceu.h>
- #include <asm/clock.h>
- #include <asm/machvec.h>
- #include <asm/io.h>
-@@ -270,15 +274,167 @@ static struct platform_device migor_lcdc
- 	},
- };
- 
-+static struct clk *camera_clk;
-+
-+static void camera_power_on(void)
-+{
-+	unsigned char value;
-+
-+	camera_clk = clk_get(NULL, "video_clk");
-+	clk_set_rate(camera_clk, 24000000);
-+	clk_enable(camera_clk);	/* start VIO_CKO */
-+
-+	mdelay(10);
-+	value = ctrl_inb(PORT_PTDR);
-+	value &= ~0x09;
-+#ifndef CONFIG_SH_MIGOR_RTA_WVGA
-+	value |= 0x01;
-+#endif
-+	ctrl_outb(value, PORT_PTDR);
-+	mdelay(10);
-+
-+	ctrl_outb(value | 8, PORT_PTDR);
-+}
-+
-+static void camera_power_off(void)
-+{
-+	clk_disable(camera_clk); /* stop VIO_CKO */
-+	clk_put(camera_clk);
-+
-+	ctrl_outb(ctrl_inb(PORT_PTDR) & ~0x08, PORT_PTDR);
-+}
-+
-+static unsigned char camera_ov772x_magic[] +{
-+	0x09, 0x01, 0x0c, 0x10, 0x0d, 0x41, 0x0e, 0x01,
-+	0x12, 0x00, 0x13, 0x8F, 0x14, 0x4A, 0x15, 0x00,
-+	0x16, 0x00, 0x17, 0x23, 0x18, 0xa0, 0x19, 0x07,
-+	0x1a, 0xf0, 0x1b, 0x40, 0x1f, 0x00, 0x20, 0x10,
-+	0x22, 0xff, 0x23, 0x01, 0x28, 0x00, 0x29, 0xa0,
-+	0x2a, 0x00, 0x2b, 0x00, 0x2c, 0xf0, 0x2d, 0x00,
-+	0x2e, 0x00, 0x30, 0x80, 0x31, 0x60, 0x32, 0x00,
-+	0x33, 0x00, 0x34, 0x00, 0x3d, 0x80, 0x3e, 0xe2,
-+	0x3f, 0x1f, 0x42, 0x80, 0x43, 0x80, 0x44, 0x80,
-+	0x45, 0x80, 0x46, 0x00, 0x47, 0x00, 0x48, 0x00,
-+	0x49, 0x50, 0x4a, 0x30, 0x4b, 0x50, 0x4c, 0x50,
-+	0x4d, 0x00, 0x4e, 0xef, 0x4f, 0x10, 0x50, 0x60,
-+	0x51, 0x00, 0x52, 0x00, 0x53, 0x24, 0x54, 0x7a,
-+	0x55, 0xfc, 0x62, 0xff, 0x63, 0xf0, 0x64, 0x1f,
-+	0x65, 0x00, 0x66, 0x10, 0x67, 0x00, 0x68, 0x00,
-+	0x69, 0x5c, 0x6a, 0x11, 0x6b, 0xa2, 0x6c, 0x01,
-+	0x6d, 0x50, 0x6e, 0x80, 0x6f, 0x80, 0x70, 0x0f,
-+	0x71, 0x00, 0x72, 0x00, 0x73, 0x0f, 0x74, 0x0f,
-+	0x75, 0xff, 0x78, 0x10, 0x79, 0x70, 0x7a, 0x70,
-+	0x7b, 0xf0, 0x7c, 0xf0, 0x7d, 0xf0, 0x7e, 0x0e,
-+	0x7f, 0x1a, 0x80, 0x31, 0x81, 0x5a, 0x82, 0x69,
-+	0x83, 0x75, 0x84, 0x7e, 0x85, 0x88, 0x86, 0x8f,
-+	0x87, 0x96, 0x88, 0xa3, 0x89, 0xaf, 0x8a, 0xc4,
-+	0x8b, 0xd7, 0x8c, 0xe8, 0x8d, 0x20, 0x8e, 0x00,
-+	0x8f, 0x00, 0x90, 0x08, 0x91, 0x10, 0x92, 0x1f,
-+	0x93, 0x01, 0x94, 0x2c, 0x95, 0x24, 0x96, 0x08,
-+	0x97, 0x14, 0x98, 0x24, 0x99, 0x38, 0x9a, 0x9e,
-+	0x9b, 0x00, 0x9c, 0x40, 0x9e, 0x11, 0x9f, 0x02,
-+	0xa0, 0x00, 0xa1, 0x40, 0xa2, 0x40, 0xa3, 0x06,
-+	0xa4, 0x00, 0xa6, 0x00, 0xa7, 0x40, 0xa8, 0x40,
-+	0xa9, 0x80, 0xaa, 0x80, 0xab, 0x06, 0xac, 0xff,
-+	0x12, 0x06, 0x64, 0x3f, 0x12, 0x46, 0x17, 0x3f,
-+	0x18, 0x50, 0x19, 0x03, 0x1a, 0x78, 0x29, 0x50,
-+	0x2c, 0x78,
-+};
-+
-+static int ov772x_set_capture(struct soc_camera_platform_info *info,
-+			      int enable)
-+{
-+	struct i2c_adapter *a = i2c_get_adapter(0);
-+	struct i2c_msg msg;
-+	int ret = 0;
-+	int i;
-+
-+	if (!enable)
-+		return 0; /* camera_power_off() is enough */
-+
-+	for (i = 0; i < ARRAY_SIZE(camera_ov772x_magic); i += 2) {
-+		u_int8_t buf[8];
-+
-+		msg.addr = 0x21;
-+		msg.buf = buf;
-+		msg.len = 2;
-+		msg.flags = 0;
-+
-+		buf[0] = camera_ov772x_magic[i];
-+		buf[1] = camera_ov772x_magic[i + 1];
-+
-+		ret = (ret < 0) ? ret : i2c_transfer(a, &msg, 1);
-+	}
-+
-+	return ret;
-+}
-+
-+static struct soc_camera_platform_info ov772x_info = {
-+	.iface = 0,
-+	.format_name = "RGB565",
-+	.format_depth = 16,
-+	.format = {
-+		.pixelformat = V4L2_PIX_FMT_RGB565,
-+		.colorspace = V4L2_COLORSPACE_SRGB,
-+		.width = 320,
-+		.height = 240,
-+	},
-+	.bus_param =  SOCAM_PCLK_SAMPLE_RISING | SOCAM_HSYNC_ACTIVE_HIGH |
-+	SOCAM_VSYNC_ACTIVE_HIGH | SOCAM_MASTER | SOCAM_DATAWIDTH_8,
-+	.set_capture = ov772x_set_capture,
-+};
-+
-+static struct platform_device migor_camera_device = {
-+	.name		= "soc_camera_platform",
-+	.dev	= {
-+		.platform_data	= &ov772x_info,
-+	},
-+};
-+
-+static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
-+	.flags = SOCAM_MASTER | SOCAM_DATAWIDTH_8 | SOCAM_PCLK_SAMPLE_RISING \
-+	| SOCAM_HSYNC_ACTIVE_HIGH | SOCAM_VSYNC_ACTIVE_HIGH,
-+	.enable_camera = camera_power_on,
-+	.disable_camera = camera_power_off,
-+};
-+
-+static struct resource migor_ceu_resources[] = {
-+	[0] = {
-+		.name	= "CEU",
-+		.start	= 0xfe910000,
-+		.end	= 0xfe91009f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 52,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device migor_ceu_device = {
-+	.name		= "sh_mobile_ceu",
-+	.num_resources	= ARRAY_SIZE(migor_ceu_resources),
-+	.resource	= migor_ceu_resources,
-+	.dev	= {
-+		.platform_data	= &sh_mobile_ceu_info,
-+	},
-+};
-+
- static struct platform_device *migor_devices[] __initdata = {
- 	&smc91x_eth_device,
- 	&sh_keysc_device,
- 	&migor_lcdc_device,
-+	&migor_ceu_device,
-+	&migor_camera_device,
- 	&migor_nor_flash_device,
- 	&migor_nand_flash_device,
- };
- 
--static struct i2c_board_info __initdata migor_i2c_devices[] = {
-+static struct i2c_board_info migor_i2c_devices[] = {
- 	{
- 		I2C_BOARD_INFO("rs5c372b", 0x32),
- 	},
-@@ -292,6 +448,9 @@ static int __init migor_devices_setup(vo
- {
- 	clk_always_enable("mstp214"); /* KEYSC */
- 	clk_always_enable("mstp200"); /* LCDC */
-+	clk_always_enable("mstp203"); /* CEU */
-+
-+	platform_resource_setup_memory(&migor_ceu_device, "ceu", 4 << 20);
- 
- 	i2c_register_board_info(0, migor_i2c_devices,
- 				ARRAY_SIZE(migor_i2c_devices));
-@@ -344,6 +503,18 @@ static void __init migor_setup(char **cm
- 	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x0100, PORT_MSELCRB);
- 	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x01e0, PORT_HIZCRA);
- #endif
-+
-+	/* CEU */
-+	ctrl_outw((ctrl_inw(PORT_PTCR) & ~0x03c3) | 0x0051, PORT_PTCR);
-+	ctrl_outw(ctrl_inw(PORT_PUCR) & ~0x03ff, PORT_PUCR);
-+	ctrl_outw(ctrl_inw(PORT_PVCR) & ~0x03ff, PORT_PVCR);
-+	ctrl_outw(ctrl_inw(PORT_PWCR) & ~0x3c00, PORT_PWCR);
-+	ctrl_outw(ctrl_inw(PORT_PSELC) | 0x0001, PORT_PSELC);
-+	ctrl_outw(ctrl_inw(PORT_PSELD) & ~0x2000, PORT_PSELD);
-+	ctrl_outw(ctrl_inw(PORT_PSELE) | 0x000f, PORT_PSELE);
-+	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x2200, PORT_MSELCRB);
-+	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x0a00, PORT_HIZCRA);
-+	ctrl_outw(ctrl_inw(PORT_HIZCRB) & ~0x0003, PORT_HIZCRB);
- }
- 
- static struct sh_machine_vector mv_migor __initmv = {
---- 0009/include/asm-sh/migor.h
-+++ work/include/asm-sh/migor.h	2008-07-28 16:20:14.000000000 +0900
-@@ -25,12 +25,16 @@
- #define PORT_PLCR 0xa4050114
- #define PORT_PMCR 0xa4050116
- #define PORT_PRCR 0xa405011c
-+#define PORT_PTCR 0xa4050140
-+#define PORT_PUCR 0xa4050142
-+#define PORT_PVCR 0xa4050144
- #define PORT_PWCR 0xa4050146
- #define PORT_PXCR 0xa4050148
- #define PORT_PYCR 0xa405014a
- #define PORT_PZCR 0xa405014c
- #define PORT_PADR 0xa4050120
- #define PORT_PHDR 0xa405012e
-+#define PORT_PTDR 0xa4050160
- #define PORT_PWDR 0xa4050166
- 
- #define PORT_HIZCRA 0xa4050158
-@@ -45,6 +49,7 @@
- #define PORT_PSELB 0xa4050150
- #define PORT_PSELC 0xa4050152
- #define PORT_PSELD 0xa4050154
-+#define PORT_PSELE 0xa4050156
- 
- #define PORT_HIZCRA 0xa4050158
- #define PORT_HIZCRB 0xa405015a
+Which contains:
+
+Adrian Bunk (1):
+      mm/hugetlb.c must #include <asm/io.h>
+
+Adrian McMenamin (1):
+      sh/maple: clean maple bus code
+
+Magnus Damm (1):
+      sh: I2C fix for AP325RXA and Migo-R
+
+Nobuhiro Iwamatsu (1):
+      sh: Fix compile error of Solution Engine
+
+OGAWA Hirofumi (1):
+      sh: Proper __put_user_asm() size mismatch fix.
+
+Paul Mundt (23):
+      sh: rsk7203: Add smc911x platform data.
+      sh: rsk7203: update defconfig.
+      sh: Fix up unaligned current_text_addr().
+      MAINTAINERS: Switch SUPERH to Supported.
+      video: Kill off leaked CONFIG_FB_SH7343VOU reference.
+      sh: migrate to arch/sh/include/
+      sh: dreamcast: fix build failure from header reorg.
+      sh: Add an arch/sh/kernel/.gitignore
+      sh: Stub in a dummy ENTRY_OFFSET for uImage offset calculation.
+      sh: Add ARCH_DEFCONFIG entries for sh and sh64.
+      sh: Switch KBUILD_DEFCONFIG to shx3_defconfig.
+      sh: dma-sh: Fix up dreamcast dma.h mach path.
+      sh: Shuffle the board directories in to mach groups.
+      sh: Move out the solution engine headers to arch/sh/include/mach-se/
+      sh: More header path fixups for mach dir refactoring.
+      sh: Provide common CPU headers, prune the SH-2 and SH-2A directories.
+      sh: Allow SH-3 and SH-5 to use common headers.
+      sh: Make sure AT_SYSINFO_EHDR is exposed to userspace in asm/auxvec.h.
+      sh: Move out individual boards without mach groups.
+      serial: sh-sci: Fix up SH7760/SH7780/SH7785 early printk regression.
+      sh: Kill off stray mach-rsk7203 reference.
+      sh: defconfig updates.
+      video: Fix up hp6xx driver build regressions.
+
+ MAINTAINERS                                        |    2 +-
+ arch/sh/Kconfig                                    |  252 +------
+ arch/sh/Makefile                                   |  139 +--
+ arch/sh/boards/Kconfig                             |  258 ++++++
+ arch/sh/boards/Makefile                            |    8 +
+ .../{renesas/ap325rxa/setup.c => board-ap325rxa.c} |    4 +
+ .../{magicpanelr2/setup.c => board-magicpanelr2.c} |    0 
+ .../{renesas/rsk7203/setup.c => board-rsk7203.c}   |   10 +
+ .../sh7785lcr/setup.c => board-sh7785lcr.c}        |    0 
+ arch/sh/boards/{shmin/setup.c => board-shmin.c}    |    0 
+ arch/sh/boards/{cayman => mach-cayman}/Makefile    |    0 
+ arch/sh/boards/{cayman => mach-cayman}/irq.c       |    2 +-
+ arch/sh/boards/{cayman => mach-cayman}/led.c       |    0 
+ arch/sh/boards/{cayman => mach-cayman}/setup.c     |    2 +-
+ .../boards/{dreamcast => mach-dreamcast}/Makefile  |    0 
+ arch/sh/boards/{dreamcast => mach-dreamcast}/irq.c |    2 +-
+ arch/sh/boards/{dreamcast => mach-dreamcast}/rtc.c |    0 
+ .../boards/{dreamcast => mach-dreamcast}/setup.c   |    2 +-
+ .../{renesas/edosk7705 => mach-edosk7705}/Makefile |    0 
+ .../{renesas/edosk7705 => mach-edosk7705}/io.c     |    0 
+ .../{renesas/edosk7705 => mach-edosk7705}/setup.c  |    0 
+ .../{renesas/r7780rp => mach-highlander}/Kconfig   |    0 
+ .../{renesas/r7780rp => mach-highlander}/Makefile  |    0 
+ .../r7780rp => mach-highlander}/irq-r7780mp.c      |    0 
+ .../r7780rp => mach-highlander}/irq-r7780rp.c      |    0 
+ .../r7780rp => mach-highlander}/irq-r7785rp.c      |    0 
+ .../{renesas/r7780rp => mach-highlander}/psw.c     |    2 +-
+ .../{renesas/r7780rp => mach-highlander}/setup.c   |    0 
+ arch/sh/boards/{hp6xx => mach-hp6xx}/Makefile      |    0 
+ arch/sh/boards/{hp6xx => mach-hp6xx}/hp6xx_apm.c   |    0 
+ arch/sh/boards/{hp6xx => mach-hp6xx}/pm.c          |    2 +-
+ arch/sh/boards/{hp6xx => mach-hp6xx}/pm_wakeup.S   |    2 +-
+ arch/sh/boards/{hp6xx => mach-hp6xx}/setup.c       |    2 +-
+ arch/sh/boards/{landisk => mach-landisk}/Makefile  |    0 
+ arch/sh/boards/{landisk => mach-landisk}/gio.c     |    4 +-
+ arch/sh/boards/{landisk => mach-landisk}/irq.c     |    2 +-
+ arch/sh/boards/{landisk => mach-landisk}/psw.c     |    2 +-
+ arch/sh/boards/{landisk => mach-landisk}/setup.c   |    2 +-
+ arch/sh/boards/{lboxre2 => mach-lboxre2}/Makefile  |    0 
+ arch/sh/boards/{lboxre2 => mach-lboxre2}/irq.c     |    0 
+ arch/sh/boards/{lboxre2 => mach-lboxre2}/setup.c   |    0 
+ .../{superh/microdev => mach-microdev}/Makefile    |    0 
+ .../boards/{superh/microdev => mach-microdev}/io.c |    0 
+ .../{superh/microdev => mach-microdev}/irq.c       |    0 
+ .../{superh/microdev => mach-microdev}/led.c       |    0 
+ .../{superh/microdev => mach-microdev}/setup.c     |    0 
+ .../boards/{renesas/migor => mach-migor}/Kconfig   |    0 
+ .../boards/{renesas/migor => mach-migor}/Makefile  |    0 
+ .../{renesas/migor => mach-migor}/lcd_qvga.c       |    0 
+ .../boards/{renesas/migor => mach-migor}/setup.c   |    4 +
+ .../{renesas/rts7751r2d => mach-r2d}/Kconfig       |    0 
+ .../{renesas/rts7751r2d => mach-r2d}/Makefile      |    0 
+ .../boards/{renesas/rts7751r2d => mach-r2d}/irq.c  |    0 
+ .../{renesas/rts7751r2d => mach-r2d}/setup.c       |    0 
+ .../{renesas/sdk7780 => mach-sdk7780}/Kconfig      |    0 
+ .../{renesas/sdk7780 => mach-sdk7780}/Makefile     |    0 
+ .../boards/{renesas/sdk7780 => mach-sdk7780}/irq.c |    0 
+ .../{renesas/sdk7780 => mach-sdk7780}/setup.c      |    0 
+ arch/sh/boards/{se => mach-se}/7206/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/7206/io.c           |    2 +-
+ arch/sh/boards/{se => mach-se}/7206/irq.c          |    2 +-
+ arch/sh/boards/{se => mach-se}/7206/setup.c        |    2 +-
+ arch/sh/boards/{se => mach-se}/7343/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/7343/io.c           |    2 +-
+ arch/sh/boards/{se => mach-se}/7343/irq.c          |    6 +-
+ arch/sh/boards/{se => mach-se}/7343/setup.c        |    2 +-
+ arch/sh/boards/{se => mach-se}/770x/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/770x/io.c           |    2 +-
+ arch/sh/boards/{se => mach-se}/770x/irq.c          |    2 +-
+ arch/sh/boards/{se => mach-se}/770x/setup.c        |    8 +-
+ arch/sh/boards/{se => mach-se}/7721/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/7721/irq.c          |    2 +-
+ arch/sh/boards/{se => mach-se}/7721/setup.c        |    2 +-
+ arch/sh/boards/{se => mach-se}/7722/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/7722/irq.c          |    2 +-
+ arch/sh/boards/{se => mach-se}/7722/setup.c        |    2 +-
+ arch/sh/boards/{se => mach-se}/7751/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/7751/io.c           |    2 +-
+ arch/sh/boards/{se => mach-se}/7751/irq.c          |    2 +-
+ arch/sh/boards/{se => mach-se}/7751/pci.c          |    0 
+ arch/sh/boards/{se => mach-se}/7751/setup.c        |    2 +-
+ arch/sh/boards/{se => mach-se}/7780/Makefile       |    0 
+ arch/sh/boards/{se => mach-se}/7780/irq.c          |    2 +-
+ arch/sh/boards/{se => mach-se}/7780/setup.c        |    2 +-
+ arch/sh/boards/mach-se/Makefile                    |    9 +
+ .../{se/7619/setup.c => mach-se/board-se7619.c}    |    0 
+ arch/sh/boards/{sh03 => mach-sh03}/Makefile        |    0 
+ arch/sh/boards/{sh03 => mach-sh03}/rtc.c           |    0 
+ arch/sh/boards/{sh03 => mach-sh03}/setup.c         |    4 +-
+ .../{renesas/sh7763rdp => mach-sh7763rdp}/Makefile |    0 
+ .../{renesas/sh7763rdp => mach-sh7763rdp}/irq.c    |    0 
+ .../{renesas/sh7763rdp => mach-sh7763rdp}/setup.c  |    0 
+ .../sh/boards/{snapgear => mach-snapgear}/Makefile |    0 
+ arch/sh/boards/{snapgear => mach-snapgear}/io.c    |    0 
+ arch/sh/boards/{snapgear => mach-snapgear}/setup.c |    2 +-
+ .../{renesas/systemh => mach-systemh}/Makefile     |    0 
+ .../boards/{renesas/systemh => mach-systemh}/io.c  |    0 
+ .../boards/{renesas/systemh => mach-systemh}/irq.c |    0 
+ .../{renesas/systemh => mach-systemh}/setup.c      |    0 
+ arch/sh/boards/{titan => mach-titan}/Makefile      |    0 
+ arch/sh/boards/{titan => mach-titan}/io.c          |    0 
+ arch/sh/boards/{titan => mach-titan}/setup.c       |    0 
+ .../{renesas/x3proto => mach-x3proto}/Makefile     |    0 
+ .../{renesas/x3proto => mach-x3proto}/ilsel.c      |    0 
+ .../{renesas/x3proto => mach-x3proto}/setup.c      |    0 
+ arch/sh/boards/magicpanelr2/Kconfig                |   13 -
+ arch/sh/boards/magicpanelr2/Makefile               |    5 -
+ arch/sh/boards/renesas/ap325rxa/Makefile           |    1 -
+ arch/sh/boards/renesas/rsk7203/Makefile            |    1 -
+ arch/sh/boards/renesas/sh7785lcr/Makefile          |    1 -
+ arch/sh/boards/se/7619/Makefile                    |    5 -
+ arch/sh/boards/shmin/Makefile                      |    5 -
+ arch/sh/boot/Makefile                              |    3 +-
+ arch/sh/boot/compressed/head_64.S                  |    4 +-
+ arch/sh/configs/ap325rxa_defconfig                 |   35 +-
+ arch/sh/configs/dreamcast_defconfig                |  304 +++++--
+ arch/sh/configs/hp6xx_defconfig                    |  258 ++++--
+ arch/sh/configs/landisk_defconfig                  |  894 +++++++++-----------
+ arch/sh/configs/lboxre2_defconfig                  |  725 +++++++---------
+ arch/sh/configs/magicpanelr2_defconfig             |  195 +++--
+ arch/sh/configs/microdev_defconfig                 |  630 +++++++--------
+ arch/sh/configs/migor_defconfig                    |   63 ++-
+ arch/sh/configs/r7780mp_defconfig                  |  194 +++--
+ arch/sh/configs/r7785rp_defconfig                  |  258 ++++--
+ arch/sh/configs/rsk7203_defconfig                  |  179 ++++-
+ arch/sh/configs/rts7751r2d1_defconfig              |  259 ++++---
+ arch/sh/configs/rts7751r2dplus_defconfig           |  259 ++++---
+ arch/sh/configs/sdk7780_defconfig                  |  269 ++++---
+ arch/sh/configs/se7206_defconfig                   |   38 +-
+ arch/sh/configs/se7343_defconfig                   |   78 +-
+ arch/sh/configs/se7619_defconfig                   |  261 +++----
+ arch/sh/drivers/dma/dma-g2.c                       |    4 +-
+ arch/sh/drivers/dma/dma-pvr2.c                     |    4 +-
+ arch/sh/drivers/dma/dma-sh.c                       |    2 +-
+ arch/sh/drivers/dma/dma-sh.h                       |    2 +-
+ arch/sh/drivers/pci/fixups-dreamcast.c             |    2 +-
+ arch/sh/drivers/pci/ops-cayman.c                   |    2 +-
+ arch/sh/drivers/pci/ops-dreamcast.c                |    2 +-
+ arch/sh/drivers/pci/ops-se7780.c                   |    2 +-
+ arch/sh/drivers/pci/pci-sh5.c                      |    2 +-
+ arch/sh/include/asm/.gitignore                     |    1 +
+ {include/asm-sh => arch/sh/include/asm}/Kbuild     |    0 
+ {include/asm-sh => arch/sh/include/asm}/a.out.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/adc.h      |    2 +-
+ .../asm-sh => arch/sh/include/asm}/addrspace.h     |    2 +-
+ .../asm-sh => arch/sh/include/asm}/atomic-grb.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/atomic-irq.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/atomic-llsc.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/atomic.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/auxvec.h   |    2 +-
+ .../asm-sh => arch/sh/include/asm}/bitops-grb.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/bitops-irq.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/bitops.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/bug.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/bugs.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/byteorder.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/cache.h    |    2 +-
+ .../asm-sh => arch/sh/include/asm}/cacheflush.h    |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/checksum.h |    0 
+ .../asm-sh => arch/sh/include/asm}/checksum_32.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/checksum_64.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/clock.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/cmpxchg-grb.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/cmpxchg-irq.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/cpu-features.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/cputime.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/current.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/delay.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/device.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/div64.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/dma-mapping.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/dma.h      |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/dmabrg.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/edosk7705.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/elf.h      |    0 
+ .../sh/include/asm}/emergency-restart.h            |    0 
+ .../asm-sh => arch/sh/include/asm}/entry-macros.S  |    0 
+ {include/asm-sh => arch/sh/include/asm}/errno.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/fb.h       |    0 
+ {include/asm-sh => arch/sh/include/asm}/fcntl.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/fixmap.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/flat.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/fpu.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/freq.h     |    2 +-
+ .../asm-sh => arch/sh/include/asm}/futex-irq.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/futex.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/gpio.h     |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/hardirq.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/hd64461.h  |    0 
+ .../asm-sh => arch/sh/include/asm}/hd64465/gpio.h  |    0 
+ .../sh/include/asm}/hd64465/hd64465.h              |    0 
+ .../asm-sh => arch/sh/include/asm}/hd64465/io.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/heartbeat.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/hp6xx.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/hugetlb.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/hw_irq.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/i2c-sh7760.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/ilsel.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/io.h       |    0 
+ .../asm-sh => arch/sh/include/asm}/io_generic.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/io_trapped.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/ioctl.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/ioctls.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/ipcbuf.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/irq.h      |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/irq_regs.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/irqflags.h |    0 
+ .../asm-sh => arch/sh/include/asm}/irqflags_32.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/irqflags_64.h   |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/kdebug.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/kexec.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/kgdb.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/kmap_types.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/lboxre2.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/linkage.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/local.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/machvec.h  |    0 
+ .../asm-sh => arch/sh/include/asm}/magicpanelr2.h  |    0 
+ .../asm-sh => arch/sh/include/asm}/mc146818rtc.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/microdev.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/migor.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/mman.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/mmu.h      |    0 
+ .../asm-sh => arch/sh/include/asm}/mmu_context.h   |    2 +-
+ .../sh/include/asm}/mmu_context_32.h               |    0 
+ .../sh/include/asm}/mmu_context_64.h               |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/mmzone.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/module.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/msgbuf.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/mutex.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/page.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/param.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/parport.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/pci.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/percpu.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/pgalloc.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/pgtable.h  |    0 
+ .../asm-sh => arch/sh/include/asm}/pgtable_32.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/pgtable_64.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/pm.h       |    0 
+ {include/asm-sh => arch/sh/include/asm}/poll.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/posix_types.h   |    0 
+ .../sh/include/asm}/posix_types_32.h               |    0 
+ .../sh/include/asm}/posix_types_64.h               |    0 
+ .../asm-sh => arch/sh/include/asm}/processor.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/processor_32.h  |    2 +-
+ .../asm-sh => arch/sh/include/asm}/processor_64.h  |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/ptrace.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/push-switch.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/r7780rp.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/resource.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/rtc.h      |    2 +-
+ .../asm-sh => arch/sh/include/asm}/rts7751r2d.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/rwsem.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/scatterlist.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/sdk7780.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/sections.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/segment.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/sembuf.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/serial.h   |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/setup.h    |    0 
+ .../asm-sh => arch/sh/include/asm}/sfp-machine.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/sh7760fb.h |    0 
+ .../asm-sh => arch/sh/include/asm}/sh7763rdp.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/sh7785lcr.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/sh_bios.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/sh_keysc.h |    0 
+ .../sh/include/asm}/sh_mobile_lcdc.h               |    0 
+ {include/asm-sh => arch/sh/include/asm}/shmbuf.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/shmin.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/shmparam.h |    0 
+ .../asm-sh => arch/sh/include/asm}/sigcontext.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/siginfo.h  |    0 
+ {include/asm-sh => arch/sh/include/asm}/signal.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/smc37c93x.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/smp.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/snapgear.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/socket.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/sockios.h  |    0 
+ .../asm-sh => arch/sh/include/asm}/sparsemem.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/spi.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/spinlock.h |    0 
+ .../sh/include/asm}/spinlock_types.h               |    0 
+ {include/asm-sh => arch/sh/include/asm}/stat.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/statfs.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/string.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/string_32.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/string_64.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/system.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/system_32.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/system_64.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/systemh7751.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/termbits.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/termios.h  |    0 
+ .../asm-sh => arch/sh/include/asm}/thread_info.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/timer.h    |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/timex.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/titan.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/tlb.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/tlb_64.h   |    0 
+ {include/asm-sh => arch/sh/include/asm}/tlbflush.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/topology.h |    0 
+ {include/asm-sh => arch/sh/include/asm}/types.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/uaccess.h  |    6 +-
+ .../asm-sh => arch/sh/include/asm}/uaccess_32.h    |    3 +-
+ .../asm-sh => arch/sh/include/asm}/uaccess_64.h    |    0 
+ {include/asm-sh => arch/sh/include/asm}/ubc.h      |    2 +-
+ {include/asm-sh => arch/sh/include/asm}/ucontext.h |    0 
+ .../asm-sh => arch/sh/include/asm}/unaligned.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/unistd.h   |    0 
+ .../asm-sh => arch/sh/include/asm}/unistd_32.h     |    0 
+ .../asm-sh => arch/sh/include/asm}/unistd_64.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/user.h     |    0 
+ {include/asm-sh => arch/sh/include/asm}/vga.h      |    0 
+ {include/asm-sh => arch/sh/include/asm}/watchdog.h |    4 +-
+ {include/asm-sh => arch/sh/include/asm}/xor.h      |    0 
+ .../sh/include/cpu-common/cpu}/addrspace.h         |    0 
+ .../sh/include/cpu-common/cpu}/cacheflush.h        |    4 +-
+ .../sh/include/cpu-common/cpu}/mmu_context.h       |    0 
+ .../sh/include/cpu-common/cpu}/rtc.h               |    0 
+ .../sh/include/cpu-common/cpu}/sigcontext.h        |    0 
+ .../sh/include/cpu-common/cpu}/timer.h             |    0 
+ .../sh/include/cpu-sh2/cpu}/cache.h                |    0 
+ .../cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/dma.h  |    0 
+ .../cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/freq.h |    0 
+ .../cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/ubc.h  |    0 
+ .../sh/include/cpu-sh2/cpu}/watchdog.h             |    0 
+ .../sh/include/cpu-sh2a/cpu}/cache.h               |    0 
+ arch/sh/include/cpu-sh2a/cpu/dma.h                 |    1 +
+ .../sh/include/cpu-sh2a/cpu}/freq.h                |    0 
+ .../sh/include/cpu-sh2a/cpu}/rtc.h                 |    0 
+ arch/sh/include/cpu-sh2a/cpu/ubc.h                 |    1 +
+ arch/sh/include/cpu-sh2a/cpu/watchdog.h            |    1 +
+ .../cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/adc.h  |    0 
+ .../sh/include/cpu-sh3/cpu}/cache.h                |    0 
+ arch/sh/include/cpu-sh3/cpu/cacheflush.h           |   36 +
+ .../cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/dac.h  |    0 
+ .../cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/dma.h  |    0 
+ .../cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/freq.h |    0 
+ .../cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/gpio.h |    0 
+ .../sh/include/cpu-sh3/cpu}/mmu_context.h          |    0 
+ .../sh/include/cpu-sh3/cpu}/timer.h                |    0 
+ .../cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/ubc.h  |    0 
+ .../sh/include/cpu-sh3/cpu}/watchdog.h             |    0 
+ .../sh/include/cpu-sh4/cpu}/addrspace.h            |    0 
+ .../sh/include/cpu-sh4/cpu}/cache.h                |    0 
+ .../sh/include/cpu-sh4/cpu}/cacheflush.h           |    0 
+ .../sh/include/cpu-sh4/cpu}/dma-sh7780.h           |    0 
+ .../cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/dma.h  |    2 +-
+ .../cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/fpu.h  |    0 
+ .../cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/freq.h |    0 
+ .../sh/include/cpu-sh4/cpu}/mmu_context.h          |    0 
+ .../cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/rtc.h  |    0 
+ .../sh/include/cpu-sh4/cpu}/sigcontext.h           |    0 
+ .../cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/sq.h   |    0 
+ .../sh/include/cpu-sh4/cpu}/timer.h                |    0 
+ .../cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/ubc.h  |    0 
+ .../sh/include/cpu-sh4/cpu}/watchdog.h             |    0 
+ .../sh/include/cpu-sh5/cpu}/addrspace.h            |    0 
+ .../sh/include/cpu-sh5/cpu}/cache.h                |    0 
+ .../sh/include/cpu-sh5/cpu}/cacheflush.h           |    0 
+ .../cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/dma.h  |    0 
+ .../cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/irq.h  |    0 
+ .../sh/include/cpu-sh5/cpu}/mmu_context.h          |    0 
+ .../sh/include/cpu-sh5/cpu}/registers.h            |    0 
+ .../cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/rtc.h  |    0 
+ .../sh/include/mach-dreamcast/mach}/dma.h          |    0 
+ .../sh/include/mach-dreamcast/mach}/maple.h        |    0 
+ .../sh/include/mach-dreamcast/mach}/pci.h          |    2 +-
+ .../sh/include/mach-dreamcast/mach}/sysasic.h      |    0 
+ .../sh/include/mach-landisk/mach}/gio.h            |    0 
+ .../sh/include/mach-landisk/mach}/iodata_landisk.h |    0 
+ .../asm-sh => arch/sh/include/mach-se/mach}/se.h   |    0 
+ .../sh/include/mach-se/mach}/se7206.h              |    0 
+ .../sh/include/mach-se/mach}/se7343.h              |    0 
+ .../sh/include/mach-se/mach}/se7721.h              |    0 
+ .../sh/include/mach-se/mach}/se7722.h              |    0 
+ .../sh/include/mach-se/mach}/se7751.h              |    0 
+ .../sh/include/mach-se/mach}/se7780.h              |    0 
+ .../sh03 => arch/sh/include/mach-sh03/mach}/io.h   |    0 
+ .../sh03 => arch/sh/include/mach-sh03/mach}/sh03.h |    0 
+ arch/sh/kernel/.gitignore                          |    1 +
+ arch/sh/kernel/cf-enabler.c                        |    6 +-
+ arch/sh/kernel/cpu/irq/intc-sh5.c                  |    2 +-
+ arch/sh/kernel/cpu/sh2/entry.S                     |    2 +-
+ arch/sh/kernel/cpu/sh2a/entry.S                    |    2 +-
+ arch/sh/kernel/cpu/sh3/entry.S                     |    2 +-
+ arch/sh/kernel/cpu/sh4/fpu.c                       |    2 +-
+ arch/sh/kernel/cpu/sh4/softfloat.c                 |    2 +-
+ arch/sh/kernel/cpu/sh4/sq.c                        |    2 +-
+ arch/sh/kernel/cpu/sh5/entry.S                     |    2 +-
+ arch/sh/kernel/head_64.S                           |    4 +-
+ arch/sh/kernel/irq.c                               |    2 +-
+ arch/sh/kernel/time_64.c                           |    4 +-
+ arch/sh/lib64/panic.c                              |    2 +-
+ arch/sh/mm/fault_64.c                              |    2 +-
+ arch/sh/tools/Makefile                             |    4 +-
+ drivers/cdrom/gdrom.c                              |    4 +-
+ drivers/input/keyboard/maple_keyb.c                |    1 -
+ drivers/serial/sh-sci.h                            |   12 +-
+ drivers/sh/maple/maple.c                           |  265 ++++--
+ drivers/video/Makefile                             |    1 -
+ drivers/video/backlight/hp680_bl.c                 |    2 +-
+ drivers/video/hitfb.c                              |    2 +-
+ drivers/video/pvr2fb.c                             |    6 +-
+ include/asm-sh/.gitignore                          |    3 -
+ include/asm-sh/cpu-sh2a/addrspace.h                |   10 -
+ include/asm-sh/cpu-sh2a/cacheflush.h               |    1 -
+ include/asm-sh/cpu-sh2a/dma.h                      |    1 -
+ include/asm-sh/cpu-sh2a/mmu_context.h              |    1 -
+ include/asm-sh/cpu-sh2a/timer.h                    |    1 -
+ include/asm-sh/cpu-sh2a/ubc.h                      |    1 -
+ include/asm-sh/cpu-sh2a/watchdog.h                 |    1 -
+ include/asm-sh/cpu-sh3/addrspace.h                 |   19 -
+ include/asm-sh/cpu-sh3/cacheflush.h                |   70 --
+ include/asm-sh/cpu-sh3/rtc.h                       |    8 -
+ include/asm-sh/cpu-sh3/sigcontext.h                |   17 -
+ include/asm-sh/cpu-sh5/timer.h                     |    4 -
+ include/linux/maple.h                              |    6 +-
+ mm/hugetlb.c                                       |    2 +-
+ sound/sh/aica.c                                    |    2 +-
+ 421 files changed, 3358 insertions(+), 2943 deletions(-)
+ create mode 100644 arch/sh/boards/Kconfig
+ create mode 100644 arch/sh/boards/Makefile
+ rename arch/sh/boards/{renesas/ap325rxa/setup.c => board-ap325rxa.c} (99%)
+ rename arch/sh/boards/{magicpanelr2/setup.c => board-magicpanelr2.c} (100%)
+ rename arch/sh/boards/{renesas/rsk7203/setup.c => board-rsk7203.c} (92%)
+ rename arch/sh/boards/{renesas/sh7785lcr/setup.c => board-sh7785lcr.c} (100%)
+ rename arch/sh/boards/{shmin/setup.c => board-shmin.c} (100%)
+ rename arch/sh/boards/{cayman => mach-cayman}/Makefile (100%)
+ rename arch/sh/boards/{cayman => mach-cayman}/irq.c (99%)
+ rename arch/sh/boards/{cayman => mach-cayman}/led.c (100%)
+ rename arch/sh/boards/{cayman => mach-cayman}/setup.c (99%)
+ rename arch/sh/boards/{dreamcast => mach-dreamcast}/Makefile (100%)
+ rename arch/sh/boards/{dreamcast => mach-dreamcast}/irq.c (99%)
+ rename arch/sh/boards/{dreamcast => mach-dreamcast}/rtc.c (100%)
+ rename arch/sh/boards/{dreamcast => mach-dreamcast}/setup.c (98%)
+ rename arch/sh/boards/{renesas/edosk7705 => mach-edosk7705}/Makefile (100%)
+ rename arch/sh/boards/{renesas/edosk7705 => mach-edosk7705}/io.c (100%)
+ rename arch/sh/boards/{renesas/edosk7705 => mach-edosk7705}/setup.c (100%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/Kconfig (100%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/Makefile (100%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/irq-r7780mp.c (100%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/irq-r7780rp.c (100%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/irq-r7785rp.c (100%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/psw.c (98%)
+ rename arch/sh/boards/{renesas/r7780rp => mach-highlander}/setup.c (100%)
+ rename arch/sh/boards/{hp6xx => mach-hp6xx}/Makefile (100%)
+ rename arch/sh/boards/{hp6xx => mach-hp6xx}/hp6xx_apm.c (100%)
+ rename arch/sh/boards/{hp6xx => mach-hp6xx}/pm.c (98%)
+ rename arch/sh/boards/{hp6xx => mach-hp6xx}/pm_wakeup.S (96%)
+ rename arch/sh/boards/{hp6xx => mach-hp6xx}/setup.c (99%)
+ rename arch/sh/boards/{landisk => mach-landisk}/Makefile (100%)
+ rename arch/sh/boards/{landisk => mach-landisk}/gio.c (97%)
+ rename arch/sh/boards/{landisk => mach-landisk}/irq.c (96%)
+ rename arch/sh/boards/{landisk => mach-landisk}/psw.c (98%)
+ rename arch/sh/boards/{landisk => mach-landisk}/setup.c (98%)
+ rename arch/sh/boards/{lboxre2 => mach-lboxre2}/Makefile (100%)
+ rename arch/sh/boards/{lboxre2 => mach-lboxre2}/irq.c (100%)
+ rename arch/sh/boards/{lboxre2 => mach-lboxre2}/setup.c (100%)
+ rename arch/sh/boards/{superh/microdev => mach-microdev}/Makefile (100%)
+ rename arch/sh/boards/{superh/microdev => mach-microdev}/io.c (100%)
+ rename arch/sh/boards/{superh/microdev => mach-microdev}/irq.c (100%)
+ rename arch/sh/boards/{superh/microdev => mach-microdev}/led.c (100%)
+ rename arch/sh/boards/{superh/microdev => mach-microdev}/setup.c (100%)
+ rename arch/sh/boards/{renesas/migor => mach-migor}/Kconfig (100%)
+ rename arch/sh/boards/{renesas/migor => mach-migor}/Makefile (100%)
+ rename arch/sh/boards/{renesas/migor => mach-migor}/lcd_qvga.c (100%)
+ rename arch/sh/boards/{renesas/migor => mach-migor}/setup.c (99%)
+ rename arch/sh/boards/{renesas/rts7751r2d => mach-r2d}/Kconfig (100%)
+ rename arch/sh/boards/{renesas/rts7751r2d => mach-r2d}/Makefile (100%)
+ rename arch/sh/boards/{renesas/rts7751r2d => mach-r2d}/irq.c (100%)
+ rename arch/sh/boards/{renesas/rts7751r2d => mach-r2d}/setup.c (100%)
+ rename arch/sh/boards/{renesas/sdk7780 => mach-sdk7780}/Kconfig (100%)
+ rename arch/sh/boards/{renesas/sdk7780 => mach-sdk7780}/Makefile (100%)
+ rename arch/sh/boards/{renesas/sdk7780 => mach-sdk7780}/irq.c (100%)
+ rename arch/sh/boards/{renesas/sdk7780 => mach-sdk7780}/setup.c (100%)
+ rename arch/sh/boards/{se => mach-se}/7206/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/7206/io.c (98%)
+ rename arch/sh/boards/{se => mach-se}/7206/irq.c (98%)
+ rename arch/sh/boards/{se => mach-se}/7206/setup.c (98%)
+ rename arch/sh/boards/{se => mach-se}/7343/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/7343/io.c (99%)
+ rename arch/sh/boards/{se => mach-se}/7343/irq.c (96%)
+ rename arch/sh/boards/{se => mach-se}/7343/setup.c (98%)
+ rename arch/sh/boards/{se => mach-se}/770x/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/770x/io.c (99%)
+ rename arch/sh/boards/{se => mach-se}/770x/irq.c (98%)
+ rename arch/sh/boards/{se => mach-se}/770x/setup.c (96%)
+ rename arch/sh/boards/{se => mach-se}/7721/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/7721/irq.c (96%)
+ rename arch/sh/boards/{se => mach-se}/7721/setup.c (98%)
+ rename arch/sh/boards/{se => mach-se}/7722/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/7722/irq.c (98%)
+ rename arch/sh/boards/{se => mach-se}/7722/setup.c (99%)
+ rename arch/sh/boards/{se => mach-se}/7751/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/7751/io.c (99%)
+ rename arch/sh/boards/{se => mach-se}/7751/irq.c (96%)
+ rename arch/sh/boards/{se => mach-se}/7751/pci.c (100%)
+ rename arch/sh/boards/{se => mach-se}/7751/setup.c (98%)
+ rename arch/sh/boards/{se => mach-se}/7780/Makefile (100%)
+ rename arch/sh/boards/{se => mach-se}/7780/irq.c (97%)
+ rename arch/sh/boards/{se => mach-se}/7780/setup.c (98%)
+ create mode 100644 arch/sh/boards/mach-se/Makefile
+ rename arch/sh/boards/{se/7619/setup.c => mach-se/board-se7619.c} (100%)
+ rename arch/sh/boards/{sh03 => mach-sh03}/Makefile (100%)
+ rename arch/sh/boards/{sh03 => mach-sh03}/rtc.c (100%)
+ rename arch/sh/boards/{sh03 => mach-sh03}/setup.c (96%)
+ rename arch/sh/boards/{renesas/sh7763rdp => mach-sh7763rdp}/Makefile (100%)
+ rename arch/sh/boards/{renesas/sh7763rdp => mach-sh7763rdp}/irq.c (100%)
+ rename arch/sh/boards/{renesas/sh7763rdp => mach-sh7763rdp}/setup.c (100%)
+ rename arch/sh/boards/{snapgear => mach-snapgear}/Makefile (100%)
+ rename arch/sh/boards/{snapgear => mach-snapgear}/io.c (100%)
+ rename arch/sh/boards/{snapgear => mach-snapgear}/setup.c (98%)
+ rename arch/sh/boards/{renesas/systemh => mach-systemh}/Makefile (100%)
+ rename arch/sh/boards/{renesas/systemh => mach-systemh}/io.c (100%)
+ rename arch/sh/boards/{renesas/systemh => mach-systemh}/irq.c (100%)
+ rename arch/sh/boards/{renesas/systemh => mach-systemh}/setup.c (100%)
+ rename arch/sh/boards/{titan => mach-titan}/Makefile (100%)
+ rename arch/sh/boards/{titan => mach-titan}/io.c (100%)
+ rename arch/sh/boards/{titan => mach-titan}/setup.c (100%)
+ rename arch/sh/boards/{renesas/x3proto => mach-x3proto}/Makefile (100%)
+ rename arch/sh/boards/{renesas/x3proto => mach-x3proto}/ilsel.c (100%)
+ rename arch/sh/boards/{renesas/x3proto => mach-x3proto}/setup.c (100%)
+ delete mode 100644 arch/sh/boards/magicpanelr2/Kconfig
+ delete mode 100644 arch/sh/boards/magicpanelr2/Makefile
+ delete mode 100644 arch/sh/boards/renesas/ap325rxa/Makefile
+ delete mode 100644 arch/sh/boards/renesas/rsk7203/Makefile
+ delete mode 100644 arch/sh/boards/renesas/sh7785lcr/Makefile
+ delete mode 100644 arch/sh/boards/se/7619/Makefile
+ delete mode 100644 arch/sh/boards/shmin/Makefile
+ create mode 100644 arch/sh/include/asm/.gitignore
+ rename {include/asm-sh => arch/sh/include/asm}/Kbuild (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/a.out.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/adc.h (88%)
+ rename {include/asm-sh => arch/sh/include/asm}/addrspace.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/atomic-grb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/atomic-irq.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/atomic-llsc.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/atomic.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/auxvec.h (94%)
+ rename {include/asm-sh => arch/sh/include/asm}/bitops-grb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/bitops-irq.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/bitops.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/bug.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/bugs.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/byteorder.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/cache.h (97%)
+ rename {include/asm-sh => arch/sh/include/asm}/cacheflush.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/checksum.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/checksum_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/checksum_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/clock.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/cmpxchg-grb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/cmpxchg-irq.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/cpu-features.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/cputime.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/current.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/delay.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/device.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/div64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/dma-mapping.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/dma.h (99%)
+ rename {include/asm-sh => arch/sh/include/asm}/dmabrg.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/edosk7705.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/elf.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/emergency-restart.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/entry-macros.S (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/errno.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/fb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/fcntl.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/fixmap.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/flat.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/fpu.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/freq.h (94%)
+ rename {include/asm-sh => arch/sh/include/asm}/futex-irq.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/futex.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/gpio.h (94%)
+ rename {include/asm-sh => arch/sh/include/asm}/hardirq.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hd64461.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hd64465/gpio.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hd64465/hd64465.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hd64465/io.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/heartbeat.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hp6xx.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hugetlb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/hw_irq.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/i2c-sh7760.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/ilsel.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/io.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/io_generic.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/io_trapped.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/ioctl.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/ioctls.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/ipcbuf.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/irq.h (97%)
+ rename {include/asm-sh => arch/sh/include/asm}/irq_regs.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/irqflags.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/irqflags_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/irqflags_64.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/kdebug.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/kexec.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/kgdb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/kmap_types.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/lboxre2.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/linkage.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/local.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/machvec.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/magicpanelr2.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/mc146818rtc.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/microdev.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/migor.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/mman.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/mmu.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/mmu_context.h (99%)
+ rename {include/asm-sh => arch/sh/include/asm}/mmu_context_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/mmu_context_64.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/mmzone.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/module.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/msgbuf.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/mutex.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/page.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/param.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/parport.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/pci.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/percpu.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/pgalloc.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/pgtable.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/pgtable_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/pgtable_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/pm.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/poll.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/posix_types.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/posix_types_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/posix_types_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/processor.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/processor_32.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/processor_64.h (99%)
+ rename {include/asm-sh => arch/sh/include/asm}/ptrace.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/push-switch.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/r7780rp.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/resource.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/rtc.h (92%)
+ rename {include/asm-sh => arch/sh/include/asm}/rts7751r2d.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/rwsem.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/scatterlist.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sdk7780.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sections.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/segment.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sembuf.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/serial.h (96%)
+ rename {include/asm-sh => arch/sh/include/asm}/setup.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sfp-machine.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sh7760fb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sh7763rdp.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sh7785lcr.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sh_bios.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sh_keysc.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sh_mobile_lcdc.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/shmbuf.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/shmin.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/shmparam.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sigcontext.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/siginfo.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/signal.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/smc37c93x.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/smp.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/snapgear.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/socket.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sockios.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/sparsemem.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/spi.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/spinlock.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/spinlock_types.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/stat.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/statfs.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/string.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/string_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/string_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/system.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/system_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/system_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/systemh7751.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/termbits.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/termios.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/thread_info.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/timer.h (96%)
+ rename {include/asm-sh => arch/sh/include/asm}/timex.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/titan.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/tlb.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/tlb_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/tlbflush.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/topology.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/types.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/uaccess.h (97%)
+ rename {include/asm-sh => arch/sh/include/asm}/uaccess_32.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/uaccess_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/ubc.h (98%)
+ rename {include/asm-sh => arch/sh/include/asm}/ucontext.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/unaligned.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/unistd.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/unistd_32.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/unistd_64.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/user.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/vga.h (100%)
+ rename {include/asm-sh => arch/sh/include/asm}/watchdog.h (96%)
+ rename {include/asm-sh => arch/sh/include/asm}/xor.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-common/cpu}/addrspace.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-common/cpu}/cacheflush.h (99%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-common/cpu}/mmu_context.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-common/cpu}/rtc.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-common/cpu}/sigcontext.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-common/cpu}/timer.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/cache.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/dma.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/freq.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/ubc.h (100%)
+ rename {include/asm-sh/cpu-sh2 => arch/sh/include/cpu-sh2/cpu}/watchdog.h (100%)
+ rename {include/asm-sh/cpu-sh2a => arch/sh/include/cpu-sh2a/cpu}/cache.h (100%)
+ create mode 100644 arch/sh/include/cpu-sh2a/cpu/dma.h
+ rename {include/asm-sh/cpu-sh2a => arch/sh/include/cpu-sh2a/cpu}/freq.h (100%)
+ rename {include/asm-sh/cpu-sh2a => arch/sh/include/cpu-sh2a/cpu}/rtc.h (100%)
+ create mode 100644 arch/sh/include/cpu-sh2a/cpu/ubc.h
+ create mode 100644 arch/sh/include/cpu-sh2a/cpu/watchdog.h
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/adc.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/cache.h (100%)
+ create mode 100644 arch/sh/include/cpu-sh3/cpu/cacheflush.h
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/dac.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/dma.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/freq.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/gpio.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/mmu_context.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/timer.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/ubc.h (100%)
+ rename {include/asm-sh/cpu-sh3 => arch/sh/include/cpu-sh3/cpu}/watchdog.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/addrspace.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/cache.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/cacheflush.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/dma-sh7780.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/dma.h (97%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/fpu.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/freq.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/mmu_context.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/rtc.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/sigcontext.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/sq.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/timer.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/ubc.h (100%)
+ rename {include/asm-sh/cpu-sh4 => arch/sh/include/cpu-sh4/cpu}/watchdog.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/addrspace.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/cache.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/cacheflush.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/dma.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/irq.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/mmu_context.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/registers.h (100%)
+ rename {include/asm-sh/cpu-sh5 => arch/sh/include/cpu-sh5/cpu}/rtc.h (100%)
+ rename {include/asm-sh/dreamcast => arch/sh/include/mach-dreamcast/mach}/dma.h (100%)
+ rename {include/asm-sh/dreamcast => arch/sh/include/mach-dreamcast/mach}/maple.h (100%)
+ rename {include/asm-sh/dreamcast => arch/sh/include/mach-dreamcast/mach}/pci.h (93%)
+ rename {include/asm-sh/dreamcast => arch/sh/include/mach-dreamcast/mach}/sysasic.h (100%)
+ rename {include/asm-sh/landisk => arch/sh/include/mach-landisk/mach}/gio.h (100%)
+ rename {include/asm-sh/landisk => arch/sh/include/mach-landisk/mach}/iodata_landisk.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se7206.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se7343.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se7721.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se7722.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se7751.h (100%)
+ rename {include/asm-sh => arch/sh/include/mach-se/mach}/se7780.h (100%)
+ rename {include/asm-sh/sh03 => arch/sh/include/mach-sh03/mach}/io.h (100%)
+ rename {include/asm-sh/sh03 => arch/sh/include/mach-sh03/mach}/sh03.h (100%)
+ create mode 100644 arch/sh/kernel/.gitignore
+ delete mode 100644 include/asm-sh/.gitignore
+ delete mode 100644 include/asm-sh/cpu-sh2a/addrspace.h
+ delete mode 100644 include/asm-sh/cpu-sh2a/cacheflush.h
+ delete mode 100644 include/asm-sh/cpu-sh2a/dma.h
+ delete mode 100644 include/asm-sh/cpu-sh2a/mmu_context.h
+ delete mode 100644 include/asm-sh/cpu-sh2a/timer.h
+ delete mode 100644 include/asm-sh/cpu-sh2a/ubc.h
+ delete mode 100644 include/asm-sh/cpu-sh2a/watchdog.h
+ delete mode 100644 include/asm-sh/cpu-sh3/addrspace.h
+ delete mode 100644 include/asm-sh/cpu-sh3/cacheflush.h
+ delete mode 100644 include/asm-sh/cpu-sh3/rtc.h
+ delete mode 100644 include/asm-sh/cpu-sh3/sigcontext.h
+ delete mode 100644 include/asm-sh/cpu-sh5/timer.h
