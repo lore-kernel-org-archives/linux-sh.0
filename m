@@ -1,23 +1,15 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Wed, 23 Jul 2008 04:10:56 +0000
+From: Jeff Garzik <jeff@garzik.org>
+Date: Wed, 30 Jul 2008 21:22:17 +0000
 Subject: Re: [PATCH v3] net: sh_eth: Add support of SH7763 to sh_eth
-Message-Id: <4886AF50.3000707@renesas.com>
+Message-Id: <4890DB89.7020701@garzik.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <485A3437.4010902@renesas.com> <4864840A.3060003@garzik.org>
- <48684011.5020201@renesas.com>
+References: <485A3437.4010902@renesas.com> <4864840A.3060003@garzik.org> <48684011.5020201@renesas.com>
 In-Reply-To: <48684011.5020201@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jeff Garzik <jeff@garzik.org>
-Cc: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, netdev <netdev@vger.kernel.org>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Linux-sh <linux-sh@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>
-
-Hi, Jeff.
-
-Please pick up,  and apply  this patch to 2.6.27 queue too.
-
-Best regards,
- Nobuhiro
+To: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Cc: netdev <netdev@vger.kernel.org>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Linux-sh <linux-sh@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>
 
 Nobuhiro Iwamatsu wrote:
 > Jeff Garzik wrote:
@@ -52,4 +44,8 @@ Nobuhiro Iwamatsu wrote:
 >  drivers/net/sh_eth.c |  202 ++++++++++++++++++++-----
 >  drivers/net/sh_eth.h |  426 +++++++++++++++++++++++++++++++++++++-------------
 >  3 files changed, 482 insertions(+), 150 deletions(-)
+
+applied
+
+
 
