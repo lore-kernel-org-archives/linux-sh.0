@@ -1,60 +1,67 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 05 Jul 2008 03:32:44 +0000
-Subject: [PATCH] sh: enable I2C on the ap325rxa board
-Message-Id: <20080705033244.17254.72036.sendpatchset@rx1.opensource.se>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 31 Jul 2008 01:22:10 +0000
+Subject: [patch 2/6] kdump: sh: parse elfcorehdr command line argument
+Message-Id: <20080731012927.266000791@vergenet.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080731012208.115225969@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: kexec@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Vivek Goyal <vgoyal@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, Paul Mundt <lethal@linux-sh.org>
 
-This patch enables I2C on the sh7723-based ap325rxa board.
+A quick cut and paste from other architectures to allow SH
+to parse the elfcorehdr command line argument which is required
+for both is_kdump_kernel() and vmcore to function.
+(the former is as yet unused on SH).
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Tested compilation only
 
- arch/sh/boards/renesas/ap325rxa/setup.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
---- 0001/arch/sh/boards/renesas/ap325rxa/setup.c
-+++ work/arch/sh/boards/renesas/ap325rxa/setup.c	2008-07-02 12:58:29.000000000 +0900
-@@ -15,6 +15,7 @@
- #include <linux/platform_device.h>
- #include <linux/mtd/physmap.h>
- #include <linux/delay.h>
-+#include <linux/i2c.h>
+--- 
+Andrew, Paul Mundt has aggreed to apply this patch
+
+Index: linux-2.6/arch/sh/kernel/setup.c
+=================================--- linux-2.6.orig/arch/sh/kernel/setup.c	2008-07-30 09:33:45.000000000 +1000
++++ linux-2.6/arch/sh/kernel/setup.c	2008-07-30 09:37:45.000000000 +1000
+@@ -25,6 +25,7 @@
+ #include <linux/smp.h>
+ #include <linux/err.h>
+ #include <linux/debugfs.h>
++#include <linux/crash_dump.h>
+ #include <asm/uaccess.h>
  #include <asm/io.h>
+ #include <asm/page.h>
+@@ -286,6 +287,25 @@ static void __init setup_memory(void)
+ extern void __init setup_memory(void);
+ #endif
  
- static struct resource smc9118_resources[] = {
-@@ -83,14 +84,21 @@ static struct platform_device *ap325rxa_
- 	&ap325rxa_nor_flash_device
- };
- 
-+static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
-+};
++/*
++ * Note: elfcorehdr_addr is not just limited to vmcore. It is also used by
++ * is_kdump_kernel() to determine if we are booting after a panic. Hence
++ * ifdef it under CONFIG_CRASH_DUMP and not CONFIG_PROC_VMCORE.
++ */
++#ifdef CONFIG_CRASH_DUMP
++/* elfcorehdr= specifies the location of elf core header
++ * stored by the crashed kernel.
++ */
++static int __init parse_elfcorehdr(char *arg)
++{
++	if (!arg)
++		return -EINVAL;
++	elfcorehdr_addr = memparse(arg, &arg);
++	return 0;
++}
++early_param("elfcorehdr", parse_elfcorehdr);
++#endif
 +
- static int __init ap325rxa_devices_setup(void)
+ void __init setup_arch(char **cmdline_p)
  {
-+	i2c_register_board_info(0, ap325rxa_i2c_devices,
-+				ARRAY_SIZE(ap325rxa_i2c_devices));
-+ 
- 	return platform_add_devices(ap325rxa_devices,
- 				ARRAY_SIZE(ap325rxa_devices));
- }
- device_initcall(ap325rxa_devices_setup);
- 
- #define MSTPCR0		(0xA4150030)
-+#define MSTPCR1		(0xA4150034)
- #define MSTPCR2		(0xA4150038)
- 
- static void __init ap325rxa_setup(char **cmdline_p)
-@@ -100,6 +108,9 @@ static void __init ap325rxa_setup(char *
- 
- 	/* enable MERAM */
- 	ctrl_outl(ctrl_inl(MSTPCR0) & ~0x00000001, MSTPCR0);	/* bit 0 */
-+
-+	/* I2C */
-+	ctrl_outl(ctrl_inl(MSTPCR1) & ~0x00000200, MSTPCR1);
- }
- 
- static struct sh_machine_vector mv_ap325rxa __initmv = {
+ 	enable_mmu();
+
+-- 
+
+-- 
+Horms
+
