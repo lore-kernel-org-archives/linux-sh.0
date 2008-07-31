@@ -1,45 +1,249 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 04 Jul 2008 03:55:55 +0000
-Subject: Re: sh64 build error - sh, kbuild or binutils problem?
-Message-Id: <20080704035555.GB7247@linux-sh.org>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Thu, 31 Jul 2008 23:35:33 +0000
+Subject: [PATCH] sh_eth Add SH7619 support
+Message-Id: <878wvhtynu.wl%ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8763rng2q0.wl%ysato@users.sourceforge.jp>
-In-Reply-To: <8763rng2q0.wl%ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Jeff Garzik <jeff@garzik.org>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, Jul 03, 2008 at 08:24:52PM -0400, Yoshinori Sato wrote:
-> At Thu, 3 Jul 2008 19:03:23 +0900,
-> Paul Mundt wrote:
-> > 
-> > On Wed, Jul 02, 2008 at 09:45:27PM -0400, Yoshinori Sato wrote:
-> > > At Sun, 1 Jun 2008 14:30:47 +0900,
-> > > Paul Mundt wrote:
-> > > > 
-> > > > On Sat, May 31, 2008 at 11:22:39PM +0300, Adrian Bunk wrote:
-> > > > > Minimal example demonstrating the problem:
-> > > > > 
-> > > > > $ sh64-linux-ar rcs tmp.o
-> > > > > $ sh64-linux-ld -EL -r -o tmp2.o tmp.o
-> > > > > $ sh64-linux-ld -EL -r -o out.o tmp2.o 
-> > > > > sh64-linux-ld: sh3 architecture of input file `tmp2.o' is incompatible with sh5 output
-> > > > > $ 
-> > > > > 
-> > > > Yes, it's a binutils bug. I've hit this on SH-2A zImage builds too, and
-> > > > hacked together a patch for it. I'll see about fixing it up fo sh64 too
-> > > > and then posting it to the list.
-> > > 
-> > > I think ld is strict machine type check.
-> > > 
-> > > This is workaround.
-> > > SH-2A build success.
-> > > 
-> > This is probably a reasonable workaround until fixed versions of binutils
-> > are more readily available. Please re-send this with a Signed-off-by and
-> > I'll add it to my queue.
-> 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> 
-Applied, thanks.
+SH7619 have same SH7710 ethernet controler.
+Add support for sh_eth driver.
+
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+---
+ drivers/net/Kconfig  |    5 +++--
+ drivers/net/sh_eth.c |   34 ++++++++++++++++++----------------
+ drivers/net/sh_eth.h |   25 +++++++++++++++++++++++--
+ 3 files changed, 44 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 8a03875..1a6cf24 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -510,14 +510,15 @@ config STNIC
+ config SH_ETH
+ 	tristate "Renesas SuperH Ethernet support"
+ 	depends on SUPERH && \
+-		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || CPU_SUBTYPE_SH7763)
++		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || \
++		 CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619)
+ 	select CRC32
+ 	select MII
+ 	select MDIO_BITBANG
+ 	select PHYLIB
+ 	help
+ 	  Renesas SuperH Ethernet device driver.
+-	  This driver support SH7710, SH7712 and SH7763.
++	  This driver support SH7710, SH7712, SH7763 and SH7619.
+ 
+ config SUNLANCE
+ 	tristate "Sun LANCE support"
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index 6a06b95..9661e2d 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -240,7 +240,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		/* RX descriptor */
+ 		rxdesc = &mdp->rx_ring[i];
+ 		rxdesc->addr = (u32)skb->data & ~0x3UL;
+-		rxdesc->status = cpu_to_le32(RD_RACT | RD_RFP);
++		rxdesc->status = cpu_to_edmac(RD_RACT | RD_RFP);
+ 
+ 		/* The size of the buffer is 16 byte boundary. */
+ 		rxdesc->buffer_length = (mdp->rx_buf_sz + 16) & ~0x0F;
+@@ -262,7 +262,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 	mdp->dirty_rx = (u32) (i - RX_RING_SIZE);
+ 
+ 	/* Mark the last entry as wrapping the ring. */
+-	rxdesc->status |= cpu_to_le32(RD_RDEL);
++	rxdesc->status |= cpu_to_edmac(RD_RDEL);
+ 
+ 	memset(mdp->tx_ring, 0, tx_ringsize);
+ 
+@@ -270,7 +270,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 	for (i = 0; i < TX_RING_SIZE; i++) {
+ 		mdp->tx_skbuff[i] = NULL;
+ 		txdesc = &mdp->tx_ring[i];
+-		txdesc->status = cpu_to_le32(TD_TFP);
++		txdesc->status = cpu_to_edmac(TD_TFP);
+ 		txdesc->buffer_length = 0;
+ 		if (i = 0) {
+ 			/* Rx descriptor address set */
+@@ -287,7 +287,7 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 	ctrl_outl(0x1, ioaddr + TDFFR);
+ #endif
+ 
+-	txdesc->status |= cpu_to_le32(TD_TDLE);
++	txdesc->status |= cpu_to_edmac(TD_TDLE);
+ }
+ 
+ /* Get skb and descriptor buffer */
+@@ -455,7 +455,7 @@ static int sh_eth_txfree(struct net_device *ndev)
+ 	for (; mdp->cur_tx - mdp->dirty_tx > 0; mdp->dirty_tx++) {
+ 		entry = mdp->dirty_tx % TX_RING_SIZE;
+ 		txdesc = &mdp->tx_ring[entry];
+-		if (txdesc->status & cpu_to_le32(TD_TACT))
++		if (txdesc->status & cpu_to_edmac(TD_TACT))
+ 			break;
+ 		/* Free the original skb. */
+ 		if (mdp->tx_skbuff[entry]) {
+@@ -463,9 +463,9 @@ static int sh_eth_txfree(struct net_device *ndev)
+ 			mdp->tx_skbuff[entry] = NULL;
+ 			freeNum++;
+ 		}
+-		txdesc->status = cpu_to_le32(TD_TFP);
++		txdesc->status = cpu_to_edmac(TD_TFP);
+ 		if (entry >= TX_RING_SIZE - 1)
+-			txdesc->status |= cpu_to_le32(TD_TDLE);
++			txdesc->status |= cpu_to_edmac(TD_TDLE);
+ 
+ 		mdp->stats.tx_packets++;
+ 		mdp->stats.tx_bytes += txdesc->buffer_length;
+@@ -486,8 +486,8 @@ static int sh_eth_rx(struct net_device *ndev)
+ 	u32 desc_status, reserve = 0;
+ 
+ 	rxdesc = &mdp->rx_ring[entry];
+-	while (!(rxdesc->status & cpu_to_le32(RD_RACT))) {
+-		desc_status = le32_to_cpu(rxdesc->status);
++	while (!(rxdesc->status & cpu_to_edmac(RD_RACT))) {
++		desc_status = edmac_to_cpu(rxdesc->status);
+ 		pkt_len = rxdesc->frame_length;
+ 
+ 		if (--boguscnt < 0)
+@@ -522,7 +522,7 @@ static int sh_eth_rx(struct net_device *ndev)
+ 			mdp->stats.rx_packets++;
+ 			mdp->stats.rx_bytes += pkt_len;
+ 		}
+-		rxdesc->status |= cpu_to_le32(RD_RACT);
++		rxdesc->status |= cpu_to_edmac(RD_RACT);
+ 		entry = (++mdp->cur_rx) % RX_RING_SIZE;
+ 	}
+ 
+@@ -552,10 +552,10 @@ static int sh_eth_rx(struct net_device *ndev)
+ 		}
+ 		if (entry >= RX_RING_SIZE - 1)
+ 			rxdesc->status |-				cpu_to_le32(RD_RACT | RD_RFP | RD_RDEL);
++				cpu_to_edmac(RD_RACT | RD_RFP | RD_RDEL);
+ 		else
+ 			rxdesc->status |-				cpu_to_le32(RD_RACT | RD_RFP);
++				cpu_to_edmac(RD_RACT | RD_RFP);
+ 	}
+ 
+ 	/* Restart Rx engine if stopped. */
+@@ -931,9 +931,9 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 		txdesc->buffer_length = skb->len;
+ 
+ 	if (entry >= TX_RING_SIZE - 1)
+-		txdesc->status |= cpu_to_le32(TD_TACT | TD_TDLE);
++		txdesc->status |= cpu_to_edmac(TD_TACT | TD_TDLE);
+ 	else
+-		txdesc->status |= cpu_to_le32(TD_TACT);
++		txdesc->status |= cpu_to_edmac(TD_TACT);
+ 
+ 	mdp->cur_tx++;
+ 
+@@ -1217,12 +1217,14 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 
+ 	/* First device only init */
+ 	if (!devno) {
++#if defined(SH_TSU_ADDR)
+ 		/* reset device */
+ 		ctrl_outl(ARSTR_ARSTR, ARSTR);
+ 		mdelay(1);
+ 
+ 		/* TSU init (Init only)*/
+ 		sh_eth_tsu_init(SH_TSU_ADDR);
++#endif
+ 	}
+ 
+ 	/* network device register */
+@@ -1240,8 +1242,8 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	       ndev->name, CARDNAME, (u32) ndev->base_addr);
+ 
+ 	for (i = 0; i < 5; i++)
+-		printk(KERN_INFO "%02X:", ndev->dev_addr[i]);
+-	printk(KERN_INFO "%02X, IRQ %d.\n", ndev->dev_addr[i], ndev->irq);
++		printk("%02X:", ndev->dev_addr[i]);
++	printk("%02X, IRQ %d.\n", ndev->dev_addr[i], ndev->irq);
+ 
+ 	platform_set_drvdata(pdev, ndev);
+ 
+diff --git a/drivers/net/sh_eth.h b/drivers/net/sh_eth.h
+index 45ad1b0..ca3cc5f 100644
+--- a/drivers/net/sh_eth.h
++++ b/drivers/net/sh_eth.h
+@@ -143,10 +143,11 @@
+ 
+ #else /* CONFIG_CPU_SUBTYPE_SH7763 */
+ # define RX_OFFSET 2	/* skb offset */
++#ifndef CONFIG_CPU_SUBTYPE_SH7619
+ /* Chip base address */
+ # define SH_TSU_ADDR  0xA7000804
+ # define ARSTR		  0xA7000800
+-
++#endif
+ /* Chip Registers */
+ /* E-DMAC */
+ # define EDMR	0x0000
+@@ -384,7 +385,11 @@ enum FCFTR_BIT {
+ 	FCFTR_RFD1 = 0x00000002, FCFTR_RFD0 = 0x00000001,
+ };
+ #define FIFO_F_D_RFF	(FCFTR_RFF2|FCFTR_RFF1|FCFTR_RFF0)
++#ifndef CONFIG_CPU_SUBTYPE_SH7619
+ #define FIFO_F_D_RFD	(FCFTR_RFD2|FCFTR_RFD1|FCFTR_RFD0)
++#else
++#define FIFO_F_D_RFD	(FCFTR_RFD0)
++#endif
+ 
+ /* Transfer descriptor bit */
+ enum TD_STS_BIT {
+@@ -411,9 +416,11 @@ enum FELIC_MODE_BIT {
+ 	ECMR_PRM = 0x00000001,
+ };
+ 
+-#ifdef CONFIG_CPU_SUBTYPE_SH7763
++#if defined(CONFIG_CPU_SUBTYPE_SH7763)
+ #define ECMR_CHG_DM	(ECMR_TRCCM | ECMR_RZPF | ECMR_ZPF |\
+ 			ECMR_PFR | ECMR_RXF | ECMR_TXF | ECMR_MCT)
++#elif defined(CONFIG_CPU_SUBTYPE_SH7619)
++#define ECMR_CHG_DM	(ECMR_ZPF | ECMR_PFR ECMR_RXF | ECMR_TXF)
+ #else
+ #define ECMR_CHG_DM	(ECMR_ZPF | ECMR_PFR ECMR_RXF | ECMR_TXF | ECMR_MCT)
+ #endif
+@@ -485,7 +492,11 @@ enum RPADIR_BIT {
+ 
+ /* FDR */
+ enum FIFO_SIZE_BIT {
++#if defined(CONFIG_CPU_SUBTYPE_SH7619)
++	FIFO_SIZE_T = 0x00000100, FIFO_SIZE_R = 0x00000001,
++#else
+ 	FIFO_SIZE_T = 0x00000700, FIFO_SIZE_R = 0x00000007,
++#endif
+ };
+ enum phy_offsets {
+ 	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
+@@ -663,4 +674,14 @@ static void swaps(char *src, int len)
+ #endif
+ }
+ #endif /* CONFIG_CPU_SUBTYPE_SH7763 */
++
++/* CPU endian from/to EDMAC endian */
++#if !defined(CONFIG_CPU_SUBTYPE_SH7619)
++#define cpu_to_edmac(x) cpu_to_le32(x)
++#define edmac_to_cpu(x) le32_to_cpu(x)
++#else
++#define cpu_to_edmac(x) cpu_to_be32(x)
++#define edmac_to_cpu(x) be32_to_cpu(x)
++#endif
++
+ #endif
+-- 
+1.5.6.3
+
+-- 
+Yoshinori Sato
+<ysato@users.sourceforge.jp>
