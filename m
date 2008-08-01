@@ -1,68 +1,73 @@
-From: Luca Santini <luca.santini@spesonline.com>
-Date: Fri, 29 Aug 2008 08:35:43 +0000
-Subject: Re: [PATCH] support for edosk7760 board
-Message-Id: <48B7B4DF.5040707@spesonline.com>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Fri, 01 Aug 2008 22:13:44 +0000
+Subject: [2.6 patch] sh: fix LIBGCC
+Message-Id: <20080801221344.GI19682@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48B52DC8.1020208@spesonline.com>
-In-Reply-To: <48B52DC8.1020208@spesonline.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sam Ravnborg <sam@ravnborg.org>, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-For some reason,
-i have trouble in switching from .26 to .27-rc4;
+Commit f15cbe6f1a4b4d9df59142fc8e4abb973302cf44
+(sh: migrate to arch/sh/include/) moved KBUILD_CFLAGS
+(which is used by LIBGCC) below LIBGCC, causing build
+errors like the following:
 
-it seems i have problems in irq masking (for the smc eth chip);
-now kernel/irq/manage.c outputs
+<--  snip  -->
 
-[    1.462932] No set_type function for IRQ 9 (SR.IMASK)
+...
+  LD      .tmp_vmlinux1
+arch/sh/kernel/built-in.o: In function `module_clk_recalc':
+clock-sh4.c:(.text+0x80f0): undefined reference to `__udivsi3_i4i'
+...
+make[1]: *** [.tmp_vmlinux1] Error 1
 
-and after initialization, when nfs boot starts
-([    3.105886] Looking up port of RPC 100003/2 on 10.193.101.100)
-i get a seems-infinite loop of
+<--  snip  -->
 
-[    3.115338] irq 9, desc: 8c238aec, depth: 0, count: 0, unhandled: 0
-[    3.117228] ->handle_irq():  8c0361d8, handle_bad_irq+0x0/0x1ac
-[    3.123100] ->chip(): 8c236318, imask_irq_type+0x0/0x40
-[    3.128284] ->action(): 8f9307e0
-[    3.131482] ->action->handler(): 8c10dc98, smc_interrupt+0x0/0xbe4
-[    3.137620] unexpected IRQ trap at vector 09
+Reported-by: Adrian Bunk <bunk@kernel.org>
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
 
-something has changed in .27 in irq management?
+---
 
-Luca Santini
+ arch/sh/Makefile |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-
-Magnus Damm wrote:
-> On Thu, Aug 28, 2008 at 12:00 PM, Paul Mundt <lethal@linux-sh.org> wrote:
->> On Wed, Aug 27, 2008 at 06:32:02PM +0200, Luca Santini wrote:
->>>>>> +static struct smc91x_platdata smc91x_info = {
->>>>>> +  .flags = SMC91X_USE_16BIT,
->>>>>> +};
->>>>>> +
->>>> For some reason your flags here and your later smc91x patch for edosk7760
->>>> have absolutely nothing in common. This leads me to believe that you
->>>> either couldn't get the dynamic configuration working, in which case this
->>>> bit of code is useless, or that it works fine and there's no need for the
->>>> changes to smc91x.h. If you need both, you are doing something very
->>>> wrong.
->>>>
->>> you're right; what i really need is
->>>
->>> #define SMC_IO_SHIFT 1
->>>
->>> but using the platdata flag
->>>
->>> SMC91X_IO_SHIFT_1
->>>
->>> doesn't work.
->>>
->> Ok, so that's a real bug then. Magnus, can you take a look at this?
-> 
-> The io shift platform data configuration should be generic, but it
-> looks like it has been fully hooked in by some ARM platforms only at
-> this point. Someone forgot to fix the generic case. Try the attached
-> patch, that should get you going. Let me know if it solves your issue.
-> 
-> / magnus
+d85920b1d9470920dad5f6541952d6765fcde8de 
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 7b70cfd..01d85c7 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -95,8 +95,6 @@ head-y			:= arch/sh/kernel/init_task.o
+ head-$(CONFIG_SUPERH32)	+= arch/sh/kernel/head_32.o
+ head-$(CONFIG_SUPERH64)	+= arch/sh/kernel/head_64.o
+ 
+-LIBGCC := $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
+-
+ core-y				+= arch/sh/kernel/ arch/sh/mm/ arch/sh/boards/
+ core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
+ 
+@@ -145,10 +143,6 @@ cpuincdir-$(CONFIG_CPU_SH4)	+= cpu-sh4
+ cpuincdir-$(CONFIG_CPU_SH5)	+= cpu-sh5
+ cpuincdir-y			+= cpu-common	# Must be last
+ 
+-libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
+-libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
+-libs-y				+= $(LIBGCC)
+-
+ drivers-y			+= arch/sh/drivers/
+ drivers-$(CONFIG_OPROFILE)	+= arch/sh/oprofile/
+ 
+@@ -161,6 +155,12 @@ KBUILD_CFLAGS		+= -pipe $(cflags-y)
+ KBUILD_CPPFLAGS		+= $(cflags-y)
+ KBUILD_AFLAGS		+= $(cflags-y)
+ 
++LIBGCC := $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
++
++libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
++libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
++libs-y				+= $(LIBGCC)
++
+ PHONY += maketools FORCE
+ 
+ maketools:  include/linux/version.h FORCE
