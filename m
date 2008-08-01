@@ -1,67 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 31 Jul 2008 01:22:10 +0000
-Subject: [patch 2/6] kdump: sh: parse elfcorehdr command line argument
-Message-Id: <20080731012927.266000791@vergenet.net>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Fri, 01 Aug 2008 21:27:28 +0000
+Subject: sh O= builds broken
+Message-Id: <20080801212728.GF19682@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080731012208.115225969@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kexec@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Vivek Goyal <vgoyal@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, Paul Mundt <lethal@linux-sh.org>
+To: sam@ravnborg.org, lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-A quick cut and paste from other architectures to allow SH
-to parse the elfcorehdr command line argument which is required
-for both is_kdump_kernel() and vmcore to function.
-(the former is as yet unused on SH).
+Most likely caused by the headers move:
 
-Tested compilation only
+<--  snip  -->
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+...
+  CC      init/main.o
+In file included from /home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/include/asm/irq.h:4,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/linux/irq.h:23,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/include/asm/hardirq.h:5,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/linux/hardirq.h:7,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/asm-generic/local.h:5,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/include/asm/local.h:4,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/include/linux/module.h:19,
+                 from /home/bunk/linux/kernel-2.6/git/linux-2.6/init/main.c:13:
+/home/bunk/linux/kernel-2.6/git/linux-2.6/arch/sh/include/asm/machvec.h:15:27: 
+error: asm/machtypes.h: No such file or directory
+make[2]: *** [init/main.o] Error 1
 
---- 
-Andrew, Paul Mundt has aggreed to apply this patch
+<--  snip  -->
 
-Index: linux-2.6/arch/sh/kernel/setup.c
-=================================--- linux-2.6.orig/arch/sh/kernel/setup.c	2008-07-30 09:33:45.000000000 +1000
-+++ linux-2.6/arch/sh/kernel/setup.c	2008-07-30 09:37:45.000000000 +1000
-@@ -25,6 +25,7 @@
- #include <linux/smp.h>
- #include <linux/err.h>
- #include <linux/debugfs.h>
-+#include <linux/crash_dump.h>
- #include <asm/uaccess.h>
- #include <asm/io.h>
- #include <asm/page.h>
-@@ -286,6 +287,25 @@ static void __init setup_memory(void)
- extern void __init setup_memory(void);
- #endif
- 
-+/*
-+ * Note: elfcorehdr_addr is not just limited to vmcore. It is also used by
-+ * is_kdump_kernel() to determine if we are booting after a panic. Hence
-+ * ifdef it under CONFIG_CRASH_DUMP and not CONFIG_PROC_VMCORE.
-+ */
-+#ifdef CONFIG_CRASH_DUMP
-+/* elfcorehdr= specifies the location of elf core header
-+ * stored by the crashed kernel.
-+ */
-+static int __init parse_elfcorehdr(char *arg)
-+{
-+	if (!arg)
-+		return -EINVAL;
-+	elfcorehdr_addr = memparse(arg, &arg);
-+	return 0;
-+}
-+early_param("elfcorehdr", parse_elfcorehdr);
-+#endif
-+
- void __init setup_arch(char **cmdline_p)
- {
- 	enable_mmu();
+cu
+Adrian
 
 -- 
 
--- 
-Horms
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
 
