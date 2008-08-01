@@ -1,73 +1,37 @@
-From: Adrian Bunk <bunk@kernel.org>
-Date: Fri, 01 Aug 2008 22:13:44 +0000
-Subject: [2.6 patch] sh: fix LIBGCC
-Message-Id: <20080801221344.GI19682@cs181140183.pp.htv.fi>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 01 Aug 2008 22:22:17 +0000
+Subject: Re: [2.6 patch] sh: fix LIBGCC
+Message-Id: <20080801222217.GD13448@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080801221344.GI19682@cs181140183.pp.htv.fi>
+In-Reply-To: <20080801221344.GI19682@cs181140183.pp.htv.fi>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sam Ravnborg <sam@ravnborg.org>, Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Adrian Bunk <bunk@kernel.org>
+Cc: Sam Ravnborg <sam@ravnborg.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Commit f15cbe6f1a4b4d9df59142fc8e4abb973302cf44
-(sh: migrate to arch/sh/include/) moved KBUILD_CFLAGS
-(which is used by LIBGCC) below LIBGCC, causing build
-errors like the following:
+On Sat, Aug 02, 2008 at 01:13:44AM +0300, Adrian Bunk wrote:
+> Commit f15cbe6f1a4b4d9df59142fc8e4abb973302cf44
+> (sh: migrate to arch/sh/include/) moved KBUILD_CFLAGS
+> (which is used by LIBGCC) below LIBGCC, causing build
+> errors like the following:
+> 
+> <--  snip  -->
+> 
+> ...
+>   LD      .tmp_vmlinux1
+> arch/sh/kernel/built-in.o: In function `module_clk_recalc':
+> clock-sh4.c:(.text+0x80f0): undefined reference to `__udivsi3_i4i'
+> ...
+> make[1]: *** [.tmp_vmlinux1] Error 1
+> 
+> <--  snip  -->
+> 
+> Reported-by: Adrian Bunk <bunk@kernel.org>
+> Signed-off-by: Adrian Bunk <bunk@kernel.org>
+> 
+That's interesting, none of my compilers had difficulty with it, whereas
+it seems your toolchain couldn't report the libgcc location at all.
 
-<--  snip  -->
-
-...
-  LD      .tmp_vmlinux1
-arch/sh/kernel/built-in.o: In function `module_clk_recalc':
-clock-sh4.c:(.text+0x80f0): undefined reference to `__udivsi3_i4i'
-...
-make[1]: *** [.tmp_vmlinux1] Error 1
-
-<--  snip  -->
-
-Reported-by: Adrian Bunk <bunk@kernel.org>
-Signed-off-by: Adrian Bunk <bunk@kernel.org>
-
----
-
- arch/sh/Makefile |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-d85920b1d9470920dad5f6541952d6765fcde8de 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 7b70cfd..01d85c7 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -95,8 +95,6 @@ head-y			:= arch/sh/kernel/init_task.o
- head-$(CONFIG_SUPERH32)	+= arch/sh/kernel/head_32.o
- head-$(CONFIG_SUPERH64)	+= arch/sh/kernel/head_64.o
- 
--LIBGCC := $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
--
- core-y				+= arch/sh/kernel/ arch/sh/mm/ arch/sh/boards/
- core-$(CONFIG_SH_FPU_EMU)	+= arch/sh/math-emu/
- 
-@@ -145,10 +143,6 @@ cpuincdir-$(CONFIG_CPU_SH4)	+= cpu-sh4
- cpuincdir-$(CONFIG_CPU_SH5)	+= cpu-sh5
- cpuincdir-y			+= cpu-common	# Must be last
- 
--libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
--libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
--libs-y				+= $(LIBGCC)
--
- drivers-y			+= arch/sh/drivers/
- drivers-$(CONFIG_OPROFILE)	+= arch/sh/oprofile/
- 
-@@ -161,6 +155,12 @@ KBUILD_CFLAGS		+= -pipe $(cflags-y)
- KBUILD_CPPFLAGS		+= $(cflags-y)
- KBUILD_AFLAGS		+= $(cflags-y)
- 
-+LIBGCC := $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
-+
-+libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
-+libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
-+libs-y				+= $(LIBGCC)
-+
- PHONY += maketools FORCE
- 
- maketools:  include/linux/version.h FORCE
+Anyways, applied, thanks.
