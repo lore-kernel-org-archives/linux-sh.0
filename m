@@ -1,50 +1,37 @@
 From: Adrian Bunk <bunk@kernel.org>
-Date: Fri, 01 Aug 2008 22:25:46 +0000
-Subject: Re: [2.6 patch] sh: fix LIBGCC
-Message-Id: <20080801222546.GJ19682@cs181140183.pp.htv.fi>
+Date: Sat, 02 Aug 2008 16:53:44 +0000
+Subject: [2.6 patch] sh/boards/Makefile typo fix
+Message-Id: <20080802165344.GP19682@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080801221344.GI19682@cs181140183.pp.htv.fi> <20080801222217.GD13448@linux-sh.org>
-In-Reply-To: <20080801222217.GD13448@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Sam Ravnborg <sam@ravnborg.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sat, Aug 02, 2008 at 07:22:17AM +0900, Paul Mundt wrote:
-> On Sat, Aug 02, 2008 at 01:13:44AM +0300, Adrian Bunk wrote:
-> > Commit f15cbe6f1a4b4d9df59142fc8e4abb973302cf44
-> > (sh: migrate to arch/sh/include/) moved KBUILD_CFLAGS
-> > (which is used by LIBGCC) below LIBGCC, causing build
-> > errors like the following:
-> > 
-> > <--  snip  -->
-> > 
-> > ...
-> >   LD      .tmp_vmlinux1
-> > arch/sh/kernel/built-in.o: In function `module_clk_recalc':
-> > clock-sh4.c:(.text+0x80f0): undefined reference to `__udivsi3_i4i'
-> > ...
-> > make[1]: *** [.tmp_vmlinux1] Error 1
-> > 
-> > <--  snip  -->
-> > 
-> > Reported-by: Adrian Bunk <bunk@kernel.org>
-> > Signed-off-by: Adrian Bunk <bunk@kernel.org>
-> > 
-> That's interesting, none of my compilers had difficulty with it, whereas
-> it seems your toolchain couldn't report the libgcc location at all.
->...
+The following build error was caused by an obvious typo:
 
-It did report /usr/local/DIR/gcc-sh-4.3.1/lib/gcc/sh-linux/4.3.1/libgcc.a,
-but that's not for all configurations the correct one.
+<--  snip  -->
 
-cu
-Adrian
+...
+  LD      arch/sh/mm/built-in.o
+make[2]: *** No rule to make target `arch/sh/boards/board-shmin..o', needed by `arch/sh/boards/built-in.o'.  Stop.
 
--- 
+<--  snip  -->
 
-       "Is there not promise of rain?" Ling Tan asked suddenly out
-        of the darkness. There had been need of rain for many days.
-       "Only a promise," Lao Er said.
-                                       Pearl S. Buck - Dragon Seed
+Reported-by: Adrian Bunk <bunk@kernel.org>
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
+
+---
+399bc393a7499892af33d7a4621516c5f5c359d8 
+diff --git a/arch/sh/boards/Makefile b/arch/sh/boards/Makefile
+index ff9b93c..463022c 100644
+--- a/arch/sh/boards/Makefile
++++ b/arch/sh/boards/Makefile
+@@ -5,4 +5,4 @@ obj-$(CONFIG_SH_AP325RXA)	+= board-ap325rxa.o
+ obj-$(CONFIG_SH_MAGIC_PANEL_R2)	+= board-magicpanelr2.o
+ obj-$(CONFIG_SH_RSK7203)	+= board-rsk7203.o
+ obj-$(CONFIG_SH_SH7785LCR)	+= board-sh7785lcr.o
+-obj-$(CONFIG_SH_SHMIN)		+= board-shmin..o
++obj-$(CONFIG_SH_SHMIN)		+= board-shmin.o
 
