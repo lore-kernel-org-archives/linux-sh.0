@@ -1,27 +1,36 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 11 Aug 2008 11:28:59 +0000
-Subject: Re: [PATCH] input: migor_ts compile and detection fix
-Message-Id: <20080811112858.GA5340@linux-sh.org>
+Date: Sun, 03 Aug 2008 23:52:47 +0000
+Subject: Re: [RFT PATCH] SuperH HSPI controller driver.
+Message-Id: <20080803235247.GA6682@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080811055349.19913.70612.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080811055349.19913.70612.sendpatchset@rx1.opensource.se>
+References: <20080721090744.GA16714@roarinelk.homelinux.net>
+In-Reply-To: <20080721090744.GA16714-nEyxjcs6f3Vin2gBucwGBecsttgLyre6@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-input@vger.kernel.org, dmitry.torokhov@gmail.com, linux-sh@vger.kernel.org
+To: Manuel Lauss <mano-nEyxjcs6f3Vin2gBucwGBecsttgLyre6@public.gmane.org>
+Cc: David Brownell <david-b-yBeKhBN/0LDR7s880joybQ@public.gmane.org>, spi-devel-general-TtF/mJH4Jtrk1uMJSBkQmQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, Aug 11, 2008 at 02:53:49PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
+On Mon, Jul 21, 2008 at 11:07:44AM +0200, Manuel Lauss wrote:
+> Here is a very simple driver for the HSPI block on many SuperH processors.
+> I could only subject it to limited testings, as my sole SPI device here is
+> a write-only 8bit digital poti.  It seems to do the right thing as far as
+> I could see on an oscilloscope.
 > 
-> The i2c layer got changed while the migor_ts driver was in the input
-> tree waiting to get merged upstream. Fix current compile issue by using
-> struct i2c_client member "name" instead of "driver_name". Also, add
-> id_table to make sure the device gets properly detected.
+> The driver doesn't do DMA and pushes/pops bytes one-at-a-time from/to fifos
+> (I'm going to fix that at a later time).
 > 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> Please test and comment!
+> 
+> Thanks,
+> 	Manuel Lauss
+> 
 > ---
 > 
->  Paul, can you pick up this one together with other SuperH fixes?
+> A simple driver for the HSPI block found on many SuperH processors.
 > 
-Yes, I rolled it in to my queue, thanks.
+> Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
+
+I have no outstanding issues with this, though I did just break it with
+the header reorg. If David is fine with it and wants to Ack it, I can
+take it through my tree.
