@@ -1,32 +1,106 @@
-From: Krzysztof Helt <krzysztof.h1@poczta.fm>
-Date: Mon, 11 Aug 2008 17:38:16 +0000
-Subject: Re: [Linux-fbdev-devel] [PATCH] video: export sh_mobile_lcdc panel
-Message-Id: <20080811193816.0a466418.krzysztof.h1@poczta.fm>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 04 Aug 2008 11:17:56 +0000
+Subject: [GIT PULL] sh updates for 2.6.27-rc2
+Message-Id: <20080804111756.GA13735@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080811062600.19986.98178.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080811062600.19986.98178.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-fbdev-devel@lists.sourceforge.net, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, 11 Aug 2008 15:26:00 +0900
-Magnus Damm <magnus.damm@gmail.com> wrote:
+Please pull from:
 
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> Export the LCD panel size for sh_mobile_lcdc boards. This allows us
-> to perform dpi and screen aspect ratio calculations in user space.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> ---
-> 
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
-Acked-by: Krzysztof Helt <krzysztof.h1@wp.pl>
+Which contains:
 
+Adrian Bunk (2):
+      sh: fix LIBGCC
+      sh/boards/Makefile typo fix
 
-----------------------------------------------------------------------
-Tylko dla detektywow! Konkurs na Smaker.pl
-Kliknij >>> http://link.interia.pl/f1eb1
+Adrian McMenamin (2):
+      maple: allow removal and reinsertion of keyboard driver module
+      input: Clean up maple keyboard driver
 
+Huang Weiyi (2):
+      arch/sh/boards/board-ap325rxa.c: removed duplicated #include
+      arch/sh/boards/mach-se/7343/irq.c: removed duplicated #include
+
+Paul Mundt (20):
+      sh: Tidy up the _TIF work masks, and fix syscall trace bug on singlestep.
+      sh: seccomp support.
+      sh: ptrace single stepping cleanups.
+      sh: Make syscall tracer use tracehook notifiers, add TIF_NOTIFY_RESUME.
+      sh: Fix up the audit arch endian specification.
+      net: stnic: Fix up fallout from SH header migration.
+      sh: Revert the location change of auto-generated asm/machtypes.h
+      sh: /proc/asids depends on MMU.
+      maple: Clean up maple_driver_register/unregister routines.
+      maple: Kill useless private_data pointer.
+      sh: Fix up broken kerneldoc comments.
+      sh: Add documentation and integrate into docbook build.
+      sh: Fix up __bug_table handling in module loader.
+      sh: module_alloc() should be using vmalloc_exec().
+      sh: Save NUMA node data in vmcore for crash dumps.
+      sh: define GENERIC_LOCKBREAK.
+      sh: define GENERIC_HARDIRQS_NO__DO_IRQ.
+      sh: Kill off ARCH_SUPPORTS_AOUT and remnants of a.out support.
+      nommu: Provide vmalloc_exec().
+      sh: enable maple_keyb in dreamcast_defconfig.
+
+Simon Horman (1):
+      kdump: sh: parse elfcorehdr command line argument
+
+Takashi Yoshii (1):
+      add addrespace definition for sh2a.
+
+Yoshinori Sato (1):
+      SH2(A) cache update
+
+ Documentation/DocBook/Makefile            |    2 +-
+ Documentation/DocBook/sh.tmpl             |  105 ++++++++++++++++++
+ arch/sh/Kconfig                           |   27 ++++-
+ arch/sh/Kconfig.debug                     |    2 +-
+ arch/sh/Makefile                          |   16 ++--
+ arch/sh/boards/Makefile                   |    2 +-
+ arch/sh/boards/board-ap325rxa.c           |    1 -
+ arch/sh/boards/mach-se/7343/irq.c         |    1 -
+ arch/sh/configs/dreamcast_defconfig       |   14 +--
+ arch/sh/include/asm/a.out.h               |   20 ----
+ arch/sh/include/asm/ptrace.h              |    9 ++
+ arch/sh/include/asm/seccomp.h             |   10 ++
+ arch/sh/include/asm/thread_info.h         |   51 ++++++---
+ arch/sh/include/asm/tlb_64.h              |   12 +--
+ arch/sh/include/cpu-sh2/cpu/cache.h       |    6 +-
+ arch/sh/include/cpu-sh2a/cpu/addrspace.h  |   10 ++
+ arch/sh/include/cpu-sh2a/cpu/cache.h      |    3 +
+ arch/sh/include/cpu-sh2a/cpu/cacheflush.h |   34 ++++++
+ arch/sh/kernel/cpu/sh4/sq.c               |    2 +-
+ arch/sh/kernel/cpu/sh5/entry.S            |   19 ++--
+ arch/sh/kernel/entry-common.S             |   16 +--
+ arch/sh/kernel/machine_kexec.c            |    8 ++
+ arch/sh/kernel/module.c                   |    7 +-
+ arch/sh/kernel/ptrace_32.c                |  157 ++++++++++-----------------
+ arch/sh/kernel/ptrace_64.c                |  144 +++++++++---------------
+ arch/sh/kernel/setup.c                    |   20 ++++
+ arch/sh/kernel/signal_32.c                |   22 +++-
+ arch/sh/kernel/signal_64.c                |  166 +++++++++++++++-------------
+ arch/sh/mm/Kconfig                        |    1 -
+ arch/sh/mm/Makefile_32                    |   11 +-
+ arch/sh/mm/cache-sh2.c                    |   45 ++++++--
+ arch/sh/mm/cache-sh2a.c                   |  129 +++++++++++++++++++++
+ arch/sh/mm/tlb-sh5.c                      |   20 +---
+ arch/sh/tools/Makefile                    |    4 +-
+ drivers/input/keyboard/maple_keyb.c       |  172 +++++++++++++++--------------
+ drivers/net/stnic.c                       |    2 +-
+ drivers/sh/maple/maple.c                  |   65 +++++++----
+ include/linux/maple.h                     |    8 +-
+ mm/nommu.c                                |   21 ++++
+ 39 files changed, 854 insertions(+), 510 deletions(-)
+ create mode 100644 Documentation/DocBook/sh.tmpl
+ delete mode 100644 arch/sh/include/asm/a.out.h
+ create mode 100644 arch/sh/include/asm/seccomp.h
+ create mode 100644 arch/sh/include/cpu-sh2a/cpu/addrspace.h
+ create mode 100644 arch/sh/include/cpu-sh2a/cpu/cacheflush.h
+ create mode 100644 arch/sh/mm/cache-sh2a.c
