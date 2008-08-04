@@ -1,41 +1,49 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 13 Aug 2008 01:20:25 +0000
-Subject: Re: [RFC] SCI(F) clock source select
-Message-Id: <20080813012025.GA11346@linux-sh.org>
+From: Takashi Yoshii <yoshii.takashi@renesas.com>
+Date: Mon, 04 Aug 2008 05:28:38 +0000
+Subject: [PATCH] add addrespace definition for sh2a.
+Message-Id: <48969386.4050705@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vdy5zuk2.wl%ysato@users.sourceforge.jp>
-In-Reply-To: <87vdy5zuk2.wl%ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Aug 12, 2008 at 07:23:57PM -0400, Yoshinori Sato wrote:
-> SCI(F) clock source (Internal/External) selection is hard coding now.
-> And depend on CPU type.
-> 
-> But I think it's setting depend on target.
-> 
-> I hope add clock selection in platform_data.
-> 
-> Any comments?
-> 
-> diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
-> index 3df2aae..6c0ceff 100644
-> --- a/drivers/serial/sh-sci.c
-> +++ b/drivers/serial/sh-sci.c
-> @@ -82,6 +82,8 @@ struct sci_port {
->  	/* Port clock */
->  	struct clk		*clk;
->  #endif
-> +	/* clock source */
-> +	int			clock_source;
->  };
->  
+Newfile: arch/sh/include/cpu-sh2a/cpu/addrspace.h
 
-We should probably just add an additional flags field to the port type
-and platform data and allow internal/external selection based off of
-that. Then we can default to the current behaviour, and allow the
-platforms that want different behaviour to specifically set a bit.
+This file seems had be removed to use fallback (cpu-common/cpu/addrspace.h),
+but, I'd like to add sh2a specific file here, because
+1. the values defined there are not suitable for sh2a.
+2. I don't think there is "common" definition for these values.
 
-It's certainly heading in the right direction, though.
+Values are chosen by consideration of followings...
+ P1 is 0. perhaps no question.
+ P2 is from hardware manual, which says no-cache area starts at 20000000.
+ It means that P? space size 000000.
+ P3 is P2+size since asm/ptrace.h uses P3 as a end of P2. 
+ P4 is P3+size since asm/fixup.h uses P4 as a end of P3.
+
+Signed-off-by: Takashi YOSHII <yoshii.takashi@renesas.com>
+---
+ arch/sh/include/cpu-sh2a/cpu/addrspace.h |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/include/cpu-sh2a/cpu/addrspace.h
+
+diff --git a/arch/sh/include/cpu-sh2a/cpu/addrspace.h b/arch/sh/include/cpu-sh2a/cpu/addrspace.h
+new file mode 100644
+index 0000000..31eb4b5
+--- /dev/null
++++ b/arch/sh/include/cpu-sh2a/cpu/addrspace.h
+@@ -0,0 +1,10 @@
++#ifndef __ASM_SH_CPU_SH2A_ADDRSPACE_H
++#define __ASM_SH_CPU_SH2A_ADDRSPACE_H
++
++#define P0SEG		0x00000000
++#define P1SEG		0x00000000
++#define P2SEG		0x20000000
++#define P3SEG		0x40000000
++#define P4SEG		0x60000000
++
++#endif /* __ASM_SH_CPU_SH2A_ADDRSPACE_H */
+-- 
+1.5.4.5
+
