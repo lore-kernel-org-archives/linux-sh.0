@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Aug 2008 06:03:03 +0000
+From: Adrian Bunk <bunk@kernel.org>
+Date: Wed, 06 Aug 2008 17:29:06 +0000
 Subject: Re: rsk7203_defconfig build error
-Message-Id: <20080806060303.GB2610@linux-sh.org>
+Message-Id: <20080806172906.GB11188@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080805154429.GD22895@cs181140183.pp.htv.fi> <87sktjw6sh.wl%ysato@users.sourceforge.jp>
 In-Reply-To: <87sktjw6sh.wl%ysato@users.sourceforge.jp>
@@ -9,7 +9,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Adrian Bunk <bunk@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 On Tue, Aug 05, 2008 at 04:22:54PM -0400, Yoshinori Sato wrote:
 > At Tue, 5 Aug 2008 18:44:29 +0300,
@@ -39,7 +39,17 @@ On Tue, Aug 05, 2008 at 04:22:54PM -0400, Yoshinori Sato wrote:
 > 
 > This patch not tested.
 > Please test and apply.
-> 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> 
-This works fine for my toolchains at least, so I'll apply it.
+>...
+
+Thanks, that fixed the compilation for me.
+
+cu
+Adrian
+
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
+
