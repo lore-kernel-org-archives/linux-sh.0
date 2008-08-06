@@ -1,39 +1,14 @@
-From: David Howells <dhowells@redhat.com>
-Date: Mon, 04 Aug 2008 10:08:59 +0000
-Subject: Re: [PATCH 2/3] binfmt_elf_fdpic: Convert initial stack alignment to arch_align_stack().
-Message-Id: <32309.1217844539@redhat.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 06 Aug 2008 10:36:00 +0000
+Subject: [PATCH 2/3] binfmt_elf_fdpic: Convert initial stack alignment to arch_align_stack()
+Message-Id: <20080806103600.GB5194@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080804040025.GA11127@linux-sh.org> <20080728150501.GC16555@linux-sh.org> <20080728150359.GA16555@linux-sh.org> <20080728150430.GB16555@linux-sh.org> <27552.1217599279@redhat.com> <20080801214448.GA13448@linux-sh.org> <8bd0f97a0808032024x18a31d29tb44ebc6216a2aed@mail.gmail.com>
-In-Reply-To: <20080804040025.GA11127@linux-sh.org>
+References: <20080806103458.GE2610@linux-sh.org>
+In-Reply-To: <20080806103458.GE2610@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: dhowells@redhat.com, Mike Frysinger <vapier.adi@gmail.com>, "Wu, Bryan" <Bryan.Wu@analog.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-
-Paul Mundt <lethal@linux-sh.org> wrote:
-
-> There's no need, as David pointed out, that was the wrong thing to do for
-> the nommu case anyways. Here's an updated patch to replace the previous
-> one:
-
-That's better, however:
-
-> -	/* we're going to shovel a whole load of stuff onto the stack */
->  #ifdef CONFIG_MMU
-> -	sp = bprm->p;
-> +	/*
-> +	 * we're going to shovel a whole load of stuff onto the stack
-
-I think that comment shouldn't be moved inside the conditional section since
-it applies to NOMMU as well.  Picky, I know, but...  It might actually be
-better to attach it to the banner comment for the whole function.
-
-David
----
-[PATCH] binfmt_elf_fdpic: Convert initial stack alignment to arch_align_stack()
-
-From: Paul Mundt <lethal@linux-sh.org>
+To: David Howells <dhowells@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
 binfmt_elf_fdpic seems to have grabbed a hard-coded hack from an ancient
 version of binfmt_elf in order to try and fix up initial stack alignment
