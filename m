@@ -1,31 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 12 Aug 2008 02:38:54 +0000
-Subject: Re: [PATCH 3/3] binfmt_elf_fdpic: Wire up AT_EXECFD, AT_EXECFN, AT_SECURE.
-Message-Id: <20080812023854.GB9162@linux-sh.org>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Thu, 07 Aug 2008 04:54:59 +0000
+Subject: [PATCH] sh: fix sh2a cache entry_mask
+Message-Id: <489A8023.6020505@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080806103458.GE2610@linux-sh.org> <20080806103615.GC5194@linux-sh.org> <20080811141855.a4ddf04d.akpm@linux-foundation.org>
-In-Reply-To: <20080811141855.a4ddf04d.akpm@linux-foundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: dhowells@redhat.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Aug 11, 2008 at 02:18:55PM -0700, Andrew Morton wrote:
-> On Wed, 6 Aug 2008 19:36:15 +0900
-> Paul Mundt <lethal@linux-sh.org> wrote:
-> 
-> > These auxvec entries are the only ones left unhandled out of the current
-> > base implementation. This syncs up binfmt_elf_fdpic with linux/auxvec.h
-> > and current binfmt_elf.
-> 
-> The patches ran afoul of the credentials changes in linux-next.
-> 
-> #1 and #2 applied OK, but #3 tossed the below reject.  Please check
-> that my (fairly obvious) fixups are OK.
-> 
-Yes, your fixups look fine, thanks.
+fix sh2a cache entry_mask in __flush_{purge,invalidate}_region.
 
-Also note that you are missing David's signed-off-by on 2/3:
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ arch/sh/mm/cache-sh2a.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-http://marc.info/?l=linux-sh&m1784461423443&w=2
+diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
+index 62c0c5f..24d86a7 100644
+--- a/arch/sh/mm/cache-sh2a.c
++++ b/arch/sh/mm/cache-sh2a.c
+@@ -59,7 +59,7 @@ void __flush_purge_region(void *start, int size)
+
+ 	for (v = begin; v < end; v+=L1_CACHE_BYTES) {
+ 		ctrl_outl((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_OC_ADDRESS_ARRAY | (v & 0x000003f0) | 0x00000008);
++			  CACHE_OC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+ 	}
+ 	back_to_cached();
+ 	local_irq_restore(flags);
+@@ -82,14 +82,14 @@ void __flush_invalidate_region(void *start, int size)
+ 	/* I-cache invalidate */
+ 	for (v = begin; v < end; v+=L1_CACHE_BYTES) {
+ 		ctrl_outl((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_IC_ADDRESS_ARRAY | (v & 0x000003f0) | 0x00000008);
++			  CACHE_IC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+ 	}
+ #else
+ 	for (v = begin; v < end; v+=L1_CACHE_BYTES) {
+ 		ctrl_outl((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_IC_ADDRESS_ARRAY | (v & 0x000003f0) | 0x00000008);
++			  CACHE_IC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+ 		ctrl_outl((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_OC_ADDRESS_ARRAY | (v & 0x000003f0) | 0x00000008);
++			  CACHE_OC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+ 	}
+ #endif
+ 	back_to_cached();
+-- 
+1.5.5
+
