@@ -1,106 +1,155 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 04 Aug 2008 11:17:56 +0000
-Subject: [GIT PULL] sh updates for 2.6.27-rc2
-Message-Id: <20080804111756.GA13735@linux-sh.org>
+From: Adrian Bunk <bunk@stusta.de>
+Date: Fri, 08 Aug 2008 15:39:11 +0000
+Subject: [2.6 patch] fix watchdog/shwdt.c compilation
+Message-Id: <20080808153911.GC14495@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Alan Cox <alan@redhat.com>, Wim Van Sebroeck <wim@iguana.be>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
 
-Please pull from:
+This patch fixes the following compile errors caused by
+commit 70b814ec1a484279a51bf9f7193551b996627247
+([WATCHDOG 45/57] shwdt: coding style, cleanup, switch to unlocked_io):
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+<--  snip  -->
 
-Which contains:
+...
+  CC      drivers/watchdog/shwdt.o
+shwdt.c:64: error: 'WTCSR_CKS_4096' undeclared here (not in a function)
+shwdt.c: In function 'sh_wdt_start':
+shwdt.c:92: error: 'wdt_lock' undeclared (first use in this function)
+shwdt.c:92: error: (Each undeclared identifier is reported only once
+shwdt.c:92: error: for each function it appears in.)
+shwdt.c:97: error: implicit declaration of function 'sh_wdt_read_csr'
+shwdt.c:98: error: 'WTCSR_WT' undeclared (first use in this function)
+shwdt.c:99: error: implicit declaration of function 'sh_wdt_write_csr'
+shwdt.c:101: error: implicit declaration of function 'sh_wdt_write_cnt'
+shwdt.c:112: error: 'WTCSR_TME' undeclared (first use in this function)
+shwdt.c:113: error: 'WTCSR_RSTS' undeclared (first use in this function)
+shwdt.c: In function 'sh_wdt_stop':
+shwdt.c:142: error: 'wdt_lock' undeclared (first use in this function)
+shwdt.c:147: error: 'WTCSR_TME' undeclared (first use in this function)
+shwdt.c: In function 'sh_wdt_keepalive':
+shwdt.c:160: error: 'wdt_lock' undeclared (first use in this function)
+shwdt.c: In function 'sh_wdt_set_heartbeat':
+shwdt.c:176: error: 'wdt_lock' undeclared (first use in this function)
+shwdt.c: In function 'sh_wdt_ping':
+shwdt.c:192: error: 'wdt_lock' undeclared (first use in this function)
+shwdt.c:197: error: 'WTCSR_IOVF' undeclared (first use in this function)
+shwdt.c: At top level:
+shwdt.c:417: error: conflicting type qualifiers for 'sh_wdt_info'
+shwdt.c:71: error: previous declaration of 'sh_wdt_info' was here
+make[3]: *** [drivers/watchdog/shwdt.o] Error 1
 
-Adrian Bunk (2):
-      sh: fix LIBGCC
-      sh/boards/Makefile typo fix
+<--  snip  -->
 
-Adrian McMenamin (2):
-      maple: allow removal and reinsertion of keyboard driver module
-      input: Clean up maple keyboard driver
+Reported-by: Adrian Bunk <bunk@kernel.org>
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
 
-Huang Weiyi (2):
-      arch/sh/boards/board-ap325rxa.c: removed duplicated #include
-      arch/sh/boards/mach-se/7343/irq.c: removed duplicated #include
+---
 
-Paul Mundt (20):
-      sh: Tidy up the _TIF work masks, and fix syscall trace bug on singlestep.
-      sh: seccomp support.
-      sh: ptrace single stepping cleanups.
-      sh: Make syscall tracer use tracehook notifiers, add TIF_NOTIFY_RESUME.
-      sh: Fix up the audit arch endian specification.
-      net: stnic: Fix up fallout from SH header migration.
-      sh: Revert the location change of auto-generated asm/machtypes.h
-      sh: /proc/asids depends on MMU.
-      maple: Clean up maple_driver_register/unregister routines.
-      maple: Kill useless private_data pointer.
-      sh: Fix up broken kerneldoc comments.
-      sh: Add documentation and integrate into docbook build.
-      sh: Fix up __bug_table handling in module loader.
-      sh: module_alloc() should be using vmalloc_exec().
-      sh: Save NUMA node data in vmcore for crash dumps.
-      sh: define GENERIC_LOCKBREAK.
-      sh: define GENERIC_HARDIRQS_NO__DO_IRQ.
-      sh: Kill off ARCH_SUPPORTS_AOUT and remnants of a.out support.
-      nommu: Provide vmalloc_exec().
-      sh: enable maple_keyb in dreamcast_defconfig.
+ drivers/watchdog/shwdt.c |   23 ++++++++++++-----------
+ 1 file changed, 12 insertions(+), 11 deletions(-)
 
-Simon Horman (1):
-      kdump: sh: parse elfcorehdr command line argument
+ea098979faf0b600824510a18675e47cdab23aca 
+diff --git a/drivers/watchdog/shwdt.c b/drivers/watchdog/shwdt.c
+index 824125a..9c81aff 100644
+--- a/drivers/watchdog/shwdt.c
++++ b/drivers/watchdog/shwdt.c
+@@ -31,6 +31,7 @@
+ #include <linux/io.h>
+ #include <linux/uaccess.h>
+ #include <linux/watchdog.h>
++#include <asm/watchdog.h>
+ 
+ #define PFX "shwdt: "
+ 
+@@ -68,7 +69,7 @@ static int clock_division_ratio = WTCSR_CKS_4096;
+ static void sh_wdt_ping(unsigned long data);
+ 
+ static unsigned long shwdt_is_open;
+-static struct watchdog_info sh_wdt_info;
++static const struct watchdog_info sh_wdt_info;
+ static char shwdt_expect_close;
+ static DEFINE_TIMER(timer, sh_wdt_ping, 0, 0);
+ static unsigned long next_heartbeat;
+@@ -89,7 +90,7 @@ static void sh_wdt_start(void)
+ 	__u8 csr;
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&wdt_lock, flags);
++	spin_lock_irqsave(&shwdt_lock, flags);
+ 
+ 	next_heartbeat = jiffies + (heartbeat * HZ);
+ 	mod_timer(&timer, next_ping_period(clock_division_ratio));
+@@ -127,7 +128,7 @@ static void sh_wdt_start(void)
+ 	csr &= ~RSTCSR_RSTS;
+ 	sh_wdt_write_rstcsr(csr);
+ #endif
+-	spin_unlock_irqrestore(&wdt_lock, flags);
++	spin_unlock_irqrestore(&shwdt_lock, flags);
+ }
+ 
+ /**
+@@ -139,14 +140,14 @@ static void sh_wdt_stop(void)
+ 	__u8 csr;
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&wdt_lock, flags);
++	spin_lock_irqsave(&shwdt_lock, flags);
+ 
+ 	del_timer(&timer);
+ 
+ 	csr = sh_wdt_read_csr();
+ 	csr &= ~WTCSR_TME;
+ 	sh_wdt_write_csr(csr);
+-	spin_unlock_irqrestore(&wdt_lock, flags);
++	spin_unlock_irqrestore(&shwdt_lock, flags);
+ }
+ 
+ /**
+@@ -157,9 +158,9 @@ static inline void sh_wdt_keepalive(void)
+ {
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&wdt_lock, flags);
++	spin_lock_irqsave(&shwdt_lock, flags);
+ 	next_heartbeat = jiffies + (heartbeat * HZ);
+-	spin_unlock_irqrestore(&wdt_lock, flags);
++	spin_unlock_irqrestore(&shwdt_lock, flags);
+ }
+ 
+ /**
+@@ -173,9 +174,9 @@ static int sh_wdt_set_heartbeat(int t)
+ 	if (unlikely(t < 1 || t > 3600)) /* arbitrary upper limit */
+ 		return -EINVAL;
+ 
+-	spin_lock_irqsave(&wdt_lock, flags);
++	spin_lock_irqsave(&shwdt_lock, flags);
+ 	heartbeat = t;
+-	spin_unlock_irqrestore(&wdt_lock, flags);
++	spin_unlock_irqrestore(&shwdt_lock, flags);
+ 	return 0;
+ }
+ 
+@@ -189,7 +190,7 @@ static void sh_wdt_ping(unsigned long data)
+ {
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&wdt_lock, flags);
++	spin_lock_irqsave(&shwdt_lock, flags);
+ 	if (time_before(jiffies, next_heartbeat)) {
+ 		__u8 csr;
+ 
+@@ -203,7 +204,7 @@ static void sh_wdt_ping(unsigned long data)
+ 	} else
+ 		printk(KERN_WARNING PFX "Heartbeat lost! Will not ping "
+ 		       "the watchdog\n");
+-	spin_unlock_irqrestore(&wdt_lock, flags);
++	spin_unlock_irqrestore(&shwdt_lock, flags);
+ }
+ 
+ /**
 
-Takashi Yoshii (1):
-      add addrespace definition for sh2a.
-
-Yoshinori Sato (1):
-      SH2(A) cache update
-
- Documentation/DocBook/Makefile            |    2 +-
- Documentation/DocBook/sh.tmpl             |  105 ++++++++++++++++++
- arch/sh/Kconfig                           |   27 ++++-
- arch/sh/Kconfig.debug                     |    2 +-
- arch/sh/Makefile                          |   16 ++--
- arch/sh/boards/Makefile                   |    2 +-
- arch/sh/boards/board-ap325rxa.c           |    1 -
- arch/sh/boards/mach-se/7343/irq.c         |    1 -
- arch/sh/configs/dreamcast_defconfig       |   14 +--
- arch/sh/include/asm/a.out.h               |   20 ----
- arch/sh/include/asm/ptrace.h              |    9 ++
- arch/sh/include/asm/seccomp.h             |   10 ++
- arch/sh/include/asm/thread_info.h         |   51 ++++++---
- arch/sh/include/asm/tlb_64.h              |   12 +--
- arch/sh/include/cpu-sh2/cpu/cache.h       |    6 +-
- arch/sh/include/cpu-sh2a/cpu/addrspace.h  |   10 ++
- arch/sh/include/cpu-sh2a/cpu/cache.h      |    3 +
- arch/sh/include/cpu-sh2a/cpu/cacheflush.h |   34 ++++++
- arch/sh/kernel/cpu/sh4/sq.c               |    2 +-
- arch/sh/kernel/cpu/sh5/entry.S            |   19 ++--
- arch/sh/kernel/entry-common.S             |   16 +--
- arch/sh/kernel/machine_kexec.c            |    8 ++
- arch/sh/kernel/module.c                   |    7 +-
- arch/sh/kernel/ptrace_32.c                |  157 ++++++++++-----------------
- arch/sh/kernel/ptrace_64.c                |  144 +++++++++---------------
- arch/sh/kernel/setup.c                    |   20 ++++
- arch/sh/kernel/signal_32.c                |   22 +++-
- arch/sh/kernel/signal_64.c                |  166 +++++++++++++++-------------
- arch/sh/mm/Kconfig                        |    1 -
- arch/sh/mm/Makefile_32                    |   11 +-
- arch/sh/mm/cache-sh2.c                    |   45 ++++++--
- arch/sh/mm/cache-sh2a.c                   |  129 +++++++++++++++++++++
- arch/sh/mm/tlb-sh5.c                      |   20 +---
- arch/sh/tools/Makefile                    |    4 +-
- drivers/input/keyboard/maple_keyb.c       |  172 +++++++++++++++--------------
- drivers/net/stnic.c                       |    2 +-
- drivers/sh/maple/maple.c                  |   65 +++++++----
- include/linux/maple.h                     |    8 +-
- mm/nommu.c                                |   21 ++++
- 39 files changed, 854 insertions(+), 510 deletions(-)
- create mode 100644 Documentation/DocBook/sh.tmpl
- delete mode 100644 arch/sh/include/asm/a.out.h
- create mode 100644 arch/sh/include/asm/seccomp.h
- create mode 100644 arch/sh/include/cpu-sh2a/cpu/addrspace.h
- create mode 100644 arch/sh/include/cpu-sh2a/cpu/cacheflush.h
- create mode 100644 arch/sh/mm/cache-sh2a.c
