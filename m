@@ -1,37 +1,83 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 04 Aug 2008 05:37:33 +0000
-Subject: Re: [PATCH] add addrespace definition for sh2a.
-Message-Id: <20080804053733.GA11682@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Fri, 08 Aug 2008 05:29:58 +0000
+Subject: [PATCH] sh: Add support sh_eth to sh7763rdp board
+Message-Id: <489BD9D6.6060804@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48969386.4050705@renesas.com>
-In-Reply-To: <48969386.4050705@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 04, 2008 at 02:28:38PM +0900, Takashi Yoshii wrote:
-> Newfile: arch/sh/include/cpu-sh2a/cpu/addrspace.h
-> 
-> This file seems had be removed to use fallback (cpu-common/cpu/addrspace.h),
-> but, I'd like to add sh2a specific file here, because
-> 1. the values defined there are not suitable for sh2a.
-> 2. I don't think there is "common" definition for these values.
-> 
-> Values are chosen by consideration of followings...
-> P1 is 0. perhaps no question.
-> P2 is from hardware manual, which says no-cache area starts at 20000000.
-> It means that P? space size 000000.
-> P3 is P2+size since asm/ptrace.h uses P3 as a end of P2. 
-> P4 is P3+size since asm/fixup.h uses P4 as a end of P3.
-> 
-> Signed-off-by: Takashi YOSHII <yoshii.takashi@renesas.com>
+SH7763 has sh_eth device. This patch add sh_eth platform device
+to this board.
 
-This is a good indicator for why we should just kill off all of the
-references in-tree that we can find, it's been a terrible abstraction
-from the beginning. It would have been nice if more than a single family
-of CPUs could have been consistent with its segmentation.
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ arch/sh/boards/mach-sh7763rdp/setup.c |   34 +++++++++++++++++++++++++++++++-
+ 1 files changed, 32 insertions(+), 2 deletions(-)
 
-For SH-2A these look fine, so I'll check this in as it is, but I would
-much rather see patches that get rid of more of these references, rather
-than adding more ;-)
+diff --git a/arch/sh/boards/mach-sh7763rdp/setup.c b/arch/sh/boards/mach-sh7763rdp/setup.c
+index 925f16a..49940d1 100644
+--- a/arch/sh/boards/mach-sh7763rdp/setup.c
++++ b/arch/sh/boards/mach-sh7763rdp/setup.c
+@@ -15,8 +15,9 @@
+ #include <linux/interrupt.h>
+ #include <linux/input.h>
+ #include <linux/mtd/physmap.h>
+-#include <asm/io.h>
++#include <linux/io.h>
+ #include <asm/sh7763rdp.h>
++#include <asm/sh_eth.h>
+
+ /* NOR Flash */
+ static struct mtd_partition sh7763rdp_nor_flash_partitions[] = {
+@@ -60,8 +61,36 @@ static struct platform_device sh7763rdp_nor_flash_device = {
+ 	},
+ };
+
++/* SH-Ether */
++static struct resource sh_eth_resources[] = {
++	{
++		.start  = 0xFEE00800,   /* use eth1 */
++		.end    = 0xFEE00F7C - 1,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = 58,   /* irq number */
++		.end    = 58,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct sh_eth_plat_data sh7763_eth_pdata = {
++	.phy = 1,
++	.edmac_endian = EDMAC_LITTLE_ENDIAN,
++};
++
++static struct platform_device sh7763rdp_eth_device = {
++	.name       = "sh-eth",
++	.resource   = sh_eth_resources,
++	.num_resources  = ARRAY_SIZE(sh_eth_resources),
++	.dev        = {
++		.platform_data = &sh7763_eth_pdata,
++	},
++};
++
+ static struct platform_device *sh7763rdp_devices[] __initdata = {
+ 	&sh7763rdp_nor_flash_device,
++	&sh7763rdp_eth_device,
+ };
+
+ static int __init sh7763rdp_devices_setup(void)
+@@ -69,7 +98,8 @@ static int __init sh7763rdp_devices_setup(void)
+ 	return platform_add_devices(sh7763rdp_devices,
+ 				    ARRAY_SIZE(sh7763rdp_devices));
+ }
+-__initcall(sh7763rdp_devices_setup);
++
++device_initcall(sh7763rdp_devices_setup);
+
+ static void __init sh7763rdp_setup(char **cmdline_p)
+ {
+-- 
+1.5.6.2
+
