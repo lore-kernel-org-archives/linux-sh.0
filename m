@@ -1,26 +1,66 @@
-From: Jeff Garzik <jeff@garzik.org>
-Date: Thu, 07 Aug 2008 06:23:37 +0000
-Subject: Re: [PATCH 1/2] sh_eth Add SH7619 support (driver)
-Message-Id: <489A94E9.5050606@garzik.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 11 Aug 2008 05:53:49 +0000
+Subject: [PATCH] input: migor_ts compile and detection fix
+Message-Id: <20080811055349.19913.70612.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878wvhtynu.wl%ysato@users.sourceforge.jp>	<29ab51dc0807312048hfa9cd88pb90d1a7520bb3f99@mail.gmail.com>	<871w18ycmr.wl%ysato@users.sourceforge.jp>	<20080802073021.GA30041@verge.net.au>	<87myjv77nm.wl%ysato@users.sourceforge.jp>	<20080803192335.GB4448@linux-sh.org>	<87tzdzmfno.wl%ysato@users.sourceforge.jp>	<29ab51dc0808060038g429bed14q4f41ef654def2a0@mail.gmail.com> <87k5etzour.wl%ysato@users.sourceforge.jp>
-In-Reply-To: <87k5etzour.wl%ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-input@vger.kernel.org
+Cc: lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, dmitry.torokhov@gmail.com, linux-sh@vger.kernel.org
 
-Yoshinori Sato wrote:
-> Add support SH7619 Internal ethernet controler.
-> 
->  arch/sh/include/asm/sh_eth.h |   11 +++++++
->  drivers/net/Kconfig          |    5 ++-
->  drivers/net/sh_eth.c         |   69 ++++++++++++++++++++++++++++++-----------
->  drivers/net/sh_eth.h         |   22 +++++++++++--
->  4 files changed, 82 insertions(+), 25 deletions(-)
->  create mode 100644 arch/sh/include/asm/sh_eth.h
+From: Magnus Damm <damm@igel.co.jp>
 
-applied
+The i2c layer got changed while the migor_ts driver was in the input
+tree waiting to get merged upstream. Fix current compile issue by using
+struct i2c_client member "name" instead of "driver_name". Also, add
+id_table to make sure the device gets properly detected.
 
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
+ Paul, can you pick up this one together with other SuperH fixes?
+
+ drivers/input/touchscreen/migor_ts.c |   11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- 0001/drivers/input/touchscreen/migor_ts.c
++++ work/drivers/input/touchscreen/migor_ts.c	2008-08-04 11:19:21.000000000 +0900
+@@ -173,7 +173,7 @@ static int migor_ts_probe(struct i2c_cli
+ 	input_set_abs_params(input, ABS_X, 95, 955, 0, 0);
+ 	input_set_abs_params(input, ABS_Y, 85, 935, 0, 0);
+ 
+-	input->name = client->driver_name;
++	input->name = client->name;
+ 	input->id.bustype = BUS_I2C;
+ 	input->dev.parent = &client->dev;
+ 
+@@ -192,7 +192,7 @@ static int migor_ts_probe(struct i2c_cli
+ 		goto err1;
+ 
+ 	error = request_irq(priv->irq, migor_ts_isr, IRQF_TRIGGER_LOW,
+-			    client->driver_name, priv);
++			    client->name, priv);
+ 	if (error) {
+ 		dev_err(&client->dev, "Unable to request touchscreen IRQ.\n");
+ 		goto err2;
+@@ -224,12 +224,19 @@ static int migor_ts_remove(struct i2c_cl
+ 	return 0;
+ }
+ 
++static const struct i2c_device_id migor_ts_id[] = {
++	{ "migor_ts", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, migor_ts);
++
+ static struct i2c_driver migor_ts_driver = {
+ 	.driver = {
+ 		.name = "migor_ts",
+ 	},
+ 	.probe = migor_ts_probe,
+ 	.remove = migor_ts_remove,
++	.id_table = migor_ts_id,
+ };
+ 
+ static int __init migor_ts_init(void)
