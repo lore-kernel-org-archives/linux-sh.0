@@ -1,74 +1,72 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Aug 2008 10:36:15 +0000
-Subject: [PATCH 3/3] binfmt_elf_fdpic: Wire up AT_EXECFD, AT_EXECFN, AT_SECURE.
-Message-Id: <20080806103615.GC5194@linux-sh.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Mon, 11 Aug 2008 21:18:55 +0000
+Subject: Re: [PATCH 3/3] binfmt_elf_fdpic: Wire up AT_EXECFD, AT_EXECFN,
+Message-Id: <20080811141855.a4ddf04d.akpm@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080806103458.GE2610@linux-sh.org>
-In-Reply-To: <20080806103458.GE2610@linux-sh.org>
+	<20080806103615.GC5194@linux-sh.org>
+In-Reply-To: <20080806103615.GC5194@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Howells <dhowells@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: dhowells@redhat.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-These auxvec entries are the only ones left unhandled out of the current
-base implementation. This syncs up binfmt_elf_fdpic with linux/auxvec.h
-and current binfmt_elf.
+On Wed, 6 Aug 2008 19:36:15 +0900
+Paul Mundt <lethal@linux-sh.org> wrote:
 
-Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: David Howells <dhowells@redhat.com>
+> These auxvec entries are the only ones left unhandled out of the current
+> base implementation. This syncs up binfmt_elf_fdpic with linux/auxvec.h
+> and current binfmt_elf.
 
----
+The patches ran afoul of the credentials changes in linux-next.
 
- fs/binfmt_elf_fdpic.c |   14 +++++++++++++-
- 1 files changed, 13 insertions(+), 1 deletions(-)
+#1 and #2 applied OK, but #3 tossed the below reject.  Please check
+that my (fairly obvious) fixups are OK.
 
-diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
-index bc64f5f..f0dd83c 100644
---- a/fs/binfmt_elf_fdpic.c
-+++ b/fs/binfmt_elf_fdpic.c
-@@ -25,6 +25,7 @@
- #include <linux/fcntl.h>
- #include <linux/slab.h>
- #include <linux/pagemap.h>
-+#include <linux/security.h>
- #include <linux/highmem.h>
- #include <linux/highuid.h>
- #include <linux/personality.h>
-@@ -562,11 +563,14 @@ static int create_elf_fdpic_tables(struct linux_binprm *bprm,
- 	}
- 
- 	/* force 16 byte _final_ alignment here for generality */
--#define DLINFO_ITEMS 13
-+#define DLINFO_ITEMS 15
- 
- 	nitems = 1 + DLINFO_ITEMS + (k_platform ? 1 : 0) + \
- 		(k_base_platform ? 1 : 0) + AT_VECTOR_SIZE_ARCH;
- 
-+	if (bprm->interp_flags & BINPRM_FLAGS_EXECFD)
-+		nitems++;
-+
- 	csp = sp;
- 	sp -= nitems * 2 * sizeof(unsigned long);
- 	sp -= (bprm->envc + 1) * sizeof(char *);	/* envv[] */
-@@ -604,6 +608,12 @@ static int create_elf_fdpic_tables(struct linux_binprm *bprm,
- 			    (elf_addr_t) (unsigned long) u_base_platform);
- 	}
- 
-+	if (bprm->interp_flags & BINPRM_FLAGS_EXECFD) {
-+		nr = 0;
-+		csp -= 2 * sizeof(unsigned long);
-+		NEW_AUX_ENT(AT_EXECFD, bprm->interp_data);
-+	}
-+
- 	nr = 0;
- 	csp -= DLINFO_ITEMS * 2 * sizeof(unsigned long);
- 	NEW_AUX_ENT(AT_HWCAP,	hwcap);
-@@ -619,6 +629,8 @@ static int create_elf_fdpic_tables(struct linux_binprm *bprm,
- 	NEW_AUX_ENT(AT_EUID,	(elf_addr_t) current->euid);
- 	NEW_AUX_ENT(AT_GID,	(elf_addr_t) current->gid);
- 	NEW_AUX_ENT(AT_EGID,	(elf_addr_t) current->egid);
-+	NEW_AUX_ENT(AT_SECURE,	security_bprm_secureexec(bprm));
-+	NEW_AUX_ENT(AT_EXECFN,	bprm->exec);
- 
- #ifdef ARCH_DLINFO
- 	nr = 0;
+***************
+*** 562,572 ****
+  	}
+  
+  	/* force 16 byte _final_ alignment here for generality */
+- #define DLINFO_ITEMS 13
+  
+  	nitems = 1 + DLINFO_ITEMS + (k_platform ? 1 : 0) + \
+  		(k_base_platform ? 1 : 0) + AT_VECTOR_SIZE_ARCH;
+  
+  	csp = sp;
+  	sp -= nitems * 2 * sizeof(unsigned long);
+  	sp -= (bprm->envc + 1) * sizeof(char *);	/* envv[] */
+--- 563,576 ----
+  	}
+  
+  	/* force 16 byte _final_ alignment here for generality */
++ #define DLINFO_ITEMS 15
+  
+  	nitems = 1 + DLINFO_ITEMS + (k_platform ? 1 : 0) + \
+  		(k_base_platform ? 1 : 0) + AT_VECTOR_SIZE_ARCH;
+  
++ 	if (bprm->interp_flags & BINPRM_FLAGS_EXECFD)
++ 		nitems++;
++ 
+  	csp = sp;
+  	sp -= nitems * 2 * sizeof(unsigned long);
+  	sp -= (bprm->envc + 1) * sizeof(char *);	/* envv[] */
+***************
+*** 618,623 ****
+  	NEW_AUX_ENT(AT_EUID,	(elf_addr_t) current->euid);
+  	NEW_AUX_ENT(AT_GID,	(elf_addr_t) current->gid);
+  	NEW_AUX_ENT(AT_EGID,	(elf_addr_t) current->egid);
+  
+  #ifdef ARCH_DLINFO
+  	nr = 0;
+--- 628,635 ----
+  	NEW_AUX_ENT(AT_EUID,	(elf_addr_t) current->euid);
+  	NEW_AUX_ENT(AT_GID,	(elf_addr_t) current->gid);
+  	NEW_AUX_ENT(AT_EGID,	(elf_addr_t) current->egid);
++ 	NEW_AUX_ENT(AT_SECURE,	security_bprm_secureexec(bprm));
++ 	NEW_AUX_ENT(AT_EXECFN,	bprm->exec);
+  
+  #ifdef ARCH_DLINFO
+  	nr = 0;
+
