@@ -1,99 +1,96 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 27 Aug 2008 14:45:27 +0000
-Subject: Re: [PATCH] smc91x support for edosk7760 (smc91c96 ethernet chip)
-Message-Id: <20080827144527.GB32530@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 11 Aug 2008 06:26:00 +0000
+Subject: [PATCH] video: export sh_mobile_lcdc panel size
+Message-Id: <20080811062600.19986.98178.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48B53015.9000203@spesonline.com>
-In-Reply-To: <48B53015.9000203@spesonline.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-In the future, please send patches inline, or at the very least, using a
-text/plain mime type. Whoever came up with text/x-diff was an idiot.
+From: Magnus Damm <damm@igel.co.jp>
 
-On Wed, Aug 27, 2008 at 12:44:37PM +0200, Luca Santini wrote:
+Export the LCD panel size for sh_mobile_lcdc boards. This allows us
+to perform dpi and screen aspect ratio calculations in user space.
 
-> --- a/drivers/net/smc91x.h	2008-07-13 23:51:29.000000000 +0200
-> +++ b/drivers/net/smc91x.h	2008-08-27 10:40:01.000000000 +0200
-> @@ -429,6 +429,36 @@
->  
->  #include <asm/unit/smc91111.h>
->  
-> +
-> +
-> +#elif defined(CONFIG_SH_EDOSK7760) //SPES
-> +
-> +/* SMC91C96 registers are 4 byte aligned rather than the
-> + * usual 2 byte!
-> + */
-> +#define SMC_IO_SHIFT 1 //SPES
-> +
-> +#define SMC_CAN_USE_8BIT	1
-> +#define SMC_CAN_USE_16BIT	1
-> +#define SMC_CAN_USE_32BIT	1
-> +#define SMC_NOWAIT		1
-> +
-> +#define SMC_inb(a, r)		readb((a) + (r))
-> +#define SMC_inw(a, r)		readw((a) + (r))
-> +#define SMC_inl(a, r)		readl((a) + (r))
-> +#define SMC_outb(v, a, r)	writeb(v, (a) + (r))
-> +#define SMC_outw(v, a, r)	writew(v, (a) + (r))
-> +#define SMC_outl(v, a, r)	writel(v, (a) + (r))
-> +#define SMC_insw(a, r, p, l)	readsw((a) + (r), p, l)
-> +#define SMC_outsw(a, r, p, l)	writesw((a) + (r), p, l)
-> +#define SMC_insl(a, r, p, l)	readsl((a) + (r), p, l)
-> +#define SMC_outsl(a, r, p, l)	writesl((a) + (r), p, l)
-> +
-> +#define RPC_LSA_DEFAULT		RPC_LED_100_10
-> +#define RPC_LSB_DEFAULT		RPC_LED_TX_RX
-> +
-> +#define SMC_DYNAMIC_BUS_CONFIG
-> +
->  #else
->  
-I think you've totally missed the point of the "dynamic" bus
-configuration. Please explain why you need to hardcode things here for
-your platform rather than using the platform data, as all new platforms
-should be doing. If there is something insufficient in the current
-dynamic bus configuration data, we should fix that, not add back in more
-of this hardcoded board support damage.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
->  /*
-> @@ -702,7 +732,6 @@
->  */
->  #define BANK_SELECT		(14 << SMC_IO_SHIFT)
->  
-> -
->  // Transmit Control Register
->  /* BANK 0  */
->  #define TCR_REG(lp) 	SMC_REG(lp, 0x0000, 0)
-> @@ -1252,9 +1281,9 @@
->  
->  #define SMC_PUT_PKT_HDR(lp, status, length)				\
->  	do {								\
-> -		if (SMC_32BIT(lp))					\
-> +		if (SMC_32BIT(lp)){					\
->  			SMC_outl((status) | (length)<<16, ioaddr,	\
-> -				 DATA_REG(lp));			\
-> +				 DATA_REG(lp));	}		\
->  		else {							\
->  			SMC_outw(status, ioaddr, DATA_REG(lp));	\
->  			SMC_outw(length, ioaddr, DATA_REG(lp));	\
-> @@ -1334,4 +1363,10 @@
->  			SMC_insb(ioaddr, DATA_REG(lp), p, l);		\
->  	} while (0)
->  
-> +
-> +
-> +
-> +
-> +
-> +
->  #endif  /* _SMC91X_H_ */
+ Paul, maybe this is material for the SuperH tree?
 
+ arch/sh/boards/board-ap325rxa.c      |    4 ++++
+ arch/sh/boards/mach-migor/setup.c    |    8 ++++++++
+ arch/sh/include/asm/sh_mobile_lcdc.h |    6 ++++++
+ drivers/video/sh_mobile_lcdcfb.c     |    2 ++
+ 4 files changed, 20 insertions(+)
 
-This part of the patch is nothing but whitespace damage. Please be more
-careful and make sure you are only patching useful things in the future,
-as this adds a lot of noise that has to be manually removed otherwise.
+--- 0001/arch/sh/boards/board-ap325rxa.c
++++ work/arch/sh/boards/board-ap325rxa.c	2008-08-11 11:36:22.000000000 +0900
+@@ -140,6 +140,10 @@ static struct sh_mobile_lcdc_info lcdc_i
+ 			.vsync_len = 1,
+ 			.sync = 0, /* hsync and vsync are active low */
+ 		},
++		.lcd_size_cfg = { /* 7.0 inch */
++			.width = 152,
++			.height = 91,
++		},
+ 		.board_cfg = {
+ 			.display_on = ap320_wvga_power_on,
+ 		},
+--- 0001/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2008-08-11 11:36:12.000000000 +0900
+@@ -224,6 +224,10 @@ static struct sh_mobile_lcdc_info sh_mob
+ 			.vsync_len = 2,
+ 			.sync = 0,
+ 		},
++		.lcd_size_cfg = { /* 7.0 inch */
++			.width = 152,
++			.height = 91,
++		},
+ 	}
+ #endif
+ #ifdef CONFIG_SH_MIGOR_QVGA
+@@ -245,6 +249,10 @@ static struct sh_mobile_lcdc_info sh_mob
+ 			.vsync_len = 2,
+ 			.sync = FB_SYNC_HOR_HIGH_ACT,
+ 		},
++		.lcd_size_cfg = { /* 2.4 inch */
++			.width = 49,
++			.height = 37,
++		},
+ 		.board_cfg = {
+ 			.setup_sys = migor_lcd_qvga_setup,
+ 		},
+--- 0001/arch/sh/include/asm/sh_mobile_lcdc.h
++++ work/arch/sh/include/asm/sh_mobile_lcdc.h	2008-08-11 11:28:30.000000000 +0900
+@@ -47,12 +47,18 @@ struct sh_mobile_lcdc_board_cfg {
+ 	void (*display_off)(void *board_data);
+ };
+ 
++struct sh_mobile_lcdc_lcd_size_cfg { /* width and height of panel in mm */
++	unsigned long width;
++	unsigned long height;
++};
++
+ struct sh_mobile_lcdc_chan_cfg {
+ 	int chan;
+ 	int bpp;
+ 	int interface_type; /* selects RGBn or SYSn I/F, see above */
+ 	int clock_divider;
+ 	struct fb_videomode lcd_cfg;
++	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
+ 	struct sh_mobile_lcdc_board_cfg board_cfg;
+ 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
+ };
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2008-08-11 11:28:30.000000000 +0900
+@@ -595,6 +595,8 @@ static int __init sh_mobile_lcdc_probe(s
+ 		info->fbops = &sh_mobile_lcdc_ops;
+ 		info->var.xres = info->var.xres_virtual = cfg->lcd_cfg.xres;
+ 		info->var.yres = info->var.yres_virtual = cfg->lcd_cfg.yres;
++		info->var.width = cfg->lcd_size_cfg.width;
++		info->var.height = cfg->lcd_size_cfg.height;
+ 		info->var.activate = FB_ACTIVATE_NOW;
+ 		error = sh_mobile_lcdc_set_bpp(&info->var, cfg->bpp);
+ 		if (error)
