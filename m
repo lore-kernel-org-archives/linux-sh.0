@@ -1,101 +1,68 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Fri, 08 Aug 2008 05:30:06 +0000
-Subject: [PATCH] sh: Add support sh7760fb to sh7763rdp board
-Message-Id: <489BD9DE.9080705@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 11 Aug 2008 06:13:24 +0000
+Subject: [PATCH] sh: select memchunk size using kernel cmdline
+Message-Id: <20080811061324.19955.97869.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add sh7760fb platform device to sh7763rdp's setup.
+From: Magnus Damm <damm@igel.co.jp>
+
+Allow user to pass parameters on kernel command line to override
+default size for physically contiguous memory buffers. The default
+VPU buffer size is too small for VGA harware encoding, but instead
+of just bumping up the number we allow the user to override the
+default size using the command line. Supports SuperH Mobile hardware
+blocks such as VEU, VPU and CEU.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/boards/mach-sh7763rdp/setup.c |   52 ++++++++++++++++++++++++++++++++-
- 1 files changed, 51 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/boards/mach-sh7763rdp/setup.c b/arch/sh/boards/mach-sh7763rdp/setup.c
-index 49940d1..23850da 100644
---- a/arch/sh/boards/mach-sh7763rdp/setup.c
-+++ b/arch/sh/boards/mach-sh7763rdp/setup.c
-@@ -15,9 +15,11 @@
- #include <linux/interrupt.h>
- #include <linux/input.h>
- #include <linux/mtd/physmap.h>
-+#include <linux/fb.h>
- #include <linux/io.h>
- #include <asm/sh7763rdp.h>
- #include <asm/sh_eth.h>
-+#include <asm/sh7760fb.h>
+ arch/sh/mm/consistent.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
- /* NOR Flash */
- static struct mtd_partition sh7763rdp_nor_flash_partitions[] = {
-@@ -88,9 +90,58 @@ static struct platform_device sh7763rdp_eth_device = {
- 	},
- };
-
-+/* SH7763 LCDC */
-+static struct resource sh7763rdp_fb_resources[] = {
-+	{
-+		.start  = 0xFFE80000,
-+		.end    = 0xFFE80442 - 1,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct fb_videomode sh7763fb_videomode = {
-+	.refresh = 60,
-+	.name = "VGA Monitor",
-+	.xres = 640,
-+	.yres = 480,
-+	.pixclock = 10000,
-+	.left_margin = 80,
-+	.right_margin = 24,
-+	.upper_margin = 30,
-+	.lower_margin = 1,
-+	.hsync_len = 96,
-+	.vsync_len = 1,
-+	.sync = 0,
-+	.vmode = FB_VMODE_NONINTERLACED,
-+	.flag = FBINFO_FLAG_DEFAULT,
-+};
-+
-+static struct sh7760fb_platdata sh7763fb_def_pdata = {
-+	.def_mode = &sh7763fb_videomode,
-+	.ldmtr = (LDMTR_TFT_COLOR_16|LDMTR_MCNT),
-+	.lddfr = LDDFR_16BPP_RGB565,
-+	.ldpmmr = 0x0000,
-+	.ldpspr = 0xFFFF,
-+	.ldaclnr = 0x0001,
-+	.ldickr = 0x1102,
-+	.rotate = 0,
-+	.novsync = 0,
-+	.blank = NULL,
-+};
-+
-+static struct platform_device sh7763rdp_fb_device = {
-+	.name		= "sh7760-lcdc",
-+	.resource	= sh7763rdp_fb_resources,
-+	.num_resources = ARRAY_SIZE(sh7763rdp_fb_resources),
-+	.dev = {
-+		.platform_data = &sh7763fb_def_pdata,
-+	},
-+};
-+
- static struct platform_device *sh7763rdp_devices[] __initdata = {
- 	&sh7763rdp_nor_flash_device,
- 	&sh7763rdp_eth_device,
-+	&sh7763rdp_fb_device,
- };
-
- static int __init sh7763rdp_devices_setup(void)
-@@ -98,7 +149,6 @@ static int __init sh7763rdp_devices_setup(void)
- 	return platform_add_devices(sh7763rdp_devices,
- 				    ARRAY_SIZE(sh7763rdp_devices));
+--- 0001/arch/sh/mm/consistent.c
++++ work/arch/sh/mm/consistent.c	2008-08-11 14:32:08.000000000 +0900
+@@ -95,6 +95,29 @@ void dma_cache_sync(struct device *dev, 
  }
--
- device_initcall(sh7763rdp_devices_setup);
-
- static void __init sh7763rdp_setup(char **cmdline_p)
--- 
-1.5.6.2
-
+ EXPORT_SYMBOL(dma_cache_sync);
+ 
++static int __init memchunk_setup(char *str)
++{
++	return 1; /* accept anything that begins with "memchunk." */
++}
++__setup("memchunk.", memchunk_setup);
++
++static void memchunk_cmdline_override(char *name, unsigned long *sizep)
++{
++	char *p = boot_command_line;
++	int k = strlen(name);
++
++	while ((p = strstr(p, "memchunk."))) {
++		p += 9; /* strlen("memchunk.") */
++		if (!strncmp(name, p, k) && p[k] = '=') {
++			p += k + 1;
++			*sizep = memparse(p, NULL);
++			pr_info("%s: forcing memory chunk size to 0x%08lx\n",
++				name, *sizep);
++			break;
++		}
++	}
++}
++
+ int platform_resource_setup_memory(struct platform_device *pdev,
+ 				   char *name, unsigned long memsize)
+ {
+@@ -109,6 +132,10 @@ int platform_resource_setup_memory(struc
+ 		return -EINVAL;
+ 	}
+ 
++	memchunk_cmdline_override(name, &memsize);
++	if (!memsize)
++		return 0;
++
+ 	buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
+ 	if (!buf) {
+ 		pr_warning("%s: unable to allocate memory\n", name);
