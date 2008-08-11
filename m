@@ -1,68 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 11 Aug 2008 06:13:24 +0000
-Subject: [PATCH] sh: select memchunk size using kernel cmdline
-Message-Id: <20080811061324.19955.97869.sendpatchset@rx1.opensource.se>
+From: Krzysztof Helt <krzysztof.h1@poczta.fm>
+Date: Mon, 11 Aug 2008 17:38:16 +0000
+Subject: Re: [Linux-fbdev-devel] [PATCH] video: export sh_mobile_lcdc panel
+Message-Id: <20080811193816.0a466418.krzysztof.h1@poczta.fm>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080811062600.19986.98178.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080811062600.19986.98178.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-fbdev-devel@lists.sourceforge.net, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Mon, 11 Aug 2008 15:26:00 +0900
+Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Allow user to pass parameters on kernel command line to override
-default size for physically contiguous memory buffers. The default
-VPU buffer size is too small for VGA harware encoding, but instead
-of just bumping up the number we allow the user to override the
-default size using the command line. Supports SuperH Mobile hardware
-blocks such as VEU, VPU and CEU.
+> From: Magnus Damm <damm@igel.co.jp>
+> 
+> Export the LCD panel size for sh_mobile_lcdc boards. This allows us
+> to perform dpi and screen aspect ratio calculations in user space.
+> 
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> ---
+> 
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Acked-by: Krzysztof Helt <krzysztof.h1@wp.pl>
 
- arch/sh/mm/consistent.c |   27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
 
---- 0001/arch/sh/mm/consistent.c
-+++ work/arch/sh/mm/consistent.c	2008-08-11 14:32:08.000000000 +0900
-@@ -95,6 +95,29 @@ void dma_cache_sync(struct device *dev, 
- }
- EXPORT_SYMBOL(dma_cache_sync);
- 
-+static int __init memchunk_setup(char *str)
-+{
-+	return 1; /* accept anything that begins with "memchunk." */
-+}
-+__setup("memchunk.", memchunk_setup);
-+
-+static void memchunk_cmdline_override(char *name, unsigned long *sizep)
-+{
-+	char *p = boot_command_line;
-+	int k = strlen(name);
-+
-+	while ((p = strstr(p, "memchunk."))) {
-+		p += 9; /* strlen("memchunk.") */
-+		if (!strncmp(name, p, k) && p[k] = '=') {
-+			p += k + 1;
-+			*sizep = memparse(p, NULL);
-+			pr_info("%s: forcing memory chunk size to 0x%08lx\n",
-+				name, *sizep);
-+			break;
-+		}
-+	}
-+}
-+
- int platform_resource_setup_memory(struct platform_device *pdev,
- 				   char *name, unsigned long memsize)
- {
-@@ -109,6 +132,10 @@ int platform_resource_setup_memory(struc
- 		return -EINVAL;
- 	}
- 
-+	memchunk_cmdline_override(name, &memsize);
-+	if (!memsize)
-+		return 0;
-+
- 	buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
- 	if (!buf) {
- 		pr_warning("%s: unable to allocate memory\n", name);
+----------------------------------------------------------------------
+Tylko dla detektywow! Konkurs na Smaker.pl
+Kliknij >>> http://link.interia.pl/f1eb1
+
