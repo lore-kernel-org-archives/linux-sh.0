@@ -1,81 +1,97 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Aug 2008 10:36:00 +0000
-Subject: [PATCH 2/3] binfmt_elf_fdpic: Convert initial stack alignment to arch_align_stack()
-Message-Id: <20080806103600.GB5194@linux-sh.org>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Tue, 12 Aug 2008 23:23:57 +0000
+Subject: [RFC] SCI(F) clock source select
+Message-Id: <87vdy5zuk2.wl%ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080806103458.GE2610@linux-sh.org>
-In-Reply-To: <20080806103458.GE2610@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Howells <dhowells@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-binfmt_elf_fdpic seems to have grabbed a hard-coded hack from an ancient
-version of binfmt_elf in order to try and fix up initial stack alignment
-on multi-threaded x86, which while in addition to being unused, was also
-pushed down beyond the first set of operations on the stack pointer,
-negating the entire purpose.
+SCI(F) clock source (Internal/External) selection is hard coding now.
+And depend on CPU type.
 
-These days, we have an architecture independent arch_align_stack(), so we
-switch to using that instead. Move the initial alignment up before the
-initial stores while we're at it.
+But I think it's setting depend on target.
 
-Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-Signed-off-by: David Howells <dhowells@redhat.com>
----
+I hope add clock selection in platform_data.
 
- fs/binfmt_elf_fdpic.c |   25 ++++++++-----------------
- 1 files changed, 8 insertions(+), 17 deletions(-)
+Any comments?
 
-
-diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
-index 7c83605..f9d6eaa 100644
---- a/fs/binfmt_elf_fdpic.c
-+++ b/fs/binfmt_elf_fdpic.c
-@@ -466,7 +466,8 @@ error_kill:
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 3df2aae..6c0ceff 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -82,6 +82,8 @@ struct sci_port {
+ 	/* Port clock */
+ 	struct clk		*clk;
  #endif
++	/* clock source */
++	int			clock_source;
+ };
  
+ #ifdef CONFIG_SH_KGDB
+@@ -1040,7 +1042,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			    struct ktermios *old)
+ {
+ 	struct sci_port *s = &sci_ports[port->line];
+-	unsigned int status, baud, smr_val;
++	unsigned int status, baud, smr_val, scscr_val;
+ 	int t;
+ 
+ 	baud = uart_get_baud_rate(port, termios, old, 0, port->uartclk/16);
+@@ -1099,7 +1101,16 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	if (likely(s->init_pins))
+ 		s->init_pins(port, termios->c_cflag);
+ 
+-	sci_out(port, SCSCR, SCSCR_INIT(port));
++	scscr_val = SCSCR_INIT(port);
++	switch (s->clock_source) {
++	case SCIx_CLOCK_INT:
++		scscr_val &= ~0x02;
++		break;
++	case SCIx_CLOCK_EXT:
++		scscr_val |= 0x02;
++		break;
++	}
++	sci_out(port, SCSCR, scscr_val);
+ 
+ 	if ((termios->c_cflag & CREAD) != 0)
+               sci_start_rx(port,0);
+@@ -1468,6 +1479,8 @@ static int __devinit sci_probe(struct platform_device *dev)
+ 
+ 		sciport->type		= sciport->port.type = p->type;
+ 
++		sciport->clock_source	= p->clock;
++
+ 		memcpy(&sciport->irqs, &p->irqs, sizeof(p->irqs));
+ 
+ 		uart_add_one_port(&sci_uart_driver, &sciport->port);
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 893cc53..8f08db1 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -16,6 +16,12 @@ enum {
+ 	SCIx_NR_IRQS,
+ };
+ 
++/* clock source type */
++enum {
++	SCIx_CLOCK_INT,
++	SCIx_CLOCK_EXT,
++};
++
  /*
-- * present useful information to the program
-+ * present useful information to the program by shovelling it onto the new
-+ * process's stack
+  * Platform device specific platform_data struct
   */
- static int create_elf_fdpic_tables(struct linux_binprm *bprm,
- 				   struct mm_struct *mm,
-@@ -482,9 +483,13 @@ static int create_elf_fdpic_tables(struct linux_binprm *bprm,
- 	int loop;
- 	int nr;	/* reset for each csp adjustment */
+@@ -25,6 +31,7 @@ struct plat_sci_port {
+ 	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
+ 	unsigned int	type;			/* SCI / SCIF / IRDA */
+ 	upf_t		flags;			/* UPF_* flags */
++	int		clock;			/* clock source */
+ };
  
--	/* we're going to shovel a whole load of stuff onto the stack */
- #ifdef CONFIG_MMU
--	sp = bprm->p;
-+	/* In some cases (e.g. Hyper-Threading), we want to avoid L1 evictions
-+	 * by the processes running on the same package. One thing we can do is
-+	 * to shuffle the initial stack for them, so we give the architecture
-+	 * an opportunity to do so here.
-+	 */
-+	sp = arch_align_stack(bprm->p);
- #else
- 	sp = mm->start_stack;
- 
-@@ -527,20 +532,6 @@ static int create_elf_fdpic_tables(struct linux_binprm *bprm,
- 			return -EFAULT;
- 	}
- 
--#if defined(__i386__) && defined(CONFIG_SMP)
--	/* in some cases (e.g. Hyper-Threading), we want to avoid L1 evictions
--	 * by the processes running on the same package. One thing we can do is
--	 * to shuffle the initial stack for them.
--	 *
--	 * the conditionals here are unneeded, but kept in to make the code
--	 * behaviour the same as pre change unless we have hyperthreaded
--	 * processors. This keeps Mr Marcelo Person happier but should be
--	 * removed for 2.5
--	 */
--	if (smp_num_siblings > 1)
--		sp = sp - ((current->pid % 64) << 7);
--#endif
--
- 	sp &= ~7UL;
- 
- 	/* stack the load map(s) */
+ int early_sci_setup(struct uart_port *port);
+
+-- 
+Yoshinori Sato
+<ysato@users.sourceforge.jp>
