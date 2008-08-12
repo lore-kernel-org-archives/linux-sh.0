@@ -1,40 +1,38 @@
-From: Alessandro Zummo <alessandro.zummo@towertech.it>
-Date: Wed, 06 Aug 2008 18:00:57 +0000
-Subject: Re: [PATCH 2/2] rtc: rtc-rs5c372: add support for Ricoh R2025S/D
-Message-Id: <20080806200057.6eeca72c@i1501.lan.towertech.it>
+From: Hideo Saito <saito@densan.co.jp>
+Date: Tue, 12 Aug 2008 01:04:34 +0000
+Subject: can't single-step on gdb
+Message-Id: <20080812.100434.68561126.saito@densan.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080806110008.GA5477@linux-sh.org>
-In-Reply-To: <20080806110008.GA5477@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, 6 Aug 2008 20:00:08 +0900
-Paul Mundt <lethal@linux-sh.org> wrote:
+Hi Paul,
 
-> This adds support for the Ricoh R2025S/D series of I2C RTCs, produced
-> by Ricoh Japan and described at:
-> 
-> 	http://www.ricoh.co.jp/LSI/product_rtc/2wire/r2025x/
-> 
-> This series has very minor deviations from the rest of the RS5C chips, most of
-> which have to do with the oscillator, which was abstracted away in an earlier
-> patch.
-> 
-> Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-> Acked-by: David Brownell <david-b@pacbell.net>
-> Tested-by: Riku Voipio <riku.voipio@movial.fi>
+I have a problem as to tracing a program using gdb on my platform(SH7780). I can single-step a program on gdb usually, however, in some conditions, I can not single-step the program because gdb does not change the PC without any failed assertions.
 
- Acked-by: Alessandro Zummo <a.zummo@towertech.it>
+It seems that do_syscall_trace() sets SIGTRAP in exit_code in the task structure before the traced program executes the instruction. I think that do_syscall_trace should ignore single-step because the schedule of the traced process might be delayed.
 
-
--- 
-
- Best regards,
-
- Alessandro Zummo,
-  Tower Technologies - Torino, Italy
-
-  http://www.towertech.it
-
+--- ./arch/sh/kernel/ptrace_32.c.org	2008-04-17 11:49:44.000000000 +0900
++++ ./arch/sh/kernel/ptrace_32.c	2008-08-12 08:53:44.000000000 +0900
+@@ -252,18 +252,17 @@ long arch_ptrace(struct task_struct *chi
+ asmlinkage void do_syscall_trace(struct pt_regs *regs, int entryexit)
+ {
+ 	struct task_struct *tsk = current;
+ 
+ 	if (unlikely(current->audit_context) && entryexit)
+ 		audit_syscall_exit(AUDITSC_RESULT(regs->regs[0]),
+ 				   regs->regs[0]);
+ 
+-	if (!test_thread_flag(TIF_SYSCALL_TRACE) &&
+-	    !test_thread_flag(TIF_SINGLESTEP))
++	if (!test_thread_flag(TIF_SYSCALL_TRACE))
+ 		goto out;
+ 	if (!(tsk->ptrace & PT_PTRACED))
+ 		goto out;
+ 
+ 	/* the 0x80 provides a way for the tracing parent to distinguish
+ 	   between a syscall stop and SIGTRAP delivery */
+ 	ptrace_notify(SIGTRAP | ((current->ptrace & PT_TRACESYSGOOD) &&
+ 				 !test_thread_flag(TIF_SINGLESTEP) ? 0x80 : 0));
