@@ -1,24 +1,47 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sun, 10 Aug 2008 15:31:46 +0000
-Subject: Re: [PATCH] i2c: Renesas Highlander FPGA SMBus support, v2.
-Message-Id: <20080810153146.GA29351@linux-sh.org>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Fri, 22 Aug 2008 15:20:36 +0000
+Subject: [2.6 patch] sh: fix ptrace_64.c:user_disable_single_step()
+Message-Id: <20080822152036.GB26762@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080731104354.GA21764@linux-sh.org> <20080810162931.3d9221af@hyperion.delvare> <20080810145053.GA9412@renesas.com> <20080810171342.14844957@hyperion.delvare>
-In-Reply-To: <20080810171342.14844957@hyperion.delvare>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jean Delvare <khali@linux-fr.org>
-Cc: Trent Piepho <xyzzy@speakeasy.org>, Andrew Morton <akpm@linux-foundation.org>, i2c@lm-sensors.org, linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sun, Aug 10, 2008 at 05:13:42PM +0200, Jean Delvare wrote:
-> On Sun, 10 Aug 2008 23:50:54 +0900, Paul Mundt wrote:
-> > Hopefully that's answered above. Let me know if you have any other
-> > concerns or suggestions.
-> 
-> OK. I've fixed the strlcpy size issue myself, together with a couple
-> checkpatch warnings. The resulting patch is there:
-> http://khali.linux-fr.org/devel/linux-2.6/jdelvare-i2c/i2c-renesas-highlander-fpga-smbus-support.patch
-> It is queued for 2.6.28.
-> 
-Looks good, thanks Jean.
+This patch fixes the following compile error caused by
+commit c459dbf294b4a3d70490a468a7ca3907fb2c2f57
+(sh: ptrace single stepping cleanups.):
+
+<--  snip  -->
+
+...
+  CC      arch/sh/kernel/ptrace_64.o
+arch/sh/kernel/ptrace_64.c: In function 'user_disable_single_step':
+arch/sh/kernel/ptrace_64.c:134: error: 'regs' undeclared (first use in this function)
+arch/sh/kernel/ptrace_64.c:134: error: (Each undeclared identifier is reported only once
+arch/sh/kernel/ptrace_64.c:134: error: for each function it appears in.)
+...
+make[2]: *** [arch/sh/kernel/ptrace_64.o] Error 1
+
+<--  snip  -->
+
+Reported-by: Adrian Bunk <bunk@kernel.org>
+Signed-off-by: Adrian Bunk <bunk@kernel.org>
+
+---
+956a62dc8d102633bdeb955f639d179b066703a5 
+diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
+index 5922edd..9c64248 100644
+--- a/arch/sh/kernel/ptrace_64.c
++++ b/arch/sh/kernel/ptrace_64.c
+@@ -131,6 +131,8 @@ void user_enable_single_step(struct task_struct *child)
+ 
+ void user_disable_single_step(struct task_struct *child)
+ {
++	struct pt_regs *regs = child->thread.uregs;
++
+ 	regs->sr &= ~SR_SSTEP;
+ }
+ 
+
