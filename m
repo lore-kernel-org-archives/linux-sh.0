@@ -1,55 +1,65 @@
-From: Adrian Bunk <bunk@kernel.org>
-Date: Wed, 06 Aug 2008 17:29:06 +0000
-Subject: Re: rsk7203_defconfig build error
-Message-Id: <20080806172906.GB11188@cs181140183.pp.htv.fi>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Mon, 25 Aug 2008 06:23:52 +0000
+Subject: [PATCH] sh: ap325rxa: create CPLD data area in mtd
+Message-Id: <48B24FF8.6060009@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080805154429.GD22895@cs181140183.pp.htv.fi> <87sktjw6sh.wl%ysato@users.sourceforge.jp>
-In-Reply-To: <87sktjw6sh.wl%ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Aug 05, 2008 at 04:22:54PM -0400, Yoshinori Sato wrote:
-> At Tue, 5 Aug 2008 18:44:29 +0300,
-> Adrian Bunk wrote:
-> > 
-> > Hi Paul,
-> > 
-> > rsk7203_defconfig fails to build with the following error:
-> > 
-> > <--  snip  -->
-> > 
-> > ...
-> >   LD      .tmp_vmlinux1
-> > arch/sh/kernel/built-in.o:(__ksymtab+0xb8): undefined reference to `__udivsi3_i4i'
-> > arch/sh/kernel/built-in.o:(__ksymtab+0xc8): undefined reference to `__sdivsi3_i4i'
-> > make[1]: *** [.tmp_vmlinux1] Error 1
-> > 
-> > <--  snip  -->
-> > 
-> > That worked with 2.6.26, and these are far less undefined references 
-> > than in the cases where libgcc was missing.
-> 
-> This functions is not defined sh2 and sh2a.
-> See gcc-4.3.1/gcc/config/sh/lib1funcs.asm
-> 
-> Sorry I forget report.
-> 
-> This patch not tested.
-> Please test and apply.
->...
+AP320 and AP325RXA has CPLD data in NOR Flash.
+If this area erased, this board can not boot.
+This patch create CPLD data area and set writeable mask bit.
 
-Thanks, that fixed the compilation for me.
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ arch/sh/boards/board-ap325rxa.c |   18 ++++++++++++++++--
+ 1 files changed, 16 insertions(+), 2 deletions(-)
 
-cu
-Adrian
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index fd16125..9e24455 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -52,6 +52,10 @@ static struct platform_device smc9118_device = {
+ 	},
+ };
 
++/*
++ * AP320 and AP325RXA has CPLD data in NOR Flash(0xA80000-0xABFFFF).
++ * If this area erased, this board can not boot.
++ */
+ static struct mtd_partition ap325rxa_nor_flash_partitions[] = {
+ 	{
+ 		 .name = "uboot",
+@@ -63,7 +67,17 @@ static struct mtd_partition ap325rxa_nor_flash_partitions[] = {
+ 		 .offset = MTDPART_OFS_APPEND,
+ 		 .size = (2 * 1024 * 1024),
+ 	}, {
+-		 .name = "other",
++		 .name = "free-area0",
++		 .offset = MTDPART_OFS_APPEND,
++		 .size = ((7 * 1024 * 1024) + (512 * 1024)),
++	}, {
++		 .name = "FPGA-Data",
++		 .offset = MTDPART_OFS_APPEND,
++		 .mask_flags = MTD_WRITEABLE,	/* Read-only */
++		 .size = (1024 * 128 * 2),
++		 .size = MTDPART_SIZ_FULL,
++	}, {
++		 .name = "free-area1",
+ 		 .offset = MTDPART_OFS_APPEND,
+ 		 .size = MTDPART_SIZ_FULL,
+ 	},
+@@ -292,7 +306,7 @@ static int __init ap325rxa_devices_setup(void)
+
+ 	i2c_register_board_info(0, ap325rxa_i2c_devices,
+ 				ARRAY_SIZE(ap325rxa_i2c_devices));
+-
++
+ 	return platform_add_devices(ap325rxa_devices,
+ 				ARRAY_SIZE(ap325rxa_devices));
+ }
 -- 
-
-       "Is there not promise of rain?" Ling Tan asked suddenly out
-        of the darkness. There had been need of rain for many days.
-       "Only a promise," Lao Er said.
-                                       Pearl S. Buck - Dragon Seed
+1.5.6.3
 
