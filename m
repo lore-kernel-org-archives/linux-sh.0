@@ -1,21 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 11 Aug 2008 15:16:48 +0000
-Subject: Re: [PATCH] sh: remove MSTPCR defines from Migo-R header file
-Message-Id: <20080811151648.GA5723@linux-sh.org>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Wed, 27 Aug 2008 11:16:46 +0000
+Subject: [PATCH] sh: fix semtimedop syscall
+Message-Id: <48B5379E.5050901@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080811055246.19910.85965.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080811055246.19910.85965.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 11, 2008 at 02:52:46PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> Remove MSTPCR register definitions from Migo-R header file. The clock
-> frame work should be used instead of direct register access. 
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+fix the problem that cannot work semtimedop system call.
 
-applied the series, thanks.
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+
+ I think that SPARC has the similar bug.
+ However I cannot confirm it, because I don't have SPARC system.
+
+ arch/sh/kernel/sys_sh.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/sys_sh.c b/arch/sh/kernel/sys_sh.c
+index 59cd285..9061b86 100644
+--- a/arch/sh/kernel/sys_sh.c
++++ b/arch/sh/kernel/sys_sh.c
+@@ -170,7 +170,7 @@ asmlinkage int sys_ipc(uint call, int first, int second,
+ 	version = call >> 16; /* hack for backward compatibility */
+ 	call &= 0xffff;
+
+-	if (call <= SEMCTL)
++	if (call <= SEMTIMEDOP)
+ 		switch (call) {
+ 		case SEMOP:
+ 			return sys_semtimedop(first,
+-- 
+1.5.5
+
