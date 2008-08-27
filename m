@@ -1,83 +1,94 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 04 Aug 2008 05:49:03 +0000
-Subject: Re: [RFT PATCH] SuperH HSPI controller driver.
-Message-Id: <20080804054903.GB11682@linux-sh.org>
+From: Luca Santini <luca.santini@spesonline.com>
+Date: Wed, 27 Aug 2008 10:44:37 +0000
+Subject: [PATCH] smc91x support for edosk7760 (smc91c96 ethernet chip)
+Message-Id: <48B53015.9000203@spesonline.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------090003000204040009010305"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080721090744.GA16714@roarinelk.homelinux.net>
-In-Reply-To: <20080721090744.GA16714@roarinelk.homelinux.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 04, 2008 at 08:57:02AM +0900, Paul Mundt wrote:
-> On Mon, Aug 04, 2008 at 08:52:47AM +0900, Paul Mundt wrote:
-> > On Mon, Jul 21, 2008 at 11:07:44AM +0200, Manuel Lauss wrote:
-> > > Here is a very simple driver for the HSPI block on many SuperH processors.
-> > > I could only subject it to limited testings, as my sole SPI device here is
-> > > a write-only 8bit digital poti.  It seems to do the right thing as far as
-> > > I could see on an oscilloscope.
-> > > 
-> > > The driver doesn't do DMA and pushes/pops bytes one-at-a-time from/to fifos
-> > > (I'm going to fix that at a later time).
-> > > 
-> > > Please test and comment!
-> > > 
-> > > Thanks,
-> > > 	Manuel Lauss
-> > > 
-> > > ---
-> > > 
-> > > A simple driver for the HSPI block found on many SuperH processors.
-> > > 
-> > > Signed-off-by: Manuel Lauss <mano@roarinelk.homelinux.net>
-> > 
-> > I have no outstanding issues with this, though I did just break it with
-> > the header reorg. If David is fine with it and wants to Ack it, I can
-> > take it through my tree.
-> 
-> Taking a quick look at it again, I think you should be able to reuse
-> arch/sh/include/asm/spi.h as-is, and just drop the header you have now.
+This is a multi-part message in MIME format.
+--------------090003000204040009010305
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-This should do it. You could also use priv->pd->bus_num directly instead
-of referencing pdev->id, but I suppose it doesn't really matter.
 
----
+--------------090003000204040009010305
+Content-Type: text/x-diff;
+ name="smc91x.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="smc91x.patch"
 
---- a/drivers/spi/spi_hspi.c	2008-08-04 14:46:01.000000000 +0900
-+++ b/drivers/spi/spi_hspi.c	2008-08-04 14:45:51.000000000 +0900
-@@ -22,7 +22,7 @@
- #include <linux/spi/spi_bitbang.h>
+--- a/drivers/net/smc91x.h	2008-07-13 23:51:29.000000000 +0200
++++ b/drivers/net/smc91x.h	2008-08-27 10:40:01.000000000 +0200
+@@ -429,6 +429,36 @@
  
- #include <asm/clock.h>
--#include <asm/spi_hspi.h>
-+#include <asm/spi.h>
+ #include <asm/unit/smc91111.h>
  
- #define SPCR	0x00			/* control */
- #define SPSR	0x04			/* status */
-@@ -89,13 +89,13 @@
- 	struct device *dev;
- 	struct resource *ioarea;
- 	struct spi_master *master;
--	struct hspi_platdata *pd;
-+	struct sh_spi_info *pd;
- };
++
++
++#elif defined(CONFIG_SH_EDOSK7760) //SPES
++
++/* SMC91C96 registers are 4 byte aligned rather than the
++ * usual 2 byte!
++ */
++#define SMC_IO_SHIFT 1 //SPES
++
++#define SMC_CAN_USE_8BIT	1
++#define SMC_CAN_USE_16BIT	1
++#define SMC_CAN_USE_32BIT	1
++#define SMC_NOWAIT		1
++
++#define SMC_inb(a, r)		readb((a) + (r))
++#define SMC_inw(a, r)		readw((a) + (r))
++#define SMC_inl(a, r)		readl((a) + (r))
++#define SMC_outb(v, a, r)	writeb(v, (a) + (r))
++#define SMC_outw(v, a, r)	writew(v, (a) + (r))
++#define SMC_outl(v, a, r)	writel(v, (a) + (r))
++#define SMC_insw(a, r, p, l)	readsw((a) + (r), p, l)
++#define SMC_outsw(a, r, p, l)	writesw((a) + (r), p, l)
++#define SMC_insl(a, r, p, l)	readsl((a) + (r), p, l)
++#define SMC_outsl(a, r, p, l)	writesl((a) + (r), p, l)
++
++#define RPC_LSA_DEFAULT		RPC_LED_100_10
++#define RPC_LSB_DEFAULT		RPC_LED_TX_RX
++
++#define SMC_DYNAMIC_BUS_CONFIG
++
+ #else
  
- static inline void hspi_platcs(struct hspi_priv *priv, int cs, int pol)
- {
--	if (priv->pd && priv->pd->set_cs)
--		priv->pd->set_cs(priv->pd, cs, pol);
-+	if (priv->pd && priv->pd->chip_select)
-+		priv->pd->chip_select(priv->pd, cs, pol);
- }
+ /*
+@@ -702,7 +732,6 @@
+ */
+ #define BANK_SELECT		(14 << SMC_IO_SHIFT)
  
- static inline struct hspi_priv *to_priv(struct spi_device *sdev)
-@@ -353,7 +353,7 @@
- 		goto out3;
- 	}
+-
+ // Transmit Control Register
+ /* BANK 0  */
+ #define TCR_REG(lp) 	SMC_REG(lp, 0x0000, 0)
+@@ -1252,9 +1281,9 @@
  
--	master->num_chipselect = priv->pd ? priv->pd->num_cs : 1;
-+	master->num_chipselect = priv->pd ? priv->pd->num_chipselect : 1;
- 	master->bus_num = pdev->id;
- 	master->setup = hspi_setup;
+ #define SMC_PUT_PKT_HDR(lp, status, length)				\
+ 	do {								\
+-		if (SMC_32BIT(lp))					\
++		if (SMC_32BIT(lp)){					\
+ 			SMC_outl((status) | (length)<<16, ioaddr,	\
+-				 DATA_REG(lp));			\
++				 DATA_REG(lp));	}		\
+ 		else {							\
+ 			SMC_outw(status, ioaddr, DATA_REG(lp));	\
+ 			SMC_outw(length, ioaddr, DATA_REG(lp));	\
+@@ -1334,4 +1363,10 @@
+ 			SMC_insb(ioaddr, DATA_REG(lp), p, l);		\
+ 	} while (0)
  
++
++
++
++
++
++
+ #endif  /* _SMC91X_H_ */
+
+--------------090003000204040009010305--
