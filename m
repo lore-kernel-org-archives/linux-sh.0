@@ -1,44 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Aug 2008 09:15:43 +0000
-Subject: [PATCH] sh: crash kernel resource fix
-Message-Id: <20080827091543.9100.82819.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 28 Aug 2008 06:41:29 +0000
+Subject: Re: [PATCH] sh: crash kernel resource fix
+Message-Id: <20080828064128.GA21623@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080827091543.9100.82819.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080827091543.9100.82819.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Wed, Aug 27, 2008 at 06:15:43PM +0900, Magnus Damm wrote:
+> The reserved crash kernel memory range is currently missing from
+> /proc/iomem. crashk_res is mistakenly setup after __add_active_range().
+> Reorder things to make sure the resource shows up in /proc/iomem.
 
-The reserved crash kernel memory range is currently missing from
-/proc/iomem. crashk_res is mistakenly setup after __add_active_range().
-Reorder things to make sure the resource shows up in /proc/iomem.
+On Wed, Aug 27, 2008 at 06:19:01PM +0900, Magnus Damm wrote:
+> The crash kernel entry point is currently checked by the kexec kernel
+> code and only physical addresses in the reserved memory window are
+> accepted. This means that we can't pass P2 or P1 addresses as entry
+> points in the case of crash kernels. This patch makes sure we can start
+> crash kernels by adding support for physical address entry points.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Wed, Aug 27, 2008 at 06:21:29PM +0900, Magnus Damm wrote:
+> This patch kills a section mismatch for platform_resource_setup_memory().
 
- arch/sh/kernel/setup.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+On Wed, Aug 27, 2008 at 06:22:49PM +0900, Magnus Damm wrote:
+> This patch updates the MigoR defconfig to include the recently merged
+> uio_pdrv_genirq driver.
 
---- 0001/arch/sh/kernel/setup.c
-+++ work/arch/sh/kernel/setup.c	2008-08-25 12:20:04.000000000 +0900
-@@ -171,6 +171,7 @@ static void __init reserve_crashkernel(v
- 				(unsigned long)(free_mem >> 20));
- 		crashk_res.start = crash_base;
- 		crashk_res.end   = crash_base + crash_size - 1;
-+		insert_resource(&iomem_resource, &crashk_res);
- 	}
- }
- #else
-@@ -204,11 +205,6 @@ void __init __add_active_range(unsigned 
- 	request_resource(res, &data_resource);
- 	request_resource(res, &bss_resource);
- 
--#ifdef CONFIG_KEXEC
--	if (crashk_res.start != crashk_res.end)
--		request_resource(res, &crashk_res);
--#endif
--
- 	add_active_range(nid, start_pfn, end_pfn);
- }
- 
+On Wed, Aug 27, 2008 at 06:23:52PM +0900, Magnus Damm wrote:
+> This patch updates the AP325RXA defconfig to include the recently merged
+> uio_pdrv_genirq driver.
+
+Applied, thanks.
