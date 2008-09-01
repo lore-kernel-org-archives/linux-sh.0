@@ -1,56 +1,43 @@
 From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Sat, 27 Sep 2008 17:12:29 +0000
-Subject: Re: SH7722 serial scif
-Message-Id: <aec7e5c30809271012s749ce1a0hc110fe2a9d5fc6e7@mail.gmail.com>
+Date: Mon, 01 Sep 2008 01:24:16 +0000
+Subject: Re: [PATCH] support for edosk7760 board
+Message-Id: <aec7e5c30808311824y5936eaaet8a5ff770dcb813d@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878566.91579.qm@web26201.mail.ukl.yahoo.com>
-In-Reply-To: <878566.91579.qm@web26201.mail.ukl.yahoo.com>
+References: <48B52DC8.1020208@spesonline.com>
+In-Reply-To: <48B52DC8.1020208@spesonline.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Sep 25, 2008 at 6:17 PM, Michael Trimarchi
-<trimarchimichael@yahoo.it> wrote:
->> Ok, that's interesting. There are a couple things to consider here:
->>
->>     - startup/shutdown both set and clear the RX and TX IRQ enable
->>       bits
->>     - the base SCSCR initialization is maintained across the lifetime
->>       of the port, and is directly manipulated by the termios value.
->>
->> We need the initialization in the set_termios path for things like the
->> system console, which can be suspended/resumed, as well as handling
->> rate changes directly (not related to the frequency notifier).
->>
->> Given that, moving this out to the startup/shutdown path is definitely
->> not what we want to do, but we do need to figure out what your SCSCR
->> register state is at the time of startup and shutdown. There are a couple
->> of possibilities:
->>
->>     - IRQ not properly acked and cleared at shutdown time, despite
->>       the TX/RX bits being cleared.
->>     - Some bit setting in the SCSCR_INIT definition for your platform
->>       that we need to be more careful in handling.
->>
->> If we look at the setting for 7722, it's the usual mix of TE/RE/REIE and
->> nothing particularly exotic, so we can probably just swallow these up in
->> the sci_start_tx/rx()/sci_stop_tx/rx() pairs, and that should
->> subsequently get your SCSCR value pretty much back to 0 at shutdown time.
+On Fri, Aug 29, 2008 at 5:35 PM, Luca Santini
+<luca.santini@spesonline.com> wrote:
+> For some reason,
+> i have trouble in switching from .26 to .27-rc4;
 >
-> After revert my code, and take a look to the SCSCR register before
-> open and shutdown, this is the result.
+> it seems i have problems in irq masking (for the smc eth chip);
+> now kernel/irq/manage.c outputs
 >
-> I found a SCSCR equal to 0x38 after and before, so the bit are not cleared but if I do an sci_out of 0
-> to the register, all seems to be ok.
+> [    1.462932] No set_type function for IRQ 9 (SR.IMASK)
 >
-> It is very strange, it seems the SCSCR status does't change
-> after the sci_stop_tx e sci_stop_rx
+> and after initialization, when nfs boot starts
+> ([    3.105886] Looking up port of RPC 100003/2 on 10.193.101.100)
+> i get a seems-infinite loop of
 >
+> [    3.115338] irq 9, desc: 8c238aec, depth: 0, count: 0, unhandled: 0
+> [    3.117228] ->handle_irq():  8c0361d8, handle_bad_irq+0x0/0x1ac
+> [    3.123100] ->chip(): 8c236318, imask_irq_type+0x0/0x40
+> [    3.128284] ->action(): 8f9307e0
+> [    3.131482] ->action->handler(): 8c10dc98, smc_interrupt+0x0/0xbe4
+> [    3.137620] unexpected IRQ trap at vector 09
 >
-> Any idea?
+> something has changed in .27 in irq management?
 
-This may be far off, but is the MSTPCR clock stop bit setup properly
-for your particular SCIF channel?
+I don't think so. Are you sure about the value 9 for IRQ?
+
+Since there is no external interrupt controller code I assume the SMC
+chip is connected directly to the processor. I would guess using pin
+IRQ4, IRQ5, IRQ6 or IRQ7. Try using interrupt numbers from 48 (IRQ4)
+to 51 (IRQ7) and see if that helps!
 
 / magnus
