@@ -1,77 +1,44 @@
-From: Takashi Iwai <tiwai@suse.de>
-Date: Fri, 26 Sep 2008 12:38:04 +0000
-Subject: Re: [alsa-devel] Audio buffer mmap-ing on sh arch vs.	cache	aliasing	problem
-Message-Id: <s5hvdwjaxqr.wl%tiwai@suse.de>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 05 Sep 2008 05:36:43 +0000
+Subject: Re: [PATCH] i2c: fix i2c-sh_mobile timing issues
+Message-Id: <20080905053643.GA2051@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1220527434.3299.2074.camel@bri1004.bri.st.com>
-	<s5h63owgdk1.wl%tiwai@suse.de>
-	<1222354553.28498.30.camel@bri1004.bri.st.com>
-	<s5hbpybcjfc.wl%tiwai@suse.de>
-	<20080926103045.GA18874@linux-sh.org>
-	<1222428317.28498.74.camel@bri1004.bri.st.com>
-In-Reply-To: <1222428317.28498.74.camel@bri1004.bri.st.com>
+References: <20080827093356.9145.33751.sendpatchset@rx1.opensource.se> <20080827144048.GA32530@linux-sh.org> <20080827174628.3b452f2d@hyperion.delvare>
+In-Reply-To: <20080827174628.3b452f2d@hyperion.delvare>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Pawel MOLL <pawel.moll@st.com>
-Cc: alsa-devel@alsa-project.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: Jean Delvare <khali@linux-fr.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, i2c@lm-sensors.org, linux-sh@vger.kernel.org, ben-linux@fluff.org
 
-At Fri, 26 Sep 2008 12:25:17 +0100,
-Pawel MOLL wrote:
+On Wed, Aug 27, 2008 at 05:46:28PM +0200, Jean Delvare wrote:
+> On Wed, 27 Aug 2008 23:40:48 +0900, Paul Mundt wrote:
+> > On Wed, Aug 27, 2008 at 06:33:56PM +0900, Magnus Damm wrote:
+> > > From: Magnus Damm <damm@igel.co.jp>
+> > > 
+> > > This patch teaches the i2c-sh_mobile driver to make use of wait irqs.
+> > > Without this patch only dte irqs are used which may lead to overruns
+> > > and cases of missing stop and extra bytes being read on the i2c bus.
+> > > 
+> > > Use of wait irqs forces the hardware to pause and wait until the cpu
+> > > is ready. Polling is also reworked in this patch to fix ms delay issues.
+> > > 
+> > > Verified with bus analyzer and tested on MigoR and AP325RXA boards.
+> > > 
+> > > Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> > > ---
+> > > 
+> > >  Paul, can you merge this for 2.6.27?
+> > > 
+> > >  drivers/i2c/busses/i2c-sh_mobile.c |  271 +++++++++++++++++++++++++++---------
+> > >  1 file changed, 208 insertions(+), 63 deletions(-)
+> > > 
+> > I'll add it to my queue if Jean and Ben don't have any issues with the
+> > patch. If the polling works as is, I would suggest that it is not 2.6.27
+> > material, but if it's fixing operational bugs then it doesn't make sense
+> > to leave 2.6.27 in a known broken state.
 > 
-> > > IIRC, a similar buffer handling (via vmalloc) is used in video
-> > > drivers.  I suppose they don't work as well, right?
+> No objection from me, as this is outside of my jurisdiction.
 > 
-> Well, our FB driver is aware of the problem. I can't say much about
-> other ones...
-
-FB driver has some generic API for that, defined in asm/fb.h.
-
-> > > DRM driver uses __vmalloc() with PAGE_KERNEL_NOCACHE, but it's only
-> > > for PPC32 non-coherent.
-> 
-> Hm. PPC with non-coherent cache?
-> 
-> /*
->  * Only on coherent architectures, we can mmap the status and the control records
->  * for effcient data transfer.  On others, we have to use HWSYNC ioctl...
->  */
-> #if defined(CONFIG_X86) || defined(CONFIG_PPC) || defined(CONFIG_ALPHA)
->                                    ^^^^^^^^^^
-> /*
->  * mmap status record
->  */
-> static struct page * snd_pcm_mmap_status_nopage(struct vm_area_struct *area,
->                                                 unsigned long address, int *type)
-
-Yeah, it's a known problem, and I already have patches.
-But, it's still under discussion how to solve it better.
-I'm going to post the theme to linux-arch, which James Bottomley and
-others suggested in the previous discussions.
-
-> > x86 does it also, via its PAGE_AGP definition.
-> > 
-> > There are not that many platforms that define PAGE_KERNEL_NOCACHE though,
-> > so this gets a bit messy..
-> 
-> Oh, bloody hell, I haven't realised that!
-> 
-> > Yeah, that's not sexy, but maybe the only working case right now
-> > > (better with arch-specific ifdefs).
-> 
-> The question is what ifdefs to use ;-) Because the cached/uncached
-> decision must be consistent between snd_pcm_default_mmap() and buffer
-> allocation...
-
-Right.  Both must have matching ifdefs.  The vmalloc buffer handling
-can be in sound/core common part, so that it won't be scattered in
-different sub directories.
-
-Or, let's define a common generic API (oh let me dream on)
-
-> What a mess! ;-)
-
-Indeed ;)
-
-
-Takashi
+Well, it's been a week and there's been no comments, so I'll roll this in
+to my queue.
