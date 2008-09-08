@@ -1,37 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 08 Sep 2008 05:02:34 +0000
-Subject: [PATCH] smc91x: SMC_IO_SHIFT platform data support for default case
-Message-Id: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 08 Sep 2008 11:19:27 +0000
+Subject: Re: [PATCH] smc91x: SMC_IO_SHIFT platform data support for default
+Message-Id: <20080908111922.GA15553@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: eric.miao@marvell.com, Magnus Damm <magnus.damm@gmail.com>, luca.santini@spesonline.com, nico@cam.org, linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: netdev@vger.kernel.org, eric.miao@marvell.com, luca.santini@spesonline.com, nico@cam.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Mon, Sep 08, 2008 at 02:02:34PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@igel.co.jp>
+> 
+> Commit 159198862adad7109bb347bb30a620f67beac45f added SMC_IO_SHIFT
+> platform data support. After that ARM board support was added.
+> 
+> The default case is still missing though, so on SuperH SMC_IO_SHIFT
+> is constantly zero regardless of what you pass as platform data.
 
-Commit 159198862adad7109bb347bb30a620f67beac45f added SMC_IO_SHIFT
-platform data support. After that ARM board support was added.
+Hi Magnus,
 
-The default case is still missing though, so on SuperH SMC_IO_SHIFT
-is constantly zero regardless of what you pass as platform data.
+I beleive that its now common practice to include the subject
+of a commit along with its id, as the latter can change as
+it moves from tree to tree.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
-Test-by: Luca Santini <luca.santini@spesonline.com>
----
-
- drivers/net/smc91x.h |    2 ++
- 1 file changed, 2 insertions(+)
-
---- 0001/drivers/net/smc91x.h
-+++ work/drivers/net/smc91x.h	2008-08-28 20:43:03.000000000 +0900
-@@ -446,6 +446,8 @@ static inline void LPD7_SMC_outsw (unsig
- #define SMC_CAN_USE_32BIT	1
- #define SMC_NOWAIT		1
- 
-+#define SMC_IO_SHIFT		(lp->io_shift)
-+
- #define SMC_inb(a, r)		readb((a) + (r))
- #define SMC_inw(a, r)		readw((a) + (r))
- #define SMC_inl(a, r)		readl((a) + (r))
