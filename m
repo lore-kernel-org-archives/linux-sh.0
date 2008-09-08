@@ -1,36 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 29 Sep 2008 11:50:32 +0000
-Subject: Re: [PATCH v2] mtd: sh_flctl: add support for Renesas SuperH FLCTL
-Message-Id: <20080929115032.GC24836@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Sep 2008 05:02:34 +0000
+Subject: [PATCH] smc91x: SMC_IO_SHIFT platform data support for default case
+Message-Id: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48D348FC.3060301@renesas.com> <20080921010713.GA2522@linux-sh.org>
-In-Reply-To: <20080921010713.GA2522@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>, dwmw2@infradead.org, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: eric.miao@marvell.com, Magnus Damm <magnus.damm@gmail.com>, luca.santini@spesonline.com, nico@cam.org, linux-sh@vger.kernel.org
 
-On Sun, Sep 21, 2008 at 10:07:13AM +0900, Paul Mundt wrote:
-> On Fri, Sep 19, 2008 at 03:38:52PM +0900, Yoshihiro Shimoda wrote:
-> > Several Renesas SuperH CPU has FLCTL. The FLCTL support NAND Flash.
-> > This driver support SH7723.
-> > 
-> > Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-> > Acked-by: Paul Mundt <lethal@linux-sh.org>
-> > ---
-> > 
-> > PATCH v2:
-> >  - fix size of ioremap().
-> > 
-> >  drivers/mtd/nand/Kconfig     |    7 +
-> >  drivers/mtd/nand/Makefile    |    1 +
-> >  drivers/mtd/nand/sh_flctl.c  |  878 ++++++++++++++++++++++++++++++++++++++++++
-> >  include/linux/mtd/sh_flctl.h |  125 ++++++
-> >  4 files changed, 1011 insertions(+), 0 deletions(-)
-> >  create mode 100644 drivers/mtd/nand/sh_flctl.c
-> >  create mode 100644 include/linux/mtd/sh_flctl.h
-> > 
-> I'll merge the platform bits once this is applied. Optionally I can roll
-> this in to my tree if dwmw2 acks it.
+From: Magnus Damm <damm@igel.co.jp>
 
-David?
+Commit 159198862adad7109bb347bb30a620f67beac45f added SMC_IO_SHIFT
+platform data support. After that ARM board support was added.
+
+The default case is still missing though, so on SuperH SMC_IO_SHIFT
+is constantly zero regardless of what you pass as platform data.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Test-by: Luca Santini <luca.santini@spesonline.com>
+---
+
+ drivers/net/smc91x.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- 0001/drivers/net/smc91x.h
++++ work/drivers/net/smc91x.h	2008-08-28 20:43:03.000000000 +0900
+@@ -446,6 +446,8 @@ static inline void LPD7_SMC_outsw (unsig
+ #define SMC_CAN_USE_32BIT	1
+ #define SMC_NOWAIT		1
+ 
++#define SMC_IO_SHIFT		(lp->io_shift)
++
+ #define SMC_inb(a, r)		readb((a) + (r))
+ #define SMC_inw(a, r)		readw((a) + (r))
+ #define SMC_inl(a, r)		readl((a) + (r))
