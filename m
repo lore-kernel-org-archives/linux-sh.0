@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 08 Sep 2008 02:52:14 +0000
+From: Manuel Lauss <mano@roarinelk.homelinux.net>
+Date: Mon, 08 Sep 2008 05:41:26 +0000
 Subject: Re: [PATCH] support for edosk7760 board
-Message-Id: <20080908025214.GA13992@linux-sh.org>
+Message-Id: <20080908054126.GA12585@roarinelk.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <48B52DC8.1020208@spesonline.com>
 In-Reply-To: <48B52DC8.1020208@spesonline.com>
@@ -37,5 +37,7 @@ On Mon, Sep 08, 2008 at 11:30:11AM +0900, Paul Mundt wrote:
 > No worries, I'll split out 2 and 3 manually, it's not that big of a deal.
 > The SH7760 bits look fine to me anyways. Manuel?
 
-Luca, please also send an edosk7760_defconfig so that we are able to tie
-this in to the daily builds.
+No runtime problems here;  the change is required for non-IRL mode to work.
+
+Best regards,
+	Manuel Lauss
