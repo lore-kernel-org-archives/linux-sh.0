@@ -1,96 +1,122 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Mon, 29 Sep 2008 03:34:04 +0000
-Subject: Re: [PATCH 01/05] sh: Add GPIO and pinmux base code
-Message-Id: <aec7e5c30809282034gf45920ewa9dbff659eef54f1@mail.gmail.com>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 09 Sep 2008 08:17:42 +0000
+Subject: [PATCH] sh: add support FLCTL for ap325rxa board
+Message-Id: <48C63126.5060008@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080927181016.11246.72087.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080927181016.11246.72087.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Sep 28, 2008 at 3:39 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Sun, Sep 28, 2008 at 03:10:16AM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@igel.co.jp>
->>
->> This patch adds the pinmux table parser and gpiolib glue.
->> The old SH3 header code is removed.
->>
->> Signed-off-by: Magnus Damm <damm@igel.co.jp>
->
-> For starters, I don't know why you decided to kill off the SH-3 gpio
-> header. It's still in active use by the magicpanelr2 board. Once 7720 and
-> mpr2 are converted over, then we can kill off the header, but not before
-> that. Although I suppose we can just fix up the board header to use
-> cpu-sh3/cpu/gpio.h explicitly.
+This patch adds platform_device for sh_flctl driver, NAND Flash
+simple partition, and GPIO setting.
 
-I suspected the SH3 register definitions would be in use somewhere,
-but I couldn't find any references to that header file. Now I do. =) I
-must have forgot searching the asm include directory.
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
 
-I'll fix that up.
+ This patch depends on the sh_flctl MTD driver patch.
+ http://marc.info/?l=linux-sh&m2094731021820&w=2
 
->> --- 0001/arch/sh/include/asm/gpio.h
->> +++ work/arch/sh/include/asm/gpio.h   2008-09-28 02:03:40.000000000 +0900
->> @@ -1,19 +1,119 @@
->>  /*
->> - *  include/asm-sh/gpio.h
->> + * Generic GPIO API using gpiolib and pinmux table support for SuperH.
->>   *
->> - *  Copyright (C) 2007 Markus Brunner, Mark Jonas
->> + * Copyright (c) 2008 Magnus Damm
->>   *
->> - *  Addresses for the Pin Function Controller
->> + * Generic GPIO derived from x86 version:
->> + * Copyright (c) 2007-2008  MontaVista Software, Inc.
->> + * Author: Anton Vorontsov <avorontsov@ru.mvista.com>
->>   *
->> - * This file is subject to the terms and conditions of the GNU General Public
->> - * License.  See the file "COPYING" in the main directory of this archive
->> - * for more details.
->> + * This program is free software; you can redistribute it and/or modify
->> + * it under the terms of the GNU General Public License as published by
->> + * the Free Software Foundation; either version 2 of the License, or
->> + * (at your option) any later version.
->>   */
->>  #ifndef __ASM_SH_GPIO_H
->>  #define __ASM_SH_GPIO_H
->>
-> I wouldn't bother with the header comments at all, there's nothing
-> profound here and it's almost all pinmux stuff anyways.
+ arch/sh/boards/board-ap325rxa.c |   52 +++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 52 insertions(+), 0 deletions(-)
 
-Yeah.
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index fd16125..4ba3001 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -15,6 +15,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/mtd/sh_flctl.h>
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
+ #include <linux/smc911x.h>
+@@ -93,6 +94,38 @@ static struct platform_device ap325rxa_nor_flash_device = {
+ 	},
+ };
 
->> +static int read_write_reg(unsigned long reg, unsigned long reg_width,
->> +                       unsigned long field_width, unsigned long in_pos,
->> +                       unsigned long value, int do_write)
->> +{
->> +     unsigned long flags, data, mask, pos;
->> +
->> +     flags = 0; /* kill silly warning */
->> +     data = 0;
->> +     mask = (1 << field_width) - 1;
->> +     pos = reg_width - ((in_pos + 1) * field_width);
->> +
->> +#ifdef DEBUG
->> +     pr_info("sh pinmux: %s, addr = %lx, value = %ld, pos = %ld, "
->> +             "r_width = %ld, f_width = %ld\n",
->> +             do_write ? "write" : "read", reg, value, pos,
->> +             reg_width, field_width);
->> +#endif
->> +
->> +     if (do_write)
->> +             spin_lock_irqsave(&gpio_register_lock, flags);
->> +
-> The locking here is a bit non-obvious, and should be commented. I had to
-> read through this a couple of times to figure out what it was supposed to
-> be doing. You seem to be trying to use a spinlock as a rwlock, which is a
-> bit error prone to say the least.
++static struct mtd_partition nand_partition_info[] = {
++	{
++		.name	= "nand_data",
++		.offset	= 0,
++		.size	= MTDPART_SIZ_FULL,
++	},
++};
++
++static struct resource nand_flash_resources[] = {
++	[0] = {
++		.start	= 0xa4530000,
++		.end	= 0xa45300ff,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
++static struct sh_flctl_platform_data nand_flash_data = {
++	.parts		= nand_partition_info,
++	.nr_parts	= ARRAY_SIZE(nand_partition_info),
++	.flcmncr_val	= FCKSEL_E | TYPESEL_SET | NANWF_E,
++	.has_hwecc	= 1,
++};
++
++static struct platform_device nand_flash_device = {
++	.name		= "sh_flctl",
++	.resource	= nand_flash_resources,
++	.num_resources	= ARRAY_SIZE(nand_flash_resources),
++	.dev		= {
++		.platform_data = &nand_flash_data,
++	},
++};
++
+ #define FPGA_LCDREG	0xB4100180
+ #define FPGA_BKLREG	0xB4100212
+ #define FPGA_LCDREG_VAL	0x0018
+@@ -101,11 +134,19 @@ static struct platform_device ap325rxa_nor_flash_device = {
+ #define PORT_PMCR	0xA4050116
+ #define PORT_PRCR	0xA405011C
+ #define PORT_PSCR	0xA405011E
++#define PORT_PUCR	0xA4050142
++#define PORT_PVCR	0xA4050144
++#define PORT_PXCR	0xA4050148
+ #define PORT_PZCR	0xA405014C
+ #define PORT_HIZCRA	0xA4050158
++#define PORT_HIZCRC	0xA405015C
+ #define PORT_MSELCRB	0xA4050182
++#define PORT_DRVCRA	0xA405018A
++#define PORT_DRVCRB	0xA405018C
+ #define PORT_PSDR	0xA405013E
++#define PORT_PXDR	0xA4050168
+ #define PORT_PZDR	0xA405016C
++#define PORT_PSELC	0xA4050152
+ #define PORT_PSELD	0xA4050154
 
-Sorry about the unclear code. This function is used for reading and
-writing bit fields in registers. The spinlock is protecting the
-read-modify-write register operation in the write case. No locking is
-done for the read case.
+ static void ap320_wvga_power_on(void *board_data)
+@@ -278,6 +319,7 @@ static struct platform_device *ap325rxa_devices[] __initdata = {
+ #ifdef CONFIG_I2C
+ 	&camera_device,
+ #endif
++	&nand_flash_device,
+ };
 
-/ magnus
+ static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
+@@ -312,6 +354,16 @@ static void __init ap325rxa_setup(char **cmdline_p)
+ 	ctrl_outw(ctrl_inw(PORT_PSELD) & ~0x0003, PORT_PSELD);
+ 	ctrl_outw((ctrl_inw(PORT_PZCR) & ~0xff00) | 0x5500, PORT_PZCR);
+ 	ctrl_outb((ctrl_inb(PORT_PZDR) & ~0xf0) | 0x20, PORT_PZDR);
++
++	/* FLCTL */
++	ctrl_outw(0, PORT_PUCR);
++	ctrl_outw(0, PORT_PVCR);
++	ctrl_outw(0, PORT_PSELC);
++	ctrl_outw(0, PORT_HIZCRC);
++	ctrl_outw(0xFFFF, PORT_DRVCRA);
++	ctrl_outw(0xFFFF, PORT_DRVCRB);
++	ctrl_outw((ctrl_inw(PORT_PXCR) & 0x3fff) | 0x4000, PORT_PXCR);
++	ctrl_outb(0x80, PORT_PXDR);
+ }
+
+ static struct sh_machine_vector mv_ap325rxa __initmv = {
+-- 
+1.5.5
+
+
