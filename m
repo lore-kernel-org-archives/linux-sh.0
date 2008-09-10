@@ -1,20 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 24 Sep 2008 04:54:49 +0000
-Subject: Re: [PATCH v2] sh: ap325rxa: create CPLD data area in mtd
-Message-Id: <20080924045449.GB6516@linux-sh.org>
+From: roel kluin <roel.kluin@gmail.com>
+Date: Wed, 10 Sep 2008 17:22:44 +0000
+Subject: [PATCH] sh_eth: unsigned ndev->irq cannot be negative
+Message-Id: <48C80264.2070205@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48D9AA18.2070803@renesas.com>
-In-Reply-To: <48D9AA18.2070803@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 24, 2008 at 11:46:48AM +0900, Nobuhiro Iwamatsu wrote:
-> AP320 and AP325RXA has CPLD data in NOR Flash.
-> If this area erased, this board can not boot.
-> This patch create CPLD data area and set writeable mask bit.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+unsigned ndev->irq cannot be negative
 
-Applied, thanks.
+Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
+---
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index 6a06b95..c52cc82 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -1182,11 +1182,12 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 		devno = 0;
+ 
+ 	ndev->dma = -1;
+-	ndev->irq = platform_get_irq(pdev, 0);
+-	if (ndev->irq < 0) {
++	ret = platform_get_irq(pdev, 0);
++	if (ret < 0) {
+ 		ret = -ENODEV;
+ 		goto out_release;
+ 	}
++	ndev->irq = ret;
+ 
+ 	SET_NETDEV_DEV(ndev, &pdev->dev);
+ 
