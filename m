@@ -1,33 +1,25 @@
-From: roel kluin <roel.kluin@gmail.com>
-Date: Wed, 10 Sep 2008 17:22:44 +0000
-Subject: [PATCH] sh_eth: unsigned ndev->irq cannot be negative
-Message-Id: <48C80264.2070205@gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 11 Sep 2008 05:59:15 +0000
+Subject: Re: [PATCH] sh_eth: unsigned ndev->irq cannot be negative
+Message-Id: <20080911055915.GA1184@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <48C80264.2070205@gmail.com>
+In-Reply-To: <48C80264.2070205@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-unsigned ndev->irq cannot be negative
+On Wed, Sep 10, 2008 at 07:22:44PM +0200, roel kluin wrote:
+> unsigned ndev->irq cannot be negative
+> 
+> Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
 
-Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
----
-diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
-index 6a06b95..c52cc82 100644
---- a/drivers/net/sh_eth.c
-+++ b/drivers/net/sh_eth.c
-@@ -1182,11 +1182,12 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 		devno = 0;
- 
- 	ndev->dma = -1;
--	ndev->irq = platform_get_irq(pdev, 0);
--	if (ndev->irq < 0) {
-+	ret = platform_get_irq(pdev, 0);
-+	if (ret < 0) {
- 		ret = -ENODEV;
- 		goto out_release;
- 	}
-+	ndev->irq = ret;
- 
- 	SET_NETDEV_DEV(ndev, &pdev->dev);
- 
+On Wed, Sep 10, 2008 at 07:34:44PM +0200, roel kluin wrote:
+> possibly since commit b420b1a7a17ea88531d0e12b2f2679a0c8365803
+> ---
+> rtc-sh: Unsigned rtc->{periodic,carry,alarm}_irq cannot be negative
+> 
+> Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
+
+Applied, thanks.
