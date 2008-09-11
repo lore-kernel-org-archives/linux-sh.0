@@ -1,7 +1,7 @@
 From: "Nylund, Martin" <Martin.Nylund@emtrion.de>
-Date: Thu, 11 Sep 2008 09:43:10 +0000
+Date: Thu, 11 Sep 2008 14:00:16 +0000
 Subject: AW: strace not working with latest git
-Message-Id: <37C9A1F7C45F1F498E9CB8295E7B305C77F51F@em-srv1-kaha.intern.emtrion.de>
+Message-Id: <37C9A1F7C45F1F498E9CB8295E7B305C77F523@em-srv1-kaha.intern.emtrion.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <37C9A1F7C45F1F498E9CB8295E7B305C513CBB@em-srv1-kaha.intern.emtrion.de>
 In-Reply-To: <37C9A1F7C45F1F498E9CB8295E7B305C513CBB@em-srv1-kaha.intern.emtrion.de>
@@ -10,8 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-> Hello all,
-> 
+
 > I haven't bee able to get strace working on my sh7722 target:
 > 
 > $> uname -a
@@ -39,25 +38,24 @@ To: linux-sh@vger.kernel.org
 > syscall number. I also added a printk to PTRACE_PEEKUSR in 
 > arch/sh/kernel/ptrace_32.c and the returned value is always 0. 
 > 
-> What might be wrong here?
-> 
-> Martin
 
 I got strace now working with following hack. Still don't know why this
 is needed though. get_stack_long() seemst to read data from wrong
 offset...
 
 diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-index 035cb30..7be388a 100644
+index 035cb30..950b7e2 100644
 --- a/arch/sh/kernel/ptrace_32.c
 +++ b/arch/sh/kernel/ptrace_32.c
-@@ -107,6 +107,7 @@ long arch_ptrace(struct task_struct *child, long
+@@ -107,6 +107,9 @@ long arch_ptrace(struct task_struct *child, long
 request, long addr, long data)
         struct user * dummy = NULL;
         int ret;
 
-+       addr=(addr+0x34);
++       if(addr<0xff)
++           addr=(addr+0x34);
++
         switch (request) {
         /* read the word at location addr in the USER area. */
         case PTRACE_PEEKUSR: {
-  
+
