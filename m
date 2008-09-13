@@ -1,38 +1,44 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Wed, 10 Sep 2008 07:44:14 +0000
-Subject: Re: [PATCH] smc91x: SMC_IO_SHIFT platform data support for default case
-Message-Id: <aec7e5c30809100044g1a51e7bfj240bdd67c5cb3012@mail.gmail.com>
+From: Jeff Garzik <jeff@garzik.org>
+Date: Sat, 13 Sep 2008 19:13:04 +0000
+Subject: Re: [PATCH] smc91x: SMC_IO_SHIFT platform data support for default
+Message-Id: <48CC10C0.6040607@garzik.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
-	 <20080908111922.GA15553@verge.net.au>
-In-Reply-To: <20080908111922.GA15553@verge.net.au>
+In-Reply-To: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
+To: Magnus Damm <magnus.damm@gmail.com>
 Cc: netdev@vger.kernel.org, eric.miao@marvell.com, luca.santini@spesonline.com, nico@cam.org, linux-sh@vger.kernel.org
 
-Hi Simon!
+Magnus Damm wrote:
+> From: Magnus Damm <damm@igel.co.jp>
+> 
+> Commit 159198862adad7109bb347bb30a620f67beac45f added SMC_IO_SHIFT
+> platform data support. After that ARM board support was added.
+> 
+> The default case is still missing though, so on SuperH SMC_IO_SHIFT
+> is constantly zero regardless of what you pass as platform data.
+> 
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> Test-by: Luca Santini <luca.santini@spesonline.com>
+> ---
+> 
+>  drivers/net/smc91x.h |    2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> --- 0001/drivers/net/smc91x.h
+> +++ work/drivers/net/smc91x.h	2008-08-28 20:43:03.000000000 +0900
+> @@ -446,6 +446,8 @@ static inline void LPD7_SMC_outsw (unsig
+>  #define SMC_CAN_USE_32BIT	1
+>  #define SMC_NOWAIT		1
+>  
+> +#define SMC_IO_SHIFT		(lp->io_shift)
+> +
+>  #define SMC_inb(a, r)		readb((a) + (r))
+>  #define SMC_inw(a, r)		readw((a) + (r))
+>  #define SMC_inl(a, r)		readl((a) + (r))
 
-On Mon, Sep 8, 2008 at 8:19 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Sep 08, 2008 at 02:02:34PM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@igel.co.jp>
->>
->> Commit 159198862adad7109bb347bb30a620f67beac45f added SMC_IO_SHIFT
->> platform data support. After that ARM board support was added.
->>
->> The default case is still missing though, so on SuperH SMC_IO_SHIFT
->> is constantly zero regardless of what you pass as platform data.
->
-> I beleive that its now common practice to include the subject
-> of a commit along with its id, as the latter can change as
-> it moves from tree to tree.
+applied
 
-Oh, thanks for pointing that out. I should really do that next time.
 
-In this case the commit id is from the linux-2.6 git, so shouldn't it
-be stable enough? Isn't it the final destination? =)
-
-Thanks!
-
-/ magnus
