@@ -1,75 +1,61 @@
-From: Carmelo AMOROSO <carmelo.amoroso@st.com>
-Date: Fri, 05 Sep 2008 05:45:34 +0000
-Subject: Re: [PATCH] resume_kernel fix for kernel oops built with CONFIG_BKL_PREEMPT=y
-Message-Id: <48C0C77E.3050401@st.com>
+From: Cuong Dang Phu <cuongdp@Cybersoft-VN.com>
+Date: Mon, 15 Sep 2008 03:48:21 +0000
+Subject: Linux 2.6.22.11 on T-Engine/SH7727 (MS7727CP02) Development Kit - Mapping physical memory address
+Message-Id: <loom.20080915T032055-333@post.gmane.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48BFD6F5.5030508@st.com>
-In-Reply-To: <48BFD6F5.5030508@st.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Thu, Sep 04, 2008 at 02:39:17PM +0200, Carmelo AMOROSO wrote:
->> Hi All,
->> attached patch solves a kernel OOPS discovered while running LTP 
->> testsuite (doio test) with kernel 2.6.23.y (rootf on hd).
->> Attached for your reference the output of the test and the kernel oops.
->>
->> The problems is within the SH implementation of resume_kernel code,
->> that implements in assembly the bulk of preempt_schedule_irq function 
->> without taking care of the extra code needed to handle the BKL preemptible.
->>
->> The patch basically consists of removing this asm code and calling the 
->> common C implementation (see kernel/sched.c) as other archs do.
->>
-> I don't recall that C implementation existing when I wrote that code back
-> in the 2.4 days, so that's probably why the semantics are a bit
-> different. We certainly should be doing what the other arches are doing
-> though, so your patch looks good and I'll apply it. The irqflags tracing
-> will probably need a bit more thinking there, but I'll look at that
-> tomorrow.
-> 
+Hi,
 
-Hi Paul,
-well irqflags tracing is managed internally by local_irq_[enable,diable]
-as defined in include/linux/irqflags.h.
+We are working for an embedded software company, for R&D purpose, we are 
+porting Linux on T-Engine/SH7727 (MS7727CP02) Development Kit. The first step 
+we do is: define physical memory and peripherals (in this file: \include\asm-
+sh\se7727.h), but we have some difficult:
+	a. We can’t understand many symbols: I show you a list I get form Linux 
+kernel 2.6.22.11 for se7720:
+ 
+#define PA_PCIC         PA_PERIPHERAL   		/* MR-SHPC-01 PCMCIA */
+#define PA_MRSHPC       (PA_PERIPHERAL + 0x003fffe0)    /* MR-SHPC-01 PCMCIA 
+controller */
+#define PA_MRSHPC_MW1   (PA_PERIPHERAL + 0x00400000)    /* MR-SHPC-01 memory 
+window base */
+#define PA_MRSHPC_MW2   (PA_PERIPHERAL + 0x00500000)    /* MR-SHPC-01 attribute 
+window base */
+#define PA_MRSHPC_IO    (PA_PERIPHERAL + 0x00600000)    /* MR-SHPC-01 I/O 
+window base */
+#define MRSHPC_OPTION   (PA_MRSHPC + 6)
+#define MRSHPC_CSR      (PA_MRSHPC + 8)
+#define MRSHPC_ISR      (PA_MRSHPC + 10)
+#define MRSHPC_ICR      (PA_MRSHPC + 12)
+#define MRSHPC_CPWCR    (PA_MRSHPC + 14)
+#define MRSHPC_MW0CR1   (PA_MRSHPC + 16)
+#define MRSHPC_MW1CR1   (PA_MRSHPC + 18)
+#define MRSHPC_IOWCR1   (PA_MRSHPC + 20)
+#define MRSHPC_MW0CR2   (PA_MRSHPC + 22)
+#define MRSHPC_MW1CR2   (PA_MRSHPC + 24)
+#define MRSHPC_IOWCR2   (PA_MRSHPC + 26)
+#define MRSHPC_CDCR     (PA_MRSHPC + 28)
+#define MRSHPC_PCIC_INFO (PA_MRSHPC + 30)
 
-#ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
+#define PA_FPGA		0xB7000000 	/* FPGA base address */
 
-#include <asm/irqflags.h>
+#define MRSHPC_IRQ0    	14
 
-#define local_irq_enable() \
-      do { trace_hardirqs_on(); raw_local_irq_enable(); } while (0)
-#define local_irq_disable() \
-      do { raw_local_irq_disable(); trace_hardirqs_off(); } while (0)
+#define FPGA_ILSR1	(PA_FPGA + 0x02)
+#define FPGA_ILSR2	(PA_FPGA + 0x03)
+#define FPGA_ILSR3	(PA_FPGA + 0x04)
+#define FPGA_ILSR4	(PA_FPGA + 0x05)
+#define FPGA_ILSR5	(PA_FPGA + 0x06)
+#define FPGA_ILSR6	(PA_FPGA + 0x07)
+#define FPGA_ILSR7	(PA_FPGA + 0x08)
+#define FPGA_ILSR8	(PA_FPGA + 0x09)
+ 
+	b. We don’t know how to define these sysbols.
 
-.........
-
-#else /* !CONFIG_TRACE_IRQFLAGS_SUPPORT */
-/*
-  * The local_irq_*() APIs are equal to the raw_local_irq*()
-  * if !TRACE_IRQFLAGS.
-  */
-# define raw_local_irq_disable()    local_irq_disable()
-# define raw_local_irq_enable()     local_irq_enable()
-......
-#endif
-
-Indeed, looking better, the macros within the #else path
-are erroneously exchanged... we should have
-
-# define local_irq_disable() raw_local_irq_disable()
-# define local_irq_enable() raw_local_irq_enable()
-
-These should be fixed on Linus' main stream.
-
-> I'll add this in to the 2.6.27 queue, thanks.
-> 
-That's fine.
-
-Cheers,
-Carmelo
+Best regards,
+Cuong Dang Phu
 
 
