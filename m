@@ -1,50 +1,59 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 05 Sep 2008 05:59:12 +0000
-Subject: [GIT PULL] sh updates for 2.6.27-rc6
-Message-Id: <20080905055912.GB2051@linux-sh.org>
+From: Pawel MOLL <pawel.moll@st.com>
+Date: Fri, 26 Sep 2008 11:25:17 +0000
+Subject: Re: [alsa-devel] Audio buffer mmap-ing on sh arch vs.
+Message-Id: <1222428317.28498.74.camel@bri1004.bri.st.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1220527434.3299.2074.camel@bri1004.bri.st.com>
+	<s5h63owgdk1.wl%tiwai@suse.de>
+	<1222354553.28498.30.camel@bri1004.bri.st.com>
+	<s5hbpybcjfc.wl%tiwai@suse.de>  <20080926103045.GA18874@linux-sh.org>
+In-Reply-To: <20080926103045.GA18874@linux-sh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Takashi Iwai <tiwai@suse.de>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
 
-Please pull from:
+> > IIRC, a similar buffer handling (via vmalloc) is used in video
+> > drivers.  I suppose they don't work as well, right?
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.27
+Well, our FB driver is aware of the problem. I can't say much about
+other ones...
 
-Which contains:
+> > DRM driver uses __vmalloc() with PAGE_KERNEL_NOCACHE, but it's only
+> > for PPC32 non-coherent.
 
-Adrian Bunk (2):
-      sh64: re-add the __strnlen_user() prototype
-      sh: fix ptrace_64.c:user_disable_single_step()
+Hm. PPC with non-coherent cache?
 
-Carmelo Amoroso (1):
-      sh: resume_kernel fix for kernel oops built with CONFIG_BKL_PREEMPT=y.
+/*
+ * Only on coherent architectures, we can mmap the status and the control r=
+ecords
+ * for effcient data transfer.  On others, we have to use HWSYNC ioctl...
+ */
+#if defined(CONFIG_X86) || defined(CONFIG_PPC) || defined(CONFIG_ALPHA)
+                                   ^^^^^^^^^^
+/*
+ * mmap status record
+ */
+static struct page * snd_pcm_mmap_status_nopage(struct vm_area_struct *area,
+                                                unsigned long address, int =
+*type)
 
-Magnus Damm (6):
-      sh: crash kernel resource fix
-      sh: fix kexec entry point for crash kernels
-      sh: fix platform_resource_setup_memory() section mismatch
-      sh: update Migo-R defconfig
-      sh: update AP325RXA defconfig
-      i2c: fix i2c-sh_mobile timing issues
+> x86 does it also, via its PAGE_AGP definition.
+>=20
+> There are not that many platforms that define PAGE_KERNEL_NOCACHE though,
+> so this gets a bit messy..
 
-Paul Mundt (1):
-      sh64: resume_kernel fix for kernel oops built with CONFIG_BKL_PREEMPT=y.
+Oh, bloody hell, I haven't realised that!
 
-Yoshihiro Shimoda (1):
-      sh: fix semtimedop syscall
+> Yeah, that's not sexy, but maybe the only working case right now
+> > (better with arch-specific ifdefs).
 
- arch/sh/configs/ap325rxa_defconfig |   22 ++--
- arch/sh/configs/migor_defconfig    |   21 ++-
- arch/sh/include/asm/uaccess_64.h   |    2 +
- arch/sh/kernel/cpu/sh5/entry.S     |   14 +--
- arch/sh/kernel/entry-common.S      |   27 +---
- arch/sh/kernel/machine_kexec.c     |    2 +-
- arch/sh/kernel/ptrace_64.c         |    2 +
- arch/sh/kernel/setup.c             |    6 +-
- arch/sh/kernel/sys_sh.c            |    2 +-
- arch/sh/mm/consistent.c            |    6 +-
- drivers/i2c/busses/i2c-sh_mobile.c |  271 +++++++++++++++++++++++++++---------
- 11 files changed, 250 insertions(+), 125 deletions(-)
+The question is what ifdefs to use ;-) Because the cached/uncached
+decision must be consistent between snd_pcm_default_mmap() and buffer
+allocation...
+
+What a mess! ;-)
+
+Pawe=C5=82
+
