@@ -1,246 +1,304 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 26 Sep 2008 11:01:24 +0000
-Subject: What's in sh-2.6.git for 2.6.28?
-Message-Id: <20080926110124.GA18957@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 27 Sep 2008 18:10:36 +0000
+Subject: [PATCH 03/05] sh: Use sh7722 GPIO on Migo-R board
+Message-Id: <20080927181036.11246.4510.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This is a brief summary of the changes that are sitting in the sh queue
-for 2.6.28.
+From: Magnus Damm <damm@igel.co.jp>
 
-There are quite a few changes all over the place. The main items are:
+This patch enables the GPIO code on Migo-R and converts the code from
+register based pinmux configuration to GPIO based pin by pin setup.
+While at it 2 LEDs are added and exported to user space.
 
-	- tracehook support
-	- ftrace support
-	- kprobes/kretprobes support
-	- latencytop support
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Tracehook support presently includes all of the general registers, DSP
-registers, and hard FPU registers. There is still some outstanding work
-for tying in the math emulation code in to the same interface, but as
-we've never supported that through ptrace before, it will be an
-incremental change. It passes the utrace tests, and ELF core dumps have
-been switched over to using the shiny new regset interface.
+ arch/sh/boards/Kconfig               |    1 
+ arch/sh/boards/mach-migor/lcd_qvga.c |    6 -
+ arch/sh/boards/mach-migor/setup.c    |  185 +++++++++++++++++++++-------------
+ 3 files changed, 124 insertions(+), 68 deletions(-)
 
-As far as ftrace goes, only static ftrace is presently implemented. I'm
-presently hacking on some trampoline code to get dynamic ftrace working,
-but that's 2.6.29 material at this point.
-
-The kprobes implementation is somewhat of a combined effort of all of the
-various implementations that were floating around over the years, and
-is based on the version ST has been shipping for some time.
-
-Other misc stuff include new board support (EDOSK7760), support for
-kernel stacks < PAGE_SIZE, optimized delay loop calibration, memory
-hot-unplug, tickless fixes, SH4-A optimized bitops/cmpxchg, lots of
-sparse fixes, and some SMP work for platforms lacking local timers.
-
-As usual, the tree is at:
-
-        git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.git
-
-Which contains:
-
-Carl Shaw (1):
-      sh: Subnormal double to float conversion
-
-Chris Smith (2):
-      sh: Fix uImage load address in 32-bit mode.
-      sh: Add kprobes support.
-
-Francesco Virlinzi (1):
-      sh: fix the TMU code to allow a fully running NO_HZ system
-
-Luca Santini (5):
-      sh: Enable IRLM mode for SH7760 IRQ_MODE_IRQ.
-      sh: Add Renesas EDOSK7760 board support.
-      sh: edosk7760 physmap-flash support.
-      sh: update edosk7760 defconfig for physmap-flash.
-      sh: edosk7760: Correct size of bootloader flash partition.
-
-Marek Skuczynski (1):
-      sh: remove unnecessary memset after alloc_bootmem_low_pages
-
-Nobuhiro Iwamatsu (1):
-      sh: ap325rxa: create CPLD data area in mtd
-
-Paul Mundt (59):
-      sh: Provide movli.l/movco.l-based bitops.
-      sh: Provide movli.l/movco.l-based cmpxchg.
-      sh: Kill off unused defines from asm/smp.h.
-      sh: smp: Provide a generic IPI handler.
-      sh: smp: Hook in to the generic IPI handler for SH-X3 SMP.
-      sh: smp: Hook up a timer IPI stub.
-      sh: generic clockevent broadcast support.
-      sh: smp: shove a cpu_relax() in the plat_start_cpu() busy loop.
-      sh: Early dummy clockevent registration on boot CPU.
-      sh: Display CPU information in show_regs().
-      sh: fixup many sparse errors.
-      sh: Don't enable clockevents broadcasting on UP SH-X3 builds.
-      sh: Add support for memory hot-remove.
-      sh: Add the rest of the boot targets to arch/sh/boot/.gitignore.
-      sh: uninline flush_icache_all().
-      sh: Add EDOSK7760 mach type.
-      sh: Mark kretprobe_trampoline_holder static and __used.
-      sh: Disable seccomp support by default.
-      sh: kprobes: Hook up kprobe_fault_handler() in the page fault path.
-      sh: kprobes: Use trapa #0x3a for breakpoint trap.
-      sh: kprobes: Default to NOTIFY_DONE for unhandled debug traps.
-      sh: kprobes: Fix up a preemption imbalance on jprobe return.
-      sh: kprobes: Fix up race against probe point removal.
-      sh: kprobes: __kprobes annotations and formatting cleanups.
-      sh: Derive calibrate_delay lpj from clk fwk.
-      sh: Add R2D+ defconfig for qemu system emulator.
-      sh: kprobes: kretprobe_trampoline needs to be global.
-      sh: Provide a fixed UTS_MACHINE definition for sh64.
-      sh: ptrace: Introduce user_regset interface for gp regs.
-      sh: ioremap_prot support.
-      sh: Flag T-bit for syscall restart.
-      sh: provide user_stack_pointer(), needed for tracehook support.
-      sh: Provide the asm/syscall.h interface, needed by tracehook.
-      sh: Enable HAVE_ARCH_TRACEHOOK.
-      sh: Fix up NUMA build error with se7722_defconfig.
-      sh: Add DSP registers to regset interface.
-      sh: Add missing task_user_regset_view() definition.
-      sh: Check SR.DSP bit for DSP regset validity.
-      sh: Tidy up ELF core dumps.
-      sh: latencytop support.
-      sh: Fix up fpu emu build.
-      sh: Make memory hot-add and hot-remove depend on MMU.
-      sh: Fix up signal_64 conflicting handle_signal() definition.
-      sh: Consolidate struct sh_cpuinfo definitions across _32/_64 split.
-      sh: Fix up headers_check regression.
-      sh: HAVE_IOREMAP_PROT depends on MMU.
-      sh: Disable 4kB stacks when using PAGE_SIZE_64KB.
-      sh: Support kernel stacks smaller than a page.
-      sh: Copy in asm/sizes.h helper from ARM.
-      sh: Add a few more definitions to asm/sizes.h.
-      sh: Move lookup_exception_vector() out to asm/system_32.h.
-      sh: Look up the trap vector for the page fault notifier.
-      sh: Kill off duplicate page fault notifiers in slow path.
-      sh: Trivial trace_mark() instrumentation for core events.
-      sh: ftrace support.
-      doc: Add remaining SH parameters to kernel-parameters.txt.
-      sh: Add missing asm/ftrace.h.
-      sh: Add FPU registers to regset interface.
-      sh: Force pending restarted system calls to return -EINTR.
-
-Stuart Menefy (4):
-      sh: early cached_to_uncached initialization.
-      sh: Fix up broken 32-bit initrd support.
-      sh: vmalloc pgtable sync fix.
-      sh: Fix an unusual memory initialisation error.
-
-roel kluin (3):
-      sh: intc_prio_data() test before subtraction on unsigned
-      sh_eth: unsigned ndev->irq cannot be negative
-      rtc-sh: Unsigned rtc->{periodic,carry,alarm}_irq cannot be negative
-
- Documentation/kernel-parameters.txt           |   12 +-
- arch/sh/Kconfig                               |   17 +-
- arch/sh/Kconfig.debug                         |    2 +-
- arch/sh/Makefile                              |    2 +
- arch/sh/boards/Kconfig                        |    7 +
- arch/sh/boards/Makefile                       |    1 +
- arch/sh/boards/board-ap325rxa.c               |   33 +-
- arch/sh/boards/board-edosk7760.c              |  193 +++++
- arch/sh/boot/.gitignore                       |    3 +
- arch/sh/boot/Makefile                         |    6 +
- arch/sh/boot/compressed/Makefile_32           |    5 +
- arch/sh/boot/compressed/misc_32.c             |    2 +-
- arch/sh/configs/edosk7760_defconfig           | 1050 +++++++++++++++++++++++++
- arch/sh/configs/rts7751r2dplus_qemu_defconfig |  909 +++++++++++++++++++++
- arch/sh/include/asm/bitops-llsc.h             |  144 ++++
- arch/sh/include/asm/bitops.h                  |    2 +
- arch/sh/include/asm/clock.h                   |    1 +
- arch/sh/include/asm/cmpxchg-llsc.h            |   71 ++
- arch/sh/include/asm/elf.h                     |   14 +-
- arch/sh/include/asm/fpu.h                     |   19 +
- arch/sh/include/asm/ftrace.h                  |    8 +
- arch/sh/include/asm/io.h                      |    6 +-
- arch/sh/include/asm/irq.h                     |    3 +
- arch/sh/include/asm/kprobes.h                 |   58 ++
- arch/sh/include/asm/mmzone.h                  |    2 +
- arch/sh/include/asm/page.h                    |    2 +
- arch/sh/include/asm/pgtable.h                 |    1 +
- arch/sh/include/asm/processor.h               |   44 +-
- arch/sh/include/asm/processor_32.h            |   22 +-
- arch/sh/include/asm/processor_64.h            |   45 +-
- arch/sh/include/asm/ptrace.h                  |   11 +-
- arch/sh/include/asm/rtc.h                     |    1 +
- arch/sh/include/asm/setup.h                   |    1 -
- arch/sh/include/asm/sizes.h                   |   61 ++
- arch/sh/include/asm/smp.h                     |   26 +-
- arch/sh/include/asm/syscall.h                 |   10 +
- arch/sh/include/asm/syscall_32.h              |  110 +++
- arch/sh/include/asm/syscall_64.h              |    6 +
- arch/sh/include/asm/syscalls.h                |   25 +
- arch/sh/include/asm/syscalls_32.h             |   56 ++
- arch/sh/include/asm/syscalls_64.h             |   34 +
- arch/sh/include/asm/system.h                  |    8 +-
- arch/sh/include/asm/system_32.h               |   44 +-
- arch/sh/include/asm/thread_info.h             |   32 +-
- arch/sh/kernel/Makefile_32                    |    2 +-
- arch/sh/kernel/Makefile_64                    |    1 -
- arch/sh/kernel/cpu/clock.c                    |    5 +-
- arch/sh/kernel/cpu/irq/intc.c                 |   10 +-
- arch/sh/kernel/cpu/sh4/fpu.c                  |   25 +-
- arch/sh/kernel/cpu/sh4/setup-sh7760.c         |    5 +
- arch/sh/kernel/cpu/sh4/softfloat.c            |   29 +
- arch/sh/kernel/cpu/sh4a/smp-shx3.c            |   67 +-
- arch/sh/kernel/dump_task.c                    |   32 -
- arch/sh/kernel/entry-common.S                 |   44 +
- arch/sh/kernel/io_generic.c                   |    6 +-
- arch/sh/kernel/kprobes.c                      |  584 ++++++++++++++
- arch/sh/kernel/machvec.c                      |    1 +
- arch/sh/kernel/process_32.c                   |   36 +-
- arch/sh/kernel/process_64.c                   |   11 +-
- arch/sh/kernel/ptrace_32.c                    |  298 ++++++--
- arch/sh/kernel/ptrace_64.c                    |    1 +
- arch/sh/kernel/setup.c                        |   48 +-
- arch/sh/kernel/sh_ksyms_32.c                  |    4 +
- arch/sh/kernel/signal_32.c                    |   69 +-
- arch/sh/kernel/signal_64.c                    |   22 +-
- arch/sh/kernel/smp.c                          |   43 +-
- arch/sh/kernel/stacktrace.c                   |   23 +-
- arch/sh/kernel/sys_sh.c                       |    9 +-
- arch/sh/kernel/sys_sh32.c                     |    5 +-
- arch/sh/kernel/time_32.c                      |   11 +-
- arch/sh/kernel/timers/Makefile                |    1 +
- arch/sh/kernel/timers/timer-broadcast.c       |   57 ++
- arch/sh/kernel/timers/timer-cmt.c             |    2 +-
- arch/sh/kernel/timers/timer-tmu.c             |  177 +++--
- arch/sh/kernel/traps_32.c                     |   95 ++--
- arch/sh/lib/div64-generic.c                   |    1 +
- arch/sh/mm/Kconfig                            |    6 +-
- arch/sh/mm/cache-sh4.c                        |    2 +-
- arch/sh/mm/consistent.c                       |    2 +-
- arch/sh/mm/fault_32.c                         |   63 ++-
- arch/sh/mm/init.c                             |   74 ++-
- arch/sh/mm/pg-nommu.c                         |    1 +
- arch/sh/mm/tlb-nommu.c                        |    1 +
- arch/sh/tools/mach-types                      |    1 +
- drivers/net/sh_eth.c                          |    5 +-
- drivers/rtc/rtc-sh.c                          |   21 +-
- drivers/serial/sh-sci.c                       |    2 +-
- 87 files changed, 4541 insertions(+), 470 deletions(-)
- create mode 100644 arch/sh/boards/board-edosk7760.c
- create mode 100644 arch/sh/configs/edosk7760_defconfig
- create mode 100644 arch/sh/configs/rts7751r2dplus_qemu_defconfig
- create mode 100644 arch/sh/include/asm/bitops-llsc.h
- create mode 100644 arch/sh/include/asm/cmpxchg-llsc.h
- create mode 100644 arch/sh/include/asm/ftrace.h
- create mode 100644 arch/sh/include/asm/kprobes.h
- create mode 100644 arch/sh/include/asm/sizes.h
- create mode 100644 arch/sh/include/asm/syscall.h
- create mode 100644 arch/sh/include/asm/syscall_32.h
- create mode 100644 arch/sh/include/asm/syscall_64.h
- create mode 100644 arch/sh/include/asm/syscalls.h
- create mode 100644 arch/sh/include/asm/syscalls_32.h
- create mode 100644 arch/sh/include/asm/syscalls_64.h
- delete mode 100644 arch/sh/kernel/dump_task.c
- create mode 100644 arch/sh/kernel/kprobes.c
- create mode 100644 arch/sh/kernel/timers/timer-broadcast.c
+--- 0001/arch/sh/boards/Kconfig
++++ work/arch/sh/boards/Kconfig	2008-09-28 01:44:57.000000000 +0900
+@@ -162,6 +162,7 @@ config SH_SH7785LCR_29BIT_PHYSMAPS
+ config SH_MIGOR
+ 	bool "Migo-R"
+ 	depends on CPU_SUBTYPE_SH7722
++	select ARCH_REQUIRE_GPIOLIB
+ 	help
+ 	  Select Migo-R if configuring for the SH7722 Migo-R platform
+           by Renesas System Solutions Asia Pte. Ltd.
+--- 0001/arch/sh/boards/mach-migor/lcd_qvga.c
++++ work/arch/sh/boards/mach-migor/lcd_qvga.c	2008-09-28 01:46:09.000000000 +0900
+@@ -17,8 +17,10 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/gpio.h>
+ #include <asm/sh_mobile_lcdc.h>
+ #include <asm/migor.h>
++#include <asm/sh7722.h>
+ 
+ /* LCD Module is a PH240320T according to board schematics. This module
+  * is made up of a 240x320 LCD hooked up to a R61505U (or HX8347-A01?)
+@@ -30,9 +32,9 @@
+ 
+ static void reset_lcd_module(void)
+ {
+-	ctrl_outb(ctrl_inb(PORT_PHDR) & ~0x04, PORT_PHDR);
++	gpio_set_value(GPIO_PTH2, 0);
+ 	mdelay(2);
+-	ctrl_outb(ctrl_inb(PORT_PHDR) | 0x04, PORT_PHDR);
++	gpio_set_value(GPIO_PTH2, 1);
+ 	mdelay(1);
+ }
+ 
+--- 0001/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2008-09-28 01:46:27.000000000 +0900
+@@ -17,6 +17,7 @@
+ #include <linux/smc91x.h>
+ #include <linux/delay.h>
+ #include <linux/clk.h>
++#include <linux/gpio.h>
+ #include <media/soc_camera_platform.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <asm/clock.h>
+@@ -25,6 +26,7 @@
+ #include <asm/sh_keysc.h>
+ #include <asm/sh_mobile_lcdc.h>
+ #include <asm/migor.h>
++#include <asm/sh7722.h>
+ 
+ /* Address     IRQ  Size  Bus  Description
+  * 0x00000000       64MB  16   NOR Flash (SP29PL256N)
+@@ -169,7 +171,7 @@ static void migor_nand_flash_cmd_ctl(str
+ 
+ static int migor_nand_flash_ready(struct mtd_info *mtd)
+ {
+-	return ctrl_inb(PORT_PADR) & 0x02; /* PTA1 */
++	return gpio_get_value(GPIO_PTA1); /* NAND_RBn */
+ }
+ 
+ struct platform_nand_data migor_nand_flash_data = {
+@@ -286,22 +288,15 @@ static struct clk *camera_clk;
+ 
+ static void camera_power_on(void)
+ {
+-	unsigned char value;
+-
+ 	camera_clk = clk_get(NULL, "video_clk");
+ 	clk_set_rate(camera_clk, 24000000);
+ 	clk_enable(camera_clk);	/* start VIO_CKO */
+ 
++	/* use VIO_RST to take camera out of reset */
+ 	mdelay(10);
+-	value = ctrl_inb(PORT_PTDR);
+-	value &= ~0x09;
+-#ifndef CONFIG_SH_MIGOR_RTA_WVGA
+-	value |= 0x01;
+-#endif
+-	ctrl_outb(value, PORT_PTDR);
++	gpio_set_value(GPIO_PTT3, 0);
+ 	mdelay(10);
+-
+-	ctrl_outb(value | 8, PORT_PTDR);
++	gpio_set_value(GPIO_PTT3, 1);
+ }
+ 
+ static void camera_power_off(void)
+@@ -309,7 +304,7 @@ static void camera_power_off(void)
+ 	clk_disable(camera_clk); /* stop VIO_CKO */
+ 	clk_put(camera_clk);
+ 
+-	ctrl_outb(ctrl_inb(PORT_PTDR) & ~0x08, PORT_PTDR);
++	gpio_set_value(GPIO_PTT3, 0);
+ }
+ 
+ #ifdef CONFIG_I2C
+@@ -458,9 +453,121 @@ static struct i2c_board_info migor_i2c_d
+ 
+ static int __init migor_devices_setup(void)
+ {
++	/* Lit D11 LED */
++	gpio_request(GPIO_PTJ7, NULL);
++	gpio_direction_output(GPIO_PTJ7, 1);
++	gpio_export(GPIO_PTJ7, 0);
++
++	/* Lit D12 LED */
++	gpio_request(GPIO_PTJ5, NULL);
++	gpio_direction_output(GPIO_PTJ5, 1);
++	gpio_export(GPIO_PTJ5, 0);
++
++	/* SMC91C111 */
++	gpio_request(GPIO_FN_IRQ0, NULL);
++
++	/* KEYSC */
+ 	clk_always_enable("mstp214"); /* KEYSC */
++	gpio_request(GPIO_FN_KEYOUT0, NULL);
++	gpio_request(GPIO_FN_KEYOUT1, NULL);
++	gpio_request(GPIO_FN_KEYOUT2, NULL);
++	gpio_request(GPIO_FN_KEYOUT3, NULL);
++	gpio_request(GPIO_FN_KEYOUT4_IN6, NULL);
++	gpio_request(GPIO_FN_KEYIN1, NULL);
++	gpio_request(GPIO_FN_KEYIN2, NULL);
++	gpio_request(GPIO_FN_KEYIN3, NULL);
++	gpio_request(GPIO_FN_KEYIN4, NULL);
++	gpio_request(GPIO_FN_KEYOUT5_IN5, NULL);
++
++	/* NAND Flash */
++	gpio_request(GPIO_FN_CS6A_CE2B, NULL);
++	ctrl_outl((ctrl_inl(BSC_CS6ABCR) & ~0x0600) | 0x0200, BSC_CS6ABCR);
++	gpio_request(GPIO_PTA1, NULL);
++	gpio_direction_input(GPIO_PTA1);
++
++	/* Touch Panel */
++	gpio_request(GPIO_FN_IRQ6, NULL);
++
++	/* LCD Panel */
+ 	clk_always_enable("mstp200"); /* LCDC */
++#ifdef CONFIG_SH_MIGOR_QVGA /* LCDC - QVGA - Enable SYS Interface signals */
++	gpio_request(GPIO_FN_LCDD17, NULL);
++	gpio_request(GPIO_FN_LCDD16, NULL);
++	gpio_request(GPIO_FN_LCDD15, NULL);
++	gpio_request(GPIO_FN_LCDD14, NULL);
++	gpio_request(GPIO_FN_LCDD13, NULL);
++	gpio_request(GPIO_FN_LCDD12, NULL);
++	gpio_request(GPIO_FN_LCDD11, NULL);
++	gpio_request(GPIO_FN_LCDD10, NULL);
++	gpio_request(GPIO_FN_LCDD8, NULL);
++	gpio_request(GPIO_FN_LCDD7, NULL);
++	gpio_request(GPIO_FN_LCDD6, NULL);
++	gpio_request(GPIO_FN_LCDD5, NULL);
++	gpio_request(GPIO_FN_LCDD4, NULL);
++	gpio_request(GPIO_FN_LCDD3, NULL);
++	gpio_request(GPIO_FN_LCDD2, NULL);
++	gpio_request(GPIO_FN_LCDD1, NULL);
++	gpio_request(GPIO_FN_LCDRS, NULL);
++	gpio_request(GPIO_FN_LCDCS, NULL);
++	gpio_request(GPIO_FN_LCDRD, NULL);
++	gpio_request(GPIO_FN_LCDWR, NULL);
++	gpio_request(GPIO_PTH2, NULL); /* LCD_DON */
++	gpio_direction_output(GPIO_PTH2, 1);
++#endif
++#ifdef CONFIG_SH_MIGOR_RTA_WVGA /* LCDC - WVGA - Enable RGB Interface signals */
++	gpio_request(GPIO_FN_LCDD15, NULL);
++	gpio_request(GPIO_FN_LCDD14, NULL);
++	gpio_request(GPIO_FN_LCDD13, NULL);
++	gpio_request(GPIO_FN_LCDD12, NULL);
++	gpio_request(GPIO_FN_LCDD11, NULL);
++	gpio_request(GPIO_FN_LCDD10, NULL);
++	gpio_request(GPIO_FN_LCDD9, NULL);
++	gpio_request(GPIO_FN_LCDD8, NULL);
++	gpio_request(GPIO_FN_LCDD7, NULL);
++	gpio_request(GPIO_FN_LCDD6, NULL);
++	gpio_request(GPIO_FN_LCDD5, NULL);
++	gpio_request(GPIO_FN_LCDD4, NULL);
++	gpio_request(GPIO_FN_LCDD3, NULL);
++	gpio_request(GPIO_FN_LCDD2, NULL);
++	gpio_request(GPIO_FN_LCDD1, NULL);
++	gpio_request(GPIO_FN_LCDD0, NULL);
++	gpio_request(GPIO_FN_LCDLCLK, NULL);
++	gpio_request(GPIO_FN_LCDDCK, NULL);
++	gpio_request(GPIO_FN_LCDVEPWC, NULL);
++	gpio_request(GPIO_FN_LCDVCPWC, NULL);
++	gpio_request(GPIO_FN_LCDVSYN, NULL);
++	gpio_request(GPIO_FN_LCDHSYN, NULL);
++	gpio_request(GPIO_FN_LCDDISP, NULL);
++	gpio_request(GPIO_FN_LCDDON, NULL);
++#endif
++
++	/* CEU */
+ 	clk_always_enable("mstp203"); /* CEU */
++	gpio_request(GPIO_FN_VIO_CLK2, NULL);
++	gpio_request(GPIO_FN_VIO_VD2, NULL);
++	gpio_request(GPIO_FN_VIO_HD2, NULL);
++	gpio_request(GPIO_FN_VIO_FLD, NULL);
++	gpio_request(GPIO_FN_VIO_CKO, NULL);
++	gpio_request(GPIO_FN_VIO_D15, NULL);
++	gpio_request(GPIO_FN_VIO_D14, NULL);
++	gpio_request(GPIO_FN_VIO_D13, NULL);
++	gpio_request(GPIO_FN_VIO_D12, NULL);
++	gpio_request(GPIO_FN_VIO_D11, NULL);
++	gpio_request(GPIO_FN_VIO_D10, NULL);
++	gpio_request(GPIO_FN_VIO_D9, NULL);
++	gpio_request(GPIO_FN_VIO_D8, NULL);
++
++	gpio_request(GPIO_PTT3, NULL); /* VIO_RST */
++	gpio_direction_output(GPIO_PTT3, 0);
++	gpio_request(GPIO_PTT2, NULL); /* TV_IN_EN */
++	gpio_direction_output(GPIO_PTT2, 1);
++	gpio_request(GPIO_PTT0, NULL); /* CAM_EN */
++#ifdef CONFIG_SH_MIGOR_RTA_WVGA
++	gpio_direction_output(GPIO_PTT0, 0);
++#else
++	gpio_direction_output(GPIO_PTT0, 1);
++#endif
++	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x2000, PORT_MSELCRB); /* D15->D8 */
+ 
+ 	platform_resource_setup_memory(&migor_ceu_device, "ceu", 4 << 20);
+ 
+@@ -473,60 +580,6 @@ __initcall(migor_devices_setup);
+ 
+ static void __init migor_setup(char **cmdline_p)
+ {
+-	/* SMC91C111 - Enable IRQ0 */
+-	ctrl_outw(ctrl_inw(PORT_PJCR) & ~0x0003, PORT_PJCR);
+-
+-	/* KEYSC */
+-	ctrl_outw(ctrl_inw(PORT_PYCR) & ~0x0fff, PORT_PYCR);
+-	ctrl_outw(ctrl_inw(PORT_PZCR) & ~0x0ff0, PORT_PZCR);
+-	ctrl_outw(ctrl_inw(PORT_PSELA) & ~0x4100, PORT_PSELA);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x4000, PORT_HIZCRA);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRC) & ~0xc000, PORT_HIZCRC);
+-
+-	/* NAND Flash */
+-	ctrl_outw(ctrl_inw(PORT_PXCR) & 0x0fff, PORT_PXCR);
+-	ctrl_outl((ctrl_inl(BSC_CS6ABCR) & ~0x00000600) | 0x00000200,
+-		  BSC_CS6ABCR);
+-
+-	/* Touch Panel - Enable IRQ6 */
+-	ctrl_outw(ctrl_inw(PORT_PZCR) & ~0xc, PORT_PZCR);
+-	ctrl_outw((ctrl_inw(PORT_PSELA) | 0x8000), PORT_PSELA);
+-	ctrl_outw((ctrl_inw(PORT_HIZCRC) & ~0x4000), PORT_HIZCRC);
+-
+-#ifdef CONFIG_SH_MIGOR_RTA_WVGA
+-	/* LCDC - WVGA - Enable RGB Interface signals */
+-	ctrl_outw(ctrl_inw(PORT_PACR) & ~0x0003, PORT_PACR);
+-	ctrl_outw(0x0000, PORT_PHCR);
+-	ctrl_outw(0x0000, PORT_PLCR);
+-	ctrl_outw(0x0000, PORT_PMCR);
+-	ctrl_outw(ctrl_inw(PORT_PRCR) & ~0x000f, PORT_PRCR);
+-	ctrl_outw((ctrl_inw(PORT_PSELD) & ~0x000d) | 0x0400, PORT_PSELD);
+-	ctrl_outw(ctrl_inw(PORT_MSELCRB) & ~0x0100, PORT_MSELCRB);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x01e0, PORT_HIZCRA);
+-#endif
+-#ifdef CONFIG_SH_MIGOR_QVGA
+-	/* LCDC - QVGA - Enable SYS Interface signals */
+-	ctrl_outw(ctrl_inw(PORT_PACR) & ~0x0003, PORT_PACR);
+-	ctrl_outw((ctrl_inw(PORT_PHCR) & ~0xcfff) | 0x0010, PORT_PHCR);
+-	ctrl_outw(0x0000, PORT_PLCR);
+-	ctrl_outw(0x0000, PORT_PMCR);
+-	ctrl_outw(ctrl_inw(PORT_PRCR) & ~0x030f, PORT_PRCR);
+-	ctrl_outw((ctrl_inw(PORT_PSELD) & ~0x0001) | 0x0420, PORT_PSELD);
+-	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x0100, PORT_MSELCRB);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x01e0, PORT_HIZCRA);
+-#endif
+-
+-	/* CEU */
+-	ctrl_outw((ctrl_inw(PORT_PTCR) & ~0x03c3) | 0x0051, PORT_PTCR);
+-	ctrl_outw(ctrl_inw(PORT_PUCR) & ~0x03ff, PORT_PUCR);
+-	ctrl_outw(ctrl_inw(PORT_PVCR) & ~0x03ff, PORT_PVCR);
+-	ctrl_outw(ctrl_inw(PORT_PWCR) & ~0x3c00, PORT_PWCR);
+-	ctrl_outw(ctrl_inw(PORT_PSELC) | 0x0001, PORT_PSELC);
+-	ctrl_outw(ctrl_inw(PORT_PSELD) & ~0x2000, PORT_PSELD);
+-	ctrl_outw(ctrl_inw(PORT_PSELE) | 0x000f, PORT_PSELE);
+-	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x2200, PORT_MSELCRB);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x0a00, PORT_HIZCRA);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRB) & ~0x0003, PORT_HIZCRB);
+ }
+ 
+ static struct sh_machine_vector mv_migor __initmv = {
