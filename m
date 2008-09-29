@@ -1,618 +1,487 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 29 Sep 2008 10:46:43 +0000
-Subject: [PATCH] sh: Add GPIO and pinmux base code V2
-Message-Id: <20080929104643.5355.23964.sendpatchset@rx1.opensource.se>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Mon, 29 Sep 2008 09:26:45 +0000
+Subject: [RFC][PATCH] sh: override DMA interrupt handler to dma-sh driver
+Message-Id: <48E09F55.4030406@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Dma-sh has fixed interrupt handler and cannot register
+an interrupt for exclusive use of the device with dma.
 
-This patch adds pinmux table parser code and gpiolib glue.
+I added a handler to sh_dmac_request_dma and reviced it
+to be able to appoint a handler.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@nigauri.org>
 ---
+ arch/sh/drivers/dma/Kconfig       |    2 +-
+ arch/sh/drivers/dma/dma-api.c     |   63 +++++++++++++++++++++++++-----------
+ arch/sh/drivers/dma/dma-pvr2.c    |    2 +-
+ arch/sh/drivers/dma/dma-sh.c      |   38 ++++++++++++----------
+ arch/sh/drivers/dma/dma-sh.h      |   46 +++++++++++++++++++--------
+ arch/sh/drivers/dma/dmabrg.c      |    2 +-
+ arch/sh/include/asm/dma.h         |   36 +++++++++++++++++---
+ arch/sh/include/cpu-sh4/cpu/dma.h |    9 +++++-
+ 8 files changed, 137 insertions(+), 61 deletions(-)
 
- Requires the request/free gpiolib patch by David Brownell.
+diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
+index 0193636..0c4ee21 100644
+--- a/arch/sh/drivers/dma/Kconfig
++++ b/arch/sh/drivers/dma/Kconfig
+@@ -12,7 +12,7 @@ config SH_DMA
+ config NR_ONCHIP_DMA_CHANNELS
+ 	int
+ 	depends on SH_DMA
+-	default "6" if CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721
++	default "6" if CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721 || CPU_SUBTYPE_SH7763
+ 	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R
+ 	default "12" if CPU_SUBTYPE_SH7780
+ 	default "4"
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index 727126e..27831a1 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -126,7 +126,8 @@ static int search_cap(const char **haystack, const char *needle)
+  * case they can never be allocated using this API, and so
+  * request_dma() must be used specifying the channel number.
+  */
+-int request_dma_bycap(const char **dmac, const char **caps, const char *dev_id)
++int request_dma_bycap(const char **dmac, const char **caps,
++	const char *dev_id, irq_handler_t handler, void *data)
+ {
+ 	unsigned int found = 0;
+ 	struct dma_info *info;
+@@ -135,6 +136,9 @@ int request_dma_bycap(const char **dmac, const char **caps, const char *dev_id)
 
- arch/sh/Kconfig            |    3 
- arch/sh/include/asm/gpio.h |  105 ++++++++++
- arch/sh/kernel/Makefile_32 |    1 
- arch/sh/kernel/Makefile_64 |    1 
- arch/sh/kernel/gpio.c      |  440 ++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 550 insertions(+)
+ 	BUG_ON(!dmac || !caps);
 
---- 0001/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-09-29 15:49:52.000000000 +0900
-@@ -60,6 +60,9 @@ config GENERIC_HARDIRQS_NO__DO_IRQ
- config GENERIC_IRQ_PROBE
- 	def_bool y
- 
-+config GENERIC_GPIO
-+	def_bool n
++	if(!handler||!data)
++		return -EINVAL;
 +
- config GENERIC_CALIBRATE_DELAY
- 	bool
- 
---- 0003/arch/sh/include/asm/gpio.h
-+++ work/arch/sh/include/asm/gpio.h	2008-09-29 15:51:42.000000000 +0900
-@@ -1,6 +1,10 @@
- /*
-  *  include/asm-sh/gpio.h
-  *
-+ * Generic GPIO API using gpiolib and pinmux table support for SuperH.
-+ *
-+ * Copyright (c) 2008 Magnus Damm
-+ *
-  * This file is subject to the terms and conditions of the GNU General Public
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-@@ -8,4 +12,105 @@
- #ifndef __ASM_SH_GPIO_H
- #define __ASM_SH_GPIO_H
- 
-+#define ARCH_NR_GPIOS 512
-+#include <asm-generic/gpio.h>
+ 	list_for_each_entry(info, &registered_dmac_list, list)
+ 		if (strcmp(*dmac, info->name) = 0) {
+ 			found = 1;
+@@ -149,20 +153,19 @@ int request_dma_bycap(const char **dmac, const char **caps, const char *dev_id)
+
+ 		if (unlikely(!channel->caps))
+ 			continue;
+-
+ 		for (p = caps; *p; p++) {
+ 			if (!search_cap(channel->caps, *p))
+ 				break;
+-			if (request_dma(channel->chan, dev_id) = 0)
 +
-+static inline int gpio_get_value(unsigned gpio)
++			if (request_dma(channel->chan, dev_id, handler, data) = 0)
+ 				return channel->chan;
+ 		}
+ 	}
+-
+ 	return -EINVAL;
+ }
+ EXPORT_SYMBOL(request_dma_bycap);
+
+-int dmac_search_free_channel(const char *dev_id)
++int dmac_search_free_channel(void)
+ {
+ 	struct dma_channel *channel = { 0 };
+ 	struct dma_info *info = get_dma_info(0);
+@@ -177,32 +180,26 @@ int dmac_search_free_channel(const char *dev_id)
+ 			break;
+ 	}
+
+-	if (info->ops->request) {
+-		int result = info->ops->request(channel);
+-		if (result)
+-			return result;
+-
+-		atomic_set(&channel->busy, 1);
+-		return channel->chan;
+-	}
+-
+-	return -ENOSYS;
++	return channel->chan;
+ }
++EXPORT_SYMBOL(dmac_search_free_channel);
+
+-int request_dma(unsigned int chan, const char *dev_id)
++int request_dma(unsigned int chan, const char *dev_id,
++	irq_handler_t handler, void *data)
+ {
+ 	struct dma_channel *channel = { 0 };
+ 	struct dma_info *info = get_dma_info(chan);
+ 	int result;
+
+ 	channel = get_dma_channel(chan);
++
+ 	if (atomic_xchg(&channel->busy, 1))
+ 		return -EBUSY;
+
+ 	strlcpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
+
+ 	if (info->ops->request) {
+-		result = info->ops->request(channel);
++		result = info->ops->request(channel, handler, data);
+ 		if (result)
+ 			atomic_set(&channel->busy, 0);
+
+@@ -213,13 +210,13 @@ int request_dma(unsigned int chan, const char *dev_id)
+ }
+ EXPORT_SYMBOL(request_dma);
+
+-void free_dma(unsigned int chan)
++void free_dma(unsigned int chan, void *data)
+ {
+ 	struct dma_info *info = get_dma_info(chan);
+ 	struct dma_channel *channel = get_dma_channel(chan);
+
+ 	if (info->ops->free)
+-		info->ops->free(channel);
++		info->ops->free(channel, data);
+
+ 	atomic_set(&channel->busy, 0);
+ }
+@@ -295,6 +292,34 @@ int dma_xfer(unsigned int chan, unsigned long from,
+ }
+ EXPORT_SYMBOL(dma_xfer);
+
++int dma_start(unsigned int chan)
 +{
-+	return __gpio_get_value(gpio);
-+}
++	struct dma_info *info = get_dma_info(chan);
++	struct dma_channel *channel = get_dma_channel(chan);
++	
++	if( info->ops->start ) {
++		info->ops->start(channel);
++		return 0;
++	}
 +
-+static inline void gpio_set_value(unsigned gpio, int value)
-+{
-+	__gpio_set_value(gpio, value);
-+}
-+
-+static inline int gpio_cansleep(unsigned gpio)
-+{
-+	return __gpio_cansleep(gpio);
-+}
-+
-+static inline int gpio_to_irq(unsigned gpio)
-+{
 +	return -ENOSYS;
 +}
++EXPORT_SYMBOL(dma_start);
 +
-+static inline int irq_to_gpio(unsigned int irq)
++int dma_stop(unsigned int chan)
 +{
-+	return -EINVAL;
-+}
++	struct dma_info *info = get_dma_info(chan);
++	struct dma_channel *channel = get_dma_channel(chan);
 +
-+typedef unsigned short pinmux_enum_t;
-+typedef unsigned char pinmux_flag_t;
-+
-+#define PINMUX_TYPE_NONE            0
-+#define PINMUX_TYPE_FUNCTION        1
-+#define PINMUX_TYPE_GPIO            2
-+#define PINMUX_TYPE_OUTPUT          3
-+#define PINMUX_TYPE_INPUT           4
-+#define PINMUX_TYPE_INPUT_PULLUP    5
-+#define PINMUX_TYPE_INPUT_PULLDOWN  6
-+
-+#define PINMUX_FLAG_TYPE            (0x7)
-+#define PINMUX_FLAG_WANT_PULLUP     (1 << 3)
-+#define PINMUX_FLAG_WANT_PULLDOWN   (1 << 4)
-+
-+struct pinmux_gpio {
-+	pinmux_enum_t enum_id;
-+	pinmux_flag_t flags;
-+};
-+
-+#define PINMUX_GPIO(gpio, data_or_mark) [gpio] = { data_or_mark }
-+#define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
-+
-+struct pinmux_cfg_reg {
-+	unsigned long reg, reg_width, field_width;
-+	unsigned long *cnt;
-+	pinmux_enum_t *enum_ids;
-+};
-+
-+#define PINMUX_CFG_REG(name, r, r_width, f_width)			\
-+	.reg = r, .reg_width = r_width, .field_width = f_width,		\
-+	.cnt = (unsigned long [r_width / f_width]) {},			\
-+	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)])
-+
-+struct pinmux_data_reg {
-+	unsigned long reg, reg_width;
-+	pinmux_enum_t *enum_ids;
-+};
-+
-+#define PINMUX_DATA_REG(name, r, r_width)	\
-+	.reg = r, .reg_width = r_width,		\
-+	.enum_ids = (pinmux_enum_t [r_width])
-+
-+struct pinmux_range {
-+	pinmux_enum_t begin;
-+	pinmux_enum_t end;
-+};
-+
-+struct pinmux_info {
-+	struct gpio_chip chip;
-+
-+	char *name;
-+	pinmux_enum_t reserved_id;
-+	struct pinmux_range data;
-+	struct pinmux_range input;
-+	struct pinmux_range input_pd;
-+	struct pinmux_range input_pu;
-+	struct pinmux_range output;
-+	struct pinmux_range mark;
-+	struct pinmux_range function;
-+
-+	unsigned first_gpio, last_gpio;
-+
-+	struct pinmux_gpio *gpios;
-+	struct pinmux_cfg_reg *cfg_regs;
-+	struct pinmux_data_reg *data_regs;
-+
-+	pinmux_enum_t *gpio_data;
-+	unsigned int gpio_data_size;
-+};
-+
-+int register_pinmux(struct pinmux_info *pip);
-+
- #endif /* __ASM_SH_GPIO_H */
---- 0001/arch/sh/kernel/Makefile_32
-+++ work/arch/sh/kernel/Makefile_32	2008-09-29 15:49:52.000000000 +0900
-@@ -23,5 +23,6 @@ obj-$(CONFIG_PM)		+= pm.o
- obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
- obj-$(CONFIG_IO_TRAPPED)	+= io_trapped.o
- obj-$(CONFIG_KPROBES)		+= kprobes.o
-+obj-$(CONFIG_GPIOLIB)		+= gpio.o
- 
- EXTRA_CFLAGS += -Werror
---- 0001/arch/sh/kernel/Makefile_64
-+++ work/arch/sh/kernel/Makefile_64	2008-09-29 15:49:52.000000000 +0900
-@@ -18,5 +18,6 @@ obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
- obj-$(CONFIG_PM)		+= pm.o
- obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
- obj-$(CONFIG_IO_TRAPPED)	+= io_trapped.o
-+obj-$(CONFIG_GPIOLIB)		+= gpio.o
- 
- EXTRA_CFLAGS += -Werror
---- /dev/null
-+++ work/arch/sh/kernel/gpio.c	2008-09-29 15:55:01.000000000 +0900
-@@ -0,0 +1,440 @@
-+/*
-+ * Pinmuxed GPIO support for SuperH through gpiolib.
-+ *
-+ * Copyright (C) 2008 Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/errno.h>
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/err.h>
-+#include <linux/io.h>
-+#include <linux/gpio.h>
-+
-+static DEFINE_SPINLOCK(gpio_register_lock);
-+
-+static int enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
-+{
-+	if (enum_id < r->begin)
++	if( info->ops->stop ){
++		info->ops->stop(channel);
 +		return 0;
++	}
 +
-+	if (enum_id > r->end)
-+		return 0;
-+
-+	return 1;
++	return -ENOSYS;
 +}
++EXPORT_SYMBOL(dma_stop);
 +
-+static int read_write_reg(unsigned long reg, unsigned long reg_width,
-+			  unsigned long field_width, unsigned long in_pos,
-+			  unsigned long value, int do_write)
-+{
-+	unsigned long flags, data, mask, pos;
+ int dma_extend(unsigned int chan, unsigned long op, void *param)
+ {
+ 	struct dma_info *info = get_dma_info(chan);
+diff --git a/arch/sh/drivers/dma/dma-pvr2.c b/arch/sh/drivers/dma/dma-pvr2.c
+index 391cbe1..2016e88 100644
+--- a/arch/sh/drivers/dma/dma-pvr2.c
++++ b/arch/sh/drivers/dma/dma-pvr2.c
+@@ -89,7 +89,7 @@ static struct dma_info pvr2_dma_info = {
+ static int __init pvr2_dma_init(void)
+ {
+ 	setup_irq(HW_EVENT_PVR2_DMA, &pvr2_dma_irq);
+-	request_dma(PVR2_CASCADE_CHAN, "pvr2 cascade");
++	request_dma(PVR2_CASCADE_CHAN, "pvr2 cascade",NULL, NULL);
+
+ 	return register_dmac(&pvr2_dma_info);
+ }
+diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
+index b2ffe64..69cb807 100644
+--- a/arch/sh/drivers/dma/dma-sh.c
++++ b/arch/sh/drivers/dma/dma-sh.c
+@@ -28,6 +28,7 @@ static int dmte_irq_map[] = {
+     defined(CONFIG_CPU_SUBTYPE_SH7721)  ||	\
+     defined(CONFIG_CPU_SUBTYPE_SH7751R) ||	\
+     defined(CONFIG_CPU_SUBTYPE_SH7760)  ||	\
++    defined(CONFIG_CPU_SUBTYPE_SH7763)  ||	\
+     defined(CONFIG_CPU_SUBTYPE_SH7709)  ||	\
+     defined(CONFIG_CPU_SUBTYPE_SH7780)
+ 	DMTE4_IRQ,
+@@ -88,18 +89,25 @@ static irqreturn_t dma_tei(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+
+-static int sh_dmac_request_dma(struct dma_channel *chan)
++static int sh_dmac_request_dma(struct dma_channel *chan, irq_handler_t handler, void *data)
+ {
+ 	if (unlikely(!(chan->flags & DMA_TEI_CAPABLE)))
+ 		return 0;
+
++	if (handler)
++		return request_irq(get_dmte_irq(chan->chan), handler,
++			IRQF_DISABLED, chan->dev_id, data);
 +
-+	flags = 0; /* kill silly warning */
-+	data = 0;
-+	mask = (1 << field_width) - 1;
-+	pos = reg_width - ((in_pos + 1) * field_width);
+ 	return request_irq(get_dmte_irq(chan->chan), dma_tei,
+-			   IRQF_DISABLED, chan->dev_id, chan);
++			IRQF_DISABLED, chan->dev_id, chan);
+ }
+
+-static void sh_dmac_free_dma(struct dma_channel *chan)
++static void sh_dmac_free_dma(struct dma_channel *chan, void *data)
+ {
+-	free_irq(get_dmte_irq(chan->chan), chan);
++	if (data)
++		free_irq(get_dmte_irq(chan->chan), data);
++	else
++		free_irq(get_dmte_irq(chan->chan), chan);
+ }
+
+ static int
+@@ -116,17 +124,14 @@ sh_dmac_configure_channel(struct dma_channel *chan, unsigned long chcr)
+ 	}
+
+ 	ctrl_outl(chcr, CHCR[chan->chan]);
+-
+ 	chan->flags |= DMA_CONFIGURED;
+ 	return 0;
+ }
+
+ static void sh_dmac_enable_dma(struct dma_channel *chan)
+ {
+-	int irq;
+-	u32 chcr;
++	u32 chcr= ctrl_inl(CHCR[chan->chan]);
+
+-	chcr = ctrl_inl(CHCR[chan->chan]);
+ 	chcr |= CHCR_DE;
+
+ 	if (chan->flags & DMA_TEI_CAPABLE)
+@@ -134,21 +139,15 @@ static void sh_dmac_enable_dma(struct dma_channel *chan)
+
+ 	ctrl_outl(chcr, CHCR[chan->chan]);
+
+-	if (chan->flags & DMA_TEI_CAPABLE) {
+-		irq = get_dmte_irq(chan->chan);
+-		enable_irq(irq);
+-	}
++	if (chan->flags & DMA_TEI_CAPABLE)
++		enable_irq(get_dmte_irq(chan->chan));
+ }
+
+ static void sh_dmac_disable_dma(struct dma_channel *chan)
+ {
+-	int irq;
+ 	u32 chcr;
+-
+-	if (chan->flags & DMA_TEI_CAPABLE) {
+-		irq = get_dmte_irq(chan->chan);
+-		disable_irq(irq);
+-	}
++	if (chan->flags & DMA_TEI_CAPABLE)
++		disable_irq(get_dmte_irq(chan->chan));
+
+ 	chcr = ctrl_inl(CHCR[chan->chan]);
+ 	chcr &= ~(CHCR_DE | CHCR_TE | CHCR_IE);
+@@ -205,6 +204,7 @@ static int sh_dmac_get_dma_residue(struct dma_channel *chan)
+
+ #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7780)
+ #define dmaor_read_reg()	ctrl_inw(DMAOR)
+ #define dmaor_write_reg(data)	ctrl_outw(data, DMAOR)
+@@ -249,6 +249,8 @@ static struct dma_ops sh_dmac_ops = {
+ 	.get_residue	= sh_dmac_get_dma_residue,
+ 	.xfer		= sh_dmac_xfer_dma,
+ 	.configure	= sh_dmac_configure_channel,
++	.start = sh_dmac_enable_dma,
++	.stop = sh_dmac_disable_dma,
+ };
+
+ static struct dma_info sh_dmac_info = {
+diff --git a/arch/sh/drivers/dma/dma-sh.h b/arch/sh/drivers/dma/dma-sh.h
+index b05af34..6cb8269 100644
+--- a/arch/sh/drivers/dma/dma-sh.h
++++ b/arch/sh/drivers/dma/dma-sh.h
+@@ -28,10 +28,21 @@
+ #define SM_DEC	0x00002000
+ #define RS_IN	0x00000200
+ #define RS_OUT	0x00000300
++#define RS_EXT	0x00000000
++#define RS_AUTO 0x00000400
++#define RS_MOD	0x00000800
+ #define TS_BLK	0x00000040
++#define TB_E	0x00000020
+ #define CHCR_DE 0x00000001
+ #define CHCR_TE 0x00000002
+ #define CHCR_IE 0x00000004
++/* Reload / Repert Mode */
++#define RPT_ALL	0x01000000
++#define RPT_DAR	0x02000000
++#define RPT_SAR	0x03000000
++#define RLD_ALL	0x05000000
++#define RLD_DAR	0x06000000
++#define RLD_SAR	0x07000000
+
+ /* DMAOR definitions */
+ #define DMAOR_AE	0x00000004
+@@ -42,7 +53,7 @@
+  * Define the default configuration for dual address memory-memory transfer.
+  * The 0x400 value represents auto-request, external->external.
+  */
+-#define RS_DUAL	(DM_INC | SM_INC | 0x400 | TS_32)
++#define RS_DUAL	(DM_INC | SM_INC | RS_AUTO | TS_32)
+
+ #define MAX_DMAC_CHANNELS	(CONFIG_NR_ONCHIP_DMA_CHANNELS)
+
+@@ -55,20 +66,27 @@
+  * basic calculation, unfortunately on other subtypes these are more
+  * scattered, so we just leave it unrolled for simplicity.
+  */
+-#define SAR	((unsigned long[]){SH_DMAC_BASE + 0x00, SH_DMAC_BASE + 0x10, \
+-				   SH_DMAC_BASE + 0x20, SH_DMAC_BASE + 0x30, \
+-				   SH_DMAC_BASE + 0x50, SH_DMAC_BASE + 0x60})
+-#define DAR	((unsigned long[]){SH_DMAC_BASE + 0x04, SH_DMAC_BASE + 0x14, \
+-				   SH_DMAC_BASE + 0x24, SH_DMAC_BASE + 0x34, \
+-				   SH_DMAC_BASE + 0x54, SH_DMAC_BASE + 0x64})
+-#define DMATCR	((unsigned long[]){SH_DMAC_BASE + 0x08, SH_DMAC_BASE + 0x18, \
+-				   SH_DMAC_BASE + 0x28, SH_DMAC_BASE + 0x38, \
+-				   SH_DMAC_BASE + 0x58, SH_DMAC_BASE + 0x68})
+-#define CHCR	((unsigned long[]){SH_DMAC_BASE + 0x0c, SH_DMAC_BASE + 0x1c, \
+-				   SH_DMAC_BASE + 0x2c, SH_DMAC_BASE + 0x3c, \
+-				   SH_DMAC_BASE + 0x5c, SH_DMAC_BASE + 0x6c})
++#define SAR ((unsigned long[]){SH_DMAC_BASE + 0x00, SH_DMAC_BASE + 0x10, \
++					SH_DMAC_BASE + 0x20, SH_DMAC_BASE + 0x30, \
++					SH_DMAC_BASE + 0x50, SH_DMAC_BASE + 0x60})
+
+-#define DMAOR	(SH_DMAC_BASE + 0x40)
++#define DAR ((unsigned long[]){SH_DMAC_BASE + 0x04, SH_DMAC_BASE + 0x14, \
++					SH_DMAC_BASE + 0x24, SH_DMAC_BASE + 0x34, \
++					SH_DMAC_BASE + 0x54, SH_DMAC_BASE + 0x64})
 +
-+#ifdef DEBUG
-+	pr_info("sh pinmux: %s, addr = %lx, value = %ld, pos = %ld, "
-+		"r_width = %ld, f_width = %ld\n",
-+		do_write ? "write" : "read", reg, value, pos,
-+		reg_width, field_width);
++#define DMATCR ((unsigned long[]){SH_DMAC_BASE + 0x08, SH_DMAC_BASE + 0x18, \
++					SH_DMAC_BASE + 0x28, SH_DMAC_BASE + 0x38, \
++					SH_DMAC_BASE + 0x58, SH_DMAC_BASE + 0x68})
++
++#define CHCR ((unsigned long[]){SH_DMAC_BASE + 0x0c, SH_DMAC_BASE + 0x1c, \
++					SH_DMAC_BASE + 0x2c, SH_DMAC_BASE + 0x3c, \
++					SH_DMAC_BASE + 0x5c, SH_DMAC_BASE + 0x6c})
++
++#define DMAOR (SH_DMAC_BASE + 0x40)
++
++#define DMASR ((unsigned long[]){SH_DMAC_BASE + 0xFE0, SH_DMAC_BASE + 0xFE0, \
++					SH_DMAC_BASE + 0xFE4, SH_DMAC_BASE + 0xFE4, \
++					SH_DMAC_BASE + 0xFE8, SH_DMAC_BASE + 0xFE8})
+
+ #endif /* __DMA_SH_H */
+
+diff --git a/arch/sh/drivers/dma/dmabrg.c b/arch/sh/drivers/dma/dmabrg.c
+index 5e22689..38c3edc 100644
+--- a/arch/sh/drivers/dma/dmabrg.c
++++ b/arch/sh/drivers/dma/dmabrg.c
+@@ -160,7 +160,7 @@ static int __init dmabrg_init(void)
+
+ #ifdef CONFIG_SH_DMA
+ 	/* request DMAC channel 0 before anyone else can get it */
+-	ret = request_dma(0, "DMAC 0 (DMABRG)");
++	ret = request_dma(0, "DMAC 0 (DMABRG)", NULL, NULL);
+ 	if (ret < 0)
+ 		printk(KERN_INFO "DMABRG: DMAC ch0 not reserved!\n");
+ #endif
+diff --git a/arch/sh/include/asm/dma.h b/arch/sh/include/asm/dma.h
+index beca712..e29fbd2 100644
+--- a/arch/sh/include/asm/dma.h
++++ b/arch/sh/include/asm/dma.h
+@@ -1,5 +1,5 @@
+ /*
+- * include/asm-sh/dma.h
++ * arch/sh/include/asm/dma.h
+  *
+  * Copyright (C) 2003, 2004  Paul Mundt
+  *
+@@ -13,6 +13,7 @@
+
+ #include <linux/spinlock.h>
+ #include <linux/wait.h>
++#include <linux/interrupt.h>
+ #include <linux/sched.h>
+ #include <linux/sysdev.h>
+ #include <cpu/dma.h>
+@@ -67,13 +68,16 @@ extern spinlock_t dma_spin_lock;
+ struct dma_channel;
+
+ struct dma_ops {
+-	int (*request)(struct dma_channel *chan);
+-	void (*free)(struct dma_channel *chan);
++	int (*request)(struct dma_channel *chan, irq_handler_t handler,
++						void *data);
++	void (*free)(struct dma_channel *chan, void *data);
+
+ 	int (*get_residue)(struct dma_channel *chan);
+ 	int (*xfer)(struct dma_channel *chan);
+ 	int (*configure)(struct dma_channel *chan, unsigned long flags);
+ 	int (*extend)(struct dma_channel *chan, unsigned long op, void *param);
++	void (*start)(struct dma_channel *chan);
++	void (*stop)(struct dma_channel *chan);
+ };
+
+ struct dma_channel {
+@@ -124,6 +128,21 @@ struct dma_chan_caps {
+ /* arch/sh/drivers/dma/dma-api.c */
+ extern int dma_xfer(unsigned int chan, unsigned long from,
+ 		    unsigned long to, size_t size, unsigned int mode);
++/* SAR */
++#define dma_set_sar(val, chan)	ctrl_outl(val, SAR[chan])
++#define dma_get_sar(chan)		ctrl_inl(SAR[chan])
++/* DAR */
++#define dma_set_dar(val, chan)	ctrl_outl(val, DAR[chan])
++#define dma_get_dar(chan)		ctrl_inl(DAR[chan])
++/* DMATCR */
++#define dma_set_dmatcr(val, chan) ctrl_outl(val, DMATCR[chan])
++#define dma_get_dmatcr(chan) ctrl_inl(DMATCR[chan])
++/* CHCR */
++#define dma_set_chcr(val, chan)	ctrl_outl(val, CHCR[chan])
++#define dma_get_chcr(chan)		ctrl_inl(CHCR[chan])
++/* DMASR */
++#define dma_set_dmasr(val, chan)	ctrl_outw(val, DMASR[chan])
++#define dma_get_dmasr(chan)			ctrl_inw(DMASR[chan])
+
+ #define dma_write(chan, from, to, size)	\
+ 	dma_xfer(chan, from, to, size, DMA_MODE_WRITE)
+@@ -135,10 +154,15 @@ extern int dma_xfer(unsigned int chan, unsigned long from,
+ #define dma_read_page(chan, from, to)	\
+ 	dma_read(chan, from, to, PAGE_SIZE)
+
++extern int dma_start(unsigned int chan);
++extern int dma_stop(unsigned int chan);
++
+ extern int request_dma_bycap(const char **dmac, const char **caps,
+-			     const char *dev_id);
+-extern int request_dma(unsigned int chan, const char *dev_id);
+-extern void free_dma(unsigned int chan);
++			const char *dev_id, irq_handler_t handler, void *data);
++extern int dmac_search_free_channel(void);
++extern int request_dma(unsigned int chan, const char *dev_id,
++			irq_handler_t handler, void *data);
++extern void free_dma(unsigned int chan, void *data);
+ extern int get_dma_residue(unsigned int chan);
+ extern struct dma_info *get_dma_info(unsigned int chan);
+ extern struct dma_channel *get_dma_channel(unsigned int chan);
+diff --git a/arch/sh/include/cpu-sh4/cpu/dma.h b/arch/sh/include/cpu-sh4/cpu/dma.h
+index 235b7cd..1d2bd3b 100644
+--- a/arch/sh/include/cpu-sh4/cpu/dma.h
++++ b/arch/sh/include/cpu-sh4/cpu/dma.h
+@@ -15,7 +15,14 @@
+ #define DMAE_IRQ	38
+
+ #ifdef CONFIG_CPU_SH4A
+-#define SH_DMAC_BASE	0xfc808020
++
++#if defined(CONFIG_CPU_SUBTYPE_SH7763) ||\
++	defined(CONFIG_CPU_SUBTYPE_SH7764)
++# define SH_DMAC_BASE  0xff608020
++#else
++/* SH7780/SH7785 */
++# define SH_DMAC_BASE  0xfc808020
 +#endif
-+
-+	/* use spinlock to protect read-modify-write register access.
-+	 * the read case does not need any protection.
-+	 */
-+
-+	if (do_write)
-+		spin_lock_irqsave(&gpio_register_lock, flags);
-+
-+	switch (reg_width) {
-+	case 8:
-+		data = ctrl_inb(reg);
-+		break;
-+	case 16:
-+		data = ctrl_inw(reg);
-+		break;
-+	case 32:
-+		data = ctrl_inl(reg);
-+		break;
-+	default:
-+		BUG();
-+	}
-+
-+	if (!do_write)
-+		return (data >> pos) & mask;
-+
-+	data &= ~(mask << pos);
-+	data |= value << pos;
-+
-+	switch (reg_width) {
-+	case 8:
-+		ctrl_outb(data, reg);
-+		break;
-+	case 16:
-+		ctrl_outw(data, reg);
-+		break;
-+	case 32:
-+		ctrl_outl(data, reg);
-+		break;
-+	}
-+
-+	spin_unlock_irqrestore(&gpio_register_lock, flags);
-+	return 0;
-+}
-+
-+static int get_data_reg(struct pinmux_info *gpioc, unsigned gpio,
-+			struct pinmux_data_reg **drp, int *bitp)
-+{
-+	pinmux_enum_t enum_id = gpioc->gpios[gpio].enum_id;
-+	struct pinmux_data_reg *data_reg;
-+	int k, n;
-+
-+	if (!enum_in_range(enum_id, &gpioc->data))
-+		return -ENXIO;
-+
-+	k = 0;
-+	while (1) {
-+		data_reg = gpioc->data_regs + k;
-+
-+		if (!data_reg->reg_width)
-+			break;
-+
-+		for (n = 0; n < data_reg->reg_width; n++) {
-+			if (data_reg->enum_ids[n] = enum_id) {
-+				*drp = data_reg;
-+				*bitp = n;
-+				return 0;
-+			}
-+		}
-+		k++;
-+	}
-+
-+	return -ENXIO;
-+}
-+
-+static int get_config_reg(struct pinmux_info *gpioc, pinmux_enum_t enum_id,
-+			  struct pinmux_cfg_reg **crp, int *indexp,
-+			  unsigned long **cntp)
-+{
-+	struct pinmux_cfg_reg *config_reg;
-+	unsigned long r_width, f_width;
-+	int k, n;
-+
-+	k = 0;
-+	while (1) {
-+		config_reg = gpioc->cfg_regs + k;
-+
-+		r_width = config_reg->reg_width;
-+		f_width = config_reg->field_width;
-+
-+		if (!r_width)
-+			break;
-+
-+		for (n = 0; n < (r_width / f_width) * 1 << f_width; n++) {
-+			if (config_reg->enum_ids[n] = enum_id) {
-+				*crp = config_reg;
-+				*indexp = n;
-+				*cntp = &config_reg->cnt[n / (1 << f_width)];
-+				return 0;
-+			}
-+		}
-+		k++;
-+	}
-+
-+	return -ENXIO;
-+}
-+
-+static int get_gpio_enum_id(struct pinmux_info *gpioc, unsigned gpio,
-+			    int pos, pinmux_enum_t *enum_idp)
-+{
-+	pinmux_enum_t enum_id = gpioc->gpios[gpio].enum_id;
-+	pinmux_enum_t *data = gpioc->gpio_data;
-+	int k;
-+
-+	if (!enum_in_range(enum_id, &gpioc->data)) {
-+		if (!enum_in_range(enum_id, &gpioc->mark)) {
-+			pr_err("non data/mark enum_id for gpio %d\n", gpio);
-+			return -ENXIO;
-+		}
-+	}
-+
-+	if (pos) {
-+		*enum_idp = data[pos + 1];
-+		return pos + 1;
-+	}
-+
-+	for (k = 0; k < gpioc->gpio_data_size; k++) {
-+		if (data[k] = enum_id) {
-+			*enum_idp = data[k + 1];
-+			return k + 1;
-+		}
-+	}
-+
-+	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
-+	return -ENXIO;
-+}
-+
-+static int write_config_reg(struct pinmux_info *gpioc,
-+			    struct pinmux_cfg_reg *crp,
-+			    int index)
-+{
-+	unsigned long ncomb, pos, value;
-+
-+	ncomb = 1 << crp->field_width;
-+	pos = index / ncomb;
-+	value = index % ncomb;
-+
-+	return read_write_reg(crp->reg, crp->reg_width,
-+			      crp->field_width, pos, value, 1);
-+}
-+
-+static int check_config_reg(struct pinmux_info *gpioc,
-+			    struct pinmux_cfg_reg *crp,
-+			    int index)
-+{
-+	unsigned long ncomb, pos, value;
-+
-+	ncomb = 1 << crp->field_width;
-+	pos = index / ncomb;
-+	value = index % ncomb;
-+
-+	if (read_write_reg(crp->reg, crp->reg_width,
-+			   crp->field_width, pos, 0, 0) = value)
-+		return 0;
-+
-+	return -1;
-+}
-+
-+enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
-+
-+int pinmux_config_gpio(struct pinmux_info *gpioc, unsigned gpio,
-+		       int pinmux_type, int cfg_mode)
-+{
-+	struct pinmux_cfg_reg *cr = NULL;
-+	pinmux_enum_t enum_id;
-+	struct pinmux_range *range;
-+	int in_range, pos, index;
-+	unsigned long *cntp;
-+
-+	switch (pinmux_type) {
-+
-+	case PINMUX_TYPE_FUNCTION:
-+		range = NULL;
-+		break;
-+
-+	case PINMUX_TYPE_OUTPUT:
-+		range = &gpioc->output;
-+		break;
-+
-+	case PINMUX_TYPE_INPUT:
-+		range = &gpioc->input;
-+		break;
-+
-+	case PINMUX_TYPE_INPUT_PULLUP:
-+		range = &gpioc->input_pu;
-+		break;
-+
-+	case PINMUX_TYPE_INPUT_PULLDOWN:
-+		range = &gpioc->input_pd;
-+		break;
-+
-+	default:
-+		goto out_err;
-+	}
-+
-+	pos = 0;
-+	enum_id = 0;
-+	index = 0;
-+	while (1) {
-+		pos = get_gpio_enum_id(gpioc, gpio, pos, &enum_id);
-+		if (pos <= 0)
-+			goto out_err;
-+
-+		if (!enum_id)
-+			break;
-+
-+		in_range = enum_in_range(enum_id, &gpioc->function);
-+		if (!in_range && range)
-+			in_range = enum_in_range(enum_id, range);
-+
-+		if (!in_range)
-+			continue;
-+
-+		if (get_config_reg(gpioc, enum_id, &cr, &index, &cntp) != 0)
-+			goto out_err;
-+
-+		switch (cfg_mode) {
-+		case GPIO_CFG_DRYRUN:
-+			if (!*cntp || !check_config_reg(gpioc, cr, index))
-+				continue;
-+			break;
-+
-+		case GPIO_CFG_REQ:
-+			if (write_config_reg(gpioc, cr, index) != 0)
-+				goto out_err;
-+			*cntp = *cntp + 1;
-+			break;
-+
-+		case GPIO_CFG_FREE:
-+			*cntp = *cntp - 1;
-+			break;
-+		}
-+	}
-+
-+	return 0;
-+ out_err:
-+	return -1;
-+}
-+
-+static struct pinmux_info *sh_pinmux_info(struct gpio_chip *chip)
-+{
-+	return container_of(chip, struct pinmux_info, chip);
-+}
-+
-+static int sh_gpio_request(struct gpio_chip *chip, unsigned offset)
-+{
-+	struct pinmux_info *gpioc = sh_pinmux_info(chip);
-+	struct pinmux_data_reg *dummy;
-+	int i, pinmux_type;
-+
-+	pinmux_type = gpioc->gpios[offset].flags & PINMUX_FLAG_TYPE;
-+
-+	BUG_ON(pinmux_type != PINMUX_TYPE_NONE);
-+
-+	/* setup pin function here if no data is associated with pin */
-+
-+	if (get_data_reg(gpioc, offset, &dummy, &i) != 0)
-+		pinmux_type = PINMUX_TYPE_FUNCTION;
-+	else
-+		pinmux_type = PINMUX_TYPE_GPIO;
-+
-+	if (pinmux_type = PINMUX_TYPE_FUNCTION) {
-+		if (pinmux_config_gpio(gpioc, offset,
-+				       pinmux_type,
-+				       GPIO_CFG_DRYRUN) != 0)
-+			return -EBUSY;
-+
-+		if (pinmux_config_gpio(gpioc, offset,
-+				       pinmux_type,
-+				       GPIO_CFG_REQ) != 0)
-+			BUG();
-+	}
-+
-+	gpioc->gpios[offset].flags = pinmux_type;
-+	return 0;
-+}
-+
-+static void sh_gpio_free(struct gpio_chip *chip, unsigned offset)
-+{
-+	struct pinmux_info *gpioc = sh_pinmux_info(chip);
-+	int pinmux_type;
-+
-+	pinmux_type = gpioc->gpios[offset].flags & PINMUX_FLAG_TYPE;
-+	pinmux_config_gpio(gpioc, offset, pinmux_type, GPIO_CFG_FREE);
-+	gpioc->gpios[offset].flags = PINMUX_TYPE_NONE;
-+}
-+
-+static int sh_gpio_direction(struct gpio_chip *chip, unsigned offset,
-+			     int new_pinmux_type)
-+{
-+	struct pinmux_info *gpioc = sh_pinmux_info(chip);
-+	int pinmux_type;
-+
-+	pinmux_type = gpioc->gpios[offset].flags & PINMUX_FLAG_TYPE;
-+
-+	switch (pinmux_type) {
-+	case PINMUX_TYPE_GPIO:
-+		break;
-+	case PINMUX_TYPE_OUTPUT:
-+	case PINMUX_TYPE_INPUT:
-+	case PINMUX_TYPE_INPUT_PULLUP:
-+	case PINMUX_TYPE_INPUT_PULLDOWN:
-+		pinmux_config_gpio(gpioc, offset, pinmux_type, GPIO_CFG_FREE);
-+		break;
-+	default:
-+		BUG();
-+		return -EINVAL;
-+	}
-+
-+	if (pinmux_config_gpio(gpioc, offset,
-+			       new_pinmux_type,
-+			       GPIO_CFG_DRYRUN) != 0)
-+		return -EBUSY;
-+
-+	if (pinmux_config_gpio(gpioc, offset,
-+			       new_pinmux_type,
-+			       GPIO_CFG_REQ) != 0)
-+		BUG();
-+
-+	gpioc->gpios[offset].flags = new_pinmux_type;
-+	return 0;
-+}
-+
-+static int sh_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
-+{
-+	return sh_gpio_direction(chip, offset, PINMUX_TYPE_INPUT);
-+}
-+
-+static int sh_gpio_get_set_value(struct gpio_chip *chip, unsigned offset,
-+				 int value, int do_write)
-+{
-+	struct pinmux_info *gpioc = sh_pinmux_info(chip);
-+	struct pinmux_data_reg *dr = NULL;
-+	int bit = 0;
-+
-+	if (get_data_reg(gpioc, offset, &dr, &bit) != 0)
-+		BUG();
-+	else
-+		value = read_write_reg(dr->reg, dr->reg_width,
-+				       1, bit, value, do_write);
-+
-+	return value;
-+}
-+
-+static int sh_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
-+				    int value)
-+{
-+	sh_gpio_get_set_value(chip, offset, value, 1);
-+	return sh_gpio_direction(chip, offset, PINMUX_TYPE_OUTPUT);
-+}
-+
-+static int sh_gpio_get(struct gpio_chip *chip, unsigned offset)
-+{
-+	return sh_gpio_get_set_value(chip, offset, 0, 0);
-+}
-+
-+static void sh_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
-+{
-+	sh_gpio_get_set_value(chip, offset, value, 1);
-+}
-+
-+int register_pinmux(struct pinmux_info *pip)
-+{
-+	struct gpio_chip *chip = &pip->chip;
-+
-+	pr_info("sh pinmux: %s handling gpio %d -> %d\n",
-+		pip->name, pip->first_gpio, pip->last_gpio);
-+
-+	chip->request = sh_gpio_request;
-+	chip->free = sh_gpio_free;
-+	chip->direction_input = sh_gpio_direction_input;
-+	chip->get = sh_gpio_get;
-+	chip->direction_output = sh_gpio_direction_output;
-+	chip->set = sh_gpio_set;
-+
-+	WARN_ON(pip->first_gpio != 0); /* needs testing */
-+
-+	chip->label = pip->name;
-+	chip->owner = THIS_MODULE;
-+	chip->base = pip->first_gpio;
-+	chip->ngpio = (pip->last_gpio - pip->first_gpio) + 1;
-+
-+	return gpiochip_add(chip);
-+}
+
+ #define CHCR_TS_MASK	0x18
+ #define CHCR_TS_SHIFT	3
+-- 
+1.5.6.3
+
