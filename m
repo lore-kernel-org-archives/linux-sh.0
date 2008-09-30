@@ -1,44 +1,62 @@
-From: Jeff Garzik <jeff@garzik.org>
-Date: Sat, 13 Sep 2008 19:13:04 +0000
-Subject: Re: [PATCH] smc91x: SMC_IO_SHIFT platform data support for default
-Message-Id: <48CC10C0.6040607@garzik.org>
+From: thaoth <thaoth@cybersoft-vn.com>
+Date: Tue, 30 Sep 2008 11:30:09 +0000
+Subject: [UBoot] Hows to boot Linux Kernel from USB
+Message-Id: <loom.20080930T111336-805@post.gmane.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20080908050234.11554.10123.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: netdev@vger.kernel.org, eric.miao@marvell.com, luca.santini@spesonline.com, nico@cam.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> Commit 159198862adad7109bb347bb30a620f67beac45f added SMC_IO_SHIFT
-> platform data support. After that ARM board support was added.
-> 
-> The default case is still missing though, so on SuperH SMC_IO_SHIFT
-> is constantly zero regardless of what you pass as platform data.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> Test-by: Luca Santini <luca.santini@spesonline.com>
-> ---
-> 
->  drivers/net/smc91x.h |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> --- 0001/drivers/net/smc91x.h
-> +++ work/drivers/net/smc91x.h	2008-08-28 20:43:03.000000000 +0900
-> @@ -446,6 +446,8 @@ static inline void LPD7_SMC_outsw (unsig
->  #define SMC_CAN_USE_32BIT	1
->  #define SMC_NOWAIT		1
->  
-> +#define SMC_IO_SHIFT		(lp->io_shift)
-> +
->  #define SMC_inb(a, r)		readb((a) + (r))
->  #define SMC_inw(a, r)		readw((a) + (r))
->  #define SMC_inl(a, r)		readl((a) + (r))
+Hi All,
 
-applied
+I would like to know how to boot linux kernel from USB. I have 
+ported UBoot
+(support serial, USB driver) but didn't support CF card. 
 
+Would you please tell me how to boot Linux Kernel from USB Flash memory? 
+I have
+many guide could help hows to boot Linux kernel from CF card or network 
+but  I
+didn't see help for USB Flash memory.
+
+Here is step by step I did but didn't work.
+- First initialization USB
+
+=> usb start
+
+- List file on USB Flash memory
+
+=> fatls usb 0:1
+  3876248   vmlinux.srec
+  1348231   vmlinux
+  2207942   vmlinux.bin
+.
+  1277956   zimage
+
+- load zImage into SDRAM memory at base address 0x8c000000 + 200000 
+
+=> fatload usb 0:1 200000 zimage
+reading zimage
+.
+.
+.
+.
+......................................................
+..........................
+............................................
+
+1277956 bytes read
+
+=> bootm
+Wrong Image Format for bootm command
+ERROR: can't get kernel image!
+
+This seems here is wrong command. I should load uImage (not zImage) 
+into SDRAM
+memory. Google booting kernel from USB on the internet but I 
+didn't see any help. :(
+
+Thank you for answer
+Best regards,
 
