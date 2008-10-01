@@ -1,66 +1,87 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 07 Oct 2008 13:55:10 +0000
-Subject: [PATCH] sh: Use sh7720 pinmux code on the magicpanelr2 board
-Message-Id: <20081007135510.29528.37293.sendpatchset@rx1.opensource.se>
+From: Carmelo Amoroso <carmelo73@gmail.com>
+Date: Wed, 01 Oct 2008 05:31:08 +0000
+Subject: Re: CoreDump STLinux
+Message-Id: <48E30B1C.2020502@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Hi Rafael,
+This should be redirected to the ST support Bugzilla at
+https://bugzilla.stlinux.com/
 
-This patch hooks up the magicpanelr2 board with the sh7720 pinmux code.
+Regards,
+Carmelo
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+rdtorres@gmail.com wrote:
+> Hi all,
+> 
+> First of all sorry to send an email to linuxsh-dev list directly, I
+> doing it because my attempt to use linux-sh@m17n.org fail (its site is
+> down).
+> 
+> My problem:
+> I trying to analyse a core-dump of  "Hello-world" like app that is
+> running on SH4-STLinux, but it fails.
+> 
+> gdb gives me :
+> 
+> (gdb) bt full
+> #0  0x297382d4 in raise () from
+> /opt/7109/STM/STLinux-2.2/devkit/sh4/bin/../target/lib/libc.so.6
+> No symbol table info available.
+> #1  0x29739dd6 in abort () from
+> /opt/7109/STM/STLinux-2.2/devkit/sh4/bin/../target/lib/libc.so.6
+> No symbol table info available.
+> Cannot access memory at address 0x7b916ff8
+> 
+> 
+> My program code:
+> 
+> #include <stdlib.h>
+> 
+> extern void m1();
+> 
+> static int count = 0;
+> 
+> void m3(){
+>        if (count++ > 2)
+>                abort();
+>        m1();
+> }
+> 
+> void m2(){
+>        m3();
+> }
+> 
+> void m1 (){
+>        m2();
+> }
+> 
+> int
+> main (int argc, char* argv[]) {
+>        m1();
+>        return 0;
+> }
+> 
+> I compiled it with /opt/STM/STLinux-2.2/devkit/sh4/bin/sh4-linux-g++
+> -g -o mysand sandbox.cpp
+> 
+> I've tried -fstack-protector-all option without success too.
+> 
+> Before running it on STLinux I'm running: ulimited -c unlimited.
+> 
+> 
+> Do you have any idea why the stack of my core-dump is broken ?
+> 
+> 
+> Thanks in advance,
+> Rafael Torres
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
- Compiles fine but untested.
-
- arch/sh/boards/Kconfig              |    1 +
- arch/sh/boards/board-magicpanelr2.c |   11 ++++++++++-
- 2 files changed, 11 insertions(+), 1 deletion(-)
-
---- 0010/arch/sh/boards/Kconfig
-+++ work/arch/sh/boards/Kconfig	2008-10-06 16:00:48.000000000 +0900
-@@ -238,6 +238,7 @@ config SH_X3PROTO
- config SH_MAGIC_PANEL_R2
- 	bool "Magic Panel R2"
- 	depends on CPU_SUBTYPE_SH7720
-+	select ARCH_REQUIRE_GPIOLIB
- 	help
- 	  Select Magic Panel R2 if configuring for Magic Panel R2.
- 
---- 0001/arch/sh/boards/board-magicpanelr2.c
-+++ work/arch/sh/boards/board-magicpanelr2.c	2008-10-06 16:06:12.000000000 +0900
-@@ -13,12 +13,14 @@
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
-+#include <linux/gpio.h>
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/map.h>
- #include <asm/magicpanelr2.h>
- #include <asm/heartbeat.h>
-+#include <asm/sh7720.h>
- 
- #define LAN9115_READY	(ctrl_inl(0xA8000084UL) & 0x00000001UL)
- 
-@@ -170,7 +172,14 @@ static void __init setup_port_multiplexi
- 	/* R7 A25;	     R6 A24;	     R5 A23;		  R4 A22;
- 	 * R3 A21;	     R2 A20;	     R1 A19;		  R0 A0;
- 	 */
--	ctrl_outw(0x0000, PORT_PRCR);	/* 00 00 00 00 00 00 00 00 */
-+	gpio_request(GPIO_FN_A25, NULL);
-+	gpio_request(GPIO_FN_A24, NULL);
-+	gpio_request(GPIO_FN_A23, NULL);
-+	gpio_request(GPIO_FN_A22, NULL);
-+	gpio_request(GPIO_FN_A21, NULL);
-+	gpio_request(GPIO_FN_A20, NULL);
-+	gpio_request(GPIO_FN_A19, NULL);
-+	gpio_request(GPIO_FN_A0, NULL);
- 
- 	/* S7 (x);		S6 (x);        S5 (x);	     S4 GPO(EEPROM_CS2);
- 	 * S3 GPO(EEPROM_CS1);  S2 SIOF0_TXD;  S1 SIOF0_RXD; S0 SIOF0_SCK;
