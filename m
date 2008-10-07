@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 09 Oct 2008 09:41:34 +0000
-Subject: [PATCH] sh: reduce Migo-R smc91x overruns
-Message-Id: <20081009094134.6468.88563.sendpatchset@rx1.opensource.se>
+Date: Tue, 07 Oct 2008 13:55:10 +0000
+Subject: [PATCH] sh: Use sh7720 pinmux code on the magicpanelr2 board
+Message-Id: <20081007135510.29528.37293.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,48 +10,57 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Improve Migo-R ethernet performance by reducing smc91x overruns.
-This is done by enabling SMC91X_NOWAIT and optimizing CS4 setup.
+This patch hooks up the magicpanelr2 board with the sh7720 pinmux code.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/boards/mach-migor/setup.c |    6 ++++--
- arch/sh/include/asm/migor.h       |    2 ++
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ Compiles fine but untested.
 
---- 0004/arch/sh/boards/mach-migor/setup.c
-+++ work/arch/sh/boards/mach-migor/setup.c	2008-10-09 16:53:01.000000000 +0900
-@@ -37,7 +37,7 @@
-  */
+ arch/sh/boards/Kconfig              |    1 +
+ arch/sh/boards/board-magicpanelr2.c |   11 ++++++++++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+--- 0010/arch/sh/boards/Kconfig
++++ work/arch/sh/boards/Kconfig	2008-10-06 16:00:48.000000000 +0900
+@@ -238,6 +238,7 @@ config SH_X3PROTO
+ config SH_MAGIC_PANEL_R2
+ 	bool "Magic Panel R2"
+ 	depends on CPU_SUBTYPE_SH7720
++	select ARCH_REQUIRE_GPIOLIB
+ 	help
+ 	  Select Magic Panel R2 if configuring for Magic Panel R2.
  
- static struct smc91x_platdata smc91x_info = {
--	.flags = SMC91X_USE_16BIT,
-+	.flags = SMC91X_USE_16BIT | SMC91X_NOWAIT,
- };
+--- 0001/arch/sh/boards/board-magicpanelr2.c
++++ work/arch/sh/boards/board-magicpanelr2.c	2008-10-06 16:06:12.000000000 +0900
+@@ -13,12 +13,14 @@
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
++#include <linux/gpio.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/map.h>
+ #include <asm/magicpanelr2.h>
+ #include <asm/heartbeat.h>
++#include <asm/sh7720.h>
  
- static struct resource smc91x_eth_resources[] = {
-@@ -463,8 +463,10 @@ static int __init migor_devices_setup(vo
- 	gpio_direction_output(GPIO_PTJ5, 1);
- 	gpio_export(GPIO_PTJ5, 0);
+ #define LAN9115_READY	(ctrl_inl(0xA8000084UL) & 0x00000001UL)
  
--	/* SMC91C111 */
-+	/* SMC91C111 - Enable IRQ0, Setup CS4 for 16-bit fast access */
- 	gpio_request(GPIO_FN_IRQ0, NULL);
-+	ctrl_outl(0x00003400, BSC_CS4BCR);
-+	ctrl_outl(0x00110080, BSC_CS4WCR);
+@@ -170,7 +172,14 @@ static void __init setup_port_multiplexi
+ 	/* R7 A25;	     R6 A24;	     R5 A23;		  R4 A22;
+ 	 * R3 A21;	     R2 A20;	     R1 A19;		  R0 A0;
+ 	 */
+-	ctrl_outw(0x0000, PORT_PRCR);	/* 00 00 00 00 00 00 00 00 */
++	gpio_request(GPIO_FN_A25, NULL);
++	gpio_request(GPIO_FN_A24, NULL);
++	gpio_request(GPIO_FN_A23, NULL);
++	gpio_request(GPIO_FN_A22, NULL);
++	gpio_request(GPIO_FN_A21, NULL);
++	gpio_request(GPIO_FN_A20, NULL);
++	gpio_request(GPIO_FN_A19, NULL);
++	gpio_request(GPIO_FN_A0, NULL);
  
- 	/* KEYSC */
- 	clk_always_enable("mstp214"); /* KEYSC */
---- 0001/arch/sh/include/asm/migor.h
-+++ work/arch/sh/include/asm/migor.h	2008-10-09 16:44:46.000000000 +0900
-@@ -52,7 +52,9 @@
- #define PORT_HIZCRB 0xa405015a
- #define PORT_HIZCRC 0xa405015c
- 
-+#define BSC_CS4BCR 0xfec10010
- #define BSC_CS6ABCR 0xfec1001c
-+#define BSC_CS4WCR 0xfec10030
- 
- #include <video/sh_mobile_lcdc.h>
- 
+ 	/* S7 (x);		S6 (x);        S5 (x);	     S4 GPO(EEPROM_CS2);
+ 	 * S3 GPO(EEPROM_CS1);  S2 SIOF0_TXD;  S1 SIOF0_RXD; S0 SIOF0_SCK;
