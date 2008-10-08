@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Oct 2008 11:14:28 +0000
-Subject: [PATCH] sh: use arch_flags for sh_mobile mstpcr clock bits
-Message-Id: <20081031111428.2964.51168.sendpatchset@rx1.opensource.se>
+Date: Wed, 08 Oct 2008 11:42:38 +0000
+Subject: [PATCH 07/09] sh: Use sh7203 GPIO on rsk7203 board
+Message-Id: <20081008114238.25282.57017.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,113 +10,52 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Use arch_flags to keep track of register and flag number.
+Make the rsk7203 board use the newly added sh7203 pinmux code.
+Only a single LED plus the serial console pins for now.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   72 +++++++++++++-------------------
- 1 file changed, 30 insertions(+), 42 deletions(-)
+ arch/sh/boards/Kconfig         |    1 +
+ arch/sh/boards/board-rsk7203.c |   11 +++++++++++
+ 2 files changed, 12 insertions(+)
 
---- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2008-10-30 19:10:54.000000000 +0900
-@@ -567,12 +567,30 @@ static struct clk sh7722_video_clock = {
- 	.ops = &sh7722_video_clk_ops,
- };
+--- 0006/arch/sh/boards/Kconfig
++++ work/arch/sh/boards/Kconfig	2008-10-08 19:34:15.000000000 +0900
+@@ -128,6 +128,7 @@ config SH_RTS7751R2D
  
--static int sh7722_mstpcr_start_stop(struct clk *clk, unsigned long reg,
--				    int enable)
-+#define MSTPCR_ARCH_FLAGS(reg, bit) (((reg) << 8) | (bit))
-+#define MSTPCR_ARCH_FLAGS_REG(value) ((value) >> 8)
-+#define MSTPCR_ARCH_FLAGS_BIT(value) ((value) & 0xff)
+ config SH_RSK7203
+ 	bool "RSK7203"
++	select GENERIC_GPIO
+ 	depends on CPU_SUBTYPE_SH7203
+ 
+ config SH_SDK7780
+--- 0001/arch/sh/boards/board-rsk7203.c
++++ work/arch/sh/boards/board-rsk7203.c	2008-10-08 19:33:50.000000000 +0900
+@@ -16,8 +16,10 @@
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/map.h>
+ #include <linux/smc911x.h>
++#include <linux/gpio.h>
+ #include <asm/machvec.h>
+ #include <asm/io.h>
++#include <asm/sh7203.h>
+ 
+ static struct smc911x_platdata smc911x_info = {
+ 	.flags		= SMC911X_USE_16BIT,
+@@ -122,6 +124,15 @@ static struct platform_device *rsk7203_d
+ 
+ static int __init rsk7203_devices_setup(void)
+ {
++	/* Select pins for SCIF0 */
++	gpio_request(GPIO_FN_TXD0, NULL);
++	gpio_request(GPIO_FN_RXD0, NULL);
 +
-+static int sh7722_mstpcr_start_stop(struct clk *clk, int enable)
- {
--	unsigned long bit = clk->arch_flags;
-+	unsigned long bit = MSTPCR_ARCH_FLAGS_BIT(clk->arch_flags);
-+	unsigned long reg;
- 	unsigned long r;
- 
-+	switch(MSTPCR_ARCH_FLAGS_REG(clk->arch_flags)) {
-+	case 0:
-+		reg = MSTPCR0;
-+		break;
-+	case 1:
-+		reg = MSTPCR1;
-+		break;
-+	case 2:
-+		reg = MSTPCR2;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}  
++	/* Lit LED0 */
++	gpio_request(GPIO_PE10, NULL);
++	gpio_direction_output(GPIO_PE10, 0);
++	gpio_export(GPIO_PE10, 0);
 +
- 	r = ctrl_inl(reg);
- 
- 	if (enable)
-@@ -584,56 +602,26 @@ static int sh7722_mstpcr_start_stop(stru
- 	return 0;
- }
- 
--static void sh7722_mstpcr0_enable(struct clk *clk)
--{
--	sh7722_mstpcr_start_stop(clk, MSTPCR0, 1);
--}
--
--static void sh7722_mstpcr0_disable(struct clk *clk)
--{
--	sh7722_mstpcr_start_stop(clk, MSTPCR0, 0);
--}
--
--static void sh7722_mstpcr1_enable(struct clk *clk)
--{
--	sh7722_mstpcr_start_stop(clk, MSTPCR1, 1);
--}
--
--static void sh7722_mstpcr1_disable(struct clk *clk)
--{
--	sh7722_mstpcr_start_stop(clk, MSTPCR1, 0);
--}
--
--static void sh7722_mstpcr2_enable(struct clk *clk)
-+static void sh7722_mstpcr_enable(struct clk *clk)
- {
--	sh7722_mstpcr_start_stop(clk, MSTPCR2, 1);
-+	sh7722_mstpcr_start_stop(clk, 1);
- }
- 
--static void sh7722_mstpcr2_disable(struct clk *clk)
-+static void sh7722_mstpcr_disable(struct clk *clk)
- {
--	sh7722_mstpcr_start_stop(clk, MSTPCR2, 0);
-+	sh7722_mstpcr_start_stop(clk, 0);
- }
- 
--static struct clk_ops sh7722_mstpcr0_clk_ops = {
--	.enable = sh7722_mstpcr0_enable,
--	.disable = sh7722_mstpcr0_disable,
--};
--
--static struct clk_ops sh7722_mstpcr1_clk_ops = {
--	.enable = sh7722_mstpcr1_enable,
--	.disable = sh7722_mstpcr1_disable,
--};
--
--static struct clk_ops sh7722_mstpcr2_clk_ops = {
--	.enable = sh7722_mstpcr2_enable,
--	.disable = sh7722_mstpcr2_disable,
-+static struct clk_ops sh7722_mstpcr_clk_ops = {
-+	.enable = sh7722_mstpcr_enable,
-+	.disable = sh7722_mstpcr_disable,
- };
- 
- #define DECLARE_MSTPCRN(regnr, bitnr, bitstr)		\
- {							\
- 	.name = "mstp" __stringify(regnr) bitstr,	\
--	.arch_flags = bitnr,				\
--	.ops = &sh7722_mstpcr ## regnr ## _clk_ops,	\
-+	.arch_flags = MSTPCR_ARCH_FLAGS(regnr, bitnr),	\
-+	.ops = &sh7722_mstpcr_clk_ops,	\
- }
- 
- #define DECLARE_MSTPCR(regnr) \
+ 	set_mtd_partitions();
+ 	return platform_add_devices(rsk7203_devices,
+ 				    ARRAY_SIZE(rsk7203_devices));
