@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 08 Oct 2008 11:41:43 +0000
-Subject: [PATCH 01/09] sh: GPIO and pinmux base code
-Message-Id: <20081008114143.25282.13668.sendpatchset@rx1.opensource.se>
+Date: Wed, 08 Oct 2008 11:42:01 +0000
+Subject: [PATCH 03/09] sh: Use sh7722 GPIO on Migo-R board
+Message-Id: <20081008114201.25282.69471.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,658 +10,301 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds gpio code together with the pinmux table parser.
-In the future we should optimize this and switch back to gpiolib.
+This patch enables the GPIO code on Migo-R and converts the code from
+register based pinmux configuration to GPIO based pin by pin setup.
+Fix whitespace damage while at it and add 2 LEDs and export them to
+user space.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/Kconfig            |    3 
- arch/sh/include/asm/gpio.h |   92 +++++++-
- arch/sh/kernel/Makefile_32 |    2 
- arch/sh/kernel/Makefile_64 |    2 
- arch/sh/kernel/gpio.c      |  498 ++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 593 insertions(+), 4 deletions(-)
+ arch/sh/boards/Kconfig               |    1 
+ arch/sh/boards/mach-migor/lcd_qvga.c |    6 -
+ arch/sh/boards/mach-migor/setup.c    |  187 +++++++++++++++++++++-------------
+ 3 files changed, 125 insertions(+), 69 deletions(-)
 
---- 0001/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-10-08 18:47:02.000000000 +0900
-@@ -59,6 +59,9 @@ config GENERIC_HARDIRQS_NO__DO_IRQ
- config GENERIC_IRQ_PROBE
- 	def_bool y
- 
-+config GENERIC_GPIO
-+	def_bool n
-+
- config GENERIC_CALIBRATE_DELAY
- 	bool
- 
---- 0001/arch/sh/include/asm/gpio.h
-+++ work/arch/sh/include/asm/gpio.h	2008-10-08 18:14:30.000000000 +0900
-@@ -1,9 +1,9 @@
- /*
-  *  include/asm-sh/gpio.h
-  *
-- *  Copyright (C) 2007 Markus Brunner, Mark Jonas
-+ * Generic GPIO API and pinmux table support for SuperH.
-  *
-- *  Addresses for the Pin Function Controller
-+ * Copyright (c) 2008 Magnus Damm
-  *
-  * This file is subject to the terms and conditions of the GNU General Public
-  * License.  See the file "COPYING" in the main directory of this archive
-@@ -16,4 +16,92 @@
- #include <cpu/gpio.h>
- #endif
- 
-+typedef unsigned short pinmux_enum_t;
-+typedef unsigned char pinmux_flag_t;
-+
-+#define PINMUX_TYPE_NONE            0
-+#define PINMUX_TYPE_FUNCTION        1
-+#define PINMUX_TYPE_GPIO            2
-+#define PINMUX_TYPE_OUTPUT          3
-+#define PINMUX_TYPE_INPUT           4
-+#define PINMUX_TYPE_INPUT_PULLUP    5
-+#define PINMUX_TYPE_INPUT_PULLDOWN  6
-+
-+#define PINMUX_FLAG_TYPE            (0x7)
-+#define PINMUX_FLAG_WANT_PULLUP     (1 << 3)
-+#define PINMUX_FLAG_WANT_PULLDOWN   (1 << 4)
-+
-+struct pinmux_gpio {
-+	pinmux_enum_t enum_id;
-+	pinmux_flag_t flags;
-+};
-+
-+#define PINMUX_GPIO(gpio, data_or_mark) [gpio] = { data_or_mark }
-+#define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
-+
-+struct pinmux_cfg_reg {
-+	unsigned long reg, reg_width, field_width;
-+	unsigned long *cnt;
-+	pinmux_enum_t *enum_ids;
-+};
-+
-+#define PINMUX_CFG_REG(name, r, r_width, f_width) \
-+	.reg = r, .reg_width = r_width, .field_width = f_width,		\
-+	.cnt = (unsigned long [r_width / f_width]) {}, \
-+	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)]) \
-+
-+struct pinmux_data_reg {
-+	unsigned long reg, reg_width;
-+	pinmux_enum_t *enum_ids;
-+};
-+
-+#define PINMUX_DATA_REG(name, r, r_width) \
-+	.reg = r, .reg_width = r_width,	\
-+	.enum_ids = (pinmux_enum_t [r_width]) \
-+
-+struct pinmux_range {
-+	pinmux_enum_t begin;
-+	pinmux_enum_t end;
-+};
-+
-+struct pinmux_info {
-+	char *name;
-+	pinmux_enum_t reserved_id;
-+	struct pinmux_range data;
-+	struct pinmux_range input;
-+	struct pinmux_range input_pd;
-+	struct pinmux_range input_pu;
-+	struct pinmux_range output;
-+	struct pinmux_range mark;
-+	struct pinmux_range function;
-+
-+	unsigned first_gpio, last_gpio;
-+
-+	struct pinmux_gpio *gpios;
-+	struct pinmux_cfg_reg *cfg_regs;
-+	struct pinmux_data_reg *data_regs;
-+
-+	pinmux_enum_t *gpio_data;
-+	unsigned int gpio_data_size;
-+
-+	unsigned long *gpio_in_use;
-+};
-+
-+int register_pinmux(struct pinmux_info *pip);
-+
-+int __gpio_request(unsigned gpio);
-+static inline int gpio_request(unsigned gpio, const char *label)
-+{
-+	return __gpio_request(gpio);
-+}
-+void gpio_free(unsigned gpio);
-+int gpio_direction_input(unsigned gpio);
-+int gpio_direction_output(unsigned gpio, int value);
-+int gpio_get_value(unsigned gpio);
-+void gpio_set_value(unsigned gpio, int value);
-+static inline int gpio_export(unsigned gpio, bool direction_may_change)
-+{
-+	return 0;
-+}
-+
- #endif /* __ASM_SH_GPIO_H */
---- 0001/arch/sh/kernel/Makefile_32
-+++ work/arch/sh/kernel/Makefile_32	2008-10-08 18:14:30.000000000 +0900
-@@ -5,7 +5,7 @@
- extra-y	:= head_32.o init_task.o vmlinux.lds
- 
- obj-y	:= debugtraps.o io.o io_generic.o irq.o machvec.o process_32.o \
--	   ptrace_32.o setup.o signal_32.o sys_sh.o sys_sh32.o \
-+	   ptrace_32.o setup.o signal_32.o sys_sh.o sys_sh32.o gpio.o \
- 	   syscalls_32.o time_32.o topology.o traps.o traps_32.o
- 
- obj-y				+= cpu/ timers/
---- 0001/arch/sh/kernel/Makefile_64
-+++ work/arch/sh/kernel/Makefile_64	2008-10-08 18:14:30.000000000 +0900
-@@ -1,7 +1,7 @@
- extra-y	:= head_64.o init_task.o vmlinux.lds
- 
- obj-y	:= debugtraps.o io.o io_generic.o irq.o machvec.o process_64.o \
--	   ptrace_64.o setup.o signal_64.o sys_sh.o sys_sh64.o \
-+	   ptrace_64.o setup.o signal_64.o sys_sh.o sys_sh64.o gpio.o \
- 	   syscalls_64.o time_64.o topology.o traps.o traps_64.o
- 
- obj-y				+= cpu/ timers/
---- /dev/null
-+++ work/arch/sh/kernel/gpio.c	2008-10-08 18:14:30.000000000 +0900
-@@ -0,0 +1,498 @@
-+/*
-+ * Pinmuxed GPIO support for SuperH.
-+ *
-+ * Copyright (C) 2008 Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/errno.h>
-+#include <linux/kernel.h>
-+#include <linux/list.h>
-+#include <linux/module.h>
-+#include <linux/clk.h>
-+#include <linux/err.h>
-+#include <linux/io.h>
-+#include <linux/irq.h>
-+#include <linux/bitops.h>
+--- 0001/arch/sh/boards/Kconfig
++++ work/arch/sh/boards/Kconfig	2008-10-08 18:51:31.000000000 +0900
+@@ -162,6 +162,7 @@ config SH_SH7785LCR_29BIT_PHYSMAPS
+ config SH_MIGOR
+ 	bool "Migo-R"
+ 	depends on CPU_SUBTYPE_SH7722
++	select GENERIC_GPIO
+ 	help
+ 	  Select Migo-R if configuring for the SH7722 Migo-R platform
+           by Renesas System Solutions Asia Pte. Ltd.
+--- 0001/arch/sh/boards/mach-migor/lcd_qvga.c
++++ work/arch/sh/boards/mach-migor/lcd_qvga.c	2008-10-08 18:50:59.000000000 +0900
+@@ -17,7 +17,9 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
 +#include <linux/gpio.h>
+ #include <video/sh_mobile_lcdc.h>
++#include <asm/sh7722.h>
+ #include <asm/migor.h>
+ 
+ /* LCD Module is a PH240320T according to board schematics. This module
+@@ -30,9 +32,9 @@
+ 
+ static void reset_lcd_module(void)
+ {
+-	ctrl_outb(ctrl_inb(PORT_PHDR) & ~0x04, PORT_PHDR);
++	gpio_set_value(GPIO_PTH2, 0);
+ 	mdelay(2);
+-	ctrl_outb(ctrl_inb(PORT_PHDR) | 0x04, PORT_PHDR);
++	gpio_set_value(GPIO_PTH2, 1);
+ 	mdelay(1);
+ }
+ 
+--- 0001/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2008-10-08 18:52:25.000000000 +0900
+@@ -17,6 +17,7 @@
+ #include <linux/smc91x.h>
+ #include <linux/delay.h>
+ #include <linux/clk.h>
++#include <linux/gpio.h>
+ #include <media/soc_camera_platform.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <video/sh_mobile_lcdc.h>
+@@ -25,6 +26,7 @@
+ #include <asm/io.h>
+ #include <asm/sh_keysc.h>
+ #include <asm/migor.h>
++#include <asm/sh7722.h>
+ 
+ /* Address     IRQ  Size  Bus  Description
+  * 0x00000000       64MB  16   NOR Flash (SP29PL256N)
+@@ -169,7 +171,7 @@ static void migor_nand_flash_cmd_ctl(str
+ 
+ static int migor_nand_flash_ready(struct mtd_info *mtd)
+ {
+-	return ctrl_inb(PORT_PADR) & 0x02; /* PTA1 */
++	return gpio_get_value(GPIO_PTA1); /* NAND_RBn */
+ }
+ 
+ struct platform_nand_data migor_nand_flash_data = {
+@@ -286,22 +288,15 @@ static struct clk *camera_clk;
+ 
+ static void camera_power_on(void)
+ {
+-	unsigned char value;
+-
+ 	camera_clk = clk_get(NULL, "video_clk");
+ 	clk_set_rate(camera_clk, 24000000);
+ 	clk_enable(camera_clk);	/* start VIO_CKO */
+ 
++	/* use VIO_RST to take camera out of reset */
+ 	mdelay(10);
+-	value = ctrl_inb(PORT_PTDR);
+-	value &= ~0x09;
+-#ifndef CONFIG_SH_MIGOR_RTA_WVGA
+-	value |= 0x01;
+-#endif
+-	ctrl_outb(value, PORT_PTDR);
++	gpio_set_value(GPIO_PTT3, 0);
+ 	mdelay(10);
+-
+-	ctrl_outb(value | 8, PORT_PTDR);
++	gpio_set_value(GPIO_PTT3, 1);
+ }
+ 
+ static void camera_power_off(void)
+@@ -309,7 +304,7 @@ static void camera_power_off(void)
+ 	clk_disable(camera_clk); /* stop VIO_CKO */
+ 	clk_put(camera_clk);
+ 
+-	ctrl_outb(ctrl_inb(PORT_PTDR) & ~0x08, PORT_PTDR);
++	gpio_set_value(GPIO_PTT3, 0);
+ }
+ 
+ #ifdef CONFIG_I2C
+@@ -458,75 +453,133 @@ static struct i2c_board_info migor_i2c_d
+ 
+ static int __init migor_devices_setup(void)
+ {
++	/* Lit D11 LED */
++	gpio_request(GPIO_PTJ7, NULL);
++	gpio_direction_output(GPIO_PTJ7, 1);
++	gpio_export(GPIO_PTJ7, 0);
 +
-+static struct pinmux_info *registered_gpio;
++	/* Lit D12 LED */
++	gpio_request(GPIO_PTJ5, NULL);
++	gpio_direction_output(GPIO_PTJ5, 1);
++	gpio_export(GPIO_PTJ5, 0);
 +
-+static struct pinmux_info *gpio_controller(unsigned gpio)
-+{
-+	if (!registered_gpio)
-+		return NULL;
++	/* SMC91C111 */
++	gpio_request(GPIO_FN_IRQ0, NULL);
 +
-+	if (gpio < registered_gpio->first_gpio)
-+		return NULL;
++	/* KEYSC */
+ 	clk_always_enable("mstp214"); /* KEYSC */
++	gpio_request(GPIO_FN_KEYOUT0, NULL);
++	gpio_request(GPIO_FN_KEYOUT1, NULL);
++	gpio_request(GPIO_FN_KEYOUT2, NULL);
++	gpio_request(GPIO_FN_KEYOUT3, NULL);
++	gpio_request(GPIO_FN_KEYOUT4_IN6, NULL);
++	gpio_request(GPIO_FN_KEYIN1, NULL);
++	gpio_request(GPIO_FN_KEYIN2, NULL);
++	gpio_request(GPIO_FN_KEYIN3, NULL);
++	gpio_request(GPIO_FN_KEYIN4, NULL);
++	gpio_request(GPIO_FN_KEYOUT5_IN5, NULL);
 +
-+	if (gpio > registered_gpio->last_gpio)
-+		return NULL;
++	/* NAND Flash */
++	gpio_request(GPIO_FN_CS6A_CE2B, NULL);
++	ctrl_outl((ctrl_inl(BSC_CS6ABCR) & ~0x0600) | 0x0200, BSC_CS6ABCR);
++	gpio_request(GPIO_PTA1, NULL);
++	gpio_direction_input(GPIO_PTA1);
 +
-+	return registered_gpio;
-+}
++	/* Touch Panel */
++	gpio_request(GPIO_FN_IRQ6, NULL);
 +
-+static int enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
-+{
-+	if (enum_id < r->begin)
-+		return 0;
-+
-+	if (enum_id > r->end)
-+		return 0;
-+
-+	return 1;
-+}
-+
-+static int read_write_reg(unsigned long reg, unsigned long reg_width,
-+			  unsigned long field_width, unsigned long in_pos,
-+			  unsigned long value, int do_write)
-+{
-+	unsigned long data, mask, pos;
-+
-+	data = 0;
-+	mask = (1 << field_width) - 1;
-+	pos = reg_width - ((in_pos + 1) * field_width);
-+
-+#ifdef DEBUG
-+	pr_info("%s, addr = %lx, value = %ld, pos = %ld, "
-+		"r_width = %ld, f_width = %ld\n",
-+		do_write ? "write" : "read", reg, value, pos,
-+		reg_width, field_width);
++	/* LCD Panel */
+ 	clk_always_enable("mstp200"); /* LCDC */
++#ifdef CONFIG_SH_MIGOR_QVGA /* LCDC - QVGA - Enable SYS Interface signals */
++	gpio_request(GPIO_FN_LCDD17, NULL);
++	gpio_request(GPIO_FN_LCDD16, NULL);
++	gpio_request(GPIO_FN_LCDD15, NULL);
++	gpio_request(GPIO_FN_LCDD14, NULL);
++	gpio_request(GPIO_FN_LCDD13, NULL);
++	gpio_request(GPIO_FN_LCDD12, NULL);
++	gpio_request(GPIO_FN_LCDD11, NULL);
++	gpio_request(GPIO_FN_LCDD10, NULL);
++	gpio_request(GPIO_FN_LCDD8, NULL);
++	gpio_request(GPIO_FN_LCDD7, NULL);
++	gpio_request(GPIO_FN_LCDD6, NULL);
++	gpio_request(GPIO_FN_LCDD5, NULL);
++	gpio_request(GPIO_FN_LCDD4, NULL);
++	gpio_request(GPIO_FN_LCDD3, NULL);
++	gpio_request(GPIO_FN_LCDD2, NULL);
++	gpio_request(GPIO_FN_LCDD1, NULL);
++	gpio_request(GPIO_FN_LCDRS, NULL);
++	gpio_request(GPIO_FN_LCDCS, NULL);
++	gpio_request(GPIO_FN_LCDRD, NULL);
++	gpio_request(GPIO_FN_LCDWR, NULL);
++	gpio_request(GPIO_PTH2, NULL); /* LCD_DON */
++	gpio_direction_output(GPIO_PTH2, 1);
++#endif
++#ifdef CONFIG_SH_MIGOR_RTA_WVGA /* LCDC - WVGA - Enable RGB Interface signals */
++	gpio_request(GPIO_FN_LCDD15, NULL);
++	gpio_request(GPIO_FN_LCDD14, NULL);
++	gpio_request(GPIO_FN_LCDD13, NULL);
++	gpio_request(GPIO_FN_LCDD12, NULL);
++	gpio_request(GPIO_FN_LCDD11, NULL);
++	gpio_request(GPIO_FN_LCDD10, NULL);
++	gpio_request(GPIO_FN_LCDD9, NULL);
++	gpio_request(GPIO_FN_LCDD8, NULL);
++	gpio_request(GPIO_FN_LCDD7, NULL);
++	gpio_request(GPIO_FN_LCDD6, NULL);
++	gpio_request(GPIO_FN_LCDD5, NULL);
++	gpio_request(GPIO_FN_LCDD4, NULL);
++	gpio_request(GPIO_FN_LCDD3, NULL);
++	gpio_request(GPIO_FN_LCDD2, NULL);
++	gpio_request(GPIO_FN_LCDD1, NULL);
++	gpio_request(GPIO_FN_LCDD0, NULL);
++	gpio_request(GPIO_FN_LCDLCLK, NULL);
++	gpio_request(GPIO_FN_LCDDCK, NULL);
++	gpio_request(GPIO_FN_LCDVEPWC, NULL);
++	gpio_request(GPIO_FN_LCDVCPWC, NULL);
++	gpio_request(GPIO_FN_LCDVSYN, NULL);
++	gpio_request(GPIO_FN_LCDHSYN, NULL);
++	gpio_request(GPIO_FN_LCDDISP, NULL);
++	gpio_request(GPIO_FN_LCDDON, NULL);
 +#endif
 +
-+	switch (reg_width) {
-+	case 8:
-+		data = ctrl_inb(reg);
-+		break;
-+	case 16:
-+		data = ctrl_inw(reg);
-+		break;
-+	case 32:
-+		data = ctrl_inl(reg);
-+		break;
-+	}
-+
-+	if (!do_write)
-+		return (data >> pos) & mask;
-+
-+	data &= ~(mask << pos);
-+	data |= value << pos;
-+
-+	switch (reg_width) {
-+	case 8:
-+		ctrl_outb(data, reg);
-+		break;
-+	case 16:
-+		ctrl_outw(data, reg);
-+		break;
-+	case 32:
-+		ctrl_outl(data, reg);
-+		break;
-+	}
-+	return 0;
-+}
-+
-+static int get_data_reg(struct pinmux_info *gpioc, unsigned gpio,
-+			struct pinmux_data_reg **drp, int *bitp)
-+{
-+	pinmux_enum_t enum_id = gpioc->gpios[gpio].enum_id;
-+	struct pinmux_data_reg *data_reg;
-+	int k, n;
-+
-+	if (!enum_in_range(enum_id, &gpioc->data))
-+		return -1;
-+
-+	k = 0;
-+	while (1) {
-+		data_reg = gpioc->data_regs + k;
-+
-+		if (!data_reg->reg_width)
-+			break;
-+
-+		for (n = 0; n < data_reg->reg_width; n++) {
-+			if (data_reg->enum_ids[n] = enum_id) {
-+				*drp = data_reg;
-+				*bitp = n;
-+				return 0;
-+
-+			}
-+		}
-+		k++;
-+	}
-+
-+	return -1;
-+}
-+
-+static int get_config_reg(struct pinmux_info *gpioc, pinmux_enum_t enum_id,
-+			  struct pinmux_cfg_reg **crp, int *indexp,
-+			  unsigned long **cntp)
-+{
-+	struct pinmux_cfg_reg *config_reg;
-+	unsigned long r_width, f_width;
-+	int k, n;
-+
-+	k = 0;
-+	while (1) {
-+		config_reg = gpioc->cfg_regs + k;
-+
-+		r_width = config_reg->reg_width;
-+		f_width = config_reg->field_width;
-+
-+		if (!r_width)
-+			break;
-+		for (n = 0; n < (r_width / f_width) * 1 << f_width; n++) {
-+			if (config_reg->enum_ids[n] = enum_id) {
-+				*crp = config_reg;
-+				*indexp = n;
-+				*cntp = &config_reg->cnt[n / (1 << f_width)];
-+				return 0;
-+			}
-+		}
-+		k++;
-+	}
-+
-+	return -1;
-+}
-+
-+static int get_gpio_enum_id(struct pinmux_info *gpioc, unsigned gpio,
-+			    int pos, pinmux_enum_t *enum_idp)
-+{
-+	pinmux_enum_t enum_id = gpioc->gpios[gpio].enum_id;
-+	pinmux_enum_t *data = gpioc->gpio_data;
-+	int k;
-+
-+	if (!enum_in_range(enum_id, &gpioc->data)) {
-+		if (!enum_in_range(enum_id, &gpioc->mark)) {
-+			pr_err("non data/mark enum_id for gpio %d\n", gpio);
-+			return -1;
-+		}
-+	}
-+
-+	if (pos) {
-+		*enum_idp = data[pos + 1];
-+		return pos + 1;
-+	}
-+
-+	for (k = 0; k < gpioc->gpio_data_size; k++) {
-+		if (data[k] = enum_id) {
-+			*enum_idp = data[k + 1];
-+			return k + 1;
-+		}
-+	}
-+
-+	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
-+	return -1;
-+}
-+
-+static int write_config_reg(struct pinmux_info *gpioc,
-+			    struct pinmux_cfg_reg *crp,
-+			    int index)
-+{
-+	unsigned long ncomb, pos, value;
-+
-+	ncomb = 1 << crp->field_width;
-+	pos = index / ncomb;
-+	value = index % ncomb;
-+
-+	return read_write_reg(crp->reg, crp->reg_width,
-+			      crp->field_width, pos, value, 1);
-+}
-+
-+static int check_config_reg(struct pinmux_info *gpioc,
-+			    struct pinmux_cfg_reg *crp,
-+			    int index)
-+{
-+	unsigned long ncomb, pos, value;
-+
-+	ncomb = 1 << crp->field_width;
-+	pos = index / ncomb;
-+	value = index % ncomb;
-+
-+	if (read_write_reg(crp->reg, crp->reg_width,
-+			   crp->field_width, pos, 0, 0) = value)
-+		return 0;
-+
-+	return -1;
-+}
-+
-+enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
-+
-+int pinmux_config_gpio(struct pinmux_info *gpioc, unsigned gpio,
-+		       int pinmux_type, int cfg_mode)
-+{
-+	struct pinmux_cfg_reg *cr = NULL;
-+	pinmux_enum_t enum_id;
-+	struct pinmux_range *range;
-+	int in_range, pos, index;
-+	unsigned long *cntp;
-+
-+	switch (pinmux_type) {
-+
-+	case PINMUX_TYPE_FUNCTION:
-+		range = NULL;
-+		break;
-+
-+	case PINMUX_TYPE_OUTPUT:
-+		range = &gpioc->output;
-+		break;
-+
-+	case PINMUX_TYPE_INPUT:
-+		range = &gpioc->input;
-+		break;
-+
-+	case PINMUX_TYPE_INPUT_PULLUP:
-+		range = &gpioc->input_pu;
-+		break;
-+
-+	case PINMUX_TYPE_INPUT_PULLDOWN:
-+		range = &gpioc->input_pd;
-+		break;
-+
-+	default:
-+		goto out_err;
-+	}
-+
-+	pos = 0;
-+	enum_id = 0;
-+	index = 0;
-+	while (1) {
-+		pos = get_gpio_enum_id(gpioc, gpio, pos, &enum_id);
-+		if (pos <= 0)
-+			goto out_err;
-+
-+		if (!enum_id)
-+			break;
-+
-+		in_range = enum_in_range(enum_id, &gpioc->function);
-+		if (!in_range && range)
-+			in_range = enum_in_range(enum_id, range);
-+
-+		if (!in_range)
-+			continue;
-+
-+		if (get_config_reg(gpioc, enum_id, &cr, &index, &cntp) != 0)
-+			goto out_err;
-+
-+		switch (cfg_mode) {
-+		case GPIO_CFG_DRYRUN:
-+			if (!*cntp || !check_config_reg(gpioc, cr, index))
-+				continue;
-+			break;
-+
-+		case GPIO_CFG_REQ:
-+			if (write_config_reg(gpioc, cr, index) != 0)
-+				goto out_err;
-+			*cntp = *cntp + 1;
-+			break;
-+
-+		case GPIO_CFG_FREE:
-+			*cntp = *cntp - 1;
-+			break;
-+		}
-+	}
-+
-+	return 0;
-+ out_err:
-+	return -1;
-+}
-+
-+static DEFINE_SPINLOCK(gpio_lock);
-+
-+int __gpio_request(unsigned gpio)
-+{
-+	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	struct pinmux_data_reg *dummy;
-+	unsigned long flags;
-+	int i, ret, pinmux_type;
-+
-+	ret = -EINVAL;
-+
-+	if (!gpioc)
-+		goto err_out;
-+
-+	spin_lock_irqsave(&gpio_lock, flags);
-+
-+	if ((gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE) != PINMUX_TYPE_NONE)
-+		goto err_unlock;
-+
-+	/* setup pin function here if no data is associated with pin */
-+
-+	if (get_data_reg(gpioc, gpio, &dummy, &i) != 0)
-+		pinmux_type = PINMUX_TYPE_FUNCTION;
-+	else
-+		pinmux_type = PINMUX_TYPE_GPIO;
-+
-+	if (pinmux_type = PINMUX_TYPE_FUNCTION) {
-+		if (pinmux_config_gpio(gpioc, gpio,
-+				       pinmux_type,
-+				       GPIO_CFG_DRYRUN) != 0)
-+			goto err_unlock;
-+
-+		if (pinmux_config_gpio(gpioc, gpio,
-+				       pinmux_type,
-+				       GPIO_CFG_REQ) != 0)
-+			BUG();
-+	}
-+
-+	gpioc->gpios[gpio].flags = pinmux_type;
-+
-+	ret = 0;
-+ err_unlock:
-+	spin_unlock_irqrestore(&gpio_lock, flags);
-+ err_out:
-+	return ret;
-+}
-+EXPORT_SYMBOL(__gpio_request);
-+
-+void gpio_free(unsigned gpio)
-+{
-+	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	unsigned long flags;
-+	int pinmux_type;
-+
-+	if (!gpioc)
-+		return;
-+
-+	spin_lock_irqsave(&gpio_lock, flags);
-+
-+	pinmux_type = gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE;
-+	pinmux_config_gpio(gpioc, gpio, pinmux_type, GPIO_CFG_FREE);
-+	gpioc->gpios[gpio].flags = PINMUX_TYPE_NONE;
-+
-+	spin_unlock_irqrestore(&gpio_lock, flags);
-+}
-+EXPORT_SYMBOL(gpio_free);
-+
-+static int pinmux_direction(struct pinmux_info *gpioc,
-+			    unsigned gpio, int new_pinmux_type)
-+{
-+	int ret, pinmux_type;
-+
-+	ret = -EINVAL;
-+	pinmux_type = gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE;
-+
-+	switch (pinmux_type) {
-+	case PINMUX_TYPE_GPIO:
-+		break;
-+	case PINMUX_TYPE_OUTPUT:
-+	case PINMUX_TYPE_INPUT:
-+	case PINMUX_TYPE_INPUT_PULLUP:
-+	case PINMUX_TYPE_INPUT_PULLDOWN:
-+		pinmux_config_gpio(gpioc, gpio, pinmux_type, GPIO_CFG_FREE);
-+		break;
-+	default:
-+		goto err_out;
-+	}
-+
-+	if (pinmux_config_gpio(gpioc, gpio,
-+			       new_pinmux_type,
-+			       GPIO_CFG_DRYRUN) != 0)
-+		goto err_out;
-+
-+	if (pinmux_config_gpio(gpioc, gpio,
-+			       new_pinmux_type,
-+			       GPIO_CFG_REQ) != 0)
-+		BUG();
-+
-+	gpioc->gpios[gpio].flags = new_pinmux_type;
-+
-+	ret = 0;
-+ err_out:
-+	return ret;
-+}
-+
-+int gpio_direction_input(unsigned gpio)
-+{
-+	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	unsigned long flags;
-+	int ret = -EINVAL;
-+
-+	if (!gpioc)
-+		goto err_out;
-+
-+	spin_lock_irqsave(&gpio_lock, flags);
-+	ret = pinmux_direction(gpioc, gpio, PINMUX_TYPE_INPUT);
-+	spin_unlock_irqrestore(&gpio_lock, flags);
-+ err_out:
-+	return ret;
-+}
-+EXPORT_SYMBOL(gpio_direction_input);
-+
-+static int __gpio_get_set_value(struct pinmux_info *gpioc,
-+				unsigned gpio, int value,
-+				int do_write)
-+{
-+	struct pinmux_data_reg *dr = NULL;
-+	int bit = 0;
-+
-+	if (get_data_reg(gpioc, gpio, &dr, &bit) != 0)
-+		BUG();
-+	else
-+		value = read_write_reg(dr->reg, dr->reg_width,
-+				       1, bit, value, do_write);
-+
-+	return value;
-+}
-+
-+int gpio_direction_output(unsigned gpio, int value)
-+{
-+	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	unsigned long flags;
-+	int ret = -EINVAL;
-+
-+	if (!gpioc)
-+		goto err_out;
-+
-+	spin_lock_irqsave(&gpio_lock, flags);
-+	__gpio_get_set_value(gpioc, gpio, value, 1);
-+	ret = pinmux_direction(gpioc, gpio, PINMUX_TYPE_OUTPUT);
-+	spin_unlock_irqrestore(&gpio_lock, flags);
-+ err_out:
-+	return ret;
-+}
-+EXPORT_SYMBOL(gpio_direction_output);
-+
-+int gpio_get_value(unsigned gpio)
-+{
-+	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	unsigned long flags;
-+	int value = 0;
-+
-+	if (!gpioc)
-+		BUG();
-+	else {
-+		spin_lock_irqsave(&gpio_lock, flags);
-+		value = __gpio_get_set_value(gpioc, gpio, 0, 0);
-+		spin_unlock_irqrestore(&gpio_lock, flags);
-+	}
-+
-+	return value;
-+}
-+EXPORT_SYMBOL(gpio_get_value);
-+
-+void gpio_set_value(unsigned gpio, int value)
-+{
-+	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	unsigned long flags;
-+
-+	if (!gpioc)
-+		BUG();
-+	else {
-+		spin_lock_irqsave(&gpio_lock, flags);
-+		__gpio_get_set_value(gpioc, gpio, value, 1);
-+		spin_unlock_irqrestore(&gpio_lock, flags);
-+	}
-+}
-+EXPORT_SYMBOL(gpio_set_value);
-+
-+int register_pinmux(struct pinmux_info *pip)
-+{
-+	registered_gpio = pip;
-+	pr_info("pinmux: %s handling gpio %d -> %d\n",
-+		pip->name, pip->first_gpio, pip->last_gpio);
-+
-+	return 0;
-+}
++	/* CEU */
+ 	clk_always_enable("mstp203"); /* CEU */
++	gpio_request(GPIO_FN_VIO_CLK2, NULL);
++	gpio_request(GPIO_FN_VIO_VD2, NULL);
++	gpio_request(GPIO_FN_VIO_HD2, NULL);
++	gpio_request(GPIO_FN_VIO_FLD, NULL);
++	gpio_request(GPIO_FN_VIO_CKO, NULL);
++	gpio_request(GPIO_FN_VIO_D15, NULL);
++	gpio_request(GPIO_FN_VIO_D14, NULL);
++	gpio_request(GPIO_FN_VIO_D13, NULL);
++	gpio_request(GPIO_FN_VIO_D12, NULL);
++	gpio_request(GPIO_FN_VIO_D11, NULL);
++	gpio_request(GPIO_FN_VIO_D10, NULL);
++	gpio_request(GPIO_FN_VIO_D9, NULL);
++	gpio_request(GPIO_FN_VIO_D8, NULL);
++
++	gpio_request(GPIO_PTT3, NULL); /* VIO_RST */
++	gpio_direction_output(GPIO_PTT3, 0);
++	gpio_request(GPIO_PTT2, NULL); /* TV_IN_EN */
++	gpio_direction_output(GPIO_PTT2, 1);
++	gpio_request(GPIO_PTT0, NULL); /* CAM_EN */
++#ifdef CONFIG_SH_MIGOR_RTA_WVGA
++	gpio_direction_output(GPIO_PTT0, 0);
++#else
++	gpio_direction_output(GPIO_PTT0, 1);
++#endif
++	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x2000, PORT_MSELCRB); /* D15->D8 */
+ 
+ 	platform_resource_setup_memory(&migor_ceu_device, "ceu", 4 << 20);
+ 
+ 	i2c_register_board_info(0, migor_i2c_devices,
+ 				ARRAY_SIZE(migor_i2c_devices));
+- 
++
+ 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
+ }
+ __initcall(migor_devices_setup);
+ 
+ static void __init migor_setup(char **cmdline_p)
+ {
+-	/* SMC91C111 - Enable IRQ0 */
+-	ctrl_outw(ctrl_inw(PORT_PJCR) & ~0x0003, PORT_PJCR);
+-
+-	/* KEYSC */
+-	ctrl_outw(ctrl_inw(PORT_PYCR) & ~0x0fff, PORT_PYCR);
+-	ctrl_outw(ctrl_inw(PORT_PZCR) & ~0x0ff0, PORT_PZCR);
+-	ctrl_outw(ctrl_inw(PORT_PSELA) & ~0x4100, PORT_PSELA);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x4000, PORT_HIZCRA);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRC) & ~0xc000, PORT_HIZCRC);
+-
+-	/* NAND Flash */
+-	ctrl_outw(ctrl_inw(PORT_PXCR) & 0x0fff, PORT_PXCR);
+-	ctrl_outl((ctrl_inl(BSC_CS6ABCR) & ~0x00000600) | 0x00000200,
+-		  BSC_CS6ABCR);
+-
+-	/* Touch Panel - Enable IRQ6 */
+-	ctrl_outw(ctrl_inw(PORT_PZCR) & ~0xc, PORT_PZCR);
+-	ctrl_outw((ctrl_inw(PORT_PSELA) | 0x8000), PORT_PSELA);
+-	ctrl_outw((ctrl_inw(PORT_HIZCRC) & ~0x4000), PORT_HIZCRC);
+-
+-#ifdef CONFIG_SH_MIGOR_RTA_WVGA
+-	/* LCDC - WVGA - Enable RGB Interface signals */
+-	ctrl_outw(ctrl_inw(PORT_PACR) & ~0x0003, PORT_PACR);
+-	ctrl_outw(0x0000, PORT_PHCR);
+-	ctrl_outw(0x0000, PORT_PLCR);
+-	ctrl_outw(0x0000, PORT_PMCR);
+-	ctrl_outw(ctrl_inw(PORT_PRCR) & ~0x000f, PORT_PRCR);
+-	ctrl_outw((ctrl_inw(PORT_PSELD) & ~0x000d) | 0x0400, PORT_PSELD);
+-	ctrl_outw(ctrl_inw(PORT_MSELCRB) & ~0x0100, PORT_MSELCRB);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x01e0, PORT_HIZCRA);
+-#endif
+-#ifdef CONFIG_SH_MIGOR_QVGA
+-	/* LCDC - QVGA - Enable SYS Interface signals */
+-	ctrl_outw(ctrl_inw(PORT_PACR) & ~0x0003, PORT_PACR);
+-	ctrl_outw((ctrl_inw(PORT_PHCR) & ~0xcfff) | 0x0010, PORT_PHCR);
+-	ctrl_outw(0x0000, PORT_PLCR);
+-	ctrl_outw(0x0000, PORT_PMCR);
+-	ctrl_outw(ctrl_inw(PORT_PRCR) & ~0x030f, PORT_PRCR);
+-	ctrl_outw((ctrl_inw(PORT_PSELD) & ~0x0001) | 0x0420, PORT_PSELD);
+-	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x0100, PORT_MSELCRB);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x01e0, PORT_HIZCRA);
+-#endif
+-
+-	/* CEU */
+-	ctrl_outw((ctrl_inw(PORT_PTCR) & ~0x03c3) | 0x0051, PORT_PTCR);
+-	ctrl_outw(ctrl_inw(PORT_PUCR) & ~0x03ff, PORT_PUCR);
+-	ctrl_outw(ctrl_inw(PORT_PVCR) & ~0x03ff, PORT_PVCR);
+-	ctrl_outw(ctrl_inw(PORT_PWCR) & ~0x3c00, PORT_PWCR);
+-	ctrl_outw(ctrl_inw(PORT_PSELC) | 0x0001, PORT_PSELC);
+-	ctrl_outw(ctrl_inw(PORT_PSELD) & ~0x2000, PORT_PSELD);
+-	ctrl_outw(ctrl_inw(PORT_PSELE) | 0x000f, PORT_PSELE);
+-	ctrl_outw(ctrl_inw(PORT_MSELCRB) | 0x2200, PORT_MSELCRB);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRA) & ~0x0a00, PORT_HIZCRA);
+-	ctrl_outw(ctrl_inw(PORT_HIZCRB) & ~0x0003, PORT_HIZCRB);
+ }
+ 
+ static struct sh_machine_vector mv_migor __initmv = {
