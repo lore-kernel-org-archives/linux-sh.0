@@ -1,89 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 21 Oct 2008 12:32:31 +0000
-Subject: [PATCH] sh: Migo-R MMC support using spi_gpio and mmc_spi
-Message-Id: <20081021123231.27894.26150.sendpatchset@rx1.opensource.se>
+From: Adrian Bunk <bunk@kernel.org>
+Date: Tue, 14 Oct 2008 18:39:36 +0000
+Subject: sh/boards/mach-migor/setup.c build error
+Message-Id: <20081014183936.GB4710@cs181140183.pp.htv.fi>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Stefan Herbrechtsmeier <hbmeier@hni.uni-paderborn.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <mchehab@redhat.com>, lethal@linux-sh.org
+Cc: Magnus Damm <damm@igel.co.jp>, video4linux-list@redhat.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Commit 81034663159f39d005316b5c139038459cd16721
+(V4L/DVB (8687): soc-camera: Move .power and .reset from
+ soc_camera host to sensor driver) causes the following build error:
 
-This patch adds CN9 MMC support for MigoR using the mmc_spi driver on
-top of the bitbanging spi_gpio driver.
+<--  snip  -->
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+...
+  CC      arch/sh/boards/mach-migor/setup.o
+arch/sh/boards/mach-migor/setup.c:408: error: unknown field 'enable_camera' specified in initializer
+arch/sh/boards/mach-migor/setup.c:408: warning: excess elements in struct initializer
+arch/sh/boards/mach-migor/setup.c:408: warning: (near initialization for 'sh_mobile_ceu_info')
+arch/sh/boards/mach-migor/setup.c:409: error: unknown field 'disable_camera' specified in initializer
+arch/sh/boards/mach-migor/setup.c:409: warning: excess elements in struct initializer
+arch/sh/boards/mach-migor/setup.c:409: warning: (near initialization for 'sh_mobile_ceu_info')
+make[2]: *** [arch/sh/boards/mach-migor/setup.o] Error 1
 
- Needs the header from the not-yet-merged spi_gpio driver.
+<--  snip  -->
 
- arch/sh/boards/mach-migor/setup.c |   29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
 
---- 0002/arch/sh/boards/mach-migor/setup.c
-+++ work/arch/sh/boards/mach-migor/setup.c	2008-10-21 20:03:36.000000000 +0900
-@@ -18,6 +18,8 @@
- #include <linux/delay.h>
- #include <linux/clk.h>
- #include <linux/gpio.h>
-+#include <linux/spi/spi.h>
-+#include <linux/spi/spi_gpio.h>
- #include <media/soc_camera_platform.h>
- #include <media/sh_mobile_ceu.h>
- #include <video/sh_mobile_lcdc.h>
-@@ -436,6 +438,20 @@ static struct platform_device migor_ceu_
- 	},
- };
- 
-+struct spi_gpio_platform_data sdcard_cn9_platform_data = {
-+	.sck = GPIO_PTD0,
-+	.mosi = GPIO_PTD1,
-+	.miso = GPIO_PTD2,
-+	.num_chipselect = 1,
-+};
-+
-+static struct platform_device sdcard_cn9_device = {
-+	.name		= "spi_gpio",
-+	.dev	= {
-+		.platform_data	= &sdcard_cn9_platform_data,
-+	},
-+};
-+
- static struct platform_device *migor_devices[] __initdata = {
- 	&smc91x_eth_device,
- 	&sh_keysc_device,
-@@ -446,6 +462,7 @@ static struct platform_device *migor_dev
- #endif
- 	&migor_nor_flash_device,
- 	&migor_nand_flash_device,
-+	&sdcard_cn9_device,
- };
- 
- static struct i2c_board_info migor_i2c_devices[] = {
-@@ -458,6 +475,15 @@ static struct i2c_board_info migor_i2c_d
- 	},
- };
- 
-+static struct spi_board_info migor_spi_devices[] = {
-+	{
-+		.modalias = "mmc_spi",
-+		.max_speed_hz = 5000000,
-+		.chip_select = 0,
-+		.controller_data = (void *) GPIO_PTD5,
-+	},
-+};
-+
- static int __init migor_devices_setup(void)
- {
- 	/* Lit D11 LED */
-@@ -583,6 +609,9 @@ static int __init migor_devices_setup(vo
- 	i2c_register_board_info(0, migor_i2c_devices,
- 				ARRAY_SIZE(migor_i2c_devices));
- 
-+	spi_register_board_info(migor_spi_devices,
-+				ARRAY_SIZE(migor_spi_devices));
-+
- 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
- }
- __initcall(migor_devices_setup);
+cu
+Adrian
+
+-- 
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
+
