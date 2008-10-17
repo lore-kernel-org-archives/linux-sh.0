@@ -1,34 +1,38 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 22 Oct 2008 10:03:43 +0000
-Subject: Re: [PATCH] sh: add support FLCTL for ap325rxa board
-Message-Id: <20081022100343.GA13815@linux-sh.org>
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+Date: Fri, 17 Oct 2008 11:25:03 +0000
+Subject: [PATCH] Fix debugfs_create_dir's error checking method for arch/sh/kernel/
+Message-Id: <48F8760F.4070909@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48C63126.5060008@renesas.com>
-In-Reply-To: <48C63126.5060008@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Wed, Oct 22, 2008 at 06:45:14PM +0900, Yoshihiro Shimoda wrote:
-> Paul Mundt wrote:
-> >> +	/* FLCTL */
-> >> +	ctrl_outw(0, PORT_PUCR);
-> >> +	ctrl_outw(0, PORT_PVCR);
-> >> +	ctrl_outw(0, PORT_PSELC);
-> >> +	ctrl_outw(0, PORT_HIZCRC);
-> >> +	ctrl_outw(0xFFFF, PORT_DRVCRA);
-> >> +	ctrl_outw(0xFFFF, PORT_DRVCRB);
-> >> +	ctrl_outw((ctrl_inw(PORT_PXCR) & 0x3fff) | 0x4000, PORT_PXCR);
-> >> +	ctrl_outb(0x80, PORT_PXDR);
-> >>  }
-> >>
-> >>  static struct sh_machine_vector mv_ap325rxa __initmv = {
-> > 
-> > I checked this part in with your original patch, but have since rewrote
-> > it to grab all of the FLCTL pins through the new pinmux code. Please make
-> > sure that it still works for you.
-> 
-> I checked that FLCTL worked correctly using today's sh-2.6.git.
-> 
-Great, thanks for testing!
+Hi,
+
+debugfs_create_dir() returns NULL if an error occurs, returns -ENODEV
+when debugfs is not enabled in the kernel.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ arch/sh/kernel/setup.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index de83205..c41c4dc 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -530,6 +530,8 @@ struct dentry *sh_debugfs_root;
+ static int __init sh_debugfs_init(void)
+ {
+ 	sh_debugfs_root = debugfs_create_dir("sh", NULL);
++	if (!sh_debugfs_root)
++		return -ENOMEM;
+ 	if (IS_ERR(sh_debugfs_root))
+ 		return PTR_ERR(sh_debugfs_root);
+ 
+-- 
+1.5.5.3
+
+
