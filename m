@@ -1,20 +1,35 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 20 Oct 2008 02:28:32 +0000
-Subject: Re: [PATCH] sh64: rescue get_user/put_user
-Message-Id: <20081020022832.GA19416@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Fri, 17 Oct 2008 07:53:57 +0000
+Subject: [PATCH] sh: ap325rxa: Add support RTC RX-8564LC in AP325RXA board
+Message-Id: <48F84495.9010807@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081019192929.GA22064@x200.localdomain>
-In-Reply-To: <20081019192929.GA22064@x200.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Oct 19, 2008 at 11:29:29PM +0400, Alexey Dobriyan wrote:
-> 	(void *)&__pu_val, __pu_addr
-> 
-> is what original include/asm-sh64/uaccess.h did.
-> 
-> Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
+Renesas AP325RXA board has Epson RX-8564LC of RTC.
+This patch supports RTC of this board.
 
-This is already fixed in my queue, but thanks anyways!
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ arch/sh/boards/board-ap325rxa.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index 7ae8dcd..6abaf46 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -294,6 +294,9 @@ static struct platform_device *ap325rxa_devices[] __initdata = {
+ };
+
+ static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
++	{
++		I2C_BOARD_INFO("pcf8563", 0x51),
++	},
+ };
+
+ static int __init ap325rxa_devices_setup(void)
+-- 
+1.5.6.5
+
