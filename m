@@ -1,61 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 09 Oct 2008 09:48:16 +0000
-Subject: [PATCH] video: add sh_mobile_lcdc platform flags
-Message-Id: <20081009094816.6478.31468.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 20 Oct 2008 04:24:45 +0000
+Subject: Re: [RFC][PATCH] sh: override DMA interrupt handler to dma-sh driver
+Message-Id: <20081020042445.GC20044@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-fbdev-devel@lists.sourceforge.net
 
-From: Magnus Damm <damm@igel.co.jp>
+On Mon, Sep 29, 2008 at 06:26:45PM +0900, Nobuhiro Iwamatsu wrote:
+> Dma-sh has fixed interrupt handler and cannot register
+> an interrupt for exclusive use of the device with dma.
+> 
+> I added a handler to sh_dmac_request_dma and reviced it
+> to be able to appoint a handler.
+> 
+> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@nigauri.org>
 
-Add platform data flags for detailed lcd display configuration.
+While I don't have anything against the idea, I don't care for the
+approach. It is not acceptable to break the API every time you wish to
+extend soem basic functionality. The addition of request_dma_bycap()
+itself should have been a good indicator of this, as we didn't simply
+hack request_dma() in-place. Part of the reason for this is also because
+request_dma()/free_dma() are legacy interfaces from the ISA DMA days, and
+are virtually consistent across the entire tree.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
-
- Paul, can you please handle this one together with the other patch?
-
- drivers/video/sh_mobile_lcdcfb.c |    5 +++++
- include/video/sh_mobile_lcdc.h   |    7 +++++++
- 2 files changed, 12 insertions(+)
-
---- 0014/drivers/video/sh_mobile_lcdcfb.c
-+++ work/drivers/video/sh_mobile_lcdcfb.c	2008-10-09 18:08:33.000000000 +0900
-@@ -262,6 +262,11 @@ static int sh_mobile_lcdc_start(struct s
- 		tmp = ch->ldmt1r_value;
- 		tmp |= (lcd_cfg->sync & FB_SYNC_VERT_HIGH_ACT) ? 0 : 1 << 28;
- 		tmp |= (lcd_cfg->sync & FB_SYNC_HOR_HIGH_ACT) ? 0 : 1 << 27;
-+		tmp |= (ch->cfg.flags & LCDC_FLAGS_DWPOL) ? 1 << 26 : 0;
-+		tmp |= (ch->cfg.flags & LCDC_FLAGS_DIPOL) ? 1 << 25 : 0;
-+		tmp |= (ch->cfg.flags & LCDC_FLAGS_DAPOL) ? 1 << 24 : 0;
-+		tmp |= (ch->cfg.flags & LCDC_FLAGS_HSCNT) ? 1 << 17 : 0;
-+		tmp |= (ch->cfg.flags & LCDC_FLAGS_DWCNT) ? 1 << 16 : 0;
- 		lcdc_write_chan(ch, LDMT1R, tmp);
- 
- 		/* setup SYS bus */
---- 0014/include/video/sh_mobile_lcdc.h
-+++ work/include/video/sh_mobile_lcdc.h	2008-10-09 18:04:53.000000000 +0900
-@@ -28,6 +28,12 @@ enum { LCDC_CHAN_DISABLED = 0,
- 
- enum { LCDC_CLK_BUS, LCDC_CLK_PERIPHERAL, LCDC_CLK_EXTERNAL };
- 
-+#define LCDC_FLAGS_DWPOL (1 << 0) /* Rising edge dot clock data latch */
-+#define LCDC_FLAGS_DIPOL (1 << 1) /* Active low display enable polarity */
-+#define LCDC_FLAGS_DAPOL (1 << 2) /* Active low display data polarity */
-+#define LCDC_FLAGS_HSCNT (1 << 3) /* Disable HSYNC during VBLANK */
-+#define LCDC_FLAGS_DWCNT (1 << 4) /* Disable dotclock during blanking */
-+
- struct sh_mobile_lcdc_sys_bus_cfg {
- 	unsigned long ldmt2r;
- 	unsigned long ldmt3r;
-@@ -57,6 +63,7 @@ struct sh_mobile_lcdc_chan_cfg {
- 	int bpp;
- 	int interface_type; /* selects RGBn or SYSn I/F, see above */
- 	int clock_divider;
-+	unsigned long flags; /* LCDC_FLAGS_... */
- 	struct fb_videomode lcd_cfg;
- 	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
- 	struct sh_mobile_lcdc_board_cfg board_cfg;
+Having said that, wanting to register data with a channel or set a
+specific handler for it is perfectly reasonable, but this is something
+you ought to model after the generic hardirq layer and driver model, have
+special routines that set/get a private data pointer and one for setting
+the IRQ handler. The other thing to note is that you do not want to blow
+away the existing IRQ handler in the controller driver either, since that
+contains logic relative to your channel anyways (ie, TEI handling). You
+are likely better off introducing a new capability that takes priority
+over TEI handling and requires a special handler, but note that CHCR
+handling itself should only be done by the controller driver. If you wish
+to make use of a DMA channel in a generic driver, that is perfectly fine,
+but you should not be exposing _any_ dma-sh internals there, especially
+for the IRQ top half.
