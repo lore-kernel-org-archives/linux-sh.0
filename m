@@ -1,64 +1,20 @@
-From: Alexey Dobriyan <adobriyan@gmail.com>
-Date: Sun, 19 Oct 2008 19:29:29 +0000
-Subject: [PATCH] sh64: rescue get_user/put_user
-Message-Id: <20081019192929.GA22064@x200.localdomain>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 20 Oct 2008 02:28:32 +0000
+Subject: Re: [PATCH] sh64: rescue get_user/put_user
+Message-Id: <20081020022832.GA19416@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20081019192929.GA22064@x200.localdomain>
+In-Reply-To: <20081019192929.GA22064@x200.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-	(void *)&__pu_val, __pu_addr
+On Sun, Oct 19, 2008 at 11:29:29PM +0400, Alexey Dobriyan wrote:
+> 	(void *)&__pu_val, __pu_addr
+> 
+> is what original include/asm-sh64/uaccess.h did.
+> 
+> Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
 
-is what original include/asm-sh64/uaccess.h did.
-
-Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
----
-
- arch/sh/include/asm/uaccess_64.h |   16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
-
---- a/arch/sh/include/asm/uaccess_64.h
-+++ b/arch/sh/include/asm/uaccess_64.h
-@@ -26,16 +26,16 @@ do {								\
- 	retval = 0;						\
- 	switch (size) {						\
- 	case 1:							\
--		retval = __get_user_asm_b(x, ptr);		\
-+		retval = __get_user_asm_b((void *)&(x), (long)ptr);\
- 		break;						\
- 	case 2:							\
--		retval = __get_user_asm_w(x, ptr);		\
-+		retval = __get_user_asm_w((void *)&(x), (long)ptr);\
- 		break;						\
- 	case 4:							\
--		retval = __get_user_asm_l(x, ptr);		\
-+		retval = __get_user_asm_l((void *)&(x), (long)ptr);\
- 		break;						\
- 	case 8:							\
--		retval = __get_user_asm_q(x, ptr);		\
-+		retval = __get_user_asm_q((void *)&(x), (long)ptr);\
- 		break;						\
- 	default:						\
- 		__get_user_unknown();				\
-@@ -54,16 +54,16 @@ do {								\
- 	retval = 0;						\
- 	switch (size) {						\
- 	case 1:							\
--		retval = __put_user_asm_b(x, ptr);		\
-+		retval = __put_user_asm_b((void *)&(x), (long)(ptr));\
- 		break;						\
- 	case 2:							\
--		retval = __put_user_asm_w(x, ptr);		\
-+		retval = __put_user_asm_w((void *)&(x), (long)(ptr));\
- 		break;						\
- 	case 4:							\
--		retval = __put_user_asm_l(x, ptr);		\
-+		retval = __put_user_asm_l((void *)&(x), (long)(ptr));\
- 		break;						\
- 	case 8:							\
--		retval = __put_user_asm_q(x, ptr);		\
-+		retval = __put_user_asm_q((void *)&(x), (long)(ptr));\
- 		break;						\
- 	default:						\
- 		__put_user_unknown();				\
+This is already fixed in my queue, but thanks anyways!
