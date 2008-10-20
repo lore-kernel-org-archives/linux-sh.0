@@ -1,32 +1,32 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 31 Oct 2008 07:26:28 +0000
-Subject: Re: How could i use a file system on Ram ?
-Message-Id: <20081031072628.GH26928@linux-sh.org>
+From: David Brownell <david-b@pacbell.net>
+Date: Mon, 20 Oct 2008 04:30:23 +0000
+Subject: Re: [PATCH 00/05] sh: GPIO for SuperH using gpiolib
+Message-Id: <200810192130.24189.david-b@pacbell.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <loom.20081024T092251-945@post.gmane.org>
-In-Reply-To: <loom.20081024T092251-945@post.gmane.org>
+References: <20080927181008.11246.53495.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20080927181008.11246.53495.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Oct 24, 2008 at 09:35:14AM +0000, Cuong Dang Phu wrote:
-> Hi,
-> 
-> This is my problem: my kernel can find root file system (it???s loaded on Ram)
-> 
-> ???
-> RAMDISK driver initialized: 1 RAM disks of 4096K size 1024 blocksize
-> driver sh_udc, 12 Nov 2007
-> List of all partitions:
-> No filesystem could mount root, tried: ext3 ext2 cramfs minix vfat
-> Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(1,0)
-> ???
-> 
-> My kernel command is: ???root=/dev/ram0??? I think my kernel doesn???t know file-
-> system???s address and I don???t know how to configure kernel, could you help me to 
-> configure it?
-> 
-It sounds like you may wish to give initramfs a try. See:
+On Saturday 27 September 2008, Magnus Damm wrote:
+> The pinmux code is written so multiple GPIOs map to one physical pin.
+> So for example on sh7723, pin PTS5 can be accessed as regular Port S pin 5
+> GPIO, but it can also be locked to two different functions - as TX pin of
+> the SCIF1 serial port or as SDHI0D3 - a D3 pin on the first MMC interface.
 
-	http://www.linux-sh.org/shwiki/Using_Early_User_Space
+I've lost track of the status of these patches, but as a terminology
+point I think it's best to keep in mind that those alternate functions
+are not what's called a "GPIO".  The GPIO framework only expects to
+handle the first function -- "GPIO".
+
+
+> This specific PTS5 pin is exported as 3 different GPIOs:
+> GPIO_PTS5
+> GPIO_FN_SCIF1_PTS_TXD
+> GPIO_FN_SDHI0D3_PTS
+> Only one at a time can be selected using gpio_request().
+> 
+
+
