@@ -1,19 +1,43 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 31 Oct 2008 07:28:12 +0000
-Subject: Re: [PATCH] Add support usb setting on sh 7366
-Message-Id: <20081031072812.GA3576@linux-sh.org>
+Date: Tue, 21 Oct 2008 09:11:56 +0000
+Subject: Re: [PATCH] sh: add support FLCTL for ap325rxa board
+Message-Id: <20081021091156.GA30886@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <u4p2u4o83.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <u4p2u4o83.wl%morimoto.kuninori@renesas.com>
+References: <48C63126.5060008@renesas.com>
+In-Reply-To: <48C63126.5060008@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Oct 30, 2008 at 02:49:03PM +0900, Kuninori Morimoto wrote:
+On Tue, Sep 09, 2008 at 05:17:42PM +0900, Yoshihiro Shimoda wrote:
+> This patch adds platform_device for sh_flctl driver, NAND Flash
+> simple partition, and GPIO setting.
 > 
-> This patch add usb setting for sh 7366
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+> Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 
-This is also applied, thanks.
+Now that the sh_flctl MTD driver has been merged, I have applied this
+patch.
+
+>  static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
+> @@ -312,6 +354,16 @@ static void __init ap325rxa_setup(char **cmdline_p)
+>  	ctrl_outw(ctrl_inw(PORT_PSELD) & ~0x0003, PORT_PSELD);
+>  	ctrl_outw((ctrl_inw(PORT_PZCR) & ~0xff00) | 0x5500, PORT_PZCR);
+>  	ctrl_outb((ctrl_inb(PORT_PZDR) & ~0xf0) | 0x20, PORT_PZDR);
+> +
+> +	/* FLCTL */
+> +	ctrl_outw(0, PORT_PUCR);
+> +	ctrl_outw(0, PORT_PVCR);
+> +	ctrl_outw(0, PORT_PSELC);
+> +	ctrl_outw(0, PORT_HIZCRC);
+> +	ctrl_outw(0xFFFF, PORT_DRVCRA);
+> +	ctrl_outw(0xFFFF, PORT_DRVCRB);
+> +	ctrl_outw((ctrl_inw(PORT_PXCR) & 0x3fff) | 0x4000, PORT_PXCR);
+> +	ctrl_outb(0x80, PORT_PXDR);
+>  }
+> 
+>  static struct sh_machine_vector mv_ap325rxa __initmv = {
+
+I checked this part in with your original patch, but have since rewrote
+it to grab all of the FLCTL pins through the new pinmux code. Please make
+sure that it still works for you.
