@@ -1,40 +1,33 @@
-From: Adrian Bunk <bunk@kernel.org>
-Date: Tue, 14 Oct 2008 18:39:36 +0000
-Subject: sh/boards/mach-migor/setup.c build error
-Message-Id: <20081014183936.GB4710@cs181140183.pp.htv.fi>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 21 Oct 2008 12:31:07 +0000
+Subject: [PATCH] sh: Update gpio_set_value() pin value handling
+Message-Id: <20081021123107.27891.40895.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stefan Herbrechtsmeier <hbmeier@hni.uni-paderborn.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <mchehab@redhat.com>, lethal@linux-sh.org
-Cc: Magnus Damm <damm@igel.co.jp>, video4linux-list@redhat.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Commit 81034663159f39d005316b5c139038459cd16721
-(V4L/DVB (8687): soc-camera: Move .power and .reset from
- soc_camera host to sensor driver) causes the following build error:
+From: Magnus Damm <damm@igel.co.jp>
 
-<--  snip  -->
+This patch updates the pinmux code to use the boolean value for
+the function gpio_set_value(). Without this patch values other
+than 0 and 1 will result in incorrect GPIO settings.
 
-...
-  CC      arch/sh/boards/mach-migor/setup.o
-arch/sh/boards/mach-migor/setup.c:408: error: unknown field 'enable_camera' specified in initializer
-arch/sh/boards/mach-migor/setup.c:408: warning: excess elements in struct initializer
-arch/sh/boards/mach-migor/setup.c:408: warning: (near initialization for 'sh_mobile_ceu_info')
-arch/sh/boards/mach-migor/setup.c:409: error: unknown field 'disable_camera' specified in initializer
-arch/sh/boards/mach-migor/setup.c:409: warning: excess elements in struct initializer
-arch/sh/boards/mach-migor/setup.c:409: warning: (near initialization for 'sh_mobile_ceu_info')
-make[2]: *** [arch/sh/boards/mach-migor/setup.o] Error 1
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-<--  snip  -->
+ arch/sh/kernel/gpio.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-
-cu
-Adrian
-
--- 
-
-       "Is there not promise of rain?" Ling Tan asked suddenly out
-        of the darkness. There had been need of rain for many days.
-       "Only a promise," Lao Er said.
-                                       Pearl S. Buck - Dragon Seed
-
+--- 0001/arch/sh/kernel/gpio.c
++++ work/arch/sh/kernel/gpio.c	2008-10-21 20:22:25.000000000 +0900
+@@ -432,7 +432,7 @@ static int __gpio_get_set_value(struct p
+ 		BUG();
+ 	else
+ 		value = read_write_reg(dr->reg, dr->reg_width,
+-				       1, bit, value, do_write);
++				       1, bit, !!value, do_write);
+ 
+ 	return value;
+ }
