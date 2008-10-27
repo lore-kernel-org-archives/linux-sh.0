@@ -1,19 +1,40 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 20 Oct 2008 02:40:56 +0000
-Subject: Re: [PATCH] sh: ap325rxa: Add support RTC RX-8564LC in AP325RXA board
-Message-Id: <20081020024055.GB19416@linux-sh.org>
+From: "Nobuhiro Iwamatsu" <iwamatsu@nigauri.org>
+Date: Mon, 27 Oct 2008 02:32:27 +0000
+Subject: [PATCH] gdrom: Fix compile error
+Message-Id: <29ab51dc0810261932n7580e87aua85103f8b1dcc5a5@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <48F84495.9010807@renesas.com>
-In-Reply-To: <48F84495.9010807@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Al Viro <viro@zeniv.linux.org.uk>, Linux-sh <linux-sh@vger.kernel.org>
 
-On Fri, Oct 17, 2008 at 04:53:57PM +0900, Nobuhiro Iwamatsu wrote:
-> Renesas AP325RXA board has Epson RX-8564LC of RTC.
-> This patch supports RTC of this board.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-> 
-Applied, thanks.
+Return value and argument of block_device_operations.release of gdrom
+was changed.
+This patch fix this problem.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsunigauri.org>
+---
+ drivers/cdrom/gdrom.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
+index 9aaa86b..2eecb77 100644
+--- a/drivers/cdrom/gdrom.c
++++ b/drivers/cdrom/gdrom.c
+@@ -495,9 +495,10 @@ static int gdrom_bdops_open(struct block_device
+*bdev, fmode_t mode)
+ 	return cdrom_open(gd.cd_info, bdev, mode);
+ }
+
+-static int gdrom_bdops_release(struct block_device *bdev, fmode_t mode)
++static int gdrom_bdops_release(struct gendisk *disk, fmode_t mode)
+ {
+-	return cdrom_release(gd.cd_info, mode);
++	cdrom_release(gd.cd_info, mode);
++	return 0;
+ }
+
+ static int gdrom_bdops_mediachanged(struct gendisk *disk)
+-- 
+1.5.6.5
