@@ -1,21 +1,24 @@
-From: Michael Trimarchi <trimarchimichael@yahoo.it>
-Date: Tue, 28 Oct 2008 18:12:06 +0000
+From: michael <trimarchi@gandalf.sssup.it>
+Date: Tue, 28 Oct 2008 18:15:21 +0000
 Subject: [RFC PATCH] Correct the interrupt handler in sh4 serial device.
-Message-Id: <490755F6.7060100@yahoo.it>
+Message-Id: <490756B9.7000902@gandalf.sssup.it>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------010807050507060900060503"
+Content-Type: multipart/mixed; boundary="------------090401000701050501070805"
 List-Id: <linux-sh.vger.kernel.org>
+References: <490755F6.7060100@yahoo.it>
+In-Reply-To: <490755F6.7060100@yahoo.it>
 To: lethal@linux-sh.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Michael Trimarchi <trimarchimichael@yahoo.it>
 
 This is a multi-part message in MIME format.
---------------010807050507060900060503
+--------------090401000701050501070805
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------010807050507060900060503
+
+--------------090401000701050501070805
 Content-Type: text/x-patch;
  name="correct-interrupt-handler-sh4-serial.patch"
 Content-Transfer-Encoding: 7bit
@@ -94,4 +97,5 @@ index 7cd28b2..bce713f 100644
 1.5.6.5
 
 
---------------010807050507060900060503--
+
+--------------090401000701050501070805--
