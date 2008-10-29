@@ -1,51 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 13 Oct 2008 13:13:47 +0000
-Subject: Re: Booting kernel problem !
-Message-Id: <20081013131347.GE10579@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Wed, 29 Oct 2008 04:33:45 +0000
+Subject: [PATCH] sh: Add sci_rxd_in of SH4-202
+Message-Id: <4907E7A9.6080202@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <loom.20081013T035846-303@post.gmane.org>
-In-Reply-To: <loom.20081013T035846-303@post.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Oct 13, 2008 at 04:18:20AM +0000, Cuong Dang Phu wrote:
-> I'm having a problem when booting Linux kernel on sh7727, this is what I did:
-> 
-> Kernel start booting with head.s:
-> [/linux-2.6.22.11/arch/sh/boot/compressed/head.s]
-> ???
-> 	/* Set the initial pointer. */
-> 	mov.l	init_stack_addr, r0
-> 	mov.l	@r0, r15
-> 	/* Decompress the kernel */
-> 	mov.l	decompress_kernel_addr, r0
-> 	jsr	@r0
-> 	nop
-> ???
-> 
-> And jump to ???decompress_kernel???:
-> [/linux-2.6.22.11/arch/sh/boot/compressed/misc.c]
-> ???
-> void decompress_kernel(void)
-> {
-> 	output_data = 0;
-> 	output_ptr = P2SEGADDR((unsigned long)&_text+PAGE_SIZE);
-> 	free_mem_ptr = (unsigned long)&_end;
-> 	free_mem_end_ptr = free_mem_ptr + HEAP_SIZE;
-> 
-> 	makecrc();
-> 	puts("Uncompressing Linux... ");
-> 	gunzip();
-> 	puts("Ok, booting the kernel.\n");
-> }
-> ???
-> 
-> And it crash when execute ???makecrc();???
-> I don???t why it crash here, could you give me you ideas, 
-> 
-It sounds like you may have to fix up your BOOT_LINK_OFFSET or some
-related settings. makecrc() itself is harmless and only does some simple
-computation for preparing a table, so it is likely that your initial
-stack pointer is having issues.
+SH4-202 doesn't have SCSXX1. But it is treated so that there is SCSPTR1 in
+current code. This patch add sci_rxd_in of SH4-202.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ drivers/serial/sh-sci.h |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index 257b223..cd4073e 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -526,8 +526,7 @@ static inline int sci_rxd_in(struct uart_port *port)
+       defined(CONFIG_CPU_SUBTYPE_SH7751R) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7750R) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7750S) || \
+-      defined(CONFIG_CPU_SUBTYPE_SH7091)  || \
+-      defined(CONFIG_CPU_SUBTYPE_SH4_202)
++      defined(CONFIG_CPU_SUBTYPE_SH7091)
+ static inline int sci_rxd_in(struct uart_port *port)
+ {
+ 	if (port->mapbase = 0xffe00000)
+@@ -536,6 +535,13 @@ static inline int sci_rxd_in(struct uart_port *port)
+ 		return ctrl_inw(SCSPTR2)&0x0001 ? 1 : 0; /* SCIF */
+ 	return 1;
+ }
++#elif defined(CONFIG_CPU_SUBTYPE_SH4_202)
++static inline int sci_rxd_in(struct uart_port *port)
++{
++	if (port->mapbase = 0xffe80000)
++		return ctrl_inw(SCSPTR2)&0x0001 ? 1 : 0; /* SCIF */
++	return 1;
++}
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7760)
+ static inline int sci_rxd_in(struct uart_port *port)
+ {
+-- 
+1.5.6.5
