@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 09 Oct 2008 09:43:57 +0000
-Subject: [PATCH] sh: remove consistent alloc cruft
-Message-Id: <20081009094357.6473.88353.sendpatchset@rx1.opensource.se>
+Date: Fri, 31 Oct 2008 11:14:28 +0000
+Subject: [PATCH] sh: use arch_flags for sh_mobile mstpcr clock bits
+Message-Id: <20081031111428.2964.51168.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,41 +10,113 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Remove left overs from the generic declared coherent rework.
+Use arch_flags to keep track of register and flag number.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/mm/consistent.c |   10 ----------
- 1 file changed, 10 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   72 +++++++++++++-------------------
+ 1 file changed, 30 insertions(+), 42 deletions(-)
 
---- 0001/arch/sh/mm/consistent.c
-+++ work/arch/sh/mm/consistent.c	2008-10-09 16:55:55.000000000 +0900
-@@ -16,14 +16,6 @@
- #include <asm/addrspace.h>
- #include <asm/io.h>
+--- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2008-10-30 19:10:54.000000000 +0900
+@@ -567,12 +567,30 @@ static struct clk sh7722_video_clock = {
+ 	.ops = &sh7722_video_clk_ops,
+ };
  
--struct dma_coherent_mem {
--	void		*virt_base;
--	u32		device_base;
--	int		size;
--	int		flags;
--	unsigned long	*bitmap;
+-static int sh7722_mstpcr_start_stop(struct clk *clk, unsigned long reg,
+-				    int enable)
++#define MSTPCR_ARCH_FLAGS(reg, bit) (((reg) << 8) | (bit))
++#define MSTPCR_ARCH_FLAGS_REG(value) ((value) >> 8)
++#define MSTPCR_ARCH_FLAGS_BIT(value) ((value) & 0xff)
++
++static int sh7722_mstpcr_start_stop(struct clk *clk, int enable)
+ {
+-	unsigned long bit = clk->arch_flags;
++	unsigned long bit = MSTPCR_ARCH_FLAGS_BIT(clk->arch_flags);
++	unsigned long reg;
+ 	unsigned long r;
+ 
++	switch(MSTPCR_ARCH_FLAGS_REG(clk->arch_flags)) {
++	case 0:
++		reg = MSTPCR0;
++		break;
++	case 1:
++		reg = MSTPCR1;
++		break;
++	case 2:
++		reg = MSTPCR2;
++		break;
++	default:
++		return -EINVAL;
++	}  
++
+ 	r = ctrl_inl(reg);
+ 
+ 	if (enable)
+@@ -584,56 +602,26 @@ static int sh7722_mstpcr_start_stop(stru
+ 	return 0;
+ }
+ 
+-static void sh7722_mstpcr0_enable(struct clk *clk)
+-{
+-	sh7722_mstpcr_start_stop(clk, MSTPCR0, 1);
+-}
+-
+-static void sh7722_mstpcr0_disable(struct clk *clk)
+-{
+-	sh7722_mstpcr_start_stop(clk, MSTPCR0, 0);
+-}
+-
+-static void sh7722_mstpcr1_enable(struct clk *clk)
+-{
+-	sh7722_mstpcr_start_stop(clk, MSTPCR1, 1);
+-}
+-
+-static void sh7722_mstpcr1_disable(struct clk *clk)
+-{
+-	sh7722_mstpcr_start_stop(clk, MSTPCR1, 0);
+-}
+-
+-static void sh7722_mstpcr2_enable(struct clk *clk)
++static void sh7722_mstpcr_enable(struct clk *clk)
+ {
+-	sh7722_mstpcr_start_stop(clk, MSTPCR2, 1);
++	sh7722_mstpcr_start_stop(clk, 1);
+ }
+ 
+-static void sh7722_mstpcr2_disable(struct clk *clk)
++static void sh7722_mstpcr_disable(struct clk *clk)
+ {
+-	sh7722_mstpcr_start_stop(clk, MSTPCR2, 0);
++	sh7722_mstpcr_start_stop(clk, 0);
+ }
+ 
+-static struct clk_ops sh7722_mstpcr0_clk_ops = {
+-	.enable = sh7722_mstpcr0_enable,
+-	.disable = sh7722_mstpcr0_disable,
 -};
 -
- void *dma_alloc_coherent(struct device *dev, size_t size,
- 			   dma_addr_t *dma_handle, gfp_t gfp)
- {
-@@ -58,12 +50,10 @@ EXPORT_SYMBOL(dma_alloc_coherent);
- void dma_free_coherent(struct device *dev, size_t size,
- 			 void *vaddr, dma_addr_t dma_handle)
- {
--	struct dma_coherent_mem *mem = dev ? dev->dma_mem : NULL;
- 	int order = get_order(size);
+-static struct clk_ops sh7722_mstpcr1_clk_ops = {
+-	.enable = sh7722_mstpcr1_enable,
+-	.disable = sh7722_mstpcr1_disable,
+-};
+-
+-static struct clk_ops sh7722_mstpcr2_clk_ops = {
+-	.enable = sh7722_mstpcr2_enable,
+-	.disable = sh7722_mstpcr2_disable,
++static struct clk_ops sh7722_mstpcr_clk_ops = {
++	.enable = sh7722_mstpcr_enable,
++	.disable = sh7722_mstpcr_disable,
+ };
  
- 	if (!dma_release_from_coherent(dev, order, vaddr)) {
- 		WARN_ON(irqs_disabled());	/* for portability */
--		BUG_ON(mem && mem->flags & DMA_MEMORY_EXCLUSIVE);
- 		free_pages((unsigned long)phys_to_virt(dma_handle), order);
- 		iounmap(vaddr);
- 	}
+ #define DECLARE_MSTPCRN(regnr, bitnr, bitstr)		\
+ {							\
+ 	.name = "mstp" __stringify(regnr) bitstr,	\
+-	.arch_flags = bitnr,				\
+-	.ops = &sh7722_mstpcr ## regnr ## _clk_ops,	\
++	.arch_flags = MSTPCR_ARCH_FLAGS(regnr, bitnr),	\
++	.ops = &sh7722_mstpcr_clk_ops,	\
+ }
+ 
+ #define DECLARE_MSTPCR(regnr) \
