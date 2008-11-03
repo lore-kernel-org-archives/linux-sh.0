@@ -1,25 +1,32 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 28 Nov 2008 14:02:27 +0000
-Subject: Re: [PATCH] sh: Switch HD64461 from hw_interrupt_type to irq_chip
-Message-Id: <20081128140227.GB18785@linux-sh.org>
+From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
+Date: Mon, 03 Nov 2008 13:13:07 +0000
+Subject: Any users of hitfb?
+Message-Id: <20081103151314.bc5ed408.kristoffer.ericson@gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Mon__3_Nov_2008_15_13_15_+0100_O9RJviD7.2HmaEBf"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1227862710-11696-1-git-send-email-mjf@gentoo.org>
-In-Reply-To: <1227862710-11696-1-git-send-email-mjf@gentoo.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Nov 28, 2008 at 08:58:30AM +0000, Matt Fleming wrote:
-> Use struct irq_chip for the interrupt handler for the HD64461. Also
-> convert some in{b,w} and out{b,w} calls to the equivalent __raw_* calls.
-> Include <linux/io.h> and not <asm/io.h> to stop checkpatch.pl
-> complaining.
-> 
-> This change should now allow machines with HD64461 to define
-> GENERIC_HARDIRQS_NO__DO_IRQ.
-> 
-> Acked-by: Kristoffer Ericson <Kristoffer.Ericson@gmail.com>
-> Signed-off-by: Matt Fleming <mjf@gentoo.org>
+--Signature=_Mon__3_Nov_2008_15_13_15_+0100_O9RJviD7.2HmaEBf
+Content-Type: text/plain; charset=US-ASCII
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Applied, thanks.
+Just want to see if there is anyone else out there
+needing hitfb for their platform?
+
+--=20
+Kristoffer Ericson <kristoffer.ericson@gmail.com>
+
+--Signature=_Mon__3_Nov_2008_15_13_15_+0100_O9RJviD7.2HmaEBf
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkkPBvsACgkQPQls10ERAGdLMgCdFIOPcr0M5MEwvuhXD5vNgXM/
+rEIAoMDnA9hYmeAMpwIz48LeCJmOkym7
+=tEj+
+-----END PGP SIGNATURE-----
+
+--Signature=_Mon__3_Nov_2008_15_13_15_+0100_O9RJviD7.2HmaEBf--
