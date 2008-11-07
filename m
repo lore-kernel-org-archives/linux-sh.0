@@ -1,13 +1,13 @@
 From: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-Date: Wed, 12 Nov 2008 23:16:01 +0000
-Subject: [patch 10/17] LTTng timestamp sh
-Message-Id: <20081112232259.855355779@polymtl.ca>
+Date: Fri, 07 Nov 2008 05:23:47 +0000
+Subject: [RFC patch 11/18] LTTng timestamp sh
+Message-Id: <20081107053350.364655339@polymtl.ca>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081112231551.473569400@polymtl.ca>
+References: <20081107052336.652868737@polymtl.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>, akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <a.p.zijlstra@chello.nl>, linux-kernel@vger.kernel.org
 Cc: Giuseppe Cavallaro <peppe.cavallaro@st.com>, Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
 This patch adds the timestamping mechanism in the trace-clock.h arch header
@@ -29,12 +29,12 @@ CC: linux-sh@vger.kernel.org
 ---
  arch/sh/Kconfig                   |    2 +
  arch/sh/include/asm/timex.h       |    7 +++-
- arch/sh/include/asm/trace-clock.h |   58 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 65 insertions(+), 2 deletions(-)
+ arch/sh/include/asm/trace-clock.h |   61 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 68 insertions(+), 2 deletions(-)
 
 Index: linux.trees.git/arch/sh/include/asm/timex.h
-=================================--- linux.trees.git.orig/arch/sh/include/asm/timex.h	2008-11-07 00:34:10.000000000 -0500
-+++ linux.trees.git/arch/sh/include/asm/timex.h	2008-11-12 18:01:56.000000000 -0500
+=================================--- linux.trees.git.orig/arch/sh/include/asm/timex.h	2008-09-30 11:38:51.000000000 -0400
++++ linux.trees.git/arch/sh/include/asm/timex.h	2008-11-07 00:12:47.000000000 -0500
 @@ -6,13 +6,16 @@
  #ifndef __ASM_SH_TIMEX_H
  #define __ASM_SH_TIMEX_H
@@ -55,8 +55,8 @@ Index: linux.trees.git/arch/sh/include/asm/timex.h
  
  #endif /* __ASM_SH_TIMEX_H */
 Index: linux.trees.git/arch/sh/Kconfig
-=================================--- linux.trees.git.orig/arch/sh/Kconfig	2008-11-07 00:34:10.000000000 -0500
-+++ linux.trees.git/arch/sh/Kconfig	2008-11-12 18:01:56.000000000 -0500
+=================================--- linux.trees.git.orig/arch/sh/Kconfig	2008-11-07 00:06:06.000000000 -0500
++++ linux.trees.git/arch/sh/Kconfig	2008-11-07 00:12:47.000000000 -0500
 @@ -11,6 +11,8 @@ config SUPERH
  	select HAVE_CLK
  	select HAVE_IDE
@@ -68,8 +68,8 @@ Index: linux.trees.git/arch/sh/Kconfig
  	help
 Index: linux.trees.git/arch/sh/include/asm/trace-clock.h
 =================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux.trees.git/arch/sh/include/asm/trace-clock.h	2008-11-12 18:01:56.000000000 -0500
-@@ -0,0 +1,58 @@
++++ linux.trees.git/arch/sh/include/asm/trace-clock.h	2008-11-07 00:12:47.000000000 -0500
+@@ -0,0 +1,61 @@
 +/*
 + * Copyright (C) 2007,2008 Giuseppe Cavallaro <peppe.cavallaro@st.com>
 + *                         Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
@@ -94,6 +94,9 @@ Index: linux.trees.git/arch/sh/include/asm/trace-clock.h
 +{
 +	return trace_clock_read_synthetic_tsc();
 +}
++
++static inline void trace_clock_add_timestamp(unsigned long ticks)
++{ }
 +
 +static inline unsigned int trace_clock_frequency(void)
 +{
