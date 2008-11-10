@@ -1,24 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 21 Nov 2008 07:46:03 +0000
-Subject: Re: [PATCH 4/6] smsc911x: convert ap325rxa platform to use smsc911x
-Message-Id: <20081121074603.GA26397@linux-sh.org>
+From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
+Date: Mon, 10 Nov 2008 21:39:09 +0000
+Subject: Qemu SH4 status #2
+Message-Id: <20081110233926.3d8c7fd1.kristoffer.ericson@gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Mon__10_Nov_2008_23_39_26_+0100_Jix3liZvjmmBQonl"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1225881342-3485-1-git-send-email-steve.glendinning@smsc.com> <1225881342-3485-2-git-send-email-steve.glendinning@smsc.com> <1225881342-3485-3-git-send-email-steve.glendinning@smsc.com> <1225881342-3485-4-git-send-email-steve.glendinning@smsc.com> <1225881342-3485-5-git-send-email-steve.glendinning@smsc.com> <49266715.9090705@renesas.com>
-In-Reply-To: <49266715.9090705@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Cc: Steve Glendinning <steve.glendinning@smsc.com>, netdev@vger.kernel.org, catalin.marinas@arm.com, Bahadir.Balban@arm.com, dustin@sensoria.com, bgat@billgatliff.com, Ian Saturley <ian.saturley@smsc.com>, g.liakhovetski@gmx.de, Peter Korsgaard <jacmet@sunsite.dk>, Linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Fri, Nov 21, 2008 at 04:45:25PM +0900, Nobuhiro Iwamatsu wrote:
-> Steve Glendinning wrote:
-> > Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
-> > ---
-> >  arch/sh/boards/board-ap325rxa.c    |   24 +++++++++++++-----------
-> >  arch/sh/configs/ap325rxa_defconfig |   21 +++++++++++++++++++--
-> >  2 files changed, 32 insertions(+), 13 deletions(-)
-> 
-> Tested-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+--Signature=_Mon__10_Nov_2008_23_39_26_+0100_Jix3liZvjmmBQonl
+Content-Type: text/plain; charset=US-ASCII
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Greetings,
+
+I followed the segmentation fault and finally
+found it being caused by :
+
+sh_intc_source()
+{
+ printf("this text will show\n");
+ if (id)
+	return desc->sources + id;
+ printf("we will never reach here...\n");
+ return NULL;
+}
+
+My best guess is that id for whatever reason is tooo
+high, but thats just my #1 attempt at qemu debugging.
+
+Happy hacking!
+
+/Kristoffer
+
+
+--=20
+Kristoffer Ericson <kristoffer.ericson@gmail.com>
+
+--Signature=_Mon__10_Nov_2008_23_39_26_+0100_Jix3liZvjmmBQonl
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkkYuB4ACgkQPQls10ERAGdojwCfY7e2fG5QHrH0HtFAQ/4YuNSS
+UcQAoNinuACqP/RQ2O5lX00mfQ1C/Wyb
+=gkW9
+-----END PGP SIGNATURE-----
+
+--Signature=_Mon__10_Nov_2008_23_39_26_+0100_Jix3liZvjmmBQonl--
