@@ -1,35 +1,40 @@
-From: "Nobuhiro Iwamatsu" <iwamatsu@nigauri.org>
-Date: Thu, 13 Nov 2008 00:55:57 +0000
-Subject: Re: [Qemu-devel] SH4 kernel and diskimage
-Message-Id: <29ab51dc0811121655y69049a27i3ab5977e29db0237@mail.gmail.com>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 11 Nov 2008 07:47:21 +0000
+Subject: [PATCH] usb: r8a66597-hcd: fix wrong data access in SuperH on-chip USB
+Message-Id: <49193889.1080700@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081112204128.a15c8d3a.kristoffer.ericson@gmail.com>
-	<491B63FE.6010201@juno.dti.ne.jp>
-In-Reply-To: <491B63FE.6010201@juno.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, qemu-devel@nongnu.org, yoshii.takashi@gmail.com
+To: linux-sh@vger.kernel.org
 
-Hi,
+When I used SuperH on-chip USB, there was the problem that accessed
+r8a66597_root_hub which was not allocated.
 
-2008/11/13 Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>:
-> Hi, thanks for your work!
->
-> Kristoffer Ericson wrote:
->
->> I've put the disk and kernel image here:
->> http://jlime.com/downloads/development/qemu/sh4-7751-qemu.zImage
->> http://jlime.com/downloads/development/qemu/disk_small.img
->
-> I can't access the server, jlime.com via http.
-> Ping works fine.  Is there any trouble?
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ drivers/usb/host/r8a66597-hcd.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-I can get these now.
+diff --git a/drivers/usb/host/r8a66597-hcd.c b/drivers/usb/host/r8a66597-hcd.c
+index c18d879..2376f24 100644
+--- a/drivers/usb/host/r8a66597-hcd.c
++++ b/drivers/usb/host/r8a66597-hcd.c
+@@ -1763,11 +1763,12 @@ static void r8a66597_timer(unsigned long _r8a66597)
+ {
+ 	struct r8a66597 *r8a66597 = (struct r8a66597 *)_r8a66597;
+ 	unsigned long flags;
++	int port;
 
-Best regards,
- Nobuhiro
+ 	spin_lock_irqsave(&r8a66597->lock, flags);
 
+-	r8a66597_root_hub_control(r8a66597, 0);
+-	r8a66597_root_hub_control(r8a66597, 1);
++	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
++		r8a66597_root_hub_control(r8a66597, port);
+
+ 	spin_unlock_irqrestore(&r8a66597->lock, flags);
+ }
 -- 
-Nobuhiro Iwamatsu
+1.5.5
+
