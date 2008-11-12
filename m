@@ -1,89 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 25 Nov 2008 13:01:39 +0000
-Subject: [PATCH 7/8] sh: timer rewrite V2, sh7343 support
-Message-Id: <20081125130139.8590.21422.sendpatchset@rx1.opensource.se>
+From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
+Date: Wed, 12 Nov 2008 18:41:17 +0000
+Subject: SH4 kernel and diskimage
+Message-Id: <20081112204128.a15c8d3a.kristoffer.ericson@gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Wed__12_Nov_2008_20_41_28_+0100_g.MTc=fL9gGjmN74"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: yoshii.takashi@gmail.com, lethal@linux-sh.org
+Cc: qemu-devel@nongnu.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-From: Magnus Damm <damm@igel.co.jp>
+--Signature=_Wed__12_Nov_2008_20_41_28_+0100_g.MTc=fL9gGjmN74
+Content-Type: text/plain; charset=US-ASCII
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Add CMT and TMU devices and use the new timer code V2 on sh7343.
+Greetings,
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+After applying your patches and some time
+spent fiddling with image file it actually works
+nicely.
 
- arch/sh/Kconfig                        |    1 
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   45 ++++++++++++++++++++++++++++++++
- 2 files changed, 46 insertions(+)
+I'm using current linux-2.6.git (vanilla v2.6.27 didn't work).
+And an image I created based on the minimal image from
+jlime (sh3 based). I can bootup and logon just like on my=20
+jornada with no apparent problems.
 
---- 0010/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-11-25 21:12:12.000000000 +0900
-@@ -350,6 +350,7 @@ config CPU_SUBTYPE_SHX3
- config CPU_SUBTYPE_SH7343
- 	bool "Support SH7343 processor"
- 	select CPU_SH4AL_DSP
-+	select SH_TIMER
- 
- config CPU_SUBTYPE_SH7722
- 	bool "Support SH7722 processor"
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2008-11-25 21:16:01.000000000 +0900
-@@ -12,6 +12,7 @@
- #include <linux/serial.h>
- #include <linux/serial_sci.h>
- #include <linux/uio_driver.h>
-+#include <linux/sh_timer.h>
- #include <asm/clock.h>
- 
- static struct resource iic0_resources[] = {
-@@ -292,3 +293,47 @@ void __init plat_irq_setup(void)
- {
- 	register_intc_controller(&intc_desc);
- }
-+
-+static struct sh_timer_config timers[] = {
-+	{
-+		.type = SH_TIMER_TYPE_CMT,
-+		.name = "CMT",
-+		.base = 0x044a0000,
-+		.channel_offset = 0x60,
-+		.timer_bit = 5,
-+		.clk = "cmt0",
-+		.irq = 104,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU0",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x04,
-+		.timer_bit = 0,
-+		.clk = "tmu0",
-+		.irq = 16,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU1",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x10,
-+		.timer_bit = 1,
-+		.clk = "tmu0",
-+		.irq = 17,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU2",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x1c,
-+		.timer_bit = 2,
-+		.clk = "tmu0",
-+		.irq = 18,
-+	}
-+};
-+
-+void __init plat_timer_setup(void)
-+{
-+	sh_timer_register(timers, ARRAY_SIZE(timers));
-+}
+I get the IRQ_NOBODY_CARED error at bootup and
+the keyboard is overly sensitive otherwise it's
+fine.
+
+I've put the disk and kernel image here:
+http://jlime.com/downloads/development/qemu/sh4-7751-qemu.zImage
+http://jlime.com/downloads/development/qemu/disk_small.img
+
+user=3Droot, password (just press enter).
+
+--=20
+Kristoffer Ericson <kristoffer.ericson@gmail.com>
+
+--Signature=_Wed__12_Nov_2008_20_41_28_+0100_g.MTc=fL9gGjmN74
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkkbMWgACgkQPQls10ERAGebJQCgux5E2OYR0RqixRIXX9/Ny1yt
+xXAAoOU7TKd5BRT7XBrMlVQg2sxBrogn
+=qqIf
+-----END PGP SIGNATURE-----
+
+--Signature=_Wed__12_Nov_2008_20_41_28_+0100_g.MTc=fL9gGjmN74--
