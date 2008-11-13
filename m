@@ -1,40 +1,20 @@
-From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Tue, 11 Nov 2008 07:47:21 +0000
-Subject: [PATCH] usb: r8a66597-hcd: fix wrong data access in SuperH on-chip USB
-Message-Id: <49193889.1080700@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 13 Nov 2008 06:33:51 +0000
+Subject: Re: [PATCH] usb: r8a66597-hcd: fix wrong data access in SuperH on-chip USB
+Message-Id: <20081113063351.GB24769@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <49193889.1080700@renesas.com>
+In-Reply-To: <49193889.1080700@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-When I used SuperH on-chip USB, there was the problem that accessed
-r8a66597_root_hub which was not allocated.
+On Tue, Nov 11, 2008 at 04:47:21PM +0900, Yoshihiro Shimoda wrote:
+> When I used SuperH on-chip USB, there was the problem that accessed
+> r8a66597_root_hub which was not allocated.
+> 
+> Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
----
- drivers/usb/host/r8a66597-hcd.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/usb/host/r8a66597-hcd.c b/drivers/usb/host/r8a66597-hcd.c
-index c18d879..2376f24 100644
---- a/drivers/usb/host/r8a66597-hcd.c
-+++ b/drivers/usb/host/r8a66597-hcd.c
-@@ -1763,11 +1763,12 @@ static void r8a66597_timer(unsigned long _r8a66597)
- {
- 	struct r8a66597 *r8a66597 = (struct r8a66597 *)_r8a66597;
- 	unsigned long flags;
-+	int port;
-
- 	spin_lock_irqsave(&r8a66597->lock, flags);
-
--	r8a66597_root_hub_control(r8a66597, 0);
--	r8a66597_root_hub_control(r8a66597, 1);
-+	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
-+		r8a66597_root_hub_control(r8a66597, port);
-
- 	spin_unlock_irqrestore(&r8a66597->lock, flags);
- }
--- 
-1.5.5
-
+I've applied this also for 2.6.28, I'll send it out with the rest of the
+updates later today, thanks.
