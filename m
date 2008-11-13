@@ -1,45 +1,34 @@
-From: Michael Trimarchi <trimarchimichael@yahoo.it>
-Date: Thu, 20 Nov 2008 11:58:56 +0000
-Subject: [RFC PATCH] Adjust the test in the unlock for sh4a fastlock
-Message-Id: <20081120115856.GA26785@gandalf.sssup.it>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 13 Nov 2008 06:28:21 +0000
+Subject: [PATCH] i2c: fix i2c-sh_mobile rx underrun
+Message-Id: <20081113062821.4993.30076.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-[RFC PATCH] Adjust the test in the unlock for sh4a fastlock
+From: Magnus Damm <damm@igel.co.jp>
 
-The test condition in the previus patch was wrong.
-Test on MigoR board
+Fix receive path underrun in i2c-sh_mobile driver. 
 
-Signed-off-by: Trimarchi Michael <michaeltrimarchi@yahoo.it>
-
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/include/asm/mutex_sh.h |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/include/asm/mutex_sh.h b/arch/sh/include/asm/mutex_sh.h
-index c62f5af..7a12036 100644
---- a/arch/sh/include/asm/mutex_sh.h
-+++ b/arch/sh/include/asm/mutex_sh.h
-@@ -49,7 +49,6 @@ static inline void
- __mutex_fastpath_unlock(atomic_t *count, void (*fail_fn)(atomic_t *))
- {
- 	int __res;
--
- 	__asm__ __volatile__ (
- 		"movli.l	@%1, %0	\n"
- 		"add		#1, %0	\n"
-@@ -58,7 +57,7 @@ __mutex_fastpath_unlock(atomic_t *count, void (*fail_fn)(atomic_t *))
- 		: "r" (&(count)->counter)
- 		: "t" );
- 
--	if (unlikely(__res != 0))
-+	if (unlikely(__res <= 0))
- 		fail_fn(count);
- }
- 
--- 
-1.5.6.5
+ Paul, can you include this with your other SuperH changes for 2.6.28?
 
+ drivers/i2c/busses/i2c-sh_mobile.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0001/drivers/i2c/busses/i2c-sh_mobile.c
++++ work/drivers/i2c/busses/i2c-sh_mobile.c	2008-11-11 19:22:49.000000000 +0900
+@@ -318,7 +318,8 @@ static int sh_mobile_i2c_isr_rx(struct s
+ 		} else
+ 			data = i2c_op(pd, OP_RX, 0);
+ 
+-		pd->msg->buf[real_pos] = data;
++		if (real_pos >= 0)
++			pd->msg->buf[real_pos] = data;
+ 	} while (0);
+ 
+ 	pd->pos++;
