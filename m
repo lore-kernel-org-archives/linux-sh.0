@@ -1,134 +1,30 @@
-From: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-Date: Wed, 26 Nov 2008 12:42:57 +0000
-Subject: [patch 11/17] LTTng timestamp sh
-Message-Id: <20081126124636.075638361@polymtl.ca>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 13 Nov 2008 06:33:45 +0000
+Subject: [PATCH] sh: early printk port type fix
+Message-Id: <20081113063345.5011.52264.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081126124246.800751190@polymtl.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@elte.hu>, akpm@linux-foundation.org, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org
-Cc: Giuseppe Cavallaro <peppe.cavallaro@st.com>, Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch adds the timestamping mechanism in the trace-clock.h arch header
-file. The new timestamp functions use the TMU channel 1.
+From: Magnus Damm <damm@igel.co.jp>
 
-This code only works if the TMU channel 1 is initialized during the kernel boot.
+Add PORT_SCIF to unbreak the early printk code.
 
-Big fat warning(TM) from Mathieu Desnoyers :
-
-This patch seems to assume TMU channel 1 is setup at boot. Is it always true on
-all SuperH boards ? Is there some Kconfig selection that should be done here ?
-Make sure this patch does not break get_cycles on SuperH before merging.
-
-From: Giuseppe Cavallaro <peppe.cavallaro@st.com>
-Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
-Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-CC: Paul Mundt <lethal@linux-sh.org>
-CC: linux-sh@vger.kernel.org
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/Kconfig                   |    2 +
- arch/sh/include/asm/timex.h       |    7 +++-
- arch/sh/include/asm/trace-clock.h |   58 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 65 insertions(+), 2 deletions(-)
 
-Index: linux.trees.git/arch/sh/include/asm/timex.h
-=================================--- linux.trees.git.orig/arch/sh/include/asm/timex.h	2008-11-12 18:15:48.000000000 -0500
-+++ linux.trees.git/arch/sh/include/asm/timex.h	2008-11-26 06:52:23.000000000 -0500
-@@ -6,13 +6,16 @@
- #ifndef __ASM_SH_TIMEX_H
- #define __ASM_SH_TIMEX_H
- 
--#define CLOCK_TICK_RATE		(CONFIG_SH_PCLK_FREQ / 4) /* Underlying HZ */
-+#include <linux/io.h>
-+#include <asm/cpu/timer.h>
-+
-+#define CLOCK_TICK_RATE		(HZ * 100000UL)
- 
- typedef unsigned long long cycles_t;
- 
- static __inline__ cycles_t get_cycles (void)
- {
--	return 0;
-+	return 0xffffffff - ctrl_inl(TMU1_TCNT);
- }
- 
- #endif /* __ASM_SH_TIMEX_H */
-Index: linux.trees.git/arch/sh/Kconfig
-=================================--- linux.trees.git.orig/arch/sh/Kconfig	2008-11-12 18:15:47.000000000 -0500
-+++ linux.trees.git/arch/sh/Kconfig	2008-11-26 06:52:23.000000000 -0500
-@@ -11,6 +11,8 @@ config SUPERH
- 	select HAVE_CLK
- 	select HAVE_IDE
- 	select HAVE_OPROFILE
-+	select HAVE_TRACE_CLOCK
-+	select HAVE_TRACE_CLOCK_32_TO_64
- 	select HAVE_GENERIC_DMA_COHERENT
- 	select HAVE_IOREMAP_PROT if MMU
- 	help
-Index: linux.trees.git/arch/sh/include/asm/trace-clock.h
-=================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux.trees.git/arch/sh/include/asm/trace-clock.h	2008-11-26 06:52:23.000000000 -0500
-@@ -0,0 +1,58 @@
-+/*
-+ * Copyright (C) 2007,2008 Giuseppe Cavallaro <peppe.cavallaro@st.com>
-+ *                         Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-+ *
-+ * Trace clock definitions for SuperH.
-+ */
-+
-+#ifndef _ASM_SH_TRACE_CLOCK_H
-+#define _ASM_SH_TRACE_CLOCK_H
-+
-+#include <linux/timer.h>
-+#include <asm/clock.h>
-+
-+extern u64 trace_clock_read_synthetic_tsc(void);
-+
-+static inline u32 trace_clock_get_timestamp32(void)
-+{
-+	return get_cycles();
-+}
-+
-+static inline u64 trace_clock_get_timestamp64(void)
-+{
-+	return trace_clock_read_synthetic_tsc();
-+}
-+
-+static inline u64 trace_clock_frequency(void)
-+{
-+	u64 rate;
-+	struct clk *tmu1_clk;
-+
-+	tmu1_clk = clk_get(NULL, "tmu1_clk");
-+	rate = clk_get_rate(tmu1_clk);
-+
-+	return rate;
-+}
-+
-+static inline u32 trace_clock_freq_scale(void)
-+{
-+	return 1;
-+}
-+
-+extern void get_synthetic_tsc(void);
-+extern void put_synthetic_tsc(void);
-+
-+static inline void get_trace_clock(void)
-+{
-+	get_synthetic_tsc();
-+}
-+
-+static inline void put_trace_clock(void)
-+{
-+	put_synthetic_tsc();
-+}
-+
-+static inline void set_trace_clock_is_sync(int state)
-+{
-+}
-+#endif /* _ASM_SH_TRACE_CLOCK_H */
+ arch/sh/kernel/early_printk.c |    1 +
+ 1 file changed, 1 insertion(+)
 
--- 
-Mathieu Desnoyers
-OpenPGP key fingerprint: 8CD5 52C3 8E3C 4140 715F  BA06 3F25 A8FE 3BAE 9A68
+--- 0001/arch/sh/kernel/early_printk.c
++++ work/arch/sh/kernel/early_printk.c	2008-11-13 13:36:24.000000000 +0900
+@@ -75,6 +75,7 @@ static struct console bios_console = {
+ #endif
+ 
+ static struct uart_port scif_port = {
++	.type		= PORT_SCIF,
+ 	.mapbase	= CONFIG_EARLY_SCIF_CONSOLE_PORT,
+ 	.membase	= (char __iomem *)CONFIG_EARLY_SCIF_CONSOLE_PORT,
+ };
