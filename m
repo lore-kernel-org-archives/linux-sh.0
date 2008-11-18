@@ -1,587 +1,404 @@
-From: Peter Griffin <pgriffin@mpc-data.co.uk>
-Date: Fri, 28 Nov 2008 12:27:30 +0000
-Subject: [PATCH 1 / 3] sh: SH7201, cpu support
-Message-Id: <492FE3B2.6080400@mpc-data.co.uk>
+From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
+Date: Tue, 18 Nov 2008 15:49:03 +0000
+Subject: [PATCH - UPDATED]  - Fix dreamcast irq.c formatting
+Message-Id: <20081118174927.803cbfd6.kristoffer.ericson@gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Tue__18_Nov_2008_17_49_27_+0100_zdCEftDb.gKHeAe7"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Peter Griffin <pgriffin@mpc-data.co.uk>
+--Signature=_Tue__18_Nov_2008_17_49_27_+0100_zdCEftDb.gKHeAe7
+Content-Type: multipart/mixed;
+ boundary="Multipart=_Tue__18_Nov_2008_17_49_27_+0100_DNHtcQ1DYJ2ktUX9"
 
-sh: SH7201, cpu support
 
-This patch adds support for the SH7201 processor subtype.
+--Multipart=_Tue__18_Nov_2008_17_49_27_+0100_DNHtcQ1DYJ2ktUX9
+Content-Type: text/plain; charset=US-ASCII
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Peter Griffin <pgriffin@mpc-data.co.uk>
----
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 9b58bd0..f8741e7 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -182,6 +182,10 @@ config CPU_SUBTYPE_SH7619
-  	select CPU_SH2
+This patch cleans the bad formatting
+found in mach-dreamcast/irq.c file.
 
-  # SH-2A Processor Support
-+config CPU_SUBTYPE_SH7201
-+	bool "Support SH7201 processor"
-+	select CPU_SH2A
-+	select CPU_HAS_FPU
+Signed-off-by: Kristoffer Ericson <Kristoffer.Ericson@gmail.com>
 
-  config CPU_SUBTYPE_SH7203
-  	bool "Support SH7203 processor"
-diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-index 50467f9..2bf3f6c 100644
-
-diff --git a/arch/sh/include/asm/processor.h b/arch/sh/include/asm/processor.h
-index f186fc6..1ef4b24 100644
---- a/arch/sh/include/asm/processor.h
-+++ b/arch/sh/include/asm/processor.h
-@@ -18,7 +18,7 @@ enum cpu_type {
-  	CPU_SH7619,
-
-  	/* SH-2A types */
--	CPU_SH7203, CPU_SH7206, CPU_SH7263, CPU_MXG,
-+	CPU_SH7201, CPU_SH7203, CPU_SH7206, CPU_SH7263, CPU_MXG,
-
-  	/* SH-3 types */
-  	CPU_SH7705, CPU_SH7706, CPU_SH7707,
-diff --git a/arch/sh/kernel/cpu/sh2a/Makefile b/arch/sh/kernel/cpu/sh2a/Makefile
-index 428450c..314725e 100644
---- a/arch/sh/kernel/cpu/sh2a/Makefile
-+++ b/arch/sh/kernel/cpu/sh2a/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_SH_FPU)	+= fpu.o
-
-  obj-$(CONFIG_CPU_SUBTYPE_SH7206)	+= setup-sh7206.o clock-sh7206.o
-  obj-$(CONFIG_CPU_SUBTYPE_SH7203)	+= setup-sh7203.o clock-sh7203.o
-+obj-$(CONFIG_CPU_SUBTYPE_SH7201)	+= setup-sh7201.o clock-sh7201.o
-  obj-$(CONFIG_CPU_SUBTYPE_SH7263)	+= setup-sh7203.o clock-sh7203.o
-  obj-$(CONFIG_CPU_SUBTYPE_MXG)		+= setup-mxg.o clock-sh7206.o
-
-diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7201.c b/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-new file mode 100644
-index 0000000..a99983c
---- /dev/null
-+++ b/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-@@ -0,0 +1,86 @@
+diff --git a/arch/sh/boards/mach-dreamcast/irq.c b/arch/sh/boards/mach-drea=
+mcast/irq.c
+index 67bdc33..36a8a08 100644
+--- a/arch/sh/boards/mach-dreamcast/irq.c
++++ b/arch/sh/boards/mach-dreamcast/irq.c
+@@ -14,31 +14,32 @@
+ #include <asm/irq.h>
+ #include <mach/sysasic.h>
+=20
+-/* Dreamcast System ASIC Hardware Events -
+-
+-   The Dreamcast's System ASIC (a.k.a. Holly) is responsible for receiving
+-   hardware events from system peripherals and triggering an SH7750 IRQ.
+-   Hardware events can trigger IRQs 13, 11, or 9 depending on which bits a=
+re
+-   set in the Event Mask Registers (EMRs).  When a hardware event is
+-   triggered, it's corresponding bit in the Event Status Registers (ESRs)
+-   is set, and that bit should be rewritten to the ESR to acknowledge that
+-   event.
+-
+-   There are three 32-bit ESRs located at 0xa05f8900 - 0xa05f6908.  Event
+-   types can be found in include/asm-sh/dreamcast/sysasic.h. There are thr=
+ee
+-   groups of EMRs that parallel the ESRs.  Each EMR group corresponds to an
+-   IRQ, so 0xa05f6910 - 0xa05f6918 triggers IRQ 13, 0xa05f6920 - 0xa05f6928
+-   triggers IRQ 11, and 0xa05f6930 - 0xa05f6938 triggers IRQ 9.
+-
+-   In the kernel, these events are mapped to virtual IRQs so that drivers =
+can
+-   respond to them as they would a normal interrupt.  In order to keep this
+-   mapping simple, the events are mapped as:
+-
+-   6900/6910 - Events  0-31, IRQ 13
+-   6904/6924 - Events 32-63, IRQ 11
+-   6908/6938 - Events 64-95, IRQ  9
+-
+-*/
 +/*
-+ * arch/sh/kernel/cpu/sh2a/clock-sh7201.c
++ * Dreamcast System ASIC Hardware Events
 + *
-+ * SH7201 support for the clock framework
++ * The Dreamcast's System ASIC (a.k.a. Holly) is responsible for receiving
++ * hardware events from system peripherals and triggering an SH7750 IRQ.
++ * Hardware events can trigger IRQs 13, 11, or 9 depending on which bits a=
+re
++ * set in the Event Mask Registers (EMRs).  When a hardware event is
++ * triggered, it's corresponding bit in the Event Status Registers (ESRs)
++ * is set, and that bit should be rewritten to the ESR to acknowledge that
++ * event.
 + *
-+ *  Copyright (C) 2008 Peter Griffin  <pgriffin@mpc-data.co.uk>
++ * There are three 32-bit ESRs located at 0xa05f8900 - 0xa05f6908.  Event
++ * types can be found in include/asm-sh/dreamcast/sysasic.h. There are thr=
+ee
++ * groups of EMRs that parallel the ESRs.  Each EMR group corresponds to an
++ * IRQ, so 0xa05f6910 - 0xa05f6918 triggers IRQ 13, 0xa05f6920 - 0xa05f6928
++ * triggers IRQ 11, and 0xa05f6930 - 0xa05f6938 triggers IRQ 9.
 + *
-+ * Based on clock-sh4.c
-+ *  Copyright (C) 2005  Paul Mundt
++ * In the kernel, these events are mapped to virtual IRQs so that drivers =
+can
++ * respond to them as they would a normal interrupt.  In order to keep this
++ * mapping simple, the events are mapped as:
 + *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * 6900/6910 - Events  0-31, IRQ 13
++ * 6904/6924 - Events 32-63, IRQ 11
++ * 6908/6938 - Events 64-95, IRQ  9
++ *
 + */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <asm/clock.h>
-+#include <asm/freq.h>
-+#include <asm/io.h>
+=20
+ #define ESR_BASE 0x005f6900    /* Base event status register */
+ #define EMR_BASE 0x005f6910    /* Base event mask register */
+@@ -56,60 +57,60 @@
+ /* Disable the hardware event by masking its bit in its EMR */
+ static inline void disable_systemasic_irq(unsigned int irq)
+ {
+-        __u32 emr =3D EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
+-        __u32 mask;
++	__u32 emr =3D EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
++	__u32 mask;
+=20
+-        mask =3D inl(emr);
+-        mask &=3D ~(1 << EVENT_BIT(irq));
+-        outl(mask, emr);
++	mask =3D inl(emr);
++	mask &=3D ~(1 << EVENT_BIT(irq));
++	outl(mask, emr);
+ }
+=20
+ /* Enable the hardware event by setting its bit in its EMR */
+ static inline void enable_systemasic_irq(unsigned int irq)
+ {
+-        __u32 emr =3D EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
+-        __u32 mask;
++	__u32 emr =3D EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
++	__u32 mask;
+=20
+-        mask =3D inl(emr);
+-        mask |=3D (1 << EVENT_BIT(irq));
+-        outl(mask, emr);
++	mask =3D inl(emr);
++	mask |=3D (1 << EVENT_BIT(irq));
++	outl(mask, emr);
+ }
+=20
+ /* Acknowledge a hardware event by writing its bit back to its ESR */
+ static void ack_systemasic_irq(unsigned int irq)
+ {
+-        __u32 esr =3D ESR_BASE + (LEVEL(irq) << 2);
+-        disable_systemasic_irq(irq);
+-        outl((1 << EVENT_BIT(irq)), esr);
++	__u32 esr =3D ESR_BASE + (LEVEL(irq) << 2);
++	disable_systemasic_irq(irq);
++	outl((1 << EVENT_BIT(irq)), esr);
+ }
+=20
+ /* After a IRQ has been ack'd and responded to, it needs to be renabled */
+ static void end_systemasic_irq(unsigned int irq)
+ {
+-        if (!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS)))
+-                enable_systemasic_irq(irq);
++	if (!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS)))
++		enable_systemasic_irq(irq);
+ }
+=20
+ static unsigned int startup_systemasic_irq(unsigned int irq)
+ {
+-        enable_systemasic_irq(irq);
++	enable_systemasic_irq(irq);
+=20
+-        return 0;
++	return 0;
+ }
+=20
+ static void shutdown_systemasic_irq(unsigned int irq)
+ {
+-        disable_systemasic_irq(irq);
++	disable_systemasic_irq(irq);
+ }
+=20
+ struct hw_interrupt_type systemasic_int =3D {
+-        .typename       =3D "System ASIC",
+-        .startup        =3D startup_systemasic_irq,
+-        .shutdown       =3D shutdown_systemasic_irq,
+-        .enable         =3D enable_systemasic_irq,
+-        .disable        =3D disable_systemasic_irq,
+-        .ack            =3D ack_systemasic_irq,
+-        .end            =3D end_systemasic_irq,
++	.typename	=3D "System ASIC",
++	.startup	=3D startup_systemasic_irq,
++	.shutdown	=3D shutdown_systemasic_irq,
++	.enable		=3D enable_systemasic_irq,
++	.disable	=3D disable_systemasic_irq,
++	.ack		=3D ack_systemasic_irq,
++	.end		=3D end_systemasic_irq,
+ };
+=20
+ /*
+@@ -117,37 +118,37 @@ struct hw_interrupt_type systemasic_int =3D {
+  */
+ int systemasic_irq_demux(int irq)
+ {
+-        __u32 emr, esr, status, level;
+-        __u32 j, bit;
+-
+-        switch (irq) {
+-                case 13:
+-                        level =3D 0;
+-                        break;
+-                case 11:
+-                        level =3D 1;
+-                        break;
+-                case  9:
+-                        level =3D 2;
+-                        break;
+-                default:
+-                        return irq;
+-        }
+-        emr =3D EMR_BASE + (level << 4) + (level << 2);
+-        esr =3D ESR_BASE + (level << 2);
+-
+-        /* Mask the ESR to filter any spurious, unwanted interrupts */
+-        status =3D inl(esr);
+-        status &=3D inl(emr);
+-
+-        /* Now scan and find the first set bit as the event to map */
+-        for (bit =3D 1, j =3D 0; j < 32; bit <<=3D 1, j++) {
+-                if (status & bit) {
+-                        irq =3D HW_EVENT_IRQ_BASE + j + (level << 5);
+-                        return irq;
+-                }
+-        }
+-
+-        /* Not reached */
+-        return irq;
++	__u32 emr, esr, status, level;
++	__u32 j, bit;
 +
-+const static int pll1rate[]={1,2,3,4,6,8};
-+const static int pfc_divisors[]={1,2,3,4,6,8,12};
-+#define ifc_divisors pfc_divisors
-+
-+#if (CONFIG_SH_CLK_MD = 0)
-+#define PLL2 (4)
-+#elif (CONFIG_SH_CLK_MD = 2)
-+#define PLL2 (2)
-+#elif (CONFIG_SH_CLK_MD = 3)
-+#define PLL2 (1)
-+#else
-+#error "Illegal Clock Mode!"
-+#endif
-+
-+static void master_clk_init(struct clk *clk)
-+{
-+	clk->rate = 10000000 * PLL2 * pll1rate[(ctrl_inw(FREQCR) >> 8) & 0x0007];
-+}
-+
-+static struct clk_ops sh7201_master_clk_ops = {
-+	.init		= master_clk_init,
-+};
-+
-+static void module_clk_recalc(struct clk *clk)
-+{
-+	int idx = (ctrl_inw(FREQCR) & 0x0007);
-+	clk->rate = clk->parent->rate / pfc_divisors[idx];
-+}
-+
-+static struct clk_ops sh7201_module_clk_ops = {
-+	.recalc		= module_clk_recalc,
-+};
-+
-+static void bus_clk_recalc(struct clk *clk)
-+{
-+	int idx = (ctrl_inw(FREQCR) & 0x0007);
-+	clk->rate = clk->parent->rate / pfc_divisors[idx];
-+}
-+
-+static struct clk_ops sh7201_bus_clk_ops = {
-+	.recalc		= bus_clk_recalc,
-+};
-+
-+static void cpu_clk_recalc(struct clk *clk)
-+{
-+  	int idx = ((ctrl_inw(FREQCR) >> 4) & 0x0007);
-+  	clk->rate = clk->parent->rate / ifc_divisors[idx];
-+}
-+
-+static struct clk_ops sh7201_cpu_clk_ops = {
-+	.recalc		= cpu_clk_recalc,
-+};
-+
-+static struct clk_ops *sh7201_clk_ops[] = {
-+	&sh7201_master_clk_ops,
-+	&sh7201_module_clk_ops,
-+	&sh7201_bus_clk_ops,
-+	&sh7201_cpu_clk_ops,
-+};
-+
-+void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
-+{
-+	if (idx < ARRAY_SIZE(sh7201_clk_ops))
-+		*ops = sh7201_clk_ops[idx];
-+}
-+
-diff --git a/arch/sh/kernel/cpu/sh2a/probe.c b/arch/sh/kernel/cpu/sh2a/probe.c
-index 6e79132..3976ace 100644
---- a/arch/sh/kernel/cpu/sh2a/probe.c
-+++ b/arch/sh/kernel/cpu/sh2a/probe.c
-@@ -18,7 +18,11 @@ int __init detect_cpu_and_cache_system(void)
-  	/* All SH-2A CPUs have support for 16 and 32-bit opcodes.. */
-  	boot_cpu_data.flags			|= CPU_HAS_OP32;
-
--#if defined(CONFIG_CPU_SUBTYPE_SH7203)
-+#if defined(CONFIG_CPU_SUBTYPE_SH7201)
-+	boot_cpu_data.type			= CPU_SH7201;
-+	/* SH7201 has an FPU.. */
-+	boot_cpu_data.flags			|= CPU_HAS_FPU;
-+#elif defined(CONFIG_CPU_SUBTYPE_SH7203)
-  	boot_cpu_data.type			= CPU_SH7203;
-  	/* SH7203 has an FPU.. */
-  	boot_cpu_data.flags			|= CPU_HAS_FPU;
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-new file mode 100644
-index 0000000..a8e8e62
---- /dev/null
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
-@@ -0,0 +1,331 @@
-+/*
-+ *  SH7201 setup
-+ *
-+ *  Copyright (C) 2008  Peter Griffin pgriffin@mpc-data.co.uk
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#include <linux/platform_device.h>
-+#include <linux/init.h>
-+#include <linux/serial.h>
-+#include <linux/serial_sci.h>
-+
-+enum {
-+	UNUSED = 0,
-+
-+	/* interrupt sources */
-+	IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7,
-+	PINT0, PINT1, PINT2, PINT3, PINT4, PINT5, PINT6, PINT7,
-+	ADC_ADI,
-+	MTU2_TGI0A, MTU2_TGI0B, MTU2_TGI0C, MTU2_TGI0D,
-+	MTU2_TCI0V, MTU2_TGI0E, MTU2_TGI0F,
-+	MTU2_TGI1A, MTU2_TGI1B, MTU2_TCI1V, MTU2_TCI1U,
-+	MTU2_TGI2A, MTU2_TGI2B, MTU2_TCI2V, MTU2_TCI2U,
-+	MTU2_TGI3A, MTU2_TGI3B, MTU2_TGI3C, MTU2_TGI3D, MTU2_TCI3V,
-+	MTU2_TGI4A, MTU2_TGI4B, MTU2_TGI4C, MTU2_TGI4D, MTU2_TCI4V,
-+	MTU2_TGI5U, MTU2_TGI5V, MTU2_TGI5W,
-+	RTC_ARM, RTC_PRD, RTC_CUP,
-+	WDT,
-+	IIC30_STPI, IIC30_NAKI, IIC30_RXI, IIC30_TXI, IIC30_TEI,
-+	IIC31_STPI, IIC31_NAKI, IIC31_RXI, IIC31_TXI, IIC31_TEI,
-+	IIC32_STPI, IIC32_NAKI, IIC32_RXI, IIC32_TXI, IIC32_TEI,
-+
-+	DMAC0_DMINT0, DMAC1_DMINT1,
-+	DMAC2_DMINT2, DMAC3_DMINT3,
-+
-+	SCIF0_BRI, SCIF0_ERI, SCIF0_RXI, SCIF0_TXI,
-+	SCIF1_BRI, SCIF1_ERI, SCIF1_RXI, SCIF1_TXI,
-+	SCIF2_BRI, SCIF2_ERI, SCIF2_RXI, SCIF2_TXI,
-+	SCIF3_BRI, SCIF3_ERI, SCIF3_RXI, SCIF3_TXI,
-+	SCIF4_BRI, SCIF4_ERI, SCIF4_RXI, SCIF4_TXI,
-+	SCIF5_BRI, SCIF5_ERI, SCIF5_RXI, SCIF5_TXI,
-+	SCIF6_BRI, SCIF6_ERI, SCIF6_RXI, SCIF6_TXI,
-+	SCIF7_BRI, SCIF7_ERI, SCIF7_RXI, SCIF7_TXI,
-+
-+	DMAC0_DMINTA, DMAC4_DMINT4, DMAC5_DMINT5, DMAC6_DMINT6,
-+	DMAC7_DMINT7,
-+
-+	RCAN0_ERS, RCAN0_OVR,
-+	RCAN0_SLE,
-+	RCAN0_RM0, RCAN0_RM1,
-+
-+	RCAN1_ERS, RCAN1_OVR,
-+	RCAN1_SLE,
-+	RCAN1_RM0, RCAN1_RM1,
-+
-+	SSI0_SSII, SSI1_SSII,
-+
-+	TMR0_CMIA0, TMR0_CMIB0, TMR0_OVI0,
-+	TMR1_CMIA1, TMR1_CMIB1, TMR1_OVI1,
-+
-+	/* interrupt groups */
-+
-+	IRQ, PINT, ADC,
-+	MTU20_ABCD, MTU20_VEF, MTU21_AB, MTU21_VU, MTU22_AB, MTU22_VU,
-+	MTU23_ABCD, MTU24_ABCD, MTU25_UVW,
-+	RTC, IIC30, IIC31, IIC32,
-+	SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7,
-+	RCAN0, RCAN1, TMR0, TMR1
-+
-+};
-+
-+static struct intc_vect vectors[] __initdata = {
-+	INTC_IRQ(IRQ0, 64), INTC_IRQ(IRQ1, 65),
-+	INTC_IRQ(IRQ2, 66), INTC_IRQ(IRQ3, 67),
-+	INTC_IRQ(IRQ4, 68), INTC_IRQ(IRQ5, 69),
-+	INTC_IRQ(IRQ6, 70), INTC_IRQ(IRQ7, 71),
-+	INTC_IRQ(PINT0, 80), INTC_IRQ(PINT1, 81),
-+	INTC_IRQ(PINT2, 82), INTC_IRQ(PINT3, 83),
-+	INTC_IRQ(PINT4, 84), INTC_IRQ(PINT5, 85),
-+	INTC_IRQ(PINT6, 86), INTC_IRQ(PINT7, 87),
-+
-+	INTC_IRQ(ADC_ADI, 92),
-+
-+	INTC_IRQ(MTU2_TGI0A, 108), INTC_IRQ(MTU2_TGI0B, 109),
-+	INTC_IRQ(MTU2_TGI0C, 110), INTC_IRQ(MTU2_TGI0D, 111),
-+	INTC_IRQ(MTU2_TCI0V, 112),
-+	INTC_IRQ(MTU2_TGI0E, 113), INTC_IRQ(MTU2_TGI0F, 114),
-+
-+	INTC_IRQ(MTU2_TGI1A, 116), INTC_IRQ(MTU2_TGI1B, 117),
-+	INTC_IRQ(MTU2_TCI1V, 120), INTC_IRQ(MTU2_TCI1U, 121),
-+
-+	INTC_IRQ(MTU2_TGI2A, 124), INTC_IRQ(MTU2_TGI2B, 125),
-+	INTC_IRQ(MTU2_TCI2V, 128), INTC_IRQ(MTU2_TCI2U, 129),
-+
-+	INTC_IRQ(MTU2_TGI3A, 132), INTC_IRQ(MTU2_TGI3B, 133),
-+	INTC_IRQ(MTU2_TGI3C, 134), INTC_IRQ(MTU2_TGI3D, 135),
-+	INTC_IRQ(MTU2_TCI3V, 136),
-+
-+	INTC_IRQ(MTU2_TGI4A, 140), INTC_IRQ(MTU2_TGI4B, 141),
-+	INTC_IRQ(MTU2_TGI4C, 142), INTC_IRQ(MTU2_TGI4D, 143),
-+	INTC_IRQ(MTU2_TCI4V, 144),
-+
-+	INTC_IRQ(MTU2_TGI5U, 148), INTC_IRQ(MTU2_TGI5V, 149),
-+	INTC_IRQ(MTU2_TGI5W, 150),
-+
-+	INTC_IRQ(RTC_ARM, 152), INTC_IRQ(RTC_PRD, 153),
-+	INTC_IRQ(RTC_CUP, 154), INTC_IRQ(WDT, 156),
-+
-+	INTC_IRQ(IIC30_STPI, 157), INTC_IRQ(IIC30_NAKI, 158),
-+	INTC_IRQ(IIC30_RXI, 159), INTC_IRQ(IIC30_TXI, 160),
-+	INTC_IRQ(IIC30_TEI, 161),
-+
-+	INTC_IRQ(IIC31_STPI, 164), INTC_IRQ(IIC31_NAKI, 165),
-+	INTC_IRQ(IIC31_RXI, 166), INTC_IRQ(IIC31_TXI, 167),
-+	INTC_IRQ(IIC31_TEI, 168),
-+
-+	INTC_IRQ(IIC32_STPI, 170), INTC_IRQ(IIC32_NAKI, 171),
-+	INTC_IRQ(IIC32_RXI, 172), INTC_IRQ(IIC32_TXI, 173),
-+	INTC_IRQ(IIC32_TEI, 174),
-+
-+	INTC_IRQ(DMAC0_DMINT0, 176), INTC_IRQ(DMAC1_DMINT1, 177),
-+	INTC_IRQ(DMAC2_DMINT2, 178), INTC_IRQ(DMAC3_DMINT3, 179),
-+
-+	INTC_IRQ(SCIF0_BRI, 180), INTC_IRQ(SCIF0_ERI, 181),
-+	INTC_IRQ(SCIF0_RXI, 182), INTC_IRQ(SCIF0_TXI, 183),
-+	INTC_IRQ(SCIF1_BRI, 184), INTC_IRQ(SCIF1_ERI, 185),
-+	INTC_IRQ(SCIF1_RXI, 186), INTC_IRQ(SCIF1_TXI, 187),
-+	INTC_IRQ(SCIF2_BRI, 188), INTC_IRQ(SCIF2_ERI, 189),
-+	INTC_IRQ(SCIF2_RXI, 190), INTC_IRQ(SCIF2_TXI, 191),
-+	INTC_IRQ(SCIF3_BRI, 192), INTC_IRQ(SCIF3_ERI, 193),
-+	INTC_IRQ(SCIF3_RXI, 194), INTC_IRQ(SCIF3_TXI, 195),
-+	INTC_IRQ(SCIF4_BRI, 196), INTC_IRQ(SCIF4_ERI, 197),
-+	INTC_IRQ(SCIF4_RXI, 198), INTC_IRQ(SCIF4_TXI, 199),
-+	INTC_IRQ(SCIF5_BRI, 200), INTC_IRQ(SCIF5_ERI, 201),
-+	INTC_IRQ(SCIF5_RXI, 202), INTC_IRQ(SCIF5_TXI, 203),
-+	INTC_IRQ(SCIF6_BRI, 204), INTC_IRQ(SCIF6_ERI, 205),
-+	INTC_IRQ(SCIF6_RXI, 206), INTC_IRQ(SCIF6_TXI, 207),
-+	INTC_IRQ(SCIF7_BRI, 208), INTC_IRQ(SCIF7_ERI, 209),
-+	INTC_IRQ(SCIF7_RXI, 210), INTC_IRQ(SCIF7_TXI, 211),
-+
-+	INTC_IRQ(DMAC0_DMINTA, 212), INTC_IRQ(DMAC4_DMINT4, 216),
-+	INTC_IRQ(DMAC5_DMINT5, 217), INTC_IRQ(DMAC6_DMINT6, 218),
-+	INTC_IRQ(DMAC7_DMINT7, 219),
-+
-+	INTC_IRQ(RCAN0_ERS, 228), INTC_IRQ(RCAN0_OVR, 229),
-+	INTC_IRQ(RCAN0_SLE, 230),
-+	INTC_IRQ(RCAN0_RM0, 231), INTC_IRQ(RCAN0_RM1, 232),
-+
-+	INTC_IRQ(RCAN1_ERS, 234), INTC_IRQ(RCAN1_OVR, 235),
-+	INTC_IRQ(RCAN1_SLE, 236),
-+	INTC_IRQ(RCAN1_RM0, 237), INTC_IRQ(RCAN1_RM1, 238),
-+
-+	INTC_IRQ(SSI0_SSII, 244), INTC_IRQ(SSI1_SSII, 245),
-+
-+	INTC_IRQ(TMR0_CMIA0, 246), INTC_IRQ(TMR0_CMIB0, 247),
-+	INTC_IRQ(TMR0_OVI0, 248),
-+
-+	INTC_IRQ(TMR1_CMIA1, 252), INTC_IRQ(TMR1_CMIB1, 253),
-+	INTC_IRQ(TMR1_OVI1, 254),
-+
-+};
-+
-+static struct intc_group groups[] __initdata = {
-+	INTC_GROUP(PINT, PINT0, PINT1, PINT2, PINT3,
-+		   PINT4, PINT5, PINT6, PINT7),
-+	INTC_GROUP(MTU20_ABCD, MTU2_TGI0A, MTU2_TGI0B, MTU2_TGI0C, MTU2_TGI0D),
-+	INTC_GROUP(MTU20_VEF, MTU2_TCI0V, MTU2_TGI0E, MTU2_TGI0F),
-+
-+	INTC_GROUP(MTU21_AB, MTU2_TGI1A, MTU2_TGI1B),
-+	INTC_GROUP(MTU21_VU, MTU2_TCI1V, MTU2_TCI1U),
-+	INTC_GROUP(MTU22_AB, MTU2_TGI2A, MTU2_TGI2B),
-+	INTC_GROUP(MTU22_VU, MTU2_TCI2V, MTU2_TCI2U),
-+	INTC_GROUP(MTU23_ABCD, MTU2_TGI3A, MTU2_TGI3B, MTU2_TGI3C, MTU2_TGI3D),
-+	INTC_GROUP(MTU24_ABCD, MTU2_TGI4A, MTU2_TGI4B, MTU2_TGI4C, MTU2_TGI4D),
-+	INTC_GROUP(MTU25_UVW, MTU2_TGI5U, MTU2_TGI5V, MTU2_TGI5W),
-+	INTC_GROUP(RTC, RTC_ARM, RTC_PRD, RTC_CUP ),
-+
-+	INTC_GROUP(IIC30, IIC30_STPI, IIC30_NAKI, IIC30_RXI, IIC30_TXI,
-+		   IIC30_TEI),
-+	INTC_GROUP(IIC31, IIC31_STPI, IIC31_NAKI, IIC31_RXI, IIC31_TXI,
-+		   IIC31_TEI),
-+	INTC_GROUP(IIC32, IIC32_STPI, IIC32_NAKI, IIC32_RXI, IIC32_TXI,
-+		   IIC32_TEI),
-+
-+	INTC_GROUP(SCIF0, SCIF0_BRI, SCIF0_ERI, SCIF0_RXI, SCIF0_TXI),
-+	INTC_GROUP(SCIF1, SCIF1_BRI, SCIF1_ERI, SCIF1_RXI, SCIF1_TXI),
-+	INTC_GROUP(SCIF2, SCIF2_BRI, SCIF2_ERI, SCIF2_RXI, SCIF2_TXI),
-+	INTC_GROUP(SCIF3, SCIF3_BRI, SCIF3_ERI, SCIF3_RXI, SCIF3_TXI),
-+	INTC_GROUP(SCIF4, SCIF4_BRI, SCIF4_ERI, SCIF4_RXI, SCIF4_TXI),
-+	INTC_GROUP(SCIF5, SCIF5_BRI, SCIF5_ERI, SCIF5_RXI, SCIF5_TXI),
-+	INTC_GROUP(SCIF6, SCIF6_BRI, SCIF6_ERI, SCIF6_RXI, SCIF6_TXI),
-+	INTC_GROUP(SCIF7, SCIF7_BRI, SCIF7_ERI, SCIF7_RXI, SCIF7_TXI),
-+
-+	INTC_GROUP(RCAN0, RCAN0_ERS, RCAN0_OVR, RCAN0_RM0, RCAN0_RM1,
-+		   RCAN0_SLE),
-+	INTC_GROUP(RCAN1, RCAN1_ERS, RCAN1_OVR, RCAN1_RM0, RCAN1_RM1,
-+		   RCAN1_SLE),
-+
-+	INTC_GROUP(TMR0, TMR0_CMIA0, TMR0_CMIB0, TMR0_OVI0),
-+	INTC_GROUP(TMR1, TMR1_CMIA1, TMR1_CMIB1, TMR1_OVI1),
-+};
-+
-+static struct intc_prio_reg prio_registers[] __initdata = {
-+	{ 0xfffe9418, 0, 16, 4, /* IPR01 */ { IRQ0, IRQ1, IRQ2, IRQ3 } },
-+	{ 0xfffe941a, 0, 16, 4, /* IPR02 */ { IRQ4, IRQ5, IRQ6, IRQ7 } },
-+	{ 0xfffe9420, 0, 16, 4, /* IPR05 */ { PINT, 0, ADC_ADI, 0 } },
-+	{ 0xfffe9800, 0, 16, 4, /* IPR06 */ { 0, MTU20_ABCD, MTU20_VEF, MTU21_AB } },
-+	{ 0xfffe9802, 0, 16, 4, /* IPR07 */ { MTU21_VU, MTU22_AB, MTU22_VU,  MTU23_ABCD } },
-+	{ 0xfffe9804, 0, 16, 4, /* IPR08 */ { MTU2_TCI3V, MTU24_ABCD, MTU2_TCI4V, MTU25_UVW } },
-+
-+	{ 0xfffe9806, 0, 16, 4, /* IPR09 */ { RTC, WDT, IIC30, 0 } },
-+	{ 0xfffe9808, 0, 16, 4, /* IPR10 */ { IIC31, IIC32, DMAC0_DMINT0, DMAC1_DMINT1 } },
-+	{ 0xfffe980a, 0, 16, 4, /* IPR11 */ { DMAC2_DMINT2, DMAC3_DMINT3, SCIF0 , SCIF1 } },
-+	{ 0xfffe980c, 0, 16, 4, /* IPR12 */ { SCIF2, SCIF3, SCIF4, SCIF5 } },
-+	{ 0xfffe980e, 0, 16, 4, /* IPR13 */ { SCIF6, SCIF7, DMAC0_DMINTA, DMAC4_DMINT4  } },
-+	{ 0xfffe9810, 0, 16, 4, /* IPR14 */ { DMAC5_DMINT5, DMAC6_DMINT6, DMAC7_DMINT7, 0 } },
-+	{ 0xfffe9812, 0, 16, 4, /* IPR15 */ { 0, RCAN0, RCAN1, 0 } },
-+	{ 0xfffe9814, 0, 16, 4, /* IPR16 */ { SSI0_SSII, SSI1_SSII, TMR0, TMR1 } },
-+};
-+
-+static struct intc_mask_reg mask_registers[] __initdata = {
-+	{ 0xfffe9408, 0, 16, /* PINTER */
-+	  { 0, 0, 0, 0, 0, 0, 0, 0,
-+	    PINT7, PINT6, PINT5, PINT4, PINT3, PINT2, PINT1, PINT0 } },
-+};
-+
-+static DECLARE_INTC_DESC(intc_desc, "sh7201", vectors, groups,
-+			 mask_registers, prio_registers, NULL);
-+
-+static struct plat_sci_port sci_platform_data[] = {
-+	{
-+		.mapbase	= 0xfffe8000,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 181, 182, 183, 180}
-+	}, {
-+		.mapbase	= 0xfffe8800,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 185, 186, 187, 184}
-+	}, {
-+		.mapbase	= 0xfffe9000,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 189, 186, 187, 188}
-+	}, {
-+		.mapbase	= 0xfffe9800,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 193, 194, 195, 192}
-+	}, {
-+		.mapbase	= 0xfffea000,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 196, 198, 199, 196}
-+	}, {
-+		.mapbase	= 0xfffea800,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 201, 202, 203, 200}
-+	}, {
-+		.mapbase	= 0xfffeb000,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 205, 206, 207, 204}
-+	}, {
-+		.mapbase	= 0xfffeb800,
-+		.flags		= UPF_BOOT_AUTOCONF,
-+		.type		= PORT_SCIF,
-+		.irqs		= { 209, 210, 211, 208}
-+	}, {
-+		.flags = 0,
++	switch (irq) {
++	case 13:
++		level =3D 0;
++		break;
++	case 11:
++		level =3D 1;
++		break;
++	case  9:
++		level =3D 2;
++		break;
++	default:
++		return irq;
 +	}
-+};
++	emr =3D EMR_BASE + (level << 4) + (level << 2);
++	esr =3D ESR_BASE + (level << 2);
 +
-+static struct platform_device sci_device = {
-+	.name		= "sh-sci",
-+	.id		= -1,
-+	.dev		= {
-+		.platform_data	= sci_platform_data,
-+	},
-+};
++	/* Mask the ESR to filter any spurious, unwanted interrupts */
++	status =3D inl(esr);
++	status &=3D inl(emr);
 +
-+static struct resource rtc_resources[] = {
-+	[0] = {
-+		.start	= 0xffff0800,
-+		.end	= 0xffff2000 + 0x58 - 1,
-+		.flags	= IORESOURCE_IO,
-+	},
-+	[1] = {
-+		/* Period IRQ */
-+		.start	= 153,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		/* Carry IRQ */
-+		.start	= 154,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[3] = {
-+		/* Alarm IRQ */
-+		.start	= 152,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
++	/* Now scan and find the first set bit as the event to map */
++	for (bit =3D 1, j =3D 0; j < 32; bit <<=3D 1, j++) {
++		if (status & bit) {
++			irq =3D HW_EVENT_IRQ_BASE + j + (level << 5);
++			return irq;
++		}
++	}
 +
-+static struct platform_device rtc_device = {
-+	.name		= "sh-rtc",
-+	.id		= -1,
-+	.num_resources	= ARRAY_SIZE(rtc_resources),
-+	.resource	= rtc_resources,
-+};
-+
-+static struct platform_device *sh7201_devices[] __initdata = {
-+	&sci_device,
-+	&rtc_device,
-+};
-+
-+static int __init sh7201_devices_setup(void)
-+{
-+	return platform_add_devices(sh7201_devices,
-+				    ARRAY_SIZE(sh7201_devices));
-+}
-+__initcall(sh7201_devices_setup);
-+
-+void __init plat_irq_setup(void)
-+{
-+	register_intc_controller(&intc_desc);
-+}
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index e7152cc..70fe51b 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -417,6 +419,7 @@ void __init setup_arch(char **cmdline_p)
-  }
++	/* Not reached */
++	return irq;
+ }
 
-  static const char *cpu_name[] = {
-+ 	[CPU_SH7201]	= "SH7201",
-  	[CPU_SH7203]	= "SH7203",	[CPU_SH7263]	= "SH7263",
-  	[CPU_SH7206]	= "SH7206",	[CPU_SH7619]	= "SH7619",
-  	[CPU_SH7705]	= "SH7705",	[CPU_SH7706]	= "SH7706",
-diff --git a/arch/sh/kernel/timers/timer-mtu2.c b/arch/sh/kernel/timers/timer-mtu2.c
-index fe453c0..40936ca 100644
---- a/arch/sh/kernel/timers/timer-mtu2.c
-+++ b/arch/sh/kernel/timers/timer-mtu2.c
-@@ -34,7 +34,12 @@
-  #define MTU2_TIER_1	0xfffe4384
-  #define MTU2_TSR_1	0xfffe4385
-  #define MTU2_TCNT_1	0xfffe4386	/* 16-bit counter */
-+
-+#if defined (CONFIG_CPU_SUBTYPE_SH7201)
-+#define MTU2_TGRA_1	0xfffe4388
-+#else
-  #define MTU2_TGRA_1	0xfffe438a
-+#endif
 
-  #define STBCR3		0xfffe0408
+--=20
+Kristoffer Ericson <kristoffer.ericson@gmail.com>
 
-diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
-index 9f33b06..387b070 100644
---- a/drivers/serial/sh-sci.h
-+++ b/drivers/serial/sh-sci.h
-@@ -135,11 +135,18 @@
-  # define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-  #elif defined(CONFIG_CPU_SUBTYPE_SH7203) || \
-        defined(CONFIG_CPU_SUBTYPE_SH7206) || \
--      defined(CONFIG_CPU_SUBTYPE_SH7263)
-+      defined(CONFIG_CPU_SUBTYPE_SH7263) || \
-+      defined(CONFIG_CPU_SUBTYPE_SH7201)
-  # define SCSPTR0 0xfffe8020 /* 16 bit SCIF */
-  # define SCSPTR1 0xfffe8820 /* 16 bit SCIF */
-  # define SCSPTR2 0xfffe9020 /* 16 bit SCIF */
-  # define SCSPTR3 0xfffe9820 /* 16 bit SCIF */
-+#if defined(CONFIG_CPU_SUBTYPE_SH7201)
-+# define SCSPTR4 0xfffeA020 /* 16 bit SCIF */
-+# define SCSPTR5 0xfffeA820 /* 16 bit SCIF */
-+# define SCSPTR6 0xfffeB020 /* 16 bit SCIF */
-+# define SCSPTR7 0xfffeB820 /* 16 bit SCIF */
-+#endif
-  # define SCSCR_INIT(port)	0x38 /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-  #elif defined(CONFIG_CPU_SUBTYPE_SH7619)
-  # define SCSPTR0 0xf8400020 /* 16 bit SCIF */
-@@ -666,7 +673,8 @@ static inline int sci_rxd_in(struct uart_port *port)
-  }
-  #elif defined(CONFIG_CPU_SUBTYPE_SH7203) || \
-        defined(CONFIG_CPU_SUBTYPE_SH7206) || \
--      defined(CONFIG_CPU_SUBTYPE_SH7263)
-+      defined(CONFIG_CPU_SUBTYPE_SH7263) || \
-+      defined(CONFIG_CPU_SUBTYPE_SH7201)
-  static inline int sci_rxd_in(struct uart_port *port)
-  {
-  	if (port->mapbase = 0xfffe8000)
-@@ -677,6 +685,16 @@ static inline int sci_rxd_in(struct uart_port *port)
-  		return ctrl_inw(SCSPTR2) & 0x0001 ? 1 : 0; /* SCIF */
-  	if (port->mapbase = 0xfffe9800)
-  		return ctrl_inw(SCSPTR3) & 0x0001 ? 1 : 0; /* SCIF */
-+#if defined(CONFIG_CPU_SUBTYPE_SH7201)
-+	if (port->mapbase = 0xfffeA000)
-+		return ctrl_inw(SCSPTR0) & 0x0001 ? 1 : 0; /* SCIF */
-+	if (port->mapbase = 0xfffeA800)
-+		return ctrl_inw(SCSPTR1) & 0x0001 ? 1 : 0; /* SCIF */
-+	if (port->mapbase = 0xfffeB000)
-+		return ctrl_inw(SCSPTR2) & 0x0001 ? 1 : 0; /* SCIF */
-+	if (port->mapbase = 0xfffeB800)
-+		return ctrl_inw(SCSPTR3) & 0x0001 ? 1 : 0; /* SCIF */
-+#endif
-  	return 1;
-  }
-  #elif defined(CONFIG_CPU_SUBTYPE_SH7619)
+--Multipart=_Tue__18_Nov_2008_17_49_27_+0100_DNHtcQ1DYJ2ktUX9
+Content-Type: application/octet-stream;
+ name="fix-dreamcast-irq-formatting.patch"
+Content-Disposition: attachment;
+ filename="fix-dreamcast-irq-formatting.patch"
+Content-Transfer-Encoding: base64
+
+ZGlmZiAtLWdpdCBhL2FyY2gvc2gvYm9hcmRzL21hY2gtZHJlYW1jYXN0L2lycS5jIGIvYXJjaC9z
+aC9ib2FyZHMvbWFjaC1kcmVhbWNhc3QvaXJxLmMKaW5kZXggNjdiZGMzMy4uMzZhOGEwOCAxMDA2
+NDQKLS0tIGEvYXJjaC9zaC9ib2FyZHMvbWFjaC1kcmVhbWNhc3QvaXJxLmMKKysrIGIvYXJjaC9z
+aC9ib2FyZHMvbWFjaC1kcmVhbWNhc3QvaXJxLmMKQEAgLTE0LDMxICsxNCwzMiBAQAogI2luY2x1
+ZGUgPGFzbS9pcnEuaD4KICNpbmNsdWRlIDxtYWNoL3N5c2FzaWMuaD4KIAotLyogRHJlYW1jYXN0
+IFN5c3RlbSBBU0lDIEhhcmR3YXJlIEV2ZW50cyAtCi0KLSAgIFRoZSBEcmVhbWNhc3QncyBTeXN0
+ZW0gQVNJQyAoYS5rLmEuIEhvbGx5KSBpcyByZXNwb25zaWJsZSBmb3IgcmVjZWl2aW5nCi0gICBo
+YXJkd2FyZSBldmVudHMgZnJvbSBzeXN0ZW0gcGVyaXBoZXJhbHMgYW5kIHRyaWdnZXJpbmcgYW4g
+U0g3NzUwIElSUS4KLSAgIEhhcmR3YXJlIGV2ZW50cyBjYW4gdHJpZ2dlciBJUlFzIDEzLCAxMSwg
+b3IgOSBkZXBlbmRpbmcgb24gd2hpY2ggYml0cyBhcmUKLSAgIHNldCBpbiB0aGUgRXZlbnQgTWFz
+ayBSZWdpc3RlcnMgKEVNUnMpLiAgV2hlbiBhIGhhcmR3YXJlIGV2ZW50IGlzCi0gICB0cmlnZ2Vy
+ZWQsIGl0J3MgY29ycmVzcG9uZGluZyBiaXQgaW4gdGhlIEV2ZW50IFN0YXR1cyBSZWdpc3RlcnMg
+KEVTUnMpCi0gICBpcyBzZXQsIGFuZCB0aGF0IGJpdCBzaG91bGQgYmUgcmV3cml0dGVuIHRvIHRo
+ZSBFU1IgdG8gYWNrbm93bGVkZ2UgdGhhdAotICAgZXZlbnQuCi0KLSAgIFRoZXJlIGFyZSB0aHJl
+ZSAzMi1iaXQgRVNScyBsb2NhdGVkIGF0IDB4YTA1Zjg5MDAgLSAweGEwNWY2OTA4LiAgRXZlbnQK
+LSAgIHR5cGVzIGNhbiBiZSBmb3VuZCBpbiBpbmNsdWRlL2FzbS1zaC9kcmVhbWNhc3Qvc3lzYXNp
+Yy5oLiBUaGVyZSBhcmUgdGhyZWUKLSAgIGdyb3VwcyBvZiBFTVJzIHRoYXQgcGFyYWxsZWwgdGhl
+IEVTUnMuICBFYWNoIEVNUiBncm91cCBjb3JyZXNwb25kcyB0byBhbgotICAgSVJRLCBzbyAweGEw
+NWY2OTEwIC0gMHhhMDVmNjkxOCB0cmlnZ2VycyBJUlEgMTMsIDB4YTA1ZjY5MjAgLSAweGEwNWY2
+OTI4Ci0gICB0cmlnZ2VycyBJUlEgMTEsIGFuZCAweGEwNWY2OTMwIC0gMHhhMDVmNjkzOCB0cmln
+Z2VycyBJUlEgOS4KLQotICAgSW4gdGhlIGtlcm5lbCwgdGhlc2UgZXZlbnRzIGFyZSBtYXBwZWQg
+dG8gdmlydHVhbCBJUlFzIHNvIHRoYXQgZHJpdmVycyBjYW4KLSAgIHJlc3BvbmQgdG8gdGhlbSBh
+cyB0aGV5IHdvdWxkIGEgbm9ybWFsIGludGVycnVwdC4gIEluIG9yZGVyIHRvIGtlZXAgdGhpcwot
+ICAgbWFwcGluZyBzaW1wbGUsIHRoZSBldmVudHMgYXJlIG1hcHBlZCBhczoKLQotICAgNjkwMC82
+OTEwIC0gRXZlbnRzICAwLTMxLCBJUlEgMTMKLSAgIDY5MDQvNjkyNCAtIEV2ZW50cyAzMi02Mywg
+SVJRIDExCi0gICA2OTA4LzY5MzggLSBFdmVudHMgNjQtOTUsIElSUSAgOQotCi0qLworLyoKKyAq
+IERyZWFtY2FzdCBTeXN0ZW0gQVNJQyBIYXJkd2FyZSBFdmVudHMKKyAqCisgKiBUaGUgRHJlYW1j
+YXN0J3MgU3lzdGVtIEFTSUMgKGEuay5hLiBIb2xseSkgaXMgcmVzcG9uc2libGUgZm9yIHJlY2Vp
+dmluZworICogaGFyZHdhcmUgZXZlbnRzIGZyb20gc3lzdGVtIHBlcmlwaGVyYWxzIGFuZCB0cmln
+Z2VyaW5nIGFuIFNINzc1MCBJUlEuCisgKiBIYXJkd2FyZSBldmVudHMgY2FuIHRyaWdnZXIgSVJR
+cyAxMywgMTEsIG9yIDkgZGVwZW5kaW5nIG9uIHdoaWNoIGJpdHMgYXJlCisgKiBzZXQgaW4gdGhl
+IEV2ZW50IE1hc2sgUmVnaXN0ZXJzIChFTVJzKS4gIFdoZW4gYSBoYXJkd2FyZSBldmVudCBpcwor
+ICogdHJpZ2dlcmVkLCBpdCdzIGNvcnJlc3BvbmRpbmcgYml0IGluIHRoZSBFdmVudCBTdGF0dXMg
+UmVnaXN0ZXJzIChFU1JzKQorICogaXMgc2V0LCBhbmQgdGhhdCBiaXQgc2hvdWxkIGJlIHJld3Jp
+dHRlbiB0byB0aGUgRVNSIHRvIGFja25vd2xlZGdlIHRoYXQKKyAqIGV2ZW50LgorICoKKyAqIFRo
+ZXJlIGFyZSB0aHJlZSAzMi1iaXQgRVNScyBsb2NhdGVkIGF0IDB4YTA1Zjg5MDAgLSAweGEwNWY2
+OTA4LiAgRXZlbnQKKyAqIHR5cGVzIGNhbiBiZSBmb3VuZCBpbiBpbmNsdWRlL2FzbS1zaC9kcmVh
+bWNhc3Qvc3lzYXNpYy5oLiBUaGVyZSBhcmUgdGhyZWUKKyAqIGdyb3VwcyBvZiBFTVJzIHRoYXQg
+cGFyYWxsZWwgdGhlIEVTUnMuICBFYWNoIEVNUiBncm91cCBjb3JyZXNwb25kcyB0byBhbgorICog
+SVJRLCBzbyAweGEwNWY2OTEwIC0gMHhhMDVmNjkxOCB0cmlnZ2VycyBJUlEgMTMsIDB4YTA1ZjY5
+MjAgLSAweGEwNWY2OTI4CisgKiB0cmlnZ2VycyBJUlEgMTEsIGFuZCAweGEwNWY2OTMwIC0gMHhh
+MDVmNjkzOCB0cmlnZ2VycyBJUlEgOS4KKyAqCisgKiBJbiB0aGUga2VybmVsLCB0aGVzZSBldmVu
+dHMgYXJlIG1hcHBlZCB0byB2aXJ0dWFsIElSUXMgc28gdGhhdCBkcml2ZXJzIGNhbgorICogcmVz
+cG9uZCB0byB0aGVtIGFzIHRoZXkgd291bGQgYSBub3JtYWwgaW50ZXJydXB0LiAgSW4gb3JkZXIg
+dG8ga2VlcCB0aGlzCisgKiBtYXBwaW5nIHNpbXBsZSwgdGhlIGV2ZW50cyBhcmUgbWFwcGVkIGFz
+OgorICoKKyAqIDY5MDAvNjkxMCAtIEV2ZW50cyAgMC0zMSwgSVJRIDEzCisgKiA2OTA0LzY5MjQg
+LSBFdmVudHMgMzItNjMsIElSUSAxMQorICogNjkwOC82OTM4IC0gRXZlbnRzIDY0LTk1LCBJUlEg
+IDkKKyAqCisgKi8KIAogI2RlZmluZSBFU1JfQkFTRSAweDAwNWY2OTAwICAgIC8qIEJhc2UgZXZl
+bnQgc3RhdHVzIHJlZ2lzdGVyICovCiAjZGVmaW5lIEVNUl9CQVNFIDB4MDA1ZjY5MTAgICAgLyog
+QmFzZSBldmVudCBtYXNrIHJlZ2lzdGVyICovCkBAIC01Niw2MCArNTcsNjAgQEAKIC8qIERpc2Fi
+bGUgdGhlIGhhcmR3YXJlIGV2ZW50IGJ5IG1hc2tpbmcgaXRzIGJpdCBpbiBpdHMgRU1SICovCiBz
+dGF0aWMgaW5saW5lIHZvaWQgZGlzYWJsZV9zeXN0ZW1hc2ljX2lycSh1bnNpZ25lZCBpbnQgaXJx
+KQogewotICAgICAgICBfX3UzMiBlbXIgPSBFTVJfQkFTRSArIChMRVZFTChpcnEpIDw8IDQpICsg
+KExFVkVMKGlycSkgPDwgMik7Ci0gICAgICAgIF9fdTMyIG1hc2s7CisJX191MzIgZW1yID0gRU1S
+X0JBU0UgKyAoTEVWRUwoaXJxKSA8PCA0KSArIChMRVZFTChpcnEpIDw8IDIpOworCV9fdTMyIG1h
+c2s7CiAKLSAgICAgICAgbWFzayA9IGlubChlbXIpOwotICAgICAgICBtYXNrICY9IH4oMSA8PCBF
+VkVOVF9CSVQoaXJxKSk7Ci0gICAgICAgIG91dGwobWFzaywgZW1yKTsKKwltYXNrID0gaW5sKGVt
+cik7CisJbWFzayAmPSB+KDEgPDwgRVZFTlRfQklUKGlycSkpOworCW91dGwobWFzaywgZW1yKTsK
+IH0KIAogLyogRW5hYmxlIHRoZSBoYXJkd2FyZSBldmVudCBieSBzZXR0aW5nIGl0cyBiaXQgaW4g
+aXRzIEVNUiAqLwogc3RhdGljIGlubGluZSB2b2lkIGVuYWJsZV9zeXN0ZW1hc2ljX2lycSh1bnNp
+Z25lZCBpbnQgaXJxKQogewotICAgICAgICBfX3UzMiBlbXIgPSBFTVJfQkFTRSArIChMRVZFTChp
+cnEpIDw8IDQpICsgKExFVkVMKGlycSkgPDwgMik7Ci0gICAgICAgIF9fdTMyIG1hc2s7CisJX191
+MzIgZW1yID0gRU1SX0JBU0UgKyAoTEVWRUwoaXJxKSA8PCA0KSArIChMRVZFTChpcnEpIDw8IDIp
+OworCV9fdTMyIG1hc2s7CiAKLSAgICAgICAgbWFzayA9IGlubChlbXIpOwotICAgICAgICBtYXNr
+IHw9ICgxIDw8IEVWRU5UX0JJVChpcnEpKTsKLSAgICAgICAgb3V0bChtYXNrLCBlbXIpOworCW1h
+c2sgPSBpbmwoZW1yKTsKKwltYXNrIHw9ICgxIDw8IEVWRU5UX0JJVChpcnEpKTsKKwlvdXRsKG1h
+c2ssIGVtcik7CiB9CiAKIC8qIEFja25vd2xlZGdlIGEgaGFyZHdhcmUgZXZlbnQgYnkgd3JpdGlu
+ZyBpdHMgYml0IGJhY2sgdG8gaXRzIEVTUiAqLwogc3RhdGljIHZvaWQgYWNrX3N5c3RlbWFzaWNf
+aXJxKHVuc2lnbmVkIGludCBpcnEpCiB7Ci0gICAgICAgIF9fdTMyIGVzciA9IEVTUl9CQVNFICsg
+KExFVkVMKGlycSkgPDwgMik7Ci0gICAgICAgIGRpc2FibGVfc3lzdGVtYXNpY19pcnEoaXJxKTsK
+LSAgICAgICAgb3V0bCgoMSA8PCBFVkVOVF9CSVQoaXJxKSksIGVzcik7CisJX191MzIgZXNyID0g
+RVNSX0JBU0UgKyAoTEVWRUwoaXJxKSA8PCAyKTsKKwlkaXNhYmxlX3N5c3RlbWFzaWNfaXJxKGly
+cSk7CisJb3V0bCgoMSA8PCBFVkVOVF9CSVQoaXJxKSksIGVzcik7CiB9CiAKIC8qIEFmdGVyIGEg
+SVJRIGhhcyBiZWVuIGFjaydkIGFuZCByZXNwb25kZWQgdG8sIGl0IG5lZWRzIHRvIGJlIHJlbmFi
+bGVkICovCiBzdGF0aWMgdm9pZCBlbmRfc3lzdGVtYXNpY19pcnEodW5zaWduZWQgaW50IGlycSkK
+IHsKLSAgICAgICAgaWYgKCEoaXJxX2Rlc2NbaXJxXS5zdGF0dXMgJiAoSVJRX0RJU0FCTEVEfElS
+UV9JTlBST0dSRVNTKSkpCi0gICAgICAgICAgICAgICAgZW5hYmxlX3N5c3RlbWFzaWNfaXJxKGly
+cSk7CisJaWYgKCEoaXJxX2Rlc2NbaXJxXS5zdGF0dXMgJiAoSVJRX0RJU0FCTEVEfElSUV9JTlBS
+T0dSRVNTKSkpCisJCWVuYWJsZV9zeXN0ZW1hc2ljX2lycShpcnEpOwogfQogCiBzdGF0aWMgdW5z
+aWduZWQgaW50IHN0YXJ0dXBfc3lzdGVtYXNpY19pcnEodW5zaWduZWQgaW50IGlycSkKIHsKLSAg
+ICAgICAgZW5hYmxlX3N5c3RlbWFzaWNfaXJxKGlycSk7CisJZW5hYmxlX3N5c3RlbWFzaWNfaXJx
+KGlycSk7CiAKLSAgICAgICAgcmV0dXJuIDA7CisJcmV0dXJuIDA7CiB9CiAKIHN0YXRpYyB2b2lk
+IHNodXRkb3duX3N5c3RlbWFzaWNfaXJxKHVuc2lnbmVkIGludCBpcnEpCiB7Ci0gICAgICAgIGRp
+c2FibGVfc3lzdGVtYXNpY19pcnEoaXJxKTsKKwlkaXNhYmxlX3N5c3RlbWFzaWNfaXJxKGlycSk7
+CiB9CiAKIHN0cnVjdCBod19pbnRlcnJ1cHRfdHlwZSBzeXN0ZW1hc2ljX2ludCA9IHsKLSAgICAg
+ICAgLnR5cGVuYW1lICAgICAgID0gIlN5c3RlbSBBU0lDIiwKLSAgICAgICAgLnN0YXJ0dXAgICAg
+ICAgID0gc3RhcnR1cF9zeXN0ZW1hc2ljX2lycSwKLSAgICAgICAgLnNodXRkb3duICAgICAgID0g
+c2h1dGRvd25fc3lzdGVtYXNpY19pcnEsCi0gICAgICAgIC5lbmFibGUgICAgICAgICA9IGVuYWJs
+ZV9zeXN0ZW1hc2ljX2lycSwKLSAgICAgICAgLmRpc2FibGUgICAgICAgID0gZGlzYWJsZV9zeXN0
+ZW1hc2ljX2lycSwKLSAgICAgICAgLmFjayAgICAgICAgICAgID0gYWNrX3N5c3RlbWFzaWNfaXJx
+LAotICAgICAgICAuZW5kICAgICAgICAgICAgPSBlbmRfc3lzdGVtYXNpY19pcnEsCisJLnR5cGVu
+YW1lCT0gIlN5c3RlbSBBU0lDIiwKKwkuc3RhcnR1cAk9IHN0YXJ0dXBfc3lzdGVtYXNpY19pcnEs
+CisJLnNodXRkb3duCT0gc2h1dGRvd25fc3lzdGVtYXNpY19pcnEsCisJLmVuYWJsZQkJPSBlbmFi
+bGVfc3lzdGVtYXNpY19pcnEsCisJLmRpc2FibGUJPSBkaXNhYmxlX3N5c3RlbWFzaWNfaXJxLAor
+CS5hY2sJCT0gYWNrX3N5c3RlbWFzaWNfaXJxLAorCS5lbmQJCT0gZW5kX3N5c3RlbWFzaWNfaXJx
+LAogfTsKIAogLyoKQEAgLTExNywzNyArMTE4LDM3IEBAIHN0cnVjdCBod19pbnRlcnJ1cHRfdHlw
+ZSBzeXN0ZW1hc2ljX2ludCA9IHsKICAqLwogaW50IHN5c3RlbWFzaWNfaXJxX2RlbXV4KGludCBp
+cnEpCiB7Ci0gICAgICAgIF9fdTMyIGVtciwgZXNyLCBzdGF0dXMsIGxldmVsOwotICAgICAgICBf
+X3UzMiBqLCBiaXQ7Ci0KLSAgICAgICAgc3dpdGNoIChpcnEpIHsKLSAgICAgICAgICAgICAgICBj
+YXNlIDEzOgotICAgICAgICAgICAgICAgICAgICAgICAgbGV2ZWwgPSAwOwotICAgICAgICAgICAg
+ICAgICAgICAgICAgYnJlYWs7Ci0gICAgICAgICAgICAgICAgY2FzZSAxMToKLSAgICAgICAgICAg
+ICAgICAgICAgICAgIGxldmVsID0gMTsKLSAgICAgICAgICAgICAgICAgICAgICAgIGJyZWFrOwot
+ICAgICAgICAgICAgICAgIGNhc2UgIDk6Ci0gICAgICAgICAgICAgICAgICAgICAgICBsZXZlbCA9
+IDI7Ci0gICAgICAgICAgICAgICAgICAgICAgICBicmVhazsKLSAgICAgICAgICAgICAgICBkZWZh
+dWx0OgotICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIGlycTsKLSAgICAgICAgfQotICAg
+ICAgICBlbXIgPSBFTVJfQkFTRSArIChsZXZlbCA8PCA0KSArIChsZXZlbCA8PCAyKTsKLSAgICAg
+ICAgZXNyID0gRVNSX0JBU0UgKyAobGV2ZWwgPDwgMik7Ci0KLSAgICAgICAgLyogTWFzayB0aGUg
+RVNSIHRvIGZpbHRlciBhbnkgc3B1cmlvdXMsIHVud2FudGVkIGludGVycnVwdHMgKi8KLSAgICAg
+ICAgc3RhdHVzID0gaW5sKGVzcik7Ci0gICAgICAgIHN0YXR1cyAmPSBpbmwoZW1yKTsKLQotICAg
+ICAgICAvKiBOb3cgc2NhbiBhbmQgZmluZCB0aGUgZmlyc3Qgc2V0IGJpdCBhcyB0aGUgZXZlbnQg
+dG8gbWFwICovCi0gICAgICAgIGZvciAoYml0ID0gMSwgaiA9IDA7IGogPCAzMjsgYml0IDw8PSAx
+LCBqKyspIHsKLSAgICAgICAgICAgICAgICBpZiAoc3RhdHVzICYgYml0KSB7Ci0gICAgICAgICAg
+ICAgICAgICAgICAgICBpcnEgPSBIV19FVkVOVF9JUlFfQkFTRSArIGogKyAobGV2ZWwgPDwgNSk7
+Ci0gICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gaXJxOwotICAgICAgICAgICAgICAgIH0K
+LSAgICAgICAgfQotCi0gICAgICAgIC8qIE5vdCByZWFjaGVkICovCi0gICAgICAgIHJldHVybiBp
+cnE7CisJX191MzIgZW1yLCBlc3IsIHN0YXR1cywgbGV2ZWw7CisJX191MzIgaiwgYml0OworCisJ
+c3dpdGNoIChpcnEpIHsKKwljYXNlIDEzOgorCQlsZXZlbCA9IDA7CisJCWJyZWFrOworCWNhc2Ug
+MTE6CisJCWxldmVsID0gMTsKKwkJYnJlYWs7CisJY2FzZSAgOToKKwkJbGV2ZWwgPSAyOworCQli
+cmVhazsKKwlkZWZhdWx0OgorCQlyZXR1cm4gaXJxOworCX0KKwllbXIgPSBFTVJfQkFTRSArIChs
+ZXZlbCA8PCA0KSArIChsZXZlbCA8PCAyKTsKKwllc3IgPSBFU1JfQkFTRSArIChsZXZlbCA8PCAy
+KTsKKworCS8qIE1hc2sgdGhlIEVTUiB0byBmaWx0ZXIgYW55IHNwdXJpb3VzLCB1bndhbnRlZCBp
+bnRlcnJ1cHRzICovCisJc3RhdHVzID0gaW5sKGVzcik7CisJc3RhdHVzICY9IGlubChlbXIpOwor
+CisJLyogTm93IHNjYW4gYW5kIGZpbmQgdGhlIGZpcnN0IHNldCBiaXQgYXMgdGhlIGV2ZW50IHRv
+IG1hcCAqLworCWZvciAoYml0ID0gMSwgaiA9IDA7IGogPCAzMjsgYml0IDw8PSAxLCBqKyspIHsK
+KwkJaWYgKHN0YXR1cyAmIGJpdCkgeworCQkJaXJxID0gSFdfRVZFTlRfSVJRX0JBU0UgKyBqICsg
+KGxldmVsIDw8IDUpOworCQkJcmV0dXJuIGlycTsKKwkJfQorCX0KKworCS8qIE5vdCByZWFjaGVk
+ICovCisJcmV0dXJuIGlycTsKIH0K
+
+--Multipart=_Tue__18_Nov_2008_17_49_27_+0100_DNHtcQ1DYJ2ktUX9--
+
+--Signature=_Tue__18_Nov_2008_17_49_27_+0100_zdCEftDb.gKHeAe7
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkki8hcACgkQPQls10ERAGeLRwCfZoWj4rof5vhPfmAs4OoIr6PZ
+YAQAn088Pj5Jh63crCiTs6KlDoZdcCiE
+=MAJR
+-----END PGP SIGNATURE-----
+
+--Signature=_Tue__18_Nov_2008_17_49_27_+0100_zdCEftDb.gKHeAe7--
