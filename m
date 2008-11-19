@@ -1,25 +1,45 @@
-From: "CHIKAMA Masaki" <masaki.chikama@gmail.com>
-Date: Mon, 17 Nov 2008 12:47:23 +0000
-Subject: Re: repeated oops under load on SH4 system
-Message-Id: <fd0635d10811170447g1e7fa810q3c5346a104cf7410@mail.gmail.com>
+From: michael <trimarchimichael@yahoo.it>
+Date: Wed, 19 Nov 2008 13:23:04 +0000
+Subject: Mutex fast-path implementation sh4a
+Message-Id: <49241338.1010405@yahoo.it>
 List-Id: <linux-sh.vger.kernel.org>
-References: <fd0635d10811040431l45e7b41fvee0a78650b15bacc@mail.gmail.com>
-In-Reply-To: <fd0635d10811040431l45e7b41fvee0a78650b15bacc@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2008/11/10 CHIKAMA Masaki <masaki.chikama@gmail.com>:
+Hi,
 
-> Thank you for your comment and patch.
-> I backport the patch to 2.6.26.7 and start the work that I have been.
-> I'll let you know in one or two weeks whether the patch fix my problem.
+I'm not an expert of sh4 assembler instruction on gcc, but I figure out 
+how to implement
+the fastpath_lock and trylock, and I obtain this code:
 
-One week passed and I don't see that error messages any more.
-I ran the same(but not exact same) task on 5 hardwares and none of
-them output the errors for the time being.
-It seems that my problem was also fixed with your patch.
-Thank you again.
--- 
-CHIKAMA Masaki
+static inline void
+__mutex_fastpath_lock(atomic_t *count, void (*fail_fn)(atomic_t *))
+{
+        int __res;
+
+        __asm__ __volatile__ (
+
+                "movli.l        @%1, %0 \n\t"
+                "dt             %0      \n\t"
+                "movco.l        %0, @%1 \n\t"
+                : "=&z" (__res)
+                : "r" (&(count)->counter)
+                : "t" );
+
+        if (unlikely(__res != count->counter))
+                fail_fn(count);
+}
+
+The retval function is very quite similar to this one. I don't find 
+documentation about sh assembler,
+can someone point me out to documentation?
+The start point was the arm implementation and the 
+arch/sh/include/asm/atomic-llsc.h file.
+
+Can be a correct implementation?
+
+Regards Michael
+
+
