@@ -1,26 +1,53 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 21 Nov 2008 07:46:54 +0000
-Subject: Re: [PATCH] sh: sh7760fb: Fix color pallette setting
-Message-Id: <20081121074654.GA26414@linux-sh.org>
+From: Michael Trimarchi <trimarchimichael@yahoo.it>
+Date: Thu, 20 Nov 2008 13:45:02 +0000
+Subject: [RFC PATCH V2 FIX] Fix deadlock during find
+Message-Id: <20081120134502.GA27286@gandalf.sssup.it>
 List-Id: <linux-sh.vger.kernel.org>
-References: <492648A1.2090000@renesas.com> <49264861.6030205@renesas.com>
-In-Reply-To: <492648A1.2090000@renesas.com> <49264861.6030205@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Cc: linux-fbdev-devel@lists.sourceforge.net, Linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Fri, Nov 21, 2008 at 02:34:25PM +0900, Nobuhiro Iwamatsu wrote:
-> The setting of the color palette was wrong, fixed it.
-> And removed fb_setcmap, and added fb_setcolreg function.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Fix a deadlock during find.
 
-On Fri, Nov 21, 2008 at 02:35:29PM +0900, Nobuhiro Iwamatsu wrote:
-> SH7720 and 7721 has IP of Frame Buffer same as SH7760.
-> This driver can support these.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Continue with testing i find and errata implementation in the unlock.
+This patch fix the deadlock.
 
-Applied, thanks.
+Signed-off-by: Michael Trimarchi <trimarchimichael@yahoo.it>
+
+---
+ arch/sh/include/asm/mutex_sh.h |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/include/asm/mutex_sh.h b/arch/sh/include/asm/mutex_sh.h
+index c98e875..c65f19e 100644
+--- a/arch/sh/include/asm/mutex_sh.h
++++ b/arch/sh/include/asm/mutex_sh.h
+@@ -48,18 +48,18 @@ __mutex_fastpath_lock_retval(atomic_t *count, int (*fail_fn)(atomic_t *))
+ static inline void
+ __mutex_fastpath_unlock(atomic_t *count, void (*fail_fn)(atomic_t *))
+ {
+-	int __res, __orig;
++	int __res;
+ 
+ 	__asm__ __volatile__ (
+-		"movli.l	@%2, %0	\n\t"
+-		"mov		%0, %1	\n\t"
++		"1: movli.l	@%1, %0	\n\t"
+ 		"add		#1, %0	\n\t"
+-		"movco.l	%0, @%2 "
+-		: "=&z" (__res), "=&r" (__orig)
++		"movco.l	%0, @%1 \n\t"
++		"bf		1b\n\t"
++		: "=&z" (__res)
+ 		: "r" (&(count)->counter)
+ 		: "t" );
+ 
+-	if (unlikely(__orig != 0))
++	if (unlikely(__res <= 0))
+ 		fail_fn(count);
+ }
+ 
+-- 
+1.5.6.5
+
