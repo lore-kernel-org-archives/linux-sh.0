@@ -1,90 +1,128 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 21 Nov 2008 13:21:44 +0000
-Subject: [PATCH 7/8] sh: timer rewrite, sh7343 support
-Message-Id: <20081121132144.4219.39181.sendpatchset@rx1.opensource.se>
+From: Michael Trimarchi <trimarchimichael@yahoo.it>
+Date: Thu, 20 Nov 2008 11:49:29 +0000
+Subject: [RFC PATCH 0/1] Add the cpu-sh4a fastpath mutex implementation
+Message-Id: <20081120114929.GA26667@gandalf.sssup.it>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Add the cpu-sh4a fastpath mutex implementation
 
-Add CMT and TMU devices and use the new timer code on sh7343.
+Signed-off-by: Michael Trimarchi <trimarchimichael@yahoo.it>
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
+ arch/sh/include/asm/mutex_sh.h |  100 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 100 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/include/asm/mutex_sh.h
 
- arch/sh/Kconfig                        |    1 
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   46 ++++++++++++++++++++++++++++++++
- 2 files changed, 47 insertions(+)
-
---- 0007/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-11-21 17:22:55.000000000 +0900
-@@ -350,6 +350,7 @@ config CPU_SUBTYPE_SHX3
- config CPU_SUBTYPE_SH7343
- 	bool "Support SH7343 processor"
- 	select CPU_SH4AL_DSP
-+	select SH_TIMER
- 
- config CPU_SUBTYPE_SH7722
- 	bool "Support SH7722 processor"
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2008-11-21 17:24:15.000000000 +0900
-@@ -12,6 +12,7 @@
- #include <linux/serial.h>
- #include <linux/serial_sci.h>
- #include <linux/uio_driver.h>
-+#include <linux/sh_timer.h>
- #include <asm/clock.h>
- 
- static struct resource iic0_resources[] = {
-@@ -292,3 +293,48 @@ void __init plat_irq_setup(void)
- {
- 	register_intc_controller(&intc_desc);
- }
+diff --git a/arch/sh/include/asm/mutex_sh.h b/arch/sh/include/asm/mutex_sh.h
+new file mode 100644
+index 0000000..c62f5af
+--- /dev/null
++++ b/arch/sh/include/asm/mutex_sh.h
+@@ -0,0 +1,100 @@
++/*
++ * arch/arm/include/asm/mutex.h
++ *
++ * SH optimized mutex locking primitives
++ *
++ * Please look into asm-generic/mutex-xchg.h for a formal definition.
++ */
++#ifndef _ASM_MUTEX_H
++#define _ASM_MUTEX_H
 +
-+static struct sh_timer_config timers[] = {
-+	{
-+		.type = SH_TIMER_TYPE_CMT,
-+		.name = "CMT",
-+		.base = 0x044a0000,
-+		.channel_offset = 0x60,
-+		.timer_bit = 5,
-+		.clk = "cmt0",
-+		.irq = 104,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU0",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x04,
-+		.timer_bit = 0,
-+		.clk = "tmu0",
-+		.irq = 16,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU1",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x10,
-+		.timer_bit = 1,
-+		.clk = "tmu0",
-+		.irq = 17,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU2",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x1c,
-+		.timer_bit = 2,
-+		.clk = "tmu0",
-+		.irq = 18,
-+	}
-+};
-+
-+static int __init plat_timer_setup(void)
++static inline void
++__mutex_fastpath_lock(atomic_t *count, void (*fail_fn)(atomic_t *))
 +{
-+	return sh_timer_register(timers, ARRAY_SIZE(timers));
++	int __res;
++
++	__asm__ __volatile__ (
++		"movli.l	@%1, %0	\n"
++		"dt		%0	\n"
++		"movco.l	%0, @%1	\n"
++		: "=&z" (__res)
++		: "r" (&(count)->counter)
++		: "t" );
++
++	if (unlikely(__res != 0))
++		fail_fn(count);
 +}
-+arch_initcall(plat_timer_setup);
++
++static inline int
++__mutex_fastpath_lock_retval(atomic_t *count, int (*fail_fn)(atomic_t *))
++{
++	int __res;
++
++	__asm__ __volatile__ (
++
++		"movli.l	@%1, %0	\n"
++		"dt		%0	\n"
++		"movco.l	%0, @%1	\n"
++		: "=&z" (__res)
++		: "r" (&(count)->counter)
++		: "t" );
++
++	if (unlikely(__res != 0))
++		__res = fail_fn(count);
++
++	return __res;
++}
++
++static inline void
++__mutex_fastpath_unlock(atomic_t *count, void (*fail_fn)(atomic_t *))
++{
++	int __res;
++
++	__asm__ __volatile__ (
++		"movli.l	@%1, %0	\n"
++		"add		#1, %0	\n"
++		"movco.l	%0, @%1	\n"
++		: "=&z" (__res)
++		: "r" (&(count)->counter)
++		: "t" );
++
++	if (unlikely(__res != 0))
++		fail_fn(count);
++}
++
++/*
++ * If the unlock was done on a contended lock, or if the unlock simply fails
++ * then the mutex remains locked.
++ */
++#define __mutex_slowpath_needs_to_unlock()	1
++
++/*
++ * For __mutex_fastpath_trylock we use another construct which could be
++ * described as a "single value cmpxchg".
++ *
++ * This provides the needed trylock semantics like cmpxchg would, but it is
++ * lighter and less generic than a true cmpxchg implementation.
++ */
++static inline int
++__mutex_fastpath_trylock(atomic_t *count, int (*fail_fn)(atomic_t *))
++{
++	int __res, __orig;
++
++	__asm__ __volatile__ (
++                "1: movli.l	@%2, %0		\n\t"
++                "dt		%0		\n\t"
++                "movco.l	%0,@%2		\n\t"
++                "bf		1b		\n\t"
++		"cmp/eq		#0,%0		\n\t"
++		"bt		2f		\n\t"
++		"mov		#0, %1		\n\t"
++		"bf		3f		\n\t"
++		"2: mov		#1, %1		\n\t"
++		"3:				"
++                : "=&z" (__orig), "=&r" (__res)
++                : "r" (&count->counter)
++		: "t" );
++
++        return __res;
++}
++#endif
+-- 
+1.5.6.5
+
