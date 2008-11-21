@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Nov 2008 06:33:45 +0000
-Subject: [PATCH] sh: early printk port type fix
-Message-Id: <20081113063345.5011.52264.sendpatchset@rx1.opensource.se>
+Date: Fri, 21 Nov 2008 13:21:08 +0000
+Subject: [PATCH 6/8] sh: timer rewrite, sh7723 support
+Message-Id: <20081121132108.4203.59324.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,21 +10,108 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Add PORT_SCIF to unbreak the early printk code.
+Add CMT and TMU devices and use the new timer code on sh7723.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/early_printk.c |    1 +
- 1 file changed, 1 insertion(+)
+ arch/sh/Kconfig                        |    1 
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   73 ++++++++++++++++++++++++++++++++
+ 2 files changed, 74 insertions(+)
 
---- 0001/arch/sh/kernel/early_printk.c
-+++ work/arch/sh/kernel/early_printk.c	2008-11-13 13:36:24.000000000 +0900
-@@ -75,6 +75,7 @@ static struct console bios_console = {
- #endif
+--- 0006/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2008-11-21 17:03:08.000000000 +0900
+@@ -311,6 +311,7 @@ config CPU_SUBTYPE_SH7723
+ 	select CPU_SH4A
+ 	select CPU_SHX2
+ 	select ARCH_SPARSEMEM_ENABLE
++	select SH_TIMER
+ 	help
+ 	  Select SH7723 if you have an SH-MobileR2 CPU.
  
- static struct uart_port scif_port = {
-+	.type		= PORT_SCIF,
- 	.mapbase	= CONFIG_EARLY_SCIF_CONSOLE_PORT,
- 	.membase	= (char __iomem *)CONFIG_EARLY_SCIF_CONSOLE_PORT,
- };
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2008-11-21 17:04:54.000000000 +0900
+@@ -13,6 +13,7 @@
+ #include <linux/mm.h>
+ #include <linux/serial_sci.h>
+ #include <linux/uio_driver.h>
++#include <linux/sh_timer.h>
+ #include <asm/clock.h>
+ #include <asm/mmzone.h>
+ 
+@@ -460,3 +461,75 @@ void __init plat_irq_setup(void)
+ {
+ 	register_intc_controller(&intc_desc);
+ }
++
++static struct sh_timer_config timers[] = {
++	{
++		.type = SH_TIMER_TYPE_CMT,
++		.name = "CMT",
++		.base = 0x044a0000,
++		.channel_offset = 0x60,
++		.timer_bit = 5,
++		.clk = "cmt0",
++		.irq = 104,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU0_0",
++		.base = 0xffd80004,
++		.channel_offset = 0x04,
++		.timer_bit = 0,
++		.clk = "tmu0",
++		.irq = 16,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU0_1",
++		.base = 0xffd80004,
++		.channel_offset = 0x10,
++		.timer_bit = 1,
++		.clk = "tmu0",
++		.irq = 17,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU0_2",
++		.base = 0xffd80004,
++		.channel_offset = 0x1c,
++		.timer_bit = 2,
++		.clk = "tmu0",
++		.irq = 18,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU1_0",
++		.base = 0xffd90004,
++		.channel_offset = 0x04,
++		.timer_bit = 0,
++		.clk = "tmu1",
++		.irq = 57,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU1_1",
++		.base = 0xffd90004,
++		.channel_offset = 0x10,
++		.timer_bit = 1,
++		.clk = "tmu1",
++		.irq = 58,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU1_2",
++		.base = 0xffd90004,
++		.channel_offset = 0x1c,
++		.timer_bit = 2,
++		.clk = "tmu1",
++		.irq = 59,
++	}
++};
++
++static int __init plat_timer_setup(void)
++{
++	return sh_timer_register(timers, ARRAY_SIZE(timers));
++}
++arch_initcall(plat_timer_setup);
