@@ -1,33 +1,25 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 25 Nov 2008 13:18:52 +0000
-Subject: Re: [PATCH] sh: P4 ioremap pass-through
-Message-Id: <20081125131852.GC20883@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Fri, 21 Nov 2008 07:45:25 +0000
+Subject: Re: [PATCH 4/6] smsc911x: convert ap325rxa platform to use smsc911x
+Message-Id: <49266715.9090705@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081125125729.8565.28530.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081125125729.8565.28530.sendpatchset@rx1.opensource.se>
+References: <1225881342-3485-1-git-send-email-steve.glendinning@smsc.com>
+ <1225881342-3485-2-git-send-email-steve.glendinning@smsc.com>
+ <1225881342-3485-3-git-send-email-steve.glendinning@smsc.com>
+ <1225881342-3485-4-git-send-email-steve.glendinning@smsc.com>
+ <1225881342-3485-5-git-send-email-steve.glendinning@smsc.com>
+In-Reply-To: <1225881342-3485-5-git-send-email-steve.glendinning@smsc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Steve Glendinning <steve.glendinning@smsc.com>
+Cc: netdev@vger.kernel.org, catalin.marinas@arm.com, Bahadir.Balban@arm.com, dustin@sensoria.com, bgat@billgatliff.com, Ian Saturley <ian.saturley@smsc.com>, g.liakhovetski@gmx.de, Peter Korsgaard <jacmet@sunsite.dk>, Linux-sh <linux-sh@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>
 
-On Tue, Nov 25, 2008 at 09:57:29PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> This patch adds a pass-through case when ioremapping P4 addresses.
-> 
-> Addresses passed to ioremap() should be physical addresses, so the
-> best option is usually to convert the virtual address to a physical
-> address before calling ioremap. This will give you a virtual address
-> in P2 which matches the physical address and this works well for
-> most internal hardware blocks on the SuperH architecture.
-> 
-> However, some hardware blocks must be accessed through P4. Converting
-> the P4 address to a physical and then back to a P2 does not work. One
-> example of this is the sh7722 TMU block, it must be accessed through P4.
-> 
-> Without this patch P4 addresses will be mapped using PTEs which
-> requires the page allocator to be up and running.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Steve Glendinning wrote:
+> Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
+> ---
+>  arch/sh/boards/board-ap325rxa.c    |   24 +++++++++++++-----------
+>  arch/sh/configs/ap325rxa_defconfig |   21 +++++++++++++++++++--
+>  2 files changed, 32 insertions(+), 13 deletions(-)
 
-Applied, thanks.
+Tested-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
