@@ -1,40 +1,93 @@
-From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Wed, 19 Nov 2008 21:34:20 +0000
-Subject: HP Jornada 600-series not booting with 2.6.27
-Message-Id: <20081119233457.747c456d.kristoffer.ericson@gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Signature=_Wed__19_Nov_2008_23_34_57_+0100_d3i.wLzw5tcSQ4bZ"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 21 Nov 2008 13:19:55 +0000
+Subject: [PATCH 5/8] sh: timer rewrite, sh7722 support
+Message-Id: <20081121131955.4175.53365.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---Signature=_Wed__19_Nov_2008_23_34_57_+0100_d3i.wLzw5tcSQ4bZ
-Content-Type: text/plain; charset=US-ASCII
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+From: Magnus Damm <damm@igel.co.jp>
 
-Greetings,
+Add CMT and TMU devices and use the new timer code on sh7722.
 
-Just wanted to give people a heads up before
-I actually started looking at this. I get
-absolutely no output from serial after pressing
-bootloader and it ends with cold reset complaining
-about TLB something (wince/rom error).
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-I believe v2.6.26 vanilla booted but will
-confirm this later on.
+ arch/sh/Kconfig                        |    1 
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   46 ++++++++++++++++++++++++++++++++
+ 2 files changed, 47 insertions(+)
 
---=20
-Kristoffer Ericson <kristoffer.ericson@gmail.com>
-
---Signature=_Wed__19_Nov_2008_23_34_57_+0100_d3i.wLzw5tcSQ4bZ
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkkklJEACgkQPQls10ERAGes8QCg5ZWVHHvq7S7Ju3Rjahe+iy1m
-9DsAnRTiodEeXTfs9VVdQSJJmuvGOIan
-=Dz6m
------END PGP SIGNATURE-----
-
---Signature=_Wed__19_Nov_2008_23_34_57_+0100_d3i.wLzw5tcSQ4bZ--
+--- 0005/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2008-11-21 16:06:12.000000000 +0900
+@@ -356,6 +356,7 @@ config CPU_SUBTYPE_SH7722
+ 	select CPU_SHX2
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
++	select SH_TIMER
+ 
+ config CPU_SUBTYPE_SH7366
+ 	bool "Support SH7366 processor"
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2008-11-21 16:05:43.000000000 +0900
+@@ -13,6 +13,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/mm.h>
+ #include <linux/uio_driver.h>
++#include <linux/sh_timer.h>
+ #include <asm/clock.h>
+ #include <asm/mmzone.h>
+ 
+@@ -343,6 +344,51 @@ void __init plat_irq_setup(void)
+ 	register_intc_controller(&intc_desc);
+ }
+ 
++static struct sh_timer_config timers[] = {
++	{
++		.type = SH_TIMER_TYPE_CMT,
++		.name = "CMT",
++		.base = 0x044a0000,
++		.channel_offset = 0x60,
++		.timer_bit = 5,
++		.clk = "cmt0",
++		.irq = 104,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU0",
++		.base = 0xffd80004,
++		.channel_offset = 0x04,
++		.timer_bit = 0,
++		.clk = "tmu0",
++		.irq = 16,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU1",
++		.base = 0xffd80004,
++		.channel_offset = 0x10,
++		.timer_bit = 1,
++		.clk = "tmu0",
++		.irq = 17,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU2",
++		.base = 0xffd80004,
++		.channel_offset = 0x1c,
++		.timer_bit = 2,
++		.clk = "tmu0",
++		.irq = 18,
++	}
++};
++
++static int __init plat_timer_setup(void)
++{
++	return sh_timer_register(timers, ARRAY_SIZE(timers));
++}
++arch_initcall(plat_timer_setup);
++
+ void __init plat_mem_setup(void)
+ {
+ 	/* Register the URAM space as Node 1 */
