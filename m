@@ -1,21 +1,24 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 13 Nov 2008 07:00:08 +0000
-Subject: Re: [RFC PATCH] Cleanup code of sh-sci serial driver
-Message-Id: <20081113070008.GA25436@linux-sh.org>
+From: Luca Santini <luca.santini@spesonline.com>
+Date: Sat, 22 Nov 2008 11:50:28 +0000
+Subject: git pull breaks edosk7760 kernel
+Message-Id: <4927F204.5090805@spesonline.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <491B02B7.3050007@yahoo.it>
-In-Reply-To: <491B02B7.3050007@yahoo.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 12, 2008 at 05:22:15PM +0100, michael wrote:
-> this patch does not fix any bug but clean up the coding style.
-> 
+Hi all,
+yesterday i pulled from git and obtained an unbootable kernel.
+My last working pull is dated
 
-Applied, thanks.
+commit 882b689432129bfe77530d61f70797147179a742
+Merge: b86c2c0... fb059cd...
+Author: Luca Santini <santox@libero.it>
+Date:   Thu Nov 13 11:31:54 2008 +0100
 
-In the future, please try to have your mailer use text/plain for patches,
-assuming it will not mangle the whitespace in the process. This makes it
-easier to reply to if there are any issues.
+
+The only thing i was able to do is 
+git reset --hard HEAD^ 
+
+i'm not a god of git... is there a way to "pull step by step" and find the offending patch(es)? 
