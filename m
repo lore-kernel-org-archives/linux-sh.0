@@ -1,137 +1,277 @@
-From: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-Date: Fri, 07 Nov 2008 05:23:47 +0000
-Subject: [RFC patch 11/18] LTTng timestamp sh
-Message-Id: <20081107053350.364655339@polymtl.ca>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 25 Nov 2008 12:58:29 +0000
+Subject: [PATCH 1/8] sh: timer rewrite V2, base code
+Message-Id: <20081125125829.8567.91997.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081107052336.652868737@polymtl.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <a.p.zijlstra@chello.nl>, linux-kernel@vger.kernel.org
-Cc: Giuseppe Cavallaro <peppe.cavallaro@st.com>, Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch adds the timestamping mechanism in the trace-clock.h arch header
-file. The new timestamp functions use the TMU channel 1.
+From: Magnus Damm <damm@igel.co.jp>
 
-This code only works if the TMU channel 1 is initialized during the kernel boot.
+SuperH timer base code V2 supporting:
+- hardware configuration kept with other processor parameters
+- compile time CONFIG_SH_TIMER switch
+- using CONFIG_GENERIC_TIME and CONFIG_GENERIC_CLOCKEVENTS
+- sharing of drivers with other architectures
 
-Big fat warning(TM) from Mathieu Desnoyers :
-
-This patch seems to assume TMU channel 1 is setup at boot. Is it always true on
-all SuperH boards ? Is there some Kconfig selection that should be done here ?
-Make sure this patch does not break get_cycles on SuperH before merging.
-
-From: Giuseppe Cavallaro <peppe.cavallaro@st.com>
-Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
-Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-CC: Paul Mundt <lethal@linux-sh.org>
-CC: linux-sh@vger.kernel.org
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/Kconfig                   |    2 +
- arch/sh/include/asm/timex.h       |    7 +++-
- arch/sh/include/asm/trace-clock.h |   61 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 68 insertions(+), 2 deletions(-)
 
-Index: linux.trees.git/arch/sh/include/asm/timex.h
-=================================--- linux.trees.git.orig/arch/sh/include/asm/timex.h	2008-09-30 11:38:51.000000000 -0400
-+++ linux.trees.git/arch/sh/include/asm/timex.h	2008-11-07 00:12:47.000000000 -0500
-@@ -6,13 +6,16 @@
- #ifndef __ASM_SH_TIMEX_H
- #define __ASM_SH_TIMEX_H
+ Changes since V1 include:
+ - Removed sysdev stuff
+ - Timer code setup from time_init()
+ - Use plat_timer_setup() in cpu code.
+
+ arch/sh/Kconfig                |   12 +++++--
+ arch/sh/kernel/time_32.c       |   33 +++++++++++---------
+ drivers/clocksource/Makefile   |    1 
+ drivers/clocksource/sh_timer.c |   64 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_timer.h       |   35 +++++++++++++++++++++
+ 5 files changed, 127 insertions(+), 18 deletions(-)
+
+--- 0001/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2008-11-25 20:15:08.000000000 +0900
+@@ -384,10 +384,15 @@ source "arch/sh/boards/Kconfig"
  
--#define CLOCK_TICK_RATE		(CONFIG_SH_PCLK_FREQ / 4) /* Underlying HZ */
-+#include <linux/io.h>
-+#include <asm/cpu/timer.h>
+ menu "Timer and clock configuration"
+ 
++config SH_TIMER
++	def_bool n
++	select GENERIC_TIME
++	select GENERIC_CLOCKEVENTS
 +
-+#define CLOCK_TICK_RATE		(HZ * 100000UL)
+ config SH_TMU
+ 	def_bool y
+ 	prompt "TMU timer support"
+-	depends on CPU_SH3 || CPU_SH4
++	depends on !SH_TIMER && (CPU_SH3 || CPU_SH4)
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
+ 	help
+@@ -396,18 +401,19 @@ config SH_TMU
+ config SH_CMT
+ 	def_bool y
+ 	prompt "CMT timer support"
+-	depends on CPU_SH2 && !CPU_SUBTYPE_MXG
++	depends on !SH_TIMER && CPU_SH2 && !CPU_SUBTYPE_MXG
+ 	help
+ 	  This enables the use of the CMT as the system timer.
  
- typedef unsigned long long cycles_t;
+ config SH_MTU2
+ 	def_bool n
+ 	prompt "MTU2 timer support"
+-	depends on CPU_SH2A
++	depends on !SH_TIMER && CPU_SH2A
+ 	help
+ 	  This enables the use of the MTU2 as the system timer.
  
- static __inline__ cycles_t get_cycles (void)
- {
--	return 0;
-+	return 0xffffffff - ctrl_inl(TMU1_TCNT);
+ config SH_TIMER_IRQ
++	depends on !SH_TIMER
+ 	int
+ 	default "28" if CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785 || \
+ 			CPU_SUBTYPE_SH7763
+--- 0001/arch/sh/kernel/time_32.c
++++ work/arch/sh/kernel/time_32.c	2008-11-25 20:17:41.000000000 +0900
+@@ -18,6 +18,7 @@
+ #include <linux/clockchips.h>
+ #include <linux/mc146818rtc.h>	/* for rtc_lock */
+ #include <linux/smp.h>
++#include <linux/sh_timer.h>
+ #include <asm/clock.h>
+ #include <asm/rtc.h>
+ #include <asm/timer.h>
+@@ -41,14 +42,6 @@ static int null_rtc_set_time(const time_
+ 	return 0;
  }
  
- #endif /* __ASM_SH_TIMEX_H */
-Index: linux.trees.git/arch/sh/Kconfig
-=================================--- linux.trees.git.orig/arch/sh/Kconfig	2008-11-07 00:06:06.000000000 -0500
-+++ linux.trees.git/arch/sh/Kconfig	2008-11-07 00:12:47.000000000 -0500
-@@ -11,6 +11,8 @@ config SUPERH
- 	select HAVE_CLK
- 	select HAVE_IDE
- 	select HAVE_OPROFILE
-+	select HAVE_TRACE_CLOCK
-+	select HAVE_TRACE_CLOCK_32_TO_64
- 	select HAVE_GENERIC_DMA_COHERENT
- 	select HAVE_IOREMAP_PROT if MMU
- 	help
-Index: linux.trees.git/arch/sh/include/asm/trace-clock.h
-=================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux.trees.git/arch/sh/include/asm/trace-clock.h	2008-11-07 00:12:47.000000000 -0500
-@@ -0,0 +1,61 @@
+-/*
+- * Null high precision timer functions for systems lacking one.
+- */
+-static cycle_t null_hpt_read(void)
+-{
+-	return 0;
+-}
+-
+ void (*rtc_sh_get_time)(struct timespec *) = null_rtc_get_time;
+ int (*rtc_sh_set_time)(const time_t) = null_rtc_set_time;
+ 
+@@ -185,7 +178,7 @@ int timer_resume(struct sys_device *dev)
+ #define timer_suspend NULL
+ #define timer_resume NULL
+ #endif
+-
++#ifndef CONFIG_SH_TIMER
+ static struct sysdev_class timer_sysclass = {
+ 	.name	 = "timer",
+ 	.suspend = timer_suspend,
+@@ -202,17 +195,24 @@ static int __init timer_init_sysfs(void)
+ 	return sysdev_register(&sys_timer->dev);
+ }
+ device_initcall(timer_init_sysfs);
+-
++#endif
+ void (*board_time_init)(void);
+-
++#ifndef CONFIG_SH_TIMER
+ /*
+  * Shamelessly based on the MIPS and Sparc64 work.
+  */
+-static unsigned long timer_ticks_per_nsec_quotient __read_mostly;
+ unsigned long sh_hpt_frequency = 0;
+-
++static unsigned long timer_ticks_per_nsec_quotient __read_mostly;
+ #define NSEC_PER_CYC_SHIFT	10
+ 
 +/*
-+ * Copyright (C) 2007,2008 Giuseppe Cavallaro <peppe.cavallaro@st.com>
-+ *                         Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
++ * Null high precision timer functions for systems lacking one.
++ */
++static cycle_t null_hpt_read(void)
++{
++	return 0;
++}
++
+ static struct clocksource clocksource_sh = {
+ 	.name		= "SuperH",
+ 	.rating		= 200,
+@@ -243,6 +243,7 @@ unsigned long long sched_clock(void)
+ 	return (ticks * timer_ticks_per_nsec_quotient) >> NSEC_PER_CYC_SHIFT;
+ }
+ #endif
++#endif
+ 
+ void __init time_init(void)
+ {
+@@ -258,7 +259,9 @@ void __init time_init(void)
+ #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST
+ 	local_timer_setup(smp_processor_id());
+ #endif
+-
++#ifdef CONFIG_SH_TIMER
++	sh_timer_init();
++#else
+ 	/*
+ 	 * Find the timer to use as the system timer, it will be
+ 	 * initialized for us.
+@@ -276,7 +279,7 @@ void __init time_init(void)
+ 		printk("Using %lu.%03lu MHz high precision timer.\n",
+ 		       ((sh_hpt_frequency + 500) / 1000) / 1000,
+ 		       ((sh_hpt_frequency + 500) / 1000) % 1000);
+-
++#endif
+ #if defined(CONFIG_SH_KGDB)
+ 	/*
+ 	 * Set up kgdb as requested. We do it here because the serial
+--- 0001/drivers/clocksource/Makefile
++++ work/drivers/clocksource/Makefile	2008-11-25 20:15:08.000000000 +0900
+@@ -2,3 +2,4 @@ obj-$(CONFIG_ATMEL_TCB_CLKSRC)	+= tcb_cl
+ obj-$(CONFIG_X86_CYCLONE_TIMER)	+= cyclone.o
+ obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
+ obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
++obj-$(CONFIG_SH_TIMER)		+= sh_timer.o
+--- /dev/null
++++ work/drivers/clocksource/sh_timer.c	2008-11-25 20:18:41.000000000 +0900
+@@ -0,0 +1,64 @@
++/*
++ * SuperH Timer Support
 + *
-+ * Trace clock definitions for SuperH.
++ * Copyright (C) 2008 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 + */
 +
-+#ifndef _ASM_SH_TRACE_CLOCK_H
-+#define _ASM_SH_TRACE_CLOCK_H
++#include <linux/init.h>
++#include <linux/bootmem.h>
++#include <linux/sh_timer.h>
 +
-+#include <linux/timer.h>
-+#include <asm/clock.h>
++struct early_timer *sh_timers_early[] = {
++};
 +
-+extern u64 trace_clock_read_synthetic_tsc(void);
++static struct sh_timer_config *sh_timer_timers;
++static int sh_timer_nr_timers;
 +
-+static inline u32 trace_clock_get_timestamp32(void)
++void sh_timer_register(struct sh_timer_config *timers, int nr_timers)
 +{
-+	return get_cycles();
++	sh_timer_timers = timers;
++	sh_timer_nr_timers = nr_timers;
 +}
 +
-+static inline u64 trace_clock_get_timestamp64(void)
++int __init sh_timer_init(void)
 +{
-+	return trace_clock_read_synthetic_tsc();
++	struct sh_timer_config *cfg;
++	struct early_timer *etp;
++	void *vp;
++	int k, n;
++
++	plat_timer_setup();
++
++	for (k = 0; k < sh_timer_nr_timers; k++) {
++		cfg = sh_timer_timers + k;
++		n = cfg->type;
++
++		if (n < SH_TIMER_TYPE_NR && sh_timers_early[n]) {
++			etp = sh_timers_early[n];
++			vp = alloc_bootmem(etp->priv_size);
++
++			if (etp->setup(vp, cfg)) {
++				free_bootmem((unsigned long)vp, etp->priv_size);
++				pr_warning("sh_timer: unable to setup timer\n");
++			}
++		}
++	}
++
++	if (!sh_timer_nr_timers)
++		pr_warning("sh_timer: no timer configuration\n");
++
++	return 0;
 +}
+--- /dev/null
++++ work/include/linux/sh_timer.h	2008-11-25 20:20:35.000000000 +0900
+@@ -0,0 +1,35 @@
++#ifndef __SH_TIMER_H__
++#define __SH_TIMER_H__
++/*
++ * SuperH Timer Support
++ *
++ * Timer devices are defined by the processor-specific code using
++ * an array of struct sh_timer_config. This array is registered
++ * using sh_timer_register(). Flags can be passed to the driver
++ * using the flags variable.
++ */
 +
-+static inline void trace_clock_add_timestamp(unsigned long ticks)
-+{ }
++struct early_timer {
++	int priv_size;
++	int (*setup)(void *priv, void *config);
++};
 +
-+static inline unsigned int trace_clock_frequency(void)
-+{
-+	unsigned long rate;
-+	struct clk *tmu1_clk;
++enum sh_timer_type { SH_TIMER_TYPE_NR };
 +
-+	tmu1_clk = clk_get(NULL, "tmu1_clk");
-+	rate = clk_get_rate(tmu1_clk);
++struct sh_timer_config {
++	enum sh_timer_type type;
++	unsigned long flags;
 +
-+	return (unsigned int)rate;
-+}
++	char *name;
++	unsigned long base;
++	unsigned long channel_offset;
++	int timer_bit;
++	char *clk;
++	int irq;
++};
 +
-+static inline u32 trace_clock_freq_scale(void)
-+{
-+	return 1;
-+}
++void sh_timer_register(struct sh_timer_config *timers, int nr);
++int sh_timer_init(void);
++void plat_timer_setup(void);
 +
-+extern void get_synthetic_tsc(void);
-+extern void put_synthetic_tsc(void);
-+
-+static inline void get_trace_clock(void)
-+{
-+	get_synthetic_tsc();
-+}
-+
-+static inline void put_trace_clock(void)
-+{
-+	put_synthetic_tsc();
-+}
-+
-+static inline void set_trace_clock_is_sync(int state)
-+{
-+}
-+#endif /* _ASM_SH_TRACE_CLOCK_H */
-
--- 
-Mathieu Desnoyers
-OpenPGP key fingerprint: 8CD5 52C3 8E3C 4140 715F  BA06 3F25 A8FE 3BAE 9A68
++#endif /* __SH_TIMER_H__ */
