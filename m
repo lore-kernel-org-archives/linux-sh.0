@@ -1,75 +1,89 @@
-From: Michael Trimarchi <trimarchimichael@yahoo.it>
-Date: Mon, 17 Nov 2008 09:57:58 +0000
-Subject: [RFC PATCH] SH4 PTEA register update description
-Message-Id: <20081117095758.GA9951@gandalf.sssup.it>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 25 Nov 2008 13:01:39 +0000
+Subject: [PATCH 7/8] sh: timer rewrite V2, sh7343 support
+Message-Id: <20081125130139.8590.21422.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Better description of PTEA register update.
+From: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Michael Trimarchi <trimarchimichael@yahoo.it>
+Add CMT and TMU devices and use the new timer code V2 on sh7343.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/include/asm/pgtable_32.h          |    8 ++++++++
- arch/sh/include/cpu-sh4/cpu/mmu_context.h |    3 ++-
- arch/sh/mm/tlb-sh4.c                      |    9 ++++++---
- 3 files changed, 16 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/include/asm/pgtable_32.h b/arch/sh/include/asm/pgtable_32.h
-index 72ea209..f83a02b 100644
---- a/arch/sh/include/asm/pgtable_32.h
-+++ b/arch/sh/include/asm/pgtable_32.h
-@@ -86,6 +86,14 @@
- #define _PAGE_PCC_ATR8	0x60000000	/* Attribute Memory space, 8 bit bus */
- #define _PAGE_PCC_ATR16	0x60000001	/* Attribute Memory space, 6 bit bus */
+ arch/sh/Kconfig                        |    1 
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   45 ++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+--- 0010/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2008-11-25 21:12:12.000000000 +0900
+@@ -350,6 +350,7 @@ config CPU_SUBTYPE_SHX3
+ config CPU_SUBTYPE_SH7343
+ 	bool "Support SH7343 processor"
+ 	select CPU_SH4AL_DSP
++	select SH_TIMER
  
-+#ifndef CONFIG_X2TLB
-+/* copy the ptea attributes */
-+static inline unsigned long copy_ptea_attributes(unsigned long x)
-+{
-+	return	((x >> 28) & 0xe) | (x & 0x1);
-+}
-+#endif
+ config CPU_SUBTYPE_SH7722
+ 	bool "Support SH7722 processor"
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2008-11-25 21:16:01.000000000 +0900
+@@ -12,6 +12,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
+ #include <linux/uio_driver.h>
++#include <linux/sh_timer.h>
+ #include <asm/clock.h>
+ 
+ static struct resource iic0_resources[] = {
+@@ -292,3 +293,47 @@ void __init plat_irq_setup(void)
+ {
+ 	register_intc_controller(&intc_desc);
+ }
 +
- /* Mask which drops unused bits from the PTEL value */
- #if defined(CONFIG_CPU_SH3)
- #define _PAGE_CLEAR_FLAGS	(_PAGE_PROTNONE | _PAGE_ACCESSED| \
-diff --git a/arch/sh/include/cpu-sh4/cpu/mmu_context.h b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-index 9ea8eb2..9b0d1c4 100644
---- a/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-+++ b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-@@ -14,7 +14,8 @@
- #define MMU_PTEL	0xFF000004	/* Page table entry register LOW */
- #define MMU_TTB		0xFF000008	/* Translation table base register */
- #define MMU_TEA		0xFF00000C	/* TLB Exception Address */
--#define MMU_PTEA	0xFF000034	/* Page table entry assistance register */
-+#define MMU_PTEA	0xFF000034	/* Page table entry assistance
-+					 * register */
- 
- #define MMUCR		0xFF000010	/* MMU Control Register */
- 
-diff --git a/arch/sh/mm/tlb-sh4.c b/arch/sh/mm/tlb-sh4.c
-index f0c7b73..fd0d11f 100644
---- a/arch/sh/mm/tlb-sh4.c
-+++ b/arch/sh/mm/tlb-sh4.c
-@@ -61,9 +61,12 @@ void update_mmu_cache(struct vm_area_struct * vma,
- 	 */
- 	ctrl_outl(pte.pte_high, MMU_PTEA);
- #else
--	if (cpu_data->flags & CPU_HAS_PTEA)
--		/* TODO: make this look less hacky */
--		ctrl_outl(((pteval >> 28) & 0xe) | (pteval & 0x1), MMU_PTEA);
-+	if (cpu_data->flags & CPU_HAS_PTEA) {
-+		/* The last 3 bits and the first one of pteval contains
-+		 * the PTEA timing control and space attribute bits
-+		 */
-+		ctrl_outl(copy_ptea_attributes(pteval), MMU_PTEA);
++static struct sh_timer_config timers[] = {
++	{
++		.type = SH_TIMER_TYPE_CMT,
++		.name = "CMT",
++		.base = 0x044a0000,
++		.channel_offset = 0x60,
++		.timer_bit = 5,
++		.clk = "cmt0",
++		.irq = 104,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU0",
++		.base = 0xffd80004,
++		.channel_offset = 0x04,
++		.timer_bit = 0,
++		.clk = "tmu0",
++		.irq = 16,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU1",
++		.base = 0xffd80004,
++		.channel_offset = 0x10,
++		.timer_bit = 1,
++		.clk = "tmu0",
++		.irq = 17,
++	},
++	{
++		.type = SH_TIMER_TYPE_TMU,
++		.name = "TMU2",
++		.base = 0xffd80004,
++		.channel_offset = 0x1c,
++		.timer_bit = 2,
++		.clk = "tmu0",
++		.irq = 18,
 +	}
- #endif
- 
- 	/* Set PTEL register */
--- 
-1.5.6.5
-
++};
++
++void __init plat_timer_setup(void)
++{
++	sh_timer_register(timers, ARRAY_SIZE(timers));
++}
