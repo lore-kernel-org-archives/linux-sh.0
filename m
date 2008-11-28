@@ -1,92 +1,155 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 25 Nov 2008 13:00:41 +0000
-Subject: [PATCH 5/8] sh: timer rewrite V2, sh7722 support
-Message-Id: <20081125130041.8587.86950.sendpatchset@rx1.opensource.se>
+From: Peter Griffin <pgriffin@mpc-data.co.uk>
+Date: Fri, 28 Nov 2008 12:31:16 +0000
+Subject: [PATCH 2 / 3] sh: SH7201, board support
+Message-Id: <492FE494.50100@mpc-data.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+From: Peter Griffin <pgriffin@mpc-data.co.uk>
 
-Add CMT and TMU devices and use the new timer code V2 on sh7722.
+sh: SH7201, board support
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+This patch adds RSK+ 7201 board support.
+
+Signed-off-by: Peter Griffin <pgriffin@mpc-data.co.uk>
 ---
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -126,6 +126,10 @@ config SH_RTS7751R2D
+  	  Select RTS7751R2D if configuring for a Renesas Technology
+  	  Sales SH-Graphics board.
 
- arch/sh/Kconfig                        |    1 
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   45 ++++++++++++++++++++++++++++++++
- 2 files changed, 46 insertions(+)
-
---- 0005/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-11-25 20:26:34.000000000 +0900
-@@ -356,6 +356,7 @@ config CPU_SUBTYPE_SH7722
- 	select CPU_SHX2
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_NUMA
-+	select SH_TIMER
- 
- config CPU_SUBTYPE_SH7366
- 	bool "Support SH7366 processor"
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2008-11-25 20:26:54.000000000 +0900
-@@ -13,6 +13,7 @@
- #include <linux/serial_sci.h>
- #include <linux/mm.h>
- #include <linux/uio_driver.h>
-+#include <linux/sh_timer.h>
- #include <asm/clock.h>
- #include <asm/mmzone.h>
- 
-@@ -343,6 +344,50 @@ void __init plat_irq_setup(void)
- 	register_intc_controller(&intc_desc);
- }
- 
-+static struct sh_timer_config timers[] = {
++config SH_RSK7201
++	bool "RSK7201"
++	depends on CPU_SUBTYPE_SH7201
++
+  config SH_RSK7203
+  	bool "RSK7203"
+  	select GENERIC_GPIO
+diff --git a/arch/sh/boards/Makefile b/arch/sh/boards/Makefile
+index d9efa39..ce4d4d4 100644
+--- a/arch/sh/boards/Makefile
++++ b/arch/sh/boards/Makefile
+@@ -3,6 +3,7 @@
+  #
+  obj-$(CONFIG_SH_AP325RXA)	+= board-ap325rxa.o
+  obj-$(CONFIG_SH_MAGIC_PANEL_R2)	+= board-magicpanelr2.o
++obj-$(CONFIG_SH_RSK7201)	+= board-rsk7201.o
+  obj-$(CONFIG_SH_RSK7203)	+= board-rsk7203.o
+  obj-$(CONFIG_SH_SH7785LCR)	+= board-sh7785lcr.o
+  obj-$(CONFIG_SH_SHMIN)		+= board-shmin.o
+diff --git a/arch/sh/boards/board-rsk7201.c b/arch/sh/boards/board-rsk7201.c
+new file mode 100644
+index 0000000..47a843d
+--- /dev/null
++++ b/arch/sh/boards/board-rsk7201.c
+@@ -0,0 +1,106 @@
++/*
++ * Renesas Technology Europe RSK+ 7201 Support.
++ *
++ * Copyright (C) 2008 Peter Griffin <pgriffin@mpc-data.co.uk>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#include <linux/init.h>
++#include <linux/types.h>
++#include <linux/platform_device.h>
++#include <linux/interrupt.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/physmap.h>
++#include <linux/mtd/map.h>
++#include <asm/machvec.h>
++#include <asm/io.h>
++
++static const char *probes[] = { "cmdlinepart", NULL };
++
++static struct mtd_partition *parsed_partitions;
++
++static struct mtd_partition rsk7201_partitions[] = {
 +	{
-+		.type = SH_TIMER_TYPE_CMT,
-+		.name = "CMT",
-+		.base = 0x044a0000,
-+		.channel_offset = 0x60,
-+		.timer_bit = 5,
-+		.clk = "cmt0",
-+		.irq = 104,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU0",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x04,
-+		.timer_bit = 0,
-+		.clk = "tmu0",
-+		.irq = 16,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU1",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x10,
-+		.timer_bit = 1,
-+		.clk = "tmu0",
-+		.irq = 17,
-+	},
-+	{
-+		.type = SH_TIMER_TYPE_TMU,
-+		.name = "TMU2",
-+		.base = 0xffd80004,
-+		.channel_offset = 0x1c,
-+		.timer_bit = 2,
-+		.clk = "tmu0",
-+		.irq = 18,
++		.name		= "Bootloader",
++		.offset		= 0x00000000,
++		.size		= 0x00040000,
++		.mask_flags	= MTD_WRITEABLE,
++	}, {
++		.name		= "Kernel",
++		.offset		= MTDPART_OFS_NXTBLK,
++		.size		= 0x001c0000,
++	}, {
++		.name		= "Flash_FS",
++		.offset		= MTDPART_OFS_NXTBLK,
++		.size		= MTDPART_SIZ_FULL,
 +	}
 +};
 +
-+void __init plat_timer_setup(void)
++static struct physmap_flash_data flash_data = {
++	.width		= 2,
++};
++
++static struct resource flash_resource = {
++	.start		= 0x20000000,
++	.end		= 0x20400000,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct platform_device flash_device = {
++	.name		= "physmap-flash",
++	.id		= -1,
++	.resource	= &flash_resource,
++	.num_resources	= 1,
++	.dev		= {
++		.platform_data = &flash_data,
++	},
++};
++
++static struct mtd_info *flash_mtd;
++
++static struct map_info rsk7201_flash_map = {
++	.name		= "RSK+ Flash",
++	.size		= 0x400000,
++	.bankwidth	= 2,
++};
++
++static void __init set_mtd_partitions(void)
 +{
-+	sh_timer_register(timers, ARRAY_SIZE(timers));
++	int nr_parts = 0;
++
++	simple_map_init(&rsk7201_flash_map);
++	flash_mtd = do_map_probe("cfi_probe", &rsk7201_flash_map);
++	nr_parts = parse_mtd_partitions(flash_mtd, probes,
++					&parsed_partitions, 0);
++	/* If there is no partition table, used the hard coded table */
++	if (nr_parts <= 0) {
++		flash_data.parts = rsk7201_partitions;
++		flash_data.nr_parts = ARRAY_SIZE(rsk7201_partitions);
++	} else {
++		flash_data.nr_parts = nr_parts;
++		flash_data.parts = parsed_partitions;
++	}
 +}
 +
- void __init plat_mem_setup(void)
- {
- 	/* Register the URAM space as Node 1 */
++
++static struct platform_device *rsk7201_devices[] __initdata = {
++	&flash_device,
++};
++
++static int __init rsk7201_devices_setup(void)
++{
++	set_mtd_partitions();
++	return platform_add_devices(rsk7201_devices,
++				    ARRAY_SIZE(rsk7201_devices));
++}
++device_initcall(rsk7201_devices_setup);
++
++/*
++ * The Machine Vector
++ */
++static struct sh_machine_vector mv_rsk7201 __initmv = {
++	.mv_name        = "RSK+7201",
++};
