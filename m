@@ -1,7 +1,7 @@
 From: Peter Griffin <pgriffin@mpc-data.co.uk>
-Date: Fri, 28 Nov 2008 12:31:16 +0000
-Subject: [PATCH 2 / 3] sh: SH7201, board support
-Message-Id: <492FE494.50100@mpc-data.co.uk>
+Date: Fri, 28 Nov 2008 12:34:59 +0000
+Subject: [PATCH 3 / 3] sh: SH7201, defconfig
+Message-Id: <492FE573.2090308@mpc-data.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,146 +10,709 @@ To: linux-sh@vger.kernel.org
 
 From: Peter Griffin <pgriffin@mpc-data.co.uk>
 
-sh: SH7201, board support
+sh: SH7201, defconfig
 
-This patch adds RSK+ 7201 board support.
+This patch adds default kernel config for RSK+ 7201 board.
 
 Signed-off-by: Peter Griffin <pgriffin@mpc-data.co.uk>
 ---
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -126,6 +126,10 @@ config SH_RTS7751R2D
-  	  Select RTS7751R2D if configuring for a Renesas Technology
-  	  Sales SH-Graphics board.
+  arch/sh/configs/rsk7201_defconfig |  691 +++++++++++++++++++++++++++++++++++++
+  1 files changed, 691 insertions(+), 0 deletions(-)
 
-+config SH_RSK7201
-+	bool "RSK7201"
-+	depends on CPU_SUBTYPE_SH7201
-+
-  config SH_RSK7203
-  	bool "RSK7203"
-  	select GENERIC_GPIO
-diff --git a/arch/sh/boards/Makefile b/arch/sh/boards/Makefile
-index d9efa39..ce4d4d4 100644
---- a/arch/sh/boards/Makefile
-+++ b/arch/sh/boards/Makefile
-@@ -3,6 +3,7 @@
-  #
-  obj-$(CONFIG_SH_AP325RXA)	+= board-ap325rxa.o
-  obj-$(CONFIG_SH_MAGIC_PANEL_R2)	+= board-magicpanelr2.o
-+obj-$(CONFIG_SH_RSK7201)	+= board-rsk7201.o
-  obj-$(CONFIG_SH_RSK7203)	+= board-rsk7203.o
-  obj-$(CONFIG_SH_SH7785LCR)	+= board-sh7785lcr.o
-  obj-$(CONFIG_SH_SHMIN)		+= board-shmin.o
-diff --git a/arch/sh/boards/board-rsk7201.c b/arch/sh/boards/board-rsk7201.c
+diff --git a/arch/sh/configs/rsk7201_defconfig b/arch/sh/configs/rsk7201_defconfig
 new file mode 100644
-index 0000000..47a843d
+index 0000000..4a75584
 --- /dev/null
-+++ b/arch/sh/boards/board-rsk7201.c
-@@ -0,0 +1,106 @@
-+/*
-+ * Renesas Technology Europe RSK+ 7201 Support.
-+ *
-+ * Copyright (C) 2008 Peter Griffin <pgriffin@mpc-data.co.uk>
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#include <linux/init.h>
-+#include <linux/types.h>
-+#include <linux/platform_device.h>
-+#include <linux/interrupt.h>
-+#include <linux/mtd/mtd.h>
-+#include <linux/mtd/partitions.h>
-+#include <linux/mtd/physmap.h>
-+#include <linux/mtd/map.h>
-+#include <asm/machvec.h>
-+#include <asm/io.h>
++++ b/arch/sh/configs/rsk7201_defconfig
+@@ -0,0 +1,691 @@
++#
++# Automatically generated make config: don't edit
++# Linux kernel version: 2.6.28-rc6
++# Thu Nov 27 12:14:18 2008
++#
++CONFIG_SUPERH=y
++CONFIG_SUPERH32=y
++CONFIG_ARCH_DEFCONFIG="arch/sh/configs/shx3_defconfig"
++CONFIG_RWSEM_GENERIC_SPINLOCK=y
++CONFIG_GENERIC_BUG=y
++CONFIG_GENERIC_FIND_NEXT_BIT=y
++CONFIG_GENERIC_HWEIGHT=y
++CONFIG_GENERIC_HARDIRQS=y
++CONFIG_GENERIC_HARDIRQS_NO__DO_IRQ=y
++CONFIG_GENERIC_IRQ_PROBE=y
++# CONFIG_GENERIC_GPIO is not set
++# CONFIG_GENERIC_TIME is not set
++# CONFIG_GENERIC_CLOCKEVENTS is not set
++CONFIG_STACKTRACE_SUPPORT=y
++CONFIG_LOCKDEP_SUPPORT=y
++CONFIG_HAVE_LATENCYTOP_SUPPORT=y
++# CONFIG_ARCH_HAS_ILOG2_U32 is not set
++# CONFIG_ARCH_HAS_ILOG2_U64 is not set
++CONFIG_ARCH_NO_VIRT_TO_BUS=y
++CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
 +
-+static const char *probes[] = { "cmdlinepart", NULL };
++#
++# General setup
++#
++CONFIG_EXPERIMENTAL=y
++CONFIG_BROKEN_ON_SMP=y
++CONFIG_INIT_ENV_ARG_LIMIT2
++CONFIG_LOCALVERSION=""
++# CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_SYSVIPC=y
++CONFIG_SYSVIPC_SYSCTL=y
++CONFIG_BSD_PROCESS_ACCT=y
++# CONFIG_BSD_PROCESS_ACCT_V3 is not set
++CONFIG_IKCONFIG=y
++# CONFIG_IKCONFIG_PROC is not set
++CONFIG_LOG_BUF_SHIFT
++# CONFIG_CGROUPS is not set
++# CONFIG_GROUP_SCHED is not set
++# CONFIG_SYSFS_DEPRECATED_V2 is not set
++# CONFIG_RELAY is not set
++CONFIG_NAMESPACES=y
++CONFIG_UTS_NS=y
++CONFIG_IPC_NS=y
++CONFIG_USER_NS=y
++CONFIG_PID_NS=y
++CONFIG_BLK_DEV_INITRD=y
++CONFIG_INITRAMFS_SOURCE=""
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_SYSCTL=y
++CONFIG_EMBEDDED=y
++CONFIG_UID16=y
++CONFIG_SYSCTL_SYSCALL=y
++CONFIG_KALLSYMS=y
++# CONFIG_KALLSYMS_EXTRA_PASS is not set
++CONFIG_HOTPLUG=y
++CONFIG_PRINTK=y
++CONFIG_BUG=y
++CONFIG_ELF_CORE=y
++CONFIG_COMPAT_BRK=y
++CONFIG_BASE_FULL=y
++CONFIG_FUTEX=y
++CONFIG_ANON_INODES=y
++CONFIG_EPOLL=y
++CONFIG_SIGNALFD=y
++CONFIG_TIMERFD=y
++CONFIG_EVENTFD=y
++# CONFIG_AIO is not set
++CONFIG_VM_EVENT_COUNTERS=y
++# CONFIG_SLAB is not set
++# CONFIG_SLUB is not set
++CONFIG_SLOB=y
++CONFIG_PROFILING=y
++# CONFIG_MARKERS is not set
++CONFIG_OPROFILE=y
++CONFIG_HAVE_OPROFILE=y
++# CONFIG_KPROBES is not set
++CONFIG_HAVE_KPROBES=y
++CONFIG_HAVE_KRETPROBES=y
++CONFIG_HAVE_ARCH_TRACEHOOK=y
++CONFIG_HAVE_CLK=y
++CONFIG_HAVE_GENERIC_DMA_COHERENT=y
++CONFIG_RT_MUTEXES=y
++CONFIG_TINY_SHMEM=y
++CONFIG_BASE_SMALL=0
++CONFIG_MODULES=y
++# CONFIG_MODULE_FORCE_LOAD is not set
++# CONFIG_MODULE_UNLOAD is not set
++# CONFIG_MODVERSIONS is not set
++# CONFIG_MODULE_SRCVERSION_ALL is not set
++CONFIG_KMOD=y
++CONFIG_BLOCK=y
++# CONFIG_LBD is not set
++# CONFIG_BLK_DEV_IO_TRACE is not set
++# CONFIG_LSF is not set
++# CONFIG_BLK_DEV_BSG is not set
++# CONFIG_BLK_DEV_INTEGRITY is not set
 +
-+static struct mtd_partition *parsed_partitions;
++#
++# IO Schedulers
++#
++CONFIG_IOSCHED_NOOP=y
++# CONFIG_IOSCHED_AS is not set
++# CONFIG_IOSCHED_DEADLINE is not set
++# CONFIG_IOSCHED_CFQ is not set
++# CONFIG_DEFAULT_AS is not set
++# CONFIG_DEFAULT_DEADLINE is not set
++# CONFIG_DEFAULT_CFQ is not set
++CONFIG_DEFAULT_NOOP=y
++CONFIG_DEFAULT_IOSCHED="noop"
++CONFIG_CLASSIC_RCU=y
++# CONFIG_FREEZER is not set
 +
-+static struct mtd_partition rsk7201_partitions[] = {
-+	{
-+		.name		= "Bootloader",
-+		.offset		= 0x00000000,
-+		.size		= 0x00040000,
-+		.mask_flags	= MTD_WRITEABLE,
-+	}, {
-+		.name		= "Kernel",
-+		.offset		= MTDPART_OFS_NXTBLK,
-+		.size		= 0x001c0000,
-+	}, {
-+		.name		= "Flash_FS",
-+		.offset		= MTDPART_OFS_NXTBLK,
-+		.size		= MTDPART_SIZ_FULL,
-+	}
-+};
++#
++# System type
++#
++CONFIG_CPU_SH2=y
++CONFIG_CPU_SH2A=y
++# CONFIG_CPU_SUBTYPE_SH7619 is not set
++CONFIG_CPU_SUBTYPE_SH7201=y
++# CONFIG_CPU_SUBTYPE_SH7203 is not set
++# CONFIG_CPU_SUBTYPE_SH7206 is not set
++# CONFIG_CPU_SUBTYPE_SH7263 is not set
++# CONFIG_CPU_SUBTYPE_MXG is not set
++# CONFIG_CPU_SUBTYPE_SH7705 is not set
++# CONFIG_CPU_SUBTYPE_SH7706 is not set
++# CONFIG_CPU_SUBTYPE_SH7707 is not set
++# CONFIG_CPU_SUBTYPE_SH7708 is not set
++# CONFIG_CPU_SUBTYPE_SH7709 is not set
++# CONFIG_CPU_SUBTYPE_SH7710 is not set
++# CONFIG_CPU_SUBTYPE_SH7712 is not set
++# CONFIG_CPU_SUBTYPE_SH7720 is not set
++# CONFIG_CPU_SUBTYPE_SH7721 is not set
++# CONFIG_CPU_SUBTYPE_SH7750 is not set
++# CONFIG_CPU_SUBTYPE_SH7091 is not set
++# CONFIG_CPU_SUBTYPE_SH7750R is not set
++# CONFIG_CPU_SUBTYPE_SH7750S is not set
++# CONFIG_CPU_SUBTYPE_SH7751 is not set
++# CONFIG_CPU_SUBTYPE_SH7751R is not set
++# CONFIG_CPU_SUBTYPE_SH7760 is not set
++# CONFIG_CPU_SUBTYPE_SH4_202 is not set
++# CONFIG_CPU_SUBTYPE_SH7723 is not set
++# CONFIG_CPU_SUBTYPE_SH7763 is not set
++# CONFIG_CPU_SUBTYPE_SH7770 is not set
++# CONFIG_CPU_SUBTYPE_SH7780 is not set
++# CONFIG_CPU_SUBTYPE_SH7785 is not set
++# CONFIG_CPU_SUBTYPE_SHX3 is not set
++# CONFIG_CPU_SUBTYPE_SH7343 is not set
++# CONFIG_CPU_SUBTYPE_SH7722 is not set
++# CONFIG_CPU_SUBTYPE_SH7366 is not set
++# CONFIG_CPU_SUBTYPE_SH5_101 is not set
++# CONFIG_CPU_SUBTYPE_SH5_103 is not set
 +
-+static struct physmap_flash_data flash_data = {
-+	.width		= 2,
-+};
++#
++# Memory management options
++#
++CONFIG_QUICKLIST=y
++CONFIG_PAGE_OFFSET=0x00000000
++CONFIG_MEMORY_START=0x08000000
++CONFIG_MEMORY_SIZE=0x01000000
++CONFIG_29BIT=y
++CONFIG_ARCH_FLATMEM_ENABLE=y
++CONFIG_ARCH_SPARSEMEM_ENABLE=y
++CONFIG_ARCH_SPARSEMEM_DEFAULT=y
++CONFIG_MAX_ACTIVE_REGIONS=1
++CONFIG_ARCH_POPULATES_NODE_MAP=y
++CONFIG_ARCH_SELECT_MEMORY_MODEL=y
++CONFIG_PAGE_SIZE_4KB=y
++# CONFIG_PAGE_SIZE_8KB is not set
++# CONFIG_PAGE_SIZE_16KB is not set
++# CONFIG_PAGE_SIZE_64KB is not set
++CONFIG_ENTRY_OFFSET=0x00001000
++CONFIG_SELECT_MEMORY_MODEL=y
++CONFIG_FLATMEM_MANUAL=y
++# CONFIG_DISCONTIGMEM_MANUAL is not set
++# CONFIG_SPARSEMEM_MANUAL is not set
++CONFIG_FLATMEM=y
++CONFIG_FLAT_NODE_MEM_MAP=y
++CONFIG_SPARSEMEM_STATIC=y
++CONFIG_PAGEFLAGS_EXTENDED=y
++CONFIG_SPLIT_PTLOCK_CPUS=4
++# CONFIG_RESOURCES_64BIT is not set
++# CONFIG_PHYS_ADDR_T_64BIT is not set
++CONFIG_ZONE_DMA_FLAG=0
++CONFIG_NR_QUICK=2
 +
-+static struct resource flash_resource = {
-+	.start		= 0x20000000,
-+	.end		= 0x20400000,
-+	.flags		= IORESOURCE_MEM,
-+};
++#
++# Cache configuration
++#
++# CONFIG_SH_DIRECT_MAPPED is not set
++CONFIG_CACHE_WRITEBACK=y
++# CONFIG_CACHE_WRITETHROUGH is not set
++# CONFIG_CACHE_OFF is not set
 +
-+static struct platform_device flash_device = {
-+	.name		= "physmap-flash",
-+	.id		= -1,
-+	.resource	= &flash_resource,
-+	.num_resources	= 1,
-+	.dev		= {
-+		.platform_data = &flash_data,
-+	},
-+};
++#
++# Processor features
++#
++# CONFIG_CPU_LITTLE_ENDIAN is not set
++CONFIG_CPU_BIG_ENDIAN=y
++CONFIG_SH_FPU=y
++CONFIG_CPU_HAS_FPU=y
 +
-+static struct mtd_info *flash_mtd;
++#
++# Board support
++#
++CONFIG_SH_RSK7201=y
 +
-+static struct map_info rsk7201_flash_map = {
-+	.name		= "RSK+ Flash",
-+	.size		= 0x400000,
-+	.bankwidth	= 2,
-+};
++#
++# Timer and clock configuration
++#
++# CONFIG_SH_CMT is not set
++CONFIG_SH_MTU2=y
++CONFIG_SH_TIMER_IRQ
++CONFIG_SH_PCLK_FREQ@000000
++CONFIG_SH_CLK_MD=0
 +
-+static void __init set_mtd_partitions(void)
-+{
-+	int nr_parts = 0;
++#
++# CPU Frequency scaling
++#
++# CONFIG_CPU_FREQ is not set
 +
-+	simple_map_init(&rsk7201_flash_map);
-+	flash_mtd = do_map_probe("cfi_probe", &rsk7201_flash_map);
-+	nr_parts = parse_mtd_partitions(flash_mtd, probes,
-+					&parsed_partitions, 0);
-+	/* If there is no partition table, used the hard coded table */
-+	if (nr_parts <= 0) {
-+		flash_data.parts = rsk7201_partitions;
-+		flash_data.nr_parts = ARRAY_SIZE(rsk7201_partitions);
-+	} else {
-+		flash_data.nr_parts = nr_parts;
-+		flash_data.parts = parsed_partitions;
-+	}
-+}
++#
++# DMA support
++#
 +
++#
++# Companion Chips
++#
 +
-+static struct platform_device *rsk7201_devices[] __initdata = {
-+	&flash_device,
-+};
++#
++# Additional SuperH Device Drivers
++#
++# CONFIG_HEARTBEAT is not set
++# CONFIG_PUSH_SWITCH is not set
 +
-+static int __init rsk7201_devices_setup(void)
-+{
-+	set_mtd_partitions();
-+	return platform_add_devices(rsk7201_devices,
-+				    ARRAY_SIZE(rsk7201_devices));
-+}
-+device_initcall(rsk7201_devices_setup);
++#
++# Kernel features
++#
++# CONFIG_HZ_100 is not set
++# CONFIG_HZ_250 is not set
++# CONFIG_HZ_300 is not set
++CONFIG_HZ_1000=y
++CONFIG_HZ00
++# CONFIG_SCHED_HRTICK is not set
++# CONFIG_KEXEC is not set
++# CONFIG_CRASH_DUMP is not set
++# CONFIG_SECCOMP is not set
++CONFIG_PREEMPT_NONE=y
++# CONFIG_PREEMPT_VOLUNTARY is not set
++# CONFIG_PREEMPT is not set
++CONFIG_GUSA=y
 +
-+/*
-+ * The Machine Vector
-+ */
-+static struct sh_machine_vector mv_rsk7201 __initmv = {
-+	.mv_name        = "RSK+7201",
-+};
++#
++# Boot options
++#
++CONFIG_ZERO_PAGE_OFFSET=0x00001000
++CONFIG_BOOT_LINK_OFFSET=0x00800000
++CONFIG_CMDLINE_BOOL=y
++CONFIG_CMDLINE="console=ttySC0,115200 earlyprintk=serial ignore_loglevel"
++
++#
++# Bus options
++#
++# CONFIG_ARCH_SUPPORTS_MSI is not set
++# CONFIG_PCCARD is not set
++
++#
++# Executable file formats
++#
++CONFIG_BINFMT_ELF_FDPIC=y
++CONFIG_BINFMT_FLAT=y
++CONFIG_BINFMT_ZFLAT=y
++CONFIG_BINFMT_SHARED_FLAT=y
++# CONFIG_HAVE_AOUT is not set
++# CONFIG_BINFMT_MISC is not set
++# CONFIG_NET is not set
++
++#
++# Device Drivers
++#
++
++#
++# Generic Driver Options
++#
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++# CONFIG_STANDALONE is not set
++# CONFIG_PREVENT_FIRMWARE_BUILD is not set
++# CONFIG_FW_LOADER is not set
++# CONFIG_SYS_HYPERVISOR is not set
++CONFIG_MTD=y
++# CONFIG_MTD_DEBUG is not set
++CONFIG_MTD_CONCAT=y
++CONFIG_MTD_PARTITIONS=y
++CONFIG_MTD_REDBOOT_PARTS=y
++CONFIG_MTD_REDBOOT_DIRECTORY_BLOCK=-1
++# CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED is not set
++# CONFIG_MTD_REDBOOT_PARTS_READONLY is not set
++# CONFIG_MTD_CMDLINE_PARTS is not set
++# CONFIG_MTD_AR7_PARTS is not set
++
++#
++# User Modules And Translation Layers
++#
++CONFIG_MTD_CHAR=y
++CONFIG_MTD_BLKDEVS=y
++CONFIG_MTD_BLOCK=y
++# CONFIG_FTL is not set
++# CONFIG_NFTL is not set
++# CONFIG_INFTL is not set
++# CONFIG_RFD_FTL is not set
++# CONFIG_SSFDC is not set
++# CONFIG_MTD_OOPS is not set
++
++#
++# RAM/ROM/Flash chip drivers
++#
++CONFIG_MTD_CFI=y
++# CONFIG_MTD_JEDECPROBE is not set
++CONFIG_MTD_GEN_PROBE=y
++# CONFIG_MTD_CFI_ADV_OPTIONS is not set
++CONFIG_MTD_MAP_BANK_WIDTH_1=y
++CONFIG_MTD_MAP_BANK_WIDTH_2=y
++CONFIG_MTD_MAP_BANK_WIDTH_4=y
++# CONFIG_MTD_MAP_BANK_WIDTH_8 is not set
++# CONFIG_MTD_MAP_BANK_WIDTH_16 is not set
++# CONFIG_MTD_MAP_BANK_WIDTH_32 is not set
++CONFIG_MTD_CFI_I1=y
++CONFIG_MTD_CFI_I2=y
++# CONFIG_MTD_CFI_I4 is not set
++# CONFIG_MTD_CFI_I8 is not set
++# CONFIG_MTD_CFI_INTELEXT is not set
++CONFIG_MTD_CFI_AMDSTD=y
++# CONFIG_MTD_CFI_STAA is not set
++CONFIG_MTD_CFI_UTIL=y
++# CONFIG_MTD_RAM is not set
++# CONFIG_MTD_ROM is not set
++# CONFIG_MTD_ABSENT is not set
++
++#
++# Mapping drivers for chip access
++#
++# CONFIG_MTD_COMPLEX_MAPPINGS is not set
++CONFIG_MTD_PHYSMAP=y
++CONFIG_MTD_PHYSMAP_START=0x0
++CONFIG_MTD_PHYSMAP_LEN=0x0
++CONFIG_MTD_PHYSMAP_BANKWIDTH=4
++# CONFIG_MTD_PLATRAM is not set
++
++#
++# Self-contained MTD device drivers
++#
++# CONFIG_MTD_SLRAM is not set
++# CONFIG_MTD_PHRAM is not set
++# CONFIG_MTD_MTDRAM is not set
++# CONFIG_MTD_BLOCK2MTD is not set
++
++#
++# Disk-On-Chip Device Drivers
++#
++# CONFIG_MTD_DOC2000 is not set
++# CONFIG_MTD_DOC2001 is not set
++# CONFIG_MTD_DOC2001PLUS is not set
++# CONFIG_MTD_NAND is not set
++# CONFIG_MTD_ONENAND is not set
++
++#
++# UBI - Unsorted block images
++#
++# CONFIG_MTD_UBI is not set
++# CONFIG_PARPORT is not set
++CONFIG_BLK_DEV=y
++# CONFIG_BLK_DEV_COW_COMMON is not set
++# CONFIG_BLK_DEV_LOOP is not set
++# CONFIG_BLK_DEV_RAM is not set
++# CONFIG_CDROM_PKTCDVD is not set
++# CONFIG_BLK_DEV_HD is not set
++CONFIG_MISC_DEVICES=y
++# CONFIG_EEPROM_93CX6 is not set
++# CONFIG_ENCLOSURE_SERVICES is not set
++# CONFIG_C2PORT is not set
++CONFIG_HAVE_IDE=y
++# CONFIG_IDE is not set
++
++#
++# SCSI device support
++#
++# CONFIG_RAID_ATTRS is not set
++# CONFIG_SCSI is not set
++# CONFIG_SCSI_DMA is not set
++# CONFIG_SCSI_NETLINK is not set
++# CONFIG_ATA is not set
++# CONFIG_MD is not set
++# CONFIG_PHONE is not set
++
++#
++# Input device support
++#
++CONFIG_INPUT=y
++# CONFIG_INPUT_FF_MEMLESS is not set
++# CONFIG_INPUT_POLLDEV is not set
++
++#
++# Userland interfaces
++#
++# CONFIG_INPUT_MOUSEDEV is not set
++# CONFIG_INPUT_JOYDEV is not set
++# CONFIG_INPUT_EVDEV is not set
++# CONFIG_INPUT_EVBUG is not set
++
++#
++# Input Device Drivers
++#
++# CONFIG_INPUT_KEYBOARD is not set
++# CONFIG_INPUT_MOUSE is not set
++# CONFIG_INPUT_JOYSTICK is not set
++# CONFIG_INPUT_TABLET is not set
++# CONFIG_INPUT_TOUCHSCREEN is not set
++# CONFIG_INPUT_MISC is not set
++
++#
++# Hardware I/O ports
++#
++# CONFIG_SERIO is not set
++# CONFIG_GAMEPORT is not set
++
++#
++# Character devices
++#
++# CONFIG_VT is not set
++CONFIG_DEVKMEM=y
++# CONFIG_SERIAL_NONSTANDARD is not set
++
++#
++# Serial drivers
++#
++# CONFIG_SERIAL_8250 is not set
++
++#
++# Non-8250 serial port support
++#
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS=8
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++CONFIG_SERIAL_CORE=y
++CONFIG_SERIAL_CORE_CONSOLE=y
++# CONFIG_UNIX98_PTYS is not set
++# CONFIG_LEGACY_PTYS is not set
++# CONFIG_IPMI_HANDLER is not set
++# CONFIG_HW_RANDOM is not set
++# CONFIG_R3964 is not set
++# CONFIG_RAW_DRIVER is not set
++# CONFIG_TCG_TPM is not set
++# CONFIG_I2C is not set
++# CONFIG_SPI is not set
++# CONFIG_W1 is not set
++# CONFIG_POWER_SUPPLY is not set
++# CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++# CONFIG_WATCHDOG is not set
++CONFIG_SSB_POSSIBLE=y
++
++#
++# Sonics Silicon Backplane
++#
++# CONFIG_SSB is not set
++
++#
++# Multifunction device drivers
++#
++# CONFIG_MFD_CORE is not set
++# CONFIG_MFD_SM501 is not set
++# CONFIG_HTC_PASIC3 is not set
++# CONFIG_MFD_TMIO is not set
++# CONFIG_REGULATOR is not set
++
++#
++# Multimedia devices
++#
++
++#
++# Multimedia core support
++#
++# CONFIG_VIDEO_DEV is not set
++# CONFIG_VIDEO_MEDIA is not set
++
++#
++# Multimedia drivers
++#
++CONFIG_DAB=y
++
++#
++# Graphics support
++#
++# CONFIG_VGASTATE is not set
++CONFIG_VIDEO_OUTPUT_CONTROL=y
++# CONFIG_FB is not set
++# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
++
++#
++# Display device support
++#
++# CONFIG_DISPLAY_SUPPORT is not set
++# CONFIG_SOUND is not set
++# CONFIG_HID_SUPPORT is not set
++# CONFIG_USB_SUPPORT is not set
++# CONFIG_MMC is not set
++# CONFIG_MEMSTICK is not set
++# CONFIG_NEW_LEDS is not set
++# CONFIG_ACCESSIBILITY is not set
++CONFIG_RTC_LIB=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_HCTOSYS=y
++CONFIG_RTC_HCTOSYS_DEVICE="rtc0"
++# CONFIG_RTC_DEBUG is not set
++
++#
++# RTC interfaces
++#
++CONFIG_RTC_INTF_SYSFS=y
++CONFIG_RTC_INTF_PROC=y
++CONFIG_RTC_INTF_DEV=y
++# CONFIG_RTC_INTF_DEV_UIE_EMUL is not set
++# CONFIG_RTC_DRV_TEST is not set
++
++#
++# SPI RTC drivers
++#
++
++#
++# Platform RTC drivers
++#
++# CONFIG_RTC_DRV_DS1286 is not set
++# CONFIG_RTC_DRV_DS1511 is not set
++# CONFIG_RTC_DRV_DS1553 is not set
++# CONFIG_RTC_DRV_DS1742 is not set
++# CONFIG_RTC_DRV_STK17TA8 is not set
++# CONFIG_RTC_DRV_M48T86 is not set
++# CONFIG_RTC_DRV_M48T35 is not set
++# CONFIG_RTC_DRV_M48T59 is not set
++# CONFIG_RTC_DRV_BQ4802 is not set
++# CONFIG_RTC_DRV_V3020 is not set
++
++#
++# on-CPU RTC drivers
++#
++CONFIG_RTC_DRV_SH=y
++# CONFIG_DMADEVICES is not set
++# CONFIG_UIO is not set
++# CONFIG_STAGING is not set
++CONFIG_STAGING_EXCLUDE_BUILD=y
++
++#
++# File systems
++#
++CONFIG_EXT2_FS=y
++# CONFIG_EXT2_FS_XATTR is not set
++# CONFIG_EXT3_FS is not set
++# CONFIG_EXT4_FS is not set
++# CONFIG_REISERFS_FS is not set
++# CONFIG_JFS_FS is not set
++# CONFIG_FS_POSIX_ACL is not set
++# CONFIG_FILE_LOCKING is not set
++# CONFIG_XFS_FS is not set
++# CONFIG_DNOTIFY is not set
++# CONFIG_INOTIFY is not set
++# CONFIG_QUOTA is not set
++# CONFIG_AUTOFS_FS is not set
++# CONFIG_AUTOFS4_FS is not set
++# CONFIG_FUSE_FS is not set
++
++#
++# CD-ROM/DVD Filesystems
++#
++# CONFIG_ISO9660_FS is not set
++# CONFIG_UDF_FS is not set
++
++#
++# DOS/FAT/NT Filesystems
++#
++# CONFIG_MSDOS_FS is not set
++# CONFIG_VFAT_FS is not set
++# CONFIG_NTFS_FS is not set
++
++#
++# Pseudo filesystems
++#
++CONFIG_PROC_FS=y
++CONFIG_PROC_SYSCTL=y
++CONFIG_SYSFS=y
++# CONFIG_TMPFS is not set
++# CONFIG_HUGETLB_PAGE is not set
++# CONFIG_CONFIGFS_FS is not set
++
++#
++# Miscellaneous filesystems
++#
++# CONFIG_ADFS_FS is not set
++# CONFIG_AFFS_FS is not set
++# CONFIG_HFS_FS is not set
++# CONFIG_HFSPLUS_FS is not set
++# CONFIG_BEFS_FS is not set
++# CONFIG_BFS_FS is not set
++# CONFIG_EFS_FS is not set
++CONFIG_JFFS2_FS=y
++CONFIG_JFFS2_FS_DEBUG=0
++CONFIG_JFFS2_FS_WRITEBUFFER=y
++# CONFIG_JFFS2_FS_WBUF_VERIFY is not set
++# CONFIG_JFFS2_SUMMARY is not set
++# CONFIG_JFFS2_FS_XATTR is not set
++# CONFIG_JFFS2_COMPRESSION_OPTIONS is not set
++CONFIG_JFFS2_ZLIB=y
++# CONFIG_JFFS2_LZO is not set
++CONFIG_JFFS2_RTIME=y
++# CONFIG_JFFS2_RUBIN is not set
++# CONFIG_CRAMFS is not set
++# CONFIG_VXFS_FS is not set
++# CONFIG_MINIX_FS is not set
++# CONFIG_OMFS_FS is not set
++# CONFIG_HPFS_FS is not set
++# CONFIG_QNX4FS_FS is not set
++CONFIG_ROMFS_FS=y
++# CONFIG_SYSV_FS is not set
++# CONFIG_UFS_FS is not set
++
++#
++# Partition Types
++#
++# CONFIG_PARTITION_ADVANCED is not set
++CONFIG_MSDOS_PARTITION=y
++# CONFIG_NLS is not set
++
++#
++# Kernel hacking
++#
++CONFIG_TRACE_IRQFLAGS_SUPPORT=y
++# CONFIG_PRINTK_TIME is not set
++CONFIG_ENABLE_WARN_DEPRECATED=y
++# CONFIG_ENABLE_MUST_CHECK is not set
++CONFIG_FRAME_WARN24
++CONFIG_MAGIC_SYSRQ=y
++# CONFIG_UNUSED_SYMBOLS is not set
++CONFIG_DEBUG_FS=y
++# CONFIG_HEADERS_CHECK is not set
++# CONFIG_DEBUG_KERNEL is not set
++# CONFIG_DEBUG_BUGVERBOSE is not set
++# CONFIG_DEBUG_MEMORY_INIT is not set
++# CONFIG_RCU_CPU_STALL_DETECTOR is not set
++# CONFIG_LATENCYTOP is not set
++CONFIG_SYSCTL_SYSCALL_CHECK=y
++CONFIG_HAVE_FUNCTION_TRACER=y
++CONFIG_HAVE_DYNAMIC_FTRACE=y
++CONFIG_HAVE_FTRACE_MCOUNT_RECORD=y
++
++#
++# Tracers
++#
++# CONFIG_DYNAMIC_PRINTK_DEBUG is not set
++# CONFIG_SAMPLES is not set
++# CONFIG_SH_STANDARD_BIOS is not set
++# CONFIG_EARLY_SCIF_CONSOLE is not set
++
++#
++# Security options
++#
++# CONFIG_KEYS is not set
++# CONFIG_SECURITY is not set
++# CONFIG_SECURITYFS is not set
++# CONFIG_SECURITY_FILE_CAPABILITIES is not set
++# CONFIG_CRYPTO is not set
++
++#
++# Library routines
++#
++CONFIG_BITREVERSE=y
++# CONFIG_CRC_CCITT is not set
++# CONFIG_CRC16 is not set
++# CONFIG_CRC_T10DIF is not set
++# CONFIG_CRC_ITU_T is not set
++CONFIG_CRC32=y
++# CONFIG_CRC7 is not set
++# CONFIG_LIBCRC32C is not set
++CONFIG_ZLIB_INFLATE=y
++CONFIG_ZLIB_DEFLATE=y
++CONFIG_PLIST=y
++CONFIG_HAS_IOMEM=y
++CONFIG_HAS_IOPORT=y
++CONFIG_HAS_DMA=y
