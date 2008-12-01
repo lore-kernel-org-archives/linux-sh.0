@@ -1,123 +1,117 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Dec 2008 08:30:26 +0000
-Subject: [PATCH 05/05] video: deferred io sys helpers - xen V2
-Message-Id: <20081224083026.1848.92193.sendpatchset@rx1.opensource.se>
+Date: Mon, 01 Dec 2008 10:33:47 +0000
+Subject: [PATCH 09/10] clocksource: add enable() and disable() callbacks
+Message-Id: <20081201103347.26620.3670.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev-devel@lists.sourceforge.net
-Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
+To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Change the xen driver to use the new shared sys helpers. This
-allows us to remove some duplicated code. The use of the new
-shared sys helpers will change the behavior of this driver from
-syncing all operations directly to using the deferred io delay.
+Add enable() and disable() callbacks for clocksources. This allows
+us to put unused clocksources in power save mode. The functions
+clocksource_enable() and clocksource_disable() wrap the callbacks
+and are inserted in the timekeeping code to enable before use and
+disable after switching to a new clocksource.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Changes since V1:
- - Only cosmetic
+ include/linux/clocksource.h |   31 +++++++++++++++++++++++++++++++
+ kernel/time/timekeeping.c   |   12 +++++++++---
+ 2 files changed, 40 insertions(+), 3 deletions(-)
 
- drivers/video/Kconfig       |    4 ---
- drivers/video/xen-fbfront.c |   51 +++++++++----------------------------------
- 2 files changed, 11 insertions(+), 44 deletions(-)
-
---- 0005/drivers/video/Kconfig
-+++ work/drivers/video/Kconfig	2008-12-24 16:42:47.000000000 +0900
-@@ -2057,10 +2057,6 @@ config FB_VIRTUAL
- config XEN_FBDEV_FRONTEND
- 	tristate "Xen virtual frame buffer support"
- 	depends on FB && XEN
--	select FB_SYS_FILLRECT
--	select FB_SYS_COPYAREA
--	select FB_SYS_IMAGEBLIT
--	select FB_SYS_FOPS
- 	select FB_DEFERRED_IO
- 	default y
- 	help
---- 0001/drivers/video/xen-fbfront.c
-+++ work/drivers/video/xen-fbfront.c	2008-12-24 16:44:19.000000000 +0900
-@@ -177,11 +177,17 @@ static void xenfb_refresh(struct xenfb_i
- static void xenfb_deferred_io(struct fb_info *fb_info,
- 			      struct list_head *pagelist)
- {
-+	struct fb_deferred_io *fbdefio = fb_info->fbdefio;
- 	struct xenfb_info *info = fb_info->par;
- 	struct page *page;
- 	unsigned long beg, end;
- 	int y1, y2, miny, maxy;
- 
-+	if (fbdefio->dx != -1)
-+		xenfb_refresh(info, fbdefio->dx, fbdefio->dy,
-+			      min_t(int, info->page->width, fbdefio->width),
-+			      min_t(int, info->page->height, fbdefio->height));
-+
- 	miny = INT_MAX;
- 	maxy = 0;
- 	list_for_each_entry(page, pagelist, lru) {
-@@ -235,41 +241,6 @@ static int xenfb_setcolreg(unsigned regn
- 	return 0;
+--- 0009/include/linux/clocksource.h
++++ work/include/linux/clocksource.h	2008-12-01 14:19:43.000000000 +0900
+@@ -44,6 +44,8 @@ struct clocksource;
+  *				available.
+  * @read:		returns a cycle value
+  * @read2:		returns a cycle value, passes clocksource as argument
++ * @enable:		optional function to enable the clocksource
++ * @disable:		optional function to disable the clocksource
+  * @mask:		bitmask for two's complement
+  *			subtraction of non 64 bit counters
+  * @mult:		cycle to nanosecond multiplier (adjusted by NTP)
+@@ -64,6 +66,8 @@ struct clocksource {
+ 	int rating;
+ 	cycle_t (*read)(void);
+ 	cycle_t (*read2)(struct clocksource *cs);
++	int (*enable)(struct clocksource *cs);
++	void (*disable)(struct clocksource *cs);
+ 	cycle_t mask;
+ 	u32 mult;
+ 	u32 mult_orig;
+@@ -176,6 +180,33 @@ static inline cycle_t clocksource_read(s
  }
  
--static void xenfb_fillrect(struct fb_info *p, const struct fb_fillrect *rect)
--{
--	struct xenfb_info *info = p->par;
--
--	sys_fillrect(p, rect);
--	xenfb_refresh(info, rect->dx, rect->dy, rect->width, rect->height);
--}
--
--static void xenfb_imageblit(struct fb_info *p, const struct fb_image *image)
--{
--	struct xenfb_info *info = p->par;
--
--	sys_imageblit(p, image);
--	xenfb_refresh(info, image->dx, image->dy, image->width, image->height);
--}
--
--static void xenfb_copyarea(struct fb_info *p, const struct fb_copyarea *area)
--{
--	struct xenfb_info *info = p->par;
--
--	sys_copyarea(p, area);
--	xenfb_refresh(info, area->dx, area->dy, area->width, area->height);
--}
--
--static ssize_t xenfb_write(struct fb_info *p, const char __user *buf,
--			size_t count, loff_t *ppos)
--{
--	struct xenfb_info *info = p->par;
--	ssize_t res;
--
--	res = fb_sys_write(p, buf, count, ppos);
--	xenfb_refresh(info, 0, 0, info->page->width, info->page->height);
--	return res;
--}
--
- static int
- xenfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ /**
++ * clocksource_enable: - enable clocksource
++ * @cs:		pointer to clocksource
++ *
++ * Enables the specified clocksource. The clocksource callback
++ * function should start up the hardware and setup mult and field
++ * members of struct clocksource to reflect hardware capabilities.
++ */
++static inline int clocksource_enable(struct clocksource *cs)
++{
++	return cs->enable ? cs->enable(cs) : 0;
++}
++
++/**
++ * clocksource_disable: - disable clocksource
++ * @cs:		pointer to clocksource
++ *
++ * Disables the specified clocksource. The clocksource callback
++ * function should power down the now unused hardware block to
++ * save power.
++ */
++static inline void clocksource_disable(struct clocksource *cs)
++{
++	if (cs->disable)
++		cs->disable(cs);
++}
++
++/**
+  * cyc2ns - converts clocksource cycles to nanoseconds
+  * @cs:		Pointer to clocksource
+  * @cycles:	Cycles
+--- 0001/kernel/time/timekeeping.c
++++ work/kernel/time/timekeeping.c	2008-12-01 14:20:32.000000000 +0900
+@@ -177,7 +177,7 @@ EXPORT_SYMBOL(do_settimeofday);
+  */
+ static void change_clocksource(void)
  {
-@@ -323,12 +294,12 @@ static int xenfb_set_par(struct fb_info 
+-	struct clocksource *new;
++	struct clocksource *new, *old;
  
- static struct fb_ops xenfb_fb_ops = {
- 	.owner		= THIS_MODULE,
--	.fb_read	= fb_sys_read,
--	.fb_write	= xenfb_write,
-+	.fb_read        = fb_deferred_io_read,
-+	.fb_write	= fb_deferred_io_write,
-+	.fb_fillrect	= fb_deferred_io_fillrect,
-+	.fb_copyarea	= fb_deferred_io_copyarea,
-+	.fb_imageblit	= fb_deferred_io_imageblit,
- 	.fb_setcolreg	= xenfb_setcolreg,
--	.fb_fillrect	= xenfb_fillrect,
--	.fb_copyarea	= xenfb_copyarea,
--	.fb_imageblit	= xenfb_imageblit,
- 	.fb_check_var	= xenfb_check_var,
- 	.fb_set_par     = xenfb_set_par,
- };
+ 	new = clocksource_get_next();
+ 
+@@ -186,11 +186,16 @@ static void change_clocksource(void)
+ 
+ 	clocksource_forward_now();
+ 
+-	new->raw_time = clock->raw_time;
++	if (clocksource_enable(new))
++		return;
+ 
++	new->raw_time = clock->raw_time;
++	old = clock;
+ 	clock = new;
++	clocksource_disable(old);
++
+ 	clock->cycle_last = 0;
+-	clock->cycle_last = clocksource_read(new);
++	clock->cycle_last = clocksource_read(clock);
+ 	clock->error = 0;
+ 	clock->xtime_nsec = 0;
+ 	clocksource_calculate_interval(clock, NTP_INTERVAL_LENGTH);
+@@ -287,6 +292,7 @@ void __init timekeeping_init(void)
+ 	ntp_init();
+ 
+ 	clock = clocksource_get_next();
++	clocksource_enable(clock);
+ 	clocksource_calculate_interval(clock, NTP_INTERVAL_LENGTH);
+ 	clock->cycle_last = clocksource_read(clock);
+ 
