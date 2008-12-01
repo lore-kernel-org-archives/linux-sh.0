@@ -1,35 +1,62 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 11 Dec 2008 12:52:42 +0000
-Subject: [PATCH 00/03] sh: timer rewrite V5
-Message-Id: <20081211125242.19369.8194.sendpatchset@rx1.opensource.se>
+Date: Mon, 01 Dec 2008 10:33:09 +0000
+Subject: [PATCH 05/10] irq: allow free_irq() after setup_irq()
+Message-Id: <20081201103309.26620.11140.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SuperH Timer Rewrite V5:
+From: Magnus Damm <damm@igel.co.jp>
 
-[PATCH 01/03] sh: CONFIG_SH_TIMER support
-[PATCH 02/03] sh: CMT early platform driver
-[PATCH 03/03] sh: enable CMT on sh7723/sh7722/sh7366/sh7343
-
-This patchset is another iteration which simply disconnects the clocksource
-patches and makes use of early platform drivers. The early platform driver
-patch and read(), enable/disable() and arch_gettimeoffset clocksource
-patches can be found on lkml.
+This patch adds support for using free_irq() on interrupts
+allocated with setup_irq(). Without this patch the kernel
+will try to kfree() the struct irqaction passed as argument
+to setup_irq().
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/Kconfig                        |   24 -
- arch/sh/include/asm/timer.h            |    4 
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   40 +
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   40 +
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   40 +
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   40 +
- arch/sh/kernel/time_32.c               |   41 +
- drivers/clocksource/Makefile           |    1 
- drivers/clocksource/sh_cmt.c           |  702 ++++++++++++++++++++++++++++++++
- include/linux/sh_cmt.h                 |   13 
- 10 files changed, 931 insertions(+), 14 deletions(-)
+ include/linux/interrupt.h |    2 ++
+ kernel/irq/manage.c       |    4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- 0001/include/linux/interrupt.h
++++ work/include/linux/interrupt.h	2008-11-25 19:43:40.000000000 +0900
+@@ -48,6 +48,7 @@
+  * IRQF_IRQPOLL - Interrupt is used for polling (only the interrupt that is
+  *                registered first in an shared interrupt is considered for
+  *                performance reasons)
++ * IRQF_STATIC - Interrupt requested with setup_irq(), do not kfree().
+  */
+ #define IRQF_DISABLED		0x00000020
+ #define IRQF_SAMPLE_RANDOM	0x00000040
+@@ -57,6 +58,7 @@
+ #define IRQF_PERCPU		0x00000400
+ #define IRQF_NOBALANCING	0x00000800
+ #define IRQF_IRQPOLL		0x00001000
++#define IRQF_STATIC		0x00002000
+ 
+ typedef irqreturn_t (*irq_handler_t)(int, void *);
+ 
+--- 0001/kernel/irq/manage.c
++++ work/kernel/irq/manage.c	2008-11-25 19:44:14.000000000 +0900
+@@ -509,6 +509,7 @@ int setup_irq(unsigned int irq, struct i
+ {
+ 	struct irq_desc *desc = irq_to_desc(irq);
+ 
++	act->flags |= IRQF_STATIC;
+ 	return __setup_irq(irq, desc, act);
+ }
+ 
+@@ -585,7 +586,8 @@ void free_irq(unsigned int irq, void *de
+ 				local_irq_restore(flags);
+ 			}
+ #endif
+-			kfree(action);
++			if (!(action->flags & IRQF_STATIC))
++				kfree(action);
+ 			return;
+ 		}
+ 		printk(KERN_ERR "Trying to free already-free IRQ %d\n", irq);
