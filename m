@@ -1,57 +1,71 @@
-From: "Jaya Kumar" <jayakumar.lkml@gmail.com>
-Date: Thu, 25 Dec 2008 19:03:30 +0000
-Subject: Re: [PATCH 01/05] video: deferred io sys helpers - core V2
-Message-Id: <45a44e480812251103m5129d575lfffda361b11dd4d6@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Dec 2008 10:32:42 +0000
+Subject: [PATCH 02/10] clockevent: let set_mode() setup delta information
+Message-Id: <20081201103242.26620.86716.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
-	 <20081224082954.1848.42892.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081224082954.1848.42892.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-fbdev-devel@lists.sourceforge.net, aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Dec 24, 2008 at 3:29 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm@igel.co.jp>
->
-> Add shared sys helpers to the deferred io code. Instead of duplicating
-> the code in each driver we can keep it in one place. This saves a
-> few lines. The new helper functions make use of the deferred io delay.
-> While at it, keep track of the dirty area to allow partial screen update.
+From: Magnus Damm <damm@igel.co.jp>
 
-Hi Magnus,
+Allow the set_mode() clockevent callback to decide and fill in delta
+details such as shift, mult, max_delta_ns and min_delta_ns.
 
-Ok, while the overall patchset looks good, I still had trouble with
-the dx, dy, w, h stuff. It had me a bit confused. The above comment
-about keeping track of the dirty area made me realize why I think that
-portion can be improved. The reason is that we already have a pagelist
-to track touched pages and the dx, dy, w, h stuff duplicates that. I
-have an idea of how we can avoid this duplication which I'll sketch
-below.
+With this change the clockevent can be registered without delta details
+which allows us to keep the parent clock disabled until the clockevent
+gets setup using set_mode().
 
-> +ssize_t fb_deferred_io_write(struct fb_info *info, const char __user *buf,
-> +                            size_t count, loff_t *ppos)
-> +{
-> +       int ret = fb_sys_write(info, buf, count, ppos);
-> +
-> +       if (ret > 0)
-> +               fb_deferred_io_touch(info, 0, 0, INT_MAX, INT_MAX);
-> +
-> +       return ret;
-> +}
-> +EXPORT_SYMBOL_GPL(fb_deferred_io_write);
+Letting set_mode() fill in or update delta details allows us to save
+power by disabling the parent clock while the clockevent is unused.
+This may however make the parent clock rate change, so next time the
+clockevent gets enabled we need let set_mode() to update the detla
+details accordingly. Doing it at registration time is not enough.
 
-As you have noticed, doing it using x, y, w, h results in needing to
-do things like INT_MAX above and side effects like dx != -1 in the
-client drivers. I think that we can avoid this. Instead, I would
-prepare the pagelist directly in write, imageblit, etc since we know
-exactly which pages have been touched.
+Furthermore, the delta details seem unused in the case of periodic-only
+clockevent drivers, so this change also allows registration of such
+drivers without the delta details filled in.
 
-I guess this would be better explained if I posted some sample code
-rather than just talking about it so I'll do a quick and dirty
-implementation for write only in metronomefb so that we can discuss
-this further.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Thanks,
-jaya
+ kernel/time/clockevents.c |   20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
+
+--- 0001/kernel/time/clockevents.c
++++ work/kernel/time/clockevents.c	2008-11-28 15:51:31.000000000 +0900
+@@ -68,6 +68,17 @@ void clockevents_set_mode(struct clock_e
+ 	if (dev->mode != mode) {
+ 		dev->set_mode(mode, dev);
+ 		dev->mode = mode;
++
++		/*
++		 * A nsec2cyc multiplicator of 0 is invalid and we'd crash
++		 * on it, so fix it up and emit a warning:
++		 */
++		if (mode = CLOCK_EVT_MODE_ONESHOT) {
++			if (unlikely(!dev->mult)) {
++				dev->mult = 1;
++				WARN_ON(1);
++			}
++		}
+ 	}
+ }
+ 
+@@ -166,15 +177,6 @@ static void clockevents_notify_released(
+ void clockevents_register_device(struct clock_event_device *dev)
+ {
+ 	BUG_ON(dev->mode != CLOCK_EVT_MODE_UNUSED);
+-	/*
+-	 * A nsec2cyc multiplicator of 0 is invalid and we'd crash
+-	 * on it, so fix it up and emit a warning:
+-	 */
+-	if (unlikely(!dev->mult)) {
+-		dev->mult = 1;
+-		WARN_ON(1);
+-	}
+-
+ 	spin_lock(&clockevents_lock);
+ 
+ 	list_add(&dev->list, &clockevent_devices);
