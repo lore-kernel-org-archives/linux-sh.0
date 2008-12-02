@@ -1,89 +1,160 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Wed, 24 Dec 2008 16:13:06 +0000
-Subject: Re: [PATCH] sh: maple: add Maple controller as a joystick device
-Message-Id: <200812241157.33912.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart5716807.DDvuXe0M0L"
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 02 Dec 2008 07:42:24 +0000
+Subject: [PATCH 2/2] Remove soc_camera_platform setting from Migo-R
+Message-Id: <u1vwrm2ks.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1229797614.6502.20.camel@localhost.localdomain>
-In-Reply-To: <1229797614.6502.20.camel@localhost.localdomain>
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@osdl.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
---nextPart5716807.DDvuXe0M0L
-Content-Type: text/plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
 
-On Saturday 20 December 2008 13:26:54 Adrian McMenamin wrote:
-> +static int probe_maple_controller(struct device *dev)
-> +{
-> ...
-> +	mdev =3D to_maple_dev(dev);
-> +	if (!mdev) {
-> +		error =3D EINVAL;
-> +		goto fail;
-> +	}
-> +
-> +	mdrv =3D to_maple_driver(dev->driver);
-> +	if (!mdrv) {
-> +		error =3D EINVAL;
-> +		goto fail;
-> +	}
+Migo-R can use ov772x camera driver in Linux 2.6.29.
+Therefore, soc_camera_platform setting is no longer needed.
+This patch remove it.
 
-like Dmitry said, these NULL checks make no sense
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+this patch is for linux 2.6.29
+V4L2 maintainer said ov772x driver will be added to linux 2.6.29
 
-> +	pad =3D kzalloc(sizeof(struct dc_pad), GFP_KERNEL);
-> +	if (!pad) {
-> +		error =3D ENOMEM;
-> +		goto fail;
-> +	}
-> +	idev =3D input_allocate_device();
-> +	if (!idev){
-> +		error =3D ENOMEM;
-> +		goto fail_idev;
-> +	}
-> ...
-> +	error =3D input_register_device(idev);
-> +	if (error)
-> +		goto fail_register;
-> ...
-> +fail_register:
-> +	maple_set_drvdata(mdev, NULL);
-> +	input_free_device(pad->dev);
-> +fail_idev:
-> +	kfree(pad);
-> +fail:
-> +	return -error;
-> +}
+ arch/sh/boards/mach-migor/setup.c |  103 -------------------------------------
+ 1 files changed, 0 insertions(+), 103 deletions(-)
 
-this -error stuff is weird and i think wrong.  for constants, you're adding=
-=20
-overhead, and for the input_register_device(), i think you're negating an=20
-already negative value thus breaking it.
-=2Dmike
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 4b348d8..115503b 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -18,7 +18,6 @@
+ #include <linux/delay.h>
+ #include <linux/clk.h>
+ #include <linux/gpio.h>
+-#include <media/soc_camera_platform.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <media/ov772x.h>
+ #include <video/sh_mobile_lcdc.h>
+@@ -312,14 +311,6 @@ static void camera_power_off(void)
+ 	gpio_set_value(GPIO_PTT3, 0);
+ }
+ 
+-static void camera_power(int mode)
+-{
+-	if (mode)
+-		camera_power_on();
+-	else
+-		camera_power_off();
+-}
+-
+ static int ov7725_power(struct device *dev, int mode)
+ {
+ 	if (mode)
+@@ -330,97 +321,6 @@ static int ov7725_power(struct device *dev, int mode)
+ 	return 0;
+ }
+ 
+-#ifdef CONFIG_I2C
+-static unsigned char camera_ov772x_magic[] -{
+-	0x09, 0x01, 0x0c, 0x20, 0x0d, 0x41, 0x0e, 0x01,
+-	0x12, 0x00, 0x13, 0x8F, 0x14, 0x4A, 0x15, 0x00,
+-	0x16, 0x00, 0x17, 0x23, 0x18, 0xa0, 0x19, 0x07,
+-	0x1a, 0xf0, 0x1b, 0x40, 0x1f, 0x00, 0x20, 0x10,
+-	0x22, 0xff, 0x23, 0x01, 0x28, 0x00, 0x29, 0xa0,
+-	0x2a, 0x00, 0x2b, 0x00, 0x2c, 0xf0, 0x2d, 0x00,
+-	0x2e, 0x00, 0x30, 0x80, 0x31, 0x60, 0x32, 0x00,
+-	0x33, 0x00, 0x34, 0x00, 0x3d, 0x80, 0x3e, 0xe2,
+-	0x3f, 0x1f, 0x42, 0x80, 0x43, 0x80, 0x44, 0x80,
+-	0x45, 0x80, 0x46, 0x00, 0x47, 0x00, 0x48, 0x00,
+-	0x49, 0x50, 0x4a, 0x30, 0x4b, 0x50, 0x4c, 0x50,
+-	0x4d, 0x00, 0x4e, 0xef, 0x4f, 0x10, 0x50, 0x60,
+-	0x51, 0x00, 0x52, 0x00, 0x53, 0x24, 0x54, 0x7a,
+-	0x55, 0xfc, 0x62, 0xff, 0x63, 0xf0, 0x64, 0x1f,
+-	0x65, 0x00, 0x66, 0x10, 0x67, 0x00, 0x68, 0x00,
+-	0x69, 0x5c, 0x6a, 0x11, 0x6b, 0xa2, 0x6c, 0x01,
+-	0x6d, 0x50, 0x6e, 0x80, 0x6f, 0x80, 0x70, 0x0f,
+-	0x71, 0x00, 0x72, 0x00, 0x73, 0x0f, 0x74, 0x0f,
+-	0x75, 0xff, 0x78, 0x10, 0x79, 0x70, 0x7a, 0x70,
+-	0x7b, 0xf0, 0x7c, 0xf0, 0x7d, 0xf0, 0x7e, 0x0e,
+-	0x7f, 0x1a, 0x80, 0x31, 0x81, 0x5a, 0x82, 0x69,
+-	0x83, 0x75, 0x84, 0x7e, 0x85, 0x88, 0x86, 0x8f,
+-	0x87, 0x96, 0x88, 0xa3, 0x89, 0xaf, 0x8a, 0xc4,
+-	0x8b, 0xd7, 0x8c, 0xe8, 0x8d, 0x20, 0x8e, 0x00,
+-	0x8f, 0x00, 0x90, 0x08, 0x91, 0x10, 0x92, 0x1f,
+-	0x93, 0x01, 0x94, 0x2c, 0x95, 0x24, 0x96, 0x08,
+-	0x97, 0x14, 0x98, 0x24, 0x99, 0x38, 0x9a, 0x9e,
+-	0x9b, 0x00, 0x9c, 0x40, 0x9e, 0x11, 0x9f, 0x02,
+-	0xa0, 0x00, 0xa1, 0x40, 0xa2, 0x40, 0xa3, 0x06,
+-	0xa4, 0x00, 0xa6, 0x00, 0xa7, 0x40, 0xa8, 0x40,
+-	0xa9, 0x80, 0xaa, 0x80, 0xab, 0x06, 0xac, 0xff,
+-	0x12, 0x06, 0x64, 0x3f, 0x12, 0x46, 0x17, 0x3f,
+-	0x18, 0x50, 0x19, 0x03, 0x1a, 0x78, 0x29, 0x50,
+-	0x2c, 0x78,
+-};
+-
+-static int ov772x_set_capture(struct soc_camera_platform_info *info,
+-			      int enable)
+-{
+-	struct i2c_adapter *a = i2c_get_adapter(0);
+-	struct i2c_msg msg;
+-	int ret = 0;
+-	int i;
+-
+-	if (!enable)
+-		return 0; /* camera_power_off() is enough */
+-
+-	for (i = 0; i < ARRAY_SIZE(camera_ov772x_magic); i += 2) {
+-		u_int8_t buf[8];
+-
+-		msg.addr = 0x21;
+-		msg.buf = buf;
+-		msg.len = 2;
+-		msg.flags = 0;
+-
+-		buf[0] = camera_ov772x_magic[i];
+-		buf[1] = camera_ov772x_magic[i + 1];
+-
+-		ret = (ret < 0) ? ret : i2c_transfer(a, &msg, 1);
+-	}
+-
+-	return ret;
+-}
+-
+-static struct soc_camera_platform_info ov772x_info = {
+-	.iface = 0,
+-	.format_name = "RGB565",
+-	.format_depth = 16,
+-	.format = {
+-		.pixelformat = V4L2_PIX_FMT_RGB565,
+-		.colorspace = V4L2_COLORSPACE_SRGB,
+-		.width = 320,
+-		.height = 240,
+-	},
+-	.bus_param =  SOCAM_PCLK_SAMPLE_RISING | SOCAM_HSYNC_ACTIVE_HIGH |
+-	SOCAM_VSYNC_ACTIVE_HIGH | SOCAM_MASTER | SOCAM_DATAWIDTH_8,
+-	.power = camera_power,
+-	.set_capture = ov772x_set_capture,
+-};
+-
+-static struct platform_device migor_camera_device = {
+-	.name		= "soc_camera_platform",
+-	.dev	= {
+-		.platform_data	= &ov772x_info,
+-	},
+-};
+-#endif /* CONFIG_I2C */
+-
+ static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
+ 	.flags = SOCAM_MASTER | SOCAM_DATAWIDTH_8 | SOCAM_PCLK_SAMPLE_RISING \
+ 	| SOCAM_HSYNC_ACTIVE_HIGH | SOCAM_VSYNC_ACTIVE_HIGH,
+@@ -464,9 +364,6 @@ static struct platform_device *migor_devices[] __initdata = {
+ 	&sh_keysc_device,
+ 	&migor_lcdc_device,
+ 	&migor_ceu_device,
+-#ifdef CONFIG_I2C
+-	&migor_camera_device,
+-#endif
+ 	&migor_nor_flash_device,
+ 	&migor_nand_flash_device,
+ };
+-- 
+1.5.6.3
 
---nextPart5716807.DDvuXe0M0L
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.9 (GNU/Linux)
-
-iQIcBAABAgAGBQJJUmn9AAoJEEFjO5/oN/WB1hwQAL84sYqkaWhLa1U+SLr0mUTG
-I4ktduD4v1/hOk0jpw+64BveIX3K9n3agivX1YogH0ye+6aCP2LfubrhNqxh4PY4
-OPDICf7vMulpVguJC7914QVY9tqHyA8Rtx9vgNlBQ5Vir8/FO8X3ZhB6UrpvjdoZ
-wboLY8K89vLFe3w3WC7hWTSXBLPKQ0/g9MZep/KeLP79rwC/8EsiikkVRxltU/Kp
-UIg96IN7FBD+ix4lzgZgl0J2VzlXDrJLUuX1JDVxbaep8Eepk6baO1SpI9H2rF9F
-CwP0jmDJgOMm7EkZ1iaga/ZfzmzUJ6XhXueBIMM56fMNmFGrOulmb9M+bc6c+V2Q
-Lvl2V7YUfpAeMAEV1RJv7mgo2/0dkDFaMcUqROZrmB6PCqn5abvvb0lhoLEOB1MO
-UERhkGD/HLd0jkgUp7KH6tbXJHgYHf94Nmgfn9syln1mkjF2NwNVCxnfUnEcoTle
-0y0/8pvC9TxPWeqtGsvMsMGM1EsWYwGiUeZu8QQ41OTNobrdrrmvMCwPcmT+B53p
-lg92FcTtMvO+5Kvv4Fc9GFVveeHw83k329dRhjkbysNqwgNU6T1aw28JtCPxjVXU
-3HJ8prnositb4IP+Bnf969FuO2uvWq/2FeV+uN8RnNUI3SudJV1MKwjmCeO54YAi
-7Hl0mQjXgSykT41R7g4w
-=HVVg
------END PGP SIGNATURE-----
-
---nextPart5716807.DDvuXe0M0L--
