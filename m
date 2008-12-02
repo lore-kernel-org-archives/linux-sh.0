@@ -1,157 +1,75 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Dec 2008 09:17:09 +0000
-Subject: [PATCH 01/04] sh: make gpio_get/set_value() O(1)
-Message-Id: <20081225091709.7670.50390.sendpatchset@rx1.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 02 Dec 2008 07:38:34 +0000
+Subject: [PATCH 1/2 v2] Add support ov772x driver setting for Migo-R
+Message-Id: <uskp5zha2.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
 
-This patch modifies the table based SuperH gpio implementation to
-make use of direct table lookups. With this change the functions
-gpio_get_value() and gpio_set_value() are O(1).
-
-Tested on Migo-R using bitbanging mmc. Performance is improved from
-11 KBytes/s to 26 Kbytes/s.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+v1 -> v2
+ov7725_info become static 
 
- arch/sh/include/asm/gpio.h |    7 +++++-
- arch/sh/kernel/gpio.c      |   48 +++++++++++++++++++++++++++++++++-----------
- 2 files changed, 43 insertions(+), 12 deletions(-)
+ arch/sh/boards/mach-migor/setup.c |   22 ++++++++++++++++++++++
+ 1 files changed, 22 insertions(+), 0 deletions(-)
 
---- 0001/arch/sh/include/asm/gpio.h
-+++ work/arch/sh/include/asm/gpio.h	2008-11-05 17:13:25.000000000 +0900
-@@ -20,7 +20,7 @@
- #endif
- 
- typedef unsigned short pinmux_enum_t;
--typedef unsigned char pinmux_flag_t;
-+typedef unsigned short pinmux_flag_t;
- 
- #define PINMUX_TYPE_NONE            0
- #define PINMUX_TYPE_FUNCTION        1
-@@ -34,6 +34,11 @@ typedef unsigned char pinmux_flag_t;
- #define PINMUX_FLAG_WANT_PULLUP     (1 << 3)
- #define PINMUX_FLAG_WANT_PULLDOWN   (1 << 4)
- 
-+#define PINMUX_FLAG_DBIT_SHIFT      5
-+#define PINMUX_FLAG_DBIT            (0x1f << PINMUX_FLAG_DBIT_SHIFT)
-+#define PINMUX_FLAG_DREG_SHIFT      10
-+#define PINMUX_FLAG_DREG            (0x3f << PINMUX_FLAG_DREG_SHIFT)
-+
- struct pinmux_gpio {
- 	pinmux_enum_t enum_id;
- 	pinmux_flag_t flags;
---- 0001/arch/sh/kernel/gpio.c
-+++ work/arch/sh/kernel/gpio.c	2008-11-05 17:19:48.000000000 +0900
-@@ -95,14 +95,13 @@ static int read_write_reg(unsigned long 
- 	return 0;
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 03d2dea..4b348d8 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -20,6 +20,7 @@
+ #include <linux/gpio.h>
+ #include <media/soc_camera_platform.h>
+ #include <media/sh_mobile_ceu.h>
++#include <media/ov772x.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <asm/clock.h>
+ #include <asm/machvec.h>
+@@ -319,6 +320,16 @@ static void camera_power(int mode)
+ 		camera_power_off();
  }
  
--static int get_data_reg(struct pinmux_info *gpioc, unsigned gpio,
--			struct pinmux_data_reg **drp, int *bitp)
-+static int setup_data_reg(struct pinmux_info *gpioc, unsigned gpio)
- {
--	pinmux_enum_t enum_id = gpioc->gpios[gpio].enum_id;
-+	struct pinmux_gpio *gpiop = &gpioc->gpios[gpio];
- 	struct pinmux_data_reg *data_reg;
- 	int k, n;
- 
--	if (!enum_in_range(enum_id, &gpioc->data))
-+	if (!enum_in_range(gpiop->enum_id, &gpioc->data))
- 		return -1;
- 
- 	k = 0;
-@@ -113,19 +112,38 @@ static int get_data_reg(struct pinmux_in
- 			break;
- 
- 		for (n = 0; n < data_reg->reg_width; n++) {
--			if (data_reg->enum_ids[n] = enum_id) {
--				*drp = data_reg;
--				*bitp = n;
-+			if (data_reg->enum_ids[n] = gpiop->enum_id) {
-+				gpiop->flags &= ~PINMUX_FLAG_DREG;
-+				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
-+				gpiop->flags &= ~PINMUX_FLAG_DBIT;
-+				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
- 				return 0;
--
- 			}
- 		}
- 		k++;
- 	}
- 
-+	BUG();
-+
- 	return -1;
- }
- 
-+static int get_data_reg(struct pinmux_info *gpioc, unsigned gpio,
-+			struct pinmux_data_reg **drp, int *bitp)
++static int ov7725_power(struct device *dev, int mode)
 +{
-+	struct pinmux_gpio *gpiop = &gpioc->gpios[gpio];
-+	int k, n;
++	if (mode)
++		camera_power_on();
++	else
++		camera_power_off();
 +
-+	if (!enum_in_range(gpiop->enum_id, &gpioc->data))
-+		return -1;
-+
-+	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
-+	n = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
-+	*drp = gpioc->data_regs + k;
-+	*bitp = n;
 +	return 0;
 +}
 +
- static int get_config_reg(struct pinmux_info *gpioc, pinmux_enum_t enum_id,
- 			  struct pinmux_cfg_reg **crp, int *indexp,
- 			  unsigned long **cntp)
-@@ -341,7 +359,8 @@ int __gpio_request(unsigned gpio)
- 			BUG();
- 	}
+ #ifdef CONFIG_I2C
+ static unsigned char camera_ov772x_magic[]  {
+@@ -441,6 +452,13 @@ static struct platform_device migor_ceu_device = {
+ 	},
+ };
  
--	gpioc->gpios[gpio].flags = pinmux_type;
-+	gpioc->gpios[gpio].flags &= ~PINMUX_FLAG_TYPE;
-+	gpioc->gpios[gpio].flags |= pinmux_type;
- 
- 	ret = 0;
-  err_unlock:
-@@ -364,7 +383,8 @@ void gpio_free(unsigned gpio)
- 
- 	pinmux_type = gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE;
- 	pinmux_config_gpio(gpioc, gpio, pinmux_type, GPIO_CFG_FREE);
--	gpioc->gpios[gpio].flags = PINMUX_TYPE_NONE;
-+	gpioc->gpios[gpio].flags &= ~PINMUX_FLAG_TYPE;
-+	gpioc->gpios[gpio].flags |= PINMUX_TYPE_NONE;
- 
- 	spin_unlock_irqrestore(&gpio_lock, flags);
- }
-@@ -401,7 +421,8 @@ static int pinmux_direction(struct pinmu
- 			       GPIO_CFG_REQ) != 0)
- 		BUG();
- 
--	gpioc->gpios[gpio].flags = new_pinmux_type;
-+	gpioc->gpios[gpio].flags &= ~PINMUX_FLAG_TYPE;
-+	gpioc->gpios[gpio].flags |= new_pinmux_type;
- 
- 	ret = 0;
-  err_out:
-@@ -494,9 +515,14 @@ EXPORT_SYMBOL(gpio_set_value);
- 
- int register_pinmux(struct pinmux_info *pip)
- {
-+	int k;
++static struct ov772x_camera_info ov7725_info = {
++	.buswidth  = SOCAM_DATAWIDTH_8,
++	.link = {
++		.power  = ov7725_power,
++	},
++};
 +
- 	registered_gpio = pip;
- 	pr_info("pinmux: %s handling gpio %d -> %d\n",
- 		pip->name, pip->first_gpio, pip->last_gpio);
+ static struct platform_device *migor_devices[] __initdata = {
+ 	&smc91x_eth_device,
+ 	&sh_keysc_device,
+@@ -461,6 +479,10 @@ static struct i2c_board_info migor_i2c_devices[] = {
+ 		I2C_BOARD_INFO("migor_ts", 0x51),
+ 		.irq = 38, /* IRQ6 */
+ 	},
++	{
++		I2C_BOARD_INFO("ov772x", 0x21),
++		.platform_data = &ov7725_info,
++	},
+ };
  
-+	for (k = pip->first_gpio; k <= pip->last_gpio; k++)
-+		setup_data_reg(pip, k);
-+
- 	return 0;
- }
+ static int __init migor_devices_setup(void)
+-- 
+1.5.6.3
+
