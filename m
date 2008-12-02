@@ -1,53 +1,75 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 19 Dec 2008 07:52:33 +0000
-Subject: Re: A patch got applied to v4l bypassing v4l lists
-Message-Id: <20081219075233.GA31320@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 02 Dec 2008 07:38:34 +0000
+Subject: [PATCH 1/2] Add support ov772x driver setting for Migo-R
+Message-Id: <u3ah7m2kz.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.0812181613050.5510@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0812181613050.5510@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Dec 19, 2008 at 08:15:19AM +0100, Guennadi Liakhovetski wrote:
-> On Thu, 18 Dec 2008, Mauro Carvalho Chehab wrote:
-> 
-> > On Fri, 19 Dec 2008 00:30:05 +0100 (CET)
-> > Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> > 
-> > > > A side note: maybe the design of pxa_camera could be improved to avoid needing
-> > > > to be touched as architecture changes. This is the only v4l driver that includes
-> > > > asm/arch header files.
-> > > 
-> > > The patch in question was for sh_mobile_ceu_camera.c - not for pxa, and 
-> > > even though that one doesn't include any asm headers, as you see, it is 
-> > > also tied pretty closely with respective platform code.
-> > 
-> > > As for including asm headers in pxa_camera.c - it wouldn't be easy to get 
-> > > rid of them, one of the main obstacles is the use of the pxa-specific 
-> > > dma-channel handling API.
-> > 
-> > Ok. I dunno the specific details of the sh and pxa bindings, but it would be
-> > better to have it more independent from architecture specific implementation
-> > details.
-> 
-> ...that's what I'm saying - we have to work with the complete kernel tree. 
-> Working with a part of it is no fun. Just think about one thing - changing 
-> platform data struct layout. It will still compile as long as you preserve 
-> the name, because that's just a void * you get from platform, but you 
-> better don't try to run that... Or take this clock change now to the 
-> sh_mobile_ceu_camera.c. It will still compile with older kernels, but it 
-> won't run.
-> 
-Correct, this is one of the key issues with not breaking bisection. It is
-not just a matter of whether something compiles or not, but whether we
-can actually boot and test the result. Things that have a fixed
-dependency on each other need to happen in the same change, and can not
-be split. That means that either the v4l tree needs to track changes to
-architecture files as well, or it will have to resync and pull down
-changes made upstream periodically. The latter is how every other tree in
-existence is run, largely because of these sorts of reasons. It seems
-like most of the trouble comes from running a partial tree, but since the
-days of the driver model, it is no longer possible to keep dependent
-changes confined and isolated to that directory structure.
+
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+this patch is for linux 2.6.29
+V4L2 maintainer said ov772x driver will be added to linux 2.6.29
+
+ arch/sh/boards/mach-migor/setup.c |   22 ++++++++++++++++++++++
+ 1 files changed, 22 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 03d2dea..4b348d8 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -20,6 +20,7 @@
+ #include <linux/gpio.h>
+ #include <media/soc_camera_platform.h>
+ #include <media/sh_mobile_ceu.h>
++#include <media/ov772x.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <asm/clock.h>
+ #include <asm/machvec.h>
+@@ -319,6 +320,16 @@ static void camera_power(int mode)
+ 		camera_power_off();
+ }
+ 
++static int ov7725_power(struct device *dev, int mode)
++{
++	if (mode)
++		camera_power_on();
++	else
++		camera_power_off();
++
++	return 0;
++}
++
+ #ifdef CONFIG_I2C
+ static unsigned char camera_ov772x_magic[]  {
+@@ -441,6 +452,13 @@ static struct platform_device migor_ceu_device = {
+ 	},
+ };
+ 
++struct ov772x_camera_info ov7725_info = {
++	.buswidth  = SOCAM_DATAWIDTH_8,
++	.link = {
++		.power  = ov7725_power,
++	},
++};
++
+ static struct platform_device *migor_devices[] __initdata = {
+ 	&smc91x_eth_device,
+ 	&sh_keysc_device,
+@@ -461,6 +479,10 @@ static struct i2c_board_info migor_i2c_devices[] = {
+ 		I2C_BOARD_INFO("migor_ts", 0x51),
+ 		.irq = 38, /* IRQ6 */
+ 	},
++	{
++		I2C_BOARD_INFO("ov772x", 0x21),
++		.platform_data = &ov7725_info,
++	},
+ };
+ 
+ static int __init migor_devices_setup(void)
+-- 
+1.5.6.3
+
