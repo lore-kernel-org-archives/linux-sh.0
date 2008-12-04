@@ -1,46 +1,41 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Mon, 29 Dec 2008 00:28:15 +0000
-Subject: Re: [RFC][patch] sh: maple: Dreamcast mouse driver
-Message-Id: <200812281628.15790.dmitry.torokhov@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Dec 2008 08:59:46 +0000
+Subject: [PATCH 00/06] sh: sh7343 and se7343 patches
+Message-Id: <20081204085946.25773.64257.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1230508197.7574.4.camel@localhost.localdomain>
-In-Reply-To: <1230508197.7574.4.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: linux-input <linux-input@vger.kernel.org>, Andrew Morton <akpm@osdl.org>, linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Adrian,
+sh7343 and se7343 patches:
 
-On Sunday 28 December 2008 15:49:57 Adrian McMenamin wrote:
-> +
-> +	mdev = to_maple_dev(dev);
-> +	mdrv = to_maple_driver(dev->driver);
-> +	if (!mdrv||!mdev) {
-> +		error = EINVAL;
-> +		goto fail;
-> +	}
+[PATCH 01/06] sh: sh7343 scif configuration update
+[PATCH 02/06] sh: fix number of interrupts on se7343
+[PATCH 03/06] sh: add st16c2550 devices to se7343
+[PATCH 04/06] sh: add isp1161 usb host device to se7343
+[PATCH 05/06] sh: remove ioport cruft and smc91x from se7343
+[PATCH 06/06] sh: update se7343 defconfig
 
-This still does not make sense, mdev and mdrv will never be NULL.
+This patchset simply updates the sh7343 processor code a bit and
+modifies the se7343 board support code to include the external usb
+host controller chip and on-board uarts. The out-of-date ioport
+code gets removed while at it - including some old support for
+unknown-ne2000-pcmcia-card, cf-over-pcmcia and a mysterical smc91x
+that once must have been on a special daughterboard.
 
-> +fail:
-> +	return -error;
+Now with the USB host controller in place we get network connection
+using an ethernet-over-usb adapter (yay) but we're still unfortunately
+stuck loading the kernel over the serial gdbstub which makes kernel
+development too slow to be practical.
 
-You just negated the error returned by input_register_device() and the module 
-loading code will think that probe succeeded.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-> +
-> +static int remove_maple_mouse(struct device *dev)
-> +{
-> +	struct maple_device *mdev = to_maple_dev(dev);
-> +	struct dc_mouse *mse = maple_get_drvdata(mdev);
-> +
-> +	mdev->callback = NULL;
-
-I am uneasy about just whacking a NULL there. The other driver you sent 
-implemented open and close methods and used maple_getcond_callback to 
-manipulate callbacks which I assume is safer than just resetting the pointer.
-
--- 
-Dmitry
+ arch/sh/boards/mach-se/7343/Makefile   |    2 
+ arch/sh/boards/mach-se/7343/io.c       |  273 ----------------------------
+ arch/sh/boards/mach-se/7343/setup.c    |  126 ++++++++-----
+ arch/sh/configs/se7343_defconfig       |  303 ++++++++++++++++++++++++++++----
+ arch/sh/include/mach-se/mach/se7343.h  |    9 
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   19 +-
+ 6 files changed, 376 insertions(+), 356 deletions(-)
