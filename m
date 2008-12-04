@@ -1,197 +1,253 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Tue, 30 Dec 2008 20:27:05 +0000
-Subject: Re: [PATCH] sh: maple: add support for the Maple mouse on the SEGA
-Message-Id: <1230668825.6489.1.camel@localhost.localdomain>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Dec 2008 13:45:03 +0000
+Subject: [PATCH 01/03] sh: move the hp6xx pm code
+Message-Id: <20081204134503.21168.21185.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1230578246.6496.25.camel@localhost.localdomain>
-	 <1230589073.6496.30.camel@localhost.localdomain>
-	 <200812291719.47754.vapier@gentoo.org>
-	 <200812300017.45336.dmitry.torokhov@gmail.com>
-In-Reply-To: <200812300017.45336.dmitry.torokhov@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Mike Frysinger <vapier@gentoo.org>, Sam Ravnborg <sam@ravnborg.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Andrew Morton <akpm@osdl.org>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
+Move the not-so-generic pm code from arch/sh/kernel/pm.c to the
+platform directory together with the rest of the hp6xx pm code.
 
-Adding maple mouse with proper __devexit_p() handling
+This is done to let non-hp6xx platforms enable CONFIG_PM.
 
-Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
-diff --git a/drivers/input/mouse/Kconfig b/drivers/input/mouse/Kconfig
-index 4e99342..71cc98a 100644
---- a/drivers/input/mouse/Kconfig
-+++ b/drivers/input/mouse/Kconfig
-@@ -286,4 +286,15 @@ config MOUSE_GPIO
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called gpio_mouse.
- 
-+config MOUSE_MAPLE
-+	tristate "Maple mouse (for the Dreamcast)"
-+	depends on MAPLE
-+	help
-+	  This driver supports the Maple mouse on the SEGA Dreamcast.
-+
-+	  Most Dreamcast users, who have a mouse, will say Y here.
-+
-+	  To compile this driver as a module choose M here: the module will be
-+	  called maplemouse.
-+
- endif
-diff --git a/drivers/input/mouse/Makefile b/drivers/input/mouse/Makefile
-index 96f1dd8..0272f5d 100644
---- a/drivers/input/mouse/Makefile
-+++ b/drivers/input/mouse/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_MOUSE_SERIAL)	+= sermouse.o
- obj-$(CONFIG_MOUSE_HIL)		+= hil_ptr.o
- obj-$(CONFIG_MOUSE_VSXXXAA)	+= vsxxxaa.o
- obj-$(CONFIG_MOUSE_GPIO)	+= gpio_mouse.o
-+obj-$(CONFIG_MOUSE_MAPLE)	+= maplemouse.o
- 
- psmouse-objs := psmouse-base.o synaptics.o
- 
-diff --git a/drivers/input/mouse/maplemouse.c b/drivers/input/mouse/maplemouse.c
-new file mode 100644
-index 0000000..103e5a0
---- /dev/null
-+++ b/drivers/input/mouse/maplemouse.c
-@@ -0,0 +1,135 @@
-+/*
-+ *	SEGA Dreamcast mouse driver
-+ *	Based on drivers/usb/usbmouse.c
-+ *
-+ *	Copyright Yaegashi Takeshi, 2001
-+ *	Adrian McMenamin, 2008
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/slab.h>
-+#include <linux/input.h>
-+#include <linux/module.h>
-+#include <linux/init.h>
-+#include <linux/timer.h>
-+#include <linux/maple.h>
-+
-+MODULE_AUTHOR("Adrian McMenamin <adrian@mcmen.demon.co.uk>");
-+MODULE_DESCRIPTION("SEGA Dreamcast mouse driver");
-+MODULE_LICENSE("GPL");
-+
-+struct dc_mouse {
-+	struct input_dev *dev;
-+	struct maple_device *mdev;
-+};
-+
-+static void dc_mouse_callback(struct mapleq *mq)
-+{
-+	int buttons, relx, rely, relz;
-+	struct maple_device *mapledev = mq->dev;
-+	struct dc_mouse *mse = maple_get_drvdata(mapledev);
-+	struct input_dev *dev = mse->dev;
-+	unsigned char *res = mq->recvbuf;
-+
-+	buttons = ~res[8];
-+	relx = *(unsigned short *)(res + 12) - 512;
-+	rely = *(unsigned short *)(res + 14) - 512;
-+	relz = *(unsigned short *)(res + 16) - 512;
-+
-+	input_report_key(dev, BTN_LEFT,   buttons & 4);
-+	input_report_key(dev, BTN_MIDDLE, buttons & 9);
-+	input_report_key(dev, BTN_RIGHT,  buttons & 2);
-+	input_report_rel(dev, REL_X,      relx);
-+	input_report_rel(dev, REL_Y,      rely);
-+	input_report_rel(dev, REL_WHEEL,  relz);
-+	input_sync(dev);
-+}
-+
-+/* allow the mouse to be used */
-+static int __devinit probe_maple_mouse(struct device *dev)
-+{
-+	struct maple_device *mdev;
-+	struct maple_driver *mdrv;
-+	int error;
-+	struct input_dev *input_dev;
-+	struct dc_mouse *mse;
-+
-+	mdev = to_maple_dev(dev);
-+	mdrv = to_maple_driver(dev->driver);
-+
-+	mse = kzalloc(sizeof(struct dc_mouse), GFP_KERNEL);
-+	if (!mse) {
-+		error = -ENOMEM;
-+		goto fail;
-+	}
-+
-+	input_dev = input_allocate_device();
-+	if (!input_dev) {
-+		error = -ENOMEM;
-+		goto fail_nomem;
-+	}
-+
-+	mse->dev = input_dev;
-+	mse->mdev = mdev;
-+
-+	input_set_drvdata(input_dev, mse);
-+	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
-+	input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) |
-+		BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
-+	input_dev->relbit[0] = BIT_MASK(REL_X) | BIT_MASK(REL_Y) |
-+		BIT_MASK(REL_WHEEL);
-+	input_dev->name = mdev->product_name;
-+	input_dev->id.bustype = BUS_HOST;
-+	error =	input_register_device(input_dev);
-+	if (error)
-+		goto fail_register;
-+
-+	mdev->driver = mdrv;
-+	maple_set_drvdata(mdev, mse);
-+
-+	maple_getcond_callback(mdev, dc_mouse_callback, HZ/50,
-+		MAPLE_FUNC_MOUSE);
-+
-+	return error;
-+
-+fail_register:
-+	input_free_device(input_dev);
-+fail_nomem:
-+	kfree(mse);
-+fail:
-+	return error;
-+}
-+
-+static int __devexit remove_maple_mouse(struct device *dev)
-+{
-+	struct maple_device *mdev = to_maple_dev(dev);
-+	struct dc_mouse *mse = maple_get_drvdata(mdev);
-+
-+	mdev->callback = NULL;
-+	input_unregister_device(mse->dev);
-+	maple_set_drvdata(mdev, NULL);
-+	kfree(mse);
-+	return 0;
-+}
-+
-+static struct maple_driver dc_mouse_driver = {
-+	.function =	MAPLE_FUNC_MOUSE,
-+	.drv = {
-+		.name = "Dreamcast_mouse",
-+		.probe = probe_maple_mouse,
-+		.remove = __devexit_p(remove_maple_mouse),
-+	},
-+};
-+
-+static int __init dc_mouse_init(void)
-+{
-+	return maple_driver_register(&dc_mouse_driver);
-+}
-+
-+static void __exit dc_mouse_exit(void)
-+{
-+	maple_driver_unregister(&dc_mouse_driver);
-+}
-+
-+module_init(dc_mouse_init);
-+module_exit(dc_mouse_exit);
+ arch/sh/boards/mach-hp6xx/pm.c |   78 +++++++++++++++++++++++++++++++++++
+ arch/sh/include/asm/pm.h       |   17 -------
+ arch/sh/kernel/Makefile_32     |    1 
+ arch/sh/kernel/Makefile_64     |    1 
+ arch/sh/kernel/pm.c            |   88 ----------------------------------------
+ 5 files changed, 77 insertions(+), 108 deletions(-)
 
+--- 0001/arch/sh/boards/mach-hp6xx/pm.c
++++ work/arch/sh/boards/mach-hp6xx/pm.c	2008-12-04 20:43:36.000000000 +0900
+@@ -10,15 +10,91 @@
+ #include <linux/suspend.h>
+ #include <linux/errno.h>
+ #include <linux/time.h>
++#include <linux/delay.h>
++#include <linux/gfp.h>
+ #include <asm/io.h>
+ #include <asm/hd64461.h>
+ #include <mach/hp6xx.h>
+ #include <cpu/dac.h>
+-#include <asm/pm.h>
++#include <asm/freq.h>
++#include <asm/watchdog.h>
++
++#define INTR_OFFSET	0x600
+ 
+ #define STBCR		0xffffff82
+ #define STBCR2		0xffffff88
+ 
++#define STBCR_STBY	0x80
++#define STBCR_MSTP2	0x04
++
++#define MCR		0xffffff68
++#define RTCNT		0xffffff70
++
++#define MCR_RMODE	2
++#define MCR_RFSH	4
++
++extern u8 wakeup_start;
++extern u8 wakeup_end;
++
++static void pm_enter(void)
++{
++	u8 stbcr, csr;
++	u16 frqcr, mcr;
++	u32 vbr_new, vbr_old;
++
++	set_bl_bit();
++
++	/* set wdt */
++	csr = sh_wdt_read_csr();
++	csr &= ~WTCSR_TME;
++	csr |= WTCSR_CKS_4096;
++	sh_wdt_write_csr(csr);
++	csr = sh_wdt_read_csr();
++	sh_wdt_write_cnt(0);
++
++	/* disable PLL1 */
++	frqcr = ctrl_inw(FRQCR);
++	frqcr &= ~(FRQCR_PLLEN | FRQCR_PSTBY);
++	ctrl_outw(frqcr, FRQCR);
++
++	/* enable standby */
++	stbcr = ctrl_inb(STBCR);
++	ctrl_outb(stbcr | STBCR_STBY | STBCR_MSTP2, STBCR);
++
++	/* set self-refresh */
++	mcr = ctrl_inw(MCR);
++	ctrl_outw(mcr & ~MCR_RFSH, MCR);
++
++	/* set interrupt handler */
++	asm volatile("stc vbr, %0" : "=r" (vbr_old));
++	vbr_new = get_zeroed_page(GFP_ATOMIC);
++	udelay(50);
++	memcpy((void*)(vbr_new + INTR_OFFSET),
++	       &wakeup_start, &wakeup_end - &wakeup_start);
++	asm volatile("ldc %0, vbr" : : "r" (vbr_new));
++
++	ctrl_outw(0, RTCNT);
++	ctrl_outw(mcr | MCR_RFSH | MCR_RMODE, MCR);
++
++	cpu_sleep();
++
++	asm volatile("ldc %0, vbr" : : "r" (vbr_old));
++
++	free_page(vbr_new);
++
++	/* enable PLL1 */
++	frqcr = ctrl_inw(FRQCR);
++	frqcr |= FRQCR_PSTBY;
++	ctrl_outw(frqcr, FRQCR);
++	udelay(50);
++	frqcr |= FRQCR_PLLEN;
++	ctrl_outw(frqcr, FRQCR);
++
++	ctrl_outb(stbcr, STBCR);
++
++	clear_bl_bit();
++}
++
+ static int hp6x0_pm_enter(suspend_state_t state)
+ {
+ 	u8 stbcr, stbcr2;
+--- 0001/arch/sh/include/asm/pm.h
++++ /dev/null	2008-12-03 11:12:15.442019092 +0900
+@@ -1,17 +0,0 @@
+-/*
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- * Copyright 2006 (c) Andriy Skulysh <askulysh@gmail.com>
+- *
+- */
+-#ifndef __ASM_SH_PM_H
+-#define __ASM_SH_PM_H
+-
+-extern u8 wakeup_start;
+-extern u8 wakeup_end;
+-
+-void pm_enter(void);
+-
+-#endif
+--- 0001/arch/sh/kernel/Makefile_32
++++ work/arch/sh/kernel/Makefile_32	2008-12-04 20:41:49.000000000 +0900
+@@ -25,7 +25,6 @@ obj-$(CONFIG_MODULES)		+= sh_ksyms_32.o 
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
+ obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
+-obj-$(CONFIG_PM)		+= pm.o
+ obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
+ obj-$(CONFIG_IO_TRAPPED)	+= io_trapped.o
+ obj-$(CONFIG_KPROBES)		+= kprobes.o
+--- 0001/arch/sh/kernel/Makefile_64
++++ work/arch/sh/kernel/Makefile_64	2008-12-04 20:41:49.000000000 +0900
+@@ -15,7 +15,6 @@ obj-$(CONFIG_MODULES)		+= sh_ksyms_64.o 
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
+ obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
+-obj-$(CONFIG_PM)		+= pm.o
+ obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
+ obj-$(CONFIG_IO_TRAPPED)	+= io_trapped.o
+ obj-$(CONFIG_GENERIC_GPIO)	+= gpio.o
+--- 0001/arch/sh/kernel/pm.c
++++ /dev/null	2008-12-03 11:12:15.442019092 +0900
+@@ -1,88 +0,0 @@
+-/*
+- * Generic Power Management Routine
+- *
+- * Copyright (c) 2006 Andriy Skulysh <askulsyh@gmail.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License.
+- */
+-#include <linux/suspend.h>
+-#include <linux/delay.h>
+-#include <linux/gfp.h>
+-#include <asm/freq.h>
+-#include <asm/io.h>
+-#include <asm/watchdog.h>
+-#include <asm/pm.h>
+-
+-#define INTR_OFFSET	0x600
+-
+-#define STBCR		0xffffff82
+-#define STBCR2		0xffffff88
+-
+-#define STBCR_STBY	0x80
+-#define STBCR_MSTP2	0x04
+-
+-#define MCR		0xffffff68
+-#define RTCNT		0xffffff70
+-
+-#define MCR_RMODE	2
+-#define MCR_RFSH	4
+-
+-void pm_enter(void)
+-{
+-	u8 stbcr, csr;
+-	u16 frqcr, mcr;
+-	u32 vbr_new, vbr_old;
+-
+-	set_bl_bit();
+-
+-	/* set wdt */
+-	csr = sh_wdt_read_csr();
+-	csr &= ~WTCSR_TME;
+-	csr |= WTCSR_CKS_4096;
+-	sh_wdt_write_csr(csr);
+-	csr = sh_wdt_read_csr();
+-	sh_wdt_write_cnt(0);
+-
+-	/* disable PLL1 */
+-	frqcr = ctrl_inw(FRQCR);
+-	frqcr &= ~(FRQCR_PLLEN | FRQCR_PSTBY);
+-	ctrl_outw(frqcr, FRQCR);
+-
+-	/* enable standby */
+-	stbcr = ctrl_inb(STBCR);
+-	ctrl_outb(stbcr | STBCR_STBY | STBCR_MSTP2, STBCR);
+-
+-	/* set self-refresh */
+-	mcr = ctrl_inw(MCR);
+-	ctrl_outw(mcr & ~MCR_RFSH, MCR);
+-
+-	/* set interrupt handler */
+-	asm volatile("stc vbr, %0" : "=r" (vbr_old));
+-	vbr_new = get_zeroed_page(GFP_ATOMIC);
+-	udelay(50);
+-	memcpy((void*)(vbr_new + INTR_OFFSET),
+-	       &wakeup_start, &wakeup_end - &wakeup_start);
+-	asm volatile("ldc %0, vbr" : : "r" (vbr_new));
+-
+-	ctrl_outw(0, RTCNT);
+-	ctrl_outw(mcr | MCR_RFSH | MCR_RMODE, MCR);
+-
+-	cpu_sleep();
+-
+-	asm volatile("ldc %0, vbr" : : "r" (vbr_old));
+-
+-	free_page(vbr_new);
+-
+-	/* enable PLL1 */
+-	frqcr = ctrl_inw(FRQCR);
+-	frqcr |= FRQCR_PSTBY;
+-	ctrl_outw(frqcr, FRQCR);
+-	udelay(50);
+-	frqcr |= FRQCR_PLLEN;
+-	ctrl_outw(frqcr, FRQCR);
+-
+-	ctrl_outb(stbcr, STBCR);
+-
+-	clear_bl_bit();
+-}
