@@ -1,94 +1,47 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Fri, 05 Dec 2008 01:56:41 +0000
-Subject: [PATCH] Add icb clk setting for SH7723 on sh_mobile_lcdcfb.c
-Message-Id: <uskp3tl9v.wl%morimoto.kuninori@renesas.com>
+From: "Magnus Damm" <magnus.damm@gmail.com>
+Date: Fri, 05 Dec 2008 02:47:15 +0000
+Subject: Re: [PATCH] Add icb clk setting for SH7723 on sh_mobile_lcdcfb.c
+Message-Id: <aec7e5c30812041847o36dbe8bdp8457ac70bb2ec3eb@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <uskp3tl9v.wl%morimoto.kuninori@renesas.com>
+In-Reply-To: <uskp3tl9v.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hi Morimoto-san,
 
-ICB clock is needed when you use LCDC on SH7723
-This patch add support it.
+Thanks for your patch.
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
----
- drivers/video/sh_mobile_lcdcfb.c |   22 +++++++++++++++++++++-
- 1 files changed, 21 insertions(+), 1 deletions(-)
+On Fri, Dec 5, 2008 at 10:56 AM, Kuninori Morimoto
+<morimoto.kuninori@renesas.com> wrote:
+> ICB clock is needed when you use LCDC on SH7723
+> This patch add support it.
+>
+> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index c81ee00..90ceef9 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -17,6 +17,7 @@
- #include <linux/platform_device.h>
- #include <linux/dma-mapping.h>
- #include <video/sh_mobile_lcdc.h>
-+#include <asm/processor.h>
- 
- #define PALETTE_NR 16
- 
-@@ -36,6 +37,7 @@ struct sh_mobile_lcdc_priv {
- 	void __iomem *base;
- #ifdef CONFIG_HAVE_CLK
- 	struct clk *dot_clk;
-+	struct clk *icb_clk;
- 	struct clk *clk;
- #endif
- 	unsigned long lddckr;
-@@ -210,6 +212,8 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 
- #ifdef CONFIG_HAVE_CLK
- 	clk_enable(priv->clk);
-+	if (priv->icb_clk)
-+		clk_enable(priv->icb_clk);
- 	if (priv->dot_clk)
- 		clk_enable(priv->dot_clk);
- #endif
-@@ -381,6 +385,8 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- #ifdef CONFIG_HAVE_CLK
- 	if (priv->dot_clk)
- 		clk_disable(priv->dot_clk);
-+	if (priv->icb_clk)
-+		clk_disable(priv->icb_clk);
- 	clk_disable(priv->clk);
- #endif
- }
-@@ -452,11 +458,23 @@ static int sh_mobile_lcdc_setup_clocks(struct platform_device *pdev,
- 		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
- 		return PTR_ERR(priv->clk);
- 	}
--	
-+
-+	if (CPU_SH7723 = current_cpu_data.type) {
-+		snprintf(clk_name, sizeof(clk_name), "icb%d", pdev->id);
-+		priv->icb_clk = clk_get(&pdev->dev, clk_name);
-+		if (IS_ERR(priv->icb_clk)) {
-+			dev_err(&pdev->dev,
-+				"cannot get clock \"%s\"\n", clk_name);
-+			return PTR_ERR(priv->icb_clk);
-+		}
-+	}
-+
- 	if (str) {
- 		priv->dot_clk = clk_get(&pdev->dev, str);
- 		if (IS_ERR(priv->dot_clk)) {
- 			dev_err(&pdev->dev, "cannot get dot clock %s\n", str);
-+			if (priv->icb_clk)
-+				clk_put(priv->icb_clk);
- 			clk_put(priv->clk);
- 			return PTR_ERR(priv->dot_clk);
- 		}
-@@ -720,6 +738,8 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- #ifdef CONFIG_HAVE_CLK
- 	if (priv->dot_clk)
- 		clk_put(priv->dot_clk);
-+	if (priv->icb_clk)
-+		clk_put(priv->icb_clk);
- 	clk_put(priv->clk);
- #endif
- 
--- 
-1.5.6.3
+The LCDC can be used with or without the ICB on sh7723. Right now
+we're using it perfectly fine without the ICB.
 
+What is your goal with using the ICB? I suspect it's to reduce bus
+load. Do you have any performance numbers?
+
+In general, improving the LCDC driver is a good idea. For instance I'd
+like to use deferred io together with one shot update mode for SYS
+panel configurations. I hope that will save quite a bit of power.
+
+I think adding ICB support is a good idea too, but your patch seems to
+treat the problem as sh7723-specific. It's really not, look at sh7366
+for instance. Also, you probably need more code than that to get the
+ICB working, right?
+
+Adding ICB support in general is a quite difficult task since there
+are many hardware blocks that are affected. And I really think we
+should benchmark these things to see that we implement them correctly.
+The problem is much bigger than just adding support for an extra clock
+in the LCDC, so let's discuss more how to support the ICB properly.
+
+Thanks,
+
+/ magnus
