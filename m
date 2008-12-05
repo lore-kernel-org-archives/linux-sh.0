@@ -1,176 +1,77 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Dec 2008 08:30:18 +0000
-Subject: [PATCH 04/05] video: deferred io sys helpers - metronome V2
-Message-Id: <20081224083018.1848.67243.sendpatchset@rx1.opensource.se>
+From: morimoto.kuninori@renesas.com
+Date: Fri, 05 Dec 2008 02:40:54 +0000
+Subject: Bug report about udivsi3-0s.S
+Message-Id: <ur64ntkcp.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev-devel@lists.sourceforge.net
-Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
 
-Change the metronome driver to use the new shared sys helpers. This
-allows us to remove some duplicated code. The use of the new shared
-sys helpers will change the behavior of this driver from syncing all
-fillrect/copyarea/imageblit/write operations directly to using the
-deferred io delay.
+Dear Paul
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+I notice bug of ${LINUX}/arch/sh/lib/udivsi3-0s.
 
- Changes since V1:
- - added dirty area update comment
+My environment is
 
- drivers/video/Kconfig       |    4 -
- drivers/video/metronomefb.c |  109 +++++++++----------------------------------
- 2 files changed, 24 insertions(+), 89 deletions(-)
+gcc : sh4-unknown-linug-gnu-gcc
+OS  : Linux 2.6.28-rc6 (from latest git)
+CPU : SH7723
 
---- 0004/drivers/video/Kconfig
-+++ work/drivers/video/Kconfig	2008-12-24 16:33:39.000000000 +0900
-@@ -2071,10 +2071,6 @@ config XEN_FBDEV_FRONTEND
- config FB_METRONOME
- 	tristate "E-Ink Metronome/8track controller support"
- 	depends on FB
--	select FB_SYS_FILLRECT
--	select FB_SYS_COPYAREA
--	select FB_SYS_IMAGEBLIT
--	select FB_SYS_FOPS
- 	select FB_DEFERRED_IO
- 	help
- 	  This driver implements support for the E-Ink Metronome
---- 0001/drivers/video/metronomefb.c
-+++ work/drivers/video/metronomefb.c	2008-12-24 16:41:55.000000000 +0900
-@@ -445,7 +445,6 @@ static void metronomefb_dpy_update(struc
+When I use latest Linux 2.6.28-rc6 and sh4-unknown-linug-gnu-gcc,
+kernel starts an infinite loop on sh-sci.c :: sci_set_termios
+
+but it works well when I use sh4-linux-gcc
+
+And I found the reason.
+I think __udivsi3 should not break r1 register.
+
+following is my kernel.
+Kernel starts infinite loop on 88118408.
+
+sh-sci.c :: sci_set_termios
+--------------------
+(snip)
+881183f0:	91 52       	mov.l	@(4,r9),r2
+881183f2:	bc 64       	extu.b	r11,r4
+881183f4:	1c d0       	mov.l	88118468 <sci_set_termios+0x1a0>,r0	! 880eecb8 <__udivsi3>
+881183f6:	a3 65       	mov	r10,r5
+881183f8:	1c d1       	mov.l	8811846c <sci_set_termios+0x1a4>,r1	! f423f
+881183fa:	04 72       	add	#4,r2
+881183fc:	40 22       	mov.b	r4,@r2
+881183fe:	a3 64       	mov	r10,r4
+88118400:	1c 34       	add	r1,r4
+88118402:	1b d1       	mov.l	88118470 <sci_set_termios+0x1a8>,r1	! 880ee414 <__udelay>
+88118404:	0b 40       	jsr	@r0
+88118406:	09 00       	nop	
+88118408:	0b 41       	jsr	@r1
+8811840a:	03 64       	mov	r0,r4
+8811840c:	d3 61       	mov	r13,r1
+(snip)
+--------------------
+
+udivsi3-0s.
+------------------
+(snip)
+	.set	__udivsi3, __udivsi3_i4i
+	.type	__udivsi3_i4i, @function
+	.type	__sdivsi3_i4i, @function
+__udivsi3_i4i:
+	sts pr,r1               <== **** r1 is broken ****
+	mov.l r4,@-r15
+	extu.w r5,r0
+	cmp/eq r5,r0
+	swap.w r4,r0
+	shlr16 r4
+(snip)
+	mov.l @r15+,r4
+	jmp @r1                 <== **** return to 88118408 ****
+	rotcl r0
+(snip)
+------------------
+
+Best regards
+--
+Kuninori Morimoto
  
- 	cksum = calc_img_cksum((u16 *) par->metromem_img, fbsize/2);
- 	*((u16 *)(par->metromem_img) + fbsize/2) = cksum;
--	metronome_display_cmd(par);
- }
- 
- static u16 metronomefb_dpy_update_page(struct metronomefb_par *par, int index)
-@@ -472,97 +471,37 @@ static void metronomefb_dpy_deferred_io(
- 	struct fb_deferred_io *fbdefio = info->fbdefio;
- 	struct metronomefb_par *par = info->par;
- 
--	/* walk the written page list and swizzle the data */
--	list_for_each_entry(cur, &fbdefio->pagelist, lru) {
--		cksum = metronomefb_dpy_update_page(par,
--					(cur->index << PAGE_SHIFT));
--		par->metromem_img_csum -= par->csum_table[cur->index];
--		par->csum_table[cur->index] = cksum;
--		par->metromem_img_csum += cksum;
-+	/* force full screen update if dx is set or walk page list.
-+	 *
-+	 * normally, we need to update the dirty area pointed out by dx and
-+	 * plus all dirty pages. in this driver any dirty area pointed out
-+	 * by dx results in a full screen update. and since the entire screen
-+	 * is updated in that case we can skip walking the page list.
-+	 */
-+	if (fbdefio->dx != -1) {
-+		/* update the entire screen */
-+		metronomefb_dpy_update(par);
-+	} else {
-+		/* walk the written page list and swizzle the data */
-+		list_for_each_entry(cur, &fbdefio->pagelist, lru) {
-+			cksum = metronomefb_dpy_update_page(par,
-+						(cur->index << PAGE_SHIFT));
-+			par->metromem_img_csum -= par->csum_table[cur->index];
-+			par->csum_table[cur->index] = cksum;
-+			par->metromem_img_csum += cksum;
-+		}
- 	}
- 
- 	metronome_display_cmd(par);
- }
- 
--static void metronomefb_fillrect(struct fb_info *info,
--				   const struct fb_fillrect *rect)
--{
--	struct metronomefb_par *par = info->par;
--
--	sys_fillrect(info, rect);
--	metronomefb_dpy_update(par);
--}
--
--static void metronomefb_copyarea(struct fb_info *info,
--				   const struct fb_copyarea *area)
--{
--	struct metronomefb_par *par = info->par;
--
--	sys_copyarea(info, area);
--	metronomefb_dpy_update(par);
--}
--
--static void metronomefb_imageblit(struct fb_info *info,
--				const struct fb_image *image)
--{
--	struct metronomefb_par *par = info->par;
--
--	sys_imageblit(info, image);
--	metronomefb_dpy_update(par);
--}
--
--/*
-- * this is the slow path from userspace. they can seek and write to
-- * the fb. it is based on fb_sys_write
-- */
--static ssize_t metronomefb_write(struct fb_info *info, const char __user *buf,
--				size_t count, loff_t *ppos)
--{
--	struct metronomefb_par *par = info->par;
--	unsigned long p = *ppos;
--	void *dst;
--	int err = 0;
--	unsigned long total_size;
--
--	if (info->state != FBINFO_STATE_RUNNING)
--		return -EPERM;
--
--	total_size = info->fix.smem_len;
--
--	if (p > total_size)
--		return -EFBIG;
--
--	if (count > total_size) {
--		err = -EFBIG;
--		count = total_size;
--	}
--
--	if (count + p > total_size) {
--		if (!err)
--			err = -ENOSPC;
--
--		count = total_size - p;
--	}
--
--	dst = (void __force *)(info->screen_base + p);
--
--	if (copy_from_user(dst, buf, count))
--		err = -EFAULT;
--
--	if  (!err)
--		*ppos += count;
--
--	metronomefb_dpy_update(par);
--
--	return (err) ? err : count;
--}
--
- static struct fb_ops metronomefb_ops = {
- 	.owner		= THIS_MODULE,
--	.fb_write	= metronomefb_write,
--	.fb_fillrect	= metronomefb_fillrect,
--	.fb_copyarea	= metronomefb_copyarea,
--	.fb_imageblit	= metronomefb_imageblit,
-+	.fb_read        = fb_deferred_io_read,
-+	.fb_write	= fb_deferred_io_write,
-+	.fb_fillrect	= fb_deferred_io_fillrect,
-+	.fb_copyarea	= fb_deferred_io_copyarea,
-+	.fb_imageblit	= fb_deferred_io_imageblit,
- };
- 
- static struct fb_deferred_io metronomefb_defio = {
