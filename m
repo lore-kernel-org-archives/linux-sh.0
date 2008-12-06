@@ -1,7 +1,7 @@
 From: Michael Trimarchi <trimarchimichael@yahoo.it>
-Date: Sat, 06 Dec 2008 14:17:19 +0000
+Date: Sat, 06 Dec 2008 14:17:34 +0000
 Subject: Re: [RFC PATCH V2 FIX] Fix deadlock during find
-Message-Id: <676791.67939.qm@web23501.mail.ird.yahoo.com>
+Message-Id: <491708.10759.qm@web23502.mail.ird.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20081120134502.GA27286@gandalf.sssup.it>
 In-Reply-To: <20081120134502.GA27286@gandalf.sssup.it>
@@ -10,7 +10,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+
+
 
 --- Sab 6/12/08, Paul Mundt <lethal@linux-sh.org> ha scritto:
 
@@ -94,11 +95,6 @@ Hi,
 > in line with what the fast-path semantics are supposed to
 > be. So far I
 > haven't had any issues with the refactored fast-path.
-
-I'm agree with you.
-
-Regards Michael
-
 
 
       
