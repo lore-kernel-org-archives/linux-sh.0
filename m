@@ -1,187 +1,156 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 11 Dec 2008 12:52:49 +0000
-Subject: [PATCH 01/03] sh: CONFIG_SH_TIMER support
-Message-Id: <20081211125249.19369.59783.sendpatchset@rx1.opensource.se>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 07 Dec 2008 21:30:11 +0000
+Subject: Dreamcast update
+Message-Id: <1228685411.10445.7.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
-
-SuperH timer V5 base code supporting:
-- early platform drivers
-- hardware configuration kept as platform data
-- compile time CONFIG_SH_TIMER switch
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
-
- arch/sh/Kconfig             |   13 +++++++++----
- arch/sh/include/asm/timer.h |    4 ++++
- arch/sh/kernel/time_32.c    |   41 +++++++++++++++++++++++++++++++----------
- 3 files changed, 44 insertions(+), 14 deletions(-)
-
---- 0004/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-12-11 19:54:15.000000000 +0900
-@@ -395,33 +395,38 @@ source "arch/sh/boards/Kconfig"
- 
- menu "Timer and clock configuration"
- 
-+config SH_TIMER
-+	def_bool n
-+	select GENERIC_CLOCKEVENTS
-+
- config SH_TMU
- 	def_bool y
- 	prompt "TMU timer support"
--	depends on CPU_SH3 || CPU_SH4
-+	depends on !SH_TIMER && (CPU_SH3 || CPU_SH4)
- 	select GENERIC_CLOCKEVENTS
- 	help
- 	  This enables the use of the TMU as the system timer.
- 
- config ARCH_USES_GETTIMEOFFSET
- 	def_bool y
--	depends on !SH_TMU
-+	depends on !SH_TMU && !SH_TIMER
- 
- config SH_CMT
- 	def_bool y
- 	prompt "CMT timer support"
--	depends on CPU_SH2 && !CPU_SUBTYPE_MXG
-+	depends on !SH_TIMER && CPU_SH2 && !CPU_SUBTYPE_MXG
- 	help
- 	  This enables the use of the CMT as the system timer.
- 
- config SH_MTU2
- 	def_bool n
- 	prompt "MTU2 timer support"
--	depends on CPU_SH2A
-+	depends on !SH_TIMER && CPU_SH2A
- 	help
- 	  This enables the use of the MTU2 as the system timer.
- 
- config SH_TIMER_IRQ
-+	depends on !SH_TIMER
- 	int
- 	default "28" if CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785 || \
- 			CPU_SUBTYPE_SH7763
---- 0005/arch/sh/include/asm/timer.h
-+++ work/arch/sh/include/asm/timer.h	2008-12-11 19:54:15.000000000 +0900
-@@ -3,6 +3,7 @@
- 
- #include <linux/sysdev.h>
- #include <linux/clocksource.h>
-+#include <linux/platform_device.h>
- #include <cpu/timer.h>
- 
- struct sys_timer_ops {
-@@ -41,4 +42,7 @@ struct sys_timer *get_sys_timer(void);
- void handle_timer_tick(void);
- extern unsigned long sh_hpt_frequency;
- 
-+void sh_timer_register(struct platform_device **pdevs, int nr_pdevs);
-+void plat_timer_setup(void);
-+
- #endif /* __ASM_SH_TIMER_H */
---- 0005/arch/sh/kernel/time_32.c
-+++ work/arch/sh/kernel/time_32.c	2008-12-11 19:55:21.000000000 +0900
-@@ -12,6 +12,7 @@
- #include <linux/kernel.h>
- #include <linux/module.h>
- #include <linux/init.h>
-+#include <linux/platform_device.h>
- #include <linux/profile.h>
- #include <linux/timex.h>
- #include <linux/sched.h>
-@@ -41,14 +42,6 @@ static int null_rtc_set_time(const time_
- 	return 0;
- }
- 
--/*
-- * Null high precision timer functions for systems lacking one.
-- */
--static cycle_t null_hpt_read(struct clocksource *cs)
--{
--	return 0;
--}
--
- void (*rtc_sh_get_time)(struct timespec *) = null_rtc_get_time;
- int (*rtc_sh_set_time)(const time_t) = null_rtc_set_time;
- 
-@@ -133,6 +126,21 @@ int timer_resume(struct sys_device *dev)
- #define timer_resume NULL
- #endif
- 
-+void (*board_time_init)(void);
-+
-+#ifdef CONFIG_SH_TIMER
-+
-+static struct platform_device **sh_timer_pdevs;
-+static int sh_timer_nr_pdevs;
-+
-+void sh_timer_register(struct platform_device **pdevs, int nr_pdevs)
-+{
-+	sh_timer_pdevs = pdevs;
-+	sh_timer_nr_pdevs = nr_pdevs;
-+}
-+
-+#else
-+
- static struct sysdev_class timer_sysclass = {
- 	.name	 = "timer",
- 	.suspend = timer_suspend,
-@@ -150,8 +158,6 @@ static int __init timer_init_sysfs(void)
- }
- device_initcall(timer_init_sysfs);
- 
--void (*board_time_init)(void);
--
- /*
-  * Shamelessly based on the MIPS and Sparc64 work.
-  */
-@@ -160,6 +166,14 @@ unsigned long sh_hpt_frequency = 0;
- 
- #define NSEC_PER_CYC_SHIFT	10
- 
-+/*
-+ * Null high precision timer functions for systems lacking one.
-+ */
-+static cycle_t null_hpt_read(struct clocksource *cs)
-+{
-+	return 0;
-+}
-+
- static struct clocksource clocksource_sh = {
- 	.name		= "SuperH",
- 	.rating		= 200,
-@@ -190,6 +204,7 @@ unsigned long long sched_clock(void)
- 	return (ticks * timer_ticks_per_nsec_quotient) >> NSEC_PER_CYC_SHIFT;
- }
- #endif
-+#endif
- 
- void __init time_init(void)
- {
-@@ -206,6 +221,11 @@ void __init time_init(void)
- 	local_timer_setup(smp_processor_id());
- #endif
- 
-+#ifdef CONFIG_SH_TIMER
-+	plat_timer_setup();
-+	platform_device_setup_early("earlytimer",
-+				    sh_timer_pdevs, sh_timer_nr_pdevs);
-+#else
- 	/*
- 	 * Find the timer to use as the system timer, it will be
- 	 * initialized for us.
-@@ -224,6 +244,7 @@ void __init time_init(void)
- 		       ((sh_hpt_frequency + 500) / 1000) / 1000,
- 		       ((sh_hpt_frequency + 500) / 1000) % 1000);
- 
-+#endif
- #if defined(CONFIG_SH_KGDB)
- 	/*
- 	 * Set up kgdb as requested. We do it here because the serial
+V29ya2luZyB3aXRoIE1hdHQsIGNhbiBub3cgYm9vdCB0aGUgRHJlYW1jYXN0IGFuZCB0aGUgUFZS
+MiBhbmQgR0RSb20gYXBwZWFyIHRvIHdvcmsgKGNlcnRhaW5seSBnZXQgdmlkZW8gb3V0cHV0IGZy
+b20KdGhlIFBWUjIpLiBCdXQgY2Fubm90IGdldCB0aGUgbmV0d29yayB0byBjb21lIHVwLgoKTWF0
+dCB0aGlua3MgdGhpcyBpc3N1ZSBtaWdodCBoYXZlIGJlZW4gc2VlbiBlbHNld2hlcmUgdG9vIC0g
+YW55Ym9keSBnb3QKYW55IGlkZWFzIGFib3V0IGZpeGluZyBpdD8KCkFkcmlhbgoKCgpbICAgIDAu
+MDAwMDAwXSBMaW51eCB2ZXJzaW9uIDIuNi4yOC1yYzctMTM4MzEtZ2FjZmJiZGQtZGlydHkgKGFk
+cmlhbkBib3NzY2xhc3MpIChnY2MgdmVyc2lvbiAzLjQuNikgIzk2NyBQUkVFTVBUIFN1biBEZWMg
+NyAyMToyMToyNiBHTVQgMjAwOApbICAgIDAuMDAwMDAwXSBCb290IHBhcmFtczoKWyAgICAwLjAw
+MDAwMF0gLi4uIE1PVU5UX1JPT1RfUkRPTkxZIC0gOTFmMGM3NWYKWyAgICAwLjAwMDAwMF0gLi4u
+IFJBTURJU0tfRkxBR1MgICAgIC0gZTFmZjMwMTgKWyAgICAwLjAwMDAwMF0gLi4uIE9SSUdfUk9P
+VF9ERVYgICAgIC0gODkwOTM2MTAKWyAgICAwLjAwMDAwMF0gLi4uIExPQURFUl9UWVBFICAgICAg
+IC0gMzYxMmUxMDgKWyAgICAwLjAwMDAwMF0gLi4uIElOSVRSRF9TVEFSVCAgICAgIC0gNDYwODg5
+MDQKWyAgICAwLjAwMDAwMF0gLi4uIElOSVRSRF9TSVpFICAgICAgIC0gNjAwMjMwNmMKWyAgICAw
+LjAwMDAwMF0gY29uc29sZSBbc2VyY29uMF0gZW5hYmxlZApbICAgIDAuMDAwMDAwXSBCb290aW5n
+IG1hY2h2ZWM6IFNlZ2EgRHJlYW1jYXN0ClsgICAgMC4wMDAwMDBdIE5vZGUgMDogc3RhcnRfcGZu
+ID0gMHhjMDAwLCBsb3cgPSAweGQwMDAKWyAgICAwLjAwMDAwMF0gWm9uZSBQRk4gcmFuZ2VzOgpb
+ICAgIDAuMDAwMDAwXSAgIE5vcm1hbCAgIDB4MDAwMGMwMDAgLT4gMHgwMDAwZDAwMApbICAgIDAu
+MDAwMDAwXSBNb3ZhYmxlIHpvbmUgc3RhcnQgUEZOIGZvciBlYWNoIG5vZGUKWyAgICAwLjAwMDAw
+MF0gZWFybHlfbm9kZV9tYXBbMV0gYWN0aXZlIFBGTiByYW5nZXMKWyAgICAwLjAwMDAwMF0gICAg
+IDA6IDB4MDAwMGMwMDAgLT4gMHgwMDAwZDAwMApbICAgIDAuMDAwMDAwXSBCdWlsdCAxIHpvbmVs
+aXN0cyBpbiBab25lIG9yZGVyLCBtb2JpbGl0eSBncm91cGluZyBvbi4gIFRvdGFsIHBhZ2VzOiA0
+MDY0ClsgICAgMC4wMDAwMDBdIEtlcm5lbCBjb21tYW5kIGxpbmU6IHJvb3Q9L2Rldi9uZnMgcncg
+bmZzcm9vdBkyLjE2OC42MS41MDovaG9tZS9hZHJpYW4vZGViZGlzdCBpcD1kaGNwIGVhcmx5cHJp
+bnRrPXNlcmlhbCB2aWRlbz1wdnIyZmI6NjQweDQ4MC0zMkA2MCBjb25zb2w3ClsgICAgMC4wMDAw
+MDBdIFBJRCBoYXNoIHRhYmxlIGVudHJpZXM6IDY0IChvcmRlcjogNiwgMjU2IGJ5dGVzKQpbICAg
+IDAuMDAwMDAwXSBVc2luZyB0bXUgZm9yIHN5c3RlbSB0aW1lcgpbICAgIDAuMDAwMDAwXSBVc2lu
+ZyAxMi40NjkgTUh6IGhpZ2ggcHJlY2lzaW9uIHRpbWVyLgpbICAgIDAuMDA5NjUyXSBDb25zb2xl
+OiBjb2xvdXIgZHVtbXkgZGV2aWNlIDgweDI1ClsgICAgMC4wMTQ2ODhdIERlbnRyeSBjYWNoZSBo
+YXNoIHRhYmxlIGVudHJpZXM6IDIwNDggKG9yZGVyOiAxLCA4MTkyIGJ5dGVzKQpbICAgIDAuMDIy
+MjU0XSBJbm9kZS1jYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6IDEwMjQgKG9yZGVyOiAwLCA0MDk2
+IGJ5dGVzKQpbICAgIDAuMDMyNTkwXSBNZW1vcnk6IDEyNjYway8xNjM4NGsgYXZhaWxhYmxlICgy
+MDk3ayBrZXJuZWwgY29kZSwgNzQ1ayBkYXRhLCAxMTJrIGluaXQpClsgICAgMC4wNDExNDBdIFBW
+UgQwMjA1YzEgQ1ZSADAwMDAwMCBQUlIAMDAwMDAwClsgICAgMC4wNDYzMDVdIEktY2FjaGUgOiBu
+X3dheXM9MSBuX3NldHMlNiB3YXlfaW5jcoE5MgpbICAgIDAuMDUyMDkxXSBJLWNhY2hlIDogZW50
+cnlfbWFzaz0weDAwMDAxZmUwIGFsaWFzX21hc2s9MHgwMDAwMTAwMCBuX2FsaWFzZXM9MgpbICAg
+IDAuMDU5ODg0XSBELWNhY2hlIDogbl93YXlzPTEgbl9zZXRzUTIgd2F5X2luY3IWMzg0ClsgICAg
+MC4wNjU3NDVdIEQtY2FjaGUgOiBlbnRyeV9tYXNrPTB4MDAwMDNmZTAgYWxpYXNfbWFzaz0weDAw
+MDAzMDAwIG5fYWxpYXNlcz00ClsgICAgMC4wNzQwODldIFNMVUI6IEdlbnNsYWJzECwgSFdhbGln
+bjIsIE9yZGVyPTAtMywgTWluT2JqZWN0cz0wLCBDUFVzPTEsIE5vZGVzPTEKWyAgICAwLjA4MjY0
+NF0gQ2FsaWJyYXRpbmcgZGVsYXkgbG9vcCAoc2tpcHBlZCkuLi4gMTk5LjUwIEJvZ29NSVBTIFBS
+RVNFVCAobHBqOTkwMTIpClsgICAgMC4wOTI0NjVdIE1vdW50LWNhY2hlIGhhc2ggdGFibGUgZW50
+cmllczogNTEyClsgICAgMC4xMDIxOTldIENQVTogU0g3NzUwClsgICAgMC4xMzM5NTJdIG5ldF9u
+YW1lc3BhY2U6IDI4OCBieXRlcwpbICAgIDAuMTM5NTY5XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9j
+b2wgZmFtaWx5IDE2ClsgICAgMC4yNjgzODhdIERNQTogUmVnaXN0ZXJpbmcgRE1BIEFQSS4KWyAg
+ICAwLjI3MzEzNl0gRE1BOiBSZWdpc3RlcmluZyBzaF9kbWFjIGhhbmRsZXIgKDQgY2hhbm5lbHMp
+LgpbICAgIDAuMjkxOTE5XSBETUE6IFJlZ2lzdGVyaW5nIHB2cjJfZG1hYyBoYW5kbGVyICgxIGNo
+YW5uZWwpLgpbICAgIDAuMzAzMjkwXSBETUE6IFJlZ2lzdGVyaW5nIGcyX2RtYWMgaGFuZGxlciAo
+NCBjaGFubmVscykuClsgICAgMC4zMjI0NTZdIEF1dG9jb25maWcgUENJIGNoYW5uZWwgMHg4YzJj
+MzgwNApbICAgIDAuMzI3MzIwXSBTY2FubmluZyBidXMgMDAsIEkvTyAweDAxMDAxNjAwOjB4MDEw
+MDM2MDAsIE1lbSAweDAxODQwMDAwOjB4MDE4NDgwMDAKWyAgICAwLjMzNTkyMF0gMDA6MDAuMCBD
+bGFzcyAwMjAwOiAxMWRiOjEyMzQgKHJldiAxMCkKWyAgICAwLjM0MTI2Ml0gICAgICAgICBJL08g
+YXQgMHgwMTAwMTYwMCBbc2l6ZT0weDEwMF0KWyAgICAwLjM0NjU4N10gICAgICAgICBNZW0gYXQg
+MHgwMTg0MDAwMCBbc2l6ZT0weDEwMF0KWyAgICAwLjM1NTA0NV0gUENJOiBGaXhpbmcgdXAgZGV2
+aWNlIDAwMDA6MDA6MDAuMApbICAgIDAuNDE4NDc3XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wg
+ZmFtaWx5IDIKWyAgICAwLjQ2MDY4Ml0gSVAgcm91dGUgY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVz
+OiAxMDI0IChvcmRlcjogMCwgNDA5NiBieXRlcykKWyAgICAwLjQ2OTk1OV0gVENQIGVzdGFibGlz
+aGVkIGhhc2ggdGFibGUgZW50cmllczogNTEyIChvcmRlcjogMCwgNDA5NiBieXRlcykKWyAgICAw
+LjQ3NzYzM10gVENQIGJpbmQgaGFzaCB0YWJsZSBlbnRyaWVzOiA1MTIgKG9yZGVyOiAtMSwgMjA0
+OCBieXRlcykKWyAgICAwLjQ4NDY4NF0gVENQOiBIYXNoIHRhYmxlcyBjb25maWd1cmVkIChlc3Rh
+Ymxpc2hlZCA1MTIgYmluZCA1MTIpClsgICAgMC40OTE0OTFdIFRDUCByZW5vIHJlZ2lzdGVyZWQK
+WyAgICAwLjUwNTUxOV0gTkVUOiBSZWdpc3RlcmVkIHByb3RvY29sIGZhbWlseSAxClsgICAgMC41
+MTY1NzddIHNxOiBSZWdpc3RlcmluZyBzdG9yZSBxdWV1ZSBBUEkuClsgICAgMC41MjgzOTRdIGNw
+dWZyZXE6IFN1cGVySCBDUFUgZnJlcXVlbmN5IGRyaXZlci4KWyAgICAwLjUzMzgwN10gY3B1ZnJl
+cTogY2xvY2sgZnJhbWV3b3JrIHJhdGUgcm91bmRpbmcgbm90IHN1cHBvcnRlZCBvbiB0aGlzIENQ
+VS4KWyAgICAwLjU1MzU5NF0gSHVnZVRMQiByZWdpc3RlcmVkIDY0IEtCIHBhZ2Ugc2l6ZSwgcHJl
+LWFsbG9jYXRlZCAwIHBhZ2VzClsgICAgMC44MTUwNjFdIG1zZ21uaSBoYXMgYmVlbiBzZXQgdG8g
+MjQKWyAgICAwLjgyNzk1Nl0gYWxnOiBObyB0ZXN0IGZvciBzdGRybmcgKGtybmcpClsgICAgMC44
+MzMyMTRdIGlvIHNjaGVkdWxlciBub29wIHJlZ2lzdGVyZWQKWyAgICAwLjgzNzU5OV0gaW8gc2No
+ZWR1bGVyIGFudGljaXBhdG9yeSByZWdpc3RlcmVkIChkZWZhdWx0KQpbICAgIDEuOTY0NTM1XSBD
+b25zb2xlOiBzd2l0Y2hpbmcgdG8gY29sb3VyIGZyYW1lIGJ1ZmZlciBkZXZpY2UgODB4MzAKWyAg
+ICAyLjAwOTg0Nl0gZmIwOiBORUMgUG93ZXJWUjIgKHJldiAxLjEpIGZyYW1lIGJ1ZmZlciBkZXZp
+Y2UsIHVzaW5nIDEyMDBrLzgxOTJrIG9mIHZpZGVvIG1lbW9yeQpbICAgIDIuMDE5MzIxXSBmYjA6
+IE1vZGUgNjQweDQ4MC0zMiBwaXRjaCA9IDI1NjAgY2FibGU6IFZHQSB2aWRlbyBvdXRwdXQ6IFZH
+QQpbICAgIDIuMDI2ODg5XSBmYjA6IHJlZ2lzdGVyaW5nIHdpdGggU1EgQVBJClsgICAgMi4wMzE2
+NjFdIHNxcmVtYXA6ICAgIE5FQyBQb3dlclZSMiAgWzIwNDggcGFnZXNdICB2YSAweGUwMDAwMDAw
+ICAgcGEgMHhhNTAwMDAwMApbICAgIDIuMDM5ODIwXSBmYjA6IE1hcHBlZCB2aWRlbyBtZW1vcnkg
+dG8gU1EgYWRkciAweGUwMDAwMDAwClsgICAgMy45MDEwMjBdIFN1cGVySCBTQ0koRikgZHJpdmVy
+IGluaXRpYWxpemVkClsgICAgMy45MDYyMTddIHNoLXNjaTogdHR5U0MwIGF0IE1NSU8gMHhmZmUw
+MDAwMCAoaXJxID0gMjUpIGlzIGEgc2NpClsgICAgMy45MTY1ODldIHNoLXNjaTogdHR5U0MxIGF0
+IE1NSU8gMHhmZmU4MDAwMCAoaXJxID0gNDMpIGlzIGEgc2NpZgrvv71bICAgIDMuOTIzNzkxXSBj
+b25zb2xlIGhhbmRvdmVyOiBib290IFtzZXJjb24wXSAtPiByZWFsIFt0dHlTQzFdClsgICAgMy45
+MzMzNTVdIHNoLXNjaSBzaC1zY2k6IENQVSBmcmVxdWVuY3kgbm90aWZpZXIgcmVnaXN0ZXJlZApb
+ICAgIDMuOTgyNjk4XSBuYmQ6IHJlZ2lzdGVyZWQgZGV2aWNlIGF0IG1ham9yIDQzClsgICAgNC4w
+ODg5MDBdIDgxMzl0b28gRmFzdCBFdGhlcm5ldCBkcml2ZXIgMC45LjI4ClsgICAgNC4wOTg2MjFd
+IGV0aDA6IFJlYWxUZWsgUlRMODEzOSBhdCAweGExMDAxNzAwLCAwMDpkMDpmMTowMzoxMjpiOSwg
+SVJRIDgzClsgICAgNC42Njk5MzNdIEdEUk9NOiBDRC1ST00gRFJJVkUgICAgIGZyb20gU0UgICAg
+ICAgICAgICAgICB3aXRoIGZpcm13YXJlIDYuNDIgICAgICAgICAgICAKWyAgICA0LjY3NzczM10g
+R0RST006IFJlZ2lzdGVyZWQgd2l0aCBtYWpvciBudW1iZXIgMjU0ClsgICAgNC42ODI3NjRdIFVu
+aWZvcm0gQ0QtUk9NIGRyaXZlciBSZXZpc2lvbjogMy4yMApbICAgIDQuNjk0NTc1XSBUQ1AgY3Vi
+aWMgcmVnaXN0ZXJlZApbICAgIDQuNjk3NjIyXSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wgZmFt
+aWx5IDE3ClsgICAgNC43MTQzOTNdIFJQQzogUmVnaXN0ZXJlZCB1ZHAgdHJhbnNwb3J0IG1vZHVs
+ZS4KWyAgICA0LjcxODc1Nl0gUlBDOiBSZWdpc3RlcmVkIHRjcCB0cmFuc3BvcnQgbW9kdWxlLgpb
+ICAgIDUuMjQxMjI4XSBldGgwOiBsaW5rIHVwLCAxMDBNYnBzLCBmdWxsLWR1cGxleCwgbHBhIDB4
+NDVFMQpbICAgIDYuMjQ4Mjk1XSBTZW5kaW5nIERIQ1AgcmVxdWVzdHMgLi4uLi48Nj5ORVRERVYg
+V0FUQ0hET0c6IGV0aDAgKDgxMzl0b28pOiB0cmFuc21pdCB0aW1lZCBvdXQKWyAgIDQxLjkzMzgy
+NF0gLS0tLS0tLS0tLS0tWyBjdXQgaGVyZSBdLS0tLS0tLS0tLS0tClsgICA0MS45MzgzNjddIEJh
+ZG5lc3MgYXQgbmV0L3NjaGVkL3NjaF9nZW5lcmljLmM6MjI2ClsgICA0MS45NDMzODhdIApbICAg
+NDEuOTQ0ODMyXSBQaWQgOiAwLCBDb21tOiAgICAgICAgICAgICAgc3dhcHBlcgpbICAgNDEuOTQ5
+NTExXSBDUFUgOiAwICAgIE5vdCB0YWludGVkICAoMi42LjI4LXJjNy0xMzgzMS1nYWNmYmJkZC1k
+aXJ0eSAjOTY3KQpbICAgNDEuOTU2NzE0XSBQQyBpcyBhdCBkZXZfd2F0Y2hkb2crMHgxOTgvMHgz
+NDAKWyAgIDQxLjk2MTE5Nl0gUFIgaXMgYXQgZGV2X3dhdGNoZG9nKzB4MTk4LzB4MzQwClsgICA0
+MS45NjU2NzddIFBDICA6IDhjMTlmMzc4IFNQICA6IDhjMmE3ZTY0IFNSICA6IDQwMDA4MTAxIFRF
+QSA6IDAwMDAwMDAwClsgICA0MS45NzI1MDNdIFIwICA6IDAwMDAwMDM3IFIxICA6IDhjMmE2MDAw
+IFIyICA6IDhjMmE2MDAwIFIzICA6IDAwMDAwMGRmClsgICA0MS45NzkzMzBdIFI0ICA6IDAwMDAw
+MDAxIFI1ICA6IDAwMDAxNzU1IFI2ICA6IGZmZmZmZmZmIFI3ICA6IDAwMDAwMDM1ClsgICA0MS45
+ODYxNjBdIFI4ICA6IDAwMDAwMDAxIFI5ICA6IDhjMmFmNzk0IFIxMCA6IDAwMDAwMDAxIFIxMSA6
+IDhjMmY1Mjc4ClsgICA0MS45OTI5ODFdIFIxMiA6IDAwMDAwMDAxIFIxMyA6IDhjYzUzMmZjIFIx
+NCA6IDhjMmE3ZTY0ClsgICA0MS45OTgzNzVdIE1BQ0g6IDAwMDAyNzBjIE1BQ0w6IDAwMDAwM2Mw
+IEdCUiA6IDhjMDAwMDAwIFBSICA6IDhjMTlmMzc4ClsgICA0Mi4wMDUxODhdIApbICAgNDIuMDA1
+MjAyXSBDYWxsIHRyYWNlOiAKWyAgIDQyLjAwOTM1NV0gWzw4YzA0MDdjYT5dIGdldF90aW1lc3Rh
+bXArMHhhLzB4NDAKWyAgIDQyLjAxNDAyM10gWzw4YzAwZGIxNj5dIHRtdV90aW1lcl9yZWFkKzB4
+MTYvMHg0MApbICAgNDIuMDE4ODY2XSBbPDhjMDA2OTcwPl0gc2NoZWRfY2xvY2srMHgxMC8weDYw
+ClsgICA0Mi4wMjM1NDNdIFs8OGMwMzQzZjg+XSBzY2hlZF9jbG9ja19jcHUrMHgxOC8weDQwClsg
+ICA0Mi4wMjgzOTVdIFs8OGMwMjI0NGE+XSB1cGRhdGVfcHJvY2Vzc190aW1lcysweDRhLzB4ODAK
+WyAgIDQyLjAzMzc4OF0gWzw4YzAyMjMxYT5dIHJ1bl90aW1lcl9zb2Z0aXJxKzB4MTFhLzB4MWMw
+ClsgICA0Mi4wMzkxNzRdIFs8OGMwMThiZTA+XSBwcmludGsrMHgwLzB4NDAKWyAgIDQyLjA0MzEy
+Nl0gWzw4YzE5ZjFlMD5dIGRldl93YXRjaGRvZysweDAvMHgzNDAKWyAgIDQyLjA0Nzc5NF0gWzw4
+YzAxZDE3YT5dIF9fZG9fc29mdGlycSsweDVhLzB4MTIwClsgICA0Mi4wNTI2NDBdIFs8OGMxMmIw
+ZTA+XSBkZWJ1Z19zbXBfcHJvY2Vzc29yX2lkKzB4MC8weGMwClsgICA0Mi4wNTgwMzBdIFs8OGMw
+MWQyN2E+XSBkb19zb2Z0aXJxKzB4M2EvMHhhMApbICAgNDIuMDYyNTI5XSBbPDhjMjA4MWMwPl0g
+X19zY2hlZF90ZXh0X3N0YXJ0KzB4MC8weDQ2MApbICAgNDIuMDY3NzI4XSBbPDhjMDExZmEwPl0g
+YWRkX3ByZWVtcHRfY291bnQrMHgwLzB4ODAKWyAgIDQyLjA3Mjc2MF0gWzw4YzAxZDRkND5dIGly
+cV9leGl0KzB4MzQvMHg2MApbICAgNDIuMDc3MDcwXSBbPDhjMDExZjAwPl0gc3ViX3ByZWVtcHRf
+Y291bnQrMHgwLzB4YTAKWyAgIDQyLjA4MjA5NF0gWzw4YzAwMzc4OD5dIGRvX0lSUSsweDQ4LzB4
+ODAKWyAgIDQyLjA4NjIzNF0gWzw4YzAwODBlOD5dIHJldF9mcm9tX2lycSsweDAvMHgxMApbICAg
+NDIuMDkwOTA3XSBbPDhjMDczYTIwPl0gcXVpY2tsaXN0X3RyaW0rMHgwLzB4MTIwClsgICA0Mi4w
+OTU3NDVdIFs8OGMwMDM3NDA+XSBkb19JUlErMHgwLzB4ODAKWyAgIDQyLjA5OTcxN10gWzw4YzAw
+MzgyMD5dIGRlZmF1bHRfaWRsZSsweDAvMHgxMDAKWyAgIDQyLjEwNDM3OF0gWzw4YzA3M2EyMD5d
+IHF1aWNrbGlzdF90cmltKzB4MC8weDEyMApbICAgNDIuMTA5MjI1XSBbPDhjMDExZmEwPl0gYWRk
+X3ByZWVtcHRfY291bnQrMHgwLzB4ODAKWyAgIDQyLjExNDI2MF0gWzw4YzIwODFjMD5dIF9fc2No
+ZWRfdGV4dF9zdGFydCsweDAvMHg0NjAKWyAgIDQyLjExOTQ2OF0gWzw4YzAwMzg4Mj5dIGRlZmF1
+bHRfaWRsZSsweDYyLzB4MTAwClsgICA0Mi4xMjQzMDldIFs8OGMwMDM5ODQ+XSBjcHVfaWRsZSsw
+eDY0LzB4YzAKWyAgIDQyLjEyODYzM10gWzw4YzAwMzk4ND5dIGNwdV9pZGxlKzB4NjQvMHhjMApb
+ICAgNDIuMTMyOTM3XSBbPDhjMjAzOGQwPl0gcmVzdF9pbml0KzB4NTAvMHhhMApbICAgNDIuMTM3
+MjYwXSBbPDhjMmNkZTYwPl0gX19hbGxvY19ib290bWVtKzB4MC8weDIwClsgICA0Mi4xNDIxMDBd
+IFs8OGMwMDNiNjA+XSBrZXJuZWxfdGhyZWFkKzB4MC8weDgwClsgICA0Mi4xNDY3ODNdIFs8OGMy
+YzhhNzA+XSBzdGFydF9rZXJuZWwrMHg1NzAvMHg1YTAKWyAgIDQyLjE1MTYyMl0gWzw4YzAwMjAy
+ND5dIF9zdGV4dCsweDI0LzB4MzAKWyAgIDQyLjE1NTc0Ml0gClsgICA0NS4xNTc5MzRdIGV0aDA6
+IGxpbmsgdXAsIDEwME1icHMsIGZ1bGwtZHVwbGV4LCBscGEgMHg0NUUxClsgICA1OS40NDk5ODdd
+IC4KIENUUkwtQSBaIGZvciBoZWxwIHwxMTUyMDAgOE4xIHwgTk9SIHwgTWluaWNvbSAyLjMgICAg
+fCBWVDEwMiB8ICAgICAgT2ZmbGluZSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCgoKCi0tClRvIHVu
+c3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51
+eC1zaCIgaW4KdGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5v
+cmcKTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRv
+bW8taW5mby5odG1s
