@@ -1,15 +1,15 @@
 From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Fri, 05 Dec 2008 18:42:14 +0000
+Date: Mon, 08 Dec 2008 16:39:51 +0000
 Subject: Re: [PATCH 01/03] sh: move the hp6xx pm code
-Message-Id: <20081205204326.aa7b62f0.kristoffer.ericson@gmail.com>
+Message-Id: <20081208184107.d3689bb9.kristoffer.ericson@gmail.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Signature=_Fri__5_Dec_2008_20_43_26_+0100_/p9wves25kLJJjN_"
+Content-Type: multipart/mixed; boundary="Signature=_Mon__8_Dec_2008_18_41_07_+0100_//lpj/3qoJ8njxo5"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20081204134503.21168.21185.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20081204134503.21168.21185.sendpatchset@rx1.opensource.se>
 To: linux-sh@vger.kernel.org
 
---Signature=_Fri__5_Dec_2008_20_43_26_+0100_/p9wves25kLJJjN_
+--Signature=_Mon__8_Dec_2008_18_41_07_+0100_//lpj/3qoJ8njxo5
 Content-Type: text/plain; charset=US-ASCII
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
@@ -23,15 +23,23 @@ Magnus Damm <magnus.damm@gmail.com> wrote:
 > platform directory together with the rest of the hp6xx pm code.
 >=20
 > This is done to let non-hp6xx platforms enable CONFIG_PM.
-
-Will test it fully tommorow, but the idea seems
-sane to me. Been wondering about it before since
-the hp6xx pm and the so called generic one is almost
-identical (which obviously shouldn't be the case).
-
 >=20
 > Signed-off-by: Magnus Damm <damm@igel.co.jp>
 > ---
+
+The suspend has been broken on HP Jornada 600
+since 2.6.17, so I can only ack on the=20
+idea behind the patch to remove the so called
+generic pm.c. I plan on getting round
+to it in time.
+
+Also, since they are almost identical
+it's unlikely that your patch will break anything.
+It essentially just removes an extra copy.
+
+So feel free to add an ack.
+
+
 >=20
 >  arch/sh/boards/mach-hp6xx/pm.c |   78 +++++++++++++++++++++++++++++++++++
 >  arch/sh/include/asm/pm.h       |   17 -------
@@ -274,15 +282,15 @@ ublic
 --=20
 Kristoffer Ericson <kristoffer.ericson@gmail.com>
 
---Signature=_Fri__5_Dec_2008_20_43_26_+0100_/p9wves25kLJJjN_
+--Signature=_Mon__8_Dec_2008_18_41_07_+0100_//lpj/3qoJ8njxo5
 Content-Type: application/pgp-signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (GNU/Linux)
 
-iEYEARECAAYFAkk5hF4ACgkQPQls10ERAGe54gCgg2VDTWQ8Zv1SzeOWDjkjfN6V
-GE0An1npzmqnMMtMZbFJlVNpzsJ46Rer
-=Z+Qn
+iEYEARECAAYFAkk9XDMACgkQPQls10ERAGcXAACgiAmafpJXT5S3oj2bcstQpKG4
+2iUAnjfcjuIGJFUW2AkjhXq7vh8KB5nb
+=OMxv
 -----END PGP SIGNATURE-----
 
---Signature=_Fri__5_Dec_2008_20_43_26_+0100_/p9wves25kLJJjN_--
+--Signature=_Mon__8_Dec_2008_18_41_07_+0100_//lpj/3qoJ8njxo5--
