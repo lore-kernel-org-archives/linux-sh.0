@@ -1,312 +1,773 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 24 Dec 2008 01:47:17 +0000
-Subject: Re: [PATCH] input: gpio_keys: Polling mode support.
-Message-Id: <20081224014717.GA28258@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 10 Dec 2008 15:13:07 +0000
+Subject: [PATCH 04/05] sh: CMT platform driver using early timer
+Message-Id: <20081210151307.32515.19409.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081021083816.GA29345@linux-sh.org> <20081028101857.GA25523@linux-sh.org> <20081029035123.GB27906@anvil.corenet.prv> <20081125204358.GA31335@linux-sh.org> <20081208033222.GA11996@linux-sh.org>
-In-Reply-To: <20081208033222.GA11996@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-input@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Re-ping.
+From: Magnus Damm <damm@igel.co.jp>
 
-On Mon, Dec 08, 2008 at 12:32:22PM +0900, Paul Mundt wrote:
-> Ping.
-> 
-> On Wed, Nov 26, 2008 at 05:43:58AM +0900, Paul Mundt wrote:
-> > On Tue, Oct 28, 2008 at 11:51:23PM -0400, Dmitry Torokhov wrote:
-> > > On Tue, Oct 28, 2008 at 07:18:57PM +0900, Paul Mundt wrote:
-> > > > On Tue, Oct 21, 2008 at 05:38:16PM +0900, Paul Mundt wrote:
-> > > > > This implements an optional polling mode for the gpio_keys driver,
-> > > > > necessary for GPIOs that are not able to generate IRQs.
-> > > > > 
-> > > > > Polling mode is done device granular, and can not be toggled for
-> > > > > individual GPIOs in order to maintain simplicity. Platforms with both
-> > > > > IRQ capable and incapable GPIOs are required to register multiple
-> > > > > times, once for each case.
-> > > > > 
-> > > > >  
-> > > > > -	input_unregister_device(input);
-> > > > > +	if (pdata->polling)
-> > > > > +		input_unregister_polled_device(poll_dev);
-> > > 
-> > > You also need to do input_free_polled_device (but not input_free_device
-> > >  - yeah, I know, its confusing... The reason is that input_dev is
-> > >    refcounted while input_polled_dev is not).
-> > 
-> > Thanks, fixed.
-> > 
-> > > > > +	else
-> > > > > +		input_unregister_device(poll_dev->input);
-> > > > >  
-> > > 
-> > > I also concerned with unconditionally polling INPUT_POLLDEV for all
-> > > users of gpio-keys. Maybe we could make polling support optional?
-> > > 
-> > I thought that was what my patch was doing? I couldn't think of a clean
-> > way to do it on a per-gpio basis, so the cleanest way seemed to be to
-> > regster in polled and non-polled blocks. ie, polled devices will set
-> > pdata->polling and register those for gpio_keys to set up a polled dev.
-> > Devices that do not set pdata->polling will remain unaffected.
-> > 
-> > If you have some suggestions on how to toggle this on a per-gpio basis,
-> > I am quite happy to change the code. If your concern is the select of
-> > INPUT_POLLDEV, I can just select it from my platform code if you prefer.
-> > This does mean that we would need nopped definitions in
-> > linux/input-polldev.h though, or litter gpio_keys with ifdefs, which is
-> > what I was trying to avoid in the first place. Let me know what you
-> > prefer here, and I'll update accordingly.
-> > 
-> > For now, here is an updated version..
-> > 
-> > Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-> > 
-> > ---
-> > 
-> >  drivers/input/keyboard/Kconfig     |    1 
-> >  drivers/input/keyboard/gpio_keys.c |   92 ++++++++++++++++++++++++++++---------
-> >  include/linux/gpio_keys.h          |    1 
-> >  3 files changed, 73 insertions(+), 21 deletions(-)
-> > 
-> > diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-> > index efd70a9..a8cefe9 100644
-> > --- a/drivers/input/keyboard/Kconfig
-> > +++ b/drivers/input/keyboard/Kconfig
-> > @@ -283,6 +283,7 @@ config KEYBOARD_AAED2000
-> >  config KEYBOARD_GPIO
-> >  	tristate "GPIO Buttons"
-> >  	depends on GENERIC_GPIO
-> > +	select INPUT_POLLDEV
-> >  	help
-> >  	  This driver implements support for buttons connected
-> >  	  to GPIO pins of various CPUs (and some other chips).
-> > diff --git a/drivers/input/keyboard/gpio_keys.c b/drivers/input/keyboard/gpio_keys.c
-> > index 05f3f43..e7a46f8 100644
-> > --- a/drivers/input/keyboard/gpio_keys.c
-> > +++ b/drivers/input/keyboard/gpio_keys.c
-> > @@ -1,7 +1,8 @@
-> >  /*
-> > - * Driver for keys on GPIO lines capable of generating interrupts.
-> > + * Driver for keys on GPIO lines, either IRQ-driven or polled.
-> >   *
-> >   * Copyright 2005 Phil Blundell
-> > + * Copyright 2008 Paul Mundt
-> >   *
-> >   * This program is free software; you can redistribute it and/or modify
-> >   * it under the terms of the GNU General Public License version 2 as
-> > @@ -9,7 +10,6 @@
-> >   */
-> >  
-> >  #include <linux/module.h>
-> > -
-> >  #include <linux/init.h>
-> >  #include <linux/fs.h>
-> >  #include <linux/interrupt.h>
-> > @@ -22,7 +22,7 @@
-> >  #include <linux/platform_device.h>
-> >  #include <linux/input.h>
-> >  #include <linux/gpio_keys.h>
-> > -
-> > +#include <linux/input-polldev.h>
-> >  #include <asm/gpio.h>
-> >  
-> >  struct gpio_button_data {
-> > @@ -32,7 +32,8 @@ struct gpio_button_data {
-> >  };
-> >  
-> >  struct gpio_keys_drvdata {
-> > -	struct input_dev *input;
-> > +	struct gpio_keys_platform_data *pdata;
-> > +	struct input_polled_dev *poll_dev;
-> >  	struct gpio_button_data data[0];
-> >  };
-> >  
-> > @@ -54,6 +55,33 @@ static void gpio_check_button(unsigned long _data)
-> >  	gpio_keys_report_event(data);
-> >  }
-> >  
-> > +static void gpio_handle_button_event(struct gpio_keys_button *button,
-> > +				     struct gpio_button_data *bdata)
-> > +{
-> > +	if (button->debounce_interval)
-> > +		mod_timer(&bdata->timer,
-> > +			jiffies + msecs_to_jiffies(button->debounce_interval));
-> > +	else
-> > +		gpio_keys_report_event(bdata);
-> > +}
-> > +
-> > +static void gpio_keys_poll(struct input_polled_dev *dev)
-> > +{
-> > +	struct gpio_keys_drvdata *ddata = dev->private;
-> > +	struct gpio_keys_platform_data *pdata = ddata->pdata;
-> > +	int i;
-> > +
-> > +	for (i = 0; i < pdata->nbuttons; i++) {
-> > +		struct gpio_keys_button *button = &pdata->buttons[i];
-> > +		struct gpio_button_data *bdata = &ddata->data[i];
-> > +
-> > +		bdata->input = dev->input;
-> > +		bdata->button = button;
-> > +
-> > +		gpio_handle_button_event(button, bdata);
-> > +	}
-> > +}
-> > +
-> >  static irqreturn_t gpio_keys_isr(int irq, void *dev_id)
-> >  {
-> >  	struct gpio_button_data *bdata = dev_id;
-> > @@ -61,11 +89,7 @@ static irqreturn_t gpio_keys_isr(int irq, void *dev_id)
-> >  
-> >  	BUG_ON(irq != gpio_to_irq(button->gpio));
-> >  
-> > -	if (button->debounce_interval)
-> > -		mod_timer(&bdata->timer,
-> > -			jiffies + msecs_to_jiffies(button->debounce_interval));
-> > -	else
-> > -		gpio_keys_report_event(bdata);
-> > +	gpio_handle_button_event(button, bdata);
-> >  
-> >  	return IRQ_HANDLED;
-> >  }
-> > @@ -74,6 +98,7 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  {
-> >  	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
-> >  	struct gpio_keys_drvdata *ddata;
-> > +	struct input_polled_dev *poll_dev;
-> >  	struct input_dev *input;
-> >  	int i, error;
-> >  	int wakeup = 0;
-> > @@ -81,14 +106,19 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  	ddata = kzalloc(sizeof(struct gpio_keys_drvdata) +
-> >  			pdata->nbuttons * sizeof(struct gpio_button_data),
-> >  			GFP_KERNEL);
-> > -	input = input_allocate_device();
-> > -	if (!ddata || !input) {
-> > +	poll_dev = input_allocate_polled_device();
-> > +	if (!ddata || !poll_dev) {
-> >  		error = -ENOMEM;
-> >  		goto fail1;
-> >  	}
-> >  
-> >  	platform_set_drvdata(pdev, ddata);
-> >  
-> > +	poll_dev->private = ddata;
-> > +	poll_dev->poll = gpio_keys_poll;
-> > +	poll_dev->poll_interval = 50; /* msec */
-> > +
-> > +	input = poll_dev->input;
-> >  	input->name = pdev->name;
-> >  	input->phys = "gpio-keys/input0";
-> >  	input->dev.parent = &pdev->dev;
-> > @@ -98,7 +128,8 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  	input->id.product = 0x0001;
-> >  	input->id.version = 0x0100;
-> >  
-> > -	ddata->input = input;
-> > +	ddata->poll_dev = poll_dev;
-> > +	ddata->pdata = pdata;
-> >  
-> >  	for (i = 0; i < pdata->nbuttons; i++) {
-> >  		struct gpio_keys_button *button = &pdata->buttons[i];
-> > @@ -127,6 +158,15 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  			goto fail2;
-> >  		}
-> >  
-> > +		input_set_capability(input, type, button->code);
-> > +
-> > +		/*
-> > +		 * Skip the IRQ setup and wakeup source initialization if
-> > +		 * we are going to be polled.
-> > +		 */
-> > +		if (pdata->polling)
-> > +			continue;
-> > +
-> >  		irq = gpio_to_irq(button->gpio);
-> >  		if (irq < 0) {
-> >  			error = irq;
-> > @@ -151,11 +191,12 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  
-> >  		if (button->wakeup)
-> >  			wakeup = 1;
-> > -
-> > -		input_set_capability(input, type, button->code);
-> >  	}
-> >  
-> > -	error = input_register_device(input);
-> > +	if (pdata->polling)
-> > +		error = input_register_polled_device(poll_dev);
-> > +	else
-> > +		error = input_register_device(input);
-> >  	if (error) {
-> >  		pr_err("gpio-keys: Unable to register input device, "
-> >  			"error: %d\n", error);
-> > @@ -168,7 +209,9 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  
-> >   fail2:
-> >  	while (--i >= 0) {
-> > -		free_irq(gpio_to_irq(pdata->buttons[i].gpio), &ddata->data[i]);
-> > +		if (!pdata->polling)
-> > +			free_irq(gpio_to_irq(pdata->buttons[i].gpio),
-> > +				 &ddata->data[i]);
-> >  		if (pdata->buttons[i].debounce_interval)
-> >  			del_timer_sync(&ddata->data[i].timer);
-> >  		gpio_free(pdata->buttons[i].gpio);
-> > @@ -176,7 +219,7 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
-> >  
-> >  	platform_set_drvdata(pdev, NULL);
-> >   fail1:
-> > -	input_free_device(input);
-> > +	input_free_polled_device(poll_dev);
-> >  	kfree(ddata);
-> >  
-> >  	return error;
-> > @@ -186,20 +229,27 @@ static int __devexit gpio_keys_remove(struct platform_device *pdev)
-> >  {
-> >  	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
-> >  	struct gpio_keys_drvdata *ddata = platform_get_drvdata(pdev);
-> > -	struct input_dev *input = ddata->input;
-> > +	struct input_polled_dev *poll_dev = ddata->poll_dev;
-> >  	int i;
-> >  
-> >  	device_init_wakeup(&pdev->dev, 0);
-> >  
-> >  	for (i = 0; i < pdata->nbuttons; i++) {
-> > -		int irq = gpio_to_irq(pdata->buttons[i].gpio);
-> > -		free_irq(irq, &ddata->data[i]);
-> > +		if (!pdata->polling) {
-> > +			int irq = gpio_to_irq(pdata->buttons[i].gpio);
-> > +			free_irq(irq, &ddata->data[i]);
-> > +		}
-> > +
-> >  		if (pdata->buttons[i].debounce_interval)
-> >  			del_timer_sync(&ddata->data[i].timer);
-> >  		gpio_free(pdata->buttons[i].gpio);
-> >  	}
-> >  
-> > -	input_unregister_device(input);
-> > +	if (pdata->polling) {
-> > +		input_unregister_polled_device(poll_dev);
-> > +		input_free_polled_device(poll_dev);
-> > +	} else
-> > +		input_unregister_device(poll_dev->input);
-> >  
-> >  	return 0;
-> >  }
-> > diff --git a/include/linux/gpio_keys.h b/include/linux/gpio_keys.h
-> > index ec6ecd7..e869752 100644
-> > --- a/include/linux/gpio_keys.h
-> > +++ b/include/linux/gpio_keys.h
-> > @@ -15,6 +15,7 @@ struct gpio_keys_button {
-> >  struct gpio_keys_platform_data {
-> >  	struct gpio_keys_button *buttons;
-> >  	int nbuttons;
-> > +	int polling;		/* force polling mode */
-> >  };
-> >  
-> >  #endif
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+CMT driver for the SuperH timer base code implementation V4.
+Both 16-bit and 32-bit CMT versions are supported, but only 32-bit
+is tested. This driver contains support for both clockevents and
+clocksources, but no unregistration is supported at this point.
+
+Works fine as clock source and/or event in periodic or oneshot mode.
+Tested on sh7722 and sh7723, but should work with any cpu/architecture.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Changes since V3 include:
+ - Removed dependency of timer_inc
+ - Removed unregistration code
+
+ Changes since V2 include:
+ - Rewrote driver to platform driver and early timer
+ - Only control clocks and hardware registers in disable()/enable()
+ - Removed exported struct from sh_timer.c/sh_timer.h
+ - sh_timer_early_probe() is used for early timer setup
+
+ Changes since V1 include:
+ - Reworked private data handling - no more union in sh_timer.h
+ - Made spinlock static
+ - Use setup_irq() to request early interrupt
+ - Removed request_mem_region()/free_mem_region()
+ - Removed sysdev code
+
+ arch/sh/Kconfig              |    7 
+ drivers/clocksource/Makefile |    1 
+ drivers/clocksource/sh_cmt.c |  702 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 710 insertions(+)
+
+--- 0010/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2008-12-10 22:59:45.000000000 +0900
+@@ -403,6 +403,13 @@ config SH_TIMER
+ 	def_bool n
+ 	select GENERIC_CLOCKEVENTS
+ 
++config SH_TIMER_CMT
++	def_bool y
++	prompt "CMT timer support"
++	depends on SH_TIMER
++	help
++	  This enables build of the CMT system timer driver.
++
+ config SH_TMU
+ 	def_bool y
+ 	prompt "TMU timer support"
+--- 0009/drivers/clocksource/Makefile
++++ work/drivers/clocksource/Makefile	2008-12-10 22:59:45.000000000 +0900
+@@ -3,3 +3,4 @@ obj-$(CONFIG_X86_CYCLONE_TIMER)	+= cyclo
+ obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
+ obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
+ obj-$(CONFIG_SH_TIMER)		+= sh_timer.o
++obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
+--- /dev/null
++++ work/drivers/clocksource/sh_cmt.c	2008-12-10 23:01:48.000000000 +0900
+@@ -0,0 +1,702 @@
++/*
++ * SuperH Timer Support - CMT
++ *
++ *  Copyright (C) 2008 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++#include <linux/interrupt.h>
++#include <linux/ioport.h>
++#include <linux/io.h>
++#include <linux/clk.h>
++#include <linux/irq.h>
++#include <linux/err.h>
++#include <linux/sh_timer.h>
++#include <linux/clocksource.h>
++#include <linux/clockchips.h>
++
++struct sh_cmt_priv {
++	void __iomem *mapbase;
++	struct clk *clk;
++	unsigned long width; /* 16 or 32 bit version of hardware block */
++	unsigned long overflow_bit;
++	unsigned long clear_bits;
++	struct irqaction irqaction;
++	struct platform_device *pdev;
++
++	unsigned long flags;
++	unsigned long match_value;
++	unsigned long next_match_value;
++	unsigned long max_match_value;
++	unsigned long rate;
++	spinlock_t lock;
++	struct clock_event_device ced;
++	struct clocksource cs;
++	unsigned long total_cycles;
++};
++
++static DEFINE_SPINLOCK(sh_cmt_lock);
++
++#define CMSTR -1 /* shared register */
++#define CMCSR 0 /* channel register */
++#define CMCNT 1 /* channel register */
++#define CMCOR 2 /* channel register */
++
++static inline unsigned long sh_cmt_read(struct sh_cmt_priv *p, int reg_nr)
++{
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++	void __iomem *base = p->mapbase;
++	unsigned long offs;
++
++	if (reg_nr = CMSTR) {
++		offs = 0;
++		base -= cfg->channel_offset;
++	} else
++		offs = reg_nr;
++
++	if (p->width = 16)
++		offs <<= 1;
++	else {
++		offs <<= 2;
++		if ((reg_nr = CMCNT) || (reg_nr = CMCOR))
++			return ioread32(base + offs);
++	}
++
++	return ioread16(base + offs);
++}
++
++static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
++				unsigned long value)
++{
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++	void __iomem *base = p->mapbase;
++	unsigned long offs;
++
++	if (reg_nr = CMSTR) {
++		offs = 0;
++		base -= cfg->channel_offset;
++	} else
++		offs = reg_nr;
++
++	if (p->width = 16)
++		offs <<= 1;
++	else {
++		offs <<= 2;
++		if ((reg_nr = CMCNT) || (reg_nr = CMCOR)) {
++			iowrite32(value, base + offs);
++			return;
++		}
++	}
++
++	iowrite16(value, base + offs);
++}
++
++static unsigned long sh_cmt_get_counter(struct sh_cmt_priv *p,
++					int *has_wrapped)
++{
++	unsigned long v1, v2, v3;
++
++	/* Make sure the timer value is stable. Stolen from acpi_pm.c */
++	do {
++		v1 = sh_cmt_read(p, CMCNT);
++		v2 = sh_cmt_read(p, CMCNT);
++		v3 = sh_cmt_read(p, CMCNT);
++	} while (unlikely((v1 > v2 && v1 < v3) || (v2 > v3 && v2 < v1)
++			  || (v3 > v1 && v3 < v2)));
++
++	*has_wrapped = sh_cmt_read(p, CMCSR) & p->overflow_bit;
++	return v2;
++}
++
++
++static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
++{
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++	unsigned long flags, value;
++
++	/* start stop register shared by multiple timer channels */
++	spin_lock_irqsave(&sh_cmt_lock, flags);
++	value = sh_cmt_read(p, CMSTR);
++
++	if (start)
++		value |= 1 << cfg->timer_bit;
++	else
++		value &= ~(1 << cfg->timer_bit);
++
++	sh_cmt_write(p, CMSTR, value);
++	spin_unlock_irqrestore(&sh_cmt_lock, flags);
++}
++
++static int sh_cmt_enable(struct sh_cmt_priv *p, unsigned long *rate)
++{
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++	int ret;
++
++	/* enable clock */
++	ret = clk_enable(p->clk);
++	if (ret) {
++		pr_err("sh_cmt: cannot enable clock \"%s\"\n", cfg->clk);
++		return ret;
++	}
++	*rate = clk_get_rate(p->clk) / 8;
++
++	/* make sure channel is disabled */
++	sh_cmt_start_stop_ch(p, 0);
++
++	/* configure channel, periodic mode and maximum timeout */
++	if (p->width = 16)
++		sh_cmt_write(p, CMCSR, 0);
++	else
++		sh_cmt_write(p, CMCSR, 0x01a4);
++
++	sh_cmt_write(p, CMCOR, 0xffffffff);
++	sh_cmt_write(p, CMCNT, 0);
++
++	/* enable channel */
++	sh_cmt_start_stop_ch(p, 1);
++	return 0;
++}
++
++static void sh_cmt_disable(struct sh_cmt_priv *p)
++{
++	/* disable channel */
++	sh_cmt_start_stop_ch(p, 0);
++
++	/* stop clock */
++	clk_disable(p->clk);
++}
++
++/* private flags */
++#define FLAG_CLOCKEVENT (1 << 0)
++#define FLAG_CLOCKSOURCE (1 << 1)
++#define FLAG_REPROGRAM (1 << 2)
++#define FLAG_SKIPEVENT (1 << 3)
++#define FLAG_IRQCONTEXT (1 << 4)
++
++static void sh_cmt_clock_event_program_verify(struct sh_cmt_priv *p,
++					      int absolute)
++{
++	unsigned long new_match;
++	unsigned long value = p->next_match_value;
++	unsigned long delay = 0;
++	unsigned long now = 0;
++	int has_wrapped;
++
++	now = sh_cmt_get_counter(p, &has_wrapped);
++	p->flags |= FLAG_REPROGRAM; /* force reprogram */
++
++	if (has_wrapped) {
++		/* we're competing with the interrupt handler.
++		 *  -> let the interrupt handler reprogram the timer.
++		 *  -> interrupt number two handles the event.
++		 */
++		p->flags |= FLAG_SKIPEVENT;
++		return;
++	}
++
++	if (absolute)
++		now = 0;
++
++	do {
++		/* reprogram the timer hardware,
++		 * but don't save the new match value yet.
++		 */
++		new_match = now + value + delay;
++		if (new_match > p->max_match_value)
++			new_match = p->max_match_value;
++
++		sh_cmt_write(p, CMCOR, new_match);
++
++		now = sh_cmt_get_counter(p, &has_wrapped);
++		if (has_wrapped && (new_match > p->match_value)) {
++			/* we are changing to a greater match value,
++			 * so this wrap must be caused by the counter
++			 * matching the old value.
++			 * -> first interrupt reprograms the timer.
++			 * -> interrupt number two handles the event.
++			 */
++			p->flags |= FLAG_SKIPEVENT;
++			break;
++		}
++
++		if (has_wrapped) {
++			/* we are changing to a smaller match value,
++			 * so the wrap must be caused by the counter
++			 * matching the new value.
++			 * -> save programmed match value.
++			 * -> let isr handle the event.
++			 */
++			p->match_value = new_match;
++			break;
++		}
++
++		/* be safe: verify hardware settings */
++		if (now < new_match) {
++			/* timer value is below match value, all good.
++			 * this makes sure we won't miss any match events.
++			 * -> save programmed match value.
++			 * -> let isr handle the event.
++			 */
++			p->match_value = new_match;
++			break;
++		}
++
++		/* the counter has reached a value greater
++		 * than our new match value. and since the
++		 * has_wrapped flag isn't set we must have
++		 * programmed a too close event.
++		 * -> increase delay and retry.
++		 */
++		if (delay)
++			delay <<= 1;
++		else
++			delay = 1;
++
++		if (!delay)
++			pr_warning("sh_cmt: too long delay\n");
++
++	} while (delay);
++}
++
++static void sh_cmt_set_next(struct sh_cmt_priv *p, unsigned long delta)
++{
++	unsigned long flags;
++
++	if (delta > p->max_match_value)
++		pr_warning("sh_cmt: delta out of range\n");
++
++	spin_lock_irqsave(&p->lock, flags);
++	p->next_match_value = delta;
++	sh_cmt_clock_event_program_verify(p, 0);
++	spin_unlock_irqrestore(&p->lock, flags);
++}
++
++static irqreturn_t sh_cmt_interrupt(int irq, void *dev_id)
++{
++	struct sh_cmt_priv *p = dev_id;
++
++	/* clear flags */
++	sh_cmt_write(p, CMCSR, sh_cmt_read(p, CMCSR) & p->clear_bits);
++
++	/* update clock source counter to begin with if enabled
++	 * the wrap flag should be cleared by the timer specific
++	 * isr before we end up here.
++	 */
++	if (p->flags & FLAG_CLOCKSOURCE)
++		p->total_cycles += p->match_value;
++
++	if (!(p->flags & FLAG_REPROGRAM))
++		p->next_match_value = p->max_match_value;
++
++	p->flags |= FLAG_IRQCONTEXT;
++
++	if (p->flags & FLAG_CLOCKEVENT) {
++		if (!(p->flags & FLAG_SKIPEVENT)) {
++			if (p->ced.mode = CLOCK_EVT_MODE_ONESHOT) {
++				p->next_match_value = p->max_match_value;
++				p->flags |= FLAG_REPROGRAM;
++			}
++
++			p->ced.event_handler(&p->ced);
++		}
++	}
++
++	p->flags &= ~FLAG_SKIPEVENT;
++
++	if (p->flags & FLAG_REPROGRAM) {
++		p->flags &= ~FLAG_REPROGRAM;
++		sh_cmt_clock_event_program_verify(p, 1);
++
++		if (p->flags & FLAG_CLOCKEVENT)
++			if ((p->ced.mode = CLOCK_EVT_MODE_SHUTDOWN)
++			    || (p->match_value = p->next_match_value))
++				p->flags &= ~FLAG_REPROGRAM;
++	}
++
++	p->flags &= ~FLAG_IRQCONTEXT;
++
++	return IRQ_HANDLED;
++}
++
++static int sh_cmt_start(struct sh_cmt_priv *p, unsigned long flag)
++{
++	int ret = 0;
++	unsigned long flags;
++
++	spin_lock_irqsave(&p->lock, flags);
++
++	if (!(p->flags & (FLAG_CLOCKEVENT | FLAG_CLOCKSOURCE)))
++		ret = sh_cmt_enable(p, &p->rate);
++
++	if (ret)
++		goto out;
++	p->flags |= flag;
++
++	/* setup timeout if no clockevent */
++	if ((flag = FLAG_CLOCKSOURCE) && (!(p->flags & FLAG_CLOCKEVENT)))
++		sh_cmt_set_next(p, p->max_match_value);
++ out:
++	spin_unlock_irqrestore(&p->lock, flags);
++
++	return ret;
++}
++
++static void sh_cmt_stop(struct sh_cmt_priv *p, unsigned long flag)
++{
++	unsigned long flags;
++	unsigned long f;
++
++	spin_lock_irqsave(&p->lock, flags);
++
++	f = p->flags & (FLAG_CLOCKEVENT | FLAG_CLOCKSOURCE);
++	p->flags &= ~flag;
++
++	if (f && !(p->flags & (FLAG_CLOCKEVENT | FLAG_CLOCKSOURCE)))
++		sh_cmt_disable(p);
++
++	/* adjust the timeout to maximum if only clocksource left */
++	if ((flag = FLAG_CLOCKEVENT) && (p->flags & FLAG_CLOCKSOURCE))
++		sh_cmt_set_next(p, p->max_match_value);
++
++	spin_unlock_irqrestore(&p->lock, flags);
++}
++
++static struct sh_cmt_priv *cs_to_sh_cmt(struct clocksource *cs)
++{
++	return container_of(cs, struct sh_cmt_priv, cs);
++}
++
++static cycle_t sh_cmt_clocksource_read(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++	unsigned long flags, raw;
++	unsigned long value;
++	int has_wrapped;
++
++	spin_lock_irqsave(&p->lock, flags);
++	value = p->total_cycles;
++	raw = sh_cmt_get_counter(p, &has_wrapped);
++
++	if (unlikely(has_wrapped))
++		raw = p->match_value;
++	spin_unlock_irqrestore(&p->lock, flags);
++
++	return value + raw;
++}
++
++static int sh_cmt_clocksource_enable(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++	int ret;
++
++	p->total_cycles = 0;
++
++	ret = sh_cmt_start(p, FLAG_CLOCKSOURCE);
++	if (ret)
++		return ret;
++
++	/* TODO: calculate good shift from rate and counter bit width */
++	cs->shift = 0;
++	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
++	return 0;
++}
++
++static void sh_cmt_clocksource_disable(struct clocksource *cs)
++{
++	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
++}
++
++static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
++				       char *name, unsigned long rating)
++{
++	struct clocksource *cs = &p->cs;
++
++	cs->name = name;
++	cs->rating = rating;
++	cs->read2 = sh_cmt_clocksource_read;
++	cs->enable = sh_cmt_clocksource_enable;
++	cs->disable = sh_cmt_clocksource_disable;
++	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
++	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
++	pr_info("sh_cmt: %s used as clock source\n", cs->name);
++	clocksource_register(cs);
++	return 0;
++}
++
++static struct sh_cmt_priv *ced_to_sh_cmt(struct clock_event_device *ced)
++{
++	return container_of(ced, struct sh_cmt_priv, ced);
++}
++
++static void sh_cmt_clock_event_start(struct sh_cmt_priv *p, int periodic)
++{
++	struct clock_event_device *ced = &p->ced;
++
++	sh_cmt_start(p, FLAG_CLOCKEVENT);
++
++	/* TODO: calculate good shift from rate and counter bit width */
++
++	ced->shift = 32;
++	ced->mult = div_sc(p->rate, NSEC_PER_SEC, ced->shift);
++	ced->max_delta_ns = clockevent_delta2ns(p->max_match_value, ced);
++	ced->min_delta_ns = clockevent_delta2ns(0x1f, ced);
++
++	if (periodic)
++		sh_cmt_set_next(p, (p->rate + HZ/2) / HZ);
++	else
++		sh_cmt_set_next(p, p->max_match_value);
++}
++
++static void sh_cmt_clock_event_mode(enum clock_event_mode mode,
++				    struct clock_event_device *ced)
++{
++	struct sh_cmt_priv *p = ced_to_sh_cmt(ced);
++
++	/* deal with old setting first */
++	switch (ced->mode) {
++	case CLOCK_EVT_MODE_PERIODIC:
++	case CLOCK_EVT_MODE_ONESHOT:
++		sh_cmt_stop(p, FLAG_CLOCKEVENT);
++		break;
++	default:
++		break;
++	}
++
++	switch (mode) {
++	case CLOCK_EVT_MODE_PERIODIC:
++		pr_info("sh_cmt: %s used for periodic clock events\n",
++			ced->name);
++		sh_cmt_clock_event_start(p, 1);
++		break;
++	case CLOCK_EVT_MODE_ONESHOT:
++		pr_info("sh_cmt: %s used for oneshot clock events\n",
++			ced->name);
++		sh_cmt_clock_event_start(p, 0);
++		break;
++	case CLOCK_EVT_MODE_SHUTDOWN:
++	case CLOCK_EVT_MODE_UNUSED:
++		sh_cmt_stop(p, FLAG_CLOCKEVENT);
++		break;
++	default:
++		break;
++	}
++}
++
++static int sh_cmt_clock_event_next(unsigned long delta,
++				   struct clock_event_device *ced)
++{
++	struct sh_cmt_priv *p = ced_to_sh_cmt(ced);
++
++	BUG_ON(ced->mode != CLOCK_EVT_MODE_ONESHOT);
++	if (likely(p->flags & FLAG_IRQCONTEXT))
++		p->next_match_value = delta;
++	else
++		sh_cmt_set_next(p, delta);
++
++	return 0;
++}
++
++static void sh_cmt_register_clockevent(struct sh_cmt_priv *p,
++				       char *name, unsigned long rating)
++{
++	struct clock_event_device *ced = &p->ced;
++
++	memset(ced, 0, sizeof(*ced));
++
++	ced->name = name;
++	ced->features = CLOCK_EVT_FEAT_PERIODIC;
++	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
++	ced->rating = rating;
++	ced->cpumask = CPU_MASK_CPU0;
++	ced->set_next_event = sh_cmt_clock_event_next;
++	ced->set_mode = sh_cmt_clock_event_mode;
++
++	pr_info("sh_cmt: %s used for clock events\n", ced->name);
++	ced->mult = 1; /* work around misplaced WARN_ON() in clockevents.c */
++	clockevents_register_device(ced);
++}
++
++int sh_cmt_register(struct sh_cmt_priv *p, char *name,
++		    unsigned long clockevent_rating,
++		    unsigned long clocksource_rating)
++{
++	if (p->width = (sizeof(p->max_match_value) * 8))
++		p->max_match_value = ~0;
++	else
++		p->max_match_value = (1 << p->width) - 1;
++
++	p->match_value = p->max_match_value;
++	spin_lock_init(&p->lock);
++
++	if (clockevent_rating)
++		sh_cmt_register_clockevent(p, name, clockevent_rating);
++
++	if (clocksource_rating)
++		sh_cmt_register_clocksource(p, name, clocksource_rating);
++
++	return 0;
++}
++
++static int sh_cmt_setup(void *priv, struct platform_device *pdev)
++{
++	struct sh_cmt_priv *p = priv;
++	struct sh_timer_config *cfg = pdev->dev.platform_data;
++	struct resource *res;
++	int irq, ret;
++	ret = -ENXIO;
++
++	memset(p, 0, sizeof(*p));
++	p->pdev = pdev;
++
++	if (!cfg) {
++		dev_err(&p->pdev->dev, "missing platform data\n");
++		goto err0;
++	}
++
++	platform_set_drvdata(pdev, priv);
++
++	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
++		goto err0;
++	}
++
++	irq = platform_get_irq(p->pdev, 0);
++	if (irq < 0) {
++		dev_err(&p->pdev->dev, "failed to get irq\n");
++		goto err0;
++	}
++
++	/* map memory, let mapbase point to our channel */
++	p->mapbase = ioremap_nocache(res->start, resource_size(res));
++	if (p->mapbase = NULL) {
++		pr_err("sh_cmt: failed to remap I/O memory\n");
++		goto err0;
++	}
++
++	/* request irq using setup_irq() (too early for request_irq()) */
++	p->irqaction.name = cfg->name;
++	p->irqaction.handler = sh_cmt_interrupt;
++	p->irqaction.dev_id = p;
++	p->irqaction.flags = IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL;
++	p->irqaction.mask = CPU_MASK_NONE;
++	ret = setup_irq(irq, &p->irqaction);
++	if (ret) {
++		pr_err("sh_cmt: failed to request irq %d\n", irq);
++		goto err1;
++	}
++
++	/* get hold of clock */
++	p->clk = clk_get(&p->pdev->dev, cfg->clk);
++	if (IS_ERR(p->clk)) {
++		pr_err("sh_cmt: cannot get clock \"%s\"\n", cfg->clk);
++		ret = PTR_ERR(p->clk);
++		goto err2;
++	}
++
++	if (resource_size(res) = 6) {
++		p->width = 16;
++		p->overflow_bit = 0x80;
++		p->clear_bits = ~0xc0;
++	} else {
++		p->width = 32;
++		p->overflow_bit = 0x8000;
++		p->clear_bits = ~0xc000;
++	}
++
++	return sh_cmt_register(p, cfg->name,
++			       cfg->clockevent_rating,
++			       cfg->clocksource_rating);
++ err2:
++	free_irq(irq, p);
++ err1:
++	iounmap(p->mapbase);
++ err0:
++	return ret;
++}
++
++#ifndef MODULE
++/* early timer interface, used before platform devices are available */
++static struct sh_timer_early sh_cmt = {
++	.priv_size = sizeof(struct sh_cmt_priv),
++	.setup = sh_cmt_setup,
++};
++
++struct sh_timer_early *sh_timer_early_probe(struct platform_device *pdev)
++{
++	if (!strcmp(pdev->name, "sh_cmt"))
++		return &sh_cmt;
++
++	return NULL;
++}
++#endif
++
++static int __devinit sh_cmt_probe(struct platform_device *pdev)
++{
++	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
++	struct sh_timer_config *cfg = pdev->dev.platform_data;
++	int ret;
++
++	if (p) {
++		pr_info("sh_cmt: %s kept as early timer\n", cfg->name);
++		return 0;
++	}
++
++	p = kmalloc(sizeof(*p), GFP_KERNEL);
++	if (p = NULL) {
++		dev_err(&pdev->dev, "failed to allocate driver data\n");
++		return -ENOMEM;
++	}
++
++	ret = sh_cmt_setup(p, pdev);
++	if (ret) {
++		kfree(p);
++		platform_set_drvdata(pdev, NULL);
++	}
++	return ret;
++}
++
++static int __devexit sh_cmt_remove(struct platform_device *pdev)
++{
++	return -EBUSY; /* cannot unregister clockevent and clocksource */
++}
++
++static struct platform_driver sh_cmt_device_driver = {
++	.probe		= sh_cmt_probe,
++	.remove		= __devexit_p(sh_cmt_remove),
++	.driver		= {
++		.name	= "sh_cmt",
++	}
++};
++
++static int __init sh_cmt_init(void)
++{
++	return platform_driver_register(&sh_cmt_device_driver);
++}
++
++static void __exit sh_cmt_exit(void)
++{
++	platform_driver_unregister(&sh_cmt_device_driver);
++}
++
++module_init(sh_cmt_init);
++module_exit(sh_cmt_exit);
++
++MODULE_AUTHOR("Magnus Damm");
++MODULE_DESCRIPTION("SuperH CMT Timer Driver");
++MODULE_LICENSE("GPL v2");
