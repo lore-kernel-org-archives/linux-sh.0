@@ -1,45 +1,32 @@
-From: morimoto.kuninori@renesas.com
-Date: Wed, 03 Dec 2008 10:23:10 +0000
-Subject: Re: [PATCH 1/2] Add support ov772x driver setting for Migo-R
-Message-Id: <utz9lzhf5.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 10 Dec 2008 08:02:13 +0000
+Subject: [PATCH] sh: add ov772x reset delay on Migo-R
+Message-Id: <20081210080213.5789.69039.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <u3ah7m2kz.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <u3ah7m2kz.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
-Dear Paul
+Add reset delay for the ov772x device on Migo-R.
 
-Thank you for checking patch.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-> > Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> > ---
-> > this patch is for linux 2.6.29
-> > V4L2 maintainer said ov772x driver will be added to linux 2.6.29
-> > 
-> As these depend on new headers and data structures, I will include these
-> with the second round of updates for the merge window, after the V4L2
-> merge has taken place.
+ Applies on top of Morimoto-sans ov772x patches.
 
-Thank you
+ arch/sh/boards/mach-migor/setup.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-> > +struct ov772x_camera_info ov7725_info = {
-> > +	.buswidth  = SOCAM_DATAWIDTH_8,
-> > +	.link = {
-> > +		.power  = ov7725_power,
-> > +	},
-> > +};
-> > +
-(snip)
-> Also note that ov7725_info should be static, as you are assigning it to
-> platform_data and nothing outside of this file is using it otherwise.
-
-ouch !
-I will fix it and send again
-
-Thanks.
-
-/Morimoto
+--- 0032/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2008-12-10 12:41:02.000000000 +0900
+@@ -301,6 +301,7 @@ static void camera_power_on(void)
+ 	gpio_set_value(GPIO_PTT3, 0);
+ 	mdelay(10);
+ 	gpio_set_value(GPIO_PTT3, 1);
++	mdelay(10); /* wait to let chip come out of reset */
+ }
+ 
+ static void camera_power_off(void)
