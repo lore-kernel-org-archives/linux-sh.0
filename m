@@ -1,40 +1,142 @@
-From: "Jaya Kumar" <jayakumar.lkml@gmail.com>
-Date: Wed, 24 Dec 2008 05:01:21 +0000
-Subject: Re: [PATCH 00/05] video: deferred io fixes and sh_mobile_lcdcfb support
-Message-Id: <45a44e480812232101x3a81036j8cf82f5ddbd7507b@mail.gmail.com>
+From: Julia Lawall <julia@diku.dk>
+Date: Wed, 10 Dec 2008 16:37:35 +0000
+Subject: [PATCH 15/28] arch/sh: Drop return value from platform_driver remove
+Message-Id: <Pine.LNX.4.64.0812101737120.21998@ask.diku.dk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081219063359.2703.85817.sendpatchset@rx1.opensource.se>
-	 <20081221065358.GA12631@linux-sh.org>
-	 <45a44e480812202311p18db8638q28d893ffd2d51d32@mail.gmail.com>
-	 <20081221161439.GA14843@linux-sh.org>
-In-Reply-To: <20081221161439.GA14843@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Jaya Kumar <jayakumar.lkml@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-fbdev-devel@lists.sourceforge.net, adaplas@gmail.comlinux-
+To: dmitri.vorobiev@movial.fi, lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
 
-On Sun, Dec 21, 2008 at 11:14 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Sun, Dec 21, 2008 at 02:11:50AM -0500, Jaya Kumar wrote:
->> On Sun, Dec 21, 2008 at 1:53 AM, Paul Mundt <lethal@linux-sh.org> wrote:
->> >
->> > I have no particular issues with this series anyways. If Jaya is fine
->> > with the first three, I will take the last two. Or I can just take the entire
->> > series, as it's fairly insular and no one else is likely to care about it
->> > presently. Jaya?
->> >
->>
->> Hi Paul,
->>
->> Looks fine to me too. Nice work. Thanks for the effort Magnus.
->>
->> I agree that it'd be best if you could take the entire series as it is
->> self-contained, plus there's no fbdev specific tree currently and I'm
->> not sure if Tony is back yet.
->>
-> Ok, I will carry it then. Can I add your Acked-by?
->
+From: Julia Lawall <julia@diku.dk>
 
-Ok, I'll find Magnus' patches and add my Acked-by to be thorough for each one.
+The return value of the remove function of a driver structure, and thus of
+a platform_driver structure, is ultimately ignored, and is thus
+unnecessary.  This patch removes the return value for the remove function
+stored in a platform_driver structure.  For the files in this patch, the
+return values are always 0.
 
-Thanks,
-jaya
+A simplified version of the semantic patch that makes this change is as
+follows: (http://www.emn.fr/x-info/coccinelle/)
+
+// <smpl>
+@r@
+struct platform_driver I;
+identifier a,f;
+position p;
+@@
+I.remove = \(f@p\|a(f@p)\);
+
+@void_called@
+identifier r.f;
+position p;
+@@
+f@p(...);
+
+@called@
+identifier r.f;
+position p1 != void_called.p;
+@@
+f@p1(...)
+
+@localfn@
+identifier r.f;
+@@
+static int f(...) { ... }
+
+@depends on !called && localfn@
+struct platform_driver I;
+identifier a,f;
+position r.p;
+@@
+
+I.
+- remove
++ remove_new
+   = \(f@p\|a(f@p)\);
+
+@depends on !called && localfn@
+identifier r.f,i;
+constant C;
+expression E;
+@@
+
+- int
++ void
+       f(...) {
+  <...
+(
+-  return \(C\|i\);
++  return;
+|
+-  return E;
++  E;
++  return;
+)
+  ...>
+}
+// </smpl>
+
+Signed-off-by: Julia Lawall <julia@diku.dk>
+
+---
+ arch/sh/drivers/heartbeat.c   |    6 ++----
+ arch/sh/drivers/push-switch.c |    6 ++----
+ 2 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
+index 938817e..8d8c8a3 100644
+--- a/arch/sh/drivers/heartbeat.c
++++ b/arch/sh/drivers/heartbeat.c
+@@ -116,7 +116,7 @@ static int heartbeat_drv_probe(struct platform_device *pdev)
+ 	return mod_timer(&hd->timer, jiffies + 1);
+ }
+ 
+-static int heartbeat_drv_remove(struct platform_device *pdev)
++static void heartbeat_drv_remove(struct platform_device *pdev)
+ {
+ 	struct heartbeat_data *hd = platform_get_drvdata(pdev);
+ 
+@@ -127,13 +127,11 @@ static int heartbeat_drv_remove(struct platform_device *pdev)
+ 
+ 	if (!pdev->dev.platform_data)
+ 		kfree(hd);
+-
+-	return 0;
+ }
+ 
+ static struct platform_driver heartbeat_driver = {
+ 	.probe		= heartbeat_drv_probe,
+-	.remove		= heartbeat_drv_remove,
++	.remove_new	= heartbeat_drv_remove,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 	},
+diff --git a/arch/sh/drivers/push-switch.c b/arch/sh/drivers/push-switch.c
+index 725be6d..747c787 100644
+--- a/arch/sh/drivers/push-switch.c
++++ b/arch/sh/drivers/push-switch.c
+@@ -96,7 +96,7 @@ err:
+ 	return ret;
+ }
+ 
+-static int switch_drv_remove(struct platform_device *pdev)
++static void switch_drv_remove(struct platform_device *pdev)
+ {
+ 	struct push_switch *psw = platform_get_drvdata(pdev);
+ 	struct push_switch_platform_info *psw_info = pdev->dev.platform_data;
+@@ -111,13 +111,11 @@ static int switch_drv_remove(struct platform_device *pdev)
+ 	free_irq(irq, pdev);
+ 
+ 	kfree(psw);
+-
+-	return 0;
+ }
+ 
+ static struct platform_driver switch_driver = {
+ 	.probe		= switch_drv_probe,
+-	.remove		= switch_drv_remove,
++	.remove_new	= switch_drv_remove,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 	},
