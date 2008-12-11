@@ -1,100 +1,35 @@
-From: Michael Trimarchi <trimarchimichael@yahoo.it>
-Date: Sat, 06 Dec 2008 14:17:34 +0000
-Subject: Re: [RFC PATCH V2 FIX] Fix deadlock during find
-Message-Id: <491708.10759.qm@web23502.mail.ird.yahoo.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 11 Dec 2008 12:52:42 +0000
+Subject: [PATCH 00/03] sh: timer rewrite V5
+Message-Id: <20081211125242.19369.8194.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081120134502.GA27286@gandalf.sssup.it>
-In-Reply-To: <20081120134502.GA27286@gandalf.sssup.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+SuperH Timer Rewrite V5:
 
+[PATCH 01/03] sh: CONFIG_SH_TIMER support
+[PATCH 02/03] sh: CMT early platform driver
+[PATCH 03/03] sh: enable CMT on sh7723/sh7722/sh7366/sh7343
 
+This patchset is another iteration which simply disconnects the clocksource
+patches and makes use of early platform drivers. The early platform driver
+patch and read(), enable/disable() and arch_gettimeoffset clocksource
+patches can be found on lkml.
 
---- Sab 6/12/08, Paul Mundt <lethal@linux-sh.org> ha scritto:
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-> Da: Paul Mundt <lethal@linux-sh.org>
-> Oggetto: Re: [RFC PATCH V2 FIX] Fix deadlock during find
-> A: "Michael Trimarchi" <trimarchimichael@yahoo.it>
-> Cc: linux-sh@vger.kernel.org
-> Data: Sabato 6 dicembre 2008, 14:01
-> On Wed, Nov 26, 2008 at 01:04:28PM +0000, Michael Trimarchi
-> wrote:
-> > ----- Messaggio originale -----
-> > > Da: Paul Mundt <lethal@linux-sh.org>
-> > > A: Michael Trimarchi
-> <trimarchimichael@yahoo.it>
-> > > Cc: linux-sh@vger.kernel.org
-> > > Inviato: Marted? 25 novembre 2008, 18:06:03
-> > > Oggetto: Re: [RFC PATCH V2 FIX] Fix deadlock
-> during find
-> > > 
-> [snip]
-> 
-> > > > @@ -48,18 +48,18 @@
-> __mutex_fastpath_lock_retval(atomic_t *count, int 
-> > > (*fail_fn)(atomic_t *))
-> > > >  static inline void
-> > > >  __mutex_fastpath_unlock(atomic_t *count,
-> void (*fail_fn)(atomic_t *))
-> > > >  {
-> > > > -    int __res, __orig;
-> > > > +    int __res;
-> > > >  
-> > > >      __asm__ __volatile__ (
-> > > > -        "movli.l    @%2, %0   
-> \n\t"
-> > > > -        "mov        %0, %1   
-> \n\t"
-> > > > +        "1: movli.l    @%1, %0   
-> \n\t"
-> > > >          "add        #1, %0   
-> \n\t"
-> > > > -        "movco.l    %0, @%2 "
-> > > > -        : "=&z" (__res),
-> "=&r" (__orig)
-> > > > +        "movco.l    %0, @%1
-> \n\t"
-> > > > +        "bf       
-> 1b\n\t"
-> > > > +        : "=&z" (__res)
-> > > >          : "r"
-> (&(count)->counter)
-> > > >          : "t" );
-> > > >  
-> > > > -    if (unlikely(__orig != 0))
-> > > > +    if (unlikely(__res <= 0))
-> > > >          fail_fn(count);
-> > > >  }
-> > > >  
-> > > 
-> > > Making __mutex_fastpath_unlock() loop seems
-> counter-intuitive. I think
-> > > the initial test on __orig is what was causing
-> you issues rather than the
-> > > need for looping. I do see why ARM did it this
-> way, but we don't have
-> > > precisely the same semantics there.
-> > > 
-> > > Does the following patch against current git pass
-> your test cases?
-> > > 
-> >  This is an old one patch. You integrate the correct
-> one V3
-> > 
-> The patch in question was against what is in current git.
-> The very
-> definition of the fast-path is that it is a single-shot
-> that isn't busy
-> looping, as that is what the slow path does. Unless you see
-> any
-> particular issues with my patch, I will queue it up, as it
-> brings us back
-> in line with what the fast-path semantics are supposed to
-> be. So far I
-> haven't had any issues with the refactored fast-path.
-
-
-      
+ arch/sh/Kconfig                        |   24 -
+ arch/sh/include/asm/timer.h            |    4 
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   40 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   40 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   40 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   40 +
+ arch/sh/kernel/time_32.c               |   41 +
+ drivers/clocksource/Makefile           |    1 
+ drivers/clocksource/sh_cmt.c           |  702 ++++++++++++++++++++++++++++++++
+ include/linux/sh_cmt.h                 |   13 
+ 10 files changed, 931 insertions(+), 14 deletions(-)
