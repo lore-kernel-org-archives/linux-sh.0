@@ -1,69 +1,95 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Tue, 02 Dec 2008 05:51:13 +0000
-Subject: Re: [PATCH 09/10] clocksource: add enable() and disable() callbacks
-Message-Id: <aec7e5c30812012151l58dfd6c1x68bcb9a80c0b2ba5@mail.gmail.com>
+From: Matt Fleming <mjf@gentoo.org>
+Date: Sun, 14 Dec 2008 12:02:24 +0000
+Subject: [PATCH 1/5] sh: Convert Microdev boards from hw_interrupt_type to irq_chip
+Message-Id: <006313f0e180a1cd3dec11f09f4d406b556500f8.1229255348.git.mjf@gentoo.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081201103347.26620.3670.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081201103347.26620.3670.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 2, 2008 at 5:43 AM, john stultz <johnstul@us.ibm.com> wrote:
-> On Mon, 2008-12-01 at 19:33 +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@igel.co.jp>
->>
->> Add enable() and disable() callbacks for clocksources. This allows
->> us to put unused clocksources in power save mode. The functions
->> clocksource_enable() and clocksource_disable() wrap the callbacks
->> and are inserted in the timekeeping code to enable before use and
->> disable after switching to a new clocksource.
->>
->> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+This is part of the SH move to irq_chip.
 
-Hi John,
+Signed-off-by: Matt Fleming <mjf@gentoo.org>
+---
+ arch/sh/boards/mach-microdev/irq.c |   36 +++++++-----------------------------
+ 1 files changed, 7 insertions(+), 29 deletions(-)
 
-> I like this! Its a nice addition to the clocksource structure to allow
-> for improved power management.
+diff --git a/arch/sh/boards/mach-microdev/irq.c b/arch/sh/boards/mach-microdev/irq.c
+index 702753c..b551963 100644
+--- a/arch/sh/boards/mach-microdev/irq.c
++++ b/arch/sh/boards/mach-microdev/irq.c
+@@ -67,27 +67,13 @@ static const struct {
+ 
+ static void enable_microdev_irq(unsigned int irq);
+ static void disable_microdev_irq(unsigned int irq);
+-
+-	/* shutdown is same as "disable" */
+-#define shutdown_microdev_irq disable_microdev_irq
+-
+ static void mask_and_ack_microdev(unsigned int);
+-static void end_microdev_irq(unsigned int irq);
+-
+-static unsigned int startup_microdev_irq(unsigned int irq)
+-{
+-	enable_microdev_irq(irq);
+-	return 0;		/* never anything pending */
+-}
+ 
+-static struct hw_interrupt_type microdev_irq_type = {
+-	.typename = "MicroDev-IRQ",
+-	.startup = startup_microdev_irq,
+-	.shutdown = shutdown_microdev_irq,
+-	.enable = enable_microdev_irq,
+-	.disable = disable_microdev_irq,
++static struct irq_chip microdev_irq_type = {
++	.name = "MicroDev-IRQ",
++	.unmask = enable_microdev_irq,
++	.mask = disable_microdev_irq,
+ 	.ack = mask_and_ack_microdev,
+-	.end = end_microdev_irq
+ };
+ 
+ static void disable_microdev_irq(unsigned int irq)
+@@ -130,11 +116,11 @@ static void enable_microdev_irq(unsigned int irq)
+ 	ctrl_outl(MICRODEV_FPGA_INTC_MASK(fpgaIrq), MICRODEV_FPGA_INTENB_REG);
+ }
+ 
+-	/* This functions sets the desired irq handler to be a MicroDev type */
++/* This function sets the desired irq handler to be a MicroDev type */
+ static void __init make_microdev_irq(unsigned int irq)
+ {
+ 	disable_irq_nosync(irq);
+-	irq_desc[irq].chip = &microdev_irq_type;
++	set_irq_chip_and_handler(irq, &microdev_irq_type, handle_level_irq);
+ 	disable_microdev_irq(irq);
+ }
+ 
+@@ -143,17 +129,11 @@ static void mask_and_ack_microdev(unsigned int irq)
+ 	disable_microdev_irq(irq);
+ }
+ 
+-static void end_microdev_irq(unsigned int irq)
+-{
+-	if (!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS)))
+-		enable_microdev_irq(irq);
+-}
+-
+ extern void __init init_microdev_irq(void)
+ {
+ 	int i;
+ 
+-		/* disable interrupts on the FPGA INTC register */
++	/* disable interrupts on the FPGA INTC register */
+ 	ctrl_outl(~0ul, MICRODEV_FPGA_INTDSB_REG);
+ 
+ 	for (i = 0; i < NUM_EXTERNAL_IRQS; i++)
+@@ -179,5 +159,3 @@ extern void microdev_print_fpga_intc_status(void)
+ 	printk("FPGA_INTPRI[3..0] = %08x:%08x:%08x:%08x\n", *intprid, *intpric, *intprib, *intpria);
+ 	printk("-------------------------------------------------------------------------------\n");
+ }
+-
+-
+-- 
+1.5.6.4
 
-Great, thank you!
-
-> I've got some worries that if clocksource_enable() is allowed to fail it
-> might give us some grief in early boot (you don't check for errors
-> there, but understandably, as there isn't much we can do).
-
-I've been changing the code back and forth between returning void or
-int, but I settled on int since the clock framework returns an int
-from clk_enable(). So apparently that can fail. The clock framework is
-the main reason why I want to be add enable() and disable(), and if we
-can't enable the clock then it's very likely that we can't use the
-clocksource hardware either.
-
-At boot, maybe being a bit more verbose about what is failing would be good.
-
-> However, maybe if a clocksource fails to be enabled, we need to eject it
-> from the list of usable clocksources, as if clocksource with a high
-> rating value, were to fail to be enabled, every tick we'd try to swap
-> the bad clocksource in and fail, never to move to a good clocksource
-> with slightly lower rating.
-
-Yeah, moving it out from the list that sounds like a good idea. I
-wonder if this problem overlaps with unregistration of clocksources?
-My feeling is that we need to extend the clocksource state to include
-a broken-state somehow. But that raises all sorts of other questions.
-
-Also while at the topic, it would be nice if we could use clocksources
-for other purposes such as trace clocks. Or maybe that is being done
-already?
-
-> But other then that nit, I think this is a good change.
-
-Excellent! Do you want to extend this patch with smarter logic for
-failing clocksources? I'd prefer to keep this as-is and try to get
-unregistration and improved handling of failing clocksources solved
-together.
-
-Cheers,
-
-/ magnus
