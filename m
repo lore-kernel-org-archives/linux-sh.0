@@ -1,75 +1,36 @@
-From: Matt Fleming <mjf@gentoo.org>
-Date: Sun, 14 Dec 2008 12:02:27 +0000
-Subject: [PATCH 4/5] sh: Convert Cayman boards from hw_interrupt_type to irq_chip
-Message-Id: <ff11b9a9b797db1bf120396fa0039c3f99ee4a0a.1229255348.git.mjf@gentoo.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 16 Dec 2008 07:31:12 +0000
+Subject: [ANNOUNCE] QEMU/SH staging tree
+Message-Id: <20081216073111.GA27634@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've been unable to even compile-test this change because I don't have
-an sh5 toolchain. All uses of hw_interrupt_type for SuperH boards have
-now been converted to use irq_chip.
+Due to issues with patches either getting lost, overlooked, or
+re-implemented multiple times by different people, I've opted to start
+tracking SH-specific development patches against QEMU in a staging tree.
+Rather than using a fork of the tree, I've opted for a quilt series
+instead, as this tends to fit the model for the staging tree much better.
 
-Signed-off-by: Matt Fleming <mjf@gentoo.org>
----
- arch/sh/boards/mach-cayman/irq.c |   35 ++++++++---------------------------
- 1 files changed, 8 insertions(+), 27 deletions(-)
+Anyone doing QEMU development should be doing this against the QEMU SVN
+HEAD directly, though of course it is possible to build up a dependency
+chain based on patches within the staging tree.
 
-diff --git a/arch/sh/boards/mach-cayman/irq.c b/arch/sh/boards/mach-cayman/irq.c
-index ceb37ae..da62ad5 100644
---- a/arch/sh/boards/mach-cayman/irq.c
-+++ b/arch/sh/boards/mach-cayman/irq.c
-@@ -94,31 +94,11 @@ static void ack_cayman_irq(unsigned int irq)
- 	disable_cayman_irq(irq);
- }
- 
--static void end_cayman_irq(unsigned int irq)
--{
--	if (!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS)))
--		enable_cayman_irq(irq);
--}
--
--static unsigned int startup_cayman_irq(unsigned int irq)
--{
--	enable_cayman_irq(irq);
--	return 0; /* never anything pending */
--}
--
--static void shutdown_cayman_irq(unsigned int irq)
--{
--	disable_cayman_irq(irq);
--}
--
--struct hw_interrupt_type cayman_irq_type = {
--	.typename	= "Cayman-IRQ",
--	.startup	= startup_cayman_irq,
--	.shutdown	= shutdown_cayman_irq,
--	.enable		= enable_cayman_irq,
--	.disable	= disable_cayman_irq,
--	.ack		= ack_cayman_irq,
--	.end		= end_cayman_irq,
-+struct irq_chip cayman_irq_type = {
-+	.name		= "Cayman-IRQ",
-+	.unmask 	= enable_cayman_irq,
-+	.mask		= disable_cayman_irq,
-+	.mask_ack	= ack_cayman_irq,
- };
- 
- int cayman_irq_demux(int evt)
-@@ -187,8 +167,9 @@ void init_cayman_irq(void)
- 		return;
- 	}
- 
--	for (i=0; i<NR_EXT_IRQS; i++) {
--		irq_desc[START_EXT_IRQS + i].chip = &cayman_irq_type;
-+	for (i = 0; i < NR_EXT_IRQS; i++) {
-+		set_irq_chip_and_handler(START_EXT_IRQS + i, &cayman_irq_type,
-+					 handle_level_irq);
- 	}
- 
- 	/* Setup the SMSC interrupt */
--- 
-1.5.6.4
+Additionally, this also serves as a reference point for users that want
+to make sure they have the latest and greatest of SH development work
+against QEMU as it is today. Also note that this tree will be following
+the QEMU SVN, rather than fixed releases. Patches in this tree are
+intended to be short lived, and will be dropped as soon as they have
+found their way upstream.
 
+The quilt series can be found at:
+
+	git://git.kernel.org/pub/scm/virt/qemu/lethal/qemu-sh.git
+
+More documentation and notes can be found in the tree itself, and there
+is also some background in the qemu-devel archives for those enterprising
+individuals that care about such things.
+
+Status updates will be reflected on the wiki.
