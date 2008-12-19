@@ -1,63 +1,37 @@
-From: Julia Lawall <julia@diku.dk>
-Date: Fri, 26 Dec 2008 07:27:24 +0000
-Subject: [PATCH 2/7] arch/sh/mm: Move a dereference below a NULL test
-Message-Id: <Pine.LNX.4.64.0812260826540.25450@ask.diku.dk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 19 Dec 2008 06:34:50 +0000
+Subject: [PATCH 05/05] sh: enable deferred io LCDC on Migo-R
+Message-Id: <20081219063450.2703.46469.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20081219063359.2703.85817.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081219063359.2703.85817.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, adaplas@gmail.com, linux-sh@vger.kernel.org
 
-From: Julia Lawall <julia@diku.dk>
+From: Magnus Damm <damm@igel.co.jp>
 
-If the NULL test is necessary, then the dereference should be moved below
-the NULL test.
+Enable LCDC deferred io on Migo-R using 1s delay.
 
-The semantic patch that makes this change is as follows:
-(http://www.emn.fr/x-info/coccinelle/).
+As with other deferred io frame buffers user space code should
+use fsync() on the frame buffer device to trigger an update.
 
-// <smpl>
-@disable is_null@
-identifier f;
-expression E;
-identifier fld;
-statement S;
-@@
-
-+ if (E = NULL) S
-  f(...,E->fld,...);
-- if (E = NULL) S
-
-@@
-identifier f;
-expression E;
-identifier fld;
-statement S;
-@@
-
-+ if (!E) S
-  f(...,E->fld,...);
-- if (!E) S
-// </smpl>
-
-Signed-off-by: Julia Lawall <julia@diku.dk>
-
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/mm/ioremap_64.c             |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/mm/ioremap_64.c b/arch/sh/mm/ioremap_64.c
-index 6e0be24..fddcab4 100644
---- a/arch/sh/mm/ioremap_64.c
-+++ b/arch/sh/mm/ioremap_64.c
-@@ -71,9 +71,9 @@ void *__ioremap(unsigned long phys_addr, unsigned long size,
- 	 * Ok, go for it..
- 	 */
- 	area = get_vm_area(size, VM_IOREMAP);
--	pr_debug("Get vm_area returns %p addr %p\n",area,area->addr);
- 	if (!area)
- 		return NULL;
-+	pr_debug("Get vm_area returns %p addr %p\n", area, area->addr);
- 	area->phys_addr = phys_addr;
- 	addr = area->addr;
- 	if (ioremap_page_range((unsigned long)addr, (unsigned long)addr + size,
+ arch/sh/boards/mach-migor/setup.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- 0008/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2008-12-18 13:59:06.000000000 +0900
+@@ -262,6 +262,8 @@ static struct sh_mobile_lcdc_info sh_mob
+ 		.sys_bus_cfg = {
+ 			.ldmt2r = 0x06000a09,
+ 			.ldmt3r = 0x180e3418,
++			/* set 1s delay to encourage fsync() */
++			.deferred_io_msec = 1000,
+ 		},
+ 	}
+ #endif
