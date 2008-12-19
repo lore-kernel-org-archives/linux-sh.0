@@ -1,394 +1,391 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Dec 2008 09:17:34 +0000
-Subject: [PATCH 04/04] sh: use gpiolib
-Message-Id: <20081225091734.7670.31100.sendpatchset@rx1.opensource.se>
+Date: Fri, 19 Dec 2008 06:34:41 +0000
+Subject: [PATCH 04/05] video: sh_mobile_lcdcfb deferred io support
+Message-Id: <20081219063441.2703.27320.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20081219063359.2703.85817.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081219063359.2703.85817.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, adaplas@gmail.com, linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch updates the SuperH gpio code to make use of gpiolib. The
-gpiolib callbacks get() and set() are lockless, but we use our own
-spinlock for the other operations to make sure hardware register
-bitfield accesses stay atomic.
+This patch adds sh_mobile_lcdcfb deferred io support for SYS panels.
+
+The LCDC hardware block managed by the sh_mobile_lcdcfb driver supports
+RGB or SYS panel configurations. SYS panels come with an external display
+controller that is resposible for refreshing the actual LCD panel. RGB
+panels are controlled directly by the LCDC and they need to be refreshed
+by the LCDC hardware.
+
+In the case of SYS panels we can save some power by configuring the LCDC
+hardware block in one-shot mode. In this one-shot mode panel refresh is
+managed by software. This works well together with deferred io since it
+allows us to stop clocks for most of the time and only enable clocks when
+we actually want to trigger an update. When there is no fbdev activity
+the clocks are kept stopped which allows us to deep sleep.
+
+The refresh rate in deferred io mode is set using platform data. The same
+platform data can also be used to disable deferred io mode.
+
+As with other deferred io frame buffers user space code should use fsync()
+on the frame buffer device to trigger an update.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- r2dplus builds both with and without CONFIG_GENERIC_GPIO.
- Migo-R builds and works well.
+ drivers/video/Kconfig            |    1 
+ drivers/video/sh_mobile_lcdcfb.c |  170 +++++++++++++++++++++++++++++++++-----
+ include/video/sh_mobile_lcdc.h   |    1 
+ 3 files changed, 150 insertions(+), 22 deletions(-)
 
- arch/sh/Kconfig            |    7 ++
- arch/sh/boards/Kconfig     |    4 -
- arch/sh/include/asm/gpio.h |   61 ++++++++++++++-----------
- arch/sh/kernel/Makefile_32 |    2 
- arch/sh/kernel/Makefile_64 |    2 
- arch/sh/kernel/gpio.c      |  106 ++++++++++++++++++++++----------------------
- drivers/serial/sh-sci.h    |    2 
- 7 files changed, 100 insertions(+), 84 deletions(-)
-
---- 0001/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2008-12-25 17:20:17.000000000 +0900
-@@ -126,6 +126,13 @@ config ARCH_HAS_ILOG2_U64
- config ARCH_NO_VIRT_TO_BUS
- 	def_bool y
+--- 0001/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-19 14:17:44.000000000 +0900
+@@ -1893,6 +1893,7 @@ config FB_SH_MOBILE_LCDC
+ 	select FB_SYS_COPYAREA
+ 	select FB_SYS_IMAGEBLIT
+ 	select FB_SYS_FOPS
++	select FB_DEFERRED_IO
+ 	---help---
+ 	  Frame buffer driver for the on-chip SH-Mobile LCD controller.
  
-+config ARCH_WANT_OPTIONAL_GPIOLIB
-+	def_bool y
-+	depends on !ARCH_REQUIRE_GPIOLIB
-+
-+config ARCH_REQUIRE_GPIOLIB
-+	def_bool n
-+
- config IO_TRAPPED
- 	bool
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2008-12-19 14:17:59.000000000 +0900
+@@ -16,7 +16,9 @@
+ #include <linux/clk.h>
+ #include <linux/platform_device.h>
+ #include <linux/dma-mapping.h>
++#include <linux/interrupt.h>
+ #include <video/sh_mobile_lcdc.h>
++#include <asm/atomic.h>
  
---- 0001/arch/sh/boards/Kconfig
-+++ work/arch/sh/boards/Kconfig	2008-12-25 17:20:17.000000000 +0900
-@@ -165,7 +165,7 @@ config SH_SH7785LCR_29BIT_PHYSMAPS
- config SH_MIGOR
- 	bool "Migo-R"
- 	depends on CPU_SUBTYPE_SH7722
--	select GENERIC_GPIO
-+	select ARCH_REQUIRE_GPIOLIB
- 	help
- 	  Select Migo-R if configuring for the SH7722 Migo-R platform
-           by Renesas System Solutions Asia Pte. Ltd.
-@@ -173,7 +173,7 @@ config SH_MIGOR
- config SH_AP325RXA
- 	bool "AP-325RXA"
- 	depends on CPU_SUBTYPE_SH7723
--	select GENERIC_GPIO
-+	select ARCH_REQUIRE_GPIOLIB
- 	help
- 	  Renesas "AP-325RXA" support.
- 	  Compatible with ALGO SYSTEM CO.,LTD. "AP-320A"
---- 0012/arch/sh/include/asm/gpio.h
-+++ work/arch/sh/include/asm/gpio.h	2008-12-25 17:28:31.000000000 +0900
-@@ -19,6 +19,40 @@
- #include <cpu/gpio.h>
- #endif
+ #define PALETTE_NR 16
  
-+#define ARCH_NR_GPIOS 512
-+#include <asm-generic/gpio.h>
-+
-+#ifdef CONFIG_GPIOLIB
-+
-+static inline int gpio_get_value(unsigned gpio)
-+{
-+	return __gpio_get_value(gpio);
-+}
-+
-+static inline void gpio_set_value(unsigned gpio, int value)
-+{
-+	__gpio_set_value(gpio, value);
-+}
-+
-+static inline int gpio_cansleep(unsigned gpio)
-+{
-+	return __gpio_cansleep(gpio);
-+}
-+
-+static inline int gpio_to_irq(unsigned gpio)
-+{
-+	WARN_ON(1);
-+	return -ENOSYS;
-+}
-+
-+static inline int irq_to_gpio(unsigned int irq)
-+{
-+	WARN_ON(1);
-+	return -EINVAL;
-+}
-+
-+#endif /* CONFIG_GPIOLIB */
-+
- typedef unsigned short pinmux_enum_t;
- typedef unsigned short pinmux_flag_t;
- 
-@@ -94,34 +128,9 @@ struct pinmux_info {
- 	unsigned int gpio_data_size;
- 
- 	unsigned long *gpio_in_use;
-+	struct gpio_chip chip;
+@@ -30,11 +32,14 @@ struct sh_mobile_lcdc_chan {
+ 	u32 pseudo_palette[PALETTE_NR];
+ 	struct fb_info info;
+ 	dma_addr_t dma_handle;
++	struct fb_deferred_io defio;
  };
  
- int register_pinmux(struct pinmux_info *pip);
+ struct sh_mobile_lcdc_priv {
+ 	void __iomem *base;
++	int irq;
+ #ifdef CONFIG_HAVE_CLK
++	atomic_t clk_usecnt;
+ 	struct clk *dot_clk;
+ 	struct clk *clk;
+ #endif
+@@ -57,7 +62,7 @@ struct sh_mobile_lcdc_priv {
  
--int __gpio_request(unsigned gpio);
--static inline int gpio_request(unsigned gpio, const char *label)
--{
--	return __gpio_request(gpio);
--}
--void gpio_free(unsigned gpio);
--int gpio_direction_input(unsigned gpio);
--int gpio_direction_output(unsigned gpio, int value);
--int gpio_get_value(unsigned gpio);
--void gpio_set_value(unsigned gpio, int value);
--
--/* IRQ modes are unspported */
--static inline int gpio_to_irq(unsigned gpio)
--{
--	WARN_ON(1);
--	return -EINVAL;
--}
--
--static inline int irq_to_gpio(unsigned irq)
--{
--	WARN_ON(1);
--	return -EINVAL;
--}
--
--#include <asm-generic/gpio.h>
--
- #endif /* __ASM_SH_GPIO_H */
---- 0001/arch/sh/kernel/Makefile_32
-+++ work/arch/sh/kernel/Makefile_32	2008-12-25 17:36:49.000000000 +0900
-@@ -27,7 +27,7 @@ obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
- obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
- obj-$(CONFIG_IO_TRAPPED)	+= io_trapped.o
- obj-$(CONFIG_KPROBES)		+= kprobes.o
--obj-$(CONFIG_GENERIC_GPIO)	+= gpio.o
-+obj-$(CONFIG_ARCH_REQUIRE_GPIOLIB)	+= gpio.o
- obj-$(CONFIG_DYNAMIC_FTRACE)	+= ftrace.o
- obj-$(CONFIG_DUMP_CODE)		+= disassemble.o
+ /* per-channel registers */
+ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+-       LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR };
++       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR };
  
---- 0001/arch/sh/kernel/Makefile_64
-+++ work/arch/sh/kernel/Makefile_64	2008-12-25 17:37:06.000000000 +0900
-@@ -15,6 +15,6 @@ obj-$(CONFIG_KEXEC)		+= machine_kexec.o 
- obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
- obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
- obj-$(CONFIG_IO_TRAPPED)	+= io_trapped.o
--obj-$(CONFIG_GENERIC_GPIO)	+= gpio.o
-+obj-$(CONFIG_ARCH_REQUIRE_GPIOLIB)	+= gpio.o
+ static unsigned long lcdc_offs_mainlcd[] = {
+ 	[LDDCKPAT1R] = 0x400,
+@@ -67,6 +72,7 @@ static unsigned long lcdc_offs_mainlcd[]
+ 	[LDMT3R] = 0x420,
+ 	[LDDFR] = 0x424,
+ 	[LDSM1R] = 0x428,
++	[LDSM2R] = 0x42c,
+ 	[LDSA1R] = 0x430,
+ 	[LDMLSR] = 0x438,
+ 	[LDHCNR] = 0x448,
+@@ -84,6 +90,7 @@ static unsigned long lcdc_offs_sublcd[] 
+ 	[LDMT3R] = 0x608,
+ 	[LDDFR] = 0x60c,
+ 	[LDSM1R] = 0x610,
++	[LDSM2R] = 0x614,
+ 	[LDSA1R] = 0x618,
+ 	[LDMLSR] = 0x620,
+ 	[LDHCNR] = 0x624,
+@@ -97,6 +104,8 @@ static unsigned long lcdc_offs_sublcd[] 
+ #define LCDC_RESET	0x00000100
+ #define DISPLAY_BEU	0x00000008
+ #define LCDC_ENABLE	0x00000001
++#define LDINTR_FE	0x00000400
++#define LDINTR_FS	0x00000004
  
- EXTRA_CFLAGS += -Werror
---- 0012/arch/sh/kernel/gpio.c
-+++ work/arch/sh/kernel/gpio.c	2008-12-25 17:20:17.000000000 +0900
-@@ -19,22 +19,6 @@
- #include <linux/bitops.h>
- #include <linux/gpio.h>
+ static void lcdc_write_chan(struct sh_mobile_lcdc_chan *chan,
+ 			    int reg_nr, unsigned long data)
+@@ -171,6 +180,65 @@ struct sh_mobile_lcdc_sys_bus_ops sh_mob
+ 	lcdc_sys_read_data,
+ };
  
--static struct pinmux_info *registered_gpio;
--
--static struct pinmux_info *gpio_controller(unsigned gpio)
--{
--	if (!registered_gpio)
--		return NULL;
--
--	if (gpio < registered_gpio->first_gpio)
--		return NULL;
--
--	if (gpio > registered_gpio->last_gpio)
--		return NULL;
--
--	return registered_gpio;
--}
--
- static int enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
- {
- 	if (enum_id < r->begin)
-@@ -398,9 +382,14 @@ static int pinmux_config_gpio(struct pin
- 
- static DEFINE_SPINLOCK(gpio_lock);
- 
--int __gpio_request(unsigned gpio)
-+static struct pinmux_info *chip_to_pinmux(struct gpio_chip *chip)
++#ifdef CONFIG_HAVE_CLK
++static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
 +{
-+	return container_of(chip, struct pinmux_info, chip);
++	if (atomic_inc_and_test(&priv->clk_usecnt)) {
++		clk_enable(priv->clk);
++		if (priv->dot_clk)
++			clk_enable(priv->dot_clk);
++	}
 +}
 +
-+static int sh_gpio_request(struct gpio_chip *chip, unsigned offset)
++static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
++{
++	if (atomic_sub_return(1, &priv->clk_usecnt) = -1) {
++		if (priv->dot_clk)
++			clk_disable(priv->dot_clk);
++		clk_disable(priv->clk);
++	}
++}
++#else
++static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv) {}
++static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv) {}
++#endif
++
++static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
++				       struct list_head *pagelist)
++{
++	struct sh_mobile_lcdc_chan *ch = info->par;
++
++	/* enable clocks before accessing hardware */
++	sh_mobile_lcdc_clk_on(ch->lcdc);
++
++	/* trigger panel update */
++	lcdc_write_chan(ch, LDSM2R, 1);
++}
++
++static void sh_mobile_lcdc_deferred_io_touch(struct fb_info *info)
++{
++	struct fb_deferred_io *fbdefio = info->fbdefio;
++
++	if (fbdefio)
++		schedule_delayed_work(&info->deferred_work, fbdefio->delay);
++}
++
++static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
++{
++	struct sh_mobile_lcdc_priv *priv = data;
++	unsigned long tmp;
++
++	/* acknowledge interrupt */
++	tmp = lcdc_read(priv, _LDINTR);
++	tmp &= 0xffffff00; /* mask in high 24 bits */
++	tmp |= 0x000000ff ^ LDINTR_FS; /* status in low 8 */
++	lcdc_write(priv, _LDINTR, tmp);
++
++	/* disable clocks */
++	sh_mobile_lcdc_clk_off(priv);
++	return IRQ_HANDLED;
++}
++
+ static void sh_mobile_lcdc_start_stop(struct sh_mobile_lcdc_priv *priv,
+ 				      int start)
  {
--	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	struct pinmux_info *gpioc = chip_to_pinmux(chip);
- 	struct pinmux_data_reg *dummy;
- 	unsigned long flags;
- 	int i, ret, pinmux_type;
-@@ -412,30 +401,30 @@ int __gpio_request(unsigned gpio)
+@@ -208,11 +276,11 @@ static int sh_mobile_lcdc_start(struct s
+ 	int k, m;
+ 	int ret = 0;
  
- 	spin_lock_irqsave(&gpio_lock, flags);
+-#ifdef CONFIG_HAVE_CLK
+-	clk_enable(priv->clk);
+-	if (priv->dot_clk)
+-		clk_enable(priv->dot_clk);
+-#endif
++	/* enable clocks before accessing the hardware */
++	for (k = 0; k < ARRAY_SIZE(priv->ch); k++)
++		if (priv->ch[k].enabled)
++			sh_mobile_lcdc_clk_on(priv);
++
+ 	/* reset */
+ 	lcdc_write(priv, _LDCNT2R, lcdc_read(priv, _LDCNT2R) | LCDC_RESET);
+ 	lcdc_wait_bit(priv, _LDCNT2R, LCDC_RESET, 0);
+@@ -255,7 +323,7 @@ static int sh_mobile_lcdc_start(struct s
+ 	lcdc_write(priv, _LDDCKSTPR, 0);
+ 	lcdc_wait_bit(priv, _LDDCKSTPR, ~0, 0);
  
--	if ((gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE) != PINMUX_TYPE_NONE)
-+	if ((gpioc->gpios[offset].flags & PINMUX_FLAG_TYPE) != PINMUX_TYPE_NONE)
- 		goto err_unlock;
+-	/* interrupts are disabled */
++	/* interrupts are disabled to begin with */
+ 	lcdc_write(priv, _LDINTR, 0);
  
- 	/* setup pin function here if no data is associated with pin */
- 
--	if (get_data_reg(gpioc, gpio, &dummy, &i) != 0)
-+	if (get_data_reg(gpioc, offset, &dummy, &i) != 0)
- 		pinmux_type = PINMUX_TYPE_FUNCTION;
- 	else
- 		pinmux_type = PINMUX_TYPE_GPIO;
- 
- 	if (pinmux_type = PINMUX_TYPE_FUNCTION) {
--		if (pinmux_config_gpio(gpioc, gpio,
-+		if (pinmux_config_gpio(gpioc, offset,
- 				       pinmux_type,
- 				       GPIO_CFG_DRYRUN) != 0)
- 			goto err_unlock;
- 
--		if (pinmux_config_gpio(gpioc, gpio,
-+		if (pinmux_config_gpio(gpioc, offset,
- 				       pinmux_type,
- 				       GPIO_CFG_REQ) != 0)
- 			BUG();
+ 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
+@@ -316,9 +384,6 @@ static int sh_mobile_lcdc_start(struct s
+ 			return ret;
  	}
  
--	gpioc->gpios[gpio].flags &= ~PINMUX_FLAG_TYPE;
--	gpioc->gpios[gpio].flags |= pinmux_type;
-+	gpioc->gpios[offset].flags &= ~PINMUX_FLAG_TYPE;
-+	gpioc->gpios[offset].flags |= pinmux_type;
+-	/* --- display_lcdc_data() --- */
+-	lcdc_write(priv, _LDINTR, 0x00000f00);
+-
+ 	/* word and long word swap */
+ 	lcdc_write(priv, _LDDDSR, lcdc_read(priv, _LDDDSR) | 6);
  
- 	ret = 0;
-  err_unlock:
-@@ -443,11 +432,10 @@ int __gpio_request(unsigned gpio)
-  err_out:
- 	return ret;
- }
--EXPORT_SYMBOL(__gpio_request);
+@@ -340,8 +405,24 @@ static int sh_mobile_lcdc_start(struct s
+ 		/* set line size */
+ 		lcdc_write_chan(ch, LDMLSR, ch->info.fix.line_length);
  
--void gpio_free(unsigned gpio)
-+static void sh_gpio_free(struct gpio_chip *chip, unsigned offset)
- {
--	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	struct pinmux_info *gpioc = chip_to_pinmux(chip);
- 	unsigned long flags;
- 	int pinmux_type;
- 
-@@ -456,14 +444,13 @@ void gpio_free(unsigned gpio)
- 
- 	spin_lock_irqsave(&gpio_lock, flags);
- 
--	pinmux_type = gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE;
--	pinmux_config_gpio(gpioc, gpio, pinmux_type, GPIO_CFG_FREE);
--	gpioc->gpios[gpio].flags &= ~PINMUX_FLAG_TYPE;
--	gpioc->gpios[gpio].flags |= PINMUX_TYPE_NONE;
-+	pinmux_type = gpioc->gpios[offset].flags & PINMUX_FLAG_TYPE;
-+	pinmux_config_gpio(gpioc, offset, pinmux_type, GPIO_CFG_FREE);
-+	gpioc->gpios[offset].flags &= ~PINMUX_FLAG_TYPE;
-+	gpioc->gpios[offset].flags |= PINMUX_TYPE_NONE;
- 
- 	spin_unlock_irqrestore(&gpio_lock, flags);
- }
--EXPORT_SYMBOL(gpio_free);
- 
- static int pinmux_direction(struct pinmux_info *gpioc,
- 			    unsigned gpio, int new_pinmux_type)
-@@ -507,21 +494,20 @@ static int pinmux_direction(struct pinmu
- 	return ret;
- }
- 
--int gpio_direction_input(unsigned gpio)
-+static int sh_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
- {
--	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	struct pinmux_info *gpioc = chip_to_pinmux(chip);
- 	unsigned long flags;
- 	int ret;
- 
- 	spin_lock_irqsave(&gpio_lock, flags);
--	ret = pinmux_direction(gpioc, gpio, PINMUX_TYPE_INPUT);
-+	ret = pinmux_direction(gpioc, offset, PINMUX_TYPE_INPUT);
- 	spin_unlock_irqrestore(&gpio_lock, flags);
- 
- 	return ret;
- }
--EXPORT_SYMBOL(gpio_direction_input);
- 
--static void __gpio_set_value(struct pinmux_info *gpioc,
-+static void sh_gpio_set_value(struct pinmux_info *gpioc,
- 			     unsigned gpio, int value)
- {
- 	struct pinmux_data_reg *dr = NULL;
-@@ -533,22 +519,22 @@ static void __gpio_set_value(struct pinm
- 		gpio_write_bit(dr, bit, value);
- }
- 
--int gpio_direction_output(unsigned gpio, int value)
-+static int sh_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
-+				    int value)
- {
--	struct pinmux_info *gpioc = gpio_controller(gpio);
-+	struct pinmux_info *gpioc = chip_to_pinmux(chip);
- 	unsigned long flags;
- 	int ret;
- 
--	__gpio_set_value(gpioc, gpio, value);
-+	sh_gpio_set_value(gpioc, offset, value);
- 	spin_lock_irqsave(&gpio_lock, flags);
--	ret = pinmux_direction(gpioc, gpio, PINMUX_TYPE_OUTPUT);
-+	ret = pinmux_direction(gpioc, offset, PINMUX_TYPE_OUTPUT);
- 	spin_unlock_irqrestore(&gpio_lock, flags);
- 
- 	return ret;
- }
--EXPORT_SYMBOL(gpio_direction_output);
- 
--static int __gpio_get_value(struct pinmux_info *gpioc, unsigned gpio)
-+static int sh_gpio_get_value(struct pinmux_info *gpioc, unsigned gpio)
- {
- 	struct pinmux_data_reg *dr = NULL;
- 	int bit = 0;
-@@ -561,24 +547,38 @@ static int __gpio_get_value(struct pinmu
- 	return gpio_read_reg(dr->reg, dr->reg_width, 1, bit);
- }
- 
--int gpio_get_value(unsigned gpio)
-+static int sh_gpio_get(struct gpio_chip *chip, unsigned offset)
- {
--	return __gpio_get_value(gpio_controller(gpio), gpio);
-+	return sh_gpio_get_value(chip_to_pinmux(chip), offset);
- }
--EXPORT_SYMBOL(gpio_get_value);
- 
--void gpio_set_value(unsigned gpio, int value)
-+static void sh_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
- {
--	__gpio_set_value(gpio_controller(gpio), gpio, value);
-+	sh_gpio_set_value(chip_to_pinmux(chip), offset, value);
- }
--EXPORT_SYMBOL(gpio_set_value);
- 
- int register_pinmux(struct pinmux_info *pip)
- {
--	registered_gpio = pip;
--	setup_data_regs(pip);
--	pr_info("pinmux: %s handling gpio %d -> %d\n",
-+	struct gpio_chip *chip = &pip->chip;
+-		/* continuous read mode */
+-		lcdc_write_chan(ch, LDSM1R, 0);
++		/* setup deferred io if SYS bus */
++		tmp = ch->cfg.sys_bus_cfg.deferred_io_msec;
++		if (ch->ldmt1r_value & (1 << 12) && tmp) {
++			ch->defio.deferred_io = sh_mobile_lcdc_deferred_io;
++			ch->defio.delay = msecs_to_jiffies(tmp);
++			ch->info.fbdefio = &ch->defio;
++			fb_deferred_io_init(&ch->info);
 +
-+	pr_info("sh pinmux: %s handling gpio %d -> %d\n",
- 		pip->name, pip->first_gpio, pip->last_gpio);
++			/* one-shot mode */
++			lcdc_write_chan(ch, LDSM1R, 1);
++
++			/* enable "Frame End Interrupt Enable" bit */
++			lcdc_write(priv, _LDINTR, LDINTR_FE);
++
++		} else {
++			/* continuous read mode */
++			lcdc_write_chan(ch, LDSM1R, 0);
++		}
+ 	}
  
--	return 0;
-+	setup_data_regs(pip);
+ 	/* display output */
+@@ -365,6 +446,7 @@ static void sh_mobile_lcdc_stop(struct s
+ {
+ 	struct sh_mobile_lcdc_chan *ch;
+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg;
++	unsigned long tmp;
+ 	int k;
+ 
+ 	/* tell the board code to disable the panel */
+@@ -373,16 +455,22 @@ static void sh_mobile_lcdc_stop(struct s
+ 		board_cfg = &ch->cfg.board_cfg;
+ 		if (board_cfg->display_off)
+ 			board_cfg->display_off(board_cfg->board_data);
 +
-+	chip->request = sh_gpio_request;
-+	chip->free = sh_gpio_free;
-+	chip->direction_input = sh_gpio_direction_input;
-+	chip->get = sh_gpio_get;
-+	chip->direction_output = sh_gpio_direction_output;
-+	chip->set = sh_gpio_set;
-+
-+	WARN_ON(pip->first_gpio != 0); /* needs testing */
-+
-+	chip->label = pip->name;
-+	chip->owner = THIS_MODULE;
-+	chip->base = pip->first_gpio;
-+	chip->ngpio = (pip->last_gpio - pip->first_gpio) + 1;
-+
-+	return gpiochip_add(chip);
++		/* cleanup deferred io if SYS bus */
++		tmp = ch->cfg.sys_bus_cfg.deferred_io_msec;
++		if (ch->ldmt1r_value & (1 << 12) && tmp) {
++			fb_deferred_io_cleanup(&ch->info);
++			ch->info.fbdefio = NULL;
++		}
+ 	}
+ 
+ 	/* stop the lcdc */
+ 	sh_mobile_lcdc_start_stop(priv, 0);
+ 
+-#ifdef CONFIG_HAVE_CLK
+-	if (priv->dot_clk)
+-		clk_disable(priv->dot_clk);
+-	clk_disable(priv->clk);
+-#endif
++	/* stop clocks */
++	for (k = 0; k < ARRAY_SIZE(priv->ch); k++)
++		if (priv->ch[k].enabled)
++			sh_mobile_lcdc_clk_off(priv);
  }
---- 0001/drivers/serial/sh-sci.h
-+++ work/drivers/serial/sh-sci.h	2008-12-25 17:31:11.000000000 +0900
-@@ -1,6 +1,6 @@
- #include <linux/serial_core.h>
- #include <asm/io.h>
--#include <asm/gpio.h>
-+#include <linux/gpio.h>
  
- #if defined(CONFIG_H83007) || defined(CONFIG_H83068)
- #include <asm/regs306x.h>
+ static int sh_mobile_lcdc_check_interface(struct sh_mobile_lcdc_chan *ch)
+@@ -446,6 +534,7 @@ static int sh_mobile_lcdc_setup_clocks(s
+ 	priv->lddckr = icksel << 16;
+ 
+ #ifdef CONFIG_HAVE_CLK
++	atomic_set(&priv->clk_usecnt, -1);
+ 	snprintf(clk_name, sizeof(clk_name), "lcdc%d", pdev->id);
+ 	priv->clk = clk_get(&pdev->dev, clk_name);
+ 	if (IS_ERR(priv->clk)) {
+@@ -497,13 +586,34 @@ static struct fb_fix_screeninfo sh_mobil
+ 	.accel =	FB_ACCEL_NONE,
+ };
+ 
++static void sh_mobile_lcdc_fillrect(struct fb_info *info,
++				    const struct fb_fillrect *rect)
++{
++	sys_fillrect(info, rect);
++	sh_mobile_lcdc_deferred_io_touch(info);
++}
++
++static void sh_mobile_lcdc_copyarea(struct fb_info *info,
++				    const struct fb_copyarea *area)
++{
++	sys_copyarea(info, area);
++	sh_mobile_lcdc_deferred_io_touch(info);
++}
++
++static void sh_mobile_lcdc_imageblit(struct fb_info *info,
++				     const struct fb_image *image)
++{
++	sys_imageblit(info, image);
++	sh_mobile_lcdc_deferred_io_touch(info);
++}
++
+ static struct fb_ops sh_mobile_lcdc_ops = {
+ 	.fb_setcolreg	= sh_mobile_lcdc_setcolreg,
+ 	.fb_read        = fb_sys_read,
+ 	.fb_write       = fb_sys_write,
+-	.fb_fillrect	= sys_fillrect,
+-	.fb_copyarea	= sys_copyarea,
+-	.fb_imageblit	= sys_imageblit,
++	.fb_fillrect	= sh_mobile_lcdc_fillrect,
++	.fb_copyarea	= sh_mobile_lcdc_copyarea,
++	.fb_imageblit	= sh_mobile_lcdc_imageblit,
+ };
+ 
+ static int sh_mobile_lcdc_set_bpp(struct fb_var_screeninfo *var, int bpp)
+@@ -564,8 +674,9 @@ static int __init sh_mobile_lcdc_probe(s
+ 	}
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (res = NULL) {
+-		dev_err(&pdev->dev, "cannot find IO resource\n");
++	i = platform_get_irq(pdev, 0);
++	if (!res || i < 0) {
++		dev_err(&pdev->dev, "cannot get platform resources\n");
+ 		error = -ENOENT;
+ 		goto err0;
+ 	}
+@@ -577,6 +688,14 @@ static int __init sh_mobile_lcdc_probe(s
+ 		goto err0;
+ 	}
+ 
++	error = request_irq(i, sh_mobile_lcdc_irq, IRQF_DISABLED,
++			    pdev->dev.bus_id, priv);
++	if (error) {
++		dev_err(&pdev->dev, "unable to request irq\n");
++		goto err1;
++	}
++
++	priv->irq = i;
+ 	platform_set_drvdata(pdev, priv);
+ 	pdata = pdev->dev.platform_data;
+ 
+@@ -660,6 +779,7 @@ static int __init sh_mobile_lcdc_probe(s
+ 		info->fix.smem_start = priv->ch[i].dma_handle;
+ 		info->screen_base = buf;
+ 		info->device = &pdev->dev;
++		info->par = &priv->ch[i];
+ 	}
+ 
+ 	if (error)
+@@ -687,6 +807,10 @@ static int __init sh_mobile_lcdc_probe(s
+ 			 (int) priv->ch[i].cfg.lcd_cfg.xres,
+ 			 (int) priv->ch[i].cfg.lcd_cfg.yres,
+ 			 priv->ch[i].cfg.bpp);
++
++		/* deferred io mode: disable clock to save power */
++		if (info->fbdefio)
++			sh_mobile_lcdc_clk_off(priv);
+ 	}
+ 
+ 	return 0;
+@@ -728,6 +852,8 @@ static int sh_mobile_lcdc_remove(struct 
+ 	if (priv->base)
+ 		iounmap(priv->base);
+ 
++	if (priv->irq)
++		free_irq(priv->irq, priv);
+ 	kfree(priv);
+ 	return 0;
+ }
+--- 0001/include/video/sh_mobile_lcdc.h
++++ work/include/video/sh_mobile_lcdc.h	2008-12-19 14:17:44.000000000 +0900
+@@ -37,6 +37,7 @@ enum { LCDC_CLK_BUS, LCDC_CLK_PERIPHERAL
+ struct sh_mobile_lcdc_sys_bus_cfg {
+ 	unsigned long ldmt2r;
+ 	unsigned long ldmt3r;
++	unsigned long deferred_io_msec;
+ };
+ 
+ struct sh_mobile_lcdc_sys_bus_ops {
