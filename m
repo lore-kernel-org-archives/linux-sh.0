@@ -1,26 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 31 Dec 2008 23:29:51 +0000
-Subject: Re: SH7709 BUG on boot (partially bisected)
-Message-Id: <20081231232950.GA29912@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 19 Dec 2008 06:33:59 +0000
+Subject: [PATCH 00/05] video: deferred io fixes and sh_mobile_lcdcfb support
+Message-Id: <20081219063359.2703.85817.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <OF2E8062F8.007117EA-ON80257530.004D178D-80257530.004E3CFB@smsc.com>
-In-Reply-To: <OF2E8062F8.007117EA-ON80257530.004D178D-80257530.004E3CFB@smsc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, adaplas@gmail.com, linux-sh@vger.kernel.org
 
-On Wed, Dec 31, 2008 at 02:13:23PM +0000, Steve.Glendinning@smsc.com wrote:
-> Using the current torvalds tree on SH7709, physmap is having a problem 
-> seeing my memory-mapped flash.  I've bisected this to somewhere between:
-> 
-> GOOD: [e9bf51e5ccc7703226c79888603e157066213700] sh: __udivdi3 -> do_div() 
-> in softfloat lib.
-> BAD: [3b041227f7ef7c7e97f205c68c6069c0c62e5204] sh: Add plain udivsi3 (not 
-> _i4*) for gcc-4.1 and lower.
-> 
-> All commits between these two fail to boot here (no console output at 
-> all), so I wasn't able to bisect further.
-> 
-Can you post your toolchain information? Compiler version is the most
-important thing here.
+video: deferred io fixes and sh_mobile_lcdcfb support
+
+[PATCH 01/05] video: fix deferred io fsync()
+[PATCH 02/05] video: deferred io cleanup
+[PATCH 03/05] video: deferred io with physically contiguous memory
+[PATCH 04/05] video: sh_mobile_lcdcfb deferred io support 
+[PATCH 05/05] sh: enable deferred io LCDC on Migo-R
+
+This patchset adds deferred io support to sh_mobile_lcdcfb.
+
+The LCDC hardware block managed by the sh_mobile_lcdcfb driver supports
+RGB or SYS panel configurations. SYS panels come with an external display
+controller that is resposible for refreshing the actual LCD panel. RGB
+panels are controlled directly by the LCDC and they need to be refreshed
+by the LCDC hardware.
+
+In the case of SYS panels we can save some power by configuring the LCDC
+hardware block in one-shot mode. In this one-shot mode panel refresh is
+managed by software. This works well together with deferred io since it
+allows us to stop clocks for most of the time and only enable clocks when
+we actually want to trigger an update. When there is no fbdev activity
+the clocks are kept stopped which allows us to deep sleep.
+
+May I suggest merging the first 3 patches with other framebuffer changes,
+but handling patch 4 and 5 with other SuperH changes? That strategy
+should be fine since there are no compile time dependencies. To keep
+things running please apply patch number 5 when all other changes are in.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/boards/mach-migor/setup.c |    2 
+ drivers/video/Kconfig             |    1 
+ drivers/video/fb_defio.c          |   27 ++++-
+ drivers/video/sh_mobile_lcdcfb.c  |  170 ++++++++++++++++++++++++++++++++-----
+ include/video/sh_mobile_lcdc.h    |    1 
+ 5 files changed, 174 insertions(+), 27 deletions(-)
