@@ -1,32 +1,54 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Fri, 19 Dec 2008 04:38:10 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Dec 2008 07:15:19 +0000
 Subject: Re: A patch got applied to v4l bypassing v4l lists
-Message-Id: <aec7e5c30812182038v5d89c2bnfc2a71ebd61783b@mail.gmail.com>
+Message-Id: <Pine.LNX.4.64.0812190808390.3922@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.0812181613050.5510@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0812181613050.5510@axis700.grange>
+	<20081218160841.GA13851@linux-sh.org>
+	<Pine.LNX.4.64.0812181717320.5510@axis700.grange>
+	<20081218162439.GA27151@linux-sh.org>
+	<Pine.LNX.4.64.0812181730080.5510@axis700.grange>
+	<20081218191839.78cb627d@caramujo.chehab.org>
+	<Pine.LNX.4.64.0812190026180.8046@axis700.grange>
+	<20081218205706.60bf1526@caramujo.chehab.org>
+In-Reply-To: <20081218205706.60bf1526@caramujo.chehab.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Mauro Carvalho Chehab <mchehab@infradead.org>
 Cc: Magnus Damm <damm@igel.co.jp>, video4linux-list@redhat.com, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-Hi Guennadi,
+On Thu, 18 Dec 2008, Mauro Carvalho Chehab wrote:
 
-On Fri, Dec 19, 2008 at 12:23 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> just stumbled upon a patch
->
-> sh: sh_mobile ceu clock framework support
->
-> that has been pulled through linux-sh ML and the sh tree without even
-> being cc-ed to the v4l list, which wasn't a very good idea IMHO. Now this
-> patch has to be manually "back-ported" to v4l hg repos using the
-> "kernel-sync:" tag and only in part, because arch/sh directory is not in
-> hg at all. Can we please avoid this in the future?
+> On Fri, 19 Dec 2008 00:30:05 +0100 (CET)
+> Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> 
+> > > A side note: maybe the design of pxa_camera could be improved to avoid needing
+> > > to be touched as architecture changes. This is the only v4l driver that includes
+> > > asm/arch header files.
+> > 
+> > The patch in question was for sh_mobile_ceu_camera.c - not for pxa, and 
+> > even though that one doesn't include any asm headers, as you see, it is 
+> > also tied pretty closely with respective platform code.
+> 
+> > As for including asm headers in pxa_camera.c - it wouldn't be easy to get 
+> > rid of them, one of the main obstacles is the use of the pxa-specific 
+> > dma-channel handling API.
+> 
+> Ok. I dunno the specific details of the sh and pxa bindings, but it would be
+> better to have it more independent from architecture specific implementation
+> details.
 
-That specific patch set improved clock framework support and changed
-quite a few SuperH drivers. I should have CC-ed you. Sorry about that,
-will do next time.
+...that's what I'm saying - we have to work with the complete kernel tree. 
+Working with a part of it is no fun. Just think about one thing - changing 
+platform data struct layout. It will still compile as long as you preserve 
+the name, because that's just a void * you get from platform, but you 
+better don't try to run that... Or take this clock change now to the 
+sh_mobile_ceu_camera.c. It will still compile with older kernels, but it 
+won't run.
 
-/ magnus
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
