@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Dec 2008 08:29:46 +0000
-Subject: [PATCH 00/05] video: deferred io sys helpers V2
-Message-Id: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
+Date: Mon, 22 Dec 2008 05:53:17 +0000
+Subject: [PATCH 05/05] video: deferred io sys helpers - xen
+Message-Id: <20081222055317.27821.25927.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
@@ -11,49 +11,110 @@ Content-Transfer-Encoding: 7bit
 To: linux-fbdev-devel@lists.sourceforge.net
 Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
 
-video: deferred io sys helpers V2
+From: Magnus Damm <damm@igel.co.jp>
 
-[PATCH 01/05] video: deferred io sys helpers - core V2
-[PATCH 02/05] video: deferred io sys helpers - sh_mobile_lcdcfb V2
-[PATCH 03/05] video: deferred io sys helpers - hecuba / n411 V2
-[PATCH 04/05] video: deferred io sys helpers - metronome V2
-[PATCH 05/05] video: deferred io sys helpers - xen V2
-
-This patchset extends the deferred io core code with commonly used functions.
-
-The following functions are added to and exported from fb_defio.c:
- - fb_deferred_io_read()
- - fb_deferred_io_write()
- - fb_deferred_io_fillrect()
- - fb_deferred_io_copyarea()
- - fb_deferred_io_imageblit()
-
-The functions above makes use the deferred io delay which so far only
-has been used for mmap. This means for instance that the drivers using
-these functions no longer will refresh the screen according to the soft
-cursor refresh rate, instead the screen refresh rate derived from the
-deferred io delay value will be used.
-
-The deferred io core code now keeps track of a dirty area between the
-calls to the functions above. Only xen is currently making use of this.
-
-In the future we may want to extend the dirty area tracking code to
-instead modify the dirty bits for the pages backing the frame buffer.
-
-Status:
-- sh_mobile_lcdcfb: compiles and works well
-- hecuba / n411: compiles on superh, but untested
-- metronome: compiles on superh, but untested
-- xen: unknown
+Change the xen driver to use the new shared sys helpers. This allows
+us to remove some duplicated code. In the future this driver can
+setup the "sysdelay" value to delay flushing.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/video/Kconfig            |   35 +++---------
- drivers/video/fb_defio.c         |   77 ++++++++++++++++++++++++++
- drivers/video/hecubafb.c         |   86 +----------------------------
- drivers/video/metronomefb.c      |  109 ++++++++------------------------------
- drivers/video/sh_mobile_lcdcfb.c |   39 +------------
- drivers/video/xen-fbfront.c      |   51 +++--------------
- include/linux/fb.h               |   12 ++++
- 7 files changed, 145 insertions(+), 264 deletions(-)
+ drivers/video/Kconfig       |    4 ---
+ drivers/video/xen-fbfront.c |   52 +++++++++----------------------------------
+ 2 files changed, 12 insertions(+), 44 deletions(-)
+
+--- 0052/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-22 14:08:03.000000000 +0900
+@@ -2057,10 +2057,6 @@ config FB_VIRTUAL
+ config XEN_FBDEV_FRONTEND
+ 	tristate "Xen virtual frame buffer support"
+ 	depends on FB && XEN
+-	select FB_SYS_FILLRECT
+-	select FB_SYS_COPYAREA
+-	select FB_SYS_IMAGEBLIT
+-	select FB_SYS_FOPS
+ 	select FB_DEFERRED_IO
+ 	default y
+ 	help
+--- 0001/drivers/video/xen-fbfront.c
++++ work/drivers/video/xen-fbfront.c	2008-12-22 14:08:03.000000000 +0900
+@@ -177,11 +177,18 @@ static void xenfb_refresh(struct xenfb_i
+ static void xenfb_deferred_io(struct fb_info *fb_info,
+ 			      struct list_head *pagelist)
+ {
++	struct fb_deferred_io *fbdefio = fb_info->fbdefio;
+ 	struct xenfb_info *info = fb_info->par;
+ 	struct page *page;
+ 	unsigned long beg, end;
+ 	int y1, y2, miny, maxy;
+ 
++	if (fbdefio->dx != -1) {
++		xenfb_refresh(info, fbdefio->dx, fbdefio->dy,
++			      min_t(int, info->page->width, fbdefio->width),
++			      min_t(int, info->page->height, fbdefio->height));
++	}
++
+ 	miny = INT_MAX;
+ 	maxy = 0;
+ 	list_for_each_entry(page, pagelist, lru) {
+@@ -235,41 +242,6 @@ static int xenfb_setcolreg(unsigned regn
+ 	return 0;
+ }
+ 
+-static void xenfb_fillrect(struct fb_info *p, const struct fb_fillrect *rect)
+-{
+-	struct xenfb_info *info = p->par;
+-
+-	sys_fillrect(p, rect);
+-	xenfb_refresh(info, rect->dx, rect->dy, rect->width, rect->height);
+-}
+-
+-static void xenfb_imageblit(struct fb_info *p, const struct fb_image *image)
+-{
+-	struct xenfb_info *info = p->par;
+-
+-	sys_imageblit(p, image);
+-	xenfb_refresh(info, image->dx, image->dy, image->width, image->height);
+-}
+-
+-static void xenfb_copyarea(struct fb_info *p, const struct fb_copyarea *area)
+-{
+-	struct xenfb_info *info = p->par;
+-
+-	sys_copyarea(p, area);
+-	xenfb_refresh(info, area->dx, area->dy, area->width, area->height);
+-}
+-
+-static ssize_t xenfb_write(struct fb_info *p, const char __user *buf,
+-			size_t count, loff_t *ppos)
+-{
+-	struct xenfb_info *info = p->par;
+-	ssize_t res;
+-
+-	res = fb_sys_write(p, buf, count, ppos);
+-	xenfb_refresh(info, 0, 0, info->page->width, info->page->height);
+-	return res;
+-}
+-
+ static int
+ xenfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ {
+@@ -323,12 +295,12 @@ static int xenfb_set_par(struct fb_info 
+ 
+ static struct fb_ops xenfb_fb_ops = {
+ 	.owner		= THIS_MODULE,
+-	.fb_read	= fb_sys_read,
+-	.fb_write	= xenfb_write,
++	.fb_read        = fb_deferred_io_read,
++	.fb_write	= fb_deferred_io_write,
++	.fb_fillrect	= fb_deferred_io_fillrect,
++	.fb_copyarea	= fb_deferred_io_copyarea,
++	.fb_imageblit	= fb_deferred_io_imageblit,
+ 	.fb_setcolreg	= xenfb_setcolreg,
+-	.fb_fillrect	= xenfb_fillrect,
+-	.fb_copyarea	= xenfb_copyarea,
+-	.fb_imageblit	= xenfb_imageblit,
+ 	.fb_check_var	= xenfb_check_var,
+ 	.fb_set_par     = xenfb_set_par,
+ };
