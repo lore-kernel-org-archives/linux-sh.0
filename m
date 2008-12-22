@@ -1,20 +1,56 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 22 Dec 2008 02:36:34 +0000
-Subject: Re: [PATCH] add UIO support for JPU.
-Message-Id: <20081222023634.GA4182@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 22 Dec 2008 05:52:33 +0000
+Subject: [PATCH 00/05] video: deferred io sys helpers
+Message-Id: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <494EF5CF.1030901@igel.co.jp>
-In-Reply-To: <494EF5CF.1030901@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
 
-On Mon, Dec 22, 2008 at 11:05:03AM +0900, Takanari Hayama wrote:
-> Add JPU support on Migo-R via UIO. This make use of Magnus's
-> generic UIO platform driver. Chunk of contiguous memory to hold
-> intermediate image and compressed data during encode and decode.
-> 
-> Signed-off-by: Takanari Hayama <taki@igel.co.jp>
+video: deferred io sys helpers
 
-Applied, thanks.
+[PATCH 01/05] video: deferred io sys helpers - core
+[PATCH 02/05] video: deferred io sys helpers - sh_mobile_lcdcfb
+[PATCH 03/05] video: deferred io sys helpers - hecuba / n411
+[PATCH 04/05] video: deferred io sys helpers - metronome
+[PATCH 05/05] video: deferred io sys helpers - xen
+
+This patchset extends the deferred io core code with commonly used functions.
+
+The following functions are added to and exported from fb_defio.c:
+ - fb_deferred_io_read()
+ - fb_deferred_io_write()
+ - fb_deferred_io_fillrect()
+ - fb_deferred_io_copyarea()
+ - fb_deferred_io_imageblit()
+
+To be backwards compatible with the existing behavior the delay variable
+"sysdelay" is introduced. It is a separate timeout value for the functions
+above. In the sh_mobile_lcdcfb driver we set it to the same as "delay",
+but the other drivers keep it as zero which means flush directly.
+
+The deferred io core code now keeps track of a dirty area between the
+calls to the functions above. Only xen is currently making use of this.
+
+In the future we may want to extend the dirty area tracking code to
+instead modify the dirty bits for the pages backing the frame buffer.
+
+Status:
+- sh_mobile_lcdcfb: compiles and works well
+- hecuba / n411: compiles on superh, but untested
+- metronome: compiles on superh, but untested
+- xen: unknown
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ drivers/video/Kconfig            |   33 +++---------
+ drivers/video/fb_defio.c         |   71 ++++++++++++++++++++++++++
+ drivers/video/hecubafb.c         |   86 +-------------------------------
+ drivers/video/metronomefb.c      |  102 ++++++--------------------------------
+ drivers/video/sh_mobile_lcdcfb.c |   40 ++------------
+ drivers/video/xen-fbfront.c      |   52 ++++---------------
+ include/linux/fb.h               |   14 +++++
+ 7 files changed, 135 insertions(+), 263 deletions(-)
