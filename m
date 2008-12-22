@@ -1,82 +1,104 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 08 Dec 2008 04:23:18 +0000
-Subject: Re: Dreamcast oopses on boot
-Message-Id: <20081208042318.GD12039@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 22 Dec 2008 05:52:52 +0000
+Subject: [PATCH 02/05] video: deferred io sys helpers - sh_mobile_lcdcfb
+Message-Id: <20081222055252.27821.80248.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1228567633.6763.2.camel@localhost.localdomain>
-In-Reply-To: <1228567633.6763.2.camel@localhost.localdomain>
+References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
 
-On Sat, Dec 06, 2008 at 12:47:13PM +0000, Adrian McMenamin wrote:
-> [    3.512804] Unable to handle kernel NULL pointer dereference at virtual address 00000000
-> [    3.520910] pc = 00000000
-> [    3.523605] *pde = 00000000
-> [    3.526490] Oops: 0000 [#1]
-> [    3.529353] Modules linked in:
-> [    3.532584] 
-> [    3.534028] Pid : 1, Comm:              swapper
-> [    3.538707] CPU : 0    Not tainted  (2.6.28-rc7-13830-g168fef8 #939)
-> [    3.545348] PC is at 0x0
-> [    3.547875] PR is at do_IRQ+0x42/0x80
-> [    3.551638] PC  : 00000000 SP  : 8cc21ca8 SR  : 400081f1 TEA : 00000000
-> [    3.558464] R0  : 00000050 R1  : 00000000 R2  : 00000000 R3  : 0000001f
-> [    3.565294] R4  : 00000050 R5  : 8c2ad784 R6  : 8c85fba0 R7  : 00000001
-> [    3.572120] R8  : 00000050 R9  : 8c2e97fc R10 : 00000000 R11 : 8c2ad79c
-> [    3.578943] R12 : 00000050 R13 : 00000000 R14 : 8cc21ca8
-> [    3.584515] MACH: 01f00f65 MACL: 000012c0 GBR : 00000000 PR  : 8c003782
-> [    3.591329] 
-> [    3.591343] Call trace: 
-> [    3.595486] [<8c0080e8>] ret_from_irq+0x0/0x10
-> [    3.599975] [<8c003740>] do_IRQ+0x0/0x80
-> [    3.604138] [<8c041856>] __setup_irq+0x1f6/0x300
-> [    3.608867] [<8c0417aa>] __setup_irq+0x14a/0x300
-> [    3.613552] [<8c041ba4>] request_irq+0x84/0xc0
+From: Magnus Damm <damm@igel.co.jp>
 
-So, this is because you have stumbled across the
-GENERIC_HARDIRQS_NO__DO_IRQ hiccup that hp6xx also hit. I've changed the
-default behaviour in-tree to leave this disabled for the problematic
-platforms. Presently these include the Cayman, Microdev, Dreamcast, and
-SystemH 7751.
+Change the sh_mobile_lcdcfb driver to use the new shared sys helpers.
+This allows us to remove some code. Also, "sysdelay" is set to the same
+value as "delay" to keep same behavior as before.
 
-Having said that, converting dreamcast to irq_chip and dropping it from
-the dependencies is certainly the way we want to go. I'll have to look at
-Cayman and Microdev one of these days, but as neither have a double-digit
-userbase, this is not a pressing priority.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-On Sun, Dec 07, 2008 at 09:30:11PM +0000, Adrian McMenamin wrote:
-> Working with Matt, can now boot the Dreamcast and the PVR2 and GDRom
-> appear to work (certainly get video output from the PVR2). But cannot
-> get the network to come up.
-> 
-> Matt thinks this issue might have been seen elsewhere too - anybody got
-> any ideas about fixing it?
-> 
-> [    6.248295] Sending DHCP requests .....<6>NETDEV WATCHDOG: eth0 (8139too): transmit timed out
-> [   41.933824] ------------[ cut here ]------------
-> [   41.938367] Badness at net/sched/sch_generic.c:226
-> [   41.943388] 
-> [   41.944832] Pid : 0, Comm:              swapper
-> [   41.949511] CPU : 0    Not tainted  (2.6.28-rc7-13831-gacfbbdd-dirty #967)
-> [   41.956714] PC is at dev_watchdog+0x198/0x340
-> [   41.961196] PR is at dev_watchdog+0x198/0x340
-> [   41.965677] PC  : 8c19f378 SP  : 8c2a7e64 SR  : 40008101 TEA : 00000000
-> [   41.972503] R0  : 00000037 R1  : 8c2a6000 R2  : 8c2a6000 R3  : 000000df
-> [   41.979330] R4  : 00000001 R5  : 00001755 R6  : ffffffff R7  : 00000035
-> [   41.986160] R8  : 00000001 R9  : 8c2af794 R10 : 00000001 R11 : 8c2f5278
-> [   41.992981] R12 : 00000001 R13 : 8cc532fc R14 : 8c2a7e64
-> [   41.998375] MACH: 0000270c MACL: 000003c0 GBR : 8c000000 PR  : 8c19f378
-> [   42.005188] 
-> [   42.005202] Call trace: 
-> [   42.009355] [<8c0407ca>] get_timestamp+0xa/0x40
-> [   42.014023] [<8c00db16>] tmu_timer_read+0x16/0x40
-> [   42.018866] [<8c006970>] sched_clock+0x10/0x60
-> [   42.023543] [<8c0343f8>] sched_clock_cpu+0x18/0x40
+ drivers/video/Kconfig            |    4 ---
+ drivers/video/sh_mobile_lcdcfb.c |   40 +++++---------------------------------
+ 2 files changed, 6 insertions(+), 38 deletions(-)
 
-It looks like your ethernet IRQ isn't firing or being handled at all. The
-stack trace in question only covers the watchdog timeout relative to the
-timer, no IRQ noise from 8139too is visible. So, you probably have
-something broken with your irq_chip conversion patch, likely related to
-the demux handling.
+--- 0049/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-22 14:05:10.000000000 +0900
+@@ -1893,10 +1893,6 @@ config FB_W100
+ config FB_SH_MOBILE_LCDC
+ 	tristate "SuperH Mobile LCDC framebuffer support"
+ 	depends on FB && SUPERH
+-	select FB_SYS_FILLRECT
+-	select FB_SYS_COPYAREA
+-	select FB_SYS_IMAGEBLIT
+-	select FB_SYS_FOPS
+ 	select FB_DEFERRED_IO
+ 	---help---
+ 	  Frame buffer driver for the on-chip SH-Mobile LCD controller.
+--- 0006/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2008-12-22 14:05:10.000000000 +0900
+@@ -215,14 +215,6 @@ static void sh_mobile_lcdc_deferred_io(s
+ 	lcdc_write_chan(ch, LDSM2R, 1);
+ }
+ 
+-static void sh_mobile_lcdc_deferred_io_touch(struct fb_info *info)
+-{
+-	struct fb_deferred_io *fbdefio = info->fbdefio;
+-
+-	if (fbdefio)
+-		schedule_delayed_work(&info->deferred_work, fbdefio->delay);
+-}
+-
+ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
+ {
+ 	struct sh_mobile_lcdc_priv *priv = data;
+@@ -410,6 +402,7 @@ static int sh_mobile_lcdc_start(struct s
+ 		if (ch->ldmt1r_value & (1 << 12) && tmp) {
+ 			ch->defio.deferred_io = sh_mobile_lcdc_deferred_io;
+ 			ch->defio.delay = msecs_to_jiffies(tmp);
++			ch->defio.sysdelay = msecs_to_jiffies(tmp);
+ 			ch->info.fbdefio = &ch->defio;
+ 			fb_deferred_io_init(&ch->info);
+ 
+@@ -586,34 +579,13 @@ static struct fb_fix_screeninfo sh_mobil
+ 	.accel =	FB_ACCEL_NONE,
+ };
+ 
+-static void sh_mobile_lcdc_fillrect(struct fb_info *info,
+-				    const struct fb_fillrect *rect)
+-{
+-	sys_fillrect(info, rect);
+-	sh_mobile_lcdc_deferred_io_touch(info);
+-}
+-
+-static void sh_mobile_lcdc_copyarea(struct fb_info *info,
+-				    const struct fb_copyarea *area)
+-{
+-	sys_copyarea(info, area);
+-	sh_mobile_lcdc_deferred_io_touch(info);
+-}
+-
+-static void sh_mobile_lcdc_imageblit(struct fb_info *info,
+-				     const struct fb_image *image)
+-{
+-	sys_imageblit(info, image);
+-	sh_mobile_lcdc_deferred_io_touch(info);
+-}
+-
+ static struct fb_ops sh_mobile_lcdc_ops = {
+ 	.fb_setcolreg	= sh_mobile_lcdc_setcolreg,
+-	.fb_read        = fb_sys_read,
+-	.fb_write       = fb_sys_write,
+-	.fb_fillrect	= sh_mobile_lcdc_fillrect,
+-	.fb_copyarea	= sh_mobile_lcdc_copyarea,
+-	.fb_imageblit	= sh_mobile_lcdc_imageblit,
++	.fb_read        = fb_deferred_io_read,
++	.fb_write       = fb_deferred_io_write,
++	.fb_fillrect	= fb_deferred_io_fillrect,
++	.fb_copyarea	= fb_deferred_io_copyarea,
++	.fb_imageblit	= fb_deferred_io_imageblit,
+ };
+ 
+ static int sh_mobile_lcdc_set_bpp(struct fb_var_screeninfo *var, int bpp)
