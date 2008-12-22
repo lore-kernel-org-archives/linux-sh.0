@@ -1,85 +1,164 @@
-From: "Magnus Damm" <magnus.damm@gmail.com>
-Date: Wed, 10 Dec 2008 08:19:37 +0000
-Subject: Re: [PATCH 02/10] clockevent: let set_mode() setup delta information
-Message-Id: <aec7e5c30812100019q3069627cr1a49d2abf54bd19e@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 22 Dec 2008 05:53:09 +0000
+Subject: [PATCH 04/05] video: deferred io sys helpers - metronome
+Message-Id: <20081222055309.27821.40219.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081201103242.26620.86716.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081201103242.26620.86716.sendpatchset@rx1.opensource.se>
+References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
 
-Hi guys,
+From: Magnus Damm <damm@igel.co.jp>
 
-Any comments on this patch? It allow us to use the frequency from the
-clock framework.
-Please let me know what you think. Thanks for your help.
+Change the metronome driver to use the new shared sys helpers.
+In the future this driver can setup the "sysdelay" value to
+delay flushing.
 
-Cheers,
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-/ magnus
+ drivers/video/Kconfig       |    4 -
+ drivers/video/metronomefb.c |  102 +++++++------------------------------------
+ 2 files changed, 17 insertions(+), 89 deletions(-)
 
-On Mon, Dec 1, 2008 at 7:32 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm@igel.co.jp>
->
-> Allow the set_mode() clockevent callback to decide and fill in delta
-> details such as shift, mult, max_delta_ns and min_delta_ns.
->
-> With this change the clockevent can be registered without delta details
-> which allows us to keep the parent clock disabled until the clockevent
-> gets setup using set_mode().
->
-> Letting set_mode() fill in or update delta details allows us to save
-> power by disabling the parent clock while the clockevent is unused.
-> This may however make the parent clock rate change, so next time the
-> clockevent gets enabled we need let set_mode() to update the detla
-> details accordingly. Doing it at registration time is not enough.
->
-> Furthermore, the delta details seem unused in the case of periodic-only
-> clockevent drivers, so this change also allows registration of such
-> drivers without the delta details filled in.
->
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> ---
->
->  kernel/time/clockevents.c |   20 +++++++++++---------
->  1 file changed, 11 insertions(+), 9 deletions(-)
->
-> --- 0001/kernel/time/clockevents.c
-> +++ work/kernel/time/clockevents.c      2008-11-28 15:51:31.000000000 +0900
-> @@ -68,6 +68,17 @@ void clockevents_set_mode(struct clock_e
->        if (dev->mode != mode) {
->                dev->set_mode(mode, dev);
->                dev->mode = mode;
-> +
-> +               /*
-> +                * A nsec2cyc multiplicator of 0 is invalid and we'd crash
-> +                * on it, so fix it up and emit a warning:
-> +                */
-> +               if (mode = CLOCK_EVT_MODE_ONESHOT) {
-> +                       if (unlikely(!dev->mult)) {
-> +                               dev->mult = 1;
-> +                               WARN_ON(1);
-> +                       }
-> +               }
->        }
->  }
->
-> @@ -166,15 +177,6 @@ static void clockevents_notify_released(
->  void clockevents_register_device(struct clock_event_device *dev)
->  {
->        BUG_ON(dev->mode != CLOCK_EVT_MODE_UNUSED);
-> -       /*
-> -        * A nsec2cyc multiplicator of 0 is invalid and we'd crash
-> -        * on it, so fix it up and emit a warning:
-> -        */
-> -       if (unlikely(!dev->mult)) {
-> -               dev->mult = 1;
-> -               WARN_ON(1);
-> -       }
-> -
->        spin_lock(&clockevents_lock);
->
->        list_add(&dev->list, &clockevent_devices);
->
+--- 0051/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-22 14:07:15.000000000 +0900
+@@ -2071,10 +2071,6 @@ config XEN_FBDEV_FRONTEND
+ config FB_METRONOME
+ 	tristate "E-Ink Metronome/8track controller support"
+ 	depends on FB
+-	select FB_SYS_FILLRECT
+-	select FB_SYS_COPYAREA
+-	select FB_SYS_IMAGEBLIT
+-	select FB_SYS_FOPS
+ 	select FB_DEFERRED_IO
+ 	help
+ 	  This driver implements support for the E-Ink Metronome
+--- 0001/drivers/video/metronomefb.c
++++ work/drivers/video/metronomefb.c	2008-12-22 14:07:15.000000000 +0900
+@@ -445,7 +445,6 @@ static void metronomefb_dpy_update(struc
+ 
+ 	cksum = calc_img_cksum((u16 *) par->metromem_img, fbsize/2);
+ 	*((u16 *)(par->metromem_img) + fbsize/2) = cksum;
+-	metronome_display_cmd(par);
+ }
+ 
+ static u16 metronomefb_dpy_update_page(struct metronomefb_par *par, int index)
+@@ -472,97 +471,30 @@ static void metronomefb_dpy_deferred_io(
+ 	struct fb_deferred_io *fbdefio = info->fbdefio;
+ 	struct metronomefb_par *par = info->par;
+ 
+-	/* walk the written page list and swizzle the data */
+-	list_for_each_entry(cur, &fbdefio->pagelist, lru) {
+-		cksum = metronomefb_dpy_update_page(par,
+-					(cur->index << PAGE_SHIFT));
+-		par->metromem_img_csum -= par->csum_table[cur->index];
+-		par->csum_table[cur->index] = cksum;
+-		par->metromem_img_csum += cksum;
++	if (fbdefio->dx != -1) {
++		/* update the entire screen */
++		metronomefb_dpy_update(par);
++	} else {
++		/* walk the written page list and swizzle the data */
++		list_for_each_entry(cur, &fbdefio->pagelist, lru) {
++			cksum = metronomefb_dpy_update_page(par,
++						(cur->index << PAGE_SHIFT));
++			par->metromem_img_csum -= par->csum_table[cur->index];
++			par->csum_table[cur->index] = cksum;
++			par->metromem_img_csum += cksum;
++		}
+ 	}
+ 
+ 	metronome_display_cmd(par);
+ }
+ 
+-static void metronomefb_fillrect(struct fb_info *info,
+-				   const struct fb_fillrect *rect)
+-{
+-	struct metronomefb_par *par = info->par;
+-
+-	sys_fillrect(info, rect);
+-	metronomefb_dpy_update(par);
+-}
+-
+-static void metronomefb_copyarea(struct fb_info *info,
+-				   const struct fb_copyarea *area)
+-{
+-	struct metronomefb_par *par = info->par;
+-
+-	sys_copyarea(info, area);
+-	metronomefb_dpy_update(par);
+-}
+-
+-static void metronomefb_imageblit(struct fb_info *info,
+-				const struct fb_image *image)
+-{
+-	struct metronomefb_par *par = info->par;
+-
+-	sys_imageblit(info, image);
+-	metronomefb_dpy_update(par);
+-}
+-
+-/*
+- * this is the slow path from userspace. they can seek and write to
+- * the fb. it is based on fb_sys_write
+- */
+-static ssize_t metronomefb_write(struct fb_info *info, const char __user *buf,
+-				size_t count, loff_t *ppos)
+-{
+-	struct metronomefb_par *par = info->par;
+-	unsigned long p = *ppos;
+-	void *dst;
+-	int err = 0;
+-	unsigned long total_size;
+-
+-	if (info->state != FBINFO_STATE_RUNNING)
+-		return -EPERM;
+-
+-	total_size = info->fix.smem_len;
+-
+-	if (p > total_size)
+-		return -EFBIG;
+-
+-	if (count > total_size) {
+-		err = -EFBIG;
+-		count = total_size;
+-	}
+-
+-	if (count + p > total_size) {
+-		if (!err)
+-			err = -ENOSPC;
+-
+-		count = total_size - p;
+-	}
+-
+-	dst = (void __force *)(info->screen_base + p);
+-
+-	if (copy_from_user(dst, buf, count))
+-		err = -EFAULT;
+-
+-	if  (!err)
+-		*ppos += count;
+-
+-	metronomefb_dpy_update(par);
+-
+-	return (err) ? err : count;
+-}
+-
+ static struct fb_ops metronomefb_ops = {
+ 	.owner		= THIS_MODULE,
+-	.fb_write	= metronomefb_write,
+-	.fb_fillrect	= metronomefb_fillrect,
+-	.fb_copyarea	= metronomefb_copyarea,
+-	.fb_imageblit	= metronomefb_imageblit,
++	.fb_read        = fb_deferred_io_read,
++	.fb_write	= fb_deferred_io_write,
++	.fb_fillrect	= fb_deferred_io_fillrect,
++	.fb_copyarea	= fb_deferred_io_copyarea,
++	.fb_imageblit	= fb_deferred_io_imageblit,
+ };
+ 
+ static struct fb_deferred_io metronomefb_defio = {
