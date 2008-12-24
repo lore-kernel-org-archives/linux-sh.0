@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 22 Dec 2008 05:53:17 +0000
-Subject: [PATCH 05/05] video: deferred io sys helpers - xen
-Message-Id: <20081222055317.27821.25927.sendpatchset@rx1.opensource.se>
+Date: Wed, 24 Dec 2008 08:30:26 +0000
+Subject: [PATCH 05/05] video: deferred io sys helpers - xen V2
+Message-Id: <20081224083026.1848.92193.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
+References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,19 +13,23 @@ Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@red
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Change the xen driver to use the new shared sys helpers. This allows
-us to remove some duplicated code. In the future this driver can
-setup the "sysdelay" value to delay flushing.
+Change the xen driver to use the new shared sys helpers. This
+allows us to remove some duplicated code. The use of the new
+shared sys helpers will change the behavior of this driver from
+syncing all operations directly to using the deferred io delay.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/video/Kconfig       |    4 ---
- drivers/video/xen-fbfront.c |   52 +++++++++----------------------------------
- 2 files changed, 12 insertions(+), 44 deletions(-)
+ Changes since V1:
+ - Only cosmetic
 
---- 0052/drivers/video/Kconfig
-+++ work/drivers/video/Kconfig	2008-12-22 14:08:03.000000000 +0900
+ drivers/video/Kconfig       |    4 ---
+ drivers/video/xen-fbfront.c |   51 +++++++++----------------------------------
+ 2 files changed, 11 insertions(+), 44 deletions(-)
+
+--- 0005/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-24 16:42:47.000000000 +0900
 @@ -2057,10 +2057,6 @@ config FB_VIRTUAL
  config XEN_FBDEV_FRONTEND
  	tristate "Xen virtual frame buffer support"
@@ -38,8 +42,8 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  	default y
  	help
 --- 0001/drivers/video/xen-fbfront.c
-+++ work/drivers/video/xen-fbfront.c	2008-12-22 14:08:03.000000000 +0900
-@@ -177,11 +177,18 @@ static void xenfb_refresh(struct xenfb_i
++++ work/drivers/video/xen-fbfront.c	2008-12-24 16:44:19.000000000 +0900
+@@ -177,11 +177,17 @@ static void xenfb_refresh(struct xenfb_i
  static void xenfb_deferred_io(struct fb_info *fb_info,
  			      struct list_head *pagelist)
  {
@@ -49,16 +53,15 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  	unsigned long beg, end;
  	int y1, y2, miny, maxy;
  
-+	if (fbdefio->dx != -1) {
++	if (fbdefio->dx != -1)
 +		xenfb_refresh(info, fbdefio->dx, fbdefio->dy,
 +			      min_t(int, info->page->width, fbdefio->width),
 +			      min_t(int, info->page->height, fbdefio->height));
-+	}
 +
  	miny = INT_MAX;
  	maxy = 0;
  	list_for_each_entry(page, pagelist, lru) {
-@@ -235,41 +242,6 @@ static int xenfb_setcolreg(unsigned regn
+@@ -235,41 +241,6 @@ static int xenfb_setcolreg(unsigned regn
  	return 0;
  }
  
@@ -100,7 +103,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  static int
  xenfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
  {
-@@ -323,12 +295,12 @@ static int xenfb_set_par(struct fb_info 
+@@ -323,12 +294,12 @@ static int xenfb_set_par(struct fb_info 
  
  static struct fb_ops xenfb_fb_ops = {
  	.owner		= THIS_MODULE,
