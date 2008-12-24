@@ -1,165 +1,86 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Dec 2008 08:30:09 +0000
-Subject: [PATCH 03/05] video: deferred io sys helpers - hecuba / n411 V2
-Message-Id: <20081224083009.1848.84015.sendpatchset@rx1.opensource.se>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Wed, 24 Dec 2008 17:13:04 +0000
+Subject: stack usage with libgcc math funcs
+Message-Id: <200812241257.33701.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart1299130.J1jeZ2VTp2"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-fbdev-devel@lists.sourceforge.net
-Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+--nextPart1299130.J1jeZ2VTp2
+Content-Type: text/plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-Change the hecubafb driver and the n411 code to use the new shared sys
-helpers. This allows us to remove some duplicated code. The use of the
-new shared sys helpers will change the behavior of this driver from
-syncing all fillrect/copyarea/imageblit/write operations directly to
-using the deferred io delay.
+i dont know superh assembly, so i cant really check the code myself.  start=
+ing=20
+with at gcc-4.1.2 (at least, gcc-3.4.6 doesnt seem to have this issue), a f=
+ew=20
+objects in libgcc.a lack GNU-stack markings.  here is the scanelf output=20
+against libgcc.a from gcc-4.3.2.  basically, '!WX' just means that the obje=
+cts=20
+do not have a .note.GNU-stack section.
 
-While at it, convert space to tabs for the n411 kconfig entry.
+$ scanelf -qeR .
+!WX --- ---  ./4.3.2/_ashiftrt.o
+!WX --- ---  ./4.3.2/_ashiftrt_n.o
+!WX --- ---  ./4.3.2/_ashiftlt.o
+!WX --- ---  ./4.3.2/_lshiftrt.o
+!WX --- ---  ./4.3.2/_movmem.o
+!WX --- ---  ./4.3.2/_movmem_i4.o
+!WX --- ---  ./4.3.2/_mulsi3.o
+!WX --- ---  ./4.3.2/_sdivsi3.o
+!WX --- ---  ./4.3.2/_sdivsi3_i4.o
+!WX --- ---  ./4.3.2/_udivsi3.o
+!WX --- ---  ./4.3.2/_udivsi3_i4.o
+!WX --- ---  ./4.3.2/_set_fpscr.o
+!WX --- ---  ./4.3.2/_div_table.o
+!WX --- ---  ./4.3.2/_udiv_qrnnd_16.o
+!WX --- ---  ./4.3.2/_ic_invalidate.o
+!WX --- ---  ./4.3.2/_ic_invalidate_array.o
+!WX --- ---  ./4.3.2/linux-atomic.o
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+assuming libgcc doesnt actually use the stack to exec code, the attached pa=
+tch=20
+should fix things i think.
+=2Dmike
 
- Changes since V1:
- - fix FB_HECUBA select of FB_DEFERRED_IO, thanks Paul!
+=2D-- gcc/config/sh/lib1funcs.asm
++++ gcc/config/sh/lib1funcs.asm
+@@ -34,6 +34,11 @@
+ !! recoded in assembly by Toshiyasu Morita
+ !! tm@netcom.com
+=20
++#if defined(__ELF__) && defined(__linux__)
++.section .note.GNU-stack,"",%progbits
++.previous
++#endif
++
+ /* SH2 optimizations for ___ashrsi3, ___ashlsi3, ___lshrsi3 and
+    ELF local label prefixes by J"orn Rennecke
+    amylaar@cygnus.com  */
 
- drivers/video/Kconfig    |   19 +++-------
- drivers/video/hecubafb.c |   86 ++--------------------------------------------
- 2 files changed, 12 insertions(+), 93 deletions(-)
+--nextPart1299130.J1jeZ2VTp2
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
---- 0003/drivers/video/Kconfig
-+++ work/drivers/video/Kconfig	2008-12-24 15:32:30.000000000 +0900
-@@ -187,7 +187,7 @@ config FB_DEFERRED_IO
- config FB_HECUBA
- 	tristate
- 	depends on FB
--	depends on FB_DEFERRED_IO
-+	select FB_DEFERRED_IO
- 
- config FB_SVGALIB
- 	tristate
-@@ -712,17 +712,12 @@ config FB_EFI
- 	  using the EFI framebuffer as your console.
- 
- config FB_N411
--       tristate "N411 Apollo/Hecuba devkit support"
--       depends on FB && X86 && MMU
--       select FB_SYS_FILLRECT
--       select FB_SYS_COPYAREA
--       select FB_SYS_IMAGEBLIT
--       select FB_SYS_FOPS
--       select FB_DEFERRED_IO
--       select FB_HECUBA
--       help
--         This enables support for the Apollo display controller in its
--         Hecuba form using the n411 devkit.
-+	tristate "N411 Apollo/Hecuba devkit support"
-+	depends on FB && X86 && MMU
-+	select FB_HECUBA
-+	help
-+	  This enables support for the Apollo display controller in its
-+	  Hecuba form using the n411 devkit.
- 
- config FB_HGA
- 	tristate "Hercules mono graphics support"
---- 0001/drivers/video/hecubafb.c
-+++ work/drivers/video/hecubafb.c	2008-12-24 15:32:30.000000000 +0900
-@@ -122,89 +122,13 @@ static void hecubafb_dpy_deferred_io(str
- 	hecubafb_dpy_update(info->par);
- }
- 
--static void hecubafb_fillrect(struct fb_info *info,
--				   const struct fb_fillrect *rect)
--{
--	struct hecubafb_par *par = info->par;
--
--	sys_fillrect(info, rect);
--
--	hecubafb_dpy_update(par);
--}
--
--static void hecubafb_copyarea(struct fb_info *info,
--				   const struct fb_copyarea *area)
--{
--	struct hecubafb_par *par = info->par;
--
--	sys_copyarea(info, area);
--
--	hecubafb_dpy_update(par);
--}
--
--static void hecubafb_imageblit(struct fb_info *info,
--				const struct fb_image *image)
--{
--	struct hecubafb_par *par = info->par;
--
--	sys_imageblit(info, image);
--
--	hecubafb_dpy_update(par);
--}
--
--/*
-- * this is the slow path from userspace. they can seek and write to
-- * the fb. it's inefficient to do anything less than a full screen draw
-- */
--static ssize_t hecubafb_write(struct fb_info *info, const char __user *buf,
--				size_t count, loff_t *ppos)
--{
--	struct hecubafb_par *par = info->par;
--	unsigned long p = *ppos;
--	void *dst;
--	int err = 0;
--	unsigned long total_size;
--
--	if (info->state != FBINFO_STATE_RUNNING)
--		return -EPERM;
--
--	total_size = info->fix.smem_len;
--
--	if (p > total_size)
--		return -EFBIG;
--
--	if (count > total_size) {
--		err = -EFBIG;
--		count = total_size;
--	}
--
--	if (count + p > total_size) {
--		if (!err)
--			err = -ENOSPC;
--
--		count = total_size - p;
--	}
--
--	dst = (void __force *) (info->screen_base + p);
--
--	if (copy_from_user(dst, buf, count))
--		err = -EFAULT;
--
--	if  (!err)
--		*ppos += count;
--
--	hecubafb_dpy_update(par);
--
--	return (err) ? err : count;
--}
--
- static struct fb_ops hecubafb_ops = {
- 	.owner		= THIS_MODULE,
--	.fb_read        = fb_sys_read,
--	.fb_write	= hecubafb_write,
--	.fb_fillrect	= hecubafb_fillrect,
--	.fb_copyarea	= hecubafb_copyarea,
--	.fb_imageblit	= hecubafb_imageblit,
-+	.fb_read        = fb_deferred_io_read,
-+	.fb_write	= fb_deferred_io_write,
-+	.fb_fillrect	= fb_deferred_io_fillrect,
-+	.fb_copyarea	= fb_deferred_io_copyarea,
-+	.fb_imageblit	= fb_deferred_io_imageblit,
- };
- 
- static struct fb_deferred_io hecubafb_defio = {
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
+
+iQIcBAABAgAGBQJJUngNAAoJEEFjO5/oN/WBSmYQAKKROn3SnYRTH1RkEqqNoxtF
+IIEwBLBegx+oBlbKwuaprPGi0GojeY8xXInMkRL/dBTn7GbkwFqkKpRR3nwZ+2HU
+A2P34KxfsKPGS4m8CzbK+ZpZ4MRxZAzAlvZzVbm3nmjROVtLkpw/Uwzl+8vCc7ua
+YjpRea5ZSSDmsJunAFMOqLDGBo1jcUoz5OCI2aW+hXxMXGRbSQNb2jLGNvRvVvVf
+BE7MzrAVmxQrIeRjRu8qO4+kZgAvExW2rXX4WLeO+/D9/s5prQrxwjYXmtuZ1Ndq
+H0qOrd4Cxj3BBKMl3nKgvI2exlzgRz/N3Sx0Img+6N27HcTKwyE5s2MHVOLtRdfl
+/oZyWqA6MlRyNuonn8/+ALLIV8rLlL0+AlyibqNzl0wFuKKS2gcnz5qLT8L7LGa+
++rU86FMBM2MS0MGoYpvqxFdmcBpkq0ethGV3yyWYoF0SLgHAkpL3VuN0XRkOhIVY
+Kk+c6yunyCiocdI8iv+Wcs19HahGk9g4FKarnJrznY0chMlqQpCGDOI4EQV2wSIw
+fzONTdtTegIvdbHKaAoYsjitQ4yqWlI6M8w0ea3BvgD2She06EREttjgZAdRrEtE
+sQnT3XLQUR3ryFm8rfq1tdxXwK5wQVqr7Ld2SJlWP1rmoZhI1P0NpE6p8yPKQ31X
+r5mCYQEwGW7JwdRxj7uC
+=Bg/6
+-----END PGP SIGNATURE-----
+
+--nextPart1299130.J1jeZ2VTp2--
