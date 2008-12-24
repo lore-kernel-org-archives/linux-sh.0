@@ -1,32 +1,176 @@
-From: "Jaya Kumar" <jayakumar.lkml@gmail.com>
-Date: Wed, 24 Dec 2008 06:44:12 +0000
-Subject: Re: [PATCH 04/05] video: deferred io sys helpers - metronome
-Message-Id: <45a44e480812232244o257e4878g61e283fcc1595f65@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Dec 2008 08:30:18 +0000
+Subject: [PATCH 04/05] video: deferred io sys helpers - metronome V2
+Message-Id: <20081224083018.1848.67243.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
-	 <20081222055309.27821.40219.sendpatchset@rx1.opensource.se>
-	 <45a44e480812232058g5e81ee97r95c4b9c1ed81066@mail.gmail.com>
-	 <aec7e5c30812232146t5dff36act9f4d5badc25bef22@mail.gmail.com>
-In-Reply-To: <aec7e5c30812232146t5dff36act9f4d5badc25bef22@mail.gmail.com>
+References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-fbdev-devel@lists.sourceforge.net, aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@redhat.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, jayakumar.lkml@gmail.com
 
-On Wed, Dec 24, 2008 at 12:46 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->
-> Btw, patch [1/5] is somewhat broken today with the handling of
-> sysdelay vs delay. Ideally I'd like to get rid of sysdelay and let
-> write/blit/* use the same delay as mmap(). Not sure if you are keen on
-> that though since it changes the behavior of your drivers. Otoh that
-> may make fbcon usable on e-paper since it decouples the soft cursor
-> refresh rate from the screen refresh rate.
+From: Magnus Damm <damm@igel.co.jp>
 
-You're right that that would make fbcon be better. I don't think there
-are too many users currently so now would be a good time to change. So
-yes, I agree with changing the current behavior and droping the
-sysdelay stuff.
+Change the metronome driver to use the new shared sys helpers. This
+allows us to remove some duplicated code. The use of the new shared
+sys helpers will change the behavior of this driver from syncing all
+fillrect/copyarea/imageblit/write operations directly to using the
+deferred io delay.
 
-Thanks,
-jaya
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Changes since V1:
+ - added dirty area update comment
+
+ drivers/video/Kconfig       |    4 -
+ drivers/video/metronomefb.c |  109 +++++++++----------------------------------
+ 2 files changed, 24 insertions(+), 89 deletions(-)
+
+--- 0004/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-24 16:33:39.000000000 +0900
+@@ -2071,10 +2071,6 @@ config XEN_FBDEV_FRONTEND
+ config FB_METRONOME
+ 	tristate "E-Ink Metronome/8track controller support"
+ 	depends on FB
+-	select FB_SYS_FILLRECT
+-	select FB_SYS_COPYAREA
+-	select FB_SYS_IMAGEBLIT
+-	select FB_SYS_FOPS
+ 	select FB_DEFERRED_IO
+ 	help
+ 	  This driver implements support for the E-Ink Metronome
+--- 0001/drivers/video/metronomefb.c
++++ work/drivers/video/metronomefb.c	2008-12-24 16:41:55.000000000 +0900
+@@ -445,7 +445,6 @@ static void metronomefb_dpy_update(struc
+ 
+ 	cksum = calc_img_cksum((u16 *) par->metromem_img, fbsize/2);
+ 	*((u16 *)(par->metromem_img) + fbsize/2) = cksum;
+-	metronome_display_cmd(par);
+ }
+ 
+ static u16 metronomefb_dpy_update_page(struct metronomefb_par *par, int index)
+@@ -472,97 +471,37 @@ static void metronomefb_dpy_deferred_io(
+ 	struct fb_deferred_io *fbdefio = info->fbdefio;
+ 	struct metronomefb_par *par = info->par;
+ 
+-	/* walk the written page list and swizzle the data */
+-	list_for_each_entry(cur, &fbdefio->pagelist, lru) {
+-		cksum = metronomefb_dpy_update_page(par,
+-					(cur->index << PAGE_SHIFT));
+-		par->metromem_img_csum -= par->csum_table[cur->index];
+-		par->csum_table[cur->index] = cksum;
+-		par->metromem_img_csum += cksum;
++	/* force full screen update if dx is set or walk page list.
++	 *
++	 * normally, we need to update the dirty area pointed out by dx and
++	 * plus all dirty pages. in this driver any dirty area pointed out
++	 * by dx results in a full screen update. and since the entire screen
++	 * is updated in that case we can skip walking the page list.
++	 */
++	if (fbdefio->dx != -1) {
++		/* update the entire screen */
++		metronomefb_dpy_update(par);
++	} else {
++		/* walk the written page list and swizzle the data */
++		list_for_each_entry(cur, &fbdefio->pagelist, lru) {
++			cksum = metronomefb_dpy_update_page(par,
++						(cur->index << PAGE_SHIFT));
++			par->metromem_img_csum -= par->csum_table[cur->index];
++			par->csum_table[cur->index] = cksum;
++			par->metromem_img_csum += cksum;
++		}
+ 	}
+ 
+ 	metronome_display_cmd(par);
+ }
+ 
+-static void metronomefb_fillrect(struct fb_info *info,
+-				   const struct fb_fillrect *rect)
+-{
+-	struct metronomefb_par *par = info->par;
+-
+-	sys_fillrect(info, rect);
+-	metronomefb_dpy_update(par);
+-}
+-
+-static void metronomefb_copyarea(struct fb_info *info,
+-				   const struct fb_copyarea *area)
+-{
+-	struct metronomefb_par *par = info->par;
+-
+-	sys_copyarea(info, area);
+-	metronomefb_dpy_update(par);
+-}
+-
+-static void metronomefb_imageblit(struct fb_info *info,
+-				const struct fb_image *image)
+-{
+-	struct metronomefb_par *par = info->par;
+-
+-	sys_imageblit(info, image);
+-	metronomefb_dpy_update(par);
+-}
+-
+-/*
+- * this is the slow path from userspace. they can seek and write to
+- * the fb. it is based on fb_sys_write
+- */
+-static ssize_t metronomefb_write(struct fb_info *info, const char __user *buf,
+-				size_t count, loff_t *ppos)
+-{
+-	struct metronomefb_par *par = info->par;
+-	unsigned long p = *ppos;
+-	void *dst;
+-	int err = 0;
+-	unsigned long total_size;
+-
+-	if (info->state != FBINFO_STATE_RUNNING)
+-		return -EPERM;
+-
+-	total_size = info->fix.smem_len;
+-
+-	if (p > total_size)
+-		return -EFBIG;
+-
+-	if (count > total_size) {
+-		err = -EFBIG;
+-		count = total_size;
+-	}
+-
+-	if (count + p > total_size) {
+-		if (!err)
+-			err = -ENOSPC;
+-
+-		count = total_size - p;
+-	}
+-
+-	dst = (void __force *)(info->screen_base + p);
+-
+-	if (copy_from_user(dst, buf, count))
+-		err = -EFAULT;
+-
+-	if  (!err)
+-		*ppos += count;
+-
+-	metronomefb_dpy_update(par);
+-
+-	return (err) ? err : count;
+-}
+-
+ static struct fb_ops metronomefb_ops = {
+ 	.owner		= THIS_MODULE,
+-	.fb_write	= metronomefb_write,
+-	.fb_fillrect	= metronomefb_fillrect,
+-	.fb_copyarea	= metronomefb_copyarea,
+-	.fb_imageblit	= metronomefb_imageblit,
++	.fb_read        = fb_deferred_io_read,
++	.fb_write	= fb_deferred_io_write,
++	.fb_fillrect	= fb_deferred_io_fillrect,
++	.fb_copyarea	= fb_deferred_io_copyarea,
++	.fb_imageblit	= fb_deferred_io_imageblit,
+ };
+ 
+ static struct fb_deferred_io metronomefb_defio = {
