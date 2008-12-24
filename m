@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 22 Dec 2008 05:52:52 +0000
-Subject: [PATCH 02/05] video: deferred io sys helpers - sh_mobile_lcdcfb
-Message-Id: <20081222055252.27821.80248.sendpatchset@rx1.opensource.se>
+Date: Wed, 24 Dec 2008 08:30:01 +0000
+Subject: [PATCH 02/05] video: deferred io sys helpers - sh_mobile_lcdcfb V2
+Message-Id: <20081224083001.1848.97506.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
+References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,18 +14,20 @@ Cc: aliguori@us.ibm.com, adaplas@gmail.com, linux-sh@vger.kernel.org, armbru@red
 From: Magnus Damm <damm@igel.co.jp>
 
 Change the sh_mobile_lcdcfb driver to use the new shared sys helpers.
-This allows us to remove some code. Also, "sysdelay" is set to the same
-value as "delay" to keep same behavior as before.
+This allows us to remove some code.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/video/Kconfig            |    4 ---
- drivers/video/sh_mobile_lcdcfb.c |   40 +++++---------------------------------
- 2 files changed, 6 insertions(+), 38 deletions(-)
+ Changes since V1:
+ - remove sysdelay
 
---- 0049/drivers/video/Kconfig
-+++ work/drivers/video/Kconfig	2008-12-22 14:05:10.000000000 +0900
+ drivers/video/Kconfig            |    4 ---
+ drivers/video/sh_mobile_lcdcfb.c |   39 ++++----------------------------------
+ 2 files changed, 5 insertions(+), 38 deletions(-)
+
+--- 0002/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-24 16:29:02.000000000 +0900
 @@ -1893,10 +1893,6 @@ config FB_W100
  config FB_SH_MOBILE_LCDC
  	tristate "SuperH Mobile LCDC framebuffer support"
@@ -37,8 +39,8 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  	select FB_DEFERRED_IO
  	---help---
  	  Frame buffer driver for the on-chip SH-Mobile LCD controller.
---- 0006/drivers/video/sh_mobile_lcdcfb.c
-+++ work/drivers/video/sh_mobile_lcdcfb.c	2008-12-22 14:05:10.000000000 +0900
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2008-12-24 16:29:09.000000000 +0900
 @@ -215,14 +215,6 @@ static void sh_mobile_lcdc_deferred_io(s
  	lcdc_write_chan(ch, LDSM2R, 1);
  }
@@ -54,15 +56,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
  {
  	struct sh_mobile_lcdc_priv *priv = data;
-@@ -410,6 +402,7 @@ static int sh_mobile_lcdc_start(struct s
- 		if (ch->ldmt1r_value & (1 << 12) && tmp) {
- 			ch->defio.deferred_io = sh_mobile_lcdc_deferred_io;
- 			ch->defio.delay = msecs_to_jiffies(tmp);
-+			ch->defio.sysdelay = msecs_to_jiffies(tmp);
- 			ch->info.fbdefio = &ch->defio;
- 			fb_deferred_io_init(&ch->info);
- 
-@@ -586,34 +579,13 @@ static struct fb_fix_screeninfo sh_mobil
+@@ -586,34 +578,13 @@ static struct fb_fix_screeninfo sh_mobil
  	.accel =	FB_ACCEL_NONE,
  };
  
