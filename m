@@ -1,26 +1,89 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Sat, 20 Dec 2008 20:28:20 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Wed, 24 Dec 2008 16:13:06 +0000
 Subject: Re: [PATCH] sh: maple: add Maple controller as a joystick device
-Message-Id: <200812201228.20767.dmitry.torokhov@gmail.com>
+Message-Id: <200812241157.33912.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart5716807.DDvuXe0M0L"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1229797614.6502.20.camel@localhost.localdomain>
 In-Reply-To: <1229797614.6502.20.camel@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
 To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@osdl.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@osdl.org>
 
-T24gU2F0dXJkYXkgMjAgRGVjZW1iZXIgMjAwOCAxMDoyNjo1NCBBZHJpYW4gTWNNZW5hbWluIHdy
-b3RlOgo+ICugoKCgoKCgbWRldiA9IHRvX21hcGxlX2RldihkZXYpOwo+ICugoKCgoKCgaWYgKCFt
-ZGV2KSB7Cj4gK6CgoKCgoKCgoKCgoKCgoGVycm9yID0gRUlOVkFMOwo+ICugoKCgoKCgoKCgoKCg
-oKBnb3RvIGZhaWw7Cj4gK6CgoKCgoKB9Cj4gK6CgoKCgoKAKPiAroKCgoKCgoG1kcnYgPSB0b19t
-YXBsZV9kcml2ZXIoZGV2LT5kcml2ZXIpOwo+ICugoKCgoKCgaWYgKCFtZHJ2KSB7Cj4gK6CgoKCg
-oKCgoKCgoKCgoGVycm9yID0gRUlOVkFMOwo+ICugoKCgoKCgoKCgoKCgoKBnb3RvIGZhaWw7Cj4g
-K6CgoKCgoKB9CgpUaGlzIHdpbGwgbmV2ZXIgaGFwcGVuIC0gdG9fbWFwbGVfKiBhcmUgc2ltcGxl
-IHdyYXBwZXJzIGFyb3VuZCBjb250YWluZXJfb2YgCmFuZCBzbyB0aGUgcmVzdWx0IHdpbGwgbmV2
-ZXIgYmUgTlVMTCBidXQgc29tZSBzbWFsbCBvZmZzZXQgZnJvbSBpdCBpZiBkZXYgaXMgCk5VTEwu
-IEknbSBzdGF5aW5nIG9uIHRoZSBvbGQgdmVyc2lvbiBvZiB0aGUgcGF0Y2ggd2l0aCBzbWFsbCBm
-aXh1cHMuCgotLSAKRG1pdHJ5Cv/06Lp7Lm7HK4m3n66JrYYrJYrL/7Hp3bYXpYp3/7p7Lm7HK4m3
-pYp7sf7I/4p7YXm6HcqH2pnrLGoHraJmo6K3aJqP74Hq/5Hq53pf6K4DKK3pmo6K3aJqIp36GrYb
-baf//74Hq/5Hq53p/6K4P5mo6K3aJqP4p36P4Qo=
+--nextPart5716807.DDvuXe0M0L
+Content-Type: text/plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
+
+On Saturday 20 December 2008 13:26:54 Adrian McMenamin wrote:
+> +static int probe_maple_controller(struct device *dev)
+> +{
+> ...
+> +	mdev =3D to_maple_dev(dev);
+> +	if (!mdev) {
+> +		error =3D EINVAL;
+> +		goto fail;
+> +	}
+> +
+> +	mdrv =3D to_maple_driver(dev->driver);
+> +	if (!mdrv) {
+> +		error =3D EINVAL;
+> +		goto fail;
+> +	}
+
+like Dmitry said, these NULL checks make no sense
+
+> +	pad =3D kzalloc(sizeof(struct dc_pad), GFP_KERNEL);
+> +	if (!pad) {
+> +		error =3D ENOMEM;
+> +		goto fail;
+> +	}
+> +	idev =3D input_allocate_device();
+> +	if (!idev){
+> +		error =3D ENOMEM;
+> +		goto fail_idev;
+> +	}
+> ...
+> +	error =3D input_register_device(idev);
+> +	if (error)
+> +		goto fail_register;
+> ...
+> +fail_register:
+> +	maple_set_drvdata(mdev, NULL);
+> +	input_free_device(pad->dev);
+> +fail_idev:
+> +	kfree(pad);
+> +fail:
+> +	return -error;
+> +}
+
+this -error stuff is weird and i think wrong.  for constants, you're adding=
+=20
+overhead, and for the input_register_device(), i think you're negating an=20
+already negative value thus breaking it.
+=2Dmike
+
+--nextPart5716807.DDvuXe0M0L
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
+
+iQIcBAABAgAGBQJJUmn9AAoJEEFjO5/oN/WB1hwQAL84sYqkaWhLa1U+SLr0mUTG
+I4ktduD4v1/hOk0jpw+64BveIX3K9n3agivX1YogH0ye+6aCP2LfubrhNqxh4PY4
+OPDICf7vMulpVguJC7914QVY9tqHyA8Rtx9vgNlBQ5Vir8/FO8X3ZhB6UrpvjdoZ
+wboLY8K89vLFe3w3WC7hWTSXBLPKQ0/g9MZep/KeLP79rwC/8EsiikkVRxltU/Kp
+UIg96IN7FBD+ix4lzgZgl0J2VzlXDrJLUuX1JDVxbaep8Eepk6baO1SpI9H2rF9F
+CwP0jmDJgOMm7EkZ1iaga/ZfzmzUJ6XhXueBIMM56fMNmFGrOulmb9M+bc6c+V2Q
+Lvl2V7YUfpAeMAEV1RJv7mgo2/0dkDFaMcUqROZrmB6PCqn5abvvb0lhoLEOB1MO
+UERhkGD/HLd0jkgUp7KH6tbXJHgYHf94Nmgfn9syln1mkjF2NwNVCxnfUnEcoTle
+0y0/8pvC9TxPWeqtGsvMsMGM1EsWYwGiUeZu8QQ41OTNobrdrrmvMCwPcmT+B53p
+lg92FcTtMvO+5Kvv4Fc9GFVveeHw83k329dRhjkbysNqwgNU6T1aw28JtCPxjVXU
+3HJ8prnositb4IP+Bnf969FuO2uvWq/2FeV+uN8RnNUI3SudJV1MKwjmCeO54YAi
+7Hl0mQjXgSykT41R7g4w
+=HVVg
+-----END PGP SIGNATURE-----
+
+--nextPart5716807.DDvuXe0M0L--
