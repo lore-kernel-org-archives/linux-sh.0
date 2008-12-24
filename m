@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 22 Dec 2008 05:52:41 +0000
-Subject: [PATCH 01/05] video: deferred io sys helpers - core
-Message-Id: <20081222055241.27821.12610.sendpatchset@rx1.opensource.se>
+Date: Wed, 24 Dec 2008 08:29:54 +0000
+Subject: [PATCH 01/05] video: deferred io sys helpers - core V2
+Message-Id: <20081224082954.1848.42892.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081222055233.27821.68008.sendpatchset@rx1.opensource.se>
+References: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20081224082946.1848.46644.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,20 +15,23 @@ From: Magnus Damm <damm@igel.co.jp>
 
 Add shared sys helpers to the deferred io code. Instead of duplicating
 the code in each driver we can keep it in one place. This saves a
-few lines. This patch also adds "sysdelay" which allows the driver to
-select timeout for sys helper functions. While at it, keep track of
-the dirty area to allow partial screen update.
+few lines. The new helper functions make use of the deferred io delay.
+While at it, keep track of the dirty area to allow partial screen update.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/video/Kconfig    |    4 ++
- drivers/video/fb_defio.c |   71 ++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/fb.h       |   14 +++++++++
- 3 files changed, 89 insertions(+)
+ Changes since V1
+ - Remove sysdelay
+ - Fix dirty area calculation
 
---- 0006/drivers/video/Kconfig
-+++ work/drivers/video/Kconfig	2008-12-22 13:50:17.000000000 +0900
+ drivers/video/Kconfig    |    4 ++
+ drivers/video/fb_defio.c |   77 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/fb.h       |   12 +++++++
+ 3 files changed, 93 insertions(+)
+
+--- 0001/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2008-12-24 15:31:14.000000000 +0900
 @@ -179,6 +179,10 @@ config FB_SYS_FOPS
  config FB_DEFERRED_IO
  	bool
@@ -40,9 +43,9 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  
  config FB_HECUBA
  	tristate
---- 0005/drivers/video/fb_defio.c
-+++ work/drivers/video/fb_defio.c	2008-12-22 14:03:35.000000000 +0900
-@@ -83,6 +83,32 @@ int fb_deferred_io_fsync(struct file *fi
+--- 0001/drivers/video/fb_defio.c
++++ work/drivers/video/fb_defio.c	2008-12-24 16:24:01.000000000 +0900
+@@ -83,6 +83,38 @@ int fb_deferred_io_fsync(struct file *fi
  }
  EXPORT_SYMBOL_GPL(fb_deferred_io_fsync);
  
@@ -50,32 +53,38 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +				 int dx, int dy, int width, int height)
 +{
 +	struct fb_deferred_io *fbdefio = info->fbdefio;
++	int x, y, ex, ey;
 +
 +	/* Skip if deferred io is complied-in but disabled on this fbdev */
 +	if (!fbdefio)
 +		return;
 +
 +	/* Remember area to redraw and expand if necessary */
-+	if (fbdefio->dx = -1) {
-+		fbdefio->dx = dx;
-+		fbdefio->dy = dy;
-+		fbdefio->width = width;
-+		fbdefio->height = height;
-+	} else {
-+		fbdefio->dx = min_t(int, dx, fbdefio->dx);
-+		fbdefio->dy = min_t(int, dx, fbdefio->dy);
-+		fbdefio->width = max_t(int, width, fbdefio->width);
-+		fbdefio->height = max_t(int, height, fbdefio->height);
++	if (fbdefio->dx != -1) {
++		x = min_t(int, dx, fbdefio->dx);
++		y = min_t(int, dy, fbdefio->dy);
++		ex = max_t(int, dx + width, fbdefio->dx + fbdefio->width);
++		ey = max_t(int, dy + height, fbdefio->dy + fbdefio->height);
++
++		dx = x;
++		dy = y;
++		width = ex - x;
++		height = ey - y;
 +	}
 +
-+	/* come back after sysdelay to process the deferred IO */
-+	schedule_delayed_work(&info->deferred_work, fbdefio->sysdelay);
++	fbdefio->dx = dx;
++	fbdefio->dy = dy;
++	fbdefio->width = width;
++	fbdefio->height = height;
++
++	/* come back after delay to process the deferred IO */
++	schedule_delayed_work(&info->deferred_work, fbdefio->delay);
 +}
 +
  /* vm_ops->page_mkwrite handler */
  static int fb_deferred_io_mkwrite(struct vm_area_struct *vma,
  				  struct page *page)
-@@ -172,9 +198,53 @@ static void fb_deferred_io_work(struct w
+@@ -172,9 +204,53 @@ static void fb_deferred_io_work(struct w
  	list_for_each_safe(node, next, &fbdefio->pagelist) {
  		list_del(node);
  	}
@@ -129,7 +138,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  void fb_deferred_io_init(struct fb_info *info)
  {
  	struct fb_deferred_io *fbdefio = info->fbdefio;
-@@ -184,6 +254,7 @@ void fb_deferred_io_init(struct fb_info 
+@@ -184,6 +260,7 @@ void fb_deferred_io_init(struct fb_info 
  	info->fbops->fb_mmap = fb_deferred_io_mmap;
  	INIT_DELAYED_WORK(&info->deferred_work, fb_deferred_io_work);
  	INIT_LIST_HEAD(&fbdefio->pagelist);
@@ -138,20 +147,16 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  		fbdefio->delay = HZ;
  }
 --- 0001/include/linux/fb.h
-+++ work/include/linux/fb.h	2008-12-22 13:50:17.000000000 +0900
-@@ -587,8 +587,11 @@ struct fb_pixmap {
- struct fb_deferred_io {
- 	/* delay between mkwrite and deferred handler */
++++ work/include/linux/fb.h	2008-12-24 16:20:57.000000000 +0900
+@@ -589,6 +589,7 @@ struct fb_deferred_io {
  	unsigned long delay;
-+	/* delay between write/fillrect/copyarea/imageblit and handler */
-+	unsigned long sysdelay;
  	struct mutex lock; /* mutex that protects the page list */
  	struct list_head pagelist; /* list of touched pages */
-+	int dx, dy, width, height; /* modified area */
++	int dx, dy, width, height; /* modified area, excluding pages */
  	/* callback */
  	void (*deferred_io)(struct fb_info *info, struct list_head *pagelist);
  };
-@@ -983,6 +986,17 @@ extern void fb_deferred_io_open(struct f
+@@ -983,6 +984,17 @@ extern void fb_deferred_io_open(struct f
  extern void fb_deferred_io_cleanup(struct fb_info *info);
  extern int fb_deferred_io_fsync(struct file *file, struct dentry *dentry,
  				int datasync);
