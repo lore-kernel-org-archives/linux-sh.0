@@ -1,289 +1,271 @@
-From: Matt Fleming <mjf@gentoo.org>
-Date: Sun, 14 Dec 2008 12:02:26 +0000
-Subject: [PATCH 3/5] sh: Convert Dreamcast support from hw_interrupt_type to irq_chip
-Message-Id: <b9f8004cbf167b96cdd6f6e368e2ca2bf2f9965b.1229255348.git.mjf@gentoo.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Dec 2008 09:17:18 +0000
+Subject: [PATCH 02/04] sh: lockless gpio_get_value()
+Message-Id: <20081225091718.7670.26232.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Switch the dreamcast IRQ code over to the irq_chip way of doing things,
-so that we can set GENERIC_HARDIRQS_NO__DO_IRQ for all SuperH boards.
+From: Magnus Damm <damm@igel.co.jp>
 
-Also, whilst I'm here change some things to make checkpatch.pl happy:
-	- Indent with tabs, not with spaces
-	- Include <linux/io.h>, not <asm/io.h>
-	- Fix the multi-line comment style
-	- Fix some typos in the comments
+This patch separates the register read and write functions to
+allow lockless gpio_get_value().
 
-Tested-by: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Signed-off-by: Matt Fleming <mjf@gentoo.org>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/boards/mach-dreamcast/irq.c   |  192 +++++++++++++++------------------
- arch/sh/boards/mach-dreamcast/setup.c |    5 +-
- 2 files changed, 91 insertions(+), 106 deletions(-)
 
-diff --git a/arch/sh/boards/mach-dreamcast/irq.c b/arch/sh/boards/mach-dreamcast/irq.c
-index 67bdc33..f55fc8e 100644
---- a/arch/sh/boards/mach-dreamcast/irq.c
-+++ b/arch/sh/boards/mach-dreamcast/irq.c
-@@ -10,106 +10,90 @@
-  */
- 
- #include <linux/irq.h>
--#include <asm/io.h>
-+#include <linux/io.h>
- #include <asm/irq.h>
- #include <mach/sysasic.h>
- 
--/* Dreamcast System ASIC Hardware Events -
--
--   The Dreamcast's System ASIC (a.k.a. Holly) is responsible for receiving
--   hardware events from system peripherals and triggering an SH7750 IRQ.
--   Hardware events can trigger IRQs 13, 11, or 9 depending on which bits are
--   set in the Event Mask Registers (EMRs).  When a hardware event is
--   triggered, it's corresponding bit in the Event Status Registers (ESRs)
--   is set, and that bit should be rewritten to the ESR to acknowledge that
--   event.
--
--   There are three 32-bit ESRs located at 0xa05f8900 - 0xa05f6908.  Event
--   types can be found in include/asm-sh/dreamcast/sysasic.h. There are three
--   groups of EMRs that parallel the ESRs.  Each EMR group corresponds to an
--   IRQ, so 0xa05f6910 - 0xa05f6918 triggers IRQ 13, 0xa05f6920 - 0xa05f6928
--   triggers IRQ 11, and 0xa05f6930 - 0xa05f6938 triggers IRQ 9.
--
--   In the kernel, these events are mapped to virtual IRQs so that drivers can
--   respond to them as they would a normal interrupt.  In order to keep this
--   mapping simple, the events are mapped as:
--
--   6900/6910 - Events  0-31, IRQ 13
--   6904/6924 - Events 32-63, IRQ 11
--   6908/6938 - Events 64-95, IRQ  9
--
--*/
-+/*
-+ * Dreamcast System ASIC Hardware Events -
-+ *
-+ * The Dreamcast's System ASIC (a.k.a. Holly) is responsible for receiving
-+ * hardware events from system peripherals and triggering an SH7750 IRQ.
-+ * Hardware events can trigger IRQs 13, 11, or 9 depending on which bits are
-+ * set in the Event Mask Registers (EMRs).  When a hardware event is
-+ * triggered, its corresponding bit in the Event Status Registers (ESRs)
-+ * is set, and that bit should be rewritten to the ESR to acknowledge that
-+ * event.
-+ *
-+ * There are three 32-bit ESRs located at 0xa05f6900 - 0xa05f6908.  Event
-+ * types can be found in arch/sh/include/mach-dreamcast/mach/sysasic.h.
-+ * There are three groups of EMRs that parallel the ESRs.  Each EMR group
-+ * corresponds to an IRQ, so 0xa05f6910 - 0xa05f6918 triggers IRQ 13,
-+ * 0xa05f6920 - 0xa05f6928 triggers IRQ 11, and 0xa05f6930 - 0xa05f6938
-+ * triggers IRQ 9.
-+ *
-+ * In the kernel, these events are mapped to virtual IRQs so that drivers can
-+ * respond to them as they would a normal interrupt.  In order to keep this
-+ * mapping simple, the events are mapped as:
-+ *
-+ * 6900/6910 - Events  0-31, IRQ 13
-+ * 6904/6924 - Events 32-63, IRQ 11
-+ * 6908/6938 - Events 64-95, IRQ  9
-+ *
-+ */
- 
- #define ESR_BASE 0x005f6900    /* Base event status register */
- #define EMR_BASE 0x005f6910    /* Base event mask register */
- 
--/* Helps us determine the EMR group that this event belongs to: 0 = 0x6910,
--   1 = 0x6920, 2 = 0x6930; also determine the event offset */
-+/*
-+ * Helps us determine the EMR group that this event belongs to: 0 = 0x6910,
-+ * 1 = 0x6920, 2 = 0x6930; also determine the event offset.
-+ */
- #define LEVEL(event) (((event) - HW_EVENT_IRQ_BASE) / 32)
- 
- /* Return the hardware event's bit positon within the EMR/ESR */
- #define EVENT_BIT(event) (((event) - HW_EVENT_IRQ_BASE) & 31)
- 
--/* For each of these *_irq routines, the IRQ passed in is the virtual IRQ
--   (logically mapped to the corresponding bit for the hardware event). */
-+/*
-+ * For each of these *_irq routines, the IRQ passed in is the virtual IRQ
-+ * (logically mapped to the corresponding bit for the hardware event).
-+ */
- 
- /* Disable the hardware event by masking its bit in its EMR */
- static inline void disable_systemasic_irq(unsigned int irq)
- {
--        __u32 emr = EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
--        __u32 mask;
-+	__u32 emr = EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
-+	__u32 mask;
- 
--        mask = inl(emr);
--        mask &= ~(1 << EVENT_BIT(irq));
--        outl(mask, emr);
-+	mask = inl(emr);
-+	mask &= ~(1 << EVENT_BIT(irq));
-+	outl(mask, emr);
- }
- 
- /* Enable the hardware event by setting its bit in its EMR */
- static inline void enable_systemasic_irq(unsigned int irq)
- {
--        __u32 emr = EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
--        __u32 mask;
-+	__u32 emr = EMR_BASE + (LEVEL(irq) << 4) + (LEVEL(irq) << 2);
-+	__u32 mask;
- 
--        mask = inl(emr);
--        mask |= (1 << EVENT_BIT(irq));
--        outl(mask, emr);
-+	mask = inl(emr);
-+	mask |= (1 << EVENT_BIT(irq));
-+	outl(mask, emr);
- }
- 
- /* Acknowledge a hardware event by writing its bit back to its ESR */
--static void ack_systemasic_irq(unsigned int irq)
--{
--        __u32 esr = ESR_BASE + (LEVEL(irq) << 2);
--        disable_systemasic_irq(irq);
--        outl((1 << EVENT_BIT(irq)), esr);
--}
--
--/* After a IRQ has been ack'd and responded to, it needs to be renabled */
--static void end_systemasic_irq(unsigned int irq)
--{
--        if (!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS)))
--                enable_systemasic_irq(irq);
--}
--
--static unsigned int startup_systemasic_irq(unsigned int irq)
--{
--        enable_systemasic_irq(irq);
--
--        return 0;
--}
--
--static void shutdown_systemasic_irq(unsigned int irq)
-+static void mask_ack_systemasic_irq(unsigned int irq)
- {
--        disable_systemasic_irq(irq);
-+	__u32 esr = ESR_BASE + (LEVEL(irq) << 2);
-+	disable_systemasic_irq(irq);
-+	outl((1 << EVENT_BIT(irq)), esr);
- }
- 
--struct hw_interrupt_type systemasic_int = {
--        .typename       = "System ASIC",
--        .startup        = startup_systemasic_irq,
--        .shutdown       = shutdown_systemasic_irq,
--        .enable         = enable_systemasic_irq,
--        .disable        = disable_systemasic_irq,
--        .ack            = ack_systemasic_irq,
--        .end            = end_systemasic_irq,
-+struct irq_chip systemasic_int = {
-+	.name		= "System ASIC",
-+	.mask		= disable_systemasic_irq,
-+	.mask_ack	= mask_ack_systemasic_irq,
-+	.unmask		= enable_systemasic_irq,
- };
- 
- /*
-@@ -117,37 +101,37 @@ struct hw_interrupt_type systemasic_int = {
-  */
- int systemasic_irq_demux(int irq)
- {
--        __u32 emr, esr, status, level;
--        __u32 j, bit;
--
--        switch (irq) {
--                case 13:
--                        level = 0;
--                        break;
--                case 11:
--                        level = 1;
--                        break;
--                case  9:
--                        level = 2;
--                        break;
--                default:
--                        return irq;
--        }
--        emr = EMR_BASE + (level << 4) + (level << 2);
--        esr = ESR_BASE + (level << 2);
--
--        /* Mask the ESR to filter any spurious, unwanted interrupts */
--        status = inl(esr);
--        status &= inl(emr);
--
--        /* Now scan and find the first set bit as the event to map */
--        for (bit = 1, j = 0; j < 32; bit <<= 1, j++) {
--                if (status & bit) {
--                        irq = HW_EVENT_IRQ_BASE + j + (level << 5);
--                        return irq;
--                }
--        }
--
--        /* Not reached */
--        return irq;
-+	__u32 emr, esr, status, level;
-+	__u32 j, bit;
-+
-+	switch (irq) {
-+	case 13:
-+		level = 0;
-+		break;
-+	case 11:
-+		level = 1;
-+		break;
-+	case  9:
-+		level = 2;
-+		break;
-+	default:
-+		return irq;
-+	}
-+	emr = EMR_BASE + (level << 4) + (level << 2);
-+	esr = ESR_BASE + (level << 2);
-+
-+	/* Mask the ESR to filter any spurious, unwanted interrupts */
-+	status = inl(esr);
-+	status &= inl(emr);
-+
-+	/* Now scan and find the first set bit as the event to map */
-+	for (bit = 1, j = 0; j < 32; bit <<= 1, j++) {
-+		if (status & bit) {
-+			irq = HW_EVENT_IRQ_BASE + j + (level << 5);
-+			return irq;
-+		}
-+	}
-+
-+	/* Not reached */
-+	return irq;
- }
-diff --git a/arch/sh/boards/mach-dreamcast/setup.c b/arch/sh/boards/mach-dreamcast/setup.c
-index 7d944fc..d1bee48 100644
---- a/arch/sh/boards/mach-dreamcast/setup.c
-+++ b/arch/sh/boards/mach-dreamcast/setup.c
-@@ -28,7 +28,7 @@
- #include <asm/machvec.h>
- #include <mach/sysasic.h>
- 
--extern struct hw_interrupt_type systemasic_int;
-+extern struct irq_chip systemasic_int;
- extern void aica_time_init(void);
- extern int gapspci_init(void);
- extern int systemasic_irq_demux(int);
-@@ -47,7 +47,8 @@ static void __init dreamcast_setup(char **cmdline_p)
- 
- 	/* Assign all virtual IRQs to the System ASIC int. handler */
- 	for (i = HW_EVENT_IRQ_BASE; i < HW_EVENT_IRQ_MAX; i++)
--		irq_desc[i].chip = &systemasic_int;
-+		set_irq_chip_and_handler(i, &systemasic_int,
-+					 handle_level_irq);
- 
- 	board_time_init = aica_time_init;
- 
--- 
-1.5.6.4
+ arch/sh/kernel/gpio.c |  126 ++++++++++++++++++++++++-------------------------
+ 1 file changed, 63 insertions(+), 63 deletions(-)
 
+--- 0010/arch/sh/kernel/gpio.c
++++ work/arch/sh/kernel/gpio.c	2008-12-25 15:49:44.000000000 +0900
+@@ -46,9 +46,8 @@ static int enum_in_range(pinmux_enum_t e
+ 	return 1;
+ }
+ 
+-static int read_write_reg(unsigned long reg, unsigned long reg_width,
+-			  unsigned long field_width, unsigned long in_pos,
+-			  unsigned long value, int do_write)
++static int gpio_read_reg(unsigned long reg, unsigned long reg_width,
++			 unsigned long field_width, unsigned long in_pos)
+ {
+ 	unsigned long data, mask, pos;
+ 
+@@ -57,10 +56,9 @@ static int read_write_reg(unsigned long 
+ 	pos = reg_width - ((in_pos + 1) * field_width);
+ 
+ #ifdef DEBUG
+-	pr_info("%s, addr = %lx, value = %ld, pos = %ld, "
++	pr_info("read_reg: addr = %lx, pos = %ld, "
+ 		"r_width = %ld, f_width = %ld\n",
+-		do_write ? "write" : "read", reg, value, pos,
+-		reg_width, field_width);
++		reg, pos, reg_width, field_width);
+ #endif
+ 
+ 	switch (reg_width) {
+@@ -75,24 +73,38 @@ static int read_write_reg(unsigned long 
+ 		break;
+ 	}
+ 
+-	if (!do_write)
+-		return (data >> pos) & mask;
++	return (data >> pos) & mask;
++}
++
++static void gpio_write_reg(unsigned long reg, unsigned long reg_width,
++			   unsigned long field_width, unsigned long in_pos,
++			   unsigned long value)
++{
++	unsigned long mask, pos;
++
++	mask = (1 << field_width) - 1;
++	pos = reg_width - ((in_pos + 1) * field_width);
+ 
+-	data &= ~(mask << pos);
+-	data |= value << pos;
++#ifdef DEBUG
++	pr_info("write_reg addr = %lx, value = %ld, pos = %ld, "
++		"r_width = %ld, f_width = %ld\n",
++		reg, value, pos, reg_width, field_width);
++#endif
++
++	mask = ~(mask << pos);
++	value = value << pos;
+ 
+ 	switch (reg_width) {
+ 	case 8:
+-		ctrl_outb(data, reg);
++		ctrl_outb((ctrl_inb(reg) & mask) | value, reg);
+ 		break;
+ 	case 16:
+-		ctrl_outw(data, reg);
++		ctrl_outw((ctrl_inw(reg) & mask) | value, reg);
+ 		break;
+ 	case 32:
+-		ctrl_outl(data, reg);
++		ctrl_outl((ctrl_inl(reg) & mask) | value, reg);
+ 		break;
+ 	}
+-	return 0;
+ }
+ 
+ static int setup_data_reg(struct pinmux_info *gpioc, unsigned gpio)
+@@ -205,9 +217,9 @@ static int get_gpio_enum_id(struct pinmu
+ 	return -1;
+ }
+ 
+-static int write_config_reg(struct pinmux_info *gpioc,
+-			    struct pinmux_cfg_reg *crp,
+-			    int index)
++static void write_config_reg(struct pinmux_info *gpioc,
++			     struct pinmux_cfg_reg *crp,
++			     int index)
+ {
+ 	unsigned long ncomb, pos, value;
+ 
+@@ -215,8 +227,7 @@ static int write_config_reg(struct pinmu
+ 	pos = index / ncomb;
+ 	value = index % ncomb;
+ 
+-	return read_write_reg(crp->reg, crp->reg_width,
+-			      crp->field_width, pos, value, 1);
++	gpio_write_reg(crp->reg, crp->reg_width, crp->field_width, pos, value);
+ }
+ 
+ static int check_config_reg(struct pinmux_info *gpioc,
+@@ -229,8 +240,8 @@ static int check_config_reg(struct pinmu
+ 	pos = index / ncomb;
+ 	value = index % ncomb;
+ 
+-	if (read_write_reg(crp->reg, crp->reg_width,
+-			   crp->field_width, pos, 0, 0) = value)
++	if (gpio_read_reg(crp->reg, crp->reg_width,
++			  crp->field_width, pos) = value)
+ 		return 0;
+ 
+ 	return -1;
+@@ -238,8 +249,8 @@ static int check_config_reg(struct pinmu
+ 
+ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+ 
+-int pinmux_config_gpio(struct pinmux_info *gpioc, unsigned gpio,
+-		       int pinmux_type, int cfg_mode)
++static int pinmux_config_gpio(struct pinmux_info *gpioc, unsigned gpio,
++			      int pinmux_type, int cfg_mode)
+ {
+ 	struct pinmux_cfg_reg *cr = NULL;
+ 	pinmux_enum_t enum_id;
+@@ -305,8 +316,7 @@ int pinmux_config_gpio(struct pinmux_inf
+ 			break;
+ 
+ 		case GPIO_CFG_REQ:
+-			if (write_config_reg(gpioc, cr, index) != 0)
+-				goto out_err;
++			write_config_reg(gpioc, cr, index);
+ 			*cntp = *cntp + 1;
+ 			break;
+ 
+@@ -393,9 +403,12 @@ EXPORT_SYMBOL(gpio_free);
+ static int pinmux_direction(struct pinmux_info *gpioc,
+ 			    unsigned gpio, int new_pinmux_type)
+ {
+-	int ret, pinmux_type;
++	int pinmux_type;
++	int ret = -EINVAL;
++
++	if (!gpioc)
++		goto err_out;
+ 
+-	ret = -EINVAL;
+ 	pinmux_type = gpioc->gpios[gpio].flags & PINMUX_FLAG_TYPE;
+ 
+ 	switch (pinmux_type) {
+@@ -433,68 +446,59 @@ int gpio_direction_input(unsigned gpio)
+ {
+ 	struct pinmux_info *gpioc = gpio_controller(gpio);
+ 	unsigned long flags;
+-	int ret = -EINVAL;
+-
+-	if (!gpioc)
+-		goto err_out;
++	int ret;
+ 
+ 	spin_lock_irqsave(&gpio_lock, flags);
+ 	ret = pinmux_direction(gpioc, gpio, PINMUX_TYPE_INPUT);
+ 	spin_unlock_irqrestore(&gpio_lock, flags);
+- err_out:
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(gpio_direction_input);
+ 
+-static int __gpio_get_set_value(struct pinmux_info *gpioc,
+-				unsigned gpio, int value,
+-				int do_write)
++static void __gpio_set_value(struct pinmux_info *gpioc,
++			     unsigned gpio, int value)
+ {
+ 	struct pinmux_data_reg *dr = NULL;
+ 	int bit = 0;
+ 
+-	if (get_data_reg(gpioc, gpio, &dr, &bit) != 0)
++	if (!gpioc || get_data_reg(gpioc, gpio, &dr, &bit) != 0)
+ 		BUG();
+ 	else
+-		value = read_write_reg(dr->reg, dr->reg_width,
+-				       1, bit, !!value, do_write);
+-
+-	return value;
++		gpio_write_reg(dr->reg, dr->reg_width, 1, bit, !!value);
+ }
+ 
+ int gpio_direction_output(unsigned gpio, int value)
+ {
+ 	struct pinmux_info *gpioc = gpio_controller(gpio);
+ 	unsigned long flags;
+-	int ret = -EINVAL;
+-
+-	if (!gpioc)
+-		goto err_out;
++	int ret;
+ 
+ 	spin_lock_irqsave(&gpio_lock, flags);
+-	__gpio_get_set_value(gpioc, gpio, value, 1);
++	__gpio_set_value(gpioc, gpio, value);
+ 	ret = pinmux_direction(gpioc, gpio, PINMUX_TYPE_OUTPUT);
+ 	spin_unlock_irqrestore(&gpio_lock, flags);
+- err_out:
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(gpio_direction_output);
+ 
+-int gpio_get_value(unsigned gpio)
++static int __gpio_get_value(struct pinmux_info *gpioc, unsigned gpio)
+ {
+-	struct pinmux_info *gpioc = gpio_controller(gpio);
+-	unsigned long flags;
+-	int value = 0;
++	struct pinmux_data_reg *dr = NULL;
++	int bit = 0;
+ 
+-	if (!gpioc)
++	if (!gpioc || get_data_reg(gpioc, gpio, &dr, &bit) != 0) {
+ 		BUG();
+-	else {
+-		spin_lock_irqsave(&gpio_lock, flags);
+-		value = __gpio_get_set_value(gpioc, gpio, 0, 0);
+-		spin_unlock_irqrestore(&gpio_lock, flags);
++		return 0;
+ 	}
+ 
+-	return value;
++	return gpio_read_reg(dr->reg, dr->reg_width, 1, bit);
++}
++
++int gpio_get_value(unsigned gpio)
++{
++	return __gpio_get_value(gpio_controller(gpio), gpio);
+ }
+ EXPORT_SYMBOL(gpio_get_value);
+ 
+@@ -503,13 +507,9 @@ void gpio_set_value(unsigned gpio, int v
+ 	struct pinmux_info *gpioc = gpio_controller(gpio);
+ 	unsigned long flags;
+ 
+-	if (!gpioc)
+-		BUG();
+-	else {
+-		spin_lock_irqsave(&gpio_lock, flags);
+-		__gpio_get_set_value(gpioc, gpio, value, 1);
+-		spin_unlock_irqrestore(&gpio_lock, flags);
+-	}
++	spin_lock_irqsave(&gpio_lock, flags);
++	__gpio_set_value(gpioc, gpio, value);
++	spin_unlock_irqrestore(&gpio_lock, flags);
+ }
+ EXPORT_SYMBOL(gpio_set_value);
+ 
