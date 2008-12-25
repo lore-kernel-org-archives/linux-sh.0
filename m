@@ -1,32 +1,91 @@
-From: Kaz Kojima <kkojima@rr.iij4u.or.jp>
-Date: Tue, 30 Dec 2008 00:10:43 +0000
-Subject: Re: Flag T-bit for syscall restart
-Message-Id: <20081230.091043.221530353.kkojima@rr.iij4u.or.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Dec 2008 09:55:26 +0000
+Subject: [PATCH] sh: export the sh7343 JPU to user space
+Message-Id: <20081225095526.32515.83316.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4.2.0.58.J.20081227113019.05455988@192.168.0.5>
-In-Reply-To: <4.2.0.58.J.20081227113019.05455988@192.168.0.5>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Paul Mundt <lethal@linux-sh.org> wrote:
-> On Sat, Dec 27, 2008 at 12:02:01PM +0900, SUGIOKA Toshinobu wrote:
->> Hi,
->> 
->> Could someone explain me about the patch
->> http://kerneltrap.org/mailarchive/git-commits-head/2008/10/20/3733624
->> 
->> I can't understand why T-bit(regs->sr & 1) is used
->> as the condition about restarting syscall at the last hunk.
->> 
-> Look at arch/sh/include/asm/syscall_32.h, it is used for syscall error
-> detection by the regset interface.
+From: Magnus Damm <damm@igel.co.jp>
 
-BTW, I've missed this change for a while.  It means that now T
-register is clobbered with syscalls, right?  If so, the clobber
-list of the asm statements for syscall in the userland should be
-updated, for example.
+This patch exports the sh7343 JPU to user space using uio_pdrv_genirq,
+very similar to the sh7722 JPU patch by Hayama-san.
 
-Regards,
-	kaz
+While at it fix up the end of the sh7722 JPU iomem resource.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   31 +++++++++++++++++++++++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    2 +-
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2008-12-25 18:45:26.000000000 +0900
+@@ -112,6 +112,34 @@ static struct platform_device veu_device
+ 	.num_resources	= ARRAY_SIZE(veu_resources),
+ };
+ 
++static struct uio_info jpu_platform_data = {
++	.name = "JPU",
++	.version = "0",
++	.irq = 27,
++};
++
++static struct resource jpu_resources[] = {
++	[0] = {
++		.name	= "JPU",
++		.start	= 0xfea00000,
++		.end	= 0xfea102d3,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* place holder for contiguous memory */
++	},
++};
++
++static struct platform_device jpu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 2,
++	.dev = {
++		.platform_data	= &jpu_platform_data,
++	},
++	.resource	= jpu_resources,
++	.num_resources	= ARRAY_SIZE(jpu_resources),
++};
++
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+ 		.mapbase	= 0xffe00000,
+@@ -152,6 +180,7 @@ static struct platform_device *sh7343_de
+ 	&sci_device,
+ 	&vpu_device,
+ 	&veu_device,
++	&jpu_device,
+ };
+ 
+ static int __init sh7343_devices_setup(void)
+@@ -160,9 +189,11 @@ static int __init sh7343_devices_setup(v
+ 	clk_always_enable("xymem0"); /* XYMEM */
+ 	clk_always_enable("veu0"); /* VEU */
+ 	clk_always_enable("vpu0"); /* VPU */
++	clk_always_enable("jpu0"); /* JPU */
+ 
+ 	platform_resource_setup_memory(&vpu_device, "vpu", 1 << 20);
+ 	platform_resource_setup_memory(&veu_device, "veu", 2 << 20);
++	platform_resource_setup_memory(&jpu_device, "jpu", 2 << 20);
+ 
+ 	return platform_add_devices(sh7343_devices,
+ 				    ARRAY_SIZE(sh7343_devices));
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2008-12-25 18:40:08.000000000 +0900
+@@ -158,7 +158,7 @@ static struct resource jpu_resources[]  	[0] = {
+ 		.name	= "JPU",
+ 		.start	= 0xfea00000,
+-		.end	= 0xfea102d0,
++		.end	= 0xfea102d3,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
