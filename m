@@ -1,128 +1,203 @@
-From: john stultz <johnstul@us.ibm.com>
-Date: Wed, 10 Dec 2008 20:30:51 +0000
-Subject: Re: [PATCH 02/05] clocksource: add enable() and disable() callbacks
-Message-Id: <1228941051.6930.2.camel@localhost.localdomain>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 28 Dec 2008 23:49:57 +0000
+Subject: [RFC][patch] sh: maple: Dreamcast mouse driver
+Message-Id: <1230508197.7574.4.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20081210151251.32515.4022.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20081210151251.32515.4022.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-input <linux-input@vger.kernel.org>, Andrew Morton <akpm@osdl.org>, linux-sh <linux-sh@vger.kernel.org>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 
-On Thu, 2008-12-11 at 00:12 +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> Add enable() and disable() callbacks for clocksources. This allows
-> us to put unused clocksources in power save mode. The functions
-> clocksource_enable() and clocksource_disable() wrap the callbacks
-> and are inserted in the timekeeping code to enable before use and
-> disable after switching to a new clocksource.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+The last time I posted patches for maple devices there were a number of
+problems, so this is a request for comments on the fix of the old mouse
+driver.
 
-This looks ok to me.
+Driver for mouse on the SEGA Dreamcast
 
-Acked-by: John Stultz <johnstul@us.ibm.com>
+
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 
 
 
-> ---
-> 
->  include/linux/clocksource.h |   31 +++++++++++++++++++++++++++++++
->  kernel/time/timekeeping.c   |   12 +++++++++---
->  2 files changed, 40 insertions(+), 3 deletions(-)
-> 
-> --- 0009/include/linux/clocksource.h
-> +++ work/include/linux/clocksource.h	2008-12-01 14:19:43.000000000 +0900
-> @@ -44,6 +44,8 @@ struct clocksource;
->   *				available.
->   * @read:		returns a cycle value
->   * @read2:		returns a cycle value, passes clocksource as argument
-> + * @enable:		optional function to enable the clocksource
-> + * @disable:		optional function to disable the clocksource
->   * @mask:		bitmask for two's complement
->   *			subtraction of non 64 bit counters
->   * @mult:		cycle to nanosecond multiplier (adjusted by NTP)
-> @@ -64,6 +66,8 @@ struct clocksource {
->  	int rating;
->  	cycle_t (*read)(void);
->  	cycle_t (*read2)(struct clocksource *cs);
-> +	int (*enable)(struct clocksource *cs);
-> +	void (*disable)(struct clocksource *cs);
->  	cycle_t mask;
->  	u32 mult;
->  	u32 mult_orig;
-> @@ -176,6 +180,33 @@ static inline cycle_t clocksource_read(s
->  }
-> 
->  /**
-> + * clocksource_enable: - enable clocksource
-> + * @cs:		pointer to clocksource
-> + *
-> + * Enables the specified clocksource. The clocksource callback
-> + * function should start up the hardware and setup mult and field
-> + * members of struct clocksource to reflect hardware capabilities.
-> + */
-> +static inline int clocksource_enable(struct clocksource *cs)
-> +{
-> +	return cs->enable ? cs->enable(cs) : 0;
-> +}
-> +
-> +/**
-> + * clocksource_disable: - disable clocksource
-> + * @cs:		pointer to clocksource
-> + *
-> + * Disables the specified clocksource. The clocksource callback
-> + * function should power down the now unused hardware block to
-> + * save power.
-> + */
-> +static inline void clocksource_disable(struct clocksource *cs)
-> +{
-> +	if (cs->disable)
-> +		cs->disable(cs);
-> +}
-> +
-> +/**
->   * cyc2ns - converts clocksource cycles to nanoseconds
->   * @cs:		Pointer to clocksource
->   * @cycles:	Cycles
-> --- 0001/kernel/time/timekeeping.c
-> +++ work/kernel/time/timekeeping.c	2008-12-01 14:20:32.000000000 +0900
-> @@ -177,7 +177,7 @@ EXPORT_SYMBOL(do_settimeofday);
->   */
->  static void change_clocksource(void)
->  {
-> -	struct clocksource *new;
-> +	struct clocksource *new, *old;
-> 
->  	new = clocksource_get_next();
-> 
-> @@ -186,11 +186,16 @@ static void change_clocksource(void)
-> 
->  	clocksource_forward_now();
-> 
-> -	new->raw_time = clock->raw_time;
-> +	if (clocksource_enable(new))
-> +		return;
-> 
-> +	new->raw_time = clock->raw_time;
-> +	old = clock;
->  	clock = new;
-> +	clocksource_disable(old);
-> +
->  	clock->cycle_last = 0;
-> -	clock->cycle_last = clocksource_read(new);
-> +	clock->cycle_last = clocksource_read(clock);
->  	clock->error = 0;
->  	clock->xtime_nsec = 0;
->  	clocksource_calculate_interval(clock, NTP_INTERVAL_LENGTH);
-> @@ -287,6 +292,7 @@ void __init timekeeping_init(void)
->  	ntp_init();
-> 
->  	clock = clocksource_get_next();
-> +	clocksource_enable(clock);
->  	clocksource_calculate_interval(clock, NTP_INTERVAL_LENGTH);
->  	clock->cycle_last = clocksource_read(clock);
-> 
+---
+
+diff --git a/drivers/input/mouse/Kconfig b/drivers/input/mouse/Kconfig
+index 4e99342..9e5c644 100644
+--- a/drivers/input/mouse/Kconfig
++++ b/drivers/input/mouse/Kconfig
+@@ -286,4 +286,17 @@ config MOUSE_GPIO
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called gpio_mouse.
+ 
++config MOUSE_MAPLE
++	tristate "Maple mouse (for Dreamcast)"
++	depends on MAPLE
++	help
++	  Say Y here to support the mouse on the SEGA Dreamcast.
++
++	  Most Dreamcast users (with a mouse) will want to say Y here.
++
++	  To compile this driver as a module, choose M here: the module will
++	  be called maplemouse.
++
++
+ endif
+diff --git a/drivers/input/mouse/Makefile b/drivers/input/mouse/Makefile
+index 96f1dd8..0272f5d 100644
+--- a/drivers/input/mouse/Makefile
++++ b/drivers/input/mouse/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_MOUSE_SERIAL)	+= sermouse.o
+ obj-$(CONFIG_MOUSE_HIL)		+= hil_ptr.o
+ obj-$(CONFIG_MOUSE_VSXXXAA)	+= vsxxxaa.o
+ obj-$(CONFIG_MOUSE_GPIO)	+= gpio_mouse.o
++obj-$(CONFIG_MOUSE_MAPLE)	+= maplemouse.o
+ 
+ psmouse-objs := psmouse-base.o synaptics.o
+ 
+diff --git a/drivers/input/mouse/maplemouse.c b/drivers/input/mouse/maplemouse.c
+new file mode 100644
+index 0000000..4b8beb4
+--- /dev/null
++++ b/drivers/input/mouse/maplemouse.c
+@@ -0,0 +1,139 @@
++/*
++ *	SEGA Dreamcast mouse driver
++ *	Based on drivers/usb/usbmouse.c
++ *
++ *	Copyright Yaegashi Takeshi, 2001
++ *	Porting to 2.6 and other fixes
++ *	copyright, Adrian McMenamin, 2008
++ */
++
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/timer.h>
++#include <linux/maple.h>
++
++MODULE_AUTHOR("Adrian McMenamin <adrian@mcmen.demon.co.uk>");
++MODULE_DESCRIPTION("SEGA Dreamcast mouse driver");
++MODULE_LICENSE("GPL");
++
++struct dc_mouse {
++	struct input_dev *dev;
++	struct maple_device *mdev;
++};
++
++static void dc_mouse_callback(struct mapleq *mq)
++{
++	int buttons, relx, rely, relz;
++	struct maple_device *mapledev = mq->dev;
++	struct dc_mouse *mse = maple_get_drvdata(mapledev);
++	struct input_dev *dev = mse->dev;
++	unsigned char *res = mq->recvbuf;
++
++	buttons = ~res[8];
++	relx = *(unsigned short *)(res + 12) - 512;
++	rely = *(unsigned short *)(res + 14) - 512;
++	relz = *(unsigned short *)(res + 16) - 512;
++
++	input_report_key(dev, BTN_LEFT,   buttons & 4);
++	input_report_key(dev, BTN_MIDDLE, buttons & 9);
++	input_report_key(dev, BTN_RIGHT,  buttons & 2);
++	input_report_rel(dev, REL_X,      relx);
++	input_report_rel(dev, REL_Y,      rely);
++	input_report_rel(dev, REL_WHEEL,  relz);
++	input_sync(dev);
++}
++
++/* allow the mouse to be used */
++static int probe_maple_mouse(struct device *dev)
++{
++	struct maple_device *mdev;
++	struct maple_driver *mdrv;
++	int error;
++	struct input_dev *input_dev;
++	struct dc_mouse *mse;
++
++
++	mdev = to_maple_dev(dev);
++	mdrv = to_maple_driver(dev->driver);
++	if (!mdrv||!mdev) {
++		error = EINVAL;
++		goto fail;
++	}
++
++	mse = kzalloc(sizeof(struct dc_mouse), GFP_KERNEL);
++	if (!mse) {
++		error = ENOMEM;
++		goto fail;
++	}
++
++	input_dev = input_allocate_device();
++	if (!input_dev) {
++		error = ENOMEM;
++		goto fail_nomem;
++	}
++
++	mse->dev = input_dev;
++	mse->mdev = mdev;
++
++	input_set_drvdata(input_dev, mse);
++	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
++	input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) | BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
++	input_dev->relbit[0] = BIT_MASK(REL_X) | BIT_MASK(REL_Y) | BIT_MASK(REL_WHEEL);
++	input_dev->name = mdev->product_name;
++	input_dev->id.bustype = BUS_HOST;
++	error =	input_register_device(input_dev);
++	if (error)
++		goto fail_register;
++
++	maple_getcond_callback(mdev, dc_mouse_callback, HZ/50, MAPLE_FUNC_MOUSE);
++
++	mdev->driver = mdrv;
++	maple_set_drvdata(mdev, mse);
++
++	return error;
++
++fail_register:
++	input_free_device(input_dev);
++fail_nomem:
++	kfree(mse);
++fail:
++	return -error;
++
++}
++
++static int remove_maple_mouse(struct device *dev)
++{
++	struct maple_device *mdev = to_maple_dev(dev);
++	struct dc_mouse *mse = maple_get_drvdata(mdev);
++
++	mdev->callback = NULL;
++	input_unregister_device(mse->dev);
++	maple_set_drvdata(mdev, NULL);
++	kfree(mse);
++	return 0;
++}
++
++static struct maple_driver dc_mouse_driver = {
++	.function =	MAPLE_FUNC_MOUSE,
++	.drv = {
++		.name = "Dreamcast_mouse",
++		.probe = probe_maple_mouse,
++		.remove = remove_maple_mouse,
++	},
++};
++
++static int __init dc_mouse_init(void)
++{
++	return maple_driver_register(&dc_mouse_driver);
++}
++
++static void __exit dc_mouse_exit(void)
++{
++	maple_driver_unregister(&dc_mouse_driver);
++}
++
++module_init(dc_mouse_init);
++module_exit(dc_mouse_exit);
 
