@@ -1,156 +1,241 @@
 From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Sun, 07 Dec 2008 21:30:11 +0000
-Subject: Dreamcast update
-Message-Id: <1228685411.10445.7.camel@localhost.localdomain>
+Date: Wed, 31 Dec 2008 20:30:46 +0000
+Subject: Problem with memcpy - cache alignment
+Message-Id: <1230755446.6570.22.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-V29ya2luZyB3aXRoIE1hdHQsIGNhbiBub3cgYm9vdCB0aGUgRHJlYW1jYXN0IGFuZCB0aGUgUFZS
-MiBhbmQgR0RSb20gYXBwZWFyIHRvIHdvcmsgKGNlcnRhaW5seSBnZXQgdmlkZW8gb3V0cHV0IGZy
-b20KdGhlIFBWUjIpLiBCdXQgY2Fubm90IGdldCB0aGUgbmV0d29yayB0byBjb21lIHVwLgoKTWF0
-dCB0aGlua3MgdGhpcyBpc3N1ZSBtaWdodCBoYXZlIGJlZW4gc2VlbiBlbHNld2hlcmUgdG9vIC0g
-YW55Ym9keSBnb3QKYW55IGlkZWFzIGFib3V0IGZpeGluZyBpdD8KCkFkcmlhbgoKCgpbICAgIDAu
-MDAwMDAwXSBMaW51eCB2ZXJzaW9uIDIuNi4yOC1yYzctMTM4MzEtZ2FjZmJiZGQtZGlydHkgKGFk
-cmlhbkBib3NzY2xhc3MpIChnY2MgdmVyc2lvbiAzLjQuNikgIzk2NyBQUkVFTVBUIFN1biBEZWMg
-NyAyMToyMToyNiBHTVQgMjAwOApbICAgIDAuMDAwMDAwXSBCb290IHBhcmFtczoKWyAgICAwLjAw
-MDAwMF0gLi4uIE1PVU5UX1JPT1RfUkRPTkxZIC0gOTFmMGM3NWYKWyAgICAwLjAwMDAwMF0gLi4u
-IFJBTURJU0tfRkxBR1MgICAgIC0gZTFmZjMwMTgKWyAgICAwLjAwMDAwMF0gLi4uIE9SSUdfUk9P
-VF9ERVYgICAgIC0gODkwOTM2MTAKWyAgICAwLjAwMDAwMF0gLi4uIExPQURFUl9UWVBFICAgICAg
-IC0gMzYxMmUxMDgKWyAgICAwLjAwMDAwMF0gLi4uIElOSVRSRF9TVEFSVCAgICAgIC0gNDYwODg5
-MDQKWyAgICAwLjAwMDAwMF0gLi4uIElOSVRSRF9TSVpFICAgICAgIC0gNjAwMjMwNmMKWyAgICAw
-LjAwMDAwMF0gY29uc29sZSBbc2VyY29uMF0gZW5hYmxlZApbICAgIDAuMDAwMDAwXSBCb290aW5n
-IG1hY2h2ZWM6IFNlZ2EgRHJlYW1jYXN0ClsgICAgMC4wMDAwMDBdIE5vZGUgMDogc3RhcnRfcGZu
-ID0gMHhjMDAwLCBsb3cgPSAweGQwMDAKWyAgICAwLjAwMDAwMF0gWm9uZSBQRk4gcmFuZ2VzOgpb
-ICAgIDAuMDAwMDAwXSAgIE5vcm1hbCAgIDB4MDAwMGMwMDAgLT4gMHgwMDAwZDAwMApbICAgIDAu
-MDAwMDAwXSBNb3ZhYmxlIHpvbmUgc3RhcnQgUEZOIGZvciBlYWNoIG5vZGUKWyAgICAwLjAwMDAw
-MF0gZWFybHlfbm9kZV9tYXBbMV0gYWN0aXZlIFBGTiByYW5nZXMKWyAgICAwLjAwMDAwMF0gICAg
-IDA6IDB4MDAwMGMwMDAgLT4gMHgwMDAwZDAwMApbICAgIDAuMDAwMDAwXSBCdWlsdCAxIHpvbmVs
-aXN0cyBpbiBab25lIG9yZGVyLCBtb2JpbGl0eSBncm91cGluZyBvbi4gIFRvdGFsIHBhZ2VzOiA0
-MDY0ClsgICAgMC4wMDAwMDBdIEtlcm5lbCBjb21tYW5kIGxpbmU6IHJvb3Q9L2Rldi9uZnMgcncg
-bmZzcm9vdBkyLjE2OC42MS41MDovaG9tZS9hZHJpYW4vZGViZGlzdCBpcD1kaGNwIGVhcmx5cHJp
-bnRrPXNlcmlhbCB2aWRlbz1wdnIyZmI6NjQweDQ4MC0zMkA2MCBjb25zb2w3ClsgICAgMC4wMDAw
-MDBdIFBJRCBoYXNoIHRhYmxlIGVudHJpZXM6IDY0IChvcmRlcjogNiwgMjU2IGJ5dGVzKQpbICAg
-IDAuMDAwMDAwXSBVc2luZyB0bXUgZm9yIHN5c3RlbSB0aW1lcgpbICAgIDAuMDAwMDAwXSBVc2lu
-ZyAxMi40NjkgTUh6IGhpZ2ggcHJlY2lzaW9uIHRpbWVyLgpbICAgIDAuMDA5NjUyXSBDb25zb2xl
-OiBjb2xvdXIgZHVtbXkgZGV2aWNlIDgweDI1ClsgICAgMC4wMTQ2ODhdIERlbnRyeSBjYWNoZSBo
-YXNoIHRhYmxlIGVudHJpZXM6IDIwNDggKG9yZGVyOiAxLCA4MTkyIGJ5dGVzKQpbICAgIDAuMDIy
-MjU0XSBJbm9kZS1jYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6IDEwMjQgKG9yZGVyOiAwLCA0MDk2
-IGJ5dGVzKQpbICAgIDAuMDMyNTkwXSBNZW1vcnk6IDEyNjYway8xNjM4NGsgYXZhaWxhYmxlICgy
-MDk3ayBrZXJuZWwgY29kZSwgNzQ1ayBkYXRhLCAxMTJrIGluaXQpClsgICAgMC4wNDExNDBdIFBW
-UgQwMjA1YzEgQ1ZSADAwMDAwMCBQUlIAMDAwMDAwClsgICAgMC4wNDYzMDVdIEktY2FjaGUgOiBu
-X3dheXM9MSBuX3NldHMlNiB3YXlfaW5jcoE5MgpbICAgIDAuMDUyMDkxXSBJLWNhY2hlIDogZW50
-cnlfbWFzaz0weDAwMDAxZmUwIGFsaWFzX21hc2s9MHgwMDAwMTAwMCBuX2FsaWFzZXM9MgpbICAg
-IDAuMDU5ODg0XSBELWNhY2hlIDogbl93YXlzPTEgbl9zZXRzUTIgd2F5X2luY3IWMzg0ClsgICAg
-MC4wNjU3NDVdIEQtY2FjaGUgOiBlbnRyeV9tYXNrPTB4MDAwMDNmZTAgYWxpYXNfbWFzaz0weDAw
-MDAzMDAwIG5fYWxpYXNlcz00ClsgICAgMC4wNzQwODldIFNMVUI6IEdlbnNsYWJzECwgSFdhbGln
-bjIsIE9yZGVyPTAtMywgTWluT2JqZWN0cz0wLCBDUFVzPTEsIE5vZGVzPTEKWyAgICAwLjA4MjY0
-NF0gQ2FsaWJyYXRpbmcgZGVsYXkgbG9vcCAoc2tpcHBlZCkuLi4gMTk5LjUwIEJvZ29NSVBTIFBS
-RVNFVCAobHBqOTkwMTIpClsgICAgMC4wOTI0NjVdIE1vdW50LWNhY2hlIGhhc2ggdGFibGUgZW50
-cmllczogNTEyClsgICAgMC4xMDIxOTldIENQVTogU0g3NzUwClsgICAgMC4xMzM5NTJdIG5ldF9u
-YW1lc3BhY2U6IDI4OCBieXRlcwpbICAgIDAuMTM5NTY5XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9j
-b2wgZmFtaWx5IDE2ClsgICAgMC4yNjgzODhdIERNQTogUmVnaXN0ZXJpbmcgRE1BIEFQSS4KWyAg
-ICAwLjI3MzEzNl0gRE1BOiBSZWdpc3RlcmluZyBzaF9kbWFjIGhhbmRsZXIgKDQgY2hhbm5lbHMp
-LgpbICAgIDAuMjkxOTE5XSBETUE6IFJlZ2lzdGVyaW5nIHB2cjJfZG1hYyBoYW5kbGVyICgxIGNo
-YW5uZWwpLgpbICAgIDAuMzAzMjkwXSBETUE6IFJlZ2lzdGVyaW5nIGcyX2RtYWMgaGFuZGxlciAo
-NCBjaGFubmVscykuClsgICAgMC4zMjI0NTZdIEF1dG9jb25maWcgUENJIGNoYW5uZWwgMHg4YzJj
-MzgwNApbICAgIDAuMzI3MzIwXSBTY2FubmluZyBidXMgMDAsIEkvTyAweDAxMDAxNjAwOjB4MDEw
-MDM2MDAsIE1lbSAweDAxODQwMDAwOjB4MDE4NDgwMDAKWyAgICAwLjMzNTkyMF0gMDA6MDAuMCBD
-bGFzcyAwMjAwOiAxMWRiOjEyMzQgKHJldiAxMCkKWyAgICAwLjM0MTI2Ml0gICAgICAgICBJL08g
-YXQgMHgwMTAwMTYwMCBbc2l6ZT0weDEwMF0KWyAgICAwLjM0NjU4N10gICAgICAgICBNZW0gYXQg
-MHgwMTg0MDAwMCBbc2l6ZT0weDEwMF0KWyAgICAwLjM1NTA0NV0gUENJOiBGaXhpbmcgdXAgZGV2
-aWNlIDAwMDA6MDA6MDAuMApbICAgIDAuNDE4NDc3XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wg
-ZmFtaWx5IDIKWyAgICAwLjQ2MDY4Ml0gSVAgcm91dGUgY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVz
-OiAxMDI0IChvcmRlcjogMCwgNDA5NiBieXRlcykKWyAgICAwLjQ2OTk1OV0gVENQIGVzdGFibGlz
-aGVkIGhhc2ggdGFibGUgZW50cmllczogNTEyIChvcmRlcjogMCwgNDA5NiBieXRlcykKWyAgICAw
-LjQ3NzYzM10gVENQIGJpbmQgaGFzaCB0YWJsZSBlbnRyaWVzOiA1MTIgKG9yZGVyOiAtMSwgMjA0
-OCBieXRlcykKWyAgICAwLjQ4NDY4NF0gVENQOiBIYXNoIHRhYmxlcyBjb25maWd1cmVkIChlc3Rh
-Ymxpc2hlZCA1MTIgYmluZCA1MTIpClsgICAgMC40OTE0OTFdIFRDUCByZW5vIHJlZ2lzdGVyZWQK
-WyAgICAwLjUwNTUxOV0gTkVUOiBSZWdpc3RlcmVkIHByb3RvY29sIGZhbWlseSAxClsgICAgMC41
-MTY1NzddIHNxOiBSZWdpc3RlcmluZyBzdG9yZSBxdWV1ZSBBUEkuClsgICAgMC41MjgzOTRdIGNw
-dWZyZXE6IFN1cGVySCBDUFUgZnJlcXVlbmN5IGRyaXZlci4KWyAgICAwLjUzMzgwN10gY3B1ZnJl
-cTogY2xvY2sgZnJhbWV3b3JrIHJhdGUgcm91bmRpbmcgbm90IHN1cHBvcnRlZCBvbiB0aGlzIENQ
-VS4KWyAgICAwLjU1MzU5NF0gSHVnZVRMQiByZWdpc3RlcmVkIDY0IEtCIHBhZ2Ugc2l6ZSwgcHJl
-LWFsbG9jYXRlZCAwIHBhZ2VzClsgICAgMC44MTUwNjFdIG1zZ21uaSBoYXMgYmVlbiBzZXQgdG8g
-MjQKWyAgICAwLjgyNzk1Nl0gYWxnOiBObyB0ZXN0IGZvciBzdGRybmcgKGtybmcpClsgICAgMC44
-MzMyMTRdIGlvIHNjaGVkdWxlciBub29wIHJlZ2lzdGVyZWQKWyAgICAwLjgzNzU5OV0gaW8gc2No
-ZWR1bGVyIGFudGljaXBhdG9yeSByZWdpc3RlcmVkIChkZWZhdWx0KQpbICAgIDEuOTY0NTM1XSBD
-b25zb2xlOiBzd2l0Y2hpbmcgdG8gY29sb3VyIGZyYW1lIGJ1ZmZlciBkZXZpY2UgODB4MzAKWyAg
-ICAyLjAwOTg0Nl0gZmIwOiBORUMgUG93ZXJWUjIgKHJldiAxLjEpIGZyYW1lIGJ1ZmZlciBkZXZp
-Y2UsIHVzaW5nIDEyMDBrLzgxOTJrIG9mIHZpZGVvIG1lbW9yeQpbICAgIDIuMDE5MzIxXSBmYjA6
-IE1vZGUgNjQweDQ4MC0zMiBwaXRjaCA9IDI1NjAgY2FibGU6IFZHQSB2aWRlbyBvdXRwdXQ6IFZH
-QQpbICAgIDIuMDI2ODg5XSBmYjA6IHJlZ2lzdGVyaW5nIHdpdGggU1EgQVBJClsgICAgMi4wMzE2
-NjFdIHNxcmVtYXA6ICAgIE5FQyBQb3dlclZSMiAgWzIwNDggcGFnZXNdICB2YSAweGUwMDAwMDAw
-ICAgcGEgMHhhNTAwMDAwMApbICAgIDIuMDM5ODIwXSBmYjA6IE1hcHBlZCB2aWRlbyBtZW1vcnkg
-dG8gU1EgYWRkciAweGUwMDAwMDAwClsgICAgMy45MDEwMjBdIFN1cGVySCBTQ0koRikgZHJpdmVy
-IGluaXRpYWxpemVkClsgICAgMy45MDYyMTddIHNoLXNjaTogdHR5U0MwIGF0IE1NSU8gMHhmZmUw
-MDAwMCAoaXJxID0gMjUpIGlzIGEgc2NpClsgICAgMy45MTY1ODldIHNoLXNjaTogdHR5U0MxIGF0
-IE1NSU8gMHhmZmU4MDAwMCAoaXJxID0gNDMpIGlzIGEgc2NpZgrvv71bICAgIDMuOTIzNzkxXSBj
-b25zb2xlIGhhbmRvdmVyOiBib290IFtzZXJjb24wXSAtPiByZWFsIFt0dHlTQzFdClsgICAgMy45
-MzMzNTVdIHNoLXNjaSBzaC1zY2k6IENQVSBmcmVxdWVuY3kgbm90aWZpZXIgcmVnaXN0ZXJlZApb
-ICAgIDMuOTgyNjk4XSBuYmQ6IHJlZ2lzdGVyZWQgZGV2aWNlIGF0IG1ham9yIDQzClsgICAgNC4w
-ODg5MDBdIDgxMzl0b28gRmFzdCBFdGhlcm5ldCBkcml2ZXIgMC45LjI4ClsgICAgNC4wOTg2MjFd
-IGV0aDA6IFJlYWxUZWsgUlRMODEzOSBhdCAweGExMDAxNzAwLCAwMDpkMDpmMTowMzoxMjpiOSwg
-SVJRIDgzClsgICAgNC42Njk5MzNdIEdEUk9NOiBDRC1ST00gRFJJVkUgICAgIGZyb20gU0UgICAg
-ICAgICAgICAgICB3aXRoIGZpcm13YXJlIDYuNDIgICAgICAgICAgICAKWyAgICA0LjY3NzczM10g
-R0RST006IFJlZ2lzdGVyZWQgd2l0aCBtYWpvciBudW1iZXIgMjU0ClsgICAgNC42ODI3NjRdIFVu
-aWZvcm0gQ0QtUk9NIGRyaXZlciBSZXZpc2lvbjogMy4yMApbICAgIDQuNjk0NTc1XSBUQ1AgY3Vi
-aWMgcmVnaXN0ZXJlZApbICAgIDQuNjk3NjIyXSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wgZmFt
-aWx5IDE3ClsgICAgNC43MTQzOTNdIFJQQzogUmVnaXN0ZXJlZCB1ZHAgdHJhbnNwb3J0IG1vZHVs
-ZS4KWyAgICA0LjcxODc1Nl0gUlBDOiBSZWdpc3RlcmVkIHRjcCB0cmFuc3BvcnQgbW9kdWxlLgpb
-ICAgIDUuMjQxMjI4XSBldGgwOiBsaW5rIHVwLCAxMDBNYnBzLCBmdWxsLWR1cGxleCwgbHBhIDB4
-NDVFMQpbICAgIDYuMjQ4Mjk1XSBTZW5kaW5nIERIQ1AgcmVxdWVzdHMgLi4uLi48Nj5ORVRERVYg
-V0FUQ0hET0c6IGV0aDAgKDgxMzl0b28pOiB0cmFuc21pdCB0aW1lZCBvdXQKWyAgIDQxLjkzMzgy
-NF0gLS0tLS0tLS0tLS0tWyBjdXQgaGVyZSBdLS0tLS0tLS0tLS0tClsgICA0MS45MzgzNjddIEJh
-ZG5lc3MgYXQgbmV0L3NjaGVkL3NjaF9nZW5lcmljLmM6MjI2ClsgICA0MS45NDMzODhdIApbICAg
-NDEuOTQ0ODMyXSBQaWQgOiAwLCBDb21tOiAgICAgICAgICAgICAgc3dhcHBlcgpbICAgNDEuOTQ5
-NTExXSBDUFUgOiAwICAgIE5vdCB0YWludGVkICAoMi42LjI4LXJjNy0xMzgzMS1nYWNmYmJkZC1k
-aXJ0eSAjOTY3KQpbICAgNDEuOTU2NzE0XSBQQyBpcyBhdCBkZXZfd2F0Y2hkb2crMHgxOTgvMHgz
-NDAKWyAgIDQxLjk2MTE5Nl0gUFIgaXMgYXQgZGV2X3dhdGNoZG9nKzB4MTk4LzB4MzQwClsgICA0
-MS45NjU2NzddIFBDICA6IDhjMTlmMzc4IFNQICA6IDhjMmE3ZTY0IFNSICA6IDQwMDA4MTAxIFRF
-QSA6IDAwMDAwMDAwClsgICA0MS45NzI1MDNdIFIwICA6IDAwMDAwMDM3IFIxICA6IDhjMmE2MDAw
-IFIyICA6IDhjMmE2MDAwIFIzICA6IDAwMDAwMGRmClsgICA0MS45NzkzMzBdIFI0ICA6IDAwMDAw
-MDAxIFI1ICA6IDAwMDAxNzU1IFI2ICA6IGZmZmZmZmZmIFI3ICA6IDAwMDAwMDM1ClsgICA0MS45
-ODYxNjBdIFI4ICA6IDAwMDAwMDAxIFI5ICA6IDhjMmFmNzk0IFIxMCA6IDAwMDAwMDAxIFIxMSA6
-IDhjMmY1Mjc4ClsgICA0MS45OTI5ODFdIFIxMiA6IDAwMDAwMDAxIFIxMyA6IDhjYzUzMmZjIFIx
-NCA6IDhjMmE3ZTY0ClsgICA0MS45OTgzNzVdIE1BQ0g6IDAwMDAyNzBjIE1BQ0w6IDAwMDAwM2Mw
-IEdCUiA6IDhjMDAwMDAwIFBSICA6IDhjMTlmMzc4ClsgICA0Mi4wMDUxODhdIApbICAgNDIuMDA1
-MjAyXSBDYWxsIHRyYWNlOiAKWyAgIDQyLjAwOTM1NV0gWzw4YzA0MDdjYT5dIGdldF90aW1lc3Rh
-bXArMHhhLzB4NDAKWyAgIDQyLjAxNDAyM10gWzw4YzAwZGIxNj5dIHRtdV90aW1lcl9yZWFkKzB4
-MTYvMHg0MApbICAgNDIuMDE4ODY2XSBbPDhjMDA2OTcwPl0gc2NoZWRfY2xvY2srMHgxMC8weDYw
-ClsgICA0Mi4wMjM1NDNdIFs8OGMwMzQzZjg+XSBzY2hlZF9jbG9ja19jcHUrMHgxOC8weDQwClsg
-ICA0Mi4wMjgzOTVdIFs8OGMwMjI0NGE+XSB1cGRhdGVfcHJvY2Vzc190aW1lcysweDRhLzB4ODAK
-WyAgIDQyLjAzMzc4OF0gWzw4YzAyMjMxYT5dIHJ1bl90aW1lcl9zb2Z0aXJxKzB4MTFhLzB4MWMw
-ClsgICA0Mi4wMzkxNzRdIFs8OGMwMThiZTA+XSBwcmludGsrMHgwLzB4NDAKWyAgIDQyLjA0MzEy
-Nl0gWzw4YzE5ZjFlMD5dIGRldl93YXRjaGRvZysweDAvMHgzNDAKWyAgIDQyLjA0Nzc5NF0gWzw4
-YzAxZDE3YT5dIF9fZG9fc29mdGlycSsweDVhLzB4MTIwClsgICA0Mi4wNTI2NDBdIFs8OGMxMmIw
-ZTA+XSBkZWJ1Z19zbXBfcHJvY2Vzc29yX2lkKzB4MC8weGMwClsgICA0Mi4wNTgwMzBdIFs8OGMw
-MWQyN2E+XSBkb19zb2Z0aXJxKzB4M2EvMHhhMApbICAgNDIuMDYyNTI5XSBbPDhjMjA4MWMwPl0g
-X19zY2hlZF90ZXh0X3N0YXJ0KzB4MC8weDQ2MApbICAgNDIuMDY3NzI4XSBbPDhjMDExZmEwPl0g
-YWRkX3ByZWVtcHRfY291bnQrMHgwLzB4ODAKWyAgIDQyLjA3Mjc2MF0gWzw4YzAxZDRkND5dIGly
-cV9leGl0KzB4MzQvMHg2MApbICAgNDIuMDc3MDcwXSBbPDhjMDExZjAwPl0gc3ViX3ByZWVtcHRf
-Y291bnQrMHgwLzB4YTAKWyAgIDQyLjA4MjA5NF0gWzw4YzAwMzc4OD5dIGRvX0lSUSsweDQ4LzB4
-ODAKWyAgIDQyLjA4NjIzNF0gWzw4YzAwODBlOD5dIHJldF9mcm9tX2lycSsweDAvMHgxMApbICAg
-NDIuMDkwOTA3XSBbPDhjMDczYTIwPl0gcXVpY2tsaXN0X3RyaW0rMHgwLzB4MTIwClsgICA0Mi4w
-OTU3NDVdIFs8OGMwMDM3NDA+XSBkb19JUlErMHgwLzB4ODAKWyAgIDQyLjA5OTcxN10gWzw4YzAw
-MzgyMD5dIGRlZmF1bHRfaWRsZSsweDAvMHgxMDAKWyAgIDQyLjEwNDM3OF0gWzw4YzA3M2EyMD5d
-IHF1aWNrbGlzdF90cmltKzB4MC8weDEyMApbICAgNDIuMTA5MjI1XSBbPDhjMDExZmEwPl0gYWRk
-X3ByZWVtcHRfY291bnQrMHgwLzB4ODAKWyAgIDQyLjExNDI2MF0gWzw4YzIwODFjMD5dIF9fc2No
-ZWRfdGV4dF9zdGFydCsweDAvMHg0NjAKWyAgIDQyLjExOTQ2OF0gWzw4YzAwMzg4Mj5dIGRlZmF1
-bHRfaWRsZSsweDYyLzB4MTAwClsgICA0Mi4xMjQzMDldIFs8OGMwMDM5ODQ+XSBjcHVfaWRsZSsw
-eDY0LzB4YzAKWyAgIDQyLjEyODYzM10gWzw4YzAwMzk4ND5dIGNwdV9pZGxlKzB4NjQvMHhjMApb
-ICAgNDIuMTMyOTM3XSBbPDhjMjAzOGQwPl0gcmVzdF9pbml0KzB4NTAvMHhhMApbICAgNDIuMTM3
-MjYwXSBbPDhjMmNkZTYwPl0gX19hbGxvY19ib290bWVtKzB4MC8weDIwClsgICA0Mi4xNDIxMDBd
-IFs8OGMwMDNiNjA+XSBrZXJuZWxfdGhyZWFkKzB4MC8weDgwClsgICA0Mi4xNDY3ODNdIFs8OGMy
-YzhhNzA+XSBzdGFydF9rZXJuZWwrMHg1NzAvMHg1YTAKWyAgIDQyLjE1MTYyMl0gWzw4YzAwMjAy
-ND5dIF9zdGV4dCsweDI0LzB4MzAKWyAgIDQyLjE1NTc0Ml0gClsgICA0NS4xNTc5MzRdIGV0aDA6
-IGxpbmsgdXAsIDEwME1icHMsIGZ1bGwtZHVwbGV4LCBscGEgMHg0NUUxClsgICA1OS40NDk5ODdd
-IC4KIENUUkwtQSBaIGZvciBoZWxwIHwxMTUyMDAgOE4xIHwgTk9SIHwgTWluaWNvbSAyLjMgICAg
-fCBWVDEwMiB8ICAgICAgT2ZmbGluZSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCgoKCi0tClRvIHVu
-c3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51
-eC1zaCIgaW4KdGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5v
-cmcKTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRv
-bW8taW5mby5odG1s
+Perhaps someone could give me some pointers to fixing this...
+
+I am working on my VMU (flash memory) driver for the Dreamcast. Using
+the caching mtdblock device abstraction in the kernel it seems it is
+sometimes possible to get this to work (simply reading off the contents
+of the VMU by typing cat /dev/mtdblock0 etc)
+
+But more often than not it blows up on what seems to be a simple memcpy
+operation - always at the same instruction in the assembly code itself.
+It does this after reading a number of blocks and generally seems to do
+it towards the end of the read.
+
+This is the read code from the device driver...
+
+/* Maple bus callback function for reads */
+static void vmu_blockread(struct mapleq *mq)
+{
+	struct maple_device *mdev;
+	struct memcard *card;
+	struct mtd_info *mtd;
+	struct vmu_cache *pcache;
+	struct mdev_part *mpart;
+	int partition;
+
+	mdev = mq->dev;
+	card = maple_get_drvdata(mdev);
+	/* copy the read in data */
+	memcpy(card->blockread, mq->recvbuf + 12, card->blocklen);
+	card->read = 1;
+	/* fill the cache for this block */
+	mpart = card->mtd->priv;
+	partition = mpart->partition;
+	pcache = (card->parts[partition]).pcache;
+	if (!pcache->buffer) {
+		pcache->buffer = kmalloc(card->blocklen, GFP_KERNEL);
+		/* If fail because of ENOMEM - wake up to cause failure */
+		if (!pcache->buffer)
+			goto wakeup;
+	}
+	memcpy(pcache->buffer, card->blockread, card->blocklen);
+	pcache->block = ((unsigned char *)mq->recvbuf)[11];
+	pcache->jiffies_atc = jiffies;
+	pcache->valid = 1;
+wakeup:
+	wake_up_interruptible(&card->vmu_read);
+}
+
+
+Which generates this error at random intervals...
+
+/* Maple bus callback function for reads */
+static void vmu_blockread(struct mapleq *mq)
+{
+	struct maple_device *mdev;
+	struct memcard *card;
+	struct mtd_info *mtd;
+	struct vmu_cache *pcache;
+	struct mdev_part *mpart;
+	int partition;
+
+	mdev = mq->dev;
+	card = maple_get_drvdata(mdev);
+	/* copy the read in data */
+	memcpy(card->blockread, mq->recvbuf + 12, card->blocklen);
+	card->read = 1;
+	/* fill the cache for this block */
+	mpart = card->mtd->priv;
+	partition = mpart->partition;
+	pcache = (card->parts[partition]).pcache;
+	if (!pcache->buffer) {
+		pcache->buffer = kmalloc(card->blocklen, GFP_KERNEL);
+		/* If fail because of ENOMEM - wake up to cause failure */
+		if (!pcache->buffer)
+			goto wakeup;
+	}
+	memcpy(pcache->buffer, card->blockread, card->blocklen);
+	pcache->block = ((unsigned char *)mq->recvbuf)[11];
+	pcache->jiffies_atc = jiffies;
+	pcache->valid = 1;
+wakeup:
+	wake_up_interruptible(&card->vmu_read);
+}
+
+Which generates this (always the same) error at (random) intervals...
+
+
+[  116.557096] mtdblock: read on "vmu2.1.0" at 0x1be00, size 0x200
+[  116.831468] Unable to handle kernel NULL pointer dereference at virtual address 000001e0
+[  116.831542] pc = 8c0f0af0
+[  116.831570] *pde = 00000000
+[  116.831609] Oops: 0001 [#1]
+[  116.831637] Modules linked in: evdev
+[  116.831679] 
+[  116.831707] Pid : 5, Comm:           events/0
+[  116.831752] CPU : 0                  Not tainted  (2.6.28-03115-gc1eca7e-dirty #40)
+[  116.831790] 
+[  116.831834] PC is at memcpy+0x15c/0x28c
+[  116.831898] PR is at vmu_blockread+0x2a/0xa4
+[  116.831946] PC  : 8c0f0af0 SP  : 8cc23ecc SR  : 40008101 TEA : c0027454
+[  116.832011] R0  : 00000000 R1  : 000001e0 R2  : 00000000 R3  : 00000000
+[  116.832066] R4  : 00000000 R5  : ac9a0dec R6  : 00000000 R7  : 00000000
+[  116.832119] R8  : 00000000 R9  : 00000000 R10 : 00000000 R11 : 00000000
+[  116.832174] R12 : 00000001 R13 : 8c29573c R14 : 8cc23edc
+[  116.832225] MACH: 00000019 MACL: 00000000 GBR : 00000000 PR  : 8c139df6
+[  116.832269] 
+[  116.832285] Call trace:
+[  116.832334] [<8c0f0994>] memcpy+0x0/0x28c
+[  116.832394] [<8c147942>] maple_dma_handler+0x1de/0x318
+[  116.832461] [<8c00fb58>] add_preempt_count+0x0/0x64
+[  116.832532] [<8c023c98>] run_workqueue+0xb0/0x17c
+[  116.832594] [<8c00fb58>] add_preempt_count+0x0/0x64
+[  116.832653] [<8c147764>] maple_dma_handler+0x0/0x318
+[  116.832717] [<8c023de6>] worker_thread+0x82/0xbc
+[  116.832779] [<8c0111a0>] complete+0x0/0x8c
+[  116.832846] [<8c026fd4>] kthread_should_stop+0x0/0x20
+[  116.832921] [<8c027768>] autoremove_wake_function+0x0/0x30
+[  116.832999] [<8c027768>] autoremove_wake_function+0x0/0x30
+[  116.833069] [<8c02702e>] kthread+0x3a/0x70
+[  116.833126] [<8c023d64>] worker_thread+0x0/0xbc
+[  116.833193] [<8c026fd4>] kthread_should_stop+0x0/0x20
+[  116.833255] [<8c0038a8>] kernel_thread_helper+0x8/0x14
+[  116.833336] [<8c026ff4>] kthread+0x0/0x70
+[  116.833412] [<8c0038a0>] kernel_thread_helper+0x0/0x14
+[  116.833455] 
+[  116.833478] Code:
+[  116.833507]   8c0f0aea:  mov.l     @(20,r5), r9
+[  116.833607]   8c0f0aec:  mov.l     @(24,r5), r10
+[  116.833691]   8c0f0aee:  mov.l     @(28,r5), r11
+[  116.833775] ->8c0f0af0:  movca.l   r0, @r1
+[  116.833859]   8c0f0af2:  mov.l     r3, @(4,r1)
+[  116.833941]   8c0f0af4:  mov.l     r6, @(8,r1)
+[  116.834023]   8c0f0af6:  mov.l     r7, @(12,r1)
+[  116.834106]   8c0f0af8:  mov.l     r8, @(16,r1)
+[  116.834188]   8c0f0afa:  add       #-32, r5
+[  116.834250] 
+[  116.834285] Process: events/0 (pid: 5, stack limit = 8cc22001)
+[  116.834335] Stack: (0x8cc23ecc to 0x8cc24000)
+[  116.834371] 3ec0:                            8c0f0994 8ca52860 8c719400 8cd4c260 8c147942 
+[  116.834485] 3ee0: 8cc23ef8 8c00fb58 00000008 ac9a0c00 8c719400 8ca52860 8cc23f14 00000000 
+[  116.834610] 3f00: 8cd4cc20 8c023c98 8cc23f24 00000000 8c00fb58 8c147764 8c2655b0 8cc02920 
+[  116.834736] 3f20: 00000000 8c023de6 8cc23f40 fffffffc 8c0111a0 8c026fd4 8cc02920 8cc02928 
+[  116.834862] 3f40: 00000000 8cc1da20 8c027768 8cc23f4c 8cc23f4c 00000000 8cc1da20 8c027768 
+[  116.834985] 3f60: 8cc23f4c 8cc23f4c 8c02702e 8cc23f7c 8c023d64 8cc02920 8c026fd4 8c0038a8 
+[  116.835115] 3f80: 8cc23f98 00000000 00000000 00000000 00000000 00000000 00000000 00000000 
+[  116.835226] 3fa0: 00000000 00000000 00000000 00000000 8cc15ef4 8c026ff4 00000000 00000000 
+[  116.835339] 3fc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 8cc23fa0 
+[  116.835452] 3fe0: 8c0038a0 00000000 40000000 00000000 00000000 00000000 00000000 00000000 
+[  116.835679] ---[ end trace 68d2f606da5f3439 ]---
+
+The fragment of assembly seems to relate to this (2:) bit of
+memcpy-sh4.S:
+
+	! Copy the cache line aligned blocks
+	!
+	! In use: r0, r2, r4, r5
+	! Scratch: r1, r3, r6, r7
+	!
+	! We could do this with the four scratch registers, but if src
+	! and dest hit the same cache line, this will thrash, so make
+	! use of additional registers.
+	!
+	! We also need r0 as a temporary (for movca), so 'undo' the invariant:
+	!   r5:	 src (was r0+r5)
+	!   r1:	 dest (was r0)
+	! this can be reversed at the end, so we don't need to save any extra
+	! state.
+	!
+1:	mov.l	r8, @-r15	!  30 LS
+	add	r0, r5		!  49 EX
+
+	mov.l	r9, @-r15	!  30 LS
+	mov	r0, r1		!   5 MT (latency=0)
+
+	mov.l	r10, @-r15	!  30 LS
+	add	#-0x1c, r5	!  50 EX
+
+	mov.l	r11, @-r15	!  30 LS
+
+	! 16 cycles, 32 bytes per iteration
+2:	mov.l	@(0x00,r5),r0	! 18 LS (latency=2)
+	add	#-0x20, r1	! 50 EX
+	mov.l	@(0x04,r5),r3	! 18 LS (latency=2)
+	mov.l	@(0x08,r5),r6	! 18 LS (latency=2)
+	mov.l	@(0x0c,r5),r7	! 18 LS (latency=2)
+	mov.l	@(0x10,r5),r8	! 18 LS (latency=2)
+	mov.l	@(0x14,r5),r9	! 18 LS (latency=2)
+	mov.l	@(0x18,r5),r10	! 18 LS (latency=2)
+	mov.l	@(0x1c,r5),r11	! 18 LS (latency=2)
+	movca.l	r0,@r1		! 40 LS (latency=3-7)
+	mov.l	r3,@(0x04,r1)	! 33 LS
+	mov.l	r6,@(0x08,r1)	! 33 LS
+	mov.l	r7,@(0x0c,r1)	! 33 LS
+
+	mov.l	r8,@(0x10,r1)	! 33 LS
+	add	#-0x20, r5	! 50 EX
+
+	mov.l	r9,@(0x14,r1)	! 33 LS
+	cmp/eq	r2,r1		! 54 MT
+
+	mov.l	r10,@(0x18,r1)	!  33 LS
+	bf/s	2b		! 109 BR
+
+	 mov.l	r11,@(0x1c,r1)	!  33 LS
+
+	mov	r1, r0		!   5 MT (latency=0)
+
+	mov.l	@r15+, r11	!  15 LS
+	sub	r1, r5		!  75 EX
+
+	mov.l	@r15+, r10	!  15 LS
+	cmp/eq	r4, r0		!  54 MT
+
+	bf/s	1f		! 109 BR
+	 mov.l	 @r15+, r9	!  15 LS
+
+	rts
+
+
+Using sh-linux-addr2line gives the calling line in the driver as: 	mpart
+= card->mtd->priv;
+
+
+which obviously isn't doing much.
+
+Any clues as to where I should be looking to fix this? 
+
+
+Otherwise, happy new year to you all.
+
+Adrian
+
