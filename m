@@ -1,36 +1,57 @@
-From: morimoto.kuninori@renesas.com
-Date: Thu, 29 Jan 2009 23:54:17 +0000
-Subject: Re: [bug report] dead lock (?) occur on ap325 board
-Message-Id: <u4ozhoehi.wl%morimoto.kuninori@renesas.com>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 01 Jan 2009 07:41:14 +0000
+Subject: Re: [PATCH] sh: maple: add support for the Maple mouse on the SEGA Dreamcast
+Message-Id: <200901010241.16185.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart32419704.AYxseJ8L90"
 List-Id: <linux-sh.vger.kernel.org>
-References: <uprie4cmj.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uprie4cmj.wl%morimoto.kuninori@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1230578246.6496.25.camel@localhost.localdomain> <200812300017.45336.dmitry.torokhov@gmail.com> <1230668825.6489.1.camel@localhost.localdomain>
+In-Reply-To: <1230668825.6489.1.camel@localhost.localdomain>
+To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Sam Ravnborg <sam@ravnborg.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Andrew Morton <akpm@osdl.org>, Paul Mundt <lethal@linux-sh.org>
 
+--nextPart32419704.AYxseJ8L90
+Content-Type: text/plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-Dear Paul and yoshii-san.
+On Tuesday 30 December 2008 15:27:05 Adrian McMenamin wrote:
+> Adding maple mouse with proper __devexit_p() handling
 
-Thank you yoshii-san for your response.
+this kind of patch revision info typically goes below the --- marker and  t=
+he=20
+patch itself gets "v2", "v3", etc... header markers
 
-> > Signed-off-by: Takashi YOSHII <yoshii.takashi@renesas.com>
-> 
-> Yes, that looks fine. I'll queue this up, thanks.
-> 
-> If Morimoto-san wants to add his Signed-off-by or Acked-by, I'll add that
-> also.
+otherwise, driver looks OK to me.  thanks for your dreamcast work.
+Acked-by: Mike Frysinger <vapier@gentoo.org>
 
-Please add.
+> +	mse =3D kzalloc(sizeof(struct dc_mouse), GFP_KERNEL);
 
->> Kunihiro's fix looks good for me.
-> Who I meant was you.
+personally i find this style less likely to rot:
+mse =3D kzalloc(sizeof(*mse), GFP_KERNEL);
+=2Dmike
 
-Yes. My name is Kuninori
-v(^o^)v         ~~~~~~~~
+--nextPart32419704.AYxseJ8L90
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Best regards
---
-Kuninori Morimoto
- 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
+
+iQIcBAABAgAGBQJJXHOcAAoJEEFjO5/oN/WBlqwQAMKseiErdo+hELWlxq9bXqSt
+Xu6D18iVDLTsph930I1U2hKZbKi/DWZXcc602kg7CNOzfqtlRepXpn5WWDP0GWoN
+fCb3IRjSJ4YcgJjJkvEhpytvd43K1n6GOmZtNXzPU4wF0U/6/33bYJiRaWdjVSEQ
+SFw20Zb8mdcuhMTRohJ7CkW34LB7Wq2tnccKw1u1t03F0tT4qRJaFoq1hxCTJjFf
+g2+AJYx8QtdfC0H+qBM6RHavs/SDOFvDQpom8nCyNaBeP69WD3oGag+oW/FUKBAy
+N9wn6J2V/9Cjpxjme14bEVUG+lbaN8y4qvcrbPq1bDR64FrpfMOGuTo2hTwT8Vkk
+fSltj4BdbhxmzYAqv9xIkF/u6VmbULlyUTPxHqNBUVO05+9u2WDqtIwlEi9kz86J
+mr7CMVyMbmbNq8mTYErqfOckob8DG01nkIbqdF9jm+xmH9dDl+OdyC8dhbx6OoGX
+PKPF1l8eIhgKuLewKxqukKnLr4NPS9Icg/4E0WQvdfpWiMA3qqpbD++1/RFet2Qh
+vkkwGJyTh3ozdO2k5GPQn560r0KXRLNsW/qsgkzUlfqhz2m771FgAY/BUHouP8BZ
+/o3X/llKDHZzIp2ifibQ04V5tCAUBHFxZntr8ctU/0cAi86bpU7Y7nE1j8zfCQ+p
+ErHfH5XfHIBmWkCifiey
+=o85d
+-----END PGP SIGNATURE-----
+
+--nextPart32419704.AYxseJ8L90--
