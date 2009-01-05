@@ -1,7 +1,7 @@
 From: Steve.Glendinning@smsc.com
-Date: Thu, 01 Jan 2009 12:58:32 +0000
-Subject: Re: SH7709 BUG on boot (partially bisected)
-Message-Id: <OF27945C1E.C7FFE91D-ON80257531.00459EBC-80257531.004762ED@smsc.com>
+Date: Mon, 05 Jan 2009 11:32:49 +0000
+Subject: Fw: SH7709 BUG on boot (partially bisected)
+Message-Id: <OF78FD2628.616675FB-ON80257535.003E96C0-80257535.003F89DE@smsc.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <OF2E8062F8.007117EA-ON80257530.004D178D-80257530.004E3CFB@smsc.com>
 In-Reply-To: <OF2E8062F8.007117EA-ON80257530.004D178D-80257530.004E3CFB@smsc.com>
@@ -10,42 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-HI Paul,
+Hi Paul,
 
-> > Using the current torvalds tree on SH7709, physmap is having a problem 
+> > Can you post your toolchain information? Compiler version is the most
+> > important thing here.
+>
+> I've upgraded to the gcc 4.1.1 rpm (also from rpm.linux-sh.org). 
 
-> > seeing my memory-mapped flash.  I've bisected this to somewhere 
-between:
-> > 
-> > GOOD: [e9bf51e5ccc7703226c79888603e157066213700] sh: __udivdi3 -> 
-do_div() 
-> > in softfloat lib.
-> > BAD: [3b041227f7ef7c7e97f205c68c6069c0c62e5204] sh: Add plain udivsi3 
-(not 
-> > _i4*) for gcc-4.1 and lower.
-> > 
-> > All commits between these two fail to boot here (no console output at 
-> > all), so I wasn't able to bisect further.
-> > 
-> Can you post your toolchain information? Compiler version is the most
-> important thing here.
+Sorry, that should be rpm.sh-linux.org.
 
-I've upgraded to the gcc 4.1.1 rpm (also from rpm.linux-sh.org).  The 
-problem is still there but the messages I see are different: The BUG has 
-been replaced with "map_probe failed".
+Doh, since Friday Linus's tree #errors on gcc 4.1.{0,1}.  Is there a more 
+recent version available as a binary, or should I build my own cross 
+toolchain (crosstool?)?
 
-    physmap platform flash device: 01000000 at 00000000
-    physmap-flash physmap-flash.0: map_probe failed
+Is there a specific gcc version you'd recommend for sh cross compilation?
 
-Obviously later on I get a panic as it can't see its root fs.
-
-The same revisions as before are good and bad, and I still get no console 
-output from commits in-between the two so I'm unable to bisect further.
-
-Regards,
+Thanks for your help,
 --
 Steve Glendinning
 SMSC GmbH
 m: +44 777 933 9124
 e: steve.glendinning@smsc.com
+
 
