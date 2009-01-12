@@ -1,49 +1,83 @@
-From: "Edgar E. Iglesias" <edgar.iglesias@axis.com>
-Date: Tue, 13 Jan 2009 02:57:22 +0000
-Subject: Re: [Qemu-devel] sh: dcache flush breaks text region?
-Message-Id: <20090113025722.GC30935@edgar.se.axis.com>
+From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
+Date: Mon, 12 Jan 2009 03:48:02 +0000
+Subject: Re: [Qemu-devel] [PATCH 1/3] sh: SE7750 board definition
+Message-Id: <496ABD72.20400@juno.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4968DD28.3030709@juno.dti.ne.jp>
-	<20090110195332.GD26952@edgar.se.axis.com>
-	<49696E54.9030102@juno.dti.ne.jp>
-	<20090111104259.GE26952@edgar.se.axis.com>
-In-Reply-To: <20090111104259.GE26952@edgar.se.axis.com>
+References: <4969B77E.7050206@juno.dti.ne.jp>
+	<20090111130445.GA12080@game.jcrosoft.org>
+In-Reply-To: <20090111130445.GA12080@game.jcrosoft.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Edgar E. Iglesias" <edgar@axis.com>
-Cc: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>, qemu-devel@nongnu.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>, qemu-devel@nongnu.org
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Sun, Jan 11, 2009 at 11:42:59AM +0100, Edgar E. Iglesias wrote:
-> On Sun, Jan 11, 2009 at 12:58:12PM +0900, Shin-ichiro KAWASAKI wrote:
-> >
-> > Edgar E. Iglesias wrote:
-> >> Another solution might be for linux to use a ocpb followed by a ocpi insn
-> >> on the line. IIUC that should achieve the same results net results.
-> > I'm not sure about it.  But I think we should not modify linux,
+Thank you for the review!
+# This mail CCed to linux-sh ML expecting some comments on SE7750 flash.
+
+Jean-Christophe PLAGNIOL-VILLARD wrote:
+>> +#define SDRAM_BASE   0x0c000000 /* Physical location of SDRAM: Area 3 */
+>> +#define SDRAM_SIZE   0x02000000
 > 
-> I agree.
-> 
-> The ocpb followed by the ocpi that I suggested won't work and I cant
-> think of anything better than what linux is already doing.
+>> +#define ENTRY_OFFSET 0x00001000
+>> +#define COMMAND_LINE_OFFSET 0x0000100
+> IIRC it's the case for all SH4 maybe we could define it in a header and all
+> board to overwrite it
+I agree.  I think it will be another patch.
 
-I gave this some more thought and I think that there might be room for
-improvements in the cache-sh4 flushing loops anyway.
+>> +
+>> +static void se7750_init(ram_addr_t ram_size, int vga_ram_size,
+>> +                    const char *boot_device, DisplayState * ds,
+>> +                    const char *kernel_filename, const char *kernel_cmdline,
+>> +                    const char *initrd_filename, const char *cpu_model)
+>> +{
+>> +    CPUState *env;
+>> +    struct SH7750State *s;
+>> +    ram_addr_t sdram_addr;
+>> +    int kernel_size;
+>> +    uint8 * phys_load_addr = phys_ram_base;
+>> +
+>> +    /* initialize CPU */
+>> +    if (!cpu_model)
+>> +        cpu_model = "SH7750";
+>> +
+>> +    env = cpu_init(cpu_model);
+>> +    if (!env) {
+>> +        fprintf(stderr, "Unable to find CPU definition\n");
+>> +        exit(1);
+>> +    }
+>> +
+>> +    /* Allocate memory space */
+>> +    sdram_addr = qemu_ram_alloc(SDRAM_SIZE);
+>> +    cpu_register_physical_memory(SDRAM_BASE, SDRAM_SIZE, sdram_addr);
+>> +
+>> +    /* Register peripherals */
+>> +    s = sh7750_init(env);
+>> +
+>> +    /* initialization which should be done by firmware */
+>> +    uint32_t bcr1 = 1 << 3; /* cs3 SDRAM */
+>> +    uint16_t bcr2 = 3 << (3 * 2); /* cs3 32-bit */
+> please move tihs too the beginning of the function
+Sure. I'll do so.
 
-The reason why the suggested ocbp+ocbi sequences didn't work was because
-I later noticed that the same loop was beeing used for unconditional line
-flushes aswell as for flushes for ranges where you actually know the
-virtual addresses you want to flush (complete page flushes seem to be
-treated differently).
+>> +    cpu_physical_memory_write(SH7750_BCR1_A7, (uint8_t *)&bcr1, 4);
+>> +    cpu_physical_memory_write(SH7750_BCR2_A7, (uint8_t *)&bcr2, 2);
+>> +
+>> +    /* Start from P2 area */
+>> +    env->pc = SDRAM_BASE | 0xa0000000;
+>> +
+>> +    /* pass kernel cmdline */
+>> +    if (kernel_cmdline) {
+>> +        pstrcpy((char *)phys_load_addr + ENTRY_OFFSET + COMMAND_LINE_OFFSET,
+>> +                strlen(kernel_cmdline) + 1, kernel_cmdline);
+>> +        env->pc += 0x80000;
+>> +        phys_load_addr += 0x80000;
+>> +    }
+> do you known the flash model present on the real board?
+No, I don't.
+The patches for SE7750 are all implemented using informations in linux source code.
+I visited Solution Engine site (in Japanese) but could not find useful specs.
+http://www.hitachi-ul.co.jp/system/SH-SE/shiyou.html
 
-If you separate the two, the flushes for virtual ranges can be done with
-the ocbp+ocbi sequence. If I'm not misstaken, there are two main
-advantages:
-
-1. You will flush and invalidate much fewer lines, only those that
-   actually hit in the cache. This could turn out to be a pretty
-   significant win.
-2. You get rid of the atomic requirements. It means you can do all the
-   ranged flushes with interrupts enabled all the time.
-
-Best regards
+Regards,
+Shin-ichiro KAWASAKI
