@@ -1,81 +1,118 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Fri, 02 Jan 2009 07:52:57 +0000
-Subject: [PATCH] asm-sh/posix_types_{32,64}.h: drop __GLIBC__/__USE_ALL usage
-Message-Id: <1230882777-9950-1-git-send-email-vapier@gentoo.org>
+From: Steve Glendinning <steve.glendinning@smsc.com>
+Date: Tue, 13 Jan 2009 15:45:49 +0000
+Subject: [PATCH 2/3] sh: convert ap325rxa platform to use smsc911x
+Message-Id: <1231861550-29681-3-git-send-email-steve.glendinning@smsc.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Bring sh in line with all the other ports.  Not sure how sh missed this
-change as all the other arches were being updated ...
-
-Signed-off-by: Mike Frysinger <vapier@gentoo.org>
-CC: Paul Mundt <lethal@linux-sh.org>
-CC: linux-sh@vger.kernel.org
+Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
+Tested-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Acked-by: Paul Mundt <lethal@sh-linux.org>
 ---
- arch/sh/include/asm/posix_types_32.h |    8 ++------
- arch/sh/include/asm/posix_types_64.h |    8 ++------
- 2 files changed, 4 insertions(+), 12 deletions(-)
+ arch/sh/boards/board-ap325rxa.c    |   24 +++++++++++++-----------
+ arch/sh/configs/ap325rxa_defconfig |   21 +++++++++++++++++++--
+ 2 files changed, 32 insertions(+), 13 deletions(-)
 
-diff --git a/arch/sh/include/asm/posix_types_32.h b/arch/sh/include/asm/posix_types_32.h
-index 0a3d2f5..2172732 100644
---- a/arch/sh/include/asm/posix_types_32.h
-+++ b/arch/sh/include/asm/posix_types_32.h
-@@ -39,14 +39,10 @@ typedef long long	__kernel_loff_t;
- #endif
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index 1c67cba..5d1083b 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -18,7 +18,7 @@
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
+-#include <linux/smc911x.h>
++#include <linux/smsc911x.h>
+ #include <linux/gpio.h>
+ #include <media/soc_camera_platform.h>
+ #include <media/sh_mobile_ceu.h>
+@@ -27,12 +27,14 @@
+ #include <asm/clock.h>
+ #include <cpu/sh7723.h>
  
- typedef struct {
--#if defined(__KERNEL__) || defined(__USE_ALL)
- 	int	val[2];
--#else /* !defined(__KERNEL__) && !defined(__USE_ALL) */
--	int	__val[2];
--#endif /* !defined(__KERNEL__) && !defined(__USE_ALL) */
- } __kernel_fsid_t;
+-static struct smc911x_platdata smc911x_info = {
+-	.flags = SMC911X_USE_32BIT,
+-	.irq_flags = IRQF_TRIGGER_LOW,
++static struct smsc911x_platform_config smsc911x_config = {
++	.irq_polarity = SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type = SMSC911X_IRQ_TYPE_OPEN_DRAIN,
++	.flags = SMSC911X_USE_32BIT,
++	.phy_interface = PHY_INTERFACE_MODE_MII,
+ };
  
--#if defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2)
-+#if defined(__KERNEL__)
- 
- #undef	__FD_SET
- static __inline__ void __FD_SET(unsigned long __fd, __kernel_fd_set *__fdsetp)
-@@ -117,6 +113,6 @@ static __inline__ void __FD_ZERO(__kernel_fd_set *__p)
+-static struct resource smc9118_resources[] = {
++static struct resource smsc9118_resources[] = {
+ 	[0] = {
+ 		.start	= 0xb6080000,
+ 		.end	= 0xb60fffff,
+@@ -45,13 +47,13 @@ static struct resource smc9118_resources[] = {
  	}
- }
+ };
  
--#endif /* defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2) */
-+#endif /* defined(__KERNEL__) */
+-static struct platform_device smc9118_device = {
+-	.name		= "smc911x",
++static struct platform_device smsc9118_device = {
++	.name		= "smsc911x",
+ 	.id		= -1,
+-	.num_resources	= ARRAY_SIZE(smc9118_resources),
+-	.resource	= smc9118_resources,
++	.num_resources	= ARRAY_SIZE(smsc9118_resources),
++	.resource	= smsc9118_resources,
+ 	.dev		= {
+-		.platform_data = &smc911x_info,
++		.platform_data = &smsc911x_config,
+ 	},
+ };
  
- #endif /* __ASM_SH_POSIX_TYPES_H */
-diff --git a/arch/sh/include/asm/posix_types_64.h b/arch/sh/include/asm/posix_types_64.h
-index 0620317..f83e9bd 100644
---- a/arch/sh/include/asm/posix_types_64.h
-+++ b/arch/sh/include/asm/posix_types_64.h
-@@ -48,14 +48,10 @@ typedef long long	__kernel_loff_t;
- #endif
+@@ -316,7 +318,7 @@ static struct platform_device ceu_device = {
+ };
  
- typedef struct {
--#if defined(__KERNEL__) || defined(__USE_ALL)
- 	int	val[2];
--#else /* !defined(__KERNEL__) && !defined(__USE_ALL) */
--	int	__val[2];
--#endif /* !defined(__KERNEL__) && !defined(__USE_ALL) */
- } __kernel_fsid_t;
- 
--#if defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2)
-+#if defined(__KERNEL__)
- 
- #undef	__FD_SET
- static __inline__ void __FD_SET(unsigned long __fd, __kernel_fd_set *__fdsetp)
-@@ -126,6 +122,6 @@ static __inline__ void __FD_ZERO(__kernel_fd_set *__p)
- 	}
- }
- 
--#endif /* defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2) */
-+#endif /* defined(__KERNEL__) */
- 
- #endif /* __ASM_SH64_POSIX_TYPES_H */
+ static struct platform_device *ap325rxa_devices[] __initdata = {
+-	&smc9118_device,
++	&smsc9118_device,
+ 	&ap325rxa_nor_flash_device,
+ 	&lcdc_device,
+ 	&ceu_device,
+diff --git a/arch/sh/configs/ap325rxa_defconfig b/arch/sh/configs/ap325rxa_defconfig
+index 874dd97..9317e81 100644
+--- a/arch/sh/configs/ap325rxa_defconfig
++++ b/arch/sh/configs/ap325rxa_defconfig
+@@ -541,13 +541,30 @@ CONFIG_NETDEVICES=y
+ # CONFIG_EQUALIZER is not set
+ # CONFIG_TUN is not set
+ # CONFIG_VETH is not set
+-# CONFIG_PHYLIB is not set
++CONFIG_PHYLIB=y
++
++#
++# MII PHY device drivers
++#
++# CONFIG_MARVELL_PHY is not set
++# CONFIG_DAVICOM_PHY is not set
++# CONFIG_QSEMI_PHY is not set
++# CONFIG_LXT_PHY is not set
++# CONFIG_CICADA_PHY is not set
++# CONFIG_VITESSE_PHY is not set
++CONFIG_SMSC_PHY=y
++# CONFIG_BROADCOM_PHY is not set
++# CONFIG_ICPLUS_PHY is not set
++# CONFIG_REALTEK_PHY is not set
++# CONFIG_FIXED_PHY is not set
++# CONFIG_MDIO_BITBANG is not set
+ CONFIG_NET_ETHERNET=y
+ CONFIG_MII=y
+ # CONFIG_AX88796 is not set
+ # CONFIG_STNIC is not set
+ # CONFIG_SMC91X is not set
+-CONFIG_SMC911X=y
++# CONFIG_SMC911X is not set
++CONFIG_SMSC911X=y
+ # CONFIG_IBM_NEW_EMAC_ZMII is not set
+ # CONFIG_IBM_NEW_EMAC_RGMII is not set
+ # CONFIG_IBM_NEW_EMAC_TAH is not set
 -- 
 1.6.0.6
 
