@@ -1,36 +1,29 @@
-From: "Dell New Year Promo" <info@live.com>
-Date: Sat, 10 Jan 2009 07:37:50 +0000
-Subject: Dell Award Notification
-Message-Id: <6fc30547efdcf19aac1dc13bf6d50031.squirrel@webmail.nerim.net>
+From: Roel Kluin <roel.kluin@gmail.com>
+Date: Sun, 18 Jan 2009 19:46:58 +0000
+Subject: [PATCH] pvr2fb: test var->xoffset as bool?
+Message-Id: <49738732.2020002@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+was this what was intended?
+------------8<------------->8------------
+Test for negative xoffset
 
-
-
-Dell Award Notification
-
-We are delighted to inform you that you are one of the THREE LUCKY WINNERS
-whose e-mail address won the sum payout of =A3500,000 pounds.(Five Hundred
-Thousand Pounds Sterlings Only) in the DELL ELECTRONICS SEASONAL AWARD 2009.
-
-Please be informed that all participants were selected through a computer
-ballot system drawn from over 30,000 company and 50,000,000 individual email
-addresses and names from all over the world. To file in for your claims,
-contact our claim's agent  with your information as provided below:
-
-Brown .J. Williams
-Tell: +447031908584
-Email: delloffice2@onlineclaimsdept.co.uk
-
-Full Names:......Country:....... Tel:......Marital
-Status.........Sex.......Age:.... Occupation:.... Nationality:.......
-Residential Address: .........
-
-Dr.Carl A.Moore
-(Information Officer)
-
-
+Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
+---
+diff --git a/drivers/video/pvr2fb.c b/drivers/video/pvr2fb.c
+index 0a0fd48..5869e6c 100644
+--- a/drivers/video/pvr2fb.c
++++ b/drivers/video/pvr2fb.c
+@@ -460,7 +460,7 @@ static int pvr2fb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ 	set_color_bitfields(var);
+ 
+ 	if (var->vmode & FB_VMODE_YWRAP) {
+-		if (var->xoffset || var->yoffset < 0 ||
++		if (var->xoffset < 0 || var->yoffset < 0 ||
+ 		    var->yoffset >= var->yres_virtual) {
+ 			var->xoffset = var->yoffset = 0;
+ 		} else {
