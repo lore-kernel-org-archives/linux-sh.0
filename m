@@ -1,29 +1,256 @@
-From: Kaz Kojima <kkojima@rr.iij4u.or.jp>
-Date: Fri, 30 Jan 2009 23:40:49 +0000
-Subject: Re: ERESTART* seen by userland
-Message-Id: <20090131.084049.14336755.kkojima@rr.iij4u.or.jp>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Tue, 20 Jan 2009 21:14:37 +0000
+Subject: [PATCH 1/2] sh: Relax inline assembly constraints
+Message-Id: <1232486078-11227-1-git-send-email-matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090117.084015.142054869.kkojima@rr.iij4u.or.jp>
-In-Reply-To: <20090117.084015.142054869.kkojima@rr.iij4u.or.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Matt Fleming <matt@console-pimps.org>
 
-Paul Mundt <lethal@linux-sh.org> wrote:
-> This should fix it up:
-> 
-> ---
-> 
->  arch/sh/include/asm/syscall_32.h |   22 +++-------------------
->  arch/sh/include/asm/syscall_64.h |   22 +++-------------------
->  arch/sh/kernel/signal_32.c       |    4 +---
->  arch/sh/kernel/signal_64.c       |    4 +---
->  4 files changed, 8 insertions(+), 44 deletions(-)
+When dereferencing the memory address contained in a register and
+modifying the value at that memory address, the register should not be
+listed in the inline asm outputs. The value at the memory address is an
+output (which is taken care of with the "memory" clobber), not the register.
 
-Sorry for the delay.  I've confirmed that this also fixes
-the test cases I'm having.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/include/asm/bitops-llsc.h  |   72 ++++++++++++++++++------------------
+ arch/sh/include/asm/cmpxchg-llsc.h |   38 +++++++++---------
+ 2 files changed, 55 insertions(+), 55 deletions(-)
 
-Regards,
-	kaz
+diff --git a/arch/sh/include/asm/bitops-llsc.h b/arch/sh/include/asm/bitops-llsc.h
+index 1d2fc0b..d8328be 100644
+--- a/arch/sh/include/asm/bitops-llsc.h
++++ b/arch/sh/include/asm/bitops-llsc.h
+@@ -1,7 +1,7 @@
+ #ifndef __ASM_SH_BITOPS_LLSC_H
+ #define __ASM_SH_BITOPS_LLSC_H
+ 
+-static inline void set_bit(int nr, volatile void * addr)
++static inline void set_bit(int nr, volatile void *addr)
+ {
+ 	int	mask;
+ 	volatile unsigned int *a = addr;
+@@ -13,16 +13,16 @@ static inline void set_bit(int nr, volatile void * addr)
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+ 		"movli.l	@%1, %0	! set_bit		\n\t"
+-		"or		%3, %0				\n\t"
++		"or		%2, %0				\n\t"
+ 		"movco.l	%0, @%1				\n\t"
+ 		"bf		1b				\n\t"
+-		: "=&z" (tmp), "=r" (a)
+-		: "1" (a), "r" (mask)
++		: "=&z" (tmp)
++		: "r" (a), "r" (mask)
+ 		: "t", "memory"
+ 	);
+ }
+ 
+-static inline void clear_bit(int nr, volatile void * addr)
++static inline void clear_bit(int nr, volatile void *addr)
+ {
+ 	int	mask;
+ 	volatile unsigned int *a = addr;
+@@ -34,16 +34,16 @@ static inline void clear_bit(int nr, volatile void * addr)
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+ 		"movli.l	@%1, %0	! clear_bit		\n\t"
+-		"and		%3, %0				\n\t"
++		"and		%2, %0				\n\t"
+ 		"movco.l	%0, @%1				\n\t"
+ 		"bf		1b				\n\t"
+-		: "=&z" (tmp), "=r" (a)
+-		: "1" (a), "r" (~mask)
++		: "=&z" (tmp)
++		: "r" (a), "r" (~mask)
+ 		: "t", "memory"
+ 	);
+ }
+ 
+-static inline void change_bit(int nr, volatile void * addr)
++static inline void change_bit(int nr, volatile void *addr)
+ {
+ 	int	mask;
+ 	volatile unsigned int *a = addr;
+@@ -55,16 +55,16 @@ static inline void change_bit(int nr, volatile void * addr)
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+ 		"movli.l	@%1, %0	! change_bit		\n\t"
+-		"xor		%3, %0				\n\t"
++		"xor		%2, %0				\n\t"
+ 		"movco.l	%0, @%1				\n\t"
+ 		"bf		1b				\n\t"
+-		: "=&z" (tmp), "=r" (a)
+-		: "1" (a), "r" (mask)
++		: "=&z" (tmp)
++		: "r" (a), "r" (mask)
+ 		: "t", "memory"
+ 	);
+ }
+ 
+-static inline int test_and_set_bit(int nr, volatile void * addr)
++static inline int test_and_set_bit(int nr, volatile void *addr)
+ {
+ 	int	mask, retval;
+ 	volatile unsigned int *a = addr;
+@@ -75,21 +75,21 @@ static inline int test_and_set_bit(int nr, volatile void * addr)
+ 
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+-		"movli.l	@%1, %0	! test_and_set_bit	\n\t"
+-		"mov		%0, %2				\n\t"
+-		"or		%4, %0				\n\t"
+-		"movco.l	%0, @%1				\n\t"
++		"movli.l	@%2, %0	! test_and_set_bit	\n\t"
++		"mov		%0, %1				\n\t"
++		"or		%3, %0				\n\t"
++		"movco.l	%0, @%2				\n\t"
+ 		"bf		1b				\n\t"
+-		"and		%4, %2				\n\t"
+-		: "=&z" (tmp), "=r" (a), "=&r" (retval)
+-		: "1" (a), "r" (mask)
++		"and		%3, %1				\n\t"
++		: "=&z" (tmp), "=&r" (retval)
++		: "r" (a), "r" (mask)
+ 		: "t", "memory"
+ 	);
+ 
+ 	return retval != 0;
+ }
+ 
+-static inline int test_and_clear_bit(int nr, volatile void * addr)
++static inline int test_and_clear_bit(int nr, volatile void *addr)
+ {
+ 	int	mask, retval;
+ 	volatile unsigned int *a = addr;
+@@ -100,22 +100,22 @@ static inline int test_and_clear_bit(int nr, volatile void * addr)
+ 
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+-		"movli.l	@%1, %0	! test_and_clear_bit	\n\t"
+-		"mov		%0, %2				\n\t"
+-		"and		%5, %0				\n\t"
+-		"movco.l	%0, @%1				\n\t"
++		"movli.l	@%2, %0	! test_and_clear_bit	\n\t"
++		"mov		%0, %1				\n\t"
++		"and		%4, %0				\n\t"
++		"movco.l	%0, @%2				\n\t"
+ 		"bf		1b				\n\t"
+-		"and		%4, %2				\n\t"
++		"and		%3, %1				\n\t"
+ 		"synco						\n\t"
+-		: "=&z" (tmp), "=r" (a), "=&r" (retval)
+-		: "1" (a), "r" (mask), "r" (~mask)
++		: "=&z" (tmp), "=&r" (retval)
++		: "r" (a), "r" (mask), "r" (~mask)
+ 		: "t", "memory"
+ 	);
+ 
+ 	return retval != 0;
+ }
+ 
+-static inline int test_and_change_bit(int nr, volatile void * addr)
++static inline int test_and_change_bit(int nr, volatile void *addr)
+ {
+ 	int	mask, retval;
+ 	volatile unsigned int *a = addr;
+@@ -126,15 +126,15 @@ static inline int test_and_change_bit(int nr, volatile void * addr)
+ 
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+-		"movli.l	@%1, %0	! test_and_change_bit	\n\t"
+-		"mov		%0, %2				\n\t"
+-		"xor		%4, %0				\n\t"
+-		"movco.l	%0, @%1				\n\t"
++		"movli.l	@%2, %0	! test_and_change_bit	\n\t"
++		"mov		%0, %1				\n\t"
++		"xor		%3, %0				\n\t"
++		"movco.l	%0, @%2				\n\t"
+ 		"bf		1b				\n\t"
+-		"and		%4, %2				\n\t"
++		"and		%3, %1				\n\t"
+ 		"synco						\n\t"
+-		: "=&z" (tmp), "=r" (a), "=&r" (retval)
+-		: "1" (a), "r" (mask)
++		: "=&z" (tmp), "=&r" (retval)
++		: "r" (a), "r" (mask)
+ 		: "t", "memory"
+ 	);
+ 
+diff --git a/arch/sh/include/asm/cmpxchg-llsc.h b/arch/sh/include/asm/cmpxchg-llsc.h
+index aee3bf2..0fac3da 100644
+--- a/arch/sh/include/asm/cmpxchg-llsc.h
++++ b/arch/sh/include/asm/cmpxchg-llsc.h
+@@ -8,14 +8,14 @@ static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
+ 
+ 	__asm__ __volatile__ (
+ 		"1:					\n\t"
+-		"movli.l	@%1, %0	! xchg_u32	\n\t"
+-		"mov		%0, %2			\n\t"
+-		"mov		%4, %0			\n\t"
+-		"movco.l	%0, @%1			\n\t"
++		"movli.l	@%2, %0	! xchg_u32	\n\t"
++		"mov		%0, %1			\n\t"
++		"mov		%3, %0			\n\t"
++		"movco.l	%0, @%2			\n\t"
+ 		"bf		1b			\n\t"
+ 		"synco					\n\t"
+-		: "=&z"(tmp), "=r" (m), "=&r" (retval)
+-		: "1" (m), "r" (val)
++		: "=&z"(tmp), "=&r" (retval)
++		: "r" (m), "r" (val)
+ 		: "t", "memory"
+ 	);
+ 
+@@ -29,14 +29,14 @@ static inline unsigned long xchg_u8(volatile u8 *m, unsigned long val)
+ 
+ 	__asm__ __volatile__ (
+ 		"1:					\n\t"
+-		"movli.l	@%1, %0	! xchg_u8	\n\t"
+-		"mov		%0, %2			\n\t"
+-		"mov		%4, %0			\n\t"
+-		"movco.l	%0, @%1			\n\t"
++		"movli.l	@%2, %0	! xchg_u8	\n\t"
++		"mov		%0, %1			\n\t"
++		"mov		%3, %0			\n\t"
++		"movco.l	%0, @%2			\n\t"
+ 		"bf		1b			\n\t"
+ 		"synco					\n\t"
+-		: "=&z"(tmp), "=r" (m), "=&r" (retval)
+-		: "1" (m), "r" (val & 0xff)
++		: "=&z"(tmp), "=&r" (retval)
++		: "r" (m), "r" (val & 0xff)
+ 		: "t", "memory"
+ 	);
+ 
+@@ -51,17 +51,17 @@ __cmpxchg_u32(volatile int *m, unsigned long old, unsigned long new)
+ 
+ 	__asm__ __volatile__ (
+ 		"1:						\n\t"
+-		"movli.l	@%1, %0	! __cmpxchg_u32		\n\t"
+-		"mov		%0, %2				\n\t"
+-		"cmp/eq		%2, %4				\n\t"
++		"movli.l	@%2, %0	! __cmpxchg_u32		\n\t"
++		"mov		%0, %1				\n\t"
++		"cmp/eq		%1, %3				\n\t"
+ 		"bf		2f				\n\t"
+-		"mov		%5, %0				\n\t"
++		"mov		%3, %0				\n\t"
+ 		"2:						\n\t"
+-		"movco.l	%0, @%1				\n\t"
++		"movco.l	%0, @%2				\n\t"
+ 		"bf		1b				\n\t"
+ 		"synco						\n\t"
+-		: "=&z" (tmp), "=r" (m), "=&r" (retval)
+-		: "1" (m), "r" (old), "r" (new)
++		: "=&z" (tmp), "=&r" (retval)
++		: "r" (m), "r" (old), "r" (new)
+ 		: "t", "memory"
+ 	);
+ 
+-- 
+1.5.6.3
 
