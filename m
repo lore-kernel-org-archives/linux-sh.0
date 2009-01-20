@@ -1,170 +1,92 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2009 15:13:50 +0000
-Subject: [PATCH 002/013] sh-sci: allow single port platform devices
-Message-Id: <20090121151350.29269.50560.sendpatchset@rx1.opensource.se>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Tue, 20 Jan 2009 21:14:38 +0000
+Subject: [PATCH 2/2] sh: Use the atomic_t "counter" member
+Message-Id: <1232486078-11227-2-git-send-email-matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1232486078-11227-1-git-send-email-matt@console-pimps.org>
+In-Reply-To: <1232486078-11227-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Matt Fleming <matt@console-pimps.org>
 
-From: Magnus Damm <damm@igel.co.jp>
+Now that atomic_t is a generic opaque type for all architectures, it is
+unwise to use intimate knowledge of its internals when manipulating it.
 
-Allow registration of single port sh-sci platform devices.
+Instead of relying on the "counter" member being at offset 0 from the
+beginning of an atomic_t, explicitly reference the member. This guards
+us from any changes to the layout of the beginning of the atomic_t type.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
 ---
+ arch/sh/include/asm/atomic-irq.h |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
 
- drivers/serial/sh-sci.c |  125 +++++++++++++++++++++++++++--------------------
- 1 file changed, 72 insertions(+), 53 deletions(-)
-
---- 0002/drivers/serial/sh-sci.c
-+++ work/drivers/serial/sh-sci.c	2009-01-19 20:09:21.000000000 +0900
-@@ -1234,6 +1234,70 @@ static int __devexit sci_remove(struct p
- 	return 0;
+diff --git a/arch/sh/include/asm/atomic-irq.h b/arch/sh/include/asm/atomic-irq.h
+index 74f7943..a0b3480 100644
+--- a/arch/sh/include/asm/atomic-irq.h
++++ b/arch/sh/include/asm/atomic-irq.h
+@@ -11,7 +11,7 @@ static inline void atomic_add(int i, atomic_t *v)
+ 	unsigned long flags;
+ 
+ 	local_irq_save(flags);
+-	*(long *)v += i;
++	v->counter += i;
+ 	local_irq_restore(flags);
  }
  
-+static int __devinit sci_probe_single(struct platform_device *dev,
-+				      unsigned int index,
-+				      struct plat_sci_port *p,
-+				      struct sci_port *sciport)
-+{
-+	struct sh_sci_priv *priv = platform_get_drvdata(dev);
-+	unsigned long flags;
-+	int ret;
-+
-+	/* Sanity check */
-+	if (unlikely(index >= SCI_NPORTS)) {
-+		dev_notice(&dev->dev, "Attempting to register port "
-+			   "%d when only %d are available.\n",
-+			   index+1, SCI_NPORTS);
-+		dev_notice(&dev->dev, "Consider bumping "
-+			   "CONFIG_SERIAL_SH_SCI_NR_UARTS!\n");
-+		return 0;
-+	}
-+
-+	sciport->port.mapbase	= p->mapbase;
-+
-+	if (p->mapbase && !p->membase) {
-+		if (p->flags & UPF_IOREMAP) {
-+			p->membase = ioremap_nocache(p->mapbase, 0x40);
-+			if (IS_ERR(p->membase))
-+				return PTR_ERR(p->membase);
-+		} else {
-+			/*
-+			 * For the simple (and majority of) cases
-+			 * where we don't need to do any remapping,
-+			 * just cast the cookie directly.
-+			 */
-+			p->membase = (void __iomem *)p->mapbase;
-+		}
-+	}
-+
-+	sciport->port.membase	= p->membase;
-+
-+	sciport->port.irq	= p->irqs[SCIx_TXI_IRQ];
-+	sciport->port.flags	= p->flags;
-+	sciport->port.dev	= &dev->dev;
-+
-+	sciport->type		= sciport->port.type = p->type;
-+
-+	memcpy(&sciport->irqs, &p->irqs, sizeof(p->irqs));
-+
-+	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
-+
-+	if (ret) {
-+		if (p->flags & UPF_IOREMAP)
-+			iounmap(p->membase);
-+
-+		return ret;
-+	}
-+
-+	INIT_LIST_HEAD(&sciport->node);
-+
-+	spin_lock_irqsave(&priv->lock, flags);
-+	list_add(&sciport->node, &priv->ports);
-+	spin_unlock_irqrestore(&priv->lock, flags);
-+
-+	return 0;
-+}
-+
- /*
-  * Register a set of serial devices attached to a platform device.  The
-  * list is terminated with a zero flags entry, which means we expect
-@@ -1245,7 +1309,6 @@ static int __devinit sci_probe(struct pl
- 	struct plat_sci_port *p = dev->dev.platform_data;
- 	struct sh_sci_priv *priv;
- 	int i, ret = -EINVAL;
--	unsigned long flags;
+@@ -20,7 +20,7 @@ static inline void atomic_sub(int i, atomic_t *v)
+ 	unsigned long flags;
  
- 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
- 	if (!priv)
-@@ -1260,60 +1323,16 @@ static int __devinit sci_probe(struct pl
- 	cpufreq_register_notifier(&priv->clk_nb, CPUFREQ_TRANSITION_NOTIFIER);
- #endif
+ 	local_irq_save(flags);
+-	*(long *)v -= i;
++	v->counter -= i;
+ 	local_irq_restore(flags);
+ }
  
--	for (i = 0; p && p->flags != 0; p++, i++) {
--		struct sci_port *sciport = &sci_ports[i];
--
--		/* Sanity check */
--		if (unlikely(i = SCI_NPORTS)) {
--			dev_notice(&dev->dev, "Attempting to register port "
--				   "%d when only %d are available.\n",
--				   i+1, SCI_NPORTS);
--			dev_notice(&dev->dev, "Consider bumping "
--				   "CONFIG_SERIAL_SH_SCI_NR_UARTS!\n");
--			break;
--		}
--
--		sciport->port.mapbase	= p->mapbase;
--
--		if (p->mapbase && !p->membase) {
--			if (p->flags & UPF_IOREMAP) {
--				p->membase = ioremap_nocache(p->mapbase, 0x40);
--				if (IS_ERR(p->membase)) {
--					ret = PTR_ERR(p->membase);
--					goto err_unreg;
--				}
--			} else {
--				/*
--				 * For the simple (and majority of) cases
--				 * where we don't need to do any remapping,
--				 * just cast the cookie directly.
--				 */
--				p->membase = (void __iomem *)p->mapbase;
--			}
--		}
--
--		sciport->port.membase	= p->membase;
--
--		sciport->port.irq	= p->irqs[SCIx_TXI_IRQ];
--		sciport->port.flags	= p->flags;
--		sciport->port.dev	= &dev->dev;
--
--		sciport->type		= sciport->port.type = p->type;
--
--		memcpy(&sciport->irqs, &p->irqs, sizeof(p->irqs));
--
--		ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
--
--		if (ret && (p->flags & UPF_IOREMAP)) {
--			iounmap(p->membase);
-+	if (dev->id != -1) {
-+		ret = sci_probe_single(dev, dev->id, p, &sci_ports[dev->id]);
-+		if (ret)
- 			goto err_unreg;
-+	} else {
-+		for (i = 0; p && p->flags != 0; p++, i++) {
-+			ret = sci_probe_single(dev, i, p, &sci_ports[i]);
-+			if (ret)
-+				goto err_unreg;
- 		}
--
--		INIT_LIST_HEAD(&sciport->node);
--
--		spin_lock_irqsave(&priv->lock, flags);
--		list_add(&sciport->node, &priv->ports);
--		spin_unlock_irqrestore(&priv->lock, flags);
- 	}
+@@ -29,9 +29,9 @@ static inline int atomic_add_return(int i, atomic_t *v)
+ 	unsigned long temp, flags;
  
- #ifdef CONFIG_SH_STANDARD_BIOS
+ 	local_irq_save(flags);
+-	temp = *(long *)v;
++	temp = v->counter;
+ 	temp += i;
+-	*(long *)v = temp;
++	v->counter = temp;
+ 	local_irq_restore(flags);
+ 
+ 	return temp;
+@@ -42,9 +42,9 @@ static inline int atomic_sub_return(int i, atomic_t *v)
+ 	unsigned long temp, flags;
+ 
+ 	local_irq_save(flags);
+-	temp = *(long *)v;
++	temp = v->counter;
+ 	temp -= i;
+-	*(long *)v = temp;
++	v->counter = temp;
+ 	local_irq_restore(flags);
+ 
+ 	return temp;
+@@ -55,7 +55,7 @@ static inline void atomic_clear_mask(unsigned int mask, atomic_t *v)
+ 	unsigned long flags;
+ 
+ 	local_irq_save(flags);
+-	*(long *)v &= ~mask;
++	v->counter &= ~mask;
+ 	local_irq_restore(flags);
+ }
+ 
+@@ -64,7 +64,7 @@ static inline void atomic_set_mask(unsigned int mask, atomic_t *v)
+ 	unsigned long flags;
+ 
+ 	local_irq_save(flags);
+-	*(long *)v |= mask;
++	v->counter |= mask;
+ 	local_irq_restore(flags);
+ }
+ 
+-- 
+1.5.6.3
+
