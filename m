@@ -1,113 +1,112 @@
-From: Steve Glendinning <steve.glendinning@smsc.com>
-Date: Tue, 13 Jan 2009 15:45:48 +0000
-Subject: [PATCH 1/3] sh: convert magicpanelr2 platform to use smsc911x
-Message-Id: <1231861550-29681-2-git-send-email-steve.glendinning@smsc.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 21 Jan 2009 10:39:12 +0000
+Subject: [GIT PULL] sh updates for 2.6.29-rc3
+Message-Id: <20090121103912.GC17836@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
----
- arch/sh/boards/board-magicpanelr2.c    |   23 +++++++++++++++++------
- arch/sh/configs/magicpanelr2_defconfig |   21 +++++++++++++++++++--
- 2 files changed, 36 insertions(+), 8 deletions(-)
+Please pull from:
 
-diff --git a/arch/sh/boards/board-magicpanelr2.c b/arch/sh/boards/board-magicpanelr2.c
-index 3de22cc..8dd589a 100644
---- a/arch/sh/boards/board-magicpanelr2.c
-+++ b/arch/sh/boards/board-magicpanelr2.c
-@@ -14,6 +14,7 @@
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/gpio.h>
-+#include <linux/smsc911x.h>
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
-@@ -242,7 +243,7 @@ static void __init mpr2_setup(char **cmdline_p)
- 		printk(KERN_WARNING "Ethernet not ready\n");
- }
- 
--static struct resource smc911x_resources[] = {
-+static struct resource smsc911x_resources[] = {
- 	[0] = {
- 		.start		= 0xa8000000,
- 		.end		= 0xabffffff,
-@@ -255,11 +256,21 @@ static struct resource smc911x_resources[] = {
- 	},
- };
- 
--static struct platform_device smc911x_device = {
--	.name		= "smc911x",
-+static struct smsc911x_platform_config smsc911x_config = {
-+	.irq_polarity = SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-+	.irq_type = SMSC911X_IRQ_TYPE_OPEN_DRAIN,
-+	.flags = SMSC911X_USE_32BIT,
-+	.phy_interface = PHY_INTERFACE_MODE_MII,
-+};
-+
-+static struct platform_device smsc911x_device = {
-+	.name		= "smsc911x",
- 	.id		= -1,
--	.num_resources	= ARRAY_SIZE(smc911x_resources),
--	.resource	= smc911x_resources,
-+	.num_resources	= ARRAY_SIZE(smsc911x_resources),
-+	.resource	= smsc911x_resources,
-+	.dev = {
-+		.platform_data = &smsc911x_config,
-+	},
- };
- 
- static struct resource heartbeat_resources[] = {
-@@ -360,7 +371,7 @@ static void __init set_mtd_partitions(void)
- 
- static struct platform_device *mpr2_devices[] __initdata = {
- 	&heartbeat_device,
--	&smc911x_device,
-+	&smsc911x_device,
- 	&flash_device,
- };
- 
-diff --git a/arch/sh/configs/magicpanelr2_defconfig b/arch/sh/configs/magicpanelr2_defconfig
-index 499ed72..e590085 100644
---- a/arch/sh/configs/magicpanelr2_defconfig
-+++ b/arch/sh/configs/magicpanelr2_defconfig
-@@ -502,13 +502,30 @@ CONFIG_NETDEVICES=y
- # CONFIG_EQUALIZER is not set
- # CONFIG_TUN is not set
- # CONFIG_VETH is not set
--# CONFIG_PHYLIB is not set
-+CONFIG_PHYLIB=y
-+
-+#
-+# MII PHY device drivers
-+#
-+# CONFIG_MARVELL_PHY is not set
-+# CONFIG_DAVICOM_PHY is not set
-+# CONFIG_QSEMI_PHY is not set
-+# CONFIG_LXT_PHY is not set
-+# CONFIG_CICADA_PHY is not set
-+# CONFIG_VITESSE_PHY is not set
-+CONFIG_SMSC_PHY=y
-+# CONFIG_BROADCOM_PHY is not set
-+# CONFIG_ICPLUS_PHY is not set
-+# CONFIG_REALTEK_PHY is not set
-+# CONFIG_FIXED_PHY is not set
-+# CONFIG_MDIO_BITBANG is not set
- CONFIG_NET_ETHERNET=y
- CONFIG_MII=y
- # CONFIG_AX88796 is not set
- # CONFIG_STNIC is not set
- # CONFIG_SMC91X is not set
--CONFIG_SMC911X=y
-+# CONFIG_SMC911X is not set
-+CONFIG_SMSC911X=y
- # CONFIG_IBM_NEW_EMAC_ZMII is not set
- # CONFIG_IBM_NEW_EMAC_RGMII is not set
- # CONFIG_IBM_NEW_EMAC_TAH is not set
--- 
-1.6.0.6
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.29
 
+Which contains:
+
+Adrian McMenamin (1):
+      dma-coherent: per-device coherent area is in pages, not bytes.
+
+Julia Lawall (1):
+      arch/sh/mm: Move a dereference below a NULL test
+
+Kuninori Morimoto (3):
+      sh: mach-migor: Add ov772x support.
+      sh: mach-migor: Delete soc_camera_platform setup.
+      sh: mach-migor: Add tw9910 support.
+
+Magnus Damm (4):
+      sh: ap325rxa MMC support using spi_gpio and mmc_spi
+      sh: Migo-R MMC support using spi_gpio and mmc_spi.
+      sh: export the sh7343 JPU to user space
+      sh: fix sh-sci / early printk build on sh7723
+
+Mike Frysinger (1):
+      asm-sh/posix_types_{32,64}.h: drop __GLIBC__/__USE_ALL usage
+
+Paul Mundt (8):
+      sh: Drop the BKL from sys_execve() on SH-5.
+      sh: mach-x3proto: needs linux/irq.h.
+      sh: sh7785lcr/highlander/hp6xx need linux/irq.h.
+      sh: Kill off obsolete busses from arch/sh/Kconfig.
+      serial: sh-sci: Fix up SH7720/SH7721 SCI build.
+      sh: update defconfigs.
+      nommu: Stub in vm_map_ram()/vm_unmap_ram()/vm_unmap_aliases().
+      dma-coherent: Restore dma_alloc_from_coherent() large alloc fall back policy.
+
+SUGIOKA Toshinobu (1):
+      sh: fix unaligned and nonexistent address handling
+
+Steve Glendinning (3):
+      sh: convert ap325rxa platform to use smsc911x.
+      sh: convert magicpanelr2 platform to use smsc911x.
+      sh: convert rsk7203 to use smsc911x.
+
+ arch/sh/Kconfig                           |   63 +-----
+ arch/sh/boards/board-ap325rxa.c           |   53 ++++-
+ arch/sh/boards/board-magicpanelr2.c       |   23 ++-
+ arch/sh/boards/board-sh7785lcr.c          |    1 +
+ arch/sh/boards/mach-highlander/setup.c    |    1 +
+ arch/sh/boards/mach-hp6xx/setup.c         |    2 +-
+ arch/sh/boards/mach-migor/setup.c         |  171 ++++++--------
+ arch/sh/boards/mach-rsk/devices-rsk7203.c |   24 +-
+ arch/sh/boards/mach-x3proto/setup.c       |    1 +
+ arch/sh/configs/ap325rxa_defconfig        |  355 ++++++++++++++++++++++++++---
+ arch/sh/configs/dreamcast_defconfig       |   60 ++++--
+ arch/sh/configs/edosk7705_defconfig       |   18 +-
+ arch/sh/configs/edosk7760_defconfig       |   83 +++++--
+ arch/sh/configs/hp6xx_defconfig           |   88 ++++----
+ arch/sh/configs/landisk_defconfig         |   76 +++++--
+ arch/sh/configs/lboxre2_defconfig         |   63 ++++--
+ arch/sh/configs/magicpanelr2_defconfig    |  119 +++++++---
+ arch/sh/configs/microdev_defconfig        |   63 ++++--
+ arch/sh/configs/migor_defconfig           |   95 ++++++--
+ arch/sh/configs/r7780mp_defconfig         |   85 ++++++--
+ arch/sh/configs/r7785rp_defconfig         |  130 ++++++++---
+ arch/sh/configs/rsk7201_defconfig         |   26 ++-
+ arch/sh/configs/rsk7203_defconfig         |   88 ++++++--
+ arch/sh/configs/rts7751r2d1_defconfig     |   87 +++++--
+ arch/sh/configs/rts7751r2dplus_defconfig  |   87 +++++--
+ arch/sh/configs/sdk7780_defconfig         |  101 ++++++---
+ arch/sh/configs/se7206_defconfig          |   75 +++++--
+ arch/sh/configs/se7343_defconfig          |   61 +++--
+ arch/sh/configs/se7619_defconfig          |   47 +++--
+ arch/sh/configs/se7705_defconfig          |   60 +++--
+ arch/sh/configs/se7712_defconfig          |   79 +++++--
+ arch/sh/configs/se7721_defconfig          |   85 +++++---
+ arch/sh/configs/se7722_defconfig          |   61 +++--
+ arch/sh/configs/se7750_defconfig          |   61 +++--
+ arch/sh/configs/se7751_defconfig          |   56 +++--
+ arch/sh/configs/se7780_defconfig          |   87 +++++---
+ arch/sh/configs/sh03_defconfig            |   82 +++++--
+ arch/sh/configs/sh7710voipgw_defconfig    |   55 +++--
+ arch/sh/configs/sh7763rdp_defconfig       |   71 ++++--
+ arch/sh/configs/sh7785lcr_defconfig       |   92 +++++---
+ arch/sh/configs/shmin_defconfig           |   54 +++--
+ arch/sh/configs/shx3_defconfig            |   77 +++++--
+ arch/sh/configs/snapgear_defconfig        |   53 +++--
+ arch/sh/configs/systemh_defconfig         |   50 +++--
+ arch/sh/configs/titan_defconfig           |   90 +++++--
+ arch/sh/configs/ul2_defconfig             |   69 ++++--
+ arch/sh/include/asm/posix_types_32.h      |    8 +-
+ arch/sh/include/asm/posix_types_64.h      |    8 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c    |   31 +++
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c    |    2 +-
+ arch/sh/kernel/process_64.c               |    2 -
+ arch/sh/kernel/traps_32.c                 |    9 +-
+ arch/sh/mm/ioremap_64.c                   |    2 +-
+ drivers/serial/sh-sci.h                   |    5 +-
+ kernel/dma-coherent.c                     |   47 ++--
+ mm/nommu.c                                |   20 ++-
+ 56 files changed, 2368 insertions(+), 1094 deletions(-)
