@@ -1,75 +1,65 @@
-From: Adrian McMenamin <lkmladrian@gmail.com>
-Date: Fri, 30 Jan 2009 09:55:38 +0000
-Subject: Re: [PATCH RFC] sh: maple: Add support for SEGA Dreamcast VMU and
-Message-Id: <8b67d60901300155n66f86d4ch875d01cd1620409e@mail.gmail.com>
+From: SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+Date: Wed, 21 Jan 2009 00:42:10 +0000
+Subject: fix unaligned and nonexistent address handling
+Message-Id: <4.2.0.58.J.20090121090500.00b5e5d0@router.itonet.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1233186456.6734.16.camel@localhost.localdomain>
-	 <1233187069.6734.21.camel@localhost.localdomain>
-	 <20090129031341.GD31096@linux-sh.org>
-	 <3ca9ec7a13c1a13ea7be6c37bbdfdb0c.squirrel@newgolddream.dyndns.info>
-	 <793692118a2f4bdd17326e8bed6c9792.squirrel@newgolddream.dyndns.info>
-In-Reply-To: <793692118a2f4bdd17326e8bed6c9792.squirrel@newgolddream.dyndns.info>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Paul Mundt <lethal@linux-sh.org>, Greg KH <greg@kroah.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@infradead.org>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-2009/1/29 Adrian McMenamin <adrian@newgolddream.dyndns.info>:
-> On Thu, January 29, 2009 4:43 pm, Adrian McMenamin wrote:
->> On Thu, January 29, 2009 3:13 am, Paul Mundt wrote:
+unaligned and nonexistent address causes wrong exception
+handling in traps_32.c(handle_unaligned_access).
 
->>>>
->>> Please do not abuse P2SEGADDR in this fashion. No new code should be
->>> using P2SEGADDR anyways. maple is particularly abusive in this case
->>> since
->>> it bounces back and forth between P2SEGADDR and PHYSADDR to try and
->>> ignore the fact cache flushing has to be handled.
->>>
->>> You may also wish to consider ioremap/ioremap_nocache().
->>>
->>
->> Can I just use dma_cache_sync before each dma run and then use the P1
->> address space?
->>
->
-> After the dma run I mean - the cache is flushed before the run - but not
-> after.
->
+'handle_unalinged_ins' should return -EFAULT if address error
+is fixed up with kernel exception table, otherwise 
+'handle_unaligned_access' increases already fixed program counter
+and then crash.
 
+for example
+   ioctl(fd, TCGETA, (struct termio *)-1)
+never return and stay in TASK_UNINTERRUPTIBLE state forever
+in my kernel.
 
-So I have done this:
+Signed-off-by: SUGIOKA Toshinobu <sugioka@itonet.co.jp>
 
-Removing P2SEGADDR call and flushing caches
----
+diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
+index c0aa3d8..60dcf87 100644
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -125,20 +125,18 @@ static inline void die_if_kernel(const char *str, struct pt_regs *regs,
+  * - userspace errors just cause EFAULT to be returned, resulting in SEGV
+  * - kernel/userspace interfaces cause a jump to an appropriate handler
+  * - other kernel errors are bad
+- * - return 0 if fixed-up, -EFAULT if non-fatal (to the kernel) fault
+  */
+-static int die_if_no_fixup(const char * str, struct pt_regs * regs, long err)
++static void die_if_no_fixup(const char * str, struct pt_regs * regs, long err)
+ {
+ 	if (!user_mode(regs)) {
+ 		const struct exception_table_entry *fixup;
+ 		fixup = search_exception_tables(regs->pc);
+ 		if (fixup) {
+ 			regs->pc = fixup->fixup;
+-			return 0;
++			return;
+ 		}
+ 		die(str, regs, err);
+ 	}
+-	return -EFAULT;
+ }
+ 
+ static inline void sign_extend(unsigned int count, unsigned char *dst)
+@@ -314,7 +312,8 @@ static int handle_unaligned_ins(opcode_t instruction, struct pt_regs *regs,
+ 	/* Argh. Address not only misaligned but also non-existent.
+ 	 * Raise an EFAULT and see if it's trapped
+ 	 */
+-	return die_if_no_fixup("Fault in unaligned fixup", regs, 0);
++	die_if_no_fixup("Fault in unaligned fixup", regs, 0);
++	return -EFAULT;
+ }
+ 
+ /*
 
-diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-index 4d9b8b3..5dca308 100644
---- a/drivers/sh/maple/maple.c
-+++ b/drivers/sh/maple/maple.c
-@@ -186,7 +186,7 @@ static struct mapleq *maple_allocq(struct
-maple_device *mdev)
- 	mq->recvbuf = kmem_cache_zalloc(maple_queue_cache, GFP_KERNEL);
- 	if (!mq->recvbuf)
- 		goto failed_p2;
--	mq->recvbuf->buf = (void *)P2SEGADDR(&((mq->recvbuf->bufx)[0]));
-+	mq->recvbuf->buf = &((mq->recvbuf->bufx)[0]);
+SUGIOKA Toshinobu
 
- 	return mq;
-
-@@ -639,9 +639,11 @@ static void maple_dma_handler(struct work_struct *work)
- 	ctrl_outl(0, MAPLE_ENABLE);
- 	if (!list_empty(&maple_sentq)) {
- 		list_for_each_entry_safe(mq, nmq, &maple_sentq, list) {
-+			mdev = mq->dev;
- 			recvbuf = mq->recvbuf->buf;
-+			dma_cache_sync(&mdev->dev, recvbuf, 0x400,
-+				DMA_FROM_DEVICE);
- 			code = recvbuf[0];
--			mdev = mq->dev;
- 			kfree(mq->sendbuf);
- 			list_del_init(&mq->list);
- 			switch (code) {
-
-
-Seems to work...
