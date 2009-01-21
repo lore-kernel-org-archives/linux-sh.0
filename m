@@ -1,112 +1,170 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 21 Jan 2009 10:39:12 +0000
-Subject: [GIT PULL] sh updates for 2.6.29-rc3
-Message-Id: <20090121103912.GC17836@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 21 Jan 2009 15:13:50 +0000
+Subject: [PATCH 002/013] sh-sci: allow single port platform devices
+Message-Id: <20090121151350.29269.50560.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+From: Magnus Damm <damm@igel.co.jp>
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.29
+Allow registration of single port sh-sci platform devices.
 
-Which contains:
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Adrian McMenamin (1):
-      dma-coherent: per-device coherent area is in pages, not bytes.
+ drivers/serial/sh-sci.c |  125 +++++++++++++++++++++++++++--------------------
+ 1 file changed, 72 insertions(+), 53 deletions(-)
 
-Julia Lawall (1):
-      arch/sh/mm: Move a dereference below a NULL test
-
-Kuninori Morimoto (3):
-      sh: mach-migor: Add ov772x support.
-      sh: mach-migor: Delete soc_camera_platform setup.
-      sh: mach-migor: Add tw9910 support.
-
-Magnus Damm (4):
-      sh: ap325rxa MMC support using spi_gpio and mmc_spi
-      sh: Migo-R MMC support using spi_gpio and mmc_spi.
-      sh: export the sh7343 JPU to user space
-      sh: fix sh-sci / early printk build on sh7723
-
-Mike Frysinger (1):
-      asm-sh/posix_types_{32,64}.h: drop __GLIBC__/__USE_ALL usage
-
-Paul Mundt (8):
-      sh: Drop the BKL from sys_execve() on SH-5.
-      sh: mach-x3proto: needs linux/irq.h.
-      sh: sh7785lcr/highlander/hp6xx need linux/irq.h.
-      sh: Kill off obsolete busses from arch/sh/Kconfig.
-      serial: sh-sci: Fix up SH7720/SH7721 SCI build.
-      sh: update defconfigs.
-      nommu: Stub in vm_map_ram()/vm_unmap_ram()/vm_unmap_aliases().
-      dma-coherent: Restore dma_alloc_from_coherent() large alloc fall back policy.
-
-SUGIOKA Toshinobu (1):
-      sh: fix unaligned and nonexistent address handling
-
-Steve Glendinning (3):
-      sh: convert ap325rxa platform to use smsc911x.
-      sh: convert magicpanelr2 platform to use smsc911x.
-      sh: convert rsk7203 to use smsc911x.
-
- arch/sh/Kconfig                           |   63 +-----
- arch/sh/boards/board-ap325rxa.c           |   53 ++++-
- arch/sh/boards/board-magicpanelr2.c       |   23 ++-
- arch/sh/boards/board-sh7785lcr.c          |    1 +
- arch/sh/boards/mach-highlander/setup.c    |    1 +
- arch/sh/boards/mach-hp6xx/setup.c         |    2 +-
- arch/sh/boards/mach-migor/setup.c         |  171 ++++++--------
- arch/sh/boards/mach-rsk/devices-rsk7203.c |   24 +-
- arch/sh/boards/mach-x3proto/setup.c       |    1 +
- arch/sh/configs/ap325rxa_defconfig        |  355 ++++++++++++++++++++++++++---
- arch/sh/configs/dreamcast_defconfig       |   60 ++++--
- arch/sh/configs/edosk7705_defconfig       |   18 +-
- arch/sh/configs/edosk7760_defconfig       |   83 +++++--
- arch/sh/configs/hp6xx_defconfig           |   88 ++++----
- arch/sh/configs/landisk_defconfig         |   76 +++++--
- arch/sh/configs/lboxre2_defconfig         |   63 ++++--
- arch/sh/configs/magicpanelr2_defconfig    |  119 +++++++---
- arch/sh/configs/microdev_defconfig        |   63 ++++--
- arch/sh/configs/migor_defconfig           |   95 ++++++--
- arch/sh/configs/r7780mp_defconfig         |   85 ++++++--
- arch/sh/configs/r7785rp_defconfig         |  130 ++++++++---
- arch/sh/configs/rsk7201_defconfig         |   26 ++-
- arch/sh/configs/rsk7203_defconfig         |   88 ++++++--
- arch/sh/configs/rts7751r2d1_defconfig     |   87 +++++--
- arch/sh/configs/rts7751r2dplus_defconfig  |   87 +++++--
- arch/sh/configs/sdk7780_defconfig         |  101 ++++++---
- arch/sh/configs/se7206_defconfig          |   75 +++++--
- arch/sh/configs/se7343_defconfig          |   61 +++--
- arch/sh/configs/se7619_defconfig          |   47 +++--
- arch/sh/configs/se7705_defconfig          |   60 +++--
- arch/sh/configs/se7712_defconfig          |   79 +++++--
- arch/sh/configs/se7721_defconfig          |   85 +++++---
- arch/sh/configs/se7722_defconfig          |   61 +++--
- arch/sh/configs/se7750_defconfig          |   61 +++--
- arch/sh/configs/se7751_defconfig          |   56 +++--
- arch/sh/configs/se7780_defconfig          |   87 +++++---
- arch/sh/configs/sh03_defconfig            |   82 +++++--
- arch/sh/configs/sh7710voipgw_defconfig    |   55 +++--
- arch/sh/configs/sh7763rdp_defconfig       |   71 ++++--
- arch/sh/configs/sh7785lcr_defconfig       |   92 +++++---
- arch/sh/configs/shmin_defconfig           |   54 +++--
- arch/sh/configs/shx3_defconfig            |   77 +++++--
- arch/sh/configs/snapgear_defconfig        |   53 +++--
- arch/sh/configs/systemh_defconfig         |   50 +++--
- arch/sh/configs/titan_defconfig           |   90 +++++--
- arch/sh/configs/ul2_defconfig             |   69 ++++--
- arch/sh/include/asm/posix_types_32.h      |    8 +-
- arch/sh/include/asm/posix_types_64.h      |    8 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c    |   31 +++
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c    |    2 +-
- arch/sh/kernel/process_64.c               |    2 -
- arch/sh/kernel/traps_32.c                 |    9 +-
- arch/sh/mm/ioremap_64.c                   |    2 +-
- drivers/serial/sh-sci.h                   |    5 +-
- kernel/dma-coherent.c                     |   47 ++--
- mm/nommu.c                                |   20 ++-
- 56 files changed, 2368 insertions(+), 1094 deletions(-)
+--- 0002/drivers/serial/sh-sci.c
++++ work/drivers/serial/sh-sci.c	2009-01-19 20:09:21.000000000 +0900
+@@ -1234,6 +1234,70 @@ static int __devexit sci_remove(struct p
+ 	return 0;
+ }
+ 
++static int __devinit sci_probe_single(struct platform_device *dev,
++				      unsigned int index,
++				      struct plat_sci_port *p,
++				      struct sci_port *sciport)
++{
++	struct sh_sci_priv *priv = platform_get_drvdata(dev);
++	unsigned long flags;
++	int ret;
++
++	/* Sanity check */
++	if (unlikely(index >= SCI_NPORTS)) {
++		dev_notice(&dev->dev, "Attempting to register port "
++			   "%d when only %d are available.\n",
++			   index+1, SCI_NPORTS);
++		dev_notice(&dev->dev, "Consider bumping "
++			   "CONFIG_SERIAL_SH_SCI_NR_UARTS!\n");
++		return 0;
++	}
++
++	sciport->port.mapbase	= p->mapbase;
++
++	if (p->mapbase && !p->membase) {
++		if (p->flags & UPF_IOREMAP) {
++			p->membase = ioremap_nocache(p->mapbase, 0x40);
++			if (IS_ERR(p->membase))
++				return PTR_ERR(p->membase);
++		} else {
++			/*
++			 * For the simple (and majority of) cases
++			 * where we don't need to do any remapping,
++			 * just cast the cookie directly.
++			 */
++			p->membase = (void __iomem *)p->mapbase;
++		}
++	}
++
++	sciport->port.membase	= p->membase;
++
++	sciport->port.irq	= p->irqs[SCIx_TXI_IRQ];
++	sciport->port.flags	= p->flags;
++	sciport->port.dev	= &dev->dev;
++
++	sciport->type		= sciport->port.type = p->type;
++
++	memcpy(&sciport->irqs, &p->irqs, sizeof(p->irqs));
++
++	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
++
++	if (ret) {
++		if (p->flags & UPF_IOREMAP)
++			iounmap(p->membase);
++
++		return ret;
++	}
++
++	INIT_LIST_HEAD(&sciport->node);
++
++	spin_lock_irqsave(&priv->lock, flags);
++	list_add(&sciport->node, &priv->ports);
++	spin_unlock_irqrestore(&priv->lock, flags);
++
++	return 0;
++}
++
+ /*
+  * Register a set of serial devices attached to a platform device.  The
+  * list is terminated with a zero flags entry, which means we expect
+@@ -1245,7 +1309,6 @@ static int __devinit sci_probe(struct pl
+ 	struct plat_sci_port *p = dev->dev.platform_data;
+ 	struct sh_sci_priv *priv;
+ 	int i, ret = -EINVAL;
+-	unsigned long flags;
+ 
+ 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+@@ -1260,60 +1323,16 @@ static int __devinit sci_probe(struct pl
+ 	cpufreq_register_notifier(&priv->clk_nb, CPUFREQ_TRANSITION_NOTIFIER);
+ #endif
+ 
+-	for (i = 0; p && p->flags != 0; p++, i++) {
+-		struct sci_port *sciport = &sci_ports[i];
+-
+-		/* Sanity check */
+-		if (unlikely(i = SCI_NPORTS)) {
+-			dev_notice(&dev->dev, "Attempting to register port "
+-				   "%d when only %d are available.\n",
+-				   i+1, SCI_NPORTS);
+-			dev_notice(&dev->dev, "Consider bumping "
+-				   "CONFIG_SERIAL_SH_SCI_NR_UARTS!\n");
+-			break;
+-		}
+-
+-		sciport->port.mapbase	= p->mapbase;
+-
+-		if (p->mapbase && !p->membase) {
+-			if (p->flags & UPF_IOREMAP) {
+-				p->membase = ioremap_nocache(p->mapbase, 0x40);
+-				if (IS_ERR(p->membase)) {
+-					ret = PTR_ERR(p->membase);
+-					goto err_unreg;
+-				}
+-			} else {
+-				/*
+-				 * For the simple (and majority of) cases
+-				 * where we don't need to do any remapping,
+-				 * just cast the cookie directly.
+-				 */
+-				p->membase = (void __iomem *)p->mapbase;
+-			}
+-		}
+-
+-		sciport->port.membase	= p->membase;
+-
+-		sciport->port.irq	= p->irqs[SCIx_TXI_IRQ];
+-		sciport->port.flags	= p->flags;
+-		sciport->port.dev	= &dev->dev;
+-
+-		sciport->type		= sciport->port.type = p->type;
+-
+-		memcpy(&sciport->irqs, &p->irqs, sizeof(p->irqs));
+-
+-		ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
+-
+-		if (ret && (p->flags & UPF_IOREMAP)) {
+-			iounmap(p->membase);
++	if (dev->id != -1) {
++		ret = sci_probe_single(dev, dev->id, p, &sci_ports[dev->id]);
++		if (ret)
+ 			goto err_unreg;
++	} else {
++		for (i = 0; p && p->flags != 0; p++, i++) {
++			ret = sci_probe_single(dev, i, p, &sci_ports[i]);
++			if (ret)
++				goto err_unreg;
+ 		}
+-
+-		INIT_LIST_HEAD(&sciport->node);
+-
+-		spin_lock_irqsave(&priv->lock, flags);
+-		list_add(&sciport->node, &priv->ports);
+-		spin_unlock_irqrestore(&priv->lock, flags);
+ 	}
+ 
+ #ifdef CONFIG_SH_STANDARD_BIOS
