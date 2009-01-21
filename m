@@ -1,80 +1,233 @@
-From: christuserloeser@dcevolution.net
-Date: Wed, 28 Jan 2009 14:16:15 +0000
-Subject: Re: [Dreamcastdev] For those interested in the Dreamcast
-Message-Id: <4680.195.14.204.90.1233152175.squirrel@webmail.netfirms.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 21 Jan 2009 15:15:12 +0000
+Subject: [PATCH 012/013] sh-sci: convert sh4 cpus to single port devices
+Message-Id: <20090121151512.29269.85170.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi everyone!
+From: Magnus Damm <damm@igel.co.jp>
 
-someone called adventure_of_link posted the following at DCEmulation.org
-recently:
+Rework sh-sci platform data for sh4 processors such as:
+ sh775x, sh776x, sh4-202
 
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-----[quote]----------------------------------------------------------------
-***I apologize in advance if this may seem like spam, but it needed to be
-said all the same, and hopefully I put this in the right section. If it
-isn't in the right section, please feel free to move it there. also in
-case you don't know me, I'm the same adventure_of_link from ZSNES boards,
-Snes9X, and retrojunk.***
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |   22 +++-----
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c  |   51 ++++++++++++-------
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  |   84 +++++++++++++++++++++-----------
+ 3 files changed, 97 insertions(+), 60 deletions(-)
 
-I'm sure those of you who used to goto the official Snes9X forums for help
-and support remember that you'd get turned down for said help and support
-due to the team only supporting PC/Mac versions, and told to seek the
-official developers, right?
-
-Well, it has come to my attention recently from the forum admins of Snes9X
-(namely Ryan and Jerremy) that they now want the console porters to come
-on over and make their ports official. You will get full SVN access to the
-official code to allow you to update your version and port it, a subforum
-on the site for your particular version, and your build will also get
-placed on the main downloads page for Snes9X (eg: on the main site.)
-
-If any porters of Snes9X to ANY LEGIT console/handheld visit this forum,
-PLEASE read this message and consider it. Making a nick on the Snes9X
-forums and getting in touch with Ryan and/or Jerremy would be nice too.
-Thank you for your time.
-
---adventure_of_link
-----[/quote]---------------------------------------------------------------
-
-
-It sure would be something to see the source code to DreamSNES released.
-From what I remember, you guys had something like v0.99 in the works, but
-it never got released.
-
-
-Cheers,
-
-
--Chris
-christuserloeser@dcevolution.net
-http://www.dcevolution.net/
-
-
-
-
-> On Tue, Jan 13, 2009 at 10:51 AM, Adrian McMenamin
-> <adrian@newgolddream.dyndns.info> wrote:
->> On Tue, January 13, 2009 7:38 am, Peter Bortas wrote:
->>
->>> Is dcdev@yahoogroups.com broken?
->>
->> The last email was in September 2006.
->>
->> But this is because the moderator neglected to moderate.
->
-> That would be a valid reason to start a new list. And a cross-projects
-> DC list is nice.
->
-> --
-> Peter Bortas
-> _______________________________________________
-> Dreamcastdev mailing list
-> Dreamcastdev@transpero.net
-> http://transpero.net/cgi-bin/mailman/listinfo/dreamcastdev
->
-
+--- 0001/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh4-202.c	2009-01-21 22:11:39.000000000 +0900
+@@ -12,27 +12,23 @@
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffe80000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe80000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 40, 41, 43, 42 },
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif0_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *sh4202_devices[] __initdata = {
+-	&sci_device,
++	&scif0_device,
+ };
+ 
+ static int __init sh4202_devices_setup(void)
+--- 0001/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh7750.c	2009-01-21 22:08:36.000000000 +0900
+@@ -44,35 +44,48 @@ static struct platform_device rtc_device
+ 	.resource	= rtc_resources,
+ };
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+ #ifndef CONFIG_SH_RTS7751R2D
+-		.mapbase	= 0xffe00000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCI,
+-		.irqs		= { 23, 24, 25, 0 },
+-	}, {
+-#endif
+-		.mapbase	= 0xffe80000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port sci0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCI,
++	.irqs		= { 23, 24, 25, 0 },
++};
++
++static struct platform_device sci0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &sci0_platform_data,
++	},
++};
++#endif
++
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe80000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 40, 41, 43, 42 },
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++#ifdef CONFIG_SH_RTS7751R2D
++	.id		= 0,
++#else
++	.id		= 1,
++#endif
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif0_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *sh7750_devices[] __initdata = {
+ 	&rtc_device,
+-	&sci_device,
++#ifndef CONFIG_SH_RTS7751R2D
++	&sci0_device,
++#endif
++	&scif0_device,
+ };
+ 
+ static int __init sh7750_devices_setup(void)
+--- 0001/arch/sh/kernel/cpu/sh4/setup-sh7760.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh7760.c	2009-01-21 22:10:33.000000000 +0900
+@@ -134,42 +134,70 @@ static struct intc_vect vectors_irq[] __
+ static DECLARE_INTC_DESC(intc_desc_irq, "sh7760-irq", vectors_irq, groups,
+ 			 mask_registers, prio_registers, NULL);
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xfe600000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 52, 53, 55, 54 },
+-	}, {
+-		.mapbase	= 0xfe610000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 72, 73, 75, 74 },
+-	}, {
+-		.mapbase	= 0xfe620000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 76, 77, 79, 78 },
+-	}, {
+-		.mapbase	= 0xfe480000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCI,
+-		.irqs		= { 80, 81, 82, 0 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xfe600000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 52, 53, 55, 54 },
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif0_platform_data,
+ 	},
+ };
+ 
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xfe610000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 72, 73, 75, 74 },
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xfe620000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 76, 77, 79, 78 },
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
++
++static struct plat_sci_port sci0_platform_data = {
++	.mapbase	= 0xfe480000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCI,
++	.irqs		= { 80, 81, 82, 0 },
++};
++
++static struct platform_device sci0_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &sci0_platform_data,
++	},
++};
+ static struct platform_device *sh7760_devices[] __initdata = {
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&sci0_device,
+ };
+ 
+ static int __init sh7760_devices_setup(void)
