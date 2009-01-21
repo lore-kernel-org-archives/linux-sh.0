@@ -1,67 +1,120 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 21 Jan 2009 03:39:52 +0000
+Date: Wed, 21 Jan 2009 08:11:19 +0000
 Subject: Re: [PATCH] dma: fix up broken comparison in dma_alloc_from_coherent
-Message-Id: <20090121033951.GB14094@linux-sh.org>
+Message-Id: <20090121081118.GA14537@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8b67d60901201348r6a59928dw3fcf8c9c823d5c68@mail.gmail.com> <1232488507.6794.8.camel@localhost.localdomain>
-In-Reply-To: <1232488507.6794.8.camel@localhost.localdomain>
+References: <8b67d60901201348r6a59928dw3fcf8c9c823d5c68@mail.gmail.com> <1232488507.6794.8.camel@localhost.localdomain> <20090121033951.GB14094@linux-sh.org>
+In-Reply-To: <20090121033951.GB14094@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Adrian McMenamin <lkmladrian@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh <linux-sh@vger.kernel.org>, penberg@cs.helsinki.fi, dbaryshkov@gmail.com, penguin-kernel@i-love.sakura.ne.jp, Guennadi Liakhovetski <lg@denx.de>, Johannes Weiner <hannes@cmpxchg.org>
+To: Adrian McMenamin <adrian@newgolddream.dyndns.info>, Adrian McMenamin <lkmladrian@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh <linux-sh@vger.kernel.org>, penberg@cs.helsinki.fi, dbaryshkov@gmail.com, penguin-kernel@i-love.sakura.ne.jp, Guennadi Liakhovetski <lg@denx.de>, Johannes Weiner <hannes@cmpxchg.org>
 
-On Tue, Jan 20, 2009 at 09:55:07PM +0000, Adrian McMenamin wrote:
-> On Tue, 2009-01-20 at 21:48 +0000, Adrian McMenamin wrote:
-> > Currently this code compares a size in bytes with a size in pages.
-> > This patch makes both sides of the comparison bytes.
-> 
-> Apologies, here it is without the line wrap.
-> 
-> Currently this comparison is made between bytes and pages. This patch
-> ensures it is bytes on both side of the comparison.
-> 
-> Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
-> ---
-> 
-> --- a/kernel/dma-coherent.c
-> +++ b/kernel/dma-coherent.c
-> @@ -118,7 +118,7 @@ int dma_alloc_from_coherent(struct device *dev, ssize_t size,
->  	mem = dev->dma_mem;
->  	if (!mem)
->  		return 0;
-> -	if (unlikely(size > mem->size))
-> +	if (unlikely(size > mem->size << PAGE_SHIFT))
->   		return 0;
->  
->  	pageno = bitmap_find_free_region(mem->bitmap, mem->size, order);
-> 
-What is more concerning is that the change that introduced this:
+On Wed, Jan 21, 2009 at 12:39:52PM +0900, Paul Mundt wrote:
+> On Tue, Jan 20, 2009 at 09:55:07PM +0000, Adrian McMenamin wrote:
+> > On Tue, 2009-01-20 at 21:48 +0000, Adrian McMenamin wrote:
+> > > Currently this code compares a size in bytes with a size in pages.
+> > > This patch makes both sides of the comparison bytes.
+> > 
+> > Apologies, here it is without the line wrap.
+> > 
+> > Currently this comparison is made between bytes and pages. This patch
+> > ensures it is bytes on both side of the comparison.
+> > 
+> > Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+> > ---
+> > 
+> > --- a/kernel/dma-coherent.c
+> > +++ b/kernel/dma-coherent.c
+> > @@ -118,7 +118,7 @@ int dma_alloc_from_coherent(struct device *dev, ssize_t size,
+> >  	mem = dev->dma_mem;
+> >  	if (!mem)
+> >  		return 0;
+> > -	if (unlikely(size > mem->size))
+> > +	if (unlikely(size > mem->size << PAGE_SHIFT))
+> >   		return 0;
+> >  
+> >  	pageno = bitmap_find_free_region(mem->bitmap, mem->size, order);
+> > 
+And to make matters worse, this completely changes the underlying
+semantics for systems that _require_ exclusive use of the per-device
+region and don't permit fallback to the generic allocator. Returning 0
+from dma_alloc_from_coherent() indicates that the generic allocator is
+safe to fall back on, which is totally bogus in the DMA_MEMORY_EXCLUSIVE
+case. This is what causes 8139too to successfully allocate memory on the
+Dreamcast from totally bogus locations, which causes the generally
+unhelpful error messages. If the fallback hadn't been made silently, it
+would have errored out on allocating the buffers immediately.
 
-commit 58c6d3dfe436eb8cfb451981d8fdc9044eaf42da
-Author: Johannes Weiner <hannes@cmpxchg.org>
-Date:   Tue Jan 6 14:43:10 2009 -0800
+So, something like the following should do it:
 
-    dma-coherent: catch oversized requests to dma_alloc_from_coherent()
+---
 
-    Prevent passing an order to bitmap_find_free_region() that is larger than
-    the actual bitmap can represent.
-
-    These requests can come from device drivers that have no idea how big the
-    dma region is and need to rely on dma_alloc_from_coherent() to sort it out
-    for them.
-
-    Reported-by: Guennadi Liakhovetski <lg@denx.de>
-    Signed-off-by: Johannes Weiner <hannes@cmpxchg.org>
-...
-
-Claims to fix a problem that doesn't exist anywhere in-tree today, and was
-obviously never tested. This looks like a sanity thing for drivers that derive
-their coherent pool from passed in platform device resources.
-
-It is equally impressive that the author of this patch modified a code path
-that is only hit by platforms that provide dma_declare_coherent_memory() (sh,
-arm, mips, and x86_32) and subsequently failed to Cc the primary users of the
-interface.
-
-I'll add your patch to my queue and send it off to Linus later today, thanks.
+diff --git a/kernel/dma-coherent.c b/kernel/dma-coherent.c
+index 0387074..3a2156a 100644
+--- a/kernel/dma-coherent.c
++++ b/kernel/dma-coherent.c
+@@ -98,7 +98,7 @@ EXPORT_SYMBOL(dma_mark_declared_memory_occupied);
+  * @size:	size of requested memory area
+  * @dma_handle:	This will be filled with the correct dma handle
+  * @ret:	This pointer will be filled with the virtual address
+- * 		to allocated area.
++ *		to allocated area.
+  *
+  * This function should be only called from per-arch dma_alloc_coherent()
+  * to support allocation from per-device coherent memory pools.
+@@ -118,31 +118,32 @@ int dma_alloc_from_coherent(struct device *dev, ssize_t size,
+ 	mem = dev->dma_mem;
+ 	if (!mem)
+ 		return 0;
+-	if (unlikely(size > mem->size))
+- 		return 0;
++
++	*ret = NULL;
++
++	if (unlikely(size > (mem->size << PAGE_SHIFT)))
++		goto err;
+ 
+ 	pageno = bitmap_find_free_region(mem->bitmap, mem->size, order);
+-	if (pageno >= 0) {
+-		/*
+-		 * Memory was found in the per-device arena.
+-		 */
+-		*dma_handle = mem->device_base + (pageno << PAGE_SHIFT);
+-		*ret = mem->virt_base + (pageno << PAGE_SHIFT);
+-		memset(*ret, 0, size);
+-	} else if (mem->flags & DMA_MEMORY_EXCLUSIVE) {
+-		/*
+-		 * The per-device arena is exhausted and we are not
+-		 * permitted to fall back to generic memory.
+-		 */
+-		*ret = NULL;
+-	} else {
+-		/*
+-		 * The per-device arena is exhausted and we are
+-		 * permitted to fall back to generic memory.
+-		 */
+-		 return 0;
+-	}
++	if (unlikely(pageno < 0))
++		goto err;
++
++	/*
++	 * Memory was found in the per-device arena.
++	 */
++	*dma_handle = mem->device_base + (pageno << PAGE_SHIFT);
++	*ret = mem->virt_base + (pageno << PAGE_SHIFT);
++	memset(*ret, 0, size);
++
+ 	return 1;
++
++err:
++	/*
++	 * In the case where the allocation can not be satisfied from the
++	 * per-device area, try to fall back to generic memory if the
++	 * constraints allow it.
++	 */
++	return mem->flags & DMA_MEMORY_EXCLUSIVE;
+ }
+ EXPORT_SYMBOL(dma_alloc_from_coherent);
+ 
