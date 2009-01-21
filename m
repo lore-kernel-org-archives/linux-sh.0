@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2009 15:14:30 +0000
-Subject: [PATCH 007/013] sh-sci: improve clock framework support
-Message-Id: <20090121151430.29269.65179.sendpatchset@rx1.opensource.se>
+Date: Wed, 21 Jan 2009 15:15:20 +0000
+Subject: [PATCH 013/013] sh-sci: sh4a single port devices and clock support
+Message-Id: <20090121151520.29269.68219.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,216 +10,805 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Use enable/disable hooks for clock framework integration.
-Make sure we control the clock for the serial console as well.
+Rework sh-sci platform data for sh4a processors such as:
+ sh7343, sh7366, sh7722, sh7723, sh7763, sh7780, sh7785, shx3
+
+Also add clock framework data for SuperH Mobile processors.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/serial/sh-sci.c    |   87 +++++++++++++++++++++++++++-----------------
- include/linux/serial_sci.h |    1 
- 2 files changed, 56 insertions(+), 32 deletions(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   89 ++++++++++++++-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   23 ++---
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   66 ++++++++++-----
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  133 ++++++++++++++++++++++----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |   64 +++++++++------
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |   43 ++++++----
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  128 ++++++++++++++++++++----------
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   |   85 +++++++++++++-------
+ 8 files changed, 418 insertions(+), 213 deletions(-)
 
---- 0007/drivers/serial/sh-sci.c
-+++ work/drivers/serial/sh-sci.c	2009-01-21 19:27:51.000000000 +0900
-@@ -76,8 +76,10 @@ struct sci_port {
- 	int			break_flag;
- 
- #ifdef CONFIG_HAVE_CLK
--	/* Port clock */
--	struct clk		*clk;
-+	/* Interface clock */
-+	struct clk		*iclk;
-+	/* Data clock */
-+	struct clk		*dclk;
- #endif
- 	struct list_head	node;
- };
-@@ -146,7 +148,7 @@ static void sci_poll_put_char(struct uar
- 	} while (!(status & SCxSR_TDxE(port)));
- 
- 	sci_in(port, SCxSR);            /* Dummy read */
--	sci_out(port, SCxSR, SCxSR_TDxE_CLEAR(port));
-+	sci_out(port, SCxSR, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
- 	sci_out(port, SCxTDR, c);
- }
- #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
-@@ -166,12 +168,12 @@ static void h8300_sci_config(struct uart
- 		*mstpcrl &= ~mask;
- }
- 
--static inline void h8300_sci_enable(struct uart_port *port)
-+static void h8300_sci_enable(struct uart_port *port)
- {
- 	h8300_sci_config(port, sci_enable);
- }
- 
--static inline void h8300_sci_disable(struct uart_port *port)
-+static void h8300_sci_disable(struct uart_port *port)
- {
- 	h8300_sci_config(port, sci_disable);
- }
-@@ -740,13 +742,34 @@ static int sci_notifier(struct notifier_
- 	    (phase = CPUFREQ_RESUMECHANGE)) {
- 		spin_lock_irqsave(&priv->lock, flags);
- 		list_for_each_entry(sci_port, &priv->ports, node)
--			sci_port->port.uartclk = clk_get_rate(sci_port->clk);
-+			sci_port->port.uartclk = clk_get_rate(sci_port->dclk);
- 
- 		spin_unlock_irqrestore(&priv->lock, flags);
- 	}
- 
- 	return NOTIFY_OK;
- }
-+
-+static void sci_clk_enable(struct uart_port *port)
-+{
-+	struct sci_port *sci_port = to_sci_port(port);
-+
-+	clk_enable(sci_port->dclk);
-+	sci_port->port.uartclk = clk_get_rate(sci_port->dclk);
-+
-+	if (sci_port->iclk)
-+		clk_enable(sci_port->iclk);
-+}
-+
-+static void sci_clk_disable(struct uart_port *port)
-+{
-+	struct sci_port *sci_port = to_sci_port(port);
-+
-+	if (sci_port->iclk)
-+		clk_disable(sci_port->iclk);
-+
-+	clk_disable(sci_port->dclk);
-+}
- #endif
- 
- static int sci_request_irq(struct sci_port *port)
-@@ -878,10 +901,6 @@ static int sci_startup(struct uart_port 
- 	if (s->enable)
- 		s->enable(port);
- 
--#ifdef CONFIG_HAVE_CLK
--	s->clk = clk_get(NULL, "module_clk");
--#endif
--
- 	sci_request_irq(s);
- 	sci_start_tx(port);
- 	sci_start_rx(port, 1);
-@@ -899,11 +918,6 @@ static void sci_shutdown(struct uart_por
- 
- 	if (s->disable)
- 		s->disable(port);
--
--#ifdef CONFIG_HAVE_CLK
--	clk_put(s->clk);
--	s->clk = NULL;
--#endif
- }
- 
- static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
-@@ -1043,7 +1057,8 @@ static struct uart_ops sci_uart_ops = {
- #endif
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2009-01-21 17:40:55.000000000 +0900
+@@ -140,44 +140,77 @@ static struct platform_device jpu_device
+ 	.num_resources	= ARRAY_SIZE(jpu_resources),
  };
  
--static void __devinit sci_init_single(struct sci_port *sci_port,
-+static void __devinit sci_init_single(struct platform_device *dev,
-+				      struct sci_port *sci_port,
- 				      unsigned int index,
- 				      struct plat_sci_port *p)
- {
-@@ -1059,14 +1074,10 @@ static void __devinit sci_init_single(st
- #endif
- 	sci_port->port.uartclk	= CONFIG_CPU_CLOCK;
- #elif defined(CONFIG_HAVE_CLK)
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffe00000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 80, 80, 80, 80 },
+-	}, {
+-		.mapbase	= 0xffe10000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 81, 81, 81, 81 },
+-	}, {
+-		.mapbase	= 0xffe20000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 82, 82, 82, 82 },
+-	}, {
+-		.mapbase	= 0xffe30000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 83, 83, 83, 83 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 80, 80, 80, 80 },
++	.clk		= "scif0",
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffe10000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 81, 81, 81, 81 },
++	.clk		= "scif1",
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xffe20000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 82, 82, 82, 82 },
++	.clk		= "scif2",
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
++
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xffe30000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 83, 83, 83, 83 },
++	.clk		= "scif3",
++};
++
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &scif3_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *sh7343_devices[] __initdata = {
+ 	&iic0_device,
+ 	&iic1_device,
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
+ 	&vpu_device,
+ 	&veu_device,
+ 	&jpu_device,
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7366.c	2009-01-21 17:42:17.000000000 +0900
+@@ -147,28 +147,25 @@ static struct platform_device veu1_devic
+ 	.num_resources	= ARRAY_SIZE(veu1_resources),
+ };
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffe00000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 80, 80, 80, 80 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 80, 80, 80, 80 },
++	.clk		= "scif0",
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif0_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *sh7366_devices[] __initdata = {
+ 	&iic_device,
+-	&sci_device,
++	&scif0_device,
+ 	&usb_host_device,
+ 	&vpu_device,
+ 	&veu0_device,
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2009-01-21 17:31:52.000000000 +0900
+@@ -176,35 +176,51 @@ static struct platform_device jpu_device
+ 	.num_resources	= ARRAY_SIZE(jpu_resources),
+ };
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffe00000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 80, 80, 80, 80 },
+-	},
+-	{
+-		.mapbase	= 0xffe10000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 81, 81, 81, 81 },
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 80, 80, 80, 80 },
++	.clk		= "scif0",
++};
++
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
+ 	},
+-	{
+-		.mapbase	= 0xffe20000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 82, 82, 82, 82 },
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffe10000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 81, 81, 81, 81 },
++	.clk		= "scif1",
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
+ 	},
+-	{
+-		.flags = 0,
+-	}
+ };
+ 
+-static struct platform_device sci_device = {
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xffe20000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 82, 82, 82, 82 },
++	.clk		= "scif2",
++};
++
++static struct platform_device scif2_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 2,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif2_platform_data,
+ 	},
+ };
+ 
+@@ -212,7 +228,9 @@ static struct platform_device *sh7722_de
+ 	&rtc_device,
+ 	&usbf_device,
+ 	&iic_device,
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
+ 	&vpu_device,
+ 	&veu_device,
+ 	&jpu_device,
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2009-01-21 17:41:55.000000000 +0900
+@@ -100,47 +100,99 @@ static struct platform_device veu1_devic
+ 	.num_resources	= ARRAY_SIZE(veu1_resources),
+ };
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase        = 0xffe00000,
+-		.flags          = UPF_BOOT_AUTOCONF,
+-		.type           = PORT_SCIF,
+-		.irqs           = { 80, 80, 80, 80 },
+-	},{
+-		.mapbase        = 0xffe10000,
+-		.flags          = UPF_BOOT_AUTOCONF,
+-		.type           = PORT_SCIF,
+-		.irqs           = { 81, 81, 81, 81 },
+-	},{
+-		.mapbase        = 0xffe20000,
+-		.flags          = UPF_BOOT_AUTOCONF,
+-		.type           = PORT_SCIF,
+-		.irqs           = { 82, 82, 82, 82 },
+-	},{
+-		.mapbase	= 0xa4e30000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIFA,
+-		.irqs		= { 56, 56, 56, 56 },
+-	},{
+-		.mapbase	= 0xa4e40000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIFA,
+-		.irqs		= { 88, 88, 88, 88 },
+-	},{
+-		.mapbase	= 0xa4e50000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIFA,
+-		.irqs		= { 109, 109, 109, 109 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 80, 80, 80, 80 },
++	.clk		= "scif0",
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffe10000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 81, 81, 81, 81 },
++	.clk		= "scif1",
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xffe20000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 82, 82, 82, 82 },
++	.clk		= "scif2",
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
++
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xa4e30000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs		= { 56, 56, 56, 56 },
++	.clk		= "scif3",
++};
++
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &scif3_platform_data,
++	},
++};
++
++static struct plat_sci_port scif4_platform_data = {
++	.mapbase	= 0xa4e40000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs		= { 88, 88, 88, 88 },
++	.clk		= "scif4",
++};
++
++static struct platform_device scif4_device = {
++	.name		= "sh-sci",
++	.id		= 4,
++	.dev		= {
++		.platform_data	= &scif4_platform_data,
++	},
++};
++
++static struct plat_sci_port scif5_platform_data = {
++	.mapbase	= 0xa4e50000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs		= { 109, 109, 109, 109 },
++	.clk		= "scif5",
++};
++
++static struct platform_device scif5_device = {
++	.name		= "sh-sci",
++	.id		= 5,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif5_platform_data,
+ 	},
+ };
+ 
+@@ -221,7 +273,12 @@ static struct platform_device iic_device
+ };
+ 
+ static struct platform_device *sh7723_devices[] __initdata = {
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
++	&scif4_device,
++	&scif5_device,
+ 	&rtc_device,
+ 	&iic_device,
+ 	&sh7723_usb_host_device,
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7763.c	2009-01-21 17:30:54.000000000 +0900
+@@ -45,32 +45,48 @@ static struct platform_device rtc_device
+ 	.resource	= rtc_resources,
+ };
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffe00000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
+-	}, {
+-		.mapbase	= 0xffe08000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 76, 77, 79, 78 },
+-	}, {
+-		.mapbase	= 0xffe10000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 104, 105, 107, 106 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 40, 41, 43, 42 },
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffe08000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 76, 77, 79, 78 },
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xffe10000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 104, 105, 107, 106 },
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif2_platform_data,
+ 	},
+ };
+ 
+@@ -125,7 +141,9 @@ static struct platform_device usbf_devic
+ 
+ static struct platform_device *sh7763_devices[] __initdata = {
+ 	&rtc_device,
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
+ 	&usb_ohci_device,
+ 	&usbf_device,
+ };
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7780.c	2009-01-21 17:30:54.000000000 +0900
+@@ -43,33 +43,40 @@ static struct platform_device rtc_device
+ 	.resource	= rtc_resources,
+ };
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffe00000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
+-	}, {
+-		.mapbase	= 0xffe10000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 76, 77, 79, 78 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffe00000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 40, 41, 43, 42 },
++};
++
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffe10000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 76, 77, 79, 78 },
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif1_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 1,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif1_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *sh7780_devices[] __initdata = {
+ 	&rtc_device,
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
+ };
+ 
+ static int __init sh7780_devices_setup(void)
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7785.c	2009-01-21 17:30:54.000000000 +0900
+@@ -15,57 +15,103 @@
+ #include <linux/mm.h>
+ #include <asm/mmzone.h>
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffea0000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
+-	}, {
+-		.mapbase	= 0xffeb0000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 44, 45, 47, 46 },
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffea0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 40, 41, 43, 42 },
++};
++
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
+ 	},
++};
+ 
 -	/*
--	 * XXX: We should use a proper SCI/SCIF clock
+-	 * The rest of these all have multiplexed IRQs
 -	 */
 -	{
--		struct clk *clk = clk_get(NULL, "module_clk");
--		sci_port->port.uartclk = clk_get_rate(clk);
--		clk_put(clk);
+-		.mapbase	= 0xffec0000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 60, 60, 60, 60 },
+-	}, {
+-		.mapbase	= 0xffed0000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 61, 61, 61, 61 },
+-	}, {
+-		.mapbase	= 0xffee0000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 62, 62, 62, 62 },
+-	}, {
+-		.mapbase	= 0xffef0000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 63, 63, 63, 63 },
+-	}, {
+-		.flags = 0,
 -	}
-+	sci_port->iclk		= p->clk ? clk_get(&dev->dev, p->clk) : NULL;
-+	sci_port->dclk		= clk_get(&dev->dev, "module_clk");
-+	sci_port->enable	= sci_clk_enable;
-+	sci_port->disable	= sci_clk_disable;
- #else
- #error "Need a valid uartclk"
- #endif
-@@ -1080,9 +1091,11 @@ static void __devinit sci_init_single(st
- 
- 	sci_port->port.irq	= p->irqs[SCIx_TXI_IRQ];
- 	sci_port->port.flags	= p->flags;
-+	sci_port->port.dev	= &dev->dev;
- 	sci_port->type		= sci_port->port.type = p->type;
- 
- 	memcpy(&sci_port->irqs, &p->irqs, sizeof(p->irqs));
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffeb0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 44, 45, 47, 46 },
++};
 +
- }
- 
- #ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
-@@ -1106,7 +1119,22 @@ static void serial_console_putchar(struc
- static void serial_console_write(struct console *co, const char *s,
- 				 unsigned count)
- {
--	uart_console_write(co->data, s, count, serial_console_putchar);
-+	struct uart_port *port = co->data;
-+	struct sci_port *sci_port = to_sci_port(port);
-+	unsigned short bits;
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
 +
-+	if (sci_port->enable)
-+		sci_port->enable(port);
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xffec0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 60, 60, 60, 60 },
++};
 +
-+	uart_console_write(port, s, count, serial_console_putchar);
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
 +
-+	/* wait until fifo is empty and last bit has been transmitted */
-+	bits = SCxSR_TDxE(port) | SCxSR_TEND(port);
-+	while ((sci_in(port, SCxSR) & bits) != bits)
-+		cpu_relax();
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xffed0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 61, 61, 61, 61 },
++};
 +
-+	if (sci_port->disable)
-+		sci_port->disable(port);
- }
- 
- static int __init serial_console_setup(struct console *co, char *options)
-@@ -1140,11 +1168,6 @@ static int __init serial_console_setup(s
- 	if (!port->type)
- 		return -ENODEV;
- 
--#ifdef CONFIG_HAVE_CLK
--	if (!sci_port->clk)
--		sci_port->clk = clk_get(NULL, "module_clk");
--#endif
--
- 	sci_config_port(port, 0);
- 
- 	if (sci_port->enable)
-@@ -1159,6 +1182,7 @@ static int __init serial_console_setup(s
- 	if (ret = 0)
- 		sci_stop_rx(port);
- #endif
-+	/* TODO: disable clock */
- 	return ret;
- }
- 
-@@ -1238,8 +1262,7 @@ static int __devinit sci_probe_single(st
- 		return 0;
- 	}
- 
--	sciport->port.dev = &dev->dev;
--	sci_init_single(sciport, index, p);
-+	sci_init_single(dev, sciport, index, p);
- 
- 	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
- 	if (ret)
---- 0004/include/linux/serial_sci.h
-+++ work/include/linux/serial_sci.h	2009-01-21 19:25:20.000000000 +0900
-@@ -25,6 +25,7 @@ struct plat_sci_port {
- 	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
- 	unsigned int	type;			/* SCI / SCIF / IRDA */
- 	upf_t		flags;			/* UPF_* flags */
-+	char		*clk;			/* clock string */
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &scif3_platform_data,
++	},
++};
++
++static struct plat_sci_port scif4_platform_data = {
++	.mapbase	= 0xffee0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 62, 62, 62, 62 },
++};
++
++static struct platform_device scif4_device = {
++	.name		= "sh-sci",
++	.id		= 4,
++	.dev		= {
++		.platform_data	= &scif4_platform_data,
++	},
++};
++
++static struct plat_sci_port scif5_platform_data = {
++	.mapbase	= 0xffef0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 63, 63, 63, 63 },
  };
  
- #endif /* __LINUX_SERIAL_SCI_H */
+-static struct platform_device sci_device = {
++static struct platform_device scif5_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 5,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif5_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *sh7785_devices[] __initdata = {
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
++	&scif4_device,
++	&scif5_device,
+ };
+ 
+ static int __init sh7785_devices_setup(void)
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-shx3.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-shx3.c	2009-01-21 17:30:54.000000000 +0900
+@@ -14,42 +14,71 @@
+ #include <linux/io.h>
+ #include <asm/mmzone.h>
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xffc30000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
+-	}, {
+-		.mapbase	= 0xffc40000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 44, 45, 47, 46 },
+-	}, {
+-		.mapbase	= 0xffc50000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 48, 49, 51, 50 },
+-	}, {
+-		.mapbase	= 0xffc60000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 52, 53, 55, 54 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xffc30000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 40, 41, 43, 42 },
++};
++
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xffc40000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 44, 45, 47, 46 },
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xffc50000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 48, 49, 51, 50 },
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
++
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xffc60000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 52, 53, 55, 54 },
+ };
+ 
+-static struct platform_device sci_device = {
++static struct platform_device scif3_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 3,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif3_platform_data,
+ 	},
+ };
+ 
+ static struct platform_device *shx3_devices[] __initdata = {
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
+ };
+ 
+ static int __init shx3_devices_setup(void)
