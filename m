@@ -1,38 +1,57 @@
-From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Wed, 21 Jan 2009 19:01:35 +0000
-Subject: Re: [Qemu-devel] [PATCH 1/3] sh: SE7750 board definition
-Message-Id: <20090121190135.GF5147@game.jcrosoft.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 22 Jan 2009 00:33:21 +0000
+Subject: [PATCH 1/2] ap325 control camera power
+Message-Id: <ufxjckvqa.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4969B77E.7050206@juno.dti.ne.jp>
-	<20090111130445.GA12080@game.jcrosoft.org>
-	<496ABD72.20400@juno.dti.ne.jp>
-	<20090112124949.GA14269@linux-sh.org>
-	<496BFD30.30306@renesas.com> <496C98EB.5040309@juno.dti.ne.jp>
-	<20090121090424.GC14537@linux-sh.org>
-	<4977527A.70104@juno.dti.ne.jp>
-In-Reply-To: <4977527A.70104@juno.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Cc: Takashi Yoshii <yoshii.takashi@renesas.com>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, qemu-devel@nongnu.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
->> I also don't see much point in catering to OSes that don't support
->> hardware manufactured this century. If the TOPPERS and BSD people want to
->> toy around with legacy support, they are welcome to, but QEMU certainly
->> doesn't have much to gain by spending time on this.
-> I've just heard that newest TOPPERS (TOPPERS/ASP) supports SH-4A.
->
->
-> Now, I hope that we would reach a consensus about the spec of new standard board
-> for SH-4A.  SH7785LCR is a choice.  And, as Iwamatsu-san suggested, a virtual
-> generic board is another choice.  I'm not sure SH7785LCR's hardware spec is available
-> or not. (Does anyone know it?)  If it is, I push SH7785LCR.  Otherwise, virtual board
-> sounds good.
-The SH7785LCR is a good choice for the SH-4A
-The RSK7203 will be a good choice for the SH-2A
 
-The virtual board will be a good choice for IP test and integration test
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+ arch/sh/boards/board-ap325rxa.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
 
-Best Regards,
-J.
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index caf4c33..72da416 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -216,6 +216,12 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
+ 
++static void camera_power(int val)
++{
++	gpio_set_value(GPIO_PTZ5, val); /* RST_CAM/RSTB */
++	mdelay(10);
++}
++
+ #ifdef CONFIG_I2C
+ static unsigned char camera_ncm03j_magic[]  {
+@@ -245,9 +251,11 @@ static int camera_set_capture(struct soc_camera_platform_info *info,
+ 	int ret = 0;
+ 	int i;
+ 
++	camera_power(0);
+ 	if (!enable)
+ 		return 0; /* no disable for now */
+ 
++	camera_power(1);
+ 	for (i = 0; i < ARRAY_SIZE(camera_ncm03j_magic); i += 2) {
+ 		u_int8_t buf[8];
+ 
+@@ -426,7 +434,7 @@ static int __init ap325rxa_devices_setup(void)
+ 	gpio_request(GPIO_PTZ6, NULL);
+ 	gpio_direction_output(GPIO_PTZ6, 0); /* STBY_CAM */
+ 	gpio_request(GPIO_PTZ5, NULL);
+-	gpio_direction_output(GPIO_PTZ5, 1); /* RST_CAM */
++	gpio_direction_output(GPIO_PTZ5, 0); /* RST_CAM */
+ 	gpio_request(GPIO_PTZ4, NULL);
+ 	gpio_direction_output(GPIO_PTZ4, 0); /* SADDR */
+ 
+-- 
+1.5.6.3
+
