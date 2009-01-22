@@ -1,92 +1,47 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Tue, 20 Jan 2009 21:14:38 +0000
-Subject: [PATCH 2/2] sh: Use the atomic_t "counter" member
-Message-Id: <1232486078-11227-2-git-send-email-matt@console-pimps.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 Jan 2009 09:55:40 +0000
+Subject: [PATCH 02/05] sh: tmu disable support
+Message-Id: <20090122095540.31653.65134.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1232486078-11227-1-git-send-email-matt@console-pimps.org>
-In-Reply-To: <1232486078-11227-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Matt Fleming <matt@console-pimps.org>
 
-Now that atomic_t is a generic opaque type for all architectures, it is
-unwise to use intimate knowledge of its internals when manipulating it.
+From: Magnus Damm <damm@igel.co.jp>
 
-Instead of relying on the "counter" member being at offset 0 from the
-beginning of an atomic_t, explicitly reference the member. This guards
-us from any changes to the layout of the beginning of the atomic_t type.
+Add TMU disable support so we can use other clockevents.
+Also, setup the clockevent rating.
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/include/asm/atomic-irq.h |   16 ++++++++--------
- 1 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/include/asm/atomic-irq.h b/arch/sh/include/asm/atomic-irq.h
-index 74f7943..a0b3480 100644
---- a/arch/sh/include/asm/atomic-irq.h
-+++ b/arch/sh/include/asm/atomic-irq.h
-@@ -11,7 +11,7 @@ static inline void atomic_add(int i, atomic_t *v)
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	*(long *)v += i;
-+	v->counter += i;
- 	local_irq_restore(flags);
- }
- 
-@@ -20,7 +20,7 @@ static inline void atomic_sub(int i, atomic_t *v)
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	*(long *)v -= i;
-+	v->counter -= i;
- 	local_irq_restore(flags);
- }
- 
-@@ -29,9 +29,9 @@ static inline int atomic_add_return(int i, atomic_t *v)
- 	unsigned long temp, flags;
- 
- 	local_irq_save(flags);
--	temp = *(long *)v;
-+	temp = v->counter;
- 	temp += i;
--	*(long *)v = temp;
-+	v->counter = temp;
- 	local_irq_restore(flags);
- 
- 	return temp;
-@@ -42,9 +42,9 @@ static inline int atomic_sub_return(int i, atomic_t *v)
- 	unsigned long temp, flags;
- 
- 	local_irq_save(flags);
--	temp = *(long *)v;
-+	temp = v->counter;
- 	temp -= i;
--	*(long *)v = temp;
-+	v->counter = temp;
- 	local_irq_restore(flags);
- 
- 	return temp;
-@@ -55,7 +55,7 @@ static inline void atomic_clear_mask(unsigned int mask, atomic_t *v)
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	*(long *)v &= ~mask;
-+	v->counter &= ~mask;
- 	local_irq_restore(flags);
- }
- 
-@@ -64,7 +64,7 @@ static inline void atomic_set_mask(unsigned int mask, atomic_t *v)
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	*(long *)v |= mask;
-+	v->counter |= mask;
- 	local_irq_restore(flags);
- }
- 
--- 
-1.5.6.3
+ arch/sh/kernel/timers/timer-tmu.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
+--- 0015/arch/sh/kernel/timers/timer-tmu.c
++++ work/arch/sh/kernel/timers/timer-tmu.c	2009-01-22 17:58:50.000000000 +0900
+@@ -146,7 +146,14 @@ static irqreturn_t tmu_timer_interrupt(i
+ 	_tmu_clear_status(TMU0);
+ 	_tmu_set_irq(TMU0,tmu0_clockevent.mode != CLOCK_EVT_MODE_ONESHOT);
+ 
+-	evt->event_handler(evt);
++	switch (tmu0_clockevent.mode) {
++	case CLOCK_EVT_MODE_ONESHOT:
++	case CLOCK_EVT_MODE_PERIODIC:
++		evt->event_handler(evt);
++		break;
++	default:
++		break;
++	}
+ 
+ 	return IRQ_HANDLED;
+ }
+@@ -271,6 +278,7 @@ static int tmu_timer_init(void)
+ 			clockevent_delta2ns(1, &tmu0_clockevent);
+ 
+ 	tmu0_clockevent.cpumask = cpumask_of(0);
++	tmu0_clockevent.rating = 100;
+ 
+ 	clockevents_register_device(&tmu0_clockevent);
+ 
