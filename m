@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 21 Jan 2009 15:14:14 +0000
-Subject: [PATCH 005/013] sh-sci: replace sci_init_ports()
-Message-Id: <20090121151414.29269.48426.sendpatchset@rx1.opensource.se>
+Date: Mon, 26 Jan 2009 06:43:08 +0000
+Subject: [PATCH] sh-sci: sh4a/sh7770 single port devices
+Message-Id: <20090126064308.16809.9767.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,161 +10,242 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Replace sci_init_ports() with sci_init_single().
+Rework sh-sci platform data for the sh7770 processor.
+Use one platform device per port.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/serial/sh-sci.c |  109 +++++++++++++++++++++--------------------------
- 1 file changed, 51 insertions(+), 58 deletions(-)
+ Forgot sh7770 in the previous sh4a patch.
 
---- 0006/drivers/serial/sh-sci.c
-+++ work/drivers/serial/sh-sci.c	2009-01-21 13:25:41.000000000 +0900
-@@ -1040,46 +1040,64 @@ static struct uart_ops sci_uart_ops = {
- #endif
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c |  211 +++++++++++++++++++++++---------
+ 1 file changed, 153 insertions(+), 58 deletions(-)
+
+--- 0026/arch/sh/kernel/cpu/sh4a/setup-sh7770.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7770.c	2009-01-26 15:28:01.000000000 +0900
+@@ -12,72 +12,167 @@
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
+ 
+-static struct plat_sci_port sci_platform_data[] = {
+-	{
+-		.mapbase	= 0xff923000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 61, 61, 61, 61 },
+-	}, {
+-		.mapbase	= 0xff924000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 62, 62, 62, 62 },
+-	}, {
+-		.mapbase	= 0xff925000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 63, 63, 63, 63 },
+-	}, {
+-		.mapbase	= 0xff926000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 64, 64, 64, 64 },
+-	}, {
+-		.mapbase	= 0xff927000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 65, 65, 65, 65 },
+-	}, {
+-		.mapbase	= 0xff928000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 66, 66, 66, 66 },
+-	}, {
+-		.mapbase	= 0xff929000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 67, 67, 67, 67 },
+-	}, {
+-		.mapbase	= 0xff92a000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 68, 68, 68, 68 },
+-	}, {
+-		.mapbase	= 0xff92b000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 69, 69, 69, 69 },
+-	}, {
+-		.mapbase	= 0xff92c000,
+-		.flags		= UPF_BOOT_AUTOCONF,
+-		.type		= PORT_SCIF,
+-		.irqs		= { 70, 70, 70, 70 },
+-	}, {
+-		.flags = 0,
+-	}
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xff923000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 61, 61, 61, 61 },
  };
  
--static void __init sci_init_ports(void)
--{
--	static int first = 1;
--	int i;
--
--	if (!first)
--		return;
--
--	first = 0;
--
--	for (i = 0; i < SCI_NPORTS; i++) {
--		sci_ports[i].port.ops		= &sci_uart_ops;
--		sci_ports[i].port.iotype	= UPIO_MEM;
--		sci_ports[i].port.line		= i;
--		sci_ports[i].port.fifosize	= 1;
-+static int __devinit sci_init_single(struct sci_port *sci_port,
-+				     unsigned int index,
-+				     struct plat_sci_port *p)
-+{
-+	sci_port->port.ops	= &sci_uart_ops;
-+	sci_port->port.iotype	= UPIO_MEM;
-+	sci_port->port.line	= index;
-+	sci_port->port.fifosize	= 1;
- 
- #if defined(__H8300H__) || defined(__H8300S__)
- #ifdef __H8300S__
--		sci_ports[i].enable	= h8300_sci_enable;
--		sci_ports[i].disable	= h8300_sci_disable;
-+	sci_port->enable	= h8300_sci_enable;
-+	sci_port->disable	= h8300_sci_disable;
- #endif
--		sci_ports[i].port.uartclk = CONFIG_CPU_CLOCK;
-+	sci_port->port.uartclk	= CONFIG_CPU_CLOCK;
- #elif defined(CONFIG_HAVE_CLK)
--		/*
--		 * XXX: We should use a proper SCI/SCIF clock
--		 */
--		{
--			struct clk *clk = clk_get(NULL, "module_clk");
--			sci_ports[i].port.uartclk = clk_get_rate(clk);
--			clk_put(clk);
--		}
-+	/*
-+	 * XXX: We should use a proper SCI/SCIF clock
-+	 */
-+	{
-+		struct clk *clk = clk_get(NULL, "module_clk");
-+		sci_port->port.uartclk = clk_get_rate(clk);
-+		clk_put(clk);
-+	}
- #else
- #error "Need a valid uartclk"
- #endif
- 
--		sci_ports[i].break_timer.data = (unsigned long)&sci_ports[i];
--		sci_ports[i].break_timer.function = sci_break_timer;
-+	sci_port->break_timer.data = (unsigned long)sci_port;
-+	sci_port->break_timer.function = sci_break_timer;
-+	init_timer(&sci_port->break_timer);
+-static struct platform_device sci_device = {
++static struct platform_device scif0_device = {
+ 	.name		= "sh-sci",
+-	.id		= -1,
++	.id		= 0,
+ 	.dev		= {
+-		.platform_data	= sci_platform_data,
++		.platform_data	= &scif0_platform_data,
++	},
++};
 +
-+	sci_port->port.mapbase	= p->mapbase;
- 
--		init_timer(&sci_ports[i].break_timer);
-+	if (p->mapbase && !p->membase) {
-+		if (p->flags & UPF_IOREMAP) {
-+			p->membase = ioremap_nocache(p->mapbase, 0x40);
-+			if (IS_ERR(p->membase))
-+				return PTR_ERR(p->membase);
-+		} else {
-+			/*
-+			 * For the simple (and majority of) cases
-+			 * where we don't need to do any remapping,
-+			 * just cast the cookie directly.
-+			 */
-+			p->membase = (void __iomem *)p->mapbase;
-+		}
- 	}
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xff924000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 62, 62, 62, 62 },
++};
 +
-+	sci_port->port.membase	= p->membase;
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
 +
-+	sci_port->port.irq	= p->irqs[SCIx_TXI_IRQ];
-+	sci_port->port.flags	= p->flags;
-+	sci_port->type		= sci_port->port.type = p->type;
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xff925000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 63, 63, 63, 63 },
++};
 +
-+	memcpy(&sci_port->irqs, &p->irqs, sizeof(p->irqs));
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
 +
-+	return 0;
- }
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xff926000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 64, 64, 64, 64 },
++};
++
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &scif3_platform_data,
++	},
++};
++
++static struct plat_sci_port scif4_platform_data = {
++	.mapbase	= 0xff927000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 65, 65, 65, 65 },
++};
++
++static struct platform_device scif4_device = {
++	.name		= "sh-sci",
++	.id		= 4,
++	.dev		= {
++		.platform_data	= &scif4_platform_data,
++	},
++};
++
++static struct plat_sci_port scif5_platform_data = {
++	.mapbase	= 0xff928000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 66, 66, 66, 66 },
++};
++
++static struct platform_device scif5_device = {
++	.name		= "sh-sci",
++	.id		= 5,
++	.dev		= {
++		.platform_data	= &scif5_platform_data,
++	},
++};
++
++static struct plat_sci_port scif6_platform_data = {
++	.mapbase	= 0xff929000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 67, 67, 67, 67 },
++};
++
++static struct platform_device scif6_device = {
++	.name		= "sh-sci",
++	.id		= 6,
++	.dev		= {
++		.platform_data	= &scif6_platform_data,
++	},
++};
++
++static struct plat_sci_port scif7_platform_data = {
++	.mapbase	= 0xff92a000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 68, 68, 68, 68 },
++};
++
++static struct platform_device scif7_device = {
++	.name		= "sh-sci",
++	.id		= 7,
++	.dev		= {
++		.platform_data	= &scif7_platform_data,
++	},
++};
++
++static struct plat_sci_port scif8_platform_data = {
++	.mapbase	= 0xff92b000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 69, 69, 69, 69 },
++};
++
++static struct platform_device scif8_device = {
++	.name		= "sh-sci",
++	.id		= 8,
++	.dev		= {
++		.platform_data	= &scif8_platform_data,
++	},
++};
++
++static struct plat_sci_port scif9_platform_data = {
++	.mapbase	= 0xff92c000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 70, 70, 70, 70 },
++};
++
++static struct platform_device scif9_device = {
++	.name		= "sh-sci",
++	.id		= 9,
++	.dev		= {
++		.platform_data	= &scif9_platform_data,
+ 	},
+ };
  
- #ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
-@@ -1175,7 +1193,6 @@ static struct console serial_console = {
+ static struct platform_device *sh7770_devices[] __initdata = {
+-	&sci_device,
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
++	&scif4_device,
++	&scif5_device,
++	&scif6_device,
++	&scif7_device,
++	&scif8_device,
++	&scif9_device,
+ };
  
- static int __init sci_console_init(void)
- {
--	sci_init_ports();
- 	register_console(&serial_console);
- 	return 0;
- }
-@@ -1241,32 +1258,10 @@ static int __devinit sci_probe_single(st
- 		return 0;
- 	}
- 
--	sciport->port.mapbase	= p->mapbase;
--
--	if (p->mapbase && !p->membase) {
--		if (p->flags & UPF_IOREMAP) {
--			p->membase = ioremap_nocache(p->mapbase, 0x40);
--			if (IS_ERR(p->membase))
--				return PTR_ERR(p->membase);
--		} else {
--			/*
--			 * For the simple (and majority of) cases
--			 * where we don't need to do any remapping,
--			 * just cast the cookie directly.
--			 */
--			p->membase = (void __iomem *)p->mapbase;
--		}
--	}
--
--	sciport->port.membase	= p->membase;
--
--	sciport->port.irq	= p->irqs[SCIx_TXI_IRQ];
--	sciport->port.flags	= p->flags;
--	sciport->port.dev	= &dev->dev;
--
--	sciport->type		= sciport->port.type = p->type;
--
--	memcpy(&sciport->irqs, &p->irqs, sizeof(p->irqs));
-+	sciport->port.dev = &dev->dev;
-+	ret = sci_init_single(sciport, index, p);
-+	if (ret)
-+		return ret;
- 
- 	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
- 
-@@ -1381,8 +1376,6 @@ static int __init sci_init(void)
- 
- 	printk(banner);
- 
--	sci_init_ports();
--
- 	ret = uart_register_driver(&sci_uart_driver);
- 	if (likely(ret = 0)) {
- 		ret = platform_driver_register(&sci_driver);
+ static int __init sh7770_devices_setup(void)
