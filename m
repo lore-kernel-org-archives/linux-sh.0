@@ -1,57 +1,134 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Thu, 01 Jan 2009 07:41:14 +0000
-Subject: Re: [PATCH] sh: maple: add support for the Maple mouse on the SEGA Dreamcast
-Message-Id: <200901010241.16185.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart32419704.AYxseJ8L90"
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 27 Jan 2009 02:46:12 +0000
+Subject: [PATCH] ap325 defconfig include ov772x
+Message-Id: <uljsxcvd8.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1230578246.6496.25.camel@localhost.localdomain> <200812300017.45336.dmitry.torokhov@gmail.com> <1230668825.6489.1.camel@localhost.localdomain>
-In-Reply-To: <1230668825.6489.1.camel@localhost.localdomain>
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Sam Ravnborg <sam@ravnborg.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Andrew Morton <akpm@osdl.org>, Paul Mundt <lethal@linux-sh.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
---nextPart32419704.AYxseJ8L90
-Content-Type: text/plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+This patch updates the ap325 defconfig to include
+ov772x camera driver.
+Old camera is still supported.
 
-On Tuesday 30 December 2008 15:27:05 Adrian McMenamin wrote:
-> Adding maple mouse with proper __devexit_p() handling
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/configs/ap325rxa_defconfig |   27 ++++++++++++++++++++-------
+ 1 files changed, 20 insertions(+), 7 deletions(-)
 
-this kind of patch revision info typically goes below the --- marker and  t=
-he=20
-patch itself gets "v2", "v3", etc... header markers
+diff --git a/arch/sh/configs/ap325rxa_defconfig b/arch/sh/configs/ap325rxa_defconfig
+index 5c423fa..352f87d 100644
+--- a/arch/sh/configs/ap325rxa_defconfig
++++ b/arch/sh/configs/ap325rxa_defconfig
+@@ -1,7 +1,7 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux kernel version: 2.6.28
+-# Fri Jan  9 16:54:19 2009
++# Linux kernel version: 2.6.29-rc2
++# Tue Jan 27 11:45:08 2009
+ #
+ CONFIG_SUPERH=y
+ CONFIG_SUPERH32=y
+@@ -45,12 +45,12 @@ CONFIG_BSD_PROCESS_ACCT=y
+ # CONFIG_AUDIT is not set
+ # CONFIG_IKCONFIG is not set
+ CONFIG_LOG_BUF_SHIFT
+-# CONFIG_CGROUPS is not set
+ CONFIG_GROUP_SCHED=y
+ CONFIG_FAIR_GROUP_SCHED=y
+ # CONFIG_RT_GROUP_SCHED is not set
+ CONFIG_USER_SCHED=y
+ # CONFIG_CGROUP_SCHED is not set
++# CONFIG_CGROUPS is not set
+ CONFIG_SYSFS_DEPRECATED=y
+ CONFIG_SYSFS_DEPRECATED_V2=y
+ # CONFIG_RELAY is not set
+@@ -378,6 +378,7 @@ CONFIG_WIRELESS=y
+ # CONFIG_WIRELESS_EXT is not set
+ # CONFIG_LIB80211 is not set
+ # CONFIG_MAC80211 is not set
++# CONFIG_WIMAX is not set
+ # CONFIG_RFKILL is not set
+ # CONFIG_NET_9P is not set
+ 
+@@ -400,6 +401,7 @@ CONFIG_MTD=y
+ # CONFIG_MTD_DEBUG is not set
+ CONFIG_MTD_CONCAT=y
+ CONFIG_MTD_PARTITIONS=y
++# CONFIG_MTD_TESTS is not set
+ # CONFIG_MTD_REDBOOT_PARTS is not set
+ CONFIG_MTD_CMDLINE_PARTS=y
+ # CONFIG_MTD_AR7_PARTS is not set
+@@ -447,9 +449,7 @@ CONFIG_MTD_CFI_UTIL=y
+ #
+ # CONFIG_MTD_COMPLEX_MAPPINGS is not set
+ CONFIG_MTD_PHYSMAP=y
+-CONFIG_MTD_PHYSMAP_START=0xffffffff
+-CONFIG_MTD_PHYSMAP_LEN=0
+-CONFIG_MTD_PHYSMAP_BANKWIDTH=0
++# CONFIG_MTD_PHYSMAP_COMPAT is not set
+ # CONFIG_MTD_PLATRAM is not set
+ 
+ #
+@@ -480,6 +480,12 @@ CONFIG_MTD_NAND_SH_FLCTL=y
+ # CONFIG_MTD_ONENAND is not set
+ 
+ #
++# LPDDR flash memory drivers
++#
++# CONFIG_MTD_LPDDR is not set
++# CONFIG_MTD_QINFO_PROBE is not set
++
++#
+ # UBI - Unsorted block images
+ #
+ CONFIG_MTD_UBI=y
+@@ -607,6 +613,10 @@ CONFIG_SMSC911X=y
+ # CONFIG_WLAN_PRE80211 is not set
+ # CONFIG_WLAN_80211 is not set
+ # CONFIG_IWLWIFI_LEDS is not set
++
++#
++# Enable WiMAX (Networking options) to see the WiMAX drivers
++#
+ # CONFIG_WAN is not set
+ # CONFIG_PPP is not set
+ # CONFIG_SLIP is not set
+@@ -790,6 +800,7 @@ CONFIG_SSB_POSSIBLE=y
+ # CONFIG_PMIC_DA903X is not set
+ # CONFIG_MFD_WM8400 is not set
+ # CONFIG_MFD_WM8350_I2C is not set
++# CONFIG_MFD_PCF50633 is not set
+ # CONFIG_REGULATOR is not set
+ 
+ #
+@@ -837,7 +848,7 @@ CONFIG_SOC_CAMERA=y
+ # CONFIG_SOC_CAMERA_MT9V022 is not set
+ # CONFIG_SOC_CAMERA_TW9910 is not set
+ CONFIG_SOC_CAMERA_PLATFORM=y
+-# CONFIG_SOC_CAMERA_OV772X is not set
++CONFIG_SOC_CAMERA_OV772X=y
+ CONFIG_VIDEO_SH_MOBILE_CEU=y
+ # CONFIG_RADIO_ADAPTERS is not set
+ # CONFIG_DAB is not set
+@@ -1012,6 +1023,7 @@ CONFIG_FS_POSIX_ACL=y
+ CONFIG_FILE_LOCKING=y
+ # CONFIG_XFS_FS is not set
+ # CONFIG_OCFS2_FS is not set
++# CONFIG_BTRFS_FS is not set
+ CONFIG_DNOTIFY=y
+ CONFIG_INOTIFY=y
+ CONFIG_INOTIFY_USER=y
+@@ -1060,6 +1072,7 @@ CONFIG_MISC_FILESYSTEMS=y
+ # CONFIG_JFFS2_FS is not set
+ # CONFIG_UBIFS_FS is not set
+ # CONFIG_CRAMFS is not set
++# CONFIG_SQUASHFS is not set
+ # CONFIG_VXFS_FS is not set
+ # CONFIG_MINIX_FS is not set
+ # CONFIG_OMFS_FS is not set
+-- 
+1.5.6.3
 
-otherwise, driver looks OK to me.  thanks for your dreamcast work.
-Acked-by: Mike Frysinger <vapier@gentoo.org>
-
-> +	mse =3D kzalloc(sizeof(struct dc_mouse), GFP_KERNEL);
-
-personally i find this style less likely to rot:
-mse =3D kzalloc(sizeof(*mse), GFP_KERNEL);
-=2Dmike
-
---nextPart32419704.AYxseJ8L90
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.9 (GNU/Linux)
-
-iQIcBAABAgAGBQJJXHOcAAoJEEFjO5/oN/WBlqwQAMKseiErdo+hELWlxq9bXqSt
-Xu6D18iVDLTsph930I1U2hKZbKi/DWZXcc602kg7CNOzfqtlRepXpn5WWDP0GWoN
-fCb3IRjSJ4YcgJjJkvEhpytvd43K1n6GOmZtNXzPU4wF0U/6/33bYJiRaWdjVSEQ
-SFw20Zb8mdcuhMTRohJ7CkW34LB7Wq2tnccKw1u1t03F0tT4qRJaFoq1hxCTJjFf
-g2+AJYx8QtdfC0H+qBM6RHavs/SDOFvDQpom8nCyNaBeP69WD3oGag+oW/FUKBAy
-N9wn6J2V/9Cjpxjme14bEVUG+lbaN8y4qvcrbPq1bDR64FrpfMOGuTo2hTwT8Vkk
-fSltj4BdbhxmzYAqv9xIkF/u6VmbULlyUTPxHqNBUVO05+9u2WDqtIwlEi9kz86J
-mr7CMVyMbmbNq8mTYErqfOckob8DG01nkIbqdF9jm+xmH9dDl+OdyC8dhbx6OoGX
-PKPF1l8eIhgKuLewKxqukKnLr4NPS9Icg/4E0WQvdfpWiMA3qqpbD++1/RFet2Qh
-vkkwGJyTh3ozdO2k5GPQn560r0KXRLNsW/qsgkzUlfqhz2m771FgAY/BUHouP8BZ
-/o3X/llKDHZzIp2ifibQ04V5tCAUBHFxZntr8ctU/0cAi86bpU7Y7nE1j8zfCQ+p
-ErHfH5XfHIBmWkCifiey
-=o85d
------END PGP SIGNATURE-----
-
---nextPart32419704.AYxseJ8L90--
