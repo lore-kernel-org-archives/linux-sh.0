@@ -1,7 +1,7 @@
 From: morimoto.kuninori@renesas.com
-Date: Mon, 26 Jan 2009 05:01:36 +0000
+Date: Tue, 27 Jan 2009 08:26:46 +0000
 Subject: Re: [bug report] dead lock (?) occur on ap325 board
-Message-Id: <uy6wyek3z.wl%morimoto.kuninori@renesas.com>
+Message-Id: <uiqo1cfy1.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <uprie4cmj.wl%morimoto.kuninori@renesas.com>
 In-Reply-To: <uprie4cmj.wl%morimoto.kuninori@renesas.com>
@@ -13,30 +13,33 @@ To: linux-sh@vger.kernel.org
 
 Dear Paul
 
+> I haven't been able to reproduce this yet, but it would be helpful to
 > know precisely where your lock up occurs. If you aren't using JTAG, you
 > can try sending an NMI, or send a register and/or stacktrace request via
 > magic sysrq.
 
-# In the sample, it seems to happen easily.
-# But this problem happens only unusually.
-# Therefore, we should try a lot of past string to occur this lock up.
+I think I found the reason.
 
-hmm...
-I can use JTAG now, but kernel is always running default_idle
-when freeze occur.
+in "__mutex_fastpath_unlock" (arch/sh/include/asm/mutex-llsc.h),
+currect operation is following.
 
-88003074 <default_idle>:
-...
-8800309a:	1b 00       	sleep
-8800309c:	f2 01       	stc	r7_bank,r1
-8800309e:	12 50       	mov.l	@(8,r1),r0
-880030a0:	04 c9       	and	#4,r0
-880030a2:	08 20       	tst	r0,r0
-880030a4:	f9 89       	bt	8800309a
+-------------------
+	__res |= !__ex_flag;
+	if (unlikely(__res <= 0))
+-------------------
 
-I don't know how to debug it.
+But, This operation is wrong for me.
+I think following is correct ?
+
+-------------------
+     	if (unlikely(__res <= 0 || __ex_flag = 0))
+-------------------
+
+above patch works well and dead lock never occur
+on my local environment.
+If my opinion is correct, I will send patch.
 
 Best regards
 --
 Kuninori Morimoto
-
+ 
