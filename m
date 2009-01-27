@@ -1,70 +1,104 @@
-From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Date: Sat, 24 Jan 2009 05:46:40 +0000
-Subject: sh: Virtual Board or Real board? (was Re: [Qemu-devel] [PATCH 1/3]
-Message-Id: <497AAB40.7010608@juno.dti.ne.jp>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 27 Jan 2009 00:43:12 +0000
+Subject: Re: sh: Virtual Board or Real board? (was Re: [Qemu-devel] [PATCH 1/3] sh: SE7750 board definition)
+Message-Id: <20090127004312.GC3835@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4969B77E.7050206@juno.dti.ne.jp>	<20090121090424.GC14537@linux-sh.org>	<4977527A.70104@juno.dti.ne.jp>
+References: <4969B77E.7050206@juno.dti.ne.jp>
+	<20090121090424.GC14537@linux-sh.org>
+	<4977527A.70104@juno.dti.ne.jp>
 	<200901211706.09350.paul@codesourcery.com>
-In-Reply-To: <200901211706.09350.paul@codesourcery.com>
+	<497AAB40.7010608@juno.dti.ne.jp>
+In-Reply-To: <497AAB40.7010608@juno.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: qemu-devel@nongnu.org
-Cc: Takashi Yoshii <yoshii.takashi@renesas.com>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
+Cc: Takashi Yoshii <yoshii.takashi@renesas.com>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, qemu-devel@nongnu.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Paul Brook wrote:
->> Now, I hope that we would reach a consensus about the spec of new standard
->> board for SH-4A.  SH7785LCR is a choice.  And, as Iwamatsu-san suggested, a
->> virtual generic board is another choice.  I'm not sure SH7785LCR's hardware
->> spec is available or not. (Does anyone know it?)  If it is, I push
->> SH7785LCR.  Otherwise, virtual board sounds good.
+On Sat, Jan 24, 2009 at 02:46:40PM +0900, Shin-ichiro KAWASAKI wrote:
+> Paul Brook wrote:
+> >>Now, I hope that we would reach a consensus about the spec of new standard
+> >>board for SH-4A.  SH7785LCR is a choice.  And, as Iwamatsu-san suggested, 
+> >>a
+> >>virtual generic board is another choice.  I'm not sure SH7785LCR's 
+> >>hardware
+> >>spec is available or not. (Does anyone know it?)  If it is, I push
+> >>SH7785LCR.  Otherwise, virtual board sounds good.
+> >
+> >I recommend against using a virtual board. It means you have to maintain 
+> >both qemu and a kernel port. The mips virtual board suffered exactly this 
+> >fate, and IIUC is likely to be removed fairly soon.
 > 
-> I recommend against using a virtual board. It means you have to maintain both 
-> qemu and a kernel port. The mips virtual board suffered exactly this fate, 
-> and IIUC is likely to be removed fairly soon.
+> Thank you for your comment.  As you pointed out, we need to maintain kernel
+> config for virtual board.  SH-Linux developpers' help is important.
+> I guess we can expect Iwamatsu-san's help :)  And once Paul Mundt
+> supported special kernel configuration for QEMU-SH kindly.
+> 
+> 
+> I try to clarify the difference of real board and virtual board, as follows.
+> 
+> * Real board
+> 
+> - We can compare the emulated system with the real board.  The specification
+>  is not vague, and deffects can be investitated by comaparison.
+> 
+> - No need to maintain kernel, and it can avoid the risk the maintenance
+>  work would be terminated, as Paul Brook pointed out.
+> 
+> 
+> * Virtual board
+> 
+> - It decreases the number of supported boards, and avoid messy many board
+>  supports.  SuperH series have many CPU sub tyepes, and as number of
+>  supported CPU types increase, number of suppoted boards will increase.
+>  (Iwamatsu-san pointed it out.)
+> 
+This depends roughly on the level of support you are looking for. You can
+use the generic machine vector with any CPU you want and simply stick
+with the on-chip peripherals without having to make any board
+modifications. This should be sufficient for the simple case, especially
+if you are interested in testing different CPUs, but will not help you if
+you are looking for more complete board support.
 
-Thank you for your comment.  As you pointed out, we need to maintain kernel
-config for virtual board.  SH-Linux developpers' help is important.
-I guess we can expect Iwamatsu-san's help :)  And once Paul Mundt
-supported special kernel configuration for QEMU-SH kindly.
+> - It avoids rare peripheral support by QEMU.
+>  Sometimes embedded boards have rare peripheral on it.
+>     e.g.) RTL8139B (below Rev.C). on R2D+.
+>           http://lists.gnu.org/archive/html/qemu-devel/2008-12/msg00961.html
+>  If we make the virtual board have standard peripheral (e.g. RTL8139C),
+>  we can reuse peripheral implemenation qualified with other board for other
+>  CPU arch, and avoid messy many type peripheral support.
+> 
+> I'm not sure if QEMU's policy exists or not for this kind of choice.
+> 
+> We can support both of them in the future.  But I think it is important
+> to make consensus which should be the default and standard for QEMU-SH,
+> to decide to which we'll try to contribute.
+> 
+> I'd like to your comments on them.
+> 
+From the kernel point of view, whether we add a new machine type for
+emulated boards or not doesn't really matter, it mostly depends on how
+people are going to be using it, and what level of change you are looking
+for. I will add as many defconfigs and boards as people want as long as
+there are users for them anyways.
 
+Anyways, I think there is value in supporting both. Emulating real
+hardware is especially helpful if you want to compare and contrast the
+environment between emulation and an existing platform, as well as
+allowing people without access to real hardware to develop against the
+emulated environment with testing conducted on real hardware as it
+becomes available.
 
-I try to clarify the difference of real board and virtual board, as follows.
+Real hardware on the other hand is quite restrictive, and there are a lot
+of interesting features and capabilities that exist on some boards/CPUs
+but not others, limiting the amount of testing that can be performed. If
+people want to provide a virtual board that is pretty feature heavy to
+try and help with regression testing and so on, that would also be pretty
+useful.
 
-* Real board
-
-- We can compare the emulated system with the real board.  The specification
-  is not vague, and deffects can be investitated by comaparison.
-
-- No need to maintain kernel, and it can avoid the risk the maintenance
-  work would be terminated, as Paul Brook pointed out.
-
-
-* Virtual board
-
-- It decreases the number of supported boards, and avoid messy many board
-  supports.  SuperH series have many CPU sub tyepes, and as number of
-  supported CPU types increase, number of suppoted boards will increase.
-  (Iwamatsu-san pointed it out.)
-
-- It avoids rare peripheral support by QEMU.
-  Sometimes embedded boards have rare peripheral on it.
-     e.g.) RTL8139B (below Rev.C). on R2D+.
-           http://lists.gnu.org/archive/html/qemu-devel/2008-12/msg00961.html
-  If we make the virtual board have standard peripheral (e.g. RTL8139C),
-  we can reuse peripheral implemenation qualified with other board for other
-  CPU arch, and avoid messy many type peripheral support.
-
-I'm not sure if QEMU's policy exists or not for this kind of choice.
-
-We can support both of them in the future.  But I think it is important
-to make consensus which should be the default and standard for QEMU-SH,
-to decide to which we'll try to contribute.
-
-I'd like to your comments on them.
-
-
-Regards,
-Shin-ichiro KAWASAKI
-
-
+I wouldn't worry about it too much anyways. If there is something you are
+specifically interested on working on in QEMU, there is no real reason
+why we can't accomodate that in the kernel too, it just depends on the
+code changes you want. We do want people to experiment with both on a
+regular basis anyways, so I have no real interest in setting any sort of
+policy on this subject. ;-)
