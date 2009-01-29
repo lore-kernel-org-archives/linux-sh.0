@@ -1,49 +1,53 @@
-From: Kristoffer Ericson <kristoffer.ericson@gmail.com>
-Date: Wed, 28 Jan 2009 17:37:08 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 29 Jan 2009 00:34:07 +0000
 Subject: Re: SH devices in "the wild"
-Message-Id: <20090129183602.e01f193c.kristoffer.ericson@gmail.com>
+Message-Id: <200901281934.08904.vapier@gentoo.org>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Signature=_Thu__29_Jan_2009_18_36_02_+0100_H+fJ5oGyImhLCqWY"
+Content-Type: multipart/mixed; boundary="nextPart11329694.JjqX3oSXS3"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1233017860.6498.3.camel@localhost.localdomain>
 In-Reply-To: <1233017860.6498.3.camel@localhost.localdomain>
 To: linux-sh@vger.kernel.org
 
---Signature=_Thu__29_Jan_2009_18_36_02_+0100_H+fJ5oGyImhLCqWY
-Content-Type: text/plain; charset=US-ASCII
-Content-Disposition: inline
+--nextPart11329694.JjqX3oSXS3
+Content-Type: text/plain;
+  charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-On Tue, 27 Jan 2009 00:57:40 +0000
-Adrian McMenamin <adrian@newgolddream.dyndns.info> wrote:
-
+On Monday 26 January 2009 19:57:40 Adrian McMenamin wrote:
 > Are there any easily acquirable SH devices out in the wild where useful
 > hacking might be done?
->=20
+>
 > I'm not giving up on the Dreamcast, but variety would be interesting
 > once in a while.
 
-I think alot of them are listed on the linuxSH wiki.
+ive found the lantank to be pretty good (it's in the wiki).  it has USB,=20
+ethernet, an IDE bus, and 200mhz/64meg RAM.
 
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+C++ and -pipe is the only annoying thing as that tends to eat up the RAM :/.
+=2Dmike
 
-
---=20
-Kristoffer Ericson <kristoffer.ericson@gmail.com>
-
---Signature=_Thu__29_Jan_2009_18_36_02_+0100_H+fJ5oGyImhLCqWY
-Content-Type: application/pgp-signature
+--nextPart11329694.JjqX3oSXS3
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+Version: GnuPG v2.0.9 (GNU/Linux)
 
-iEYEARECAAYFAkmB6QIACgkQPQls10ERAGc0xwCg2AUI8gIAtZ2INgJqOeMZMReC
-sTIAn3D9syhLVGUKS+0R9DhPCwaLV5sf
-=j7nM
+iQIcBAABAgAGBQJJgPmAAAoJEEFjO5/oN/WBoxoP/0gZ2nK4Rnnht/eqbaZbBARl
+BpiiM7pyJGx3mnRo3XSS54Jp4VGbIc0VYHNf1aabgKHURiwtkNOcc5UiriCspq29
+UVE5v4m1FsdwYZ8J62Fdzv1NhJceMSJ860Rmj88rCWguABivpLPaXhJM319bPYKc
+MxuA+7PTa9B1kK98+iixtL3Pjjwa3meky0aOONHqCR3I6sErYGvH0ZtF9xOBMtpD
+Qf8oBi1U0RrkyKO4p9ZatEJcNSNnQQ1M/7INztlE2HvqPwO33Qw4Ec3dNvqzFcJm
+M99bcDIlp7D6PlkSwpVNISJuoTDXXnLgkuhXhTjvr3/eEr1PAp7A9d9Ecz0WtBVa
+t6MPNlFOkdi1evd/sqXx6rFUtIukrCAxTaSKVtkjo0rBbLF1+NTZQ3K3CutAFPHU
+uFGlPe7quDvHlfsRM4xBg/yMFaOVaIbb1fti2wz05kv0VMWDHDREgZB92iBVY5t7
+so5SUEMn8JAdDNtx0H6FufP1mzTqFvpeW8LFhYTA/NOcrfgdqQntjIAnvrP8sgV+
+FEwjIIn/A/6u7jpeFiaYMntm8T0BztLNK4iNsak8ndSTnQkeR7ON1zX3jToBfuZb
+04uLuOiLIiJaEHbwGh7TJj7kg24UJc/XQc8zyLmN6gqlzEQnEZoNdioDdHSuwAJK
+y96hRbub8Ac0EQbPnrWT
+=XdmN
 -----END PGP SIGNATURE-----
 
---Signature=_Thu__29_Jan_2009_18_36_02_+0100_H+fJ5oGyImhLCqWY--
+--nextPart11329694.JjqX3oSXS3--
