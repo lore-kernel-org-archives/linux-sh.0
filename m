@@ -1,32 +1,34 @@
 From: "Adrian McMenamin" <adrian@newgolddream.dyndns.info>
-Date: Thu, 29 Jan 2009 10:34:43 +0000
+Date: Thu, 29 Jan 2009 16:43:50 +0000
 Subject: Re: [PATCH RFC] sh: maple: Add support for SEGA Dreamcast VMU and
-Message-Id: <509354d63a44246cefe01bd35eb1374c.squirrel@newgolddream.dyndns.info>
+Message-Id: <3ca9ec7a13c1a13ea7be6c37bbdfdb0c.squirrel@newgolddream.dyndns.info>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1233186456.6734.16.camel@localhost.localdomain>
     <1233187069.6734.21.camel@localhost.localdomain>
-    <1233187750.6734.27.camel@localhost.localdomain>
-    <1233188287.6734.32.camel@localhost.localdomain>
-    <20090129025754.GC31096@linux-sh.org>
-In-Reply-To: <20090129025754.GC31096@linux-sh.org>
+    <20090129031341.GD31096@linux-sh.org>
+In-Reply-To: <20090129031341.GD31096@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Adrian McMenamin <adrian@newgolddream.dyndns.info>, Greg KH <greg@kroah.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@in>
+To: Paul Mundt <lethal@linux-sh.org>, Adrian McMenamin <adrian@newgolddream.dyndns.info>, Greg KH <greg@kroah.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@infradead.org>, linux-sh <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, linux-mtd <linux-mtd@vger.kernel.org>
 
-On Thu, January 29, 2009 2:57 am, Paul Mundt wrote:
-> On Thu, Jan 29, 2009 at 12:18:07AM +0000, Adrian McMenamin wrote:
->> +	if (!(mdev->function & MAPLE_FUNC_KEYBOARD)) {
->> +		error = EINVAL;
->> +		goto fail;
->> +	}
+On Thu, January 29, 2009 3:13 am, Paul Mundt wrote:
+> On Wed, Jan 28, 2009 at 11:57:49PM +0000, Adrian McMenamin wrote:
+>> Rework the maple bus driver to support block reads and writes, while
+>> also cleaning up the code and aiming for a consistent namespace for
+>> functions.
 >>
-> What is this all about? If the function doesn't match, you should never
-> enter the probe routine in the first place. The bus code should already
-> get this right.
+>> -	mutex_init(&mq->mutex);
+>> +	mq->recvbuf->buf = (void *)P2SEGADDR(&((mq->recvbuf->bufx)[0]));
+>>
+> Please do not abuse P2SEGADDR in this fashion. No new code should be
+> using P2SEGADDR anyways. maple is particularly abusive in this case since
+> it bounces back and forth between P2SEGADDR and PHYSADDR to try and
+> ignore the fact cache flushing has to be handled.
+>
+> You may also wish to consider ioremap/ioremap_nocache().
 >
 
-It does, it is a fragment of old code from when the bus code was wrong
-which for reasons which pass understanding I rewrote rather than just
-excised.
+Can I just use dma_cache_sync before each dma run and then use the P1
+address space?
 
