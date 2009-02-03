@@ -1,51 +1,38 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Tue, 03 Feb 2009 16:30:42 +0000
-Subject: Re: [PATCH] sh: maple: Add support for VMU devices (v3) [1/3]
-Message-Id: <200902031130.45507.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2196167.7PJLGleKEi"
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Tue, 03 Feb 2009 16:59:43 +0000
+Subject: [PATCH] sh: maple: Add support for VMU devices (v4) [0/3]
+Message-Id: <1233680383.20790.2.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1233671486.6512.8.camel@localhost.localdomain> <1233671742.6512.11.camel@localhost.localdomain>
-In-Reply-To: <1233671742.6512.11.camel@localhost.localdomain>
-To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: greg KH <greg@kroah.com>, dwmw2 <dwmw2@infradead.org>, Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, LKML <linux-kernel@vger.kernel.org>, MTD <linux-mtd@lists.infradead.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>
-
---nextPart2196167.7PJLGleKEi
-Content-Type: text/plain;
-  charset="utf-8"
+References: <1233619569.13918.12.camel@localhost.localdomain>
+In-Reply-To: <1233619569.13918.12.camel@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+To: greg KH <greg@kroah.com>, Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@infradead.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, MTD <linux-mtd@lists.infradead.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>
 
-On Tuesday 03 February 2009 09:35:42 Adrian McMenamin wrote:
-> +static int __init vmu_flash_map_init(void)
-> +{
-> +	maple_driver_register(&vmu_flash_driver);
-> +	return 0;
-> +}
+This series of patches adds support for the Dreamcast Visual Memory
+Unit, reworking the maple bus code to ensure it supports asynchronous
+reads and writes. A consequential amendment to the keyboard driver is
+also included.
 
-still not returning maple_driver_register() ?
--mike
+The VMU is a 'smart' flash chip where access is controlled by a
+microcontroller so that, for instance, flash erases appear to be
+transparent to the end user. The VMU does, however, show typical
+flash-type behaviour (eg phased writes) and the MTD layer and the chip
+work well together (eg in the way they handle apparent hotplug events
+during a block write).
 
---nextPart2196167.7PJLGleKEi
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+This version tidies up some style issues raised with version 2.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.9 (GNU/Linux)
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
 
-iQIcBAABAgAGBQJJiHE1AAoJEEFjO5/oN/WBMqwQANgUvI9w4Ne/Wg2XdblbSIit
-fAtudm7MfopAisRVG/L5sE5UirD65kZe9G96HBifR9WZweJz1sETQn9bJ4Jtr8iR
-6TXAmLEDEGHKwUG4gL+PnF31HSONmpolP/P3V7loS4wLxoRUFcHVdrU6bTQD3vuY
-Y8A61iO8e7yAj7l/wXsHRsZTrliTLQGLZ7Tw8dcaJYmGdaOj/hAgqgSROpY7Mecc
-+otbQ1vZg00cCWceqnZoM2JV40PwnhfPZgSnLA8IDanWc5cH4n6OHxExJ10cZjx9
-Q5r9pgTLxYucPjyJ2Obr32aiPQOL6jjCbJXqFOk4iWdliOmUKvHpZvX1s3gnl8Uy
-/lbd+2CNKwI8tfCPJGo8B4DRfzM8oB1f7JcIMGiXIdkrHxuDHHDEUjMiBkaChlsW
-sgcYHSa5nTLknS5C9w5Hb4v1jabDGbMru6LBWo04cxrnohpkNd8ybIEPvPFYVl8e
-INjWKT/S6pw6C9YI/feYhdsyKcyBD4yGesXp7mV+DYmPZuT8YggLIZueLlFSrQC+
-Xmh1Q14Qz+x9kM0/CjMMbPnTDlbZUBx3VUkTIvRyg4r33fFGIdMVaglY6usy5SdN
-dRZijjVwHL/ABmSy2k6yqe4y6ZQcMIZAoywxJCj/YIaHbRh6hXQSIffVjn5mF5zf
-0qAAsLAmE5i2dYGkqUBd
-=PWzR
------END PGP SIGNATURE-----
+ drivers/input/keyboard/maple_keyb.c |   40 +-
+ drivers/mtd/maps/Kconfig            |   12 +-
+ drivers/mtd/maps/Makefile           |    1 +
+ drivers/mtd/maps/vmu-flash.c        |  825 +++++++++++++++++++++++++++++++++++
+ drivers/sh/maple/maple.c            |  463 ++++++++++----------
+ include/linux/maple.h               |   62 ++-
+ 6 files changed, 1138 insertions(+), 265 deletions(-)
 
---nextPart2196167.7PJLGleKEi--
