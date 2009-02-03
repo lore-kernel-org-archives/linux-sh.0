@@ -1,43 +1,26 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 27 Feb 2009 02:04:10 +0000
-Subject: Re: [PATCH] sh: Update dma-sh api
-Message-Id: <aec7e5c30902261804w2853c085p1d35036b6c37e6a2@mail.gmail.com>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Tue, 03 Feb 2009 00:06:09 +0000
+Subject: [PATCH] sh: maple: Add support for VMU devices (v2) [0/3]
+Message-Id: <1233619569.13918.12.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49A668C4.2020608@renesas.com>
-In-Reply-To: <49A668C4.2020608@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: greg KH <greg@kroah.com>, Paul Mundt <lethal@linux-sh.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@infradead.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, MTD <linux-mtd@lists.infradead.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>
 
-Hi Iwamatsu-san,
+This series of patches adds support for the Dreamcast Visual Memory
+Unit, reworking the maple bus code to ensure it supports asynchronous
+reads and writes. A consequential amendment to the keyboard driver is
+also included.
 
-On Thu, Feb 26, 2009 at 7:02 PM, Nobuhiro Iwamatsu
-<iwamatsu.nobuhiro@renesas.com> wrote:
-> Add DMA support of new SH CPU and the change of definition.
->
-> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+The VMU is a 'smart' flash chip where access is controlled by a
+microcontroller so that, for instance, flash erases appear to be
+transparent to the end user. The VMU does, however, show typical
+flash-type behaviour (eg phased writes) and the MTD layer and the chip
+work well together (eg in the way they handle apparent hotplug events
+during a block write).
 
-Thanks for your work on this. I have one main question and a few
-nitpicking comments on your patch.
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
 
-Question:
-
-Does this patch build on top of the reworked sh775x, sh7780 and sh7785
-interrupt vectors? The patchset pointed out below modifies the DMAC
-interrupt to only use a single linux interrupt instead of multiple
-with broken masking:
-
-http://patchwork.kernel.org/patch/8592/
-
-> --- /dev/null
-> +++ b/arch/sh/include/asm/dma-sh.h
-> @@ -0,0 +1,151 @@
-> +/*
-> + * arch/sh/drivers/dma/dma-sh.h
-
-Header comment mismatch. =)
-
-Cheers,
-
-/ magnus
