@@ -1,19 +1,25 @@
-From: "Fondation De France" <info@grant.net>
-Date: Thu, 19 Feb 2009 04:40:26 +0000
-Subject: Attn!!
-Message-Id: <9263.41.204.224.16.1235018426.squirrel@mail.mn.yu>
+From: Carmelo Amoroso <carmelo73@gmail.com>
+Date: Tue, 03 Feb 2009 15:41:15 +0000
+Subject: Info on prelink support on sh4 arch.
+Message-Id: <4988659B.9030101@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Congratulation for your $1,350,000.00 as grant from the
-Fondation De France. You are to send us the following
-details so that we can proceed to process your grant. Name:
-Address: Occupation: Sex: Tel.
+Folks,
+I know this is not a kernel topic, I'm just asking if some of you sh4
+users, have never
+used prelink tools with glibc on sh4 target.
+We have asked more and more to glibc hacker and help list but nobody
+replied.
+So I'd like to know your about your experience.
 
-And send to Mr Patrice Williams (fdf097@yahoo.com.hk)
-Sincerely,
-Mrs. Claudia Lauren Announcer.
-www.fdf.org
+TIA,
+Carmelo
 
+
+P.S.
+Previously I've seent this mail erroneously from my wife's account
+(not subscribed to the list). Sorry for asking again.
