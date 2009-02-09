@@ -1,153 +1,48 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Sun, 08 Feb 2009 20:07:37 +0000
-Subject: Re: [PATCH] sh: maple: add support for Visual Memory Card devices,
-Message-Id: <1234123657.6736.32.camel@localhost.localdomain>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 09 Feb 2009 06:56:32 +0000
+Subject: Re: [PATCH] sh: maple: add support for Visual Memory Card devices, and make consequential changes to
+Message-Id: <20090209065632.GA21980@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1234122069.6736.8.camel@localhost.localdomain>
-In-Reply-To: <1234122069.6736.8.camel@localhost.localdomain>
+References: <1234122069.6736.8.camel@localhost.localdomain> <1234123473.6736.29.camel@localhost.localdomain>
+In-Reply-To: <1234123473.6736.29.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Cc: Greg KH <greg@kroah.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@infradead.org>, LKML <linux-kernel@vger.kernel.org>, MTD <linux-mtd@lists.infradead.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>
+To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Cc: Greg KH <greg@kroah.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, dwmw2 <dwmw2@infradead.org>, LKML <linux-kernel@vger.kernel.org>, MTD <linux-mtd@lists.infradead.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>
 
-Consequential changes to the maple input drivers as well as a cleanup of
-the keyboard code.
+On Sun, Feb 08, 2009 at 08:04:33PM +0000, Adrian McMenamin wrote:
+> Change the maple bus driver to support the visual memory unit driver.
+> 
+> The maple bus driver currently only supports synchronous polling of attached devices status. These changes allow
+> the bus to handle asynchronous commands such as block reads and writes. 
+> 
+> Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
 
-Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
----
-diff --git a/drivers/input/joystick/maplecontrol.c b/drivers/input/joystick/maplecontrol.c
-index e50047b..77cfde5 100644
---- a/drivers/input/joystick/maplecontrol.c
-+++ b/drivers/input/joystick/maplecontrol.c
-@@ -3,7 +3,7 @@
-  *	Based on drivers/usb/iforce.c
-  *
-  *	Copyright Yaegashi Takeshi, 2001
-- *	Adrian McMenamin, 2008
-+ *	Adrian McMenamin, 2008 - 2009
-  */
- 
- #include <linux/kernel.h>
-@@ -29,7 +29,7 @@ static void dc_pad_callback(struct mapleq *mq)
- 	struct maple_device *mapledev = mq->dev;
- 	struct dc_pad *pad = maple_get_drvdata(mapledev);
- 	struct input_dev *dev = pad->dev;
--	unsigned char *res = mq->recvbuf;
-+	unsigned char *res = mq->recvbuf->buf;
- 
- 	buttons = ~le16_to_cpup((__le16 *)(res + 8));
- 
-diff --git a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
-index 22f17a5..5aa2361 100644
---- a/drivers/input/keyboard/maple_keyb.c
-+++ b/drivers/input/keyboard/maple_keyb.c
-@@ -1,8 +1,8 @@
- /*
-  * SEGA Dreamcast keyboard driver
-  * Based on drivers/usb/usbkbd.c
-- * Copyright YAEGASHI Takeshi, 2001
-- * Porting to 2.6 Copyright Adrian McMenamin, 2007, 2008
-+ * Copyright (c) YAEGASHI Takeshi, 2001
-+ * Porting to 2.6 Copyright (c) Adrian McMenamin, 2007 - 2009
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -33,7 +33,7 @@ static DEFINE_MUTEX(maple_keyb_mutex);
- 
- #define NR_SCANCODES 256
- 
--MODULE_AUTHOR("YAEGASHI Takeshi, Adrian McMenamin");
-+MODULE_AUTHOR("Adrian McMenamin <adrian@mcmen.demon.co.uk");
- MODULE_DESCRIPTION("SEGA Dreamcast keyboard driver");
- MODULE_LICENSE("GPL");
- 
-@@ -115,7 +115,7 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
- 				input_event(dev, EV_MSC, MSC_SCAN, code);
- 				input_report_key(dev, keycode, 0);
- 			} else
--				printk(KERN_DEBUG "maple_keyb: "
-+				dev_dbg(&dev->dev,
- 					"Unknown key (scancode %#x) released.",
- 					code);
- 		}
-@@ -127,7 +127,7 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
- 				input_event(dev, EV_MSC, MSC_SCAN, code);
- 				input_report_key(dev, keycode, 1);
- 			} else
--				printk(KERN_DEBUG "maple_keyb: "
-+				dev_dbg(&dev->dev,
- 					"Unknown key (scancode %#x) pressed.",
- 					code);
- 		}
-@@ -140,7 +140,7 @@ static void dc_kbd_callback(struct mapleq *mq)
- {
- 	struct maple_device *mapledev = mq->dev;
- 	struct dc_kbd *kbd = maple_get_drvdata(mapledev);
--	unsigned long *buf = mq->recvbuf;
-+	unsigned long *buf = (unsigned long *)(mq->recvbuf->buf);
- 
- 	/*
- 	 * We should always get the lock because the only
-@@ -159,22 +159,27 @@ static void dc_kbd_callback(struct mapleq *mq)
- 
- static int probe_maple_kbd(struct device *dev)
- {
--	struct maple_device *mdev = to_maple_dev(dev);
--	struct maple_driver *mdrv = to_maple_driver(dev->driver);
-+	struct maple_device *mdev;
-+	struct maple_driver *mdrv;
- 	int i, error;
- 	struct dc_kbd *kbd;
- 	struct input_dev *idev;
- 
--	if (!(mdev->function & MAPLE_FUNC_KEYBOARD))
--		return -EINVAL;
-+	mdev = to_maple_dev(dev);
-+	mdrv = to_maple_driver(dev->driver);
- 
- 	kbd = kzalloc(sizeof(struct dc_kbd), GFP_KERNEL);
--	idev = input_allocate_device();
--	if (!kbd || !idev) {
-+	if (!kbd) {
- 		error = -ENOMEM;
- 		goto fail;
- 	}
- 
-+	idev = input_allocate_device();
-+	if (!idev) {
-+		error = -ENOMEM;
-+		goto fail_idev_alloc;
-+	}
-+
- 	kbd->dev = idev;
- 	memcpy(kbd->keycode, dc_kbd_keycode, sizeof(kbd->keycode));
- 
-@@ -195,7 +200,7 @@ static int probe_maple_kbd(struct device *dev)
- 
- 	error = input_register_device(idev);
- 	if (error)
--		goto fail;
-+		goto fail_register;
- 
- 	/* Maple polling is locked to VBLANK - which may be just 50/s */
- 	maple_getcond_callback(mdev, dc_kbd_callback, HZ/50,
-@@ -207,10 +212,12 @@ static int probe_maple_kbd(struct device *dev)
- 
- 	return error;
- 
--fail:
-+fail_register:
-+	maple_set_drvdata(mdev, NULL);
- 	input_free_device(idev);
-+fail_idev_alloc:
- 	kfree(kbd);
--	maple_set_drvdata(mdev, NULL);
-+fail:
- 	return error;
- }
- 
+The ordering of your patch series is a bit vague. Do the changes to the
+maple bus code need to be made before the VMU patch can be applied? Do
+the input driver changes have to be made at the same time as the changes
+to the bus code, or are they ok to leave as a separate patch after the
+bus changes?
 
+All of these seem to have some interdependency issues that haven't been
+noted at all, making it incredibly difficult to apply incrementally. Your
+subject for the series also seems to imply you have no idea how they
+logically structure, and that you simply hacked things up until the point
+where everything worked, rather than paying attention to logical
+incremental changes to show how you got from point A to point B without
+breaking bisection along the way.
 
+We do not want to have the tree in a state where bisection is broken, nor
+do we want to apply huge monolothic changes that are unable to be clearly
+broken out.
 
+At this point the maple bus stuff I am fine with, and I have no real
+objections to the driver patches either, it is more your methodology or
+lack thereof that makes dealing with this rather taxing. If you want your
+patches applied, small incremental patches that don't leave the tree in a
+broken state are the way to go.
 
-
+Presently I have no idea how to split this series up, and even if the
+other subsystem folks add their Acked-bys, this will not be going in as
+one large change.
