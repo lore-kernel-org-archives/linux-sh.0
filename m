@@ -1,121 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 25 Feb 2009 03:59:29 +0000
-Subject: [PATCH] pm: rework includes, remove arch ifdefs V2
-Message-Id: <20090225035929.18506.46282.sendpatchset@rx1.opensource.se>
+From: Tobias Klauser <tklauser@distanz.ch>
+Date: Mon, 09 Feb 2009 20:59:40 +0000
+Subject: [PATCH] sh: Storage class should be before const qualifier
+Message-Id: <20090209205940.GA6938@xenon.distanz.ch>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
+References: <20080217143835.GA9231@distanz.ch>
+In-Reply-To: <20080217143835.GA9231@distanz.ch>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+The C99 specification states in section 6.11.5:
 
-This patch contains the following header file changes:
- - remove arch ifdefs and asm/suspend.h from linux/suspend.h
- - add asm/suspend.h to disk.c (for arch_prepare_suspend())
- - add linux/io.h to swsusp.c (for ioremap())
- - x86 32/64 bit compile fixes
+The placement of a storage-class specifier other than at the
+beginning of the declaration specifiers in a declaration is an
+obsolescent feature.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Tobias Klauser <tklauser@distanz.ch>
 ---
+ arch/sh/kernel/cpu/sh2a/clock-sh7201.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
- These are the only generic changes needed to get
- CONFIG_HIBERNATION working on SuperH.
+diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7201.c b/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
+index 020a96f..4a5e597 100644
+--- a/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
++++ b/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
+@@ -18,8 +18,8 @@
+ #include <asm/freq.h>
+ #include <asm/io.h>
+ 
+-const static int pll1rate[]={1,2,3,4,6,8};
+-const static int pfc_divisors[]={1,2,3,4,6,8,12};
++static const int pll1rate[]={1,2,3,4,6,8};
++static const int pfc_divisors[]={1,2,3,4,6,8,12};
+ #define ifc_divisors pfc_divisors
+ 
+ #if (CONFIG_SH_CLK_MD = 0)
+-- 
+1.5.6.5
 
- Changes since V1:
- - x86 32/64 bit compile fixes, thanks akpm!
-
- arch/x86/kernel/asm-offsets_32.c |    1 +
- arch/x86/kernel/asm-offsets_64.c |    1 +
- arch/x86/power/cpu_32.c          |    1 +
- arch/x86/power/cpu_64.c          |    1 +
- arch/x86/power/hibernate_64.c    |    1 +
- include/linux/suspend.h          |    3 ---
- kernel/power/disk.c              |    1 +
- kernel/power/swsusp.c            |    1 +
- 8 files changed, 7 insertions(+), 3 deletions(-)
-
---- 0001/arch/x86/kernel/asm-offsets_32.c
-+++ work/arch/x86/kernel/asm-offsets_32.c	2009-02-25 12:20:52.000000000 +0900
-@@ -18,6 +18,7 @@
- #include <asm/thread_info.h>
- #include <asm/bootparam.h>
- #include <asm/elf.h>
-+#include <asm/suspend.h>
- 
- #include <xen/interface/xen.h>
- 
---- 0001/arch/x86/kernel/asm-offsets_64.c
-+++ work/arch/x86/kernel/asm-offsets_64.c	2009-02-25 12:20:52.000000000 +0900
-@@ -17,6 +17,7 @@
- #include <asm/thread_info.h>
- #include <asm/ia32.h>
- #include <asm/bootparam.h>
-+#include <asm/suspend.h>
- 
- #include <xen/interface/xen.h>
- 
---- 0001/arch/x86/power/cpu_32.c
-+++ work/arch/x86/power/cpu_32.c	2009-02-25 12:20:52.000000000 +0900
-@@ -12,6 +12,7 @@
- #include <asm/mtrr.h>
- #include <asm/mce.h>
- #include <asm/xcr.h>
-+#include <asm/suspend.h>
- 
- static struct saved_context saved_context;
- 
---- 0001/arch/x86/power/cpu_64.c
-+++ work/arch/x86/power/cpu_64.c	2009-02-25 12:20:52.000000000 +0900
-@@ -15,6 +15,7 @@
- #include <asm/pgtable.h>
- #include <asm/mtrr.h>
- #include <asm/xcr.h>
-+#include <asm/suspend.h>
- 
- static void fix_processor_context(void);
- 
---- 0001/arch/x86/power/hibernate_64.c
-+++ work/arch/x86/power/hibernate_64.c	2009-02-25 12:20:52.000000000 +0900
-@@ -14,6 +14,7 @@
- #include <asm/page.h>
- #include <asm/pgtable.h>
- #include <asm/mtrr.h>
-+#include <asm/suspend.h>
- 
- /* References to section boundaries */
- extern const void __nosave_begin, __nosave_end;
---- 0001/include/linux/suspend.h
-+++ work/include/linux/suspend.h	2009-02-24 15:03:52.000000000 +0900
-@@ -1,9 +1,6 @@
- #ifndef _LINUX_SUSPEND_H
- #define _LINUX_SUSPEND_H
- 
--#if defined(CONFIG_X86) || defined(CONFIG_FRV) || defined(CONFIG_PPC32) || defined(CONFIG_PPC64)
--#include <asm/suspend.h>
--#endif
- #include <linux/swap.h>
- #include <linux/notifier.h>
- #include <linux/init.h>
---- 0001/kernel/power/disk.c
-+++ work/kernel/power/disk.c	2009-02-24 15:03:52.000000000 +0900
-@@ -22,6 +22,7 @@
- #include <linux/console.h>
- #include <linux/cpu.h>
- #include <linux/freezer.h>
-+#include <asm/suspend.h>
- 
- #include "power.h"
- 
---- 0001/kernel/power/swsusp.c
-+++ work/kernel/power/swsusp.c	2009-02-24 15:03:52.000000000 +0900
-@@ -51,6 +51,7 @@
- #include <linux/highmem.h>
- #include <linux/time.h>
- #include <linux/rbtree.h>
-+#include <linux/io.h>
- 
- #include "power.h"
- 
