@@ -1,134 +1,36 @@
-From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Date: Tue, 03 Feb 2009 17:09:13 +0000
-Subject: [PATCH] sh: maple: Add support for VMU devices (v4) [3/3]
-Message-Id: <1233680953.20790.12.camel@localhost.localdomain>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 10 Feb 2009 09:04:00 +0000
+Subject: [PATCH] sh-sci.h: fix typo for SH7785
+Message-Id: <ud4dqy7nz.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1233680383.20790.2.camel@localhost.localdomain>
-In-Reply-To: <1233680383.20790.2.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: greg KH <greg@kroah.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Paul Mundt <lethal@linux-sh.org>, dwmw2 <dwmw2@infradead.org>, LKML <linux-kernel@vger.kernel.org>, MTD <linux-mtd@lists.infradead.org>, linux-sh <linux-sh@vger.kernel.org>, linux-input <linux-input@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-This patch updates the Maple keyboard driver to reflect changes in the
-maple bus code and also to tidy up some dubious legacy code.
 
-Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+I think this is just typo.
+But is it intention ?
+If so, please ignore this patch...
 
-diff --git a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
-index 22f17a5..42ff911 100644
---- a/drivers/input/keyboard/maple_keyb.c
-+++ b/drivers/input/keyboard/maple_keyb.c
-@@ -1,8 +1,8 @@
- /*
-  * SEGA Dreamcast keyboard driver
-  * Based on drivers/usb/usbkbd.c
-- * Copyright YAEGASHI Takeshi, 2001
-- * Porting to 2.6 Copyright Adrian McMenamin, 2007, 2008
-+ * Copyright (c) YAEGASHI Takeshi, 2001
-+ * Porting to 2.6 Copyright (c) Adrian McMenamin, 2007 - 2009
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -33,7 +33,7 @@ static DEFINE_MUTEX(maple_keyb_mutex);
- 
- #define NR_SCANCODES 256
- 
--MODULE_AUTHOR("YAEGASHI Takeshi, Adrian McMenamin");
-+MODULE_AUTHOR("Adrian McMenamin <adrian@mcmen.demon.co.uk");
- MODULE_DESCRIPTION("SEGA Dreamcast keyboard driver");
- MODULE_LICENSE("GPL");
- 
-@@ -115,7 +115,7 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
- 				input_event(dev, EV_MSC, MSC_SCAN, code);
- 				input_report_key(dev, keycode, 0);
- 			} else
--				printk(KERN_DEBUG "maple_keyb: "
-+				dev_dbg(&dev->dev,
- 					"Unknown key (scancode %#x) released.",
- 					code);
- 		}
-@@ -127,7 +127,7 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
- 				input_event(dev, EV_MSC, MSC_SCAN, code);
- 				input_report_key(dev, keycode, 1);
- 			} else
--				printk(KERN_DEBUG "maple_keyb: "
-+				dev_dbg(&dev->dev,
- 					"Unknown key (scancode %#x) pressed.",
- 					code);
- 		}
-@@ -140,7 +140,7 @@ static void dc_kbd_callback(struct mapleq *mq)
- {
- 	struct maple_device *mapledev = mq->dev;
- 	struct dc_kbd *kbd = maple_get_drvdata(mapledev);
--	unsigned long *buf = mq->recvbuf;
-+	unsigned long *buf = (unsigned long *)(mq->recvbuf->buf);
- 
- 	/*
- 	 * We should always get the lock because the only
-@@ -159,22 +159,30 @@ static void dc_kbd_callback(struct mapleq *mq)
- 
- static int probe_maple_kbd(struct device *dev)
- {
--	struct maple_device *mdev = to_maple_dev(dev);
--	struct maple_driver *mdrv = to_maple_driver(dev->driver);
-+	struct maple_device *mdev;
-+	struct maple_driver *mdrv;
- 	int i, error;
- 	struct dc_kbd *kbd;
- 	struct input_dev *idev;
- 
--	if (!(mdev->function & MAPLE_FUNC_KEYBOARD))
--		return -EINVAL;
-+	mdev = to_maple_dev(dev);
-+	if (!mdev) {
-+		error = -EINVAL;
-+		goto fail;
-+	}
- 
- 	kbd = kzalloc(sizeof(struct dc_kbd), GFP_KERNEL);
--	idev = input_allocate_device();
--	if (!kbd || !idev) {
-+	if (!kbd) {
- 		error = -ENOMEM;
- 		goto fail;
- 	}
- 
-+	idev = input_allocate_device();
-+	if (!idev) {
-+		error = -ENOMEM;
-+		goto fail_idev_alloc;
-+	}
-+
- 	kbd->dev = idev;
- 	memcpy(kbd->keycode, dc_kbd_keycode, sizeof(kbd->keycode));
- 
-@@ -195,7 +203,7 @@ static int probe_maple_kbd(struct device *dev)
- 
- 	error = input_register_device(idev);
- 	if (error)
--		goto fail;
-+		goto fail_register;
- 
- 	/* Maple polling is locked to VBLANK - which may be just 50/s */
- 	maple_getcond_callback(mdev, dc_kbd_callback, HZ/50,
-@@ -207,10 +215,12 @@ static int probe_maple_kbd(struct device *dev)
- 
- 	return error;
- 
--fail:
-+fail_register:
-+	maple_set_drvdata(mdev, NULL);
- 	input_free_device(idev);
-+fail_idev_alloc:
- 	kfree(kbd);
--	maple_set_drvdata(mdev, NULL);
-+fail:
- 	return error;
- }
- 
+ drivers/serial/sh-sci.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index 6a7cd49..bb9fe12 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -133,7 +133,7 @@
+ # define SCSPTR3	0xffed0024	/* 16 bit SCIF */
+ # define SCSPTR4	0xffee0024	/* 16 bit SCIF */
+ # define SCSPTR5	0xffef0024	/* 16 bit SCIF */
+-# define SCIF_OPER	0x0001		/* Overrun error bit */
++# define SCIF_ORER	0x0001		/* Overrun error bit */
+ # define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7201) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7203) || \
+-- 
+1.5.6.3
 
