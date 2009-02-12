@@ -1,81 +1,41 @@
-From: Rob Landley <rob@landley.net>
-Date: Sat, 14 Feb 2009 09:31:35 +0000
-Subject: Re: [Qemu-devel] Status of SH4 support in repository
-Message-Id: <200902140331.35460.rob@landley.net>
+From: Giuseppe CAVALLARO <peppe.cavallaro@st.com>
+Date: Thu, 12 Feb 2009 16:53:32 +0000
+Subject: Re: [PATCH] slab: fix slab flags for archs use alignment larger 64-bit
+Message-Id: <49946204.70601@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090209172352.cae23097.kristoffer.ericson@gmail.com>
-	<200902130245.53417.rob@landley.net>
-	<49958342.4080803@juno.dti.ne.jp>
-In-Reply-To: <49958342.4080803@juno.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Cc: qemu-devel@nongnu.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Friday 13 February 2009 08:27:14 Shin-ichiro KAWASAKI wrote:
-> Rob Landley wrote:
-> > On Wednesday 11 February 2009 06:28:05 Shin-ichiro KAWASAKI wrote:
-> >> Kristoffer Ericson wrote:
-> >>> On Wed, 11 Feb 2009 01:53:45 +0900
-> >>>
-> >>> Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp> wrote:
-> >>>> Hi, Kristoffer.
-> >>>>
-> >>>> Kristoffer Ericson wrote:
-> >>>>> Greetings,
-> >>>>>
-> >>>>> Just interested in an update of the current status. I built a fresh
-> >>>>> qemu from the repository today and Im currently I get no output.
-> >>>>
-> >>>> I do not catch 'no output' mean.  Could you explain it more?
-> >>>>
-> >>>> FYI, here's the log how I built qemu-sh at Feb. 6th.
-> >>>>   http://www.assembla.com/wiki/show/qemu-sh4/BuildingEnvironment
-> >>>
-> >>> My mistake I did something wrong when I built it earlier, currently
-> >>> it works somewhat. What doesnt work is keyboard,mouse and booting
-> >>> from image file (seems like to bootstring isnt being aknowledged).
-> >>
-> >> Current qemu sh4 system emulation does not support either usb host
-> >> or kernel boot command line.  You still need to apply some patches
-> >> to use those features.
-> >>
-> >> Please check qemu-sh patch staging repository, which holds patches
-> >> for qemu-sh. README in it explains how to apply.
-> >>   http://git.kernel.org/?p=virt/qemu/lethal/qemu-sh.git;a=summary
-> >
-> > My blocker is the lack of a working -append.  You have a git tree for a
-> > collection of 5 patches, which then wants to invoke "quilt" to apply
-> > them. (Seems like overkill.)
-> >
-> > At a guess, this seems like the patch that implements it is
-> > staging/sh4-r2d-update-pci-usb-and-kernel-management.patch
-> >
-> >> To apply all them, you need to role back qemu to rev 6215, for now.
-> >
-> > No you don't, you just need a chainsaw and some duct tape...
-> >
-> >> The patch for usb host is already posted to qemu-ml.  But I guess
-> >> patch for kernel boot command line for r2d is not yet posted.
-> >
-> > I adjusted the above patch to apply to current qemu svn, and attached the
-> > result, but it didn't make -append work.  It's still using the hardwired
-> > one.
-> >
-> > Any suggestions?  (Do I need to look at the other patches?  This one
-> > looked like it was _trying_ to fix the problem...)
+sorry... patch also sent to linux-kernel@vger.kernel.org
+
+Giuseppe CAVALLARO wrote:
+> I think, this fix is necessary for all the architectures want to
+> perform DMA into kmalloc caches and need a guaranteed alignment
+> larger than the alignment of a 64-bit integer.
+> An example is sh architecture where ARCH_KMALLOC_MINALIGN is L1_CACHE_BYTES.
 >
-> Yoshii-san already turned on the chainsaw the day before yeterday. :)
->   http://lists.gnu.org/archive/html/qemu-devel/2009-02/msg00727.html
+> As side effect, these kind of objects cannot be visible
+> within the /proc/slab_allocators file.
 >
-> And I guess, -append option is valid only if the kernel zImage does
-> not contain built in kernel arguments
+> Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
+> ---
+>  mm/slab.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/mm/slab.c b/mm/slab.c
+> index ddc41f3..031d785 100644
+> --- a/mm/slab.c
+> +++ b/mm/slab.c
+> @@ -2262,7 +2262,7 @@ kmem_cache_create (const char *name, size_t size, size_t align,
+>  		ralign = align;
+>  	}
+>  	/* disable debug if necessary */
+> -	if (ralign > __alignof__(unsigned long long))
+> +	if (ralign > ARCH_KMALLOC_MINALIGN)
+>  		flags &= ~(SLAB_RED_ZONE | SLAB_STORE_USER);
+>  	/*
+>  	 * 4) Store it.
+>   
 
-Yup, that fixed it.
-
-Wow sh4 emulation is slow.  But working for me now. ;)
-
-Thanks,
-
-Rob
