@@ -1,63 +1,66 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 12 Feb 2009 18:56:41 +0000
+From: Giuseppe CAVALLARO <peppe.cavallaro@st.com>
+Date: Fri, 13 Feb 2009 09:00:30 +0000
 Subject: Re: [PATCH] slab: fix slab flags for archs use alignment larger 64-bit
-Message-Id: <20090212185640.GA6111@linux-sh.org>
+Message-Id: <499544AD.3030804@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1234461073-23281-1-git-send-email-peppe.cavallaro@st.com>
-In-Reply-To: <1234461073-23281-1-git-send-email-peppe.cavallaro@st.com>
+References: <1234461073-23281-1-git-send-email-peppe.cavallaro@st.com> <20090212185640.GA6111@linux-sh.org>
+In-Reply-To: <20090212185640.GA6111@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Giuseppe CAVALLARO <peppe.cavallaro@st.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@vger.kernel.org
 
-On Thu, Feb 12, 2009 at 06:51:13PM +0100, Giuseppe CAVALLARO wrote:
-> I think, this fix is necessary for all the architectures want to
-> perform DMA into kmalloc caches and need a guaranteed alignment
-> larger than the alignment of a 64-bit integer.
-> An example is sh architecture where ARCH_KMALLOC_MINALIGN is L1_CACHE_BYTES.
-> 
-> As side effect, these kind of objects cannot be visible
-> within the /proc/slab_allocators file.
-> 
-> Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
-> ---
->  mm/slab.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/mm/slab.c b/mm/slab.c
-> index ddc41f3..031d785 100644
-> --- a/mm/slab.c
-> +++ b/mm/slab.c
-> @@ -2262,7 +2262,7 @@ kmem_cache_create (const char *name, size_t size, size_t align,
->  		ralign = align;
->  	}
->  	/* disable debug if necessary */
-> -	if (ralign > __alignof__(unsigned long long))
-> +	if (ralign > ARCH_KMALLOC_MINALIGN)
->  		flags &= ~(SLAB_RED_ZONE | SLAB_STORE_USER);
->  	/*
->  	 * 4) Store it.
+Paul Mundt wrote:
+> No, this change in itself is not sufficient. The redzone marker placement
+> as well as that of the user store need to know about the minalign as well
+> before slab debug can work correctly.
+>
+> I last looked at this when introducing ARCH_SLAB_MINALIGN:
+>
+> http://article.gmane.org/gmane.linux.kernel/262528
+>
+> But it would need some rework for the current slab code.
+>
+> Note that the ARCH_KMALLOC_MINALIGN value has no meaning here, as this
+> relates to slab caches in general, of which kmalloc just happens to have
+> a few. This is also why the rest of the kmem_cache_create() code
+> references ARCH_SLAB_MINALIGN in the first place. But that in itself is
+> irrelevant since for the kmalloc slab caches, ARCH_KMALLOC_MINALIGN is
+> already passed in as the align value for kmem_cache_create(), so ralign
+> is already set to L1_CACHE_BYTES immediately before that check.
+>
+> What exactly are you having problems with that made you come up with this
+> patch? It would be helpful to know precisely what your issues are, as
+> this change in itself is only related to slab debug, and not general
+> operation
+Thanks for your feedback.
 
-No, this change in itself is not sufficient. The redzone marker placement
-as well as that of the user store need to know about the minalign as well
-before slab debug can work correctly.
+This patch is only to fix the debug information reported in
+/proc/slab_allocators .
 
-I last looked at this when introducing ARCH_SLAB_MINALIGN:
+On SH, I've noticed that /proc/slab_allocators has no size-X entries.
+I guess, we should find these fields, shouldn't we?
 
-http://article.gmane.org/gmane.linux.kernel/262528
+IIUC, and as you explained above, ralign is already set to the cache
+line size by the following code:
+...
+/* 3) caller mandated alignment */
+if (ralign < align)
+ralign = align;
 
-But it would need some rework for the current slab code.
+Then, there is following check:
+...
+/* disable debug if necessary */
+if (ralign > _alignof__(unsigned long long))
+flags &= ~(SLAB_RED_ZONE | SLAB_STORE_USER);
 
-Note that the ARCH_KMALLOC_MINALIGN value has no meaning here, as this
-relates to slab caches in general, of which kmalloc just happens to have
-a few. This is also why the rest of the kmem_cache_create() code
-references ARCH_SLAB_MINALIGN in the first place. But that in itself is
-irrelevant since for the kmalloc slab caches, ARCH_KMALLOC_MINALIGN is
-already passed in as the align value for kmem_cache_create(), so ralign
-is already set to L1_CACHE_BYTES immediately before that check.
+In my point of view, just this check appears "incoherent" (please, note
+I'm not familiar with the slab internals).
+It always makes sense in case of x86 where ARCH_KMALLOC_MINALIGN is
+defined as: __alignof__(unsigned long long) as well.
+In case of sh, we always disable debug for 32 aligned objects. As side
+effect, within the leaks_show function we immediately exit for them.
+Indeed, after applying the patch, I attached, I was able to find size-X
+fields within the slab_allocators proc entry.
 
-What exactly are you having problems with that made you come up with this
-patch? It would be helpful to know precisely what your issues are, as
-this change in itself is only related to slab debug, and not general
-operation.
+
