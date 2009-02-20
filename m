@@ -1,25 +1,30 @@
-From: Carmelo Amoroso <carmelo73@gmail.com>
-Date: Tue, 03 Feb 2009 15:41:15 +0000
-Subject: Info on prelink support on sh4 arch.
-Message-Id: <4988659B.9030101@gmail.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Fri, 20 Feb 2009 07:02:32 +0000
+Subject: [PATCH 6/6] timer-tmu: Add SH7786 support
+Message-Id: <ueixpd2gx.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Folks,
-I know this is not a kernel topic, I'm just asking if some of you sh4
-users, have never
-used prelink tools with glibc on sh4 target.
-We have asked more and more to glibc hacker and help list but nobody
-replied.
-So I'd like to know your about your experience.
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/kernel/timers/timer-tmu.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-TIA,
-Carmelo
+diff --git a/arch/sh/kernel/timers/timer-tmu.c b/arch/sh/kernel/timers/timer-tmu.c
+index 2b62f9c..10b5a6f 100644
+--- a/arch/sh/kernel/timers/timer-tmu.c
++++ b/arch/sh/kernel/timers/timer-tmu.c
+@@ -244,6 +244,7 @@ static int tmu_timer_init(void)
+     !defined(CONFIG_CPU_SUBTYPE_SH7721) && \
+     !defined(CONFIG_CPU_SUBTYPE_SH7760) && \
+     !defined(CONFIG_CPU_SUBTYPE_SH7785) && \
++    !defined(CONFIG_CPU_SUBTYPE_SH7786) && \
+     !defined(CONFIG_CPU_SUBTYPE_SHX3)
+ 	ctrl_outb(TMU_TOCR_INIT, TMU_TOCR);
+ #endif
+-- 
+1.5.6.3
 
-
-P.S.
-Previously I've seent this mail erroneously from my wife's account
-(not subscribed to the list). Sorry for asking again.
