@@ -1,39 +1,93 @@
-From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Fri, 20 Feb 2009 10:32:14 +0000
-Subject: [PATCH 3/3] sh: pci-sh7780: fix pci memory address for fixed PMB
-Message-Id: <499E86AE.6070209@renesas.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Fri, 20 Feb 2009 07:43:49 +0000
+Subject: [PATCH 5/6] sh-sci: Add SH7786 support
+Message-Id: <ufxi5d2h0.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Fix the problem that cannot work a PCI device when 32-bit physical
-address mode.
-
-Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- I changed this driver before. I think that I must revise it so
- that a hardcoding...
+ drivers/serial/sh-sci.c |    4 +++-
+ drivers/serial/sh-sci.h |   13 +++++++++----
+ 2 files changed, 12 insertions(+), 5 deletions(-)
 
- arch/sh/drivers/pci/pci-sh7780.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/sh/drivers/pci/pci-sh7780.c b/arch/sh/drivers/pci/pci-sh7780.c
-index 078dc44..773d575 100644
---- a/arch/sh/drivers/pci/pci-sh7780.c
-+++ b/arch/sh/drivers/pci/pci-sh7780.c
-@@ -127,8 +127,8 @@ int __init sh7780_pcic_init(struct sh4_pci_address_map *map)
- 	pci_write_reg(word, SH4_PCILSR0);
- 	pci_write_reg(0x00000001, SH4_PCILSR1);
- 	/* Set the values on window 0 PCI config registers */
--	word = (CONFIG_MEMORY_SIZE > 0x08000000) ? 0x10000000 : 0x08000000;
--	pci_write_reg(word | 0xa0000000, SH4_PCILAR0);
-+	word = CONFIG_MEMORY_START | (CONFIG_MEMORY_SIZE - 0x01000000);
-+	pci_write_reg(word, SH4_PCILAR0);
- 	pci_write_reg(word, SH7780_PCIMBAR0);
- 	/* Set the values on window 1 PCI config registers */
- 	pci_write_reg(0x00000000, SH4_PCILAR1);
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 557b54a..7ec5f99 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -263,6 +263,7 @@ static inline void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7785) || \
++      defined(CONFIG_CPU_SUBTYPE_SH7786) || \
+       defined(CONFIG_CPU_SUBTYPE_SHX3)
+ static inline void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ {
+@@ -284,7 +285,8 @@ static inline void sci_init_pins(struct uart_port *port, unsigned int cflag)
+ 
+ #if defined(CONFIG_CPU_SUBTYPE_SH7760) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7785)
++    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7786)
+ static inline int scif_txroom(struct uart_port *port)
+ {
+ 	return SCIF_TXROOM_MAX - (sci_in(port, SCTFDR) & 0xff);
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index bb9fe12..d0aa82d 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -126,7 +126,8 @@
+ # define SCSPTR1	0xffe10024	/* 16 bit SCIF */
+ # define SCIF_ORER	0x0001		/* Overrun error bit */
+ # define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7785)
++#elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
++      defined(CONFIG_CPU_SUBTYPE_SH7786)
+ # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
+ # define SCSPTR1	0xffeb0024	/* 16 bit SCIF */
+ # define SCSPTR2	0xffec0024	/* 16 bit SCIF */
+@@ -182,6 +183,7 @@
+     defined(CONFIG_CPU_SUBTYPE_SH7763)  || \
+     defined(CONFIG_CPU_SUBTYPE_SH7780)  || \
+     defined(CONFIG_CPU_SUBTYPE_SH7785)  || \
++    defined(CONFIG_CPU_SUBTYPE_SH7786)  || \
+     defined(CONFIG_CPU_SUBTYPE_SHX3)
+ #define SCI_CTRL_FLAGS_REIE 0x08 /* 7750 SCIF */
+ #else
+@@ -413,7 +415,8 @@ SCIx_FNS(SCxRDR, 0x0a,  8, 0x14,  8, 0x0A,  8, 0x14,  8, 0x05,  8)
+ SCIF_FNS(SCFCR,                      0x0c,  8, 0x18, 16)
+ #if defined(CONFIG_CPU_SUBTYPE_SH7760) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7785)
++    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7786)
+ SCIF_FNS(SCFDR,			     0x0e, 16, 0x1C, 16)
+ SCIF_FNS(SCTFDR,		     0x0e, 16, 0x1C, 16)
+ SCIF_FNS(SCRFDR,		     0x0e, 16, 0x20, 16)
+@@ -644,7 +647,8 @@ static inline int sci_rxd_in(struct uart_port *port)
+ 		return ctrl_inw(SCSPTR1) & 0x0001 ? 1 : 0; /* SCIF */
+ 	return 1;
+ }
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7785)
++#elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
++      defined(CONFIG_CPU_SUBTYPE_SH7786)
+ static inline int sci_rxd_in(struct uart_port *port)
+ {
+ 	if (port->mapbase = 0xffea0000)
+@@ -746,7 +750,8 @@ static inline int sci_rxd_in(struct uart_port *port)
+  */
+ 
+ #if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7785)
++    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7786)
+ #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
 -- 
-1.5.5
+1.5.6.3
 
