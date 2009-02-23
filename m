@@ -1,57 +1,60 @@
-From: Guennadi Liakhovetski <lg@denx.de>
-Date: Fri, 06 Feb 2009 22:30:56 +0000
-Subject: Re: [PATCH] fix broken size test in bitmap_find_free_region()
-Message-Id: <Pine.LNX.4.64.0902062328300.7686@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 23 Feb 2009 08:02:04 +0000
+Subject: [PATCH] pm: rework includes, remove arch ifdefs
+Message-Id: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8b67d60901201348r6a59928dw3fcf8c9c823d5c68@mail.gmail.com>
- <1232488507.6794.8.camel@localhost.localdomain> <20090121033951.GB14094@linux-sh.org>
- <20090121081118.GA14537@linux-sh.org> <20090127134831.3dd04182.akpm@linux-foundation.org>
- <20090127225458.GA8756@linux-sh.org> <Pine.LNX.4.64.0901280913090.4926@axis700.grange>
- <Pine.LNX.4.64.0902061313260.6241@axis700.grange>
- <20090206132950.96c3f92e.akpm@linux-foundation.org>
-In-Reply-To: <20090206132950.96c3f92e.akpm@linux-foundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, lethal@linux-sh.org, adrian@newgolddream.dyndns.info, lkmladrian@gmail.com, linux-sh@vger.kernel.org, penberg@cs.helsinki.fi, dbaryshkov@gmail.com, penguin-kernel@i-love.sakura.ne.jp, hannes@cmpxchg.org
+To: linux-sh@vger.kernel.org
 
-On Fri, 6 Feb 2009, Andrew Morton wrote:
+From: Magnus Damm <damm@igel.co.jp>
 
-> On Fri, 6 Feb 2009 13:22:33 +0100 (CET)
-> Guennadi Liakhovetski <lg@denx.de> wrote:
-> 
-> > This loop and test in bitmap_find_free_region()
-> > 
-> > 	for (pos = 0; pos < bits; pos += (1 << order))
-> > 		if (__reg_op(bitmap, pos, order, REG_OP_ISFREE))
-> > 			break;
-> > 	if (pos = bits)
-> > 		return -ENOMEM;
-> > 
-> > can only return an error (-ENOMEM) if bits is a multiple of (1 << order), 
-> > which is, for instance, true, if bits is (also) a power of 2. This 
-> > is not necessarily the case with dma_alloc_from_coherent(). A failure to 
-> > recognise too large a request leads in dma_alloc_from_coherent() to 
-> > accessing beyond available memory, and to writing beyond the bitmap.
-> > 
-> 
-> Do we have any reports of dma_alloc_from_coherent() actually behaving
-> in that way?
+This patch contains the following header file changes:
+ - remove arch ifdefs and asm/suspend.h from linux/suspend.h
+ - add asm/suspend.h to disk.c (for arch_prepare_suspend())
+ - add linux/io.h to swsusp.c (for ioremap())
 
-Does this count:
-
-http://marc.info/?l=linux-kernel&m3313185800954&w=2
-
-Yes, I did see this behaviour with a video driver, that's still not in the 
-mainline (expected in the next cycle), using videobuf-dma-contig.c in the 
-__videobuf_mmap_mapper() function.
-
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
-Guennadi Liakhovetski, Ph.D.
 
-DENX Software Engineering GmbH,     MD: Wolfgang Denk & Detlev Zundel
-HRB 165235 Munich, Office: Kirchenstr.5, D-82194 Groebenzell, Germany
-Phone: +49-8142-66989-0 Fax: +49-8142-66989-80  Email: office@denx.de
+ These are the only generic changes needed to get
+ CONFIG_HIBERNATION working on SuperH.
+
+ include/linux/suspend.h |    3 ---
+ kernel/power/disk.c     |    1 +
+ kernel/power/swsusp.c   |    1 +
+ 3 files changed, 2 insertions(+), 3 deletions(-)
+
+--- 0001/include/linux/suspend.h
++++ work/include/linux/suspend.h	2009-02-23 14:44:28.000000000 +0900
+@@ -1,9 +1,6 @@
+ #ifndef _LINUX_SUSPEND_H
+ #define _LINUX_SUSPEND_H
+ 
+-#if defined(CONFIG_X86) || defined(CONFIG_FRV) || defined(CONFIG_PPC32) || defined(CONFIG_PPC64)
+-#include <asm/suspend.h>
+-#endif
+ #include <linux/swap.h>
+ #include <linux/notifier.h>
+ #include <linux/init.h>
+--- 0001/kernel/power/disk.c
++++ work/kernel/power/disk.c	2009-02-23 14:44:02.000000000 +0900
+@@ -22,6 +22,7 @@
+ #include <linux/console.h>
+ #include <linux/cpu.h>
+ #include <linux/freezer.h>
++#include <asm/suspend.h>
+ 
+ #include "power.h"
+ 
+--- 0001/kernel/power/swsusp.c
++++ work/kernel/power/swsusp.c	2009-02-23 14:43:17.000000000 +0900
+@@ -51,6 +51,7 @@
+ #include <linux/highmem.h>
+ #include <linux/time.h>
+ #include <linux/rbtree.h>
++#include <linux/io.h>
+ 
+ #include "power.h"
+ 
