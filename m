@@ -1,87 +1,178 @@
-From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Date: Sun, 01 Feb 2009 07:59:58 +0000
-Subject: [PATCH] qemu-sh : pci_sh patch accepted
-Message-Id: <49855681.1030200@juno.dti.ne.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 24 Feb 2009 13:59:04 +0000
+Subject: [PATCH 02/04] sh: multiple vectors per irq - sh7750
+Message-Id: <20090224135904.12058.81946.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Aurelian Jarno kindly applied Yoshii-san's patch to QEMU trunk,
-at revision 6433. This patch removes it from qemu-sh repository.
+From: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp> 
+Update intc tables and platform data to use one linux irq
+per maskable interrupt source instead of keeping the one-to-one
+mapping between vectors and linux irqs.
 
+This fixes potential irq masking issues for sh775x hardware
+blocks such as SCI/SCIF/RTC/DMAC/TMU2/REF.
 
-diff --git a/series b/series
-index 1212b52..533b1aa 100644
---- a/series
-+++ b/series
-@@ -2,7 +2,6 @@
- # General architecture patches
- #
- staging/sh7750-51-add-register-bcr3-ncr4-pcr-rtcor-rtcn.patch
--staging/sh_pci-register-resources-both-at-a7-and-p4.patch
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Depends on the sh-rtc-single-irq-support patch.
+ Tested in latest upstream QEMU using -M r2d.
+
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |   87 +++++++++------------------------
+ 1 file changed, 25 insertions(+), 62 deletions(-)
+
+--- 0001/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh7750.c	2009-02-24 21:51:58.000000000 +0900
+@@ -21,17 +21,7 @@ static struct resource rtc_resources[]  		.flags	= IORESOURCE_IO,
+ 	},
+ 	[1] = {
+-		/* Period IRQ */
+-		.start	= 21,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	[2] = {
+-		/* Carry IRQ */
+-		.start	= 22,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	[3] = {
+-		/* Alarm IRQ */
++		/* Shared Period/Carry/Alarm IRQ */
+ 		.start	= 20,
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+@@ -50,13 +40,13 @@ static struct plat_sci_port sci_platform
+ 		.mapbase	= 0xffe00000,
+ 		.flags		= UPF_BOOT_AUTOCONF,
+ 		.type		= PORT_SCI,
+-		.irqs		= { 23, 24, 25, 0 },
++		.irqs		= { 23, 23, 23, 0 },
+ 	}, {
+ #endif
+ 		.mapbase	= 0xffe80000,
+ 		.flags		= UPF_BOOT_AUTOCONF,
+ 		.type		= PORT_SCIF,
+-		.irqs		= { 40, 41, 43, 42 },
++		.irqs		= { 40, 40, 40, 40 },
+ 	}, {
+ 		.flags = 0,
+ 	}
+@@ -87,43 +77,27 @@ enum {
  
- #
- # Board support improvements
-diff --git a/staging/sh_pci-register-resources-both-at-a7-and-p4.patch b/staging/sh_pci-register-resources-both-at-a7-and-p4.patch
-deleted file mode 100644
-index 46eb8e0..0000000
---- a/staging/sh_pci-register-resources-both-at-a7-and-p4.patch
-+++ /dev/null
-@@ -1,53 +0,0 @@
--Add resource registration both for P4 and A7.
--This is needed because of #5935 SH4: Eliminate P4 to A7 mangling.
--Additionally, {reg,iop,mem}base which is no longer used are removed.
+ 	/* interrupt sources */
+ 	IRL0, IRL1, IRL2, IRL3, /* only IRLM mode supported */
+-	HUDI, GPIOI,
+-	DMAC_DMTE0, DMAC_DMTE1, DMAC_DMTE2, DMAC_DMTE3,
+-	DMAC_DMTE4, DMAC_DMTE5, DMAC_DMTE6, DMAC_DMTE7,
+-	DMAC_DMAE,
++	HUDI, GPIOI, DMAC,
+ 	PCIC0_PCISERR, PCIC1_PCIERR, PCIC1_PCIPWDWN, PCIC1_PCIPWON,
+ 	PCIC1_PCIDMA0, PCIC1_PCIDMA1, PCIC1_PCIDMA2, PCIC1_PCIDMA3,
+-	TMU3, TMU4, TMU0, TMU1, TMU2_TUNI, TMU2_TICPI,
+-	RTC_ATI, RTC_PRI, RTC_CUI,
+-	SCI1_ERI, SCI1_RXI, SCI1_TXI, SCI1_TEI,
+-	SCIF_ERI, SCIF_RXI, SCIF_BRI, SCIF_TXI,
+-	WDT,
+-	REF_RCMI, REF_ROVI,
++	TMU3, TMU4, TMU0, TMU1, TMU2, RTC, SCI1, SCIF, WDT, REF,
+ 
+ 	/* interrupt groups */
+-	DMAC, PCIC1, TMU2, RTC, SCI1, SCIF, REF,
++	PCIC1,
+ };
+ 
+ static struct intc_vect vectors[] __initdata = {
+ 	INTC_VECT(HUDI, 0x600), INTC_VECT(GPIOI, 0x620),
+ 	INTC_VECT(TMU0, 0x400), INTC_VECT(TMU1, 0x420),
+-	INTC_VECT(TMU2_TUNI, 0x440), INTC_VECT(TMU2_TICPI, 0x460),
+-	INTC_VECT(RTC_ATI, 0x480), INTC_VECT(RTC_PRI, 0x4a0),
+-	INTC_VECT(RTC_CUI, 0x4c0),
+-	INTC_VECT(SCI1_ERI, 0x4e0), INTC_VECT(SCI1_RXI, 0x500),
+-	INTC_VECT(SCI1_TXI, 0x520), INTC_VECT(SCI1_TEI, 0x540),
+-	INTC_VECT(SCIF_ERI, 0x700), INTC_VECT(SCIF_RXI, 0x720),
+-	INTC_VECT(SCIF_BRI, 0x740), INTC_VECT(SCIF_TXI, 0x760),
++	INTC_VECT(TMU2, 0x440), INTC_VECT(TMU2, 0x460),
++	INTC_VECT(RTC, 0x480), INTC_VECT(RTC, 0x4a0),
++	INTC_VECT(RTC, 0x4c0),
++	INTC_VECT(SCI1, 0x4e0), INTC_VECT(SCI1, 0x500),
++	INTC_VECT(SCI1, 0x520), INTC_VECT(SCI1, 0x540),
++	INTC_VECT(SCIF, 0x700), INTC_VECT(SCIF, 0x720),
++	INTC_VECT(SCIF, 0x740), INTC_VECT(SCIF, 0x760),
+ 	INTC_VECT(WDT, 0x560),
+-	INTC_VECT(REF_RCMI, 0x580), INTC_VECT(REF_ROVI, 0x5a0),
+-};
 -
--Signed-off-by: Takashi YOSHII <takasi-y@ops.dti.ne.jp>
-----
-- hw/sh_pci.c |   17 +++++++----------
-- 1 files changed, 7 insertions(+), 10 deletions(-)
+-static struct intc_group groups[] __initdata = {
+-	INTC_GROUP(TMU2, TMU2_TUNI, TMU2_TICPI),
+-	INTC_GROUP(RTC, RTC_ATI, RTC_PRI, RTC_CUI),
+-	INTC_GROUP(SCI1, SCI1_ERI, SCI1_RXI, SCI1_TXI, SCI1_TEI),
+-	INTC_GROUP(SCIF, SCIF_ERI, SCIF_RXI, SCIF_BRI, SCIF_TXI),
+-	INTC_GROUP(REF, REF_RCMI, REF_ROVI),
++	INTC_VECT(REF, 0x580), INTC_VECT(REF, 0x5a0),
+ };
+ 
+ static struct intc_prio_reg prio_registers[] __initdata = {
+@@ -136,7 +110,7 @@ static struct intc_prio_reg prio_registe
+ 						 PCIC1, PCIC0_PCISERR } },
+ };
+ 
+-static DECLARE_INTC_DESC(intc_desc, "sh7750", vectors, groups,
++static DECLARE_INTC_DESC(intc_desc, "sh7750", vectors, NULL,
+ 			 NULL, prio_registers, NULL);
+ 
+ /* SH7750, SH7750S, SH7751 and SH7091 all have 4-channel DMA controllers */
+@@ -145,39 +119,28 @@ static DECLARE_INTC_DESC(intc_desc, "sh7
+ 	defined(CONFIG_CPU_SUBTYPE_SH7751) || \
+ 	defined(CONFIG_CPU_SUBTYPE_SH7091)
+ static struct intc_vect vectors_dma4[] __initdata = {
+-	INTC_VECT(DMAC_DMTE0, 0x640), INTC_VECT(DMAC_DMTE1, 0x660),
+-	INTC_VECT(DMAC_DMTE2, 0x680), INTC_VECT(DMAC_DMTE3, 0x6a0),
+-	INTC_VECT(DMAC_DMAE, 0x6c0),
+-};
 -
--diff --git a/hw/sh_pci.c b/hw/sh_pci.c
--index 5524c59..9f89f2d 100644
----- a/hw/sh_pci.c
--+++ b/hw/sh_pci.c
--@@ -29,9 +29,6 @@
-- typedef struct {
--     PCIBus *bus;
--     PCIDevice *dev;
---    uint32_t regbase;
---    uint32_t iopbase;
---    uint32_t membase;
--     uint32_t par;
--     uint32_t mbr;
--     uint32_t iobr;
--@@ -181,15 +178,15 @@ PCIBus *sh_pci_register_bus(pci_set_irq_fn set_irq, pci_map_irq_fn map_irq,
-- 
--     p->dev = pci_register_device(p->bus, "SH PCIC", sizeof(PCIDevice),
--                                  -1, NULL, NULL);
---    p->regbase = 0x1e200000;
---    p->iopbase = 0x1e240000;
---    p->membase = 0xfd000000;
--     reg = cpu_register_io_memory(0, sh_pci_reg.r, sh_pci_reg.w, p);
---    mem = cpu_register_io_memory(0, sh_pci_mem.r, sh_pci_mem.w, p);
--     iop = cpu_register_io_memory(0, sh_pci_iop.r, sh_pci_iop.w, p);
---    cpu_register_physical_memory(p->regbase, 0x224, reg);
---    cpu_register_physical_memory(p->iopbase, 0x40000, iop);
---    cpu_register_physical_memory(p->membase, 0x1000000, mem);
--+    mem = cpu_register_io_memory(0, sh_pci_mem.r, sh_pci_mem.w, p);
--+    cpu_register_physical_memory(0x1e200000, 0x224, reg);
--+    cpu_register_physical_memory(0x1e240000, 0x40000, iop);
--+    cpu_register_physical_memory(0x1d000000, 0x1000000, mem);
--+    cpu_register_physical_memory(0xfe200000, 0x224, reg);
--+    cpu_register_physical_memory(0xfe240000, 0x40000, iop);
--+    cpu_register_physical_memory(0xfd000000, 0x1000000, mem);
-- 
--     p->dev->config[0x00] = 0x54; // HITACHI
--     p->dev->config[0x01] = 0x10; //
---- 
--1.5.6.3
+-static struct intc_group groups_dma4[] __initdata = {
+-	INTC_GROUP(DMAC, DMAC_DMTE0, DMAC_DMTE1, DMAC_DMTE2,
+-		   DMAC_DMTE3, DMAC_DMAE),
++	INTC_VECT(DMAC, 0x640), INTC_VECT(DMAC, 0x660),
++	INTC_VECT(DMAC, 0x680), INTC_VECT(DMAC, 0x6a0),
++	INTC_VECT(DMAC, 0x6c0),
+ };
+ 
+ static DECLARE_INTC_DESC(intc_desc_dma4, "sh7750_dma4",
+-			 vectors_dma4, groups_dma4,
++			 vectors_dma4, NULL,
+ 			 NULL, prio_registers, NULL);
+ #endif
+ 
+ /* SH7750R and SH7751R both have 8-channel DMA controllers */
+ #if defined(CONFIG_CPU_SUBTYPE_SH7750R) || defined(CONFIG_CPU_SUBTYPE_SH7751R)
+ static struct intc_vect vectors_dma8[] __initdata = {
+-	INTC_VECT(DMAC_DMTE0, 0x640), INTC_VECT(DMAC_DMTE1, 0x660),
+-	INTC_VECT(DMAC_DMTE2, 0x680), INTC_VECT(DMAC_DMTE3, 0x6a0),
+-	INTC_VECT(DMAC_DMTE4, 0x780), INTC_VECT(DMAC_DMTE5, 0x7a0),
+-	INTC_VECT(DMAC_DMTE6, 0x7c0), INTC_VECT(DMAC_DMTE7, 0x7e0),
+-	INTC_VECT(DMAC_DMAE, 0x6c0),
+-};
 -
--
--/yoshii
--
--
+-static struct intc_group groups_dma8[] __initdata = {
+-	INTC_GROUP(DMAC, DMAC_DMTE0, DMAC_DMTE1, DMAC_DMTE2,
+-		   DMAC_DMTE3, DMAC_DMTE4, DMAC_DMTE5,
+-		   DMAC_DMTE6, DMAC_DMTE7, DMAC_DMAE),
++	INTC_VECT(DMAC, 0x640), INTC_VECT(DMAC, 0x660),
++	INTC_VECT(DMAC, 0x680), INTC_VECT(DMAC, 0x6a0),
++	INTC_VECT(DMAC, 0x780), INTC_VECT(DMAC, 0x7a0),
++	INTC_VECT(DMAC, 0x7c0), INTC_VECT(DMAC, 0x7e0),
++	INTC_VECT(DMAC, 0x6c0),
+ };
+ 
+ static DECLARE_INTC_DESC(intc_desc_dma8, "sh7750_dma8",
+-			 vectors_dma8, groups_dma8,
++			 vectors_dma8, NULL,
+ 			 NULL, prio_registers, NULL);
+ #endif
+ 
