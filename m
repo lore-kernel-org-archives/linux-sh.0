@@ -1,60 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 23 Feb 2009 08:02:04 +0000
-Subject: [PATCH] pm: rework includes, remove arch ifdefs
-Message-Id: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Tue, 24 Feb 2009 23:45:56 +0000
+Subject: Re: [PATCH] pm: rework includes, remove arch ifdefs
+Message-Id: <20090224154556.7f4fa1db.akpm@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Mon, 23 Feb 2009 17:02:04 +0900
+Magnus Damm <magnus.damm@gmail.com> wrote:
 
-This patch contains the following header file changes:
- - remove arch ifdefs and asm/suspend.h from linux/suspend.h
- - add asm/suspend.h to disk.c (for arch_prepare_suspend())
- - add linux/io.h to swsusp.c (for ioremap())
+> This patch contains the following header file changes:
+>  - remove arch ifdefs and asm/suspend.h from linux/suspend.h
+>  - add asm/suspend.h to disk.c (for arch_prepare_suspend())
+>  - add linux/io.h to swsusp.c (for ioremap())
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+x86_64 allmodconfig:
 
- These are the only generic changes needed to get
- CONFIG_HIBERNATION working on SuperH.
+In file included from arch/x86/kernel/asm-offsets.c:4:
+arch/x86/kernel/asm-offsets_64.c: In function 'main':
+arch/x86/kernel/asm-offsets_64.c:109: error: invalid use of undefined type 'struct saved_context'
+arch/x86/kernel/asm-offsets_64.c:110: error: invalid use of undefined type 'struct saved_context'
+arch/x86/kernel/asm-offsets_64.c:111: error: invalid use of undefined type 'struct saved_context'
+arch/x86/kernel/asm-offsets_64.c:112: error: invalid use of undefined type 'struct saved_context'
+arch/x86/kernel/asm-offsets_64.c:113: error: invalid use of undefined type 'struct saved_context'
 
- include/linux/suspend.h |    3 ---
- kernel/power/disk.c     |    1 +
- kernel/power/swsusp.c   |    1 +
- 3 files changed, 2 insertions(+), 3 deletions(-)
-
---- 0001/include/linux/suspend.h
-+++ work/include/linux/suspend.h	2009-02-23 14:44:28.000000000 +0900
-@@ -1,9 +1,6 @@
- #ifndef _LINUX_SUSPEND_H
- #define _LINUX_SUSPEND_H
- 
--#if defined(CONFIG_X86) || defined(CONFIG_FRV) || defined(CONFIG_PPC32) || defined(CONFIG_PPC64)
--#include <asm/suspend.h>
--#endif
- #include <linux/swap.h>
- #include <linux/notifier.h>
- #include <linux/init.h>
---- 0001/kernel/power/disk.c
-+++ work/kernel/power/disk.c	2009-02-23 14:44:02.000000000 +0900
-@@ -22,6 +22,7 @@
- #include <linux/console.h>
- #include <linux/cpu.h>
- #include <linux/freezer.h>
-+#include <asm/suspend.h>
- 
- #include "power.h"
- 
---- 0001/kernel/power/swsusp.c
-+++ work/kernel/power/swsusp.c	2009-02-23 14:43:17.000000000 +0900
-@@ -51,6 +51,7 @@
- #include <linux/highmem.h>
- #include <linux/time.h>
- #include <linux/rbtree.h>
-+#include <linux/io.h>
- 
- #include "power.h"
- 
