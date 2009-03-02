@@ -1,41 +1,122 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 30 Mar 2009 23:32:33 +0000
-Subject: Re: regression in 2.6.29-git3 on SH/Dreamcast
-Message-Id: <20090330233233.GJ19535@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 02 Mar 2009 05:16:06 +0000
+Subject: [PATCH] Add OHCI USB support for SH7786
+Message-Id: <uy6vozecn.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1238353446.6471.14.camel@localhost.localdomain> <1238369758.6471.16.camel@localhost.localdomain> <20090330071755.GA30234@roarinelk.homelinux.net>
-In-Reply-To: <20090330071755.GA30234@roarinelk.homelinux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Manuel Lauss <mano@roarinelk.homelinux.net>
-Cc: Adrian McMenamin <adrian@newgolddream.dyndns.info>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Mar 30, 2009 at 09:17:56AM +0200, Manuel Lauss wrote:
-> Hi Adrian,
-> 
-> On Mon, Mar 30, 2009 at 12:35:58AM +0100, Adrian McMenamin wrote:
-> > On Sun, 2009-03-29 at 20:04 +0100, Adrian McMenamin wrote:
-> > > While 2.6.29 boots cleanly on the Dreamcast, later revisions are likely
-> > > to crash with an OOM condition (this is a race, it doesn't happen on
-> > > every boot, but on about one in every three or four).
-> > > 
-> > 
-> > Still don't know why this timer patch is tipping the machine over, but I
-> > have found that if I set CONFIG_NO_HZ=y then the machine will boot with
-> > the patch applied.
-> 
-> I found that enabling swapfile support in Kconfig also reduces the frequency
-> of OOMs on my sh7760.   While I don't experience your particular problem, my
-> personal observation is that since around >2.6.22 linux-sh may OOM without
-> actual swapspace a lot sooner  (i.e. post 2.6.25 I can't even do "emerge -pv
-> world" without the kernel OOMing on me! This is with unreviewed platform code,
-> so take this info with a mountain of salt).
-> 
-On a board with how much memory? What SLAB allocator are you using? This
-is the first I have heard about any such issues, and if our memory
-consumption drastically went up somewhere it would have been nice to know
-when this became a problem. The Dreamcast is fixed at 16MB, and the
-system in general is close to being OOM before it even makes it all the
-way up. It would also be helpful to see the numbers with SLOB, which
-should by the default on all of these systems.
+
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |   60 ++++++++++++++++++++++++++++++++
+ drivers/usb/Kconfig                    |    1 +
+ drivers/usb/host/ohci-hcd.c            |    3 +-
+ 3 files changed, 63 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index ca5d987..ad5b4d4 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -68,10 +68,70 @@ static struct platform_device sci_device = {
+ 	},
+ };
+ 
++static struct resource usb_ohci_resources[] = {
++	[0] = {
++		.start	= 0xffe70400,
++		.end	= 0xffe704ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 77,
++		.end	= 77,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static u64 usb_ohci_dma_mask = 0xffffffffUL;
++static struct platform_device usb_ohci_device = {
++	.name		= "sh_ohci",
++	.id		= -1,
++	.dev = {
++		.dma_mask		= &usb_ohci_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++	},
++	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
++	.resource	= usb_ohci_resources,
++};
++
+ static struct platform_device *sh7786_devices[] __initdata = {
+ 	&sci_device,
++	&usb_ohci_device,
+ };
+ 
++#define USBPCTL1	0xffe70804
++#define USBST		0xffe70808
++#define USBCTL0		0xffe70858
++int __init sh7786_usb_setup(int exclock)
++{
++	int i;
++	u32 val;
++
++	ctrl_outl(0x00ff0040, 0xffe70094);
++	ctrl_outl(0x00000001, 0xffe7009c);
++
++	val = ctrl_inl(USBCTL0) & 0xffffff7f;
++	if (exclock)
++		val |= 0x00000080;
++	ctrl_outl(val, USBCTL0);
++
++	/* Set the PHY ENB bit */
++	i = 1000000;
++	ctrl_outl(0x00000001, USBPCTL1);
++	while (i-- && !(ctrl_inl(USBST) & (1 << 30)))
++		;
++
++	/* Set the PLL ENB bit */
++	i = 1000000;
++	ctrl_outl(0x00000003, USBPCTL1);
++	while (i-- && ((ctrl_inl(USBST) & (0x3 << 30)) != (0x3 << 30)))
++		;
++
++	/* Set the PHY RST bit */
++	ctrl_outl(0x00000007, USBPCTL1);
++
++	printk(KERN_INFO "sh7786 usb setup done\n");
++}
++
+ static int __init sh7786_devices_setup(void)
+ {
+ 	return platform_add_devices(sh7786_devices,
+diff --git a/drivers/usb/Kconfig b/drivers/usb/Kconfig
+index 83babb0..c6c816b 100644
+--- a/drivers/usb/Kconfig
++++ b/drivers/usb/Kconfig
+@@ -47,6 +47,7 @@ config USB_ARCH_HAS_OHCI
+ 	default y if CPU_SUBTYPE_SH7720
+ 	default y if CPU_SUBTYPE_SH7721
+ 	default y if CPU_SUBTYPE_SH7763
++	default y if CPU_SUBTYPE_SH7786
+ 	# more:
+ 	default PCI
+ 
+diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
+index 5cf5f1e..7658589 100644
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -1049,7 +1049,8 @@ MODULE_LICENSE ("GPL");
+ 
+ #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7763)
++    defined(CONFIG_CPU_SUBTYPE_SH7763) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7786)
+ #include "ohci-sh.c"
+ #define PLATFORM_DRIVER		ohci_hcd_sh_driver
+ #endif
+-- 
+1.5.6.3
+
