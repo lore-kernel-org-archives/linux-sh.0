@@ -1,45 +1,55 @@
-From: Randy Dunlap <randy.dunlap@oracle.com>
-Date: Fri, 06 Mar 2009 16:15:14 +0000
-Subject: Re: [PATCH] Add documentation for "nohlt" kernel parameter
-Message-Id: <49B14C12.5050402@oracle.com>
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Mon, 02 Mar 2009 06:31:44 +0000
+Subject: Re: [PATCH] sh: Update dma-sh api
+Message-Id: <29ab51dc0903012231x158ae710q535877a12f67efca@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090306122925.9779.95415.stgit@Programuotojas>
-In-Reply-To: <20090306122925.9779.95415.stgit@Programuotojas>
+References: <49A668C4.2020608@renesas.com>
+In-Reply-To: <49A668C4.2020608@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
-Cc: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, linux-sh@vger.kernel.org, yanok@emcraft.com, wd@denx.de
+To: linux-sh@vger.kernel.org
 
-Paulius Zaleckas wrote:
-> As per discussion in:
-> http://marc.info/?l=linux-arm-kernel&m3633652517391&w=2
-> 
-> Signed-off-by: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
-> ---
-> 
->  Documentation/kernel-parameters.txt |    4 +++-
->  1 files changed, 3 insertions(+), 1 deletions(-)
-> 
-> 
-> diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-> index 54f21a5..de06666 100644
-> --- a/Documentation/kernel-parameters.txt
-> +++ b/Documentation/kernel-parameters.txt
-> @@ -1487,7 +1487,9 @@ and is between 256 and 4096 characters. It is defined in the file
->  
->  	noclflush	[BUGS=X86] Don't use the CLFLUSH instruction
->  
-> -	nohlt		[BUGS=ARM,SH]
-> +	nohlt		[BUGS=ARM,SH] Tells the kernel that the sleep(SH) or
-> +			wfi(ARM) instruction doesn't work correctly and not to
-> +			use it. This is also usefull when using JTAG debugger.
+Hi, Magnus .
 
-			                     useful
->  
->  	no-hlt		[BUGS=X86-32] Tells the kernel that the hlt
->  			instruction doesn't work correctly and not to
+2009/2/27 Magnus Damm <magnus.damm@gmail.com>:
+> Hi Iwamatsu-san,
+>
+> On Thu, Feb 26, 2009 at 7:02 PM, Nobuhiro Iwamatsu
+> <iwamatsu.nobuhiro@renesas.com> wrote:
+>> Add DMA support of new SH CPU and the change of definition.
+>>
+>> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+>
+> Thanks for your work on this. I have one main question and a few
+> nitpicking comments on your patch.
+>
+> Question:
+>
+> Does this patch build on top of the reworked sh775x, sh7780 and sh7785
+> interrupt vectors? The patchset pointed out below modifies the DMAC
+> interrupt to only use a single linux interrupt instead of multiple
+> with broken masking:
+>
+> http://patchwork.kernel.org/patch/8592/
 
+I did not consider your patch.
+I will read your patch and think.
+
+
+>
+>> --- /dev/null
+>> +++ b/arch/sh/include/asm/dma-sh.h
+>> @@ -0,0 +1,151 @@
+>> +/*
+>> + * arch/sh/drivers/dma/dma-sh.h
+>
+> Header comment mismatch. =)
+>
+Thanks, I will fixed next version.
+
+Best regards,
+ Nobuhiro
 
 -- 
-~Randy
+Nobuhiro Iwamatsu
