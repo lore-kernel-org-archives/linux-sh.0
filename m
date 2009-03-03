@@ -1,458 +1,77 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 26 Mar 2009 00:39:49 +0000
-Subject: [PATCH] sh7786: modify pinmux definition to more readable and fix typo
-Message-Id: <uzlf8bxkk.wl%morimoto.kuninori@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 03 Mar 2009 06:18:01 +0000
+Subject: Re: [PATCH] sh-sci: console drainage
+Message-Id: <20090303061801.GA30177@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Tue, Feb 24, 2009 at 03:57:12PM +0900, Magnus Damm wrote:
+> Modify the serial console code to wait for the transmit FIFO,
+> make sure all bits have been put on the wire before returning.
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
----
-This patch is for linux-next
+On Tue, Feb 24, 2009 at 10:11:03PM +0900, Magnus Damm wrote:
+> Add support for single IRQ hardware to the sh-rtc driver.
+> 
+> This is useful for processors with limited interrupt masking
+> support such as sh7750 and sh7780. With this patch in place we
+> can add logic to the intc code that merges all RTC vectors into
+> a single linux interrupt with proper masking/unmasking support.
+> 
+> Specify a single IRQ in the platform data to use this new shared
+> IRQ feature. Separate Periodic/Carry/Alarm IRQs are still supported.
 
- arch/sh/include/cpu-sh4/cpu/sh7786.h    |  214 +++++++++++-------------------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |  184 ++++++---------------------
- 2 files changed, 118 insertions(+), 280 deletions(-)
+On Tue, Feb 24, 2009 at 10:23:51PM +0900, Magnus Damm wrote:
+> Fix iounmap() of pass-through P4 addresses. Without this patch
+> iounmap() on the sh7780 rtc area results in a warning message.
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7786.h b/arch/sh/include/cpu-sh4/cpu/sh7786.h
-index 48688ad..977862f 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7786.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7786.h
-@@ -51,142 +51,86 @@ enum {
- 	GPIO_PJ7, GPIO_PJ6, GPIO_PJ5, GPIO_PJ4,
- 	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1, GPIO_PJ0,
- 
--	GPIO_FN_CDE,
--	GPIO_FN_ETH_MAGIC,
--	GPIO_FN_DISP,
--	GPIO_FN_ETH_LINK,
--	GPIO_FN_DR5,
--	GPIO_FN_ETH_TX_ER,
--	GPIO_FN_DR4,
--	GPIO_FN_ETH_TX_EN,
--	GPIO_FN_DR3,
--	GPIO_FN_ETH_TXD3,
--	GPIO_FN_DR2,
--	GPIO_FN_ETH_TXD2,
--	GPIO_FN_DR1,
--	GPIO_FN_ETH_TXD1,
--	GPIO_FN_DR0,
--	GPIO_FN_ETH_TXD0,
--	GPIO_FN_VSYNC,
--	GPIO_FN_HSPI_CLK,
--	GPIO_FN_ODDF,
--	GPIO_FN_HSPI_CS,
--	GPIO_FN_DG5,
--	GPIO_FN_ETH_MDIO,
--	GPIO_FN_DG4,
--	GPIO_FN_ETH_RX_CLK,
--	GPIO_FN_DG3,
--	GPIO_FN_ETH_MDC,
--	GPIO_FN_DG2,
--	GPIO_FN_ETH_COL,
--	GPIO_FN_DG1,
--	GPIO_FN_ETH_TX_CLK,
--	GPIO_FN_DG0,
--	GPIO_FN_ETH_CRS,
--	GPIO_FN_DCLKIN,
--	GPIO_FN_HSPI_RX,
--	GPIO_FN_HSYNC,
--	GPIO_FN_HSPI_TX,
--	GPIO_FN_DB5,
--	GPIO_FN_ETH_RXD3,
--	GPIO_FN_DB4,
--	GPIO_FN_ETH_RXD2,
--	GPIO_FN_DB3,
--	GPIO_FN_ETH_RXD1,
--	GPIO_FN_DB2,
--	GPIO_FN_ETH_RXD0,
--	GPIO_FN_DB1,
--	GPIO_FN_ETH_RX_DV,
--	GPIO_FN_DB0,
--	GPIO_FN_ETH_RX_ER,
--	GPIO_FN_DCLKOUT,
--	GPIO_FN_SCIF1_SLK,
--	GPIO_FN_SCIF1_RXD,
--	GPIO_FN_SCIF1_TXD,
--	GPIO_FN_DACK1,
--	GPIO_FN_BACK,
--	GPIO_FN_FALE,
--	GPIO_FN_DACK0,
--	GPIO_FN_FCLE,
--	GPIO_FN_DREQ1,
--	GPIO_FN_BREQ,
--	GPIO_FN_USB_OVC1,
--	GPIO_FN_DREQ0,
--	GPIO_FN_USB_OVC0,
--	GPIO_FN_USB_PENC1,
--	GPIO_FN_USB_PENC0,
--	GPIO_FN_HAC1_SDOUT,
--	GPIO_FN_SSI1_SDATA,
--	GPIO_FN_SDIF1CMD,
--	GPIO_FN_HAC1_SDIN,
--	GPIO_FN_SSI1_SCK,
--	GPIO_FN_SDIF1CD,
--	GPIO_FN_HAC1_SYNC,
--	GPIO_FN_SSI1_WS,
--	GPIO_FN_SDIF1WP,
--	GPIO_FN_HAC1_BITCLK,
--	GPIO_FN_SSI1_CLK,
--	GPIO_FN_SDIF1CLK,
--	GPIO_FN_HAC0_SDOUT,
--	GPIO_FN_SSI0_SDATA,
--	GPIO_FN_SDIF1D3,
--	GPIO_FN_HAC0_SDIN,
--	GPIO_FN_SSI0_SCK,
--	GPIO_FN_SDIF1D2,
--	GPIO_FN_HAC0_SYNC,
--	GPIO_FN_SSI0_WS,
--	GPIO_FN_SDIF1D1,
--	GPIO_FN_HAC0_BITCLK,
--	GPIO_FN_SSI0_CLK,
--	GPIO_FN_SDIF1D0,
--	GPIO_FN_SCIF3_SCK,
--	GPIO_FN_SSI2_SDATA,
--	GPIO_FN_SCIF3_RXD,
--	GPIO_FN_TCLK,
--	GPIO_FN_SSI2_SCK,
--	GPIO_FN_SCIF3_TXD,
-+	/* DU */
-+	GPIO_FN_DCLKIN, GPIO_FN_DCLKOUT, GPIO_FN_ODDF,
-+	GPIO_FN_VSYNC, GPIO_FN_HSYNC, GPIO_FN_CDE, GPIO_FN_DISP,
-+	GPIO_FN_DR0, GPIO_FN_DG0, GPIO_FN_DB0,
-+	GPIO_FN_DR1, GPIO_FN_DG1, GPIO_FN_DB1,
-+	GPIO_FN_DR2, GPIO_FN_DG2, GPIO_FN_DB2,
-+	GPIO_FN_DR3, GPIO_FN_DG3, GPIO_FN_DB3,
-+	GPIO_FN_DR4, GPIO_FN_DG4, GPIO_FN_DB4,
-+	GPIO_FN_DR5, GPIO_FN_DG5, GPIO_FN_DB5,
-+
-+	/* Eth */
-+	GPIO_FN_ETH_MAGIC, GPIO_FN_ETH_LINK, GPIO_FN_ETH_TX_ER,
-+	GPIO_FN_ETH_TX_EN, GPIO_FN_ETH_MDIO, GPIO_FN_ETH_RX_CLK,
-+	GPIO_FN_ETH_MDC, GPIO_FN_ETH_COL, GPIO_FN_ETH_TX_CLK,
-+	GPIO_FN_ETH_CRS, GPIO_FN_ETH_RX_DV, GPIO_FN_ETH_RX_ER,
-+	GPIO_FN_ETH_TXD3, GPIO_FN_ETH_TXD2, GPIO_FN_ETH_TXD1, GPIO_FN_ETH_TXD0,
-+	GPIO_FN_ETH_RXD3, GPIO_FN_ETH_RXD2, GPIO_FN_ETH_RXD1, GPIO_FN_ETH_RXD0,
-+
-+	/* HSPI */
-+	GPIO_FN_HSPI_CLK, GPIO_FN_HSPI_CS, GPIO_FN_HSPI_RX, GPIO_FN_HSPI_TX,
-+
-+	/* SCIF0 */
-+	GPIO_FN_SCIF0_CTS, GPIO_FN_SCIF0_RTS, GPIO_FN_SCIF0_SCK,
-+	GPIO_FN_SCIF0_RXD, GPIO_FN_SCIF0_TXD,
-+
-+	/* SCIF1 */
-+	GPIO_FN_SCIF1_SCK, GPIO_FN_SCIF1_RXD, GPIO_FN_SCIF1_TXD,
-+
-+	/* SCIF3 */
-+	GPIO_FN_SCIF3_SCK, GPIO_FN_SCIF3_RXD, GPIO_FN_SCIF3_TXD,
-+
-+	/* SCIF4 */
-+	GPIO_FN_SCIF4_SCK, GPIO_FN_SCIF4_RXD, GPIO_FN_SCIF4_TXD,
-+
-+	/* SCIF5 */
-+	GPIO_FN_SCIF5_SCK, GPIO_FN_SCIF5_RXD, GPIO_FN_SCIF5_TXD,
-+
-+	/* LBSC */
-+	GPIO_FN_BREQ, GPIO_FN_IOIS16, GPIO_FN_CE2B, GPIO_FN_CE2A, GPIO_FN_BACK,
-+
-+	/* FLCTL */
-+	GPIO_FN_FALE, GPIO_FN_FRB, GPIO_FN_FSTATUS,
-+	GPIO_FN_FSE, GPIO_FN_FCLE,
-+
-+	/* DMAC */
-+	GPIO_FN_DACK0, GPIO_FN_DREQ0, GPIO_FN_DRAK0,
-+	GPIO_FN_DACK1, GPIO_FN_DREQ1, GPIO_FN_DRAK1,
-+	GPIO_FN_DACK2, GPIO_FN_DREQ2, GPIO_FN_DRAK2,
-+	GPIO_FN_DACK3, GPIO_FN_DREQ3, GPIO_FN_DRAK3,
-+
-+	/* USB */
-+	GPIO_FN_USB_OVC0, GPIO_FN_USB_PENC0,
-+	GPIO_FN_USB_OVC1, GPIO_FN_USB_PENC1,
-+
-+	/* HAC */
- 	GPIO_FN_HAC_RES,
--	GPIO_FN_SSI2_WS,
--	GPIO_FN_DACK3,
--	GPIO_FN_SDIF0CMD,
--	GPIO_FN_DACK2,
--	GPIO_FN_SDIF0CD,
--	GPIO_FN_DREQ3,
--	GPIO_FN_SDIF0WP,
--	GPIO_FN_SCIF0_CTS,
--	GPIO_FN_DREQ2,
--	GPIO_FN_SDIF0CLK,
--	GPIO_FN_SCIF0_RTS,
--	GPIO_FN_IRL7,
--	GPIO_FN_SDIF0D3,
--	GPIO_FN_SCIF0_SCK,
--	GPIO_FN_IRL6,
--	GPIO_FN_SDIF0D2,
--	GPIO_FN_SCIF0_RXD,
--	GPIO_FN_IRL5,
--	GPIO_FN_SDIF0D1,
--	GPIO_FN_SCIF0_TXD,
--	GPIO_FN_IRL4,
--	GPIO_FN_SDIF0D0,
--	GPIO_FN_SCIF5_SCK,
--	GPIO_FN_FRB,
--	GPIO_FN_SCIF5_RXD,
--	GPIO_FN_IOIS16,
--	GPIO_FN_SCIF5_TXD,
--	GPIO_FN_CE2B,
--	GPIO_FN_DRAK3,
--	GPIO_FN_CE2A,
--	GPIO_FN_SCIF4_SCK,
--	GPIO_FN_DRAK2,
--	GPIO_FN_SSI3_WS,
--	GPIO_FN_SCIF4_RXD,
--	GPIO_FN_DRAK1,
--	GPIO_FN_SSI3_SDATA,
--	GPIO_FN_FSTATUS,
--	GPIO_FN_SCIF4_TXD,
--	GPIO_FN_DRAK0,
--	GPIO_FN_SSI3_SCK,
--	GPIO_FN_FSE,
-+	GPIO_FN_HAC0_SDOUT, GPIO_FN_HAC0_SDIN,
-+	GPIO_FN_HAC0_SYNC, GPIO_FN_HAC0_BITCLK,
-+	GPIO_FN_HAC1_SDOUT, GPIO_FN_HAC1_SDIN,
-+	GPIO_FN_HAC1_SYNC, GPIO_FN_HAC1_BITCLK,
-+
-+	/* SSI */
-+	GPIO_FN_SSI0_SDATA, GPIO_FN_SSI0_SCK, GPIO_FN_SSI0_WS, GPIO_FN_SSI0_CLK,
-+	GPIO_FN_SSI1_SDATA, GPIO_FN_SSI1_SCK, GPIO_FN_SSI1_WS, GPIO_FN_SSI1_CLK,
-+	GPIO_FN_SSI2_SDATA, GPIO_FN_SSI2_SCK, GPIO_FN_SSI2_WS,
-+	GPIO_FN_SSI3_SDATA, GPIO_FN_SSI3_SCK, GPIO_FN_SSI3_WS,
-+
-+	/* SDIF1 */
-+	GPIO_FN_SDIF1CMD, GPIO_FN_SDIF1CD, GPIO_FN_SDIF1WP, GPIO_FN_SDIF1CLK,
-+	GPIO_FN_SDIF1D3, GPIO_FN_SDIF1D2, GPIO_FN_SDIF1D1, GPIO_FN_SDIF1D0,
-+
-+	/* SDIF0 */
-+	GPIO_FN_SDIF0CMD, GPIO_FN_SDIF0CD, GPIO_FN_SDIF0WP, GPIO_FN_SDIF0CLK,
-+	GPIO_FN_SDIF0D3, GPIO_FN_SDIF0D2, GPIO_FN_SDIF0D1, GPIO_FN_SDIF0D0,
-+
-+	/* TMU */
-+	GPIO_FN_TCLK,
-+
-+	/* INTC */
-+	GPIO_FN_IRL7, GPIO_FN_IRL6, GPIO_FN_IRL5, GPIO_FN_IRL4,
- };
- 
- #endif /* __CPU_SH7786_H__ */
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-index 54ca664..4229e07 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-@@ -149,150 +149,44 @@ enum {
- 	PINMUX_FUNCTION_END,
- 
- 	PINMUX_MARK_BEGIN,
--	CDE_MARK,
--	ETH_MAGIC_MARK,
--	DISP_MARK,
--	ETH_LINK_MARK,
--	DR5_MARK,
--	ETH_TX_ER_MARK,
--	DR4_MARK,
--	ETH_TX_EN_MARK,
--	DR3_MARK,
--	ETH_TXD3_MARK,
--	DR2_MARK,
--	ETH_TXD2_MARK,
--	DR1_MARK,
--	ETH_TXD1_MARK,
--	DR0_MARK,
--	ETH_TXD0_MARK,
--
--	VSYNC_MARK,
--	HSPI_CLK_MARK,
--	ODDF_MARK,
--	HSPI_CS_MARK,
--	DG5_MARK,
--	ETH_MDIO_MARK,
--	DG4_MARK,
--	ETH_RX_CLK_MARK,
--	DG3_MARK,
--	ETH_MDC_MARK,
--	DG2_MARK,
--	ETH_COL_MARK,
--	DG1_MARK,
--	ETH_TX_CLK_MARK,
--	DG0_MARK,
--	ETH_CRS_MARK,
--
--	DCLKIN_MARK,
--	HSPI_RX_MARK,
--	HSYNC_MARK,
--	HSPI_TX_MARK,
--	DB5_MARK,
--	ETH_RXD3_MARK,
--	DB4_MARK,
--	ETH_RXD2_MARK,
--	DB3_MARK,
--	ETH_RXD1_MARK,
--	DB2_MARK,
--	ETH_RXD0_MARK,
--	DB1_MARK,
--	ETH_RX_DV_MARK,
--	DB0_MARK,
--	ETH_RX_ER_MARK,
--
--	DCLKOUT_MARK,
--	SCIF1_SLK_MARK,
--	SCIF1_RXD_MARK,
--	SCIF1_TXD_MARK,
--	DACK1_MARK,
--	BACK_MARK,
--	FALE_MARK,
--	DACK0_MARK,
--	FCLE_MARK,
--	DREQ1_MARK,
--	BREQ_MARK,
--	USB_OVC1_MARK,
--	DREQ0_MARK,
--	USB_OVC0_MARK,
--
--	USB_PENC1_MARK,
--	USB_PENC0_MARK,
--
--	HAC1_SDOUT_MARK,
--	SSI1_SDATA_MARK,
--	SDIF1CMD_MARK,
--	HAC1_SDIN_MARK,
--	SSI1_SCK_MARK,
--	SDIF1CD_MARK,
--	HAC1_SYNC_MARK,
--	SSI1_WS_MARK,
--	SDIF1WP_MARK,
--	HAC1_BITCLK_MARK,
--	SSI1_CLK_MARK,
--	SDIF1CLK_MARK,
--	HAC0_SDOUT_MARK,
--	SSI0_SDATA_MARK,
--	SDIF1D3_MARK,
--	HAC0_SDIN_MARK,
--	SSI0_SCK_MARK,
--	SDIF1D2_MARK,
--	HAC0_SYNC_MARK,
--	SSI0_WS_MARK,
--	SDIF1D1_MARK,
--	HAC0_BITCLK_MARK,
--	SSI0_CLK_MARK,
--	SDIF1D0_MARK,
--
--	SCIF3_SCK_MARK,
--	SSI2_SDATA_MARK,
--	SCIF3_RXD_MARK,
--	TCLK_MARK,
--	SSI2_SCK_MARK,
--	SCIF3_TXD_MARK,
-+	DCLKIN_MARK, DCLKOUT_MARK, ODDF_MARK,
-+	VSYNC_MARK, HSYNC_MARK, CDE_MARK, DISP_MARK,
-+	DR0_MARK, DR1_MARK, DR2_MARK, DR3_MARK, DR4_MARK, DR5_MARK,
-+	DG0_MARK, DG1_MARK, DG2_MARK, DG3_MARK, DG4_MARK, DG5_MARK,
-+	DB0_MARK, DB1_MARK, DB2_MARK, DB3_MARK, DB4_MARK, DB5_MARK,
-+	ETH_MAGIC_MARK, ETH_LINK_MARK, ETH_TX_ER_MARK, ETH_TX_EN_MARK,
-+	ETH_MDIO_MARK, ETH_RX_CLK_MARK, ETH_MDC_MARK, ETH_COL_MARK,
-+	ETH_TX_CLK_MARK, ETH_CRS_MARK, ETH_RX_DV_MARK, ETH_RX_ER_MARK,
-+	ETH_TXD3_MARK, ETH_TXD2_MARK, ETH_TXD1_MARK, ETH_TXD0_MARK,
-+	ETH_RXD3_MARK, ETH_RXD2_MARK, ETH_RXD1_MARK, ETH_RXD0_MARK,
-+	HSPI_CLK_MARK, HSPI_CS_MARK, HSPI_RX_MARK, HSPI_TX_MARK,
-+	SCIF0_CTS_MARK, SCIF0_RTS_MARK,
-+	SCIF0_SCK_MARK, SCIF0_RXD_MARK, SCIF0_TXD_MARK,
-+	SCIF1_SCK_MARK, SCIF1_RXD_MARK, SCIF1_TXD_MARK,
-+	SCIF3_SCK_MARK, SCIF3_RXD_MARK, SCIF3_TXD_MARK,
-+	SCIF4_SCK_MARK, SCIF4_RXD_MARK, SCIF4_TXD_MARK,
-+	SCIF5_SCK_MARK, SCIF5_RXD_MARK, SCIF5_TXD_MARK,
-+	BREQ_MARK, IOIS16_MARK, CE2B_MARK, CE2A_MARK, BACK_MARK,
-+	FALE_MARK, FRB_MARK, FSTATUS_MARK,
-+	FSE_MARK, FCLE_MARK,
-+	DACK0_MARK, DACK1_MARK, DACK2_MARK, DACK3_MARK,
-+	DREQ0_MARK, DREQ1_MARK, DREQ2_MARK, DREQ3_MARK,
-+	DRAK0_MARK, DRAK1_MARK, DRAK2_MARK, DRAK3_MARK,
-+	USB_OVC1_MARK, USB_OVC0_MARK,
-+	USB_PENC1_MARK, USB_PENC0_MARK,
- 	HAC_RES_MARK,
--	SSI2_WS_MARK,
--
--	DACK3_MARK,
--	SDIF0CMD_MARK,
--	DACK2_MARK,
--	SDIF0CD_MARK,
--	DREQ3_MARK,
--	SDIF0WP_MARK,
--	SCIF0_CTS_MARK,
--	DREQ2_MARK,
--	SDIF0CLK_MARK,
--	SCIF0_RTS_MARK,
--	IRL7_MARK,
--	SDIF0D3_MARK,
--	SCIF0_SCK_MARK,
--	IRL6_MARK,
--	SDIF0D2_MARK,
--	SCIF0_RXD_MARK,
--	IRL5_MARK,
--	SDIF0D1_MARK,
--	SCIF0_TXD_MARK,
--	IRL4_MARK,
--	SDIF0D0_MARK,
--
--	SCIF5_SCK_MARK,
--	FRB_MARK,
--	SCIF5_RXD_MARK,
--	IOIS16_MARK,
--	SCIF5_TXD_MARK,
--	CE2B_MARK,
--	DRAK3_MARK,
--	CE2A_MARK,
--	SCIF4_SCK_MARK,
--	DRAK2_MARK,
--	SSI3_WS_MARK,
--	SCIF4_RXD_MARK,
--	DRAK1_MARK,
--	SSI3_SDATA_MARK,
--	FSTATUS_MARK,
--	SCIF4_TXD_MARK,
--	DRAK0_MARK,
--	SSI3_SCK_MARK,
--	FSE_MARK,
-+	HAC1_SDOUT_MARK, HAC1_SDIN_MARK, HAC1_SYNC_MARK, HAC1_BITCLK_MARK,
-+	HAC0_SDOUT_MARK, HAC0_SDIN_MARK, HAC0_SYNC_MARK, HAC0_BITCLK_MARK,
-+	SSI0_SDATA_MARK, SSI0_SCK_MARK, SSI0_WS_MARK, SSI0_CLK_MARK,
-+	SSI1_SDATA_MARK, SSI1_SCK_MARK, SSI1_WS_MARK, SSI1_CLK_MARK,
-+	SSI2_SDATA_MARK, SSI2_SCK_MARK, SSI2_WS_MARK,
-+	SSI3_SDATA_MARK, SSI3_SCK_MARK, SSI3_WS_MARK,
-+	SDIF1CMD_MARK, SDIF1CD_MARK, SDIF1WP_MARK, SDIF1CLK_MARK,
-+	SDIF1D3_MARK, SDIF1D2_MARK, SDIF1D1_MARK, SDIF1D0_MARK,
-+	SDIF0CMD_MARK, SDIF0CD_MARK, SDIF0WP_MARK, SDIF0CLK_MARK,
-+	SDIF0D3_MARK, SDIF0D2_MARK, SDIF0D1_MARK, SDIF0D0_MARK,
-+	TCLK_MARK,
-+	IRL7_MARK, IRL6_MARK, IRL5_MARK, IRL4_MARK,
- 	PINMUX_MARK_END,
- };
- 
-@@ -433,7 +327,7 @@ static pinmux_enum_t pinmux_data[] = {
- 
- 	/* PD FN */
- 	PINMUX_DATA(DCLKOUT_MARK,	PD7_FN),
--	PINMUX_DATA(SCIF1_SLK_MARK,	PD6_FN),
-+	PINMUX_DATA(SCIF1_SCK_MARK,	PD6_FN),
- 	PINMUX_DATA(SCIF1_RXD_MARK,	PD5_FN),
- 	PINMUX_DATA(SCIF1_TXD_MARK,	PD4_FN),
- 	PINMUX_DATA(DACK1_MARK,		P1MSEL13_1, P1MSEL12_0, PD3_FN),
-@@ -661,7 +555,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	PINMUX_GPIO(GPIO_FN_DB0,		DB0_MARK),
- 	PINMUX_GPIO(GPIO_FN_ETH_RX_ER,		ETH_RX_ER_MARK),
- 	PINMUX_GPIO(GPIO_FN_DCLKOUT,		DCLKOUT_MARK),
--	PINMUX_GPIO(GPIO_FN_SCIF1_SLK,		SCIF1_SLK_MARK),
-+	PINMUX_GPIO(GPIO_FN_SCIF1_SCK,		SCIF1_SCK_MARK),
- 	PINMUX_GPIO(GPIO_FN_SCIF1_RXD,		SCIF1_RXD_MARK),
- 	PINMUX_GPIO(GPIO_FN_SCIF1_TXD,		SCIF1_TXD_MARK),
- 	PINMUX_GPIO(GPIO_FN_DACK1,		DACK1_MARK),
--- 
-1.5.6.3
+On Tue, Feb 24, 2009 at 10:58:57PM +0900, Magnus Damm wrote:
+> Instead of keeping the single vector -> single linux irq mapping
+> we extend the intc code to support merging of vectors to a single
+> linux irq. This helps processors such as sh7750, sh7780 and sh7785
+> which have more vectors than masking ability. With this patch in
+> place we can modify the intc tables to use one irq per maskable
+> irq source. Please note the following:
+> 
+>  - If multiple vectors share the same enum then only the
+>    first vector will be available as a linux irq.
+> 
+>  - Drivers may need to be rewritten to get pending irq 
+>    source from the hardware block instead of irq number.
+> 
+> This patch together with the sh7785 specific intc tables solves
+> DMA controller irq issues related to buggy interrupt masking.
+> 
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> Reported-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 
+Please try to keep the flow consistent here. Reported-by should always be
+first, while Tested-by and so on tend to follow your Signed-off-by.
+
+On Tue, Feb 24, 2009 at 10:59:04PM +0900, Magnus Damm wrote:
+> Update intc tables and platform data to use one linux irq
+> per maskable interrupt source instead of keeping the one-to-one
+> mapping between vectors and linux irqs.
+> 
+> This fixes potential irq masking issues for sh775x hardware
+> blocks such as SCI/SCIF/RTC/DMAC/TMU2/REF.
+
+On Tue, Feb 24, 2009 at 10:59:12PM +0900, Magnus Damm wrote:
+> Update intc tables and platform data to use one linux irq
+> per maskable interrupt source instead of keeping the one-to-one
+> mapping between vectors and linux irqs.
+> 
+> This fixes potential irq masking issues for sh7780 hardware
+> blocks such as SCIF/RTC/DMAC/PCIC5/MMCIF/FLCTL/GPIO
+
+On Tue, Feb 24, 2009 at 10:59:19PM +0900, Magnus Damm wrote:
+> Update intc tables and platform data to use one linux irq
+> per maskable interrupt source instead of keeping the one-to-one
+> mapping between vectors and linux irqs.
+> 
+> This fixes potential irq masking issues for sh7785 hardware
+> blocks such as SCIF/DMAC/PCIC5/MMCIF/GDTA/FLCTL/GPIO
+
+All applied, thanks.
