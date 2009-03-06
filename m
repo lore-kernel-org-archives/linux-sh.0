@@ -1,35 +1,40 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Thu, 26 Mar 2009 08:09:45 +0000
-Subject: Re: [PATCH] sh: add kexec jump support V2
-Message-Id: <49CB3849.9000109@renesas.com>
+From: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
+Date: Fri, 06 Mar 2009 16:35:58 +0000
+Subject: [PATCH v2] Add documentation for "nohlt" kernel parameter
+Message-Id: <20090306163558.11873.5076.stgit@Programuotojas>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090318085129.5943.83795.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090318085129.5943.83795.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, linux-sh@vger.kernel.org
+Cc: yanok@emcraft.com, wd@denx.de
 
-Paul Mundt wrote:
-> On Thu, Mar 26, 2009 at 11:22:26AM +0900, Nobuhiro Iwamatsu wrote:
->> Hi,all.
->>
->> I'm sorry that I could not check this patch.
->>
->> This patch became compilation error in SH2/SH2A, because there are
->> not a spc register and a ssr register in SH2.[0]
->> I don't have environment of SH2 and I don't know whether I work
->> by these measures.
->> Do you have somebody, environment?
->>
->> [0]: http://kisskb.ellerman.id.au/kisskb/buildresult/271654/
->>
-> Kexec is not likely to work on nommu anyways, given that all of the tools
-> today assume ELF. I suspect we should just make it depend on MMU and be
-> done with it for now.
-> 
-OK, I understood.
-I will send patch for this topic.
+As per discussion in:
+http://marc.info/?l=linux-arm-kernel&m3633652517391&w=2
 
-Best regards,
-  Nobuhiro
+v2:
+- usefull<->useful
+
+Signed-off-by: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
+---
+
+ Documentation/kernel-parameters.txt |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index 54f21a5..5d251ad 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -1487,7 +1487,9 @@ and is between 256 and 4096 characters. It is defined in the file
+ 
+ 	noclflush	[BUGS=X86] Don't use the CLFLUSH instruction
+ 
+-	nohlt		[BUGS=ARM,SH]
++	nohlt		[BUGS=ARM,SH] Tells the kernel that the sleep(SH) or
++			wfi(ARM) instruction doesn't work correctly and not to
++			use it. This is also useful when using JTAG debugger.
+ 
+ 	no-hlt		[BUGS=X86-32] Tells the kernel that the hlt
+ 			instruction doesn't work correctly and not to
+
