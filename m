@@ -1,86 +1,49 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Mar 2009 09:53:50 +0000
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Fri, 06 Mar 2009 10:05:35 +0000
 Subject: Re: [PATCH] sh: hibernation support
-Message-Id: <aec7e5c30903060153w962ff3bjcda3f8a24ac0acb2@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="0022152d695505de1e04647043cd"
+Message-Id: <49B0F56F.2090806@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090306064156.27281.35572.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090306064156.27281.35572.sendpatchset@rx1.opensource.se>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---0022152d695505de1e04647043cd
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Hi Magnus
+>
+> Great! You should try in on some ST hardware as well. =)
+>   
+Yes I could try if it works also if we already had the hibernation on 
+memory on sh4.
+>   
+>> Is it also for sh4 with PMB? If so how are you managing the PMB?
+>> Moreover what about interrupt controller? This means after a resume from
+>> hibernation
+>> you could have a resumed device (and driver) but the interrupt controller
+>> has the right irq-line not initialized.
+>>     
+>
+> I have not tested with PMB.
+On PMB: some entries may be is already OK (the entries the bootloader 
+prepared fot linux)
+ but Linux has to force an hw-initialization of the other entries
+>  You are right about the interrupt
+> controller, but it works because swsusp resume boots up the system as
+> usual with an identical kernel. Look at the attached file for the
+> swsusp code flow...
+>   
+You are right until you don't use module.
+If you use a "mini-kernel" with several modules... when you will resume 
+from hibernation at the begin
+ you boots again the 'mini-kernel'... after that you restore the 
+previous image and the irq line required by
+ module more probably remains as it was (not-initialized).
 
-On Fri, Mar 6, 2009 at 4:06 PM, Francesco VIRLINZI
-<francesco.virlinzi@st.com> wrote:
-> Hi Magnus
-> I was looking your patch and I have few question.
+Regards
+ Francesco
+> Cheers,
+>
+> / magnus
+>   
 
-Great! You should try in on some ST hardware as well. =)
-
-> Is it also for sh4 with PMB? If so how are you managing the PMB?
-> Moreover what about interrupt controller? This means after a resume from
-> hibernation
-> you could have a resumed device (and driver) but the interrupt controller
-> has the right irq-line not initialized.
-
-I have not tested with PMB. You are right about the interrupt
-controller, but it works because swsusp resume boots up the system as
-usual with an identical kernel. Look at the attached file for the
-swsusp code flow...
-
-Cheers,
-
-/ magnus
-
---0022152d695505de1e04647043cd
-Content-Type: text/plain; charset=US-ASCII; name="pm.txt"
-Content-Disposition: attachment; filename="pm.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_fryoryz20
-
-Q09ORklHX0hJQkVSTkFURSBpbiAyLjYuMjkKCnN1c3BlbmQgb3BlcmF0aW9uIAotLS0tLS0tLS0t
-LS0tLS0tLS0Kc3dzdXNwIGNvZGUgICAgICAgICAgICAgICAgICAgICAgICBhcmNoIGNvZGUgICAg
-ICAgICAgIGRyaXZlciBjYWxsYmFja3MKCmhpYmVybmF0ZSgpOiBbZGlzay5jXQogIGhpYmVybmF0
-aW9uX3NuYXBzaG90KCkKCmhpYmVybmF0aW9uX3NuYXBzaG90KCk6CiAgc3VzcGVuZF9jb25zb2xl
-KCkKICBkZXZpY2Vfc3VzcGVuZChQTVNHX0ZSRUVaRSkgICAgICAgICAgICAgICAgICAgICAgICAg
-IHByZXBhcmUoKSwgZnJlZXplKCkKICBkaXNhYmxlX25vbmJvb3RfY3B1cygpCiAgY3JlYXRlX2lt
-YWdlKCkKCmNyZWF0ZV9pbWFnZSgpOgogIGFyY2hfcHJlcGFyZV9zdXNwZW5kKCkgICAgICAgICAg
-IGRvIG5vdGhpbmcKICBsb2NhbF9pcnFfZGlzYWJsZSgpCiAgZGV2aWNlX3Bvd2VyX2Rvd24oUE1T
-R19GUkVFWkUpICAgICAgICAgICAgICAgICAgICAgICBmcmVlemVfbm9pcnEoKQogIHNhdmVfcHJv
-Y2Vzc29yX3N0YXRlKCkgICAgICAgICAgIHNhdmUgcmVnaXN0ZXJzCiAgc3dzdXNwX2FyY2hfc3Vz
-cGVuZCgpICAgICAgICAgICAgY2FsbCBzd3N1c3Bfc2F2ZSgpCgpzd3N1c3Bfc2F2ZSgpIFtzbmFw
-c2hvdC5jXQogIGNyZWF0ZSBoaWJlcm5hdGlvbiBpbWFnZQoKY3JlYXRlX2ltYWdlKCk6IFtkaXNr
-LmNdCiAgcmVzdG9yZV9wcm9jZXNzb3Jfc3RhdGUoKSAgICAgICAgcmVzdG9yZSByZWdpc3RlcnMK
-ICBkZXZpY2VfcG93ZXJfdXAoUE1TR19USEFXKSAgICAgICAgICAgICAgICAgICAgICAgICAgIHRo
-YXdfbm9pcnEoKQogIGxvY2FsX2lycV9lbmFibGUoKQogIApoaWJlcm5hdGlvbl9zbmFwc2hvdCgp
-CiAgZW5hYmxlX25vbmJvb3RfY3B1cygpCiAgZGV2aWNlX3Jlc3VtZShQTVNHX1RIQVcpICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICB0aGF3KCksIGNvbXBsZXRlKCkKICByZXN1bWVfY29uc29s
-ZSgpCgpoaWJlcm5hdGUoKToKICBzd3N1c3Bfd3JpdGUoKQogIHN3c3VzcF9mcmVlKCkKICBwb3dl
-cl9kb3duKCkKCnBvd2VyX2Rvd24oKToKICBoaWJlcm5hdGlvbl9wbGF0Zm9ybV9lbnRlcigpCgpo
-aWJlcm5hdGlvbl9wbGF0Zm9ybV9lbnRlcigpOgogIHN1c3BlbmRfY29uc29sZSgpCiAgZGV2aWNl
-X3N1c3BlbmQoUE1TR19ISUJFUk5BVEUpICAgICAgICAgICAgICAgICAgICAgICBwcmVwYXJlKCks
-IHBvd2Vyb2ZmKCkKICBkaXNhYmxlX25vbmJvb3RfY3B1cygpCiAgbG9jYWxfaXJxX2Rpc2FibGUo
-KQogIGRldmljZV9wb3dlcl9kb3duKFBNU0dfSElCRVJOQVRFKSAgICAgICAgICAgICAgICAgICAg
-cG93ZXJvZmZfbm9pcnEoKQoKCnJlc3VtZSBvcGVyYXRpb246Ci0tLS0tLS0tLS0tLS0tLS0tCnN3
-c3VzcCBjb2RlICAgICAgICAgICAgICAgICAgICAgICAgYXJjaCBjb2RlICAgICAgICAgICBkcml2
-ZXIgY2FsbGJhY2tzCgpzb2Z0d2FyZV9yZXN1bWUoKSBbZGlzay5jXQogIHN3c3VzcF9jaGVjaygp
-CiAgc3dzdXNwX3JlYWQoKQogIGhpYmVybmF0aW9uX3Jlc3RvcmUoKQoKaGliZXJuYXRpb25fcmVz
-dG9yZSgpCiAgc3VzcGVuZF9jb25zb2xlKCkKICBkZXZpY2Vfc3VzcGVuZChQTVNHX1FVSUVTQ0Up
-ICAgICAgICAgICAgICAgICAgICAgICAgIHByZXBhcmUoKSwgZnJlZXplKCkKICBkaXNhYmxlX25v
-bmJvb3RfY3B1cygpCiAgcmVzdW1lX3RhcmdldF9rZXJuZWwoKQoKcmVzdW1lX3RhcmdldF9rZXJu
-ZWwoKQogIGxvY2FsX2lycV9kaXNhYmxlKCkKICBkZXZpY2VfcG93ZXJfZG93bihQTVNHX1FVSUVT
-Q0UpICAgICAgICAgICAgICAgICAgICAgIGZyZWV6ZV9ub2lycSgpCiAgc2F2ZV9wcm9jZXNzb3Jf
-c3RhdGUoKSAgICAgICAgICAgc2F2ZSByZWdpc3RlcnMKICByZXN0b3JlX2hpZ2htZW0oKQogIHN3
-c3VzcF9hcmNoX3Jlc3VtZSgpICAgICAgICAgICAgIG92ZXJ3cml0ZSBtZW1vcnkKCiAgW2V4ZWN1
-dGluZyBvbGQgaW1hZ2Ugbm93LCBiYWNrIGluIHN1c3BlbmQgcGF0aCB3aXRoIGluX3N1c3BlbmQg
-PSAwXQoKY3JlYXRlX2ltYWdlKCk6CiAgcmVzdG9yZV9wcm9jZXNzb3Jfc3RhdGUoKSAgICAgICAg
-cmVzdG9yZSByZWdpc3RlcnMKICBkZXZpY2VfcG93ZXJfdXAoUE1TR19SRVNUT1JFKSAgICAgICAg
-ICAgICAgICAgICAgICAgIHJlc3RvcmVfbm9pcnEoKQogIGxvY2FsX2lycV9lbmFibGUoKQogIApo
-aWJlcm5hdGlvbl9zbmFwc2hvdCgpCiAgZW5hYmxlX25vbmJvb3RfY3B1cygpCiAgZGV2aWNlX3Jl
-c3VtZShQTVNHX1JFU1RPUkUpICAgICAgICAgICAgICAgICAgICAgICAgICByZXN0b3JlKCksIGNv
-bXBsZXRlKCkKICByZXN1bWVfY29uc29sZSgpCgpoaWJlcm5hdGUoKToKICBzd3N1c3BfZnJlZSgp
-Cg==
---0022152d695505de1e04647043cd--
