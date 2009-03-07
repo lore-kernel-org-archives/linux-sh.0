@@ -1,40 +1,23 @@
-From: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
-Date: Fri, 06 Mar 2009 16:35:58 +0000
-Subject: [PATCH v2] Add documentation for "nohlt" kernel parameter
-Message-Id: <20090306163558.11873.5076.stgit@Programuotojas>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 07 Mar 2009 06:22:11 +0000
+Subject: Re: [PATCH v2] Add documentation for "nohlt" kernel parameter
+Message-Id: <20090307062211.GD14735@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090306163558.11873.5076.stgit@Programuotojas>
+In-Reply-To: <20090306163558.11873.5076.stgit@Programuotojas>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, linux-sh@vger.kernel.org
-Cc: yanok@emcraft.com, wd@denx.de
+To: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
+Cc: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, linux-sh@vger.kernel.org, yanok@emcraft.com, wd@denx.de
 
-As per discussion in:
-http://marc.info/?l=linux-arm-kernel&m3633652517391&w=2
+On Fri, Mar 06, 2009 at 06:35:58PM +0200, Paulius Zaleckas wrote:
+> As per discussion in:
+> http://marc.info/?l=linux-arm-kernel&m3633652517391&w=2
+> 
+> v2:
+> - usefull<->useful
+> 
+> Signed-off-by: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
 
-v2:
-- usefull<->useful
-
-Signed-off-by: Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
----
-
- Documentation/kernel-parameters.txt |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-
-diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 54f21a5..5d251ad 100644
---- a/Documentation/kernel-parameters.txt
-+++ b/Documentation/kernel-parameters.txt
-@@ -1487,7 +1487,9 @@ and is between 256 and 4096 characters. It is defined in the file
- 
- 	noclflush	[BUGS=X86] Don't use the CLFLUSH instruction
- 
--	nohlt		[BUGS=ARM,SH]
-+	nohlt		[BUGS=ARM,SH] Tells the kernel that the sleep(SH) or
-+			wfi(ARM) instruction doesn't work correctly and not to
-+			use it. This is also useful when using JTAG debugger.
- 
- 	no-hlt		[BUGS=X86-32] Tells the kernel that the hlt
- 			instruction doesn't work correctly and not to
-
+Acked-by: Paul Mundt <lethal@linux-sh.org>
