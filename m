@@ -1,30 +1,26 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 10 Mar 2009 06:19:35 +0000
-Subject: Re: [PATCH] video: deferred io cleanup fix for sh_mobile_lcdcfb
-Message-Id: <20090310061935.GD10393@linux-sh.org>
+From: Pavel Machek <pavel@ucw.cz>
+Date: Tue, 10 Mar 2009 11:24:18 +0000
+Subject: Re: [linux-pm] [PATCH] pm: rework includes, remove arch ifdefs V2
+Message-Id: <20090310112418.GG1337@ucw.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090310060849.22278.94445.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090310060849.22278.94445.sendpatchset@rx1.opensource.se>
+References: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090223080204.13536.67018.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-fbdev-devel@lists.sourceforge.net, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Mar 10, 2009 at 03:08:49PM +0900, Magnus Damm wrote:
+On Wed 2009-02-25 12:59:29, Magnus Damm wrote:
 > From: Magnus Damm <damm@igel.co.jp>
 > 
-> Fix deferred io cleanup patch in the sh_mobile_lcdcfb driver.
-> 
-> If probe() fails early the sh_mobile_lcdc_stop() function will
-> be called to clean up deferred io. This patch modifies the
-> code to only call fb_deferred_io_cleanup() after deferred io
-> has been initialized. 
-> 
-> With this patch applied we no longer hit BUG_ON() inside
-> fb_deferred_io_cleanup(). Triggers on a Migo-R with the
-> SYS QVGA panel board unmounted.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> This patch contains the following header file changes:
+>  - remove arch ifdefs and asm/suspend.h from linux/suspend.h
+>  - add asm/suspend.h to disk.c (for arch_prepare_suspend())
+>  - add linux/io.h to swsusp.c (for ioremap())
+>  - x86 32/64 bit compile fixes
 
-Rolled in to the for-2.6.29 queue, thanks.
+Looks ok to me, but I did not test it. ACK.
+
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
