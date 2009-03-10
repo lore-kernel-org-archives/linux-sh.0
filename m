@@ -1,54 +1,52 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 23 Mar 2009 10:29:54 +0000
-Subject: Re: On "sh: Consolidate SH-Mobile CPU code in arch/sh/kernel/cpu/shmobile/."
-Message-Id: <aec7e5c30903230329mc9a3fceya54b27dc68cd6528@mail.gmail.com>
+Date: Tue, 10 Mar 2009 06:08:49 +0000
+Subject: [PATCH] video: deferred io cleanup fix for sh_mobile_lcdcfb
+Message-Id: <20090310060849.22278.94445.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49BF4B7C.2090607@st.com>
-In-Reply-To: <49BF4B7C.2090607@st.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev-devel@lists.sourceforge.net
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-On Thu, Mar 19, 2009 at 4:17 PM, Francesco VIRLINZI
-<francesco.virlinzi@st.com> wrote:
-> What do you mean with 'page'? I don't see 'page' issue until we don't use
-> the TLB
+From: Magnus Damm <damm@igel.co.jp>
 
-Hehe, sorry for my unclear language. I didn't mean page as memory
-management unit. =3D)
+Fix deferred io cleanup patch in the sh_mobile_lcdcfb driver.
 
->> No, no code exists at this point. I hope to find some time to hack up
->> a prototype next week. We probably need a couple of iterations before
->> we both are happy so I suspect the interpreter stuff would be 2.6.31
->> material. Is that ok, or do you have any special requirements from
->> your side?
->>
->
-> It isn't a real problem for me.
-> In February we did our first kernel release with =A0pm support and I can
-> maintain this
-> code until the official pm support will be integrated in the kernel after
-> that I will (slowly..)
-> move our SOCs in the new pm infrastructure.
-> Let me say I have my 'recovery' solution therefore the time required
-> for investigation/design/prototype isn't a problem.
+If probe() fails early the sh_mobile_lcdc_stop() function will
+be called to clean up deferred io. This patch modifies the
+code to only call fb_deferred_io_cleanup() after deferred io
+has been initialized. 
 
-Good. Sounds like you will be able to spend some time in the future.
+With this patch applied we no longer hit BUG_ON() inside
+fb_deferred_io_cleanup(). Triggers on a Migo-R with the
+SYS QVGA panel board unmounted.
 
->> I also need to focus on fixing up the clock framework
->
-> What about clock framework?
-> I'd like an integrated support for standby (as I did for hibernation... a=
-lso
-> if I know the standby is more difficult
-> than hibernation).
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-I agree. What more is needed for standby in your opinion?
+ drivers/video/sh_mobile_lcdcfb.c |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-Cheers,
-
-/ magnus
-
-PS. If you have time, please fix clock framework warning in sh-2.6
-introduced by suspend code (i think).
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2009-03-03 18:31:37.000000000 +0900
+@@ -446,7 +446,6 @@ static void sh_mobile_lcdc_stop(struct s
+ {
+ 	struct sh_mobile_lcdc_chan *ch;
+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg;
+-	unsigned long tmp;
+ 	int k;
+ 
+ 	/* tell the board code to disable the panel */
+@@ -456,9 +455,8 @@ static void sh_mobile_lcdc_stop(struct s
+ 		if (board_cfg->display_off)
+ 			board_cfg->display_off(board_cfg->board_data);
+ 
+-		/* cleanup deferred io if SYS bus */
+-		tmp = ch->cfg.sys_bus_cfg.deferred_io_msec;
+-		if (ch->ldmt1r_value & (1 << 12) && tmp) {
++		/* cleanup deferred io if enabled */
++		if (ch->info.fbdefio) {
+ 			fb_deferred_io_cleanup(&ch->info);
+ 			ch->info.fbdefio = NULL;
+ 		}
