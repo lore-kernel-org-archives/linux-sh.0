@@ -1,8 +1,10 @@
 From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Tue, 10 Mar 2009 02:52:20 +0000
+Date: Tue, 10 Mar 2009 04:48:14 +0000
 Subject: [PATCH v2] sh: Update dma-sh api
-Message-Id: <49B5D5E4.4060801@renesas.com>
+Message-Id: <49B5F10E.7080706@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <49B5D5E4.4060801@renesas.com>
+In-Reply-To: <49B5D5E4.4060801@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,9 +16,9 @@ And add Multi IRQ support for SH7763/64/80/85.
 
 Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
 Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-
 ---
- Makefile                                 |    4 +-
+ V2: Remove Makefile
+
  arch/sh/drivers/dma/Kconfig              |    8 +-
  arch/sh/drivers/dma/dma-sh.c             |  172 ++++++++++++++++++++----------
  arch/sh/drivers/dma/dma-sh.h             |   75 -------------
@@ -26,26 +28,12 @@ Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
  arch/sh/include/cpu-sh4/cpu/dma-sh4a.h   |   94 ++++++++++++++++
  arch/sh/include/cpu-sh4/cpu/dma-sh7780.h |   39 -------
  arch/sh/include/cpu-sh4/cpu/dma.h        |   30 +++---
- 10 files changed, 354 insertions(+), 210 deletions(-)
+ 9 files changed, 352 insertions(+), 208 deletions(-)
  delete mode 100644 arch/sh/drivers/dma/dma-sh.h
  create mode 100644 arch/sh/include/asm/dma-sh.h
  create mode 100644 arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
  delete mode 100644 arch/sh/include/cpu-sh4/cpu/dma-sh7780.h
 
-diff --git a/Makefile b/Makefile
-index 681c1d2..5f6df0c 100644
---- a/Makefile
-+++ b/Makefile
-@@ -190,8 +190,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
- # Default value for CROSS_COMPILE is not to prefix executables
- # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
- export KBUILD_BUILDHOST := $(SUBARCH)
--ARCH		?= $(SUBARCH)
--CROSS_COMPILE	?+ARCH		?= sh
-+CROSS_COMPILE	?= sh4-unknown-linux-gnu-
-
- # Architecture as present in compile.h
- UTS_MACHINE 	:= $(ARCH)
 diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
 index 0193636..57d95fc 100644
 --- a/arch/sh/drivers/dma/Kconfig
