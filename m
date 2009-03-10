@@ -1,76 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 10 Mar 2009 06:24:21 +0000
-Subject: [PATCH] input: add suspend wakeup support to sh_keysc
-Message-Id: <20090310062421.22328.68726.sendpatchset@rx1.opensource.se>
+From: Trilok Soni <soni.trilok@gmail.com>
+Date: Tue, 10 Mar 2009 08:36:00 +0000
+Subject: Re: [PATCH] input: add suspend wakeup support to sh_keysc
+Message-Id: <5d5443650903100124g2bbc4837gaa5d9a9f17cd56f0@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090310062421.22328.68726.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090310062421.22328.68726.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-input@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Hi Magnus,
 
-This patch adds wakeup support to the sh_keysc driver.
-With this feature the ".../power/wakeup" file can be
-used to enable and disable if the device takes the
-system out of suspend. Default is enabled.
+> +
+> + =A0 =A0 =A0 device_init_wakeup(&pdev->dev, 1);
+> =A0 =A0 =A0 =A0return 0;
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
 
- drivers/input/keyboard/sh_keysc.c |   29 +++++++++++++++++++++++++----
- 1 file changed, 25 insertions(+), 4 deletions(-)
+Please add device_init_wakeup(&pdev->dev, 0) in sh_keysc_remove.
 
---- 0001/drivers/input/keyboard/sh_keysc.c
-+++ work/drivers/input/keyboard/sh_keysc.c	2009-03-09 19:14:47.000000000 +0900
-@@ -219,6 +219,8 @@ static int __devinit sh_keysc_probe(stru
- 		  pdata->scan_timing, priv->iomem_base + KYCR1_OFFS);
- 	iowrite16(0, priv->iomem_base + KYOUTDR_OFFS);
- 	iowrite16(KYCR2_IRQ_LEVEL, priv->iomem_base + KYCR2_OFFS);
-+
-+	device_init_wakeup(&pdev->dev, 1);
- 	return 0;
-  err5:
- 	free_irq(irq, pdev);
-@@ -253,17 +255,36 @@ static int __devexit sh_keysc_remove(str
- 	return 0;
- }
- 
-+static int sh_keysc_suspend(struct device *dev)
-+{
-+	struct platform_device *pdev;
-+	struct sh_keysc_priv *priv;
-+	unsigned short value;
-+
-+	pdev = container_of(dev, struct platform_device, dev);
-+	priv = platform_get_drvdata(pdev);
-+
-+	value = ioread16(priv->iomem_base + KYCR1_OFFS);
-+
-+	if (device_may_wakeup(dev))
-+		value |= 0x80;
-+	else
-+		value &= ~0x80;
- 
--#define sh_keysc_suspend NULL
--#define sh_keysc_resume NULL
-+	iowrite16(value, priv->iomem_base + KYCR1_OFFS);
-+	return 0;
-+}
-+
-+static struct dev_pm_ops sh_keysc_dev_pm_ops = {
-+	.suspend = sh_keysc_suspend,
-+};
- 
- struct platform_driver sh_keysc_device_driver = {
- 	.probe		= sh_keysc_probe,
- 	.remove		= __devexit_p(sh_keysc_remove),
--	.suspend	= sh_keysc_suspend,
--	.resume		= sh_keysc_resume,
- 	.driver		= {
- 		.name	= "sh_keysc",
-+		.pm	= &sh_keysc_dev_pm_ops,
- 	}
- };
- 
+> =A0err5:
+> =A0 =A0 =A0 =A0free_irq(irq, pdev);
+> @@ -253,17 +255,36 @@ static int __devexit sh_keysc_remove(str
+> =A0 =A0 =A0 =A0return 0;
+> =A0}
+>
+> +static int sh_keysc_suspend(struct device *dev)
+> +{
+> + =A0 =A0 =A0 struct platform_device *pdev;
+> + =A0 =A0 =A0 struct sh_keysc_priv *priv;
+> + =A0 =A0 =A0 unsigned short value;
+> +
+> + =A0 =A0 =A0 pdev =3D container_of(dev, struct platform_device, dev);
+> + =A0 =A0 =A0 priv =3D platform_get_drvdata(pdev);
+
+to_platform_device(...) ?
+
+--=20
+---Trilok Soni
+http://triloksoni.wordpress.com
+http://www.linkedin.com/in/triloksoni
