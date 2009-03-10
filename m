@@ -1,135 +1,817 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Mon, 16 Mar 2009 02:18:24 +0000
-Subject: Re: [PATCH v2] sh: Update dma-sh api
-Message-Id: <29ab51dc0903151918t3ad438d6u5c88fff7ad6f18f5@mail.gmail.com>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Tue, 10 Mar 2009 08:17:33 +0000
+Subject: [PATCH v3] sh: Update dma-sh api
+Message-Id: <49B6221D.1020301@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49B5D5E4.4060801@renesas.com>
-In-Reply-To: <49B5D5E4.4060801@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGksIEFkcmlhbi4KClRoYW5rIHlvdSBmb3IgeW91ciB0ZXN0IS4KCjIwMDkvMy8xNCBBZHJpYW4g
-TWNNZW5hbWluIDxhZHJpYW5AbmV3Z29sZGRyZWFtLmR5bmRucy5pbmZvPjoKPiBPbiBTYXQsIDIw
-MDktMDMtMTQgYXQgMDA6MDkgKzA5MDAsIFBhdWwgTXVuZHQgd3JvdGU6Cj4+IE9uIEZyaSwgTWFy
-IDEzLCAyMDA5IGF0IDEyOjA1OjI1UE0gKzAwMDAsIEFkcmlhbiBNY01lbmFtaW4gd3JvdGU6Cj4+
-ID4gMjAwOS8zLzEwIFBhdWwgTXVuZHQgPGxldGhhbEBsaW51eC1zaC5vcmc+Ogo+PiA+ID4gT24g
-VHVlLCBNYXIgMTAsIDIwMDkgYXQgMDQ6MjI6MzdQTSArMDkwMCwgTm9idWhpcm8gSXdhbWF0c3Ug
-d3JvdGU6Cj4+ID4gPj4gUGF1bCBNdW5kdCB3cm90ZToKPj4gPiA+PiA+T24gVHVlLCBNYXIgMTAs
-IDIwMDkgYXQgMDE6NDg6MTRQTSArMDkwMCwgTm9idWhpcm8gSXdhbWF0c3Ugd3JvdGU6Cj4+ID4K
-Pj4gPiCgLi4uCj4+ID4KPj4gPiA+PiBJIHNlZS4KPj4gPiA+PiBJIGhhdmUgYWxyZWFkeSBiZWVu
-IHdyaXRpbmcgdGhlIGRyaXZlciBvZiBETUFlbmdpbmUsIGFuZCBJIGFtIHRlc3RpbmcuCj4+ID4g
-Pj4gVG8gbWFrZSBvbGQgRE1BLUFQSSBjb2V4aXN0IHdpdGggZG1hIGVuZ2luZSBpbiB0aGVzZSBw
-YXRjaGVzLCBJIHdyb3RlLgo+PiA+ID4+Cj4+ID4gPiBBaCwgb2ssIEkgd2Fzbid0IGF3YXJlIHRo
-YXQgdGhhdCB3YXMgd2hhdCB5b3VyIGludGVudGlvbiB3YXMuIEluIHRoYXQKPj4gPiA+IGNhc2Us
-IG9uY2UgdGhlIERyZWFtY2FzdCBmYWxsb3V0IGlzIGZpeGVkLCBJJ2xsIG1lcmdlIHRoZXNlLgo+
-PiA+Cj4+ID4KPj4gPiBKdXN0IGNvbWUgYWNyb3NzIHRoaXMuIEkgYW0gaGFwcHkgdG8gdGVzdCBh
-bnkgbmV3IHBhdGNoIG9uIHRoZQo+PiA+IERyZWFtY2FzdCBvbmNlIGl0J3MgZG9uZS4gSnVzdCBs
-ZXQgbWUga25vdyBhbmQga2ljayBtZSBpZiBJIGRvbid0Cj4+ID4gcmVzcG9uZC4KPj4KPj4gVGhl
-IHVwZGF0ZWQgdmVyc2lvbiBvZiB0aGlzIGlzIG1lcmdlZCBub3csIHNvIHBsZWFzZSBzZWUgaWYg
-dGhlcmUgYXJlIGFueQo+PiByZWdyZXNzaW9ucyBpbiB0aGUgY3VycmVudCBnaXQgdHJlZS4KPgo+
-Cj4gRG9lc24ndCB3b3JrIEknbSBhZnJhaWQ6Cj4KPiBbIKAgoDAuMDAwMDAwXSBMaW51eCB2ZXJz
-aW9uIDIuNi4yOS1yYzctMDAyMTUtZzYwMGZhNTcgKGFkcmlhbkBib3NzY2xhc3MpIChnY2MgdmVy
-c2lvbiA0LjIuMikgIzEgUFJFRU1QVCBTYXQgTWFyIDE0IDAwOjUzOjQ3IEdNVCAyMDA5Cj4gWyCg
-IKAwLjAwMDAwMF0gQm9vdCBwYXJhbXM6Cj4gWyCgIKAwLjAwMDAwMF0gLi4uIE1PVU5UX1JPT1Rf
-UkRPTkxZIC0gOTFmMGM3NWYKPiBbIKAgoDAuMDAwMDAwXSAuLi4gUkFNRElTS19GTEFHUyCgIKAg
-LSBlMWZmMzAxOAo+IFsgoCCgMC4wMDAwMDBdIC4uLiBPUklHX1JPT1RfREVWIKAgoCAtIDg5MDkz
-NjEwCj4gWyCgIKAwLjAwMDAwMF0gLi4uIExPQURFUl9UWVBFIKAgoCCgIC0gMzYxMmUxMDgKPiBb
-IKAgoDAuMDAwMDAwXSAuLi4gSU5JVFJEX1NUQVJUIKAgoCCgLSA0NjA4ODkwNAo+IFsgoCCgMC4w
-MDAwMDBdIC4uLiBJTklUUkRfU0laRSCgIKAgoCAtIDYwMDIzMDZjCj4gWyCgIKAwLjAwMDAwMF0g
-Y29uc29sZSBbc2VyY29uMF0gZW5hYmxlZAo+IFsgoCCgMC4wMDAwMDBdIEJvb3RpbmcgbWFjaHZl
-YzogU2VnYSBEcmVhbWNhc3QKPiBbIKAgoDAuMDAwMDAwXSBOb2RlIDA6IHN0YXJ0X3BmbiA9IDB4
-YzAwMCwgbG93ID0gMHhkMDAwCj4gWyCgIKAwLjAwMDAwMF0gWm9uZSBQRk4gcmFuZ2VzOgo+IFsg
-oCCgMC4wMDAwMDBdIKAgTm9ybWFsIKAgMHgwMDAwYzAwMCAtPiAweDAwMDBkMDAwCj4gWyCgIKAw
-LjAwMDAwMF0gTW92YWJsZSB6b25lIHN0YXJ0IFBGTiBmb3IgZWFjaCBub2RlCj4gWyCgIKAwLjAw
-MDAwMF0gZWFybHlfbm9kZV9tYXBbMV0gYWN0aXZlIFBGTiByYW5nZXMKPiBbIKAgoDAuMDAwMDAw
-XSCgIKAgMDogMHgwMDAwYzAwMCAtPiAweDAwMDBkMDAwCj4gWyCgIKAwLjAwMDAwMF0gQnVpbHQg
-MSB6b25lbGlzdHMgaW4gWm9uZSBvcmRlciwgbW9iaWxpdHkgZ3JvdXBpbmcgb24uIKBUb3RhbCBw
-YWdlczogNDA2NAo+IFsgoCCgMC4wMDAwMDBdIEtlcm5lbCBjb21tYW5kIGxpbmU6IHJvb3Q9L2Rl
-di9uZnMgcncgbmZzcm9vdBkyLjE2OC42MS41MDovaG9tZS9hZHJpYW4vZGViZGlzdCBpcD1kaGNw
-IGVhcmx5cHJpbnRrPXNlcmlhbCB2aWRlbz1wdnIyZmI6NjQweDQ4MC0zMkA2MCBjb25zb2xlPXR0
-eVNDMSBwYW5pYz03Cj4gWyCgIKAwLjAwMDAwMF0gUElEIGhhc2ggdGFibGUgZW50cmllczogNjQg
-KG9yZGVyOiA2LCAyNTYgYnl0ZXMpCj4gWyCgIKAwLjAwMDAwMF0gVXNpbmcgdG11IGZvciBzeXN0
-ZW0gdGltZXIKPiBbIKAgoDAuMDA0MzIyXSBDb25zb2xlOiBjb2xvdXIgZHVtbXkgZGV2aWNlIDgw
-eDI1Cj4gWyCgIKAwLjAwOTM5OV0gRGVudHJ5IGNhY2hlIGhhc2ggdGFibGUgZW50cmllczogMjA0
-OCAob3JkZXI6IDEsIDgxOTIgYnl0ZXMpCj4gWyCgIKAwLjAxNjkzNV0gSW5vZGUtY2FjaGUgaGFz
-aCB0YWJsZSBlbnRyaWVzOiAxMDI0IChvcmRlcjogMCwgNDA5NiBieXRlcykKPiBbIKAgoDAuMDI2
-ODg4XSBNZW1vcnk6IDEyNDAway8xNjM4NGsgYXZhaWxhYmxlICgyNDU2ayBrZXJuZWwgY29kZSwg
-NjIzayBkYXRhLCAxMjRrIGluaXQpCj4gWyCgIKAwLjAzNTUwMV0gUFZSBDAyMDVjMSBDVlIAMDAw
-MDAwIFBSUgAwMDAwMDAKPiBbIKAgoDAuMDQwODQxXSBJLWNhY2hlIDogbl93YXlzPTEgbl9zZXRz
-JTYgd2F5X2luY3KBOTIKPiBbIKAgoDAuMDQ2NTY3XSBJLWNhY2hlIDogZW50cnlfbWFzaz0weDAw
-MDAxZmUwIGFsaWFzX21hc2s9MHgwMDAwMTAwMCBuX2FsaWFzZXM9Mgo+IFsgoCCgMC4wNTQ0MDZd
-IEQtY2FjaGUgOiBuX3dheXM9MSBuX3NldHNRMiB3YXlfaW5jchYzODQKPiBbIKAgoDAuMDYwMjMx
-XSBELWNhY2hlIDogZW50cnlfbWFzaz0weDAwMDAzZmUwIGFsaWFzX21hc2s9MHgwMDAwMzAwMCBu
-X2FsaWFzZXM9NAo+IFsgoCCgMC4wNjg1MzhdIFNMVUI6IEdlbnNsYWJzECwgSFdhbGlnbjIsIE9y
-ZGVyPTAtMywgTWluT2JqZWN0cz0wLCBDUFVzPTEsIE5vZGVzPTEKPiBbIKAgoDAuMDc3MDg5XSBD
-YWxpYnJhdGluZyBkZWxheSBsb29wIChza2lwcGVkKS4uLiAxOTkuNTAgQm9nb01JUFMgUFJFU0VU
-IChscGo5OTAxMikKPiBbIKAgoDAuMDg2OTg3XSBNb3VudC1jYWNoZSBoYXNoIHRhYmxlIGVudHJp
-ZXM6IDUxMgo+IFsgoCCgMC4wOTcwNDBdIENQVTogU0g3NzUwCj4gWyCgIKAwLjEyODk4Nl0gbmV0
-X25hbWVzcGFjZTogMjk2IGJ5dGVzCj4gWyCgIKAwLjEzNDc2Ml0gTkVUOiBSZWdpc3RlcmVkIHBy
-b3RvY29sIGZhbWlseSAxNgo+IFsgoCCgMC4yNjY0NDNdIGJpbzogY3JlYXRlIHNsYWIgPGJpby0w
-PiBhdCAwCj4gWyCgIKAwLjI5MjM5MF0gRE1BOiBSZWdpc3RlcmluZyBETUEgQVBJLgo+IFsgoCCg
-MC4yOTcxNTZdIERNQUMgQWRkcmVzcyBFcnJvcjAgcmVxdWVzdF9pcnEgZmFpbAo+IFsgoCCgMC4z
-MDIzNjJdIEZhdWx0IGluIHVuYWxpZ25lZCBmaXh1cDogMDAwMCBbIzFdCj4gWyCgIKAwLjMwNzI2
-N10gTW9kdWxlcyBsaW5rZWQgaW46Cj4gWyCgIKAwLjMxMDY5Nl0KPiBbIKAgoDAuMzEyMjU3XSBQ
-aWQgOiAxLCBDb21tOiCgIKAgoCCgIKAgc3dhcHBlcgo+IFsgoCCgMC4zMTYxNjhdIENQVSA6IDAg
-oCCgIKAgoCCgIKAgoCCgIKBOb3QgdGFpbnRlZCCgKDIuNi4yOS1yYzctMDAyMTUtZzYwMGZhNTcg
-IzEpCj4gWyCgIKAwLjMxNjE5N10KPiBbIKAgoDAuMzI1MjQ4XSBQQyBpcyBhdCByZXF1ZXN0X2Rt
-YSsweDJjLzB4YzAKPiBbIKAgoDAuMzI5NjkzXSBQUiBpcyBhdCByZXF1ZXN0X2RtYSsweDFlLzB4
-YzAKPiBbIKAgoDAuMzM0MTYyXSBQQyCgOiA4YzFjNDBjYyBTUCCgOiA4Y2MxZmYwMCBTUiCgOiA0
-MDAwMDFmMSBURUEgOiAwMDAwMDAxYQo+IFsgoCCgMC4zNDE0MjFdIFIwIKA6IDAwMDAwMDAwIFIx
-IKA6IDQwMDAwMTAxIFIyIKA6IDhjMmZlYjk0IFIzIKA6IDhjMmZlYjk0Cj4gWyCgIKAwLjM0ODY3
-M10gUjQgoDogMDAwMDAwMDIgUjUgoDogOGMyYmVkMDggUjYgoDogOGNjNDdjNTggUjcgoDogMDAw
-MDAwMDAKPiBbIKAgoDAuMzU1OTI2XSBSOCCgOiBmZmZmZmZlYSBSOSCgOiAwMDAwMDAwMCBSMTAg
-OiA4YzJiZWQwOCBSMTEgOiAwMDAwMDAwMAo+IFsgoCCgMC4zNjMxNjVdIFIxMiA6IDhjMzE1NTAw
-IFIxMyA6IDhjMzIzMDY0IFIxNCA6IDhjYzFmZjAwCj4gWyCgIKAwLjM2ODk5MF0gTUFDSDogMDAw
-MDAwMDAgTUFDTDogMDAwMDBhODAgR0JSIDogMDAwMDAwMDAgUFIgoDogOGMxYzQwYmUKPiBbIKAg
-oDAuMzc2MjIwXQo+IFsgoCCgMC4zNzYyMzRdIENhbGwgdHJhY2U6Cj4gWyCgIKAwLjM4MDY0MV0g
-Wzw4YzMxNTUxNj5dIHB2cjJfZG1hX2luaXQrMHgxNi8weDQwCj4gWyCgIKAwLjM4NTY2OV0gWzw4
-YzAwMjA2MD5dIGRvX29uZV9pbml0Y2FsbCsweDAvMHgxYTAKPiBbIKAgoDAuMzkwOTEyXSBbPDhj
-MDAyMDhjPl0gZG9fb25lX2luaXRjYWxsKzB4MmMvMHgxYTAKPiBbIKAgoDAuMzk2MjYxXSBbPDhj
-MDRkMWVlPl0gcmVnaXN0ZXJfaXJxX3Byb2MrMHg2ZS8weGMwCj4gWyCgIKAwLjQwMTY5Nl0gWzw4
-YzA0ZDI3YT5dIGluaXRfaXJxX3Byb2MrMHgzYS8weDgwCj4gWyCgIKAwLjQwNjc1M10gWzw4YzA0
-ZDE4MD5dIHJlZ2lzdGVyX2lycV9wcm9jKzB4MC8weGMwCj4gWyCgIKAwLjQxMjA5NF0gWzw4YzA0
-YTA0MD5dIGlycV90b19kZXNjKzB4MC8weDQwCj4gWyCgIKAwLjQxNjg2M10gWzw4YzMwNDUyOD5d
-IGtlcm5lbF9pbml0KzB4NjgvMHgxMjAKPiBbIKAgoDAuNDIxOTA4XSBbPDhjMDAyMDYwPl0gZG9f
-b25lX2luaXRjYWxsKzB4MC8weDFhMAo+IFsgoCCgMC40MjcxMjJdIFs8OGMwMDNjODg+XSBrZXJu
-ZWxfdGhyZWFkX2hlbHBlcisweDgvMHgyMAo+IFsgoCCgMC40MzI3NjBdIFs8OGMzMDQ0YzA+XSBr
-ZXJuZWxfaW5pdCsweDAvMHgxMjAKPiBbIKAgoDAuNDM3NjIxXSBbPDhjMDAzYzgwPl0ga2VybmVs
-X3RocmVhZF9oZWxwZXIrMHgwLzB4MjAKPiBbIKAgoDAuNDQzMzE3XQo+IFsgoCCgMC40NDQ4NzNd
-IENvZGU6Cj4gWyCgIKAwLjQ0Njk3MV0goCA4YzFjNDBjNjogoGxkYyCgIKAgoCByMCwgc3IKPiBb
-IKAgoDAuNDUxNDU2XSCgIDhjMWM0MGM4OiCgbW92IKAgoCCgIHIxLCByMAo+IFsgoCCgMC40NTU5
-MTFdIKAgOGMxYzQwY2E6IKBhbmQgoCCgIKAgIy0xNiwgcjAKPiBbIKAgoDAuNDYwNTU3XSAtPjhj
-MWM0MGNjOiCgbW92LmwgoCCgIEAoNDgscjgpLCByOQo+IFsgoCCgMC40NjU2MjNdIKAgOGMxYzQw
-Y2U6IKBtb3YgoCCgIKAgIzEsIHIxCj4gWyCgIKAwLjQ3MDA5MF0goCA4YzFjNDBkMDogoHRzdCCg
-IKAgoCByMCwgcjAKPiBbIKAgoDAuNDc0NTgwXSCgIDhjMWM0MGQyOiCgbW92LmwgoCCgIHIxLCBA
-KDQ4LHI4KQo+IFsgoCCgMC40Nzk2NDRdIKAgOGMxYzQwZDQ6IKBidCCgIKAgoCCgOGMxYzQwZTAK
-PiBbIKAgoDAuNDg0MjU5XSCgIDhjMWM0MGQ2OiCgYW5kIKAgoCCgICMtMTYsIHIwCj4gWyCgIKAw
-LjQ4ODg4N10KPiBbIKAgoDAuNDkwNDUzXSBQcm9jZXNzOiBzd2FwcGVyIChwaWQ6IDEsIHN0YWNr
-IGxpbWl0ID0gOGNjMWUwMDEpCj4gWyCgIKAwLjQ5Njc0NF0gU3RhY2s6ICgweDhjYzFmZjAwIHRv
-IDB4OGNjMjAwMDApCj4gWyCgIKAwLjUwMTUwM10gZmYwMDogOGMzMTU1MTYgOGNjMWZmMTggOGMz
-MjE3MTggOGMzMjE0OGMgOGMwMDIwNjAgOGMzMjE1MzAgOGMwMDIwOGMgOGNjMWZmMjAKPiBbIKAg
-oDAuNTEwNjMyXSBmZjIwOiAwMDAwMDAwMSAwMDAwMDAwMCA4YzMyYmE0OCA4Y2MxZmVmOCA4Y2M0
-NzYwMCA4Y2M0NmQyMCA4YzA0ZDFlZSA4Y2MxZmY0OAo+IFsgoCCgMC41MTk4NjRdIGZmNDA6IDhj
-MmVlMGE0IDhjYzFmZjRhIDM0MzFmZjE0IDAwMDAwMDMyIDAwMDAwMDAwIDhjMDRkMjdhIDhjYzFm
-ZjZjIDhjMDRkMTgwCj4gWyCgIKAwLjUyOTAxOV0gZmY2MDogOGMwNGEwNDAgOGMzMDQ1MjggOGNj
-MWZmODQgMDAwMDAwMDAgMDAwMDAwMDAgOGMzMjE3MTggOGMzMjE0OGMgOGMwMDIwNjAKPiBbIKAg
-oDAuNTM4MjM3XSBmZjgwOiA4YzMyMTUzMCA4YzAwM2M4OCA4Y2MxZmY5YyAwMDAwMDAwMCAwMDAw
-MDAwMCAwMDAwMDAwMCAwMDAwMDAwMCAwMDAwMDAwMAo+IFsgoCCgMC41NDczNzldIGZmYTA6IDAw
-MDAwMDAwIDAwMDAwMDAwIDAwMDAwMDAwIDAwMDAwMDAwIDAwMDAwMDAwIDAwMDAwMDAwIDhjMzA0
-NGMwIDAwMDAwMDAwCj4gWyCgIKAwLjU1NjQ3MF0gZmZjMDogMDAwMDAwMDAgMDAwMDAwMDAgMDAw
-MDAwMDAgMDAwMDAwMDAgMDAwMDAwMDAgMDAwMDAwMDAgMDAwMDAwMDAgMDAwMDAwMDAKPiBbIKAg
-oDAuNTY1NzU5XSBmZmUwOiA4Y2MxZmZhNCA4YzAwM2M4MCAwMDAwMDAwMCA0MDAwMDAwMCAwMDAw
-MDAwMCAwMDAwMDAwMCAwMDAwMDAwMCAwMDAwMDAwMAo+IFsgoCCgMC41NzUwNDRdIC0tLVsgZW5k
-IHRyYWNlIDRlYWEyYTg2YThlMmRhMjIgXS0tLQo+IFsgoCCgMC41ODAyMjBdIEtlcm5lbCBwYW5p
-YyAtIG5vdCBzeW5jaW5nOiBBdHRlbXB0ZWQgdG8ga2lsbCBpbml0IQo+IFsgoCCgMC41ODY4MzNd
-IFJlYm9vdGluZyBpbiA3IHNlY29uZHMuLgo+Cj4KPiAweDhjMWM0MGNjIGNvcnJlc3BvbmRzIHRv
-IGFyY2gvc2gvaW5jbHVkZS9hc20vY21weGNoZy1pcnEuaDo5Cj4KPiAweDhjMWM0MGJlIGlzIGFy
-Y2gvc2gvZHJpdmVycy9kbWEvZG1hLWFwaS5jOjE5OApUaGlzIGlzIGJlY2F1c2UgRE1BLWFwaSBv
-ZiBzaDc3NXggZG9lcyBub3Qgc3VwcG9ydCBtdWx0aS1pcnEuCkkgd2lsbCBzZW5kIGEgcGF0Y2gg
-dG8gcmV2aXNlLgoKQmVzdCByZWdhcmRzLAogTm9idWhpcm8KCi0tIApOb2J1aGlybyBJd2FtYXRz
-dQotLQpUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAidW5zdWJz
-Y3JpYmUgbGludXgtc2giIGluCnRoZSBib2R5IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRvbW9Admdl
-ci5rZXJuZWwub3JnCk1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5v
-cmcvbWFqb3Jkb21vLWluZm8uaHRtbA==
+Add DMA support of new SH CPU and the change of definition.
+And add Multi IRQ support for SH7763/64/80/85.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+
+ V3: revert CONFIG_NR_ONCHIP_DMA_CHANNELS defconfig
+
+ arch/sh/drivers/dma/Kconfig              |    8 +-
+ arch/sh/drivers/dma/dma-sh.c             |  172 ++++++++++++++++++++----------
+ arch/sh/drivers/dma/dma-sh.h             |   75 -------------
+ arch/sh/include/asm/dma-sh.h             |  117 ++++++++++++++++++++
+ arch/sh/include/asm/dma.h                |    4 +-
+ arch/sh/include/cpu-sh3/cpu/dma.h        |   17 +--
+ arch/sh/include/cpu-sh4/cpu/dma-sh4a.h   |   94 ++++++++++++++++
+ arch/sh/include/cpu-sh4/cpu/dma-sh7780.h |   39 -------
+ arch/sh/include/cpu-sh4/cpu/dma.h        |   30 +++---
+ 9 files changed, 352 insertions(+), 204 deletions(-)
+ delete mode 100644 arch/sh/drivers/dma/dma-sh.h
+ create mode 100644 arch/sh/include/asm/dma-sh.h
+ create mode 100644 arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
+ delete mode 100644 arch/sh/include/cpu-sh4/cpu/dma-sh7780.h
+
+diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
+index 0193636..57d95fc 100644
+--- a/arch/sh/drivers/dma/Kconfig
++++ b/arch/sh/drivers/dma/Kconfig
+@@ -12,10 +12,10 @@ config SH_DMA
+ config NR_ONCHIP_DMA_CHANNELS
+ 	int
+ 	depends on SH_DMA
+-	default "6" if CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721
+-	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R
+-	default "12" if CPU_SUBTYPE_SH7780
+-	default "4"
++	default "4" if CPU_SUBTYPE_SH7750 || CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7750S
++	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || CPU_SUBTYPE_SH7760
++	default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785
++	default "6"
+ 	help
+ 	  This allows you to specify the number of channels that the on-chip
+ 	  DMAC supports. This will be 4 for SH7750/SH7751 and 8 for the
+diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
+index 50887a5..ab7b18d 100644
+--- a/arch/sh/drivers/dma/dma-sh.c
++++ b/arch/sh/drivers/dma/dma-sh.c
+@@ -17,28 +17,23 @@
+ #include <mach-dreamcast/mach/dma.h>
+ #include <asm/dma.h>
+ #include <asm/io.h>
+-#include "dma-sh.h"
+-
+-static int dmte_irq_map[] = {
+-	DMTE0_IRQ,
+-	DMTE1_IRQ,
+-	DMTE2_IRQ,
+-	DMTE3_IRQ,
+-#if defined(CONFIG_CPU_SUBTYPE_SH7720)  ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7721)  ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7751R) ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7760)  ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7709)  ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7780)
+-	DMTE4_IRQ,
+-	DMTE5_IRQ,
++#include <asm/dma-sh.h>
++
++#if defined(CONFIG_CPU_SUBTYPE_SH7763)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7764)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7780)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7785)
++#define DMAC_IRQ_MULTI	1
+ #endif
+-#if defined(CONFIG_CPU_SUBTYPE_SH7751R) ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7760)  ||	\
+-    defined(CONFIG_CPU_SUBTYPE_SH7780)
+-	DMTE6_IRQ,
+-	DMTE7_IRQ,
++
++#if defined(DMAE1_IRQ)
++#define NR_DMAE		2
++#else
++#define NR_DMAE		1
+ #endif
++
++static const char *dmae_name[] = {
++	"DMAC Address Error0", "DMAC Address Error1"
+ };
+
+ static inline unsigned int get_dmte_irq(unsigned int chan)
+@@ -46,7 +41,14 @@ static inline unsigned int get_dmte_irq(unsigned int chan)
+ 	unsigned int irq = 0;
+ 	if (chan < ARRAY_SIZE(dmte_irq_map))
+ 		irq = dmte_irq_map[chan];
++
++#if defined(DMAC_IRQ_MULTI)
++	if (irq > DMTE6_IRQ)
++		return DMTE6_IRQ;
++	return DMTE0_IRQ;
++#else
+ 	return irq;
++#endif
+ }
+
+ /*
+@@ -59,7 +61,7 @@ static inline unsigned int get_dmte_irq(unsigned int chan)
+  */
+ static inline unsigned int calc_xmit_shift(struct dma_channel *chan)
+ {
+-	u32 chcr = ctrl_inl(CHCR[chan->chan]);
++	u32 chcr = ctrl_inl(dma_base_addr[chan->chan] + CHCR);
+
+ 	return ts_shift[(chcr & CHCR_TS_MASK)>>CHCR_TS_SHIFT];
+ }
+@@ -75,13 +77,13 @@ static irqreturn_t dma_tei(int irq, void *dev_id)
+ 	struct dma_channel *chan = dev_id;
+ 	u32 chcr;
+
+-	chcr = ctrl_inl(CHCR[chan->chan]);
++	chcr = ctrl_inl(dma_base_addr[chan->chan] + CHCR);
+
+ 	if (!(chcr & CHCR_TE))
+ 		return IRQ_NONE;
+
+ 	chcr &= ~(CHCR_IE | CHCR_DE);
+-	ctrl_outl(chcr, CHCR[chan->chan]);
++	ctrl_outl(chcr, (dma_base_addr[chan->chan] + CHCR));
+
+ 	wake_up(&chan->wait_queue);
+
+@@ -94,7 +96,12 @@ static int sh_dmac_request_dma(struct dma_channel *chan)
+ 		return 0;
+
+ 	return request_irq(get_dmte_irq(chan->chan), dma_tei,
+-			   IRQF_DISABLED, chan->dev_id, chan);
++#if defined(DMAC_IRQ_MULTI)
++				IRQF_SHARED,
++#else
++				IRQF_DISABLED,
++#endif
++				chan->dev_id, chan);
+ }
+
+ static void sh_dmac_free_dma(struct dma_channel *chan)
+@@ -115,7 +122,7 @@ sh_dmac_configure_channel(struct dma_channel *chan, unsigned long chcr)
+ 		chan->flags &= ~DMA_TEI_CAPABLE;
+ 	}
+
+-	ctrl_outl(chcr, CHCR[chan->chan]);
++	ctrl_outl(chcr, (dma_base_addr[chan->chan] + CHCR));
+
+ 	chan->flags |= DMA_CONFIGURED;
+ 	return 0;
+@@ -126,13 +133,13 @@ static void sh_dmac_enable_dma(struct dma_channel *chan)
+ 	int irq;
+ 	u32 chcr;
+
+-	chcr = ctrl_inl(CHCR[chan->chan]);
++	chcr = ctrl_inl(dma_base_addr[chan->chan] + CHCR);
+ 	chcr |= CHCR_DE;
+
+ 	if (chan->flags & DMA_TEI_CAPABLE)
+ 		chcr |= CHCR_IE;
+
+-	ctrl_outl(chcr, CHCR[chan->chan]);
++	ctrl_outl(chcr, (dma_base_addr[chan->chan] + CHCR));
+
+ 	if (chan->flags & DMA_TEI_CAPABLE) {
+ 		irq = get_dmte_irq(chan->chan);
+@@ -150,9 +157,9 @@ static void sh_dmac_disable_dma(struct dma_channel *chan)
+ 		disable_irq(irq);
+ 	}
+
+-	chcr = ctrl_inl(CHCR[chan->chan]);
++	chcr = ctrl_inl(dma_base_addr[chan->chan] + CHCR);
+ 	chcr &= ~(CHCR_DE | CHCR_TE | CHCR_IE);
+-	ctrl_outl(chcr, CHCR[chan->chan]);
++	ctrl_outl(chcr, (dma_base_addr[chan->chan] + CHCR));
+ }
+
+ static int sh_dmac_xfer_dma(struct dma_channel *chan)
+@@ -183,12 +190,13 @@ static int sh_dmac_xfer_dma(struct dma_channel *chan)
+ 	 */
+ 	if (chan->sar || (mach_is_dreamcast() &&
+ 			  chan->chan = PVR2_CASCADE_CHAN))
+-		ctrl_outl(chan->sar, SAR[chan->chan]);
++		ctrl_outl(chan->sar, (dma_base_addr[chan->chan]+SAR));
+ 	if (chan->dar || (mach_is_dreamcast() &&
+ 			  chan->chan = PVR2_CASCADE_CHAN))
+-		ctrl_outl(chan->dar, DAR[chan->chan]);
++		ctrl_outl(chan->dar, (dma_base_addr[chan->chan] + DAR));
+
+-	ctrl_outl(chan->count >> calc_xmit_shift(chan), DMATCR[chan->chan]);
++	ctrl_outl(chan->count >> calc_xmit_shift(chan),
++		(dma_base_addr[chan->chan] + TCR));
+
+ 	sh_dmac_enable_dma(chan);
+
+@@ -197,36 +205,26 @@ static int sh_dmac_xfer_dma(struct dma_channel *chan)
+
+ static int sh_dmac_get_dma_residue(struct dma_channel *chan)
+ {
+-	if (!(ctrl_inl(CHCR[chan->chan]) & CHCR_DE))
++	if (!(ctrl_inl(dma_base_addr[chan->chan] + CHCR) & CHCR_DE))
+ 		return 0;
+
+-	return ctrl_inl(DMATCR[chan->chan]) << calc_xmit_shift(chan);
++	return ctrl_inl(dma_base_addr[chan->chan] + TCR)
++		 << calc_xmit_shift(chan);
+ }
+
+-#if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7709)
+-#define dmaor_read_reg()	ctrl_inw(DMAOR)
+-#define dmaor_write_reg(data)	ctrl_outw(data, DMAOR)
+-#else
+-#define dmaor_read_reg()	ctrl_inl(DMAOR)
+-#define dmaor_write_reg(data)	ctrl_outl(data, DMAOR)
+-#endif
+-
+-static inline int dmaor_reset(void)
++static inline int dmaor_reset(int no)
+ {
+-	unsigned long dmaor = dmaor_read_reg();
++	unsigned long dmaor = dmaor_read_reg(no);
+
+ 	/* Try to clear the error flags first, incase they are set */
+ 	dmaor &= ~(DMAOR_NMIF | DMAOR_AE);
+-	dmaor_write_reg(dmaor);
++	dmaor_write_reg(no, dmaor);
+
+ 	dmaor |= DMAOR_INIT;
+-	dmaor_write_reg(dmaor);
++	dmaor_write_reg(no, dmaor);
+
+ 	/* See if we got an error again */
+-	if ((dmaor_read_reg() & (DMAOR_AE | DMAOR_NMIF))) {
++	if ((dmaor_read_reg(no) & (DMAOR_AE | DMAOR_NMIF))) {
+ 		printk(KERN_ERR "dma-sh: Can't initialize DMAOR.\n");
+ 		return -EINVAL;
+ 	}
+@@ -237,10 +235,33 @@ static inline int dmaor_reset(void)
+ #if defined(CONFIG_CPU_SH4)
+ static irqreturn_t dma_err(int irq, void *dummy)
+ {
+-	dmaor_reset();
++#if defined(DMAC_IRQ_MULTI)
++	int cnt = 0;
++	switch (irq) {
++#if defined(DMTE6_IRQ) && defined(DMAE1_IRQ)
++	case DMTE6_IRQ:
++		cnt++;
++#endif
++	case DMTE0_IRQ:
++		if (dmaor_read_reg(cnt) & (DMAOR_NMIF | DMAOR_AE)) {
++			disable_irq(irq);
++			/* DMA multi and error IRQ */
++			return IRQ_HANDLED;
++		}
++	default:
++		return IRQ_NONE;
++	}
++#else
++	dmaor_reset(0);
++#if defined(CONFIG_CPU_SUBTYPE_SH7723)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7780)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7785)
++	dmaor_reset(1);
++#endif
+ 	disable_irq(irq);
+
+ 	return IRQ_HANDLED;
++#endif
+ }
+ #endif
+
+@@ -259,24 +280,57 @@ static struct dma_info sh_dmac_info = {
+ 	.flags		= DMAC_CHANNELS_TEI_CAPABLE,
+ };
+
++static unsigned int get_dma_error_irq(int n)
++{
++#if defined(DMAC_IRQ_MULTI)
++	return (n = 0) ? get_dmte_irq(0) : get_dmte_irq(6);
++#else
++	return (n = 0) ? DMAE0_IRQ :
++#if defined(DMAE1_IRQ)
++				DMAE1_IRQ;
++#else
++				-1;
++#endif
++#endif
++}
++
+ static int __init sh_dmac_init(void)
+ {
+ 	struct dma_info *info = &sh_dmac_info;
+ 	int i;
+
+ #ifdef CONFIG_CPU_SH4
+-	i = request_irq(DMAE_IRQ, dma_err, IRQF_DISABLED, "DMAC Address Error", 0);
+-	if (unlikely(i < 0))
+-		return i;
++	int n;
++
++	for (n = 0; n < NR_DMAE; n++) {
++		i = request_irq(get_dma_error_irq(n), dma_err,
++#if defined(DMAC_IRQ_MULTI)
++				IRQF_SHARED,
++#else
++				IRQF_DISABLED,
+ #endif
++				dmae_name[n], (void *)dmae_name[n]);
++		if (unlikely(i < 0)) {
++			printk(KERN_ERR "%s request_irq fail\n", dmae_name[n]);
++			return i;
++		}
++	}
++#endif /* CONFIG_CPU_SH4 */
+
+ 	/*
+ 	 * Initialize DMAOR, and clean up any error flags that may have
+ 	 * been set.
+ 	 */
+-	i = dmaor_reset();
++	i = dmaor_reset(0);
++	if (unlikely(i != 0))
++		return i;
++#if defined(CONFIG_CPU_SUBTYPE_SH7723)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7780)	|| \
++		defined(CONFIG_CPU_SUBTYPE_SH7785)
++	i = dmaor_reset(1);
+ 	if (unlikely(i != 0))
+ 		return i;
++#endif
+
+ 	return register_dmac(info);
+ }
+@@ -284,8 +338,12 @@ static int __init sh_dmac_init(void)
+ static void __exit sh_dmac_exit(void)
+ {
+ #ifdef CONFIG_CPU_SH4
+-	free_irq(DMAE_IRQ, 0);
+-#endif
++	int n;
++
++	for (n = 0; n < NR_DMAE; n++) {
++		free_irq(get_dma_error_irq(n), (void *)dmae_name[n]);
++	}
++#endif /* CONFIG_CPU_SH4 */
+ 	unregister_dmac(&sh_dmac_info);
+ }
+
+diff --git a/arch/sh/drivers/dma/dma-sh.h b/arch/sh/drivers/dma/dma-sh.h
+deleted file mode 100644
+index 05fecd5..0000000
+--- a/arch/sh/drivers/dma/dma-sh.h
++++ /dev/null
+@@ -1,75 +0,0 @@
+-/*
+- * arch/sh/drivers/dma/dma-sh.h
+- *
+- * Copyright (C) 2000  Takashi YOSHII
+- * Copyright (C) 2003  Paul Mundt
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-#ifndef __DMA_SH_H
+-#define __DMA_SH_H
+-
+-#include <cpu/dma.h>
+-
+-/* Definitions for the SuperH DMAC */
+-#define REQ_L	0x00000000
+-#define REQ_E	0x00080000
+-#define RACK_H	0x00000000
+-#define RACK_L	0x00040000
+-#define ACK_R	0x00000000
+-#define ACK_W	0x00020000
+-#define ACK_H	0x00000000
+-#define ACK_L	0x00010000
+-#define DM_INC	0x00004000
+-#define DM_DEC	0x00008000
+-#define SM_INC	0x00001000
+-#define SM_DEC	0x00002000
+-#define RS_IN	0x00000200
+-#define RS_OUT	0x00000300
+-#define TS_BLK	0x00000040
+-#define TM_BUR	0x00000020
+-#define CHCR_DE 0x00000001
+-#define CHCR_TE 0x00000002
+-#define CHCR_IE 0x00000004
+-
+-/* DMAOR definitions */
+-#define DMAOR_AE	0x00000004
+-#define DMAOR_NMIF	0x00000002
+-#define DMAOR_DME	0x00000001
+-
+-/*
+- * Define the default configuration for dual address memory-memory transfer.
+- * The 0x400 value represents auto-request, external->external.
+- */
+-#define RS_DUAL	(DM_INC | SM_INC | 0x400 | TS_32)
+-
+-#define MAX_DMAC_CHANNELS	(CONFIG_NR_ONCHIP_DMA_CHANNELS)
+-
+-/*
+- * Subtypes that have fewer channels than this simply need to change
+- * CONFIG_NR_ONCHIP_DMA_CHANNELS. Likewise, subtypes with a larger number
+- * of channels should expand on this.
+- *
+- * For most subtypes we can easily figure these values out with some
+- * basic calculation, unfortunately on other subtypes these are more
+- * scattered, so we just leave it unrolled for simplicity.
+- */
+-#define SAR	((unsigned long[]){SH_DMAC_BASE + 0x00, SH_DMAC_BASE + 0x10, \
+-				   SH_DMAC_BASE + 0x20, SH_DMAC_BASE + 0x30, \
+-				   SH_DMAC_BASE + 0x50, SH_DMAC_BASE + 0x60})
+-#define DAR	((unsigned long[]){SH_DMAC_BASE + 0x04, SH_DMAC_BASE + 0x14, \
+-				   SH_DMAC_BASE + 0x24, SH_DMAC_BASE + 0x34, \
+-				   SH_DMAC_BASE + 0x54, SH_DMAC_BASE + 0x64})
+-#define DMATCR	((unsigned long[]){SH_DMAC_BASE + 0x08, SH_DMAC_BASE + 0x18, \
+-				   SH_DMAC_BASE + 0x28, SH_DMAC_BASE + 0x38, \
+-				   SH_DMAC_BASE + 0x58, SH_DMAC_BASE + 0x68})
+-#define CHCR	((unsigned long[]){SH_DMAC_BASE + 0x0c, SH_DMAC_BASE + 0x1c, \
+-				   SH_DMAC_BASE + 0x2c, SH_DMAC_BASE + 0x3c, \
+-				   SH_DMAC_BASE + 0x5c, SH_DMAC_BASE + 0x6c})
+-
+-#define DMAOR	(SH_DMAC_BASE + 0x40)
+-
+-#endif /* __DMA_SH_H */
+-
+diff --git a/arch/sh/include/asm/dma-sh.h b/arch/sh/include/asm/dma-sh.h
+new file mode 100644
+index 0000000..e873eca
+--- /dev/null
++++ b/arch/sh/include/asm/dma-sh.h
+@@ -0,0 +1,117 @@
++/*
++ * arch/sh/include/asm/dma-sh.h
++ *
++ * Copyright (C) 2000  Takashi YOSHII
++ * Copyright (C) 2003  Paul Mundt
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#ifndef __DMA_SH_H
++#define __DMA_SH_H
++
++#include <cpu/dma.h>
++
++/* DMAOR contorl: The DMAOR access size is different by CPU.*/
++#if defined(CONFIG_CPU_SUBTYPE_SH7723)	|| \
++    defined(CONFIG_CPU_SUBTYPE_SH7780)	|| \
++    defined(CONFIG_CPU_SUBTYPE_SH7785)
++#define dmaor_read_reg(n) \
++    (n ? ctrl_inw(SH_DMAC_BASE1 + DMAOR) \
++	: ctrl_inw(SH_DMAC_BASE0 + DMAOR))
++#define dmaor_write_reg(n, data) \
++    (n ? ctrl_outw(data, SH_DMAC_BASE1 + DMAOR) \
++    : ctrl_outw(data, SH_DMAC_BASE0 + DMAOR))
++#else /* Other CPU */
++#define dmaor_read_reg(n) ctrl_inw(SH_DMAC_BASE0 + DMAOR)
++#define dmaor_write_reg(n, data) ctrl_outw(data, SH_DMAC_BASE0 + DMAOR)
++#endif
++
++static int dmte_irq_map[] __maybe_unused = {
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 4)
++    DMTE0_IRQ,
++    DMTE0_IRQ + 1,
++    DMTE0_IRQ + 2,
++    DMTE0_IRQ + 3,
++#endif
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 6)
++    DMTE4_IRQ,
++    DMTE4_IRQ + 1,
++#endif
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 8)
++    DMTE6_IRQ,
++    DMTE6_IRQ + 1,
++#endif
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 12)
++    DMTE8_IRQ,
++    DMTE9_IRQ,
++    DMTE10_IRQ,
++    DMTE11_IRQ,
++#endif
++};
++
++/* Definitions for the SuperH DMAC */
++#define REQ_L	0x00000000
++#define REQ_E	0x00080000
++#define RACK_H	0x00000000
++#define RACK_L	0x00040000
++#define ACK_R	0x00000000
++#define ACK_W	0x00020000
++#define ACK_H	0x00000000
++#define ACK_L	0x00010000
++#define DM_INC	0x00004000
++#define DM_DEC	0x00008000
++#define SM_INC	0x00001000
++#define SM_DEC	0x00002000
++#define RS_IN	0x00000200
++#define RS_OUT	0x00000300
++#define TS_BLK	0x00000040
++#define TM_BUR	0x00000020
++#define CHCR_DE 0x00000001
++#define CHCR_TE 0x00000002
++#define CHCR_IE 0x00000004
++
++/* DMAOR definitions */
++#define DMAOR_AE	0x00000004
++#define DMAOR_NMIF	0x00000002
++#define DMAOR_DME	0x00000001
++
++/*
++ * Define the default configuration for dual address memory-memory transfer.
++ * The 0x400 value represents auto-request, external->external.
++ */
++#define RS_DUAL	(DM_INC | SM_INC | 0x400 | TS_32)
++
++/* DMA base address */
++static u32 dma_base_addr[] __maybe_unused = {
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 4)
++	SH_DMAC_BASE0 + 0x00,	/* channel 0 */
++	SH_DMAC_BASE0 + 0x10,
++	SH_DMAC_BASE0 + 0x20,
++	SH_DMAC_BASE0 + 0x30,
++#endif
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 6)
++	SH_DMAC_BASE0 + 0x50,
++	SH_DMAC_BASE0 + 0x60,
++#endif
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 8)
++	SH_DMAC_BASE1 + 0x00,
++	SH_DMAC_BASE1 + 0x10,
++#endif
++#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 12)
++	SH_DMAC_BASE1 + 0x20,
++	SH_DMAC_BASE1 + 0x30,
++	SH_DMAC_BASE1 + 0x50,
++	SH_DMAC_BASE1 + 0x60, /* channel 11 */
++#endif
++};
++
++/* DMA register */
++#define SAR     0x00
++#define DAR     0x04
++#define TCR     0x08
++#define CHCR    0x0C
++#define DMAOR	0x40
++
++#endif /* __DMA_SH_H */
+diff --git a/arch/sh/include/asm/dma.h b/arch/sh/include/asm/dma.h
+index beca712..6bd1784 100644
+--- a/arch/sh/include/asm/dma.h
++++ b/arch/sh/include/asm/dma.h
+@@ -25,9 +25,9 @@
+ #define MAX_DMA_ADDRESS		(PAGE_OFFSET+0x10000000)
+
+ #ifdef CONFIG_NR_DMA_CHANNELS
+-#  define MAX_DMA_CHANNELS	(CONFIG_NR_DMA_CHANNELS)
++#  define MAX_DMA_CHANNELS   (CONFIG_NR_DMA_CHANNELS)
+ #else
+-#  define MAX_DMA_CHANNELS	(CONFIG_NR_ONCHIP_DMA_CHANNELS)
++#  define MAX_DMA_CHANNELS   (CONFIG_NR_ONCHIP_DMA_CHANNELS)
+ #endif
+
+ /*
+diff --git a/arch/sh/include/cpu-sh3/cpu/dma.h b/arch/sh/include/cpu-sh3/cpu/dma.h
+index 6813c32..0ea15f3 100644
+--- a/arch/sh/include/cpu-sh3/cpu/dma.h
++++ b/arch/sh/include/cpu-sh3/cpu/dma.h
+@@ -1,22 +1,17 @@
+ #ifndef __ASM_CPU_SH3_DMA_H
+ #define __ASM_CPU_SH3_DMA_H
+
+-
+ #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7721)
+-#define SH_DMAC_BASE	0xa4010020
+-#else
+-#define SH_DMAC_BASE	0xa4000020
++    defined(CONFIG_CPU_SUBTYPE_SH7721) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7710) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7712)
++#define SH_DMAC_BASE0	0xa4010020
++#else /* SH7705/06/07/09 */
++#define SH_DMAC_BASE0	0xa4000020
+ #endif
+
+-#if defined(CONFIG_CPU_SUBTYPE_SH7720) || defined(CONFIG_CPU_SUBTYPE_SH7709)
+ #define DMTE0_IRQ	48
+-#define DMTE1_IRQ	49
+-#define DMTE2_IRQ	50
+-#define DMTE3_IRQ	51
+ #define DMTE4_IRQ	76
+-#define DMTE5_IRQ	77
+-#endif
+
+ /* Definitions for the SuperH DMAC */
+ #define TM_BURST	0x00000020
+diff --git a/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h b/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
+new file mode 100644
+index 0000000..0ed5178
+--- /dev/null
++++ b/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
+@@ -0,0 +1,94 @@
++#ifndef __ASM_SH_CPU_SH4_DMA_SH7780_H
++#define __ASM_SH_CPU_SH4_DMA_SH7780_H
++
++#if defined(CONFIG_CPU_SUBTYPE_SH7343) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7722) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7730)
++#define DMTE0_IRQ	48
++#define DMTE4_IRQ	76
++#define DMAE0_IRQ	78	/* DMA Error IRQ*/
++#define SH_DMAC_BASE0	0xFE008020
++#define SH_DMARS_BASE	0xFE009000
++#elif defined(CONFIG_CPU_SUBTYPE_SH7763) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7764)
++#define DMTE0_IRQ	34
++#define DMTE4_IRQ	44
++#define DMAE0_IRQ	38
++#define SH_DMAC_BASE0	0xFF608020
++#define SH_DMARS_BASE	0xFF609000
++#elif defined(CONFIG_CPU_SUBTYPE_SH7723)
++#define DMTE0_IRQ	48	/* DMAC0A*/
++#define DMTE4_IRQ	40	/* DMAC0B */
++#define DMTE6_IRQ	42
++#define DMTE8_IRQ	76	/* DMAC1A */
++#define DMTE9_IRQ	77
++#define DMTE10_IRQ	72	/* DMAC1B */
++#define DMTE11_IRQ	73
++#define DMAE0_IRQ	78	/* DMA Error IRQ*/
++#define DMAE1_IRQ	74	/* DMA Error IRQ*/
++#define SH_DMAC_BASE0	0xFE008020
++#define SH_DMAC_BASE1	0xFDC08020
++#define SH_DMARS_BASE	0xFDC09000
++#elif defined(CONFIG_CPU_SUBTYPE_SH7780)
++#define DMTE0_IRQ	34
++#define DMTE4_IRQ	44
++#define DMTE6_IRQ	46
++#define DMTE8_IRQ	92
++#define DMTE9_IRQ	93
++#define DMTE10_IRQ	94
++#define DMTE11_IRQ	95
++#define DMAE0_IRQ	38	/* DMA Error IRQ */
++#define SH_DMAC_BASE0	0xFC808020
++#define SH_DMAC_BASE1	0xFC818020
++#define SH_DMARS_BASE	0xFC809000
++#else /* SH7785 */
++#define DMTE0_IRQ	33
++#define DMTE4_IRQ	37
++#define DMTE6_IRQ	52
++#define DMTE8_IRQ	54
++#define DMTE9_IRQ	55
++#define DMTE10_IRQ	56
++#define DMTE11_IRQ	57
++#define DMAE0_IRQ	39	/* DMA Error IRQ0 */
++#define DMAE1_IRQ	58	/* DMA Error IRQ1 */
++#define SH_DMAC_BASE0	0xFC808020
++#define SH_DMAC_BASE1	0xFCC08020
++#define SH_DMARS_BASE	0xFC809000
++#endif
++
++#define REQ_HE	0x000000C0
++#define REQ_H	0x00000080
++#define REQ_LE	0x00000040
++#define TM_BURST 0x0000020
++#define TS_8	0x00000000
++#define TS_16	0x00000008
++#define TS_32	0x00000010
++#define TS_16BLK	0x00000018
++#define TS_32BLK	0x00100000
++
++/*
++ * The SuperH DMAC supports a number of transmit sizes, we list them here,
++ * with their respective values as they appear in the CHCR registers.
++ *
++ * Defaults to a 64-bit transfer size.
++ */
++enum {
++	XMIT_SZ_8BIT,
++	XMIT_SZ_16BIT,
++	XMIT_SZ_32BIT,
++	XMIT_SZ_128BIT,
++	XMIT_SZ_256BIT,
++};
++
++/*
++ * The DMA count is defined as the number of bytes to transfer.
++ */
++static unsigned int ts_shift[] __maybe_unused = {
++	[XMIT_SZ_8BIT]		= 0,
++	[XMIT_SZ_16BIT]		= 1,
++	[XMIT_SZ_32BIT]		= 2,
++	[XMIT_SZ_128BIT]	= 4,
++	[XMIT_SZ_256BIT]	= 5,
++};
++
++#endif /* __ASM_SH_CPU_SH4_DMA_SH7780_H */
+diff --git a/arch/sh/include/cpu-sh4/cpu/dma-sh7780.h b/arch/sh/include/cpu-sh4/cpu/dma-sh7780.h
+deleted file mode 100644
+index 71b426a..0000000
+--- a/arch/sh/include/cpu-sh4/cpu/dma-sh7780.h
++++ /dev/null
+@@ -1,39 +0,0 @@
+-#ifndef __ASM_SH_CPU_SH4_DMA_SH7780_H
+-#define __ASM_SH_CPU_SH4_DMA_SH7780_H
+-
+-#define REQ_HE	0x000000C0
+-#define REQ_H	0x00000080
+-#define REQ_LE	0x00000040
+-#define TM_BURST 0x0000020
+-#define TS_8	0x00000000
+-#define TS_16	0x00000008
+-#define TS_32	0x00000010
+-#define TS_16BLK	0x00000018
+-#define TS_32BLK	0x00100000
+-
+-/*
+- * The SuperH DMAC supports a number of transmit sizes, we list them here,
+- * with their respective values as they appear in the CHCR registers.
+- *
+- * Defaults to a 64-bit transfer size.
+- */
+-enum {
+-	XMIT_SZ_8BIT,
+-	XMIT_SZ_16BIT,
+-	XMIT_SZ_32BIT,
+-	XMIT_SZ_128BIT,
+-	XMIT_SZ_256BIT,
+-};
+-
+-/*
+- * The DMA count is defined as the number of bytes to transfer.
+- */
+-static unsigned int ts_shift[] __maybe_unused = {
+-	[XMIT_SZ_8BIT]		= 0,
+-	[XMIT_SZ_16BIT]		= 1,
+-	[XMIT_SZ_32BIT]		= 2,
+-	[XMIT_SZ_128BIT]	= 4,
+-	[XMIT_SZ_256BIT]	= 5,
+-};
+-
+-#endif /* __ASM_SH_CPU_SH4_DMA_SH7780_H */
+diff --git a/arch/sh/include/cpu-sh4/cpu/dma.h b/arch/sh/include/cpu-sh4/cpu/dma.h
+index 235b7cd..bcb3024 100644
+--- a/arch/sh/include/cpu-sh4/cpu/dma.h
++++ b/arch/sh/include/cpu-sh4/cpu/dma.h
+@@ -1,31 +1,29 @@
+ #ifndef __ASM_CPU_SH4_DMA_H
+ #define __ASM_CPU_SH4_DMA_H
+
+-#define DMAOR_INIT	( 0x8000 | DMAOR_DME )
+-
+ /* SH7751/7760/7780 DMA IRQ sources */
+-#define DMTE0_IRQ	34
+-#define DMTE1_IRQ	35
+-#define DMTE2_IRQ	36
+-#define DMTE3_IRQ	37
+-#define DMTE4_IRQ	44
+-#define DMTE5_IRQ	45
+-#define DMTE6_IRQ	46
+-#define DMTE7_IRQ	47
+-#define DMAE_IRQ	38
+
+ #ifdef CONFIG_CPU_SH4A
+-#define SH_DMAC_BASE	0xfc808020
+
++#define DMAOR_INIT	(DMAOR_DME)
+ #define CHCR_TS_MASK	0x18
+ #define CHCR_TS_SHIFT	3
+
+-#include <cpu/dma-sh7780.h>
+-#else
+-#define SH_DMAC_BASE	0xffa00000
++#include <cpu/dma-sh4a.h>
++#else /* CONFIG_CPU_SH4A */
++/*
++ * SH7750/SH7751/SH7760
++ */
++#define DMTE0_IRQ	34
++#define DMTE4_IRQ	44
++#define DMTE6_IRQ	46
++#define DMAE0_IRQ	38
+
++#define DMAOR_INIT	(0x8000|DMAOR_DME)
++#define SH_DMAC_BASE0	0xffa00000
++#define SH_DMAC_BASE1	0xffa00070
+ /* Definitions for the SuperH DMAC */
+-#define TM_BURST	0x0000080
++#define TM_BURST	0x00000080
+ #define TS_8		0x00000010
+ #define TS_16		0x00000020
+ #define TS_32		0x00000030
+-- 
+1.6.1.3
+
