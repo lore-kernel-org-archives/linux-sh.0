@@ -1,51 +1,40 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Mon, 30 Mar 2009 04:21:11 +0000
-Subject: Re: Developing in Dreamcast
-Message-Id: <200903300021.11790.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1757413.8bASLkGfsp"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 11 Mar 2009 08:04:23 +0000
+Subject: [PATCH] input: sh_keysc suspend can use to_platform_device()
+Message-Id: <20090311080423.2006.22858.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <600adaf50903292048m5423a4a8ie7760eed338d314f@mail.gmail.com>
-In-Reply-To: <600adaf50903292048m5423a4a8ie7760eed338d314f@mail.gmail.com>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-input@vger.kernel.org
+Cc: soni.trilok@gmail.com, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
---nextPart1757413.8bASLkGfsp
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+From: Magnus Damm <damm@igel.co.jp>
 
-On Sunday 29 March 2009 23:48:28 Tiago Maluta wrote:
-> I had a question about how developers of linux-sh works on Dreamcast.
-> Is developers using only a Sega Dreamcast console and Broadband
-> Adapter (I think burning CD-R isn't a useful way) or there are some
-> ref. board with jtag, etc; that reflects Dreamcast hardware?
+This patch changes sh_keysc to use to_platform_device()
+for suspend. Thanks to Trilok Soni for this suggestion.
 
-BBA is really the way to go if you want to work with the Dreamcast.  should=
-=20
-work fine, but Adrian would know more ...
-=2Dmike
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
---nextPart1757413.8bASLkGfsp
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+ drivers/input/keyboard/sh_keysc.c |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.10 (GNU/Linux)
-
-iQIcBAABAgAGBQJJ0Ei3AAoJEEFjO5/oN/WBGIwQANpCiMyL/etxEZ1yGQlgctb7
-pNN4sLAN7yR04QmIEIjGdDq9Pdai4vs02jyLEe5dxW3vtcF4MiIKJdW5UaH19A0d
-ByPHZ3YxHG/V3pHhqIpBkRTdstxAzA+hmQKilCJBY4zCMXYtU+QsTOxD32kHmFp2
-40urRxwH3O58mZas/zRR8P9U+LUywCoVUuhSgZiYQ80TMGomb0dm4+uOay9xr0Pr
-i91Gpz8mUl1J2RU6dwGJgqBi3kZFKJLvORr6/LpiO74mMR6m+c7sKFZb99TndewL
-p8k55I+DroqoKOESB+sicVWlk3Mo5en7Dmm8MsriCC7WyFBfuBuo/szo+JXZkOhF
-HSVOCWc6qcyLlX1C9nkMBE5GCb+zub5LWiQqc9OzM8/gf1mjuSDmGHlgB6gUpfBv
-L3sbZdijz3VRWS8zHFoVGuHfKnwpaBrb31iyjvtl2UY8glEnL7qx3J7joAQfwkQS
-Q+g8Tt4GzY+wS1LyATaS42CM7qijHX3dlWSfBxZFEzQjGMelnLNrtvYszzM1flbT
-gcoZN8uJ/PU/jV2FQUX6v/NGoh1d+4rkzRsOHKn0HuKZpU9PYGbzW3wurmuHGETJ
-dcJPfPGjok2ol6fwFFWMDtEP+R1CcfC6eWclcwJiH10cuX/qhdMl4j6kG5Q9lZo4
-4Wv2CdfQewtkrNxylwM2
-=9Bfv
------END PGP SIGNATURE-----
-
---nextPart1757413.8bASLkGfsp--
+--- 0001/drivers/input/keyboard/sh_keysc.c
++++ work/drivers/input/keyboard/sh_keysc.c	2009-03-11 13:33:14.000000000 +0900
+@@ -257,13 +257,10 @@ static int __devexit sh_keysc_remove(str
+ 
+ static int sh_keysc_suspend(struct device *dev)
+ {
+-	struct platform_device *pdev;
+-	struct sh_keysc_priv *priv;
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_keysc_priv *priv = platform_get_drvdata(pdev);
+ 	unsigned short value;
+ 
+-	pdev = container_of(dev, struct platform_device, dev);
+-	priv = platform_get_drvdata(pdev);
+-
+ 	value = ioread16(priv->iomem_base + KYCR1_OFFS);
+ 
+ 	if (device_may_wakeup(dev))
