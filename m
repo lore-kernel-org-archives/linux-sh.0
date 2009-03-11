@@ -1,50 +1,95 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 11 Mar 2009 05:49:04 +0000
-Subject: Re: [PATCH] sh_clk: added clk_set_parent/clk_get_parent support
-Message-Id: <20090311054904.GA6281@linux-sh.org>
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Wed, 11 Mar 2009 07:40:54 +0000
+Subject: [PATCH] sh_clk: added clk_set_parent/clk_get_parent v2
+Message-Id: <49B76B06.50602@st.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------050600020602060606080704"
 List-Id: <linux-sh.vger.kernel.org>
 References: <49B66867.2010406@st.com>
 In-Reply-To: <49B66867.2010406@st.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 11, 2009 at 12:00:05PM +0900, Magnus Damm wrote:
-> Hi Francesco,
-> 
-> Thanks for your work on this!
-> 
-> On Tue, Mar 10, 2009 at 10:17 PM, Francesco VIRLINZI
-> <francesco.virlinzi@st.com> wrote:
-> > I would add the following functions in the clock framework
-> > - clk_set_parent
-> > - clk_get_parent
-> 
-> 1) I agree about adding the functions above.
-> 
-> > and the utility function
-> > - clk_for_each
-> 
-> 2) As much as I like functions like this, where is this used?
-> 
-> (From patch header)
-> > - changes the callback function to return a value
-> 
-> 3) These changes break other code. You need to update cpu/sh4a/clock-*
-> files as well. I agree about init and enable, but why does the disable
-> callback need to return something?
-> 
-> Please break out 1) and resubmit it inline to begin with. Let's deal
-> with 2) and 3) separately.
-> 
-Agreed. 1) can be merged as is, as it doesn't really impact anything, and
-matches updates to linux/clk.h, even if we don't use them today. 2) needs
-a user before we consider merging it, and 3) needs to include the updates
-to all of the clock files if we are to merge it, as this change will have
-to be made in one shot. It's not clear why the return value is something
-we care about in most of these cases, so I'm rather less enthusiastic
-about making such a sweeping change.
+This is a multi-part message in MIME format.
+--------------050600020602060606080704
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Content-Transfer-Encoding: 7bit
 
-For now, I'll fold 1) in to the tree. 2) and 3) can be added later if and
-when the aforementioned issues are resolved.
+
+
+--------------050600020602060606080704
+Content-Type: text/x-patch;
+ name="0002-sh_clk-Add-clk_set_parent-clk_get_parent-support.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename*0="0002-sh_clk-Add-clk_set_parent-clk_get_parent-support.patch"
+
+From 96d7aa00af83ecb4a3660ace507221b959aa12f1 Mon Sep 17 00:00:00 2001
+From: Francesco Virlinzi <francesco.virlinzi@st.com>
+Date: Wed, 11 Mar 2009 08:09:16 +0100
+Subject: [PATCH] sh_clk: Add clk_set_parent/clk_get_parent support
+
+This patch adds the clk_set_parent/clk_get_parent in the sh clock framework
+
+Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
+---
+ arch/sh/include/asm/clock.h |    1 +
+ arch/sh/kernel/cpu/clock.c  |   29 +++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/include/asm/clock.h b/arch/sh/include/asm/clock.h
+index f9c8858..2f6c962 100644
+--- a/arch/sh/include/asm/clock.h
++++ b/arch/sh/include/asm/clock.h
+@@ -15,6 +15,7 @@ struct clk_ops {
+ 	void (*disable)(struct clk *clk);
+ 	void (*recalc)(struct clk *clk);
+ 	int (*set_rate)(struct clk *clk, unsigned long rate, int algo_id);
++	int (*set_parent)(struct clk *clk, struct clk *parent);
+ 	long (*round_rate)(struct clk *clk, unsigned long rate);
+ };
+ 
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index 7b17137..332a179 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
+@@ -239,6 +239,35 @@ void clk_recalc_rate(struct clk *clk)
+ }
+ EXPORT_SYMBOL_GPL(clk_recalc_rate);
+ 
++int clk_set_parent(struct clk *clk, struct clk *parent)
++{
++	int ret = -EINVAL;
++	struct clk *old;
++
++	if (!parent || !clk)
++		return ret;
++
++	old = clk->parent;
++	if (likely(clk->ops && clk->ops->set_parent)) {
++		unsigned long flags;
++		spin_lock_irqsave(&clock_lock, flags);
++		ret = clk->ops->set_parent(clk, parent);
++		spin_unlock_irqrestore(&clock_lock, flags);
++		clk->parent = (ret ? old : parent);
++	}
++
++	if (unlikely(clk->flags & CLK_RATE_PROPAGATES))
++		propagate_rate(clk);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(clk_set_parent);
++
++struct clk *clk_get_parent(struct clk *clk)
++{
++	return clk->parent;
++}
++EXPORT_SYMBOL_GPL(clk_get_parent);
++
+ long clk_round_rate(struct clk *clk, unsigned long rate)
+ {
+ 	if (likely(clk->ops && clk->ops->round_rate)) {
+-- 
+1.5.6.6
+
+
+--------------050600020602060606080704--
