@@ -1,261 +1,89 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Tue, 10 Mar 2009 13:27:40 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 11 Mar 2009 13:36:34 +0000
 Subject: Re: [Proposal][PATCH] sh: Suspend in Ram on sh4
-Message-Id: <49B66ACC.5070801@st.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------050400090900020802060500"
+Message-Id: <aec7e5c30903110636r79aaf053n2ee4fd857f9949c7@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <49B66A0E.1020400@st.com>
 In-Reply-To: <49B66A0E.1020400@st.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------050400090900020802060500
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
+Hi Francesco!
 
-Sorry here the example on now to use.
-Regards
- Francesco
+On Tue, Mar 10, 2009 at 10:24 PM, Francesco VIRLINZI
+<francesco.virlinzi@st.com> wrote:
+> Hi all
+> I would propose an other version of suspend in ram.
 >
+> In ST we have several constraints:
+> - Several SOCs with different Clock IPs
+> - No cache memory mapped (it was removed in recently version of ST40)
+> - No IPREF instruction..
+> - 29/32 bits supports (where in 32 bits we are managing the PMB in a
+> different manner respect the original kernel.org code).
+
+Just curious, how many different SoCs do you support with suspend?
+
+> For these reason an hard-coded suspend assembly code isn't easy to use for
+> us.
 >
-> P.S.: in attach an example on how I'm using the suspend core code.
+> To address the issue we are using a mini interpreter able to execute macro
+> instructions SOC based.
 
+Some week ago I was considering doing something similar, but then I
+decided not to. The reason for this was simplicity. My suspend patch
+only supports a few processors, so it's probably not fair to compare
+it with your case. So please take this with a pinch of salt. And
+correct me when I'm wrong.
 
---------------050400090900020802060500
-Content-Type: text/x-csrc;
- name="suspend-stx7105.c"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="suspend-stx7105.c"
+The only code that needs special care is the self refresh code and
+whatever runs when the system ram is put in self refresh. What happens
+before and after can be written in C or assembly as usual. Having some
+assembly code snippet that does this is very simple. The code for
+suspend that I posted recently is relocatable and does exactly this.
+It should be possible to load that into the instruction cache too
+unless I'm mistaken.
 
-/*
- * -------------------------------------------------------------------------
- * <linux_root>/arch/sh/kernel/cpu/sh4/suspend-stx7105.c
- * -------------------------------------------------------------------------
- * Copyright (C) 2009  STMicroelectronics
- * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
- *
- * May be copied or modified under the terms of the GNU General Public
- * License V.2 ONLY.  See linux/COPYING for more information.
- *
- * ------------------------------------------------------------------------- */
+I realize that the self-refresh mode switching code may vary with
+processor type and maybe board type as well. And having special case
+handling by ifdefs in the assembly snippet is not exacly clean.
 
-#include <linux/init.h>
-#include <linux/suspend.h>
-#include <linux/errno.h>
-#include <linux/time.h>
-#include <linux/delay.h>
-#include <linux/irqflags.h>
-#include <linux/stm/pm.h>
-#include <linux/stm/sysconf.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#include <asm/pm.h>
-#include <asm/irq.h>
+> The assembly code preloads (with a jump sequence) in cache (both I$ and D$)
+> the 'instruction-table'
+> and after that it executes the instruction-table.
 
-#include "./soc-stx7105.h"
+I tried to figure out how this cache population is working, but i
+still don't understand. =) Something is magical with your JUMPER().
+And you need both populate both instruction and data cache, right?
 
-#define _SYS_STA4		(7)
-#define _SYS_STA4_MASK		(8)
-#define _SYS_STA3		(11)
-#define _SYS_STA3_MASK		(12)
-#define _SYS_STA3_VALUE		(13)
+> This solution allow me to have no assembly code SOCs specific and
+> for each SOC I have only to produce the right "tables" for standby and/or
+> mem-standby.
 
-#define _SYS_CFG11		(9)
-#define _SYS_CFG11_MASK		(10)
-#define _SYS_CFG38		(5)
-#define _SYS_CFG38_MASK		(6)
-/* *************************
- * STANDBY INSTRUCTION TABLE
- * *************************
- */
-static unsigned long stx7105_standby_table[] __cacheline_aligned = {
-/* 1. Move all the clock on OSC */
-CLK_POKE(CKGA_CLKOPSRC_SWITCH_CFG(0x0), 0x0),
-CLK_POKE(CKGA_OSC_DIV_CFG(0x5), 29), /* ic_if_100 @ 1 MHz to be safe for Lirc*/
+I understand. This is pretty neat.
 
-IMMEDIATE_DEST(0x1f),
-/* reduces OSC_st40 */
-CLK_STORE(CKGA_OSC_DIV_CFG(4)),
-/* reduces OSC_clk_ic */
-CLK_STORE(CKGA_OSC_DIV_CFG(0x0)),
-/* END. */
-_END(),
+> Moreover a 3rd table is supported to be able to produce or save data on the
+> fly for the standby it-self (for example if we have different action on the
+> same SOC but different Cut).
 
-DATA_LOAD(0x0),
-CLK_STORE(CKGA_CLKOPSRC_SWITCH_CFG(0x0)),
-DATA_LOAD(0x1),
-CLK_STORE(CKGA_OSC_DIV_CFG(0x0)),
-DATA_LOAD(0x2),
-CLK_STORE(CKGA_OSC_DIV_CFG(5)),
-/* END. */
-_END()
-};
+How do you save data without writing to the self-refreshing ram?
+Copy-back configuration with guaranteed space?
 
-/* *********************
- * MEM INSTRUCTION TABLE
- * *********************
- */
-static unsigned long stx7105_mem_table[] __cacheline_aligned = {
-/* 1. Enables the DDR self refresh mode */
-DATA_OR_LONG(_SYS_CFG38, _SYS_CFG38_MASK),
-/* waits until the ack bit is zero */
-DATA_WHILE_NEQ(_SYS_STA4, _SYS_STA4_MASK, _SYS_STA4_MASK),
-/* 1.1 Turn-off the ClockGenD */
-DATA_OR_LONG(_SYS_CFG11, _SYS_CFG11_MASK),
+I like the idea with an interpreter. But I get the feeling that you're
+using the interpreter to set all sorts of register configurations -
+not only the ones that setup/restore self-refresh and sleep. Am I
+wrong?
 
-IMMEDIATE_DEST(0x1f),
-/* reduces OSC_st40 */
-CLK_STORE(CKGA_OSC_DIV_CFG(4)),
-/* reduces OSC_clk_ic */
-CLK_STORE(CKGA_OSC_DIV_CFG(0x0)),
-/* reduces OSC_clk_ic_if_200 */
-CLK_STORE(CKGA_OSC_DIV_CFG(17)),
-/* 2. Move all the clock on OSC */
+I'm not sure what the best way forward is. Are you planning on
+submitting upstream support for some SoC? That would be nice so we
+could share the same power management code. If not then it's maybe
+best that I just fix up and resend my suspend patch and we can tie in
+some interpreter whenever it's needed.
 
-CLK_POKE(CKGA_OSC_DIV_CFG(5), 29), /* ic_if_100 @ 1MHz to be safe for Lirc*/
+Thanks for your help so far!
 
-IMMEDIATE_DEST(0x0),
-CLK_STORE(CKGA_CLKOPSRC_SWITCH_CFG(0x0)),
-CLK_STORE(CKGA_CLKOPSRC_SWITCH_CFG(0x1)),
-/* PLLs in power down */
-CLK_OR_LONG(CKGA_POWER_CFG, 0x3),
- /* END. */
-_END(),
+Cheers,
 
-/* Turn-on the PLLs */
-CLK_AND_LONG(CKGA_POWER_CFG, ~3),
-/* Wait PLLS lock */
-CLK_WHILE_NEQ(CKGA_PLL0_CFG, CKGA_PLL0_CFG_LOCK, CKGA_PLL0_CFG_LOCK),
-CLK_WHILE_NEQ(CKGA_PLL1_CFG, CKGA_PLL1_CFG_LOCK, CKGA_PLL1_CFG_LOCK),
-
-/* 1. Turn-on the LMI ClocksGenD */
-DATA_AND_NOT_LONG(_SYS_CFG11, _SYS_CFG11_MASK),
-/* Wait LMI ClocksGenD lock */
-DATA_WHILE_NEQ(_SYS_STA3, _SYS_STA3_MASK, _SYS_STA3_VALUE),
-
-/* 2. Disables the DDR self refresh mode */
-DATA_AND_NOT_LONG(_SYS_CFG38, _SYS_CFG38_MASK),
-/* waits until the ack bit is zero */
-DATA_WHILE_EQ(_SYS_STA4, _SYS_STA4_MASK, _SYS_STA4_MASK),
-
-IMMEDIATE_DEST(0x10000),
-CLK_STORE(CKGA_PLL0LS_DIV_CFG(4)),
-
-/* 3. Restore the previous clocks setting */
-DATA_LOAD(0x0),
-CLK_STORE(CKGA_CLKOPSRC_SWITCH_CFG(0x0)),
-DATA_LOAD(0x1),
-CLK_STORE(CKGA_CLKOPSRC_SWITCH_CFG(0x1)),
-DATA_LOAD(0x3),
-CLK_STORE(CKGA_OSC_DIV_CFG(5)),
-DATA_LOAD(0x2),
-CLK_STORE(CKGA_OSC_DIV_CFG(0x0)),
-DATA_LOAD(0x4),
-CLK_STORE(CKGA_OSC_DIV_CFG(17)),
-
-_DELAY(),
-_DELAY(),
-_DELAY(),
-_END()
-};
-
-static unsigned long stx7105_wrt_table[16] __cacheline_aligned;
-
-static int stx7105_suspend_prepare(suspend_state_t state)
-{
-	int ret = -EINVAL;
-	pm_message_t pms = {.event = PM_EVENT_SUSPEND, };
-	clk_pm_state(pms);
-
-	switch (state) {
-	case PM_SUSPEND_STANDBY:
-		stx7105_wrt_table[0] = /* swith config */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_CLKOPSRC_SWITCH_CFG(0));
-		stx7105_wrt_table[1] = /* clk_STNoc */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_OSC_DIV_CFG(0));
-		stx7105_wrt_table[2] = /* clk_ic_if_100 */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_OSC_DIV_CFG(5));
-		ret = 0;
-	break;
-	case PM_SUSPEND_MEM:
-		stx7105_wrt_table[0] = /* swith config */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_CLKOPSRC_SWITCH_CFG(0));
-		stx7105_wrt_table[1] = /* swith config 1 */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_CLKOPSRC_SWITCH_CFG(1));
-		stx7105_wrt_table[2] = /* clk_STNoc */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_OSC_DIV_CFG(0));
-		stx7105_wrt_table[3] = /* clk_ic_if_100 */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_OSC_DIV_CFG(5));
-		stx7105_wrt_table[4] = /* clk_ic_if_200 */
-		   ioread32(CLOCKGENA_BASE_ADDR + CKGA_OSC_DIV_CFG(17));
-		ret = 0;
-		break;
-	}
-	return ret;
-}
-
-/*
- * The xxxx_finish function is called after the resume
- * sysdev devices (i.e.: timer, cpufreq)
- * But it isn't a big issue in our platform
- */
-static int stx7105_suspend_finish(suspend_state_t state)
-{
-	pm_message_t pms = {.event = PM_EVENT_ON, };
-	clk_pm_state(pms);
-	return 0;
-}
-
-static unsigned long stx7105_iomem[2] __cacheline_aligned = {
-		stx7105_wrt_table,
-		CLOCKGENA_BASE_ADDR};
-
-static int stx7105_evt_to_irq(unsigned long evt)
-{
-	return evt2irq(evt);
-}
-
-static struct sh4_suspend_t st40data __cacheline_aligned = {
-	.iobase = stx7105_iomem,
-	.ops.finish = stx7105_suspend_finish,
-	.ops.prepare = stx7105_suspend_prepare,
-	.evt_to_irq = stx7105_evt_to_irq,
-	.stby_tbl = (unsigned long)stx7105_standby_table,
-	.stby_size = DIV_ROUND_UP(ARRAY_SIZE(stx7105_standby_table) * sizeof(long),
-			L1_CACHE_BYTES),
-	.mem_tbl = (unsigned long)stx7105_mem_table,
-	.mem_size = DIV_ROUND_UP(ARRAY_SIZE(stx7105_mem_table) * sizeof(long),
-			L1_CACHE_BYTES),
-	.wrt_tbl = (unsigned long)stx7105_wrt_table,
-	.wrt_size = DIV_ROUND_UP(ARRAY_SIZE(stx7105_wrt_table) * sizeof(long),
-			L1_CACHE_BYTES),
-};
-
-static int __init suspend_platform_setup(void)
-{
-
-	struct sysconf_field* sc;
-	sc = sysconf_claim(SYS_CFG, 38, 20, 20, "pm");
-	stx7105_wrt_table[_SYS_CFG38]      = (unsigned long)sysconf_address(sc);
-	stx7105_wrt_table[_SYS_CFG38_MASK] = sysconf_mask(sc);
-
-	sc = sysconf_claim(SYS_CFG, 11, 12, 12, "pm");
-	stx7105_wrt_table[_SYS_CFG11]      = (unsigned long)sysconf_address(sc);
-	stx7105_wrt_table[_SYS_CFG11_MASK] = sysconf_mask(sc);
-
-	sc = sysconf_claim(SYS_STA, 4, 0, 0, "pm");
-	stx7105_wrt_table[_SYS_STA4]      = (unsigned long)sysconf_address(sc);
-	stx7105_wrt_table[_SYS_STA4_MASK] = sysconf_mask(sc);
-
-	sc = sysconf_claim(SYS_STA, 3, 0, 0, "pm");
-	stx7105_wrt_table[_SYS_STA3] = (unsigned long)sysconf_address(sc);
-	stx7105_wrt_table[_SYS_STA3_MASK] = sysconf_mask(sc);
-	stx7105_wrt_table[_SYS_STA3_VALUE] = 0;
-	return sh4_suspend_register(&st40data);
-}
-
-late_initcall(suspend_platform_setup);
-
---------------050400090900020802060500--
+/ magnus
