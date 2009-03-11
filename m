@@ -1,157 +1,51 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Tue, 10 Mar 2009 13:19:50 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 11 Mar 2009 04:26:49 +0000
 Subject: Re: [PATCH] sh: hibernation support
-Message-Id: <49B668F6.3020405@st.com>
+Message-Id: <aec7e5c30903102126y53e0ee09r332ac3409f41329c@mail.gmail.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------040908000903060404060300"
+Content-Type: multipart/mixed; boundary="0003255760b2bb78510464d046a4"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090306064156.27281.35572.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090306064156.27281.35572.sendpatchset@rx1.opensource.se>
 To: linux-sh@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------040908000903060404060300
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+--0003255760b2bb78510464d046a4
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 
-Hi Magnus
-In the clock framework I would propose the attached solution
-Regards
- Francesco
-Magnus Damm ha scritto:
-> On Mon, Mar 9, 2009 at 7:03 PM, Francesco VIRLINZI
-> <francesco.virlinzi@st.com> wrote:
->   
->> I'm sorry if I'm stressing you but you will have similar problem also with
->> the clock framework.
->> A simple
->> -  clk_get_rate(...)
->> could return a wrong value if in the previous session someone changed the
->> clock rate (from init value) and
->> you don't force again in the hw the resumed "clk->rate".
->>     
->
-> Yeah, the clock framework needs more work. =)
->
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->   
+Hi Francesco,
 
+On Tue, Mar 10, 2009 at 10:19 PM, Francesco VIRLINZI
+<francesco.virlinzi@st.com> wrote:
+> Hi Magnus
+> In the clock framework I would propose the attached solution
 
---------------040908000903060404060300
-Content-Type: text/x-patch;
- name="0003-sh_clk-Added-clks-sysdevice-to-support-hibernation.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename*0="0003-sh_clk-Added-clks-sysdevice-to-support-hibernation.patc";
- filename*1="h"
+Thanks for your help! I tested your patch but I need the attached fix.
 
-From 7d2249e98d304181b3deaa806ee475873e822328 Mon Sep 17 00:00:00 2001
-From: Francesco Virlinzi <francesco.virlinzi@st.com>
-Date: Tue, 10 Mar 2009 10:23:23 +0100
-Subject: [PATCH] sh_clk: Added clks sysdevice to support hibernation
+Can you please include my fix and resubmit inline? Feel free to add an
+ack from me.
 
-This patch adds the clk_sysdev device to restore the right clocks
- setting after a resume from hibernation.
+Thanks!
 
-Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
----
- arch/sh/kernel/cpu/clock.c |   62 ++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 62 insertions(+), 0 deletions(-)
+/ magnus
 
-diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
-index dc53def..06fcbf0 100644
---- a/arch/sh/kernel/cpu/clock.c
-+++ b/arch/sh/kernel/cpu/clock.c
-@@ -20,6 +20,8 @@
- #include <linux/mutex.h>
- #include <linux/list.h>
- #include <linux/kref.h>
-+#include <linux/kobject.h>
-+#include <linux/sysdev.h>
- #include <linux/seq_file.h>
- #include <linux/err.h>
- #include <linux/platform_device.h>
-@@ -382,6 +384,56 @@ static int show_clocks(char *buf, char **start, off_t off,
- 	return p - buf;
- }
- 
-+static int clks_suspend(struct sys_device *dev, pm_message_t state)
-+{
-+	static pm_message_t prev_state;
-+	struct clk *clkp;
-+
-+	switch (state.event) {
-+	case PM_EVENT_ON:
-+		/* Resumeing from hibernation */
-+		if (prev_state.event == PM_EVENT_FREEZE) {
-+			list_for_each_entry(clkp, &clock_list, node)
-+				if (likely(clkp->ops)) {
-+					if (likely(clkp->ops->set_parent))
-+						clkp->ops->set_parent(clkp,
-+							clkp->parent);
-+					if (likely(clkp->ops->set_rate))
-+						clkp->ops->set_rate(clkp,
-+							clkp->rate, NO_CHANGE);
-+					if (likely(clkp->ops->recalc))
-+						clkp->ops->recalc(clkp);
-+					}
-+		}
-+		break;
-+	case PM_EVENT_FREEZE:
-+		break;
-+	case PM_EVENT_SUSPEND:
-+		break;
-+	}
-+
-+	prev_state = state;
-+	return 0;
-+}
-+
-+static int clks_resume(struct sys_device *dev)
-+{
-+	return clks_suspend(dev, PMSG_ON);
-+}
-+
-+static struct sysdev_class clks_class = {
-+	.kset.kobj.name = "clks",
-+};
-+
-+static struct sysdev_driver clks_driver = {
-+	.suspend = clks_suspend,
-+	.resume = clks_resume,
-+};
-+
-+static struct sys_device clks_dev = {
-+	.cls = &clks_class,
-+};
-+
- int __init clk_init(void)
- {
- 	int i, ret = 0;
-@@ -404,6 +456,16 @@ int __init clk_init(void)
- 	return ret;
- }
- 
-+static int __init clk_sysdev_init(void)
-+{
-+
-+	sysdev_class_register(&clks_class);
-+	sysdev_driver_register(&clks_class, &clks_driver);
-+	sysdev_register(&clks_dev);
-+	return 0;
-+}
-+subsys_initcall(clk_sysdev_init);
-+
- static int __init clk_proc_init(void)
- {
- 	struct proc_dir_entry *p;
--- 
-1.5.6.6
+--0003255760b2bb78510464d046a4
+Content-Type: text/x-patch; charset=US-ASCII; 
+	name="0003-sh_clk-Added-clks-sysdevice-to-support-hibernation-fix.patch"
+Content-Disposition: attachment; 
+	filename="0003-sh_clk-Added-clks-sysdevice-to-support-hibernation-fix.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_fs5ia85m1
 
-
---------------040908000903060404060300--
+LS0tIDAwMDMvYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMKKysrIHdvcmsvYXJjaC9zaC9rZXJu
+ZWwvY3B1L2Nsb2NrLmMJMjAwOS0wMy0xMSAxMjozNjo0NC4wMDAwMDAwMDAgKzA5MDAKQEAgLTM2
+OSw3ICszNjksNyBAQCBzdGF0aWMgaW50IGNsa3NfcmVzdW1lKHN0cnVjdCBzeXNfZGV2aWNlCiB9
+CiAKIHN0YXRpYyBzdHJ1Y3Qgc3lzZGV2X2NsYXNzIGNsa3NfY2xhc3MgPSB7Ci0JLmtzZXQua29i
+ai5uYW1lID0gImNsa3MiLAorCS5uYW1lID0gImNsa3MiLAogfTsKIAogc3RhdGljIHN0cnVjdCBz
+eXNkZXZfZHJpdmVyIGNsa3NfZHJpdmVyID0gewpAQCAtNDA1LDEwICs0MDUsMTAgQEAgaW50IF9f
+aW5pdCBjbGtfaW5pdCh2b2lkKQogCiBzdGF0aWMgaW50IF9faW5pdCBjbGtfc3lzZGV2X2luaXQo
+dm9pZCkKIHsKLQogCXN5c2Rldl9jbGFzc19yZWdpc3RlcigmY2xrc19jbGFzcyk7CiAJc3lzZGV2
+X2RyaXZlcl9yZWdpc3RlcigmY2xrc19jbGFzcywgJmNsa3NfZHJpdmVyKTsKIAlzeXNkZXZfcmVn
+aXN0ZXIoJmNsa3NfZGV2KTsKKwogCXJldHVybiAwOwogfQogc3Vic3lzX2luaXRjYWxsKGNsa19z
+eXNkZXZfaW5pdCk7Cg==
+--0003255760b2bb78510464d046a4--
