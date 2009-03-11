@@ -1,89 +1,124 @@
-From: Michael Trimarchi <trimarchi@gandalf.sssup.it>
-Date: Tue, 24 Mar 2009 11:28:28 +0000
-Subject: [RFC patch] Fix stack dsp offset
-Message-Id: <20090324112828.GA17344@gandalf.sssup.it>
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Wed, 11 Mar 2009 07:42:05 +0000
+Subject: [PATCH] sh_clk: Added resume from hibernation support in the clk
+Message-Id: <49B76B4D.60104@st.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------020105080602040504060503"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Compute correcly the offset of the registers on the stack when the
-CONFIG_SH_DSP is enabled. It add a thread depend information
-in the thread_struct. It was tested in the migor sh4a using
-a gdbserver application for a non dsp application.
+This is a multi-part message in MIME format.
+--------------020105080602040504060503
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Signed-off-by: Michael Trimarchi <michael@evidence.eu.com>
+
+
+--------------020105080602040504060503
+Content-Type: text/x-patch;
+ name="0003-sh_clk-Added-hibernation-support-in-the-clock-frame.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename*0="0003-sh_clk-Added-hibernation-support-in-the-clock-frame.pat";
+ filename*1="ch"
+
+From da85a159444a638aef1b1d83d9d786265febf8e2 Mon Sep 17 00:00:00 2001
+From: Francesco Virlinzi <francesco.virlinzi@st.com>
+Date: Wed, 11 Mar 2009 08:37:20 +0100
+Subject: [PATCH] sh_clk: Added hibernation support in the clock framework
+
+This patch adds the hibernation support in the clock framework
+
+Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
 ---
-diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
-index efdd78a..46e73b2 100644
---- a/arch/sh/include/asm/processor_32.h
-+++ b/arch/sh/include/asm/processor_32.h
-@@ -96,6 +96,9 @@ struct thread_struct {
+ arch/sh/kernel/cpu/clock.c |   65 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 65 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index 332a179..7ed0e45 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
+@@ -20,6 +20,8 @@
+ #include <linux/mutex.h>
+ #include <linux/list.h>
+ #include <linux/kref.h>
++#include <linux/kobject.h>
++#include <linux/sysdev.h>
+ #include <linux/seq_file.h>
+ #include <linux/err.h>
+ #include <linux/platform_device.h>
+@@ -358,6 +360,69 @@ static int show_clocks(char *buf, char **start, off_t off,
+ 	return p - buf;
+ }
  
- 	/* floating point info */
- 	union sh_fpu_union fpu;
-+
-+	/* Dsp status information */
-+	long dsp_status;
- };
- 
- /* Count of active tasks with UBC settings */
-diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
-index 81c6568..3504f2d 100644
---- a/arch/sh/include/asm/ptrace.h
-+++ b/arch/sh/include/asm/ptrace.h
-@@ -120,11 +120,19 @@ extern void user_enable_single_step(struct task_struct *);
- extern void user_disable_single_step(struct task_struct *);
- 
- #ifdef CONFIG_SH_DSP
--#define task_pt_regs(task) \
--	((struct pt_regs *) (task_stack_page(task) + THREAD_SIZE \
--		 - sizeof(struct pt_dspregs)) - 1)
-+extern int is_dsp_enabled(struct task_struct *);
-+
- #define task_pt_dspregs(task) \
--	((struct pt_dspregs *) (task_stack_page(task) + THREAD_SIZE) - 1)
-+	((struct pt_dspregs *) (task_stack_page(task) + THREAD_SIZE \
-+		 - sizeof(unsigned long)) - 1)
-+
-+#define task_pt_regs(task) \
-+        (is_dsp_enabled(task) ? \
-+		((struct pt_regs *) (task_stack_page(task) + \
-+			THREAD_SIZE - sizeof(struct pt_dspregs) - \
-+			sizeof(unsigned long)) - 1): \
-+		((struct pt_regs *) (task_stack_page(task) + \
-+			THREAD_SIZE - sizeof(unsigned long)) - 1))
- #else
- #define task_pt_regs(task) \
- 	((struct pt_regs *) (task_stack_page(task) + THREAD_SIZE) - 1)
-diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-index 29ca09d..4560637 100644
---- a/arch/sh/kernel/ptrace_32.c
-+++ b/arch/sh/kernel/ptrace_32.c
-@@ -195,6 +195,12 @@ static int fpregs_active(struct task_struct *target,
- #endif
- 
- #ifdef CONFIG_SH_DSP
-+
-+int is_dsp_enabled(struct task_struct *task)
++#ifdef CONFIG_PM
++static int clks_sysdev_suspend(struct sys_device *dev, pm_message_t state)
 +{
-+	return !!(task->thread.dsp_status & SR_DSP);
++	static pm_message_t prev_state;
++	struct clk *clkp;
++
++	switch (state.event) {
++	case PM_EVENT_ON:
++		/* Resumeing from hibernation */
++		if (prev_state.event == PM_EVENT_FREEZE) {
++			list_for_each_entry(clkp, &clock_list, node)
++				if (likely(clkp->ops)) {
++					if (likely(clkp->ops->set_parent))
++						clkp->ops->set_parent(clkp,
++							clkp->parent);
++					if (likely(clkp->ops->set_rate))
++						clkp->ops->set_rate(clkp,
++							clkp->rate, NO_CHANGE);
++					else if (likely(clkp->ops->recalc))
++						clkp->ops->recalc(clkp);
++					}
++		}
++		break;
++	case PM_EVENT_FREEZE:
++		break;
++	case PM_EVENT_SUSPEND:
++		break;
++	}
++
++	prev_state = state;
++	return 0;
 +}
 +
- static int dspregs_get(struct task_struct *target,
- 		       const struct user_regset *regset,
- 		       unsigned int pos, unsigned int count,
-diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
-index 60dcf87..d97886d 100644
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -664,6 +664,8 @@ asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
- 	if (is_dsp_inst(regs)) {
- 		/* Enable DSP mode, and restart instruction. */
- 		regs->sr |= SR_DSP;
-+		/* Save DSP mode */
-+		tsk->thread.dsp_status |= SR_DSP;
- 		return;
- 	}
- #endif
++static int clks_sysdev_resume(struct sys_device *dev)
++{
++	return clks_sysdev_suspend(dev, PMSG_ON);
++}
++
++static struct sysdev_class clks_sysdev_class = {
++	.name = "clks",
++};
++
++static struct sysdev_driver clks_sysdev_driver = {
++	.suspend = clks_sysdev_suspend,
++	.resume = clks_sysdev_resume,
++};
++
++static struct sys_device clks_sysdev_dev = {
++	.cls = &clks_sysdev_class,
++};
++
++static int __init clk_sysdev_init(void)
++{
++
++	sysdev_class_register(&clks_sysdev_class);
++	sysdev_driver_register(&clks_sysdev_class, &clks_sysdev_driver);
++	sysdev_register(&clks_sysdev_dev);
++	return 0;
++}
++
++subsys_initcall(clk_sysdev_init);
++#endif
++
+ int __init clk_init(void)
+ {
+ 	int i, ret = 0;
+-- 
+1.5.6.6
+
+
+--------------020105080602040504060503--
