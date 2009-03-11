@@ -1,49 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2009 05:52:45 +0000
-Subject: Re: [Proposal][PATCH] sh: Suspend in Ram on sh4
-Message-Id: <aec7e5c30903182252j4a6fbe88k168743f6f614c932@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 11 Mar 2009 08:31:45 +0000
+Subject: Re: [PATCH 00/09] sh: clean up pci code
+Message-Id: <20090311083145.GG6281@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49B66A0E.1020400@st.com>
-In-Reply-To: <49B66A0E.1020400@st.com>
+References: <20080219123420.4266.2965.sendpatchset@clockwork.opensource.se>
+In-Reply-To: <20080219123420.4266.2965.sendpatchset@clockwork.opensource.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 11, 2009 at 11:31 PM, Francesco VIRLINZI
-<francesco.virlinzi@st.com> wrote:
->> I'm not sure what the best way forward is. Are you planning on
->> submitting upstream support for some SoC?
->
-> Not so easy submit the per SOC code also because we use an older kernel t=
-han
-> the original kernel.org (I'm on 2.6.23).
-
-I see. The joys of old kernels. =3D)
-
->> =A0That would be nice so we
->> could share the same power management code.
->
-> I'm already sharing this code for that reason.
-
-I appreciate your effort. You may have noted that we cherry pick
-certain parts of the code that you post. Accepting everything would of
-course be better, but there is some hesitation since we don't have the
-full picture of your code base.
-
-In my opinion, the best way to add new interfaces or change existing
-ones is to also submit code that is using your interfaces. WIthout
-such code it's difficult to understand the reason behind the change.
-
-I wonder if it would be possible to take a single cpu and a single
-board from your out of tree code base, and add support for that system
-upstream. Then we can tie in whatever interfaces to that code. This
-may take quite a bit of time though, but it's probably worth doing in
-the long term.
-
-Also, please try to submit your patches inline if possible. It makes
-review much easier. I use sendpatchset for this purpose.
-
-Thanks for your help so far!
-
-/ magnus
+On Tue, Feb 19, 2008 at 09:34:20PM +0900, Magnus Damm wrote:
+> These patches rework the pci code for the sh architecture.
+> 
+> Currently each board implements some kind of ioport to address mapping. Some
+> boards use generic_io_base others try passing addresses as io ports. This is
+> the first set of patches that try to unify the pci code as much as possible
+> to avoid duplicated code. This will in the end lead to fewer lines board
+> specific code and more generic code.
+> 
+> Only high level stuff so far. These patches avoid changing low level bits,
+> I have patches for sh7751 and sh7780 doing that already. I'll post then 
+> later on this week after some more testing.
+> 
+> Have fun and people with pci host controllers - please test!
+> 
+I've merged this series in to the sh/pci-rework topic branch. It needs
+some more work, some of which I've already done, but it makes more sense
+to concentrate development in one place and merge it when it's ready.
