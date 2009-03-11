@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 11 Mar 2009 13:36:34 +0000
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Wed, 11 Mar 2009 14:31:38 +0000
 Subject: Re: [Proposal][PATCH] sh: Suspend in Ram on sh4
-Message-Id: <aec7e5c30903110636r79aaf053n2ee4fd857f9949c7@mail.gmail.com>
+Message-Id: <49B7CB4A.7060907@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <49B66A0E.1020400@st.com>
 In-Reply-To: <49B66A0E.1020400@st.com>
@@ -10,80 +10,63 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Francesco!
-
-On Tue, Mar 10, 2009 at 10:24 PM, Francesco VIRLINZI
-<francesco.virlinzi@st.com> wrote:
-> Hi all
-> I would propose an other version of suspend in ram.
+Hi again Magnus
+> ...
+> Just curious, how many different SoCs do you support with suspend?
+Currently seven... ~11-12 for the end of the year...
+> ...
 >
-> In ST we have several constraints:
-> - Several SOCs with different Clock IPs
-> - No cache memory mapped (it was removed in recently version of ST40)
-> - No IPREF instruction..
-> - 29/32 bits supports (where in 32 bits we are managing the PMB in a
-> different manner respect the original kernel.org code).
-
-Just curious, how many different SoCs do you support with suspend?
-
-> For these reason an hard-coded suspend assembly code isn't easy to use for
-> us.
 >
-> To address the issue we are using a mini interpreter able to execute macro
-> instructions SOC based.
+> The only code that needs special care is the self refresh code and
+> whatever runs when the system ram is put in self refresh. What happens
+> before and after can be written in C or assembly as usual.
+Agreed!
+>> The assembly code preloads (with a jump sequence) in cache (both I$ and D$)
+>> the 'instruction-table'
+>> and after that it executes the instruction-table.
+>
+> I tried to figure out how this cache population is working, but i
+> still don't understand. =) Something is magical with your JUMPER().
+> And you need both populate both instruction and data cache, right?
+Yes you are right!
+As I said in the ST40 we removed the ipref instruction and we removed also
+ the cache memory mapped therefore the only way to preload the code  in 
+the ICache is executing it..
 
-Some week ago I was considering doing something similar, but then I
-decided not to. The reason for this was simplicity. My suspend patch
-only supports a few processors, so it's probably not fair to compare
-it with your case. So please take this with a pinch of salt. And
-correct me when I'm wrong.
+When the linux calls the 'sh4_suspend' the CPU begins a sequence of 
+jumps "to ping" all the Icache line (but
+ I'm not really executing code... I'm only jumping from a label to the 
+next label...) until the
+ end of the code where it jumps on 'sh4_really_suspend' where the CPU 
+really executes the code (now in Icache).
+>
+> How do you save data without writing to the self-refreshing ram?
+Both the 'instruction table' and the 'writable-table' are preloaded in 
+Dcache.
+> Copy-back configuration with guaranteed space?
+>
+> I like the idea with an interpreter. But I get the feeling that you're
+> using the interpreter to set all sorts of register configurations -
+> not only the ones that setup/restore self-refresh and sleep. Am I
+> wrong?
+No you aren't.
+You are  right, I sets also some clocks but using the interpreter 
+basically you can do what you want for example
+ in a SOC the last thing I do to enter in standby isn't a sleep... it's 
+a write in the ClockIP to turn-off the sh4_clk...
+ the wakeup event routed to the ClockIP will ("automatically") turn-on 
+again the sh4_clk.... therefore it's a kind
+ of 'hard' sleep instruction.... (without sleep instruction)
 
-The only code that needs special care is the self refresh code and
-whatever runs when the system ram is put in self refresh. What happens
-before and after can be written in C or assembly as usual. Having some
-assembly code snippet that does this is very simple. The code for
-suspend that I posted recently is relocatable and does exactly this.
-It should be possible to load that into the instruction cache too
-unless I'm mistaken.
+Also in this case the code to manage the clock has to be in icache.
+>
+> I'm not sure what the best way forward is. Are you planning on
+> submitting upstream support for some SoC?
+Not so easy submit the per SOC code also because we use an older kernel 
+than the original kernel.org (I'm on 2.6.23).
+>  That would be nice so we
+> could share the same power management code.
+I'm already sharing this code for that reason.
+Ciao
+  Francesco
 
-I realize that the self-refresh mode switching code may vary with
-processor type and maybe board type as well. And having special case
-handling by ifdefs in the assembly snippet is not exacly clean.
-
-> The assembly code preloads (with a jump sequence) in cache (both I$ and D$)
-> the 'instruction-table'
-> and after that it executes the instruction-table.
-
-I tried to figure out how this cache population is working, but i
-still don't understand. =) Something is magical with your JUMPER().
-And you need both populate both instruction and data cache, right?
-
-> This solution allow me to have no assembly code SOCs specific and
-> for each SOC I have only to produce the right "tables" for standby and/or
-> mem-standby.
-
-I understand. This is pretty neat.
-
-> Moreover a 3rd table is supported to be able to produce or save data on the
-> fly for the standby it-self (for example if we have different action on the
-> same SOC but different Cut).
-
-How do you save data without writing to the self-refreshing ram?
-Copy-back configuration with guaranteed space?
-
-I like the idea with an interpreter. But I get the feeling that you're
-using the interpreter to set all sorts of register configurations -
-not only the ones that setup/restore self-refresh and sleep. Am I
-wrong?
-
-I'm not sure what the best way forward is. Are you planning on
-submitting upstream support for some SoC? That would be nice so we
-could share the same power management code. If not then it's maybe
-best that I just fix up and resend my suspend patch and we can tie in
-some interpreter whenever it's needed.
-
-Thanks for your help so far!
-
-Cheers,
-
-/ magnus
