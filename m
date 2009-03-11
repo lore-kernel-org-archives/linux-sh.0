@@ -1,40 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 11 Mar 2009 08:04:23 +0000
-Subject: [PATCH] input: sh_keysc suspend can use to_platform_device()
-Message-Id: <20090311080423.2006.22858.sendpatchset@rx1.opensource.se>
+From: Trilok Soni <soni.trilok@gmail.com>
+Date: Wed, 11 Mar 2009 08:25:16 +0000
+Subject: Re: [PATCH] input: sh_keysc suspend can use to_platform_device()
+Message-Id: <5d5443650903110113o214c98a5l39ac7d483059ad56@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090311080423.2006.22858.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090311080423.2006.22858.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org
-Cc: soni.trilok@gmail.com, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-input@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Hi Magnus,
 
-This patch changes sh_keysc to use to_platform_device()
-for suspend. Thanks to Trilok Soni for this suggestion.
+On Wed, Mar 11, 2009 at 1:34 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm@igel.co.jp>
+>
+> This patch changes sh_keysc to use to_platform_device()
+> for suspend. Thanks to Trilok Soni for this suggestion.
+>
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Thanks.
 
- drivers/input/keyboard/sh_keysc.c |    7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+Reviewed-by: Trilok Soni <soni.trilok@gmail.com>
 
---- 0001/drivers/input/keyboard/sh_keysc.c
-+++ work/drivers/input/keyboard/sh_keysc.c	2009-03-11 13:33:14.000000000 +0900
-@@ -257,13 +257,10 @@ static int __devexit sh_keysc_remove(str
- 
- static int sh_keysc_suspend(struct device *dev)
- {
--	struct platform_device *pdev;
--	struct sh_keysc_priv *priv;
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_keysc_priv *priv = platform_get_drvdata(pdev);
- 	unsigned short value;
- 
--	pdev = container_of(dev, struct platform_device, dev);
--	priv = platform_get_drvdata(pdev);
--
- 	value = ioread16(priv->iomem_base + KYCR1_OFFS);
- 
- 	if (device_may_wakeup(dev))
+
+-- 
+---Trilok Soni
+http://triloksoni.wordpress.com
+http://www.linkedin.com/in/triloksoni
