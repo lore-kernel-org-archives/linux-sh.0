@@ -1,38 +1,82 @@
 From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Tue, 31 Mar 2009 00:58:23 +0000
-Subject: Re: [PATCH] sh_eth: Change handling of IRQ
-Message-Id: <49D16AAF.4080803@renesas.com>
+Date: Thu, 12 Mar 2009 06:34:39 +0000
+Subject: [PATCH] sh: Revert CONFIG_NR_ONCHIP_DMA_CHANNELS to MAX_DMA_CHANNELS
+Message-Id: <49B8ACFF.1030604@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49BF3A97.4010008@renesas.com> <49BF3A41.6040309@renesas.com>
- <20090330231513.GG19535@linux-sh.org> <20090330231623.GH19535@linux-sh.org>
-In-Reply-To: <20090330231623.GH19535@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, netdev@vger.kernel.org, Linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Tue, Mar 31, 2009 at 08:15:13AM +0900, Paul Mundt wrote:
->> On Tue, Mar 17, 2009 at 02:50:57PM +0900, Nobuhiro Iwamatsu wrote:
->>> Handling of IRQ of the SH7763/SH7764 CPU which sh_eth supported was
->>> changed.
->>> This revises it for this change.
->>>
->>> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->> On Tue, Mar 17, 2009 at 02:52:23PM +0900, Nobuhiro Iwamatsu wrote:
->>> Address of SH_TSU_ADDR and ARSTR of SH7763 was wrong.
->>> This revise it.
->>>
->>> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->> The sh changes this depends on for the CPU subtypes are merged upstream
->> now, so this can go through either tree. As there is nothing really
->> netdev specific about this, I suppose the easiest is to just roll both of
->> these in to the sh tree.
-> 
-> Oh, nevermind, I see these were merged already through the net tree..
-> 
-I should have reported that these were taken in.
-I will report it from the next time.
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ arch/sh/include/asm/dma-sh.h |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
 
-Best regards,
-  Nobuhiro
+diff --git a/arch/sh/include/asm/dma-sh.h b/arch/sh/include/asm/dma-sh.h
+index e873eca..0c8f8e1 100644
+--- a/arch/sh/include/asm/dma-sh.h
++++ b/arch/sh/include/asm/dma-sh.h
+@@ -11,6 +11,7 @@
+ #ifndef __DMA_SH_H
+ #define __DMA_SH_H
+
++#include <asm/dma.h>
+ #include <cpu/dma.h>
+
+ /* DMAOR contorl: The DMAOR access size is different by CPU.*/
+@@ -29,21 +30,21 @@
+ #endif
+
+ static int dmte_irq_map[] __maybe_unused = {
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 4)
++#if (MAX_DMA_CHANNELS >= 4)
+     DMTE0_IRQ,
+     DMTE0_IRQ + 1,
+     DMTE0_IRQ + 2,
+     DMTE0_IRQ + 3,
+ #endif
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 6)
++#if (MAX_DMA_CHANNELS >= 6)
+     DMTE4_IRQ,
+     DMTE4_IRQ + 1,
+ #endif
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 8)
++#if (MAX_DMA_CHANNELS >= 8)
+     DMTE6_IRQ,
+     DMTE6_IRQ + 1,
+ #endif
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 12)
++#if (MAX_DMA_CHANNELS >= 12)
+     DMTE8_IRQ,
+     DMTE9_IRQ,
+     DMTE10_IRQ,
+@@ -85,21 +86,21 @@ static int dmte_irq_map[] __maybe_unused = {
+
+ /* DMA base address */
+ static u32 dma_base_addr[] __maybe_unused = {
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 4)
++#if (MAX_DMA_CHANNELS >= 4)
+ 	SH_DMAC_BASE0 + 0x00,	/* channel 0 */
+ 	SH_DMAC_BASE0 + 0x10,
+ 	SH_DMAC_BASE0 + 0x20,
+ 	SH_DMAC_BASE0 + 0x30,
+ #endif
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 6)
++#if (MAX_DMA_CHANNELS >= 6)
+ 	SH_DMAC_BASE0 + 0x50,
+ 	SH_DMAC_BASE0 + 0x60,
+ #endif
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 8)
++#if (MAX_DMA_CHANNELS >= 8)
+ 	SH_DMAC_BASE1 + 0x00,
+ 	SH_DMAC_BASE1 + 0x10,
+ #endif
+-#if (CONFIG_NR_ONCHIP_DMA_CHANNELS >= 12)
++#if (MAX_DMA_CHANNELS >= 12)
+ 	SH_DMAC_BASE1 + 0x20,
+ 	SH_DMAC_BASE1 + 0x30,
+ 	SH_DMAC_BASE1 + 0x50,
+-- 
+1.6.2
+
