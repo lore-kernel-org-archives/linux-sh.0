@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2009 10:10:44 +0000
-Subject: [PATCH] sh:  sh-rtc invalid time rework
-Message-Id: <20090319101044.9839.71473.sendpatchset@rx1.opensource.se>
+Date: Fri, 13 Mar 2009 15:27:14 +0000
+Subject: [PATCH] sh: add ap325 lcd power off support
+Message-Id: <20090313152714.20494.42365.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,52 +10,39 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch modifies invalid time handling in the
-SuperH RTC driver. Instead of zeroing the returned
-value at read-out time we just return an error code
-and reset invalid values during probe.
+Improve the ap325 board code to allow the lcd panel
+and backlight to be powered off.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/rtc/rtc-sh.c |   15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+ arch/sh/boards/board-ap325rxa.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
---- 0008/drivers/rtc/rtc-sh.c
-+++ work/drivers/rtc/rtc-sh.c	2009-03-19 18:39:23.000000000 +0900
-@@ -431,12 +431,7 @@ static int sh_rtc_read_time(struct devic
- 		tm->tm_sec, tm->tm_min, tm->tm_hour,
- 		tm->tm_mday, tm->tm_mon + 1, tm->tm_year, tm->tm_wday);
- 
--	if (rtc_valid_tm(tm) < 0) {
--		dev_err(dev, "invalid date\n");
--		rtc_time_to_tm(0, tm);
--	}
--
--	return 0;
-+	return rtc_valid_tm(tm);
+--- 0001/arch/sh/boards/board-ap325rxa.c
++++ work/arch/sh/boards/board-ap325rxa.c	2009-03-12 22:06:57.000000000 +0900
+@@ -166,6 +166,16 @@ static void ap320_wvga_power_on(void *bo
+ 	ctrl_outw(0x100, FPGA_BKLREG);
  }
  
- static int sh_rtc_set_time(struct device *dev, struct rtc_time *tm)
-@@ -641,6 +636,7 @@ static int __devinit sh_rtc_probe(struct
- {
- 	struct sh_rtc *rtc;
- 	struct resource *res;
-+	struct rtc_time r;
- 	int ret;
- 
- 	rtc = kzalloc(sizeof(struct sh_rtc), GFP_KERNEL);
-@@ -752,6 +748,13 @@ static int __devinit sh_rtc_probe(struct
- 	sh_rtc_setpie(&pdev->dev, 0);
- 	sh_rtc_setaie(&pdev->dev, 0);
- 	sh_rtc_setcie(&pdev->dev, 0);
++static void ap320_wvga_power_off(void *board_data)
++{
++	/* backlight */
++	ctrl_outw(0, FPGA_BKLREG);
++	gpio_set_value(GPIO_PTS3, 1);
 +
-+	/* reset rtc to epoch 0 if time is invalid */
-+	if (rtc_read_time(rtc->rtc_dev, &r) < 0) {
-+		rtc_time_to_tm(0, &r);
-+		rtc_set_time(rtc->rtc_dev, &r);
-+	}
++	/* ASD AP-320/325 LCD OFF */
++	ctrl_outw(0, FPGA_LCDREG);
++}
 +
- 	return 0;
- 
- err_unmap:
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.clock_source = LCDC_CLK_EXTERNAL,
+ 	.ch[0] = {
+@@ -191,6 +201,7 @@ static struct sh_mobile_lcdc_info lcdc_i
+ 		},
+ 		.board_cfg = {
+ 			.display_on = ap320_wvga_power_on,
++			.display_off = ap320_wvga_power_off,
+ 		},
+ 	}
+ };
