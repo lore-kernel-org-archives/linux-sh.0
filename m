@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 12 Mar 2009 14:45:33 +0000
-Subject: [PATCH] sh: SuperH Mobile suspend support V2
-Message-Id: <20090312144533.28453.15458.sendpatchset@rx1.opensource.se>
+Date: Fri, 13 Mar 2009 15:23:04 +0000
+Subject: [PATCH] sh: SuperH Mobile suspend support V3
+Message-Id: <20090313152304.20487.42793.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090309105143.23622.42915.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090309105143.23622.42915.sendpatchset@rx1.opensource.se>
@@ -13,7 +13,7 @@ To: linux-sh@vger.kernel.org
 From: Magnus Damm <damm@igel.co.jp>
 
 This patch contains CONFIG_SUSPEND support to the SuperH
-architecture V2. If enabled, SuperH Mobile processors will
+architecture V3. If enabled, SuperH Mobile processors will
 register their suspend callbacks during boot.
 
 To suspend, use "echo mem > /sys/power/state". To allow
@@ -24,19 +24,23 @@ are most likely needed.
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
+ Changes since V2:
+ - fixed ILRAM typo
+ - use CONFIG_ARCH_SHMOBILE in Makefile
+
  Changes since V1:
  - fixed up issues pointed out by Paul
  - added more comments
 
  arch/sh/Kconfig                           |    1 
  arch/sh/include/asm/suspend.h             |    9 ++
- arch/sh/kernel/cpu/sh4a/Makefile          |    7 +
+ arch/sh/kernel/cpu/sh4a/Makefile          |    4 
  arch/sh/kernel/cpu/sh4a/pm-sh_mobile.c    |   92 +++++++++++++++++++++
  arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S |  125 +++++++++++++++++++++++++++++
- 5 files changed, 234 insertions(+)
+ 5 files changed, 231 insertions(+)
 
 --- 0005/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2009-03-12 23:13:25.000000000 +0900
++++ work/arch/sh/Kconfig	2009-03-13 14:19:50.000000000 +0900
 @@ -181,6 +181,7 @@ config CPU_SHX3
  
  config ARCH_SHMOBILE
@@ -46,7 +50,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  choice
  	prompt "Processor sub-type selection"
 --- 0001/arch/sh/include/asm/suspend.h
-+++ work/arch/sh/include/asm/suspend.h	2009-03-12 23:16:59.000000000 +0900
++++ work/arch/sh/include/asm/suspend.h	2009-03-13 14:19:50.000000000 +0900
 @@ -1,6 +1,7 @@
  #ifndef _ASM_SH_SUSPEND_H
  #define _ASM_SH_SUSPEND_H
@@ -70,23 +74,20 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  
  #endif /* _ASM_SH_SUSPEND_H */
 --- 0001/arch/sh/kernel/cpu/sh4a/Makefile
-+++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-03-12 22:15:16.000000000 +0900
-@@ -35,6 +35,13 @@ pinmux-$(CONFIG_CPU_SUBTYPE_SH7723)	:= p
++++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-03-13 15:39:05.000000000 +0900
+@@ -35,6 +35,10 @@ pinmux-$(CONFIG_CPU_SUBTYPE_SH7723)	:= p
  pinmux-$(CONFIG_CPU_SUBTYPE_SH7785)	:= pinmux-sh7785.o
  pinmux-$(CONFIG_CPU_SUBTYPE_SH7786)	:= pinmux-sh7786.o
  
 +# Power Mangement & Sleep mode
-+pm-$(CONFIG_CPU_SUBTYPE_SH7343)		:= pm-sh_mobile.o sleep-sh_mobile.o
-+pm-$(CONFIG_CPU_SUBTYPE_SH7366)		:= pm-sh_mobile.o sleep-sh_mobile.o
-+pm-$(CONFIG_CPU_SUBTYPE_SH7722)		:= pm-sh_mobile.o sleep-sh_mobile.o
-+pm-$(CONFIG_CPU_SUBTYPE_SH7723)		:= pm-sh_mobile.o sleep-sh_mobile.o
++pm-$(CONFIG_ARCH_SHMOBILE)		:= pm-sh_mobile.o sleep-sh_mobile.o
 +
  obj-y			+= $(clock-y)
  obj-$(CONFIG_SMP)	+= $(smp-y)
  obj-$(CONFIG_GENERIC_GPIO)	+= $(pinmux-y)
 +obj-$(CONFIG_PM)	+= $(pm-y)
 --- /dev/null
-+++ work/arch/sh/kernel/cpu/sh4a/pm-sh_mobile.c	2009-03-12 23:37:17.000000000 +0900
++++ work/arch/sh/kernel/cpu/sh4a/pm-sh_mobile.c	2009-03-13 15:38:32.000000000 +0900
 @@ -0,0 +1,92 @@
 +/*
 + * arch/sh/kernel/cpu/sh4a/pm-sh_mobile.c
@@ -135,7 +136,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +static void sh_mobile_call_standby(unsigned long mode)
 +{
 +	extern void *vbr_base;
-+	void *onchip_mem = (void *)0xe520000; /* ILRAM */
++	void *onchip_mem = (void *)0xe5200000; /* ILRAM */
 +	void (*standby_onchip_mem)(unsigned long) = onchip_mem;
 +
 +	/* Note: Wake up from sleep may generate exceptions!
@@ -181,7 +182,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 +late_initcall(sh_pm_init);
 --- /dev/null
-+++ work/arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S	2009-03-12 23:31:02.000000000 +0900
++++ work/arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S	2009-03-13 14:19:50.000000000 +0900
 @@ -0,0 +1,125 @@
 +/*
 + * arch/sh/kernel/cpu/sh4a/sleep-sh_mobile.S
