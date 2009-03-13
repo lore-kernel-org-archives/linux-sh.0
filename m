@@ -1,39 +1,47 @@
 From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Fri, 13 Mar 2009 08:10:45 +0000
-Subject: [PATCH] sh: clkfwk: Changed the init function
-Message-Id: <49BA1505.7000500@st.com>
+Date: Fri, 13 Mar 2009 08:34:56 +0000
+Subject: Re: [PATCH] sh: clkfwk: Changed the init function
+Message-Id: <49BA1AB0.9030203@st.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------010600040006020307050706"
+Content-Type: multipart/mixed; boundary="------------040104000707040703000809"
 List-Id: <linux-sh.vger.kernel.org>
+References: <49BA1505.7000500@st.com>
+In-Reply-To: <49BA1505.7000500@st.com>
 To: linux-sh@vger.kernel.org
 
 This is a multi-part message in MIME format.
---------------010600040006020307050706
+--------------040104000707040703000809
 Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Content-Transfer-Encoding: 7bit
 
-Hi all
-
-This patch changes the init field in the clk_ops structure.
-Moreover it changes how the init function is used.
-Now it's called during registration and if something was wrong the clock 
-isn't registered.
-
+Sorry I forgot the timers..
+Here the right patch
 Regards
  Francesco
+Francesco VIRLINZI ha scritto:
+> Hi all
+>
+> This patch changes the init field in the clk_ops structure.
+> Moreover it changes how the init function is used.
+> Now it's called during registration and if something was wrong the 
+> clock isn't registered.
+>
+> Regards
+> Francesco
 
---------------010600040006020307050706
+
+--------------040104000707040703000809
 Content-Type: text/x-patch;
- name="0002-sh-clkfwk-Changed-the-init-callback-from-void-to-i.patch"
+ name="0002-sh-clkfwk-Changed-the-init-field-to-return-a-value.patch"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: inline;
- filename*0="0002-sh-clkfwk-Changed-the-init-callback-from-void-to-i.patc";
+ filename*0="0002-sh-clkfwk-Changed-the-init-field-to-return-a-value.patc";
  filename*1="h"
 
-From 24022f871a04d09a0884fe7e8185871081cad44a Mon Sep 17 00:00:00 2001
+From 942219bb95734329c858587806e49895bae29208 Mon Sep 17 00:00:00 2001
 From: Francesco Virlinzi <francesco.virlinzi@st.com>
-Date: Fri, 13 Mar 2009 09:03:04 +0100
-Subject: [PATCH] sh: clkfwk: Changed the init callback from void to int
+Date: Fri, 13 Mar 2009 09:32:45 +0100
+Subject: [PATCH] sh: clkfwk: Changed the init field to return a value
 
 This patch changes the clk_ops.init function pointer
 to return a value.
@@ -64,7 +72,10 @@ Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
  arch/sh/kernel/cpu/sh4a/clock-sh7786.c |    3 ++-
  arch/sh/kernel/cpu/sh4a/clock-shx3.c   |    3 ++-
  arch/sh/kernel/cpu/sh5/clock-sh5.c     |    3 ++-
- 21 files changed, 44 insertions(+), 33 deletions(-)
+ arch/sh/kernel/timers/timer-cmt.c      |    3 ++-
+ arch/sh/kernel/timers/timer-mtu2.c     |    3 ++-
+ arch/sh/kernel/timers/timer-tmu.c      |    3 ++-
+ 24 files changed, 50 insertions(+), 36 deletions(-)
 
 diff --git a/arch/sh/include/asm/clock.h b/arch/sh/include/asm/clock.h
 index 2f6c962..f7a5899 100644
@@ -447,8 +458,68 @@ index 52c4924..89abffe 100644
  }
  
  static struct clk_ops sh5_master_clk_ops = {
+diff --git a/arch/sh/kernel/timers/timer-cmt.c b/arch/sh/kernel/timers/timer-cmt.c
+index c127293..f69a1f1 100644
+--- a/arch/sh/kernel/timers/timer-cmt.c
++++ b/arch/sh/kernel/timers/timer-cmt.c
+@@ -112,13 +112,14 @@ static struct irqaction cmt_irq = {
+ 	.mask		= CPU_MASK_NONE,
+ };
+ 
+-static void cmt_clk_init(struct clk *clk)
++static int cmt_clk_init(struct clk *clk)
+ {
+ 	u8 divisor = CMT_CMCSR_INIT & 0x3;
+ 	ctrl_inw(CMT_CMCSR_0);
+ 	ctrl_outw(CMT_CMCSR_INIT, CMT_CMCSR_0);
+ 	clk->parent = clk_get(NULL, "module_clk");
+ 	clk->rate = clk->parent->rate / (8 << (divisor << 1));
++	return 0;
+ }
+ 
+ static void cmt_clk_recalc(struct clk *clk)
+diff --git a/arch/sh/kernel/timers/timer-mtu2.c b/arch/sh/kernel/timers/timer-mtu2.c
+index 9a77ae8..9d56c35 100644
+--- a/arch/sh/kernel/timers/timer-mtu2.c
++++ b/arch/sh/kernel/timers/timer-mtu2.c
+@@ -120,7 +120,7 @@ static struct irqaction mtu2_irq = {
+ 
+ static unsigned int divisors[] = { 1, 4, 16, 64, 1, 1, 256 };
+ 
+-static void mtu2_clk_init(struct clk *clk)
++static int mtu2_clk_init(struct clk *clk)
+ {
+ 	u8 idx = MTU2_TCR_INIT & 0x7;
+ 
+@@ -128,6 +128,7 @@ static void mtu2_clk_init(struct clk *clk)
+ 	/* Start TCNT counting */
+ 	ctrl_outb(ctrl_inb(MTU2_TSTR) | MTU2_TSTR_CST1, MTU2_TSTR);
+ 
++	return 0;
+ }
+ 
+ static void mtu2_clk_recalc(struct clk *clk)
+diff --git a/arch/sh/kernel/timers/timer-tmu.c b/arch/sh/kernel/timers/timer-tmu.c
+index 10b5a6f..be439ff 100644
+--- a/arch/sh/kernel/timers/timer-tmu.c
++++ b/arch/sh/kernel/timers/timer-tmu.c
+@@ -165,12 +165,13 @@ static struct irqaction tmu0_irq = {
+ 	.mask		= CPU_MASK_NONE,
+ };
+ 
+-static void __init tmu_clk_init(struct clk *clk)
++static int __init tmu_clk_init(struct clk *clk)
+ {
+ 	u8 divisor  = TMU_TCR_INIT & 0x7;
+ 	int tmu_num = clk->name[3]-'0';
+ 	ctrl_outw(TMU_TCR_INIT, TMU0_TCR+(tmu_num*0xC));
+ 	clk->rate = clk_get_rate(clk->parent) / (4 << (divisor << 1));
++	return 0;
+ }
+ 
+ static void tmu_clk_recalc(struct clk *clk)
 -- 
 1.5.6.6
 
 
---------------010600040006020307050706--
+--------------040104000707040703000809--
