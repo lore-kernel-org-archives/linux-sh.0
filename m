@@ -1,38 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 30 Mar 2009 22:44:42 +0000
-Subject: Re: [PATCH] sh7786: remove buggy definition from pinmux_data[]
-Message-Id: <20090330224442.GA19535@linux-sh.org>
+From: Adrian McMenamin <adrian@newgolddream.dyndns.info>
+Date: Sun, 15 Mar 2009 22:05:40 +0000
+Subject: [PATCH] snd: aica - fix annoying compiler warning
+Message-Id: <1237154740.6636.4.camel@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <u1vskdc5w.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <u1vskdc5w.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Alsa-devel <alsa-devel@lists.sourceforge.net>, Takashi Iwai <tiwai@suse.de>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
 
-On Wed, Mar 25, 2009 at 05:54:23PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
-> This patch is for linux-next
-> 
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    1 -
->  1 files changed, 0 insertions(+), 1 deletions(-)
+Cast pointer to data member of struct firmware as a void to end an
+annoying compiler warning.
 
-On Thu, Mar 26, 2009 at 09:24:01AM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
-> This patch is for linux-next
-> 
->  arch/sh/boards/board-urquell.c |    4 ++++
->  1 files changed, 4 insertions(+), 0 deletions(-)
+fix annoying compiler warning
 
-On Thu, Mar 26, 2009 at 09:39:49AM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
-> This patch is for linux-next
-> 
->  arch/sh/include/cpu-sh4/cpu/sh7786.h    |  214 +++++++++++-------------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |  184 ++++++---------------------
->  2 files changed, 118 insertions(+), 280 deletions(-)
+Signed-off-by: Adrian McMenamin <adrian@mcmen.demon.co.uk>
+---
 
-Applied, thanks.
+diff --git a/sound/sh/aica.c b/sound/sh/aica.c
+index 7c920f3..822b119 100644
+--- a/sound/sh/aica.c
++++ b/sound/sh/aica.c
+@@ -567,7 +567,7 @@ static int load_aica_firmware(void)
+ 		return err;
+ 	/* write firware into memory */
+ 	spu_disable();
+-	spu_memload(0, fw_entry->data, fw_entry->size);
++	spu_memload(0, (void *)fw_entry->data, fw_entry->size);
+ 	spu_enable();
+ 	release_firmware(fw_entry);
+ 	return err;
+
