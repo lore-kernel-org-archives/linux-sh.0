@@ -1,48 +1,64 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Thu, 12 Mar 2009 08:54:23 +0000
-Subject: Re: [PATCH] sh: hibernation support
-Message-Id: <49B8CDBF.9090307@st.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 18 Mar 2009 05:34:52 +0000
+Subject: [PATCH] sh: use P1 instead of P2 for kexec
+Message-Id: <20090318053452.4078.65405.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090306064156.27281.35572.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090306064156.27281.35572.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus
->
-> Yeah, notification is needed.
-... Yes unfortunately...
->
->>> Are you using cpuidle?
->> Not currently and I think it will be not so easy to use for us.
->
-> Because of A-SMP?
-Yes
-> I have a cpuidle prototype running, but I need to improve the clock
-> framework code to track dependencies better before I can integrate it
-> upstream.
-Interesting when available I will see it.
->
->>> What about cpufreq?
->> Supported.
->
-> Still on my TODO-list. The SuperH Mobile devices have quite a few
-> restrictions on which divider combinations that are allowed for the
-> system clocks. So if someone changes the processor clock for instance,
-> many other clocks may need to follow.
-Yes I understand... the famous sh4_clk/sh4_per/module_clk ratios..) ...
-We still have some platform with these constraints...
-What I can say you is that the timer-tmu.c is already ready for this kind
- of operation and you will have no impact on the system timer or No_HZ 
-system.
+From: Magnus Damm <damm@igel.co.jp>
 
->
-> I see. Some partial system suspend (some devices suspended only) would
-> be good to have, don't you think?
-Yes I agree. But I prefer a tool to leave the people free to create 
-their own 'profile'.
+Use P1 instead of P2 to enable cache when
+moving data in the kexec assembly snippet.
 
-Ciao
- Francesco
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Q: Maybe we need to flush data cache before jumping?
+
+ arch/sh/kernel/machine_kexec.c   |    2 +-
+ arch/sh/kernel/relocate_kernel.S |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- 0005/arch/sh/kernel/machine_kexec.c
++++ work/arch/sh/kernel/machine_kexec.c	2009-03-18 11:44:45.000000000 +0900
+@@ -100,7 +100,7 @@ void machine_kexec(struct kimage *image)
+ #endif
+ 	/* now call it */
+ 	rnk = (relocate_new_kernel_t) reboot_code_buffer;
+-	(*rnk)(page_list, reboot_code_buffer, P2SEGADDR(image->start));
++	(*rnk)(page_list, reboot_code_buffer, P1SEGADDR(image->start));
+ }
+ 
+ void arch_crash_save_vmcoreinfo(void)
+--- 0005/arch/sh/kernel/relocate_kernel.S
++++ work/arch/sh/kernel/relocate_kernel.S	2009-03-18 11:45:14.000000000 +0900
+@@ -18,7 +18,7 @@ relocate_new_kernel:
+ 	/* r6 = start_address      */
+ 
+ 	mov.l	10f,r8	  /* PAGE_SIZE */
+-	mov.l	11f,r9    /* P2SEG */
++	mov.l	11f,r9    /* P1SEG */
+ 
+ 	/*  stack setting */
+ 	add	r8,r5
+@@ -29,7 +29,7 @@ relocate_new_kernel:
+ 0:
+ 	mov.l	@r4+,r0	  /* cmd = *ind++ */
+ 
+-1:	/* addr = (cmd | P2SEG) & 0xfffffff0 */
++1:	/* addr = (cmd | P1SEG) & 0xfffffff0 */
+ 	mov	r0,r2
+ 	or	r9,r2
+ 	mov	#-16,r1
+@@ -86,7 +86,7 @@ relocate_new_kernel:
+ 10:
+ 	.long	PAGE_SIZE
+ 11:
+-	.long	P2SEG
++	.long	P1SEG
+ 
+ relocate_new_kernel_end:
+ 
