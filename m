@@ -1,72 +1,49 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Wed, 11 Mar 2009 14:31:38 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Mar 2009 05:52:45 +0000
 Subject: Re: [Proposal][PATCH] sh: Suspend in Ram on sh4
-Message-Id: <49B7CB4A.7060907@st.com>
+Message-Id: <aec7e5c30903182252j4a6fbe88k168743f6f614c932@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <49B66A0E.1020400@st.com>
 In-Reply-To: <49B66A0E.1020400@st.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi again Magnus
-> ...
-> Just curious, how many different SoCs do you support with suspend?
-Currently seven... ~11-12 for the end of the year...
-> ...
+On Wed, Mar 11, 2009 at 11:31 PM, Francesco VIRLINZI
+<francesco.virlinzi@st.com> wrote:
+>> I'm not sure what the best way forward is. Are you planning on
+>> submitting upstream support for some SoC?
 >
->
-> The only code that needs special care is the self refresh code and
-> whatever runs when the system ram is put in self refresh. What happens
-> before and after can be written in C or assembly as usual.
-Agreed!
->> The assembly code preloads (with a jump sequence) in cache (both I$ and D$)
->> the 'instruction-table'
->> and after that it executes the instruction-table.
->
-> I tried to figure out how this cache population is working, but i
-> still don't understand. =) Something is magical with your JUMPER().
-> And you need both populate both instruction and data cache, right?
-Yes you are right!
-As I said in the ST40 we removed the ipref instruction and we removed also
- the cache memory mapped therefore the only way to preload the code  in 
-the ICache is executing it..
+> Not so easy submit the per SOC code also because we use an older kernel t=
+han
+> the original kernel.org (I'm on 2.6.23).
 
-When the linux calls the 'sh4_suspend' the CPU begins a sequence of 
-jumps "to ping" all the Icache line (but
- I'm not really executing code... I'm only jumping from a label to the 
-next label...) until the
- end of the code where it jumps on 'sh4_really_suspend' where the CPU 
-really executes the code (now in Icache).
->
-> How do you save data without writing to the self-refreshing ram?
-Both the 'instruction table' and the 'writable-table' are preloaded in 
-Dcache.
-> Copy-back configuration with guaranteed space?
->
-> I like the idea with an interpreter. But I get the feeling that you're
-> using the interpreter to set all sorts of register configurations -
-> not only the ones that setup/restore self-refresh and sleep. Am I
-> wrong?
-No you aren't.
-You are  right, I sets also some clocks but using the interpreter 
-basically you can do what you want for example
- in a SOC the last thing I do to enter in standby isn't a sleep... it's 
-a write in the ClockIP to turn-off the sh4_clk...
- the wakeup event routed to the ClockIP will ("automatically") turn-on 
-again the sh4_clk.... therefore it's a kind
- of 'hard' sleep instruction.... (without sleep instruction)
+I see. The joys of old kernels. =3D)
 
-Also in this case the code to manage the clock has to be in icache.
+>> =A0That would be nice so we
+>> could share the same power management code.
 >
-> I'm not sure what the best way forward is. Are you planning on
-> submitting upstream support for some SoC?
-Not so easy submit the per SOC code also because we use an older kernel 
-than the original kernel.org (I'm on 2.6.23).
->  That would be nice so we
-> could share the same power management code.
-I'm already sharing this code for that reason.
-Ciao
-  Francesco
+> I'm already sharing this code for that reason.
 
+I appreciate your effort. You may have noted that we cherry pick
+certain parts of the code that you post. Accepting everything would of
+course be better, but there is some hesitation since we don't have the
+full picture of your code base.
+
+In my opinion, the best way to add new interfaces or change existing
+ones is to also submit code that is using your interfaces. WIthout
+such code it's difficult to understand the reason behind the change.
+
+I wonder if it would be possible to take a single cpu and a single
+board from your out of tree code base, and add support for that system
+upstream. Then we can tie in whatever interfaces to that code. This
+may take quite a bit of time though, but it's probably worth doing in
+the long term.
+
+Also, please try to submit your patches inline if possible. It makes
+review much easier. I use sendpatchset for this purpose.
+
+Thanks for your help so far!
+
+/ magnus
