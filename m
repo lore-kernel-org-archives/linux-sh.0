@@ -1,105 +1,75 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Tue, 24 Mar 2009 13:30:01 +0000
-Subject: [PATCH] Added ASSEMBLY macro in the mmu.h file
-Message-Id: <49C8E059.9040100@st.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------090201040701050109020200"
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 19 Mar 2009 02:51:15 +0000
+Subject: [PATCH 5/6] Add VPU support for SH7724
+Message-Id: <uws9n1ub6.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------090201040701050109020200
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
-
-This patch adds the ifndef __ASSEMBLY__ preprocessor to allow the
- defines in the file are used also in assembly code.
-
-Regards
- Francesco
-
---------------090201040701050109020200
-Content-Type: text/x-patch;
- name="0003--Added-__ASSEMBLY__-ifdef-in-the-mmu.h-file.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename*0="0003--Added-__ASSEMBLY__-ifdef-in-the-mmu.h-file.patch"
-
-From 2adf176e3e8e429237742dedc82bc9ffc9f7ae97 Mon Sep 17 00:00:00 2001
-From: Francesco Virlinzi <francesco.virlinzi@st.com>
-Date: Tue, 24 Mar 2009 14:22:19 +0100
-Subject: [PATCH] Added __ASSEMBLY__ ifdef in the mmu.h file
-
-Added the 'ifndef _ASSEMBLY__' to be able to use the
-defines in the mmu.h in assmebly code
-
-Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- arch/sh/include/asm/mmu.h |   35 +++++++++++++++++++----------------
- 1 files changed, 19 insertions(+), 16 deletions(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   33 ++++++++++++++++++++++++++++++++
+ 1 files changed, 33 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
-index 6c43625..f596303 100644
---- a/arch/sh/include/asm/mmu.h
-+++ b/arch/sh/include/asm/mmu.h
-@@ -1,22 +1,6 @@
- #ifndef __MMU_H
- #define __MMU_H
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index ca625c2..64b7f0d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -168,12 +168,42 @@ static struct platform_device iic1_device = {
+ 	.resource       = iic1_resources,
+ };
  
--/* Default "unsigned long" context */
--typedef unsigned long mm_context_id_t[NR_CPUS];
--
--typedef struct {
--#ifdef CONFIG_MMU
--	mm_context_id_t		id;
--	void			*vdso;
--#else
--	unsigned long		end_brk;
--#endif
--#ifdef CONFIG_BINFMT_ELF_FDPIC
--	unsigned long		exec_fdpic_loadmap;
--	unsigned long		interp_fdpic_loadmap;
--#endif
--} mm_context_t;
--
- /*
-  * Privileged Space Mapping Buffer (PMB) definitions
-  */
-@@ -41,6 +25,24 @@ typedef struct {
- 
- #define PMB_NO_ENTRY		(-1)
- 
-+#ifndef __ASSEMBLY__
++/* VPU */
++static struct uio_info vpu_platform_data = {
++	.name = "VPU5F",
++	.version = "0",
++	.irq = 60,
++};
 +
-+/* Default "unsigned long" context */
-+typedef unsigned long mm_context_id_t[NR_CPUS];
++static struct resource vpu_resources[] = {
++	[0] = {
++		.name	= "VPU",
++		.start	= 0xfe900000,
++		.end	= 0xfe902807,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* place holder for contiguous memory */
++	},
++};
 +
-+typedef struct {
-+#ifdef CONFIG_MMU
-+	mm_context_id_t		id;
-+	void			*vdso;
-+#else
-+	unsigned long		end_brk;
-+#endif
-+#ifdef CONFIG_BINFMT_ELF_FDPIC
-+	unsigned long		exec_fdpic_loadmap;
-+	unsigned long		interp_fdpic_loadmap;
-+#endif
-+} mm_context_t;
++static struct platform_device vpu_device = {
++	.name		= "uio_pdrv_genirq",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &vpu_platform_data,
++	},
++	.resource	= vpu_resources,
++	.num_resources	= ARRAY_SIZE(vpu_resources),
++};
 +
- struct pmb_entry;
+ static struct platform_device *sh7724_devices[] __initdata = {
+ 	&sci_device,
+ 	&rtc_device,
+ 	&usb0_device,
+ 	&iic0_device,
+ 	&iic1_device,
++	&vpu_device,
+ };
  
- struct pmb_entry {
-@@ -70,6 +72,7 @@ void pmb_free(struct pmb_entry *pmbe);
- long pmb_remap(unsigned long virt, unsigned long phys,
- 	       unsigned long size, unsigned long flags);
- void pmb_unmap(unsigned long addr);
-+#endif /* __ASSEMBLY__ */
+ #define UPONCR0		0xa40501d4
+@@ -188,6 +218,9 @@ static void __init sh7724_usb_setup(void)
+ static int __init sh7724_devices_setup(void)
+ {
+ 	clk_always_enable("rtc0");   /* RTC */
++	clk_always_enable("vpu0");   /* VPU */
++
++	platform_resource_setup_memory(&vpu_device, "vpu", 2 << 20);
  
- #endif /* __MMU_H */
- 
+ 	sh7724_usb_setup();
+ 	return platform_add_devices(sh7724_devices,
 -- 
-1.6.0.6
+1.5.6.3
 
-
---------------090201040701050109020200--
