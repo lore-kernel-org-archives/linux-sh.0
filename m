@@ -1,50 +1,38 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2009 10:04:29 +0000
-Subject: [PATCH] sh: disallow kexec virtual entry
-Message-Id: <20090319100429.9817.21412.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 20 Mar 2009 10:01:53 +0000
+Subject: Re: [PATCH] sh: disallow kexec virtual entry
+Message-Id: <20090320100153.GA13269@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090319100429.9817.21412.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090319100429.9817.21412.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Thu, Mar 19, 2009 at 07:04:29PM +0900, Magnus Damm wrote:
+> Older versions of kexec-tools has a zImage loader that
+> passes a virtual address as entry point. The elf loader
+> otoh it passes a physical address as entry point, and
+> pages are always passed as physical addresses as well.
+> 
+> Only allow physical addresses from now on.
 
-Older versions of kexec-tools has a zImage loader that
-passes a virtual address as entry point. The elf loader
-otoh it passes a physical address as entry point, and
-pages are always passed as physical addresses as well.
+On Thu, Mar 19, 2009 at 07:05:58PM +0900, Magnus Damm wrote:
+> This patch modifies the SuperH RTC driver to only
+> enable carry interrupts when needed. So by default
+> no interrupts are enabled with this patch. Without
+> this patch a suspending system will most likely
+> wake up by the carry interrupt regardless if the
+> alarm interrupt has been enabled or not.
 
-Only allow physical addresses from now on.
+On Thu, Mar 19, 2009 at 07:10:44PM +0900, Magnus Damm wrote:
+> This patch modifies invalid time handling in the
+> SuperH RTC driver. Instead of zeroing the returned
+> value at read-out time we just return an error code
+> and reset invalid values during probe.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Thu, Mar 19, 2009 at 07:14:41PM +0900, Magnus Damm wrote:
+> Flag that the SuperH RTC supports wakeup.
 
- arch/sh/kernel/machine_kexec.c |    9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
---- 0001/arch/sh/kernel/machine_kexec.c
-+++ work/arch/sh/kernel/machine_kexec.c	2009-03-18 20:25:56.000000000 +0900
-@@ -46,6 +46,12 @@ void machine_crash_shutdown(struct pt_re
-  */
- int machine_kexec_prepare(struct kimage *image)
- {
-+	/* older versions of kexec-tools are passing
-+	 * the zImage entry point as a virtual address.
-+	 */
-+	if (image->start != PHYSADDR(image->start))
-+		return -EINVAL; /* upgrade your kexec-tools */
-+
- 	return 0;
- }
- 
-@@ -125,7 +131,8 @@ void machine_kexec(struct kimage *image)
- 
- 	/* now call it */
- 	rnk = (relocate_new_kernel_t) reboot_code_buffer;
--	(*rnk)(page_list, reboot_code_buffer, image->start);
-+	(*rnk)(page_list, reboot_code_buffer,
-+	       (unsigned long)phys_to_virt(image->start));
- 
- #ifdef CONFIG_KEXEC_JUMP
- 	asm volatile("ldc %0, vbr" : : "r" (&vbr_base) : "memory");
+Applied, thanks.
