@@ -1,8 +1,10 @@
 From: Steve Glendinning <steve.glendinning@smsc.com>
-Date: Thu, 19 Mar 2009 10:42:42 +0000
+Date: Fri, 20 Mar 2009 14:16:30 +0000
 Subject: [PATCH 2/2] sh: add default config for SMSC Polaris platform
-Message-Id: <1237459362-5204-2-git-send-email-steve.glendinning@smsc.com>
+Message-Id: <1237558590-22106-2-git-send-email-steve.glendinning@smsc.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1237459362-5204-2-git-send-email-steve.glendinning@smsc.com>
+In-Reply-To: <1237459362-5204-2-git-send-email-steve.glendinning@smsc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
