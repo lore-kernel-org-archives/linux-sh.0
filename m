@@ -1,106 +1,89 @@
-From: Dan Williams <dan.j.williams@intel.com>
-Date: Tue, 31 Mar 2009 16:01:33 +0000
-Subject: Re: [PATCH v3] dmaengine: sh: Add Support SuperH DMA Engine driver
-Message-Id: <49D23E5D.2020209@intel.com>
+From: Rafael Ignacio Zurita <rizurita@yahoo.com>
+Date: Fri, 20 Mar 2009 02:08:22 +0000
+Subject: [PATCH] sh: fix the HD64461 level-triggered interrupts handling
+Message-Id: <20090320020822.GA17555@rafazurita.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49C9D558.7030002@renesas.com>
-In-Reply-To: <49C9D558.7030002@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Wed, Mar 25, 2009 at 03:55:20PM +0900, Nobuhiro Iwamatsu wrote:
->> This supported all DMA channels, and it was tested in SH7722,
->> SH7780 and SH7763.
->> This can not use with SH DMA API.
->>
->> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->> Reviewed-by: Matt Fleming <matt@console-pimps.org>
-> 
-> I don't know why you dropped Dan from the CC, but you need his Acked-by
-> or Reviewed-by before this can be merged.
+Rework the hd64461 demuxer code to fix the HD64461 level-triggered
+interrupts handling, using handle_level_irq() as needed.
 
-Thanks Paul.
+Signed-off-by: Rafael Ignacio Zurita <rizurita@yahoo.com>
+---
+ arch/sh/boards/mach-hp6xx/setup.c |    1 -
+ arch/sh/cchips/hd6446x/hd64461.c  |   30 +++++++++++++++++-------------
+ arch/sh/include/asm/hd64461.h     |    1 -
+ 3 files changed, 17 insertions(+), 15 deletions(-)
 
-This version still has the problem of up leveling the descriptor lock to 
-  spin_lock_irqsave from spin_lock_bh.  This poses a problem for 
-completion callback support where callbacks assume that interrupts are 
-enabled, like a timer callback.  I have also spotted a new problem below:
-
-> 
->> ---
->>
->>  V3: Reflect Maciej's comments.
->>
->>  arch/sh/drivers/dma/Kconfig  |   12 +-
->>  arch/sh/drivers/dma/Makefile |    3 +-
->>  arch/sh/include/asm/dma-sh.h |   13 +
->>  drivers/dma/Kconfig          |    8 +
->>  drivers/dma/Makefile         |    2 +
->>  drivers/dma/shdma.c          |  756 ++++++++++++++++++++++++++++++++++++++++++
->>  drivers/dma/shdma.h          |   64 ++++
->>  7 files changed, 853 insertions(+), 5 deletions(-)
->>  create mode 100644 drivers/dma/shdma.c
->>  create mode 100644 drivers/dma/shdma.h
-[..]
->> +static struct sh_desc *sh_dmae_alloc_descriptor(struct sh_dmae_chan *sh_chan)
->> +{
->> +     struct sh_desc *desc_sw;
->> +     desc_sw = kzalloc(sizeof(struct sh_desc), GFP_KERNEL);
->> +     if (desc_sw) {
->> +             dma_async_tx_descriptor_init(&desc_sw->async_tx,
->> +                                             &sh_chan->common);
->> +             desc_sw->async_tx.tx_submit = sh_dmae_tx_submit;
->> +             INIT_LIST_HEAD(&desc_sw->async_tx.tx_list);
->> +     }
->> +
->> +     return desc_sw;
->> +}
->> +
->> +static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
->> +{
->> +     return 1;
->> +}
-
-The point of this routine is to preallocate descriptors because...
-
->> +
->> +/*
->> + * sh_dma_free_chan_resources - Free all resources of the channel.
->> + */
-[..]
->> +
->> +static struct dma_async_tx_descriptor *sh_dmae_prep_memcpy(
->> +     struct dma_chan *chan, dma_addr_t dma_dest, dma_addr_t dma_src,
->> +     size_t len, unsigned long flags)
->> +{
->> +     struct sh_dmae_chan *sh_chan;
->> +     struct sh_desc *first = NULL, *prev = NULL, *new;
->> +     size_t copy_size;
->> +     int cnt = 0;
->> +     LIST_HEAD(link_chain);
->> +
->> +     if (!chan)
->> +             return NULL;
->> +
->> +     if (!len)
->> +             return NULL;
->> +
->> +     sh_chan = to_sh_chan(chan);
->> +
->> +     do {
->> +             /* Allocate the link descriptor from DMA pool */
->> +             new = sh_dmae_alloc_descriptor(sh_chan);
-
-...we may not be able to do a GFP_KERNEL allocation here.
-
->> +             if (!new) {
->> +                     dev_err(sh_chan->dev,
->> +                                     "No free memory for link descriptor\n");
->> +                     return NULL;
->> +             }
-
---
-Dan
+--- a/arch/sh/boards/mach-hp6xx/setup.c
++++ b/arch/sh/boards/mach-hp6xx/setup.c
+@@ -115,7 +115,6 @@ static struct sh_machine_vector mv_hp6xx __initmv = {
+ 	.mv_setup = hp6xx_setup,
+ 	/* IRQ's : CPU(64) + CCHIP(16) + FREE_TO_USE(6) */
+ 	.mv_nr_irqs = HD64461_IRQBASE + HD64461_IRQ_NUM + 6,
+-	.mv_irq_demux = hd64461_irq_demux,
+ 	/* Enable IRQ0 -> IRQ3 in IRQ_MODE */
+ 	.mv_init_irq = hp6xx_init_irq,
+ };
+--- a/arch/sh/cchips/hd6446x/hd64461.c
++++ b/arch/sh/cchips/hd6446x/hd64461.c
+@@ -53,21 +53,22 @@ static struct irq_chip hd64461_irq_chip = {
+ 	.unmask		= hd64461_unmask_irq,
+ };
+ 
+-int hd64461_irq_demux(int irq)
++static void hd64461_irq_demux(unsigned int irq, struct irq_desc *desc)
+ {
+-	if (irq = CONFIG_HD64461_IRQ) {
+-		unsigned short bit;
+-		unsigned short nirr = inw(HD64461_NIRR);
+-		unsigned short nimr = inw(HD64461_NIMR);
+-		int i;
+-
+-		nirr &= ~nimr;
+-		for (bit = 1, i = 0; i < 16; bit <<= 1, i++)
+-			if (nirr & bit)
+-				break;
+-		irq = HD64461_IRQBASE + i;
++	unsigned short intv = ctrl_inw(HD64461_NIRR);
++	struct irq_desc *ext_desc;
++	unsigned int ext_irq = HD64461_IRQBASE;
++
++	intv &= (1 << HD64461_IRQ_NUM) - 1;
++
++	while (intv) {
++		if (intv & 1) {
++			ext_desc = irq_desc + ext_irq;
++			handle_level_irq(ext_irq, ext_desc);
++		}
++		intv >>= 1;
++		ext_irq++;
+ 	}
+-	return irq;
+ }
+ 
+ int __init setup_hd64461(void)
+@@ -93,6 +94,9 @@ int __init setup_hd64461(void)
+ 		set_irq_chip_and_handler(i, &hd64461_irq_chip,
+ 					 handle_level_irq);
+ 
++	set_irq_chained_handler(CONFIG_HD64461_IRQ, hd64461_irq_demux);
++	set_irq_type(CONFIG_HD64461_IRQ, IRQ_TYPE_LEVEL_LOW);
++
+ #ifdef CONFIG_HD64461_ENABLER
+ 	printk(KERN_INFO "HD64461: enabling PCMCIA devices\n");
+ 	__raw_writeb(0x4c, HD64461_PCC1CSCIER);
+--- a/arch/sh/include/asm/hd64461.h
++++ b/arch/sh/include/asm/hd64461.h
+@@ -242,7 +242,6 @@
+ #include <asm/io_generic.h>
+ 
+ /* arch/sh/cchips/hd6446x/hd64461/setup.c */
+-int hd64461_irq_demux(int irq);
+ void hd64461_register_irq_demux(int irq,
+ 				int (*demux) (int irq, void *dev), void *dev);
+ void hd64461_unregister_irq_demux(int irq);
+-- 
