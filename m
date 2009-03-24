@@ -1,156 +1,84 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 13 Mar 2009 15:36:55 +0000
-Subject: [PATCH] video: sh_mobile_lcdcfb suspend/resume support
-Message-Id: <20090313153655.20515.14828.sendpatchset@rx1.opensource.se>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 24 Mar 2009 09:27:24 +0000
+Subject: [PATCH] sh_flctl: fix hardware ecc handling for 2048 byte page
+Message-Id: <49C8A77C.9070902@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev-devel@lists.sourceforge.net
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: dwmw2@infradead.org
+Cc: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds suspend/resume support to the LCDC
-driver for SuperH Mobile - sh_mobile_lcdcfb.
-
-We simply stop hardware on suspend and start it again
-on resume. For RGB panels this is trivial, but for SYS
-panels in deferred io mode this becomes a bit more
-difficult - we need to wait for a frame end interrupt
-to make sure the clocks are balanced before stopping
-the actual hardware.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Jeremy Baker <Jeremy.Baker@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 ---
+ drivers/mtd/nand/sh_flctl.c |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
 
- Tested on ap325 and Migo-R.
-
- drivers/video/sh_mobile_lcdcfb.c |   66 +++++++++++++++++++++++++++++++++-----
- 1 file changed, 59 insertions(+), 7 deletions(-)
-
---- 0001/drivers/video/sh_mobile_lcdcfb.c
-+++ work/drivers/video/sh_mobile_lcdcfb.c	2009-03-14 00:06:47.000000000 +0900
-@@ -33,6 +33,8 @@ struct sh_mobile_lcdc_chan {
- 	struct fb_info info;
- 	dma_addr_t dma_handle;
- 	struct fb_deferred_io defio;
-+	unsigned long frame_end;
-+	wait_queue_head_t frame_end_wait;
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 821acb0..2bc8966 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -58,7 +58,7 @@ static struct nand_bbt_descr flctl_4secc_smallpage = {
  };
- 
- struct sh_mobile_lcdc_priv {
-@@ -226,7 +228,10 @@ static void sh_mobile_lcdc_deferred_io_t
- static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
+
+ static struct nand_bbt_descr flctl_4secc_largepage = {
+-	.options = 0,
++	.options = NAND_BBT_SCAN2NDPAGE,
+ 	.offs = 58,
+ 	.len = 2,
+ 	.pattern = scan_ff_pattern,
+@@ -149,7 +149,7 @@ static void wait_wfifo_ready(struct sh_flctl *flctl)
+ 	printk(KERN_ERR "wait_wfifo_ready(): Timeout occured \n");
+ }
+
+-static int wait_recfifo_ready(struct sh_flctl *flctl)
++static int wait_recfifo_ready(struct sh_flctl *flctl, int sector_number)
  {
- 	struct sh_mobile_lcdc_priv *priv = data;
-+	struct sh_mobile_lcdc_chan *ch;
- 	unsigned long tmp;
-+	int is_sub;
-+	int k;
- 
- 	/* acknowledge interrupt */
- 	tmp = lcdc_read(priv, _LDINTR);
-@@ -234,8 +239,24 @@ static irqreturn_t sh_mobile_lcdc_irq(in
- 	tmp |= 0x000000ff ^ LDINTR_FS; /* status in low 8 */
- 	lcdc_write(priv, _LDINTR, tmp);
- 
--	/* disable clocks */
--	sh_mobile_lcdc_clk_off(priv);
-+	/* figure out if this interrupt is for main or sub lcd */
-+	is_sub = (lcdc_read(priv, _LDSR) & (1 << 10)) ? 1 : 0;
+ 	uint32_t timeout = LOOP_TIMEOUT_MAX;
+ 	int checked[4];
+@@ -183,7 +183,12 @@ static int wait_recfifo_ready(struct sh_flctl *flctl)
+ 				uint8_t org;
+ 				int index;
+
+-				index = data >> 16;
++				if (flctl->page_size)
++					index = (512 * sector_number) +
++						(data >> 16);
++				else
++					index = data >> 16;
 +
-+	/* wake up channel and disable clocks*/
-+	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
-+		ch = &priv->ch[k];
-+
-+		if (!ch->enabled)
-+			continue;
-+
-+		if (is_sub = lcdc_chan_is_sublcd(ch)) {
-+			ch->frame_end = 1;
-+			wake_up(&ch->frame_end_wait);
-+
-+			sh_mobile_lcdc_clk_off(priv);
-+		}
-+	}
-+
- 	return IRQ_HANDLED;
- }
- 
-@@ -448,18 +469,27 @@ static void sh_mobile_lcdc_stop(struct s
- 	struct sh_mobile_lcdc_board_cfg	*board_cfg;
- 	int k;
- 
--	/* tell the board code to disable the panel */
-+	/* clean up deferred io and ask board code to disable panel */
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
- 		ch = &priv->ch[k];
--		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->display_off)
--			board_cfg->display_off(board_cfg->board_data);
- 
--		/* cleanup deferred io if enabled */
-+		/* deferred io mode:
-+		 * flush frame, and wait for frame end interrupt
-+		 * clean up deferred io and enable clock
-+		 */
- 		if (ch->info.fbdefio) {
-+			ch->frame_end = 0;
-+			schedule_delayed_work(&ch->info.deferred_work, 0);
-+			wait_event(ch->frame_end_wait, ch->frame_end);
- 			fb_deferred_io_cleanup(&ch->info);
- 			ch->info.fbdefio = NULL;
-+			sh_mobile_lcdc_clk_on(priv);
- 		}
-+
-+		board_cfg = &ch->cfg.board_cfg;
-+		if (board_cfg->display_off)
-+			board_cfg->display_off(board_cfg->board_data);
-+
+ 				org = flctl->done_buff[index];
+ 				flctl->done_buff[index] = org ^ (data & 0xFF);
+ 				checked[i] = 1;
+@@ -238,14 +243,14 @@ static void read_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
  	}
- 
- 	/* stop the lcdc */
-@@ -652,6 +682,26 @@ static int sh_mobile_lcdc_set_bpp(struct
- 	return 0;
  }
- 
-+static int sh_mobile_lcdc_suspend(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+
-+	sh_mobile_lcdc_stop(platform_get_drvdata(pdev));
-+	return 0;
-+}
-+
-+static int sh_mobile_lcdc_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+
-+	return sh_mobile_lcdc_start(platform_get_drvdata(pdev));
-+}
-+
-+static struct dev_pm_ops sh_mobile_lcdc_dev_pm_ops = {
-+	.suspend = sh_mobile_lcdc_suspend,
-+	.resume = sh_mobile_lcdc_resume,
-+};
-+
- static int sh_mobile_lcdc_remove(struct platform_device *pdev);
- 
- static int __init sh_mobile_lcdc_probe(struct platform_device *pdev)
-@@ -707,6 +757,7 @@ static int __init sh_mobile_lcdc_probe(s
- 			dev_err(&pdev->dev, "unsupported interface type\n");
- 			goto err1;
- 		}
-+		init_waitqueue_head(&priv->ch[i].frame_end_wait);
- 
- 		switch (pdata->ch[i].chan) {
- 		case LCDC_CHAN_MAINLCD:
-@@ -860,6 +911,7 @@ static struct platform_driver sh_mobile_
- 	.driver		= {
- 		.name		= "sh_mobile_lcdc_fb",
- 		.owner		= THIS_MODULE,
-+		.pm		= &sh_mobile_lcdc_dev_pm_ops,
- 	},
- 	.probe		= sh_mobile_lcdc_probe,
- 	.remove		= sh_mobile_lcdc_remove,
+
+-static int read_ecfiforeg(struct sh_flctl *flctl, uint8_t *buff)
++static int read_ecfiforeg(struct sh_flctl *flctl, uint8_t *buff, int sector)
+ {
+ 	int i;
+ 	unsigned long *ecc_buf = (unsigned long *)buff;
+ 	void *fifo_addr = (void *)FLECFIFO(flctl);
+
+ 	for (i = 0; i < 4; i++) {
+-		if (wait_recfifo_ready(flctl))
++		if (wait_recfifo_ready(flctl , sector))
+ 			return 1;
+ 		ecc_buf[i] = readl(fifo_addr);
+ 		ecc_buf[i] = be32_to_cpu(ecc_buf[i]);
+@@ -384,7 +389,8 @@ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
+ 		read_fiforeg(flctl, 512, 512 * sector);
+
+ 		ret = read_ecfiforeg(flctl,
+-			&flctl->done_buff[mtd->writesize + 16 * sector]);
++			&flctl->done_buff[mtd->writesize + 16 * sector],
++			sector);
+
+ 		if (ret)
+ 			flctl->hwecc_cant_correct[sector] = 1;
+-- 
+1.5.5
+
