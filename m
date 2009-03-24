@@ -1,124 +1,105 @@
 From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Wed, 11 Mar 2009 07:42:05 +0000
-Subject: [PATCH] sh_clk: Added resume from hibernation support in the clk
-Message-Id: <49B76B4D.60104@st.com>
+Date: Tue, 24 Mar 2009 13:30:01 +0000
+Subject: [PATCH] Added ASSEMBLY macro in the mmu.h file
+Message-Id: <49C8E059.9040100@st.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------020105080602040504060503"
+Content-Type: multipart/mixed; boundary="------------090201040701050109020200"
 List-Id: <linux-sh.vger.kernel.org>
 To: linux-sh@vger.kernel.org
 
 This is a multi-part message in MIME format.
---------------020105080602040504060503
+--------------090201040701050109020200
 Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Content-Transfer-Encoding: 7bit
 
+This patch adds the ifndef __ASSEMBLY__ preprocessor to allow the
+ defines in the file are used also in assembly code.
 
+Regards
+ Francesco
 
---------------020105080602040504060503
+--------------090201040701050109020200
 Content-Type: text/x-patch;
- name="0003-sh_clk-Added-hibernation-support-in-the-clock-frame.patch"
+ name="0003--Added-__ASSEMBLY__-ifdef-in-the-mmu.h-file.patch"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: inline;
- filename*0="0003-sh_clk-Added-hibernation-support-in-the-clock-frame.pat";
- filename*1="ch"
+ filename*0="0003--Added-__ASSEMBLY__-ifdef-in-the-mmu.h-file.patch"
 
-From da85a159444a638aef1b1d83d9d786265febf8e2 Mon Sep 17 00:00:00 2001
+From 2adf176e3e8e429237742dedc82bc9ffc9f7ae97 Mon Sep 17 00:00:00 2001
 From: Francesco Virlinzi <francesco.virlinzi@st.com>
-Date: Wed, 11 Mar 2009 08:37:20 +0100
-Subject: [PATCH] sh_clk: Added hibernation support in the clock framework
+Date: Tue, 24 Mar 2009 14:22:19 +0100
+Subject: [PATCH] Added __ASSEMBLY__ ifdef in the mmu.h file
 
-This patch adds the hibernation support in the clock framework
+Added the 'ifndef _ASSEMBLY__' to be able to use the
+defines in the mmu.h in assmebly code
 
 Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
 ---
- arch/sh/kernel/cpu/clock.c |   65 ++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 65 insertions(+), 0 deletions(-)
+ arch/sh/include/asm/mmu.h |   35 +++++++++++++++++++----------------
+ 1 files changed, 19 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
-index 332a179..7ed0e45 100644
---- a/arch/sh/kernel/cpu/clock.c
-+++ b/arch/sh/kernel/cpu/clock.c
-@@ -20,6 +20,8 @@
- #include <linux/mutex.h>
- #include <linux/list.h>
- #include <linux/kref.h>
-+#include <linux/kobject.h>
-+#include <linux/sysdev.h>
- #include <linux/seq_file.h>
- #include <linux/err.h>
- #include <linux/platform_device.h>
-@@ -358,6 +360,69 @@ static int show_clocks(char *buf, char **start, off_t off,
- 	return p - buf;
- }
+diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
+index 6c43625..f596303 100644
+--- a/arch/sh/include/asm/mmu.h
++++ b/arch/sh/include/asm/mmu.h
+@@ -1,22 +1,6 @@
+ #ifndef __MMU_H
+ #define __MMU_H
  
-+#ifdef CONFIG_PM
-+static int clks_sysdev_suspend(struct sys_device *dev, pm_message_t state)
-+{
-+	static pm_message_t prev_state;
-+	struct clk *clkp;
+-/* Default "unsigned long" context */
+-typedef unsigned long mm_context_id_t[NR_CPUS];
+-
+-typedef struct {
+-#ifdef CONFIG_MMU
+-	mm_context_id_t		id;
+-	void			*vdso;
+-#else
+-	unsigned long		end_brk;
+-#endif
+-#ifdef CONFIG_BINFMT_ELF_FDPIC
+-	unsigned long		exec_fdpic_loadmap;
+-	unsigned long		interp_fdpic_loadmap;
+-#endif
+-} mm_context_t;
+-
+ /*
+  * Privileged Space Mapping Buffer (PMB) definitions
+  */
+@@ -41,6 +25,24 @@ typedef struct {
+ 
+ #define PMB_NO_ENTRY		(-1)
+ 
++#ifndef __ASSEMBLY__
 +
-+	switch (state.event) {
-+	case PM_EVENT_ON:
-+		/* Resumeing from hibernation */
-+		if (prev_state.event == PM_EVENT_FREEZE) {
-+			list_for_each_entry(clkp, &clock_list, node)
-+				if (likely(clkp->ops)) {
-+					if (likely(clkp->ops->set_parent))
-+						clkp->ops->set_parent(clkp,
-+							clkp->parent);
-+					if (likely(clkp->ops->set_rate))
-+						clkp->ops->set_rate(clkp,
-+							clkp->rate, NO_CHANGE);
-+					else if (likely(clkp->ops->recalc))
-+						clkp->ops->recalc(clkp);
-+					}
-+		}
-+		break;
-+	case PM_EVENT_FREEZE:
-+		break;
-+	case PM_EVENT_SUSPEND:
-+		break;
-+	}
++/* Default "unsigned long" context */
++typedef unsigned long mm_context_id_t[NR_CPUS];
 +
-+	prev_state = state;
-+	return 0;
-+}
-+
-+static int clks_sysdev_resume(struct sys_device *dev)
-+{
-+	return clks_sysdev_suspend(dev, PMSG_ON);
-+}
-+
-+static struct sysdev_class clks_sysdev_class = {
-+	.name = "clks",
-+};
-+
-+static struct sysdev_driver clks_sysdev_driver = {
-+	.suspend = clks_sysdev_suspend,
-+	.resume = clks_sysdev_resume,
-+};
-+
-+static struct sys_device clks_sysdev_dev = {
-+	.cls = &clks_sysdev_class,
-+};
-+
-+static int __init clk_sysdev_init(void)
-+{
-+
-+	sysdev_class_register(&clks_sysdev_class);
-+	sysdev_driver_register(&clks_sysdev_class, &clks_sysdev_driver);
-+	sysdev_register(&clks_sysdev_dev);
-+	return 0;
-+}
-+
-+subsys_initcall(clk_sysdev_init);
++typedef struct {
++#ifdef CONFIG_MMU
++	mm_context_id_t		id;
++	void			*vdso;
++#else
++	unsigned long		end_brk;
 +#endif
++#ifdef CONFIG_BINFMT_ELF_FDPIC
++	unsigned long		exec_fdpic_loadmap;
++	unsigned long		interp_fdpic_loadmap;
++#endif
++} mm_context_t;
 +
- int __init clk_init(void)
- {
- 	int i, ret = 0;
+ struct pmb_entry;
+ 
+ struct pmb_entry {
+@@ -70,6 +72,7 @@ void pmb_free(struct pmb_entry *pmbe);
+ long pmb_remap(unsigned long virt, unsigned long phys,
+ 	       unsigned long size, unsigned long flags);
+ void pmb_unmap(unsigned long addr);
++#endif /* __ASSEMBLY__ */
+ 
+ #endif /* __MMU_H */
+ 
 -- 
-1.5.6.6
+1.6.0.6
 
 
---------------020105080602040504060503--
+--------------090201040701050109020200--
