@@ -1,46 +1,32 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 02 Mar 2009 07:31:08 +0000
-Subject: Re: [PULL] soc-camera queue including a fix for 2.6.29
-Message-Id: <Pine.LNX.4.64.0903020830050.4275@axis700.grange>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 25 Mar 2009 08:54:23 +0000
+Subject: [PATCH] sh7786: remove buggy definition from pinmux_data[]
+Message-Id: <u1vskdc5w.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uzlg4zfjq.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uzlg4zfjq.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Morimoto-san,
-
-On Mon, 2 Mar 2009, morimoto.kuninori@renesas.com wrote:
-
-> Dear Guennadi, Mauro, Paul
->=20
-> Mauro, Guennadi
-> When does following patch will be applyed ?
->=20
-> > 07/14: ov772x: Add image flip support
-> > http://linuxtv.org/hg/~gliakhovetski/v4l-dvb?cmd=3Dchangeset;node=859f6=
-10843c1
->=20
-> Because ALGO board (SH7723) needs platform patch.
-> And
->=20
-> > 09/14: sh_mobile_ceu: SOCAM flags are not platform dependent
-> > http://linuxtv.org/hg/~gliakhovetski/v4l-dvb?cmd=3Dchangeset;node	28a1b=
-e9d4e
->=20
-> MigoR and ALGO board needs new flags setting patches.
->=20
-> I'm not sure when should I send patch to Paul ?
-
-They are already in this tree:
-
-http://git.kernel.org/?p=3Dlinux/kernel/git/mchehab/linux-next.git;a=3Dtree=
-;hb=3DHEAD
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
+This patch is for linux-next
+
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index 373b344..54ca664 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -377,7 +377,6 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(PJ1_DATA, PJ1_IN, PJ1_OUT, PJ1_IN_PU),
+ 
+ 	/* PA FN */
+-	PINMUX_MARK_BEGIN,
+ 	PINMUX_DATA(CDE_MARK,		P1MSEL2_0, PA7_FN),
+ 	PINMUX_DATA(DISP_MARK,		P1MSEL2_0, PA6_FN),
+ 	PINMUX_DATA(DR5_MARK,		P1MSEL2_0, PA5_FN),
+-- 
+1.5.6.3
+
