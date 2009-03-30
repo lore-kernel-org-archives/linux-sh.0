@@ -1,66 +1,25 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 03 Mar 2009 06:50:45 +0000
-Subject: Re: [PATCH] Add OHCI USB support for SH7786
-Message-Id: <20090303065045.GC30177@linux-sh.org>
+From: Tiago Maluta <tiago.maluta@gmail.com>
+Date: Mon, 30 Mar 2009 03:48:28 +0000
+Subject: Developing in Dreamcast
+Message-Id: <600adaf50903292048m5423a4a8ie7760eed338d314f@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uy6vozecn.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uy6vozecn.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Mar 02, 2009 at 02:16:06PM +0900, Kuninori Morimoto wrote:
-> +static u64 usb_ohci_dma_mask = 0xffffffffUL;
+I had a question about how developers of linux-sh works on Dreamcast.
+Is developers using only a Sega Dreamcast console and Broadband
+Adapter (I think burning CD-R isn't a useful way) or there are some
+ref. board with jtag, etc; that reflects Dreamcast hardware?
 
-Please use DMA_BIT_MASK(32) here for the initializer instead. The
-definition is in linux/dma-mapping.h.
+I'm working with SH processors com set-top boxes (ST7100) but I like
+to know other families (SH7750).
+I think for studying purposes I can use Dreamcast to bring up latest
+kernels. Today a used one is relatively cheap (expect BBA) and use
+just for hobby would be nice.
 
-> +static struct platform_device usb_ohci_device = {
-> +	.name		= "sh_ohci",
-> +	.id		= -1,
-> +	.dev = {
-> +		.dma_mask		= &usb_ohci_dma_mask,
-> +		.coherent_dma_mask	= 0xffffffff,
-> +	},
+Thanks.
 
-Likewise for the coherent_dma_mask.
 
-> +int __init sh7786_usb_setup(int exclock)
-> +{
-Where is this function used?
-
-> +	int i;
-> +	u32 val;
-> +
-> +	ctrl_outl(0x00ff0040, 0xffe70094);
-> +	ctrl_outl(0x00000001, 0xffe7009c);
-> +
-This needs documenting. Also, please use __raw_writel() and friends
-instead of the ctrl_xxx() variants for new code.
-
-> +	val = ctrl_inl(USBCTL0) & 0xffffff7f;
-> +	if (exclock)
-> +		val |= 0x00000080;
-> +	ctrl_outl(val, USBCTL0);
-> +
-The above mask and bit definition should have macros associated with
-them, so we know precisely what is changing.
-
-> +	/* Set the PHY ENB bit */
-> +	i = 1000000;
-> +	ctrl_outl(0x00000001, USBPCTL1);
-> +	while (i-- && !(ctrl_inl(USBST) & (1 << 30)))
-> +		;
-> +
-This is not sufficient, all new versions of gcc will optimize this away.
-At the very least, you will need a cpu_relax(); to prevent the loop
-optimization.
-
-> +	/* Set the PLL ENB bit */
-> +	i = 1000000;
-> +	ctrl_outl(0x00000003, USBPCTL1);
-> +	while (i-- && ((ctrl_inl(USBST) & (0x3 << 30)) != (0x3 << 30)))
-> +		;
-> +
-Likewise.
+--tm
