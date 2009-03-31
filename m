@@ -1,22 +1,45 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 16 Mar 2009 11:05:02 +0000
-Subject: Re: [Proposal][PATCH] sh: PMB hibernation support
-Message-Id: <20090316110502.GD21433@linux-sh.org>
+From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
+Date: Tue, 31 Mar 2009 13:19:24 +0000
+Subject: qemu-sh CF access perormance
+Message-Id: <49D2185C.4050909@juno.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49B794C6.8000806@st.com>
-In-Reply-To: <49B794C6.8000806@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 11, 2009 at 11:39:02AM +0100, Francesco VIRLINZI wrote:
-> In attach there is a proposal on how manage the PMB after a resume from 
-> hibernation.
-> My assumption in background is that "just because the kernel runs.. the 
-> "core" PMB (main memory) are already ok"
-> In our kernel I'm doing something very similar.
-> I can say: it compiles but I have no way to really test this code as it is.
-> 
-This looks like as good a place as any to start, so I'll merge this for
-now, and we can build on top of this incrementally as other cases pop up.
+Hi.  I have a question related to qemu-sh.
+
+I use qemu-sh r2d emulation and userland on compact flush as qemu disk image,
+to investigate why qemu-sh system emulation is slower than qemu-arm.
+
+For example, it takes only around 1 second to compile simple hello.c with
+gcc on qemu-arm system emulation.  On the other hand, it takes around 40
+seconds on qemu-sh system emulation.
+
+This compile time (40 secs) reduces to less than 6 seconds, if I repeat to
+invoke "% gcc hello.c".  Then I guess,
+
+ - disk cache reduces the compile time
+ - and compact flush access performance is rather bad on qemu-sh r2d system
+
+I investigated what happens on CF access, and found
+
+ - the ioread/write16_rep() function call in ata_sff_data_xfer() placed in
+   "drivers/ata/libata-sff.c", cause tlb miss exception,
+
+ - and the exception is handled by handle_trapped_io() in
+   "arch/sh/kernel/io_trapped.c".
+
+I'd like to ask following questions to linux-sh experts,
+
+ - Why such io-traps are used to access CF?
+ - Will this io-traps are used for SH7785LCR's SD card access?
+
+I guess these io-traps can be the reason why gcc takes so much time on qemu-sh.
+
+Thank you for reading this mail.
+Any comments or any explanations will be appreciated.
+
+Regards,
+Shin-ichiro KAWASAKI
