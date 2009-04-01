@@ -1,27 +1,13 @@
-From: "Mrs.Cindy Howard." <info@yahoo.co.uk>
-Date: Thu, 09 Apr 2009 13:55:34 +0000
-Subject: Ref No: UK/9420X2/68
-Message-Id: <78.138.19.210.1239285334.wm@webmail.inode.at>
+From: christphen_dona@ecunet.org
+Date: Wed, 01 Apr 2009 01:25:49 +0000
+Subject: Hello dear
+Message-Id: <200904010125.n311PnNn016992@ecunet-web-1.ecunet.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 
-Your e-mail address has just won  =A31,000,000,00 (One million pounds
-sterling).
+How are you ? I guess you are fine and living good. my name is christphen a beautiful young girl I find you and i'm interesting to know you and establish a serious relationship with you. I wanna be your friend for first friendship cannot be seen or even be touched, it must be felt within the heart.Hoping you feel just the way i do. Wow! friends are like clothes without them you feel naked!I  guess am right.I will tell you more about me, my family and all that maybe necessary in this relationship, If this is okay by you feel free to contact me as to enable us get to know each other better. Have a wonderful day with lot of happiness.
 
-Contact Person : Mr.kelvin Brown
-Contact Number :+447031942741
-Email : mrkelvin-brown@8u8.com
-
-Ref No: UK/9420X2/68,Batch No: 074/05/ZY369
-
-FULL NAMES:_____ADDRESS:_______
-TELEPHONE NUMBER:______SEX:______
-COUNTRY:______STATE _______
-
-Sincerely,
-Mrs.Cindy Howard.
-
-
+best regards
+  christphen
