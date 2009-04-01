@@ -1,22 +1,70 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 06 Apr 2009 15:58:51 +0000
-Subject: Re: [PATCH] sh7785lcr: Map whole address space to PCI
-Message-Id: <20090406155851.GE17834@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 01 Apr 2009 14:49:41 +0000
+Subject: [PATCH] migor_ts: add wakeup support
+Message-Id: <20090401144941.385.70861.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090402180330.00319c4f.yoshii.takashi@renesas.com>
-In-Reply-To: <20090402180330.00319c4f.yoshii.takashi@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Apr 06, 2009 at 08:37:15PM +0900, Yoshihiro Shimoda wrote:
-> Fix the problem that cannot work PCI device on 32-bit mode because
-> influence of the commit 68b42d1b548be1840aff7122fdebeb804daf0fa3
-> ("sh: sh7785lcr: Map whole PCI address space."). So this patch was
-> implement like a 29-bit mode, map whole physical address space of
-> DDR-SDRAM.
-> 
-> Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+From: Magnus Damm <damm@igel.co.jp>
 
-Applied, thanks.
+Add wakeup support to the migor_ts driver. If user space has enabled
+wakeup, use set_irq_wake() during suspend and resume. With this patch
+the migor_ts driver can be used to wake the system from suspend.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Tested with wakeup enabled and disabled on a Migo-R board.
+
+ drivers/input/touchscreen/migor_ts.c |   23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+--- 0001/drivers/input/touchscreen/migor_ts.c
++++ work/drivers/input/touchscreen/migor_ts.c	2009-04-01 22:59:07.000000000 +0900
+@@ -198,6 +198,7 @@ static int migor_ts_probe(struct i2c_cli
+ 		goto err2;
+ 	}
+ 
++	device_init_wakeup(&client->dev, 1);
+ 	return 0;
+ 
+  err2:
+@@ -224,6 +225,26 @@ static int migor_ts_remove(struct i2c_cl
+ 	return 0;
+ }
+ 
++static int migor_ts_suspend(struct i2c_client *client, pm_message_t mesg)
++{
++	struct migor_ts_priv *priv = dev_get_drvdata(&client->dev);
++
++	if (device_may_wakeup(&client->dev))
++		enable_irq_wake(priv->irq);
++
++	return 0;
++}
++
++static int migor_ts_resume(struct i2c_client *client)
++{
++	struct migor_ts_priv *priv = dev_get_drvdata(&client->dev);
++
++	if (device_may_wakeup(&client->dev))
++		disable_irq_wake(priv->irq);
++
++	return 0;
++}
++
+ static const struct i2c_device_id migor_ts_id[] = {
+ 	{ "migor_ts", 0 },
+ 	{ }
+@@ -236,6 +257,8 @@ static struct i2c_driver migor_ts_driver
+ 	},
+ 	.probe = migor_ts_probe,
+ 	.remove = migor_ts_remove,
++	.suspend = migor_ts_suspend,
++	.resume = migor_ts_resume,
+ 	.id_table = migor_ts_id,
+ };
+ 
