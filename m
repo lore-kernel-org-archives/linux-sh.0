@@ -1,62 +1,72 @@
-From: Tim Abbott <tabbott@MIT.EDU>
-Date: Thu, 30 Apr 2009 23:57:59 +0000
-Subject: [PATCH 3/7] sh: use NOSAVE_DATA macro for .data.nosave section.
-Message-Id: <1241135883-9766-4-git-send-email-tabbott@mit.edu>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 01 Apr 2009 14:45:17 +0000
+Subject: [PATCH] sh_rtc: use set_irq_wake()
+Message-Id: <20090401144517.336.60634.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1241135883-9766-1-git-send-email-tabbott@mit.edu>
- <1241135883-9766-2-git-send-email-tabbott@mit.edu>
- <1241135883-9766-3-git-send-email-tabbott@mit.edu>
-In-Reply-To: <1241135883-9766-3-git-send-email-tabbott@mit.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sam Ravnborg <sam@ravnborg.org>
-Cc: Linux kernel mailing list <linux-kernel@vger.kernel.org>, Anders Kaseorg <andersk@MIT.EDU>, Waseem Daher <wdaher@MIT.EDU>, Denys Vlasenko <vda.linux@googlemail.com>, Jeff Arnold <jbarnold@MIT.EDU>, Paul Mundt <lethal@linux-sh.org>, Tim Abbott <tabbott@MIT.EDU>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Tim Abbott <tabbott@mit.edu>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+From: Magnus Damm <damm@igel.co.jp>
+
+Modify the sh_rtc driver to use set_irq_wake() during suspend
+and resume. These functions are used to enable the rtc interrupts
+in the interrupt controller so the rtc can be used to wakeup the
+system from suspend.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/kernel/vmlinux_32.lds.S |    7 +------
- arch/sh/kernel/vmlinux_64.lds.S |    7 +------
- 2 files changed, 2 insertions(+), 12 deletions(-)
 
-diff --git a/arch/sh/kernel/vmlinux_32.lds.S b/arch/sh/kernel/vmlinux_32.lds.S
-index 325af0b..5f5e190 100644
---- a/arch/sh/kernel/vmlinux_32.lds.S
-+++ b/arch/sh/kernel/vmlinux_32.lds.S
-@@ -70,12 +70,7 @@ SECTIONS
- 		*(.data.read_mostly)
- 
- 		PAGE_ALIGNED_DATA
--
--		__nosave_begin = .;
--		*(.data.nosave)
--		. = ALIGN(PAGE_SIZE);
--		__nosave_end = .;
--
-+		NOSAVE_DATA
- 		DATA_DATA
- 		CONSTRUCTORS
- 	}
-diff --git a/arch/sh/kernel/vmlinux_64.lds.S b/arch/sh/kernel/vmlinux_64.lds.S
-index b222700..9cccb3d 100644
---- a/arch/sh/kernel/vmlinux_64.lds.S
-+++ b/arch/sh/kernel/vmlinux_64.lds.S
-@@ -79,12 +79,7 @@ SECTIONS
- 		*(.data.read_mostly)
- 
- 		PAGE_ALIGNED_DATA
--
--		__nosave_begin = .;
--		*(.data.nosave)
--		. = ALIGN(PAGE_SIZE);
--		__nosave_end = .;
--
-+		NOSAVE_DATA
- 		DATA_DATA
- 		CONSTRUCTORS
- 	}
--- 
-1.6.2.1
+ drivers/rtc/rtc-sh.c |   36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
+--- 0001/drivers/rtc/rtc-sh.c
++++ work/drivers/rtc/rtc-sh.c	2009-04-01 22:57:15.000000000 +0900
+@@ -795,10 +795,46 @@ static int __devexit sh_rtc_remove(struc
+ 
+ 	return 0;
+ }
++
++static void sh_rtc_set_irq_wake(struct device *dev, int enabled)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_rtc *rtc = platform_get_drvdata(pdev);
++
++	set_irq_wake(rtc->periodic_irq, enabled);
++	if (rtc->carry_irq > 0) {
++		set_irq_wake(rtc->carry_irq, enabled);
++		set_irq_wake(rtc->alarm_irq, enabled);
++	}
++
++}
++
++static int sh_rtc_suspend(struct device *dev)
++{
++	if (device_may_wakeup(dev))
++		sh_rtc_set_irq_wake(dev, 1);
++
++	return 0;
++}
++
++static int sh_rtc_resume(struct device *dev)
++{
++	if (device_may_wakeup(dev))
++		sh_rtc_set_irq_wake(dev, 0);
++
++	return 0;
++}
++
++static struct dev_pm_ops sh_rtc_dev_pm_ops = {
++	.suspend = sh_rtc_suspend,
++	.resume = sh_rtc_resume,
++};
++
+ static struct platform_driver sh_rtc_platform_driver = {
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,
++		.pm	= &sh_rtc_dev_pm_ops,
+ 	},
+ 	.probe		= sh_rtc_probe,
+ 	.remove		= __devexit_p(sh_rtc_remove),
