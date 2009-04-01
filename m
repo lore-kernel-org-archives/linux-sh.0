@@ -1,72 +1,50 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 01 Apr 2009 14:45:17 +0000
-Subject: [PATCH] sh_rtc: use set_irq_wake()
-Message-Id: <20090401144517.336.60634.sendpatchset@rx1.opensource.se>
+Date: Wed, 01 Apr 2009 11:07:15 +0000
+Subject: Re: [Proposal][PATCH] Fixed the irq interrupt line after a resume
+Message-Id: <aec7e5c30904010407i5d448fa5rc8574a6f22613df1@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Hi Francesco,
 
-Modify the sh_rtc driver to use set_irq_wake() during suspend
-and resume. These functions are used to enable the rtc interrupts
-in the interrupt controller so the rtc can be used to wakeup the
-system from suspend.
+On Wed, Mar 18, 2009 at 5:35 PM, Francesco VIRLINZI
+<francesco.virlinzi@st.com> wrote:
+> Hi all
+>
+> Ad I said in a previous email the current hibernation suppont has a problem
+> with
+> every interrupt line enabled in the previous session by modules.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On suspend:
 
- drivers/rtc/rtc-sh.c |   36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+kernel/power/disk.c: create_image() calls device_power_down()
+drivers/base/power/main.c: device_power_down() calls suspend_device_irqs()
+kernel/irq/pm.c: suspend_device_irqs() calls __disable_irq()
+kernel/irq/manage.c: __disable_irq() marks with IRQ_SUSPENDED and
+calls chip->disable()
 
---- 0001/drivers/rtc/rtc-sh.c
-+++ work/drivers/rtc/rtc-sh.c	2009-04-01 22:57:15.000000000 +0900
-@@ -795,10 +795,46 @@ static int __devexit sh_rtc_remove(struc
- 
- 	return 0;
- }
-+
-+static void sh_rtc_set_irq_wake(struct device *dev, int enabled)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_rtc *rtc = platform_get_drvdata(pdev);
-+
-+	set_irq_wake(rtc->periodic_irq, enabled);
-+	if (rtc->carry_irq > 0) {
-+		set_irq_wake(rtc->carry_irq, enabled);
-+		set_irq_wake(rtc->alarm_irq, enabled);
-+	}
-+
-+}
-+
-+static int sh_rtc_suspend(struct device *dev)
-+{
-+	if (device_may_wakeup(dev))
-+		sh_rtc_set_irq_wake(dev, 1);
-+
-+	return 0;
-+}
-+
-+static int sh_rtc_resume(struct device *dev)
-+{
-+	if (device_may_wakeup(dev))
-+		sh_rtc_set_irq_wake(dev, 0);
-+
-+	return 0;
-+}
-+
-+static struct dev_pm_ops sh_rtc_dev_pm_ops = {
-+	.suspend = sh_rtc_suspend,
-+	.resume = sh_rtc_resume,
-+};
-+
- static struct platform_driver sh_rtc_platform_driver = {
- 	.driver		= {
- 		.name	= DRV_NAME,
- 		.owner	= THIS_MODULE,
-+		.pm	= &sh_rtc_dev_pm_ops,
- 	},
- 	.probe		= sh_rtc_probe,
- 	.remove		= __devexit_p(sh_rtc_remove),
+On resume:
+
+kernel/power/disk.c: create_image() calls device_power_up()
+drivers/base/power/main.c: device_power_up() calls resume_device_irqs()
+kernel/irq/pm.c: resume_device_irqs() calls __enable_irq()
+kernel/irq/manage.c: __enable_irq() calls check_irq_resend()
+
+I suspect you want check_irq_resend() to re-enable the interrupt for
+you somehow instead of doing it in restore_processor_state(). Does
+that solve your problem?
+
+> The right thing should be add sysdev device to the intc but it requires more
+> work in the intc design.
+
+Yes, upgrading intc to use sysdev for suspend and resume sounds like a
+good idea. Adding wakeup support so we can do enable_irq_wake() and
+set_irq_wake() is also needed.
+
+On top of that we really need to re-init the entire interrupt
+controller after coming back from U/R-standby.
+
+/ magnus
