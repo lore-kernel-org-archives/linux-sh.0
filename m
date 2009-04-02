@@ -1,41 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 01 Apr 2009 14:11:07 +0000
-Subject: [PATCH] sh_cmt: use remove_irq() and remove clockevent workaround
-Message-Id: <20090401141107.32445.63752.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 02 Apr 2009 03:44:51 +0000
+Subject: Re: [PATCH] sh_cmt: use remove_irq() and remove clockevent workaround
+Message-Id: <20090402034451.GA11576@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090401141107.32445.63752.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090401141107.32445.63752.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Wed, Apr 01, 2009 at 11:11:07PM +0900, Magnus Damm wrote:
+> Update the sh_cmt driver to make use of recent irq and clockevent changes:
+>  - use remove_irq() together with setup_irq()
+>  - remove mult workaround since WARN_ON() now has been moved
 
-Update the sh_cmt driver to make use of recent irq and clockevent changes:
- - use remove_irq() together with setup_irq()
- - remove mult workaround since WARN_ON() now has been moved
+On Wed, Apr 01, 2009 at 11:20:58PM +0900, Magnus Damm wrote:
+> Modify the intc code to install a disable callback. The current
+> solution without a disable callback results in use of the
+> generic default_disable() function. This function is a no-op
+> so suspend_device_irqs() will not disable any intc interrupts
+> at suspend time without this patch. Also, install enable and
+> shutdown callbacks while at it.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Wed, Apr 01, 2009 at 11:30:59PM +0900, Magnus Damm wrote:
+> Add set_irq_wake() support to intc using sysdev and suspend.
+> 
+> The intc controllers are put on a list at registration time
+> and registered as sysdev devices later on during the boot.
+> 
+> The sysdev class suspend callback is used to find irqs with
+> wakeup enabled belonging to our intc controller. Such irqs
+> are simply enabled so wakeup interrupts may reach the cpu.
 
- drivers/clocksource/sh_cmt.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+On Wed, Apr 01, 2009 at 11:39:20PM +0900, Magnus Damm wrote:
+> Modify the sh_keysc driver to use enable/disable_irq_wake()
+> during suspend and resume. These functions are used to enable
+> the sh_keysc interrupt in the interrupt controller so the
+> keypad can be used to wakeup the system from suspend.
 
---- 0001/drivers/clocksource/sh_cmt.c
-+++ work/drivers/clocksource/sh_cmt.c	2009-04-01 23:01:39.000000000 +0900
-@@ -465,7 +465,6 @@ static void sh_cmt_register_clockevent(s
- 	ced->set_mode = sh_cmt_clock_event_mode;
- 
- 	pr_info("sh_cmt: %s used for clock events\n", ced->name);
--	ced->mult = 1; /* work around misplaced WARN_ON() in clockevents.c */
- 	clockevents_register_device(ced);
- }
- 
-@@ -557,7 +556,7 @@ static int sh_cmt_setup(struct sh_cmt_pr
- 			       cfg->clockevent_rating,
- 			       cfg->clocksource_rating);
-  err2:
--	free_irq(irq, p);
-+	remove_irq(irq, &p->irqaction);
-  err1:
- 	iounmap(p->mapbase);
-  err0:
+On Wed, Apr 01, 2009 at 11:45:17PM +0900, Magnus Damm wrote:
+> Modify the sh_rtc driver to use set_irq_wake() during suspend
+> and resume. These functions are used to enable the rtc interrupts
+> in the interrupt controller so the rtc can be used to wakeup the
+> system from suspend.
+
+On Wed, Apr 01, 2009 at 11:49:41PM +0900, Magnus Damm wrote:
+> Add wakeup support to the migor_ts driver. If user space has enabled
+> wakeup, use set_irq_wake() during suspend and resume. With this patch
+> the migor_ts driver can be used to wake the system from suspend.
+
+All applied, thanks.
