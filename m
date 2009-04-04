@@ -1,50 +1,126 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 01 Apr 2009 11:07:15 +0000
-Subject: Re: [Proposal][PATCH] Fixed the irq interrupt line after a resume
-Message-Id: <aec7e5c30904010407i5d448fa5rc8574a6f22613df1@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 04 Apr 2009 16:03:33 +0000
+Subject: [GIT PULL] sh updates for 2.6.30-rc1, part 2.
+Message-Id: <20090404160333.GC17834@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Francesco,
+Please pull from:
 
-On Wed, Mar 18, 2009 at 5:35 PM, Francesco VIRLINZI
-<francesco.virlinzi@st.com> wrote:
-> Hi all
->
-> Ad I said in a previous email the current hibernation suppont has a problem
-> with
-> every interrupt line enabled in the previous session by modules.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
-On suspend:
+Which contains:
 
-kernel/power/disk.c: create_image() calls device_power_down()
-drivers/base/power/main.c: device_power_down() calls suspend_device_irqs()
-kernel/irq/pm.c: suspend_device_irqs() calls __disable_irq()
-kernel/irq/manage.c: __disable_irq() marks with IRQ_SUSPENDED and
-calls chip->disable()
+Francesco VIRLINZI (1):
+      sh: Sanitize asm/mmu.h for assembly use.
 
-On resume:
+Kuninori Morimoto (5):
+      sh: Remove buggy definition from SH7786 pinmux_data[]
+      sh: urquell: enable LAN device
+      sh: Tidy up sh7786 pinmux table.
+      sh: ap325rxa: Add ov772x support, again.
+      sh: ap325 and Migo-R use new sh_mobile_ceu_info flags
 
-kernel/power/disk.c: create_image() calls device_power_up()
-drivers/base/power/main.c: device_power_up() calls resume_device_irqs()
-kernel/irq/pm.c: resume_device_irqs() calls __enable_irq()
-kernel/irq/manage.c: __enable_irq() calls check_irq_resend()
+Magnus Damm (6):
+      clocksource: sh_cmt: use remove_irq() and remove clockevent workaround
+      sh: intc: install enable, disable and shutdown callbacks
+      sh: intc: set_irq_wake() support
+      input: sh_keysc: use enable/disable_irq_wake()
+      rtc: rtc-sh: use set_irq_wake()
+      input: migor_ts: add wakeup support
 
-I suspect you want check_irq_resend() to re-enable the interrupt for
-you somehow instead of doing it in restore_processor_state(). Does
-that solve your problem?
+Michael Trimarchi (1):
+      sh: Fix up DSP context save/restore.
 
-> The right thing should be add sysdev device to the intc but it requires more
-> work in the intc design.
+Nobuhiro Iwamatsu (1):
+      sh: Add MMU dependency for kexec
 
-Yes, upgrading intc to use sysdev for suspend and resume sounds like a
-good idea. Adding wakeup support so we can do enable_irq_wake() and
-set_irq_wake() is also needed.
+Paul Mundt (8):
+      sh: Fix up -Wformat-security whining.
+      sh: migor: Fix up CEU use flags.
+      sh: Select ARCH_HIBERNATION_POSSIBLE.
+      sh: Add a command line option for disabling I/O trapping.
+      sh: Wire up ARCH_HAS_DEFAULT_IDLE for cpuidle.
+      sh: Kill off broken direct-mapped cache mode.
+      sh: update defconfigs.
+      sh: Fix up number of on-chip DMA channels on SH7091.
 
-On top of that we really need to re-init the entire interrupt
-controller after coming back from U/R-standby.
+Takashi Yoshii (1):
+      sh: sh7785lcr: Map whole PCI address space.
 
-/ magnus
+ Documentation/kernel-parameters.txt       |    2 +
+ arch/sh/Kconfig                           |    6 +-
+ arch/sh/boards/board-ap325rxa.c           |   57 ++++++-
+ arch/sh/boards/board-urquell.c            |    4 +
+ arch/sh/boards/mach-migor/setup.c         |    4 +-
+ arch/sh/configs/ap325rxa_defconfig        |   70 ++++++---
+ arch/sh/configs/cayman_defconfig          |  235 ++++++++++++++---------------
+ arch/sh/configs/dreamcast_defconfig       |   71 ++++++---
+ arch/sh/configs/edosk7705_defconfig       |   29 +++--
+ arch/sh/configs/edosk7760_defconfig       |   78 +++++++---
+ arch/sh/configs/espt_defconfig            |   39 +++--
+ arch/sh/configs/hp6xx_defconfig           |   54 +++++--
+ arch/sh/configs/landisk_defconfig         |   97 ++++++++----
+ arch/sh/configs/lboxre2_defconfig         |   69 ++++++---
+ arch/sh/configs/magicpanelr2_defconfig    |   73 ++++++---
+ arch/sh/configs/microdev_defconfig        |   74 +++++++---
+ arch/sh/configs/migor_defconfig           |   82 +++++++----
+ arch/sh/configs/polaris_defconfig         |   31 ++--
+ arch/sh/configs/r7780mp_defconfig         |   91 +++++++++---
+ arch/sh/configs/r7785rp_defconfig         |   96 +++++++++---
+ arch/sh/configs/rsk7201_defconfig         |   57 +++++---
+ arch/sh/configs/rsk7203_defconfig         |   94 ++++++++----
+ arch/sh/configs/rts7751r2d1_defconfig     |   83 ++++++++---
+ arch/sh/configs/rts7751r2dplus_defconfig  |   83 ++++++++---
+ arch/sh/configs/sdk7780_defconfig         |   78 +++++++---
+ arch/sh/configs/se7206_defconfig          |   82 +++++++---
+ arch/sh/configs/se7343_defconfig          |   89 ++++++++----
+ arch/sh/configs/se7619_defconfig          |   55 +++++---
+ arch/sh/configs/se7705_defconfig          |   75 +++++++---
+ arch/sh/configs/se7712_defconfig          |   79 +++++++---
+ arch/sh/configs/se7721_defconfig          |   82 +++++++---
+ arch/sh/configs/se7722_defconfig          |   76 +++++++---
+ arch/sh/configs/se7750_defconfig          |   71 ++++++---
+ arch/sh/configs/se7751_defconfig          |   74 +++++++---
+ arch/sh/configs/se7780_defconfig          |   78 +++++++---
+ arch/sh/configs/sh03_defconfig            |   79 +++++++---
+ arch/sh/configs/sh7710voipgw_defconfig    |   69 ++++++---
+ arch/sh/configs/sh7763rdp_defconfig       |   82 +++++++---
+ arch/sh/configs/sh7785lcr_32bit_defconfig |   42 +++--
+ arch/sh/configs/sh7785lcr_defconfig       |   90 ++++++++----
+ arch/sh/configs/shmin_defconfig           |   73 ++++++---
+ arch/sh/configs/shx3_defconfig            |   99 ++++++++----
+ arch/sh/configs/snapgear_defconfig        |   62 ++++++--
+ arch/sh/configs/systemh_defconfig         |   54 +++++--
+ arch/sh/configs/titan_defconfig           |  101 +++++++++---
+ arch/sh/configs/ul2_defconfig             |   93 +++++++++---
+ arch/sh/configs/urquell_defconfig         |   45 ++++---
+ arch/sh/drivers/dma/Kconfig               |   20 ++-
+ arch/sh/drivers/pci/ops-sh7785lcr.c       |    9 +-
+ arch/sh/drivers/pci/pci-sh7780.c          |   16 +--
+ arch/sh/include/asm/mmu.h                 |   35 +++--
+ arch/sh/include/asm/processor_32.h        |   13 ++
+ arch/sh/include/asm/ptrace.h              |    8 -
+ arch/sh/include/asm/system.h              |    1 +
+ arch/sh/include/asm/system_32.h           |  170 +++++++++++++++------
+ arch/sh/include/cpu-sh4/cpu/sh7786.h      |  214 ++++++++++-----------------
+ arch/sh/kernel/cpu/sh3/entry.S            |   85 +----------
+ arch/sh/kernel/cpu/sh4/probe.c            |    5 -
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c   |  185 +++++------------------
+ arch/sh/kernel/idle.c                     |    2 +-
+ arch/sh/kernel/io_trapped.c               |   13 ++
+ arch/sh/kernel/process_32.c               |   14 ++-
+ arch/sh/kernel/ptrace_32.c                |    6 +-
+ arch/sh/kernel/setup.c                    |    5 +-
+ arch/sh/kernel/traps_32.c                 |    2 +
+ arch/sh/mm/Kconfig                        |   12 --
+ drivers/clocksource/sh_cmt.c              |    3 +-
+ drivers/input/keyboard/sh_keysc.c         |   17 ++-
+ drivers/input/touchscreen/migor_ts.c      |   23 +++
+ drivers/rtc/rtc-sh.c                      |   36 +++++
+ drivers/sh/intc.c                         |   68 +++++++++
+ 71 files changed, 2754 insertions(+), 1515 deletions(-)
