@@ -1,32 +1,58 @@
-From: Steve.Glendinning@smsc.com
-Date: Tue, 28 Apr 2009 08:22:58 +0000
-Subject: Re: [PATCH] sh: smsc911x support for the rsk7203 board
-Message-Id: <OFB62D0D76.D8FF3D00-ON802575A6.002DEE44-802575A6.002E0A62@smsc.com>
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Tue, 07 Apr 2009 08:25:00 +0000
+Subject: Re: [PATCH] sh: clkfwk: Changed the init function
+Message-Id: <49DB0DDC.2050800@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090428080213.16323.31667.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090428080213.16323.31667.sendpatchset@rx1.opensource.se>
+References: <49BA1505.7000500@st.com>
+In-Reply-To: <49BA1505.7000500@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Magnus Damm <magnus.damm@gmail.com> wrote on 28/04/2009 09:02:13:
-
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> This patch adds support for the LAN9118 ethernet on rsk7203.
-> 
-> The LAN9118 controller is hooked up using a 16-bit data bus,
-> but the rsk7203 board does not swap the byte lanes as needed
-> between the sh7203 processor and the the ethernet controller.
-> 
-> In the processor the CS memory window is configured in 16-bit
-> mode but the smsc911x driver is told to do 32-bit accesses to
-> improve performance. The SMSC911X_SWAP_FIFO flag is used
-> to tell the driver to do software byte swapping of fifo data.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> ---
-
-Acked-by: Steve Glendinning <steve.glendinning@smsc.com>
-
+Hi Paul
+I'm sorry if I'm boring you.
+Any replay on the below issue?
+Regards
+ Francesco
+Francesco VIRLINZI ha scritto:
+> Hi Paul
+>> The clock framework itself also specifies that no assumptions can be 
+>> made
+>> about the state of the clock, so you must call clk_enable() to enable 
+>> the
+>> clock after bumping the refcount with clk_get(), and then and only then
+>> can you determine if there is a problem with the clock settings.
+> I understand you point of view... and also my example was not so good!
+> Let me try again ;-)
+>
+> Now in the clock fmwk we have also clk_set_parent/clk_get_parent this 
+> means
+> we can change the topology on the fly (we have this behavior with 
+> video clocks).
+>
+> From my point of view the .init function should also initialize the 
+> clk->parent field based
+> on the loaded hw setting... (I assume we can not hard-code something 
+> like clk_x->parent = &clk_y;
+> just because something like that it's strictly based on hardware value 
+> on power-up).
+>
+> Therefore I can trust the clk->parent value only after a call to the 
+> .init function.
+>
+> But with the current clfwk is mandatory that a topology change can be 
+> done _only_ after the clock
+> is enabled while in my point of view I should be able to change the 
+> topology without this constraint.
+>
+> Once a clock is registered I should be able to call clk_set_parent 
+> without being forced to enable it.
+>
+> Moreover it could be dangerous for the devices that are using the 
+> clock because first of all I have to
+> enable the clock.. and only after that I can change (if required) the 
+> clk->parent (while the clock is running).
+>
+> Regards
+> Francesco
