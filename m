@@ -1,7 +1,7 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Thu, 09 Apr 2009 05:53:10 +0000
+From: morimoto.kuninori@renesas.com
+Date: Thu, 09 Apr 2009 07:42:06 +0000
 Subject: Re: Question about sh-sci on SH7723
-Message-Id: <49DD8D46.6030408@renesas.com>
+Message-Id: <uy6ual1dd.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <uk55vvebh.wl%morimoto.kuninori@renesas.com>
 In-Reply-To: <uk55vvebh.wl%morimoto.kuninori@renesas.com>
@@ -10,29 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-morimoto.kuninori@renesas.com wrote:
-> Dear Iwamatsu
+
+Dear Iwamatsu
+
+> We set function to use in PFC and it is from IO-port
+> and controls them.
 > 
->>> I think that this is coding miss.
->>> If you check implemenation of other SH CPU's(e.g. SH7722),
->>> you can understand that other CPU checked RXD bit.
->> If this is a just "coding miss", I can understand !!
->> Thank you
-> 
-> Oops.
-> But Can we really read RXD status from IO port ?
-> Because when we use SCIF/SCIFA,
-> function modules is selected in PFC.
-> it is not IO port.
-> 
-We set function to use in PFC and it is from IO-port
-and controls them.
+> For example, we want to get RXD of SCIF0, setup PSELC and PTCR,
+> and get value from PTDR.
 
-For example, we want to get RXD of SCIF0, setup PSELC and PTCR,
-and get value from PTDR.
+Hmm....
+Now I tried to watch PxDR behavior by JTAG.
+Then, I can read data from PxDR if PxCR is "I/O".
+But, I can not read data when PxCR is "Function".
+It is always 0x00.
+I think at least clock bit will change.
 
-OK?
+Do you know why ?
 
-Best regards,
-  Nobuhiro
-
+Best regards
+--
+Kuninori Morimoto
+ 
