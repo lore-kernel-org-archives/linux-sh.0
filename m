@@ -1,41 +1,58 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Thu, 02 Apr 2009 09:16:47 +0000
-Subject: Re: [PATCH v3] dmaengine: sh: Add Support SuperH DMA Engine driver
-Message-Id: <49D4827F.6080906@renesas.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 09 Apr 2009 04:38:00 +0000
+Subject: [PATCH] sh7786: modify usb setup timeout judgment bug.
+Message-Id: <uzleql7ud.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49C9D558.7030002@renesas.com>
-In-Reply-To: <49C9D558.7030002@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi, Dan.
+Timeout counter "i" can reach -1 if USB setup isn't done.
+And "i" can be 0 if USB setup is done when last possible moment.
+Then it is judged to fail though setup is done.
+This patch modify this problem.
+Special thanks to Mr. Juha Leppanen for nice advice.
 
-Thank you for your commnets.
+Reported-by: "Juha Leppanen" <juha_motorsportcom@luukku.com>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+> Paul
+Can you test this patch on Urquell board please ?
 
-Dan Williams wrote:
-> Paul Mundt wrote:
->> On Wed, Mar 25, 2009 at 03:55:20PM +0900, Nobuhiro Iwamatsu wrote:
->>> This supported all DMA channels, and it was tested in SH7722,
->>> SH7780 and SH7763.
->>> This can not use with SH DMA API.
->>>
->>> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->>> Reviewed-by: Matt Fleming <matt@console-pimps.org>
->>
->> I don't know why you dropped Dan from the CC, but you need his Acked-by
->> or Reviewed-by before this can be merged.
-> 
-> Thanks Paul.
-> 
-> This version still has the problem of up leveling the descriptor lock to 
->  spin_lock_irqsave from spin_lock_bh.  This poses a problem for 
-> completion callback support where callbacks assume that interrupts are 
-> enabled, like a timer callback.  I have also spotted a new problem below:
-> 
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
 
-I understood. I fix your undication part.
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index 5a47e1c..ee30e68 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -127,6 +127,7 @@ void __init sh7786_usb_use_exclock(void)
+ static void __init sh7786_usb_setup(void)
+ {
+ 	int i = 1000000;
++	u32 val;
+ 
+ 	/*
+ 	 * USB initial settings
+@@ -143,11 +144,14 @@ static void __init sh7786_usb_setup(void)
+ 	 * Set the PHY and PLL enable bit
+ 	 */
+ 	__raw_writel(PHY_ENB | PLL_ENB, USBPCTL1);
+-	while (i-- &&
+-	       ((__raw_readl(USBST) & ACT_PLL_STATUS) != ACT_PLL_STATUS))
++	while (i--) {
++		val = __raw_readl(USBST) & ACT_PLL_STATUS;
++		if (ACT_PLL_STATUS = val)
++			break;
+ 		cpu_relax();
++	}
+ 
+-	if (i) {
++	if (ACT_PLL_STATUS = val) {
+ 		/* Set the PHY RST bit */
+ 		__raw_writel(PHY_ENB | PLL_ENB | PHY_RST, USBPCTL1);
+ 		printk(KERN_INFO "sh7786 usb setup done\n");
+-- 
+1.5.6.3
 
-Best regards,
-  Nobuhiro
