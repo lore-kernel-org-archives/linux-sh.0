@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 07 Apr 2009 17:46:23 +0000
+From: morimoto.kuninori@renesas.com
+Date: Thu, 09 Apr 2009 02:08:09 +0000
 Subject: Re: [PATCH] Urquell: Add board comment
-Message-Id: <20090407174622.GA6812@linux-sh.org>
+Message-Id: <u63hemvee.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <uocv8etjd.wl%morimoto.kuninori@renesas.com>
 In-Reply-To: <uocv8etjd.wl%morimoto.kuninori@renesas.com>
@@ -10,11 +10,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 07, 2009 at 05:41:57PM +0900, Kuninori Morimoto wrote:
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/boards/board-urquell.c |   27 +++++++++++++++++++++++++++
->  1 files changed, 27 insertions(+), 0 deletions(-)
-> 
-Applied, thanks.
+
+Dear Paul
+
+> > Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+> > ---
+> >  arch/sh/boards/board-urquell.c |   27 +++++++++++++++++++++++++++
+> >  1 files changed, 27 insertions(+), 0 deletions(-)
+> > 
+> Applied, thanks.
+
+Sorry I took a miss in this patch.
+(wrong comment is there)
+May I send v2 patch ?
+
+Best regards
+--
+Kuninori Morimoto
+ 
