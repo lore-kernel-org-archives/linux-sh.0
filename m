@@ -1,89 +1,59 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 13 Apr 2009 21:59:50 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 13 Apr 2009 22:28:43 +0000
 Subject: Re: [RFC][patch] filesystem: Vmufat filesystem, version 4
-Message-Id: <20090413215949.GD14847@linux-sh.org>
+Message-Id: <200904131828.45729.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart5691143.QjW6X3utMt"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1239654768.6542.10.camel@localhost.localdomain> <20090413210030.GA14847@linux-sh.org> <1239658604.6542.28.camel@localhost.localdomain>
-In-Reply-To: <1239658604.6542.28.camel@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1239654768.6542.10.camel@localhost.localdomain> <1239658604.6542.28.camel@localhost.localdomain> <1239658843.6542.30.camel@localhost.localdomain>
+In-Reply-To: <1239658843.6542.30.camel@localhost.localdomain>
 To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Josef 'Jeff' Sipek <jeffpc@josefsipek.net>, Sam Ravnborg <sam@ravnborg.org>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Josef 'Jeff' Sipek <jeffpc@josefsipek.net>, Sam Ravnborg <sam@ravnborg.org>
 
-On Mon, Apr 13, 2009 at 10:36:44PM +0100, Adrian McMenamin wrote:
-> On Tue, 2009-04-14 at 06:00 +0900, Paul Mundt wrote:
-> > Reviewing code is tedious work at best, making people that have taken the
-> > time to participate in review do even more work to find updated versions
-> > that may or may not have addressed their issues is remarkably poor
-> > etiquette at best, especially when they haven't completed their review.
-> > 
-> 
-> As far as I can see the three issues I haven't addressed were posting a
-> further patch to magic.h and a couple of *suggestions* about code style.
-> I will fix these points in due course, for sure. I have taken on board,
-> afaics, all the substantive points for which thanks
-> 
-This got cut off, but the point remains that you have provided no
-incremental comments in your changelog to note what has changed across
-versions, so it's not obvious at first glance what issues have been
-addressed and which ones have not.
+--nextPart5691143.QjW6X3utMt
+Content-Type: text/plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-Likewise, folks that have started looking at the code have cut their
-review short pending an updated version with the aforementioned issues
-corrected. This is the primary reason why you want to make sure all of
-those nits are addressed and the Cc list maintained, especially if you
-are still in 'RFC' mode.
+On Monday 13 April 2009 17:40:43 Adrian McMenamin wrote:
+> Should any earlier reviewer want to see what changes I've made please
+> have a look here:
+>
+> http://newgolddream.dyndns.info/cgi-bin/gitweb.cgi
+>
+> Hopefully that will make the changes from earlier versions a bit
+> clearer.
 
-> > Furthermore, the fact other file systems haven't done so is not an excuse
-> > for you not to, especially as their reasons for doing so might be valid
-> > (you of course haven't bothered citing what other file systems you are
-> > referring to, so one can only vaguely postulate, though at least the
-> > arguments for things like cramfs do not apply to vmufat).
-> > 
-> 
-> I didn't say that it was - I was offering my explanation for having
-> taken the decision to make it all one file and then seeing what the
-> bounce back was... there are in fact a very large number of filesystems
-> like this, not least of which of course is ext2 which has longer inode.c
-> and super.c files than this inode.c
-> 
-Lines of code is a terrible metric. There are a lot of things you can
-split out here that do not apply to other generic file systems. The
-inode.c/super.c is the typical split for the fs, but a lot of the code
-you are carrying around is for managing the on-disk format and other
-VMU-specific oddities. It is useful to split this out logically and
-compartmentalize where it makes sense, especially as there are far more
-people who can review the file system part than the VMU part.
+if the changelog history is clean, then you could always ask for people to=
+=20
+pull the whole history rather than the final diff between mainline.  that's=
+ =20
+actually kind of preferred as it implicitly retains some of the logic behin=
+d=20
+decisions made and other ideas tried.
+=2Dmike
 
-> > You should also think about whether you really want to go down the road
-> > of decoupling this from the VMU device dependencies. vmufat is not and
-> > never will be a general purpose file system, the on-disk format,
-> > limitation in block numbering, etc. are all directly tied to the VMU
-> > itself. Since you cited emulators as a potential user, these should be
-> > emulating the VMU itself anyways before you worry about layering vmufat
-> > on top of it. Trying to position this as a general purpose file system
-> > will bring you a world of pain you really don't want.
-> 
-> The two compromises are that on a failed read of a block it tries again
-> (as experience suggest that fixes most issues with the flaky VMU
-> hardware - though I doubt emulator builders will replicate that) and
-> that it does not write out a new date for the "superblock" on a change
-> of the filesystem - to avoid wear on the flash on the VMU, but again not
-> an issue for most emulator writers - I think the Kconfig makes it pretty
-> clear this isn't a general purpose filesystem.
-> 
-Whether these hacks belong in the fs at all or not is another issue
-entirely, but none of that addresses any of the things I noted.
+--nextPart5691143.QjW6X3utMt
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-This file system is tied directly to the VMU. Assumptions about the
-on-disk format, block numbering limitations, etc. are all VMU
-constraints, and papering over that in the Kconfig text is not
-sufficient. This file system is and always will be tied to the VMU, and
-you really do not want to decouple the two. What you do in loopback mode
-for testing is your own business, but this will not work in the way
-people expect on a fixed disk. You are only making things harder on
-yourself by insisting that this is somehow generic.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.11 (GNU/Linux)
 
-The file system at least wants a dependency on the VMU (and I suppose
-mtdblock) itself.
+iQIcBAABAgAGBQJJ47ydAAoJEEFjO5/oN/WBrM4P/jIqmfm5RmbKfHrnaWGe0J4p
+9ULJk5SF1eNhzkrcnmeHFaCJ4++AjBPOSJDxo2++YBxknr8e6WijnDp99+3/CQFO
+X/JuRdsJBvOhvR0cd5i+qFjFAVp4k5Tf1z1IC5pDLRodOemRVZShZzuGFWCe0bGu
+bfkqbpvG5CHtS1qKef6UdRU1CZhxW/hJIuYqJom7hXtw+cpkLYKMJKMOMVbrIh5O
+UD47/toPbi6tYm39YFZjr3x/njdLKj/bh27kEry4bXd6dA0KnBs+9IA7Xz0BOrgt
+fKJPmEX8qZuFHxyUH0cOVKhDhjjDT3cUa7dW0qxhjKK0u/4nX2GTuW6JVtiXrWPk
+1dMnjCcOiEWpqXfCjkptoko7RHBmbcma1rEyQnLDazde/MCiyVjgf+0ZKWpXouQl
+PTn4ZZP3Ny0Lozz75UV7NayTGRKw+yuU+IrEgpHKIao7IB9vsb79JLqNqBu1iEln
+i8lzZtmL7BDHgdn4wBSVJM440CNPn+VrtfPO5enOjDOFSV8q2THzmrBC6+3Upmqs
+zEfG1Q/b2h1LdShYzrM2fDiid1plxyiUmqp4gUmiuKM6w/RMzn2+9yBSLsncLo3o
+yT6P8s0byMOzfiou2ZT/BPOumjok1d0QEdKsA96eIGZgZRVYBxrmUdbf7ogH1ICb
+IhobeIryvWTPIml6E29O
+=eOVW
+-----END PGP SIGNATURE-----
+
+--nextPart5691143.QjW6X3utMt--
