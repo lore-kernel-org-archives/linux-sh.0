@@ -1,125 +1,103 @@
-From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Date: Thu, 02 Apr 2009 14:36:17 +0000
-Subject: Re: qemu-sh CF access perormance
-Message-Id: <49D4CD61.5000603@juno.dti.ne.jp>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 13 Apr 2009 04:17:59 +0000
+Subject: [Review request] sh-sci clock
+Message-Id: <ur5zxgnmk.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49D2185C.4050909@juno.dti.ne.jp>
-In-Reply-To: <49D2185C.4050909@juno.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Thu, Apr 02, 2009 at 12:25:19AM +0900, Shin-ichiro KAWASAKI wrote:
->> Hi, Magnus!  Thank you for your explanation.
->>
->> Magnus Damm wrote:
->>> 2009/3/31 Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>:
->>>> I'd like to ask following questions to linux-sh experts,
->>>>
->>>> - Why such io-traps are used to access CF?
->>>> - Will this io-traps are used for SH7785LCR's SD card access?
->>>>
->>>> I guess these io-traps can be the reason why gcc takes so much time on 
->>>> qemu-sh.
->>> The r2d hardware implements 16-bit only CF interface while driver
->>> software requires 8-bit access. To work around this issue io_trapped
->>> is used to convert 8-bit accesses to 16-bit accesses. This is quite
->>> slow.
->>>
->>> For more information, please see the comment in 
->>> arch/sh/boards/mach-r2d/setup.c
->>>
->>> To improve performance, consider adding a command line flag to the
->>> kernel that disables io_trapped. This flag can then be set on the
->>> kernel command line by the person running qemu.
->>>
->>> Hope this helps!
->> It really helps!
->>
->> The attached patch is a rough implementation to add a command line
->> flag 'avoid_trap', which Magnus suggested.  It is just a reference,
->> but it reduces the gcc compile time from 40 seconds to around 4 seconds.
->> 10 times faster!
->>
->> Is it OK to add such qemu specific options to linux kernel mainline?
->>
-> Sure, why not. Try this:
 
-It works fine, and gains same performance improvement as my dirty patch.
-Thank you Paul for your quick clean patch!
+Hi all
 
-Tested-by: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
+Now I'm creating SH7724 sub cpu support patch.
+And I would like to use "bus_clk" for SCIFA on sh-sci.
+Current sh-sci use module_clk only.
+So, I created attached patch to be able to select "bus_clk" or "module_clk".
 
-> ---
-> 
-> commit eeee7853c4ffaf5b9eb58f39708e3c78f66cee15
-> Author: Paul Mundt <lethal@linux-sh.org>
-> Date:   Thu Apr 2 12:31:16 2009 +0900
-> 
->     sh: Add a command line option for disabling I/O trapping.
->     
->     This adds a 'noiotrap' kernel command line option to permit disabling of
->     I/O trapping. This is mostly useful for running on emulators where the
->     physical device limitations are not an issue.
->     
->     Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-> 
-> diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-> index 240257d..8b2067c 100644
-> --- a/Documentation/kernel-parameters.txt
-> +++ b/Documentation/kernel-parameters.txt
-> @@ -1544,6 +1544,8 @@ and is between 256 and 4096 characters. It is defined in the file
->  			Valid arguments: on, off
->  			Default: on
->  
-> +	noiotrap	[SH] Disables trapped I/O port accesses.
-> +
->  	noirqdebug	[X86-32] Disables the code which attempts to detect and
->  			disable unhandled interrupt sources.
->  
-> diff --git a/arch/sh/kernel/io_trapped.c b/arch/sh/kernel/io_trapped.c
-> index 39cd7f3..c22853b 100644
-> --- a/arch/sh/kernel/io_trapped.c
-> +++ b/arch/sh/kernel/io_trapped.c
-> @@ -14,6 +14,7 @@
->  #include <linux/bitops.h>
->  #include <linux/vmalloc.h>
->  #include <linux/module.h>
-> +#include <linux/init.h>
->  #include <asm/system.h>
->  #include <asm/mmu_context.h>
->  #include <asm/uaccess.h>
-> @@ -32,6 +33,15 @@ EXPORT_SYMBOL_GPL(trapped_mem);
->  #endif
->  static DEFINE_SPINLOCK(trapped_lock);
->  
-> +static int trapped_io_disable __read_mostly;
-> +
-> +static int __init trapped_io_setup(char *__unused)
-> +{
-> +	trapped_io_disable = 1;
-> +	return 1;
-> +}
-> +__setup("noiotrap", trapped_io_setup);
-> +
->  int register_trapped_io(struct trapped_io *tiop)
->  {
->  	struct resource *res;
-> @@ -39,6 +49,9 @@ int register_trapped_io(struct trapped_io *tiop)
->  	struct page *pages[TRAPPED_PAGES_MAX];
->  	int k, n;
->  
-> +	if (unlikely(trapped_io_disable))
-> +		return 0;
-> +
->  	/* structure must be page aligned */
->  	if ((unsigned long)tiop & (PAGE_SIZE - 1))
->  		goto bad;
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+It works well on SH7724/SH7723/SH7722
+But I can not check about other CPU.
+
+Please review it.
+
+** from here **
+
+sh-sci: sh-sci can select bus_clk or module_clk
+
+SCIFA had used module_clk up to now though it used bus_clk.
+This patch modify this problem, and checked by SH7723/SH7722.
+
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ drivers/serial/sh-sci.c |   18 ++++++++++++++----
+ drivers/serial/sh-sci.h |    4 ++--
+ 2 files changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index dbf5357..dd60a1c 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -92,6 +92,11 @@ static void sci_stop_tx(struct uart_port *port);
+ static struct sci_port sci_ports[SCI_NPORTS];
+ static struct uart_driver sci_uart_driver;
+ 
++static inline const char *get_clk_source(struct sci_port *s)
++{
++	return (s->type = PORT_SCIFA) ? "bus_clk" : "module_clk";
++}
++
+ static inline struct sci_port *
+ to_sci_port(struct uart_port *uart)
+ {
+@@ -871,7 +876,7 @@ static int sci_startup(struct uart_port *port)
+ 		s->enable(port);
+ 
+ #ifdef CONFIG_HAVE_CLK
+-	s->clk = clk_get(NULL, "module_clk");
++	s->clk = clk_get(NULL, get_clk_source(s));
+ #endif
+ 
+ 	sci_request_irq(s);
+@@ -1059,7 +1064,8 @@ static void __init sci_init_ports(void)
+ 		 * XXX: We should use a proper SCI/SCIF clock
+ 		 */
+ 		{
+-			struct clk *clk = clk_get(NULL, "module_clk");
++			struct clk *clk = clk_get(NULL,
++						  get_clk_source(sci_ports+i));
+ 			sci_ports[i].port.uartclk = clk_get_rate(clk);
+ 			clk_put(clk);
+ 		}
+@@ -1147,8 +1153,12 @@ static int __init serial_console_setup(struct console *co, char *options)
+ 	port->type = serial_console_port->type;
+ 
+ #ifdef CONFIG_HAVE_CLK
+-	if (!serial_console_port->clk)
+-		serial_console_port->clk = clk_get(NULL, "module_clk");
++	if (!serial_console_port->clk) {
++		serial_console_port->clk +			clk_get(NULL, get_clk_source(serial_console_port));
++		serial_console_port->port.uartclk +			clk_get_rate(serial_console_port->clk);
++	}
+ #endif
+ 
+ 	if (port->flags & UPF_IOREMAP)
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index d0aa82d..5215b9d 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -761,9 +761,9 @@ static inline int sci_rxd_in(struct uart_port *port)
+ static inline int scbrr_calc(struct uart_port *port, int bps, int clk)
+ {
+ 	if (port->type = PORT_SCIF)
+-		return (clk+16*bps)/(32*bps)-1;
++		return (clk/(32*bps))-1;
+ 	else
+-		return ((clk*2)+16*bps)/(16*bps)-1;
++		return (clk/(16*bps))-1;
+ }
+ #define SCBRR_VALUE(bps, clk) scbrr_calc(port, bps, clk)
+ #elif defined(__H8300H__) || defined(__H8300S__)
+-- 
+1.5.6.3
 
