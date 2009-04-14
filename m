@@ -1,59 +1,79 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Tue, 14 Apr 2009 07:23:15 +0000
+From: Sam Ravnborg <sam@ravnborg.org>
+Date: Tue, 14 Apr 2009 07:38:50 +0000
 Subject: Re: [RFC][patch] filesystem: Vmufat filesystem, version 4
-Message-Id: <200904140323.19062.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart24798497.qPfQ16toom"
+Message-Id: <20090414073850.GA11577@uranus.ravnborg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1239654768.6542.10.camel@localhost.localdomain> <20090414070314.GB29075@linux-sh.org> <1239693375.6538.5.camel@localhost.localdomain>
-In-Reply-To: <1239693375.6538.5.camel@localhost.localdomain>
+References: <1239654768.6542.10.camel@localhost.localdomain>
+In-Reply-To: <1239654768.6542.10.camel@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Adrian McMenamin <adrian@newgolddream.dyndns.info>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>, Josef 'Jeff' Sipek <jeffpc@josefsipek.net>, Sam Ravnborg <sam@ravnborg.org>
+Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh <linux-sh@vger.kernel.org>
 
---nextPart24798497.qPfQ16toom
-Content-Type: text/plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+Hi Adrian.
 
-On Tuesday 14 April 2009 03:16:15 Adrian McMenamin wrote:
-> On Tue, 2009-04-14 at 16:03 +0900, Paul Mundt wrote:
-> > Everything about the on-disk format is tied to the VMU. Until that sinks
-> > in, don't bother sending me email, thanks.
->
-> No, everything in the file system is dependent on the specification. The
-> specification is not dependent on the hardware. Those are the facts.
+I see that most of the point raised in last round has been addressed.
+An incremental changelog would be nice during this RFC phase
+so we know what has been changed from one version to the next.
 
-i must be slow because i tend to agree with Adrian here.  if the VMU is a=20
-simple block device, then while the filesystem format may have been tailore=
-d=20
-to the exact hardware layout of the VMU, it doesnt mean that the resulting=
-=20
-filesystem spec will only work on that hardware.  then again, i didnt read =
-the=20
-entire source code from top to bottom ...
-=2Dmike
+> +/*
+> + * write out the date in bcd format
+> + * in the appropriate part of the 
+> + * directory entry
+> + */
+> +static unsigned long vmufat_save_bcd(char *bh, int z)
+> +{
+> +	unsigned char day, year, century, nl_day, month;
+> +	unsigned char u8year;
+> +	unsigned long unix_date = CURRENT_TIME.tv_sec;
+> +
+> +	day = unix_date / 86400 - 3652;
+> +	year = day / 365;
+> +
+> +	if ((year + 3) / 4 + 365 * year > day)
+> +		year--;
+> +
+> +	day -= (year + 3) / 4 + 365 * year;
+> +	if (day = 59 && !(year & 3)) {
+> +		nl_day = day;
+> +		month = 2;
+> +	} else {
+> +		nl_day = (year & 3) || day <= 59 ? day : day - 1;
+> +		for (month = 0; month < 12; month++)
+> +			if (day_n[month] > nl_day)
+> +				break;
+> +	}
+> +
+> +	century = 19;
+> +	if (year > 19)
+> +		century = 20;
+> +
+> +	bh[z + 0x10] = bin2bcd(century);
+> +	u8year = year + 80;
+> +	if (u8year > 99)
+> +		u8year = u8year - 100;
+> +
+> +	bh[z + 0x11] = bin2bcd(u8year);
+> +	bh[z + 0x12] = bin2bcd(month);
+> +	bh[z + 0x13] > +	    bin2bcd(day - day_n[month - 1] + 1);
+> +	bh[z + 0x14] > +	    bin2bcd((unix_date / 3600) % 24);
+> +	bh[z + 0x15] = bin2bcd((unix_date / 60) % 60);
+> +	bh[z + 0x16] = bin2bcd(unix_date % 60);
+> +	return unix_date;
+> +}
 
---nextPart24798497.qPfQ16toom
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+Can we get all these numbers replaced by a set of descriptive constants?
+You can then use the definition of the constants to more-or-less document
+the on-disk format.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.11 (GNU/Linux)
+You have it in several places - the above is just one of them.
 
-iQIcBAABAgAGBQJJ5DnmAAoJEEFjO5/oN/WBtDYQAI3zGHtHtrY44jtSHUzn6no4
-1EtSZvwJTcChf9dzguxlgsutfKg4QXHEcY7IHoFwx8LoGg84RiYpnsOMl1Wag5UG
-v3jA2xz9YTj0Vr6m6HuEEscWECww/VxlT+5p8WKBuPyL3maSoZMPrYXs9mJgBl1b
-HMc7X9KLMpOBs2lLzbJloYPWVO9O3SfrInzr7YnACVDvr/FKk6iGIFQ73dEhJrRN
-NrtQs9Qqp6RqNoJx0lPZ3Ry0HyAI0pGFch/60nIw5ZX7/K86YZn4y2XdYZDGt19F
-424XMdsoZ+8d5bQKOI50+aG/h5xr/Y9X2BzgxZJAOE5qJBzBvB/e0O1wLM3/1JrI
-5B+0QSSvi7XC0CJYW81D9gsC9SyCpFDvRnPAV8pjbN+NcTcfDtmQi89XmmnSqZqN
-Kfef5jbXBH6/oOo+cQr2eohsEL+6uXPUuA60ny32VtQvb4DMBHRPPFXZK5GoAo+E
-CpuZi8BrL7WG2Wl295+2KXVg4AGyieFSXeAxFOofnBw/h9ctdsHc4OSwk1jyC7Jm
-cWy24gd+I6tdWr73ghMxj96k2IAKvxYHvJvEwavEHUa99KKz7Ihf8setqlDMIsQj
-CKI/m9hxQ5MwRVIdPr89MmgbIAZs4WRCx/2rzY7BbdKmjPtw5+RGiR0dcofvza06
-rMll75elNXVGHV6+Lo9H
-=Itxl
------END PGP SIGNATURE-----
+I did not look into the rest of the filesystem this time,
+I may do so later.
 
---nextPart24798497.qPfQ16toom--
+Please ntoe that this part of the excercise is to make the filesystem
+ready to be reviewed by someone who knows how to write a filesystem.
+What I provide to you is only the janitorial level..
+
+	Sam
