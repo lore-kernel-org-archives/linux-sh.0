@@ -1,43 +1,29 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Tue, 14 Apr 2009 04:34:52 +0000
-Subject: [PATCH] sh-sci: fix SCBRR value calculation
-Message-Id: <ud4bf3jpm.wl%morimoto.kuninori@renesas.com>
+From: yoshii.takashi@gmail.com
+Date: Tue, 14 Apr 2009 05:37:08 +0000
+Subject: Re: [PATCH] sh-sci: fix SCBRR value calculation
+Message-Id: <20090414143708.0bc57473.yoshii.takashi@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <ud4bf3jpm.wl%morimoto.kuninori@renesas.com>
+In-Reply-To: <ud4bf3jpm.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Please don't omit that term, that is for "round to near" operation.
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
----
->> Iwamatsu-san
+round_to_near(clk/(32*bps)) -1
+--> round_to_zero(clk/(32*bps) + 0.5) -1
+--> (int)((clk+16*bps)/(32*bps)) -1
 
-Please check this patch to make sure it doesn't break any boards. 
-I checked this patch by AP325 (for SCIFA)
-and Diamond Head (for SCIF)
-It works well
-But I don't know about some strange Hitachi ULSI board with magical clock settings.
+> -		return (clk+16*bps)/(32*bps)-1;
+> +		return (clk/(32*bps)) - 1;
+Former one is correct.
 
- drivers/serial/sh-sci.h |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+> -		return ((clk*2)+16*bps)/(16*bps)-1;
+> +		return ((clk*2)/(16*bps)) - 1;
+Both incorrect? Perhaps,
+		return ((clk*2)+8*bps)/(16*bps) - 1;
 
-diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
-index d0aa82d..f8c0b87 100644
---- a/drivers/serial/sh-sci.h
-+++ b/drivers/serial/sh-sci.h
-@@ -761,9 +761,9 @@ static inline int sci_rxd_in(struct uart_port *port)
- static inline int scbrr_calc(struct uart_port *port, int bps, int clk)
- {
- 	if (port->type = PORT_SCIF)
--		return (clk+16*bps)/(32*bps)-1;
-+		return (clk/(32*bps)) - 1;
- 	else
--		return ((clk*2)+16*bps)/(16*bps)-1;
-+		return ((clk*2)/(16*bps)) - 1;
- }
- #define SCBRR_VALUE(bps, clk) scbrr_calc(port, bps, clk)
- #elif defined(__H8300H__) || defined(__H8300S__)
--- 
-1.5.6.3
-
+I don't have read 7723 HW manual, though.
+/yoshii
