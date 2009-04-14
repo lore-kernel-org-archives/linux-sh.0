@@ -1,31 +1,43 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 28 Apr 2009 09:14:28 +0000
-Subject: Re: [PATCH] clocksource: improve sh_cmt clocksource overflow handling
-Message-Id: <20090428091427.GA23203@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 14 Apr 2009 04:34:52 +0000
+Subject: [PATCH] sh-sci: fix SCBRR value calculation
+Message-Id: <ud4bf3jpm.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090428081754.16592.85760.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090428081754.16592.85760.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 28, 2009 at 05:17:54PM +0900, Magnus Damm wrote:
-> This patch improves the sh_cmt clocksource handling.
-> 
-> Currently the counter value is ignored in the case of
-> overflow. With this patch the overflow flag is read
-> before and after reading the counter, removing any
-> counter value and overflow flag mismatch issues.
 
-On Tue, Apr 28, 2009 at 05:19:50PM +0900, Magnus Damm wrote:
-> This patch moves the SuperH timer setup code from time_init()
-> to late_time_init(). Good things about this change:
->  - interrupts: they are enabled at late_time_init()
->  - mm: regular kmalloc() can be used at late_time_init()
-> 
-> Together with moving to late_time_init() this patch changes
-> the sh_cmt driver to always allocate with kmalloc(). This
-> simplifies the code a bit and also fixes section mismatches.
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+>> Iwamatsu-san
 
-Applied to the sh-2.6.31 queue.
+Please check this patch to make sure it doesn't break any boards. 
+I checked this patch by AP325 (for SCIFA)
+and Diamond Head (for SCIF)
+It works well
+But I don't know about some strange Hitachi ULSI board with magical clock settings.
+
+ drivers/serial/sh-sci.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index d0aa82d..f8c0b87 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -761,9 +761,9 @@ static inline int sci_rxd_in(struct uart_port *port)
+ static inline int scbrr_calc(struct uart_port *port, int bps, int clk)
+ {
+ 	if (port->type = PORT_SCIF)
+-		return (clk+16*bps)/(32*bps)-1;
++		return (clk/(32*bps)) - 1;
+ 	else
+-		return ((clk*2)+16*bps)/(16*bps)-1;
++		return ((clk*2)/(16*bps)) - 1;
+ }
+ #define SCBRR_VALUE(bps, clk) scbrr_calc(port, bps, clk)
+ #elif defined(__H8300H__) || defined(__H8300S__)
+-- 
+1.5.6.3
+
