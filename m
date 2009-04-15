@@ -1,71 +1,60 @@
-From: Tim Abbott <tabbott@MIT.EDU>
-Date: Thu, 30 Apr 2009 23:58:01 +0000
-Subject: [PATCH 5/7] sh: use new macros for .data.init_task.
-Message-Id: <1241135883-9766-6-git-send-email-tabbott@mit.edu>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Apr 2009 10:50:21 +0000
+Subject: [PATCH 03/05] sh: Add plat_early_device_setup()
+Message-Id: <20090415105021.29940.78289.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1241135883-9766-1-git-send-email-tabbott@mit.edu>
- <1241135883-9766-2-git-send-email-tabbott@mit.edu>
- <1241135883-9766-3-git-send-email-tabbott@mit.edu>
- <1241135883-9766-4-git-send-email-tabbott@mit.edu>
- <1241135883-9766-5-git-send-email-tabbott@mit.edu>
-In-Reply-To: <1241135883-9766-5-git-send-email-tabbott@mit.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sam Ravnborg <sam@ravnborg.org>
-Cc: Linux kernel mailing list <linux-kernel@vger.kernel.org>, Anders Kaseorg <andersk@MIT.EDU>, Waseem Daher <wdaher@MIT.EDU>, Denys Vlasenko <vda.linux@googlemail.com>, Jeff Arnold <jbarnold@MIT.EDU>, Paul Mundt <lethal@linux-sh.org>, Tim Abbott <tabbott@MIT.EDU>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Tim Abbott <tabbott@mit.edu>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+From: Magnus Damm <damm@igel.co.jp>
+
+Add a plat_early_device_setup() function to allow
+processor-specific code to register Early Platform Data.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/kernel/init_task.c      |    3 +--
- arch/sh/kernel/vmlinux_32.lds.S |    3 +--
- arch/sh/kernel/vmlinux_64.lds.S |    3 +--
- 3 files changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sh/kernel/init_task.c b/arch/sh/kernel/init_task.c
-index 80c35ff..9522d9a 100644
---- a/arch/sh/kernel/init_task.c
-+++ b/arch/sh/kernel/init_task.c
-@@ -20,8 +20,7 @@ EXPORT_SYMBOL(init_mm);
-  * way process stacks are handled. This is done by having a special
-  * "init_task" linker map entry..
-  */
--union thread_union init_thread_union
--	__attribute__((__section__(".data.init_task"))) +union thread_union init_thread_union __init_task_data  		{ INIT_THREAD_INFO(init_task) };
- 
- /*
-diff --git a/arch/sh/kernel/vmlinux_32.lds.S b/arch/sh/kernel/vmlinux_32.lds.S
-index eabb0bb..7a0f3c4 100644
---- a/arch/sh/kernel/vmlinux_32.lds.S
-+++ b/arch/sh/kernel/vmlinux_32.lds.S
-@@ -59,9 +59,8 @@ SECTIONS
- 	.uncached.data : { *(.uncached.data) }
- 	__uncached_end = .;
- 
--	. = ALIGN(THREAD_SIZE);
- 	.data : {			/* Data */
--		*(.data.init_task)
-+		INIT_TASK_DATA(THREAD_SIZE)
- 
- 		. = ALIGN(L1_CACHE_BYTES);
- 		*(.data.read_mostly)
-diff --git a/arch/sh/kernel/vmlinux_64.lds.S b/arch/sh/kernel/vmlinux_64.lds.S
-index e0e2e1b..5cd3e78 100644
---- a/arch/sh/kernel/vmlinux_64.lds.S
-+++ b/arch/sh/kernel/vmlinux_64.lds.S
-@@ -68,9 +68,8 @@ SECTIONS
- 	NOTES 
- 	RO_DATA(PAGE_SIZE)
- 
--	. = ALIGN(THREAD_SIZE);
- 	.data : C_PHYS(.data) {			/* Data */
--		*(.data.init_task)
-+		INIT_TASK_DATA(THREAD_SIZE)
- 
- 		. = ALIGN(L1_CACHE_BYTES);
- 		*(.data.read_mostly)
--- 
-1.6.2.1
+ arch/sh/include/asm/device.h |    2 ++
+ arch/sh/kernel/setup.c       |    7 +++++++
+ 2 files changed, 9 insertions(+)
 
+--- 0001/arch/sh/include/asm/device.h
++++ work/arch/sh/include/asm/device.h	2009-01-22 17:03:40.000000000 +0900
+@@ -10,3 +10,5 @@ struct platform_device;
+ int platform_resource_setup_memory(struct platform_device *pdev,
+ 				   char *name, unsigned long memsize);
+ 
++void plat_early_device_setup(void);
++
+--- 0001/arch/sh/kernel/setup.c
++++ work/arch/sh/kernel/setup.c	2009-01-22 17:06:39.000000000 +0900
+@@ -29,6 +29,7 @@
+ #include <linux/mmzone.h>
+ #include <linux/clk.h>
+ #include <linux/delay.h>
++#include <linux/platform_device.h>
+ #include <asm/uaccess.h>
+ #include <asm/io.h>
+ #include <asm/page.h>
+@@ -329,6 +330,10 @@ static int __init parse_elfcorehdr(char 
+ early_param("elfcorehdr", parse_elfcorehdr);
+ #endif
+ 
++void __init __attribute__ ((weak)) plat_early_device_setup(void)
++{
++}
++
+ void __init setup_arch(char **cmdline_p)
+ {
+ 	enable_mmu();
+@@ -382,6 +387,8 @@ void __init setup_arch(char **cmdline_p)
+ 
+ 	parse_early_param();
+ 
++	plat_early_device_setup();
++
+ 	sh_mv_setup();
+ 
+ 	/*
