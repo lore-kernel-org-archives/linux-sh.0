@@ -1,54 +1,38 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 16 Apr 2009 00:00:39 +0000
-Subject: Re: [PATCH 4/6] Add I2C support for SH7724
-Message-Id: <uws9lv55k.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Apr 2009 10:49:56 +0000
+Subject: [PATCH 00/05] Remaining earlytimer / Early Platform patches
+Message-Id: <20090415104956.29940.86548.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uy6u31ubd.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uy6u31ubd.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Remaining earlytimer / Early Platform patches:
 
-Dear Magnus
+[PATCH 01/05] clocksource: sh_cmt earlytimer support
+[PATCH 02/05] sh: arch earlytimer support
+[PATCH 03/05] sh: Add plat_early_device_setup()
+[PATCH 04/05] sh: Early Platform Data for SuperH Mobile
+[PATCH 05/05] sh: Let SH_TIMER_CMT select GENERIC_TIME
 
-Thank you for your comment
+This patchset contains all the outstanding earlytimer-specific patches
+for the SuperH architecture. earlytimer is implemented using sh_cmt as
+Early Platform Driver together with Early Platform Data for SuperH Mobile.
 
-> > +/* I2C */
-> > +static struct resource iic0_resources[] =3D {
-> > + =A0 =A0 =A0 [0] =3D {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "IIC0",
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0x04470000,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0x04470016 - 1,
->=20
-> Each SuperH Mobile I2C register is accessed using 8-bit read/write
-> operation, but all registers are 32-bit aligned. sh7724 does not seem
-> to be any exception. Please use ...0017 as end.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-I could understand thank you.
+ Needs driver-core.current/driver-core-early-platform-driver.patch from Greg
+ Tested on a sh7722 Migo-R board with 2.6.30-rc2.
 
-> > +static struct platform_device iic0_device =3D {
-> > + =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =3D "i2c-sh_mobile",
-> > + =A0 =A0 =A0 .id =A0 =A0 =A0 =A0 =A0 =A0 =3D 0, /* "i2c0" clock */
-> > + =A0 =A0 =A0 .num_resources =A0=3D ARRAY_SIZE(iic0_resources),
-> > + =A0 =A0 =A0 .resource =A0 =A0 =A0 =3D iic0_resources,
-> > +};
-> > +
-> > +static struct platform_device iic1_device =3D {
-> > + =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =3D "i2c-sh_mobile",
-> > + =A0 =A0 =A0 .id =A0 =A0 =A0 =A0 =A0 =A0 =3D 1, /* "i2c1" clock */
-> > + =A0 =A0 =A0 .num_resources =A0=3D ARRAY_SIZE(iic1_resources),
-> > + =A0 =A0 =A0 .resource =A0 =A0 =A0 =3D iic1_resources,
-> > +};
->=20
-> Why do you keep these structures together? Please put iic0_device
-> after iic0_resources.
-
-sorry. I will fix it.
-Thank you
-
-Best regards
---
-Kuninori Morimoto
-=20
+ arch/sh/Kconfig                        |    1 +
+ arch/sh/include/asm/device.h           |    2 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   10 ++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   10 ++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   10 ++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   10 ++++++++++
+ arch/sh/kernel/setup.c                 |    7 +++++++
+ arch/sh/kernel/time_32.c               |    9 +++++++++
+ drivers/clocksource/sh_cmt.c           |   18 ++++++++++++++++--
+ 9 files changed, 75 insertions(+), 2 deletions(-)
