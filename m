@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Fri, 10 Apr 2009 08:43:08 +0000
+Date: Wed, 15 Apr 2009 02:43:07 +0000
 Subject: [PATCH 6/6] Add VEU support for SH7724
-Message-Id: <uvdp71ub3.wl%morimoto.kuninori@renesas.com>
+Message-Id: <u8wm23adg.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <uvdp71ub3.wl%morimoto.kuninori@renesas.com>
+In-Reply-To: <uvdp71ub3.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
