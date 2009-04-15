@@ -1,49 +1,48 @@
-From: Michael Trimarchi <trimarchi@gandalf.sssup.it>
-Date: Thu, 23 Apr 2009 17:20:06 +0000
-Subject: Re: Sourcery G++ Lite 4.3-143 for SuperH GNU/Linux now available
-Message-Id: <49F0A346.4020007@gandalf.sssup.it>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Apr 2009 10:50:12 +0000
+Subject: [PATCH 02/05] sh: arch earlytimer support
+Message-Id: <20090415105012.29940.70431.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49F09D5A.4070102@codesourcery.com>
-In-Reply-To: <49F09D5A.4070102@codesourcery.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+From: Magnus Damm <damm@igel.co.jp>
 
-Michael Trimarchi wrote:
-> Hi
-> Andrew Stubbs wrote:
->> CodeSourcery is pleased to announce the availability of the initial 
->> Sourcery G++ Lite Edition release for SuperH processors.  This is 
->> available for download from:
->>
->>     http://www.codesourcery.com/sgpp/lite/superh
->>
->> Key features of this new toolchain:
->>
->> * Support for SH4A and SH4AL-DSP GNU/Linux.
->>
->> * Support for both little endian and big endian platforms. (SH4A only.)
->>
->> * Support for both GLIBC and UCLIBC.
->>
-> Maybe I miss somenthig what is exactly? I have and integrated 
-> enviroment that use sbox2
-> anjuta o sbox2 and eclipse, I can debug the target using gdbserver, 
-> gdb with anjuta or eclipse.
->
-> What are the feauture or I must download it?
->
-Sorry they are toolchains only. I was thinking that they was toolchains 
-and IDE...
+Extend the 32-bit SuperH timer code to register and probe
+the earlytimer class of Early Platform Drivers.
 
-Regards Michael
-> Michael
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+This registers the sh_cmt driver if compiled-in.
 
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/kernel/time_32.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- 0001/arch/sh/kernel/time_32.c
++++ work/arch/sh/kernel/time_32.c	2009-04-15 16:59:31.000000000 +0900
+@@ -17,6 +17,7 @@
+ #include <linux/sched.h>
+ #include <linux/clockchips.h>
+ #include <linux/mc146818rtc.h>	/* for rtc_lock */
++#include <linux/platform_device.h>
+ #include <linux/smp.h>
+ #include <asm/clock.h>
+ #include <asm/rtc.h>
+@@ -233,6 +234,14 @@ void __init time_init(void)
+ 	 * initialized for us.
+ 	 */
+ 	sys_timer = get_sys_timer();
++
++	/* Make sure all compiled-in early timers register themselves.
++	 * Run probe() for one "earlytimer" device.
++	 */
++	early_platform_driver_register_all("earlytimer");
++	if (early_platform_driver_probe("earlytimer", 1, 0))
++		return;
++
+ 	if (unlikely(!sys_timer))
+ 		panic("System timer missing.\n");
+ 
