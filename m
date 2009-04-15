@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 16 Apr 2009 04:16:07 +0000
-Subject: [PATCH 4/6 v2] Add I2C support for SH7724
-Message-Id: <uocuxutbs.wl%morimoto.kuninori@renesas.com>
+Date: Wed, 15 Apr 2009 02:42:47 +0000
+Subject: [PATCH 2/6] sh-sci: Add support SH7724 support
+Message-Id: <ueivu3ae0.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -11,75 +11,71 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
-v1 -> v2
+ drivers/serial/sh-sci.h |   23 ++++++++++++++++++++---
+ 1 files changed, 20 insertions(+), 3 deletions(-)
 
-o fixed end of address in iicX_resource.
-o iicX_device and iicX_resource order was changed.
-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   46 ++++++++++++++++++++++++++++++++
- 1 files changed, 46 insertions(+), 0 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index 471a736..a89a2bc 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -125,10 +125,56 @@ static struct platform_device usb0_device = {
- 	.resource	= usb0_host_resources,
- };
- 
-+/* I2C0 */
-+static struct resource iic0_resources[] = {
-+	[0] = {
-+		.name	= "IIC0",
-+		.start  = 0x04470000,
-+		.end    = 0x04470018 - 1,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 96,
-+		.end    = 99,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device iic0_device = {
-+	.name           = "i2c-sh_mobile",
-+	.id             = 0, /* "i2c0" clock */
-+	.num_resources  = ARRAY_SIZE(iic0_resources),
-+	.resource       = iic0_resources,
-+};
-+
-+/* I2C1 */
-+static struct resource iic1_resources[] = {
-+	[0] = {
-+		.name	= "IIC1",
-+		.start  = 0x04750000,
-+		.end    = 0x04750018 - 1,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 92,
-+		.end    = 95,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device iic1_device = {
-+	.name           = "i2c-sh_mobile",
-+	.id             = 1, /* "i2c1" clock */
-+	.num_resources  = ARRAY_SIZE(iic1_resources),
-+	.resource       = iic1_resources,
-+};
-+
- static struct platform_device *sh7724_devices[] __initdata = {
- 	&sci_device,
- 	&rtc_device,
- 	&usb0_device,
-+	&iic0_device,
-+	&iic1_device,
- };
- 
- #define UPONCR0		0xa40501d4
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index 5215b9d..c203d1f 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -91,6 +91,9 @@
+ # define SCSPTR5                0xa4050128
+ # define SCIF_ORER              0x0001  /* overrun error bit */
+ # define SCSCR_INIT(port)       0x0038  /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
++#elif defined(CONFIG_CPU_SUBTYPE_SH7724)
++# define SCIF_ORER              0x0001  /* overrun error bit */
++# define SCSCR_INIT(port)       0x0038  /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
+ #elif defined(CONFIG_CPU_SUBTYPE_SH4_202)
+ # define SCSPTR2 0xffe80020 /* 16 bit SCIF */
+ # define SCIF_ORER 0x0001   /* overrun error bit */
+@@ -361,7 +364,8 @@
+                  h8_sci_offset, h8_sci_size) \
+   CPU_SCI_FNS(name, h8_sci_offset, h8_sci_size)
+ #define SCIF_FNS(name, sh3_scif_offset, sh3_scif_size, sh4_scif_offset, sh4_scif_size)
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7723)
++#elif defined(CONFIG_CPU_SUBTYPE_SH7723) ||\
++      defined(CONFIG_CPU_SUBTYPE_SH7724)
+         #define SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size, sh4_scif_offset, sh4_scif_size) \
+                 CPU_SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size, sh4_scif_offset, sh4_scif_size)
+         #define SCIF_FNS(name, sh4_scif_offset, sh4_scif_size) \
+@@ -390,7 +394,8 @@ SCIF_FNS(SCFDR,  0x1c, 16)
+ SCIF_FNS(SCxTDR, 0x20,  8)
+ SCIF_FNS(SCxRDR, 0x24,  8)
+ SCIF_FNS(SCLSR,  0x24, 16)
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7723)
++#elif defined(CONFIG_CPU_SUBTYPE_SH7723) ||\
++      defined(CONFIG_CPU_SUBTYPE_SH7724)
+ SCIx_FNS(SCSMR,  0x00, 16, 0x00, 16)
+ SCIx_FNS(SCBRR,  0x04,  8, 0x04,  8)
+ SCIx_FNS(SCSCR,  0x08, 16, 0x08, 16)
+@@ -604,6 +609,17 @@ static inline int sci_rxd_in(struct uart_port *port)
+                 return ctrl_inb(SCSPTR5) & 0x0008 ? 1 : 0; /* SCIF5 */
+         return 1;
+ }
++#elif defined(CONFIG_CPU_SUBTYPE_SH7724)
++#  define SCFSR    0x0010
++#  define SCASSR   0x0014
++static inline int sci_rxd_in(struct uart_port *port)
++{
++	if (port->type = PORT_SCIF)
++		return ctrl_inw((port->mapbase + SCFSR))  & SCIF_BRK ? 1 : 0;
++	if (port->type = PORT_SCIFA)
++		return ctrl_inw((port->mapbase + SCASSR)) & SCIF_BRK ? 1 : 0;
++	return 1;
++}
+ #elif defined(CONFIG_CPU_SUBTYPE_SH5_101) || defined(CONFIG_CPU_SUBTYPE_SH5_103)
+ static inline int sci_rxd_in(struct uart_port *port)
+ {
+@@ -757,7 +773,8 @@ static inline int sci_rxd_in(struct uart_port *port)
+       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7721)
+ #define SCBRR_VALUE(bps, clk) (((clk*2)+16*bps)/(32*bps)-1)
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7723)
++#elif defined(CONFIG_CPU_SUBTYPE_SH7723) ||\
++      defined(CONFIG_CPU_SUBTYPE_SH7724)
+ static inline int scbrr_calc(struct uart_port *port, int bps, int clk)
+ {
+ 	if (port->type = PORT_SCIF)
 -- 
 1.5.6.3
 
