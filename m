@@ -1,31 +1,25 @@
-From: morimoto.kuninori@renesas.com
-Date: Wed, 15 Apr 2009 02:40:19 +0000
-Subject: [PATCH 0/6] Add support SH7724 CPU series
-Message-Id: <uhc0q3ai4.wl%morimoto.kuninori@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 16 Apr 2009 05:51:20 +0000
+Subject: Re: [PATCH 0/6] Add support SH7724 CPU series
+Message-Id: <20090416055120.GC26667@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <uhc0q3ai4.wl%morimoto.kuninori@renesas.com>
+In-Reply-To: <uhc0q3ai4.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-SH7724 CPU support patch series
-
-[PATCH 1/6] Add support for SH7724 CPU subtype
-[PATCH 2/6] sh-sci: Add support SH7724 support
-[PATCH 3/6] Add USB support for SH7724
-[PATCH 4/6] Add I2C support for SH7724
-[PATCH 5/6] Add VPU support for SH7724
-[PATCH 6/6] Add VEU support for SH7724
-
-1st patch change clock-sh7722.c with some #ifdef and macro.
-So, please check it carefully.
-
-These patches are based on Rev 0.11 manual.
-
-These patch series are tested by ms7724se board.
-But I can not send this board support patch.
-Because this is not W/W reference board.
-
-# I'm sorry about timestamps problem.
-# May be this time OK...
+On Wed, Apr 15, 2009 at 11:40:19AM +0900, morimoto.kuninori@renesas.com wrote:
+> SH7724 CPU support patch series
+> 
+> [PATCH 1/6] Add support for SH7724 CPU subtype
+> [PATCH 2/6] sh-sci: Add support SH7724 support
+> [PATCH 4/6 v2] Add I2C support for SH7724
+> [PATCH 5/6] Add VPU support for SH7724
+> [PATCH 6/6] Add VEU support for SH7724
+> 
+All of these have been added to the sh/shmobile-r2r-staging topic branch.
+Once you have the updated USB patches and the JPU support, I'll merge
+those on top of these. Once that stuff is settled, I will pull this in
+to the 2.6.31 queue.
