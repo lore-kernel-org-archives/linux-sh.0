@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 16 Apr 2009 02:46:08 +0000
+Date: Thu, 16 Apr 2009 02:46:18 +0000
 Subject: Re: [PATCH 3/6] Add USB support for SH7724
-Message-Id: <uskk9uxhr.wl%morimoto.kuninori@renesas.com>
+Message-Id: <ur5ztuxhh.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <uzlej1ubl.wl%morimoto.kuninori@renesas.com>
 In-Reply-To: <uzlej1ubl.wl%morimoto.kuninori@renesas.com>
