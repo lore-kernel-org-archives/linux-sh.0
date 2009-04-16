@@ -1,65 +1,85 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 01 Apr 2009 14:39:20 +0000
-Subject: [PATCH] sh_keysc: use enable/disable_irq_wake()
-Message-Id: <20090401143920.32738.82373.sendpatchset@rx1.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 16 Apr 2009 04:16:07 +0000
+Subject: [PATCH 4/6 v2] Add I2C support for SH7724
+Message-Id: <uocuxutbs.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
 
-Modify the sh_keysc driver to use enable/disable_irq_wake()
-during suspend and resume. These functions are used to enable
-the sh_keysc interrupt in the interrupt controller so the
-keypad can be used to wakeup the system from suspend.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+v1 -> v2
 
- Tested with wakeup disabled and enabled on a Migo-R board.
+o fixed end of address in iicX_resource.
+o iicX_device and iicX_resource order was changed.
 
- drivers/input/keyboard/sh_keysc.c |   17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   46 ++++++++++++++++++++++++++++++++
+ 1 files changed, 46 insertions(+), 0 deletions(-)
 
---- 0001/drivers/input/keyboard/sh_keysc.c
-+++ work/drivers/input/keyboard/sh_keysc.c	2009-04-01 22:55:59.000000000 +0900
-@@ -259,12 +259,15 @@ static int sh_keysc_suspend(struct devic
- {
- 	struct platform_device *pdev = to_platform_device(dev);
- 	struct sh_keysc_priv *priv = platform_get_drvdata(pdev);
-+	int irq = platform_get_irq(pdev, 0);
- 	unsigned short value;
- 
- 	value = ioread16(priv->iomem_base + KYCR1_OFFS);
- 
--	if (device_may_wakeup(dev))
-+	if (device_may_wakeup(dev)) {
- 		value |= 0x80;
-+		enable_irq_wake(irq);
-+	}
- 	else
- 		value &= ~0x80;
- 
-@@ -272,8 +275,20 @@ static int sh_keysc_suspend(struct devic
- 	return 0;
- }
- 
-+static int sh_keysc_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	int irq = platform_get_irq(pdev, 0);
-+
-+	if (device_may_wakeup(dev))
-+		disable_irq_wake(irq);
-+
-+	return 0;
-+}
-+
- static struct dev_pm_ops sh_keysc_dev_pm_ops = {
- 	.suspend = sh_keysc_suspend,
-+	.resume = sh_keysc_resume,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 471a736..a89a2bc 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -125,10 +125,56 @@ static struct platform_device usb0_device = {
+ 	.resource	= usb0_host_resources,
  };
  
- struct platform_driver sh_keysc_device_driver = {
++/* I2C0 */
++static struct resource iic0_resources[] = {
++	[0] = {
++		.name	= "IIC0",
++		.start  = 0x04470000,
++		.end    = 0x04470018 - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 96,
++		.end    = 99,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device iic0_device = {
++	.name           = "i2c-sh_mobile",
++	.id             = 0, /* "i2c0" clock */
++	.num_resources  = ARRAY_SIZE(iic0_resources),
++	.resource       = iic0_resources,
++};
++
++/* I2C1 */
++static struct resource iic1_resources[] = {
++	[0] = {
++		.name	= "IIC1",
++		.start  = 0x04750000,
++		.end    = 0x04750018 - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 92,
++		.end    = 95,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device iic1_device = {
++	.name           = "i2c-sh_mobile",
++	.id             = 1, /* "i2c1" clock */
++	.num_resources  = ARRAY_SIZE(iic1_resources),
++	.resource       = iic1_resources,
++};
++
+ static struct platform_device *sh7724_devices[] __initdata = {
+ 	&sci_device,
+ 	&rtc_device,
+ 	&usb0_device,
++	&iic0_device,
++	&iic1_device,
+ };
+ 
+ #define UPONCR0		0xa40501d4
+-- 
+1.5.6.3
+
