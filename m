@@ -1,37 +1,33 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 16 Apr 2009 02:46:18 +0000
+Date: Thu, 16 Apr 2009 04:26:40 +0000
 Subject: Re: [PATCH 3/6] Add USB support for SH7724
-Message-Id: <ur5ztuxhh.wl%morimoto.kuninori@renesas.com>
+Message-Id: <umyahusu7.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <uzlej1ubl.wl%morimoto.kuninori@renesas.com>
 In-Reply-To: <uzlej1ubl.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
 
-Dear all
+Dear Paul
 
-> >> Hm... In the future we want to control the above dynamically for
-> >> better power savings. I guess it's ok as-is for now.
-> > 
-> > Looking a bit in r8a66597.h, I wonder if USBPOWERON is similar to
-> > VBOUT that is present in DVSTCR on external devices?
-> 
-> I also think UPONCR register control port power. I think this register
-> differ from SH7786.
-> I will modify the r8a66597 driver and be able to control those registers
-> with r8a66597's ops. It's like a sh_mobile_lcdcfb's display_on function. :)
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0xa4d80000,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0xa4d800ff,
+>
+> Is D1FIFO included in this area? Shouldn't end be ..0123?
 
-Thank you shimoda-san.
-When your modification was applied,
-I will send patch to use it for SH7786/SH7724.
+Now I noticed that SH7724's USB (r8a66597) register mapping=20
+is different from other r8a66597.
 
-In my opinion, SH7724 needs .power_on function,
-and SH7786 needs .init function to r8a66597's ops.
+It mean r8a66597 driver need fix for SH7724.
+I will consult with shimoda-san about it
+
+Therefore, please ignore this patch this time.
+Sorry.
 
 Best regards
 --
 Kuninori Morimoto
- 
+=20
