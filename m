@@ -1,150 +1,114 @@
-From: Michael Trimarchi <trimarchi@gandalf.sssup.it>
-Date: Wed, 22 Apr 2009 11:33:53 +0000
-Subject: Re: [RFC patch] sci_tx_empty for scif serial device
-Message-Id: <49EF00A1.9080004@gandalf.sssup.it>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 17 Apr 2009 05:26:31 +0000
+Subject: [PATCH] clocksource: sh_cmt clocksource support
+Message-Id: <20090417052631.8114.81559.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090421120846.GA26186@gandalf.sssup.it>
-In-Reply-To: <20090421120846.GA26186@gandalf.sssup.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+From: Magnus Damm <damm@igel.co.jp>
 
-Michael Trimarchi wrote:
-> Hi,
->
-> Paul Mundt wrote:
->> On Tue, Apr 21, 2009 at 02:08:47PM +0200, Michael Trimarchi wrote:
->>  
->>> Add the sci_tx_empty function for scif serial device.
->>>
->>> Signed-off-by: Michael Trimarchi <trimarchi@gandalf.sssup.it>
->>> ---
->>> diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
->>> index dbf5357..6cea2c4 100644
->>> --- a/drivers/serial/sh-sci.c
->>> +++ b/drivers/serial/sh-sci.c
->>> @@ -794,6 +794,20 @@ static void sci_free_irq(struct sci_port *port)
->>>  
->>>  static unsigned int sci_tx_empty(struct uart_port *port)
->>>  {
->>> +    int txroom = SCIF_TXROOM_MAX;
->>> +
->>> +#if defined(CONFIG_CPU_SUBTYPE_SH7763)
->>> +    if (!(port->mapbase = 0xffe00000) &&
->>> +        !(port->mapbase = 0xffe08000)) {
->>> +        txroom = SCIF2_TXROOM_MAX)
->>> +    }
->>> +#endif
->>>     
->>
->> Uhm.. your version of gcc must be orders of magnitude more magical than
->> mine, as I see no way for this to compile :-)
->>   
-> Of course is wrong here, I don't try the SH7763 configuration. Sorry...
->>  
->>> +    if (port->type = PORT_SCIF) {
->>> +        if (scif_txroom(port) = txroom)
->>> +            return TIOCSER_TEMT;
->>> +        return 0;
->>> +    }
->>> +
->>>     
->> This looks ok anyways, is there some reason this can't be applied to
->> SH7763, too?
->>
->>   
-> Apart the compilation issue, the sh7763 has the SCIF2 port has a 
-> txroom different.
->
-> I would like to know if it is correct that the fifosize of serial 
-> device may equal to the
-> tx buffer size. In this case I can change the txroom and tx_empty 
-> using this info from
-> the port strucy for scif device. For the sci device I don't think that 
-> it is useful to read the tx status register to check if it's empty or 
-> full, maybe no.
->
-> Michael
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-Somenthing like this. It is just an example.
+Add clocksource support to the sh_cmt driver. With this in
+place we can do tickless with a single CMT channel.
 
-diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
-index dbf5357..50563af 100644
---- a/drivers/serial/sh-sci.c
-+++ b/drivers/serial/sh-sci.c
-@@ -283,13 +283,9 @@ static inline void sci_init_pins(struct uart_port 
-*port, unsigned int cflag)
- }
- #endif
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ This patch depends on the following -mm patches:
+  clocksource-add-enable-and-disable-callbacks.patch
+  clocksource-pass-clocksource-to-read-callback.patch
+
+ drivers/clocksource/sh_cmt.c |   66 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
+
+--- 0006/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2009-02-04 19:48:04.000000000 +0900
+@@ -47,6 +47,7 @@ struct sh_cmt_priv {
+ 	unsigned long rate;
+ 	spinlock_t lock;
+ 	struct clock_event_device ced;
++	struct clocksource cs;
+ 	unsigned long total_cycles;
+ };
  
--#if defined(CONFIG_CPU_SUBTYPE_SH7760) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7780) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7786)
- static inline int scif_txroom(struct uart_port *port)
- {
--    return SCIF_TXROOM_MAX - (sci_in(port, SCTFDR) & 0xff);
-+    return port->fifosize - (sci_in(port, SCTFDR) & 0xff);
+@@ -376,6 +377,68 @@ static void sh_cmt_stop(struct sh_cmt_pr
+ 	spin_unlock_irqrestore(&p->lock, flags);
  }
  
- static inline int scif_rxroom(struct uart_port *port)
-@@ -297,18 +293,6 @@ static inline int scif_rxroom(struct uart_port *port)
-     return sci_in(port, SCRFDR) & 0xff;
- }
- #elif defined(CONFIG_CPU_SUBTYPE_SH7763)
--static inline int scif_txroom(struct uart_port *port)
--{
--    if ((port->mapbase = 0xffe00000) ||
--        (port->mapbase = 0xffe08000)) {
--        /* SCIF0/1*/
--        return SCIF_TXROOM_MAX - (sci_in(port, SCTFDR) & 0xff);
--    } else {
--        /* SCIF2 */
--        return SCIF2_TXROOM_MAX - (sci_in(port, SCFDR) >> 8);
--    }
--}
--
- static inline int scif_rxroom(struct uart_port *port)
- {
-     if ((port->mapbase = 0xffe00000) ||
-@@ -321,10 +305,6 @@ static inline int scif_rxroom(struct uart_port *port)
-     }
- }
- #else
--static inline int scif_txroom(struct uart_port *port)
--{
--    return SCIF_TXROOM_MAX - (sci_in(port, SCFDR) >> 8);
--}
- 
- static inline int scif_rxroom(struct uart_port *port)
- {
-@@ -794,6 +774,12 @@ static void sci_free_irq(struct sci_port *port)
- 
- static unsigned int sci_tx_empty(struct uart_port *port)
- {
-+    if (port->type = PORT_SCIF) {
-+        if (scif_txroom(port) = port->fifosize)
-+            return TIOCSER_TEMT;
-+        return 0;
-+    }
++static struct sh_cmt_priv *cs_to_sh_cmt(struct clocksource *cs)
++{
++	return container_of(cs, struct sh_cmt_priv, cs);
++}
 +
-     /* Can't detect */
-     return TIOCSER_TEMT;
- }
-@@ -1255,6 +1241,7 @@ static int __devinit sci_probe(struct 
-platform_device *dev)
-         sciport->port.irq    = p->irqs[SCIx_TXI_IRQ];
-         sciport->port.flags    = p->flags;
-         sciport->port.dev    = &dev->dev;
-+        sciport->port.fifosize    = p->fifosize;
++static cycle_t sh_cmt_clocksource_read(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++	unsigned long flags, raw;
++	unsigned long value;
++	int has_wrapped;
++
++	spin_lock_irqsave(&p->lock, flags);
++	value = p->total_cycles;
++	raw = sh_cmt_get_counter(p, &has_wrapped);
++
++	if (unlikely(has_wrapped))
++		raw = p->match_value;
++	spin_unlock_irqrestore(&p->lock, flags);
++
++	return value + raw;
++}
++
++static int sh_cmt_clocksource_enable(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++	int ret;
++
++	p->total_cycles = 0;
++
++	ret = sh_cmt_start(p, FLAG_CLOCKSOURCE);
++	if (ret)
++		return ret;
++
++	/* TODO: calculate good shift from rate and counter bit width */
++	cs->shift = 0;
++	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
++	return 0;
++}
++
++static void sh_cmt_clocksource_disable(struct clocksource *cs)
++{
++	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
++}
++
++static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
++				       char *name, unsigned long rating)
++{
++	struct clocksource *cs = &p->cs;
++
++	cs->name = name;
++	cs->rating = rating;
++	cs->read = sh_cmt_clocksource_read;
++	cs->enable = sh_cmt_clocksource_enable;
++	cs->disable = sh_cmt_clocksource_disable;
++	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
++	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
++	pr_info("sh_cmt: %s used as clock source\n", cs->name);
++	clocksource_register(cs);
++	return 0;
++}
++
+ static struct sh_cmt_priv *ced_to_sh_cmt(struct clock_event_device *ced)
+ {
+ 	return container_of(ced, struct sh_cmt_priv, ced);
+@@ -484,6 +547,9 @@ int sh_cmt_register(struct sh_cmt_priv *
+ 	if (clockevent_rating)
+ 		sh_cmt_register_clockevent(p, name, clockevent_rating);
  
-         sciport->type        = sciport->port.type = p->type;
++	if (clocksource_rating)
++		sh_cmt_register_clocksource(p, name, clocksource_rating);
++
+ 	return 0;
+ }
  
