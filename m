@@ -1,7 +1,7 @@
-From: Michael Trimarchi <trimarchi@gandalf.sssup.it>
-Date: Mon, 20 Apr 2009 13:30:41 +0000
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Tue, 21 Apr 2009 07:17:32 +0000
 Subject: Re: [PATCH][RFC] sh: suspend interpreter V1
-Message-Id: <49EC7901.5030201@gandalf.sssup.it>
+Message-Id: <49ED730C.9050507@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090323091739.25647.6773.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090323091739.25647.6773.sendpatchset@rx1.opensource.se>
@@ -10,39 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Jean-Christophe PLAGNIOL-VILLARD wrote:
-> On 14:55 Mon 20 Apr     , Francesco VIRLINZI wrote:
+Hi Magnus
+> Can you disable power to certain parts of the SoC? Do you have
+> multiple power domains?
 >   
->> Jean-Christophe PLAGNIOL-VILLARD ha scritto:
->>     
->>> On 14:33 Mon 20 Apr     , Francesco VIRLINZI wrote:
->>>   
->>>       
->>>> Hi Jean
->>>>     
->>>>         
->>>>> Actually it will be nice to have it, I've this exact hardware design and wish
->>>>> to do it we on a 7105.
->>>>>
->>>>> Francesco do you have any patch or tree were we can take a look on it?
->>>>>         
->>>>>           
->>>> All the STLinux distribution (RPM and SRPM formats) is freely available @
->>>>     
->>>>         
->>> more precisely please
->>>   
->>>       
->> @
->> ftp://ftp.stlinux.com/pub/stlinux/2.3/SRPMS/
->>     
-> I mean the patch, git tree commit
+Not currently... It should be in the future.
+But hibernation on memory works with a 'power domain' board based 
+therefore it's easy to implement in the customer board.
+> Do you need functions for saving and restoring hardware state in
+> device drivers?
+For some IP it's required.
+>  I've been talking a bit about run time device power
+> management. Maybe that would be useful for you guys?
 >   
-maybe, they has an internal repository, so maybe the good question can 
-be, what are the
-affected files?
-> Best Regards,
-> J.
+What do you have in mind?
+Currently we release a kernel tool to leave the customer able to design 
+their our power profile.
+This means the system is moved from a profile to an other....
+
+A real runtime power management requires a support linux currently 
+doesn't have.
+
+Regards
+ Francesco
+> Cheers,
+>
+> / magnus
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
 > the body of a message to majordomo@vger.kernel.org
