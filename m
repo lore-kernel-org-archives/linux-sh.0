@@ -1,37 +1,31 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 01 Apr 2009 14:20:58 +0000
-Subject: [PATCH] sh_intc: install enable, disable and shutdown callbacks
-Message-Id: <20090401142058.32553.60588.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 21 Apr 2009 08:20:37 +0000
+Subject: [GIT PULL] sh updates for 2.6.30-rc3
+Message-Id: <20090421082036.GA15855@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+Please pull from:
 
-Modify the intc code to install a disable callback. The current
-solution without a disable callback results in use of the
-generic default_disable() function. This function is a no-op
-so suspend_device_irqs() will not disable any intc interrupts
-at suspend time without this patch. Also, install enable and
-shutdown callbacks while at it.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.30
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Which contains:
 
- drivers/sh/intc.c |    3 +++
- 1 file changed, 3 insertions(+)
+Paul Mundt (3):
+      rtc: rtc-sh: clock framework support.
+      sh: sh7722: Don't default enable the RTC clock.
+      sh: sh7723: Don't default enable the RTC clock.
 
---- 0001/drivers/sh/intc.c
-+++ work/drivers/sh/intc.c	2009-04-01 21:03:04.000000000 +0900
-@@ -707,6 +707,9 @@ void __init register_intc_controller(str
- 	d->chip.mask = intc_disable;
- 	d->chip.unmask = intc_enable;
- 	d->chip.mask_ack = intc_disable;
-+	d->chip.enable = intc_enable;
-+	d->chip.disable = intc_disable;
-+	d->chip.shutdown = intc_disable;
- 	d->chip.set_type = intc_set_sense;
- 
- #if defined(CONFIG_CPU_SH3) || defined(CONFIG_CPU_SH4A)
+Toshinobu Sugioka (1):
+      sh: Fix mmap2 for handling differing PAGE_SIZEs.
+
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    1 -
+ arch/sh/kernel/sys_sh.c                |    9 ++++
+ drivers/rtc/Kconfig                    |    2 +-
+ drivers/rtc/rtc-sh.c                   |   67 +++++++++++++++++++++++--------
+ 5 files changed, 59 insertions(+), 21 deletions(-)
