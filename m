@@ -1,41 +1,57 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 13 Apr 2009 21:02:29 +0000
-Subject: Re: [PATCH] ap325: use edge control for ov772x camera
-Message-Id: <20090413210229.GB14847@linux-sh.org>
+From: Roel Kluin <roel.kluin@gmail.com>
+Date: Thu, 23 Apr 2009 19:47:11 +0000
+Subject: [PATCH] SH-5: struct pt_regs:syscall_nr is unsigned.
+Message-Id: <49F0C5BF.4090207@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uprfhgibw.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uprfhgibw.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Apr 13, 2009 at 03:40:04PM +0900, Kuninori Morimoto wrote:
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
-> This patch is for Linux 2.6.30-rc1
-> 
->  arch/sh/boards/board-ap325rxa.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
-> index 912458f..39e4691 100644
-> --- a/arch/sh/boards/board-ap325rxa.c
-> +++ b/arch/sh/boards/board-ap325rxa.c
-> @@ -349,6 +349,7 @@ static int ov7725_power(struct device *dev, int mode)
->  static struct ov772x_camera_info ov7725_info = {
->  	.buswidth  = SOCAM_DATAWIDTH_8,
->  	.flags = OV772X_FLAG_VFLIP | OV772X_FLAG_HFLIP,
-> +	.edgectrl = OV772X_AUTO_EDGECTRL(0xf, 0),
->  	.link = {
->  		.power  = ov7725_power,
->  	},
+vi arch/sh/include/asm/ptrace.h +9
+And note that struct pt_regs:syscall_nr is unsigned.
 
-While I don't mind empty changelogs for obvious and trivial changes,
-things like this really want some explanation. I don't know if this fixes
-a regression, adds a new feature, what the impact is for different
-versions of the board, etc.
+So I think something like the patch below is required, isn't it? As an
+alternative to the patch below, syscall_nr could become signed. what is
+preferred?
+--------------------------->8-------------8<------------------------------
+In restore_sigcontext() syscall_nr is set to -1, but it is unsigned for
+SH-5.
 
-If a change is not immediately obvious from the description, you really
-want a changelog for it.
+Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
+---
+diff --git a/arch/sh/include/asm/syscall_64.h b/arch/sh/include/asm/syscall_64.h
+index c3561ca..291fc86 100644
+--- a/arch/sh/include/asm/syscall_64.h
++++ b/arch/sh/include/asm/syscall_64.h
+@@ -9,7 +9,7 @@
+ static inline long syscall_get_nr(struct task_struct *task,
+ 				  struct pt_regs *regs)
+ {
+-	return (regs->syscall_nr >= 0) ? regs->regs[9] : -1L;
++	return (regs->syscall_nr != -1) ? regs->regs[9] : -1L;
+ }
+ 
+ static inline void syscall_rollback(struct task_struct *task,
+diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
+index 0663a0e..b851141 100644
+--- a/arch/sh/kernel/signal_64.c
++++ b/arch/sh/kernel/signal_64.c
+@@ -51,7 +51,7 @@ static inline void
+ handle_syscall_restart(struct pt_regs *regs, struct sigaction *sa)
+ {
+ 	/* If we're not from a syscall, bail out */
+-	if (regs->syscall_nr < 0)
++	if (regs->syscall_nr = -1)
+ 		return;
+ 
+ 	/* check for system call restart.. */
+@@ -127,7 +127,7 @@ static int do_signal(struct pt_regs *regs, sigset_t *oldset)
+ 
+ no_signal:
+ 	/* Did we come from a system call? */
+-	if (regs->syscall_nr >= 0) {
++	if (regs->syscall_nr != -1) {
+ 		/* Restart the system call - no handlers present */
+ 		switch (regs->regs[REG_RET]) {
+ 		case -ERESTARTNOHAND:
