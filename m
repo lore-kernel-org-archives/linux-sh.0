@@ -1,40 +1,61 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 16 Apr 2009 05:23:41 +0000
-Subject: Re: [PATCH 05/05] sh: Let SH_TIMER_CMT select GENERIC_TIME
-Message-Id: <20090416052341.GB26667@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 28 Apr 2009 08:17:54 +0000
+Subject: [PATCH] clocksource: improve sh_cmt clocksource overflow handling
+Message-Id: <20090428081754.16592.85760.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090415105038.29940.67915.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090415105038.29940.67915.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Apr 15, 2009 at 07:50:38PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> Let SH_TIMER_CMT select GENERIC_TIME. This since GENERIC_TIME is
-> required to build the CMT driver. Without this patch the TMU driver
-> must be enabled for the CMT driver to build.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> ---
-> 
->  arch/sh/Kconfig |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> --- 0001/arch/sh/Kconfig
-> +++ work/arch/sh/Kconfig	2009-02-04 19:29:12.000000000 +0900
-> @@ -431,6 +431,7 @@ config SH_CMT
->  config SH_TIMER_CMT
->  	bool "CMT clockevents driver"
->  	depends on SYS_SUPPORTS_CMT && !SH_CMT
-> +	select GENERIC_TIME
->  	select GENERIC_CLOCKEVENTS
->  
-We can't do this yet, as the mtu2 sys_timer code is not GENERIC_TIME
-ready. So if one uses that in conjunction with SH_TIMER_CMT, it will blow
-up. Once the early platform stuff is merged and we can use the new CMT
-code for jiffies, then I will change the Kconfig bits around to prevent
-any sys_timer drivers being enabled, and at that point this can be
-applied.
+From: Magnus Damm <damm@igel.co.jp>
+
+This patch improves the sh_cmt clocksource handling.
+
+Currently the counter value is ignored in the case of
+overflow. With this patch the overflow flag is read
+before and after reading the counter, removing any
+counter value and overflow flag mismatch issues.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ drivers/clocksource/sh_cmt.c |   13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+--- 0001/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2009-04-28 16:03:20.000000000 +0900
+@@ -111,16 +111,21 @@ static unsigned long sh_cmt_get_counter(
+ 					int *has_wrapped)
+ {
+ 	unsigned long v1, v2, v3;
++	int o1, o2;
++
++	o1 = sh_cmt_read(p, CMCSR) & p->overflow_bit;
+ 
+ 	/* Make sure the timer value is stable. Stolen from acpi_pm.c */
+ 	do {
++		o2 = o1;
+ 		v1 = sh_cmt_read(p, CMCNT);
+ 		v2 = sh_cmt_read(p, CMCNT);
+ 		v3 = sh_cmt_read(p, CMCNT);
+-	} while (unlikely((v1 > v2 && v1 < v3) || (v2 > v3 && v2 < v1)
+-			  || (v3 > v1 && v3 < v2)));
++		o1 = sh_cmt_read(p, CMCSR) & p->overflow_bit;
++	} while (unlikely((o1 != o2) || (v1 > v2 && v1 < v3)
++			  || (v2 > v3 && v2 < v1) || (v3 > v1 && v3 < v2)));
+ 
+-	*has_wrapped = sh_cmt_read(p, CMCSR) & p->overflow_bit;
++	*has_wrapped = o1;
+ 	return v2;
+ }
+ 
+@@ -394,7 +399,7 @@ static cycle_t sh_cmt_clocksource_read(s
+ 	raw = sh_cmt_get_counter(p, &has_wrapped);
+ 
+ 	if (unlikely(has_wrapped))
+-		raw = p->match_value;
++		raw += p->match_value;
+ 	spin_unlock_irqrestore(&p->lock, flags);
+ 
+ 	return value + raw;
