@@ -1,40 +1,55 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Mon, 13 Apr 2009 06:40:04 +0000
-Subject: [PATCH v2] ap325: use edge control for ov772x camera
-Message-Id: <uljq42inq.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Apr 2009 14:50:37 +0000
+Subject: [PATCH] clocksource: sh_cmt 16-bit fixes
+Message-Id: <20090429145037.16210.25996.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
-Because of an influence of the lens,
-current ov772x camera on ap325 board display the part on the
-edge in strong white.
-This patch set edge control parameter to suppress it.
+This patch contains various fixes for 16-bit cmt hardware.
+With this applied periodic clockevents work fine on sh7203.
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
-v1 -> v2
 
-o add explanation
+ drivers/clocksource/sh_cmt.c |   12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
- arch/sh/boards/board-ap325rxa.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
-index 912458f..39e4691 100644
---- a/arch/sh/boards/board-ap325rxa.c
-+++ b/arch/sh/boards/board-ap325rxa.c
-@@ -349,6 +349,7 @@ static int ov7725_power(struct device *dev, int mode)
- static struct ov772x_camera_info ov7725_info = {
- 	.buswidth  = SOCAM_DATAWIDTH_8,
- 	.flags = OV772X_FLAG_VFLIP | OV772X_FLAG_HFLIP,
-+	.edgectrl = OV772X_AUTO_EDGECTRL(0xf, 0),
- 	.link = {
- 		.power  = ov7725_power,
- 	},
--- 
-1.5.6.3
-
+--- 0001/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2009-04-21 21:58:39.000000000 +0900
+@@ -153,16 +153,18 @@ static int sh_cmt_enable(struct sh_cmt_p
+ 		pr_err("sh_cmt: cannot enable clock \"%s\"\n", cfg->clk);
+ 		return ret;
+ 	}
+-	*rate = clk_get_rate(p->clk) / 8;
+ 
+ 	/* make sure channel is disabled */
+ 	sh_cmt_start_stop_ch(p, 0);
+ 
+ 	/* configure channel, periodic mode and maximum timeout */
+-	if (p->width = 16)
+-		sh_cmt_write(p, CMCSR, 0);
+-	else
++	if (p->width = 16) {
++		*rate = clk_get_rate(p->clk) / 512;
++		sh_cmt_write(p, CMCSR, 0x43);
++	} else {
++		*rate = clk_get_rate(p->clk) / 8;
+ 		sh_cmt_write(p, CMCSR, 0x01a4);
++	}
+ 
+ 	sh_cmt_write(p, CMCOR, 0xffffffff);
+ 	sh_cmt_write(p, CMCNT, 0);
+@@ -545,7 +547,7 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 	if (resource_size(res) = 6) {
+ 		p->width = 16;
+ 		p->overflow_bit = 0x80;
+-		p->clear_bits = ~0xc0;
++		p->clear_bits = ~0x80;
+ 	} else {
+ 		p->width = 32;
+ 		p->overflow_bit = 0x8000;
