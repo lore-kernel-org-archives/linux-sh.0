@@ -1,21 +1,67 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 14 Apr 2009 09:17:22 +0000
-Subject: Re: [PATCH 1/6] Add support for SH7724 CPU subtype
-Message-Id: <20090414091721.GA30402@linux-sh.org>
+From: Tim Abbott <tabbott@MIT.EDU>
+Date: Thu, 30 Apr 2009 23:58:02 +0000
+Subject: [PATCH 6/7] sh: use new macro for .data.read_mostly section.
+Message-Id: <1241135883-9766-7-git-send-email-tabbott@mit.edu>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1241135883-9766-1-git-send-email-tabbott@mit.edu>
+ <1241135883-9766-2-git-send-email-tabbott@mit.edu>
+ <1241135883-9766-3-git-send-email-tabbott@mit.edu>
+ <1241135883-9766-4-git-send-email-tabbott@mit.edu>
+ <1241135883-9766-5-git-send-email-tabbott@mit.edu>
+ <1241135883-9766-6-git-send-email-tabbott@mit.edu>
+In-Reply-To: <1241135883-9766-6-git-send-email-tabbott@mit.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sam Ravnborg <sam@ravnborg.org>
+Cc: Linux kernel mailing list <linux-kernel@vger.kernel.org>, Anders Kaseorg <andersk@MIT.EDU>, Waseem Daher <wdaher@MIT.EDU>, Denys Vlasenko <vda.linux@googlemail.com>, Jeff Arnold <jbarnold@MIT.EDU>, Paul Mundt <lethal@linux-sh.org>, Tim Abbott <tabbott@MIT.EDU>, linux-sh@vger.kernel.org
 
-On Tue, Apr 14, 2009 at 05:14:39PM +0900, Kuninori Morimoto wrote:
-> This adds preliminary support for the SH7724 CPU subtype.
-> This patch is based on Rev 0.11 manual
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Signed-off-by: Tim Abbott <tabbott@mit.edu>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/vmlinux_32.lds.S |    5 +----
+ arch/sh/kernel/vmlinux_64.lds.S |    5 +----
+ 2 files changed, 2 insertions(+), 8 deletions(-)
 
-Please resend this patch series with the timestamps corrected and
-properly nested. They are not only completely out of order, but do not
-nest at all. Even if you just have a 0/6 mail that summarizes the patch
-set and all of the other patches nest under that, it makes it a lot
-easier to figure out where things are supposed to go.
+diff --git a/arch/sh/kernel/vmlinux_32.lds.S b/arch/sh/kernel/vmlinux_32.lds.S
+index 7a0f3c4..de80e50 100644
+--- a/arch/sh/kernel/vmlinux_32.lds.S
++++ b/arch/sh/kernel/vmlinux_32.lds.S
+@@ -61,13 +61,10 @@ SECTIONS
+ 
+ 	.data : {			/* Data */
+ 		INIT_TASK_DATA(THREAD_SIZE)
+-
+-		. = ALIGN(L1_CACHE_BYTES);
+-		*(.data.read_mostly)
+-
+ 		PAGE_ALIGNED_DATA
+ 		NOSAVE_DATA
+ 		CACHELINE_ALIGNED_DATA(L1_CACHE_BYTES)
++		READ_MOSTLY_DATA(L1_CACHE_BYTES)
+ 		DATA_DATA
+ 		CONSTRUCTORS
+ 	}
+diff --git a/arch/sh/kernel/vmlinux_64.lds.S b/arch/sh/kernel/vmlinux_64.lds.S
+index 5cd3e78..72e856b 100644
+--- a/arch/sh/kernel/vmlinux_64.lds.S
++++ b/arch/sh/kernel/vmlinux_64.lds.S
+@@ -70,13 +70,10 @@ SECTIONS
+ 
+ 	.data : C_PHYS(.data) {			/* Data */
+ 		INIT_TASK_DATA(THREAD_SIZE)
+-
+-		. = ALIGN(L1_CACHE_BYTES);
+-		*(.data.read_mostly)
+-
+ 		PAGE_ALIGNED_DATA
+ 		NOSAVE_DATA
+ 		CACHELINE_ALIGNED_DATA(L1_CACHE_BYTES)
++		READ_MOSTLY_DATA(L1_CACHE_BYTES)
+ 		DATA_DATA
+ 		CONSTRUCTORS
+ 	}
+-- 
+1.6.2.1
+
