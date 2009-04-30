@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 30 Apr 2009 07:02:49 +0000
-Subject: [PATCH] clocksource: SuperH MTU2 Timer driver
-Message-Id: <20090430070249.26541.47890.sendpatchset@rx1.opensource.se>
+Date: Thu, 30 Apr 2009 07:12:09 +0000
+Subject: [PATCH] sh: remove old MTU2 driver
+Message-Id: <20090430071209.26643.61045.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,433 +10,282 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds a MTU2 driver for the SuperH architecture.
+This patch removes the old MTU2 driver (CONFIG_SH_MTU2/timer-mtu2.c)
 
-The MTU2 driver is a platform driver with early platform
-support to allow using a MTU2 channel as only clockevent
-during system bootup.
+As replacement, select the sh_cmt driver with CONFIG_SH_TIMER_MTU2
+and configure timer channel using platform data.
 
-Clocksource on sh2a is currently unsupported due to code
-generation issues with 64-bit math, so at this point only
-periodic clockevent support is in place.
+If multiple MTU channels are enabled using platform data, use the
+earlytimer parameter on the kernel command line to select channel.
+For instance, use "earlytimer=sh_mtu2.0" to select the first channel.
+
+To verify which timer is being used, look at printouts or the timer
+irq count in /proc/interrupts.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Tested on a rsk7203 board with a sh7203 processor.
+ arch/sh/Kconfig                    |    9 -
+ arch/sh/include/asm/timer.h        |    2 
+ arch/sh/kernel/timers/Makefile     |    1 
+ arch/sh/kernel/timers/timer-mtu2.c |  202 ------------------------------------
+ arch/sh/kernel/timers/timer.c      |    3 
+ 5 files changed, 2 insertions(+), 215 deletions(-)
 
- arch/sh/Kconfig               |   11 +
- drivers/clocksource/Makefile  |    1 
- drivers/clocksource/sh_mtu2.c |  357 +++++++++++++++++++++++++++++++++++++++++
- include/linux/sh_mtu2.h       |   12 +
- 4 files changed, 381 insertions(+)
-
---- 0007/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2009-04-29 23:11:09.000000000 +0900
-@@ -113,6 +113,9 @@ config SYS_SUPPORTS_PCI
- config SYS_SUPPORTS_CMT
- 	bool
- 
-+config SYS_SUPPORTS_MTU2
-+	bool
-+
- config STACKTRACE_SUPPORT
- 	def_bool y
- 
-@@ -478,6 +481,14 @@ config SH_MTU2
+--- 0009/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2009-04-29 23:15:10.000000000 +0900
+@@ -478,16 +478,9 @@ config SH_TIMER_CMT
  	help
- 	  This enables the use of the MTU2 as the system timer.
+ 	  This enables build of the CMT timer driver.
  
-+config SH_TIMER_MTU2
-+	bool "MTU2 timer driver"
-+	depends on SYS_SUPPORTS_MTU2 && !SH_MTU2
-+	default y
-+	select GENERIC_CLOCKEVENTS
-+	help
-+	  This enables build of the MTU2 timer driver.
-+
- config SH_TIMER_IRQ
- 	int
- 	default "28" if CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785 || \
---- 0001/drivers/clocksource/Makefile
-+++ work/drivers/clocksource/Makefile	2009-04-29 23:11:09.000000000 +0900
-@@ -3,3 +3,4 @@ obj-$(CONFIG_X86_CYCLONE_TIMER)	+= cyclo
- obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
- obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
- obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
-+obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
---- /dev/null
-+++ work/drivers/clocksource/sh_mtu2.c	2009-04-29 23:11:48.000000000 +0900
-@@ -0,0 +1,357 @@
-+/*
-+ * SuperH Timer Support - MTU2
-+ *
-+ *  Copyright (C) 2009 Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+#include <linux/spinlock.h>
-+#include <linux/interrupt.h>
-+#include <linux/ioport.h>
-+#include <linux/delay.h>
-+#include <linux/io.h>
-+#include <linux/clk.h>
-+#include <linux/irq.h>
-+#include <linux/err.h>
-+#include <linux/clockchips.h>
-+#include <linux/sh_mtu2.h>
-+
-+struct sh_mtu2_priv {
-+	void __iomem *mapbase;
-+	struct clk *clk;
-+	struct irqaction irqaction;
-+	struct platform_device *pdev;
-+	unsigned long rate;
-+	unsigned long periodic;
-+	struct clock_event_device ced;
-+};
-+
-+static DEFINE_SPINLOCK(sh_mtu2_lock);
-+
-+#define TSTR -1 /* shared register */
-+#define TCR  0 /* channel register */
-+#define TMDR 1 /* channel register */
-+#define TIOR 2 /* channel register */
-+#define TIER 3 /* channel register */
-+#define TSR  4 /* channel register */
-+#define TCNT 5 /* channel register */
-+#define TGR  6 /* channel register */
-+
-+static unsigned long mtu2_reg_offs[] = {
-+	[TCR] = 0,
-+	[TMDR] = 1,
-+	[TIOR] = 2,
-+	[TIER] = 4,
-+	[TSR] = 5,
-+	[TCNT] = 6,
-+	[TGR] = 8,
-+};
-+
-+static inline unsigned long sh_mtu2_read(struct sh_mtu2_priv *p, int reg_nr)
-+{
-+	struct sh_mtu2_config *cfg = p->pdev->dev.platform_data;
-+	void __iomem *base = p->mapbase;
-+	unsigned long offs;
-+
-+	if (reg_nr = TSTR)
-+		return ioread8(base + cfg->channel_offset);
-+
-+	offs = mtu2_reg_offs[reg_nr];
-+
-+	if ((reg_nr = TCNT) || (reg_nr = TGR))
-+		return ioread16(base + offs);
-+	else
-+		return ioread8(base + offs);
-+}
-+
-+static inline void sh_mtu2_write(struct sh_mtu2_priv *p, int reg_nr,
-+				unsigned long value)
-+{
-+	struct sh_mtu2_config *cfg = p->pdev->dev.platform_data;
-+	void __iomem *base = p->mapbase;
-+	unsigned long offs;
-+
-+	if (reg_nr = TSTR) {
-+		iowrite8(value, base + cfg->channel_offset);
-+		return;
-+	}
-+
-+	offs = mtu2_reg_offs[reg_nr];
-+
-+	if ((reg_nr = TCNT) || (reg_nr = TGR))
-+		iowrite16(value, base + offs);
-+	else
-+		iowrite8(value, base + offs);
-+}
-+
-+static void sh_mtu2_start_stop_ch(struct sh_mtu2_priv *p, int start)
-+{
-+	struct sh_mtu2_config *cfg = p->pdev->dev.platform_data;
-+	unsigned long flags, value;
-+
-+	/* start stop register shared by multiple timer channels */
-+	spin_lock_irqsave(&sh_mtu2_lock, flags);
-+	value = sh_mtu2_read(p, TSTR);
-+
-+	if (start)
-+		value |= 1 << cfg->timer_bit;
-+	else
-+		value &= ~(1 << cfg->timer_bit);
-+
-+	sh_mtu2_write(p, TSTR, value);
-+	spin_unlock_irqrestore(&sh_mtu2_lock, flags);
-+}
-+
-+static int sh_mtu2_enable(struct sh_mtu2_priv *p)
-+{
-+	struct sh_mtu2_config *cfg = p->pdev->dev.platform_data;
-+	int ret;
-+
-+	/* enable clock */
-+	ret = clk_enable(p->clk);
-+	if (ret) {
-+		pr_err("sh_mtu2: cannot enable clock \"%s\"\n", cfg->clk);
-+		return ret;
-+	}
-+
-+	/* make sure channel is disabled */
-+	sh_mtu2_start_stop_ch(p, 0);
-+
-+	p->rate = clk_get_rate(p->clk) / 64;
-+	p->periodic = (p->rate + HZ/2) / HZ;
-+
-+	/* "Periodic Counter Operation" */
-+	sh_mtu2_write(p, TCR, 0x23); /* TGRA clear, divide clock by 64 */
-+	sh_mtu2_write(p, TIOR, 0);
-+	sh_mtu2_write(p, TGR, p->periodic);
-+	sh_mtu2_write(p, TCNT, 0);
-+	sh_mtu2_write(p, TMDR, 0);
-+	sh_mtu2_write(p, TIER, 0x01);
-+
-+	/* enable channel */
-+	sh_mtu2_start_stop_ch(p, 1);
-+
-+	return 0;
-+}
-+
-+static void sh_mtu2_disable(struct sh_mtu2_priv *p)
-+{
-+	/* disable channel */
-+	sh_mtu2_start_stop_ch(p, 0);
-+
-+	/* stop clock */
-+	clk_disable(p->clk);
-+}
-+
-+static irqreturn_t sh_mtu2_interrupt(int irq, void *dev_id)
-+{
-+	struct sh_mtu2_priv *p = dev_id;
-+
-+	/* acknowledge interrupt */
-+	sh_mtu2_read(p, TSR);
-+	sh_mtu2_write(p, TSR, 0xfe);
-+
-+	/* notify clockevent layer */
-+	p->ced.event_handler(&p->ced);
-+	return IRQ_HANDLED;
-+}
-+
-+static struct sh_mtu2_priv *ced_to_sh_mtu2(struct clock_event_device *ced)
-+{
-+	return container_of(ced, struct sh_mtu2_priv, ced);
-+}
-+
-+static void sh_mtu2_clock_event_mode(enum clock_event_mode mode,
-+				    struct clock_event_device *ced)
-+{
-+	struct sh_mtu2_priv *p = ced_to_sh_mtu2(ced);
-+	int disabled = 0;
-+
-+	/* deal with old setting first */
-+	switch (ced->mode) {
-+	case CLOCK_EVT_MODE_PERIODIC:
-+		sh_mtu2_disable(p);
-+		disabled = 1;
-+		break;
-+	default:
-+		break;
-+	}
-+
-+	switch (mode) {
-+	case CLOCK_EVT_MODE_PERIODIC:
-+		pr_info("sh_mtu2: %s used for periodic clock events\n",
-+			ced->name);
-+		sh_mtu2_enable(p);
-+		break;
-+	case CLOCK_EVT_MODE_UNUSED:
-+		if (!disabled)
-+			sh_mtu2_disable(p);
-+		break;
-+	case CLOCK_EVT_MODE_SHUTDOWN:
-+	default:
-+		break;
-+	}
-+}
-+
-+static void sh_mtu2_register_clockevent(struct sh_mtu2_priv *p,
-+				       char *name, unsigned long rating)
-+{
-+	struct clock_event_device *ced = &p->ced;
-+	int ret;
-+
-+	memset(ced, 0, sizeof(*ced));
-+
-+	ced->name = name;
-+	ced->features = CLOCK_EVT_FEAT_PERIODIC;
-+	ced->rating = rating;
-+	ced->cpumask = cpumask_of(0);
-+	ced->set_mode = sh_mtu2_clock_event_mode;
-+
-+	ret = setup_irq(p->irqaction.irq, &p->irqaction);
-+	if (ret) {
-+		pr_err("sh_mtu2: failed to request irq %d\n",
-+		       p->irqaction.irq);
-+		return;
-+	}
-+
-+	pr_info("sh_mtu2: %s used for clock events\n", ced->name);
-+	clockevents_register_device(ced);
-+}
-+
-+int sh_mtu2_register(struct sh_mtu2_priv *p, char *name,
-+		     unsigned long clockevent_rating)
-+{
-+	if (clockevent_rating)
-+		sh_mtu2_register_clockevent(p, name, clockevent_rating);
-+
-+	return 0;
-+}
-+
-+static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
-+{
-+	struct sh_mtu2_config *cfg = pdev->dev.platform_data;
-+	struct resource *res;
-+	int irq, ret;
-+	ret = -ENXIO;
-+
-+	memset(p, 0, sizeof(*p));
-+	p->pdev = pdev;
-+
-+	if (!cfg) {
-+		dev_err(&p->pdev->dev, "missing platform data\n");
-+		goto err0;
-+	}
-+
-+	platform_set_drvdata(pdev, p);
-+
-+	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
-+	if (!res) {
-+		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
-+		goto err0;
-+	}
-+
-+	irq = platform_get_irq(p->pdev, 0);
-+	if (irq < 0) {
-+		dev_err(&p->pdev->dev, "failed to get irq\n");
-+		goto err0;
-+	}
-+
-+	/* map memory, let mapbase point to our channel */
-+	p->mapbase = ioremap_nocache(res->start, resource_size(res));
-+	if (p->mapbase = NULL) {
-+		pr_err("sh_mtu2: failed to remap I/O memory\n");
-+		goto err0;
-+	}
-+
-+	/* setup data for setup_irq() (too early for request_irq()) */
-+	p->irqaction.name = cfg->name;
-+	p->irqaction.handler = sh_mtu2_interrupt;
-+	p->irqaction.dev_id = p;
-+	p->irqaction.irq = irq;
-+	p->irqaction.flags = IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL;
-+	p->irqaction.mask = CPU_MASK_NONE;
-+
-+	/* get hold of clock */
-+	p->clk = clk_get(&p->pdev->dev, cfg->clk);
-+	if (IS_ERR(p->clk)) {
-+		pr_err("sh_mtu2: cannot get clock \"%s\"\n", cfg->clk);
-+		ret = PTR_ERR(p->clk);
-+		goto err1;
-+	}
-+
-+	return sh_mtu2_register(p, cfg->name, cfg->clockevent_rating);
-+ err1:
-+	iounmap(p->mapbase);
-+ err0:
-+	return ret;
-+}
-+
-+static int __devinit sh_mtu2_probe(struct platform_device *pdev)
-+{
-+	struct sh_mtu2_priv *p = platform_get_drvdata(pdev);
-+	struct sh_mtu2_config *cfg = pdev->dev.platform_data;
-+	int ret;
-+
-+	if (p) {
-+		pr_info("sh_mtu2: %s kept as earlytimer\n", cfg->name);
-+		return 0;
-+	}
-+
-+	p = kmalloc(sizeof(*p), GFP_KERNEL);
-+	if (p = NULL) {
-+		dev_err(&pdev->dev, "failed to allocate driver data\n");
-+		return -ENOMEM;
-+	}
-+
-+	ret = sh_mtu2_setup(p, pdev);
-+	if (ret) {
-+		kfree(p);
-+		platform_set_drvdata(pdev, NULL);
-+	}
-+	return ret;
-+}
-+
-+static int __devexit sh_mtu2_remove(struct platform_device *pdev)
-+{
-+	return -EBUSY; /* cannot unregister clockevent */
-+}
-+
-+static struct platform_driver sh_mtu2_device_driver = {
-+	.probe		= sh_mtu2_probe,
-+	.remove		= __devexit_p(sh_mtu2_remove),
-+	.driver		= {
-+		.name	= "sh_mtu2",
-+	}
-+};
-+
-+static int __init sh_mtu2_init(void)
-+{
-+	return platform_driver_register(&sh_mtu2_device_driver);
-+}
-+
-+static void __exit sh_mtu2_exit(void)
-+{
-+	platform_driver_unregister(&sh_mtu2_device_driver);
-+}
-+
-+early_platform_init("earlytimer", &sh_mtu2_device_driver);
-+module_init(sh_mtu2_init);
-+module_exit(sh_mtu2_exit);
-+
-+MODULE_AUTHOR("Magnus Damm");
-+MODULE_DESCRIPTION("SuperH MTU2 Timer Driver");
-+MODULE_LICENSE("GPL v2");
---- /dev/null
-+++ work/include/linux/sh_mtu2.h	2009-04-29 23:11:09.000000000 +0900
-@@ -0,0 +1,12 @@
-+#ifndef __SH_MTU2_H__
-+#define __SH_MTU2_H__
-+
-+struct sh_mtu2_config {
-+	char *name;
-+	int channel_offset;
-+	int timer_bit;
-+	char *clk;
-+	unsigned long clockevent_rating;
-+};
-+
-+#endif /* __SH_MTU2_H__ */
+-config SH_MTU2
+-	bool "MTU2 timer support"
+-	depends on CPU_SH2A && !GENERIC_TIME
+-	default y
+-	help
+-	  This enables the use of the MTU2 as the system timer.
+-
+ config SH_TIMER_MTU2
+ 	bool "MTU2 timer driver"
+-	depends on SYS_SUPPORTS_MTU2 && !SH_MTU2
++	depends on SYS_SUPPORTS_MTU2
+ 	default y
+ 	select GENERIC_CLOCKEVENTS
+ 	help
+--- 0007/arch/sh/include/asm/timer.h
++++ work/arch/sh/include/asm/timer.h	2009-04-29 23:15:59.000000000 +0900
+@@ -23,7 +23,7 @@ struct sys_timer {
+ 
+ #define TICK_SIZE (tick_nsec / 1000)
+ 
+-extern struct sys_timer tmu_timer, mtu2_timer;
++extern struct sys_timer tmu_timer;
+ extern struct sys_timer *sys_timer;
+ 
+ #ifndef CONFIG_GENERIC_TIME
+--- 0007/arch/sh/kernel/timers/Makefile
++++ work/arch/sh/kernel/timers/Makefile	2009-04-29 23:15:31.000000000 +0900
+@@ -5,6 +5,5 @@
+ obj-y	:= timer.o
+ 
+ obj-$(CONFIG_SH_TMU)		+= timer-tmu.o
+-obj-$(CONFIG_SH_MTU2)		+= timer-mtu2.o
+ 
+ obj-$(CONFIG_GENERIC_CLOCKEVENTS_BROADCAST)	+= timer-broadcast.o
+--- 0001/arch/sh/kernel/timers/timer-mtu2.c
++++ /dev/null	2009-04-29 10:17:59.254032074 +0900
+@@ -1,202 +0,0 @@
+-/*
+- * arch/sh/kernel/timers/timer-mtu2.c - MTU2 Timer Support
+- *
+- *  Copyright (C) 2005  Paul Mundt
+- *
+- * Based off of arch/sh/kernel/timers/timer-tmu.c
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-#include <linux/init.h>
+-#include <linux/kernel.h>
+-#include <linux/interrupt.h>
+-#include <linux/seqlock.h>
+-#include <asm/timer.h>
+-#include <asm/io.h>
+-#include <asm/irq.h>
+-#include <asm/clock.h>
+-
+-/*
+- * We use channel 1 for our lowly system timer. Channel 2 would be the other
+- * likely candidate, but we leave it alone as it has higher divisors that
+- * would be of more use to other more interesting applications.
+- *
+- * TODO: Presently we only implement a 16-bit single-channel system timer.
+- * However, we can implement channel cascade if we go the overflow route and
+- * get away with using 2 MTU2 channels as a 32-bit timer.
+- */
+-#define MTU2_TSTR	0xfffe4280
+-#define MTU2_TCR_1	0xfffe4380
+-#define MTU2_TMDR_1	0xfffe4381
+-#define MTU2_TIOR_1	0xfffe4382
+-#define MTU2_TIER_1	0xfffe4384
+-#define MTU2_TSR_1	0xfffe4385
+-#define MTU2_TCNT_1	0xfffe4386	/* 16-bit counter */
+-
+-#if defined(CONFIG_CPU_SUBTYPE_SH7201) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7203)
+-#define MTU2_TGRA_1	0xfffe4388
+-#else
+-#define MTU2_TGRA_1	0xfffe438a
+-#endif
+-
+-#define STBCR3		0xfffe0408
+-
+-#define MTU2_TSTR_CST1	(1 << 1)	/* Counter Start 1 */
+-
+-#define MTU2_TSR_TGFA	(1 << 0)	/* GRA compare match */
+-
+-#define MTU2_TIER_TGIEA	(1 << 0)	/* GRA compare match  interrupt enable */
+-
+-#define MTU2_TCR_INIT	0x22
+-
+-#define MTU2_TCR_CALIB  0x00
+-
+-static unsigned long mtu2_timer_get_offset(void)
+-{
+-	int count;
+-	static int count_p = 0x7fff;	/* for the first call after boot */
+-	static unsigned long jiffies_p = 0;
+-
+-	/*
+-	 * cache volatile jiffies temporarily; we have IRQs turned off.
+-	 */
+-	unsigned long jiffies_t;
+-
+-	/* timer count may underflow right here */
+-	count = ctrl_inw(MTU2_TCNT_1);	/* read the latched count */
+-
+-	jiffies_t = jiffies;
+-
+-	/*
+-	 * avoiding timer inconsistencies (they are rare, but they happen)...
+-	 * there is one kind of problem that must be avoided here:
+-	 *  1. the timer counter underflows
+-	 */
+-
+-	if (jiffies_t = jiffies_p) {
+-		if (count > count_p) {
+-			if (ctrl_inb(MTU2_TSR_1) & MTU2_TSR_TGFA) {
+-				count -= LATCH;
+-			} else {
+-				printk("%s (): hardware timer problem?\n",
+-				       __func__);
+-			}
+-		}
+-	} else
+-		jiffies_p = jiffies_t;
+-
+-	count_p = count;
+-
+-	count = ((LATCH-1) - count) * TICK_SIZE;
+-	count = (count + LATCH/2) / LATCH;
+-
+-	return count;
+-}
+-
+-static irqreturn_t mtu2_timer_interrupt(int irq, void *dev_id)
+-{
+-	unsigned long timer_status;
+-
+-	/* Clear TGFA bit */
+-	timer_status = ctrl_inb(MTU2_TSR_1);
+-	timer_status &= ~MTU2_TSR_TGFA;
+-	ctrl_outb(timer_status, MTU2_TSR_1);
+-
+-	/* Do timer tick */
+-	handle_timer_tick();
+-
+-	return IRQ_HANDLED;
+-}
+-
+-static struct irqaction mtu2_irq = {
+-	.name		= "timer",
+-	.handler	= mtu2_timer_interrupt,
+-	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
+-};
+-
+-static unsigned int divisors[] = { 1, 4, 16, 64, 1, 1, 256 };
+-
+-static void mtu2_clk_init(struct clk *clk)
+-{
+-	u8 idx = MTU2_TCR_INIT & 0x7;
+-
+-	clk->rate = clk->parent->rate / divisors[idx];
+-	/* Start TCNT counting */
+-	ctrl_outb(ctrl_inb(MTU2_TSTR) | MTU2_TSTR_CST1, MTU2_TSTR);
+-
+-}
+-
+-static void mtu2_clk_recalc(struct clk *clk)
+-{
+-	u8 idx = ctrl_inb(MTU2_TCR_1) & 0x7;
+-	clk->rate = clk->parent->rate / divisors[idx];
+-}
+-
+-static struct clk_ops mtu2_clk_ops = {
+-	.init		= mtu2_clk_init,
+-	.recalc		= mtu2_clk_recalc,
+-};
+-
+-static struct clk mtu2_clk1 = {
+-	.name		= "mtu2_clk1",
+-	.ops		= &mtu2_clk_ops,
+-};
+-
+-static int mtu2_timer_start(void)
+-{
+-	ctrl_outb(ctrl_inb(MTU2_TSTR) | MTU2_TSTR_CST1, MTU2_TSTR);
+-	return 0;
+-}
+-
+-static int mtu2_timer_stop(void)
+-{
+-	ctrl_outb(ctrl_inb(MTU2_TSTR) & ~MTU2_TSTR_CST1, MTU2_TSTR);
+-	return 0;
+-}
+-
+-static int mtu2_timer_init(void)
+-{
+-	unsigned long interval;
+-
+-	setup_irq(CONFIG_SH_TIMER_IRQ, &mtu2_irq);
+-
+-	mtu2_clk1.parent = clk_get(NULL, "module_clk");
+-
+-	ctrl_outb(ctrl_inb(STBCR3) & (~0x20), STBCR3);
+-
+-	/* Normal operation */
+-	ctrl_outb(0, MTU2_TMDR_1);
+-	ctrl_outb(MTU2_TCR_INIT, MTU2_TCR_1);
+-	ctrl_outb(0x01, MTU2_TIOR_1);
+-
+-	/* Enable underflow interrupt */
+-	ctrl_outb(ctrl_inb(MTU2_TIER_1) | MTU2_TIER_TGIEA, MTU2_TIER_1);
+-
+-	interval = CONFIG_SH_PCLK_FREQ / 16 / HZ;
+-	printk(KERN_INFO "Interval = %ld\n", interval);
+-
+-	ctrl_outw(interval, MTU2_TGRA_1);
+-	ctrl_outw(0, MTU2_TCNT_1);
+-
+-	clk_register(&mtu2_clk1);
+-	clk_enable(&mtu2_clk1);
+-
+-	return 0;
+-}
+-
+-struct sys_timer_ops mtu2_timer_ops = {
+-	.init		= mtu2_timer_init,
+-	.start		= mtu2_timer_start,
+-	.stop		= mtu2_timer_stop,
+-#ifndef CONFIG_GENERIC_TIME
+-	.get_offset	= mtu2_timer_get_offset,
+-#endif
+-};
+-
+-struct sys_timer mtu2_timer = {
+-	.name	= "mtu2",
+-	.ops	= &mtu2_timer_ops,
+-};
+--- 0007/arch/sh/kernel/timers/timer.c
++++ work/arch/sh/kernel/timers/timer.c	2009-04-29 23:15:40.000000000 +0900
+@@ -17,9 +17,6 @@ static struct sys_timer *sys_timers[] = 
+ #ifdef CONFIG_SH_TMU
+ 	&tmu_timer,
+ #endif
+-#ifdef CONFIG_SH_MTU2
+-	&mtu2_timer,
+-#endif
+ 	NULL,
+ };
+ 
