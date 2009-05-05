@@ -1,7 +1,7 @@
 From: Manuel Lauss <mano@roarinelk.homelinux.net>
-Date: Mon, 04 May 2009 15:43:15 +0000
+Date: Tue, 05 May 2009 05:44:48 +0000
 Subject: Re: 2.6.30-rc4-git: timer-related oops
-Message-Id: <20090504154315.GB28519@roarinelk.homelinux.net>
+Message-Id: <20090505054448.GA1709@roarinelk.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090504091430.GA30660@linux-sh.org>
 In-Reply-To: <20090504091430.GA30660@linux-sh.org>
@@ -29,8 +29,12 @@ On Mon, May 04, 2009 at 11:41:38PM +0900, Paul Mundt wrote:
 > on most configurations, with ample space to spare. Have you tried turning
 > on stack usage reporting to see where it is all going?
 
-Good point, I'll get on it first thing tomorrow.
+There are no warnings regarding stack overflows, and all in-kernel stack
+users have plenty (>P%) stack space left.  
+
+The _real_ culprit is actually CONFIG_IRQSTACKS=y; 4k stacks on its own is
+fine, but with irqstacks enabled the kernel blows up with random oopses as
+soon as it goes on to start the init process.
 
 Thanks!
 	Manuel Lauss
-
