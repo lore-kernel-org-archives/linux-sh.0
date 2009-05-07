@@ -1,46 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 08 May 2009 14:51:04 +0000
-Subject: Re: [PATCH] sh-sci h8300 fix
-Message-Id: <20090508145104.GA14068@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 07 May 2009 10:17:44 +0000
+Subject: [PATCH] sh: sh7785 early scif fix
+Message-Id: <20090507101744.31631.58621.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y6tlcrww.wl%ysato@users.sourceforge.jp>
-In-Reply-To: <87y6tlcrww.wl%ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 28, 2009 at 04:46:09PM -0400, Yoshinori Sato wrote:
-> At Tue, 28 Apr 2009 15:46:22 +0900,
-> Paul Mundt wrote:
-> > 
-> > On Tue, Apr 28, 2009 at 12:40:15AM -0400, Yoshinori Sato wrote:
-> > > - Dummy SCIF functions define.
-> > 
-> > Why? The generic ones should work fine for you.
-> 
-> SCI don't have SCFCR, SCFDR and SCLSR register.
-> So use dummy r/w functions.
-> 
-> 
-> > 
-> > > - h8300 specific header include.
-> > > 
-> > I guess this one we have to live with. Do you have any plans to convert
-> > the H8300 GPIO API to GENERIC_GPIO?
-> 
-> Yes.
-> But not working now.
-> 
-> > Also, I note that h8300 does not register an sh-sci platform driver
-> > anywhere. How exactly are you using this driver?
-> 
-> It's already fixed.
-> 
-Ok, applied.
+From: Magnus Damm <damm@igel.co.jp>
 
-I would also like to get rid of the HAVE_CLK ifdefs within the driver and
-simply depend on the clock framework outright. It would be nice if h8300
-could implement a trivial clock framework implementation to feed sh-sci
-the uart clock definitions, then we can clean up a lot of the current
-mess..
+This patch moves the SH4 case of EARLY_SCIF_CONSOLE_PORT
+so the SH7785 default value gets used. Without this patch
+the value for SH7785 is set to 0xffe80000.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/Kconfig.debug |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/sh/Kconfig.debug
++++ work/arch/sh/Kconfig.debug	2009-05-07 17:47:37.000000000 +0900
+@@ -38,10 +38,10 @@ config EARLY_SCIF_CONSOLE_PORT
+ 	default "0xffe00000" if CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7763 || \
+ 				CPU_SUBTYPE_SH7722 || CPU_SUBTYPE_SH7366 || \
+ 				CPU_SUBTYPE_SH7343
+-	default "0xffe80000" if CPU_SH4
+ 	default "0xffea0000" if CPU_SUBTYPE_SH7785
+ 	default "0xfffe8000" if CPU_SUBTYPE_SH7203
+ 	default "0xfffe9800" if CPU_SUBTYPE_SH7206 || CPU_SUBTYPE_SH7263
++	default "0xffe80000" if CPU_SH4
+ 	default "0x00000000"
+ 
+ config EARLY_PRINTK
