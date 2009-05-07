@@ -1,50 +1,46 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 29 May 2009 05:10:53 +0000
-Subject: Re: [PATCH 02/04] Driver Core: Add idle and wakeup functions
-Message-Id: <aec7e5c30905282210h23f0edc0vad4e29dd52c2e99c@mail.gmail.com>
+Date: Thu, 07 May 2009 10:31:39 +0000
+Subject: [PATCH] sh: call clock framework init() callback once
+Message-Id: <20090507103139.31790.67489.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090527100642.29671.52231.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090527100642.29671.52231.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2009/5/29 Rafael J. Wysocki <rjw@sisk.pl>:
-> On Wednesday 27 May 2009, Magnus Damm wrote:
->> From: Magnus Damm <damm@igel.co.jp>
->>
->> Add platform_device_idle() and platform_device_wakeup()
->> and allow architectures to implement their own versions
->> of these if CONFIG_HAVE_PLATFORM_IDLE_WAKEUP is set.
->>
->> Signed-off-by: Magnus Damm <damm@igel.co.jp>
->> ---
->>
->> =A0Yes, this needs documentation. See [00/04] for now.
->>
->> =A0arch/Kconfig =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0| =A0 =A03 +++
->> =A0include/linux/platform_device.h | =A0 =A08 ++++++++
->> =A02 files changed, 11 insertions(+)
->>
->> --- 0002/arch/Kconfig
->> +++ work/arch/Kconfig 2009-05-26 12:31:06.000000000 +0900
->> @@ -115,3 +115,6 @@ config HAVE_DEFAULT_NO_SPIN_MUTEXES
->>
->> =A0config HAVE_PLATFORM_DEVICE_ARCHDATA
->> =A0 =A0 =A0 bool
->> +
->> +config HAVE_PLATFORM_DEVICE_IDLE_WAKEUP
->
-> Again, I'm not sure if the new CONFIG_ option is really necessary.
+From: Magnus Damm <damm@igel.co.jp>
 
-At least it could be combined into a single option for platform device
-runtime pm. So no need to have separate kconfig options for [02/04]
-and [03/04].
+Make sure that clk->ops->init() only gets called once in
+the case of CLK_ALWAYS_ENABLED. Without this patch the
+init() callback may be called multiple times.
 
-We could also drop the #ifdef stuff and go for weak symbols that can
-be overriden by architecture code.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-I'm open to suggestions. =3D)
+ arch/sh/kernel/cpu/clock.c |    9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-/ magnus
+--- 0001/arch/sh/kernel/cpu/clock.c
++++ work/arch/sh/kernel/cpu/clock.c	2009-05-07 15:00:52.000000000 +0900
+@@ -99,15 +99,18 @@ static int __clk_enable(struct clk *clk)
+ 	 * changes and the clock needs to hunt for the proper set of
+ 	 * divisors to use before it can effectively recalc.
+ 	 */
++
++	if (clk->flags & CLK_ALWAYS_ENABLED) {
++		kref_get(&clk->kref);
++		return 0;
++	}
++
+ 	if (unlikely(atomic_read(&clk->kref.refcount) = 1))
+ 		if (clk->ops && clk->ops->init)
+ 			clk->ops->init(clk);
+ 
+ 	kref_get(&clk->kref);
+ 
+-	if (clk->flags & CLK_ALWAYS_ENABLED)
+-		return 0;
+-
+ 	if (likely(clk->ops && clk->ops->enable))
+ 		clk->ops->enable(clk);
+ 
