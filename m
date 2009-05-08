@@ -1,40 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 May 2009 11:18:44 +0000
-Subject: Re: [PATCH] video: add sh_mobile_lcdcfb memory resource
-Message-Id: <aec7e5c30905120418l1c7027e2y1ff8ebf3752f682a@mail.gmail.com>
+From: Peter Griffin <pgriffin@mpc-data.co.uk>
+Date: Fri, 08 May 2009 14:50:54 +0000
+Subject: [PATCH] Add ptrace support for NOMMU debugging
+Message-Id: <1241794254.16311.32.camel@quercus-bis>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090512095745.25477.87326.sendpatchset@rx1.opensource.se>
-	 <20090512105013.GA20500@linux-sh.org>
-In-Reply-To: <20090512105013.GA20500@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-fbdev-devel@lists.sourceforge.net
+To: linux-sh@vger.kernel.org
 
-On Tue, May 12, 2009 at 7:50 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Tue, May 12, 2009 at 06:57:45PM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@igel.co.jp>
->>
->> This patch adds memory resource support to the LCDC driver.
->> With this applied the physical memory range used for framebuffer
->> data will show up in /proc/iomem together with other SuperH
->> Mobile devices.
->>
->> Signed-off-by: Magnus Damm <damm@igel.co.jp>
->
-> Drivers have no place doing this on their own, besides, insert_resource()
-> is not available to modules. The platform device code already takes care
-> of this, so perhaps I am missing what the point of this change is?
+From 2652ec6503dbe78e5bf371b77544e168166aa57d Mon Sep 17 00:00:00 2001
+From: Peter Griffin <pgriffin@mpc-data.co.uk>
+Date: Fri, 8 May 2009 15:01:21 +0100
+Subject: [PATCH] Add ptrace support for NOMMU debugging
 
-Other SuperH Mobile multimedia blocks like the CEU and VEU/VPU/JPU all
-get passed a physically contiguous area of memory as platform data. So
-for those blocks the memory range show up in /proc/iomem. For the LCDC
-this does not happen today.
 
-Thanks for pointing out the module issue. I guess the proper fix would
-be to pass a struct resource with memory to the LCDC driver as well
-instead of this patch.
+Signed-off-by: Peter Griffin <pgriffin@mpc-data.co.uk>
+---
+ arch/sh/kernel/ptrace_32.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
-Cheeers,
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index f7b22dd..28aa86f 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -33,6 +33,7 @@
+ #include <asm/mmu_context.h>
+ #include <asm/syscalls.h>
+ #include <asm/fpu.h>
++#include <asm/asm-offsets.h>
+ 
+ /*
+  * This routine will get a word off of the process kernel stack.
+@@ -334,6 +335,14 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 					[(addr - (long)&dummy->fpu) >> 2];
+ 		} else if (addr = (long) &dummy->u_fpvalid)
+ 			tmp = !!tsk_used_math(child);
++		else if ( addr = PT_TEXT_ADDR)
++			tmp = child->mm->start_code;
++		else if ( addr = PT_DATA_ADDR)
++			tmp = child->mm->start_data;
++		else if ( addr = PT_TEXT_END_ADDR )
++			tmp = child->mm->end_code;
++		else if ( addr = PT_TEXT_LEN )
++			tmp = child->mm->end_code - child->mm->start_code;
+ 		else
+ 			tmp = 0;
+ 		ret = put_user(tmp, datap);
+-- 
+1.5.6.3
 
-/ magnus
+
+
