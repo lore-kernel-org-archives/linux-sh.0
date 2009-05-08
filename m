@@ -1,36 +1,31 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 07 May 2009 10:17:44 +0000
-Subject: [PATCH] sh: sh7785 early scif fix
-Message-Id: <20090507101744.31631.58621.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 08 May 2009 02:39:12 +0000
+Subject: Re: [PATCH] sh: sh7785 early scif fix
+Message-Id: <20090508023911.GB26125@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090507101744.31631.58621.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090507101744.31631.58621.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Thu, May 07, 2009 at 07:17:44PM +0900, Magnus Damm wrote:
+> This patch moves the SH4 case of EARLY_SCIF_CONSOLE_PORT
+> so the SH7785 default value gets used. Without this patch
+> the value for SH7785 is set to 0xffe80000.
 
-This patch moves the SH4 case of EARLY_SCIF_CONSOLE_PORT
-so the SH7785 default value gets used. Without this patch
-the value for SH7785 is set to 0xffe80000.
+On Thu, May 07, 2009 at 07:31:39PM +0900, Magnus Damm wrote:
+> Make sure that clk->ops->init() only gets called once in
+> the case of CLK_ALWAYS_ENABLED. Without this patch the
+> init() callback may be called multiple times.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Thu, May 07, 2009 at 07:44:55PM +0900, Magnus Damm wrote:
+> Update the r7785 highlander defconfig to fix
+> PCLK value and that mode4 is set high.
 
- arch/sh/Kconfig.debug |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Thu, May 07, 2009 at 07:55:37PM +0900, Magnus Damm wrote:
+> This patch adds TMU platform data for sh7785. Both clockevent
+> and clocksource support is enabled.
 
---- 0001/arch/sh/Kconfig.debug
-+++ work/arch/sh/Kconfig.debug	2009-05-07 17:47:37.000000000 +0900
-@@ -38,10 +38,10 @@ config EARLY_SCIF_CONSOLE_PORT
- 	default "0xffe00000" if CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7763 || \
- 				CPU_SUBTYPE_SH7722 || CPU_SUBTYPE_SH7366 || \
- 				CPU_SUBTYPE_SH7343
--	default "0xffe80000" if CPU_SH4
- 	default "0xffea0000" if CPU_SUBTYPE_SH7785
- 	default "0xfffe8000" if CPU_SUBTYPE_SH7203
- 	default "0xfffe9800" if CPU_SUBTYPE_SH7206 || CPU_SUBTYPE_SH7263
-+	default "0xffe80000" if CPU_SH4
- 	default "0x00000000"
- 
- config EARLY_PRINTK
+I've applied these, thanks.
