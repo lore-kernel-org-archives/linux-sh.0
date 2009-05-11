@@ -1,25 +1,40 @@
-From: Luca Santini <luca.santini@spesonline.com>
-Date: Mon, 04 May 2009 14:29:01 +0000
-Subject: changing bus clock frequency (sh7760)
-Message-Id: <49FEFBAD.8010102@spesonline.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 11 May 2009 08:49:45 +0000
+Subject: [PATCH] sh: clean vsyscall files
+Message-Id: <20090511084945.32420.29345.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi all,
-is there a fast-and-simple way to change the system bus frequency clock? (i want, say, a 33Mhz system freq instead 66Mhz )
-i tried tweaking SH_PCLK_FREQ but it seems bus freq remains the same; only peripherals are screwed up (i.e. uart baudrate) :(
+From: Magnus Damm <damm@igel.co.jp>
 
--- 
-*Luca  Santini*
-//Elettronica di Sistema//
+Fix so vsyscall-trapa.so and vsyscall.lds get
+removed with a make distclean.
 
-*SPES. S.c.p.a*
-Via  Lamberto Corsi, 43   
-60044 Fabriano (AN)
-tel. +39 0732 25291 diretto 0732 25451
-fax +39 0732 2529441
-luca.santini@spesonline.com <mailto:luca.santini@spesonline.com>
-www.spesonline.com <http://www.spesonline.com>
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/Makefile                 |    1 +
+ arch/sh/kernel/vsyscall/Makefile |    2 ++
+ 2 files changed, 3 insertions(+)
+
+--- 0001/arch/sh/Makefile
++++ work/arch/sh/Makefile	2009-05-11 13:58:05.000000000 +0900
+@@ -204,6 +204,7 @@ archprepare: maketools
+ 
+ archclean:
+ 	$(Q)$(MAKE) $(clean)=$(boot)
++	$(Q)$(MAKE) $(clean)=arch/sh/kernel/vsyscall
+ 
+ define archhelp
+ 	@echo '* zImage 	           - Compressed kernel image'
+--- 0001/arch/sh/kernel/vsyscall/Makefile
++++ work/arch/sh/kernel/vsyscall/Makefile	2009-05-11 13:59:04.000000000 +0900
+@@ -34,3 +34,5 @@ SYSCFLAGS_vsyscall-syms.o = -r
+ $(obj)/vsyscall-syms.o: $(src)/vsyscall.lds \
+ 			$(obj)/vsyscall-trapa.o $(obj)/vsyscall-note.o FORCE
+ 	$(call if_changed,syscall)
++
++MRPROPER_FILES += $(obj)/vsyscall-trapa.so $(obj)/vsyscall.lds
