@@ -1,8 +1,10 @@
 From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Mon, 11 May 2009 16:20:12 +0000
-Subject: [PATCH] sh: clkfw: Added the .set_rate_ex callback in the clock operation
-Message-Id: <1242058812-18864-1-git-send-email-francesco.virlinzi@st.com>
+Date: Mon, 11 May 2009 16:34:13 +0000
+Subject: [PATCH] sh: clkfw: Added the .set_rate_ex callback in the clock operation [v2]
+Message-Id: <1242059653-21681-1-git-send-email-francesco.virlinzi@st.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1242058812-18864-1-git-send-email-francesco.virlinzi@st.com>
+In-Reply-To: <1242058812-18864-1-git-send-email-francesco.virlinzi@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,10 +16,10 @@ clk_set_rate() operation and the operation under clk_set_rate_ex().
 Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
 ---
  arch/sh/include/asm/clock.h            |    3 ++-
- arch/sh/kernel/cpu/clock.c             |   19 ++++++++++++++++---
+ arch/sh/kernel/cpu/clock.c             |   22 +++++++++++++++++-----
  arch/sh/kernel/cpu/sh4/clock-sh4-202.c |    5 ++---
  arch/sh/kernel/cpu/sh4a/clock-sh7722.c |    9 ++++-----
- 4 files changed, 24 insertions(+), 12 deletions(-)
+ 4 files changed, 25 insertions(+), 14 deletions(-)
 
 diff --git a/arch/sh/include/asm/clock.h b/arch/sh/include/asm/clock.h
 index b1f2919..ba9114b 100644
@@ -34,7 +36,7 @@ index b1f2919..ba9114b 100644
  	long (*round_rate)(struct clk *clk, unsigned long rate);
  };
 diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
-index 133dbe4..f97a0c6 100644
+index 133dbe4..b2791ee 100644
 --- a/arch/sh/kernel/cpu/clock.c
 +++ b/arch/sh/kernel/cpu/clock.c
 @@ -211,7 +211,20 @@ EXPORT_SYMBOL_GPL(clk_get_rate);
@@ -44,15 +46,15 @@ index 133dbe4..f97a0c6 100644
 -	return clk_set_rate_ex(clk, rate, 0);
 +	int ret = -EOPNOTSUPP;
 +
-+	if (likely(clk->ops && clk->ops->set_rate)) 
++	if (likely(clk->ops && clk->ops->set_rate)) {
 +		unsigned long flags;
 +
 +		spin_lock_irqsave(&clock_lock, flags);
-+		ret = clk->ops->set_rate_ex(clk, rate);
++		ret = clk->ops->set_rate(clk, rate);
 +		spin_unlock_irqrestore(&clock_lock, flags);
 +	}
 +
-+	if (unlikely(clk->flags & CLK_RATE_PROPAGATES)){
++	if (unlikely(clk->flags & CLK_RATE_PROPAGATES))
 +		propagate_rate(clk);
 +
 +	return ret;
@@ -73,6 +75,16 @@ index 133dbe4..f97a0c6 100644
  		spin_unlock_irqrestore(&clock_lock, flags);
  	}
  
+@@ -386,8 +399,7 @@ static int clks_sysdev_suspend(struct sys_device *dev, pm_message_t state)
+ 						clkp->ops->set_parent(clkp,
+ 							clkp->parent);
+ 					if (likely(clkp->ops->set_rate))
+-						clkp->ops->set_rate(clkp,
+-							rate, NO_CHANGE);
++						clkp->ops->set_rate(clkp, rate);
+ 					else if (likely(clkp->ops->recalc))
+ 						clkp->ops->recalc(clkp);
+ 					}
 diff --git a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c b/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
 index a334294..eb22dcc 100644
 --- a/arch/sh/kernel/cpu/sh4/clock-sh4-202.c
