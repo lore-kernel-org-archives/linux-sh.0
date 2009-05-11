@@ -1,49 +1,66 @@
-From: Peter Griffin <pgriffin@mpc-data.co.uk>
-Date: Tue, 12 May 2009 08:38:51 +0000
-Subject: Re: [PATCH] Add ptrace support for NOMMU debugging
-Message-Id: <1242117531.32597.17.camel@quercus-bis>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Mon, 11 May 2009 06:51:28 +0000
+Subject: [PATCH] sh: sh7785lcr: fix I2C device address map for 32-bit mode
+Message-Id: <4A07CAF0.9080701@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1241794254.16311.32.camel@quercus-bis>
-In-Reply-To: <1241794254.16311.32.camel@quercus-bis>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, 2009-05-08 at 14:28 -0400, Mike Frysinger wrote:
-> On Friday 08 May 2009 10:50:54 Peter Griffin wrote:
-> > >From 2652ec6503dbe78e5bf371b77544e168166aa57d Mon Sep 17 00:00:00 2001
-> >
-> > From: Peter Griffin <pgriffin@mpc-data.co.uk>
-> > Date: Fri, 8 May 2009 15:01:21 +0100
-> > Subject: [PATCH] Add ptrace support for NOMMU debugging
-> 
-> are you not using git-send-email ?  posting the actual file produced by git-
-> format-patch looks weird (not sure if git-am works with this).
-Hi Mike,
+Fix the problem that cannot work RTC on 32-bit mode.
+The cause is because the board datasheet had a mistake.
 
-I was using git-format-patch to generate the patches, and then evolution
-in 'pre-format' mode to insert the patch file and send the email.
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ arch/sh/include/mach-common/mach/sh7785lcr.h |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-I've not used git-send-email before, but I just installed it on my
-system and it looks really good. I especially like the look of the
---signed-off-by-cc option :-)
+diff --git a/arch/sh/include/mach-common/mach/sh7785lcr.h b/arch/sh/include/mach-common/mach/sh7785lcr.h
+index 1ce27d5..90011d4 100644
+--- a/arch/sh/include/mach-common/mach/sh7785lcr.h
++++ b/arch/sh/include/mach-common/mach/sh7785lcr.h
+@@ -9,11 +9,11 @@
+  * -----------------------------+---------------+---------------
+  * 0x00000000 - 0x03ffffff(CS0)	| NOR Flash	| NOR Flash
+  * 0x04000000 - 0x05ffffff(CS1)	| PLD		| PLD
+- * 0x06000000 - 0x07ffffff(CS1)	| reserved	| I2C
++ * 0x06000000 - 0x07ffffff(CS1)	| I2C		| I2C
+  * 0x08000000 - 0x0bffffff(CS2)	| USB		| DDR SDRAM
+  * 0x0c000000 - 0x0fffffff(CS3)	| SD		| DDR SDRAM
+  * 0x10000000 - 0x13ffffff(CS4)	| SM107		| SM107
+- * 0x14000000 - 0x17ffffff(CS5)	| I2C		| USB
++ * 0x14000000 - 0x17ffffff(CS5)	| reserved	| USB
+  * 0x18000000 - 0x1bffffff(CS6)	| reserved	| SD
+  * 0x40000000 - 0x5fffffff	| DDR SDRAM	| (cannot use)
+  *
+@@ -32,6 +32,9 @@
+ #define PLD_VERSR		(PLD_BASE_ADDR + 0x0c)
+ #define PLD_MMSR		(PLD_BASE_ADDR + 0x0e)
 
-> > +		else if ( addr = PT_TEXT_ADDR)
-> > +			tmp = child->mm->start_code;
-> > +		else if ( addr = PT_DATA_ADDR)
-> > +			tmp = child->mm->start_data;
-> > +		else if ( addr = PT_TEXT_END_ADDR )
-> > +			tmp = child->mm->end_code;
-> > +		else if ( addr = PT_TEXT_LEN )
-> > +			tmp = child->mm->end_code - child->mm->start_code;
-> 
-> style wrong: no space inside of those parenthesis
-> -mike
-Noted, thanks for pointing it out. Paul fixed this for me when
-committing.
++#define PCA9564_ADDR		0x06000000	/* I2C */
++#define PCA9564_SIZE		0x00000100
++
+ #define SM107_MEM_ADDR		0x10000000
+ #define SM107_MEM_SIZE		0x00e00000
+ #define SM107_REG_ADDR		0x13e00000
+@@ -40,16 +43,13 @@
+ #if defined(CONFIG_SH_SH7785LCR_29BIT_PHYSMAPS)
+ #define R8A66597_ADDR		0x14000000	/* USB */
+ #define CG200_ADDR		0x18000000	/* SD */
+-#define PCA9564_ADDR		0x06000000	/* I2C */
+ #else
+ #define R8A66597_ADDR		0x08000000
+ #define CG200_ADDR		0x0c000000
+-#define PCA9564_ADDR		0x14000000
+ #endif
 
-regards,
+ #define R8A66597_SIZE		0x00000100
+ #define CG200_SIZE		0x00010000
+-#define PCA9564_SIZE		0x00000100
 
-Peter.
+ #endif  /* __ASM_SH_RENESAS_SH7785LCR_H */
+
+-- 
+1.5.5
 
