@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 11 May 2009 11:37:16 +0000
-Subject: [PATCH] sh: TMU platform data for sh7780
-Message-Id: <20090511113716.12681.44470.sendpatchset@rx1.opensource.se>
+Date: Mon, 11 May 2009 09:06:24 +0000
+Subject: [PATCH] sh: TMU platform data for sh7760
+Message-Id: <20090511090624.508.11282.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,25 +10,31 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds TMU platform data for sh7780. Both clockevent
+This patch adds TMU platform data for sh7760. Both clockevent
 and clocksource support is enabled.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Tested on r7780.
+ Compiles fine , but not run time tested due to lack of hardware.
 
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c |  204 ++++++++++++++++++++++++++++++++
- 1 file changed, 204 insertions(+)
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c |  109 +++++++++++++++++++++++++++++++++
+ 1 file changed, 109 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7780.c	2009-05-11 19:45:28.000000000 +0900
-@@ -12,6 +12,189 @@
+--- 0005/arch/sh/kernel/cpu/sh4/setup-sh7760.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh7760.c	2009-05-11 17:30:11.000000000 +0900
+@@ -10,6 +10,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/init.h>
  #include <linux/serial.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
 +#include <linux/sh_timer.h>
-+
+ #include <linux/serial_sci.h>
+ #include <linux/io.h>
+ 
+@@ -159,8 +160,104 @@ static struct platform_device sci_device
+ 	},
+ };
+ 
 +static struct sh_timer_config tmu0_platform_data = {
 +	.name = "TMU0",
 +	.channel_offset = 0x04,
@@ -45,7 +51,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
-+		.start	= 28,
++		.start	= 16,
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +};
@@ -76,7 +82,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
-+		.start	= 29,
++		.start	= 17,
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +};
@@ -106,7 +112,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
-+		.start	= 30,
++		.start	= 18,
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +};
@@ -121,130 +127,31 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.num_resources	= ARRAY_SIZE(tmu2_resources),
 +};
 +
-+static struct sh_timer_config tmu3_platform_data = {
-+	.name = "TMU3",
-+	.channel_offset = 0x04,
-+	.timer_bit = 0,
-+	.clk = "module_clk",
-+};
 +
-+static struct resource tmu3_resources[] = {
-+	[0] = {
-+		.name	= "TMU3",
-+		.start	= 0xffdc0008,
-+		.end	= 0xffdc0013,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 96,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu3_device = {
-+	.name		= "sh_tmu",
-+	.id		= 3,
-+	.dev = {
-+		.platform_data	= &tmu3_platform_data,
-+	},
-+	.resource	= tmu3_resources,
-+	.num_resources	= ARRAY_SIZE(tmu3_resources),
-+};
-+
-+static struct sh_timer_config tmu4_platform_data = {
-+	.name = "TMU4",
-+	.channel_offset = 0x10,
-+	.timer_bit = 1,
-+	.clk = "module_clk",
-+};
-+
-+static struct resource tmu4_resources[] = {
-+	[0] = {
-+		.name	= "TMU4",
-+		.start	= 0xffdc0014,
-+		.end	= 0xffdc001f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 97,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu4_device = {
-+	.name		= "sh_tmu",
-+	.id		= 4,
-+	.dev = {
-+		.platform_data	= &tmu4_platform_data,
-+	},
-+	.resource	= tmu4_resources,
-+	.num_resources	= ARRAY_SIZE(tmu4_resources),
-+};
-+
-+static struct sh_timer_config tmu5_platform_data = {
-+	.name = "TMU5",
-+	.channel_offset = 0x1c,
-+	.timer_bit = 2,
-+	.clk = "module_clk",
-+};
-+
-+static struct resource tmu5_resources[] = {
-+	[0] = {
-+		.name	= "TMU5",
-+		.start	= 0xffdc0020,
-+		.end	= 0xffdc002b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 98,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu5_device = {
-+	.name		= "sh_tmu",
-+	.id		= 5,
-+	.dev = {
-+		.platform_data	= &tmu5_platform_data,
-+	},
-+	.resource	= tmu5_resources,
-+	.num_resources	= ARRAY_SIZE(tmu5_resources),
-+};
- 
- static struct resource rtc_resources[] = {
- 	[0] = {
-@@ -58,6 +241,12 @@ static struct platform_device sci_device
- };
- 
- static struct platform_device *sh7780_devices[] __initdata = {
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
-+	&tmu3_device,
-+	&tmu4_device,
-+	&tmu5_device,
- 	&rtc_device,
+ static struct platform_device *sh7760_devices[] __initdata = {
  	&sci_device,
- };
-@@ -69,6 +258,21 @@ static int __init sh7780_devices_setup(v
- }
- __initcall(sh7780_devices_setup);
- 
-+static struct platform_device *sh7780_early_devices[] __initdata = {
 +	&tmu0_device,
 +	&tmu1_device,
 +	&tmu2_device,
-+	&tmu3_device,
-+	&tmu4_device,
-+	&tmu5_device,
+ };
+ 
+ static int __init sh7760_devices_setup(void)
+@@ -170,6 +267,18 @@ static int __init sh7760_devices_setup(v
+ }
+ __initcall(sh7760_devices_setup);
+ 
++static struct platform_device *sh7760_early_devices[] __initdata = {
++	&tmu0_device,
++	&tmu1_device,
++	&tmu2_device,
 +};
 +
 +void __init plat_early_device_setup(void)
 +{
-+	early_platform_add_devices(sh7780_early_devices,
-+				   ARRAY_SIZE(sh7780_early_devices));
++	early_platform_add_devices(sh7760_early_devices,
++				   ARRAY_SIZE(sh7760_early_devices));
 +}
 +
- enum {
- 	UNUSED = 0,
+ #define INTC_ICR	0xffd00000UL
+ #define INTC_ICR_IRLM	(1 << 7)
  
