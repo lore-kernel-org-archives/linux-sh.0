@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 01 May 2009 06:58:52 +0000
-Subject: [PATCH] sh: TMU platform data for sh7722
-Message-Id: <20090501065852.8861.19090.sendpatchset@rx1.opensource.se>
+Date: Mon, 11 May 2009 08:54:54 +0000
+Subject: [PATCH] sh: TMU platform data for sh775x
+Message-Id: <20090511085454.32672.952.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,46 +10,36 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds TMU platform data for sh7722. Only clockevent
-mode is enabled for now, clocksource requires this patch:
-"clocksource: setup mult_orig in clocksource_enable()"
+This patch adds TMU platform data for sh775x. Both clockevent
+and clocksource support is enabled.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/Kconfig                        |    1 
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   99 ++++++++++++++++++++++++++++++++
- 2 files changed, 100 insertions(+)
+ Tested on R2D-Plus.
 
---- 0007/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2009-05-01 13:22:50.000000000 +0900
-@@ -423,6 +423,7 @@ config CPU_SUBTYPE_SH7722
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_NUMA
- 	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_TMU
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |  187 +++++++++++++++++++++++++++++++++
+ 1 file changed, 187 insertions(+)
+
+--- 0001/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh7750.c	2009-05-11 13:13:50.000000000 +0900
+@@ -12,6 +12,7 @@
+ #include <linux/init.h>
+ #include <linux/serial.h>
+ #include <linux/io.h>
++#include <linux/sh_timer.h>
+ #include <linux/serial_sci.h>
  
- config CPU_SUBTYPE_SH7366
- 	bool "Support SH7366 processor"
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2009-05-01 13:32:49.000000000 +0900
-@@ -14,6 +14,7 @@
- #include <linux/mm.h>
- #include <linux/uio_driver.h>
- #include <linux/sh_cmt.h>
-+#include <linux/sh_tmu.h>
- #include <asm/clock.h>
- #include <asm/mmzone.h>
- 
-@@ -209,6 +210,98 @@ static struct platform_device cmt_device
- 	.num_resources	= ARRAY_SIZE(cmt_resources),
+ static struct resource rtc_resources[] = {
+@@ -60,9 +61,177 @@ static struct platform_device sci_device
+ 	},
  };
  
-+static struct sh_tmu_config tmu0_platform_data = {
++static struct sh_timer_config tmu0_platform_data = {
 +	.name = "TMU0",
 +	.channel_offset = 0x04,
 +	.timer_bit = 0,
-+	.clk = "tmu0",
++	.clk = "module_clk",
 +	.clockevent_rating = 200,
 +};
 +
@@ -76,12 +66,12 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.num_resources	= ARRAY_SIZE(tmu0_resources),
 +};
 +
-+static struct sh_tmu_config tmu1_platform_data = {
++static struct sh_timer_config tmu1_platform_data = {
 +	.name = "TMU1",
 +	.channel_offset = 0x10,
 +	.timer_bit = 1,
-+	.clk = "tmu0",
-+	.clocksource_rating = 0, /* disabled for now */
++	.clk = "module_clk",
++	.clocksource_rating = 200,
 +};
 +
 +static struct resource tmu1_resources[] = {
@@ -107,18 +97,18 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.num_resources	= ARRAY_SIZE(tmu1_resources),
 +};
 +
-+static struct sh_tmu_config tmu2_platform_data = {
++static struct sh_timer_config tmu2_platform_data = {
 +	.name = "TMU2",
 +	.channel_offset = 0x1c,
 +	.timer_bit = 2,
-+	.clk = "tmu0",
++	.clk = "module_clk",
 +};
 +
 +static struct resource tmu2_resources[] = {
 +	[0] = {
 +		.name	= "TMU2",
 +		.start	= 0xffd80020,
-+		.end	= 0xffd8002b,
++		.end	= 0xffd8002f,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
@@ -137,26 +127,110 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.num_resources	= ARRAY_SIZE(tmu2_resources),
 +};
 +
- static struct plat_sci_port sci_platform_data[] = {
- 	{
- 		.mapbase	= 0xffe00000,
-@@ -243,6 +336,9 @@ static struct platform_device sci_device
- 
- static struct platform_device *sh7722_devices[] __initdata = {
- 	&cmt_device,
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
++/* SH7750R, SH7751 and SH7751R all have two extra timer channels */
++#if defined(CONFIG_CPU_SUBTYPE_SH7750R) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7751) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7751R)
++
++static struct sh_timer_config tmu3_platform_data = {
++	.name = "TMU3",
++	.channel_offset = 0x04,
++	.timer_bit = 0,
++	.clk = "module_clk",
++};
++
++static struct resource tmu3_resources[] = {
++	[0] = {
++		.name	= "TMU3",
++		.start	= 0xfe100008,
++		.end	= 0xfe100013,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 72,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu3_device = {
++	.name		= "sh_tmu",
++	.id		= 3,
++	.dev = {
++		.platform_data	= &tmu3_platform_data,
++	},
++	.resource	= tmu3_resources,
++	.num_resources	= ARRAY_SIZE(tmu3_resources),
++};
++
++static struct sh_timer_config tmu4_platform_data = {
++	.name = "TMU4",
++	.channel_offset = 0x10,
++	.timer_bit = 1,
++	.clk = "module_clk",
++};
++
++static struct resource tmu4_resources[] = {
++	[0] = {
++		.name	= "TMU4",
++		.start	= 0xfe100014,
++		.end	= 0xfe10001f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 76,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu4_device = {
++	.name		= "sh_tmu",
++	.id		= 4,
++	.dev = {
++		.platform_data	= &tmu4_platform_data,
++	},
++	.resource	= tmu4_resources,
++	.num_resources	= ARRAY_SIZE(tmu4_resources),
++};
++
++#endif
++
+ static struct platform_device *sh7750_devices[] __initdata = {
  	&rtc_device,
- 	&usbf_device,
- 	&iic_device,
-@@ -271,6 +367,9 @@ __initcall(sh7722_devices_setup);
- 
- static struct platform_device *sh7722_early_devices[] __initdata = {
- 	&cmt_device,
+ 	&sci_device,
 +	&tmu0_device,
 +	&tmu1_device,
 +	&tmu2_device,
++#if defined(CONFIG_CPU_SUBTYPE_SH7750R) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7751) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7751R)
++	&tmu3_device,
++	&tmu4_device,
++#endif
  };
  
- void __init plat_early_device_setup(void)
+ static int __init sh7750_devices_setup(void)
+@@ -72,6 +241,24 @@ static int __init sh7750_devices_setup(v
+ }
+ __initcall(sh7750_devices_setup);
+ 
++static struct platform_device *sh7750_early_devices[] __initdata = {
++	&tmu0_device,
++	&tmu1_device,
++	&tmu2_device,
++#if defined(CONFIG_CPU_SUBTYPE_SH7750R) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7751) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7751R)
++	&tmu3_device,
++	&tmu4_device,
++#endif
++};
++
++void __init plat_early_device_setup(void)
++{
++	early_platform_add_devices(sh7750_early_devices,
++				   ARRAY_SIZE(sh7750_early_devices));
++}
++
+ enum {
+ 	UNUSED = 0,
+ 
