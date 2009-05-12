@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 May 2009 10:04:49 +0000
-Subject: [PATCH] sh: TMU platform data for sh7706/sh7707/sh7708/sh7709
-Message-Id: <20090512100449.25564.87995.sendpatchset@rx1.opensource.se>
+Date: Tue, 12 May 2009 10:17:52 +0000
+Subject: [PATCH] sh: TMU platform data for sh7720/sh7721
+Message-Id: <20090512101752.25732.14629.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,29 +10,30 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Add TMU platform data for sh7706/sh7707/sh7708/sh7709.
+This patch adds TMU platform data for sh7720 and sh7721.
 Both clockevent and clocksource support is enabled.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh3/setup-sh770x.c |  108 +++++++++++++++++++++++++++++++++
- 1 file changed, 108 insertions(+)
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c |  109 +++++++++++++++++++++++++++++++++
+ 1 file changed, 109 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh3/setup-sh770x.c
-+++ work/arch/sh/kernel/cpu/sh3/setup-sh770x.c	2009-05-12 15:52:39.000000000 +0900
+--- 0001/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ work/arch/sh/kernel/cpu/sh3/setup-sh7720.c	2009-05-12 16:19:14.000000000 +0900
 @@ -18,6 +18,7 @@
- #include <linux/platform_device.h>
  #include <linux/serial.h>
+ #include <linux/io.h>
  #include <linux/serial_sci.h>
 +#include <linux/sh_timer.h>
+ #include <asm/rtc.h>
  
- enum {
- 	UNUSED = 0,
-@@ -144,7 +145,102 @@ static struct platform_device sci_device
- 	},
+ static struct resource rtc_resources[] = {
+@@ -123,7 +124,103 @@ static struct platform_device usbf_devic
+ 	.resource	= usbf_resources,
  };
  
++
 +static struct sh_timer_config tmu0_platform_data = {
 +	.name = "TMU0",
 +	.channel_offset = 0x02,
@@ -44,8 +45,8 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +static struct resource tmu0_resources[] = {
 +	[0] = {
 +		.name	= "TMU0",
-+		.start	= 0xfffffe94,
-+		.end	= 0xfffffe9f,
++		.start	= 0xa412fe94,
++		.end	= 0xa412fe9f,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
@@ -75,8 +76,8 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +static struct resource tmu1_resources[] = {
 +	[0] = {
 +		.name	= "TMU1",
-+		.start	= 0xfffffea0,
-+		.end	= 0xfffffeab,
++		.start	= 0xa412fea0,
++		.end	= 0xa412feab,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
@@ -105,8 +106,8 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +static struct resource tmu2_resources[] = {
 +	[0] = {
 +		.name	= "TMU2",
-+		.start	= 0xfffffeac,
-+		.end	= 0xfffffebb,
++		.start	= 0xa412feac,
++		.end	= 0xa412feb5,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
@@ -125,18 +126,18 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.num_resources	= ARRAY_SIZE(tmu2_resources),
 +};
 +
- static struct platform_device *sh770x_devices[] __initdata = {
+ static struct platform_device *sh7720_devices[] __initdata = {
 +	&tmu0_device,
 +	&tmu1_device,
 +	&tmu2_device,
- 	&sci_device,
  	&rtc_device,
- };
-@@ -156,6 +252,18 @@ static int __init sh770x_devices_setup(v
+ 	&sci_device,
+ 	&usb_ohci_device,
+@@ -137,6 +234,18 @@ static int __init sh7720_devices_setup(v
  }
- __initcall(sh770x_devices_setup);
+ __initcall(sh7720_devices_setup);
  
-+static struct platform_device *sh770x_early_devices[] __initdata = {
++static struct platform_device *sh7720_early_devices[] __initdata = {
 +	&tmu0_device,
 +	&tmu1_device,
 +	&tmu2_device,
@@ -144,10 +145,10 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +
 +void __init plat_early_device_setup(void)
 +{
-+	early_platform_add_devices(sh770x_early_devices,
-+				   ARRAY_SIZE(sh770x_early_devices));
++	early_platform_add_devices(sh7720_early_devices,
++				   ARRAY_SIZE(sh7720_early_devices));
 +}
 +
- void __init plat_irq_setup(void)
- {
- 	register_intc_controller(&intc_desc);
+ enum {
+ 	UNUSED = 0,
+ 
