@@ -1,119 +1,230 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Tue, 12 May 2009 04:40:35 +0000
-Subject: [BUG] Error in copy_process, when enable CONFIG_PROVE_LOCKING.
-Message-Id: <29ab51dc0905112140v3187b462qcc8a9e5385de8ef6@mail.gmail.com>
+From: Stuart MENEFY <stuart.menefy@st.com>
+Date: Tue, 12 May 2009 12:15:22 +0000
+Subject: Re: [BUG] Error in copy_process, when enable CONFIG_PROVE_LOCKING.
+Message-Id: <4A09685A.2070105@st.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <29ab51dc0905112140v3187b462qcc8a9e5385de8ef6@mail.gmail.com>
+In-Reply-To: <29ab51dc0905112140v3187b462qcc8a9e5385de8ef6@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGksIGFsbC4KCkVycm9yIGluIGNvcHlfcHJvY2Vzcywgd2hlbiBlbmFibGUgQ09ORklHX1BST1ZF
-X0xPQ0tJTkcuClRoaXMgZXJyb3IgaGFzIHAtPmhhcmRpcnFzX2VuYWJsZWQgaW4ga2VybmVsLmZv
-cmsuYwoKIDk4NyAjaWZkZWYgQ09ORklHX1BST1ZFX0xPQ0tJTkcKIDk4OCAgICAgREVCVUdfTE9D
-S1NfV0FSTl9PTighcC0+aGFyZGlycXNfZW5hYmxlZCk7CiA5ODkgICAgIERFQlVHX0xPQ0tTX1dB
-Uk5fT04oIXAtPnNvZnRpcnFzX2VuYWJsZWQpOwogOTkwICNlbmRpZgogOTkxICAgICByZXR2YWwg
-PSAtRUFHQUlOOwoKVGhlIGVycm9yIG1lc3NhZ2UgaXMgYXMgZm9sbG93cy4KSSBhbSBkZWJ1Z2lu
-ZyB0aGlzLiBQbGVhc2UgdGVhY2ggaWYgeW91IGtub3cgdGhlIHJldmlzaW9uIG1ldGhvZCBvZgp0
-aGlzIHByb2JsZW0uCgotLS0tLS0KICAgSW1hZ2UgTmFtZTogICBMaW51eC0yLjYuMzAtcmM0LTAw
-MTcwLWdjY2MxOTU2CiAgIEltYWdlIFR5cGU6ICAgU3VwZXJIIExpbnV4IEtlcm5lbCBJbWFnZSAo
-Z3ppcCBjb21wcmVzc2VkKQogICBEYXRhIFNpemU6ICAgIDIwMzU5MzAgQnl0ZXMgPSAgMS45IE1C
-CiAgIExvYWQgQWRkcmVzczogODgwMDEwMDAKICAgRW50cnkgUG9pbnQ6ICA4ODAwMjAwMAogICBW
-ZXJpZnlpbmcgQ2hlY2tzdW0gLi4uIE9LCiAgIFVuY29tcHJlc3NpbmcgS2VybmVsIEltYWdlIC4u
-LiBPSwpbICAgIDAuMDAwMDAwXSBMaW51eCB2ZXJzaW9uIDIuNi4zMC1yYzQtMDAxNzAtZ2NjYzE5
-NTYKKGl3YW1hdHN1QHhwcy1pd2FtYXRzdSkgKGdjYyB2ZXJzaW9uIDQuMS4yIChHZW50b28gNC4x
-LjIgcDEuMC4yKSkgIzUyClBSRUVNUFQgVHVlIE1heSAxMiAxMzoyNjoyNSBKU1QgMjAwOQpbICAg
-IDAuMDAwMDAwXSBCb290IHBhcmFtczoKWyAgICAwLjAwMDAwMF0gLi4uIE1PVU5UX1JPT1RfUkRP
-TkxZIC0gMDAwMDAwMDAKWyAgICAwLjAwMDAwMF0gLi4uIFJBTURJU0tfRkxBR1MgICAgIC0gMDAw
-MDAwMDAKWyAgICAwLjAwMDAwMF0gLi4uIE9SSUdfUk9PVF9ERVYgICAgIC0gMDAwMDAwMDAKWyAg
-ICAwLjAwMDAwMF0gLi4uIExPQURFUl9UWVBFICAgICAgIC0gMDAwMDAwMDAKWyAgICAwLjAwMDAw
-MF0gLi4uIElOSVRSRF9TVEFSVCAgICAgIC0gMDAwMDAwMDAKWyAgICAwLjAwMDAwMF0gLi4uIElO
-SVRSRF9TSVpFICAgICAgIC0gMDAwMDAwMDAKWyAgICAwLjAwMDAwMF0gQm9vdGluZyBtYWNodmVj
-OiBIaWdobGFuZGVyClsgICAgMC4wMDAwMDBdIFJlbmVzYXMgU29sdXRpb25zIEhpZ2hsYW5kZXIg
-Ujc3ODBNUCBzdXBwb3J0LgpbICAgIDAuMDAwMDAwXSBCb2FyZCB2ZXJzaW9uOiAyIChyZXZpc2lv
-biAxKSwgRlBHQSB2ZXJzaW9uOiAyIChyZXZpc2lvbiAxKQpbICAgIDAuMDAwMDAwXSBOb2RlIDA6
-IHN0YXJ0X3BmbiA9IDB4ODAwMCwgbG93ID0gMHgxMDAwMApbICAgIDAuMDAwMDAwXSBab25lIFBG
-TiByYW5nZXM6ClsgICAgMC4wMDAwMDBdICAgTm9ybWFsICAgMHgwMDAwODAwMCAtPiAweDAwMDEw
-MDAwClsgICAgMC4wMDAwMDBdIE1vdmFibGUgem9uZSBzdGFydCBQRk4gZm9yIGVhY2ggbm9kZQpb
-ICAgIDAuMDAwMDAwXSBlYXJseV9ub2RlX21hcFsxXSBhY3RpdmUgUEZOIHJhbmdlcwpbICAgIDAu
-MDAwMDAwXSAgICAgMDogMHgwMDAwODAwMCAtPiAweDAwMDEwMDAwClsgICAgMC4wMDAwMDBdIE9u
-IG5vZGUgMCB0b3RhbHBhZ2VzOiAzMjc2OApbICAgIDAuMDAwMDAwXSBmcmVlX2FyZWFfaW5pdF9u
-b2RlOiBub2RlIDAsIHBnZGF0IDg4MzVkNTk4LApub2RlX21lbV9tYXAgODg4MzEwMDAKWyAgICAw
-LjAwMDAwMF0gICBOb3JtYWwgem9uZTogMjU2IHBhZ2VzIHVzZWQgZm9yIG1lbW1hcApbICAgIDAu
-MDAwMDAwXSAgIE5vcm1hbCB6b25lOiAwIHBhZ2VzIHJlc2VydmVkClsgICAgMC4wMDAwMDBdICAg
-Tm9ybWFsIHpvbmU6IDMyNTEyIHBhZ2VzLCBMSUZPIGJhdGNoOjcKWyAgICAwLjAwMDAwMF0gQnVp
-bHQgMSB6b25lbGlzdHMgaW4gWm9uZSBvcmRlciwgbW9iaWxpdHkgZ3JvdXBpbmcgb24uClRvdGFs
-IHBhZ2VzOiAzMjUxMgpbICAgIDAuMDAwMDAwXSBLZXJuZWwgY29tbWFuZCBsaW5lOiBjb25zb2xl
-PXR0eVNDMCwxMTUyMDAgcm9vdD0vZGV2L25mcyBpcD1ib290cApbICAgIDAuMDAwMDAwXSBOUl9J
-UlFTOjI1NgpbICAgIDAuMDAwMDAwXSBVc2luZyByNzc4MG1wIGludGVycnVwdCBjb250cm9sbGVy
-LgpbICAgIDAuMDAwMDAwXSBQSUQgaGFzaCB0YWJsZSBlbnRyaWVzOiA1MTIgKG9yZGVyOiA5LCAy
-MDQ4IGJ5dGVzKQpbICAgIDAuMDAwMDAwXSBMb2NrIGRlcGVuZGVuY3kgdmFsaWRhdG9yOiBDb3B5
-cmlnaHQgKGMpIDIwMDYgUmVkIEhhdCwKSW5jLiwgSW5nbyBNb2xuYXIKWyAgICAwLjAwMDAwMF0g
-Li4uIE1BWF9MT0NLREVQX1NVQkNMQVNTRVM6ICA4ClsgICAgMC4wMDAwMDBdIC4uLiBNQVhfTE9D
-S19ERVBUSDogICAgICAgICAgNDgKWyAgICAwLjAwMDAwMF0gLi4uIE1BWF9MT0NLREVQX0tFWVM6
-ICAgICAgICA4MTkxClsgICAgMC4wMDAwMDBdIC4uLiBDTEFTU0hBU0hfU0laRTogICAgICAgICAg
-NDA5NgpbICAgIDAuMDAwMDAwXSAuLi4gTUFYX0xPQ0tERVBfRU5UUklFUzogICAgIDgxOTIKWyAg
-ICAwLjAwMDAwMF0gLi4uIE1BWF9MT0NLREVQX0NIQUlOUzogICAgICAxNjM4NApbICAgIDAuMDAw
-MDAwXSAuLi4gQ0hBSU5IQVNIX1NJWkU6ICAgICAgICAgIDgxOTIKWyAgICAwLjAwMDAwMF0gIG1l
-bW9yeSB1c2VkIGJ5IGxvY2sgZGVwZW5kZW5jeSBpbmZvOiAyODQ3IGtCClsgICAgMC4wMDAwMDBd
-ICBwZXIgdGFzay1zdHJ1Y3QgbWVtb3J5IGZvb3RwcmludDogMTE1MiBieXRlcwpbICAgIDAuMDAw
-MDAwXSBEZW50cnkgY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVzOiAxNjM4NCAob3JkZXI6IDQsIDY1
-NTM2IGJ5dGVzKQpbICAgIDAuMDAwMDAwXSBJbm9kZS1jYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6
-IDgxOTIgKG9yZGVyOiAzLCAzMjc2OCBieXRlcykKWyAgICAwLjAwMDAwMF0gTWVtb3J5OiAxMjE0
-MDBrLzEzMTA3MmsgYXZhaWxhYmxlICgyMzEwayBrZXJuZWwgY29kZSwKMTEzNGsgZGF0YSwgMTA0
-ayBpbml0KQpbICAgIDAuMDAwMDAwXSBQVlIQMjAwYTAwIENWUnM0NDAwMTAgUFJSADAwMDkyMApb
-ICAgIDAuMDAwMDAwXSBJLWNhY2hlIDogbl93YXlzPTQgbl9zZXRzJTYgd2F5X2luY3KBOTIKWyAg
-ICAwLjAwMDAwMF0gSS1jYWNoZSA6IGVudHJ5X21hc2s9MHgwMDAwMWZlMCBhbGlhc19tYXNrPTB4
-MDAwMDEwMDAgbl9hbGlhc2VzPTIKWyAgICAwLjAwMDAwMF0gRC1jYWNoZSA6IG5fd2F5cz00IG5f
-c2V0cyU2IHdheV9pbmNygTkyClsgICAgMC4wMDAwMDBdIEQtY2FjaGUgOiBlbnRyeV9tYXNrPTB4
-MDAwMDFmZTAgYWxpYXNfbWFzaz0weDAwMDAxMDAwIG5fYWxpYXNlcz0yClsgICAgMC4wMDAzMjFd
-IFVzaW5nIHRtdSBmb3Igc3lzdGVtIHRpbWVyClsgICAgMC4wMDAzNzZdIENhbGlicmF0aW5nIGRl
-bGF5IGxvb3AgKHNraXBwZWQpLi4uIDM4NC4wMCBCb2dvTUlQUwpQUkVTRVQgKGxwanY4MDAwKQpb
-ICAgIDAuMDAxNTIzXSBNb3VudC1jYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6IDUxMgpbICAgIDAu
-MDE0MjAyXSBDUFU6IFNINzc4MApbICAgIDAuMDMzNDk1XSBuZXRfbmFtZXNwYWNlOiA2NjAgYnl0
-ZXMKWyAgICAwLjAzODQ5OF0gTkVUOiBSZWdpc3RlcmVkIHByb3RvY29sIGZhbWlseSAxNgpbICAg
-IDAuMDUyOTM1XSBQQ0k6IFN0YXJ0aW5nIGludGlhbGl6YXRpb24uClsgICAgMC4wNTI5ODJdIFBD
-STogRm91bmQgYSBSZW5lc2FzIFNINzc4MCBob3N0IGNvbnRyb2xsZXIsIHJldmlzaW9uIDAuClsg
-ICAgMC4wNTMwMTBdIFBDSTogVXNpbmcgY29uZmlndXJhdGlvbiB0eXBlIDEKWyAgICAwLjA1MzIw
-NV0gcmVnaXN0ZXJpbmcgUENJIGNvbnRyb2xsZXIgd2l0aCBpb19tYXBfYmFzZSB1bnNldApbICAg
-IDAuMDYwMTc3XSAtLS0tLS0tLS0tLS1bIGN1dCBoZXJlIF0tLS0tLS0tLS0tLS0KWyAgICAwLjA2
-MDIyNV0gQmFkbmVzcyBhdCA4ODAxNGM4ZSBbdmVyYm9zZSBkZWJ1ZyBpbmZvIHVuYXZhaWxhYmxl
-XQpbICAgIDAuMDYwMjQ5XQpbICAgIDAuMDYwMjY5XSBQaWQgOiA2LCBDb21tOiAgICAgICAgICAg
-a2hlbHBlcgpbICAgIDAuMDYwMjk5XSBDUFUgOiAwICAgICAgICAgICAgICAgICAgTm90IHRhaW50
-ZWQKKDIuNi4zMC1yYzQtMDAxNzAtZ2NjYzE5NTYgIzUyKQpbICAgIDAuMDYwMzE2XQpbICAgIDAu
-MDYwMzcxXSBQQyBpcyBhdCBjb3B5X3Byb2Nlc3MrMHgxNGUvMHhkODgKWyAgICAwLjA2MDQwNl0g
-UFIgaXMgYXQgY29weV9wcm9jZXNzKzB4MTQyLzB4ZDg4ClsgICAgMC4wNjA0MzVdIFBDICA6IDg4
-MDE0YzhlIFNQICA6IDhmODM1ZTBjIFNSICA6IDQwMDAwMTAxIFRFQSA6IDAwMDAwMDAwClsgICAg
-MC4wNjA0NzddIFIwICA6IDAwMDAwMDAxIFIxICA6IDAwMDAwMDAwIFIyICA6IDAwMDAwMDAxIFIz
-ICA6IDAwMDAwMDA3ClsgICAgMC4wNjA1MTNdIFI0ICA6IDg4MzdhMjZjIFI1ICA6IDg4MmQ1ODUw
-IFI2ICA6IDg4MzdhMjZjIFI3ICA6IDg4MzNhYWQwClsgICAgMC4wNjA1NDhdIFI4ICA6IDhmODc0
-MDAwIFI5ICA6IDAwMDAwMDAwIFIxMCA6IDhmODI2MDYwIFIxMSA6IGZmZmZmZmY0ClsgICAgMC4w
-NjA1ODFdIFIxMiA6IDhmODZhMTAwIFIxMyA6IDAwMDAwMDAwIFIxNCA6IDhmODM1ZTBjClsgICAg
-MC4wNjA2MTNdIE1BQ0g6IDAwMDIxMWM1IE1BQ0w6IDAwMDA0ODQwIEdCUiA6IDAwMDAwMDAwIFBS
-ICA6IDg4MDE0YzgyClsgICAgMC4wNjA2MzldClsgICAgMC4wNjA2NDZdIENhbGwgdHJhY2U6Clsg
-ICAgMC4wNjA3MDFdIFs8ODgwMzUyMjQ+XSBfX2xvY2tfYWNxdWlyZSsweDYxNi8weDZhNgpbICAg
-IDAuMDYwNzQyXSBbPDg4MDE1YThjPl0gZG9fZm9yaysweGY4LzB4MmIwClsgICAgMC4wNjA3ODhd
-IFs8ODgwMzMxZWM+XSB0cmFjZV9oYXJkaXJxc19vbl9jYWxsZXIrMHhkNC8weDExNApbICAgIDAu
-MDYwODQyXSBbPDg4MjQxMDc0Pl0gX3NwaW5fdW5sb2NrX2lycSsweDIwLzB4NjQKWyAgICAwLjA2
-MDg4MF0gWzw4ODAzNTIyND5dIF9fbG9ja19hY3F1aXJlKzB4NjE2LzB4NmE2ClsgICAgMC4wNjA5
-MTddIFs8ODgwMDM4NmM+XSBrZXJuZWxfdGhyZWFkKzB4NDgvMHg3MApbICAgIDAuMDYwOTY2XSBb
-PDg4MDI0ZWNjPl0gX19fX2NhbGxfdXNlcm1vZGVoZWxwZXIrMHgwLzB4MTEwClsgICAgMC4wNjEw
-MDldIFs8ODgwMjRlY2M+XSBfX19fY2FsbF91c2VybW9kZWhlbHBlcisweDAvMHgxMTAKWyAgICAw
-LjA2MTA1MF0gWzw4ODAwMzg5ND5dIGtlcm5lbF90aHJlYWRfaGVscGVyKzB4MC8weDE0ClsgICAg
-MC4wNjEwOTFdIFs8ODgwMjRiYWM+XSBfX2NhbGxfdXNlcm1vZGVoZWxwZXIrMHgzOC8weDcwClsg
-ICAgMC4wNjExMzRdIFs8ODgwMjVkYzA+XSB3b3JrZXJfdGhyZWFkKzB4MTUwLzB4Mjc0ClsgICAg
-MC4wNjExNzJdIFs8ODgwMzViOWM+XSBsb2NrX3JlbGVhc2UrMHgwLzB4MTk4ClsgICAgMC4wNjEy
-MDhdIFs8ODgwMjRiNzQ+XSBfX2NhbGxfdXNlcm1vZGVoZWxwZXIrMHgwLzB4NzAKWyAgICAwLjA2
-MTI0OF0gWzw4ODAyOGNmMD5dIGF1dG9yZW1vdmVfd2FrZV9mdW5jdGlvbisweDAvMHgzMApbICAg
-IDAuMDYxMjg1XSBbPDg4MDI4YmYyPl0ga3RocmVhZCsweDNlLzB4NzAKWyAgICAwLjA2MTMyM10g
-Wzw4ODAyNWM3MD5dIHdvcmtlcl90aHJlYWQrMHgwLzB4Mjc0ClsgICAgMC4wNjEzNTldIFs8ODgw
-MDM4OWM+XSBrZXJuZWxfdGhyZWFkX2hlbHBlcisweDgvMHgxNApbICAgIDAuMDYxMzk4XSBbPDg4
-MDI4YmI0Pl0ga3RocmVhZCsweDAvMHg3MApbICAgIDAuMDYxNDM2XSBbPDg4MDAzODk0Pl0ga2Vy
-bmVsX3RocmVhZF9oZWxwZXIrMHgwLzB4MTQKWyAgICAwLjA2MTQ2MV0KWyAgICAwLjA2MTQ3OF0g
-SU5GTzogbG9ja2RlcCBpcyB0dXJuZWQgb2ZmLgpbICAgIDAuMDc5NTc4XSBiaW86IGNyZWF0ZSBz
-bGFiIDxiaW8tMD4gYXQgMApbICAgIDAuMDg0ODI3XSBTQ1NJIHN1YnN5c3RlbSBpbml0aWFsaXpl
-ZApbICAgIDAuMDk3OTEyXSBsaWJhdGEgdmVyc2lvbiAzLjAwIGxvYWRlZC4KCgotLSAKTm9idWhp
-cm8gSXdhbWF0c3UKLS0KVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxp
-bmUgInVuc3Vic2NyaWJlIGxpbnV4LXNoIiBpbgp0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFq
-b3Jkb21vQHZnZXIua2VybmVsLm9yZwpNb3JlIG1ham9yZG9tbyBpbmZvIGF0ICBodHRwOi8vdmdl
-ci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWw=
+Nobuhiro Iwamatsu wrote:
+> Error in copy_process, when enable CONFIG_PROVE_LOCKING.
+> This error has p->hardirqs_enabled in kernel.fork.c
+> 
+>  987 #ifdef CONFIG_PROVE_LOCKING
+>  988     DEBUG_LOCKS_WARN_ON(!p->hardirqs_enabled);
+>  989     DEBUG_LOCKS_WARN_ON(!p->softirqs_enabled);
+>  990 #endif
+>  991     retval = -EAGAIN;
+> 
+> The error message is as follows.
+> I am debuging this. Please teach if you know the revision method of
+> this problem.
+
+As it happens I was looking at this recently. I think there are some
+missing calls to trace_hardirqs_on/off in the assembly
+code. Unfortunately my kernel is quite different from the mainline in
+this area, but you could try this patch which is an *untested* forward
+port of the code I'm currently running successfully.
+
+--
+
+A couple of fixes are required for the IRQ tracing. Also switch to using
+a macro which removes quite a few #ifdefs.
+
+Signed-off-by: Stuart Menefy <stuart.menefy@st.com>
+Index: x/arch/sh/kernel/cpu/sh3/entry.S
+=================================--- x.orig/arch/sh/kernel/cpu/sh3/entry.S
++++ x/arch/sh/kernel/cpu/sh3/entry.S
+@@ -217,6 +217,16 @@ ENTRY(sh_bios_handler)
+ ! BL=0 on entry, on exit BL=1 (depending on r8).
+
+ ENTRY(restore_regs)
++#ifdef CONFIG_TRACE_IRQFLAGS
++	mov	#OFF_SR, r0
++	mov.l	@(r0,r15), r0		! get status register
++	shlr2	r0
++	and	#0x3c, r0
++	cmp/eq	#0x3c, r0
++	bt	6f
++	TRACE_IRQS_ON
++6:
++#endif
+ 	mov.l	@r15+, r0
+ 	mov.l	@r15+, r1
+ 	mov.l	@r15+, r2
+Index: x/arch/sh/kernel/entry-common.S
+=================================--- x.orig/arch/sh/kernel/entry-common.S
++++ x/arch/sh/kernel/entry-common.S
+@@ -45,7 +45,7 @@
+  */
+
+ #if defined(CONFIG_PREEMPT)
+-#  define preempt_stop()	cli
++#  define preempt_stop()	cli; TRACE_IRQS_OFF
+ #else
+ #  define preempt_stop()
+ #  define resume_kernel		__restore_all
+@@ -55,11 +55,7 @@
+ 	.align	2
+ ENTRY(exception_error)
+ 	!
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	2f, r0
+-	jsr	@r0
+-	 nop
+-#endif
++	TRACE_IRQS_ON
+ 	sti
+ 	mov.l	1f, r0
+ 	jmp	@r0
+@@ -67,18 +63,10 @@ ENTRY(exception_error)
+
+ 	.align	2
+ 1:	.long	do_exception_error
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-2:	.long	trace_hardirqs_on
+-#endif
+
+ 	.align	2
+ ret_from_exception:
+ 	preempt_stop()
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	4f, r0
+-	jsr	@r0
+-	 nop
+-#endif
+ ENTRY(ret_from_irq)
+ 	!
+ 	mov	#OFF_SR, r0
+@@ -125,11 +113,7 @@ noresched:
+ ENTRY(resume_userspace)
+ 	! r8: current_thread_info
+ 	cli
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	5f, r0
+-	jsr	@r0
+-	 nop
+-#endif
++	TRACE_IRQS_OFF
+ 	mov.l	@(TI_FLAGS,r8), r0		! current_thread_info->flags
+ 	tst	#_TIF_WORK_MASK, r0
+ 	bt/s	__restore_all
+@@ -156,11 +140,7 @@ work_resched:
+ 	jsr	@r1				! schedule
+ 	 nop
+ 	cli
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	5f, r0
+-	jsr	@r0
+-	 nop
+-#endif
++	TRACE_IRQS_OFF
+ 	!
+ 	mov.l	@(TI_FLAGS,r8), r0		! current_thread_info->flags
+ 	tst	#_TIF_WORK_MASK, r0
+@@ -172,10 +152,6 @@ work_resched:
+ 1:	.long	schedule
+ 2:	.long	do_notify_resume
+ 3:	.long	resume_userspace
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-4:	.long	trace_hardirqs_on
+-5:	.long	trace_hardirqs_off
+-#endif
+
+ 	.align	2
+ syscall_exit_work:
+@@ -184,11 +160,7 @@ syscall_exit_work:
+ 	tst	#_TIF_WORK_SYSCALL_MASK, r0
+ 	bt/s	work_pending
+ 	 tst	#_TIF_NEED_RESCHED, r0
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	5f, r0
+-	jsr	@r0
+-	 nop
+-#endif
++	TRACE_IRQS_ON
+ 	sti
+ 	mov	r15, r4
+ 	mov.l	8f, r0			! do_syscall_trace_leave
+@@ -322,9 +294,10 @@ ENTRY(system_call)
+ 	 nop
+
+ #ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	5f, r10
+-	jsr	@r10
+-	 nop
++	/* Need to preserve r3 */
++	mov	r3, r8
++	TRACE_IRQS_ON
++	mov	r8, r3
+ #endif
+ 	sti
+
+@@ -351,11 +324,7 @@ syscall_call:
+ 	!
+ syscall_exit:
+ 	cli
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-	mov.l	6f, r0
+-	jsr	@r0
+-	 nop
+-#endif
++	TRACE_IRQS_OFF
+ 	!
+ 	get_current_thread_info r8, r0
+ 	mov.l	@(TI_FLAGS,r8), r0		! current_thread_info->flags
+@@ -369,9 +338,5 @@ syscall_exit:
+ #endif
+ 2:	.long	NR_syscalls
+ 3:	.long	sys_call_table
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-5:	.long	trace_hardirqs_on
+-6:	.long	trace_hardirqs_off
+-#endif
+ 7:	.long	do_syscall_trace_enter
+ 8:	.long	do_syscall_trace_leave
+Index: x/arch/sh/include/asm/entry-macros.S
+=================================--- x.orig/arch/sh/include/asm/entry-macros.S
++++ x/arch/sh/include/asm/entry-macros.S
+@@ -31,6 +31,37 @@
+ #endif	
+ 	.endm
+
++#ifdef CONFIG_TRACE_IRQFLAGS
++
++	.macro	TRACE_IRQS_ON
++	mov.l	7834f, r0
++	jsr	@r0
++	 nop
++	bra	7835f
++	 nop
++	.balign	4
++7834:	.long	trace_hardirqs_on
++7835:
++	.endm
++	.macro	TRACE_IRQS_OFF
++	mov.l	7834f, r0
++	jsr	@r0
++	 nop
++	bra	7835f
++	 nop
++	.balign	4
++7834:	.long	trace_hardirqs_off
++7835:
++	.endm
++
++#else
++	.macro	TRACE_IRQS_ON
++	.endm
++
++	.macro	TRACE_IRQS_OFF
++	.endm
++#endif
++
+ #if defined(CONFIG_CPU_SH2A) || defined(CONFIG_CPU_SH4)
+ # define PREF(x)	pref	@x
+ #else
