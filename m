@@ -1,48 +1,69 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 29 May 2009 18:18:38 +0000
-Subject: Re: [PATCH 00/04][RFC] PM: Runtime platform device PM
-Message-Id: <200905292018.39247.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 May 2009 09:57:45 +0000
+Subject: [PATCH] video: add sh_mobile_lcdcfb memory resource
+Message-Id: <20090512095745.25477.87326.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-fbdev-devel@lists.sourceforge.net
 
-On Friday 29 May 2009, Alan Stern wrote:
-> On Fri, 29 May 2009, Magnus Damm wrote:
-> 
-> > > (And by the way, the _noirq ops don't run in atomic context.  They run
-> > > in process context with most interrupt deliveries disabled.  It's not
-> > > the same thing -- they are allowed to sleep.)
-> > 
-> > Huh, so if they are allowed to sleep then clock events are still
-> > running. And probably some clocksource as well. I guess that's why you
-> > say "most" interrupts disabled instead of all. Sharing the timer IRQ
-> > is not allowed then?
-> 
-> Rafael can tell you.  But notice I didn't say the interrupts were
-> disabled -- I said that interrupt _delivery_ was disabled.  In general
-> the interrupts themselves _are_ enabled; the kernel fields them but
-> then does not call the drivers' interrupt handler routines.
+From: Magnus Damm <damm@igel.co.jp>
 
-That's correct, except for the platforms where __disable_irq() actually masks
-the IRQ.  I'm not sure if SuperH is one of these.
+This patch adds memory resource support to the LCDC driver.
+With this applied the physical memory range used for framebuffer
+data will show up in /proc/iomem together with other SuperH
+Mobile devices.
 
-> (Except perhaps for IRQs which are explicitly marked as wakeup sources...)
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-No, they are treated just like the other ones except that we check if any of
-them are pending right at the beginning of sysdev_suspend().
+ drivers/video/sh_mobile_lcdcfb.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-> > I wonder if the PM code assumes that the clock event is a sys device?
-
-Yes, it does.
-
-> > We use platform drivers for clock events on SuperH...
-
-Argh.  This is going to hurt, but I'm not sure how badly.  At least on
-multiprocessor.
-
-Best,
-Rafael
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2009-05-11 21:14:35.000000000 +0900
+@@ -35,6 +35,7 @@ struct sh_mobile_lcdc_chan {
+ 	struct fb_deferred_io defio;
+ 	unsigned long frame_end;
+ 	wait_queue_head_t frame_end_wait;
++	struct resource memory;
+ };
+ 
+ struct sh_mobile_lcdc_priv {
+@@ -813,12 +814,26 @@ static int __init sh_mobile_lcdc_probe(s
+ 			break;
+ 		}
+ 
++		res = &priv->ch[i].memory;
++		res->name = "lcdc";
++		res->start = priv->ch[i].dma_handle;
++		res->end = res->start + info->fix.smem_len - 1;
++		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
++		error = insert_resource(&iomem_resource, res);
++		if (error) {
++			dev_err(&pdev->dev, "unable to request resource\n");
++			dma_free_coherent(&pdev->dev, info->fix.smem_len,
++					  buf, priv->ch[i].dma_handle);
++			break;
++		}
++
+ 		info->pseudo_palette = &priv->ch[i].pseudo_palette;
+ 		info->flags = FBINFO_FLAG_DEFAULT;
+ 
+ 		error = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
+ 		if (error < 0) {
+ 			dev_err(&pdev->dev, "unable to allocate cmap\n");
++			release_resource(res);
+ 			dma_free_coherent(&pdev->dev, info->fix.smem_len,
+ 					  buf, priv->ch[i].dma_handle);
+ 			break;
+@@ -887,6 +902,7 @@ static int sh_mobile_lcdc_remove(struct 
+ 		if (!info->device)
+ 			continue;
+ 
++		release_resource(&priv->ch[i].memory);
+ 		dma_free_coherent(&pdev->dev, info->fix.smem_len,
+ 				  info->screen_base, priv->ch[i].dma_handle);
+ 		fb_dealloc_cmap(&info->cmap);
