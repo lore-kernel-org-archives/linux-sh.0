@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 08 May 2009 08:27:19 +0000
-Subject: [PATCH] sh: enable TMU clocksource on sh7722
-Message-Id: <20090508082719.30262.93811.sendpatchset@rx1.opensource.se>
+Date: Tue, 12 May 2009 09:39:06 +0000
+Subject: [PATCH] sh: TMU platform data for sh7343
+Message-Id: <20090512093906.25245.41268.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,33 +10,133 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch enables the TMU clocksource on sh7722.
-To prioritize TMU over CMT we also adjust the CMT
-clock source rating.
+This patch adds TMU platform data for sh7343. Both clockevent
+and clocksource support is enabled.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   98 ++++++++++++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2009-05-08 15:35:02.000000000 +0900
-@@ -183,7 +183,7 @@ static struct sh_timer_config cmt_platfo
- 	.timer_bit = 5,
- 	.clk = "cmt0",
- 	.clockevent_rating = 125,
--	.clocksource_rating = 200,
-+	.clocksource_rating = 125,
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2009-05-12 13:30:06.000000000 +0900
+@@ -173,6 +173,98 @@ static struct platform_device cmt_device
+ 	.num_resources	= ARRAY_SIZE(cmt_resources),
  };
  
- static struct resource cmt_resources[] = {
-@@ -245,7 +245,7 @@ static struct sh_timer_config tmu1_platf
- 	.channel_offset = 0x10,
- 	.timer_bit = 1,
- 	.clk = "tmu0",
--	.clocksource_rating = 0, /* disabled for now */
++static struct sh_timer_config tmu0_platform_data = {
++	.name = "TMU0",
++	.channel_offset = 0x04,
++	.timer_bit = 0,
++	.clk = "tmu0",
++	.clockevent_rating = 200,
++};
++
++static struct resource tmu0_resources[] = {
++	[0] = {
++		.name	= "TMU0",
++		.start	= 0xffd80008,
++		.end	= 0xffd80013,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 16,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu0_device = {
++	.name		= "sh_tmu",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &tmu0_platform_data,
++	},
++	.resource	= tmu0_resources,
++	.num_resources	= ARRAY_SIZE(tmu0_resources),
++};
++
++static struct sh_timer_config tmu1_platform_data = {
++	.name = "TMU1",
++	.channel_offset = 0x10,
++	.timer_bit = 1,
++	.clk = "tmu0",
 +	.clocksource_rating = 200,
++};
++
++static struct resource tmu1_resources[] = {
++	[0] = {
++		.name	= "TMU1",
++		.start	= 0xffd80014,
++		.end	= 0xffd8001f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 17,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu1_device = {
++	.name		= "sh_tmu",
++	.id		= 1,
++	.dev = {
++		.platform_data	= &tmu1_platform_data,
++	},
++	.resource	= tmu1_resources,
++	.num_resources	= ARRAY_SIZE(tmu1_resources),
++};
++
++static struct sh_timer_config tmu2_platform_data = {
++	.name = "TMU2",
++	.channel_offset = 0x1c,
++	.timer_bit = 2,
++	.clk = "tmu0",
++};
++
++static struct resource tmu2_resources[] = {
++	[0] = {
++		.name	= "TMU2",
++		.start	= 0xffd80020,
++		.end	= 0xffd8002b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 18,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu2_device = {
++	.name		= "sh_tmu",
++	.id		= 2,
++	.dev = {
++		.platform_data	= &tmu2_platform_data,
++	},
++	.resource	= tmu2_resources,
++	.num_resources	= ARRAY_SIZE(tmu2_resources),
++};
++
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+ 		.mapbase	= 0xffe00000,
+@@ -213,6 +305,9 @@ static struct platform_device sci_device
+ 
+ static struct platform_device *sh7343_devices[] __initdata = {
+ 	&cmt_device,
++	&tmu0_device,
++	&tmu1_device,
++	&tmu2_device,
+ 	&iic0_device,
+ 	&iic1_device,
+ 	&sci_device,
+@@ -240,6 +335,9 @@ __initcall(sh7343_devices_setup);
+ 
+ static struct platform_device *sh7343_early_devices[] __initdata = {
+ 	&cmt_device,
++	&tmu0_device,
++	&tmu1_device,
++	&tmu2_device,
  };
  
- static struct resource tmu1_resources[] = {
+ void __init plat_early_device_setup(void)
