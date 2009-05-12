@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 May 2009 09:39:06 +0000
-Subject: [PATCH] sh: TMU platform data for sh7343
-Message-Id: <20090512093906.25245.41268.sendpatchset@rx1.opensource.se>
+Date: Tue, 12 May 2009 09:28:25 +0000
+Subject: [PATCH] sh: TMU platform data for sh4-202
+Message-Id: <20090512092825.25119.4889.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,26 +10,34 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds TMU platform data for sh7343. Both clockevent
+This patch adds TMU platform data for sh4-202. Both clockevent
 and clocksource support is enabled.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   98 ++++++++++++++++++++++++++++++++
- 1 file changed, 98 insertions(+)
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |  108 ++++++++++++++++++++++++++++++++
+ 1 file changed, 108 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2009-05-12 13:30:06.000000000 +0900
-@@ -173,6 +173,98 @@ static struct platform_device cmt_device
- 	.num_resources	= ARRAY_SIZE(cmt_resources),
+--- 0001/arch/sh/kernel/cpu/sh4/setup-sh4-202.c
++++ work/arch/sh/kernel/cpu/sh4/setup-sh4-202.c	2009-05-12 15:12:35.000000000 +0900
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/serial.h>
+ #include <linux/serial_sci.h>
++#include <linux/sh_timer.h>
+ 
+ static struct plat_sci_port sci_platform_data[] = {
+ 	{
+@@ -31,8 +32,103 @@ static struct platform_device sci_device
+ 	},
  };
  
 +static struct sh_timer_config tmu0_platform_data = {
 +	.name = "TMU0",
 +	.channel_offset = 0x04,
 +	.timer_bit = 0,
-+	.clk = "tmu0",
++	.clk = "module_clk",
 +	.clockevent_rating = 200,
 +};
 +
@@ -60,7 +68,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.name = "TMU1",
 +	.channel_offset = 0x10,
 +	.timer_bit = 1,
-+	.clk = "tmu0",
++	.clk = "module_clk",
 +	.clocksource_rating = 200,
 +};
 +
@@ -91,14 +99,14 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.name = "TMU2",
 +	.channel_offset = 0x1c,
 +	.timer_bit = 2,
-+	.clk = "tmu0",
++	.clk = "module_clk",
 +};
 +
 +static struct resource tmu2_resources[] = {
 +	[0] = {
 +		.name	= "TMU2",
 +		.start	= 0xffd80020,
-+		.end	= 0xffd8002b,
++		.end	= 0xffd8002f,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
@@ -117,26 +125,30 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.num_resources	= ARRAY_SIZE(tmu2_resources),
 +};
 +
- static struct plat_sci_port sci_platform_data[] = {
- 	{
- 		.mapbase	= 0xffe00000,
-@@ -213,6 +305,9 @@ static struct platform_device sci_device
- 
- static struct platform_device *sh7343_devices[] __initdata = {
- 	&cmt_device,
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
- 	&iic0_device,
- 	&iic1_device,
+ static struct platform_device *sh4202_devices[] __initdata = {
  	&sci_device,
-@@ -240,6 +335,9 @@ __initcall(sh7343_devices_setup);
- 
- static struct platform_device *sh7343_early_devices[] __initdata = {
- 	&cmt_device,
 +	&tmu0_device,
 +	&tmu1_device,
 +	&tmu2_device,
  };
  
- void __init plat_early_device_setup(void)
+ static int __init sh4202_devices_setup(void)
+@@ -42,6 +138,18 @@ static int __init sh4202_devices_setup(v
+ }
+ __initcall(sh4202_devices_setup);
+ 
++static struct platform_device *sh4202_early_devices[] __initdata = {
++	&tmu0_device,
++	&tmu1_device,
++	&tmu2_device,
++};
++
++void __init plat_early_device_setup(void)
++{
++	early_platform_add_devices(sh4202_early_devices,
++				   ARRAY_SIZE(sh4202_early_devices));
++}
++
+ void __init plat_irq_setup(void)
+ {
+ 	/* do nothing - all IRL interrupts are handled by the board code */
