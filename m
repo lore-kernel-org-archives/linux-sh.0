@@ -1,154 +1,96 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 May 2009 10:17:52 +0000
-Subject: [PATCH] sh: TMU platform data for sh7720/sh7721
-Message-Id: <20090512101752.25732.14629.sendpatchset@rx1.opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 12 May 2009 15:13:32 +0000
+Subject: [PATCH 1/3] soc-camera: unify i2c camera device platform data
+Message-Id: <Pine.LNX.4.64.0905121702510.5087@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.0905121649420.5087@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.0905121649420.5087@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@igel.co.jp>
+Unify i2c camera device platform data to point to struct soc_camera_link 
+for a smooth transition to soc-camera as a platform driver.
 
-This patch adds TMU platform data for sh7720 and sh7721.
-Both clockevent and clocksource support is enabled.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/sh/boards/board-ap325rxa.c   |    2 +-
+ arch/sh/boards/mach-migor/setup.c |    4 ++--
+ drivers/media/video/ov772x.c      |    6 ++++--
+ drivers/media/video/tw9910.c      |    6 ++++--
+ 4 files changed, 11 insertions(+), 7 deletions(-)
 
- arch/sh/kernel/cpu/sh3/setup-sh7720.c |  109 +++++++++++++++++++++++++++++++++
- 1 file changed, 109 insertions(+)
-
---- 0001/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-+++ work/arch/sh/kernel/cpu/sh3/setup-sh7720.c	2009-05-12 16:19:14.000000000 +0900
-@@ -18,6 +18,7 @@
- #include <linux/serial.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <asm/rtc.h>
- 
- static struct resource rtc_resources[] = {
-@@ -123,7 +124,103 @@ static struct platform_device usbf_devic
- 	.resource	= usbf_resources,
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index 39e4691..54c5cd1 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -414,7 +414,7 @@ static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("ov772x", 0x21),
+-		.platform_data = &ov7725_info,
++		.platform_data = &ov7725_info.link,
+ 	},
  };
  
-+
-+static struct sh_timer_config tmu0_platform_data = {
-+	.name = "TMU0",
-+	.channel_offset = 0x02,
-+	.timer_bit = 0,
-+	.clk = "module_clk",
-+	.clockevent_rating = 200,
-+};
-+
-+static struct resource tmu0_resources[] = {
-+	[0] = {
-+		.name	= "TMU0",
-+		.start	= 0xa412fe94,
-+		.end	= 0xa412fe9f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 16,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu0_device = {
-+	.name		= "sh_tmu",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &tmu0_platform_data,
-+	},
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
-+};
-+
-+static struct sh_timer_config tmu1_platform_data = {
-+	.name = "TMU1",
-+	.channel_offset = 0xe,
-+	.timer_bit = 1,
-+	.clk = "module_clk",
-+	.clocksource_rating = 200,
-+};
-+
-+static struct resource tmu1_resources[] = {
-+	[0] = {
-+		.name	= "TMU1",
-+		.start	= 0xa412fea0,
-+		.end	= 0xa412feab,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 17,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu1_device = {
-+	.name		= "sh_tmu",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &tmu1_platform_data,
-+	},
-+	.resource	= tmu1_resources,
-+	.num_resources	= ARRAY_SIZE(tmu1_resources),
-+};
-+
-+static struct sh_timer_config tmu2_platform_data = {
-+	.name = "TMU2",
-+	.channel_offset = 0x1a,
-+	.timer_bit = 2,
-+	.clk = "module_clk",
-+};
-+
-+static struct resource tmu2_resources[] = {
-+	[0] = {
-+		.name	= "TMU2",
-+		.start	= 0xa412feac,
-+		.end	= 0xa412feb5,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 18,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu2_device = {
-+	.name		= "sh_tmu",
-+	.id		= 2,
-+	.dev = {
-+		.platform_data	= &tmu2_platform_data,
-+	},
-+	.resource	= tmu2_resources,
-+	.num_resources	= ARRAY_SIZE(tmu2_resources),
-+};
-+
- static struct platform_device *sh7720_devices[] __initdata = {
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
- 	&rtc_device,
- 	&sci_device,
- 	&usb_ohci_device,
-@@ -137,6 +234,18 @@ static int __init sh7720_devices_setup(v
- }
- __initcall(sh7720_devices_setup);
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 1ee1de0..c4b97e1 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -430,11 +430,11 @@ static struct i2c_board_info migor_i2c_devices[] = {
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("ov772x", 0x21),
+-		.platform_data = &ov7725_info,
++		.platform_data = &ov7725_info.link,
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("tw9910", 0x45),
+-		.platform_data = &tw9910_info,
++		.platform_data = &tw9910_info.link,
+ 	},
+ };
  
-+static struct platform_device *sh7720_early_devices[] __initdata = {
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
-+};
-+
-+void __init plat_early_device_setup(void)
-+{
-+	early_platform_add_devices(sh7720_early_devices,
-+				   ARRAY_SIZE(sh7720_early_devices));
-+}
-+
- enum {
- 	UNUSED = 0,
+diff --git a/drivers/media/video/ov772x.c b/drivers/media/video/ov772x.c
+index c0d9112..0bce255 100644
+--- a/drivers/media/video/ov772x.c
++++ b/drivers/media/video/ov772x.c
+@@ -1067,10 +1067,12 @@ static int ov772x_probe(struct i2c_client *client,
+ 	struct i2c_adapter        *adapter = to_i2c_adapter(client->dev.parent);
+ 	int                        ret;
  
+-	info = client->dev.platform_data;
+-	if (!info)
++	if (!client->dev.platform_data)
+ 		return -EINVAL;
+ 
++	info = container_of(client->dev.platform_data,
++			    struct ov772x_camera_info, link);
++
+ 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
+ 		dev_err(&adapter->dev,
+ 			"I2C-Adapter doesn't support "
+diff --git a/drivers/media/video/tw9910.c b/drivers/media/video/tw9910.c
+index a399476..aa5065e 100644
+--- a/drivers/media/video/tw9910.c
++++ b/drivers/media/video/tw9910.c
+@@ -875,10 +875,12 @@ static int tw9910_probe(struct i2c_client *client,
+ 	const struct tw9910_scale_ctrl *scale;
+ 	int                             i, ret;
+ 
+-	info = client->dev.platform_data;
+-	if (!info)
++	if (!client->dev.platform_data)
+ 		return -EINVAL;
+ 
++	info = container_of(client->dev.platform_data,
++			    struct tw9910_video_info, link);
++
+ 	if (!i2c_check_functionality(to_i2c_adapter(client->dev.parent),
+ 				     I2C_FUNC_SMBUS_BYTE_DATA)) {
+ 		dev_err(&client->dev,
+-- 
+1.6.2.4
+
