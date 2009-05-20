@@ -1,118 +1,189 @@
-From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
-Date: Sat, 30 May 2009 13:27:16 +0000
-Subject: Re: [PATCH] clocksource: SuperH TMU Timer driver
-Message-Id: <4A213434.4030800@juno.dti.ne.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 May 2009 13:55:02 +0000
+Subject: [PATCH] sh: CONFIG_SH_CLK_DISABLE_LEGACY
+Message-Id: <20090520135502.7742.12748.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090501065100.8800.99808.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090501065100.8800.99808.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus, could you provide an answer to my question on SH-TMU?
+From: Magnus Damm <damm@igel.co.jp>
 
-Magnus Damm wrote:
-> From: Magnus Damm <damm@igel.co.jp>
-> 
-> This patch adds a TMU driver for the SuperH architecture.
-> 
-> The TMU driver is a platform driver with early platform
-> support to allow using a TMU channel as clockevent or
-> clocksource during system bootup or later.
-> 
-> Clocksource or clockevent can be selected.
-> Both periodic and oneshot clockevents are supported.
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> ---
-> 
->  Tested on a Migo-R board with sh7722.
->  Applies on top of the MTU2 patches.
->  Clocksource operation requires the following patch:
->  "clocksource: setup mult_orig in clocksource_enable()"
-> 
->  arch/sh/Kconfig              |   12 +
->  drivers/clocksource/Makefile |    1 
->  drivers/clocksource/sh_tmu.c |  461 ++++++++++++++++++++++++++++++++++++++++++
->  include/linux/sh_tmu.h       |   13 +
->  4 files changed, 487 insertions(+)
-> 
-> --- 0006/arch/sh/Kconfig
-> +++ work/arch/sh/Kconfig	2009-05-01 13:18:03.000000000 +0900
-> @@ -116,6 +116,9 @@ config SYS_SUPPORTS_CMT
->  config SYS_SUPPORTS_MTU2
->  	bool
->  
-> +config SYS_SUPPORTS_TMU
-> +	bool
-> +
->  config STACKTRACE_SUPPORT
->  	def_bool y
->  
-> @@ -470,6 +473,15 @@ config SH_TMU
->  	help
->  	  This enables the use of the TMU as the system timer.
->  
-> +config SH_TIMER_TMU
-> +	bool "TMU timer driver"
-> +	depends on !SH_TMU && SYS_SUPPORTS_TMU
-> +	default y
-> +	select GENERIC_TIME
-> +	select GENERIC_CLOCKEVENTS
-> +	help
-> +	  This enables the build of the TMU timer driver.
-> +
->  config SH_TIMER_CMT
->  	bool "CMT timer driver"
->  	depends on SYS_SUPPORTS_CMT
-> --- 0004/drivers/clocksource/Makefile
-> +++ work/drivers/clocksource/Makefile	2009-05-01 13:17:38.000000000 +0900
-> @@ -4,3 +4,4 @@ obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
->  obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
->  obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
->  obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
-> +obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
-> --- /dev/null
-> +++ work/drivers/clocksource/sh_tmu.c	2009-05-01 13:20:00.000000000 +0900
-> @@ -0,0 +1,461 @@
-(snip...)
+Invert legacy kconfig logic in clkfwk branch. Instead of
+building clock-cpg.c if CONFIG_SH_CLK_CPG_LEGACY is set,
+let CONFIG_SH_CLK_DISABLE_LEGACY be no by default and let
+upgraded processors use select to disable the legacy code.
+While at it, put clock-cpg.c code in clock.c and wrap it
+in ifdefs to only build if CONFIG_SH_CLK_DISABLE_LEGACY
+is set to no.
 
-> +static void sh_tmu_set_next(struct sh_tmu_priv *p, unsigned long delta,
-> +			    int periodic)
-> +{
-> +	/* stop timer */
-> +	sh_tmu_start_stop_ch(p, 0);
-> +
-> +	/* acknowledge interrupt */
-> +	sh_tmu_read(p, TCR);
-> +
-> +	/* enable interrupt */
-> +	sh_tmu_write(p, TCR, 0x0020);
-> +
-> +	/* reload delta value in case of periodic timer */
-> +	if (periodic)
-> +		sh_tmu_write(p, TCOR, delta);
-> +	else
-> +		sh_tmu_write(p, TCOR, 0);
-> +
-> +	sh_tmu_write(p, TCNT, delta);
-> +
-> +	/* start timer */
-> +	sh_tmu_start_stop_ch(p, 1);
-> +}
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-In some occasions, qemu-sh prints out a lot of warnings on timer
-with this message : 'Timer with period zero. disabling.'
+ arch/sh/Kconfig                |    5 +--
+ arch/sh/kernel/cpu/Makefile    |    1 
+ arch/sh/kernel/cpu/clock-cpg.c |   60 ---------------------------------------
+ arch/sh/kernel/cpu/clock.c     |   61 ++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 64 insertions(+), 63 deletions(-)
 
-I made some investigation, and found that the warnings are printed
-after zero value is set to TCOR.  I checked SH7785 hardware manual,
-but could not find any description what happens when zero value set
-to TCOR.
-
-According to the code above, I guess that TMU works as a non-periodic
-one-shot timer when the TCOR value is zero. Is it right?
-
-
-Regards,
-Shin-ichiro KAWASAKI
+--- 0001/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2009-05-20 21:40:26.000000000 +0900
+@@ -398,6 +398,7 @@ config CPU_SUBTYPE_SH7785
+ 	select CPU_SHX2
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
++	select SH_CLK_DISABLE_LEGACY
+ 
+ config CPU_SUBTYPE_SH7786
+ 	bool "Support SH7786 processor"
+@@ -513,8 +514,8 @@ config SH_PCLK_FREQ
+ 	  This is necessary for determining the reference clock value on
+ 	  platforms lacking an RTC.
+ 
+-config SH_CLK_CPG_LEGACY
+-	def_bool y if !CPU_SUBTYPE_SH7785
++config SH_CLK_DISABLE_LEGACY
++	def_bool n
+ 
+ config SH_CLK_MD
+ 	int "CPU Mode Pin Setting"
+--- 0001/arch/sh/kernel/cpu/Makefile
++++ work/arch/sh/kernel/cpu/Makefile	2009-05-20 21:39:39.000000000 +0900
+@@ -17,6 +17,5 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
+ 
+ obj-$(CONFIG_UBC_WAKEUP)	+= ubc.o
+ obj-$(CONFIG_SH_ADC)		+= adc.o
+-obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
+ 
+ obj-y	+= irq/ init.o clock.o
+--- 0001/arch/sh/kernel/cpu/clock-cpg.c
++++ /dev/null	2009-05-19 12:17:43.197032281 +0900
+@@ -1,60 +0,0 @@
+-#include <linux/clk.h>
+-#include <linux/compiler.h>
+-#include <asm/clock.h>
+-
+-static struct clk master_clk = {
+-	.name		= "master_clk",
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.rate		= CONFIG_SH_PCLK_FREQ,
+-};
+-
+-static struct clk peripheral_clk = {
+-	.name		= "peripheral_clk",
+-	.parent		= &master_clk,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-};
+-
+-static struct clk bus_clk = {
+-	.name		= "bus_clk",
+-	.parent		= &master_clk,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-};
+-
+-static struct clk cpu_clk = {
+-	.name		= "cpu_clk",
+-	.parent		= &master_clk,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-};
+-
+-/*
+- * The ordering of these clocks matters, do not change it.
+- */
+-static struct clk *onchip_clocks[] = {
+-	&master_clk,
+-	&peripheral_clk,
+-	&bus_clk,
+-	&cpu_clk,
+-};
+-
+-int __init __deprecated cpg_clk_init(void)
+-{
+-	int i, ret = 0;
+-
+-	for (i = 0; i < ARRAY_SIZE(onchip_clocks); i++) {
+-		struct clk *clk = onchip_clocks[i];
+-		arch_init_clk_ops(&clk->ops, i);
+-		if (clk->ops)
+-			ret |= clk_register(clk);
+-	}
+-
+-	return ret;
+-}
+-
+-/*
+- * Placeholder for compatability, until the lazy CPUs do this
+- * on their own.
+- */
+-int __init __weak arch_clk_init(void)
+-{
+-	return cpg_clk_init();
+-}
+--- 0001/arch/sh/kernel/cpu/clock.c
++++ work/arch/sh/kernel/cpu/clock.c	2009-05-20 21:39:28.000000000 +0900
+@@ -585,3 +585,64 @@ err_out:
+ 	return err;
+ }
+ late_initcall(clk_debugfs_init);
++
++#ifndef CONFIG_SH_CLK_DISABLE_LEGACY
++
++static struct clk master_clk = {
++	.name		= "master_clk",
++	.flags		= CLK_ENABLE_ON_INIT,
++	.rate		= CONFIG_SH_PCLK_FREQ,
++};
++
++static struct clk peripheral_clk = {
++	.name		= "peripheral_clk",
++	.parent		= &master_clk,
++	.flags		= CLK_ENABLE_ON_INIT,
++};
++
++static struct clk bus_clk = {
++	.name		= "bus_clk",
++	.parent		= &master_clk,
++	.flags		= CLK_ENABLE_ON_INIT,
++};
++
++static struct clk cpu_clk = {
++	.name		= "cpu_clk",
++	.parent		= &master_clk,
++	.flags		= CLK_ENABLE_ON_INIT,
++};
++
++/*
++ * The ordering of these clocks matters, do not change it.
++ */
++static struct clk *onchip_clocks[] = {
++	&master_clk,
++	&peripheral_clk,
++	&bus_clk,
++	&cpu_clk,
++};
++
++int __init __deprecated cpg_clk_init(void)
++{
++	int i, ret = 0;
++
++	for (i = 0; i < ARRAY_SIZE(onchip_clocks); i++) {
++		struct clk *clk = onchip_clocks[i];
++		arch_init_clk_ops(&clk->ops, i);
++		if (clk->ops)
++			ret |= clk_register(clk);
++	}
++
++	return ret;
++}
++
++/*
++ * Placeholder for compatability, until the lazy CPUs do this
++ * on their own.
++ */
++int __init __weak arch_clk_init(void)
++{
++	return cpg_clk_init();
++}
++
++#endif /* CONFIG_SH_CLK_DISABLE_LEGACY */
