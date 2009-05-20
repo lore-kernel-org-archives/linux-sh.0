@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 May 2009 14:18:00 +0000
-Subject: [PATCH] sh: shared clock framework code for SuperH Mobile
-Message-Id: <20090520141800.8158.23015.sendpatchset@rx1.opensource.se>
+Date: Wed, 20 May 2009 14:23:16 +0000
+Subject: [PATCH] sh: shared clock framework code for sh7723
+Message-Id: <20090520142316.8221.69424.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090520141800.8158.23015.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090520141800.8158.23015.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,148 +12,146 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds new and improved clock framework code for
-SuperH Mobile processors. Only shared code is included in
-this patch, processor specific patches are required on top
-of this to make use of the new features.
-
-With this rewrite the clock framework becomes aware of
-which CPG divisors combinations that are valid. The cpu
-specific code flags which divisor bits that are supported
-and a callback is used to validate divisor combinations.
-Maximum per divisor clock ratings are also supported.
-
-The divisors are kept in groups. One group is a bunch of
-divisors that have complex dependencies. The shared code
-will make sure that all divisors are kept valid and
-informs the cpu specific code to update the divisors in
-the group atomically.
-
-PLL modification is not supported. Only divisor modification
-with sh_mobile_div_optimize() is supported for now. The PLL
-should be read out during boot and will be kept constant during
-run-time.
-
-Setting rates from the clock framework needs a bit more work,
-but should be fairly easy to add on top of this.
-
-Hint: state_dump() gives you all valid divisor combinations.
+This patch hooks up the sh7723 processor to make use of
+the new and improved clock framework code for SuperH Mobile.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Apply on top of the clkfwk topic branch.
+ Tested on ap325.  Apply on top of the clkfwk topic branch.
 
- arch/sh/include/cpu-common/cpu/clock-sh_mobile.h |   89 +++
- arch/sh/kernel/cpu/shmobile/Makefile             |    2 
- arch/sh/kernel/cpu/shmobile/clock.c              |  569 ++++++++++++++++++++++
- 3 files changed, 659 insertions(+), 1 deletion(-)
+ arch/sh/Kconfig                                  |    1 
+ arch/sh/include/cpu-common/cpu/clock-sh_mobile.h |    6 
+ arch/sh/kernel/cpu/sh4a/Makefile                 |    2 
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c           |   57 ---
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c           |  361 ++++++++++++++++++++++
+ 5 files changed, 370 insertions(+), 57 deletions(-)
 
---- /dev/null
-+++ work/arch/sh/include/cpu-common/cpu/clock-sh_mobile.h	2009-05-20 22:08:58.000000000 +0900
-@@ -0,0 +1,89 @@
-+#ifndef __CLOCK_SH_MOBILE_H__
-+#define __CLOCK_SH_MOBILE_H__
-+
-+#define SH_MOBILE_DIVISOR_NR 0 /* override with cpu specific value */
-+#define SH_MOBILE_MSTP_NR 0 /* override with cpu specific value */
-+#define SH_MOBILE_ALLOWED_NR 16 /* 4-bit fields is enough for now */
-+
-+/* system clock modes */
-+#define CLK_MODE_N_1 0
-+#define CLK_MODE_3_2 1
-+#define CLK_MODE_5_2 2
-+#define CLK_MODE_1_N 3
-+#define CLK_MODE_4_3 4
-+#define CLK_MODE_5_4 5
-+#define CLK_MODE_1_1 6
-+#define CLK_MODE_2_1 7
-+#define CLK_MODE_3_1 8
-+#define CLK_MODE_4_1 9
-+
-+/* per-divisor run time state */
-+struct sh_mobile_div_state {
-+	int mode;
-+	int selected;
-+	int cnt;
-+	int forced_min;
-+	int forced_max;
-+	int best;
-+};
-+
-+/* run time state */
-+struct sh_mobile_cpg_state {
-+	int cnt;
-+	struct sh_mobile_div_state div_state[SH_MOBILE_DIVISOR_NR];
-+};
-+
-+/* per-divisor hardware configuration (write-once) */
-+struct sh_mobile_div_hw_cfg {
-+	char *name;
-+	int div;
-+	int grp;
-+	unsigned long max_mhz;
-+	DECLARE_BITMAP(allowed, SH_MOBILE_ALLOWED_NR);
-+};
-+
-+/* per-mstp hardware configuration (write-once) */
-+struct sh_mobile_mstp_hw_cfg {
-+	char *name;
-+	int parent;
-+	unsigned long reg;
-+	unsigned char bitnr, enable_on_init, use_cpg, use_ram;
-+};
-+
-+/* hardware configuration (write-once) */
-+struct sh_mobile_cpg_hw_cfg {
-+	int pll_mult; /* fixed PLL multiplier for now */
-+	int (*check_div)(struct sh_mobile_cpg_hw_cfg *h, int div, int bit,
-+			 struct sh_mobile_cpg_state *cs);
-+	int (*set_div)(struct sh_mobile_cpg_hw_cfg *h, int grp,
-+		       struct sh_mobile_cpg_state *cs);
-+	int (*get_div)(struct sh_mobile_cpg_hw_cfg *h, int div);
-+	void (*enable_disable)(struct sh_mobile_cpg_hw_cfg *h, int div, int on);
-+	struct sh_mobile_div_hw_cfg div[SH_MOBILE_DIVISOR_NR];
-+	int *multipliers;
-+	int *divisors;
-+	struct sh_mobile_mstp_hw_cfg mstp[SH_MOBILE_MSTP_NR];
-+};
-+
-+int sh_mobile_div_check(struct sh_mobile_cpg_hw_cfg *h, int prev_div,
-+			int mode, int this,
-+			struct sh_mobile_cpg_state *cs);
-+
-+struct sh_mobile_div_hw_cfg *sh_mobile_div(struct sh_mobile_cpg_hw_cfg *h,
-+					   int nr, char *name, int clk,
-+					   int grp, unsigned long max_mhz);
-+
-+void sh_mobile_div_ok(struct sh_mobile_div_hw_cfg *d, int bit);
-+void sh_mobile_div_ng(struct sh_mobile_div_hw_cfg *d, int bit);
-+
-+int sh_mobile_div_optimize(struct sh_mobile_cpg_hw_cfg *fhcp, char *div_str);
-+
-+int sh_mobile_mstp(struct sh_mobile_cpg_hw_cfg *h,
-+		   int nr, char *name, int parent,
-+		   unsigned long reg, int bitnr,
-+		   int enable_on_init, int use_cpg, int use_ram);
-+
-+
-+int __init sh_mobile_clk_register(struct sh_mobile_cpg_hw_cfg *h);
-+
-+#endif /* __CLOCK_SH_MOBILE_H__ */
---- 0001/arch/sh/kernel/cpu/shmobile/Makefile
-+++ work/arch/sh/kernel/cpu/shmobile/Makefile	2009-05-20 22:03:57.000000000 +0900
-@@ -3,4 +3,4 @@
- #
+--- 0003/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2009-05-20 22:19:34.000000000 +0900
+@@ -365,6 +365,7 @@ config CPU_SUBTYPE_SH7723
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_CMT
++	select SH_CLK_DISABLE_LEGACY
+ 	help
+ 	  Select SH7723 if you have an SH-MobileR2 CPU.
  
- # Power Management & Sleep mode
--obj-$(CONFIG_PM)	+= pm.o sleep.o
-+obj-$(CONFIG_PM)	+= pm.o sleep.o clock.o
+--- 0004/arch/sh/include/cpu-common/cpu/clock-sh_mobile.h
++++ work/arch/sh/include/cpu-common/cpu/clock-sh_mobile.h	2009-05-20 22:19:34.000000000 +0900
+@@ -1,8 +1,14 @@
+ #ifndef __CLOCK_SH_MOBILE_H__
+ #define __CLOCK_SH_MOBILE_H__
+ 
++#ifdef CONFIG_CPU_SUBTYPE_SH7723
++#define SH_MOBILE_DIVISOR_NR 9
++#define SH_MOBILE_MSTP_NR 48
++#else
+ #define SH_MOBILE_DIVISOR_NR 0 /* override with cpu specific value */
+ #define SH_MOBILE_MSTP_NR 0 /* override with cpu specific value */
++#endif
++
+ #define SH_MOBILE_ALLOWED_NR 16 /* 4-bit fields is enough for now */
+ 
+ /* system clock modes */
+--- 0001/arch/sh/kernel/cpu/sh4a/Makefile
++++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-05-20 22:19:34.000000000 +0900
+@@ -26,7 +26,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SH7785)	:= cl
+ clock-$(CONFIG_CPU_SUBTYPE_SH7786)	:= clock-sh7786.o
+ clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= clock-sh7722.o
+ clock-$(CONFIG_CPU_SUBTYPE_SH7722)	:= clock-sh7722.o
+-clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7722.o
++clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7723.o
+ clock-$(CONFIG_CPU_SUBTYPE_SH7724)	:= clock-sh7722.o
+ clock-$(CONFIG_CPU_SUBTYPE_SH7366)	:= clock-sh7722.o
+ clock-$(CONFIG_CPU_SUBTYPE_SHX3)	:= clock-shx3.o
+--- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-05-20 22:22:15.000000000 +0900
+@@ -1,7 +1,7 @@
+ /*
+  * arch/sh/kernel/cpu/sh4a/clock-sh7722.c
+  *
+- * SH7343, SH7722, SH7723 & SH7366 support for the clock framework
++ * SH7343, SH7722 & SH7366 support for the clock framework
+  *
+  * Copyright (c) 2006-2007 Nomad Global Solutions Inc
+  * Based on code for sh7343 by Paul Mundt
+@@ -176,11 +176,6 @@ static unsigned long module_clk_recalc(s
+ #define STCMASK		0x3f
+ #define DIVCALC(div)	(div/2-1)
+ #define FRQCRKICK	0x80000000
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7723)
+-#define MASTERDIVS	{ 6, 8, 12, 16 }
+-#define STCMASK		0x1f
+-#define DIVCALC(div)	(div-1)
+-#define FRQCRKICK	0x00000000
+ #else
+ #define MASTERDIVS	{ 2, 3, 4, 6, 8, 16 }
+ #define STCMASK		0x1f
+@@ -681,56 +676,6 @@ static struct clk sh7722_mstpcr_clocks[]
+ 	MSTPCR("vpu0", "bus_clk", 2, 1, CLK_ENABLE_ON_INIT),
+ 	MSTPCR("lcdc0", "bus_clk", 2, 0, 0),
+ #endif
+-#if defined(CONFIG_CPU_SUBTYPE_SH7723)
+-	/* See page 60 of Datasheet V1.0: Overview -> Block Diagram */
+-	MSTPCR("tlb0", "cpu_clk", 0, 31, 0),
+-	MSTPCR("ic0", "cpu_clk", 0, 30, 0),
+-	MSTPCR("oc0", "cpu_clk", 0, 29, 0),
+-	MSTPCR("l2c0", "sh_clk", 0, 28, 0),
+-	MSTPCR("ilmem0", "cpu_clk", 0, 27, 0),
+-	MSTPCR("fpu0", "cpu_clk", 0, 24, 0),
+-	MSTPCR("intc0", "cpu_clk", 0, 22, 0),
+-	MSTPCR("dmac0", "bus_clk", 0, 21, 0),
+-	MSTPCR("sh0", "sh_clk", 0, 20, 0),
+-	MSTPCR("hudi0", "peripheral_clk", 0, 19, 0),
+-	MSTPCR("ubc0", "cpu_clk", 0, 17, 0),
+-	MSTPCR("tmu0", "peripheral_clk", 0, 15, 0),
+-	MSTPCR("cmt0", "r_clk", 0, 14, 0),
+-	MSTPCR("rwdt0", "r_clk", 0, 13, 0),
+-	MSTPCR("dmac1", "bus_clk", 0, 12, 0),
+-	MSTPCR("tmu1", "peripheral_clk", 0, 11, 0),
+-	MSTPCR("flctl0", "peripheral_clk", 0, 10, 0),
+-	MSTPCR("scif0", "peripheral_clk", 0, 9, 0),
+-	MSTPCR("scif1", "peripheral_clk", 0, 8, 0),
+-	MSTPCR("scif2", "peripheral_clk", 0, 7, 0),
+-	MSTPCR("scif3", "bus_clk", 0, 6, 0),
+-	MSTPCR("scif4", "bus_clk", 0, 5, 0),
+-	MSTPCR("scif5", "bus_clk", 0, 4, 0),
+-	MSTPCR("msiof0", "bus_clk", 0, 2, 0),
+-	MSTPCR("msiof1", "bus_clk", 0, 1, 0),
+-	MSTPCR("meram0", "sh_clk", 0, 0, CLK_ENABLE_ON_INIT),
+-	MSTPCR("i2c0", "peripheral_clk", 1, 9, 0),
+-	MSTPCR("rtc0", "r_clk", 1, 8, 0),
+-	MSTPCR("atapi0", "sh_clk", 2, 28, 0),
+-	MSTPCR("adc0", "peripheral_clk", 2, 28, 0),
+-	MSTPCR("tpu0", "bus_clk", 2, 25, 0),
+-	MSTPCR("irda0", "peripheral_clk", 2, 24, 0),
+-	MSTPCR("tsif0", "bus_clk", 2, 22, 0),
+-	MSTPCR("icb0", "bus_clk", 2, 21, 0),
+-	MSTPCR("sdhi0", "bus_clk", 2, 18, 0),
+-	MSTPCR("sdhi1", "bus_clk", 2, 17, 0),
+-	MSTPCR("keysc0", "r_clk", 2, 14, 0),
+-	MSTPCR("usb0", "bus_clk", 2, 11, 0),
+-	MSTPCR("2dg0", "bus_clk", 2, 10, 0),
+-	MSTPCR("siu0", "bus_clk", 2, 8, 0),
+-	MSTPCR("veu1", "bus_clk", 2, 6, CLK_ENABLE_ON_INIT),
+-	MSTPCR("vou0", "bus_clk", 2, 5, 0),
+-	MSTPCR("beu0", "bus_clk", 2, 4, 0),
+-	MSTPCR("ceu0", "bus_clk", 2, 3, 0),
+-	MSTPCR("veu0", "bus_clk", 2, 2, CLK_ENABLE_ON_INIT),
+-	MSTPCR("vpu0", "bus_clk", 2, 1, CLK_ENABLE_ON_INIT),
+-	MSTPCR("lcdc0", "bus_clk", 2, 0, 0),
+-#endif
+ #if defined(CONFIG_CPU_SUBTYPE_SH7724)
+ 	/* See Datasheet : Overview -> Block Diagram */
+ 	MSTPCR("tlb0", "cpu_clk", 0, 31, 0),
 --- /dev/null
-+++ work/arch/sh/kernel/cpu/shmobile/clock.c	2009-05-20 22:03:57.000000000 +0900
-@@ -0,0 +1,569 @@
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2009-05-20 22:21:02.000000000 +0900
+@@ -0,0 +1,361 @@
 +/*
-+ * SuperH Mobile clock framework support
++ * arch/sh/kernel/cpu/sh4a/clock-sh7723.c
++ *
++ * SH77723 clock framework support
 + *
 + * Copyright (C) 2009 Magnus Damm
 + *
@@ -176,546 +176,336 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +#include <cpu/clock-sh_mobile.h>
 +#include <asm/clock.h>
 +
-+/* Fixed 32 KHz root clock for RTC and Power Management purposes */
-+static struct clk r_clk = {
-+	.name		= "rclk",
-+	.id		= -1,
-+	.rate		= 32768,
-+};
++/* divisor bitnr in bitmaps and as index in multipliers[] / divisors[] */
++#define BIT_1_1  0
++#define BIT_2_3  1
++#define BIT_1_2  2
++#define BIT_2_5  3
++#define BIT_1_3  4
++#define BIT_1_4  5
++#define BIT_1_5  6
++#define BIT_1_6  7
++#define BIT_1_8  8
++#define BIT_1_10 9
++#define BIT_1_12 10
++#define BIT_1_16 11 /* keep below SH_MOBILE_ALLOWED_NR */
 +
-+/*
-+ * Default rate for the root input clock, reset this with clk_set_rate()
-+ * from the platform code.
-+ */
-+struct clk extal_clk = {
-+	.name		= "extal",
-+	.id		= -1,
-+	.rate		= 33333333,
-+};
++/* system divisor nr */
++#define DIV_I  0
++#define DIV_U  1
++#define DIV_SH 2
++#define DIV_B3 3
++#define DIV_B  4
++#define DIV_P  5
++#define DIV_SIUA 6
++#define DIV_SIUB 7
++#define DIV_IRDA 8  /* keep below SH_MOBILE_DIVISOR_NR */
 +
-+static int check_n_m(struct sh_mobile_cpg_hw_cfg *fhcp,
-+		     int n, int m, int prev_div, int this,
-+		     struct sh_mobile_cpg_state *cs)
-+{
-+	int prev = cs->div_state[prev_div].selected;
-+	int prev_value = (fhcp->divisors[prev] * n) / fhcp->multipliers[prev];
-+	int this_value = (fhcp->divisors[this] * m) / fhcp->multipliers[this];
-+	int last = SH_MOBILE_ALLOWED_NR - 1;
++/* system clock groups */
++#define GRP_UNUSED 0 /* zero must be unused */
++#define GRP_FRQCR 1
++#define GRP_SIUA 2
++#define GRP_SIUB 3
++#define GRP_IRDA 4
 +
-+	if (prev_value = this_value)
-+		return 0;
++/* SH7723 registers */
++#define FRQCR		        0xa4150000
++#define VCLKCR			0xa4150004
++#define SCLKACR			0xa4150008
++#define SCLKBCR			0xa415000c
++#define IrDACLKCR		0xa4150010
++#define MSTPCR0			0xa4150030
++#define MSTPCR1			0xa4150034
++#define MSTPCR2			0xa4150038
 +
-+	if ((n > last) || (m > last))
-+		return -2;
++/* common divisor combinations, index must match with BIT_ values above */
++static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1,  1,  1  };
++static int divisors[] =    { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16 };
 +
-+	return -1;
-+}
-+
-+int sh_mobile_div_check(struct sh_mobile_cpg_hw_cfg *fhcp, int prev_div,
-+			int mode, int this,
-+			struct sh_mobile_cpg_state *cs)
++static int sh7723_div_check(struct sh_mobile_cpg_hw_cfg *f, int div, int bit,
++			    struct sh_mobile_cpg_state *cs)
 +{
 +	int ret = -1;
-+	int k;
 +
-+	switch (mode) {
-+	case CLK_MODE_N_1:
-+		for (k = 1; ret = -1; k++)
-+			ret = check_n_m(fhcp, k, 1, prev_div, this, cs);
++	switch (div) {
++	case DIV_SH:
++		ret = sh_mobile_div_check(f, DIV_I, CLK_MODE_N_1, bit, cs);
++		if (ret >= 0)
++			break;
++		ret = sh_mobile_div_check(f, DIV_I, CLK_MODE_3_2, bit, cs);
 +		break;
-+	case CLK_MODE_3_2:
-+		ret = check_n_m(fhcp, 3, 2, prev_div, this, cs);
++	case DIV_U:
++		ret = sh_mobile_div_check(f, DIV_SH, CLK_MODE_1_1, bit, cs);
 +		break;
-+	case CLK_MODE_5_2:
-+		ret = check_n_m(fhcp, 5, 2, prev_div, this, cs);
++	case DIV_B:
++		ret = sh_mobile_div_check(f, DIV_SH, CLK_MODE_N_1, bit, cs);
 +		break;
-+	case CLK_MODE_1_N:
-+		for (k = 1; ret = -1; k++)
-+			ret = check_n_m(fhcp, 1, k, prev_div, this, cs);
++	case DIV_B3:
++		ret = sh_mobile_div_check(f, DIV_SH, CLK_MODE_N_1, bit, cs);
 +		break;
-+	case CLK_MODE_4_3:
-+		ret = check_n_m(fhcp, 4, 3, prev_div, this, cs);
++	case DIV_P: /* both combinations must be met */
++		ret = sh_mobile_div_check(f, DIV_I, CLK_MODE_N_1, bit, cs);
++		if (ret < 0)
++			break;
++		ret = sh_mobile_div_check(f, DIV_B, CLK_MODE_N_1, bit, cs);
 +		break;
-+	case CLK_MODE_5_4:
-+		ret = check_n_m(fhcp, 5, 4, prev_div, this, cs);
-+		break;
-+	case CLK_MODE_1_1:
-+		ret = check_n_m(fhcp, 1, 1, prev_div, this, cs);
-+		break;
-+	case CLK_MODE_2_1:
-+		ret = check_n_m(fhcp, 2, 1, prev_div, this, cs);
-+		break;
-+	case CLK_MODE_3_1:
-+		ret = check_n_m(fhcp, 3, 1, prev_div, this, cs);
-+		break;
-+	case CLK_MODE_4_1:
-+		ret = check_n_m(fhcp, 4, 1, prev_div, this, cs);
++	case DIV_I:
++	case DIV_SIUA:
++	case DIV_SIUB:
++	case DIV_IRDA:
++		ret = 0;
 +		break;
 +	default:
 +		break;
 +	}
 +
-+	if (ret >= 0)
-+		ret = mode;
-+
 +	return ret;
 +}
 +
-+struct sh_mobile_div_hw_cfg *sh_mobile_div(struct sh_mobile_cpg_hw_cfg *h,
-+					   int nr, char *name, int div,
-+					   int grp, unsigned long max_mhz)
++static int sh7723_div_set(struct sh_mobile_cpg_hw_cfg *f, int grp,
++			  struct sh_mobile_cpg_state *cs)
 +{
-+	struct sh_mobile_div_hw_cfg *d;
++	unsigned long value;
 +
-+	BUG_ON(nr >= SH_MOBILE_DIVISOR_NR);
++	switch (grp) {
++	case GRP_FRQCR:
++		value = __raw_readl(FRQCR) & 0xff000000;
++		value |= cs->div_state[DIV_I].selected << 20; /* IFC */
++		value |= cs->div_state[DIV_U].selected << 16; /* UFC */
++		value |= cs->div_state[DIV_SH].selected << 12; /* SFC */
++		value |= cs->div_state[DIV_B].selected << 8; /* BFC */
++		value |= cs->div_state[DIV_B3].selected << 4; /* B3FC */
++		value |= cs->div_state[DIV_P].selected; /* P1FC */
++		__raw_writel(value, FRQCR);
++		break;
 +
-+	d = &h->div[nr];
-+	d->name = name;
-+	d->div = div;
-+	d->grp = grp;
-+	d->max_mhz = max_mhz;
-+	return d;
++	case GRP_SIUA:
++		value = __raw_readl(SCLKACR) & ~0xf;
++		value |=  cs->div_state[DIV_SIUA].selected;
++		__raw_writel(value, SCLKACR);
++		break;
++
++	case GRP_SIUB:
++		value = __raw_readl(SCLKBCR) & ~0xf;
++		value |=  cs->div_state[DIV_SIUB].selected;
++		__raw_writel(value, SCLKBCR);
++		break;
++
++	case GRP_IRDA:
++		value = __raw_readl(IrDACLKCR) & ~0xf;
++		value |=  cs->div_state[DIV_IRDA].selected;
++		__raw_writel(value, IrDACLKCR);
++		break;
++	}
++
++	return 1; /* done setting */
 +}
 +
-+void sh_mobile_div_ok(struct sh_mobile_div_hw_cfg *d, int bit)
++static int sh7723_div_get(struct sh_mobile_cpg_hw_cfg *f, int div)
 +{
-+	BUG_ON(bit >= SH_MOBILE_ALLOWED_NR);
++	int shift;
 +
-+	__set_bit(bit, d->allowed);
++	switch (div) {
++	case DIV_I:
++		shift = 20; /* IFC */
++		break;
++
++	case DIV_U:
++		shift = 16; /* UFC */
++		break;
++
++	case DIV_SH:
++		shift = 12; /* SFC */
++		break;
++
++	case DIV_B:
++		shift = 8; /* BFC */
++		break;
++
++	case DIV_B3:
++		shift = 4; /* B3FC */
++		break;
++
++	case DIV_P:
++		shift = 0; /* P1FC */
++		break;
++
++	case DIV_IRDA:
++		return __raw_readl(IrDACLKCR) & 0xf;
++
++	case DIV_SIUA:
++		return __raw_readl(SCLKACR) & 0xf;
++
++	case DIV_SIUB:
++		return __raw_readl(SCLKBCR) & 0xf;
++
++	default:
++		return -1;
++	}
++
++	return (__raw_readl(FRQCR) >> shift) & 0xf;
 +}
 +
-+void sh_mobile_div_ng(struct sh_mobile_div_hw_cfg *d, int bit)
++static void sh7723_div_enable_disable(struct sh_mobile_cpg_hw_cfg *f,
++				      int div, int on)
 +{
-+	BUG_ON(bit >= SH_MOBILE_ALLOWED_NR);
++	unsigned long reg;
 +
-+	__clear_bit(bit, d->allowed);
-+}
++	switch (div) {
++	case DIV_IRDA:
++		reg = IrDACLKCR;
++		break;
 +
-+int sh_mobile_mstp(struct sh_mobile_cpg_hw_cfg *h,
-+		   int nr, char *name, int parent,
-+		   unsigned long reg, int bitnr,
-+		   int enable_on_init, int use_cpg, int use_ram)
-+{
-+	struct sh_mobile_mstp_hw_cfg *d;
++	case DIV_SIUA:
++		reg = SCLKACR;
++		break;
 +
-+	BUG_ON(nr >= SH_MOBILE_MSTP_NR);
++	case DIV_SIUB:
++		reg = SCLKBCR;
++		break;
 +
-+	d = &h->mstp[nr];
-+	d->name = name;
-+	d->parent = parent;
-+	d->reg = reg;
-+	d->bitnr = bitnr;
-+	d->enable_on_init = enable_on_init;
-+	d->use_cpg = use_cpg;
-+	d->use_ram = use_ram;
-+
-+	return nr + 1;
-+}
-+
-+
-+static int div_str(struct sh_mobile_cpg_hw_cfg *h, int div,
-+		   char *str, int n)
-+{
-+	return snprintf(str, n, "%d/%d",
-+			h->multipliers[div],
-+			h->divisors[div]);
-+}
-+
-+#ifdef DEBUG
-+
-+static void printout_head_foot(struct sh_mobile_cpg_hw_cfg *fhcp,
-+			       int grp, int foot,
-+			       struct sh_mobile_cpg_state *cs)
-+{
-+	struct sh_mobile_div_hw_cfg *divp;
-+	char *name;
-+	char str[8];
-+	int k, n;
-+
-+	if (foot) {
-+		printk(KERN_INFO "\n%6s ", "min:");
-+		for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+			divp = &fhcp->div[k];
-+
-+			if (divp->grp != grp)
-+				continue;
-+
-+			n = cs->div_state[divp->div].forced_min;
-+			if (n)
-+				div_str(fhcp, n - 1, str, sizeof(str));
-+			else
-+				str[0] = '\0';
-+
-+			printk(KERN_INFO "%6s ", str);
-+		}
-+		printk(KERN_INFO "\n%6s ", "max:");
-+		for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+			divp = &fhcp->div[k];
-+
-+			if (divp->grp != grp)
-+				continue;
-+
-+			n = cs->div_state[divp->div].forced_max;
-+			if (n)
-+				div_str(fhcp, n - 1, str, sizeof(str));
-+			else
-+				str[0] = '\0';
-+
-+			printk(KERN_INFO "%6s ", str);
-+		}
-+		printk(KERN_INFO "\n");
++	default:
 +		return;
 +	}
 +
-+	printk(KERN_INFO "%6s ", "");
-+	for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+		divp = &fhcp->div[k];
-+
-+		if (divp->grp != grp)
-+			continue;
-+
-+		name = divp->name ? divp->name : "?";
-+
-+		n = cs->div_state[divp->div].forced_min;
-+		n |= cs->div_state[divp->div].forced_max;
-+
-+		if (n)
-+			printk(KERN_INFO "%5s* ", name);
-+		else
-+			printk(KERN_INFO "%6s ", name);
-+	}
-+	printk(KERN_INFO "\n");
-+
++	if (on)
++		__raw_writel(__raw_readl(reg) & ~0x80, reg);
++	else
++		__raw_writel(__raw_readl(reg) | 0x80, reg);
 +}
 +
-+static int printout(struct sh_mobile_cpg_hw_cfg *fhcp, int grp,
-+		    struct sh_mobile_cpg_state *cs)
++static void sh7723_div_all_ok(struct sh_mobile_div_hw_cfg *d)
 +{
-+	struct sh_mobile_div_hw_cfg *divp;
-+	char str[8];
-+	int k;
-+
-+	snprintf(str, sizeof(str), "%u:", cs->cnt);
-+	printk(KERN_INFO "%6s ", str);
-+	for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+		divp = &fhcp->div[k];
-+
-+		if (divp->grp != grp)
-+			continue;
-+
-+		div_str(fhcp, cs->div_state[divp->div].selected,
-+			str, sizeof(str));
-+		printk(KERN_INFO "%6s ", str);
-+	}
-+	printk(KERN_INFO "\n");
-+	cs->cnt++;
-+	return 0;
++	sh_mobile_div_ok(d, BIT_1_1);
++	sh_mobile_div_ok(d, BIT_2_3);
++	sh_mobile_div_ok(d, BIT_1_2);
++	sh_mobile_div_ok(d, BIT_2_5);
++	sh_mobile_div_ok(d, BIT_1_3);
++	sh_mobile_div_ok(d, BIT_1_4);
++	sh_mobile_div_ok(d, BIT_1_6);
++	sh_mobile_div_ok(d, BIT_1_8);
++	sh_mobile_div_ok(d, BIT_1_12);
++	sh_mobile_div_ok(d, BIT_1_16);
 +}
 +
-+#endif /* DEBUG */
-+
-+static int main(struct sh_mobile_cpg_hw_cfg *fhcp, int nr, int grp,
-+		struct sh_mobile_cpg_state *cs,
-+		int (*complete)(struct sh_mobile_cpg_hw_cfg *fhcp, int grp,
-+				struct sh_mobile_cpg_state *cs))
++void sh7723_div_setup(struct sh_mobile_cpg_hw_cfg *p)
 +{
-+	struct sh_mobile_div_hw_cfg *divp = &fhcp->div[nr];
-+	struct sh_mobile_div_state *ds = &cs->div_state[divp->div];
-+	unsigned long freq;
-+	int ret;
++	struct sh_mobile_div_hw_cfg *d;
 +
-+	if (nr = SH_MOBILE_DIVISOR_NR)
-+		return complete(fhcp, grp, cs);
++	/* I Clock (CPU), max 400 MHz */
++	d = sh_mobile_div(p, 0, "cpu_clk", DIV_I, GRP_FRQCR, 400);
++	sh7723_div_all_ok(d);
 +
-+	if (divp->grp != grp)
-+		return main(fhcp, nr + 1, grp, cs, complete);
++	/* SH Clock (SuperHyway), max 133 Mhz */
++	d = sh_mobile_div(p, 1, "shyway_clk", DIV_SH, GRP_FRQCR, 133);
++	sh7723_div_all_ok(d);
 +
-+	for (ds->cnt = 0; ds->cnt < SH_MOBILE_ALLOWED_NR; ds->cnt++) {
-+		if (!test_bit(ds->cnt, divp->allowed))
-+			continue;
++	/* U Clock (URAM), max 133 MHz */
++	d = sh_mobile_div(p, 2, "uram_clk", DIV_U, GRP_FRQCR, 133);
++	sh7723_div_all_ok(d);
 +
-+		if (ds->forced_min && (ds->cnt < (ds->forced_min - 1)))
-+			continue;
++	/* B Clock (Bus), max 66 MHz */
++	d = sh_mobile_div(p, 3, "bus_clk", DIV_B, GRP_FRQCR, 66);
++	sh7723_div_all_ok(d);
 +
-+		if (ds->forced_max && (ds->cnt > (ds->forced_max - 1)))
-+			continue;
++	/* B3 Clock (SDRAM), max 133 MHz */
++	d = sh_mobile_div(p, 4, "b3_clk", DIV_B3, GRP_FRQCR, 133);
++	sh7723_div_all_ok(d);
++	sh_mobile_div_ng(d, BIT_1_1);
++	sh_mobile_div_ng(d, BIT_2_3);
++	sh_mobile_div_ng(d, BIT_2_5);
 +
-+		ret = fhcp->check_div(fhcp, divp->div, ds->cnt, cs);
-+		if (ret < 0)
-+			continue;
++	/* P Clock (Peripheral), max 33 MHz */
++	d = sh_mobile_div(p, 5, "peripheral_clk", DIV_P, GRP_FRQCR, 33);
++	sh7723_div_all_ok(d);
 +
-+		freq = (extal_clk.rate * fhcp->pll_mult *
-+			fhcp->multipliers[ds->cnt]) / fhcp->divisors[ds->cnt];
++	/* SIUA Clock, max 33 MHz */
++	d = sh_mobile_div(p, 6, "siua_clk", DIV_SIUA, GRP_SIUA, 33);
++	sh7723_div_all_ok(d);
 +
-+		if (freq > (divp->max_mhz * 1000000))
-+			continue;
++	/* SIUB Clock, max 33 MHz */
++	d = sh_mobile_div(p, 7, "siub_clk", DIV_SIUB, GRP_SIUB, 33);
++	sh7723_div_all_ok(d);
 +
-+		ds->mode = ret;
-+		ds->selected = ds->cnt;
-+		ret = main(fhcp, nr + 1, grp, cs, complete);
-+		if (ret != 0)
-+			return ret;
-+	}
-+
-+	return 0;
++	/* IRDA Clock, max 33 MHz */
++	d = sh_mobile_div(p, 8, "irda_clk", DIV_IRDA, GRP_IRDA, 33);
++	sh7723_div_all_ok(d);
 +}
 +
-+static void state_init(struct sh_mobile_cpg_state *cs)
++void sh7723_mstp_setup(struct sh_mobile_cpg_hw_cfg *p)
 +{
-+	memset(cs, 0, sizeof(*cs));
++	int k = 0;
++
++	/* See page 60 of Datasheet V1.0: Overview -> Block Diagram */
++	k = sh_mobile_mstp(p, k, "tlb0", DIV_I, MSTPCR0, 31, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "ic0", DIV_I, MSTPCR0, 30, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "oc0", DIV_I, MSTPCR0, 29, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "l2c0", DIV_SH, MSTPCR0, 28, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "ilmem0", DIV_I, MSTPCR0, 27, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "fpu0", DIV_I, MSTPCR0, 24, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "intc0", DIV_I, MSTPCR0, 22, 1, 1, 0);
++	k = sh_mobile_mstp(p, k, "dmac0", DIV_B, MSTPCR0, 21, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "sh0", DIV_SH, MSTPCR0, 20, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "hudi0", DIV_P, MSTPCR0, 19, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "ubc0", DIV_I, MSTPCR0, 17, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "tmu0", DIV_P, MSTPCR0, 15, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "cmt0", -1, MSTPCR0, 14, 0, 0, 0);
++	k = sh_mobile_mstp(p, k, "rwdt0", -1, MSTPCR0, 13, 0, 0, 0);
++	k = sh_mobile_mstp(p, k, "dmac1", DIV_B, MSTPCR0, 12, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "tmu1", DIV_P, MSTPCR0, 11, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "flctl0", DIV_P, MSTPCR0, 10, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "scif0", DIV_P, MSTPCR0, 9, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "scif1", DIV_P, MSTPCR0, 8, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "scif2", DIV_P, MSTPCR0, 7, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "scif3", DIV_B, MSTPCR0, 6, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "scif4", DIV_B, MSTPCR0, 5, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "scif5", DIV_B, MSTPCR0, 4, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "msiof0", DIV_B, MSTPCR0, 2, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "msiof1", DIV_B, MSTPCR0, 1, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "meram0", DIV_SH, MSTPCR0, 0, 1, 1, 0);
++
++	k = sh_mobile_mstp(p, k, "i2c0", DIV_P, MSTPCR1, 9, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "keysc0", -1, MSTPCR1, 8, 0, 0, 0);
++
++	k = sh_mobile_mstp(p, k, "atapi0", DIV_SH, MSTPCR2, 28, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "adc0", DIV_P, MSTPCR2, 27, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "tpu0", DIV_B, MSTPCR2, 25, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "irda0", DIV_P, MSTPCR2, 24, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "tsif0", DIV_B, MSTPCR2, 22, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "icb0", DIV_B, MSTPCR2, 21, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "sdhi0", DIV_B, MSTPCR2, 18, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "sdhi1", DIV_B, MSTPCR2, 17, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "keysc0", -1, MSTPCR2, 14, 0, 0, 0);
++	k = sh_mobile_mstp(p, k, "usb0", DIV_B, MSTPCR2, 11, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "2dg0", DIV_B, MSTPCR2, 10, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "siu0", DIV_B, MSTPCR2, 8, 0, 1, 0);
++	k = sh_mobile_mstp(p, k, "veu1", DIV_B, MSTPCR2, 6, 1, 1, 1);
++	k = sh_mobile_mstp(p, k, "vou0", DIV_B, MSTPCR2, 5, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "beu0", DIV_B, MSTPCR2, 4, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "ceu0", DIV_B, MSTPCR2, 3, 0, 1, 1);
++	k = sh_mobile_mstp(p, k, "veu0", DIV_B, MSTPCR2, 2, 1, 1, 1);
++	k = sh_mobile_mstp(p, k, "vpu0", DIV_B, MSTPCR2, 1, 1, 1, 1);
++	k = sh_mobile_mstp(p, k, "lcdc0", DIV_B, MSTPCR2, 0, 0, 1, 1);
 +}
 +
-+static void state_fix(struct sh_mobile_cpg_state *cs, int div, int bit)
-+{
-+	cs->div_state[div].forced_min = bit + 1;
-+	cs->div_state[div].forced_max = bit + 1;
-+}
-+
-+static void state_dump(struct sh_mobile_cpg_hw_cfg *fhcp, int grp,
-+		       struct sh_mobile_cpg_state *cs)
-+{
-+#ifdef DEBUG
-+	cs->cnt = 0;
-+	printout_head_foot(fhcp, grp, 0, cs);
-+	main(fhcp, 0, grp, cs, printout);
-+	printout_head_foot(fhcp, grp, 1, cs);
-+#endif
-+}
-+
-+static int note_best(struct sh_mobile_cpg_hw_cfg *fhcp, int grp,
-+		     struct sh_mobile_cpg_state *cs)
-+{
-+	struct sh_mobile_div_hw_cfg *divp;
-+	struct sh_mobile_div_state *ds;
-+	int k;
-+
-+	for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+		divp = &fhcp->div[k];
-+		ds = &cs->div_state[divp->div];
-+
-+		if (divp->grp != grp)
-+			continue;
-+
-+		if (!ds->best || ((ds->selected + 1) < ds->best))
-+			ds->best = ds->selected + 1;
-+	}
-+	cs->cnt++;
-+	return 0;
-+}
-+
-+int sh_mobile_div_optimize(struct sh_mobile_cpg_hw_cfg *fhcp, char *divisor)
-+{
-+	struct sh_mobile_cpg_state state;
-+	char str[8];
-+	int grp = 0, div = -1;
-+	int k, n;
-+
-+	/* find divisor and group from string */
-+	for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+		if (!strcmp(fhcp->div[k].name, divisor)) {
-+			div = fhcp->div[k].div;
-+			grp = fhcp->div[k].grp;
-+		}
-+	}
-+
-+	if (div = -1)
-+		return -EINVAL;
-+
-+	/* locate the best divisor (highest frequency / lowest divisor) */
-+	state_init(&state);
-+	main(fhcp, 0, grp, &state, note_best);
-+
-+	n = -1;
-+	for (k = 0; k < SH_MOBILE_DIVISOR_NR; k++) {
-+		if (fhcp->div[k].div = div) {
-+			n = state.div_state[fhcp->div[k].div].best;
-+			break;
-+		}
-+	}
-+
-+	/* reinit and dump tables (if compiled-in) */
-+	state_init(&state);
-+	state_dump(fhcp, grp, &state);
-+
-+	if (!n)
-+		return -ENOENT;
-+
-+	/* reinit and set optimized divisor to fixed */
-+	state_init(&state);
-+	state_fix(&state, div, n - 1);
-+	div_str(fhcp, n - 1, str, sizeof(str));
-+	pr_info("sh_mobile_cpg_optimize(): optimizing for %s [%s]\n",
-+		fhcp->div[k].name, str);
-+
-+	/* generate all other divisors from this setting */
-+	main(fhcp, 0, grp, &state, fhcp->set_div);
-+	return 0;
-+}
-+
-+static unsigned long sh_mobile_pll_recalc(struct clk *clk)
-+{
-+	struct sh_mobile_cpg_hw_cfg *h = clk->priv;
-+
-+	return clk->parent->rate * h->pll_mult;
-+}
-+
-+static struct clk_ops sh_mobile_pll_ops = {
-+	.recalc		= sh_mobile_pll_recalc,
++static struct sh_mobile_cpg_hw_cfg sh7723_cpg_hw_config = {
++	.check_div = sh7723_div_check,
++	.set_div = sh7723_div_set,
++	.get_div = sh7723_div_get,
++	.enable_disable = sh7723_div_enable_disable,
++	.multipliers = multipliers,
++	.divisors = divisors,
 +};
 +
-+static struct clk pll_clk = {
-+	.name		= "pll",
-+	.id		= -1,
-+	.parent		= &extal_clk,
-+	.ops		= &sh_mobile_pll_ops,
-+};
-+
-+static struct clk div_clks[SH_MOBILE_DIVISOR_NR];
-+static struct clk mstp_clks[SH_MOBILE_MSTP_NR];
-+
-+static unsigned long sh_mobile_div_recalc(struct clk *clk)
++int __init arch_clk_init(void)
 +{
-+	struct sh_mobile_cpg_hw_cfg *h = clk->priv;
-+	unsigned long value;
-+	int div = clk - &div_clks[0];
-+	int bit;
++	/* setup processor specific divisors & mstp bits */
++	sh7723_div_setup(&sh7723_cpg_hw_config);
++	sh7723_mstp_setup(&sh7723_cpg_hw_config);
 +
-+	bit = h->get_div(h, div);
++	/* detect pll setting */
++	sh7723_cpg_hw_config.pll_mult = ((__raw_readl(FRQCR) >> 24) & 0x1f) + 1;
 +
-+	if (bit >= 0) {
-+		value = (clk->parent->rate * h->multipliers[bit]);
-+		value /= h->divisors[bit];
-+	} else
-+		value = 0;
-+
-+	pr_debug("%s has rate %lu (%d,%d)\n", clk->name, value, bit, div);
-+
-+	return value;
-+}
-+
-+static int sh_mobile_div_enable(struct clk *clk)
-+{
-+	struct sh_mobile_cpg_hw_cfg *h = clk->priv;
-+	int div = clk - &div_clks[0];
-+
-+	h->enable_disable(h, div, 1);
-+	return 0;
-+}
-+
-+static void sh_mobile_div_disable(struct clk *clk)
-+{
-+	struct sh_mobile_cpg_hw_cfg *h = clk->priv;
-+	int div = clk - &div_clks[0];
-+
-+	h->enable_disable(h, div, 0);
-+}
-+
-+static struct clk_ops sh_mobile_div_ops = {
-+	.recalc		= sh_mobile_div_recalc,
-+	.enable		= sh_mobile_div_enable,
-+	.disable	= sh_mobile_div_disable,
-+};
-+
-+static int sh_mobile_mstpcr_enable(struct clk *clk)
-+{
-+	struct sh_mobile_cpg_hw_cfg *h = clk->priv;
-+	int mstp = clk - &mstp_clks[0];
-+	unsigned long reg = h->mstp[mstp].reg;
-+
-+	__raw_writel(__raw_readl(reg) & ~(1 << h->mstp[mstp].bitnr), reg);
-+	return 0;
-+}
-+
-+static void sh_mobile_mstpcr_disable(struct clk *clk)
-+{
-+	struct sh_mobile_cpg_hw_cfg *h = clk->priv;
-+	int mstp = clk - &mstp_clks[0];
-+	unsigned long reg = h->mstp[mstp].reg;
-+
-+	__raw_writel(__raw_readl(reg) | (1 << h->mstp[mstp].bitnr), reg);
-+}
-+
-+static struct clk_ops sh_mobile_mstp_ops = {
-+	.enable		= sh_mobile_mstpcr_enable,
-+	.disable	= sh_mobile_mstpcr_disable,
-+	.recalc		= followparent_recalc,
-+};
-+
-+int __init sh_mobile_clk_register(struct sh_mobile_cpg_hw_cfg *h)
-+{
-+	struct clk *clkp;
-+	int k;
-+	int ret;
-+
-+	ret = clk_register(&extal_clk);
-+	if (ret < 0) {
-+		pr_err("sh_mobile_clk_register: unable to register extal\n");
-+		return ret;
-+	}
-+
-+	pll_clk.priv = h;
-+	ret = clk_register(&pll_clk);
-+	if (ret < 0) {
-+		pr_err("sh_mobile_clk_register: unable to register pll\n");
-+		return ret;
-+	}
-+
-+	ret = clk_register(&r_clk);
-+	if (ret < 0) {
-+		pr_err("sh_mobile_clk_register: unable to register rclk\n");
-+		return ret;
-+	}
-+
-+	for (k = 0; k < ARRAY_SIZE(div_clks); k++) {
-+		clkp = &div_clks[k];
-+
-+		if (!h->div[k].name)
-+			break;
-+
-+		clkp->name = h->div[k].name;
-+		clkp->id = -1;
-+		clkp->ops = &sh_mobile_div_ops;
-+		clkp->parent = &pll_clk;
-+		clkp->priv = h;
-+
-+		ret = clk_register(clkp);
-+		if (ret < 0) {
-+			pr_err("sh_mobile_clk_register: unable to register "
-+			       "divisor clock\n");
-+			return ret;
-+		}
-+	}
-+
-+	for (k = 0; k < ARRAY_SIZE(mstp_clks); k++) {
-+		clkp = &mstp_clks[k];
-+
-+		if (!h->mstp[k].name)
-+			break;
-+
-+		clkp->name = h->mstp[k].name;
-+		clkp->id = -1;
-+		clkp->ops = &sh_mobile_mstp_ops;
-+
-+		if (!h->mstp[k].use_cpg)
-+			clkp->parent = &r_clk;
-+		else
-+			clkp->parent = &div_clks[h->mstp[k].parent];
-+
-+		if (h->mstp[k].enable_on_init)
-+			clkp->flags = CLK_ENABLE_ON_INIT;
-+
-+		clkp->priv = h;
-+
-+		ret = clk_register(clkp);
-+		if (ret < 0) {
-+			pr_err("sh_mobile_clk_register: unable to register "
-+			       "mstp clock\n");
-+			return ret;
-+		}
-+	}
-+#ifndef CONFIG_SERIAL_CORE_CONSOLE
-+	if (sh_mobile_div_optimize(h, "cpu_clk"))
-+		panic("sh_mobile_clk_register(): unable to setup clocks\n");
-+#endif
-+	return ret;
++	/* register our divisors & mstp bits */
++	return sh_mobile_clk_register(&sh7723_cpg_hw_config);
 +}
