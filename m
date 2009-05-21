@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 May 2009 11:56:21 +0000
-Subject: [PATCH] sh: sh7785 mode pin definitions
-Message-Id: <20090528115621.5770.60114.sendpatchset@rx1.opensource.se>
+Date: Thu, 21 May 2009 06:37:53 +0000
+Subject: [PATCH][RFC] sh: struct clk_cpg_div
+Message-Id: <20090521063753.31513.20597.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,43 +10,86 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds sh7785 mode pin definitions. Mode pins and
-pin function controller comments are added as well.
+This patch adds CPG divisor helper functions to clock-cpg.c.
+
+CPG divisors (and the PLL) usually found in FRQCR can now
+register multipier and divisor arrays together with callbacks
+for getting and setting index values.
+
+The value read out from the hardware is used as index in the
+multiplier and divisor arrays to calculate frequency. Invalid
+settings in the array should be set to zero.
+
+Only getting rate is supported for now.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/include/cpu-sh4/cpu/sh7785.h |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ arch/sh/include/asm/clock.h    |   16 ++++++++++++++++
+ arch/sh/kernel/cpu/clock-cpg.c |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
 
---- 0001/arch/sh/include/cpu-sh4/cpu/sh7785.h
-+++ work/arch/sh/include/cpu-sh4/cpu/sh7785.h	2009-05-28 20:42:21.000000000 +0900
-@@ -1,6 +1,28 @@
- #ifndef __ASM_SH7785_H__
- #define __ASM_SH7785_H__
+--- 0001/arch/sh/include/asm/clock.h
++++ work/arch/sh/include/asm/clock.h	2009-05-21 15:25:07.000000000 +0900
+@@ -100,4 +100,20 @@ enum clk_sh_algo_id {
+ 	IP_N1,
+ };
  
-+/* Boot Mode Pins, more information in sh7785 manual Rev.1.00, page 1628 */
-+#define MODE_PIN_MODE0 0 /* CPG - Initial Pck/Bck Frequency [FRQMR1] */
-+#define MODE_PIN_MODE1 1 /* CPG - Initial Uck/SHck/DDRck Frequency [FRQMR1] */
-+#define MODE_PIN_MODE2 2 /* CPG - Reserved (L: Normal operation) */
-+#define MODE_PIN_MODE3 3 /* CPG - Reserved (L: Normal operation) */
-+#define MODE_PIN_MODE4 4 /* CPG - Initial PLL setting (72x/36x) */
-+#define MODE_PIN_MODE5 5 /* LBSC - Area0 Memory Type / Bus Width [CS0BCR.8] */
-+#define MODE_PIN_MODE6 6 /* LBSC - Area0 Memory Type / Bus Width [CS0BCR.9] */
-+#define MODE_PIN_MODE7 7 /* LBSC - Area0 Memory Type / Bus Width [CS0BCR.3] */
-+#define MODE_PIN_MODE8 8 /* LBSC - Endian Mode (L: Big, H: Little) [BCR.31] */
-+#define MODE_PIN_MODE9 9 /* LBSC - Master/Slave Mode (L: Slave) [BCR.30] */
-+#define MODE_PIN_MODE10 10 /* CPG - Clock Input (L: Ext Clk, H: Crystal) */
-+#define MODE_PIN_MODE11 11 /* PCI - Pin Mode (LL: PCI host, LH: PCI slave) */
-+#define MODE_PIN_MODE12 12 /* PCI - Pin Mode (HL: Local bus, HH: DU) */
-+#define MODE_PIN_MODE13 13 /* Boot Address Mode (L: 29-bit, H: 32-bit) */
-+#define MODE_PIN_MODE14 14 /* Reserved (H: Normal operation) */
-+#define MODE_PIN_MPMD 15 /* Emulation Mode (L: Emulation mode, H: LSI mode) */
++struct clk_cpg_div {
++	struct clk clk;
++	int id;
++};
 +
-+/* Pin Function Controller:
-+ * GPIO_FN_xx - GPIO used to select pin function
-+ * GPIO_Pxx - GPIO mapped to real I/O pin on CPU
-+ */
- enum {
- 	/* PA */
- 	GPIO_PA7, GPIO_PA6, GPIO_PA5, GPIO_PA4,
++struct clk_cpg_div_group {
++	int *multipliers;
++	int *divisors;
++	int nr_entries;
++	int (*get_index)(struct clk_cpg_div *div);
++	void (*set_index)(struct clk_cpg_div *div, int index);
++};
++
++int clk_cpg_div_register(struct clk_cpg_div *div,
++			 struct clk_cpg_div_group *group);
++
+ #endif /* __ASM_SH_CLOCK_H */
+--- 0005/arch/sh/kernel/cpu/clock-cpg.c
++++ work/arch/sh/kernel/cpu/clock-cpg.c	2009-05-21 15:25:01.000000000 +0900
+@@ -2,6 +2,38 @@
+ #include <linux/compiler.h>
+ #include <asm/clock.h>
+ 
++static unsigned long clk_cpg_div_recalc(struct clk *clk)
++{
++	struct clk_cpg_div_group *group = clk->priv;
++	struct clk_cpg_div *div;
++	unsigned long multiplier, divisor;
++	int index;
++
++	div = (void *)((char *)clk - offsetof(struct clk_cpg_div, clk));
++	index = group->get_index(div);
++
++	BUG_ON(index >= group->nr_entries);
++
++	multiplier = group->multipliers[index];
++	divisor = group->divisors[index];
++
++	BUG_ON(!multiplier || !divisor);
++
++	return clk->parent->rate * multiplier / divisor;
++}
++
++static struct clk_ops clk_cpg_div_ops = {
++	.recalc = clk_cpg_div_recalc,
++};
++
++int clk_cpg_div_register(struct clk_cpg_div *div,
++			 struct clk_cpg_div_group *group)
++{
++	div->clk.ops = &clk_cpg_div_ops;
++	div->clk.priv = group;
++	return clk_register(&div->clk);
++}
++
+ #ifndef CONFIG_SH_CLK_DISABLE_LEGACY
+ 
+ static struct clk master_clk = {
