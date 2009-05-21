@@ -1,82 +1,77 @@
-From: Peter Griffin <pgriffin@mpc-data.co.uk>
-Date: Fri, 08 May 2009 15:25:27 +0000
-Subject: Re: [PATCH] Add in support for ptrace GDB defines
-Message-Id: <1241796327.16311.39.camel@quercus-bis>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 May 2009 07:16:20 +0000
+Subject: [PATCH] sh: boot word / mode pin support
+Message-Id: <20090521071620.12842.12995.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1241794095.16311.28.camel@quercus-bis>
-In-Reply-To: <1241794095.16311.28.camel@quercus-bis>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, 2009-05-09 at 00:09 +0900, Paul Mundt wrote:
-> On Fri, May 08, 2009 at 03:48:15PM +0100, Peter Griffin wrote:
-> > >From 74f64c22d2d3b0082cf96ed81fe2ccd02a352441 Mon Sep 17 00:00:00 2001
-> > From: Kieran Bingham <kieranbingham@gmail.com>
-> > Date: Mon, 2 Mar 2009 17:05:09 +0000
-> > Subject: [PATCH] Add in support for ptrace GDB defines
-> > 
-> > 
-> > Signed-off-by: Peter Griffin <pgriffin@mpc-data.co.uk>
-> > Signed-off-by: Peter Griffin <kieranbingham@gmail.com>
-> 
-> Copy and paste error I suppose.
-> 
-> On Fri, May 08, 2009 at 03:49:50PM +0100, Peter Griffin wrote:
-> > >From 0eab785eda2d1c980da7ecd59acda9f50b25ac73 Mon Sep 17 00:00:00 2001
-> > From: Peter Griffin <pgriffin@mpc-data.co.uk>
-> > Date: Fri, 8 May 2009 14:55:48 +0100
-> > Subject: [PATCH] Fix UBC setup and registers for SH2A
-> > 
-> > 
-> > Signed-off-by: Peter Griffin <pgriffin@mpc-data.co.uk>
-> > Signed-off-by: Peter Griffin <kieranbingham@gmail.com>
-> 
-> Likewise.
-> 
-> On Fri, May 08, 2009 at 03:50:54PM +0100, Peter Griffin wrote:
-> > diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-> > index f7b22dd..28aa86f 100644
-> > --- a/arch/sh/kernel/ptrace_32.c
-> > +++ b/arch/sh/kernel/ptrace_32.c
-> > @@ -33,6 +33,7 @@
-> >  #include <asm/mmu_context.h>
-> >  #include <asm/syscalls.h>
-> >  #include <asm/fpu.h>
-> > +#include <asm/asm-offsets.h>
-> >  
-> >  /*
-> >   * This routine will get a word off of the process kernel stack.
-> 
-> This seems to have snuck in from somewhere else, as nothing uses it.
-> 
-> > @@ -334,6 +335,14 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
-> >  					[(addr - (long)&dummy->fpu) >> 2];
-> >  		} else if (addr = (long) &dummy->u_fpvalid)
-> >  			tmp = !!tsk_used_math(child);
-> > +		else if ( addr = PT_TEXT_ADDR)
-> > +			tmp = child->mm->start_code;
-> > +		else if ( addr = PT_DATA_ADDR)
-> > +			tmp = child->mm->start_data;
-> > +		else if ( addr = PT_TEXT_END_ADDR )
-> > +			tmp = child->mm->end_code;
-> > +		else if ( addr = PT_TEXT_LEN )
-> > +			tmp = child->mm->end_code - child->mm->start_code;
-> >  		else
-> >  			tmp = 0;
-> >  		ret = put_user(tmp, datap);
-> 
-> Some weird spacing here. Please run your patches through
-> scripts/checkpatch.pl before sending them to the list, it will complain
-> about these sorts of trivial things so I don't have to. :-)
-> 
-> Anyways, most of the issues were minor, so I just tidied those up by
-> hand. The series is now applied, thanks.
-> 
-Hi Paul,
+From: Magnus Damm <damm@igel.co.jp>
 
-Sorry about that, thanks for fixing it and applying.
+Add mode pin support for the SuperH architecture.
 
-Pete
+Processor and board specific code can with this patch
+use set_mode_pin() to set mode pin configuration. Use
+test_mode_pin() to test already set mode pin values.
 
+The code warns if a pin is tested but not configured.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/include/asm/processor.h |    4 ++++
+ arch/sh/kernel/setup.c          |   28 ++++++++++++++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+--- 0001/arch/sh/include/asm/processor.h
++++ work/arch/sh/include/asm/processor.h	2009-05-21 15:57:36.000000000 +0900
+@@ -94,6 +94,10 @@ extern struct pt_regs fake_swapper_regs;
+ const char *get_cpu_subtype(struct sh_cpuinfo *c);
+ extern const struct seq_operations cpuinfo_op;
+ 
++#define SH_MODE_PINS_NR 16
++void set_mode_pin(int pin, int on);
++int test_mode_pin(int pin);
++
+ #ifdef CONFIG_VSYSCALL
+ int vsyscall_init(void);
+ #else
+--- 0001/arch/sh/kernel/setup.c
++++ work/arch/sh/kernel/setup.c	2009-05-21 16:08:18.000000000 +0900
+@@ -420,6 +420,34 @@ void __init setup_arch(char **cmdline_p)
+ #endif
+ }
+ 
++/* processor boot mode configuration */
++static DECLARE_BITMAP(mode_pins, SH_MODE_PINS_NR * 2);
++
++void set_mode_pin(int pin, int on)
++{
++	BUG_ON(pin >= SH_MODE_PINS_NR);
++
++	/* mark pin as configured */
++	set_bit(pin + SH_MODE_PINS_NR, mode_pins);
++
++	/* remember pin value */
++	if (on)
++		set_bit(pin, mode_pins);
++	else
++		clear_bit(pin, mode_pins);
++}
++
++int test_mode_pin(int pin)
++{
++	BUG_ON(pin >= SH_MODE_PINS_NR);
++
++	/* warn if not configured */
++	if (!test_bit(pin + SH_MODE_PINS_NR, mode_pins))
++		pr_warning("test_mode_pin(): pin %d not configured\n", pin);
++
++	return test_bit(pin, mode_pins);
++}
++
+ static const char *cpu_name[] = {
+ 	[CPU_SH7201]	= "SH7201",
+ 	[CPU_SH7203]	= "SH7203",	[CPU_SH7263]	= "SH7263",
