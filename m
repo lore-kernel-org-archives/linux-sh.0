@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 21 May 2009 17:45:21 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 22 May 2009 04:14:51 +0000
 Subject: Re: [PATCH] sh: ap325 camera without i2c driver fix
-Message-Id: <20090521174521.GA2552@linux-sh.org>
+Message-Id: <aec7e5c30905212114w1125cbabg38db6c3c3d325c24@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090520143006.8314.55548.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090520143006.8314.55548.sendpatchset@rx1.opensource.se>
@@ -10,26 +10,37 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, May 20, 2009 at 11:30:06PM +0900, Magnus Damm wrote:
-> This patch fixes the ap325rxa ncm03j camera code to handle
-> the case where no i2c driver is present. Without this fix
-> i2c_transfer() may be passed NULL as adapter which results
-> in a crash.
-> 
-> Triggered when i2c-sh_mobile.c failed to probe() due to
-> missing MSTP clocks.
+On Fri, May 22, 2009 at 2:45 AM, Paul Mundt <lethal@linux-sh.org> wrote:
+> On Wed, May 20, 2009 at 11:30:06PM +0900, Magnus Damm wrote:
+>> This patch fixes the ap325rxa ncm03j camera code to handle
+>> the case where no i2c driver is present. Without this fix
+>> i2c_transfer() may be passed NULL as adapter which results
+>> in a crash.
+>>
+>> Triggered when i2c-sh_mobile.c failed to probe() due to
+>> missing MSTP clocks.
+>
+> On Wed, May 20, 2009 at 11:34:43PM +0900, Magnus Damm wrote:
+>> This patch fixes the LCDC driver to avoid calling the
+>> function sh_mobile_lcdc_start_stop(priv, 0) unless the
+>> same function has been called before to start the LCDC
+>> hardware.
+>>
+>> Triggered when sh_mobile_lcdcfb.c failed to probe() due to
+>> missing MSTP clocks.
+>
+> I was going to apply these, but as you provided no information as to what
+> branch these should be applied to, I didn't bother. Is this a problem
+> only in sh/clkfwk? Is this a problem with HEAD? Does it need to go in
+> 2.6.30? If you are going to post a bunch of seemingly unrelated patches
+> in one go, it helps to know what exactly you want done with them.
 
-On Wed, May 20, 2009 at 11:34:43PM +0900, Magnus Damm wrote:
-> This patch fixes the LCDC driver to avoid calling the
-> function sh_mobile_lcdc_start_stop(priv, 0) unless the
-> same function has been called before to start the LCDC
-> hardware.
-> 
-> Triggered when sh_mobile_lcdcfb.c failed to probe() due to
-> missing MSTP clocks.
+These fixes are not sh/clkfwk specific. Does the branch modify these drivers?
 
-I was going to apply these, but as you provided no information as to what
-branch these should be applied to, I didn't bother. Is this a problem
-only in sh/clkfwk? Is this a problem with HEAD? Does it need to go in
-2.6.30? If you are going to post a bunch of seemingly unrelated patches
-in one go, it helps to know what exactly you want done with them.
+Since they are not very critical I suggest adding them to 2.6.31, but
+if you're going to push things for 2.6.30 once more then you may
+include these as well.
+
+Cheers,
+
+/ magnus
