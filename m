@@ -1,30 +1,19 @@
-From: Roel Kluin <roel.kluin@gmail.com>
-Date: Thu, 21 May 2009 20:12:58 +0000
-Subject: [PATCH] panasonic-laptop: beyond ARRAY_SIZE of pcc->keymap
-Message-Id: <4A15B5CA.9060907@gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 22 May 2009 02:19:33 +0000
+Subject: Re: [PATCH] panasonic-laptop: beyond ARRAY_SIZE of pcc->keymap
+Message-Id: <20090522021933.GA10832@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4A15B5CA.9060907@gmail.com>
+In-Reply-To: <4A15B5CA.9060907@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Do not go beyond ARRAY_SIZE of pcc->keymap
+On Thu, May 21, 2009 at 10:12:58PM +0200, Roel Kluin wrote:
+> Do not go beyond ARRAY_SIZE of pcc->keymap
+> 
+> Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
 
-Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
----
-This is against linux-next
-
-diff --git a/drivers/misc/panasonic-laptop.c b/drivers/misc/panasonic-laptop.c
-index 4a1bc64..d82d1cc 100644
---- a/drivers/misc/panasonic-laptop.c
-+++ b/drivers/misc/panasonic-laptop.c
-@@ -515,7 +515,7 @@ static void acpi_pcc_generate_keyinput(struct pcc_acpi *pcc)
- 
- 	hkey_num = result & 0xf;
- 
--	if (hkey_num < 0 || hkey_num > ARRAY_SIZE(pcc->keymap)) {
-+	if (hkey_num < 0 || hkey_num >= ARRAY_SIZE(pcc->keymap)) {
- 		ACPI_DEBUG_PRINT((ACPI_DB_ERROR,
- 				  "hotkey number out of range: %d\n",
- 				  hkey_num));
-
+Presumably you meant to send this to linux-acpi or linux-kernel instead
+of linux-sh ;-)
