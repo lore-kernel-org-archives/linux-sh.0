@@ -1,69 +1,141 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Fri, 29 May 2009 07:41:18 +0000
-Subject: [PATCH] sh4a: add L2 cache support
-Message-Id: <uprdswe3l.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 May 2009 08:10:28 +0000
+Subject: [PATCH 02/04] sh: add shared clock framework frequency table code
+Message-Id: <20090525081028.7893.20643.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+From: Magnus Damm <damm@igel.co.jp>
+
+Add SuperH-specific clock framework helper functions:
+- clk_rate_table_build() - build cpufreq table from divisors/multipliers
+- clk_rate_table_round() - use cpufreq table to find matching frequency
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/include/cpu-sh4/cpu/cache.h |    5 +++++
- arch/sh/kernel/cpu/init.c           |    8 ++++++++
- arch/sh/mm/Kconfig                  |    5 +++++
- 3 files changed, 18 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/cache.h b/arch/sh/include/cpu-sh4/cpu/cache.h
-index 1c61ebf..0a438f5 100644
---- a/arch/sh/include/cpu-sh4/cpu/cache.h
-+++ b/arch/sh/include/cpu-sh4/cpu/cache.h
-@@ -31,6 +31,11 @@
- #define CCR_CACHE_EMODE	0x80000000	/* EMODE Enable */
- #endif
+ For the clkfwk topic branch.
+
+ arch/sh/include/asm/clock.h |   18 ++++++++++
+ arch/sh/kernel/cpu/clock.c  |   75 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 93 insertions(+)
+
+--- 0001/arch/sh/include/asm/clock.h
++++ work/arch/sh/include/asm/clock.h	2009-05-25 16:12:20.000000000 +0900
+@@ -100,4 +100,22 @@ enum clk_sh_algo_id {
+ 	IP_N1,
+ };
  
-+#define RAMCR			0xFF000074
-+#define RAMCR_CACHE_L2FC	0x0002
-+#define RAMCR_CACHE_L2E		0x0001
-+#define L2_CACHE_ENABLE		(RAMCR_CACHE_L2E|RAMCR_CACHE_L2FC)
++struct clk_div_mult_table {
++	unsigned int *divisors;
++	unsigned int nr_divisors;
++	unsigned int *multipliers;
++	unsigned int nr_multipliers;
++};
 +
- /* Default CCR setup: 8k+16k-byte cache,P1-wb,enable */
- #define CCR_CACHE_ENABLE	(CCR_CACHE_OCE|CCR_CACHE_ICE)
- #define CCR_CACHE_INVALIDATE	(CCR_CACHE_OCI|CCR_CACHE_ICI)
-diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
-index d29e69c..79646e8 100644
---- a/arch/sh/kernel/cpu/init.c
-+++ b/arch/sh/kernel/cpu/init.c
-@@ -146,6 +146,14 @@ static void __uses_jump_to_uncached cache_init(void)
- 	flags &= ~CCR_CACHE_ENABLE;
- #endif
++struct cpufreq_frequency_table;
++void clk_rate_table_build(struct clk *clk,
++			  struct cpufreq_frequency_table *freq_table,
++			  int nr_freqs,
++			  struct clk_div_mult_table *src_table,
++			  unsigned long *bitmap);
++
++long clk_rate_table_round(struct clk *clk,
++			  struct cpufreq_frequency_table *freq_table,
++			  unsigned long rate);
++
+ #endif /* __ASM_SH_CLOCK_H */
+--- 0001/arch/sh/kernel/cpu/clock.c
++++ work/arch/sh/kernel/cpu/clock.c	2009-05-25 16:12:20.000000000 +0900
+@@ -29,6 +29,7 @@
+ #include <linux/err.h>
+ #include <linux/platform_device.h>
+ #include <linux/debugfs.h>
++#include <linux/cpufreq.h>
+ #include <asm/clock.h>
+ #include <asm/machvec.h>
  
-+#ifdef CONFIG_L2_CACHE_ENABLE
-+	/* Enabel L2 cache */
-+	if (current_cpu_data.flags & CPU_HAS_L2_CACHE) {
-+		ctrl_outl(flags & ~CCR_CACHE_ENABLE, CCR);
-+		ctrl_outl(L2_CACHE_ENABLE, RAMCR);
+@@ -36,6 +37,80 @@ static LIST_HEAD(clock_list);
+ static DEFINE_SPINLOCK(clock_lock);
+ static DEFINE_MUTEX(clock_list_sem);
+ 
++void clk_rate_table_build(struct clk *clk,
++			  struct cpufreq_frequency_table *freq_table,
++			  int nr_freqs,
++			  struct clk_div_mult_table *src_table,
++			  unsigned long *bitmap)
++{
++	unsigned long mult, div;
++	unsigned long freq;
++	int i;
++
++	for (i = 0; i < nr_freqs; i++) {
++		div = 1;
++		mult = 1;
++
++		if (src_table->divisors && i < src_table->nr_divisors)
++			div = src_table->divisors[i];
++
++		if (src_table->multipliers && i < src_table->nr_multipliers)
++			mult = src_table->multipliers[i];
++
++		if (!div || !mult || (bitmap && !test_bit(i, bitmap)))
++			freq = CPUFREQ_ENTRY_INVALID;
++		else
++			freq = clk->parent->rate * mult / div;
++
++		freq_table[i].index = i;
++		freq_table[i].frequency = freq;
 +	}
-+#endif
 +
- 	ctrl_outl(flags, CCR);
- 	back_to_cached();
- }
-diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
-index 2795618..8be9d95 100644
---- a/arch/sh/mm/Kconfig
-+++ b/arch/sh/mm/Kconfig
-@@ -291,4 +291,9 @@ config CACHE_OFF
- 
- endchoice
- 
-+config L2_CACHE_ENABLE
-+	bool "L2 Cache Enable"
-+	depends on CACHE_WRITEBACK || CACHE_WRITETHROUGH
-+	depends on CPU_SH4
++	/* Termination entry */
++	freq_table[i].index = i;
++	freq_table[i].frequency = CPUFREQ_TABLE_END;
++}
 +
- endmenu
--- 
-1.6.0.4
-
++long clk_rate_table_round(struct clk *clk,
++			  struct cpufreq_frequency_table *freq_table,
++			  unsigned long rate)
++{
++	unsigned long rate_error, rate_error_prev = ~0UL;
++	unsigned long rate_best_fit = rate;
++	unsigned long highest, lowest;
++	int i;
++
++	highest = lowest = 0;
++
++	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
++		unsigned long freq = freq_table[i].frequency;
++
++		if (freq = CPUFREQ_ENTRY_INVALID)
++			continue;
++
++		if (freq > highest)
++			highest = freq;
++		if (freq < lowest)
++			lowest = freq;
++
++		rate_error = abs(freq - rate);
++		if (rate_error < rate_error_prev) {
++			rate_best_fit = freq;
++			rate_error_prev = rate_error;
++		}
++
++		if (rate_error = 0)
++			break;
++	}
++
++	if (rate >= highest)
++		rate_best_fit = highest;
++	if (rate <= lowest)
++		rate_best_fit = lowest;
++
++	return rate_best_fit;
++}
++
+ /* Used for clocks that always have same value as the parent clock */
+ unsigned long followparent_recalc(struct clk *clk)
+ {
