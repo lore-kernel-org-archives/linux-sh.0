@@ -1,31 +1,44 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 08 May 2009 02:39:12 +0000
-Subject: Re: [PATCH] sh: sh7785 early scif fix
-Message-Id: <20090508023911.GB26125@linux-sh.org>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Mon, 25 May 2009 09:52:35 +0000
+Subject: [PATCH 1/5] net: sh_eth: fix cache coherency issue
+Message-Id: <4A1A6A63.8040608@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090507101744.31631.58621.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090507101744.31631.58621.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
 
-On Thu, May 07, 2009 at 07:17:44PM +0900, Magnus Damm wrote:
-> This patch moves the SH4 case of EARLY_SCIF_CONSOLE_PORT
-> so the SH7785 default value gets used. Without this patch
-> the value for SH7785 is set to 0xffe80000.
+Fix the problem that may not work receive process by cache coherency issue.
 
-On Thu, May 07, 2009 at 07:31:39PM +0900, Magnus Damm wrote:
-> Make sure that clk->ops->init() only gets called once in
-> the case of CLK_ALWAYS_ENABLED. Without this patch the
-> init() callback may be called multiple times.
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ drivers/net/sh_eth.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-On Thu, May 07, 2009 at 07:44:55PM +0900, Magnus Damm wrote:
-> Update the r7785 highlander defconfig to fix
-> PCLK value and that mode4 is set high.
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index 3ab28bb..a742297 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -250,6 +250,8 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		mdp->rx_skbuff[i] = skb;
+ 		if (skb = NULL)
+ 			break;
++		dma_map_single(&ndev->dev, skb->tail, mdp->rx_buf_sz,
++				DMA_FROM_DEVICE);
+ 		skb->dev = ndev; /* Mark as being used by this device. */
+ #if defined(CONFIG_CPU_SUBTYPE_SH7763)
+ 		reserve = SH7763_SKB_ALIGN
+@@ -559,6 +561,8 @@ static int sh_eth_rx(struct net_device *ndev)
+ 			mdp->rx_skbuff[entry] = skb;
+ 			if (skb = NULL)
+ 				break;	/* Better luck next round. */
++			dma_map_single(&ndev->dev, skb->tail, mdp->rx_buf_sz,
++					DMA_FROM_DEVICE);
+ 			skb->dev = ndev;
+ #if defined(CONFIG_CPU_SUBTYPE_SH7763)
+ 			reserve = SH7763_SKB_ALIGN
+-- 
+1.5.5
 
-On Thu, May 07, 2009 at 07:55:37PM +0900, Magnus Damm wrote:
-> This patch adds TMU platform data for sh7785. Both clockevent
-> and clocksource support is enabled.
-
-I've applied these, thanks.
