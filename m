@@ -1,71 +1,34 @@
 From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Tue, 26 May 2009 03:16:17 +0000
-Subject: [PATCH] sh: sh7785lcr: add platform data for r8a66597-hcd
-Message-Id: <4A1B5F01.9060503@renesas.com>
+Date: Mon, 25 May 2009 09:53:40 +0000
+Subject: [PATCH 3/5] net: sh_eth: fix receive desciptor loop
+Message-Id: <4A1A6AA4.3030507@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
 
-and remove redundant parameter for r8a66597-hcd.
+Fix the problem that this driver not update rxdesc in sh_eth_rx.
 
 Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
 ---
- This patch depends on the following patch.
- http://marc.info/?l=linux-usb&m4330739812843&w=2
+ drivers/net/sh_eth.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
- arch/sh/boards/board-sh7785lcr.c |   13 ++++++++++---
- 1 files changed, 10 insertions(+), 3 deletions(-)
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index eb76835..728c419 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -536,6 +536,7 @@ static int sh_eth_rx(struct net_device *ndev)
+ 		}
+ 		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
+ 		entry = (++mdp->cur_rx) % RX_RING_SIZE;
++		rxdesc = &mdp->rx_ring[entry];
+ 	}
 
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index 6f94f17..8ce4692 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -19,6 +19,8 @@
- #include <linux/i2c-pca-platform.h>
- #include <linux/i2c-algo-pca.h>
- #include <linux/irq.h>
-+#include <linux/interrupt.h>
-+#include <linux/usb/r8a66597.h>
- #include <asm/heartbeat.h>
- #include <mach/sh7785lcr.h>
-
-@@ -94,18 +96,22 @@ static struct platform_device nor_flash_device = {
- 	.resource	= nor_flash_resources,
- };
-
-+static struct r8a66597_platdata r8a66597_data = {
-+	.xtal = R8A66597_PLATDATA_XTAL_12MHZ,
-+	.vif = 1,
-+	.irq_sense = 1,
-+};
-+
- static struct resource r8a66597_usb_host_resources[] = {
- 	[0] = {
--		.name	= "r8a66597_hcd",
- 		.start	= R8A66597_ADDR,
- 		.end	= R8A66597_ADDR + R8A66597_SIZE - 1,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.name	= "r8a66597_hcd",
- 		.start	= 2,
- 		.end	= 2,
--		.flags	= IORESOURCE_IRQ,
-+		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
- 	},
- };
-
-@@ -115,6 +121,7 @@ static struct platform_device r8a66597_usb_host_device = {
- 	.dev = {
- 		.dma_mask		= NULL,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &r8a66597_data,
- 	},
- 	.num_resources	= ARRAY_SIZE(r8a66597_usb_host_resources),
- 	.resource	= r8a66597_usb_host_resources,
+ 	/* Refill the Rx ring buffers. */
 -- 
 1.5.5
-
 
