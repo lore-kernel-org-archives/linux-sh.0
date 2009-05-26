@@ -1,101 +1,248 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 28 May 2009 06:54:57 +0000
-Subject: Re: [PATCH][RFC] sh: helper code for 4-bit divisors
-Message-Id: <20090528065457.GB16978@linux-sh.org>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 26 May 2009 03:09:48 +0000
+Subject: [PATCH] usb: r8a66597-hcd: use platform_data instead of module_param
+Message-Id: <4A1B5D7C.6070205@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <aec7e5c30905272159o7838c469jc7ae935e1eda02d@mail.gmail.com>
-In-Reply-To: <aec7e5c30905272159o7838c469jc7ae935e1eda02d@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, May 28, 2009 at 02:54:59PM +0900, Magnus Damm wrote:
-> On Thu, May 28, 2009 at 2:25 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> > I don't particularly mind which one you want to use, but at least forcing
-> > the clock flags in the register function must die. CLK_ENABLE_ON_INIT is
-> > only ever supposed to be used sparingly, not as a blanket thing. I have
-> > modified the SH-Mobile clocks previously also to fix this up, and I will
-> > not apply any patch that default-enables everything. I do not want to see
-> > any of these clock flags used by registration functions, ever. These need
-> > to be decided on an individual basis by each clock. If you want to have
-> > macros for building those up, fine, but the flag setting must be done
-> > explicitly for each clock.
-> 
-> Ok, sure. I agree. Maybe the current cpg clocks for sh7785 can be
-> tuned a bit then, maybe the peripheral clock doesn't need to use
-> CLK_ENABLE_ON_INIT?
-> 
-Yes, the peripheral clock can have this disabled, it's children will
-force it to be enabled, the reason it has that bit at all is because at
-the time I was converting from the legacy clocks, there were no sibling
-clocks.
+CPU/board specific parameters (PLL clock, irq sense etc...) can be set
+by platform_data instead of module_param.
 
-> > The sh_clk_cpg_div4_data structure I am also not terribly keen on.
-> > For starters, the frequency table has no place in this data structure, at
-> > all. Nothing about it is specific to div4 clocks, and all this does is
-> > encourage alternate tables to be constructed elsewhere. There is nothing
-> > in this structure that can basically not be included in the struct clk
-> > directly, and we can of course throw the CPG ifdef around those fields to
-> > make life easier on people who aren't using the CPG.
-> 
-> The only specific thing for div4 clocks is that it's for 4 bit
-> divisors which means that the frequency table size is adjusted to
-> that.
-> 
-Yes, we need to be a bit more intelligent about handling the frequency
-table, but that again is a totally unrelated issue.
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ drivers/usb/host/r8a66597-hcd.c |   59 ++++++++------------------------------
+ drivers/usb/host/r8a66597.h     |   37 +++++++++++++++++++++--
+ include/linux/usb/r8a66597.h    |   47 +++++++++++++++++++++++++++++++
+ 3 files changed, 93 insertions(+), 50 deletions(-)
+ create mode 100644 include/linux/usb/r8a66597.h
 
-> I guess the concept of a private pointer is to allow different
-> implementations to hook in whatever private data they need.
-> It makes sense to use the same structure for all implementations if
-> they are close enough, but I'm not sure if it's a good plan to embeed
-> a huge frequency table in struct clk at this point. Maybe after moving
-> stop bits from clocks to wakeup/idle.
-> 
-Likewise.
+diff --git a/drivers/usb/host/r8a66597-hcd.c b/drivers/usb/host/r8a66597-hcd.c
+index 3e1216a..af073e4 100644
+--- a/drivers/usb/host/r8a66597-hcd.c
++++ b/drivers/usb/host/r8a66597-hcd.c
+@@ -46,31 +46,10 @@ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Yoshihiro Shimoda");
+ MODULE_ALIAS("platform:r8a66597_hcd");
 
-> > Once this is generalized enough I think I will just kill the private data
-> > pointer entirely to avoid this sort of abuse happening in the future.
-> 
-> Your view of the clock framework seems to be that all SuperH clocks
-> are close enough so we can just throw everything into struct clock.
-> I'd say that we have at least 4 different types of clocks: PLL, DIV4,
-> DIV6 and MSTP. We can of course use the same data structure for
-> everything, I just don't see why since they are all have different
-> needs.
-> 
-MSTP is not now nor has it ever been a clock. It got shoehorned in to the
-clock framework because we had no better place for it, if your generic
-platform stuff gets integrated, the MSTP mess will need a separate
-abstraction and will be tied in to that. We only use the clock framework
-now because piggybacking on clk_enable()/disable() for a virtualized
-function clock that maps to an MSTP bit is convenient. However, we have
-many blocks with MSTP bits that don't have any clocks of their own in the
-first place. Fixing up this coupling is beneficial.
+-#define DRIVER_VERSION	"10 Apr 2008"
++#define DRIVER_VERSION	"2009-05-25"
 
-Beyond that, PLL, DIV4, and DIV6 are different. I do not expect that one
-size will fit all, but I more than expect that a reasonably flexible
-struct clk will work for the 95% case, and we can special case the
-scenarios that do not map in to that. There is absolutely no point in
-having a struct clk in the first place if you want it to be some sort of
-neutered rate/refcount container where all of the real clock information
-is stashed off in some random data structure. Divisors and multipliers
-are common to _every_ clock, so this is data that you are going to have
-to reproduce in every one of your offshoot data structures anyways, with
-the only variation being in size. A maze of fairly similar data
-structures is a total disaster, and likewise will not be merged, so don't
-even waste your time.
+ static const char hcd_name[] = "r8a66597_hcd";
 
-For the root clocks it is acceptable to have special data structures if
-and only if they can not fit within the struct clk abstraction, or they
-happen to need a lot more data (which is probably true in the PLL cases).
-But extending this methodology to every clock on the system only creates
-an unmaintainable mess.
+-/* module parameters */
+-#if !defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+-static unsigned short clock = XTAL12;
+-module_param(clock, ushort, 0644);
+-MODULE_PARM_DESC(clock, "input clock: 48MHz2768, 24MHz384, 12MHz=0 "
+-		"(default=0)");
+-#endif
+-
+-static unsigned short vif = LDRV;
+-module_param(vif, ushort, 0644);
+-MODULE_PARM_DESC(vif, "input VIF: 3.3V2768, 1.5V=0(default2768)");
+-
+-static unsigned short endian;
+-module_param(endian, ushort, 0644);
+-MODULE_PARM_DESC(endian, "data endian: big%6, little=0 (default=0)");
+-
+-static unsigned short irq_sense = 0xff;
+-module_param(irq_sense, ushort, 0644);
+-MODULE_PARM_DESC(irq_sense, "IRQ sense: low level2, falling edge=0 "
+-		"(default2)");
+-
+ static void packet_write(struct r8a66597 *r8a66597, u16 pipenum);
+ static int r8a66597_get_frame(struct usb_hcd *hcd);
 
-> I'm more for making struct clk as small as possible and let each
-> specialized clock type wrap whatever it needs around the data type.
-> With or without private data pointer in struct clk. =)
+@@ -136,7 +115,8 @@ static int r8a66597_clock_enable(struct r8a66597 *r8a66597)
+ 		}
+ 	} while ((tmp & USBE) != USBE);
+ 	r8a66597_bclr(r8a66597, USBE, SYSCFG0);
+-	r8a66597_mdfy(r8a66597, clock, XTAL, SYSCFG0);
++	r8a66597_mdfy(r8a66597, get_xtal_from_pdata(r8a66597->pdata), XTAL,
++			SYSCFG0);
 
-Which is precisely what struct clk was never intended for in the first
-place. It is meant to be a useful abstraction, not a refcount wrapper.
+ 	i = 0;
+ 	r8a66597_bset(r8a66597, XCKE, SYSCFG0);
+@@ -203,6 +183,9 @@ static void r8a66597_disable_port(struct r8a66597 *r8a66597, int port)
+ static int enable_controller(struct r8a66597 *r8a66597)
+ {
+ 	int ret, port;
++	u16 vif = r8a66597->pdata->vif ? LDRV : 0;
++	u16 irq_sense = r8a66597->pdata->irq_sense ? INTL : 0;
++	u16 endian = r8a66597->pdata->endian ? BIGEND : 0;
+
+ 	ret = r8a66597_clock_enable(r8a66597);
+ 	if (ret < 0)
+@@ -2418,6 +2401,12 @@ static int __devinit r8a66597_probe(struct platform_device *pdev)
+ 		goto clean_up;
+ 	}
+
++	if (pdev->dev.platform_data = NULL) {
++		dev_err(&pdev->dev, "no platform data\n");
++		ret = -ENODEV;
++		goto clean_up;
++	}
++
+ 	/* initialize hcd */
+ 	hcd = usb_create_hcd(&r8a66597_hc_driver, &pdev->dev, (char *)hcd_name);
+ 	if (!hcd) {
+@@ -2428,6 +2417,7 @@ static int __devinit r8a66597_probe(struct platform_device *pdev)
+ 	r8a66597 = hcd_to_r8a66597(hcd);
+ 	memset(r8a66597, 0, sizeof(struct r8a66597));
+ 	dev_set_drvdata(&pdev->dev, r8a66597);
++	r8a66597->pdata = pdev->dev.platform_data;
+
+ #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
+ 	snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
+@@ -2458,29 +2448,6 @@ static int __devinit r8a66597_probe(struct platform_device *pdev)
+
+ 	hcd->rsrc_start = res->start;
+
+-	/* irq_sense setting on cmdline takes precedence over resource
+-	 * settings, so the introduction of irqflags in IRQ resourse
+-	 * won't disturb existing setups */
+-	switch (irq_sense) {
+-		case INTL:
+-			irq_trigger = IRQF_TRIGGER_LOW;
+-			break;
+-		case 0:
+-			irq_trigger = IRQF_TRIGGER_FALLING;
+-			break;
+-		case 0xff:
+-			if (irq_trigger)
+-				irq_sense = (irq_trigger & IRQF_TRIGGER_LOW) ?
+-					    INTL : 0;
+-			else {
+-				irq_sense = INTL;
+-				irq_trigger = IRQF_TRIGGER_LOW;
+-			}
+-			break;
+-		default:
+-			dev_err(&pdev->dev, "Unknown irq_sense value.\n");
+-	}
+-
+ 	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | irq_trigger);
+ 	if (ret != 0) {
+ 		dev_err(&pdev->dev, "Failed to add hcd\n");
+diff --git a/drivers/usb/host/r8a66597.h b/drivers/usb/host/r8a66597.h
+index f49208f..4d1203e 100644
+--- a/drivers/usb/host/r8a66597.h
++++ b/drivers/usb/host/r8a66597.h
+@@ -30,6 +30,8 @@
+ #include <linux/clk.h>
+ #endif
+
++#include <linux/usb/r8a66597.h>
++
+ #define SYSCFG0		0x00
+ #define SYSCFG1		0x02
+ #define SYSSTS0		0x04
+@@ -488,6 +490,7 @@ struct r8a66597 {
+ #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
+ 	struct clk *clk;
+ #endif
++	struct r8a66597_platdata	*pdata;
+ 	struct r8a66597_device		device0;
+ 	struct r8a66597_root_hub	root_hub[R8A66597_MAX_ROOT_HUB];
+ 	struct list_head		pipe_queue[R8A66597_MAX_NUM_PIPE];
+@@ -660,10 +663,36 @@ static inline void r8a66597_port_power(struct r8a66597 *r8a66597, int port,
+ {
+ 	unsigned long dvstctr_reg = get_dvstctr_reg(port);
+
+-	if (power)
+-		r8a66597_bset(r8a66597, VBOUT, dvstctr_reg);
+-	else
+-		r8a66597_bclr(r8a66597, VBOUT, dvstctr_reg);
++	if (r8a66597->pdata->port_power) {
++		r8a66597->pdata->port_power(port, power);
++	} else {
++		if (power)
++			r8a66597_bset(r8a66597, VBOUT, dvstctr_reg);
++		else
++			r8a66597_bclr(r8a66597, VBOUT, dvstctr_reg);
++	}
++}
++
++static inline u16 get_xtal_from_pdata(struct r8a66597_platdata *pdata)
++{
++	u16 clock = 0;
++
++	switch (pdata->xtal) {
++	case R8A66597_PLATDATA_XTAL_12MHZ:
++		clock = XTAL12;
++		break;
++	case R8A66597_PLATDATA_XTAL_24MHZ:
++		clock = XTAL24;
++		break;
++	case R8A66597_PLATDATA_XTAL_48MHZ:
++		clock = XTAL48;
++		break;
++	default:
++		printk(KERN_ERR "r8a66597: platdata clock is wrong.\n");
++		break;
++	}
++
++	return clock;
+ }
+
+ #define get_pipectr_addr(pipenum)	(PIPE1CTR + (pipenum - 1) * 2)
+diff --git a/include/linux/usb/r8a66597.h b/include/linux/usb/r8a66597.h
+new file mode 100644
+index 0000000..7322ff3
+--- /dev/null
++++ b/include/linux/usb/r8a66597.h
+@@ -0,0 +1,47 @@
++/*
++ * R8A66597 driver platform data
++ *
++ * Copyright (C) 2009  Renesas Solutions Corp.
++ *
++ * Author : Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++
++#ifndef __LINUX_USB_R8A66597_H
++#define __LINUX_USB_R8A66597_H
++
++#define R8A66597_PLATDATA_XTAL_12MHZ	0x01
++#define R8A66597_PLATDATA_XTAL_24MHZ	0x02
++#define R8A66597_PLATDATA_XTAL_48MHZ	0x03
++
++struct r8a66597_platdata {
++	/* This ops can controll port power instead of DVSTCTR register. */
++	void (*port_power)(int port, int power);
++
++	/* (external controller only) set R8A66597_PLATDATA_XTAL_nnMHZ */
++	unsigned	xtal:2;
++
++	/* set one = 3.3V, set zero = 1.5V */
++	unsigned	vif:1;
++
++	/* set one = big endian, set zero = little endian */
++	unsigned	endian:1;
++
++	/* set one = low level, set zero = falling edge */
++	unsigned	irq_sense:1;
++};
++#endif
++
+-- 
+1.5.5
+
+
