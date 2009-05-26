@@ -1,93 +1,58 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 26 May 2009 06:15:32 +0000
-Subject: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
-Message-Id: <20090526061532.GD9188@linux-sh.org>
+From: Linus Walleij <linus.ml.walleij@gmail.com>
+Date: Tue, 26 May 2009 14:31:58 +0000
+Subject: Re: [PATCH] sched: Support current clocksource handling in fallback
+Message-Id: <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090526061532.GD9188@linux-sh.org>
+In-Reply-To: <20090526061532.GD9188@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@elte.hu>
-Cc: Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, peterz@infradead.org
+Cc: linux-arm-kernel@lists.arm.linux.org.uk
 
-There are presently a number of issues and limitations with how the
-clocksource and sched_clock() interaction works today. Configurations
-tend to be grouped in to one of the following:
+2009/5/26 Paul Mundt <lethal@linux-sh.org>:
 
-	- Platform provides a low rated clocksource (< 100) and prefers
-	  to use jiffies for sched_clock() due to reliability concerns.
+>  */
+>  unsigned long long __attribute__((weak)) sched_clock(void)
+>  {
+> +       /*
+> +        * Use the current clocksource when it becomes available later in
+> +        * the boot process, and ensure that it has a high enough rating
+> +        * to make it suitable for general use.
+> +        */
+> +       if (clock && clock->rating >= 100)
+> +               return cyc2ns(clock, clocksource_read(clock));
+> +
+> +       /* Otherwise just fall back on jiffies */
+>        return (unsigned long long)(jiffies - INITIAL_JIFFIES)
+>                                        * (NSEC_PER_SEC / HZ);
+>  }
 
-	- Platform provides its own clocksource and sched_clock() that
-	  wraps in to it.
+This seems like it would make the patch I sent the other day
+unnecessary (subject u300 sched_clock() implementation).
 
-	- Platform uses a generic clocksource (ie, drivers/clocksource/)
-	  combined with the generic jiffies-backed sched_clock().
+It would also trim off this solution found in all OMAP platforms in
+arch/arm/plat-omap/common.c
 
-	- Platform supports a generic highly-rated clocksource but ends
-	  up having to use the jiffies sched_clock() anyways.
+BUT Peter Zijlstra replied to my question about why this wasn't
+generic with:
 
-	- Platform supports multiple highly-rated clocksources.
+[peterz]:
+> But that is the reason this isn't generic, non of the 'stable'
+> clocksources on x86 are fast enough to use as sched_clock.
 
-In the first case, simply using the rating information is sufficient to
-figure out the proper course of action. In the second case, very few of
-these do anything outside of the regular cyc2ns() work on the preferred
-clocksource, so it tends to be more about having access to the reference
-clocksource data structures more than really wanting to do any special
-calculations in sched_clock().
+Does that mean clock->rating for these clocksources is
+for certain < 100?
 
-The last few cases are presently what we are faced with on sh, and which
-also impacts other drivers/clocksource drivers (while acpi_pm seems to
-have alternate recourse for sched_clock(), ARM/AVR32/SH do not). In these
-cases multiple clocksources can be provided, and the availability of
-these will often depend on runtime constraints (pinmux and so forth), in
-which case link time determination is simply not sufficient. While these
-clocksources can be highly rated and can offer excellent granularity, the
-jiffies clocksource is still used as a fallback given the inability to
-sprinkle sched_clock() wrappers in the drivers themselves. Also, while
-sched_clock() could be moved in to struct clocksource itself, this does
-not help the case where sched_clock() is called in to repeatedly well
-before a preferred clocksource has been determined and made available
-(printk times and so on), so extra logic is needed regardless.
+The definition of "rating" from the kerneldoc does not
+seem to imply that, it's a subjective measure AFAICT.
 
-This patch does the only thing I could think of to address most of
-these in one shot, abusing the current clocksource pointer and forcing
-sched_clock() to read from it directly as soon as it becomes available
-(and assuming that is is rated highly enough). This does add the cost of
-the rating test on systems that only have the jiffies clocksource, but I
-think this is acceptable collateral damage given that jiffies are not
-very granular to begin with.
+Else you might want an additional criteria, like
+cyc2ns(1) (much less than) jiffies_to_usecs(1)*1000
+(however you do that the best way)
+so you don't pick something
+that isn't substantially faster than the jiffy counter atleast?
 
-Signed-off-by: Paul Mundt <lethal@linux-sh.org>
-
----
-
- kernel/sched_clock.c |   10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/kernel/sched_clock.c b/kernel/sched_clock.c
-index e1d16c9..59bbeeb 100644
---- a/kernel/sched_clock.c
-+++ b/kernel/sched_clock.c
-@@ -30,6 +30,7 @@
- #include <linux/percpu.h>
- #include <linux/ktime.h>
- #include <linux/sched.h>
-+#include <linux/clocksource.h>
- 
- /*
-  * Scheduler clock - returns current time in nanosec units.
-@@ -38,6 +39,15 @@
-  */
- unsigned long long __attribute__((weak)) sched_clock(void)
- {
-+	/*
-+	 * Use the current clocksource when it becomes available later in
-+	 * the boot process, and ensure that it has a high enough rating
-+	 * to make it suitable for general use.
-+	 */
-+	if (clock && clock->rating >= 100)
-+		return cyc2ns(clock, clocksource_read(clock));
-+
-+	/* Otherwise just fall back on jiffies */
- 	return (unsigned long long)(jiffies - INITIAL_JIFFIES)
- 					* (NSEC_PER_SEC / HZ);
- }
+Yours,
+Linus Walleij
