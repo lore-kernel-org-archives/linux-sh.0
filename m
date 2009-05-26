@@ -1,70 +1,93 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Tue, 12 May 2009 03:02:32 +0000
-Subject: Re: [PATCH v5] dmaengine: sh: Add Support SuperH DMA Engine driver
-Message-Id: <4A08E6C8.8050802@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 26 May 2009 06:15:32 +0000
+Subject: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
+Message-Id: <20090526061532.GD9188@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <49E41BA8.4090807@renesas.com>
-In-Reply-To: <49E41BA8.4090807@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ingo Molnar <mingo@elte.hu>
+Cc: Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi, Dan.
+There are presently a number of issues and limitations with how the
+clocksource and sched_clock() interaction works today. Configurations
+tend to be grouped in to one of the following:
 
-Thank you for your check.
+	- Platform provides a low rated clocksource (< 100) and prefers
+	  to use jiffies for sched_clock() due to reliability concerns.
 
-Dan Williams wrote:
-> Nobuhiro Iwamatsu wrote:
->> This supported all DMA channels, and it was tested in SH7722,
->> SH7780 and SH7763.
->> This can not use with SH DMA API.
->>
->> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->> Reviewed-by: Matt Fleming <matt@console-pimps.org>
->> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
->> Acked-by: Maciej Sosnowski <maciej.sosnowski@intel.com>
->> ---
->>  v5: Fix some bug.
->>      Add Cyclic extention API (got hint from dw_dmac.c)
-> 
-> Have you run this with CONFIG_PROVE_LOCKING=y?  I suspect it will find 
-> some issues.  It looks like desc_lock in the interrupt handler is only 
-> protecting updates to the CHCR register.  In other places desc_lock is 
-> protecting descriptor chain updates.  And the code varies from spin_lock 
-> to spin_lock_bh?  If you can't move all register manipulations to bh or 
-> process context then you will most likely need a separate register_lock 
-> which can be taken with spin_lock_irq... see what CONFIG_PROVE_LOCKING 
-> reports.
+	- Platform provides its own clocksource and sched_clock() that
+	  wraps in to it.
 
-OK, I check this point, and send report.
-> 
->> diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
->> index 3b3c01b..0a27f3c 100644
->> --- a/drivers/dma/Kconfig
->> +++ b/drivers/dma/Kconfig
->> @@ -81,6 +81,14 @@ config MX3_IPU_IRQS
->>           To avoid bloating the irq_desc[] array we allocate a sufficient
->>           number of IRQ slots and map them dynamically to specific 
->> sources.
->>
->> +config SH_DMAE
->> +       tristate "Renesas SuperH DMAC support"
->> +       depends on SUPERH && SH_DMA
->> +       depends on !SH_DMA_API
->> +       select DMA_ENGINE
->> +       help
->> +         Enable support for the Renesas SuperH DMA controllers.
->> +
->>  config DMA_ENGINE
->>         bool
->>
-> 
-> This will collide with the TXX9_DMAC config option now sitting in Ralf's 
-> tree.  Please put this entry somewhere before MX3_IPU.
+	- Platform uses a generic clocksource (ie, drivers/clocksource/)
+	  combined with the generic jiffies-backed sched_clock().
 
-OK, I fix this next patch.
+	- Platform supports a generic highly-rated clocksource but ends
+	  up having to use the jiffies sched_clock() anyways.
 
+	- Platform supports multiple highly-rated clocksources.
 
-Best regards,
- Nobuhiro
+In the first case, simply using the rating information is sufficient to
+figure out the proper course of action. In the second case, very few of
+these do anything outside of the regular cyc2ns() work on the preferred
+clocksource, so it tends to be more about having access to the reference
+clocksource data structures more than really wanting to do any special
+calculations in sched_clock().
+
+The last few cases are presently what we are faced with on sh, and which
+also impacts other drivers/clocksource drivers (while acpi_pm seems to
+have alternate recourse for sched_clock(), ARM/AVR32/SH do not). In these
+cases multiple clocksources can be provided, and the availability of
+these will often depend on runtime constraints (pinmux and so forth), in
+which case link time determination is simply not sufficient. While these
+clocksources can be highly rated and can offer excellent granularity, the
+jiffies clocksource is still used as a fallback given the inability to
+sprinkle sched_clock() wrappers in the drivers themselves. Also, while
+sched_clock() could be moved in to struct clocksource itself, this does
+not help the case where sched_clock() is called in to repeatedly well
+before a preferred clocksource has been determined and made available
+(printk times and so on), so extra logic is needed regardless.
+
+This patch does the only thing I could think of to address most of
+these in one shot, abusing the current clocksource pointer and forcing
+sched_clock() to read from it directly as soon as it becomes available
+(and assuming that is is rated highly enough). This does add the cost of
+the rating test on systems that only have the jiffies clocksource, but I
+think this is acceptable collateral damage given that jiffies are not
+very granular to begin with.
+
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+
+---
+
+ kernel/sched_clock.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/kernel/sched_clock.c b/kernel/sched_clock.c
+index e1d16c9..59bbeeb 100644
+--- a/kernel/sched_clock.c
++++ b/kernel/sched_clock.c
+@@ -30,6 +30,7 @@
+ #include <linux/percpu.h>
+ #include <linux/ktime.h>
+ #include <linux/sched.h>
++#include <linux/clocksource.h>
+ 
+ /*
+  * Scheduler clock - returns current time in nanosec units.
+@@ -38,6 +39,15 @@
+  */
+ unsigned long long __attribute__((weak)) sched_clock(void)
+ {
++	/*
++	 * Use the current clocksource when it becomes available later in
++	 * the boot process, and ensure that it has a high enough rating
++	 * to make it suitable for general use.
++	 */
++	if (clock && clock->rating >= 100)
++		return cyc2ns(clock, clocksource_read(clock));
++
++	/* Otherwise just fall back on jiffies */
+ 	return (unsigned long long)(jiffies - INITIAL_JIFFIES)
+ 					* (NSEC_PER_SEC / HZ);
+ }
