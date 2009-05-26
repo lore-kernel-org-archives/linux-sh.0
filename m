@@ -1,52 +1,55 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 26 May 2009 23:08:55 +0000
+Date: Tue, 26 May 2009 23:13:13 +0000
 Subject: Re: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
-Message-Id: <20090526230855.GA27218@linux-sh.org>
+Message-Id: <20090526231313.GB27218@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090526061532.GD9188@linux-sh.org> <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com> <1243348681.23657.14.camel@twins> <alpine.LFD.2.00.0905262209160.1762@localhost.localdomain>
-In-Reply-To: <alpine.LFD.2.00.0905262209160.1762@localhost.localdomain>
+References: <20090526061532.GD9188@linux-sh.org> <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com> <1243348681.23657.14.camel@twins> <alpine.LFD.2.00.0905262209160.1762@localhost.localdomain> <20090526230855.GA27218@linux-sh.org>
+In-Reply-To: <20090526230855.GA27218@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: Peter Zijlstra <peterz@infradead.org>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
+To: Thomas Gleixner <tglx@linutronix.de>, Peter Zijlstra <peterz@infradead.org>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
 
-On Tue, May 26, 2009 at 10:17:02PM +0200, Thomas Gleixner wrote:
-> On Tue, 26 May 2009, Peter Zijlstra wrote:
-> > On Tue, 2009-05-26 at 16:31 +0200, Linus Walleij wrote:
-> > > The definition of "rating" from the kerneldoc does not
-> > > seem to imply that, it's a subjective measure AFAICT.
+On Wed, May 27, 2009 at 08:08:55AM +0900, Paul Mundt wrote:
+> On Tue, May 26, 2009 at 10:17:02PM +0200, Thomas Gleixner wrote:
+> > On Tue, 26 May 2009, Peter Zijlstra wrote:
+> > > On Tue, 2009-05-26 at 16:31 +0200, Linus Walleij wrote:
+> > > > The definition of "rating" from the kerneldoc does not
+> > > > seem to imply that, it's a subjective measure AFAICT.
+> > 
+> >   Right, there is no rating threshold defined, which allows to deduce
+> >   that. The TSC on x86 which might be unreliable, but usable as
+> >   sched_clock has an initial rating of 300 which can be changed later
+> >   on to 0 when the TSC is unusable as a time of day source. In that
+> >   case clock is replaced by HPET which has a rating > 100 but is
+> >   definitely not a good choice for sched_clock
+> > 
+> > > > Else you might want an additional criteria, like
+> > > > cyc2ns(1) (much less than) jiffies_to_usecs(1)*1000
+> > > > (however you do that the best way)
+> > > > so you don't pick something
+> > > > that isn't substantially faster than the jiffy counter atleast?
+> > 
+> >   What we can do is add another flag to the clocksource e.g.
+> >   CLOCK_SOURCE_USE_FOR_SCHED_CLOCK and check this instead of the
+> >   rating.
+> > 
+> Ok, so based on this and John's locking concerns, how about something
+> like this? It doesn't handle the wrapping cases, but I wonder if we
+> really want to add that amount of logic to sched_clock() in the first
+> place. Clocksources that wrap frequently could either leave the flag
+> unset, or do something similar to the TSC code where the cyc2ns shift is
+> used. If this is something we want to handle generically, then I'll have
+> a go at generalizing the TSC cyc2ns scaling bits for the next spin.
 > 
->   Right, there is no rating threshold defined, which allows to deduce
->   that. The TSC on x86 which might be unreliable, but usable as
->   sched_clock has an initial rating of 300 which can be changed later
->   on to 0 when the TSC is unusable as a time of day source. In that
->   case clock is replaced by HPET which has a rating > 100 but is
->   definitely not a good choice for sched_clock
-> 
-> > > Else you might want an additional criteria, like
-> > > cyc2ns(1) (much less than) jiffies_to_usecs(1)*1000
-> > > (however you do that the best way)
-> > > so you don't pick something
-> > > that isn't substantially faster than the jiffy counter atleast?
-> 
->   What we can do is add another flag to the clocksource e.g.
->   CLOCK_SOURCE_USE_FOR_SCHED_CLOCK and check this instead of the
->   rating.
-> 
-Ok, so based on this and John's locking concerns, how about something
-like this? It doesn't handle the wrapping cases, but I wonder if we
-really want to add that amount of logic to sched_clock() in the first
-place. Clocksources that wrap frequently could either leave the flag
-unset, or do something similar to the TSC code where the cyc2ns shift is
-used. If this is something we want to handle generically, then I'll have
-a go at generalizing the TSC cyc2ns scaling bits for the next spin.
+Lets try that again..
 
 ---
 
  include/linux/clocksource.h |    2 ++
  kernel/sched_clock.c        |   22 ++++++++++++++++++++++
- 2 files changed, 24 insertions(+)
+ kernel/time/clocksource.c   |    2 +-
+ 3 files changed, 25 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/clocksource.h b/include/linux/clocksource.h
 index c56457c..cfd873e 100644
@@ -108,3 +111,16 @@ index e1d16c9..c7027cd 100644
  	return (unsigned long long)(jiffies - INITIAL_JIFFIES)
  					* (NSEC_PER_SEC / HZ);
  }
+diff --git a/kernel/time/clocksource.c b/kernel/time/clocksource.c
+index 80189f6..437a6cf 100644
+--- a/kernel/time/clocksource.c
++++ b/kernel/time/clocksource.c
+@@ -127,7 +127,7 @@ static struct clocksource *curr_clocksource = &clocksource_jiffies;
+ static struct clocksource *next_clocksource;
+ static struct clocksource *clocksource_override;
+ static LIST_HEAD(clocksource_list);
+-static DEFINE_SPINLOCK(clocksource_lock);
++DEFINE_SPINLOCK(clocksource_lock);
+ static char override_name[32];
+ static int finished_booting;
+ 
