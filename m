@@ -1,74 +1,110 @@
-From: john stultz <johnstul@us.ibm.com>
-Date: Tue, 26 May 2009 23:00:35 +0000
-Subject: Re: [PATCH] sched: Support current clocksource handling in
-Message-Id: <1243378835.3275.30.camel@localhost>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 26 May 2009 23:08:55 +0000
+Subject: Re: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
+Message-Id: <20090526230855.GA27218@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090526061532.GD9188@linux-sh.org>
-	 <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com>
-	 <1243348681.23657.14.camel@twins>  <1243369423.3275.5.camel@localhost>
-	 <1243369815.6600.2.camel@laptop>  <1243370439.3275.13.camel@localhost>
-	 <1243371309.6600.8.camel@laptop>
-In-Reply-To: <1243371309.6600.8.camel@laptop>
+References: <20090526061532.GD9188@linux-sh.org> <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com> <1243348681.23657.14.camel@twins> <alpine.LFD.2.00.0905262209160.1762@localhost.localdomain>
+In-Reply-To: <alpine.LFD.2.00.0905262209160.1762@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>
-Cc: Linus Walleij <linus.ml.walleij@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>, Thomas Gleixner <tglx@linutronix.de>
+To: Thomas Gleixner <tglx@linutronix.de>
+Cc: Peter Zijlstra <peterz@infradead.org>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
 
-On Tue, 2009-05-26 at 22:55 +0200, Peter Zijlstra wrote:
-> On Tue, 2009-05-26 at 13:40 -0700, john stultz wrote:
-> > On Tue, 2009-05-26 at 22:30 +0200, Peter Zijlstra wrote:
-> > > On Tue, 2009-05-26 at 13:23 -0700, john stultz wrote:
-> > > > Overall, I'd probably suggest thinking this through a bit more. At some
-> > > > point doing this right will cause sched_clock() to be basically the same
-> > > > as ktime_get(). So why not just use that instead of remaking it?
-> > > 
-> > > simply because we don't require the strict global monotonicy for
-> > > scheduling as we do from a regular time source (its nice to have
-> > > though).
-> > > 
-> > > That means that on x86 we can always use TSC for sched_clock(), even
-> > > when its quite unsuitable for ktime.
-> > 
-> > Right, but I guess what I'm asking is can this be a bit better defined? 
-> > 
-> > If we are going to use clocksources (or cyclecounters - an area I need
-> > to clean up soon), it would be good to get an idea of what is expected
-> > of the sched_clock() interface.
-> > 
-> > So TSC good, HPET bad. Why? 
+On Tue, May 26, 2009 at 10:17:02PM +0200, Thomas Gleixner wrote:
+> On Tue, 26 May 2009, Peter Zijlstra wrote:
+> > On Tue, 2009-05-26 at 16:31 +0200, Linus Walleij wrote:
+> > > The definition of "rating" from the kerneldoc does not
+> > > seem to imply that, it's a subjective measure AFAICT.
 > 
-> Because TSC is a few cycles to read, and you can factorize a largish
-> prime while doing an HPET read :-)
+>   Right, there is no rating threshold defined, which allows to deduce
+>   that. The TSC on x86 which might be unreliable, but usable as
+>   sched_clock has an initial rating of 300 which can be changed later
+>   on to 0 when the TSC is unusable as a time of day source. In that
+>   case clock is replaced by HPET which has a rating > 100 but is
+>   definitely not a good choice for sched_clock
 > 
-> > Is latency all we care about? How bad would
-> > the TSC have to be before we wouldn't want to use it?
+> > > Else you might want an additional criteria, like
+> > > cyc2ns(1) (much less than) jiffies_to_usecs(1)*1000
+> > > (however you do that the best way)
+> > > so you don't pick something
+> > > that isn't substantially faster than the jiffy counter atleast?
 > 
-> Anything better than jiffies ;-)
-
-Except HPET thought, right? :)
-
-> For sched_clock() we want something high-res that is monotonic per cpu
-> and has a bounded drift between cpus in the order of jiffies.
+>   What we can do is add another flag to the clocksource e.g.
+>   CLOCK_SOURCE_USE_FOR_SCHED_CLOCK and check this instead of the
+>   rating.
 > 
-> Look at kernel/sched_clock.c for what we do to make really shitty TSC
-> conform to the above requirements.
+Ok, so based on this and John's locking concerns, how about something
+like this? It doesn't handle the wrapping cases, but I wonder if we
+really want to add that amount of logic to sched_clock() in the first
+place. Clocksources that wrap frequently could either leave the flag
+unset, or do something similar to the TSC code where the cyc2ns shift is
+used. If this is something we want to handle generically, then I'll have
+a go at generalizing the TSC cyc2ns scaling bits for the next spin.
 
-Sure, I guess what I'm trying to pull out here is that should we try to
-create some OK_FOR_SCHED_CLOCK flag for clocksources, and then we try to
-make this generic so other arches can add that flag and be done, what is
-the guidance we want to give to arch maintainers for setting that flag?
+---
 
-1) Has to be very very fast. Can we put a number on this? 50ns to read?
+ include/linux/clocksource.h |    2 ++
+ kernel/sched_clock.c        |   22 ++++++++++++++++++++++
+ 2 files changed, 24 insertions(+)
 
-2) How long does it have to be monotonic for? Is it ok if it wraps every
-few seconds?
-
-If get_cycles() || jiffies is what we want, then lets leave it there. I
-just want to avoid mixing the clocksource code into the sched clock code
-until we really get this sort of definition sorted.
-
-thanks
--john
-
-
+diff --git a/include/linux/clocksource.h b/include/linux/clocksource.h
+index c56457c..cfd873e 100644
+--- a/include/linux/clocksource.h
++++ b/include/linux/clocksource.h
+@@ -203,6 +203,7 @@ struct clocksource {
+ };
+ 
+ extern struct clocksource *clock;	/* current clocksource */
++extern spinlock_t clocksource_lock;
+ 
+ /*
+  * Clock source flags bits::
+@@ -212,6 +213,7 @@ extern struct clocksource *clock;	/* current clocksource */
+ 
+ #define CLOCK_SOURCE_WATCHDOG			0x10
+ #define CLOCK_SOURCE_VALID_FOR_HRES		0x20
++#define CLOCK_SOURCE_USE_FOR_SCHED_CLOCK	0x40
+ 
+ /* simplify initialization of mask field */
+ #define CLOCKSOURCE_MASK(bits) (cycle_t)((bits) < 64 ? ((1ULL<<(bits))-1) : -1)
+diff --git a/kernel/sched_clock.c b/kernel/sched_clock.c
+index e1d16c9..c7027cd 100644
+--- a/kernel/sched_clock.c
++++ b/kernel/sched_clock.c
+@@ -30,6 +30,7 @@
+ #include <linux/percpu.h>
+ #include <linux/ktime.h>
+ #include <linux/sched.h>
++#include <linux/clocksource.h>
+ 
+ /*
+  * Scheduler clock - returns current time in nanosec units.
+@@ -38,6 +39,27 @@
+  */
+ unsigned long long __attribute__((weak)) sched_clock(void)
+ {
++	/*
++	 * Use the current clocksource when it becomes available later in
++	 * the boot process. As this needs to be fast, we only make a
++	 * single pass at grabbing the spinlock. If the clock is changing
++	 * out from underneath us, fall back on jiffies and try it again
++	 * the next time around.
++	 */
++	if (clock && _raw_spin_trylock(&clocksource_lock)) {
++		/*
++		 * Only use clocksources suitable for sched_clock()
++		 */
++		if (clock->flags & CLOCK_SOURCE_USE_FOR_SCHED_CLOCK) {
++			cycle_t now = cyc2ns(clock, clocksource_read(clock));
++			_raw_spin_unlock(&clocksource_lock);
++			return now;
++		}
++
++		_raw_spin_unlock(&clocksource_lock);
++	}
++
++	/* If all else fails, fall back on jiffies */
+ 	return (unsigned long long)(jiffies - INITIAL_JIFFIES)
+ 					* (NSEC_PER_SEC / HZ);
+ }
