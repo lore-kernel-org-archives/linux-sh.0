@@ -1,41 +1,74 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 26 May 2009 14:53:59 +0000
-Subject: Re: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
-Message-Id: <20090526145359.GA20760@linux-sh.org>
+From: Matthieu CASTET <matthieu.castet@parrot.com>
+Date: Tue, 26 May 2009 15:02:58 +0000
+Subject: Re: [PATCH] sched: Support current clocksource handling in fallback
+Message-Id: <4A1C04A2.80404@parrot.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090526061532.GD9188@linux-sh.org> <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com> <20090526144357.GA20577@linux-sh.org> <1243349409.23657.17.camel@twins>
-In-Reply-To: <1243349409.23657.17.camel@twins>
+References: <20090526061532.GD9188@linux-sh.org> <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com>
+In-Reply-To: <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>
-Cc: Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Linus Walleij <linus.ml.walleij@gmail.com>
+Cc: Paul Mundt <lethal@linux-sh.org>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "peterz@infradead.org" <peterz@infradead.org>, "linux-arm-kernel@lists.arm.linux.org.uk" <linux-arm-kernel@lists.arm.linux.org.uk>
 
-On Tue, May 26, 2009 at 04:50:09PM +0200, Peter Zijlstra wrote:
-> On Tue, 2009-05-26 at 23:43 +0900, Paul Mundt wrote:
-> > > Else you might want an additional criteria, like
-> > > cyc2ns(1) (much less than) jiffies_to_usecs(1)*1000
-> > > (however you do that the best way)
-> > > so you don't pick something
-> > > that isn't substantially faster than the jiffy counter atleast?
-> > > 
-> > This rather defeats the purpose of sched_clock() being fast. If we want
-> > to add a flag that means this in to the clocksource instead of consulting
-> > the rating, that is fine with me too. I know which clocksources I prefer
-> > to use for a sched_clock() and they are all better than jiffies. The
-> > semantics of how we tell sched_clock() that are not so important. Rating
-> > seemed like a good choice from the documentation in struct clocksource at
-> > least.
-> 
-> Am I confused or are we talking about fast HZ vs fast cycles?
-> 
-> sched_clock() should be fast cycles, that is, we don't want to read a
-> clock that takes about 1000 cycles.
-> 
-> sched_clock() is about providing a high resolution clock that is fast
-> (low cycle count) to acquire, and need not be strictly monotonic on smp.
+Linus Walleij a =E9crit :
+> 2009/5/26 Paul Mundt <lethal@linux-sh.org>:
+>=20
+>>  */
+>>  unsigned long long __attribute__((weak)) sched_clock(void)
+>>  {
+>> +       /*
+>> +        * Use the current clocksource when it becomes available later in
+>> +        * the boot process, and ensure that it has a high enough rating
+>> +        * to make it suitable for general use.
+>> +        */
+>> +       if (clock && clock->rating >=3D 100)
+>> +               return cyc2ns(clock, clocksource_read(clock));
+>> +
+>> +       /* Otherwise just fall back on jiffies */
+>>        return (unsigned long long)(jiffies - INITIAL_JIFFIES)
+>>                                        * (NSEC_PER_SEC / HZ);
+>>  }
+This is buggy for fast clocksource that wrap often, because sched_clock
+is not supposed to wrap.
+That why custom implementation use cnt32_to_63 and a smaller shift
+(around 8 -10) for conversion for timer unit to ns.
 
-I don't think there's any confusion here. My point is that I didn't want
-to add too much logic in to sched_clock() given that it is supposed to be
-fast. So if the rating test by itself is not sufficient, then we need
-another way to flag a clocksource as being usable for sched_clock().
+Look for example to arch/arm/mach-pxa/time.c implementation [1]
+
+But we can image you make it generic.
+
+Matthieu
+
+[1]
+/*
+ * This is PXA's sched_clock implementation. This has a resolution
+ * of at least 308 ns and a maximum value of 208 days.
+ *
+ * The return value is guaranteed to be monotonic in that range as
+ * long as there is always less than 582 seconds between successive
+ * calls to sched_clock() which should always be the case in practice.
+ */
+#define OSCR2NS_SCALE_FACTOR 10
+
+static unsigned long oscr2ns_scale;
+
+static void __init set_oscr2ns_scale(unsigned long oscr_rate)
+{
+    unsigned long long v =3D 1000000000ULL << OSCR2NS_SCALE_FACTOR;
+    do_div(v, oscr_rate);
+    oscr2ns_scale =3D v;
+    /*
+     * We want an even value to automatically clear the top bit
+     * returned by cnt32_to_63() without an additional run time
+     * instruction. So if the LSB is 1 then round it up.
+     */
+    if (oscr2ns_scale & 1)
+        oscr2ns_scale++;
+}
+
+unsigned long long sched_clock(void)
+{
+    unsigned long long v =3D cnt32_to_63(OSCR);
+    return (v * oscr2ns_scale) >> OSCR2NS_SCALE_FACTOR;
+}
