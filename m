@@ -1,153 +1,71 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 May 2009 10:01:01 +0000
-Subject: [PATCH] sh: TMU platform data for sh7705
-Message-Id: <20090512100101.25523.11777.sendpatchset@rx1.opensource.se>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 26 May 2009 03:16:17 +0000
+Subject: [PATCH] sh: sh7785lcr: add platform data for r8a66597-hcd
+Message-Id: <4A1B5F01.9060503@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+and remove redundant parameter for r8a66597-hcd.
 
-This patch adds TMU platform data for sh7705. Both clockevent
-and clocksource support is enabled.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 ---
+ This patch depends on the following patch.
+ http://marc.info/?l=linux-usb&m4330739812843&w=2
 
- arch/sh/kernel/cpu/sh3/setup-sh7705.c |  108 +++++++++++++++++++++++++++++++++
- 1 file changed, 108 insertions(+)
+ arch/sh/boards/board-sh7785lcr.c |   13 ++++++++++---
+ 1 files changed, 10 insertions(+), 3 deletions(-)
 
---- 0001/arch/sh/kernel/cpu/sh3/setup-sh7705.c
-+++ work/arch/sh/kernel/cpu/sh3/setup-sh7705.c	2009-05-12 15:32:42.000000000 +0900
-@@ -13,6 +13,7 @@
+diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
+index 6f94f17..8ce4692 100644
+--- a/arch/sh/boards/board-sh7785lcr.c
++++ b/arch/sh/boards/board-sh7785lcr.c
+@@ -19,6 +19,8 @@
+ #include <linux/i2c-pca-platform.h>
+ #include <linux/i2c-algo-pca.h>
  #include <linux/irq.h>
- #include <linux/serial.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <asm/rtc.h>
- 
- enum {
-@@ -116,7 +117,102 @@ static struct platform_device rtc_device
++#include <linux/interrupt.h>
++#include <linux/usb/r8a66597.h>
+ #include <asm/heartbeat.h>
+ #include <mach/sh7785lcr.h>
+
+@@ -94,18 +96,22 @@ static struct platform_device nor_flash_device = {
+ 	.resource	= nor_flash_resources,
+ };
+
++static struct r8a66597_platdata r8a66597_data = {
++	.xtal = R8A66597_PLATDATA_XTAL_12MHZ,
++	.vif = 1,
++	.irq_sense = 1,
++};
++
+ static struct resource r8a66597_usb_host_resources[] = {
+ 	[0] = {
+-		.name	= "r8a66597_hcd",
+ 		.start	= R8A66597_ADDR,
+ 		.end	= R8A66597_ADDR + R8A66597_SIZE - 1,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.name	= "r8a66597_hcd",
+ 		.start	= 2,
+ 		.end	= 2,
+-		.flags	= IORESOURCE_IRQ,
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
  	},
  };
- 
-+static struct sh_timer_config tmu0_platform_data = {
-+	.name = "TMU0",
-+	.channel_offset = 0x02,
-+	.timer_bit = 0,
-+	.clk = "module_clk",
-+	.clockevent_rating = 200,
-+};
-+
-+static struct resource tmu0_resources[] = {
-+	[0] = {
-+		.name	= "TMU0",
-+		.start	= 0xfffffe94,
-+		.end	= 0xfffffe9f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 16,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu0_device = {
-+	.name		= "sh_tmu",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &tmu0_platform_data,
-+	},
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
-+};
-+
-+static struct sh_timer_config tmu1_platform_data = {
-+	.name = "TMU1",
-+	.channel_offset = 0xe,
-+	.timer_bit = 1,
-+	.clk = "module_clk",
-+	.clocksource_rating = 200,
-+};
-+
-+static struct resource tmu1_resources[] = {
-+	[0] = {
-+		.name	= "TMU1",
-+		.start	= 0xfffffea0,
-+		.end	= 0xfffffeab,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 17,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu1_device = {
-+	.name		= "sh_tmu",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &tmu1_platform_data,
-+	},
-+	.resource	= tmu1_resources,
-+	.num_resources	= ARRAY_SIZE(tmu1_resources),
-+};
-+
-+static struct sh_timer_config tmu2_platform_data = {
-+	.name = "TMU2",
-+	.channel_offset = 0x1a,
-+	.timer_bit = 2,
-+	.clk = "module_clk",
-+};
-+
-+static struct resource tmu2_resources[] = {
-+	[0] = {
-+		.name	= "TMU2",
-+		.start	= 0xfffffeac,
-+		.end	= 0xfffffebb,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 18,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu2_device = {
-+	.name		= "sh_tmu",
-+	.id		= 2,
-+	.dev = {
-+		.platform_data	= &tmu2_platform_data,
-+	},
-+	.resource	= tmu2_resources,
-+	.num_resources	= ARRAY_SIZE(tmu2_resources),
-+};
-+
- static struct platform_device *sh7705_devices[] __initdata = {
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
- 	&sci_device,
- 	&rtc_device,
- };
-@@ -128,6 +224,18 @@ static int __init sh7705_devices_setup(v
- }
- __initcall(sh7705_devices_setup);
- 
-+static struct platform_device *sh7705_early_devices[] __initdata = {
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
-+};
-+
-+void __init plat_early_device_setup(void)
-+{
-+	early_platform_add_devices(sh7705_early_devices,
-+				   ARRAY_SIZE(sh7705_early_devices));
-+}
-+
- void __init plat_irq_setup(void)
- {
- 	register_intc_controller(&intc_desc);
+
+@@ -115,6 +121,7 @@ static struct platform_device r8a66597_usb_host_device = {
+ 	.dev = {
+ 		.dma_mask		= NULL,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &r8a66597_data,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(r8a66597_usb_host_resources),
+ 	.resource	= r8a66597_usb_host_resources,
+-- 
+1.5.5
+
+
