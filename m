@@ -1,8 +1,10 @@
 From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Tue, 26 May 2009 03:17:05 +0000
-Subject: [PATCH] sh: add platform data for r8a66597-hcd in setup-sh7366
-Message-Id: <4A1B5F31.10602@renesas.com>
+Date: Tue, 26 May 2009 03:17:09 +0000
+Subject: [PATCH] sh: add platform data for r8a66597-hcd in setup-sh7723
+Message-Id: <4A1B5F35.3090706@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4A1B5F31.10602@renesas.com>
+In-Reply-To: <4A1B5F31.10602@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,53 +17,52 @@ Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
  This patch depends on the following patch.
  http://marc.info/?l=linux-usb&m4330739812843&w=2
 
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   10 +++++++---
- 1 files changed, 7 insertions(+), 3 deletions(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-index 93ecf8e..200bc6a 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-@@ -15,6 +15,7 @@
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index a800466..026d274 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -14,6 +14,7 @@
  #include <linux/serial_sci.h>
  #include <linux/uio_driver.h>
  #include <linux/sh_cmt.h>
 +#include <linux/usb/r8a66597.h>
  #include <asm/clock.h>
+ #include <asm/mmzone.h>
 
- static struct resource iic_resources[] = {
-@@ -38,18 +39,20 @@ static struct platform_device iic_device = {
- 	.resource       = iic_resources,
+@@ -207,9 +208,12 @@ static struct platform_device rtc_device = {
+ 	.resource	= rtc_resources,
  };
 
 +static struct r8a66597_platdata r8a66597_data = {
 +	.irq_sense = 1,
 +};
 +
- static struct resource usb_host_resources[] = {
+ static struct resource sh7723_usb_host_resources[] = {
  	[0] = {
--		.name   = "r8a66597_hcd",
- 		.start  = 0xa4d80000,
- 		.end    = 0xa4d800ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
+-		.name	= "r8a66597_hcd",
+ 		.start	= 0xa4d80000,
+ 		.end	= 0xa4d800ff,
+ 		.flags	= IORESOURCE_MEM,
+@@ -217,7 +221,7 @@ static struct resource sh7723_usb_host_resources[] = {
  	[1] = {
--		.name   = "r8a66597_hcd",
- 		.start  = 65,
- 		.end    = 65,
--		.flags  = IORESOURCE_IRQ,
+ 		.start	= 65,
+ 		.end	= 65,
+-		.flags	= IORESOURCE_IRQ,
 +		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
  	},
  };
 
-@@ -59,6 +62,7 @@ static struct platform_device usb_host_device = {
+@@ -227,6 +231,7 @@ static struct platform_device sh7723_usb_host_device = {
  	.dev = {
- 		.dma_mask		= NULL,
+ 		.dma_mask		= NULL,         /*  not use dma */
  		.coherent_dma_mask	= 0xffffffff,
 +		.platform_data		= &r8a66597_data,
  	},
- 	.num_resources	= ARRAY_SIZE(usb_host_resources),
- 	.resource	= usb_host_resources,
+ 	.num_resources	= ARRAY_SIZE(sh7723_usb_host_resources),
+ 	.resource	= sh7723_usb_host_resources,
 -- 
 1.5.5
 
