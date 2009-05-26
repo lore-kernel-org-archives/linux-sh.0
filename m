@@ -1,44 +1,69 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 11 May 2009 11:34:16 +0000
-Subject: [PATCH] sh: r7780 highlander clock fixes
-Message-Id: <20090511113416.12454.62526.sendpatchset@rx1.opensource.se>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 26 May 2009 09:33:08 +0000
+Subject: [PATCH v2] sh: x3proto: add platform data for r8a66597-hcd
+Message-Id: <4A1BB754.5070901@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+and remove redundant parameter for r8a66597-hcd.
 
-Update the r7780 highlander defconfig to fix
-PCLK value, while at it fix cmdline on r7785.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
 ---
+ This patch depends on the following patch.
+ http://marc.info/?l=linux-usb&m4332990308291&w=2
 
- arch/sh/configs/r7780mp_defconfig |    2 +-
- arch/sh/configs/r7785rp_defconfig |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/boards/mach-x3proto/setup.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
 
---- 0001/arch/sh/configs/r7780mp_defconfig
-+++ work/arch/sh/configs/r7780mp_defconfig	2009-05-11 20:06:47.000000000 +0900
-@@ -260,7 +260,7 @@ CONFIG_SH_R7780MP=y
- #
- CONFIG_SH_TMU=y
- CONFIG_SH_TIMER_IRQ(
--CONFIG_SH_PCLK_FREQ2000000
-+CONFIG_SH_PCLK_FREQ3333333
- # CONFIG_NO_HZ is not set
- # CONFIG_HIGH_RES_TIMERS is not set
- CONFIG_GENERIC_CLOCKEVENTS_BUILD=y
---- 0001/arch/sh/configs/r7785rp_defconfig
-+++ work/arch/sh/configs/r7785rp_defconfig	2009-05-11 20:07:02.000000000 +0900
-@@ -333,7 +333,7 @@ CONFIG_GUSA=y
- CONFIG_ZERO_PAGE_OFFSET=0x00001000
- CONFIG_BOOT_LINK_OFFSET=0x00800000
- CONFIG_CMDLINE_BOOL=y
--CONFIG_CMDLINE="console=ttySC0,115200 root=/dev/sda1 mode4_pin=high"
-+CONFIG_CMDLINE="console=ttySC0,115200 root=/dev/sda1"
- 
- #
- # Bus options
+diff --git a/arch/sh/boards/mach-x3proto/setup.c b/arch/sh/boards/mach-x3proto/setup.c
+index a340492..8913ae3 100644
+--- a/arch/sh/boards/mach-x3proto/setup.c
++++ b/arch/sh/boards/mach-x3proto/setup.c
+@@ -15,6 +15,8 @@
+ #include <linux/io.h>
+ #include <linux/smc91x.h>
+ #include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/usb/r8a66597.h>
+ #include <asm/ilsel.h>
+
+ static struct resource heartbeat_resources[] = {
+@@ -58,17 +60,20 @@ static struct platform_device smc91x_device = {
+ 	},
+ };
+
++static struct r8a66597_platdata r8a66597_data = {
++	.xtal = R8A66597_PLATDATA_XTAL_12MHZ,
++	.vif = 1,
++};
++
+ static struct resource r8a66597_usb_host_resources[] = {
+ 	[0] = {
+-		.name	= "r8a66597_hcd",
+ 		.start	= 0x18040000,
+ 		.end	= 0x18080000 - 1,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.name	= "r8a66597_hcd",
+ 		/* Filled in by ilsel */
+-		.flags	= IORESOURCE_IRQ,
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
+ 	},
+ };
+
+@@ -78,6 +83,7 @@ static struct platform_device r8a66597_usb_host_device = {
+ 	.dev = {
+ 		.dma_mask		= NULL,		/* don't use dma */
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &r8a66597_data,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(r8a66597_usb_host_resources),
+ 	.resource	= r8a66597_usb_host_resources,
+-- 
+1.5.5
+
+
