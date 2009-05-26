@@ -1,29 +1,68 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 28 May 2009 23:37:16 +0000
-Subject: Re: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
-Message-Id: <20090528233716.GB1122@linux-sh.org>
+From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+Date: Tue, 26 May 2009 03:17:05 +0000
+Subject: [PATCH] sh: add platform data for r8a66597-hcd in setup-sh7366
+Message-Id: <4A1B5F31.10602@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090528164011.GA30104@linux-sh.org> <1243529547.28705.43.camel@desktop> <20090528165816.GA31688@linux-sh.org> <1243532324.28705.75.camel@desktop> <20090528175341.GA32118@linux-sh.org> <1243534252.28705.86.camel@desktop> <20090528182730.GA32767@linux-sh.org> <1243537463.28705.94.camel@desktop> <20090528193458.GA1122@linux-sh.org> <1243539663.28705.99.camel@desktop>
-In-Reply-To: <1243539663.28705.99.camel@desktop>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Daniel Walker <dwalker@fifo99.com>
-Cc: Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
+To: linux-sh@vger.kernel.org
 
-On Thu, May 28, 2009 at 12:41:03PM -0700, Daniel Walker wrote:
-> On Fri, 2009-05-29 at 04:34 +0900, Paul Mundt wrote:
-> > > I'm still a little confused how kernel modules fit in here.. Are you
-> > > saying a user would unload some certain driver which has a pin locked
-> > > down and prevents the clocksource from working. Then the user would load
-> > > the clocksource module which would now function, and that all would have
-> > > to happen in order to enter a certain power state?
-> > > 
-> > Yes.
-> 
-> I'm assuming this isn't a low power state, this would be something more
-> like suspend or hibernate right?
-> 
-Right, with the amount of hassle involved, it makes no sense for run-time
-PM at least. So the suspend/hibernate use cases are mostly where it makes
-sense.
+and remove redundant parameter for r8a66597-hcd.
+
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ This patch depends on the following patch.
+ http://marc.info/?l=linux-usb&m4330739812843&w=2
+
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+index 93ecf8e..200bc6a 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+@@ -15,6 +15,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/uio_driver.h>
+ #include <linux/sh_cmt.h>
++#include <linux/usb/r8a66597.h>
+ #include <asm/clock.h>
+
+ static struct resource iic_resources[] = {
+@@ -38,18 +39,20 @@ static struct platform_device iic_device = {
+ 	.resource       = iic_resources,
+ };
+
++static struct r8a66597_platdata r8a66597_data = {
++	.irq_sense = 1,
++};
++
+ static struct resource usb_host_resources[] = {
+ 	[0] = {
+-		.name   = "r8a66597_hcd",
+ 		.start  = 0xa4d80000,
+ 		.end    = 0xa4d800ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.name   = "r8a66597_hcd",
+ 		.start  = 65,
+ 		.end    = 65,
+-		.flags  = IORESOURCE_IRQ,
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
+ 	},
+ };
+
+@@ -59,6 +62,7 @@ static struct platform_device usb_host_device = {
+ 	.dev = {
+ 		.dma_mask		= NULL,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &r8a66597_data,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_host_resources),
+ 	.resource	= usb_host_resources,
+-- 
+1.5.5
+
+
