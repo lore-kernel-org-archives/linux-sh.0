@@ -1,29 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 26 May 2009 08:39:14 +0000
-Subject: Re: [PATCH 00/04] sh: share clock framework frequency table code
-Message-Id: <20090526083914.GA1610@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 May 2009 10:06:42 +0000
+Subject: [PATCH 02/04] Driver Core: Add idle and wakeup functions
+Message-Id: <20090527100642.29671.52231.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090525081011.7893.47950.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090525081011.7893.47950.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, May 25, 2009 at 05:10:11PM +0900, Magnus Damm wrote:
-> sh: share clock framework frequency table code 
-> 
-> [PATCH 01/04] sh: add pll_clk to sh7785
-> [PATCH 02/04] sh: add shared clock framework frequency table code
-> [PATCH 03/04] sh: use shared frequency tables on sh7785
-> [PATCH 04/04] sh: remove clk_ops->build_rate_table()
-> 
-> These patches modify the clkfwk topic branch with the following:
-> - break out sh7785 pll_clk to remove multiplier from frqmr_recalc()
-> - implement clk_rate_table_build() and clk_rate_table_round()
-> - hook in the above functions in the sh7785 code, drop ->build_rate_table()
-> - remove ->build_rate_table() callback since recalc() can be used instead
-> 
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+From: Magnus Damm <damm@igel.co.jp>
 
-Series applied to sh/clkfwk branch, thanks.
+Add platform_device_idle() and platform_device_wakeup()
+and allow architectures to implement their own versions
+of these if CONFIG_HAVE_PLATFORM_IDLE_WAKEUP is set.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Yes, this needs documentation. See [00/04] for now.
+
+ arch/Kconfig                    |    3 +++
+ include/linux/platform_device.h |    8 ++++++++
+ 2 files changed, 11 insertions(+)
+
+--- 0002/arch/Kconfig
++++ work/arch/Kconfig	2009-05-26 12:31:06.000000000 +0900
+@@ -115,3 +115,6 @@ config HAVE_DEFAULT_NO_SPIN_MUTEXES
+ 
+ config HAVE_PLATFORM_DEVICE_ARCHDATA
+ 	bool
++
++config HAVE_PLATFORM_DEVICE_IDLE_WAKEUP
++	bool
+--- 0002/include/linux/platform_device.h
++++ work/include/linux/platform_device.h	2009-05-26 12:32:40.000000000 +0900
+@@ -57,6 +57,14 @@ extern int platform_device_add(struct pl
+ extern void platform_device_del(struct platform_device *pdev);
+ extern void platform_device_put(struct platform_device *pdev);
+ 
++#ifdef CONFIG_HAVE_PLATFORM_DEVICE_IDLE_WAKEUP
++void platform_device_idle(struct platform_device *pdev);
++void platform_device_wakeup(struct platform_device *pdev);
++#else
++static inline void platform_device_idle(struct platform_device *pdev) {}
++static inline void platform_device_wakeup(struct platform_device *pdev) {}
++#endif
++
+ struct platform_driver {
+ 	int (*probe)(struct platform_device *);
+ 	int (*remove)(struct platform_device *);
