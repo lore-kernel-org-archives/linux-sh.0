@@ -1,88 +1,71 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 May 2009 11:51:51 +0000
-Subject: [PATCH] sh: boot word / mode pin support V2
-Message-Id: <20090528115151.5727.58043.sendpatchset@rx1.opensource.se>
+Date: Wed, 27 May 2009 10:06:25 +0000
+Subject: [PATCH 00/04][RFC] PM: Runtime platform device PM
+Message-Id: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090521071620.12842.12995.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090521071620.12842.12995.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+PM: Runtime platform device power management
 
-Add mode pin support for the SuperH architecture V2.
+[PATCH 01/04] Driver Core: Add platform device arch data
+[PATCH 02/04] Driver Core: Add idle and wakeup functions
+[PATCH 03/04] PM: Add platform bus runtime dev_pm_ops
+[PATCH 04/04] sh: Runtime platform device PM mockup
 
-With this patch applied the board code can add their
-own function to export the cpu mode pin configuration.
-In most cases this will be a constant bitmap, but
-boards that allow reading this from a register can
-instead read out the pin state from hardware.
+These patches extend platform device and driver interfaces to
+allow architectures to implement platform device runtime pm.
 
-The code warns if a pin is tested but no board specific
-mode pin function has been provided.
+Upstream runtime power management needs to be improved to fully
+make use of hardware power saving features found on embedded
+platforms and in common SoCs.
+
+For runtime power management we today have cpuidle, the clock
+framework and qos. This allows the cpu core to enter various
+forms of deep sleep, and for devices we may stop clocks to save
+power. Modern SoCs however allow disabling of power to parts of
+the chip, and we have no upstream interface to handle that today.
+
+I propose adding the following simple platform device functions:
+ - platform_device_wakeup()
+ - platform_device_idle()
+
+The idle function is used by the platform driver to let the 
+architecture power management code know that from now on the
+device is in idle state. When the device is marked as idle
+the architecture specific runtime power management may decide
+to do various levels of device power management, ranging from
+stopping clocks to turning off power. The dev_pm_ops callbacks
+may be invoked by the runtime pm code to save and restore state
+whenever the device is marked as idle.
+
+The wakeup function is used by the platform driver to notify the
+architecture code that the driver wants to make use of the hardware
+device. If the device has been put in sleep then it needs to be
+woken up. This wakeup call may invoke dev_pm_ops callbacks.
+
+Have a look at the last patch for a SuperH mockup that shows how
+it all fits together. We need this or a similar interface to be able
+to enter deep sleep states on SuperH. I believe other architectures
+have similar requirements.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/include/asm/machvec.h   |    1 +
- arch/sh/include/asm/processor.h |    4 ++++
- arch/sh/kernel/machvec.c        |    1 +
- arch/sh/kernel/setup.c          |   12 ++++++++++++
- 4 files changed, 18 insertions(+)
-
---- 0001/arch/sh/include/asm/machvec.h
-+++ work/arch/sh/include/asm/machvec.h	2009-05-28 15:55:02.000000000 +0900
-@@ -48,6 +48,7 @@ struct sh_machine_vector {
- 	void (*mv_ioport_unmap)(void __iomem *);
- 
- 	int (*mv_clk_init)(void);
-+	int (*mv_mode_pins)(void);
- };
- 
- extern struct sh_machine_vector sh_mv;
---- 0001/arch/sh/include/asm/processor.h
-+++ work/arch/sh/include/asm/processor.h	2009-05-28 16:00:33.000000000 +0900
-@@ -94,6 +94,10 @@ extern struct pt_regs fake_swapper_regs;
- const char *get_cpu_subtype(struct sh_cpuinfo *c);
- extern const struct seq_operations cpuinfo_op;
- 
-+/* processor boot mode configuration */
-+int generic_mode_pins(void);
-+int test_mode_pin(int pin);
-+
- #ifdef CONFIG_VSYSCALL
- int vsyscall_init(void);
- #else
---- 0001/arch/sh/kernel/machvec.c
-+++ work/arch/sh/kernel/machvec.c	2009-05-28 15:55:02.000000000 +0900
-@@ -129,6 +129,7 @@ void __init sh_mv_setup(void)
- 	mv_set(ioport_map);
- 	mv_set(ioport_unmap);
- 	mv_set(irq_demux);
-+	mv_set(mode_pins);
- 
- 	if (!sh_mv.mv_nr_irqs)
- 		sh_mv.mv_nr_irqs = NR_IRQS;
---- 0001/arch/sh/kernel/setup.c
-+++ work/arch/sh/kernel/setup.c	2009-05-28 16:00:35.000000000 +0900
-@@ -420,6 +420,18 @@ void __init setup_arch(char **cmdline_p)
- #endif
- }
- 
-+/* processor boot mode configuration */
-+int generic_mode_pins(void)
-+{
-+	pr_warning("generic_mode_pins(): missing mode pin configuration\n");
-+	return 0;
-+}
-+
-+int test_mode_pin(int pin)
-+{
-+	return sh_mv.mv_mode_pins() & (1 << pin);
-+}
-+
- static const char *cpu_name[] = {
- 	[CPU_SH7201]	= "SH7201",
- 	[CPU_SH7203]	= "SH7203",	[CPU_SH7263]	= "SH7263",
+ arch/Kconfig                               |    9 +
+ arch/sh/Kconfig                            |    3 
+ arch/sh/boards/mach-migor/setup.c          |    9 +
+ arch/sh/include/asm/device.h               |    6 
+ arch/sh/include/cpu-sh4/cpu/sh7722.h       |   14 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c     |   31 ++++
+ arch/sh/kernel/cpu/shmobile/pm.c           |  118 +++++++++++++++++
+ drivers/base/platform.c                    |  193 +++++++++++++++++++++++++++-
+ drivers/clocksource/sh_cmt.c               |    2 
+ drivers/clocksource/sh_tmu.c               |    2 
+ drivers/i2c/busses/i2c-sh_mobile.c         |    2 
+ drivers/media/video/sh_mobile_ceu_camera.c |    2 
+ drivers/video/sh_mobile_lcdcfb.c           |    4 
+ include/linux/platform_device.h            |   21 +++
+ 14 files changed, 415 insertions(+), 1 deletion(-)
