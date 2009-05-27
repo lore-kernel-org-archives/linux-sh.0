@@ -1,38 +1,50 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Wed, 27 May 2009 06:58:46 +0000
+From: Daniel Walker <dwalker@fifo99.com>
+Date: Wed, 27 May 2009 16:25:25 +0000
 Subject: Re: [PATCH] sched: Support current clocksource handling in
-Message-Id: <1243407526.23657.37.camel@twins>
+Message-Id: <1243441525.28705.19.camel@desktop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090526061532.GD9188@linux-sh.org>
 	 <63386a3d0905260731m655bfee3q82a6f52d71fa3cef@mail.gmail.com>
-	 <1243348681.23657.14.camel@twins>  <1243369423.3275.5.camel@localhost>
-	 <1243369815.6600.2.camel@laptop>  <1243370439.3275.13.camel@localhost>
-	 <1243371309.6600.8.camel@laptop>  <1243378835.3275.30.camel@localhost>
-In-Reply-To: <1243378835.3275.30.camel@localhost>
+	 <1243348681.23657.14.camel@twins>
+	 <alpine.LFD.2.00.0905262209160.1762@localhost.localdomain>
+	 <20090526230855.GA27218@linux-sh.org>
+	 <alpine.LFD.2.00.0905270140030.1762@localhost.localdomain>
+	 <20090527001543.GA8493@linux-sh.org>
+In-Reply-To: <20090527001543.GA8493@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: john stultz <johnstul@us.ibm.com>
-Cc: Linus Walleij <linus.ml.walleij@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>, Thomas Gleixner <tglx@linutronix.de>
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Peter Zijlstra <peterz@infradead.org>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
 
-On Tue, 2009-05-26 at 16:00 -0700, john stultz wrote:
+On Wed, 2009-05-27 at 09:15 +0900, Paul Mundt wrote:
 
-> Sure, I guess what I'm trying to pull out here is that should we try to
-> create some OK_FOR_SCHED_CLOCK flag for clocksources, and then we try to
-> make this generic so other arches can add that flag and be done, what is
-> the guidance we want to give to arch maintainers for setting that flag?
-> 
-> 1) Has to be very very fast. Can we put a number on this? 50ns to read?
+>  unsigned long long __attribute__((weak)) sched_clock(void)
+>  {
+> +	/*
+> +	 * Use the current clocksource when it becomes available later in
+> +	 * the boot process, and ensure that it is usable for sched_clock().
+> +	 */
+> +	if (clock && (clock->flags & CLOCK_SOURCE_USE_FOR_SCHED_CLOCK))
+> +		return cyc2ns(clock, clocksource_read(clock));
+> +
+> +	/* Otherwise just fall back on jiffies */
+>  	return (unsigned long long)(jiffies - INITIAL_JIFFIES)
 
-I'd express it in cpu cycles, but not sure, the very fastest the arch
-has :-) Just tell people this is in their scheduling hot-path and they
-might understand.
+Do we really need all this complexity in a fast path? the jiffies
+clocksource is static and always ready. Could we instead remove the
+usage of "clock" and create a new pointer called "sched_clocksource" and
+initialize it to the jiffies clock, and allow the clocksource management
+code to update that new pointer based on the
+CLOCK_SOURCE_USE_FOR_SCHED_CLOCK flag when new clocksources are
+registered/removed/marked unstable etc..
 
-> 2) How long does it have to be monotonic for? 
+that would eliminate all the code in sched_clock except one line,
 
-Forever? (per cpu)
+unsigned long long __attribute__((weak)) sched_clock(void)
+{
+	return cyc2ns(sched_clocksource, clocksource_read(sched_clocksource));
+}
 
-> Is it ok if it wraps every few seconds?
-
-No, if it wraps it needs to wrap on u64.
+Daniel
 
