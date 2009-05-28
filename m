@@ -1,18 +1,23 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Thu, 28 May 2009 17:46:22 +0000
-Subject: Re: [PATCH] sched: Support current clocksource handling in fallback
-Message-Id: <alpine.LFD.2.00.0905281943010.3397@localhost.localdomain>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 28 May 2009 17:53:41 +0000
+Subject: Re: [PATCH] sched: Support current clocksource handling in fallback sched_clock().
+Message-Id: <20090528175341.GA32118@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090528091936.GA27545@linux-sh.org>  <1243503281.23657.80.camel@twins> <20090528110902.GA27884@linux-sh.org>  <alpine.LFD.2.00.0905281417500.3397@localhost.localdomain>  <20090528124207.GA28830@linux-sh.org> <1243515570.6600.96.camel@laptop> 
- <1243527218.28705.35.camel@desktop> <1243528329.6645.77.camel@laptop>  <20090528164011.GA30104@linux-sh.org> <1243529547.28705.43.camel@desktop>  <20090528165816.GA31688@linux-sh.org> <1243532324.28705.75.camel@desktop>
+References: <20090528110902.GA27884@linux-sh.org> <alpine.LFD.2.00.0905281417500.3397@localhost.localdomain> <20090528124207.GA28830@linux-sh.org> <1243515570.6600.96.camel@laptop> <1243527218.28705.35.camel@desktop> <1243528329.6645.77.camel@laptop> <20090528164011.GA30104@linux-sh.org> <1243529547.28705.43.camel@desktop> <20090528165816.GA31688@linux-sh.org> <1243532324.28705.75.camel@desktop>
 In-Reply-To: <1243532324.28705.75.camel@desktop>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Daniel Walker <dwalker@fifo99.com>
-Cc: Paul Mundt <lethal@linux-sh.org>, Peter Zijlstra <peterz@infradead.org>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
+Cc: Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Linus Walleij <linus.ml.walleij@gmail.com>, Ingo Molnar <mingo@elte.hu>, Andrew Victor <linux@maxim.org.za>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, John Stultz <johnstul@linux.vnet.ibm.com>
 
-On Thu, 28 May 2009, Daniel Walker wrote:
+On Thu, May 28, 2009 at 10:38:44AM -0700, Daniel Walker wrote:
+> On Fri, 2009-05-29 at 01:58 +0900, Paul Mundt wrote:
+> > On Thu, May 28, 2009 at 09:52:27AM -0700, Daniel Walker wrote:
+> > > I don't think it's an important case to consider right now ..
+> > > clocksources are usually so integral to the system putting one in a
+> > > module seems counterintuitive. 
+> > > 
 > > I would not have mentioned it if it weren't something we already had use
 > > cases for. For the SH timers alone we have 3 that can be used as
 > > clocksources in any combination, excluding the differences in timer
@@ -32,21 +37,23 @@ On Thu, 28 May 2009, Daniel Walker wrote:
 > Can you imagine a general case on SH where the users know enough about
 > the different clocksources that they can switch between them optimally
 > without an SH expert sitting next to them telling them what to do?
+> 
+As I already stated, yes.
 
-Paul explained already that:
+We have multiple clock sources for most CPUs. These can be set up in any
+sort of configuration, and there are pros and cons to using different
+ones. The ones that are available can in turn be cycled between. I don't
+know what exactly is difficult to understand about this.
 
-> > ...  These tend to have different implications for
-> > performance, power management, etc.
+Yes, we want to be able to use modular clocksources. The only reason we
+don't right now is because some more preparatory work is needed first.
+Any attempt to remove support for modular clocksources means we will just
+have to add it in back later.
 
-So the use case for this is pretty obvious. In operational state you
-want something fast and easy to access (which might use more power
-e.g. because it runs at a higher clock frequency). When you go into
-power saving modes you switch over to a clocksource which might be
-slower to access but uses less power.
+That and the fact there are already in-tree users using the
+unregistration path suggests that there is no benefit in trying to
+prevent modular clocksources in the first place. If you have no intention
+to use modular clocksources, then don't.
 
-And there is no user interaction at all, it's selected as part of a
-power state transition from the kernel.
-
-Thanks,
-
-	tglx
+If you have any technical concerns, then raise them, otherwise this is
+pointless.
