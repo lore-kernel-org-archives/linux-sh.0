@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 25 May 2009 08:10:36 +0000
-Subject: [PATCH 03/04] sh: use shared frequency tables on sh7785
-Message-Id: <20090525081036.7893.45142.sendpatchset@rx1.opensource.se>
+Date: Thu, 28 May 2009 13:01:53 +0000
+Subject: [PATCH] sh: hook upshared mstp32 clock code to sh7785
+Message-Id: <20090528130153.6566.78971.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,119 +10,113 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch converts the sh7785 clock code to make use
-of clk_rate_table_build() and clk_rate_table_round().
-The ->build_rate_table() callback is removed, the
-table building is instead handled in ->recalc().
+Hook up the shared 32-bit module stop bit code to sh7785.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- For the clkfwk topic branch.
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c |   80 ++++++++++----------------------
+ 1 file changed, 25 insertions(+), 55 deletions(-)
 
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c |   77 ++++----------------------------
- 1 file changed, 12 insertions(+), 65 deletions(-)
-
---- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7785.c	2009-05-25 16:20:54.000000000 +0900
-@@ -19,6 +19,12 @@
- 
- static unsigned int div2[] = { 1, 2, 4, 6, 8, 12, 16, 18,
- 			       24, 32, 36, 48 };
-+
-+static struct clk_div_mult_table cpg_div = {
-+	.divisors = div2,
-+	.nr_divisors = ARRAY_SIZE(div2),
-+};
-+
- struct clk_priv {
- 	unsigned int			shift;
- 
-@@ -52,82 +58,23 @@ FRQMR_CLK_DATA(ifc, 28, 0x000e);
- static unsigned long frqmr_recalc(struct clk *clk)
- {
- 	struct clk_priv *data = clk->priv;
--	unsigned int idx;
--
--	idx = (__raw_readl(FRQMR1) >> data->shift) & 0x000f;
--
--	return clk->parent->rate / div2[idx];
--}
--
--static void frqmr_build_rate_table(struct clk *clk)
--{
--	struct clk_priv *data = clk->priv;
--	int i, entry;
-+	unsigned int idx = (__raw_readl(FRQMR1) >> data->shift) & 0x000f;
- 
--	for (i = entry = 0; i < ARRAY_SIZE(div2); i++) {
--		if ((data->div_bitmap & (1 << i)) = 0)
--			continue;
--
--		data->freq_table[entry].index = entry;
--		data->freq_table[entry].frequency -			clk->parent->rate / div2[i];
--
--		entry++;
--	}
--
--	if (entry = 0) {
--		pr_warning("clkfwk: failed to build frequency table "
--			   "for \"%s\" clk!\n", clk->name);
--		return;
--	}
--
--	/* Termination entry */
--	data->freq_table[entry].index = entry;
--	data->freq_table[entry].frequency = CPUFREQ_TABLE_END;
-+	clk_rate_table_build(clk, data->freq_table, ARRAY_SIZE(div2),
-+			     &cpg_div, &data->div_bitmap);
-+	
-+	return data->freq_table[idx].frequency;
- }
- 
- static long frqmr_round_rate(struct clk *clk, unsigned long rate)
- {
- 	struct clk_priv *data = clk->priv;
--	unsigned long rate_error, rate_error_prev = ~0UL;
--	unsigned long rate_best_fit = rate;
--	unsigned long highest, lowest;
--	int i;
--
--	highest = lowest = 0;
--
--	for (i = 0; data->freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
--		unsigned long freq = data->freq_table[i].frequency;
--
--		if (freq = CPUFREQ_ENTRY_INVALID)
--			continue;
--
--		if (freq > highest)
--			highest = freq;
--		if (freq < lowest)
--			lowest = freq;
--
--		rate_error = abs(freq - rate);
--		if (rate_error < rate_error_prev) {
--			rate_best_fit = freq;
--			rate_error_prev = rate_error;
--		}
--
--		if (rate_error = 0)
--			break;
--	}
--
--	if (rate >= highest)
--		rate_best_fit = highest;
--	if (rate <= lowest)
--		rate_best_fit = lowest;
- 
--	return rate_best_fit;
-+	return clk_rate_table_round(clk, data->freq_table, rate);
- }
- 
- static struct clk_ops frqmr_clk_ops = {
- 	.recalc			= frqmr_recalc,
--	.build_rate_table	= frqmr_build_rate_table,
- 	.round_rate		= frqmr_round_rate,
+--- 0005/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7785.c	2009-05-28 16:58:07.000000000 +0900
+@@ -193,65 +193,34 @@ static struct clk *clks[] = {
+ 	&umem_clk,
  };
  
+-static int mstpcr_clk_enable(struct clk *clk)
+-{
+-	__raw_writel(__raw_readl(clk->enable_reg) & ~(1 << clk->enable_bit),
+-		     clk->enable_reg);
+-	return 0;
+-}
+-
+-static void mstpcr_clk_disable(struct clk *clk)
+-{
+-	__raw_writel(__raw_readl(clk->enable_reg) | (1 << clk->enable_bit),
+-		     clk->enable_reg);
+-}
+-
+-static struct clk_ops mstpcr_clk_ops = {
+-	.enable		= mstpcr_clk_enable,
+-	.disable	= mstpcr_clk_disable,
+-	.recalc		= followparent_recalc,
+-};
+-
+ #define MSTPCR0		0xffc80030
+ #define MSTPCR1		0xffc80034
+ 
+-#define CLK(_name, _id, _parent, _enable_reg,		\
+-	    _enable_bit, _flags)			\
+-{							\
+-	.name		= _name,			\
+-	.id		= _id,				\
+-	.parent		= _parent,			\
+-	.enable_reg	= (void __iomem *)_enable_reg,	\
+-	.enable_bit	= _enable_bit,			\
+-	.flags		= _flags,			\
+-	.ops		= &mstpcr_clk_ops,		\
+-}
+-
+-static struct clk mstpcr_clks[] = {
++static struct clk mstp_clks[] = {
+ 	/* MSTPCR0 */
+-	CLK("scif_fck", 5, &peripheral_clk, MSTPCR0, 29, 0),
+-	CLK("scif_fck", 4, &peripheral_clk, MSTPCR0, 28, 0),
+-	CLK("scif_fck", 3, &peripheral_clk, MSTPCR0, 27, 0),
+-	CLK("scif_fck", 2, &peripheral_clk, MSTPCR0, 26, 0),
+-	CLK("scif_fck", 1, &peripheral_clk, MSTPCR0, 25, 0),
+-	CLK("scif_fck", 0, &peripheral_clk, MSTPCR0, 24, 0),
+-	CLK("ssi_fck", 1, &peripheral_clk, MSTPCR0, 21, 0),
+-	CLK("ssi_fck", 0, &peripheral_clk, MSTPCR0, 20, 0),
+-	CLK("hac_fck", 1, &peripheral_clk, MSTPCR0, 17, 0),
+-	CLK("hac_fck", 0, &peripheral_clk, MSTPCR0, 16, 0),
+-	CLK("mmcif_fck", -1, &peripheral_clk, MSTPCR0, 13, 0),
+-	CLK("flctl_fck", -1, &peripheral_clk, MSTPCR0, 12, 0),
+-	CLK("tmu345_fck", -1, &peripheral_clk, MSTPCR0, 9, 0),
+-	CLK("tmu012_fck", -1, &peripheral_clk, MSTPCR0, 8, 0),
+-	CLK("siof_fck", -1, &peripheral_clk, MSTPCR0, 3, 0),
+-	CLK("hspi_fck", -1, &peripheral_clk, MSTPCR0, 2, 0),
++	SH_CLK_MSTP32("scif_fck", 5, &peripheral_clk, MSTPCR0, 29, 0),
++	SH_CLK_MSTP32("scif_fck", 4, &peripheral_clk, MSTPCR0, 28, 0),
++	SH_CLK_MSTP32("scif_fck", 3, &peripheral_clk, MSTPCR0, 27, 0),
++	SH_CLK_MSTP32("scif_fck", 2, &peripheral_clk, MSTPCR0, 26, 0),
++	SH_CLK_MSTP32("scif_fck", 1, &peripheral_clk, MSTPCR0, 25, 0),
++	SH_CLK_MSTP32("scif_fck", 0, &peripheral_clk, MSTPCR0, 24, 0),
++	SH_CLK_MSTP32("ssi_fck", 1, &peripheral_clk, MSTPCR0, 21, 0),
++	SH_CLK_MSTP32("ssi_fck", 0, &peripheral_clk, MSTPCR0, 20, 0),
++	SH_CLK_MSTP32("hac_fck", 1, &peripheral_clk, MSTPCR0, 17, 0),
++	SH_CLK_MSTP32("hac_fck", 0, &peripheral_clk, MSTPCR0, 16, 0),
++	SH_CLK_MSTP32("mmcif_fck", -1, &peripheral_clk, MSTPCR0, 13, 0),
++	SH_CLK_MSTP32("flctl_fck", -1, &peripheral_clk, MSTPCR0, 12, 0),
++	SH_CLK_MSTP32("tmu345_fck", -1, &peripheral_clk, MSTPCR0, 9, 0),
++	SH_CLK_MSTP32("tmu012_fck", -1, &peripheral_clk, MSTPCR0, 8, 0),
++	SH_CLK_MSTP32("siof_fck", -1, &peripheral_clk, MSTPCR0, 3, 0),
++	SH_CLK_MSTP32("hspi_fck", -1, &peripheral_clk, MSTPCR0, 2, 0),
+ 
+ 	/* MSTPCR1 */
+-	CLK("hudi_fck", -1, NULL, MSTPCR1, 19, 0),
+-	CLK("ubc_fck", -1, NULL, MSTPCR1, 17, 0),
+-	CLK("dmac_11_6_fck", -1, NULL, MSTPCR1, 5, 0),
+-	CLK("dmac_5_0_fck", -1, NULL, MSTPCR1, 4, 0),
+-	CLK("gdta_fck", -1, NULL, MSTPCR1, 0, 0),
++	SH_CLK_MSTP32("hudi_fck", -1, NULL, MSTPCR1, 19, 0),
++	SH_CLK_MSTP32("ubc_fck", -1, NULL, MSTPCR1, 17, 0),
++	SH_CLK_MSTP32("dmac_11_6_fck", -1, NULL, MSTPCR1, 5, 0),
++	SH_CLK_MSTP32("dmac_5_0_fck", -1, NULL, MSTPCR1, 4, 0),
++	SH_CLK_MSTP32("gdta_fck", -1, NULL, MSTPCR1, 0, 0),
+ };
+ 
+ int __init arch_clk_init(void)
+@@ -260,8 +229,9 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(mstpcr_clks); i++)
+-		ret |= clk_register(&mstpcr_clks[i]);
++
++	if (!ret)
++		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
+ 
+ 	return ret;
+ }
