@@ -1,7 +1,7 @@
-From: Alan Stern <stern@rowland.harvard.edu>
-Date: Thu, 28 May 2009 15:33:56 +0000
+From: Kevin Hilman <khilman@deeprootsystems.com>
+Date: Thu, 28 May 2009 17:14:43 +0000
 Subject: Re: [PATCH 00/04][RFC] PM: Runtime platform device PM
-Message-Id: <Pine.LNX.4.44L0.0905281129090.3037-100000@iolanthe.rowland.org>
+Message-Id: <877i01p2t8.fsf@deeprootsystems.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
@@ -10,28 +10,52 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, 28 May 2009, Magnus Damm wrote:
+Magnus Damm <magnus.damm@gmail.com> writes:
 
-> On Wed, May 27, 2009 at 11:30 PM, Alan Stern <stern@rowland.harvard.edu> wrote:
-> > On Wed, 27 May 2009, Magnus Damm wrote:
-> >> PM: Runtime platform device power management
-> 
-> > Have you given any thought as to whether the platform_device_wakeup and
-> > platform_device_idle calls should be restricted to process context?
-> 
-> Good question. The first thing that pops into my mind is to have same
-> restrictions as clk_enable() and clk_disable(). To keep things simple
-> I'd say that it's unlikely that any embedded platform driver would
-> need to sleep during the dev_pm_ops callbacks. Maybe it makes sense to
-> only allow _noirq variants of dev_pm_ops, not sure. Any ideas?
+> For runtime power management we today have cpuidle, the clock
+> framework and qos. This allows the cpu core to enter various
+> forms of deep sleep, and for devices we may stop clocks to save
+> power. Modern SoCs however allow disabling of power to parts of
+> the chip, and we have no upstream interface to handle that today.
+>
+> I propose adding the following simple platform device functions:
+>  - platform_device_wakeup()
+>  - platform_device_idle()
+>
+> The idle function is used by the platform driver to let the 
+> architecture power management code know that from now on the
+> device is in idle state. When the device is marked as idle
+> the architecture specific runtime power management may decide
+> to do various levels of device power management, ranging from
+> stopping clocks to turning off power. The dev_pm_ops callbacks
+> may be invoked by the runtime pm code to save and restore state
+> whenever the device is marked as idle.
+>
+> The wakeup function is used by the platform driver to notify the
+> architecture code that the driver wants to make use of the hardware
+> device. If the device has been put in sleep then it needs to be
+> woken up. This wakeup call may invoke dev_pm_ops callbacks.
 
-I don't know what would be appropriate for you.  USB power transitions
-cannot be made in an atomic context, but the situation could well be
-different for platform devices.  It's just something to be aware of.
+A couple comments/questions:
 
-(And by the way, the _noirq ops don't run in atomic context.  They run 
-in process context with most interrupt deliveries disabled.  It's not 
-the same thing -- they are allowed to sleep.)
+Wouldn't the 'wakeup' hook be better named platform_device_enable().
+The _wakeup name seems to imply that the call will perform some sort
+of wakeup, but all it's really doing is enabling it by turning it on
+or taking it out of idle.
 
-Alan Stern
+In the process of discussing a similar interface for OMAP, we dicussed
+that having 3 states would be more useful.  Specifically, and
+_enable(), _idle() and _disable() hook.  The _enable() and _idle()
+hooks being exactly what you proposed above, but with the addition of
+a _disable() hook which says not only can the device go idle, but that
+the driver is really finished with the device.  In this case, more
+aggresive PM measures could be taken, such as turning of regulators
+that may have long latencies that may not be appropriate to turn off
+in idle.
 
+I'm interested in any thoughts there because the line between _idle()
+and _disable() remains a little fuzzy to me still.  For exmaple, maybe
+the _idle() call in combination with latency constraints in PM QoS
+could do effectively the same thing as _disable().
+
+Kevin
