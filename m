@@ -1,157 +1,69 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 11 May 2009 09:06:24 +0000
-Subject: [PATCH] sh: TMU platform data for sh7760
-Message-Id: <20090511090624.508.11282.sendpatchset@rx1.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Fri, 29 May 2009 07:41:18 +0000
+Subject: [PATCH] sh4a: add L2 cache support
+Message-Id: <uprdswe3l.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
-
-This patch adds TMU platform data for sh7760. Both clockevent
-and clocksource support is enabled.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ arch/sh/include/cpu-sh4/cpu/cache.h |    5 +++++
+ arch/sh/kernel/cpu/init.c           |    8 ++++++++
+ arch/sh/mm/Kconfig                  |    5 +++++
+ 3 files changed, 18 insertions(+), 0 deletions(-)
 
- Compiles fine , but not run time tested due to lack of hardware.
-
- arch/sh/kernel/cpu/sh4/setup-sh7760.c |  109 +++++++++++++++++++++++++++++++++
- 1 file changed, 109 insertions(+)
-
---- 0005/arch/sh/kernel/cpu/sh4/setup-sh7760.c
-+++ work/arch/sh/kernel/cpu/sh4/setup-sh7760.c	2009-05-11 17:30:11.000000000 +0900
-@@ -10,6 +10,7 @@
- #include <linux/platform_device.h>
- #include <linux/init.h>
- #include <linux/serial.h>
-+#include <linux/sh_timer.h>
- #include <linux/serial_sci.h>
- #include <linux/io.h>
+diff --git a/arch/sh/include/cpu-sh4/cpu/cache.h b/arch/sh/include/cpu-sh4/cpu/cache.h
+index 1c61ebf..0a438f5 100644
+--- a/arch/sh/include/cpu-sh4/cpu/cache.h
++++ b/arch/sh/include/cpu-sh4/cpu/cache.h
+@@ -31,6 +31,11 @@
+ #define CCR_CACHE_EMODE	0x80000000	/* EMODE Enable */
+ #endif
  
-@@ -159,8 +160,104 @@ static struct platform_device sci_device
- 	},
- };
++#define RAMCR			0xFF000074
++#define RAMCR_CACHE_L2FC	0x0002
++#define RAMCR_CACHE_L2E		0x0001
++#define L2_CACHE_ENABLE		(RAMCR_CACHE_L2E|RAMCR_CACHE_L2FC)
++
+ /* Default CCR setup: 8k+16k-byte cache,P1-wb,enable */
+ #define CCR_CACHE_ENABLE	(CCR_CACHE_OCE|CCR_CACHE_ICE)
+ #define CCR_CACHE_INVALIDATE	(CCR_CACHE_OCI|CCR_CACHE_ICI)
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index d29e69c..79646e8 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -146,6 +146,14 @@ static void __uses_jump_to_uncached cache_init(void)
+ 	flags &= ~CCR_CACHE_ENABLE;
+ #endif
  
-+static struct sh_timer_config tmu0_platform_data = {
-+	.name = "TMU0",
-+	.channel_offset = 0x04,
-+	.timer_bit = 0,
-+	.clk = "module_clk",
-+	.clockevent_rating = 200,
-+};
++#ifdef CONFIG_L2_CACHE_ENABLE
++	/* Enabel L2 cache */
++	if (current_cpu_data.flags & CPU_HAS_L2_CACHE) {
++		ctrl_outl(flags & ~CCR_CACHE_ENABLE, CCR);
++		ctrl_outl(L2_CACHE_ENABLE, RAMCR);
++	}
++#endif
 +
-+static struct resource tmu0_resources[] = {
-+	[0] = {
-+		.name	= "TMU0",
-+		.start	= 0xffd80008,
-+		.end	= 0xffd80013,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 16,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu0_device = {
-+	.name		= "sh_tmu",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &tmu0_platform_data,
-+	},
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
-+};
-+
-+static struct sh_timer_config tmu1_platform_data = {
-+	.name = "TMU1",
-+	.channel_offset = 0x10,
-+	.timer_bit = 1,
-+	.clk = "module_clk",
-+	.clocksource_rating = 200,
-+};
-+
-+static struct resource tmu1_resources[] = {
-+	[0] = {
-+		.name	= "TMU1",
-+		.start	= 0xffd80014,
-+		.end	= 0xffd8001f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 17,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu1_device = {
-+	.name		= "sh_tmu",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &tmu1_platform_data,
-+	},
-+	.resource	= tmu1_resources,
-+	.num_resources	= ARRAY_SIZE(tmu1_resources),
-+};
-+
-+static struct sh_timer_config tmu2_platform_data = {
-+	.name = "TMU2",
-+	.channel_offset = 0x1c,
-+	.timer_bit = 2,
-+	.clk = "module_clk",
-+};
-+
-+static struct resource tmu2_resources[] = {
-+	[0] = {
-+		.name	= "TMU2",
-+		.start	= 0xffd80020,
-+		.end	= 0xffd8002f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 18,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu2_device = {
-+	.name		= "sh_tmu",
-+	.id		= 2,
-+	.dev = {
-+		.platform_data	= &tmu2_platform_data,
-+	},
-+	.resource	= tmu2_resources,
-+	.num_resources	= ARRAY_SIZE(tmu2_resources),
-+};
-+
-+
- static struct platform_device *sh7760_devices[] __initdata = {
- 	&sci_device,
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
- };
- 
- static int __init sh7760_devices_setup(void)
-@@ -170,6 +267,18 @@ static int __init sh7760_devices_setup(v
+ 	ctrl_outl(flags, CCR);
+ 	back_to_cached();
  }
- __initcall(sh7760_devices_setup);
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 2795618..8be9d95 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -291,4 +291,9 @@ config CACHE_OFF
  
-+static struct platform_device *sh7760_early_devices[] __initdata = {
-+	&tmu0_device,
-+	&tmu1_device,
-+	&tmu2_device,
-+};
-+
-+void __init plat_early_device_setup(void)
-+{
-+	early_platform_add_devices(sh7760_early_devices,
-+				   ARRAY_SIZE(sh7760_early_devices));
-+}
-+
- #define INTC_ICR	0xffd00000UL
- #define INTC_ICR_IRLM	(1 << 7)
+ endchoice
  
++config L2_CACHE_ENABLE
++	bool "L2 Cache Enable"
++	depends on CACHE_WRITEBACK || CACHE_WRITETHROUGH
++	depends on CPU_SH4
++
+ endmenu
+-- 
+1.6.0.4
+
