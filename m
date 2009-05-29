@@ -1,276 +1,87 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 May 2009 10:06:50 +0000
-Subject: [PATCH 03/04] PM: Add platform bus runtime dev_pm_ops
-Message-Id: <20090527100650.29671.82139.sendpatchset@rx1.opensource.se>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 29 May 2009 23:23:17 +0000
+Subject: Re: [PATCH 03/04] PM: Add platform bus runtime dev_pm_ops
+Message-Id: <200905300123.18367.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090527100650.29671.82139.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090527100650.29671.82139.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Wednesday 27 May 2009, Magnus Damm wrote:
+> From: Magnus Damm <damm@igel.co.jp>
+> 
+> Wrap the platform device bus dev_pm_ops to allow runtime
+> pm and regular suspend and resume to coexist.
+> 
+> Platform device data is extended with flags that allow
+> us to keep track of which dev_pm_ops that has been called.
+> 
+> Basically, if a device has been frozen by the runtime pm
+> code, don't call ->freeze() again when hibernating.
+> 
+> Architecture code can use platform_runtime_dev_pm_ops to
+> call driver dev_pm_ops associated with a certain device.
+> 
+> Enable with CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM.
+> 
+> Signed-off-by: Magnus Damm <damm@igel.co.jp>
+> ---
+> 
+>  This is a bit of a hack, any better way to wrap dev_pm_ops?
 
-Wrap the platform device bus dev_pm_ops to allow runtime
-pm and regular suspend and resume to coexist.
+I'm not really sure you need to wrap them at all.
 
-Platform device data is extended with flags that allow
-us to keep track of which dev_pm_ops that has been called.
+There are a few choices:
 
-Basically, if a device has been frozen by the runtime pm
-code, don't call ->freeze() again when hibernating.
+(1) You can use the platform_pm_* functions directly for run-time PM, but
+in that case you'll need to make sure that the "suspend" ones return 0
+immediately when called during system-wide suspend or hibernation (there's the
+question whether the "resume" ones should still put the device into the full
+power state in that case).  For this purpose you can add a single flag to
+struct platform_device and set it for devices that have already been
+"suspended" (this flag, when set, will make all of the "suspend" callbacks
+return 0 without doing anything until the device is "resumed").
 
-Architecture code can use platform_runtime_dev_pm_ops to
-call driver dev_pm_ops associated with a certain device.
+(2) You can add separate platform callbacks for run-time PM that will execute
+the drivers' dev_pm_ops callbacks and presumably do something else (I don't
+know what that may be for platform devices, though).  In that case, again,
+adding a flag to struct platform_device and making platform_pm_* check it
+should be sufficient to prevent devices from being suspended twice in a row.
 
-Enable with CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM.
+(3) You can add separate platform callbacks for run-time PM for both the
+bus type and the drivers, in which dev_pm_ops will be totally separate from
+these new callbacks, although of course you'll need provide some kind of
+synchronization bettween them all.  That also may be done through a flag
+in struct platform_device IMO.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Now, since other bus types will most probably also need a flag in their
+_device structures, it may be worth putting it into struct device (we've
+discsussed that already).
 
- This is a bit of a hack, any better way to wrap dev_pm_ops?
+I'm not sure which of (1) - (3) are the most suitable for the platform bus
+type.  For PCI I'd probably choose (2), because the current PCI bus type's
+dev_pm_ops callbacks are tailored to system-wide power transitions.
+Moreover, PCI devices can generally be put first into D1, then into D2 and
+finally into D3, which only makes sense at run time, and some of them may
+have to be put back into the full power state before a system-wide transition
+(apparently, we'll need a separate flag to mark such devices).
 
- arch/Kconfig                    |    3 
- drivers/base/platform.c         |  193 ++++++++++++++++++++++++++++++++++++++-
- include/linux/platform_device.h |    8 +
- 3 files changed, 203 insertions(+), 1 deletion(-)
+Of course, if you decide to add separate run-time PM callbacks for the
+platform bus type, you won't need to wrap its dev_pm_ops callbacks any more,
+but you'll need to modify them to check the appropriate flag(s).  For example,
+you may choose to use a two-bit pm_suspend_level field such that
 
---- 0003/arch/Kconfig
-+++ work/arch/Kconfig	2009-05-26 21:22:17.000000000 +0900
-@@ -118,3 +118,6 @@ config HAVE_PLATFORM_DEVICE_ARCHDATA
- 
- config HAVE_PLATFORM_DEVICE_IDLE_WAKEUP
- 	bool
-+
-+config HAVE_PLATFORM_DEVICE_RUNTIME_PM
-+	bool
---- 0001/drivers/base/platform.c
-+++ work/drivers/base/platform.c	2009-05-27 17:31:06.000000000 +0900
-@@ -962,12 +962,203 @@ static struct dev_pm_ops platform_dev_pm
- 
- #endif /* !CONFIG_PM_SLEEP */
- 
-+#ifdef CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM
-+
-+#define DEV_PM_OP_PREPARE offsetof(struct dev_pm_ops, prepare)
-+#define DEV_PM_OP_COMPLETE offsetof(struct dev_pm_ops, complete)
-+#define DEV_PM_OP_SUSPEND offsetof(struct dev_pm_ops, suspend)
-+#define DEV_PM_OP_RESUME offsetof(struct dev_pm_ops, resume)
-+#define DEV_PM_OP_FREEZE offsetof(struct dev_pm_ops, freeze)
-+#define DEV_PM_OP_THAW offsetof(struct dev_pm_ops, thaw)
-+#define DEV_PM_OP_POWEROFF offsetof(struct dev_pm_ops, poweroff)
-+#define DEV_PM_OP_RESTORE offsetof(struct dev_pm_ops, restore)
-+#define DEV_PM_OP_SUSPEND_NOIRQ offsetof(struct dev_pm_ops, suspend_noirq)
-+#define DEV_PM_OP_RESUME_NOIRQ offsetof(struct dev_pm_ops, resume_noirq)
-+#define DEV_PM_OP_FREEZE_NOIRQ offsetof(struct dev_pm_ops, freeze_noirq)
-+#define DEV_PM_OP_THAW_NOIRQ offsetof(struct dev_pm_ops, thaw_noirq)
-+#define DEV_PM_OP_POWEROFF_NOIRQ offsetof(struct dev_pm_ops, poweroff_noirq)
-+#define DEV_PM_OP_RESTORE_NOIRQ offsetof(struct dev_pm_ops, restore_noirq)
-+
-+static DEFINE_SPINLOCK(platform_runtime_lock);
-+
-+static int platform_runtime_call_op(struct device *dev, unsigned int op)
-+{
-+	struct dev_pm_ops *dev_pm_ops = PLATFORM_PM_OPS_PTR;
-+	void **vp = (void **)dev_pm_ops;
-+	int (*int_op)(struct device *);
-+
-+	if (dev_pm_ops) {
-+		if (op = DEV_PM_OP_COMPLETE) {
-+			if (dev_pm_ops->complete)
-+				dev_pm_ops->complete(dev);
-+		} else {
-+			int_op = vp[op / sizeof(void *)];
-+			if (int_op)
-+				return int_op(dev);
-+		}
-+	}
-+
-+	return 0;
-+}
-+
-+static int platform_runtime_call_once(struct device *dev,
-+				      unsigned int op)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	unsigned long flags;
-+	int bit, bit_op, is_suspend, ret;
-+
-+	ret = 0;
-+	is_suspend = 0;
-+
-+	switch (op) {
-+	case DEV_PM_OP_COMPLETE:
-+		bit_op = DEV_PM_OP_PREPARE;
-+		break;
-+	case DEV_PM_OP_RESUME:
-+		bit_op = DEV_PM_OP_SUSPEND;
-+		break;
-+	case DEV_PM_OP_THAW:
-+		bit_op = DEV_PM_OP_FREEZE;
-+		break;
-+	case DEV_PM_OP_RESTORE:
-+		bit_op = DEV_PM_OP_POWEROFF;
-+		break;
-+	case DEV_PM_OP_RESUME_NOIRQ:
-+		bit_op = DEV_PM_OP_SUSPEND_NOIRQ;
-+		break;
-+	case DEV_PM_OP_THAW_NOIRQ:
-+		bit_op = DEV_PM_OP_FREEZE_NOIRQ;
-+		break;
-+	case DEV_PM_OP_RESTORE_NOIRQ:
-+		bit_op = DEV_PM_OP_POWEROFF_NOIRQ;
-+		break;
-+	default:
-+		bit_op = op;
-+		is_suspend = 1;
-+	}
-+
-+	bit = bit_op / sizeof(void *);
-+
-+	spin_lock_irqsave(&platform_runtime_lock, flags);
-+
-+	if (test_bit(bit, &pdev->runtime_flags) != is_suspend) {
-+		ret = platform_runtime_call_op(dev, op);
-+
-+		if (!ret) {
-+			if (is_suspend)
-+				__set_bit(bit, &pdev->runtime_flags);
-+			else
-+				__clear_bit(bit, &pdev->runtime_flags);
-+		}
-+	}
-+
-+	spin_unlock_irqrestore(&platform_runtime_lock, flags);
-+
-+	return ret;
-+}
-+
-+static int platform_runtime_prepare(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_PREPARE);
-+}
-+
-+static void platform_runtime_complete(struct device *dev)
-+{
-+	platform_runtime_call_once(dev, DEV_PM_OP_COMPLETE);
-+}
-+
-+static int platform_runtime_suspend(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_SUSPEND);
-+}
-+
-+static int platform_runtime_resume(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_RESUME);
-+}
-+
-+static int platform_runtime_freeze(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_FREEZE);
-+}
-+
-+static int platform_runtime_thaw(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_THAW);
-+}
-+
-+static int platform_runtime_poweroff(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_POWEROFF);
-+}
-+
-+static int platform_runtime_restore(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_RESTORE);
-+}
-+
-+static int platform_runtime_suspend_noirq(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_SUSPEND_NOIRQ);
-+}
-+
-+static int platform_runtime_resume_noirq(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_RESUME_NOIRQ);
-+}
-+
-+static int platform_runtime_freeze_noirq(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_FREEZE_NOIRQ);
-+}
-+
-+static int platform_runtime_thaw_noirq(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_THAW_NOIRQ);
-+}
-+
-+static int platform_runtime_poweroff_noirq(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_POWEROFF_NOIRQ);
-+}
-+
-+static int platform_runtime_restore_noirq(struct device *dev)
-+{
-+	return platform_runtime_call_once(dev, DEV_PM_OP_RESTORE_NOIRQ);
-+}
-+
-+struct dev_pm_ops platform_runtime_dev_pm_ops = {
-+	.prepare = platform_runtime_prepare,
-+	.complete = platform_runtime_complete,
-+	.suspend = platform_runtime_suspend,
-+	.resume = platform_runtime_resume,
-+	.freeze = platform_runtime_freeze,
-+	.thaw = platform_runtime_thaw,
-+	.poweroff = platform_runtime_poweroff,
-+	.restore = platform_runtime_restore,
-+	.suspend_noirq = platform_runtime_suspend_noirq,
-+	.resume_noirq = platform_runtime_resume_noirq,
-+	.freeze_noirq = platform_runtime_freeze_noirq,
-+	.thaw_noirq = platform_runtime_thaw_noirq,
-+	.poweroff_noirq = platform_runtime_poweroff_noirq,
-+	.restore_noirq = platform_runtime_restore_noirq,
-+};
-+
-+#define PLATFORM_RUNTIME_PM_OPS_PTR	(&platform_runtime_dev_pm_ops)
-+
-+#else /* !CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM */
-+
-+#define PLATFORM_RUNTIME_PM_OPS_PTR	PLATFORM_PM_OPS_PTR
-+
-+#endif /* !CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM */
-+
- struct bus_type platform_bus_type = {
- 	.name		= "platform",
- 	.dev_attrs	= platform_dev_attrs,
- 	.match		= platform_match,
- 	.uevent		= platform_uevent,
--	.pm		= PLATFORM_PM_OPS_PTR,
-+	.pm		= PLATFORM_RUNTIME_PM_OPS_PTR,
- };
- EXPORT_SYMBOL_GPL(platform_bus_type);
- 
---- 0003/include/linux/platform_device.h
-+++ work/include/linux/platform_device.h	2009-05-26 21:22:17.000000000 +0900
-@@ -27,6 +27,10 @@ struct platform_device {
- 	/* arch specific additions */
- 	struct pdev_archdata	archdata;
- #endif
-+#ifdef CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM
-+	unsigned long runtime_flags;
-+#endif
-+
- };
- 
- #define platform_get_device_id(pdev)	((pdev)->id_entry)
-@@ -65,6 +69,10 @@ static inline void platform_device_idle(
- static inline void platform_device_wakeup(struct platform_device *pdev) {}
- #endif
- 
-+#ifdef CONFIG_HAVE_PLATFORM_DEVICE_RUNTIME_PM
-+extern struct dev_pm_ops platform_runtime_dev_pm_ops;
-+#endif
-+
- struct platform_driver {
- 	int (*probe)(struct platform_device *);
- 	int (*remove)(struct platform_device *);
+* if pm_suspend_level = 1, platform_pm_prepare() will return immediately
+* if pm_suspend_level = 2, platform_pm_prepare() and platform_pm_suspend()
+  will return immediately
+* if pm_suspend_level = 3, platform_pm_prepare(), platform_pm_suspend()
+  and platform_pm_suspend_noirq() will return immediately
+
+(and analogously for the hibernation callbacks) and make your run-time PM
+callbacks set this field appropriately.
+
+Thanks,
+Rafael
