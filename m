@@ -1,61 +1,49 @@
-From: Kevin Hilman <khilman@deeprootsystems.com>
-Date: Thu, 28 May 2009 17:14:43 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 29 May 2009 07:41:13 +0000
 Subject: Re: [PATCH 00/04][RFC] PM: Runtime platform device PM
-Message-Id: <877i01p2t8.fsf@deeprootsystems.com>
+Message-Id: <aec7e5c30905290041p13cc3e48k3527640fb52c3730@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
 In-Reply-To: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Magnus Damm <magnus.damm@gmail.com> writes:
-
-> For runtime power management we today have cpuidle, the clock
-> framework and qos. This allows the cpu core to enter various
-> forms of deep sleep, and for devices we may stop clocks to save
-> power. Modern SoCs however allow disabling of power to parts of
-> the chip, and we have no upstream interface to handle that today.
+On Fri, May 29, 2009 at 12:33 AM, Alan Stern <stern@rowland.harvard.edu> wr=
+ote:
+> On Thu, 28 May 2009, Magnus Damm wrote:
 >
-> I propose adding the following simple platform device functions:
->  - platform_device_wakeup()
->  - platform_device_idle()
+>> On Wed, May 27, 2009 at 11:30 PM, Alan Stern <stern@rowland.harvard.edu>=
+ wrote:
+>> > On Wed, 27 May 2009, Magnus Damm wrote:
+>> >> PM: Runtime platform device power management
+>>
+>> > Have you given any thought as to whether the platform_device_wakeup and
+>> > platform_device_idle calls should be restricted to process context?
+>>
+>> Good question. The first thing that pops into my mind is to have same
+>> restrictions as clk_enable() and clk_disable(). To keep things simple
+>> I'd say that it's unlikely that any embedded platform driver would
+>> need to sleep during the dev_pm_ops callbacks. Maybe it makes sense to
+>> only allow _noirq variants of dev_pm_ops, not sure. Any ideas?
 >
-> The idle function is used by the platform driver to let the 
-> architecture power management code know that from now on the
-> device is in idle state. When the device is marked as idle
-> the architecture specific runtime power management may decide
-> to do various levels of device power management, ranging from
-> stopping clocks to turning off power. The dev_pm_ops callbacks
-> may be invoked by the runtime pm code to save and restore state
-> whenever the device is marked as idle.
->
-> The wakeup function is used by the platform driver to notify the
-> architecture code that the driver wants to make use of the hardware
-> device. If the device has been put in sleep then it needs to be
-> woken up. This wakeup call may invoke dev_pm_ops callbacks.
+> I don't know what would be appropriate for you. =A0USB power transitions
+> cannot be made in an atomic context, but the situation could well be
+> different for platform devices. =A0It's just something to be aware of.
 
-A couple comments/questions:
+For our SuperH platform devices there should be no need to sleep.
 
-Wouldn't the 'wakeup' hook be better named platform_device_enable().
-The _wakeup name seems to imply that the call will perform some sort
-of wakeup, but all it's really doing is enabling it by turning it on
-or taking it out of idle.
+> (And by the way, the _noirq ops don't run in atomic context. =A0They run
+> in process context with most interrupt deliveries disabled. =A0It's not
+> the same thing -- they are allowed to sleep.)
 
-In the process of discussing a similar interface for OMAP, we dicussed
-that having 3 states would be more useful.  Specifically, and
-_enable(), _idle() and _disable() hook.  The _enable() and _idle()
-hooks being exactly what you proposed above, but with the addition of
-a _disable() hook which says not only can the device go idle, but that
-the driver is really finished with the device.  In this case, more
-aggresive PM measures could be taken, such as turning of regulators
-that may have long latencies that may not be appropriate to turn off
-in idle.
+Huh, so if they are allowed to sleep then clock events are still
+running. And probably some clocksource as well. I guess that's why you
+say "most" interrupts disabled instead of all. Sharing the timer IRQ
+is not allowed then?
 
-I'm interested in any thoughts there because the line between _idle()
-and _disable() remains a little fuzzy to me still.  For exmaple, maybe
-the _idle() call in combination with latency constraints in PM QoS
-could do effectively the same thing as _disable().
+I wonder if the PM code assumes that the clock event is a sys device?
+We use platform drivers for clock events on SuperH...
 
-Kevin
+/ magnus
