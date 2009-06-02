@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Tue, 02 Jun 2009 02:49:28 +0000
-Subject: [PATCH 4/4] sh7723: add l2_cache_init support
-Message-Id: <u8wkbe4ef.wl%morimoto.kuninori@renesas.com>
+Date: Tue, 02 Jun 2009 02:49:20 +0000
+Subject: [PATCH 2/4] sh: add l2_cache_init function on cache_init
+Message-Id: <ubpp7e4en.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -11,37 +11,34 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ arch/sh/kernel/cpu/init.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-index 04cb4aa..d8f4a13 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-@@ -14,6 +14,7 @@
- #include <linux/serial_sci.h>
- #include <linux/uio_driver.h>
- #include <linux/sh_timer.h>
-+#include <linux/io.h>
- #include <asm/clock.h>
- #include <asm/mmzone.h>
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index d29e69c..ad85421 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -62,6 +62,11 @@ static void __init speculative_execution_init(void)
+ #define speculative_execution_init()	do { } while (0)
+ #endif
  
-@@ -485,6 +486,15 @@ void __init plat_early_device_setup(void)
- 				   ARRAY_SIZE(sh7723_early_devices));
- }
- 
-+#define RAMCR_CACHE_L2FC	0x0002
-+#define RAMCR_CACHE_L2E		0x0001
-+#define L2_CACHE_ENABLE		(RAMCR_CACHE_L2E|RAMCR_CACHE_L2FC)
-+void __uses_jump_to_uncached l2_cache_init(void)
++/* 2nd-level cache init */
++void __uses_jump_to_uncached __attribute__ ((weak)) l2_cache_init(void)
 +{
-+	/* Enable L2 cache */
-+	ctrl_outl(L2_CACHE_ENABLE, RAMCR);
 +}
 +
- enum {
- 	UNUSED=0,
+ /*
+  * Generic first-level cache init
+  */
+@@ -146,6 +151,8 @@ static void __uses_jump_to_uncached cache_init(void)
+ 	flags &= ~CCR_CACHE_ENABLE;
+ #endif
  
++	l2_cache_init();
++
+ 	ctrl_outl(flags, CCR);
+ 	back_to_cached();
+ }
 -- 
 1.6.0.4
 
