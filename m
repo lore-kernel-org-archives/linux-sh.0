@@ -1,44 +1,41 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Tue, 02 Jun 2009 02:49:20 +0000
-Subject: [PATCH 2/4] sh: add l2_cache_init function on cache_init
-Message-Id: <ubpp7e4en.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 03 Jun 2009 08:34:46 +0000
+Subject: [PATCH] sh: intc compile warning fix
+Message-Id: <20090603083446.28534.27711.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+This patch fixes a compile warning in the intc code
+for the CONFIG_SPARSE_IRQ=n case.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/kernel/cpu/init.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
-index d29e69c..ad85421 100644
---- a/arch/sh/kernel/cpu/init.c
-+++ b/arch/sh/kernel/cpu/init.c
-@@ -62,6 +62,11 @@ static void __init speculative_execution_init(void)
- #define speculative_execution_init()	do { } while (0)
- #endif
- 
-+/* 2nd-level cache init */
-+void __uses_jump_to_uncached __attribute__ ((weak)) l2_cache_init(void)
-+{
-+}
-+
- /*
-  * Generic first-level cache init
-  */
-@@ -146,6 +151,8 @@ static void __uses_jump_to_uncached cache_init(void)
- 	flags &= ~CCR_CACHE_ENABLE;
- #endif
- 
-+	l2_cache_init();
-+
- 	ctrl_outl(flags, CCR);
- 	back_to_cached();
- }
--- 
-1.6.0.4
+ drivers/sh/intc.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+--- 0001/drivers/sh/intc.c
++++ work/drivers/sh/intc.c	2009-06-03 12:55:05.000000000 +0900
+@@ -671,7 +671,7 @@ unsigned int intc_evt2irq(unsigned int v
+ 
+ void __init register_intc_controller(struct intc_desc *desc)
+ {
+-	unsigned int i, k, smp, cpu = smp_processor_id();
++	unsigned int i, k, smp;
+ 	struct intc_desc_int *d;
+ 
+ 	d = alloc_bootmem(sizeof(*d));
+@@ -778,7 +778,7 @@ void __init register_intc_controller(str
+ 			continue;
+ 
+ #ifdef CONFIG_SPARSE_IRQ
+-		irq_desc = irq_to_desc_alloc_cpu(irq, cpu);
++		irq_desc = irq_to_desc_alloc_cpu(irq, smp_processor_id());
+ 		if (unlikely(!irq_desc)) {
+ 			printk(KERN_INFO "can not get irq_desc for %d\n", irq);
+ 			continue;
