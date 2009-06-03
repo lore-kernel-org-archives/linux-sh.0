@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 03 Jun 2009 08:22:50 +0000
-Subject: [PATCH] sh: add Migo-R mode pin configuration
-Message-Id: <20090603082250.28379.68248.sendpatchset@rx1.opensource.se>
+Date: Wed, 03 Jun 2009 08:18:56 +0000
+Subject: [PATCH] sh: sh7722 mode pin definitions
+Message-Id: <20090603081856.28322.87630.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,37 +10,35 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds mode pin configuration and
-a machvec structure to Migo-R.
+This patch adds sh7722 mode pin and pin function
+controller comments.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/boards/mach-migor/setup.c |   19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ arch/sh/include/cpu-sh4/cpu/sh7722.h |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
---- 0001/arch/sh/boards/mach-migor/setup.c
-+++ work/arch/sh/boards/mach-migor/setup.c	2009-06-03 16:38:01.000000000 +0900
-@@ -584,3 +584,22 @@ static int __init migor_devices_setup(vo
- 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
- }
- __initcall(migor_devices_setup);
-+
-+/* Return the board specific boot mode pin configuration */
-+static int migor_mode_pins(void)
-+{
-+	/* MD0=1, MD1=1, MD2=0: Clock Mode 3
-+	 * MD3=0: 16-bit Area0 Bus Width
-+	 * MD5=1: Little Endian
-+	 * TSTMD=1, MD8=0: Test Mode Disabled
-+	 */
-+	return MODE_PIN0 | MODE_PIN1 | MODE_PIN5;
-+}
-+
-+/*
-+ * The Machine Vector
+--- 0001/arch/sh/include/cpu-sh4/cpu/sh7722.h
++++ work/arch/sh/include/cpu-sh4/cpu/sh7722.h	2009-06-03 15:59:50.000000000 +0900
+@@ -1,6 +1,20 @@
+ #ifndef __ASM_SH7722_H__
+ #define __ASM_SH7722_H__
+ 
++/* Boot Mode Pins:
++ *
++ * MD0: CPG - Clock Mode 0->3
++ * MD1: CPG - Clock Mode 0->3
++ * MD2: CPG - Reserved (L: Normal operation)
++ * MD3: BSC - Area0 Bus Width (16/32-bit) [CS0BCR.9,10]
++ * MD5: BSC - Endian Mode (L: Big, H: Little) [CMNCR.3]
++ * MD8: Test Mode
 + */
-+static struct sh_machine_vector mv_migor __initmv = {
-+	.mv_name		= "Migo-R",
-+	.mv_mode_pins		= migor_mode_pins,
-+};
++
++/* Pin Function Controller:
++ * GPIO_FN_xx - GPIO used to select pin function
++ * GPIO_Pxx - GPIO mapped to real I/O pin on CPU
++ */
+ enum {
+ 	/* PTA */
+ 	GPIO_PTA7, GPIO_PTA6, GPIO_PTA5, GPIO_PTA4,
