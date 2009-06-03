@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jun 2009 09:15:36 +0000
-Subject: [PATCH] sh: sh7723 clock framework rewrite
-Message-Id: <20090602091536.7475.79564.sendpatchset@rx1.opensource.se>
+Date: Wed, 03 Jun 2009 08:39:59 +0000
+Subject: [PATCH] sh: sh7723 clock framework rewrite V2
+Message-Id: <20090603083959.28587.36860.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090602091536.7475.79564.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090602091536.7475.79564.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,9 +12,10 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch contains a rewrite of the sh7723 clock
-framework code. The new code makes use of the
-recently merged div4, div6 and mstp32 helper code.
+This patch contains V2 of the sh7723 clock framework
+rewrite. The new code makes use of the recently merged
+div4, div6 and mstp32 helper code. Both extal and dll
+are supported as input clocks to the pll.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
@@ -21,12 +24,12 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 
  arch/sh/Kconfig                        |    2 
  arch/sh/kernel/cpu/sh4a/Makefile       |    2 
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   57 ----------
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |  181 ++++++++++++++++++++++++++++++++
- 4 files changed, 184 insertions(+), 58 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   57 --------
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |  222 ++++++++++++++++++++++++++++++++
+ 4 files changed, 225 insertions(+), 58 deletions(-)
 
 --- 0001/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2009-06-02 17:09:27.000000000 +0900
++++ work/arch/sh/Kconfig	2009-06-03 16:04:32.000000000 +0900
 @@ -516,7 +516,7 @@ config SH_CLK_CPG
  
  config SH_CLK_CPG_LEGACY
@@ -37,7 +40,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  config SH_CLK_MD
  	int "CPU Mode Pin Setting"
 --- 0001/arch/sh/kernel/cpu/sh4a/Makefile
-+++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-06-02 17:09:27.000000000 +0900
++++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-06-03 16:04:32.000000000 +0900
 @@ -26,7 +26,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SH7785)	:= cl
  clock-$(CONFIG_CPU_SUBTYPE_SH7786)	:= clock-sh7786.o
  clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= clock-sh7722.o
@@ -48,7 +51,7 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  clock-$(CONFIG_CPU_SUBTYPE_SH7366)	:= clock-sh7722.o
  clock-$(CONFIG_CPU_SUBTYPE_SHX3)	:= clock-shx3.o
 --- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-06-02 17:09:27.000000000 +0900
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-06-03 16:04:32.000000000 +0900
 @@ -1,7 +1,7 @@
  /*
   * arch/sh/kernel/cpu/sh4a/clock-sh7722.c
@@ -128,12 +131,12 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
  	/* See Datasheet : Overview -> Block Diagram */
  	MSTPCR("tlb0", "cpu_clk", 0, 31, 0),
 --- /dev/null
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2009-06-02 17:09:34.000000000 +0900
-@@ -0,0 +1,181 @@
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2009-06-03 16:13:52.000000000 +0900
+@@ -0,0 +1,222 @@
 +/*
 + * arch/sh/kernel/cpu/sh4a/clock-sh7723.c
 + *
-+ * SH77723 clock framework support
++ * SH7723 clock framework support
 + *
 + * Copyright (C) 2009 Magnus Damm
 + *
@@ -160,10 +163,12 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +#define VCLKCR		0xa4150004
 +#define SCLKACR		0xa4150008
 +#define SCLKBCR		0xa415000c
-+#define IRDACLKCR	0xa4150010
++#define IRDACLKCR	0xa4150018
++#define PLLCR		0xa4150024
 +#define MSTPCR0		0xa4150030
 +#define MSTPCR1		0xa4150034
 +#define MSTPCR2		0xa4150038
++#define DLLFRQ		0xa4150050
 +
 +/* Fixed 32 KHz root clock for RTC and Power Management purposes */
 +static struct clk r_clk = {
@@ -182,9 +187,42 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.rate		= 33333333,
 +};
 +
++/* The dll multiplies the 32khz r_clk, may be used instead of extal */
++static unsigned long dll_recalc(struct clk *clk)
++{
++	unsigned long mult;
++
++	if (__raw_readl(PLLCR) & 0x1000)
++		mult = __raw_readl(DLLFRQ);
++	else
++		mult = 0;
++
++	return clk->parent->rate * mult;
++}
++
++static struct clk_ops dll_clk_ops = {
++	.recalc		= dll_recalc,
++};
++
++static struct clk dll_clk = {
++	.name           = "dll_clk",
++	.id             = -1,
++	.ops		= &dll_clk_ops,
++	.parent		= &r_clk,
++	.flags		= CLK_ENABLE_ON_INIT,
++};
++
 +static unsigned long pll_recalc(struct clk *clk)
 +{
-+	return clk->parent->rate * (((__raw_readl(FRQCR) >> 24) & 0x1f) + 1);
++	unsigned long mult = 1;
++	unsigned long div = 1;
++
++	if (__raw_readl(PLLCR) & 0x4000)
++		mult = (((__raw_readl(FRQCR) >> 24) & 0x1f) + 1);
++	else
++		div = 2;
++
++	return (clk->parent->rate * mult) / div;
 +}
 +
 +static struct clk_ops pll_clk_ops = {
@@ -195,13 +233,13 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +	.name		= "pll_clk",
 +	.id		= -1,
 +	.ops		= &pll_clk_ops,
-+	.parent		= &extal_clk,
 +	.flags		= CLK_ENABLE_ON_INIT,
 +};
 +
 +struct clk *main_clks[] = {
 +	&r_clk,
 +	&extal_clk,
++	&dll_clk,
 +	&pll_clk,
 +};
 +
@@ -296,6 +334,12 @@ Signed-off-by: Magnus Damm <damm@igel.co.jp>
 +int __init arch_clk_init(void)
 +{
 +	int k, ret = 0;
++
++	/* autodetect extal or dll configuration */
++	if (__raw_readl(PLLCR) & 0x1000)
++		pll_clk.parent = &dll_clk;
++	else
++		pll_clk.parent = &extal_clk;
 +
 +	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
 +		ret = clk_register(main_clks[k]);
