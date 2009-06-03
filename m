@@ -1,27 +1,41 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 01 Jun 2009 09:14:02 +0000
-Subject: Re: [PATCH] sh: shared mstp32 clock code
-Message-Id: <20090601091402.GB31292@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 03 Jun 2009 08:26:40 +0000
+Subject: [PATCH] sh: add AP325RXA mode pin configuration
+Message-Id: <20090603082640.28419.69409.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, May 28, 2009 at 09:52:29PM +0900, Magnus Damm wrote:
-> Add shared 32-bit module stop bit clock support.
-> 
-> Processor specific code can use SH_CLK_MSTP32()
-> to initialize module stop bit clocks, and then
-> use sh_clk_mstp32() for registration.
+From: Magnus Damm <damm@igel.co.jp>
 
-On Thu, May 28, 2009 at 10:01:53PM +0900, Magnus Damm wrote:
-> Hook up the shared 32-bit module stop bit code to sh7785.
+This patch adds mode pin configuration to ap325rxa.
 
-On Thu, May 28, 2009 at 10:11:31PM +0900, Magnus Damm wrote:
-> Add shared code for 4-bit divisor clocks.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-On Thu, May 28, 2009 at 10:13:56PM +0900, Magnus Damm wrote:
-> Hook up the shared 4-bit divisor clock code to sh7785.
+ arch/sh/boards/board-ap325rxa.c |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-Applied, thanks.
+--- 0001/arch/sh/boards/board-ap325rxa.c
++++ work/arch/sh/boards/board-ap325rxa.c	2009-06-03 16:29:41.000000000 +0900
+@@ -535,6 +535,18 @@ static int __init ap325rxa_devices_setup
+ }
+ device_initcall(ap325rxa_devices_setup);
+ 
++/* Return the board specific boot mode pin configuration */
++static int ap325rxa_mode_pins(void)
++{
++	/* MD0=0, MD1=0, MD2=0: Clock Mode 0
++	 * MD3=0: 16-bit Area0 Bus Width
++	 * MD5=1: Little Endian
++	 * TSTMD=1, MD8=1: Test Mode Disabled
++	 */
++	return MODE_PIN5 | MODE_PIN8;
++}
++
+ static struct sh_machine_vector mv_ap325rxa __initmv = {
+ 	.mv_name = "AP-325RXA",
++	.mv_mode_pins = ap325rxa_mode_pins,
+ };
