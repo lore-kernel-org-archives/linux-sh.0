@@ -1,23 +1,30 @@
-From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-Date: Mon, 15 Jun 2009 03:29:20 +0000
-Subject: Re: [PATCH] sh: Remove mask variable
-Message-Id: <4A35C010.2030202@renesas.com>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Thu, 04 Jun 2009 13:01:25 +0000
+Subject: Hi all,long silence from me
+Message-Id: <200906041501.25421.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4A35BDA6.1030600@renesas.com>
-In-Reply-To: <4A35BDA6.1030600@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Paul Mundt wrote:
-> On Mon, Jun 15, 2009 at 12:19:02PM +0900, Nobuhiro Iwamatsu wrote:
->> The mask variable was deleted from irqaction structure from 2.6.31.
->>
->> Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
->> CC: Magnus Damm <magnus.damm@gmail.com>
-> 
-> Already gone in current git, as well as for the other clocksource
-> drivers.
-> 
-OK, thanks.
+But in Italy we are invested by a very hard economic crisis; so much of effort 
+if directed to survive.
+By the way, we are developing a power quality meter, and we have based it on 
+sh2a 7286.
+Which could be the best toolchain version?
+I'm at gcc 3.2.3 for the sh2 cores.
+Any suggestion?
+
+Thanks
+
+-- 
+Fabio Giovagnini
+
+Aurion s.r.l.
+Tel. +39.335.8350919
+
+www.aurion-tech.com
+
+account telefono VoIP skype (www.skype.com):
+aurion.giovagnini
