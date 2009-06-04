@@ -1,272 +1,124 @@
-From: <gregkh@suse.de>
-Date: Tue, 02 Jun 2009 19:43:12 +0000
-Subject: patch usb-r8a66597-hcd-use-platform_data-instead-of-module_param.patch added to gregkh-2.6 tree
-Message-Id: <12439717921401@kroah.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 04 Jun 2009 05:31:41 +0000
+Subject: [PATCH] sh: add enable()/disable()/set_rate() to div6 code
+Message-Id: <20090604053141.31218.83540.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
-This is a note to let you know that I've just added the patch titled
+This patch updates the div6 clock helper code to add support
+for enable(), disable() and set_rate() callbacks.
 
-    Subject: USB: r8a66597-hcd: use platform_data instead of module_param
+Needed by the camera clock enabling board code on Migo-R.
 
-to my gregkh-2.6 tree.  Its filename is
-
-    usb-r8a66597-hcd-use-platform_data-instead-of-module_param.patch
-
-This tree can be found at 
-    http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/patches/
-
-
-From shimoda.yoshihiro@renesas.com  Tue Jun  2 12:27:45 2009
-From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Tue, 26 May 2009 18:24:34 +0900
-Subject: USB: r8a66597-hcd: use platform_data instead of module_param
-To: Greg Kroah-Hartman <gregkh@suse.de>
-Cc: Paul Mundt <lethal@linux-sh.org>, SH-Linux <linux-sh@vger.kernel.org>
-Message-ID: <4A1BB552.3020909@renesas.com>
-
-
-CPU/board specific parameters (PLL clock, vif etc...) can be set
-by platform_data instead of module_param.
-
-v2: remove irq_sense member in platform_data because it can OR in
-    IRQF_TRIGGER_LOW or IRQF_TRIGGER_FALLING against IORESOURCE_IRQ in
-    the struct resource.
-
-Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Reviewed-by: Paul Mundt <lethal@linux-sh.org>
-Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
-
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- drivers/usb/host/r8a66597-hcd.c |   60 +++++++++-------------------------------
- drivers/usb/host/r8a66597.h     |   38 ++++++++++++++++++++++---
- include/linux/usb/r8a66597.h    |   44 +++++++++++++++++++++++++++++
- 3 files changed, 92 insertions(+), 50 deletions(-)
 
---- a/drivers/usb/host/r8a66597.h
-+++ b/drivers/usb/host/r8a66597.h
-@@ -30,6 +30,8 @@
- #include <linux/clk.h>
- #endif
+ Tested on Migo-R with rewritten sh7722 clock framework.
+
+ arch/sh/include/asm/clock.h    |    4 +++
+ arch/sh/kernel/cpu/clock-cpg.c |   44 ++++++++++++++++++++++++++++++++++++++++
+ arch/sh/kernel/cpu/clock.c     |   19 +++++++++++++++++
+ 3 files changed, 67 insertions(+)
+
+--- 0005/arch/sh/include/asm/clock.h
++++ work/arch/sh/include/asm/clock.h	2009-06-04 13:49:27.000000000 +0900
+@@ -119,6 +119,10 @@ long clk_rate_table_round(struct clk *cl
+ 			  struct cpufreq_frequency_table *freq_table,
+ 			  unsigned long rate);
  
-+#include <linux/usb/r8a66597.h>
++int clk_rate_table_find(struct clk *clk,
++			struct cpufreq_frequency_table *freq_table,
++			unsigned long rate);
 +
- #define SYSCFG0		0x00
- #define SYSCFG1		0x02
- #define SYSSTS0		0x04
-@@ -488,6 +490,7 @@ struct r8a66597 {
- #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
- 	struct clk *clk;
- #endif
-+	struct r8a66597_platdata	*pdata;
- 	struct r8a66597_device		device0;
- 	struct r8a66597_root_hub	root_hub[R8A66597_MAX_ROOT_HUB];
- 	struct list_head		pipe_queue[R8A66597_MAX_NUM_PIPE];
-@@ -506,6 +509,7 @@ struct r8a66597 {
- 	unsigned long child_connect_map[4];
- 
- 	unsigned bus_suspended:1;
-+	unsigned irq_sense_low:1;
- };
- 
- static inline struct r8a66597 *hcd_to_r8a66597(struct usb_hcd *hcd)
-@@ -660,10 +664,36 @@ static inline void r8a66597_port_power(s
- {
- 	unsigned long dvstctr_reg = get_dvstctr_reg(port);
- 
--	if (power)
--		r8a66597_bset(r8a66597, VBOUT, dvstctr_reg);
--	else
--		r8a66597_bclr(r8a66597, VBOUT, dvstctr_reg);
-+	if (r8a66597->pdata->port_power) {
-+		r8a66597->pdata->port_power(port, power);
-+	} else {
-+		if (power)
-+			r8a66597_bset(r8a66597, VBOUT, dvstctr_reg);
-+		else
-+			r8a66597_bclr(r8a66597, VBOUT, dvstctr_reg);
-+	}
-+}
-+
-+static inline u16 get_xtal_from_pdata(struct r8a66597_platdata *pdata)
-+{
-+	u16 clock = 0;
-+
-+	switch (pdata->xtal) {
-+	case R8A66597_PLATDATA_XTAL_12MHZ:
-+		clock = XTAL12;
-+		break;
-+	case R8A66597_PLATDATA_XTAL_24MHZ:
-+		clock = XTAL24;
-+		break;
-+	case R8A66597_PLATDATA_XTAL_48MHZ:
-+		clock = XTAL48;
-+		break;
-+	default:
-+		printk(KERN_ERR "r8a66597: platdata clock is wrong.\n");
-+		break;
-+	}
-+
-+	return clock;
+ #define SH_CLK_MSTP32(_name, _id, _parent, _enable_reg,	\
+ 	    _enable_bit, _flags)			\
+ {							\
+--- 0005/arch/sh/kernel/cpu/clock-cpg.c
++++ work/arch/sh/kernel/cpu/clock-cpg.c	2009-06-04 13:56:11.000000000 +0900
+@@ -68,9 +68,53 @@ static unsigned long sh_clk_div6_recalc(
+ 	return clk->freq_table[idx].frequency;
  }
  
- #define get_pipectr_addr(pipenum)	(PIPE1CTR + (pipenum - 1) * 2)
---- a/drivers/usb/host/r8a66597-hcd.c
-+++ b/drivers/usb/host/r8a66597-hcd.c
-@@ -46,31 +46,10 @@ MODULE_LICENSE("GPL");
- MODULE_AUTHOR("Yoshihiro Shimoda");
- MODULE_ALIAS("platform:r8a66597_hcd");
++static int sh_clk_div6_set_rate(struct clk *clk,
++				unsigned long rate, int algo_id)
++{
++	unsigned long value;
++	int idx;
++
++	idx = clk_rate_table_find(clk, clk->freq_table, rate);
++	if (idx < 0)
++		return idx;
++
++	value = __raw_readl(clk->enable_reg);
++	value &= ~0x3f;
++	value |= idx;
++	__raw_writel(value, clk->enable_reg);
++	return 0;
++}
++
++static int sh_clk_div6_enable(struct clk *clk)
++{
++	unsigned long value;
++	int ret;
++
++	ret = sh_clk_div6_set_rate(clk, clk->rate, 0);
++	if (ret = 0) {
++		value = __raw_readl(clk->enable_reg);
++		value &= ~0x100; /* clear stop bit to enable clock */
++		__raw_writel(value, clk->enable_reg);
++	}
++	return ret;
++}
++
++static void sh_clk_div6_disable(struct clk *clk)
++{
++	unsigned long value;
++
++	value = __raw_readl(clk->enable_reg);
++	value |= 0x100; /* stop clock */
++	value |= 0x3f; /* VDIV bits must be non-zero, overwrite divider */
++	__raw_writel(value, clk->enable_reg);
++}
++
+ static struct clk_ops sh_clk_div6_clk_ops = {
+ 	.recalc		= sh_clk_div6_recalc,
+ 	.round_rate	= sh_clk_div_round_rate,
++	.set_rate	= sh_clk_div6_set_rate,
++	.enable		= sh_clk_div6_enable,
++	.disable	= sh_clk_div6_disable,
+ };
  
--#define DRIVER_VERSION	"10 Apr 2008"
-+#define DRIVER_VERSION	"2009-05-26"
+ int __init sh_clk_div6_register(struct clk *clks, int nr)
+--- 0001/arch/sh/kernel/cpu/clock.c
++++ work/arch/sh/kernel/cpu/clock.c	2009-06-04 13:58:42.000000000 +0900
+@@ -111,6 +111,25 @@ long clk_rate_table_round(struct clk *cl
+ 	return rate_best_fit;
+ }
  
- static const char hcd_name[] = "r8a66597_hcd";
- 
--/* module parameters */
--#if !defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
--static unsigned short clock = XTAL12;
--module_param(clock, ushort, 0644);
--MODULE_PARM_DESC(clock, "input clock: 48MHz2768, 24MHz384, 12MHz=0 "
--		"(default=0)");
--#endif
--
--static unsigned short vif = LDRV;
--module_param(vif, ushort, 0644);
--MODULE_PARM_DESC(vif, "input VIF: 3.3V2768, 1.5V=0(default2768)");
--
--static unsigned short endian;
--module_param(endian, ushort, 0644);
--MODULE_PARM_DESC(endian, "data endian: big%6, little=0 (default=0)");
--
--static unsigned short irq_sense = 0xff;
--module_param(irq_sense, ushort, 0644);
--MODULE_PARM_DESC(irq_sense, "IRQ sense: low level2, falling edge=0 "
--		"(default2)");
--
- static void packet_write(struct r8a66597 *r8a66597, u16 pipenum);
- static int r8a66597_get_frame(struct usb_hcd *hcd);
- 
-@@ -136,7 +115,8 @@ static int r8a66597_clock_enable(struct 
- 		}
- 	} while ((tmp & USBE) != USBE);
- 	r8a66597_bclr(r8a66597, USBE, SYSCFG0);
--	r8a66597_mdfy(r8a66597, clock, XTAL, SYSCFG0);
-+	r8a66597_mdfy(r8a66597, get_xtal_from_pdata(r8a66597->pdata), XTAL,
-+			SYSCFG0);
- 
- 	i = 0;
- 	r8a66597_bset(r8a66597, XCKE, SYSCFG0);
-@@ -203,6 +183,9 @@ static void r8a66597_disable_port(struct
- static int enable_controller(struct r8a66597 *r8a66597)
- {
- 	int ret, port;
-+	u16 vif = r8a66597->pdata->vif ? LDRV : 0;
-+	u16 irq_sense = r8a66597->irq_sense_low ? INTL : 0;
-+	u16 endian = r8a66597->pdata->endian ? BIGEND : 0;
- 
- 	ret = r8a66597_clock_enable(r8a66597);
- 	if (ret < 0)
-@@ -2418,6 +2401,12 @@ static int __devinit r8a66597_probe(stru
- 		goto clean_up;
- 	}
- 
-+	if (pdev->dev.platform_data = NULL) {
-+		dev_err(&pdev->dev, "no platform data\n");
-+		ret = -ENODEV;
-+		goto clean_up;
++int clk_rate_table_find(struct clk *clk,
++			struct cpufreq_frequency_table *freq_table,
++			unsigned long rate)
++{
++	int i;
++
++	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
++		unsigned long freq = freq_table[i].frequency;
++
++		if (freq = CPUFREQ_ENTRY_INVALID)
++			continue;
++
++		if (freq = rate)
++			return i;
 +	}
 +
- 	/* initialize hcd */
- 	hcd = usb_create_hcd(&r8a66597_hc_driver, &pdev->dev, (char *)hcd_name);
- 	if (!hcd) {
-@@ -2428,6 +2417,8 @@ static int __devinit r8a66597_probe(stru
- 	r8a66597 = hcd_to_r8a66597(hcd);
- 	memset(r8a66597, 0, sizeof(struct r8a66597));
- 	dev_set_drvdata(&pdev->dev, r8a66597);
-+	r8a66597->pdata = pdev->dev.platform_data;
-+	r8a66597->irq_sense_low = irq_trigger = IRQF_TRIGGER_LOW;
- 
- #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
- 	snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
-@@ -2458,29 +2449,6 @@ static int __devinit r8a66597_probe(stru
- 
- 	hcd->rsrc_start = res->start;
- 
--	/* irq_sense setting on cmdline takes precedence over resource
--	 * settings, so the introduction of irqflags in IRQ resourse
--	 * won't disturb existing setups */
--	switch (irq_sense) {
--		case INTL:
--			irq_trigger = IRQF_TRIGGER_LOW;
--			break;
--		case 0:
--			irq_trigger = IRQF_TRIGGER_FALLING;
--			break;
--		case 0xff:
--			if (irq_trigger)
--				irq_sense = (irq_trigger & IRQF_TRIGGER_LOW) ?
--					    INTL : 0;
--			else {
--				irq_sense = INTL;
--				irq_trigger = IRQF_TRIGGER_LOW;
--			}
--			break;
--		default:
--			dev_err(&pdev->dev, "Unknown irq_sense value.\n");
--	}
--
- 	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | irq_trigger);
- 	if (ret != 0) {
- 		dev_err(&pdev->dev, "Failed to add hcd\n");
---- /dev/null
-+++ b/include/linux/usb/r8a66597.h
-@@ -0,0 +1,44 @@
-+/*
-+ * R8A66597 driver platform data
-+ *
-+ * Copyright (C) 2009  Renesas Solutions Corp.
-+ *
-+ * Author : Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ *
-+ */
++	return -ENOENT;
++}
 +
-+#ifndef __LINUX_USB_R8A66597_H
-+#define __LINUX_USB_R8A66597_H
-+
-+#define R8A66597_PLATDATA_XTAL_12MHZ	0x01
-+#define R8A66597_PLATDATA_XTAL_24MHZ	0x02
-+#define R8A66597_PLATDATA_XTAL_48MHZ	0x03
-+
-+struct r8a66597_platdata {
-+	/* This ops can controll port power instead of DVSTCTR register. */
-+	void (*port_power)(int port, int power);
-+
-+	/* (external controller only) set R8A66597_PLATDATA_XTAL_nnMHZ */
-+	unsigned	xtal:2;
-+
-+	/* set one = 3.3V, set zero = 1.5V */
-+	unsigned	vif:1;
-+
-+	/* set one = big endian, set zero = little endian */
-+	unsigned	endian:1;
-+};
-+#endif
-+
-
+ /* Used for clocks that always have same value as the parent clock */
+ unsigned long followparent_recalc(struct clk *clk)
+ {
