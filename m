@@ -1,7 +1,7 @@
 From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 04 Jun 2009 13:10:41 +0000
+Date: Fri, 05 Jun 2009 12:42:03 +0000
 Subject: Re: Hi all,long silence from me
-Message-Id: <200906041510.41928.fabio.giovagnini@aurion-tech.com>
+Message-Id: <200906051442.03765.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200906041501.25421.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <200906041501.25421.fabio.giovagnini@aurion-tech.com>
@@ -10,10 +10,20 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Thanks a lot.
+Hi Magnus.
+I have downloaded the source code from your website.
+I'm tring to build the toolchain step by step because I'd like to have the =
 
-HAve a nice day
+sh2a instruction set support but also the smallest size of applications; in=
+=20
+fact I'm interested at this step to the toolchain for compiling my own=20
+application framework being not an OS at all. I'm not interested to run=20
+linux-sh at this step.
+So I'd like to build the toolchain with newlib support or at most uclibc=20
+support.
+Wher could I find the any docs regarding these aspectcs?
 
+Thanks a lot
 
 Alle 15:09, gioved=EC 4 giugno 2009, Magnus Damm ha scritto:
 > On Thu, Jun 4, 2009 at 10:01 PM, Fabio Giovagnini
@@ -26,10 +36,6 @@ Alle 15:09, gioved=EC 4 giugno 2009, Magnus Damm ha scritto:
 > http://www.codesourcery.com/sgpp/lite/superh/
 >
 > / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 --=20
 Fabio Giovagnini
