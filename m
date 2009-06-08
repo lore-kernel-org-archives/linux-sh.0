@@ -1,320 +1,316 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 04 Jun 2009 07:35:25 +0000
-Subject: [PATCH] sh: sh7366 clock framework rewrite
-Message-Id: <20090604073525.32230.32489.sendpatchset@rx1.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 08 Jun 2009 10:05:12 +0000
+Subject: [PATCH] sh7724: INTC setting update
+Message-Id: <uk53n59d3.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+This patch follows Rev 0.50 manual
 
-This patch rewrites the sh7366 clock framework code.
-The new code makes use of the recently merged div4,
-div6 and mstp32 helper code. Both extal and dll are
-supported as input clocks to the pll.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  171 +++++++++++++++-----------------
+ 1 files changed, 82 insertions(+), 89 deletions(-)
 
- arch/sh/Kconfig                        |    2 
- arch/sh/kernel/cpu/sh4a/Makefile       |    2 
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c |  211 ++++++++++++++++++++++++++++++++
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   42 ------
- 4 files changed, 214 insertions(+), 43 deletions(-)
-
---- 0014/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2009-06-04 13:19:11.000000000 +0900
-@@ -516,7 +516,7 @@ config SH_CLK_CPG
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 4de5055..65de974 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -594,46 +594,46 @@ enum {
+ 	IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7,
+ 	HUDI,
+ 	DMAC1A_DEI0, DMAC1A_DEI1, DMAC1A_DEI2, DMAC1A_DEI3,
+-	_2DG_TRI, _2DG_INI, _2DG_CEI, _2DG_BRK,
++	_2DG_TRI, _2DG_INI, _2DG_CEI,
+ 	DMAC0A_DEI0, DMAC0A_DEI1, DMAC0A_DEI2, DMAC0A_DEI3,
+-	VIO_CEU20I, VIO_BEU20I, VIO_VEU3F1, VIO_VOUI,
+-	SCIFA_SCIFA0,
+-	VPU_VPUI,
+-	TPU_TPUI,
+-	CEU21I,
+-	BEU21I,
+-	USB_USI0,
++	VIO_CEU0, VIO_BEU0, VIO_VEU1, VIO_VOU,
++	SCIFA3,
++	VPU,
++	TPU,
++	CEU1,
++	BEU1,
++	USB0, USB1,
+ 	ATAPI,
+ 	RTC_ATI, RTC_PRI, RTC_CUI,
+ 	DMAC1B_DEI4, DMAC1B_DEI5, DMAC1B_DADERR,
+ 	DMAC0B_DEI4, DMAC0B_DEI5, DMAC0B_DADERR,
+-	KEYSC_KEYI,
++	KEYSC,
+ 	SCIF_SCIF0, SCIF_SCIF1, SCIF_SCIF2,
+-	VEU3F0I,
++	VEU0,
+ 	MSIOF_MSIOFI0, MSIOF_MSIOFI1,
+ 	SPU_SPUI0, SPU_SPUI1,
+-	SCIFA_SCIFA1,
+-/*	ICB_ICBI, */
++	SCIFA4,
++	ICB,
+ 	ETHI,
+ 	I2C1_ALI, I2C1_TACKI, I2C1_WAITI, I2C1_DTEI,
+ 	I2C0_ALI, I2C0_TACKI, I2C0_WAITI, I2C0_DTEI,
+-	SDHI0_SDHII0, SDHI0_SDHII1, SDHI0_SDHII2,
+-	CMT_CMTI,
+-	TSIF_TSIFI,
+-/*	ICB_LMBI, */
+-	FSI_FSI,
+-	SCIFA_SCIFA2,
++	SDHI0_SDHII0, SDHI0_SDHII1, SDHI0_SDHII2, SDHI0_SDHII3,
++	CMT,
++	TSIF,
++	FSI,
++	SCIFA5,
+ 	TMU0_TUNI0, TMU0_TUNI1, TMU0_TUNI2,
+-	IRDA_IRDAI,
++	IRDA,
+ 	SDHI1_SDHII0, SDHI1_SDHII1, SDHI1_SDHII2,
+-	JPU_JPUI,
+-	MMC_MMCI0, MMC_MMCI1, MMC_MMCI2,
+-	LCDC_LCDCI,
++	JPU,
++	_2DDMAC,
++	MMC_MMC2I, MMC_MMC3I,
++	LCDC,
+ 	TMU1_TUNI0, TMU1_TUNI1, TMU1_TUNI2,
  
- config SH_CLK_CPG_LEGACY
- 	depends on SH_CLK_CPG
--	def_bool y if !CPU_SUBTYPE_SH7785 && !CPU_SUBTYPE_SH7723 && !CPU_SUBTYPE_SH7724 && !CPU_SUBTYPE_SH7343
-+	def_bool y if !CPU_SUBTYPE_SH7785 && !CPU_SUBTYPE_SH7723 && !CPU_SUBTYPE_SH7724 && !CPU_SUBTYPE_SH7343 && !CPU_SUBTYPE_SH7366
- 
- config SH_CLK_MD
- 	int "CPU Mode Pin Setting"
---- 0014/arch/sh/kernel/cpu/sh4a/Makefile
-+++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-06-04 13:19:37.000000000 +0900
-@@ -28,7 +28,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= cl
- clock-$(CONFIG_CPU_SUBTYPE_SH7722)	:= clock-sh7722.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7723.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7724)	:= clock-sh7724.o
--clock-$(CONFIG_CPU_SUBTYPE_SH7366)	:= clock-sh7722.o
-+clock-$(CONFIG_CPU_SUBTYPE_SH7366)	:= clock-sh7366.o
- clock-$(CONFIG_CPU_SUBTYPE_SHX3)	:= clock-shx3.o
- 
- # Pinmux setup
---- /dev/null
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7366.c	2009-06-04 13:15:07.000000000 +0900
-@@ -0,0 +1,211 @@
-+/*
-+ * arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-+ *
-+ * SH7366 clock framework support
-+ *
-+ * Copyright (C) 2009 Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <asm/clock.h>
-+
-+/* SH7366 registers */
-+#define FRQCR		0xa4150000
-+#define VCLKCR		0xa4150004
-+#define SCLKACR		0xa4150008
-+#define SCLKBCR		0xa415000c
-+#define PLLCR		0xa4150024
-+#define MSTPCR0		0xa4150030
-+#define MSTPCR1		0xa4150034
-+#define MSTPCR2		0xa4150038
-+#define DLLFRQ		0xa4150050
-+
-+/* Fixed 32 KHz root clock for RTC and Power Management purposes */
-+static struct clk r_clk = {
-+	.name           = "rclk",
-+	.id             = -1,
-+	.rate           = 32768,
-+};
-+
-+/*
-+ * Default rate for the root input clock, reset this with clk_set_rate()
-+ * from the platform code.
-+ */
-+struct clk extal_clk = {
-+	.name		= "extal",
-+	.id		= -1,
-+	.rate		= 33333333,
-+};
-+
-+/* The dll block multiplies the 32khz r_clk, may be used instead of extal */
-+static unsigned long dll_recalc(struct clk *clk)
-+{
-+	unsigned long mult;
-+
-+	if (__raw_readl(PLLCR) & 0x1000)
-+		mult = __raw_readl(DLLFRQ);
-+	else
-+		mult = 0;
-+
-+	return clk->parent->rate * mult;
-+}
-+
-+static struct clk_ops dll_clk_ops = {
-+	.recalc		= dll_recalc,
-+};
-+
-+static struct clk dll_clk = {
-+	.name           = "dll_clk",
-+	.id             = -1,
-+	.ops		= &dll_clk_ops,
-+	.parent		= &r_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static unsigned long pll_recalc(struct clk *clk)
-+{
-+	unsigned long mult = 1;
-+	unsigned long div = 1;
-+
-+	if (__raw_readl(PLLCR) & 0x4000)
-+		mult = (((__raw_readl(FRQCR) >> 24) & 0x1f) + 1);
-+	else
-+		div = 2;
-+
-+	return (clk->parent->rate * mult) / div;
-+}
-+
-+static struct clk_ops pll_clk_ops = {
-+	.recalc		= pll_recalc,
-+};
-+
-+static struct clk pll_clk = {
-+	.name		= "pll_clk",
-+	.id		= -1,
-+	.ops		= &pll_clk_ops,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+struct clk *main_clks[] = {
-+	&r_clk,
-+	&extal_clk,
-+	&dll_clk,
-+	&pll_clk,
-+};
-+
-+static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-+static int divisors[] = { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16, 20 };
-+
-+static struct clk_div_mult_table div4_table = {
-+	.divisors = divisors,
-+	.nr_divisors = ARRAY_SIZE(divisors),
-+	.multipliers = multipliers,
-+	.nr_multipliers = ARRAY_SIZE(multipliers),
-+};
-+
-+enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P,
-+       DIV4_SIUA, DIV4_SIUB, DIV4_NR };
-+
-+#define DIV4(_str, _reg, _bit, _mask, _flags) \
-+  SH_CLK_DIV4(_str, &pll_clk, _reg, _bit, _mask, _flags)
-+
-+struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_I] = DIV4("cpu_clk", FRQCR, 20, 0x1fef, CLK_ENABLE_ON_INIT),
-+	[DIV4_U] = DIV4("umem_clk", FRQCR, 16, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_SH] = DIV4("shyway_clk", FRQCR, 12, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_B] = DIV4("bus_clk", FRQCR, 8, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_B3] = DIV4("b3_clk", FRQCR, 4, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_P] = DIV4("peripheral_clk", FRQCR, 0, 0x1fff, 0),
-+	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x1fff, 0),
-+	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x1fff, 0),
-+};
-+
-+struct clk div6_clks[] = {
-+	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
-+};
-+
-+#define MSTP(_str, _parent, _reg, _bit, _flags) \
-+  SH_CLK_MSTP32(_str, -1, _parent, _reg, _bit, _flags)
-+
-+static struct clk mstp_clks[] = {
-+	/* See page 52 of Datasheet V0.40: Overview -> Block Diagram */
-+	MSTP("tlb0", &div4_clks[DIV4_I], MSTPCR0, 31, CLK_ENABLE_ON_INIT),
-+	MSTP("ic0", &div4_clks[DIV4_I], MSTPCR0, 30, CLK_ENABLE_ON_INIT),
-+	MSTP("oc0", &div4_clks[DIV4_I], MSTPCR0, 29, CLK_ENABLE_ON_INIT),
-+	MSTP("rsmem0", &div4_clks[DIV4_SH], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
-+	MSTP("xymem0", &div4_clks[DIV4_B], MSTPCR0, 26, CLK_ENABLE_ON_INIT),
-+	MSTP("intc3", &div4_clks[DIV4_P], MSTPCR0, 23, 0),
-+	MSTP("intc0", &div4_clks[DIV4_P], MSTPCR0, 22, 0),
-+	MSTP("dmac0", &div4_clks[DIV4_P], MSTPCR0, 21, 0),
-+	MSTP("sh0", &div4_clks[DIV4_P], MSTPCR0, 20, 0),
-+	MSTP("hudi0", &div4_clks[DIV4_P], MSTPCR0, 19, 0),
-+	MSTP("ubc0", &div4_clks[DIV4_P], MSTPCR0, 17, 0),
-+	MSTP("tmu0", &div4_clks[DIV4_P], MSTPCR0, 15, 0),
-+	MSTP("cmt0", &r_clk, MSTPCR0, 14, 0),
-+	MSTP("rwdt0", &r_clk, MSTPCR0, 13, 0),
-+	MSTP("mfi0", &div4_clks[DIV4_P], MSTPCR0, 11, 0),
-+	MSTP("flctl0", &div4_clks[DIV4_P], MSTPCR0, 10, 0),
-+	MSTP("scif0", &div4_clks[DIV4_P], MSTPCR0, 7, 0),
-+	MSTP("scif1", &div4_clks[DIV4_P], MSTPCR0, 6, 0),
-+	MSTP("scif2", &div4_clks[DIV4_P], MSTPCR0, 5, 0),
-+	MSTP("msiof0", &div4_clks[DIV4_P], MSTPCR0, 2, 0),
-+	MSTP("sbr0", &div4_clks[DIV4_P], MSTPCR0, 1, 0),
-+
-+	MSTP("i2c0", &div4_clks[DIV4_P], MSTPCR1, 9, 0),
-+
-+	MSTP("icb0", &div4_clks[DIV4_P], MSTPCR2, 27, 0),
-+	MSTP("meram0", &div4_clks[DIV4_P], MSTPCR2, 26, 0),
-+	MSTP("dacy1", &div4_clks[DIV4_P], MSTPCR2, 24, 0),
-+	MSTP("dacy0", &div4_clks[DIV4_P], MSTPCR2, 23, 0),
-+	MSTP("tsif0", &div4_clks[DIV4_P], MSTPCR2, 22, 0),
-+	MSTP("sdhi0", &div4_clks[DIV4_P], MSTPCR2, 18, 0),
-+	MSTP("mmcif0", &div4_clks[DIV4_P], MSTPCR2, 17, 0),
-+	MSTP("usbf0", &div4_clks[DIV4_P], MSTPCR2, 11, 0),
-+	MSTP("siu0", &div4_clks[DIV4_B], MSTPCR2, 9, 0),
-+	MSTP("veu1", &div4_clks[DIV4_B], MSTPCR2, 7, CLK_ENABLE_ON_INIT),
-+	MSTP("vou0", &div4_clks[DIV4_B], MSTPCR2, 5, 0),
-+	MSTP("beu0", &div4_clks[DIV4_B], MSTPCR2, 4, 0),
-+	MSTP("ceu0", &div4_clks[DIV4_B], MSTPCR2, 3, 0),
-+	MSTP("veu0", &div4_clks[DIV4_B], MSTPCR2, 2, CLK_ENABLE_ON_INIT),
-+	MSTP("vpu0", &div4_clks[DIV4_B], MSTPCR2, 1, CLK_ENABLE_ON_INIT),
-+	MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
-+};
-+
-+int __init arch_clk_init(void)
-+{
-+	int k, ret = 0;
-+
-+	/* autodetect extal or dll configuration */
-+	if (__raw_readl(PLLCR) & 0x1000)
-+		pll_clk.parent = &dll_clk;
-+	else
-+		pll_clk.parent = &extal_clk;
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+
-+	if (!ret)
-+		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+
-+	if (!ret)
-+		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
-+
-+	return ret;
-+}
---- 0014/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-06-04 13:18:49.000000000 +0900
-@@ -1,7 +1,7 @@
- /*
-  * arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-  *
-- * SH7722 & SH7366 support for the clock framework
-+ * SH7722 support for the clock framework
-  *
-  * Copyright (c) 2006-2007 Nomad Global Solutions Inc
-  * Based on code for sh7343 by Paul Mundt
-@@ -654,46 +654,6 @@ static struct clk sh7722_mstpcr_clocks[]
- 	MSTPCR("vpu0", "bus_clk", 2, 1, CLK_ENABLE_ON_INIT),
- 	MSTPCR("lcdc0", "bus_clk", 2, 0, 0),
- #endif
--#if defined(CONFIG_CPU_SUBTYPE_SH7366)
--	/* See page 52 of Datasheet V0.40: Overview -> Block Diagram */
--	MSTPCR("tlb0", "cpu_clk", 0, 31, 0),
--	MSTPCR("ic0", "cpu_clk", 0, 30, 0),
--	MSTPCR("oc0", "cpu_clk", 0, 29, 0),
--	MSTPCR("rsmem0", "sh_clk", 0, 28, CLK_ENABLE_ON_INIT),
--	MSTPCR("xymem0", "cpu_clk", 0, 26, CLK_ENABLE_ON_INIT),
--	MSTPCR("intc30", "peripheral_clk", 0, 23, 0),
--	MSTPCR("intc0", "peripheral_clk", 0, 22, 0),
--	MSTPCR("dmac0", "bus_clk", 0, 21, 0),
--	MSTPCR("sh0", "sh_clk", 0, 20, 0),
--	MSTPCR("hudi0", "peripheral_clk", 0, 19, 0),
--	MSTPCR("ubc0", "cpu_clk", 0, 17, 0),
--	MSTPCR("tmu0", "peripheral_clk", 0, 15, 0),
--	MSTPCR("cmt0", "r_clk", 0, 14, 0),
--	MSTPCR("rwdt0", "r_clk", 0, 13, 0),
--	MSTPCR("flctl0", "peripheral_clk", 0, 10, 0),
--	MSTPCR("scif0", "peripheral_clk", 0, 7, 0),
--	MSTPCR("scif1", "bus_clk", 0, 6, 0),
--	MSTPCR("scif2", "bus_clk", 0, 5, 0),
--	MSTPCR("msiof0", "peripheral_clk", 0, 2, 0),
--	MSTPCR("sbr0", "peripheral_clk", 0, 1, 0),
--	MSTPCR("i2c0", "peripheral_clk", 1, 9, 0),
--	MSTPCR("icb0", "bus_clk", 2, 27, 0),
--	MSTPCR("meram0", "sh_clk", 2, 26, 0),
--	MSTPCR("dacc0", "peripheral_clk", 2, 24, 0),
--	MSTPCR("dacy0", "peripheral_clk", 2, 23, 0),
--	MSTPCR("tsif0", "bus_clk", 2, 22, 0),
--	MSTPCR("sdhi0", "bus_clk", 2, 18, 0),
--	MSTPCR("mmcif0", "bus_clk", 2, 17, 0),
--	MSTPCR("usb0", "bus_clk", 2, 11, 0),
--	MSTPCR("siu0", "bus_clk", 2, 8, 0),
--	MSTPCR("veu1", "bus_clk", 2, 7, CLK_ENABLE_ON_INIT),
--	MSTPCR("vou0", "bus_clk", 2, 5, 0),
--	MSTPCR("beu0", "bus_clk", 2, 4, 0),
--	MSTPCR("ceu0", "bus_clk", 2, 3, 0),
--	MSTPCR("veu0", "bus_clk", 2, 2, CLK_ENABLE_ON_INIT),
--	MSTPCR("vpu0", "bus_clk", 2, 1, CLK_ENABLE_ON_INIT),
--	MSTPCR("lcdc0", "bus_clk", 2, 0, 0),
--#endif
+ 	/* interrupt groups */
+-	DMAC1A, _2DG, DMAC0A, VIO, RTC,
+-	DMAC1B, DMAC0B, I2C0, I2C1, SDHI0, SDHI1, SPU, MMC,
++	DMAC1A, _2DG, DMAC0A, VIO, USB, RTC,
++	DMAC1B, DMAC0B, I2C0, I2C1, SDHI0, SDHI1, SPU, MMCIF,
  };
  
- static struct clk *sh7722_clocks[] = {
+ static struct intc_vect vectors[] __initdata = {
+@@ -650,25 +650,25 @@ static struct intc_vect vectors[] __initdata = {
+ 	INTC_VECT(_2DG_TRI, 0x780),
+ 	INTC_VECT(_2DG_INI, 0x7A0),
+ 	INTC_VECT(_2DG_CEI, 0x7C0),
+-	INTC_VECT(_2DG_BRK, 0x7E0),
+ 
+ 	INTC_VECT(DMAC0A_DEI0, 0x800),
+ 	INTC_VECT(DMAC0A_DEI1, 0x820),
+ 	INTC_VECT(DMAC0A_DEI2, 0x840),
+ 	INTC_VECT(DMAC0A_DEI3, 0x860),
+ 
+-	INTC_VECT(VIO_CEU20I, 0x880),
+-	INTC_VECT(VIO_BEU20I, 0x8A0),
+-	INTC_VECT(VIO_VEU3F1, 0x8C0),
+-	INTC_VECT(VIO_VOUI, 0x8E0),
++	INTC_VECT(VIO_CEU0, 0x880),
++	INTC_VECT(VIO_BEU0, 0x8A0),
++	INTC_VECT(VIO_VEU1, 0x8C0),
++	INTC_VECT(VIO_VOU,  0x8E0),
+ 
+-	INTC_VECT(SCIFA_SCIFA0, 0x900),
+-	INTC_VECT(VPU_VPUI, 0x980),
+-	INTC_VECT(TPU_TPUI, 0x9A0),
+-	INTC_VECT(CEU21I, 0x9E0),
+-	INTC_VECT(BEU21I, 0xA00),
+-	INTC_VECT(USB_USI0, 0xA20),
+-	INTC_VECT(ATAPI, 0xA60),
++	INTC_VECT(SCIFA3, 0x900),
++	INTC_VECT(VPU,    0x980),
++	INTC_VECT(TPU,    0x9A0),
++	INTC_VECT(CEU1,   0x9E0),
++	INTC_VECT(BEU1,   0xA00),
++	INTC_VECT(USB0,   0xA20),
++	INTC_VECT(USB1,   0xA40),
++	INTC_VECT(ATAPI,  0xA60),
+ 
+ 	INTC_VECT(RTC_ATI, 0xA80),
+ 	INTC_VECT(RTC_PRI, 0xAA0),
+@@ -682,18 +682,18 @@ static struct intc_vect vectors[] __initdata = {
+ 	INTC_VECT(DMAC0B_DEI5, 0xBA0),
+ 	INTC_VECT(DMAC0B_DADERR, 0xBC0),
+ 
+-	INTC_VECT(KEYSC_KEYI, 0xBE0),
++	INTC_VECT(KEYSC,      0xBE0),
+ 	INTC_VECT(SCIF_SCIF0, 0xC00),
+ 	INTC_VECT(SCIF_SCIF1, 0xC20),
+ 	INTC_VECT(SCIF_SCIF2, 0xC40),
+-	INTC_VECT(VEU3F0I, 0xC60),
++	INTC_VECT(VEU0,       0xC60),
+ 	INTC_VECT(MSIOF_MSIOFI0, 0xC80),
+ 	INTC_VECT(MSIOF_MSIOFI1, 0xCA0),
+ 	INTC_VECT(SPU_SPUI0, 0xCC0),
+ 	INTC_VECT(SPU_SPUI1, 0xCE0),
+-	INTC_VECT(SCIFA_SCIFA1, 0xD00),
++	INTC_VECT(SCIFA4,    0xD00),
+ 
+-/*	INTC_VECT(ICB_ICBI, 0xD20), */
++	INTC_VECT(ICB,  0xD20),
+ 	INTC_VECT(ETHI, 0xD60),
+ 
+ 	INTC_VECT(I2C1_ALI, 0xD80),
+@@ -709,30 +709,30 @@ static struct intc_vect vectors[] __initdata = {
+ 	INTC_VECT(SDHI0_SDHII0, 0xE80),
+ 	INTC_VECT(SDHI0_SDHII1, 0xEA0),
+ 	INTC_VECT(SDHI0_SDHII2, 0xEC0),
++	INTC_VECT(SDHI0_SDHII3, 0xEE0),
+ 
+-	INTC_VECT(CMT_CMTI, 0xF00),
+-	INTC_VECT(TSIF_TSIFI, 0xF20),
+-/*	INTC_VECT(ICB_LMBI, 0xF60), */
+-	INTC_VECT(FSI_FSI, 0xF80),
+-	INTC_VECT(SCIFA_SCIFA2, 0xFA0),
++	INTC_VECT(CMT,    0xF00),
++	INTC_VECT(TSIF,   0xF20),
++	INTC_VECT(FSI,    0xF80),
++	INTC_VECT(SCIFA5, 0xFA0),
+ 
+ 	INTC_VECT(TMU0_TUNI0, 0x400),
+ 	INTC_VECT(TMU0_TUNI1, 0x420),
+ 	INTC_VECT(TMU0_TUNI2, 0x440),
+ 
+-	INTC_VECT(IRDA_IRDAI, 0x480),
++	INTC_VECT(IRDA,    0x480),
+ 
+ 	INTC_VECT(SDHI1_SDHII0, 0x4E0),
+ 	INTC_VECT(SDHI1_SDHII1, 0x500),
+ 	INTC_VECT(SDHI1_SDHII2, 0x520),
+ 
+-	INTC_VECT(JPU_JPUI, 0x560),
++	INTC_VECT(JPU, 0x560),
++	INTC_VECT(_2DDMAC, 0x4A0),
+ 
+-	INTC_VECT(MMC_MMCI0, 0x580),
+-	INTC_VECT(MMC_MMCI1, 0x5A0),
+-	INTC_VECT(MMC_MMCI2, 0x5C0),
++	INTC_VECT(MMC_MMC2I, 0x5A0),
++	INTC_VECT(MMC_MMC3I, 0x5C0),
+ 
+-	INTC_VECT(LCDC_LCDCI, 0xF40),
++	INTC_VECT(LCDC, 0xF40),
+ 
+ 	INTC_VECT(TMU1_TUNI0, 0x920),
+ 	INTC_VECT(TMU1_TUNI1, 0x940),
+@@ -741,86 +741,79 @@ static struct intc_vect vectors[] __initdata = {
+ 
+ static struct intc_group groups[] __initdata = {
+ 	INTC_GROUP(DMAC1A, DMAC1A_DEI0, DMAC1A_DEI1, DMAC1A_DEI2, DMAC1A_DEI3),
+-	INTC_GROUP(_2DG, _2DG_TRI, _2DG_INI, _2DG_CEI, _2DG_BRK),
++	INTC_GROUP(_2DG, _2DG_TRI, _2DG_INI, _2DG_CEI),
+ 	INTC_GROUP(DMAC0A, DMAC0A_DEI0, DMAC0A_DEI1, DMAC0A_DEI2, DMAC0A_DEI3),
+-	INTC_GROUP(VIO, VIO_CEU20I, VIO_BEU20I, VIO_VEU3F1, VIO_VOUI),
++	INTC_GROUP(VIO, VIO_CEU0, VIO_BEU0, VIO_VEU1, VIO_VOU),
++	INTC_GROUP(USB, USB0, USB1),
+ 	INTC_GROUP(RTC, RTC_ATI, RTC_PRI, RTC_CUI),
+ 	INTC_GROUP(DMAC1B, DMAC1B_DEI4, DMAC1B_DEI5, DMAC1B_DADERR),
+ 	INTC_GROUP(DMAC0B, DMAC0B_DEI4, DMAC0B_DEI5, DMAC0B_DADERR),
+ 	INTC_GROUP(I2C0, I2C0_ALI, I2C0_TACKI, I2C0_WAITI, I2C0_DTEI),
+ 	INTC_GROUP(I2C1, I2C1_ALI, I2C1_TACKI, I2C1_WAITI, I2C1_DTEI),
+-	INTC_GROUP(SDHI0, SDHI0_SDHII0, SDHI0_SDHII1, SDHI0_SDHII2),
++	INTC_GROUP(SDHI0, SDHI0_SDHII0, SDHI0_SDHII1, SDHI0_SDHII2, SDHI0_SDHII3),
+ 	INTC_GROUP(SDHI1, SDHI1_SDHII0, SDHI1_SDHII1, SDHI1_SDHII2),
+ 	INTC_GROUP(SPU, SPU_SPUI0, SPU_SPUI1),
+-	INTC_GROUP(MMC, MMC_MMCI0, MMC_MMCI1, MMC_MMCI2),
++	INTC_GROUP(MMCIF, MMC_MMC2I, MMC_MMC3I),
+ };
+ 
+-/* FIXMEEEEEEEEEEEEEEEEEEE !!!!! */
+-/* very bad manual !! */
+ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	{ 0xa4080080, 0xa40800c0, 8, /* IMR0 / IMCR0 */
+ 	  { 0, TMU1_TUNI2, TMU1_TUNI1, TMU1_TUNI0,
+-	    /*SDHII3?*/0, SDHI1_SDHII2, SDHI1_SDHII1, SDHI1_SDHII0 } },
++	    0, SDHI1_SDHII2, SDHI1_SDHII1, SDHI1_SDHII0 } },
+ 	{ 0xa4080084, 0xa40800c4, 8, /* IMR1 / IMCR1 */
+-	  { VIO_VOUI, VIO_VEU3F1, VIO_BEU20I, VIO_CEU20I,
++	  { VIO_VOU, VIO_VEU1, VIO_BEU0, VIO_CEU0,
+ 	    DMAC0A_DEI3, DMAC0A_DEI2, DMAC0A_DEI1, DMAC0A_DEI0 } },
+ 	{ 0xa4080088, 0xa40800c8, 8, /* IMR2 / IMCR2 */
+-	  { 0, 0, 0, VPU_VPUI, ATAPI, ETHI, 0, /*SCIFA3*/SCIFA_SCIFA0 } },
++	  { 0, 0, 0, VPU, ATAPI, ETHI, 0, SCIFA3 } },
+ 	{ 0xa408008c, 0xa40800cc, 8, /* IMR3 / IMCR3 */
+ 	  { DMAC1A_DEI3, DMAC1A_DEI2, DMAC1A_DEI1, DMAC1A_DEI0,
+-	    SPU_SPUI1, SPU_SPUI0, BEU21I, IRDA_IRDAI } },
++	    SPU_SPUI1, SPU_SPUI0, BEU1, IRDA } },
+ 	{ 0xa4080090, 0xa40800d0, 8, /* IMR4 / IMCR4 */
+ 	  { 0, TMU0_TUNI2, TMU0_TUNI1, TMU0_TUNI0,
+-	    JPU_JPUI, 0, 0, LCDC_LCDCI } },
++	    JPU, 0, 0, LCDC } },
+ 	{ 0xa4080094, 0xa40800d4, 8, /* IMR5 / IMCR5 */
+-	  { KEYSC_KEYI, DMAC0B_DADERR, DMAC0B_DEI5, DMAC0B_DEI4,
+-	    VEU3F0I, SCIF_SCIF2, SCIF_SCIF1, SCIF_SCIF0 } },
++	  { KEYSC, DMAC0B_DADERR, DMAC0B_DEI5, DMAC0B_DEI4,
++	    VEU0, SCIF_SCIF2, SCIF_SCIF1, SCIF_SCIF0 } },
+ 	{ 0xa4080098, 0xa40800d8, 8, /* IMR6 / IMCR6 */
+-	  { 0, 0, /*ICB_ICBI*/0, /*SCIFA4*/SCIFA_SCIFA1,
+-	    CEU21I, 0, MSIOF_MSIOFI1, MSIOF_MSIOFI0 } },
++	  { 0, 0, ICB, SCIFA4,
++	    CEU1, 0, MSIOF_MSIOFI1, MSIOF_MSIOFI0 } },
+ 	{ 0xa408009c, 0xa40800dc, 8, /* IMR7 / IMCR7 */
+ 	  { I2C0_DTEI, I2C0_WAITI, I2C0_TACKI, I2C0_ALI,
+ 	    I2C1_DTEI, I2C1_WAITI, I2C1_TACKI, I2C1_ALI } },
+ 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
+-	  { /*SDHII3*/0, SDHI0_SDHII2, SDHI0_SDHII1, SDHI0_SDHII0,
+-	    0, 0, /*SCIFA5*/SCIFA_SCIFA2, FSI_FSI } },
++	  { SDHI0_SDHII3, SDHI0_SDHII2, SDHI0_SDHII1, SDHI0_SDHII0,
++	    0, 0, SCIFA5, FSI } },
+ 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
+-	  { 0, 0, 0, CMT_CMTI, 0, /*USB1*/0, USB_USI0, 0 } },
++	  { 0, 0, 0, CMT, 0, USB1, USB0, 0 } },
+ 	{ 0xa40800a8, 0xa40800e8, 8, /* IMR10 / IMCR10 */
+ 	  { 0, DMAC1B_DADERR, DMAC1B_DEI5, DMAC1B_DEI4,
+-	    0, RTC_ATI, RTC_PRI, RTC_CUI } },
++	    0, RTC_CUI, RTC_PRI, RTC_ATI } },
+ 	{ 0xa40800ac, 0xa40800ec, 8, /* IMR11 / IMCR11 */
+-	  { _2DG_BRK, _2DG_CEI, _2DG_INI, _2DG_TRI,
+-	    0, TPU_TPUI, /*ICB_LMBI*/0, TSIF_TSIFI } },
++	  { 0, _2DG_CEI, _2DG_INI, _2DG_TRI,
++	    0, TPU, 0, TSIF } },
+ 	{ 0xa40800b0, 0xa40800f0, 8, /* IMR12 / IMCR12 */
+-	  { 0, 0, 0, 0, 0, 0, 0, 0/*2DDMAC*/ } },
++	  { 0, 0, MMC_MMC3I, MMC_MMC2I, 0, 0, 0, _2DDMAC } },
+ 	{ 0xa4140044, 0xa4140064, 8, /* INTMSK00 / INTMSKCLR00 */
+ 	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
+ };
+ 
+ static struct intc_prio_reg prio_registers[] __initdata = {
+ 	{ 0xa4080000, 0, 16, 4, /* IPRA */ { TMU0_TUNI0, TMU0_TUNI1,
+-					     TMU0_TUNI2, IRDA_IRDAI } },
+-	{ 0xa4080004, 0, 16, 4, /* IPRB */ { JPU_JPUI, LCDC_LCDCI,
+-					     DMAC1A, BEU21I } },
++					     TMU0_TUNI2, IRDA } },
++	{ 0xa4080004, 0, 16, 4, /* IPRB */ { JPU, LCDC, DMAC1A, BEU1 } },
+ 	{ 0xa4080008, 0, 16, 4, /* IPRC */ { TMU1_TUNI0, TMU1_TUNI1,
+ 					     TMU1_TUNI2, SPU } },
+-	{ 0xa408000c, 0, 16, 4, /* IPRD */ { 0, MMC, 0, ATAPI } },
+-	{ 0xa4080010, 0, 16, 4, /* IPRE */
+-	  { DMAC0A, /*BEU?VEU?*/VIO, /*SCIFA3*/SCIFA_SCIFA0, /*VPU5F*/
+-	    VPU_VPUI } },
+-	{ 0xa4080014, 0, 16, 4, /* IPRF */ { KEYSC_KEYI, DMAC0B,
+-					     USB_USI0, CMT_CMTI } },
++	{ 0xa408000c, 0, 16, 4, /* IPRD */ { 0, MMCIF, 0, ATAPI } },
++	{ 0xa4080010, 0, 16, 4, /* IPRE */ { DMAC0A, VIO, SCIFA3, VPU } },
++	{ 0xa4080014, 0, 16, 4, /* IPRF */ { KEYSC, DMAC0B, USB, CMT } },
+ 	{ 0xa4080018, 0, 16, 4, /* IPRG */ { SCIF_SCIF0, SCIF_SCIF1,
+-					     SCIF_SCIF2, VEU3F0I } },
++					     SCIF_SCIF2, VEU0 } },
+ 	{ 0xa408001c, 0, 16, 4, /* IPRH */ { MSIOF_MSIOFI0, MSIOF_MSIOFI1,
+ 					     I2C1, I2C0 } },
+-	{ 0xa4080020, 0, 16, 4, /* IPRI */ { /*SCIFA4*/SCIFA_SCIFA1, /*ICB*/0,
+-					     TSIF_TSIFI, _2DG/*ICB?*/ } },
+-	{ 0xa4080024, 0, 16, 4, /* IPRJ */ { CEU21I, ETHI, FSI_FSI, SDHI1 } },
+-	{ 0xa4080028, 0, 16, 4, /* IPRK */ { RTC, DMAC1B, /*ICB?*/0, SDHI0 } },
+-	{ 0xa408002c, 0, 16, 4, /* IPRL */ { /*SCIFA5*/SCIFA_SCIFA2, 0,
+-					     TPU_TPUI, /*2DDMAC*/0 } },
++	{ 0xa4080020, 0, 16, 4, /* IPRI */ { SCIFA4, ICB, TSIF, _2DG } },
++	{ 0xa4080024, 0, 16, 4, /* IPRJ */ { CEU1, ETHI, FSI, SDHI1 } },
++	{ 0xa4080028, 0, 16, 4, /* IPRK */ { RTC, DMAC1B, 0, SDHI0 } },
++	{ 0xa408002c, 0, 16, 4, /* IPRL */ { SCIFA5, 0, TPU, _2DDMAC } },
+ 	{ 0xa4140010, 0, 32, 4, /* INTPRI00 */
+ 	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
+ };
+-- 
+1.6.0.4
+
