@@ -1,49 +1,41 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Fri, 05 Jun 2009 12:42:03 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Jun 2009 07:58:09 +0000
 Subject: Re: Hi all,long silence from me
-Message-Id: <200906051442.03765.fabio.giovagnini@aurion-tech.com>
+Message-Id: <aec7e5c30906080058j5e6b6ad3kf4241ec08f47a629@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <200906041501.25421.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <200906041501.25421.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus.
-I have downloaded the source code from your website.
-I'm tring to build the toolchain step by step because I'd like to have the =
+Hi Fabio,
 
-sh2a instruction set support but also the smallest size of applications; in=
-=20
-fact I'm interested at this step to the toolchain for compiling my own=20
-application framework being not an OS at all. I'm not interested to run=20
-linux-sh at this step.
-So I'd like to build the toolchain with newlib support or at most uclibc=20
-support.
-Wher could I find the any docs regarding these aspectcs?
-
-Thanks a lot
-
-Alle 15:09, gioved=EC 4 giugno 2009, Magnus Damm ha scritto:
-> On Thu, Jun 4, 2009 at 10:01 PM, Fabio Giovagnini
+On Fri, Jun 5, 2009 at 9:42 PM, Fabio
+Giovagnini<fabio.giovagnini@aurion-tech.com> wrote:
+> I have downloaded the source code from your website.
+> I'm tring to build the toolchain step by step because I'd like to have the
+> sh2a instruction set support but also the smallest size of applications; in
+> fact I'm interested at this step to the toolchain for compiling my own
+> application framework being not an OS at all. I'm not interested to run
+> linux-sh at this step.
+> So I'd like to build the toolchain with newlib support or at most uclibc
+> support.
+> Wher could I find the any docs regarding these aspectcs?
 >
-> <fabio.giovagnini@aurion-tech.com> wrote:
-> > Which could be the best toolchain version?
-> > I'm at gcc 3.2.3 for the sh2 cores.
-> > Any suggestion?
->
-> http://www.codesourcery.com/sgpp/lite/superh/
->
-> / magnus
+> Thanks a lot
 
---=20
-Fabio Giovagnini
+I'm afraid that I have not seen any documentation in this area. You
+are of course free to browse the source for the codesourcery/kpit/ST
+tools and cherry pick patches, but I don't recommend it if you value
+your time. =)
 
-Aurion s.r.l.
-Tel. +39.335.8350919
+I spent a few days a year or two ago trying to cherry pick patches for
+sh4al-dsp and integrate in buildroot and/or crosstool, and at that
+point all I ended up with was a big mess. Things were far from good
+upstream back then, hopefully it's better today.
 
-www.aurion-tech.com
+Good luck! =)
 
-account telefono VoIP skype (www.skype.com):
-aurion.giovagnini
+/ magnus
