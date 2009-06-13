@@ -1,35 +1,43 @@
-From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Thu, 11 Jun 2009 01:37:05 +0000
-Subject: Re: [PATCH] sh: fix clock for sh7785
-Message-Id: <4A305FC1.3080300@renesas.com>
+From: Huang Weiyi <weiyi.huang@gmail.com>
+Date: Sat, 13 Jun 2009 12:21:11 +0000
+Subject: [PATCH 1/3] sh: pci: remove duplicated #include's
+Message-Id: <1244895671-2840-1-git-send-email-weiyi.huang@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4A2F461A.8080506@renesas.com>
-In-Reply-To: <4A2F461A.8080506@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Magnus Damm wrote:
-> On Wed, Jun 10, 2009 at 2:35 PM, Yoshihiro
-> Shimoda<shimoda.yoshihiro@renesas.com> wrote:
->> Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
->> ---
->>  Could you apply this patch to linux-2.6.30?
->>  If impossible, this patch is not necessary because clock-sh7785.c will modify
->>  in linux-2.6.31.
-> 
-> This patch looks like a workaround for the issue solved by this patch:
-> 
-> http://patchwork.kernel.org/patch/22299/
-> 
-> Or am I misunderstanding?
+Signed-off-by: Huang Weiyi <weiyi.huang@gmail.com>
+---
+ arch/sh/boards/mach-se/7780/irq.c   |    1 -
+ arch/sh/drivers/pci/ops-dreamcast.c |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
 
-Thank you for your comment.
+diff --git a/arch/sh/boards/mach-se/7780/irq.c b/arch/sh/boards/mach-se/7780/irq.c
+index b8d43b6..121744c 100644
+--- a/arch/sh/boards/mach-se/7780/irq.c
++++ b/arch/sh/boards/mach-se/7780/irq.c
+@@ -12,7 +12,6 @@
+ #include <linux/init.h>
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+-#include <linux/irq.h>
+ #include <linux/io.h>
+ #include <mach-se/mach/se7780.h>
+ 
+diff --git a/arch/sh/drivers/pci/ops-dreamcast.c b/arch/sh/drivers/pci/ops-dreamcast.c
+index e83d0d3..16e0a1b 100644
+--- a/arch/sh/drivers/pci/ops-dreamcast.c
++++ b/arch/sh/drivers/pci/ops-dreamcast.c
+@@ -18,7 +18,6 @@
+ #include <linux/pci.h>
+ #include <linux/module.h>
+ #include <linux/io.h>
+-#include <linux/irq.h>
+ #include <mach/pci.h>
+ 
+ /*
+-- 
+1.6.1.2
 
-Because the patch was due to be applied linux-2.6.31,
-a problem remains linux-2.6.30. However since linux-2.6.30
-had already been released, my patch became unnecessary :)
-
-Thanks,
-Yoshihiro Shimoda
