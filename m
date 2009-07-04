@@ -1,59 +1,49 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2009 07:01:36 +0000
-Subject: [PATCH] sh: clean up MSTPCRn register definitions
-Message-Id: <20090731070136.28104.85192.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 04 Jul 2009 15:40:15 +0000
+Subject: Re: [PATCH] sh: hwblk base implementation
+Message-Id: <20090704154014.GE9933@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Fri, Jul 03, 2009 at 07:08:05PM +0900, Magnus Damm wrote:
+> This patch is the hwblk base implementation, containing
+> structures and shared functions dealing with hardware blocks.
+> 
+> A each processor model should provide a list of hwblks and 
+> describe which module stop bit that is associated with each
+> hwblck and how the hwblks are grouped together into areas.
+> 
+> The shared code keeps track of the usage count for each
+> hwblk and the areas. Fallback implementations for processor
+> specific code are also kept as weak symbols.
+> 
+> The clock framework, the runtime pm code and cpuidle will
+> all tie into this hwblk implementation.
 
-This patch removes the unused MSTPCRn register definitions
-from the SuperH Mobile code for sh7722, sh7723 and sh7724.
+On Fri, Jul 03, 2009 at 07:15:25PM +0900, Magnus Damm wrote:
+> This patch contains the sh7722 specific hwblk implementation.
+> 
+> Hwblk ids are added to the processor specific header file,
+> module stop bits and areas are kept track of as hwblks,
+> clocks are converted to make use of the shared hwblk code.
+> Code to determine allowed sleep modes is also added.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Fri, Jul 03, 2009 at 07:28:00PM +0900, Magnus Damm wrote:
+> This patch adds cpuidle support for SuperH Mobile.
+> 
+> The sleep mode selected by cpuidle is compared with
+> the mode selected by the hwblk sleep code and the
+> best allowed mode is entered.
+> 
+> At this point "Sleep mode" and "Sleep mode + SF" are
+> supported. This code can easily be extended to support
+> "Software suspend mode", but the assembly code must
+> first be updated to avoid loosing interrupts.
+> 
+> Also, update the code to only copy the assembly snippet
+> into internal memory once at bootup.
 
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |    3 ---
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    3 ---
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    3 ---
- 3 files changed, 9 deletions(-)
-
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-07-31 15:04:53.000000000 +0900
-@@ -32,9 +32,6 @@
- #define SCLKBCR		0xa415000c
- #define IRDACLKCR	0xa4150018
- #define PLLCR		0xa4150024
--#define MSTPCR0		0xa4150030
--#define MSTPCR1		0xa4150034
--#define MSTPCR2		0xa4150038
- #define DLLFRQ		0xa4150050
- 
- /* Fixed 32 KHz root clock for RTC and Power Management purposes */
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2009-07-31 15:04:58.000000000 +0900
-@@ -32,9 +32,6 @@
- #define SCLKBCR		0xa415000c
- #define IRDACLKCR	0xa4150018
- #define PLLCR		0xa4150024
--#define MSTPCR0		0xa4150030
--#define MSTPCR1		0xa4150034
--#define MSTPCR2		0xa4150038
- #define DLLFRQ		0xa4150050
- 
- /* Fixed 32 KHz root clock for RTC and Power Management purposes */
---- 0003/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2009-07-31 15:05:04.000000000 +0900
-@@ -33,9 +33,6 @@
- #define FCLKBCR		0xa415000c
- #define IRDACLKCR	0xa4150018
- #define PLLCR		0xa4150024
--#define MSTPCR0		0xa4150030
--#define MSTPCR1		0xa4150034
--#define MSTPCR2		0xa4150038
- #define SPUCLKCR	0xa415003c
- #define FLLFRQ		0xa4150050
- #define LSTATS		0xa4150060
+All applied, thanks.
