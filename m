@@ -1,38 +1,43 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 07 Jul 2009 20:46:01 +0000
-Subject: [GIT PULL] sh updates for 2.6.31-rc3
-Message-Id: <20090707204600.GA24726@linux-sh.org>
+From: SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+Date: Tue, 07 Jul 2009 05:32:07 +0000
+Subject: [PATCH] fix sci interrupt handler
+Message-Id: <4.2.0.58.J.20090707142727.03937f10@router.itonet.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+It seems that interrupt handler in sh-sci.c does not work
+for SCI.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.31
+Signed-off-by: SUGIOKA Toshinobu <sugioka@itonet.co.jp>
 
-Which contains:
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 12bd646..8e2feb5 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -716,16 +716,16 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	err_enabled = scr_status & (SCI_CTRL_FLAGS_REIE | SCI_CTRL_FLAGS_RIE);
+ 
+ 	/* Tx Interrupt */
+-	if ((ssr_status & 0x0020) && (scr_status & SCI_CTRL_FLAGS_TIE))
++	if ((ssr_status & SCxSR_TDxE(port)) && (scr_status & SCI_CTRL_FLAGS_TIE))
+ 		ret = sci_tx_interrupt(irq, ptr);
+ 	/* Rx Interrupt */
+-	if ((ssr_status & 0x0002) && (scr_status & SCI_CTRL_FLAGS_RIE))
++	if ((ssr_status & SCxSR_RDxF(port)) && (scr_status & SCI_CTRL_FLAGS_RIE))
+ 		ret = sci_rx_interrupt(irq, ptr);
+ 	/* Error Interrupt */
+-	if ((ssr_status & 0x0080) && err_enabled)
++	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
+ 		ret = sci_er_interrupt(irq, ptr);
+ 	/* Break Interrupt */
+-	if ((ssr_status & 0x0010) && err_enabled)
++	if ((ssr_status & SCxSR_BRK(port)) && err_enabled)
+ 		ret = sci_br_interrupt(irq, ptr);
+ 
+ 	return ret;
 
-Magnus Damm (3):
-      sh-sci: update receive error handling for muxed irqs
-      usb: allow sh7724 to enable on-chip r8a66597
-      sh: add r8a66597 usb0 host to the se7724 board
+SUGIOKA Toshinobu
 
-Paul Mundt (4):
-      sh: define PERF_COUNTER_INDEX_OFFSET.
-      video: sh_mobile_lcdcfb: Convert to framebuffer_alloc().
-      video: hitfb: Convert to framebuffer_alloc().
-      video: hitfb: Move over to dev_pm_ops.
-
-SUGIOKA Toshinobu (1):
-      serial: sh-sci: fix sci interrupt handler
-
- arch/sh/boards/mach-se/7724/setup.c |   38 ++++++++++++++++++++
- arch/sh/include/asm/perf_counter.h  |    2 +
- drivers/serial/sh-sci.c             |   11 +++---
- drivers/usb/host/Kconfig            |    4 +-
- drivers/video/hitfb.c               |   66 +++++++++++++++++++++++-----------
- drivers/video/sh_mobile_lcdcfb.c    |   40 +++++++++++++--------
- 6 files changed, 116 insertions(+), 45 deletions(-)
