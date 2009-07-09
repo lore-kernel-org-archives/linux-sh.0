@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Jul 2009 15:06:15 +0000
-Subject: [PATCH] sh: kfr2r09 romImage support V2
-Message-Id: <20090729150615.4622.34405.sendpatchset@rx1.opensource.se>
+Date: Thu, 09 Jul 2009 15:19:53 +0000
+Subject: [PATCH 03/06] sh: Runtime PM for SuperH Mobile
+Message-Id: <20090709151953.8385.89482.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,234 +10,299 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch is romImage support for the kfr2r09 board V2.
+This patch contains the processor independent part of the
+SuperH Mobile Runtime PM prototype.
 
-The partner-jet-setup.txt file is converted into assembly code
-which becomes the first code to execute from the reset vector.
+The patch adds fields for Runtime PM to the architecture
+specific part of struct platform_device. The most important
+field is hw_blk_id which contains an id for the hardware
+block within the SoC.
 
-The file partner-jet-setup.txt can also be used to setup
-the hardware using a JTAG debugger so booting from RAM can
-be done without burning the code to flash.
+This hwblk id is used by the SuperH specific Runtime PM
+callbacks for the platform bus. Multiple devices are allowed
+to use the same hwblk id.
+
+The SuperH specific Runtime PM platform bus callbacks
+platform_pm_runtime_suspend() and platform_pm_runtime_resume()
+control clocks and adds/removes the platform device to a list
+of platform devices that has had their bus suspend callback
+executed.
+
+The driver Runtime PM suspend callbacks get invoked when
+cpuidle discovers that all devices in the power domain
+has had their bus suspend callback executed. When all devices
+have been suspended using their driver Runtime PM suspend
+callbacks, cpuidle is allowed to enter the deepest mode
+which involves turning off power to the domain.
+
+Please note that the code is very experimental. Alan kindly
+suggested a cleaner way to do this using the idle callback,
+but for that to work I need to rearrange all platform devices.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/include/mach-kfr2r09/partner-jet-setup.txt |  134 ++++++++++++++++++++
- arch/sh/include/mach-kfr2r09/romimage.h            |   75 +++++++++++
- 2 files changed, 209 insertions(+)
+ arch/sh/include/asm/device.h             |   16 ++
+ arch/sh/include/asm/hwblk.h              |    4 
+ arch/sh/kernel/cpu/shmobile/Makefile     |    1 
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c |  206 ++++++++++++++++++++++++++++++
+ 4 files changed, 225 insertions(+), 2 deletions(-)
 
+--- 0001/arch/sh/include/asm/device.h
++++ work/arch/sh/include/asm/device.h	2009-07-09 18:41:09.000000000 +0900
+@@ -3,7 +3,9 @@
+  *
+  * This file is released under the GPLv2
+  */
+-#include <asm-generic/device.h>
++
++struct dev_archdata {
++};
+ 
+ struct platform_device;
+ /* allocate contiguous memory chunk and fill in struct resource */
+@@ -12,3 +14,15 @@ int platform_resource_setup_memory(struc
+ 
+ void plat_early_device_setup(void);
+ 
++#define PDEV_ARCHDATA_FLAG_INIT 0
++#define PDEV_ARCHDATA_FLAG_LIST 1
++#define PDEV_ARCHDATA_FLAG_SUSP 2
++
++struct pdev_archdata {
++#ifdef CONFIG_ARCH_SHMOBILE
++	int hw_blk_id;
++	unsigned long flags;
++	struct list_head entry;
++	struct work_struct work;
++#endif
++};
+--- 0005/arch/sh/include/asm/hwblk.h
++++ work/arch/sh/include/asm/hwblk.h	2009-07-09 18:42:49.000000000 +0900
+@@ -5,7 +5,9 @@
+ #include <asm/io.h>
+ 
+ #define HWBLK_CNT_USAGE 0
+-#define HWBLK_CNT_NR 1
++#define HWBLK_CNT_IDLE 1
++#define HWBLK_CNT_DEVICES 2
++#define HWBLK_CNT_NR 3
+ 
+ #define HWBLK_AREA_FLAG_PARENT (1 << 0) /* valid parent */
+ 
+--- 0001/arch/sh/kernel/cpu/shmobile/Makefile
++++ work/arch/sh/kernel/cpu/shmobile/Makefile	2009-07-09 18:41:12.000000000 +0900
+@@ -5,3 +5,4 @@
+ # Power Management & Sleep mode
+ obj-$(CONFIG_PM)	+= pm.o sleep.o
+ obj-$(CONFIG_CPU_IDLE)	+= cpuidle.o
++obj-$(CONFIG_PM_RUNTIME)	+= pm_runtime.o
 --- /dev/null
-+++ work/arch/sh/include/mach-kfr2r09/partner-jet-setup.txt	2009-07-29 23:04:28.000000000 +0900
-@@ -0,0 +1,134 @@
-+LIST "partner-jet-setup.txt - 20090729 Magnus Damm"
-+LIST "set up enough of the kfr2r09 hardware to boot the kernel"
-+
-+LIST "zImage (RAM boot)"
-+LIST "This script can be used to boot the kernel from RAM via JTAG:"
-+LIST "> < partner-jet-setup.txt"
-+LIST "> RD zImage, 0xa8800000"
-+LIST "> G=0xa8800000"
-+
-+LIST "romImage (Flash boot)"
-+LIST "Use the following command to burn the zImage to flash via JTAG:"
-+LIST "> RD romImage, 0"
-+
-+LIST "--------------------------------"
-+
-+LIST "disable watchdog"
-+EW 0xa4520004, 0xa507
-+
-+LIST "select mode for cs5 + cs6"
-+ED 0xff800020, 0xa5a50001
-+ED 0xfec10000, 0x0000001b
-+
-+LIST "setup clocks"
-+ED 0xa4150004, 0x00000050
-+ED 0xa4150000, 0x91053508
-+WAIT 1
-+ED 0xa4150024, 0x00005000
-+
-+LIST "setup pins"
-+EB 0xa4050120, 0x00
-+EB 0xa4050122, 0x00
-+EB 0xa4050124, 0x00
-+EB 0xa4050126, 0x00
-+EB 0xa4050128, 0xA0
-+EB 0xa405012A, 0x10
-+EB 0xa405012C, 0x00
-+EB 0xa405012E, 0x00
-+EB 0xa4050130, 0x00
-+EB 0xa4050132, 0x00
-+EB 0xa4050134, 0x01
-+EB 0xa4050136, 0x40
-+EB 0xa4050138, 0x00
-+EB 0xa405013A, 0x00
-+EB 0xa405013C, 0x00
-+EB 0xa405013E, 0x20
-+EB 0xa4050160, 0x00
-+EB 0xa4050162, 0x40
-+EB 0xa4050164, 0x03
-+EB 0xa4050166, 0x00
-+EB 0xa4050168, 0x00
-+EB 0xa405016A, 0x00
-+EB 0xa405016C, 0x00
-+
-+EW 0xa405014E, 0x5660
-+EW 0xa4050150, 0x0145
-+EW 0xa4050152, 0x1550
-+EW 0xa4050154, 0x0200
-+EW 0xa4050156, 0x0040
-+
-+EW 0xa4050158, 0x0000
-+EW 0xa405015a, 0x0000
-+EW 0xa405015c, 0x0000
-+EW 0xa405015e, 0x0000
-+
-+EW 0xa4050180, 0x0000
-+EW 0xa4050182, 0x8002
-+EW 0xa4050184, 0x0000
-+
-+EW 0xa405018a, 0x9991
-+EW 0xa405018c, 0x8011
-+EW 0xa405018e, 0x9550
-+
-+EW 0xa4050100, 0x0000
-+EW 0xa4050102, 0x5540
-+EW 0xa4050104, 0x0000
-+EW 0xa4050106, 0x0000
-+EW 0xa4050108, 0x4550
-+EW 0xa405010a, 0x0130
-+EW 0xa405010c, 0x0555
-+EW 0xa405010e, 0x0000
-+EW 0xa4050110, 0x0000
-+EW 0xa4050112, 0xAAA8
-+EW 0xa4050114, 0x8305
-+EW 0xa4050116, 0x10F0
-+EW 0xa4050118, 0x0F50
-+EW 0xa405011a, 0x0000
-+EW 0xa405011c, 0x0000
-+EW 0xa405011e, 0x0555
-+EW 0xa4050140, 0x0000
-+EW 0xa4050142, 0x5141
-+EW 0xa4050144, 0x5005
-+EW 0xa4050146, 0xAAA9
-+EW 0xa4050148, 0xFAA9
-+EW 0xa405014a, 0x3000
-+EW 0xa405014c, 0x0000
-+
-+LIST "setup sdram"
-+ED 0xFD000108, 0x40000301
-+ED 0xFD000020, 0x011B0002
-+ED 0xFD000030, 0x03060E02
-+ED 0xFD000034, 0x01020102
-+ED 0xFD000038, 0x01090406
-+ED 0xFD000008, 0x00000004
-+ED 0xFD000040, 0x00000001
-+ED 0xFD000040, 0x00000000
-+ED 0xFD000018, 0x00000001
-+
-+WAIT 1
-+
-+ED 0xFD000014, 0x00000002
-+ED 0xFD000060, 0x00000032
-+ED 0xFD000060, 0x00020000
-+ED 0xFD000014, 0x00000004
-+ED 0xFD000014, 0x00000004
-+ED 0xFD000010, 0x00000001
-+ED 0xFD000044, 0x000004AF
-+ED 0xFD000048, 0x20CF0037
-+
-+LIST "read 16 bytes from sdram"
-+DD 0xa8000000, 0xa8000000, 1
-+DD 0xa8000004, 0xa8000004, 1
-+DD 0xa8000008, 0xa8000008, 1
-+DD 0xa800000c, 0xa800000c, 1
-+
-+ED 0xFD000014, 0x00000002
-+ED 0xFD000014, 0x00000004
-+ED 0xFD000108, 0x40000300
-+ED 0xFD000040, 0x00010000
-+
-+LIST "write to internal ram"
-+ED 0xfd8007fc, 0
-+
-+LIST "setup cache"
-+ED 0xff00001c, 0x0000090b
---- /dev/null
-+++ work/arch/sh/include/mach-kfr2r09/romimage.h	2009-07-29 23:05:06.000000000 +0900
-@@ -0,0 +1,75 @@
-+/* kfr2r09 board specific boot code:
-+ * converts the "partner-jet-script.txt" script into assembly
-+ * the assembly code is the first code to be executed in the romImage
++++ work/arch/sh/kernel/cpu/shmobile/pm_runtime.c	2009-07-09 18:41:12.000000000 +0900
+@@ -0,0 +1,206 @@
++/*
++ * arch/sh/kernel/cpu/shmobile/pm_runtime.c
++ *
++ * Runtime PM support code for SuperH Mobile
++ *
++ *  Copyright (C) 2009 Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
 + */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/pm_runtime.h>
++#include <linux/platform_device.h>
++#include <asm/hwblk.h>
 +
-+/* The LIST command is used to include comments in the script */
-+.macro	LIST comment
-+.endm
++static DEFINE_SPINLOCK(hwblk_idle_lock);
++static LIST_HEAD(hwblk_idle_list);
 +
-+/* The ED command is used to write a 32-bit word */
-+.macro  ED, addr, data
-+        mov.l 1f ,r1
-+        mov.l 2f ,r0
-+        mov.l r0, @r1
-+	bra 3f
-+	 nop
-+	.align 2
-+1:	.long \addr
-+2:	.long \data
-+3:
-+.endm
++extern struct hwblk_info *hwblk_info;
 +
-+/* The EW command is used to write a 16-bit word */
-+.macro  EW, addr, data
-+        mov.l 1f ,r1
-+        mov.l 2f ,r0
-+        mov.w r0, @r1
-+	bra 3f
-+	 nop
-+	.align 2
-+1:	.long \addr
-+2:	.long \data
-+3:
-+.endm
++static void platform_pm_runtime_work(struct work_struct *work)
++{
++	struct platform_device *pdev = container_of(work,
++						    struct platform_device,
++						    archdata.work);
++	struct device *dev = &pdev->dev;
++	struct dev_pm_ops *dev_pm_ops = NULL;
++	unsigned long flags;
++	int hwblk = pdev->archdata.hw_blk_id;
++	int ret = 0;
 +
-+/* The EB command is used to write an 8-bit word */
-+.macro  EB, addr, data
-+        mov.l 1f ,r1
-+        mov.l 2f ,r0
-+        mov.b r0, @r1
-+	bra 3f
-+	 nop
-+	.align 2
-+1:	.long \addr
-+2:	.long \data
-+3:
-+.endm
++	pr_info("platform_pm_runtime_work() suspending \"%s\" [%d]\n",
++		dev_name(dev), hwblk);
 +
-+/* The WAIT command is used to delay the execution */
-+.macro  WAIT, time
-+        mov.l  2f ,r3
-+1:
-+        nop
-+        tst     r3, r3
-+        bf/s    1b
-+         dt      r3
-+	bra	3f
-+	 nop
-+	.align 2
-+2:	.long \time * 100
-+3:
-+.endm
++	if (dev->driver && dev->driver->pm)
++		dev_pm_ops = dev->driver->pm;
 +
-+/* The DD command is used to read a 32-bit word */
-+.macro  DD, addr, addr2, nr
-+        mov.l 1f ,r1
-+        mov.l @r1, r0
-+	bra 2f
-+	 nop
-+	.align 2
-+1:	.long \addr
-+2:
-+.endm
++	if (dev_pm_ops && dev_pm_ops->runtime_suspend) {
++		hwblk_enable(hwblk_info, hwblk);
++		ret = dev_pm_ops->runtime_suspend(dev);
++		hwblk_disable(hwblk_info, hwblk);
++	}
 +
-+#include "partner-jet-setup.txt"
++	if (ret)
++		return;
++
++	/* remove device from idle list and decrease idle count */
++	spin_lock_irqsave(&hwblk_idle_lock, flags);
++	if (test_bit(PDEV_ARCHDATA_FLAG_LIST, &pdev->archdata.flags)) {
++		list_del(&pdev->archdata.entry);
++		__clear_bit(PDEV_ARCHDATA_FLAG_LIST, &pdev->archdata.flags);
++		__set_bit(PDEV_ARCHDATA_FLAG_SUSP, &pdev->archdata.flags);
++		hwblk_cnt_dec(hwblk_info, hwblk, HWBLK_CNT_IDLE);
++	}
++	spin_unlock_irqrestore(&hwblk_idle_lock, flags);
++
++	pr_info("platform_pm_runtime_work() suspended \"%s\" [%d]\n",
++		dev_name(dev), hwblk);
++}
++
++void platform_pm_runtime_suspend_idle(void)
++{
++	struct platform_device *pdev;
++	unsigned long flags;
++
++	/* schedule suspend for all devices on the idle list */
++	spin_lock_irqsave(&hwblk_idle_lock, flags);
++	list_for_each_entry(pdev, &hwblk_idle_list, archdata.entry)
++		schedule_work(&pdev->archdata.work);
++	spin_unlock_irqrestore(&hwblk_idle_lock, flags);
++}
++
++int platform_pm_runtime_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	unsigned long flags;
++	int hwblk = pdev->archdata.hw_blk_id;
++
++	if (!hwblk)
++		return -EINVAL;
++
++	pr_info("platform_pm_runtime_suspend() \"%s\" [%d]\n",
++		dev_name(dev), hwblk);
++
++	if (test_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags)) {
++		pr_warning("runtime_pm: driver should start from resume!\n");
++		return -EINVAL;
++	}
++
++	/* disable the clock */
++	hwblk_disable(hwblk_info, hwblk);
++
++	/* increase idle count */
++	hwblk_cnt_inc(hwblk_info, hwblk, HWBLK_CNT_IDLE);
++
++	/* put device on idle list */
++	spin_lock_irqsave(&hwblk_idle_lock, flags);
++	list_add_tail(&pdev->archdata.entry, &hwblk_idle_list);
++	__set_bit(PDEV_ARCHDATA_FLAG_LIST, &pdev->archdata.flags);
++	spin_unlock_irqrestore(&hwblk_idle_lock, flags);
++
++	return 0;
++};
++
++int platform_pm_runtime_resume(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct dev_pm_ops *dev_pm_ops = NULL;
++	unsigned long flags;
++	int hwblk = pdev->archdata.hw_blk_id;
++	int ret = 0;
++
++	if (!hwblk)
++		return -EINVAL;
++
++	pr_info("platform_pm_runtime_resume() \"%s\" [%d]\n",
++		dev_name(dev), hwblk);
++
++	/* remove device from idle list if needed */
++	spin_lock_irqsave(&hwblk_idle_lock, flags);
++	if (test_bit(PDEV_ARCHDATA_FLAG_LIST, &pdev->archdata.flags)) {
++		list_del(&pdev->archdata.entry);
++		__clear_bit(PDEV_ARCHDATA_FLAG_LIST, &pdev->archdata.flags);
++	}
++	spin_unlock_irqrestore(&hwblk_idle_lock, flags);
++
++	/* decrease idle count if needed */
++	if (!test_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags) &&
++	    !test_bit(PDEV_ARCHDATA_FLAG_SUSP, &pdev->archdata.flags))
++		hwblk_cnt_dec(hwblk_info, hwblk, HWBLK_CNT_IDLE);
++
++	__clear_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
++
++	/* enable the clock */
++	hwblk_enable(hwblk_info, hwblk);
++
++	/* resume the device if needed */
++	if (test_bit(PDEV_ARCHDATA_FLAG_SUSP, &pdev->archdata.flags)) {
++
++		pr_info("platform_pm_runtime_resume() resuming \"%s\" [%d]\n",
++			dev_name(dev), hwblk);
++
++		if (dev->driver && dev->driver->pm)
++			dev_pm_ops = dev->driver->pm;
++
++		if (dev_pm_ops && dev_pm_ops->runtime_resume)
++			ret = dev_pm_ops->runtime_resume(dev);
++
++		__clear_bit(PDEV_ARCHDATA_FLAG_SUSP, &pdev->archdata.flags);
++	}
++
++	return ret;
++};
++
++static int __devinit platform_bus_notify(struct notifier_block *nb,
++					 unsigned long action, void *data)
++{
++	struct device *dev = data;
++	struct platform_device *pdev = to_platform_device(dev);
++	int hwblk = pdev->archdata.hw_blk_id;
++
++	/* ignore off-chip non-SoC platform devices */
++	if (!hwblk)
++		return 0;
++
++	switch (action) {
++	case BUS_NOTIFY_ADD_DEVICE:
++		INIT_LIST_HEAD(&pdev->archdata.entry);
++		INIT_WORK(&pdev->archdata.work, platform_pm_runtime_work);
++		/* platform devices without drivers should be disabled */
++		hwblk_enable(hwblk_info, hwblk);
++		hwblk_disable(hwblk_info, hwblk);
++		/* make sure driver re-inits itself once */
++		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
++		break;
++	/* TODO: add BUS_NOTIFY_BIND_DRIVER and increase idle count */
++	case BUS_NOTIFY_BOUND_DRIVER:
++		/* keep track of number of devices in use per hwblk */
++		hwblk_cnt_inc(hwblk_info, hwblk, HWBLK_CNT_DEVICES);
++		break;
++	case BUS_NOTIFY_UNBOUND_DRIVER:
++		/* keep track of number of devices in use per hwblk */
++		hwblk_cnt_dec(hwblk_info, hwblk, HWBLK_CNT_DEVICES);
++		/* make sure driver re-inits itself once */
++		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
++		break;
++	case BUS_NOTIFY_DEL_DEVICE:
++		break;
++	}
++	return 0;
++}
++
++static struct notifier_block platform_bus_notifier = {
++	.notifier_call = platform_bus_notify
++};
++
++static int __init sh_pm_runtime_init(void)
++{
++	bus_register_notifier(&platform_bus_type, &platform_bus_notifier);
++	return 0;
++}
++
++arch_initcall(sh_pm_runtime_init);
