@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2009 14:02:25 +0000
-Subject: [PATCH 02/04] i2c: Runtime PM changes for SuperH I2C driver
-Message-Id: <20090731140225.11351.14777.sendpatchset@rx1.opensource.se>
+Date: Thu, 09 Jul 2009 15:19:44 +0000
+Subject: [PATCH 02/06] sh: Add support for multiple hwblk counters
+Message-Id: <20090709151944.8385.62628.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,106 +10,188 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch modifies the SuperH Mobile I2C driver to support
-Runtime PM. These changes should be all that is needed for
-proper Runtime PM support in this driver. Driver callbacks
-for Runtime PM are empty because the registers are always
-re-initialized after pm_runtime_get_sync().
+Extend the SuperH hwblk code to support more than one counter.
+This is needed by the Runtime PM prototype implementation.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Changes from V1 prototype:
- - use pm_runtime_get_sync() and pm_runtime_put_sync()
- - use pm_runtime_disable()
- - implement nop runtime pm functions for dev_pm_ops
- - no need for pm_runtime_set_suspended()
+ arch/sh/include/asm/hwblk.h            |   13 +++++-
+ arch/sh/kernel/cpu/hwblk.c             |   69 +++++++++++++++++++++-----------
+ arch/sh/kernel/cpu/sh4a/hwblk-sh7722.c |    4 -
+ 3 files changed, 60 insertions(+), 26 deletions(-)
 
- drivers/i2c/busses/i2c-sh_mobile.c |   39 ++++++++++++++++++++++++++++++++++--
- 1 file changed, 37 insertions(+), 2 deletions(-)
-
---- 0001/drivers/i2c/busses/i2c-sh_mobile.c
-+++ work/drivers/i2c/busses/i2c-sh_mobile.c	2009-07-31 00:55:42.000000000 +0900
-@@ -28,6 +28,7 @@
- #include <linux/interrupt.h>
- #include <linux/i2c.h>
- #include <linux/err.h>
-+#include <linux/pm_runtime.h>
- #include <linux/clk.h>
- #include <linux/io.h>
+--- 0001/arch/sh/include/asm/hwblk.h
++++ work/arch/sh/include/asm/hwblk.h	2009-07-09 18:38:04.000000000 +0900
+@@ -4,6 +4,9 @@
+ #include <asm/clock.h>
+ #include <asm/io.h>
  
-@@ -165,7 +166,8 @@ static void activate_ch(struct sh_mobile
- 	u_int32_t denom;
- 	u_int32_t tmp;
- 
--	/* Make sure the clock is enabled */
-+	/* Wake up device and enable clock */
-+	pm_runtime_get_sync(pd->dev);
- 	clk_enable(pd->clk);
- 
- 	/* Get clock rate after clock is enabled */
-@@ -213,8 +215,9 @@ static void deactivate_ch(struct sh_mobi
- 	/* Disable channel */
- 	iowrite8(ioread8(ICCR(pd)) & ~ICCR_ICE, ICCR(pd));
- 
--	/* Disable clock */
-+	/* Disable clock and mark device as idle */
- 	clk_disable(pd->clk);
-+	pm_runtime_put_sync(pd->dev);
- }
- 
- static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
-@@ -572,6 +575,19 @@ static int sh_mobile_i2c_probe(struct pl
- 		goto err_irq;
- 	}
- 
-+	/* Enable Runtime PM for this device.
-+	 *
-+	 * Also tell the Runtime PM core to ignore children
-+	 * for this device since it is valid for us to suspend
-+	 * this I2C master driver even though the slave devices
-+	 * on the I2C bus may not be suspended.
-+	 *
-+	 * The state of the I2C hardware bus is unaffected by
-+	 * the Runtime PM state.
-+	 */
-+	pm_suspend_ignore_children(&dev->dev, true);
-+	pm_runtime_enable(&dev->dev);
++#define HWBLK_CNT_USAGE 0
++#define HWBLK_CNT_NR 1
 +
- 	/* setup the private data */
- 	adap = &pd->adap;
- 	i2c_set_adapdata(adap, pd);
-@@ -614,14 +630,33 @@ static int sh_mobile_i2c_remove(struct p
- 	iounmap(pd->reg);
- 	sh_mobile_i2c_hook_irqs(dev, 0);
- 	clk_put(pd->clk);
-+	pm_runtime_disable(&dev->dev);
- 	kfree(pd);
- 	return 0;
+ #define HWBLK_AREA_FLAG_PARENT (1 << 0) /* valid parent */
+ 
+ #define HWBLK_AREA(_flags, _parent)		\
+@@ -13,7 +16,7 @@
  }
  
-+static int sh_mobile_i2c_runtime_nop(struct device *dev)
+ struct hwblk_area {
+-	unsigned long cnt;
++	int cnt[HWBLK_CNT_NR];
+ 	unsigned char parent;
+ 	unsigned char flags;
+ };
+@@ -29,7 +32,7 @@ struct hwblk {
+ 	void __iomem *mstp;
+ 	unsigned char bit;
+ 	unsigned char area;
+-	unsigned long cnt;
++	int cnt[HWBLK_CNT_NR];
+ };
+ 
+ struct hwblk_info {
+@@ -46,6 +49,12 @@ int arch_hwblk_sleep_mode(void);
+ int hwblk_register(struct hwblk_info *info);
+ int hwblk_init(void);
+ 
++void hwblk_enable(struct hwblk_info *info, int hwblk);
++void hwblk_disable(struct hwblk_info *info, int hwblk);
++
++void hwblk_cnt_inc(struct hwblk_info *info, int hwblk, int cnt);
++void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int cnt);
++
+ /* allow clocks to enable and disable hardware blocks */
+ #define SH_HWBLK_CLK(_name, _id, _parent, _hwblk, _flags)	\
+ {							\
+--- 0001/arch/sh/kernel/cpu/hwblk.c
++++ work/arch/sh/kernel/cpu/hwblk.c	2009-07-09 18:34:46.000000000 +0900
+@@ -9,38 +9,64 @@
+ 
+ static DEFINE_SPINLOCK(hwblk_lock);
+ 
+-static void hwblk_area_inc(struct hwblk_info *info, int area)
++static void hwblk_area_mod_cnt(struct hwblk_info *info,
++			       int area, int counter, int value, int goal)
+ {
+ 	struct hwblk_area *hap = info->areas + area;
+ 
+-	hap->cnt++;
+-	if (hap->cnt = 1)
+-		if (hap->flags & HWBLK_AREA_FLAG_PARENT)
+-			hwblk_area_inc(info, hap->parent);
++	hap->cnt[counter] += value;
++
++	if (hap->cnt[counter] != goal)
++		return;
++
++	if (hap->flags & HWBLK_AREA_FLAG_PARENT)
++		hwblk_area_mod_cnt(info, hap->parent, counter, value, goal);
+ }
+ 
+-static void hwblk_area_dec(struct hwblk_info *info, int area)
++
++static int __hwblk_mod_cnt(struct hwblk_info *info, int hwblk,
++			  int counter, int value, int goal)
+ {
+-	struct hwblk_area *hap = info->areas + area;
++	struct hwblk *hp = info->hwblks + hwblk;
++
++	hp->cnt[counter] += value;
++	if (hp->cnt[counter] = goal)
++		hwblk_area_mod_cnt(info, hp->area, counter, value, goal);
+ 
+-	if (hap->cnt = 1)
+-		if (hap->flags & HWBLK_AREA_FLAG_PARENT)
+-			hwblk_area_dec(info, hap->parent);
+-	hap->cnt--;
++	return hp->cnt[counter];
+ }
+ 
+-static void hwblk_enable(struct hwblk_info *info, int hwblk)
++static void hwblk_mod_cnt(struct hwblk_info *info, int hwblk,
++			  int counter, int value, int goal)
 +{
-+	/* Runtime PM callback shared between ->runtime_suspend()
-+	 * and ->runtime_resume(). Simply returns success.
-+	 *
-+	 * This driver re-initializes all registers after
-+	 * pm_runtime_get_sync() anyway so there is no need
-+	 * to save and restore registers here.
-+	 */
-+	return 0;
++	unsigned long flags;
++
++	spin_lock_irqsave(&hwblk_lock, flags);
++	__hwblk_mod_cnt(info, hwblk, counter, value, goal);
++	spin_unlock_irqrestore(&hwblk_lock, flags);
 +}
 +
-+static struct dev_pm_ops sh_mobile_i2c_dev_pm_ops = {
-+	.runtime_suspend = sh_mobile_i2c_runtime_nop,
-+	.runtime_resume = sh_mobile_i2c_runtime_nop,
-+};
++void hwblk_cnt_inc(struct hwblk_info *info, int hwblk, int counter)
++{
++	hwblk_mod_cnt(info, hwblk, counter, 1, 1);
++}
 +
- static struct platform_driver sh_mobile_i2c_driver = {
- 	.driver		= {
- 		.name		= "i2c-sh_mobile",
- 		.owner		= THIS_MODULE,
-+		.pm		= &sh_mobile_i2c_dev_pm_ops,
- 	},
- 	.probe		= sh_mobile_i2c_probe,
- 	.remove		= sh_mobile_i2c_remove,
++void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int counter)
++{
++	hwblk_mod_cnt(info, hwblk, counter, -1, 0);
++}
++
++void hwblk_enable(struct hwblk_info *info, int hwblk)
+ {
+ 	struct hwblk *hp = info->hwblks + hwblk;
+ 	unsigned long tmp;
+ 	unsigned long flags;
++	int ret;
+ 
+ 	spin_lock_irqsave(&hwblk_lock, flags);
+ 
+-	hp->cnt++;
+-	if (hp->cnt = 1) {
+-		hwblk_area_inc(info, hp->area);
+-
++	ret = __hwblk_mod_cnt(info, hwblk, HWBLK_CNT_USAGE, 1, 1);
++	if (ret = 1) {
+ 		tmp = __raw_readl(hp->mstp);
+ 		tmp &= ~(1 << hp->bit);
+ 		__raw_writel(tmp, hp->mstp);
+@@ -49,27 +75,26 @@ static void hwblk_enable(struct hwblk_in
+ 	spin_unlock_irqrestore(&hwblk_lock, flags);
+ }
+ 
+-static void hwblk_disable(struct hwblk_info *info, int hwblk)
++void hwblk_disable(struct hwblk_info *info, int hwblk)
+ {
+ 	struct hwblk *hp = info->hwblks + hwblk;
+ 	unsigned long tmp;
+ 	unsigned long flags;
++	int ret;
+ 
+ 	spin_lock_irqsave(&hwblk_lock, flags);
+ 
+-	if (hp->cnt = 1) {
+-		hwblk_area_dec(info, hp->area);
+-
++	ret = __hwblk_mod_cnt(info, hwblk, HWBLK_CNT_USAGE, -1, 0);
++	if (ret = 0) {
+ 		tmp = __raw_readl(hp->mstp);
+ 		tmp |= 1 << hp->bit;
+ 		__raw_writel(tmp, hp->mstp);
+ 	}
+-	hp->cnt--;
+ 
+ 	spin_unlock_irqrestore(&hwblk_lock, flags);
+ }
+ 
+-static struct hwblk_info *hwblk_info;
++struct hwblk_info *hwblk_info;
+ 
+ int __init hwblk_register(struct hwblk_info *info)
+ {
+--- 0001/arch/sh/kernel/cpu/sh4a/hwblk-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/hwblk-sh7722.c	2009-07-09 18:38:48.000000000 +0900
+@@ -91,10 +91,10 @@ static struct hwblk_info sh7722_hwblk_in
+ 
+ int arch_hwblk_sleep_mode(void)
+ {
+-	if (!sh7722_hwblk_area[CORE_AREA].cnt)
++	if (!sh7722_hwblk_area[CORE_AREA].cnt[HWBLK_CNT_USAGE])
+ 		return SUSP_SH_STANDBY | SUSP_SH_SF;
+ 
+-	if (!sh7722_hwblk_area[CORE_AREA_BM].cnt)
++	if (!sh7722_hwblk_area[CORE_AREA_BM].cnt[HWBLK_CNT_USAGE])
+ 		return SUSP_SH_SLEEP | SUSP_SH_SF;
+ 
+ 	return SUSP_SH_SLEEP;
