@@ -1,56 +1,147 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2009 07:47:05 +0000
-Subject: [PATCH 00/09] sh: Runtime PM pdev hwblk
-Message-Id: <20090731074705.29009.33769.sendpatchset@rx1.opensource.se>
+From: Tim Abbott <tabbott@ksplice.com>
+Date: Thu, 09 Jul 2009 14:45:59 +0000
+Subject: [PATCH] sh: Clean up linker script using new linker script macros.
+Message-Id: <alpine.DEB.1.10.0907082333190.6580@vinegar-pot.mit.edu>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, Sam Ravnborg <sam@ravnborg.org>, linux-sh@vger.kernel.org, Anders Kaseorg <andersk@ksplice.com>
 
-sh: Runtime PM pdev hwblk changes
+This patch converts the sh architecture to use the new linker script 
+macros in include/asm-generic/vmlinux.lds.h.
 
-[PATCH 01/09] sh: Runtime PM pdev hwblk - header change
-[PATCH 02/09] sh: Runtime PM pdev hwblk - sh7722
-[PATCH 03/09] sh: Runtime PM pdev hwblk - Migo-R
-[PATCH 04/09] sh: Runtime PM pdev hwblk - Solution Engine 7722
-[PATCH 05/09] sh: Runtime PM pdev hwblk - sh7723
-[PATCH 06/09] sh: Runtime PM pdev hwblk - AP325RXA
-[PATCH 07/09] sh: Runtime PM pdev hwblk - sh7724
-[PATCH 08/09] sh: Runtime PM pdev hwblk - kfr2r09
-[PATCH 09/09] sh: Runtime PM pdev hwblk - Solution Engine 7724
-
-These patches extend struct platform device data for a bunch of
-SuperH Mobile processors and embedded boards. The patches simply
-add hardware block ids to on-chip platform devices. Platform
-devices off chip (such as external ethernet controllers or flash
-chips) are left out which gives them a special case hardware block
-id of zero.
-
-Upcoming Runtime PM code will make use of the hardware block id
-to group devices together. The hardware block id can also be used
-to extend the SuperH Mobile clock framework implementation.
-
-This series of patches depend on the following:
-"Driver Core: Add platform device arch data V3".
-
-The patch above is part of Rafaels for-linux topic branch.
-I would however prefer to see this series merged independently
-of the Runtime PM patches.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Tim Abbott <tabbott@ksplice.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Sam Ravnborg <sam@ravnborg.org>
+Cc: linux-sh@vger.kernel.org
 ---
+ arch/sh/kernel/vmlinux.lds.S |   87 +++++------------------------------------
+ 1 files changed, 11 insertions(+), 76 deletions(-)
 
- Build tested on all boards. No runtime logic changes.
-
- arch/sh/boards/board-ap325rxa.c        |    6 ++++
- arch/sh/boards/mach-kfr2r09/setup.c    |    3 ++
- arch/sh/boards/mach-migor/setup.c      |    9 ++++++
- arch/sh/boards/mach-se/7722/setup.c    |    4 ++
- arch/sh/boards/mach-se/7724/setup.c    |   18 +++++++++++++
- arch/sh/include/asm/device.h           |    9 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   31 +++++++++++++++++++++++
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   40 +++++++++++++++++++++++++++++
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   43 ++++++++++++++++++++++++++++++++
- 9 files changed, 162 insertions(+), 1 deletion(-)
-
+diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
+index f53c76a..7e833db 100644
+--- a/arch/sh/kernel/vmlinux.lds.S
++++ b/arch/sh/kernel/vmlinux.lds.S
+@@ -50,12 +50,7 @@ SECTIONS
+ 		_etext = .;		/* End of text section */
+ 	} = 0x0009
+ 
+-	. = ALIGN(16);		/* Exception table */
+-	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
+-		__start___ex_table = .;
+-		*(__ex_table)
+-		__stop___ex_table = .;
+-	}
++	EXCEPTION_TABLE(16)
+ 
+ 	NOTES
+ 	RO_DATA(PAGE_SIZE)
+@@ -71,69 +66,14 @@ SECTIONS
+ 		__uncached_end = .;
+ 	}
+ 
+-	. = ALIGN(THREAD_SIZE);
+-	.data : AT(ADDR(.data) - LOAD_OFFSET) {		/* Data */
+-		*(.data.init_task)
+-
+-		. = ALIGN(L1_CACHE_BYTES);
+-		*(.data.cacheline_aligned)
+-
+-		. = ALIGN(L1_CACHE_BYTES);
+-		*(.data.read_mostly)
+-
+-		. = ALIGN(PAGE_SIZE);
+-		*(.data.page_aligned)
+-
+-		__nosave_begin = .;
+-		*(.data.nosave)
+-		. = ALIGN(PAGE_SIZE);
+-		__nosave_end = .;
+-
+-		DATA_DATA
+-		CONSTRUCTORS
+-	}
++	RW_DATA_SECTION(L1_CACHE_BYTES, PAGE_SIZE, THREAD_SIZE)
+ 
+ 	_edata = .;			/* End of data section */
+ 
+ 	. = ALIGN(PAGE_SIZE);		/* Init code and data */
+-	.init.text : AT(ADDR(.init.text) - LOAD_OFFSET) {
+-		__init_begin = .;
+-		_sinittext = .;
+-		INIT_TEXT
+-		_einittext = .;
+-	}
+-
+-	.init.data : AT(ADDR(.init.data) - LOAD_OFFSET) { INIT_DATA }
+-
+-	. = ALIGN(16);
+-	.init.setup : AT(ADDR(.init.setup) - LOAD_OFFSET) {
+-		__setup_start = .;
+-		*(.init.setup)
+-		__setup_end = .;
+-	}
+-
+-	.initcall.init : AT(ADDR(.initcall.init) - LOAD_OFFSET) {
+-		__initcall_start = .;
+-		INITCALLS
+-		__initcall_end = .;
+-	}
+-
+-	.con_initcall.init : AT(ADDR(.con_initcall.init) - LOAD_OFFSET) {
+-		__con_initcall_start = .;
+-		*(.con_initcall.init)
+-		__con_initcall_end = .;
+-	}
+-
+-	SECURITY_INIT
+-
+-#ifdef CONFIG_BLK_DEV_INITRD
+-	. = ALIGN(PAGE_SIZE);
+-	.init.ramfs : AT(ADDR(.init.ramfs) - LOAD_OFFSET) {
+-		__initramfs_start = .;
+-		*(.init.ramfs)
+-		__initramfs_end = .;
+-	}
+-#endif
++	__init_begin = .;
++	INIT_TEXT_SECTION(PAGE_SIZE)
++	INIT_DATA_SECTION(16)
+ 
+ 	. = ALIGN(4);
+ 	.machvec.init : AT(ADDR(.machvec.init) - LOAD_OFFSET) {
+@@ -152,16 +92,11 @@ SECTIONS
+ 	.exit.data : AT(ADDR(.exit.data) - LOAD_OFFSET) { EXIT_DATA }
+ 
+ 	. = ALIGN(PAGE_SIZE);
+-	.bss : AT(ADDR(.bss) - LOAD_OFFSET) {
+-		__init_end = .;
+-		__bss_start = .;		/* BSS */
+-		*(.bss.page_aligned)
+-		*(.bss)
+-		*(COMMON)
+-		. = ALIGN(4);
+-		_ebss = .;			/* uClinux MTD sucks */
+-		_end = . ;
+-	}
++	__init_end = .;
++	BSS(PAGE_SIZE)
++	. = ALIGN(4);
++	_ebss = .;			/* uClinux MTD sucks */
++	_end = . ;
+ 
+ 	/*
+ 	 * When something in the kernel is NOT compiled as a module, the
+@@ -170,7 +105,7 @@ SECTIONS
+ 	 * it's a module.
+ 	 */
+ 	/DISCARD/ : {
+-		*(.exitcall.exit)
++		EXIT_CALL
+ 	}
+ 
+ 	STABS_DEBUG
+-- 
+1.6.3.3
