@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2009 07:48:29 +0000
-Subject: [PATCH 09/09] sh: Runtime PM pdev hwblk - Solution Engine 7724
-Message-Id: <20090731074829.29009.65668.sendpatchset@rx1.opensource.se>
+Date: Thu, 09 Jul 2009 15:20:11 +0000
+Subject: [PATCH 05/06] i2c: Runtime PM for i2c-sh_mobile.c
+Message-Id: <20090709152011.8385.40046.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,74 +10,66 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Add hwblk_id to Solution Engine 7724 board specific
-on-chip sh7724 platform devices.
+This patch modifies the SuperH Mobile i2c driver to support
+Runtime PM. These changes should be all that is needed for
+proper Runtime PM support in this driver. Driver callbacks
+for Runtime PM are not needed becuase the registers are
+always re-initialized.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/boards/mach-se/7724/setup.c |   18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ drivers/i2c/busses/i2c-sh_mobile.c |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
---- 0001/arch/sh/boards/mach-se/7724/setup.c
-+++ work/arch/sh/boards/mach-se/7724/setup.c	2009-07-31 15:19:58.000000000 +0900
-@@ -174,6 +174,9 @@ static struct platform_device lcdc_devic
- 	.dev		= {
- 		.platform_data	= &lcdc_info,
- 	},
-+	.archdata = {
-+		.hwblk_id = HWBLK_LCDC,
-+	},
- };
+--- 0001/drivers/i2c/busses/i2c-sh_mobile.c
++++ work/drivers/i2c/busses/i2c-sh_mobile.c	2009-07-07 18:50:53.000000000 +0900
+@@ -28,6 +28,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/i2c.h>
+ #include <linux/err.h>
++#include <linux/pm_runtime.h>
+ #include <linux/clk.h>
+ #include <linux/io.h>
  
- /* CEU0 */
-@@ -205,6 +208,9 @@ static struct platform_device ceu0_devic
- 	.dev	= {
- 		.platform_data	= &sh_mobile_ceu0_info,
- 	},
-+	.archdata = {
-+		.hwblk_id = HWBLK_CEU0,
-+	},
- };
+@@ -165,6 +166,9 @@ static void activate_ch(struct sh_mobile
+ 	u_int32_t denom;
+ 	u_int32_t tmp;
  
- /* CEU1 */
-@@ -236,6 +242,9 @@ static struct platform_device ceu1_devic
- 	.dev	= {
- 		.platform_data	= &sh_mobile_ceu1_info,
- 	},
-+	.archdata = {
-+		.hwblk_id = HWBLK_CEU1,
-+	},
- };
++	/* Runtime PM must wake up device */
++	pm_runtime_resume(pd->dev);
++
+ 	/* Make sure the clock is enabled */
+ 	clk_enable(pd->clk);
  
- /* KEYSC */
-@@ -273,6 +282,9 @@ static struct platform_device keysc_devi
- 	.dev	= {
- 		.platform_data	= &keysc_info,
- 	},
-+	.archdata = {
-+		.hwblk_id = HWBLK_KEYSC,
-+	},
- };
+@@ -215,6 +219,9 @@ static void deactivate_ch(struct sh_mobi
  
- /* SH Eth */
-@@ -301,6 +313,9 @@ static struct platform_device sh_eth_dev
- 	},
- 	.num_resources = ARRAY_SIZE(sh_eth_resources),
- 	.resource = sh_eth_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_ETHER,
-+	},
- };
+ 	/* Disable clock */
+ 	clk_disable(pd->clk);
++
++	/* Runtime PM code may suspend now */
++	pm_runtime_suspend(pd->dev);
+ }
  
- static struct r8a66597_platdata sh7724_usb0_host_data = {
-@@ -330,6 +345,9 @@ static struct platform_device sh7724_usb
- 	},
- 	.num_resources	= ARRAY_SIZE(sh7724_usb0_host_resources),
- 	.resource	= sh7724_usb0_host_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_USB0,
-+	},
- };
+ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
+@@ -572,6 +579,20 @@ static int sh_mobile_i2c_probe(struct pl
+ 		goto err_irq;
+ 	}
  
- static struct platform_device *ms7724se_devices[] __initdata = {
++	/* Enable Runtime PM for this device.
++	 *
++	 * Also tell the Runtime PM core to ignore children
++	 * for this device since it is valid for us to suspend
++	 * this I2C master driver even though the slave devices
++	 * on the I2C bus may not be suspended.
++	 *
++	 * The state of the I2C hardware bus is unaffected by
++	 * the Runtime PM state.
++	 */
++	pm_suspend_ignore_children(&dev->dev, true);
++	pm_runtime_set_suspended(&dev->dev);
++	pm_runtime_enable(&dev->dev);
++
+ 	/* setup the private data */
+ 	adap = &pd->adap;
+ 	i2c_set_adapdata(adap, pd);
