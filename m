@@ -1,84 +1,22 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 09 Jul 2009 15:19:35 +0000
-Subject: [PATCH 01/06] Driver Core: Runtime PM callbacks for the Platform Bus
-Message-Id: <20090709151935.8385.71812.sendpatchset@rx1.opensource.se>
+From: "MITSUBISHI COMPANY UK" <info@mitsubishi.com>
+Date: Fri, 10 Jul 2009 12:30:03 +0000
+Subject: Your E-mail Attach To category\\"A\\" 870,000GBP&#8207;
+Message-Id: <20090710122911.M51719@mitsubishi.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+MITSUBISHI COMPANY UK.
+28 TANFIELD ROAD,LONDON, UK.
 
-This patch adds default Runtime PM callbacks to the dev_pm_ops
-belonging to the platform bus. The callbacks are weak symbols
-that architecture specific code may override. Also, call
-pm_runtime_enable() for the platform bus struct device.
+You have just been awarded,the sum of  &pound;870.000.00 in the  MITSUBISHI COMPANY 
+Award 2009, Anniversary Bonanza. held in July.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+Names:............. Address:..............
+Country:................ Age:..........
+Phone Number............ Occupation.......Sex
 
- drivers/base/platform.c |   31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
-
---- 0001/drivers/base/platform.c
-+++ work/drivers/base/platform.c	2009-06-25 18:58:56.000000000 +0900
-@@ -17,6 +17,7 @@
- #include <linux/bootmem.h>
- #include <linux/err.h>
- #include <linux/slab.h>
-+#include <linux/pm_runtime.h>
- 
- #include "base.h"
- 
-@@ -925,6 +926,30 @@ static int platform_pm_restore_noirq(str
- 
- #endif /* !CONFIG_HIBERNATION */
- 
-+#ifdef CONFIG_PM_RUNTIME
-+
-+int __weak platform_pm_runtime_suspend(struct device *dev)
-+{
-+	return -EINVAL;
-+};
-+
-+int __weak platform_pm_runtime_resume(struct device *dev)
-+{
-+	return -EINVAL;
-+};
-+
-+void __weak platform_pm_runtime_idle(struct device *dev)
-+{
-+};
-+
-+#else /* !CONFIG_PM_RUNTIME */
-+
-+#define platform_pm_runtime_suspend NULL
-+#define platform_pm_runtime_resume NULL
-+#define platform_pm_runtime_idle NULL
-+
-+#endif /* !CONFIG_PM_RUNTIME */
-+
- static struct dev_pm_ops platform_dev_pm_ops = {
- 	.prepare = platform_pm_prepare,
- 	.complete = platform_pm_complete,
-@@ -940,6 +965,9 @@ static struct dev_pm_ops platform_dev_pm
- 	.thaw_noirq = platform_pm_thaw_noirq,
- 	.poweroff_noirq = platform_pm_poweroff_noirq,
- 	.restore_noirq = platform_pm_restore_noirq,
-+	.runtime_suspend = platform_pm_runtime_suspend,
-+	.runtime_resume = platform_pm_runtime_resume,
-+	.runtime_idle = platform_pm_runtime_idle,
- };
- 
- #define PLATFORM_PM_OPS_PTR	(&platform_dev_pm_ops)
-@@ -968,6 +996,9 @@ int __init platform_bus_init(void)
- 	error = device_register(&platform_bus);
- 	if (error)
- 		return error;
-+
-+	pm_runtime_enable(&platform_bus);
-+
- 	error =  bus_register(&platform_bus_type);
- 	if (error)
- 		device_unregister(&platform_bus);
+Regards.Felke Courtney.
+Online Co-ordinator.
