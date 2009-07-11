@@ -1,12 +1,37 @@
 From: Matt Fleming <matt@console-pimps.org>
-Date: Sat, 11 Jul 2009 00:29:02 +0000
-Subject: [PATCH 1/3] sh: Provide diagnostic kernel stack checks
-Message-Id: <194c0b5363680cc9a1ff59bf2784e09574fbaa99.1247272091.git.matt@console-pimps.org>
+Date: Sat, 11 Jul 2009 01:00:23 +0000
+Subject: Re: [PATCH 1/3] sh: Provide diagnostic kernel stack checks
+Message-Id: <20090711010023.GA7058@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <194c0b5363680cc9a1ff59bf2784e09574fbaa99.1247272091.git.matt@console-pimps.org>
+In-Reply-To: <194c0b5363680cc9a1ff59bf2784e09574fbaa99.1247272091.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+
+On Sat, Jul 11, 2009 at 01:29:02AM +0100, Matt Fleming wrote:
+>  	mov.l	r4, @-r15;	\
+> @@ -28,6 +29,56 @@
+>  	rts;			\
+>  	 mov.l	@r15+, r4
+>  
+> +#ifdef CONFIG_STACK_DEBUG
+> +/*
+> + * Perform diagnostic checks on the state of the kernel stack,
+> + *
+
+The follow-up patch fixes this comma.
+
+> +							\
+> +	/* sizeof(struct thread_info) */		\
+> +	mov	#60, r3;				\
+> +	mov	#(STACK_WARN >> 8), r2;			\
+> +	shll8	r2;					\
+
+And uses a proper constant for sizeof(struct thread_info).
+
+---
 
 Enable kernel stack checking code in both the dynamic ftrace and mcount
 code paths. Check the stack to see if it's overflowing and make sure
@@ -15,9 +40,10 @@ or after the bss.
 
 Signed-off-by: Matt Fleming <matt@console-pimps.org>
 ---
- arch/sh/Kconfig.debug |   11 ++++++
- arch/sh/lib/mcount.S  |   85 +++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 96 insertions(+), 0 deletions(-)
+ arch/sh/Kconfig.debug        |   11 +++++
+ arch/sh/kernel/asm-offsets.c |    1 +
+ arch/sh/lib/mcount.S         |   85 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 97 insertions(+), 0 deletions(-)
 
 diff --git a/arch/sh/Kconfig.debug b/arch/sh/Kconfig.debug
 index 39224b5..52a132c 100644
@@ -39,25 +65,38 @@ index 39224b5..52a132c 100644
 +	  users should say N.
 +
  endmenu
+diff --git a/arch/sh/kernel/asm-offsets.c b/arch/sh/kernel/asm-offsets.c
+index 99aceb2..d218e80 100644
+--- a/arch/sh/kernel/asm-offsets.c
++++ b/arch/sh/kernel/asm-offsets.c
+@@ -26,6 +26,7 @@ int main(void)
+ 	DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
+ 	DEFINE(TI_PRE_COUNT,	offsetof(struct thread_info, preempt_count));
+ 	DEFINE(TI_RESTART_BLOCK,offsetof(struct thread_info, restart_block));
++	DEFINE(TI_SIZE,		sizeof(struct thread_info));
+ 
+ #ifdef CONFIG_HIBERNATION
+ 	DEFINE(PBE_ADDRESS, offsetof(struct pbe, address));
 diff --git a/arch/sh/lib/mcount.S b/arch/sh/lib/mcount.S
-index 71e87f9..282a38d 100644
+index 71e87f9..8596483 100644
 --- a/arch/sh/lib/mcount.S
 +++ b/arch/sh/lib/mcount.S
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,8 @@
   * for more details.
   */
  #include <asm/ftrace.h>
 +#include <asm/thread_info.h>
++#include <asm/asm-offsets.h>
  
  #define MCOUNT_ENTER()		\
  	mov.l	r4, @-r15;	\
-@@ -28,6 +29,56 @@
+@@ -28,6 +30,55 @@
  	rts;			\
  	 mov.l	@r15+, r4
  
 +#ifdef CONFIG_STACK_DEBUG
 +/*
-+ * Perform diagnostic checks on the state of the kernel stack,
++ * Perform diagnostic checks on the state of the kernel stack.
 + *
 + * Check for stack overflow. If there is less than 1KB free
 + * then it has overflowed.
@@ -76,8 +115,7 @@ index 71e87f9..282a38d 100644
 +	add	r0, r1;					\
 +	and	r15, r1;				\
 +							\
-+	/* sizeof(struct thread_info) */		\
-+	mov	#60, r3;				\
++	mov	#TI_SIZE, r3;				\
 +	mov	#(STACK_WARN >> 8), r2;			\
 +	shll8	r2;					\
 +	add	r3, r2;					\
