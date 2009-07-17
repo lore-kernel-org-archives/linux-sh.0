@@ -1,34 +1,80 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 23 Jul 2009 08:44:16 +0000
-Subject: Re: [PATCH] sh: kfr2r09 board support - zImage flash boot
-Message-Id: <aec7e5c30907230144g34e8ac1anf40fa4f058b36953@mail.gmail.com>
+Date: Fri, 17 Jul 2009 14:52:05 +0000
+Subject: [PATCH] usb: convert r8a66597-hcd to dev_pm_ops
+Message-Id: <20090717145205.17771.85105.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090722162637.18222.7149.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090722162637.18222.7149.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Iwamatsu-san,
+From: Magnus Damm <damm@igel.co.jp>
 
-On Thu, Jul 23, 2009 at 5:00 PM, Nobuhiro Iwamatsu<iwamatsu@nigauri.org> wrote:
-> On Thu, 23 Jul 2009 01:26:37 +0900
-> Magnus Damm <magnus.damm@gmail.com> wrote:
->> This patch adds zImage flash boot support to the kfr2r09 board.
->
-> Is not U-Boot of R2R yet implemented?
+Convert the r8a66597-hcd driver to dev_pm_ops. This makes
+the driver a good PM citizen and removes a warning printout.
 
-I don't know the status of U-Boot on R2R by itself, but last time I
-checked U-boot did not have enough hardware support for the kfr2r09
-board to boot easily. This board does not have any ethernet
-controller. And no USB host.
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-To easily boot the kfr2r09 board we need USB gadget support with
-r8a66597 together with USB ethernet + serial combo gadget driver and
-maybe MMC as well. And since we need them under Linux anyway we may as
-well reuse our drivers for booting together with kexec.
+ Tested on a ap325 board with sh7723 cpu using on-chip r8a66597.
 
-Cheers,
+ drivers/usb/host/r8a66597-hcd.c |   21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
 
-/ magnus
+--- 0001/drivers/usb/host/r8a66597-hcd.c
++++ work/drivers/usb/host/r8a66597-hcd.c	2009-07-17 23:03:50.000000000 +0900
+@@ -2306,9 +2306,9 @@ static struct hc_driver r8a66597_hc_driv
+ };
+ 
+ #if defined(CONFIG_PM)
+-static int r8a66597_suspend(struct platform_device *pdev, pm_message_t state)
++static int r8a66597_suspend(struct device *dev)
+ {
+-	struct r8a66597		*r8a66597 = dev_get_drvdata(&pdev->dev);
++	struct r8a66597		*r8a66597 = dev_get_drvdata(dev);
+ 	int port;
+ 
+ 	dbg("%s", __func__);
+@@ -2324,9 +2324,9 @@ static int r8a66597_suspend(struct platf
+ 	return 0;
+ }
+ 
+-static int r8a66597_resume(struct platform_device *pdev)
++static int r8a66597_resume(struct device *dev)
+ {
+-	struct r8a66597		*r8a66597 = dev_get_drvdata(&pdev->dev);
++	struct r8a66597		*r8a66597 = dev_get_drvdata(dev);
+ 	struct usb_hcd		*hcd = r8a66597_to_hcd(r8a66597);
+ 
+ 	dbg("%s", __func__);
+@@ -2336,9 +2336,15 @@ static int r8a66597_resume(struct platfo
+ 
+ 	return 0;
+ }
++
++static struct dev_pm_ops r8a66597_dev_pm_ops = {
++	.suspend = r8a66597_suspend,
++	.resume = r8a66597_resume,
++};
++
++#define R8A66597_DEV_PM_OPS	(&r8a66597_dev_pm_ops)
+ #else	/* if defined(CONFIG_PM) */
+-#define r8a66597_suspend	NULL
+-#define r8a66597_resume		NULL
++#define R8A66597_DEV_PM_OPS	NULL
+ #endif
+ 
+ static int __init_or_module r8a66597_remove(struct platform_device *pdev)
+@@ -2474,11 +2480,10 @@ clean_up:
+ static struct platform_driver r8a66597_driver = {
+ 	.probe =	r8a66597_probe,
+ 	.remove =	r8a66597_remove,
+-	.suspend =	r8a66597_suspend,
+-	.resume =	r8a66597_resume,
+ 	.driver		= {
+ 		.name = (char *) hcd_name,
+ 		.owner	= THIS_MODULE,
++		.pm	= R8A66597_DEV_PM_OPS,
+ 	},
+ };
+ 
