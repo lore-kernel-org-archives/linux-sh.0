@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 04 Jun 2009 07:32:11 +0000
-Subject: [PATCH] sh: sh7343 clock framework rewrite
-Message-Id: <20090604073211.32188.76225.sendpatchset@rx1.opensource.se>
+Date: Fri, 17 Jul 2009 14:59:55 +0000
+Subject: [PATCH] usb: r8a66597-hcd platform data on_chip support
+Message-Id: <20090717145955.17840.24106.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,339 +10,616 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch rewrites the sh7343 clock framework code.
-The new code makes use of the recently merged div4,
-div6 and mstp32 helper code. Both extal and dll are
-supported as input clocks to the pll.
+Convert the r8a66597-hcd driver to use the on_chip flag
+from platform data to enable on chip behaviour instead
+of relying on CONFIG_SUPERH_ON_CHIP_R8A66597 ugliness.
+
+This makes the code cleaner and also allows us to support
+both external and internal r8a66597 with the same kernel.
+
+It also makes the Kconfig part more future proof since
+we with this patch can add support for new processors
+with on-chip r8a66597 without modifying the Kconfig.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/Kconfig                        |    2 
- arch/sh/kernel/cpu/sh4a/Makefile       |    2 
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c |  211 ++++++++++++++++++++++++++++++++
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   33 -----
- 4 files changed, 214 insertions(+), 34 deletions(-)
+ Applies on top of the dev_pm_ops patch.
 
---- 0012/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2009-06-04 12:49:54.000000000 +0900
-@@ -516,7 +516,7 @@ config SH_CLK_CPG
- 
- config SH_CLK_CPG_LEGACY
- 	depends on SH_CLK_CPG
--	def_bool y if !CPU_SUBTYPE_SH7785 && !CPU_SUBTYPE_SH7723 && !CPU_SUBTYPE_SH7724
-+	def_bool y if !CPU_SUBTYPE_SH7785 && !CPU_SUBTYPE_SH7723 && !CPU_SUBTYPE_SH7724 && !CPU_SUBTYPE_SH7343
- 
- config SH_CLK_MD
- 	int "CPU Mode Pin Setting"
---- 0012/arch/sh/kernel/cpu/sh4a/Makefile
-+++ work/arch/sh/kernel/cpu/sh4a/Makefile	2009-06-04 12:49:54.000000000 +0900
-@@ -24,7 +24,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SH7770)	:= cl
- clock-$(CONFIG_CPU_SUBTYPE_SH7780)	:= clock-sh7780.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7785)	:= clock-sh7785.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7786)	:= clock-sh7786.o
--clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= clock-sh7722.o
-+clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= clock-sh7343.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7722)	:= clock-sh7722.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7723.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7724)	:= clock-sh7724.o
---- /dev/null
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2009-06-04 12:49:54.000000000 +0900
-@@ -0,0 +1,211 @@
-+/*
-+ * arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-+ *
-+ * SH7343 clock framework support
-+ *
-+ * Copyright (C) 2009 Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <asm/clock.h>
-+
-+/* SH7343 registers */
-+#define FRQCR		0xa4150000
-+#define VCLKCR		0xa4150004
-+#define SCLKACR		0xa4150008
-+#define SCLKBCR		0xa415000c
-+#define PLLCR		0xa4150024
-+#define MSTPCR0		0xa4150030
-+#define MSTPCR1		0xa4150034
-+#define MSTPCR2		0xa4150038
-+#define DLLFRQ		0xa4150050
-+
-+/* Fixed 32 KHz root clock for RTC and Power Management purposes */
-+static struct clk r_clk = {
-+	.name           = "rclk",
-+	.id             = -1,
-+	.rate           = 32768,
-+};
-+
-+/*
-+ * Default rate for the root input clock, reset this with clk_set_rate()
-+ * from the platform code.
-+ */
-+struct clk extal_clk = {
-+	.name		= "extal",
-+	.id		= -1,
-+	.rate		= 33333333,
-+};
-+
-+/* The dll block multiplies the 32khz r_clk, may be used instead of extal */
-+static unsigned long dll_recalc(struct clk *clk)
-+{
-+	unsigned long mult;
-+
-+	if (__raw_readl(PLLCR) & 0x1000)
-+		mult = __raw_readl(DLLFRQ);
-+	else
-+		mult = 0;
-+
-+	return clk->parent->rate * mult;
-+}
-+
-+static struct clk_ops dll_clk_ops = {
-+	.recalc		= dll_recalc,
-+};
-+
-+static struct clk dll_clk = {
-+	.name           = "dll_clk",
-+	.id             = -1,
-+	.ops		= &dll_clk_ops,
-+	.parent		= &r_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static unsigned long pll_recalc(struct clk *clk)
-+{
-+	unsigned long mult = 1;
-+
-+	if (__raw_readl(PLLCR) & 0x4000)
-+		mult = (((__raw_readl(FRQCR) >> 24) & 0x1f) + 1);
-+
-+	return clk->parent->rate * mult;
-+}
-+
-+static struct clk_ops pll_clk_ops = {
-+	.recalc		= pll_recalc,
-+};
-+
-+static struct clk pll_clk = {
-+	.name		= "pll_clk",
-+	.id		= -1,
-+	.ops		= &pll_clk_ops,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+struct clk *main_clks[] = {
-+	&r_clk,
-+	&extal_clk,
-+	&dll_clk,
-+	&pll_clk,
-+};
-+
-+static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-+static int divisors[] = { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16, 20 };
-+
-+static struct clk_div_mult_table div4_table = {
-+	.divisors = divisors,
-+	.nr_divisors = ARRAY_SIZE(divisors),
-+	.multipliers = multipliers,
-+	.nr_multipliers = ARRAY_SIZE(multipliers),
-+};
-+
-+enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P,
-+       DIV4_SIUA, DIV4_SIUB, DIV4_NR };
-+
-+#define DIV4(_str, _reg, _bit, _mask, _flags) \
-+  SH_CLK_DIV4(_str, &pll_clk, _reg, _bit, _mask, _flags)
-+
-+struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_I] = DIV4("cpu_clk", FRQCR, 20, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_U] = DIV4("umem_clk", FRQCR, 16, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_SH] = DIV4("shyway_clk", FRQCR, 12, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_B] = DIV4("bus_clk", FRQCR, 8, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_B3] = DIV4("b3_clk", FRQCR, 4, 0x1fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_P] = DIV4("peripheral_clk", FRQCR, 0, 0x1fff, 0),
-+	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x1fff, 0),
-+	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x1fff, 0),
-+};
-+
-+struct clk div6_clks[] = {
-+	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
-+};
-+
-+#define MSTP(_str, _parent, _reg, _bit, _flags) \
-+  SH_CLK_MSTP32(_str, -1, _parent, _reg, _bit, _flags)
-+
-+static struct clk mstp_clks[] = {
-+	MSTP("tlb0", &div4_clks[DIV4_I], MSTPCR0, 31, CLK_ENABLE_ON_INIT),
-+	MSTP("ic0", &div4_clks[DIV4_I], MSTPCR0, 30, CLK_ENABLE_ON_INIT),
-+	MSTP("oc0", &div4_clks[DIV4_I], MSTPCR0, 29, CLK_ENABLE_ON_INIT),
-+	MSTP("uram0", &div4_clks[DIV4_U], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
-+	MSTP("xymem0", &div4_clks[DIV4_B], MSTPCR0, 26, CLK_ENABLE_ON_INIT),
-+	MSTP("intc3", &div4_clks[DIV4_P], MSTPCR0, 23, 0),
-+	MSTP("intc0", &div4_clks[DIV4_P], MSTPCR0, 22, 0),
-+	MSTP("dmac0", &div4_clks[DIV4_P], MSTPCR0, 21, 0),
-+	MSTP("sh0", &div4_clks[DIV4_P], MSTPCR0, 20, 0),
-+	MSTP("hudi0", &div4_clks[DIV4_P], MSTPCR0, 19, 0),
-+	MSTP("ubc0", &div4_clks[DIV4_P], MSTPCR0, 17, 0),
-+	MSTP("tmu0", &div4_clks[DIV4_P], MSTPCR0, 15, 0),
-+	MSTP("cmt0", &r_clk, MSTPCR0, 14, 0),
-+	MSTP("rwdt0", &r_clk, MSTPCR0, 13, 0),
-+	MSTP("mfi0", &div4_clks[DIV4_P], MSTPCR0, 11, 0),
-+	MSTP("flctl0", &div4_clks[DIV4_P], MSTPCR0, 10, 0),
-+	MSTP("scif0", &div4_clks[DIV4_P], MSTPCR0, 7, 0),
-+	MSTP("scif1", &div4_clks[DIV4_P], MSTPCR0, 6, 0),
-+	MSTP("scif2", &div4_clks[DIV4_P], MSTPCR0, 5, 0),
-+	MSTP("scif3", &div4_clks[DIV4_P], MSTPCR0, 4, 0),
-+	MSTP("sio0", &div4_clks[DIV4_P], MSTPCR0, 3, 0),
-+	MSTP("siof0", &div4_clks[DIV4_P], MSTPCR0, 2, 0),
-+	MSTP("siof1", &div4_clks[DIV4_P], MSTPCR0, 1, 0),
-+
-+	MSTP("i2c0", &div4_clks[DIV4_P], MSTPCR1, 9, 0),
-+	MSTP("i2c1", &div4_clks[DIV4_P], MSTPCR1, 8, 0),
-+
-+	MSTP("tpu0", &div4_clks[DIV4_P], MSTPCR2, 25, 0),
-+	MSTP("irda0", &div4_clks[DIV4_P], MSTPCR2, 24, 0),
-+	MSTP("sdhi0", &div4_clks[DIV4_P], MSTPCR2, 18, 0),
-+	MSTP("mmcif0", &div4_clks[DIV4_P], MSTPCR2, 17, 0),
-+	MSTP("sim0", &div4_clks[DIV4_P], MSTPCR2, 16, 0),
-+	MSTP("keysc0", &r_clk, MSTPCR2, 14, 0),
-+	MSTP("tsif0", &div4_clks[DIV4_P], MSTPCR2, 13, 0),
-+	MSTP("s3d40", &div4_clks[DIV4_P], MSTPCR2, 12, 0),
-+	MSTP("usbf0", &div4_clks[DIV4_P], MSTPCR2, 11, 0),
-+	MSTP("siu0", &div4_clks[DIV4_B], MSTPCR2, 8, 0),
-+	MSTP("jpu0", &div4_clks[DIV4_B], MSTPCR2, 6, CLK_ENABLE_ON_INIT),
-+	MSTP("vou0", &div4_clks[DIV4_B], MSTPCR2, 5, 0),
-+	MSTP("beu0", &div4_clks[DIV4_B], MSTPCR2, 4, 0),
-+	MSTP("ceu0", &div4_clks[DIV4_B], MSTPCR2, 3, 0),
-+	MSTP("veu0", &div4_clks[DIV4_B], MSTPCR2, 2, CLK_ENABLE_ON_INIT),
-+	MSTP("vpu0", &div4_clks[DIV4_B], MSTPCR2, 1, CLK_ENABLE_ON_INIT),
-+	MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
-+};
-+
-+int __init arch_clk_init(void)
-+{
-+	int k, ret = 0;
-+
-+	/* autodetect extal or dll configuration */
-+	if (__raw_readl(PLLCR) & 0x1000)
-+		pll_clk.parent = &dll_clk;
-+	else
-+		pll_clk.parent = &extal_clk;
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+
-+	if (!ret)
-+		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+
-+	if (!ret)
-+		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
-+
-+	return ret;
-+}
---- 0012/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-06-04 12:50:59.000000000 +0900
-@@ -1,7 +1,7 @@
- /*
-  * arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-  *
-- * SH7343, SH7722 & SH7366 support for the clock framework
-+ * SH7722 & SH7366 support for the clock framework
-  *
-  * Copyright (c) 2006-2007 Nomad Global Solutions Inc
-  * Based on code for sh7343 by Paul Mundt
-@@ -417,7 +417,6 @@ static struct clk_ops sh7722_frqcr_clk_o
- /*
-  * clock ops methods for SIU A/B and IrDA clock
-  */
--#ifndef CONFIG_CPU_SUBTYPE_SH7343
- static int sh7722_siu_set_rate(struct clk *clk, unsigned long rate, int algo_id)
- {
- 	unsigned long r;
-@@ -469,8 +468,6 @@ static struct clk_ops sh7722_siu_clk_ops
- 	.disable = sh7722_siu_disable,
+ arch/sh/boards/mach-se/7724/setup.c    |    1 
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |    2 
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    2 
+ drivers/usb/host/Kconfig               |    7 -
+ drivers/usb/host/r8a66597-hcd.c        |  187 ++++++++++++++++++--------------
+ drivers/usb/host/r8a66597.h            |   78 ++++++-------
+ include/linux/usb/r8a66597.h           |    3 
+ 7 files changed, 148 insertions(+), 132 deletions(-)
+
+--- 0001/arch/sh/boards/mach-se/7724/setup.c
++++ work/arch/sh/boards/mach-se/7724/setup.c	2009-07-17 02:12:24.000000000 +0900
+@@ -304,6 +304,7 @@ static struct platform_device sh_eth_dev
  };
  
--#endif /* CONFIG_CPU_SUBTYPE_SH7343 */
+ static struct r8a66597_platdata sh7724_usb0_host_data = {
++	.on_chip = 1,
+ };
+ 
+ static struct resource sh7724_usb0_host_resources[] = {
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7366.c	2009-07-17 02:11:44.000000000 +0900
+@@ -40,7 +40,7 @@ static struct platform_device iic_device
+ };
+ 
+ static struct r8a66597_platdata r8a66597_data = {
+-	/* This set zero to all members */
++	.on_chip = 1,
+ };
+ 
+ static struct resource usb_host_resources[] = {
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2009-07-17 02:12:21.000000000 +0900
+@@ -398,7 +398,7 @@ static struct platform_device rtc_device
+ };
+ 
+ static struct r8a66597_platdata r8a66597_data = {
+-	/* This set zero to all members */
++	.on_chip = 1,
+ };
+ 
+ static struct resource sh7723_usb_host_resources[] = {
+--- 0001/drivers/usb/host/Kconfig
++++ work/drivers/usb/host/Kconfig	2009-07-17 02:14:41.000000000 +0900
+@@ -335,13 +335,6 @@ config USB_R8A66597_HCD
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called r8a66597-hcd.
+ 
+-config SUPERH_ON_CHIP_R8A66597
+-	boolean "Enable SuperH on-chip R8A66597 USB"
+-	depends on USB_R8A66597_HCD && (CPU_SUBTYPE_SH7366 || CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7724)
+-	help
+-	   This driver enables support for the on-chip R8A66597 in the
+-	   SH7366, SH7723 and SH7724 processors.
 -
- static int sh7722_video_enable(struct clk *clk)
+ config USB_WHCI_HCD
+ 	tristate "Wireless USB Host Controller Interface (WHCI) driver (EXPERIMENTAL)"
+ 	depends on EXPERIMENTAL
+--- 0009/drivers/usb/host/r8a66597-hcd.c
++++ work/drivers/usb/host/r8a66597-hcd.c	2009-07-17 02:09:41.000000000 +0900
+@@ -92,43 +92,43 @@ static int r8a66597_clock_enable(struct 
+ 	u16 tmp;
+ 	int i = 0;
+ 
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+-#if defined(CONFIG_HAVE_CLK)
+-	clk_enable(r8a66597->clk);
++	if (r8a66597->pdata->on_chip) {
++#ifdef CONFIG_HAVE_CLK
++		clk_enable(r8a66597->clk);
+ #endif
+-	do {
+-		r8a66597_write(r8a66597, SCKE, SYSCFG0);
+-		tmp = r8a66597_read(r8a66597, SYSCFG0);
+-		if (i++ > 1000) {
+-			printk(KERN_ERR "r8a66597: register access fail.\n");
+-			return -ENXIO;
+-		}
+-	} while ((tmp & SCKE) != SCKE);
+-	r8a66597_write(r8a66597, 0x04, 0x02);
+-#else
+-	do {
+-		r8a66597_write(r8a66597, USBE, SYSCFG0);
+-		tmp = r8a66597_read(r8a66597, SYSCFG0);
+-		if (i++ > 1000) {
+-			printk(KERN_ERR "r8a66597: register access fail.\n");
+-			return -ENXIO;
+-		}
+-	} while ((tmp & USBE) != USBE);
+-	r8a66597_bclr(r8a66597, USBE, SYSCFG0);
+-	r8a66597_mdfy(r8a66597, get_xtal_from_pdata(r8a66597->pdata), XTAL,
+-			SYSCFG0);
++		do {
++			r8a66597_write(r8a66597, SCKE, SYSCFG0);
++			tmp = r8a66597_read(r8a66597, SYSCFG0);
++			if (i++ > 1000) {
++				printk(KERN_ERR "r8a66597: reg access fail.\n");
++				return -ENXIO;
++			}
++		} while ((tmp & SCKE) != SCKE);
++		r8a66597_write(r8a66597, 0x04, 0x02);
++	} else {
++		do {
++			r8a66597_write(r8a66597, USBE, SYSCFG0);
++			tmp = r8a66597_read(r8a66597, SYSCFG0);
++			if (i++ > 1000) {
++				printk(KERN_ERR "r8a66597: reg access fail.\n");
++				return -ENXIO;
++			}
++		} while ((tmp & USBE) != USBE);
++		r8a66597_bclr(r8a66597, USBE, SYSCFG0);
++		r8a66597_mdfy(r8a66597, get_xtal_from_pdata(r8a66597->pdata),
++			      XTAL, SYSCFG0);
+ 
+-	i = 0;
+-	r8a66597_bset(r8a66597, XCKE, SYSCFG0);
+-	do {
+-		msleep(1);
+-		tmp = r8a66597_read(r8a66597, SYSCFG0);
+-		if (i++ > 500) {
+-			printk(KERN_ERR "r8a66597: register access fail.\n");
+-			return -ENXIO;
+-		}
+-	} while ((tmp & SCKE) != SCKE);
+-#endif	/* #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) */
++		i = 0;
++		r8a66597_bset(r8a66597, XCKE, SYSCFG0);
++		do {
++			msleep(1);
++			tmp = r8a66597_read(r8a66597, SYSCFG0);
++			if (i++ > 500) {
++				printk(KERN_ERR "r8a66597: reg access fail.\n");
++				return -ENXIO;
++			}
++		} while ((tmp & SCKE) != SCKE);
++	}
+ 
+ 	return 0;
+ }
+@@ -137,15 +137,16 @@ static void r8a66597_clock_disable(struc
  {
- 	unsigned long r;
-@@ -542,7 +539,6 @@ static struct clk sh7722_r_clock = {
- 	.rate = 32768,
- };
- 
--#if !defined(CONFIG_CPU_SUBTYPE_SH7343)
- /*
-  * these three clocks - SIU A, SIU B, IrDA - share the same clk_ops
-  * methods of clk_ops determine which register they should access by
-@@ -559,7 +555,6 @@ static struct clk sh7722_siu_b_clock = {
- 	.arch_flags = SCLKBCR,
- 	.ops = &sh7722_siu_clk_ops,
- };
--#endif /* CONFIG_CPU_SUBTYPE_SH7343 */
- 
- #if defined(CONFIG_CPU_SUBTYPE_SH7722)
- static struct clk sh7722_irda_clock = {
-@@ -659,30 +654,6 @@ static struct clk sh7722_mstpcr_clocks[]
- 	MSTPCR("vpu0", "bus_clk", 2, 1, CLK_ENABLE_ON_INIT),
- 	MSTPCR("lcdc0", "bus_clk", 2, 0, 0),
- #endif
--#if defined(CONFIG_CPU_SUBTYPE_SH7343)
--	MSTPCR("uram0", "umem_clk", 0, 28, CLK_ENABLE_ON_INIT),
--	MSTPCR("xymem0", "bus_clk", 0, 26, CLK_ENABLE_ON_INIT),
--	MSTPCR("tmu0", "peripheral_clk", 0, 15, 0),
--	MSTPCR("cmt0", "r_clk", 0, 14, 0),
--	MSTPCR("rwdt0", "r_clk", 0, 13, 0),
--	MSTPCR("scif0", "peripheral_clk", 0, 7, 0),
--	MSTPCR("scif1", "peripheral_clk", 0, 6, 0),
--	MSTPCR("scif2", "peripheral_clk", 0, 5, 0),
--	MSTPCR("scif3", "peripheral_clk", 0, 4, 0),
--	MSTPCR("i2c0", "peripheral_clk", 1, 9, 0),
--	MSTPCR("i2c1", "peripheral_clk", 1, 8, 0),
--	MSTPCR("sdhi0", "peripheral_clk", 2, 18, 0),
--	MSTPCR("keysc0", "r_clk", 2, 14, 0),
--	MSTPCR("usbf0", "peripheral_clk", 2, 11, 0),
--	MSTPCR("siu0", "bus_clk", 2, 8, 0),
--	MSTPCR("jpu0", "bus_clk", 2, 6, CLK_ENABLE_ON_INIT),
--	MSTPCR("vou0", "bus_clk", 2, 5, 0),
--	MSTPCR("beu0", "bus_clk", 2, 4, 0),
--	MSTPCR("ceu0", "bus_clk", 2, 3, 0),
--	MSTPCR("veu0", "bus_clk", 2, 2, CLK_ENABLE_ON_INIT),
--	MSTPCR("vpu0", "bus_clk", 2, 1, CLK_ENABLE_ON_INIT),
--	MSTPCR("lcdc0", "bus_clk", 2, 0, 0),
+ 	r8a66597_bclr(r8a66597, SCKE, SYSCFG0);
+ 	udelay(1);
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+-#if defined(CONFIG_HAVE_CLK)
+-	clk_disable(r8a66597->clk);
 -#endif
- #if defined(CONFIG_CPU_SUBTYPE_SH7366)
- 	/* See page 52 of Datasheet V0.40: Overview -> Block Diagram */
- 	MSTPCR("tlb0", "cpu_clk", 0, 31, 0),
-@@ -730,10 +701,8 @@ static struct clk *sh7722_clocks[] = {
- 	&sh7722_sh_clock,
- 	&sh7722_peripheral_clock,
- 	&sh7722_sdram_clock,
--#if !defined(CONFIG_CPU_SUBTYPE_SH7343)
- 	&sh7722_siu_a_clock,
- 	&sh7722_siu_b_clock,
--#endif
- #if defined(CONFIG_CPU_SUBTYPE_SH7722)
- 	&sh7722_irda_clock,
+-#else
+-	r8a66597_bclr(r8a66597, PLLC, SYSCFG0);
+-	r8a66597_bclr(r8a66597, XCKE, SYSCFG0);
+-	r8a66597_bclr(r8a66597, USBE, SYSCFG0);
++
++	if (r8a66597->pdata->on_chip) {
++#ifdef CONFIG_HAVE_CLK
++		clk_disable(r8a66597->clk);
  #endif
++	} else {
++		r8a66597_bclr(r8a66597, PLLC, SYSCFG0);
++		r8a66597_bclr(r8a66597, XCKE, SYSCFG0);
++		r8a66597_bclr(r8a66597, USBE, SYSCFG0);
++	}
+ }
+ 
+ static void r8a66597_enable_port(struct r8a66597 *r8a66597, int port)
+@@ -206,7 +207,7 @@ static int enable_controller(struct r8a6
+ 
+ 	r8a66597_bset(r8a66597, SIGNE | SACKE, INTENB1);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
++	for (port = 0; port < r8a66597->max_root_hub; port++)
+ 		r8a66597_enable_port(r8a66597, port);
+ 
+ 	return 0;
+@@ -219,7 +220,7 @@ static void disable_controller(struct r8
+ 	r8a66597_write(r8a66597, 0, INTENB0);
+ 	r8a66597_write(r8a66597, 0, INTSTS0);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
++	for (port = 0; port < r8a66597->max_root_hub; port++)
+ 		r8a66597_disable_port(r8a66597, port);
+ 
+ 	r8a66597_clock_disable(r8a66597);
+@@ -250,11 +251,12 @@ static int is_hub_limit(char *devpath)
+ 	return ((strlen(devpath) >= 4) ? 1 : 0);
+ }
+ 
+-static void get_port_number(char *devpath, u16 *root_port, u16 *hub_port)
++static void get_port_number(struct r8a66597 *r8a66597,
++			    char *devpath, u16 *root_port, u16 *hub_port)
+ {
+ 	if (root_port) {
+ 		*root_port = (devpath[0] & 0x0F) - 1;
+-		if (*root_port >= R8A66597_MAX_ROOT_HUB)
++		if (*root_port >= r8a66597->max_root_hub)
+ 			printk(KERN_ERR "r8a66597: Illegal root port number.\n");
+ 	}
+ 	if (hub_port)
+@@ -356,7 +358,8 @@ static int make_r8a66597_device(struct r
+ 	INIT_LIST_HEAD(&dev->device_list);
+ 	list_add_tail(&dev->device_list, &r8a66597->child_device);
+ 
+-	get_port_number(urb->dev->devpath, &dev->root_port, &dev->hub_port);
++	get_port_number(r8a66597, urb->dev->devpath,
++			&dev->root_port, &dev->hub_port);
+ 	if (!is_child_device(urb->dev->devpath))
+ 		r8a66597->root_hub[dev->root_port].dev = dev;
+ 
+@@ -421,7 +424,7 @@ static void free_usb_address(struct r8a6
+ 	list_del(&dev->device_list);
+ 	kfree(dev);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++) {
++	for (port = 0; port < r8a66597->max_root_hub; port++) {
+ 		if (r8a66597->root_hub[port].dev = dev) {
+ 			r8a66597->root_hub[port].dev = NULL;
+ 			break;
+@@ -496,10 +499,20 @@ static void r8a66597_pipe_toggle(struct 
+ 		r8a66597_bset(r8a66597, SQCLR, pipe->pipectr);
+ }
+ 
++static inline unsigned short mbw_value(struct r8a66597 *r8a66597)
++{
++	if (r8a66597->pdata->on_chip)
++		return MBW_32;
++	else
++		return MBW_16;
++}
++
+ /* this function must be called with interrupt disabled */
+ static inline void cfifo_change(struct r8a66597 *r8a66597, u16 pipenum)
+ {
+-	r8a66597_mdfy(r8a66597, MBW | pipenum, MBW | CURPIPE, CFIFOSEL);
++	unsigned short mbw = mbw_value(r8a66597);
++
++	r8a66597_mdfy(r8a66597, mbw | pipenum, mbw | CURPIPE, CFIFOSEL);
+ 	r8a66597_reg_wait(r8a66597, CFIFOSEL, CURPIPE, pipenum);
+ }
+ 
+@@ -507,11 +520,13 @@ static inline void cfifo_change(struct r
+ static inline void fifo_change_from_pipe(struct r8a66597 *r8a66597,
+ 					 struct r8a66597_pipe *pipe)
+ {
++	unsigned short mbw = mbw_value(r8a66597);
++
+ 	cfifo_change(r8a66597, 0);
+-	r8a66597_mdfy(r8a66597, MBW | 0, MBW | CURPIPE, D0FIFOSEL);
+-	r8a66597_mdfy(r8a66597, MBW | 0, MBW | CURPIPE, D1FIFOSEL);
++	r8a66597_mdfy(r8a66597, mbw | 0, mbw | CURPIPE, D0FIFOSEL);
++	r8a66597_mdfy(r8a66597, mbw | 0, mbw | CURPIPE, D1FIFOSEL);
+ 
+-	r8a66597_mdfy(r8a66597, MBW | pipe->info.pipenum, MBW | CURPIPE,
++	r8a66597_mdfy(r8a66597, mbw | pipe->info.pipenum, mbw | CURPIPE,
+ 		      pipe->fifosel);
+ 	r8a66597_reg_wait(r8a66597, pipe->fifosel, CURPIPE, pipe->info.pipenum);
+ }
+@@ -743,9 +758,13 @@ static void enable_r8a66597_pipe_dma(str
+ 				     struct r8a66597_pipe *pipe,
+ 				     struct urb *urb)
+ {
+-#if !defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+ 	int i;
+ 	struct r8a66597_pipe_info *info = &pipe->info;
++	unsigned short mbw = mbw_value(r8a66597);
++
++	/* pipe dma is only for external controlles */
++	if (r8a66597->pdata->on_chip)
++		return;
+ 
+ 	if ((pipe->info.pipenum != 0) && (info->type != R8A66597_INT)) {
+ 		for (i = 0; i < R8A66597_MAX_DMA_CHANNEL; i++) {
+@@ -764,8 +783,8 @@ static void enable_r8a66597_pipe_dma(str
+ 			set_pipe_reg_addr(pipe, i);
+ 
+ 			cfifo_change(r8a66597, 0);
+-			r8a66597_mdfy(r8a66597, MBW | pipe->info.pipenum,
+-				      MBW | CURPIPE, pipe->fifosel);
++			r8a66597_mdfy(r8a66597, mbw | pipe->info.pipenum,
++				      mbw | CURPIPE, pipe->fifosel);
+ 
+ 			r8a66597_reg_wait(r8a66597, pipe->fifosel, CURPIPE,
+ 					  pipe->info.pipenum);
+@@ -773,7 +792,6 @@ static void enable_r8a66597_pipe_dma(str
+ 			break;
+ 		}
+ 	}
+-#endif	/* #if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) */
+ }
+ 
+ /* this function must be called with interrupt disabled */
+@@ -1770,7 +1788,7 @@ static void r8a66597_timer(unsigned long
+ 
+ 	spin_lock_irqsave(&r8a66597->lock, flags);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++)
++	for (port = 0; port < r8a66597->max_root_hub; port++)
+ 		r8a66597_root_hub_control(r8a66597, port);
+ 
+ 	spin_unlock_irqrestore(&r8a66597->lock, flags);
+@@ -1808,7 +1826,7 @@ static void set_address_zero(struct r8a6
+ 	u16 root_port, hub_port;
+ 
+ 	if (usb_address = 0) {
+-		get_port_number(urb->dev->devpath,
++		get_port_number(r8a66597, urb->dev->devpath,
+ 				&root_port, &hub_port);
+ 		set_devadd_reg(r8a66597, 0,
+ 			       get_r8a66597_usb_speed(urb->dev->speed),
+@@ -2083,7 +2101,7 @@ static int r8a66597_hub_status_data(stru
+ 
+ 	*buf = 0;	/* initialize (no change) */
+ 
+-	for (i = 0; i < R8A66597_MAX_ROOT_HUB; i++) {
++	for (i = 0; i < r8a66597->max_root_hub; i++) {
+ 		if (r8a66597->root_hub[i].port & 0xffff0000)
+ 			*buf |= 1 << (i + 1);
+ 	}
+@@ -2098,11 +2116,11 @@ static void r8a66597_hub_descriptor(stru
+ {
+ 	desc->bDescriptorType = 0x29;
+ 	desc->bHubContrCurrent = 0;
+-	desc->bNbrPorts = R8A66597_MAX_ROOT_HUB;
++	desc->bNbrPorts = r8a66597->max_root_hub;
+ 	desc->bDescLength = 9;
+ 	desc->bPwrOn2PwrGood = 0;
+ 	desc->wHubCharacteristics = cpu_to_le16(0x0011);
+-	desc->bitmap[0] = ((1 << R8A66597_MAX_ROOT_HUB) - 1) << 1;
++	desc->bitmap[0] = ((1 << r8a66597->max_root_hub) - 1) << 1;
+ 	desc->bitmap[1] = ~0;
+ }
+ 
+@@ -2130,7 +2148,7 @@ static int r8a66597_hub_control(struct u
+ 		}
+ 		break;
+ 	case ClearPortFeature:
+-		if (wIndex > R8A66597_MAX_ROOT_HUB)
++		if (wIndex > r8a66597->max_root_hub)
+ 			goto error;
+ 		if (wLength != 0)
+ 			goto error;
+@@ -2163,12 +2181,12 @@ static int r8a66597_hub_control(struct u
+ 		*buf = 0x00;
+ 		break;
+ 	case GetPortStatus:
+-		if (wIndex > R8A66597_MAX_ROOT_HUB)
++		if (wIndex > r8a66597->max_root_hub)
+ 			goto error;
+ 		*(__le32 *)buf = cpu_to_le32(rh->port);
+ 		break;
+ 	case SetPortFeature:
+-		if (wIndex > R8A66597_MAX_ROOT_HUB)
++		if (wIndex > r8a66597->max_root_hub)
+ 			goto error;
+ 		if (wLength != 0)
+ 			goto error;
+@@ -2217,7 +2235,7 @@ static int r8a66597_bus_suspend(struct u
+ 
+ 	dbg("%s", __func__);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++) {
++	for (port = 0; port < r8a66597->max_root_hub; port++) {
+ 		struct r8a66597_root_hub *rh = &r8a66597->root_hub[port];
+ 		unsigned long dvstctr_reg = get_dvstctr_reg(port);
+ 
+@@ -2248,7 +2266,7 @@ static int r8a66597_bus_resume(struct us
+ 
+ 	dbg("%s", __func__);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++) {
++	for (port = 0; port < r8a66597->max_root_hub; port++) {
+ 		struct r8a66597_root_hub *rh = &r8a66597->root_hub[port];
+ 		unsigned long dvstctr_reg = get_dvstctr_reg(port);
+ 
+@@ -2315,7 +2333,7 @@ static int r8a66597_suspend(struct devic
+ 
+ 	disable_controller(r8a66597);
+ 
+-	for (port = 0; port < R8A66597_MAX_ROOT_HUB; port++) {
++	for (port = 0; port < r8a66597->max_root_hub; port++) {
+ 		struct r8a66597_root_hub *rh = &r8a66597->root_hub[port];
+ 
+ 		rh->port = 0x00000000;
+@@ -2355,8 +2373,9 @@ static int __init_or_module r8a66597_rem
+ 	del_timer_sync(&r8a66597->rh_timer);
+ 	usb_remove_hcd(hcd);
+ 	iounmap((void *)r8a66597->reg);
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
+-	clk_put(r8a66597->clk);
++#ifdef CONFIG_HAVE_CLK
++	if (r8a66597->pdata->on_chip)
++		clk_put(r8a66597->clk);
+ #endif
+ 	usb_put_hcd(hcd);
+ 	return 0;
+@@ -2364,7 +2383,7 @@ static int __init_or_module r8a66597_rem
+ 
+ static int __devinit r8a66597_probe(struct platform_device *pdev)
+ {
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
++#ifdef CONFIG_HAVE_CLK
+ 	char clk_name[8];
+ #endif
+ 	struct resource *res = NULL, *ires;
+@@ -2426,15 +2445,20 @@ static int __devinit r8a66597_probe(stru
+ 	r8a66597->pdata = pdev->dev.platform_data;
+ 	r8a66597->irq_sense_low = irq_trigger = IRQF_TRIGGER_LOW;
+ 
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
+-	snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
+-	r8a66597->clk = clk_get(&pdev->dev, clk_name);
+-	if (IS_ERR(r8a66597->clk)) {
+-		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+-		ret = PTR_ERR(r8a66597->clk);
+-		goto clean_up2;
+-	}
++	if (r8a66597->pdata->on_chip) {
++#ifdef CONFIG_HAVE_CLK
++		snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
++		r8a66597->clk = clk_get(&pdev->dev, clk_name);
++		if (IS_ERR(r8a66597->clk)) {
++			dev_err(&pdev->dev, "cannot get clock \"%s\"\n",
++				clk_name);
++			ret = PTR_ERR(r8a66597->clk);
++			goto clean_up2;
++		}
+ #endif
++		r8a66597->max_root_hub = 1;
++	} else
++		r8a66597->max_root_hub = 2;
+ 
+ 	spin_lock_init(&r8a66597->lock);
+ 	init_timer(&r8a66597->rh_timer);
+@@ -2464,8 +2488,9 @@ static int __devinit r8a66597_probe(stru
+ 	return 0;
+ 
+ clean_up3:
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
+-	clk_put(r8a66597->clk);
++#ifdef CONFIG_HAVE_CLK
++	if (r8a66597->pdata->on_chip)
++		clk_put(r8a66597->clk);
+ clean_up2:
+ #endif
+ 	usb_put_hcd(hcd);
+--- 0001/drivers/usb/host/r8a66597.h
++++ work/drivers/usb/host/r8a66597.h	2009-07-17 02:03:13.000000000 +0900
+@@ -26,7 +26,7 @@
+ #ifndef __R8A66597_H__
+ #define __R8A66597_H__
+ 
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
++#ifdef CONFIG_HAVE_CLK
+ #include <linux/clk.h>
+ #endif
+ 
+@@ -193,13 +193,9 @@
+ #define	REW		0x4000	/* b14: Buffer rewind */
+ #define	DCLRM		0x2000	/* b13: DMA buffer clear mode */
+ #define	DREQE		0x1000	/* b12: DREQ output enable */
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+-#define	MBW		0x0800
+-#else
+-#define	MBW		0x0400	/* b10: Maximum bit width for FIFO access */
+-#endif
+ #define	  MBW_8		 0x0000	  /*  8bit */
+ #define	  MBW_16	 0x0400	  /* 16bit */
++#define	  MBW_32	 0x0800   /* 32bit */
+ #define	BIGEND		0x0100	/* b8: Big endian mode */
+ #define	  BYTE_LITTLE	 0x0000		/* little dendian */
+ #define	  BYTE_BIG	 0x0100		/* big endifan */
+@@ -405,11 +401,7 @@
+ #define R8A66597_MAX_NUM_PIPE		10
+ #define R8A66597_BUF_BSIZE		8
+ #define R8A66597_MAX_DEVICE		10
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+-#define R8A66597_MAX_ROOT_HUB		1
+-#else
+ #define R8A66597_MAX_ROOT_HUB		2
+-#endif
+ #define R8A66597_MAX_SAMPLING		5
+ #define R8A66597_RH_POLL_TIME		10
+ #define R8A66597_MAX_DMA_CHANNEL	2
+@@ -487,7 +479,7 @@ struct r8a66597_root_hub {
+ struct r8a66597 {
+ 	spinlock_t lock;
+ 	unsigned long reg;
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597) && defined(CONFIG_HAVE_CLK)
++#ifdef CONFIG_HAVE_CLK
+ 	struct clk *clk;
+ #endif
+ 	struct r8a66597_platdata	*pdata;
+@@ -504,6 +496,7 @@ struct r8a66597 {
+ 	unsigned short interval_map;
+ 	unsigned char pipe_cnt[R8A66597_MAX_NUM_PIPE];
+ 	unsigned char dma_map;
++	unsigned int max_root_hub;
+ 
+ 	struct list_head child_device;
+ 	unsigned long child_connect_map[4];
+@@ -550,21 +543,22 @@ static inline void r8a66597_read_fifo(st
+ 				      unsigned long offset, u16 *buf,
+ 				      int len)
+ {
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+ 	unsigned long fifoaddr = r8a66597->reg + offset;
+ 	unsigned long count;
+ 
+-	count = len / 4;
+-	insl(fifoaddr, buf, count);
+-
+-	if (len & 0x00000003) {
+-		unsigned long tmp = inl(fifoaddr);
+-		memcpy((unsigned char *)buf + count * 4, &tmp, len & 0x03);
++	if (r8a66597->pdata->on_chip) {
++		count = len / 4;
++		insl(fifoaddr, buf, count);
++
++		if (len & 0x00000003) {
++			unsigned long tmp = inl(fifoaddr);
++			memcpy((unsigned char *)buf + count * 4, &tmp,
++			       len & 0x03);
++		}
++	} else {
++		len = (len + 1) / 2;
++		insw(fifoaddr, buf, len);
+ 	}
+-#else
+-	len = (len + 1) / 2;
+-	insw(r8a66597->reg + offset, buf, len);
+-#endif
+ }
+ 
+ static inline void r8a66597_write(struct r8a66597 *r8a66597, u16 val,
+@@ -578,33 +572,33 @@ static inline void r8a66597_write_fifo(s
+ 				       int len)
+ {
+ 	unsigned long fifoaddr = r8a66597->reg + offset;
+-#if defined(CONFIG_SUPERH_ON_CHIP_R8A66597)
+ 	unsigned long count;
+ 	unsigned char *pb;
+ 	int i;
+ 
+-	count = len / 4;
+-	outsl(fifoaddr, buf, count);
+-
+-	if (len & 0x00000003) {
+-		pb = (unsigned char *)buf + count * 4;
+-		for (i = 0; i < (len & 0x00000003); i++) {
+-			if (r8a66597_read(r8a66597, CFIFOSEL) & BIGEND)
+-				outb(pb[i], fifoaddr + i);
+-			else
+-				outb(pb[i], fifoaddr + 3 - i);
++	if (r8a66597->pdata->on_chip) {
++		count = len / 4;
++		outsl(fifoaddr, buf, count);
++
++		if (len & 0x00000003) {
++			pb = (unsigned char *)buf + count * 4;
++			for (i = 0; i < (len & 0x00000003); i++) {
++				if (r8a66597_read(r8a66597, CFIFOSEL) & BIGEND)
++					outb(pb[i], fifoaddr + i);
++				else
++					outb(pb[i], fifoaddr + 3 - i);
++			}
+ 		}
+-	}
+-#else
+-	int odd = len & 0x0001;
++	} else {
++		int odd = len & 0x0001;
+ 
+-	len = len / 2;
+-	outsw(fifoaddr, buf, len);
+-	if (unlikely(odd)) {
+-		buf = &buf[len];
+-		outb((unsigned char)*buf, fifoaddr);
++		len = len / 2;
++		outsw(fifoaddr, buf, len);
++		if (unlikely(odd)) {
++			buf = &buf[len];
++			outb((unsigned char)*buf, fifoaddr);
++		}
+ 	}
+-#endif
+ }
+ 
+ static inline void r8a66597_mdfy(struct r8a66597 *r8a66597,
+--- 0001/include/linux/usb/r8a66597.h
++++ work/include/linux/usb/r8a66597.h	2009-07-17 01:39:37.000000000 +0900
+@@ -31,6 +31,9 @@ struct r8a66597_platdata {
+ 	/* This ops can controll port power instead of DVSTCTR register. */
+ 	void (*port_power)(int port, int power);
+ 
++	/* set one = on chip controller, set zero = external controller */
++	unsigned	on_chip:1;
++
+ 	/* (external controller only) set R8A66597_PLATDATA_XTAL_nnMHZ */
+ 	unsigned	xtal:2;
+ 
