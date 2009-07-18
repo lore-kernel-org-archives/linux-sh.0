@@ -1,30 +1,61 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 30 Jul 2009 05:25:26 +0000
-Subject: Re: Problem with current kernel and old sh3 machines
-Message-Id: <20090730052525.GA29064@linux-sh.org>
+From: Pavel Machek <pavel@ucw.cz>
+Date: Sat, 18 Jul 2009 11:49:48 +0000
+Subject: Re: [linux-pm] [PATCH 00/04][RFC] PM: Runtime platform device PM
+Message-Id: <20090718114947.GG1433@ucw.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <aec7e5c30907232030pf8d5e92h1ae9d73d5a5e8e44@mail.gmail.com>
-In-Reply-To: <aec7e5c30907232030pf8d5e92h1ae9d73d5a5e8e44@mail.gmail.com>
+References: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090527100625.29671.43166.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jul 29, 2009 at 10:11:45PM -0300, Rafael Ignacio Zurita wrote:
-> Node 0: start_pfn = 0xd000, low = 0xe000                                        
-> Zone PFN ranges:                                                                
->   Normal   0x0000d000 -> 0x0000e000                                             
-> Movable zone start PFN for each node                                            
-> early_node_map[1] active PFN ranges                                             
->     0: 0x0000d000 -> 0x0000e000                                                 
-> Built 1 zonelists in Zone order, mobility grouping off.  Total pages: 4064      
-> Kernel command line: memM init=/bin/sh earlyprintk=serial                    
-> NR_IRQS:256                                                                     
-> PID hash table entries: 64 (order: 6, 256 bytes)                                
-> Console: colour dummy device 80x25                                              
-> console handover: boot [sercon0] -> real [tty0]        
+Hi!
+
+> > Sure, conditions may have changed while the system was asleep.  They might
+> > also change while the system is awake.  In general, whether or not the system
+> > was asleep shouldn't make any difference -- to as great an extent as possible
+> > we should strive to pretend that the entire sleep took no time at all (or
+> > simply didn't happen).
+> > 
+> > So: Suppose the system had been awake when the access point
+> > disappeared.  What would the wireless adapter driver do then?  It
+> > should try to do exactly the same thing if the access point disappears
+> > while the system is asleep.
 > 
-> and I guess that the system hangs. 
-> Should I try other printks in other places? Suggestions?
+> Not really.  Namely, when the access point _vanishes_ at run time, this is an
+> error condition from which we have to recover, while if it's _not_ _present_
+> after a resume, it's a normal situation and we shouldn't be recovering from
+> that (the user might have changed the physical location while
+> suspended).
+
+I disagree here. User can just walk away with powered notebook.
+
+
+> > You see?  The sleep should be transparent.
 > 
-earlyprintk=serial,keep
+> In some cases it won't be, because the hardware state changes while sleeping.
+> For example, a laptop battery may be depleted while suspended, so that after
+> resume it's in the 'low' condition, while it was in the 'good' condition before
+> the preceding suspend.  Arguably, you can't drain a battery from 90% to 10%,
+> for example, momentarily.  Also, a CPU fan might be 100% on before
+> suspend,
+
+Actually... going 90%->10% immediately is common behaviour of old
+li-ion batteries.
+
+> because the CPU was hot at that time, but that doesn't mean the fan should be
+> 100% on after the subsequent resume, because it's likely that the CPU will be
+> cold (on some systems trying to make the fan spin too fast may lead to
+> general problems with thermal management afterwards).
+
+100% is indeed sane default for fan. Yes you should slow the fan down
+when you read the real temperature. And yes some systems play it safe
+and do 100% fan during boot.
+
+(Otherwise you may have heat problems if you suspend and immediately
+resume).
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
