@@ -1,199 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 17 Jul 2009 14:24:55 +0000
-Subject: [PATCH] sh: Add support for multiple hwblk counters
-Message-Id: <20090717142455.14866.58859.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sun, 19 Jul 2009 19:38:05 +0000
+Subject: Re: [PATCH] sh: Add support for multiple hwblk counters
+Message-Id: <20090719193805.GB30569@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090717142455.14866.58859.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090717142455.14866.58859.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Fri, Jul 17, 2009 at 11:24:55PM +0900, Magnus Damm wrote:
+> Extend the SuperH hwblk code to support more than one counter.
+> Contains ground work for the future Runtime PM implementation.
 
-Extend the SuperH hwblk code to support more than one counter.
-Contains ground work for the future Runtime PM implementation.
+On Fri, Jul 17, 2009 at 11:43:38PM +0900, Magnus Damm wrote:
+> This patch adds hwblk support for the sh7723 processor.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Fri, Jul 17, 2009 at 11:52:05PM +0900, Magnus Damm wrote:
+> Convert the r8a66597-hcd driver to dev_pm_ops. This makes
+> the driver a good PM citizen and removes a warning printout.
 
- Previously posted together with the Runtime PM prototype.
+On Fri, Jul 17, 2009 at 11:59:55PM +0900, Magnus Damm wrote:
+> Convert the r8a66597-hcd driver to use the on_chip flag
+> from platform data to enable on chip behaviour instead
+> of relying on CONFIG_SUPERH_ON_CHIP_R8A66597 ugliness.
+> 
+> This makes the code cleaner and also allows us to support
+> both external and internal r8a66597 with the same kernel.
+> 
+> It also makes the Kconfig part more future proof since
+> we with this patch can add support for new processors
+> with on-chip r8a66597 without modifying the Kconfig.
 
- arch/sh/include/asm/hwblk.h            |   13 +++++-
- arch/sh/kernel/cpu/hwblk.c             |   69 +++++++++++++++++++++-----------
- arch/sh/kernel/cpu/sh4a/hwblk-sh7722.c |    4 -
- 3 files changed, 60 insertions(+), 26 deletions(-)
-
---- 0001/arch/sh/include/asm/hwblk.h
-+++ work/arch/sh/include/asm/hwblk.h	2009-07-09 18:38:04.000000000 +0900
-@@ -4,6 +4,9 @@
- #include <asm/clock.h>
- #include <asm/io.h>
- 
-+#define HWBLK_CNT_USAGE 0
-+#define HWBLK_CNT_NR 1
-+
- #define HWBLK_AREA_FLAG_PARENT (1 << 0) /* valid parent */
- 
- #define HWBLK_AREA(_flags, _parent)		\
-@@ -13,7 +16,7 @@
- }
- 
- struct hwblk_area {
--	unsigned long cnt;
-+	int cnt[HWBLK_CNT_NR];
- 	unsigned char parent;
- 	unsigned char flags;
- };
-@@ -29,7 +32,7 @@ struct hwblk {
- 	void __iomem *mstp;
- 	unsigned char bit;
- 	unsigned char area;
--	unsigned long cnt;
-+	int cnt[HWBLK_CNT_NR];
- };
- 
- struct hwblk_info {
-@@ -46,6 +49,12 @@ int arch_hwblk_sleep_mode(void);
- int hwblk_register(struct hwblk_info *info);
- int hwblk_init(void);
- 
-+void hwblk_enable(struct hwblk_info *info, int hwblk);
-+void hwblk_disable(struct hwblk_info *info, int hwblk);
-+
-+void hwblk_cnt_inc(struct hwblk_info *info, int hwblk, int cnt);
-+void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int cnt);
-+
- /* allow clocks to enable and disable hardware blocks */
- #define SH_HWBLK_CLK(_name, _id, _parent, _hwblk, _flags)	\
- {							\
---- 0001/arch/sh/kernel/cpu/hwblk.c
-+++ work/arch/sh/kernel/cpu/hwblk.c	2009-07-09 18:34:46.000000000 +0900
-@@ -9,38 +9,64 @@
- 
- static DEFINE_SPINLOCK(hwblk_lock);
- 
--static void hwblk_area_inc(struct hwblk_info *info, int area)
-+static void hwblk_area_mod_cnt(struct hwblk_info *info,
-+			       int area, int counter, int value, int goal)
- {
- 	struct hwblk_area *hap = info->areas + area;
- 
--	hap->cnt++;
--	if (hap->cnt = 1)
--		if (hap->flags & HWBLK_AREA_FLAG_PARENT)
--			hwblk_area_inc(info, hap->parent);
-+	hap->cnt[counter] += value;
-+
-+	if (hap->cnt[counter] != goal)
-+		return;
-+
-+	if (hap->flags & HWBLK_AREA_FLAG_PARENT)
-+		hwblk_area_mod_cnt(info, hap->parent, counter, value, goal);
- }
- 
--static void hwblk_area_dec(struct hwblk_info *info, int area)
-+
-+static int __hwblk_mod_cnt(struct hwblk_info *info, int hwblk,
-+			  int counter, int value, int goal)
- {
--	struct hwblk_area *hap = info->areas + area;
-+	struct hwblk *hp = info->hwblks + hwblk;
-+
-+	hp->cnt[counter] += value;
-+	if (hp->cnt[counter] = goal)
-+		hwblk_area_mod_cnt(info, hp->area, counter, value, goal);
- 
--	if (hap->cnt = 1)
--		if (hap->flags & HWBLK_AREA_FLAG_PARENT)
--			hwblk_area_dec(info, hap->parent);
--	hap->cnt--;
-+	return hp->cnt[counter];
- }
- 
--static void hwblk_enable(struct hwblk_info *info, int hwblk)
-+static void hwblk_mod_cnt(struct hwblk_info *info, int hwblk,
-+			  int counter, int value, int goal)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&hwblk_lock, flags);
-+	__hwblk_mod_cnt(info, hwblk, counter, value, goal);
-+	spin_unlock_irqrestore(&hwblk_lock, flags);
-+}
-+
-+void hwblk_cnt_inc(struct hwblk_info *info, int hwblk, int counter)
-+{
-+	hwblk_mod_cnt(info, hwblk, counter, 1, 1);
-+}
-+
-+void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int counter)
-+{
-+	hwblk_mod_cnt(info, hwblk, counter, -1, 0);
-+}
-+
-+void hwblk_enable(struct hwblk_info *info, int hwblk)
- {
- 	struct hwblk *hp = info->hwblks + hwblk;
- 	unsigned long tmp;
- 	unsigned long flags;
-+	int ret;
- 
- 	spin_lock_irqsave(&hwblk_lock, flags);
- 
--	hp->cnt++;
--	if (hp->cnt = 1) {
--		hwblk_area_inc(info, hp->area);
--
-+	ret = __hwblk_mod_cnt(info, hwblk, HWBLK_CNT_USAGE, 1, 1);
-+	if (ret = 1) {
- 		tmp = __raw_readl(hp->mstp);
- 		tmp &= ~(1 << hp->bit);
- 		__raw_writel(tmp, hp->mstp);
-@@ -49,27 +75,26 @@ static void hwblk_enable(struct hwblk_in
- 	spin_unlock_irqrestore(&hwblk_lock, flags);
- }
- 
--static void hwblk_disable(struct hwblk_info *info, int hwblk)
-+void hwblk_disable(struct hwblk_info *info, int hwblk)
- {
- 	struct hwblk *hp = info->hwblks + hwblk;
- 	unsigned long tmp;
- 	unsigned long flags;
-+	int ret;
- 
- 	spin_lock_irqsave(&hwblk_lock, flags);
- 
--	if (hp->cnt = 1) {
--		hwblk_area_dec(info, hp->area);
--
-+	ret = __hwblk_mod_cnt(info, hwblk, HWBLK_CNT_USAGE, -1, 0);
-+	if (ret = 0) {
- 		tmp = __raw_readl(hp->mstp);
- 		tmp |= 1 << hp->bit;
- 		__raw_writel(tmp, hp->mstp);
- 	}
--	hp->cnt--;
- 
- 	spin_unlock_irqrestore(&hwblk_lock, flags);
- }
- 
--static struct hwblk_info *hwblk_info;
-+struct hwblk_info *hwblk_info;
- 
- int __init hwblk_register(struct hwblk_info *info)
- {
---- 0001/arch/sh/kernel/cpu/sh4a/hwblk-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/hwblk-sh7722.c	2009-07-09 18:38:48.000000000 +0900
-@@ -91,10 +91,10 @@ static struct hwblk_info sh7722_hwblk_in
- 
- int arch_hwblk_sleep_mode(void)
- {
--	if (!sh7722_hwblk_area[CORE_AREA].cnt)
-+	if (!sh7722_hwblk_area[CORE_AREA].cnt[HWBLK_CNT_USAGE])
- 		return SUSP_SH_STANDBY | SUSP_SH_SF;
- 
--	if (!sh7722_hwblk_area[CORE_AREA_BM].cnt)
-+	if (!sh7722_hwblk_area[CORE_AREA_BM].cnt[HWBLK_CNT_USAGE])
- 		return SUSP_SH_SLEEP | SUSP_SH_SF;
- 
- 	return SUSP_SH_SLEEP;
+Applied, thanks.
