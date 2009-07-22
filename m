@@ -1,49 +1,101 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2009 14:01:58 +0000
-Subject: [PATCH 00/04] PM: SuperH Runtime PM prototype V2
-Message-Id: <20090731140158.11351.26021.sendpatchset@rx1.opensource.se>
+Date: Wed, 22 Jul 2009 16:22:28 +0000
+Subject: [PATCH] sh: kfr2r09 board support - NOR flash
+Message-Id: <20090722162228.18182.95719.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-PM: SuperH Runtime PM prototype V2
+From: Magnus Damm <damm@igel.co.jp>
 
-[PATCH 01/04] sh: SuperH platform bus code for Runtime PM v11
-[PATCH 02/04] i2c: Runtime PM changes for SuperH I2C driver 
-[PATCH 03/04] uio: Runtime PM changes for UIO driver
-[PATCH 04/04] video: Runtime PM hack for SuperH LCDC driver
+This patch adds NOR flash support to the kfr2r09 board.
 
-This series is the Runtime PM prototype for SuperH V2. Included
-is a architecture specific Runtime PM implementation prototype
-for the platform bus together with a few driver changes.
-
-The patches are meant to be applied on top of the following: 
-"PM: Introduce core framework for run-time PM of I/O devices (rev. 11)"
-"PM: Runtime PM v11 - add dev_pm_ops helpers"
-"PM: Runtime PM v11 - let bus-less devices succeed"
-"PM: Runtime PM v11 - add debug printouts"
-"PM: Runtime PM v11 - CONFIG_PM_SLEEP=n support"
-"Driver Core: Runtime PM callbacks for the Platform Bus V2"
-
-For the SuperH side of things you also need latest sh-2.6 git and:
-"Driver Core: Add platform device arch data V3"
-"sh: Runtime PM pdev hwblk changes"
-
-Patch 01 + 04 need more attention
-Patch 02 + 03 should be all that is needed for Runtime PM driver support.
-
-Rafael, please have a look at the Runtime PM v11 issue in patch 04.
+NOR flash support is added by describing the NOR flash
+chip hooked up to CS0 as platform device data for the
+physmap-flash MTD driver.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/include/asm/device.h             |    8 
- arch/sh/include/asm/hwblk.h              |    4 
- arch/sh/kernel/cpu/shmobile/Makefile     |    1 
- arch/sh/kernel/cpu/shmobile/pm_runtime.c |  244 ++++++++++++++++++++++++++++++
- drivers/i2c/busses/i2c-sh_mobile.c       |   39 ++++
- drivers/uio/uio_pdrv_genirq.c            |   54 ++++++
- drivers/video/sh_mobile_lcdcfb.c         |   47 +++--
- 7 files changed, 376 insertions(+), 21 deletions(-)
+ Applies on top of the SCIF patch.
+
+ arch/sh/boards/mach-kfr2r09/setup.c |   54 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 53 insertions(+), 1 deletion(-)
+
+--- 0009/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-07-23 00:36:29.000000000 +0900
+@@ -10,6 +10,7 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
++#include <linux/mtd/physmap.h>
+ #include <linux/delay.h>
+ #include <linux/clk.h>
+ #include <linux/gpio.h>
+@@ -18,13 +19,64 @@
+ #include <asm/io.h>
+ #include <cpu/sh7724.h>
+ 
++static struct mtd_partition kfr2r09_nor_flash_partitions[] +{
++	{
++		.name = "boot",
++		.offset = 0,
++		.size = (4 * 1024 * 1024),
++		.mask_flags = MTD_WRITEABLE,	/* Read-only */
++	},
++	{
++		.name = "other",
++		.offset = MTDPART_OFS_APPEND,
++		.size = MTDPART_SIZ_FULL,
++	},
++};
++
++static struct physmap_flash_data kfr2r09_nor_flash_data = {
++	.width		= 2,
++	.parts		= kfr2r09_nor_flash_partitions,
++	.nr_parts	= ARRAY_SIZE(kfr2r09_nor_flash_partitions),
++};
++
++static struct resource kfr2r09_nor_flash_resources[] = {
++	[0] = {
++		.name		= "NOR Flash",
++		.start		= 0x00000000,
++		.end		= 0x03ffffff,
++		.flags		= IORESOURCE_MEM,
++	}
++};
++
++static struct platform_device kfr2r09_nor_flash_device = {
++	.name		= "physmap-flash",
++	.resource	= kfr2r09_nor_flash_resources,
++	.num_resources	= ARRAY_SIZE(kfr2r09_nor_flash_resources),
++	.dev		= {
++		.platform_data = &kfr2r09_nor_flash_data,
++	},
++};
++
++static struct platform_device *kfr2r09_devices[] __initdata = {
++	&kfr2r09_nor_flash_device,
++};
++
++#define BSC_CS0BCR 0xfec10004
++#define BSC_CS0WCR 0xfec10024
++
+ static int __init kfr2r09_devices_setup(void)
+ {
+ 	/* enable SCIF1 serial port for YC401 console support */
+ 	gpio_request(GPIO_FN_SCIF1_RXD, NULL);
+ 	gpio_request(GPIO_FN_SCIF1_TXD, NULL);
+ 
+-	return 0;
++	/* setup NOR flash at CS0 */
++	ctrl_outl(0x36db0400, BSC_CS0BCR);
++	ctrl_outl(0x00000500, BSC_CS0WCR);
++
++	return platform_add_devices(kfr2r09_devices,
++				    ARRAY_SIZE(kfr2r09_devices));
+ }
+ device_initcall(kfr2r09_devices_setup);
+ 
