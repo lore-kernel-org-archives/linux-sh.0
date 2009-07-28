@@ -1,206 +1,128 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Sat, 11 Jul 2009 01:00:23 +0000
-Subject: Re: [PATCH 1/3] sh: Provide diagnostic kernel stack checks
-Message-Id: <20090711010023.GA7058@console-pimps.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 28 Jul 2009 08:06:49 +0000
+Subject: [PATCH] SH: Switch Migo-R to use the tmio MMC driver instead of SPI
+Message-Id: <Pine.LNX.4.64.0907280951220.4943@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <194c0b5363680cc9a1ff59bf2784e09574fbaa99.1247272091.git.matt@console-pimps.org>
-In-Reply-To: <194c0b5363680cc9a1ff59bf2784e09574fbaa99.1247272091.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, Jul 11, 2009 at 01:29:02AM +0100, Matt Fleming wrote:
->  	mov.l	r4, @-r15;	\
-> @@ -28,6 +29,56 @@
->  	rts;			\
->  	 mov.l	@r15+, r4
->  
-> +#ifdef CONFIG_STACK_DEBUG
-> +/*
-> + * Perform diagnostic checks on the state of the kernel stack,
-> + *
+Allow tmio_mmc driver to be used on SuperH systems and add platform bindngs to
+the SH7722 Migo-R platform.
 
-The follow-up patch fixes this comma.
-
-> +							\
-> +	/* sizeof(struct thread_info) */		\
-> +	mov	#60, r3;				\
-> +	mov	#(STACK_WARN >> 8), r2;			\
-> +	shll8	r2;					\
-
-And uses a proper constant for sizeof(struct thread_info).
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-Enable kernel stack checking code in both the dynamic ftrace and mcount
-code paths. Check the stack to see if it's overflowing and make sure
-that the stack pointer contains an address that's either in init_stack
-or after the bss.
+Depends on my previous two patches for tmio_mmc:
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
----
- arch/sh/Kconfig.debug        |   11 +++++
- arch/sh/kernel/asm-offsets.c |    1 +
- arch/sh/lib/mcount.S         |   85 ++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 97 insertions(+), 0 deletions(-)
+http://marc.info/?l=linux-kernel&m4876748530957&w=2
+http://marc.info/?l=linux-kernel&m4782904228865&w=2
 
-diff --git a/arch/sh/Kconfig.debug b/arch/sh/Kconfig.debug
-index 39224b5..52a132c 100644
---- a/arch/sh/Kconfig.debug
-+++ b/arch/sh/Kconfig.debug
-@@ -123,4 +123,15 @@ config SH64_SR_WATCH
- 	bool "Debug: set SR.WATCH to enable hardware watchpoints and trace"
- 	depends on SUPERH64
+ arch/sh/boards/mach-migor/setup.c |   48 ++++++++++++++++++++++++++++++-------
+ drivers/mmc/host/Kconfig          |    4 +-
+ 2 files changed, 41 insertions(+), 11 deletions(-)
+
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index f70f464..fafa88e 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -30,6 +30,8 @@
+ #include <asm/sh_keysc.h>
+ #include <mach/migor.h>
+ #include <cpu/sh7722.h>
++#include <linux/mfd/core.h>
++#include <linux/mfd/tmio.h>
  
-+config STACK_DEBUG
-+	bool "Enable diagnostic checks of the kernel stack"
-+	depends on FUNCTION_TRACER
-+	select DEBUG_STACKOVERFLOW
-+	default n
-+	help
-+	  This option allows checks to be performed on the kernel stack
-+	  at runtime. Saying Y here will add overhead to every function
-+	  call and will therefore incur a major performance hit. Most
-+	  users should say N.
-+
- endmenu
-diff --git a/arch/sh/kernel/asm-offsets.c b/arch/sh/kernel/asm-offsets.c
-index 99aceb2..d218e80 100644
---- a/arch/sh/kernel/asm-offsets.c
-+++ b/arch/sh/kernel/asm-offsets.c
-@@ -26,6 +26,7 @@ int main(void)
- 	DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
- 	DEFINE(TI_PRE_COUNT,	offsetof(struct thread_info, preempt_count));
- 	DEFINE(TI_RESTART_BLOCK,offsetof(struct thread_info, restart_block));
-+	DEFINE(TI_SIZE,		sizeof(struct thread_info));
+ /* Address     IRQ  Size  Bus  Description
+  * 0x00000000       64MB  16   NOR Flash (SP29PL256N)
+@@ -381,17 +383,35 @@ static struct platform_device migor_ceu_device = {
+ 	},
+ };
  
- #ifdef CONFIG_HIBERNATION
- 	DEFINE(PBE_ADDRESS, offsetof(struct pbe, address));
-diff --git a/arch/sh/lib/mcount.S b/arch/sh/lib/mcount.S
-index 71e87f9..8596483 100644
---- a/arch/sh/lib/mcount.S
-+++ b/arch/sh/lib/mcount.S
-@@ -9,6 +9,8 @@
-  * for more details.
-  */
- #include <asm/ftrace.h>
-+#include <asm/thread_info.h>
-+#include <asm/asm-offsets.h>
+-struct spi_gpio_platform_data sdcard_cn9_platform_data = {
+-	.sck = GPIO_PTD0,
+-	.mosi = GPIO_PTD1,
+-	.miso = GPIO_PTD2,
+-	.num_chipselect = 1,
++static struct resource sdhi_cn9_resources[] = {
++	[0] = {
++		.name	= "MMC",
++		.start	= 0x04ce0000,
++		.end	= 0x04ce01ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 101,
++		.end	= 101,
++		.flags  = IORESOURCE_IRQ,
++	},
+ };
  
- #define MCOUNT_ENTER()		\
- 	mov.l	r4, @-r15;	\
-@@ -28,6 +30,55 @@
- 	rts;			\
- 	 mov.l	@r15+, r4
+-static struct platform_device sdcard_cn9_device = {
+-	.name		= "spi_gpio",
++static struct tmio_mmc_data sdhi_cn9_driver_data = {
++	.hclk = 24000000,
++	.clk_name = "sdhi0",
++};
++
++struct mfd_cell sdhi_cn9_platform_data = {
++	.driver_data = &sdhi_cn9_driver_data,
++};
++
++static struct platform_device sdhi_cn9_device = {
++	.name		= "tmio-mmc",
++	.num_resources	= ARRAY_SIZE(sdhi_cn9_resources),
++	.resource	= sdhi_cn9_resources,
+ 	.dev	= {
+-		.platform_data	= &sdcard_cn9_platform_data,
++		.platform_data	= &sdhi_cn9_platform_data,
+ 	},
+ };
  
-+#ifdef CONFIG_STACK_DEBUG
-+/*
-+ * Perform diagnostic checks on the state of the kernel stack.
-+ *
-+ * Check for stack overflow. If there is less than 1KB free
-+ * then it has overflowed.
-+ *
-+ * Make sure the stack pointer contains a valid address. Valid
-+ * addresses for kernel stacks are anywhere after the bss
-+ * (after _ebss) and anywhere in init_thread_union (init_stack).
-+ */
-+#define STACK_CHECK()					\
-+	mov	#(THREAD_SIZE >> 10), r0;		\
-+	shll8	r0;					\
-+	shll2	r0;					\
-+							\
-+	/* r1 = sp & (THREAD_SIZE - 1) */		\
-+	mov	#-1, r1;				\
-+	add	r0, r1;					\
-+	and	r15, r1;				\
-+							\
-+	mov	#TI_SIZE, r3;				\
-+	mov	#(STACK_WARN >> 8), r2;			\
-+	shll8	r2;					\
-+	add	r3, r2;					\
-+							\
-+	/* Is the stack overflowing? */			\
-+	cmp/hi	r2, r1;					\
-+	bf	stack_panic;				\
-+							\
-+	/* If sp > _ebss then we're OK. */		\
-+	mov.l	.L_ebss, r1;				\
-+	cmp/hi	r1, r15;				\
-+	bt	1f;					\
-+							\
-+	/* If sp < init_stack, we're not OK. */		\
-+	mov.l	.L_init_thread_union, r1;		\
-+	cmp/hs	r1, r15;				\
-+	bf	stack_panic;				\
-+							\
-+	/* If sp > init_stack && sp < _ebss, not OK. */	\
-+	add	r0, r1;					\
-+	cmp/hs	r1, r15;				\
-+	bt	stack_panic;				\
-+1:
-+#else
-+#define STACK_CHECK()
-+#endif /* CONFIG_STACK_DEBUG */
-+
- 	.align 2
- 	.globl	_mcount
- 	.type	_mcount,@function
-@@ -41,6 +92,8 @@ mcount:
- 	tst	r0, r0
- 	bf	ftrace_stub
- #endif
-+	STACK_CHECK()
-+
- 	MCOUNT_ENTER()
+@@ -458,7 +478,7 @@ static struct platform_device *migor_devices[] __initdata = {
+ 	&migor_ceu_device,
+ 	&migor_nor_flash_device,
+ 	&migor_nand_flash_device,
+-	&sdcard_cn9_device,
++	&sdhi_cn9_device,
+ 	&migor_camera[0],
+ 	&migor_camera[1],
+ };
+@@ -516,6 +536,16 @@ static int __init migor_devices_setup(void)
+ 	gpio_request(GPIO_PTA1, NULL);
+ 	gpio_direction_input(GPIO_PTA1);
  
- #ifdef CONFIG_DYNAMIC_FTRACE
-@@ -73,6 +126,8 @@ ftrace_caller:
- 	tst	r0, r0
- 	bf	ftrace_stub
++	/* SDHI */
++	gpio_request(GPIO_FN_SDHICD, NULL);
++	gpio_request(GPIO_FN_SDHIWP, NULL);
++	gpio_request(GPIO_FN_SDHID3, NULL);
++	gpio_request(GPIO_FN_SDHID2, NULL);
++	gpio_request(GPIO_FN_SDHID1, NULL);
++	gpio_request(GPIO_FN_SDHID0, NULL);
++	gpio_request(GPIO_FN_SDHICMD, NULL);
++	gpio_request(GPIO_FN_SDHICLK, NULL);
++
+ 	/* Touch Panel */
+ 	gpio_request(GPIO_FN_IRQ6, NULL);
  
-+	STACK_CHECK()
-+
- 	MCOUNT_ENTER()
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 891ef18..6d36132 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -273,10 +273,10 @@ config MMC_SDRICOH_CS
  
- 	.globl ftrace_call
-@@ -100,6 +155,36 @@ ftrace_stub:
- 	rts
- 	 nop
+ config MMC_TMIO
+ 	tristate "Toshiba Mobile IO Controller (TMIO) MMC/SD function support"
+-	depends on MFD_TMIO || MFD_ASIC3
++	depends on MFD_TMIO || MFD_ASIC3 || SUPERH
+ 	help
+ 	  This provides support for the SD/MMC cell found in TC6393XB,
+-	  T7L66XB and also HTC ASIC3
++	  T7L66XB, HTC ASIC3 and also SuperH
  
-+#ifdef CONFIG_STACK_DEBUG
-+	.globl	stack_panic
-+stack_panic:
-+	mov.l	.Ldump_stack, r0
-+	jsr	@r0
-+	 nop
-+
-+	mov.l	.Lpanic, r0
-+	jsr	@r0
-+	 mov.l	.Lpanic_s, r4
-+
-+	rts
-+	 nop
-+
- 	.align 2
- .Lfunction_trace_stop:
- 	.long	function_trace_stop
-+.L_ebss:
-+	.long	_ebss
-+.L_init_thread_union:
-+	.long	init_thread_union
-+.Lpanic:
-+	.long	panic
-+.Lpanic_s:
-+	.long	.Lpanic_str
-+.Ldump_stack:
-+	.long	dump_stack
-+
-+	.section	.rodata
-+	.align 2
-+.Lpanic_str:
-+	.string "Stack error"
-+#endif /* CONFIG_STACK_DEBUG */
+ config MMC_CB710
+ 	tristate "ENE CB710 MMC/SD Interface support"
 -- 
-1.6.3.2.316.gda4e
+1.6.2.4
 
