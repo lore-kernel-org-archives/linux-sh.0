@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2009 07:47:27 +0000
-Subject: [PATCH 02/09] sh: Runtime PM pdev hwblk - sh7722
-Message-Id: <20090731074727.29009.95656.sendpatchset@rx1.opensource.se>
+Date: Wed, 29 Jul 2009 12:49:42 +0000
+Subject: [PATCH] sh: romImage support
+Message-Id: <20090729124942.3344.84856.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,121 +10,134 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Add hwblk_id to on-chip sh7722 platform devices.
+This patch adds support for the romImage build target.
+
+The resulting romImage file should be burned to rom
+or flash and could be used as small boot loader.
+
+Board code should keep their setup code in the file
+romimage.h located in their mach include directory.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ arch/sh/Makefile                       |    2 +-
+ arch/sh/boot/Makefile                  |   11 +++++++++--
+ arch/sh/boot/romimage/Makefile         |   31 +++++++++++++++++++++++++++++++
+ arch/sh/boot/romimage/head_32.S        |   18 ++++++++++++++++++
+ arch/sh/boot/romimage/head_64.S        |   11 +++++++++++
+ arch/sh/include/mach-common/romimage.h |    1 +
+ 6 files changed, 71 insertions(+), 3 deletions(-)
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2009-07-30 15:03:50.000000000 +0900
-@@ -17,6 +17,7 @@
- #include <linux/sh_timer.h>
- #include <asm/clock.h>
- #include <asm/mmzone.h>
-+#include <cpu/sh7722.h>
+--- 0001/arch/sh/Makefile
++++ work/arch/sh/Makefile	2009-07-29 20:36:36.000000000 +0900
+@@ -195,7 +195,7 @@ libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/
+ libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
  
- static struct resource rtc_resources[] = {
- 	[0] = {
-@@ -46,6 +47,9 @@ static struct platform_device rtc_device
- 	.id		= -1,
- 	.num_resources	= ARRAY_SIZE(rtc_resources),
- 	.resource	= rtc_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_RTC,
-+	},
- };
+ BOOT_TARGETS = uImage uImage.bz2 uImage.gz uImage.lzma uImage.srec \
+-	       zImage vmlinux.srec
++	       zImage vmlinux.srec romImage
+ PHONY += maketools $(BOOT_TARGETS) FORCE
  
- static struct m66592_platdata usbf_platdata = {
-@@ -76,6 +80,9 @@ static struct platform_device usbf_devic
- 	},
- 	.num_resources	= ARRAY_SIZE(usbf_resources),
- 	.resource	= usbf_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_USBF,
-+	},
- };
+ maketools:  include/linux/version.h FORCE
+--- 0001/arch/sh/boot/Makefile
++++ work/arch/sh/boot/Makefile	2009-07-29 20:36:36.000000000 +0900
+@@ -24,9 +24,9 @@ suffix-$(CONFIG_KERNEL_GZIP)  := gz
+ suffix-$(CONFIG_KERNEL_BZIP2) := bz2
+ suffix-$(CONFIG_KERNEL_LZMA)  := lzma
  
- static struct resource iic_resources[] = {
-@@ -97,6 +104,9 @@ static struct platform_device iic_device
- 	.id             = 0, /* "i2c0" clock */
- 	.num_resources  = ARRAY_SIZE(iic_resources),
- 	.resource       = iic_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_IIC,
-+	},
- };
+-targets := zImage vmlinux.srec uImage uImage.srec uImage.gz uImage.bz2 uImage.lzma
++targets := zImage vmlinux.srec romImage uImage uImage.srec uImage.gz uImage.bz2 uImage.lzma
+ extra-y += vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 vmlinux.bin.lzma
+-subdir- := compressed
++subdir- := compressed romimage
  
- static struct uio_info vpu_platform_data = {
-@@ -125,6 +135,9 @@ static struct platform_device vpu_device
- 	},
- 	.resource	= vpu_resources,
- 	.num_resources	= ARRAY_SIZE(vpu_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_VPU,
-+	},
- };
+ $(obj)/zImage: $(obj)/compressed/vmlinux FORCE
+ 	$(call if_changed,objcopy)
+@@ -35,6 +35,13 @@ $(obj)/zImage: $(obj)/compressed/vmlinux
+ $(obj)/compressed/vmlinux: FORCE
+ 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
  
- static struct uio_info veu_platform_data = {
-@@ -153,6 +166,9 @@ static struct platform_device veu_device
- 	},
- 	.resource	= veu_resources,
- 	.num_resources	= ARRAY_SIZE(veu_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_VEU,
-+	},
- };
- 
- static struct uio_info jpu_platform_data = {
-@@ -181,6 +197,9 @@ static struct platform_device jpu_device
- 	},
- 	.resource	= jpu_resources,
- 	.num_resources	= ARRAY_SIZE(jpu_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_JPU,
-+	},
- };
- 
- static struct sh_timer_config cmt_platform_data = {
-@@ -213,6 +232,9 @@ static struct platform_device cmt_device
- 	},
- 	.resource	= cmt_resources,
- 	.num_resources	= ARRAY_SIZE(cmt_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_CMT,
-+	},
- };
- 
- static struct sh_timer_config tmu0_platform_data = {
-@@ -244,6 +266,9 @@ static struct platform_device tmu0_devic
- 	},
- 	.resource	= tmu0_resources,
- 	.num_resources	= ARRAY_SIZE(tmu0_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_TMU,
-+	},
- };
- 
- static struct sh_timer_config tmu1_platform_data = {
-@@ -275,6 +300,9 @@ static struct platform_device tmu1_devic
- 	},
- 	.resource	= tmu1_resources,
- 	.num_resources	= ARRAY_SIZE(tmu1_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_TMU,
-+	},
- };
- 
- static struct sh_timer_config tmu2_platform_data = {
-@@ -305,6 +333,9 @@ static struct platform_device tmu2_devic
- 	},
- 	.resource	= tmu2_resources,
- 	.num_resources	= ARRAY_SIZE(tmu2_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_TMU,
-+	},
- };
- 
- static struct plat_sci_port sci_platform_data[] = {
++$(obj)/romImage: $(obj)/romimage/vmlinux FORCE
++	$(call if_changed,objcopy)
++	@echo '  Kernel: $@ is ready'
++
++$(obj)/romimage/vmlinux: $(obj)/compressed/vmlinux FORCE
++	$(Q)$(MAKE) $(build)=$(obj)/romimage $@
++
+ KERNEL_MEMORY := 0x00000000
+ ifeq ($(CONFIG_PMB_FIXED),y)
+ KERNEL_MEMORY := $(shell /bin/bash -c 'printf "0x%08x" \
+--- /dev/null
++++ work/arch/sh/boot/romimage/Makefile	2009-07-29 20:36:36.000000000 +0900
+@@ -0,0 +1,31 @@
++#
++# linux/arch/sh/boot/romimage/Makefile
++#
++# create an image suitable for burning to flash from zImage
++#
++
++targets		:= vmlinux head_$(BITS).o
++
++OBJECTS = $(obj)/head_$(BITS).o
++
++#
++# IMAGE_OFFSET is the load offset of the compression loader
++#
++IMAGE_OFFSET	:= $(shell /bin/bash -c 'printf "0x%08x" \
++		     $$[$(CONFIG_PAGE_OFFSET)  + \
++			$(KERNEL_MEMORY) + \
++			$(CONFIG_BOOT_LINK_OFFSET)]')
++
++LIBGCC	:= $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
++
++ifeq ($(CONFIG_MCOUNT),y)
++ORIG_CFLAGS := $(KBUILD_CFLAGS)
++KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
++endif
++
++LDFLAGS_vmlinux := --oformat $(ld-bfd) -Ttext $(IMAGE_OFFSET) -e romstart \
++		   -T $(obj)/../../kernel/vmlinux.lds
++
++$(obj)/vmlinux: $(OBJECTS) arch/sh/boot/compressed/vmlinux $(LIBGCC) FORCE
++	$(call if_changed,ld)
++	@:
+--- /dev/null
++++ work/arch/sh/boot/romimage/head_32.S	2009-07-29 20:45:52.000000000 +0900
+@@ -0,0 +1,18 @@
++/*
++ *  linux/arch/sh/boot/romimage/head_32.S
++ *
++ * Board specific setup code, executed before zImage loader
++ */
++
++.text
++	.global	romstart
++romstart:
++#include <romimage.h>
++	mov.l	startup_addr, r0
++	jmp	@r0
++	 nop
++
++	.align 2
++startup_addr:
++	.long	startup
++	.align 0
+--- /dev/null
++++ work/arch/sh/boot/romimage/head_64.S	2009-07-29 20:46:55.000000000 +0900
+@@ -0,0 +1,11 @@
++/*
++ *  linux/arch/sh/boot/romimage/head_64.S
++ *
++ * Board specific setup code, executed before zImage loader
++ */
++
++.text
++	.global	romstart
++romstart:
++#include <romimage.h>
++#warning "64-bit implementation needs more work"
+--- /dev/null
++++ work/arch/sh/include/mach-common/romimage.h	2009-07-29 20:36:36.000000000 +0900
+@@ -0,0 +1 @@
++/* do nothing here by default */
