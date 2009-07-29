@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Jul 2009 12:49:42 +0000
-Subject: [PATCH] sh: romImage support
-Message-Id: <20090729124942.3344.84856.sendpatchset@rx1.opensource.se>
+Date: Wed, 29 Jul 2009 15:06:15 +0000
+Subject: [PATCH] sh: kfr2r09 romImage support V2
+Message-Id: <20090729150615.4622.34405.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,134 +10,234 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds support for the romImage build target.
+This patch is romImage support for the kfr2r09 board V2.
 
-The resulting romImage file should be burned to rom
-or flash and could be used as small boot loader.
+The partner-jet-setup.txt file is converted into assembly code
+which becomes the first code to execute from the reset vector.
 
-Board code should keep their setup code in the file
-romimage.h located in their mach include directory.
+The file partner-jet-setup.txt can also be used to setup
+the hardware using a JTAG debugger so booting from RAM can
+be done without burning the code to flash.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- arch/sh/Makefile                       |    2 +-
- arch/sh/boot/Makefile                  |   11 +++++++++--
- arch/sh/boot/romimage/Makefile         |   31 +++++++++++++++++++++++++++++++
- arch/sh/boot/romimage/head_32.S        |   18 ++++++++++++++++++
- arch/sh/boot/romimage/head_64.S        |   11 +++++++++++
- arch/sh/include/mach-common/romimage.h |    1 +
- 6 files changed, 71 insertions(+), 3 deletions(-)
+ arch/sh/include/mach-kfr2r09/partner-jet-setup.txt |  134 ++++++++++++++++++++
+ arch/sh/include/mach-kfr2r09/romimage.h            |   75 +++++++++++
+ 2 files changed, 209 insertions(+)
 
---- 0001/arch/sh/Makefile
-+++ work/arch/sh/Makefile	2009-07-29 20:36:36.000000000 +0900
-@@ -195,7 +195,7 @@ libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/
- libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
- 
- BOOT_TARGETS = uImage uImage.bz2 uImage.gz uImage.lzma uImage.srec \
--	       zImage vmlinux.srec
-+	       zImage vmlinux.srec romImage
- PHONY += maketools $(BOOT_TARGETS) FORCE
- 
- maketools:  include/linux/version.h FORCE
---- 0001/arch/sh/boot/Makefile
-+++ work/arch/sh/boot/Makefile	2009-07-29 20:36:36.000000000 +0900
-@@ -24,9 +24,9 @@ suffix-$(CONFIG_KERNEL_GZIP)  := gz
- suffix-$(CONFIG_KERNEL_BZIP2) := bz2
- suffix-$(CONFIG_KERNEL_LZMA)  := lzma
- 
--targets := zImage vmlinux.srec uImage uImage.srec uImage.gz uImage.bz2 uImage.lzma
-+targets := zImage vmlinux.srec romImage uImage uImage.srec uImage.gz uImage.bz2 uImage.lzma
- extra-y += vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 vmlinux.bin.lzma
--subdir- := compressed
-+subdir- := compressed romimage
- 
- $(obj)/zImage: $(obj)/compressed/vmlinux FORCE
- 	$(call if_changed,objcopy)
-@@ -35,6 +35,13 @@ $(obj)/zImage: $(obj)/compressed/vmlinux
- $(obj)/compressed/vmlinux: FORCE
- 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
- 
-+$(obj)/romImage: $(obj)/romimage/vmlinux FORCE
-+	$(call if_changed,objcopy)
-+	@echo '  Kernel: $@ is ready'
-+
-+$(obj)/romimage/vmlinux: $(obj)/compressed/vmlinux FORCE
-+	$(Q)$(MAKE) $(build)=$(obj)/romimage $@
-+
- KERNEL_MEMORY := 0x00000000
- ifeq ($(CONFIG_PMB_FIXED),y)
- KERNEL_MEMORY := $(shell /bin/bash -c 'printf "0x%08x" \
 --- /dev/null
-+++ work/arch/sh/boot/romimage/Makefile	2009-07-29 20:36:36.000000000 +0900
-@@ -0,0 +1,31 @@
-+#
-+# linux/arch/sh/boot/romimage/Makefile
-+#
-+# create an image suitable for burning to flash from zImage
-+#
++++ work/arch/sh/include/mach-kfr2r09/partner-jet-setup.txt	2009-07-29 23:04:28.000000000 +0900
+@@ -0,0 +1,134 @@
++LIST "partner-jet-setup.txt - 20090729 Magnus Damm"
++LIST "set up enough of the kfr2r09 hardware to boot the kernel"
 +
-+targets		:= vmlinux head_$(BITS).o
++LIST "zImage (RAM boot)"
++LIST "This script can be used to boot the kernel from RAM via JTAG:"
++LIST "> < partner-jet-setup.txt"
++LIST "> RD zImage, 0xa8800000"
++LIST "> G=0xa8800000"
 +
-+OBJECTS = $(obj)/head_$(BITS).o
++LIST "romImage (Flash boot)"
++LIST "Use the following command to burn the zImage to flash via JTAG:"
++LIST "> RD romImage, 0"
 +
-+#
-+# IMAGE_OFFSET is the load offset of the compression loader
-+#
-+IMAGE_OFFSET	:= $(shell /bin/bash -c 'printf "0x%08x" \
-+		     $$[$(CONFIG_PAGE_OFFSET)  + \
-+			$(KERNEL_MEMORY) + \
-+			$(CONFIG_BOOT_LINK_OFFSET)]')
++LIST "--------------------------------"
 +
-+LIBGCC	:= $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
++LIST "disable watchdog"
++EW 0xa4520004, 0xa507
 +
-+ifeq ($(CONFIG_MCOUNT),y)
-+ORIG_CFLAGS := $(KBUILD_CFLAGS)
-+KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
-+endif
++LIST "select mode for cs5 + cs6"
++ED 0xff800020, 0xa5a50001
++ED 0xfec10000, 0x0000001b
 +
-+LDFLAGS_vmlinux := --oformat $(ld-bfd) -Ttext $(IMAGE_OFFSET) -e romstart \
-+		   -T $(obj)/../../kernel/vmlinux.lds
++LIST "setup clocks"
++ED 0xa4150004, 0x00000050
++ED 0xa4150000, 0x91053508
++WAIT 1
++ED 0xa4150024, 0x00005000
 +
-+$(obj)/vmlinux: $(OBJECTS) arch/sh/boot/compressed/vmlinux $(LIBGCC) FORCE
-+	$(call if_changed,ld)
-+	@:
++LIST "setup pins"
++EB 0xa4050120, 0x00
++EB 0xa4050122, 0x00
++EB 0xa4050124, 0x00
++EB 0xa4050126, 0x00
++EB 0xa4050128, 0xA0
++EB 0xa405012A, 0x10
++EB 0xa405012C, 0x00
++EB 0xa405012E, 0x00
++EB 0xa4050130, 0x00
++EB 0xa4050132, 0x00
++EB 0xa4050134, 0x01
++EB 0xa4050136, 0x40
++EB 0xa4050138, 0x00
++EB 0xa405013A, 0x00
++EB 0xa405013C, 0x00
++EB 0xa405013E, 0x20
++EB 0xa4050160, 0x00
++EB 0xa4050162, 0x40
++EB 0xa4050164, 0x03
++EB 0xa4050166, 0x00
++EB 0xa4050168, 0x00
++EB 0xa405016A, 0x00
++EB 0xa405016C, 0x00
++
++EW 0xa405014E, 0x5660
++EW 0xa4050150, 0x0145
++EW 0xa4050152, 0x1550
++EW 0xa4050154, 0x0200
++EW 0xa4050156, 0x0040
++
++EW 0xa4050158, 0x0000
++EW 0xa405015a, 0x0000
++EW 0xa405015c, 0x0000
++EW 0xa405015e, 0x0000
++
++EW 0xa4050180, 0x0000
++EW 0xa4050182, 0x8002
++EW 0xa4050184, 0x0000
++
++EW 0xa405018a, 0x9991
++EW 0xa405018c, 0x8011
++EW 0xa405018e, 0x9550
++
++EW 0xa4050100, 0x0000
++EW 0xa4050102, 0x5540
++EW 0xa4050104, 0x0000
++EW 0xa4050106, 0x0000
++EW 0xa4050108, 0x4550
++EW 0xa405010a, 0x0130
++EW 0xa405010c, 0x0555
++EW 0xa405010e, 0x0000
++EW 0xa4050110, 0x0000
++EW 0xa4050112, 0xAAA8
++EW 0xa4050114, 0x8305
++EW 0xa4050116, 0x10F0
++EW 0xa4050118, 0x0F50
++EW 0xa405011a, 0x0000
++EW 0xa405011c, 0x0000
++EW 0xa405011e, 0x0555
++EW 0xa4050140, 0x0000
++EW 0xa4050142, 0x5141
++EW 0xa4050144, 0x5005
++EW 0xa4050146, 0xAAA9
++EW 0xa4050148, 0xFAA9
++EW 0xa405014a, 0x3000
++EW 0xa405014c, 0x0000
++
++LIST "setup sdram"
++ED 0xFD000108, 0x40000301
++ED 0xFD000020, 0x011B0002
++ED 0xFD000030, 0x03060E02
++ED 0xFD000034, 0x01020102
++ED 0xFD000038, 0x01090406
++ED 0xFD000008, 0x00000004
++ED 0xFD000040, 0x00000001
++ED 0xFD000040, 0x00000000
++ED 0xFD000018, 0x00000001
++
++WAIT 1
++
++ED 0xFD000014, 0x00000002
++ED 0xFD000060, 0x00000032
++ED 0xFD000060, 0x00020000
++ED 0xFD000014, 0x00000004
++ED 0xFD000014, 0x00000004
++ED 0xFD000010, 0x00000001
++ED 0xFD000044, 0x000004AF
++ED 0xFD000048, 0x20CF0037
++
++LIST "read 16 bytes from sdram"
++DD 0xa8000000, 0xa8000000, 1
++DD 0xa8000004, 0xa8000004, 1
++DD 0xa8000008, 0xa8000008, 1
++DD 0xa800000c, 0xa800000c, 1
++
++ED 0xFD000014, 0x00000002
++ED 0xFD000014, 0x00000004
++ED 0xFD000108, 0x40000300
++ED 0xFD000040, 0x00010000
++
++LIST "write to internal ram"
++ED 0xfd8007fc, 0
++
++LIST "setup cache"
++ED 0xff00001c, 0x0000090b
 --- /dev/null
-+++ work/arch/sh/boot/romimage/head_32.S	2009-07-29 20:45:52.000000000 +0900
-@@ -0,0 +1,18 @@
-+/*
-+ *  linux/arch/sh/boot/romimage/head_32.S
-+ *
-+ * Board specific setup code, executed before zImage loader
++++ work/arch/sh/include/mach-kfr2r09/romimage.h	2009-07-29 23:05:06.000000000 +0900
+@@ -0,0 +1,75 @@
++/* kfr2r09 board specific boot code:
++ * converts the "partner-jet-script.txt" script into assembly
++ * the assembly code is the first code to be executed in the romImage
 + */
 +
-+.text
-+	.global	romstart
-+romstart:
-+#include <romimage.h>
-+	mov.l	startup_addr, r0
-+	jmp	@r0
++/* The LIST command is used to include comments in the script */
++.macro	LIST comment
++.endm
++
++/* The ED command is used to write a 32-bit word */
++.macro  ED, addr, data
++        mov.l 1f ,r1
++        mov.l 2f ,r0
++        mov.l r0, @r1
++	bra 3f
 +	 nop
-+
 +	.align 2
-+startup_addr:
-+	.long	startup
-+	.align 0
---- /dev/null
-+++ work/arch/sh/boot/romimage/head_64.S	2009-07-29 20:46:55.000000000 +0900
-@@ -0,0 +1,11 @@
-+/*
-+ *  linux/arch/sh/boot/romimage/head_64.S
-+ *
-+ * Board specific setup code, executed before zImage loader
-+ */
++1:	.long \addr
++2:	.long \data
++3:
++.endm
 +
-+.text
-+	.global	romstart
-+romstart:
-+#include <romimage.h>
-+#warning "64-bit implementation needs more work"
---- /dev/null
-+++ work/arch/sh/include/mach-common/romimage.h	2009-07-29 20:36:36.000000000 +0900
-@@ -0,0 +1 @@
-+/* do nothing here by default */
++/* The EW command is used to write a 16-bit word */
++.macro  EW, addr, data
++        mov.l 1f ,r1
++        mov.l 2f ,r0
++        mov.w r0, @r1
++	bra 3f
++	 nop
++	.align 2
++1:	.long \addr
++2:	.long \data
++3:
++.endm
++
++/* The EB command is used to write an 8-bit word */
++.macro  EB, addr, data
++        mov.l 1f ,r1
++        mov.l 2f ,r0
++        mov.b r0, @r1
++	bra 3f
++	 nop
++	.align 2
++1:	.long \addr
++2:	.long \data
++3:
++.endm
++
++/* The WAIT command is used to delay the execution */
++.macro  WAIT, time
++        mov.l  2f ,r3
++1:
++        nop
++        tst     r3, r3
++        bf/s    1b
++         dt      r3
++	bra	3f
++	 nop
++	.align 2
++2:	.long \time * 100
++3:
++.endm
++
++/* The DD command is used to read a 32-bit word */
++.macro  DD, addr, addr2, nr
++        mov.l 1f ,r1
++        mov.l @r1, r0
++	bra 2f
++	 nop
++	.align 2
++1:	.long \addr
++2:
++.endm
++
++#include "partner-jet-setup.txt"
