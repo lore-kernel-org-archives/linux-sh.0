@@ -1,43 +1,49 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 Jul 2009 14:58:39 +0000
-Subject: [PATCH] i2c: change i2c-sh_mobile.c module_init() to subsys_initcall()
-Message-Id: <20090722145839.17871.94267.sendpatchset@rx1.opensource.se>
+Date: Fri, 31 Jul 2009 14:01:58 +0000
+Subject: [PATCH 00/04] PM: SuperH Runtime PM prototype V2
+Message-Id: <20090731140158.11351.26021.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ben-linux-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+PM: SuperH Runtime PM prototype V2
 
-Convert the i2c-sh_mobile i2c bus driver to use
-subsys_initcall() instead of module_init().
+[PATCH 01/04] sh: SuperH platform bus code for Runtime PM v11
+[PATCH 02/04] i2c: Runtime PM changes for SuperH I2C driver 
+[PATCH 03/04] uio: Runtime PM changes for UIO driver
+[PATCH 04/04] video: Runtime PM hack for SuperH LCDC driver
 
-This change makes the driver register a bit earlier which
-together with earlier platform data moves the time for probe().
-The earlier probe() makes it possible to use i2c_get_adapter()
-and i2c_transfer() from device_initcall().
+This series is the Runtime PM prototype for SuperH V2. Included
+is a architecture specific Runtime PM implementation prototype
+for the platform bus together with a few driver changes.
 
-The same strategy is used by other i2c bus drivers such as
-i2c-pxa.c and i2c-s3c2410.c.
+The patches are meant to be applied on top of the following: 
+"PM: Introduce core framework for run-time PM of I/O devices (rev. 11)"
+"PM: Runtime PM v11 - add dev_pm_ops helpers"
+"PM: Runtime PM v11 - let bus-less devices succeed"
+"PM: Runtime PM v11 - add debug printouts"
+"PM: Runtime PM v11 - CONFIG_PM_SLEEP=n support"
+"Driver Core: Runtime PM callbacks for the Platform Bus V2"
+
+For the SuperH side of things you also need latest sh-2.6 git and:
+"Driver Core: Add platform device arch data V3"
+"sh: Runtime PM pdev hwblk changes"
+
+Patch 01 + 04 need more attention
+Patch 02 + 03 should be all that is needed for Runtime PM driver support.
+
+Rafael, please have a look at the Runtime PM v11 issue in patch 04.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Paul, can you merge this in your tree?
-
- drivers/i2c/busses/i2c-sh_mobile.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/drivers/i2c/busses/i2c-sh_mobile.c
-+++ work/drivers/i2c/busses/i2c-sh_mobile.c	2009-07-22 21:54:29.000000000 +0900
-@@ -637,7 +637,7 @@ static void __exit sh_mobile_i2c_adap_ex
- 	platform_driver_unregister(&sh_mobile_i2c_driver);
- }
- 
--module_init(sh_mobile_i2c_adap_init);
-+subsys_initcall(sh_mobile_i2c_adap_init);
- module_exit(sh_mobile_i2c_adap_exit);
- 
- MODULE_DESCRIPTION("SuperH Mobile I2C Bus Controller driver");
+ arch/sh/include/asm/device.h             |    8 
+ arch/sh/include/asm/hwblk.h              |    4 
+ arch/sh/kernel/cpu/shmobile/Makefile     |    1 
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c |  244 ++++++++++++++++++++++++++++++
+ drivers/i2c/busses/i2c-sh_mobile.c       |   39 ++++
+ drivers/uio/uio_pdrv_genirq.c            |   54 ++++++
+ drivers/video/sh_mobile_lcdcfb.c         |   47 +++--
+ 7 files changed, 376 insertions(+), 21 deletions(-)
