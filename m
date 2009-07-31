@@ -1,43 +1,56 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Wed, 22 Jul 2009 04:47:59 +0000
-Subject: Re: ATAPI drivers on the SH7724 chip
-Message-Id: <20090722134759.f1a6fdf3.iwamatsu@nigauri.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 31 Jul 2009 07:47:05 +0000
+Subject: [PATCH 00/09] sh: Runtime PM pdev hwblk
+Message-Id: <20090731074705.29009.33769.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090715100214.1be10825.masao-takahashi@kanno.co.jp>
-In-Reply-To: <20090715100214.1be10825.masao-takahashi@kanno.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+sh: Runtime PM pdev hwblk changes
 
-On Tue, 21 Jul 2009 12:16:46 +0900
-MASAO TAKAHASHI <masao-takahashi@kanno.co.jp> wrote:
+[PATCH 01/09] sh: Runtime PM pdev hwblk - header change
+[PATCH 02/09] sh: Runtime PM pdev hwblk - sh7722
+[PATCH 03/09] sh: Runtime PM pdev hwblk - Migo-R
+[PATCH 04/09] sh: Runtime PM pdev hwblk - Solution Engine 7722
+[PATCH 05/09] sh: Runtime PM pdev hwblk - sh7723
+[PATCH 06/09] sh: Runtime PM pdev hwblk - AP325RXA
+[PATCH 07/09] sh: Runtime PM pdev hwblk - sh7724
+[PATCH 08/09] sh: Runtime PM pdev hwblk - kfr2r09
+[PATCH 09/09] sh: Runtime PM pdev hwblk - Solution Engine 7724
 
-> On Mon, 20 Jul 2009 04:36:41 +0900
-> Paul Mundt <lethal@linux-sh.org> wrote:
-> 
-> > On Wed, Jul 15, 2009 at 10:02:14AM +0900, MASAO TAKAHASHI wrote:
-> > > Do you have a plan to support a ATAPI driver on the SH7724 ?
-> > > 
-> > It is planned for the long term, but I am not sure when we will get to
-> > it. Presently there is quite a lot of other SH7724 related work to do
-> > that will take priority. The ATAPI interface also really wants
-> > Iwamatsu-san's DMA engine work to be merged first.
-> Mr Iwamatsu,
-> Will you port SH7764 works to main line of sh-linux?
+These patches extend struct platform device data for a bunch of
+SuperH Mobile processors and embedded boards. The patches simply
+add hardware block ids to on-chip platform devices. Platform
+devices off chip (such as external ethernet controllers or flash
+chips) are left out which gives them a special case hardware block
+id of zero.
 
-I dont have SH7764 board. If I have this, I can port.
+Upcoming Runtime PM code will make use of the hardware block id
+to group devices together. The hardware block id can also be used
+to extend the SuperH Mobile clock framework implementation.
 
-If you need kernel which supports sh7764, you can get from
-http://www.superh-linux.org/platforms/index.html#sh7764
+This series of patches depend on the following:
+"Driver Core: Add platform device arch data V3".
 
-Best regards,
- Nobuhiro
+The patch above is part of Rafaels for-linux topic branch.
+I would however prefer to see this series merged independently
+of the Runtime PM patches.
 
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
+ Build tested on all boards. No runtime logic changes.
 
--- 
-Nobuhiro Iwamatsu
-	GPG ID: 3170EBE9
+ arch/sh/boards/board-ap325rxa.c        |    6 ++++
+ arch/sh/boards/mach-kfr2r09/setup.c    |    3 ++
+ arch/sh/boards/mach-migor/setup.c      |    9 ++++++
+ arch/sh/boards/mach-se/7722/setup.c    |    4 ++
+ arch/sh/boards/mach-se/7724/setup.c    |   18 +++++++++++++
+ arch/sh/include/asm/device.h           |    9 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   31 +++++++++++++++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   40 +++++++++++++++++++++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   43 ++++++++++++++++++++++++++++++++
+ 9 files changed, 162 insertions(+), 1 deletion(-)
+
