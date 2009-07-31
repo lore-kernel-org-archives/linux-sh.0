@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 09 Jul 2009 15:20:11 +0000
-Subject: [PATCH 05/06] i2c: Runtime PM for i2c-sh_mobile.c
-Message-Id: <20090709152011.8385.40046.sendpatchset@rx1.opensource.se>
+Date: Fri, 31 Jul 2009 14:02:37 +0000
+Subject: [PATCH 03/04] uio: Runtime PM changes for UIO driver
+Message-Id: <20090731140237.11351.48881.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,66 +10,120 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch modifies the SuperH Mobile i2c driver to support
-Runtime PM. These changes should be all that is needed for
-proper Runtime PM support in this driver. Driver callbacks
-for Runtime PM are not needed becuase the registers are
-always re-initialized.
+This patch modifies the uio_pdrv_genirq driver to support
+Runtime PM. The power management implementation simply
+runtime resumes the device at open() time and runtime
+suspends it at release() time. The user space driver is
+responsible for re-initializing the hardware after open().
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/i2c/busses/i2c-sh_mobile.c |   21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ drivers/uio/uio_pdrv_genirq.c |   54 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
 
---- 0001/drivers/i2c/busses/i2c-sh_mobile.c
-+++ work/drivers/i2c/busses/i2c-sh_mobile.c	2009-07-07 18:50:53.000000000 +0900
-@@ -28,6 +28,7 @@
+--- 0001/drivers/uio/uio_pdrv_genirq.c
++++ work/drivers/uio/uio_pdrv_genirq.c	2009-07-31 00:54:10.000000000 +0900
+@@ -20,6 +20,7 @@
+ #include <linux/bitops.h>
  #include <linux/interrupt.h>
- #include <linux/i2c.h>
- #include <linux/err.h>
+ #include <linux/stringify.h>
 +#include <linux/pm_runtime.h>
- #include <linux/clk.h>
- #include <linux/io.h>
  
-@@ -165,6 +166,9 @@ static void activate_ch(struct sh_mobile
- 	u_int32_t denom;
- 	u_int32_t tmp;
+ #define DRIVER_NAME "uio_pdrv_genirq"
  
-+	/* Runtime PM must wake up device */
-+	pm_runtime_resume(pd->dev);
+@@ -27,8 +28,27 @@ struct uio_pdrv_genirq_platdata {
+ 	struct uio_info *uioinfo;
+ 	spinlock_t lock;
+ 	unsigned long flags;
++	struct platform_device *pdev;
+ };
+ 
++static int uio_pdrv_genirq_open(struct uio_info *info, struct inode *inode)
++{
++	struct uio_pdrv_genirq_platdata *priv = info->priv;
 +
- 	/* Make sure the clock is enabled */
- 	clk_enable(pd->clk);
- 
-@@ -215,6 +219,9 @@ static void deactivate_ch(struct sh_mobi
- 
- 	/* Disable clock */
- 	clk_disable(pd->clk);
++	/* Wait until the Runtime PM code has woken up the device */
++	pm_runtime_get_sync(&priv->pdev->dev);
++	return 0;
++}
 +
-+	/* Runtime PM code may suspend now */
-+	pm_runtime_suspend(pd->dev);
++static int uio_pdrv_genirq_release(struct uio_info *info, struct inode *inode)
++{
++	struct uio_pdrv_genirq_platdata *priv = info->priv;
++
++	/* Tell the Runtime PM code that the device has become idle */
++	pm_runtime_put_sync(&priv->pdev->dev);
++	return 0;
++}
++
+ static irqreturn_t uio_pdrv_genirq_handler(int irq, struct uio_info *dev_info)
+ {
+ 	struct uio_pdrv_genirq_platdata *priv = dev_info->priv;
+@@ -97,6 +117,7 @@ static int uio_pdrv_genirq_probe(struct 
+ 	priv->uioinfo = uioinfo;
+ 	spin_lock_init(&priv->lock);
+ 	priv->flags = 0; /* interrupt is enabled to begin with */
++	priv->pdev = pdev;
+ 
+ 	uiomem = &uioinfo->mem[0];
+ 
+@@ -136,8 +157,17 @@ static int uio_pdrv_genirq_probe(struct 
+ 	uioinfo->irq_flags |= IRQF_DISABLED;
+ 	uioinfo->handler = uio_pdrv_genirq_handler;
+ 	uioinfo->irqcontrol = uio_pdrv_genirq_irqcontrol;
++	uioinfo->open = uio_pdrv_genirq_open;
++	uioinfo->release = uio_pdrv_genirq_release;
+ 	uioinfo->priv = priv;
+ 
++	/* Enable Runtime PM for this device:
++	 * Starts in suspended state to allow the hardware to be turned off
++	 * by default. The Runtime PM bus code will power on the hardware and
++	 * enable clocks at open() during the call to pm_runtime_get_sync().
++	 */
++	pm_runtime_enable(&pdev->dev);
++
+ 	ret = uio_register_device(&pdev->dev, priv->uioinfo);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "unable to register uio device\n");
+@@ -157,16 +187,40 @@ static int uio_pdrv_genirq_remove(struct
+ 	struct uio_pdrv_genirq_platdata *priv = platform_get_drvdata(pdev);
+ 
+ 	uio_unregister_device(priv->uioinfo);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(priv);
+ 	return 0;
  }
  
- static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
-@@ -572,6 +579,20 @@ static int sh_mobile_i2c_probe(struct pl
- 		goto err_irq;
- 	}
- 
-+	/* Enable Runtime PM for this device.
++static int uio_pdrv_genirq_runtime_nop(struct device *dev)
++{
++	/* Runtime PM callback shared between ->runtime_suspend()
++	 * and ->runtime_resume(). Simply returns success.
 +	 *
-+	 * Also tell the Runtime PM core to ignore children
-+	 * for this device since it is valid for us to suspend
-+	 * this I2C master driver even though the slave devices
-+	 * on the I2C bus may not be suspended.
++	 * In this driver pm_runtime_get() and pm_runtime_put_sync()
++	 * are used at open() and release() time. This allows the
++	 * Runtime PM code to turn off power to the device while the
++	 * device is unused, ie before open() and after release().
 +	 *
-+	 * The state of the I2C hardware bus is unaffected by
-+	 * the Runtime PM state.
++	 * This Runtime PM callback does not need to save or restore
++	 * any registers since user space will reinitialize all the
++	 * hardware registers after open().
 +	 */
-+	pm_suspend_ignore_children(&dev->dev, true);
-+	pm_runtime_set_suspended(&dev->dev);
-+	pm_runtime_enable(&dev->dev);
++	return 0;
++}
 +
- 	/* setup the private data */
- 	adap = &pd->adap;
- 	i2c_set_adapdata(adap, pd);
++static struct dev_pm_ops uio_pdrv_genirq_dev_pm_ops = {
++	.runtime_suspend = uio_pdrv_genirq_runtime_nop,
++	.runtime_resume = uio_pdrv_genirq_runtime_nop,
++};
++
+ static struct platform_driver uio_pdrv_genirq = {
+ 	.probe = uio_pdrv_genirq_probe,
+ 	.remove = uio_pdrv_genirq_remove,
+ 	.driver = {
+ 		.name = DRIVER_NAME,
+ 		.owner = THIS_MODULE,
++		.pm = &uio_pdrv_genirq_dev_pm_ops,
+ 	},
+ };
+ 
