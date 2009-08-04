@@ -1,34 +1,37 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 21 Aug 2009 08:26:26 +0000
-Subject: Re: [PATCH] sh: Add initial support for SH7757 CPU subtype
-Message-Id: <20090821082626.GA30795@linux-sh.org>
+Date: Tue, 04 Aug 2009 05:44:22 +0000
+Subject: Re: [PATCH] sh: romImage support V2
+Message-Id: <20090804054421.GB21171@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 21, 2009 at 04:30:28PM +0900, Yoshihiro Shimoda wrote:
-> Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-> ---
->  arch/sh/Kconfig                         |    7 +
->  arch/sh/Kconfig.debug                   |    1 +
->  arch/sh/include/asm/processor.h         |    2 +-
->  arch/sh/include/cpu-sh4/cpu/freq.h      |    4 +
->  arch/sh/include/cpu-sh4/cpu/sh7757.h    |  243 ++++
->  arch/sh/kernel/cpu/sh4/probe.c          |   11 +-
->  arch/sh/kernel/cpu/sh4a/Makefile        |    3 +
->  arch/sh/kernel/cpu/sh4a/clock-sh7757.c  |  130 ++
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c | 2019 +++++++++++++++++++++++++++++++
->  arch/sh/kernel/cpu/sh4a/setup-sh7757.c  |  513 ++++++++
->  arch/sh/kernel/setup.c                  |    2 +-
->  arch/sh/mm/Kconfig                      |    7 +-
->  drivers/serial/sh-sci.c                 |    3 +-
->  drivers/serial/sh-sci.h                 |   17 +
->  14 files changed, 2954 insertions(+), 8 deletions(-)
->  create mode 100644 arch/sh/include/cpu-sh4/cpu/sh7757.h
->  create mode 100644 arch/sh/kernel/cpu/sh4a/clock-sh7757.c
->  create mode 100644 arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
->  create mode 100644 arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+On Thu, Jul 30, 2009 at 12:04:05AM +0900, Magnus Damm wrote:
+> This patch contains support for the romImage build target V2.
 > 
-Applied, thanks.
+> The resulting romImage file should be burned to rom
+> or flash and could be used as small boot loader.
+> 
+> Board code should keep their setup code in the file
+> romimage.h located in their mach include directory.
+
+On Thu, Jul 30, 2009 at 12:06:15AM +0900, Magnus Damm wrote:
+> This patch is romImage support for the kfr2r09 board V2.
+> 
+> The partner-jet-setup.txt file is converted into assembly code
+> which becomes the first code to execute from the reset vector.
+> 
+> The file partner-jet-setup.txt can also be used to setup
+> the hardware using a JTAG debugger so booting from RAM can
+> be done without burning the code to flash.
+
+On Fri, Jul 31, 2009 at 03:57:36PM +0900, Magnus Damm wrote:
+> This patch adds hwblk support for the sh7724 processor.
+
+On Fri, Jul 31, 2009 at 04:01:36PM +0900, Magnus Damm wrote:
+> This patch removes the unused MSTPCRn register definitions
+> from the SuperH Mobile code for sh7722, sh7723 and sh7724.
+
+These are all applied.
