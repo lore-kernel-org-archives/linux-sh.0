@@ -1,185 +1,51 @@
-From: Kyungmin Park <kmpark@infradead.org>
-Date: Wed, 05 Aug 2009 04:24:28 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Aug 2009 04:41:32 +0000
 Subject: Re: [PATCH] mtd: make onenand/generic.c more generic
-Message-Id: <9c9fda240908042124y4f783dfehd575601c0a09550e@mail.gmail.com>
+Message-Id: <aec7e5c30908042141l18b25ba4l66b3cb309f080b21@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20090804092046.16025.83910.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090804092046.16025.83910.sendpatchset@rx1.opensource.se>
+	<9c9fda240908042124y4f783dfehd575601c0a09550e@mail.gmail.com>
+In-Reply-To: <9c9fda240908042124y4f783dfehd575601c0a09550e@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Magnus Damm <magnus.damm@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kyungmin Park <kmpark@infradead.org>
 Cc: linux-sh@vger.kernel.org, tony@atomide.com, lethal@linux-sh.org, linux-mtd@lists.infradead.org, akpm@linux-foundation.org, linux-omap@vger.kernel.org, dwmw2@infradead.org
 
-Hi
+Hi Kyungmin!
 
-Good idea add the onenand_platform_data, but dont' agree the renaming
-the onenand-flash.
-Other boards are use it even though it's not released it
+> On Tue, Aug 4, 2009 at 6:20 PM, Magnus Damm<magnus.damm@gmail.com> wrote:
+>> From: Magnus Damm <damm@igel.co.jp>
+>>
+>> This patch removes the ARM dependency from the generic "onenand"
+>> platform device driver. This change makes the driver useful for
+>> other architectures as well. Needed for the SuperH kfr2r09 board.
 
-Others are good.
+On Wed, Aug 5, 2009 at 1:24 PM, Kyungmin Park<kmpark@infradead.org> wrote:
+> Good idea add the onenand_platform_data, but dont' agree the renaming
+> the onenand-flash.
+> Other boards are use it even though it's not released it
 
-Thank you,
-Kyungmin Park
+I suspected so. But this is the only reason why changed the name. =)
 
-On Tue, Aug 4, 2009 at 6:20 PM, Magnus Damm<magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm@igel.co.jp>
->
-> This patch removes the ARM dependency from the generic "onenand"
-> platform device driver. This change makes the driver useful for
-> other architectures as well. Needed for the SuperH kfr2r09 board.
->
-> Apart from the obvious Kconfig bits, the most important change
-> is the move away from ARM specific includes and platform data.
-> Together with this change the only in-tree board code gets an
-> update, and the driver name is also changed gracefully break
-> potential out of tree drivers.
->
-> The driver is also updated to allow NULL as platform data together
-> with a few changes to make use of resource_size() and dev_name().
->
-> Signed-off-by: Magnus Damm <damm@igel.co.jp>
-> ---
->
-> =A0Tested on the sh7724 kfr2r09 board with a separate platform data patch.
->
-> =A0arch/arm/mach-omap2/board-apollon.c | =A0 =A04 ++--
-> =A0drivers/mtd/onenand/Kconfig =A0 =A0 =A0 =A0 | =A0 =A01 -
-> =A0drivers/mtd/onenand/generic.c =A0 =A0 =A0 | =A0 24 ++++++++++++++-----=
------
-> =A0include/linux/mtd/onenand.h =A0 =A0 =A0 =A0 | =A0 =A08 ++++++++
-> =A04 files changed, 24 insertions(+), 13 deletions(-)
->
-> --- 0001/arch/arm/mach-omap2/board-apollon.c
-> +++ work/arch/arm/mach-omap2/board-apollon.c =A0 =A02009-08-04 17:01:18.0=
-00000000 +0900
-> @@ -87,7 +87,7 @@ static struct mtd_partition apollon_part
-> =A0 =A0 =A0 =A0},
-> =A0};
->
-> -static struct flash_platform_data apollon_flash_data =3D {
-> +static struct onenand_platform_data apollon_flash_data =3D {
-> =A0 =A0 =A0 =A0.parts =A0 =A0 =A0 =A0 =A0=3D apollon_partitions,
-> =A0 =A0 =A0 =A0.nr_parts =A0 =A0 =A0 =3D ARRAY_SIZE(apollon_partitions),
-> =A0};
-> @@ -99,7 +99,7 @@ static struct resource apollon_flash_res
-> =A0};
->
-> =A0static struct platform_device apollon_onenand_device =3D {
-> - =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =3D "onenand",
-> + =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =3D "onenand-flash",
-> =A0 =A0 =A0 =A0.id =A0 =A0 =A0 =A0 =A0 =A0 =3D -1,
-> =A0 =A0 =A0 =A0.dev =A0 =A0 =A0 =A0 =A0 =A0=3D {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0.platform_data =A0=3D &apollon_flash_data,
-> --- 0001/drivers/mtd/onenand/Kconfig
-> +++ work/drivers/mtd/onenand/Kconfig =A0 =A02009-08-04 17:01:18.000000000=
- +0900
-> @@ -23,7 +23,6 @@ config MTD_ONENAND_VERIFY_WRITE
->
-> =A0config MTD_ONENAND_GENERIC
-> =A0 =A0 =A0 =A0tristate "OneNAND Flash device via platform device driver"
-> - =A0 =A0 =A0 depends on ARM
-> =A0 =A0 =A0 =A0help
-> =A0 =A0 =A0 =A0 =A0Support for OneNAND flash via platform device driver.
->
-> --- 0001/drivers/mtd/onenand/generic.c
-> +++ work/drivers/mtd/onenand/generic.c =A02009-08-04 17:12:00.000000000 +=
-0900
-> @@ -19,12 +19,16 @@
-> =A0#include <linux/mtd/mtd.h>
-> =A0#include <linux/mtd/onenand.h>
-> =A0#include <linux/mtd/partitions.h>
-> -
-> =A0#include <asm/io.h>
-> -#include <asm/mach/flash.h>
-> -
-> -#define DRIVER_NAME =A0 =A0"onenand"
->
-> +/*
-> + * Note: Driver name and platform data format have been updated!
-> + *
-> + * This version of the driver is named "onenand-flash" and takes struct
-> + * onenand_platform_data as platform data. The old ARM-specific version
-> + * with the name "onenand" used to take struct flash_platform_data.
-> + */
-> +#define DRIVER_NAME =A0 =A0"onenand-flash"
->
-> =A0#ifdef CONFIG_MTD_PARTITIONS
-> =A0static const char *part_probes[] =3D { "cmdlinepart", NULL, =A0};
-> @@ -39,16 +43,16 @@ struct onenand_info {
-> =A0static int __devinit generic_onenand_probe(struct platform_device *pde=
-v)
-> =A0{
-> =A0 =A0 =A0 =A0struct onenand_info *info;
-> - =A0 =A0 =A0 struct flash_platform_data *pdata =3D pdev->dev.platform_da=
-ta;
-> + =A0 =A0 =A0 struct onenand_platform_data *pdata =3D pdev->dev.platform_=
-data;
-> =A0 =A0 =A0 =A0struct resource *res =3D pdev->resource;
-> - =A0 =A0 =A0 unsigned long size =3D res->end - res->start + 1;
-> + =A0 =A0 =A0 unsigned long size =3D resource_size(res);
-> =A0 =A0 =A0 =A0int err;
->
-> =A0 =A0 =A0 =A0info =3D kzalloc(sizeof(struct onenand_info), GFP_KERNEL);
-> =A0 =A0 =A0 =A0if (!info)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return -ENOMEM;
->
-> - =A0 =A0 =A0 if (!request_mem_region(res->start, size, pdev->dev.driver-=
->name)) {
-> + =A0 =A0 =A0 if (!request_mem_region(res->start, size, dev_name(&pdev->d=
-ev))) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0err =3D -EBUSY;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out_free_info;
-> =A0 =A0 =A0 =A0}
-> @@ -59,7 +63,7 @@ static int __devinit generic_onenand_pro
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out_release_mem_region;
-> =A0 =A0 =A0 =A0}
->
-> - =A0 =A0 =A0 info->onenand.mmcontrol =3D pdata->mmcontrol;
-> + =A0 =A0 =A0 info->onenand.mmcontrol =3D pdata ? pdata->mmcontrol : 0;
-> =A0 =A0 =A0 =A0info->onenand.irq =3D platform_get_irq(pdev, 0);
->
-> =A0 =A0 =A0 =A0info->mtd.name =3D dev_name(&pdev->dev);
-> @@ -75,7 +79,7 @@ static int __devinit generic_onenand_pro
-> =A0 =A0 =A0 =A0err =3D parse_mtd_partitions(&info->mtd, part_probes, &inf=
-o->parts, 0);
-> =A0 =A0 =A0 =A0if (err > 0)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0add_mtd_partitions(&info->mtd, info->parts=
-, err);
-> - =A0 =A0 =A0 else if (err <=3D 0 && pdata->parts)
-> + =A0 =A0 =A0 else if (err <=3D 0 && pdata && pdata->parts)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0add_mtd_partitions(&info->mtd, pdata->part=
-s, pdata->nr_parts);
-> =A0 =A0 =A0 =A0else
-> =A0#endif
-> @@ -99,7 +103,7 @@ static int __devexit generic_onenand_rem
-> =A0{
-> =A0 =A0 =A0 =A0struct onenand_info *info =3D platform_get_drvdata(pdev);
-> =A0 =A0 =A0 =A0struct resource *res =3D pdev->resource;
-> - =A0 =A0 =A0 unsigned long size =3D res->end - res->start + 1;
-> + =A0 =A0 =A0 unsigned long size =3D resource_size(res);
->
-> =A0 =A0 =A0 =A0platform_set_drvdata(pdev, NULL);
->
-> --- 0001/include/linux/mtd/onenand.h
-> +++ work/include/linux/mtd/onenand.h =A0 =A02009-08-04 17:01:18.000000000=
- +0900
-> @@ -214,4 +214,12 @@ unsigned onenand_block(struct onenand_ch
-> =A0loff_t onenand_addr(struct onenand_chip *this, int block);
-> =A0int flexonenand_region(struct mtd_info *mtd, loff_t addr);
->
-> +struct mtd_partition;
-> +
-> +struct onenand_platform_data {
-> + =A0 =A0 =A0 void =A0 =A0 =A0 =A0 =A0 =A0(*mmcontrol)(struct mtd_info *m=
-td, int sync_read);
-> + =A0 =A0 =A0 struct mtd_partition *parts;
-> + =A0 =A0 =A0 unsigned int =A0 =A0nr_parts;
-> +};
-> +
-> =A0#endif /* __LINUX_MTD_ONENAND_H */
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-omap" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+If we don't change the name then the platform device will be attached
+to the platform driver as usual, but the old platform data structure
+will use a different binary format compated to what the driver
+expects.
+
+Changing the driver name makes sure that the old device disappears and
+that people can move over to the new name and at the same time update
+the platform data to the new format.
+
+> Others are good.
+
+Thanks.
+
+I can post an updated version where I keep the driver name unchanged
+if you prefer that. But I'm pretty sure out-of-tree drivers will break
+with NULL pointer accesses or similar if we update the platform data
+format without changing the name. I don't think you want that. =)
+
+Cheers,
+
+/ magnus
