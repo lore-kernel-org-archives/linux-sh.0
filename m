@@ -1,49 +1,61 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 27 Aug 2009 14:26:12 +0000
-Subject: Re: [BUG] arch/sh/include/mach-common/mach/sh7785lcr.h: PCA9564_ADDR is 29bit-only
-Message-Id: <20090827142612.GB5097@linux-sh.org>
+From: Valentin R Sitsikov <valentin.sitdikov@siemens.com>
+Date: Thu, 06 Aug 2009 09:03:47 +0000
+Subject: sh7785 cache question
+Message-Id: <4A7A9C73.1070000@siemens.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4A95800A.7020603@gentoo.org>
-In-Reply-To: <4A95800A.7020603@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 27, 2009 at 04:20:47PM +0200, Ra?l Porcel wrote:
-> Yoshihiro Shimoda wrote:
-> > Paul Mundt wrote:
-> >> On Thu, Aug 27, 2009 at 12:01:03PM +0900, yoshii.takashi@renesas.com wrote:
-> >>> Oh, sorry.
-> >>> This might be because the board I sent you was a special version.
-> >>> You (and possibly others who use this version) should revert that commit.
-> >>> I'm really sorry for inconvenient.
-> >>>
-> >>> Paul, are there any good way to support this kind of small differences?
-> >>> Is it ok to add configuration menu item like below?
-> >>>
-> >> Presumably we can figure the version out from the FPGA? If so, we can
-> >> just figure out which devices to register, and have different devices for
-> >> different versions.
-> >>
-> >> If we can't figure it out from the FPGA, then the next best bet is to use
-> >> the mach types, the version information can be encoded in a new
-> >> mach-type, and we can simply have a mach_is_xxx() check for determining
-> >> the board version and doing the appropriate fixups. We already do this
-> >> today for some boards (highlander, r2d, etc.).
-> > 
-> > Thank you very much for your comment.
-> > Unfortunately, this board don't have version register in FPGA.
-> > So I made a patch that it adds mach_is_sh7785lcr_pt().
-> > Would you check this patch?
-> > 
-> > Thanks,
-> > Yoshihiro Shimoda
-> > 
-> >[patch]
-> 
-> I can confirm it works perfectly:
-> Linux superh 2.6.31-rc7-00224-gea15edb-dirty #3 Thu Aug 27 14:12:21 GMT
-> 2009 sh4a SH7785 SH7785LCR GNU/Linux
-> 
-Thanks for testing, I'll queue it up.
+Hello All!
+
+Sh-7785 hw manual section 5 (Caches), chapter 5.3 (Operation of 
+Instructions for Operand Cache Manipulation.) says:
+OCBI
+OCBWB
+OCBP
+
+Formerly, this instruction was treated as an NOP if Rn indicated an 
+address in a non-cacheable
+area. In the case of the LSI with the SH-4A extended functions, the 
+operand cache line indicated
+by way = Rn[14:13] and entry = Rn[12:5] is affected.
+This operation is only valid in privileged mode, and the instruction 
+generates an
+address error exception in user mode. In addition, TLB-related 
+exceptions do not occur.
+Do not execute this instruction with Rn[31:24] containing a value other 
+than H'F4, i.e. a value that
+indicates the memory-mapped array area, control register area, or a 
+reserved area (H'F0 to H'F3,
+H'F5 to H'FF).
+
+So my question is why still all cache related code for the sh-7785 in 
+these instructions have effective address
+as operand instead of 0xF4XXXXXX ?
+
+Also It is interesting if there any plans for remove associative write 
+operation to memory mapped OC address array?
+The manual says:
+5.4       Memory-Mapped Associative Write Operation
+Associative writing to the IC and OC address arrays may not be supported 
+in future SuperH-
+family products. The use of instructions ICBI, OCBI, OCBP, and OCBWB is 
+recommended.
+These instructions handle ITLB misses, and notify instruction TLB miss 
+exceptions and data TLB
+miss exceptions, thus providing a sure way of controlling the IC and OC. 
+As a transitional
+measure, the SH-4A generates address errors when this function is used. 
+If compatibility with
+previous products is a crucial consideration, on the other hand, the 
+MMCAW bit in EXPMASK
+(H'FF2F 0004) can be set to 1 to enable this function. However, 
+instructions ICBI, OCBI, OCBP,
+and OCBWB should be used to guarantee compatibility with future 
+SuperH-family products.
+
+
+Thanks in advance.
+
