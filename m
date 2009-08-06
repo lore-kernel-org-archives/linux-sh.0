@@ -1,94 +1,51 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Thu, 27 Aug 2009 20:13:11 +0000
-Subject: Re: Recent assembler sign extension patch
-Message-Id: <20090827201311.GA6791@console-pimps.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Aug 2009 14:28:12 +0000
+Subject: [PATCH] sh: LCDC SYS bus access wait fix
+Message-Id: <20090806142812.3947.24083.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090827132813.GB4668@console-pimps.org>
-In-Reply-To: <20090827132813.GB4668@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 27, 2009 at 03:39:36PM +0100, Stuart MENEFY wrote:
-> 
-> Strange, this works OK for me although I'm using a slightly older
-> as (2.18.50.0.8.20090602). However I did see this error with gas
-> built on x86-64 - there is a bug in the assembler in this area
-> which assumes longs are 32 bit (from memory). Could that be why
-> you're seeing this?
-> 
+From: Magnus Damm <damm@igel.co.jp>
 
-Bingo! Good call there, Stuart. It is indeed a 64-bit host bug in the
-assembler. The bug is still present in the latest binutils sources. I've
-attached a patch that I will push towards the binutils folks.
+Update the SuperH Mobile LCDC driver to wait for SYS bus to
+become idle after reading or writing. This is needed by the
+kfr2r09 board, but also fixes potential problems on other
+boards making use of the LCDC in a SYS configuration.
 
-> 
-> Its one of the things which has always bugged me about the SH assembler,
-> that its checks on the immediate argument don't take into account
-> whether the instruction sign extends its argument. To me more precise,
-> it checks all immediates are in the range -256 to +255.
-> 
-> So I modified binutils to take into account whether the instruction
-> sign extends or not, and found that entry.S had a bug:
-> 
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
 
-Are you planning on submitting these assembler changes upstream? It'd be
-cool if you can.
+ Tested on Migo-R and kfr2r09.
 
-> @@ -676,8 +676,9 @@ need_resched:
-> 
->         mov     #OFF_SR, r0
->         mov.l   @(r0,r15), r0           ! get status register
-> -       and     #0xf0, r0               ! interrupts off (exception path)?
-> -       cmp/eq  #0xf0, r0
-> +       shlr    r0
-> +       and     #(0xf0>>1), r0
-> +       cmp/eq  #(0xf0>>1), r0          ! interrupts off (exception path)?
->         bt      noresched
->         mov.l   3f, r0
->         jsr     @r0                     ! call preempt_schedule_irq
-> 
-> Here the "and" doesn't sign extend, but the "cmp/eq" does.
-> 
-> All the other changes are to clarify when sign extension is actually
-> taking place. Personally I'd rather see
->   add #0xffffffe0, r0
-> than
->   add #0xe0, r0
-> and have to remember that sign extension is taking place. This also happens
-> to be what my modified assembler requires!
-> 
-> Stuart
+ drivers/video/sh_mobile_lcdcfb.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-Ah right, I understand now. That makes sense.
-
-
-Index: gas/config/tc-sh.c
-=================================RCS file: /cvs/src/src/gas/config/tc-sh.c,v
-retrieving revision 1.132
-diff -u -r1.132 tc-sh.c
---- gas/config/tc-sh.c	24 Jul 2009 11:45:00 -0000	1.132
-+++ gas/config/tc-sh.c	27 Aug 2009 20:09:14 -0000
-@@ -156,6 +156,11 @@
- #define ENCODE_RELAX(what,length) (((what) << 4) + (length))
- #define GET_WHAT(x) ((x>>4))
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2009-08-06 21:34:30.000000000 +0900
+@@ -154,6 +154,7 @@ static void lcdc_sys_write_index(void *h
+ 	lcdc_write(ch->lcdc, _LDDWD0R, data | 0x10000000);
+ 	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
+ 	lcdc_write(ch->lcdc, _LDDWAR, 1 | (lcdc_chan_is_sublcd(ch) ? 2 : 0));
++	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
+ }
  
-+/* Truncate and sign-extend at 32 bits, so that building on a 64-bit host
-+   gives identical results to a 32-bit host.  */
-+#define TRUNC(X)	((long) (X) & 0xffffffff)
-+#define SEXT(X)		((TRUNC (X) ^ 0x80000000) - 0x80000000)
-+
- /* These are the three types of relaxable instruction.  */
- /* These are the types of relaxable instructions; except for END which is
-    a marker.  */
-@@ -4183,7 +4188,7 @@
- 	val = ((val >> shift)
- 	       | ((long) -1 & ~ ((long) -1 >> shift)));
-     }
--  if (max != 0 && (val < min || val > max))
-+  if (max != 0 && (SEXT(val) < min || SEXT(val) > max))
-     as_bad_where (fixP->fx_file, fixP->fx_line, _("offset out of range"));
-   else if (max != 0)
-     /* Stop the generic code from trying to overlow check the value as well.
-
+ static void lcdc_sys_write_data(void *handle, unsigned long data)
+@@ -163,6 +164,7 @@ static void lcdc_sys_write_data(void *ha
+ 	lcdc_write(ch->lcdc, _LDDWD0R, data | 0x11000000);
+ 	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
+ 	lcdc_write(ch->lcdc, _LDDWAR, 1 | (lcdc_chan_is_sublcd(ch) ? 2 : 0));
++	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
+ }
+ 
+ static unsigned long lcdc_sys_read_data(void *handle)
+@@ -173,6 +175,7 @@ static unsigned long lcdc_sys_read_data(
+ 	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
+ 	lcdc_write(ch->lcdc, _LDDRAR, 1 | (lcdc_chan_is_sublcd(ch) ? 2 : 0));
+ 	udelay(1);
++	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
+ 
+ 	return lcdc_read(ch->lcdc, _LDDRDR) & 0xffff;
+ }
