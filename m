@@ -1,87 +1,106 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 06 Aug 2009 14:58:43 +0000
-Subject: [PATCH] sh: kfr2r09 board support - NAND flash
-Message-Id: <20090806145843.4475.33947.sendpatchset@rx1.opensource.se>
+Date: Thu, 06 Aug 2009 15:16:29 +0000
+Subject: [PATCH] sh: clean up Migo-R header file
+Message-Id: <20090806151629.5142.26006.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: tony@atomide.com, Magnus Damm <magnus.damm@gmail.com>, kyungmin.park@samsung.com, lethal@linux-sh.org, linux-mtd@lists.infradead.org, akpm@linux-foundation.org, dwmw2@infradead.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch adds support for the NAND flash chip
-attached to CS4 on the KFR2R09 board. The device is
-driven by the platform device driver "onenand-flash".
+This patch moves the Migo-R specific header file from
+mach-common/ into mach-migor/ and removes unused cruft.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- No merge/build time dependencies, but needs the following patch
- to start working on the actual hardware:
+ arch/sh/include/mach-common/mach/migor.h |   64 ------------------------------
+ arch/sh/include/mach-migor/mach/migor.h  |   14 ++++++
+ 2 files changed, 14 insertions(+), 64 deletions(-)
 
- "[PATCH] mtd: make onenand/generic.c more generic"
-
- arch/sh/boards/mach-kfr2r09/setup.c |   23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
-
---- 0003/arch/sh/boards/mach-kfr2r09/setup.c
-+++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-08-06 21:37:18.000000000 +0900
-@@ -11,6 +11,7 @@
- #include <linux/platform_device.h>
- #include <linux/interrupt.h>
- #include <linux/mtd/physmap.h>
-+#include <linux/mtd/onenand.h>
- #include <linux/delay.h>
- #include <linux/clk.h>
- #include <linux/gpio.h>
-@@ -62,6 +63,21 @@ static struct platform_device kfr2r09_no
- 	},
- };
- 
-+static struct resource kfr2r09_nand_flash_resources[] = {
-+	[0] = {
-+		.name		= "NAND Flash",
-+		.start		= 0x10000000,
-+		.end		= 0x1001ffff,
-+		.flags		= IORESOURCE_MEM,
-+	}
-+};
+--- 0001/arch/sh/include/mach-common/mach/migor.h
++++ /dev/null	2009-08-04 09:21:32.824030158 +0900
+@@ -1,64 +0,0 @@
+-#ifndef __ASM_SH_MIGOR_H
+-#define __ASM_SH_MIGOR_H
+-
+-/*
+- * linux/include/asm-sh/migor.h
+- *
+- * Copyright (C) 2008 Renesas Solutions
+- *
+- * Portions Copyright (C) 2007 Nobuhiro Iwamatsu
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License. See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- */
+-#include <asm/addrspace.h>
+-
+-/* GPIO */
+-#define PORT_PACR 0xa4050100
+-#define PORT_PDCR 0xa4050106
+-#define PORT_PECR 0xa4050108
+-#define PORT_PHCR 0xa405010e
+-#define PORT_PJCR 0xa4050110
+-#define PORT_PKCR 0xa4050112
+-#define PORT_PLCR 0xa4050114
+-#define PORT_PMCR 0xa4050116
+-#define PORT_PRCR 0xa405011c
+-#define PORT_PTCR 0xa4050140
+-#define PORT_PUCR 0xa4050142
+-#define PORT_PVCR 0xa4050144
+-#define PORT_PWCR 0xa4050146
+-#define PORT_PXCR 0xa4050148
+-#define PORT_PYCR 0xa405014a
+-#define PORT_PZCR 0xa405014c
+-#define PORT_PADR 0xa4050120
+-#define PORT_PHDR 0xa405012e
+-#define PORT_PTDR 0xa4050160
+-#define PORT_PWDR 0xa4050166
+-
+-#define PORT_HIZCRA 0xa4050158
+-#define PORT_HIZCRC 0xa405015c
+-
+-#define PORT_MSELCRB 0xa4050182
+-
+-#define PORT_PSELA 0xa405014e
+-#define PORT_PSELB 0xa4050150
+-#define PORT_PSELC 0xa4050152
+-#define PORT_PSELD 0xa4050154
+-#define PORT_PSELE 0xa4050156
+-
+-#define PORT_HIZCRA 0xa4050158
+-#define PORT_HIZCRB 0xa405015a
+-#define PORT_HIZCRC 0xa405015c
+-
+-#define BSC_CS4BCR 0xfec10010
+-#define BSC_CS6ABCR 0xfec1001c
+-#define BSC_CS4WCR 0xfec10030
+-
+-#include <video/sh_mobile_lcdc.h>
+-
+-int migor_lcd_qvga_setup(void *board_data, void *sys_ops_handle,
+-			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+-
+-#endif /* __ASM_SH_MIGOR_H */
+--- /dev/null
++++ work/arch/sh/include/mach-migor/mach/migor.h	2009-08-06 21:56:02.000000000 +0900
+@@ -0,0 +1,14 @@
++#ifndef __ASM_SH_MIGOR_H
++#define __ASM_SH_MIGOR_H
 +
-+static struct platform_device kfr2r09_nand_flash_device = {
-+	.name		= "onenand-flash",
-+	.resource	= kfr2r09_nand_flash_resources,
-+	.num_resources	= ARRAY_SIZE(kfr2r09_nand_flash_resources),
-+};
-+
- static struct sh_keysc_info kfr2r09_sh_keysc_info = {
- 	.mode = SH_KEYSC_MODE_1, /* KEYOUT0->4, KEYIN0->4 */
- 	.scan_timing = 3,
-@@ -161,12 +177,15 @@ static struct platform_device kfr2r09_sh
- 
- static struct platform_device *kfr2r09_devices[] __initdata = {
- 	&kfr2r09_nor_flash_device,
-+	&kfr2r09_nand_flash_device,
- 	&kfr2r09_sh_keysc_device,
- 	&kfr2r09_sh_lcdc_device,
- };
- 
- #define BSC_CS0BCR 0xfec10004
- #define BSC_CS0WCR 0xfec10024
++#define PORT_MSELCRB 0xa4050182
 +#define BSC_CS4BCR 0xfec10010
++#define BSC_CS6ABCR 0xfec1001c
 +#define BSC_CS4WCR 0xfec10030
- 
- static int __init kfr2r09_devices_setup(void)
- {
-@@ -178,6 +197,10 @@ static int __init kfr2r09_devices_setup(
- 	ctrl_outl(0x36db0400, BSC_CS0BCR);
- 	ctrl_outl(0x00000500, BSC_CS0WCR);
- 
-+	/* setup NAND flash at CS4 */
-+	ctrl_outl(0x36db0400, BSC_CS4BCR);
-+	ctrl_outl(0x00000500, BSC_CS4WCR);
 +
- 	/* setup KEYSC pins */
- 	gpio_request(GPIO_FN_KEYOUT0, NULL);
- 	gpio_request(GPIO_FN_KEYOUT1, NULL);
++#include <video/sh_mobile_lcdc.h>
++
++int migor_lcd_qvga_setup(void *board_data, void *sys_ops_handle,
++			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
++
++#endif /* __ASM_SH_MIGOR_H */
