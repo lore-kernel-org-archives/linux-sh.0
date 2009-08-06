@@ -1,40 +1,58 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Wed, 19 Aug 2009 10:24:15 +0000
-Subject: [PATCH] sh: Add SH7724 support to NR_ONCHIP_DMA_CHANNELS
-Message-Id: <uocqc5cfk.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Aug 2009 15:03:43 +0000
+Subject: [PATCH] sh: LED9, LED10 and LED11 support for Solution Engine 7724
+Message-Id: <20090806150343.4770.1714.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch also update help comment
+From: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+This patch adds support for LED9, LED10 and LED11 on
+the Solution Engine 7724 board. If CONFIG_PM is enabled
+then these LEDs are used to show the hardware sleep
+mode used by the processor. Useful to debug cpuidle.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/drivers/dma/Kconfig |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
-index 63e9dd3..b91fa8d 100644
---- a/arch/sh/drivers/dma/Kconfig
-+++ b/arch/sh/drivers/dma/Kconfig
-@@ -27,12 +27,12 @@ config NR_ONCHIP_DMA_CHANNELS
- 	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || \
- 		       CPU_SUBTYPE_SH7760
- 	default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780  || \
--			CPU_SUBTYPE_SH7785
-+			CPU_SUBTYPE_SH7785 || CPU_SUBTYPE_SH7724
- 	default "6"
- 	help
- 	  This allows you to specify the number of channels that the on-chip
--	  DMAC supports. This will be 4 for SH7091/SH7750/SH7751 and 8 for the
--	  SH7750R/SH7751R.
-+	  DMAC supports. This will be 4 for SH7750/SH7751/Sh7750S/SH7091 and 8 for the
-+	  SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724, default is 6.
+ arch/sh/boards/mach-se/7724/setup.c |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- 0001/arch/sh/boards/mach-se/7724/setup.c
++++ work/arch/sh/boards/mach-se/7724/setup.c	2009-08-05 15:22:48.000000000 +0900
+@@ -429,6 +429,32 @@ static int __init devices_setup(void)
+ 	/* turn on USB clocks, use external clock */
+ 	ctrl_outw((ctrl_inw(PORT_MSELCRB) & ~0xc000) | 0x8000, PORT_MSELCRB);
  
- config NR_DMA_CHANNELS_BOOL
- 	depends on SH_DMA
--- 
-1.6.0.4
-
++#ifdef CONFIG_PM
++	/* Let LED9 show STATUS2 */
++	gpio_request(GPIO_FN_STATUS2, NULL);
++
++	/* Lit LED10 show STATUS0 */
++	gpio_request(GPIO_FN_STATUS0, NULL);
++
++	/* Lit LED11 show PDSTATUS */
++	gpio_request(GPIO_FN_PDSTATUS, NULL);
++#else
++	/* Lit LED9 */
++	gpio_request(GPIO_PTJ6, NULL);
++	gpio_direction_output(GPIO_PTJ6, 1);
++	gpio_export(GPIO_PTJ6, 0);
++
++	/* Lit LED10 */
++	gpio_request(GPIO_PTJ5, NULL);
++	gpio_direction_output(GPIO_PTJ5, 1);
++	gpio_export(GPIO_PTJ5, 0);
++
++	/* Lit LED11 */
++	gpio_request(GPIO_PTJ7, NULL);
++	gpio_direction_output(GPIO_PTJ7, 1);
++	gpio_export(GPIO_PTJ7, 0);
++#endif
++
+ 	/* enable USB0 port */
+ 	ctrl_outw(0x0600, 0xa40501d4);
+ 
