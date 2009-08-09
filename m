@@ -1,32 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 20 Aug 2009 01:51:27 +0000
-Subject: Re: [PATCH] sh: Add EcoVec (SH7724) board support
-Message-Id: <20090820015126.GB27450@linux-sh.org>
+From: Marcin Slusarz <marcin.slusarz@gmail.com>
+Date: Sun, 09 Aug 2009 19:53:59 +0000
+Subject: [PATCH 04/14] sh: use printk_once
+Message-Id: <1249847649-11631-5-git-send-email-marcin.slusarz@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <ufxbo57lq.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <ufxbo57lq.wl%morimoto.kuninori@renesas.com>
+References: <1249847649-11631-1-git-send-email-marcin.slusarz@gmail.com>
+In-Reply-To: <1249847649-11631-1-git-send-email-marcin.slusarz@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-On Wed, Aug 19, 2009 at 09:08:33PM +0900, Kuninori Morimoto wrote:
-> This adds preliminary support for the EcoVec board.
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/Makefile                      |    1 +
->  arch/sh/boards/Kconfig                |    7 +
->  arch/sh/boards/mach-ecovec24/Makefile |    9 +
->  arch/sh/boards/mach-ecovec24/setup.c  |  129 +++
->  arch/sh/configs/ecovec24_defconfig    | 1550 +++++++++++++++++++++++++++++++++
->  5 files changed, 1696 insertions(+), 0 deletions(-)
->  create mode 100644 arch/sh/boards/mach-ecovec24/Makefile
->  create mode 100644 arch/sh/boards/mach-ecovec24/setup.c
->  create mode 100644 arch/sh/configs/ecovec24_defconfig
-> 
-Applied, thanks.
+Signed-off-by: Marcin Slusarz <marcin.slusarz@gmail.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/mm/ioremap_64.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
 
-In the future, please do not forget to add the board entry to
-arch/sh/tools/mach-types, this saves me from having to always add them
-manually. :-)
+diff --git a/arch/sh/mm/ioremap_64.c b/arch/sh/mm/ioremap_64.c
+index 828c859..b16843d 100644
+--- a/arch/sh/mm/ioremap_64.c
++++ b/arch/sh/mm/ioremap_64.c
+@@ -94,7 +94,6 @@ static struct resource *shmedia_find_resource(struct resource *root,
+ static void __iomem *shmedia_alloc_io(unsigned long phys, unsigned long size,
+ 				      const char *name, unsigned long flags)
+ {
+-	static int printed_full;
+ 	struct xresource *xres;
+ 	struct resource *res;
+ 	char *tack;
+@@ -108,11 +107,8 @@ static void __iomem *shmedia_alloc_io(unsigned long phys, unsigned long size,
+ 		tack = xres->xname;
+ 		res = &xres->xres;
+ 	} else {
+-		if (!printed_full) {
+-			printk(KERN_NOTICE "%s: done with statics, "
++		printk_once(KERN_NOTICE "%s: done with statics, "
+ 			       "switching to kmalloc\n", __func__);
+-			printed_full = 1;
+-		}
+ 		tlen = strlen(name);
+ 		tack = kmalloc(sizeof(struct resource) + tlen + 1, GFP_KERNEL);
+ 		if (!tack)
+-- 
+1.6.3.3
+
