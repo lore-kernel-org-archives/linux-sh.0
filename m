@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Aug 2009 10:49:08 +0000
-Subject: [PATCH 03/05] video: Runtime PM for SuperH Mobile LCDC
-Message-Id: <20090814104908.32396.91559.sendpatchset@rx1.opensource.se>
+Date: Fri, 14 Aug 2009 10:48:16 +0000
+Subject: [PATCH 01/05] sh: Runtime PM for SuperH Mobile platform bus devices
+Message-Id: <20090814104816.32396.60186.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,287 +10,403 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-This patch modifies the SuperH Mobile LCDC framebuffer driver
-to support Runtime PM. The driver is using the functions
+This patch is V3 of the SuperH Mobile Runtime PM platform bus
+implentation matching Rafael's Runtime PM v16.
 
- - pm_runtime_get_sync()
- - pm_runtime_put_sync()
+The code gets invoked from the SuperH specific Runtime PM
+platform bus functions that override the weak symbols for:
+ - platform_pm_runtime_suspend()
+ - platform_pm_runtime_resume()
+ - platform_pm_runtime_idle()
 
-to inform the bus code if the hardware is idle or not. If the
-hardware is idle then the bus code may call the runtime dev_pm_ops
-callbacks to save and restore state. pm_runtime_resume() is used
-to allow the driver to access the hardware from probe().
+This Runtime PM implementation performs two levels of power
+management. At the time of platform bus runtime suspend the
+clock to the device is stopped instantly. Later on if all
+devices within the power domain has their clocks stopped
+then the device driver ->runtime_suspend() callbacks are
+used to save hardware register state for each device.
+
+Device driver ->runtime_suspend() calls are scheduled from
+cpuidle context using platform_pm_runtime_suspend_idle().
+When all devices have been fully suspended the processor
+is allowed to enter deep sleep from cpuidle.
+
+The runtime resume operation turns on clocks and also
+restores registers if needed. It is worth noting that the
+devices start in a suspended state and the device driver
+is responsible for calling runtime resume before accessing
+the actual hardware.
+
+In this particular platform bus implementation runtime
+resume is not allowed from interrupt context. Runtime
+suspend is however allowed from interrupt context as
+long as the synchronous functions are avoided.
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- Changes since V2:
- - implemented proper device register save and restore
- - use pm_runtime_resume() to support probe() hardware usage
+  Changes since V2
+  - update to v16
+  - rewrite work queue code
+  - use mutex
 
- Changes since V1:
- - use pm_runtime_get_sync() and pm_runtime_put_sync()
- - use pm_runtime_disable()
- - no need for pm_runtime_set_suspended()
- - incomplete runtime pm functions for dev_pm_ops
- - work around with pm_runtime_put_noidle()/pm_runtime_get_noresume()
+  Changes since V1:
+  - update from Runtime PM v9 to v11
+  - rework error handling
+  - implement platform_pm_runtime_idle()
+  - add might_sleep()
+  - use dev_pm_ops helpers
+  - use dev_dbg()
+  - use core_initcall()
 
- drivers/video/sh_mobile_lcdcfb.c |  154 ++++++++++++++++++++++++++------------
- 1 file changed, 109 insertions(+), 45 deletions(-)
+ arch/sh/include/asm/device.h             |    9 
+ arch/sh/include/asm/hwblk.h              |    4 
+ arch/sh/kernel/cpu/shmobile/Makefile     |    1 
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c |  304 ++++++++++++++++++++++++++++++
+ 4 files changed, 317 insertions(+), 1 deletion(-)
 
---- 0001/drivers/video/sh_mobile_lcdcfb.c
-+++ work/drivers/video/sh_mobile_lcdcfb.c	2009-08-11 19:54:43.000000000 +0900
-@@ -14,6 +14,7 @@
- #include <linux/mm.h>
- #include <linux/fb.h>
- #include <linux/clk.h>
+--- 0011/arch/sh/include/asm/device.h
++++ work/arch/sh/include/asm/device.h	2009-08-14 18:23:00.000000000 +0900
+@@ -14,6 +14,15 @@ int platform_resource_setup_memory(struc
+ 
+ void plat_early_device_setup(void);
+ 
++#define PDEV_ARCHDATA_FLAG_INIT 0
++#define PDEV_ARCHDATA_FLAG_IDLE 1
++#define PDEV_ARCHDATA_FLAG_SUSP 2
++
+ struct pdev_archdata {
+ 	int hwblk_id;
++#ifdef CONFIG_PM_RUNTIME
++	unsigned long flags;
++	struct list_head entry;
++	struct mutex mutex;
++#endif
+ };
+--- 0001/arch/sh/include/asm/hwblk.h
++++ work/arch/sh/include/asm/hwblk.h	2009-08-14 18:22:22.000000000 +0900
+@@ -5,7 +5,9 @@
+ #include <asm/io.h>
+ 
+ #define HWBLK_CNT_USAGE 0
+-#define HWBLK_CNT_NR 1
++#define HWBLK_CNT_IDLE 1
++#define HWBLK_CNT_DEVICES 2
++#define HWBLK_CNT_NR 3
+ 
+ #define HWBLK_AREA_FLAG_PARENT (1 << 0) /* valid parent */
+ 
+--- 0001/arch/sh/kernel/cpu/shmobile/Makefile
++++ work/arch/sh/kernel/cpu/shmobile/Makefile	2009-08-14 18:22:22.000000000 +0900
+@@ -5,3 +5,4 @@
+ # Power Management & Sleep mode
+ obj-$(CONFIG_PM)	+= pm.o sleep.o
+ obj-$(CONFIG_CPU_IDLE)	+= cpuidle.o
++obj-$(CONFIG_PM_RUNTIME)	+= pm_runtime.o
+--- /dev/null
++++ work/arch/sh/kernel/cpu/shmobile/pm_runtime.c	2009-08-14 18:25:56.000000000 +0900
+@@ -0,0 +1,304 @@
++/*
++ * arch/sh/kernel/cpu/shmobile/pm_runtime.c
++ *
++ * Runtime PM support code for SuperH Mobile
++ *
++ *  Copyright (C) 2009 Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
 +#include <linux/pm_runtime.h>
- #include <linux/platform_device.h>
- #include <linux/dma-mapping.h>
- #include <linux/interrupt.h>
-@@ -23,33 +24,6 @@
- 
- #define PALETTE_NR 16
- 
--struct sh_mobile_lcdc_priv;
--struct sh_mobile_lcdc_chan {
--	struct sh_mobile_lcdc_priv *lcdc;
--	unsigned long *reg_offs;
--	unsigned long ldmt1r_value;
--	unsigned long enabled; /* ME and SE in LDCNT2R */
--	struct sh_mobile_lcdc_chan_cfg cfg;
--	u32 pseudo_palette[PALETTE_NR];
--	struct fb_info *info;
--	dma_addr_t dma_handle;
--	struct fb_deferred_io defio;
--	struct scatterlist *sglist;
--	unsigned long frame_end;
--	wait_queue_head_t frame_end_wait;
--};
--
--struct sh_mobile_lcdc_priv {
--	void __iomem *base;
--	int irq;
--	atomic_t clk_usecnt;
--	struct clk *dot_clk;
--	struct clk *clk;
--	unsigned long lddckr;
--	struct sh_mobile_lcdc_chan ch[2];
--	int started;
--};
--
- /* shared registers */
- #define _LDDCKR 0x410
- #define _LDDCKSTPR 0x414
-@@ -63,11 +37,23 @@ struct sh_mobile_lcdc_priv {
- #define _LDDWAR 0x900
- #define _LDDRAR 0x904
- 
-+/* shared registers and their order for context save/restore */
-+static int lcdc_shared_regs[] = {
-+	_LDDCKR,
-+	_LDDCKSTPR,
-+	_LDINTR,
-+	_LDDDSR,
-+	_LDCNT1R,
-+	_LDCNT2R,
-+};
-+#define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
++#include <linux/platform_device.h>
++#include <linux/mutex.h>
++#include <asm/hwblk.h>
 +
- /* per-channel registers */
- enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
--       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR };
-+       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR,
-+       NR_CH_REGS };
- 
--static unsigned long lcdc_offs_mainlcd[] = {
-+static unsigned long lcdc_offs_mainlcd[NR_CH_REGS] = {
- 	[LDDCKPAT1R] = 0x400,
- 	[LDDCKPAT2R] = 0x404,
- 	[LDMT1R] = 0x418,
-@@ -85,7 +71,7 @@ static unsigned long lcdc_offs_mainlcd[]
- 	[LDPMR] = 0x460,
- };
- 
--static unsigned long lcdc_offs_sublcd[] = {
-+static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
- 	[LDDCKPAT1R] = 0x408,
- 	[LDDCKPAT2R] = 0x40c,
- 	[LDMT1R] = 0x600,
-@@ -110,6 +96,35 @@ static unsigned long lcdc_offs_sublcd[] 
- #define LDINTR_FE	0x00000400
- #define LDINTR_FS	0x00000004
- 
-+struct sh_mobile_lcdc_priv;
-+struct sh_mobile_lcdc_chan {
-+	struct sh_mobile_lcdc_priv *lcdc;
-+	unsigned long *reg_offs;
-+	unsigned long ldmt1r_value;
-+	unsigned long enabled; /* ME and SE in LDCNT2R */
-+	struct sh_mobile_lcdc_chan_cfg cfg;
-+	u32 pseudo_palette[PALETTE_NR];
-+	unsigned long saved_ch_regs[NR_CH_REGS];
-+	struct fb_info *info;
-+	dma_addr_t dma_handle;
-+	struct fb_deferred_io defio;
-+	struct scatterlist *sglist;
-+	unsigned long frame_end;
-+	wait_queue_head_t frame_end_wait;
-+};
++static DEFINE_SPINLOCK(hwblk_lock);
++static LIST_HEAD(hwblk_idle_list);
++static struct work_struct hwblk_work;
 +
-+struct sh_mobile_lcdc_priv {
-+	void __iomem *base;
-+	int irq;
-+	atomic_t hw_usecnt;
-+	struct device *dev;
-+	struct clk *dot_clk;
-+	unsigned long lddckr;
-+	struct sh_mobile_lcdc_chan ch[2];
-+	unsigned long saved_shared_regs[NR_SHARED_REGS];
-+	int started;
-+};
++extern struct hwblk_info *hwblk_info;
 +
- static void lcdc_write_chan(struct sh_mobile_lcdc_chan *chan,
- 			    int reg_nr, unsigned long data)
- {
-@@ -188,8 +203,8 @@ struct sh_mobile_lcdc_sys_bus_ops sh_mob
- 
- static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
- {
--	if (atomic_inc_and_test(&priv->clk_usecnt)) {
--		clk_enable(priv->clk);
-+	if (atomic_inc_and_test(&priv->hw_usecnt)) {
-+		pm_runtime_get_sync(priv->dev);
- 		if (priv->dot_clk)
- 			clk_enable(priv->dot_clk);
- 	}
-@@ -197,10 +212,10 @@ static void sh_mobile_lcdc_clk_on(struct
- 
- static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
- {
--	if (atomic_sub_return(1, &priv->clk_usecnt) = -1) {
-+	if (atomic_sub_return(1, &priv->hw_usecnt) = -1) {
- 		if (priv->dot_clk)
- 			clk_disable(priv->dot_clk);
--		clk_disable(priv->clk);
-+		pm_runtime_put(priv->dev);
- 	}
- }
- 
-@@ -569,7 +584,6 @@ static int sh_mobile_lcdc_setup_clocks(s
- 				       int clock_source,
- 				       struct sh_mobile_lcdc_priv *priv)
- {
--	char clk_name[8];
- 	char *str;
- 	int icksel;
- 
-@@ -583,23 +597,21 @@ static int sh_mobile_lcdc_setup_clocks(s
- 
- 	priv->lddckr = icksel << 16;
- 
--	atomic_set(&priv->clk_usecnt, -1);
--	snprintf(clk_name, sizeof(clk_name), "lcdc%d", pdev->id);
--	priv->clk = clk_get(&pdev->dev, clk_name);
--	if (IS_ERR(priv->clk)) {
--		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
--		return PTR_ERR(priv->clk);
--	}
--
- 	if (str) {
- 		priv->dot_clk = clk_get(&pdev->dev, str);
- 		if (IS_ERR(priv->dot_clk)) {
- 			dev_err(&pdev->dev, "cannot get dot clock %s\n", str);
--			clk_put(priv->clk);
- 			return PTR_ERR(priv->dot_clk);
- 		}
- 	}
-+	atomic_set(&priv->hw_usecnt, -1);
- 
-+	/* Runtime PM support involves two step for this driver:
-+	 * 1) Enable Runtime PM
-+	 * 2) Force Runtime PM Resume since hardware is accessed from probe()
++static void platform_pm_runtime_not_idle(struct platform_device *pdev)
++{
++	unsigned long flags;
++
++	/* remove device from idle list */
++	spin_lock_irqsave(&hwblk_lock, flags);
++	if (test_bit(PDEV_ARCHDATA_FLAG_IDLE, &pdev->archdata.flags)) {
++		list_del(&pdev->archdata.entry);
++		__clear_bit(PDEV_ARCHDATA_FLAG_IDLE, &pdev->archdata.flags);
++	}
++	spin_unlock_irqrestore(&hwblk_lock, flags);
++}
++
++static int __platform_pm_runtime_resume(struct platform_device *pdev)
++{
++	struct device *d = &pdev->dev;
++	struct pdev_archdata *ad = &pdev->archdata;
++	int hwblk = ad->hwblk_id;
++	int ret = -ENOSYS;
++
++	dev_dbg(d, "__platform_pm_runtime_resume() [%d]\n", hwblk);
++
++	if (d->driver && d->driver->pm && d->driver->pm->runtime_resume) {
++		hwblk_enable(hwblk_info, hwblk);
++		ret = 0;
++
++		if (test_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags)) {
++			ret = d->driver->pm->runtime_resume(d);
++			if (!ret)
++				clear_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags);
++			else
++				hwblk_disable(hwblk_info, hwblk);
++		}
++	}
++
++	dev_dbg(d, "__platform_pm_runtime_resume() [%d] - returns %d\n",
++		hwblk, ret);
++
++	return ret;
++}
++
++static int __platform_pm_runtime_suspend(struct platform_device *pdev)
++{
++	struct device *d = &pdev->dev;
++	struct pdev_archdata *ad = &pdev->archdata;
++	int hwblk = ad->hwblk_id;
++	int ret = -ENOSYS;
++
++	dev_dbg(d, "__platform_pm_runtime_suspend() [%d]\n", hwblk);
++
++	if (d->driver && d->driver->pm && d->driver->pm->runtime_suspend) {
++		BUG_ON(!test_bit(PDEV_ARCHDATA_FLAG_IDLE, &ad->flags));
++
++		hwblk_enable(hwblk_info, hwblk);
++		ret = d->driver->pm->runtime_suspend(d);
++		hwblk_disable(hwblk_info, hwblk);
++
++		if (!ret) {
++			set_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags);
++			platform_pm_runtime_not_idle(pdev);
++			hwblk_cnt_dec(hwblk_info, hwblk, HWBLK_CNT_IDLE);
++		}
++	}
++
++	dev_dbg(d, "__platform_pm_runtime_suspend() [%d] - returns %d\n",
++		hwblk, ret);
++
++	return ret;
++}
++
++static void platform_pm_runtime_work(struct work_struct *work)
++{
++	struct platform_device *pdev;
++	unsigned long flags;
++	int ret;
++
++	/* go through the idle list and suspend one device at a time */
++	do {
++		spin_lock_irqsave(&hwblk_lock, flags);
++		if (list_empty(&hwblk_idle_list))
++			pdev = NULL;
++		else
++			pdev = list_first_entry(&hwblk_idle_list,
++						struct platform_device,
++						archdata.entry);
++		spin_unlock_irqrestore(&hwblk_lock, flags);
++
++		if (pdev) {
++			mutex_lock(&pdev->archdata.mutex);
++			ret = __platform_pm_runtime_suspend(pdev);
++
++			/* at this point the platform device may be:
++			 * suspended: ret = 0, FLAG_SUSP set, clock stopped
++			 * failed: ret < 0, FLAG_IDLE set, clock stopped
++			 */
++			mutex_unlock(&pdev->archdata.mutex);
++		} else {
++			ret = -ENODEV;
++		}
++	} while (!ret);
++}
++
++/* this function gets called from cpuidle context when all devices in the
++ * main power domain are unused but some are counted as idle, ie the hwblk
++ * counter values are (HWBLK_CNT_USAGE = 0) && (HWBLK_CNT_IDLE != 0)
++ */
++void platform_pm_runtime_suspend_idle(void)
++{
++	queue_work(pm_wq, &hwblk_work);
++}
++
++int platform_pm_runtime_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct pdev_archdata *ad = &pdev->archdata;
++	unsigned long flags;
++	int hwblk = ad->hwblk_id;
++	int ret = 0;
++
++	dev_dbg(dev, "platform_pm_runtime_suspend() [%d]\n", hwblk);
++
++	/* ignore off-chip platform devices */
++	if (!hwblk)
++		goto out;
++
++	/* interrupt context not allowed */
++	might_sleep();
++
++	/* catch misconfigured drivers not starting with resume */
++	if (test_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags)) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	/* serialize */
++	mutex_lock(&ad->mutex);
++
++	/* disable clock */
++	hwblk_disable(hwblk_info, hwblk);
++
++	/* put device on idle list */
++	spin_lock_irqsave(&hwblk_lock, flags);
++	list_add_tail(&pdev->archdata.entry, &hwblk_idle_list);
++	__set_bit(PDEV_ARCHDATA_FLAG_IDLE, &pdev->archdata.flags);
++	spin_unlock_irqrestore(&hwblk_lock, flags);
++
++	/* increase idle count */
++	hwblk_cnt_inc(hwblk_info, hwblk, HWBLK_CNT_IDLE);
++
++	/* at this point the platform device is:
++	 * idle: ret = 0, FLAG_IDLE set, clock stopped
 +	 */
-+	pm_runtime_enable(priv->dev);
-+	pm_runtime_resume(priv->dev);
- 	return 0;
- }
- 
-@@ -717,9 +729,59 @@ static int sh_mobile_lcdc_resume(struct 
- 	return sh_mobile_lcdc_start(platform_get_drvdata(pdev));
- }
- 
-+static int sh_mobile_lcdc_runtime_suspend(struct device *dev)
++	mutex_unlock(&ad->mutex);
++
++ out:
++	dev_dbg(dev, "platform_pm_runtime_suspend() [%d] returns %d\n",
++		hwblk, ret);
++
++	return ret;
++}
++
++int platform_pm_runtime_resume(struct device *dev)
 +{
 +	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mobile_lcdc_priv *p = platform_get_drvdata(pdev);
-+	struct sh_mobile_lcdc_chan *ch;
-+	int k, n;
++	struct pdev_archdata *ad = &pdev->archdata;
++	int hwblk = ad->hwblk_id;
++	int ret = 0;
 +
-+	/* save per-channel registers */
-+	for (k = 0; k < ARRAY_SIZE(p->ch); k++) {
-+		ch = &p->ch[k];
-+		if (!ch->enabled)
-+			continue;
-+		for (n = 0; n < NR_CH_REGS; n++)
-+			ch->saved_ch_regs[n] = lcdc_read_chan(ch, n);
++	dev_dbg(dev, "platform_pm_runtime_resume() [%d]\n", hwblk);
++
++	/* ignore off-chip platform devices */
++	if (!hwblk)
++		goto out;
++
++	/* interrupt context not allowed */
++	might_sleep();
++
++	/* serialize */
++	mutex_lock(&ad->mutex);
++
++	/* make sure device is removed from idle list */
++	platform_pm_runtime_not_idle(pdev);
++
++	/* decrease idle count */
++	if (!test_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags) &&
++	    !test_bit(PDEV_ARCHDATA_FLAG_SUSP, &pdev->archdata.flags))
++		hwblk_cnt_dec(hwblk_info, hwblk, HWBLK_CNT_IDLE);
++
++	/* resume the device if needed */
++	ret = __platform_pm_runtime_resume(pdev);
++
++	/* the driver has been initialized now, so clear the init flag */
++	clear_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
++
++	/* at this point the platform device may be:
++	 * resumed: ret = 0, flags = 0, clock started
++	 * failed: ret < 0, FLAG_SUSP set, clock stopped
++	 */
++	mutex_unlock(&ad->mutex);
++ out:
++	dev_dbg(dev, "platform_pm_runtime_resume() [%d] returns %d\n",
++		hwblk, ret);
++
++	return ret;
++}
++
++void platform_pm_runtime_idle(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	int hwblk = pdev->archdata.hwblk_id;
++
++	dev_dbg(dev, "platform_pm_runtime_idle() [%d]\n", hwblk);
++
++	/* ignore off-chip platform devices */
++	if (!hwblk)
++		goto out;
++
++	/* interrupt context not allowed, use pm_runtime_put()! */
++	might_sleep();
++
++	/* suspend synchronously to disable clocks immediately */
++	pm_runtime_suspend(dev);
++ out:
++	dev_dbg(dev, "platform_pm_runtime_idle() [%d] done!\n", hwblk);
++	return;
++}
++
++static int __devinit platform_bus_notify(struct notifier_block *nb,
++					 unsigned long action, void *data)
++{
++	struct device *dev = data;
++	struct platform_device *pdev = to_platform_device(dev);
++	int hwblk = pdev->archdata.hwblk_id;
++
++	/* ignore off-chip platform devices */
++	if (!hwblk)
++		return 0;
++
++	switch (action) {
++	case BUS_NOTIFY_ADD_DEVICE:
++		INIT_LIST_HEAD(&pdev->archdata.entry);
++		mutex_init(&pdev->archdata.mutex);
++		/* platform devices without drivers should be disabled */
++		hwblk_enable(hwblk_info, hwblk);
++		hwblk_disable(hwblk_info, hwblk);
++		/* make sure driver re-inits itself once */
++		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
++		break;
++	/* TODO: add BUS_NOTIFY_BIND_DRIVER and increase idle count */
++	case BUS_NOTIFY_BOUND_DRIVER:
++		/* keep track of number of devices in use per hwblk */
++		hwblk_cnt_inc(hwblk_info, hwblk, HWBLK_CNT_DEVICES);
++		break;
++	case BUS_NOTIFY_UNBOUND_DRIVER:
++		/* keep track of number of devices in use per hwblk */
++		hwblk_cnt_dec(hwblk_info, hwblk, HWBLK_CNT_DEVICES);
++		/* make sure driver re-inits itself once */
++		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
++		break;
++	case BUS_NOTIFY_DEL_DEVICE:
++		break;
 +	}
-+
-+	/* save shared registers */
-+	for (n = 0; n < NR_SHARED_REGS; n++)
-+		p->saved_shared_regs[n] = lcdc_read(p, lcdc_shared_regs[n]);
-+
-+	/* turn off LCDC hardware */
-+	lcdc_write(p, _LDCNT1R, 0);
 +	return 0;
 +}
 +
-+static int sh_mobile_lcdc_runtime_resume(struct device *dev)
++static struct notifier_block platform_bus_notifier = {
++	.notifier_call = platform_bus_notify
++};
++
++static int __init sh_pm_runtime_init(void)
 +{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mobile_lcdc_priv *p = platform_get_drvdata(pdev);
-+	struct sh_mobile_lcdc_chan *ch;
-+	int k, n;
++	INIT_WORK(&hwblk_work, platform_pm_runtime_work);
 +
-+	/* restore per-channel registers */
-+	for (k = 0; k < ARRAY_SIZE(p->ch); k++) {
-+		ch = &p->ch[k];
-+		if (!ch->enabled)
-+			continue;
-+		for (n = 0; n < NR_CH_REGS; n++)
-+			lcdc_write_chan(ch, n, ch->saved_ch_regs[n]);
-+	}
-+
-+	/* restore shared registers */
-+	for (n = 0; n < NR_SHARED_REGS; n++)
-+		lcdc_write(p, lcdc_shared_regs[n], p->saved_shared_regs[n]);
-+
++	bus_register_notifier(&platform_bus_type, &platform_bus_notifier);
 +	return 0;
 +}
 +
- static struct dev_pm_ops sh_mobile_lcdc_dev_pm_ops = {
- 	.suspend = sh_mobile_lcdc_suspend,
- 	.resume = sh_mobile_lcdc_resume,
-+	.runtime_suspend = sh_mobile_lcdc_runtime_suspend,
-+	.runtime_resume = sh_mobile_lcdc_runtime_resume,
- };
- 
- static int sh_mobile_lcdc_remove(struct platform_device *pdev);
-@@ -764,6 +826,7 @@ static int __init sh_mobile_lcdc_probe(s
- 	}
- 
- 	priv->irq = i;
-+	priv->dev = &pdev->dev;
- 	platform_set_drvdata(pdev, priv);
- 	pdata = pdev->dev.platform_data;
- 
-@@ -935,7 +998,8 @@ static int sh_mobile_lcdc_remove(struct 
- 
- 	if (priv->dot_clk)
- 		clk_put(priv->dot_clk);
--	clk_put(priv->clk);
-+
-+	pm_runtime_disable(priv->dev);
- 
- 	if (priv->base)
- 		iounmap(priv->base);
++core_initcall(sh_pm_runtime_init);
