@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 19 Aug 2009 09:50:49 +0000
-Subject: [PATCH] usb: add clock support to r8a66597 gadget driver
-Message-Id: <20090819095049.11541.67276.sendpatchset@rx1.opensource.se>
+Date: Fri, 14 Aug 2009 10:49:08 +0000
+Subject: [PATCH 03/05] video: Runtime PM for SuperH Mobile LCDC
+Message-Id: <20090814104908.32396.91559.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,124 +10,287 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@igel.co.jp>
 
-Add support for the clock framework to the r8a66597 gadget driver.
-This is needed to control the clock driving the USB block.
+This patch modifies the SuperH Mobile LCDC framebuffer driver
+to support Runtime PM. The driver is using the functions
+
+ - pm_runtime_get_sync()
+ - pm_runtime_put_sync()
+
+to inform the bus code if the hardware is idle or not. If the
+hardware is idle then the bus code may call the runtime dev_pm_ops
+callbacks to save and restore state. pm_runtime_resume() is used
+to allow the driver to access the hardware from probe().
 
 Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
 
- drivers/usb/gadget/r8a66597-udc.c |   37 ++++++++++++++++++++++++++++++++++---
- drivers/usb/gadget/r8a66597-udc.h |    7 +++++++
- 2 files changed, 41 insertions(+), 3 deletions(-)
+ Changes since V2:
+ - implemented proper device register save and restore
+ - use pm_runtime_resume() to support probe() hardware usage
 
---- 0002/drivers/usb/gadget/r8a66597-udc.c
-+++ work/drivers/usb/gadget/r8a66597-udc.c	2009-08-19 18:29:50.000000000 +0900
-@@ -25,6 +25,7 @@
- #include <linux/delay.h>
- #include <linux/io.h>
+ Changes since V1:
+ - use pm_runtime_get_sync() and pm_runtime_put_sync()
+ - use pm_runtime_disable()
+ - no need for pm_runtime_set_suspended()
+ - incomplete runtime pm functions for dev_pm_ops
+ - work around with pm_runtime_put_noidle()/pm_runtime_get_noresume()
+
+ drivers/video/sh_mobile_lcdcfb.c |  154 ++++++++++++++++++++++++++------------
+ 1 file changed, 109 insertions(+), 45 deletions(-)
+
+--- 0001/drivers/video/sh_mobile_lcdcfb.c
++++ work/drivers/video/sh_mobile_lcdcfb.c	2009-08-11 19:54:43.000000000 +0900
+@@ -14,6 +14,7 @@
+ #include <linux/mm.h>
+ #include <linux/fb.h>
+ #include <linux/clk.h>
++#include <linux/pm_runtime.h>
  #include <linux/platform_device.h>
-+#include <linux/clk.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/interrupt.h>
+@@ -23,33 +24,6 @@
  
- #include <linux/usb/ch9.h>
- #include <linux/usb/gadget.h>
-@@ -1475,6 +1476,12 @@ static int __exit r8a66597_remove(struct
- 	iounmap((void *)r8a66597->reg);
- 	free_irq(platform_get_irq(pdev, 0), r8a66597);
- 	r8a66597_free_request(&r8a66597->ep[0].ep, r8a66597->ep0_req);
-+#ifdef CONFIG_HAVE_CLK
-+	if (r8a66597->pdata->on_chip) {
-+		clk_disable(r8a66597->clk);
-+		clk_put(r8a66597->clk);
-+	}
-+#endif
- 	kfree(r8a66597);
+ #define PALETTE_NR 16
+ 
+-struct sh_mobile_lcdc_priv;
+-struct sh_mobile_lcdc_chan {
+-	struct sh_mobile_lcdc_priv *lcdc;
+-	unsigned long *reg_offs;
+-	unsigned long ldmt1r_value;
+-	unsigned long enabled; /* ME and SE in LDCNT2R */
+-	struct sh_mobile_lcdc_chan_cfg cfg;
+-	u32 pseudo_palette[PALETTE_NR];
+-	struct fb_info *info;
+-	dma_addr_t dma_handle;
+-	struct fb_deferred_io defio;
+-	struct scatterlist *sglist;
+-	unsigned long frame_end;
+-	wait_queue_head_t frame_end_wait;
+-};
+-
+-struct sh_mobile_lcdc_priv {
+-	void __iomem *base;
+-	int irq;
+-	atomic_t clk_usecnt;
+-	struct clk *dot_clk;
+-	struct clk *clk;
+-	unsigned long lddckr;
+-	struct sh_mobile_lcdc_chan ch[2];
+-	int started;
+-};
+-
+ /* shared registers */
+ #define _LDDCKR 0x410
+ #define _LDDCKSTPR 0x414
+@@ -63,11 +37,23 @@ struct sh_mobile_lcdc_priv {
+ #define _LDDWAR 0x900
+ #define _LDDRAR 0x904
+ 
++/* shared registers and their order for context save/restore */
++static int lcdc_shared_regs[] = {
++	_LDDCKR,
++	_LDDCKSTPR,
++	_LDINTR,
++	_LDDDSR,
++	_LDCNT1R,
++	_LDCNT2R,
++};
++#define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
++
+ /* per-channel registers */
+ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+-       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR };
++       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR,
++       NR_CH_REGS };
+ 
+-static unsigned long lcdc_offs_mainlcd[] = {
++static unsigned long lcdc_offs_mainlcd[NR_CH_REGS] = {
+ 	[LDDCKPAT1R] = 0x400,
+ 	[LDDCKPAT2R] = 0x404,
+ 	[LDMT1R] = 0x418,
+@@ -85,7 +71,7 @@ static unsigned long lcdc_offs_mainlcd[]
+ 	[LDPMR] = 0x460,
+ };
+ 
+-static unsigned long lcdc_offs_sublcd[] = {
++static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
+ 	[LDDCKPAT1R] = 0x408,
+ 	[LDDCKPAT2R] = 0x40c,
+ 	[LDMT1R] = 0x600,
+@@ -110,6 +96,35 @@ static unsigned long lcdc_offs_sublcd[] 
+ #define LDINTR_FE	0x00000400
+ #define LDINTR_FS	0x00000004
+ 
++struct sh_mobile_lcdc_priv;
++struct sh_mobile_lcdc_chan {
++	struct sh_mobile_lcdc_priv *lcdc;
++	unsigned long *reg_offs;
++	unsigned long ldmt1r_value;
++	unsigned long enabled; /* ME and SE in LDCNT2R */
++	struct sh_mobile_lcdc_chan_cfg cfg;
++	u32 pseudo_palette[PALETTE_NR];
++	unsigned long saved_ch_regs[NR_CH_REGS];
++	struct fb_info *info;
++	dma_addr_t dma_handle;
++	struct fb_deferred_io defio;
++	struct scatterlist *sglist;
++	unsigned long frame_end;
++	wait_queue_head_t frame_end_wait;
++};
++
++struct sh_mobile_lcdc_priv {
++	void __iomem *base;
++	int irq;
++	atomic_t hw_usecnt;
++	struct device *dev;
++	struct clk *dot_clk;
++	unsigned long lddckr;
++	struct sh_mobile_lcdc_chan ch[2];
++	unsigned long saved_shared_regs[NR_SHARED_REGS];
++	int started;
++};
++
+ static void lcdc_write_chan(struct sh_mobile_lcdc_chan *chan,
+ 			    int reg_nr, unsigned long data)
+ {
+@@ -188,8 +203,8 @@ struct sh_mobile_lcdc_sys_bus_ops sh_mob
+ 
+ static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
+ {
+-	if (atomic_inc_and_test(&priv->clk_usecnt)) {
+-		clk_enable(priv->clk);
++	if (atomic_inc_and_test(&priv->hw_usecnt)) {
++		pm_runtime_get_sync(priv->dev);
+ 		if (priv->dot_clk)
+ 			clk_enable(priv->dot_clk);
+ 	}
+@@ -197,10 +212,10 @@ static void sh_mobile_lcdc_clk_on(struct
+ 
+ static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
+ {
+-	if (atomic_sub_return(1, &priv->clk_usecnt) = -1) {
++	if (atomic_sub_return(1, &priv->hw_usecnt) = -1) {
+ 		if (priv->dot_clk)
+ 			clk_disable(priv->dot_clk);
+-		clk_disable(priv->clk);
++		pm_runtime_put(priv->dev);
+ 	}
+ }
+ 
+@@ -569,7 +584,6 @@ static int sh_mobile_lcdc_setup_clocks(s
+ 				       int clock_source,
+ 				       struct sh_mobile_lcdc_priv *priv)
+ {
+-	char clk_name[8];
+ 	char *str;
+ 	int icksel;
+ 
+@@ -583,23 +597,21 @@ static int sh_mobile_lcdc_setup_clocks(s
+ 
+ 	priv->lddckr = icksel << 16;
+ 
+-	atomic_set(&priv->clk_usecnt, -1);
+-	snprintf(clk_name, sizeof(clk_name), "lcdc%d", pdev->id);
+-	priv->clk = clk_get(&pdev->dev, clk_name);
+-	if (IS_ERR(priv->clk)) {
+-		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+-		return PTR_ERR(priv->clk);
+-	}
+-
+ 	if (str) {
+ 		priv->dot_clk = clk_get(&pdev->dev, str);
+ 		if (IS_ERR(priv->dot_clk)) {
+ 			dev_err(&pdev->dev, "cannot get dot clock %s\n", str);
+-			clk_put(priv->clk);
+ 			return PTR_ERR(priv->dot_clk);
+ 		}
+ 	}
++	atomic_set(&priv->hw_usecnt, -1);
+ 
++	/* Runtime PM support involves two step for this driver:
++	 * 1) Enable Runtime PM
++	 * 2) Force Runtime PM Resume since hardware is accessed from probe()
++	 */
++	pm_runtime_enable(priv->dev);
++	pm_runtime_resume(priv->dev);
  	return 0;
  }
-@@ -1485,6 +1492,9 @@ static void nop_completion(struct usb_ep
  
- static int __init r8a66597_probe(struct platform_device *pdev)
- {
-+#ifdef CONFIG_HAVE_CLK
-+	char clk_name[8];
-+#endif
- 	struct resource *res, *ires;
- 	int irq;
- 	void __iomem *reg = NULL;
-@@ -1545,13 +1555,27 @@ static int __init r8a66597_probe(struct 
+@@ -717,9 +729,59 @@ static int sh_mobile_lcdc_resume(struct 
+ 	return sh_mobile_lcdc_start(platform_get_drvdata(pdev));
+ }
  
- 	r8a66597->bi_bufnum = R8A66597_BASE_BUFNUM;
- 
-+#ifdef CONFIG_HAVE_CLK
-+	if (r8a66597->pdata->on_chip) {
-+		snprintf(clk_name, sizeof(clk_name), "usb%d", pdev->id);
-+		r8a66597->clk = clk_get(&pdev->dev, clk_name);
-+		if (IS_ERR(r8a66597->clk)) {
-+			dev_err(&pdev->dev, "cannot get clock \"%s\"\n",
-+				clk_name);
-+			ret = PTR_ERR(r8a66597->clk);
-+			goto clean_up;
-+		}
-+		clk_enable(r8a66597->clk);
-+	}
-+#endif
++static int sh_mobile_lcdc_runtime_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mobile_lcdc_priv *p = platform_get_drvdata(pdev);
++	struct sh_mobile_lcdc_chan *ch;
++	int k, n;
 +
- 	disable_controller(r8a66597); /* make sure controller is disabled */
++	/* save per-channel registers */
++	for (k = 0; k < ARRAY_SIZE(p->ch); k++) {
++		ch = &p->ch[k];
++		if (!ch->enabled)
++			continue;
++		for (n = 0; n < NR_CH_REGS; n++)
++			ch->saved_ch_regs[n] = lcdc_read_chan(ch, n);
++	}
++
++	/* save shared registers */
++	for (n = 0; n < NR_SHARED_REGS; n++)
++		p->saved_shared_regs[n] = lcdc_read(p, lcdc_shared_regs[n]);
++
++	/* turn off LCDC hardware */
++	lcdc_write(p, _LDCNT1R, 0);
++	return 0;
++}
++
++static int sh_mobile_lcdc_runtime_resume(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mobile_lcdc_priv *p = platform_get_drvdata(pdev);
++	struct sh_mobile_lcdc_chan *ch;
++	int k, n;
++
++	/* restore per-channel registers */
++	for (k = 0; k < ARRAY_SIZE(p->ch); k++) {
++		ch = &p->ch[k];
++		if (!ch->enabled)
++			continue;
++		for (n = 0; n < NR_CH_REGS; n++)
++			lcdc_write_chan(ch, n, ch->saved_ch_regs[n]);
++	}
++
++	/* restore shared registers */
++	for (n = 0; n < NR_SHARED_REGS; n++)
++		lcdc_write(p, lcdc_shared_regs[n], p->saved_shared_regs[n]);
++
++	return 0;
++}
++
+ static struct dev_pm_ops sh_mobile_lcdc_dev_pm_ops = {
+ 	.suspend = sh_mobile_lcdc_suspend,
+ 	.resume = sh_mobile_lcdc_resume,
++	.runtime_suspend = sh_mobile_lcdc_runtime_suspend,
++	.runtime_resume = sh_mobile_lcdc_runtime_resume,
+ };
  
- 	ret = request_irq(irq, r8a66597_irq, IRQF_DISABLED | IRQF_SHARED,
- 			udc_name, r8a66597);
- 	if (ret < 0) {
- 		printk(KERN_ERR "request_irq error (%d)\n", ret);
--		goto clean_up;
-+		goto clean_up2;
+ static int sh_mobile_lcdc_remove(struct platform_device *pdev);
+@@ -764,6 +826,7 @@ static int __init sh_mobile_lcdc_probe(s
  	}
  
- 	INIT_LIST_HEAD(&r8a66597->gadget.ep_list);
-@@ -1586,7 +1610,7 @@ static int __init r8a66597_probe(struct 
- 	r8a66597->ep0_req = r8a66597_alloc_request(&r8a66597->ep[0].ep,
- 							GFP_KERNEL);
- 	if (r8a66597->ep0_req = NULL)
--		goto clean_up2;
-+		goto clean_up3;
- 	r8a66597->ep0_req->complete = nop_completion;
+ 	priv->irq = i;
++	priv->dev = &pdev->dev;
+ 	platform_set_drvdata(pdev, priv);
+ 	pdata = pdev->dev.platform_data;
  
- 	init_controller(r8a66597);
-@@ -1594,8 +1618,15 @@ static int __init r8a66597_probe(struct 
- 	dev_info(&pdev->dev, "version %s\n", DRIVER_VERSION);
- 	return 0;
+@@ -935,7 +998,8 @@ static int sh_mobile_lcdc_remove(struct 
  
--clean_up2:
-+clean_up3:
- 	free_irq(irq, r8a66597);
-+clean_up2:
-+#ifdef CONFIG_HAVE_CLK
-+	if (r8a66597->pdata->on_chip) {
-+		clk_disable(r8a66597->clk);
-+		clk_put(r8a66597->clk);
-+	}
-+#endif
- clean_up:
- 	if (r8a66597) {
- 		if (r8a66597->ep0_req)
---- 0002/drivers/usb/gadget/r8a66597-udc.h
-+++ work/drivers/usb/gadget/r8a66597-udc.h	2009-08-19 18:22:48.000000000 +0900
-@@ -23,6 +23,10 @@
- #ifndef __R8A66597_H__
- #define __R8A66597_H__
- 
-+#ifdef CONFIG_HAVE_CLK
-+#include <linux/clk.h>
-+#endif
+ 	if (priv->dot_clk)
+ 		clk_put(priv->dot_clk);
+-	clk_put(priv->clk);
 +
- #include <linux/usb/r8a66597.h>
++	pm_runtime_disable(priv->dev);
  
- #define R8A66597_MAX_SAMPLING	10
-@@ -88,6 +92,9 @@ struct r8a66597 {
- 	spinlock_t		lock;
- 	unsigned long		reg;
- 
-+#ifdef CONFIG_HAVE_CLK
-+	struct clk *clk;
-+#endif
- 	struct r8a66597_platdata	*pdata;
- 
- 	struct usb_gadget		gadget;
+ 	if (priv->base)
+ 		iounmap(priv->base);
