@@ -1,79 +1,40 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Tue, 18 Aug 2009 07:00:20 +0000
-Subject: [PATCH] heartbeat: add bit mask operation on heartbeat_toggle_bit
-Message-Id: <uab1xy5bv.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Aug 2009 10:48:08 +0000
+Subject: [PATCH 00/05] PM: Runtime PM v16 for SuperH Mobile V3
+Message-Id: <20090814104808.32396.50021.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+PM: Runtime PM v16 for SuperH Mobile V3
 
-Current heartbeat driver has the possibility
-to change area that is not LED.
-This patch add bit mask operation to not change it.
+[PATCH 01/05] sh: Runtime PM for SuperH Mobile platform bus devices
+[PATCH 02/05] i2c: Runtime PM for SuperH Mobile I2C
+[PATCH 03/05] video: Runtime PM for SuperH Mobile LCDC
+[PATCH 04/05] v4l2: Runtime PM for SuperH Mobile CEU
+[PATCH 05/05] uio: Runtime PM for UIO devices
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+This is the SuperH Mobile platform bus Runtime PM implementation V3.
+Included is a SuperH Mobile specific Runtime PM implementation and
+some driver changes. The code has been tested with "Software Standby"
+mode on sh7722 and a multimedia playback workload exercising drivers
+for fbdev, uio, v4l2 and i2c.
+
+Apply on top of Rafael's linux-next patches and
+"PM: Introduce core framework for run-time PM of I/O devices (rev. 16)"
+"PM: Runtime PM v15 - Platform Device Bus Support"
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/drivers/heartbeat.c     |   10 ++++++++++
- arch/sh/include/asm/heartbeat.h |    1 +
- 2 files changed, 11 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
-index 938817e..a9339a6 100644
---- a/arch/sh/drivers/heartbeat.c
-+++ b/arch/sh/drivers/heartbeat.c
-@@ -40,14 +40,19 @@ static inline void heartbeat_toggle_bit(struct heartbeat_data *hd,
- 	if (inverted)
- 		new = ~new;
- 
-+	new &= hd->mask;
-+
- 	switch (hd->regsize) {
- 	case 32:
-+		new |= ioread32(hd->base) & ~hd->mask;
- 		iowrite32(new, hd->base);
- 		break;
- 	case 16:
-+		new |= ioread16(hd->base) & ~hd->mask;
- 		iowrite16(new, hd->base);
- 		break;
- 	default:
-+		new |= ioread8(hd->base) & ~hd->mask;
- 		iowrite8(new, hd->base);
- 		break;
- 	}
-@@ -72,6 +77,7 @@ static int heartbeat_drv_probe(struct platform_device *pdev)
- {
- 	struct resource *res;
- 	struct heartbeat_data *hd;
-+	int i;
- 
- 	if (unlikely(pdev->num_resources != 1)) {
- 		dev_err(&pdev->dev, "invalid number of resources\n");
-@@ -107,6 +113,10 @@ static int heartbeat_drv_probe(struct platform_device *pdev)
- 		hd->nr_bits = ARRAY_SIZE(default_bit_pos);
- 	}
- 
-+	hd->mask = 0;
-+	for (i = 0; i < hd->nr_bits; i++)
-+		hd->mask |= (1 << hd->bit_pos[i]);
-+
- 	if (!hd->regsize)
- 		hd->regsize = 8;	/* default access size */
- 
-diff --git a/arch/sh/include/asm/heartbeat.h b/arch/sh/include/asm/heartbeat.h
-index 724a43e..caaafe5 100644
---- a/arch/sh/include/asm/heartbeat.h
-+++ b/arch/sh/include/asm/heartbeat.h
-@@ -11,6 +11,7 @@ struct heartbeat_data {
- 	unsigned int nr_bits;
- 	struct timer_list timer;
- 	unsigned int regsize;
-+	unsigned int mask;
- 	unsigned long flags;
- };
- 
--- 
-1.6.0.4
-
+ arch/sh/include/asm/device.h               |    9 
+ arch/sh/include/asm/hwblk.h                |    4 
+ arch/sh/kernel/cpu/shmobile/Makefile       |    1 
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c   |  304 ++++++++++++++++++++++++++++
+ drivers/i2c/busses/i2c-sh_mobile.c         |   39 +++
+ drivers/media/video/sh_mobile_ceu_camera.c |   41 ++-
+ drivers/uio/uio_pdrv_genirq.c              |   54 ++++
+ drivers/video/sh_mobile_lcdcfb.c           |  154 ++++++++++----
+ 8 files changed, 542 insertions(+), 64 deletions(-)
