@@ -1,33 +1,35 @@
-From: "Nylund, Martin" <Martin.Nylund@emtrion.de>
-Date: Wed, 12 Aug 2009 12:33:15 +0000
-Subject: AW: kernel oopses on 7780 target with 2.6.25 kernel
-Message-Id: <37C9A1F7C45F1F498E9CB8295E7B305C77F8F3@em-srv1-kaha.intern.emtrion.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 15 Aug 2009 03:02:08 +0000
+Subject: [PATCH] sh: Runtime PM pdev hwblk - kfr2r09 LCDC
+Message-Id: <20090815030208.8312.1837.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <37C9A1F7C45F1F498E9CB8295E7B305CBD3FE6@em-srv1-kaha.intern.emtrion.de>
-In-Reply-To: <37C9A1F7C45F1F498E9CB8295E7B305CBD3FE6@em-srv1-kaha.intern.emtrion.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
-> On Wed, Aug 12, 2009 at 09:34:26AM +0200, Nylund, Martin wrote:
-> >=20
-> > > in 2.6.30
-> > > set_pte(kmap_coherent_pte - (FIX_CMAP_END - idx), pte);
-> > > is called after update_mmu_cache.
-> > >=20
-> > > So, you should better to update to the recent kernel.
-> >=20
-> > I was afraid of something like that. Do you happen to=20
-> remember when or=20
-> > in which kernel release this bug was fixed? Is it a total=20
-> no-go to try=20
-> > to backport this to 2.6.25? Updating the whole kernel takes=20
-> time which=20
-> > I currently don't have.
-> >=20
-> http://git.kernel.org/?p=3Dlinux/kernel/git/torvalds/linux-2.6.g
-it;a=3Dcommitdiff;h=ACca4f4d9bd657e8bc7e1665ba5077465138f133
+This patch simply adds LCDC hwblk_id data for the kfr2r09 board.
 
-I applied the changes and now the test runs stable. Thanks!
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ Suitable for the sh/hwblk topic branch, but also depends on the
+ kfr2r09 LCDC patch. I suppose the sh/hwblk stuff needs a rebase?
+
+ arch/sh/boards/mach-kfr2r09/setup.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- 0004/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-08-07 13:22:32.000000000 +0900
+@@ -176,6 +176,9 @@ static struct platform_device kfr2r09_sh
+ 	.dev	= {
+ 		.platform_data	= &kfr2r09_sh_lcdc_info,
+ 	},
++	.archdata = {
++		.hwblk_id = HWBLK_LCDC,
++	},
+ };
+ 
+ static struct platform_device *kfr2r09_devices[] __initdata = {
