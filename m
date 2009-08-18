@@ -1,32 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 20 Aug 2009 23:45:04 +0000
-Subject: Re: [PATCH] sh: i2c compile fix for kfr2r09
-Message-Id: <20090820234504.GC31542@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 18 Aug 2009 06:51:28 +0000
+Subject: [PATCH] kfr2409: add FLLFRQ value
+Message-Id: <ueir9y5qn.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090820135736.23974.96123.sendpatchset@rx1.opensource.se>
-In-Reply-To: <20090820135736.23974.96123.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 20, 2009 at 10:57:36PM +0900, Magnus Damm wrote:
-> Fix the kfr2r09 board code so it compiles if CONFIG_I2C=n.
 
-On Thu, Aug 20, 2009 at 10:58:38PM +0900, Magnus Damm wrote:
-> Add instruction cache and TLB invalidation code for the
-> the kfr2r09 romimage target.
+FLLFRQ setting is needed to use correct PLL clock for kfr2409.
 
-On Thu, Aug 20, 2009 at 10:59:26PM +0900, Magnus Damm wrote:
-> Add a P1 jump to the the kfr2r09 romimage code. With this
-> patch applied the initial zImage assembly code will run
-> with instruction cache enabled.
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ .../mach-kfr2r09/mach/partner-jet-setup.txt        |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-On Thu, Aug 20, 2009 at 11:01:24PM +0900, Magnus Damm wrote:
-> Add romImage defconfig for the kfr2r09 board. This defconfig
-> should be used to build the kernel based boot loader.
+diff --git a/arch/sh/include/mach-kfr2r09/mach/partner-jet-setup.txt b/arch/sh/include/mach-kfr2r09/mach/partner-jet-setup.txt
+index 9c85088..25801d4 100644
+--- a/arch/sh/include/mach-kfr2r09/mach/partner-jet-setup.txt
++++ b/arch/sh/include/mach-kfr2r09/mach/partner-jet-setup.txt
+@@ -24,6 +24,7 @@ LIST "setup clocks"
+ ED 0xa4150004, 0x00000050
+ ED 0xa4150000, 0x91053508
+ WAIT 1
++ED 0xa4150050, 0x00000340
+ ED 0xa4150024, 0x00005000
+ 
+ LIST "setup pins"
+-- 
+1.6.0.4
 
-On Thu, Aug 20, 2009 at 11:02:24PM +0900, Magnus Damm wrote:
-> Update the kfr2r09 defconfig with support for LCDC and USB gadget.
-
-All applied, thanks.
