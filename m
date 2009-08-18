@@ -1,118 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Aug 2009 10:48:59 +0000
-Subject: [PATCH 02/05] i2c: Runtime PM for SuperH Mobile I2C
-Message-Id: <20090814104859.32396.79162.sendpatchset@rx1.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 18 Aug 2009 07:00:20 +0000
+Subject: [PATCH] heartbeat: add bit mask operation on heartbeat_toggle_bit
+Message-Id: <uab1xy5bv.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
 
-This patch modifies the SuperH Mobile I2C driver to support
-Runtime PM. These changes is all that is needed for proper
-Runtime PM support in this driver. Driver callbacks for
-Runtime PM are empty because the device registers are always
-re-initialized after pm_runtime_get_sync().
+Current heartbeat driver has the possibility
+to change area that is not LED.
+This patch add bit mask operation to not change it.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ arch/sh/drivers/heartbeat.c     |   10 ++++++++++
+ arch/sh/include/asm/heartbeat.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
 
- Changes from V2:
- - none
-
- Changes from V1:
- - use pm_runtime_get_sync() and pm_runtime_put_sync()
- - use pm_runtime_disable()
- - implement nop runtime pm functions for dev_pm_ops
- - no need for pm_runtime_set_suspended()
-
- drivers/i2c/busses/i2c-sh_mobile.c |   39 ++++++++++++++++++++++++++++++++++--
- 1 file changed, 37 insertions(+), 2 deletions(-)
-
---- 0001/drivers/i2c/busses/i2c-sh_mobile.c
-+++ work/drivers/i2c/busses/i2c-sh_mobile.c	2009-07-31 00:55:42.000000000 +0900
-@@ -28,6 +28,7 @@
- #include <linux/interrupt.h>
- #include <linux/i2c.h>
- #include <linux/err.h>
-+#include <linux/pm_runtime.h>
- #include <linux/clk.h>
- #include <linux/io.h>
+diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
+index 938817e..a9339a6 100644
+--- a/arch/sh/drivers/heartbeat.c
++++ b/arch/sh/drivers/heartbeat.c
+@@ -40,14 +40,19 @@ static inline void heartbeat_toggle_bit(struct heartbeat_data *hd,
+ 	if (inverted)
+ 		new = ~new;
  
-@@ -165,7 +166,8 @@ static void activate_ch(struct sh_mobile
- 	u_int32_t denom;
- 	u_int32_t tmp;
++	new &= hd->mask;
++
+ 	switch (hd->regsize) {
+ 	case 32:
++		new |= ioread32(hd->base) & ~hd->mask;
+ 		iowrite32(new, hd->base);
+ 		break;
+ 	case 16:
++		new |= ioread16(hd->base) & ~hd->mask;
+ 		iowrite16(new, hd->base);
+ 		break;
+ 	default:
++		new |= ioread8(hd->base) & ~hd->mask;
+ 		iowrite8(new, hd->base);
+ 		break;
+ 	}
+@@ -72,6 +77,7 @@ static int heartbeat_drv_probe(struct platform_device *pdev)
+ {
+ 	struct resource *res;
+ 	struct heartbeat_data *hd;
++	int i;
  
--	/* Make sure the clock is enabled */
-+	/* Wake up device and enable clock */
-+	pm_runtime_get_sync(pd->dev);
- 	clk_enable(pd->clk);
- 
- 	/* Get clock rate after clock is enabled */
-@@ -213,8 +215,9 @@ static void deactivate_ch(struct sh_mobi
- 	/* Disable channel */
- 	iowrite8(ioread8(ICCR(pd)) & ~ICCR_ICE, ICCR(pd));
- 
--	/* Disable clock */
-+	/* Disable clock and mark device as idle */
- 	clk_disable(pd->clk);
-+	pm_runtime_put_sync(pd->dev);
- }
- 
- static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
-@@ -572,6 +575,19 @@ static int sh_mobile_i2c_probe(struct pl
- 		goto err_irq;
+ 	if (unlikely(pdev->num_resources != 1)) {
+ 		dev_err(&pdev->dev, "invalid number of resources\n");
+@@ -107,6 +113,10 @@ static int heartbeat_drv_probe(struct platform_device *pdev)
+ 		hd->nr_bits = ARRAY_SIZE(default_bit_pos);
  	}
  
-+	/* Enable Runtime PM for this device.
-+	 *
-+	 * Also tell the Runtime PM core to ignore children
-+	 * for this device since it is valid for us to suspend
-+	 * this I2C master driver even though the slave devices
-+	 * on the I2C bus may not be suspended.
-+	 *
-+	 * The state of the I2C hardware bus is unaffected by
-+	 * the Runtime PM state.
-+	 */
-+	pm_suspend_ignore_children(&dev->dev, true);
-+	pm_runtime_enable(&dev->dev);
++	hd->mask = 0;
++	for (i = 0; i < hd->nr_bits; i++)
++		hd->mask |= (1 << hd->bit_pos[i]);
 +
- 	/* setup the private data */
- 	adap = &pd->adap;
- 	i2c_set_adapdata(adap, pd);
-@@ -614,14 +630,33 @@ static int sh_mobile_i2c_remove(struct p
- 	iounmap(pd->reg);
- 	sh_mobile_i2c_hook_irqs(dev, 0);
- 	clk_put(pd->clk);
-+	pm_runtime_disable(&dev->dev);
- 	kfree(pd);
- 	return 0;
- }
+ 	if (!hd->regsize)
+ 		hd->regsize = 8;	/* default access size */
  
-+static int sh_mobile_i2c_runtime_nop(struct device *dev)
-+{
-+	/* Runtime PM callback shared between ->runtime_suspend()
-+	 * and ->runtime_resume(). Simply returns success.
-+	 *
-+	 * This driver re-initializes all registers after
-+	 * pm_runtime_get_sync() anyway so there is no need
-+	 * to save and restore registers here.
-+	 */
-+	return 0;
-+}
-+
-+static struct dev_pm_ops sh_mobile_i2c_dev_pm_ops = {
-+	.runtime_suspend = sh_mobile_i2c_runtime_nop,
-+	.runtime_resume = sh_mobile_i2c_runtime_nop,
-+};
-+
- static struct platform_driver sh_mobile_i2c_driver = {
- 	.driver		= {
- 		.name		= "i2c-sh_mobile",
- 		.owner		= THIS_MODULE,
-+		.pm		= &sh_mobile_i2c_dev_pm_ops,
- 	},
- 	.probe		= sh_mobile_i2c_probe,
- 	.remove		= sh_mobile_i2c_remove,
+diff --git a/arch/sh/include/asm/heartbeat.h b/arch/sh/include/asm/heartbeat.h
+index 724a43e..caaafe5 100644
+--- a/arch/sh/include/asm/heartbeat.h
++++ b/arch/sh/include/asm/heartbeat.h
+@@ -11,6 +11,7 @@ struct heartbeat_data {
+ 	unsigned int nr_bits;
+ 	struct timer_list timer;
+ 	unsigned int regsize;
++	unsigned int mask;
+ 	unsigned long flags;
+ };
+ 
+-- 
+1.6.0.4
+
