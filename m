@@ -1,101 +1,43 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Wed, 26 Aug 2009 11:04:26 +0000
-Subject: [PATCH 2/6] sh: Add SH-ETH support for EcoVec24
-Message-Id: <ubpm2hm4l.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 19 Aug 2009 14:26:10 +0000
+Subject: [PATCH] usb: r8a66597-udc disable interrupts on shutdown fix
+Message-Id: <20090819142610.23156.17157.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@igel.co.jp>
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+This patch improves the disable_controller() function in the
+r8a66597-udc driver to disable all interrupts and also clear
+status flags. With this patch in place the driver survives
+kexec.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
 ---
- arch/sh/boards/mach-ecovec24/setup.c |   53 +++++++++++++++++++++++++++++++++-
- 1 files changed, 52 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index e555b92..8c0c845 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -14,8 +14,10 @@
- #include <linux/mtd/physmap.h>
- #include <linux/gpio.h>
- #include <linux/interrupt.h>
--#include <asm/io.h>
-+#include <linux/io.h>
-+#include <linux/delay.h>
- #include <asm/heartbeat.h>
-+#include <asm/sh_eth.h>
- #include <cpu/sh7724.h>
- 
- /*
-@@ -93,9 +95,41 @@ static struct platform_device nor_flash_device = {
- 	},
- };
- 
-+/* SH Eth */
-+#define SH_ETH_ADDR	(0xA4600000)
-+#define SH_ETH_MAHR	(SH_ETH_ADDR + 0x1C0)
-+#define SH_ETH_MALR	(SH_ETH_ADDR + 0x1C8)
-+static struct resource sh_eth_resources[] = {
-+	[0] = {
-+		.start = SH_ETH_ADDR,
-+		.end   = SH_ETH_ADDR + 0x1FC,
-+		.flags = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start = 91,
-+		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
-+	},
-+};
-+
-+struct sh_eth_plat_data sh_eth_plat = {
-+	.phy = 0x1f, /* SMSC LAN8700 */
-+	.edmac_endian = EDMAC_LITTLE_ENDIAN,
-+};
-+
-+static struct platform_device sh_eth_device = {
-+	.name = "sh-eth",
-+	.id	= 0,
-+	.dev = {
-+		.platform_data = &sh_eth_plat,
-+	},
-+	.num_resources = ARRAY_SIZE(sh_eth_resources),
-+	.resource = sh_eth_resources,
-+};
-+
- static struct platform_device *ecovec_devices[] __initdata = {
- 	&heartbeat_device,
- 	&nor_flash_device,
-+	&sh_eth_device,
- };
- 
- static int __init devices_setup(void)
-@@ -114,6 +148,23 @@ static int __init devices_setup(void)
- 	gpio_direction_output(GPIO_PTG2, 0);
- 	gpio_direction_output(GPIO_PTG3, 0);
- 
-+	/* enable SH-Eth */
-+	gpio_request(GPIO_PTA1, NULL);
-+	gpio_direction_output(GPIO_PTA1, 1);
-+	mdelay(20);
-+
-+	gpio_request(GPIO_FN_RMII_RXD0,    NULL);
-+	gpio_request(GPIO_FN_RMII_RXD1,    NULL);
-+	gpio_request(GPIO_FN_RMII_TXD0,    NULL);
-+	gpio_request(GPIO_FN_RMII_TXD1,    NULL);
-+	gpio_request(GPIO_FN_RMII_REF_CLK, NULL);
-+	gpio_request(GPIO_FN_RMII_TX_EN,   NULL);
-+	gpio_request(GPIO_FN_RMII_RX_ER,   NULL);
-+	gpio_request(GPIO_FN_RMII_CRS_DV,  NULL);
-+	gpio_request(GPIO_FN_MDIO,         NULL);
-+	gpio_request(GPIO_FN_MDC,          NULL);
-+	gpio_request(GPIO_FN_LNKSTA,       NULL);
-+
- 	return platform_add_devices(ecovec_devices,
- 				    ARRAY_SIZE(ecovec_devices));
- }
--- 
-1.6.0.4
+ drivers/usb/gadget/r8a66597-udc.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
+--- 0005/drivers/usb/gadget/r8a66597-udc.c
++++ work/drivers/usb/gadget/r8a66597-udc.c	2009-08-19 22:04:26.000000000 +0900
+@@ -614,8 +614,17 @@ static void disable_controller(struct r8
+ 	if (r8a66597->pdata->on_chip) {
+ 		r8a66597_bset(r8a66597, SCKE, SYSCFG0);
+ 
++		/* disable interrupts */
+ 		r8a66597_write(r8a66597, 0, INTENB0);
+ 		r8a66597_write(r8a66597, 0, INTENB1);
++		r8a66597_write(r8a66597, 0, BRDYENB);
++		r8a66597_write(r8a66597, 0, BEMPENB);
++		r8a66597_write(r8a66597, 0, NRDYENB);
++
++		/* clear status */
++		r8a66597_write(r8a66597, 0, BRDYSTS);
++		r8a66597_write(r8a66597, 0, NRDYSTS);
++		r8a66597_write(r8a66597, 0, BEMPSTS);
+ 
+ 		r8a66597_bclr(r8a66597, USBE, SYSCFG0);
+ 		r8a66597_bclr(r8a66597, SCKE, SYSCFG0);
