@@ -1,43 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 20 Aug 2009 13:57:36 +0000
-Subject: [PATCH] sh: i2c compile fix for kfr2r09
-Message-Id: <20090820135736.23974.96123.sendpatchset@rx1.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 20 Aug 2009 23:45:04 +0000
+Subject: Re: [PATCH] sh: i2c compile fix for kfr2r09
+Message-Id: <20090820234504.GC31542@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20090820135736.23974.96123.sendpatchset@rx1.opensource.se>
+In-Reply-To: <20090820135736.23974.96123.sendpatchset@rx1.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
+On Thu, Aug 20, 2009 at 10:57:36PM +0900, Magnus Damm wrote:
+> Fix the kfr2r09 board code so it compiles if CONFIG_I2C=n.
 
-Fix the kfr2r09 board code so it compiles if CONFIG_I2C=n.
+On Thu, Aug 20, 2009 at 10:58:38PM +0900, Magnus Damm wrote:
+> Add instruction cache and TLB invalidation code for the
+> the kfr2r09 romimage target.
 
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
----
+On Thu, Aug 20, 2009 at 10:59:26PM +0900, Magnus Damm wrote:
+> Add a P1 jump to the the kfr2r09 romimage code. With this
+> patch applied the initial zImage assembly code will run
+> with instruction cache enabled.
 
- arch/sh/boards/mach-kfr2r09/setup.c |    7 +++++++
- 1 file changed, 7 insertions(+)
+On Thu, Aug 20, 2009 at 11:01:24PM +0900, Magnus Damm wrote:
+> Add romImage defconfig for the kfr2r09 board. This defconfig
+> should be used to build the kernel based boot loader.
 
---- 0001/arch/sh/boards/mach-kfr2r09/setup.c
-+++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-08-20 12:48:09.000000000 +0900
-@@ -219,6 +219,7 @@ static struct platform_device *kfr2r09_d
- #define BSC_CS4WCR 0xfec10030
- #define PORT_MSELCRB 0xa4050182
- 
-+#ifdef CONFIG_I2C
- static int kfr2r09_usb0_gadget_i2c_setup(void)
- {
- 	struct i2c_adapter *a;
-@@ -261,6 +262,12 @@ static int kfr2r09_usb0_gadget_i2c_setup
- 
- 	return 0;
- }
-+#else
-+static int kfr2r09_usb0_gadget_i2c_setup(void)
-+{
-+	return -ENODEV;
-+}
-+#endif
- 
- static int kfr2r09_usb0_gadget_setup(void)
- {
+On Thu, Aug 20, 2009 at 11:02:24PM +0900, Magnus Damm wrote:
+> Update the kfr2r09 defconfig with support for LCDC and USB gadget.
+
+All applied, thanks.
