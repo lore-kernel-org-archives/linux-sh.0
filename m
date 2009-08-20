@@ -1,36 +1,174 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Wed, 19 Aug 2009 06:35:05 +0000
-Subject: Re: [BUG] Error in copy_process, when enable CONFIG_PROVE_LOCKING.
-Message-Id: <29ab51dc0908182335v465c1e92y34ac70ad1cf46741@mail.gmail.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 20 Aug 2009 12:01:24 +0000
+Subject: [PATCH v2 3/4] Add FSI-AK4642 sound support for SuperH
+Message-Id: <uvdkid78r.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <29ab51dc0905112140v3187b462qcc8a9e5385de8ef6@mail.gmail.com>
-In-Reply-To: <29ab51dc0905112140v3187b462qcc8a9e5385de8ef6@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, alsa-devel@alsa-project.org
+Cc: Takashi Iwai <tiwai@suse.de>, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, broonie@opensource.wolfsonmicro.com
 
-2009/7/29 Paul Mundt <lethal@linux-sh.org>:
-> On Tue, May 12, 2009 at 01:40:35PM +0900, Nobuhiro Iwamatsu wrote:
->> Error in copy_process, when enable CONFIG_PROVE_LOCKING.
->> This error has p->hardirqs_enabled in kernel.fork.c
->>
->> =A0987 #ifdef CONFIG_PROVE_LOCKING
->> =A0988 =A0 =A0 DEBUG_LOCKS_WARN_ON(!p->hardirqs_enabled);
->> =A0989 =A0 =A0 DEBUG_LOCKS_WARN_ON(!p->softirqs_enabled);
->> =A0990 #endif
->> =A0991 =A0 =A0 retval =3D -EAGAIN;
->>
->> The error message is as follows.
->> I am debuging this. Please teach if you know the revision method of
->> this problem.
->>
-> This should be fixed now in current git. Can you give it a try?
->
+This patch is tested by ms7724se
 
-OK.
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+v1 -> v2
 
+o move to sound/soc/sh
 
---=20
-Nobuhiro Iwamatsu / Debian Developer
-   iwamatsu at {nigauri.org / debian.org}
+ sound/soc/sh/Kconfig      |    8 +++
+ sound/soc/sh/Makefile     |    2 +
+ sound/soc/sh/fsi-ak4642.c |  111 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 121 insertions(+), 0 deletions(-)
+ create mode 100644 sound/soc/sh/fsi-ak4642.c
+
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index 01943a1..9154b43 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -40,4 +40,12 @@ config SND_SH7760_AC97
+ 	  This option enables generic sound support for the first
+ 	  AC97 unit of the SH7760.
+ 
++config SND_FSI_AK4642
++	bool "FSI-AK4642 sound support"
++	depends on SND_SOC_SH4_FSI
++	select SND_SOC_AK4642
++	help
++	  This option enables generic sound support for the
++	  FSI - AK4642 unit
++
+ endmenu
+diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
+index 9fbcc4a..a699787 100644
+--- a/sound/soc/sh/Makefile
++++ b/sound/soc/sh/Makefile
+@@ -12,5 +12,7 @@ obj-$(CONFIG_SND_SOC_SH4_FSI)	+= snd-soc-fsi.o
+ 
+ ## boards
+ snd-soc-sh7760-ac97-objs	:= sh7760-ac97.o
++snd-soc-fsi-ak4642-objs		:= fsi-ak4642.o
+ 
+ obj-$(CONFIG_SND_SH7760_AC97)	+= snd-soc-sh7760-ac97.o
++obj-$(CONFIG_SND_FSI_AK4642)	+= snd-soc-fsi-ak4642.o
+diff --git a/sound/soc/sh/fsi-ak4642.c b/sound/soc/sh/fsi-ak4642.c
+new file mode 100644
+index 0000000..3e5498e
+--- /dev/null
++++ b/sound/soc/sh/fsi-ak4642.c
+@@ -0,0 +1,111 @@
++/*
++ * FSI-AK464x sound support for ms7724se
++ *
++ * Copyright (C) 2009 Renesas Solutions Corp.
++ * Kuninori Morimoto <morimoto.kuninori@renesas.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/platform_device.h>
++#include <linux/i2c.h>
++#include <linux/io.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/soc.h>
++#include <sound/soc-dapm.h>
++
++#include <sound/sh_fsi.h>
++#include <../sound/soc/codecs/ak4642.h>
++
++static struct snd_soc_dai_link fsi_dai_link = {
++	.name		= "AK4642",
++	.stream_name	= "AK4642",
++	.cpu_dai	= &fsi_soc_dai[0], /* fsi */
++	.codec_dai	= &ak4642_dai,
++	.ops		= NULL,
++};
++
++static struct snd_soc_card fsi_soc_card  = {
++	.name		= "FSI",
++	.platform	= &fsi_soc_platform,
++	.dai_link	= &fsi_dai_link,
++	.num_links	= 1,
++};
++
++struct ak4642_setup_data ak4642_setup = {
++	.i2c_bus	= 0,
++	.i2c_address	= 0x12, /* 0x13 */
++};
++
++static struct snd_soc_device fsi_snd_devdata = {
++	.card		= &fsi_soc_card,
++	.codec_dev	= &soc_codec_dev_ak4642,
++	.codec_data	= &ak4642_setup,
++};
++
++static int ak4642_add_i2c_device(const struct ak4642_setup_data *setup)
++{
++	struct i2c_board_info info;
++	struct i2c_adapter *adapter;
++	struct i2c_client *client;
++
++	memset(&info, 0, sizeof(struct i2c_board_info));
++	info.addr = setup->i2c_address;
++	strlcpy(info.type, "ak4642", I2C_NAME_SIZE);
++
++	adapter = i2c_get_adapter(setup->i2c_bus);
++	if (!adapter) {
++		printk(KERN_DEBUG "can't get i2c adapter\n");
++		return -ENODEV;
++	}
++
++	client = i2c_new_device(adapter, &info);
++	i2c_put_adapter(adapter);
++	if (!client) {
++		printk(KERN_DEBUG "can't add i2c device\n");
++		return -ENODEV;
++	}
++
++	return 0;
++}
++
++static struct platform_device *fsi_snd_device;
++
++static int __init fsi_ak4642_init(void)
++{
++	int ret = -ENOMEM;
++
++	ak4642_add_i2c_device(&ak4642_setup);
++
++	fsi_snd_device = platform_device_alloc("soc-audio", -1);
++	if (!fsi_snd_device)
++		goto out;
++
++	platform_set_drvdata(fsi_snd_device,
++			     &fsi_snd_devdata);
++	fsi_snd_devdata.dev = &fsi_snd_device->dev;
++	ret = platform_device_add(fsi_snd_device);
++
++	if (ret)
++		platform_device_put(fsi_snd_device);
++
++out:
++	return ret;
++}
++
++static void __exit fsi_ak4642_exit(void)
++{
++	platform_device_unregister(fsi_snd_device);
++}
++
++module_init(fsi_ak4642_init);
++module_exit(fsi_ak4642_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Generic SH4 FSI-AK4642 sound card");
++MODULE_AUTHOR("Kuninori Morimoto <morimoto.kuninori@renesas.com>");
+-- 
+1.6.0.4
+
