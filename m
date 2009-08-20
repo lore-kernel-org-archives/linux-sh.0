@@ -1,162 +1,22 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 20 Aug 2009 12:01:27 +0000
-Subject: [PATCH v2 4/4] sh: add FSI driver support for ms7724se
-Message-Id: <utz02d78o.wl%morimoto.kuninori@renesas.com>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Thu, 20 Aug 2009 19:06:26 +0000
+Subject: Re: [alsa-devel] [PATCH v2 4/4] sh: add FSI driver support for
+Message-Id: <20090820190626.GH5032@sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <utz02d78o.wl%morimoto.kuninori@renesas.com>
+In-Reply-To: <utz02d78o.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, alsa-devel@alsa-project.org
-Cc: Takashi Iwai <tiwai@suse.de>, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, broonie@opensource.wolfsonmicro.com
+To: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Cc: Takashi Iwai <tiwai@suse.de>, alsa-devel@alsa-project.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
----
-v1 -> v2
+On Thu, Aug 20, 2009 at 09:01:27PM +0900, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 
-o become independent patch
+> o become independent patch
 
- arch/sh/boards/mach-se/7724/setup.c |   90 +++++++++++++++++++++++++++++++++++
- 1 files changed, 90 insertions(+), 0 deletions(-)
-
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 9162081..bffc90e 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -22,11 +22,13 @@
- #include <linux/usb/r8a66597.h>
- #include <video/sh_mobile_lcdc.h>
- #include <media/sh_mobile_ceu.h>
-+#include <sound/sh_fsi.h>
- #include <asm/io.h>
- #include <asm/heartbeat.h>
- #include <asm/sh_eth.h>
- #include <asm/clock.h>
- #include <asm/sh_keysc.h>
-+#include <asm/dma-sh.h>
- #include <cpu/sh7724.h>
- #include <mach-se/mach/se7724.h>
- 
-@@ -246,6 +248,65 @@ static struct platform_device ceu1_device = {
- 	},
- };
- 
-+/* FSI */
-+/*
-+ * FSI-A use external clock which came from ak464x.
-+ * So, we should change parent of fsi
-+ */
-+#define FCLKACR		0xa4150008
-+static void fsimck_init(struct clk *clk)
-+{
-+	u32 status = ctrl_inl(clk->enable_reg);
-+
-+	/* use external clock */
-+	status &= ~0x000000ff;
-+	status |= 0x00000080;
-+	ctrl_outl(status, clk->enable_reg);
-+}
-+
-+static struct clk_ops fsimck_clk_ops = {
-+	.init = fsimck_init,
-+};
-+
-+static struct clk fsimcka_clk = {
-+	.name		= "fsimcka_clk",
-+	.id		= -1,
-+	.ops		= &fsimck_clk_ops,
-+	.enable_reg	= (void __iomem *)FCLKACR,
-+	.rate		= 0, /* unknown */
-+};
-+
-+struct sh_fsi_platform_info fsi_info = {
-+	.porta_flags = SH_FSI_BRS_INV |
-+		       SH_FSI_OUT_SLAVE_MODE |
-+		       SH_FSI_IN_SLAVE_MODE |
-+		       SH_FSI_OFMT(PCM) |
-+		       SH_FSI_IFMT(PCM),
-+};
-+
-+static struct resource fsi_resources[] = {
-+	[0] = {
-+		.name	= "FSI",
-+		.start	= 0xFE3C0000,
-+		.end	= 0xFE3C021d,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 108,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device fsi_device = {
-+	.name		= "sh_fsi",
-+	.id		= 0,
-+	.num_resources	= ARRAY_SIZE(fsi_resources),
-+	.resource	= fsi_resources,
-+	.dev	= {
-+		.platform_data	= &fsi_info,
-+	},
-+};
-+
- /* KEYSC in SoC (Needs SW33-2 set to ON) */
- static struct sh_keysc_info keysc_info = {
- 	.mode = SH_KEYSC_MODE_1,
-@@ -351,6 +412,7 @@ static struct platform_device *ms7724se_devices[] __initdata = {
- 	&keysc_device,
- 	&sh_eth_device,
- 	&sh7724_usb0_host_device,
-+	&fsi_device,
- };
- 
- #define EEPROM_OP   0xBA206000
-@@ -418,11 +480,13 @@ static void __init sh_eth_init(void)
- static int __init devices_setup(void)
- {
- 	u16 sw = ctrl_inw(SW4140); /* select camera, monitor */
-+	struct clk *fsia_clk;
- 
- 	/* Reset Release */
- 	ctrl_outw(ctrl_inw(FPGA_OUT) &
- 		  ~((1 << 1)  | /* LAN */
- 		    (1 << 6)  | /* VIDEO DAC */
-+		    (1 << 7)  | /* AK4643 */
- 		    (1 << 12) | /* USB0 */
- 		    (1 << 14)), /* RMII */
- 		  FPGA_OUT);
-@@ -558,6 +622,32 @@ static int __init devices_setup(void)
- 	gpio_request(GPIO_FN_KEYOUT1,     NULL);
- 	gpio_request(GPIO_FN_KEYOUT0,     NULL);
- 
-+	/* enable FSI */
-+	gpio_request(GPIO_FN_FSIMCKB,    NULL);
-+	gpio_request(GPIO_FN_FSIMCKA,    NULL);
-+	gpio_request(GPIO_FN_FSIOASD,    NULL);
-+	gpio_request(GPIO_FN_FSIIABCK,   NULL);
-+	gpio_request(GPIO_FN_FSIIALRCK,  NULL);
-+	gpio_request(GPIO_FN_FSIOABCK,   NULL);
-+	gpio_request(GPIO_FN_FSIOALRCK,  NULL);
-+	gpio_request(GPIO_FN_CLKAUDIOAO, NULL);
-+	gpio_request(GPIO_FN_FSIIBSD,    NULL);
-+	gpio_request(GPIO_FN_FSIOBSD,    NULL);
-+	gpio_request(GPIO_FN_FSIIBBCK,   NULL);
-+	gpio_request(GPIO_FN_FSIIBLRCK,  NULL);
-+	gpio_request(GPIO_FN_FSIOBBCK,   NULL);
-+	gpio_request(GPIO_FN_FSIOBLRCK,  NULL);
-+	gpio_request(GPIO_FN_CLKAUDIOBO, NULL);
-+	gpio_request(GPIO_FN_FSIIASD,    NULL);
-+
-+	/* change parent of FSI A */
-+	fsia_clk = clk_get(NULL, "fsia_clk");
-+	clk_register(&fsimcka_clk);
-+	clk_set_parent(fsia_clk, &fsimcka_clk);
-+	clk_set_rate(fsia_clk, 11000);
-+	clk_set_rate(&fsimcka_clk, 11000);
-+	clk_put(fsia_clk);
-+
- 	/*
- 	 * enable SH-Eth
- 	 *
--- 
-1.6.0.4
-
+It looks like this should have another change to register the CODEC as
+an I2C device?  Other than that it's fine from an ASoC point of view -
+is it OK to merge via ASoC due to the dependency on the platform data
+for the FSI?
