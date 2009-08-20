@@ -1,26 +1,43 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 04 Aug 2009 05:46:39 +0000
-Subject: Re: [PATCH] ms7724se: add 1280x720 lcdc output support
-Message-Id: <20090804054638.GC21171@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 20 Aug 2009 13:57:36 +0000
+Subject: [PATCH] sh: i2c compile fix for kfr2r09
+Message-Id: <20090820135736.23974.96123.sendpatchset@rx1.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <u8wi1ts7g.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <u8wi1ts7g.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 03, 2009 at 01:52:03PM +0900, Kuninori Morimoto wrote:
-> There was no big meaning in the support of SVGA,
-> but 720p support is necessary for ms7724se board.
-> So, this patch support 720p instead of SVGA.
+From: Magnus Damm <damm@igel.co.jp>
 
-On Mon, Aug 03, 2009 at 01:52:24PM +0900, Kuninori Morimoto wrote:
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/include/asm/dma-sh.h           |    1 +
->  arch/sh/include/cpu-sh4/cpu/dma-sh4a.h |    3 ++-
->  2 files changed, 3 insertions(+), 1 deletions(-)
-> 
-Applied.
+Fix the kfr2r09 board code so it compiles if CONFIG_I2C=n.
+
+Signed-off-by: Magnus Damm <damm@igel.co.jp>
+---
+
+ arch/sh/boards/mach-kfr2r09/setup.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- 0001/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-08-20 12:48:09.000000000 +0900
+@@ -219,6 +219,7 @@ static struct platform_device *kfr2r09_d
+ #define BSC_CS4WCR 0xfec10030
+ #define PORT_MSELCRB 0xa4050182
+ 
++#ifdef CONFIG_I2C
+ static int kfr2r09_usb0_gadget_i2c_setup(void)
+ {
+ 	struct i2c_adapter *a;
+@@ -261,6 +262,12 @@ static int kfr2r09_usb0_gadget_i2c_setup
+ 
+ 	return 0;
+ }
++#else
++static int kfr2r09_usb0_gadget_i2c_setup(void)
++{
++	return -ENODEV;
++}
++#endif
+ 
+ static int kfr2r09_usb0_gadget_setup(void)
+ {
