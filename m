@@ -1,45 +1,613 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 20 Aug 2009 18:58:36 +0000
-Subject: Re: [alsa-devel] [PATCH v2 2/4] Add ak464x codec support
-Message-Id: <20090820185835.GE5032@sirena.org.uk>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Fri, 21 Aug 2009 01:23:41 +0000
+Subject: [PATCH v3 2/4] ASoC: Add ak4642/ak4643 codec support
+Message-Id: <ueir6nen6.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uws4yd793.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uws4yd793.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-To: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Cc: linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, Takashi Iwai <tiwai@suse.de>, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org, alsa-devel@alsa-project.org
+Cc: lethal@linux-sh.org, broonie@opensource.wolfsonmicro.com
 
-On Thu, Aug 20, 2009 at 09:01:12PM +0900, Kuninori Morimoto wrote:
-> This is very simple driver for ALSA
-> It supprt headphone output and stereo input only
-> This patch is tested by ms7724se
+This is very simple driver for ALSA
+It supprt headphone output and stereo input only
+This patch is tested by ms7724se
 
-Thanks, this looks good but it needs updating for a recent change in the
-current ASoC tree at:
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+v2 -> v3
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound-2.6.git for-2.6.32
+o add ak4643 in i2c table
+o remove un-used hw_read
+o remove un-used ak4642_setup_data
 
-sound/soc/codecs/ak4642.c: In function ‘ak4642_read’:
-sound/soc/codecs/ak4642.c:130: warning: passing argument 2 of ‘codec->hw_read’ makes integer from pointer without a cast
-sound/soc/codecs/ak4642.c:130: error: too many arguments to function ‘codec->hw_read’
-sound/soc/codecs/ak4642.c: In function ‘ak4642_init’:
-sound/soc/codecs/ak4642.c:332: warning: assignment from incompatible pointer type
+I used Paul's git for base and merge from
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound-2.6.git for-2.6.32
 
-Also, a couple of minor issues:
+ sound/soc/codecs/Kconfig  |    4 +
+ sound/soc/codecs/Makefile |    2 +
+ sound/soc/codecs/ak4642.c |  502 +++++++++++++++++++++++++++++++++++++++++++++
+ sound/soc/codecs/ak4642.h |   20 ++
+ 4 files changed, 528 insertions(+), 0 deletions(-)
+ create mode 100644 sound/soc/codecs/ak4642.c
+ create mode 100644 sound/soc/codecs/ak4642.h
 
-> +static const struct i2c_device_id ak4642_i2c_id[] = {
-> +	{ "ak4642", 0 },
-> +	{ }
-> +};
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index 167a5ce..0edca93 100644
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -18,6 +18,7 @@ config SND_SOC_ALL_CODECS
+ 	select SND_SOC_AD73311 if I2C
+ 	select SND_SOC_AK4104 if SPI_MASTER
+ 	select SND_SOC_AK4535 if I2C
++	select SND_SOC_AK4642 if I2C
+ 	select SND_SOC_CS4270 if I2C
+ 	select SND_SOC_MAX9877 if I2C
+ 	select SND_SOC_PCM3008
+@@ -92,6 +93,9 @@ config SND_SOC_AK4104
+ config SND_SOC_AK4535
+ 	tristate
+ 
++config SND_SOC_AK4642
++	tristate
++
+ # Cirrus Logic CS4270 Codec
+ config SND_SOC_CS4270
+ 	tristate
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index fbab43b..fb4af28 100644
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -5,6 +5,7 @@ snd-soc-ad1980-objs := ad1980.o
+ snd-soc-ad73311-objs := ad73311.o
+ snd-soc-ak4104-objs := ak4104.o
+ snd-soc-ak4535-objs := ak4535.o
++snd-soc-ak4642-objs := ak4642.o
+ snd-soc-cs4270-objs := cs4270.o
+ snd-soc-cx20442-objs := cx20442.o
+ snd-soc-l3-objs := l3.o
+@@ -54,6 +55,7 @@ obj-$(CONFIG_SND_SOC_AD1980)	+= snd-soc-ad1980.o
+ obj-$(CONFIG_SND_SOC_AD73311) += snd-soc-ad73311.o
+ obj-$(CONFIG_SND_SOC_AK4104)	+= snd-soc-ak4104.o
+ obj-$(CONFIG_SND_SOC_AK4535)	+= snd-soc-ak4535.o
++obj-$(CONFIG_SND_SOC_AK4642)	+= snd-soc-ak4642.o
+ obj-$(CONFIG_SND_SOC_CS4270)	+= snd-soc-cs4270.o
+ obj-$(CONFIG_SND_SOC_CX20442)	+= snd-soc-cx20442.o
+ obj-$(CONFIG_SND_SOC_L3)	+= snd-soc-l3.o
+diff --git a/sound/soc/codecs/ak4642.c b/sound/soc/codecs/ak4642.c
+new file mode 100644
+index 0000000..e057c7b
+--- /dev/null
++++ b/sound/soc/codecs/ak4642.c
+@@ -0,0 +1,502 @@
++/*
++ * ak4642.c  --  AK4642/AK4643 ALSA Soc Audio driver
++ *
++ * Copyright (C) 2009 Renesas Solutions Corp.
++ * Kuninori Morimoto <morimoto.kuninori@renesas.com>
++ *
++ * Based on wm8731.c by Richard Purdie
++ * Based on ak4535.c by Richard Purdie
++ * Based on wm8753.c by Liam Girdwood
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++/* ** CAUTION **
++ *
++ * This is very simple driver.
++ * It can use headphone output / stereo input only
++ *
++ * AK4642 is not tested.
++ * AK4643 is tested.
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/pm.h>
++#include <linux/i2c.h>
++#include <linux/platform_device.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/soc-dapm.h>
++#include <sound/initval.h>
++
++#include "ak4642.h"
++
++#define AK4642_VERSION "0.0.1"
++
++#define PW_MGMT1	0x00
++#define PW_MGMT2	0x01
++#define SG_SL1		0x02
++#define SG_SL2		0x03
++#define MD_CTL1		0x04
++#define MD_CTL2		0x05
++#define TIMER		0x06
++#define ALC_CTL1	0x07
++#define ALC_CTL2	0x08
++#define L_IVC		0x09
++#define L_DVC		0x0a
++#define ALC_CTL3	0x0b
++#define R_IVC		0x0c
++#define R_DVC		0x0d
++#define MD_CTL3		0x0e
++#define MD_CTL4		0x0f
++#define PW_MGMT3	0x10
++#define DF_S		0x11
++#define FIL3_0		0x12
++#define FIL3_1		0x13
++#define FIL3_2		0x14
++#define FIL3_3		0x15
++#define EQ_0		0x16
++#define EQ_1		0x17
++#define EQ_2		0x18
++#define EQ_3		0x19
++#define EQ_4		0x1a
++#define EQ_5		0x1b
++#define FIL1_0		0x1c
++#define FIL1_1		0x1d
++#define FIL1_2		0x1e
++#define FIL1_3		0x1f
++#define PW_MGMT4	0x20
++#define MD_CTL5		0x21
++#define LO_MS		0x22
++#define HP_MS		0x23
++#define SPK_MS		0x24
++
++#define AK4642_CACHEREGNUM 	0x25
++
++struct snd_soc_codec_device soc_codec_dev_ak4642;
++
++/* codec private data */
++struct ak4642_priv {
++	struct snd_soc_codec codec;
++	unsigned int sysclk;
++};
++
++static struct snd_soc_codec *ak4642_codec;
++
++/*
++ * ak4642 register cache
++ */
++static const u16 ak4642_reg[AK4642_CACHEREGNUM] = {
++	0x0000, 0x0000, 0x0001, 0x0000,
++	0x0002, 0x0000, 0x0000, 0x0000,
++	0x00e1, 0x00e1, 0x0018, 0x0000,
++	0x00e1, 0x0018, 0x0011, 0x0008,
++	0x0000, 0x0000, 0x0000, 0x0000,
++	0x0000, 0x0000, 0x0000, 0x0000,
++	0x0000, 0x0000, 0x0000, 0x0000,
++	0x0000, 0x0000, 0x0000, 0x0000,
++	0x0000, 0x0000, 0x0000, 0x0000,
++	0x0000,
++};
++
++/*
++ * read ak4642 register cache
++ */
++static inline unsigned int ak4642_read_reg_cache(struct snd_soc_codec *codec,
++	unsigned int reg)
++{
++	u16 *cache = codec->reg_cache;
++	if (reg >= AK4642_CACHEREGNUM)
++		return -1;
++	return cache[reg];
++}
++
++/*
++ * write ak4642 register cache
++ */
++static inline void ak4642_write_reg_cache(struct snd_soc_codec *codec,
++	u16 reg, unsigned int value)
++{
++	u16 *cache = codec->reg_cache;
++	if (reg >= AK4642_CACHEREGNUM)
++		return;
++
++	cache[reg] = value;
++}
++
++/*
++ * write to the AK4642 register space
++ */
++static int ak4642_write(struct snd_soc_codec *codec, unsigned int reg,
++	unsigned int value)
++{
++	u8 data[2];
++
++	/* data is
++	 *   D15..D8 AK4642 register offset
++	 *   D7...D0 register data
++	 */
++	data[0] = reg & 0xff;
++	data[1] = value & 0xff;
++
++	if (codec->hw_write(codec->control_data, data, 2) = 2) {
++		ak4642_write_reg_cache(codec, reg, value);
++		return 0;
++	} else
++		return -EIO;
++}
++
++static int ak4642_sync(struct snd_soc_codec *codec)
++{
++	u16 *cache = codec->reg_cache;
++	int i, r = 0;
++
++	for (i = 0; i < AK4642_CACHEREGNUM; i++)
++		r |= ak4642_write(codec, i, cache[i]);
++
++	return r;
++};
++
++static int ak4642_dai_startup(struct snd_pcm_substream *substream,
++			      struct snd_soc_dai *dai)
++{
++	int is_play = substream->stream = SNDRV_PCM_STREAM_PLAYBACK;
++	struct snd_soc_codec *codec = dai->codec;
++
++	if (is_play) {
++		/*
++		 * start headphone output
++		 *
++		 * PLL, Master Mode
++		 * Audio I/F Format :MSB justified (ADC & DAC)
++		 * Sampling Frequency: 44.1kHz
++		 * Digital Volume: −8dB
++		 * Bass Boost Level : Middle
++		 *
++		 * This operation came from example code of
++		 * "ASAHI KASEI AK4642" (japanese) manual p97.
++		 *
++		 * Example code use 0x39, 0x79 value for 0x01 address,
++		 * But we need MCKO (0x02) bit now
++		 */
++		ak4642_write(codec, 0x05, 0x27);
++		ak4642_write(codec, 0x0f, 0x09);
++		ak4642_write(codec, 0x0e, 0x19);
++		ak4642_write(codec, 0x09, 0x91);
++		ak4642_write(codec, 0x0c, 0x91);
++		ak4642_write(codec, 0x0a, 0x28);
++		ak4642_write(codec, 0x0d, 0x28);
++		ak4642_write(codec, 0x00, 0x64);
++		ak4642_write(codec, 0x01, 0x3b); /* + MCKO bit */
++		ak4642_write(codec, 0x01, 0x7b); /* + MCKO bit */
++	} else {
++		/*
++		 * start stereo input
++		 *
++		 * PLL Master Mode
++		 * Audio I/F Format:MSB justified (ADC & DAC)
++		 * Sampling Frequency:44.1kHz
++		 * Pre MIC AMP:+20dB
++		 * MIC Power On
++		 * ALC setting:Refer to Table 35
++		 * ALC bit=“1”
++		 *
++		 * This operation came from example code of
++		 * "ASAHI KASEI AK4642" (japanese) manual p94.
++		 */
++		ak4642_write(codec, 0x05, 0x27);
++		ak4642_write(codec, 0x02, 0x05);
++		ak4642_write(codec, 0x06, 0x3c);
++		ak4642_write(codec, 0x08, 0xe1);
++		ak4642_write(codec, 0x0b, 0x00);
++		ak4642_write(codec, 0x07, 0x21);
++		ak4642_write(codec, 0x00, 0x41);
++		ak4642_write(codec, 0x10, 0x01);
++	}
++
++	return 0;
++}
++
++static void ak4642_dai_shutdown(struct snd_pcm_substream *substream,
++			       struct snd_soc_dai *dai)
++{
++	int is_play = substream->stream = SNDRV_PCM_STREAM_PLAYBACK;
++	struct snd_soc_codec *codec = dai->codec;
++
++	if (is_play) {
++		/* stop headphone output */
++		ak4642_write(codec, 0x01, 0x3b);
++		ak4642_write(codec, 0x01, 0x0b);
++		ak4642_write(codec, 0x00, 0x40);
++		ak4642_write(codec, 0x0e, 0x11);
++		ak4642_write(codec, 0x0f, 0x08);
++	} else {
++		/* stop stereo input */
++		ak4642_write(codec, 0x00, 0x40);
++		ak4642_write(codec, 0x10, 0x00);
++		ak4642_write(codec, 0x07, 0x01);
++	}
++}
++
++static int ak4642_dai_set_sysclk(struct snd_soc_dai *codec_dai,
++	int clk_id, unsigned int freq, int dir)
++{
++	struct snd_soc_codec *codec = codec_dai->codec;
++	struct ak4642_priv *ak4642 = codec->private_data;
++
++	ak4642->sysclk = freq;
++	return 0;
++}
++
++static struct snd_soc_dai_ops ak4642_dai_ops = {
++	.startup	= ak4642_dai_startup,
++	.shutdown	= ak4642_dai_shutdown,
++	.set_sysclk	= ak4642_dai_set_sysclk,
++};
++
++struct snd_soc_dai ak4642_dai = {
++	.name = "AK4642",
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_48000,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE },
++	.capture = {
++		.stream_name = "Capture",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_48000,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE },
++	.ops = &ak4642_dai_ops,
++};
++EXPORT_SYMBOL_GPL(ak4642_dai);
++
++static int ak4642_resume(struct platform_device *pdev)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++	struct snd_soc_codec *codec = socdev->card->codec;
++
++	ak4642_sync(codec);
++	return 0;
++}
++
++/*
++ * initialise the AK4642 driver
++ * register the mixer and dsp interfaces with the kernel
++ */
++static int ak4642_init(struct ak4642_priv *ak4642)
++{
++	struct snd_soc_codec *codec = &ak4642->codec;
++	int ret = 0;
++
++	if (ak4642_codec) {
++		dev_err(codec->dev, "Another ak4642 is registered\n");
++		return -EINVAL;
++	}
++
++	mutex_init(&codec->mutex);
++	INIT_LIST_HEAD(&codec->dapm_widgets);
++	INIT_LIST_HEAD(&codec->dapm_paths);
++
++	codec->private_data	= ak4642;
++	codec->name		= "AK4642";
++	codec->owner		= THIS_MODULE;
++	codec->read		= ak4642_read_reg_cache;
++	codec->write		= ak4642_write;
++	codec->dai		= &ak4642_dai;
++	codec->num_dai		= 1;
++	codec->hw_write		= (hw_write_t)i2c_master_send;
++	codec->reg_cache_size	= ARRAY_SIZE(ak4642_reg);
++	codec->reg_cache	= kmemdup(ak4642_reg,
++					  sizeof(ak4642_reg), GFP_KERNEL);
++
++	if (!codec->reg_cache)
++		return -ENOMEM;
++
++	ak4642_dai.dev = codec->dev;
++	ak4642_codec = codec;
++
++	ret = snd_soc_register_codec(codec);
++	if (ret) {
++		dev_err(codec->dev, "Failed to register codec: %d\n", ret);
++		goto reg_cache_err;
++	}
++
++	ret = snd_soc_register_dai(&ak4642_dai);
++	if (ret) {
++		dev_err(codec->dev, "Failed to register DAI: %d\n", ret);
++		snd_soc_unregister_codec(codec);
++		goto reg_cache_err;
++	}
++
++	/*
++	 * clock setting
++	 *
++	 * Audio I/F Format: MSB justified (ADC & DAC)
++	 * BICK frequency at Master Mode: 64fs
++	 * Input Master Clock Select at PLL Mode: 11.2896MHz
++	 * MCKO: Enable
++	 * Sampling Frequency: 44.1kHz
++	 *
++	 * This operation came from example code of
++	 * "ASAHI KASEI AK4642" (japanese) manual p89.
++	 *
++	 * please fix-me
++	 */
++	ak4642_write(codec, 0x01, 0x08);
++	ak4642_write(codec, 0x04, 0x4a);
++	ak4642_write(codec, 0x05, 0x27);
++	ak4642_write(codec, 0x00, 0x40);
++	ak4642_write(codec, 0x01, 0x0b);
++
++	return ret;
++
++reg_cache_err:
++	kfree(codec->reg_cache);
++	codec->reg_cache = NULL;
++
++	return ret;
++}
++
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++static int ak4642_i2c_probe(struct i2c_client *i2c,
++			    const struct i2c_device_id *id)
++{
++	struct ak4642_priv *ak4642;
++	struct snd_soc_codec *codec;
++	int ret;
++
++	ak4642 = kzalloc(sizeof(struct ak4642_priv), GFP_KERNEL);
++	if (!ak4642)
++		return -ENOMEM;
++
++	codec = &ak4642->codec;
++	codec->dev = &i2c->dev;
++
++	i2c_set_clientdata(i2c, ak4642);
++	codec->control_data = i2c;
++
++	ret = ak4642_init(ak4642);
++	if (ret < 0)
++		printk(KERN_ERR "failed to initialise AK4642\n");
++
++	return ret;
++}
++
++static int ak4642_i2c_remove(struct i2c_client *client)
++{
++	struct ak4642_priv *ak4642 = i2c_get_clientdata(client);
++
++	snd_soc_unregister_dai(&ak4642_dai);
++	snd_soc_unregister_codec(&ak4642->codec);
++	kfree(ak4642->codec.reg_cache);
++	kfree(ak4642);
++	ak4642_codec = NULL;
++
++	return 0;
++}
++
++static const struct i2c_device_id ak4642_i2c_id[] = {
++	{ "ak4642", 0 },
++	{ "ak4643", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ak4642_i2c_id);
++
++static struct i2c_driver ak4642_i2c_driver = {
++	.driver = {
++		.name = "AK4642 I2C Codec",
++		.owner = THIS_MODULE,
++	},
++	.probe		= ak4642_i2c_probe,
++	.remove		= ak4642_i2c_remove,
++	.id_table	= ak4642_i2c_id,
++};
++
++#endif
++
++static int ak4642_probe(struct platform_device *pdev)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++	int ret;
++
++	if (!ak4642_codec) {
++		dev_err(&pdev->dev, "Codec device not registered\n");
++		return -ENODEV;
++	}
++
++	socdev->card->codec = ak4642_codec;
++
++	/* register pcms */
++	ret = snd_soc_new_pcms(socdev, SNDRV_DEFAULT_IDX1, SNDRV_DEFAULT_STR1);
++	if (ret < 0) {
++		printk(KERN_ERR "ak4642: failed to create pcms\n");
++		goto pcm_err;
++	}
++
++	ret = snd_soc_init_card(socdev);
++	if (ret < 0) {
++		printk(KERN_ERR "ak4642: failed to register card\n");
++		goto card_err;
++	}
++
++	dev_info(&pdev->dev, "AK4642 Audio Codec %s", AK4642_VERSION);
++	return ret;
++
++card_err:
++	snd_soc_free_pcms(socdev);
++	snd_soc_dapm_free(socdev);
++pcm_err:
++	return ret;
++
++}
++
++/* power down chip */
++static int ak4642_remove(struct platform_device *pdev)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++
++	snd_soc_free_pcms(socdev);
++	snd_soc_dapm_free(socdev);
++
++	return 0;
++}
++
++struct snd_soc_codec_device soc_codec_dev_ak4642 = {
++	.probe =	ak4642_probe,
++	.remove =	ak4642_remove,
++	.resume =	ak4642_resume,
++};
++EXPORT_SYMBOL_GPL(soc_codec_dev_ak4642);
++
++static int __init ak4642_modinit(void)
++{
++	int ret;
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++	ret = i2c_add_driver(&ak4642_i2c_driver);
++#endif
++	return ret;
++
++}
++module_init(ak4642_modinit);
++
++static void __exit ak4642_exit(void)
++{
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++	i2c_del_driver(&ak4642_i2c_driver);
++#endif
++
++}
++module_exit(ak4642_exit);
++
++MODULE_DESCRIPTION("Soc AK4642 driver");
++MODULE_AUTHOR("Kuninori Morimoto <morimoto.kuninori@renesas.com>");
++MODULE_LICENSE("GPL");
+diff --git a/sound/soc/codecs/ak4642.h b/sound/soc/codecs/ak4642.h
+new file mode 100644
+index 0000000..e476833
+--- /dev/null
++++ b/sound/soc/codecs/ak4642.h
+@@ -0,0 +1,20 @@
++/*
++ * ak4642.h  --  AK4642 Soc Audio driver
++ *
++ * Copyright (C) 2009 Renesas Solutions Corp.
++ * Kuninori Morimoto <morimoto.kuninori@renesas.com>
++ *
++ * Based on ak4535.c
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef _AK4642_H
++#define _AK4642_H
++
++extern struct snd_soc_dai ak4642_dai;
++extern struct snd_soc_codec_device soc_codec_dev_ak4642;
++
++#endif
+-- 
+1.6.0.4
 
-Since the ak4643 is also supported you should add an entry for it to
-this table.
-
-> +struct ak4642_setup_data {
-> +	int            i2c_bus;
-> +	unsigned short i2c_address;
-> +};
-
-This struct isn't used any more and so should be removed.
