@@ -1,86 +1,161 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 19 Aug 2009 10:39:05 +0000
-Subject: [PATCH] sh: drop static UIO clocks for sh7722, sh7723 and sh7724
-Message-Id: <20090819103905.12389.36202.sendpatchset@rx1.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 26 Aug 2009 11:04:34 +0000
+Subject: [PATCH 4/6] sh: Add support LCDC for EcoVec24
+Message-Id: <u8wh6hm4d.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@igel.co.jp>
 
-The Runtime PM patch for UIO driver implements coarse grained
-dynamic power management for UIO devices. With that patch in
-place we can get rid of the static clock configuration. Which
-in turn makes it possible for cpuidle to enter deeper sleep.
-
-Signed-off-by: Magnus Damm <damm@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ arch/sh/boards/mach-ecovec24/setup.c |  109 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 109 insertions(+), 0 deletions(-)
 
- Also for the sh/pm-runtime topic branch.
-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |    6 +++---
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    6 +++---
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    8 ++++----
- 3 files changed, 10 insertions(+), 10 deletions(-)
-
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2009-08-17 19:00:49.000000000 +0900
-@@ -164,11 +164,11 @@ static struct clk mstp_clks[] = {
- 	SH_HWBLK_CLK("2dg0", -1, B_CLK, HWBLK_2DG, 0),
- 	SH_HWBLK_CLK("siu0", -1, B_CLK, HWBLK_SIU, 0),
- 	SH_HWBLK_CLK("vou0", -1, B_CLK, HWBLK_VOU, 0),
--	SH_HWBLK_CLK("jpu0", -1, B_CLK, HWBLK_JPU, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("jpu0", -1, B_CLK, HWBLK_JPU, 0),
- 	SH_HWBLK_CLK("beu0", -1, B_CLK, HWBLK_BEU, 0),
- 	SH_HWBLK_CLK("ceu0", -1, B_CLK, HWBLK_CEU, 0),
--	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU, CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU, 0),
-+	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, 0),
- 	SH_HWBLK_CLK("lcdc0", -1, P_CLK, HWBLK_LCDC, 0),
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 7850818..a575b38 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -17,6 +17,7 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <linux/usb/r8a66597.h>
++#include <video/sh_mobile_lcdc.h>
+ #include <asm/heartbeat.h>
+ #include <asm/sh_eth.h>
+ #include <cpu/sh7724.h>
+@@ -211,14 +212,60 @@ static struct platform_device usb1_host_device = {
+ 	.resource	= usb1_host_resources,
  };
  
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2009-08-17 19:01:11.000000000 +0900
-@@ -190,12 +190,12 @@ static struct clk mstp_clks[] = {
- 	SH_HWBLK_CLK("usb0", -1, B_CLK, HWBLK_USB, 0),
- 	SH_HWBLK_CLK("2dg0", -1, B_CLK, HWBLK_2DG, 0),
- 	SH_HWBLK_CLK("siu0", -1, B_CLK, HWBLK_SIU, 0),
--	SH_HWBLK_CLK("veu1", -1, B_CLK, HWBLK_VEU2H1, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("veu1", -1, B_CLK, HWBLK_VEU2H1, 0),
- 	SH_HWBLK_CLK("vou0", -1, B_CLK, HWBLK_VOU, 0),
- 	SH_HWBLK_CLK("beu0", -1, B_CLK, HWBLK_BEU, 0),
- 	SH_HWBLK_CLK("ceu0", -1, B_CLK, HWBLK_CEU, 0),
--	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU2H0, CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU2H0, 0),
-+	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, 0),
- 	SH_HWBLK_CLK("lcdc0", -1, B_CLK, HWBLK_LCDC, 0),
++/* LCDC */
++static struct sh_mobile_lcdc_info lcdc_info = {
++	.ch[0] = {
++		.interface_type = RGB18,
++		.chan = LCDC_CHAN_MAINLCD,
++		.bpp = 16,
++		.clock_divider = 1,
++		.lcd_cfg = {
++			.sync = 0, /* hsync and vsync are active low */
++		},
++		.lcd_size_cfg = { /* 7.0 inch */
++			.width = 152,
++			.height = 91,
++		},
++		.board_cfg = {
++		},
++	}
++};
++
++static struct resource lcdc_resources[] = {
++	[0] = {
++		.name	= "LCDC",
++		.start	= 0xfe940000,
++		.end	= 0xfe941fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 106,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc_resources),
++	.resource	= lcdc_resources,
++	.dev		= {
++		.platform_data	= &lcdc_info,
++	},
++	.archdata = {
++		.hwblk_id = HWBLK_LCDC,
++	},
++};
++
+ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&nor_flash_device,
+ 	&sh_eth_device,
+ 	&usb0_host_device,
+ 	&usb1_host_device, /* USB1 host support */
++	&lcdc_device,
  };
  
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2009-08-17 19:02:08.000000000 +0900
-@@ -204,17 +204,17 @@ static struct clk mstp_clks[] = {
- 	SH_HWBLK_CLK("2dg0", -1, B_CLK, HWBLK_2DG, 0),
- 	SH_HWBLK_CLK("sdhi0", -1, B_CLK, HWBLK_SDHI0, 0),
- 	SH_HWBLK_CLK("sdhi1", -1, B_CLK, HWBLK_SDHI1, 0),
--	SH_HWBLK_CLK("veu1", -1, B_CLK, HWBLK_VEU1, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("veu1", -1, B_CLK, HWBLK_VEU1, 0),
- 	SH_HWBLK_CLK("ceu1", -1, B_CLK, HWBLK_CEU1, 0),
- 	SH_HWBLK_CLK("beu1", -1, B_CLK, HWBLK_BEU1, 0),
- 	SH_HWBLK_CLK("2ddmac0", -1, SH_CLK, HWBLK_2DDMAC, 0),
- 	SH_HWBLK_CLK("spu0", -1, B_CLK, HWBLK_SPU, 0),
--	SH_HWBLK_CLK("jpu0", -1, B_CLK, HWBLK_JPU, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("jpu0", -1, B_CLK, HWBLK_JPU, 0),
- 	SH_HWBLK_CLK("vou0", -1, B_CLK, HWBLK_VOU, 0),
- 	SH_HWBLK_CLK("beu0", -1, B_CLK, HWBLK_BEU0, 0),
- 	SH_HWBLK_CLK("ceu0", -1, B_CLK, HWBLK_CEU0, 0),
--	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU0, CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, CLK_ENABLE_ON_INIT),
-+	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU0, 0),
-+	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, 0),
- 	SH_HWBLK_CLK("lcdc0", -1, B_CLK, HWBLK_LCDC, 0),
- };
++#define PORT_HIZA 0xA4050158
+ static int __init devices_setup(void)
+ {
+ 	/* enable SCIFA0 */
+@@ -262,6 +309,68 @@ static int __init devices_setup(void)
+ 	ctrl_outw(0x0600, 0xa40501d4);
+ 	ctrl_outw(0x0600, 0xa4050192);
  
++	/* enable LCDC */
++	gpio_request(GPIO_FN_LCDD23,   NULL);
++	gpio_request(GPIO_FN_LCDD22,   NULL);
++	gpio_request(GPIO_FN_LCDD21,   NULL);
++	gpio_request(GPIO_FN_LCDD20,   NULL);
++	gpio_request(GPIO_FN_LCDD19,   NULL);
++	gpio_request(GPIO_FN_LCDD18,   NULL);
++	gpio_request(GPIO_FN_LCDD17,   NULL);
++	gpio_request(GPIO_FN_LCDD16,   NULL);
++	gpio_request(GPIO_FN_LCDD15,   NULL);
++	gpio_request(GPIO_FN_LCDD14,   NULL);
++	gpio_request(GPIO_FN_LCDD13,   NULL);
++	gpio_request(GPIO_FN_LCDD12,   NULL);
++	gpio_request(GPIO_FN_LCDD11,   NULL);
++	gpio_request(GPIO_FN_LCDD10,   NULL);
++	gpio_request(GPIO_FN_LCDD9,    NULL);
++	gpio_request(GPIO_FN_LCDD8,    NULL);
++	gpio_request(GPIO_FN_LCDD7,    NULL);
++	gpio_request(GPIO_FN_LCDD6,    NULL);
++	gpio_request(GPIO_FN_LCDD5,    NULL);
++	gpio_request(GPIO_FN_LCDD4,    NULL);
++	gpio_request(GPIO_FN_LCDD3,    NULL);
++	gpio_request(GPIO_FN_LCDD2,    NULL);
++	gpio_request(GPIO_FN_LCDD1,    NULL);
++	gpio_request(GPIO_FN_LCDD0,    NULL);
++	gpio_request(GPIO_FN_LCDDISP,  NULL);
++	gpio_request(GPIO_FN_LCDHSYN,  NULL);
++	gpio_request(GPIO_FN_LCDDCK,   NULL);
++	gpio_request(GPIO_FN_LCDVSYN,  NULL);
++	gpio_request(GPIO_FN_LCDDON,   NULL);
++	gpio_request(GPIO_FN_LCDLCLK,  NULL);
++	ctrl_outw((ctrl_inw(PORT_HIZA) & ~0x0001), PORT_HIZA);
++
++	gpio_request(GPIO_PTE6, NULL);
++	gpio_request(GPIO_PTU1, NULL);
++	gpio_request(GPIO_PTR1, NULL);
++	gpio_request(GPIO_PTA2, NULL);
++	gpio_direction_input(GPIO_PTE6);
++	gpio_direction_output(GPIO_PTU1, 0);
++	gpio_direction_output(GPIO_PTR1, 0);
++	gpio_direction_output(GPIO_PTA2, 0);
++
++	if (gpio_get_value(GPIO_PTE6)) {
++		/* DVI */
++		lcdc_info.clock_source			= LCDC_CLK_EXTERNAL;
++		lcdc_info.ch[0].lcd_cfg.name		= "DVI";
++		lcdc_info.ch[0].lcd_cfg.xres		= 1280;
++		lcdc_info.ch[0].lcd_cfg.yres		= 720;
++		lcdc_info.ch[0].lcd_cfg.left_margin	= 220;
++		lcdc_info.ch[0].lcd_cfg.right_margin	= 110;
++		lcdc_info.ch[0].lcd_cfg.hsync_len	= 40;
++		lcdc_info.ch[0].lcd_cfg.upper_margin	= 20;
++		lcdc_info.ch[0].lcd_cfg.lower_margin	= 5;
++		lcdc_info.ch[0].lcd_cfg.vsync_len	= 5;
++
++		gpio_set_value(GPIO_PTA2, 1);
++		gpio_set_value(GPIO_PTU1, 1);
++	} else {
++		/* Panel */
++		/* not supported */
++	}
++
+ 	return platform_add_devices(ecovec_devices,
+ 				    ARRAY_SIZE(ecovec_devices));
+ }
+-- 
+1.6.0.4
+
