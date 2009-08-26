@@ -1,37 +1,25 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Fri, 21 Aug 2009 01:09:18 +0000
-Subject: Re: [alsa-devel] [PATCH v2 4/4] sh: add FSI driver support for ms7724se
-Message-Id: <ufxbmnfb5.wl%morimoto.kuninori@renesas.com>
+From: =?ISO-8859-1?Q?Ra=FAl_Porcel?= <armin76@gentoo.org>
+Date: Wed, 26 Aug 2009 18:33:46 +0000
+Subject: [BUG] arch/sh/include/mach-common/mach/sh7785lcr.h: PCA9564_ADDR
+Message-Id: <4A95800A.7020603@gentoo.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <utz02d78o.wl%morimoto.kuninori@renesas.com>
-	<20090820190626.GH5032@sirena.org.uk>
-In-Reply-To: <20090820190626.GH5032@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>, lethal@linux-sh.org
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+Since some months ago i noticed that with newer kernels the RTC on the
+SH7785LCR stopped working when running on 32bit mode. I just found out
+this is due to a commit that reverted the declaration of the
+PCA9564_ADDR address for both 29bit and 32bit mode. The current address
+only works on 29bit mode.
 
-Dear Mark
+The bad commit is the following:
 
-Thank you
+http://git.kernel.org/?p=linux/kernel/git/lethal/sh-2.6.git;a=commitdiff;h{ce6c2740fab36708233e998a9e53115649b193
 
-> It looks like this should have another change to register the CODEC as
-> an I2C device?  Other than that it's fine from an ASoC point of view -
-> is it OK to merge via ASoC due to the dependency on the platform data
-> for the FSI?
+And it makes this error on 32bit mode:
 
-I think you can not apply this patch to
-your git branch without merge from Paul's git.
-Because there are a lot of patches for
-${LINUX}/arch/sh/boards/mach-se/7724/setup.c
-in current Paul's git
-This patch is based on Paul's git
-
-and I'm sorry I will send v3 patch
-
-Best regards
---
-Kuninori Morimoto
- 
+rtc-rs5c372 0-0032: can't read registers
+rtc-rs5c372: probe of 0-0032 failed with error -5
+PCA9564/PCA9665 at 0x06000000 registered.
