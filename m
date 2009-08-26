@@ -1,55 +1,101 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 13 Aug 2009 03:05:56 +0000
-Subject: [GIT PULL] sh updates for 2.6.31-rc6
-Message-Id: <20090813030556.GE2701@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 26 Aug 2009 11:04:26 +0000
+Subject: [PATCH 2/6] sh: Add SH-ETH support for EcoVec24
+Message-Id: <ubpm2hm4l.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Here are a couple of fixes for initcall ordering that fix up the recent
-changes with the i2c reordering. All of these have been stewing in my
--next branch for some time, and only became .31 material when the i2c
-changes were merged. In any event, there should be no real surprises
-here.
 
-Please pull from:
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/boards/mach-ecovec24/setup.c |   53 +++++++++++++++++++++++++++++++++-
+ 1 files changed, 52 insertions(+), 1 deletions(-)
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.31
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index e555b92..8c0c845 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -14,8 +14,10 @@
+ #include <linux/mtd/physmap.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+-#include <asm/io.h>
++#include <linux/io.h>
++#include <linux/delay.h>
+ #include <asm/heartbeat.h>
++#include <asm/sh_eth.h>
+ #include <cpu/sh7724.h>
+ 
+ /*
+@@ -93,9 +95,41 @@ static struct platform_device nor_flash_device = {
+ 	},
+ };
+ 
++/* SH Eth */
++#define SH_ETH_ADDR	(0xA4600000)
++#define SH_ETH_MAHR	(SH_ETH_ADDR + 0x1C0)
++#define SH_ETH_MALR	(SH_ETH_ADDR + 0x1C8)
++static struct resource sh_eth_resources[] = {
++	[0] = {
++		.start = SH_ETH_ADDR,
++		.end   = SH_ETH_ADDR + 0x1FC,
++		.flags = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start = 91,
++		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
++	},
++};
++
++struct sh_eth_plat_data sh_eth_plat = {
++	.phy = 0x1f, /* SMSC LAN8700 */
++	.edmac_endian = EDMAC_LITTLE_ENDIAN,
++};
++
++static struct platform_device sh_eth_device = {
++	.name = "sh-eth",
++	.id	= 0,
++	.dev = {
++		.platform_data = &sh_eth_plat,
++	},
++	.num_resources = ARRAY_SIZE(sh_eth_resources),
++	.resource = sh_eth_resources,
++};
++
+ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&nor_flash_device,
++	&sh_eth_device,
+ };
+ 
+ static int __init devices_setup(void)
+@@ -114,6 +148,23 @@ static int __init devices_setup(void)
+ 	gpio_direction_output(GPIO_PTG2, 0);
+ 	gpio_direction_output(GPIO_PTG3, 0);
+ 
++	/* enable SH-Eth */
++	gpio_request(GPIO_PTA1, NULL);
++	gpio_direction_output(GPIO_PTA1, 1);
++	mdelay(20);
++
++	gpio_request(GPIO_FN_RMII_RXD0,    NULL);
++	gpio_request(GPIO_FN_RMII_RXD1,    NULL);
++	gpio_request(GPIO_FN_RMII_TXD0,    NULL);
++	gpio_request(GPIO_FN_RMII_TXD1,    NULL);
++	gpio_request(GPIO_FN_RMII_REF_CLK, NULL);
++	gpio_request(GPIO_FN_RMII_TX_EN,   NULL);
++	gpio_request(GPIO_FN_RMII_RX_ER,   NULL);
++	gpio_request(GPIO_FN_RMII_CRS_DV,  NULL);
++	gpio_request(GPIO_FN_MDIO,         NULL);
++	gpio_request(GPIO_FN_MDC,          NULL);
++	gpio_request(GPIO_FN_LNKSTA,       NULL);
++
+ 	return platform_add_devices(ecovec_devices,
+ 				    ARRAY_SIZE(ecovec_devices));
+ }
+-- 
+1.6.0.4
 
-Which contains:
-
-Magnus Damm (3):
-      sh: convert processor device setup functions to arch_initcall()
-      sh: fix i2c init order on Migo-R V2
-      sh: fix i2c init order on ap325rxa V2
-
- arch/sh/boards/board-ap325rxa.c        |    2 +-
- arch/sh/boards/mach-migor/setup.c      |    2 +-
- arch/sh/kernel/cpu/sh2/setup-sh7619.c  |    2 +-
- arch/sh/kernel/cpu/sh2a/setup-mxg.c    |    2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c |    2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c |    2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c |    2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7705.c  |    2 +-
- arch/sh/kernel/cpu/sh3/setup-sh770x.c  |    2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7710.c  |    2 +-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    2 +-
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c |    2 +-
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  |    2 +-
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   |    2 +-
- arch/sh/kernel/cpu/sh5/setup-sh5.c     |    2 +-
- 26 files changed, 26 insertions(+), 26 deletions(-)
