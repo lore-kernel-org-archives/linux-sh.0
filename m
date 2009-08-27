@@ -1,48 +1,29 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 27 Aug 2009 01:36:58 +0000
-Subject: current kernel say "Unaligned kernel access on behalf"
-Message-Id: <uocq2ghqd.wl%morimoto.kuninori@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 27 Aug 2009 01:53:24 +0000
+Subject: Re: current kernel say "Unaligned kernel access on behalf"
+Message-Id: <20090827015324.GB18826@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <uocq2ghqd.wl%morimoto.kuninori@renesas.com>
+In-Reply-To: <uocq2ghqd.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Thu, Aug 27, 2009 at 10:36:58AM +0900, Kuninori Morimoto wrote:
+> -------------------------------------------------
+> Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcf54 ins=0x6362   
+> Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcf9e ins=0x6176   
+> Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcfa0 ins=0x6276   
+> -------------------------------------------------
+> 
+> If I use c3144fc46f987413df10e83659f0bf1aad76f79e
+> It works well for me
+> 
+> what's happen ??
 
-Hi all
-
-I tried current Paul's git
-and it say a lot of error/warning after network working.
-following is log
-
------ log -----------------------
-(snip)
-RPC: Registered tcp transport module.
-/opt/usr/src/WORK/morimoto/gitlinux/sh-2.6/drivers/rtc/hctosys.c: unable to ope)
-net eth0: attached phy 31 to driver SMSC LAN8700
-Sending DHCP requests .
-PHY: 0:1f - Link is Up - 100/Full
-.
-Unaligned kernel access on behalf of "swapper" pid=0 pc=0x882dcfc8 ins=0x882c
-Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcfc8 ins=0x6362
-Unaligned kernel access on behalf of "swapper" pid=0 pc=0x882dd012 ins=0x882a
-Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dd012 ins=0x6176
-Unaligned kernel access on behalf of "swapper" pid=0 pc=0x882dd014 ins=0x882a
-...
-----------------------------------
-
-If I use after 7436cde6b2ca71049051620c68c26522bb3403bf
-all say above
-
-If I use 9a4af027a03e10e97f56081cd7dd1fda5282bd9c
-It say
--------------------------------------------------
-Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcf54 ins=0x6362   
-Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcf9e ins=0x6176   
-Fixing up unaligned kernel access in "swapper" pid=0 pc=0x882dcfa0 ins=0x6276   
--------------------------------------------------
-
-If I use c3144fc46f987413df10e83659f0bf1aad76f79e
-It works well for me
-
-what's happen ??
+What happened is that I added a change that starts to report these fixups
+for the kernel as well. Previously these were being just silently fixed
+up. There is no change in functionality, they've just been added as a
+debugging aid. Though in retrospect, KERN_NOTICE is probably the wrong
+thing for kernel fixups, so I'll switch them over to KERN_DEBUG.
