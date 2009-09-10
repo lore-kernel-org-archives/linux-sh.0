@@ -1,77 +1,127 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Sun, 13 Sep 2009 05:38:30 +0000
-Subject: libshcodecs 0.9.6 Release
-Message-Id: <dba6c0830909122238m495e1bd4peaa8bc6eb79447ba@mail.gmail.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 10 Sep 2009 01:39:58 +0000
+Subject: [PATCH 3/6] sh: EcoVec24: write MAC address in boot
+Message-Id: <upr9zy3v5.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-libshcodecs 0.9.6 Release
-============
-libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-The [SH-Mobile][0] processor series includes a hardware video processing
-unit that supports MPEG-4 and H.264 encoding and decoding.
-libshcodecs is available under the terms of the GNU LGPL.
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/boards/mach-ecovec24/setup.c |   81 +++++++++++++++++++++++++++++++++-
+ 1 files changed, 79 insertions(+), 2 deletions(-)
 
-The source archive, and more information about the library are available from:
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 6721b25..620a6d7 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -17,6 +17,7 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <linux/usb/r8a66597.h>
++#include <linux/i2c.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <asm/heartbeat.h>
+@@ -342,9 +343,77 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&ceu1_device,
+ };
+ 
++#define EEPROM_ADDR 0x50
++static u8 mac_read(struct i2c_adapter *a, u8 command)
++{
++	struct i2c_msg msg[2];
++	u8 buf;
++	int ret;
++
++	msg[0].addr  = EEPROM_ADDR;
++	msg[0].flags = 0;
++	msg[0].len   = 1;
++	msg[0].buf   = &command;
++
++	msg[1].addr  = EEPROM_ADDR;
++	msg[1].flags = I2C_M_RD;
++	msg[1].len   = 1;
++	msg[1].buf   = &buf;
++
++	ret = i2c_transfer(a, msg, 2);
++	if (ret < 0) {
++		printk(KERN_ERR "error %d\n", ret);
++		buf = 0xff;
++	}
++
++	return buf;
++}
++
++#define MAC_LEN 6
++static void __init sh_eth_init(void)
++{
++	struct i2c_adapter *a = i2c_get_adapter(1);
++	struct clk *eth_clk;
++	u8 mac[MAC_LEN];
++	int i;
++
++	if (!a) {
++		pr_err("can not get I2C 1\n");
++		return;
++	}
++
++	eth_clk = clk_get(NULL, "eth0");
++	if (!eth_clk) {
++		pr_err("can not get eth0 clk\n");
++		return;
++	}
++
++	/* read MAC address frome EEPROM */
++	for (i = 0; i < MAC_LEN; i++) {
++		mac[i] = mac_read(a, 0x10 + i);
++		msleep(10);
++	}
++
++	/* clock enable */
++	clk_enable(eth_clk);
++
++	/* reset sh-eth */
++	ctrl_outl(0x1, SH_ETH_ADDR + 0x0);
++
++	/* set MAC addr */
++	ctrl_outl((mac[0] << 24) |
++		  (mac[1] << 16) |
++		  (mac[2] <<  8) |
++		  (mac[3] <<  0), SH_ETH_MAHR);
++	ctrl_outl((mac[4] <<  8) |
++		  (mac[5] <<  0), SH_ETH_MALR);
++
++	clk_put(eth_clk);
++}
++
+ #define PORT_HIZA 0xA4050158
+ #define IODRIVEA  0xA405018A
+-static int __init devices_setup(void)
++static int __init arch_setup(void)
+ {
+ 	/* enable SCIFA0 */
+ 	gpio_request(GPIO_FN_SCIF0_TXD, NULL);
+@@ -520,7 +589,15 @@ static int __init devices_setup(void)
+ 	return platform_add_devices(ecovec_devices,
+ 				    ARRAY_SIZE(ecovec_devices));
+ }
+-arch_initcall(devices_setup);
++arch_initcall(arch_setup);
++
++static int __init devices_setup(void)
++{
++	sh_eth_init();
++	return 0;
++}
++device_initcall(devices_setup);
++
+ 
+ static struct sh_machine_vector mv_ecovec __initmv = {
+ 	.mv_name	= "R0P7724 (EcoVec)",
+-- 
+1.6.0.4
 
-        http://linux-sh.org/cgi-bin/moin.cgi/libshcodecs
-
-New in this release
-=========
-        * New shcodecs-play tool to play directly to framebuffer
-
-	* Added new functions for accessing physical memory addresses
-
-	* Man pages for tools
-
-        * Updated shared version info to 6:0:2
-
-
-Changes
--------
-
-Conrad Parker (21):
-      support NV12->RGB565 conversion in tools
-      add shcodecs_decoder_use_physical() public API call
-      typo: Version_script reference to shcodecs_decoder_set_use_physical
-      Encode to stdout if ouput file name is "-"
-      tools: move all debug and error output to stderr, don't clobber stdout
-      libshcodecs: move all debug messages to stderr, don't clobber stdout
-      add v4l2 capture control example files
-      don't do path concatenation on output file name "-" specifying stdout
-      add streaming output file, with output filename "-" and
-      add extra .ctl files to pkg
-      add man pages for tools
-      add KMp4-v4l2-stream capenc control file
-      cleanup: report correct function names in debug
-      add checks and #include "config.h" throughout
-      add SIGINT and SIGPIPE handling to encoder tools
-      add a note about benchmarking to shcodecs-dec man page
-      add note to README about kernel configuration
-      capenc: read video device filename from control file
-      Document policy for freeing decode buffers
-      stop shcodecs_decode() on non-zero callback return
-      convert avcbe_global.h comments to UTF-8
-
-Phil Edworthy (11):
-      VEU scale, rotate, crop function.
-      Added shcodecs-play tool
-      Fixed path to v4l2 device.
-      Fixed problem with opening framebuffer.
-      Cleaned up h264 encoder code.
-      h264 enc: merged encode by nal and pic into 1 function.
-      mpeg4/h263 encoder cleanup
-      Cleaned up buffer allocation for the encoder.
-      Add ability to position output
-      Fixed ANNEX_B symbol definition
-      Fixed thread sync issues with shcodecs-play
-
-Takashi Namiki (1):
-      Added a function to get phisical address.
-
-
-[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
