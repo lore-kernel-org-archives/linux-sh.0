@@ -1,35 +1,30 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Wed, 30 Sep 2009 00:32:14 +0000
-Subject: Re: [PATCH] sh: mach-ecovec24: modify MTD mask_flags typo
-Message-Id: <uljjx9ss1.wl%morimoto.kuninori@renesas.com>
+Date: Thu, 10 Sep 2009 01:40:00 +0000
+Subject: [PATCH 4/6] sh: EcoVec24: add HIZA setting for LED
+Message-Id: <uocpjy3v3.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uhbumqaj9.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uhbumqaj9.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/boards/mach-ecovec24/setup.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Dear Jean
-
-Thank you for review
-
-> > This patch modify bug which can erase boot loader image area.
-> IIC you do not want to be able to modify the boot loader area
-> why?
-
-IIC = I2C ?
-I think boot loader area should not be changed (erased) from Linux.
-because you might not be able to reboot it.
-
-And now I checked other board settings.
-other board use MTD_WRITEABLE to force read only.
-So, I will re-send v2 patch soon
-
-Thank you
-
-Best regards
---
-Kuninori Morimoto
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 620a6d7..3632f41 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -428,6 +428,7 @@ static int __init arch_setup(void)
+ 	gpio_direction_output(GPIO_PTG1, 0);
+ 	gpio_direction_output(GPIO_PTG2, 0);
+ 	gpio_direction_output(GPIO_PTG3, 0);
++	ctrl_outw((ctrl_inw(PORT_HIZA) & ~(0x1 << 1)) , PORT_HIZA);
  
+ 	/* enable SH-Eth */
+ 	gpio_request(GPIO_PTA1, NULL);
+-- 
+1.6.0.4
+
