@@ -1,24 +1,32 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 14 Sep 2009 05:54:50 +0000
-Subject: Re: What's in sh-2.6.git for 2.6.32?
-Message-Id: <20090914055450.GG15078@linux-sh.org>
+From: Yusuke Goda <goda.yusuke@renesas.com>
+Date: Fri, 11 Sep 2009 02:42:46 +0000
+Subject: [PATCH] sh: Fix the indication point of the liquid crystal of
+Message-Id: <4AA9B926.9090907@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090914054854.GF15078@linux-sh.org>
-In-Reply-To: <20090914054854.GF15078@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 14, 2009 at 02:48:54PM +0900, Paul Mundt wrote:
->  drivers/block/aoe/aoe.h                            |    2 +-
->  drivers/block/aoe/aoeblk.c                         |   12 +-
->  drivers/block/aoe/aoedev.c                         |    1 -
->  drivers/gpu/drm/i915/i915_gem.c                    |    6 +-
->  drivers/gpu/drm/i915/intel_dp.c                    |    2 +-
->  drivers/gpu/drm/i915/intel_drv.h                   |    1 -
->  drivers/gpu/drm/i915/intel_tv.c                    |    1 -
+Signed-off-by: Yusuke Goda <goda.yusuke@renesas.com>
+---
+ arch/sh/boards/board-ap325rxa.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-These obviously are just a result of the suspend tree being a couple of
-changes ahead which I failed to account for, so just pretend these don't
-exist.
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index 19eea4a..bcf1f40 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -188,7 +188,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 			.name = "LB070WV1",
+ 			.xres = 800,
+ 			.yres = 480,
+-			.left_margin = 40,
++			.left_margin = 32,
+ 			.right_margin = 160,
+ 			.hsync_len = 8,
+ 			.upper_margin = 63,
+-- 
+1.6.0.4
+
+
