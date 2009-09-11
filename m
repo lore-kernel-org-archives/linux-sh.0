@@ -1,50 +1,64 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Fri, 11 Sep 2009 18:35:59 +0000
+From: Dale Larson <dlarson42@gmail.com>
+Date: Fri, 11 Sep 2009 19:16:38 +0000
 Subject: Re: User mode address error problems on 7763
-Message-Id: <20090911183557.GA21695@console-pimps.org>
+Message-Id: <6e6aa1a80909111216i5e104b14r952c7610359d071e@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <6e6aa1a80909111106l6dbcfccag4e9e7a3abb922688@mail.gmail.com>
 In-Reply-To: <6e6aa1a80909111106l6dbcfccag4e9e7a3abb922688@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
 To: linux-sh@vger.kernel.org
 
-On Fri, Sep 11, 2009 at 01:06:31PM -0500, Dale Larson wrote:
-> I've been porting linux (2.6.30.2) to our 7763 based platform and the
-> kernel seems to be running fine but when user mode programs run I
-> randomly get errors like this:
-> 
-> [    8.419557] VFS: Mounted root (nfs filesystem) on device 0:9.
-> [    8.431863] Freeing unused kernel memory: 80k freed
-> init started: BusyBox v1.14.3 (2009-09-04 15:19:48 CDT)
-> [    8.682286] Fixing up unaligned userspace access in "mount" pid2
-> pc=0x295583d0 ins=0x60b2
-> [    8.699336] Sending SIGBUS to "mount" due to unaligned access (PC
-> a0042955 PR 295583da)
-> Populating /dev using udev: done
-> 
-> Another example:
-> 
-> Starting dropbear sshd: OK
-> [  484.428550] Fixing up unaligned userspace access in "touch" pid8
-> pc=0x295583d0 ins=0x60b2
-> [  492.438796] Sending SIGBUS to "touch" due to unaligned access (PC
-> a0042955 PR 295583da)
-> 
-> The SIGBUS kills the process. I've tried various versions of linux
-> form kernel.org: 2.6.28, 2.6.29, 2.6.30 and all have the same
-> behaviour.
-> 
-> Using JTAG I see that I'm having both data alignment and PC alignment
-> problems. If I turn off the I&D caching this problem doesn't happen.
-> 
-
-This is most likely to be the cache aliasing bug I'm hunting. What are
-the dimensions of your cache? Can you tried building a kernel from the
-sh/cachetlb branch at,
-
-git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.git
-
-and see if the issue persists? Paul has made some changes recently that
-might work around this problem.
+SGkgTWF0dCwKCj4gVGhpcyBpcyBtb3N0IGxpa2VseSB0byBiZSB0aGUgY2FjaGUgYWxpYXNpbmcg
+YnVnIEknbSBodW50aW5nLiBXaGF0IGFyZQo+IHRoZSBkaW1lbnNpb25zIG9mIHlvdXIgY2FjaGU/
+CgpIZXJlJ3MgdGhlIGtlcm5lbCBtZXNzYWdlcyB1cCB0byB0aGUgY2FjaGUgaW5pdGlhbGl6YXRp
+b246CgpbICAgIDAuMDAwMDAwXSBMaW51eCB2ZXJzaW9uIDIuNi4zMC4yIChkbGFyc29uQFVidW50
+dURhbGUpIChnY2MKdmVyc2lvbiA0LjMuNCAoR0NDKSApICMyIEZyaSBTZXAgMTEgMDg6MTM6MzMg
+Q0RUIDIwMDkKWyAgICAwLjAwMDAwMF0gQm9vdCBwYXJhbXM6ClsgICAgMC4wMDAwMDBdIC4uLiBN
+T1VOVF9ST09UX1JET05MWSAtIDAwMDAwMDAxClsgICAgMC4wMDAwMDBdIC4uLiBSQU1ESVNLX0ZM
+QUdTICAgICAtIDAwMDAwMDAwClsgICAgMC4wMDAwMDBdIC4uLiBPUklHX1JPT1RfREVWICAgICAt
+IDAwMDAwMjAwClsgICAgMC4wMDAwMDBdIC4uLiBMT0FERVJfVFlQRSAgICAgICAtIDAwMDAwMDAx
+ClsgICAgMC4wMDAwMDBdIC4uLiBJTklUUkRfU1RBUlQgICAgICAtIDAwMDAwMDAwClsgICAgMC4w
+MDAwMDBdIC4uLiBJTklUUkRfU0laRSAgICAgICAtIDAwMDAwMDAwClsgICAgMC4wMDAwMDBdIEVh
+cmx5IHNlcmlhbCBjb25zb2xlIGF0IE1NSU8gMHgxODAwMDAwOCAob3B0aW9ucyAnMTE1MjAwbjgn
+KQpbICAgIDAuMDAwMDAwXSBjb25zb2xlIFt1YXJ0MF0gZW5hYmxlZApbICAgIDAuMDAwMDAwXSBC
+b290aW5nIG1hY2h2ZWM6IGpjaTc3NjMKWyAgICAwLjAwMDAwMF0gTm9kZSAwOiBzdGFydF9wZm4g
+PSAweDgwMDAsIGxvdyA9IDB4MTAwMDAKWyAgICAwLjAwMDAwMF0gWm9uZSBQRk4gcmFuZ2VzOgpb
+ICAgIDAuMDAwMDAwXSAgIE5vcm1hbCAgIDB4MDAwMDgwMDAgLT4gMHgwMDAxMDAwMApbICAgIDAu
+MDAwMDAwXSBNb3ZhYmxlIHpvbmUgc3RhcnQgUEZOIGZvciBlYWNoIG5vZGUKWyAgICAwLjAwMDAw
+MF0gZWFybHlfbm9kZV9tYXBbMV0gYWN0aXZlIFBGTiByYW5nZXMKWyAgICAwLjAwMDAwMF0gICAg
+IDA6IDB4MDAwMDgwMDAgLT4gMHgwMDAxMDAwMApbICAgIDAuMDAwMDAwXSBCdWlsdCAxIHpvbmVs
+aXN0cyBpbiBab25lIG9yZGVyLCBtb2JpbGl0eSBncm91cGluZyBvbi4KVG90YWwgcGFnZXM6IDMy
+NTEyClsgICAgMC4wMDAwMDBdIEtlcm5lbCBjb21tYW5kIGxpbmU6CmVhcmx5Y29uPXVhcnQsbW1p
+bywweDE4MDAwMDA4LDExNTIwMG44IGNvbnNvbGU9dHR5UzAsMTE1MjAwbjgKcm9vdD0vZGV2L25m
+cyBydyByb290ZnN0eXBlPW5mcyBuZnNyb290FTkuMjIyLjExLjU2Oi9uNDByb290IGlwPWRoY3AK
+WyAgICAwLjAwMDAwMF0gTlJfSVJRUzoyNTYKWyAgICAwLjAwMDAwMF0gUElEIGhhc2ggdGFibGUg
+ZW50cmllczogNTEyIChvcmRlcjogOSwgMjA0OCBieXRlcykKWyAgICAwLjAwMDAwMF0gVXNpbmcg
+dG11IGZvciBzeXN0ZW0gdGltZXIKWyAgICAwLjAwOTc4NV0gRGVudHJ5IGNhY2hlIGhhc2ggdGFi
+bGUgZW50cmllczogMTYzODQgKG9yZGVyOiA0LCA2NTUzNiBieXRlcykKWyAgICAwLjAyNzQxNV0g
+SW5vZGUtY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVzOiA4MTkyIChvcmRlcjogMywgMzI3NjggYnl0
+ZXMpClsgICAgMC4wNjYzMTVdIE1lbW9yeTogMTI3MjMyay8xMzEwNzJrIGF2YWlsYWJsZSAoMTM0
+MWsga2VybmVsIGNvZGUsCjQyNGsgZGF0YSwgODBrIGluaXQpClsgICAgMC4wODUyNjBdIFBWUhAy
+MDBhMDAgQ1ZSczQ0MDAxMCBQUlIAMDAwYTEwClsgICAgMC4wOTY2OTBdIEktY2FjaGUgOiBuX3dh
+eXM9NCBuX3NldHMlNiB3YXlfaW5jcoE5MgpbICAgIDAuMTA5MTcxXSBJLWNhY2hlIDogZW50cnlf
+bWFzaz0weDAwMDAxZmUwIGFsaWFzX21hc2s9MHgwMDAwMTAwMCBuX2FsaWFzZXM9MgpbICAgIDAu
+MTI2MjAwXSBELWNhY2hlIDogbl93YXlzPTQgbl9zZXRzJTYgd2F5X2luY3KBOTIKWyAgICAwLjEz
+ODY4MV0gRC1jYWNoZSA6IGVudHJ5X21hc2s9MHgwMDAwMWZlMCBhbGlhc19tYXNrPTB4MDAwMDEw
+MDAgbl9hbGlhc2VzPTIKWyAgICAwLjE1NjYyN10gQ2FsaWJyYXRpbmcgZGVsYXkgbG9vcCAoc2tp
+cHBlZCkuLi4gMjY2LjY2IEJvZ29NSVBTClBSRVNFVCAobHBqUzMzMzMpClsgICAgMC4xNzU1MThd
+IE1vdW50LWNhY2hlIGhhc2ggdGFibGUgZW50cmllczogNTEyClsgICAgMC4xODc3NzZdIENQVTog
+U0g3NzYzClsgICAgMC4xOTg4ODhdIG5ldF9uYW1lc3BhY2U6IDI5NiBieXRlcwpbICAgIDAuMjA4
+NjU0XSBORVQ6IFJlZ2lzdGVyZWQgcHJvdG9jb2wgZmFtaWx5IDE2ClsgICAgMC4yNDc3NzBdIGJp
+bzogY3JlYXRlIHNsYWIgPGJpby0wPiBhdCAwClsgICAgMC4yNjQzMzZdIFNDU0kgc3Vic3lzdGVt
+IGluaXRpYWxpemVkClsgICAgMC4yODg0NjddIE5FVDogUmVnaXN0ZXJlZCBwcm90b2NvbCBmYW1p
+bHkgMgoKCj5DYW4geW91IHRyaWVkIGJ1aWxkaW5nIGEga2VybmVsIGZyb20gdGhlCj4gc2gvY2Fj
+aGV0bGIgYnJhbmNoIGF0LAo+Cj4gZ2l0Oi8vZ2l0Lmtlcm5lbC5vcmcvcHViL3NjbS9saW51eC9r
+ZXJuZWwvZ2l0L2xldGhhbC9zaC0yLjYuZ2l0Cj4KPiBhbmQgc2VlIGlmIHRoZSBpc3N1ZSBwZXJz
+aXN0cz8gUGF1bCBoYXMgbWFkZSBzb21lIGNoYW5nZXMgcmVjZW50bHkgdGhhdAo+IG1pZ2h0IHdv
+cmsgYXJvdW5kIHRoaXMgcHJvYmxlbS4KCkknbGwgZ2l2ZSB0aGlzIGEgc2hvdCBvbiBNb25kYXku
+IEkgZG8gaGF2ZSBhIGNsb25lIG9mIHRoYXQgcmVwb3NpdG9yeS4KLS0KVG8gdW5zdWJzY3JpYmUg
+ZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LXNoIiBpbgp0
+aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwpNb3JlIG1h
+am9yZG9tbyBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0
+bWw=
