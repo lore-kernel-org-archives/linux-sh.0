@@ -1,106 +1,77 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Mon, 14 Sep 2009 11:23:00 +0000
-Subject: [PATCH 2/2] sh: Add KEYSC support for EcoVec24
-Message-Id: <uzl8xepnv.wl%morimoto.kuninori@renesas.com>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Sun, 13 Sep 2009 05:38:30 +0000
+Subject: libshcodecs 0.9.6 Release
+Message-Id: <dba6c0830909122238m495e1bd4peaa8bc6eb79447ba@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
----
- arch/sh/boards/mach-ecovec24/setup.c |   52 ++++++++++++++++++++++++++++++++++
- 1 files changed, 52 insertions(+), 0 deletions(-)
+libshcodecs 0.9.6 Release
+============
+libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 2129e4c..40decfe 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -18,10 +18,12 @@
- #include <linux/delay.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/i2c.h>
-+#include <linux/input.h>
- #include <video/sh_mobile_lcdc.h>
- #include <media/sh_mobile_ceu.h>
- #include <asm/heartbeat.h>
- #include <asm/sh_eth.h>
-+#include <asm/sh_keysc.h>
- #include <cpu/sh7724.h>
- 
- /*
-@@ -332,6 +334,46 @@ static struct i2c_board_info i2c1_devices[] = {
- 	},
- };
- 
-+/* KEYSC */
-+static struct sh_keysc_info keysc_info = {
-+	.mode		= SH_KEYSC_MODE_1,
-+	.scan_timing	= 3,
-+	.delay		= 50,
-+	.kycr2_delay	= 100,
-+	.keycodes	= { KEY_1, 0, 0, 0, 0,
-+			    KEY_2, 0, 0, 0, 0,
-+			    KEY_3, 0, 0, 0, 0,
-+			    KEY_4, 0, 0, 0, 0,
-+			    KEY_5, 0, 0, 0, 0,
-+			    KEY_6, 0, 0, 0, 0, },
-+};
-+
-+static struct resource keysc_resources[] = {
-+	[0] = {
-+		.name	= "KEYSC",
-+		.start  = 0x044b0000,
-+		.end    = 0x044b000f,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 79,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device keysc_device = {
-+	.name           = "sh_keysc",
-+	.id             = 0, /* keysc0 clock */
-+	.num_resources  = ARRAY_SIZE(keysc_resources),
-+	.resource       = keysc_resources,
-+	.dev	= {
-+		.platform_data	= &keysc_info,
-+	},
-+	.archdata = {
-+		.hwblk_id = HWBLK_KEYSC,
-+	},
-+};
-+
- static struct platform_device *ecovec_devices[] __initdata = {
- 	&heartbeat_device,
- 	&nor_flash_device,
-@@ -341,6 +383,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&lcdc_device,
- 	&ceu0_device,
- 	&ceu1_device,
-+	&keysc_device,
- };
- 
- #define EEPROM_ADDR 0x50
-@@ -585,6 +628,15 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_VIO1_CLK, NULL);
- 	platform_resource_setup_memory(&ceu1_device, "ceu1", 4 << 20);
- 
-+	/* enable KEYSC */
-+	gpio_request(GPIO_FN_KEYOUT5_IN5, NULL);
-+	gpio_request(GPIO_FN_KEYOUT4_IN6, NULL);
-+	gpio_request(GPIO_FN_KEYOUT3,     NULL);
-+	gpio_request(GPIO_FN_KEYOUT2,     NULL);
-+	gpio_request(GPIO_FN_KEYOUT1,     NULL);
-+	gpio_request(GPIO_FN_KEYOUT0,     NULL);
-+	gpio_request(GPIO_FN_KEYIN0,      NULL);
-+
- 	/* enable I2C device */
- 	i2c_register_board_info(1, i2c1_devices,
- 				ARRAY_SIZE(i2c1_devices));
--- 
-1.6.0.4
+The [SH-Mobile][0] processor series includes a hardware video processing
+unit that supports MPEG-4 and H.264 encoding and decoding.
+libshcodecs is available under the terms of the GNU LGPL.
 
+The source archive, and more information about the library are available from:
+
+        http://linux-sh.org/cgi-bin/moin.cgi/libshcodecs
+
+New in this release
+=========
+        * New shcodecs-play tool to play directly to framebuffer
+
+	* Added new functions for accessing physical memory addresses
+
+	* Man pages for tools
+
+        * Updated shared version info to 6:0:2
+
+
+Changes
+-------
+
+Conrad Parker (21):
+      support NV12->RGB565 conversion in tools
+      add shcodecs_decoder_use_physical() public API call
+      typo: Version_script reference to shcodecs_decoder_set_use_physical
+      Encode to stdout if ouput file name is "-"
+      tools: move all debug and error output to stderr, don't clobber stdout
+      libshcodecs: move all debug messages to stderr, don't clobber stdout
+      add v4l2 capture control example files
+      don't do path concatenation on output file name "-" specifying stdout
+      add streaming output file, with output filename "-" and
+      add extra .ctl files to pkg
+      add man pages for tools
+      add KMp4-v4l2-stream capenc control file
+      cleanup: report correct function names in debug
+      add checks and #include "config.h" throughout
+      add SIGINT and SIGPIPE handling to encoder tools
+      add a note about benchmarking to shcodecs-dec man page
+      add note to README about kernel configuration
+      capenc: read video device filename from control file
+      Document policy for freeing decode buffers
+      stop shcodecs_decode() on non-zero callback return
+      convert avcbe_global.h comments to UTF-8
+
+Phil Edworthy (11):
+      VEU scale, rotate, crop function.
+      Added shcodecs-play tool
+      Fixed path to v4l2 device.
+      Fixed problem with opening framebuffer.
+      Cleaned up h264 encoder code.
+      h264 enc: merged encode by nal and pic into 1 function.
+      mpeg4/h263 encoder cleanup
+      Cleaned up buffer allocation for the encoder.
+      Add ability to position output
+      Fixed ANNEX_B symbol definition
+      Fixed thread sync issues with shcodecs-play
+
+Takashi Namiki (1):
+      Added a function to get phisical address.
+
+
+[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
