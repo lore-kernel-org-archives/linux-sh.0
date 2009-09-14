@@ -1,62 +1,47 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 14 Sep 2009 13:26:47 +0000
-Subject: Re: Recent assembler sign extension patch
-Message-Id: <20090914132646.GC21091@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 14 Sep 2009 11:22:55 +0000
+Subject: [PATCH 1/2] sh: add kycr2_delay for sh_keysc
+Message-Id: <u1vm9g48g.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090827132813.GB4668@console-pimps.org>
-In-Reply-To: <20090827132813.GB4668@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Sep 14, 2009 at 02:12:34PM +0900, Nobuhiro Iwamatsu wrote:
-> 2009/8/28 Matt Fleming <matt@console-pimps.org>:
-> > Index: gas/config/tc-sh.c
-> > =================================> > RCS file: /cvs/src/src/gas/config/tc-sh.c,v
-> > retrieving revision 1.132
-> > diff -u -r1.132 tc-sh.c
-> > --- gas/config/tc-sh.c ?24 Jul 2009 11:45:00 -0000 ? ? ?1.132
-> > +++ gas/config/tc-sh.c ?27 Aug 2009 20:09:14 -0000
-> > @@ -156,6 +156,11 @@
-> > ?#define ENCODE_RELAX(what,length) (((what) << 4) + (length))
-> > ?#define GET_WHAT(x) ((x>>4))
-> >
-> > +/* Truncate and sign-extend at 32 bits, so that building on a 64-bit host
-> > + ? gives identical results to a 32-bit host. ?*/
-> > +#define TRUNC(X) ? ? ? ((long) (X) & 0xffffffff)
-> > +#define SEXT(X) ? ? ? ? ? ? ? ?((TRUNC (X) ^ 0x80000000) - 0x80000000)
-> > +
-> > ?/* These are the three types of relaxable instruction. ?*/
-> > ?/* These are the types of relaxable instructions; except for END which is
-> > ? ?a marker. ?*/
-> > @@ -4183,7 +4188,7 @@
-> > ? ? ? ?val = ((val >> shift)
-> > ? ? ? ? ? ? ? | ((long) -1 & ~ ((long) -1 >> shift)));
-> > ? ? }
-> > - ?if (max != 0 && (val < min || val > max))
-> > + ?if (max != 0 && (SEXT(val) < min || SEXT(val) > max))
-> > ? ? as_bad_where (fixP->fx_file, fixP->fx_line, _("offset out of range"));
-> > ? else if (max != 0)
-> > ? ? /* Stop the generic code from trying to overlow check the value as well.
-> 
-> I think that I should cope in a kernel, because this problem is thing
-> by the limit of mov.
-> # mov of this case supports only 8bit.
-> 
-The whole reason that the toolchain patch is necessary is because 64-bit
-hosts weren't doing sign extension on a truncated 32-bit value, which is
-a legitimate bug.
+After KYCR2 is set, udelay  might become necessary
+when the connected KEY is few.
+This patch add kycr2_delay for this problem.
 
-As far as the mov size, a manually sign extended value is perfectly
-acceptable, and any toolchain should be intelligent enough to get the
-size calculation right. It's obviously not entirely elegant, but it's
-much less confusing than running in to situations where the same
-immediate is used and it may or may not be sign extended, depending on
-which instruction it gets used with. That ambiguity is what this approach
-solves, and I think it is definitely worthwhile trying to keep it as
-simple as possible to prevent sign extension bugs from popping up.
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/include/asm/sh_keysc.h    |    1 +
+ drivers/input/keyboard/sh_keysc.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-If you've ever had to chase a sign extension bug, you will appreciate the
-value of this (especially given the sometimes rather inconsistent
-instruction set).
+diff --git a/arch/sh/include/asm/sh_keysc.h b/arch/sh/include/asm/sh_keysc.h
+index b5a4dd5..4a65b1e 100644
+--- a/arch/sh/include/asm/sh_keysc.h
++++ b/arch/sh/include/asm/sh_keysc.h
+@@ -7,6 +7,7 @@ struct sh_keysc_info {
+ 	enum { SH_KEYSC_MODE_1, SH_KEYSC_MODE_2, SH_KEYSC_MODE_3 } mode;
+ 	int scan_timing; /* 0 -> 7, see KYCR1, SCN[2:0] */
+ 	int delay;
++	int kycr2_delay;
+ 	int keycodes[SH_KEYSC_MAXKEYS];
+ };
+ 
+diff --git a/drivers/input/keyboard/sh_keysc.c b/drivers/input/keyboard/sh_keysc.c
+index cea70e6..2080f60 100644
+--- a/drivers/input/keyboard/sh_keysc.c
++++ b/drivers/input/keyboard/sh_keysc.c
+@@ -79,6 +79,7 @@ static irqreturn_t sh_keysc_isr(int irq, void *dev_id)
+ 		iowrite16(0, priv->iomem_base + KYOUTDR_OFFS);
+ 		iowrite16(KYCR2_IRQ_LEVEL | (keyin_set << 8),
+ 			  priv->iomem_base + KYCR2_OFFS);
++		udelay(pdata->kycr2_delay);
+ 
+ 		keys ^= ~0;
+ 		keys &= (1 << (sh_keysc_mode[pdata->mode].keyin *
+-- 
+1.6.0.4
+
