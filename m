@@ -1,167 +1,180 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 30 Sep 2009 11:57:24 +0000
-Subject: [PATCH] usb: r8a66597-udc unaligned fifo fix
-Message-Id: <20090930115724.5579.76782.sendpatchset@rxone.opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 15 Sep 2009 12:00:30 +0000
+Subject: [PATCH 2/2] fbdev: use both register sets for display panning
+Message-Id: <Pine.LNX.4.64.0909151357590.4640@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.0909151354340.4640@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.0909151354340.4640@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-fbdev-devel@lists.sourceforge.net
 
-From: Magnus Damm <damm@opensource.se>
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Rework the r8a66597-udc fifo code to avoid unaligned accesses.
+Switch to using both register sets - side A and side B for display panning.
 
-Without this patch unaligned exceptions will degrade the
-USB performance. The exceptions come from the fact that
-the usb fifo data buffers may be misaligned.
-
-This patch updates the fifo access code to only use
-insl()/outsl() and insw()/outsw() in the case of properly
-aligned data buffers. The fallback case is that inl()/inw()
-are used for misaligned buffer reads together with outb()
-that is used for misaligned buffer writes.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/sh/boards/board-ap325rxa.c      |    2 +-
+ arch/sh/boards/mach-ecovec24/setup.c |    2 +-
+ arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
+ arch/sh/boards/mach-migor/setup.c    |    2 +-
+ arch/sh/boards/mach-se/7724/setup.c  |    2 +-
+ drivers/video/sh_mobile_lcdcfb.c     |   47 +++++++++++++++++++++++++++++++--
+ 6 files changed, 49 insertions(+), 8 deletions(-)
 
- Tested on kfr2r09 with CONFIG_USB_CDC_COMPOSITE=y
-
- drivers/usb/gadget/r8a66597-udc.h |  105 +++++++++++++++++++++----------------
- 1 file changed, 62 insertions(+), 43 deletions(-)
-
---- 0001/drivers/usb/gadget/r8a66597-udc.h
-+++ work/drivers/usb/gadget/r8a66597-udc.h	2009-09-30 17:00:36.000000000 +0900
-@@ -131,31 +131,48 @@ static inline u16 r8a66597_read(struct r
- }
+diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
+index 9c97301..6675763 100644
+--- a/arch/sh/boards/board-ap325rxa.c
++++ b/arch/sh/boards/board-ap325rxa.c
+@@ -211,7 +211,7 @@ static struct resource lcdc_resources[] = {
+ 	[0] = {
+ 		.name	= "LCDC",
+ 		.start	= 0xfe940000, /* P4-only space */
+-		.end	= 0xfe941fff,
++		.end	= 0xfe942fff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 428d118..08627bd 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -235,7 +235,7 @@ static struct resource lcdc_resources[] = {
+ 	[0] = {
+ 		.name	= "LCDC",
+ 		.start	= 0xfe940000,
+-		.end	= 0xfe941fff,
++		.end	= 0xfe942fff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 7155be0..c08d33f 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -162,7 +162,7 @@ static struct resource kfr2r09_sh_lcdc_resources[] = {
+ 	[0] = {
+ 		.name	= "LCDC",
+ 		.start	= 0xfe940000, /* P4-only space */
+-		.end	= 0xfe941fff,
++		.end	= 0xfe942fff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index be8f0d9..6ed1fd3 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -279,7 +279,7 @@ static struct resource migor_lcdc_resources[] = {
+ 	[0] = {
+ 		.name	= "LCDC",
+ 		.start	= 0xfe940000, /* P4-only space */
+-		.end	= 0xfe941fff,
++		.end	= 0xfe942fff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 1876c83..00973e0 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -166,7 +166,7 @@ static struct resource lcdc_resources[] = {
+ 	[0] = {
+ 		.name	= "LCDC",
+ 		.start	= 0xfe940000,
+-		.end	= 0xfe941fff,
++		.end	= 0xfe942fff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 7f30cb3..3ad5157 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -23,6 +23,8 @@
+ #include <asm/atomic.h>
  
- static inline void r8a66597_read_fifo(struct r8a66597 *r8a66597,
--				      unsigned long offset, u16 *buf,
-+				      unsigned long offset,
-+				      unsigned char *buf,
- 				      int len)
- {
-+	unsigned long fifoaddr = r8a66597->reg + offset;
-+	unsigned int data;
-+	int i;
-+
- 	if (r8a66597->pdata->on_chip) {
--		unsigned long fifoaddr = r8a66597->reg + offset;
--		unsigned long count;
--		union {
--			unsigned long dword;
--			unsigned char byte[4];
--		} data;
--		unsigned char *pb;
--		int i;
--
--		count = len / 4;
--		insl(fifoaddr, buf, count);
--
--		if (len & 0x00000003) {
--			data.dword = inl(fifoaddr);
--			pb = (unsigned char *)buf + count * 4;
--			for (i = 0; i < (len & 0x00000003); i++)
--				pb[i] = data.byte[i];
-+		/* 32-bit accesses for on_chip controllers */
-+
-+		/* aligned buf case */
-+		if (len >= 4 && !((unsigned long)buf & 0x03)) {
-+			insl(fifoaddr, buf, len / 4);
-+			buf += len & ~0x03;
-+			len &= 0x03;
-+		}
-+
-+		/* unaligned buf case */
-+		for (i = 0; i < len; i++) {
-+			if (!(i & 0x03))
-+				data = inl(fifoaddr);
-+
-+			buf[i] = (data >> ((i & 0x03) * 8)) & 0xff;
- 		}
- 	} else {
--		len = (len + 1) / 2;
--		insw(r8a66597->reg + offset, buf, len);
-+		/* 16-bit accesses for external controllers */
-+
-+		/* aligned buf case */
-+		if (len >= 2 && !((unsigned long)buf & 0x01)) {
-+			insw(fifoaddr, buf, len / 2);
-+			buf += len & ~0x01;
-+			len &= 0x01;
-+		}
-+
-+		/* unaligned buf case */
-+		for (i = 0; i < len; i++) {
-+			if (!(i & 0x01))
-+				data = inw(fifoaddr);
-+
-+			buf[i] = (data >> ((i & 0x01) * 8)) & 0xff;
-+		}
- 	}
- }
+ #define PALETTE_NR 16
++#define SIDE_B_OFFSET 0x1000
++#define MIRROR_OFFSET 0x2000
  
-@@ -166,38 +183,40 @@ static inline void r8a66597_write(struct
- }
+ /* shared registers */
+ #define _LDDCKR 0x410
+@@ -100,6 +102,10 @@ static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
+ #define LDINTR_FS	0x00000004
+ #define LDINTR_VSS	0x00000002
+ #define LDINTR_VES	0x00000001
++#define LDRCNTR_SRS	0x00020000
++#define LDRCNTR_SRC	0x00010000
++#define LDRCNTR_MRS	0x00000002
++#define LDRCNTR_MRC	0x00000001
  
- static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
--				       unsigned long offset, u16 *buf,
-+				       unsigned long offset,
-+				       unsigned char *buf,
- 				       int len)
- {
- 	unsigned long fifoaddr = r8a66597->reg + offset;
-+	int adj = 0;
-+	int i;
+ struct sh_mobile_lcdc_priv;
+ struct sh_mobile_lcdc_chan {
+@@ -132,10 +138,39 @@ struct sh_mobile_lcdc_priv {
+ 	int started;
+ };
  
- 	if (r8a66597->pdata->on_chip) {
--		unsigned long count;
--		unsigned char *pb;
--		int i;
--
--		count = len / 4;
--		outsl(fifoaddr, buf, count);
--
--		if (len & 0x00000003) {
--			pb = (unsigned char *)buf + count * 4;
--			for (i = 0; i < (len & 0x00000003); i++) {
--				if (r8a66597_read(r8a66597, CFIFOSEL) & BIGEND)
--					outb(pb[i], fifoaddr + i);
--				else
--					outb(pb[i], fifoaddr + 3 - i);
--			}
-+		/* 32-bit access only if buf is 32-bit aligned */
-+		if (len >= 4 && !((unsigned long)buf & 0x03)) {
-+			outsl(fifoaddr, buf, len / 4);
-+			buf += len & ~0x03;
-+			len &= 0x03;
- 		}
- 	} else {
--		int odd = len & 0x0001;
--
--		len = len / 2;
--		outsw(fifoaddr, buf, len);
--		if (unlikely(odd)) {
--			buf = &buf[len];
--			outb((unsigned char)*buf, fifoaddr);
-+		/* 16-bit access only if buf is 16-bit aligned */
-+		if (len >= 2 && !((unsigned long)buf & 0x01)) {
-+			outsw(fifoaddr, buf, len / 2);
-+			buf += len & ~0x01;
-+			len &= 0x01;
- 		}
- 	}
-+
-+	/* adjust fifo address in the little endian case */
-+	if (!(r8a66597_read(r8a66597, CFIFOSEL) & BIGEND)) {
-+		if (r8a66597->pdata->on_chip)
-+			adj = 0x03; /* 32-bit wide */
-+		else
-+			adj = 0x01; /* 16-bit wide */
++static bool banked(int reg_nr)
++{
++	switch (reg_nr) {
++	case LDMT1R:
++	case LDMT2R:
++	case LDMT3R:
++	case LDDFR:
++	case LDSM1R:
++	case LDSA1R:
++	case LDMLSR:
++	case LDHCNR:
++	case LDHSYNR:
++	case LDVLNR:
++	case LDVSYNR:
++		return true;
 +	}
++	return false;
++}
 +
-+	for (i = 0; i < len; i++)
-+		outb(buf[i], fifoaddr + adj - (i & adj));
+ static void lcdc_write_chan(struct sh_mobile_lcdc_chan *chan,
+ 			    int reg_nr, unsigned long data)
+ {
+ 	iowrite32(data, chan->lcdc->base + chan->reg_offs[reg_nr]);
++	if (banked(reg_nr))
++		iowrite32(data, chan->lcdc->base + chan->reg_offs[reg_nr] +
++			  SIDE_B_OFFSET);
++}
++
++static void lcdc_write_chan_mirror(struct sh_mobile_lcdc_chan *chan,
++			    int reg_nr, unsigned long data)
++{
++	iowrite32(data, chan->lcdc->base + chan->reg_offs[reg_nr] +
++		  MIRROR_OFFSET);
  }
  
- static inline void r8a66597_mdfy(struct r8a66597 *r8a66597,
+ static unsigned long lcdc_read_chan(struct sh_mobile_lcdc_chan *chan,
+@@ -308,10 +343,16 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
+ 
+ 		/* VSYNC End */
+ 		if (ldintr & LDINTR_VES) {
++			unsigned long ldrcntr = lcdc_read(priv, _LDRCNTR);
+ 			/* Set the source address for the next refresh */
+-			lcdc_write_chan(ch, LDSA1R, ch->dma_handle +
+-					ch->new_pan_offset);
+-			lcdc_write(ch->lcdc, _LDRCNTR, 0);
++			lcdc_write_chan_mirror(ch, LDSA1R, ch->dma_handle +
++					       ch->new_pan_offset);
++			if (lcdc_chan_is_sublcd(ch))
++				lcdc_write(ch->lcdc, _LDRCNTR,
++					   ldrcntr ^ LDRCNTR_SRS);
++			else
++				lcdc_write(ch->lcdc, _LDRCNTR,
++					   ldrcntr ^ LDRCNTR_MRS);
+ 			ch->pan_offset = ch->new_pan_offset;
+ 		}
+ 	}
+-- 
+1.6.2.4
+
