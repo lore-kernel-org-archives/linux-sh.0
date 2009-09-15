@@ -1,7 +1,7 @@
 From: Dale Larson <dlarson42@gmail.com>
-Date: Tue, 15 Sep 2009 13:16:26 +0000
+Date: Tue, 15 Sep 2009 13:23:05 +0000
 Subject: Re: User mode address error problems on 7763
-Message-Id: <6e6aa1a80909150616k3a667fa6r1a1d9eaed0e4edd9@mail.gmail.com>
+Message-Id: <6e6aa1a80909150623i4a15e2e6g44a92622cd617242@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <6e6aa1a80909111106l6dbcfccag4e9e7a3abb922688@mail.gmail.com>
 In-Reply-To: <6e6aa1a80909111106l6dbcfccag4e9e7a3abb922688@mail.gmail.com>
@@ -10,42 +10,201 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Sep 15, 2009 at 8:07 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Tue, Sep 15, 2009 at 07:55:14AM -0500, Dale Larson wrote:
->> > I assumed SH7763 was an SH-X2 based core, but it turns out it is a
->> > first-generation SH-4A, in which case it does not implement the extended
->> > mode TLB. So the next available page size above 4k is 64k. I wasn't aware
->> > there was anyone still running first generation SH-4A, I'll have to dust
->> > some of mine off to see if I can reproduce your issues.
->>
->> We're finally replacing our 7760 (yep, you heard right) based product
->> with the 7763.
->> While you're dusting your's off we'll just be putting polish on it. ;-)
->>
-> That's actually good to know, it means we'll have to do more aggressive
-> regression testing on first-generation SH-X parts (we tend to scale back
-> regression testing efforts on older parts when there are no visible users
-> of them on the current kernel). In any event, I'll give both the SH7780
-> and SH7770 highlanders a go tomorrow and see how things go.. and if that
-> doesn't work, I'm sure there's a 7763 lying around the office somwehere.
-> ;-)
->
->> > page size. That will bring up a menu where you can cycle through the
->> > available page sizes. I don't recommend 1MB for a system page size, as it
->> > tends to interact badly with some of the slab allocators. 64k will give
->> > you an idea of whether there are indeed any aliasing bugs lurking about.
->>
->> I'll try that.
->>
->> Thanks!
->
-> One other thing I forgot to mention is that you might also want to try a
-> 4k page size with write-through caching enabled. This you can configure
-> via System type -> Cache configuration.
+> Can you reliably reproduce this? A little tip when doing development is
+> to turn on Verbose BUG() reporting, which is located in the Kernel
+> Hacking menu. That'll give you a line and number in the source file.
 
-At one point I did give that a try but the system refused to run. I didn't take
-any time to investigate why that happened.
+Here's a dump with BUG() on. I just booted the system and let it sit.
+After a while the following crash occurs:
 
-I'll try it again with this newer code.
-
-Thanks!
+[ 2484.956000] ------------[ cut here ]------------
+[ 2484.956000] kernel BUG at mm/slab.c:2974!
+[ 2484.956000] Kernel BUG: 003e [#1]
+[ 2484.956000]
+[ 2484.956000] Pid : 0, Comm:           swapper
+[ 2484.956000] CPU : 0                  Not tainted  (2.6.31-rc9 #6)
+[ 2484.956000]
+[ 2484.956000] PC is at cache_alloc_refill+0xc2/0x39c
+[ 2484.956000] PR is at kmem_cache_alloc+0x52/0xb0
+[ 2484.956000] PC  : 8804492e SP  : 881afdb0 SR  : 400080f1 TEA : 8f8a605a
+[ 2484.956000] R0  : 00000006 R1  : 0000000f R2  : 0000000f R3  : 8f9501a0
+[ 2484.956000] R4  : 00000008 R5  : 8f847d60 R6  : 8f950040 R7  : 00000010
+[ 2484.956000] R8  : 8f847d68 R9  : 8f84a800 R10 : 8f847d70 R11 : 8f8105c0
+[ 2484.956000] R12 : 00000007 R13 : 00000001 R14 : 881afdb0
+[ 2484.956000] MACH: 00000242 MACL: 00000100 GBR : 00000000 PR  : 88044d2a
+[ 2484.956000]
+[ 2484.956000] Call trace:
+[ 2484.956000]  [<88044d2a>] kmem_cache_alloc+0x52/0xb0
+[ 2484.956000]  [<88103f2e>] dst_alloc+0x2a/0x78
+[ 2484.956000]  [<881126f6>] ip_route_input+0x952/0xb70
+[ 2484.956000]  [<88113896>] ip_rcv+0x1e2/0x414
+[ 2484.956000]  [<880ff75a>] netif_receive_skb+0x216/0x23c
+[ 2484.956000]  [<880ff7de>] process_backlog+0x5e/0xb4
+[ 2484.956000]  [<880ffd40>] net_rx_action+0x40/0x118
+[ 2484.956000]  [<88016dd6>] __do_softirq+0x62/0xf8
+[ 2484.956000]  [<88016e9a>] do_softirq+0x2e/0x60
+[ 2484.956000]  [<88153c60>] printk+0x0/0x30
+[ 2484.956000]  [<880bcb00>] strlen+0x0/0x58
+[ 2484.956000]  [<88016fe2>] irq_exit+0x2a/0x44
+[ 2484.956000]  [<88003718>] do_IRQ+0x38/0x60
+[ 2484.956000]  [<880070fc>] ret_from_exception+0x0/0xc
+[ 2484.956000]  [<88153e8c>] schedule+0x0/0x358
+[ 2484.956000]  [<880036e0>] do_IRQ+0x0/0x60
+[ 2484.956000]  [<880031b8>] default_idle+0x0/0x78
+[ 2484.956000]  [<88045698>] quicklist_trim+0x0/0xe0
+[ 2484.956000]  [<88153e8c>] schedule+0x0/0x358
+[ 2484.956000]  [<880bcb00>] strlen+0x0/0x58
+[ 2484.956000]  [<88153c60>] printk+0x0/0x30
+[ 2484.956000]  [<880031e4>] default_idle+0x2c/0x78
+[ 2484.956000]  [<88003276>] cpu_idle+0x32/0x6c
+[ 2484.956000]  [<88152f0c>] rest_init+0x44/0x7c
+[ 2484.956000]  [<88003da0>] kernel_thread+0x0/0x70
+[ 2484.956000]  [<881c88e2>] start_kernel+0x3c2/0x3fc
+[ 2484.956000]  [<8800202c>] _stext+0x2c/0x38
+[ 2484.956000]
+[ 2484.956000] Code:
+[ 2484.956000]   88044928:  mov.l     @(28,r11), r1
+[ 2484.956000]   8804492a:  cmp/hs    r1, r2
+[ 2484.956000]   8804492c:  bf        8804495a
+[ 2484.956000] ->8804492e:  trapa     #62
+[ 2484.956000]   88044930:  bra       8804495c
+[ 2484.956000]   88044932:  mov       r12, r4
+[ 2484.956000]   88044934:  mov.l     @(16,r11), r3
+[ 2484.956000]   88044936:  mov.l     @(20,r6), r1
+[ 2484.956000]   88044938:  mov.l     @r9, r2
+[ 2484.956000]
+[ 2484.956000] Process: swapper (pid: 0, stack limit = 881ae001)
+[ 2484.956000] Stack: (0x881afdb0 to 0x881b0000)
+[ 2484.956000] fda0:                                     00000020
+00000020 00000000 88044d2a
+[ 2484.956000] fdc0: 881afddc 8f84e000 a10bde9f 8f8105c0 00008020
+ffffff97 00000000 88103f2e
+[ 2484.956000] fde0: 881afdf4 00000001 00000001 ffffff97 881c4194
+881126f6 881afe00 0000009f
+[ 2484.956000] fe00: 00000000 00000000 ff0bde9f 8f836300 8f84f7a0
+14000000 00000000 00000002
+[ 2484.956000] fe20: 00000000 ff0bde9f a10bde9f 00000000 00000000
+00000000 00000000 00000000
+[ 2484.956000] fe40: 00000000 00000000 00000000 00000000 00000000
+fd030020 8f89c2c0 8f83639c
+[ 2484.956000] fe60: 8f84e000 8f84f7a0 d40ade9f 00000000 88113896
+881afe94 00000008 00000000
+[ 2484.956000] fe80: 8f84e000 8f83639c 8f8a604e 8f836300 8f84e000
+8f8a3d20 880ff75a 881afeac
+[ 2484.956000] fea0: 8f83639c 8f836300 881b0300 881b0320 880ff7de
+881afed0 881c39b0 00000040
+[ 2484.956000] fec0: 000855bf 881c39cc 881c39b4 00000001 880ffd40
+881afef0 881c39b0 000855c1
+[ 2484.956000] fee0: 0000012c 00000000 00000040 881c39cc 88016dd6
+881aff10 0000000a 0000000c
+[ 2484.956000] ff00: 00000001 881fed18 00000100 00000003 88016e9a
+881aff30 88153c60 880bcb00
+[ 2484.956000] ff20: 881dd290 00000000 881c1e94 000000f0 88016fe2
+881aff3c 0000003a 88003718
+[ 2484.956000] ff40: 881aff44 880070fc 881affb4 88153e8c 880036e0
+400080f1 00000000 881ae000
+[ 2484.956000] ff60: ffffff0f 50008001 00000001 00000000 00000019
+00000010 880031b8 88045698
+[ 2484.956000] ff80: 88153e8c 881dd290 880bcb00 88153c60 881affb4
+881affb4 880031e4 88003276
+[ 2484.956000] ffa0: 50008001 00000000 00000242 8b875800 ffffffff
+881affb8 88152f0c 881affd0
+[ 2484.956000] ffc0: 881d8b45 881d8860 881b15f8 88003da0 881c88e2
+881affdc 8820080c 881d8ac0
+[ 2484.956000] ffe0: 8800202c 00000000 00000062 00000fa0 ffe7ffff
+00000000 000026a2 000026a2
+[ 2484.960000] Kernel panic - not syncing: Fatal exception in interrupt
+[ 2484.964000] Stack: (0x881afcd4 to 0x881b0000)
+[ 2484.968000] fcc0:
+88153b4e 881afce4 881afd54
+[ 2484.984000] fce0: 8818c2b4 88153ba4 881afcec 881afd10 88006312
+881afd1c 00000001 00000007
+[ 2485.000000] fd00: 0000003e 8818c164 881afd54 88153c60 00000002
+881afcf8 ffffffff 88005e82
+[ 2485.020000] fd20: 881afd34 8f8105c0 881afdac 881afd54 8804492e
+88005eec 881afd44 881afd54
+[ 2485.036000] fd40: 881afd94 880071c6 881afdb0 0000007f 88005e9c
+00000006 0000000f 0000000f
+[ 2485.052000] fd60: 8f9501a0 00000008 8f847d60 8f950040 00000010
+8f847d68 8f84a800 8f847d70
+[ 2485.068000] fd80: 8f8105c0 00000007 00000001 881afdb0 881afdb0
+8804492e 88044d2a 400080f1
+[ 2485.088000] fda0: 00000000 00000242 00000100 000000f8 00000020
+00000020 00000000 88044d2a
+[ 2485.104000] fdc0: 881afddc 8f84e000 a10bde9f 8f8105c0 00008020
+ffffff97 00000000 88103f2e
+[ 2485.120000] fde0: 881afdf4 00000001 00000001 ffffff97 881c4194
+881126f6 881afe00 0000009f
+[ 2485.136000] fe00: 00000000 00000000 ff0bde9f 8f836300 8f84f7a0
+14000000 00000000 00000002
+[ 2485.156000] fe20: 00000000 ff0bde9f a10bde9f 00000000 00000000
+00000000 00000000 00000000
+[ 2485.172000] fe40: 00000000 00000000 00000000 00000000 00000000
+fd030020 8f89c2c0 8f83639c
+[ 2485.188000] fe60: 8f84e000 8f84f7a0 d40ade9f 00000000 88113896
+881afe94 00000008 00000000
+[ 2485.204000] fe80: 8f84e000 8f83639c 8f8a604e 8f836300 8f84e000
+8f8a3d20 880ff75a 881afeac
+[ 2485.224000] fea0: 8f83639c 8f836300 881b0300 881b0320 880ff7de
+881afed0 881c39b0 00000040
+[ 2485.240000] fec0: 000855bf 881c39cc 881c39b4 00000001 880ffd40
+881afef0 881c39b0 000855c1
+[ 2485.256000] fee0: 0000012c 00000000 00000040 881c39cc 88016dd6
+881aff10 0000000a 0000000c
+[ 2485.276000] ff00: 00000001 881fed18 00000100 00000003 88016e9a
+881aff30 88153c60 880bcb00
+[ 2485.292000] ff20: 881dd290 00000000 881c1e94 000000f0 88016fe2
+881aff3c 0000003a 88003718
+[ 2485.308000] ff40: 881aff44 880070fc 881affb4 88153e8c 880036e0
+400080f1 00000000 881ae000
+[ 2485.324000] ff60: ffffff0f 50008001 00000001 00000000 00000019
+00000010 880031b8 88045698
+[ 2485.344000] ff80: 88153e8c 881dd290 880bcb00 88153c60 881affb4
+881affb4 880031e4 88003276
+[ 2485.360000] ffa0: 50008001 00000000 00000242 8b875800 ffffffff
+881affb8 88152f0c 881affd0
+[ 2485.376000] ffc0: 881d8b45 881d8860 881b15f8 88003da0 881c88e2
+881affdc 8820080c 881d8ac0
+[ 2485.392000] ffe0: 8800202c 00000000 00000062 00000fa0 ffe7ffff
+00000000 000026a2 000026a2
+[ 2485.412000]
+[ 2485.412000] Call trace:
+[ 2485.416000]  [<88153b4e>] dump_stack+0xe/0x1c
+[ 2485.420000]  [<88153ba4>] panic+0x48/0x104
+[ 2485.424000]  [<88006312>] die+0xda/0x140
+[ 2485.428000]  [<88153c60>] printk+0x0/0x30
+[ 2485.432000]  [<88005e82>] handle_BUG+0x5e/0x78
+[ 2485.436000]  [<8804492e>] cache_alloc_refill+0xc2/0x39c
+[ 2485.440000]  [<88005eec>] bug_trap_handler+0x50/0x84
+[ 2485.444000]  [<880071c6>] debug_trap+0xe/0x18
+[ 2485.448000]  [<88005e9c>] bug_trap_handler+0x0/0x84
+[ 2485.452000]  [<8804492e>] cache_alloc_refill+0xc2/0x39c
+[ 2485.456000]  [<88044d2a>] kmem_cache_alloc+0x52/0xb0
+[ 2485.460000]  [<88044d2a>] kmem_cache_alloc+0x52/0xb0
+[ 2485.464000]  [<88103f2e>] dst_alloc+0x2a/0x78
+[ 2485.468000]  [<881126f6>] ip_route_input+0x952/0xb70
+[ 2485.472000]  [<88113896>] ip_rcv+0x1e2/0x414
+[ 2485.476000]  [<880ff75a>] netif_receive_skb+0x216/0x23c
+[ 2485.480000]  [<880ff7de>] process_backlog+0x5e/0xb4
+[ 2485.484000]  [<880ffd40>] net_rx_action+0x40/0x118
+[ 2485.488000]  [<88016dd6>] __do_softirq+0x62/0xf8
+[ 2485.492000]  [<88016e9a>] do_softirq+0x2e/0x60
+[ 2485.496000]  [<88153c60>] printk+0x0/0x30
+[ 2485.500000]  [<880bcb00>] strlen+0x0/0x58
+[ 2485.504000]  [<88016fe2>] irq_exit+0x2a/0x44
+[ 2485.508000]  [<88003718>] do_IRQ+0x38/0x60
+[ 2485.512000]  [<880070fc>] ret_from_exception+0x0/0xc
+[ 2485.516000]  [<88153e8c>] schedule+0x0/0x358
+[ 2485.520000]  [<880036e0>] do_IRQ+0x0/0x60
+[ 2485.524000]  [<880031b8>] default_idle+0x0/0x78
+[ 2485.528000]  [<88045698>] quicklist_trim+0x0/0xe0
+[ 2485.532000]  [<88153e8c>] schedule+0x0/0x358
+[ 2485.536000]  [<880bcb00>] strlen+0x0/0x58
+[ 2485.540000]  [<88153c60>] printk+0x0/0x30
+[ 2485.544000]  [<880031e4>] default_idle+0x2c/0x78
+[ 2485.548000]  [<88003276>] cpu_idle+0x32/0x6c
+[ 2485.552000]  [<88152f0c>] rest_init+0x44/0x7c
+[ 2485.556000]  [<88003da0>] kernel_thread+0x0/0x70
+[ 2485.560000]  [<881c88e2>] start_kernel+0x3c2/0x3fc
+[ 2485.564000]  [<8800202c>] _stext+0x2c/0x38
+[ 2485.568000]
