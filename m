@@ -1,180 +1,93 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 15 Sep 2009 12:00:30 +0000
-Subject: [PATCH 2/2] fbdev: use both register sets for display panning
-Message-Id: <Pine.LNX.4.64.0909151357590.4640@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 25 Sep 2009 04:41:53 +0000
+Subject: [GIT PULL] sh updates for 2.6.32-rc1, part 2.
+Message-Id: <20090925044153.GB13166@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.0909151354340.4640@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0909151354340.4640@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-fbdev-devel@lists.sourceforge.net
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+Please pull from:
 
-Switch to using both register sets - side A and side B for display panning.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/sh/boards/board-ap325rxa.c      |    2 +-
- arch/sh/boards/mach-ecovec24/setup.c |    2 +-
- arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
- arch/sh/boards/mach-migor/setup.c    |    2 +-
- arch/sh/boards/mach-se/7724/setup.c  |    2 +-
- drivers/video/sh_mobile_lcdcfb.c     |   47 +++++++++++++++++++++++++++++++--
- 6 files changed, 49 insertions(+), 8 deletions(-)
+Which contains:
 
-diff --git a/arch/sh/boards/board-ap325rxa.c b/arch/sh/boards/board-ap325rxa.c
-index 9c97301..6675763 100644
---- a/arch/sh/boards/board-ap325rxa.c
-+++ b/arch/sh/boards/board-ap325rxa.c
-@@ -211,7 +211,7 @@ static struct resource lcdc_resources[] = {
- 	[0] = {
- 		.name	= "LCDC",
- 		.start	= 0xfe940000, /* P4-only space */
--		.end	= 0xfe941fff,
-+		.end	= 0xfe942fff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 428d118..08627bd 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -235,7 +235,7 @@ static struct resource lcdc_resources[] = {
- 	[0] = {
- 		.name	= "LCDC",
- 		.start	= 0xfe940000,
--		.end	= 0xfe941fff,
-+		.end	= 0xfe942fff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 7155be0..c08d33f 100644
---- a/arch/sh/boards/mach-kfr2r09/setup.c
-+++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -162,7 +162,7 @@ static struct resource kfr2r09_sh_lcdc_resources[] = {
- 	[0] = {
- 		.name	= "LCDC",
- 		.start	= 0xfe940000, /* P4-only space */
--		.end	= 0xfe941fff,
-+		.end	= 0xfe942fff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index be8f0d9..6ed1fd3 100644
---- a/arch/sh/boards/mach-migor/setup.c
-+++ b/arch/sh/boards/mach-migor/setup.c
-@@ -279,7 +279,7 @@ static struct resource migor_lcdc_resources[] = {
- 	[0] = {
- 		.name	= "LCDC",
- 		.start	= 0xfe940000, /* P4-only space */
--		.end	= 0xfe941fff,
-+		.end	= 0xfe942fff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 1876c83..00973e0 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -166,7 +166,7 @@ static struct resource lcdc_resources[] = {
- 	[0] = {
- 		.name	= "LCDC",
- 		.start	= 0xfe940000,
--		.end	= 0xfe941fff,
-+		.end	= 0xfe942fff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 7f30cb3..3ad5157 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -23,6 +23,8 @@
- #include <asm/atomic.h>
- 
- #define PALETTE_NR 16
-+#define SIDE_B_OFFSET 0x1000
-+#define MIRROR_OFFSET 0x2000
- 
- /* shared registers */
- #define _LDDCKR 0x410
-@@ -100,6 +102,10 @@ static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
- #define LDINTR_FS	0x00000004
- #define LDINTR_VSS	0x00000002
- #define LDINTR_VES	0x00000001
-+#define LDRCNTR_SRS	0x00020000
-+#define LDRCNTR_SRC	0x00010000
-+#define LDRCNTR_MRS	0x00000002
-+#define LDRCNTR_MRC	0x00000001
- 
- struct sh_mobile_lcdc_priv;
- struct sh_mobile_lcdc_chan {
-@@ -132,10 +138,39 @@ struct sh_mobile_lcdc_priv {
- 	int started;
- };
- 
-+static bool banked(int reg_nr)
-+{
-+	switch (reg_nr) {
-+	case LDMT1R:
-+	case LDMT2R:
-+	case LDMT3R:
-+	case LDDFR:
-+	case LDSM1R:
-+	case LDSA1R:
-+	case LDMLSR:
-+	case LDHCNR:
-+	case LDHSYNR:
-+	case LDVLNR:
-+	case LDVSYNR:
-+		return true;
-+	}
-+	return false;
-+}
-+
- static void lcdc_write_chan(struct sh_mobile_lcdc_chan *chan,
- 			    int reg_nr, unsigned long data)
- {
- 	iowrite32(data, chan->lcdc->base + chan->reg_offs[reg_nr]);
-+	if (banked(reg_nr))
-+		iowrite32(data, chan->lcdc->base + chan->reg_offs[reg_nr] +
-+			  SIDE_B_OFFSET);
-+}
-+
-+static void lcdc_write_chan_mirror(struct sh_mobile_lcdc_chan *chan,
-+			    int reg_nr, unsigned long data)
-+{
-+	iowrite32(data, chan->lcdc->base + chan->reg_offs[reg_nr] +
-+		  MIRROR_OFFSET);
- }
- 
- static unsigned long lcdc_read_chan(struct sh_mobile_lcdc_chan *chan,
-@@ -308,10 +343,16 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
- 
- 		/* VSYNC End */
- 		if (ldintr & LDINTR_VES) {
-+			unsigned long ldrcntr = lcdc_read(priv, _LDRCNTR);
- 			/* Set the source address for the next refresh */
--			lcdc_write_chan(ch, LDSA1R, ch->dma_handle +
--					ch->new_pan_offset);
--			lcdc_write(ch->lcdc, _LDRCNTR, 0);
-+			lcdc_write_chan_mirror(ch, LDSA1R, ch->dma_handle +
-+					       ch->new_pan_offset);
-+			if (lcdc_chan_is_sublcd(ch))
-+				lcdc_write(ch->lcdc, _LDRCNTR,
-+					   ldrcntr ^ LDRCNTR_SRS);
-+			else
-+				lcdc_write(ch->lcdc, _LDRCNTR,
-+					   ldrcntr ^ LDRCNTR_MRS);
- 			ch->pan_offset = ch->new_pan_offset;
- 		}
- 	}
--- 
-1.6.2.4
+Guennadi Liakhovetski (1):
+      sh_mobile_ceu_camera: fix compile breakage, caused by a bad merge
 
+Jaswinder Singh Rajput (1):
+      sh: includecheck fix: dwarf.c
+
+Kuninori Morimoto (2):
+      sh: mach-ecovec24: Add active low setting for sh_eth
+      sh: add FSI driver support for ms7724se
+
+Nobuhiro Iwamatsu (2):
+      sh: Add support DMA Engine to SH7722
+      sh: Add support DMA Engine to SH7780
+
+Paul Mundt (4):
+      sh: Handle unaligned 16-bit instructions on SH-2A.
+      sh: Fix up uninitialized variable use caught by gcc 4.4.
+      sh: update defconfigs.
+      sh: enable onenand support in kfr2r09 defconfig.
+
+ arch/sh/boards/mach-ecovec24/setup.c        |    1 +
+ arch/sh/boards/mach-se/7724/setup.c         |   89 +++++
+ arch/sh/configs/ap325rxa_defconfig          |  100 ++++--
+ arch/sh/configs/dreamcast_defconfig         |   82 +++--
+ arch/sh/configs/ecovec24-romimage_defconfig |   52 ++--
+ arch/sh/configs/ecovec24_defconfig          |   70 +++--
+ arch/sh/configs/edosk7705_defconfig         |   50 ++-
+ arch/sh/configs/edosk7760_defconfig         |   82 +++--
+ arch/sh/configs/espt_defconfig              |   75 +++-
+ arch/sh/configs/hp6xx_defconfig             |   69 +++-
+ arch/sh/configs/kfr2r09-romimage_defconfig  |   47 ++-
+ arch/sh/configs/kfr2r09_defconfig           |   57 ++-
+ arch/sh/configs/landisk_defconfig           |   86 +++-
+ arch/sh/configs/lboxre2_defconfig           |   86 +++-
+ arch/sh/configs/magicpanelr2_defconfig      |   85 +++--
+ arch/sh/configs/microdev_defconfig          |   74 +++-
+ arch/sh/configs/migor_defconfig             |  111 ++++--
+ arch/sh/configs/polaris_defconfig           |   73 +++-
+ arch/sh/configs/r7780mp_defconfig           |  116 +++++--
+ arch/sh/configs/r7785rp_defconfig           |  125 +++++--
+ arch/sh/configs/rsk7201_defconfig           |   60 +++-
+ arch/sh/configs/rsk7203_defconfig           |   81 +++-
+ arch/sh/configs/rts7751r2d1_defconfig       |   97 ++++-
+ arch/sh/configs/rts7751r2dplus_defconfig    |  100 ++++--
+ arch/sh/configs/sdk7780_defconfig           |   93 ++++--
+ arch/sh/configs/se7206_defconfig            |   80 +++--
+ arch/sh/configs/se7343_defconfig            |   91 +++--
+ arch/sh/configs/se7619_defconfig            |   56 ++-
+ arch/sh/configs/se7705_defconfig            |   75 +++-
+ arch/sh/configs/se7712_defconfig            |   79 +++--
+ arch/sh/configs/se7721_defconfig            |   86 +++--
+ arch/sh/configs/se7722_defconfig            |   92 ++++--
+ arch/sh/configs/se7724_defconfig            |  264 +++++++++++---
+ arch/sh/configs/se7750_defconfig            |   75 +++-
+ arch/sh/configs/se7751_defconfig            |   74 +++-
+ arch/sh/configs/se7780_defconfig            |   89 ++++--
+ arch/sh/configs/sh03_defconfig              |   87 +++-
+ arch/sh/configs/sh7710voipgw_defconfig      |   71 +++-
+ arch/sh/configs/sh7724_generic_defconfig    |   64 +++-
+ arch/sh/configs/sh7763rdp_defconfig         |   79 +++-
+ arch/sh/configs/sh7770_generic_defconfig    |   62 +++-
+ arch/sh/configs/sh7785lcr_32bit_defconfig   |  559 +++++++++++++++++++--------
+ arch/sh/configs/sh7785lcr_defconfig         |  107 ++++--
+ arch/sh/configs/shmin_defconfig             |   68 +++-
+ arch/sh/configs/shx3_defconfig              |   95 ++++--
+ arch/sh/configs/snapgear_defconfig          |   40 +-
+ arch/sh/configs/systemh_defconfig           |   61 +++-
+ arch/sh/configs/titan_defconfig             |   93 ++++--
+ arch/sh/configs/ul2_defconfig               |  104 ++++--
+ arch/sh/configs/urquell_defconfig           |  125 +++++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c      |   14 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c      |   14 +
+ arch/sh/kernel/dwarf.c                      |    1 -
+ arch/sh/kernel/traps_32.c                   |   23 +-
+ drivers/media/video/sh_mobile_ceu_camera.c  |    4 +-
+ 55 files changed, 3409 insertions(+), 1284 deletions(-)
