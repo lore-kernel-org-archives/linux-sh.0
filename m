@@ -1,22 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 25 Sep 2009 01:58:09 +0000
-Subject: Re: [PATCH] SH: includecheck fix: dwarf.c
-Message-Id: <20090925015809.GB12099@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Sat, 26 Sep 2009 19:44:05 +0000
+Subject: [PATCH] sh: Don't enable interrupts in the page fault path
+Message-Id: <1253994245-3739-1-git-send-email-matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1253627426.3784.24.camel@ht.satnam>
-In-Reply-To: <1253627426.3784.24.camel@ht.satnam>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jaswinder Singh Rajput <jaswinder@kernel.org>
-Cc: Matt Fleming <matt@console-pimps.org>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Sep 22, 2009 at 07:20:26PM +0530, Jaswinder Singh Rajput wrote:
-> 
-> fix the following 'make includecheck' warning:
-> 
->   arch/sh/kernel/dwarf.c: asm/dwarf.h is included more than once.
-> 
-> Signed-off-by: Jaswinder Singh Rajput <jaswinderrajput@gmail.com>
+There's already code in do_page_fault() to conditionally enable
+interrupts, so we don't need to unconditonally enable them before
+calling it. This fixes a lockdep warning where we called
+trace_hardirqs_off() but with irqs still enabled.
 
-Applied, thanks.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/kernel/cpu/sh3/entry.S |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh3/entry.S b/arch/sh/kernel/cpu/sh3/entry.S
+index 0151933..bb407ef 100644
+--- a/arch/sh/kernel/cpu/sh3/entry.S
++++ b/arch/sh/kernel/cpu/sh3/entry.S
+@@ -152,8 +152,6 @@ call_do_page_fault:
+ 	mov.l	1f, r0
+ 	mov.l	@r0, r6
+ 
+-	sti
+-
+ 	mov.l	3f, r0
+ 	mov.l	4f, r1
+ 	mov	r15, r4
+-- 
+1.6.3.3
+
