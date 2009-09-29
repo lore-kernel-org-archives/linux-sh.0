@@ -1,22 +1,44 @@
-From: Dale Larson <dlarson42@gmail.com>
-Date: Wed, 16 Sep 2009 19:22:50 +0000
-Subject: Re: User mode address error problems on 7763
-Message-Id: <6e6aa1a80909161222v1b1ee060gba17cf344b677597@mail.gmail.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 29 Sep 2009 05:59:30 +0000
+Subject: currect MigoR seems doesn't work
+Message-Id: <uljjyqojh.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6e6aa1a80909111106l6dbcfccag4e9e7a3abb922688@mail.gmail.com>
-In-Reply-To: <6e6aa1a80909111106l6dbcfccag4e9e7a3abb922688@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-My current situation is that I now have Linux running solidly on the
-7763 with the cache set to "write-through" and the memory manager set
-to SLOB.
 
-This allow's my other work to continue forward while this cache issue
-is investigated. If you need any assistance with testing cache patches
-let me know. I'd be happy to try them out.
+Hi
 
-Dale Larson
-Johnson Controls, Inc
+currect MigoR seems doesn't work now.
+And I can not disassemble it.
+why ?
+
+I used CROSS_COMPILE=sh3-linux- for make
+and I used ${LINUX}/arch/sh/configs/migor_defconfig
+my kernel is latest Paul's git
+ => fe1dbfd3f992d5432d7463a5bd6c2fc96d3eccd8
+
+--------------------
+> sh3-linux-objdump -d vmlinux > asm
+zsh: abort      sh3-linux-objdump -d vmlinux
+
+> sh3-linux-objdump -d vmlinux
+...
+8c002038 <stack_start>:
+8c002038:	00 c0       	mov.b	r0,@(0,gbr)
+8c00203a:	32 8c       	ldrs	8c0020a2 <do_one_initcall+0x42>	! 0x2118
+8c00203c:	00 00       	.word 0x0000
+8c00203e:	38 8c       	ldrs	8c0020b2 <do_one_initcall+0x52>	! 0xd051
+8c002040:	20 ce       	xor.b	#32,@(r0,gbr)
+8c002042:	3b 8c       	ldrs	8c0020bc <do_one_initcall+0x5c>	! 0x1f2
+8c002044:	40 a7       	bra	8c002ec8 <name_to_dev_t+0xb68>
+8c002046:	35 8c       	ldrs	8c0020b4 <do_one_initcall+0x54>	! 0xd44f
+8c002048:	zsh: abort      sh3-linux-objdump -d vmlinux
+--------------------
+
+Best regards
+--
+Kuninori Morimoto
+ 
