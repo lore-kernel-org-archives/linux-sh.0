@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2009 02:23:07 +0000
-Subject: [PATCH 06/07] sh: SDHI platform data to the SE7724 board
-Message-Id: <20091002022307.8215.39215.sendpatchset@rxone.opensource.se>
+Date: Fri, 02 Oct 2009 02:22:43 +0000
+Subject: [PATCH 04/07] sh: SDHI platform data to the Migo-R board
+Message-Id: <20091002022243.8215.7784.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
 In-Reply-To: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
@@ -13,68 +13,107 @@ Cc: linux-mmc@vger.kernel.org, g.liakhovetski@gmx.de, ian@mnementh.co.uk, lethal
 
 From: Magnus Damm <damm@opensource.se>
 
-Add SD Card support to the se7724 board using the
-sh_mobile_sdhi driver hooked up to SDHI0 and CN7.
+Convert the Migo-R board to use sh_mobile_sdhi for the
+SD Card connected to CN9 instead of mmc_spi.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/boards/mach-se/7724/setup.c |   33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
+ arch/sh/boards/mach-migor/setup.c |   52 +++++++++++++++++++------------------
+ 1 file changed, 28 insertions(+), 24 deletions(-)
 
---- 0001/arch/sh/boards/mach-se/7724/setup.c
-+++ work/arch/sh/boards/mach-se/7724/setup.c	2009-10-02 09:46:17.000000000 +0900
-@@ -448,6 +448,28 @@ static struct platform_device sh7724_usb
- 	.resource	= sh7724_usb1_gadget_resources,
+--- 0001/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2009-10-02 09:41:19.000000000 +0900
+@@ -18,8 +18,6 @@
+ #include <linux/delay.h>
+ #include <linux/clk.h>
+ #include <linux/gpio.h>
+-#include <linux/spi/spi.h>
+-#include <linux/spi/spi_gpio.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <media/ov772x.h>
+@@ -390,17 +388,25 @@ static struct platform_device migor_ceu_
+ 	},
  };
  
-+static struct resource sdhi0_cn7_resources[] = {
+-struct spi_gpio_platform_data sdcard_cn9_platform_data = {
+-	.sck = GPIO_PTD0,
+-	.mosi = GPIO_PTD1,
+-	.miso = GPIO_PTD2,
+-	.num_chipselect = 1,
++static struct resource sdhi_cn9_resources[] = {
 +	[0] = {
-+		.name	= "SDHI0",
-+		.start  = 0x04ce0000,
-+		.end    = 0x04ce01ff,
-+		.flags  = IORESOURCE_MEM,
++		.name	= "SDHI",
++		.start	= 0x04ce0000,
++		.end	= 0x04ce01ff,
++		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
-+		.start  = 101,
++		.start	= 101,
 +		.flags  = IORESOURCE_IRQ,
 +	},
-+};
-+
-+static struct platform_device sdhi0_cn7_device = {
-+	.name           = "sh_mobile_sdhi",
-+	.num_resources  = ARRAY_SIZE(sdhi0_cn7_resources),
-+	.resource       = sdhi0_cn7_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_SDHI0,
-+	},
-+};
-+
- static struct platform_device *ms7724se_devices[] __initdata = {
- 	&heartbeat_device,
- 	&smc91x_eth_device,
-@@ -460,6 +482,7 @@ static struct platform_device *ms7724se_
- 	&sh7724_usb0_host_device,
- 	&sh7724_usb1_gadget_device,
- 	&fsi_device,
-+	&sdhi0_cn7_device,
  };
  
- #define EEPROM_OP   0xBA206000
-@@ -698,6 +721,16 @@ static int __init devices_setup(void)
- 	clk_set_rate(&fsimcka_clk, 11000);
- 	clk_put(fsia_clk);
+-static struct platform_device sdcard_cn9_device = {
+-	.name		= "spi_gpio",
+-	.dev	= {
+-		.platform_data	= &sdcard_cn9_platform_data,
++static struct platform_device sdhi_cn9_device = {
++	.name		= "sh_mobile_sdhi",
++	.num_resources	= ARRAY_SIZE(sdhi_cn9_resources),
++	.resource	= sdhi_cn9_resources,
++	.archdata = {
++		.hwblk_id = HWBLK_SDHI,
+ 	},
+ };
  
-+	/* SDHI0 connected to cn7 */
-+	gpio_request(GPIO_FN_SDHI0CD, NULL);
-+	gpio_request(GPIO_FN_SDHI0WP, NULL);
-+	gpio_request(GPIO_FN_SDHI0D3, NULL);
-+	gpio_request(GPIO_FN_SDHI0D2, NULL);
-+	gpio_request(GPIO_FN_SDHI0D1, NULL);
-+	gpio_request(GPIO_FN_SDHI0D0, NULL);
-+	gpio_request(GPIO_FN_SDHI0CMD, NULL);
-+	gpio_request(GPIO_FN_SDHI0CLK, NULL);
+@@ -467,20 +473,11 @@ static struct platform_device *migor_dev
+ 	&migor_ceu_device,
+ 	&migor_nor_flash_device,
+ 	&migor_nand_flash_device,
+-	&sdcard_cn9_device,
++	&sdhi_cn9_device,
+ 	&migor_camera[0],
+ 	&migor_camera[1],
+ };
+ 
+-static struct spi_board_info migor_spi_devices[] = {
+-	{
+-		.modalias = "mmc_spi",
+-		.max_speed_hz = 5000000,
+-		.chip_select = 0,
+-		.controller_data = (void *) GPIO_PTD5,
+-	},
+-};
+-
+ static int __init migor_devices_setup(void)
+ {
+ 
+@@ -525,6 +522,16 @@ static int __init migor_devices_setup(vo
+ 	gpio_request(GPIO_PTA1, NULL);
+ 	gpio_direction_input(GPIO_PTA1);
+ 
++	/* SDHI */
++	gpio_request(GPIO_FN_SDHICD, NULL);
++	gpio_request(GPIO_FN_SDHIWP, NULL);
++	gpio_request(GPIO_FN_SDHID3, NULL);
++	gpio_request(GPIO_FN_SDHID2, NULL);
++	gpio_request(GPIO_FN_SDHID1, NULL);
++	gpio_request(GPIO_FN_SDHID0, NULL);
++	gpio_request(GPIO_FN_SDHICMD, NULL);
++	gpio_request(GPIO_FN_SDHICLK, NULL);
 +
- 	/*
- 	 * enable SH-Eth
- 	 *
+ 	/* Touch Panel */
+ 	gpio_request(GPIO_FN_IRQ6, NULL);
+ 
+@@ -612,9 +619,6 @@ static int __init migor_devices_setup(vo
+ 	i2c_register_board_info(0, migor_i2c_devices,
+ 				ARRAY_SIZE(migor_i2c_devices));
+ 
+-	spi_register_board_info(migor_spi_devices,
+-				ARRAY_SIZE(migor_spi_devices));
+-
+ 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
+ }
+ arch_initcall(migor_devices_setup);
