@@ -1,28 +1,44 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 26 Oct 2009 10:59:18 +0000
-Subject: Re: [PATCH] sh: fix kexec by removing check for old kexec-tools
-Message-Id: <20091026105918.GB7611@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 02 Oct 2009 02:21:58 +0000
+Subject: [PATCH 00/07] sh: SuperH Mobile SDHI changes
+Message-Id: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091026103048.24085.71003.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091026103048.24085.71003.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, g.liakhovetski@gmx.de, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, akpm@linux-foundation.org
 
-On Mon, Oct 26, 2009 at 07:30:48PM +0900, Magnus Damm wrote:
-> This unbreaks kexec support. Without this fix all
-> cases of kexec fails since __pa() does not behave
-> like PHYSADDR(). The downside is that we also kill
-> the code blocking users running old kexec-tools.
+sh: SuperH Mobile SDHI changes
 
-On Mon, Oct 26, 2009 at 07:41:58PM +0900, Magnus Damm wrote:
-> Add HWBLK_ETHER to the sh_eth platform device
-> to allow Runtime PM of the ethernet hardware.
+[PATCH 01/07] mfd: Add SuperH Mobile SDHI platform driver 
+[PATCH 02/07] mmc: Add SuperH to the tmio-mmc Kconfig
+[PATCH 03/07] mmc: Remove const from tmio-mmc platform data
+[PATCH 04/07] sh: SDHI platform data to the Migo-R board
+[PATCH 05/07] sh: SDHI platform data to the AP325RXA board
+[PATCH 06/07] sh: SDHI platform data to the SE7724 board
+[PATCH 07/07] sh: SDHI platform data to the kfr2r09 board
 
-On Mon, Oct 26, 2009 at 07:44:37PM +0900, Magnus Damm wrote:
-> Convert the ecovec24 board code to pass the mac
-> address to the sh_eth driver using platform data.
-> Also, remove the static clock to allow Runtime PM.
+These patches contain the SuperH specific changes needed for
+the tmio-mmc driver to work with SuperH Mobile SDHI hardware.
 
-Applied for 2.6.33, thanks.
+The tmio-mmc patch 0001-MMC-hardware-abstraction-for-CNF-area.patch
+by Ian Molton is needed for correct run time behaviour. Without
+this patch the tmio-mmc probe() fails gracefully.
+
+I suggest merging the series in the SuperH tree. Not sure about
+the best way to merge the patch by Ian.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/sh/boards/board-ap325rxa.c     |   52 ++++++------
+ arch/sh/boards/mach-kfr2r09/setup.c |   33 +++++++
+ arch/sh/boards/mach-migor/setup.c   |   52 ++++++------
+ arch/sh/boards/mach-se/7724/setup.c |   33 +++++++
+ drivers/mfd/Kconfig                 |    8 +
+ drivers/mfd/Makefile                |    1 
+ drivers/mfd/sh_mobile_sdhi.c        |  149 ++++++++++++++++++++++++++++++++++-
+ drivers/mmc/host/Kconfig            |    2 
+ include/linux/mfd/tmio.h            |    2 
+ 9 files changed, 279 insertions(+), 53 deletions(-)
