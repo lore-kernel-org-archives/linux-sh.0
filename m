@@ -1,140 +1,78 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Oct 2009 10:20:04 +0000
-Subject: [PATCH] net: add Runtime PM to the sh_eth driver
-Message-Id: <20091009102004.31062.83095.sendpatchset@rxone.opensource.se>
+Date: Fri, 02 Oct 2009 02:23:19 +0000
+Subject: [PATCH 07/07] sh: SDHI platform data to the kfr2r09 board
+Message-Id: <20091002022319.8215.68511.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
+In-Reply-To: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, davem@davemloft.net, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: akpm@linux-foundation.org, linux-mmc@vger.kernel.org, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, g.liakhovetski@gmx.de
 
 From: Magnus Damm <damm@opensource.se>
 
-Add Runtime PM support to the sh_eth driver.
-
-The clock to the ethernet hardware block will be
-enabled as long as the network device is up.
+Add SD Card support to the kfr2r09 board using the
+sh_mobile_sdhi driver hooked up to SDHI0 and yc304.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
 
- drivers/net/sh_eth.c |   35 +++++++++++++++++++++++++++++++++--
- drivers/net/sh_eth.h |    1 +
- 2 files changed, 34 insertions(+), 2 deletions(-)
+ arch/sh/boards/mach-kfr2r09/setup.c |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
---- 0003/drivers/net/sh_eth.c
-+++ work/drivers/net/sh_eth.c	2009-10-07 17:25:34.000000000 +0900
-@@ -30,7 +30,7 @@
- #include <linux/phy.h>
- #include <linux/cache.h>
- #include <linux/io.h>
--
-+#include <linux/pm_runtime.h>
- #include "sh_eth.h"
+--- 0001/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-10-01 13:22:17.000000000 +0900
+@@ -212,11 +212,34 @@ static struct platform_device kfr2r09_us
+ 	.resource	= kfr2r09_usb0_gadget_resources,
+ };
  
- /* There is CPU dependent code */
-@@ -1012,6 +1012,8 @@ static int sh_eth_open(struct net_device
- 	int ret = 0;
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 
-+	pm_runtime_get_sync(&mdp->pdev->dev);
-+
- 	ret = request_irq(ndev->irq, &sh_eth_interrupt,
- #if defined(CONFIG_CPU_SUBTYPE_SH7763) || defined(CONFIG_CPU_SUBTYPE_SH7764)
- 				IRQF_SHARED,
-@@ -1048,6 +1050,7 @@ static int sh_eth_open(struct net_device
- 
- out_free_irq:
- 	free_irq(ndev->irq, ndev);
-+	pm_runtime_put_sync(&mdp->pdev->dev);
- 	return ret;
- }
- 
-@@ -1179,6 +1182,8 @@ static int sh_eth_close(struct net_devic
- 	ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
- 	dma_free_coherent(NULL, ringsize, mdp->tx_ring, mdp->tx_desc_dma);
- 
-+	pm_runtime_put_sync(&mdp->pdev->dev);
-+
- 	return 0;
- }
- 
-@@ -1187,6 +1192,8 @@ static struct net_device_stats *sh_eth_g
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 	u32 ioaddr = ndev->base_addr;
- 
-+	pm_runtime_get_sync(&mdp->pdev->dev);
-+
- 	mdp->stats.tx_dropped += ctrl_inl(ioaddr + TROCR);
- 	ctrl_outl(0, ioaddr + TROCR);	/* (write clear) */
- 	mdp->stats.collisions += ctrl_inl(ioaddr + CDCR);
-@@ -1202,6 +1209,8 @@ static struct net_device_stats *sh_eth_g
- 	mdp->stats.tx_carrier_errors += ctrl_inl(ioaddr + CNDCR);
- 	ctrl_outl(0, ioaddr + CNDCR);	/* (write clear) */
- #endif
-+	pm_runtime_put_sync(&mdp->pdev->dev);
-+
- 	return &mdp->stats;
- }
- 
-@@ -1410,6 +1419,9 @@ static int sh_eth_drv_probe(struct platf
- 
- 	mdp = netdev_priv(ndev);
- 	spin_lock_init(&mdp->lock);
-+	mdp->pdev = pdev;
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_resume(&pdev->dev);
- 
- 	pd = (struct sh_eth_plat_data *)(pdev->dev.platform_data);
- 	/* get PHY ID */
-@@ -1485,18 +1497,37 @@ static int sh_eth_drv_remove(struct plat
- 	sh_mdio_release(ndev);
- 	unregister_netdev(ndev);
- 	flush_scheduled_work();
--
-+	pm_runtime_disable(&pdev->dev);
- 	free_netdev(ndev);
- 	platform_set_drvdata(pdev, NULL);
- 
- 	return 0;
- }
- 
-+static int sh_eth_runtime_nop(struct device *dev)
-+{
-+	/*
-+	 * Runtime PM callback shared between ->runtime_suspend()
-+	 * and ->runtime_resume(). Simply returns success.
-+	 *
-+	 * This driver re-initializes all registers after
-+	 * pm_runtime_get_sync() anyway so there is no need
-+	 * to save and restore registers here.
-+	 */
-+	return 0;
-+}
-+
-+static struct dev_pm_ops sh_eth_dev_pm_ops = {
-+	.runtime_suspend = sh_eth_runtime_nop,
-+	.runtime_resume = sh_eth_runtime_nop,
++static struct resource kfr2r09_sh_sdhi0_resources[] = {
++	[0] = {
++		.name	= "SDHI0",
++		.start  = 0x04ce0000,
++		.end    = 0x04ce01ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 101,
++		.flags  = IORESOURCE_IRQ,
++	},
 +};
 +
- static struct platform_driver sh_eth_driver = {
- 	.probe = sh_eth_drv_probe,
- 	.remove = sh_eth_drv_remove,
- 	.driver = {
- 		   .name = CARDNAME,
-+		   .pm = &sh_eth_dev_pm_ops,
- 	},
++static struct platform_device kfr2r09_sh_sdhi0_device = {
++	.name           = "sh_mobile_sdhi",
++	.num_resources  = ARRAY_SIZE(kfr2r09_sh_sdhi0_resources),
++	.resource       = kfr2r09_sh_sdhi0_resources,
++	.archdata = {
++		.hwblk_id = HWBLK_SDHI0,
++	},
++};
++
+ static struct platform_device *kfr2r09_devices[] __initdata = {
+ 	&kfr2r09_nor_flash_device,
+ 	&kfr2r09_nand_flash_device,
+ 	&kfr2r09_sh_keysc_device,
+ 	&kfr2r09_sh_lcdc_device,
++	&kfr2r09_sh_sdhi0_device,
  };
  
---- 0001/drivers/net/sh_eth.h
-+++ work/drivers/net/sh_eth.h	2009-10-07 17:22:24.000000000 +0900
-@@ -703,6 +703,7 @@ struct sh_eth_cpu_data {
- };
+ #define BSC_CS0BCR 0xfec10004
+@@ -361,6 +384,16 @@ static int __init kfr2r09_devices_setup(
+ 	if (kfr2r09_usb0_gadget_setup() = 0)
+ 		platform_device_register(&kfr2r09_usb0_gadget_device);
  
- struct sh_eth_private {
-+	struct platform_device *pdev;
- 	struct sh_eth_cpu_data *cd;
- 	dma_addr_t rx_desc_dma;
- 	dma_addr_t tx_desc_dma;
++	/* SDHI0 connected to yc304 */
++	gpio_request(GPIO_FN_SDHI0CD, NULL);
++	gpio_request(GPIO_FN_SDHI0WP, NULL);
++	gpio_request(GPIO_FN_SDHI0D3, NULL);
++	gpio_request(GPIO_FN_SDHI0D2, NULL);
++	gpio_request(GPIO_FN_SDHI0D1, NULL);
++	gpio_request(GPIO_FN_SDHI0D0, NULL);
++	gpio_request(GPIO_FN_SDHI0CMD, NULL);
++	gpio_request(GPIO_FN_SDHI0CLK, NULL);
++
+ 	return platform_add_devices(kfr2r09_devices,
+ 				    ARRAY_SIZE(kfr2r09_devices));
+ }
