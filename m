@@ -1,22 +1,38 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 30 Oct 2009 03:38:22 +0000
-Subject: Re: [PATCH 00/07] sh: SuperH Mobile Sleep Mode Rewrite Part 1/2
-Message-Id: <20091030033822.GB1824@linux-sh.org>
+From: ivy kim <ibkim63@gmail.com>
+Date: Tue, 06 Oct 2009 03:42:18 +0000
+Subject: SH ATAPI IDE Driver
+Message-Id: <32390a840910052042t64346e53w1bfb3473c7b2284b@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091029105131.29078.26418.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091029105131.29078.26418.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Oct 29, 2009 at 07:51:31PM +0900, Magnus Damm wrote:
-> [PATCH 02/07] sh: Add notifiers chains for cpu/board code
-> [PATCH 03/07] sh: Add sh7724 notifier for R-standby save/restore
-> [PATCH 04/07] sh: Allow boards to register memory pre/post sleep code
-> [PATCH 05/07] sh: Add kfr2r09 specific memory pre/post sleep code
-> [PATCH 06/07] sh: Add ms7724se specific memory pre/post sleep code
-> [PATCH 07/07] sh: Add migor specific memory pre/post sleep code
-> 
-2-7 applied. 1/7 was dropped and the rest were updated to use the old
-name, as discussed off-list.
+Hi there.
+
+It seems that there is no atapi driver for SH7724.
+I'm writing this atapi driver for our company's own SH7724 platform
+called 'REVE'.
+I've wrote one driver, ide-sh.c based on ide-platform.c and succeeded
+in IDE disk chip ID reading.
+And ide_host_add() returns success, so I could find some entries on
+hda in /proc/ide/hda.
+My question/problem is as follows;
+
+1. There is no /dev/hda entry after ide_host_add() success.
+        Should I make one by hand using mknod?
+2. The ide-gd.c driver is required also? If I add ide-gd,
+        I have some more /proc/ide/hda entries such as capacity  geometry etc.
+
+Actually I'm new to linux device driver(linux, to be honest). So I'm
+not sure if using ide-platform.c as my code base is correct.
+When I use ide-gd.c, this code does not 'probe' the IDE drive...
+
+My feeling on writing this type of driver shall be trivial, but my
+code is getting complicated. I think I'm lost.
+It seems that there is no document on 'Writing IDE device driver'...also.
+
+My code base is kernel 'sh-2.6-2009-06-08-ms7724se-2.6.30-rc6'
+
+Thanks.
+BR..
