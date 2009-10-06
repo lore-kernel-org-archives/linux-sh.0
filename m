@@ -1,181 +1,74 @@
 From: Matt Fleming <matt@console-pimps.org>
-Date: Tue, 06 Oct 2009 21:22:23 +0000
-Subject: [PATCH 03/14] sh: Allocate PMB entry slot earlier
-Message-Id: <c7cd0d3d83d2ee710246a1a6cd15f052985912cf.1254861984.git.matt@console-pimps.org>
+Date: Tue, 06 Oct 2009 21:22:20 +0000
+Subject: [PATCH 00/14] Dynamic PMB support
+Message-Id: <cover.1254861984.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Simplify set_pmb_entry() by removing the possibility of not finding a
-free slot in the PMB. Instead we now allocate a slot in pmb_alloc() so
-that if there are no free slots we fail at allocation time, rather than
-in set_pmb_entry().
+Hi,
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
----
- arch/sh/mm/pmb.c |   80 ++++++++++++++++++++++++++---------------------------
- 1 files changed, 39 insertions(+), 41 deletions(-)
+this patch series resurrects dynamic PMB support. Support isn't quite
+finished yet, for example even though the MMU will run in 32bit mode
+there's still not support for mapping the entire 512MB SDRAM that is
+available on my sh7785lcr board, but I'm expecting to have that sorted
+by the end of the week. These patches are mainly to make sure that I
+haven't broken anything and people's machines still boot.
 
-diff --git a/arch/sh/mm/pmb.c b/arch/sh/mm/pmb.c
-index 58f9358..a510c8b 100644
---- a/arch/sh/mm/pmb.c
-+++ b/arch/sh/mm/pmb.c
-@@ -99,10 +99,31 @@ static inline void pmb_list_del(struct pmb_entry *pmbe)
- 		}
- }
- 
-+static int pmb_alloc_entry(void)
-+{
-+	unsigned int pos;
-+
-+repeat:
-+	pos = find_first_zero_bit(&pmb_map, NR_PMB_ENTRIES);
-+
-+	if (unlikely(pos > NR_PMB_ENTRIES))
-+		return -ENOSPC;
-+
-+	if (test_and_set_bit(pos, &pmb_map))
-+		goto repeat;
-+
-+	return pos;
-+}
-+
- struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
- 			    unsigned long flags)
- {
- 	struct pmb_entry *pmbe;
-+	int pos;
-+
-+	pos = pmb_alloc_entry();
-+	if (pos < 0)
-+		return ERR_PTR(pos);
- 
- 	pmbe = kmem_cache_alloc(pmb_cache, GFP_KERNEL);
- 	if (!pmbe)
-@@ -111,6 +132,7 @@ struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
- 	pmbe->vpn	= vpn;
- 	pmbe->ppn	= ppn;
- 	pmbe->flags	= flags;
-+	pmbe->entry	= pos;
- 
- 	spin_lock_irq(&pmb_list_lock);
- 	pmb_list_add(pmbe);
-@@ -131,23 +153,9 @@ void pmb_free(struct pmb_entry *pmbe)
- /*
-  * Must be in P2 for __set_pmb_entry()
-  */
--int __set_pmb_entry(unsigned long vpn, unsigned long ppn,
--		    unsigned long flags, int *entry)
-+void __set_pmb_entry(unsigned long vpn, unsigned long ppn,
-+		    unsigned long flags, int pos)
- {
--	unsigned int pos = *entry;
--
--	if (unlikely(pos = PMB_NO_ENTRY))
--		pos = find_first_zero_bit(&pmb_map, NR_PMB_ENTRIES);
--
--repeat:
--	if (unlikely(pos > NR_PMB_ENTRIES))
--		return -ENOSPC;
--
--	if (test_and_set_bit(pos, &pmb_map)) {
--		pos = find_first_zero_bit(&pmb_map, NR_PMB_ENTRIES);
--		goto repeat;
--	}
--
- 	ctrl_outl(vpn | PMB_V, mk_pmb_addr(pos));
- 
- #ifdef CONFIG_CACHE_WRITETHROUGH
-@@ -161,21 +169,13 @@ repeat:
- #endif
- 
- 	ctrl_outl(ppn | flags | PMB_V, mk_pmb_data(pos));
--
--	*entry = pos;
--
--	return 0;
- }
- 
--int __uses_jump_to_uncached set_pmb_entry(struct pmb_entry *pmbe)
-+void __uses_jump_to_uncached set_pmb_entry(struct pmb_entry *pmbe)
- {
--	int ret;
--
- 	jump_to_uncached();
--	ret = __set_pmb_entry(pmbe->vpn, pmbe->ppn, pmbe->flags, &pmbe->entry);
-+	__set_pmb_entry(pmbe->vpn, pmbe->ppn, pmbe->flags, pmbe->entry);
- 	back_to_cached();
--
--	return ret;
- }
- 
- void __uses_jump_to_uncached clear_pmb_entry(struct pmb_entry *pmbe)
-@@ -239,8 +239,6 @@ long pmb_remap(unsigned long vaddr, unsigned long phys,
- 
- again:
- 	for (i = 0; i < ARRAY_SIZE(pmb_sizes); i++) {
--		int ret;
--
- 		if (size < pmb_sizes[i].size)
- 			continue;
- 
-@@ -250,12 +248,7 @@ again:
- 			goto out;
- 		}
- 
--		ret = set_pmb_entry(pmbe);
--		if (ret != 0) {
--			pmb_free(pmbe);
--			err = -EBUSY;
--			goto out;
--		}
-+		set_pmb_entry(pmbe);
- 
- 		phys	+= pmb_sizes[i].size;
- 		vaddr	+= pmb_sizes[i].size;
-@@ -304,8 +297,17 @@ static void __pmb_unmap(struct pmb_entry *pmbe)
- 	do {
- 		struct pmb_entry *pmblink = pmbe;
- 
--		if (pmbe->entry != PMB_NO_ENTRY)
--			clear_pmb_entry(pmbe);
-+		/*
-+		 * We may be called before this pmb_entry has been
-+		 * entered into the PMB table via set_pmb_entry(), but
-+		 * that's OK because we've allocated a unique slot for
-+		 * this entry in pmb_alloc() (even if we haven't filled
-+		 * it yet).
-+		 *
-+		 * Therefore, calling clear_pmb_entry() is safe as no
-+		 * other mapping can be using that slot.
-+		 */
-+		clear_pmb_entry(pmbe);
- 
- 		pmbe = pmblink->link;
- 
-@@ -315,11 +317,7 @@ static void __pmb_unmap(struct pmb_entry *pmbe)
- 
- static void pmb_cache_ctor(void *pmb)
- {
--	struct pmb_entry *pmbe = pmb;
--
- 	memset(pmb, 0, sizeof(struct pmb_entry));
--
--	pmbe->entry = PMB_NO_ENTRY;
- }
- 
- static int __uses_jump_to_uncached pmb_init(void)
-@@ -342,7 +340,7 @@ static int __uses_jump_to_uncached pmb_init(void)
- 	for (entry = 0; entry < nr_entries; entry++) {
- 		struct pmb_entry *pmbe = pmb_init_map + entry;
- 
--		__set_pmb_entry(pmbe->vpn, pmbe->ppn, pmbe->flags, &entry);
-+		__set_pmb_entry(pmbe->vpn, pmbe->ppn, pmbe->flags, entry);
- 	}
- 
- 	ctrl_outl(0, PMB_IRMCR);
--- 
-1.6.3.3
+What I'd appreciate is for anyone with an SH4A board to try out these
+patches. The MMU should be switched to 32bit mode seemlessly on boot if
+you build your kernel with CONFIG_PMB. Also, if people with sh7785lcr
+boards that have pmb support in the bootloader can try this patches with
+CONFIG_PMB_FIXED, just to ensure I haven't screwed anything up when
+merging pmb-fixed. and pmb.c.
+
+If you prefer git trees, these patches are available at,
+
+   git://github.com/mfleming/linux-2.6.git sh/pmb-dynamic
+
+but please note that the sh/pmb-dynamic branch may be rebased.
+
+Paul, I've tried to separate out the commits as much as possible so that
+you can ACK/NACK in a more fine-grained way. If you'd prefer for me to
+squash some of the patches, just shout.
+
+Matt Fleming (14):
+  sh: Sprinkle __uses_jump_to_uncached
+  sh: Plug PMB alloc memory leak
+  sh: Allocate PMB entry slot earlier
+  sh: Obliterate the P1 area macros
+  sh: Prepare for dynamic PMB support
+  sh: CONFIG_PMB doesn't mean the MMU is in 32bit mode
+  sh: Try PMB mapping based on physical address, not mapping size
+  sh: Make most PMB functions static
+  sh: Get rid of the kmem cache code
+  sh: Remap physical memory into P1 and P2 in pmb_init()
+  sh: Use page_to_phys() to get the physical address of a page
+  sh: Fix the offset from P1SEG/P2SEG where we map RAM
+  sh: Fold fixed-PMB support into dynamic PMB support
+  sh: Don't allocate smaller sized mappings on every iteration
+
+ arch/sh/boot/compressed/misc.c    |    2 +-
+ arch/sh/include/asm/addrspace.h   |    9 +-
+ arch/sh/include/asm/io.h          |    4 +-
+ arch/sh/include/asm/mmu.h         |   13 +-
+ arch/sh/include/asm/pgtable.h     |   26 +++-
+ arch/sh/include/asm/pgtable_32.h  |    2 +-
+ arch/sh/include/asm/scatterlist.h |    2 +-
+ arch/sh/kernel/head_32.S          |    2 +-
+ arch/sh/kernel/machine_kexec.c    |    2 +-
+ arch/sh/kernel/setup.c            |    4 +
+ arch/sh/mm/Kconfig                |    2 -
+ arch/sh/mm/Makefile               |    3 +-
+ arch/sh/mm/cache-sh4.c            |   12 +-
+ arch/sh/mm/cache-sh7705.c         |    6 +-
+ arch/sh/mm/consistent.c           |    2 +-
+ arch/sh/mm/init.c                 |    8 +
+ arch/sh/mm/ioremap_32.c           |    2 +-
+ arch/sh/mm/pmb-fixed.c            |   45 ------
+ arch/sh/mm/pmb.c                  |  295 ++++++++++++++++++++-----------------
+ 19 files changed, 224 insertions(+), 217 deletions(-)
+ delete mode 100644 arch/sh/mm/pmb-fixed.c
 
