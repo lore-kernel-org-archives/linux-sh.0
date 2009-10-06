@@ -1,93 +1,105 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 25 Sep 2009 04:41:53 +0000
-Subject: [GIT PULL] sh updates for 2.6.32-rc1, part 2.
-Message-Id: <20090925044153.GB13166@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Tue, 06 Oct 2009 21:22:24 +0000
+Subject: [PATCH 04/14] sh: Obliterate the P1 area macros
+Message-Id: <22db0c702ba4b19699c05c38c26a6061bd0bbf40.1254861984.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+Replace the use of PHYSADDR() with __pa(). PHYSADDR() is based on the
+idea that all addresses in P1SEG are untranslated, so we can access an
+address's physical page as an offset from P1SEG. This doesn't work for
+CONFIG_PMB/CONFIG_PMB_FIXED because pages in P1SEG and P2SEG are used
+for PMB mappings and so can be translated to any physical address.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+Likewise, replace a P1SEGADDR() use with virt_to_phys().
 
-Which contains:
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/boot/compressed/misc.c  |    2 +-
+ arch/sh/include/asm/addrspace.h |    3 ---
+ arch/sh/kernel/machine_kexec.c  |    2 +-
+ arch/sh/mm/cache-sh4.c          |    4 ++--
+ arch/sh/mm/cache-sh7705.c       |    2 +-
+ 5 files changed, 5 insertions(+), 8 deletions(-)
 
-Guennadi Liakhovetski (1):
-      sh_mobile_ceu_camera: fix compile breakage, caused by a bad merge
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index fd56a71..b51b1fc 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -131,7 +131,7 @@ void decompress_kernel(void)
+ #ifdef CONFIG_SUPERH64
+ 	output_addr = (CONFIG_MEMORY_START + 0x2000);
+ #else
+-	output_addr = PHYSADDR((unsigned long)&_text+PAGE_SIZE);
++	output_addr = __pa((unsigned long)&_text+PAGE_SIZE);
+ #ifdef CONFIG_29BIT
+ 	output_addr |= P2SEG;
+ #endif
+diff --git a/arch/sh/include/asm/addrspace.h b/arch/sh/include/asm/addrspace.h
+index 80d4081..ebd6e49 100644
+--- a/arch/sh/include/asm/addrspace.h
++++ b/arch/sh/include/asm/addrspace.h
+@@ -28,9 +28,6 @@
+ /* Returns the privileged segment base of a given address  */
+ #define PXSEG(a)	(((unsigned long)(a)) & 0xe0000000)
+ 
+-/* Returns the physical address of a PnSEG (n=1,2) address   */
+-#define PHYSADDR(a)	(((unsigned long)(a)) & 0x1fffffff)
+-
+ #if defined(CONFIG_29BIT) || defined(CONFIG_PMB_FIXED)
+ /*
+  * Map an address to a certain privileged segment
+diff --git a/arch/sh/kernel/machine_kexec.c b/arch/sh/kernel/machine_kexec.c
+index 7ea2704..de7cf54 100644
+--- a/arch/sh/kernel/machine_kexec.c
++++ b/arch/sh/kernel/machine_kexec.c
+@@ -49,7 +49,7 @@ int machine_kexec_prepare(struct kimage *image)
+ 	/* older versions of kexec-tools are passing
+ 	 * the zImage entry point as a virtual address.
+ 	 */
+-	if (image->start != PHYSADDR(image->start))
++	if (image->start != __pa(image->start))
+ 		return -EINVAL; /* upgrade your kexec-tools */
+ 
+ 	return 0;
+diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
+index a98c7d8..2ab8cd4 100644
+--- a/arch/sh/mm/cache-sh4.c
++++ b/arch/sh/mm/cache-sh4.c
+@@ -104,7 +104,7 @@ static inline void flush_cache_4096(unsigned long start,
+ 
+ 	local_irq_save(flags);
+ 	__flush_cache_4096(start | SH_CACHE_ASSOC,
+-			   P1SEGADDR(phys), exec_offset);
++			   virt_to_phys(phys), exec_offset);
+ 	local_irq_restore(flags);
+ }
+ 
+@@ -123,7 +123,7 @@ static void sh4_flush_dcache_page(void *arg)
+ 	else
+ #endif
+ 	{
+-		unsigned long phys = PHYSADDR(page_address(page));
++		unsigned long phys = __pa(page_address(page));
+ 		unsigned long addr = CACHE_OC_ADDRESS_ARRAY;
+ 		int i, n;
+ 
+diff --git a/arch/sh/mm/cache-sh7705.c b/arch/sh/mm/cache-sh7705.c
+index 2601935..f527fb7 100644
+--- a/arch/sh/mm/cache-sh7705.c
++++ b/arch/sh/mm/cache-sh7705.c
+@@ -141,7 +141,7 @@ static void sh7705_flush_dcache_page(void *arg)
+ 	if (mapping && !mapping_mapped(mapping))
+ 		set_bit(PG_dcache_dirty, &page->flags);
+ 	else
+-		__flush_dcache_page(PHYSADDR(page_address(page)));
++		__flush_dcache_page(__pa(page_address(page)));
+ }
+ 
+ static void __uses_jump_to_uncached sh7705_flush_cache_all(void *args)
+-- 
+1.6.3.3
 
-Jaswinder Singh Rajput (1):
-      sh: includecheck fix: dwarf.c
-
-Kuninori Morimoto (2):
-      sh: mach-ecovec24: Add active low setting for sh_eth
-      sh: add FSI driver support for ms7724se
-
-Nobuhiro Iwamatsu (2):
-      sh: Add support DMA Engine to SH7722
-      sh: Add support DMA Engine to SH7780
-
-Paul Mundt (4):
-      sh: Handle unaligned 16-bit instructions on SH-2A.
-      sh: Fix up uninitialized variable use caught by gcc 4.4.
-      sh: update defconfigs.
-      sh: enable onenand support in kfr2r09 defconfig.
-
- arch/sh/boards/mach-ecovec24/setup.c        |    1 +
- arch/sh/boards/mach-se/7724/setup.c         |   89 +++++
- arch/sh/configs/ap325rxa_defconfig          |  100 ++++--
- arch/sh/configs/dreamcast_defconfig         |   82 +++--
- arch/sh/configs/ecovec24-romimage_defconfig |   52 ++--
- arch/sh/configs/ecovec24_defconfig          |   70 +++--
- arch/sh/configs/edosk7705_defconfig         |   50 ++-
- arch/sh/configs/edosk7760_defconfig         |   82 +++--
- arch/sh/configs/espt_defconfig              |   75 +++-
- arch/sh/configs/hp6xx_defconfig             |   69 +++-
- arch/sh/configs/kfr2r09-romimage_defconfig  |   47 ++-
- arch/sh/configs/kfr2r09_defconfig           |   57 ++-
- arch/sh/configs/landisk_defconfig           |   86 +++-
- arch/sh/configs/lboxre2_defconfig           |   86 +++-
- arch/sh/configs/magicpanelr2_defconfig      |   85 +++--
- arch/sh/configs/microdev_defconfig          |   74 +++-
- arch/sh/configs/migor_defconfig             |  111 ++++--
- arch/sh/configs/polaris_defconfig           |   73 +++-
- arch/sh/configs/r7780mp_defconfig           |  116 +++++--
- arch/sh/configs/r7785rp_defconfig           |  125 +++++--
- arch/sh/configs/rsk7201_defconfig           |   60 +++-
- arch/sh/configs/rsk7203_defconfig           |   81 +++-
- arch/sh/configs/rts7751r2d1_defconfig       |   97 ++++-
- arch/sh/configs/rts7751r2dplus_defconfig    |  100 ++++--
- arch/sh/configs/sdk7780_defconfig           |   93 ++++--
- arch/sh/configs/se7206_defconfig            |   80 +++--
- arch/sh/configs/se7343_defconfig            |   91 +++--
- arch/sh/configs/se7619_defconfig            |   56 ++-
- arch/sh/configs/se7705_defconfig            |   75 +++-
- arch/sh/configs/se7712_defconfig            |   79 +++--
- arch/sh/configs/se7721_defconfig            |   86 +++--
- arch/sh/configs/se7722_defconfig            |   92 ++++--
- arch/sh/configs/se7724_defconfig            |  264 +++++++++++---
- arch/sh/configs/se7750_defconfig            |   75 +++-
- arch/sh/configs/se7751_defconfig            |   74 +++-
- arch/sh/configs/se7780_defconfig            |   89 ++++--
- arch/sh/configs/sh03_defconfig              |   87 +++-
- arch/sh/configs/sh7710voipgw_defconfig      |   71 +++-
- arch/sh/configs/sh7724_generic_defconfig    |   64 +++-
- arch/sh/configs/sh7763rdp_defconfig         |   79 +++-
- arch/sh/configs/sh7770_generic_defconfig    |   62 +++-
- arch/sh/configs/sh7785lcr_32bit_defconfig   |  559 +++++++++++++++++++--------
- arch/sh/configs/sh7785lcr_defconfig         |  107 ++++--
- arch/sh/configs/shmin_defconfig             |   68 +++-
- arch/sh/configs/shx3_defconfig              |   95 ++++--
- arch/sh/configs/snapgear_defconfig          |   40 +-
- arch/sh/configs/systemh_defconfig           |   61 +++-
- arch/sh/configs/titan_defconfig             |   93 ++++--
- arch/sh/configs/ul2_defconfig               |  104 ++++--
- arch/sh/configs/urquell_defconfig           |  125 +++++--
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c      |   14 +
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c      |   14 +
- arch/sh/kernel/dwarf.c                      |    1 -
- arch/sh/kernel/traps_32.c                   |   23 +-
- drivers/media/video/sh_mobile_ceu_camera.c  |    4 +-
- 55 files changed, 3409 insertions(+), 1284 deletions(-)
