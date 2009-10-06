@@ -1,34 +1,34 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 05 Oct 2009 02:12:51 +0000
-Subject: Re: [PATCH] usb: r8a66597-udc unaligned fifo fix
-Message-Id: <20091005021251.GB3185@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Tue, 06 Oct 2009 21:22:31 +0000
+Subject: [PATCH 11/14] sh: Use page_to_phys() to get the physical address of a page
+Message-Id: <d620fb66e676d5aefe201035330d3e974e5d8bc7.1254861984.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 30, 2009 at 08:57:24PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Rework the r8a66597-udc fifo code to avoid unaligned accesses.
-> 
-> Without this patch unaligned exceptions will degrade the
-> USB performance. The exceptions come from the fact that
-> the usb fifo data buffers may be misaligned.
-> 
-> This patch updates the fifo access code to only use
-> insl()/outsl() and insw()/outsw() in the case of properly
-> aligned data buffers. The fallback case is that inl()/inw()
-> are used for misaligned buffer reads together with outb()
-> that is used for misaligned buffer writes.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Tested on kfr2r09 with CONFIG_USB_CDC_COMPOSITE=y
-> 
->  drivers/usb/gadget/r8a66597-udc.h |  105 +++++++++++++++++++++----------------
->  1 file changed, 62 insertions(+), 43 deletions(-)
-> 
-Applied, thanks.
+Instead of abusing __pa() and page_address() to get the physical address
+of page, use page_to_phys(), which was invented for this purpose.
+
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/mm/cache-sh4.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
+index 5b73b37..0bad81c 100644
+--- a/arch/sh/mm/cache-sh4.c
++++ b/arch/sh/mm/cache-sh4.c
+@@ -123,7 +123,7 @@ static void sh4_flush_dcache_page(void *arg)
+ 	else
+ #endif
+ 	{
+-		unsigned long phys = __pa(page_address(page));
++		unsigned long phys = page_to_phys(page);
+ 		unsigned long addr = CACHE_OC_ADDRESS_ARRAY;
+ 		int i, n;
+ 
+-- 
+1.6.3.3
+
