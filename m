@@ -1,38 +1,35 @@
-From: ivy kim <ibkim63@gmail.com>
-Date: Tue, 06 Oct 2009 03:42:18 +0000
-Subject: SH ATAPI IDE Driver
-Message-Id: <32390a840910052042t64346e53w1bfb3473c7b2284b@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 06 Oct 2009 04:07:28 +0000
+Subject: Re: SH ATAPI IDE Driver
+Message-Id: <20091006040728.GA18906@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <32390a840910052042t64346e53w1bfb3473c7b2284b@mail.gmail.com>
+In-Reply-To: <32390a840910052042t64346e53w1bfb3473c7b2284b@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi there.
+On Tue, Oct 06, 2009 at 12:42:18PM +0900, ivy kim wrote:
+> It seems that there is no atapi driver for SH7724.
+> I'm writing this atapi driver for our company's own SH7724 platform
+> called 'REVE'.
+> I've wrote one driver, ide-sh.c based on ide-platform.c and succeeded
+> in IDE disk chip ID reading.
 
-It seems that there is no atapi driver for SH7724.
-I'm writing this atapi driver for our company's own SH7724 platform
-called 'REVE'.
-I've wrote one driver, ide-sh.c based on ide-platform.c and succeeded
-in IDE disk chip ID reading.
-And ide_host_add() returns success, so I could find some entries on
-hda in /proc/ide/hda.
-My question/problem is as follows;
+For starters, no new drivers should be written aimed at drivers/ide,
+libata is what you should be working with instead, aiming your driver at
+drivers/ata (you can see many other pata drivers there for examples on
+getting started, including ones that deal with ATAPI).
 
-1. There is no /dev/hda entry after ide_host_add() success.
-        Should I make one by hand using mknod?
-2. The ide-gd.c driver is required also? If I add ide-gd,
-        I have some more /proc/ide/hda entries such as capacity  geometry etc.
+> It seems that there is no document on 'Writing IDE device driver'...also.
 
-Actually I'm new to linux device driver(linux, to be honest). So I'm
-not sure if using ide-platform.c as my code base is correct.
-When I use ide-gd.c, this code does not 'probe' the IDE drive...
+All of the libata documentation is in-kernel, and you can generate pdfs
+with 'make pdfdocs', or you can just read through the DocBook file in
+Documentation/DocBook/libata.tmpl.
 
-My feeling on writing this type of driver shall be trivial, but my
-code is getting complicated. I think I'm lost.
-It seems that there is no document on 'Writing IDE device driver'...also.
+If you run in to further issues, you may also wish to subscribe to or Cc
+the linux-ide@vger.kernel.org mailing list, where all IDE and libata
+related discussion takes place:
 
-My code base is kernel 'sh-2.6-2009-06-08-ms7724se-2.6.30-rc6'
-
-Thanks.
-BR..
+	http://vger.kernel.org/vger-lists.html#linux-ide
