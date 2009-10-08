@@ -1,34 +1,90 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Tue, 06 Oct 2009 21:22:27 +0000
-Subject: [PATCH 07/14] sh: Try PMB mapping based on physical address, not mapping size
-Message-Id: <014aa11fe1891ca085d72b8b6fb56703b7637a8b.1254861984.git.matt@console-pimps.org>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Thu, 08 Oct 2009 17:44:08 +0000
+Subject: libshcodecs-0.9.7 release
+Message-Id: <dba6c0830910081044x18e77abjc189bf59bbe3613d@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-We should favour PMB mappings when the physical address cannot be
-reached with 29-bits.
+libshcodecs 0.9.7 Release
+============
+libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
----
- arch/sh/mm/ioremap_32.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+The [SH-Mobile][0] processor series includes a hardware video processing
+unit that supports MPEG-4 and H.264 encoding and decoding.
+libshcodecs is available under the terms of the GNU LGPL.
 
-diff --git a/arch/sh/mm/ioremap_32.c b/arch/sh/mm/ioremap_32.c
-index c325061..a86eaa9 100644
---- a/arch/sh/mm/ioremap_32.c
-+++ b/arch/sh/mm/ioremap_32.c
-@@ -83,7 +83,7 @@ void __iomem *__ioremap(unsigned long phys_addr, unsigned long size,
- 	 *
- 	 * PMB entries are all pre-faulted.
- 	 */
--	if (unlikely(size >= 0x1000000)) {
-+	if (unlikely(phys_addr >= P1SEG)) {
- 		unsigned long mapped = pmb_remap(addr, phys_addr, size, flags);
- 
- 		if (likely(mapped)) {
--- 
-1.6.3.3
+The source archive, and more information about the library are available from:
 
+        http://linux-sh.org/cgi-bin/moin.cgi/libshcodecs
+
+New in this release
+=========
+This release includes support to build for Android, by Katsuya Matsubara.
+
+It also includes various cleanups and documentation fixes, and changes the
+"-s" option to shcodecs-play to set the input image size instead of the output
+screen size, for consistency with shcodecs-dec.
+
+Changes
+-------
+
+Conrad Parker (9):
+      fix file permissions
+      update bug report email address in man pages
+      add bug report address to tools --help output
+      shcodecs-play: clean up line endings
+      shcodecs-play: modify sense of -s, -S options
+      add man page for shcodecs-play
+      typos in shcodecs-dec man page
+      Add control files to EXTRA_DIST
+      fix compile warnings
+
+Katsuya Matsubara (8):
+      replace debug_printf()
+      fix variable type for getopt_long()
+      add return() in main() functions
+      add ifdef macro in tests/shcodecs_tests.h for no config.h situation
+      add time.h include in src/tools/avcbeinputuser.c
+      fix uninitialized variable usage in src/libshcodecs/shcodecs_decoder.c
+      add another makefile 'Android.mk' for Android
+      rename 'ALIGN' macro
+
+ Android.mk                                |    4 +
+ data/Makefile.am                          |    8 ++
+ doc/Makefile.am                           |    2 +-
+ doc/shcodecs-capenc.1                     |    2 +-
+ doc/shcodecs-dec.1                        |    4 +-
+ doc/shcodecs-enc.1                        |    2 +-
+ doc/shcodecs-play.1                       |   57 +++++++++++
+ src/Android.mk                            |    1 +
+ src/examples/Android.mk                   |    9 ++
+ src/examples/shcodecs-decode-qvga-mpeg4.c |    6 +-
+ src/libshcodecs/Android.mk                |   27 ++++++
+ src/libshcodecs/encoder_common.h          |    3 +-
+ src/libshcodecs/m4driverif.h              |    3 +-
+ src/libshcodecs/mpeg4_encode.c            |    1 +
+ src/libshcodecs/shcodecs_decoder.c        |   24 ++---
+ src/libshcodecs/shcodecs_encoder.c        |   64 ++++++------
+ src/tests/Android.mk                      |    9 ++
+ src/tests/shcodecs_tests.h                |    2 +
+ src/tools/Android.mk                      |   59 ++++++++++++
+ src/tools/avcbeinputuser.c                |    2 +
+ src/tools/shcodecs-cap.c                  |    1 +
+ src/tools/shcodecs-capenc.c               |    6 +-
+ src/tools/shcodecs-dec.c                  |   41 ++++-----
+ src/tools/shcodecs-enc.c                  |    7 +-
+ src/tools/shcodecs-play.c                 |  146 ++++++++++++++++------------
+ 25 files changed, 348 insertions(+), 142 deletions(-)
+ create mode 100644 Android.mk
+ create mode 100644 doc/shcodecs-play.1
+ create mode 100644 src/Android.mk
+ create mode 100644 src/examples/Android.mk
+ create mode 100644 src/libshcodecs/Android.mk
+ mode change 100755 => 100644 src/libshcodecs/shcodecs_encoder.c
+ create mode 100644 src/tests/Android.mk
+ create mode 100644 src/tools/Android.mk
+
+[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
