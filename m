@@ -1,119 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 Oct 2009 04:23:59 +0000
-Subject: [PATCH 03/09] sh: Add Ecovec24 specific memory pre/post sleep code
-Message-Id: <20091030042359.11783.23483.sendpatchset@rxone.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 09 Oct 2009 02:53:44 +0000
+Subject: [GIT PULL] sh updates for 2.6.32-rc4
+Message-Id: <20091009025344.GB7179@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Please pull from:
 
-Add self-refresh handling code for the Ecovec24 board.  
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.32
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Which contains:
 
- arch/sh/boards/mach-ecovec24/Makefile |    1 
- arch/sh/boards/mach-ecovec24/sdram.S  |   52 +++++++++++++++++++++++++++++++++
- arch/sh/boards/mach-ecovec24/setup.c  |   14 ++++++++
- 3 files changed, 66 insertions(+), 1 deletion(-)
+Kuninori Morimoto (3):
+      sh: mach-ecovec24: Add TouchScreen support
+      sh: mach-ecovec24: modify 1st MTD area to read only
+      sh: mach-ecovec24: Document DS2 switch settings.
 
---- 0001/arch/sh/boards/mach-ecovec24/Makefile
-+++ work/arch/sh/boards/mach-ecovec24/Makefile	2009-10-30 12:51:03.000000000 +0900
-@@ -6,4 +6,4 @@
- # for more details.
- #
- 
--obj-y	 := setup.o
-\ No newline at end of file
-+obj-y	 := setup.o sdram.o
-\ No newline at end of file
---- /dev/null
-+++ work/arch/sh/boards/mach-ecovec24/sdram.S	2009-10-30 12:49:39.000000000 +0900
-@@ -0,0 +1,52 @@
-+/*
-+ * Ecovec24 sdram self/auto-refresh setup code
-+ *
-+ *  Copyright (C) 2009 Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/sys.h>
-+#include <linux/errno.h>
-+#include <linux/linkage.h>
-+#include <asm/asm-offsets.h>
-+#include <asm/suspend.h>
-+#include <asm/romimage-macros.h>
-+
-+/* code to enter and leave self-refresh. must be self-contained.
-+ * this code will be copied to on-chip memory and executed from there.
-+ */
-+	.balign 4
-+ENTRY(ecovec24_sdram_enter_start)
-+
-+	/* DBSC: put memory in self-refresh mode */
-+
-+	ED 0xFD000010, 0x00000000 /* DBEN */
-+	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000040, 0x00000001 /* DBRFPDN0 */
-+
-+	rts
-+	 nop
-+
-+ENTRY(ecovec24_sdram_enter_end)
-+
-+	.balign 4
-+ENTRY(ecovec24_sdram_leave_start)
-+
-+	/* DBSC: put memory in auto-refresh mode */
-+
-+	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
-+	WAIT 1
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000010, 0x00000001 /* DBEN */
-+	ED 0xFD000040, 0x00010000 /* DBRFPDN0 */
-+
-+	rts
-+	 nop
-+
-+ENTRY(ecovec24_sdram_leave_end)
---- 0001/arch/sh/boards/mach-ecovec24/setup.c
-+++ work/arch/sh/boards/mach-ecovec24/setup.c	2009-10-30 12:50:48.000000000 +0900
-@@ -26,6 +26,7 @@
- #include <asm/sh_eth.h>
- #include <asm/sh_keysc.h>
- #include <asm/clock.h>
-+#include <asm/suspend.h>
- #include <cpu/sh7724.h>
- 
- /*
-@@ -526,8 +527,21 @@ static void __init sh_eth_init(struct sh
- 
- #define PORT_HIZA 0xA4050158
- #define IODRIVEA  0xA405018A
-+
-+extern char ecovec24_sdram_enter_start;
-+extern char ecovec24_sdram_enter_end;
-+extern char ecovec24_sdram_leave_start;
-+extern char ecovec24_sdram_leave_end;
-+
- static int __init arch_setup(void)
- {
-+	/* register board specific self-refresh code */
-+	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
-+					&ecovec24_sdram_enter_start,
-+					&ecovec24_sdram_enter_end,
-+					&ecovec24_sdram_leave_start,
-+					&ecovec24_sdram_leave_end);
-+
- 	/* enable STATUS0, STATUS2 and PDSTATUS */
- 	gpio_request(GPIO_FN_STATUS0, NULL);
- 	gpio_request(GPIO_FN_STATUS2, NULL);
+Lubomir Rintel (1):
+      sh: Build fix: export __movmem
+
+Magnus Damm (2):
+      usb: r8a66597-udc unaligned fifo fix
+      sh: enable sleep state LEDs on Ecovec24
+
+Matt Fleming (5):
+      sh: Don't enable interrupts in the page fault path
+      sh: Sprinkle __uses_jump_to_uncached
+      sh: Plug PMB alloc memory leak
+      sh: Try PMB mapping based on physical address, not mapping size
+      sh: Don't allocate smaller sized mappings on every iteration
+
+Paul Mundt (4):
+      sh: Handle ioport_map() cases for >= P1SEG addresses.
+      sh: Set the default I/O port base to P2SEG.
+      sh: magicpanelr2 and dreamcast can use the generic I/O base.
+      sh: Disable unaligned kernel access printks by default.
+
+ arch/sh/boards/board-magicpanelr2.c   |    2 -
+ arch/sh/boards/mach-dreamcast/setup.c |    2 -
+ arch/sh/boards/mach-ecovec24/setup.c  |   63 +++++++++++++++++++-
+ arch/sh/kernel/cpu/sh3/entry.S        |    2 -
+ arch/sh/kernel/io_generic.c           |    3 +
+ arch/sh/kernel/machvec.c              |    3 +
+ arch/sh/kernel/sh_ksyms_32.c          |    1 +
+ arch/sh/kernel/traps_32.c             |    4 +-
+ arch/sh/mm/cache-sh4.c                |    2 +-
+ arch/sh/mm/cache-sh7705.c             |    4 +-
+ arch/sh/mm/ioremap_32.c               |    2 +-
+ arch/sh/mm/pmb.c                      |   37 ++++++++++--
+ drivers/usb/gadget/r8a66597-udc.h     |  105 +++++++++++++++++++-------------
+ 13 files changed, 168 insertions(+), 62 deletions(-)
