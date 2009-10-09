@@ -1,279 +1,178 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 14 Oct 2009 10:19:04 +0000
-Subject: [PATCH 05/07] sh: Add save/restore sleep code for BSC/DBSC
-Message-Id: <20091014101904.21842.85901.sendpatchset@rxone.opensource.se>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Fri, 09 Oct 2009 03:37:46 +0000
+Subject: UIOMux 1.0.0 Release
+Message-Id: <dba6c0830910082037v3582f80dwb2bf6f9e08a20e9f@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+UIOMux
+===
 
-Add experimental restore/save code for the BSC and DBSC.
-Only CS0 and the DBSC are handled at this point. The DBSC
-really needs board specific parameters to work correctly
-so we should tie in this as board-specific code somehow.
+UIOMux is a conflict manager for system resources, including UIO devices.
 
-Not-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+The source archive, and more information about the library are available from:
 
- arch/sh/include/asm/suspend.h       |    1 
- arch/sh/kernel/cpu/shmobile/sleep.S |  216 ++++++++++++++++++++++++++++++++++-
- 2 files changed, 215 insertions(+), 2 deletions(-)
+        http://linux-sh.org/cgi-bin/moin.cgi/libuiomux
 
---- 0004/arch/sh/include/asm/suspend.h
-+++ work/arch/sh/include/asm/suspend.h	2009-10-13 15:04:33.000000000 +0900
-@@ -28,5 +28,6 @@ static inline void sh_mobile_setup_cpuid
- #define SUSP_SH_USTANDBY	(1 << 3) /* SH-Mobile U-standby mode */
- #define SUSP_SH_SF		(1 << 4) /* Enable self-refresh */
- #define SUSP_SH_MMU		(1 << 5) /* Save/Restore MMU */
-+#define SUSP_SH_BSC		(1 << 6) /* Save/Restore BSC */
- 
- #endif /* _ASM_SH_SUSPEND_H */
---- 0005/arch/sh/kernel/cpu/shmobile/sleep.S
-+++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2009-10-13 15:32:50.000000000 +0900
-@@ -112,6 +112,78 @@ skip_mmu_save_disable:
- 	/* put mode flags in r0 */
- 	mov	r4, r0
- 
-+	/* save BSC state */
-+	tst	#SUSP_SH_BSC, r0
-+	bt	skip_bsc_save
-+
-+	mov.l   cmncr_reg, r0
-+	mov.l   @r0, r1
-+	mova    cmncr_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   cs0bcr_reg, r0
-+	mov.l   @r0, r1
-+	mova    cs0bcr_data, r0
-+	mov.l   r1, @r0
-+       
-+	mov.l   cs0wcr_reg, r0
-+	mov.l   @r0, r1
-+	mova    cs0wcr_data, r0
-+	mov.l   r1, @r0
-+
-+#ifdef CONFIG_CPU_SUBTYPE_SH7724
-+	/* save DBSC state */
-+	mov.l   dbpdcnt0_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbpdcnt0_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbconf_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbconf_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbtr0_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbtr0_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbtr1_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbtr1_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbtr2_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbtr2_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbtr3_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbtr3_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbkind_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbkind_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbrfpdn1_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbrfpdn1_data, r0
-+	mov.l   r1, @r0
-+
-+	mov.l   dbrfpdn2_reg, r0
-+	mov.l   @r0, r1
-+	mova    dbrfpdn2_data, r0
-+	mov.l   r1, @r0
-+#endif
-+
-+skip_bsc_save:
-+
-+	/* put mode flags in r0 */
-+	mov	r4, r0
-+
- 	tst	#SUSP_SH_SF, r0
- 	bt	skip_set_sf
- #ifdef CONFIG_CPU_SUBTYPE_SH7724
-@@ -247,6 +319,113 @@ skip_mmu_restore:
- 	/* get mode flags */
- 	mov.l	saved_mode, k0
- 
-+	/* save BSC state */
-+	tst	#SUSP_SH_BSC, k0
-+	bt	skip_bsc_restore
-+
-+	/* restore BSC */
-+	mov.l   mmselr_reg, k0
-+	mov.l   mmselr_data, k1
-+	mov.l   k1, @k0
-+       
-+	mov.l   cmncr_reg, k0
-+	mov.l   cmncr_data, k1
-+	mov.l   k1, @k0
-+       
-+	mov.l   cs0bcr_reg, k0
-+	mov.l   cs0bcr_data, k1
-+	mov.l   k1, @k0
-+       
-+	mov.l   cs0wcr_reg, k0
-+	mov.l   cs0wcr_data, k1
-+	mov.l   k1, @k0
-+       
-+	mov.l   cs0bcr_reg, k0
-+	mov.l   cs0bcr_data, k1
-+	mov.l   k1, @k0
-+	
-+#ifdef CONFIG_CPU_SUBTYPE_SH7724
-+	/* restore DBSC */
-+	mov.l   dbpdcnt0_reg, k0
-+	mov.l   dbpdcnt0_data, k1
-+	mov     #1, k4
-+	or      k4, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbconf_reg, k0
-+	mov.l   dbconf_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbtr0_reg, k0
-+	mov.l   dbtr0_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbtr1_reg, k0
-+	mov.l   dbtr1_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbtr2_reg, k0
-+	mov.l   dbtr2_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbtr3_reg, k0
-+	mov.l   dbtr3_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbkind_reg, k0
-+	mov.l   dbkind_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbrfpdn0_reg, k0
-+	mov     #1, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbrfpdn0_reg, k0
-+	mov     #0, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbckecnt_reg, k0
-+	mov     #1, k1
-+	mov.l   k1, @k0
-+
-+        mov    #66, k4
-+wait_again0:
-+        nop
-+        tst     k4, k4
-+        bf/s    wait_again0
-+         dt      k4
-+
-+	mov.l   dben_reg, k0
-+	mov     #1, k1
-+	mov.l   k1, @k0
-+       
-+	mov.l   dbrfpdn1_reg, k0
-+	mov.l   dbrfpdn1_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbrfpdn2_reg, k0
-+	mov.l   dbrfpdn2_data, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbcmdcnt_reg, k0
-+	mov     #4, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbpdcnt0_reg, k0
-+	mov.l   dbpdcnt0_data, k1
-+	mov     #-2, k4
-+	and     k4, k1
-+	mov.l   k1, @k0
-+
-+	mov.l   dbrfpdn0_reg, k0
-+	mov.l   dbrfpdn0_data, k1
-+	mov.l   k1, @k0
-+#endif
-+
-+skip_bsc_restore:
-+	/* get mode flags */
-+	mov.l	saved_mode, k0
-+
- 	tst	#SUSP_SH_SF, k0
- 	bt	skip_restore_sf
- 
-@@ -308,8 +487,6 @@ saved_vbr:	.long	0
- offset_vbr:	.long	0x600
- #ifdef CONFIG_CPU_SUBTYPE_SH7724
- dben_reg:	.long	0xfd000010 /* DBEN */
--dbrfpdn0_reg:	.long	0xfd000040 /* DBRFPDN0 */
--dbrfpdn0_data:	.long	0x00010000
- dbcmdcnt_reg:	.long	0xfd000014 /* DBCMDCNT */
- #else
- 1:	.long	0xfe400008 /* SDCR0 */
-@@ -340,6 +517,41 @@ pascr_data:    .long   0
- irmcr_reg:     .long   0xff000078 /* IRMCR */
- irmcr_data:    .long   0
- 
-+/* BSC */
-+cs0bcr_reg:    .long   0xfec10004
-+cs0bcr_data:   .long   0
-+cs0wcr_reg:    .long   0xfec10024
-+cs0wcr_data:   .long   0
-+mmselr_reg:    .long   0xff800020
-+mmselr_data:   .long   0xa5a50000
-+cmncr_reg:     .long   0xfec10000
-+cmncr_data:    .long   0
-+
-+#ifdef CONFIG_CPU_SUBTYPE_SH7724
-+/* DBSC */
-+dbkind_reg:    .long   0xfd000008 /* DBKIND */
-+dbkind_data:   .long   0
-+dbckecnt_reg:  .long   0xfd000018 /* DBCKECNT */
-+dbconf_reg:    .long   0xfd000020 /* DBCONF */
-+dbconf_data:   .long   0
-+dbtr0_reg:     .long   0xfd000030 /* DBTR0 */
-+dbtr0_data:    .long   0
-+dbtr1_reg:     .long   0xfd000034 /* DBTR1 */
-+dbtr1_data:    .long   0
-+dbtr2_reg:     .long   0xfd000038 /* DBTR2 */
-+dbtr2_data:    .long   0
-+dbtr3_reg:     .long   0xfd00003c /* DBTR3 */
-+dbtr3_data:    .long   0
-+dbrfpdn0_reg:  .long   0xfd000040 /* DBRFPDN0 */
-+dbrfpdn0_data: .long   0x00010000
-+dbrfpdn1_reg:  .long   0xfd000044 /* DBRFPDN1 */
-+dbrfpdn1_data: .long   0
-+dbrfpdn2_reg:  .long   0xfd000048 /* DBRFPDN2 */
-+dbrfpdn2_data: .long   0
-+dbpdcnt0_reg:  .long   0xfd000108 /* DBPDCNT0 */
-+dbpdcnt0_data: .long   0
-+#endif
-+
- /* interrupt vector @ 0x600 */
- 	.balign 	0x400,0,0x400
- 	.long	0xdeadbeef
+This is the first public release of libuiomux, and targets Renesas SH-Mobile
+processors.
+
+Overview
+--------
+
+UIOMux multiplexes access to named resources, including devices which are
+available via UIO.
+
+UIOMux consists of a user-level shared library, libuiomux, which manages
+a shared memory segment containing mutexes for each managed resource. This
+segment and its mutexes are shared amongst all processes and threads on
+the system, to provide system-wide locking. In this way, libuiomux can be
+used to manage contention across multiple simultaneous processes and threads.
+
+UIOMux allows simultaneous locking of access to multiple resources, with
+deterministic locking and unlocking order to avoid circular waiting.
+Processes or threads requiring simultaneous access to more than one resource
+should lock and unlock them simultaneously via libuiomux.
+
+UIO devices report activity through a read of their file descriptor. UIOMux
+provides a simplified interface for waiting for a UIO managed resource.
+
+UIOMux provides functions for allocating the UIO memory reserved by the
+kernel for each device. Allocations are tied to the calling process ID, and
+are cleared on process exit.
+
+UIOMux can save and restore memory-mapped IO registers associated with a
+UIO device. Registers are saved on uiomux_unlock() and restored on
+uiomux_lock(), if intervening users have used the device.
+
+Additionally, UIOMux can be queried for whether or not a resource is available
+on the currently running system.
+
+
+Commandline tool
+----------------
+
+    Usage: uiomux <command>
+
+    uiomux is a tool for querying UIO and managing the UIOMux state.
+
+    Reporting:
+      query       List available UIO device names that can be managed by UIOMux.
+      info        Show memory layout of each UIO device managed by UIOMux.
+      meminfo     Show memory allocations of each UIO device managed by UIOMux.
+
+    Management:
+      reset       Reset the UIOMux system. This initializes the UIOMux
+shared state,
+                  including all shared mutexes, and scans UIO memory maps.
+      destroy     Destroy the UIOMux system. This frees all resources
+used by the
+                  UIOMux shared state. Note that any subsequent
+program using UIOMux
+                  will reallocate and initialize this shared state,
+including this
+                  tool's 'info' and 'reset' commands.
+
+    Utilities:
+      alloc <n>   Allocate a specified number of bytes.
+
+
+libuiomux API
+-------------
+
+  * Documentation
+
+If doxygen is installed, API documentation will be built in doc/libuiomux. HTML
+documentation is created by default in doc/libuiomux/html. A PDF version can be
+created if LaTeX is installed; in this case, run 'make' in doc/libuiomux/latex.
+
+  * Summary
+
+libuiomux can be used to manage various named resources. Currently the
+following names are defined:
+
+    UIOMUX_SH_BEU
+    UIOMUX_SH_CEU
+    UIOMUX_SH_JPU
+    UIOMUX_SH_VEU
+    UIOMUX_SH_VPU
+
+These identifiers are bitmasked together as the return value from
+uiomux_query(), or as arguments to uiomux_lock() and uiomux_unlock().
+
+At any time, an application may retrieve a printable name for a resource:
+
+    const char * name;
+
+    name = uiomux_name(resource);
+
+To query which resources are available on the running system, call:
+
+    uiomux_blockmask_t available_resources;
+
+    available_resources = uiomux_query();
+
+The return value is a bitmask consisting of some of the above symbols OR'd
+together. An application may use this function to fall back to a software
+implementation if a needed hardware resource is not available, or to disable
+relevant funtionality at runtime.
+
+A process or thread wishing to use the locking facilities of libuiomux
+should start by calling uiomux_open() to obtain a UIOMux* handle:
+
+    UIOMux * uiomux;
+
+    uiomux = uiomux_open();
+
+To request exclusive access to a resource or a set of resources, call
+uiomux_lock():
+
+    uiomux_blockmask_t resources;
+
+    uiomux_lock(resources);
+
+where resources is the name of a resource, or multiple resource names OR'd
+together. Each call to uiomux_lock() must be paired with a corresponding
+call to uiomux_unlock():
+
+    uiomux_unlock(resources);
+
+Failure to unlock can lead to system-wide starvation of the locked resource.
+Note however that all locks obtained via libuiomux will be automatically
+unlocked on program termination to minimize the potential damage caused by
+rogue processes.
+
+UIO devices report activity through a read of their file descriptor. A
+simplified interface is offered for waiting for a UIO managed resource:
+
+    uiomux_sleep (uiomux, resource);
+
+UIOMux also provides a co-operative memory allocation scheme. To allocate
+memory from a UIO managed resource:
+
+    uiomux_malloc (uiomux, resource, size, alignment);
+
+To free allocated memory from a UIO managed resource:
+
+    uiomux_free (uiomux, resource, address, size);
+
+Note that any outstanding allocations are removed on process exit, and any
+invalid allocations are cleared on uiomux_open().
+
+Finally, each process or thread that opened a UIOMux* handle should
+close it by calling uiomux_close(). This will remove associated memory maps,
+unlock locked resources and mark used memory for deallocation:
+
+    uiomux_close(uiomux);
+
+
+License
+-------
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
