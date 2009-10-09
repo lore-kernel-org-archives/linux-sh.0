@@ -1,56 +1,50 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Tue, 06 Oct 2009 21:22:21 +0000
-Subject: [PATCH 01/14] sh: Sprinkle __uses_jump_to_uncached
-Message-Id: <1db0a1123393575aec324e0d808b6369f9837fe4.1254861984.git.matt@console-pimps.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 09 Oct 2009 02:37:24 +0000
+Subject: Re: [PATCH 01/14] sh: Sprinkle __uses_jump_to_uncached
+Message-Id: <20091009023724.GA7179@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1db0a1123393575aec324e0d808b6369f9837fe4.1254861984.git.matt@console-pimps.org>
+In-Reply-To: <1db0a1123393575aec324e0d808b6369f9837fe4.1254861984.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Fix some callers of jump_to_uncached() and back_to_cached() that were
-not annotated with __uses_jump_to_uncached.
+On Tue, Oct 06, 2009 at 10:22:21PM +0100, Matt Fleming wrote:
+> Fix some callers of jump_to_uncached() and back_to_cached() that were
+> not annotated with __uses_jump_to_uncached.
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
----
- arch/sh/mm/cache-sh4.c    |    2 +-
- arch/sh/mm/cache-sh7705.c |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+On Tue, Oct 06, 2009 at 10:22:22PM +0100, Matt Fleming wrote:
+> If we fail to allocate a PMB entry in pmb_remap() we must remember to
+> clear and free any PMB entries that we may have previously allocated,
+> e.g. if we were allocating a multiple entry mapping.
 
-diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
-index b2453bb..a98c7d8 100644
---- a/arch/sh/mm/cache-sh4.c
-+++ b/arch/sh/mm/cache-sh4.c
-@@ -43,7 +43,7 @@ static void (*__flush_dcache_segment_fn)(unsigned long, unsigned long)   * Called from kernel/module.c:sys_init_module and routine for a.out format,
-  * signal handler code and kprobes code
-  */
--static void sh4_flush_icache_range(void *args)
-+static void __uses_jump_to_uncached sh4_flush_icache_range(void *args)
- {
- 	struct flusher_data *data = args;
- 	unsigned long start, end;
-diff --git a/arch/sh/mm/cache-sh7705.c b/arch/sh/mm/cache-sh7705.c
-index 2cadee2..2601935 100644
---- a/arch/sh/mm/cache-sh7705.c
-+++ b/arch/sh/mm/cache-sh7705.c
-@@ -78,7 +78,7 @@ static void sh7705_flush_icache_range(void *args)
- /*
-  * Writeback&Invalidate the D-cache of the page
-  */
--static void __flush_dcache_page(unsigned long phys)
-+static void __uses_jump_to_uncached __flush_dcache_page(unsigned long phys)
- {
- 	unsigned long ways, waysize, addrstart;
- 	unsigned long flags;
-@@ -144,7 +144,7 @@ static void sh7705_flush_dcache_page(void *arg)
- 		__flush_dcache_page(PHYSADDR(page_address(page)));
- }
- 
--static void sh7705_flush_cache_all(void *args)
-+static void __uses_jump_to_uncached sh7705_flush_cache_all(void *args)
- {
- 	unsigned long flags;
- 
--- 
-1.6.3.3
+On Tue, Oct 06, 2009 at 10:22:27PM +0100, Matt Fleming wrote:
+> We should favour PMB mappings when the physical address cannot be
+> reached with 29-bits.
 
+On Tue, Oct 06, 2009 at 10:22:34PM +0100, Matt Fleming wrote:
+> Currently, we've got the less than ideal situation where if we need to
+> allocate a 256MB mapping we'll allocate four entries like so,
+> 
+> 	 entry 1: 128MB
+> 	 entry 2:  64MB
+> 	 entry 3:  16MB
+> 	 entry 4:  16MB
+> 
+> This is because as we execute the loop in pmb_remap() we will
+> progressively try mapping the remaining address space with smaller and
+> smaller sizes. This isn't good because the size we use on one iteration
+> may be the perfect size to use on the next iteration, for instance when
+> the initial size is divisible by one of the PMB mapping sizes.
+> 
+> With this patch, we now only need two entries in the PMB to map 256MB of
+> address space,
+> 
+> 	  entry 1: 128MB
+> 	  entry 2: 128MB
+> 
+
+These are all good fixups that are fairly orthogonal to the rest of the
+changes, so I've merged these as fixups for 2.6.32. The others we'll deal
+with incrementally once I open the tree for 2.6.33 changes.
