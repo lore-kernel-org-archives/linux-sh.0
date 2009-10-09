@@ -1,34 +1,81 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 28 Oct 2009 09:26:32 +0000
-Subject: Re: SH ATAPI IDE Driver
-Message-Id: <20091028092632.GB13259@linux-sh.org>
+From: Valentin R Sitsikov <valentin.sitdikov@siemens.com>
+Date: Fri, 09 Oct 2009 12:55:30 +0000
+Subject: Possibly icahe/dcache synchronization problem on sh7785lcr
+Message-Id: <4ACF32C2.9010501@siemens.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <32390a840910052042t64346e53w1bfb3473c7b2284b@mail.gmail.com>
-In-Reply-To: <32390a840910052042t64346e53w1bfb3473c7b2284b@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Oct 28, 2009 at 05:07:23PM +0900, ivy kim wrote:
-> > For starters, no new drivers should be written aimed at drivers/ide,
-> > libata is what you should be working with instead, aiming your driver at
-> > drivers/ata (you can see many other pata drivers there for examples on
-> > getting started, including ones that deal with ATAPI).
-> >
-> Although it's late, thank you for the answer. I managed to make IDE working.
-> But this is just PIO mode, and now I'm checking DMA mode but I read
-> the following article before, so I want to check if I should use
-> latest source code if the below mentioned DMA engine work is done.
-> For now, I'm using 'sh-2.6-2009-06-08-ms7724se-2.6.30-rc6'
-> 
-> Later on, I'll post at linux-ide mailing list...
-> 
-Yes, the dmaengine bits are merged upstream, although presently it's only
-enabled for sh7722 and sh7780. Getting it working for SH7724 should be
-pretty trivial, since it shouldn't really need much modification over the
-SH7722 support (which you can see in arch/sh/kernel/cpu/sh4a/setup-sh7722.c).
+Hello.
 
-If you fetch any recent kernel (ie, 2.6.31 or later) support is
-available, and should give you a stable platform for doing your driver
-development on.
+During execution of user space application form time to time
+invalid instruction or bus error occured or even init dies during sturtup.
+The situation became more stable if i use the following code:
+static void sh4_flush_icache_page(void *arg)
+{
+         flush_dcache_all();
+         flush_icache_all();
+}
+...
+local_flush_icache_page         = sh4_flush_icache_page;
+This is done because previous experience  with 2.6.20 on sdk7785.
+There was the similar problems (at least it looks like).
+
+So my question is if it really might be icache/dcache synchronization 
+problem or something different.
+May be somebody has had the same problems and know how to solve it right?
+
+
+I have the following configuration:
+sh7785lcr
+2.6.32-rc2. pagesize = 8K (avoid cache alias problem)
+uclibc-9.28 with pagesize = 8k
+
+Example of illegal instruction execution:
+...
+[    7.408000] VFS: Mounted root (nfs filesystem) on device 0:12.
+[    7.416000] Freeing unused kernel memory: 136k freed
+init started:  BusyBox v1.01 (Slind 1:1.01-2.slind3) multi-call binary
+init: Bummer, can't write to log on /dev/vc/5!
+Starting pid 881, console /dev/ttySC1: '/etc/init.d/rcS'
+Loading kernel modules
+cat: /etc/modules: No such file or directory
+Done loading modules
+.: 15: Can't open /lib/lsb/init-functions
+Activating swap.
+Cleaning up ifupdown...done.
+Starting OpenBSD Secure Shell server: sshdIllegal instruction
+...
+
+Example of unfixed unaligned access:
+[    7.416000] Freeing unused kernel memory: 136k freed
+init started:  BusyBox v1.01 (Slind 1:1.01-2.slind3) multi-call binary
+init: Bummer, can't write to log on /dev/vc/5!
+Starting pid 881, console /dev/ttySC1: '/etc/init.d/rcS'
+Loading kernel modules
+cat: /etc/modules: No such file or directory
+Done loading modules
+.: 15: Can't open /lib/lsb/init-functions
+Activating swap.
+Cleaning up ifupdown...done.
+[    9.764000] Unaligned userspace access in "sshd" pid20 
+pc=0x29684740 ins=0x2f86
+[    9.776000] Fixing up unaligned userspace access in "sshd" pid20 
+pc=0x29684740 ins=0x2f86
+Starting OpenBSD Secure Shell server: sshd[    9.916000] Unaligned 
+userspace access in "sshd" pid27 pc=0x296731e4 ins=0x2f96
+[    9.924000] Fixing up unaligned userspace access in "sshd" pid27 
+pc=0x296731e4 ins=0x2f96
+[    9.932000] Unaligned userspace access in "sshd" pid27 
+pc=0x296731f2 ins=0x0103
+[    9.940000] Fixing up unaligned userspace access in "sshd" pid27 
+pc=0x296731f2 ins=0x0103
+[    9.948000] Sending SIGBUS to "sshd" due to unaligned access (PC 
+b3325bf8 PR 296731f6)
+Bus error
+
+
+Best regards,
+Valentin.
