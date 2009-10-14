@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 14 Oct 2009 10:19:12 +0000
-Subject: [PATCH 06/07] sh: Add R-Standby support
-Message-Id: <20091014101912.21842.25895.sendpatchset@rxone.opensource.se>
+Date: Wed, 14 Oct 2009 10:18:47 +0000
+Subject: [PATCH 03/07] sh: Add save/restore sleep code for MMU/cache
+Message-Id: <20091014101847.21842.39050.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,165 +10,220 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add experimental R-standby support for sh7724. Right now only
-the kfr2r09 board is enabled. This should obviously not be
-board dependent in the future.
+Add experimental restore/save code for MMU and Cache registers.
+In the future it is most likely better to handle this somewhere
+else than from the on-chip memory.
 
 Not-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/shmobile/pm.c    |   11 +++--
- arch/sh/kernel/cpu/shmobile/sleep.S |   69 ++++++++++++++++++++++++++++++-----
- 2 files changed, 68 insertions(+), 12 deletions(-)
+ arch/sh/include/asm/suspend.h       |    1 
+ arch/sh/kernel/cpu/shmobile/pm.c    |    5 +
+ arch/sh/kernel/cpu/shmobile/sleep.S |  147 ++++++++++++++++++++++++++++++++++-
+ 3 files changed, 152 insertions(+), 1 deletion(-)
 
---- 0004/arch/sh/kernel/cpu/shmobile/pm.c
-+++ work/arch/sh/kernel/cpu/shmobile/pm.c	2009-10-14 18:07:02.000000000 +0900
-@@ -23,16 +23,15 @@
-  * Sleep mode is just plain "sleep" instruction
-  * Sleep Self-Refresh mode is above plus RAM put in Self-Refresh
-  * Standby Self-Refresh mode is above plus stopped clocks
-+ * R-standby turns off the main power domain
-  */
- #define SUSP_MODE_SLEEP		(SUSP_SH_SLEEP)
- #define SUSP_MODE_SLEEP_SF	(SUSP_SH_SLEEP | SUSP_SH_SF)
- #define SUSP_MODE_STANDBY_SF	(SUSP_SH_STANDBY | SUSP_SH_SF)
-+#define SUSP_MODE_RSTANDBY	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_BSC | SUSP_SH_SF)
+--- 0001/arch/sh/include/asm/suspend.h
++++ work/arch/sh/include/asm/suspend.h	2009-10-13 14:49:52.000000000 +0900
+@@ -27,5 +27,6 @@ static inline void sh_mobile_setup_cpuid
+ #define SUSP_SH_RSTANDBY	(1 << 2) /* SH-Mobile R-standby mode */
+ #define SUSP_SH_USTANDBY	(1 << 3) /* SH-Mobile U-standby mode */
+ #define SUSP_SH_SF		(1 << 4) /* Enable self-refresh */
++#define SUSP_SH_MMU		(1 << 5) /* Save/Restore MMU */
+ 
+ #endif /* _ASM_SH_SUSPEND_H */
+--- 0003/arch/sh/kernel/cpu/shmobile/pm.c
++++ work/arch/sh/kernel/cpu/shmobile/pm.c	2009-10-13 17:35:23.000000000 +0900
+@@ -14,6 +14,7 @@
+ #include <linux/io.h>
+ #include <linux/suspend.h>
+ #include <asm/suspend.h>
++#include <asm/cacheflush.h>
+ #include <asm/uaccess.h>
  
  /*
-- * The following modes are not there yet:
-- *
-- * R-standby mode is unsupported, but will be added in the future
-- * U-standby mode is low priority since it needs bootloader hacks
-+ * U-standby mode is unsupported since it needs bootloader hacks
-  */
+@@ -48,6 +49,10 @@ void sh_mobile_call_standby(unsigned lon
+ 	void *onchip_mem = (void *)RAM_BASE;
+ 	void (*standby_onchip_mem)(unsigned long, unsigned long) = onchip_mem;
  
- #ifdef CONFIG_CPU_SUBTYPE_SH7724
-@@ -61,7 +60,11 @@ static int sh_pm_enter(suspend_state_t s
- {
- 	local_irq_disable();
- 	set_bl_bit();
-+#ifdef CONFIG_SH_KFR2R09
-+	sh_mobile_call_standby(SUSP_MODE_RSTANDBY);
-+#else
- 	sh_mobile_call_standby(SUSP_MODE_STANDBY_SF);
-+#endif
- 	local_irq_disable();
- 	clear_bl_bit();
- 	return 0;
---- 0006/arch/sh/kernel/cpu/shmobile/sleep.S
-+++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2009-10-14 18:07:02.000000000 +0900
-@@ -246,6 +246,22 @@ test_rstandby:
- 	tst	#SUSP_SH_RSTANDBY, r0
- 	bt	test_ustandby
++	/* flush the caches if MMU flag is set */
++	if (mode & SUSP_SH_MMU)
++		flush_cache_all();
++
+ 	/* Let assembly snippet in on-chip memory handle the rest */
+ 	standby_onchip_mem(mode, RAM_BASE);
+ }
+--- 0001/arch/sh/kernel/cpu/shmobile/sleep.S
++++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2009-10-13 17:36:18.000000000 +0900
+@@ -58,6 +58,76 @@ ENTRY(sh_mobile_standby)
+ 	/* put mode flags in r0 */
+ 	mov	r4, r0
  
-+	/* save sp */
-+	mova    saved_sp, r0
-+	mov.l   r15, @r0
++	/* save MMU state */
++	tst	#SUSP_SH_MMU, r0
++	bt	skip_mmu_save_disable
 +
-+	/* setup resume address in BAR register */
-+	stc     vbr, r1
-+	mov.l   offset_resume, r4
-+	add     r4, r1
-+	mov.l   bar_reg, r4
-+	mov.l   r1, @r4
++	mov.l   pteh_reg, r0
++	mov.l   @r0, r1
++	mova    pteh_data, r0
++	mov.l   r1, @r0
 +
-+	/* make sure the SRSTF bit is cleared in RWTCSR */
-+	mov.l   rwtcsr_reg, r0
-+	mov.l   rwtcsr_data, r1
-+	mov.w   r1, @r0
++	mov.l   ptel_reg, r0
++	mov.l   @r0, r1
++	mova    ptel_data, r0
++	mov.l   r1, @r0
 +
- 	/* set mode to "r-standby mode" */
- 	bra	do_sleep
- 	 mov	#0x20, r1
-@@ -272,19 +288,49 @@ again:
- 	bra	again
- 	 nop
- 
-+restore_jump_rstandby:
-+	/* disable RWDT reset */
-+	mov.l   rwtcsr_reg, k0
-+	mov.l   rwtcsr_data, k1
-+	mov.w   k1, @k0
-+
-+	/* restore sp */
-+	mov.l   saved_sp, r15
-+
-+	/* restore sr */
-+	mov.l	saved_sr, r0
-+	ldc	r0, sr
-+
-+	/* set return_addr to old PR value */
-+	mov.l	saved_spc, k4
-+	mova	return_addr, k0
-+	mov.l	k4, @k0
-+
-+	bra	restore_jump_common
-+	 nop
++	mov.l   ttb_reg, r0
++	mov.l   @r0, r1
++	mova    ttb_data, r0
++	mov.l   r1, @r0
 +	
- restore_jump_vbr:
++	mov.l   tea_reg, r0
++	mov.l   @r0, r1
++	mova    tea_data, r0
++	mov.l   r1, @r0
 +
-+	/* set return_addr to vbr vector */
-+	mov.l	saved_vbr, k0
-+	mov.l	offset_vbr, k4
-+	add	k0, k4
-+	mova	return_addr, k0
-+	mov.l	k4, @k0
++	mov.l   mmucr_reg, r0
++	mov.l   @r0, r1
++	mova    mmucr_data, r0
++	mov.l   r1, @r0
 +
- 	/* setup spc with return address to c code */
- 	mov.l	saved_spc, k0
- 	ldc	k0, spc
- 
--	/* restore vbr */
--	mov.l	saved_vbr, k0
--	ldc	k0, vbr
--
- 	/* setup ssr with saved sr */
- 	mov.l	saved_sr, k0
- 	ldc	k0, ssr
- 
-+restore_jump_common:
-+	/* restore vbr */
-+	mov.l	saved_vbr, k0
-+	ldc	k0, vbr
++	mov.l   ptea_reg, r0
++	mov.l   @r0, r1
++	mova    ptea_data, r0
++	mov.l   r1, @r0
 +
++	mov.l   pascr_reg, r0
++	mov.l   @r0, r1
++	mova    pascr_data, r0
++	mov.l   r1, @r0
++	
++	mov.l   irmcr_reg, r0
++	mov.l   @r0, r1
++	mova    irmcr_data, r0
++	mov.l   r1, @r0
++       
++	/* invalidate TLBs and disable the MMU */
++	mov     #4, r1
++	mov.l   mmucr_reg, r0
++	mov.l   r1, @r0
++	icbi    @r0
++
++	/* save cache registers and disable caches */
++	mov.l   ccr_reg, r0
++	mov.l   @r0, r1
++	mova    ccr_data, r0
++	mov.l   r1, @r0
++
++	mov.l   ramcr_reg, r0
++	mov.l   @r0, r1
++	mova    ramcr_data, r0
++	mov.l   r1, @r0
++
++	mov.l   ccr_reg, r0
++	mov     #0, r1
++	mov.l   r1, @r0
++	icbi    @r0
++
++skip_mmu_save_disable:
++	/* put mode flags in r0 */
++	mov	r4, r0
++
+ 	tst	#SUSP_SH_SF, r0
+ 	bt	skip_set_sf
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+@@ -146,12 +216,64 @@ restore_jump_vbr:
  	/* get mode flags */
  	mov.l	saved_mode, k0
  
-@@ -499,19 +545,22 @@ skip_bsc_restore:
- 	mov.l	k0, @k1
- #endif
- skip_restore_sf:
--	/* jump to vbr vector */
--	mov.l	saved_vbr, k0
--	mov.l	offset_vbr, k4
--	add	k4, k0
+-done_sleep:
++	/* restore MMU configuration */
++	tst	#SUSP_SH_MMU, k0
++	bt	skip_mmu_restore
 +
-+	/* jump to address in return_addr */
-+	mov.l	return_addr, k0
- 	jmp	@k0
- 	 nop
- 
- 	.balign 4
- saved_mode:	.long	0
- saved_spc:	.long	0
-+saved_sp:	.long	0
- saved_sr:	.long	0
- saved_vbr:	.long	0
- offset_vbr:	.long	0x600
-+return_addr:	.long	0
-+bar_reg:       .long   0xa4150040 /* BAR */
-+offset_resume: .long   restore_jump_rstandby - sh_mobile_standby
- #ifdef CONFIG_CPU_SUBTYPE_SH7724
- dben_reg:	.long	0xfd000010 /* DBEN */
- dbcmdcnt_reg:	.long	0xfd000014 /* DBCMDCNT */
-@@ -585,6 +634,10 @@ dbpdcnt0_reg:  .long   0xfd000108 /* DBP
- dbpdcnt0_data: .long   0
- #endif
- 
-+/* RWDT */
-+rwtcsr_reg:    .long   0xa4520004
-+rwtcsr_data:   .long   0xa500
++	mov.l   pteh_reg, k4
++	mov.l   pteh_data, k1
++	mov.l   k1, @k4
 +
++	mov.l   ptel_reg, k4
++	mov.l   ptel_data, k1
++	mov.l   k1, @k4
++
++	mov.l   ttb_reg, k4
++	mov.l   ttb_data, k1
++	mov.l   k1, @k4
++
++	mov.l   tea_reg, k4
++	mov.l   tea_data, k1
++	mov.l   k1, @k4
++
++	mov.l   ptea_reg, k4
++	mov.l   ptea_data, k1
++	mov.l   k1, @k4
++	
++	mov.l   pascr_reg, k4
++	mov.l   pascr_data, k1
++	mov.l   k1, @k4
++
++	mov.l   irmcr_reg, k4
++	mov.l   irmcr_data, k1
++	mov.l   k1, @k4
++
++	mov.l   mmucr_reg, k4
++	mov.l   mmucr_data, k1
++	mov.l   k1, @k4
++	icbi    @k4
++
++	/* restore cache settings */
++	mov.l   ramcr_reg, k4
++	mov.l   ramcr_data, k1
++	mov.l   k1, @k4
++	icbi    @k4
++
++	mov.l   ccr_reg, k4
++	mov.l   ccr_data, k1
++	mov.l   k1, @k4
++	icbi    @k4
++	
++skip_mmu_restore:
++	
+ 	/* reset standby mode to sleep mode */
+ 	mov.l	5f, k4
+ 	mov	#0x00, k1
+ 	mov.l	k1, @k4
+ 
++	/* get mode flags */
++	mov.l	saved_mode, k0
++
+ 	tst	#SUSP_SH_SF, k0
+ 	bt	skip_restore_sf
+ 
+@@ -233,6 +355,29 @@ dbcmdcnt_data1:	.long	4
+ 7:	.long   0xfe400018 /* RTCNT */
+ 8:	.long   0xa55a0000
+ 
++/* MMU */
++pteh_reg:      .long   0xff000000 /* PTEH */
++pteh_data:     .long   0
++ptel_reg:      .long   0xff000004 /* PTEL */
++ptel_data:     .long   0
++ttb_reg:       .long   0xff000008 /* TTB */
++ttb_data:      .long   0
++tea_reg:       .long   0xff00000c /* TEA */
++tea_data:      .long   0
++mmucr_reg:     .long   0xff000010 /* MMUCR */
++mmucr_data:    .long   0
++ptea_reg:      .long   0xff000034 /* PTEA */
++ptea_data:     .long   0
++pascr_reg:     .long   0xff000070 /* PASCR */
++pascr_data:    .long   0
++irmcr_reg:     .long   0xff000078 /* IRMCR */
++irmcr_data:    .long   0
++
++/* Cache */
++ccr_reg:       .long   0xff00001c /* CCR */
++ccr_data:      .long   0
++ramcr_reg:     .long   0xff000074 /* RAMCR */
++ramcr_data:    .long   0
+ 
  /* interrupt vector @ 0x600 */
  	.balign 	0x400,0,0x400
- 	.long	0xdeadbeef
