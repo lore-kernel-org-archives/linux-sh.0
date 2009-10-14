@@ -1,133 +1,174 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Tue, 06 Oct 2009 21:22:28 +0000
-Subject: [PATCH 08/14] sh: Make most PMB functions static
-Message-Id: <46a9d1e2f3461c917c9f43e512bd25eced531695.1254861984.git.matt@console-pimps.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 14 Oct 2009 10:19:12 +0000
+Subject: [PATCH 06/07] sh: Add R-Standby support
+Message-Id: <20091014101912.21842.25895.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-There's no need to export the internal PMB functions for allocating,
-freeing and modifying PMB entries, etc. This way we can restrict the
-interface for PMB.
+From: Magnus Damm <damm@opensource.se>
 
-Also remove the static from pmb_init() so that we have more freedom in
-setting up the initial PMB entries and turning on MMU 32bit mode.
+Add experimental R-standby support for sh7724. Right now only
+the kfr2r09 board is enabled. This should obviously not be
+board dependent in the future.
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Not-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/include/asm/mmu.h |    8 +-------
- arch/sh/kernel/setup.c    |    4 ++++
- arch/sh/mm/pmb.c          |   17 ++++++++---------
- 3 files changed, 13 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
-index 5025e12..9c84b45 100644
---- a/arch/sh/include/asm/mmu.h
-+++ b/arch/sh/include/asm/mmu.h
-@@ -64,16 +64,10 @@ struct pmb_entry {
- };
- 
- /* arch/sh/mm/pmb.c */
--int __set_pmb_entry(unsigned long vpn, unsigned long ppn,
--		    unsigned long flags, int *entry);
--int set_pmb_entry(struct pmb_entry *pmbe);
--void clear_pmb_entry(struct pmb_entry *pmbe);
--struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
--			    unsigned long flags);
--void pmb_free(struct pmb_entry *pmbe);
- long pmb_remap(unsigned long virt, unsigned long phys,
- 	       unsigned long size, unsigned long flags);
- void pmb_unmap(unsigned long addr);
-+int pmb_init(void);
- #endif /* __ASSEMBLY__ */
- 
- #endif /* __MMU_H */
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index f9d44f8..8fdd03a 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -453,6 +453,10 @@ void __init setup_arch(char **cmdline_p)
- 
- 	paging_init();
- 
-+#ifdef CONFIG_PMB
-+	pmb_init();
-+#endif
-+
- #ifdef CONFIG_SMP
- 	plat_smp_setup();
- #endif
-diff --git a/arch/sh/mm/pmb.c b/arch/sh/mm/pmb.c
-index a510c8b..5321f82 100644
---- a/arch/sh/mm/pmb.c
-+++ b/arch/sh/mm/pmb.c
-@@ -115,8 +115,8 @@ repeat:
- 	return pos;
- }
- 
--struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
--			    unsigned long flags)
-+static struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
-+				   unsigned long flags)
- {
- 	struct pmb_entry *pmbe;
- 	int pos;
-@@ -141,7 +141,7 @@ struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
- 	return pmbe;
- }
- 
--void pmb_free(struct pmb_entry *pmbe)
-+static void pmb_free(struct pmb_entry *pmbe)
- {
- 	spin_lock_irq(&pmb_list_lock);
- 	pmb_list_del(pmbe);
-@@ -153,8 +153,8 @@ void pmb_free(struct pmb_entry *pmbe)
- /*
-  * Must be in P2 for __set_pmb_entry()
+ arch/sh/kernel/cpu/shmobile/pm.c    |   11 +++--
+ arch/sh/kernel/cpu/shmobile/sleep.S |   69 ++++++++++++++++++++++++++++++-----
+ 2 files changed, 68 insertions(+), 12 deletions(-)
+
+--- 0004/arch/sh/kernel/cpu/shmobile/pm.c
++++ work/arch/sh/kernel/cpu/shmobile/pm.c	2009-10-14 18:07:02.000000000 +0900
+@@ -23,16 +23,15 @@
+  * Sleep mode is just plain "sleep" instruction
+  * Sleep Self-Refresh mode is above plus RAM put in Self-Refresh
+  * Standby Self-Refresh mode is above plus stopped clocks
++ * R-standby turns off the main power domain
   */
--void __set_pmb_entry(unsigned long vpn, unsigned long ppn,
--		    unsigned long flags, int pos)
-+static void __set_pmb_entry(unsigned long vpn, unsigned long ppn,
-+			    unsigned long flags, int pos)
+ #define SUSP_MODE_SLEEP		(SUSP_SH_SLEEP)
+ #define SUSP_MODE_SLEEP_SF	(SUSP_SH_SLEEP | SUSP_SH_SF)
+ #define SUSP_MODE_STANDBY_SF	(SUSP_SH_STANDBY | SUSP_SH_SF)
++#define SUSP_MODE_RSTANDBY	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_BSC | SUSP_SH_SF)
+ 
+ /*
+- * The following modes are not there yet:
+- *
+- * R-standby mode is unsupported, but will be added in the future
+- * U-standby mode is low priority since it needs bootloader hacks
++ * U-standby mode is unsupported since it needs bootloader hacks
+  */
+ 
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+@@ -61,7 +60,11 @@ static int sh_pm_enter(suspend_state_t s
  {
- 	ctrl_outl(vpn | PMB_V, mk_pmb_addr(pos));
- 
-@@ -171,14 +171,14 @@ void __set_pmb_entry(unsigned long vpn, unsigned long ppn,
- 	ctrl_outl(ppn | flags | PMB_V, mk_pmb_data(pos));
- }
- 
--void __uses_jump_to_uncached set_pmb_entry(struct pmb_entry *pmbe)
-+static void __uses_jump_to_uncached set_pmb_entry(struct pmb_entry *pmbe)
- {
- 	jump_to_uncached();
- 	__set_pmb_entry(pmbe->vpn, pmbe->ppn, pmbe->flags, pmbe->entry);
- 	back_to_cached();
- }
- 
--void __uses_jump_to_uncached clear_pmb_entry(struct pmb_entry *pmbe)
-+static void __uses_jump_to_uncached clear_pmb_entry(struct pmb_entry *pmbe)
- {
- 	unsigned int entry = pmbe->entry;
- 	unsigned long addr;
-@@ -320,7 +320,7 @@ static void pmb_cache_ctor(void *pmb)
- 	memset(pmb, 0, sizeof(struct pmb_entry));
- }
- 
--static int __uses_jump_to_uncached pmb_init(void)
-+int __uses_jump_to_uncached pmb_init(void)
- {
- 	unsigned int nr_entries = ARRAY_SIZE(pmb_init_map);
- 	unsigned int entry, i;
-@@ -357,7 +357,6 @@ static int __uses_jump_to_uncached pmb_init(void)
- 
+ 	local_irq_disable();
+ 	set_bl_bit();
++#ifdef CONFIG_SH_KFR2R09
++	sh_mobile_call_standby(SUSP_MODE_RSTANDBY);
++#else
+ 	sh_mobile_call_standby(SUSP_MODE_STANDBY_SF);
++#endif
+ 	local_irq_disable();
+ 	clear_bl_bit();
  	return 0;
- }
--arch_initcall(pmb_init);
+--- 0006/arch/sh/kernel/cpu/shmobile/sleep.S
++++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2009-10-14 18:07:02.000000000 +0900
+@@ -246,6 +246,22 @@ test_rstandby:
+ 	tst	#SUSP_SH_RSTANDBY, r0
+ 	bt	test_ustandby
  
- static int pmb_seq_show(struct seq_file *file, void *iter)
- {
--- 
-1.6.3.3
-
++	/* save sp */
++	mova    saved_sp, r0
++	mov.l   r15, @r0
++
++	/* setup resume address in BAR register */
++	stc     vbr, r1
++	mov.l   offset_resume, r4
++	add     r4, r1
++	mov.l   bar_reg, r4
++	mov.l   r1, @r4
++
++	/* make sure the SRSTF bit is cleared in RWTCSR */
++	mov.l   rwtcsr_reg, r0
++	mov.l   rwtcsr_data, r1
++	mov.w   r1, @r0
++
+ 	/* set mode to "r-standby mode" */
+ 	bra	do_sleep
+ 	 mov	#0x20, r1
+@@ -272,19 +288,49 @@ again:
+ 	bra	again
+ 	 nop
+ 
++restore_jump_rstandby:
++	/* disable RWDT reset */
++	mov.l   rwtcsr_reg, k0
++	mov.l   rwtcsr_data, k1
++	mov.w   k1, @k0
++
++	/* restore sp */
++	mov.l   saved_sp, r15
++
++	/* restore sr */
++	mov.l	saved_sr, r0
++	ldc	r0, sr
++
++	/* set return_addr to old PR value */
++	mov.l	saved_spc, k4
++	mova	return_addr, k0
++	mov.l	k4, @k0
++
++	bra	restore_jump_common
++	 nop
++	
+ restore_jump_vbr:
++
++	/* set return_addr to vbr vector */
++	mov.l	saved_vbr, k0
++	mov.l	offset_vbr, k4
++	add	k0, k4
++	mova	return_addr, k0
++	mov.l	k4, @k0
++
+ 	/* setup spc with return address to c code */
+ 	mov.l	saved_spc, k0
+ 	ldc	k0, spc
+ 
+-	/* restore vbr */
+-	mov.l	saved_vbr, k0
+-	ldc	k0, vbr
+-
+ 	/* setup ssr with saved sr */
+ 	mov.l	saved_sr, k0
+ 	ldc	k0, ssr
+ 
++restore_jump_common:
++	/* restore vbr */
++	mov.l	saved_vbr, k0
++	ldc	k0, vbr
++
+ 	/* get mode flags */
+ 	mov.l	saved_mode, k0
+ 
+@@ -499,19 +545,22 @@ skip_bsc_restore:
+ 	mov.l	k0, @k1
+ #endif
+ skip_restore_sf:
+-	/* jump to vbr vector */
+-	mov.l	saved_vbr, k0
+-	mov.l	offset_vbr, k4
+-	add	k4, k0
++
++	/* jump to address in return_addr */
++	mov.l	return_addr, k0
+ 	jmp	@k0
+ 	 nop
+ 
+ 	.balign 4
+ saved_mode:	.long	0
+ saved_spc:	.long	0
++saved_sp:	.long	0
+ saved_sr:	.long	0
+ saved_vbr:	.long	0
+ offset_vbr:	.long	0x600
++return_addr:	.long	0
++bar_reg:       .long   0xa4150040 /* BAR */
++offset_resume: .long   restore_jump_rstandby - sh_mobile_standby
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+ dben_reg:	.long	0xfd000010 /* DBEN */
+ dbcmdcnt_reg:	.long	0xfd000014 /* DBCMDCNT */
+@@ -585,6 +634,10 @@ dbpdcnt0_reg:  .long   0xfd000108 /* DBP
+ dbpdcnt0_data: .long   0
+ #endif
+ 
++/* RWDT */
++rwtcsr_reg:    .long   0xa4520004
++rwtcsr_data:   .long   0xa500
++
+ /* interrupt vector @ 0x600 */
+ 	.balign 	0x400,0,0x400
+ 	.long	0xdeadbeef
