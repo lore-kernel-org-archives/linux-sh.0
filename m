@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 Oct 2009 10:52:23 +0000
-Subject: [PATCH 06/07] sh: Add ms7724se specific memory pre/post sleep code
-Message-Id: <20091029105223.29078.85437.sendpatchset@rxone.opensource.se>
+Date: Wed, 14 Oct 2009 10:18:39 +0000
+Subject: [PATCH 02/07] sh: Use RSMEM for sh7724 sleep modes
+Message-Id: <20091014101839.21842.14939.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,110 +10,51 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add self-refresh handling code for the MS7724SE board.
+Store sleep code in RSMEM on sh7724.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Not-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/boards/mach-se/7724/Makefile |    1 
- arch/sh/boards/mach-se/7724/sdram.S  |   52 ++++++++++++++++++++++++++++++++++
- arch/sh/boards/mach-se/7724/setup.c  |   12 +++++++
- 3 files changed, 64 insertions(+), 1 deletion(-)
+ arch/sh/kernel/cpu/shmobile/pm.c |   14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
---- 0001/arch/sh/boards/mach-se/7724/Makefile
-+++ work/arch/sh/boards/mach-se/7724/Makefile	2009-10-29 18:08:47.000000000 +0900
-@@ -7,4 +7,4 @@
- #
- #
+--- 0001/arch/sh/kernel/cpu/shmobile/pm.c
++++ work/arch/sh/kernel/cpu/shmobile/pm.c	2009-10-13 14:47:04.000000000 +0900
+@@ -34,18 +34,22 @@
+  * U-standby mode is low priority since it needs bootloader hacks
+  */
  
--obj-y	 := setup.o irq.o
-\ No newline at end of file
-+obj-y	 := setup.o irq.o sdram.o
---- /dev/null
-+++ work/arch/sh/boards/mach-se/7724/sdram.S	2009-10-29 18:12:13.000000000 +0900
-@@ -0,0 +1,52 @@
-+/*
-+ * MS7724SE sdram self/auto-refresh setup code
-+ *
-+ *  Copyright (C) 2009 Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/sys.h>
-+#include <linux/errno.h>
-+#include <linux/linkage.h>
-+#include <asm/asm-offsets.h>
-+#include <asm/suspend.h>
-+#include <asm/partner-jet-macros.h>
-+
-+/* code to enter and leave self-refresh. must be self-contained.
-+ * this code will be copied to on-chip memory and executed from there.
-+ */
-+	.balign 4
-+ENTRY(ms7724se_sdram_enter_start)
-+
-+	/* DBSC: put memory in self-refresh mode */
-+
-+	ED 0xFD000010, 0x00000000 /* DBEN */
-+	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000040, 0x00000001 /* DBRFPDN0 */
-+
-+	rts
-+	 nop
-+
-+ENTRY(ms7724se_sdram_enter_end)
-+
-+	.balign 4
-+ENTRY(ms7724se_sdram_leave_start)
-+
-+	/* DBSC: put memory in auto-refresh mode */
-+
-+	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
-+	WAIT 1
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000010, 0x00000001 /* DBEN */
-+	ED 0xFD000040, 0x00010000 /* DBRFPDN0 */
-+
-+	rts
-+	 nop
-+
-+ENTRY(ms7724se_sdram_leave_end)
---- 0001/arch/sh/boards/mach-se/7724/setup.c
-+++ work/arch/sh/boards/mach-se/7724/setup.c	2009-10-29 18:14:18.000000000 +0900
-@@ -28,6 +28,7 @@
- #include <asm/sh_eth.h>
- #include <asm/clock.h>
- #include <asm/sh_keysc.h>
-+#include <asm/suspend.h>
- #include <cpu/sh7724.h>
- #include <mach-se/mach/se7724.h>
+-#define ILRAM_BASE 0xe5200000
++#ifdef CONFIG_CPU_SUBTYPE_SH7724
++#define RAM_BASE 0xfd800000 /* RSMEM */
++#else
++#define RAM_BASE 0xe5200000 /* ILRAM */
++#endif
  
-@@ -566,11 +567,22 @@ static void __init sh_eth_init(void)
- #define SW41_G    0x4000
- #define SW41_H    0x8000
+ extern const unsigned char sh_mobile_standby[];
+ extern const unsigned int sh_mobile_standby_size;
  
-+extern char ms7724se_sdram_enter_start;
-+extern char ms7724se_sdram_enter_end;
-+extern char ms7724se_sdram_leave_start;
-+extern char ms7724se_sdram_leave_end;
-+
- static int __init devices_setup(void)
+ void sh_mobile_call_standby(unsigned long mode)
  {
- 	u16 sw = ctrl_inw(SW4140); /* select camera, monitor */
- 	struct clk *fsia_clk;
+-	void *onchip_mem = (void *)ILRAM_BASE;
++	void *onchip_mem = (void *)RAM_BASE;
+ 	void (*standby_onchip_mem)(unsigned long, unsigned long) = onchip_mem;
  
-+	/* register board specific self-refresh code */
-+	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
-+					&ms7724se_sdram_enter_start,
-+					&ms7724se_sdram_enter_end,
-+					&ms7724se_sdram_leave_start,
-+					&ms7724se_sdram_leave_end);
- 	/* Reset Release */
- 	ctrl_outw(ctrl_inw(FPGA_OUT) &
- 		  ~((1 << 1)  | /* LAN */
+ 	/* Let assembly snippet in on-chip memory handle the rest */
+-	standby_onchip_mem(mode, ILRAM_BASE);
++	standby_onchip_mem(mode, RAM_BASE);
+ }
+ 
+ static int sh_pm_enter(suspend_state_t state)
+@@ -65,9 +69,9 @@ static struct platform_suspend_ops sh_pm
+ 
+ static int __init sh_pm_init(void)
+ {
+-	void *onchip_mem = (void *)ILRAM_BASE;
++	void *onchip_mem = (void *)RAM_BASE;
+ 
+-	/* Copy the assembly snippet to the otherwise ununsed ILRAM */
++	/* Copy the assembly snippet to the otherwise ununsed on-chip RAM */
+ 	memcpy(onchip_mem, sh_mobile_standby, sh_mobile_standby_size);
+ 	wmb();
+ 	ctrl_barrier();
