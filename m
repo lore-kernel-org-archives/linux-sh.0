@@ -1,160 +1,35 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Fri, 09 Oct 2009 05:10:02 +0000
-Subject: libshveu-1.1.0 Release
-Message-Id: <dba6c0830910082210q58a70014i2d6c8cf35f610c30@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 14 Oct 2009 09:06:31 +0000
+Subject: [GIT PULL] sh updates for 2.6.32-rc5
+Message-Id: <20091014090630.GA29807@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-libshveu 1.1.0 Release
-===========
+Please pull from:
 
-libshveu: A library for controlling SH-Mobile VEU
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.32
 
-The source archive, and more information about the library are available from:
+Which contains:
 
-        http://linux-sh.org/cgi-bin/moin.cgi/libshveu
+Paul Mundt (8):
+      sh: update die() output.
+      sh: force dcache flush if dcache_dirty bit set.
+      sh: ftrace: Fix up syscall tracepoint support.
+      sh: Use boot_cpu_data for FPU tests in sigcontext paths.
+      sh: Tidy up SMP cpuinfo.
+      sh: Populate initial secondary CPU info from boot_cpu_data.
+      sh: Optimize the setup_rt_frame() I-cache flush.
+      sh: Fix a TRACE_IRQS_OFF typo.
 
-This is the first public release of libshveu. It contains:
-
- * src/libshveu: the libshveu shared library
- * src/tools: commandline tools
-
-libshveu API
-------------
-
-libshveu allows both synchronous and asynchronous access to the VEU.
-The synchronous API
-provides a one-shot function shveu_operation(). The asychronous API
-replaces this with a
-similar but non-blocking function, shveu_start(), and a corresponding
-shveu_wait().
-
-There are also convenience functions for colorspace conversions that
-are commonly used
-with video encoding and decoding, shveu_rgb565_to_nv12() and
-shveu_nv12_to_rgb565().
-
-The signature of shveu_operation() is as follows:
-
-/** Perform (scale|rotate) & crop between YCbCr 4:2:0 & RG565 surfaces
- * \param veu_index Index of which VEU to use
- * \param src_py Physical address of Y or RGB plane of source image
- * \param src_pc Physical address of CbCr plane of source image
-(ignored for RGB)
- * \param src_width Width in pixels of source image
- * \param src_height Height in pixels of source image
- * \param src_pitch Line pitch of source image
- * \param src_format Format of source image
- * \param dst_py Physical address of Y or RGB plane of destination image
- * \param dst_pc Physical address of CbCr plane of destination image
-(ignored for RGB)
- * \param dst_width Width in pixels of destination image
- * \param dst_height Height in pixels of destination image
- * \param dst_pitch Line pitch of destination image
- * \param dst_fmt Format of destination image
- * \param rotate Rotation to apply
- * \retval 0 Success
- * \retval -1 Error: Attempt to perform simultaneous scaling and rotation
- */
-int
-shveu_operation(
-        unsigned int veu_index,
-        unsigned long src_py,
-        unsigned long src_pc,
-        unsigned long src_width,
-        unsigned long src_height,
-        unsigned long src_pitch,
-        shveu_format_t src_fmt,
-        unsigned long dst_py,
-        unsigned long dst_pc,
-        unsigned long dst_width,
-        unsigned long dst_height,
-        unsigned long dst_pitch,
-        shveu_format_t dst_fmt,
-        shveu_rotation_t rotate);
-
-
-shveu-convert
--------------
-
-shveu-convert is a commandline program for converting raw image or video
-files. It uses the SH-Mobile VEU to perform simultaneous colorspace conversion
-and either rotation or scaling on each input frame.
-
-    Usage: shveu-convert [options] [input-filename [output-filename]]
-    Convert raw image data using the SH-Mobile VEU.
-
-    If no output filename is specified, data is output to stdout.
-    Specify '-' to force output to be written to stdout.
-
-    If no input filename is specified, data is read from stdin.
-    Specify '-' to force input to be read from stdin.
-
-    Input options
-      -c, --input-colorspace (RGB565, NV12, YCbCr420, YCbCr422)
-                             Specify input colorspace
-      -s, --input-size       Set the input image size (qcif, cif, qvga, vga)
-
-    Output options
-      -o filename, --output filename
-                             Specify output filename (default: stdout)
-      -C, --output-colorspace (RGB565, NV12, YCbCr420, YCbCr422)
-                             Specify output colorspace
-
-    Transform options
-      Note that the VEU does not support combined rotation and scaling.
-      -S, --output-size      Set the output image size (qcif, cif, qvga, vga)
-                             [default is same as input size, ie. no rescaling]
-      -r, --rotate           Rotate the image 90 degrees clockwise
-
-    Miscellaneous options
-      -h, --help             Display this help and exit
-      -v, --version          Output version information and exit
-
-    File extensions are interpreted as follows unless otherwise specified:
-      .yuv    YCbCr420
-      .rgb    RGB565
-
-
-SH-Mobile
----------
-
-The [SH-Mobile][0] processor series includes a hardware video engine
-unit that supports colorspace conversion, rotation and scaling. Some models
-also include support for camera capture, JPEG processing, and DSP
-instructions.
-
-[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
-
-Kernel configuration
---------------------
-
-libshveu uses the Linux kernel UIO support for the SH-Mobile VEU, which was
-added in 2.6.27.
-
-The following kernel boot option reserves physically contiguous memory
-for VEU use:
-
-    memchunk.veu=4m
-
-License
--------
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public
-License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
-
-See the file COPYING for details.
+ arch/sh/kernel/entry-common.S |    2 +-
+ arch/sh/kernel/ftrace.c       |   37 +++++++++++++++++++++++++++----------
+ arch/sh/kernel/setup.c        |    2 ++
+ arch/sh/kernel/signal_32.c    |    9 ++++-----
+ arch/sh/kernel/smp.c          |    2 ++
+ arch/sh/kernel/traps_32.c     |    7 ++++---
+ arch/sh/mm/cache.c            |    2 +-
+ 7 files changed, 41 insertions(+), 20 deletions(-)
