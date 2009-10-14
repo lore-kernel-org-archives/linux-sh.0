@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 Oct 2009 10:51:40 +0000
-Subject: [PATCH 01/07] sh: Rename romimage-macros.h to partner-jet-macros.h
-Message-Id: <20091029105140.29078.90079.sendpatchset@rxone.opensource.se>
+Date: Wed, 14 Oct 2009 10:18:56 +0000
+Subject: [PATCH 04/07] sh: Use immediate data for sh7724 DBSC
+Message-Id: <20091014101856.21842.73069.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,189 +10,92 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Since we will use the macros outside of romimage, rename the
-file <asm/romimage-macros.h> to <asm/partner-jet-macros.h>.
+Use immediate data for the DBSC code to save a bit of space.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/include/asm/partner-jet-macros.h      |   73 +++++++++++++++++++++++++
- arch/sh/include/asm/romimage-macros.h         |   73 -------------------------
- arch/sh/include/mach-ecovec24/mach/romimage.h |    2 
- arch/sh/include/mach-kfr2r09/mach/romimage.h  |    2 
- 4 files changed, 75 insertions(+), 75 deletions(-)
+ arch/sh/kernel/cpu/shmobile/sleep.S |   28 +++++++++++-----------------
+ 1 file changed, 11 insertions(+), 17 deletions(-)
 
---- /dev/null
-+++ work/arch/sh/include/asm/partner-jet-macros.h	2009-10-28 18:02:15.000000000 +0900
-@@ -0,0 +1,73 @@
-+#ifndef __ROMIMAGE_MACRO_H
-+#define __ROMIMAGE_MACRO_H
-+
-+/* The LIST command is used to include comments in the script */
-+.macro	LIST comment
-+.endm
-+
-+/* The ED command is used to write a 32-bit word */
-+.macro  ED, addr, data
-+	mov.l 1f, r1
-+	mov.l 2f, r0
-+	mov.l r0, @r1
-+	bra 3f
-+	 nop
-+	.align 2
-+1 :	.long \addr
-+2 :	.long \data
-+3 :
-+.endm
-+
-+/* The EW command is used to write a 16-bit word */
-+.macro  EW, addr, data
-+	mov.l 1f, r1
-+	mov.l 2f, r0
-+	mov.w r0, @r1
-+	bra 3f
-+	 nop
-+	.align 2
-+1 :	.long \addr
-+2 :	.long \data
-+3 :
-+.endm
-+
-+/* The EB command is used to write an 8-bit word */
-+.macro  EB, addr, data
-+	mov.l 1f, r1
-+	mov.l 2f, r0
-+	mov.b r0, @r1
-+	bra 3f
-+	 nop
-+	.align 2
-+1 :	.long \addr
-+2 :	.long \data
-+3 :
-+.endm
-+
-+/* The WAIT command is used to delay the execution */
-+.macro  WAIT, time
-+	mov.l  2f, r3
-+1 :
-+	nop
-+	tst     r3, r3
-+	bf/s    1b
-+	dt      r3
-+	bra	3f
-+	 nop
-+	.align 2
-+2 :	.long \time * 100
-+3 :
-+.endm
-+
-+/* The DD command is used to read a 32-bit word */
-+.macro  DD, addr, addr2, nr
-+	mov.l 1f, r1
-+	mov.l @r1, r0
-+	bra 2f
-+	 nop
-+	.align 2
-+1 :	.long \addr
-+2 :
-+.endm
-+
-+#endif /* __ROMIMAGE_MACRO_H */
---- 0001/arch/sh/include/asm/romimage-macros.h
-+++ /dev/null	2009-10-26 09:40:59.257024378 +0900
-@@ -1,73 +0,0 @@
--#ifndef __ROMIMAGE_MACRO_H
--#define __ROMIMAGE_MACRO_H
--
--/* The LIST command is used to include comments in the script */
--.macro	LIST comment
--.endm
--
--/* The ED command is used to write a 32-bit word */
--.macro  ED, addr, data
--	mov.l 1f, r1
--	mov.l 2f, r0
--	mov.l r0, @r1
--	bra 3f
--	 nop
--	.align 2
--1 :	.long \addr
--2 :	.long \data
--3 :
--.endm
--
--/* The EW command is used to write a 16-bit word */
--.macro  EW, addr, data
--	mov.l 1f, r1
--	mov.l 2f, r0
--	mov.w r0, @r1
--	bra 3f
--	 nop
--	.align 2
--1 :	.long \addr
--2 :	.long \data
--3 :
--.endm
--
--/* The EB command is used to write an 8-bit word */
--.macro  EB, addr, data
--	mov.l 1f, r1
--	mov.l 2f, r0
--	mov.b r0, @r1
--	bra 3f
--	 nop
--	.align 2
--1 :	.long \addr
--2 :	.long \data
--3 :
--.endm
--
--/* The WAIT command is used to delay the execution */
--.macro  WAIT, time
--	mov.l  2f, r3
--1 :
--	nop
--	tst     r3, r3
--	bf/s    1b
--	dt      r3
--	bra	3f
--	 nop
--	.align 2
--2 :	.long \time * 100
--3 :
--.endm
--
--/* The DD command is used to read a 32-bit word */
--.macro  DD, addr, addr2, nr
--	mov.l 1f, r1
--	mov.l @r1, r0
--	bra 2f
--	 nop
--	.align 2
--1 :	.long \addr
--2 :
--.endm
--
--#endif /* __ROMIMAGE_MACRO_H */
---- 0001/arch/sh/include/mach-ecovec24/mach/romimage.h
-+++ work/arch/sh/include/mach-ecovec24/mach/romimage.h	2009-10-29 12:53:15.000000000 +0900
-@@ -3,7 +3,7 @@
-  * the assembly code is the first code to be executed in the romImage
-  */
+--- 0004/arch/sh/kernel/cpu/shmobile/sleep.S
++++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2009-10-13 15:01:24.000000000 +0900
+@@ -117,23 +117,23 @@ skip_mmu_save_disable:
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+ 	/* DBSC: put memory in self-refresh mode */
+ 	mov.l	dben_reg, r4
+-	mov.l	dben_data0, r1
++	mov	#0, r1
+ 	mov.l	r1, @r4
  
--#include <asm/romimage-macros.h>
-+#include <asm/partner-jet-macros.h>
- #include "partner-jet-setup.txt"
+ 	mov.l	dbrfpdn0_reg, r4
+-	mov.l	dbrfpdn0_data0, r1
++	mov	#0, r1
+ 	mov.l	r1, @r4
  
- 	/* execute icbi after enabling cache */
---- 0001/arch/sh/include/mach-kfr2r09/mach/romimage.h
-+++ work/arch/sh/include/mach-kfr2r09/mach/romimage.h	2009-10-29 12:53:01.000000000 +0900
-@@ -3,7 +3,7 @@
-  * the assembly code is the first code to be executed in the romImage
-  */
+ 	mov.l	dbcmdcnt_reg, r4
+-	mov.l	dbcmdcnt_data0, r1
++	mov	#2, r1
+ 	mov.l	r1, @r4
  
--#include <asm/romimage-macros.h>
-+#include <asm/partner-jet-macros.h>
- #include "partner-jet-setup.txt"
+ 	mov.l	dbcmdcnt_reg, r4
+-	mov.l	dbcmdcnt_data1, r1
++	mov	#4 r1
+ 	mov.l	r1, @r4
  
- 	/* execute icbi after enabling cache */
+ 	mov.l	dbrfpdn0_reg, r4
+-	mov.l	dbrfpdn0_data1, r1
++	mov	#1, r1
+ 	mov.l	r1, @r4
+ #else
+ 	/* SBSC: disable power down and put in self-refresh mode */
+@@ -253,7 +253,7 @@ skip_mmu_restore:
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+ 	/* DBSC: put memory in auto-refresh mode */
+ 	mov.l	dbrfpdn0_reg, k4
+-	mov.l	dbrfpdn0_data0, k1
++	mov	#0, k1
+ 	mov.l	k1, @k4
+ 
+ 	nop /* sleep 140 ns */
+@@ -262,19 +262,19 @@ skip_mmu_restore:
+ 	nop
+ 
+ 	mov.l	dbcmdcnt_reg, k4
+-	mov.l	dbcmdcnt_data0, k1
++	mov	#2, k1
+ 	mov.l	k1, @k4
+ 
+ 	mov.l	dbcmdcnt_reg, k4
+-	mov.l	dbcmdcnt_data1, k1
++	mov	#4, k1
+ 	mov.l	k1, @k4
+ 
+ 	mov.l	dben_reg, k4
+-	mov.l	dben_data1, k1
++	mov	#1, k1
+ 	mov.l	k1, @k4
+ 
+ 	mov.l	dbrfpdn0_reg, k4
+-	mov.l	dbrfpdn0_data2, k1
++	mov.l	dbrfpdn0_data, k1
+ 	mov.l	k1, @k4
+ #else
+ 	/* SBSC: set auto-refresh mode */
+@@ -308,15 +308,9 @@ saved_vbr:	.long	0
+ offset_vbr:	.long	0x600
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+ dben_reg:	.long	0xfd000010 /* DBEN */
+-dben_data0:	.long	0
+-dben_data1:	.long	1
+ dbrfpdn0_reg:	.long	0xfd000040 /* DBRFPDN0 */
+-dbrfpdn0_data0:	.long	0
+-dbrfpdn0_data1:	.long	1
+-dbrfpdn0_data2:	.long	0x00010000
++dbrfpdn0_data:	.long	0x00010000
+ dbcmdcnt_reg:	.long	0xfd000014 /* DBCMDCNT */
+-dbcmdcnt_data0:	.long	2
+-dbcmdcnt_data1:	.long	4
+ #else
+ 1:	.long	0xfe400008 /* SDCR0 */
+ 2:	.long	0x00000400
