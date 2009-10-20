@@ -1,50 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 14 Oct 2009 10:18:21 +0000
-Subject: [PATCH 00/07] sh: SuperH Mobile R-Standby Prototype
-Message-Id: <20091014101821.21842.40286.sendpatchset@rxone.opensource.se>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Tue, 20 Oct 2009 21:53:30 +0000
+Subject: Hi Kieran, this Fabio Giovagnini
+Message-Id: <200910202353.30573.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sh: SuperH Mobile R-Standby Prototype
+Do you remember?
+I gave you some patches to make the toolchain gcc-3.4.6 able to build also 
+g++.
+It was for sh7203-uclinix-1.0
+Form you web site I have downloaded the update 2.0 for the system; but nothing 
+is changed about building c++ support into the toolchain.
+Why did not you use my patches? Were thwy not working?
 
-[PATCH 01/07] sh: Restore all INTC registers on resume
-[PATCH 02/07] sh: Use RSMEM for sh7724 sleep modes
-[PATCH 03/07] sh: Add save/restore sleep code for MMU/cache
-[PATCH 04/07] sh: Use immediate data for sh7724 DBSC
-[PATCH 05/07] sh: Add save/restore sleep code for BSC/DBSC
-[PATCH 06/07] sh: Add R-Standby support
-[PATCH 07/07] sh: R-Standby CMT timer resume order workaround 
+Let me know please.
 
-These patches implement experimental R-standby support for sh7724.
+Waiting to hear of you, best regards and many tkanks.
 
-Use CONFIG_SUSPEND together with "echo mem > /sys/power/state"
-to test this feature on a kfr2r09 board.
+Cheers
 
-R-Standby suspend and resume on other boards with sh7724 and Mobile
-DDR2-SDRAM may work as well, but the self-refresh resume code most
-likely needs more attention. Boards with sh7724 and DDR2-SDRAM
-(non-Mobile DDR2-SDRAM) are not supported at this point. Also,
-only CS0 memory area settings are kept during R-standby, so make
-sure to minimize your kernel config if you want to try this out.
+-- 
+Fabio Giovagnini
 
-On top of all that, there is an issue with the suspend code. This
-code today assumes that timer drivers are sysdev devices. This is
-not true on SuperH so [PATCH 07/07] simply disables clocksource
-support to avoid a read-before-resume clocksource crash on resume.
+Aurion s.r.l.
+CF e P.IVA 00885711200
+Tel. +39.335.8350919
 
-The code is far from pretty and quite a bit of future glue code
-is needed to mix processor-specific stuff with board-specific
-configuration.
+www.aurion-tech.com
 
-Far-from-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/sh/include/asm/suspend.h          |    2 
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |    2 
- arch/sh/kernel/cpu/shmobile/pm.c       |   30 +-
- arch/sh/kernel/cpu/shmobile/sleep.S    |  460 ++++++++++++++++++++++++++++++--
- drivers/sh/intc.c                      |   25 +
- 5 files changed, 481 insertions(+), 38 deletions(-)
+account telefono VoIP skype (www.skype.com):
+aurion.giovagnini
