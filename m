@@ -1,33 +1,34 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Tue, 27 Oct 2009 08:12:10 +0000
-Subject: toolchain suggestied
-Message-Id: <200910270912.10432.fabio.giovagnini@aurion-tech.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 21 Oct 2009 00:47:49 +0000
+Subject: [GIT PULL] sh updates for 2.6.32-rc6
+Message-Id: <20091021004749.GA17730@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Paul, hi all,
+Please pull from:
 
-sorry if I'm so hard on toolchain, but something is missing into my puzzle.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.32
 
-Paul, you wrote code surgery toolchain is the only supported.
-Do you ues the binary distribution, or did you build staring from sources?
-I have build many toolchians untill now but the code surgery one is impossible 
-for me. Do you have any suggestions?
+Which contains:
 
-Thanks and sorry again.
+Magnus Damm (1):
+      sh: disabled cache handling fix.
 
+Paul Mundt (1):
+      sh: Kill off stray HAVE_FTRACE_SYSCALLS reference.
 
--- 
-Fabio Giovagnini
+Thomas Gleixner (1):
+      sh: Remove BKL from landisk gio.
 
-Aurion s.r.l.
-CF e P.IVA 00885711200
-Tel. +39.335.8350919
+Valentin Sitdikov (1):
+      sh: Fix up single page flushing to use PAGE_SIZE.
 
-www.aurion-tech.com
-
-account telefono VoIP skype (www.skype.com):
-aurion.giovagnini
+ arch/sh/Kconfig                   |    1 -
+ arch/sh/boards/mach-landisk/gio.c |   10 ++++------
+ arch/sh/mm/cache-sh4.c            |   22 ++++++++++------------
+ arch/sh/mm/cache.c                |   10 ++++++++++
+ 4 files changed, 24 insertions(+), 19 deletions(-)
