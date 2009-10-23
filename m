@@ -1,32 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 Oct 2009 06:26:04 +0000
-Subject: [PATCH] sh: Remove unused WP signal for SDHI0 and KFR2R09
-Message-Id: <20091030062604.22969.41725.sendpatchset@rxone.opensource.se>
+From: Andrew Stubbs <ams@codesourcery.com>
+Date: Fri, 23 Oct 2009 16:41:29 +0000
+Subject: Sourcery G++ Lite 4.4-45 for SuperH GNU/Linux now available
+Message-Id: <4AE1DCB9.5020503@codesourcery.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+CodeSourcery is pleased to announce the availability of a new Sourcery 
+G++ Lite Edition release for SuperH processors.  This is available for 
+download from:
 
-Get rid of the unused WP signal for SDHI0 on KFR2R09.
-This because yc304 on KFR2R09 is a Micro SD slot which
-does not implement the WP signal.
+     http://www.codesourcery.com/sgpp/lite/superh
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Some of the new features in this release include:
 
- arch/sh/boards/mach-kfr2r09/setup.c |    1 -
- 1 file changed, 1 deletion(-)
+* GCC has been upgraded to 4.4.1.
 
---- 0013/arch/sh/boards/mach-kfr2r09/setup.c
-+++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-10-30 14:51:33.000000000 +0900
-@@ -539,7 +539,6 @@ static int __init kfr2r09_devices_setup(
+* Glibc has been upgraded to 2.10.
+
+* uClibc has been upgraded to 0.9.30.
+
+* GDB has been upgraded to 6.8.50.
+
+* GDB now supports post-mortem debugging using core-files.
+
+Please see the Getting Started Guide for a complete set of release notes:
+
  
- 	/* SDHI0 connected to yc304 */
- 	gpio_request(GPIO_FN_SDHI0CD, NULL);
--	gpio_request(GPIO_FN_SDHI0WP, NULL);
- 	gpio_request(GPIO_FN_SDHI0D3, NULL);
- 	gpio_request(GPIO_FN_SDHI0D2, NULL);
- 	gpio_request(GPIO_FN_SDHI0D1, NULL);
+http://www.codesourcery.com/sgpp/lite/superh/portal/doc5782/getting-started.pdf
+
+-- 
+Andrew Stubbs
+CodeSourcery
