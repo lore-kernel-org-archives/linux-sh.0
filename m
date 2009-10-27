@@ -1,52 +1,85 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2009 02:22:32 +0000
-Subject: [PATCH 03/07] mmc: Remove const from tmio-mmc platform data
-Message-Id: <20091002022232.8215.10549.sendpatchset@rxone.opensource.se>
+Date: Tue, 27 Oct 2009 10:49:55 +0000
+Subject: [PATCH] sh: add SDHI1 support to ms7724se
+Message-Id: <20091027104955.26350.60772.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: akpm@linux-foundation.org, linux-mmc@vger.kernel.org, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, g.liakhovetski@gmx.de
 
 From: Magnus Damm <damm@opensource.se>
 
-Remove const from the hclk member of the tmio-mmc platform
-data. This to allow assigning a value dynamically to the
-platform data in the SuperH Mobile SDHI driver.
+Add support for cn8 and SDHI1 to the ms7724se board.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Depends on the SuperH Mobile SDHI driver.
+ arch/sh/boards/mach-se/7724/setup.c |   35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
- drivers/mfd/sh_mobile_sdhi.c |    4 +---
- include/linux/mfd/tmio.h     |    2 +-
- 2 files changed, 2 insertions(+), 4 deletions(-)
-
---- 0008/drivers/mfd/sh_mobile_sdhi.c
-+++ work/drivers/mfd/sh_mobile_sdhi.c	2009-10-02 09:58:40.000000000 +0900
-@@ -84,9 +84,7 @@ static int __init sh_mobile_sdhi_probe(s
- 	}
+--- 0005/arch/sh/boards/mach-se/7724/setup.c
++++ work/arch/sh/boards/mach-se/7724/setup.c	2009-10-27 18:50:48.000000000 +0900
+@@ -463,6 +463,7 @@ static struct resource sdhi0_cn7_resourc
  
- 	clk_enable(priv->clk);
--
--	/* FIXME: silly const unsigned int hclk */
--	*(unsigned int *)&priv->mmc_data.hclk = clk_get_rate(priv->clk);
-+	priv->mmc_data.hclk = clk_get_rate(priv->clk);
- 
- 	memcpy(&priv->cell_mmc, &sh_mobile_sdhi_cell, sizeof(priv->cell_mmc));
- 	priv->cell_mmc.driver_data = &priv->mmc_data;
---- 0002/include/linux/mfd/tmio.h
-+++ work/include/linux/mfd/tmio.h	2009-10-02 09:55:50.000000000 +0900
-@@ -53,7 +53,7 @@ void tmio_core_mmc_clk_div(void __iomem 
-  * data for the MMC controller
-  */
- struct tmio_mmc_data {
--	const unsigned int		hclk;
-+	unsigned int		hclk;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_no_clk_div)(struct platform_device *host, int state);
+ static struct platform_device sdhi0_cn7_device = {
+ 	.name           = "sh_mobile_sdhi",
++	.id		= 0,
+ 	.num_resources  = ARRAY_SIZE(sdhi0_cn7_resources),
+ 	.resource       = sdhi0_cn7_resources,
+ 	.archdata = {
+@@ -470,6 +471,29 @@ static struct platform_device sdhi0_cn7_
+ 	},
  };
+ 
++static struct resource sdhi1_cn8_resources[] = {
++	[0] = {
++		.name	= "SDHI1",
++		.start  = 0x04cf0000,
++		.end    = 0x04cf01ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 24,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi1_cn8_device = {
++	.name           = "sh_mobile_sdhi",
++	.id		= 1,
++	.num_resources  = ARRAY_SIZE(sdhi1_cn8_resources),
++	.resource       = sdhi1_cn8_resources,
++	.archdata = {
++		.hwblk_id = HWBLK_SDHI1,
++	},
++};
++
+ static struct platform_device *ms7724se_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&smc91x_eth_device,
+@@ -483,6 +507,7 @@ static struct platform_device *ms7724se_
+ 	&sh7724_usb1_gadget_device,
+ 	&fsi_device,
+ 	&sdhi0_cn7_device,
++	&sdhi1_cn8_device,
+ };
+ 
+ #define EEPROM_OP   0xBA206000
+@@ -725,6 +750,16 @@ static int __init devices_setup(void)
+ 	gpio_request(GPIO_FN_SDHI0CMD, NULL);
+ 	gpio_request(GPIO_FN_SDHI0CLK, NULL);
+ 
++	/* SDHI1 connected to cn8 */
++	gpio_request(GPIO_FN_SDHI1CD, NULL);
++	gpio_request(GPIO_FN_SDHI1WP, NULL);
++	gpio_request(GPIO_FN_SDHI1D3, NULL);
++	gpio_request(GPIO_FN_SDHI1D2, NULL);
++	gpio_request(GPIO_FN_SDHI1D1, NULL);
++	gpio_request(GPIO_FN_SDHI1D0, NULL);
++	gpio_request(GPIO_FN_SDHI1CMD, NULL);
++	gpio_request(GPIO_FN_SDHI1CLK, NULL);
++
+ 	/*
+ 	 * enable SH-Eth
+ 	 *
