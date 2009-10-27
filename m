@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 26 Oct 2009 10:44:37 +0000
-Subject: [PATCH] sh: mac address through private data for sh_eth on ecovec24
-Message-Id: <20091026104437.25084.57539.sendpatchset@rxone.opensource.se>
+Date: Tue, 27 Oct 2009 10:47:34 +0000
+Subject: [PATCH] sh: mac address through private data for sh_eth on ms7724se
+Message-Id: <20091027104734.26330.25913.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20091026104437.25084.57539.sendpatchset@rxone.opensource.se>
+In-Reply-To: <20091026104437.25084.57539.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,74 +12,45 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Convert the ecovec24 board code to pass the mac
+Convert the ms7724se board code to pass the mac
 address to the sh_eth driver using platform data.
-Also, remove the static clock to allow Runtime PM.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/boards/mach-ecovec24/setup.c |   33 ++++-----------------------------
- 1 file changed, 4 insertions(+), 29 deletions(-)
+ This depends on the sh_eth platform data mac patch.
 
---- 0003/arch/sh/boards/mach-ecovec24/setup.c
-+++ work/arch/sh/boards/mach-ecovec24/setup.c	2009-10-07 15:11:51.000000000 +0900
-@@ -414,12 +414,9 @@ static u8 mac_read(struct i2c_adapter *a
- 	return buf;
- }
- 
--#define MAC_LEN 6
--static void __init sh_eth_init(void)
-+static void __init sh_eth_init(struct sh_eth_plat_data *pd)
+ arch/sh/boards/mach-se/7724/setup.c |   14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
+
+--- 0001/arch/sh/boards/mach-se/7724/setup.c
++++ work/arch/sh/boards/mach-se/7724/setup.c	2009-10-27 18:07:05.000000000 +0900
+@@ -507,7 +507,7 @@ static int __init sh_eth_is_eeprom_ready
+ static void __init sh_eth_init(void)
  {
- 	struct i2c_adapter *a = i2c_get_adapter(1);
--	struct clk *eth_clk;
--	u8 mac[MAC_LEN];
  	int i;
+-	u16 mac[3];
++	u16 mac;
  
- 	if (!a) {
-@@ -427,33 +424,11 @@ static void __init sh_eth_init(void)
- 		return;
- 	}
+ 	/* check EEPROM status */
+ 	if (!sh_eth_is_eeprom_ready())
+@@ -521,16 +521,10 @@ static void __init sh_eth_init(void)
+ 		if (!sh_eth_is_eeprom_ready())
+ 			return;
  
--	eth_clk = clk_get(NULL, "eth0");
--	if (!eth_clk) {
--		pr_err("can not get eth0 clk\n");
--		return;
--	}
--
- 	/* read MAC address frome EEPROM */
--	for (i = 0; i < MAC_LEN; i++) {
--		mac[i] = mac_read(a, 0x10 + i);
-+	for (i = 0; i < sizeof(pd->mac_addr); i++) {
-+		pd->mac_addr[i] = mac_read(a, 0x10 + i);
- 		msleep(10);
+-		mac[i] = ctrl_inw(EEPROM_DATA);
+-		mac[i] = ((mac[i] & 0xFF) << 8) | (mac[i] >> 8); /* swap */
++		mac = ctrl_inw(EEPROM_DATA);
++		sh_eth_plat.mac_addr[i << 1] = mac & 0xff;
++		sh_eth_plat.mac_addr[(i << 1) + 1] = mac >> 8;
  	}
--
--	/* clock enable */
--	clk_enable(eth_clk);
 -
 -	/* reset sh-eth */
 -	ctrl_outl(0x1, SH_ETH_ADDR + 0x0);
 -
 -	/* set MAC addr */
--	ctrl_outl((mac[0] << 24) |
--		  (mac[1] << 16) |
--		  (mac[2] <<  8) |
--		  (mac[3] <<  0), SH_ETH_MAHR);
--	ctrl_outl((mac[4] <<  8) |
--		  (mac[5] <<  0), SH_ETH_MALR);
--
--	clk_put(eth_clk);
+-	ctrl_outl(((mac[0] << 16) | (mac[1])), SH_ETH_MAHR);
+-	ctrl_outl((mac[2]), SH_ETH_MALR);
  }
  
- #define PORT_HIZA 0xA4050158
-@@ -665,7 +640,7 @@ arch_initcall(arch_setup);
- 
- static int __init devices_setup(void)
- {
--	sh_eth_init();
-+	sh_eth_init(&sh_eth_plat);
- 	return 0;
- }
- device_initcall(devices_setup);
+ #define SW4140    0xBA201000
