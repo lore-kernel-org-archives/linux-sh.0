@@ -1,203 +1,114 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2009 02:22:09 +0000
-Subject: [PATCH 01/07] mfd: Add SuperH Mobile SDHI platform driver
-Message-Id: <20091002022209.8215.81916.sendpatchset@rxone.opensource.se>
+Date: Thu, 29 Oct 2009 10:52:15 +0000
+Subject: [PATCH 05/07] sh: Add kfr2r09 specific memory pre/post sleep code
+Message-Id: <20091029105215.29078.73642.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: akpm@linux-foundation.org, linux-mmc@vger.kernel.org, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, g.liakhovetski@gmx.de
 
 From: Magnus Damm <damm@opensource.se>
 
-This patch adds an MFD driver for the SuperH Mobile SDHI
-hardware block. At this point the driver simply wraps the
-tmio-mmc driver with some clock code. In the future this
-driver is the place to put SDHI specific hotplug code.
+Add self-refresh handling code for the KFR2R09 board.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- drivers/mfd/Kconfig          |    8 ++
- drivers/mfd/Makefile         |    1 
- drivers/mfd/sh_mobile_sdhi.c |  145 ++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 154 insertions(+)
+ arch/sh/boards/mach-kfr2r09/Makefile |    2 -
+ arch/sh/boards/mach-kfr2r09/sdram.S  |   52 ++++++++++++++++++++++++++++++++++
+ arch/sh/boards/mach-kfr2r09/setup.c  |   13 ++++++++
+ 3 files changed, 66 insertions(+), 1 deletion(-)
 
---- 0001/drivers/mfd/Kconfig
-+++ work/drivers/mfd/Kconfig	2009-10-01 11:22:18.000000000 +0900
-@@ -35,6 +35,14 @@ config MFD_ASIC3
- 	  This driver supports the ASIC3 multifunction chip found on many
- 	  PDAs (mainly iPAQ and HTC based ones)
- 
-+config MFD_SH_MOBILE_SDHI
-+	bool "Support for SuperH Mobile SDHI"
-+	depends on SUPERH
-+	select MFD_CORE
-+	 ---help---
-+	  This driver supports the SDHI hardware block found in many
-+	  SuperH Mobile SoC:s.
-+
- config MFD_DM355EVM_MSP
- 	bool "DaVinci DM355 EVM microcontroller"
- 	depends on I2C && MACH_DAVINCI_DM355_EVM
---- 0002/drivers/mfd/Makefile
-+++ work/drivers/mfd/Makefile	2009-10-01 10:58:05.000000000 +0900
-@@ -4,6 +4,7 @@
- 
- obj-$(CONFIG_MFD_SM501)		+= sm501.o
- obj-$(CONFIG_MFD_ASIC3)		+= asic3.o
-+obj-$(CONFIG_MFD_SH_MOBILE_SDHI)		+= sh_mobile_sdhi.o
- 
- obj-$(CONFIG_HTC_EGPIO)		+= htc-egpio.o
- obj-$(CONFIG_HTC_PASIC3)	+= htc-pasic3.o
+--- 0001/arch/sh/boards/mach-kfr2r09/Makefile
++++ work/arch/sh/boards/mach-kfr2r09/Makefile	2009-10-29 16:53:19.000000000 +0900
+@@ -1,2 +1,2 @@
+-obj-y	 := setup.o
++obj-y	 := setup.o sdram.o
+ obj-$(CONFIG_FB_SH_MOBILE_LCDC)	+=  lcd_wqvga.o
 --- /dev/null
-+++ work/drivers/mfd/sh_mobile_sdhi.c	2009-10-01 12:07:48.000000000 +0900
-@@ -0,0 +1,145 @@
++++ work/arch/sh/boards/mach-kfr2r09/sdram.S	2009-10-29 16:54:57.000000000 +0900
+@@ -0,0 +1,52 @@
 +/*
-+ * SuperH Mobile SDHI
++ * KFR2R09 sdram self/auto-refresh setup code
 + *
-+ * Copyright (C) 2009 Magnus Damm
++ *  Copyright (C) 2009 Magnus Damm
 + *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ *
-+ * Based on "Compaq ASIC3 support":
-+ *
-+ * Copyright 2001 Compaq Computer Corporation.
-+ * Copyright 2004-2005 Phil Blundell
-+ * Copyright 2007-2008 OpenedHand Ltd.
-+ *
-+ * Authors: Phil Blundell <pb@handhelds.org>,
-+ *	    Samuel Ortiz <sameo@openedhand.com>
-+ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
 + */
 +
-+#include <linux/kernel.h>
-+#include <linux/clk.h>
-+#include <linux/platform_device.h>
++#include <linux/sys.h>
++#include <linux/errno.h>
++#include <linux/linkage.h>
++#include <asm/asm-offsets.h>
++#include <asm/suspend.h>
++#include <asm/partner-jet-macros.h>
 +
-+#include <linux/mfd/core.h>
-+#include <linux/mfd/tmio.h>
++/* code to enter and leave self-refresh. must be self-contained.
++ * this code will be copied to on-chip memory and executed from there.
++ */
++	.balign 4
++ENTRY(kfr2r09_sdram_enter_start)
 +
-+struct sh_mobile_sdhi {
-+	struct clk *clk;
-+	struct tmio_mmc_data mmc_data;
-+	struct mfd_cell cell_mmc;
-+};
++	/* DBSC: put memory in self-refresh mode */
 +
-+static struct resource sh_mobile_sdhi_resources[] = {
-+	{
-+		.start = 0x000,
-+		.end   = 0x1ff,
-+		.flags = IORESOURCE_MEM,
-+	},
-+	{
-+		.start = 0,
-+		.end   = 0,
-+		.flags = IORESOURCE_IRQ,
-+	},
-+};
++	ED 0xFD000010, 0x00000000 /* DBEN */
++	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
++	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
++	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
++	ED 0xFD000040, 0x00000001 /* DBRFPDN0 */
 +
-+static struct mfd_cell sh_mobile_sdhi_cell = {
-+	.name          = "tmio-mmc",
-+	.num_resources = ARRAY_SIZE(sh_mobile_sdhi_resources),
-+	.resources     = sh_mobile_sdhi_resources,
-+};
++	rts
++	 nop
 +
-+static int __init sh_mobile_sdhi_probe(struct platform_device *pdev)
-+{
-+	struct sh_mobile_sdhi *priv;
-+	struct resource *mem;
-+	char clk_name[8];
-+	int ret, irq;
++ENTRY(kfr2r09_sdram_enter_end)
 +
-+	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!mem)
-+		dev_err(&pdev->dev, "missing MEM resource\n");
++	.balign 4
++ENTRY(kfr2r09_sdram_leave_start)
 +
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0)
-+		dev_err(&pdev->dev, "missing IRQ resource\n");
++	/* DBSC: put memory in auto-refresh mode */
 +
-+	if (!mem || (irq < 0))
-+		return -EINVAL;
++	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
++	WAIT 1
++	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
++	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
++	ED 0xFD000010, 0x00000001 /* DBEN */
++	ED 0xFD000040, 0x00010000 /* DBRFPDN0 */
 +
-+	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
-+	if (priv = NULL) {
-+		dev_err(&pdev->dev, "kzalloc failed\n");
-+		return -ENOMEM;
-+	}
++	rts
++	 nop
 +
-+	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
-+	priv->clk = clk_get(&pdev->dev, clk_name);
-+	if (IS_ERR(priv->clk)) {
-+		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
-+		ret = PTR_ERR(priv->clk);
-+		kfree(priv);
-+		return ret;
-+	}
++ENTRY(kfr2r09_sdram_leave_end)
+--- 0001/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-10-29 16:53:19.000000000 +0900
+@@ -21,6 +21,7 @@
+ #include <media/soc_camera.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <video/sh_mobile_lcdc.h>
++#include <asm/suspend.h>
+ #include <asm/clock.h>
+ #include <asm/machvec.h>
+ #include <asm/io.h>
+@@ -444,8 +445,20 @@ static int kfr2r09_usb0_gadget_setup(voi
+ 	return 0;
+ }
+ 
++extern char kfr2r09_sdram_enter_start;
++extern char kfr2r09_sdram_enter_end;
++extern char kfr2r09_sdram_leave_start;
++extern char kfr2r09_sdram_leave_end;
 +
-+	clk_enable(priv->clk);
+ static int __init kfr2r09_devices_setup(void)
+ {
++	/* register board specific self-refresh code */
++	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
++					&kfr2r09_sdram_enter_start,
++					&kfr2r09_sdram_enter_end,
++					&kfr2r09_sdram_leave_start,
++					&kfr2r09_sdram_leave_end);
 +
-+	/* FIXME: silly const unsigned int hclk */
-+	*(unsigned int *)&priv->mmc_data.hclk = clk_get_rate(priv->clk);
-+
-+	memcpy(&priv->cell_mmc, &sh_mobile_sdhi_cell, sizeof(priv->cell_mmc));
-+	priv->cell_mmc.driver_data = &priv->mmc_data;
-+	priv->cell_mmc.platform_data = &priv->cell_mmc;
-+	priv->cell_mmc.data_size = sizeof(priv->cell_mmc);
-+
-+	platform_set_drvdata(pdev, priv);
-+
-+	ret = mfd_add_devices(&pdev->dev, pdev->id,
-+			      &priv->cell_mmc, 1, mem, irq);
-+	if (ret) {
-+		clk_disable(priv->clk);
-+		clk_put(priv->clk);
-+		kfree(priv);
-+	}
-+
-+	return ret;
-+}
-+
-+static int sh_mobile_sdhi_remove(struct platform_device *pdev)
-+{
-+	struct sh_mobile_sdhi *priv = platform_get_drvdata(pdev);
-+
-+	mfd_remove_devices(&pdev->dev);
-+	clk_disable(priv->clk);
-+	clk_put(priv->clk);
-+	kfree(priv);
-+
-+	return 0;
-+}
-+
-+static struct platform_driver sh_mobile_sdhi_driver = {
-+	.driver		= {
-+		.name	= "sh_mobile_sdhi",
-+		.owner	= THIS_MODULE,
-+	},
-+	.probe		= sh_mobile_sdhi_probe,
-+	.remove		= __devexit_p(sh_mobile_sdhi_remove),
-+};
-+
-+static int __init sh_mobile_sdhi_init(void)
-+{
-+	return platform_driver_register(&sh_mobile_sdhi_driver);
-+}
-+
-+static void __exit sh_mobile_sdhi_exit(void)
-+{
-+	platform_driver_unregister(&sh_mobile_sdhi_driver);
-+}
-+
-+module_init(sh_mobile_sdhi_init);
-+module_exit(sh_mobile_sdhi_exit);
-+
-+MODULE_DESCRIPTION("SuperH Mobile SDHI driver");
-+MODULE_AUTHOR("Magnus Damm");
-+MODULE_LICENSE("GPL v2");
+ 	/* enable SCIF1 serial port for YC401 console support */
+ 	gpio_request(GPIO_FN_SCIF1_RXD, NULL);
+ 	gpio_request(GPIO_FN_SCIF1_TXD, NULL);
