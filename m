@@ -1,23 +1,28 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 16 Oct 2009 05:39:46 +0000
-Subject: Re: [PATCH] sh: disabled cache handling fix for sh4
-Message-Id: <20091016053946.GB2952@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Fri, 30 Oct 2009 10:48:27 +0000
+Subject: Touch panel device driver
+Message-Id: <200910301148.27788.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091016012006.20892.67821.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091016012006.20892.67821.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Oct 16, 2009 at 10:20:06AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add code to handle the cache disabled case for sh4. Fixes breakage
-> introduced by 37443ef3f0406e855e169c87ae3f4ffb4b6ff635. Without
-> this patch configuring caches off with CONFIG_CACHE_OFF=y makes
-> kfr2r09 and migo-r lock up in fbdev deferred io or early user space.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Sorry guys,could you suggest to me where to study the structure of a touch 
+panel device driver. I have looek for examples into video driver, char driver 
+and documentation directories, but I have found nothing.
 
-Applied after moving it to cache.c and some tidying.
+Thanks and regards
+
+
+-- 
+Fabio Giovagnini
+
+Aurion s.r.l.
+CF e P.IVA 00885711200
+Tel. +39.335.8350919
+
+www.aurion-tech.com
+
+account telefono VoIP skype (www.skype.com):
+aurion.giovagnini
