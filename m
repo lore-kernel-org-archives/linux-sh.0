@@ -1,119 +1,75 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2009 02:22:43 +0000
-Subject: [PATCH 04/07] sh: SDHI platform data to the Migo-R board
-Message-Id: <20091002022243.8215.7784.sendpatchset@rxone.opensource.se>
+Date: Fri, 30 Oct 2009 04:24:48 +0000
+Subject: [PATCH 09/09] sh: Add KFR2R09 specific memory pre/post R-standby code
+Message-Id: <20091030042448.11783.78397.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091002022158.8215.58317.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, g.liakhovetski@gmx.de, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, akpm@linux-foundation.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Convert the Migo-R board to use sh_mobile_sdhi for the
-SD Card connected to CN9 instead of mmc_spi.
+Add R-standby support to the KFR2R09 sdram code.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/boards/mach-migor/setup.c |   52 +++++++++++++++++++------------------
- 1 file changed, 28 insertions(+), 24 deletions(-)
+ arch/sh/boards/mach-kfr2r09/sdram.S |   28 ++++++++++++++++++++++++++++
+ arch/sh/boards/mach-kfr2r09/setup.c |    3 ++-
+ 2 files changed, 30 insertions(+), 1 deletion(-)
 
---- 0001/arch/sh/boards/mach-migor/setup.c
-+++ work/arch/sh/boards/mach-migor/setup.c	2009-10-02 09:41:19.000000000 +0900
-@@ -18,8 +18,6 @@
- #include <linux/delay.h>
- #include <linux/clk.h>
- #include <linux/gpio.h>
--#include <linux/spi/spi.h>
--#include <linux/spi/spi_gpio.h>
- #include <video/sh_mobile_lcdc.h>
- #include <media/sh_mobile_ceu.h>
- #include <media/ov772x.h>
-@@ -390,17 +388,25 @@ static struct platform_device migor_ceu_
- 	},
- };
+--- 0006/arch/sh/boards/mach-kfr2r09/sdram.S
++++ work/arch/sh/boards/mach-kfr2r09/sdram.S	2009-10-29 17:16:31.000000000 +0900
+@@ -39,6 +39,10 @@ ENTRY(kfr2r09_sdram_leave_start)
  
--struct spi_gpio_platform_data sdcard_cn9_platform_data = {
--	.sck = GPIO_PTD0,
--	.mosi = GPIO_PTD1,
--	.miso = GPIO_PTD2,
--	.num_chipselect = 1,
-+static struct resource sdhi_cn9_resources[] = {
-+	[0] = {
-+		.name	= "SDHI",
-+		.start	= 0x04ce0000,
-+		.end	= 0x04ce01ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 101,
-+		.flags  = IORESOURCE_IRQ,
-+	},
- };
+ 	/* DBSC: put memory in auto-refresh mode */
  
--static struct platform_device sdcard_cn9_device = {
--	.name		= "spi_gpio",
--	.dev	= {
--		.platform_data	= &sdcard_cn9_platform_data,
-+static struct platform_device sdhi_cn9_device = {
-+	.name		= "sh_mobile_sdhi",
-+	.num_resources	= ARRAY_SIZE(sdhi_cn9_resources),
-+	.resource	= sdhi_cn9_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_SDHI,
- 	},
- };
- 
-@@ -467,20 +473,11 @@ static struct platform_device *migor_dev
- 	&migor_ceu_device,
- 	&migor_nor_flash_device,
- 	&migor_nand_flash_device,
--	&sdcard_cn9_device,
-+	&sdhi_cn9_device,
- 	&migor_camera[0],
- 	&migor_camera[1],
- };
- 
--static struct spi_board_info migor_spi_devices[] = {
--	{
--		.modalias = "mmc_spi",
--		.max_speed_hz = 5000000,
--		.chip_select = 0,
--		.controller_data = (void *) GPIO_PTD5,
--	},
--};
--
- static int __init migor_devices_setup(void)
- {
- 
-@@ -525,6 +522,16 @@ static int __init migor_devices_setup(vo
- 	gpio_request(GPIO_PTA1, NULL);
- 	gpio_direction_input(GPIO_PTA1);
- 
-+	/* SDHI */
-+	gpio_request(GPIO_FN_SDHICD, NULL);
-+	gpio_request(GPIO_FN_SDHIWP, NULL);
-+	gpio_request(GPIO_FN_SDHID3, NULL);
-+	gpio_request(GPIO_FN_SDHID2, NULL);
-+	gpio_request(GPIO_FN_SDHID1, NULL);
-+	gpio_request(GPIO_FN_SDHID0, NULL);
-+	gpio_request(GPIO_FN_SDHICMD, NULL);
-+	gpio_request(GPIO_FN_SDHICLK, NULL);
++	mov.l	@(SH_SLEEP_MODE, r5), r0
++	tst	#SUSP_SH_RSTANDBY, r0
++	bf	resume_rstandby
 +
- 	/* Touch Panel */
- 	gpio_request(GPIO_FN_IRQ6, NULL);
+ 	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
+ 	WAIT 1
+ 	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
+@@ -49,4 +53,28 @@ ENTRY(kfr2r09_sdram_leave_start)
+ 	rts
+ 	 nop
  
-@@ -612,9 +619,6 @@ static int __init migor_devices_setup(vo
- 	i2c_register_board_info(0, migor_i2c_devices,
- 				ARRAY_SIZE(migor_i2c_devices));
- 
--	spi_register_board_info(migor_spi_devices,
--				ARRAY_SIZE(migor_spi_devices));
--
- 	return platform_add_devices(migor_devices, ARRAY_SIZE(migor_devices));
- }
- arch_initcall(migor_devices_setup);
++resume_rstandby:
++
++	/* DBSC: re-initialize and put in auto-refresh */
++
++	ED 0xFD000108, 0x40000301 /* DBPDCNT0 */
++	ED 0xFD000020, 0x011B0002 /* DBCONF */
++	ED 0xFD000030, 0x03060E02 /* DBTR0 */
++	ED 0xFD000034, 0x01020102 /* DBTR1 */
++	ED 0xFD000038, 0x01090406 /* DBTR2 */
++	ED 0xFD000008, 0x00000004 /* DBKIND */
++	ED 0xFD000040, 0x00000001 /* DBRFPDN0 */
++	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
++	ED 0xFD000018, 0x00000001 /* DBCKECNT */
++	WAIT 1
++	ED 0xFD000010, 0x00000001 /* DBEN */
++	ED 0xFD000044, 0x000004AF /* DBRFPDN1 */
++	ED 0xFD000048, 0x20CF0037 /* DBRFPDN2 */
++	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
++	ED 0xFD000108, 0x40000300 /* DBPDCNT0 */
++	ED 0xFD000040, 0x00010000 /* DBRFPDN0 */
++
++	rts
++	 nop
++
+ ENTRY(kfr2r09_sdram_leave_end)
+--- 0006/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-10-29 17:11:14.000000000 +0900
+@@ -453,7 +453,8 @@ extern char kfr2r09_sdram_leave_end;
+ static int __init kfr2r09_devices_setup(void)
+ {
+ 	/* register board specific self-refresh code */
+-	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
++	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF |
++					SUSP_SH_RSTANDBY,
+ 					&kfr2r09_sdram_enter_start,
+ 					&kfr2r09_sdram_enter_end,
+ 					&kfr2r09_sdram_leave_start,
