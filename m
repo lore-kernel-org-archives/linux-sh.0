@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 Oct 2009 10:52:06 +0000
-Subject: [PATCH 04/07] sh: Allow boards to register memory pre/post sleep code
-Message-Id: <20091029105206.29078.85084.sendpatchset@rxone.opensource.se>
+Date: Fri, 30 Oct 2009 06:22:03 +0000
+Subject: [PATCH] sh: Add SDHI1 support to the AP325RXA board
+Message-Id: <20091030062203.24074.90609.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,44 +10,85 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add code to allow boards registering self-contained
-functions for going to/from self-refresh. At this
-point the board code is unused. When all supported
-boards have been converted then the new sleep code
-will make use of these functions.
+Update the SDHI platform data for the AP325RXA board
+to include support for the CN7 Micro SD Card slot.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/include/asm/suspend.h    |    4 ++++
- arch/sh/kernel/cpu/shmobile/pm.c |    6 ++++++
- 2 files changed, 10 insertions(+)
+ arch/sh/boards/mach-ap325rxa/setup.c |   36 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 35 insertions(+), 1 deletion(-)
 
---- 0008/arch/sh/include/asm/suspend.h
-+++ work/arch/sh/include/asm/suspend.h	2009-10-28 18:44:53.000000000 +0900
-@@ -30,6 +30,10 @@ extern struct atomic_notifier_head sh_mo
- #define SH_MOBILE_PRE(x)	(x)
- #define SH_MOBILE_POST(x)	(-(x))
+--- 0003/arch/sh/boards/mach-ap325rxa/setup.c
++++ work/arch/sh/boards/mach-ap325rxa/setup.c	2009-10-30 14:48:58.000000000 +0900
+@@ -423,6 +423,7 @@ static struct resource sdhi0_cn3_resourc
  
-+/* board code registration function for self-refresh assembly snippets */
-+void sh_mobile_register_self_refresh(unsigned long flags,
-+				     void *pre_start, void *pre_end,
-+				     void *post_start, void *post_end);
- #endif
+ static struct platform_device sdhi0_cn3_device = {
+ 	.name		= "sh_mobile_sdhi",
++	.id             = 0, /* "sdhi0" clock */
+ 	.num_resources	= ARRAY_SIZE(sdhi0_cn3_resources),
+ 	.resource	= sdhi0_cn3_resources,
+ 	.archdata = {
+@@ -430,6 +431,29 @@ static struct platform_device sdhi0_cn3_
+ 	},
+ };
  
- /* flags passed to assembly suspend code */
---- 0008/arch/sh/kernel/cpu/shmobile/pm.c
-+++ work/arch/sh/kernel/cpu/shmobile/pm.c	2009-10-28 18:44:53.000000000 +0900
-@@ -60,6 +60,12 @@ void sh_mobile_call_standby(unsigned lon
- 				   mode, NULL);
- }
- 
-+void sh_mobile_register_self_refresh(unsigned long flags,
-+				     void *pre_start, void *pre_end,
-+				     void *post_start, void *post_end)
-+{
-+}
++static struct resource sdhi1_cn7_resources[] = {
++	[0] = {
++		.name	= "SDHI1",
++		.start	= 0x04cf0000,
++		.end	= 0x04cf01ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 24,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
- static int sh_pm_enter(suspend_state_t state)
- {
- 	local_irq_disable();
++static struct platform_device sdhi1_cn7_device = {
++	.name		= "sh_mobile_sdhi",
++	.id             = 1, /* "sdhi1" clock */
++	.num_resources	= ARRAY_SIZE(sdhi1_cn7_resources),
++	.resource	= sdhi1_cn7_resources,
++	.archdata = {
++		.hwblk_id = HWBLK_SDHI1,
++	},
++};
++
+ static struct i2c_board_info __initdata ap325rxa_i2c_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("pcf8563", 0x51),
+@@ -478,6 +502,7 @@ static struct platform_device *ap325rxa_
+ 	&ceu_device,
+ 	&nand_flash_device,
+ 	&sdhi0_cn3_device,
++	&sdhi1_cn7_device,
+ 	&ap325rxa_camera[0],
+ 	&ap325rxa_camera[1],
+ };
+@@ -588,7 +613,7 @@ static int __init ap325rxa_devices_setup
+ 
+ 	platform_resource_setup_memory(&ceu_device, "ceu", 4 << 20);
+ 
+-	/* SDHI0 */
++	/* SDHI0 - CN3 - SD CARD */
+ 	gpio_request(GPIO_FN_SDHI0CD_PTD, NULL);
+ 	gpio_request(GPIO_FN_SDHI0WP_PTD, NULL);
+ 	gpio_request(GPIO_FN_SDHI0D3_PTD, NULL);
+@@ -598,6 +623,15 @@ static int __init ap325rxa_devices_setup
+ 	gpio_request(GPIO_FN_SDHI0CMD_PTD, NULL);
+ 	gpio_request(GPIO_FN_SDHI0CLK_PTD, NULL);
+ 
++	/* SDHI1 - CN7 - MICRO SD CARD */
++	gpio_request(GPIO_FN_SDHI1CD, NULL);
++	gpio_request(GPIO_FN_SDHI1D3, NULL);
++	gpio_request(GPIO_FN_SDHI1D2, NULL);
++	gpio_request(GPIO_FN_SDHI1D1, NULL);
++	gpio_request(GPIO_FN_SDHI1D0, NULL);
++	gpio_request(GPIO_FN_SDHI1CMD, NULL);
++	gpio_request(GPIO_FN_SDHI1CLK, NULL);
++
+ 	i2c_register_board_info(0, ap325rxa_i2c_devices,
+ 				ARRAY_SIZE(ap325rxa_i2c_devices));
+ 
