@@ -1,219 +1,137 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Tue, 06 Oct 2009 21:22:33 +0000
-Subject: [PATCH 13/14] sh: Fold fixed-PMB support into dynamic PMB support
-Message-Id: <20d41a0fcf8435fd2aaaeb0c0c3975239783b55e.1254861984.git.matt@console-pimps.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 30 Oct 2009 04:24:40 +0000
+Subject: [PATCH 08/09] sh: Add R-standby sleep mode support
+Message-Id: <20091030042440.11783.30987.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The initialisation process differs for CONFIG_PMB and for
-CONFIG_PMB_FIXED. For CONFIG_PMB_FIXED we need to register the PMB
-entries that were allocated by the bootloader.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Add R-standby specific bits to the SuperH Mobile sleep code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/include/asm/mmu.h |    2 +
- arch/sh/kernel/setup.c    |    2 +-
- arch/sh/mm/Makefile       |    3 +-
- arch/sh/mm/pmb-fixed.c    |   45 -------------------------------
- arch/sh/mm/pmb.c          |   65 +++++++++++++++++++++++++++++++++++++++++---
- 5 files changed, 64 insertions(+), 53 deletions(-)
- delete mode 100644 arch/sh/mm/pmb-fixed.c
 
-diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
-index 9c84b45..c7426ad 100644
---- a/arch/sh/include/asm/mmu.h
-+++ b/arch/sh/include/asm/mmu.h
-@@ -15,6 +15,8 @@
- #define PMB_E_MASK		0x0000000f
- #define PMB_E_SHIFT		8
+ arch/sh/include/asm/suspend.h       |    5 +++++
+ arch/sh/kernel/asm-offsets.c        |    3 +++
+ arch/sh/kernel/cpu/shmobile/pm.c    |   13 ++++++-------
+ arch/sh/kernel/cpu/shmobile/sleep.S |   12 ++++++++++++
+ 4 files changed, 26 insertions(+), 7 deletions(-)
+
+--- 0009/arch/sh/include/asm/suspend.h
++++ work/arch/sh/include/asm/suspend.h	2009-10-29 17:28:12.000000000 +0900
+@@ -38,6 +38,7 @@ void sh_mobile_register_self_refresh(uns
+ /* register structure for address/data information */
+ struct sh_sleep_regs {
+ 	unsigned long stbcr;
++	unsigned long bar;
  
-+#define PMB_PFN_MASK		0xff000000
+ 	/* MMU */
+ 	unsigned long pteh;
+@@ -63,10 +64,14 @@ struct sh_sleep_data {
+ 	unsigned long sf_pre;
+ 	unsigned long sf_post;
+ 
++	/* address of resume code */
++	unsigned long resume;
 +
- #define PMB_SZ_16M		0x00000000
- #define PMB_SZ_64M		0x00000010
- #define PMB_SZ_128M		0x00000080
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index 8fdd03a..df65fe2 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -453,7 +453,7 @@ void __init setup_arch(char **cmdline_p)
+ 	/* register state saved and restored by the assembly code */
+ 	unsigned long vbr;
+ 	unsigned long spc;
+ 	unsigned long sr;
++	unsigned long sp;
  
- 	paging_init();
- 
--#ifdef CONFIG_PMB
-+#ifdef CONFIG_PMB_ENABLE
- 	pmb_init();
- #endif
- 
-diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
-index 3759bf8..8a70535 100644
---- a/arch/sh/mm/Makefile
-+++ b/arch/sh/mm/Makefile
-@@ -33,8 +33,7 @@ obj-y				+= $(tlb-y)
- endif
- 
- obj-$(CONFIG_HUGETLB_PAGE)	+= hugetlbpage.o
--obj-$(CONFIG_PMB)		+= pmb.o
--obj-$(CONFIG_PMB_FIXED)		+= pmb-fixed.o
-+obj-$(CONFIG_PMB_ENABLE)	+= pmb.o
- obj-$(CONFIG_NUMA)		+= numa.o
- 
- # Special flags for fault_64.o.  This puts restrictions on the number of
-diff --git a/arch/sh/mm/pmb-fixed.c b/arch/sh/mm/pmb-fixed.c
-deleted file mode 100644
-index 43c8eac..0000000
---- a/arch/sh/mm/pmb-fixed.c
-+++ /dev/null
-@@ -1,45 +0,0 @@
+ 	/* structure for keeping register addresses */
+ 	struct sh_sleep_regs addr;
+--- 0009/arch/sh/kernel/asm-offsets.c
++++ work/arch/sh/kernel/asm-offsets.c	2009-10-29 17:28:31.000000000 +0900
+@@ -38,12 +38,15 @@ int main(void)
+ 	DEFINE(SH_SLEEP_MODE, offsetof(struct sh_sleep_data, mode));
+ 	DEFINE(SH_SLEEP_SF_PRE, offsetof(struct sh_sleep_data, sf_pre));
+ 	DEFINE(SH_SLEEP_SF_POST, offsetof(struct sh_sleep_data, sf_post));
++	DEFINE(SH_SLEEP_RESUME, offsetof(struct sh_sleep_data, resume));
+ 	DEFINE(SH_SLEEP_VBR, offsetof(struct sh_sleep_data, vbr));
+ 	DEFINE(SH_SLEEP_SPC, offsetof(struct sh_sleep_data, spc));
+ 	DEFINE(SH_SLEEP_SR, offsetof(struct sh_sleep_data, sr));
++	DEFINE(SH_SLEEP_SP, offsetof(struct sh_sleep_data, sp));
+ 	DEFINE(SH_SLEEP_BASE_ADDR, offsetof(struct sh_sleep_data, addr));
+ 	DEFINE(SH_SLEEP_BASE_DATA, offsetof(struct sh_sleep_data, data));
+ 	DEFINE(SH_SLEEP_REG_STBCR, offsetof(struct sh_sleep_regs, stbcr));
++	DEFINE(SH_SLEEP_REG_BAR, offsetof(struct sh_sleep_regs, bar));
+ 	DEFINE(SH_SLEEP_REG_PTEH, offsetof(struct sh_sleep_regs, pteh));
+ 	DEFINE(SH_SLEEP_REG_PTEL, offsetof(struct sh_sleep_regs, ptel));
+ 	DEFINE(SH_SLEEP_REG_TTB, offsetof(struct sh_sleep_regs, ttb));
+--- 0010/arch/sh/kernel/cpu/shmobile/pm.c
++++ work/arch/sh/kernel/cpu/shmobile/pm.c	2009-10-29 17:27:27.000000000 +0900
+@@ -33,13 +33,10 @@ ATOMIC_NOTIFIER_HEAD(sh_mobile_post_slee
+ #define SUSP_MODE_SLEEP		(SUSP_SH_SLEEP)
+ #define SUSP_MODE_SLEEP_SF	(SUSP_SH_SLEEP | SUSP_SH_SF)
+ #define SUSP_MODE_STANDBY_SF	(SUSP_SH_STANDBY | SUSP_SH_SF)
+-
 -/*
-- * arch/sh/mm/fixed_pmb.c
+- * The following modes are not there yet:
 - *
-- * Copyright (C) 2009  Renesas Solutions Corp.
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
+- * R-standby mode is unsupported, but will be added in the future
+- * U-standby mode is low priority since it needs bootloader hacks
 - */
--#include <linux/init.h>
--#include <linux/mm.h>
--#include <linux/io.h>
--#include <asm/mmu.h>
--#include <asm/mmu_context.h>
--
--static int __uses_jump_to_uncached fixed_pmb_init(void)
--{
--	int i;
--	unsigned long addr, data;
--
--	jump_to_uncached();
--
--	for (i = 0; i < PMB_ENTRY_MAX; i++) {
--		addr = PMB_DATA + (i << PMB_E_SHIFT);
--		data = ctrl_inl(addr);
--		if (!(data & PMB_V))
--			continue;
--
--		if (data & PMB_C) {
--#if defined(CONFIG_CACHE_WRITETHROUGH)
--			data |= PMB_WT;
--#elif defined(CONFIG_CACHE_WRITEBACK)
--			data &= ~PMB_WT;
--#else
--			data &= ~(PMB_C | PMB_WT);
--#endif
--		}
--		ctrl_outl(data, addr);
--	}
--
--	back_to_cached();
--
--	return 0;
--}
--arch_initcall(fixed_pmb_init);
-diff --git a/arch/sh/mm/pmb.c b/arch/sh/mm/pmb.c
-index 8c39777..f821c2e 100644
---- a/arch/sh/mm/pmb.c
-+++ b/arch/sh/mm/pmb.c
-@@ -70,14 +70,20 @@ repeat:
++#define SUSP_MODE_RSTANDBY	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_SF)
++ /*
++  * U-standby mode is unsupported since it needs bootloader hacks
++  */
+ 
+ #ifdef CONFIG_CPU_SUBTYPE_SH7724
+ #define RAM_BASE 0xfd800000 /* RSMEM */
+@@ -90,6 +87,7 @@ void sh_mobile_register_self_refresh(uns
+ 	/* part 0: data area */
+ 	sdp = onchip_mem;
+ 	sdp->addr.stbcr = 0xa4150020; /* STBCR */
++	sdp->addr.bar = 0xa4150040; /* BAR */
+ 	sdp->addr.pteh = 0xff000000; /* PTEH */
+ 	sdp->addr.ptel = 0xff000004; /* PTEL */
+ 	sdp->addr.ttb = 0xff000008; /* TTB */
+@@ -124,6 +122,7 @@ void sh_mobile_register_self_refresh(uns
+ 	vp = onchip_mem + 0x600; /* located at interrupt vector */
+ 	n = &sh_mobile_sleep_resume_end - &sh_mobile_sleep_resume_start;
+ 	memcpy(vp, &sh_mobile_sleep_resume_start, n);
++	sdp->resume = (unsigned long)vp;
+ 
+ 	sh_mobile_sleep_supported |= flags;
  }
+--- 0009/arch/sh/kernel/cpu/shmobile/sleep.S
++++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2009-10-29 17:29:14.000000000 +0900
+@@ -48,6 +48,9 @@ ENTRY(sh_mobile_sleep_enter_start)
+ 	stc	sr, r0
+ 	mov.l	r0, @(SH_SLEEP_SR, r5)
  
- static struct pmb_entry *pmb_alloc(unsigned long vpn, unsigned long ppn,
--				   unsigned long flags)
-+				   unsigned long flags, int entry)
- {
- 	struct pmb_entry *pmbe;
- 	int pos;
++	/* save sp */
++	mov.l	r15, @(SH_SLEEP_SP, r5)
++
+ 	/* save stbcr */
+ 	bsr     save_register
+ 	 mov    #SH_SLEEP_REG_STBCR, r0
+@@ -125,6 +128,12 @@ test_rstandby:
+ 	tst	#SUSP_SH_RSTANDBY, r0
+ 	bt	test_ustandby
  
--	pos = pmb_alloc_entry();
--	if (pos < 0)
--		return ERR_PTR(pos);
-+	if (entry = PMB_NO_ENTRY) {
-+		pos = pmb_alloc_entry();
-+		if (pos < 0)
-+			return ERR_PTR(pos);
-+	} else {
-+		if (test_bit(entry, &pmb_map))
-+			return ERR_PTR(-ENOSPC);
-+		pos = entry;
-+	}
++	/* setup BAR register */
++	bsr	get_register
++	 mov	#SH_SLEEP_REG_BAR, r0
++	mov.l	@(SH_SLEEP_RESUME, r5), r1
++	mov.l	r1, @r0
++
+ 	/* set mode to "r-standby mode" */
+ 	bra	do_sleep
+ 	 mov	#0x20, r1
+@@ -203,6 +212,9 @@ ENTRY(sh_mobile_sleep_resume_start)
+ 	mov.l	@(SH_SLEEP_SR, r5), r0
+ 	ldc	r0, ssr
  
- 	pmbe = &pmb_entry_list[pos];
- 	if (!pmbe)
-@@ -187,7 +193,8 @@ again:
- 		if (size < pmb_sizes[i].size)
- 			continue;
- 
--		pmbe = pmb_alloc(vaddr, phys, pmb_flags | pmb_sizes[i].flag);
-+		pmbe = pmb_alloc(vaddr, phys, pmb_flags | pmb_sizes[i].flag,
-+				 PMB_NO_ENTRY);
- 		if (IS_ERR(pmbe)) {
- 			err = PTR_ERR(pmbe);
- 			goto out;
-@@ -265,6 +272,7 @@ static void __pmb_unmap(struct pmb_entry *pmbe)
- 	} while (pmbe);
- }
- 
-+#ifdef CONFIG_PMB
- int __uses_jump_to_uncached pmb_init(void)
- {
- 	unsigned int i;
-@@ -302,6 +310,53 @@ int __uses_jump_to_uncached pmb_init(void)
- 
- 	return 0;
- }
-+#else
-+int __uses_jump_to_uncached pmb_init(void)
-+{
-+	int i;
-+	unsigned long addr, data;
++	/* restore sp */
++	mov.l   @(SH_SLEEP_SP, r5), r15
 +
-+	jump_to_uncached();
-+
-+	for (i = 0; i < PMB_ENTRY_MAX; i++) {
-+		struct pmb_entry *pmbe;
-+		unsigned long vpn, ppn, flags;
-+
-+		addr = PMB_DATA + (i << PMB_E_SHIFT);
-+		data = ctrl_inl(addr);
-+		if (!(data & PMB_V))
-+			continue;
-+
-+		if (data & PMB_C) {
-+#if defined(CONFIG_CACHE_WRITETHROUGH)
-+			data |= PMB_WT;
-+#elif defined(CONFIG_CACHE_WRITEBACK)
-+			data &= ~PMB_WT;
-+#else
-+			data &= ~(PMB_C | PMB_WT);
-+#endif
-+		}
-+		ctrl_outl(data, addr);
-+
-+		ppn = data & PMB_PFN_MASK;
-+
-+		flags = data & (PMB_C | PMB_WT | PMB_UB);
-+		flags |= data & PMB_SZ_MASK;
-+
-+		addr = PMB_ADDR + (i << PMB_E_SHIFT);
-+		data = ctrl_inl(addr);
-+
-+		vpn = data & PMB_PFN_MASK;
-+
-+		pmbe = pmb_alloc(vpn, ppn, flags, i);
-+		WARN_ON(IS_ERR(pmbe));
-+	}
-+
-+	back_to_cached();
-+
-+	return 0;
-+}
-+#endif /* CONFIG_PMB */
- 
- static int pmb_seq_show(struct seq_file *file, void *iter)
- {
--- 
-1.6.3.3
-
+ 	/* restore sleep mode register */
+ 	bsr     restore_register
+ 	 mov    #SH_SLEEP_REG_STBCR, r0
