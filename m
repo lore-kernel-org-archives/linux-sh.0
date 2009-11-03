@@ -1,44 +1,30 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 10 Nov 2009 09:49:03 +0000
-Subject: Re: [PATCH v7 ] dmaengine: sh: Add Support SuperH DMA Engine driver
-Message-Id: <Pine.LNX.4.64.0911101026160.5074@axis700.grange>
+Date: Tue, 03 Nov 2009 17:31:06 +0000
+Subject: illegal instructions / panic on sh7722
+Message-Id: <Pine.LNX.4.64.0911031826460.5059@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4AA47D5F.8060204@renesas.com>
-In-Reply-To: <4AA47D5F.8060204@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi all
+Hi
 
-On Mon, 7 Sep 2009, Nobuhiro Iwamatsu wrote:
+After hours of semi-automatic bisect it turns out that this patch
 
-> Hi,
-> 
-> Dan Williams wrote:
-> 
-> > Yes, the locking looks better in this version.  Can you respin this
-> > patch against async_tx.git/next [1]?  The 'tx_list' field of struct
-> > dma_async_tx_descriptor is set to be removed in 2.6.32, so you need to
-> > define it locally in struct sh_desc.  Once that is done and you get an
-> > ack from Paul I will add this to the queue for 2.6.32.
-> > 
-> 
-> I remove tx_list from source and check working. This work fine.
-> I resend patch.
-> 
-> Paul, could you check and ack this patch?
+From eb3118f652ea7751ecf6a7e467bb637895e3be3b Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt@console-pimps.org>
+Date: Thu, 29 Oct 2009 21:53:30 +0000
+Subject: [PATCH] sh: Do not apply virt_to_phys() to a physical address
 
-got a question to this driver: so far it only exports the DMA_MEMCPY 
-capability. But the DMAC is also serving various onboard and external 
-peripherals, which is normally done using the DMA_SLAVE capability. Is 
-this what is supported by this driver using the .set_chcr() and 
-.set_dmars() API extensions? Wouldn't it be better to switch to DMA_SLAVE 
-and replace those callbacks with just some static channel parameters, 
-provided by the board? Isn't providing those callbacks also dangerous, 
-because you don't know in what context the user is calling them so, you 
-cannot ensure proper locking?
+The variable 'phys' already contains the physical address to flush. It
+is not a virtual address and should not be passed to virt_to_phys().
+
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+
+panics on 7722 (migor) in linux-next, or produces illegal instructions 
+when it manages to boot.
 
 Thanks
 Guennadi
