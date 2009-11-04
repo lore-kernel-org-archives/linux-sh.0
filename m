@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 04 Nov 2009 03:13:09 +0000
-Subject: Re: [PATCH] sh: add SuperH DAC audio driver for ALSA V4
-Message-Id: <20091104031309.GD12841@linux-sh.org>
+From: Takashi Iwai <tiwai@suse.de>
+Date: Wed, 04 Nov 2009 08:19:24 +0000
+Subject: Re: [alsa-devel] [PATCH] sh: add SuperH DAC audio driver for ALSA V4
+Message-Id: <s5hbpjizoqb.wl%tiwai@suse.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20091103201627.GA31131@rafazurita.homelinux.net>
 In-Reply-To: <20091103201627.GA31131@rafazurita.homelinux.net>
@@ -9,9 +9,11 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Rafael Ignacio Zurita <rizurita@yahoo.com>
-Cc: Takashi Iwai <tiwai@suse.de>, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org
+Cc: alsa-devel@alsa-project.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-On Tue, Nov 03, 2009 at 05:16:27PM -0300, Rafael Ignacio Zurita wrote:
+At Tue, 3 Nov 2009 17:16:27 -0300,
+Rafael Ignacio Zurita wrote:
+> 
 > This is a port of the sound/oss/sh_dac_audio.c driver.
 > The driver uses an on-chip 8-bit D/A converter, which has a speaker connected
 > to one of its channels, found in several ancient HP machines.
@@ -35,4 +37,7 @@ On Tue, Nov 03, 2009 at 05:16:27PM -0300, Rafael Ignacio Zurita wrote:
 > 
 > Signed-off-by: Rafael Ignacio Zurita <rizurita@yahoo.com>
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Thanks!  Applied now to sound git tree.
+
+
+Takashi
