@@ -1,43 +1,35 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 26 Nov 2009 08:37:58 +0000
-Subject: Re: currect MigoR seems doesn't work
-Message-Id: <ufx81of4p.wl%morimoto.kuninori@renesas.com>
+Date: Thu, 05 Nov 2009 10:23:40 +0000
+Subject: [PATCH] sh: sh7724: SPU2 clock enable on boot
+Message-Id: <uk4y56zir.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uljjyqojh.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uljjyqojh.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Dear Paul
-[Cc Magnus]
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+This is v2 patch of 
+[PATCH] sh: mach-ecovec24: Enable SPU2 clock when boot
 
-> start_kernel
->  setup_arch
->   setup_memory
->    setup_bootmem_allocator
->     for()
->       reserve_bootmem (when i=2 I think)
->        mark_bootmem
->         BUG()          <= dead here and reboot MigoR
-(snip)
-> > It start works if I remove NUMA support from .config
-> > 
-> Thanks for testing, I'll look in to fixing it up.
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Now, I got same phenomenon on EcoVec
-which is mass production board.
-
-46/50 board are working,
-but 4/50 are can not work if It is romImage.
-But it works If I use net boot.
-
-My .config doesn't have NUMA support now.
-Do you have any doubtful point ?
-
-Best regards
---
-Kuninori Morimoto
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index dfe9192..9db7438 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -152,7 +152,7 @@ struct clk div6_clks[] = {
+ 	SH_CLK_DIV6("fsia_clk", &div3_clk, FCLKACR, 0),
+ 	SH_CLK_DIV6("fsib_clk", &div3_clk, FCLKBCR, 0),
+ 	SH_CLK_DIV6("irda_clk", &div3_clk, IRDACLKCR, 0),
+-	SH_CLK_DIV6("spu_clk", &div3_clk, SPUCLKCR, 0),
++	SH_CLK_DIV6("spu_clk", &div3_clk, SPUCLKCR, CLK_ENABLE_ON_INIT),
+ };
  
+ #define R_CLK (&r_clk)
+-- 
+1.6.3.3
+
