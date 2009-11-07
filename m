@@ -1,39 +1,47 @@
 From: Matt Fleming <matt@console-pimps.org>
-Date: Sat, 07 Nov 2009 10:55:54 +0000
-Subject: [PATCH 0/3] Fixed ioremap
-Message-Id: <cover.1257590789.git.matt@console-pimps.org>
+Date: Sat, 07 Nov 2009 10:55:56 +0000
+Subject: [PATCH 2/3] sh: Use ioremap_fixmed to map the SM501 DRAM config register
+Message-Id: <b79b0ed9a88b791015354768041c0b0a1643c269.1257590789.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+We need to write to the DRAM config register very early and at such an
+early stage ioremap() is not available. So use ioremap_fixed() to map
+the register.
 
-this patch series provides and uses a new early ioremap implementation
-using fixmaps. ioremap_fixed() is useful when you need to map some
-physical address range really early in boot. See PATCH 2/3 for an
-example. It's based on x86's early_ioremap().
+The reason that we are avoiding using the legacy P2 mapping is that
+there will come a day when the legacy P2 mappings no longer exist.
 
-Paul, as I don't have an sh64 compiler or board I've been unable to test
-PATCH 3/3. If you (or anyone else) could give it a go, that'd be
-great. Also, it's possible that some of the MMU code that is in
-iroemap_fixed.c is SH4/SH4-A specific. I've done the best I could from
-code inspection to make sure that it would work on non-SH4 boards, but I
-could have missed something, and some SH4 quirks may have slipped in.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/boards/board-sh7785lcr.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
 
-Matt Fleming (3):
-  sh: Add fixed ioremap support
-  sh: Use ioremap_fixmed to map the SM501 DRAM config register
-  sh: Use ioremap_fixed() to implement SH-5 ioremap()
-
- arch/sh/boards/board-sh7785lcr.c |   11 ++-
- arch/sh/include/asm/fixmap.h     |    8 +
- arch/sh/include/asm/io.h         |    4 +
- arch/sh/kernel/setup.c           |    2 +
- arch/sh/mm/Makefile              |    3 +-
- arch/sh/mm/ioremap_64.c          |  290 +-------------------------------------
- arch/sh/mm/ioremap_fixed.c       |  209 +++++++++++++++++++++++++++
- 7 files changed, 238 insertions(+), 289 deletions(-)
- create mode 100644 arch/sh/mm/ioremap_fixed.c
+diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
+index e5a8a2f..932b8b6 100644
+--- a/arch/sh/boards/board-sh7785lcr.c
++++ b/arch/sh/boards/board-sh7785lcr.c
+@@ -341,8 +341,15 @@ static void __init sh7785lcr_setup(char **cmdline_p)
+ 	pm_power_off = sh7785lcr_power_off;
+ 
+ 	/* sm501 DRAM configuration */
+-	sm501_reg = (void __iomem *)0xb3e00000 + SM501_DRAM_CONTROL;
+-	writel(0x000307c2, sm501_reg);
++	sm501_reg = ioremap_fixed(SM107_REG_ADDR, SM501_DRAM_CONTROL,
++				  PAGE_KERNEL);
++	if (!sm501_reg) {
++		printk(KERN_ERR "%s: ioremap error.\n", __func__);
++		return;
++	}
++
++	writel(0x000307c2, sm501_reg + SM501_DRAM_CONTROL);
++	iounmap_fixed(sm501_reg);
+ }
+ 
+ /* Return the board specific boot mode pin configuration */
+-- 
+1.6.2.5
 
