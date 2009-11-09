@@ -1,20 +1,36 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Thu, 26 Nov 2009 11:50:22 +0000
-Subject: Re: [PATCH 1/2 v2] sh: mach-ecovec24: modify memory area
-Message-Id: <20091126115022.GC6612@console-pimps.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 09 Nov 2009 02:42:47 +0000
+Subject: [PATCH] uio: pm_runtime_disable is needed if failed
+Message-Id: <ufx8oju54.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <u4ooho6yg.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <u4ooho6yg.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Nov 26, 2009 at 08:34:31PM +0900, Kuninori Morimoto wrote:
-> This operation expect to jump to cached area, but "mova" command will
-> get un-cached area in this case.
-> This patch change it un-cached area to cached area
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 
-Acked-by: Matt Fleming <matt@console-pimps.org>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+>> Magnus
+
+Please check this patch.
+I think pm_runtime_disable is needed here.
+
+ drivers/uio/uio_pdrv_genirq.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 02347c5..aa53db9 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -178,6 +178,7 @@ static int uio_pdrv_genirq_probe(struct platform_device *pdev)
+ 	return 0;
+  bad1:
+ 	kfree(priv);
++	pm_runtime_disable(&pdev->dev);
+  bad0:
+ 	return ret;
+ }
+-- 
+1.6.3.3
+
