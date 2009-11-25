@@ -1,47 +1,51 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Mon, 30 Nov 2009 19:58:24 +0000
-Subject: Re: [PATCH] sh: mach-ecovec24: update ecovec24 defconfig
-Message-Id: <20091130195824.GA26460@console-pimps.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 25 Nov 2009 08:12:55 +0000
+Subject: [PATCH 02/02] clocksource: Start CMT at clocksource resume
+Message-Id: <20091125081255.25416.85126.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uws1cuyrg.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uws1cuyrg.wl%morimoto.kuninori@renesas.com>
+References: <20091125081235.25416.32481.sendpatchset@rxone.opensource.se>
+In-Reply-To: <20091125081235.25416.32481.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: akpm@linux-foundation.org, linux-sh@vger.kernel.org, johnstul@us.ibm.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Mon, Nov 30, 2009 at 07:11:29PM +0900, Kuninori Morimoto wrote:
-> 
-> Dear Paul
-> 
-> > > because currect kernel can not use CONFIG_CACHE_WRITEBACK
-> > >
-> > Uhm, why not? Where is the bug report on this?
-> 
-> Now I searched by git bisect
-> I tested on ms7724se / ecovec24
-> 
-> -------------------------
-> eb3118f652ea7751ecf6a7e467bb637895e3be3b is first bad commit
-> commit eb3118f652ea7751ecf6a7e467bb637895e3be3b
-> Author: Matt Fleming <matt@console-pimps.org>
-> Date:   Thu Oct 29 21:53:30 2009 +0000
-> 
-> sh: Do not apply virt_to_phys() to a physical address
-> 
+From: Magnus Damm <damm@opensource.se>
 
-Could you apply this patch and post the backtrace?
+Add code to start the CMT timer on clocksource resume.
 
-diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
-index 6bfd08d..8440b12 100644
---- a/arch/sh/mm/cache-sh4.c
-+++ b/arch/sh/mm/cache-sh4.c
-@@ -89,6 +89,8 @@ static inline void flush_cache_one(unsigned long start, unsigned long phys)
- {
- 	unsigned long flags, exec_offset = 0;
+This makes sure the timer is started during sysdev_resume().
+Without this patch the clocksource may be read as suspended,
+this after sysdev resume but before platform device resume.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/clocksource/sh_cmt.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- 0001/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2009-11-25 16:02:52.000000000 +0900
+@@ -432,6 +432,13 @@ static void sh_cmt_clocksource_disable(s
+ 	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
+ }
  
-+	WARN_ON(!(phys >= __MEMORY_START && phys < __MEMORY_START + __MEMORY_SIZE));
++static void sh_cmt_clocksource_resume(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
 +
- 	/*
- 	 * All types of SH-4 require PC to be uncached to operate on the I-cache.
- 	 * Some types of SH-4 require PC to be uncached to operate on the D-cache.
++	sh_cmt_start(p, FLAG_CLOCKSOURCE);
++}
++
+ static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
+ 				       char *name, unsigned long rating)
+ {
+@@ -442,6 +449,7 @@ static int sh_cmt_register_clocksource(s
+ 	cs->read = sh_cmt_clocksource_read;
+ 	cs->enable = sh_cmt_clocksource_enable;
+ 	cs->disable = sh_cmt_clocksource_disable;
++	cs->resume = sh_cmt_clocksource_resume;
+ 	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
+ 	pr_info("sh_cmt: %s used as clock source\n", cs->name);
