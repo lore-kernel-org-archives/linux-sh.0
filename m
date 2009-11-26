@@ -1,31 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 25 Nov 2009 08:12:35 +0000
-Subject: [PATCH 00/02] clocksource: SuperH CMT driver resume changes
-Message-Id: <20091125081235.25416.32481.sendpatchset@rxone.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 26 Nov 2009 10:34:52 +0000
+Subject: [PATCH 2/2] sh: mach-kfr2r09: modify memory area calculation
+Message-Id: <u7htdo9pv.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: akpm@linux-foundation.org, linux-sh@vger.kernel.org, johnstul@us.ibm.com, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-clocksource: SuperH CMT driver resume changes
+This operation expect to jump to cached area, but "mova" command will
+get un-cached area in this case.
+This patch subtract 0x20000000 from it to change un-cached area
+to cached area
 
-[PATCH 01/02] clocksource: Add argument to resume callback
-[PATCH 02/02] clocksource: Start CMT at clocksource resume
-
-These patches modify the clocksource code so the CMT
-driver can be resumed properly. Trivial stuff, but may
-cause slight breakage if I managed to miss any clocksource
-drivers that use the resume callback.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+I think this patch is for 2.6.33
 
- arch/ia64/kernel/time.c      |    4 ++--
- arch/x86/kernel/hpet.c       |    4 ++--
- arch/x86/kernel/tsc.c        |    4 ++--
- drivers/clocksource/sh_cmt.c |   16 ++++++++++++++++
- include/linux/clocksource.h  |    4 ++--
- kernel/time/clocksource.c    |    4 ++--
- 6 files changed, 26 insertions(+), 10 deletions(-)
+ arch/sh/include/mach-kfr2r09/mach/romimage.h |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/include/mach-kfr2r09/mach/romimage.h b/arch/sh/include/mach-kfr2r09/mach/romimage.h
+index a110823..076cc94 100644
+--- a/arch/sh/include/mach-kfr2r09/mach/romimage.h
++++ b/arch/sh/include/mach-kfr2r09/mach/romimage.h
+@@ -11,10 +11,13 @@
+ 	icbi	@r0
+ 
+ 	/* jump to cached area */
+-	mova	2f, r0
++	mov.l	2f, r1
++	mova	3f, r0
++	sub	r1, r0
+ 	jmp	@r0
+ 	 nop
+ 
+ 	.align 2
+-1:	.long 0xa8000000
+-2:
++1 :	.long 0xa8000000
++2 :	.long 0x20000000 /* 0xA0000000 - 0x80000000 */
++3 :
+-- 
+1.6.3.3
+
