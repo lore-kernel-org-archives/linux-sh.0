@@ -1,34 +1,77 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 09 Nov 2009 01:57:42 +0000
-Subject: [GIT PULL] sh updates for 2.6.32-rc7
-Message-Id: <20091109015742.GB22932@linux-sh.org>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Thu, 26 Nov 2009 05:41:04 +0000
+Subject: libshcodecs 0.9.9 Release
+Message-Id: <dba6c0830911252141o64d2f6dv2415f043f833b49b@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+libshcodecs 0.9.9 Release
+============
+libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.32
+The [SH-Mobile][0] processor series includes a hardware video processing
+unit that supports MPEG-4 and H.264 encoding and decoding.
+libshcodecs is available under the terms of the GNU LGPL.
 
-Which contains:
+The source archive, and more information about the library are available from:
 
-Magnus Damm (1):
-      serial: sh-sci: disable callback typo fix
+        http://linux-sh.org/cgi-bin/moin.cgi/libshcodecs
 
-Matt Fleming (1):
-      sh: Account for cache aliases in flush_icache_range()
+New in this release
+=========
+This release adds support for encoding and decoding in resolutions up to
+720p (1280x720). The shcodecs-dec and shcodecs-play commands now accept
+size arguments "720p" and "D1", and resolutions up to 1280x720 are valid
+for shcodecs-enc and shcodecs-record.
 
-Paul Mundt (1):
-      sh: unwinder: Fix up invalid PC refetch in dwarf unwinder.
+There are no API changes since release 0.9.8.
 
-Thomas Gleixner (1):
-      sh: Replace old style lock initializer
+Changes
+-------
 
- arch/sh/include/asm/rwsem.h |    2 +-
- arch/sh/kernel/dwarf.c      |    2 +-
- arch/sh/mm/cache-sh4.c      |    5 ++++-
- drivers/serial/sh-sci.c     |    2 +-
- 4 files changed, 7 insertions(+), 4 deletions(-)
+Conrad Parker (8):
+      Increase encode buffer sizes for 720p
+      add k264-v4l2-720p-stream.ctl
+      Encoder: calculate work area, stream buff sizes
+      Add 720p option to shcodecs-dec
+      add 720p option to shcodecs-play
+      play,dec: add D1 to size options, update man pages
+      re-order decoder initialization, fix for 720p
+      Release 0.9.9
+
+Phil Edworthy (7):
+      shcodecs-record: Specify capture C plane address
+      Removed defines that aren't used.
+      Work around kernel v4l bugs with ceu buffer sizes.
+      Changed frame memory allocation to one per frame.
+      Handle ceu buffers that are not the same size as that requested.
+      Modified how stream & work area sizes are calculated.
+      Use dynamic sized NAL/work bufs.
+
+ configure.ac                       |    2 +-
+ data/Makefile.am                   |    2 +
+ data/k264-v4l2-720p-stream.ctl     |   96 ++++++++++++++++++++++++++++
+ doc/shcodecs-dec.1                 |    2 +-
+ doc/shcodecs-play.1                |    4 +-
+ include/shcodecs/shcodecs_common.h |    4 +-
+ src/libshcodecs/decoder_private.h  |    3 +-
+ src/libshcodecs/encoder_common.h   |   71 +--------------------
+ src/libshcodecs/encoder_private.h  |   11 +++-
+ src/libshcodecs/h264_accessors.c   |    2 +
+ src/libshcodecs/h264_encode.c      |   12 +---
+ src/libshcodecs/mpeg4_encode.c     |   16 +----
+ src/libshcodecs/shcodecs_decoder.c |  122 +++++++++++++++++++-----------------
+ src/libshcodecs/shcodecs_encoder.c |  105 ++++++++++++++++++++++---------
+ src/tools/avcbencsmp.h             |   94 ---------------------------
+ src/tools/capture.c                |   22 ++++++-
+ src/tools/capture.h                |    5 ++
+ src/tools/shcodecs-dec.c           |   21 +++++--
+ src/tools/shcodecs-play.c          |   55 +++++++++++------
+ src/tools/shcodecs-record.c        |   27 +++++---
+ 20 files changed, 355 insertions(+), 321 deletions(-)
+ create mode 100644 data/k264-v4l2-720p-stream.ctl
+
+[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
