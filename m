@@ -1,47 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 30 Nov 2009 11:19:36 +0000
-Subject: Re: [PATCH 02/02] clocksource: Start CMT at clocksource resume
-Message-Id: <aec7e5c30911300319i115efdb6p215984377cb97f22@mail.gmail.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 26 Nov 2009 06:00:29 +0000
+Subject: [PATCH] sh: mach-ecovec24: modify address map
+Message-Id: <uiqcxomf6.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091125081235.25416.32481.sendpatchset@rxone.opensource.se>
-	 <20091125081255.25416.85126.sendpatchset@rxone.opensource.se>
-	 <alpine.LFD.2.00.0911281457560.24119@localhost.localdomain>
-In-Reply-To: <alpine.LFD.2.00.0911281457560.24119@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-kernel@vger.kernel.org, akpm@linux-foundation.org, linux-sh@vger.kernel.org, johnstul@us.ibm.com, lethal@linux-sh.org
+To: linux-sh@vger.kernel.org
 
-Hi Thomas,
+ecovec24 board expect address map 2 instead of map 1
 
-On Sat, Nov 28, 2009 at 11:00 PM, Thomas Gleixner <tglx@linutronix.de> wrote:
-> On Wed, 25 Nov 2009, Magnus Damm wrote:
->
->> From: Magnus Damm <damm@opensource.se>
->>
->> Add code to start the CMT timer on clocksource resume.
->>
->> This makes sure the timer is started during sysdev_resume().
->> Without this patch the clocksource may be read as suspended,
->> this after sysdev resume but before platform device resume.
->
-> Hmm, don't you have the same situation on suspend ?
->
-> platform device suspend stops the clock, but the generic code expects
-> it to be running until sysdev shutdown.
+Signed-off-by: Mizukawa Tatsuo <mizukawa.tatsuo@renesas.com>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ .../mach-ecovec24/mach/partner-jet-setup.txt       |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-You are correct, the same situation exists on suspend.
+diff --git a/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt b/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt
+index 8b8e4fa..09aaabc 100644
+--- a/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt
++++ b/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt
+@@ -28,7 +28,7 @@ WAIT 1
+ 
+ LIST "BSC"
+ ED 0xff800020, 0xa5a50000
+-ED 0xfec10000, 0x00000013
++ED 0xfec10000, 0x00001013
+ ED 0xfec10004, 0x11110400
+ ED 0xfec10024, 0x00000440
+ 
+-- 
+1.6.3.3
 
-> Another thing is that you now run both, the sysdev and the platform
-> resume. Is that by design or accident ?
-
-By incorrect design. =)
-
-To fix this properly I was thinking of adding a clocksource suspend()
-callback and ditch the platform ops all together. If you don't mind
-then I'll post a patch for that tomorrow!
-
-Thank you!
-
-/ magnus
