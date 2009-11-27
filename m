@@ -1,47 +1,47 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Sat, 07 Nov 2009 10:55:56 +0000
-Subject: [PATCH 2/3] sh: Use ioremap_fixmed to map the SM501 DRAM config register
-Message-Id: <b79b0ed9a88b791015354768041c0b0a1643c269.1257590789.git.matt@console-pimps.org>
+From: Microsoft Corporation <micclaim@yahoo.com.hk>
+Date: Fri, 27 Nov 2009 03:18:54 +0000
+Subject: =?windows-1252?Q?K=E6re?= heldig vinder
+Message-Id: <web-20862920@be2.vtr.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-We need to write to the DRAM config register very early and at such an
-early stage ioremap() is not available. So use ioremap_fixed() to map
-the register.
+K=E6re heldig vinder
 
-The reason that we are avoiding using the legacy P2 mapping is that
-there will come a day when the legacy P2 mappings no longer exist.
+Dette er for at informere dig, at din e-mail har vundet en hoering af gevin=
+st=20
+p=E5
+Microsoft Corporation Email tr=E6kke opgang holdt 10 november 2009. Din
+e-mail har du vandt =A3 500.000,00 (fem hundrede tusinde store britiske pun=
+d)
+For at f=E5 din gevinst, skal du kontakte din tillids-agent Mr. GISS Peters=
+on og=20
+kontakt
+ham via e-mail med det samme inden for 24 timer.
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
----
- arch/sh/boards/board-sh7785lcr.c |   11 +++++++++--
- 1 files changed, 9 insertions(+), 2 deletions(-)
+med de oplysninger nedenfor.
 
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index e5a8a2f..932b8b6 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -341,8 +341,15 @@ static void __init sh7785lcr_setup(char **cmdline_p)
- 	pm_power_off = sh7785lcr_power_off;
- 
- 	/* sm501 DRAM configuration */
--	sm501_reg = (void __iomem *)0xb3e00000 + SM501_DRAM_CONTROL;
--	writel(0x000307c2, sm501_reg);
-+	sm501_reg = ioremap_fixed(SM107_REG_ADDR, SM501_DRAM_CONTROL,
-+				  PAGE_KERNEL);
-+	if (!sm501_reg) {
-+		printk(KERN_ERR "%s: ioremap error.\n", __func__);
-+		return;
-+	}
-+
-+	writel(0x000307c2, sm501_reg + SM501_DRAM_CONTROL);
-+	iounmap_fixed(sm501_reg);
- }
- 
- /* Return the board specific boot mode pin configuration */
--- 
-1.6.2.5
+Mr. GISS Peterson
+Microsoft Promotion Award Team
+Head Winning Tilgodehavender Dept.
+E-mail: micclaim@yahoo.com.hk
 
+1. Fulde navn :..............
+3.Occupation :..............
+4.Age :..............
+5.Sex :................
+6.Nationalitet :...........
+7.Tel :..............
+8.Amount Won :.........................
+
+En s=E6rlig tak og tak til Bill Gates og hans associates.We
+=F8nsker dig det bedste af luck.Thank dig for at v=E6re en del af vores=20
+salgsfremmende
+tildeling af programmet og erindringsm=F8nter Anniversary g=F8r.
+
+Med venlig hilsen
+Dr.Gary Stover
+Head Experian KundeService Service
+Microsoft Promotion
