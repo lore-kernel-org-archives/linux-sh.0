@@ -1,68 +1,47 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Sat, 28 Nov 2009 14:00:02 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 30 Nov 2009 11:19:36 +0000
 Subject: Re: [PATCH 02/02] clocksource: Start CMT at clocksource resume
-Message-Id: <alpine.LFD.2.00.0911281457560.24119@localhost.localdomain>
+Message-Id: <aec7e5c30911300319i115efdb6p215984377cb97f22@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091125081235.25416.32481.sendpatchset@rxone.opensource.se> <20091125081255.25416.85126.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091125081255.25416.85126.sendpatchset@rxone.opensource.se>
+References: <20091125081235.25416.32481.sendpatchset@rxone.opensource.se>
+	 <20091125081255.25416.85126.sendpatchset@rxone.opensource.se>
+	 <alpine.LFD.2.00.0911281457560.24119@localhost.localdomain>
+In-Reply-To: <alpine.LFD.2.00.0911281457560.24119@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
+To: Thomas Gleixner <tglx@linutronix.de>
 Cc: linux-kernel@vger.kernel.org, akpm@linux-foundation.org, linux-sh@vger.kernel.org, johnstul@us.ibm.com, lethal@linux-sh.org
 
+Hi Thomas,
 
+On Sat, Nov 28, 2009 at 11:00 PM, Thomas Gleixner <tglx@linutronix.de> wrote:
+> On Wed, 25 Nov 2009, Magnus Damm wrote:
+>
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Add code to start the CMT timer on clocksource resume.
+>>
+>> This makes sure the timer is started during sysdev_resume().
+>> Without this patch the clocksource may be read as suspended,
+>> this after sysdev resume but before platform device resume.
+>
+> Hmm, don't you have the same situation on suspend ?
+>
+> platform device suspend stops the clock, but the generic code expects
+> it to be running until sysdev shutdown.
 
-On Wed, 25 Nov 2009, Magnus Damm wrote:
+You are correct, the same situation exists on suspend.
 
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add code to start the CMT timer on clocksource resume.
-> 
-> This makes sure the timer is started during sysdev_resume().
-> Without this patch the clocksource may be read as suspended,
-> this after sysdev resume but before platform device resume.
+> Another thing is that you now run both, the sysdev and the platform
+> resume. Is that by design or accident ?
 
-Hmm, don't you have the same situation on suspend ?
+By incorrect design. =)
 
-platform device suspend stops the clock, but the generic code expects
-it to be running until sysdev shutdown.
+To fix this properly I was thinking of adding a clocksource suspend()
+callback and ditch the platform ops all together. If you don't mind
+then I'll post a patch for that tomorrow!
 
-Another thing is that you now run both, the sysdev and the platform
-resume. Is that by design or accident ?
+Thank you!
 
-Thanks,
-
-	tglx
-
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  drivers/clocksource/sh_cmt.c |    8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> --- 0001/drivers/clocksource/sh_cmt.c
-> +++ work/drivers/clocksource/sh_cmt.c	2009-11-25 16:02:52.000000000 +0900
-> @@ -432,6 +432,13 @@ static void sh_cmt_clocksource_disable(s
->  	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
->  }
->  
-> +static void sh_cmt_clocksource_resume(struct clocksource *cs)
-> +{
-> +	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
-> +
-> +	sh_cmt_start(p, FLAG_CLOCKSOURCE);
-> +}
-> +
->  static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
->  				       char *name, unsigned long rating)
->  {
-> @@ -442,6 +449,7 @@ static int sh_cmt_register_clocksource(s
->  	cs->read = sh_cmt_clocksource_read;
->  	cs->enable = sh_cmt_clocksource_enable;
->  	cs->disable = sh_cmt_clocksource_disable;
-> +	cs->resume = sh_cmt_clocksource_resume;
->  	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
->  	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
->  	pr_info("sh_cmt: %s used as clock source\n", cs->name);
-> 
+/ magnus
