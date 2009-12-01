@@ -1,22 +1,35 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 24 Dec 2009 10:12:43 +0000
-Subject: Re: Probably cache synchronization issue on SH7723
-Message-Id: <20091224101243.GA31200@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 01 Dec 2009 09:54:46 +0000
+Subject: [PATCH] Fix too early disabling of the serial (SCI(F)) ports
+Message-Id: <Pine.LNX.4.64.0912011045150.4701@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4B17B0D6.6020105@emtrion.de>
-In-Reply-To: <4B17B0D6.6020105@emtrion.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Dec 24, 2009 at 10:50:31AM +0100, Pietrek, Markus wrote:
-> > If we can't find the cause of this bug soon I imagine that Paul will
-> > queue up some band-aid patch so that, whilst there will be a
-> > performance loss, at least things will work correctly ;-)
-> 
-> The loss might not be as big as having to use the cache in write-through mode ;-)
-> 
-I pushed out a reworked version of your patch, so give current git a try
-and see if that fixes up your remaining issues. These changes will be
-reflected in 2.6.33-rc2.
+Currently serial ports on SH CPUs get disabled too early, because the 
+sci_tx_empty() routine claims to not be able to detect whether the 
+transmission has been completed and just always returns TIOCSER_TEMT. This 
+results in corrupt output of last characters if the port is not open for 
+reading at the same time. It is however possible to detect whether 
+transmission has been completed. Use the TEND bit of the status register 
+for this.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 85119fb..70a52a5 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -833,8 +833,8 @@ static void sci_free_irq(struct sci_port *port)
+ 
+ static unsigned int sci_tx_empty(struct uart_port *port)
+ {
+-	/* Can't detect */
+-	return TIOCSER_TEMT;
++	unsigned short status = sci_in(port, SCxSR);
++	return status & SCxSR_TEND(port) ? TIOCSER_TEMT : 0;
+ }
+ 
+ static void sci_set_mctrl(struct uart_port *port, unsigned int mctrl)
