@@ -1,31 +1,40 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 16 Dec 2009 04:24:47 +0000
-Subject: Re: [PATCH 1/3] sh: mach-ecovec24: Add tw9910 support
-Message-Id: <20091216042446.GA31265@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Dec 2009 13:38:52 +0000
+Subject: [PATCH] sh: fix sh7724 VEU3F resource size
+Message-Id: <20091201133852.29252.62066.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uocm0vlv7.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uocm0vlv7.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 15, 2009 at 02:37:16PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/boards/mach-ecovec24/setup.c |   50 ++++++++++++++++++++++++++++++++++
->  1 files changed, 50 insertions(+), 0 deletions(-)
+From: Magnus Damm <damm@opensource.se>
 
-On Tue, Dec 15, 2009 at 02:37:26PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/boards/mach-ecovec24/setup.c |   79 +++++++++++++++++++++++++++++++++-
->  1 files changed, 78 insertions(+), 1 deletions(-)
+Fix one-off VEU3F size error for sh7724.
 
-On Tue, Dec 15, 2009 at 02:37:39PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/boards/mach-ecovec24/setup.c |   98 ++++++++++++++++++++++++++++++++++
->  1 files changed, 98 insertions(+), 0 deletions(-)
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Applied, thanks.
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7724.c	2009-12-01 21:17:58.000000000 +0900
+@@ -204,7 +204,7 @@ static struct resource veu0_resources[] 
+ 	[0] = {
+ 		.name	= "VEU3F0",
+ 		.start	= 0xfe920000,
+-		.end	= 0xfe9200cb - 1,
++		.end	= 0xfe9200cb,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -236,7 +236,7 @@ static struct resource veu1_resources[] 
+ 	[0] = {
+ 		.name	= "VEU3F1",
+ 		.start	= 0xfe924000,
+-		.end	= 0xfe9240cb - 1,
++		.end	= 0xfe9240cb,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
