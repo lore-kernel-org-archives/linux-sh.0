@@ -1,43 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Nov 2009 14:34:47 +0000
-Subject: [PATCH 00/05][RFC] sh: Early serial console rework V2
-Message-Id: <20091105143447.9902.4608.sendpatchset@rxone.opensource.se>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 02 Dec 2009 01:35:46 +0000
+Subject: Re: [PATCH] sh: Add CONFIG_PARAM_* to set boot parameters.
+Message-Id: <20091202013545.GA11047@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20091130170254.65d2a0ab.yoshii.takashi@renesas.com>
+In-Reply-To: <20091130170254.65d2a0ab.yoshii.takashi@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sh: Early serial console rework V2
+On Mon, Nov 30, 2009 at 05:02:54PM +0900, yoshii.takashi@renesas.com wrote:
+> You can set boot parameters by config, ignoring data at the top of empty_zero_page.
+> This and CONFIG_CMDLINE make zImage to be simple "load and go" capable binary,
+> same as vmlinux (which has default boot parameters inside of it).
+> 
+> ---
+> 
+> I think people who already have "Linux aware" boot loader don't find anything interesting,
+> but this was helpful when I was debugging with a monitor with serial file transfer only.
+> IMHO, it might be a good to forget about parameters on the top of empty_zero_page.
+> 
+But this breaks the entire boot ABI, and probably only for the reason
+that new bootloaders don't set up the argument page correctly. How about
+just fixing the bootloaders to comply with the ABI rather than layering
+more hacks in the kernel to make up for lazy bootloader developers?
 
-[PATCH 01/05] sh-sci: disable callback typo fix
-[PATCH 02/05] Driver Core: Early platform driver buffer
-[PATCH 03/05] sh-sci: Extend sh-sci driver with early console
-[PATCH 04/05] sh: Break out SH7724 serial ports
-[PATCH 05/05] sh: Remove old early serial console code
-
-These patches move the early serial console code into the sh-sci
-driver. Apart from removing duplicated code, this also allows for
-a wider range of supported ports - SCI, SCIF and SCIFA should now
-be supported. The rework allows us to select the early serial console
-port with the kernel command line. As an example, to enable early
-serial console on KFR2R09, simply add the following to the kernel
-command line: "earlyprintk=sh-sci.1,115200".
-
-If the SuperH specific bits look OK then I'll break out serial port
-data for other processors as well and submit the driver core bits to
-LKML.
-
-Tested on sh7724 / KFR2R09.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/sh/Kconfig.debug                  |   21 ----
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  145 +++++++++++++++++++++---------
- arch/sh/kernel/early_printk.c          |  153 --------------------------------
- arch/sh/kernel/setup.c                 |    5 +
- drivers/base/platform.c                |   29 ++++--
- drivers/serial/sh-sci.c                |   58 ++++++++++--
- include/linux/platform_device.h        |   20 +++-
- 7 files changed, 193 insertions(+), 238 deletions(-)
+While I don't have any objections to making the argument page optional in
+itself, we still require some hints for things like whether we are using
+32-bit boot mode and so on that need to be reflected somewhere. If you
+wish to propose a new boot ABI and move away from overloading of the zero
+page, that's fine with me, but we're not going to be breaking the ABI to
+work around bootloader laziness.
