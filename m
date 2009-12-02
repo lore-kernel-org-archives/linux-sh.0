@@ -1,79 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 07 Dec 2009 14:26:05 +0000
-Subject: [PATCH] sh: LCDC start_transfer() for the KFR2R09 board
-Message-Id: <20091207142605.6728.6076.sendpatchset@rxone.opensource.se>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 02 Dec 2009 09:36:18 +0000
+Subject: [PATCH] sh: mach-ecovec24: Remove un-defined settings for VPU
+Message-Id: <uiqcpzpil.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The setting of VPU need not be changed from default.
+And current setting value is not defined on SH7724
 
-This patch adds a ->start_transfer() callback to the
-KFR2R09 lcd handling code. The callback is used to
-notify the lcd controller that a new frame of data
-is about to be transferred. The callback is only used
-in combination with deferred io, but the code has
-been tested both with and without deferred io enabled.
-
-Without this patch the display data on the KFR2R09
-lcd panel becomes corrupted over time.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Reported-by:   Goda Yusuke <goda.yusuke@renesas.com>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ .../mach-ecovec24/mach/partner-jet-setup.txt       |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
- Depends on the LCDC start_transfer() patch.
-
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |    6 ++++++
- arch/sh/boards/mach-kfr2r09/setup.c         |    1 +
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 ++++++
- 3 files changed, 13 insertions(+)
-
---- 0001/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
-+++ work/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c	2009-12-07 18:32:49.000000000 +0900
-@@ -273,6 +273,12 @@ int kfr2r09_lcd_setup(void *board_data, 
- 	return 0;
- }
+diff --git a/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt b/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt
+index 09aaabc..cc737b8 100644
+--- a/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt
++++ b/arch/sh/include/mach-ecovec24/mach/partner-jet-setup.txt
+@@ -22,7 +22,6 @@ ED 0xff000010, 0x00000004
+ LIST "setup clocks"
+ ED 0xa4150024, 0x00004000
+ ED 0xa4150000, 0x8E003508
+-ED 0xa4150004, 0x00000000
  
-+void kfr2r09_lcd_start(void *board_data, void *sohandle,
-+		       struct sh_mobile_lcdc_sys_bus_ops *so)
-+{
-+	write_memory_start(sohandle, so);
-+}
-+
- #define CTRL_CKSW       0x10
- #define CTRL_C10        0x20
- #define CTRL_CPSW       0x80
---- 0001/arch/sh/boards/mach-kfr2r09/setup.c
-+++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-12-07 18:32:49.000000000 +0900
-@@ -149,6 +149,7 @@ static struct sh_mobile_lcdc_info kfr2r0
- 		},
- 		.board_cfg = {
- 			.setup_sys = kfr2r09_lcd_setup,
-+			.start_transfer = kfr2r09_lcd_start,
- 			.display_on = kfr2r09_lcd_on,
- 			.display_off = kfr2r09_lcd_off,
- 		},
---- 0001/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
-+++ work/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h	2009-12-07 18:32:49.000000000 +0900
-@@ -8,6 +8,8 @@ void kfr2r09_lcd_on(void *board_data);
- void kfr2r09_lcd_off(void *board_data);
- int kfr2r09_lcd_setup(void *board_data, void *sys_ops_handle,
- 		      struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
-+void kfr2r09_lcd_start(void *board_data, void *sys_ops_handle,
-+		       struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
- #else
- static inline void kfr2r09_lcd_on(void *board_data) {}
- static inline void kfr2r09_lcd_off(void *board_data) {}
-@@ -16,6 +18,10 @@ static inline int kfr2r09_lcd_setup(void
- {
- 	return -ENODEV;
- }
-+static inline void kfr2r09_lcd_start(void *board_data, void *sys_ops_handle,
-+				     struct sh_mobile_lcdc_sys_bus_ops *sys_ops)
-+{
-+}
- #endif
+ WAIT 1
  
- #endif /* __ASM_SH_KFR2R09_H */
+-- 
+1.6.3.3
+
