@@ -1,16 +1,61 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 17 Dec 2009 05:16:00 +0000
-Subject: Re: [PATCH]: sh: dmaengine support for SH7785
-Message-Id: <20091217051600.GC3946@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 Dec 2009 12:31:45 +0000
+Subject: [PATCH] sh: allow runtime pm without suspend/resume callbacks
+Message-Id: <20091203123145.9997.81575.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <29ab51dc0912161915p55672faxd2790b69ed59ba7d@mail.gmail.com>
-In-Reply-To: <29ab51dc0912161915p55672faxd2790b69ed59ba7d@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Dec 17, 2009 at 12:15:57PM +0900, Nobuhiro Iwamatsu wrote:
-> Add dmaengine platform device to SH7785.
+From: Magnus Damm <damm@opensource.se>
 
-Applied, thanks.
+This patch updates the Runtime PM code for SuperH Mobile
+to allow drivers to have NULL as pm or callback value.
+With this in place there is no need for no-op functions.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c |   17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+--- 0001/arch/sh/kernel/cpu/shmobile/pm_runtime.c
++++ work/arch/sh/kernel/cpu/shmobile/pm_runtime.c	2009-12-02 12:17:25.000000000 +0900
+@@ -45,12 +45,14 @@ static int __platform_pm_runtime_resume(
+ 
+ 	dev_dbg(d, "__platform_pm_runtime_resume() [%d]\n", hwblk);
+ 
+-	if (d->driver && d->driver->pm && d->driver->pm->runtime_resume) {
++	if (d->driver) {
+ 		hwblk_enable(hwblk_info, hwblk);
+ 		ret = 0;
+ 
+ 		if (test_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags)) {
+-			ret = d->driver->pm->runtime_resume(d);
++			if (d->driver->pm && d->driver->pm->runtime_resume)
++				ret = d->driver->pm->runtime_resume(d);
++
+ 			if (!ret)
+ 				clear_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags);
+ 			else
+@@ -73,12 +75,15 @@ static int __platform_pm_runtime_suspend
+ 
+ 	dev_dbg(d, "__platform_pm_runtime_suspend() [%d]\n", hwblk);
+ 
+-	if (d->driver && d->driver->pm && d->driver->pm->runtime_suspend) {
++	if (d->driver) {
+ 		BUG_ON(!test_bit(PDEV_ARCHDATA_FLAG_IDLE, &ad->flags));
++		ret = 0;
+ 
+-		hwblk_enable(hwblk_info, hwblk);
+-		ret = d->driver->pm->runtime_suspend(d);
+-		hwblk_disable(hwblk_info, hwblk);
++		if (d->driver->pm && d->driver->pm->runtime_suspend) {
++			hwblk_enable(hwblk_info, hwblk);
++			ret = d->driver->pm->runtime_suspend(d);
++			hwblk_disable(hwblk_info, hwblk);
++		}
+ 
+ 		if (!ret) {
+ 			set_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags);
