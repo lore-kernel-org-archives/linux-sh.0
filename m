@@ -1,58 +1,52 @@
-From: Markus Pietrek <Markus.Pietrek@emtrion.de>
-Date: Thu, 03 Dec 2009 12:36:38 +0000
-Subject: Probably cache synchronization issue on SH7723
-Message-Id: <4B17B0D6.6020105@emtrion.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 Dec 2009 12:45:28 +0000
+Subject: Re: Probably cache synchronization issue on SH7723
+Message-Id: <aec7e5c30912030445m5a26a802tcc80047cf60bbfe9@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4B17B0D6.6020105@emtrion.de>
+In-Reply-To: <4B17B0D6.6020105@emtrion.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+Hi Markus,
 
-when starting bigger graphical applications they suddenly stop with a=20
-segmentation fault or a bus error. If I execute the application a second=20
-time, everything is fine. Applications that are linked to shared=20
-libraries are more likely to fail than statically linked applications.
+On Thu, Dec 3, 2009 at 9:36 PM, Markus Pietrek
+<Markus.Pietrek@emtrion.de> wrote:
+> when starting bigger graphical applications they suddenly stop with a
+> segmentation fault or a bus error. If I execute the application a second
+> time, everything is fine. Applications that are linked to shared libraries
+> are more likely to fail than statically linked applications.
+>
+> Changing the cache from write-back to write-through fixes it. Maybe the
+> instruction cache and the data cache are not synchronized correctly?
+>
+> I didn't have this problem with the linux-2.6.29 vanilla kernel. 2.6.32rc2
+> from git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6 introduced
+> it. And after a pull yesterday even /bin/init is failing.
 
-Changing the cache from write-back to write-through fixes it. Maybe the=20
-instruction cache and the data cache are not synchronized correctly?
+I've found that sh7722 and sh7724 doesn't work with copy back cache
+right now, see below. There may be other issues as well, but going
+back to OK fixes it for my initramfs-only case.
 
-I didn't have this problem with the linux-2.6.29 vanilla kernel.=20
-2.6.32rc2 from=20
-git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6 introduced=20
-it. And after a pull yesterday even /bin/init is failing.
+Cheers,
 
-On 9th Oct 2009, there was a similar bug report for the sh7785lcr. Does=20
-this platform now work?
+/ magnus
 
-Mit freundlichen Gr=FC=DFen / Best Regards
+BAD:
 
-Markus Pietrek
-Software engineer
+commit 39ac11c1607f1d566e7cf885acd403fa4f07f8a2
+Author: Stuart Menefy <stuart.menefy@st.com>
+Date:   Tue Oct 27 15:14:06 2009 +0000
 
---=20
-emtrion GmbH
-Greschbachstr. 12
-76229 Karlsruhe
-GERMANY
+   sh: Improve performance of SH4 versions of copy/clear_user_highpage
 
-Phone  +49 721 62725-45
-Fax    +49 721 62725-19
-E-mail Markus.Pietrek@emtrion.de
-http://www.emtrion.de
+OK:
 
-_____________________________________
+commit 49fb2cd2571e0134e5a12c5abab227696e4940c7
+Merge: dfc3494 260af56
+Author: Paul Mundt <lethal@linux-sh.org>
+Date:   Tue Nov 24 16:32:11 2009 +0900
 
-Amtsgericht Mannheim
-HRB 110 300
-Gesch=E4ftsf=FChrer: Dieter Baur, Ramona Maurer
-_____________________________________
-
-Important Note:
-- This e-mail may contain trade secrets or privileged, undisclosed or=20
-otherwise confidential information.
-- If you have received this e-mail in error, you are hereby notified that
-   any review, copying or distribution of it is strictly prohibited.
-- Please inform us immediately and destroy the original transmittal.
-Thank you for your cooperation.
+   Merge branch 'master' into sh/st-integration
