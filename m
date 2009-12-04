@@ -1,127 +1,349 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 16 Dec 2009 06:05:25 +0000
-Subject: [GIT PULL] sh updates for 2.6.33-rc1, part 2.
-Message-Id: <20091216060525.GE31265@linux-sh.org>
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Fri, 04 Dec 2009 14:52:46 +0000
+Subject: [PATCH (sh-2.6.30.y) 04/13] stm: pm: Add suspend support on stx5197
+Message-Id: <1259938375-27499-4-git-send-email-francesco.virlinzi@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
+---
+ arch/sh/kernel/cpu/sh4/clock-stx5197.c |   61 ++++++++------
+ arch/sh/kernel/pm/suspend-stx5197.c    |  147 ++++++++++++++++++++++++++++++++
+ include/linux/stm/stx5197.h            |   39 +++++++++
+ 3 files changed, 221 insertions(+), 26 deletions(-)
+ create mode 100644 arch/sh/kernel/pm/suspend-stx5197.c
 
-Which contains:
+diff --git a/arch/sh/kernel/cpu/sh4/clock-stx5197.c b/arch/sh/kernel/cpu/sh4/clock-stx5197.c
+index bb96c5b..e952aa0 100644
+--- a/arch/sh/kernel/cpu/sh4/clock-stx5197.c
++++ b/arch/sh/kernel/cpu/sh4/clock-stx5197.c
+@@ -12,13 +12,12 @@
+ #include <linux/stm/sysconf.h>
+ #include <linux/errno.h>
+ #include <linux/io.h>
+-#include <linux/pm.h>
++#include <linux/stm/stx5197.h>
++
+ #include <linux/delay.h>
+ #include <asm/clock.h>
+ #include <asm/freq.h>
+ 
+-#include "./soc-stx5197.h"
+-
+ #ifdef CONFIG_CLK_LOW_LEVEL_DEBUG
+ #include <linux/stm/pio.h>
+ #define KERN_NULL
+@@ -28,8 +27,27 @@
+ #define dbg_print(fmt, args...)
+ #endif
+ 
++#define XTAL	30000000
+ static void __iomem *ss_base;
+ 
++enum clocks_ID {
++	CLK_XTAL_ID,
++	CLK_PLLA_ID,
++	CLK_PLLB_ID,
++	CLK_DDR_ID,
++	CLK_LMI_ID,
++	CLK_BLT_ID,
++	CLK_SYS_ID,
++	CLK_FDMA_ID,
++	CLK_SPARE_ID,
++	CLK_AV_ID,
++	CLK_SPARE2_ID,
++	CLK_ETH_ID,
++	CLK_ST40_ID,
++	CLK_ST40P_ID,
++};
++
++
+ /* External XTAL ----------------------------------------------------------- */
+ 
+ static void xtal_init(struct clk *clk)
+@@ -55,10 +73,10 @@ static unsigned long pll_freq(unsigned long input, int id)
+ 	unsigned long freq, ndiv, pdiv, mdiv;
+ 	int pll_num = id - CLK_PLLA_ID;
+ 
+-	config0 = readl(ss_base + CLK_PLL_CONFIG0(pll_num));
+-	config1 = readl(ss_base + CLK_PLL_CONFIG1(pll_num));
++	config0 = readl(ss_base + (pll_num ? PLLB_CONFIG0 : PLLA_CONFIG0));
++	config1 = readl(ss_base + (pll_num ? PLLB_CONFIG1 : PLLA_CONFIG1));
+ 
+-	if (config1 & CLK_PLL_CONFIG1_POFF)
++	if (config1 & PLL_CONFIG1_POFF)
+ 		return 0;
+ 
+ 	mdiv = (config0 >> 0) & 0xff;
+@@ -164,6 +182,9 @@ FMV: Commented because currently in the clk API there is no
+ #endif
+ };
+ 
++#define CLKDIV0_CONFIG0		0x90
++#define CLKDIV1_4_CONFIG0(n)	(0x0a0 + ((n-1)*0xc))
++#define CLKDIV6_10_CONFIG0(n)	(0x0d0 + ((n-6)*0xc))
+ static unsigned long divider_freq(unsigned long input, int div_num)
+ {
+ 	int offset;
+@@ -250,15 +271,18 @@ static void dividedpll_hw_set(unsigned long addr,
+ 		      "r" (cfg0),
+ 		      "r" (cfg1),
+ 		      "r" (cfg2), /* with enable */
+-		      "r" (ss_base + CLK_MODE_CTRL),
+-		      "r" (CLK_MODE_CTRL_X1),
+-		      "r" (CLK_MODE_CTRL_PROG),
++		      "r" (ss_base + MODE_CONTROL),
++		      "r" (MODE_CONTROL_X1),
++		      "r" (MODE_CONTROL_PROG),
+ 		      "r" (1000000)
+ 		:     "memory");
+ 	writel(0x100, ss_base + CLK_LOCK_CFG); /* UnLock */
+ 	local_irq_restore(flag);
+ }
+ 
++#define CLKDIV_CONF0(x)		(((x) = 0) ? CLKDIV0_CONFIG0 : ((x) < 5) ? \
++			CLKDIV1_4_CONFIG0(x) : CLKDIV6_10_CONFIG0(x))
++
+ static int dividedpll_clk_XXable(struct clk *clk, int enable)
+ {
+ 	unsigned long num = clk->id-CLK_DDR_ID;
+@@ -383,27 +407,12 @@ static struct clk generic_comms_clk = {
+ 	.ops		= &generic_clk_ops,
+ };
+ 
+-#ifdef CONFIG_PM
+-int clk_pm_state(pm_message_t state)
+-{
+-	static int prev_state = PM_EVENT_ON;
+-	switch (state.event) {
+-	case PM_EVENT_ON:
+-	case PM_EVENT_SUSPEND:
+-	case PM_EVENT_FREEZE:
+-		prev_state = state.event;
+-		break;
+-	}
+-	return 0;
+-}
+-#endif
+-
+ int __init clk_init(void)
+ {
+ 	int i, ret;
+ 
+-	ss_base = ioremap(SYS_SERV_BASE_ADDR, 1024);
+-	if (! ss_base)
++	ss_base = ioremap(SYS_SERVICE_ADDR, 1024);
++	if (!ss_base)
+ 		panic("Unable to remap system services");
+ 
+ 	ret = clk_register(&xtal_osc);
+diff --git a/arch/sh/kernel/pm/suspend-stx5197.c b/arch/sh/kernel/pm/suspend-stx5197.c
+new file mode 100644
+index 0000000..6d314eb
+--- /dev/null
++++ b/arch/sh/kernel/pm/suspend-stx5197.c
+@@ -0,0 +1,147 @@
++/*
++ * -------------------------------------------------------------------------
++ * <linux_root>/arch/sh/kernel/pm/suspend-stx5197.c
++ * -------------------------------------------------------------------------
++ * Copyright (C) 2009  STMicroelectronics
++ * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
++ *
++ * May be copied or modified under the terms of the GNU General Public
++ * License V.2 ONLY.  See linux/COPYING for more information.
++ *
++ * ------------------------------------------------------------------------- */
++
++#include <linux/init.h>
++#include <linux/suspend.h>
++#include <linux/errno.h>
++#include <linux/time.h>
++#include <linux/irqflags.h>
++#include <linux/io.h>
++#include <linux/stm/sysconf.h>
++#include <linux/stm/stx5197.h>
++
++#include <asm/system.h>
++#include <asm/irq.h>
++#include <asm/irq-ilc.h>
++
++#include "stm_suspend.h"
++
++/*
++ * System Service Finite State Machine
++ *	+-------+   +------+    +------+
++ *	| reset |-->|  X1  |<-->| Prog |
++ *	+-------+   +------+    +------+
++ *	    	        |	   |
++ *	    		|	   |
++ *		wakeup	|       +-------+
++ *		event	+-------|Standby|
++ *			        +-------+
++ */
++
++#define SYS		SYS_SERVICE_ADDR
++#define SHD		ICHD_BASE_ADDR
++
++#define	SYS_CFG_H	(SHD + 0x14)
++#define SYS_MON_J	(SHD + 0x3C)
++
++static const long stx5197_standby_table[] __cacheline_aligned = {
++POKE32(SYS + CLK_LOCK_CFG, 0xf0),
++POKE32(SYS + CLK_LOCK_CFG, 0x0f), /* UnLock the clocks */
++
++POKE32(SYS + MODE_CONTROL, MODE_CONTROL_X1),
++
++/* 1. Move all the clock on OSC */
++OR32(SYS + CLK_REDUCED_PM_CTRL, CLK_REDUCED_ON_XTAL_STDBY),
++OR32(SYS + PLLA_CONFIG1, PLL_CONFIG1_POFF),
++POKE32(SYS + MODE_CONTROL, MODE_CONTROL_PROG),
++END_MARKER,
++
++POKE32(SYS + MODE_CONTROL, MODE_CONTROL_X1),
++
++UPDATE32(SYS + CLK_REDUCED_PM_CTRL, ~CLK_REDUCED_ON_XTAL_STDBY, 0),
++UPDATE32(SYS + PLLA_CONFIG1, ~PLL_CONFIG1_POFF, 0),
++WHILE_NE32(SYS + PLLA_CONFIG1, PLL_CONFIG1_LOCK, PLL_CONFIG1_LOCK),
++POKE32(SYS + MODE_CONTROL, MODE_CONTROL_PROG),
++
++POKE32(SYS + CLK_LOCK_CFG, 0x100), /* Lock the clocks */
++DELAY(4),
++END_MARKER,
++};
++
++/* *********************
++ * MEM INSTRUCTION TABLE
++ * *********************
++ */
++static const long stx5197_mem_table[] __cacheline_aligned = {
++OR32(SYS_CFG_H, (1<<26)),
++WHILE_NE32(SYS_MON_J, (1<<24), (1<<24)),
++
++POKE32(SYS + CLK_LOCK_CFG, 0xf0),
++POKE32(SYS + CLK_LOCK_CFG, 0x0f), /* UnLock the clocks */
++
++/* disable PLLs in standby */
++OR32(SYS + CLK_LP_MODE_DIS0, CLK_LP_MODE_DIS0_VALUE),
++POKE32(SYS + MODE_CONTROL, MODE_CONTROL_STDB), /* IN STANDBY */
++
++END_MARKER,
++/*
++ * On a wakeup Event the System Service goes directly in X1 mode */
++UPDATE32(SYS + PLLA_CONFIG1, ~PLL_CONFIG1_POFF, 0),
++UPDATE32(SYS + PLLB_CONFIG1, ~PLL_CONFIG1_POFF, 0),
++/* Wait PLLs lock */
++WHILE_NE32(SYS + PLLA_CONFIG1, PLL_CONFIG1_LOCK, PLL_CONFIG1_LOCK),
++WHILE_NE32(SYS + PLLB_CONFIG1, PLL_CONFIG1_LOCK, PLL_CONFIG1_LOCK),
++
++POKE32(SYS + MODE_CONTROL, MODE_CONTROL_PROG),
++POKE32(SYS + CLK_LOCK_CFG, 0x100), /* Lock the clocks */
++
++DELAY(5),
++UPDATE32(SYS_CFG_H, ~(1 << 26), 0),
++WHILE_NE32(SYS_MON_J, (1 << 24), 0),
++
++DELAY(4),
++
++END_MARKER,
++};
++
++static int stx5197_evt_to_irq(unsigned long evt)
++{
++	return ((evt < 0x400) ? ilc2irq(evt) : evt2irq(evt));
++}
++
++static struct stm_suspend_t stx5197_suspend = {
++	.flags = NO_SLEEP_ON_MEMSTANDBY,
++	.evt_to_irq = stx5197_evt_to_irq,
++
++	.stby_tbl = (long)stx5197_standby_table,
++	.stby_size = DIV_ROUND_UP(ARRAY_SIZE(stx5197_standby_table) *
++			sizeof(long), L1_CACHE_BYTES),
++
++	.mem_tbl = (long)stx5197_mem_table,
++	.mem_size = DIV_ROUND_UP(ARRAY_SIZE(stx5197_mem_table) * sizeof(long),
++			L1_CACHE_BYTES),
++};
++
++static int __init stx5197_suspend_setup(void)
++{
++	int i;
++	struct sysconf_field *sc[2];
++
++	sc[0] = sysconf_claim(CFG_MONITOR_J, 24, 24, "LMI - PM");
++	sc[1] = sysconf_claim(CFG_CTRL_H, 26, 26, "LMI - PM");
++
++	for (i = 0; i < 2; ++i)
++		if (!sc[i])
++			goto error;
++
++	return stm_suspend_register(&stx5197_suspend);
++
++error:
++	printk(KERN_ERR "[STM][PM]: Some sysconf is already required\n");
++	printk(KERN_ERR "[STM][PM]: the PM will not be registered\n");
++	for (i = 0; i < 2; ++i)
++		if (sc[i])
++			sysconf_release(sc[i]);
++	return -EINVAL;
++}
++
++late_initcall(stx5197_suspend_setup);
+diff --git a/include/linux/stm/stx5197.h b/include/linux/stm/stx5197.h
+index 2620437..5b2ca5d 100644
+--- a/include/linux/stm/stx5197.h
++++ b/include/linux/stm/stx5197.h
+@@ -72,6 +72,45 @@ void stx5197_configure_ethernet(struct stx5197_ethernet_config *config);
+ 
+ void stx5197_configure_usb(void);
+ 
++/* Base addresses */
++#define SYS_SERVICE_ADDR			0xFDC00000
++#define ICHD_BASE_ADDR				0xFD901000
++
++#define MODE_CONTROL				0x110
++#define   MODE_CONTROL_NULL			0x000
++#define   MODE_CONTROL_X1			0x001
++#define   MODE_CONTROL_PROG			0x002
++#define   MODE_CONTROL_STDB			0x003
++
++#define CLK_LOCK_CFG				0x300
++#define CLK_OBS_CFG				0x188
++#define FORCE_CFG				0x184
++#define PLL_SELECT_CFG				0x180
++#define PLLA_CONFIG0				0x000
++#define PLLA_CONFIG1				0x004
++#define PLLB_CONFIG0				0x008
++#define PLLB_CONFIG1				0x00C
++#define   PLL_CONFIG1_POFF			(1 << 13)
++#define   PLL_CONFIG1_LOCK			(1 << 15)
++
++/*
++ * The REDUCED_PM is used in CLK_MODE_CTRL_PROG...
++ */
++#define CLK_REDUCED_PM_CTRL			0x114
++#define   CLK_REDUCED_ON_XTAL_MEMSTDBY		(1 << 11)
++#define   CLK_REDUCED_ON_XTAL_STDBY		(~(0x22))
++
++#define CLK_LP_MODE_DIS0			0x118
++#define   CLK_LP_MODE_DIS0_VALUE		(0x3 << 11)
++
++#define CLK_LP_MODE_DIS1			0x11C
++#define   CLK_LP_MODE_DIS1_VALUE		(0x3 << 8)
++
++#define CLK_PLL_SELECT_CFG			0x180
++#define CLK_DIV_FORCE_CFG			0x184
++#define CLK_OBSERVE				0x188
++
++#define CLK_LOCK_CFG				0x300
+ 
+ #endif
+ 
+-- 
+1.6.2.5
 
-Francesco VIRLINZI (1):
-      sh: intc: Fixed resume from hibernation
-
-Kuninori Morimoto (6):
-      sh: mach-ap325rxa: Add SOCAM_DATA_ACTIVE_HIGH flags for soc-camera
-      sh: mach-ecovec24: MEMORY_SIZE fixup
-      sh: ms7724se: Add ak4642 support
-      sh: mach-ecovec24: Add tw9910 support
-      sh: mach-ecovec24: Add mt9t112 camera support
-      sh: mach-ecovec24: Add FSI sound support
-
-Magnus Damm (14):
-      sh: fix size calculation for NUMA node 0
-      sh: NUMA lmb fixes
-      sh: add a start_transfer() callback to the LCDC driver
-      sh: LCDC start_transfer() for the KFR2R09 board
-      sh-sci: Extend sh-sci driver with early console V2
-      sh: sh2 scif pdata (sh7616)
-      sh: sh2a scif pdata (sh7201/sh7203/sh7206/mxg)
-      sh: sh3 scif pdata (sh7705/sh770x/sh7710/sh7720)
-      sh: sh4 scif pdata (sh7750/sh7760/sh4-202)
-      sh: sh4a scif pdata (sh7343/sh7366/sh7722/sh7723/sh7724)
-      sh: sh4a scif pdata (sh7757/sh7763/sh7770/sh7780/sh7785/sh7786/x3)
-      sh: sh5 scif pdata (sh5-101/sh5-103)
-      sh: Remove old early serial console code V2
-      sh: MSIOF/mmc_spi platform data for the Ecovec24 board
-
-Matt Fleming (3):
-      sh: Can't compare physical and virtual addresses for aliases
-      sh: Couple kernel and user write page perm bits for CONFIG_X2TLB
-      sh: Fix up FPU build for SH5
-
-Nicolas Palix (1):
-      sh: Replace an explicit computation by the use of the container_of macro
-
-Paul Mundt (7):
-      sh: intc: Fixup compile breakage.
-      sh: pfc: Fixup type mismatch in debug printks.
-      sh: ftrace: Fix up syscall tracing build.
-      sh: Wire up recvmmsg syscall.
-      sh: Make the unaligned trap handler always obey notification levels.
-      sh: wire up vmallocinfo support in ioremap() implementations.
-      sh: Stub in P3 ioremap support for nommu parts.
-
-Roel Kluin (1):
-      sh: Fix test of unsigned in se7722_irq_demux()
-
- arch/sh/Kconfig.debug                       |   44 ----
- arch/sh/boards/mach-ap325rxa/setup.c        |    3 +-
- arch/sh/boards/mach-ecovec24/setup.c        |  322 ++++++++++++++++++++++++++-
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |    6 +
- arch/sh/boards/mach-kfr2r09/setup.c         |    1 +
- arch/sh/boards/mach-se/7722/irq.c           |    7 +-
- arch/sh/boards/mach-se/7724/setup.c         |   17 ++
- arch/sh/configs/ecovec24-romimage_defconfig |    2 +-
- arch/sh/configs/ecovec24_defconfig          |    2 +-
- arch/sh/configs/rts7751r2d1_defconfig       |    2 +-
- arch/sh/configs/rts7751r2dplus_defconfig    |    2 +-
- arch/sh/include/asm/io.h                    |   11 +-
- arch/sh/include/asm/pgtable_32.h            |    5 +-
- arch/sh/include/asm/unistd_32.h             |    3 +-
- arch/sh/include/asm/unistd_64.h             |    3 +-
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 +
- arch/sh/kernel/Makefile                     |    3 +-
- arch/sh/kernel/cpu/irq/ipr.c                |    7 +-
- arch/sh/kernel/cpu/sh2/setup-sh7619.c       |   71 ++++--
- arch/sh/kernel/cpu/sh2a/setup-mxg.c         |   23 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c      |  181 +++++++++++----
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c      |   89 +++++---
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c      |   89 +++++---
- arch/sh/kernel/cpu/sh3/setup-sh7705.c       |   49 +++--
- arch/sh/kernel/cpu/sh3/setup-sh770x.c       |   80 +++++--
- arch/sh/kernel/cpu/sh3/setup-sh7710.c       |   50 +++--
- arch/sh/kernel/cpu/sh3/setup-sh7720.c       |   50 +++--
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c      |   23 +-
- arch/sh/kernel/cpu/sh4/setup-sh7750.c       |   47 +++--
- arch/sh/kernel/cpu/sh4/setup-sh7760.c       |   89 +++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c      |  112 ++++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c      |   39 ++--
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c      |   91 +++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c      |  160 +++++++++-----
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c      |  149 +++++++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c      |   92 +++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c      |   81 +++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c      |  225 ++++++++++++++-----
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c      |   60 +++---
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c      |  159 +++++++++-----
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c      |  138 ++++++++----
- arch/sh/kernel/cpu/sh4a/setup-shx3.c        |   76 ++++---
- arch/sh/kernel/cpu/sh5/fpu.c                |    4 +-
- arch/sh/kernel/cpu/sh5/setup-sh5.c          |   22 +-
- arch/sh/kernel/early_printk.c               |  157 +-------------
- arch/sh/kernel/ftrace.c                     |   76 +------
- arch/sh/kernel/process_64.c                 |    4 +-
- arch/sh/kernel/ptrace_64.c                  |    4 +-
- arch/sh/kernel/setup.c                      |    3 +
- arch/sh/kernel/signal_64.c                  |    2 +-
- arch/sh/kernel/syscalls_32.S                |    1 +
- arch/sh/kernel/traps_32.c                   |   18 +-
- arch/sh/kernel/traps_64.c                   |    4 +-
- arch/sh/mm/cache-sh4.c                      |    3 +-
- arch/sh/mm/ioremap_32.c                     |   10 +-
- arch/sh/mm/ioremap_64.c                     |    6 +-
- arch/sh/mm/numa.c                           |   15 +-
- drivers/serial/sh-sci.c                     |   54 ++++-
- drivers/sh/intc.c                           |    2 +
- drivers/sh/pfc.c                            |    2 +-
- drivers/video/sh_mobile_lcdcfb.c            |   10 +-
- include/video/sh_mobile_lcdc.h              |    2 +
- 62 files changed, 1961 insertions(+), 1107 deletions(-)
