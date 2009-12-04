@@ -1,744 +1,232 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 14 Dec 2009 12:30:22 +0000
-Subject: [PATCH 05/07] sh: sh4a scif pdata (sh7343/sh7366/sh7722/sh7723/sh7724)
-Message-Id: <20091214123022.10707.95606.sendpatchset@rxone.opensource.se>
+From: Francesco VIRLINZI <francesco.virlinzi@st.com>
+Date: Fri, 04 Dec 2009 14:52:50 +0000
+Subject: [PATCH (sh-2.6.30.y) 08/13] stm: pm: Add suspend support to the stx7141
+Message-Id: <1259938375-27499-8-git-send-email-francesco.virlinzi@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-This patch breaks out the sh4a scif serial port platform
-data from a shared platform device to one platform
-device per port. Also, add serial ports to the list of
-early platform devices.
-
-Only sh4a SuperH Mobile processors are modified by this
-patch.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
 ---
+ arch/sh/kernel/pm/suspend-stx7141.c |  157 +++++++++++++++++++++++++++++++++++
+ include/linux/stm/stx7141.h         |   38 +++++++++
+ 2 files changed, 195 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/kernel/pm/suspend-stx7141.c
 
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  112 ++++++++++++++--------
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   39 +++----
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   91 +++++++++++-------
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  160 +++++++++++++++++++++-----------
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  145 ++++++++++++++++++++---------
- 5 files changed, 356 insertions(+), 191 deletions(-)
+diff --git a/arch/sh/kernel/pm/suspend-stx7141.c b/arch/sh/kernel/pm/suspend-stx7141.c
+new file mode 100644
+index 0000000..9a8dad5
+--- /dev/null
++++ b/arch/sh/kernel/pm/suspend-stx7141.c
+@@ -0,0 +1,157 @@
++/*
++ * -------------------------------------------------------------------------
++ * <linux_root>/arch/sh/kernel/pm/suspend-stx7141.c
++ * -------------------------------------------------------------------------
++ * Copyright (C) 2009  STMicroelectronics
++ * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
++ *
++ * May be copied or modified under the terms of the GNU General Public
++ * License V.2 ONLY.  See linux/COPYING for more information.
++ *
++ * ------------------------------------------------------------------------- */
++
++#include <linux/init.h>
++#include <linux/suspend.h>
++#include <linux/errno.h>
++#include <linux/irqflags.h>
++#include <linux/stm/sysconf.h>
++#include <linux/stm/stx7141.h>
++#include <linux/io.h>
++
++#include <asm/system.h>
++#include <asm/irq-ilc.h>
++
++#include "stm_suspend.h"
++
++/* *************************
++ * STANDBY INSTRUCTION TABLE
++ * *************************
++ */
++#define CGA	CKGA_BASE_ADDRESS
++#define _SYSCONF(x)	(SYSCFG_BASE_ADDRESS + 0x100 + 0x4 * (x))
++#define _SYSSTA(x)	(SYSCFG_BASE_ADDRESS + 0x8 + 0x4 * (x))
++
++static const long stx7141_standby_table[] __cacheline_aligned = {
++POKE32(CGA + CKGA_OSC_DIV_CFG(0), 0x1f),
++POKE32(CGA + CKGA_OSC_DIV_CFG(4), 0x1f),
++POKE32(CGA + CKGA_OSC_DIV_CFG(10), 29),
++POKE32(CGA + CKGA_CLKOPSRC_SWITCH_CFG, 0x0),
++END_MARKER,
++
++END_MARKER,
++};
++
++/* *********************
++ * MEM INSTRUCTION TABLE
++ * *********************
++ */
++static const long stx7141_mem_table[] __cacheline_aligned = {
++OR32(_SYSCONF(38), (1 << 20)),	/* Enables the DDR self refresh mode */
++WHILE_NE32(_SYSSTA(4), 1, 1),	/* waits until the ack bit is zero */
++
++OR32(_SYSCONF(11), (1 << 12)),	/* Turn-off the ClockGenD */
++
++POKE32(CGA + CKGA_OSC_DIV_CFG(0), 0x1f),
++POKE32(CGA + CKGA_OSC_DIV_CFG(4), 0x1f),
++POKE32(CGA + CKGA_OSC_DIV_CFG(10),  29),
++POKE32(CGA + CKGA_OSC_DIV_CFG(17), 0x1f),
++
++POKE32(CGA + CKGA_CLKOPSRC_SWITCH_CFG, 0),
++POKE32(CGA + CKGA_CLKOPSRC_SWITCH_CFG2, 0),
++
++OR32(CGA + CKGA_POWER_CFG, 0x3),
++END_MARKER,
++
++UPDATE32(CGA + CKGA_POWER_CFG, ~3, 0),
++WHILE_NE32(CGA + CKGA_PLL0_CFG, CKGA_PLL_CFG_LOCK, CKGA_PLL_CFG_LOCK),
++WHILE_NE32(CGA + CKGA_PLL1_CFG, CKGA_PLL_CFG_LOCK, CKGA_PLL_CFG_LOCK),
++
++POKE32(CGA + CKGA_CLKOPSRC_SWITCH_CFG, 0xa6aa55aa),
++POKE32(CGA + CKGA_CLKOPSRC_SWITCH_CFG2, 0xa),
++
++UPDATE32(_SYSCONF(11), ~(1 << 12), 0),	/* Turn-on the LMI ClocksGenD */
++WHILE_NE32(_SYSSTA(3), 1, 1),		/* Wait LMI ClocksGenD lock   */
++
++UPDATE32(_SYSCONF(38), ~(1 << 20), 0),	/* Disables DDR self refresh  */
++WHILE_NE32(_SYSSTA(4), 1, 0),		/* waits the ack bit	      */
++
++END_MARKER
++};
++
++static void stx7141_support(int suspend)
++{
++	static unsigned long saved_data[6];
++	if (suspend) {
++		saved_data[0] = ioread32(CGA + CKGA_CLKOPSRC_SWITCH_CFG);
++		saved_data[1] = ioread32(CGA + CKGA_CLKOPSRC_SWITCH_CFG2);
++		saved_data[2] = ioread32(CGA + CKGA_OSC_DIV_CFG(0));
++		saved_data[3] = ioread32(CGA + CKGA_OSC_DIV_CFG(4));
++		saved_data[4] = ioread32(CGA + CKGA_OSC_DIV_CFG(10));
++		saved_data[5] = ioread32(CGA + CKGA_OSC_DIV_CFG(17));
++		return;
++	}
++
++	iowrite32(saved_data[0], CGA + CKGA_CLKOPSRC_SWITCH_CFG);
++	iowrite32(saved_data[1], CGA + CKGA_CLKOPSRC_SWITCH_CFG2);
++	iowrite32(saved_data[2], CGA + CKGA_OSC_DIV_CFG(0));
++	iowrite32(saved_data[3], CGA + CKGA_OSC_DIV_CFG(4));
++	iowrite32(saved_data[4], CGA + CKGA_OSC_DIV_CFG(10));
++	iowrite32(saved_data[5], CGA + CKGA_OSC_DIV_CFG(17));
++}
++
++static int stx7141_suspend_prepare_late(void)
++{
++	stx7141_support(1);
++	return 0;
++}
++
++static void stx7141_wake(void)
++{
++	stx7141_support(0);
++}
++
++static int stx7141_evttoirq(unsigned long evt)
++{
++	return ((evt = 0xa00) ? ilc2irq(evt) : evt2irq(evt));
++}
++
++static struct stm_suspend_t soc_suspend = {
++	.ops.prepare_late = stx7141_suspend_prepare_late,
++	.ops.wake = stx7141_wake,
++	.evt_to_irq = stx7141_evttoirq,
++
++	.stby_tbl = (long)stx7141_standby_table,
++	.stby_size = DIV_ROUND_UP(ARRAY_SIZE(stx7141_standby_table) *
++			sizeof(long), L1_CACHE_BYTES),
++
++	.mem_tbl = (long)stx7141_mem_table,
++	.mem_size = DIV_ROUND_UP(ARRAY_SIZE(stx7141_mem_table) * sizeof(long),
++			L1_CACHE_BYTES),
++};
++
++static int __init stx7141_suspend_setup(void)
++{
++	struct sysconf_field *sc[4];
++	int i;
++
++	sc[0] = sysconf_claim(SYS_CFG, 38, 20, 20, "LMI - PM");
++	sc[1] = sysconf_claim(SYS_CFG, 11, 12, 12, "LMI - PM");
++	sc[2] = sysconf_claim(SYS_STA, 4, 0, 0, "LMI - PM");
++	sc[3] = sysconf_claim(SYS_STA, 3, 0, 0, "LMI - PM");
++
++	for (i = 0; i < 4; ++i)
++		if (!sc[i])
++			goto error;
++
++	return stm_suspend_register(&soc_suspend);
++
++error:
++	printk(KERN_ERR "[STM][PM]: Some sysconf is already required\n");
++	printk(KERN_ERR "[STM][PM]: the PM will not be registered\n");
++	for (i = 0; i < 4; ++i)
++		if (sc[i])
++			sysconf_release(sc[i]);
++	return -EINVAL;
++}
++
++late_initcall(stx7141_suspend_setup);
+diff --git a/include/linux/stm/stx7141.h b/include/linux/stm/stx7141.h
+index 49cada9..f7e79cf 100644
+--- a/include/linux/stm/stx7141.h
++++ b/include/linux/stm/stx7141.h
+@@ -100,5 +100,43 @@ struct stx7141_audio_config {
+ };
+ void stx7141_configure_audio(struct stx7141_audio_config *config);
+ 
++/*
++ *	Register description for Clock and PM
++ */
++#define CKGA_BASE_ADDRESS		0xfe213000
++#define SYSCFG_BASE_ADDRESS		0xfe001000
++
++/* --- CKGA registers --- */
++#define CKGA_PLL0_CFG			0x000
++#define CKGA_PLL1_CFG			0x004
++#define   CKGA_PLL_CFG_BYPASS		(1 << 20)
++#define   CKGA_PLL_CFG_LOCK		(1 << 31)
++#define CKGA_POWER_CFG			0x010
++#define CKGA_CLKOPSRC_SWITCH_CFG	0x014
++#define CKGA_OSC_ENABLE_FB		0x018
++#define CKGA_PLL0_ENABLE_FB		0x01c
++#define CKGA_PLL1_ENABLE_FB		0x020
++#define CKGA_CLKOPSRC_SWITCH_CFG2	0x024
++
++#define CKGA_CLKOBS_MUX1_CFG		0x030
++#define CKGA_CLKOBS_MASTER_MAXCOUNT	0x034
++#define CKGA_CLKOBS_CMD			0x038
++#define CKGA_CLKOBS_STATUS		0x03c
++#define CKGA_CLKOBS_SLAVE0_COUNT	0x040
++#define CKGA_OSCMUX_DEBUG		0x044
++#define CKGA_CLKOBS_MUX2_CFG		0x048
++#define CKGA_LOW_POWER_CTRL		0x04C
++
++#define CKGA_OSC_DIV0_CFG		0x800
++#define CKGA_OSC_DIV_CFG(x)		(CKGA_OSC_DIV0_CFG + (x) * 4)
++
++#define CKGA_PLL0HS_DIV0_CFG		0x900
++#define CKGA_PLL0HS_DIV_CFG(x)		(CKGA_PLL0HS_DIV0_CFG + (x) * 4)
++
++#define CKGA_PLL0LS_DIV0_CFG		0xA00
++#define CKGA_PLL0LS_DIV_CFG(x)		(CKGA_PLL0LS_DIV0_CFG + (x) * 4)
++
++#define CKGA_PLL1_DIV0_CFG		0xB00
++#define CKGA_PLL1_DIV_CFG(x)		(CKGA_PLL1_DIV0_CFG + (x) * 4)
+ 
+ #endif
+-- 
+1.6.2.5
 
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7343.c	2009-12-14 17:32:59.000000000 +0900
-@@ -15,6 +15,71 @@
- #include <linux/sh_timer.h>
- #include <asm/clock.h>
- 
-+/* Serial */
-+static struct plat_sci_port scif0_platform_data = {
-+	.mapbase        = 0xffe00000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 80, 80, 80, 80 },
-+	.clk		= "scif0",
-+};
-+
-+static struct platform_device scif0_device = {
-+	.name		= "sh-sci",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &scif0_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif1_platform_data = {
-+	.mapbase        = 0xffe10000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 81, 81, 81, 81 },
-+	.clk		= "scif1",
-+};
-+
-+static struct platform_device scif1_device = {
-+	.name		= "sh-sci",
-+	.id		= 1,
-+	.dev		= {
-+		.platform_data	= &scif1_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif2_platform_data = {
-+	.mapbase        = 0xffe20000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 82, 82, 82, 82 },
-+	.clk		= "scif2",
-+};
-+
-+static struct platform_device scif2_device = {
-+	.name		= "sh-sci",
-+	.id		= 2,
-+	.dev		= {
-+		.platform_data	= &scif2_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif3_platform_data = {
-+	.mapbase        = 0xffe30000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 83, 83, 83, 83 },
-+	.clk		= "scif3",
-+};
-+
-+static struct platform_device scif3_device = {
-+	.name		= "sh-sci",
-+	.id		= 3,
-+	.dev		= {
-+		.platform_data	= &scif3_platform_data,
-+	},
-+};
-+
- static struct resource iic0_resources[] = {
- 	[0] = {
- 		.name	= "IIC0",
-@@ -265,52 +330,17 @@ static struct platform_device tmu2_devic
- 	.num_resources	= ARRAY_SIZE(tmu2_resources),
- };
- 
--static struct plat_sci_port sci_platform_data[] = {
--	{
--		.mapbase	= 0xffe00000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 80, 80, 80, 80 },
--		.clk		= "scif0",
--	}, {
--		.mapbase	= 0xffe10000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 81, 81, 81, 81 },
--		.clk		= "scif1",
--	}, {
--		.mapbase	= 0xffe20000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 82, 82, 82, 82 },
--		.clk		= "scif2",
--	}, {
--		.mapbase	= 0xffe30000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 83, 83, 83, 83 },
--		.clk		= "scif3",
--	}, {
--		.flags = 0,
--	}
--};
--
--static struct platform_device sci_device = {
--	.name		= "sh-sci",
--	.id		= -1,
--	.dev		= {
--		.platform_data	= sci_platform_data,
--	},
--};
--
- static struct platform_device *sh7343_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
- 	&tmu2_device,
- 	&iic0_device,
- 	&iic1_device,
--	&sci_device,
- 	&vpu_device,
- 	&veu_device,
- 	&jpu_device,
-@@ -328,6 +358,10 @@ static int __init sh7343_devices_setup(v
- arch_initcall(sh7343_devices_setup);
- 
- static struct platform_device *sh7343_early_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7366.c	2009-12-14 17:42:43.000000000 +0900
-@@ -18,6 +18,22 @@
- #include <linux/usb/r8a66597.h>
- #include <asm/clock.h>
- 
-+static struct plat_sci_port scif0_platform_data = {
-+	.mapbase	= 0xffe00000,
-+	.flags		= UPF_BOOT_AUTOCONF,
-+	.type		= PORT_SCIF,
-+	.irqs		= { 80, 80, 80, 80 },
-+	.clk		= "scif0",
-+};
-+
-+static struct platform_device scif0_device = {
-+	.name		= "sh-sci",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &scif0_platform_data,
-+	},
-+};
-+
- static struct resource iic_resources[] = {
- 	[0] = {
- 		.name	= "IIC",
-@@ -276,33 +292,13 @@ static struct platform_device tmu2_devic
- 	.num_resources	= ARRAY_SIZE(tmu2_resources),
- };
- 
--static struct plat_sci_port sci_platform_data[] = {
--	{
--		.mapbase	= 0xffe00000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 80, 80, 80, 80 },
--		.clk		= "scif0",
--	}, {
--		.flags = 0,
--	}
--};
--
--static struct platform_device sci_device = {
--	.name		= "sh-sci",
--	.id		= -1,
--	.dev		= {
--		.platform_data	= sci_platform_data,
--	},
--};
--
- static struct platform_device *sh7366_devices[] __initdata = {
-+	&scif0_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
- 	&tmu2_device,
- 	&iic_device,
--	&sci_device,
- 	&usb_host_device,
- 	&vpu_device,
- 	&veu0_device,
-@@ -321,6 +317,7 @@ static int __init sh7366_devices_setup(v
- arch_initcall(sh7366_devices_setup);
- 
- static struct platform_device *sh7366_early_devices[] __initdata = {
-+	&scif0_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2009-12-14 17:32:40.000000000 +0900
-@@ -20,6 +20,55 @@
- #include <asm/dma-sh.h>
- #include <cpu/sh7722.h>
- 
-+/* Serial */
-+static struct plat_sci_port scif0_platform_data = {
-+	.mapbase        = 0xffe00000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 80, 80, 80, 80 },
-+	.clk		= "scif0",
-+};
-+
-+static struct platform_device scif0_device = {
-+	.name		= "sh-sci",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &scif0_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif1_platform_data = {
-+	.mapbase        = 0xffe10000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 81, 81, 81, 81 },
-+	.clk		= "scif1",
-+};
-+
-+static struct platform_device scif1_device = {
-+	.name		= "sh-sci",
-+	.id		= 1,
-+	.dev		= {
-+		.platform_data	= &scif1_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif2_platform_data = {
-+	.mapbase        = 0xffe20000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 82, 82, 82, 82 },
-+	.clk		= "scif2",
-+};
-+
-+static struct platform_device scif2_device = {
-+	.name		= "sh-sci",
-+	.id		= 2,
-+	.dev		= {
-+		.platform_data	= &scif2_platform_data,
-+	},
-+};
-+
- static struct resource rtc_resources[] = {
- 	[0] = {
- 		.start	= 0xa465fec0,
-@@ -339,41 +388,6 @@ static struct platform_device tmu2_devic
- 	},
- };
- 
--static struct plat_sci_port sci_platform_data[] = {
--	{
--		.mapbase	= 0xffe00000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 80, 80, 80, 80 },
--		.clk		= "scif0",
--	},
--	{
--		.mapbase	= 0xffe10000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 81, 81, 81, 81 },
--		.clk		= "scif1",
--	},
--	{
--		.mapbase	= 0xffe20000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIF,
--		.irqs		= { 82, 82, 82, 82 },
--		.clk		= "scif2",
--	},
--	{
--		.flags = 0,
--	}
--};
--
--static struct platform_device sci_device = {
--	.name		= "sh-sci",
--	.id		= -1,
--	.dev		= {
--		.platform_data	= sci_platform_data,
--	},
--};
--
- static struct sh_dmae_pdata dma_platform_data = {
- 	.mode = 0,
- };
-@@ -387,6 +401,9 @@ static struct platform_device dma_device
- };
- 
- static struct platform_device *sh7722_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
-@@ -394,7 +411,6 @@ static struct platform_device *sh7722_de
- 	&rtc_device,
- 	&usbf_device,
- 	&iic_device,
--	&sci_device,
- 	&vpu_device,
- 	&veu_device,
- 	&jpu_device,
-@@ -413,6 +429,9 @@ static int __init sh7722_devices_setup(v
- arch_initcall(sh7722_devices_setup);
- 
- static struct platform_device *sh7722_early_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7723.c	2009-12-14 17:05:27.000000000 +0900
-@@ -20,6 +20,103 @@
- #include <asm/mmzone.h>
- #include <cpu/sh7723.h>
- 
-+/* Serial */
-+static struct plat_sci_port scif0_platform_data = {
-+	.mapbase        = 0xffe00000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 80, 80, 80, 80 },
-+	.clk		= "scif0",
-+};
-+
-+static struct platform_device scif0_device = {
-+	.name		= "sh-sci",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &scif0_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif1_platform_data = {
-+	.mapbase        = 0xffe10000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 81, 81, 81, 81 },
-+	.clk		= "scif1",
-+};
-+
-+static struct platform_device scif1_device = {
-+	.name		= "sh-sci",
-+	.id		= 1,
-+	.dev		= {
-+		.platform_data	= &scif1_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif2_platform_data = {
-+	.mapbase        = 0xffe20000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 82, 82, 82, 82 },
-+	.clk		= "scif2",
-+};
-+
-+static struct platform_device scif2_device = {
-+	.name		= "sh-sci",
-+	.id		= 2,
-+	.dev		= {
-+		.platform_data	= &scif2_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif3_platform_data = {
-+	.mapbase        = 0xa4e30000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIFA,
-+	.irqs           = { 56, 56, 56, 56 },
-+	.clk		= "scif3",
-+};
-+
-+static struct platform_device scif3_device = {
-+	.name		= "sh-sci",
-+	.id		= 3,
-+	.dev		= {
-+		.platform_data	= &scif3_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif4_platform_data = {
-+	.mapbase        = 0xa4e40000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIFA,
-+	.irqs           = { 88, 88, 88, 88 },
-+	.clk		= "scif4",
-+};
-+
-+static struct platform_device scif4_device = {
-+	.name		= "sh-sci",
-+	.id		= 4,
-+	.dev		= {
-+		.platform_data	= &scif4_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif5_platform_data = {
-+	.mapbase        = 0xa4e50000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIFA,
-+	.irqs           = { 109, 109, 109, 109 },
-+	.clk		= "scif5",
-+};
-+
-+static struct platform_device scif5_device = {
-+	.name		= "sh-sci",
-+	.id		= 5,
-+	.dev		= {
-+		.platform_data	= &scif5_platform_data,
-+	},
-+};
-+
- static struct uio_info vpu_platform_data = {
- 	.name = "VPU5",
- 	.version = "0",
-@@ -348,56 +445,6 @@ static struct platform_device tmu5_devic
- 	},
- };
- 
--static struct plat_sci_port sci_platform_data[] = {
--	{
--		.mapbase        = 0xffe00000,
--		.flags          = UPF_BOOT_AUTOCONF,
--		.type           = PORT_SCIF,
--		.irqs           = { 80, 80, 80, 80 },
--		.clk		= "scif0",
--	},{
--		.mapbase        = 0xffe10000,
--		.flags          = UPF_BOOT_AUTOCONF,
--		.type           = PORT_SCIF,
--		.irqs           = { 81, 81, 81, 81 },
--		.clk		= "scif1",
--	},{
--		.mapbase        = 0xffe20000,
--		.flags          = UPF_BOOT_AUTOCONF,
--		.type           = PORT_SCIF,
--		.irqs           = { 82, 82, 82, 82 },
--		.clk		= "scif2",
--	},{
--		.mapbase	= 0xa4e30000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIFA,
--		.irqs		= { 56, 56, 56, 56 },
--		.clk		= "scif3",
--	},{
--		.mapbase	= 0xa4e40000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIFA,
--		.irqs		= { 88, 88, 88, 88 },
--		.clk		= "scif4",
--	},{
--		.mapbase	= 0xa4e50000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIFA,
--		.irqs		= { 109, 109, 109, 109 },
--		.clk		= "scif5",
--	}, {
--		.flags = 0,
--	}
--};
--
--static struct platform_device sci_device = {
--	.name		= "sh-sci",
--	.id		= -1,
--	.dev		= {
--		.platform_data	= sci_platform_data,
--	},
--};
--
- static struct resource rtc_resources[] = {
- 	[0] = {
- 		.start	= 0xa465fec0,
-@@ -488,6 +535,12 @@ static struct platform_device iic_device
- };
- 
- static struct platform_device *sh7723_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
-+	&scif4_device,
-+	&scif5_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
-@@ -495,7 +548,6 @@ static struct platform_device *sh7723_de
- 	&tmu3_device,
- 	&tmu4_device,
- 	&tmu5_device,
--	&sci_device,
- 	&rtc_device,
- 	&iic_device,
- 	&sh7723_usb_host_device,
-@@ -516,6 +568,12 @@ static int __init sh7723_devices_setup(v
- arch_initcall(sh7723_devices_setup);
- 
- static struct platform_device *sh7723_early_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
-+	&scif4_device,
-+	&scif5_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7724.c	2009-12-14 17:05:50.000000000 +0900
-@@ -27,53 +27,99 @@
- #include <cpu/sh7724.h>
- 
- /* Serial */
--static struct plat_sci_port sci_platform_data[] = {
--	{
--		.mapbase        = 0xffe00000,
--		.flags          = UPF_BOOT_AUTOCONF,
--		.type           = PORT_SCIF,
--		.irqs           = { 80, 80, 80, 80 },
--		.clk		= "scif0",
--	}, {
--		.mapbase        = 0xffe10000,
--		.flags          = UPF_BOOT_AUTOCONF,
--		.type           = PORT_SCIF,
--		.irqs           = { 81, 81, 81, 81 },
--		.clk		= "scif1",
--	}, {
--		.mapbase        = 0xffe20000,
--		.flags          = UPF_BOOT_AUTOCONF,
--		.type           = PORT_SCIF,
--		.irqs           = { 82, 82, 82, 82 },
--		.clk		= "scif2",
--	}, {
--		.mapbase	= 0xa4e30000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIFA,
--		.irqs		= { 56, 56, 56, 56 },
--		.clk		= "scif3",
--	}, {
--		.mapbase	= 0xa4e40000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIFA,
--		.irqs		= { 88, 88, 88, 88 },
--		.clk		= "scif4",
--	}, {
--		.mapbase	= 0xa4e50000,
--		.flags		= UPF_BOOT_AUTOCONF,
--		.type		= PORT_SCIFA,
--		.irqs		= { 109, 109, 109, 109 },
--		.clk		= "scif5",
--	}, {
--		.flags = 0,
--	}
-+static struct plat_sci_port scif0_platform_data = {
-+	.mapbase        = 0xffe00000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 80, 80, 80, 80 },
-+	.clk		= "scif0",
- };
- 
--static struct platform_device sci_device = {
-+static struct platform_device scif0_device = {
- 	.name		= "sh-sci",
--	.id		= -1,
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &scif0_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif1_platform_data = {
-+	.mapbase        = 0xffe10000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 81, 81, 81, 81 },
-+	.clk		= "scif1",
-+};
-+
-+static struct platform_device scif1_device = {
-+	.name		= "sh-sci",
-+	.id		= 1,
-+	.dev		= {
-+		.platform_data	= &scif1_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif2_platform_data = {
-+	.mapbase        = 0xffe20000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIF,
-+	.irqs           = { 82, 82, 82, 82 },
-+	.clk		= "scif2",
-+};
-+
-+static struct platform_device scif2_device = {
-+	.name		= "sh-sci",
-+	.id		= 2,
-+	.dev		= {
-+		.platform_data	= &scif2_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif3_platform_data = {
-+	.mapbase        = 0xa4e30000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIFA,
-+	.irqs           = { 56, 56, 56, 56 },
-+	.clk		= "scif3",
-+};
-+
-+static struct platform_device scif3_device = {
-+	.name		= "sh-sci",
-+	.id		= 3,
-+	.dev		= {
-+		.platform_data	= &scif3_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif4_platform_data = {
-+	.mapbase        = 0xa4e40000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIFA,
-+	.irqs           = { 88, 88, 88, 88 },
-+	.clk		= "scif4",
-+};
-+
-+static struct platform_device scif4_device = {
-+	.name		= "sh-sci",
-+	.id		= 4,
-+	.dev		= {
-+		.platform_data	= &scif4_platform_data,
-+	},
-+};
-+
-+static struct plat_sci_port scif5_platform_data = {
-+	.mapbase        = 0xa4e50000,
-+	.flags          = UPF_BOOT_AUTOCONF,
-+	.type           = PORT_SCIFA,
-+	.irqs           = { 109, 109, 109, 109 },
-+	.clk		= "scif5",
-+};
-+
-+static struct platform_device scif5_device = {
-+	.name		= "sh-sci",
-+	.id		= 5,
- 	.dev		= {
--		.platform_data	= sci_platform_data,
-+		.platform_data	= &scif5_platform_data,
- 	},
- };
- 
-@@ -590,6 +636,12 @@ static struct platform_device spu1_devic
- };
- 
- static struct platform_device *sh7724_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
-+	&scif4_device,
-+	&scif5_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
-@@ -597,7 +649,6 @@ static struct platform_device *sh7724_de
- 	&tmu3_device,
- 	&tmu4_device,
- 	&tmu5_device,
--	&sci_device,
- 	&rtc_device,
- 	&iic0_device,
- 	&iic1_device,
-@@ -624,6 +675,12 @@ static int __init sh7724_devices_setup(v
- arch_initcall(sh7724_devices_setup);
- 
- static struct platform_device *sh7724_early_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
-+	&scif4_device,
-+	&scif5_device,
- 	&cmt_device,
- 	&tmu0_device,
- 	&tmu1_device,
