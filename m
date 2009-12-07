@@ -1,66 +1,79 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 24 Dec 2009 08:31:44 +0000
-Subject: [PATCH] sh: ms7724: setup.c detailed correction
-Message-Id: <uvdfwvklr.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Dec 2009 14:26:05 +0000
+Subject: [PATCH] sh: LCDC start_transfer() for the KFR2R09 board
+Message-Id: <20091207142605.6728.6076.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-o change cpurelax -> udelay
-o add device name comment
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+This patch adds a ->start_transfer() callback to the
+KFR2R09 lcd handling code. The callback is used to
+notify the lcd controller that a new frame of data
+is about to be transferred. The callback is only used
+in combination with deferred io, but the code has
+been tested both with and without deferred io enabled.
+
+Without this patch the display data on the KFR2R09
+lcd panel becomes corrupted over time.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/boards/mach-se/7724/setup.c |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 5d0f70b..63f958c 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -391,6 +391,7 @@ static struct platform_device sh_eth_device = {
- 	},
- };
- 
-+/* USB0 */
- static struct r8a66597_platdata sh7724_usb0_host_data = {
- 	.on_chip = 1,
- };
-@@ -423,6 +424,7 @@ static struct platform_device sh7724_usb0_host_device = {
- 	},
- };
- 
-+/* USB1 */
- static struct r8a66597_platdata sh7724_usb1_gadget_data = {
- 	.on_chip = 1,
- };
-@@ -452,6 +454,7 @@ static struct platform_device sh7724_usb1_gadget_device = {
- 	.resource	= sh7724_usb1_gadget_resources,
- };
- 
-+/* SDHI0 */
- static struct resource sdhi0_cn7_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
-@@ -475,6 +478,7 @@ static struct platform_device sdhi0_cn7_device = {
- 	},
- };
- 
-+/* SDHI1 */
- static struct resource sdhi1_cn8_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
-@@ -533,7 +537,7 @@ static int __init sh_eth_is_eeprom_ready(void)
- 	while (t--) {
- 		if (!ctrl_inw(EEPROM_STAT))
- 			return 1;
--		cpu_relax();
-+		udelay(1);
- 	}
- 
- 	printk(KERN_ERR "ms7724se can not access to eeprom\n");
--- 
-1.6.3.3
+ Depends on the LCDC start_transfer() patch.
 
+ arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |    6 ++++++
+ arch/sh/boards/mach-kfr2r09/setup.c         |    1 +
+ arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 ++++++
+ 3 files changed, 13 insertions(+)
+
+--- 0001/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
++++ work/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c	2009-12-07 18:32:49.000000000 +0900
+@@ -273,6 +273,12 @@ int kfr2r09_lcd_setup(void *board_data, 
+ 	return 0;
+ }
+ 
++void kfr2r09_lcd_start(void *board_data, void *sohandle,
++		       struct sh_mobile_lcdc_sys_bus_ops *so)
++{
++	write_memory_start(sohandle, so);
++}
++
+ #define CTRL_CKSW       0x10
+ #define CTRL_C10        0x20
+ #define CTRL_CPSW       0x80
+--- 0001/arch/sh/boards/mach-kfr2r09/setup.c
++++ work/arch/sh/boards/mach-kfr2r09/setup.c	2009-12-07 18:32:49.000000000 +0900
+@@ -149,6 +149,7 @@ static struct sh_mobile_lcdc_info kfr2r0
+ 		},
+ 		.board_cfg = {
+ 			.setup_sys = kfr2r09_lcd_setup,
++			.start_transfer = kfr2r09_lcd_start,
+ 			.display_on = kfr2r09_lcd_on,
+ 			.display_off = kfr2r09_lcd_off,
+ 		},
+--- 0001/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
++++ work/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h	2009-12-07 18:32:49.000000000 +0900
+@@ -8,6 +8,8 @@ void kfr2r09_lcd_on(void *board_data);
+ void kfr2r09_lcd_off(void *board_data);
+ int kfr2r09_lcd_setup(void *board_data, void *sys_ops_handle,
+ 		      struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
++void kfr2r09_lcd_start(void *board_data, void *sys_ops_handle,
++		       struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ #else
+ static inline void kfr2r09_lcd_on(void *board_data) {}
+ static inline void kfr2r09_lcd_off(void *board_data) {}
+@@ -16,6 +18,10 @@ static inline int kfr2r09_lcd_setup(void
+ {
+ 	return -ENODEV;
+ }
++static inline void kfr2r09_lcd_start(void *board_data, void *sys_ops_handle,
++				     struct sh_mobile_lcdc_sys_bus_ops *sys_ops)
++{
++}
+ #endif
+ 
+ #endif /* __ASM_SH_KFR2R09_H */
