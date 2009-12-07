@@ -1,28 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 15 Dec 2009 03:40:15 +0000
-Subject: Re: [PATCH] sh: MSIOF/mmc_spi platform data for the Ecovec24 board
-Message-Id: <20091215034015.GE7395@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Dec 2009 14:11:59 +0000
+Subject: [PATCH] sh: fix size calculation for NUMA node 0
+Message-Id: <20091207141159.6318.90269.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091207140545.6294.90256.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091207140545.6294.90256.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, spi-devel-general@lists.sourceforge.net, akpm@linux-foundation.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 07, 2009 at 11:05:45PM +0900, Magnus Damm wrote:
-> This patch adds MSIOF and mmc_spi platform data for
-> the CN11 port on the SuperH Ecovec24 board. No card
-> detect interrupt is available so the MMC code is
-> configured to poll. The WP signal is implemented
-> together with CD and power control. The board only
-> supports 3.3V power.
-> 
-> The platform data is wrapped in SDHI #ifdefs to
-> allow both the SDHI and the MSIOF to coexist. Only
-> one configuration is allowed at a time. The pin
-> routing is selected by a dip switch but we can
-> unfortunately not detect this setting at run time.
+From: Magnus Damm <damm@opensource.se>
 
-Now that the MSIOF driver is merged, I've applied this.
+Fix the NUMA size calculation for node 0. Do the same
+as the UMA version of setup_memory() and use address
+instead of pfn when calculating the size.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/sh/mm/numa.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/sh/mm/numa.c
++++ work/arch/sh/mm/numa.c	2009-12-07 21:13:58.000000000 +0900
+@@ -28,7 +28,7 @@ void __init setup_memory(void)
+ {
+ 	unsigned long free_pfn = PFN_UP(__pa(_end));
+ 	u64 base = min_low_pfn << PAGE_SHIFT;
+-	u64 size = (max_low_pfn << PAGE_SHIFT) - min_low_pfn;
++	u64 size = (max_low_pfn << PAGE_SHIFT) - base;
+ 
+ 	lmb_add(base, size);
+ 
