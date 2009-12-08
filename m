@@ -1,462 +1,353 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Fri, 04 Dec 2009 14:52:47 +0000
-Subject: [PATCH (sh-2.6.30.y) 05/13] stm: pm: Add suspend support to the stx7100
-Message-Id: <1259938375-27499-5-git-send-email-francesco.virlinzi@st.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 08 Dec 2009 03:59:07 +0000
+Subject: [GIT PULL] sh updates for 2.6.33-rc1
+Message-Id: <20091208035907.GA4105@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+Please pull from:
 
-Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
----
- arch/sh/kernel/cpu/sh4/clock-stx7100.c |    6 +-
- arch/sh/kernel/pm/suspend-stx7100.c    |  178 ++++++++++++++++++++++++++++++++
- arch/sh/kernel/pm/suspend-stx7100_t.S  |  165 +++++++++++++++++++++++++++++
- include/linux/stm/stx7100.h            |   43 ++++++++
- 4 files changed, 389 insertions(+), 3 deletions(-)
- create mode 100644 arch/sh/kernel/pm/suspend-stx7100.c
- create mode 100644 arch/sh/kernel/pm/suspend-stx7100_t.S
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
-diff --git a/arch/sh/kernel/cpu/sh4/clock-stx7100.c b/arch/sh/kernel/cpu/sh4/clock-stx7100.c
-index 0280e9c..493884d 100644
---- a/arch/sh/kernel/cpu/sh4/clock-stx7100.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-stx7100.c
-@@ -17,8 +17,8 @@
- #include <asm/io.h>
- #include <asm-generic/div64.h>
- 
--#include "./clock-common.h"
--#include "./soc-stb7100.h"
-+#include <linux/stm/stx7100.h>
-+#include "clock-common.h"
- 
- #ifdef CONFIG_CLK_LOW_LEVEL_DEBUG
- #include <linux/stm/pio.h>
-@@ -268,7 +268,7 @@ int __init clk_init(void)
- 	/**************/
- 	/* Clockgen A */
- 	/**************/
--	clkgena_base = ioremap(CLOCKGEN_BASE_ADDR, 0x100);
-+	clkgena_base = ioremap(CLOCKGENA_BASE_ADDR, 0x100);
- 
- 	for (i = 0; i < ARRAY_SIZE(onchip_clocks); i++) {
- 		struct clk *clk = onchip_clocks[i];
-diff --git a/arch/sh/kernel/pm/suspend-stx7100.c b/arch/sh/kernel/pm/suspend-stx7100.c
-new file mode 100644
-index 0000000..ada7620
---- /dev/null
-+++ b/arch/sh/kernel/pm/suspend-stx7100.c
-@@ -0,0 +1,178 @@
-+/*
-+ * -------------------------------------------------------------------------
-+ * <linux_root>/arch/sh/kernel/cpu/sh4/suspend-stx7100.c
-+ * -------------------------------------------------------------------------
-+ * Copyright (C) 2009  STMicroelectronics
-+ * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
-+ *
-+ * May be copied or modified under the terms of the GNU General Public
-+ * License V.2 ONLY.  See linux/COPYING for more information.
-+ *
-+ * ------------------------------------------------------------------------- */
-+
-+#include <linux/init.h>
-+#include <linux/suspend.h>
-+#include <linux/errno.h>
-+#include <linux/irqflags.h>
-+#include <linux/stm/sysconf.h>
-+#include <linux/irq.h>
-+#include <linux/io.h>
-+#include <linux/stm/stx7100.h>
-+#include <asm/system.h>
-+#include <asm/mmu.h>
-+
-+#include "stm_suspend.h"
-+
-+#define	CGA	(0xA0000000 + CLOCKGENA_BASE_ADDR)
-+
-+/* *************************
-+ * STANDBY INSTRUCTION TABLE
-+ * *************************
-+ */
-+static const long stx7100_standby_table[] __cacheline_aligned = {
-+POKE32(CGA + CLKA_LOCK, 0xc0de),
-+/* PLL0 at the minimum frequency */
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_BYPASS),
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_ENABLE, 0),
-+UPDATE32(CGA + CLKA_PLL0, ~0x7ffff, CLKA_PLL0_SUSPEND),
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_ENABLE),
-+WHILE_NE32(CGA + CLKA_PLL0_LOCK, CLKA_PLL0_LOCK_LOCKED, CLKA_PLL0_LOCK_LOCKED),
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_BYPASS, 0),
-+
-+POKE32(CGA + CLKA_ST40_PER, 0x5),
-+POKE32(CGA + CLKA_ST40_IC, 0x5),
-+POKE32(CGA + CLKA_ST40, 0x3),
-+END_MARKER,
-+
-+POKE32(CGA + CLKA_ST40, 0x0),
-+POKE32(CGA + CLKA_ST40_IC, 0x1),
-+POKE32(CGA + CLKA_ST40_PER, 0x0),
-+/* PLL0 at the standard frequency */
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_BYPASS),
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_ENABLE, 0),
-+UPDATE32(CGA + CLKA_PLL0, ~0x7ffff, CLKA_PLL0_RESUME),
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_ENABLE),
-+WHILE_NE32(CGA + CLKA_PLL0_LOCK, CLKA_PLL0_LOCK_LOCKED, CLKA_PLL0_LOCK_LOCKED),
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_BYPASS, 0),
-+POKE32(CGA + CLKA_LOCK, 0x0),
-+END_MARKER
-+};
-+
-+/* *********************
-+ * MEM INSTRUCTION TABLE
-+ * *********************
-+ */
-+extern long stx7100_mem_table, stx7100_mem_tbl_size;
-+/*
-+ * Due to several cut version and the several external clock
-+ * the mem instruncion tables needs if/else/endif instructions...
-+ * impossible to write that in C-code...
-+ * The mem_standby table is in a dedicated assembly file.
-+ */
-+#ifdef CONFIG_32BIT
-+/*
-+ * In 32bits all the entries mapped on the hw are invalidated
-+ * to avoid multi-hit.
-+ * A special entry (14 th) is created to simulate the P2 area.
-+ */
-+static void stx7100_support(int suspend)
-+{
-+	unsigned int i, tmp;
-+	static int addr_14, data_14, invalidated;
-+
-+	if (suspend) {
-+		invalidated = 0;
-+		/*
-+		 * Invalidate all the 0xb... entries
-+		 * to avoid multi hit on the PMB
-+		 */
-+		for (i = 2; i < 14; ++i) {
-+			tmp = ctrl_inl(PMB_ADDR | (i << PMB_E_SHIFT));
-+			if ((tmp & 0xb0000000) = 0xb0000000 &&
-+			     tmp & PMB_V) {
-+				invalidated |= (1 << i);
-+				ctrl_outl(tmp & ~PMB_V, PMB_ADDR |
-+					(i << PMB_E_SHIFT));
-+			}
-+		}
-+		addr_14 = ctrl_inl(PMB_ADDR | (14 << PMB_E_SHIFT));
-+		data_14 = ctrl_inl(PMB_DATA | (14 << PMB_E_SHIFT));
-+
-+		/* Create an entry ad-hoc to simulate the P2 area */
-+		ctrl_outl(addr_14 & ~PMB_V, PMB_ADDR | (14 << PMB_E_SHIFT));
-+		ctrl_outl(0xb8000000 | PMB_V, PMB_ADDR | (14 << PMB_E_SHIFT));
-+		ctrl_outl(0x18000000 | PMB_V | PMB_SZ_64M | PMB_UB | PMB_WT,
-+			PMB_DATA | (14 << PMB_E_SHIFT));
-+		return;
-+	}
-+	ctrl_outl(0, PMB_ADDR | (14 << PMB_E_SHIFT));
-+	ctrl_outl(data_14, PMB_DATA | (14 << PMB_E_SHIFT));
-+	ctrl_outl(addr_14, PMB_ADDR | (14 << PMB_E_SHIFT));
-+	for (i = 2; i < 14; ++i)
-+		if (invalidated & (1 << i)) {
-+			tmp = ctrl_inl(PMB_ADDR | (i << PMB_E_SHIFT));
-+			ctrl_outl(tmp | PMB_V, PMB_ADDR | (i << PMB_E_SHIFT));
-+	}
-+}
-+
-+static int stx7100_prepare_late(void)
-+{
-+	stx7100_support(1);
-+	return 0;
-+}
-+
-+static void stx7100_wake(void)
-+{
-+	stx7100_support(0);
-+}
-+#else
-+#define stx7100_prepare_late	NULL
-+#define stx7100_wake		NULL
-+#endif
-+
-+static int stx7100_evttoirq(unsigned long evt)
-+{
-+	return evt2irq(evt);
-+}
-+
-+
-+static struct stm_suspend_t stx7100_suspend = {
-+	.ops.prepare_late = stx7100_prepare_late,
-+	.ops.wake = stx7100_wake,
-+	.evt_to_irq = stx7100_evttoirq,
-+
-+	.stby_tbl = (long)stx7100_standby_table,
-+	.stby_size = DIV_ROUND_UP(ARRAY_SIZE(stx7100_standby_table) *
-+			sizeof(long), L1_CACHE_BYTES),
-+};
-+
-+static int __init stx7100_suspend_setup(void)
-+{
-+	struct sysconf_field *sc[4];
-+	int i;
-+
-+	stx7100_suspend.mem_tbl = (long)&stx7100_mem_table;
-+	stx7100_suspend.mem_size +		DIV_ROUND_UP(stx7100_mem_tbl_size, L1_CACHE_BYTES);
-+
-+	sc[0] = sysconf_claim(SYS_STA, 12, 28, 28, "pm");
-+	sc[1] = sysconf_claim(SYS_STA, 13, 28, 28, "pm");
-+	sc[2] = sysconf_claim(SYS_CFG, 11, 28, 28, "pm");
-+	sc[3] = sysconf_claim(SYS_CFG, 11, 30, 30, "pm");
-+
-+	for (i = 0; i < 4; ++i)
-+		if (!sc[i])
-+			goto error;
-+
-+	return stm_suspend_register(&stx7100_suspend);
-+
-+error:
-+	printk(KERN_ERR "[STM][PM]: Some sysconf is already required\n");
-+	printk(KERN_ERR "[STM][PM]: the PM will not be registered\n");
-+	for (i = 0; i < 4; ++i)
-+		if (sc[i])
-+			sysconf_release(sc[i]);
-+	return -EINVAL;
-+}
-+
-+late_initcall(stx7100_suspend_setup);
-diff --git a/arch/sh/kernel/pm/suspend-stx7100_t.S b/arch/sh/kernel/pm/suspend-stx7100_t.S
-new file mode 100644
-index 0000000..75773f8
---- /dev/null
-+++ b/arch/sh/kernel/pm/suspend-stx7100_t.S
-@@ -0,0 +1,165 @@
-+/*
-+ * -------------------------------------------------------------------------
-+ * <linux_root>/arch/sh/kernel/pm/suspend-stx7100_t.c
-+ * -------------------------------------------------------------------------
-+ * Copyright (C) 2009  STMicroelectronics
-+ * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
-+ *
-+ * May be copied or modified under the terms of the GNU General Public
-+ * License V.2 ONLY.  See linux/COPYING for more information.
-+ *
-+ * ------------------------------------------------------------------------- */
-+
-+#include <linux/stm/stx7100.h>
-+#include "stm_suspend.h"
-+
-+#define	CGA	(0xA0000000 + CLOCKGENA_BASE_ADDR)
-+
-+#define SYSDEV(x)		(4 * (x) + 0xA0000000 + SYSCONF_BASE_ADDR)
-+#define   CPU_ID		(SYSDEV(0x0))
-+#define SYSSTA(x)		(0x8 + SYSDEV(x))
-+#define SYSCONF(x)		(0x100 + SYSDEV(x))
-+
-+#define STB7100_DEVID_7100_VAL		0x024
-+#define STB7100_DEVID_7109_VAL		0x02c
-+#define STB7100_DEVID_ID_SHIFT		12
-+#define STB7100_DEVID_ID_MASK		0x3ff
-+#define STB7100_DEVID_CUT_SHIFT		28
-+#define STB7100_DEVID_CUT_MASK		0xf
-+#define CPU_ID_MASK  ((STB7100_DEVID_CUT_MASK << STB7100_DEVID_CUT_SHIFT) | \
-+		(STB7100_DEVID_ID_MASK << STB7100_DEVID_ID_SHIFT))
-+
-+#define STB7100_CUT1 (STB7100_DEVID_7100_VAL << STB7100_DEVID_ID_SHIFT)
-+#define STB7100_CUT2 (STB7100_DEVID_7100_VAL << STB7100_DEVID_ID_SHIFT) | \
-+		(1 << STB7100_DEVID_CUT_SHIFT)
-+#define STB7100_CUT3 (STB7100_DEVID_7100_VAL << STB7100_DEVID_ID_SHIFT) | \
-+		(2 << STB7100_DEVID_CUT_SHIFT)
-+#define STB7109_CUT1 (STB7100_DEVID_7109_VAL << STB7100_DEVID_ID_SHIFT)
-+#define STB7109_CUT2 (STB7100_DEVID_7109_VAL << STB7100_DEVID_ID_SHIFT) | \
-+		(1 << STB7100_DEVID_CUT_SHIFT)
-+#define STB7109_CUT3 (STB7100_DEVID_7109_VAL << STB7100_DEVID_ID_SHIFT) | \
-+		(2 << STB7100_DEVID_CUT_SHIFT)
-+
-+.balign 32
-+.global stx7100_mem_table
-+stx7100_mem_table:
-+	! Enables the DDR self refresh mode
-+#if 0
-+OR32(SYSCONF(11), (1 << 28) | (1 << 30))
-+WHILE_NE32(SYSSTA(12), (1 << 28), (1 << 28))
-+WHILE_NE32(SYSSTA(13), (1 << 28), (1 << 28))
-+#endif
-+	! PLL0 at the minimum frequency
-+POKE32(CGA + CLKA_LOCK, 0xc0de)
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_BYPASS)
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_ENABLE, 0x0)
-+UPDATE32(CGA + CLKA_PLL0, ~0x7ffff, CLKA_PLL0_SUSPEND)
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_ENABLE)
-+WHILE_NE32(CGA + CLKA_PLL0_LOCK, CLKA_PLL0_LOCK_LOCKED, CLKA_PLL0_LOCK_LOCKED)
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_BYPASS, 0x0)
-+
-+#if 0
-+	! PLL1 at the minimum frequency
-+OR32(CGA + CLKA_PLL1_BYPASS, 2)
-+UPDATE32(CGA + CLKA_PLL1, ~CLKA_PLL1_ENABLE, 0x0)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, CLKA_PLL1_SUSPEND)
-+OR32(CGA + CLKA_PLL1, CLKA_PLL1_ENABLE)
-+WHILE_NE32(CGA + CLKA_PLL1_LOCK, CLKA_PLL1_LOCK_LOCKED, CLKA_PLL1_LOCK_LOCKED)
-+UPDATE32(CGA + CLKA_PLL1_BYPASS, ~2, 0x0)
-+
-+	! Turn-off the LMI clocks and the ST231 clocks
-+UPDATE32(CGA + CLKA_CLK_EN, ~CLKA_CLK_EN_DEFAULT, 0x0)
-+#endif
-+
-+POKE32(CGA + CLKA_ST40_PER, 0x5)
-+POKE32(CGA + CLKA_ST40_IC,  0x5)
-+POKE32(CGA + CLKA_ST40, 0x3)
-+
-+END_MARKER
-+
-+	! Restore the highest frequency cpu/bus/per ratios */
-+POKE32(CGA + CLKA_ST40, 0x0)
-+POKE32(CGA + CLKA_ST40_IC, 0x1)
-+POKE32(CGA + CLKA_ST40_PER, 0x0)
-+
-+!	PLL0 at the standard frequency */
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_BYPASS)
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_ENABLE, 0x0)
-+UPDATE32(CGA + CLKA_PLL0, ~0x7ffff, CLKA_PLL0_RESUME)
-+OR32(CGA + CLKA_PLL0, CLKA_PLL0_ENABLE)
-+WHILE_NE32(CGA + CLKA_PLL0_LOCK, CLKA_PLL0_LOCK_LOCKED, CLKA_PLL0_LOCK_LOCKED)
-+UPDATE32(CGA + CLKA_PLL0, ~CLKA_PLL0_BYPASS, 0x0)
-+
-+#if 0
-+	! Turn-on the LMI clocks and the ST231 clocks*/
-+OR32(CGA + CLKA_CLK_EN, CLKA_CLK_EN_DEFAULT)
-+
-+! PLL1 at the standard frequency
-+OR32(CGA + CLKA_PLL1_BYPASS, 2)
-+UPDATE32(CGA + CLKA_PLL1, ~CLKA_PLL1_ENABLE, 0x0)
-+#if (CONFIG_SH_EXTERNAL_CLOCK = 30000000)
-+/*
-+ * 30 MHz Xtal clock
-+ */
-+IF_EQ32(1, CPU_ID, CPU_ID_MASK, STB7100_CUT1)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1e | (0x85 << 8) | (0x0 << 16))
-+ELSE(1)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x0a | (0x80 << 8) | (0x1 << 16))
-+ENDIF(1)
-+
-+IF_EQ32(2, CPU_ID, CPU_ID_MASK, STB7100_CUT3)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1e | (0xc8 << 8) | (0x0 << 16))
-+ENDIF(2)
-+
-+IF_EQ32(3, CPU_ID, CPU_ID_MASK, STB7109_CUT2)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1e | (0xc8 << 8) | (0x0 << 16))
-+ENDIF(3)
-+
-+IF_EQ32(4, CPU_ID, CPU_ID_MASK, STB7109_CUT3)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1e | (0xc8 << 8) | (0x0 << 16))
-+ENDIF(4)
-+
-+#elif (CONFIG_SH_EXTERNAL_CLOCK = 27000000)
-+/*
-+ * 27 MHz Xtal clock
-+ */
-+IF_EQ32(1, CPU_ID, CPU_ID_MASK, STB7100_CUT1)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1b | (0x85 << 8) | (0x0 << 16))
-+ELSE(1)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x09 | (0x80 << 8) | (0x1 << 16))
-+ENDIF(1)
-+
-+IF_EQ32(2, CPU_ID, CPU_ID_MASK, STB7100_CUT3)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1b | (0xc8 << 8) | (0x0 << 16))
-+ENDIF(2)
-+
-+IF_EQ32(3, CPU_ID, CPU_ID_MASK, STB7109_CUT2)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1b | (0xc8 << 8) | (0x0 << 16))
-+ENDIF(3)
-+
-+IF_EQ32(4, CPU_ID, CPU_ID_MASK, STB7109_CUT3)
-+UPDATE32(CGA + CLKA_PLL1, ~0x7ffff, 0x1b | (0xc8 << 8) | (0x0 << 16))
-+ENDIF(4)
-+#else
-+#error External Oscillator not supported for PM.
-+#endif
-+
-+OR32(CGA + CLKA_PLL1, CLKA_PLL1_ENABLE)
-+
-+WHILE_NE32(CGA + CLKA_PLL1_LOCK, CLKA_PLL1_LOCK_LOCKED, CLKA_PLL1_LOCK_LOCKED)
-+UPDATE32(CGA + CLKA_PLL1_BYPASS, ~2, 0x0)
-+
-+!	Disables DDR self refresh */
-+UPDATE32(SYSCONF(11), ~((1 << 28) | (1 << 30)), 0x0)
-+WHILE_NE32(SYSSTA(12), (1 << 28), 0x0)
-+#endif
-+WHILE_NE32(SYSSTA(13), (1 << 28), 0x0)
-+
-+DELAY(10)
-+POKE32(CGA + CLKA_LOCK, 0x0)
-+END_MARKER
-+
-+.global stx7100_mem_tbl_size
-+stx7100_mem_tbl_size:
-+.long . - stx7100_mem_table
-+
-diff --git a/include/linux/stm/stx7100.h b/include/linux/stm/stx7100.h
-index e452bd4..c1c7720 100644
---- a/include/linux/stm/stx7100.h
-+++ b/include/linux/stm/stx7100.h
-@@ -1,6 +1,7 @@
- #ifndef __LINUX_STM_STX7100_H
- #define __LINUX_STM_STX7100_H
- 
-+#ifndef __ASSEMBLER__
- #include <linux/device.h>
- #include <linux/spi/spi.h>
- #include <linux/stm/platform.h>
-@@ -67,5 +68,47 @@ struct stx7100_pata_config {
- };
- void stx7100_configure_pata(struct stx7100_pata_config *config);
- 
-+#endif
-+
-+#define CLOCKGENA_BASE_ADDR	0x19213000	/* Clockgen A */
-+#define SYSCONF_BASE_ADDR	0x19001000	/* Sysconf */
-+
-+#define CLKA_LOCK			0x00
-+#define CLKA_PLL0			0x08
-+#define   CLKA_PLL0_BYPASS		(1 << 20)
-+#define   CLKA_PLL0_ENABLE		(1 << 19)
-+#define   CLKA_PLL0_SUSPEND		((5 << 16) | (100 << 8) | \
-+		(CONFIG_SH_EXTERNAL_CLOCK / 1000000))
-+
-+#if CONFIG_SH_EXTERNAL_CLOCK = 30000000
-+#define   CLKA_PLL0_RESUME	(0x14 | (0xb1 << 8) | (0x0 << 16))
-+#else
-+#define   CLKA_PLL0_RESUME	(0x06 | (0x3b << 8) | (0x0 << 16))
-+#endif
- 
-+#define CLKA_PLL0_LOCK			0x10
-+#define   CLKA_PLL0_LOCK_LOCKED		0x01
-+
-+#define CLKA_ST40			0x14
-+#define CLKA_ST40_IC			0x18
-+#define CLKA_ST40_PER			0x1c
-+#define CLKA_FDMA			0x20
-+#define CLKA_PLL1			0x24
-+#define   CLKA_PLL1_ENABLE		(1 << 19)
-+#define   CLKA_PLL1_SUSPEND		((5 << 16) | (100 << 8) | \
-+		(CONFIG_SH_EXTERNAL_CLOCK / 1000000))
-+#define CLKA_PLL1_LOCK			0x2C
-+#define   CLKA_PLL1_LOCK_LOCKED		0x01
-+
-+#define CLKA_CLK_DIV			0x30
-+#define CLKA_CLK_EN			0x34
-+#define   CLKA_CLK_EN_ST231_AUD		(1 << 0)
-+#define   CLKA_CLK_EN_ST231_VID		(1 << 1)
-+#define   CLKA_CLK_EN_LMI_SYS		(1 << 4)
-+#define   CLKA_CLK_EN_LMI_VID		(1 << 5)
-+#define   CLKA_CLK_EN_DEFAULT		(CLKA_CLK_EN_ST231_AUD |	\
-+					 CLKA_CLK_EN_ST231_VID |	\
-+					 CLKA_CLK_EN_LMI_SYS   |	\
-+					 CLKA_CLK_EN_LMI_VID)
-+#define CLKA_PLL1_BYPASS		0x3c
- #endif
--- 
-1.6.2.5
+Which contains:
 
+Alexey Dobriyan (1):
+      sh: convert /proc/cpu/aligmnent, /proc/cpu/kernel_alignment to seq_fi=
+le
+
+Giuseppe CAVALLARO (1):
+      sh: add sleazy FPU optimization
+
+Guennadi Liakhovetski (2):
+      SH: add support for the RJ54N1CB0C camera for the kfr2r09 platform
+      serial: sh-sci: Fix too early port disabling.
+
+Kuninori Morimoto (6):
+      sh: mach-ecevec24: Add SDHI support
+      sh: mach-ecovec24: Add USB1 gadget support
+      sh: sh7724: Add SPU2 support
+      sh: mach-ecovec24: modify address map
+      sh: mach-ecovec24: LCDC drive ability become high
+      sh: mach-ecovec24: Remove un-defined settings for VPU
+
+Magnus Damm (38):
+      mfd: Add SuperH Mobile SDHI platform driver
+      mmc: Add SuperH to the tmio-mmc Kconfig
+      sh: SDHI platform data to the Migo-R board
+      sh: SDHI platform data to the AP325RXA board
+      sh: SDHI platform data to the SE7724 board
+      sh: SDHI platform data to the kfr2r09 board
+      sh: fix kexec by removing check for old kexec-tools
+      sh: add hwblk_id to sh_eth on ecovec24
+      sh: mac address through private data for sh_eth on ecovec24
+      sh: mac address through private data for sh_eth on ms7724se
+      sh: add SDHI1 support to ms7724se
+      sh: Add notifiers chains for cpu/board code
+      sh: Add sh7724 notifier for R-standby save/restore
+      sh: Allow boards to register memory pre/post sleep code
+      sh: Add kfr2r09 specific memory pre/post sleep code
+      sh: Add ms7724se specific memory pre/post sleep code
+      sh: Add migor specific memory pre/post sleep code
+      sh: Move ap325rxa board code into separate directory
+      sh: Add ap325rxa specific memory pre/post sleep code
+      sh: Add Ecovec24 specific memory pre/post sleep code
+      sh: Rework SuperH Mobile sleep mode code
+      sh: Keep track of allowed sleep modes
+      sh: Add MMU and Cache handling sleep mode code
+      sh: Use RSMEM for sleep code on sh7724
+      sh: Add R-standby sleep mode support
+      sh: Add KFR2R09 specific memory pre/post R-standby code
+      sh: Add SDHI1 support to the AP325RXA board
+      sh: Remove unused WP signal for SDHI0 and KFR2R09
+      sh: Add RWDT save/restore code for sh7724 R-standby
+      mfd: Add power control platform data to SDHI driver
+      sh: Add SDHI power control support to Ecovec
+      sh: Add CPG save/restore code for sh7724 R-standby
+      sh: Move KEYSC header file
+      sh: Break out SuperH PFC code
+      sh: Improve kfr2r09 serial port setup code
+      sh: fix sh7724 VEU3F resource size
+      sh: allow runtime pm without suspend/resume callbacks
+      sh: include empty zero page in romImage
+
+Matt Fleming (16):
+      sh: Allocate PMB entry slot earlier
+      sh: Obliterate the P1 area macros
+      sh: Prepare for dynamic PMB support
+      sh: CONFIG_PMB doesn't mean the MMU is in 32bit mode
+      sh: Make most PMB functions static
+      sh: Get rid of the kmem cache code
+      sh: Remap physical memory into P1 and P2 in pmb_init()
+      sh: Fix the offset from P1SEG/P2SEG where we map RAM
+      sh: Fold fixed-PMB support into dynamic PMB support
+      sh: Teach the DWARF unwinder about modules
+      sh: Fix memory leak in dwarf_unwind_stack()
+      sh: Remove any reference to recursive functions from comments
+      sh: tracing: Use the DWARF unwinder for CALLER_ADDRx
+      sh: Annotate irq functions with "notrace"
+      sh: Do not apply virt_to_phys() to a physical address
+      sh: Drop associative writes for SH-4 cache flushes.
+
+Paul Mundt (66):
+      sh: sh4_flush_cache_mm() optimizations.
+      sh: Kill off broken PHYSADDR() usage in sh4_flush_dcache_page().
+      sh: Kill off segment-based d-cache flushing on SH-4.
+      sh: Rework sh4_flush_cache_page() for coherent kmap mapping.
+      sh: Fix up redundant cache flushing for PAGE_SIZE > 4k.
+      sh: Factor in cpu id for selection of cache colour fixmap.
+      sh: Shut up CONFIG_32BIT=3Dn compiler warnings.
+      sh: Reinstate ILSEL -> IRL intc mappings for SH-X3 proto CPU.
+      cdrom: gdrom: Kill off PHYSADDR use.
+      sh: maple: PHYSADDR() -> virt_to_phys() conversion.
+      sh: Generalize CALLER_ADDRx support.
+      sh: Tidy up the dwarf module helpers.
+      sh: Don't profile return_address().
+      sh: ftrace: Make code modification NMI safe.
+      sh: Provide CALLER_ADDRx definitions even when ftrace is disabled.
+      sh: Only invalidate the I-cache range for secondary CPUs stack_start.
+      sh: TS_RESTORE_SIGMASK conversion.
+      sh: Count NMIs in irq_cpustat_t.
+      sh: Force boot CPU in to light sleep mode for SH-X3 SMP.
+      sh: Idle loop chainsawing for SMP-based light sleep.
+      sh: Make check_pgt_cache() more aggressive while idling.
+      sh: Fix up IRQ re-enabling for the need_resched() case.
+      sh: Support SCHED_MC for SH-X3 multi-cores.
+      sh: Kill off legacy UBC wakeup cruft.
+      sh: Convert to asm-generic/irqflags.h.
+      sh: Disable SCIF2 on the SH-X3 proto CPU.
+      sh: Fix up smp_mb__xxx() memory barriers for SH-4A SMP.
+      sh: Fix up uninitialized variable warning in dwarf unwinder.
+      sh: Fix up cacheflush routine symbol exports.
+      sh: Convert to asm-generic/dma-mapping-common.h
+      sh: Add dma-mapping support for dma_alloc/free_coherent() overrides.
+      sh: Revamp PCI DMA coherence Kconfig bits.
+      sh: Kill off superfluous arch/sh/drivers/pci/Kconfig.
+      sh: Fix up dma_is_consistent().
+      sh64: cache flush symbol exports.
+      sh: intc: Make ack_regs generally available.
+      sh: Clean up more superfluous symbol exports.
+      sh: Bump up dma_ops initialization far earlier in the boot process.
+      sh: enable PERF_USE_VMALLOC across the board.
+      sh: perf events: Add preliminary support for SH-4A counters.
+      sh: perf events: Kill off left over debugging cruft.
+      sh: intc: dynamic IRQ support.
+      sh: intc: Handle legacy IRQ reservation in vector map.
+      sh: mach-se: Convert SE7722 FPGA to dynamic IRQ allocation.
+      video: sh_mobile_lcdcfb: Don't attempt to map zero-length scatterlist=
+s.
+      sh: perf events: Fix up uninitialized variable warning.
+      sh: Default-enable SPU clock for SH7724.
+      sh: perf events: Preliminary callchain support.
+      sh: perf events: Add support for SH7750-style counters.
+      sh: oprofile: Kill off bitrotted SH7750 driver.
+      sh: oprofile: Fix up count size mismatch for common impl.
+      sh: perf events: Document SH-4A raw event codes.
+      sh: Enable PMB support for all SH-4A CPUs.
+      sh: Fix up the CONFIG_PERF_EVENTS=3Dn build for SH-4.
+      sh: Use the generic I/O port base for slowdown.
+      sh64: Fix up the CONFIG_GENERIC_BUG=3Dn build.
+      sh64: Fix up reworked cache op build.
+      sh: dma: Kill off bogus dma_sysclass symbol export.
+      sh: Apply the sleazy FPU changes for SH-2A FPU as well.
+      sh: Fix up the FPU emulation build.
+      serial: sh-sci: Depend on HAVE_CLK unconditionally.
+      sh: pfc: Convert from ctrl_xxx() to __raw_xxx() I/O routines.
+      sh: pfc: pr_info() -> pr_debug() cleanups.
+      sh: Add default uImage rule for se7724, ap325rxa, and migor.
+      sh: Partial revert of copy/clear_user_highpage() optimizations.
+      sh: Make associative cache writes fatal on all SH-4A parts.
+
+Roel Kluin (1):
+      sh: Make sure indexes are positive
+
+Stuart Menefy (3):
+      sh: Optimised memset for SH4
+      sh: Improve performance of SH4 versions of copy/clear_user_highpage
+      sh: Minor optimisations to FPU handling
+
+Uwe Kleine-K=C3=B6nig (2):
+      rtc: don't use __exit_p to wrap ds1302_rtc_remove
+      serial: sh-sci: don't use __devexit_p to wrap sci_remove
+
+Valentin R Sitsikov (1):
+      sh: fix watchdog timer for sh7780/sh7785
+
+ arch/sh/Kconfig                                    |   29 +-
+ arch/sh/Makefile                                   |    4 +
+ arch/sh/boards/Makefile                            |    1 -
+ arch/sh/boards/mach-ap325rxa/Makefile              |    2 +
+ arch/sh/boards/mach-ap325rxa/sdram.S               |   69 +++
+ .../{board-ap325rxa.c =3D> mach-ap325rxa/setup.c}    |   97 +++-
+ arch/sh/boards/mach-ecovec24/Makefile              |    2 +-
+ arch/sh/boards/mach-ecovec24/sdram.S               |   52 ++
+ arch/sh/boards/mach-ecovec24/setup.c               |  197 ++++++---
+ arch/sh/boards/mach-highlander/setup.c             |    2 +-
+ arch/sh/boards/mach-kfr2r09/Makefile               |    2 +-
+ arch/sh/boards/mach-kfr2r09/sdram.S                |   80 ++++
+ arch/sh/boards/mach-kfr2r09/setup.c                |  238 +++++++++-
+ arch/sh/boards/mach-migor/Makefile                 |    2 +-
+ arch/sh/boards/mach-migor/sdram.S                  |   69 +++
+ arch/sh/boards/mach-migor/setup.c                  |   65 ++-
+ arch/sh/boards/mach-r2d/irq.c                      |    2 +-
+ arch/sh/boards/mach-se/7722/irq.c                  |   32 +-
+ arch/sh/boards/mach-se/7722/setup.c                |   17 +-
+ arch/sh/boards/mach-se/7724/Makefile               |    2 +-
+ arch/sh/boards/mach-se/7724/sdram.S                |   52 ++
+ arch/sh/boards/mach-se/7724/setup.c                |   96 ++++-
+ arch/sh/boot/compressed/misc.c                     |    2 +-
+ arch/sh/boot/romimage/Makefile                     |   12 +-
+ arch/sh/boot/romimage/head.S                       |   38 ++
+ arch/sh/drivers/dma/dma-sysfs.c                    |    2 -
+ arch/sh/drivers/pci/Kconfig                        |   19 -
+ arch/sh/include/asm/addrspace.h                    |    9 +-
+ arch/sh/include/asm/atomic.h                       |    9 +-
+ arch/sh/include/asm/bitops.h                       |    4 +-
+ arch/sh/include/asm/bugs.h                         |    4 +
+ arch/sh/include/asm/dma-mapping.h                  |  233 +++-------
+ arch/sh/include/asm/dwarf.h                        |   28 ++
+ arch/sh/include/asm/fixmap.h                       |   12 +-
+ arch/sh/include/asm/fpu.h                          |   26 +-
+ arch/sh/include/asm/ftrace.h                       |   17 +
+ arch/sh/include/asm/gpio.h                         |   82 +----
+ arch/sh/include/asm/hardirq.h                      |   13 +-
+ arch/sh/include/asm/io.h                           |   16 +-
+ arch/sh/include/asm/irqflags.h                     |   31 +--
+ arch/sh/include/asm/irqflags_32.h                  |   99 ----
+ arch/sh/include/asm/irqflags_64.h                  |   85 ----
+ arch/sh/include/asm/mmu.h                          |   13 +-
+ arch/sh/include/asm/pci.h                          |   30 +-
+ arch/sh/include/asm/perf_event.h                   |   31 ++-
+ arch/sh/include/asm/pgtable.h                      |   26 +-
+ arch/sh/include/asm/pgtable_32.h                   |    2 +-
+ arch/sh/include/asm/processor_32.h                 |    3 +-
+ arch/sh/include/asm/scatterlist.h                  |    2 +-
+ arch/sh/include/asm/suspend.h                      |   65 +++
+ arch/sh/include/asm/system.h                       |    4 -
+ arch/sh/include/asm/system_32.h                    |   29 ++
+ arch/sh/include/asm/system_64.h                    |   26 +
+ arch/sh/include/asm/thread_info.h                  |   30 +-
+ arch/sh/include/asm/topology.h                     |    8 +
+ arch/sh/include/asm/ubc.h                          |   11 -
+ arch/sh/include/asm/watchdog.h                     |   59 +++-
+ arch/sh/include/cpu-sh4/cpu/watchdog.h             |   13 +
+ .../mach-ecovec24/mach/partner-jet-setup.txt       |    3 +-
+ arch/sh/include/mach-se/mach/se7722.h              |   11 +-
+ arch/sh/kernel/Makefile                            |   10 +-
+ arch/sh/kernel/asm-offsets.c                       |   23 +
+ arch/sh/kernel/cpu/Makefile                        |    1 -
+ arch/sh/kernel/cpu/init.c                          |   28 +-
+ arch/sh/kernel/cpu/sh2a/fpu.c                      |   27 +-
+ arch/sh/kernel/cpu/sh3/entry.S                     |   33 --
+ arch/sh/kernel/cpu/sh4/Makefile                    |    8 +-
+ arch/sh/kernel/cpu/sh4/fpu.c                       |   28 +-
+ arch/sh/kernel/cpu/sh4/perf_event.c                |  253 ++++++++++
+ arch/sh/kernel/cpu/sh4a/Makefile                   |    1 +
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c             |    2 +-
+ arch/sh/kernel/cpu/sh4a/perf_event.c               |  269 +++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  264 ++++++++++-
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c               |   45 +-
+ arch/sh/kernel/cpu/sh4a/smp-shx3.c                 |   37 +-
+ arch/sh/kernel/cpu/sh5/entry.S                     |    2 +-
+ arch/sh/kernel/cpu/shmobile/cpuidle.c              |   42 +-
+ arch/sh/kernel/cpu/shmobile/pm.c                   |  117 ++++-
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c           |   17 +-
+ arch/sh/kernel/cpu/shmobile/sleep.S                |  344 ++++++++------
+ arch/sh/kernel/cpu/ubc.S                           |   59 ---
+ arch/sh/kernel/dma-nommu.c                         |   82 ++++
+ arch/sh/kernel/dwarf.c                             |  222 +++++++--
+ arch/sh/kernel/entry-common.S                      |    2 +-
+ arch/sh/kernel/ftrace.c                            |  146 ++++++-
+ arch/sh/kernel/head_32.S                           |    2 +-
+ arch/sh/kernel/idle.c                              |   78 +++-
+ arch/sh/kernel/io_generic.c                        |    4 +-
+ arch/sh/kernel/irq.c                               |   14 +
+ arch/sh/kernel/irq_32.c                            |   57 +++
+ arch/sh/kernel/irq_64.c                            |   51 ++
+ arch/sh/kernel/machine_kexec.c                     |    6 -
+ arch/sh/kernel/machvec.c                           |    4 +
+ arch/sh/kernel/module.c                            |    9 +-
+ arch/sh/kernel/perf_callchain.c                    |   98 ++++
+ arch/sh/kernel/perf_event.c                        |  312 ++++++++++++
+ arch/sh/kernel/process_32.c                        |   42 ++-
+ arch/sh/kernel/process_64.c                        |    2 +
+ arch/sh/kernel/return_address.c                    |   54 +++
+ arch/sh/kernel/setup.c                             |    4 +
+ arch/sh/kernel/sh_ksyms_32.c                       |   67 +---
+ arch/sh/kernel/sh_ksyms_64.c                       |   10 -
+ arch/sh/kernel/signal_32.c                         |   24 +-
+ arch/sh/kernel/signal_64.c                         |   13 +-
+ arch/sh/kernel/smp.c                               |    4 +-
+ arch/sh/kernel/topology.c                          |   26 +
+ arch/sh/kernel/traps.c                             |    8 +-
+ arch/sh/kernel/traps_32.c                          |   82 ++--
+ arch/sh/lib/Makefile                               |    7 +-
+ arch/sh/lib/memset-sh4.S                           |  107 +++++
+ arch/sh/math-emu/math.c                            |    6 +-
+ arch/sh/mm/Kconfig                                 |   19 +-
+ arch/sh/mm/Makefile                                |    3 +-
+ arch/sh/mm/cache-sh4.c                             |  501 +++-------------=
+----
+ arch/sh/mm/cache-sh5.c                             |    2 +-
+ arch/sh/mm/cache-sh7705.c                          |    2 +-
+ arch/sh/mm/cache.c                                 |   18 +-
+ arch/sh/mm/consistent.c                            |   28 +-
+ arch/sh/mm/init.c                                  |   19 +
+ arch/sh/mm/kmap.c                                  |    4 +-
+ arch/sh/mm/numa.c                                  |    2 +-
+ arch/sh/mm/pmb-fixed.c                             |   45 --
+ arch/sh/mm/pmb.c                                   |  268 ++++++------
+ arch/sh/oprofile/Makefile                          |    4 -
+ arch/sh/oprofile/common.c                          |   38 +--
+ arch/sh/oprofile/op_impl.h                         |    2 +-
+ arch/sh/oprofile/op_model_sh7750.c                 |  255 ----------
+ drivers/cdrom/gdrom.c                              |   10 +-
+ drivers/input/keyboard/sh_keysc.c                  |    2 +-
+ drivers/mfd/Kconfig                                |    8 +
+ drivers/mfd/Makefile                               |    1 +
+ drivers/mfd/sh_mobile_sdhi.c                       |  156 ++++++
+ drivers/mmc/host/Kconfig                           |    2 +-
+ drivers/rtc/rtc-ds1302.c                           |    2 +-
+ drivers/serial/Kconfig                             |    2 +-
+ drivers/serial/sh-sci.c                            |   59 +---
+ drivers/serial/sh-sci.h                            |    2 +-
+ drivers/sh/Makefile                                |    1 +
+ drivers/sh/intc.c                                  |  123 +++++-
+ drivers/sh/maple/maple.c                           |    4 +-
+ arch/sh/kernel/gpio.c =3D> drivers/sh/pfc.c          |   43 +-
+ drivers/video/sh_mobile_lcdcfb.c                   |   32 +-
+ .../include/asm =3D> include/linux/input}/sh_keysc.h |    6 +-
+ include/linux/mfd/sh_mobile_sdhi.h                 |    8 +
+ include/linux/sh_intc.h                            |    7 +-
+ include/linux/sh_pfc.h                             |   96 ++++
+ 146 files changed, 4741 insertions(+), 2405 deletions(-)
+ create mode 100644 arch/sh/boards/mach-ap325rxa/Makefile
+ create mode 100644 arch/sh/boards/mach-ap325rxa/sdram.S
+ rename arch/sh/boards/{board-ap325rxa.c =3D> mach-ap325rxa/setup.c} (87%)
+ create mode 100644 arch/sh/boards/mach-ecovec24/sdram.S
+ create mode 100644 arch/sh/boards/mach-kfr2r09/sdram.S
+ create mode 100644 arch/sh/boards/mach-migor/sdram.S
+ create mode 100644 arch/sh/boards/mach-se/7724/sdram.S
+ delete mode 100644 arch/sh/drivers/pci/Kconfig
+ delete mode 100644 arch/sh/include/asm/irqflags_32.h
+ delete mode 100644 arch/sh/include/asm/irqflags_64.h
+ create mode 100644 arch/sh/kernel/cpu/sh4/perf_event.c
+ create mode 100644 arch/sh/kernel/cpu/sh4a/perf_event.c
+ delete mode 100644 arch/sh/kernel/cpu/ubc.S
+ create mode 100644 arch/sh/kernel/dma-nommu.c
+ create mode 100644 arch/sh/kernel/irq_32.c
+ create mode 100644 arch/sh/kernel/irq_64.c
+ create mode 100644 arch/sh/kernel/perf_callchain.c
+ create mode 100644 arch/sh/kernel/perf_event.c
+ create mode 100644 arch/sh/kernel/return_address.c
+ create mode 100644 arch/sh/lib/memset-sh4.S
+ delete mode 100644 arch/sh/mm/pmb-fixed.c
+ delete mode 100644 arch/sh/oprofile/op_model_sh7750.c
+ create mode 100644 drivers/mfd/sh_mobile_sdhi.c
+ rename arch/sh/kernel/gpio.c =3D> drivers/sh/pfc.c (94%)
+ rename {arch/sh/include/asm =3D> include/linux/input}/sh_keysc.h (75%)
+ create mode 100644 include/linux/mfd/sh_mobile_sdhi.h
+ create mode 100644 include/linux/sh_pfc.h
