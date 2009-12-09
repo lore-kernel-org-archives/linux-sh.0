@@ -1,48 +1,47 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 08 Dec 2009 08:20:44 +0000
-Subject: Re: [PATCH 4/5] sh: stylistic improvements for the DMA driver
-Message-Id: <Pine.LNX.4.64.0912080916300.4948@axis700.grange>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 09 Dec 2009 05:21:42 +0000
+Subject: [PATCH] sh: mach-ecovec24: MEMORY_SIZE fixup
+Message-Id: <uy6lcvi1l.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.0912041936541.3981@axis700.grange> 
- <Pine.LNX.4.64.0912041942040.3981@axis700.grange>
- <e9c3a7c20912071654y19313fd5j6d9ff5a62cde028e@mail.gmail.com>
-In-Reply-To: <e9c3a7c20912071654y19313fd5j6d9ff5a62cde028e@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Dan Williams <dan.j.williams@intel.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Mon, 7 Dec 2009, Dan Williams wrote:
-
-> On Fri, Dec 4, 2009 at 11:45 AM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> > =A0drivers/dma/shdma.c | =A0 34 +++++++++++++++++-----------------
-> > =A0drivers/dma/shdma.h | =A0 14 +++++++-------
-> > =A02 files changed, 24 insertions(+), 24 deletions(-)
-> >
-> [..]
-> > -static int dmae_is_idle(struct sh_dmae_chan *sh_chan)
-> > +static int dmae_is_busy(struct sh_dmae_chan *sh_chan)
->=20
-> This one isn't purely style, I agree with it, but think it would be a
-> bit cleaner to return a bool rather than an error code.
-
-Yes, I also thought about it, but I wasn't sure whether the author had=20
-some special considerations, why he has chosen to return an error code.=20
-Besides, that return code is also used in functions dmae_set_chcr() and=20
-dmae_set_dmars() as their return value. So, you'd have to change those two =
-
-to something like
-
-	if (dmae_is_busy(sh_chan))
-		return -EBUSY;
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+This patch is v2 of "sh: mach-ecovec24: update ecovec24 defconfig"
+
+ arch/sh/configs/ecovec24-romimage_defconfig |    2 +-
+ arch/sh/configs/ecovec24_defconfig          |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/configs/ecovec24-romimage_defconfig b/arch/sh/configs/ecovec24-romimage_defconfig
+index 0774924..4687470 100644
+--- a/arch/sh/configs/ecovec24-romimage_defconfig
++++ b/arch/sh/configs/ecovec24-romimage_defconfig
+@@ -203,7 +203,7 @@ CONFIG_MMU=y
+ CONFIG_PAGE_OFFSET=0x80000000
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_MEMORY_START=0x08000000
+-CONFIG_MEMORY_SIZE=0x08000000
++CONFIG_MEMORY_SIZE=0x10000000
+ CONFIG_29BIT=y
+ # CONFIG_X2TLB is not set
+ CONFIG_VSYSCALL=y
+diff --git a/arch/sh/configs/ecovec24_defconfig b/arch/sh/configs/ecovec24_defconfig
+index ac64697..cad9184 100644
+--- a/arch/sh/configs/ecovec24_defconfig
++++ b/arch/sh/configs/ecovec24_defconfig
+@@ -204,7 +204,7 @@ CONFIG_MMU=y
+ CONFIG_PAGE_OFFSET=0x80000000
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_MEMORY_START=0x08000000
+-CONFIG_MEMORY_SIZE=0x08000000
++CONFIG_MEMORY_SIZE=0x10000000
+ CONFIG_29BIT=y
+ # CONFIG_X2TLB is not set
+ CONFIG_VSYSCALL=y
+-- 
+1.6.3.3
+
