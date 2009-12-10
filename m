@@ -1,61 +1,172 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 14 Dec 2009 12:29:40 +0000
-Subject: [PATCH 00/07] sh: break out scif platform data per port
-Message-Id: <20091214122940.10707.63683.sendpatchset@rxone.opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 10 Dec 2009 17:35:07 +0000
+Subject: [PATCH 1/3 v2] sh: stylistic improvements for the DMA driver
+Message-Id: <Pine.LNX.4.64.0912101832270.4487@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.0912101826010.4487@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.0912101826010.4487@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Dan Williams <dan.j.williams@intel.com>, linux-sh@vger.kernel.org
 
-sh: break out scif platform data per port
-
-[PATCH 01/07] sh: sh2 scif pdata (sh7616)
-[PATCH 02/07] sh: sh2a scif pdata (sh7201/sh7203/sh7206/mxg)
-[PATCH 03/07] sh: sh3 scif pdata (sh7705/sh770x/sh7710/sh7720)
-[PATCH 04/07] sh: sh4 scif pdata (sh7750/sh7760/sh4-202)
-[PATCH 05/07] sh: sh4a scif pdata (sh7343/sh7366/sh7722/sh7723/sh7724)
-[PATCH 06/07] sh: sh4a scif pdata (sh7757/sh7763/sh7770/sh7780/sh7785/sh7786/x3)
-[PATCH 07/07] sh: sh5 scif pdata (sh5-101/sh5-103)
-
-These patches break out the scif serial port platform data into
-one platform device per port.
-
-With these patches and the early serial support in place it is
-possible to select the early serial console port with the kernel
-command line. For example, to enable early serial console on KFR2R09,
-simply add the following to the kernel command line:
-
-"earlyprintk=sh-sci.1,115200".
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/dma/shdma.c |   34 +++++++++++++++++-----------------
+ drivers/dma/shdma.h |   14 +++++++-------
+ 2 files changed, 24 insertions(+), 24 deletions(-)
 
- arch/sh/configs/rts7751r2d1_defconfig    |    2 
- arch/sh/configs/rts7751r2dplus_defconfig |    2 
- arch/sh/kernel/cpu/sh2/setup-sh7619.c    |   67 +++++----
- arch/sh/kernel/cpu/sh2a/setup-mxg.c      |   23 +--
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c   |  177 +++++++++++++++++-------
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c   |   89 ++++++++----
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c   |   89 ++++++++----
- arch/sh/kernel/cpu/sh3/setup-sh7705.c    |   45 +++---
- arch/sh/kernel/cpu/sh3/setup-sh770x.c    |   80 +++++++---
- arch/sh/kernel/cpu/sh3/setup-sh7710.c    |   44 +++--
- arch/sh/kernel/cpu/sh3/setup-sh7720.c    |   44 +++--
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c   |   23 +--
- arch/sh/kernel/cpu/sh4/setup-sh7750.c    |   47 +++---
- arch/sh/kernel/cpu/sh4/setup-sh7760.c    |   89 ++++++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c   |  112 +++++++++------
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c   |   39 ++---
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c   |   91 +++++++-----
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c   |  160 ++++++++++++++-------
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c   |  145 +++++++++++++------
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c   |   92 ++++++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c   |   81 ++++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c   |  221 ++++++++++++++++++++++--------
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c   |   60 ++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c   |  159 ++++++++++++++-------
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c   |  132 ++++++++++++-----
- arch/sh/kernel/cpu/sh4a/setup-shx3.c     |   76 +++++-----
- arch/sh/kernel/cpu/sh5/setup-sh5.c       |   22 +-
- 27 files changed, 1455 insertions(+), 756 deletions(-)
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index f5fae12..8d9acd7 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -80,17 +80,17 @@ static int sh_dmae_rst(int id)
+ 	unsigned short dmaor;
+ 
+ 	sh_dmae_ctl_stop(id);
+-	dmaor = (dmaor_read_reg(id)|DMAOR_INIT);
++	dmaor = dmaor_read_reg(id) | DMAOR_INIT;
+ 
+ 	dmaor_write_reg(id, dmaor);
+-	if ((dmaor_read_reg(id) & (DMAOR_AE | DMAOR_NMIF))) {
++	if (dmaor_read_reg(id) & (DMAOR_AE | DMAOR_NMIF)) {
+ 		pr_warning(KERN_ERR "dma-sh: Can't initialize DMAOR.\n");
+ 		return -EINVAL;
+ 	}
+ 	return 0;
+ }
+ 
+-static int dmae_is_idle(struct sh_dmae_chan *sh_chan)
++static int dmae_is_busy(struct sh_dmae_chan *sh_chan)
+ {
+ 	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
+ 	if (chcr & CHCR_DE) {
+@@ -110,15 +110,14 @@ static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs hw)
+ {
+ 	sh_dmae_writel(sh_chan, hw.sar, SAR);
+ 	sh_dmae_writel(sh_chan, hw.dar, DAR);
+-	sh_dmae_writel(sh_chan,
+-		(hw.tcr >> calc_xmit_shift(sh_chan)), TCR);
++	sh_dmae_writel(sh_chan, hw.tcr >> calc_xmit_shift(sh_chan), TCR);
+ }
+ 
+ static void dmae_start(struct sh_dmae_chan *sh_chan)
+ {
+ 	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
+ 
+-	chcr |= (CHCR_DE|CHCR_IE);
++	chcr |= CHCR_DE | CHCR_IE;
+ 	sh_dmae_writel(sh_chan, chcr, CHCR);
+ }
+ 
+@@ -132,7 +131,7 @@ static void dmae_halt(struct sh_dmae_chan *sh_chan)
+ 
+ static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
+ {
+-	int ret = dmae_is_idle(sh_chan);
++	int ret = dmae_is_busy(sh_chan);
+ 	/* When DMA was working, can not set data to CHCR */
+ 	if (ret)
+ 		return ret;
+@@ -149,7 +148,7 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ {
+ 	u32 addr;
+ 	int shift = 0;
+-	int ret = dmae_is_idle(sh_chan);
++	int ret = dmae_is_busy(sh_chan);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -307,7 +306,7 @@ static struct dma_async_tx_descriptor *sh_dmae_prep_memcpy(
+ 		new = sh_dmae_get_desc(sh_chan);
+ 		if (!new) {
+ 			dev_err(sh_chan->dev,
+-					"No free memory for link descriptor\n");
++				"No free memory for link descriptor\n");
+ 			goto err_get_desc;
+ 		}
+ 
+@@ -388,7 +387,7 @@ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
+ 	struct sh_dmae_regs hw;
+ 
+ 	/* DMA work check */
+-	if (dmae_is_idle(sh_chan))
++	if (dmae_is_busy(sh_chan))
+ 		return;
+ 
+ 	/* Find the first un-transfer desciptor */
+@@ -497,8 +496,9 @@ static void dmae_do_tasklet(unsigned long data)
+ 	struct sh_dmae_chan *sh_chan = (struct sh_dmae_chan *)data;
+ 	struct sh_desc *desc, *_desc, *cur_desc = NULL;
+ 	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
++
+ 	list_for_each_entry_safe(desc, _desc,
+-					&sh_chan->ld_queue, node) {
++				 &sh_chan->ld_queue, node) {
+ 		if ((desc->hw.sar + desc->hw.tcr) = sar_buf) {
+ 			cur_desc = desc;
+ 			break;
+@@ -543,8 +543,8 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id)
+ 	/* alloc channel */
+ 	new_sh_chan = kzalloc(sizeof(struct sh_dmae_chan), GFP_KERNEL);
+ 	if (!new_sh_chan) {
+-		dev_err(shdev->common.dev, "No free memory for allocating "
+-				"dma channels!\n");
++		dev_err(shdev->common.dev,
++			"No free memory for allocating dma channels!\n");
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -586,8 +586,8 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id)
+ 			"sh-dmae%d", new_sh_chan->id);
+ 
+ 	/* set up channel irq */
+-	err = request_irq(irq, &sh_dmae_interrupt,
+-		irqflags, new_sh_chan->dev_id, new_sh_chan);
++	err = request_irq(irq, &sh_dmae_interrupt, irqflags,
++			  new_sh_chan->dev_id, new_sh_chan);
+ 	if (err) {
+ 		dev_err(shdev->common.dev, "DMA channel %d request_irq error "
+ 			"with return %d\n", id, err);
+@@ -691,8 +691,8 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	for (ecnt = 0 ; ecnt < ARRAY_SIZE(eirq); ecnt++) {
+-		err = request_irq(eirq[ecnt], sh_dmae_err,
+-			irqflags, "DMAC Address Error", shdev);
++		err = request_irq(eirq[ecnt], sh_dmae_err, irqflags,
++				  "DMAC Address Error", shdev);
+ 		if (err) {
+ 			dev_err(&pdev->dev, "DMA device request_irq"
+ 				"error (irq %d) with return %d\n",
+diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
+index 2b4bc15..60b81e5 100644
+--- a/drivers/dma/shdma.h
++++ b/drivers/dma/shdma.h
+@@ -35,15 +35,15 @@ struct sh_desc {
+ 
+ struct sh_dmae_chan {
+ 	dma_cookie_t completed_cookie;	/* The maximum cookie completed */
+-	spinlock_t desc_lock;			/* Descriptor operation lock */
+-	struct list_head ld_queue;		/* Link descriptors queue */
+-	struct list_head ld_free;		/* Link descriptors free */
+-	struct dma_chan common;			/* DMA common channel */
+-	struct device *dev;				/* Channel device */
++	spinlock_t desc_lock;		/* Descriptor operation lock */
++	struct list_head ld_queue;	/* Link descriptors queue */
++	struct list_head ld_free;	/* Link descriptors free */
++	struct dma_chan common;		/* DMA common channel */
++	struct device *dev;		/* Channel device */
+ 	struct tasklet_struct tasklet;	/* Tasklet */
+-	int descs_allocated;			/* desc count */
++	int descs_allocated;		/* desc count */
+ 	int id;				/* Raw id of this channel */
+-	char dev_id[16];	/* unique name per DMAC of channel */
++	char dev_id[16];		/* unique name per DMAC of channel */
+ 
+ 	/* Set chcr */
+ 	int (*set_chcr)(struct sh_dmae_chan *sh_chan, u32 regs);
+-- 
+1.6.2.4
+
