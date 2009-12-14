@@ -1,35 +1,55 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 17 Dec 2009 08:09:10 +0000
-Subject: Re: [PATCH 5/5] sh: dmaengine support for sh7724
-Message-Id: <20091217080910.GA20425@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 Dec 2009 10:34:43 +0000
+Subject: [PATCH] net: sh_eth alignment fix for sh7724 using NET_IP_ALIGN
+Message-Id: <20091214103443.13082.84079.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.0912041936541.3981@axis700.grange> <Pine.LNX.4.64.0912041942330.3981@axis700.grange> <e9c3a7c20912071702h1aea2026kff22db99a221f6c4@mail.gmail.com> <20091208071302.GA23814@linux-sh.org> <29ab51dc0912161914w6967c9d1l79df27d670f01b6a@mail.gmail.com> <Pine.LNX.4.64.0912170841010.5991@axis700.grange> <20091217074700.GA19805@linux-sh.org> <Pine.LNX.4.64.0912170856280.5991@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0912170856280.5991@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>, Dan Williams <dan.j.williams@intel.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, davem@davemloft.net, linux-sh@vger.kernel.org
 
-On Thu, Dec 17, 2009 at 09:02:11AM +0100, Guennadi Liakhovetski wrote:
-> On Thu, 17 Dec 2009, Paul Mundt wrote:
-> > On Thu, Dec 17, 2009 at 08:42:39AM +0100, Guennadi Liakhovetski wrote:
-> > > Same comment applies as to the other my patch. Paul, I think, you 
-> > > indicated, that you've already merged my patch, or at least, that you have 
-> > > no problem merging it. Please, do use my original version and not this 
-> > > one.
-> > > 
-> > I applied it by hand, so your authorship was retained, and I fixed up the
-> > whitespace damage by hand (it looks like it was just line wrapping from
-> > the mailer, which I deal with often enough that I no longer particularly
-> > care for trivial patches). For the non-trivial patches, reposting those
-> > without whitespace damage would be preferable.
-> 
-> Hm, strange, are you sure _my_ original version was white-space damaged? I 
-> am quite sure my mailing chain behaves, and I just double-checked my patch 
-> as I got it back from the list - it looks ok to me. Would be interesting 
-> to know what specific white-space issues you found there, you could just 
-> mail me those off-list, if you like.
-> 
-No, yours was fine, it just didn't apply. Iwamatsu-san's was updated, but
-whitespace damaged. So neither one was directly usable. ;-)
+From: Magnus Damm <damm@opensource.se>
+
+Fix sh_eth for sh7724 by adding NET_IP_ALIGN support.
+Without this patch the receive data is misaligned.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Tested on Ecovec24. Perhaps for the sh-2.6 tree?
+
+ drivers/net/sh_eth.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- 0001/drivers/net/sh_eth.c
++++ work/drivers/net/sh_eth.c	2009-12-14 15:27:25.000000000 +0900
+@@ -84,6 +84,10 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+ 	.hw_swap	= 1,
++#if NET_IP_ALIGN = 2
++	.rpadir		= 1,
++	.rpadir_value	= 0x00020000,
++#endif
+ };
+ 
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7763)
+@@ -501,6 +505,8 @@ static int sh_eth_ring_init(struct net_d
+ 	 */
+ 	mdp->rx_buf_sz = (ndev->mtu <= 1492 ? PKT_BUF_SZ :
+ 			  (((ndev->mtu + 26 + 7) & ~7) + 2 + 16));
++	if (mdp->cd->rpadir)
++		mdp->rx_buf_sz += NET_IP_ALIGN;
+ 
+ 	/* Allocate RX and TX skb rings */
+ 	mdp->rx_skbuff = kmalloc(sizeof(*mdp->rx_skbuff) * RX_RING_SIZE,
+@@ -715,6 +721,8 @@ static int sh_eth_rx(struct net_device *
+ 					pkt_len + 2);
+ 			skb = mdp->rx_skbuff[entry];
+ 			mdp->rx_skbuff[entry] = NULL;
++			if (mdp->cd->rpadir)
++				skb_reserve(skb, NET_IP_ALIGN);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
+ 			netif_rx(skb);
