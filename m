@@ -1,7 +1,7 @@
-From: yoshii.takashi@gmail.com
-Date: Thu, 10 Dec 2009 08:48:12 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 14 Dec 2009 02:10:01 +0000
 Subject: Re: [PATCH] sh: Add CONFIG_PARAM_* to set boot parameters.
-Message-Id: <20091210174812.393a51aa.yoshii.takashi@gmail.com>
+Message-Id: <20091214021001.GA12196@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20091130170254.65d2a0ab.yoshii.takashi@renesas.com>
 In-Reply-To: <20091130170254.65d2a0ab.yoshii.takashi@renesas.com>
@@ -10,27 +10,53 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Paul, I have forgotten to ask this.
+On Thu, Dec 10, 2009 at 02:00:25PM +0900, yoshii.takashi@gmail.com wrote:
+> diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+> index a78be74..58325fe 100644
+> --- a/arch/sh/kernel/head_32.S
+> +++ b/arch/sh/kernel/head_32.S
+> @@ -27,17 +27,36 @@
+>  
+>  	.section	.empty_zero_page, "aw"
+>  ENTRY(empty_zero_page)
+> +#ifdef CONFIG_PARAM_BOOL
+> +	.long	CONFIG_PARAM_MOUNT_ROOT_RDONLY
+> +	.long	CONFIG_PARAM_RAMDISK_FLAGS
+> +	.long	CONFIG_PARAM_ORIG_ROOT_DEV
+> +	.long	CONFIG_PARAM_LOADER_TYPE
+> +	.long	CONFIG_PARAM_INITRD_START
+> +	.long	CONFIG_PARAM_INITRD_SIZE
+> +#else
+>  	.long	1		/* MOUNT_ROOT_RDONLY */
+>  	.long	0		/* RAMDISK_FLAGS */
+>  	.long	0x0200		/* ORIG_ROOT_DEV */
+>  	.long	1		/* LOADER_TYPE */
+>  	.long	0x00000000	/* INITRD_START */
+>  	.long	0x00000000	/* INITRD_SIZE */
+> +#endif
 
-> Name: CMDLINE
-> Address/size: empty_zero_page+0x100/char[256]
-> Type: loader to kernel information
-> 
->  kernel may read this as a command line depending on its configuration.
->  Boot loader should put '\0' if no options.
+There's not really any point in conditionalizing these. If you want to
+have them as config options, then just drop the bool and make them
+unconditionally defined. You can just use the values that are there now
+for the default values.
 
-This time, I changed the size to 256.
-First I thought that
-- This field is char[512].
-- Valid size depends on the configuration, because the kernel
-  reads (512 - N) byte when it has N byte of default command line.
-
-But, after browsing log around CMDLINE, I think now I know what you wanted to do.
-Your design is
-- This field is char[256]
-- All of them are guaranteed to be read (except OVERWRITE mode),
-  because default command line is also char[256], and buffer is char[512].
-
-Right?
-
-/yoshii
+>  #ifdef CONFIG_32BIT
+>  	.long	0x53453f00 + 32	/* "SE?" = 32 bit */
+>  #else
+>  	.long	0x53453f00 + 29	/* "SE?" = 29 bit */
+>  #endif
+> +#if defined(CONFIG_CMDLINE)
+> +	.long	0x100		/* offset of the default command line */
+> +#else
+> +	.long	0
+> +#endif
+> +#if defined(CONFIG_CMDLINE)
+> +	.skip	empty_zero_page + 0x100 - .
+> +cmdline:
+> +	.asciz	CONFIG_CMDLINE	! default command line
+> +#endif
+>  1:
+>  	.skip	PAGE_SIZE - empty_zero_page - 1b
+>  
+The command line handling could go the same way, with a bit of Kconfig
+reordering there is no need for any ifdefs besides the 32/29bit stuff.
