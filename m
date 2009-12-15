@@ -1,92 +1,56 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Wed, 02 Dec 2009 01:35:55 +0000
-Subject: Re: [PATCH] sh: mach-ecovec24: update ecovec24 defconfig
-Message-Id: <upr6yyx6s.wl%morimoto.kuninori@renesas.com>
+Date: Tue, 15 Dec 2009 00:27:57 +0000
+Subject: [PATCH] sh: ms7724se: Add ak4642 support
+Message-Id: <uk4wp9j3m.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uws1cuyrg.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uws1cuyrg.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Paul Mundt <lethal@linux-sh.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Linux-SH <linux-sh@vger.kernel.org>
 
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+This patch is based on ALSA ak4642 patch.
 
-Dear Matt
+ arch/sh/boards/mach-se/7724/setup.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
-Thank you for your hard work !
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 4b0f0c0..5d0f70b 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -514,6 +514,13 @@ static struct platform_device *ms7724se_devices[] __initdata = {
+ 	&sdhi1_cn8_device,
+ };
+ 
++/* I2C device */
++static struct i2c_board_info i2c0_devices[] = {
++	{
++		I2C_BOARD_INFO("ak4642", 0x12),
++	},
++};
++
+ #define EEPROM_OP   0xBA206000
+ #define EEPROM_ADR  0xBA206004
+ #define EEPROM_DATA 0xBA20600C
+@@ -575,6 +582,16 @@ extern char ms7724se_sdram_enter_end;
+ extern char ms7724se_sdram_leave_start;
+ extern char ms7724se_sdram_leave_end;
+ 
++
++static int __init arch_setup(void)
++{
++	/* enable I2C device */
++	i2c_register_board_info(0, i2c0_devices,
++				ARRAY_SIZE(i2c0_devices));
++	return 0;
++}
++arch_initcall(arch_setup);
++
+ static int __init devices_setup(void)
+ {
+ 	u16 sw = ctrl_inw(SW4140); /* select camera, monitor */
+-- 
+1.6.3.3
 
-> What size caches do the ms7724se and ecovec24 have?
-
-ms7724se / ecovec24 are SH7724
-
-------------------------
-Table 8.1 Cache Features
-------------------------
-
-Item         Instruction Cache            Operand Cache
-----------------------------------------------------------------
-Capacity       32-Kbyte cache               32-Kbyte cache
-Type           4-way set-associative,       4-way set-associative,
-               virtual address              virtual address
-               index/physical address tag   index/physical address tag
-Line size      32 bytes                     32 bytes
-Entries        256 entries/way              256 entries/way
-Write method        -                       Copy-back/write-through selecta=
-ble
-Replacement    LRU (least-recently-used)    LRU (least-recently-used)
-
----------------------------
-Table 8.2 Store Queue Features
----------------------------
-
-Item            Store Queues
----------------------------
-Capacity        32 bytes =1B$B!_=1B(B 2
-Addresses       H'E000 0000 to H'E3FF FFFF
-Write           Store instruction (1-cycle write)
-Write-back      Prefetch instruction (PREF instruction)
-Access right    When MMU is disabled: Determined by SQMD bit in MMUCR
-                When MMU is enabled: Determined by PR for each page
-
-
-
----------------------------
-Table 9.1 Secondary Cache Features
----------------------------
-
-Features            Secondary Cache
----------------------------------------
-Capacity            256 Kbytes
-Structure           4-way set associative, physical address index/physical =
-address tag
-Line size           32 bytes
-Number of entries   2048 entries/way
-Write system        Write through
-Replacement method  Least-recently-used (LRU) algorithm
-Operating clock     (CPU operating clock)/n (n =3D 1, 2, 3, 4, 6, or 8)
-
-> Would you mind giving this patch a whirl?
-
-sorry, "whirl" =3D "try" ?
-
-
-If I try your patch, "Kernel panic" seems go away,
-but I can not login.
----------------------
-...
-  Looking up port of RPC 100003/2 on 192.168.10.77
-  Looking up port of RPC 100005/1 on 192.168.10.77
-  VFS: Mounted root (nfs filesystem) on device 0:12.
-  Freeing unused kernel memory: 108k freed
-* Unaligned userspace access in "rcS" pid=878 pc=3D0x2955d9fc ins=3D0x5111
-* Sending SIGBUS to "rcS" due to unaligned access (PC 2955d9fc PR 295587c2)
-
-  192.168.10.102 login: root
-  Login incorrect
----------------------
-
-I can see * lines sometimes
-
-
-# I can got same result if I remove
-# "l2_cache_init" from setup-sh7724.c
