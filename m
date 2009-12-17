@@ -1,30 +1,60 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 04 Dec 2009 07:27:16 +0000
-Subject: Re: [PATCH] sh: include empty zero page in romImage
-Message-Id: <20091204072716.GB13603@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Thu, 17 Dec 2009 03:15:57 +0000
+Subject: [PATCH]: sh: dmaengine support for SH7785
+Message-Id: <29ab51dc0912161915p55672faxd2790b69ed59ba7d@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20091204064235.7674.79539.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20091204064235.7674.79539.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Dec 04, 2009 at 04:24:56PM +0900, Magnus Damm wrote:
-> On Fri, Dec 4, 2009 at 3:42 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> >
-> > This patch updates the romImage code to include the
-> > empty_zero_page contents from vmlinux. Without this
-> > patch the empty zero page is lef uninitialized.
-> >
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > ---
-> >
-> > ?Compiles and looks fine through objdump, but not
-> > ?runtime tested due to lack of hardware debugger.
-> 
-> Update, runtime tested this using uboot bootp + go on a migor board
-> and it seems ok!
-> 
-Ok, applied.
+Add dmaengine platform device to SH7785.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+index ef26ebd..f685b9b 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+@@ -14,6 +14,7 @@
+ #include <linux/io.h>
+ #include <linux/mm.h>
+ #include <linux/sh_timer.h>
++#include <asm/dma-sh.h>
+ #include <asm/mmzone.h>
+
+ static struct plat_sci_port scif0_platform_data = {
+@@ -294,6 +295,18 @@ static struct platform_device tmu5_device = {
+ 	.num_resources	= ARRAY_SIZE(tmu5_resources),
+ };
+
++static struct sh_dmae_pdata dma_platform_data = {
++	.mode = (SHDMA_MIX_IRQ | SHDMA_DMAOR1),
++};
++
++static struct platform_device dma_device = {
++	.name           = "sh-dma-engine",
++	.id             = -1,
++	.dev            = {
++		.platform_data  = &dma_platform_data,
++	},
++};
++
+ static struct platform_device *sh7785_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -307,6 +320,7 @@ static struct platform_device *sh7785_devices[]
+__initdata = {
+ 	&tmu3_device,
+ 	&tmu4_device,
+ 	&tmu5_device,
++	&dma_device,
+ };
+
+ static int __init sh7785_devices_setup(void)
+-- 
+1.6.5.4
