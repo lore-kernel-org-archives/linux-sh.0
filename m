@@ -1,19 +1,44 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 09 Dec 2009 03:44:33 +0000
-Subject: Re: [PATCH] sh: intc: Fixed resume from hibernation
-Message-Id: <20091209034433.GA28280@linux-sh.org>
+Date: Wed, 23 Dec 2009 05:08:10 +0000
+Subject: Re: [RFC][PATCH 0/14] Convert remaining arches to read/update_persistent_clock
+Message-Id: <20091223050810.GA25791@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1259917078-12874-1-git-send-email-francesco.virlinzi@st.com>
-In-Reply-To: <1259917078-12874-1-git-send-email-francesco.virlinzi@st.com>
+References: <1261540762.3508.61.camel@localhost.localdomain>
+In-Reply-To: <1261540762.3508.61.camel@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: john stultz <johnstul@us.ibm.com>
+Cc: lkml <linux-kernel@vger.kernel.org>, Richard Henderson <rth@twiddle.net>, linux-alpha@vger.kernel.org, linux-sh@vger.kernel.org, Russell King <linux@arm.linux.org.uk>, Haavard Skinnemoen <hskinnemoen@atmel.com>, Mike Frysinger <vapier@gentoo.org>, Mikael Starvik <starvik@axis.com>, David Howells <dhowells@redhat.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Tony Luck <tony.luck@intel.com>, Hirokazu Takata <takata@linux-m32r.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Koichi Yasutake <yasutake.koichi@jp.panasonic.com>, Kyle McMartin <kyle@mcmartin.ca>, "David S. Miller" <davem@davemloft.net>
 
-On Fri, Dec 04, 2009 at 09:57:58AM +0100, Francesco VIRLINZI wrote:
-> This patch fixes the resume from hibernation
-> in the intc sysdev device when it manages 'redirect' irq
+On Tue, Dec 22, 2009 at 07:59:22PM -0800, john stultz wrote:
+> In this case the generic read_persistent_clock() and
+> update_persistent_clock() methods have been provided to allow the
+> generic timekeeping code to initialize xtime and set the persistent
+> clock when NTP is synced. However many arches haven't converted, so the
+> generic code has to handle the case where the arch is doing this
+> management itself.
 > 
-> Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
+> This patch series tries to convert the following 14 architectures over
+> to use read_persistent_clock() and update_persistent_clock() as
+> applicable, killing off about 200 lines of arch specific code.
+> 
+While I think that this is a good goal, many of the underlying
+architectures have veered pretty far away from having meaningful
+persistent clock interfaces after having moved entirely to generic
+timekeeping and the RTC subsystem.
 
-Applied, thanks.
+In the case of SH at least that interface along with the generic CMOS
+stuff is largely a stop-gap for antiquated platforms that don't have
+proper RTC drivers and likely never will, while the default for all of
+the rest of the platforms effectively returns a fixed dummy value. I
+copied this approach from MIPS originally, so there are at least a few
+architectures that this will apply to.
+
+In any event, I wonder if it might make more sense to take something like
+the SPARC implementation that is simply a wrapper around the RTC, move
+that out in to a more generic place, and permit architectures to select
+an RTC class backed persistent clock instead (it seems to be only
+platforms that haven't caught up yet in terms of generic time and RTC
+migration that would want to define this interface on their own at all at
+this point)?
