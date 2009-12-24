@@ -1,371 +1,634 @@
-From: Francesco VIRLINZI <francesco.virlinzi@st.com>
-Date: Fri, 04 Dec 2009 14:52:51 +0000
-Subject: [PATCH (sh-2.6.30.y) 09/13] stm: pm: Add suspend support to the stx7200
-Message-Id: <1259938375-27499-9-git-send-email-francesco.virlinzi@st.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 24 Dec 2009 08:47:30 +0000
+Subject: [PATCH] sh: mach-ecovec24: update defconfig for 2.6.33
+Message-Id: <utyvgvjvh.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds the standby support to the stx7200
-The memstandby currently doesn't work
 
-Signed-off-by: Francesco Virlinzi <francesco.virlinzi@st.com>
+This patch update normal/romImage defonfig for EcoVec 
+
+normal ecovec24:
+ - add mt9t112/tw9910 soc-camera
+ - remove legacy PTY
+ - CONFIG_PMB_ENABLE is not used
+
+romImage ecovec24:
+ - remove legacy PTY
+ - CONFIG_PMB_ENABLE
+
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- arch/sh/kernel/cpu/sh4/clock-stx7200.c |   19 ++--
- arch/sh/kernel/pm/suspend-stx7200.c    |  178 ++++++++++++++++++++++++++++++++
- arch/sh/kernel/pm/suspend-stx7200_t.S  |   84 +++++++++++++++
- include/linux/stm/stx7200.h            |   16 +++
- 4 files changed, 289 insertions(+), 8 deletions(-)
- create mode 100644 arch/sh/kernel/pm/suspend-stx7200.c
- create mode 100644 arch/sh/kernel/pm/suspend-stx7200_t.S
+ arch/sh/configs/ecovec24-romimage_defconfig |   85 +++++++++++++++++-----
+ arch/sh/configs/ecovec24_defconfig          |  102 ++++++++++++++++++++-------
+ 2 files changed, 142 insertions(+), 45 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4/clock-stx7200.c b/arch/sh/kernel/cpu/sh4/clock-stx7200.c
-index 4aed957..7c2b289 100644
---- a/arch/sh/kernel/cpu/sh4/clock-stx7200.c
-+++ b/arch/sh/kernel/cpu/sh4/clock-stx7200.c
-@@ -12,29 +12,32 @@
- #include <linux/errno.h>
- #include <linux/delay.h>
- #include <linux/pm.h>
-+#include <linux/stm/stx7200.h>
- #include <asm/clock.h>
- #include <asm/freq.h>
- #include <asm/io.h>
+diff --git a/arch/sh/configs/ecovec24-romimage_defconfig b/arch/sh/configs/ecovec24-romimage_defconfig
+index 4687470..bc4e6b5 100644
+--- a/arch/sh/configs/ecovec24-romimage_defconfig
++++ b/arch/sh/configs/ecovec24-romimage_defconfig
+@@ -1,7 +1,7 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux kernel version: 2.6.31
+-# Thu Sep 24 17:56:41 2009
++# Linux kernel version: 2.6.33-rc1
++# Thu Dec 24 16:11:57 2009
+ #
+ CONFIG_SUPERH=y
+ CONFIG_SUPERH32=y
+@@ -20,6 +20,7 @@ CONFIG_GENERIC_TIME=y
+ CONFIG_GENERIC_CLOCKEVENTS=y
+ CONFIG_ARCH_SUSPEND_POSSIBLE=y
+ CONFIG_ARCH_HIBERNATION_POSSIBLE=y
++CONFIG_SYS_SUPPORTS_HUGETLBFS=y
+ CONFIG_SYS_SUPPORTS_CMT=y
+ CONFIG_SYS_SUPPORTS_TMU=y
+ CONFIG_STACKTRACE_SUPPORT=y
+@@ -30,6 +31,7 @@ CONFIG_HAVE_LATENCYTOP_SUPPORT=y
+ CONFIG_ARCH_NO_VIRT_TO_BUS=y
+ CONFIG_ARCH_HAS_DEFAULT_IDLE=y
+ CONFIG_ARCH_HAS_CPU_IDLE_WAIT=y
++CONFIG_DMA_NONCOHERENT=y
+ CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
+ CONFIG_CONSTRUCTORS=y
  
--#include "./clock-common.h"
--#include "./soc-stx7200.h"
-+#include "clock-common.h"
-+
-+#define SYSACLKIN	27000000
-+#define SYSBCLKIN	30000000
+@@ -61,6 +63,7 @@ CONFIG_BSD_PROCESS_ACCT=y
+ #
+ CONFIG_TREE_RCU=y
+ # CONFIG_TREE_PREEMPT_RCU is not set
++# CONFIG_TINY_RCU is not set
+ # CONFIG_RCU_TRACE is not set
+ CONFIG_RCU_FANOUT2
+ # CONFIG_RCU_FANOUT_EXACT is not set
+@@ -103,6 +106,7 @@ CONFIG_EVENTFD=y
+ CONFIG_SHMEM=y
+ CONFIG_AIO=y
+ CONFIG_HAVE_PERF_EVENTS=y
++CONFIG_PERF_USE_VMALLOC=y
  
- /* Alternate clock for clockgen A, B and C respectivly */
- /* B & C come from SYSCLKINALT pin, SYSCLKINALT2 from PIO2[2] */
- unsigned long sysclkinalt[3] = { 0,0,0};
+ #
+ # Kernel Performance Events And Counters
+@@ -120,13 +124,13 @@ CONFIG_HAVE_IOREMAP_PROT=y
+ CONFIG_HAVE_KPROBES=y
+ CONFIG_HAVE_KRETPROBES=y
+ CONFIG_HAVE_ARCH_TRACEHOOK=y
++CONFIG_HAVE_DMA_ATTRS=y
+ CONFIG_HAVE_CLK=y
+ CONFIG_HAVE_DMA_API_DEBUG=y
  
--#define CLOCKGEN_PLL_CFG(pll)	(CLOCKGEN_BASE_ADDR + ((pll)*0x4))
-+#define CLOCKGEN_PLL_CFG(pll)	(CLOCKGENA_BASE_ADDR + ((pll)*0x4))
- #define   CLOCKGEN_PLL_CFG_BYPASS		(1<<20)
--#define CLOCKGEN_MUX_CFG	(CLOCKGEN_BASE_ADDR + 0x0c)
-+#define CLOCKGEN_MUX_CFG	(CLOCKGENA_BASE_ADDR + 0x0c)
- #define   CLOCKGEN_MUX_CFG_SYSCLK_SRC		(1<<0)
- #define   CLOCKGEN_MUX_CFG_PLL_SRC(pll)		(1<<((pll)+1))
- #define   CLOCKGEN_MUX_CFG_DIV_SRC(pll)		(1<<((pll)+4))
- #define   CLOCKGEN_MUX_CFG_FDMA_SRC(fdma)	(1<<((fdma)+7))
- #define   CLOCKGEN_MUX_CFG_IC_REG_SRC		(1<<9)
--#define CLOCKGEN_DIV_CFG	(CLOCKGEN_BASE_ADDR + 0x10)
--#define CLOCKGEN_DIV2_CFG	(CLOCKGEN_BASE_ADDR + 0x14)
--#define CLOCKGEN_CLKOBS_MUX_CFG	(CLOCKGEN_BASE_ADDR + 0x18)
--#define CLOCKGEN_POWER_CFG	(CLOCKGEN_BASE_ADDR + 0x1c)
-+#define CLOCKGEN_DIV_CFG	(CLOCKGENA_BASE_ADDR + 0x10)
-+#define CLOCKGEN_DIV2_CFG	(CLOCKGENA_BASE_ADDR + 0x14)
-+#define CLOCKGEN_CLKOBS_MUX_CFG	(CLOCKGENA_BASE_ADDR + 0x18)
-+#define CLOCKGEN_POWER_CFG	(CLOCKGENA_BASE_ADDR + 0x1c)
+ #
+ # GCOV-based kernel profiling
+ #
+-# CONFIG_GCOV_KERNEL is not set
+ # CONFIG_SLOW_WORK is not set
+ CONFIG_HAVE_GENERIC_DMA_COHERENT=y
+ CONFIG_SLABINFO=y
+@@ -142,14 +146,41 @@ CONFIG_BLOCK=y
+ # IO Schedulers
+ #
+ CONFIG_IOSCHED_NOOP=y
+-CONFIG_IOSCHED_AS=y
+ CONFIG_IOSCHED_DEADLINE=y
+ CONFIG_IOSCHED_CFQ=y
+-# CONFIG_DEFAULT_AS is not set
+ # CONFIG_DEFAULT_DEADLINE is not set
+ CONFIG_DEFAULT_CFQ=y
+ # CONFIG_DEFAULT_NOOP is not set
+ CONFIG_DEFAULT_IOSCHED="cfq"
++# CONFIG_INLINE_SPIN_TRYLOCK is not set
++# CONFIG_INLINE_SPIN_TRYLOCK_BH is not set
++# CONFIG_INLINE_SPIN_LOCK is not set
++# CONFIG_INLINE_SPIN_LOCK_BH is not set
++# CONFIG_INLINE_SPIN_LOCK_IRQ is not set
++# CONFIG_INLINE_SPIN_LOCK_IRQSAVE is not set
++CONFIG_INLINE_SPIN_UNLOCK=y
++# CONFIG_INLINE_SPIN_UNLOCK_BH is not set
++CONFIG_INLINE_SPIN_UNLOCK_IRQ=y
++# CONFIG_INLINE_SPIN_UNLOCK_IRQRESTORE is not set
++# CONFIG_INLINE_READ_TRYLOCK is not set
++# CONFIG_INLINE_READ_LOCK is not set
++# CONFIG_INLINE_READ_LOCK_BH is not set
++# CONFIG_INLINE_READ_LOCK_IRQ is not set
++# CONFIG_INLINE_READ_LOCK_IRQSAVE is not set
++CONFIG_INLINE_READ_UNLOCK=y
++# CONFIG_INLINE_READ_UNLOCK_BH is not set
++CONFIG_INLINE_READ_UNLOCK_IRQ=y
++# CONFIG_INLINE_READ_UNLOCK_IRQRESTORE is not set
++# CONFIG_INLINE_WRITE_TRYLOCK is not set
++# CONFIG_INLINE_WRITE_LOCK is not set
++# CONFIG_INLINE_WRITE_LOCK_BH is not set
++# CONFIG_INLINE_WRITE_LOCK_IRQ is not set
++# CONFIG_INLINE_WRITE_LOCK_IRQSAVE is not set
++CONFIG_INLINE_WRITE_UNLOCK=y
++# CONFIG_INLINE_WRITE_UNLOCK_BH is not set
++CONFIG_INLINE_WRITE_UNLOCK_IRQ=y
++# CONFIG_INLINE_WRITE_UNLOCK_IRQRESTORE is not set
++# CONFIG_MUTEX_SPIN_ON_OWNER is not set
+ # CONFIG_FREEZER is not set
  
- #define CLOCKGENB_PLL0_CFG	(CLOCKGENB_BASE_ADDR + 0x3c)
- #define CLOCKGENB_IN_MUX_CFG	(CLOCKGENB_BASE_ADDR + 0x44)
-diff --git a/arch/sh/kernel/pm/suspend-stx7200.c b/arch/sh/kernel/pm/suspend-stx7200.c
-new file mode 100644
-index 0000000..d31c67c
---- /dev/null
-+++ b/arch/sh/kernel/pm/suspend-stx7200.c
-@@ -0,0 +1,178 @@
-+/*
-+ * -------------------------------------------------------------------------
-+ * <linux_root>/arch/sh/kernel/pm/suspend-stx7200.c
-+ * -------------------------------------------------------------------------
-+ * Copyright (C) 2009  STMicroelectronics
-+ * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
-+ *
-+ * May be copied or modified under the terms of the GNU General Public
-+ * License V.2 ONLY.  See linux/COPYING for more information.
-+ *
-+ * ------------------------------------------------------------------------- */
-+
-+#include <linux/init.h>
-+#include <linux/suspend.h>
-+#include <linux/errno.h>
-+#include <linux/time.h>
-+#include <linux/delay.h>
-+#include <linux/irqflags.h>
-+#include <linux/stm/sysconf.h>
-+#include <linux/stm/stx7200.h>
-+#include <linux/io.h>
-+
-+#include <asm/system.h>
-+#include <asm/irq-ilc.h>
-+
-+#include "stm_suspend.h"
-+
-+#define SYSCONF(x)	(SYSCONF_BASE_ADDR + 0x100 + (x) * 0x4)
-+#define SYSSTA(x)	(SYSCONF_BASE_ADDR + (x) * 0x4)
-+#define CGA	CLOCKGENA_BASE_ADDR
-+#define CGB	CLOCKGENB_BASE_ADDR
-+
-+#define CPRC		0xffc00000
-+#define  CPRC_STBCR	(CPRC + 0x04)
-+#define  CPRC_STBCR2	(CPRC + 0x10)
-+/* *************************
-+ * STANDBY INSTRUCTION TABLE
-+ * *************************
-+ */
-+static unsigned long stx7200_standby_table[] __cacheline_aligned = {
-+/* ClockGen_B.PLL management */
-+OR32(CGB + CLKB_PLL0_CFG, CLKB_PLL0_BYPASS),	/* enable bypass */
-+OR32(CGB + CLKB_PWR_CFG, CLKB_PLL0_OFF),	/* turn off */
-+/* Down scale the GenA.Pll0 and GenA.Pll2*/
-+OR32(CGA + CLKA_PLL(0), CLKA_PLL_BYPASS),
-+OR32(CGA + CLKA_PLL(2), CLKA_PLL_BYPASS),
-+OR32(CGA + CLKA_PWR_CFG, 5),
-+
-+END_MARKER,
-+
-+UPDATE32(CGA + CLKA_PWR_CFG, ~5, 0),
-+WHILE_NE32(CGA + CLKA_PLL(0), CLKA_PLL_LOCK, CLKA_PLL_LOCK),
-+WHILE_NE32(CGA + CLKA_PLL(2), CLKA_PLL_LOCK, CLKA_PLL_LOCK),
-+
-+UPDATE32(CGA + CLKA_PLL(0), ~CLKA_PLL_BYPASS, 0),
-+UPDATE32(CGA + CLKA_PLL(2), ~CLKA_PLL_BYPASS, 0),
-+
-+/*
-+ * Reprogram the ClockGen_B.PLL
-+ */
-+UPDATE32(CGB + CLKB_PWR_CFG, ~CLKB_PLL0_OFF, 0),	/* turn on */
-+POKE32(CGB + CLKB_PLL0_CFG, 0x2803 | CLKB_PLL0_BYPASS),
-+WHILE_NE32(CGB + CLKB_PLL0_CFG, CLKB_PLL0_LOCK, CLKB_PLL0_LOCK),
-+UPDATE32(CGB + CLKB_PLL0_CFG, ~CLKB_PLL0_BYPASS, 0),
-+END_MARKER
-+};
-+
-+/* *********************
-+ * MEM INSTRUCTION TABLE
-+ * *********************
-+ */
-+
-+static unsigned long stx7200_mem_table[] __cacheline_aligned = {
-+
-+/* 1. Enables the DDR self refresh mode */
-+OR32(SYSCONF(38), 1 << 20),
-+WHILE_NE32(SYSSTA(4), 1, 1),
-+OR32(SYSCONF(39), 1 << 20),
-+WHILE_NE32(SYSSTA(6), 1, 1),
-+
-+DELAY(10),
-+
-+/* ClockGen_B.PLL management */
-+OR32(CGB + CLKB_PLL0_CFG, CLKB_PLL0_BYPASS),	/* enable bypass */
-+OR32(CGB + CLKB_PWR_CFG, CLKB_PLL0_OFF),	/* turn off */
-+#if 0
-+UPDATE32(SYSCONF(11), ~1, 0),
-+UPDATE32(SYSCONF(15), ~1, 0),
-+
-+OR32(SYSCONF(11), 1 << 12),
-+#endif
-+/* 2. Down scale the GenA.Pll0, GenA.Pll1 and GenA.Pll2*/
-+OR32(CGA + CLKA_PLL(0), CLKA_PLL_BYPASS),
-+OR32(CGA + CLKA_PLL(1), CLKA_PLL_BYPASS),
-+OR32(CGA + CLKA_PLL(2), CLKA_PLL_BYPASS),
-+
-+OR32(CGA + CLKA_PWR_CFG, 7),
-+OR32(SYSCONF(22), 1), /* global power down */
-+POKE8(CPRC_STBCR, 0x80),
-+END_MARKER,
-+/*
-+ * Reprogram the ClockGen_B.PLL
-+ */
-+UPDATE32(CGB + CLKB_PWR_CFG, ~CLKB_PLL0_OFF, 0),	/* turn on */
-+POKE32(CGB + CLKB_PLL0_CFG, 0x2803 | CLKB_PLL0_BYPASS),
-+WHILE_NE32(CGB + CLKB_PLL0_CFG, CLKB_PLL0_LOCK, CLKB_PLL0_LOCK),
-+UPDATE32(CGB + CLKB_PLL0_CFG, ~CLKB_PLL0_BYPASS, 0),
-+/*
-+ * Turn on ClockGen_A.PLLs
-+ */
-+UPDATE32(CGA + CLKA_PWR_CFG, ~7, 0),
-+WHILE_NE32(CGA + CLKA_PLL(0), CLKA_PLL_LOCK, CLKA_PLL_LOCK),
-+WHILE_NE32(CGA + CLKA_PLL(1), CLKA_PLL_LOCK, CLKA_PLL_LOCK),
-+WHILE_NE32(CGA + CLKA_PLL(2), CLKA_PLL_LOCK, CLKA_PLL_LOCK),
-+
-+UPDATE32(CGA + CLKA_PLL(0), ~CLKA_PLL_BYPASS, 0),
-+UPDATE32(CGA + CLKA_PLL(1), ~CLKA_PLL_BYPASS, 0),
-+UPDATE32(CGA + CLKA_PLL(2), ~CLKA_PLL_BYPASS, 0),
-+
-+DELAY(100),
-+UPDATE32(SYSCONF(38), ~(1 << 20), 0),
-+WHILE_NE32(SYSSTA(4), 1, 0),
-+UPDATE32(SYSCONF(39), ~(1 << 20), 0),
-+WHILE_NE32(SYSSTA(6), 1, 0),
-+
-+DELAY(100),
-+END_MARKER,
-+};
-+
-+static int stx7200_evttoirq(unsigned long evt)
-+{
-+	return ((evt < 0x400) ? ilc2irq(evt) : evt2irq(evt));
-+}
-+
-+static struct stm_suspend_t soc_suspend __cacheline_aligned = {
-+	.evt_to_irq = stx7200_evttoirq,
-+
-+	.stby_tbl = (unsigned long)stx7200_standby_table,
-+	.stby_size = DIV_ROUND_UP(ARRAY_SIZE(stx7200_standby_table) *
-+			sizeof(long), L1_CACHE_BYTES),
-+
-+	.mem_tbl = (unsigned long)stx7200_mem_table,
-+	.mem_size = DIV_ROUND_UP(ARRAY_SIZE(stx7200_mem_table) * sizeof(long),
-+			L1_CACHE_BYTES),
-+};
-+
-+static int __init stx7200_suspend_setup(void)
-+{
-+	struct sysconf_field *sc[4];
-+	int i;
-+
-+	sc[0] = sysconf_claim(SYS_STA, 4, 0, 0, "pm");
-+	sc[1] = sysconf_claim(SYS_STA, 6, 0, 0, "pm");
-+	sc[2] = sysconf_claim(SYS_CFG, 38, 20, 20, "pm");
-+	sc[3] = sysconf_claim(SYS_CFG, 39, 20, 20, "pm");
-+
-+#ifdef CONFIG_PM_DEBUG
-+	ctrl_outl(0xc, CLKA_CLKOUT_SEL +
-+		CLOCKGENA_BASE_ADDR); /* sh4:2 routed on SYSCLK_OUT */
-+#endif
-+
-+	for (i = 0; i < 4; ++i)
-+		if (!sc[i])
-+			goto error;
-+
-+	return stm_suspend_register(&soc_suspend);
-+
-+error:
-+	printk(KERN_ERR "[STM][PM]: Some sysconf is already required\n");
-+	printk(KERN_ERR "[STM][PM]: the PM will not be registered\n");
-+	for (i = 0; i < 4; ++i)
-+		if (sc[i])
-+			sysconf_release(sc[i]);
-+
-+	return -EINVAL;
-+}
-+
-+late_initcall(stx7200_suspend_setup);
-diff --git a/arch/sh/kernel/pm/suspend-stx7200_t.S b/arch/sh/kernel/pm/suspend-stx7200_t.S
-new file mode 100644
-index 0000000..12e4093
---- /dev/null
-+++ b/arch/sh/kernel/pm/suspend-stx7200_t.S
-@@ -0,0 +1,84 @@
-+/*
-+ * -------------------------------------------------------------------------
-+ * <linux_root>/arch/sh/kernel/cpu/sh4/suspend-stx7200_t.S
-+ * -------------------------------------------------------------------------
-+ * Copyright (C) 2009  STMicroelectronics
-+ * Author: Francesco M. Virlinzi  <francesco.virlinzi@st.com>
-+ *
-+ * May be copied or modified under the terms of the GNU General Public
-+ * License V.2 ONLY.  See linux/COPYING for more information.
-+ *
-+ * ------------------------------------------------------------------------- */
-+
-+#include "soc-stx7200.h"
-+#include "stm_suspend.h"
-+
-+#define CGA	CLOCKGENA_BASE_ADDR
-+
-+.text
-+.balign 32
-+.global stx7200_mem_table
-+stx7200_mem_table:
-+
-+!OR32(SYSCONF(38), 1 << 20)	! DDR in self refresh
-+!WHILE_NE32(SYSSTA(4), 1, 1)
-+
-+!OR32(SYSCONF(39), 1 << 20)	! DDR in self refresh
-+!WHILE_NE32(SYSSTA(6), 1, 1)
-+
-+!UPDATE32(SYSCONF(11), ~1 , 0x0)
-+!UPDATE32(SYSCONF(15), ~1 , 0x0)
-+
-+!OR32(SYSCONF(11), 1 << 12)	! Turn-off LMI.PLL
-+!DELAY(200)
-+
-+OR32(CGA + CLKA_PLL(0), CLKA_PLL_BYPASS)
-+!OR32(CGA + CLKA_PLL(1), CLKA_PLL_BYPASS)
-+OR32(CGA + CLKA_PLL(2), CLKA_PLL_BYPASS)
-+
-+OR32(CGA + CLKA_PWR_CFG, PLL_PWR_OFF(0) | PLL_PWR_OFF(2))
-+END_MARKER
-+
-+UPDATE32(CGA + CLKA_PWR_CFG, ~(PLL_PWR_OFF(0) | PLL_PWR_OFF(2)), 0x0)
-+
-+WHILE_NE32(CGA + CLKA_PLL(0), CLKA_PLL_LOCK, CLKA_PLL_LOCK)
-+!WHILE_NE32(CGA + CLKA_PLL(1), CLKA_PLL_LOCK, CLKA_PLL_LOCK)
-+WHILE_NE32(CGA + CLKA_PLL(2), CLKA_PLL_LOCK, CLKA_PLL_LOCK)
-+
-+UPDATE32(CGA + CLKA_PLL(0), ~CLKA_PLL_BYPASS, 0x0)
-+!UPDATE32(CGA + CLKA_PLL(1), ~CLKA_PLL_BYPASS, 0x0)
-+UPDATE32(CGA + CLKA_PLL(2), ~CLKA_PLL_BYPASS, 0x0)
-+!DELAY(200)
-+
-+!.long OP_ELSE; 1: ; .long 2f - .
-+!UPDATE32(SYSCONF(11), ~(1 << 12), 0x0)	! Turn-on LMI.PLL
-+!ENDIF(2)
-+!.long OP_IF_EQ32, SYSCONF(11), (1 << 12), 0x0, (1b - .)
-+
-+!DELAY(200)
-+!.long OP_ELSE; 1: ; .long 2f - .
-+!OR32(SYSCONF(11), 1)
-+!ENDIF(2)
-+!.long OP_IF_EQ32, SYSCONF(11), 1, 1, (1b - .)
-+
-+!.long OP_ELSE; 1: ; .long 2f - .
-+!OR32(SYSCONF(15), 1)
-+!ENDIF(2)
-+!.long OP_IF_EQ32, SYSCONF(15), 1, 1, (1b - .)
-+!DELAY(200)
-+
-+!.long OP_ELSE; 1: ; .long 2f - .
-+!ENDIF(2)
-+!UPDATE32(SYSCONF(38), ~(1 << 20), 0x0)
-+!.long OP_IF_EQ32, SYSCONF(38), (1 << 20), 0x0, (1b - .)
-+!WHILE_NE32(SYSSTA(4), 1, 0x0)
-+
-+!UPDATE32(SYSCONF(39), ~(1 << 20), 0x0)
-+!WHILE_NE32(SYSSTA(6), 1, 0x0)
-+
-+DELAY(500)
-+END_MARKER
-+
-+.global stx7200_mem_tbl_size
-+stx7200_mem_tbl_size:
-+.long . - stx7200_mem_table
-diff --git a/include/linux/stm/stx7200.h b/include/linux/stm/stx7200.h
-index d2dabfc..2ea37d5 100644
---- a/include/linux/stm/stx7200.h
-+++ b/include/linux/stm/stx7200.h
-@@ -91,5 +91,21 @@ struct stx7200_audio_config {
- };
- void stx7200_configure_audio(struct stx7200_audio_config *config);
+ #
+@@ -205,6 +236,7 @@ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_MEMORY_START=0x08000000
+ CONFIG_MEMORY_SIZE=0x10000000
+ CONFIG_29BIT=y
++# CONFIG_PMB_ENABLE is not set
+ # CONFIG_X2TLB is not set
+ CONFIG_VSYSCALL=y
+ CONFIG_ARCH_FLATMEM_ENABLE=y
+@@ -213,6 +245,8 @@ CONFIG_ARCH_SPARSEMEM_DEFAULT=y
+ CONFIG_MAX_ACTIVE_REGIONS=1
+ CONFIG_ARCH_POPULATES_NODE_MAP=y
+ CONFIG_ARCH_SELECT_MEMORY_MODEL=y
++CONFIG_PGTABLE_LEVELS_2=y
++# CONFIG_PGTABLE_LEVELS_3 is not set
+ CONFIG_PAGE_SIZE_4KB=y
+ # CONFIG_PAGE_SIZE_8KB is not set
+ # CONFIG_PAGE_SIZE_16KB is not set
+@@ -229,8 +263,6 @@ CONFIG_SPLIT_PTLOCK_CPUS=4
+ # CONFIG_PHYS_ADDR_T_64BIT is not set
+ CONFIG_ZONE_DMA_FLAG=0
+ CONFIG_NR_QUICK=2
+-CONFIG_HAVE_MLOCK=y
+-CONFIG_HAVE_MLOCKED_PAGE_BIT=y
+ # CONFIG_KSM is not set
+ CONFIG_DEFAULT_MMAP_MIN_ADDR@96
  
-+#define SYSCONF_BASE_ADDR		0xFD704000
-+#define CLOCKGENA_BASE_ADDR		0xFD700000      /* Clockgen A */
-+#define CLOCKGENB_BASE_ADDR		0xFD701000      /* Clockgen B */
+@@ -432,6 +464,10 @@ CONFIG_EXTRA_FIRMWARE=""
+ CONFIG_BLK_DEV=y
+ # CONFIG_BLK_DEV_COW_COMMON is not set
+ # CONFIG_BLK_DEV_LOOP is not set
 +
-+#define CLKA_PLL(x)			(4 * (x))
-+#define   CLKA_PLL_BYPASS		(1 << 20)
-+#define   CLKA_PLL_LOCK			(1 << 31)
-+#define CLKA_CLKOUT_SEL			0x18
-+#define CLKA_PWR_CFG			0x1C
-+
-+#define CLKB_PLL0_CFG			0x3C
-+#define   CLKB_PLL0_LOCK		(1 << 31)
-+#define   CLKB_PLL0_BYPASS		(1 << 20)
-+#define   CLKB_PLL0_LOCK                (1 << 31)
-+#define CLKB_PWR_CFG			0x58
-+#define   CLKB_PLL0_OFF			(1 << 15)
++#
++# DRBD disabled because PROC_FS, INET or CONNECTOR not selected
++#
+ # CONFIG_BLK_DEV_NBD is not set
+ # CONFIG_BLK_DEV_UB is not set
+ # CONFIG_BLK_DEV_RAM is not set
+@@ -526,11 +562,10 @@ CONFIG_SH_ETH=y
+ # CONFIG_IBM_NEW_EMAC_MAL_COMMON_ERR is not set
+ # CONFIG_B44 is not set
+ # CONFIG_KS8842 is not set
++# CONFIG_KS8851_MLL is not set
+ # CONFIG_NETDEV_1000 is not set
+ # CONFIG_NETDEV_10000 is not set
+-CONFIG_WLAN=y
+-# CONFIG_WLAN_PRE80211 is not set
+-# CONFIG_WLAN_80211 is not set
++# CONFIG_WLAN is not set
  
- #endif
+ #
+ # Enable WiMAX (Networking options) to see the WiMAX drivers
+@@ -559,6 +594,7 @@ CONFIG_WLAN=y
+ CONFIG_INPUT=y
+ # CONFIG_INPUT_FF_MEMLESS is not set
+ # CONFIG_INPUT_POLLDEV is not set
++# CONFIG_INPUT_SPARSEKMAP is not set
+ 
+ #
+ # Userland interfaces
+@@ -610,8 +646,7 @@ CONFIG_SERIAL_CORE=y
+ CONFIG_SERIAL_CORE_CONSOLE=y
+ CONFIG_UNIX98_PTYS=y
+ # CONFIG_DEVPTS_MULTIPLE_INSTANCES is not set
+-CONFIG_LEGACY_PTYS=y
+-CONFIG_LEGACY_PTY_COUNT%6
++# CONFIG_LEGACY_PTYS is not set
+ # CONFIG_IPMI_HANDLER is not set
+ CONFIG_HW_RANDOM=y
+ # CONFIG_HW_RANDOM_TIMERIOMEM is not set
+@@ -652,7 +687,6 @@ CONFIG_I2C_SH_MOBILE=y
+ #
+ # Miscellaneous I2C Chip support
+ #
+-# CONFIG_DS1682 is not set
+ # CONFIG_SENSORS_TSL2550 is not set
+ # CONFIG_I2C_DEBUG_CORE is not set
+ # CONFIG_I2C_DEBUG_ALGO is not set
+@@ -707,16 +741,19 @@ CONFIG_SSB_POSSIBLE=y
+ #
+ # CONFIG_MFD_CORE is not set
+ # CONFIG_MFD_SM501 is not set
++# CONFIG_MFD_SH_MOBILE_SDHI is not set
+ # CONFIG_HTC_PASIC3 is not set
+ # CONFIG_TPS65010 is not set
+ # CONFIG_TWL4030_CORE is not set
+ # CONFIG_MFD_TMIO is not set
+ # CONFIG_PMIC_DA903X is not set
++# CONFIG_PMIC_ADP5520 is not set
+ # CONFIG_MFD_WM8400 is not set
+ # CONFIG_MFD_WM831X is not set
+ # CONFIG_MFD_WM8350_I2C is not set
+ # CONFIG_MFD_PCF50633 is not set
+ # CONFIG_AB3100_CORE is not set
++# CONFIG_MFD_88PM8607 is not set
+ # CONFIG_REGULATOR is not set
+ # CONFIG_MEDIA_SUPPORT is not set
+ 
+@@ -865,8 +902,14 @@ CONFIG_RTC_LIB=y
+ CONFIG_EXT2_FS=y
+ # CONFIG_EXT2_FS_XATTR is not set
+ # CONFIG_EXT2_FS_XIP is not set
+-# CONFIG_EXT3_FS is not set
++CONFIG_EXT3_FS=y
++# CONFIG_EXT3_DEFAULTS_TO_ORDERED is not set
++CONFIG_EXT3_FS_XATTR=y
++# CONFIG_EXT3_FS_POSIX_ACL is not set
++# CONFIG_EXT3_FS_SECURITY is not set
+ # CONFIG_EXT4_FS is not set
++CONFIG_JBD=y
++CONFIG_FS_MBCACHE=y
+ # CONFIG_REISERFS_FS is not set
+ # CONFIG_JFS_FS is not set
+ # CONFIG_FS_POSIX_ACL is not set
+@@ -970,16 +1013,16 @@ CONFIG_NLS_DEFAULT="iso8859-1"
+ #
+ CONFIG_TRACE_IRQFLAGS_SUPPORT=y
+ # CONFIG_PRINTK_TIME is not set
+-CONFIG_ENABLE_WARN_DEPRECATED=y
++# CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ CONFIG_FRAME_WARN24
+ # CONFIG_MAGIC_SYSRQ is not set
+ # CONFIG_STRIP_ASM_SYMS is not set
+ # CONFIG_UNUSED_SYMBOLS is not set
+-CONFIG_DEBUG_FS=y
++# CONFIG_DEBUG_FS is not set
+ # CONFIG_HEADERS_CHECK is not set
+ # CONFIG_DEBUG_KERNEL is not set
+-# CONFIG_DEBUG_BUGVERBOSE is not set
++CONFIG_DEBUG_BUGVERBOSE=y
+ # CONFIG_DEBUG_MEMORY_INIT is not set
+ # CONFIG_RCU_CPU_STALL_DETECTOR is not set
+ # CONFIG_LATENCYTOP is not set
+@@ -992,12 +1035,10 @@ CONFIG_HAVE_FTRACE_MCOUNT_RECORD=y
+ CONFIG_HAVE_SYSCALL_TRACEPOINTS=y
+ CONFIG_TRACING_SUPPORT=y
+ # CONFIG_FTRACE is not set
+-# CONFIG_DYNAMIC_DEBUG is not set
+ # CONFIG_DMA_API_DEBUG is not set
+ # CONFIG_SAMPLES is not set
+ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_SH_STANDARD_BIOS is not set
+-# CONFIG_EARLY_SCIF_CONSOLE is not set
+ # CONFIG_DWARF_UNWINDER is not set
+ 
+ #
+@@ -1006,7 +1047,11 @@ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_KEYS is not set
+ # CONFIG_SECURITY is not set
+ # CONFIG_SECURITYFS is not set
+-# CONFIG_SECURITY_FILE_CAPABILITIES is not set
++# CONFIG_DEFAULT_SECURITY_SELINUX is not set
++# CONFIG_DEFAULT_SECURITY_SMACK is not set
++# CONFIG_DEFAULT_SECURITY_TOMOYO is not set
++CONFIG_DEFAULT_SECURITY_DAC=y
++CONFIG_DEFAULT_SECURITY=""
+ # CONFIG_CRYPTO is not set
+ # CONFIG_BINARY_PRINTF is not set
+ 
+diff --git a/arch/sh/configs/ecovec24_defconfig b/arch/sh/configs/ecovec24_defconfig
+index cad9184..ef183ac 100644
+--- a/arch/sh/configs/ecovec24_defconfig
++++ b/arch/sh/configs/ecovec24_defconfig
+@@ -1,7 +1,7 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux kernel version: 2.6.31
+-# Thu Sep 24 17:45:39 2009
++# Linux kernel version: 2.6.33-rc1
++# Thu Dec 24 13:25:46 2009
+ #
+ CONFIG_SUPERH=y
+ CONFIG_SUPERH32=y
+@@ -20,6 +20,7 @@ CONFIG_GENERIC_TIME=y
+ CONFIG_GENERIC_CLOCKEVENTS=y
+ CONFIG_ARCH_SUSPEND_POSSIBLE=y
+ CONFIG_ARCH_HIBERNATION_POSSIBLE=y
++CONFIG_SYS_SUPPORTS_HUGETLBFS=y
+ CONFIG_SYS_SUPPORTS_CMT=y
+ CONFIG_SYS_SUPPORTS_TMU=y
+ CONFIG_STACKTRACE_SUPPORT=y
+@@ -30,6 +31,7 @@ CONFIG_HAVE_LATENCYTOP_SUPPORT=y
+ CONFIG_ARCH_NO_VIRT_TO_BUS=y
+ CONFIG_ARCH_HAS_DEFAULT_IDLE=y
+ CONFIG_ARCH_HAS_CPU_IDLE_WAIT=y
++CONFIG_DMA_NONCOHERENT=y
+ CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
+ CONFIG_CONSTRUCTORS=y
+ 
+@@ -62,6 +64,7 @@ CONFIG_BSD_PROCESS_ACCT=y
+ #
+ CONFIG_TREE_RCU=y
+ # CONFIG_TREE_PREEMPT_RCU is not set
++# CONFIG_TINY_RCU is not set
+ # CONFIG_RCU_TRACE is not set
+ CONFIG_RCU_FANOUT2
+ # CONFIG_RCU_FANOUT_EXACT is not set
+@@ -99,6 +102,7 @@ CONFIG_EVENTFD=y
+ CONFIG_SHMEM=y
+ CONFIG_AIO=y
+ CONFIG_HAVE_PERF_EVENTS=y
++CONFIG_PERF_USE_VMALLOC=y
+ 
+ #
+ # Kernel Performance Events And Counters
+@@ -116,6 +120,7 @@ CONFIG_HAVE_IOREMAP_PROT=y
+ CONFIG_HAVE_KPROBES=y
+ CONFIG_HAVE_KRETPROBES=y
+ CONFIG_HAVE_ARCH_TRACEHOOK=y
++CONFIG_HAVE_DMA_ATTRS=y
+ CONFIG_HAVE_CLK=y
+ CONFIG_HAVE_DMA_API_DEBUG=y
+ 
+@@ -143,14 +148,41 @@ CONFIG_LBDAF=y
+ # IO Schedulers
+ #
+ CONFIG_IOSCHED_NOOP=y
+-CONFIG_IOSCHED_AS=y
+ CONFIG_IOSCHED_DEADLINE=y
+ CONFIG_IOSCHED_CFQ=y
+-# CONFIG_DEFAULT_AS is not set
+ # CONFIG_DEFAULT_DEADLINE is not set
+ CONFIG_DEFAULT_CFQ=y
+ # CONFIG_DEFAULT_NOOP is not set
+ CONFIG_DEFAULT_IOSCHED="cfq"
++# CONFIG_INLINE_SPIN_TRYLOCK is not set
++# CONFIG_INLINE_SPIN_TRYLOCK_BH is not set
++# CONFIG_INLINE_SPIN_LOCK is not set
++# CONFIG_INLINE_SPIN_LOCK_BH is not set
++# CONFIG_INLINE_SPIN_LOCK_IRQ is not set
++# CONFIG_INLINE_SPIN_LOCK_IRQSAVE is not set
++# CONFIG_INLINE_SPIN_UNLOCK is not set
++# CONFIG_INLINE_SPIN_UNLOCK_BH is not set
++# CONFIG_INLINE_SPIN_UNLOCK_IRQ is not set
++# CONFIG_INLINE_SPIN_UNLOCK_IRQRESTORE is not set
++# CONFIG_INLINE_READ_TRYLOCK is not set
++# CONFIG_INLINE_READ_LOCK is not set
++# CONFIG_INLINE_READ_LOCK_BH is not set
++# CONFIG_INLINE_READ_LOCK_IRQ is not set
++# CONFIG_INLINE_READ_LOCK_IRQSAVE is not set
++# CONFIG_INLINE_READ_UNLOCK is not set
++# CONFIG_INLINE_READ_UNLOCK_BH is not set
++# CONFIG_INLINE_READ_UNLOCK_IRQ is not set
++# CONFIG_INLINE_READ_UNLOCK_IRQRESTORE is not set
++# CONFIG_INLINE_WRITE_TRYLOCK is not set
++# CONFIG_INLINE_WRITE_LOCK is not set
++# CONFIG_INLINE_WRITE_LOCK_BH is not set
++# CONFIG_INLINE_WRITE_LOCK_IRQ is not set
++# CONFIG_INLINE_WRITE_LOCK_IRQSAVE is not set
++# CONFIG_INLINE_WRITE_UNLOCK is not set
++# CONFIG_INLINE_WRITE_UNLOCK_BH is not set
++# CONFIG_INLINE_WRITE_UNLOCK_IRQ is not set
++# CONFIG_INLINE_WRITE_UNLOCK_IRQRESTORE is not set
++# CONFIG_MUTEX_SPIN_ON_OWNER is not set
+ CONFIG_FREEZER=y
+ 
+ #
+@@ -206,6 +238,7 @@ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_MEMORY_START=0x08000000
+ CONFIG_MEMORY_SIZE=0x10000000
+ CONFIG_29BIT=y
++# CONFIG_PMB_ENABLE is not set
+ # CONFIG_X2TLB is not set
+ CONFIG_VSYSCALL=y
+ CONFIG_ARCH_FLATMEM_ENABLE=y
+@@ -214,6 +247,8 @@ CONFIG_ARCH_SPARSEMEM_DEFAULT=y
+ CONFIG_MAX_ACTIVE_REGIONS=1
+ CONFIG_ARCH_POPULATES_NODE_MAP=y
+ CONFIG_ARCH_SELECT_MEMORY_MODEL=y
++CONFIG_PGTABLE_LEVELS_2=y
++# CONFIG_PGTABLE_LEVELS_3 is not set
+ CONFIG_PAGE_SIZE_4KB=y
+ # CONFIG_PAGE_SIZE_8KB is not set
+ # CONFIG_PAGE_SIZE_16KB is not set
+@@ -230,8 +265,6 @@ CONFIG_SPLIT_PTLOCK_CPUS=4
+ # CONFIG_PHYS_ADDR_T_64BIT is not set
+ CONFIG_ZONE_DMA_FLAG=0
+ CONFIG_NR_QUICK=2
+-CONFIG_HAVE_MLOCK=y
+-CONFIG_HAVE_MLOCKED_PAGE_BIT=y
+ # CONFIG_KSM is not set
+ CONFIG_DEFAULT_MMAP_MIN_ADDR@96
+ 
+@@ -420,9 +453,6 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
+ # CONFIG_AF_RXRPC is not set
+ CONFIG_WIRELESS=y
+ # CONFIG_CFG80211 is not set
+-CONFIG_CFG80211_DEFAULT_PS_VALUE=0
+-# CONFIG_WIRELESS_OLD_REGULATORY is not set
+-# CONFIG_WIRELESS_EXT is not set
+ # CONFIG_LIB80211 is not set
+ 
+ #
+@@ -552,6 +582,10 @@ CONFIG_MTD_UBI_BEB_RESERVE=1
+ CONFIG_BLK_DEV=y
+ # CONFIG_BLK_DEV_COW_COMMON is not set
+ # CONFIG_BLK_DEV_LOOP is not set
++
++#
++# DRBD disabled because PROC_FS, INET or CONNECTOR not selected
++#
+ # CONFIG_BLK_DEV_NBD is not set
+ # CONFIG_BLK_DEV_UB is not set
+ CONFIG_BLK_DEV_RAM=y
+@@ -562,9 +596,12 @@ CONFIG_BLK_DEV_RAM_SIZE@96
+ # CONFIG_ATA_OVER_ETH is not set
+ # CONFIG_BLK_DEV_HD is not set
+ CONFIG_MISC_DEVICES=y
++# CONFIG_AD525X_DPOT is not set
+ # CONFIG_ICS932S401 is not set
+ # CONFIG_ENCLOSURE_SERVICES is not set
+ # CONFIG_ISL29003 is not set
++# CONFIG_DS1682 is not set
++# CONFIG_TI_DAC7512 is not set
+ # CONFIG_C2PORT is not set
+ 
+ #
+@@ -575,6 +612,7 @@ CONFIG_MISC_DEVICES=y
+ # CONFIG_EEPROM_LEGACY is not set
+ # CONFIG_EEPROM_MAX6875 is not set
+ # CONFIG_EEPROM_93CX6 is not set
++# CONFIG_IWMC3200TOP is not set
+ CONFIG_HAVE_IDE=y
+ # CONFIG_IDE is not set
+ 
+@@ -669,11 +707,12 @@ CONFIG_SH_ETH=y
+ # CONFIG_B44 is not set
+ # CONFIG_KS8842 is not set
+ # CONFIG_KS8851 is not set
++# CONFIG_KS8851_MLL is not set
+ # CONFIG_NETDEV_1000 is not set
+ # CONFIG_NETDEV_10000 is not set
+ CONFIG_WLAN=y
+-# CONFIG_WLAN_PRE80211 is not set
+-# CONFIG_WLAN_80211 is not set
++# CONFIG_USB_ZD1201 is not set
++# CONFIG_HOSTAP is not set
+ 
+ #
+ # Enable WiMAX (Networking options) to see the WiMAX drivers
+@@ -702,6 +741,7 @@ CONFIG_WLAN=y
+ CONFIG_INPUT=y
+ # CONFIG_INPUT_FF_MEMLESS is not set
+ # CONFIG_INPUT_POLLDEV is not set
++# CONFIG_INPUT_SPARSEKMAP is not set
+ 
+ #
+ # Userland interfaces
+@@ -767,8 +807,7 @@ CONFIG_SERIAL_CORE=y
+ CONFIG_SERIAL_CORE_CONSOLE=y
+ CONFIG_UNIX98_PTYS=y
+ # CONFIG_DEVPTS_MULTIPLE_INSTANCES is not set
+-CONFIG_LEGACY_PTYS=y
+-CONFIG_LEGACY_PTY_COUNT%6
++# CONFIG_LEGACY_PTYS is not set
+ # CONFIG_IPMI_HANDLER is not set
+ CONFIG_HW_RANDOM=y
+ # CONFIG_HW_RANDOM_TIMERIOMEM is not set
+@@ -810,7 +849,6 @@ CONFIG_I2C_SH_MOBILE=y
+ #
+ # Miscellaneous I2C Chip support
+ #
+-# CONFIG_DS1682 is not set
+ # CONFIG_SENSORS_TSL2550 is not set
+ # CONFIG_I2C_DEBUG_CORE is not set
+ # CONFIG_I2C_DEBUG_ALGO is not set
+@@ -824,7 +862,10 @@ CONFIG_SPI_MASTER=y
+ #
+ CONFIG_SPI_BITBANG=y
+ # CONFIG_SPI_GPIO is not set
++# CONFIG_SPI_SH_MSIOF is not set
+ # CONFIG_SPI_SH_SCI is not set
++# CONFIG_SPI_XILINX is not set
++# CONFIG_SPI_DESIGNWARE is not set
+ 
+ #
+ # SPI Protocol Masters
+@@ -882,11 +923,13 @@ CONFIG_SSB_POSSIBLE=y
+ #
+ # CONFIG_MFD_CORE is not set
+ # CONFIG_MFD_SM501 is not set
++# CONFIG_MFD_SH_MOBILE_SDHI is not set
+ # CONFIG_HTC_PASIC3 is not set
+ # CONFIG_TPS65010 is not set
+ # CONFIG_TWL4030_CORE is not set
+ # CONFIG_MFD_TMIO is not set
+ # CONFIG_PMIC_DA903X is not set
++# CONFIG_PMIC_ADP5520 is not set
+ # CONFIG_MFD_WM8400 is not set
+ # CONFIG_MFD_WM831X is not set
+ # CONFIG_MFD_WM8350_I2C is not set
+@@ -894,6 +937,8 @@ CONFIG_SSB_POSSIBLE=y
+ # CONFIG_MFD_MC13783 is not set
+ # CONFIG_AB3100_CORE is not set
+ # CONFIG_EZX_PCAP is not set
++# CONFIG_MFD_88PM8607 is not set
++# CONFIG_AB4500_CORE is not set
+ # CONFIG_REGULATOR is not set
+ CONFIG_MEDIA_SUPPORT=y
+ 
+@@ -910,6 +955,8 @@ CONFIG_VIDEO_MEDIA=y
+ #
+ # Multimedia drivers
+ #
++CONFIG_IR_CORE=y
++CONFIG_VIDEO_IR=y
+ # CONFIG_MEDIA_ATTACH is not set
+ CONFIG_MEDIA_TUNER=y
+ # CONFIG_MEDIA_TUNER_CUSTOMISE is not set
+@@ -930,6 +977,7 @@ CONFIG_VIDEO_CAPTURE_DRIVERS=y
+ # CONFIG_VIDEO_ADV_DEBUG is not set
+ # CONFIG_VIDEO_FIXED_MINOR_RANGES is not set
+ CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
++CONFIG_VIDEO_IR_I2C=y
+ # CONFIG_VIDEO_VIVI is not set
+ # CONFIG_VIDEO_CPIA is not set
+ # CONFIG_VIDEO_CPIA2 is not set
+@@ -939,19 +987,16 @@ CONFIG_SOC_CAMERA=y
+ # CONFIG_SOC_CAMERA_MT9M001 is not set
+ # CONFIG_SOC_CAMERA_MT9M111 is not set
+ # CONFIG_SOC_CAMERA_MT9T031 is not set
++CONFIG_SOC_CAMERA_MT9T112=y
+ # CONFIG_SOC_CAMERA_MT9V022 is not set
+-# CONFIG_SOC_CAMERA_TW9910 is not set
++# CONFIG_SOC_CAMERA_RJ54N1 is not set
++CONFIG_SOC_CAMERA_TW9910=y
+ # CONFIG_SOC_CAMERA_PLATFORM is not set
+ # CONFIG_SOC_CAMERA_OV772X is not set
++# CONFIG_SOC_CAMERA_OV9640 is not set
+ CONFIG_VIDEO_SH_MOBILE_CEU=y
+ # CONFIG_V4L_USB_DRIVERS is not set
+-CONFIG_RADIO_ADAPTERS=y
+-# CONFIG_I2C_SI4713 is not set
+-# CONFIG_RADIO_SI4713 is not set
+-# CONFIG_USB_DSBR is not set
+-# CONFIG_RADIO_SI470X is not set
+-# CONFIG_USB_MR800 is not set
+-# CONFIG_RADIO_TEA5764 is not set
++# CONFIG_RADIO_ADAPTERS is not set
+ # CONFIG_DAB is not set
+ 
+ #
+@@ -1177,6 +1222,7 @@ CONFIG_MMC_BLOCK_BOUNCE=y
+ # CONFIG_MMC_AT91 is not set
+ # CONFIG_MMC_ATMELMCI is not set
+ CONFIG_MMC_SPI=y
++# CONFIG_MMC_TMIO is not set
+ # CONFIG_MEMSTICK is not set
+ # CONFIG_NEW_LEDS is not set
+ # CONFIG_ACCESSIBILITY is not set
+@@ -1208,6 +1254,7 @@ CONFIG_RTC_INTF_DEV=y
+ CONFIG_RTC_DRV_PCF8563=y
+ # CONFIG_RTC_DRV_PCF8583 is not set
+ # CONFIG_RTC_DRV_M41T80 is not set
++# CONFIG_RTC_DRV_BQ32K is not set
+ # CONFIG_RTC_DRV_S35390A is not set
+ # CONFIG_RTC_DRV_FM3130 is not set
+ # CONFIG_RTC_DRV_RX8581 is not set
+@@ -1236,7 +1283,9 @@ CONFIG_RTC_DRV_PCF8563=y
+ # CONFIG_RTC_DRV_M48T86 is not set
+ # CONFIG_RTC_DRV_M48T35 is not set
+ # CONFIG_RTC_DRV_M48T59 is not set
++# CONFIG_RTC_DRV_MSM6242 is not set
+ # CONFIG_RTC_DRV_BQ4802 is not set
++# CONFIG_RTC_DRV_RP5C01 is not set
+ # CONFIG_RTC_DRV_V3020 is not set
+ 
+ #
+@@ -1430,7 +1479,7 @@ CONFIG_FRAME_WARN24
+ CONFIG_DEBUG_FS=y
+ # CONFIG_HEADERS_CHECK is not set
+ # CONFIG_DEBUG_KERNEL is not set
+-# CONFIG_DEBUG_BUGVERBOSE is not set
++CONFIG_DEBUG_BUGVERBOSE=y
+ # CONFIG_DEBUG_MEMORY_INIT is not set
+ # CONFIG_RCU_CPU_STALL_DETECTOR is not set
+ # CONFIG_LATENCYTOP is not set
+@@ -1448,7 +1497,6 @@ CONFIG_TRACING_SUPPORT=y
+ # CONFIG_SAMPLES is not set
+ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_SH_STANDARD_BIOS is not set
+-# CONFIG_EARLY_SCIF_CONSOLE is not set
+ # CONFIG_DWARF_UNWINDER is not set
+ 
+ #
+@@ -1457,7 +1505,11 @@ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_KEYS is not set
+ # CONFIG_SECURITY is not set
+ # CONFIG_SECURITYFS is not set
+-# CONFIG_SECURITY_FILE_CAPABILITIES is not set
++# CONFIG_DEFAULT_SECURITY_SELINUX is not set
++# CONFIG_DEFAULT_SECURITY_SMACK is not set
++# CONFIG_DEFAULT_SECURITY_TOMOYO is not set
++CONFIG_DEFAULT_SECURITY_DAC=y
++CONFIG_DEFAULT_SECURITY=""
+ CONFIG_CRYPTO=y
+ 
+ #
 -- 
-1.6.2.5
+1.6.3.3
 
