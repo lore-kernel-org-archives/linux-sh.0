@@ -1,58 +1,66 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 04 Dec 2009 18:44:48 +0000
-Subject: [PATCH 2/5] dmaengine: fix dmatest to verify minimum transfer length
-Message-Id: <Pine.LNX.4.64.0912041940580.3981@axis700.grange>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 24 Dec 2009 08:31:44 +0000
+Subject: [PATCH] sh: ms7724: setup.c detailed correction
+Message-Id: <uvdfwvklr.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.0912041936541.3981@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.0912041936541.3981@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Dan Williams <dan.j.williams@intel.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Transfers and the test buffer have to be at least align bytes long.
+o change cpurelax -> udelay
+o add device name comment
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- drivers/dma/dmatest.c |   16 ++++++++++++----
- 1 files changed, 12 insertions(+), 4 deletions(-)
+ arch/sh/boards/mach-se/7724/setup.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/dma/dmatest.c b/drivers/dma/dmatest.c
-index a32a4cf..8b90516 100644
---- a/drivers/dma/dmatest.c
-+++ b/drivers/dma/dmatest.c
-@@ -298,10 +298,6 @@ static int dmatest_func(void *data)
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 5d0f70b..63f958c 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -391,6 +391,7 @@ static struct platform_device sh_eth_device = {
+ 	},
+ };
  
- 		total_tests++;
++/* USB0 */
+ static struct r8a66597_platdata sh7724_usb0_host_data = {
+ 	.on_chip = 1,
+ };
+@@ -423,6 +424,7 @@ static struct platform_device sh7724_usb0_host_device = {
+ 	},
+ };
  
--		len = dmatest_random() % test_buf_size + 1;
--		src_off = dmatest_random() % (test_buf_size - len + 1);
--		dst_off = dmatest_random() % (test_buf_size - len + 1);
--
- 		/* honor alignment restrictions */
- 		if (thread->type = DMA_MEMCPY)
- 			align = dev->copy_align;
-@@ -310,7 +306,19 @@ static int dmatest_func(void *data)
- 		else if (thread->type = DMA_PQ)
- 			align = dev->pq_align;
++/* USB1 */
+ static struct r8a66597_platdata sh7724_usb1_gadget_data = {
+ 	.on_chip = 1,
+ };
+@@ -452,6 +454,7 @@ static struct platform_device sh7724_usb1_gadget_device = {
+ 	.resource	= sh7724_usb1_gadget_resources,
+ };
  
-+		if (1 << align > test_buf_size) {
-+			pr_err("%u-byte buffer too small for %d-byte alignment\n",
-+			       test_buf_size, 1 << align);
-+			break;
-+		}
-+
-+		len = dmatest_random() % test_buf_size + 1;
- 		len = (len >> align) << align;
-+		if (!len)
-+			len = 1 << align;
-+		src_off = dmatest_random() % (test_buf_size - len + 1);
-+		dst_off = dmatest_random() % (test_buf_size - len + 1);
-+
- 		src_off = (src_off >> align) << align;
- 		dst_off = (dst_off >> align) << align;
++/* SDHI0 */
+ static struct resource sdhi0_cn7_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+@@ -475,6 +478,7 @@ static struct platform_device sdhi0_cn7_device = {
+ 	},
+ };
  
++/* SDHI1 */
+ static struct resource sdhi1_cn8_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+@@ -533,7 +537,7 @@ static int __init sh_eth_is_eeprom_ready(void)
+ 	while (t--) {
+ 		if (!ctrl_inw(EEPROM_STAT))
+ 			return 1;
+-		cpu_relax();
++		udelay(1);
+ 	}
+ 
+ 	printk(KERN_ERR "ms7724se can not access to eeprom\n");
 -- 
-1.6.2.4
+1.6.3.3
 
