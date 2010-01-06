@@ -1,196 +1,430 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Jan 2010 04:57:09 +0000
-Subject: Re: [PATCH] MMC: hardware abstraction for CNF area
-Message-Id: <aec7e5c31001052057u68deaab2y1d63a2e881ef94a3@mail.gmail.com>
+Date: Wed, 06 Jan 2010 05:15:36 +0000
+Subject: [PATCH] MMC: hardware abstraction for CNF area fixes
+Message-Id: <20100106051536.4619.851.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20100105050914.32264.762.sendpatchset@rxone.opensource.se>
-	 <20100106002158.GM4274@sortiz.org>
-In-Reply-To: <20100106002158.GM4274@sortiz.org>
+In-Reply-To: <20100105050914.32264.762.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Samuel Ortiz <sameo@linux.intel.com>
-Cc: linux-kernel@vger.kernel.org, ian@mnementh.co.uk, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: ian@mnementh.co.uk, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, linux-sh@vger.kernel.org
 
-Hi Samuel,
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, Jan 6, 2010 at 9:21 AM, Samuel Ortiz <sameo@linux.intel.com> wrote:
-> On Tue, Jan 05, 2010 at 02:09:14PM +0900, Magnus Damm wrote:
->> From: Ian Molton <ian@mnementh.co.uk>
->>
->> This patch abstracts out the CNF area code from tmio_mmc which
->> is not present in all hardware that can use this driver. This
->> is required so that we can support non-toshiba based hardware.
->>
->> ASIC3 support by Philipp Zabel
->>
->> [ Magnus Damm: extracted patch from git.mnementh.co.uk, tried
->> =A0 to apply on top of current linux-2.6 but got rejects due to
->> =A0 -mm patch 14f1b75b1d31673d7ab6ac6d2f8fe7f23c705229, solved
->> =A0 conflict by hand, regenerated patch and posted to lkml ]
-> Thanks for taking care of that.
+This patch contains fixes for the recently posted
+"[PATCH] MMC: hardware abstraction for CNF area".
 
-No worries!
+Changes:
+ - move struct resources
+ - drop ->suspend(), ->resume(), ->disable() changes
+ - a few cosmetic changes
+ - replace tmio_core shift with function argument
+ - rename ->set_no_clk_div() to ->set_clk_div()
 
-> I wish I could take this patch straight away, but I have some objections,=
- see
-> below:
->
->> + =A0 =A0 .suspend =A0 =A0 =A0 =3D asic3_mmc_disable,
->> + =A0 =A0 .resume =A0 =A0 =A0 =A0=3D asic3_mmc_enable,
-> Why are we moving from enable/disable to resume/suspend ?
-> It makes sense from a naming point of view, but that should be in a separ=
-ate
-> patch.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-I agree.
+ This patch has been lightly tested on the KFR2R09 board
+ using tmio_mmc together with sh_mobile_sdhi. Other mfd
+ drivers are untested.
 
->> +static const struct resource t7l66xb_mmc_resources[];
-> Could we simply move the t7l66xb_mmc_resources[] definition here instead ?
+ drivers/mfd/asic3.c         |   13 +++++--------
+ drivers/mfd/t7l66xb.c       |   36 +++++++++++++++++-------------------
+ drivers/mfd/tc6387xb.c      |   36 +++++++++++++++++-------------------
+ drivers/mfd/tc6393xb.c      |    8 ++++----
+ drivers/mfd/tmio_core.c     |   20 +++++---------------
+ drivers/mmc/host/tmio_mmc.c |   10 +++++-----
+ drivers/mmc/host/tmio_mmc.h |    2 +-
+ include/linux/mfd/tmio.h    |   11 +++++------
+ 8 files changed, 59 insertions(+), 77 deletions(-)
 
-Yep, makes sense.
-
->> --- /dev/null
->> +++ work/drivers/mfd/tmio_core.c =A0 =A0 =A02010-01-05 13:27:31.00000000=
-0 +0900
->> @@ -0,0 +1,62 @@
->> +/*
->> + * Toshiba TC6393XB SoC support
-> Bogus comment.
-
-Yes.
-
->> + * Copyright(c) 2009 Ian Molton <spyro@f2s.com>
->> + *
->> + * This program is free software; you can redistribute it and/or modify
->> + * it under the terms of the GNU General Public License version 2 as
->> + * published by the Free Software Foundation.
->> + */
->> +
->> +#include <linux/mfd/tmio.h>
->> +
->> +static int shift;
-> That I dont like. Carry the shift as a function argument, because there i=
-s no
-> reason to have a static variable here.
-
-Yeah, this part of the code is pretty darn ugly. Will fix.
-
-> In fact, we could even move this code to tmio_mmc.c and export the symbols
-> from there. The tmio_mmc code know the bus shift, doesnt it ?
-
-The purpose of this patch is to make tmio_mmc work with a single I/O
-memory window. So this code was intentionally moved out of tmio_mmc. I
-don't care so much though, my original patch kept support for two
-windows in tmio_mmc but Ian preferred to make the tmio_mmc driver work
-with a single window only. Perhaps Ian has something to say?
-
-I'll just pass the shift as a function argument for now.
-
->> --- 0001/drivers/mmc/host/tmio_mmc.c
->> +++ work/drivers/mmc/host/tmio_mmc.c =A02010-01-05 13:28:07.000000000 +0=
-900
->> @@ -46,7 +46,9 @@ static void tmio_mmc_set_clock(struct tm
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 clk |=3D 0x100;
->> =A0 =A0 =A0 }
->>
->> - =A0 =A0 sd_config_write8(host, CNF_SD_CLK_MODE, clk >> 22);
->> + =A0 =A0 if (host->set_no_clk_div)
->> + =A0 =A0 =A0 =A0 =A0 =A0 host->set_no_clk_div(host->pdev, (clk>>22) & 1=
-);
->> +
-> You either need a backup path or make the set_no_clk_div() implementation
-> mandatory. IOW, we should at least call tmio_core_mmc_clk_div() if
-> set_no_clk_div() is not defined. Or then if you assume that all tmio driv=
-ers
-> must implement those hooks, then return if it's not there. I would prefer=
- the
-> former option though as that would allow me to split this patch into what=
- I
-> see as .33 material (tmio_mmc.[ch], tmio_core.c [that I would rather see =
-moved
-> to tmio_mmc.c], and tmio.h)
-
-The hardware driven by the SuperH SDHI driver lacks support for the
-second memory window, so ->set_no_clk_div() is set to NULL in that
-case. And falling back on tmio_core_mmc_clk_div() will only work on
-hardware with two memory windows, so that idea will break SuperH SDHI.
-It may be a good idea with dummy nop functions to avoid the if case,
-but none of these functions are called in any hot path so from my
-point of view it's ok as is.
-
-I agree that a lot of code in a single patch is far from optimal. Feel
-free to break out the patch in any way you'd like. My original patches
-were broken out, but for some reason this all-in-one approach was
-chosen.
-
-I don't have access to any hardware except SuperH SDHI boards, but I'm
-pretty sure Ian and Phillip has tested this patch on whatever hardware
-they have available. So it may make sense to keep the code as is to
-avoid breakage.
-
->> @@ -475,8 +478,8 @@ static int tmio_mmc_suspend(struct platf
->> =A0 =A0 =A0 ret =3D mmc_suspend_host(mmc, state);
->>
->> =A0 =A0 =A0 /* Tell MFD core it can disable us now.*/
->> - =A0 =A0 if (!ret && cell->disable)
->> - =A0 =A0 =A0 =A0 =A0 =A0 cell->disable(dev);
->> + =A0 =A0 if (!ret && cell->suspend)
->> + =A0 =A0 =A0 =A0 =A0 =A0 cell->suspend(dev);
-> That sort of change doesnt belong to that patch, unless I'm missing somet=
-hing.
-
-I agree.
-
->> + =A0 =A0 /* Callbacks for clock / power control */
->> + =A0 =A0 void (*set_pwr)(struct platform_device *host, int state);
->> + =A0 =A0 void (*set_no_clk_div)(struct platform_device *host, int state=
-);
-> The name is a bit misleading, imo. Wouldn't set_clk_div() be more appropr=
-iate?
-
-Yep, will go with ->set_clk_div().
-
->> +#define CNF_CMD =A0 =A0 0x04
->> +#define CNF_CTL_BASE =A0 0x10
->> +#define CNF_INT_PIN =A00x3d
->> +#define CNF_STOP_CLK_CTL 0x40
->> +#define CNF_GCLK_CTL 0x41
->> +#define CNF_SD_CLK_MODE 0x42
->> +#define CNF_PIN_STATUS 0x44
->> +#define CNF_PWR_CTL_1 0x48
->> +#define CNF_PWR_CTL_2 0x49
->> +#define CNF_PWR_CTL_3 0x4a
->> +#define CNF_CARD_DETECT_MODE 0x4c
->> +#define CNF_SD_SLOT 0x50
->> +#define CNF_EXT_GCLK_CTL_1 0xf0
->> +#define CNF_EXT_GCLK_CTL_2 0xf1
->> +#define CNF_EXT_GCLK_CTL_3 0xf9
->> +#define CNF_SD_LED_EN_1 0xfa
->> +#define CNF_SD_LED_EN_2 0xfe
->> +
->> +#define =A0 SDCREN 0x2 =A0 /* Enable access to MMC CTL regs. (flag in C=
-OMMAND_REG)*/
->> +
->> +#define sd_config_write8(base, shift, reg, val) \
->> + =A0 =A0 tmio_iowrite8((val), (base) + ((reg) << (shift)))
->> +#define sd_config_write16(base, shift, reg, val) \
->> + =A0 =A0 tmio_iowrite16((val), (base) + ((reg) << (shift)))
->> +#define sd_config_write32(base, shift, reg, val) \
->> + =A0 =A0 do { \
->> + =A0 =A0 tmio_iowrite16((val), (base) + ((reg) << (shift))); \
->> + =A0 =A0 tmio_iowrite16((val) >> 16, (base) + ((reg + 2) << (shift))); \
->> + =A0 =A0 } while (0)
-> By implementing the tmio_core API in tmio_mmc.c, you wouldnt need to rede=
-fine
-> those.
-
-Right, but we want to code to be broken out of tmio_mmc so putting it
-back does not make sense.
-
-Thanks a lot for your help. I'll submit a patch on top of this one
-with fixes. Feel free to apply it on top or roll it in.
-
-Cheers,
-
-/ magnus
+--- 0002/drivers/mfd/asic3.c
++++ work/drivers/mfd/asic3.c	2010-01-06 13:22:40.000000000 +0900
+@@ -690,20 +690,20 @@ static void asic3_mmc_pwr(struct platfor
+ {
+ 	struct asic3 *asic = dev_get_drvdata(pdev->dev.parent);
+ 
+-	tmio_core_mmc_pwr(asic->tmio_cnf, state);
++	tmio_core_mmc_pwr(asic->tmio_cnf, 1 - asic->bus_shift, state);
+ }
+ 
+ static void asic3_mmc_clk_div(struct platform_device *pdev, int state)
+ {
+ 	struct asic3 *asic = dev_get_drvdata(pdev->dev.parent);
+ 
+-	tmio_core_mmc_clk_div(asic->tmio_cnf, state);
++	tmio_core_mmc_clk_div(asic->tmio_cnf, 1 - asic->bus_shift, state);
+ }
+ 
+ static struct tmio_mmc_data asic3_mmc_data = {
+ 	.hclk           = 24576000,
+ 	.set_pwr        = asic3_mmc_pwr,
+-	.set_no_clk_div = asic3_mmc_clk_div,
++	.set_clk_div    = asic3_mmc_clk_div,
+ };
+ 
+ static struct resource asic3_mmc_resources[] = {
+@@ -756,7 +756,8 @@ static int asic3_mmc_enable(struct platf
+ 			   ASIC3_SDHWCTRL_SDPWR, 1);
+ 
+ 	/* ASIC3_SD_CTRL_BASE assumes 32-bit addressing, TMIO is 16-bit */
+-	tmio_core_mmc_enable(asic->tmio_cnf, ASIC3_SD_CTRL_BASE >> 1);
++	tmio_core_mmc_enable(asic->tmio_cnf, 1 - asic->bus_shift,
++			     ASIC3_SD_CTRL_BASE >> 1);
+ 
+ 	return 0;
+ }
+@@ -781,8 +782,6 @@ static struct mfd_cell asic3_cell_mmc = 
+ 	.name          = "tmio-mmc",
+ 	.enable        = asic3_mmc_enable,
+ 	.disable       = asic3_mmc_disable,
+-	.suspend       = asic3_mmc_disable,
+-	.resume        = asic3_mmc_enable,
+ 	.driver_data   = &asic3_mmc_data,
+ 	.num_resources = ARRAY_SIZE(asic3_mmc_resources),
+ 	.resources     = asic3_mmc_resources,
+@@ -827,8 +826,6 @@ static int __init asic3_mfd_probe(struct
+ 	asic3_cell_mmc.platform_data = &asic3_cell_mmc;
+ 	asic3_cell_mmc.data_size = sizeof(asic3_cell_mmc);
+ 
+-	tmio_core_set_bus_shift(1 - asic->bus_shift);
+-
+ 	ret = mfd_add_devices(&pdev->dev, pdev->id,
+ 			&asic3_cell_ds1wm, 1, mem, asic->irq_base);
+ 	if (ret < 0)
+--- 0002/drivers/mfd/t7l66xb.c
++++ work/drivers/mfd/t7l66xb.c	2010-01-06 13:18:44.000000000 +0900
+@@ -38,7 +38,18 @@ enum {
+ 	T7L66XB_CELL_MMC,
+ };
+ 
+-static const struct resource t7l66xb_mmc_resources[];
++static const struct resource t7l66xb_mmc_resources[] = {
++	{
++		.start = 0x800,
++		.end	= 0x9ff,
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.start = IRQ_T7L66XB_MMC,
++		.end	= IRQ_T7L66XB_MMC,
++		.flags = IORESOURCE_IRQ,
++	},
++};
+ 
+ #define SCR_REVID	0x08		/* b Revision ID	*/
+ #define SCR_IMR		0x42		/* b Interrupt Mask	*/
+@@ -85,7 +96,7 @@ static int t7l66xb_mmc_enable(struct pla
+ 
+ 	spin_unlock_irqrestore(&t7l66xb->lock, flags);
+ 
+-	tmio_core_mmc_enable(t7l66xb->scr + 0x200,
++	tmio_core_mmc_enable(t7l66xb->scr + 0x200, 0,
+ 		t7l66xb_mmc_resources[0].start & 0xfffe);
+ 
+ 	return 0;
+@@ -116,7 +127,7 @@ static void t7l66xb_mmc_pwr(struct platf
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct t7l66xb *t7l66xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_pwr(t7l66xb->scr + 0x200, state);
++	tmio_core_mmc_pwr(t7l66xb->scr + 0x200, 0, state);
+ }
+ 
+ static void t7l66xb_mmc_clk_div(struct platform_device *mmc, int state)
+@@ -124,7 +135,7 @@ static void t7l66xb_mmc_clk_div(struct p
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct t7l66xb *t7l66xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_clk_div(t7l66xb->scr + 0x200, state);
++	tmio_core_mmc_clk_div(t7l66xb->scr + 0x200, 0, state);
+ }
+ 
+ /*--------------------------------------------------------------------------*/
+@@ -132,20 +143,7 @@ static void t7l66xb_mmc_clk_div(struct p
+ static struct tmio_mmc_data t7166xb_mmc_data = {
+ 	.hclk = 24000000,
+ 	.set_pwr = t7l66xb_mmc_pwr,
+-	.set_no_clk_div = t7l66xb_mmc_clk_div,
+-};
+-
+-static const struct resource t7l66xb_mmc_resources[] = {
+-	{
+-		.start = 0x800,
+-		.end	= 0x9ff,
+-		.flags = IORESOURCE_MEM,
+-	},
+-	{
+-		.start = IRQ_T7L66XB_MMC,
+-		.end	= IRQ_T7L66XB_MMC,
+-		.flags = IORESOURCE_IRQ,
+-	},
++	.set_clk_div = t7l66xb_mmc_clk_div,
+ };
+ 
+ static const struct resource t7l66xb_nand_resources[] = {
+@@ -300,7 +298,7 @@ static int t7l66xb_resume(struct platfor
+ 	if (pdata && pdata->resume)
+ 		pdata->resume(dev);
+ 
+-	tmio_core_mmc_enable(t7l66xb->scr + 0x200,
++	tmio_core_mmc_enable(t7l66xb->scr + 0x200, 0,
+ 		t7l66xb_mmc_resources[0].start & 0xfffe);
+ 
+ 	return 0;
+--- 0002/drivers/mfd/tc6387xb.c
++++ work/drivers/mfd/tc6387xb.c	2010-01-06 13:21:04.000000000 +0900
+@@ -28,7 +28,18 @@ struct tc6387xb {
+ 	struct resource rscr;
+ };
+ 
+-static struct resource tc6387xb_mmc_resources[];
++static struct resource tc6387xb_mmc_resources[] = {
++	{
++		.start = 0x800,
++		.end   = 0x9ff,
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.start = 0,
++		.end   = 0,
++		.flags = IORESOURCE_IRQ,
++	},
++};
+ 
+ /*--------------------------------------------------------------------------*/
+ 
+@@ -54,7 +65,7 @@ static int tc6387xb_resume(struct platfo
+ 	if (pdata && pdata->resume)
+ 		pdata->resume(dev);
+ 
+-	tmio_core_mmc_resume(tc6387xb->scr + 0x200,
++	tmio_core_mmc_resume(tc6387xb->scr + 0x200, 0,
+ 		tc6387xb_mmc_resources[0].start & 0xfffe);
+ 
+ 	return 0;
+@@ -71,7 +82,7 @@ static void tc6387xb_mmc_pwr(struct plat
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct tc6387xb *tc6387xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_pwr(tc6387xb->scr + 0x200, state);
++	tmio_core_mmc_pwr(tc6387xb->scr + 0x200, 0, state);
+ }
+ 
+ static void tc6387xb_mmc_clk_div(struct platform_device *mmc, int state)
+@@ -79,7 +90,7 @@ static void tc6387xb_mmc_clk_div(struct 
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct tc6387xb *tc6387xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_clk_div(tc6387xb->scr + 0x200, state);
++	tmio_core_mmc_clk_div(tc6387xb->scr + 0x200, 0, state);
+ }
+ 
+ 
+@@ -90,7 +101,7 @@ static int tc6387xb_mmc_enable(struct pl
+ 
+ 	clk_enable(tc6387xb->clk32k);
+ 
+-	tmio_core_mmc_enable(tc6387xb->scr + 0x200,
++	tmio_core_mmc_enable(tc6387xb->scr + 0x200, 0,
+ 		tc6387xb_mmc_resources[0].start & 0xfffe);
+ 
+ 	return 0;
+@@ -109,24 +120,11 @@ static int tc6387xb_mmc_disable(struct p
+ static struct tmio_mmc_data tc6387xb_mmc_data = {
+ 	.hclk = 24000000,
+ 	.set_pwr = tc6387xb_mmc_pwr,
+-	.set_no_clk_div = tc6387xb_mmc_clk_div,
++	.set_clk_div = tc6387xb_mmc_clk_div,
+ };
+ 
+ /*--------------------------------------------------------------------------*/
+ 
+-static struct resource tc6387xb_mmc_resources[] = {
+-	{
+-		.start = 0x800,
+-		.end   = 0x9ff,
+-		.flags = IORESOURCE_MEM,
+-	},
+-	{
+-		.start = 0,
+-		.end   = 0,
+-		.flags = IORESOURCE_IRQ,
+-	},
+-};
+-
+ static struct mfd_cell tc6387xb_cells[] = {
+ 	[TC6387XB_CELL_MMC] = {
+ 		.name = "tmio-mmc",
+--- 0002/drivers/mfd/tc6393xb.c
++++ work/drivers/mfd/tc6393xb.c	2010-01-06 13:20:08.000000000 +0900
+@@ -342,7 +342,7 @@ static int tc6393xb_mmc_enable(struct pl
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct tc6393xb *tc6393xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_enable(tc6393xb->scr + 0x200,
++	tmio_core_mmc_enable(tc6393xb->scr + 0x200, 0,
+ 		tc6393xb_mmc_resources[0].start & 0xfffe);
+ 
+ 	return 0;
+@@ -353,7 +353,7 @@ static int tc6393xb_mmc_resume(struct pl
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct tc6393xb *tc6393xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_resume(tc6393xb->scr + 0x200,
++	tmio_core_mmc_resume(tc6393xb->scr + 0x200, 0,
+ 		tc6393xb_mmc_resources[0].start & 0xfffe);
+ 
+ 	return 0;
+@@ -364,7 +364,7 @@ static void tc6393xb_mmc_pwr(struct plat
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct tc6393xb *tc6393xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_pwr(tc6393xb->scr + 0x200, state);
++	tmio_core_mmc_pwr(tc6393xb->scr + 0x200, 0, state);
+ }
+ 
+ static void tc6393xb_mmc_clk_div(struct platform_device *mmc, int state)
+@@ -372,7 +372,7 @@ static void tc6393xb_mmc_clk_div(struct 
+ 	struct platform_device *dev = to_platform_device(mmc->dev.parent);
+ 	struct tc6393xb *tc6393xb = platform_get_drvdata(dev);
+ 
+-	tmio_core_mmc_clk_div(tc6393xb->scr + 0x200, state);
++	tmio_core_mmc_clk_div(tc6393xb->scr + 0x200, 0, state);
+ }
+ 
+ static struct tmio_mmc_data tc6393xb_mmc_data = {
+--- 0002/drivers/mfd/tmio_core.c
++++ work/drivers/mfd/tmio_core.c	2010-01-06 13:16:21.000000000 +0900
+@@ -1,6 +1,4 @@
+ /*
+- * Toshiba TC6393XB SoC support
+- *
+  * Copyright(c) 2009 Ian Molton <spyro@f2s.com>
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -10,9 +8,7 @@
+ 
+ #include <linux/mfd/tmio.h>
+ 
+-static int shift;
+-
+-int tmio_core_mmc_enable(void __iomem *cnf, unsigned long base)
++int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base)
+ {
+ 	/* Enable the MMC/SD Control registers */
+ 	sd_config_write16(cnf, shift, CNF_CMD, SDCREN);
+@@ -24,14 +20,14 @@ int tmio_core_mmc_enable(void __iomem *c
+ 	/* The below is required but why? FIXME */
+ 	sd_config_write8(cnf, shift, CNF_STOP_CLK_CTL, 0x1f);
+ 
+-	/* Power down SD bus*/
++	/* Power down SD bus */
+ 	sd_config_write8(cnf, shift, CNF_PWR_CTL_2, 0x00);
+ 
+ 	return 0;
+ }
+ EXPORT_SYMBOL(tmio_core_mmc_enable);
+ 
+-int tmio_core_mmc_resume(void __iomem *cnf, unsigned long base)
++int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base)
+ {
+ 
+ 	/* Enable the MMC/SD Control registers */
+@@ -42,21 +38,15 @@ int tmio_core_mmc_resume(void __iomem *c
+ }
+ EXPORT_SYMBOL(tmio_core_mmc_resume);
+ 
+-void tmio_core_mmc_pwr(void __iomem *cnf, int state)
++void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state)
+ {
+ 	sd_config_write8(cnf, shift, CNF_PWR_CTL_2, state ? 0x02 : 0x00);
+ }
+ EXPORT_SYMBOL(tmio_core_mmc_pwr);
+ 
+-void tmio_core_mmc_clk_div(void __iomem *cnf, int state)
++void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state)
+ {
+ 	sd_config_write8(cnf, shift, CNF_SD_CLK_MODE, state ? 1 : 0);
+ }
+ EXPORT_SYMBOL(tmio_core_mmc_clk_div);
+ 
+-void tmio_core_set_bus_shift(int bus_shift)
+-{
+-	shift = bus_shift;
+-}
+-EXPORT_SYMBOL(tmio_core_set_bus_shift);
+-
+--- 0002/drivers/mmc/host/tmio_mmc.c
++++ work/drivers/mmc/host/tmio_mmc.c	2010-01-06 13:45:59.000000000 +0900
+@@ -46,8 +46,8 @@ static void tmio_mmc_set_clock(struct tm
+ 		clk |= 0x100;
+ 	}
+ 
+-	if (host->set_no_clk_div)
+-		host->set_no_clk_div(host->pdev, (clk>>22) & 1);
++	if (host->set_clk_div)
++		host->set_clk_div(host->pdev, (clk>>22) & 1);
+ 
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
+ }
+@@ -478,8 +478,8 @@ static int tmio_mmc_suspend(struct platf
+ 	ret = mmc_suspend_host(mmc, state);
+ 
+ 	/* Tell MFD core it can disable us now.*/
+-	if (!ret && cell->suspend)
+-		cell->suspend(dev);
++	if (!ret && cell->disable)
++		cell->disable(dev);
+ 
+ 	return ret;
+ }
+@@ -539,7 +539,7 @@ static int __devinit tmio_mmc_probe(stru
+ 	platform_set_drvdata(dev, mmc);
+ 
+ 	host->set_pwr = pdata->set_pwr;
+-	host->set_no_clk_div = pdata->set_no_clk_div;
++	host->set_clk_div = pdata->set_clk_div;
+ 
+ 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+ 	host->bus_shift = resource_size(res_ctl) >> 10;
+--- 0002/drivers/mmc/host/tmio_mmc.h
++++ work/drivers/mmc/host/tmio_mmc.h	2010-01-06 13:26:06.000000000 +0900
+@@ -100,7 +100,7 @@ struct tmio_mmc_host {
+ 
+ 	/* Callbacks for clock / power control */
+ 	void (*set_pwr)(struct platform_device *host, int state);
+-	void (*set_no_clk_div)(struct platform_device *host, int state);
++	void (*set_clk_div)(struct platform_device *host, int state);
+ 
+ 	/* pio related stuff */
+ 	struct scatterlist      *sg_ptr;
+--- 0002/include/linux/mfd/tmio.h
++++ work/include/linux/mfd/tmio.h	2010-01-06 13:16:33.000000000 +0900
+@@ -50,11 +50,10 @@
+ 	tmio_iowrite16((val) >> 16, (base) + ((reg + 2) << (shift))); \
+ 	} while (0)
+ 
+-int tmio_core_mmc_enable(void __iomem *cnf, unsigned long base);
+-int tmio_core_mmc_resume(void __iomem *cnf, unsigned long base);
+-void tmio_core_mmc_pwr(void __iomem *cnf, int state);
+-void tmio_core_mmc_clk_div(void __iomem *cnf, int state);
+-void tmio_core_set_bus_shift(int bus_shift);
++int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
++int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
++void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
++void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
+ /*
+  * data for the MMC controller
+@@ -62,7 +61,7 @@ void tmio_core_set_bus_shift(int bus_shi
+ struct tmio_mmc_data {
+ 	const unsigned int		hclk;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+-	void (*set_no_clk_div)(struct platform_device *host, int state);
++	void (*set_clk_div)(struct platform_device *host, int state);
+ };
+ 
+ /*
