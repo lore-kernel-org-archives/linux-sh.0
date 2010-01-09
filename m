@@ -1,24 +1,37 @@
-From: "H. Peter Anvin" <hpa@zytor.com>
-Date: Sat, 09 Jan 2010 00:07:35 +0000
+From: Masami Hiramatsu <mhiramat@redhat.com>
+Date: Sat, 09 Jan 2010 00:09:50 +0000
 Subject: Re: [PATCH] Makefile: do not override LC_CTYPE
-Message-Id: <4B47C8C7.1010507@zytor.com>
+Message-Id: <4B47C94E.8070302@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100108115745.GA14758@sepie.suse.cz> <1262952988-16563-1-git-send-email-mmarek@suse.cz> <20100109000008.GB2319@verge.net.au>
-In-Reply-To: <20100109000008.GB2319@verge.net.au>
+References: <20100108115745.GA14758@sepie.suse.cz> <1262952988-16563-1-git-send-email-mmarek@suse.cz>
+In-Reply-To: <1262952988-16563-1-git-send-email-mmarek@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Michal Marek <mmarek@suse.cz>, Masami Hiramatsu <mhiramat@redhat.com>, Roland Dreier <rdreier@cisco.com>, Sam Ravnborg <sam@ravnborg.org>, Sergei Trofimovich <slyfox@inbox.ru>, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Michal Marek <mmarek@suse.cz>
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Simon Horman <horms@verge.net.au>, Roland Dreier <rdreier@cisco.com>, Sam Ravnborg <sam@ravnborg.org>, Sergei Trofimovich <slyfox@inbox.ru>, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On 01/08/2010 04:00 PM, Simon Horman wrote:
-> 
-> Personally I think it would be much better to set the locale explicitly
-> as needed, where needed, such as the LC_ALL=C sledgehammer that you
-> have inserted into arch/sh/tools. Or at a slightly higher level,
-> offer an awk-wrapper, as it seems to be the main (only?) cause of concern.
-> 
+Hi Michal,
 
-awk, sed, shell scripts, etc. all have the same problem.
+Michal Marek wrote:
+> Setting LC_CTYPE=C breaks localized messages in some setups. With only
+> LC_COLLATE=C and LC_NUMERIC=C, we get almost all we need, except for not
+> so defined character classes and tolower()/toupper(). The former is not
+> a big issue, because we can assume that e.g. [:alpha:] will always
+> include a-zA-Z and we only ever process ASCII input. The latter seems
+> only affect arch/sh/tools/gen-mach-types, which we can handle separately.
 
-	-hpa
+Hmm, this also affects arch/x/tools/gen-insn-attr-x86.awk.
+Could you also wrap it?
+
+Thank you,
+
+-- 
+Masami Hiramatsu
+
+Software Engineer
+Hitachi Computer Products (America), Inc.
+Software Solutions Division
+
+e-mail: mhiramat@redhat.com
+
