@@ -1,27 +1,45 @@
-From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Fri, 29 Jan 2010 03:08:13 +0000
-Subject: Re: [PATCH] usb: r8a66597-hdc disable interrupts fix
-Message-Id: <4B62511D.6010302@renesas.com>
+From: "Pietrek, Markus" <Markus.Pietrek@emtrion.de>
+Date: Wed, 13 Jan 2010 13:25:34 +0000
+Subject: [PATCH] sh-sci: using correct fifo size for SCIF and SCIFA
+Message-Id: <95F51F4B902CAC40AF459205F6322F0164298E5C37@BMK019S01.emtrion.local>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100127074119.25763.59310.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20100127074119.25763.59310.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> This patch improves disable_controller() in the r8a66597-hdc
-> driver to disable all interrupts and clear status flags. It
-> also makes sure that disable_controller() is called during
-> probe(). This fixes the relatively rare case of unexpected
-> pending interrupts after kexec reboot.
+Hi,
 
-Thank you very much for your patch.
+the sh-sci driver used the wrong fifosize for PORT_SCIFA and PORT_SCIF. If an incorrect size is used, the serial core will enforce a shutdown of a device too early, especially on baudrates < 9600.
 
-Acked-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index e218000..ff86ffb 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -1156,7 +1156,11 @@ static void __devinit sci_init_single(struct platform_device *dev,
+        sci_port->port.ops      = &sci_uart_ops;
+        sci_port->port.iotype   = UPIO_MEM;
+        sci_port->port.line     = index;
+-       sci_port->port.fifosize = 1;
++       switch (p->type) {
++           case PORT_SCIFA: sci_port->port.fifosize = 64; break;
++           case PORT_SCIF:  sci_port->port.fifosize = 16; break;
++           default:         sci_port->port.fifosize = 1;  break;
++       }
 
-Thanks,
-Yoshihiro Shimoda
+        if (dev) {
+                sci_port->iclk = p->clk ? clk_get(&dev->dev, p->clk) : NULL;
+
+_____________________________________
+
+Amtsgericht Mannheim
+HRB 110 300
+Gesch?ftsf?hrer: Dieter Baur, Ramona Maurer
+_____________________________________
+
+Important Note:
+- This e-mail may contain trade secrets or privileged, undisclosed or otherwise confidential information.
+- If you have received this e-mail in error, you are hereby notified that any review, copying or distribution of it is strictly prohibited.
+- Please inform us immediately and destroy the original transmittal.
+
+Thank you for your cooperation.
