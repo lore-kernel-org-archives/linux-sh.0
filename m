@@ -1,36 +1,112 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 07 Jan 2010 08:44:14 +0000
-Subject: Re: [PATCH] MMC: hardware abstraction for CNF area
-Message-Id: <aec7e5c31001070044n73b7b0bcw96e6c45885ce7691@mail.gmail.com>
+From: H Hartley Sweeten <hartleys@visionengravers.com>
+Date: Thu, 14 Jan 2010 18:58:09 +0000
+Subject: [PATCH] cpuinfo_op: consolidate extern declaration
+Message-Id: <201001141158.09795.hartleys@visionengravers.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100105050914.32264.762.sendpatchset@rxone.opensource.se>
-	 <20100106002158.GM4274@sortiz.org>
-	 <aec7e5c31001052057u68deaab2y1d63a2e881ef94a3@mail.gmail.com>
-	 <20100106195339.GD23473@sortiz.org>
-In-Reply-To: <20100106195339.GD23473@sortiz.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Samuel Ortiz <sameo@linux.intel.com>
-Cc: linux-kernel@vger.kernel.org, ian@mnementh.co.uk, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux Kernel <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, x86@kernel.org
+Cc: mingo@redhat.com, tglx@linutronix.de, monstr@monstr.eu, lethal@linux-sh.org, hpa@zytor.com
 
-Hi Samuel,
+cpuinfo_op: consolidate extern declaration
 
-On Thu, Jan 7, 2010 at 4:53 AM, Samuel Ortiz <sameo@linux.intel.com> wrote:
-> I applied the resulting patch to my tree, and will leave it there for at =
-least
-> a couple days so that linux-next can pick it up.
-> Meanwhile, I'd really appreciate if Ian could make sure it works for him =
-as
-> well. Ian, this is the patch I'm talking about:
->
-> http://git.kernel.org/?p=3Dlinux/kernel/git/sameo/mfd-2.6.git;a=3Dcommit;=
-h=B3df6513659704ece28da3b80cc36c2a8de315ce
+All the architectures supported by the kernel also support
+/proc/cpuinfo. Only a couple actually declare the seq_operations
+as extern. All the others will produce a sparse warning like:
 
-Thanks a lot for your help. I took the patch pointed out above and
-applied it on top of latest linux-2.6 git and my kfr2r09 platform now
-compiles and works as expected.
+warning: symbol 'cpuinfo_op' was not declared. Should it be static?
 
-Cheers,
+Fix all the warnings and consolidate the declaration by putting it
+in <linux/seq_file.h>.
 
-/ magnus
+Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Michal Simek <monstr@monstr.eu>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: H. Peter Anvin <hpa@zytor.com>
+
+---
+
+ arch/microblaze/include/asm/processor.h |    2 --
+ arch/sh/include/asm/processor.h         |    4 ----
+ arch/x86/include/asm/processor.h        |    2 --
+ fs/proc/cpuinfo.c                       |    1 -
+ include/linux/seq_file.h                |    6 ++++++
+ 5 files changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/arch/microblaze/include/asm/processor.h b/arch/microblaze/include/asm/processor.h
+index 563c6b9..e2f8c73 100644
+--- a/arch/microblaze/include/asm/processor.h
++++ b/arch/microblaze/include/asm/processor.h
+@@ -19,8 +19,6 @@
+ #include <asm/current.h>
+ 
+ # ifndef __ASSEMBLY__
+-/* from kernel/cpu/mb.c */
+-extern const struct seq_operations cpuinfo_op;
+ 
+ # define cpu_relax()		barrier()
+ # define cpu_sleep()		do {} while (0)
+diff --git a/arch/sh/include/asm/processor.h b/arch/sh/include/asm/processor.h
+index 017e0c1..fb4f942 100644
+--- a/arch/sh/include/asm/processor.h
++++ b/arch/sh/include/asm/processor.h
+@@ -96,14 +96,10 @@ extern struct sh_cpuinfo cpu_data[];
+ #define cpu_sleep()	__asm__ __volatile__ ("sleep" : : : "memory")
+ #define cpu_relax()	barrier()
+ 
+-/* Forward decl */
+-struct seq_operations;
+-
+ extern struct pt_regs fake_swapper_regs;
+ 
+ /* arch/sh/kernel/setup.c */
+ const char *get_cpu_subtype(struct sh_cpuinfo *c);
+-extern const struct seq_operations cpuinfo_op;
+ 
+ /* processor boot mode configuration */
+ #define MODE_PIN0 (1 << 0)
+diff --git a/arch/x86/include/asm/processor.h b/arch/x86/include/asm/processor.h
+index fc801ba..5c17303 100644
+--- a/arch/x86/include/asm/processor.h
++++ b/arch/x86/include/asm/processor.h
+@@ -149,8 +149,6 @@ DECLARE_PER_CPU_SHARED_ALIGNED(struct cpuinfo_x86, cpu_info);
+ #define current_cpu_data	boot_cpu_data
+ #endif
+ 
+-extern const struct seq_operations cpuinfo_op;
+-
+ static inline int hlt_works(int cpu)
+ {
+ #ifdef CONFIG_X86_32
+diff --git a/fs/proc/cpuinfo.c b/fs/proc/cpuinfo.c
+index 5a1e539..f8eea8e 100644
+--- a/fs/proc/cpuinfo.c
++++ b/fs/proc/cpuinfo.c
+@@ -3,7 +3,6 @@
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
+ 
+-extern const struct seq_operations cpuinfo_op;
+ static int cpuinfo_open(struct inode *inode, struct file *file)
+ {
+ 	return seq_open(file, &cpuinfo_op);
+diff --git a/include/linux/seq_file.h b/include/linux/seq_file.h
+index 8366d8f..ab13819 100644
+--- a/include/linux/seq_file.h
++++ b/include/linux/seq_file.h
+@@ -33,6 +33,12 @@ struct seq_operations {
+ 	int (*show) (struct seq_file *m, void *v);
+ };
+ 
++/*
++ * All architectures support /proc/cpuinfo
++ * Define the seq_operations here to keep things clean.
++ */
++extern const struct seq_operations cpuinfo_op;
++
+ #define SEQ_SKIP 1
+ 
+ /**
