@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 14 Jan 2010 23:46:25 +0000
+From: Michal Simek <monstr@monstr.eu>
+Date: Fri, 15 Jan 2010 08:06:16 +0000
 Subject: Re: [PATCH] cpuinfo_op: consolidate extern declaration
-Message-Id: <20100114234625.GD25018@linux-sh.org>
+Message-Id: <4B5021F8.4010703@monstr.eu>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201001141158.09795.hartleys@visionengravers.com>
 In-Reply-To: <201001141158.09795.hartleys@visionengravers.com>
@@ -9,9 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: H Hartley Sweeten <hartleys@visionengravers.com>
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, x86@kernel.org, mingo@redhat.com, tglx@linutronix.de, monstr@monstr.eu, hpa@zytor.com
+Cc: Linux Kernel <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, x86@kernel.org, mingo@redhat.com, tglx@linutronix.de, lethal@linux-sh.org, hpa@zytor.com
 
-On Thu, Jan 14, 2010 at 11:58:09AM -0700, H Hartley Sweeten wrote:
+H Hartley Sweeten wrote:
 > cpuinfo_op: consolidate extern declaration
 > 
 > All the architectures supported by the kernel also support
@@ -30,6 +30,12 @@ On Thu, Jan 14, 2010 at 11:58:09AM -0700, H Hartley Sweeten wrote:
 > Cc: Paul Mundt <lethal@linux-sh.org>
 > Cc: H. Peter Anvin <hpa@zytor.com>
 > 
-I guess we know from this list which architectures run sparse ;-)
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Tested-by: Michal Simek <monstr@monstr.eu>
+
+
+-- 
+Michal Simek, Ing. (M.Eng)
+w: www.monstr.eu p: +42-0-721842854
+Maintainer of Linux kernel 2.6 Microblaze Linux - http://www.monstr.eu/fdt/
+Microblaze U-BOOT custodian
