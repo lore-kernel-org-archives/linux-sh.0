@@ -1,41 +1,37 @@
-From: Michal Simek <monstr@monstr.eu>
-Date: Fri, 15 Jan 2010 08:06:16 +0000
-Subject: Re: [PATCH] cpuinfo_op: consolidate extern declaration
-Message-Id: <4B5021F8.4010703@monstr.eu>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 15 Jan 2010 00:04:17 +0000
+Subject: Re: [alsa-devel] Audio buffer mmap-ing on sh arch vs. cache	aliasing	problem
+Message-Id: <20100115000417.GF25018@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201001141158.09795.hartleys@visionengravers.com>
-In-Reply-To: <201001141158.09795.hartleys@visionengravers.com>
+References: <1220527434.3299.2074.camel@bri1004.bri.st.com> <s5h63owgdk1.wl%tiwai@suse.de> <1222354553.28498.30.camel@bri1004.bri.st.com> <s5hbpybcjfc.wl%tiwai@suse.de>
+In-Reply-To: <s5hbpybcjfc.wl%tiwai@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: H Hartley Sweeten <hartleys@visionengravers.com>
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, x86@kernel.org, mingo@redhat.com, tglx@linutronix.de, lethal@linux-sh.org, hpa@zytor.com
+To: Takashi Iwai <tiwai@suse.de>
+Cc: Pawel MOLL <pawel.moll@st.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
 
-H Hartley Sweeten wrote:
-> cpuinfo_op: consolidate extern declaration
+On Fri, Sep 26, 2008 at 12:04:23PM +0200, Takashi Iwai wrote:
+> At Thu, 25 Sep 2008 15:55:53 +0100,
+> Pawel MOLL wrote:
+> > 
+> > > One thing we can try is a patch like below.  But, I'm not sure whether
+> > > this is correct over all architectures, too.  At best, a generic API
+> > > would be helpful for such a thing...
+> > > +	area->vm_page_prot = pgprot_noncached(area->vm_page_prot);
+> > 
+> > Well, it's not enough, because the kernel mapping of buffer is still
+> > cached... A hack below does the job, but it is not nice as well...
 > 
-> All the architectures supported by the kernel also support
-> /proc/cpuinfo. Only a couple actually declare the seq_operations
-> as extern. All the others will produce a sparse warning like:
+> Yeah, that's not sexy, but maybe the only working case right now
+> (better with arch-specific ifdefs).
 > 
-> warning: symbol 'cpuinfo_op' was not declared. Should it be static?
+> IIRC, a similar buffer handling (via vmalloc) is used in video
+> drivers.  I suppose they don't work as well, right?
+> DRM driver uses __vmalloc() with PAGE_KERNEL_NOCACHE, but it's only
+> for PPC32 non-coherent.
 > 
-> Fix all the warnings and consolidate the declaration by putting it
-> in <linux/seq_file.h>.
-> 
-> Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Michal Simek <monstr@monstr.eu>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Cc: H. Peter Anvin <hpa@zytor.com>
-> 
-
-Tested-by: Michal Simek <monstr@monstr.eu>
-
-
--- 
-Michal Simek, Ing. (M.Eng)
-w: www.monstr.eu p: +42-0-721842854
-Maintainer of Linux kernel 2.6 Microblaze Linux - http://www.monstr.eu/fdt/
-Microblaze U-BOOT custodian
+To come back to this issue, we don't appear to have made any headway on
+the vmalloc front, but pgprot_noncached() is now a standard interface
+provided by all architectures, so the ifdef is no longer needed in the
+snd_pcm_default_mmap() path.
