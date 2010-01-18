@@ -1,57 +1,58 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 29 Jan 2010 15:23:37 +0000
-Subject: Re: Recent assembler sign extension patch
-Message-Id: <20100129152336.GA7388@linux-sh.org>
+From: Peter Huewe <PeterHuewe@gmx.de>
+Date: Mon, 18 Jan 2010 02:57:31 +0000
+Subject: [PATCH] arch/sh: Fix build failure caused by missing semicolon / missing include
+Message-Id: <201001180357.31594.PeterHuewe@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20090827132813.GB4668@console-pimps.org>
-In-Reply-To: <20090827132813.GB4668@console-pimps.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Matt Fleming <matt@console-pimps.org>, Francesco Virlinzi <francesco.virlinzi@st.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, peterhuewe@gmx.de
 
-On Fri, Jan 29, 2010 at 01:53:59AM -0600, Rob Landley wrote:
-> On Wednesday 27 January 2010 01:55:42 Paul Mundt wrote:
-> > At what point in this thread was the compiler even mentioned? The entire
-> > topic of the thread relates only to gas, kindly refrain from making up
-> > imaginary problems, thanks.
-> 
-> You're right, the compiler never seems to emit code that triggers this bug, 
-> you have to hand-write assembly to do it, and intentionally ask the assembler 
-> to do something it can't do.
-> 
-The only reason the assembler choked on it was because the assembler
-was buggy, is that so hard for you to get your head around? And
-unsurprisingly, other bugs in the kernel were caught and fixed as a
-result of this change.
+From: Peter Huewe <peterhuewe@gmx.de>
+Date: Mon, 18 Jan 2010 03:48:31 +0100
 
-> So the official position of the maintainer of the Super Hitachi port is that any 
-> toolchain older than October 16th (the binutils 2.20 release) is too old to 
-> build the Linux kernel.  (With the corollary that in the 5 years since the PC 
-> went 64 bit, apparently nobody ever actually tried to build anything for Super 
-> Hitachi?)
-> 
-For starters, the only Super Hitachi in existence is a train, which has
-nothing to do with me or with my employer.
+This patch fixes a build failure[1][2] for all sh configs, by fixing a
+missing semicolon and a missing include file.
 
-Anything older than the 2.20 binutils release will have this particular
-bug with sign extension on 64-bit hosts. The fact we only recently
-introduced a change that triggered this bug in the assembler doesn't
-change the fact that it was always there, and remains a legitimate
-usecase. Having said that, we could work around it, yes, but so far there
-hasn't been sufficient reason to do so. 
+Build failure was introduced by the patch
+	sh: fixed PMB mode refactoring [3]
+	of Wed, 13 Jan 2010 09:31:48 +0000 (18:31 +0900)
 
-If you'd like to cite a technical reason for why you are unable to move
-your version of binutils forward, then we can look in to that. If you're
-primarily intent on whining and posturing, don't bother Ccing me.
+References:
+[1] http://kisskb.ellerman.id.au/kisskb/buildresult/2019836/
+[2] http://kisskb.ellerman.id.au/kisskb/compiler/16/
+[3] http://git.kernel.org/?p=3Dlinux/kernel/git/sfr/linux-next.git;a=3Dcomm=
+it;h=A0ab36689a36e583b6e736f1c99ac8c9aebdad59
 
-> Meanwhile Documentation/Changes still says binutils 2.12, and other 
-> architectures _never_ work around bugs in older toolchains (*cough* git 
-> 2a4b9c5af8203 *cough*)...
-> 
-Documentation/Changes also only states "minimal" requirements, which are
-obviously not going to be consistent across platforms. If you think it
-means anything other than that, you are sorely misinformed. Most
-platforms can't build the kernel with the toolchain requirements outlined
-therein today, something that is abundantly obvious to anyone that spends
-even a cursory amount of time actually working on the code.
+Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
+---
+Patch against linux-next tree of 20100114
+KernelVersion: next-20100114
+
+ arch/sh/include/asm/mmu.h |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
+index 4b0882b..c5313e2 100644
+--- a/arch/sh/include/asm/mmu.h
++++ b/arch/sh/include/asm/mmu.h
+@@ -1,5 +1,6 @@
+ #ifndef __MMU_H
+ #define __MMU_H
++#include <linux/errno.h>
+=20
+ /*
+  * Privileged Space Mapping Buffer (PMB) definitions
+@@ -75,7 +76,7 @@ int pmb_init(void);
+ static inline long pmb_remap(unsigned long virt, unsigned long phys,
+ 			     unsigned long size, unsigned long flags)
+ {
+-	return -EINVAL
++	return -EINVAL;
+ }
+=20
+ static inline void pmb_unmap(unsigned long addr)
+--=20
+1.6.4.4
+
