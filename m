@@ -1,548 +1,1098 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 19 Jan 2010 07:27:02 +0000
-Subject: [PATCH 3/3 v2] sh: implement DMA_SLAVE capability in SH dmaengine
-Message-Id: <Pine.LNX.4.64.1001190825120.4607@axis700.grange>
+Date: Tue, 19 Jan 2010 08:08:57 +0000
+Subject: [PATCH 1/4] ASoC: add a WM8978 codec driver
+Message-Id: <Pine.LNX.4.64.1001190851380.4607@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1001190839110.4607@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1001190839110.4607@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: alsa-devel@alsa-project.org
+Cc: linux-sh@vger.kernel.org, Liam Girdwood <lrg@slimlogic.co.uk>, Kuninori Morimoto <morimoto.kuninori@renesas.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <damm@opensource.se>
 
-Tested to work with a SIU ASoC driver on sh7722 (migor).
+The WM8978 codec from Wolfson Microelectronics is very similar to wm8974, but
+is stereo and also has some differences in pin configuration and internal
+signal routing. This driver is based on wm8974 and takes the differences into
+account.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-v1 -> v2: v1 didn't work in the input direction, because capture wasn't 
-implemented for SIU audio at that time yet. This version fixes the receive 
-direction too.
+I know there is a driver for this codec in wm git-tree and I did have a 
+look at it. But, although both drivers have identical roots and look 
+similar in many places, the other one implements much less functionality, 
+doesn't seem to have been very intensively tested, and would require a 
+substantial amount of work to bring it into shape. Whereas this driver has 
+been tested, implements a few audio controls, and uses current ALSA / ASoC 
+APIs. The only part, that's missing from this version, that is present in 
+the wm driver is support for SPI, which can be added as required.
 
- arch/sh/include/asm/dma-sh.h           |   41 +++++++-
- arch/sh/include/cpu-sh4/cpu/dma-sh4a.h |   15 ++-
- drivers/dma/shdma.c                    |  190 ++++++++++++++++++++++++--------
- drivers/dma/shdma.h                    |    7 +-
- 4 files changed, 192 insertions(+), 61 deletions(-)
+ sound/soc/codecs/Kconfig  |    4 +
+ sound/soc/codecs/Makefile |    2 +
+ sound/soc/codecs/wm8978.c |  919 +++++++++++++++++++++++++++++++++++++++++++++
+ sound/soc/codecs/wm8978.h |   84 ++++
+ 4 files changed, 1009 insertions(+), 0 deletions(-)
+ create mode 100644 sound/soc/codecs/wm8978.c
+ create mode 100644 sound/soc/codecs/wm8978.h
 
-diff --git a/arch/sh/include/asm/dma-sh.h b/arch/sh/include/asm/dma-sh.h
-index 01d2fc7..c8d8ce7 100644
---- a/arch/sh/include/asm/dma-sh.h
-+++ b/arch/sh/include/asm/dma-sh.h
-@@ -64,8 +64,10 @@ static int dmte_irq_map[] __maybe_unused = {
- #define ACK_L	0x00010000
- #define DM_INC	0x00004000
- #define DM_DEC	0x00008000
-+#define DM_FIX	0x0000c000
- #define SM_INC	0x00001000
- #define SM_DEC	0x00002000
-+#define SM_FIX	0x00003000
- #define RS_IN	0x00000200
- #define RS_OUT	0x00000300
- #define TS_BLK	0x00000040
-@@ -123,10 +125,47 @@ static u32 dma_base_addr[] __maybe_unused = {
-  */
- #define SHDMA_MIX_IRQ	(1 << 1)
- #define SHDMA_DMAOR1	(1 << 2)
--#define SHDMA_DMAE1		(1 << 3)
-+#define SHDMA_DMAE1	(1 << 3)
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index 62ff26a..0aad72f 100644
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -57,6 +57,7 @@ config SND_SOC_ALL_CODECS
+ 	select SND_SOC_WM8961 if I2C
+ 	select SND_SOC_WM8971 if I2C
+ 	select SND_SOC_WM8974 if I2C
++	select SND_SOC_WM8978 if I2C
+ 	select SND_SOC_WM8988 if SND_SOC_I2C_AND_SPI
+ 	select SND_SOC_WM8990 if I2C
+ 	select SND_SOC_WM8993 if I2C
+@@ -230,6 +231,9 @@ config SND_SOC_WM8971
+ config SND_SOC_WM8974
+ 	tristate
+ 
++config SND_SOC_WM8978
++	tristate
 +
-+enum sh_dmae_slave_chan_id {
-+	SHDMA_SLAVE_SCIF0_TX,
-+	SHDMA_SLAVE_SCIF0_RX,
-+	SHDMA_SLAVE_SCIF1_TX,
-+	SHDMA_SLAVE_SCIF1_RX,
-+	SHDMA_SLAVE_SCIF2_TX,
-+	SHDMA_SLAVE_SCIF2_RX,
-+	SHDMA_SLAVE_SCIF3_TX,
-+	SHDMA_SLAVE_SCIF3_RX,
-+	SHDMA_SLAVE_SCIF4_TX,
-+	SHDMA_SLAVE_SCIF4_RX,
-+	SHDMA_SLAVE_SCIF5_TX,
-+	SHDMA_SLAVE_SCIF5_RX,
-+	SHDMA_SLAVE_SIUA_TX,
-+	SHDMA_SLAVE_SIUA_RX,
-+	SHDMA_SLAVE_SIUB_TX,
-+	SHDMA_SLAVE_SIUB_RX,
-+	SHDMA_SLAVE_NUMBER,	/* Must stay last */
+ config SND_SOC_WM8988
+ 	tristate
+ 
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index ea98354..fbd290e 100644
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -44,6 +44,7 @@ snd-soc-wm8960-objs := wm8960.o
+ snd-soc-wm8961-objs := wm8961.o
+ snd-soc-wm8971-objs := wm8971.o
+ snd-soc-wm8974-objs := wm8974.o
++snd-soc-wm8978-objs := wm8978.o
+ snd-soc-wm8988-objs := wm8988.o
+ snd-soc-wm8990-objs := wm8990.o
+ snd-soc-wm8993-objs := wm8993.o
+@@ -103,6 +104,7 @@ obj-$(CONFIG_SND_SOC_WM8960)	+= snd-soc-wm8960.o
+ obj-$(CONFIG_SND_SOC_WM8961)	+= snd-soc-wm8961.o
+ obj-$(CONFIG_SND_SOC_WM8971)	+= snd-soc-wm8971.o
+ obj-$(CONFIG_SND_SOC_WM8974)	+= snd-soc-wm8974.o
++obj-$(CONFIG_SND_SOC_WM8978)	+= snd-soc-wm8978.o
+ obj-$(CONFIG_SND_SOC_WM8988)	+= snd-soc-wm8988.o
+ obj-$(CONFIG_SND_SOC_WM8990)	+= snd-soc-wm8990.o
+ obj-$(CONFIG_SND_SOC_WM8993)	+= snd-soc-wm8993.o
+diff --git a/sound/soc/codecs/wm8978.c b/sound/soc/codecs/wm8978.c
+new file mode 100644
+index 0000000..0f91d16
+--- /dev/null
++++ b/sound/soc/codecs/wm8978.c
+@@ -0,0 +1,919 @@
++/*
++ * wm8978.c  --  WM8978 ALSA SoC Audio Codec driver
++ *
++ * Copyright (C) 2009-2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ * Copyright (C) 2007 Carlos Munoz <carlos@kenati.com>
++ * Copyright 2006-2009 Wolfson Microelectronics PLC.
++ * Based on wm8974 and wm8990 by Liam Girdwood <lrg@slimlogic.co.uk>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/pm.h>
++#include <linux/i2c.h>
++#include <linux/platform_device.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/soc-dapm.h>
++#include <sound/initval.h>
++#include <sound/tlv.h>
++#include <asm/div64.h>
++
++#include "wm8978.h"
++
++static struct snd_soc_codec *wm8978_codec;
++
++/* wm8978 register cache. Note that register 0 is not included in the cache. */
++static const u16 wm8978_reg[WM8978_CACHEREGNUM] = {
++	0x0000, 0x0000, 0x0000, 0x0000,	/* 0x00...0x03 */
++	0x0050, 0x0000, 0x0140, 0x0000,	/* 0x04...0x07 */
++	0x0000, 0x0000, 0x0000, 0x01ff,	/* 0x08...0x0b */ /* 0x0b contains the VU bit */
++	0x01ff, 0x0000, 0x0100, 0x01ff,	/* 0x0c...0x0f */ /* 0x0c and 0x0f contain the VU bit */
++	0x01ff, 0x0000, 0x012c, 0x002c,	/* 0x10...0x13 */ /* 0x10 contains the VU bit */
++	0x002c, 0x002c, 0x002c, 0x0000,	/* 0x14...0x17 */
++	0x0032, 0x0000, 0x0000, 0x0000,	/* 0x18...0x1b */
++	0x0000, 0x0000, 0x0000, 0x0000,	/* 0x1c...0x1f */
++	0x0038, 0x000b, 0x0032, 0x0000,	/* 0x20...0x23 */
++	0x0008, 0x000c, 0x0093, 0x00e9,	/* 0x24...0x27 */
++	0x0000, 0x0000, 0x0000, 0x0000,	/* 0x28...0x2b */
++	0x0033, 0x0110, 0x0110, 0x0100,	/* 0x2c...0x2f */ /* 0x2d and 0x2e contain the VU bit */
++	0x0100, 0x0002, 0x0001, 0x0001,	/* 0x30...0x33 */
++	0x0139, 0x0139, 0x0139, 0x0139,	/* 0x34...0x37 */ /* all contain the VU bit */
++	0x0001,	0x0001,			/* 0x38...0x3b */
 +};
 +
-+struct sh_dmae_slave_config {
-+	enum sh_dmae_slave_chan_id	slave_id;
-+	dma_addr_t			addr;
-+	u32				chcr;
-+	char				mid_rid;
-+};
- 
- struct sh_dmae_pdata {
- 	unsigned int mode;
-+	struct sh_dmae_slave_config *config;
-+	int config_num;
++/* codec private data */
++struct wm8978_priv {
++	struct snd_soc_codec codec;
++	u16 reg_cache[WM8978_CACHEREGNUM];
 +};
 +
-+struct device;
++static const char *wm8978_companding[] = {"Off", "NC", "u-law", "A-law" };
++static const char *wm8978_eqmode[] = {"Capture", "Playback" };
++static const char *wm8978_bw[] = {"Narrow", "Wide" };
++static const char *wm8978_eq1[] = {"80Hz", "105Hz", "135Hz", "175Hz" };
++static const char *wm8978_eq2[] = {"230Hz", "300Hz", "385Hz", "500Hz" };
++static const char *wm8978_eq3[] = {"650Hz", "850Hz", "1.1kHz", "1.4kHz" };
++static const char *wm8978_eq4[] = {"1.8kHz", "2.4kHz", "3.2kHz", "4.1kHz" };
++static const char *wm8978_eq5[] = {"5.3kHz", "6.9kHz", "9kHz", "11.7kHz" };
++static const char *wm8978_alc3[] = {"ALC", "Limiter" };
++static const char *wm8978_alc1[] = {"Off", "Right", "Left", "Both" };
 +
-+struct sh_dmae_slave {
-+	enum sh_dmae_slave_chan_id	slave_id; /* Set by the platform */
-+	struct device			*dma_dev; /* Set by the platform */
-+	struct sh_dmae_slave_config	*config;  /* Set by the driver */
- };
- 
- #endif /* __DMA_SH_H */
-diff --git a/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h b/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
-index 561538c..3d8bb27 100644
---- a/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
-+++ b/arch/sh/include/cpu-sh4/cpu/dma-sh4a.h
-@@ -7,7 +7,7 @@
- #define DMTE4_IRQ	76
- #define DMAE0_IRQ	78	/* DMA Error IRQ*/
- #define SH_DMAC_BASE0	0xFE008020
--#define SH_DMARS_BASE	0xFE009000
-+#define SH_DMARS_BASE0	0xFE009000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0
-@@ -17,7 +17,7 @@
- #define DMTE4_IRQ	76
- #define DMAE0_IRQ	78	/* DMA Error IRQ*/
- #define SH_DMAC_BASE0	0xFE008020
--#define SH_DMARS_BASE	0xFE009000
-+#define SH_DMARS_BASE0	0xFE009000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0x00300000
-@@ -28,7 +28,7 @@
- #define DMTE4_IRQ	44
- #define DMAE0_IRQ	38
- #define SH_DMAC_BASE0	0xFF608020
--#define SH_DMARS_BASE	0xFF609000
-+#define SH_DMARS_BASE0	0xFF609000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0
-@@ -45,7 +45,7 @@
- #define DMAE1_IRQ	74	/* DMA Error IRQ*/
- #define SH_DMAC_BASE0	0xFE008020
- #define SH_DMAC_BASE1	0xFDC08020
--#define SH_DMARS_BASE	0xFDC09000
-+#define SH_DMARS_BASE0	0xFDC09000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0
-@@ -62,7 +62,8 @@
- #define DMAE1_IRQ	74	/* DMA Error IRQ*/
- #define SH_DMAC_BASE0	0xFE008020
- #define SH_DMAC_BASE1	0xFDC08020
--#define SH_DMARS_BASE	0xFDC09000
-+#define SH_DMARS_BASE0	0xFE009000
-+#define SH_DMARS_BASE1	0xFDC09000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0x00600000
-@@ -78,7 +79,7 @@
- #define DMAE0_IRQ	38	/* DMA Error IRQ */
- #define SH_DMAC_BASE0	0xFC808020
- #define SH_DMAC_BASE1	0xFC818020
--#define SH_DMARS_BASE	0xFC809000
-+#define SH_DMARS_BASE0	0xFC809000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0
-@@ -95,7 +96,7 @@
- #define DMAE1_IRQ	58	/* DMA Error IRQ1 */
- #define SH_DMAC_BASE0	0xFC808020
- #define SH_DMAC_BASE1	0xFCC08020
--#define SH_DMARS_BASE	0xFC809000
-+#define SH_DMARS_BASE0	0xFC809000
- #define CHCR_TS01_MASK	0x00000018
- #define CHCR_TS01_SHIFT	3
- #define CHCR_TS23_MASK	0
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index a7c1f54..22e3a5d 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -48,6 +48,9 @@ enum sh_dmae_desc_status {
-  */
- #define RS_DEFAULT  (RS_DUAL)
- 
-+/* A bitmask with bits enough for enum sh_dmae_slave_chan_id */
-+static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SHDMA_SLAVE_NUMBER)];
++#define ARRAY_SINGLE(xreg, xshift, xtexts) SOC_ENUM_SINGLE(xreg, xshift, \
++						ARRAY_SIZE(xtexts), xtexts)
 +
- static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all);
- 
- #define SH_DMAC_CHAN_BASE(id) (dma_base_addr[id])
-@@ -61,12 +64,6 @@ static u32 sh_dmae_readl(struct sh_dmae_chan *sh_dc, u32 reg)
- 	return ctrl_inl(SH_DMAC_CHAN_BASE(sh_dc->id) + reg);
- }
- 
--static void dmae_init(struct sh_dmae_chan *sh_chan)
--{
--	u32 chcr = RS_DEFAULT; /* default is DUAL mode */
--	sh_dmae_writel(sh_chan, chcr, CHCR);
--}
--
- /*
-  * Reset DMA controller
-  *
-@@ -106,9 +103,8 @@ static bool dmae_is_busy(struct sh_dmae_chan *sh_chan)
- }
- 
- static unsigned int ts_shift[] = TS_SHIFT;
--static inline unsigned int calc_xmit_shift(struct sh_dmae_chan *sh_chan)
-+static inline unsigned int calc_xmit_shift(u32 chcr)
- {
--	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
- 	int cnt = ((chcr & CHCR_TS01_MASK) >> CHCR_TS01_SHIFT) |
- 		((chcr & CHCR_TS23_MASK) >> CHCR_TS23_SHIFT);
- 
-@@ -119,7 +115,7 @@ static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
- {
- 	sh_dmae_writel(sh_chan, hw->sar, SAR);
- 	sh_dmae_writel(sh_chan, hw->dar, DAR);
--	sh_dmae_writel(sh_chan, hw->tcr >> calc_xmit_shift(sh_chan), TCR);
-+	sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
- }
- 
- static void dmae_start(struct sh_dmae_chan *sh_chan)
-@@ -127,7 +123,7 @@ static void dmae_start(struct sh_dmae_chan *sh_chan)
- 	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
- 
- 	chcr |= CHCR_DE | CHCR_IE;
--	sh_dmae_writel(sh_chan, chcr, CHCR);
-+	sh_dmae_writel(sh_chan, chcr & ~CHCR_TE, CHCR);
- }
- 
- static void dmae_halt(struct sh_dmae_chan *sh_chan)
-@@ -138,20 +134,27 @@ static void dmae_halt(struct sh_dmae_chan *sh_chan)
- 	sh_dmae_writel(sh_chan, chcr, CHCR);
- }
- 
-+static void dmae_init(struct sh_dmae_chan *sh_chan)
++static const struct soc_enum wm8978_enum[] = {
++	/* adc */
++	ARRAY_SINGLE(WM8978_COMPANDING_CONTROL, 1, wm8978_companding),
++	/* dac */
++	ARRAY_SINGLE(WM8978_COMPANDING_CONTROL, 3, wm8978_companding),
++	ARRAY_SINGLE(WM8978_EQ1, 8, wm8978_eqmode),
++
++	ARRAY_SINGLE(WM8978_EQ1, 5, wm8978_eq1),
++	ARRAY_SINGLE(WM8978_EQ2, 8, wm8978_bw),
++	ARRAY_SINGLE(WM8978_EQ2, 5, wm8978_eq2),
++	ARRAY_SINGLE(WM8978_EQ3, 8, wm8978_bw),
++
++	ARRAY_SINGLE(WM8978_EQ3, 5, wm8978_eq3),
++	ARRAY_SINGLE(WM8978_EQ4, 8, wm8978_bw),
++	ARRAY_SINGLE(WM8978_EQ4, 5, wm8978_eq4),
++	ARRAY_SINGLE(WM8978_EQ5, 8, wm8978_bw),
++
++	ARRAY_SINGLE(WM8978_EQ5, 5, wm8978_eq5),
++	ARRAY_SINGLE(WM8978_ALC_CONTROL_3, 8, wm8978_alc3),
++	ARRAY_SINGLE(WM8978_ALC_CONTROL_1, 7, wm8978_alc1),
++};
++
++static const DECLARE_TLV_DB_SCALE(digital_tlv, -12750, 50, 1);
++static const DECLARE_TLV_DB_SCALE(eq_tlv, -1200, 100, 0);
++static const DECLARE_TLV_DB_SCALE(inpga_tlv, -1200, 75, 0);
++static const DECLARE_TLV_DB_SCALE(spk_tlv, -5700, 100, 0);
++
++static const struct snd_kcontrol_new wm8978_snd_controls[] = {
++
++SOC_SINGLE("Digital Loopback Switch", WM8978_COMPANDING_CONTROL, 0, 1, 0),
++
++SOC_ENUM("ADC Companding", wm8978_enum[0]),
++SOC_ENUM("DAC Companding", wm8978_enum[1]),
++
++SOC_SINGLE("DAC Inversion Switch", WM8978_DAC_CONTROL, 0, 1, 0),
++
++SOC_SINGLE_TLV("Left PCM Volume",
++	       WM8978_LEFT_DAC_DIGITAL_VOLUME, 0, 255, 0, digital_tlv),
++SOC_SINGLE_TLV("Right PCM Volume",
++	       WM8978_RIGHT_DAC_DIGITAL_VOLUME, 0, 255, 0, digital_tlv),
++
++SOC_SINGLE("High Pass Filter Switch", WM8978_ADC_CONTROL, 8, 1, 0),
++SOC_SINGLE("High Pass Cut Off", WM8978_ADC_CONTROL, 4, 7, 0),
++SOC_SINGLE("Left ADC Inversion Switch", WM8978_ADC_CONTROL, 0, 1, 0),
++SOC_SINGLE("Right ADC Inversion Switch", WM8978_ADC_CONTROL, 1, 1, 0),
++
++SOC_SINGLE_TLV("Left Capture Volume",
++	       WM8978_LEFT_ADC_DIGITAL_VOLUME, 0, 255, 0, digital_tlv),
++SOC_SINGLE_TLV("Right Capture Volume",
++	       WM8978_RIGHT_ADC_DIGITAL_VOLUME, 0, 255, 0, digital_tlv),
++
++SOC_ENUM("Equaliser Function", wm8978_enum[2]),
++SOC_ENUM("EQ1 Cut Off", wm8978_enum[3]),
++SOC_SINGLE_TLV("EQ1 Volume", WM8978_EQ1,  0, 24, 1, eq_tlv),
++
++SOC_ENUM("Equaliser EQ2 Bandwith", wm8978_enum[4]),
++SOC_ENUM("EQ2 Cut Off", wm8978_enum[5]),
++SOC_SINGLE_TLV("EQ2 Volume", WM8978_EQ2,  0, 24, 1, eq_tlv),
++
++SOC_ENUM("Equaliser EQ3 Bandwith", wm8978_enum[6]),
++SOC_ENUM("EQ3 Cut Off", wm8978_enum[7]),
++SOC_SINGLE_TLV("EQ3 Volume", WM8978_EQ3,  0, 24, 1, eq_tlv),
++
++SOC_ENUM("Equaliser EQ4 Bandwith", wm8978_enum[8]),
++SOC_ENUM("EQ4 Cut Off", wm8978_enum[9]),
++SOC_SINGLE_TLV("EQ4 Volume", WM8978_EQ4,  0, 24, 1, eq_tlv),
++
++SOC_ENUM("Equaliser EQ5 Bandwith", wm8978_enum[10]),
++SOC_ENUM("EQ5 Cut Off", wm8978_enum[11]),
++SOC_SINGLE_TLV("EQ5 Volume", WM8978_EQ5, 0, 24, 1, eq_tlv),
++
++SOC_SINGLE("DAC Playback Limiter Switch", WM8978_DAC_LIMITER_1, 8, 1, 0),
++SOC_SINGLE("DAC Playback Limiter Decay", WM8978_DAC_LIMITER_1, 4, 15, 0),
++SOC_SINGLE("DAC Playback Limiter Attack", WM8978_DAC_LIMITER_1, 0, 15, 0),
++
++SOC_SINGLE("DAC Playback Limiter Threshold", WM8978_DAC_LIMITER_2, 4, 7, 0),
++SOC_SINGLE("DAC Playback Limiter Boost", WM8978_DAC_LIMITER_2, 0, 15, 0),
++
++SOC_ENUM("ALC Enable Switch", wm8978_enum[13]),
++SOC_SINGLE("ALC Capture Max Gain", WM8978_ALC_CONTROL_1, 3, 7, 0),
++SOC_SINGLE("ALC Capture Min Gain", WM8978_ALC_CONTROL_1, 0, 7, 0),
++
++SOC_SINGLE("ALC Capture Hold", WM8978_ALC_CONTROL_2, 4, 7, 0),
++SOC_SINGLE("ALC Capture Target", WM8978_ALC_CONTROL_2, 0, 15, 0),
++
++SOC_ENUM("ALC Capture Mode", wm8978_enum[12]),
++SOC_SINGLE("ALC Capture Decay", WM8978_ALC_CONTROL_3, 4, 15, 0),
++SOC_SINGLE("ALC Capture Attack", WM8978_ALC_CONTROL_3, 0, 15, 0),
++
++SOC_SINGLE("ALC Capture Noise Gate Switch", WM8978_NOISE_GATE, 3, 1, 0),
++SOC_SINGLE("ALC Capture Noise Gate Threshold", WM8978_NOISE_GATE, 0, 7, 0),
++
++SOC_SINGLE("Left Capture PGA ZC Switch",
++	   WM8978_LEFT_INP_PGA_CONTROL, 7, 1, 0),
++SOC_SINGLE_TLV("Left Capture PGA Volume",
++	       WM8978_LEFT_INP_PGA_CONTROL, 0, 63, 0, inpga_tlv),
++SOC_SINGLE("Right Capture PGA ZC Switch",
++	   WM8978_RIGHT_INP_PGA_CONTROL, 7, 1, 0),
++SOC_SINGLE_TLV("Right Capture PGA Volume",
++	       WM8978_RIGHT_INP_PGA_CONTROL, 0, 63, 0, inpga_tlv),
++
++/* OUT1 - HeadPhones */
++SOC_SINGLE("Left HeadPhone Playback ZC Switch",
++	   WM8978_LOUT1_HP_CONTROL, 7, 1, 0),
++SOC_SINGLE("Left HeadPhone Playback Switch", WM8978_LOUT1_HP_CONTROL, 6, 1, 1),
++SOC_SINGLE_TLV("Left HeadPhone Playback Volume",
++	       WM8978_LOUT1_HP_CONTROL, 0, 63, 0, spk_tlv),
++
++SOC_SINGLE("Right HeadPhone Playback ZC Switch",
++	   WM8978_ROUT1_HP_CONTROL, 7, 1, 0),
++SOC_SINGLE("Right HeadPhone Playback Switch", WM8978_ROUT1_HP_CONTROL, 6, 1, 1),
++SOC_SINGLE_TLV("Right HeadPhone Playback Volume",
++	       WM8978_ROUT1_HP_CONTROL, 0, 63, 0, spk_tlv),
++
++/* OUT2 - Speakers */
++SOC_SINGLE("Left Speaker Playback ZC Switch",
++	   WM8978_LOUT2_SPK_CONTROL, 7, 1, 0),
++SOC_SINGLE("Left Speaker Playback Switch", WM8978_LOUT2_SPK_CONTROL, 6, 1, 1),
++SOC_SINGLE_TLV("Left Speaker Playback Volume",
++	       WM8978_LOUT2_SPK_CONTROL, 0, 63, 0, spk_tlv),
++
++SOC_SINGLE("Right Speaker Playback ZC Switch",
++	   WM8978_ROUT2_SPK_CONTROL, 7, 1, 0),
++SOC_SINGLE("Right Speaker Playback Switch", WM8978_ROUT2_SPK_CONTROL, 6, 1, 1),
++SOC_SINGLE_TLV("Right Speaker Playback Volume",
++	       WM8978_ROUT2_SPK_CONTROL, 0, 63, 0, spk_tlv),
++
++SOC_SINGLE("Left Capture Boost(+20dB)",
++	   WM8978_LEFT_ADC_BOOST_CONTROL, 8, 1, 0),
++SOC_SINGLE("Right Capture Boost(+20dB)",
++	   WM8978_RIGHT_ADC_BOOST_CONTROL, 8, 1, 0),
++
++/* OUT3/4 - Line Output */
++SOC_SINGLE("Left Line Playback Switch", WM8978_OUT3_MIXER_CONTROL, 6, 1, 1),
++SOC_SINGLE("Right Line Playback Switch", WM8978_OUT4_MIXER_CONTROL, 6, 1, 1),
++};
++
++/* Mixer #1: Output (OUT1, OUT2) Mixer: mix AUX, Input mixer output and DAC */
++static const struct snd_kcontrol_new wm8978_left_out_mixer[] = {
++SOC_DAPM_SINGLE("Line Bypass Switch", WM8978_LEFT_MIXER_CONTROL, 1, 1, 0),
++SOC_DAPM_SINGLE("Aux Playback Switch", WM8978_LEFT_MIXER_CONTROL, 5, 1, 0),
++SOC_DAPM_SINGLE("PCM Playback Switch", WM8978_LEFT_MIXER_CONTROL, 0, 1, 1),
++};
++
++static const struct snd_kcontrol_new wm8978_right_out_mixer[] = {
++SOC_DAPM_SINGLE("Line Bypass Switch", WM8978_RIGHT_MIXER_CONTROL, 1, 1, 0),
++SOC_DAPM_SINGLE("Aux Playback Switch", WM8978_RIGHT_MIXER_CONTROL, 5, 1, 0),
++SOC_DAPM_SINGLE("PCM Playback Switch", WM8978_RIGHT_MIXER_CONTROL, 0, 1, 1),
++};
++
++/* OUT3/OUT4 Mixer not implemented */
++
++/* Mixer #2: Input PGA Mute */
++static const struct snd_kcontrol_new wm8978_left_inpga[] = {
++SOC_DAPM_SINGLE("L2 Switch", WM8978_INPUT_CONTROL, 2, 1, 0),
++SOC_DAPM_SINGLE("Left MicN Switch", WM8978_INPUT_CONTROL, 1, 1, 0),
++SOC_DAPM_SINGLE("Left MicP Switch", WM8978_INPUT_CONTROL, 0, 1, 0),
++};
++static const struct snd_kcontrol_new wm8978_right_inpga[] = {
++SOC_DAPM_SINGLE("R2 Switch", WM8978_INPUT_CONTROL, 6, 1, 0),
++SOC_DAPM_SINGLE("Right MicN Switch", WM8978_INPUT_CONTROL, 5, 1, 0),
++SOC_DAPM_SINGLE("Right MicP Switch", WM8978_INPUT_CONTROL, 4, 1, 0),
++};
++
++/* Mixer #3: Boost (Input) mixer */
++static const struct snd_kcontrol_new wm8978_left_boost_mixer[] = {
++SOC_DAPM_SINGLE("Left PGA Mute", WM8978_LEFT_INP_PGA_CONTROL, 6, 1, 0),
++};
++static const struct snd_kcontrol_new wm8978_right_boost_mixer[] = {
++SOC_DAPM_SINGLE("Right PGA Mute", WM8978_RIGHT_INP_PGA_CONTROL, 6, 1, 0),
++};
++
++/* AUX Input boost vol */
++static const struct snd_kcontrol_new wm8978_aux_boost_controls[] = {
++SOC_DAPM_SINGLE("Left Aux Volume", WM8978_LEFT_ADC_BOOST_CONTROL, 0, 7, 0),
++SOC_DAPM_SINGLE("Right Aux Volume", WM8978_RIGHT_ADC_BOOST_CONTROL, 0, 7, 0),
++};
++
++/* Mic Input boost vol */
++static const struct snd_kcontrol_new wm8978_mic_boost_controls[] = {
++SOC_DAPM_SINGLE("Left Mic Volume", WM8978_LEFT_ADC_BOOST_CONTROL, 4, 7, 0),
++SOC_DAPM_SINGLE("Right Mic Volume", WM8978_RIGHT_ADC_BOOST_CONTROL, 4, 7, 0),
++};
++
++#define MIXER_ARRAY(n, r, s, i, m) SND_SOC_DAPM_MIXER(n, r, s, i, \
++							m, ARRAY_SIZE(m))
++
++static const struct snd_soc_dapm_widget wm8978_dapm_widgets[] = {
++SND_SOC_DAPM_DAC("Left DAC", "Left HiFi Playback", WM8978_POWER_MANAGEMENT_3, 0, 0),
++SND_SOC_DAPM_DAC("Right DAC", "Right HiFi Playback", WM8978_POWER_MANAGEMENT_3, 1, 0),
++SND_SOC_DAPM_ADC("Left ADC", "Left HiFi Capture", WM8978_POWER_MANAGEMENT_2, 0, 0),
++SND_SOC_DAPM_ADC("Right ADC", "Right HiFi Capture", WM8978_POWER_MANAGEMENT_2, 1, 0),
++
++SND_SOC_DAPM_PGA("Left Speaker Out", WM8978_POWER_MANAGEMENT_3, 6, 0, NULL, 0),
++SND_SOC_DAPM_PGA("Right Speaker Out", WM8978_POWER_MANAGEMENT_3, 5, 0, NULL, 0),
++SND_SOC_DAPM_PGA("Left Headphone Out", WM8978_POWER_MANAGEMENT_2, 7, 0, NULL, 0),
++SND_SOC_DAPM_PGA("Right Headphone Out", WM8978_POWER_MANAGEMENT_2, 8, 0, NULL, 0),
++
++/* Mixer #1: OUT1,2 */
++MIXER_ARRAY("Left Output Mixer", WM8978_POWER_MANAGEMENT_2, 2, 0,
++		   wm8978_left_out_mixer),
++MIXER_ARRAY("Right Output Mixer", WM8978_POWER_MANAGEMENT_2, 2, 0,
++		   wm8978_right_out_mixer),
++
++MIXER_ARRAY("Left Input PGA", WM8978_POWER_MANAGEMENT_2, 2, 0,
++		   wm8978_left_inpga),
++MIXER_ARRAY("Right Input PGA", WM8978_POWER_MANAGEMENT_2, 3, 0,
++		   wm8978_right_inpga),
++
++MIXER_ARRAY("Left Boost Mixer", WM8978_POWER_MANAGEMENT_2, 4, 0,
++		   wm8978_left_boost_mixer),
++MIXER_ARRAY("Right Boost Mixer", WM8978_POWER_MANAGEMENT_2, 5, 0,
++		   wm8978_right_boost_mixer),
++
++SND_SOC_DAPM_MICBIAS("Mic Bias", WM8978_POWER_MANAGEMENT_1, 4, 0),
++
++SND_SOC_DAPM_INPUT("LMICN"),
++SND_SOC_DAPM_INPUT("LMICP"),
++SND_SOC_DAPM_INPUT("RMICN"),
++SND_SOC_DAPM_INPUT("RMICP"),
++SND_SOC_DAPM_INPUT("LAUX"),
++SND_SOC_DAPM_INPUT("RAUX"),
++SND_SOC_DAPM_INPUT("L2"),
++SND_SOC_DAPM_INPUT("R2"),
++SND_SOC_DAPM_OUTPUT("LHP"),
++SND_SOC_DAPM_OUTPUT("RHP"),
++SND_SOC_DAPM_OUTPUT("LSPK"),
++SND_SOC_DAPM_OUTPUT("RSPK"),
++};
++
++static const struct snd_soc_dapm_route audio_map[] = {
++	/* Output mixer */
++	{"Right Output Mixer", "PCM Playback Switch", "Right DAC"},
++	{"Right Output Mixer", "Aux Playback Switch", "RAUX"},
++	{"Right Output Mixer", "Line Bypass Switch", "Right Boost Mixer"},
++
++	{"Left Output Mixer", "PCM Playback Switch", "Left DAC"},
++	{"Left Output Mixer", "Aux Playback Switch", "LAUX"},
++	{"Left Output Mixer", "Line Bypass Switch", "Left Boost Mixer"},
++
++	/* Outputs */
++	{"Right Headphone Out", NULL, "Right Output Mixer"},
++	{"RHP", NULL, "Right Headphone Out"},
++
++	{"Left Headphone Out", NULL, "Left Output Mixer"},
++	{"LHP", NULL, "Left Headphone Out"},
++
++	{"Right Speaker Out", NULL, "Right Output Mixer"},
++	{"RSPK", NULL, "Right Speaker Out"},
++
++	{"Left Speaker Out", NULL, "Left Output Mixer"},
++	{"LSPK", NULL, "Left Speaker Out"},
++
++	/* Boost Mixer */
++	{"Right ADC", NULL, "Right Boost Mixer"},
++
++	{"Right Boost Mixer", NULL, "RAUX"},
++	{"Right Boost Mixer", NULL, "Right Input PGA"},
++	{"Right Boost Mixer", NULL, "R2"},
++
++	{"Left ADC", NULL, "Left Boost Mixer"},
++
++	{"Left Boost Mixer", NULL, "LAUX"},
++	{"Left Boost Mixer", NULL, "Left Input PGA"},
++	{"Left Boost Mixer", NULL, "L2"},
++
++	/* Input PGA */
++	{"Right Input PGA", "R2 Switch", "R2"},
++	{"Right Input PGA", "Right MicN Switch", "RMICN"},
++	{"Right Input PGA", "Right MicP Switch", "RMICP"},
++
++	{"Left Input PGA", "L2 Switch", "L2"},
++	{"Left Input PGA", "Left MicN Switch", "LMICN"},
++	{"Left Input PGA", "Left MicP Switch", "LMICP"},
++};
++
++static int wm8978_add_widgets(struct snd_soc_codec *codec)
 +{
-+	u32 chcr = RS_DEFAULT; /* default is DUAL mode */
-+	sh_chan->xmit_shift = calc_xmit_shift(chcr);
-+	sh_dmae_writel(sh_chan, chcr, CHCR);
++	snd_soc_dapm_new_controls(codec, wm8978_dapm_widgets,
++				  ARRAY_SIZE(wm8978_dapm_widgets));
++
++	/* set up the WM8978 audio map */
++	snd_soc_dapm_add_routes(codec, audio_map, ARRAY_SIZE(audio_map));
++
++	return 0;
 +}
 +
- static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
- {
- 	/* When DMA was working, can not set data to CHCR */
- 	if (dmae_is_busy(sh_chan))
- 		return -EBUSY;
- 
-+	sh_chan->xmit_shift = calc_xmit_shift(val);
- 	sh_dmae_writel(sh_chan, val, CHCR);
++/* PLL divisors */
++struct wm8978_pll_div {
++	u32 k;
++	u8 n;
++	u8 div2;
++};
 +
- 	return 0;
- }
- 
--#define DMARS1_ADDR	0x04
--#define DMARS2_ADDR	0x08
--#define DMARS_SHIFT 8
--#define DMARS_CHAN_MSK 0x01
-+#define DMARS_SHIFT	8
-+#define DMARS_CHAN_MSK	0x01
- static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
- {
- 	u32 addr;
-@@ -163,29 +166,18 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
- 	if (sh_chan->id & DMARS_CHAN_MSK)
- 		shift = DMARS_SHIFT;
- 
--	switch (sh_chan->id) {
--	/* DMARS0 */
--	case 0:
--	case 1:
--		addr = SH_DMARS_BASE;
--		break;
--	/* DMARS1 */
--	case 2:
--	case 3:
--		addr = (SH_DMARS_BASE + DMARS1_ADDR);
--		break;
--	/* DMARS2 */
--	case 4:
--	case 5:
--		addr = (SH_DMARS_BASE + DMARS2_ADDR);
--		break;
--	default:
-+	if (sh_chan->id < 6)
-+		/* DMA0RS0 - DMA0RS2 */
-+		addr = SH_DMARS_BASE0 + (sh_chan->id / 2) * 4;
-+#ifdef SH_DMARS_BASE1
-+	else if (sh_chan->id < 12)
-+		/* DMA1RS0 - DMA1RS2 */
-+		addr = SH_DMARS_BASE1 + ((sh_chan->id - 6) / 2) * 4;
-+#endif
-+	else
- 		return -EINVAL;
--	}
- 
--	ctrl_outw((val << shift) |
--		(ctrl_inw(addr) & (shift ? 0xFF00 : 0x00FF)),
--		addr);
-+	ctrl_outw((val << shift) | (ctrl_inw(addr) & (0xFF00 >> shift)), addr);
- 
- 	return 0;
- }
-@@ -253,10 +245,53 @@ static struct sh_desc *sh_dmae_get_desc(struct sh_dmae_chan *sh_chan)
- 	return NULL;
- }
- 
-+static struct sh_dmae_slave_config *sh_dmae_find_slave(
-+	struct sh_dmae_chan *sh_chan, enum sh_dmae_slave_chan_id slave_id)
++#define FIXED_PLL_SIZE (1 << 24)
++
++static void pll_factors(struct wm8978_pll_div *pll_div, unsigned int target,
++			unsigned int source)
 +{
-+	struct dma_device *dma_dev = sh_chan->common.device;
-+	struct sh_dmae_device *shdev = container_of(dma_dev,
-+					struct sh_dmae_device, common);
-+	struct sh_dmae_pdata *pdata = &shdev->pdata;
-+	int i;
++	u64 Kpart;
++	unsigned int K, Ndiv, Nmod;
 +
-+	if ((unsigned)slave_id >= SHDMA_SLAVE_NUMBER)
-+		return NULL;
-+
-+	for (i = 0; i < pdata->config_num; i++)
-+		if (pdata->config[i].slave_id = slave_id)
-+			return pdata->config + i;
-+
-+	return NULL;
-+}
-+
- static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
- {
- 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
- 	struct sh_desc *desc;
-+	struct sh_dmae_slave *param = chan->private;
-+
-+	/*
-+	 * Called under dma_list_mutex, take care to perform all slave channel
-+	 * ID manipulations under that lock.
-+	 */
-+	if (param) {
-+		struct sh_dmae_slave_config *cfg;
-+
-+		cfg = sh_dmae_find_slave(sh_chan, param->slave_id);
-+		if (!cfg)
-+			return -EINVAL;
-+
-+		if (test_and_set_bit(param->slave_id, sh_dmae_slave_used))
-+			return -EBUSY;
-+
-+		param->config = cfg;
-+
-+		dmae_set_dmars(sh_chan, cfg->mid_rid);
-+		dmae_set_chcr(sh_chan, cfg->chcr);
++	Ndiv = target / source;
++	if (Ndiv < 6) {
++		source >>= 1;
++		pll_div->div2 = 1;
++		Ndiv = target / source;
 +	} else {
-+		if ((sh_dmae_readl(sh_chan, CHCR) & 0x700) != 0x400)
-+			dmae_set_chcr(sh_chan, RS_DEFAULT);
-+	}
- 
- 	spin_lock_bh(&sh_chan->desc_lock);
- 	while (sh_chan->descs_allocated < NR_DESCS_PER_CHANNEL) {
-@@ -289,10 +324,18 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
- 	struct sh_desc *desc, *_desc;
- 	LIST_HEAD(list);
- 
-+	dmae_halt(sh_chan);
-+
- 	/* Prepared and not submitted descriptors can still be on the queue */
- 	if (!list_empty(&sh_chan->ld_queue))
- 		sh_dmae_chan_ld_cleanup(sh_chan, true);
- 
-+	if (chan->private) {
-+		/* The caller is holding dma_list_mutex */
-+		struct sh_dmae_slave *param = chan->private;
-+		clear_bit(param->slave_id, sh_dmae_slave_used);
++		pll_div->div2 = 0;
 +	}
 +
- 	spin_lock_bh(&sh_chan->desc_lock);
- 
- 	list_splice_init(&sh_chan->ld_free, &list);
-@@ -304,7 +347,7 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
- 		kfree(desc);
- }
- 
--/*
-+/**
-  * sh_dmae_add_desc - get, set up and return one transfer descriptor
-  * @sh_chan:	DMA channel
-  * @flags:	DMA transfer flags
-@@ -351,12 +394,14 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
- 		new->async_tx.cookie = -EINVAL;
- 	}
- 
--	dev_dbg(sh_chan->dev, "chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
-+	dev_dbg(sh_chan->dev,
-+		"chaining (%u/%u)@%x -> %x with %p, cookie %d, shift %d\n",
- 		copy_size, *len, *src, *dest, &new->async_tx,
--		new->async_tx.cookie);
-+		new->async_tx.cookie, sh_chan->xmit_shift);
- 
- 	new->mark = DESC_PREPARED;
- 	new->async_tx.flags = flags;
-+	new->direction = direction;
- 
- 	*len -= copy_size;
- 	if (direction = DMA_BIDIRECTIONAL || direction = DMA_TO_DEVICE)
-@@ -465,6 +510,8 @@ static struct dma_async_tx_descriptor *sh_dmae_prep_memcpy(
- 	if (!chan || !len)
- 		return NULL;
- 
-+	chan->private = NULL;
++	if (Ndiv < 6 || Ndiv > 12)
++		dev_warn(wm8978_codec->dev,
++			 "WM8978 N value exceeds recommended range! N = %u\n",
++			 Ndiv);
 +
- 	sh_chan = to_sh_chan(chan);
- 
- 	sg_init_table(&sg, 1);
-@@ -477,6 +524,44 @@ static struct dma_async_tx_descriptor *sh_dmae_prep_memcpy(
- 			       flags);
- }
- 
-+static struct dma_async_tx_descriptor *sh_dmae_prep_slave_sg(
-+	struct dma_chan *chan, struct scatterlist *sgl, unsigned int sg_len,
-+	enum dma_data_direction direction, unsigned long flags)
-+{
-+	struct sh_dmae_slave *param;
-+	struct sh_dmae_chan *sh_chan;
++	pll_div->n = Ndiv;
++	Nmod = target - source * Ndiv;
++	Kpart = FIXED_PLL_SIZE * (long long)Nmod + source / 2;
 +
-+	if (!chan)
-+		return NULL;
++	do_div(Kpart, source);
 +
-+	sh_chan = to_sh_chan(chan);
-+	param = chan->private;
++	K = Kpart & 0xFFFFFFFF;
 +
-+	/* Someone calling slave DMA on a public channel? */
-+	if (!param || !sg_len) {
-+		dev_warn(sh_chan->dev, "%s: bad parameter: %p, %d, %d\n",
-+			 __func__, param, sg_len, param ? param->slave_id : -1);
-+		return NULL;
-+	}
-+
-+	/*
-+	 * if (param != NULL), this is a successfully requested slave channel,
-+	 * therefore param->config != NULL too.
-+	 */
-+	return sh_dmae_prep_sg(sh_chan, sgl, sg_len, &param->config->addr,
-+			       direction, flags);
++	pll_div->k = K;
 +}
 +
-+static void sh_dmae_terminate_all(struct dma_chan *chan)
++static int wm8978_set_dai_pll(struct snd_soc_dai *codec_dai, int pll_id,
++		int source, unsigned int freq_in, unsigned int freq_out)
 +{
-+	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
++	struct snd_soc_codec *codec = codec_dai->codec;
++	struct wm8978_pll_div pll_div;
++	u16 reg;
 +
-+	if (!chan)
-+		return;
++	if (freq_in = 0 || freq_out = 0) {
++		/* Clock CODEC directly from MCLK */
++		reg = snd_soc_read(codec, WM8978_CLOCKING);
++		snd_soc_write(codec, WM8978_CLOCKING, reg & ~0x100);
 +
-+	sh_dmae_chan_ld_cleanup(sh_chan, true);
++		/* Turn off PLL */
++		reg = snd_soc_read(codec, WM8978_POWER_MANAGEMENT_1);
++		snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1, reg & ~0x20);
++		return 0;
++	}
++
++	pll_factors(&pll_div, freq_out, freq_in);
++
++	dev_dbg(codec->dev, "%s: calculated PLL N=0x%x, K=0x%x, div2=%d\n",
++		__func__, pll_div.n, pll_div.k, pll_div.div2);
++
++	snd_soc_write(codec, WM8978_PLL_N, (pll_div.div2 << 4) | pll_div.n);
++	snd_soc_write(codec, WM8978_PLL_K1, pll_div.k >> 18);
++	snd_soc_write(codec, WM8978_PLL_K2, (pll_div.k >> 9) & 0x1ff);
++	snd_soc_write(codec, WM8978_PLL_K3, pll_div.k & 0x1ff);
++	reg = snd_soc_read(codec, WM8978_POWER_MANAGEMENT_1);
++	snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1, reg | 0x020);
++	/* Output PLL to GPIO1 */
++	snd_soc_write(codec, WM8978_GPIO_CONTROL,
++		      snd_soc_read(codec, WM8978_GPIO_CONTROL) | 0x4);
++
++	/* Run CODEC from PLL instead of MCLK */
++	reg = snd_soc_read(codec, WM8978_CLOCKING);
++	snd_soc_write(codec, WM8978_CLOCKING, reg | 0x100);
++
++	return 0;
 +}
 +
- static dma_async_tx_callback __ld_cleanup(struct sh_dmae_chan *sh_chan, bool all)
- {
- 	struct sh_desc *desc, *_desc;
-@@ -508,7 +593,11 @@ static dma_async_tx_callback __ld_cleanup(struct sh_dmae_chan *sh_chan, bool all
- 			cookie = tx->cookie;
- 
- 		if (desc->mark = DESC_COMPLETED && desc->chunks = 1) {
--			BUG_ON(sh_chan->completed_cookie != desc->cookie - 1);
-+			if (sh_chan->completed_cookie != desc->cookie - 1)
-+				dev_dbg(sh_chan->dev,
-+					"Completing cookie %d, expected %d\n",
-+					desc->cookie,
-+					sh_chan->completed_cookie + 1);
- 			sh_chan->completed_cookie = desc->cookie;
- 		}
- 
-@@ -581,7 +670,7 @@ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
- 		return;
- 	}
- 
--	/* Find the first un-transfer desciptor */
-+	/* Find the first not transferred desciptor */
- 	list_for_each_entry(sd, &sh_chan->ld_queue, node)
- 		if (sd->mark = DESC_SUBMITTED) {
- 			/* Get the ld start address from ld_queue */
-@@ -685,11 +774,14 @@ static void dmae_do_tasklet(unsigned long data)
- 	struct sh_dmae_chan *sh_chan = (struct sh_dmae_chan *)data;
- 	struct sh_desc *desc;
- 	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
-+	u32 dar_buf = sh_dmae_readl(sh_chan, DAR);
- 
- 	spin_lock(&sh_chan->desc_lock);
- 	list_for_each_entry(desc, &sh_chan->ld_queue, node) {
--		if ((desc->hw.sar + desc->hw.tcr) = sar_buf &&
--		    desc->mark = DESC_SUBMITTED) {
-+		if (desc->mark = DESC_SUBMITTED &&
-+		    ((desc->direction = DMA_FROM_DEVICE &&
-+		      (desc->hw.dar + desc->hw.tcr) = dar_buf) ||
-+		     (desc->hw.sar + desc->hw.tcr) = sar_buf)) {
- 			dev_dbg(sh_chan->dev, "done #%d@%p dst %u\n",
- 				desc->async_tx.cookie, &desc->async_tx,
- 				desc->hw.dar);
-@@ -762,7 +854,7 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id)
- 	}
- 
- 	snprintf(new_sh_chan->dev_id, sizeof(new_sh_chan->dev_id),
--			"sh-dmae%d", new_sh_chan->id);
-+		 "sh-dmae%d", new_sh_chan->id);
- 
- 	/* set up channel irq */
- 	err = request_irq(irq, &sh_dmae_interrupt, irqflags,
-@@ -773,11 +865,6 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id)
- 		goto err_no_irq;
- 	}
- 
--	/* CHCR register control function */
--	new_sh_chan->set_chcr = dmae_set_chcr;
--	/* DMARS register control function */
--	new_sh_chan->set_dmars = dmae_set_dmars;
--
- 	shdev->chan[id] = new_sh_chan;
- 	return 0;
- 
-@@ -848,12 +935,19 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	INIT_LIST_HEAD(&shdev->common.channels);
- 
- 	dma_cap_set(DMA_MEMCPY, shdev->common.cap_mask);
-+	dma_cap_set(DMA_SLAVE, shdev->common.cap_mask);
++/*
++ * Configure WM8978 clock dividers.
++ */
++static int wm8978_set_dai_clkdiv(struct snd_soc_dai *codec_dai,
++				 int div_id, int div)
++{
++	struct snd_soc_codec *codec = codec_dai->codec;
++	u16 reg;
 +
- 	shdev->common.device_alloc_chan_resources
- 		= sh_dmae_alloc_chan_resources;
- 	shdev->common.device_free_chan_resources = sh_dmae_free_chan_resources;
- 	shdev->common.device_prep_dma_memcpy = sh_dmae_prep_memcpy;
- 	shdev->common.device_is_tx_complete = sh_dmae_is_complete;
- 	shdev->common.device_issue_pending = sh_dmae_memcpy_issue_pending;
++	switch (div_id) {
++	case WM8978_OPCLKDIV:
++		reg = snd_soc_read(codec, WM8978_GPIO_CONTROL) & 0x1cf;
++		snd_soc_write(codec, WM8978_GPIO_CONTROL, reg | div);
++		break;
++	case WM8978_MCLKDIV:
++		reg = snd_soc_read(codec, WM8978_CLOCKING) & 0x11f;
++		snd_soc_write(codec, WM8978_CLOCKING, reg | div);
++		break;
++	case WM8978_ADCCLK:
++		reg = snd_soc_read(codec, WM8978_ADC_CONTROL) & 0x1f7;
++		snd_soc_write(codec, WM8978_ADC_CONTROL, reg | div);
++		break;
++	case WM8978_DACCLK:
++		reg = snd_soc_read(codec, WM8978_DAC_CONTROL) & 0x1f7;
++		snd_soc_write(codec, WM8978_DAC_CONTROL, reg | div);
++		break;
++	case WM8978_BCLKDIV:
++		reg = snd_soc_read(codec, WM8978_CLOCKING) & 0x1e3;
++		snd_soc_write(codec, WM8978_CLOCKING, reg | div);
++		break;
++	default:
++		return -EINVAL;
++	}
 +
-+	/* Compulsory for DMA_SLAVE fields */
-+	shdev->common.device_prep_slave_sg = sh_dmae_prep_slave_sg;
-+	shdev->common.device_terminate_all = sh_dmae_terminate_all;
++	dev_dbg(codec->dev, "%s: ID %d, value %x\n",
++		__func__, div_id, reg | div);
 +
- 	shdev->common.dev = &pdev->dev;
- 	/* Default transfer size of 32 bytes requires 32-byte alignment */
- 	shdev->common.copy_align = 5;
-diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
-index 108f1cf..7e227f3 100644
---- a/drivers/dma/shdma.h
-+++ b/drivers/dma/shdma.h
-@@ -29,6 +29,7 @@ struct sh_desc {
- 	struct sh_dmae_regs hw;
- 	struct list_head node;
- 	struct dma_async_tx_descriptor async_tx;
-+	enum dma_data_direction direction;
- 	dma_cookie_t cookie;
- 	int chunks;
- 	int mark;
-@@ -45,13 +46,9 @@ struct sh_dmae_chan {
- 	struct device *dev;		/* Channel device */
- 	struct tasklet_struct tasklet;	/* Tasklet */
- 	int descs_allocated;		/* desc count */
-+	int xmit_shift;			/* log_2(bytes_per_xfer) */
- 	int id;				/* Raw id of this channel */
- 	char dev_id[16];		/* unique name per DMAC of channel */
--
--	/* Set chcr */
--	int (*set_chcr)(struct sh_dmae_chan *sh_chan, u32 regs);
--	/* Set DMA resource */
--	int (*set_dmars)(struct sh_dmae_chan *sh_chan, u16 res);
- };
- 
- struct sh_dmae_device {
++	return 0;
++}
++
++/*
++ * Set ADC and Voice DAC format.
++ */
++static int wm8978_set_dai_fmt(struct snd_soc_dai *codec_dai,
++			      unsigned int fmt)
++{
++	struct snd_soc_codec *codec = codec_dai->codec;
++	u16 iface = snd_soc_read(codec, WM8978_AUDIO_INTERFACE) & ~0x198;
++	u16 clk = snd_soc_read(codec, WM8978_CLOCKING);
++
++	/* set master/slave audio interface */
++	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
++	case SND_SOC_DAIFMT_CBM_CFM:
++		clk |= 1;
++		break;
++	case SND_SOC_DAIFMT_CBS_CFS:
++		clk &= ~1;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	/* interface format */
++	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case SND_SOC_DAIFMT_I2S:
++		iface |= 0x10;
++		break;
++	case SND_SOC_DAIFMT_RIGHT_J:
++		break;
++	case SND_SOC_DAIFMT_LEFT_J:
++		iface |= 0x8;
++		break;
++	case SND_SOC_DAIFMT_DSP_A:
++		iface |= 0x18;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	/* clock inversion */
++	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++	case SND_SOC_DAIFMT_NB_NF:
++		break;
++	case SND_SOC_DAIFMT_IB_IF:
++		iface |= 0x180;
++		break;
++	case SND_SOC_DAIFMT_IB_NF:
++		iface |= 0x100;
++		break;
++	case SND_SOC_DAIFMT_NB_IF:
++		iface |= 0x80;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	snd_soc_write(codec, WM8978_AUDIO_INTERFACE, iface);
++	snd_soc_write(codec, WM8978_CLOCKING, clk);
++
++	return 0;
++}
++
++/*
++ * Set PCM DAI bit size and sample rate.
++ */
++static int wm8978_hw_params(struct snd_pcm_substream *substream,
++			    struct snd_pcm_hw_params *params,
++			    struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_device *socdev = rtd->socdev;
++	struct snd_soc_codec *codec = socdev->card->codec;
++	u16 iface_ctl = snd_soc_read(codec, WM8978_AUDIO_INTERFACE) & ~0x60;
++	u16 add_ctl = snd_soc_read(codec, WM8978_ADDITIONAL_CONTROL) & ~0xe;
++
++	dev_dbg(codec->dev, "%s: fmt %d, rate %u\n", __func__,
++		params_format(params), params_rate(params));
++
++	/* bit size */
++	switch (params_format(params)) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++		break;
++	case SNDRV_PCM_FORMAT_S20_3LE:
++		iface_ctl |= 0x20;
++		break;
++	case SNDRV_PCM_FORMAT_S24_LE:
++		iface_ctl |= 0x40;
++		break;
++	case SNDRV_PCM_FORMAT_S32_LE:
++		iface_ctl |= 0x60;
++		break;
++	}
++
++	/* filter coefficient */
++	switch (params_rate(params)) {
++	case 8000:
++		add_ctl |= 0x5 << 1;
++		break;
++	case 11025:
++		add_ctl |= 0x4 << 1;
++		break;
++	case 16000:
++		add_ctl |= 0x3 << 1;
++		break;
++	case 22050:
++		add_ctl |= 0x2 << 1;
++		break;
++	case 32000:
++		add_ctl |= 0x1 << 1;
++		break;
++	case 44100:
++	case 48000:
++		break;
++	}
++
++	snd_soc_write(codec, WM8978_AUDIO_INTERFACE, iface_ctl);
++	snd_soc_write(codec, WM8978_ADDITIONAL_CONTROL, add_ctl);
++
++	/* Mic bias */
++	snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1,
++		      (snd_soc_read(codec, 1) & ~4) | 0x10);
++
++	/* Out-1 enabled, left/right input channel enabled */
++	snd_soc_write(codec, WM8978_POWER_MANAGEMENT_2, 0x1bf);
++
++	/* Out-2 disabled, right/left output channel enabled, dac enabled */
++	snd_soc_write(codec, WM8978_POWER_MANAGEMENT_3, 0x10f);
++
++	return 0;
++}
++
++static int wm8978_mute(struct snd_soc_dai *dai, int mute)
++{
++	struct snd_soc_codec *codec = dai->codec;
++	u16 val = snd_soc_read(codec, WM8978_DAC_CONTROL);
++
++	dev_dbg(codec->dev, "%s: %d\n", __func__, mute);
++
++	if (mute)
++		snd_soc_write(codec, WM8978_DAC_CONTROL, val | 0x40);
++	else
++		snd_soc_write(codec, WM8978_DAC_CONTROL, val & ~0x40);
++
++	return 0;
++}
++
++static int wm8978_set_bias_level(struct snd_soc_codec *codec,
++				 enum snd_soc_bias_level level)
++{
++	u16 power1 = snd_soc_read(codec, WM8978_POWER_MANAGEMENT_1) & ~3;
++
++	switch (level) {
++	case SND_SOC_BIAS_ON:
++	case SND_SOC_BIAS_PREPARE:
++		power1 |= 1;  /* VMID 75k */
++		snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1, power1);
++		break;
++	case SND_SOC_BIAS_STANDBY:
++		power1 |= 0xC;
++
++		if (codec->bias_level = SND_SOC_BIAS_OFF) {
++			/* Initial cap charge at VMID 5k */
++			snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1,
++				      power1 | 0x3);
++			mdelay(100);
++		}
++
++		power1 |= 0x2;  /* VMID 500k */
++		snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1, power1);
++		break;
++	case SND_SOC_BIAS_OFF:
++		snd_soc_write(codec, WM8978_POWER_MANAGEMENT_1, 0);
++		snd_soc_write(codec, WM8978_POWER_MANAGEMENT_2, 0);
++		snd_soc_write(codec, WM8978_POWER_MANAGEMENT_3, 0);
++		break;
++	}
++
++	dev_dbg(codec->dev, "%s: %d, %u\n", __func__, level, power1);
++
++	codec->bias_level = level;
++	return 0;
++}
++
++/* Also supports 12kHz */
++#define WM8978_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_11025 | \
++	SNDRV_PCM_RATE_16000 | SNDRV_PCM_RATE_22050 | SNDRV_PCM_RATE_32000 | \
++	SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_48000)
++
++#define WM8978_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
++	SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE)
++
++static struct snd_soc_dai_ops wm8978_dai_ops = {
++	.hw_params	= wm8978_hw_params,
++	.digital_mute	= wm8978_mute,
++	.set_fmt	= wm8978_set_dai_fmt,
++	.set_clkdiv	= wm8978_set_dai_clkdiv,
++	.set_pll	= wm8978_set_dai_pll,
++};
++
++struct snd_soc_dai wm8978_dai = {
++	.name = "WM8978 HiFi",
++	.id = 1,
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = WM8978_RATES,
++		.formats = WM8978_FORMATS,
++	},
++	.capture = {
++		.stream_name = "Capture",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = WM8978_RATES,
++		.formats = WM8978_FORMATS,
++	},
++	.ops = &wm8978_dai_ops,
++};
++EXPORT_SYMBOL_GPL(wm8978_dai);
++
++static int wm8978_suspend(struct platform_device *pdev, pm_message_t state)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++	struct snd_soc_codec *codec = socdev->card->codec;
++
++	/* we only need to suspend if we are a valid card */
++	if (!codec->card)
++		return 0;
++
++	wm8978_set_bias_level(codec, SND_SOC_BIAS_OFF);
++	return 0;
++}
++
++static int wm8978_resume(struct platform_device *pdev)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++	struct snd_soc_codec *codec = socdev->card->codec;
++	int i;
++	u16 data;
++	u16 *cache = codec->reg_cache;
++
++	/* we only need to resume if we are a valid card */
++	if (!codec->card)
++		return 0;
++
++	/* Sync reg_cache with the hardware */
++	for (i = 0; i < ARRAY_SIZE(wm8978_reg); i++) {
++		if (i = WM8978_RESET)
++			continue;
++		data = cpu_to_be16((i << 9) | (cache[i] & 0x1ff));
++		codec->hw_write(codec->control_data, (char *)&data, 2);
++	}
++
++	wm8978_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
++	return 0;
++}
++
++static int wm8978_probe(struct platform_device *pdev)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++	struct snd_soc_codec *codec;
++	int ret = 0;
++
++	if (wm8978_codec = NULL) {
++		dev_err(&pdev->dev, "Codec device not registered\n");
++		return -ENODEV;
++	}
++
++	socdev->card->codec = wm8978_codec;
++	codec = wm8978_codec;
++
++	/* register pcms */
++	ret = snd_soc_new_pcms(socdev, SNDRV_DEFAULT_IDX1, SNDRV_DEFAULT_STR1);
++	if (ret < 0) {
++		dev_err(codec->dev, "failed to create pcms: %d\n", ret);
++		goto pcm_err;
++	}
++
++	snd_soc_add_controls(codec, wm8978_snd_controls,
++			     ARRAY_SIZE(wm8978_snd_controls));
++	wm8978_add_widgets(codec);
++
++pcm_err:
++	return ret;
++}
++
++/* power down chip */
++static int wm8978_remove(struct platform_device *pdev)
++{
++	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
++
++	snd_soc_free_pcms(socdev);
++	snd_soc_dapm_free(socdev);
++
++	return 0;
++}
++
++struct snd_soc_codec_device soc_codec_dev_wm8978 = {
++	.probe		= wm8978_probe,
++	.remove		= wm8978_remove,
++	.suspend	= wm8978_suspend,
++	.resume		= wm8978_resume,
++};
++EXPORT_SYMBOL_GPL(soc_codec_dev_wm8978);
++
++static __devinit int wm8978_register(struct wm8978_priv *wm8978)
++{
++	int ret;
++	struct snd_soc_codec *codec = &wm8978->codec;
++
++	if (wm8978_codec) {
++		dev_err(codec->dev, "Another WM8978 is registered\n");
++		return -EINVAL;
++	}
++
++	mutex_init(&codec->mutex);
++	INIT_LIST_HEAD(&codec->dapm_widgets);
++	INIT_LIST_HEAD(&codec->dapm_paths);
++
++	codec->private_data = wm8978;
++	codec->name = "WM8978";
++	codec->owner = THIS_MODULE;
++	codec->bias_level = SND_SOC_BIAS_OFF;
++	codec->set_bias_level = wm8978_set_bias_level;
++	codec->dai = &wm8978_dai;
++	codec->num_dai = 1;
++	codec->reg_cache_size = WM8978_CACHEREGNUM;
++	codec->reg_cache = &wm8978->reg_cache;
++
++	ret = snd_soc_codec_set_cache_io(codec, 7, 9, SND_SOC_I2C);
++	if (ret < 0) {
++		dev_err(codec->dev, "Failed to set cache I/O: %d\n", ret);
++		goto err;
++	}
++
++	memcpy(codec->reg_cache, wm8978_reg, sizeof(wm8978_reg));
++
++	/* Reset the codec */
++	ret = snd_soc_write(codec, WM8978_RESET, 0);
++	if (ret < 0) {
++		dev_err(codec->dev, "Failed to issue reset\n");
++		goto err;
++	}
++
++	wm8978_dai.dev = codec->dev;
++
++	wm8978_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
++
++	wm8978_codec = codec;
++
++	ret = snd_soc_register_codec(codec);
++	if (ret != 0) {
++		dev_err(codec->dev, "Failed to register codec: %d\n", ret);
++		goto err;
++	}
++
++	ret = snd_soc_register_dai(&wm8978_dai);
++	if (ret != 0) {
++		dev_err(codec->dev, "Failed to register DAI: %d\n", ret);
++		goto err_codec;
++	}
++
++	return 0;
++
++err_codec:
++	snd_soc_unregister_codec(codec);
++err:
++	kfree(wm8978);
++	return ret;
++}
++
++static __devexit void wm8978_unregister(struct wm8978_priv *wm8978)
++{
++	wm8978_set_bias_level(&wm8978->codec, SND_SOC_BIAS_OFF);
++	snd_soc_unregister_dai(&wm8978_dai);
++	snd_soc_unregister_codec(&wm8978->codec);
++	kfree(wm8978);
++	wm8978_codec = NULL;
++}
++
++static __devinit int wm8978_i2c_probe(struct i2c_client *i2c,
++				      const struct i2c_device_id *id)
++{
++	struct wm8978_priv *wm8978;
++	struct snd_soc_codec *codec;
++
++	wm8978 = kzalloc(sizeof(struct wm8978_priv), GFP_KERNEL);
++	if (wm8978 = NULL)
++		return -ENOMEM;
++
++	codec = &wm8978->codec;
++	codec->hw_write = (hw_write_t)i2c_master_send;
++
++	i2c_set_clientdata(i2c, wm8978);
++	codec->control_data = i2c;
++
++	codec->dev = &i2c->dev;
++
++	return wm8978_register(wm8978);
++}
++
++static __devexit int wm8978_i2c_remove(struct i2c_client *client)
++{
++	struct wm8978_priv *wm8978 = i2c_get_clientdata(client);
++	wm8978_unregister(wm8978);
++	return 0;
++}
++
++static const struct i2c_device_id wm8978_i2c_id[] = {
++	{ "wm8978", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, wm8978_i2c_id);
++
++static struct i2c_driver wm8978_i2c_driver = {
++	.driver = {
++		.name = "WM8978",
++		.owner = THIS_MODULE,
++	},
++	.probe =    wm8978_i2c_probe,
++	.remove =   __devexit_p(wm8978_i2c_remove),
++	.id_table = wm8978_i2c_id,
++};
++
++static int __init wm8978_modinit(void)
++{
++	return i2c_add_driver(&wm8978_i2c_driver);
++}
++module_init(wm8978_modinit);
++
++static void __exit wm8978_exit(void)
++{
++	i2c_del_driver(&wm8978_i2c_driver);
++}
++module_exit(wm8978_exit);
++
++MODULE_DESCRIPTION("ASoC WM8978 codec driver");
++MODULE_AUTHOR("Guennadi Liakhovetski <g.liakhovetski@gmx.de>");
++MODULE_LICENSE("GPL");
+diff --git a/sound/soc/codecs/wm8978.h b/sound/soc/codecs/wm8978.h
+new file mode 100644
+index 0000000..61e39c0
+--- /dev/null
++++ b/sound/soc/codecs/wm8978.h
+@@ -0,0 +1,84 @@
++/*
++ * wm8978.h		--  codec driver for WM8978
++ *
++ * Copyright 2009 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef __WM8978_H__
++#define __WM8978_H__
++
++/*
++ * Register values.
++ */
++#define WM8978_RESET				0x00
++#define WM8978_POWER_MANAGEMENT_1		0x01
++#define WM8978_POWER_MANAGEMENT_2		0x02
++#define WM8978_POWER_MANAGEMENT_3		0x03
++#define WM8978_AUDIO_INTERFACE			0x04
++#define WM8978_COMPANDING_CONTROL		0x05
++#define WM8978_CLOCKING				0x06
++#define WM8978_ADDITIONAL_CONTROL		0x07
++#define WM8978_GPIO_CONTROL			0x08
++#define WM8978_JACK_DETECT_CONTROL_1		0x09
++#define WM8978_DAC_CONTROL			0x0A
++#define WM8978_LEFT_DAC_DIGITAL_VOLUME		0x0B
++#define WM8978_RIGHT_DAC_DIGITAL_VOLUME		0x0C
++#define WM8978_JACK_DETECT_CONTROL_2		0x0D
++#define WM8978_ADC_CONTROL			0x0E
++#define WM8978_LEFT_ADC_DIGITAL_VOLUME		0x0F
++#define WM8978_RIGHT_ADC_DIGITAL_VOLUME		0x10
++#define WM8978_EQ1				0x12
++#define WM8978_EQ2				0x13
++#define WM8978_EQ3				0x14
++#define WM8978_EQ4				0x15
++#define WM8978_EQ5				0x16
++#define WM8978_DAC_LIMITER_1			0x18
++#define WM8978_DAC_LIMITER_2			0x19
++#define WM8978_NOTCH_FILTER_1			0x1b
++#define WM8978_NOTCH_FILTER_2			0x1c
++#define WM8978_NOTCH_FILTER_3			0x1d
++#define WM8978_NOTCH_FILTER_4			0x1e
++#define WM8978_ALC_CONTROL_1			0x20
++#define WM8978_ALC_CONTROL_2			0x21
++#define WM8978_ALC_CONTROL_3			0x22
++#define WM8978_NOISE_GATE			0x23
++#define WM8978_PLL_N				0x24
++#define WM8978_PLL_K1				0x25
++#define WM8978_PLL_K2				0x26
++#define WM8978_PLL_K3				0x27
++#define WM8978_3D_CONTROL			0x29
++#define WM8978_BEEP_CONTROL			0x2b
++#define WM8978_INPUT_CONTROL			0x2c
++#define WM8978_LEFT_INP_PGA_CONTROL		0x2d
++#define WM8978_RIGHT_INP_PGA_CONTROL		0x2e
++#define WM8978_LEFT_ADC_BOOST_CONTROL		0x2f
++#define WM8978_RIGHT_ADC_BOOST_CONTROL		0x30
++#define WM8978_OUTPUT_CONTROL			0x31
++#define WM8978_LEFT_MIXER_CONTROL		0x32
++#define WM8978_RIGHT_MIXER_CONTROL		0x33
++#define WM8978_LOUT1_HP_CONTROL			0x34
++#define WM8978_ROUT1_HP_CONTROL			0x35
++#define WM8978_LOUT2_SPK_CONTROL		0x36
++#define WM8978_ROUT2_SPK_CONTROL		0x37
++#define WM8978_OUT3_MIXER_CONTROL		0x38
++#define WM8978_OUT4_MIXER_CONTROL		0x39
++
++#define WM8978_CACHEREGNUM			58
++
++/* Clock divider Id's */
++enum wm8978_clk_id {
++	WM8978_OPCLKDIV,
++	WM8978_MCLKDIV,
++	WM8978_ADCCLK,
++	WM8978_DACCLK,
++	WM8978_BCLKDIV,
++};
++
++extern struct snd_soc_dai wm8978_dai;
++extern struct snd_soc_codec_device soc_codec_dev_wm8978;
++
++#endif	/* __WM8978_H__ */
 -- 
 1.6.2.4
 
