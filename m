@@ -1,53 +1,69 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 16 Jan 2010 10:20:36 +0000
-Subject: Re: [alsa-devel] Audio buffer mmap-ing on sh arch vs.	cache	aliasing	problem
-Message-Id: <20100116102036.GA32696@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 19 Jan 2010 14:29:14 +0000
+Subject: [PATCH] input: update sh_keysc driver with mode 4 and mode 5 support
+Message-Id: <20100119142914.18659.97781.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1220527434.3299.2074.camel@bri1004.bri.st.com> <s5h63owgdk1.wl%tiwai@suse.de> <1222354553.28498.30.camel@bri1004.bri.st.com> <s5hbpybcjfc.wl%tiwai@suse.de> <20100115000417.GF25018@linux-sh.org> <s5haawel607.wl%tiwai@suse.de>
-In-Reply-To: <s5haawel607.wl%tiwai@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Takashi Iwai <tiwai@suse.de>
-Cc: alsa-devel@alsa-project.org, Pawel MOLL <pawel.moll@st.com>, linux-sh@vger.kernel.org
+To: linux-input@vger.kernel.org
+Cc: lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, dmitry.torokhov@gmail.com, linux-sh@vger.kernel.org
 
-On Sat, Jan 16, 2010 at 11:05:12AM +0100, Takashi Iwai wrote:
-> At Fri, 15 Jan 2010 09:04:17 +0900,
-> Paul Mundt wrote:
-> > 
-> > On Fri, Sep 26, 2008 at 12:04:23PM +0200, Takashi Iwai wrote:
-> > > At Thu, 25 Sep 2008 15:55:53 +0100,
-> > > Pawel MOLL wrote:
-> > > > 
-> > > > > One thing we can try is a patch like below.  But, I'm not sure whether
-> > > > > this is correct over all architectures, too.  At best, a generic API
-> > > > > would be helpful for such a thing...
-> > > > > +	area->vm_page_prot = pgprot_noncached(area->vm_page_prot);
-> > > > 
-> > > > Well, it's not enough, because the kernel mapping of buffer is still
-> > > > cached... A hack below does the job, but it is not nice as well...
-> > > 
-> > > Yeah, that's not sexy, but maybe the only working case right now
-> > > (better with arch-specific ifdefs).
-> > > 
-> > > IIRC, a similar buffer handling (via vmalloc) is used in video
-> > > drivers.  I suppose they don't work as well, right?
-> > > DRM driver uses __vmalloc() with PAGE_KERNEL_NOCACHE, but it's only
-> > > for PPC32 non-coherent.
-> > > 
-> > To come back to this issue, we don't appear to have made any headway on
-> > the vmalloc front, but pgprot_noncached() is now a standard interface
-> > provided by all architectures, so the ifdef is no longer needed in the
-> > snd_pcm_default_mmap() path.
-> 
-> Thanks for heading up about this.
-> 
-> It seems, however, that pgprot_noncached() is still dangerous to apply
-> unconditionally, according to MIPS guys.  Some MIPS platforms may freeze
-> when this is set to invalid pages.
-> 
-> So, this should be applied still in an arch-dependent manner...
-> Oh well.
-> 
-Then it is something they will have to fix on their own. It's used by the
-generic VM code for VMA writenotify (see mm/mmap.c).
+From: Magnus Damm <damm@opensource.se>
+
+Add Mode 4 and Mode 5 support to the SH_KEYSC driver.
+These modes allow slightly larger key pad matrixes.
+While at it, make use of resource_size().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/input/keyboard/sh_keysc.c |    6 +++---
+ include/linux/input/sh_keysc.h    |    5 +++--
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+--- 0001/drivers/input/keyboard/sh_keysc.c
++++ work/drivers/input/keyboard/sh_keysc.c	2010-01-19 16:29:17.000000000 +0900
+@@ -36,6 +36,8 @@ static const struct {
+ 	[SH_KEYSC_MODE_1] = { 0, 6, 5 },
+ 	[SH_KEYSC_MODE_2] = { 1, 5, 6 },
+ 	[SH_KEYSC_MODE_3] = { 2, 4, 7 },
++	[SH_KEYSC_MODE_4] = { 3, 6, 6 },
++	[SH_KEYSC_MODE_5] = { 4, 6, 7 },
+ };
+ 
+ struct sh_keysc_priv {
+@@ -122,8 +124,6 @@ static irqreturn_t sh_keysc_isr(int irq,
+ 	return IRQ_HANDLED;
+ }
+ 
+-#define res_size(res) ((res)->end - (res)->start + 1)
+-
+ static int __devinit sh_keysc_probe(struct platform_device *pdev)
+ {
+ 	struct sh_keysc_priv *priv;
+@@ -164,7 +164,7 @@ static int __devinit sh_keysc_probe(stru
+ 	memcpy(&priv->pdata, pdev->dev.platform_data, sizeof(priv->pdata));
+ 	pdata = &priv->pdata;
+ 
+-	priv->iomem_base = ioremap_nocache(res->start, res_size(res));
++	priv->iomem_base = ioremap_nocache(res->start, resource_size(res));
+ 	if (priv->iomem_base = NULL) {
+ 		dev_err(&pdev->dev, "failed to remap I/O memory\n");
+ 		error = -ENXIO;
+--- 0001/include/linux/input/sh_keysc.h
++++ work/include/linux/input/sh_keysc.h	2010-01-19 16:29:17.000000000 +0900
+@@ -1,10 +1,11 @@
+ #ifndef __SH_KEYSC_H__
+ #define __SH_KEYSC_H__
+ 
+-#define SH_KEYSC_MAXKEYS 30
++#define SH_KEYSC_MAXKEYS 42
+ 
+ struct sh_keysc_info {
+-	enum { SH_KEYSC_MODE_1, SH_KEYSC_MODE_2, SH_KEYSC_MODE_3 } mode;
++	enum { SH_KEYSC_MODE_1, SH_KEYSC_MODE_2, SH_KEYSC_MODE_3,
++	       SH_KEYSC_MODE_4, SH_KEYSC_MODE_5 } mode;
+ 	int scan_timing; /* 0 -> 7, see KYCR1, SCN[2:0] */
+ 	int delay;
+ 	int kycr2_delay;
