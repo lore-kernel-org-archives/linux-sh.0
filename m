@@ -1,32 +1,40 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 19 Jan 2010 08:05:09 +0000
-Subject: [GIT PULL] sh updates for 2.6.33-rc5, part 2.
-Message-Id: <20100119080509.GD16013@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 19 Jan 2010 08:08:52 +0000
+Subject: [PATCH 0/4] ALSA: SH: add ASoC driver for SIU audio engine, an audio
+Message-Id: <Pine.LNX.4.64.1001190839110.4607@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: alsa-devel@alsa-project.org
+Cc: linux-sh@vger.kernel.org, Liam Girdwood <lrg@slimlogic.co.uk>, Kuninori Morimoto <morimoto.kuninori@renesas.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <damm@opensource.se>
 
-A few more minor changes, primarily addressing the recvmmsg/accept4 mess.
+Hi
 
-Please pull from:
+This patch series adds support for the Sound Interface Unit (SIU), found 
+on several SuperH SoCs, including sh7722, sh7343, sh7354, sh7367. The 
+driver supports playback and capture at various bitrates, mono and stereo, 
+so far only tested with an I2S codec, support for the PCM 
+(SND_SOC_DAIFMT_LEFT_J) is also included. The hardware also supports 
+S/PDIF, but including support for it would require more work and testing 
+on a suitable hardware platform.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.33
+The SIU engine includes a DSP, that has to be programmed separately. The 
+driver uses the standard request_firmware() API to load the program and 
+data.
 
-Which contains:
+This patch series also requires the earlier
 
-Kuninori Morimoto (1):
-      sh: ms7724: Correct sh-eth EEPROM polling timeout.
+[PATCH] sh: support SIU sourcing from external clock on sh7722
+(http://www.spinics.net/lists/linux-sh/msg04075.html)
 
-Paul Mundt (2):
-      sh: unwire sys_recvmmsg.
-      sh64: wire up sys_accept4.
+patch for proper functionality.
 
- arch/sh/boards/mach-se/7724/setup.c |    2 +-
- arch/sh/include/asm/unistd_32.h     |    5 +++--
- arch/sh/include/asm/unistd_64.h     |    3 ++-
- arch/sh/kernel/syscalls_32.S        |    1 -
- arch/sh/kernel/syscalls_64.S        |    1 +
- 5 files changed, 7 insertions(+), 5 deletions(-)
+Comments welcome.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
