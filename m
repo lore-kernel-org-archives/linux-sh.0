@@ -1,72 +1,30 @@
-From: "Pietrek, Markus" <Markus.Pietrek@emtrion.de>
-Date: Thu, 21 Jan 2010 09:26:27 +0000
-Subject: [PATCH] spi_sh_msiof: Fixed data sampling on the correct edge
-Message-Id: <95F51F4B902CAC40AF459205F6322F0171E8D4959B@BMK019S01.emtrion.local>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Jan 2010 10:01:46 +0000
+Subject: Re: [PATCH] spi_sh_msiof: Fixed data sampling on the correct edge
+Message-Id: <aec7e5c31001210201v15047cd0xf03ad7d7e7855251@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <95F51F4B902CAC40AF459205F6322F0171E8D4959B@BMK019S01.emtrion.local>
+In-Reply-To: <95F51F4B902CAC40AF459205F6322F0171E8D4959B@BMK019S01.emtrion.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+Hi Markus,
 
-it seems to me that the spi_sh_msiof.c driver configures REDG and TEDG wrongly. TEDG=0 outputs data at the **rising edge** of the clock and REDG=0 samples data at the **falling edge** of the clock. Therefore for SPI, TEDG must be equal to REDG, otherwise the last byte received is not sampled in the SPI mode 3
+On Thu, Jan 21, 2010 at 6:26 PM, Pietrek, Markus
+<Markus.Pietrek@emtrion.de> wrote:
+> it seems to me that the spi_sh_msiof.c driver configures REDG and TEDG wrongly. TEDG=0 outputs data at the **rising edge** of the clock and REDG=0 samples data at the **falling edge** of the clock. Therefore for SPI, TEDG must be equal to REDG, otherwise the last byte received is not sampled in the SPI mode 3
+>
+> The SH7723 HW Reference Manual explains the setting in Figure 20.20 and Figure 20.21 ("SPI Clock and data timing")
 
-The SH7723 HW Reference Manual explains the setting in Figure 20.20 and Figure 20.21 ("SPI Clock and data timing")
+Nice to hear that someone is using the msiof driver! Your patch, is it
+for a theoretical data sheet mismatch issue only?
 
-diff --git a/drivers/spi/spi_sh_msiof.c b/drivers/spi/spi_sh_msiof.c
-index 51e5e1d..a9fec2f 100644
---- a/drivers/spi/spi_sh_msiof.c
-+++ b/drivers/spi/spi_sh_msiof.c
-@@ -173,13 +173,11 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
-        int edge;
+I used your version of the register settings initially when hacked up
+the driver, but after testing on my sh7724 board and looking at the
+results in a scope I decided to use the inverted bit setting. I may be
+wrong though, so please back up your patch with some real world test
+results. =)
 
-        /*
--        * CPOL CPHA     TSCKIZ RSCKIZ TEDG REDG(!)
--        *    0    0         10     10    1    0
--        *    0    1         10     10    0    1
--        *    1    0         11     11    0    1
--        *    1    1         11     11    1    0
--        *
--        * (!) Note: REDG is inverted recommended data sheet setting
-+        * CPOL CPHA     TSCKIZ RSCKIZ TEDG REDG
-+        *    0    0         10     10    1    1
-+        *    0    1         10     10    0    0
-+        *    1    0         11     11    0    0
-+        *    1    1         11     11    1    1
-         */
-
-        sh_msiof_write(p, FCTR, 0);
-@@ -193,7 +191,7 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
-        edge = cpol ? cpha : !cpha;
-
-        tmp |= edge << 27; /* TEDG */
--       tmp |= !edge << 26; /* REDG */
-+       tmp |= edge << 26; /* REDG */
-        tmp |= (tx_hi_z ? 2 : 0) << 22; /* TXDIZ */
-        sh_msiof_write(p, CTR, tmp);
- }
-@@ -280,6 +278,9 @@ static void sh_msiof_spi_read_fifo_8(struct sh_msiof_spi_priv *p,
-
-        for (k = 0; k < words; k++)
-                buf_8[k] = sh_msiof_read(p, RFDR) >> fs;
-+
-+       for (k = 0; k < words; k++)
-+               pr_err(" %02x\n", buf_8[k]);
- }
-
- static void sh_msiof_spi_read_fifo_16(struct sh_msiof_spi_priv *p,
-
-_____________________________________
-
-Amtsgericht Mannheim
-HRB 110 300
-Gesch?ftsf?hrer: Dieter Baur, Ramona Maurer
-_____________________________________
-
-Important Note:
-- This e-mail may contain trade secrets or privileged, undisclosed or otherwise confidential information.
-- If you have received this e-mail in error, you are hereby notified that any review, copying or distribution of it is strictly prohibited.
-- Please inform us immediately and destroy the original transmittal.
-
-Thank you for your cooperation.
+/ magnus
