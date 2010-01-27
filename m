@@ -1,237 +1,188 @@
-From: Yusuke Goda <goda.yusuke@renesas.com>
-Date: Tue, 26 Jan 2010 09:42:23 +0000
-Subject: Re: USB boot problems submission
-Message-Id: <4B5EB8FF.20807@renesas.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------030102080602040706080607"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Jan 2010 09:11:20 +0000
+Subject: [PATCH] mtd: trivial sh_flctl changes
+Message-Id: <20100127091120.21312.77488.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4B5D3019.9080900@renesas.com>
-In-Reply-To: <4B5D3019.9080900@renesas.com>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, shimoda.yoshihiro@renesas.com, dwmw2@infradead.org, linux-sh@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------030102080602040706080607
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+From: Magnus Damm <damm@opensource.se>
 
+This patch contains a few changes for the sh_flctl driver:
+ - not sh7723-only driver - get rid of kconfig dependency
+ - use dev_err() instead of printk()
+ - use __devinit and __devexit for probe()/remove()
+ - fix probe() return values
 
-Paul Mundt wrote:
-> On Tue, Jan 26, 2010 at 06:24:21PM +0900, Yusuke Goda wrote:
->> Paul Mundt wrote:
->>> On Tue, Jan 26, 2010 at 05:33:18PM +0900, Yusuke Goda wrote:
->>>> Hi Paul-san
->>>>
->>>>> You should rebuild your kernel with verbose BUG reporting and all of the
->>>>> kallsyms bits turned on, which will give you a meaningful oops. That
->>>> I attach log(CONFIG_KALLSYMS=y).
->>>>
->>>>> should at least give us an idea of where things are going wrong,
->>>>> otherwise we go back to bisecting.
->>>> This problem seems to occur with the following commit.
->>>>  commit 2277ab4a1df50e05bc732fe9488d4e902bb8399a
->>>>   sh: Migrate from PG_mapped to PG_dcache_dirty.
->>>>
->>>> Sorry, I cannot identify it to number of lines.
->>> Thanks. Can you try this again with the dwarf unwinder enabled?
->> OK. I attach it.
->>
-> .. while keeping verbose bug reporting and kallsyms enabled :-)
-Oh sorry. I attach it.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Goda
+ drivers/mtd/nand/Kconfig     |    4 ++--
+ drivers/mtd/nand/sh_flctl.c  |   40 ++++++++++++++++++++++------------------
+ include/linux/mtd/sh_flctl.h |    1 +
+ 3 files changed, 25 insertions(+), 20 deletions(-)
 
---------------030102080602040706080607
-Content-Type: text/plain;
- name="ecovec-usbboot-dwarf_unwinder2.log"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="ecovec-usbboot-dwarf_unwinder2.log"
-
-## Starting application at 0x89000000 ...
-Linux version 2.6.33-rc4 (root@gohda) (gcc version 4.3.4 (Debian 4.3.4-1) ) #39 PREEMPT Tue Jan 26 09:39:26 UTC 2010
-Boot params:
-... MOUNT_ROOT_RDONLY - 00000000
-... RAMDISK_FLAGS     - 00000000
-... ORIG_ROOT_DEV     - 00000000
-... LOADER_TYPE       - 00000000
-... INITRD_START      - 00000000
-... INITRD_SIZE       - 00000000
-Booting machvec: R0P7724 (EcoVec)
-Node 0: start_pfn = 0x8000, low = 0xf800
-Zone PFN ranges:
-  Normal   0x00008000 -> 0x0000f800
-Movable zone start PFN for each node
-early_node_map[1] active PFN ranges
-    0: 0x00008000 -> 0x0000f800
-Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 30480
-Kernel command line: console=tty0, console=ttySC0,115200 root=/dev/sda2 rootdelay=10 mem=120M memchunk.vpu=4m
-PID hash table entries: 512 (order: -1, 2048 bytes)
-Dentry cache hash table entries: 16384 (order: 4, 65536 bytes)
-Inode-cache hash table entries: 8192 (order: 3, 32768 bytes)
-PVR=10300b00 CVR=7144040d PRR=00002200
-I-cache : n_ways=4 n_sets=256 way_incr=8192
-I-cache : entry_mask=0x00001fe0 alias_mask=0x00001000 n_aliases=2
-D-cache : n_ways=4 n_sets=256 way_incr=8192
-D-cache : entry_mask=0x00001fe0 alias_mask=0x00001000 n_aliases=2
-S-cache : n_ways=4 n_sets=2048 way_incr=65536
-S-cache : entry_mask=0x0000ffe0 alias_mask=0x0000f000 n_aliases=16
-Memory: 117560k/122880k available (2346k kernel code, 951k data, 104k init)
-virtual kernel memory layout:
-    fixmap  : 0xdffd6000 - 0xdffff000   ( 164 kB)
-    vmalloc : 0xc0000000 - 0xdffd4000   ( 511 MB)
-    lowmem  : 0x88000000 - 0x8f800000   ( 120 MB) (cached)
-            : 0xa8000000 - 0xc8000000   ( 512 MB) (uncached)
-      .init : 0x883c4000 - 0x883de000   ( 104 kB)
-      .data : 0x8824b9dc - 0x883396e0   ( 951 kB)
-      .text : 0x88001000 - 0x8824b9dc   (2346 kB)
-Hierarchical RCU implementation.
-NR_IRQS:256 nr_irqs:256
-Console: colour dummy device 80x25
-console [tty0] enabled
-sh_tmu: TMU0 used for clock events
-sh_tmu: TMU0 used for periodic clock events
-sh_tmu: TMU1 used as clock source
-Calibrating delay loop (skipped)... 499.99 BogoMIPS PRESET (lpj=999999)
-Mount-cache hash table entries: 512
-CPU: SH7724
-DWARF unwinder initialised: read 2 CIEs, 12566 FDEs
-NET: Registered protocol family 16
-vpu: forcing memory chunk size to 0x00400000
-sh pinmux: sh7724_pfc handling gpio 0 -> 486
-Performance Events: SH-4A support registered
-HW Breakpoints: SH-4A UBC support registered
-USB1 function is selected
-bio: create slab <bio-0> at 0
-SCSI subsystem initialized
-usbcore: registered new interface driver usbfs
-usbcore: registered new interface driver hub
-usbcore: registered new device driver usb
-Switching to clocksource TMU1
-NET: Registered protocol family 2
-IP route cache hash table entries: 1024 (order: 0, 4096 bytes)
-TCP established hash table entries: 4096 (order: 3, 32768 bytes)
-TCP bind hash table entries: 4096 (order: 2, 16384 bytes)
-TCP: Hash tables configured (established 4096 bind 4096)
-TCP reno registered
-UDP hash table entries: 256 (order: 0, 4096 bytes)
-UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
-NET: Registered protocol family 1
-RPC: Registered udp transport module.
-RPC: Registered tcp transport module.
-RPC: Registered tcp NFSv4.1 backchannel transport module.
-Installing knfsd (copyright (C) 1996 okir@monad.swb.de).
-msgmni has been set to 229
-alg: No test for stdrng (krng)
-io scheduler noop registered
-io scheduler deadline registered
-io scheduler cfq registered (default)
-Console: switching to colour frame buffer device 100x30
-graphics fb0: registered sh_mobile_lcdc_fb/mainlcd as 800x480 16bpp.
-SuperH SCI(F) driver initialized
-sh-sci.0: ttySC0 at MMIO 0xffe00000 (irq = 80) is a scif
-console [ttySC0] enabled
-sh-sci.1: ttySC1 at MMIO 0xffe10000 (irq = 81) is a scif
-sh-sci.2: ttySC2 at MMIO 0xffe20000 (irq = 82) is a scif
-sh-sci.3: ttySC3 at MMIO 0xa4e30000 (irq = 56) is a scifa
-sh-sci.4: ttySC4 at MMIO 0xa4e40000 (irq = 88) is a scifa
-sh-sci.5: ttySC5 at MMIO 0xa4e50000 (irq = 109) is a scifa
-brd: module loaded
-physmap platform flash device: 04000000 at 00000000
-physmap-flash.0: Found 1 x16 devices at 0x0 in 16-bit bank
- Amd/Fujitsu Extended Query Table at 0x0040
-physmap-flash.0: CFI does not contain boot bank location. Assuming top.
-number of CFI chips: 1
-RedBoot partition parsing not available
-Using physmap partition information
-Creating 2 MTD partitions on "physmap-flash.0":
-0x000000000000-0x000000500000 : "boot loader"
-0x000000500000-0x000004000000 : "free-area"
-sh_mii: probed
-Base address at 0xa4600000, 00:00:87:6B:BC:B0, IRQ 91.
-r8a66597_hcd: driver r8a66597_hcd, 2009-05-26
-r8a66597_hcd r8a66597_hcd.0: USB Host Controller
-r8a66597_hcd r8a66597_hcd.0: new USB bus registered, assigned bus number 1
-r8a66597_hcd r8a66597_hcd.0: irq 65, io base 0xa4d80000
-hub 1-0:1.0: USB hub found
-hub 1-0:1.0: 1 port detected
-Initializing USB Mass Storage driver...
-usbcore: registered new interface driver usb-storage
-USB Mass Storage support registered.
-input: sh_keysc as /class/input/input0
-i2c /dev entries driver
-Linux video capture interface: v2.00
-camera 0-0: Probing 0-0
-sh_mobile_ceu sh_mobile_ceu.0: SuperH Mobile CEU driver attached to camera 0
-sh_mobile_ceu sh_mobile_ceu.0: SuperH Mobile CEU driver detached from camera 0
-camera: probe of 0-0 failed with error -12
-camera 1-0: Probing 1-0
-sh_mobile_ceu sh_mobile_ceu.1: SuperH Mobile CEU driver attached to camera 0
-sh_mobile_ceu sh_mobile_ceu.1: SuperH Mobile CEU driver detached from camera 0
-camera: probe of 1-0 failed with error -12
-camera 1-1: Probing 1-1
-sh_mobile_ceu sh_mobile_ceu.1: SuperH Mobile CEU driver attached to camera 1
-sh_mobile_ceu sh_mobile_ceu.1: SuperH Mobile CEU driver detached from camera 1
-camera: probe of 1-1 failed with error -12
-sh_tmu: TMU0 kept as earlytimer
-sh_tmu: TMU1 kept as earlytimer
-usbcore: registered new interface driver usbhid
-usbhid: USB HID core driver
-heartbeat: version 0.1.2 loaded
-TCP cubic registered
-NET: Registered protocol family 17
-drivers/rtc/hctosys.c: unable to open rtc device (rtc0)
-Waiting 10sec before mounting root device...
-usb 1-1: new high speed USB device using r8a66597_hcd and address 2
-scsi0 : usb-storage 1-1:1.0
-scsi 0:0:0:0: Direct-Access     I-O DATA USB Flash Disk   3A   PQ: 0 ANSI: 2
-sd 0:0:0:0: [sda] 4014080 512-byte logical blocks: (2.05 GB/1.91 GiB)
-sd 0:0:0:0: [sda] Write Protect is off
-sd 0:0:0:0: [sda] Assuming drive cache: write through
-sd 0:0:0:0: [sda] Assuming drive cache: write through
- sda: sda1 sda2
-sd 0:0:0:0: [sda] Assuming drive cache: write through
-sd 0:0:0:0: [sda] Attached SCSI removable disk
-EXT3-fs (sda2): warning: maximal mount count reached, running e2fsck is recommended
-kjournald starting.  Commit interval 5 seconds
-EXT3-fs (sda2): using internal journal
-EXT3-fs (sda2): recovery complete
-EXT3-fs (sda2): mounted filesystem with writeback data mode
-VFS: Mounted root (ext3 filesystem) on device 8:2.
-Freeing unused kernel memory: 104k freed
-Kernel panic - not syncing: Attempted to kill init!
-Stack: (0x8f01de1c to 0x8f01e000)
-de00:                                                                88247d06 
-de20: 8f01de2c 8812837c 882ae1e4 88247d64 8f01de34 8f01de58 8801ba98 8f01de64 
-de40: 8d66a580 8f01fd60 8f01def0 8f01acc0 8f01acc0 88318314 8f01acb8 00000000 
-de60: 8f01de3c 8f01de64 00000001 0000000b 8f01dfa4 8f01de74 8f01de74 8801c08c 
-de80: 8f01de9c 8d66a580 8f01fd60 8f01def0 0000000a 0000000b 8f01fd60 88025c38 
-dea0: 8f01deac 0000000a 8d66a64c 8f01dfa4 8f01df70 8800549c 8f01ded4 8f01dfa4 
-dec0: 29583004 00000001 880080f0 880080f0 29583004 0000000a 00000002 8f01aef0 
-dee0: 8f01defc 8d674d40 8d674d74 8f01dfa4 0000000b 00000000 00030001 00000004 
-df00: 8d675f3c 29746000 29746000 8805f1d4 00000004 8d675f3c 29746000 29746000 
-df20: 8805f1d4 8f01df28 00002410 00000508 00000000 00000000 00000000 00000000 
-df40: 29746000 8d674d40 08100073 00000002 8f01df54 8802ef7a 8f01df74 8f01df80 
-df60: 8f01df44 29746000 8f01df6c 880115f0 8f01df8c 000001bc 29583004 00000000 
-df80: 29566de0 88008140 8f01dfa4 000001bc 29583004 00000001 880080f0 880080f0 
-dfa0: 8f01c000 00000040 00000000 00000020 29582e14 29574c18 29574dd0 00000000 
-dfc0: 29574c18 29574c58 295832c8 00000001 00000001 29583004 000001bc 7babec7c 
-dfe0: 7babec7c 295610de 29559810 00008100 2974a450 01f014c6 a13383fe ffffffff 
-
-Call trace:
- [<8800eff6>] dwarf_unwinder_dump+0x22/0x68
- [<88007292>] unwind_stack+0x9a/0xf0
- [<8800329e>] show_trace+0x3e/0x78
- [<880066da>] show_stack+0x3a/0x58
- [<88247d06>] dump_stack+0xe/0x1c
- [<88247d64>] panic+0x50/0x114
- [<8801ba98>] do_exit+0x40/0x5bc
- [<8801c08c>] do_group_exit+0x78/0xb8
- [<88025c38>] get_signal_to_deliver+0x360/0x3e4
- [<8800549c>] do_notify_resume+0x8c/0x6ec
- [<88008140>] resume_userspace+0x0/0x10
- [<295610de>] 0x295610de
-
-
-
---------------030102080602040706080607--
-
+--- 0001/drivers/mtd/nand/Kconfig
++++ work/drivers/mtd/nand/Kconfig	2010-01-26 22:11:20.000000000 +0900
+@@ -451,10 +451,10 @@ config MTD_NAND_NOMADIK
+ 
+ config MTD_NAND_SH_FLCTL
+ 	tristate "Support for NAND on Renesas SuperH FLCTL"
+-	depends on MTD_NAND && SUPERH && CPU_SUBTYPE_SH7723
++	depends on MTD_NAND && SUPERH
+ 	help
+ 	  Several Renesas SuperH CPU has FLCTL. This option enables support
+-	  for NAND Flash using FLCTL. This driver support SH7723.
++	  for NAND Flash using FLCTL.
+ 
+ config MTD_NAND_DAVINCI
+         tristate "Support NAND on DaVinci SoC"
+--- 0001/drivers/mtd/nand/sh_flctl.c
++++ work/drivers/mtd/nand/sh_flctl.c	2010-01-27 17:43:42.000000000 +0900
+@@ -1,10 +1,10 @@
+ /*
+  * SuperH FLCTL nand controller
+  *
+- * Copyright © 2008 Renesas Solutions Corp.
+- * Copyright © 2008 Atom Create Engineering Co., Ltd.
++ * Copyright (c) 2008 Renesas Solutions Corp.
++ * Copyright (c) 2008 Atom Create Engineering Co., Ltd.
+  *
+- * Based on fsl_elbc_nand.c, Copyright © 2006-2007 Freescale Semiconductor
++ * Based on fsl_elbc_nand.c, Copyright (c) 2006-2007 Freescale Semiconductor
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -75,6 +75,11 @@ static void start_translation(struct sh_
+ 	writeb(TRSTRT, FLTRCR(flctl));
+ }
+ 
++static void timeout_error(struct sh_flctl *flctl, const char *str)
++{
++	dev_err(&flctl->pdev->dev, "Timeout occured in %s\n", str);
++}
++
+ static void wait_completion(struct sh_flctl *flctl)
+ {
+ 	uint32_t timeout = LOOP_TIMEOUT_MAX;
+@@ -87,7 +92,7 @@ static void wait_completion(struct sh_fl
+ 		udelay(1);
+ 	}
+ 
+-	printk(KERN_ERR "wait_completion(): Timeout occured \n");
++	timeout_error(flctl, __func__);
+ 	writeb(0x0, FLTRCR(flctl));
+ }
+ 
+@@ -132,7 +137,7 @@ static void wait_rfifo_ready(struct sh_f
+ 			return;
+ 		udelay(1);
+ 	}
+-	printk(KERN_ERR "wait_rfifo_ready(): Timeout occured \n");
++	timeout_error(flctl, __func__);
+ }
+ 
+ static void wait_wfifo_ready(struct sh_flctl *flctl)
+@@ -146,7 +151,7 @@ static void wait_wfifo_ready(struct sh_f
+ 			return;
+ 		udelay(1);
+ 	}
+-	printk(KERN_ERR "wait_wfifo_ready(): Timeout occured \n");
++	timeout_error(flctl, __func__);
+ }
+ 
+ static int wait_recfifo_ready(struct sh_flctl *flctl, int sector_number)
+@@ -198,7 +203,7 @@ static int wait_recfifo_ready(struct sh_
+ 		writel(0, FL4ECCCR(flctl));
+ 	}
+ 
+-	printk(KERN_ERR "wait_recfifo_ready(): Timeout occured \n");
++	timeout_error(flctl, __func__);
+ 	return 1;	/* timeout */
+ }
+ 
+@@ -214,7 +219,7 @@ static void wait_wecfifo_ready(struct sh
+ 			return;
+ 		udelay(1);
+ 	}
+-	printk(KERN_ERR "wait_wecfifo_ready(): Timeout occured \n");
++	timeout_error(flctl, __func__);
+ }
+ 
+ static void read_datareg(struct sh_flctl *flctl, int offset)
+@@ -769,38 +774,36 @@ static int flctl_chip_init_tail(struct m
+ 	return 0;
+ }
+ 
+-static int __init flctl_probe(struct platform_device *pdev)
++static int __devinit flctl_probe(struct platform_device *pdev)
+ {
+ 	struct resource *res;
+ 	struct sh_flctl *flctl;
+ 	struct mtd_info *flctl_mtd;
+ 	struct nand_chip *nand;
+ 	struct sh_flctl_platform_data *pdata;
+-	int ret;
++	int ret = -ENXIO;
+ 
+ 	pdata = pdev->dev.platform_data;
+ 	if (pdata = NULL) {
+-		printk(KERN_ERR "sh_flctl platform_data not found.\n");
+-		return -ENODEV;
++		dev_err(&pdev->dev, "no platform data defined\n");
++		return -EINVAL;
+ 	}
+ 
+ 	flctl = kzalloc(sizeof(struct sh_flctl), GFP_KERNEL);
+ 	if (!flctl) {
+-		printk(KERN_ERR "Unable to allocate NAND MTD dev structure.\n");
++		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
+ 	}
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+-		printk(KERN_ERR "%s: resource not found.\n", __func__);
+-		ret = -ENODEV;
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
+ 		goto err;
+ 	}
+ 
+ 	flctl->reg = ioremap(res->start, resource_size(res));
+ 	if (flctl->reg = NULL) {
+-		printk(KERN_ERR "%s: ioremap error.\n", __func__);
+-		ret = -ENOMEM;
++		dev_err(&pdev->dev, "failed to remap I/O memory\n");
+ 		goto err;
+ 	}
+ 
+@@ -808,6 +811,7 @@ static int __init flctl_probe(struct pla
+ 	flctl_mtd = &flctl->mtd;
+ 	nand = &flctl->chip;
+ 	flctl_mtd->priv = nand;
++	flctl->pdev = pdev;
+ 	flctl->hwecc = pdata->has_hwecc;
+ 
+ 	flctl_register_init(flctl, pdata->flcmncr_val);
+@@ -846,7 +850,7 @@ err:
+ 	return ret;
+ }
+ 
+-static int __exit flctl_remove(struct platform_device *pdev)
++static int __devexit flctl_remove(struct platform_device *pdev)
+ {
+ 	struct sh_flctl *flctl = platform_get_drvdata(pdev);
+ 
+--- 0001/include/linux/mtd/sh_flctl.h
++++ work/include/linux/mtd/sh_flctl.h	2010-01-26 22:11:20.000000000 +0900
+@@ -96,6 +96,7 @@
+ struct sh_flctl {
+ 	struct mtd_info		mtd;
+ 	struct nand_chip	chip;
++	struct platform_device	*pdev;
+ 	void __iomem		*reg;
+ 
+ 	uint8_t	done_buff[2048 + 64];	/* max size 2048 + 64 */
