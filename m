@@ -1,85 +1,113 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 04 Jan 2010 06:55:57 +0000
-Subject: [GIT PULL] sh updates for 2.6.33-rc2, part 2.
-Message-Id: <20100104065557.GA8721@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Jan 2010 09:17:21 +0000
+Subject: [PATCH] mtd: sh_flctl SHBUSSEL and SEL_16BIT support
+Message-Id: <20100127091721.21320.90312.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, shimoda.yoshihiro@renesas.com, dwmw2@infradead.org, linux-sh@vger.kernel.org
 
-The only real churn here is the defconfig updates, which should all be
-settled now. The rest of the changes relate to a couple of build and boot
-fixes that popped up in -rc1. If it's too late for -rc2, feel free to
-just pull it for -rc3 at your leisure.
+From: Magnus Damm <damm@opensource.se>
 
-Please pull from:
+This patch extends the sh_flctl driver with support
+for 16-bit bus configuration using SEL_16BIT and
+support for multiplexed pins using SHBUSSEL.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.33
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Which contains:
+ drivers/mtd/nand/sh_flctl.c  |   27 ++++++++++++++++++++++++++-
+ include/linux/mtd/sh_flctl.h |    2 ++
+ 2 files changed, 28 insertions(+), 1 deletion(-)
 
-Daisuke HATAYAMA (1):
-      binfmt_elf_fdpic: Fix build breakage introduced by coredump changes.
-
-Paul Mundt (4):
-      sh: Only provide a PCLK definition for legacy CPG CPUs.
-      sh: Disable PMB for SH4AL-DSP CPUs.
-      sh: Don't default enable PMB support.
-      sh: update defconfigs.
-
- arch/sh/Kconfig                             |   16 ++-
- arch/sh/configs/ap325rxa_defconfig          |   87 +++++++++++---
- arch/sh/configs/cayman_defconfig            |  168 ++++++++++++++++++++-------
- arch/sh/configs/dreamcast_defconfig         |   78 ++++++++++---
- arch/sh/configs/ecovec24-romimage_defconfig |   76 ++++++++++---
- arch/sh/configs/ecovec24_defconfig          |   89 ++++++++++++---
- arch/sh/configs/edosk7705_defconfig         |   49 +++++++--
- arch/sh/configs/edosk7760_defconfig         |   70 ++++++++---
- arch/sh/configs/espt_defconfig              |   77 ++++++++++---
- arch/sh/configs/hp6xx_defconfig             |   70 +++++++++---
- arch/sh/configs/kfr2r09-romimage_defconfig  |   58 ++++++++--
- arch/sh/configs/kfr2r09_defconfig           |   71 ++++++++++--
- arch/sh/configs/landisk_defconfig           |   85 ++++++++++---
- arch/sh/configs/lboxre2_defconfig           |   89 +++++++++++----
- arch/sh/configs/magicpanelr2_defconfig      |   69 ++++++++---
- arch/sh/configs/microdev_defconfig          |   71 +++++++++---
- arch/sh/configs/migor_defconfig             |   92 +++++++++++----
- arch/sh/configs/polaris_defconfig           |   77 ++++++++++---
- arch/sh/configs/r7780mp_defconfig           |   99 ++++++++++++----
- arch/sh/configs/r7785rp_defconfig           |   98 ++++++++++++----
- arch/sh/configs/rsk7201_defconfig           |   59 ++++++++--
- arch/sh/configs/rsk7203_defconfig           |   71 +++++++++---
- arch/sh/configs/rts7751r2d1_defconfig       |   95 ++++++++++++----
- arch/sh/configs/rts7751r2dplus_defconfig    |   95 ++++++++++++----
- arch/sh/configs/sdk7780_defconfig           |   88 +++++++++++---
- arch/sh/configs/se7206_defconfig            |   66 +++++++++--
- arch/sh/configs/se7343_defconfig            |   72 +++++++++---
- arch/sh/configs/se7619_defconfig            |   58 ++++++++--
- arch/sh/configs/se7705_defconfig            |   71 +++++++++---
- arch/sh/configs/se7712_defconfig            |   61 ++++++++---
- arch/sh/configs/se7721_defconfig            |   62 ++++++++---
- arch/sh/configs/se7722_defconfig            |   69 +++++++++---
- arch/sh/configs/se7724_defconfig            |  100 +++++++++++++---
- arch/sh/configs/se7750_defconfig            |   70 +++++++++---
- arch/sh/configs/se7751_defconfig            |   70 +++++++++---
- arch/sh/configs/se7780_defconfig            |   79 ++++++++++---
- arch/sh/configs/sh03_defconfig              |   80 ++++++++++---
- arch/sh/configs/sh7710voipgw_defconfig      |   66 ++++++++---
- arch/sh/configs/sh7724_generic_defconfig    |   80 ++++++++++----
- arch/sh/configs/sh7763rdp_defconfig         |   74 +++++++++---
- arch/sh/configs/sh7770_generic_defconfig    |   79 ++++++++++---
- arch/sh/configs/sh7785lcr_32bit_defconfig   |   83 ++++++++++----
- arch/sh/configs/sh7785lcr_defconfig         |   83 ++++++++++----
- arch/sh/configs/shmin_defconfig             |   64 ++++++++---
- arch/sh/configs/shx3_defconfig              |   93 ++++++++++++---
- arch/sh/configs/snapgear_defconfig          |   79 ++++++++++---
- arch/sh/configs/systemh_defconfig           |   64 ++++++++--
- arch/sh/configs/titan_defconfig             |   87 +++++++++++---
- arch/sh/configs/ul2_defconfig               |   86 ++++++++++----
- arch/sh/configs/urquell_defconfig           |   99 ++++++++++++-----
- arch/sh/include/asm/timex.h                 |   10 ++
- arch/sh/mm/Kconfig                          |    7 +-
- fs/binfmt_elf_fdpic.c                       |    4 +-
- 53 files changed, 3029 insertions(+), 884 deletions(-)
+--- 0015/drivers/mtd/nand/sh_flctl.c
++++ work/drivers/mtd/nand/sh_flctl.c	2010-01-26 23:25:33.000000000 +0900
+@@ -105,6 +105,8 @@ static void set_addr(struct mtd_info *mt
+ 		addr = page_addr;	/* ERASE1 */
+ 	} else if (page_addr != -1) {
+ 		/* SEQIN, READ0, etc.. */
++		if (flctl->chip.options & NAND_BUSWIDTH_16)
++			column >>= 1;
+ 		if (flctl->page_size) {
+ 			addr = column & 0x0FFF;
+ 			addr |= (page_addr & 0xff) << 16;
+@@ -280,7 +282,7 @@ static void write_fiforeg(struct sh_flct
+ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_val)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	uint32_t flcmncr_val = readl(FLCMNCR(flctl));
++	uint32_t flcmncr_val = readl(FLCMNCR(flctl)) & ~SEL_16BIT;
+ 	uint32_t flcmdcr_val, addr_len_bytes = 0;
+ 
+ 	/* Set SNAND bit if page size is 2048byte */
+@@ -302,6 +304,8 @@ static void set_cmd_regs(struct mtd_info
+ 	case NAND_CMD_READOOB:
+ 		addr_len_bytes = flctl->rw_ADRCNT;
+ 		flcmdcr_val |= CDSRC_E;
++		if (flctl->chip.options & NAND_BUSWIDTH_16)
++			flcmncr_val |= SEL_16BIT;
+ 		break;
+ 	case NAND_CMD_SEQIN:
+ 		/* This case is that cmd is READ0 or READ1 or READ00 */
+@@ -310,6 +314,8 @@ static void set_cmd_regs(struct mtd_info
+ 	case NAND_CMD_PAGEPROG:
+ 		addr_len_bytes = flctl->rw_ADRCNT;
+ 		flcmdcr_val |= DOCMD2_E | CDSRC_E | SELRW;
++		if (flctl->chip.options & NAND_BUSWIDTH_16)
++			flcmncr_val |= SEL_16BIT;
+ 		break;
+ 	case NAND_CMD_READID:
+ 		flcmncr_val &= ~SNAND_E;
+@@ -528,6 +534,8 @@ static void flctl_cmdfunc(struct mtd_inf
+ 		set_addr(mtd, 0, page_addr);
+ 
+ 		flctl->read_bytes = mtd->writesize + mtd->oobsize;
++		if (flctl->chip.options & NAND_BUSWIDTH_16)
++			column >>= 1;
+ 		flctl->index += column;
+ 		goto read_normal_exit;
+ 
+@@ -691,6 +699,18 @@ static uint8_t flctl_read_byte(struct mt
+ 	return data;
+ }
+ 
++static uint16_t flctl_read_word(struct mtd_info *mtd)
++{
++       struct sh_flctl *flctl = mtd_to_flctl(mtd);
++       int index = flctl->index;
++       uint16_t data;
++       uint16_t *buf = (uint16_t *)&flctl->done_buff[index];
++
++       data = *buf;
++       flctl->index += 2;
++       return data;
++}
++
+ static void flctl_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
+ {
+ 	int i;
+@@ -829,6 +849,11 @@ static int __devinit flctl_probe(struct 
+ 	nand->select_chip = flctl_select_chip;
+ 	nand->cmdfunc = flctl_cmdfunc;
+ 
++	if (pdata->flcmncr_val & SEL_16BIT) {
++		nand->options |= NAND_BUSWIDTH_16;
++		nand->read_word = flctl_read_word;
++	}
++
+ 	ret = nand_scan_ident(flctl_mtd, 1);
+ 	if (ret)
+ 		goto err;
+--- 0015/include/linux/mtd/sh_flctl.h
++++ work/include/linux/mtd/sh_flctl.h	2010-01-26 22:54:42.000000000 +0900
+@@ -51,6 +51,8 @@
+ #define _4ECCCNTEN	(0x1 << 24)
+ #define _4ECCEN		(0x1 << 23)
+ #define _4ECCCORRECT	(0x1 << 22)
++#define SHBUSSEL	(0x1 << 20)
++#define SEL_16BIT	(0x1 << 19)
+ #define SNAND_E		(0x1 << 18)	/* SNAND (0Q2 1 48)*/
+ #define QTSEL_E		(0x1 << 17)
+ #define ENDIAN		(0x1 << 16)	/* 1 = little endian */
