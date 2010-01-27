@@ -1,63 +1,58 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Sun, 31 Jan 2010 11:55:27 +0000
-Subject: Re: Bug: access to already released memory
-Message-Id: <m3vdeiqyj4.fsf@phlog.console-pimps.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Jan 2010 07:41:19 +0000
+Subject: [PATCH] usb: r8a66597-hdc disable interrupts fix
+Message-Id: <20100127074119.25763.59310.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <a328840c1001301356r14505614pbb4563754c6890ac@mail.gmail.com>
-In-Reply-To: <a328840c1001301356r14505614pbb4563754c6890ac@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, 30 Jan 2010 22:56:30 +0100, Marek Skuczynski <mareksk7@gmail.com> wrote:
-> Hello,
->    I have found two places where access to already released memory happens,
->    attaching patches.
-> 
-> Regards,
->   Marek
-> From 1d0be80204871527e1e7757f4a009ce6f9ba0d73 Mon Sep 17 00:00:00 2001
-> From: Marek Skuczynski <mareksk7@gmail.com>
-> Date: Sat, 30 Jan 2010 22:27:41 +0100
-> Subject: [PATCH 1/2] sh: Fix access to released memory in dwarf_unwinder_cleanup()
-> 
-> Signed-off-by: Marek Skuczynski <mareksk7@gmail.com>
-> ---
->  arch/sh/kernel/dwarf.c |    8 ++++----
->  1 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
-> index 3576b70..88d28ec 100644
-> --- a/arch/sh/kernel/dwarf.c
-> +++ b/arch/sh/kernel/dwarf.c
-> @@ -892,18 +892,18 @@ static struct unwinder dwarf_unwinder = {
->  
->  static void dwarf_unwinder_cleanup(void)
->  {
-> -	struct dwarf_cie *cie;
-> -	struct dwarf_fde *fde;
-> +	struct dwarf_cie *cie, *cie_tmp;
-> +	struct dwarf_fde *fde, *fde_tmp;
->  
->  	/*
->  	 * Deallocate all the memory allocated for the DWARF unwinder.
->  	 * Traverse all the FDE/CIE lists and remove and free all the
->  	 * memory associated with those data structures.
->  	 */
-> -	list_for_each_entry(cie, &dwarf_cie_list, link)
-> +	list_for_each_entry_safe(cie, cie_tmp, &dwarf_cie_list, link)
->  		kfree(cie);
->  
-> -	list_for_each_entry(fde, &dwarf_fde_list, link)
-> +	list_for_each_entry_safe(fde, fde_tmp, &dwarf_fde_list, link)
->  		kfree(fde);
->  
->  	kmem_cache_destroy(dwarf_reg_cachep);
-> -- 
-> 1.6.4.2
-> 
+From: Magnus Damm <damm@opensource.se>
 
-Good catch.
+This patch improves disable_controller() in the r8a66597-hdc
+driver to disable all interrupts and clear status flags. It
+also makes sure that disable_controller() is called during
+probe(). This fixes the relatively rare case of unexpected
+pending interrupts after kexec reboot.
 
-Acked-by: Matt Fleming <matt@console-pimps.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/usb/host/r8a66597-hcd.c |   17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- 0001/drivers/usb/host/r8a66597-hcd.c
++++ work/drivers/usb/host/r8a66597-hcd.c	2010-01-26 18:12:57.000000000 +0900
+@@ -216,8 +216,17 @@ static void disable_controller(struct r8
+ {
+ 	int port;
+ 
++	/* disable interrupts */
+ 	r8a66597_write(r8a66597, 0, INTENB0);
+-	r8a66597_write(r8a66597, 0, INTSTS0);
++	r8a66597_write(r8a66597, 0, INTENB1);
++	r8a66597_write(r8a66597, 0, BRDYENB);
++	r8a66597_write(r8a66597, 0, BEMPENB);
++	r8a66597_write(r8a66597, 0, NRDYENB);
++
++	/* clear status */
++	r8a66597_write(r8a66597, 0, BRDYSTS);
++	r8a66597_write(r8a66597, 0, NRDYSTS);
++	r8a66597_write(r8a66597, 0, BEMPSTS);
+ 
+ 	for (port = 0; port < r8a66597->max_root_hub; port++)
+ 		r8a66597_disable_port(r8a66597, port);
+@@ -2466,6 +2475,12 @@ static int __devinit r8a66597_probe(stru
+ 	r8a66597->rh_timer.data = (unsigned long)r8a66597;
+ 	r8a66597->reg = (unsigned long)reg;
+ 
++	/* make sure no interrupts are pending */
++	ret = r8a66597_clock_enable(r8a66597);
++	if (ret < 0)
++		goto clean_up3;
++	disable_controller(r8a66597);
++
+ 	for (i = 0; i < R8A66597_MAX_NUM_PIPE; i++) {
+ 		INIT_LIST_HEAD(&r8a66597->pipe_queue[i]);
+ 		init_timer(&r8a66597->td_timer[i]);
