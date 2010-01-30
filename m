@@ -1,86 +1,79 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Tue, 26 Jan 2010 15:22:06 +0000
-Subject: Re: [alsa-devel] [PATCH 1/4 v2] ASoC: add a WM8978 codec driver
-Message-Id: <20100126152206.GV15759@rakim.wolfsonmicro.main>
+From: Marek Skuczynski <mareksk7@gmail.com>
+Date: Sat, 30 Jan 2010 21:56:30 +0000
+Subject: Bug: access to already released memory
+Message-Id: <a328840c1001301356r14505614pbb4563754c6890ac@mail.gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="000325556d1a1b5923047e68d39a"
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1001190839110.4607@axis700.grange>
- <Pine.LNX.4.64.1001190851380.4607@axis700.grange>
- <Pine.LNX.4.64.1001221659410.4652@axis700.grange>
- <20100123204730.GC4174@sirena.org.uk>
- <Pine.LNX.4.64.1001261341180.4950@axis700.grange>
- <20100126132616.GT15759@rakim.wolfsonmicro.main>
- <Pine.LNX.4.64.1001261440210.4950@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1001261440210.4950@axis700.grange>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: alsa-devel@alsa-project.org, Kuninori Morimoto <morimoto.kuninori@renesas.com>, Magnus Damm <damm@opensource.se>, Liam Girdwood <lrg@slimlogic.co.uk>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 26, 2010 at 03:08:44PM +0100, Guennadi Liakhovetski wrote:
+--000325556d1a1b5923047e68d39a
+Content-Type: text/plain; charset=ISO-8859-1
 
-> here f_MCLK is what is fed into the codec, f_OPCLK is the master clock, 
-> that the codec is generating for the outside world, PLL_mul, MCLK_div, and 
-> OPCLK_div are internal coefficients, that have to be configured. So, there 
-> are 3 equations with 4 unknowns: f_PLLOUT, PLL_mul, MCLK_div, and 
-> OPCLK_div. Since there are additional constraints on all of them, there 
-> are usually not too many possible solutions. Still, this system is not 
-> uniquely resolvable and you have to use some heuristics to select a 
-> specific solution.
+Hello,
+   I have found two places where access to already released memory happens,
+   attaching patches.
 
-Right, the CODEC driver needs something to tell it what frequency to
-generate from both the PLL and OPCLK.  Given the PLL configuration it
-can work out the CODEC-side bits of things but it has no idea what's
-going on with OPCLK or how that is related to the PLL.
+Regards,
+  Marek
 
-> Now, Mark, you are suggesting, that the board code should call
+--000325556d1a1b5923047e68d39a
+Content-Type: text/x-patch; charset=US-ASCII; 
+	name="0001-sh-Fix-access-to-released-memory-in-dwarf_unwinder_c.patch"
+Content-Disposition: attachment; 
+	filename="0001-sh-Fix-access-to-released-memory-in-dwarf_unwinder_c.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: file0
 
-> 	snd_soc_dai_set_pll(dai, 0, 0, f_in, f_out);
+RnJvbSAxZDBiZTgwMjA0ODcxNTI3ZTFlNzc1N2Y0YTAwOWNlNmY5YmEwZDczIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJlayBTa3Vjenluc2tpIDxtYXJla3NrN0BnbWFpbC5jb20+
+CkRhdGU6IFNhdCwgMzAgSmFuIDIwMTAgMjI6Mjc6NDEgKzAxMDAKU3ViamVjdDogW1BBVENIIDEv
+Ml0gc2g6IEZpeCBhY2Nlc3MgdG8gcmVsZWFzZWQgbWVtb3J5IGluIGR3YXJmX3Vud2luZGVyX2Ns
+ZWFudXAoKQoKU2lnbmVkLW9mZi1ieTogTWFyZWsgU2t1Y3p5bnNraSA8bWFyZWtzazdAZ21haWwu
+Y29tPgotLS0KIGFyY2gvc2gva2VybmVsL2R3YXJmLmMgfCAgICA4ICsrKystLS0tCiAxIGZpbGVz
+IGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygrKSwgNCBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9h
+cmNoL3NoL2tlcm5lbC9kd2FyZi5jIGIvYXJjaC9zaC9rZXJuZWwvZHdhcmYuYwppbmRleCAzNTc2
+YjcwLi44OGQyOGVjIDEwMDY0NAotLS0gYS9hcmNoL3NoL2tlcm5lbC9kd2FyZi5jCisrKyBiL2Fy
+Y2gvc2gva2VybmVsL2R3YXJmLmMKQEAgLTg5MiwxOCArODkyLDE4IEBAIHN0YXRpYyBzdHJ1Y3Qg
+dW53aW5kZXIgZHdhcmZfdW53aW5kZXIgPSB7CiAKIHN0YXRpYyB2b2lkIGR3YXJmX3Vud2luZGVy
+X2NsZWFudXAodm9pZCkKIHsKLQlzdHJ1Y3QgZHdhcmZfY2llICpjaWU7Ci0Jc3RydWN0IGR3YXJm
+X2ZkZSAqZmRlOworCXN0cnVjdCBkd2FyZl9jaWUgKmNpZSwgKmNpZV90bXA7CisJc3RydWN0IGR3
+YXJmX2ZkZSAqZmRlLCAqZmRlX3RtcDsKIAogCS8qCiAJICogRGVhbGxvY2F0ZSBhbGwgdGhlIG1l
+bW9yeSBhbGxvY2F0ZWQgZm9yIHRoZSBEV0FSRiB1bndpbmRlci4KIAkgKiBUcmF2ZXJzZSBhbGwg
+dGhlIEZERS9DSUUgbGlzdHMgYW5kIHJlbW92ZSBhbmQgZnJlZSBhbGwgdGhlCiAJICogbWVtb3J5
+IGFzc29jaWF0ZWQgd2l0aCB0aG9zZSBkYXRhIHN0cnVjdHVyZXMuCiAJICovCi0JbGlzdF9mb3Jf
+ZWFjaF9lbnRyeShjaWUsICZkd2FyZl9jaWVfbGlzdCwgbGluaykKKwlsaXN0X2Zvcl9lYWNoX2Vu
+dHJ5X3NhZmUoY2llLCBjaWVfdG1wLCAmZHdhcmZfY2llX2xpc3QsIGxpbmspCiAJCWtmcmVlKGNp
+ZSk7CiAKLQlsaXN0X2Zvcl9lYWNoX2VudHJ5KGZkZSwgJmR3YXJmX2ZkZV9saXN0LCBsaW5rKQor
+CWxpc3RfZm9yX2VhY2hfZW50cnlfc2FmZShmZGUsIGZkZV90bXAsICZkd2FyZl9mZGVfbGlzdCwg
+bGluaykKIAkJa2ZyZWUoZmRlKTsKIAogCWttZW1fY2FjaGVfZGVzdHJveShkd2FyZl9yZWdfY2Fj
+aGVwKTsKLS0gCjEuNi40LjIKCg==
+--000325556d1a1b5923047e68d39a
+Content-Type: text/x-patch; charset=US-ASCII; 
+	name="0002-sh-Fix-access-to-released-memory-in-clk_debugfs_regi.patch"
+Content-Disposition: attachment; 
+	filename="0002-sh-Fix-access-to-released-memory-in-clk_debugfs_regi.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: file2
 
-> with f_out = f_PLLOUT. This means, the board has to use its own heuristics 
-> to configure the codec, which I find a bad idea. Especially since there is 
-> not a single simple recipe like "f_PLLOUT = f_OPCLK, OPCLK_div = 1," you 
-> really have to vary all those variables to get to a suitable result. Now, 
-
-The CODEC only needs to know OPCLKDIV and the PLL output frequency.  It
-doesn't really care that these are related.  There's no way it can know
-what the requirements are for OPCLK, when it's safe to vary it or in
-what way it's safe to vary it - reconfiguring the PLL requires that the
-PLL be stopped, which may be undesirable.  The CODEC driver can't assume
-that OPCLK is only needed when the CODEC is handling audio, and 
-
-There's also the fact that set_pll() normally does exactly that - it
-configures the PLL.  If you start making it do other magic 
-
-> You remember those superfluous "was-comments," that we have removed. See, 
-> the board driver chooses an OPCLK_div, and, thereby, f_PLLOUT. And this is 
-
-I'm not sure how those comments are directly related to this issue?
-
-> exactly what I disliked about that code and was quite happy to remove. If 
-> you insist, I will put it back and switch to using f_PLLOUT for 
-> .set_pll(), but I emphasise, that I really dislike this approach, and I 
-> really believe, that the board really should keep its fingers away from 
-> devices' internals - ever. The only thing that the board knows is input 
-> clock, required output clock and sampling rate. The rest should be solely 
-> a matter of specific device drivers.
-
-The machine driver already needs to know about the clocking scheme for
-the system - at the end of the day it's entirely specific to the
-combination of CODEC, CPU, whatever other components are there, the
-way they've been wired up and anything system level that software has to
-be able to achieve.  Solving this sort of problem in a generic fashion
-is non-trivial, there's a reason why we don't have an algorithm for it
-hidden away in a generic clock API.
-
-If you want to try to do this automatically I'd say that at a bare
-minimum you need to remove set_pll() from the driver API and make
-configuring OPCLK a bolt on which is not part of the standard flow for
-using the device with the PLL.  Use set_sysclk() to specify the input
-frequency for the PLL, and use something like the set_clkdiv() API to
-specify the OPCLK output rate.
-
-Your previous patches have all treated the PLL output frequency and
-OPCLK frequency too interchangibly (or documented themselves as doing
-so) - if the normal flow is worrying about what OPCLK is or if the
-system clock is being stored as OPCLK something is wrong.
+RnJvbSBkMjRhOWNmMjA0MTk5ZjFiZmI5MjE1ZjU4NDExOTJhMTgzM2Y1ZmQ3IE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJlayBTa3Vjenluc2tpIDxtYXJla3NrN0BnbWFpbC5jb20+
+CkRhdGU6IFNhdCwgMzAgSmFuIDIwMTAgMjI6Mjk6MzIgKzAxMDAKU3ViamVjdDogW1BBVENIIDIv
+Ml0gc2g6IEZpeCBhY2Nlc3MgdG8gcmVsZWFzZWQgbWVtb3J5IGluIGNsa19kZWJ1Z2ZzX3JlZ2lz
+dGVyX29uZSgpCgpTaWduZWQtb2ZmLWJ5OiBNYXJlayBTa3Vjenluc2tpIDxtYXJla3NrN0BnbWFp
+bC5jb20+Ci0tLQogYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMgfCAgICA0ICsrLS0KIDEgZmls
+ZXMgY2hhbmdlZCwgMiBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBh
+L2FyY2gvc2gva2VybmVsL2NwdS9jbG9jay5jIGIvYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMK
+aW5kZXggZjNhNDZiZS4uODNkYTVkZSAxMDA2NDQKLS0tIGEvYXJjaC9zaC9rZXJuZWwvY3B1L2Ns
+b2NrLmMKKysrIGIvYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMKQEAgLTU5OCw3ICs1OTgsNyBA
+QCBzdGF0aWMgc3RydWN0IGRlbnRyeSAqY2xrX2RlYnVnZnNfcm9vdDsKIHN0YXRpYyBpbnQgY2xr
+X2RlYnVnZnNfcmVnaXN0ZXJfb25lKHN0cnVjdCBjbGsgKmMpCiB7CiAJaW50IGVycjsKLQlzdHJ1
+Y3QgZGVudHJ5ICpkLCAqY2hpbGQ7CisJc3RydWN0IGRlbnRyeSAqZCwgKmNoaWxkLCAqY2hpbGRf
+dG1wOwogCXN0cnVjdCBjbGsgKnBhID0gYy0+cGFyZW50OwogCWNoYXIgc1syNTVdOwogCWNoYXIg
+KnAgPSBzOwpAQCAtNjMwLDcgKzYzMCw3IEBAIHN0YXRpYyBpbnQgY2xrX2RlYnVnZnNfcmVnaXN0
+ZXJfb25lKHN0cnVjdCBjbGsgKmMpCiAKIGVycl9vdXQ6CiAJZCA9IGMtPmRlbnRyeTsKLQlsaXN0
+X2Zvcl9lYWNoX2VudHJ5KGNoaWxkLCAmZC0+ZF9zdWJkaXJzLCBkX3UuZF9jaGlsZCkKKwlsaXN0
+X2Zvcl9lYWNoX2VudHJ5X3NhZmUoY2hpbGQsIGNoaWxkX3RtcCwgJmQtPmRfc3ViZGlycywgZF91
+LmRfY2hpbGQpCiAJCWRlYnVnZnNfcmVtb3ZlKGNoaWxkKTsKIAlkZWJ1Z2ZzX3JlbW92ZShjLT5k
+ZW50cnkpOwogCXJldHVybiBlcnI7Ci0tIAoxLjYuNC4yCgo=
+--000325556d1a1b5923047e68d39a--
