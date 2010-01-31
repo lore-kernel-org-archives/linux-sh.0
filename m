@@ -1,79 +1,27 @@
-From: Marek Skuczynski <mareksk7@gmail.com>
-Date: Sat, 30 Jan 2010 21:56:30 +0000
-Subject: Bug: access to already released memory
-Message-Id: <a328840c1001301356r14505614pbb4563754c6890ac@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="000325556d1a1b5923047e68d39a"
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sun, 31 Jan 2010 03:55:40 +0000
+Subject: Re: Bug: access to already released memory
+Message-Id: <20100131035540.GA13428@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <a328840c1001301356r14505614pbb4563754c6890ac@mail.gmail.com>
+In-Reply-To: <a328840c1001301356r14505614pbb4563754c6890ac@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
---000325556d1a1b5923047e68d39a
-Content-Type: text/plain; charset=ISO-8859-1
+On Sat, Jan 30, 2010 at 10:56:30PM +0100, Marek Skuczynski wrote:
+>    I have found two places where access to already released memory happens,
+>    attaching patches.
+> 
+I'll apply them for 2.6.33, thanks.
 
-Hello,
-   I have found two places where access to already released memory happens,
-   attaching patches.
-
-Regards,
-  Marek
-
---000325556d1a1b5923047e68d39a
-Content-Type: text/x-patch; charset=US-ASCII; 
-	name="0001-sh-Fix-access-to-released-memory-in-dwarf_unwinder_c.patch"
-Content-Disposition: attachment; 
-	filename="0001-sh-Fix-access-to-released-memory-in-dwarf_unwinder_c.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: file0
-
-RnJvbSAxZDBiZTgwMjA0ODcxNTI3ZTFlNzc1N2Y0YTAwOWNlNmY5YmEwZDczIE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJlayBTa3Vjenluc2tpIDxtYXJla3NrN0BnbWFpbC5jb20+
-CkRhdGU6IFNhdCwgMzAgSmFuIDIwMTAgMjI6Mjc6NDEgKzAxMDAKU3ViamVjdDogW1BBVENIIDEv
-Ml0gc2g6IEZpeCBhY2Nlc3MgdG8gcmVsZWFzZWQgbWVtb3J5IGluIGR3YXJmX3Vud2luZGVyX2Ns
-ZWFudXAoKQoKU2lnbmVkLW9mZi1ieTogTWFyZWsgU2t1Y3p5bnNraSA8bWFyZWtzazdAZ21haWwu
-Y29tPgotLS0KIGFyY2gvc2gva2VybmVsL2R3YXJmLmMgfCAgICA4ICsrKystLS0tCiAxIGZpbGVz
-IGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygrKSwgNCBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9h
-cmNoL3NoL2tlcm5lbC9kd2FyZi5jIGIvYXJjaC9zaC9rZXJuZWwvZHdhcmYuYwppbmRleCAzNTc2
-YjcwLi44OGQyOGVjIDEwMDY0NAotLS0gYS9hcmNoL3NoL2tlcm5lbC9kd2FyZi5jCisrKyBiL2Fy
-Y2gvc2gva2VybmVsL2R3YXJmLmMKQEAgLTg5MiwxOCArODkyLDE4IEBAIHN0YXRpYyBzdHJ1Y3Qg
-dW53aW5kZXIgZHdhcmZfdW53aW5kZXIgPSB7CiAKIHN0YXRpYyB2b2lkIGR3YXJmX3Vud2luZGVy
-X2NsZWFudXAodm9pZCkKIHsKLQlzdHJ1Y3QgZHdhcmZfY2llICpjaWU7Ci0Jc3RydWN0IGR3YXJm
-X2ZkZSAqZmRlOworCXN0cnVjdCBkd2FyZl9jaWUgKmNpZSwgKmNpZV90bXA7CisJc3RydWN0IGR3
-YXJmX2ZkZSAqZmRlLCAqZmRlX3RtcDsKIAogCS8qCiAJICogRGVhbGxvY2F0ZSBhbGwgdGhlIG1l
-bW9yeSBhbGxvY2F0ZWQgZm9yIHRoZSBEV0FSRiB1bndpbmRlci4KIAkgKiBUcmF2ZXJzZSBhbGwg
-dGhlIEZERS9DSUUgbGlzdHMgYW5kIHJlbW92ZSBhbmQgZnJlZSBhbGwgdGhlCiAJICogbWVtb3J5
-IGFzc29jaWF0ZWQgd2l0aCB0aG9zZSBkYXRhIHN0cnVjdHVyZXMuCiAJICovCi0JbGlzdF9mb3Jf
-ZWFjaF9lbnRyeShjaWUsICZkd2FyZl9jaWVfbGlzdCwgbGluaykKKwlsaXN0X2Zvcl9lYWNoX2Vu
-dHJ5X3NhZmUoY2llLCBjaWVfdG1wLCAmZHdhcmZfY2llX2xpc3QsIGxpbmspCiAJCWtmcmVlKGNp
-ZSk7CiAKLQlsaXN0X2Zvcl9lYWNoX2VudHJ5KGZkZSwgJmR3YXJmX2ZkZV9saXN0LCBsaW5rKQor
-CWxpc3RfZm9yX2VhY2hfZW50cnlfc2FmZShmZGUsIGZkZV90bXAsICZkd2FyZl9mZGVfbGlzdCwg
-bGluaykKIAkJa2ZyZWUoZmRlKTsKIAogCWttZW1fY2FjaGVfZGVzdHJveShkd2FyZl9yZWdfY2Fj
-aGVwKTsKLS0gCjEuNi40LjIKCg==
---000325556d1a1b5923047e68d39a
-Content-Type: text/x-patch; charset=US-ASCII; 
-	name="0002-sh-Fix-access-to-released-memory-in-clk_debugfs_regi.patch"
-Content-Disposition: attachment; 
-	filename="0002-sh-Fix-access-to-released-memory-in-clk_debugfs_regi.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: file2
-
-RnJvbSBkMjRhOWNmMjA0MTk5ZjFiZmI5MjE1ZjU4NDExOTJhMTgzM2Y1ZmQ3IE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpGcm9tOiBNYXJlayBTa3Vjenluc2tpIDxtYXJla3NrN0BnbWFpbC5jb20+
-CkRhdGU6IFNhdCwgMzAgSmFuIDIwMTAgMjI6Mjk6MzIgKzAxMDAKU3ViamVjdDogW1BBVENIIDIv
-Ml0gc2g6IEZpeCBhY2Nlc3MgdG8gcmVsZWFzZWQgbWVtb3J5IGluIGNsa19kZWJ1Z2ZzX3JlZ2lz
-dGVyX29uZSgpCgpTaWduZWQtb2ZmLWJ5OiBNYXJlayBTa3Vjenluc2tpIDxtYXJla3NrN0BnbWFp
-bC5jb20+Ci0tLQogYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMgfCAgICA0ICsrLS0KIDEgZmls
-ZXMgY2hhbmdlZCwgMiBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBh
-L2FyY2gvc2gva2VybmVsL2NwdS9jbG9jay5jIGIvYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMK
-aW5kZXggZjNhNDZiZS4uODNkYTVkZSAxMDA2NDQKLS0tIGEvYXJjaC9zaC9rZXJuZWwvY3B1L2Ns
-b2NrLmMKKysrIGIvYXJjaC9zaC9rZXJuZWwvY3B1L2Nsb2NrLmMKQEAgLTU5OCw3ICs1OTgsNyBA
-QCBzdGF0aWMgc3RydWN0IGRlbnRyeSAqY2xrX2RlYnVnZnNfcm9vdDsKIHN0YXRpYyBpbnQgY2xr
-X2RlYnVnZnNfcmVnaXN0ZXJfb25lKHN0cnVjdCBjbGsgKmMpCiB7CiAJaW50IGVycjsKLQlzdHJ1
-Y3QgZGVudHJ5ICpkLCAqY2hpbGQ7CisJc3RydWN0IGRlbnRyeSAqZCwgKmNoaWxkLCAqY2hpbGRf
-dG1wOwogCXN0cnVjdCBjbGsgKnBhID0gYy0+cGFyZW50OwogCWNoYXIgc1syNTVdOwogCWNoYXIg
-KnAgPSBzOwpAQCAtNjMwLDcgKzYzMCw3IEBAIHN0YXRpYyBpbnQgY2xrX2RlYnVnZnNfcmVnaXN0
-ZXJfb25lKHN0cnVjdCBjbGsgKmMpCiAKIGVycl9vdXQ6CiAJZCA9IGMtPmRlbnRyeTsKLQlsaXN0
-X2Zvcl9lYWNoX2VudHJ5KGNoaWxkLCAmZC0+ZF9zdWJkaXJzLCBkX3UuZF9jaGlsZCkKKwlsaXN0
-X2Zvcl9lYWNoX2VudHJ5X3NhZmUoY2hpbGQsIGNoaWxkX3RtcCwgJmQtPmRfc3ViZGlycywgZF91
-LmRfY2hpbGQpCiAJCWRlYnVnZnNfcmVtb3ZlKGNoaWxkKTsKIAlkZWJ1Z2ZzX3JlbW92ZShjLT5k
-ZW50cnkpOwogCXJldHVybiBlcnI7Ci0tIAoxLjYuNC4yCgo=
---000325556d1a1b5923047e68d39a--
+> Subject: [PATCH 2/2] sh: Fix access to released memory in clk_debugfs_register_one()
+> 
+> Signed-off-by: Marek Skuczynski <mareksk7@gmail.com>
+> ---
+>  arch/sh/kernel/cpu/clock.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+Note that this code was copied from omap, so you may want to send them a
+patch for arch/arm/plat-omap/clock.c, too.
