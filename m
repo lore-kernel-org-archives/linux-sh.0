@@ -1,26 +1,25 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 05 Feb 2010 22:10:09 +0000
-Subject: Re: [PATCH 01/06] ARM: SuperH Mobile ARM, sh7367 and G3EVM support
-Message-Id: <20100205221009.GA1923@n2100.arm.linux.org.uk>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 02 Feb 2010 04:04:49 +0000
+Subject: Re: [PATCH] sh: add high impedance mode management for SIUA pins on sh7722
+Message-Id: <20100202040449.GG13428@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100205111440.17065.33296.sendpatchset@rxone.opensource.se>
-	<20100205111449.17065.11983.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20100205111449.17065.11983.sendpatchset@rxone.opensource.se>
+References: <Pine.LNX.4.64.1001190828360.4607@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1001190828360.4607@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 05, 2010 at 08:14:49PM +0900, Magnus Damm wrote:
-> +	.macro  get_irqnr_preamble, base, tmp
-> +	.endm
-> +
-> +	.macro  arch_ret_to_user, tmp1, tmp2
-> +	.endm
-> +
-> +	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
-> +	ldr     \base, =INTFLGA
+On Tue, Jan 19, 2010 at 05:42:32PM +0900, Magnus Damm wrote:
+> On Tue, Jan 19, 2010 at 4:31 PM, Guennadi Liakhovetski
+> <g.liakhovetski@gmx.de> wrote:
+> > This improves power management for the SIUA controller on sh7722. Similar
+> > patches might be desired for other SIU-enabled SH platforms.
+> >
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> 
+> Looking good, thanks!
+> 
+> Acked-by: Magnus Damm <damm@opensource.se>
 
-There's the potential for an optimisation here - move this instruction
-into get_irqnr_preamble, and you'll avoid having to re-load the base
-register if there's multiple IRQs pending.
+Applied, thanks.
