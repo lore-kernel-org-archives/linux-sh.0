@@ -1,38 +1,109 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 08 Feb 2010 02:24:37 +0000
-Subject: [GIT PULL] sh updates for 2.6.33-rc8
-Message-Id: <20100208022437.GC6839@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 03 Feb 2010 15:03:54 +0000
+Subject: [PATCH 3/4] dmaengine: add runtime PM support to the shdma driver
+Message-Id: <Pine.LNX.4.64.1002031559390.6324@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This fixes up a number of crashes both with the unwinder and with booting
-from USB mass storage on certain CPUs. While the unwinder fixups aren't
-technically regression fixes, they address a fairly long-standing set of
-bugs. The HCD changes fix a fairly long-standing regression that was only
-recently reported.
+Provided platforms implement runtime PM, this disables the controller, when not
+in use.
 
-Please pull from:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/dma/shdma.c |   20 ++++++++++++++++++++
+ 1 files changed, 20 insertions(+), 0 deletions(-)
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.33
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 3498cab..7e7ce10 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -24,7 +24,10 @@
+ #include <linux/delay.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++
+ #include <asm/sh-dmaengine.h>
++
+ #include "shdma.h"
+ 
+ /* DMA descriptor control */
+@@ -266,6 +269,8 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
+ 	struct sh_desc *desc;
+ 	struct sh_dmae_slave *param = chan->private;
+ 
++	pm_runtime_get_sync(sh_chan->dev);
++
+ 	/*
+ 	 * This relies on the guarantee from dmaengine that alloc_chan_resources
+ 	 * never runs concurrently with itself or free_chan_resources.
+@@ -308,6 +313,9 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
+ 	}
+ 	spin_unlock_bh(&sh_chan->desc_lock);
+ 
++	if (!sh_chan->descs_allocated)
++		pm_runtime_put(sh_chan->dev);
++
+ 	return sh_chan->descs_allocated;
+ }
+ 
+@@ -319,6 +327,7 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
+ 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
+ 	struct sh_desc *desc, *_desc;
+ 	LIST_HEAD(list);
++	int descs = sh_chan->descs_allocated;
+ 
+ 	dmae_halt(sh_chan);
+ 
+@@ -339,6 +348,9 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
+ 
+ 	spin_unlock_bh(&sh_chan->desc_lock);
+ 
++	if (descs > 0)
++		pm_runtime_put(sh_chan->dev);
++
+ 	list_for_each_entry_safe(desc, _desc, &list, node)
+ 		kfree(desc);
+ }
+@@ -920,6 +932,9 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	/* platform data */
+ 	shdev->pdata = pdata;
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	/* reset dma controller */
+ 	err = sh_dmae_rst(shdev);
+ 	if (err)
+@@ -970,6 +985,8 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 			goto chan_probe_err;
+ 	}
+ 
++	pm_runtime_put(&pdev->dev);
++
+ 	platform_set_drvdata(pdev, shdev);
+ 	dma_async_device_register(&shdev->common);
+ 
+@@ -982,6 +999,7 @@ eirq_err:
+ 	free_irq(errirq, shdev);
+ 
+ rst_err:
++	pm_runtime_put(&pdev->dev);
+ 	if (dmars)
+ 		iounmap(shdev->dmars);
+ emapdmars:
+@@ -1015,6 +1033,8 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ 	/* channel data remove */
+ 	sh_dmae_chan_remove(shdev);
+ 
++	pm_runtime_disable(&pdev->dev);
++
+ 	if (shdev->dmars)
+ 		iounmap(shdev->dmars);
+ 	iounmap(shdev->chan_reg);
+-- 
+1.6.2.4
 
-Which contains:
-
-Matt Fleming (4):
-      sh: Correct the offset of the return address in ret_from_exception
-      sh: Setup frame pointer in handle_exception path
-      sh: Don't continue unwinding across interrupts
-      sh: Remove superfluous setup_frame_reg call
-
-Paul Mundt (2):
-      usb: r8a66597-hcd: Flush the D-cache for the pipe-in transfer buffers.
-      usb: r8a66597-hcd: Fix up spinlock recursion in root hub polling.
-
- arch/sh/kernel/cpu/sh3/entry.S  |    3 +-
- arch/sh/kernel/dwarf.c          |   20 +++++++++++++++++++
- arch/sh/kernel/entry-common.S   |    8 ++++++-
- drivers/usb/host/r8a66597-hcd.c |   41 +++++++++++++++++++++++++++-----------
- 4 files changed, 58 insertions(+), 14 deletions(-)
