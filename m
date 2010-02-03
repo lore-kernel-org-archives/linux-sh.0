@@ -1,14 +1,17 @@
 From: "Pietrek, Markus" <Markus.Pietrek@emtrion.de>
-Date: Wed, 03 Feb 2010 13:05:08 +0000
-Subject: [PATCH] sh: added PWM driver for SH7723 using the TPU
-Message-Id: <95F51F4B902CAC40AF459205F6322F0171E8D499FD@BMK019S01.emtrion.local>
+Date: Wed, 03 Feb 2010 14:35:45 +0000
+Subject: AW: [PATCH] sh: added PWM driver for SH7723 using the TPU
+Message-Id: <95F51F4B902CAC40AF459205F6322F0171E8D49A0F@BMK019S01.emtrion.local>
 List-Id: <linux-sh.vger.kernel.org>
+References: <95F51F4B902CAC40AF459205F6322F0171E8D499FD@BMK019S01.emtrion.local>
+In-Reply-To: <95F51F4B902CAC40AF459205F6322F0171E8D499FD@BMK019S01.emtrion.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-this PWM driver using the TPU can be used with drivers/video/backlight/pwm_bl.c to dim the backlight
+Please use this patch
+
 
 Signed-off-by: Markus Pietrek <markus.pietrek@emtrion.de>
 ---
@@ -50,14 +53,14 @@ index 420c6b2..83c8794 100644
 +
  endmenu
 diff --git a/arch/sh/drivers/Makefile b/arch/sh/drivers/Makefile
-index e13f06b..3dcaf83 100644
+index e13f06b..12e9583 100644
 --- a/arch/sh/drivers/Makefile
 +++ b/arch/sh/drivers/Makefile
 @@ -8,3 +8,4 @@ obj-$(CONFIG_PCI)               += pci/
  obj-$(CONFIG_SUPERHYWAY)       += superhyway/
  obj-$(CONFIG_PUSH_SWITCH)      += push-switch.o
  obj-$(CONFIG_HEARTBEAT)                += heartbeat.o
-+obj-$(CONFIG_SH_PWM_TPU)        += tpu.o
++obj-$(CONFIG_SH_PWM_TPU)        += pwm_tpu.o
 diff --git a/arch/sh/drivers/pwm_tpu.c b/arch/sh/drivers/pwm_tpu.c
 new file mode 100644
 index 0000000..d79733c
@@ -398,6 +401,7 @@ index 0000000..d79733c
 +module_exit(pwm_tpu_exit);
 --
 1.5.4.3
+
 
 _____________________________________
 
