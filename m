@@ -1,75 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 23 Feb 2010 05:49:46 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: G3EVM FLCTL platform data
-Message-Id: <aec7e5c31002222149u62026027r4bd5bdd35c9a51a5@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 04 Feb 2010 06:58:28 +0000
+Subject: [PATCH] usb: r8a66597-hcd: Fix up spinlock recursion in root hub polling.
+Message-Id: <20100204065828.GB5574@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100219095406.5206.86934.sendpatchset@t400s>
-In-Reply-To: <20100219095406.5206.86934.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Feb 22, 2010 at 7:31 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Fri, Feb 19, 2010 at 06:54:06PM +0900, Magnus Damm wrote:
->> +static struct mtd_partition nand_partition_info[] =3D {
->> + =A0 =A0 {
->> + =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "system",
->> + =A0 =A0 =A0 =A0 =A0 =A0 .offset =3D 0,
->> + =A0 =A0 =A0 =A0 =A0 =A0 .size =A0 =3D 64 * 1024 * 1024,
->> + =A0 =A0 },
->> + =A0 =A0 {
->> + =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "userdata",
->> + =A0 =A0 =A0 =A0 =A0 =A0 .offset =3D MTDPART_OFS_APPEND,
->> + =A0 =A0 =A0 =A0 =A0 =A0 .size =A0 =3D 128 * 1024 * 1024,
->> + =A0 =A0 },
->> + =A0 =A0 {
->> + =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "cache",
->> + =A0 =A0 =A0 =A0 =A0 =A0 .offset =3D MTDPART_OFS_APPEND,
->> + =A0 =A0 =A0 =A0 =A0 =A0 .size =A0 =3D 64 * 1024 * 1024,
->> + =A0 =A0 },
->> +};
->> +
-> You may want to #include <asm/sizes.h> here and use the SZ_ helpers
-> instead. There is far too much existing ambiguity with sz vs sz - 1 for
-> resource length that consolidating on common helpers at least makes the
-> intent more immediately apparent.
+The current root hub polling code exhibits a spinlock recursion on the
+private controller lock. r8a66597_root_hub_control() is called from
+r8a66597_timer() which grabs the lock and disables IRQs. The following
+chain emerges:
 
-Sounds like a good plan. I guess the existing NOR flash code needs an
-update as well then.
+  r8a66597_timer() <-- lock taken
+    r8a66597_root_hub_control()
+      r8a66597_check_syssts()
+        usb_hcd_poll_rh_status() <-- acquires the same lock
+	/* insert death here */
 
->> +static struct resource nand_flash_resources[] =3D {
->> + =A0 =A0 [0] =3D {
->> + =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0xe6a30000,
->> + =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0xe6a3009b,
->> + =A0 =A0 =A0 =A0 =A0 =A0 .flags =A0=3D IORESOURCE_MEM,
->> + =A0 =A0 }
->> +};
->> +
->> +static struct sh_flctl_platform_data nand_flash_data =3D {
->> + =A0 =A0 .parts =A0 =A0 =A0 =A0 =A0=3D nand_partition_info,
->> + =A0 =A0 .nr_parts =A0 =A0 =A0 =3D ARRAY_SIZE(nand_partition_info),
->> + =A0 =A0 .flcmncr_val =A0 =A0=3D QTSEL_E | FCKSEL_E | TYPESEL_SET | NAN=
-WF_E
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 | SHBUSSEL | SEL_16BIT,
->> +};
->
-> This is also a bit special, |'s usually are at the end of the previous
-> line, not the beginning of the second one.
+The entire chain requires IRQs to be disabled, so we just unlock and
+relock around the call to usb_hcd_poll_rh_status() while leaving the
+IRQ state unchanged.
 
-Ok, let's not be special!
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
 
->> + =A0 =A0 /* FOE, FCDE, FSC on dedicated pins */
->> + =A0 =A0 __raw_writel(__raw_readl(0xe6158048) & ~(1 << 15), 0xe6158048);
->> +
-> This looks suspiciously like an obfuscated MSTP toggle that the clock
-> framework needs to be handling. I thought I was already pretty clear when
-> I said I wouldn't be applying any more of these sorts of patches until
-> some basic clock framework support was in place?
+---
 
-I didn't ask you to apply the patch, just wanted to post it so other
-people can get the code.
+ drivers/usb/host/r8a66597-hcd.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-Cheers,
-
-/ magnus
+diff --git a/drivers/usb/host/r8a66597-hcd.c b/drivers/usb/host/r8a66597-hcd.c
+index 0ceec12..bee558a 100644
+--- a/drivers/usb/host/r8a66597-hcd.c
++++ b/drivers/usb/host/r8a66597-hcd.c
+@@ -1006,6 +1022,8 @@ static void start_root_hub_sampling(struct r8a66597 *r8a66597, int port,
+ /* this function must be called with interrupt disabled */
+ static void r8a66597_check_syssts(struct r8a66597 *r8a66597, int port,
+ 					u16 syssts)
++__releases(r8a66597->lock)
++__acquires(r8a66597->lock)
+ {
+ 	if (syssts = SE0) {
+ 		r8a66597_write(r8a66597, ~ATTCH, get_intsts_reg(port));
+@@ -1023,7 +1041,9 @@ static void r8a66597_check_syssts(struct r8a66597 *r8a66597, int port,
+ 			usb_hcd_resume_root_hub(r8a66597_to_hcd(r8a66597));
+ 	}
+ 
++	spin_unlock(&r8a66597->lock);
+ 	usb_hcd_poll_rh_status(r8a66597_to_hcd(r8a66597));
++	spin_lock(&r8a66597->lock);
+ }
+ 
+ /* this function must be called with interrupt disabled */
