@@ -1,35 +1,475 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 19 Feb 2010 10:01:22 +0000
-Subject: [PATCH] mtd: enable sh_flctl on SH-Mobile ARM
-Message-Id: <20100219100122.6122.78528.sendpatchset@t400s>
+Date: Fri, 05 Feb 2010 11:14:58 +0000
+Subject: [PATCH 02/06] ARM: Add sh7377 and G4EVM support V2
+Message-Id: <20100205111458.17065.4898.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20100205111440.17065.33296.sendpatchset@rxone.opensource.se>
+In-Reply-To: <20100205111440.17065.33296.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: dwmw2@infradead.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Update the Kconfig entry for the sh_flctl driver to
-enable build on SH-Mobile ARM platforms.
+This patch is V2 of base support for the SuperH Mobile ARM
+processor sh7372 together with AP4EVB board support. Only timer,
+serial console and NOR flash are supported at this point. Support
+for the interrupt controller, pinmux support, clock framework and
+runtime pm will be submitted as feature patches on top of this.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Applies on top of the other FLCTL changes in the sh-2.6 git tree.
+ Changes since V1:
+ - dropped mach-type entry
+ - dropped ioremap flag in sh-sci platform data
 
- drivers/mtd/nand/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig               |   14 +
+ arch/arm/mach-shmobile/Makefile              |    2 
+ arch/arm/mach-shmobile/board-ap4evb.c        |  127 +++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    4 
+ arch/arm/mach-shmobile/setup-sh7372.c        |  241 ++++++++++++++++++++++++++
+ 5 files changed, 388 insertions(+)
 
---- 0001/drivers/mtd/nand/Kconfig
-+++ work/drivers/mtd/nand/Kconfig	2010-02-19 18:55:44.000000000 +0900
-@@ -457,7 +457,7 @@ config MTD_NAND_NOMADIK
+--- 0003/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2010-02-05 14:04:20.000000000 +0900
+@@ -18,6 +18,14 @@ config ARCH_SH7377
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
  
- config MTD_NAND_SH_FLCTL
- 	tristate "Support for NAND on Renesas SuperH FLCTL"
--	depends on MTD_NAND && SUPERH
-+	depends on MTD_NAND && (SUPERH || ARCH_SHMOBILE)
++config ARCH_SH7372
++	bool "SH-Mobile SH7372 (AP4)"
++	select CPU_V7
++	select HAVE_CLK
++	select COMMON_CLKDEV
++	select GENERIC_TIME
++	select GENERIC_CLOCKEVENTS
++
+ comment "SH-Mobile Board Type"
+ 
+ config MACH_G3EVM
+@@ -28,6 +36,10 @@ config MACH_G4EVM
+ 	bool "G4EVM board"
+ 	depends on ARCH_SH7377
+ 
++config MACH_AP4EVB
++	bool "AP4EVB board"
++	depends on ARCH_SH7372
++
+ comment "SH-Mobile System Configuration"
+ 
+ menu "Memory configuration"
+@@ -36,6 +48,7 @@ config MEMORY_START
+ 	hex "Physical memory start address"
+ 	default "0x50000000" if MACH_G3EVM
+ 	default "0x40000000" if MACH_G4EVM
++	default "0x40000000" if MACH_AP4EVB
+ 	default "0x00000000"
+ 	---help---
+ 	  Tweak this only when porting to a new machine which does not
+@@ -46,6 +59,7 @@ config MEMORY_SIZE
+ 	hex "Physical memory size"
+ 	default "0x08000000" if MACH_G3EVM
+ 	default "0x08000000" if MACH_G4EVM
++	default "0x10000000" if MACH_AP4EVB
+ 	default "0x04000000"
  	help
- 	  Several Renesas SuperH CPU has FLCTL. This option enables support
- 	  for NAND Flash using FLCTL.
+ 	  This sets the default memory size assumed by your kernel. It can
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2010-02-05 14:04:20.000000000 +0900
+@@ -8,7 +8,9 @@ obj-y				:= timer.o
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o
+ obj-$(CONFIG_ARCH_SH7377)	+= setup-sh7377.o clock-sh7367.o
++obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7367.o
+ 
+ # Board objects
+ obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
+ obj-$(CONFIG_MACH_G4EVM)	+= board-g4evm.o
++obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4evb.o
+--- /dev/null
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2010-02-05 14:04:20.000000000 +0900
+@@ -0,0 +1,127 @@
++/*
++ * AP4EVB board support
++ *
++ * Copyright (C) 2010  Magnus Damm
++ * Copyright (C) 2008  Yoshihiro Shimoda
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/physmap.h>
++#include <linux/io.h>
++#include <mach/common.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++
++static struct mtd_partition nor_flash_partitions[] = {
++	{
++		.name		= "loader",
++		.offset		= 0x00000000,
++		.size		= 512 * 1024,
++	},
++	{
++		.name		= "bootenv",
++		.offset		= MTDPART_OFS_APPEND,
++		.size		= 512 * 1024,
++	},
++	{
++		.name		= "kernel_ro",
++		.offset		= MTDPART_OFS_APPEND,
++		.size		= 8 * 1024 * 1024,
++		.mask_flags	= MTD_WRITEABLE,
++	},
++	{
++		.name		= "kernel",
++		.offset		= MTDPART_OFS_APPEND,
++		.size		= 8 * 1024 * 1024,
++	},
++	{
++		.name		= "data",
++		.offset		= MTDPART_OFS_APPEND,
++		.size		= MTDPART_SIZ_FULL,
++	},
++};
++
++static struct physmap_flash_data nor_flash_data = {
++	.width		= 2,
++	.parts		= nor_flash_partitions,
++	.nr_parts	= ARRAY_SIZE(nor_flash_partitions),
++};
++
++static struct resource nor_flash_resources[] = {
++	[0]	= {
++		.start	= 0x00000000,
++		.end	= 0x08000000 - 1,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
++static struct platform_device nor_flash_device = {
++	.name		= "physmap-flash",
++	.dev		= {
++		.platform_data	= &nor_flash_data,
++	},
++	.num_resources	= ARRAY_SIZE(nor_flash_resources),
++	.resource	= nor_flash_resources,
++};
++
++
++static struct platform_device *ap4evb_devices[] __initdata = {
++	&nor_flash_device,
++};
++
++static struct map_desc ap4evb_io_desc[] __initdata = {
++	/* create a 1:1 entity map for 0xe6xxxxxx
++	 * used by CPGA, INTC and PFC.
++	 */
++	{
++		.virtual	= 0xe6000000,
++		.pfn		= __phys_to_pfn(0xe6000000),
++		.length		= 256 << 20,
++		.type		= MT_DEVICE_NONSHARED
++	},
++};
++
++static void __init ap4evb_map_io(void)
++{
++	iotable_init(ap4evb_io_desc, ARRAY_SIZE(ap4evb_io_desc));
++
++	/* setup early devices and clocks here as well */
++	sh7372_add_early_devices();
++	sh7367_clock_init(); /* use g3 clocks for now */
++}
++
++static void __init ap4evb_init(void)
++{
++	sh7372_add_standard_devices();
++
++	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
++}
++
++MACHINE_START(AP4EVB, "ap4evb")
++	.phys_io	= 0xe6000000,
++	.io_pg_offst	= ((0xe6000000) >> 18) & 0xfffc,
++	.map_io		= ap4evb_map_io,
++	.init_irq	= sh7372_init_irq,
++	.init_machine	= ap4evb_init,
++	.timer		= &shmobile_timer,
++MACHINE_END
+--- 0003/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-02-05 14:04:20.000000000 +0900
+@@ -12,4 +12,8 @@ extern void sh7377_init_irq(void);
+ extern void sh7377_add_early_devices(void);
+ extern void sh7377_add_standard_devices(void);
+ 
++extern void sh7372_init_irq(void);
++extern void sh7372_add_early_devices(void);
++extern void sh7372_add_standard_devices(void);
++
+ #endif /* __ARCH_MACH_COMMON_H */
+--- /dev/null
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2010-02-05 14:04:30.000000000 +0900
+@@ -0,0 +1,241 @@
++/*
++ * sh7372 processor support
++ *
++ * Copyright (C) 2010  Magnus Damm
++ * Copyright (C) 2008  Yoshihiro Shimoda
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/input.h>
++#include <linux/io.h>
++#include <linux/serial_sci.h>
++#include <linux/sh_intc.h>
++#include <linux/sh_timer.h>
++#include <mach/hardware.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xe6c40000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs		= { 80, 80, 80, 80 },
++};
++
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xe6c50000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs           = { 81, 81, 81, 81 },
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xe6c60000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs           = { 82, 82, 82, 82 },
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
++
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xe6c70000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs           = { 83, 83, 83, 83 },
++};
++
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &scif3_platform_data,
++	},
++};
++
++static struct plat_sci_port scif4_platform_data = {
++	.mapbase	= 0xe6c80000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs           = { 89, 89, 89, 89 },
++};
++
++static struct platform_device scif4_device = {
++	.name		= "sh-sci",
++	.id		= 4,
++	.dev		= {
++		.platform_data	= &scif4_platform_data,
++	},
++};
++
++static struct plat_sci_port scif5_platform_data = {
++	.mapbase	= 0xe6cb0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs           = { 90, 90, 90, 90 },
++};
++
++static struct platform_device scif5_device = {
++	.name		= "sh-sci",
++	.id		= 5,
++	.dev		= {
++		.platform_data	= &scif5_platform_data,
++	},
++};
++
++static struct plat_sci_port scif6_platform_data = {
++	.mapbase	= 0xe6c30000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIF,
++	.irqs           = { 91, 91, 91, 91 },
++};
++
++static struct platform_device scif6_device = {
++	.name		= "sh-sci",
++	.id		= 6,
++	.dev		= {
++		.platform_data	= &scif6_platform_data,
++	},
++};
++
++static struct sh_timer_config cmt10_platform_data = {
++	.name = "CMT10",
++	.channel_offset = 0x10,
++	.timer_bit = 0,
++	.clk = "r_clk",
++	.clockevent_rating = 125,
++	.clocksource_rating = 125,
++};
++
++static struct resource cmt10_resources[] = {
++	[0] = {
++		.name	= "CMT10",
++		.start	= 0xe6138010,
++		.end	= 0xe613801b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 72,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device cmt10_device = {
++	.name		= "sh_cmt",
++	.id		= 10,
++	.dev = {
++		.platform_data	= &cmt10_platform_data,
++	},
++	.resource	= cmt10_resources,
++	.num_resources	= ARRAY_SIZE(cmt10_resources),
++};
++
++static struct platform_device *sh7372_early_devices[] __initdata = {
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
++	&scif4_device,
++	&scif5_device,
++	&scif6_device,
++	&cmt10_device,
++};
++
++void __init sh7372_add_standard_devices(void)
++{
++	platform_add_devices(sh7372_early_devices,
++			    ARRAY_SIZE(sh7372_early_devices));
++}
++
++#define SMSTPCR3 0xe615013c
++#define SMSTPCR3_CMT1 (1 << 29)
++
++void __init sh7372_add_early_devices(void)
++{
++	/* enable clock to CMT1 */
++	__raw_writel(__raw_readl(SMSTPCR3) & ~SMSTPCR3_CMT1, SMSTPCR3);
++
++	early_platform_add_devices(sh7372_early_devices,
++				   ARRAY_SIZE(sh7372_early_devices));
++}
++
++enum {
++	UNUSED = 0,
++
++	/* interrupt sources INTCA */
++
++	SCIFA0, SCIFA1, SCIFA2, SCIFA3, SCIFA4, SCIFA5, SCIFB,
++	CMT10,
++};
++
++static struct intc_vect vectors[] = {
++	INTC_VECT(CMT10, 0xb00),
++	INTC_VECT(SCIFA0, 0xc00), INTC_VECT(SCIFA1, 0xc20),
++	INTC_VECT(SCIFA2, 0xc40), INTC_VECT(SCIFA3, 0xc60),
++	INTC_VECT(SCIFA4, 0xd20), INTC_VECT(SCIFA5, 0xd40),
++	INTC_VECT(SCIFB, 0xd60),
++};
++
++static struct intc_mask_reg mask_registers[] = {
++	{ 0xe6940094, 0xe69400d4, 8, /* IMR5A / IMCR5A */
++	  { 0, 0, 0, 0, SCIFA3, SCIFA2, SCIFA1, SCIFA0 } },
++	{ 0xe6940098, 0xe69400d8, 8, /* IMR6A / IMCR6A */
++	  { SCIFB, SCIFA5, SCIFA4, 0, 0, 0, 0, 0 } },
++	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
++	  { 0, 0, 0, CMT10, 0, 0, 0, 0 } },
++};
++
++static struct intc_prio_reg prio_registers[] = {
++	{ 0xe6940014, 0, 16, 4, /* IPRFA */ { 0, 0, 0, CMT10 } },
++	{ 0xe6940018, 0, 16, 4, /* IPRGA */ { SCIFA0, SCIFA1,
++					      SCIFA2, SCIFA3 } },
++	{ 0xe6940020, 0, 16, 4, /* IPRIA */ { 0, SCIFA4, 0, 0 } },
++	{ 0xe6940034, 0, 16, 4, /* IPRNA */ { SCIFB, SCIFA5, 0, 0 } },
++};
++
++static DECLARE_INTC_DESC(intc_desc, "sh7372", vectors, NULL, mask_registers,
++			 prio_registers, NULL);
++
++void __init sh7372_init_irq(void)
++{
++	register_intc_controller(&intc_desc);
++}
