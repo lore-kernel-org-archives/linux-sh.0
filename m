@@ -1,44 +1,39 @@
-From: "Pietrek, Markus" <Markus.Pietrek@emtrion.de>
-Date: Thu, 04 Feb 2010 08:11:55 +0000
-Subject: AW: [PATCH] sh: added PWM driver for SH7723 using the TPU
-Message-Id: <95F51F4B902CAC40AF459205F6322F0171E8D49A61@BMK019S01.emtrion.local>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Feb 2010 10:53:13 +0000
+Subject: [PATCH] ARM: mach-shmobile: optimize get_irqnr_preamble/and_base macros
+Message-Id: <20100208105313.5976.54002.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <95F51F4B902CAC40AF459205F6322F0171E8D499FD@BMK019S01.emtrion.local>
-In-Reply-To: <95F51F4B902CAC40AF459205F6322F0171E8D499FD@BMK019S01.emtrion.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Paul,
+From: Magnus Damm <damm@opensource.se>
 
-Thank you for your comments. Yet the 2 issues listed below are inherited from the only other pwm implementations in arch/arm/plat-{pxa,s3c,mxc}.
+Optimize the SH-Mobile interrupt assembly macros to avoid
+reloading the INTFLGA register address in case of multiple
+pending interrupts. Kindly pointed out by Russell King.
 
-> > +EXPORT_SYMBOL(pwm_disable);
-> > +
-> Is EXPORT_SYMBOL() intentional? By convention we primarily use
-> EXPORT_SYMBOL_GPL() for new exports.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-And
+ arch/arm/mach-shmobile/include/mach/entry-macro.S |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> arch_initcall() is a bit early, presumably you have some users of this
-> code that actually needs to have this initialized that early on?
-
-Peronally I would have used subsys_initcall if it was not for the other implementations.
-
-Best regards,
-Markus
-
-_____________________________________
-
-Amtsgericht Mannheim
-HRB 110 300
-Gesch?ftsf?hrer: Dieter Baur, Ramona Maurer
-_____________________________________
-
-Important Note:
-- This e-mail may contain trade secrets or privileged, undisclosed or otherwise confidential information.
-- If you have received this e-mail in error, you are hereby notified that any review, copying or distribution of it is strictly prohibited.
-- Please inform us immediately and destroy the original transmittal.
-
-Thank you for your cooperation.
+--- 0002/arch/arm/mach-shmobile/include/mach/entry-macro.S
++++ work/arch/arm/mach-shmobile/include/mach/entry-macro.S	2010-02-08 14:47:31.000000000 +0900
+@@ -21,13 +21,13 @@
+ 	.endm
+ 
+ 	.macro  get_irqnr_preamble, base, tmp
++	ldr     \base, =INTFLGA
+ 	.endm
+ 
+ 	.macro  arch_ret_to_user, tmp1, tmp2
+ 	.endm
+ 
+ 	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
+-	ldr     \base, =INTFLGA
+ 	ldr     \irqnr, [\base]
+ 	cmp	\irqnr, #0
+ 	beq	1000f
