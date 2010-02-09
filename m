@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Feb 2010 11:03:24 +0000
-Subject: [PATCH] sh: SH-Mobile R-standby register save/restore
-Message-Id: <20100225110324.6849.13911.sendpatchset@t400s>
+Date: Tue, 09 Feb 2010 08:22:30 +0000
+Subject: [PATCH] sh: break out enable/reparent div4 clocks on sh7723
+Message-Id: <20100209082230.16804.92759.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,196 +10,63 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add code to save/restore registers during
-R-standby sleep on SH-Mobile processors.
+Break out sh7723 div4 clocks for SIU and IRDA as
+reparent / enable clocks. Similar to the SIU clock
+patch for sh7722 by Guennadi.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Tested on the sh7724 processor using ms7724se and Ecovec.
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |   24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
 
- arch/sh/include/asm/suspend.h       |    1 
- arch/sh/kernel/cpu/shmobile/pm.c    |    3 
- arch/sh/kernel/cpu/shmobile/sleep.S |  121 ++++++++++++++++++++++++++++++++++-
- 3 files changed, 122 insertions(+), 3 deletions(-)
-
---- 0001/arch/sh/include/asm/suspend.h
-+++ work/arch/sh/include/asm/suspend.h	2010-02-25 19:22:59.000000000 +0900
-@@ -92,5 +92,6 @@ extern unsigned long sh_mobile_sleep_sup
- #define SUSP_SH_USTANDBY	(1 << 3) /* SH-Mobile U-standby mode */
- #define SUSP_SH_SF		(1 << 4) /* Enable self-refresh */
- #define SUSP_SH_MMU		(1 << 5) /* Save/restore MMU and cache */
-+#define SUSP_SH_REGS		(1 << 6) /* Save/restore registers */
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2010-02-09 17:14:33.000000000 +0900
+@@ -117,8 +117,7 @@ static struct clk_div_mult_table div4_ta
+ 	.nr_multipliers = ARRAY_SIZE(multipliers),
+ };
  
- #endif /* _ASM_SH_SUSPEND_H */
---- 0001/arch/sh/kernel/cpu/shmobile/pm.c
-+++ work/arch/sh/kernel/cpu/shmobile/pm.c	2010-02-25 19:22:59.000000000 +0900
-@@ -33,7 +33,8 @@ ATOMIC_NOTIFIER_HEAD(sh_mobile_post_slee
- #define SUSP_MODE_SLEEP		(SUSP_SH_SLEEP)
- #define SUSP_MODE_SLEEP_SF	(SUSP_SH_SLEEP | SUSP_SH_SF)
- #define SUSP_MODE_STANDBY_SF	(SUSP_SH_STANDBY | SUSP_SH_SF)
--#define SUSP_MODE_RSTANDBY	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_SF)
-+#define SUSP_MODE_RSTANDBY_SF \
-+	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_REGS | SUSP_SH_SF)
-  /*
-   * U-standby mode is unsupported since it needs bootloader hacks
-   */
---- 0001/arch/sh/kernel/cpu/shmobile/sleep.S
-+++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2010-02-25 19:22:59.000000000 +0900
-@@ -48,8 +48,48 @@ ENTRY(sh_mobile_sleep_enter_start)
- 	stc	sr, r0
- 	mov.l	r0, @(SH_SLEEP_SR, r5)
+-enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P,
+-       DIV4_SIUA, DIV4_SIUB, DIV4_IRDA, DIV4_NR };
++enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P, DIV4_NR };
  
--	/* save sp */
-+	/* save general purpose registers to stack if needed */
-+	mov.l	@(SH_SLEEP_MODE, r5), r0
-+	tst	#SUSP_SH_REGS, r0
-+	bt	skip_regs_save
+ #define DIV4(_str, _reg, _bit, _mask, _flags) \
+   SH_CLK_DIV4(_str, &pll_clk, _reg, _bit, _mask, _flags)
+@@ -130,11 +129,20 @@ struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_B] = DIV4("bus_clk", FRQCR, 8, 0x0dbf, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B3] = DIV4("b3_clk", FRQCR, 4, 0x0db4, CLK_ENABLE_ON_INIT),
+ 	[DIV4_P] = DIV4("peripheral_clk", FRQCR, 0, 0x0dbf, 0),
+-	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x0dbf, 0),
+-	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x0dbf, 0),
++};
 +
-+	sts.l	pr, @-r15
-+	mov.l	r14, @-r15
-+	mov.l	r13, @-r15
-+	mov.l	r12, @-r15
-+	mov.l	r11, @-r15
-+	mov.l	r10, @-r15
-+	mov.l	r9, @-r15
-+	mov.l	r8, @-r15
++enum { DIV4_IRDA, DIV4_ENABLE_NR };
 +
-+	/* make sure bank0 is selected, save low registers */
-+	mov.l	rb_bit, r9
-+	not	r9, r9
-+	bsr	set_sr
-+	 mov	#0, r10
-+
-+	bsr	save_low_regs
-+	 nop
-+
-+	/* switch to bank 1, save low registers */
-+	mov.l	rb_bit, r10
-+	bsr	set_sr
-+	 mov	#-1, r9
-+
-+	bsr	save_low_regs
-+	 nop
-+
-+	/* switch back to bank 0 */
-+	mov.l	rb_bit, r9
-+	not	r9, r9
-+	bsr	set_sr
-+	 mov	#0, r10
-+
-+skip_regs_save:
-+
-+	/* save sp, also set to internal ram */
- 	mov.l	r15, @(SH_SLEEP_SP, r5)
-+	mov	r5, r15
++struct clk div4_enable_clks[DIV4_ENABLE_NR] = {
+ 	[DIV4_IRDA] = DIV4("irda_clk", IRDACLKCR, 0, 0x0dbf, 0),
+ };
  
- 	/* save stbcr */
- 	bsr     save_register
-@@ -60,7 +100,7 @@ ENTRY(sh_mobile_sleep_enter_start)
- 	tst	#SUSP_SH_MMU, r0
- 	bt	skip_mmu_save_disable
++enum { DIV4_SIUA, DIV4_SIUB, DIV4_REPARENT_NR };
++
++struct clk div4_reparent_clks[DIV4_REPARENT_NR] = {
++	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x0dbf, 0),
++	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x0dbf, 0),
++};
+ struct clk div6_clks[] = {
+ 	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
+ };
+@@ -216,6 +224,14 @@ int __init arch_clk_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
  
--       /* save mmu state */
-+	/* save mmu state */
- 	bsr	save_register
- 	 mov	#SH_SLEEP_REG_PTEH, r0
+ 	if (!ret)
++		ret = sh_clk_div4_enable_register(div4_enable_clks,
++					DIV4_ENABLE_NR, &div4_table);
++
++	if (!ret)
++		ret = sh_clk_div4_reparent_register(div4_reparent_clks,
++					DIV4_REPARENT_NR, &div4_table);
++
++	if (!ret)
+ 		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
  
-@@ -177,6 +217,29 @@ get_register:
- 	mov.l	@(r0, r5), r0
- 	rts
- 	 nop
-+
-+set_sr:
-+	stc	sr, r8
-+	and	r9, r8
-+	or	r10, r8
-+	ldc	r8, sr
-+	rts
-+	 nop
-+
-+save_low_regs:
-+	mov.l	r7, @-r15
-+	mov.l	r6, @-r15
-+	mov.l	r5, @-r15
-+	mov.l	r4, @-r15
-+	mov.l	r3, @-r15
-+	mov.l	r2, @-r15
-+	mov.l	r1, @-r15
-+	rts
-+	 mov.l	r0, @-r15
-+
-+	.balign 4
-+rb_bit:	.long	0x20000000 ! RB=1
-+
- ENTRY(sh_mobile_sleep_enter_end)
- 
- 	.balign 4
-@@ -270,6 +333,40 @@ skip_restore_sf:
- 	icbi	@r0
- 
- skip_restore_mmu:
-+
-+	/* restore general purpose registers if needed */
-+	mov.l	@(SH_SLEEP_MODE, r5), r0
-+	tst	#SUSP_SH_REGS, r0
-+	bt	skip_restore_regs
-+
-+	/* switch to bank 1, restore low registers */
-+	mov.l	_rb_bit, r10
-+	bsr	_set_sr
-+	 mov	#-1, r9
-+
-+	bsr	restore_low_regs
-+	 nop
-+
-+	/* switch to bank0, restore low registers */
-+	mov.l	_rb_bit, r9
-+	not	r9, r9
-+	bsr	_set_sr
-+	 mov	#0, r10
-+
-+	bsr	restore_low_regs
-+	 nop
-+
-+	/* restore the rest of the registers */
-+	mov.l	@r15+, r8
-+	mov.l	@r15+, r9
-+	mov.l	@r15+, r10
-+	mov.l	@r15+, r11
-+	mov.l	@r15+, r12
-+	mov.l	@r15+, r13
-+	mov.l	@r15+, r14
-+	lds.l	@r15+, pr
-+
-+skip_restore_regs:
- 	rte
- 	 nop
- 
-@@ -283,6 +380,26 @@ restore_register:
- 	rts
- 	 nop
- 
-+_set_sr:
-+	stc	sr, r8
-+	and	r9, r8
-+	or	r10, r8
-+	ldc	r8, sr
-+	rts
-+	 nop
-+
-+restore_low_regs:
-+	mov.l	@r15+, r0
-+	mov.l	@r15+, r1
-+	mov.l	@r15+, r2
-+	mov.l	@r15+, r3
-+	mov.l	@r15+, r4
-+	mov.l	@r15+, r5
-+	mov.l	@r15+, r6
-+	rts
-+	 mov.l	@r15+, r7
-+
- 	.balign 4
-+_rb_bit:	.long	0x20000000 ! RB=1
- 1:	.long	~0x7ff
- ENTRY(sh_mobile_sleep_resume_end)
+ 	if (!ret)
