@@ -1,141 +1,95 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 15 Feb 2010 06:39:16 +0000
-Subject: What's in genesis-2.6.git for 2.6.34?
-Message-Id: <20100215063916.GG18636@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Feb 2010 06:49:48 +0000
+Subject: [PATCH 01/03] sh: sh7722/Migo-R SDHI vector merge
+Message-Id: <20100209064948.31154.41733.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This includes the initial support for the SH-Mobile G series CPUs, a
-series of ARM/SH multi-cores composed of SH IP blocks with this tree
-handling the ARM MPU side of things.
+From: Magnus Damm <damm@opensource.se>
 
-The SH tree has been cleaning up and reorganizing code in preparation for
-these CPUs for some time, and now that that is basically done, it's time
-to roll the ARM support code in.
+Merge the SDHI vectors in the sh7722 INTC table
+and update the SDHI platform data for Migo-R.
 
-This includes support for the SH-Mobile G3, G4, and AP4 CPUs, along with
-their respective reference boards (G3EVM, G4EVM, AP4EVB). At this point
-this is just preliminary support, containing little more than serial and
-timers. Much of the heavy lifting has yet to be done, and will roll over
-to 2.6.35. The bits bound for 2.6.34 are enough to allow people to start
-tinkering with the platform, however.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-As the tree was only created a little over a week ago, it's only been in
--next for roughly the same amount of time, but as it's wholly insular
-there really shouldn't be any surprises for anyone on the ARM or SH side
-of things.
+ arch/sh/boards/mach-migor/setup.c      |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   18 ++++++++++--------
+ 2 files changed, 11 insertions(+), 9 deletions(-)
 
-The tree is at:
-
-	git://git.kernel.org/pub/scm/linux/kernel/git/lethal/genesis-2.6.git
-
-and contains:
-
-Kuninori Morimoto (1):
-      ARM: mach-shmobile: intc-sh7372 tidyup
-
-Magnus Damm (15):
-      serial: sh-sci: remove SCIF code in sci_rxd_in()
-      ARM: mach-shmobile: SH-Mobile G3 support.
-      ARM: mach-shmobile: SH-Mobile G4 support.
-      ARM: mach-shmobile: SH-Mobile AP4 support.
-      sh: Build drivers/sh for ARM-based SH-Mobile CPUs.
-      sh: Let INTC set IRQF_VALID on ARM platforms.
-      serial: sh-sci: Support ARM-based SH-Mobile CPUs.
-      ARM: mach-shmobile: G3EVM, G4EVM and AP4EVB defconfigs
-      ARM: mach-shmobile: optimize get_irqnr_preamble/and_base macros
-      ARM: mach-shmobile: early console support using earlyprintk
-      ARM: mach-shmobile: sh7367 INTCA support
-      ARM: mach-shmobile: sh7377 INTCA support
-      ARM: mach-shmobile: sh7372 INTCA support
-      ARM: mach-shmobile: sh7367 and G3EVM pinmux support
-      ARM: mach-shmobile: G3EVM USBHS support
-
-NISHIMOTO Hiroki (2):
-      ARM: mach-shmobile: sh7377 and G4EVM pinmux support
-      ARM: mach-shmobile: G4EVM USBHS support
-
-Paul Mundt (1):
-      MAINTAINERS: Add entry for ARM-based SH-Mobile architecture.
-
- MAINTAINERS                                       |   10 +
- arch/arm/Kconfig                                  |    7 +
- arch/arm/Makefile                                 |    1 +
- arch/arm/configs/ap4evb_defconfig                 |  779 +++++++++
- arch/arm/configs/g3evm_defconfig                  |  774 +++++++++
- arch/arm/configs/g4evm_defconfig                  |  779 +++++++++
- arch/arm/mach-shmobile/Kconfig                    |   83 +
- arch/arm/mach-shmobile/Makefile                   |   21 +
- arch/arm/mach-shmobile/Makefile.boot              |    9 +
- arch/arm/mach-shmobile/board-ap4evb.c             |  128 ++
- arch/arm/mach-shmobile/board-g3evm.c              |  211 +++
- arch/arm/mach-shmobile/board-g4evm.c              |  211 +++
- arch/arm/mach-shmobile/clock-sh7367.c             |   96 ++
- arch/arm/mach-shmobile/console.c                  |   31 +
- arch/arm/mach-shmobile/include/mach/clkdev.h      |    7 +
- arch/arm/mach-shmobile/include/mach/common.h      |   22 +
- arch/arm/mach-shmobile/include/mach/dma.h         |    1 +
- arch/arm/mach-shmobile/include/mach/entry-macro.S |   39 +
- arch/arm/mach-shmobile/include/mach/gpio.h        |   48 +
- arch/arm/mach-shmobile/include/mach/hardware.h    |    7 +
- arch/arm/mach-shmobile/include/mach/io.h          |    9 +
- arch/arm/mach-shmobile/include/mach/irqs.h        |   10 +
- arch/arm/mach-shmobile/include/mach/memory.h      |    7 +
- arch/arm/mach-shmobile/include/mach/sh7367.h      |  332 ++++
- arch/arm/mach-shmobile/include/mach/sh7377.h      |  360 ++++
- arch/arm/mach-shmobile/include/mach/system.h      |   14 +
- arch/arm/mach-shmobile/include/mach/timex.h       |    6 +
- arch/arm/mach-shmobile/include/mach/uncompress.h  |   21 +
- arch/arm/mach-shmobile/include/mach/vmalloc.h     |    6 +
- arch/arm/mach-shmobile/intc-sh7367.c              |  270 +++
- arch/arm/mach-shmobile/intc-sh7372.c              |  369 +++++
- arch/arm/mach-shmobile/intc-sh7377.c              |  350 ++++
- arch/arm/mach-shmobile/pfc-sh7367.c               | 1801 +++++++++++++++++++++
- arch/arm/mach-shmobile/pfc-sh7377.c               | 1766 ++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh7367.c             |  198 +++
- arch/arm/mach-shmobile/setup-sh7372.c             |  199 +++
- arch/arm/mach-shmobile/setup-sh7377.c             |  215 +++
- arch/arm/mach-shmobile/timer.c                    |   46 +
- drivers/Makefile                                  |    1 +
- drivers/serial/Kconfig                            |    2 +-
- drivers/serial/sh-sci.h                           |  242 +---
- drivers/sh/intc.c                                 |   10 +-
- 42 files changed, 9269 insertions(+), 229 deletions(-)
- create mode 100644 arch/arm/configs/ap4evb_defconfig
- create mode 100644 arch/arm/configs/g3evm_defconfig
- create mode 100644 arch/arm/configs/g4evm_defconfig
- create mode 100644 arch/arm/mach-shmobile/Kconfig
- create mode 100644 arch/arm/mach-shmobile/Makefile
- create mode 100644 arch/arm/mach-shmobile/Makefile.boot
- create mode 100644 arch/arm/mach-shmobile/board-ap4evb.c
- create mode 100644 arch/arm/mach-shmobile/board-g3evm.c
- create mode 100644 arch/arm/mach-shmobile/board-g4evm.c
- create mode 100644 arch/arm/mach-shmobile/clock-sh7367.c
- create mode 100644 arch/arm/mach-shmobile/console.c
- create mode 100644 arch/arm/mach-shmobile/include/mach/clkdev.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/common.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/dma.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/entry-macro.S
- create mode 100644 arch/arm/mach-shmobile/include/mach/gpio.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/hardware.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/io.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/memory.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/sh7367.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/sh7377.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/system.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/timex.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/uncompress.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/vmalloc.h
- create mode 100644 arch/arm/mach-shmobile/intc-sh7367.c
- create mode 100644 arch/arm/mach-shmobile/intc-sh7372.c
- create mode 100644 arch/arm/mach-shmobile/intc-sh7377.c
- create mode 100644 arch/arm/mach-shmobile/pfc-sh7367.c
- create mode 100644 arch/arm/mach-shmobile/pfc-sh7377.c
- create mode 100644 arch/arm/mach-shmobile/setup-sh7367.c
- create mode 100644 arch/arm/mach-shmobile/setup-sh7372.c
- create mode 100644 arch/arm/mach-shmobile/setup-sh7377.c
- create mode 100644 arch/arm/mach-shmobile/timer.c
+--- 0001/arch/sh/boards/mach-migor/setup.c
++++ work/arch/sh/boards/mach-migor/setup.c	2010-02-09 13:02:38.000000000 +0900
+@@ -397,7 +397,7 @@ static struct resource sdhi_cn9_resource
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= 101,
++		.start	= 100,
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2010-02-09 13:02:13.000000000 +0900
+@@ -446,6 +446,7 @@ void __init plat_early_device_setup(void
+ 
+ enum {
+ 	UNUSED=0,
++	ENABLED,
+ 
+ 	/* interrupt sources */
+ 	IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7,
+@@ -461,7 +462,6 @@ enum {
+ 	SCIF0, SCIF1, SCIF2, SIOF0, SIOF1, SIO,
+ 	FLCTL_FLSTEI, FLCTL_FLENDI, FLCTL_FLTREQ0I, FLCTL_FLTREQ1I,
+ 	I2C_ALI, I2C_TACKI, I2C_WAITI, I2C_DTEI,
+-	SDHI0, SDHI1, SDHI2, SDHI3,
+ 	CMT, TSIF, SIU, TWODG,
+ 	TMU0, TMU1, TMU2,
+ 	IRDA, JPU, LCDC,
+@@ -494,8 +494,8 @@ static struct intc_vect vectors[] __init
+ 	INTC_VECT(FLCTL_FLTREQ0I, 0xdc0), INTC_VECT(FLCTL_FLTREQ1I, 0xde0),
+ 	INTC_VECT(I2C_ALI, 0xe00), INTC_VECT(I2C_TACKI, 0xe20),
+ 	INTC_VECT(I2C_WAITI, 0xe40), INTC_VECT(I2C_DTEI, 0xe60),
+-	INTC_VECT(SDHI0, 0xe80), INTC_VECT(SDHI1, 0xea0),
+-	INTC_VECT(SDHI2, 0xec0), INTC_VECT(SDHI3, 0xee0),
++	INTC_VECT(SDHI, 0xe80), INTC_VECT(SDHI, 0xea0),
++	INTC_VECT(SDHI, 0xec0), INTC_VECT(SDHI, 0xee0),
+ 	INTC_VECT(CMT, 0xf00), INTC_VECT(TSIF, 0xf20),
+ 	INTC_VECT(SIU, 0xf80), INTC_VECT(TWODG, 0xfa0),
+ 	INTC_VECT(TMU0, 0x400), INTC_VECT(TMU1, 0x420),
+@@ -513,7 +513,6 @@ static struct intc_group groups[] __init
+ 	INTC_GROUP(FLCTL, FLCTL_FLSTEI, FLCTL_FLENDI,
+ 		   FLCTL_FLTREQ0I, FLCTL_FLTREQ1I),
+ 	INTC_GROUP(I2C, I2C_ALI, I2C_TACKI, I2C_WAITI, I2C_DTEI),
+-	INTC_GROUP(SDHI, SDHI0, SDHI1, SDHI2, SDHI3),
+ };
+ 
+ static struct intc_mask_reg mask_registers[] __initdata = {
+@@ -535,7 +534,7 @@ static struct intc_mask_reg mask_registe
+ 	  { I2C_DTEI, I2C_WAITI, I2C_TACKI, I2C_ALI,
+ 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLENDI, FLCTL_FLSTEI } },
+ 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
+-	  { SDHI3, SDHI2, SDHI1, SDHI0, 0, 0, TWODG, SIU } },
++	  { 0, 0, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
+ 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
+ 	  { 0, 0, 0, CMT, 0, USB_USBI1, USB_USBI0, } },
+ 	{ 0xa40800a8, 0xa40800e8, 8, /* IMR10 / IMCR10 */
+@@ -573,9 +572,12 @@ static struct intc_mask_reg ack_register
+ 	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
+ };
+ 
+-static DECLARE_INTC_DESC_ACK(intc_desc, "sh7722", vectors, groups,
+-			     mask_registers, prio_registers, sense_registers,
+-			     ack_registers);
++static struct intc_desc intc_desc __initdata = {
++	.name = "sh7722",
++	.force_enable = ENABLED,
++	.hw = INTC_HW_DESC(vectors, groups, mask_registers,
++			   prio_registers, sense_registers, ack_registers),
++};
+ 
+ void __init plat_irq_setup(void)
+ {
