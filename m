@@ -1,43 +1,88 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Tue, 16 Feb 2010 04:40:03 +0000
-Subject: Re: [PATCH] ARM: ap4evb: Add SMSC 9220 network support
-Message-Id: <uwryd94kc.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 10 Feb 2010 11:17:39 +0000
+Subject: [PATCH] sh: extend INTC with optional ioremap() support
+Message-Id: <20100210111739.11145.92334.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <ueiklq518.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <ueiklq518.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Magnus
+Add the member "io_window" to intc_desc to allow
+passing a physical memory window to the INTC code.
+The INTC code will ioremap the window if present.
 
-Thank you for checking patch
+Required to support INTCS on SH-Mobile G-series.
 
-> > + =A0 =A0 =A0 /*
-> > + =A0 =A0 =A0 =A0* enable SMSC911X
-> > + =A0 =A0 =A0 =A0*
-> > + =A0 =A0 =A0 =A0* FIXME
-> > + =A0 =A0 =A0 =A0*
-> > + =A0 =A0 =A0 =A0* AP4 doesn't have pinmux support now.
-> > + =A0 =A0 =A0 =A0* So, set the value directly here
-> > + =A0 =A0 =A0 =A0*/
-> > + =A0 =A0 =A0 __raw_writeb(0x01, PORT65CR); /* enable CS5A */
-> > + =A0 =A0 =A0 __raw_writeb(0x00, PORT39CR); /* enable IRQ6 */
-> > + =A0 =A0 =A0 enable_irq(6);
-> > +
-> > =A0 =A0 =A0 =A0platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_d=
-evices));
-> > =A0}
->=20
-> Why enable_irq(6)?
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Oops...
-I should find good excuse...
+ drivers/sh/intc.c       |   14 ++++++++++++++
+ include/linux/sh_intc.h |    3 +++
+ 2 files changed, 17 insertions(+)
 
-I will send v2 patch.
-
-Best regards
---
-Kuninori Morimoto
+--- 0006/drivers/sh/intc.c
++++ work/drivers/sh/intc.c	2010-02-10 19:31:14.000000000 +0900
+@@ -45,6 +45,8 @@ struct intc_handle_int {
+ 
+ struct intc_desc_int {
+ 	struct list_head list;
++	unsigned long virt_base;
++	unsigned long phys_base;
+ 	struct sys_device sysdev;
+ 	pm_message_t state;
+ 	unsigned long *reg;
+@@ -425,6 +427,9 @@ static unsigned int __init intc_get_reg(
+ {
+ 	unsigned int k;
+ 
++	address -= d->phys_base;
++	address += d->virt_base;
++
+ 	for (k = 0; k < d->nr_reg; k++) {
+ 		if (d->reg[k] = address)
+ 			return k;
+@@ -774,6 +779,9 @@ static unsigned int __init save_reg(stru
+ 				    unsigned int smp)
+ {
+ 	if (value) {
++		value -= d->phys_base;
++		value += d->virt_base;
++
+ 		d->reg[cnt] = value;
+ #ifdef CONFIG_SMP
+ 		d->smp[cnt] = smp;
+@@ -800,6 +808,12 @@ void __init register_intc_controller(str
+ 	INIT_LIST_HEAD(&d->list);
+ 	list_add(&d->list, &intc_list);
+ 
++	if (desc->io_window) {
++		d->phys_base = desc->io_window->start;
++		d->virt_base = (unsigned long)ioremap_nocache(d->phys_base,
++					       resource_size(desc->io_window));
++	}
++
+ 	d->nr_reg = hw->mask_regs ? hw->nr_mask_regs * 2 : 0;
+ 	d->nr_reg += hw->prio_regs ? hw->nr_prio_regs * 2 : 0;
+ 	d->nr_reg += hw->sense_regs ? hw->nr_sense_regs : 0;
+--- 0006/include/linux/sh_intc.h
++++ work/include/linux/sh_intc.h	2010-02-10 19:31:14.000000000 +0900
+@@ -1,6 +1,8 @@
+ #ifndef __SH_INTC_H
+ #define __SH_INTC_H
+ 
++#include <linux/ioport.h>
++
+ typedef unsigned char intc_enum;
+ 
+ struct intc_vect {
+@@ -71,6 +73,7 @@ struct intc_hw_desc {
+ 
+ struct intc_desc {
+ 	char *name;
++	struct resource *io_window;
+ 	intc_enum force_enable;
+ 	struct intc_hw_desc hw;
+ };
