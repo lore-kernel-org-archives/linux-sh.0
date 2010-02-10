@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Feb 2010 08:22:30 +0000
-Subject: [PATCH] sh: break out enable/reparent div4 clocks on sh7723
-Message-Id: <20100209082230.16804.92759.sendpatchset@rxone.opensource.se>
+Date: Wed, 10 Feb 2010 11:13:31 +0000
+Subject: [PATCH] ARM: mach-shmobile: G3EVM USBHS support
+Message-Id: <20100210111331.11137.3162.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,63 +10,120 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Break out sh7723 div4 clocks for SIU and IRDA as
-reparent / enable clocks. Similar to the SIU clock
-patch for sh7722 by Guennadi.
+Add G3EVM platform data and a magic setup sequence to
+initialize the r8a66597 block aka USBHS in sh7367.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |   24 ++++++++++++++++++++----
- 1 file changed, 20 insertions(+), 4 deletions(-)
+ Depends on the pinmux patch.
 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2010-02-09 17:14:33.000000000 +0900
-@@ -117,8 +117,7 @@ static struct clk_div_mult_table div4_ta
- 	.nr_multipliers = ARRAY_SIZE(multipliers),
+ arch/arm/mach-shmobile/board-g3evm.c  |   58 +++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-sh7367.c |    7 +++
+ 2 files changed, 65 insertions(+)
+
+--- 0010/arch/arm/mach-shmobile/board-g3evm.c
++++ work/arch/arm/mach-shmobile/board-g3evm.c	2010-02-10 19:48:04.000000000 +0900
+@@ -26,6 +26,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/usb/r8a66597.h>
+ #include <linux/io.h>
+ #include <linux/gpio.h>
+ #include <mach/sh7367.h>
+@@ -86,9 +87,49 @@ static struct platform_device nor_flash_
+ 	.resource	= nor_flash_resources,
  };
  
--enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P,
--       DIV4_SIUA, DIV4_SIUB, DIV4_IRDA, DIV4_NR };
-+enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P, DIV4_NR };
- 
- #define DIV4(_str, _reg, _bit, _mask, _flags) \
-   SH_CLK_DIV4(_str, &pll_clk, _reg, _bit, _mask, _flags)
-@@ -130,11 +129,20 @@ struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_B] = DIV4("bus_clk", FRQCR, 8, 0x0dbf, CLK_ENABLE_ON_INIT),
- 	[DIV4_B3] = DIV4("b3_clk", FRQCR, 4, 0x0db4, CLK_ENABLE_ON_INIT),
- 	[DIV4_P] = DIV4("peripheral_clk", FRQCR, 0, 0x0dbf, 0),
--	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x0dbf, 0),
--	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x0dbf, 0),
++/* USBHS */
++void usb_host_port_power(int port, int power)
++{
++	if (!power) /* only power-on supported for now */
++		return;
++
++	/* set VBOUT/PWEN and EXTLP0 in DVSTCTR */
++	__raw_writew(__raw_readw(0xe6890008) | 0x600, 0xe6890008);
++}
++
++static struct r8a66597_platdata usb_host_data = {
++	.on_chip = 1,
++	.port_power = usb_host_port_power,
 +};
 +
-+enum { DIV4_IRDA, DIV4_ENABLE_NR };
-+
-+struct clk div4_enable_clks[DIV4_ENABLE_NR] = {
- 	[DIV4_IRDA] = DIV4("irda_clk", IRDACLKCR, 0, 0x0dbf, 0),
- };
- 
-+enum { DIV4_SIUA, DIV4_SIUB, DIV4_REPARENT_NR };
-+
-+struct clk div4_reparent_clks[DIV4_REPARENT_NR] = {
-+	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x0dbf, 0),
-+	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x0dbf, 0),
++static struct resource usb_host_resources[] = {
++	[0] = {
++		.name	= "USBHS",
++		.start	= 0xe6890000,
++		.end	= 0xe68900e5,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 65,
++		.flags	= IORESOURCE_IRQ,
++	},
 +};
- struct clk div6_clks[] = {
- 	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
++
++static struct platform_device usb_host_device = {
++	.name		= "r8a66597_hcd",
++	.id		= 0,
++	.dev = {
++		.platform_data		= &usb_host_data,
++		.dma_mask		= NULL,
++		.coherent_dma_mask	= 0xffffffff,
++	},
++	.num_resources	= ARRAY_SIZE(usb_host_resources),
++	.resource	= usb_host_resources,
++};
+ 
+ static struct platform_device *g3evm_devices[] __initdata = {
+ 	&nor_flash_device,
++	&usb_host_device,
  };
-@@ -216,6 +224,14 @@ int __init arch_clk_init(void)
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
  
- 	if (!ret)
-+		ret = sh_clk_div4_enable_register(div4_enable_clks,
-+					DIV4_ENABLE_NR, &div4_table);
-+
-+	if (!ret)
-+		ret = sh_clk_div4_reparent_register(div4_reparent_clks,
-+					DIV4_REPARENT_NR, &div4_table);
-+
-+	if (!ret)
- 		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
+ static struct map_desc g3evm_io_desc[] __initdata = {
+@@ -138,6 +179,23 @@ static void __init g3evm_init(void)
+ 	gpio_request(GPIO_FN_SCIFA1_CTS, NULL);
+ 	gpio_request(GPIO_FN_SCIFA1_RTS, NULL);
  
- 	if (!ret)
++	/* USBHS */
++	gpio_request(GPIO_FN_VBUS0, NULL);
++	gpio_request(GPIO_FN_PWEN, NULL);
++	gpio_request(GPIO_FN_OVCN, NULL);
++	gpio_request(GPIO_FN_OVCN2, NULL);
++	gpio_request(GPIO_FN_EXTLP, NULL);
++	gpio_request(GPIO_FN_IDIN, NULL);
++
++	/* enable clock in SYMSTPCR2 */
++	__raw_writel(__raw_readl(0xe6158048) & ~(1 << 22), 0xe6158048);
++
++	/* setup USB phy */
++	__raw_writew(0x0300, 0xe605810a);	/* USBCR1 */
++	__raw_writew(0x00e0, 0xe60581c0);	/* CPFCH */
++	__raw_writew(0x6010, 0xe60581c6);	/* CGPOSR */
++	__raw_writew(0x8a0a, 0xe605810c);	/* USBCR2 */
++
+ 	sh7367_add_standard_devices();
+ 
+ 	platform_add_devices(g3evm_devices, ARRAY_SIZE(g3evm_devices));
+--- 0001/arch/arm/mach-shmobile/clock-sh7367.c
++++ work/arch/arm/mach-shmobile/clock-sh7367.c	2010-02-10 19:47:58.000000000 +0900
+@@ -70,11 +70,18 @@ static struct clk r_clk = {
+ 	.rate	    = 32768,
+ };
+ 
++/* a static usb0 for now - enough to get r8a66597 working */
++static struct clk usb0_clk = {
++	.name	    = "usb0",
++};
++
+ static struct clk_lookup lookups[] = {
+ 	{
+ 		.clk = &peripheral_clk,
+ 	}, {
+ 		.clk = &r_clk,
++	}, {
++		.clk = &usb0_clk,
+ 	}
+ };
+ 
