@@ -1,43 +1,23 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Feb 2010 07:38:14 +0000
-Subject: [PATCH 04/05] tmio_mmc: Remove const from platform data V3
-Message-Id: <20100217073814.32726.87689.sendpatchset@t400s>
+From: VK <noreply@vk.com>
+Date: Wed, 10 Feb 2010 06:27:51 +0000
+Subject: Sergey Hnykin vi ha aggiunto tra gli amici nel sito vkontakte.ru
+Message-Id: <2568fb3f137cddca5346aabc8654154f@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100217073735.32726.12020.sendpatchset@t400s>
-In-Reply-To: <20100217073735.32726.12020.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: sameo@linux.intel.com, linux-sh@vger.kernel.org, linus.ml.walleij@gmail.com, g.liakhovetski@gmx.de, goda.yusuke@renesas.com, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, akpm@linux-foundation.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+gentile ...
 
-Remove const from the tmio-mmc platform data hclk V3.
-This change makes it possible to remove the type cast
-from the sh_mobile_sdhi driver which is using the clock
-framework to get the clock rate.
+Ora può entrare nel sito e guardare le pagine dei Suoi amici, utilizzando la Sua e-mail e la parola d&#39;ordine (password) generata automaticamente.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+VKONTAKTE.ru è un sito, che quotidianamente aiuta dieci milioni di persone a ritrovare vecchi amici, intrattenersi con loro in rete e condividere fotografie e avvenimenti della vita.
 
- Previously posted V2 to linux-mmc 20091126 as
- "[PATCH 02/03] mmc: Remove const from tmio-mmc platform data V2"
+Per entrare nel sito, clicchi sul link sottostante:
 
- Changes from V2:
- - rediff to fit on top of capabilities patch
+ATTENZIONE: la Sua registrazione non sarà attiva se ignorerà questo invito.
 
- include/linux/mfd/tmio.h |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Buon divertimento!
 
---- 0003/include/linux/mfd/tmio.h
-+++ work/include/linux/mfd/tmio.h	2010-02-17 15:52:15.000000000 +0900
-@@ -59,7 +59,7 @@ void tmio_core_mmc_clk_div(void __iomem 
-  * data for the MMC controller
-  */
- struct tmio_mmc_data {
--	const unsigned int		hclk;
-+	unsigned int			hclk;
- 	unsigned long			capabilities;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
+
