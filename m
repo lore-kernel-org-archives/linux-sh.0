@@ -1,59 +1,184 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 09 Feb 2010 01:17:41 +0000
-Subject: Re: [PATCH 02/03] input: bitmap update for sh_keysc
-Message-Id: <20100209011741.GC14586@linux-sh.org>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 11 Feb 2010 09:36:00 +0000
+Subject: [PATCH] ptrace: unify FDPIC implementations
+Message-Id: <1265880960-26676-1-git-send-email-vapier@gentoo.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100208063216.2003.84260.sendpatchset@rxone.opensource.se> <20100208063234.2003.7539.sendpatchset@rxone.opensource.se> <20100208071843.GA22911@core.coreip.homeip.net> <aec7e5c31002072341i33ddc56cwde2776cf89a585c6@mail.gmail.com>
-In-Reply-To: <aec7e5c31002072341i33ddc56cwde2776cf89a585c6@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-input@vger.kernel.org, linux-sh@vger.kernel.org
+To: Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, David Howells <dhowells@redhat.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, Feb 08, 2010 at 04:41:16PM +0900, Magnus Damm wrote:
-> Hi Dmitry,
-> 
-> On Mon, Feb 8, 2010 at 4:18 PM, Dmitry Torokhov
-> <dmitry.torokhov@gmail.com> wrote:
-> > On Mon, Feb 08, 2010 at 03:32:34PM +0900, Magnus Damm wrote:
-> >>
-> >> +#define WRAP(fn, m...) bitmap_##fn(m, SH_KEYSC_MAXKEYS)
-> >> +#define sh_keysc_map_zero(m) WRAP(zero, (m)->b)
-> >> +#define sh_keysc_map_fill(m) WRAP(fill, (m)->b)
-> >> +#define sh_keysc_map_and(m, m2) WRAP(and, (m)->b, (m)->b, (m2)->b)
-> >> +#define sh_keysc_map_or(m, m2) WRAP(or, (m)->b, (m)->b, (m2)->b)
-> >> +#define sh_keysc_map_complement(m) WRAP(complement, (m)->b, (m)->b)
-> >> +#define sh_keysc_map_set(m, n) set_bit((n), (m)->b)
-> >> +#define sh_keysc_map_clear(m, n) clear_bit((n), (m)->b)
-> >> +#define sh_keysc_map_test(m, n) test_bit((n), (m)->b)
-> >> +
-> >
-> > Why do you need these wrappers? For me they simply create a distraction,
-> > later when I read the code I will have to go and look up what
-> > sh_keysc_map_set() means but if I see __set_bit() I'd know right away.
-> 
-> To avoid duplicating SH_KEYSC_MAXKEYS all over the place I started out
-> by wrapping bitmap_zero/fill/and/or/complement(). To be consistent I
-> decided to wrap the set/clear/test_bit() functions as well, but it may
-> be better to leave them alone.
-> 
-> Are you ok with wrapping the bitmap_...() functions to avoid
-> duplicating SH_KEYSC_MAXKEYS?
-> 
-I don't see the point, either. The bitmap routines take the maximum size
-of the bitmap as an argument, and so code that uses the API heavily and
-has the size defined in a macro is going to have it sprinkled around, who
-cares?
+The Blackfin/FRV/SuperH guys all have the same exact FDPIC ptrace code in
+their arch handlers (since they were probably copied & pasted).  Since
+these ptrace interfaces are an arch independent aspect of the FDPIC code,
+unify them in the common ptrace code so new FDPIC ports don't need to copy
+and paste this fundamental stuff yet again.
 
-Wrapping up the bitmap API in your own wrappers to hide this fact only
-makes it more confusing and really doesn't buy you anything. While things
-like sh_keysc_map_set/clear() might seem obvious enough, it's also
-impossible to tell whether these employ __set_bit()/__clear_bit() or
-set_bit()/clear_bit() semantics without having to scroll back and look
-them up. The added obfuscation to save yourself from having to sprinkle
-SH_KEYSC_MAXKEYS around simply isn't worth it.
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+---
+ arch/blackfin/kernel/ptrace.c |   33 ++++++++-------------------------
+ arch/frv/kernel/ptrace.c      |   20 --------------------
+ arch/sh/kernel/ptrace_32.c    |   23 -----------------------
+ kernel/ptrace.c               |   20 ++++++++++++++++++++
+ 4 files changed, 28 insertions(+), 68 deletions(-)
 
-Any time you start out wrapping an existing API for private driver use
-outside of things like I/O accessors, you're almost certainly going to
-run in to trouble.
+diff --git a/arch/blackfin/kernel/ptrace.c b/arch/blackfin/kernel/ptrace.c
+index 65567dc..0ae2f1e 100644
+--- a/arch/blackfin/kernel/ptrace.c
++++ b/arch/blackfin/kernel/ptrace.c
+@@ -261,11 +261,15 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 			} else if (addr = (sizeof(struct pt_regs) + 8)) {
+ 				/* PT_DATA_ADDR */
+ 				tmp = child->mm->start_data;
+-#ifdef CONFIG_BINFMT_ELF_FDPIC
++#ifdef CONFIG_BINFMT_ELF_FDPIC	/* backwards compat */
+ 			} else if (addr = (sizeof(struct pt_regs) + 12)) {
+-				goto case_PTRACE_GETFDPIC_EXEC;
++				request = PTRACE_GETFDPIC;
++				addr = PTRACE_GETFDPIC_EXEC;
++				goto case_default;
+ 			} else if (addr = (sizeof(struct pt_regs) + 16)) {
+-				goto case_PTRACE_GETFDPIC_INTERP;
++				request = PTRACE_GETFDPIC;
++				addr = PTRACE_GETFDPIC_INTERP;
++				goto case_default;
+ #endif
+ 			} else {
+ 				tmp = get_reg(child, addr);
+@@ -274,28 +278,6 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 			break;
+ 		}
+ 
+-#ifdef CONFIG_BINFMT_ELF_FDPIC
+-	case PTRACE_GETFDPIC: {
+-		unsigned long tmp = 0;
+-
+-		switch (addr) {
+-		case_PTRACE_GETFDPIC_EXEC:
+-		case PTRACE_GETFDPIC_EXEC:
+-			tmp = child->mm->context.exec_fdpic_loadmap;
+-			break;
+-		case_PTRACE_GETFDPIC_INTERP:
+-		case PTRACE_GETFDPIC_INTERP:
+-			tmp = child->mm->context.interp_fdpic_loadmap;
+-			break;
+-		default:
+-			break;
+-		}
+-
+-		ret = put_user(tmp, datap);
+-		break;
+-	}
+-#endif
+-
+ 		/* when I and D space are separate, this will have to be fixed. */
+ 	case PTRACE_POKEDATA:
+ 		pr_debug("ptrace: PTRACE_PEEKDATA\n");
+@@ -409,6 +391,7 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 		ret = 0;
+ 		break;
+ 
++	case_default:
+ 	default:
+ 		ret = ptrace_request(child, request, addr, data);
+ 		break;
+diff --git a/arch/frv/kernel/ptrace.c b/arch/frv/kernel/ptrace.c
+index 60eeed3..fac0289 100644
+--- a/arch/frv/kernel/ptrace.c
++++ b/arch/frv/kernel/ptrace.c
+@@ -344,26 +344,6 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 					     0, sizeof(child->thread.user->f),
+ 					     (const void __user *)data);
+ 
+-	case PTRACE_GETFDPIC:
+-		tmp = 0;
+-		switch (addr) {
+-		case PTRACE_GETFDPIC_EXEC:
+-			tmp = child->mm->context.exec_fdpic_loadmap;
+-			break;
+-		case PTRACE_GETFDPIC_INTERP:
+-			tmp = child->mm->context.interp_fdpic_loadmap;
+-			break;
+-		default:
+-			break;
+-		}
+-
+-		ret = 0;
+-		if (put_user(tmp, (unsigned long *) data)) {
+-			ret = -EFAULT;
+-			break;
+-		}
+-		break;
+-
+ 	default:
+ 		ret = ptrace_request(child, request, addr, data);
+ 		break;
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 9be35f3..ab8123b 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -405,29 +405,6 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 					     0, sizeof(struct pt_dspregs),
+ 					     (const void __user *)data);
+ #endif
+-#ifdef CONFIG_BINFMT_ELF_FDPIC
+-	case PTRACE_GETFDPIC: {
+-		unsigned long tmp = 0;
+-
+-		switch (addr) {
+-		case PTRACE_GETFDPIC_EXEC:
+-			tmp = child->mm->context.exec_fdpic_loadmap;
+-			break;
+-		case PTRACE_GETFDPIC_INTERP:
+-			tmp = child->mm->context.interp_fdpic_loadmap;
+-			break;
+-		default:
+-			break;
+-		}
+-
+-		ret = 0;
+-		if (put_user(tmp, datap)) {
+-			ret = -EFAULT;
+-			break;
+-		}
+-		break;
+-	}
+-#endif
+ 	default:
+ 		ret = ptrace_request(child, request, addr, data);
+ 		break;
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index 23bd09c..60fe465 100644
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -554,6 +554,26 @@ int ptrace_request(struct task_struct *child, long request,
+ 		ret = ptrace_detach(child, data);
+ 		break;
+ 
++#ifdef CONFIG_BINFMT_ELF_FDPIC
++	case PTRACE_GETFDPIC: {
++		unsigned long tmp = 0;
++
++		switch (addr) {
++		case PTRACE_GETFDPIC_EXEC:
++			tmp = child->mm->context.exec_fdpic_loadmap;
++			break;
++		case PTRACE_GETFDPIC_INTERP:
++			tmp = child->mm->context.interp_fdpic_loadmap;
++			break;
++		default:
++			break;
++		}
++
++		ret = put_user(tmp, (unsigned long __user *) data);
++		break;
++	}
++#endif
++
+ #ifdef PTRACE_SINGLESTEP
+ 	case PTRACE_SINGLESTEP:
+ #endif
+-- 
+1.6.6.1
+
