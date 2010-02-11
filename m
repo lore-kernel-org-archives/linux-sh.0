@@ -1,33 +1,23 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 08 Feb 2010 02:50:28 +0000
-Subject: Re: [PATCH] sh-sci: remove SCIF code in sci_rxd_in()
-Message-Id: <20100208025028.GD6839@linux-sh.org>
+From: "Phil Edworthy" <Phil.Edworthy@renesas.com>
+Date: Thu, 11 Feb 2010 10:23:04 +0000
+Subject: [PATCH 00/02] sh: Panning fixes
+Message-Id: <AB12B32E73474741A2C5361C433A44DE0178367D@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100205104100.16820.16353.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20100205104100.16820.16353.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-On Fri, Feb 05, 2010 at 07:41:00PM +0900, Magnus Damm wrote:
-> --- 0001/drivers/serial/sh-sci.h
-> +++ work/drivers/serial/sh-sci.h	2010-02-05 16:02:19.000000000 +0900
-> @@ -518,34 +456,6 @@ static inline int sci_rxd_in(struct uart
->  {
->  	if (port->mapbase = 0xfffffe80)
->  		return __raw_readb(SCPDR)&0x01 ? 1 : 0; /* SCI */
-> -	if (port->mapbase = 0xa4000150)
-> -		return __raw_readb(SCPDR)&0x10 ? 1 : 0; /* SCIF */
-> -	if (port->mapbase = 0xa4000140)
-> -		return __raw_readb(SCPDR)&0x04 ? 1 : 0; /* IRDA */
-> -	return 1;
-> -}
+sh: Panning fixes
 
-I've applied the parts that clean up sci_rxd_in(), but dropped all of the
-register definition deletions. Those definitions are used throughout the
-driver in random locations by different subtypes, as well as places like
-sci_init_pins().
+[PATCH 01/02] sh: Add wait for vsync
+[PATCH 02/02] sh: Fix panning
 
-There's a lot of work that needs to be done before we can safely kill
-them off.
+These patches add wait for vsync and fix the panning
+so that apps can just do ioctl(FBIOPAN_DISPLAY) followed
+by ioctl(FBIO_WAITFORVSYNC) in order to ensure that the
+pan has happened.
+
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+
