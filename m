@@ -1,137 +1,172 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 16 Feb 2010 10:48:15 +0000
-Subject: [PATCH] ARM: mach-shmobile: G3EVM KEYSC platform data
-Message-Id: <20100216104815.14455.317.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 11 Feb 2010 16:50:05 +0000
+Subject: [PATCH 1/5] async-tx: fix DMA error handling in shdma.c
+Message-Id: <Pine.LNX.4.64.1002111705330.4484@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Present DMA error ISR in shdma.c is bogus, it locks the system hard in multiple
+ways. Fix it to abort all queued transactions on all channels on the affected
+controller and giving submitters a chance to get a DMA_ERROR status for aborted
+transactions. Afterwards further functionality is again possible without the
+need to re-load the driver.
 
-This patch adds KEYSC platform data for the G3EVM board.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/dma/shdma.c |   89 ++++++++++++++++++++++++++++++--------------------
+ 1 files changed, 53 insertions(+), 36 deletions(-)
 
- Build time dependencies:
-  "input: update sh_keysc driver with mode 4 and mode 5 support"
-
- Run time dependencies:
-  "sh: update PFC to allow any enum in MARK lists"
-
- Includes far-from-pretty dummy clock, perhaps worth waiting
- until a proper clock framework is in place.
-
- The sh_keysc cannot be selected by Kconfig at this point,
- will submit a separate patch to fix that.
-
- arch/arm/mach-shmobile/board-g3evm.c  |   55 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-sh7367.c |    7 ++++
- 2 files changed, 62 insertions(+)
-
---- 0011/arch/arm/mach-shmobile/board-g3evm.c
-+++ work/arch/arm/mach-shmobile/board-g3evm.c	2010-02-10 19:52:39.000000000 +0900
-@@ -29,6 +29,8 @@
- #include <linux/usb/r8a66597.h>
- #include <linux/io.h>
- #include <linux/gpio.h>
-+#include <linux/input.h>
-+#include <linux/input/sh_keysc.h>
- #include <mach/sh7367.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-@@ -127,9 +129,47 @@ static struct platform_device usb_host_d
- 	.resource	= usb_host_resources,
- };
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index b75ce8b..7731169 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -73,7 +73,7 @@ static void sh_dmae_ctl_stop(int id)
+ {
+ 	unsigned short dmaor = dmaor_read_reg(id);
  
-+/* KEYSC */
-+static struct sh_keysc_info keysc_info = {
-+	.mode		= SH_KEYSC_MODE_5,
-+	.scan_timing	= 3,
-+	.delay		= 100,
-+	.keycodes = {
-+		KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G,
-+		KEY_H, KEY_I, KEY_J, KEY_K, KEY_L, KEY_M, KEY_N,
-+		KEY_O, KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U,
-+		KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z, KEY_HOME, KEY_SLEEP,
-+		KEY_WAKEUP, KEY_COFFEE, KEY_0, KEY_1, KEY_2, KEY_3, KEY_4,
-+		KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_STOP, KEY_COMPUTER,
-+	},
-+};
-+
-+static struct resource keysc_resources[] = {
-+	[0] = {
-+		.name	= "KEYSC",
-+		.start  = 0xe61b0000,
-+		.end    = 0xe61b000f,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 79,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device keysc_device = {
-+	.name           = "sh_keysc",
-+	.num_resources  = ARRAY_SIZE(keysc_resources),
-+	.resource       = keysc_resources,
-+	.dev	= {
-+		.platform_data	= &keysc_info,
-+	},
-+};
-+
- static struct platform_device *g3evm_devices[] __initdata = {
- 	&nor_flash_device,
- 	&usb_host_device,
-+	&keysc_device,
- };
+-	dmaor &= ~(DMAOR_NMIF | DMAOR_AE);
++	dmaor &= ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME);
+ 	dmaor_write_reg(id, dmaor);
+ }
  
- static struct map_desc g3evm_io_desc[] __initdata = {
-@@ -196,6 +236,21 @@ static void __init g3evm_init(void)
- 	__raw_writew(0x6010, 0xe60581c6);	/* CGPOSR */
- 	__raw_writew(0x8a0a, 0xe605810c);	/* USBCR2 */
+@@ -86,7 +86,7 @@ static int sh_dmae_rst(int id)
  
-+	/* KEYSC @ CN7 */
-+	gpio_request(GPIO_FN_PORT42_KEYOUT0, NULL);
-+	gpio_request(GPIO_FN_PORT43_KEYOUT1, NULL);
-+	gpio_request(GPIO_FN_PORT44_KEYOUT2, NULL);
-+	gpio_request(GPIO_FN_PORT45_KEYOUT3, NULL);
-+	gpio_request(GPIO_FN_PORT46_KEYOUT4, NULL);
-+	gpio_request(GPIO_FN_PORT47_KEYOUT5, NULL);
-+	gpio_request(GPIO_FN_PORT48_KEYIN0_PU, NULL);
-+	gpio_request(GPIO_FN_PORT49_KEYIN1_PU, NULL);
-+	gpio_request(GPIO_FN_PORT50_KEYIN2_PU, NULL);
-+	gpio_request(GPIO_FN_PORT55_KEYIN3_PU, NULL);
-+	gpio_request(GPIO_FN_PORT56_KEYIN4_PU, NULL);
-+	gpio_request(GPIO_FN_PORT57_KEYIN5_PU, NULL);
-+	gpio_request(GPIO_FN_PORT58_KEYIN6_PU, NULL);
-+
- 	sh7367_add_standard_devices();
- 
- 	platform_add_devices(g3evm_devices, ARRAY_SIZE(g3evm_devices));
---- 0011/arch/arm/mach-shmobile/clock-sh7367.c
-+++ work/arch/arm/mach-shmobile/clock-sh7367.c	2010-02-10 19:55:05.000000000 +0900
-@@ -75,6 +75,11 @@ static struct clk usb0_clk = {
- 	.name	    = "usb0",
- };
- 
-+/* a static keysc0 clk for now - enough to get sh_keysc working */
-+static struct clk keysc0_clk = {
-+	.name	    = "keysc0",
-+};
-+
- static struct clk_lookup lookups[] = {
- 	{
- 		.clk = &peripheral_clk,
-@@ -82,6 +87,8 @@ static struct clk_lookup lookups[] = {
- 		.clk = &r_clk,
- 	}, {
- 		.clk = &usb0_clk,
-+	}, {
-+		.clk = &keysc0_clk,
+ 	dmaor_write_reg(id, dmaor);
+ 	if (dmaor_read_reg(id) & (DMAOR_AE | DMAOR_NMIF)) {
+-		pr_warning(KERN_ERR "dma-sh: Can't initialize DMAOR.\n");
++		pr_warning("dma-sh: Can't initialize DMAOR.\n");
+ 		return -EINVAL;
  	}
- };
+ 	return 0;
+@@ -661,7 +661,7 @@ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all)
  
+ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
+ {
+-	struct sh_desc *sd;
++	struct sh_desc *desc;
+ 
+ 	spin_lock_bh(&sh_chan->desc_lock);
+ 	/* DMA work check */
+@@ -671,10 +671,10 @@ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
+ 	}
+ 
+ 	/* Find the first not transferred desciptor */
+-	list_for_each_entry(sd, &sh_chan->ld_queue, node)
+-		if (sd->mark = DESC_SUBMITTED) {
++	list_for_each_entry(desc, &sh_chan->ld_queue, node)
++		if (desc->mark = DESC_SUBMITTED) {
+ 			/* Get the ld start address from ld_queue */
+-			dmae_set_reg(sh_chan, &sd->hw);
++			dmae_set_reg(sh_chan, &desc->hw);
+ 			dmae_start(sh_chan);
+ 			break;
+ 		}
+@@ -696,6 +696,7 @@ static enum dma_status sh_dmae_is_complete(struct dma_chan *chan,
+ 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
+ 	dma_cookie_t last_used;
+ 	dma_cookie_t last_complete;
++	enum dma_status status;
+ 
+ 	sh_dmae_chan_ld_cleanup(sh_chan, false);
+ 
+@@ -709,7 +710,27 @@ static enum dma_status sh_dmae_is_complete(struct dma_chan *chan,
+ 	if (used)
+ 		*used = last_used;
+ 
+-	return dma_async_is_complete(cookie, last_complete, last_used);
++	spin_lock_bh(&sh_chan->desc_lock);
++
++	status = dma_async_is_complete(cookie, last_complete, last_used);
++
++	/*
++	 * If we don't find cookie on the queue, it has been aborted and we have
++	 * to report error
++	 */
++	if (status != DMA_SUCCESS) {
++		struct sh_desc *desc;
++		status = DMA_ERROR;
++		list_for_each_entry(desc, &sh_chan->ld_queue, node)
++			if (desc->cookie = cookie) {
++				status = DMA_IN_PROGRESS;
++				break;
++			}
++	}
++
++	spin_unlock_bh(&sh_chan->desc_lock);
++
++	return status;
+ }
+ 
+ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
+@@ -732,40 +753,36 @@ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
+ #if defined(CONFIG_CPU_SH4)
+ static irqreturn_t sh_dmae_err(int irq, void *data)
+ {
+-	int err = 0;
+ 	struct sh_dmae_device *shdev = (struct sh_dmae_device *)data;
++	int i;
+ 
+-	/* IRQ Multi */
+-	if (shdev->pdata.mode & SHDMA_MIX_IRQ) {
+-		int __maybe_unused cnt = 0;
+-		switch (irq) {
+-#if defined(DMTE6_IRQ) && defined(DMAE1_IRQ)
+-		case DMTE6_IRQ:
+-			cnt++;
+-#endif
+-		case DMTE0_IRQ:
+-			if (dmaor_read_reg(cnt) & (DMAOR_NMIF | DMAOR_AE)) {
+-				disable_irq(irq);
+-				return IRQ_HANDLED;
++	/* halt the dma controller */
++	sh_dmae_ctl_stop(0);
++	if (shdev->pdata.mode & SHDMA_DMAOR1)
++		sh_dmae_ctl_stop(1);
++
++	/* We cannot detect, which channel caused the error, have to reset all */
++	for (i = 0; i < MAX_DMA_CHANNELS; i++) {
++		struct sh_dmae_chan *sh_chan = shdev->chan[i];
++		if (sh_chan) {
++			struct sh_desc *desc;
++			/* Stop the channel */
++			dmae_halt(sh_chan);
++			/* Complete all  */
++			list_for_each_entry(desc, &sh_chan->ld_queue, node) {
++				struct dma_async_tx_descriptor *tx = &desc->async_tx;
++				desc->mark = DESC_IDLE;
++				if (tx->callback)
++					tx->callback(tx->callback_param);
+ 			}
+-		default:
+-			return IRQ_NONE;
++			list_splice_init(&sh_chan->ld_queue, &sh_chan->ld_free);
+ 		}
+-	} else {
+-		/* reset dma controller */
+-		err = sh_dmae_rst(0);
+-		if (err)
+-			return err;
+-#ifdef SH_DMAC_BASE1
+-		if (shdev->pdata.mode & SHDMA_DMAOR1) {
+-			err = sh_dmae_rst(1);
+-			if (err)
+-				return err;
+-		}
+-#endif
+-		disable_irq(irq);
+-		return IRQ_HANDLED;
+ 	}
++	sh_dmae_rst(0);
++	if (shdev->pdata.mode & SHDMA_DMAOR1)
++		sh_dmae_rst(1);
++
++	return IRQ_HANDLED;
+ }
+ #endif
+ 
+-- 
+1.6.2.4
+
