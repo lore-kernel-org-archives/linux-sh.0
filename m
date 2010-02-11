@@ -1,17 +1,37 @@
-From: "Phil Edworthy" <Phil.Edworthy@renesas.com>
-Date: Thu, 11 Feb 2010 07:59:40 +0000
-Subject: RE: [PATCH] sh: Add wait for vsync ioctl
-Message-Id: <AB12B32E73474741A2C5361C433A44DE017834D8@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 11 Feb 2010 16:50:00 +0000
+Subject: [PATCH 0/5 v2] sh: dmaengine driver improvements
+Message-Id: <Pine.LNX.4.64.1002111647350.4484@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AB12B32E73474741A2C5361C433A44DE017832D3@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
-In-Reply-To: <AB12B32E73474741A2C5361C433A44DE017832D3@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Oops, I didn't notice your other comments. I also need to look at panning so
-I'll probably hold off until the pair of patches is ready.
+V2 of this patchset addresses comments to v1 - as is easy to guess;) 
+Specific chenges are described in respective patches. One more patch is 
+added, described in (4) below. Here again the description from v1:
+
+This patch series introduces several improvements to the shdma SH 
+dmaengine driver:
+
+1. (v2) fix handling of DMA error interrupts
+
+2. better use platform-dvice infrastructures, resources to describe DMAC 
+implementation details, ioremap address ranges, instead of poking at 
+physical addresses directly.
+
+3. separate SH headers for the legacy arch/sh/drivers/dma and the 
+dmaengine driver
+
+4. add runtime PM support to shdma dmaengine driver
+
+This series applies on top of my previous ASoC (SIU) and SH / dmaengine 
+patches.
 
 Thanks
-Phil
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
