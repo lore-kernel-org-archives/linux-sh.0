@@ -1,52 +1,60 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 18 Feb 2010 19:39:12 +0000
-Subject: [PATCH/not-for-mainline] sh7722: enable DMA on all SCIF ports
-Message-Id: <Pine.LNX.4.64.1002182036240.4373@axis700.grange>
+Date: Thu, 11 Feb 2010 16:50:22 +0000
+Subject: [PATCH 5/5] sh: activate runtime PM for dmaengine on sh7722 and
+Message-Id: <Pine.LNX.4.64.1002111744590.4484@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-serial@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-Not for inclusion - just an example how to enable DMA on SCIF.
+No change - version 1 preserved.
+
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    3 +++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |    6 ++++++
+ 2 files changed, 9 insertions(+), 0 deletions(-)
 
 diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-index 2b94281..caca1b8 100644
+index 3ce06c3..2b94281 100644
 --- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
 +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-@@ -175,6 +175,9 @@ static struct plat_sci_port scif0_platform_data = {
- 	.type           = PORT_SCIF,
- 	.irqs           = { 80, 80, 80, 80 },
- 	.clk		= "scif0",
-+	.dma_dev	= &dma_device.dev,
-+	.dma_slave_tx	= SHDMA_SLAVE_SCIF0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SCIF0_RX,
+@@ -163,6 +163,9 @@ struct platform_device dma_device = {
+ 	.dev		= {
+ 		.platform_data	= &dma_platform_data,
+ 	},
++	.archdata = {
++		.hwblk_id = HWBLK_DMAC,
++	},
  };
  
- static struct platform_device scif0_device = {
-@@ -191,6 +194,9 @@ static struct plat_sci_port scif1_platform_data = {
- 	.type           = PORT_SCIF,
- 	.irqs           = { 81, 81, 81, 81 },
- 	.clk		= "scif1",
-+	.dma_dev	= &dma_device.dev,
-+	.dma_slave_tx	= SHDMA_SLAVE_SCIF1_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SCIF1_RX,
+ /* Serial */
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index cf829bf..ddc5694 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -189,6 +189,9 @@ static struct platform_device dma0_device = {
+ 	.dev		= {
+ 		.platform_data	= &dma0_platform_data,
+ 	},
++	.archdata = {
++		.hwblk_id = HWBLK_DMAC0,
++	},
  };
  
- static struct platform_device scif1_device = {
-@@ -207,6 +213,9 @@ static struct plat_sci_port scif2_platform_data = {
- 	.type           = PORT_SCIF,
- 	.irqs           = { 82, 82, 82, 82 },
- 	.clk		= "scif2",
-+	.dma_dev	= &dma_device.dev,
-+	.dma_slave_tx	= SHDMA_SLAVE_SCIF2_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SCIF2_RX,
+ static struct platform_device dma1_device = {
+@@ -199,6 +202,9 @@ static struct platform_device dma1_device = {
+ 	.dev		= {
+ 		.platform_data	= &dma1_platform_data,
+ 	},
++	.archdata = {
++		.hwblk_id = HWBLK_DMAC1,
++	},
  };
  
- static struct platform_device scif2_device = {
+ /* Serial */
+-- 
+1.6.2.4
+
