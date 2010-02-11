@@ -1,14 +1,24 @@
-From: Roland McGrath <roland@redhat.com>
-Date: Thu, 11 Feb 2010 20:24:35 +0000
+From: David Howells <dhowells@redhat.com>
+Date: Thu, 11 Feb 2010 21:07:49 +0000
 Subject: Re: [PATCH] ptrace: unify FDPIC implementations
-Message-Id: <20100211202435.72EDA7C6A@magilla.sf.frob.com>
+Message-Id: <15265.1265922469@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1265880960-26676-1-git-send-email-vapier@gentoo.org>
-In-Reply-To: Mike Frysinger's message of  Thursday, 11 February 2010 04:36:00 -0500 <1265880960-26676-1-git-send-email-vapier@gentoo.org>
+In-Reply-To: <1265880960-26676-1-git-send-email-vapier@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Mike Frysinger <vapier@gentoo.org>
-Cc: Oleg Nesterov <oleg@redhat.com>, David Howells <dhowells@redhat.com>, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: dhowells@redhat.com, Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Acked-by: Roland McGrath <roland@redhat.com>
+Mike Frysinger <vapier@gentoo.org> wrote:
+
+> The Blackfin/FRV/SuperH guys all have the same exact FDPIC ptrace code in
+> their arch handlers (since they were probably copied & pasted).  Since
+> these ptrace interfaces are an arch independent aspect of the FDPIC code,
+> unify them in the common ptrace code so new FDPIC ports don't need to copy
+> and paste this fundamental stuff yet again.
+> 
+> Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+Acked-by: David Howells <dhowells@redhat.com>
