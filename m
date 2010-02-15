@@ -1,29 +1,31 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 25 Feb 2010 07:50:44 +0000
-Subject: Re: [PATCH] sh: ms7724: Add sh_sir support
-Message-Id: <20100225075044.GC3227@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Date: Mon, 15 Feb 2010 08:37:50 +0000
+Subject: [PATCH to v2.6.33] sh: Fix cannot booting zImage using
+Message-Id: <29ab51dc1002150037i60fb846dt60a739cfddb39d08@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <uaauzv5g4.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <uaauzv5g4.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Feb 23, 2010 at 05:19:14PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/boards/mach-se/7724/setup.c |   26 ++++++++++++++++++++++++++
->  1 files changed, 26 insertions(+), 0 deletions(-)
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
+---
+ arch/sh/boot/compressed/misc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-On Wed, Feb 24, 2010 at 09:16:47AM +0900, Kuninori Morimoto wrote:
-> KEYSC::SCN register of SH7724 is 3bit.
-> Thus, scan_timing should be 0 - 7 here.
-
-On Wed, Feb 24, 2010 at 09:32:28AM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/sh/boards/mach-ecovec24/setup.c |   27 +++++++++++++++++++++++++++
->  1 files changed, 27 insertions(+), 0 deletions(-)
-
-Applied, thanks.
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index d509a50..5ff6dfc 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -117,7 +117,7 @@ void decompress_kernel(void)
+ 	output_addr = (CONFIG_MEMORY_START + 0x2000);
+ #else
+ 	output_addr = __pa((unsigned long)&_text+PAGE_SIZE);
+-#ifdef CONFIG_29BIT
++#if defined(CONFIG_29BIT) || defined(CONFIG_PMB_FIXED)
+ 	output_addr |= P2SEG;
+ #endif
+ #endif
+-- 
+1.6.6.1
