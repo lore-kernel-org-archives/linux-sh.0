@@ -1,52 +1,45 @@
-From: Andrea Gelmini <andrea.gelmini@gelma.net>
-Date: Sat, 27 Feb 2010 16:51:23 +0000
-Subject: [PATCH 42/66] arch/mips/lib/libgcc.h: Checkpatch cleanup
-Message-Id: <1267289508-31031-43-git-send-email-andrea.gelmini@gelma.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 15 Feb 2010 11:40:25 +0000
+Subject: [PATCH] sh: extend INTC with force_disable
+Message-Id: <20100215114025.22039.11843.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1267289508-31031-1-git-send-email-andrea.gelmini@gelma.net>
-In-Reply-To: <1267289508-31031-1-git-send-email-andrea.gelmini@gelma.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Andrea Gelmini <andrea.gelmini@gelma.net>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, linux-mips@linux-mips.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-arch/mips/lib/libgcc.h:21: ERROR: open brace '{' following union go on the same line
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
+Extend the shared INTC code with force_disable support to
+allow keeping mask bits statically disabled. Needed for
+SDHI support to mask out unsupported interrupt sources.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/mips/lib/libgcc.h |    3 +--
- arch/sh/lib/libgcc.h   |    3 +--
- 2 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/mips/lib/libgcc.h b/arch/mips/lib/libgcc.h
-index 3f19d1c..05909d5 100644
---- a/arch/mips/lib/libgcc.h
-+++ b/arch/mips/lib/libgcc.h
-@@ -17,8 +17,7 @@ struct DWstruct {
- #error I feel sick.
- #endif
- 
--typedef union
--{
-+typedef union {
- 	struct DWstruct s;
- 	long long ll;
- } DWunion;
-diff --git a/arch/sh/lib/libgcc.h b/arch/sh/lib/libgcc.h
-index 3f19d1c..05909d5 100644
---- a/arch/sh/lib/libgcc.h
-+++ b/arch/sh/lib/libgcc.h
-@@ -17,8 +17,7 @@ struct DWstruct {
- #error I feel sick.
- #endif
- 
--typedef union
--{
-+typedef union {
- 	struct DWstruct s;
- 	long long ll;
- } DWunion;
--- 
-1.7.0.90.g251a4
+ drivers/sh/intc.c       |    3 +++
+ include/linux/sh_intc.h |    1 +
+ 2 files changed, 4 insertions(+)
 
+--- 0001/drivers/sh/intc.c
++++ work/drivers/sh/intc.c	2010-02-15 20:03:32.000000000 +0900
+@@ -851,6 +851,9 @@ void __init register_intc_controller(str
+ 		d->chip.mask_ack = intc_mask_ack;
+ 	}
+ 
++	/* disable bits matching force_disable before registering irqs */
++	if (desc->force_disable)
++		intc_enable_disable_enum(desc, d, desc->force_disable, 0);
+ 
+ 	/* disable bits matching force_enable before registering irqs */
+ 	if (desc->force_enable)
+--- 0001/include/linux/sh_intc.h
++++ work/include/linux/sh_intc.h	2010-02-15 20:03:32.000000000 +0900
+@@ -72,6 +72,7 @@ struct intc_hw_desc {
+ struct intc_desc {
+ 	char *name;
+ 	intc_enum force_enable;
++	intc_enum force_disable;
+ 	struct intc_hw_desc hw;
+ };
+ 
