@@ -1,32 +1,99 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 22 Feb 2010 02:35:31 +0000
-Subject: Re: [PATCH] sh: sh7724: Add workaround for FSI sound
-Message-Id: <aec7e5c31002211835t5abf4f9bjc33b9e4c286abc8c@mail.gmail.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 16 Feb 2010 02:30:25 +0000
+Subject: [PATCH] ARM: ap4evb: Add SMSC 9220 network support
+Message-Id: <ueiklq518.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <upr41pseb.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <upr41pseb.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Feb 22, 2010 at 10:02 AM, Kuninori Morimoto
-<morimoto.kuninori@renesas.com> wrote:
->> When FSI and Network (= NFS file system) had been used
->> at the same time, the I/O of FSI was unstable.
->> This patch modify the SPU2 clock which is used for FSI
->> as nearly equal system clock for stable continuous operation.
->> Special thanks to Jeremy.
->
-> I sent this patch, but I should used set_rate function.
-> And I wonder should I add it in FSI driver ?
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |   44 +++++++++++++++++++++++++++++++++
+ 1 files changed, 44 insertions(+), 0 deletions(-)
 
-I guess you want to set "spu_clk" to 12.288MHz?
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 94b545b..f9af231 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -27,11 +27,13 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/io.h>
++#include <linux/smsc911x.h>
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ 
++/* MTD */
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+ 		.name		= "loader",
+@@ -84,9 +86,37 @@ static struct platform_device nor_flash_device = {
+ 	.resource	= nor_flash_resources,
+ };
+ 
++/* SMSC 9220 */
++static struct resource smc911x_resources[] = {
++	{
++		.start	= 0x14000000,
++		.end	= 0x16000000 - 1,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= 6,
++		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_LOWLEVEL,
++	},
++};
++
++static struct smsc911x_platform_config smsc911x_info = {
++	.flags		= SMSC911X_USE_16BIT | SMSC911X_SAVE_MAC_ADDRESS,
++	.irq_polarity   = SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type       = SMSC911X_IRQ_TYPE_PUSH_PULL,
++};
++
++static struct platform_device smc911x_device = {
++	.name           = "smsc911x",
++	.id             = -1,
++	.num_resources  = ARRAY_SIZE(smc911x_resources),
++	.resource       = smc911x_resources,
++	.dev            = {
++		.platform_data = &smsc911x_info,
++	},
++};
+ 
+ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&nor_flash_device,
++	&smc911x_device,
+ };
+ 
+ static struct map_desc ap4evb_io_desc[] __initdata = {
+@@ -111,10 +141,24 @@ static void __init ap4evb_map_io(void)
+ 	shmobile_setup_console();
+ }
+ 
++#define	PORT39CR	0xE6051027
++#define	PORT65CR	0xE6052041
+ static void __init ap4evb_init(void)
+ {
+ 	sh7372_add_standard_devices();
+ 
++	/*
++	 * enable SMSC911X
++	 *
++	 * FIXME
++	 *
++	 * AP4 doesn't have pinmux support now.
++	 * So, set the value directly here
++	 */
++	__raw_writeb(0x01, PORT65CR); /* enable CS5A */
++	__raw_writeb(0x00, PORT39CR); /* enable IRQ6 */
++	enable_irq(6);
++
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
+ }
+ 
+-- 
+1.6.3.3
 
-Please use clk_set_rate() and clk_round_rate() like this patch:
-
-http://marc.info/?l=linux-sh&m6657205426784&w=2
-
-Thanks,
-
-/ magnus
