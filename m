@@ -1,109 +1,174 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 03 Feb 2010 15:03:54 +0000
-Subject: [PATCH 3/4] dmaengine: add runtime PM support to the shdma driver
-Message-Id: <Pine.LNX.4.64.1002031559390.6324@axis700.grange>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Tue, 16 Feb 2010 10:09:26 +0000
+Subject: libshcodecs 1.0.0 Release
+Message-Id: <dba6c0831002160209q10fc37e7nf7c51093691223e9@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Provided platforms implement runtime PM, this disables the controller, when not
-in use.
+libshcodecs 1.0.0 Release
+============
+libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/dma/shdma.c |   20 ++++++++++++++++++++
- 1 files changed, 20 insertions(+), 0 deletions(-)
+The [SH-Mobile][0] processor series includes a hardware video processing
+unit that supports MPEG-4 and H.264 encoding and decoding.
+libshcodecs is available under the terms of the GNU LGPL.
 
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 3498cab..7e7ce10 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -24,7 +24,10 @@
- #include <linux/delay.h>
- #include <linux/dma-mapping.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+
- #include <asm/sh-dmaengine.h>
-+
- #include "shdma.h"
- 
- /* DMA descriptor control */
-@@ -266,6 +269,8 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
- 	struct sh_desc *desc;
- 	struct sh_dmae_slave *param = chan->private;
- 
-+	pm_runtime_get_sync(sh_chan->dev);
-+
- 	/*
- 	 * This relies on the guarantee from dmaengine that alloc_chan_resources
- 	 * never runs concurrently with itself or free_chan_resources.
-@@ -308,6 +313,9 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
- 	}
- 	spin_unlock_bh(&sh_chan->desc_lock);
- 
-+	if (!sh_chan->descs_allocated)
-+		pm_runtime_put(sh_chan->dev);
-+
- 	return sh_chan->descs_allocated;
- }
- 
-@@ -319,6 +327,7 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
- 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
- 	struct sh_desc *desc, *_desc;
- 	LIST_HEAD(list);
-+	int descs = sh_chan->descs_allocated;
- 
- 	dmae_halt(sh_chan);
- 
-@@ -339,6 +348,9 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
- 
- 	spin_unlock_bh(&sh_chan->desc_lock);
- 
-+	if (descs > 0)
-+		pm_runtime_put(sh_chan->dev);
-+
- 	list_for_each_entry_safe(desc, _desc, &list, node)
- 		kfree(desc);
- }
-@@ -920,6 +932,9 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	/* platform data */
- 	shdev->pdata = pdata;
- 
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_get_sync(&pdev->dev);
-+
- 	/* reset dma controller */
- 	err = sh_dmae_rst(shdev);
- 	if (err)
-@@ -970,6 +985,8 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 			goto chan_probe_err;
- 	}
- 
-+	pm_runtime_put(&pdev->dev);
-+
- 	platform_set_drvdata(pdev, shdev);
- 	dma_async_device_register(&shdev->common);
- 
-@@ -982,6 +999,7 @@ eirq_err:
- 	free_irq(errirq, shdev);
- 
- rst_err:
-+	pm_runtime_put(&pdev->dev);
- 	if (dmars)
- 		iounmap(shdev->dmars);
- emapdmars:
-@@ -1015,6 +1033,8 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
- 	/* channel data remove */
- 	sh_dmae_chan_remove(shdev);
- 
-+	pm_runtime_disable(&pdev->dev);
-+
- 	if (shdev->dmars)
- 		iounmap(shdev->dmars);
- 	iounmap(shdev->chan_reg);
--- 
-1.6.2.4
+The source archive, and more information about the library are available from:
 
+        http://linux-sh.org/cgi-bin/moin.cgi/libshcodecs
+
+New in this release
+=========
+This is version 1.0.0, including many documentation improvements and general
+cleanups; a fix for H.264 decoder block noise and new benchmarking routines.
+
+Library
+-------
+
+Added a public API function shcodecs_encoder_get_frame_num_delta(), for
+determining if a newly encoded data block is part of an existing frame or
+starts a new frame, and if any frames have been skipped.
+
+Updated shared version info to 8:0:1.
+
+Tools
+-----
+
+This release includes framerate reporting throughout the tools (shcodecs-play,
+shcodecs-cap, shcodecs-enc and shcodecs-record), and a new benchmarking
+application for testing encode performance.
+
+Details
+-------
+
+Conrad Parker (50):
+      Add framerate.[ch], using timerfd
+      use framerate.h in shcodecs-play
+      increase encoder work area size for H.264
+      shcodecs-record: use framerate.h for capture wait
+      shcodecs-record: record finish time at capture
+      use getopt_long mnemonics in tools
+      shcodecs-record: cleanup
+      shcodecs-play: add --loop option
+      add tools info to README
+      add framerate_elapsed_time(), framerate struct
+      framerate: use CLOCK_MONOTONIC, clock_gettime
+      shcodecs-record: use framerate_elapsed_time
+      shcodecs-play: use framerate_elapsed_time
+      framerate: measure elapsed at each timeout
+      framerate: tally nr of frames handled, dropped
+      shcodecs-play: use framerate tallys
+      framerate: add marking functions
+      shcodecs-record: Add timing of encoded frames only
+      cleanup framerate API: new_measurer(), new_timer()
+      framerate: cache curr_elapsed time
+      framerate: rename calc_fps to mean_fps
+      framerate: add framerate_instantaneous_fps()
+      framerate: guard against erroneous timings
+      shcodecs-record: display instant, mean fps
+      Initialization to avoid H.264 decode block noise
+      remove unused m4iph_sdr_memset() user function
+      Add usleep fallback for framerate timer
+      update elapsed time types in tools
+      shcodecs-enc: fix output callback return value
+      h264_encode: silence no-input message, eg. at EOF
+      shcodecs-enc: add framerate reporting
+      _get_input_physical_addr(): fix reval docs
+      shcodecs-enc: add BENCHMARK build option
+      shcodecs-enc BENCHMARK: frame nr, report bitrate
+      shcodecs-enc-benchmark: new file
+      shcodecs-enc: strip out BENCHMARK code
+      enc-benchmark: strip out non-BENCHMARK code
+      don't install shcodecs-enc-benchmark
+      shcodecs-record: add --help, --version options
+      shcodecs-record: require --rotate argument
+      shcodecs-dec: add --help, --version options
+      shcodecs-enc: add --version, document --help
+      shcodecs-play: add --help, --version options
+      shcodecs-record: fix build warning, missing ROT_90
+      check m4iph_open return value in enc/dec init
+      tools: propagate sh_veu_open() return value
+      framerate.c: remove build warning
+      shcodecs-record: fix sense of rotate_cap
+      expand AUTHORS list
+      Release 1.0.0
+
+Phil Edworthy (19):
+      encoder: func to get the difference in frame number for output data.
+      pkg-config: Changed how middleware libs info so gst plugins build.
+      shcodecs-record: spaces to tabs
+      Formatting: spaces to tabs
+      cap: Fix building shcodecs-cap
+      record: Fix debug output
+      cap: Added framerate info
+      record: Fix var used after destroyed
+      capture: Fix opaque data structure definition.
+      capture: Changed names to capture/cap.
+      shcodecs-cap: User can now set capture size
+      Removed shcodec-capenc, should use shcodecs-record
+      all: Clean up control file handling
+      play: Correct usage info
+      play: Fix debug info output
+      record: Remove unnecessary CFLAGS
+      cap: Capture using mmap or user & dump output
+      cap: Added man page
+      record: Correct man page bug email address
+
+Takashi Namiki (1):
+      Changed the mode to 0 in avcbd_get_decoded_frame function.
+
+ AUTHORS                             |    4 +
+ README.md                           |   15 ++-
+ config.h.in                         |    3 +
+ configure.ac                        |   10 +-
+ doc/Makefile.am                     |    2 +-
+ doc/shcodecs-cap.1                  |   41 +++++
+ doc/shcodecs-capenc.1               |   18 --
+ doc/shcodecs-dec.1                  |    8 +
+ doc/shcodecs-enc.1                  |   12 ++
+ doc/shcodecs-play.1                 |   13 ++-
+ doc/shcodecs-record.1               |   22 ++-
+ include/shcodecs/shcodecs_encoder.h |   12 ++
+ release_notes/libshcodecs-1.0.0.txt |  161 +++++++++++++++++++
+ shcodecs.pc.in                      |    3 +-
+ src/libshcodecs/Version_script.in   |    1 +
+ src/libshcodecs/encoder_private.h   |    1 +
+ src/libshcodecs/h264_encode.c       |   10 +-
+ src/libshcodecs/m4driverif.c        |   24 ---
+ src/libshcodecs/m4driverif.h        |    2 -
+ src/libshcodecs/mpeg4_encode.c      |    5 +
+ src/libshcodecs/shcodecs_decoder.c  |   13 ++-
+ src/libshcodecs/shcodecs_encoder.c  |   34 ++++-
+ src/tools/Android.mk                |   13 +-
+ src/tools/ControlFileUtil.c         |  101 ++++++------
+ src/tools/ControlFileUtil.h         |    7 +-
+ src/tools/Makefile.am               |   47 +++---
+ src/tools/avcbeinputuser.c          |  294 ++--------------------------------
+ src/tools/avcbencsmp.h              |   34 ++---
+ src/tools/avcbencsmp_common.c       |   57 -------
+ src/tools/capture.c                 |  290 +++++++++++++++++------------------
+ src/tools/capture.h                 |   28 ++--
+ src/tools/framerate.c               |  217 ++++++++++++++++++++++++++
+ src/tools/framerate.h               |   71 +++++++++
+ src/tools/shcodecs-cap.c            |  136 +++++++++++++---
+ src/tools/shcodecs-capenc.c         |  219 --------------------------
+ src/tools/shcodecs-dec.c            |  162 +++++++++++--------
+ src/tools/shcodecs-enc-benchmark.c  |  162 +++++++++++++++++++
+ src/tools/shcodecs-enc.c            |  138 +++++++++-------
+ src/tools/shcodecs-play.c           |  280 +++++++++++++++++----------------
+ src/tools/shcodecs-record.c         |  290 +++++++++++++++++++++-------------
+ src/tools/veu_colorspace.c          |    7 +-
+ 41 files changed, 1678 insertions(+), 1289 deletions(-)
+ create mode 100644 doc/shcodecs-cap.1
+ delete mode 100644 doc/shcodecs-capenc.1
+ create mode 100644 release_notes/libshcodecs-1.0.0.txt
+ delete mode 100644 src/tools/avcbencsmp_common.c
+ create mode 100644 src/tools/framerate.c
+ create mode 100644 src/tools/framerate.h
+ delete mode 100644 src/tools/shcodecs-capenc.c
+ create mode 100644 src/tools/shcodecs-enc-benchmark.c
+
+[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
