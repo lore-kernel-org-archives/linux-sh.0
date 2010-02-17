@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Feb 2010 07:38:23 +0000
-Subject: [PATCH 05/05] tmio_mmc: Balance cell enable()/disable() calls
-Message-Id: <20100217073823.32726.10307.sendpatchset@t400s>
+Date: Wed, 17 Feb 2010 07:38:04 +0000
+Subject: [PATCH 03/05] tmio_mmc: Use 100ms mmc_detect_change() delay
+Message-Id: <20100217073804.32726.27721.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20100217073735.32726.12020.sendpatchset@t400s>
 In-Reply-To: <20100217073735.32726.12020.sendpatchset@t400s>
@@ -9,65 +9,37 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: sameo@linux.intel.com, linux-sh@vger.kernel.org, linus.ml.walleij@gmail.com, akpm@linux-foundation.org, goda.yusuke@renesas.com, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, g.liakhovetski@gmx.de
+Cc: sameo@linux.intel.com, linux-sh@vger.kernel.org, linus.ml.walleij@gmail.com, Magnus Damm <magnus.damm@gmail.com>, goda.yusuke@renesas.com, ian@mnementh.co.uk, lethal@linux-sh.org, akpm@linux-foundation.org, g.liakhovetski@gmx.de
 
 From: Magnus Damm <damm@opensource.se>
 
-This patch adds cell->disable() calls to the tmio-mmc
-probe() error handling and the remove() function.
+This patch changes the tmio_mmc driver to wait 100ms
+before checking the card detect status. This type of
+delay is quite common among mmc drivers, it seems that
+most hardware platforms need to give the hardware some
+time to settle before checking card availabilty.
+
+Hotplug is half-broken without this patch on the sh7724
+Ecovec board. Hot insertion seems ok but eject is never
+detected without this patch.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Previously posted to linux-mmc 20091126 as
- "[PATCH 03/03] mmc: Balance tmio-mmc cell enable()/disable() calls"
+ Previously posted to linux-mmc 20100215 as
+ "[PATCH] tmio_mmc: use 100ms mmc_detect_change() delay"
 
- drivers/mmc/host/tmio_mmc.c |   10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ drivers/mmc/host/tmio_mmc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---- 0004/drivers/mmc/host/tmio_mmc.c
-+++ work/drivers/mmc/host/tmio_mmc.c	2010-02-17 15:54:01.000000000 +0900
-@@ -569,14 +569,14 @@ static int __devinit tmio_mmc_probe(stru
- 	if (ret >= 0)
- 		host->irq = ret;
- 	else
--		goto unmap_ctl;
-+		goto cell_disable;
+--- 0001/drivers/mmc/host/tmio_mmc.c
++++ work/drivers/mmc/host/tmio_mmc.c	2010-02-15 20:28:15.000000000 +0900
+@@ -323,7 +323,7 @@ static irqreturn_t tmio_mmc_irq(int irq,
+ 		if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
+ 			ack_mmc_irqs(host, TMIO_STAT_CARD_INSERT |
+ 				TMIO_STAT_CARD_REMOVE);
+-			mmc_detect_change(host->mmc, 0);
++			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
+ 		}
  
- 	disable_mmc_irqs(host, TMIO_MASK_ALL);
- 
- 	ret = request_irq(host->irq, tmio_mmc_irq, IRQF_DISABLED |
- 		IRQF_TRIGGER_FALLING, dev_name(&dev->dev), host);
- 	if (ret)
--		goto unmap_ctl;
-+		goto cell_disable;
- 
- 	mmc_add_host(mmc);
- 
-@@ -588,6 +588,9 @@ static int __devinit tmio_mmc_probe(stru
- 
- 	return 0;
- 
-+cell_disable:
-+	if (cell->disable)
-+		cell->disable(dev);
- unmap_ctl:
- 	iounmap(host->ctl);
- host_free:
-@@ -598,6 +601,7 @@ out:
- 
- static int __devexit tmio_mmc_remove(struct platform_device *dev)
- {
-+	struct mfd_cell	*cell = (struct mfd_cell *)dev->dev.platform_data;
- 	struct mmc_host *mmc = platform_get_drvdata(dev);
- 
- 	platform_set_drvdata(dev, NULL);
-@@ -606,6 +610,8 @@ static int __devexit tmio_mmc_remove(str
- 		struct tmio_mmc_host *host = mmc_priv(mmc);
- 		mmc_remove_host(mmc);
- 		free_irq(host->irq, host);
-+		if (cell->disable)
-+			cell->disable(dev);
- 		iounmap(host->ctl);
- 		mmc_free_host(mmc);
- 	}
+ 		/* CRC and other errors */
