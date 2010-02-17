@@ -1,28 +1,41 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Tue, 02 Feb 2010 13:54:50 +0000
-Subject: Re: [GIT PULL] sh updates for 2.6.33-rc7
-Message-Id: <fa686aa41002020554k2d09c835u781f47e69674d051@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Feb 2010 07:37:35 +0000
+Subject: [PATCH 00/05] tmio_mmc: SDHI hotplug and random fixes
+Message-Id: <20100217073735.32726.12020.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100202040628.GH13428@linux-sh.org> <fa686aa41002020017m5ea0020di6924905a631dc7d6@mail.gmail.com>
-	<20100202082144.GB5716@linux-sh.org> <fa686aa41002020031r38e6bc9eyfce6476d86d47ec2@mail.gmail.com>
-	<20100202084659.GC5716@linux-sh.org>
-In-Reply-To: <20100202084659.GC5716@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, spi-devel-general@lists.sourceforge.net
+To: linux-mmc@vger.kernel.org
+Cc: sameo@linux.intel.com, linux-sh@vger.kernel.org, linus.ml.walleij@gmail.com, g.liakhovetski@gmx.de, goda.yusuke@renesas.com, ian@mnementh.co.uk, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, akpm@linux-foundation.org
 
-On Tue, Feb 2, 2010 at 1:46 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> Ahh.. this is where the confusion came from. The initial version of the
-> patch was only posted to the sh list, Magnus asked for it to be reposted
-> to the spi list and I hadn't heard anything about it since then, so I
-> assumed the poster just disappeared and I just cleaned it up and applied
-> it by hand. Apparently it was reposted but the sh list was dropped, so I
-> never saw the updated version. If I had known that it had hit the SPI
-> list I would have followed up there, I'll be more careful next time now
-> that I know someone is paying attention :-)
+tmio_mmc: SDHI hotplug and random fixes
 
-:-)  Thanks.
+[PATCH 01/05] tmio_mmc: Keep card-detect interrupts enabled
+[PATCH 02/05] tmio_mmc: Add MMC_CAP_MMC_HIGHSPEED support V2
+[PATCH 03/05] tmio_mmc: Use 100ms mmc_detect_change() delay
+[PATCH 04/05] tmio_mmc: Remove const from platform data V3
+[PATCH 05/05] tmio_mmc: Balance cell enable()/disable() calls
 
-g.
+These patches are a collection of fixes for SDHI hotplug and
+other minor improvements for the tmio_mmc driver.
+
+The first and the third patch contain tmio-mmc specific fixes
+for SDHI hotplug. Hot insertion and eject have been tested using
+the sh-2.6 tree with the two SDHI blocks provided by the sh7724
+processor using Ecovec24 and ms7724se boards. The single SDHI
+block included in sh7722 has been tested on Migo-R.
+
+The second patch is the ground work to allow the SDHI mfd driver
+to enable MMC_CAP_MMC_HIGHSPEED.
+
+The last two patches are just random improvements and fixes for
+the tmio_mmc driver.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/mmc/host/tmio_mmc.c |   13 ++++++++++---
+ drivers/mmc/host/tmio_mmc.h |    6 ++----
+ include/linux/mfd/tmio.h    |    3 ++-
+ 3 files changed, 14 insertions(+), 8 deletions(-)
