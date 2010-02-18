@@ -1,52 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 19 Feb 2010 09:33:47 +0000
-Subject: [PATCH] sh: always enable sh7724 vpu_clk and set to 166MHz on Ecovec
-Message-Id: <20100219093347.646.98356.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 18 Feb 2010 19:39:12 +0000
+Subject: [PATCH/not-for-mainline] sh7722: enable DMA on all SCIF ports
+Message-Id: <Pine.LNX.4.64.1002182036240.4373@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-serial@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Update the sh7724 processor code to always enable vpu_clk.
-
-On the Ecovec board, set the vpu_clk to 166 Mhz.
-
-The 166MHz setting results in a divide-by-6 setup for
-vpu_clk and improves the VPU performance compared to the
-power-on-reset/bootloader configuration.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- arch/sh/boards/mach-ecovec24/setup.c   |    5 +++++
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    2 +-
- 2 files changed, 6 insertions(+), 1 deletion(-)
+Not for inclusion - just an example how to enable DMA on SCIF.
 
---- 0001/arch/sh/boards/mach-ecovec24/setup.c
-+++ work/arch/sh/boards/mach-ecovec24/setup.c	2010-02-19 17:57:00.000000000 +0900
-@@ -1121,6 +1121,11 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_INTC_IRQ1, NULL);
- 	gpio_direction_input(GPIO_FN_INTC_IRQ1);
- 
-+	/* set VPU clock to 166 MHz */
-+	clk = clk_get(NULL, "vpu_clk");
-+	clk_set_rate(clk, clk_round_rate(clk, 166000000));
-+	clk_put(clk);
-+
- 	/* enable I2C device */
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
---- 0004/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-02-19 18:04:26.000000000 +0900
-@@ -159,7 +159,7 @@ struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_SH] = DIV4("shyway_clk", FRQCRA, 12, 0x2f7c, CLK_ENABLE_ON_INIT),
- 	[DIV4_B] = DIV4("bus_clk", FRQCRA, 8, 0x2f7c, CLK_ENABLE_ON_INIT),
- 	[DIV4_P] = DIV4("peripheral_clk", FRQCRA, 0, 0x2f7c, 0),
--	[DIV4_M1] = DIV4("vpu_clk", FRQCRB, 4, 0x2f7c, 0),
-+	[DIV4_M1] = DIV4("vpu_clk", FRQCRB, 4, 0x2f7c, CLK_ENABLE_ON_INIT),
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 2b94281..caca1b8 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -175,6 +175,9 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.type           = PORT_SCIF,
+ 	.irqs           = { 80, 80, 80, 80 },
+ 	.clk		= "scif0",
++	.dma_dev	= &dma_device.dev,
++	.dma_slave_tx	= SHDMA_SLAVE_SCIF0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SCIF0_RX,
  };
  
- struct clk div6_clks[] = {
+ static struct platform_device scif0_device = {
+@@ -191,6 +194,9 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.type           = PORT_SCIF,
+ 	.irqs           = { 81, 81, 81, 81 },
+ 	.clk		= "scif1",
++	.dma_dev	= &dma_device.dev,
++	.dma_slave_tx	= SHDMA_SLAVE_SCIF1_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SCIF1_RX,
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -207,6 +213,9 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.type           = PORT_SCIF,
+ 	.irqs           = { 82, 82, 82, 82 },
+ 	.clk		= "scif2",
++	.dma_dev	= &dma_device.dev,
++	.dma_slave_tx	= SHDMA_SLAVE_SCIF2_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SCIF2_RX,
+ };
+ 
+ static struct platform_device scif2_device = {
