@@ -1,55 +1,115 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 04 Feb 2010 05:26:14 +0000
-Subject: Re: [PATCH 2/3 v3] sh: fix Transfer Size calculation in both DMA drivers
-Message-Id: <20100204052614.GD451@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 18 Feb 2010 16:30:02 +0000
+Subject: [PATCH 1/2] sh: extend .device_terminate_all() to record partial
+Message-Id: <Pine.LNX.4.64.1002181722070.4373@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1002011958290.4617@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1002011958290.4617@axis700.grange>
+References: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-serial@vger.kernel.org
 
-On Wed, Feb 03, 2010 at 06:47:16PM -0700, Dan Williams wrote:
-> Paul Mundt wrote:
-> >On Wed, Feb 03, 2010 at 10:58:45AM -0700, Dan Williams wrote:
-> >>Dan Williams wrote:
-> >>>>arch/sh/drivers/dma/dma-sh.c           |    5 +-
-> >>>This bit collides with 9d56dd3b "sh: Mass ctrl_in/outX to 
-> >>>__raw_read/writeX conversion." in Paul's tree.  I'm fine with these 
-> >>>going through the sh tree with my acked-by modulo that minor nit with 
-> >>>the dma_list_mutex comment in 3/3.
-> >>The other option would be for me to base async_tx.git/next on top of 
-> >>sh.git/master since my tree appears later in the linux-next merge order 
-> >> (I would then make sure I merge after Paul during the .34 window). 
-> >>The only problem is that this removes the luxury of Paul rebasing the sh 
-> >>tree at his leisure (I would need to rebase as well before the result is 
-> >>seen by linux-next).  So I'll remain in ack-only mode on this set unless 
-> >>Paul signals that sh.git does not rebase.
-> >>
-> >The SH tree doesn't rebase, so this shouldn't be a problem either way.
-> >However, unless there are any dependencies on the bits in your current
-> >tree, simply having you Ack the patches and rolling them in to the SH
-> >tree seems like the less painful option.
-> 
-> Ok, I don't have any conflicting dmaengine api updates this cycle so 
-> merging the dma bits w/acks through sh.git sounds good to me.
-> 
-Ok, the versioning has become a bit of a minefield, but the present set
-seems to be:
+This patch extends the .device_terminate_all() method of the shdma driver 
+to return number of bytes transfered in the current descriptor.
 
-http://patchwork.kernel.org/patch/73811/
-http://patchwork.kernel.org/patch/76707/
-http://patchwork.kernel.org/patch/76708/
-
-which I think have addressed all of the issues you raised. Since the
-next patch series builds on top of these I'll merge these as-is and add
-your Acked-by if you have no outstanding concerns.
-
-To keep things more manageable I'll merge these in to a topic branch and
-then merge that. That way if there are more complicated changes with the
-next batch of updates we can just stack them on top and you should be
-able to trivially pull from there without having to worry about all of
-the other stuff in my tree (at which point the merge order during the
-merge window shouldn't be of any specific concern), and I'll already have
-resolved any conflicts in my tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+diff --git a/arch/sh/include/asm/dmaengine.h b/arch/sh/include/asm/dmaengine.h
+index 9586e4a..bf2f30c 100644
+--- a/arch/sh/include/asm/dmaengine.h
++++ b/arch/sh/include/asm/dmaengine.h
+@@ -10,6 +10,9 @@
+ #ifndef ASM_DMAENGINE_H
+ #define ASM_DMAENGINE_H
+ 
++#include <linux/dmaengine.h>
++#include <linux/list.h>
++
+ #include <asm/dma-register.h>
+ 
+ #define SH_DMAC_MAX_CHANNELS	6
+@@ -70,4 +73,21 @@ struct sh_dmae_slave {
+ 	struct sh_dmae_slave_config	*config;  /* Set by the driver */
+ };
+ 
++struct sh_dmae_regs {
++	u32 sar; /* SAR / source address */
++	u32 dar; /* DAR / destination address */
++	u32 tcr; /* TCR / transfer count */
++};
++
++struct sh_desc {
++	struct sh_dmae_regs hw;
++	struct list_head node;
++	struct dma_async_tx_descriptor async_tx;
++	enum dma_data_direction direction;
++	dma_cookie_t cookie;
++	size_t partial;
++	int chunks;
++	int mark;
++};
++
+ #endif
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index ea6779f..5d17e09 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -587,6 +587,19 @@ static void sh_dmae_terminate_all(struct dma_chan *chan)
+ 	if (!chan)
+ 		return;
+ 
++	dmae_halt(sh_chan);
++
++	spin_lock_bh(&sh_chan->desc_lock);
++	if (!list_empty(&sh_chan->ld_queue)) {
++		/* Record partial transfer */
++		struct sh_desc *desc = list_entry(sh_chan->ld_queue.next,
++						  struct sh_desc, node);
++		desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
++			sh_chan->xmit_shift;
++
++	}
++	spin_unlock_bh(&sh_chan->desc_lock);
++
+ 	sh_dmae_chan_ld_cleanup(sh_chan, true);
+ }
+ 
+@@ -701,6 +714,9 @@ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
+ 	/* Find the first not transferred desciptor */
+ 	list_for_each_entry(desc, &sh_chan->ld_queue, node)
+ 		if (desc->mark = DESC_SUBMITTED) {
++			dev_dbg(sh_chan->dev, "Queue #%d to %d: %u@%x -> %x\n",
++				desc->async_tx.cookie, sh_chan->id,
++				desc->hw.tcr, desc->hw.sar, desc->hw.dar);
+ 			/* Get the ld start address from ld_queue */
+ 			dmae_set_reg(sh_chan, &desc->hw);
+ 			dmae_start(sh_chan);
+diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
+index 9f0897f..153609a 100644
+--- a/drivers/dma/shdma.h
++++ b/drivers/dma/shdma.h
+@@ -21,22 +21,6 @@
+ 
+ #define SH_DMA_TCR_MAX 0x00FFFFFF	/* 16MB */
+ 
+-struct sh_dmae_regs {
+-	u32 sar; /* SAR / source address */
+-	u32 dar; /* DAR / destination address */
+-	u32 tcr; /* TCR / transfer count */
+-};
+-
+-struct sh_desc {
+-	struct sh_dmae_regs hw;
+-	struct list_head node;
+-	struct dma_async_tx_descriptor async_tx;
+-	enum dma_data_direction direction;
+-	dma_cookie_t cookie;
+-	int chunks;
+-	int mark;
+-};
+-
+ struct device;
+ 
+ struct sh_dmae_chan {
