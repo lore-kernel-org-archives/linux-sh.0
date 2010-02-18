@@ -1,48 +1,33 @@
-From: Samuel Ortiz <sameo@linux.intel.com>
-Date: Sun, 28 Feb 2010 19:03:52 +0000
-Subject: Re: [PATCH 00/05] tmio_mmc: SDHI hotplug and random fixes
-Message-Id: <20100228190351.GD3589@sortiz.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Thu, 18 Feb 2010 07:44:41 +0000
+Subject: [PATCH] ARM: mach-shmobile: ap4evb: Add SCIFA0 support
+Message-Id: <uhbpex68f.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100217073735.32726.12020.sendpatchset@t400s>
- <20100219114620.GE10255@sortiz.org>
- <aec7e5c31002212043hf9dd9b6rbe72328592d455ae@mail.gmail.com>
-In-Reply-To: <aec7e5c31002212043hf9dd9b6rbe72328592d455ae@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linus.ml.walleij@gmail.com, g.liakhovetski@gmx.de, goda.yusuke@renesas.com, ian@mnementh.co.uk, lethal@linux-sh.org, akpm@linux-foundation.org
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-On Mon, Feb 22, 2010 at 01:43:54PM +0900, Magnus Damm wrote:
-> Hi Samuel,
-> 
-> On Fri, Feb 19, 2010 at 8:46 PM, Samuel Ortiz <sameo@linux.intel.com> wrote:
-> > On Wed, Feb 17, 2010 at 04:37:35PM +0900, Magnus Damm wrote:
-> >> tmio_mmc: SDHI hotplug and random fixes
-> >>
-> >> [PATCH 01/05] tmio_mmc: Keep card-detect interrupts enabled
-> >> [PATCH 02/05] tmio_mmc: Add MMC_CAP_MMC_HIGHSPEED support V2
-> >> [PATCH 03/05] tmio_mmc: Use 100ms mmc_detect_change() delay
-> >> [PATCH 04/05] tmio_mmc: Remove const from platform data V3
-> >> [PATCH 05/05] tmio_mmc: Balance cell enable()/disable() calls
-> >>
-> > Since some of this code depends on the tmio.h changes, I'm taking this
-> > patchset. Please let me know if that's fine with you.
-> 
-> Sounds great, thank you! I've just posted two patches for
-> sh_mobile_sdhi, please pick them up as well if possible.
-Done, thanks a lot.
-
-Cheers,
-Samuel.
-
-
-> Thanks,
-> 
-> / magnus
-
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index bcd4456..41bc248 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -189,6 +189,10 @@ static void __init ap4evb_init(void)
+ {
+ 	sh7372_pinmux_init();
+ 
++	/* enable SCIFA0 */
++	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
++	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
++
+ 	/* enable SMSC911X */
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
 -- 
-Intel Open Source Technology Centre
-http://oss.intel.com/
+1.6.3.3
+
