@@ -1,39 +1,66 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 24 Feb 2010 01:03:09 +0000
-Subject: Re: Problem when testing current git on sh3 + hp6xx
-Message-Id: <20100224010309.GB17581@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Fri, 19 Feb 2010 07:52:12 +0000
+Subject: [PATCH] ARM: mach-shmobile: pfc-sh7377: modify KEYIN settings
+Message-Id: <ur5ohpsh7.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100223025042.GA28763@rafazurita.homelinux.net>
-In-Reply-To: <20100223025042.GA28763@rafazurita.homelinux.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Feb 23, 2010 at 07:38:03PM -0300, Rafael Ignacio Zurita wrote:
-> On Tue, Feb 23, 2010 at 12:51:09PM +0900, Paul Mundt wrote:
-> > Based on this it would seem that you are entering the kernel with pending
-> > timer IRQs and are racing against the clockevent setup, as no one has set
-> > up the event handler yet. Try this:
-> 
-> After to apply your patch it looks a lot better. The log :
-> 
-> Calibrating delay loop (skipped)... 22.11 BogoMIPS PRESET (lpjD220)
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/arm/mach-shmobile/pfc-sh7377.c |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
 
-It would seem that the clock framework still needs a bit of work for this
-CPU..
+diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
+index 79b53d8..613e684 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7377.c
++++ b/arch/arm/mach-shmobile/pfc-sh7377.c
+@@ -102,6 +102,7 @@ enum {
+ 	PORT_265(FN7), /* PORT0_FN7 -> PORT264_FN7 */
+ 
+ 	MSELBCR_MSEL17_1, MSELBCR_MSEL17_0,
++	MSELBCR_MSEL16_1, MSELBCR_MSEL16_0,
+ 	PINMUX_FUNCTION_END,
+ 
+ 	PINMUX_MARK_BEGIN,
+@@ -528,19 +529,19 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PORT_DATA_IO_PU_PD(263),
+ 
+ 	/* Special Pull-up / Pull-down Functions */
+-	PINMUX_DATA(PORT66_KEYIN0_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT66_KEYIN0_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT66_FN2, PORT66_IN_PU),
+-	PINMUX_DATA(PORT67_KEYIN1_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT67_KEYIN1_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT67_FN2, PORT67_IN_PU),
+-	PINMUX_DATA(PORT68_KEYIN2_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT68_KEYIN2_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT68_FN2, PORT68_IN_PU),
+-	PINMUX_DATA(PORT69_KEYIN3_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT69_KEYIN3_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT69_FN2, PORT69_IN_PU),
+-	PINMUX_DATA(PORT70_KEYIN4_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT70_KEYIN4_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT70_FN2, PORT70_IN_PU),
+-	PINMUX_DATA(PORT71_KEYIN5_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT71_KEYIN5_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT71_FN2, PORT71_IN_PU),
+-	PINMUX_DATA(PORT72_KEYIN6_PU_MARK, MSELBCR_MSEL17_0,
++	PINMUX_DATA(PORT72_KEYIN6_PU_MARK, MSELBCR_MSEL17_0, MSELBCR_MSEL16_0,
+ 				PORT72_FN2, PORT72_IN_PU),
+ 
+ 
+@@ -1637,7 +1638,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 			MSELBCR_MSEL17_0, MSELBCR_MSEL17_1,
+-			0, 0,
++			MSELBCR_MSEL16_0, MSELBCR_MSEL16_1,
+ 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+ 	},
+-- 
+1.6.3.3
 
-> HD64461 configured at 0xb0000000 on irq 36(mapped into 64 to 79)
-> HD64461: enabling PCMCIA devices
-[snip]
-> scsi0 : pata_platform
-> ata1: PATA max PIO0 mmio cmd 0x150001f0 ctl 0x150001fe irq 77
-
-Good to see that sparseirq works as advertized here too.
-
-> If your patch is applied then I need to check why X does not run, 
-> but that is another story.
-> If your patch is not going to mainline, then please, let me know
-> what should be done to continue fixing the original issue.
-> 
-I'll push them out today and add your Tested-by. Thanks for testing!
