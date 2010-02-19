@@ -1,39 +1,39 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Wed, 03 Feb 2010 10:34:07 +0000
-Subject: Re: [PATCH 1/4 v4] ASoC: add a WM8978 codec driver
-Message-Id: <20100203103406.GC8300@opensource.wolfsonmicro.com>
+From: Drasko DRASKOVIC <drasko.draskovic@gmail.com>
+Date: Fri, 19 Feb 2010 23:51:38 +0000
+Subject: Unaligned kernel access for __udivsi3_i4i
+Message-Id: <5ec3d7931002191551g21c0cda9le17729529b1afd78@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1001271846020.5073@axis700.grange>
-	<20100127201755.GA11601@rakim.wolfsonmicro.main>
-	<Pine.LNX.4.64.1001291452110.4613@axis700.grange>
-	<20100201143120.GA26011@rakim.wolfsonmicro.main>
-	<Pine.LNX.4.64.1002012047200.4617@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1002012047200.4617@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Kuninori Morimoto <morimoto.kuninori@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>, Liam Girdwood <lrg@slimlogic.co.uk>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 01, 2010 at 09:01:41PM +0100, Guennadi Liakhovetski wrote:
-> On Mon, 1 Feb 2010, Mark Brown wrote:
+Hi all,
+I am getting Unaligned kernel access on 0x809b7662
 
-> > I don't follow your logic there at all, I'm afraid.  Both options have a
-> > table of possible values for the divider (and hence the PLL output
-> > frequencies they can use) which they need to additionally constrain
-> > based on the PLL operating conditions.
+(gdb) disassemble 0x809b7662 0x809b7762
+Dump of assembler code from 0x809b7662 to 0x809b7762:
+0x809b7662 <__udivsi3_i4i+54>:=A0=A0=A0 mov.l=A0=A0=A0 @(r0,r1),r1
+0x809b7664 <__udivsi3_i4i+56>:=A0=A0=A0 mov=A0=A0=A0 r5,r0
+0x809b7666 <__udivsi3_i4i+58>:=A0=A0=A0 tst=A0=A0=A0 #-2,r0
+0x809b7668 <__udivsi3_i4i+60>:=A0=A0=A0 mova=A0=A0=A0 0x809b784c <__sdivsi3=
+_i4i+336>,r0
+...
 
-> In principle, yes, both dividers have a table of possible values. But, 
-> possible OPCLK dividers are 1, 2, 3, and 4, which makes it possible to 
-> just calculate the needed divisor by dividing the target through the 
-> source. Whereas possible MCLK divisors are 1, 3/2, 2, 3, 4, 6, 8, 12, so, 
-> you cannot compute the index, therefore I just iterate over the table and 
-> try each. Of course, the sequence is ascending, so, you could bisection, 
-> but I found that to be an overkill for this case;)
 
-You're missing the point here.  It's not the working out the divisor
-bit that I'm noticing, it's all the stuff around it imposing the
-constraints for the input frequency and the PLL itself.  What's there at
-the minute seems to split the OPCLK and non-OPCLK cases too early and
-has these very large comments explaining what it's trying to do - a more
-step by step approach might be clearer.
+Can it be related to __udivsi3_i4i and toolchain problem, mentioned
+here http://209.85.229.132/search?q=CAche:7eePA2ixT4gJ:www.sfr-fresh.com/li=
+nux/misc/v2.6/ChangeLog-2.6.21+__udivsi3_i4i+unaligned+access+st+linux&cd=
+=10&hl=3Den&ct=3Dclnk
+
+
+Can this be the reason that my app is crashing (after some time) with
+SIGBUS errors?
+
+
+How can I further investigate problem of unaligned access in the
+kernel, to check if it comes from kernel modules?
+
+
+Best regards,
+Drasko
