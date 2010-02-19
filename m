@@ -1,65 +1,52 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 08 Feb 2010 06:32:43 +0000
-Subject: [PATCH 03/03] input: update sh_keysc driver with mode 6
-Message-Id: <20100208063243.2003.6889.sendpatchset@rxone.opensource.se>
+Date: Fri, 19 Feb 2010 09:33:47 +0000
+Subject: [PATCH] sh: always enable sh7724 vpu_clk and set to 166MHz on Ecovec
+Message-Id: <20100219093347.646.98356.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100208063216.2003.84260.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20100208063216.2003.84260.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, dmitry.torokhov@gmail.com, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add mode 6 support to the sh_keysc driver. Also update
-the KYOUTDR mask value to include all 16 register bits.
+Update the sh7724 processor code to always enable vpu_clk.
+
+On the Ecovec board, set the vpu_clk to 166 Mhz.
+
+The 166MHz setting results in a divide-by-6 setup for
+vpu_clk and improves the VPU performance compared to the
+power-on-reset/bootloader configuration.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- drivers/input/keyboard/sh_keysc.c |    3 ++-
- include/linux/input/sh_keysc.h    |    6 +++---
- 2 files changed, 5 insertions(+), 4 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c   |    5 +++++
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
 
---- 0006/drivers/input/keyboard/sh_keysc.c
-+++ work/drivers/input/keyboard/sh_keysc.c	2010-02-05 13:19:52.000000000 +0900
-@@ -31,6 +31,7 @@ static const struct {
- 	[SH_KEYSC_MODE_3] = { 2, 4, 7 },
- 	[SH_KEYSC_MODE_4] = { 3, 6, 6 },
- 	[SH_KEYSC_MODE_5] = { 4, 6, 7 },
-+	[SH_KEYSC_MODE_6] = { 5, 7, 7 },
+--- 0001/arch/sh/boards/mach-ecovec24/setup.c
++++ work/arch/sh/boards/mach-ecovec24/setup.c	2010-02-19 17:57:00.000000000 +0900
+@@ -1121,6 +1121,11 @@ static int __init arch_setup(void)
+ 	gpio_request(GPIO_FN_INTC_IRQ1, NULL);
+ 	gpio_direction_input(GPIO_FN_INTC_IRQ1);
+ 
++	/* set VPU clock to 166 MHz */
++	clk = clk_get(NULL, "vpu_clk");
++	clk_set_rate(clk, clk_round_rate(clk, 166000000));
++	clk_put(clk);
++
+ 	/* enable I2C device */
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+--- 0004/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-02-19 18:04:26.000000000 +0900
+@@ -159,7 +159,7 @@ struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SH] = DIV4("shyway_clk", FRQCRA, 12, 0x2f7c, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B] = DIV4("bus_clk", FRQCRA, 8, 0x2f7c, CLK_ENABLE_ON_INIT),
+ 	[DIV4_P] = DIV4("peripheral_clk", FRQCRA, 0, 0x2f7c, 0),
+-	[DIV4_M1] = DIV4("vpu_clk", FRQCRB, 4, 0x2f7c, 0),
++	[DIV4_M1] = DIV4("vpu_clk", FRQCRB, 4, 0x2f7c, CLK_ENABLE_ON_INIT),
  };
  
- struct sh_keysc_map {
-@@ -121,7 +122,7 @@ static irqreturn_t sh_keysc_isr(int irq,
- 			n = keyin_nr * i;
- 
- 			/* drive one KEYOUT pin low, read KEYIN pins */
--			sh_keysc_write(priv, KYOUTDR, 0xfff ^ (3 << (i * 2)));
-+			sh_keysc_write(priv, KYOUTDR, 0xffff ^ (3 << (i * 2)));
- 			udelay(pdata->delay);
- 			tmp = sh_keysc_read(priv, KYINDR);
- 
---- 0004/include/linux/input/sh_keysc.h
-+++ work/include/linux/input/sh_keysc.h	2010-02-05 13:19:52.000000000 +0900
-@@ -1,15 +1,15 @@
- #ifndef __SH_KEYSC_H__
- #define __SH_KEYSC_H__
- 
--#define SH_KEYSC_MAXKEYS 42
-+#define SH_KEYSC_MAXKEYS 49
- 
- struct sh_keysc_info {
- 	enum { SH_KEYSC_MODE_1, SH_KEYSC_MODE_2, SH_KEYSC_MODE_3,
--	       SH_KEYSC_MODE_4, SH_KEYSC_MODE_5 } mode;
-+	       SH_KEYSC_MODE_4, SH_KEYSC_MODE_5, SH_KEYSC_MODE_6 } mode;
- 	int scan_timing; /* 0 -> 7, see KYCR1, SCN[2:0] */
- 	int delay;
- 	int kycr2_delay;
--	int keycodes[SH_KEYSC_MAXKEYS];
-+	int keycodes[SH_KEYSC_MAXKEYS]; /* KEYIN * KEYOUT */
- };
- 
- #endif /* __SH_KEYSC_H__ */
+ struct clk div6_clks[] = {
