@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Wed, 24 Feb 2010 00:32:28 +0000
-Subject: [PATCH] sh: mach-ecovec24: Add sh_sir support
-Message-Id: <ubpffv5gj.wl%morimoto.kuninori@renesas.com>
+Date: Mon, 22 Feb 2010 09:30:12 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: ap4evb: Add S6 debug switch support
+Message-Id: <u7hq5629w.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,61 +10,34 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c |   27 +++++++++++++++++++++++++++
- 1 files changed, 27 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 6f2e8a7..8cdf11e 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -751,6 +751,26 @@ static struct platform_device fsi_device = {
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 4714cad..d9a46d0 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -211,6 +211,20 @@ static void __init ap4evb_init(void)
+ 	gpio_export(GPIO_PORT187, 0);
+ 	gpio_export(GPIO_PORT188, 0);
  
-+/* IrDA */
-+static struct resource irda_resources[] = {
-+	[0] = {
-+		.name	= "IrDA",
-+		.start  = 0xA45D0000,
-+		.end    = 0xA45D0049,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 20,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
++	/* enable Debug switch (S6) */
++	gpio_request(GPIO_PORT32, NULL);
++	gpio_request(GPIO_PORT33, NULL);
++	gpio_request(GPIO_PORT34, NULL);
++	gpio_request(GPIO_PORT35, NULL);
++	gpio_direction_input(GPIO_PORT32);
++	gpio_direction_input(GPIO_PORT33);
++	gpio_direction_input(GPIO_PORT34);
++	gpio_direction_input(GPIO_PORT35);
++	gpio_export(GPIO_PORT32, 0);
++	gpio_export(GPIO_PORT33, 0);
++	gpio_export(GPIO_PORT34, 0);
++	gpio_export(GPIO_PORT35, 0);
 +
-+static struct platform_device irda_device = {
-+	.name           = "sh_sir",
-+	.num_resources  = ARRAY_SIZE(irda_resources),
-+	.resource       = irda_resources,
-+};
-+
- static struct platform_device *ecovec_devices[] __initdata = {
- 	&heartbeat_device,
- 	&nor_flash_device,
-@@ -771,6 +791,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&camera_devices[1],
- 	&camera_devices[2],
- 	&fsi_device,
-+	&irda_device,
- };
+ 	sh7372_add_standard_devices();
  
- #define EEPROM_ADDR 0x50
-@@ -1131,6 +1152,12 @@ static int __init arch_setup(void)
- 	clk_set_rate(clk, clk_round_rate(clk, 166000000));
- 	clk_put(clk);
- 
-+	/* enable IrDA */
-+	gpio_request(GPIO_FN_IRDA_OUT, NULL);
-+	gpio_request(GPIO_FN_IRDA_IN,  NULL);
-+	gpio_request(GPIO_PTU5, NULL);
-+	gpio_direction_output(GPIO_PTU5, 0);
-+
- 	/* enable I2C device */
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
 -- 
 1.6.3.3
 
