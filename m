@@ -1,126 +1,199 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 09 Feb 2010 02:34:18 +0000
-Subject: Re: [PATCH 2/4] sh: separate DMA headers, used by the legacy and the dmaengine drivers
-Message-Id: <20100209023418.GE14586@linux-sh.org>
+From: Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>
+Date: Tue, 23 Feb 2010 02:50:42 +0000
+Subject: Problem when testing current git on sh3 + hp6xx
+Message-Id: <20100223025042.GA28763@rafazurita.homelinux.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1002031559050.6324@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1002031559050.6324@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Feb 08, 2010 at 10:05:23AM +0100, Guennadi Liakhovetski wrote:
-> On Mon, 8 Feb 2010, Paul Mundt wrote:
-> > The shared interrupt scheme is to deal with CPUs that have multiple IRQ
-> > vectors backed by a single masking source. Given that there's no ability
-> > to mask one vector without disabling all of them, we only request_irq()
-> > for each unique masking source and make it shared for the cases where
-> > there are multiple vectors sharing it. This will always be CPU-specific,
-> > so you need to check the intc tables for a specific subtype to figure out
-> > what it can and can't support.
-> > 
-> > Comparing the interrupt numbers is not sufficient, since they'll be
-> > different. The IRQs are all unique, and are not muxed, they just can't be
-> > masked individually. We could pass the IRQ flow information in through
-> > the IRQ resource (ie, IORESOURCE_IRQ | IRQF_SHARED), but more than likely
-> > most CPUs are going to have this issue, so just using IRQF_SHARED as a
-> > default should be fine, too.
-> 
-> The point is, that the original driver checked for the SHDMA_MIX_IRQ flag, 
-> and if it was set, it used only one IRQ number for all channels and the 
-> error interrupt. So, it affects not only whether IRQF_SHARED is used, but 
-> also what IRQs are requested. If we use different IRQ numbers in platform 
-> data, then we need a way to tell the driver, that only the first one has 
-> to be used. Otherwise we can either specify the same IRQ number already in 
-> platform data, or we do request those different IRQs, in which case the 
-> intc driver will know to use the same mask bit, but then we don't need 
-> IRQF_SHARED?
-> 
-I thought that's what I said? We only request_irq() once for a unique
-masking source, yes. I don't see precisely what is difficult about this,
-there are multiple IRQ resources that can be passed in, if we only get a
-single one then we can infer that we only request_irq() once, and at the
-same time we can derive the flow control information from the resource
-flags.
+Hello, 
+  I am testing current sh-2.6.git on SH7709 based hp6xx,
+using earlyprintk as Paul suggested me.
 
-Whether or not IRQF_SHARED needs to be used or not depends on the CPU
-configuration. Just because the DMA events happen to share a masking
-source doesn't mean that they are the only ones using it. Most of masking
-sources relate to a bit range in a masking register somewhere, and
-whatever those bit positions relate to is up to the hardware designers.
-Many of the DMA IRQs will share a mask range with IRQs that have no
-relationship to the DMA engine at all, so we have no choice but to permit
-sharing of the mask source in those cases.
+When booting, kernel shows an
+Unable to handle kernel NULL pointer dereference at virtual address 00000000
+and then 
+Kernel panic - not syncing: Fatal exception in interrupt
 
-Only the CPU can know what sort of configuration it requires, which is
-why the CPU setup code is the only place where the IRQ flow control
-information should be specified. Infering too much from the driver side
-is going to be pretty fragile, since the driver isn't going to have
-enough information to really make flow control decisions on its own.
+I built using arch/sh/configs/hp6xx_defconfig, and enabling
+Verbose BUG() reporting and KALLSYMS_ALL as well.
 
-> > Internal register layout will never vary between platforms because the
-> > controller itself is wholly a property of the SoC. Different on-chip
-> > DMACs might have different layouts, but again, all of that is known at
-> > the time that the CPU definitions are being written up.
-> 
-> Yes, sorry, s/per-platform/per-SoC/. And no, I wasn't aware, that 
-> different DMAC instances on one SoC can have different register layouts. 
-> Just like SCIFs then;)
-> 
-Fortunately they're a bit more consistent than SCI/SCIF! I don't think
-any of the mass produced CPUs have had to suffer through this mixing and
-matching thing yet, but it's certainly something we should try and be
-prepared for.
+This is the log :
 
-> > I think you misunderstood my comment. My point is that since the TS_SHIFT
-> > is effectively common we could just represent that with a bitmap and then
-> > convert the valid sizes to bit positions for indicating which of the
-> > values is valid for that CPU. A simple wrapper around that to map it out
-> > to the proper CHCR layout would then take care of handling CPU-specific
-> > differences dynamically, which in turn would permit us to kill off all of
-> > this crap from the headers.
-> 
-> Well, let's see: TS_INDEX2VAL() (and indirectly CHCR_TS_*_SHIFT), and 
-> XMIT_SZ_* are used to initialise .chcr field in platform arrays of struct 
-> sh_dmae_slave_config. So, unless we sant to calculate those fields at 
-> run-time, these have to stay macros.
+Linux version 2.6.33-rc8-00195-g16afc9f (rafa@nodo3) (gcc version 4.4.1 (Sourcery G++ Lite 4.4-450
+Boot params:
+... MOUNT_ROOT_RDONLY - 00000000
+... RAMDISK_FLAGS     - 00000000
+... ORIG_ROOT_DEV     - 00000100
+... LOADER_TYPE       - 00000001
+... INITRD_START      - ffffffff
+... INITRD_SIZE       - ffffffff
+bootconsole [early_ttySC1] enabled
+Booting machvec: hp6xx
+Node 0: start_pfn = 0xd000, low = 0xe000
+Zone PFN ranges:
+  Normal   0x0000d000 -> 0x0000e000
+Movable zone start PFN for each node
+early_node_map[1] active PFN ranges
+    0: 0x0000d000 -> 0x0000e000
+Built 1 zonelists in Zone order, mobility grouping off.  Total pages: 4064
+Kernel command line: memM console=ttySC1,115200 earlyprintk=sh-sci.1,115200
+PID hash table entries: 64 (order: -4, 256 bytes)
+Dentry cache hash table entries: 2048 (order: 1, 8192 bytes)
+Inode-cache hash table entries: 1024 (order: 0, 4096 bytes)
+I-cache : n_ways=4 n_sets%6 way_incr@96
+I-cache : entry_mask=0x00000ff0 alias_mask=0x00000000 n_aliases=0
+D-cache : n_ways=4 n_sets%6 way_incr@96
+D-cache : entry_mask=0x00000ff0 alias_mask=0x00000000 n_aliases=0
+Memory: 14144k/16384k available (1440k kernel code, 482k data, 84k init)
+virtual kernel memory layout:
+    fixmap  : 0xdfff7000 - 0xdffff000   (  32 kB)
+    vmalloc : 0xc0000000 - 0xdfff5000   ( 511 MB)
+    lowmem  : 0x8d000000 - 0x8e000000   (  16 MB) (cached)
+            : 0x8e000000 - 0xae000000   ( 512 MB) (uncached)
+      .init : 0x8d1e2000 - 0x8d1f7000   (  84 kB)
+      .data : 0x8d16920c - 0x8d1e1d20   ( 482 kB)
+      .text : 0x8d001000 - 0x8d16920c   (1440 kB)
+Hierarchical RCU implementation.
+NR_IRQS:256 nr_irqs:86
+Console: colour dummy device 80x25
+Unable to handle kernel NULL pointer dereference at virtual address 00000000
+pc = 00000000
+*pde = 00000000
+Oops: 0000 [#1]
+last sysfs file: 
 
-Yes, this is why I mentioned several times that these should be
-calculated dynamically. ie, runtime. Given that these macros are already
-used in runtime calculation, it really doesn't matter if we make the CHCR
-calculation a bit heavier, at the end of the day the ability to kill off
-all of those macros makes things a lot more flexible and easier to
-maintain going forward.
+Pid : 0, Comm:          swapper
+CPU : 0                 Not tainted  (2.6.33-rc8-00195-g16afc9f #3)
 
-Having written most of those macros initially, I can assure you that they
-were never intended to deal with subtype variations. The original DMA
-code had precisely 2 variations, the SH-3 DMA controller and the SH-4.
-The Dreamcast built on top of that, and then as soon as SH-4A started,
-everyone decided to have a field day with the DMA blocks. None of the
-original code was ever intended to deal with the sort of subtype
-variation that we have to deal with today, and almost all of that code
-predates things like the driver model and all of the DMA interfaces
-besides the ISA one.
+PC is at 0x0
+PR is at sh_tmu_interrupt+0x20/0x50
+PC  : 00000000 SP  : 8d1c7ebc SR  : 400001f0 TEA : 00000000
+R0  : 00000000 R1  : 00000000 R2  : 00000020 R3  : 00000100
+R4  : 8dc06e9c R5  : 8dc06e60 R6  : 00000000 R7  : 00000010
+R8  : 8dc06e68 R9  : 00000000 R10 : 00000000 R11 : 00000010
+R12 : 8d003c80 R13 : 000000f0 R14 : 8d003cb0
+MACH: 09127064 MACL: 00000ea0 GBR : 8c009800 PR  : 8d162ab0
 
-You really would have been better off just rm -fr'ing all of the old code
-before starting out with this series, as you seem to have built up some
-sort of attachment to legacy crap that wants to be killed off completely.
-These macros are not something we want to preserve unless we really need
-to. Making things easier on the legacy code and avoiding some duplication
-to that extent is not sufficient grounds for keeping the macros alive.
+Call trace:
+ [<8d03cbb2>] handle_IRQ_event+0x42/0x150
+ [<8d03ea14>] handle_level_irq+0x44/0xd0
+ [<8d003cb0>] __raw_local_save_flags+0x0/0x10
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d0039f0>] do_IRQ+0x30/0x60
+ [<8d0080ec>] ret_from_exception+0x0/0xc
+ [<8d0039c0>] do_IRQ+0x0/0x60
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d003cb0>] __raw_local_save_flags+0x0/0x10
+ [<8d003c92>] raw_local_irq_restore+0x12/0x30
+ [<8d03d45a>] __setup_irq+0xea/0x350
+ [<8d1656ba>] sh_tmu_probe+0x24a/0x330
+ [<8d1ee11c>] early_platform_driver_probe+0x250/0x2cc
+ [<8d1ee11c>] early_platform_driver_probe+0x250/0x2cc
+ [<8d1e27a2>] start_kernel+0x28a/0x468
+ [<8d0e6540>] strlen+0x0/0x58
+ [<8d165960>] printk+0x0/0x30
+ [<8d002024>] _stext+0x24/0x30
 
-> But if you say register layout can be different on different
-> controllers, shall we also be prepared for different CHCR internal
-> structure? Then yes, we have to pass all that info in platform data,
-> including the ts_shift array. Shall we do that? And keep all the macros
-> local to platform code.
-> 
-That's probably going to be the easiest solution, given that even with
-CPU families we see variations between subtypes. The case of individual
-CPU subtypes mixing and matching different versions of the same block is
-a corner case, but if we can dynamically support something like that,
-then we're in pretty good shape for any abomination the hardware folks
-decide to throw at us.
+Code:
+  fffffffa:  add       #-84, r3
+  fffffffc:  .word 0x0000
+  fffffffe:  .word 0x0000
+ (Bad address in pc)
 
-You should be happy you got stuck with one of the moderately sane CPUs.. :-)
+Process: swapper (pid: 0, stack limit = 8d1c6001)
+Stack: (0x8d1c7ebc to 0x8d1c8000)
+7ea0:                                                                8d03cbb2 
+7ec0: 8d1b7988 00000010 8d03ea14 ffffffda 8d003cb0 00000000 8d003c80 00000010 
+7ee0: 00000010 8dc070c0 8d0039f0 00000000 8d1dbfa4 00000010 8d0080ec 00000010 
+7f00: 8d0039c0 400081f1 00000000 00000000 40000100 00000000 00000000 00006c8c 
+7f20: 00000002 00000040 8dc070c0 8dc06e68 00000010 8d003c80 00000000 8d003cb0 
+7f40: ffffffda 8d1c7f64 8d003c92 8d03d45a 40000100 8c009800 09127064 00000ea0 
+7f60: ffffffff 8d1656ba 00000000 8d1cc5a8 8d1ee11c 8d1a5568 000000c8 8dc06e9c 
+7f80: 8dc06e60 8d1ee11c 8d1a528c 00000088 ffffff78 8d1f2af8 8d1cc234 8d1f4b1c 
+7fa0: 8d1f2b00 00000000 00000001 00000002 00000000 00000002 00000000 8d1e27a2 
+7fc0: 8d0e6540 8d1f7068 8d1f705c 8d1f1bee 8d1f1954 8d165960 000000f0 8d1f1bb4 
+7fe0: 8d002024 00000000 6cef10a6 00000000 56125511 64123128 6103d30e 2019e1e0 
+---[ end trace 4eaa2a86a8e2da22 ]---
+Kernel panic - not syncing: Fatal exception in interrupt
+Stack: (0x8d1c7d58 to 0x8d1c8000)
+7d40:                                                       8d165874 8d1a53b4 
+7d60: 8d0efc80 8d1a62fc 8d1c7d88 8d0066f8 8d1a62fc 8d165960 00000000 8d0efc80 
+7d80: 8d003c80 8d1c7e60 00001bb9 ffffffff 8d206560 8d00e21a 8d1ff348 8d165960 
+7da0: 8d1c7ea0 00000000 8d1c7e60 00000000 00000000 00000000 00000000 00000000 
+7dc0: 00000000 00000000 00000000 00000000 8d1c7e20 00000000 00000000 00000000 
+7de0: 8d1c7e30 8d1c7e34 8d1c7e38 00000037 00000025 00000023 00000000 8d0ed7cc 
+7e00: ffffffff 00000000 00000001 8d04d55c 8d003c80 00000000 8d04b970 8d1c7e6c 
+7e20: 8d1e16e4 00000001 00000019 00000000 8d0ed7cc ffffffff 8d1fcd30 00000002 
+7e40: 8d0080ec 8d003cb0 000000f0 8d003c80 00000010 8d0080ec 8d0080ec 00000000 
+7e60: 00000000 00000000 00000020 00000100 8dc06e9c 8dc06e60 00000000 00000010 
+7e80: 8dc06e68 00000000 00000000 00000010 8d003c80 000000f0 8d003cb0 8d1c7ebc 
+7ea0: 00000000 8d162ab0 400001f0 8c009800 09127064 00000ea0 ffffffff 8d03cbb2 
+7ec0: 8d1b7988 00000010 8d03ea14 ffffffda 8d003cb0 00000000 8d003c80 00000010 
+7ee0: 00000010 8dc070c0 8d0039f0 00000000 8d1dbfa4 00000010 8d0080ec 00000010 
+7f00: 8d0039c0 400081f1 00000000 00000000 40000100 00000000 00000000 00006c8c 
+7f20: 00000002 00000040 8dc070c0 8dc06e68 00000010 8d003c80 00000000 8d003cb0 
+7f40: ffffffda 8d1c7f64 8d003c92 8d03d45a 40000100 8c009800 09127064 00000ea0 
+7f60: ffffffff 8d1656ba 00000000 8d1cc5a8 8d1ee11c 8d1a5568 000000c8 8dc06e9c 
+7f80: 8dc06e60 8d1ee11c 8d1a528c 00000088 ffffff78 8d1f2af8 8d1cc234 8d1f4b1c 
+7fa0: 8d1f2b00 00000000 00000001 00000002 00000000 00000002 00000000 8d1e27a2 
+7fc0: 8d0e6540 8d1f7068 8d1f705c 8d1f1bee 8d1f1954 8d165960 000000f0 8d1f1bb4 
+7fe0: 8d002024 00000000 6cef10a6 00000000 56125511 64123128 6103d30e 2019e1e0 
+
+Call trace:
+ [<8d0efc80>] bust_spinlocks+0x0/0x50
+ [<8d0efc80>] bust_spinlocks+0x0/0x50
+ [<8d0066f8>] die+0xf8/0x170
+ [<8d165960>] printk+0x0/0x30
+ [<8d0efc80>] bust_spinlocks+0x0/0x50
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d00e21a>] do_page_fault+0x27a/0x3c0
+ [<8d165960>] printk+0x0/0x30
+ [<8d0ed7cc>] number+0x2cc/0x2f0
+ [<8d04d55c>] get_page_from_freelist+0x1ac/0x460
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d04b970>] __rmqueue+0x0/0x2f0
+ [<8d0ed7cc>] number+0x2cc/0x2f0
+ [<8d0080ec>] ret_from_exception+0x0/0xc
+ [<8d003cb0>] __raw_local_save_flags+0x0/0x10
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d0080ec>] ret_from_exception+0x0/0xc
+ [<8d0080ec>] ret_from_exception+0x0/0xc
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d003cb0>] __raw_local_save_flags+0x0/0x10
+ [<8d162ab0>] sh_tmu_interrupt+0x20/0x50
+ [<8d03cbb2>] handle_IRQ_event+0x42/0x150
+ [<8d03ea14>] handle_level_irq+0x44/0xd0
+ [<8d003cb0>] __raw_local_save_flags+0x0/0x10
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d0039f0>] do_IRQ+0x30/0x60
+ [<8d0080ec>] ret_from_exception+0x0/0xc
+ [<8d0039c0>] do_IRQ+0x0/0x60
+ [<8d003c80>] raw_local_irq_restore+0x0/0x30
+ [<8d003cb0>] __raw_local_save_flags+0x0/0x10
+ [<8d003c92>] raw_local_irq_restore+0x12/0x30
+ [<8d03d45a>] __setup_irq+0xea/0x350
+ [<8d1656ba>] sh_tmu_probe+0x24a/0x330
+ [<8d1ee11c>] early_platform_driver_probe+0x250/0x2cc
+ [<8d1ee11c>] early_platform_driver_probe+0x250/0x2cc
+ [<8d1e27a2>] start_kernel+0x28a/0x468
+ [<8d0e6540>] strlen+0x0/0x58
+ [<8d165960>] printk+0x0/0x30
+ [<8d002024>] _stext+0x24/0x30
+
+
+Is there some .config option that I can use to go further?
+
+By the way, I have built the kernel using a new toolchain for me,
+(from Sourcery G++). Could it be the problem? 
+
+My old gcc-3.4.4-glibc-2.3.5 toolchain was always good for
+kernel building, but I get compilation errors with current sh-2.6.git tree
+(the compilation of linus git with the 3.4.4 gcc toolchain goes
+well though).
+
+Thanks in advance.
+
+Rafael Ignacio Zurita
