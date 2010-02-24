@@ -1,81 +1,70 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Feb 2010 11:14:28 +0000
-Subject: [PATCH] sh: remove dead LED code for migo-r and ms7724se
-Message-Id: <20100225111428.6891.89641.sendpatchset@t400s>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 24 Feb 2010 00:32:28 +0000
+Subject: [PATCH] sh: mach-ecovec24: Add sh_sir support
+Message-Id: <ubpffv5gj.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-CONFIG_PM is always set on SH-Mobile these days so
-get rid of the unused LED setup code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ arch/sh/boards/mach-ecovec24/setup.c |   27 +++++++++++++++++++++++++++
+ 1 files changed, 27 insertions(+), 0 deletions(-)
 
- arch/sh/boards/mach-migor/setup.c   |   12 ------------
- arch/sh/boards/mach-se/7724/setup.c |   17 -----------------
- 2 files changed, 29 deletions(-)
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 6f2e8a7..8cdf11e 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -751,6 +751,26 @@ static struct platform_device fsi_device = {
+ 	},
+ };
+ 
++/* IrDA */
++static struct resource irda_resources[] = {
++	[0] = {
++		.name	= "IrDA",
++		.start  = 0xA45D0000,
++		.end    = 0xA45D0049,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 20,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device irda_device = {
++	.name           = "sh_sir",
++	.num_resources  = ARRAY_SIZE(irda_resources),
++	.resource       = irda_resources,
++};
++
+ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&nor_flash_device,
+@@ -771,6 +791,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&camera_devices[1],
+ 	&camera_devices[2],
+ 	&fsi_device,
++	&irda_device,
+ };
+ 
+ #define EEPROM_ADDR 0x50
+@@ -1131,6 +1152,12 @@ static int __init arch_setup(void)
+ 	clk_set_rate(clk, clk_round_rate(clk, 166000000));
+ 	clk_put(clk);
+ 
++	/* enable IrDA */
++	gpio_request(GPIO_FN_IRDA_OUT, NULL);
++	gpio_request(GPIO_FN_IRDA_IN,  NULL);
++	gpio_request(GPIO_PTU5, NULL);
++	gpio_direction_output(GPIO_PTU5, 0);
++
+ 	/* enable I2C device */
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+-- 
+1.6.3.3
 
---- 0001/arch/sh/boards/mach-migor/setup.c
-+++ work/arch/sh/boards/mach-migor/setup.c	2010-02-25 19:53:23.000000000 +0900
-@@ -496,23 +496,11 @@ static int __init migor_devices_setup(vo
- 					&migor_sdram_enter_end,
- 					&migor_sdram_leave_start,
- 					&migor_sdram_leave_end);
--#ifdef CONFIG_PM
- 	/* Let D11 LED show STATUS0 */
- 	gpio_request(GPIO_FN_STATUS0, NULL);
- 
- 	/* Lit D12 LED show PDSTATUS */
- 	gpio_request(GPIO_FN_PDSTATUS, NULL);
--#else
--	/* Lit D11 LED */
--	gpio_request(GPIO_PTJ7, NULL);
--	gpio_direction_output(GPIO_PTJ7, 1);
--	gpio_export(GPIO_PTJ7, 0);
--
--	/* Lit D12 LED */
--	gpio_request(GPIO_PTJ5, NULL);
--	gpio_direction_output(GPIO_PTJ5, 1);
--	gpio_export(GPIO_PTJ5, 0);
--#endif
- 
- 	/* SMC91C111 - Enable IRQ0, Setup CS4 for 16-bit fast access */
- 	gpio_request(GPIO_FN_IRQ0, NULL);
---- 0008/arch/sh/boards/mach-se/7724/setup.c
-+++ work/arch/sh/boards/mach-se/7724/setup.c	2010-02-25 19:56:15.000000000 +0900
-@@ -607,7 +607,6 @@ static int __init devices_setup(void)
- 	/* turn on USB clocks, use external clock */
- 	__raw_writew((__raw_readw(PORT_MSELCRB) & ~0xc000) | 0x8000, PORT_MSELCRB);
- 
--#ifdef CONFIG_PM
- 	/* Let LED9 show STATUS2 */
- 	gpio_request(GPIO_FN_STATUS2, NULL);
- 
-@@ -616,22 +615,6 @@ static int __init devices_setup(void)
- 
- 	/* Lit LED11 show PDSTATUS */
- 	gpio_request(GPIO_FN_PDSTATUS, NULL);
--#else
--	/* Lit LED9 */
--	gpio_request(GPIO_PTJ6, NULL);
--	gpio_direction_output(GPIO_PTJ6, 1);
--	gpio_export(GPIO_PTJ6, 0);
--
--	/* Lit LED10 */
--	gpio_request(GPIO_PTJ5, NULL);
--	gpio_direction_output(GPIO_PTJ5, 1);
--	gpio_export(GPIO_PTJ5, 0);
--
--	/* Lit LED11 */
--	gpio_request(GPIO_PTJ7, NULL);
--	gpio_direction_output(GPIO_PTJ7, 1);
--	gpio_export(GPIO_PTJ7, 0);
--#endif
- 
- 	/* enable USB0 port */
- 	__raw_writew(0x0600, 0xa40501d4);
