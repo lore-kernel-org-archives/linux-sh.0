@@ -1,54 +1,44 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 05 Feb 2010 11:15:25 +0000
-Subject: [PATCH 05/06] sh: Let INTC set IRQF_VALID on ARM platforms V2
-Message-Id: <20100205111525.17065.35884.sendpatchset@rxone.opensource.se>
+Date: Thu, 25 Feb 2010 11:10:54 +0000
+Subject: [PATCH] sh: ecovec build fix for CONFIG_I2C=n
+Message-Id: <20100225111054.6879.44864.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100205111440.17065.33296.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20100205111440.17065.33296.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Reuse the SuperH INTC code on ARM by using set_irq_flags()
-to set IRQF_VALID on ARM platforms. (V2)
+Allow building the ecovec board support code
+even though I2C support is disabled.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Changes since V1:
- - wrap with CONFIG_ARM instead of CONFIG_ARCH_SHMOBILE
- - use set_irq_flags() in create_irq_nr() as well
+ arch/sh/boards/mach-ecovec24/setup.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
- drivers/sh/intc.c |   10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
-
---- 0001/drivers/sh/intc.c
-+++ work/drivers/sh/intc.c	2010-02-05 14:11:53.000000000 +0900
-@@ -658,6 +658,10 @@ static void __init intc_register_irq(str
+--- 0006/arch/sh/boards/mach-ecovec24/setup.c
++++ work/arch/sh/boards/mach-ecovec24/setup.c	2010-02-25 19:33:55.000000000 +0900
+@@ -773,6 +773,7 @@ static struct platform_device *ecovec_de
+ 	&fsi_device,
+ };
  
- 	if (desc->ack_regs)
- 		ack_handle[irq] = intc_ack_data(desc, d, enum_id);
-+
-+#ifdef CONFIG_ARM
-+	set_irq_flags(irq, IRQF_VALID); /* Enable IRQ on ARM systems */
-+#endif
++#ifdef CONFIG_I2C
+ #define EEPROM_ADDR 0x50
+ static u8 mac_read(struct i2c_adapter *a, u8 command)
+ {
+@@ -815,6 +816,12 @@ static void __init sh_eth_init(struct sh
+ 		msleep(10);
+ 	}
  }
- 
- static unsigned int __init save_reg(struct intc_desc_int *d,
-@@ -906,8 +910,12 @@ unsigned int create_irq_nr(unsigned int 
- out_unlock:
- 	spin_unlock_irqrestore(&vector_lock, flags);
- 
--	if (irq > 0)
-+	if (irq > 0) {
- 		dynamic_irq_init(irq);
-+#ifdef CONFIG_ARM
-+		set_irq_flags(irq, IRQF_VALID); /* Enable IRQ on ARM systems */
++#else
++static void __init sh_eth_init(struct sh_eth_plat_data *pd)
++{
++		pr_err("unable to read sh_eth MAC address\n");
++}
 +#endif
-+	}
  
- 	return irq;
- }
+ #define PORT_HIZA 0xA4050158
+ #define IODRIVEA  0xA405018A
