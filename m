@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 19 Feb 2010 09:22:25 +0000
-Subject: [PATCH] sh: introduce struct clk_div4_table
-Message-Id: <20100219092225.479.69458.sendpatchset@t400s>
+Date: Thu, 25 Feb 2010 11:03:24 +0000
+Subject: [PATCH] sh: SH-Mobile R-standby register save/restore
+Message-Id: <20100225110324.6849.13911.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,245 +10,196 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-This patch introduces struct clk_div4_table. The structure
-will be used to keep div4 specific data, and is with this
-patch replacing the struct clk_div_mult_table pointer arg
-used by the sh_clk_div4_register() functions.
+Add code to save/restore registers during
+R-standby sleep on SH-Mobile processors.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/include/asm/clock.h            |   10 +++++++---
- arch/sh/kernel/cpu/clock-cpg.c         |   16 +++++++++-------
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c |    6 +++++-
- 9 files changed, 51 insertions(+), 17 deletions(-)
+ Tested on the sh7724 processor using ms7724se and Ecovec.
 
---- 0001/arch/sh/include/asm/clock.h
-+++ work/arch/sh/include/asm/clock.h	2010-02-19 16:27:37.000000000 +0900
-@@ -146,12 +146,16 @@ int sh_clk_mstp32_register(struct clk *c
- 	.flags = _flags,						\
- }
+ arch/sh/include/asm/suspend.h       |    1 
+ arch/sh/kernel/cpu/shmobile/pm.c    |    3 
+ arch/sh/kernel/cpu/shmobile/sleep.S |  121 ++++++++++++++++++++++++++++++++++-
+ 3 files changed, 122 insertions(+), 3 deletions(-)
+
+--- 0001/arch/sh/include/asm/suspend.h
++++ work/arch/sh/include/asm/suspend.h	2010-02-25 19:22:59.000000000 +0900
+@@ -92,5 +92,6 @@ extern unsigned long sh_mobile_sleep_sup
+ #define SUSP_SH_USTANDBY	(1 << 3) /* SH-Mobile U-standby mode */
+ #define SUSP_SH_SF		(1 << 4) /* Enable self-refresh */
+ #define SUSP_SH_MMU		(1 << 5) /* Save/restore MMU and cache */
++#define SUSP_SH_REGS		(1 << 6) /* Save/restore registers */
  
-+struct clk_div4_table {
-+	struct clk_div_mult_table *div_mult_table;
-+};
+ #endif /* _ASM_SH_SUSPEND_H */
+--- 0001/arch/sh/kernel/cpu/shmobile/pm.c
++++ work/arch/sh/kernel/cpu/shmobile/pm.c	2010-02-25 19:22:59.000000000 +0900
+@@ -33,7 +33,8 @@ ATOMIC_NOTIFIER_HEAD(sh_mobile_post_slee
+ #define SUSP_MODE_SLEEP		(SUSP_SH_SLEEP)
+ #define SUSP_MODE_SLEEP_SF	(SUSP_SH_SLEEP | SUSP_SH_SF)
+ #define SUSP_MODE_STANDBY_SF	(SUSP_SH_STANDBY | SUSP_SH_SF)
+-#define SUSP_MODE_RSTANDBY	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_SF)
++#define SUSP_MODE_RSTANDBY_SF \
++	(SUSP_SH_RSTANDBY | SUSP_SH_MMU | SUSP_SH_REGS | SUSP_SH_SF)
+  /*
+   * U-standby mode is unsupported since it needs bootloader hacks
+   */
+--- 0001/arch/sh/kernel/cpu/shmobile/sleep.S
++++ work/arch/sh/kernel/cpu/shmobile/sleep.S	2010-02-25 19:22:59.000000000 +0900
+@@ -48,8 +48,48 @@ ENTRY(sh_mobile_sleep_enter_start)
+ 	stc	sr, r0
+ 	mov.l	r0, @(SH_SLEEP_SR, r5)
+ 
+-	/* save sp */
++	/* save general purpose registers to stack if needed */
++	mov.l	@(SH_SLEEP_MODE, r5), r0
++	tst	#SUSP_SH_REGS, r0
++	bt	skip_regs_save
 +
- int sh_clk_div4_register(struct clk *clks, int nr,
--			 struct clk_div_mult_table *table);
-+			 struct clk_div4_table *table);
- int sh_clk_div4_enable_register(struct clk *clks, int nr,
--			 struct clk_div_mult_table *table);
-+			 struct clk_div4_table *table);
- int sh_clk_div4_reparent_register(struct clk *clks, int nr,
--			 struct clk_div_mult_table *table);
-+			 struct clk_div4_table *table);
- 
- #define SH_CLK_DIV6(_name, _parent, _reg, _flags)	\
- {							\
---- 0002/arch/sh/kernel/cpu/clock-cpg.c
-+++ work/arch/sh/kernel/cpu/clock-cpg.c	2010-02-19 16:30:45.000000000 +0900
-@@ -149,7 +149,8 @@ int __init sh_clk_div6_register(struct c
- 
- static unsigned long sh_clk_div4_recalc(struct clk *clk)
- {
--	struct clk_div_mult_table *table = clk->priv;
-+	struct clk_div4_table *d4t = clk->priv;
-+	struct clk_div_mult_table *table = d4t->div_mult_table;
- 	unsigned int idx;
- 
- 	clk_rate_table_build(clk, clk->freq_table, table->nr_divisors,
-@@ -162,7 +163,8 @@ static unsigned long sh_clk_div4_recalc(
- 
- static int sh_clk_div4_set_parent(struct clk *clk, struct clk *parent)
- {
--	struct clk_div_mult_table *table = clk->priv;
-+	struct clk_div4_table *d4t = clk->priv;
-+	struct clk_div_mult_table *table = d4t->div_mult_table;
- 	u32 value;
- 	int ret;
- 
-@@ -234,11 +236,11 @@ static struct clk_ops sh_clk_div4_repare
- };
- 
- static int __init sh_clk_div4_register_ops(struct clk *clks, int nr,
--			struct clk_div_mult_table *table, struct clk_ops *ops)
-+			struct clk_div4_table *table, struct clk_ops *ops)
- {
- 	struct clk *clkp;
- 	void *freq_table;
--	int nr_divs = table->nr_divisors;
-+	int nr_divs = table->div_mult_table->nr_divisors;
- 	int freq_table_size = sizeof(struct cpufreq_frequency_table);
- 	int ret = 0;
- 	int k;
-@@ -267,20 +269,20 @@ static int __init sh_clk_div4_register_o
- }
- 
- int __init sh_clk_div4_register(struct clk *clks, int nr,
--				struct clk_div_mult_table *table)
-+				struct clk_div4_table *table)
- {
- 	return sh_clk_div4_register_ops(clks, nr, table, &sh_clk_div4_clk_ops);
- }
- 
- int __init sh_clk_div4_enable_register(struct clk *clks, int nr,
--				struct clk_div_mult_table *table)
-+				struct clk_div4_table *table)
- {
- 	return sh_clk_div4_register_ops(clks, nr, table,
- 					&sh_clk_div4_enable_clk_ops);
- }
- 
- int __init sh_clk_div4_reparent_register(struct clk *clks, int nr,
--				struct clk_div_mult_table *table)
-+				struct clk_div4_table *table)
- {
- 	return sh_clk_div4_register_ops(clks, nr, table,
- 					&sh_clk_div4_reparent_clk_ops);
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2010-02-19 16:39:04.000000000 +0900
-@@ -107,13 +107,17 @@ struct clk *main_clks[] = {
- static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
- static int divisors[] = { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16, 20 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = divisors,
- 	.nr_divisors = ARRAY_SIZE(divisors),
- 	.multipliers = multipliers,
- 	.nr_multipliers = ARRAY_SIZE(multipliers),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++	sts.l	pr, @-r15
++	mov.l	r14, @-r15
++	mov.l	r13, @-r15
++	mov.l	r12, @-r15
++	mov.l	r11, @-r15
++	mov.l	r10, @-r15
++	mov.l	r9, @-r15
++	mov.l	r8, @-r15
 +
- enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P,
-        DIV4_SIUA, DIV4_SIUB, DIV4_NR };
- 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7366.c	2010-02-19 16:38:42.000000000 +0900
-@@ -110,13 +110,17 @@ struct clk *main_clks[] = {
- static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
- static int divisors[] = { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16, 20 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = divisors,
- 	.nr_divisors = ARRAY_SIZE(divisors),
- 	.multipliers = multipliers,
- 	.nr_multipliers = ARRAY_SIZE(multipliers),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++	/* make sure bank0 is selected, save low registers */
++	mov.l	rb_bit, r9
++	not	r9, r9
++	bsr	set_sr
++	 mov	#0, r10
 +
- enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P,
-        DIV4_SIUA, DIV4_SIUB, DIV4_NR };
- 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2010-02-19 16:38:05.000000000 +0900
-@@ -110,13 +110,17 @@ struct clk *main_clks[] = {
- static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
- static int divisors[] = { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16, 20 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = divisors,
- 	.nr_divisors = ARRAY_SIZE(divisors),
- 	.multipliers = multipliers,
- 	.nr_multipliers = ARRAY_SIZE(multipliers),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++	bsr	save_low_regs
++	 nop
 +
- #define DIV4(_str, _reg, _bit, _mask, _flags) \
-   SH_CLK_DIV4(_str, &pll_clk, _reg, _bit, _mask, _flags)
- 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2010-02-19 16:36:09.000000000 +0900
-@@ -110,13 +110,17 @@ struct clk *main_clks[] = {
- static int multipliers[] = { 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
- static int divisors[] = { 1, 3, 2, 5, 3, 4, 5, 6, 8, 10, 12, 16, 20 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = divisors,
- 	.nr_divisors = ARRAY_SIZE(divisors),
- 	.multipliers = multipliers,
- 	.nr_multipliers = ARRAY_SIZE(multipliers),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++	/* switch to bank 1, save low registers */
++	mov.l	rb_bit, r10
++	bsr	set_sr
++	 mov	#-1, r9
 +
- enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_B3, DIV4_P, DIV4_NR };
- 
- #define DIV4(_str, _reg, _bit, _mask, _flags) \
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-02-19 16:41:16.000000000 +0900
-@@ -129,11 +129,15 @@ struct clk *main_clks[] = {
- 
- static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 0, 24, 32, 36, 48, 0, 72 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = divisors,
- 	.nr_divisors = ARRAY_SIZE(divisors),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++	bsr	save_low_regs
++	 nop
 +
- enum { DIV4_I, DIV4_SH, DIV4_B, DIV4_P, DIV4_M1, DIV4_NR };
- 
- #define DIV4(_str, _reg, _bit, _mask, _flags) \
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7785.c	2010-02-19 16:37:45.000000000 +0900
-@@ -57,11 +57,15 @@ static struct clk *clks[] = {
- static unsigned int div2[] = { 1, 2, 4, 6, 8, 12, 16, 18,
- 			       24, 32, 36, 48 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = div2,
- 	.nr_divisors = ARRAY_SIZE(div2),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++	/* switch back to bank 0 */
++	mov.l	rb_bit, r9
++	not	r9, r9
++	bsr	set_sr
++	 mov	#0, r10
 +
- enum { DIV4_I, DIV4_U, DIV4_SH, DIV4_B, DIV4_DDR, DIV4_GA,
- 	DIV4_DU, DIV4_P, DIV4_NR };
- 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7786.c	2010-02-19 16:37:34.000000000 +0900
-@@ -59,11 +59,15 @@ static struct clk *clks[] = {
- static unsigned int div2[] = { 1, 2, 4, 6, 8, 12, 16, 18,
- 			       24, 32, 36, 48 };
- 
--static struct clk_div_mult_table div4_table = {
-+static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = div2,
- 	.nr_divisors = ARRAY_SIZE(div2),
- };
- 
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++skip_regs_save:
 +
- enum { DIV4_I, DIV4_SH, DIV4_B, DIV4_DDR, DIV4_DU, DIV4_P, DIV4_NR };
++	/* save sp, also set to internal ram */
+ 	mov.l	r15, @(SH_SLEEP_SP, r5)
++	mov	r5, r15
  
- #define DIV4(_str, _bit, _mask, _flags) \
+ 	/* save stbcr */
+ 	bsr     save_register
+@@ -60,7 +100,7 @@ ENTRY(sh_mobile_sleep_enter_start)
+ 	tst	#SUSP_SH_MMU, r0
+ 	bt	skip_mmu_save_disable
+ 
+-       /* save mmu state */
++	/* save mmu state */
+ 	bsr	save_register
+ 	 mov	#SH_SLEEP_REG_PTEH, r0
+ 
+@@ -177,6 +217,29 @@ get_register:
+ 	mov.l	@(r0, r5), r0
+ 	rts
+ 	 nop
++
++set_sr:
++	stc	sr, r8
++	and	r9, r8
++	or	r10, r8
++	ldc	r8, sr
++	rts
++	 nop
++
++save_low_regs:
++	mov.l	r7, @-r15
++	mov.l	r6, @-r15
++	mov.l	r5, @-r15
++	mov.l	r4, @-r15
++	mov.l	r3, @-r15
++	mov.l	r2, @-r15
++	mov.l	r1, @-r15
++	rts
++	 mov.l	r0, @-r15
++
++	.balign 4
++rb_bit:	.long	0x20000000 ! RB=1
++
+ ENTRY(sh_mobile_sleep_enter_end)
+ 
+ 	.balign 4
+@@ -270,6 +333,40 @@ skip_restore_sf:
+ 	icbi	@r0
+ 
+ skip_restore_mmu:
++
++	/* restore general purpose registers if needed */
++	mov.l	@(SH_SLEEP_MODE, r5), r0
++	tst	#SUSP_SH_REGS, r0
++	bt	skip_restore_regs
++
++	/* switch to bank 1, restore low registers */
++	mov.l	_rb_bit, r10
++	bsr	_set_sr
++	 mov	#-1, r9
++
++	bsr	restore_low_regs
++	 nop
++
++	/* switch to bank0, restore low registers */
++	mov.l	_rb_bit, r9
++	not	r9, r9
++	bsr	_set_sr
++	 mov	#0, r10
++
++	bsr	restore_low_regs
++	 nop
++
++	/* restore the rest of the registers */
++	mov.l	@r15+, r8
++	mov.l	@r15+, r9
++	mov.l	@r15+, r10
++	mov.l	@r15+, r11
++	mov.l	@r15+, r12
++	mov.l	@r15+, r13
++	mov.l	@r15+, r14
++	lds.l	@r15+, pr
++
++skip_restore_regs:
+ 	rte
+ 	 nop
+ 
+@@ -283,6 +380,26 @@ restore_register:
+ 	rts
+ 	 nop
+ 
++_set_sr:
++	stc	sr, r8
++	and	r9, r8
++	or	r10, r8
++	ldc	r8, sr
++	rts
++	 nop
++
++restore_low_regs:
++	mov.l	@r15+, r0
++	mov.l	@r15+, r1
++	mov.l	@r15+, r2
++	mov.l	@r15+, r3
++	mov.l	@r15+, r4
++	mov.l	@r15+, r5
++	mov.l	@r15+, r6
++	rts
++	 mov.l	@r15+, r7
++
+ 	.balign 4
++_rb_bit:	.long	0x20000000 ! RB=1
+ 1:	.long	~0x7ff
+ ENTRY(sh_mobile_sleep_resume_end)
