@@ -1,50 +1,52 @@
-From: Govindraj <govindraj.ti@gmail.com>
-Date: Fri, 19 Feb 2010 10:24:52 +0000
-Subject: Re: [PATCH 2/2] Add DMA support for the sh-sci.c serial driver
-Message-Id: <d6a0f7aa1002190212g556341fy8c590f842d746fb0@mail.gmail.com>
+From: Andrea Gelmini <andrea.gelmini@gelma.net>
+Date: Sat, 27 Feb 2010 16:51:23 +0000
+Subject: [PATCH 42/66] arch/mips/lib/libgcc.h: Checkpatch cleanup
+Message-Id: <1267289508-31031-43-git-send-email-andrea.gelmini@gelma.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
-	 <Pine.LNX.4.64.1002181726230.4373@axis700.grange>
-	 <d6a0f7aa1002190147u57a4d88g42b376eb8891e44d@mail.gmail.com>
-	 <Pine.LNX.4.64.1002191053220.4594@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1002191053220.4594@axis700.grange>
+References: <1267289508-31031-1-git-send-email-andrea.gelmini@gelma.net>
+In-Reply-To: <1267289508-31031-1-git-send-email-andrea.gelmini@gelma.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-serial@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Andrea Gelmini <andrea.gelmini@gelma.net>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, linux-mips@linux-mips.org, linux-sh@vger.kernel.org
 
-On Fri, Feb 19, 2010 at 3:26 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Fri, 19 Feb 2010, Govindraj wrote:
->
->> > + =A0 =A0 =A0 chan =3D dma_request_channel(mask, filter, param);
->> > + =A0 =A0 =A0 dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__,=
- chan);
->>
->>
->> If dma channel allocation fails how this scenario will be handled,
->> There is an possibility of dma_request_channel returning -EBUSY,
->
-> Really? How? I thought it could only return a pointer to a channel or a
-> NULL? And if it fails, i.e., chan =3D NULL, the whole code just stays
-> inactive and the driver falls back to normal PIO.
+arch/mips/lib/libgcc.h:21: ERROR: open brace '{' following union go on the same line
 
-Sorry I missed this part:
-
-if (s->chan_tx) {
-
-if (s->chan_rx) {
-
-
-> Thanks
-> Guennadi
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
->
-
+Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
 ---
-Regards,
-Govindraj.R
+ arch/mips/lib/libgcc.h |    3 +--
+ arch/sh/lib/libgcc.h   |    3 +--
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/mips/lib/libgcc.h b/arch/mips/lib/libgcc.h
+index 3f19d1c..05909d5 100644
+--- a/arch/mips/lib/libgcc.h
++++ b/arch/mips/lib/libgcc.h
+@@ -17,8 +17,7 @@ struct DWstruct {
+ #error I feel sick.
+ #endif
+ 
+-typedef union
+-{
++typedef union {
+ 	struct DWstruct s;
+ 	long long ll;
+ } DWunion;
+diff --git a/arch/sh/lib/libgcc.h b/arch/sh/lib/libgcc.h
+index 3f19d1c..05909d5 100644
+--- a/arch/sh/lib/libgcc.h
++++ b/arch/sh/lib/libgcc.h
+@@ -17,8 +17,7 @@ struct DWstruct {
+ #error I feel sick.
+ #endif
+ 
+-typedef union
+-{
++typedef union {
+ 	struct DWstruct s;
+ 	long long ll;
+ } DWunion;
+-- 
+1.7.0.90.g251a4
+
