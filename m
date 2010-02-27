@@ -1,127 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Feb 2010 11:06:02 +0000
-Subject: [PATCH] sh: ms7724se r-standby support
-Message-Id: <20100225110602.6865.70262.sendpatchset@t400s>
+From: "Robert P. J. Day" <rpjday@crashcourse.ca>
+Date: Sat, 27 Feb 2010 18:35:08 +0000
+Subject: [PATCH] SH: No need to explicitly include <linux/rwlock.h>.
+Message-Id: <alpine.LFD.2.00.1002271333240.22885@localhost>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-This patch adds board specific r-standby resume code
-for ms7724se.
+Since <linux/spinlock.h> already includes <linux/rwlock.h>, and the
+latter file will warn about not having included the former file
+anyway, there is no value in including rwlock.h explicitly.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Robert P. J. Day <rpjday@crashcourse.ca>
+
 ---
 
- arch/sh/boards/mach-se/7724/sdram.S |   79 +++++++++++++++++++++++++++++++++++
- arch/sh/boards/mach-se/7724/setup.c |    3 -
- 2 files changed, 81 insertions(+), 1 deletion(-)
+diff --git a/arch/sh/mm/pmb.c b/arch/sh/mm/pmb.c
+index 198bcff..35b364f 100644
+--- a/arch/sh/mm/pmb.c
++++ b/arch/sh/mm/pmb.c
+@@ -23,7 +23,6 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ #include <linux/spinlock.h>
+-#include <linux/rwlock.h>
+ #include <asm/sizes.h>
+ #include <asm/system.h>
+ #include <asm/uaccess.h>
 
---- 0001/arch/sh/boards/mach-se/7724/sdram.S
-+++ work/arch/sh/boards/mach-se/7724/sdram.S	2010-02-25 19:24:43.000000000 +0900
-@@ -39,6 +39,10 @@ ENTRY(ms7724se_sdram_leave_start)
- 
- 	/* DBSC: put memory in auto-refresh mode */
- 
-+	mov.l	@(SH_SLEEP_MODE, r5), r0
-+	tst	#SUSP_SH_RSTANDBY, r0
-+	bf	resume_rstandby
-+
- 	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
- 	WAIT 1
- 	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-@@ -49,4 +53,79 @@ ENTRY(ms7724se_sdram_leave_start)
- 	rts
- 	 nop
- 
-+resume_rstandby:
-+
-+	/* CPG: setup clocks before restarting external memory */
-+
-+	ED 0xA4150024, 0x00004000 /* PLLCR */
-+
-+	mov.l	FRQCRA,r0
-+	mov.l	@r0,r3
-+	mov.l	KICK,r1
-+	or	r1, r3
-+	mov.l	r3, @r0
-+
-+	mov.l	LSTATS,r0
-+	mov	#1,r1
-+WAIT_LSTATS:
-+	mov.l	@r0,r3
-+	tst	r1,r3
-+	bf	WAIT_LSTATS
-+
-+	/* DBSC: re-initialize and put in auto-refresh */
-+
-+	ED 0xFD000108, 0x00000181 /* DBPDCNT0 */
-+	ED 0xFD000020, 0x015B0002 /* DBCONF */
-+	ED 0xFD000030, 0x03071502 /* DBTR0 */
-+	ED 0xFD000034, 0x02020102 /* DBTR1 */
-+	ED 0xFD000038, 0x01090405 /* DBTR2 */
-+	ED 0xFD00003C, 0x00000002 /* DBTR3 */
-+	ED 0xFD000008, 0x00000005 /* DBKIND */
-+	ED 0xFD000040, 0x00000001 /* DBRFPDN0 */
-+	ED 0xFD000040, 0x00000000 /* DBRFPDN0 */
-+	ED 0xFD000018, 0x00000001 /* DBCKECNT */
-+
-+	mov	#100,r0
-+WAIT_400NS:
-+	dt	r0
-+	bf	WAIT_400NS
-+
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000060, 0x00020000 /* DBMRCNT (EMR2) */
-+	ED 0xFD000060, 0x00030000 /* DBMRCNT (EMR3) */
-+	ED 0xFD000060, 0x00010004 /* DBMRCNT (EMR) */
-+	ED 0xFD000060, 0x00000532 /* DBMRCNT (MRS) */
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000060, 0x00000432 /* DBMRCNT (MRS) */
-+	ED 0xFD000060, 0x000103c0 /* DBMRCNT (EMR) */
-+	ED 0xFD000060, 0x00010040 /* DBMRCNT (EMR) */
-+
-+	mov	#100,r0
-+WAIT_400NS_2:
-+	dt	r0
-+	bf	WAIT_400NS_2
-+
-+	ED 0xFD000010, 0x00000001 /* DBEN */
-+	ED 0xFD000044, 0x0000050f /* DBRFPDN1 */
-+	ED 0xFD000048, 0x236800e6 /* DBRFPDN2 */
-+
-+	mov.l	DUMMY,r0
-+	mov.l	@r0, r1 /* force single dummy read */
-+
-+	ED 0xFD000014, 0x00000002 /* DBCMDCNT (PALL) */
-+	ED 0xFD000014, 0x00000004 /* DBCMDCNT (REF) */
-+	ED 0xFD000108, 0x00000080 /* DBPDCNT0 */
-+	ED 0xFD000040, 0x00010000 /* DBRFPDN0 */
-+
-+	rts
-+	 nop
-+
-+	.balign 4
-+DUMMY:	.long	0xac400000
-+FRQCRA:	.long	0xa4150000
-+KICK:	.long	0x80000000
-+LSTATS:	.long	0xa4150060
-+
- ENTRY(ms7724se_sdram_leave_end)
---- 0001/arch/sh/boards/mach-se/7724/setup.c
-+++ work/arch/sh/boards/mach-se/7724/setup.c	2010-02-25 19:25:00.000000000 +0900
-@@ -589,7 +589,8 @@ static int __init devices_setup(void)
- 	struct clk *clk;
- 
- 	/* register board specific self-refresh code */
--	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF,
-+	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF |
-+					SUSP_SH_RSTANDBY,
- 					&ms7724se_sdram_enter_start,
- 					&ms7724se_sdram_enter_end,
- 					&ms7724se_sdram_leave_start,
+====================================
+Robert P. J. Day                               Waterloo, Ontario, CANADA
+
+            Linux Consulting, Training and Kernel Pedantry.
+
+Web page:                                          http://crashcourse.ca
+Twitter:                                       http://twitter.com/rpjday
+====================================
