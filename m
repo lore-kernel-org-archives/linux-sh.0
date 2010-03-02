@@ -1,28 +1,34 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 11 Mar 2010 10:42:11 +0000
-Subject: [PATCH 0/3] AP4: I2C patches
-Message-Id: <usk87gmws.wl%morimoto.kuninori@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 02 Mar 2010 03:13:10 +0000
+Subject: Re: [PATCH 0/2] Implement DMA support for the sh-sci.c serial driver
+Message-Id: <20100302031310.GC20256@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-serial@vger.kernel.org
 
+On Thu, Feb 18, 2010 at 05:29:59PM +0100, Guennadi Liakhovetski wrote:
+> The two patches in this series add DMA support to the sh-sci SCI(F) serial 
+> driver. The worst problem is partial reception. Since we don't know in 
+> advance how many bytes we're going to receive, we submit a DMA buffer 
+> _and_ enable the Rx interrupt. When data arrives, we get an interrupt and 
+> the data is written into DMA buffers. In the ISR we then set a timeout, if 
+> within this time we get no DMA completion callback, we have a partial 
+> buffer. Unfortunately, dmaengine API currently doesn't support retrieving 
+> partially received DMA buffers, therefore we have to hijack the 
+> .device_terminate_all() call to collect the data. A better approach would 
+> be to add a stop-transfer / collect-partial call to the API.
+> 
+I've rolled these patches in as well, with some minor cleanups and
+dependency fixups.
 
-Dear Paul
-
-Kuninori Morimoto (3):
-      ARM: mach-shmobile: sh7372: Add I2C0, I2C1 support
-      ARM: mach-shmobile: ap4evb: Add TouchScreen support
-      ARM: mach-shmobile: ap4evb: Add R2025S RTC support
-
-These 3 patches add I2C support to AP4-EVB board.
-
-It are based on Magnus's
-  - SDHI patche series
-  - INTCS patche series
-
-Best regards
---
-Kuninori Morimoto
- 
+As none of the CPUs presently enable this yet, this will remain fairly
+experimental, but it's enough to get people playing with it under 2.6.34.
+We'll have to do some more iterative changes for 2.6.35, as well as
+gradually getting it wired up on more CPUs, in addition to making it
+configurable per-channel. This also gives us the time to get the
+dmaengine API extensions worked out with Dan.
