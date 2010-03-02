@@ -1,27 +1,35 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 23 Mar 2010 08:55:01 +0000
-Subject: Re: [PATCH] sh: add INTC out of memory error handling
-Message-Id: <20100323085501.GE30655@linux-sh.org>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 02 Mar 2010 23:35:48 +0000
+Subject: Re: [GIT PULL] genesis updates for 2.6.34-rc1
+Message-Id: <20100302233548.GA29715@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100310093101.5422.38371.sendpatchset@t400s>
-In-Reply-To: <20100310093101.5422.38371.sendpatchset@t400s>
+References: <20100226071805.GA4435@linux-sh.org>
+In-Reply-To: <20100226071805.GA4435@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 10, 2010 at 06:31:01PM +0900, Magnus Damm wrote:
-> Extend the INTC code to warn and return an error code
-> in the case of memory allocation failure.
+On Fri, Feb 26, 2010 at 04:18:05PM +0900, Paul Mundt wrote:
+> This is the initial batch of updates adding SH-Mobile G series support
+> for the merge window.
 
-On Wed, Mar 10, 2010 at 06:38:55PM +0900, Magnus Damm wrote:
-> Extend the INTC code with ioremap() support V2.
-> 
-> Support INTC controllers that are not accessible through
-> a 1:1 virt:phys window. Needed by SH-Mobile ARM INTCS.
-> 
-> The INTC code behaves as usual if the io window resource
-> is omitted. The slow phys->virt lookup only happens during
-> setup. The fast path code operates on virtual addresses.
+I get some additional stuff via this pull, which I think is down to
+this:
 
-Both applied to the sh/intc-extension topic branch, thanks.
+	serial: sh-sci: remove SCIF code in sci_rxd_in()
+
+>  drivers/Makefile                                  |    1 +
+>  drivers/serial/Kconfig                            |    2 +-
+>  drivers/serial/sh-sci.h                           |   22 +-
+>  drivers/sh/intc.c                                 |   10 +-
+>  44 files changed, 11516 insertions(+), 10 deletions(-)
+
+ drivers/Makefile                                  |    1 +
+ drivers/serial/Kconfig                            |    2 +-
+ drivers/serial/sh-sci.h                           |  242 +---
+ drivers/sh/intc.c                                 |   10 +-
+ 44 files changed, 11517 insertions(+), 229 deletions(-)
+
+Please check my devel-stable branch when I push my tree out (which should
+be shortly)
