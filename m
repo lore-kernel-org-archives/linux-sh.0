@@ -1,27 +1,33 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Wed, 31 Mar 2010 16:35:12 +0000
-Subject: Setting 31250 bps in ttySCx
-Message-Id: <201003311835.12488.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 10 Mar 2010 11:33:10 +0000
+Subject: [PATCH] video: enable sh_mobile_lcdc on SH-Mobile ARM
+Message-Id: <20100310113310.20654.18555.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi All,
-I'd like to set B31250 to have 31250 bps on ttySC1.
-Do I have to define B31250 in  asm/sh/termio.h and add in serial_core the 
-couple
-31250,B31250?
-Or do I need to add more over infos in other files?
+From: Magnus Damm <damm@opensource.se>
 
-Thanks a lot
+This patch enables the sh_mobile_lcdc driver on
+SH-Mobile ARM.
 
--- 
-Fabio Giovagnini
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+ drivers/video/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/drivers/video/Kconfig
++++ work/drivers/video/Kconfig	2010-03-10 20:12:42.000000000 +0900
+@@ -1867,7 +1867,7 @@ config FB_W100
+ 
+ config FB_SH_MOBILE_LCDC
+ 	tristate "SuperH Mobile LCDC framebuffer support"
+-	depends on FB && SUPERH && HAVE_CLK
++	depends on FB && (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
+ 	select FB_SYS_FILLRECT
+ 	select FB_SYS_COPYAREA
+ 	select FB_SYS_IMAGEBLIT
