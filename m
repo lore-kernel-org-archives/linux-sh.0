@@ -1,81 +1,88 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Mon, 29 Mar 2010 06:31:46 +0000
-Subject: [PATCH] ARM: mach-shmobile: Add missing __initdata on intcs
-Message-Id: <u7hovvdt9.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 10 Mar 2010 07:15:28 +0000
+Subject: [PATCH] ARM: mach-shmobile: ap4evb SDHI0 platform data
+Message-Id: <20100310071528.5975.28821.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+From: Magnus Damm <damm@opensource.se>
+
+Add SDHI0 platform data for the AP4EVB board.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/intc-sh7367.c |    6 +++---
- arch/arm/mach-shmobile/intc-sh7377.c |    6 +++---
- 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/intc-sh7367.c b/arch/arm/mach-shmobile/intc-sh7367.c
-index 5ff70ca..b594969 100644
---- a/arch/arm/mach-shmobile/intc-sh7367.c
-+++ b/arch/arm/mach-shmobile/intc-sh7367.c
-@@ -75,7 +75,7 @@ enum {
- 	ETM11, ARM11, USBHS, FLCTL, IIC1
- };
- 
--static struct intc_vect intca_vectors[] = {
-+static struct intc_vect intca_vectors[] __initdata = {
- 	INTC_VECT(IRQ0A, 0x0200), INTC_VECT(IRQ1A, 0x0220),
- 	INTC_VECT(IRQ2A, 0x0240), INTC_VECT(IRQ3A, 0x0260),
- 	INTC_VECT(IRQ4A, 0x0280), INTC_VECT(IRQ5A, 0x02a0),
-@@ -162,7 +162,7 @@ static struct intc_group intca_groups[] __initdata = {
- 	INTC_GROUP(IIC1, IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1),
- };
- 
--static struct intc_mask_reg intca_mask_registers[] = {
-+static struct intc_mask_reg intca_mask_registers[] __initdata = {
- 	{ 0xe6900040, 0xe6900060, 8, /* INTMSK00A / INTMSKCLR00A */
- 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
- 	{ 0xe6900044, 0xe6900064, 8, /* INTMSK10A / INTMSKCLR10A */
-@@ -211,7 +211,7 @@ static struct intc_mask_reg intca_mask_registers[] = {
- 	    MISTY, CMT3, RWDT1, RWDT0 } },
- };
- 
--static struct intc_prio_reg intca_prio_registers[] = {
-+static struct intc_prio_reg intca_prio_registers[] __initdata = {
- 	{ 0xe6900010, 0, 32, 4, /* INTPRI00A */
- 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
- 	{ 0xe6900014, 0, 32, 4, /* INTPRI10A */
-diff --git a/arch/arm/mach-shmobile/intc-sh7377.c b/arch/arm/mach-shmobile/intc-sh7377.c
-index 5c781e2..68901a4 100644
---- a/arch/arm/mach-shmobile/intc-sh7377.c
-+++ b/arch/arm/mach-shmobile/intc-sh7377.c
-@@ -90,7 +90,7 @@ enum {
- 	ICUSB, ICUDMC
- };
- 
--static struct intc_vect intca_vectors[] = {
-+static struct intc_vect intca_vectors[] __initdata = {
- 	INTC_VECT(IRQ0A, 0x0200), INTC_VECT(IRQ1A, 0x0220),
- 	INTC_VECT(IRQ2A, 0x0240), INTC_VECT(IRQ3A, 0x0260),
- 	INTC_VECT(IRQ4A, 0x0280), INTC_VECT(IRQ5A, 0x02a0),
-@@ -202,7 +202,7 @@ static struct intc_group intca_groups[] __initdata = {
- 	INTC_GROUP(ICUDMC, ICUDMC_ICUDMC1, ICUDMC_ICUDMC2),
- };
- 
--static struct intc_mask_reg intca_mask_registers[] = {
-+static struct intc_mask_reg intca_mask_registers[] __initdata = {
- 	{ 0xe6900040, 0xe6900060, 8, /* INTMSK00A / INTMSKCLR00A */
- 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
- 	{ 0xe6900044, 0xe6900064, 8, /* INTMSK10A / INTMSKCLR10A */
-@@ -272,7 +272,7 @@ static struct intc_mask_reg intca_mask_registers[] = {
- 	    SCIFA6, 0, 0, 0 } },
- };
- 
--static struct intc_prio_reg intca_prio_registers[] = {
-+static struct intc_prio_reg intca_prio_registers[] __initdata = {
- 	{ 0xe6900010, 0, 32, 4, /* INTPRI00A */
- 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
- 	{ 0xe6900014, 0, 32, 4, /* INTPRI10A */
--- 
-1.6.3.3
+ Depends on "ARM: mach-shmobile: sh7372 SDHI vector merge".
 
+ arch/arm/mach-shmobile/board-ap4evb.c |   39 +++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2010-03-10 16:11:27.000000000 +0900
+@@ -31,6 +31,7 @@
+ #include <linux/gpio.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <mach/common.h>
+ #include <mach/sh7372.h>
+ #include <asm/mach-types.h>
+@@ -206,10 +207,38 @@ static struct platform_device keysc_devi
+ 	},
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info = {
++};
++
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name	= "SDHI0",
++		.start  = 0xe6850000,
++		.end    = 0xe68501ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 96,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi0_device = {
++	.name           = "sh_mobile_sdhi",
++	.num_resources  = ARRAY_SIZE(sdhi0_resources),
++	.resource       = sdhi0_resources,
++	.id             = 0,
++	.dev	= {
++		.platform_data	= &sdhi0_info,
++	},
++};
++
+ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&keysc_device,
++	&sdhi0_device,
+ };
+ 
+ static struct map_desc ap4evb_io_desc[] __initdata = {
+@@ -286,6 +315,16 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_KEYIN3_133, NULL);
+ 	gpio_request(GPIO_FN_KEYIN4,     NULL);
+ 
++	/* SDHI0 */
++	gpio_request(GPIO_FN_SDHICD0, NULL);
++	gpio_request(GPIO_FN_SDHIWP0, NULL);
++	gpio_request(GPIO_FN_SDHICMD0, NULL);
++	gpio_request(GPIO_FN_SDHICLK0, NULL);
++	gpio_request(GPIO_FN_SDHID0_3, NULL);
++	gpio_request(GPIO_FN_SDHID0_2, NULL);
++	gpio_request(GPIO_FN_SDHID0_1, NULL);
++	gpio_request(GPIO_FN_SDHID0_0, NULL);
++
+ 	sh7372_add_standard_devices();
+ 
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
