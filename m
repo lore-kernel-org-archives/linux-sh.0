@@ -1,29 +1,27 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 23 Mar 2010 04:36:14 +0000
-Subject: Re: [PATCH] sh: Remove long unused mid_sched macro
-Message-Id: <20100323043614.GG13417@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 11 Mar 2010 10:05:26 +0000
+Subject: [PATCH 00/03] i2c: i2c-sh_mobile update for SH-Mobile ARM
+Message-Id: <20100311100526.15227.50813.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100320003800.GA7568@amos.infernal>
-In-Reply-To: <20100320003800.GA7568@amos.infernal>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, nishimoto.hiroki@renesas.com, morimoto.kuninori@renesas.com, lethal@linux-sh.org, khali@linux-fr.org, Magnus Damm <magnus.damm@gmail.com>
 
-On Sat, Mar 20, 2010 at 01:38:01AM +0100, Andreas Bombe wrote:
-> interruptible_sleep_on() is referenced for use in the mid_sched macro
-> which is not used anywhere.  Remove reference and macro as well as the
-> comment which appears to belong with them.
-> 
-> Signed-off-by: Andreas Bombe <aeb@debian.org>
-> ---
-> 
-> At least the mid_sched name does not appear anywhere else.  It doesn't
-> even appear to have been in use at any time during the kernel's git
-> history.
-> 
-It definitely predates git, but the sh64 bits haven't had that much work
-done on them since the BK days, so it's expected that there are still
-some remnants.
+i2c: i2c-sh_mobile update for SH-Mobile ARM
 
-Applied, thanks.
+[PATCH 01/03] i2c: i2c-sh_mobile register access code break out
+[PATCH 02/03] i2c: i2c-sh_mobile support for new ICIC bits
+[PATCH 03/03] i2c: i2c-sh_mobile kconfig update for SH-Mobile ARM
+
+These patches add support for a newer version of the IIC block
+to the i2c-sh_mobile and enables the driver on SH-Mobile ARM.
+
+Perhaps suitable for the SH tree?
+
+---
+
+ drivers/i2c/busses/Kconfig         |    2 
+ drivers/i2c/busses/i2c-sh_mobile.c |  121 ++++++++++++++++++++++++------------
+ 2 files changed, 85 insertions(+), 38 deletions(-)
