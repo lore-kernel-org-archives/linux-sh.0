@@ -1,53 +1,46 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 10 Mar 2010 04:10:37 +0000
+From: Kay Sievers <kay.sievers@vrfy.org>
+Date: Thu, 11 Mar 2010 19:59:18 +0000
 Subject: Re: [PATCH] driver core: Early dev_name() support.
-Message-Id: <20100310041037.GC17693@linux-sh.org>
+Message-Id: <ac3eb2511003111159q84e6cefi43de106c79c0e333@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100309065753.GA8287@linux-sh.org> <20100310023727.GB26642@kroah.com> <20100310032158.GA19518@linux-sh.org> <20100310032846.GC28444@kroah.com>
-In-Reply-To: <20100310032846.GC28444@kroah.com>
+References: <20100309065753.GA8287@linux-sh.org>
+In-Reply-To: <20100309065753.GA8287@linux-sh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Greg KH <greg@kroah.com>
-Cc: Magnus Damm <damm@opensource.se>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Greg KH <greg@kroah.com>, Magnus Damm <damm@opensource.se>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, Mar 09, 2010 at 07:28:46PM -0800, Greg KH wrote:
-> On Wed, Mar 10, 2010 at 12:21:58PM +0900, Paul Mundt wrote:
-> > On Tue, Mar 09, 2010 at 06:37:27PM -0800, Greg KH wrote:
-> > > On Tue, Mar 09, 2010 at 03:57:53PM +0900, Paul Mundt wrote:
-> > > > Presently early platform devices suffer from the fact they are unable to
-> > > > use dev_xxx() calls early on due to dev_name() and others being
-> > > > unavailable at the time ->probe() is called.
-> > > > 
-> > > > This implements early init_name construction from the matched name/id
-> > > > pair following the semantics of the late device/driver match. As a
-> > > > result, matched IDs (inclusive of requested ones) are preserved when the
-> > > > handoff from the early platform code happens at kobject initialization
-> > > > time.
-> > > > 
-> > > > Since we still require kmalloc slabs to be available at this point, using
-> > > > kstrdup() for establishing the init_name works fine. This subsequently
-> > > > needs to be tested from dev_name() prior to the init_name being cleared
-> > > > by the driver core. We don't kfree() since others will already have a
-> > > > handle on the string long before the kobject initialization takes place.
-> > > > 
-> > > > This is also needed to permit drivers to use the clock framework early,
-> > > > without having to manually construct their own device IDs from the match
-> > > > id/name pair locally (needed by the early console and timer code on sh
-> > > > and arm).
-> > > 
-> > > Is this change something that we need for .34?  Or can it wait for .35?
-> > > 
-> > If it went in for .34 we would get properly dev_name() resolution in the
-> > error paths for the existing early platform drivers, but that's obviously
-> > not critical.
-> > 
-> > I have a bunch of work I plan to do on top of it for 2.6.35, so I was
-> > planning on carrying it in a topic branch once I got your Acked-by.
-> 
-> Sure, that's fine with me.  Feel free to add a:
-> 	Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
-> 
-> to the patch.
-> 
-Done, thanks Greg.
+T24gVHVlLCBNYXIgOSwgMjAxMCBhdCAwNzo1NywgUGF1bCBNdW5kdCA8bGV0aGFsQGxpbnV4LXNo
+Lm9yZz4gd3JvdGU6Cj4gVGhpcyBpbXBsZW1lbnRzIGVhcmx5IGluaXRfbmFtZSBjb25zdHJ1Y3Rp
+b24gZnJvbSB0aGUgbWF0Y2hlZCBuYW1lL2lkCj4gcGFpciBmb2xsb3dpbmcgdGhlIHNlbWFudGlj
+cyBvZiB0aGUgbGF0ZSBkZXZpY2UvZHJpdmVyIG1hdGNoLiBBcyBhCj4gcmVzdWx0LCBtYXRjaGVk
+IElEcyAoaW5jbHVzaXZlIG9mIHJlcXVlc3RlZCBvbmVzKSBhcmUgcHJlc2VydmVkIHdoZW4gdGhl
+Cj4gaGFuZG9mZiBmcm9tIHRoZSBlYXJseSBwbGF0Zm9ybSBjb2RlIGhhcHBlbnMgYXQga29iamVj
+dCBpbml0aWFsaXphdGlvbgo+IHRpbWUuCgo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgaWYgKCFtYXRjaC0+ZGV2LmluaXRfbmFtZSkgewo+ICsgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgY2hhciBidWZbMzJdOwo+ICsKPiArIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmIChtYXRjaC0+aWQgIT0gLTEp
+Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCBzbnByaW50ZihidWYsIHNpemVvZihidWYpLCAiJXMuJWQiLAo+ICsgwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqBtYXRjaC0+bmFtZSwgbWF0Y2gtPmlkKTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIGVsc2UKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNucHJpbnRmKGJ1Ziwgc2l6ZW9mKGJ1ZiksICIl
+cyIsCj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoG1hdGNoLT5uYW1lKTsKPiArCj4gKyDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtYXRjaC0+ZGV2LmluaXRfbmFtZSA9IGtz
+dHJkdXAoYnVmLCBHRlBfS0VSTkVMKTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIGlmICghbWF0Y2gtPmRldi5pbml0X25hbWUpCj4gKyDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCByZXR1cm4gLUVO
+T01FTTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIH0KClRoaXMgY2FuIGJl
+IGthc3ByaW50ZigpIEkgZ3Vlc3MuCgo+IMKgc3RhdGljIGlubGluZSBjb25zdCBjaGFyICpkZXZf
+bmFtZShjb25zdCBzdHJ1Y3QgZGV2aWNlICpkZXYpCj4gwqB7Cj4gKyDCoCDCoCDCoCAvKiBVc2Ug
+dGhlIGluaXQgbmFtZSB1bnRpbCB0aGUga29iamVjdCBiZWNvbWVzIGF2YWlsYWJsZSAqLwoKVGhp
+cyBzaG91bGQgcHJvYmFibHkgc3RhdGUgdGhhdCBpdCdzIHVzZWQgZm9yIGdldHRpbmcgbmFtZXMg
+b3V0IG9mCnVucmVnaXN0ZXJlZCBkZXZpY2VzLiBPdGhlcndpc2UgaXQgc291bmRzIGNvbmZ1c2lu
+Zy4KCj4gKyDCoCDCoCDCoCBpZiAoZGV2LT5pbml0X25hbWUpCj4gKyDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCByZXR1cm4gZGV2LT5pbml0X25hbWU7Cj4gKwo+IMKgIMKgIMKgIMKgcmV0dXJuIGtvYmpl
+Y3RfbmFtZSgmZGV2LT5rb2JqKTsKPiDCoH0KClRoYW5rcywKS2F5Cv/06Lp7Lm7HK4m3n66JrYYr
+JYrL/7Hp3bYXpYp3/7p7Lm7HK4m3pYp7sf7I/4p7YXm6HcqH2pnrLGoHraJmo6K3aJqP74Hq/5Hq
+53pf6K4DKK3pmo6K3aJqIp36GrYbbaf//74Hq/5Hq53p/6K4P5mo6K3aJqP4p36P4Qo=
