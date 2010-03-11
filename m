@@ -1,16 +1,15 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 18 Mar 2010 10:28:37 +0000
-Subject: [PATCH 3/3 v2] sh: add Video Output Unit (VOU) and AK8813 TV-encoder
-Message-Id: <Pine.LNX.4.64.1003181126170.4485@axis700.grange>
+Date: Thu, 11 Mar 2010 13:45:00 +0000
+Subject: [PATCH 3/3] sh: add Video Output Unit (VOU) and AK8813 TV-encoder
+Message-Id: <Pine.LNX.4.64.1003111440300.4385@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1003171103030.4354@axis700.grange>
- <Pine.LNX.4.64.1003181051420.4485@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1003181051420.4485@axis700.grange>
+References: <Pine.LNX.4.64.1003111124440.4385@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1003111124440.4385@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <damm@opensource.se>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <damm@opensource.se>
 
 Add platform bindings, GPIO initialisation and allocation and AK8813 reset code
 to ms7724se.
@@ -18,15 +17,19 @@ to ms7724se.
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-v1 -> v2
-
-1. VOU bus type name changed
+Obviously depends on the previous two VOU and AK881x patches, sorry for 
+not marking those with "PATCH x/3" accordingly. Those two patches do not 
+depend upon each other and initially I wasn't sure I'd be able to clean up 
+this patch sufficiently for submission. Two 10us delays are pretty random, 
+maybe they can be optimised out completely. I just tried to reproduced the 
+reset procedure from the ak8813 datasheet, and it says nothing about the 
+duration of respective stages.
 
  arch/sh/boards/mach-se/7724/setup.c |   88 ++++++++++++++++++++++++++++++++---
  1 files changed, 81 insertions(+), 7 deletions(-)
 
 diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index c7dbbec..5a3b6da 100644
+index c7dbbec..8c8379b 100644
 --- a/arch/sh/boards/mach-se/7724/setup.c
 +++ b/arch/sh/boards/mach-se/7724/setup.c
 @@ -489,6 +489,52 @@ static struct platform_device sdhi1_cn8_device = {
@@ -47,7 +50,7 @@ index c7dbbec..5a3b6da 100644
 +};
 +
 +struct sh_vou_pdata sh_vou_pdata = {
-+	.bus_fmt	= SH_VOU_BUS_8BIT,
++	.bus_fmt	= SH_VOU_BUS_PAL_8BIT,
 +	.flags		= SH_VOU_HSYNC_LOW | SH_VOU_VSYNC_LOW,
 +	.board_info	= &ak8813,
 +	.i2c_adap	= 0,
