@@ -1,46 +1,50 @@
-From: Kay Sievers <kay.sievers@vrfy.org>
-Date: Thu, 11 Mar 2010 19:59:18 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 15 Mar 2010 08:03:59 +0000
 Subject: Re: [PATCH] driver core: Early dev_name() support.
-Message-Id: <ac3eb2511003111159q84e6cefi43de106c79c0e333@mail.gmail.com>
+Message-Id: <20100315080359.GA15171@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100309065753.GA8287@linux-sh.org>
-In-Reply-To: <20100309065753.GA8287@linux-sh.org>
+References: <20100309065753.GA8287@linux-sh.org> <ac3eb2511003111159q84e6cefi43de106c79c0e333@mail.gmail.com>
+In-Reply-To: <ac3eb2511003111159q84e6cefi43de106c79c0e333@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
-To: Paul Mundt <lethal@linux-sh.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kay Sievers <kay.sievers@vrfy.org>
 Cc: Greg KH <greg@kroah.com>, Magnus Damm <damm@opensource.se>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-T24gVHVlLCBNYXIgOSwgMjAxMCBhdCAwNzo1NywgUGF1bCBNdW5kdCA8bGV0aGFsQGxpbnV4LXNo
-Lm9yZz4gd3JvdGU6Cj4gVGhpcyBpbXBsZW1lbnRzIGVhcmx5IGluaXRfbmFtZSBjb25zdHJ1Y3Rp
-b24gZnJvbSB0aGUgbWF0Y2hlZCBuYW1lL2lkCj4gcGFpciBmb2xsb3dpbmcgdGhlIHNlbWFudGlj
-cyBvZiB0aGUgbGF0ZSBkZXZpY2UvZHJpdmVyIG1hdGNoLiBBcyBhCj4gcmVzdWx0LCBtYXRjaGVk
-IElEcyAoaW5jbHVzaXZlIG9mIHJlcXVlc3RlZCBvbmVzKSBhcmUgcHJlc2VydmVkIHdoZW4gdGhl
-Cj4gaGFuZG9mZiBmcm9tIHRoZSBlYXJseSBwbGF0Zm9ybSBjb2RlIGhhcHBlbnMgYXQga29iamVj
-dCBpbml0aWFsaXphdGlvbgo+IHRpbWUuCgo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgaWYgKCFtYXRjaC0+ZGV2LmluaXRfbmFtZSkgewo+ICsgwqAgwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgY2hhciBidWZbMzJdOwo+ICsKPiArIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmIChtYXRjaC0+aWQgIT0gLTEp
-Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCBzbnByaW50ZihidWYsIHNpemVvZihidWYpLCAiJXMuJWQiLAo+ICsgwqAgwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
-wqBtYXRjaC0+bmFtZSwgbWF0Y2gtPmlkKTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIGVsc2UKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNucHJpbnRmKGJ1Ziwgc2l6ZW9mKGJ1ZiksICIl
-cyIsCj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoG1hdGNoLT5uYW1lKTsKPiArCj4gKyDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtYXRjaC0+ZGV2LmluaXRfbmFtZSA9IGtz
-dHJkdXAoYnVmLCBHRlBfS0VSTkVMKTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIGlmICghbWF0Y2gtPmRldi5pbml0X25hbWUpCj4gKyDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCByZXR1cm4gLUVO
-T01FTTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIH0KClRoaXMgY2FuIGJl
-IGthc3ByaW50ZigpIEkgZ3Vlc3MuCgo+IMKgc3RhdGljIGlubGluZSBjb25zdCBjaGFyICpkZXZf
-bmFtZShjb25zdCBzdHJ1Y3QgZGV2aWNlICpkZXYpCj4gwqB7Cj4gKyDCoCDCoCDCoCAvKiBVc2Ug
-dGhlIGluaXQgbmFtZSB1bnRpbCB0aGUga29iamVjdCBiZWNvbWVzIGF2YWlsYWJsZSAqLwoKVGhp
-cyBzaG91bGQgcHJvYmFibHkgc3RhdGUgdGhhdCBpdCdzIHVzZWQgZm9yIGdldHRpbmcgbmFtZXMg
-b3V0IG9mCnVucmVnaXN0ZXJlZCBkZXZpY2VzLiBPdGhlcndpc2UgaXQgc291bmRzIGNvbmZ1c2lu
-Zy4KCj4gKyDCoCDCoCDCoCBpZiAoZGV2LT5pbml0X25hbWUpCj4gKyDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCByZXR1cm4gZGV2LT5pbml0X25hbWU7Cj4gKwo+IMKgIMKgIMKgIMKgcmV0dXJuIGtvYmpl
-Y3RfbmFtZSgmZGV2LT5rb2JqKTsKPiDCoH0KClRoYW5rcywKS2F5Cv/06Lp7Lm7HK4m3n66JrYYr
-JYrL/7Hp3bYXpYp3/7p7Lm7HK4m3pYp7sf7I/4p7YXm6HcqH2pnrLGoHraJmo6K3aJqP74Hq/5Hq
-53pf6K4DKK3pmo6K3aJqIp36GrYbbaf//74Hq/5Hq53p/6K4P5mo6K3aJqP4p36P4Qo=
+On Thu, Mar 11, 2010 at 08:59:18PM +0100, Kay Sievers wrote:
+> On Tue, Mar 9, 2010 at 07:57, Paul Mundt <lethal@linux-sh.org> wrote:
+> > This implements early init_name construction from the matched name/id
+> > pair following the semantics of the late device/driver match. As a
+> > result, matched IDs (inclusive of requested ones) are preserved when the
+> > handoff from the early platform code happens at kobject initialization
+> > time.
+> 
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? if (!match->dev.init_name) {
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? char buf[32];
+> > +
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? if (match->id != -1)
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? snprintf(buf, sizeof(buf), "%s.%d",
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??match->name, match->id);
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? else
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? snprintf(buf, sizeof(buf), "%s",
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??match->name);
+> > +
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? match->dev.init_name = kstrdup(buf, GFP_KERNEL);
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? if (!match->dev.init_name)
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? return -ENOMEM;
+> > + ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? }
+> 
+> This can be kasprintf() I guess.
+> 
+Yeah, that looks fine. I'll update it.
+
+> > ??static inline const char *dev_name(const struct device *dev)
+> > ??{
+> > + ?? ?? ?? /* Use the init name until the kobject becomes available */
+> 
+> This should probably state that it's used for getting names out of
+> unregistered devices. Otherwise it sounds confusing.
+> 
+It's not clear that that distinction makes things any less confusing.
+Early devices are registered, they just haven't been fully initialized
+yet.
