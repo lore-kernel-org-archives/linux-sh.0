@@ -1,19 +1,35 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 02 Mar 2010 03:13:39 +0000
-Subject: Re: [PATCH 55/66] arch/sh/boot/compressed/cache.c: Checkpatch cleanup
-Message-Id: <20100302031339.GD20256@linux-sh.org>
+Date: Mon, 15 Mar 2010 03:35:34 +0000
+Subject: [GIT PULL] sh updates for 2.6.34-rc2
+Message-Id: <20100315033534.GA14501@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1267289508-31031-1-git-send-email-andrea.gelmini@gelma.net> <1267289508-31031-56-git-send-email-andrea.gelmini@gelma.net>
-In-Reply-To: <1267289508-31031-56-git-send-email-andrea.gelmini@gelma.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrea Gelmini <andrea.gelmini@gelma.net>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sat, Feb 27, 2010 at 05:51:36PM +0100, Andrea Gelmini wrote:
-> arch/sh/boot/compressed/cache.c:8: WARNING: space prohibited between function name and open parenthesis '('
-> 
-> Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
+Please pull from:
 
-Applied.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+
+Which contains:
+
+Huang Weiyi (1):
+      serial: sh-sci: remove duplicated #include
+
+Paul Mundt (4):
+      sh: Support CPU affinity masks for INTC controllers.
+      sh: Fix up uncached offset for legacy 29-bit mode.
+      sh: Fix up NUMA build for 29-bit.
+      sh: Export uncached helper symbols.
+
+Peter Huewe (1):
+      serial: sh-sci: Fix build failure for non-sh architectures.
+
+ arch/sh/include/asm/mmu.h  |    7 +++++++
+ arch/sh/mm/uncached.c      |    9 +++++++++
+ drivers/serial/sh-sci.c    |    1 -
+ drivers/sh/intc.c          |   31 ++++++++++++++++++++++++++++++-
+ include/linux/serial_sci.h |    4 ++++
+ 5 files changed, 50 insertions(+), 2 deletions(-)
