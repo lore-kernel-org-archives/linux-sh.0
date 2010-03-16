@@ -1,34 +1,25 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 19 Mar 2010 08:15:57 +0000
-Subject: Re: [PATCH 05/05] dmaengine: shdma: Enable on SH-Mobile ARM
-Message-Id: <20100319081557.GC10003@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Tue, 16 Mar 2010 11:22:05 +0000
+Subject: Trouble with embedding initial root fs into the kernel
+Message-Id: <201003161222.05067.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100319044719.17051.57155.sendpatchset@t400s>
-In-Reply-To: <20100319044719.17051.57155.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Mar 19, 2010 at 05:15:42PM +0900, Magnus Damm wrote:
-> Hey Guennadi,
-> 
-> On Fri, Mar 19, 2010 at 4:24 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > On Fri, 19 Mar 2010, Magnus Damm wrote:
-> >> --- 0005/include/linux/serial_sci.h
-> >> +++ work/include/linux/serial_sci.h ? 2010-03-18 23:38:59.000000000 +0900
-> >> @@ -3,7 +3,7 @@
-> >>
-> >> ?#include <linux/serial_core.h>
-> >> ?#ifdef CONFIG_SERIAL_SH_SCI_DMA
-> >> -#include <asm/dmaengine.h>
-> >> +#include <linux/sh_dma.h>
-> >
-> > Shouldn't this be done in patch "04/05"?
-> 
-> It could, but nothing requires this change in 04/05. So the final
-> point where this is needed is 05/05.
-> 
-The ifdefs are also superfluous at this point, but those can be killed
-off with an incremental patch.
+Hi All,
+I'd like to know a link where to find info about step by spet procedure to 
+embedding the initial root fs into the kernel
+
+Thanks a lot in advance
+
+
+-- 
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
