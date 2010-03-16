@@ -1,35 +1,44 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 15 Mar 2010 03:35:34 +0000
-Subject: [GIT PULL] sh updates for 2.6.34-rc2
-Message-Id: <20100315033534.GA14501@linux-sh.org>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Tue, 16 Mar 2010 02:01:53 +0000
+Subject: [PATCH] sh: ms7724: Add tiny-document for sound
+Message-Id: <uwrxdyqge.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+---
+ arch/sh/boards/mach-se/7724/setup.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 66cdbc3..ccaa290 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -52,6 +52,13 @@
+  * and change SW41 to use 720p
+  */
+ 
++/*
++ * about sound
++ *
++ * This setup.c supports FSI slave mode.
++ * Please change J20, J21, J22 pin to 1-2 connection.
++ */
++
+ /* Heartbeat */
+ static struct resource heartbeat_resource = {
+ 	.start  = PA_LED,
+@@ -276,6 +283,7 @@ static struct clk fsimcka_clk = {
+ 	.rate		= 0, /* unknown */
+ };
+ 
++/* change J20, J21, J22 pin to 1-2 connection to use slave mode */
+ struct sh_fsi_platform_info fsi_info = {
+ 	.porta_flags = SH_FSI_BRS_INV |
+ 		       SH_FSI_OUT_SLAVE_MODE |
+-- 
+1.6.3.3
 
-Which contains:
-
-Huang Weiyi (1):
-      serial: sh-sci: remove duplicated #include
-
-Paul Mundt (4):
-      sh: Support CPU affinity masks for INTC controllers.
-      sh: Fix up uncached offset for legacy 29-bit mode.
-      sh: Fix up NUMA build for 29-bit.
-      sh: Export uncached helper symbols.
-
-Peter Huewe (1):
-      serial: sh-sci: Fix build failure for non-sh architectures.
-
- arch/sh/include/asm/mmu.h  |    7 +++++++
- arch/sh/mm/uncached.c      |    9 +++++++++
- drivers/serial/sh-sci.c    |    1 -
- drivers/sh/intc.c          |   31 ++++++++++++++++++++++++++++++-
- include/linux/serial_sci.h |    4 ++++
- 5 files changed, 50 insertions(+), 2 deletions(-)
