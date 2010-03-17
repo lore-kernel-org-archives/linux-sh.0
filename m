@@ -1,24 +1,37 @@
-From: Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
-Date: Tue, 16 Mar 2010 12:14:53 +0000
-Subject: Re: AW: r8a66597-hcd panics when a USB device is removed from an
-Message-Id: <4B9F763D.7070302@renesas.com>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Wed, 17 Mar 2010 10:15:34 +0000
+Subject: G4 cannot compile
+Message-Id: <uy6hr6ypl.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <95F51F4B902CAC40AF459205F6322F017F26D4B469@BMK019S01.emtrion.local>
-In-Reply-To: <95F51F4B902CAC40AF459205F6322F017F26D4B469@BMK019S01.emtrion.local>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Mr. Markus,
 
-Pietrek, Markus wrote:
-> Hello Mr. Yoshihiro
-> 
-> patch works, many thanks.
+Dear All
 
-Thank you very much for your testing!
+G4 cannot compile on latest Paul's git
+I used arch/arm/configs/g4evm_defconfig
 
-Thanks,
-Yoshihiro Shimoda
+asm/dmaengine.h  =>  arch/sh/include/asm
+                          ~~
+I guess G4 needs link to it
 
+------------------
+In file included from arch/arm/mach-shmobile/setup-sh7377.c:28:
+include/linux/serial_sci.h:5:27: error: asm/dmaengine.h: No such file or
+directory
+In file included from arch/arm/mach-shmobile/setup-sh7377.c:28:
+include/linux/serial_sci.h:33: error: field 'dma_slave_tx' has
+incomplete type
+include/linux/serial_sci.h:34: error: field 'dma_slave_rx' has
+incomplete type
+make[1]: *** [arch/arm/mach-shmobile/setup-sh7377.o] エラー 1
+make: *** [arch/arm/mach-shmobile] エラー 2
+------------------
+
+Best regards
+--
+Kuninori Morimoto
+ 
