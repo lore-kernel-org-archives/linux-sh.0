@@ -1,37 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 19 Mar 2010 08:08:32 +0000
-Subject: Re: building sh-2.6 git kernel with gcc 4.1.1 Sourgery G++ Lite 4.4-45
-Message-Id: <20100319080832.GB10003@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 17 Mar 2010 16:28:25 +0000
+Subject: nfsroot is to slow
+Message-Id: <201003171728.25305.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201003190856.31112.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201003190856.31112.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Mar 19, 2010 at 08:56:30AM +0100, Fabio Giovagnini wrote:
-> sh-linux-gnu-ld: arch/sh/kernel/module.o: uses instructions which are 
-> incompatible with instructions used in previous modules
-> sh-linux-gnu-ld: failed to merge target specific data of file 
-> arch/sh/kernel/module.o
-> make[2]: *** [arch/sh/kernel/built-in.o] Errore 1
-> make[1]: *** [arch/sh/kernel] Errore 2
-> make[1]: uscita dalla directory ?/home/fgiovagnini/sh7203/sh7203-uclinux-
-> arn/sh-2.6?
-> 
-[snip]
+Hi all,
+now I'm able to mount root nfs but it is so slow:
+/dev/root,0x0c1a58a0,0x00008000,0x0c24659c
+do_mount_root,273 - debug 2
+do_mount_root,277 - debug 3
+do_mount_root,279 - debug 4
+VFS: Mounted root (nfs filesystem).
+Freeing unused kernel memory: 88k freed
+nfs: server 192.168.1.2 not responding, still trying
+nfs: server 192.168.1.2 OK
+nfs: server 192.168.1.2 not responding, still trying
+nfs: server 192.168.1.2 not responding, still trying
 
-> What cound be my problem?
-> 
-The problem is precisely what the error says, you are mixing and matching
-sh2a and sh4a objects which just isn't going to work. The compiler you
-are using only targets sh4a, which will not handle sh2a (evident by the
-fact all of the sh2a tuning flags aren't part of your CFLAGS but do show
-up in the LDFLAGS).
+I can see this.
+Where can I investigate.
+Server side or my board side?
 
-If you are using sh2a you will need a compiler that will deal with sh2a,
-which you will most likely have to build yourself. The FDPIC compiler
-from codesourcery isn't quite ready for general consumption yet, and the
-few vendors that have binary sh2/sh2a toolchains are so laughably out of
-date it's not even worth bothering with.
+Thanks a lot
+
+-- 
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
