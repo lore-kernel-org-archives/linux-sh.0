@@ -1,48 +1,45 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Tue, 16 Mar 2010 13:16:05 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Mar 2010 03:29:27 +0000
 Subject: Re: Hi All, hot to debug my eth0' hw?
-Message-Id: <201003161416.06161.fabio.giovagnini@aurion-tech.com>
+Message-Id: <aec7e5c31003162029o12a9ceaehaa858c7f54407ec3@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201003161225.42600.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201003161225.42600.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-PAUL TOLD ME TO USE THIS:
-git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.git
-
-
-Is ti ok?
-
-Thanks a lot
-
-
-In data marted=EC 16 marzo 2010 13:43:29, Magnus Damm ha scritto:
-: > On Tue, Mar 16, 2010 at 9:38 PM, Fabio Giovagnini
->=20
+On Tue, Mar 16, 2010 at 9:32 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> On Tue, Mar 16, 2010 at 8:59 PM, Fabio Giovagnini
 > <fabio.giovagnini@aurion-tech.com> wrote:
-> > After I'll be able to have busybox I'll try to do it for sure.
-> > Which one you suggest to me?
->=20
-> I recommend 2.6.34-rc2 or later. Even better, use git to get the
-> latest kernel tree.
->=20
-> Cheers,
->=20
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+>> 2) I have a 32 bus connected sh2a D0 do smc9118 D0 and sh2a D31 do smc91=
+18
+>> D31; do I need a software swap? ( I followed the schematics of rsk+ 7203=
+ eva
+>> board before to learn that for big endioan processors the designer needs=
+ to
+>> physically swap the bytes).
+>
+> I've added code to enable swap on upstream for the rsk7203. It was
+> needed by big endian platforms.
 
---=20
-Fabio Giovagnini
+Look here:
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+http://git.kernel.org/?p=3Dlinux/kernel/git/torvalds/linux-2.6.git;a=3Dcomm=
+it;hr4cfb944007b7f8d346523a7810b53a35921bc5
+
+and here:
+
+http://git.kernel.org/?p=3Dlinux/kernel/git/torvalds/linux-2.6.git;a=3Dcomm=
+it;h=833cc67c7722e35863c6aaee9df56b442ef957ae
+
+> Please use a newer kernel if possible.
+
+If you use the latest kernel then the fixes above are already included.
+
+I recommend you to use the sh-2.6 git tree for development.
+
+Thanks,
+
+/ magnus
