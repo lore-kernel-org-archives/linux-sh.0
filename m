@@ -1,35 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 10 Mar 2010 11:17:49 +0000
-Subject: [PATCH] ARM: Add support for 10 hardirq bits
-Message-Id: <20100310111749.18521.9002.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 18 Mar 2010 08:39:59 +0000
+Subject: [PATCH] ASoC: SIU driver shall select FW_LOADER
+Message-Id: <Pine.LNX.4.64.1003180916590.4485@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Liam Girdwood <lrg@slimlogic.co.uk>
 
-From: Magnus Damm <damm@opensource.se>
+The SIU ASoC driver must load firmware to program the DSP, therefore it 
+has to select FW_LOADER in its Kconfig entry.
 
-This patch adds support for 10 hardirq bits to
-the ARM architecture. Needed by the SH-Mobile
-ARM processor sh7372 that has more than 512 IRQs.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-
- arch/arm/include/asm/hardirq.h |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/include/asm/hardirq.h
-+++ work/arch/arm/include/asm/hardirq.h	2010-03-09 21:08:10.000000000 +0900
-@@ -12,7 +12,9 @@ typedef struct {
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index 1066749..f07f6d8 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -32,6 +32,7 @@ config SND_SOC_SH4_SIU
+ 	select DMA_ENGINE
+ 	select DMADEVICES
+ 	select SH_DMAE
++	select FW_LOADER
  
- #include <linux/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
- 
--#if NR_IRQS > 256
-+#if NR_IRQS > 512
-+#define HARDIRQ_BITS	10
-+#elif NR_IRQS > 256
- #define HARDIRQ_BITS	9
- #else
- #define HARDIRQ_BITS	8
+ ##
+ ## Boards
