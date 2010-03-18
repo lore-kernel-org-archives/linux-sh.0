@@ -1,71 +1,36 @@
-From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Thu, 18 Mar 2010 06:41:13 +0000
-Subject: Build error at v2.6.33 of sh-2.6.git
-Message-Id: <4BA1CB09.8060908@dcl.info.waseda.ac.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 18 Mar 2010 07:06:36 +0000
+Subject: Re: Build error at v2.6.33 of sh-2.6.git
+Message-Id: <aec7e5c31003180006w4fdcc287w9a0d1c06d40fd71f@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4BA1CB09.8060908@dcl.info.waseda.ac.jp>
+In-Reply-To: <4BA1CB09.8060908@dcl.info.waseda.ac.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hi Hitoshi-san,
 
-Hi SuperH folks,
+On Thu, Mar 18, 2010 at 3:41 PM, Hitoshi Mitake
+<mitake@dcl.info.waseda.ac.jp> wrote:
+> So I have a question, is there the de fact standard of corss compiler
+> building kit for SuperH arch?
+> If there is, could you tell me?
 
-I'm working on porting new board support to sh.
+I used to build cross compilers all the time. These days I use the
+binary distribution provided by codesourcery.
 
-And I suffered build error when building the branch
-specified the tag v2.6.33 at
-sh-2.6.git ( 
-http://git.kernel.org/?p=linux/kernel/git/lethal/sh-2.6.git;a=summary ).
+http://www.codesourcery.com/sgpp/editions.html
 
-Error message is like this:
-% make ARCH=sh CROSS_COMPILE=sh-linux- arch/sh/kernel/cpu/sh3/entry.o
+Not sure about the status of upstream gcc, binutils and gdb. If the
+specific version of gcc that you are building with fails, please make
+sure to upgrade to the latest version and try again. I've also heard
+that debian should build fine on sh4, so I guess they have whatever
+patches that are needed.
 
-...
+Codesourcery also provide sources if you are interested.
 
-arch/sh/kernel/cpu/sh3/entry.S: Assembler messages:
-arch/sh/kernel/cpu/sh3/entry.S:260: Error: offset out of range
-arch/sh/kernel/cpu/sh3/entry.S:260: Error: value of 4294967280 too large 
-for field of 2 bytes at 196
-arch/sh/kernel/cpu/sh3/../../entry-common.S:60: Error: offset out of range
-arch/sh/kernel/cpu/sh3/../../entry-common.S:60: Error: value of 
-4294967280 too large for field of 2 bytes at 236
-arch/sh/kernel/cpu/sh3/../../entry-common.S:178: Error: offset out of range
-arch/sh/kernel/cpu/sh3/../../entry-common.S:178: Error: value of 
-4294967280 too large for field of 2 bytes at 422
-arch/sh/kernel/cpu/sh3/../../entry-common.S:326: Error: offset out of range
-arch/sh/kernel/cpu/sh3/../../entry-common.S:326: Error: value of 
-4294967280 too large for field of 2 bytes at 578
+Cheers,
 
-...
-
-But I'm suspecting that the problem is the version of my cross compiler 
-for sh.
-The version of it is 3.4.5, quite old.
--v output of my cross compiler is this:
-
-% sh-linux-gcc -v
-Reading specs from 
-/opt/crosstool/gcc-3.4.5-glibc-2.3.5/sh4-unknown-linux-gnu/lib/gcc/sh4-unknown-linux-gnu/3.4.5/specs
-Configured with: 
-/home/mitake/tool/crosstool-0.43-sh4a/build/sh4-unknown-linux-gnu/gcc-3.4.5-glibc-2.3.5/gcc-3.4.5/configure 
---target=sh4-unknown-linux-gnu --host=x86_64-host_unknown-linux-gnu 
---prefix=/opt/crosstool/gcc-3.4.5-glibc-2.3.5/sh4-unknown-linux-gnu 
---with-multilib-list=m4,m4-nofpu 
---with-headers=/opt/crosstool/gcc-3.4.5-glibc-2.3.5/sh4-unknown-linux-gnu/sh4-unknown-linux-gnu/include 
---with-local-prefix=/opt/crosstool/gcc-3.4.5-glibc-2.3.5/sh4-unknown-linux-gnu/sh4-unknown-linux-gnu 
---disable-nls --enable-threads=posix --enable-symvers=gnu 
---enable-__cxa_atexit --enable-languages=c,c++ --enable-shared 
---enable-c99 --enable-long-long
-Thread model: posix
-gcc version 3.4.5
-
-I obtained this cross compiler with this project: 
-http://kegel.com/crosstool/
-
-So I have a question, is there the de fact standard of corss compiler 
-building kit for SuperH arch?
-If there is, could you tell me?
-
-Thanks,
-	Hitoshi
+/ magnus
