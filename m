@@ -1,7 +1,7 @@
 From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 18 Mar 2010 21:05:07 +0000
+Date: Thu, 18 Mar 2010 21:07:32 +0000
 Subject: Re: Trouble with embedding initial root fs into the kernel
-Message-Id: <201003182205.07963.fabio.giovagnini@aurion-tech.com>
+Message-Id: <201003182207.32323.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201003161222.05067.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201003161222.05067.fabio.giovagnini@aurion-tech.com>
@@ -10,20 +10,22 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi magnus, still in troubles.
-I have very low performances rooting nfs. I'm coming back to the idea of=20
-initfsram.
-What is exactly r2d board in QEMU?
-Where can I study QEMU for sh family?
-I read wiki.qemu.org and no word about sh; at leas it seems.
+Wher do I have to include the script creating the nodes?=20
 
-Let me know, thanks
+Thanks
 
 
 
 In data marted=C3=AC 16 marzo 2010 13:04:54, Magnus Damm ha scritto:
-: > 7. You can always try getting initramfs working with the sh4a binary
-> on the r2d board in QEMU.
+: > 3. Modify your kernel configuration to point our your initramfs_data.cp=
+io
+>  file: CONFIG_INITRAMFS_SOURCE=3D"/path/to/your/stuff/initramfs_data.cpio"
+>=20
+> 4. Make sure you include a script that creates device nodes for you,
+> or use udev or mdev.
+>=20
+> 5. I think /init is the first file that gets executed. I usually point
+> it to /sbin/init from busybox.
 >=20
 
 --=20
