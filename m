@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 16 Mar 2010 12:41:28 +0000
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Thu, 18 Mar 2010 21:05:07 +0000
 Subject: Re: Trouble with embedding initial root fs into the kernel
-Message-Id: <aec7e5c31003160541j6d41cfdeu18c9abd1bdcb1731@mail.gmail.com>
+Message-Id: <201003182205.07963.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201003161222.05067.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201003161222.05067.fabio.giovagnini@aurion-tech.com>
@@ -10,24 +10,27 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-> In data marted=EC 16 marzo 2010 13:29:25, Magnus Damm ha scritto:
->> What hardware platform is this? rsk7203?
+Hi magnus, still in troubles.
+I have very low performances rooting nfs. I'm coming back to the idea of=20
+initfsram.
+What is exactly r2d board in QEMU?
+Where can I study QEMU for sh family?
+I read wiki.qemu.org and no word about sh; at leas it seems.
 
-On Tue, Mar 16, 2010 at 9:35 PM, Fabio Giovagnini
-<fabio.giovagnini@aurion-tech.com> wrote:
-> It si my own, derived form rsk+7203
-> its name in MLCD, and at the and I'll can send the BSP to linux-sh list, =
-if
-> you like
+Let me know, thanks
 
-Ok, I think we may be interested in processor specific fixes to begin
-with. But you need to update your BSP kernel to latest upstream before
-we can use any of your work.
 
-So please work with the latest kernel if possible. It is almost
-impossible to fix bugs in an old kernel, and very few people will give
-you support unless you pay them.
 
-Thanks!
+In data marted=C3=AC 16 marzo 2010 13:04:54, Magnus Damm ha scritto:
+: > 7. You can always try getting initramfs working with the sh4a binary
+> on the r2d board in QEMU.
+>=20
 
-/ magnus
+--=20
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
