@@ -1,114 +1,30 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 26 Mar 2010 11:58:34 +0000
-Subject: Re: [PATCH 2/3 v2] V4L: v4l2-subdev driver for AK8813 and AK8814 TV-encoders from AKM
-Message-Id: <201003261258.34469.hverkuil@xs4all.nl>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Fri, 19 Mar 2010 17:08:00 +0000
+Subject: How can I undersatnd if the userland app is linked using uclibc of glibc?
+Message-Id: <201003191808.00063.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1003171103030.4354@axis700.grange> <Pine.LNX.4.64.1003181051420.4485@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1003181051420.4485@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Magnus Damm <damm@opensource.se>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Mauro Carvalho Chehab <mchehab@redhat.com>
+To: linux-sh@vger.kernel.org
 
-On Thursday 18 March 2010 11:28:32 Guennadi Liakhovetski wrote:
-> diff --git a/drivers/media/video/ak881x.c b/drivers/media/video/ak881x.c
-...
-> +static int ak881x_s_std_output(struct v4l2_subdev *sd, v4l2_std_id std)
-> +{
-> +	struct i2c_client *client = v4l2_get_subdevdata(sd);
-> +	struct ak881x *ak881x = to_ak881x(client);
-> +	u8 vp1;
-> +
-> +	switch (std) {
-> +	case V4L2_STD_NTSC_M:
-> +	default:
-> +		vp1 = 0;
-> +		ak881x->lines = 480;
-> +		break;
-> +	case V4L2_STD_NTSC_443:
-> +		vp1 = 3;
-> +		ak881x->lines = 480;
-> +		break;
-> +	case V4L2_STD_PAL_M:
-> +		vp1 = 5;
-> +		ak881x->lines = 480;
-> +		break;
-> +	case V4L2_STD_PAL_60:
-> +		vp1 = 7;
-> +		ak881x->lines = 480;
-> +		break;
-> +	case V4L2_STD_PAL_B:
-> +	case V4L2_STD_PAL_D:
-> +	case V4L2_STD_PAL_G:
-> +	case V4L2_STD_PAL_H:
-> +	case V4L2_STD_PAL_I:
-> +		vp1 = 0xf;
-> +		ak881x->lines = 576;
-> +	}
-> +
-> +	reg_set(client, AK881X_VIDEO_PROCESS1, vp1, 0xf);
-> +
-> +	return 0;
-> +}
+Codesurgery toolchain supplies both the library; how can I know building the 
+application the linker used uclibc or glibc?
 
-This is not correct. The std is a bitmask but multiple bits can be set
-(and usually are). In general this should be written like this:
+Thanks a lot.
 
-if (std = V4L2_STD_NTSC_443) {
-	vp1 = 3;
-	ak881x->lines = 480;
-} else if (std = V4L2_STD_PAL_M) {
-	...
-} else if (std = V4L2_STD_PAL_60) {
-	...
-} else if (std & V4L2_STD_PAL) {
-	...
-} else if (std & V4L2_STD_NTSC) {
-	...
-} else {
-	/* No SECAM or PAL_N/Nc supported */
-	return -EINVAL;
-}
+P.S.
+It is very surprising the increasing of performaces you can see passing from 
+gcc-3-4.5 / linux-2.6.17 to gcc-4.4.1 / linux-2.6.33 (git sh-2.6). REally very 
+surprising.
 
-In all modern video encoders or decoders all PAL variants are handled
-automatically. Only some very old tuners have restrictions.
-
-I would also be surprised if this device didn't handle SECAM as well.
-
-Changing the code like this will also fix the problem you had with ENUMSTD.
-Requiring applications to show the full list of all variants is something
-the end user will not understand (heck, *I* wouldn't understand either!).
-
-My experience is that the list of formats that really matter is this:
-
-NTSC
-NTSC-443
-PAL-M
-PAL-N
-PAL-Nc
-PAL-60
-(PAL-I in rare cases)
-PAL (all others)
-SECAM-BGH
-SECAM-DK
-SECAM-L
-(SECAM-Lc is no longer used in practice)
-
-In the case of S-Video/Composite input or output this list is even shorter:
-
-NTSC-443
-NTSC
-PAL-M
-PAL-N
-PAL-Nc
-PAL-60
-PAL
-SECAM
-
-Regards,
-
-	Hans
+Regards
 
 -- 
-Hans Verkuil - video4linux developer - sponsored by TANDBERG
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
