@@ -1,32 +1,23 @@
-From: Michal Simek <monstr@monstr.eu>
-Date: Tue, 23 Mar 2010 07:22:15 +0000
-Subject: Re: [PATCH] uImage: Allow to specify MKIMAGE
-Message-Id: <4BA86C27.60101@monstr.eu>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Fri, 19 Mar 2010 05:27:44 +0000
+Subject: Is it possible usign QEMU for runnung kernel of sh2a?
+Message-Id: <201003190627.44881.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100320184907.8036.82488.stgit@localhost.localdomain>
-In-Reply-To: <20100320184907.8036.82488.stgit@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Paulius Zaleckas wrote:
-> Signed-off-by: Paulius Zaleckas <paulius.zaleckas@gmail.com>
-> ---
-> 
->  arch/arm/boot/Makefile          |    4 ++--
->  arch/avr32/boot/images/Makefile |    4 ++--
->  arch/blackfin/boot/Makefile     |    4 ++--
->  arch/microblaze/boot/Makefile   |    4 ++--
->  arch/sh/boot/Makefile           |    4 ++--
->  scripts/mkuboot.sh              |    1 +
->  6 files changed, 11 insertions(+), 10 deletions(-)
-> 
-Acked-by: Michal Simek <monstr@monstr.eu>
+Hi, could you tell me please how to find info about using qemu for sh2a if it 
+is possible?
 
+Thanks
 
 -- 
-Michal Simek, Ing. (M.Eng)
-w: www.monstr.eu p: +42-0-721842854
-Maintainer of Linux kernel 2.6 Microblaze Linux - http://www.monstr.eu/fdt/
-Microblaze U-BOOT custodian
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
