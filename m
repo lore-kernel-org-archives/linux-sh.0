@@ -1,140 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Mar 2010 14:58:21 +0000
-Subject: [PATCH 2/2] sh_mobile_ceu_camera.c: update documentation to reflect
-Message-Id: <Pine.LNX.4.64.1003231556560.7689@axis700.grange>
+From: Ian Campbell <Ian.Campbell@citrix.com>
+Date: Fri, 19 Mar 2010 11:27:12 +0000
+Subject: [GITPULL+PATCH 0/2 v3] irq: move some interrupt arch_* functions
+Message-Id: <1268998032.10129.44653.camel@zakaz.uk.xensource.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1003231529490.5340@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1003231529490.5340@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: Magnus Damm <damm@opensource.se>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Jeremy Fitzhardinge <jeremy@goop.org>, Ian Campbell <Ian.Campbell@citrix.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, "x86@kernel.org" <x86@kernel.org>, "linuxppc-dev@ozlabs.org" <linuxppc-dev@ozlabs.org>, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Yinghai Lu <yinghai@kernel.org>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
-This patch and the one, actually implementing this change, do not depend  
-on each other, but are logically related, so, this one can be considered  
-a follow-up.
+This small series ensures that struct irq_desc->chip_data is available
+for alternative irq_chip implementations.
 
- Documentation/video4linux/sh_mobile_ceu_camera.txt |   80 ++++++++------------
- 1 files changed, 31 insertions(+), 49 deletions(-)
+Since v2: pass x86_init_chip_data as a argument to
+irq_to_desc_alloc_node instead of calling in the arch code in order to
+get correct locking wrt the core code. Small impact on the SH arch code
+which is the only other user outside x86 and powerpc.
 
-diff --git a/Documentation/video4linux/sh_mobile_ceu_camera.txt b/Documentation/video4linux/sh_mobile_ceu_camera.txt
-index 2ae1634..cb47e72 100644
---- a/Documentation/video4linux/sh_mobile_ceu_camera.txt
-+++ b/Documentation/video4linux/sh_mobile_ceu_camera.txt
-@@ -17,18 +17,18 @@ Generic scaling / cropping scheme
- -2-- -\
- |      --\
- |         --\
--+-5-- -\     -- -3--
--|       ---\
--|           --- -4-- -\
--|                      -\
--|                        - -6--
-++-5-- .      -- -3-- -\
-+|      `...            -\
-+|          `... -4-- .   - -7..
-+|                     `.
-+|                       `. .6--
- |
--|                        - -6'-
--|                      -/
--|           --- -4'- -/
--|       ---/
--+-5'- -/
--|            -- -3'-
-+|                        . .6'-
-+|                      .´
-+|           ... -4'- .´
-+|       ...´             - -7'.
-++-5'- .´               -/
-+|            -- -3'- -/
- |         --/
- |      --/
- -2'- -/
-@@ -36,7 +36,11 @@ Generic scaling / cropping scheme
- |
- -1'-
- 
--Produced by user requests:
-+In the above chart minuses and slashes represent "real" data amounts, points and
-+accents represent "useful" data, basically, CEU scaled amd cropped output,
-+mapped back onto the client's source plane.
-+
-+Such a configuration can be produced by user requests:
- 
- S_CROP(left / top = (5) - (1), width / height = (5') - (5))
- S_FMT(width / height = (6') - (6))
-@@ -106,52 +110,30 @@ window:
- S_CROP
- ------
- 
--If old scale applied to new crop is invalid produce nearest new scale possible
--
--1. Calculate current combined scales.
--
--	scale_comb = (((4') - (4)) / ((6') - (6))) * (((2') - (2)) / ((3') - (3)))
--
--2. Apply iterative sensor S_CROP for new input window.
--
--3. If old combined scales applied to new crop produce an impossible user window,
--adjust scales to produce nearest possible window.
--
--	width_u_out = ((5') - (5)) / scale_comb
-+The API at http://v4l2spec.bytesex.org/spec/x1904.htm says:
- 
--	if (width_u_out > max)
--		scale_comb = ((5') - (5)) / max;
--	else if (width_u_out < min)
--		scale_comb = ((5') - (5)) / min;
-+"...specification does not define an origin or units. However by convention
-+drivers should horizontally count unscaled samples relative to 0H."
- 
--4. Issue G_CROP to retrieve actual input window.
-+We choose to follow the advise and interpret cropping units as client input
-+pixels.
- 
--5. Using actual input window and calculated combined scales calculate sensor
--target output window.
--
--	width_s_out = ((3') - (3)) = ((2') - (2)) / scale_comb
--
--6. Apply iterative S_FMT for new sensor target output window.
--
--7. Issue G_FMT to retrieve the actual sensor output window.
--
--8. Calculate sensor scales.
--
--	scale_s = ((3') - (3)) / ((2') - (2))
-+Cropping is performed in the following 6 steps:
- 
--9. Calculate sensor output subwindow to be cropped on CEU by applying sensor
--scales to the requested window.
-+1. Request exactly user rectangle from the sensor.
- 
--	width_ceu = ((5') - (5)) / scale_s
-+2. If smaller - iterate until a larger one is obtained. Result: sensor cropped
-+   to 2 : 2', target crop 5 : 5', current output format 6' - 6.
- 
--10. Use CEU cropping for above calculated window.
-+3. In the previous step the sensor has tried to preserve its output frame as
-+   good as possible, but it could have changed. Retrieve it again.
- 
--11. Calculate CEU scales from sensor scales from results of (10) and user window
--from (3)
-+4. Sensor scaled to 3 : 3'. Sensor's scale is (2' - 2) / (3' - 3). Calculate
-+   intermediate window: 4' - 4 = (5' - 5) * (3' - 3) / (2' - 2)
- 
--	scale_ceu = calc_scale(((5') - (5)), &width_u_out)
-+5. Calculate and apply host scale = (6' - 6) / (4' - 4)
- 
--12. Apply CEU scales.
-+6. Calculate and apply host crop: 6 - 7 = (5 - 2) * (6' - 6) / (5' - 5)
- 
- --
- Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
--- 
-1.6.2.4
+Since v1: dropped the renaming portion of the series since it
+was basically wrong, the functions I'd implicated as ioapic specific are
+not at all.
+
+Ian.
+
+The following changes since commit 1ebbdcc83e75697c0d75eb091df172b7d93c84c1:
+  Ingo Molnar (1):
+        Merge branch 'perf/urgent'
+
+are available in the git repository at:
+
+  git://xenbits.xensource.com/people/ianc/linux-2.6.git for-x86/irq
+
+Ian Campbell (2):
+      irq: move some interrupt arch_* functions into struct irq_chip.
+      x86: irq_desc->chip_data is always correct whether or not SPARSE_IRQ is enabled.
+
+ arch/powerpc/kernel/irq.c      |    4 +-
+ arch/sh/kernel/cpu/irq/ipr.c   |    2 +-
+ arch/x86/include/asm/hw_irq.h  |   11 ++++++-
+ arch/x86/kernel/apic/io_apic.c |   67 ++++++++++++++++++++++++++++++++--------
+ arch/x86/kernel/uv_irq.c       |    5 +++
+ arch/x86/lguest/boot.c         |    2 +-
+ drivers/sh/intc.c              |    7 ++--
+ drivers/xen/events.c           |    2 +-
+ include/linux/interrupt.h      |    2 +-
+ include/linux/irq.h            |   16 ++++++---
+ kernel/irq/handle.c            |   15 ++++++---
+ kernel/irq/numa_migrate.c      |   12 ++++++-
+ kernel/softirq.c               |    3 +-
+ 13 files changed, 111 insertions(+), 37 deletions(-)
+
 
