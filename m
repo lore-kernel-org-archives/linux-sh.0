@@ -1,15 +1,21 @@
-From: Ian Campbell <ian.campbell@citrix.com>
-Date: Fri, 19 Mar 2010 11:27:20 +0000
-Subject: [PATCH 1/2] irq: move some interrupt arch_* functions into struct irq_chip.
-Message-Id: <1268998041-22707-1-git-send-email-ian.campbell@citrix.com>
+From: Yinghai Lu <yinghai@kernel.org>
+Date: Fri, 19 Mar 2010 19:02:22 +0000
+Subject: Re: [PATCH 1/2] irq: move some interrupt arch_* functions into struct
+Message-Id: <4BA3CA3E.7010207@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1268998032.10129.44653.camel@zakaz.uk.xensource.com>
-In-Reply-To: <1268998032.10129.44653.camel@zakaz.uk.xensource.com>
+	<1268998041-22707-1-git-send-email-ian.campbell@citrix.com>
+In-Reply-To: <1268998041-22707-1-git-send-email-ian.campbell@citrix.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Jeremy Fitzhardinge <jeremy@goop.org>, Rusty Russell <rusty@rustcorp.com.au>, Ian Campbell <ian.campbell@citrix.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, x86@kernel.org, lguest@ozlabs.org, linuxppc-dev@ozlabs.org, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Yinghai Lu <yinghai@kernel.org>
+To: Ian Campbell <ian.campbell@citrix.com>
+Cc: lguest@ozlabs.org, Jeremy Fitzhardinge <jeremy@goop.org>, Rusty Russell <rusty@rustcorp.com.au>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linuxppc-dev@ozlabs.org, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>
+
+please check
+
+Subject: [PATCH -v4] irq: move some interrupt arch_* functions into struct irq_chip.
+From: Ian Campbell <ian.campbell@citrix.com>
 
 Move arch_init_copy_chip_data and arch_free_chip_data into function
 pointers in struct irq_chip since they operate on irq_desc->chip_data.
@@ -36,6 +42,9 @@ I've tested by booting on an 64 bit x86 system with sparse IRQ enabled
 and 32 bit without, but it's not clear to me what actions I need to
 take to actually exercise some of these code paths.
 
+-v4: yinghai add irq_to_desc_alloc_node_x...
+     so could leave default path not changed...
+
 Signed-off-by: Ian Campbell <ian.campbell@citrix.com>
 Acked-by: Michael Ellerman <michael@ellerman.id.au> [PowerPC rename portion]
 Cc: Thomas Gleixner <tglx@linutronix.de>
@@ -54,60 +63,34 @@ Cc: lguest@ozlabs.org
 Cc: Paul Mundt <lethal@linux-sh.org>
 Cc: linux-sh@vger.kernel.org
 ---
- arch/powerpc/kernel/irq.c      |    4 +-
- arch/sh/kernel/cpu/irq/ipr.c   |    2 +-
- arch/x86/include/asm/hw_irq.h  |   11 ++++++-
- arch/x86/kernel/apic/io_apic.c |   64 ++++++++++++++++++++++++++++++++++-----
- arch/x86/kernel/uv_irq.c       |    5 +++
- arch/x86/lguest/boot.c         |    2 +-
- drivers/sh/intc.c              |    7 ++--
- drivers/xen/events.c           |    2 +-
- include/linux/interrupt.h      |    2 +-
- include/linux/irq.h            |   16 +++++++---
- kernel/irq/handle.c            |   15 ++++++---
- kernel/irq/numa_migrate.c      |   12 ++++++-
- kernel/softirq.c               |    3 +-
- 13 files changed, 112 insertions(+), 33 deletions(-)
+ arch/powerpc/kernel/irq.c      |    2 -
+ arch/x86/include/asm/hw_irq.h  |    7 +++++
+ arch/x86/kernel/apic/io_apic.c |   49 +++++++++++++++++++++++++++++++++++++----
+ arch/x86/kernel/uv_irq.c       |    3 ++
+ drivers/xen/events.c           |    7 +++++
+ include/linux/interrupt.h      |    1 
+ include/linux/irq.h            |   20 ++++++++++++----
+ kernel/irq/chip.c              |    7 +++++
+ kernel/irq/handle.c            |   13 ++++++----
+ kernel/irq/numa_migrate.c      |   12 ++++++++--
+ kernel/softirq.c               |    5 ----
+ 11 files changed, 101 insertions(+), 25 deletions(-)
 
-diff --git a/arch/powerpc/kernel/irq.c b/arch/powerpc/kernel/irq.c
-index 64f6f20..dc5a8c1 100644
---- a/arch/powerpc/kernel/irq.c
-+++ b/arch/powerpc/kernel/irq.c
-@@ -670,7 +670,7 @@ static int irq_setup_virq(struct irq_host *host, unsigned int virq,
- {
- 	struct irq_desc *desc;
- 
--	desc = irq_to_desc_alloc_node(virq, 0);
-+	desc = irq_to_desc_alloc_node(virq, 0, NULL);
- 	if (!desc) {
- 		pr_debug("irq: -> allocating desc failed\n");
- 		goto error;
+Index: linux-2.6/arch/powerpc/kernel/irq.c
+=================================--- linux-2.6.orig/arch/powerpc/kernel/irq.c
++++ linux-2.6/arch/powerpc/kernel/irq.c
 @@ -1088,7 +1088,7 @@ int arch_early_irq_init(void)
  	return 0;
  }
  
 -int arch_init_chip_data(struct irq_desc *desc, int node)
-+int arch_init_irq_desc(struct irq_desc *desc, int node)
++int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn)
  {
  	desc->status |= IRQ_NOREQUEST;
  	return 0;
-diff --git a/arch/sh/kernel/cpu/irq/ipr.c b/arch/sh/kernel/cpu/irq/ipr.c
-index 9282d96..cf31454 100644
---- a/arch/sh/kernel/cpu/irq/ipr.c
-+++ b/arch/sh/kernel/cpu/irq/ipr.c
-@@ -67,7 +67,7 @@ void register_ipr_controller(struct ipr_desc *desc)
- 		BUG_ON(p->ipr_idx >= desc->nr_offsets);
- 		BUG_ON(!desc->ipr_offsets[p->ipr_idx]);
- 
--		irq_desc = irq_to_desc_alloc_node(p->irq, numa_node_id());
-+		irq_desc = irq_to_desc_alloc_node(p->irq, numa_node_id(), NULL);
- 		if (unlikely(!irq_desc)) {
- 			printk(KERN_INFO "can not get irq_desc for %d\n",
- 			       p->irq);
-diff --git a/arch/x86/include/asm/hw_irq.h b/arch/x86/include/asm/hw_irq.h
-index a929c9e..1bc7063 100644
---- a/arch/x86/include/asm/hw_irq.h
-+++ b/arch/x86/include/asm/hw_irq.h
+Index: linux-2.6/arch/x86/include/asm/hw_irq.h
+=================================--- linux-2.6.orig/arch/x86/include/asm/hw_irq.h
++++ linux-2.6/arch/x86/include/asm/hw_irq.h
 @@ -20,9 +20,9 @@
  #include <linux/percpu.h>
  #include <linux/profile.h>
@@ -119,36 +102,31 @@ index a929c9e..1bc7063 100644
  #include <asm/sections.h>
  
  /* Interrupt handlers registered during init_IRQ */
-@@ -61,6 +61,15 @@ extern void init_VISWS_APIC_irqs(void);
+@@ -61,6 +61,11 @@ extern void init_VISWS_APIC_irqs(void);
  extern void setup_IO_APIC(void);
  extern void disable_IO_APIC(void);
  
-+extern int x86_init_chip_data(struct irq_desc *desc, int node);
-+
-+#ifdef CONFIG_SPARSE_IRQ
 +extern void x86_copy_chip_data(struct irq_desc *old_desc,
 +				  struct irq_desc *desc, int node);
 +extern void x86_free_chip_data(struct irq_desc *old_desc,
 +				  struct irq_desc *desc);
-+#endif
 +
  struct io_apic_irq_attr {
  	int ioapic;
  	int ioapic_pin;
-diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index e4e0ddc..035b6d2 100644
---- a/arch/x86/kernel/apic/io_apic.c
-+++ b/arch/x86/kernel/apic/io_apic.c
-@@ -211,7 +211,7 @@ static struct irq_cfg *get_one_free_irq_cfg(int node)
+Index: linux-2.6/arch/x86/kernel/apic/io_apic.c
+=================================--- linux-2.6.orig/arch/x86/kernel/apic/io_apic.c
++++ linux-2.6/arch/x86/kernel/apic/io_apic.c
+@@ -211,7 +211,7 @@ static struct irq_cfg *get_one_free_irq_
  	return cfg;
  }
  
 -int arch_init_chip_data(struct irq_desc *desc, int node)
-+int x86_init_chip_data(struct irq_desc *desc, int node)
++static int x86_init_chip_data(struct irq_desc *desc, int node)
  {
  	struct irq_cfg *cfg;
  
-@@ -287,8 +287,8 @@ static void free_irq_2_pin(struct irq_cfg *old_cfg, struct irq_cfg *cfg)
+@@ -287,8 +287,8 @@ static void free_irq_2_pin(struct irq_cf
  	old_cfg->irq_2_pin = NULL;
  }
  
@@ -159,7 +137,7 @@ index e4e0ddc..035b6d2 100644
  {
  	struct irq_cfg *cfg;
  	struct irq_cfg *old_cfg;
-@@ -312,7 +312,7 @@ static void free_irq_cfg(struct irq_cfg *old_cfg)
+@@ -312,7 +312,7 @@ static void free_irq_cfg(struct irq_cfg
  	kfree(old_cfg);
  }
  
@@ -168,266 +146,181 @@ index e4e0ddc..035b6d2 100644
  {
  	struct irq_cfg *old_cfg, *cfg;
  
-@@ -336,6 +336,11 @@ struct irq_cfg *irq_cfg(unsigned int irq)
+@@ -329,6 +329,14 @@ void arch_free_chip_data(struct irq_desc
+ 	}
+ }
+ /* end for move_irq_desc */
++int arch_init_irq_desc(struct irq_desc *desc, int node,
++			 init_chip_data_fn init_chip_data)
++{
++	if (!init_chip_data)
++		return x86_init_chip_data(desc, node);
++
++	return init_chip_data(desc, node);
++}
+ 
+ #else
+ struct irq_cfg *irq_cfg(unsigned int irq)
+@@ -336,6 +344,15 @@ struct irq_cfg *irq_cfg(unsigned int irq
  	return irq < nr_irqs ? irq_cfgx + irq : NULL;
  }
  
-+int x86_init_chip_data(struct irq_desc *desc, int node)
++void x86_copy_chip_data(struct irq_desc *old_desc,
++			   struct irq_desc *desc, int node)
 +{
-+	return 0;
++}
++
++void x86_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
++{
 +}
 +
  #endif
  
  struct io_apic {
-@@ -1515,7 +1520,7 @@ static void __init setup_IO_APIC_irqs(void)
- 				apic->multi_timer_check(apic_id, irq))
- 			continue;
- 
--		desc = irq_to_desc_alloc_node(irq, node);
-+		desc = irq_to_desc_alloc_node(irq, node, x86_init_chip_data);
- 		if (!desc) {
- 			printk(KERN_INFO "can not get irq_desc for %d\n", irq);
- 			continue;
-@@ -1565,7 +1570,7 @@ void setup_IO_APIC_irq_extra(u32 gsi)
- 	if (desc)
- 		return;
- #endif
--	desc = irq_to_desc_alloc_node(irq, node);
-+	desc = irq_to_desc_alloc_node(irq, node, x86_init_chip_data);
- 	if (!desc) {
- 		printk(KERN_INFO "can not get irq_desc for %d\n", irq);
- 		return;
-@@ -2739,6 +2744,11 @@ static struct irq_chip ioapic_chip __read_mostly = {
+@@ -2747,6 +2764,9 @@ static struct irq_chip ioapic_chip __rea
  	.set_affinity	= set_ioapic_affinity_irq,
  #endif
  	.retrigger	= ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  static struct irq_chip ir_ioapic_chip __read_mostly = {
-@@ -2754,6 +2764,11 @@ static struct irq_chip ir_ioapic_chip __read_mostly = {
+@@ -2762,6 +2782,9 @@ static struct irq_chip ir_ioapic_chip __
  #endif
  #endif
  	.retrigger	= ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  static inline void init_IO_APIC_traps(void)
-@@ -3256,7 +3271,8 @@ unsigned int create_irq_nr(unsigned int irq_want, int node)
- 
- 	raw_spin_lock_irqsave(&vector_lock, flags);
- 	for (new = irq_want; new < nr_irqs; new++) {
--		desc_new = irq_to_desc_alloc_node(new, node);
-+		desc_new = irq_to_desc_alloc_node(new, node,
-+						  x86_init_chip_data);
- 		if (!desc_new) {
- 			printk(KERN_INFO "can not get irq_desc for %d\n", new);
- 			continue;
-@@ -3466,6 +3482,11 @@ static struct irq_chip msi_chip = {
+@@ -3474,6 +3497,9 @@ static struct irq_chip msi_chip = {
  	.set_affinity	= set_msi_irq_affinity,
  #endif
  	.retrigger	= ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  static struct irq_chip msi_ir_chip = {
-@@ -3479,6 +3500,11 @@ static struct irq_chip msi_ir_chip = {
+@@ -3487,6 +3513,9 @@ static struct irq_chip msi_ir_chip = {
  #endif
  #endif
  	.retrigger	= ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  /*
-@@ -3638,6 +3664,11 @@ static struct irq_chip dmar_msi_type = {
+@@ -3646,6 +3675,9 @@ static struct irq_chip dmar_msi_type = {
  	.set_affinity = dmar_msi_set_affinity,
  #endif
  	.retrigger = ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  int arch_setup_dmar_msi(unsigned int irq)
-@@ -3695,6 +3726,11 @@ static struct irq_chip ir_hpet_msi_type = {
+@@ -3703,6 +3735,9 @@ static struct irq_chip ir_hpet_msi_type
  #endif
  #endif
  	.retrigger = ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  static struct irq_chip hpet_msi_type = {
-@@ -3706,6 +3742,11 @@ static struct irq_chip hpet_msi_type = {
+@@ -3714,6 +3749,9 @@ static struct irq_chip hpet_msi_type = {
  	.set_affinity = hpet_msi_set_affinity,
  #endif
  	.retrigger = ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  int arch_setup_hpet_msi(unsigned int irq, unsigned int id)
-@@ -3792,6 +3833,11 @@ static struct irq_chip ht_irq_chip = {
+@@ -3800,6 +3838,9 @@ static struct irq_chip ht_irq_chip = {
  	.set_affinity	= set_ht_irq_affinity,
  #endif
  	.retrigger	= ioapic_retrigger_irq,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  int arch_setup_ht_irq(unsigned int irq, struct pci_dev *dev)
-@@ -3914,7 +3960,7 @@ static int __io_apic_set_pci_routing(struct device *dev, int irq,
- 	else
- 		node = cpu_to_node(boot_cpu_id);
- 
--	desc = irq_to_desc_alloc_node(irq, node);
-+	desc = irq_to_desc_alloc_node(irq, node, x86_init_chip_data);
- 	if (!desc) {
- 		printk(KERN_INFO "can not get irq_desc %d\n", irq);
- 		return 0;
-@@ -4312,7 +4358,7 @@ void __init pre_init_apic_IRQ0(void)
- #ifndef CONFIG_SMP
- 	phys_cpu_present_map = physid_mask_of_physid(boot_cpu_physical_apicid);
- #endif
--	desc = irq_to_desc_alloc_node(0, 0);
-+	desc = irq_to_desc_alloc_node(0, 0, x86_init_chip_data);
- 
- 	setup_local_APIC();
- 
-diff --git a/arch/x86/kernel/uv_irq.c b/arch/x86/kernel/uv_irq.c
-index ece73d8..df2c6d6 100644
---- a/arch/x86/kernel/uv_irq.c
-+++ b/arch/x86/kernel/uv_irq.c
-@@ -55,6 +55,11 @@ struct irq_chip uv_irq_chip = {
+Index: linux-2.6/arch/x86/kernel/uv_irq.c
+=================================--- linux-2.6.orig/arch/x86/kernel/uv_irq.c
++++ linux-2.6/arch/x86/kernel/uv_irq.c
+@@ -55,6 +55,9 @@ struct irq_chip uv_irq_chip = {
  	.eoi		= uv_ack_apic,
  	.end		= uv_noop,
  	.set_affinity	= uv_set_irq_affinity,
 +
-+#ifdef CONFIG_SPARSE_IRQ
 +	.copy_chip_data = x86_copy_chip_data,
 +	.free_chip_data = x86_free_chip_data,
-+#endif
  };
  
  /*
-diff --git a/arch/x86/lguest/boot.c b/arch/x86/lguest/boot.c
-index 7e59dc1..659241a 100644
---- a/arch/x86/lguest/boot.c
-+++ b/arch/x86/lguest/boot.c
-@@ -841,7 +841,7 @@ static void __init lguest_init_IRQ(void)
-  */
- void lguest_setup_irq(unsigned int irq)
- {
--	irq_to_desc_alloc_node(irq, 0);
-+	irq_to_desc_alloc_node(irq, 0, NULL);
- 	set_irq_chip_and_handler_name(irq, &lguest_irq_controller,
- 				      handle_level_irq, "level");
+Index: linux-2.6/drivers/xen/events.c
+=================================--- linux-2.6.orig/drivers/xen/events.c
++++ linux-2.6/drivers/xen/events.c
+@@ -329,6 +329,11 @@ static void unmask_evtchn(int port)
+ 	put_cpu();
  }
-diff --git a/drivers/sh/intc.c b/drivers/sh/intc.c
-index 3a5a17d..99f89dd 100644
---- a/drivers/sh/intc.c
-+++ b/drivers/sh/intc.c
-@@ -870,7 +870,7 @@ void __init register_intc_controller(struct intc_desc *desc)
- 		if (!vect->enum_id)
- 			continue;
  
--		irq_desc = irq_to_desc_alloc_node(irq, numa_node_id());
-+		irq_desc = irq_to_desc_alloc_node(irq, numa_node_id(), NULL);
- 		if (unlikely(!irq_desc)) {
- 			pr_info("can't get irq_desc for %d\n", irq);
- 			continue;
-@@ -890,7 +890,8 @@ void __init register_intc_controller(struct intc_desc *desc)
- 			 * IRQ support, each vector still needs to have
- 			 * its own backing irq_desc.
- 			 */
--			irq_desc = irq_to_desc_alloc_node(irq2, numa_node_id());
-+			irq_desc = irq_to_desc_alloc_node(irq2, numa_node_id(),
-+							  NULL);
- 			if (unlikely(!irq_desc)) {
- 				pr_info("can't get irq_desc for %d\n", irq2);
- 				continue;
-@@ -1012,7 +1013,7 @@ unsigned int create_irq_nr(unsigned int irq_want, int node)
- 		__set_bit(new, intc_irq_map);
- 	}
- 
--	desc = irq_to_desc_alloc_node(new, node);
-+	desc = irq_to_desc_alloc_node(new, node, NULL);
- 	if (unlikely(!desc)) {
- 		pr_info("can't get irq_desc for %d\n", new);
- 		goto out_unlock;
-diff --git a/drivers/xen/events.c b/drivers/xen/events.c
-index 2f84137..0d4f0d3 100644
---- a/drivers/xen/events.c
-+++ b/drivers/xen/events.c
-@@ -341,7 +341,7 @@ static int find_unbound_irq(void)
++static int xen_init_chip_data(struct irq_desc *desc, int node)
++{
++	return 0;
++}
++
+ static int find_unbound_irq(void)
+ {
+ 	int irq;
+@@ -341,7 +346,7 @@ static int find_unbound_irq(void)
  	if (irq = nr_irqs)
  		panic("No available IRQ to bind to: increase nr_irqs!\n");
  
 -	desc = irq_to_desc_alloc_node(irq, 0);
-+	desc = irq_to_desc_alloc_node(irq, 0, NULL);
++	desc = irq_to_desc_alloc_node_x(irq, 0, xen_init_chip_data);
  	if (WARN_ON(desc = NULL))
  		return -1;
  
-diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 75f3f00..cc4cd22 100644
---- a/include/linux/interrupt.h
-+++ b/include/linux/interrupt.h
-@@ -611,6 +611,6 @@ struct irq_desc;
+Index: linux-2.6/include/linux/interrupt.h
+=================================--- linux-2.6.orig/include/linux/interrupt.h
++++ linux-2.6/include/linux/interrupt.h
+@@ -611,6 +611,5 @@ struct irq_desc;
  extern int early_irq_init(void);
  extern int arch_probe_nr_irqs(void);
  extern int arch_early_irq_init(void);
 -extern int arch_init_chip_data(struct irq_desc *desc, int node);
-+extern int arch_init_irq_desc(struct irq_desc *desc, int node);
  
  #endif
-diff --git a/include/linux/irq.h b/include/linux/irq.h
-index 707ab12..e262ca0 100644
---- a/include/linux/irq.h
-+++ b/include/linux/irq.h
-@@ -131,6 +131,14 @@ struct irq_chip {
+Index: linux-2.6/include/linux/irq.h
+=================================--- linux-2.6.orig/include/linux/irq.h
++++ linux-2.6/include/linux/irq.h
+@@ -131,6 +131,12 @@ struct irq_chip {
  	void		(*bus_lock)(unsigned int irq);
  	void		(*bus_sync_unlock)(unsigned int irq);
  
 +	/* for move_irq_desc */
-+#ifdef CONFIG_SPARSE_IRQ
 +	void		(*copy_chip_data)(struct irq_desc *old_desc,
 +					  struct irq_desc *desc, int node);
 +	void		(*free_chip_data)(struct irq_desc *old_desc,
 +					  struct irq_desc *desc);
-+#endif
 +
  	/* Currently used only by UML, might disappear one day.*/
  #ifdef CONFIG_IRQ_RELEASE_METHOD
  	void		(*release)(unsigned int irq, void *dev_id);
-@@ -208,10 +216,6 @@ struct irq_desc {
+@@ -208,10 +214,6 @@ struct irq_desc {
  	const char		*name;
  } ____cacheline_internodealigned_in_smp;
  
@@ -438,22 +331,27 @@ index 707ab12..e262ca0 100644
  #ifndef CONFIG_SPARSE_IRQ
  extern struct irq_desc irq_desc[NR_IRQS];
  #endif
-@@ -225,7 +229,9 @@ static inline struct irq_desc *move_irq_desc(struct irq_desc *desc, int node)
+@@ -225,7 +227,15 @@ static inline struct irq_desc *move_irq_
  }
  #endif
  
 -extern struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node);
 +typedef int (*init_chip_data_fn)(struct irq_desc *, int node);
-+extern struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node,
++int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn);
++struct irq_desc *irq_to_desc_alloc_node_x(unsigned int irq, int node,
 +					       init_chip_data_fn fn);
++static inline struct irq_desc *irq_to_desc_alloc_node(unsigned int irq,
++							 int node)
++{
++	return irq_to_desc_alloc_node_x(irq, node, NULL);
++}
  
  /*
   * Pick up the arch-dependent methods:
-diff --git a/kernel/irq/handle.c b/kernel/irq/handle.c
-index 76d5a67..eb060e1 100644
---- a/kernel/irq/handle.c
-+++ b/kernel/irq/handle.c
-@@ -100,7 +100,8 @@ void __ref init_kstat_irqs(struct irq_desc *desc, int node, int nr)
+Index: linux-2.6/kernel/irq/handle.c
+=================================--- linux-2.6.orig/kernel/irq/handle.c
++++ linux-2.6/kernel/irq/handle.c
+@@ -100,7 +100,8 @@ void __ref init_kstat_irqs(struct irq_de
  	}
  }
  
@@ -463,28 +361,26 @@ index 76d5a67..eb060e1 100644
  {
  	memcpy(desc, &irq_desc_init, sizeof(struct irq_desc));
  
-@@ -120,7 +121,9 @@ static void init_one_irq_desc(int irq, struct irq_desc *desc, int node)
+@@ -120,7 +121,7 @@ static void init_one_irq_desc(int irq, s
  		BUG_ON(1);
  	}
  	init_desc_masks(desc);
 -	arch_init_chip_data(desc, node);
-+	arch_init_irq_desc(desc, node);
-+	if (init_chip_data)
-+		init_chip_data(desc, node);
++	arch_init_irq_desc(desc, node, init_chip_data);
  }
  
  /*
-@@ -198,7 +201,8 @@ int __init early_irq_init(void)
+@@ -198,7 +199,8 @@ int __init early_irq_init(void)
  	return arch_early_irq_init();
  }
  
 -struct irq_desc * __ref irq_to_desc_alloc_node(unsigned int irq, int node)
-+struct irq_desc * __ref irq_to_desc_alloc_node(unsigned int irq, int node,
++struct irq_desc * __ref irq_to_desc_alloc_node_x(unsigned int irq, int node,
 +					       init_chip_data_fn init_chip_data)
  {
  	struct irq_desc *desc;
  	unsigned long flags;
-@@ -227,7 +231,7 @@ struct irq_desc * __ref irq_to_desc_alloc_node(unsigned int irq, int node)
+@@ -227,7 +229,7 @@ struct irq_desc * __ref irq_to_desc_allo
  		printk(KERN_ERR "can not alloc irq_desc\n");
  		BUG_ON(1);
  	}
@@ -493,21 +389,20 @@ index 76d5a67..eb060e1 100644
  
  	set_irq_desc(irq, desc);
  
-@@ -277,7 +281,8 @@ struct irq_desc *irq_to_desc(unsigned int irq)
+@@ -277,7 +279,8 @@ struct irq_desc *irq_to_desc(unsigned in
  	return (irq < NR_IRQS) ? irq_desc + irq : NULL;
  }
  
 -struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node)
-+struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node,
++struct irq_desc *irq_to_desc_alloc_node_x(unsigned int irq, int node,
 +					init_chip_data_fn init_chip_data)
  {
  	return irq_to_desc(irq);
  }
-diff --git a/kernel/irq/numa_migrate.c b/kernel/irq/numa_migrate.c
-index 963559d..9ea09c9 100644
---- a/kernel/irq/numa_migrate.c
-+++ b/kernel/irq/numa_migrate.c
-@@ -47,7 +47,8 @@ static bool init_copy_one_irq_desc(int irq, struct irq_desc *old_desc,
+Index: linux-2.6/kernel/irq/numa_migrate.c
+=================================--- linux-2.6.orig/kernel/irq/numa_migrate.c
++++ linux-2.6/kernel/irq/numa_migrate.c
+@@ -47,7 +47,8 @@ static bool init_copy_one_irq_desc(int i
  	lockdep_set_class(&desc->lock, &irq_desc_lock_class);
  	init_copy_kstat_irqs(old_desc, desc, node, nr_cpu_ids);
  	init_copy_desc_masks(old_desc, desc);
@@ -517,7 +412,7 @@ index 963559d..9ea09c9 100644
  	return true;
  }
  
-@@ -55,7 +56,8 @@ static void free_one_irq_desc(struct irq_desc *old_desc, struct irq_desc *desc)
+@@ -55,7 +56,8 @@ static void free_one_irq_desc(struct irq
  {
  	free_kstat_irqs(old_desc, desc);
  	free_desc_masks(old_desc, desc);
@@ -543,20 +438,29 @@ index 963559d..9ea09c9 100644
  
  	if (desc->node != node)
  		desc = __real_move_irq_desc(desc, node);
-diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 7c1a67e..3f4b80e 100644
---- a/kernel/softirq.c
-+++ b/kernel/softirq.c
-@@ -895,8 +895,7 @@ int __init __weak arch_early_irq_init(void)
+Index: linux-2.6/kernel/softirq.c
+=================================--- linux-2.6.orig/kernel/softirq.c
++++ linux-2.6/kernel/softirq.c
+@@ -895,8 +895,3 @@ int __init __weak arch_early_irq_init(vo
  {
  	return 0;
  }
 -
 -int __weak arch_init_chip_data(struct irq_desc *desc, int node)
-+int __weak arch_init_irq_desc(struct irq_desc *desc, int node)
- {
- 	return 0;
+-{
+-	return 0;
+-}
+Index: linux-2.6/kernel/irq/chip.c
+=================================--- linux-2.6.orig/kernel/irq/chip.c
++++ linux-2.6/kernel/irq/chip.c
+@@ -758,3 +758,10 @@ void __init set_irq_probe(unsigned int i
+ 	desc->status &= ~IRQ_NOPROBE;
+ 	raw_spin_unlock_irqrestore(&desc->lock, flags);
  }
--- 
-1.5.6.5
-
++
++int __weak arch_init_irq_desc(struct irq_desc *desc, int node,
++				 init_chip_data_fn init_chip_data)
++{
++	return 0;
++}
++
