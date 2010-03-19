@@ -1,34 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 02 Mar 2010 03:13:10 +0000
-Subject: Re: [PATCH 0/2] Implement DMA support for the sh-sci.c serial driver
-Message-Id: <20100302031310.GC20256@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Mar 2010 13:53:36 +0000
+Subject: [PATCH] SH: remove superfluous warning from the serial driver
+Message-Id: <Pine.LNX.4.64.1003191453050.5412@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1002181624190.4373@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-serial@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Feb 18, 2010 at 05:29:59PM +0100, Guennadi Liakhovetski wrote:
-> The two patches in this series add DMA support to the sh-sci SCI(F) serial 
-> driver. The worst problem is partial reception. Since we don't know in 
-> advance how many bytes we're going to receive, we submit a DMA buffer 
-> _and_ enable the Rx interrupt. When data arrives, we get an interrupt and 
-> the data is written into DMA buffers. In the ISR we then set a timeout, if 
-> within this time we get no DMA completion callback, we have a partial 
-> buffer. Unfortunately, dmaengine API currently doesn't support retrieving 
-> partially received DMA buffers, therefore we have to hijack the 
-> .device_terminate_all() call to collect the data. A better approach would 
-> be to add a stop-transfer / collect-partial call to the API.
-> 
-I've rolled these patches in as well, with some minor cleanups and
-dependency fixups.
+This warning has been introduced during the SCI DMA support developmenr and is
+not needed any more.
 
-As none of the CPUs presently enable this yet, this will remain fairly
-experimental, but it's enough to get people playing with it under 2.6.34.
-We'll have to do some more iterative changes for 2.6.35, as well as
-gradually getting it wired up on more CPUs, in addition to making it
-configurable per-channel. This also gives us the time to get the
-dmaengine API extensions worked out with Dan.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/serial/sh-sci.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 7d6733f..be6bbb8 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -781,10 +781,6 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	if ((ssr_status & SCxSR_BRK(port)) && err_enabled)
+ 		ret = sci_br_interrupt(irq, ptr);
+ 
+-	WARN_ONCE(ret = IRQ_NONE,
+-		  "%s: %d IRQ %d, status %x, control %x\n", __func__,
+-		  irq, port->line, ssr_status, scr_status);
+-
+ 	return ret;
+ }
+ 
+-- 
+1.6.2.4
+
