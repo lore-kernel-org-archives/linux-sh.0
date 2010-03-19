@@ -1,36 +1,42 @@
-From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Date: Thu, 11 Mar 2010 21:44:31 +0000
-Subject: Re: USB mass storage and ARM cache coherency
-Message-Id: <1268343871.22204.709.camel@pasglop>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Mar 2010 13:52:35 +0000
+Subject: [PATCH] SH: fix SCIFA SCASCR register bit definitions
+Message-Id: <Pine.LNX.4.64.1003191451290.5412@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100303215437.GF2579@ucw.cz>
-	<1267709756.6526.380.camel@e102109-lin.cambridge.arm.com>
-	<20100304135128.GA12191@atrey.karlin.mff.cuni.cz>
-	<1267712512.31654.176.camel@mulgrave.site>
-	<1267716578.6526.483.camel@e102109-lin.cambridge.arm.com>
-	<20100304154103.GA9384@linux-sh.org>
-	<1267726049.6526.543.camel@e102109-lin.cambridge.arm.com>
-	<1267738660.22204.77.camel@pasglop>
-	<20100305011745.GC26618@linux-sh.org>
-	<1267764295.22204.102.camel@pasglop>
-	<20100310035249.GB17693@linux-sh.org>
-In-Reply-To: <20100310035249.GB17693@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, 2010-03-10 at 12:52 +0900, Paul Mundt wrote:
-> Well, it does start to get a bit painful with sparsemem section or
-> NUMA
-> node IDs also digging in to the page flags on 32-bit.. the benefits
-> would
-> have to be pretty compelling to offset the pain. 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/serial/sh-sci.h |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
 
-Unless we play a dangerous trick and re-use another flag that isn't
-meaningful for allocated pages... maybe PG_buddy ? Or do I miss
-something about that guy semantics ?
-
-Cheers,
-Ben.
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index 988dc87..5ac23c0 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -96,7 +96,9 @@
+ # define SCSCR_INIT(port)       0x0038  /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7724)
+ # define SCIF_ORER              0x0001  /* overrun error bit */
+-# define SCSCR_INIT(port)       0x0038  /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
++# define SCSCR_INIT(port) ((port)->type = PORT_SCIFA ? \
++	0x30 /* TIE=0,RIE=0,TE=1,RE=1 */ : \
++	0x38 /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */ )
+ #elif defined(CONFIG_CPU_SUBTYPE_SH4_202)
+ # define SCSPTR2 0xffe80020 /* 16 bit SCIF */
+ # define SCIF_ORER 0x0001   /* overrun error bit */
+@@ -199,6 +201,8 @@
+     defined(CONFIG_CPU_SUBTYPE_SH7786)  || \
+     defined(CONFIG_CPU_SUBTYPE_SHX3)
+ #define SCI_CTRL_FLAGS_REIE 0x08 /* 7750 SCIF */
++#elif defined(CONFIG_CPU_SUBTYPE_SH7724)
++#define SCI_CTRL_FLAGS_REIE ((port)->type = PORT_SCIFA ? 0 : 8)
+ #else
+ #define SCI_CTRL_FLAGS_REIE 0
+ #endif
+-- 
+1.6.2.4
 
