@@ -1,43 +1,41 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Mon, 22 Mar 2010 10:21:18 +0000
-Subject: Re: codurgery tool chain is on for the kernel for sh2a 7203; but how is for flt user space applicati
-Message-Id: <201003221121.18769.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 19 Mar 2010 04:46:30 +0000
+Subject: [PATCH 00/05] SH-Mobile ARM dmaengine support V1
+Message-Id: <20100319044630.17051.16445.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201003200806.24094.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201003200806.24094.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Ok I'll stay tuned!!!!!
+SH-Mobile ARM dmaengine support V1
 
-Thanks a lot, guys.
-I'll give you my availability for any test on very customemized hw you coul=
-d=20
-think usefull to do.
+[PATCH 01/05] dmaengine: shdma: Remove sh_dmae_slave_chan_id enum
+[PATCH 02/05] dmaengine: shdma: Common SH_DMA_SLAVE_NUMBER
+[PATCH 03/05] serial: sh-sci: Use sg_dma_len() and sg_dma_address()
+[PATCH 04/05] dmaengine: shdma: Introduce include/linux/sh_dma.h
+[PATCH 05/05] dmaengine: shdma: Enable on SH-Mobile ARM
 
-Many thanks  again
+These patches add support for the shdma dmaengine driver on
+SH-Mobile ARM. Since some of the data structures are used by
+various drivers these patches modify both SH architecture code,
+dmaengine, sh-sci and the recently added siu sound driver.
 
+Not sure how to merge this smoothly, but I tried to layer the
+changes so they can be added one at a time without breaking
+anything.
 
-In data luned=EC 22 marzo 2010 11:12:57, Andrew Stubbs ha scritto:
-: > On 22/03/10 09:49, Fabio Giovagnini wrote:
-> > Did you write on the list when the toolchain will be available?
->=20
-> No, but an announcement will be posted to this list when it is available.
->=20
-> Andrew
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+Compiles fine on sh7377 G4EVM (ARM) and sh7722 Migo-R (SH).
 
---=20
-Fabio Giovagnini
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+ arch/sh/include/asm/dmaengine.h |   67 +------------------------
+ arch/sh/include/asm/siu.h       |    8 +--
+ drivers/dma/Kconfig             |    2 
+ drivers/dma/shdma.c             |   23 ++++----
+ drivers/dma/shdma.h             |    4 -
+ drivers/serial/sh-sci.c         |   18 +++---
+ include/linux/serial_sci.h      |    6 +-
+ include/linux/sh_dma.h          |  101 +++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 134 insertions(+), 95 deletions(-)
