@@ -1,46 +1,68 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 19 Mar 2010 07:54:56 +0000
-Subject: Re: [PATCH 04/05] dmaengine: shdma: Introduce include/linux/sh_dma.h
-Message-Id: <aec7e5c31003190054x65cc33f9r324fb4843fa24937@mail.gmail.com>
+Date: Fri, 19 Mar 2010 04:46:47 +0000
+Subject: [PATCH 02/05] dmaengine: shdma: Common SH_DMA_SLAVE_NUMBER
+Message-Id: <20100319044647.17051.25902.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100319044710.17051.98259.sendpatchset@t400s>
-In-Reply-To: <20100319044710.17051.98259.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Mar 19, 2010 at 4:46 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Fri, 19 Mar 2010, Magnus Damm wrote:
->> --- 0004/arch/sh/include/asm/dmaengine.h
->> +++ work/arch/sh/include/asm/dmaengine.h =A0 =A0 =A0 =A02010-03-18 23:25=
-:04.000000000 +0900
->> @@ -10,12 +10,7 @@
->> =A0#ifndef ASM_DMAENGINE_H
->> =A0#define ASM_DMAENGINE_H
->>
->> -#include <linux/dmaengine.h>
->> -#include <linux/list.h>
->> -
->> -#include <asm/dma-register.h>
->
-> include/linux/sh_dma_register.h? (see below)
-> I am still not sure it is a good idea to duplicate these from legacy SH
-> DMA driver, maybe we could just move them in a
-> include/linux/sh_dma_register.h if they are indeed common?
+From: Magnus Damm <damm@opensource.se>
 
-Nah, no point in adding another header file. The legacy driver should
-just die and we're not going to do any more development there. So
-duplicating them is fine IMO.
+Move SHDMA_SLAVE_NUMBER from asm/dmaengine.h to
+shdma.h. Set it to 256 to support a wide range
+of processors. The amount of memory consumed by
+this change is limited to 256 bits.
 
-> Ok, I might be lazy on a Friday morning, but could you maybe regenerate
-> this one with "-M -C --find-copies-harder" or whatever it takes to make
-> git use "git rename" for this? This should work if we don't duplicate
-> register names, not sure otherwise...
+While at it, rename to SH_DMA_SLAVE_NUMBER to
+match with the rest of the file.
 
-I don't think that will help if we have two copies of the register names.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Thanks for your help!
+ arch/sh/include/asm/dmaengine.h |    1 -
+ drivers/dma/shdma.c             |    4 ++--
+ drivers/dma/shdma.h             |    1 +
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-/ magnus
+--- 0003/arch/sh/include/asm/dmaengine.h
++++ work/arch/sh/include/asm/dmaengine.h	2010-03-18 16:42:03.000000000 +0900
+@@ -34,7 +34,6 @@ enum {
+ 	SHDMA_SLAVE_SIUA_RX,
+ 	SHDMA_SLAVE_SIUB_TX,
+ 	SHDMA_SLAVE_SIUB_RX,
+-	SHDMA_SLAVE_NUMBER,	/* Must stay last */
+ };
+ 
+ struct sh_dmae_slave_config {
+--- 0003/drivers/dma/shdma.c
++++ work/drivers/dma/shdma.c	2010-03-18 16:42:15.000000000 +0900
+@@ -44,7 +44,7 @@ enum sh_dmae_desc_status {
+ #define LOG2_DEFAULT_XFER_SIZE	2
+ 
+ /* A bitmask with bits enough for enum sh_dmae_slave_chan_id */
+-static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SHDMA_SLAVE_NUMBER)];
++static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SH_DMA_SLAVE_NUMBER)];
+ 
+ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all);
+ 
+@@ -274,7 +274,7 @@ static struct sh_dmae_slave_config *sh_d
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	int i;
+ 
+-	if (param->slave_id >= SHDMA_SLAVE_NUMBER)
++	if (param->slave_id >= SH_DMA_SLAVE_NUMBER)
+ 		return NULL;
+ 
+ 	for (i = 0; i < pdata->slave_num; i++)
+--- 0001/drivers/dma/shdma.h
++++ work/drivers/dma/shdma.h	2010-03-18 16:42:03.000000000 +0900
+@@ -19,6 +19,7 @@
+ 
+ #include <asm/dmaengine.h>
+ 
++#define SH_DMA_SLAVE_NUMBER 256
+ #define SH_DMA_TCR_MAX 0x00FFFFFF	/* 16MB */
+ 
+ struct device;
