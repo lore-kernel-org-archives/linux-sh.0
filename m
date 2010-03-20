@@ -1,116 +1,45 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 18 Mar 2010 13:56:02 +0000
-Subject: Re: nfsroot is to slow
-Message-Id: <201003181456.02230.fabio.giovagnini@aurion-tech.com>
+From: Andreas Bombe <aeb@debian.org>
+Date: Sat, 20 Mar 2010 00:38:01 +0000
+Subject: [PATCH] sh: Remove long unused mid_sched macro
+Message-Id: <20100320003800.GA7568@amos.infernal>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201003171728.25305.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201003171728.25305.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I checked, and the sintax is right.
-I think it is a premissions problem on the side of server.
-I'm checking
+interruptible_sleep_on() is referenced for use in the mid_sched macro
+which is not used anywhere.  Remove reference and macro as well as the
+comment which appears to belong with them.
 
-Regards
+Signed-off-by: Andreas Bombe <aeb@debian.org>
+---
 
+At least the mid_sched name does not appear anywhere else.  It doesn't
+even appear to have been in use at any time during the kernel's git
+history.
 
-In data giovedì 18 marzo 2010 08:38:22, Simon Boulay ha scritto:
-: > On Thu, Mar 18, 2010 at 7:11 AM, Fabio Giovagnini
-> 
-> <fabio.giovagnini@aurion-tech.com> wrote:
-> > No it isn't.
-> > it is linux 2.6.17.
-> > I'm tring to pass to tne newest, but now I have to finish my ampplication
-> > with this configuration.
-> >
-> > I read this:
-> > TCP bic registered
-> > IP-Config: Complete:
-> >      device=eth0, addr2.168.1.3, mask%5.255.255.0, gw2.168.1.254,
-> >     host=uclinux, domain=, nis-domain=(none),
-> >     bootserver2.168.1.2, rootserver2.168.1.2, rootpath> > Looking up port of RPC 100003/3 on 192.168.1.2
-> > Looking up port of RPC 100005/3 on 192.168.1.2
-> > do_mount_root,270 - debug 1
-> > /dev/root,0x0c1a58a0,0x00008000,0x0c24659c
-> > do_mount_root,273 - debug 2
-> > do_mount_root,277 - debug 3
-> > do_mount_root,279 - debug 4
-> > VFS: Mounted root (nfs filesystem).
-> > Freeing unused kernel memory: 88k freed
-> > Warning: unable to open an initial console.
-> > Kernel panic - not syncing: No init found.  Try passing init= option to
-> > kernel.
-> >
-> >
-> > Could be rootpath=<empty>
-> > the problem?
-> 
-> Yes, it could. If it's not a typo error in your mail, the right syntax
-> for the nfsroot parameter is:
-> nfsroot2.168.1.2:/home/fgiovagnini/nfsroot,v3,tcp
-> (note the ':')
-> 
-> Cheers,
-> Simon.
-> 
-> > Thanks
-> >
-> > In data giovedě 18 marzo 2010 01:25:35, Conrad Parker ha scritto:
-> > : > On 18 March 2010 01:28, Fabio Giovagnini
-> >>
-> >> <fabio.giovagnini@aurion-tech.com> wrote:
-> >> > Hi all,
-> >> > now I'm able to mount root nfs but it is so slow:
-> >> > /dev/root,0x0c1a58a0,0x00008000,0x0c24659c
-> >> > do_mount_root,273 - debug 2
-> >> > do_mount_root,277 - debug 3
-> >> > do_mount_root,279 - debug 4
-> >> > VFS: Mounted root (nfs filesystem).
-> >> > Freeing unused kernel memory: 88k freed
-> >> > nfs: server 192.168.1.2 not responding, still trying
-> >> > nfs: server 192.168.1.2 OK
-> >> > nfs: server 192.168.1.2 not responding, still trying
-> >> > nfs: server 192.168.1.2 not responding, still trying
-> >> >
-> >> > I can see this.
-> >> > Where can I investigate.
-> >> > Server side or my board side?
-> >>
-> >> Is this with a current kernel?
-> >>
-> >> Conrad.
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> > --
-> > Fabio Giovagnini
-> >
-> > Aurion s.r.l.
-> > P.I e C.F.
-> > 00885711200
-> > Tel. +39.051.594.78.24
-> > Cell. +39.335.83.50.919
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ arch/sh/kernel/process_64.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
 
+diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
+index c90957a..c0d40f6 100644
+--- a/arch/sh/kernel/process_64.c
++++ b/arch/sh/kernel/process_64.c
+@@ -504,13 +504,6 @@ out:
+ 	return error;
+ }
+ 
+-/*
+- * These bracket the sleeping functions..
+- */
+-extern void interruptible_sleep_on(wait_queue_head_t *q);
+-
+-#define mid_sched	((unsigned long) interruptible_sleep_on)
+-
+ #ifdef CONFIG_FRAME_POINTER
+ static int in_sh64_switch_to(unsigned long pc)
+ {
 -- 
-Fabio Giovagnini
+1.7.0.2
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
