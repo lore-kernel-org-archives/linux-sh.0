@@ -1,34 +1,24 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 11 Mar 2010 05:33:52 +0000
-Subject: [PATCH] ARM: mach-shmobile: bump up NR_IRQS to 640
-Message-Id: <20100311053352.26717.21158.sendpatchset@t400s>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Sat, 20 Mar 2010 07:06:24 +0000
+Subject: codurgery tool chain is on for the kernel for sh2a 7203; but how is for flt user space applications?
+Message-Id: <201003200806.24094.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi all, the gcc-3.4.6 based toolchain used elf2flt to have the target userspace 
+binary.
+What is the model I have to follow?
+Where can I find infos about building toolchain if codesurgery is not suatble?
 
-Increase NR_IRQS to 640 on SH-Mobile ARM. With this
-applied the INTCS controller on sh7372 can be supported.
+Thanks a lot
+-- 
+Fabio Giovagnini
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- Depends on "[PATCH] ARM: Add support for 10 hardirq bits"
-
- arch/arm/mach-shmobile/include/mach/irqs.h |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0016/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ work/arch/arm/mach-shmobile/include/mach/irqs.h	2010-03-09 21:15:41.000000000 +0900
-@@ -1,7 +1,7 @@
- #ifndef __ASM_MACH_IRQS_H
- #define __ASM_MACH_IRQS_H
- 
--#define NR_IRQS         512
-+#define NR_IRQS         640
- #define NR_IRQS_LEGACY  8
- 
- /* INTCA */
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
