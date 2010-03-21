@@ -1,402 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Mar 2010 07:07:59 +0000
-Subject: [PATCH 02/06] sh: move sh asm/clock.h contents to linux/sh_clk.h
-Message-Id: <20100325070759.24148.66178.sendpatchset@t400s>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Sun, 21 Mar 2010 19:51:52 +0000
+Subject: [PATCH 2/2] sh: Replace unsafe manipulation of MMUCR
+Message-Id: <1269201112-28321-1-git-send-email-matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Setting the TI in MMUCR causes all the TLB bits in MMUCR to be
+cleared. Unfortunately, the TLB wired bits are also cleared when setting
+the TI bit, causing any wired TLB entries to become unwired.
 
-This patch moves the clock framework contents from
-arch/sh/include/asm/clock.h to include/linux/sh_clk.h
-and updates the include paths for files that will be
-shared between SH and SH-Mobile ARM.
+Use local_flush_tlb_all() which implements TLB flushing in a safer
+manner by using the memory-mapped TLB registers. As each CPU has its own
+PMB the modifications in pmb_init() only affect the local CPU, so only
+flush the local CPU's TLB.
 
-The file asm/clock.h is still kept in this version,
-this to depend on as few files as possible at this
-point. We may want to keep SH specific stuff in there,
-or perhaps change all users to linux/sh_clk.h.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
 ---
+ arch/sh/mm/pmb.c         |    2 +-
+ arch/sh/mm/tlbflush_32.c |   21 +++++++++++++++------
+ 2 files changed, 16 insertions(+), 7 deletions(-)
 
- arch/sh/include/asm/clock.h    |  167 ---------------------------------------
- arch/sh/kernel/cpu/clock-cpg.c |    2 
- arch/sh/kernel/cpu/clock.c     |    2 
- include/linux/sh_clk.h         |  171 ++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 174 insertions(+), 168 deletions(-)
-
---- 0001/arch/sh/include/asm/clock.h
-+++ work/arch/sh/include/asm/clock.h	2010-03-25 13:06:58.000000000 +0900
-@@ -1,171 +1,6 @@
- #ifndef __ASM_SH_CLOCK_H
- #define __ASM_SH_CLOCK_H
+diff --git a/arch/sh/mm/pmb.c b/arch/sh/mm/pmb.c
+index dda628e..3cc2193 100644
+--- a/arch/sh/mm/pmb.c
++++ b/arch/sh/mm/pmb.c
+@@ -804,7 +804,7 @@ void __init pmb_init(void)
+ 	writel_uncached(0, PMB_IRMCR);
  
--#include <linux/list.h>
--#include <linux/seq_file.h>
--#include <linux/cpufreq.h>
--#include <linux/clk.h>
--#include <linux/err.h>
--
--struct clk;
--
--struct clk_ops {
--	void (*init)(struct clk *clk);
--	int (*enable)(struct clk *clk);
--	void (*disable)(struct clk *clk);
--	unsigned long (*recalc)(struct clk *clk);
--	int (*set_rate)(struct clk *clk, unsigned long rate, int algo_id);
--	int (*set_parent)(struct clk *clk, struct clk *parent);
--	long (*round_rate)(struct clk *clk, unsigned long rate);
--};
--
--struct clk {
--	struct list_head	node;
--	const char		*name;
--	int			id;
--	struct module		*owner;
--
--	struct clk		*parent;
--	struct clk_ops		*ops;
--
--	struct list_head	children;
--	struct list_head	sibling;	/* node for children */
--
--	int			usecount;
--
--	unsigned long		rate;
--	unsigned long		flags;
--
--	void __iomem		*enable_reg;
--	unsigned int		enable_bit;
--
--	unsigned long		arch_flags;
--	void			*priv;
--	struct dentry		*dentry;
--	struct cpufreq_frequency_table *freq_table;
--};
--
--struct clk_lookup {
--	struct list_head	node;
--	const char		*dev_id;
--	const char		*con_id;
--	struct clk		*clk;
--};
--
--#define CLK_ENABLE_ON_INIT	(1 << 0)
--
--/* Should be defined by processor-specific code */
--void __deprecated arch_init_clk_ops(struct clk_ops **, int type);
--int __init arch_clk_init(void);
--
--/* arch/sh/kernel/cpu/clock.c */
--int clk_init(void);
--unsigned long followparent_recalc(struct clk *);
--void recalculate_root_clocks(void);
--void propagate_rate(struct clk *);
--int clk_reparent(struct clk *child, struct clk *parent);
--int clk_register(struct clk *);
--void clk_unregister(struct clk *);
--
--/* arch/sh/kernel/cpu/clock-cpg.c */
--int __init __deprecated cpg_clk_init(void);
--
--/* the exported API, in addition to clk_set_rate */
--/**
-- * clk_set_rate_ex - set the clock rate for a clock source, with additional parameter
-- * @clk: clock source
-- * @rate: desired clock rate in Hz
-- * @algo_id: algorithm id to be passed down to ops->set_rate
-- *
-- * Returns success (0) or negative errno.
-- */
--int clk_set_rate_ex(struct clk *clk, unsigned long rate, int algo_id);
--
--enum clk_sh_algo_id {
--	NO_CHANGE = 0,
--
--	IUS_N1_N1,
--	IUS_322,
--	IUS_522,
--	IUS_N11,
--
--	SB_N1,
--
--	SB3_N1,
--	SB3_32,
--	SB3_43,
--	SB3_54,
--
--	BP_N1,
--
--	IP_N1,
--};
--
--struct clk_div_mult_table {
--	unsigned int *divisors;
--	unsigned int nr_divisors;
--	unsigned int *multipliers;
--	unsigned int nr_multipliers;
--};
--
--struct cpufreq_frequency_table;
--void clk_rate_table_build(struct clk *clk,
--			  struct cpufreq_frequency_table *freq_table,
--			  int nr_freqs,
--			  struct clk_div_mult_table *src_table,
--			  unsigned long *bitmap);
--
--long clk_rate_table_round(struct clk *clk,
--			  struct cpufreq_frequency_table *freq_table,
--			  unsigned long rate);
--
--int clk_rate_table_find(struct clk *clk,
--			struct cpufreq_frequency_table *freq_table,
--			unsigned long rate);
--
--#define SH_CLK_MSTP32(_name, _id, _parent, _enable_reg,	\
--	    _enable_bit, _flags)			\
--{							\
--	.name		= _name,			\
--	.id		= _id,				\
--	.parent		= _parent,			\
--	.enable_reg	= (void __iomem *)_enable_reg,	\
--	.enable_bit	= _enable_bit,			\
--	.flags		= _flags,			\
--}
--
--int sh_clk_mstp32_register(struct clk *clks, int nr);
--
--#define SH_CLK_DIV4(_name, _parent, _reg, _shift, _div_bitmap, _flags)	\
--{									\
--	.name = _name,							\
--	.parent = _parent,						\
--	.enable_reg = (void __iomem *)_reg,				\
--	.enable_bit = _shift,						\
--	.arch_flags = _div_bitmap,					\
--	.flags = _flags,						\
--}
--
--struct clk_div4_table {
--	struct clk_div_mult_table *div_mult_table;
--	void (*kick)(struct clk *clk);
--};
--
--int sh_clk_div4_register(struct clk *clks, int nr,
--			 struct clk_div4_table *table);
--int sh_clk_div4_enable_register(struct clk *clks, int nr,
--			 struct clk_div4_table *table);
--int sh_clk_div4_reparent_register(struct clk *clks, int nr,
--			 struct clk_div4_table *table);
--
--#define SH_CLK_DIV6(_name, _parent, _reg, _flags)	\
--{							\
--	.name = _name,					\
--	.parent = _parent,				\
--	.enable_reg = (void __iomem *)_reg,		\
--	.flags = _flags,				\
--}
--
--int sh_clk_div6_register(struct clk *clks, int nr);
-+#include <linux/sh_clk.h>
+ 	/* Flush out the TLB */
+-	__raw_writel(__raw_readl(MMUCR) | MMUCR_TI, MMUCR);
++	local_flush_tlb_all();
+ 	ctrl_barrier();
+ }
  
- #endif /* __ASM_SH_CLOCK_H */
---- 0001/arch/sh/kernel/cpu/clock-cpg.c
-+++ work/arch/sh/kernel/cpu/clock-cpg.c	2010-03-25 13:14:01.000000000 +0900
-@@ -2,7 +2,7 @@
- #include <linux/compiler.h>
- #include <linux/slab.h>
- #include <linux/io.h>
--#include <asm/clock.h>
-+#include <linux/sh_clk.h>
- 
- static int sh_clk_mstp32_enable(struct clk *clk)
+diff --git a/arch/sh/mm/tlbflush_32.c b/arch/sh/mm/tlbflush_32.c
+index 004bb3f..77dc5ef 100644
+--- a/arch/sh/mm/tlbflush_32.c
++++ b/arch/sh/mm/tlbflush_32.c
+@@ -123,18 +123,27 @@ void local_flush_tlb_mm(struct mm_struct *mm)
+ void local_flush_tlb_all(void)
  {
---- 0001/arch/sh/kernel/cpu/clock.c
-+++ work/arch/sh/kernel/cpu/clock.c	2010-03-25 13:13:11.000000000 +0900
-@@ -30,7 +30,7 @@
- #include <linux/platform_device.h>
- #include <linux/debugfs.h>
- #include <linux/cpufreq.h>
--#include <asm/clock.h>
-+#include <linux/sh_clk.h>
- #include <asm/machvec.h>
+ 	unsigned long flags, status;
++	int i;
  
- static LIST_HEAD(clock_list);
---- /dev/null
-+++ work/include/linux/sh_clk.h	2010-03-25 13:06:21.000000000 +0900
-@@ -0,0 +1,171 @@
-+#ifndef __SH_CLK_H
-+#define __SH_CLK_H
+ 	/*
+ 	 * Flush all the TLB.
+-	 *
+-	 * Write to the MMU control register's bit:
+-	 *	TF-bit for SH-3, TI-bit for SH-4.
+-	 *      It's same position, bit #2.
+ 	 */
+ 	local_irq_save(flags);
++	jump_to_uncached();
 +
-+#include <linux/list.h>
-+#include <linux/seq_file.h>
-+#include <linux/cpufreq.h>
-+#include <linux/clk.h>
-+#include <linux/err.h>
+ 	status = __raw_readl(MMUCR);
+-	status |= 0x04;
+-	__raw_writel(status, MMUCR);
++	status = ((status & MMUCR_URB) >> MMUCR_URB_SHIFT);
 +
-+struct clk;
++	if (status = 0)
++		status = MMUCR_URB_NENTRIES;
 +
-+struct clk_ops {
-+	void (*init)(struct clk *clk);
-+	int (*enable)(struct clk *clk);
-+	void (*disable)(struct clk *clk);
-+	unsigned long (*recalc)(struct clk *clk);
-+	int (*set_rate)(struct clk *clk, unsigned long rate, int algo_id);
-+	int (*set_parent)(struct clk *clk, struct clk *parent);
-+	long (*round_rate)(struct clk *clk, unsigned long rate);
-+};
++	for (i = 0; i < status; i++)
++		__raw_writel(0x0, MMU_UTLB_ADDRESS_ARRAY | (i << 8));
 +
-+struct clk {
-+	struct list_head	node;
-+	const char		*name;
-+	int			id;
-+	struct module		*owner;
++	for (i = 0; i < 4; i++)
++		__raw_writel(0x0, MMU_ITLB_ADDRESS_ARRAY | (i << 8));
 +
-+	struct clk		*parent;
-+	struct clk_ops		*ops;
-+
-+	struct list_head	children;
-+	struct list_head	sibling;	/* node for children */
-+
-+	int			usecount;
-+
-+	unsigned long		rate;
-+	unsigned long		flags;
-+
-+	void __iomem		*enable_reg;
-+	unsigned int		enable_bit;
-+
-+	unsigned long		arch_flags;
-+	void			*priv;
-+	struct dentry		*dentry;
-+	struct cpufreq_frequency_table *freq_table;
-+};
-+
-+struct clk_lookup {
-+	struct list_head	node;
-+	const char		*dev_id;
-+	const char		*con_id;
-+	struct clk		*clk;
-+};
-+
-+#define CLK_ENABLE_ON_INIT	(1 << 0)
-+
-+/* Should be defined by processor-specific code */
-+void __deprecated arch_init_clk_ops(struct clk_ops **, int type);
-+int __init arch_clk_init(void);
-+
-+/* arch/sh/kernel/cpu/clock.c */
-+int clk_init(void);
-+unsigned long followparent_recalc(struct clk *);
-+void recalculate_root_clocks(void);
-+void propagate_rate(struct clk *);
-+int clk_reparent(struct clk *child, struct clk *parent);
-+int clk_register(struct clk *);
-+void clk_unregister(struct clk *);
-+
-+/* arch/sh/kernel/cpu/clock-cpg.c */
-+int __init __deprecated cpg_clk_init(void);
-+
-+/* the exported API, in addition to clk_set_rate */
-+/**
-+ * clk_set_rate_ex - set the clock rate for a clock source, with additional parameter
-+ * @clk: clock source
-+ * @rate: desired clock rate in Hz
-+ * @algo_id: algorithm id to be passed down to ops->set_rate
-+ *
-+ * Returns success (0) or negative errno.
-+ */
-+int clk_set_rate_ex(struct clk *clk, unsigned long rate, int algo_id);
-+
-+enum clk_sh_algo_id {
-+	NO_CHANGE = 0,
-+
-+	IUS_N1_N1,
-+	IUS_322,
-+	IUS_522,
-+	IUS_N11,
-+
-+	SB_N1,
-+
-+	SB3_N1,
-+	SB3_32,
-+	SB3_43,
-+	SB3_54,
-+
-+	BP_N1,
-+
-+	IP_N1,
-+};
-+
-+struct clk_div_mult_table {
-+	unsigned int *divisors;
-+	unsigned int nr_divisors;
-+	unsigned int *multipliers;
-+	unsigned int nr_multipliers;
-+};
-+
-+struct cpufreq_frequency_table;
-+void clk_rate_table_build(struct clk *clk,
-+			  struct cpufreq_frequency_table *freq_table,
-+			  int nr_freqs,
-+			  struct clk_div_mult_table *src_table,
-+			  unsigned long *bitmap);
-+
-+long clk_rate_table_round(struct clk *clk,
-+			  struct cpufreq_frequency_table *freq_table,
-+			  unsigned long rate);
-+
-+int clk_rate_table_find(struct clk *clk,
-+			struct cpufreq_frequency_table *freq_table,
-+			unsigned long rate);
-+
-+#define SH_CLK_MSTP32(_name, _id, _parent, _enable_reg,	\
-+	    _enable_bit, _flags)			\
-+{							\
-+	.name		= _name,			\
-+	.id		= _id,				\
-+	.parent		= _parent,			\
-+	.enable_reg	= (void __iomem *)_enable_reg,	\
-+	.enable_bit	= _enable_bit,			\
-+	.flags		= _flags,			\
-+}
-+
-+int sh_clk_mstp32_register(struct clk *clks, int nr);
-+
-+#define SH_CLK_DIV4(_name, _parent, _reg, _shift, _div_bitmap, _flags)	\
-+{									\
-+	.name = _name,							\
-+	.parent = _parent,						\
-+	.enable_reg = (void __iomem *)_reg,				\
-+	.enable_bit = _shift,						\
-+	.arch_flags = _div_bitmap,					\
-+	.flags = _flags,						\
-+}
-+
-+struct clk_div4_table {
-+	struct clk_div_mult_table *div_mult_table;
-+	void (*kick)(struct clk *clk);
-+};
-+
-+int sh_clk_div4_register(struct clk *clks, int nr,
-+			 struct clk_div4_table *table);
-+int sh_clk_div4_enable_register(struct clk *clks, int nr,
-+			 struct clk_div4_table *table);
-+int sh_clk_div4_reparent_register(struct clk *clks, int nr,
-+			 struct clk_div4_table *table);
-+
-+#define SH_CLK_DIV6(_name, _parent, _reg, _flags)	\
-+{							\
-+	.name = _name,					\
-+	.parent = _parent,				\
-+	.enable_reg = (void __iomem *)_reg,		\
-+	.flags = _flags,				\
-+}
-+
-+int sh_clk_div6_register(struct clk *clks, int nr);
-+
-+#endif /* __SH_CLK_H */
++	back_to_cached();
+ 	ctrl_barrier();
+ 	local_irq_restore(flags);
+ }
+-- 
+1.6.4.rc0
+
