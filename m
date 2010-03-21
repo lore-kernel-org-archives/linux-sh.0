@@ -1,41 +1,26 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 15 Mar 2010 03:35:37 +0000
-Subject: [GIT PULL] genesis updates for 2.6.34-rc2
-Message-Id: <20100315033537.GA14529@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Sun, 21 Mar 2010 20:56:52 +0000
+Subject: QUESTION- Codesurgery toolchain is usable for userspace app of SH2a + uclibc?
+Message-Id: <201003212156.52888.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100226071805.GA4435@linux-sh.org>
-In-Reply-To: <20100226071805.GA4435@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+Hi all,
+I have used codesurgery lite 4.4-43 and  I can build the kernel and boot it 
+successfully.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/genesis-2.6.git
+Can I use teh same toolchain for building an userspace application using 
+uclibc? Is it necessary I link that application as BFLT (using elf2flt) or not?
 
-Which contains:
+Thanks a lot
+-- 
+Fabio Giovagnini
 
-Magnus Damm (8):
-      ARM: mach-shmobile: G3EVM KEYSC platform data
-      ARM: mach-shmobile: G3EVM FLCTL platform data
-      mtd: enable sh_flctl on SH-Mobile ARM
-      ARM: mach-shmobile: sh7367 SDHI vector merge
-      ARM: mach-shmobile: sh7377 SDHI vector merge
-      ARM: mach-shmobile: sh7372 SDHI vector merge
-      ARM: mach-shmobile: ap4evb SDHI0 platform data V2
-      video: enable sh_mobile_lcdc on SH-Mobile ARM
-
-NISHIMOTO Hiroki (1):
-      ARM: mach-shmobile: G4EVM KEYSC platform data
-
- arch/arm/mach-shmobile/board-ap4evb.c |   32 +++++++++
- arch/arm/mach-shmobile/board-g3evm.c  |  122 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-g4evm.c  |   57 +++++++++++++++
- arch/arm/mach-shmobile/clock-sh7367.c |    7 ++
- arch/arm/mach-shmobile/intc-sh7367.c  |   46 ++++++------
- arch/arm/mach-shmobile/intc-sh7372.c  |   46 ++++++------
- arch/arm/mach-shmobile/intc-sh7377.c  |   36 +++++-----
- drivers/mtd/nand/Kconfig              |    2 +-
- drivers/video/Kconfig                 |    2 +-
- 9 files changed, 285 insertions(+), 65 deletions(-)
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
