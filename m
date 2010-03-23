@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 23 Mar 2010 04:05:13 +0000
+From: Michal Simek <monstr@monstr.eu>
+Date: Tue, 23 Mar 2010 07:22:15 +0000
 Subject: Re: [PATCH] uImage: Allow to specify MKIMAGE
-Message-Id: <20100323040513.GB13417@linux-sh.org>
+Message-Id: <4BA86C27.60101@monstr.eu>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20100320184907.8036.82488.stgit@localhost.localdomain>
 In-Reply-To: <20100320184907.8036.82488.stgit@localhost.localdomain>
@@ -10,7 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Mar 20, 2010 at 08:49:07PM +0200, Paulius Zaleckas wrote:
+Paulius Zaleckas wrote:
 > Signed-off-by: Paulius Zaleckas <paulius.zaleckas@gmail.com>
 > ---
 > 
@@ -22,4 +22,11 @@ On Sat, Mar 20, 2010 at 08:49:07PM +0200, Paulius Zaleckas wrote:
 >  scripts/mkuboot.sh              |    1 +
 >  6 files changed, 11 insertions(+), 10 deletions(-)
 > 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Michal Simek <monstr@monstr.eu>
+
+
+-- 
+Michal Simek, Ing. (M.Eng)
+w: www.monstr.eu p: +42-0-721842854
+Maintainer of Linux kernel 2.6 Microblaze Linux - http://www.monstr.eu/fdt/
+Microblaze U-BOOT custodian
