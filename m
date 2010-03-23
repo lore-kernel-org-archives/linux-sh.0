@@ -1,48 +1,32 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Sun, 21 Mar 2010 19:51:43 +0000
-Subject: [PATCH 1/2] sh: Flush ITLB too in PTEAEX's flush_tlb_page()
-Message-Id: <1269201103-28283-1-git-send-email-matt@console-pimps.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 23 Mar 2010 04:39:31 +0000
+Subject: Re: [PATCH 1/2] sh: Flush ITLB too in PTEAEX's flush_tlb_page()
+Message-Id: <20100323043930.GH13417@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1269201103-28283-1-git-send-email-matt@console-pimps.org>
+In-Reply-To: <1269201103-28283-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-flush_tlb_page() can be used to flush TLB entries that map executable
-pages. Therefore, we need to ensure that the ITLB is also flushed in
-local_flush_tlb_page().
+On Sun, Mar 21, 2010 at 07:51:43PM +0000, Matt Fleming wrote:
+> flush_tlb_page() can be used to flush TLB entries that map executable
+> pages. Therefore, we need to ensure that the ITLB is also flushed in
+> local_flush_tlb_page().
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
----
- arch/sh/include/cpu-sh4/cpu/mmu_context.h |    2 ++
- arch/sh/mm/tlb-pteaex.c                   |    2 ++
- 2 files changed, 4 insertions(+), 0 deletions(-)
+On Sun, Mar 21, 2010 at 07:51:52PM +0000, Matt Fleming wrote:
+> Setting the TI in MMUCR causes all the TLB bits in MMUCR to be
+> cleared. Unfortunately, the TLB wired bits are also cleared when setting
+> the TI bit, causing any wired TLB entries to become unwired.
+> 
+> Use local_flush_tlb_all() which implements TLB flushing in a safer
+> manner by using the memory-mapped TLB registers. As each CPU has its own
+> PMB the modifications in pmb_init() only affect the local CPU, so only
+> flush the local CPU's TLB.
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/mmu_context.h b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-index 03ea75c..310ec92 100644
---- a/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-+++ b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-@@ -19,6 +19,8 @@
- 
- #define MMUCR		0xFF000010	/* MMU Control Register */
- 
-+#define MMU_ITLB_ADDRESS_ARRAY  0xF2000000
-+#define MMU_ITLB_ADDRESS_ARRAY2	0xF2800000
- #define MMU_UTLB_ADDRESS_ARRAY	0xF6000000
- #define MMU_UTLB_ADDRESS_ARRAY2	0xF6800000
- #define MMU_PAGE_ASSOC_BIT	0x80
-diff --git a/arch/sh/mm/tlb-pteaex.c b/arch/sh/mm/tlb-pteaex.c
-index 32dc674..bdd0982 100644
---- a/arch/sh/mm/tlb-pteaex.c
-+++ b/arch/sh/mm/tlb-pteaex.c
-@@ -73,5 +73,7 @@ void local_flush_tlb_one(unsigned long asid, unsigned long page)
- 	jump_to_uncached();
- 	__raw_writel(page, MMU_UTLB_ADDRESS_ARRAY | MMU_PAGE_ASSOC_BIT);
- 	__raw_writel(asid, MMU_UTLB_ADDRESS_ARRAY2 | MMU_PAGE_ASSOC_BIT);
-+	__raw_writel(page, MMU_ITLB_ADDRESS_ARRAY | MMU_PAGE_ASSOC_BIT);
-+	__raw_writel(asid, MMU_ITLB_ADDRESS_ARRAY2 | MMU_PAGE_ASSOC_BIT);
- 	back_to_cached();
- }
--- 
-1.6.4.rc0
+On Mon, Mar 22, 2010 at 10:09:58PM +0000, Matt Fleming wrote:
+> set_pmb_entry() is now only used by a function that is wrapped in #ifdef
+> CONFIG_PM, so wrap set_pmb_entry() in CONFIG_PM too.
 
+All applied, thanks.
