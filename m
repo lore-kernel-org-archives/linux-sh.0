@@ -1,67 +1,76 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Mon, 22 Mar 2010 10:19:29 +0000
-Subject: Re: [PATCH 01/10] irq: move some interrupt arch_* functions into
-Message-Id: <alpine.LFD.2.00.1003220950570.3147@localhost.localdomain>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 23 Mar 2010 07:10:06 +0000
+Subject: Re: [PATCH 01/10] irq: move some interrupt arch_* functions into struct irq_chip.
+Message-Id: <20100323071006.GJ13417@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1269221770-9667-1-git-send-email-yinghai@kernel.org>
 	<1269221770-9667-2-git-send-email-yinghai@kernel.org>
-In-Reply-To: <1269221770-9667-2-git-send-email-yinghai@kernel.org>
+	<1269222962.3534.12.camel@concordia> <4BA6E4D1.6080704@kernel.org>
+In-Reply-To: <4BA6E4D1.6080704@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yinghai Lu <yinghai@kernel.org>
-Cc: lguest@ozlabs.org, Jeremy Fitzhardinge <jeremy@goop.org>, Rusty Russell <rusty@rustcorp.com.au>, Ian Campbell <ian.campbell@citrix.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, Jesse Barnes <jbarnes@virtuousgeek.org>, linuxppc-dev@ozlabs.org, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>
+Cc: lguest@ozlabs.org, x86@kernel.org, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, Rusty Russell <rusty@rustcorp.com.au>, Jeremy Fitzhardinge <jeremy@goop.org>, Jesse Barnes <jbarnes@virtuousgeek.org>, linux-kernel@vger.kernel.org, linuxppc-dev@ozlabs.org, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>, Thomas Gleixner <tglx@linutronix.de>, Ian Campbell <ian.campbell@citrix.com>
 
-On Sun, 21 Mar 2010, Yinghai Lu wrote:
-
-> From: Ian Campbell <ian.campbell@citrix.com>
+On Sun, Mar 21, 2010 at 08:32:33PM -0700, Yinghai Lu wrote:
+> diff --git a/arch/powerpc/kernel/irq.c b/arch/powerpc/kernel/irq.c
+> index 64f6f20..cafd378 100644
+> --- a/arch/powerpc/kernel/irq.c
+> +++ b/arch/powerpc/kernel/irq.c
+> @@ -1088,7 +1088,7 @@ int arch_early_irq_init(void)
+>  	return 0;
+>  }
+>  
+> -int arch_init_chip_data(struct irq_desc *desc, int node)
+> +int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn)
+>  {
+>  	desc->status |= IRQ_NOREQUEST;
+>  	return 0;
 > 
-> Move arch_init_copy_chip_data and arch_free_chip_data into function
-> pointers in struct irq_chip since they operate on irq_desc->chip_data.
+> so this patch only change one line with powerpc code. 
 
-Not sure about that. These functions are solely used by x86 and there
-is really no need to generalize them. The problem you try to solve is
-x86/xen specific and can be solved by x86_platform_ops as well w/o
-adding extra function pointers to irq_chip.
+This API seems to be going from bad to worse. Initially we had
+arch_init_chip_data(), which had precisely nothing to do with chip_data
+and only concerned itself with irq_desc, and now you're renaming it to
+something sensible but also trying to bolt on some ad-hoc chip_data
+relation at the same time thereby nullifying any benefit obtained from
+renaming the function in the first place.
 
-> arch_init_chip_data cannot be moved into struct irq_chip because
-> irq_desc->chip is not known at the time the irq_desc is setup. Instead
-> rename arch_init_chip_data to arch_init_irq_desc for PowerPC, the
-> only other user, whose usage better matches the new name.
+Renaming to xxx_irq_desc() while preserving the existing prototypes would
+make sense, even if it's ultimately just unecessary churn.
+
+> > It looks to me like this should just be done via a current machine
+> > vector or platform routine, in the same way as powerpc and (I think)
+> > ia64, ie:
+> > 
+> >> +int arch_init_irq_desc(struct irq_desc *desc, int node)
+> >> +{
+> >> +	return current_machine->init_chip_data(desc, node);
+> >> +}
+> > 
+> looks like xen in same run time, some irqs need x86_init_chip_data,
+> and some may need xen_init_chip_data later.
 > 
-> To replace the x86 arch_init_chip_data functionality
-> irq_to_desc_alloc_node now takes a pointer to a function to allocate
-> the chip data. This is necessary to ensure the allocation happens
-> under the correct locking at the core level. On PowerPC and SH
+I'm afraid I am unable to grasp the meaning of this sentence, or what
+precisely this has to do with not being able to utilize platform ops to
+get this sorted out on x86.
 
-Err, that argument is totally bogus. The calling convention of
-irq_to_desc_alloc_node and arch_init_chip_data/arch_init_irq_desc is
-still the same. It does not explain why the heck we need that function
-pointer at all.
+You're effectively trying to have the hardirq code pass around a function
+pointer for you that ultimately only serves to bail out on certain code
+paths if you're running under xen, which is a concern for how the
+platform chooses to initialize the irq desc, none of this has any value
+or relevance to the hardirq code outside of that. The fact that the
+hardirq code doesn't do anything with this information other than pass it
+around for your platform should already be a clear indicator that this is
+the wrong way to go.
 
-AFAICT the function pointer to irq_to_desc_alloc_node is completely
-pointless. It just solves a Xen/x86 specific problem which can be
-solved by using x86_platform_ops and keeps the churn x86 internal.
+From a cursory look at the x86 code, this looks like precisely the sort
+of thing that arch/x86/include/asm/x86_init.h is well suited for, and
+indeed you already have a x86_init_irqs to expand on as needed.
 
-> architectures (the other users of irq_to_desc_alloc_node) pass in NULL
-> which retains existing chip_data behaviour.
- 
-> I've retained the chip_data behaviour for uv_irq although it isn't
-> clear to me if these interrupt types support migration or how closely
-> related to the APIC modes they really are. If it weren't for this the
-> x86_{init,copy,free}_chip_data functions could be static to
-> io_apic.c.
-> 
-> I've tested by booting on an 64 bit x86 system with sparse IRQ enabled
-> and 32 bit without, but it's not clear to me what actions I need to
-> take to actually exercise some of these code paths.
-> 
-> -v4: yinghai add irq_to_desc_alloc_node_x...
-
-Aside of the general objection against this, please use descriptive
-function names and do not distinguish functions by adding random
-characters which tell us absolutely nothing about the purpose.
-
-Thanks,
-
-	tglx
+The function pointer thing itself is also a bit unorthodox to say the
+least. You're introducing and passing around an opaque type just so you
+can get to a 'return 0' in the xen case as far as I can tell, so you
+could also just make arch_init_chip_data() a weak symbol and clobber it
+in the xen case, no?
