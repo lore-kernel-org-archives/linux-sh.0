@@ -1,39 +1,50 @@
-From: Ian Campbell <Ian.Campbell@citrix.com>
-Date: Wed, 24 Mar 2010 13:33:17 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 24 Mar 2010 17:44:06 +0000
 Subject: Re: [PATCH 01/10] irq: move some interrupt arch_* functions into
-Message-Id: <1269437597.10129.67623.camel@zakaz.uk.xensource.com>
+Message-Id: <alpine.LFD.2.00.1003241824500.3147@localhost.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1269221770-9667-1-git-send-email-yinghai@kernel.org>
 	<1269221770-9667-2-git-send-email-yinghai@kernel.org>
-	<1269222962.3534.12.camel@concordia> <4BA6E4D1.6080704@kernel.org>
-	<20100323071006.GJ13417@linux-sh.org>
-In-Reply-To: <20100323071006.GJ13417@linux-sh.org>
+	<alpine.LFD.2.00.1003220950570.3147@localhost.localdomain>
+	<1269437531.10129.67616.camel@zakaz.uk.xensource.com>
+In-Reply-To: <1269437531.10129.67616.camel@zakaz.uk.xensource.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: "lguest@ozlabs.org" <lguest@ozlabs.org>, "x86@kernel.org" <x86@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Rusty Russell <rusty@rustcorp.com.au>, Jeremy Fitzhardinge <jeremy@goop.org>, Jesse Barnes <jbarnes@virtuousgeek.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linuxppc-dev@ozlabs.org" <linuxppc-dev@ozlabs.org>, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>, Yinghai Lu <yinghai@kernel.org>, Thomas Gleixner <tglx@linutronix.de>
+To: Ian Campbell <Ian.Campbell@citrix.com>
+Cc: "lguest@ozlabs.org" <lguest@ozlabs.org>, Jeremy Fitzhardinge <jeremy@goop.org>, Rusty Russell <rusty@rustcorp.com.au>, Paul Mundt <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "x86@kernel.org" <x86@kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Jesse Barnes <jbarnes@virtuousgeek.org>, "linuxppc-dev@ozlabs.org" <linuxppc-dev@ozlabs.org>, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>, Yinghai Lu <yinghai@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
 
-On Tue, 2010-03-23 at 07:10 +0000, Paul Mundt wrote:
+On Wed, 24 Mar 2010, Ian Campbell wrote:
 
-> The function pointer thing itself is also a bit unorthodox to say the
-> least. You're introducing and passing around an opaque type just so you
-> can get to a 'return 0' in the xen case as far as I can tell,
+> On Mon, 2010-03-22 at 10:19 +0000, Thomas Gleixner wrote:
+> > On Sun, 21 Mar 2010, Yinghai Lu wrote:
+> > 
+> > > From: Ian Campbell <ian.campbell@citrix.com>
+> > > 
+> > > Move arch_init_copy_chip_data and arch_free_chip_data into function
+> > > pointers in struct irq_chip since they operate on irq_desc->chip_data.
+> > 
+> > Not sure about that. These functions are solely used by x86 and there
+> > is really no need to generalize them.
+> 
+> I thought the idea of struct irq_chip was to allow the potential for
+> multiple IRQ controllers in a system? Given that it seems that struct
+> irq_desc->chip_data ought to be available for use by whichever struct
+> irq_chip is managing a given interrupt. At the moment this is not
+> possible because we step around the abstraction using these arch_*
+> methods.
 
-The ultimate aim is to have Xen use the chip data to store the event
-channel information relating to each IRQ instead of keeping it in a
-static NR_IRQs array, the new function only returns 0 as a placeholder
-until this can be put in place (which depends on these changes), it
-could as well have been left out for the time being (e.g. passing NULL
-function pointer in the Xen case or whatever).
+Right, but you have exactly _ONE_ irq_chip associated to an irq_desc,
+but that same irq_chip can be associated to several irq_descs. So
+irq_desc->data is there to provide data for the irq_chip functions
+depending on what irq they handle (e.g. base_address ...). 
 
-> so you
-> could also just make arch_init_chip_data() a weak symbol and clobber it
-> in the xen case, no?
+irq_desc->chip_data is set when the irq_chip is assigned to the
+irq_desc.
 
-A single kernel is able to boot native or Xen so a weak symbol doesn't
-really work, having the function pointer at the arch level is one
-similar option, I've replied to Thomas' similar suggestion.
+So there is no point in having functions in irq_chip to set
+irq_desc->chip_data.
 
-Ian.
+Thanks,
 
+	tglx
