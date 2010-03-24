@@ -1,112 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 11 Mar 2010 10:06:02 +0000
-Subject: [PATCH 02/03] i2c: i2c-sh_mobile support for new ICIC bits
-Message-Id: <20100311100602.15227.88236.sendpatchset@t400s>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 24 Mar 2010 02:38:35 +0000
+Subject: [GIT PULL] sh updates for 2.6.34-rc3
+Message-Id: <20100324023834.GA10729@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100311100526.15227.50813.sendpatchset@t400s>
-In-Reply-To: <20100311100526.15227.50813.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nishimoto.hiroki-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, morimoto.kuninori-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org, khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Please pull from:
 
-Add support for a new version of the IIC block
-found in the SH-Mobile ARM line of processors.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.34
 
-Prototype patch written by Nishimoto-san.
-Tested on sh7377 and sh7372.
+Which contains:
 
-Signed-off-by: NISHIMOTO Hiroki <nishimoto.hiroki@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Andreas Bombe (1):
+      sh64: Remove long unused mid_sched macro
 
- drivers/i2c/busses/i2c-sh_mobile.c |   31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+Guennadi Liakhovetski (2):
+      SH: fix SCIFA SCASCR register bit definitions
+      SH: remove superfluous warning from the serial driver
 
---- 0026/drivers/i2c/busses/i2c-sh_mobile.c
-+++ work/drivers/i2c/busses/i2c-sh_mobile.c	2010-03-11 15:33:09.000000000 +0900
-@@ -118,8 +118,10 @@ struct sh_mobile_i2c_data {
- 	struct i2c_adapter adap;
- 
- 	struct clk *clk;
-+	u_int8_t icic;
- 	u_int8_t iccl;
- 	u_int8_t icch;
-+	u_int8_t flags;
- 
- 	spinlock_t lock;
- 	wait_queue_head_t wait;
-@@ -128,6 +130,8 @@ struct sh_mobile_i2c_data {
- 	int sr;
- };
- 
-+#define IIC_FLAG_HAS_ICIC67	(1 << 0)
-+
- #define NORMAL_SPEED		100000 /* FAST_SPEED 400000 */
- 
- /* Register offsets */
-@@ -154,6 +158,8 @@ struct sh_mobile_i2c_data {
- #define ICSR_WAIT		0x02
- #define ICSR_DTE		0x01
- 
-+#define ICIC_ICCLB8		0x80
-+#define ICIC_ICCHB8		0x40
- #define ICIC_ALE		0x08
- #define ICIC_TACKE		0x04
- #define ICIC_WAITE		0x02
-@@ -161,6 +167,9 @@ struct sh_mobile_i2c_data {
- 
- static void iic_wr(struct sh_mobile_i2c_data *pd, int offs, unsigned char data)
- {
-+	if (offs = ICIC)
-+		data |= pd->icic;
-+
- 	iowrite8(data, pd->reg + offs);
- }
- 
-@@ -202,6 +211,14 @@ static void activate_ch(struct sh_mobile
- 	else
- 		pd->iccl = (u_int8_t)(num/denom);
- 
-+	/* one more bit of ICCL in ICIC */
-+	if (pd->flags & IIC_FLAG_HAS_ICIC67) {
-+		if ((num/denom) > 0xff)
-+			pd->icic |= ICIC_ICCLB8;
-+		else
-+			pd->icic &= ~ICIC_ICCLB8;
-+	}
-+
- 	/* Calculate the value for icch. From the data sheet:
- 	   icch = (p clock / transfer rate) * (H / (L + H)) */
- 	num = i2c_clk * 4;
-@@ -211,6 +228,14 @@ static void activate_ch(struct sh_mobile
- 	else
- 		pd->icch = (u_int8_t)(num/denom);
- 
-+	/* one more bit of ICCH in ICIC */
-+	if (pd->flags & IIC_FLAG_HAS_ICIC67) {
-+		if ((num/denom) > 0xff)
-+			pd->icic |= ICIC_ICCHB8;
-+		else
-+			pd->icic &= ~ICIC_ICCHB8;
-+	}
-+
- 	/* Enable channel and configure rx ack */
- 	iic_set_clr(pd, ICCR, ICCR_ICE, 0);
- 
-@@ -591,6 +616,12 @@ static int sh_mobile_i2c_probe(struct pl
- 		goto err_irq;
- 	}
- 
-+	/* The IIC blocks on SH-Mobile ARM processors
-+	 * come with two new bits in ICIC.
-+	 */
-+	if (size > 0x17)
-+		pd->flags |= IIC_FLAG_HAS_ICIC67;
-+
- 	/* Enable Runtime PM for this device.
- 	 *
- 	 * Also tell the Runtime PM core to ignore children
+Kuninori Morimoto (3):
+      sh: mach-ecovec24: Add i2c_put_adapter on sh_eth_init
+      sh: ms7724: Add tiny-document for sound
+      sh: Add watch-dog register address for SH7722/SH7723/SH7724
+
+Magnus Damm (1):
+      serial: sh-sci: fix SH-Mobile SH breakage
+
+Matt Fleming (3):
+      sh: Flush ITLB too in PTEAEX's flush_tlb_page()
+      sh: Replace unsafe manipulation of MMUCR
+      sh: Fix build after dynamic PMB rework
+
+Paul Mundt (2):
+      sh: Tidy up a couple of section mismatches.
+      sh: Silence unintialized variable warnings in dwarf unwinder.
+
+ arch/sh/boards/mach-ecovec24/setup.c      |    2 +
+ arch/sh/boards/mach-se/7724/setup.c       |    8 ++++++
+ arch/sh/include/cpu-sh4/cpu/mmu_context.h |    2 +
+ arch/sh/include/cpu-sh4/cpu/watchdog.h    |    6 +++++
+ arch/sh/kernel/dwarf.c                    |    4 +-
+ arch/sh/kernel/idle.c                     |    2 +-
+ arch/sh/kernel/perf_event.c               |    2 +-
+ arch/sh/kernel/process_64.c               |    7 -----
+ arch/sh/mm/pmb.c                          |    4 ++-
+ arch/sh/mm/tlb-pteaex.c                   |    2 +
+ arch/sh/mm/tlbflush_32.c                  |   21 ++++++++++++-----
+ drivers/serial/sh-sci.c                   |    4 ---
+ drivers/serial/sh-sci.h                   |   35 ++++++++++++++++++++++------
+ 13 files changed, 69 insertions(+), 30 deletions(-)
