@@ -1,69 +1,46 @@
-From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-Date: Thu, 11 Mar 2010 10:42:52 +0000
-Subject: [PATCH 2/3] ARM: mach-shmobile: ap4evb: Add TouchScreen support
-Message-Id: <upr3bgmvn.wl%morimoto.kuninori@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Mar 2010 07:07:51 +0000
+Subject: [PATCH 01/06] ARM: mach-shmobile: Makefile update for old clock code
+Message-Id: <20100325070751.24148.47410.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+From: Magnus Damm <damm@opensource.se>
+
+Update the main SH-Mobile ARM Makefile to only build
+the old clock framework code when CONFIG_COMMON_CLKDEV
+is set. This variable is always set at this point.
+
+This change allows us to easily move over to the clock
+framework code from the SH architecture. In the future
+we can enable the new code by selecting a new Kconfig
+variable and deselecting CONFIG_COMMON_CLKDEV in one
+atomic commit.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |   26 ++++++++++++++++++++++++++
- 1 files changed, 26 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 1c2ec96..b104314 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -26,6 +26,8 @@
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
-+#include <linux/i2c.h>
-+#include <linux/i2c/tsc2007.h>
- #include <linux/io.h>
- #include <linux/smsc911x.h>
- #include <linux/gpio.h>
-@@ -234,6 +236,23 @@ static struct platform_device *ap4evb_devices[] __initdata = {
- 	&sdhi0_device,
- };
- 
-+/* TouchScreen */
-+#define IRQ28	396
-+struct tsc2007_platform_data tsc2007_info = {
-+	.model			= 2007,
-+	.x_plate_ohms		= 180,
-+};
-+
-+/* I2C */
-+static struct i2c_board_info i2c1_devices[] = {
-+	{
-+		I2C_BOARD_INFO("tsc2007", 0x48),
-+		.type		= "tsc2007",
-+		.platform_data	= &tsc2007_info,
-+		.irq		= IRQ28,
-+	},
-+};
-+
- static struct map_desc ap4evb_io_desc[] __initdata = {
- 	/* create a 1:1 entity map for 0xe6xxxxxx
- 	 * used by CPGA, INTC and PFC.
-@@ -318,6 +337,13 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1, NULL);
- 	gpio_request(GPIO_FN_SDHID0_0, NULL);
- 
-+	/* enable TouchScreen */
-+	gpio_request(GPIO_FN_IRQ28_123, NULL);
-+	set_irq_type(IRQ28, IRQ_TYPE_LEVEL_LOW);
-+
-+	i2c_register_board_info(1, i2c1_devices,
-+				ARRAY_SIZE(i2c1_devices));
-+
- 	sh7372_add_standard_devices();
- 
- 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
--- 
-1.6.3.3
+ arch/arm/mach-shmobile/Makefile |    9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2010-03-25 12:45:59.000000000 +0900
+@@ -6,9 +6,12 @@
+ obj-y				:= timer.o console.o
+ 
+ # CPU objects
+-obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o intc-sh7367.o
+-obj-$(CONFIG_ARCH_SH7377)	+= setup-sh7377.o clock-sh7367.o intc-sh7377.o
+-obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7367.o intc-sh7372.o
++obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o intc-sh7367.o
++obj-$(CONFIG_ARCH_SH7377)	+= setup-sh7377.o intc-sh7377.o
++obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o
++
++# Clock framework
++obj-$(CONFIG_COMMON_CLKDEV)	+= clock-sh7367.o
+ 
+ # Pinmux setup
+ pfc-$(CONFIG_ARCH_SH7367)	:= pfc-sh7367.o
