@@ -1,158 +1,422 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 29 Mar 2010 07:45:28 +0000
-Subject: [PATCH 3/3 v3] sh: add Video Output Unit (VOU) and AK8813 TV-encoder
-Message-Id: <Pine.LNX.4.64.1003290941460.4417@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Mar 2010 07:08:32 +0000
+Subject: [PATCH 06/06] ARM: mach-shmobile: initial sh7372 clock framework
+Message-Id: <20100325070832.24148.17407.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1003290936280.4417@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1003290936280.4417@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <damm@opensource.se>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Add platform bindings, GPIO initialisation and allocation and AK8813 reset code
-to ms7724se.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add initial sh7372 clock framework support to
+SH-Mobile ARM. The implementation is far from
+complete but is enough to dynamically deal with
+module stop bits for CMT1, SDHI and KEYSC.
+
+The peripheral clock is kept as a static dummy
+clock to satisfy the code in sh-sci.c.
+
+Clock parent selection, z_clk and support for
+99% of the module stop bits are still on the TODO.
+
+Also, move the clock framework init time to later
+to deal with the fact that the new clock framework
+code is using kmalloc().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v2 -> v3:
+ arch/arm/mach-shmobile/Kconfig               |    2 
+ arch/arm/mach-shmobile/Makefile              |    2 
+ arch/arm/mach-shmobile/board-ap4evb.c        |   16 +
+ arch/arm/mach-shmobile/clock-sh7372.c        |  297 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 
+ arch/arm/mach-shmobile/setup-sh7372.c        |    2 
+ 6 files changed, 314 insertions(+), 6 deletions(-)
 
-1. updated to a more recent git snapshot
-
- arch/sh/boards/mach-se/7724/setup.c |   90 +++++++++++++++++++++++++++++++---
- 1 files changed, 82 insertions(+), 8 deletions(-)
-
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index ccaa290..394a500 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -517,6 +517,52 @@ static struct platform_device irda_device = {
- 	.resource       = irda_resources,
- };
+--- 0007/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2010-03-25 13:48:11.000000000 +0900
+@@ -22,7 +22,7 @@ config ARCH_SH7372
+ 	bool "SH-Mobile AP4 (SH7372)"
+ 	select CPU_V7
+ 	select HAVE_CLK
+-	select COMMON_CLKDEV
++	select SH_CLK_CPG
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
  
-+#include <media/ak881x.h>
-+#include <media/sh_vou.h>
-+
-+struct ak881x_pdata ak881x_pdata = {
-+	.flags = AK881X_IF_MODE_SLAVE,
-+};
-+
-+static struct i2c_board_info ak8813 = {
-+	/* With open J18 jumper address is 0x21 */
-+	I2C_BOARD_INFO("ak8813", 0x20),
-+	.platform_data = &ak881x_pdata,
-+};
-+
-+struct sh_vou_pdata sh_vou_pdata = {
-+	.bus_fmt	= SH_VOU_BUS_8BIT,
-+	.flags		= SH_VOU_HSYNC_LOW | SH_VOU_VSYNC_LOW,
-+	.board_info	= &ak8813,
-+	.i2c_adap	= 0,
-+	.module_name	= "ak881x",
-+};
-+
-+static struct resource sh_vou_resources[] = {
-+	[0] = {
-+		.start  = 0xfe960000,
-+		.end    = 0xfe962043,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = 55,
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device vou_device = {
-+	.name           = "sh-vou",
-+	.id		= -1,
-+	.num_resources  = ARRAY_SIZE(sh_vou_resources),
-+	.resource       = sh_vou_resources,
-+	.dev		= {
-+		.platform_data	= &sh_vou_pdata,
-+	},
-+	.archdata	= {
-+		.hwblk_id	= HWBLK_VOU,
-+	},
-+};
-+
- static struct platform_device *ms7724se_devices[] __initdata = {
- 	&heartbeat_device,
- 	&smc91x_eth_device,
-@@ -532,6 +578,7 @@ static struct platform_device *ms7724se_devices[] __initdata = {
- 	&sdhi0_cn7_device,
- 	&sdhi1_cn8_device,
- 	&irda_device,
-+	&vou_device,
- };
+--- 0007/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2010-03-25 13:48:11.000000000 +0900
+@@ -13,7 +13,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh737
+ # Clock framework
+ clk-$(CONFIG_ARCH_SH7367)	+ clk-$(CONFIG_ARCH_SH7377)	+-clk-$(CONFIG_ARCH_SH7372)	++clk-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
+ obj-$(CONFIG_SH_CLK_CPG)	+= $(clk-y) clock.o
  
- /* I2C device */
-@@ -616,6 +663,7 @@ static int __init devices_setup(void)
+ obj-$(CONFIG_COMMON_CLKDEV)	+= clock-sh7367.o
+--- 0001/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2010-03-25 15:04:45.000000000 +0900
+@@ -36,6 +36,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
++#include <asm/mach/time.h>
+ 
+ /*
+  * Address	Interface		BusWidth	note
+@@ -250,9 +251,8 @@ static void __init ap4evb_map_io(void)
  {
- 	u16 sw = __raw_readw(SW4140); /* select camera, monitor */
- 	struct clk *clk;
-+	u16 fpga_out;
+ 	iotable_init(ap4evb_io_desc, ARRAY_SIZE(ap4evb_io_desc));
  
- 	/* register board specific self-refresh code */
- 	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF |
-@@ -625,14 +673,26 @@ static int __init devices_setup(void)
- 					&ms7724se_sdram_leave_start,
- 					&ms7724se_sdram_leave_end);
- 	/* Reset Release */
--	__raw_writew(__raw_readw(FPGA_OUT) &
--		  ~((1 << 1)  | /* LAN */
--		    (1 << 6)  | /* VIDEO DAC */
--		    (1 << 7)  | /* AK4643 */
--		    (1 << 8)  | /* IrDA */
--		    (1 << 12) | /* USB0 */
--		    (1 << 14)), /* RMII */
--		  FPGA_OUT);
-+	fpga_out = __raw_readw(FPGA_OUT);
-+	/* bit4: NTSC_PDN, bit5: NTSC_RESET */
-+	fpga_out &= ~((1 << 1)  | /* LAN */
-+		      (1 << 4)  | /* AK8813 PDN */
-+		      (1 << 5)  | /* AK8813 RESET */
-+		      (1 << 6)  | /* VIDEO DAC */
-+		      (1 << 7)  | /* AK4643 */
-+		      (1 << 8)  | /* IrDA */
-+		      (1 << 12) | /* USB0 */
-+		      (1 << 14)); /* RMII */
-+	__raw_writew(fpga_out | (1 << 4), FPGA_OUT);
-+
-+	udelay(10);
-+
-+	/* AK8813 RESET */
-+	__raw_writew(fpga_out | (1 << 5), FPGA_OUT);
-+
-+	udelay(10);
-+
-+	__raw_writew(fpga_out, FPGA_OUT);
- 
- 	/* turn on USB clocks, use external clock */
- 	__raw_writew((__raw_readw(PORT_MSELCRB) & ~0xc000) | 0x8000, PORT_MSELCRB);
-@@ -860,6 +920,20 @@ static int __init devices_setup(void)
- 		lcdc_info.ch[0].flags          = LCDC_FLAGS_DWPOL;
- 	}
- 
-+	/* VOU */
-+	gpio_request(GPIO_FN_DV_D15, NULL);
-+	gpio_request(GPIO_FN_DV_D14, NULL);
-+	gpio_request(GPIO_FN_DV_D13, NULL);
-+	gpio_request(GPIO_FN_DV_D12, NULL);
-+	gpio_request(GPIO_FN_DV_D11, NULL);
-+	gpio_request(GPIO_FN_DV_D10, NULL);
-+	gpio_request(GPIO_FN_DV_D9, NULL);
-+	gpio_request(GPIO_FN_DV_D8, NULL);
-+	gpio_request(GPIO_FN_DV_CLKI, NULL);
-+	gpio_request(GPIO_FN_DV_CLK, NULL);
-+	gpio_request(GPIO_FN_DV_VSYNC, NULL);
-+	gpio_request(GPIO_FN_DV_HSYNC, NULL);
-+
- 	return platform_add_devices(ms7724se_devices,
- 				    ARRAY_SIZE(ms7724se_devices));
+-	/* setup early devices, clocks and console here as well */
++	/* setup early devices and console here as well */
+ 	sh7372_add_early_devices();
+-	sh7367_clock_init(); /* use g3 clocks for now */
+ 	shmobile_setup_console();
  }
--- 
-1.6.2.4
-
+ 
+@@ -323,11 +323,21 @@ static void __init ap4evb_init(void)
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
+ }
+ 
++static void __init ap4evb_timer_init(void)
++{
++	sh7372_clock_init();
++	shmobile_timer.init();
++}
++
++static struct sys_timer ap4evb_timer = {
++	.init		= ap4evb_timer_init,
++};
++
+ MACHINE_START(AP4EVB, "ap4evb")
+ 	.phys_io	= 0xe6000000,
+ 	.io_pg_offst	= ((0xe6000000) >> 18) & 0xfffc,
+ 	.map_io		= ap4evb_map_io,
+ 	.init_irq	= sh7372_init_irq,
+ 	.init_machine	= ap4evb_init,
+-	.timer		= &shmobile_timer,
++	.timer		= &ap4evb_timer,
+ MACHINE_END
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock-sh7372.c	2010-03-25 15:12:24.000000000 +0900
+@@ -0,0 +1,297 @@
++/*
++ * SH7372 clock framework support
++ *
++ * Copyright (C) 2010 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/sh_clk.h>
++
++/* SH7372 registers */
++#define FRQCRA		0xe6150000
++#define FRQCRB		0xe6150004
++#define FRQCRC		0xe61500e0
++#define FRQCRD		0xe61500e4
++#define VCLKCR1		0xe6150008
++#define VCLKCR2		0xe615000c
++#define VCLKCR3		0xe615001c
++#define FMSICKCR	0xe6150010
++#define FMSOCKCR	0xe6150014
++#define FSIACKCR	0xe6150018
++#define FSIBCKCR	0xe6150090
++#define SUBCKCR		0xe6150080
++#define SPUCKCR		0xe6150084
++#define VOUCKCR		0xe6150088
++#define HDMICKCR	0xe6150094
++#define DSITCKCR	0xe6150060
++#define DSI0PCKCR	0xe6150064
++#define DSI1PCKCR	0xe6150098
++#define PLLC01CR	0xe6150028
++#define PLLC2CR		0xe615002c
++#define SMSTPCR0	0xe6150130
++#define SMSTPCR1	0xe6150134
++#define SMSTPCR2	0xe6150138
++#define SMSTPCR3	0xe615013c
++#define SMSTPCR4	0xe6150140
++
++/* Fixed 32 KHz root clock from EXTALR pin */
++static struct clk r_clk = {
++	.name           = "r_clk",
++	.id             = -1,
++	.rate           = 32768,
++};
++
++/*
++ * 26MHz default rate for the EXTAL1 root input clock.
++ * If needed, reset this with clk_set_rate() from the platform code.
++ */
++struct clk extal1_clk = {
++	.name		= "extal1",
++	.id		= -1,
++	.rate		= 26666666,
++};
++
++/*
++ * 48MHz default rate for the EXTAL2 root input clock.
++ * If needed, reset this with clk_set_rate() from the platform code.
++ */
++struct clk extal2_clk = {
++	.name		= "extal2",
++	.id		= -1,
++	.rate		= 48000000,
++};
++
++/* A fixed divide-by-2 block */
++static unsigned long div2_recalc(struct clk *clk)
++{
++	return clk->parent->rate / 2;
++}
++
++static struct clk_ops div2_clk_ops = {
++	.recalc		= div2_recalc,
++};
++
++/* Divide extal1 by two */
++static struct clk extal1_div2_clk = {
++	.name		= "extal1_div2_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &extal1_clk,
++};
++
++/* Divide extal2 by two */
++static struct clk extal2_div2_clk = {
++	.name		= "extal2_div2_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &extal2_clk,
++};
++
++/* Divide extal2 by four */
++static struct clk extal2_div4_clk = {
++	.name		= "extal2_div4_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &extal2_div2_clk,
++};
++
++/* PLLC0 and PLLC1 */
++static unsigned long pllc01_recalc(struct clk *clk)
++{
++	unsigned long mult = 1;
++
++	if (__raw_readl(PLLC01CR) & (1 << 14))
++		mult = (((__raw_readl(clk->enable_reg) >> 24) & 0x3f) + 1) * 2;
++
++	return clk->parent->rate * mult;
++}
++
++static struct clk_ops pllc01_clk_ops = {
++	.recalc		= pllc01_recalc,
++};
++
++static struct clk pllc0_clk = {
++	.name		= "pllc0_clk",
++	.id		= -1,
++	.ops		= &pllc01_clk_ops,
++	.flags		= CLK_ENABLE_ON_INIT,
++	.parent		= &extal1_div2_clk,
++	.enable_reg	= (void __iomem *)FRQCRC,
++};
++
++static struct clk pllc1_clk = {
++	.name		= "pllc1_clk",
++	.id		= -1,
++	.ops		= &pllc01_clk_ops,
++	.flags		= CLK_ENABLE_ON_INIT,
++	.parent		= &extal1_div2_clk,
++	.enable_reg	= (void __iomem *)FRQCRA,
++};
++
++/* Divide PLLC1 by two */
++static struct clk pllc1_div2_clk = {
++	.name		= "pllc1_div2_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &pllc1_clk,
++};
++
++/* PLLC2 */
++static unsigned long pllc2_recalc(struct clk *clk)
++{
++	unsigned long mult = 1;
++
++	if (__raw_readl(PLLC2CR) & (1 << 31))
++		mult = (((__raw_readl(PLLC2CR) >> 24) & 0x3f) + 1) * 2;
++
++	return clk->parent->rate * mult;
++}
++
++static struct clk_ops pllc2_clk_ops = {
++	.recalc		= pllc2_recalc,
++};
++
++static struct clk pllc2_clk = {
++	.name		= "pllc2_clk",
++	.id		= -1,
++	.ops		= &pllc2_clk_ops,
++	.flags		= CLK_ENABLE_ON_INIT,
++	.parent		= &extal1_div2_clk,
++};
++
++/* a static peripheral clock for now - enough to get sh-sci working */
++static struct clk peripheral_clk = {
++	.name	    = "peripheral_clk",
++	.rate	    = 48000000,
++};
++
++struct clk *main_clks[] = {
++	&r_clk,
++	&extal1_clk,
++	&extal2_clk,
++	&extal1_div2_clk,
++	&extal2_div2_clk,
++	&extal2_div4_clk,
++	&pllc0_clk,
++	&pllc1_clk,
++	&pllc1_div2_clk,
++	&pllc2_clk,
++	&peripheral_clk,
++};
++
++static void div4_kick(struct clk *clk)
++{
++	unsigned long value;
++
++	/* set KICK bit in FRQCRB to update hardware setting */
++	value = __raw_readl(FRQCRB);
++	value |= (1 << 31);
++	__raw_writel(value, FRQCRB);
++}
++
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
++			  24, 32, 36, 48, 0, 72, 96, 0 };
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++	.kick = div4_kick,
++};
++
++enum { DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_CSIR,
++       DIV4_ZTR, DIV4_ZT, DIV4_ZX, DIV4_HP,
++       DIV4_ISPB, DIV4_S, DIV4_ZB, DIV4_ZB3, DIV4_CP,
++       DIV4_DDRP, DIV4_NR };
++
++#define DIV4(_str, _reg, _bit, _mask, _flags) \
++  SH_CLK_DIV4(_str, &pllc1_clk, _reg, _bit, _mask, _flags)
++
++struct clk div4_clks[DIV4_NR] = {
++	[DIV4_I] = DIV4("i_clk", FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_ZG] = DIV4("zg_clk", FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_B] = DIV4("b_clk", FRQCRA, 8, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_M1] = DIV4("m1_clk", FRQCRA, 4, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_CSIR] = DIV4("csir_clk", FRQCRA, 0, 0x6fff, 0),
++	[DIV4_ZTR] = DIV4("ztr_clk", FRQCRB, 20, 0x6fff, 0),
++	[DIV4_ZT] = DIV4("zt_clk", FRQCRB, 16, 0x6fff, 0),
++	[DIV4_ZX] = DIV4("zx_clk", FRQCRB, 12, 0x6fff, 0),
++	[DIV4_HP] = DIV4("hp_clk", FRQCRB, 4, 0x6fff, 0),
++	[DIV4_ISPB] = DIV4("ispb_clk", FRQCRC, 20, 0x6fff, 0),
++	[DIV4_S] = DIV4("s_clk", FRQCRC, 12, 0x6fff, 0),
++	[DIV4_ZB] = DIV4("zb_clk", FRQCRC, 8, 0x6fff, 0),
++	[DIV4_ZB3] = DIV4("zb3_clk", FRQCRC, 4, 0x6fff, 0),
++	[DIV4_CP] = DIV4("cp_clk", FRQCRC, 0, 0x6fff, 0),
++	[DIV4_DDRP] = DIV4("ddrp_clk", FRQCRD, 0, 0x677c, 0),
++};
++
++struct clk div6_clks[] = {
++	SH_CLK_DIV6("vck1_clk", &pllc1_div2_clk, VCLKCR1, 0),
++	SH_CLK_DIV6("vck2_clk", &pllc1_div2_clk, VCLKCR2, 0),
++	SH_CLK_DIV6("vck3_clk", &pllc1_div2_clk, VCLKCR3, 0),
++	SH_CLK_DIV6("fmsi_clk", &pllc1_div2_clk, FMSICKCR, 0),
++	SH_CLK_DIV6("fmso_clk", &pllc1_div2_clk, FMSOCKCR, 0),
++	SH_CLK_DIV6("fsia_clk", &pllc1_div2_clk, FSIACKCR, 0),
++	SH_CLK_DIV6("fsib_clk", &pllc1_div2_clk, FSIBCKCR, 0),
++	SH_CLK_DIV6("sub_clk", &pllc1_div2_clk, SUBCKCR, 0),
++	SH_CLK_DIV6("spu_clk", &pllc1_div2_clk, SPUCKCR, 0),
++	SH_CLK_DIV6("vou_clk", &pllc1_div2_clk, VOUCKCR, 0),
++	SH_CLK_DIV6("hdmi_clk", &pllc1_div2_clk, HDMICKCR, 0),
++	SH_CLK_DIV6("dsit_clk", &pllc1_div2_clk, DSITCKCR, 0),
++	SH_CLK_DIV6("dsi0p_clk", &pllc1_div2_clk, DSI0PCKCR, 0),
++	SH_CLK_DIV6("dsi1p_clk", &pllc1_div2_clk, DSI1PCKCR, 0),
++};
++
++#define MSTP(_str, _parent, _reg, _bit, _flags) \
++  SH_CLK_MSTP32(_str, -1, _parent, _reg, _bit, _flags)
++
++#define R_CLK (&r_clk)
++#define HP_CLK (&div4_clks[DIV4_HP])
++
++static struct clk mstp_clks[] = {
++	MSTP("sdhi0", HP_CLK, SMSTPCR3, 14, 0),
++	MSTP("sdhi1", HP_CLK, SMSTPCR3, 13, 0),
++	MSTP("keysc0", R_CLK, SMSTPCR4, 3, 0),
++	MSTP("sdhi2", HP_CLK, SMSTPCR4, 15, 0),
++	MSTP("cmt1", R_CLK, SMSTPCR3, 29, 0),
++};
++
++void __init sh7372_clock_init(void)
++{
++	int k, ret = 0;
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
++		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
++
++	if (!ret)
++		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
++
++	if (!ret)
++		clk_init();
++	else
++		panic("failed to setup sh7372 clocks\n");
++
++}
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-03-25 13:48:11.000000000 +0900
+@@ -18,6 +18,7 @@ extern void sh7377_pinmux_init(void);
+ extern void sh7372_init_irq(void);
+ extern void sh7372_add_early_devices(void);
+ extern void sh7372_add_standard_devices(void);
++extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
+ 
+ #endif /* __ARCH_MACH_COMMON_H */
+--- 0001/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2010-03-25 14:37:16.000000000 +0900
+@@ -141,7 +141,7 @@ static struct sh_timer_config cmt10_plat
+ 	.name = "CMT10",
+ 	.channel_offset = 0x10,
+ 	.timer_bit = 0,
+-	.clk = "r_clk",
++	.clk = "cmt1",
+ 	.clockevent_rating = 125,
+ 	.clocksource_rating = 125,
+ };
