@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 10 Mar 2010 05:17:24 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372 SDHI vector merge
-Message-Id: <20100310051724.23840.68979.sendpatchset@t400s>
+Date: Thu, 25 Mar 2010 07:08:07 +0000
+Subject: [PATCH 03/06] sh: move sh clock.c contents to drivers/sh/clk.c
+Message-Id: <20100325070807.24148.61953.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,133 +10,1332 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Merge the SDHI vectors for sh7372 using the recently
-merged INTC force_enable/disable feature.
-
-With this in place SDHI hotplug is supported using
-the drivers sh_mobile_sdhi and tmio_mmc.
+This patch moves most of the SH clock framework from
+arch/sh/kernel/cpu/clock.c to drivers/sh/clk.c. All
+code except the function clk_init() is moved. The
+init function is still kept in clock.c since it
+depends on the SH-specific machvec implementation.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Depends on INTC patches available in 2.6.34-rc1
+ arch/sh/kernel/cpu/clock.c |  627 ------------------------------------------
+ drivers/sh/Makefile        |    1 
+ drivers/sh/clk.c           |  650 ++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h     |    1 
+ 4 files changed, 652 insertions(+), 627 deletions(-)
 
- arch/arm/mach-shmobile/intc-sh7372.c |   46 +++++++++++++++++-----------------
- 1 file changed, 23 insertions(+), 23 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/intc-sh7372.c
-+++ work/arch/arm/mach-shmobile/intc-sh7372.c	2010-03-09 19:01:36.000000000 +0900
-@@ -27,6 +27,8 @@
+--- 0004/arch/sh/kernel/cpu/clock.c
++++ work/arch/sh/kernel/cpu/clock.c	2010-03-25 13:16:58.000000000 +0900
+@@ -20,548 +20,9 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/module.h>
+-#include <linux/mutex.h>
+-#include <linux/list.h>
+-#include <linux/kobject.h>
+-#include <linux/sysdev.h>
+-#include <linux/seq_file.h>
+-#include <linux/err.h>
+-#include <linux/platform_device.h>
+-#include <linux/debugfs.h>
+-#include <linux/cpufreq.h>
+ #include <linux/sh_clk.h>
+ #include <asm/machvec.h>
  
- enum {
- 	UNUSED_INTCA = 0,
-+	ENABLED,
-+	DISABLED,
- 
- 	/* interrupt sources INTCA */
- 	IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A,
-@@ -47,14 +49,14 @@ enum {
- 	MSIOF2, MSIOF1,
- 	SCIFA4, SCIFA5, SCIFB,
- 	FLCTL_FLSTEI, FLCTL_FLTENDI, FLCTL_FLTREQ0I, FLCTL_FLTREQ1I,
--	SDHI0_SDHI0I0, SDHI0_SDHI0I1, SDHI0_SDHI0I2, SDHI0_SDHI0I3,
--	SDHI1_SDHI1I0, SDHI1_SDHI1I1, SDHI1_SDHI1I2,
-+	SDHI0,
-+	SDHI1,
- 	IRREM,
- 	IRDA,
- 	TPU0,
- 	TTI20,
- 	DDM,
--	SDHI2_SDHI2I0, SDHI2_SDHI2I1, SDHI2_SDHI2I2, SDHI2_SDHI2I3,
-+	SDHI2,
- 	RWDT0,
- 	DMAC1_1_DEI0, DMAC1_1_DEI1, DMAC1_1_DEI2, DMAC1_1_DEI3,
- 	DMAC1_2_DEI4, DMAC1_2_DEI5, DMAC1_2_DADERR,
-@@ -82,7 +84,7 @@ enum {
- 
- 	/* interrupt groups INTCA */
- 	DMAC1_1, DMAC1_2, DMAC2_1, DMAC2_2, DMAC3_1, DMAC3_2, SHWYSTAT,
--	AP_ARM1, AP_ARM2, SPU2, FLCTL, IIC1, SDHI0, SDHI1, SDHI2
-+	AP_ARM1, AP_ARM2, SPU2, FLCTL, IIC1
- };
- 
- static struct intc_vect intca_vectors[] __initdata = {
-@@ -123,17 +125,17 @@ static struct intc_vect intca_vectors[] 
- 	INTC_VECT(SCIFB, 0x0d60),
- 	INTC_VECT(FLCTL_FLSTEI, 0x0d80), INTC_VECT(FLCTL_FLTENDI, 0x0da0),
- 	INTC_VECT(FLCTL_FLTREQ0I, 0x0dc0), INTC_VECT(FLCTL_FLTREQ1I, 0x0de0),
--	INTC_VECT(SDHI0_SDHI0I0, 0x0e00), INTC_VECT(SDHI0_SDHI0I1, 0x0e20),
--	INTC_VECT(SDHI0_SDHI0I2, 0x0e40), INTC_VECT(SDHI0_SDHI0I3, 0x0e60),
--	INTC_VECT(SDHI1_SDHI1I0, 0x0e80), INTC_VECT(SDHI1_SDHI1I1, 0x0ea0),
--	INTC_VECT(SDHI1_SDHI1I2, 0x0ec0),
-+	INTC_VECT(SDHI0, 0x0e00), INTC_VECT(SDHI0, 0x0e20),
-+	INTC_VECT(SDHI0, 0x0e40), INTC_VECT(SDHI0, 0x0e60),
-+	INTC_VECT(SDHI1, 0x0e80), INTC_VECT(SDHI1, 0x0ea0),
-+	INTC_VECT(SDHI1, 0x0ec0),
- 	INTC_VECT(IRREM, 0x0f60),
- 	INTC_VECT(IRDA, 0x0480),
- 	INTC_VECT(TPU0, 0x04a0),
- 	INTC_VECT(TTI20, 0x1100),
- 	INTC_VECT(DDM, 0x1140),
--	INTC_VECT(SDHI2_SDHI2I0, 0x1200), INTC_VECT(SDHI2_SDHI2I1, 0x1220),
--	INTC_VECT(SDHI2_SDHI2I2, 0x1240), INTC_VECT(SDHI2_SDHI2I3, 0x1260),
-+	INTC_VECT(SDHI2, 0x1200), INTC_VECT(SDHI2, 0x1220),
-+	INTC_VECT(SDHI2, 0x1240), INTC_VECT(SDHI2, 0x1260),
- 	INTC_VECT(RWDT0, 0x1280),
- 	INTC_VECT(DMAC1_1_DEI0, 0x2000), INTC_VECT(DMAC1_1_DEI1, 0x2020),
- 	INTC_VECT(DMAC1_1_DEI2, 0x2040), INTC_VECT(DMAC1_1_DEI3, 0x2060),
-@@ -193,12 +195,6 @@ static struct intc_group intca_groups[] 
- 	INTC_GROUP(FLCTL, FLCTL_FLSTEI, FLCTL_FLTENDI,
- 		   FLCTL_FLTREQ0I, FLCTL_FLTREQ1I),
- 	INTC_GROUP(IIC1, IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1),
--	INTC_GROUP(SDHI0, SDHI0_SDHI0I0, SDHI0_SDHI0I1,
--		   SDHI0_SDHI0I2, SDHI0_SDHI0I3),
--	INTC_GROUP(SDHI1, SDHI1_SDHI1I0, SDHI1_SDHI1I1,
--		   SDHI1_SDHI1I2),
--	INTC_GROUP(SDHI2, SDHI2_SDHI2I0, SDHI2_SDHI2I1,
--		   SDHI2_SDHI2I2, SDHI2_SDHI2I3),
- 	INTC_GROUP(SHWYSTAT, SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM),
- };
- 
-@@ -234,10 +230,10 @@ static struct intc_mask_reg intca_mask_r
- 	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
- 	    0, 0, MSIOF2, 0 } },
- 	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
--	  { SDHI0_SDHI0I3, SDHI0_SDHI0I2, SDHI0_SDHI0I1, SDHI0_SDHI0I0,
-+	  { DISABLED, DISABLED, ENABLED, ENABLED,
- 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
- 	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
--	  { 0, SDHI1_SDHI1I2, SDHI1_SDHI1I1, SDHI1_SDHI1I0,
-+	  { 0, DISABLED, ENABLED, ENABLED,
- 	    TTI20, USBHSDMAC0_USHDMI, 0, 0 } },
- 	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
- 	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
-@@ -252,7 +248,7 @@ static struct intc_mask_reg intca_mask_r
- 	  { 0, 0, TPU0, 0,
- 	    0, 0, 0, 0 } },
- 	{ 0xe69400b4, 0xe69400f4, 8, /* IMR13A / IMCR13A */
--	  { SDHI2_SDHI2I3, SDHI2_SDHI2I2, SDHI2_SDHI2I1, SDHI2_SDHI2I0,
-+	  { DISABLED, DISABLED, ENABLED, ENABLED,
- 	    0, CMT3, 0, RWDT0 } },
- 	{ 0xe6950080, 0xe69500c0, 8, /* IMR0A3 / IMCR0A3 */
- 	  { SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM, 0,
-@@ -358,10 +354,14 @@ static struct intc_mask_reg intca_ack_re
- 	  { IRQ24A, IRQ25A, IRQ26A, IRQ27A, IRQ28A, IRQ29A, IRQ30A, IRQ31A } },
- };
- 
--static DECLARE_INTC_DESC_ACK(intca_desc, "sh7372-intca",
--			     intca_vectors, intca_groups,
--			     intca_mask_registers, intca_prio_registers,
--			     intca_sense_registers, intca_ack_registers);
-+static struct intc_desc intca_desc __initdata = {
-+	.name = "sh7372-intca",
-+	.force_enable = ENABLED,
-+	.force_disable = DISABLED,
-+	.hw = INTC_HW_DESC(intca_vectors, intca_groups,
-+			   intca_mask_registers, intca_prio_registers,
-+			   intca_sense_registers, intca_ack_registers),
-+};
- 
- void __init sh7372_init_irq(void)
+-static LIST_HEAD(clock_list);
+-static DEFINE_SPINLOCK(clock_lock);
+-static DEFINE_MUTEX(clock_list_sem);
+-
+-void clk_rate_table_build(struct clk *clk,
+-			  struct cpufreq_frequency_table *freq_table,
+-			  int nr_freqs,
+-			  struct clk_div_mult_table *src_table,
+-			  unsigned long *bitmap)
+-{
+-	unsigned long mult, div;
+-	unsigned long freq;
+-	int i;
+-
+-	for (i = 0; i < nr_freqs; i++) {
+-		div = 1;
+-		mult = 1;
+-
+-		if (src_table->divisors && i < src_table->nr_divisors)
+-			div = src_table->divisors[i];
+-
+-		if (src_table->multipliers && i < src_table->nr_multipliers)
+-			mult = src_table->multipliers[i];
+-
+-		if (!div || !mult || (bitmap && !test_bit(i, bitmap)))
+-			freq = CPUFREQ_ENTRY_INVALID;
+-		else
+-			freq = clk->parent->rate * mult / div;
+-
+-		freq_table[i].index = i;
+-		freq_table[i].frequency = freq;
+-	}
+-
+-	/* Termination entry */
+-	freq_table[i].index = i;
+-	freq_table[i].frequency = CPUFREQ_TABLE_END;
+-}
+-
+-long clk_rate_table_round(struct clk *clk,
+-			  struct cpufreq_frequency_table *freq_table,
+-			  unsigned long rate)
+-{
+-	unsigned long rate_error, rate_error_prev = ~0UL;
+-	unsigned long rate_best_fit = rate;
+-	unsigned long highest, lowest;
+-	int i;
+-
+-	highest = lowest = 0;
+-
+-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
+-		unsigned long freq = freq_table[i].frequency;
+-
+-		if (freq = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
+-		if (freq > highest)
+-			highest = freq;
+-		if (freq < lowest)
+-			lowest = freq;
+-
+-		rate_error = abs(freq - rate);
+-		if (rate_error < rate_error_prev) {
+-			rate_best_fit = freq;
+-			rate_error_prev = rate_error;
+-		}
+-
+-		if (rate_error = 0)
+-			break;
+-	}
+-
+-	if (rate >= highest)
+-		rate_best_fit = highest;
+-	if (rate <= lowest)
+-		rate_best_fit = lowest;
+-
+-	return rate_best_fit;
+-}
+-
+-int clk_rate_table_find(struct clk *clk,
+-			struct cpufreq_frequency_table *freq_table,
+-			unsigned long rate)
+-{
+-	int i;
+-
+-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
+-		unsigned long freq = freq_table[i].frequency;
+-
+-		if (freq = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
+-		if (freq = rate)
+-			return i;
+-	}
+-
+-	return -ENOENT;
+-}
+-
+-/* Used for clocks that always have same value as the parent clock */
+-unsigned long followparent_recalc(struct clk *clk)
+-{
+-	return clk->parent ? clk->parent->rate : 0;
+-}
+-
+-int clk_reparent(struct clk *child, struct clk *parent)
+-{
+-	list_del_init(&child->sibling);
+-	if (parent)
+-		list_add(&child->sibling, &parent->children);
+-	child->parent = parent;
+-
+-	/* now do the debugfs renaming to reattach the child
+-	   to the proper parent */
+-
+-	return 0;
+-}
+-
+-/* Propagate rate to children */
+-void propagate_rate(struct clk *tclk)
+-{
+-	struct clk *clkp;
+-
+-	list_for_each_entry(clkp, &tclk->children, sibling) {
+-		if (clkp->ops && clkp->ops->recalc)
+-			clkp->rate = clkp->ops->recalc(clkp);
+-
+-		propagate_rate(clkp);
+-	}
+-}
+-
+-static void __clk_disable(struct clk *clk)
+-{
+-	if (clk->usecount = 0) {
+-		printk(KERN_ERR "Trying disable clock %s with 0 usecount\n",
+-		       clk->name);
+-		WARN_ON(1);
+-		return;
+-	}
+-
+-	if (!(--clk->usecount)) {
+-		if (likely(clk->ops && clk->ops->disable))
+-			clk->ops->disable(clk);
+-		if (likely(clk->parent))
+-			__clk_disable(clk->parent);
+-	}
+-}
+-
+-void clk_disable(struct clk *clk)
+-{
+-	unsigned long flags;
+-
+-	if (!clk)
+-		return;
+-
+-	spin_lock_irqsave(&clock_lock, flags);
+-	__clk_disable(clk);
+-	spin_unlock_irqrestore(&clock_lock, flags);
+-}
+-EXPORT_SYMBOL_GPL(clk_disable);
+-
+-static int __clk_enable(struct clk *clk)
+-{
+-	int ret = 0;
+-
+-	if (clk->usecount++ = 0) {
+-		if (clk->parent) {
+-			ret = __clk_enable(clk->parent);
+-			if (unlikely(ret))
+-				goto err;
+-		}
+-
+-		if (clk->ops && clk->ops->enable) {
+-			ret = clk->ops->enable(clk);
+-			if (ret) {
+-				if (clk->parent)
+-					__clk_disable(clk->parent);
+-				goto err;
+-			}
+-		}
+-	}
+-
+-	return ret;
+-err:
+-	clk->usecount--;
+-	return ret;
+-}
+-
+-int clk_enable(struct clk *clk)
+-{
+-	unsigned long flags;
+-	int ret;
+-
+-	if (!clk)
+-		return -EINVAL;
+-
+-	spin_lock_irqsave(&clock_lock, flags);
+-	ret = __clk_enable(clk);
+-	spin_unlock_irqrestore(&clock_lock, flags);
+-
+-	return ret;
+-}
+-EXPORT_SYMBOL_GPL(clk_enable);
+-
+-static LIST_HEAD(root_clks);
+-
+-/**
+- * recalculate_root_clocks - recalculate and propagate all root clocks
+- *
+- * Recalculates all root clocks (clocks with no parent), which if the
+- * clock's .recalc is set correctly, should also propagate their rates.
+- * Called at init.
+- */
+-void recalculate_root_clocks(void)
+-{
+-	struct clk *clkp;
+-
+-	list_for_each_entry(clkp, &root_clks, sibling) {
+-		if (clkp->ops && clkp->ops->recalc)
+-			clkp->rate = clkp->ops->recalc(clkp);
+-		propagate_rate(clkp);
+-	}
+-}
+-
+-int clk_register(struct clk *clk)
+-{
+-	if (clk = NULL || IS_ERR(clk))
+-		return -EINVAL;
+-
+-	/*
+-	 * trap out already registered clocks
+-	 */
+-	if (clk->node.next || clk->node.prev)
+-		return 0;
+-
+-	mutex_lock(&clock_list_sem);
+-
+-	INIT_LIST_HEAD(&clk->children);
+-	clk->usecount = 0;
+-
+-	if (clk->parent)
+-		list_add(&clk->sibling, &clk->parent->children);
+-	else
+-		list_add(&clk->sibling, &root_clks);
+-
+-	list_add(&clk->node, &clock_list);
+-	if (clk->ops && clk->ops->init)
+-		clk->ops->init(clk);
+-	mutex_unlock(&clock_list_sem);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL_GPL(clk_register);
+-
+-void clk_unregister(struct clk *clk)
+-{
+-	mutex_lock(&clock_list_sem);
+-	list_del(&clk->sibling);
+-	list_del(&clk->node);
+-	mutex_unlock(&clock_list_sem);
+-}
+-EXPORT_SYMBOL_GPL(clk_unregister);
+-
+-static void clk_enable_init_clocks(void)
+-{
+-	struct clk *clkp;
+-
+-	list_for_each_entry(clkp, &clock_list, node)
+-		if (clkp->flags & CLK_ENABLE_ON_INIT)
+-			clk_enable(clkp);
+-}
+-
+-unsigned long clk_get_rate(struct clk *clk)
+-{
+-	return clk->rate;
+-}
+-EXPORT_SYMBOL_GPL(clk_get_rate);
+-
+-int clk_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	return clk_set_rate_ex(clk, rate, 0);
+-}
+-EXPORT_SYMBOL_GPL(clk_set_rate);
+-
+-int clk_set_rate_ex(struct clk *clk, unsigned long rate, int algo_id)
+-{
+-	int ret = -EOPNOTSUPP;
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&clock_lock, flags);
+-
+-	if (likely(clk->ops && clk->ops->set_rate)) {
+-		ret = clk->ops->set_rate(clk, rate, algo_id);
+-		if (ret != 0)
+-			goto out_unlock;
+-	} else {
+-		clk->rate = rate;
+-		ret = 0;
+-	}
+-
+-	if (clk->ops && clk->ops->recalc)
+-		clk->rate = clk->ops->recalc(clk);
+-
+-	propagate_rate(clk);
+-
+-out_unlock:
+-	spin_unlock_irqrestore(&clock_lock, flags);
+-
+-	return ret;
+-}
+-EXPORT_SYMBOL_GPL(clk_set_rate_ex);
+-
+-int clk_set_parent(struct clk *clk, struct clk *parent)
+-{
+-	unsigned long flags;
+-	int ret = -EINVAL;
+-
+-	if (!parent || !clk)
+-		return ret;
+-	if (clk->parent = parent)
+-		return 0;
+-
+-	spin_lock_irqsave(&clock_lock, flags);
+-	if (clk->usecount = 0) {
+-		if (clk->ops->set_parent)
+-			ret = clk->ops->set_parent(clk, parent);
+-		else
+-			ret = clk_reparent(clk, parent);
+-
+-		if (ret = 0) {
+-			pr_debug("clock: set parent of %s to %s (new rate %ld)\n",
+-				 clk->name, clk->parent->name, clk->rate);
+-			if (clk->ops->recalc)
+-				clk->rate = clk->ops->recalc(clk);
+-			propagate_rate(clk);
+-		}
+-	} else
+-		ret = -EBUSY;
+-	spin_unlock_irqrestore(&clock_lock, flags);
+-
+-	return ret;
+-}
+-EXPORT_SYMBOL_GPL(clk_set_parent);
+-
+-struct clk *clk_get_parent(struct clk *clk)
+-{
+-	return clk->parent;
+-}
+-EXPORT_SYMBOL_GPL(clk_get_parent);
+-
+-long clk_round_rate(struct clk *clk, unsigned long rate)
+-{
+-	if (likely(clk->ops && clk->ops->round_rate)) {
+-		unsigned long flags, rounded;
+-
+-		spin_lock_irqsave(&clock_lock, flags);
+-		rounded = clk->ops->round_rate(clk, rate);
+-		spin_unlock_irqrestore(&clock_lock, flags);
+-
+-		return rounded;
+-	}
+-
+-	return clk_get_rate(clk);
+-}
+-EXPORT_SYMBOL_GPL(clk_round_rate);
+-
+-/*
+- * Find the correct struct clk for the device and connection ID.
+- * We do slightly fuzzy matching here:
+- *  An entry with a NULL ID is assumed to be a wildcard.
+- *  If an entry has a device ID, it must match
+- *  If an entry has a connection ID, it must match
+- * Then we take the most specific entry - with the following
+- * order of precedence: dev+con > dev only > con only.
+- */
+-static struct clk *clk_find(const char *dev_id, const char *con_id)
+-{
+-	struct clk_lookup *p;
+-	struct clk *clk = NULL;
+-	int match, best = 0;
+-
+-	list_for_each_entry(p, &clock_list, node) {
+-		match = 0;
+-		if (p->dev_id) {
+-			if (!dev_id || strcmp(p->dev_id, dev_id))
+-				continue;
+-			match += 2;
+-		}
+-		if (p->con_id) {
+-			if (!con_id || strcmp(p->con_id, con_id))
+-				continue;
+-			match += 1;
+-		}
+-		if (match = 0)
+-			continue;
+-
+-		if (match > best) {
+-			clk = p->clk;
+-			best = match;
+-		}
+-	}
+-	return clk;
+-}
+-
+-struct clk *clk_get_sys(const char *dev_id, const char *con_id)
+-{
+-	struct clk *clk;
+-
+-	mutex_lock(&clock_list_sem);
+-	clk = clk_find(dev_id, con_id);
+-	mutex_unlock(&clock_list_sem);
+-
+-	return clk ? clk : ERR_PTR(-ENOENT);
+-}
+-EXPORT_SYMBOL_GPL(clk_get_sys);
+-
+-/*
+- * Returns a clock. Note that we first try to use device id on the bus
+- * and clock name. If this fails, we try to use clock name only.
+- */
+-struct clk *clk_get(struct device *dev, const char *id)
+-{
+-	const char *dev_id = dev ? dev_name(dev) : NULL;
+-	struct clk *p, *clk = ERR_PTR(-ENOENT);
+-	int idno;
+-
+-	clk = clk_get_sys(dev_id, id);
+-	if (clk && !IS_ERR(clk))
+-		return clk;
+-
+-	if (dev = NULL || dev->bus != &platform_bus_type)
+-		idno = -1;
+-	else
+-		idno = to_platform_device(dev)->id;
+-
+-	mutex_lock(&clock_list_sem);
+-	list_for_each_entry(p, &clock_list, node) {
+-		if (p->id = idno &&
+-		    strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
+-			clk = p;
+-			goto found;
+-		}
+-	}
+-
+-	list_for_each_entry(p, &clock_list, node) {
+-		if (strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
+-			clk = p;
+-			break;
+-		}
+-	}
+-
+-found:
+-	mutex_unlock(&clock_list_sem);
+-
+-	return clk;
+-}
+-EXPORT_SYMBOL_GPL(clk_get);
+-
+-void clk_put(struct clk *clk)
+-{
+-	if (clk && !IS_ERR(clk))
+-		module_put(clk->owner);
+-}
+-EXPORT_SYMBOL_GPL(clk_put);
+-
+-#ifdef CONFIG_PM
+-static int clks_sysdev_suspend(struct sys_device *dev, pm_message_t state)
+-{
+-	static pm_message_t prev_state;
+-	struct clk *clkp;
+-
+-	switch (state.event) {
+-	case PM_EVENT_ON:
+-		/* Resumeing from hibernation */
+-		if (prev_state.event != PM_EVENT_FREEZE)
+-			break;
+-
+-		list_for_each_entry(clkp, &clock_list, node) {
+-			if (likely(clkp->ops)) {
+-				unsigned long rate = clkp->rate;
+-
+-				if (likely(clkp->ops->set_parent))
+-					clkp->ops->set_parent(clkp,
+-						clkp->parent);
+-				if (likely(clkp->ops->set_rate))
+-					clkp->ops->set_rate(clkp,
+-						rate, NO_CHANGE);
+-				else if (likely(clkp->ops->recalc))
+-					clkp->rate = clkp->ops->recalc(clkp);
+-			}
+-		}
+-		break;
+-	case PM_EVENT_FREEZE:
+-		break;
+-	case PM_EVENT_SUSPEND:
+-		break;
+-	}
+-
+-	prev_state = state;
+-	return 0;
+-}
+-
+-static int clks_sysdev_resume(struct sys_device *dev)
+-{
+-	return clks_sysdev_suspend(dev, PMSG_ON);
+-}
+-
+-static struct sysdev_class clks_sysdev_class = {
+-	.name = "clks",
+-};
+-
+-static struct sysdev_driver clks_sysdev_driver = {
+-	.suspend = clks_sysdev_suspend,
+-	.resume = clks_sysdev_resume,
+-};
+-
+-static struct sys_device clks_sysdev_dev = {
+-	.cls = &clks_sysdev_class,
+-};
+-
+-static int __init clk_sysdev_init(void)
+-{
+-	sysdev_class_register(&clks_sysdev_class);
+-	sysdev_driver_register(&clks_sysdev_class, &clks_sysdev_driver);
+-	sysdev_register(&clks_sysdev_dev);
+-
+-	return 0;
+-}
+-subsys_initcall(clk_sysdev_init);
+-#endif
+-
+ int __init clk_init(void)
  {
+ 	int ret;
+@@ -589,91 +50,3 @@ int __init clk_init(void)
+ 
+ 	return ret;
+ }
+-
+-/*
+- *	debugfs support to trace clock tree hierarchy and attributes
+- */
+-static struct dentry *clk_debugfs_root;
+-
+-static int clk_debugfs_register_one(struct clk *c)
+-{
+-	int err;
+-	struct dentry *d, *child, *child_tmp;
+-	struct clk *pa = c->parent;
+-	char s[255];
+-	char *p = s;
+-
+-	p += sprintf(p, "%s", c->name);
+-	if (c->id >= 0)
+-		sprintf(p, ":%d", c->id);
+-	d = debugfs_create_dir(s, pa ? pa->dentry : clk_debugfs_root);
+-	if (!d)
+-		return -ENOMEM;
+-	c->dentry = d;
+-
+-	d = debugfs_create_u8("usecount", S_IRUGO, c->dentry, (u8 *)&c->usecount);
+-	if (!d) {
+-		err = -ENOMEM;
+-		goto err_out;
+-	}
+-	d = debugfs_create_u32("rate", S_IRUGO, c->dentry, (u32 *)&c->rate);
+-	if (!d) {
+-		err = -ENOMEM;
+-		goto err_out;
+-	}
+-	d = debugfs_create_x32("flags", S_IRUGO, c->dentry, (u32 *)&c->flags);
+-	if (!d) {
+-		err = -ENOMEM;
+-		goto err_out;
+-	}
+-	return 0;
+-
+-err_out:
+-	d = c->dentry;
+-	list_for_each_entry_safe(child, child_tmp, &d->d_subdirs, d_u.d_child)
+-		debugfs_remove(child);
+-	debugfs_remove(c->dentry);
+-	return err;
+-}
+-
+-static int clk_debugfs_register(struct clk *c)
+-{
+-	int err;
+-	struct clk *pa = c->parent;
+-
+-	if (pa && !pa->dentry) {
+-		err = clk_debugfs_register(pa);
+-		if (err)
+-			return err;
+-	}
+-
+-	if (!c->dentry) {
+-		err = clk_debugfs_register_one(c);
+-		if (err)
+-			return err;
+-	}
+-	return 0;
+-}
+-
+-static int __init clk_debugfs_init(void)
+-{
+-	struct clk *c;
+-	struct dentry *d;
+-	int err;
+-
+-	d = debugfs_create_dir("clock", NULL);
+-	if (!d)
+-		return -ENOMEM;
+-	clk_debugfs_root = d;
+-
+-	list_for_each_entry(c, &clock_list, node) {
+-		err = clk_debugfs_register(c);
+-		if (err)
+-			goto err_out;
+-	}
+-	return 0;
+-err_out:
+-	debugfs_remove(clk_debugfs_root); /* REVISIT: Cleanup correctly */
+-	return err;
+-}
+-late_initcall(clk_debugfs_init);
+--- 0001/drivers/sh/Makefile
++++ work/drivers/sh/Makefile	2010-03-25 13:18:02.000000000 +0900
+@@ -4,4 +4,5 @@
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ obj-$(CONFIG_MAPLE)		+= maple/
+ obj-$(CONFIG_GENERIC_GPIO)	+= pfc.o
++obj-$(CONFIG_SUPERH)		+= clk.o
+ obj-y				+= intc.o
+--- /dev/null
++++ work/drivers/sh/clk.c	2010-03-25 13:18:44.000000000 +0900
+@@ -0,0 +1,650 @@
++/*
++ * arch/sh/kernel/cpu/clock.c - SuperH clock framework
++ *
++ *  Copyright (C) 2005 - 2009  Paul Mundt
++ *
++ * This clock framework is derived from the OMAP version by:
++ *
++ *	Copyright (C) 2004 - 2008 Nokia Corporation
++ *	Written by Tuukka Tikkanen <tuukka.tikkanen@elektrobit.com>
++ *
++ *  Modified for omap shared clock framework by Tony Lindgren <tony@atomide.com>
++ *
++ *  With clkdev bits:
++ *
++ *	Copyright (C) 2008 Russell King.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/list.h>
++#include <linux/kobject.h>
++#include <linux/sysdev.h>
++#include <linux/seq_file.h>
++#include <linux/err.h>
++#include <linux/platform_device.h>
++#include <linux/debugfs.h>
++#include <linux/cpufreq.h>
++#include <linux/sh_clk.h>
++
++static LIST_HEAD(clock_list);
++static DEFINE_SPINLOCK(clock_lock);
++static DEFINE_MUTEX(clock_list_sem);
++
++void clk_rate_table_build(struct clk *clk,
++			  struct cpufreq_frequency_table *freq_table,
++			  int nr_freqs,
++			  struct clk_div_mult_table *src_table,
++			  unsigned long *bitmap)
++{
++	unsigned long mult, div;
++	unsigned long freq;
++	int i;
++
++	for (i = 0; i < nr_freqs; i++) {
++		div = 1;
++		mult = 1;
++
++		if (src_table->divisors && i < src_table->nr_divisors)
++			div = src_table->divisors[i];
++
++		if (src_table->multipliers && i < src_table->nr_multipliers)
++			mult = src_table->multipliers[i];
++
++		if (!div || !mult || (bitmap && !test_bit(i, bitmap)))
++			freq = CPUFREQ_ENTRY_INVALID;
++		else
++			freq = clk->parent->rate * mult / div;
++
++		freq_table[i].index = i;
++		freq_table[i].frequency = freq;
++	}
++
++	/* Termination entry */
++	freq_table[i].index = i;
++	freq_table[i].frequency = CPUFREQ_TABLE_END;
++}
++
++long clk_rate_table_round(struct clk *clk,
++			  struct cpufreq_frequency_table *freq_table,
++			  unsigned long rate)
++{
++	unsigned long rate_error, rate_error_prev = ~0UL;
++	unsigned long rate_best_fit = rate;
++	unsigned long highest, lowest;
++	int i;
++
++	highest = lowest = 0;
++
++	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
++		unsigned long freq = freq_table[i].frequency;
++
++		if (freq = CPUFREQ_ENTRY_INVALID)
++			continue;
++
++		if (freq > highest)
++			highest = freq;
++		if (freq < lowest)
++			lowest = freq;
++
++		rate_error = abs(freq - rate);
++		if (rate_error < rate_error_prev) {
++			rate_best_fit = freq;
++			rate_error_prev = rate_error;
++		}
++
++		if (rate_error = 0)
++			break;
++	}
++
++	if (rate >= highest)
++		rate_best_fit = highest;
++	if (rate <= lowest)
++		rate_best_fit = lowest;
++
++	return rate_best_fit;
++}
++
++int clk_rate_table_find(struct clk *clk,
++			struct cpufreq_frequency_table *freq_table,
++			unsigned long rate)
++{
++	int i;
++
++	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
++		unsigned long freq = freq_table[i].frequency;
++
++		if (freq = CPUFREQ_ENTRY_INVALID)
++			continue;
++
++		if (freq = rate)
++			return i;
++	}
++
++	return -ENOENT;
++}
++
++/* Used for clocks that always have same value as the parent clock */
++unsigned long followparent_recalc(struct clk *clk)
++{
++	return clk->parent ? clk->parent->rate : 0;
++}
++
++int clk_reparent(struct clk *child, struct clk *parent)
++{
++	list_del_init(&child->sibling);
++	if (parent)
++		list_add(&child->sibling, &parent->children);
++	child->parent = parent;
++
++	/* now do the debugfs renaming to reattach the child
++	   to the proper parent */
++
++	return 0;
++}
++
++/* Propagate rate to children */
++void propagate_rate(struct clk *tclk)
++{
++	struct clk *clkp;
++
++	list_for_each_entry(clkp, &tclk->children, sibling) {
++		if (clkp->ops && clkp->ops->recalc)
++			clkp->rate = clkp->ops->recalc(clkp);
++
++		propagate_rate(clkp);
++	}
++}
++
++static void __clk_disable(struct clk *clk)
++{
++	if (clk->usecount = 0) {
++		printk(KERN_ERR "Trying disable clock %s with 0 usecount\n",
++		       clk->name);
++		WARN_ON(1);
++		return;
++	}
++
++	if (!(--clk->usecount)) {
++		if (likely(clk->ops && clk->ops->disable))
++			clk->ops->disable(clk);
++		if (likely(clk->parent))
++			__clk_disable(clk->parent);
++	}
++}
++
++void clk_disable(struct clk *clk)
++{
++	unsigned long flags;
++
++	if (!clk)
++		return;
++
++	spin_lock_irqsave(&clock_lock, flags);
++	__clk_disable(clk);
++	spin_unlock_irqrestore(&clock_lock, flags);
++}
++EXPORT_SYMBOL_GPL(clk_disable);
++
++static int __clk_enable(struct clk *clk)
++{
++	int ret = 0;
++
++	if (clk->usecount++ = 0) {
++		if (clk->parent) {
++			ret = __clk_enable(clk->parent);
++			if (unlikely(ret))
++				goto err;
++		}
++
++		if (clk->ops && clk->ops->enable) {
++			ret = clk->ops->enable(clk);
++			if (ret) {
++				if (clk->parent)
++					__clk_disable(clk->parent);
++				goto err;
++			}
++		}
++	}
++
++	return ret;
++err:
++	clk->usecount--;
++	return ret;
++}
++
++int clk_enable(struct clk *clk)
++{
++	unsigned long flags;
++	int ret;
++
++	if (!clk)
++		return -EINVAL;
++
++	spin_lock_irqsave(&clock_lock, flags);
++	ret = __clk_enable(clk);
++	spin_unlock_irqrestore(&clock_lock, flags);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(clk_enable);
++
++static LIST_HEAD(root_clks);
++
++/**
++ * recalculate_root_clocks - recalculate and propagate all root clocks
++ *
++ * Recalculates all root clocks (clocks with no parent), which if the
++ * clock's .recalc is set correctly, should also propagate their rates.
++ * Called at init.
++ */
++void recalculate_root_clocks(void)
++{
++	struct clk *clkp;
++
++	list_for_each_entry(clkp, &root_clks, sibling) {
++		if (clkp->ops && clkp->ops->recalc)
++			clkp->rate = clkp->ops->recalc(clkp);
++		propagate_rate(clkp);
++	}
++}
++
++int clk_register(struct clk *clk)
++{
++	if (clk = NULL || IS_ERR(clk))
++		return -EINVAL;
++
++	/*
++	 * trap out already registered clocks
++	 */
++	if (clk->node.next || clk->node.prev)
++		return 0;
++
++	mutex_lock(&clock_list_sem);
++
++	INIT_LIST_HEAD(&clk->children);
++	clk->usecount = 0;
++
++	if (clk->parent)
++		list_add(&clk->sibling, &clk->parent->children);
++	else
++		list_add(&clk->sibling, &root_clks);
++
++	list_add(&clk->node, &clock_list);
++	if (clk->ops && clk->ops->init)
++		clk->ops->init(clk);
++	mutex_unlock(&clock_list_sem);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(clk_register);
++
++void clk_unregister(struct clk *clk)
++{
++	mutex_lock(&clock_list_sem);
++	list_del(&clk->sibling);
++	list_del(&clk->node);
++	mutex_unlock(&clock_list_sem);
++}
++EXPORT_SYMBOL_GPL(clk_unregister);
++
++void clk_enable_init_clocks(void)
++{
++	struct clk *clkp;
++
++	list_for_each_entry(clkp, &clock_list, node)
++		if (clkp->flags & CLK_ENABLE_ON_INIT)
++			clk_enable(clkp);
++}
++
++unsigned long clk_get_rate(struct clk *clk)
++{
++	return clk->rate;
++}
++EXPORT_SYMBOL_GPL(clk_get_rate);
++
++int clk_set_rate(struct clk *clk, unsigned long rate)
++{
++	return clk_set_rate_ex(clk, rate, 0);
++}
++EXPORT_SYMBOL_GPL(clk_set_rate);
++
++int clk_set_rate_ex(struct clk *clk, unsigned long rate, int algo_id)
++{
++	int ret = -EOPNOTSUPP;
++	unsigned long flags;
++
++	spin_lock_irqsave(&clock_lock, flags);
++
++	if (likely(clk->ops && clk->ops->set_rate)) {
++		ret = clk->ops->set_rate(clk, rate, algo_id);
++		if (ret != 0)
++			goto out_unlock;
++	} else {
++		clk->rate = rate;
++		ret = 0;
++	}
++
++	if (clk->ops && clk->ops->recalc)
++		clk->rate = clk->ops->recalc(clk);
++
++	propagate_rate(clk);
++
++out_unlock:
++	spin_unlock_irqrestore(&clock_lock, flags);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(clk_set_rate_ex);
++
++int clk_set_parent(struct clk *clk, struct clk *parent)
++{
++	unsigned long flags;
++	int ret = -EINVAL;
++
++	if (!parent || !clk)
++		return ret;
++	if (clk->parent = parent)
++		return 0;
++
++	spin_lock_irqsave(&clock_lock, flags);
++	if (clk->usecount = 0) {
++		if (clk->ops->set_parent)
++			ret = clk->ops->set_parent(clk, parent);
++		else
++			ret = clk_reparent(clk, parent);
++
++		if (ret = 0) {
++			pr_debug("clock: set parent of %s to %s (new rate %ld)\n",
++				 clk->name, clk->parent->name, clk->rate);
++			if (clk->ops->recalc)
++				clk->rate = clk->ops->recalc(clk);
++			propagate_rate(clk);
++		}
++	} else
++		ret = -EBUSY;
++	spin_unlock_irqrestore(&clock_lock, flags);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(clk_set_parent);
++
++struct clk *clk_get_parent(struct clk *clk)
++{
++	return clk->parent;
++}
++EXPORT_SYMBOL_GPL(clk_get_parent);
++
++long clk_round_rate(struct clk *clk, unsigned long rate)
++{
++	if (likely(clk->ops && clk->ops->round_rate)) {
++		unsigned long flags, rounded;
++
++		spin_lock_irqsave(&clock_lock, flags);
++		rounded = clk->ops->round_rate(clk, rate);
++		spin_unlock_irqrestore(&clock_lock, flags);
++
++		return rounded;
++	}
++
++	return clk_get_rate(clk);
++}
++EXPORT_SYMBOL_GPL(clk_round_rate);
++
++/*
++ * Find the correct struct clk for the device and connection ID.
++ * We do slightly fuzzy matching here:
++ *  An entry with a NULL ID is assumed to be a wildcard.
++ *  If an entry has a device ID, it must match
++ *  If an entry has a connection ID, it must match
++ * Then we take the most specific entry - with the following
++ * order of precedence: dev+con > dev only > con only.
++ */
++static struct clk *clk_find(const char *dev_id, const char *con_id)
++{
++	struct clk_lookup *p;
++	struct clk *clk = NULL;
++	int match, best = 0;
++
++	list_for_each_entry(p, &clock_list, node) {
++		match = 0;
++		if (p->dev_id) {
++			if (!dev_id || strcmp(p->dev_id, dev_id))
++				continue;
++			match += 2;
++		}
++		if (p->con_id) {
++			if (!con_id || strcmp(p->con_id, con_id))
++				continue;
++			match += 1;
++		}
++		if (match = 0)
++			continue;
++
++		if (match > best) {
++			clk = p->clk;
++			best = match;
++		}
++	}
++	return clk;
++}
++
++struct clk *clk_get_sys(const char *dev_id, const char *con_id)
++{
++	struct clk *clk;
++
++	mutex_lock(&clock_list_sem);
++	clk = clk_find(dev_id, con_id);
++	mutex_unlock(&clock_list_sem);
++
++	return clk ? clk : ERR_PTR(-ENOENT);
++}
++EXPORT_SYMBOL_GPL(clk_get_sys);
++
++/*
++ * Returns a clock. Note that we first try to use device id on the bus
++ * and clock name. If this fails, we try to use clock name only.
++ */
++struct clk *clk_get(struct device *dev, const char *id)
++{
++	const char *dev_id = dev ? dev_name(dev) : NULL;
++	struct clk *p, *clk = ERR_PTR(-ENOENT);
++	int idno;
++
++	clk = clk_get_sys(dev_id, id);
++	if (clk && !IS_ERR(clk))
++		return clk;
++
++	if (dev = NULL || dev->bus != &platform_bus_type)
++		idno = -1;
++	else
++		idno = to_platform_device(dev)->id;
++
++	mutex_lock(&clock_list_sem);
++	list_for_each_entry(p, &clock_list, node) {
++		if (p->id = idno &&
++		    strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
++			clk = p;
++			goto found;
++		}
++	}
++
++	list_for_each_entry(p, &clock_list, node) {
++		if (strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
++			clk = p;
++			break;
++		}
++	}
++
++found:
++	mutex_unlock(&clock_list_sem);
++
++	return clk;
++}
++EXPORT_SYMBOL_GPL(clk_get);
++
++void clk_put(struct clk *clk)
++{
++	if (clk && !IS_ERR(clk))
++		module_put(clk->owner);
++}
++EXPORT_SYMBOL_GPL(clk_put);
++
++#ifdef CONFIG_PM
++static int clks_sysdev_suspend(struct sys_device *dev, pm_message_t state)
++{
++	static pm_message_t prev_state;
++	struct clk *clkp;
++
++	switch (state.event) {
++	case PM_EVENT_ON:
++		/* Resumeing from hibernation */
++		if (prev_state.event != PM_EVENT_FREEZE)
++			break;
++
++		list_for_each_entry(clkp, &clock_list, node) {
++			if (likely(clkp->ops)) {
++				unsigned long rate = clkp->rate;
++
++				if (likely(clkp->ops->set_parent))
++					clkp->ops->set_parent(clkp,
++						clkp->parent);
++				if (likely(clkp->ops->set_rate))
++					clkp->ops->set_rate(clkp,
++						rate, NO_CHANGE);
++				else if (likely(clkp->ops->recalc))
++					clkp->rate = clkp->ops->recalc(clkp);
++			}
++		}
++		break;
++	case PM_EVENT_FREEZE:
++		break;
++	case PM_EVENT_SUSPEND:
++		break;
++	}
++
++	prev_state = state;
++	return 0;
++}
++
++static int clks_sysdev_resume(struct sys_device *dev)
++{
++	return clks_sysdev_suspend(dev, PMSG_ON);
++}
++
++static struct sysdev_class clks_sysdev_class = {
++	.name = "clks",
++};
++
++static struct sysdev_driver clks_sysdev_driver = {
++	.suspend = clks_sysdev_suspend,
++	.resume = clks_sysdev_resume,
++};
++
++static struct sys_device clks_sysdev_dev = {
++	.cls = &clks_sysdev_class,
++};
++
++static int __init clk_sysdev_init(void)
++{
++	sysdev_class_register(&clks_sysdev_class);
++	sysdev_driver_register(&clks_sysdev_class, &clks_sysdev_driver);
++	sysdev_register(&clks_sysdev_dev);
++
++	return 0;
++}
++subsys_initcall(clk_sysdev_init);
++#endif
++
++/*
++ *	debugfs support to trace clock tree hierarchy and attributes
++ */
++static struct dentry *clk_debugfs_root;
++
++static int clk_debugfs_register_one(struct clk *c)
++{
++	int err;
++	struct dentry *d, *child, *child_tmp;
++	struct clk *pa = c->parent;
++	char s[255];
++	char *p = s;
++
++	p += sprintf(p, "%s", c->name);
++	if (c->id >= 0)
++		sprintf(p, ":%d", c->id);
++	d = debugfs_create_dir(s, pa ? pa->dentry : clk_debugfs_root);
++	if (!d)
++		return -ENOMEM;
++	c->dentry = d;
++
++	d = debugfs_create_u8("usecount", S_IRUGO, c->dentry, (u8 *)&c->usecount);
++	if (!d) {
++		err = -ENOMEM;
++		goto err_out;
++	}
++	d = debugfs_create_u32("rate", S_IRUGO, c->dentry, (u32 *)&c->rate);
++	if (!d) {
++		err = -ENOMEM;
++		goto err_out;
++	}
++	d = debugfs_create_x32("flags", S_IRUGO, c->dentry, (u32 *)&c->flags);
++	if (!d) {
++		err = -ENOMEM;
++		goto err_out;
++	}
++	return 0;
++
++err_out:
++	d = c->dentry;
++	list_for_each_entry_safe(child, child_tmp, &d->d_subdirs, d_u.d_child)
++		debugfs_remove(child);
++	debugfs_remove(c->dentry);
++	return err;
++}
++
++static int clk_debugfs_register(struct clk *c)
++{
++	int err;
++	struct clk *pa = c->parent;
++
++	if (pa && !pa->dentry) {
++		err = clk_debugfs_register(pa);
++		if (err)
++			return err;
++	}
++
++	if (!c->dentry) {
++		err = clk_debugfs_register_one(c);
++		if (err)
++			return err;
++	}
++	return 0;
++}
++
++static int __init clk_debugfs_init(void)
++{
++	struct clk *c;
++	struct dentry *d;
++	int err;
++
++	d = debugfs_create_dir("clock", NULL);
++	if (!d)
++		return -ENOMEM;
++	clk_debugfs_root = d;
++
++	list_for_each_entry(c, &clock_list, node) {
++		err = clk_debugfs_register(c);
++		if (err)
++			goto err_out;
++	}
++	return 0;
++err_out:
++	debugfs_remove(clk_debugfs_root); /* REVISIT: Cleanup correctly */
++	return err;
++}
++late_initcall(clk_debugfs_init);
+--- 0004/include/linux/sh_clk.h
++++ work/include/linux/sh_clk.h	2010-03-25 13:19:06.000000000 +0900
+@@ -60,6 +60,7 @@ int __init arch_clk_init(void);
+ 
+ /* arch/sh/kernel/cpu/clock.c */
+ int clk_init(void);
++void clk_enable_init_clocks(void);
+ unsigned long followparent_recalc(struct clk *);
+ void recalculate_root_clocks(void);
+ void propagate_rate(struct clk *);
