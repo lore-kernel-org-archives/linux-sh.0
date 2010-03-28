@@ -1,46 +1,40 @@
-From: Michael Ellerman <michael@ellerman.id.au>
-Date: Wed, 24 Mar 2010 11:11:15 +0000
-Subject: Re: [PATCH 2/4] panic: Allow taint flag for warnings to be changed
-Message-Id: <1269429075.2500.5.camel@concordia>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-SQzw8iyBB5lB+1zvqHUK"
+From: Matt Fleming <matt@console-pimps.org>
+Date: Sun, 28 Mar 2010 20:08:25 +0000
+Subject: [PATCH] sh: Enable the mmu in start_secondary()
+Message-Id: <a460f3c9762b32919a8886a12ecaf3347358234d.1269806815.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1269126097.18314.111.camel@localhost>
-	 <1269126340.18314.115.camel@localhost>
-In-Reply-To: <1269126340.18314.115.camel@localhost>
-To: Ben Hutchings <ben@decadent.org.uk>
-Cc: Jesse Barnes <jbarnes@virtuousgeek.org>, linux-s390@vger.kernel.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linuxppc-dev@ozlabs.org, David Woodhouse <dwmw2@infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+For the boot, enable_mmu() is called from setup_arch() but we don't call
+setup_arch() for any of the other cpus. So turn on the non-boot cpu's
+mmu inside of start_secondary().
 
---=-SQzw8iyBB5lB+1zvqHUK
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+I noticed this bug on an SMP board when trying to map I/O memory
+(smsc911x registers) into the kernel address space. Since the Address
+Translation bit in MMUCR wasn't set, accessing the virtual address where
+the smsc911x registers were supposedly mapped actually performed a
+physical address access.
 
-On Sat, 2010-03-20 at 23:05 +0000, Ben Hutchings wrote:
-> WARN() is used in some places to report firmware or hardware bugs that
-> are then worked-around.  These bugs do not affect the stability of the
-> kernel and should not set the usual TAINT_WARN flag.  To allow for
-> this, add WARN_TAINT() and WARN_TAINT_ONCE() macros that take a taint
-> flag as argument.
-..
-> The architecture-specific changes here are untested and need to be
-> reviewed by architecture maintainers.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/kernel/smp.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-I'm not one of them, but this at least builds on powerpc FWIW.
-
-cheers
-
---=-SQzw8iyBB5lB+1zvqHUK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEABECAAYFAkup80wACgkQdSjSd0sB4dIztACgqdsQgORNZPCSzn7hLuXW0Lxs
-CgMAn3Q8KMC7wAK7ce/Z3AZ9SQ+1QrUy
-=p3xA
------END PGP SIGNATURE-----
-
---=-SQzw8iyBB5lB+1zvqHUK--
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index e124cf7..002cc61 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -69,6 +69,7 @@ asmlinkage void __cpuinit start_secondary(void)
+ 	unsigned int cpu;
+ 	struct mm_struct *mm = &init_mm;
+ 
++	enable_mmu();
+ 	atomic_inc(&mm->mm_count);
+ 	atomic_inc(&mm->mm_users);
+ 	current->active_mm = mm;
+-- 
+1.6.4.rc0
 
