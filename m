@@ -1,146 +1,195 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 10 Mar 2010 05:13:12 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7367 SDHI vector merge
-Message-Id: <20100310051312.23821.38040.sendpatchset@t400s>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 29 Mar 2010 06:31:36 +0000
+Subject: [PATCH] ARM: mach-shmobile: Add SDHI support
+Message-Id: <u8w9bvdtj.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch add SDHI support for G4 board.
+Current gpio frame work doesn't have
+the method to control only pull-up/down/free.
+So, it have special gpio_pull_up function for SDHI.
+It is quick hack, so this function should be replaced
+by correct gpio frame work in future.
 
-Merge the SDHI vectors for sh7367 using the recently
-merged INTC force_enable/disable feature.
-
-With this in place SDHI hotplug is supported using
-the drivers sh_mobile_sdhi and tmio_mmc.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
+ arch/arm/mach-shmobile/board-g4evm.c |  127 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 127 insertions(+), 0 deletions(-)
 
- Depends on INTC patches available in 2.6.34-rc1
-
- arch/arm/mach-shmobile/intc-sh7367.c |   46 +++++++++++++++++-----------------
- 1 file changed, 23 insertions(+), 23 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/intc-sh7367.c
-+++ work/arch/arm/mach-shmobile/intc-sh7367.c	2010-03-09 19:22:03.000000000 +0900
-@@ -27,6 +27,8 @@
+diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
+index 10673a9..33441d5 100644
+--- a/arch/arm/mach-shmobile/board-g4evm.c
++++ b/arch/arm/mach-shmobile/board-g4evm.c
+@@ -30,6 +30,7 @@
+ #include <linux/io.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/gpio.h>
+ #include <mach/sh7377.h>
+ #include <mach/common.h>
+@@ -37,6 +38,31 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
  
- enum {
- 	UNUSED_INTCA = 0,
-+	ENABLED,
-+	DISABLED,
- 
- 	/* interrupt sources INTCA */
- 	IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A,
-@@ -46,8 +48,8 @@ enum {
- 	MSIOF2, MSIOF1,
- 	SCIFA4, SCIFA5, SCIFB,
- 	FLCTL_FLSTEI, FLCTL_FLTENDI, FLCTL_FLTREQ0I, FLCTL_FLTREQ1I,
--	SDHI0_SDHI0I0, SDHI0_SDHI0I1, SDHI0_SDHI0I2, SDHI0_SDHI0I3,
--	SDHI1_SDHI1I0, SDHI1_SDHI1I1, SDHI1_SDHI1I2, SDHI1_SDHI1I3,
-+	SDHI0,
-+	SDHI1,
- 	MSU_MSU, MSU_MSU2,
- 	IREM,
- 	SIU,
-@@ -59,7 +61,7 @@ enum {
- 	TTI20,
- 	MISTY,
- 	DDM,
--	SDHI2_SDHI2I0, SDHI2_SDHI2I1, SDHI2_SDHI2I2, SDHI2_SDHI2I3,
-+	SDHI2,
- 	RWDT0, RWDT1,
- 	DMAC_1_DEI0, DMAC_1_DEI1, DMAC_1_DEI2, DMAC_1_DEI3,
- 	DMAC_2_DEI4, DMAC_2_DEI5, DMAC_2_DADERR,
-@@ -70,7 +72,7 @@ enum {
- 
- 	/* interrupt groups INTCA */
- 	DMAC_1, DMAC_2,	DMAC2_1, DMAC2_2, DMAC3_1, DMAC3_2,
--	ETM11, ARM11, USBHS, FLCTL, IIC1, SDHI0, SDHI1, SDHI2,
-+	ETM11, ARM11, USBHS, FLCTL, IIC1
++/*
++ * SDHI
++ *
++ * SDHI0 : card detection is possible
++ * SDHI1 : card detection is impossible
++ *
++ * [G4-MAIN-BOARD]
++ * JP74 : short		# DBG_2V8A    for SDHI0
++ * JP75 : NC		# DBG_3V3A    for SDHI0
++ * JP76 : NC		# DBG_3V3A_SD for SDHI0
++ * JP77 : NC		# 3V3A_SDIO   for SDHI1
++ * JP78 : short		# DBG_2V8A    for SDHI1
++ * JP79 : NC		# DBG_3V3A    for SDHI1
++ * JP80 : NC		# DBG_3V3A_SD for SDHI1
++ *
++ * [G4-CORE-BOARD]
++ * S32 : all off	# to dissever from G3-CORE_DBG board
++ * S33 : all off	# to dissever from G3-CORE_DBG board
++ *
++ * [G3-CORE_DBG-BOARD]
++ * S1  : all off	# to dissever from G3-CORE_DBG board
++ * S3  : all off	# to dissever from G3-CORE_DBG board
++ * S4  : all off	# to dissever from G3-CORE_DBG board
++ */
++
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+ 		.name		= "loader",
+@@ -169,10 +195,53 @@ static struct platform_device keysc_device = {
+ 	},
  };
  
- static struct intc_vect intca_vectors[] = {
-@@ -105,10 +107,10 @@ static struct intc_vect intca_vectors[] 
- 	INTC_VECT(SCIFB, 0x0d60),
- 	INTC_VECT(FLCTL_FLSTEI, 0x0d80), INTC_VECT(FLCTL_FLTENDI, 0x0da0),
- 	INTC_VECT(FLCTL_FLTREQ0I, 0x0dc0), INTC_VECT(FLCTL_FLTREQ1I, 0x0de0),
--	INTC_VECT(SDHI0_SDHI0I0, 0x0e00), INTC_VECT(SDHI0_SDHI0I1, 0x0e20),
--	INTC_VECT(SDHI0_SDHI0I2, 0x0e40), INTC_VECT(SDHI0_SDHI0I3, 0x0e60),
--	INTC_VECT(SDHI1_SDHI1I0, 0x0e80), INTC_VECT(SDHI1_SDHI1I1, 0x0ea0),
--	INTC_VECT(SDHI1_SDHI1I2, 0x0ec0), INTC_VECT(SDHI1_SDHI1I3, 0x0ee0),
-+	INTC_VECT(SDHI0, 0x0e00), INTC_VECT(SDHI0, 0x0e20),
-+	INTC_VECT(SDHI0, 0x0e40), INTC_VECT(SDHI0, 0x0e60),
-+	INTC_VECT(SDHI1, 0x0e80), INTC_VECT(SDHI1, 0x0ea0),
-+	INTC_VECT(SDHI1, 0x0ec0), INTC_VECT(SDHI1, 0x0ee0),
- 	INTC_VECT(MSU_MSU, 0x0f20), INTC_VECT(MSU_MSU2, 0x0f40),
- 	INTC_VECT(IREM, 0x0f60),
- 	INTC_VECT(SIU, 0x0fa0),
-@@ -122,8 +124,8 @@ static struct intc_vect intca_vectors[] 
- 	INTC_VECT(TTI20, 0x1100),
- 	INTC_VECT(MISTY, 0x1120),
- 	INTC_VECT(DDM, 0x1140),
--	INTC_VECT(SDHI2_SDHI2I0, 0x1200), INTC_VECT(SDHI2_SDHI2I1, 0x1220),
--	INTC_VECT(SDHI2_SDHI2I2, 0x1240), INTC_VECT(SDHI2_SDHI2I3, 0x1260),
-+	INTC_VECT(SDHI2, 0x1200), INTC_VECT(SDHI2, 0x1220),
-+	INTC_VECT(SDHI2, 0x1240), INTC_VECT(SDHI2, 0x1260),
- 	INTC_VECT(RWDT0, 0x1280), INTC_VECT(RWDT1, 0x12a0),
- 	INTC_VECT(DMAC_1_DEI0, 0x2000), INTC_VECT(DMAC_1_DEI1, 0x2020),
- 	INTC_VECT(DMAC_1_DEI2, 0x2040), INTC_VECT(DMAC_1_DEI3, 0x2060),
-@@ -158,12 +160,6 @@ static struct intc_group intca_groups[] 
- 	INTC_GROUP(FLCTL, FLCTL_FLSTEI, FLCTL_FLTENDI,
- 		   FLCTL_FLTREQ0I, FLCTL_FLTREQ1I),
- 	INTC_GROUP(IIC1, IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1),
--	INTC_GROUP(SDHI0, SDHI0_SDHI0I0, SDHI0_SDHI0I1,
--		   SDHI0_SDHI0I2, SDHI0_SDHI0I3),
--	INTC_GROUP(SDHI1, SDHI1_SDHI1I0, SDHI1_SDHI1I1,
--		   SDHI1_SDHI1I2, SDHI1_SDHI1I3),
--	INTC_GROUP(SDHI2, SDHI2_SDHI2I0, SDHI2_SDHI2I1,
--		   SDHI2_SDHI2I2, SDHI2_SDHI2I3),
- };
- 
- static struct intc_mask_reg intca_mask_registers[] = {
-@@ -193,10 +189,10 @@ static struct intc_mask_reg intca_mask_r
- 	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
- 	    0, 0, MSIOF2, 0 } },
- 	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
--	  { SDHI0_SDHI0I3, SDHI0_SDHI0I2, SDHI0_SDHI0I1, SDHI0_SDHI0I0,
-+	  { DISABLED, DISABLED, ENABLED, ENABLED,
- 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
- 	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
--	  { SDHI1_SDHI1I3, SDHI1_SDHI1I2, SDHI1_SDHI1I1, SDHI1_SDHI1I0,
-+	  { DISABLED, DISABLED, ENABLED, ENABLED,
- 	    TTI20, USBDMAC_USHDMI, SPU, SIU } },
- 	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
- 	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
-@@ -211,7 +207,7 @@ static struct intc_mask_reg intca_mask_r
- 	  { 0, 0, TPU0, TPU1,
- 	    TPU2, TPU3, TPU4, 0 } },
- 	{ 0xe69400b4, 0xe69400f4, 8, /* IMR13A / IMCR13A */
--	  { SDHI2_SDHI2I3, SDHI2_SDHI2I2, SDHI2_SDHI2I1, SDHI2_SDHI2I0,
-+	  { DISABLED, DISABLED, ENABLED, ENABLED,
- 	    MISTY, CMT3, RWDT1, RWDT0 } },
- };
- 
-@@ -258,10 +254,14 @@ static struct intc_mask_reg intca_ack_re
- 	  { IRQ8A, IRQ9A, IRQ10A, IRQ11A, IRQ12A, IRQ13A, IRQ14A, IRQ15A } },
- };
- 
--static DECLARE_INTC_DESC_ACK(intca_desc, "sh7367-intca",
--			     intca_vectors, intca_groups,
--			     intca_mask_registers, intca_prio_registers,
--			     intca_sense_registers, intca_ack_registers);
-+static struct intc_desc intca_desc __initdata = {
-+	.name = "sh7367-intca",
-+	.force_enable = ENABLED,
-+	.force_disable = DISABLED,
-+	.hw = INTC_HW_DESC(intca_vectors, intca_groups,
-+			   intca_mask_registers, intca_prio_registers,
-+			   intca_sense_registers, intca_ack_registers),
++/* SDHI */
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name	= "SDHI0",
++		.start  = 0xe6d50000,
++		.end    = 0xe6d501ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 96,
++		.flags  = IORESOURCE_IRQ,
++	},
 +};
++
++static struct platform_device sdhi0_device = {
++	.name           = "sh_mobile_sdhi",
++	.num_resources  = ARRAY_SIZE(sdhi0_resources),
++	.resource       = sdhi0_resources,
++	.id             = 0,
++};
++
++static struct resource sdhi1_resources[] = {
++	[0] = {
++		.name	= "SDHI1",
++		.start  = 0xe6d60000,
++		.end    = 0xe6d601ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 100,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi1_device = {
++	.name           = "sh_mobile_sdhi",
++	.num_resources  = ARRAY_SIZE(sdhi1_resources),
++	.resource       = sdhi1_resources,
++	.id             = 1,
++};
++
+ static struct platform_device *g4evm_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&usb_host_device,
+ 	&keysc_device,
++	&sdhi0_device,
++	&sdhi1_device,
+ };
  
- void __init sh7367_init_irq(void)
+ static struct map_desc g4evm_io_desc[] __initdata = {
+@@ -197,6 +266,36 @@ static void __init g4evm_map_io(void)
+ 	shmobile_setup_console();
+ }
+ 
++#define GPIO_SDHID0_D0	0xe60520fc
++#define GPIO_SDHID0_D1	0xe60520fd
++#define GPIO_SDHID0_D2	0xe60520fe
++#define GPIO_SDHID0_D3	0xe60520ff
++#define GPIO_SDHICMD0	0xe6052100
++
++#define GPIO_SDHID1_D0	0xe6052103
++#define GPIO_SDHID1_D1	0xe6052104
++#define GPIO_SDHID1_D2	0xe6052105
++#define GPIO_SDHID1_D3	0xe6052106
++#define GPIO_SDHICMD1	0xe6052107
++
++/*
++ * FIXME !!
++ *
++ * gpio_pull_up is quick_hack.
++ *
++ * current gpio frame work doesn't have
++ * the method to control only pull up/down/free.
++ * this function should be replaced by correct gpio function
++ */
++static void __init gpio_pull_up(u32 addr)
++{
++	u8 data = __raw_readb(addr);
++
++	data &= 0x0F;
++	data |= 0xC0;
++	__raw_writeb(data, addr);
++}
++
+ static void __init g4evm_init(void)
  {
+ 	sh7377_pinmux_init();
+@@ -253,6 +352,34 @@ static void __init g4evm_init(void)
+ 	gpio_request(GPIO_FN_PORT71_KEYIN5_PU, NULL);
+ 	gpio_request(GPIO_FN_PORT72_KEYIN6_PU, NULL);
+ 
++	/* SDHI0 */
++	gpio_request(GPIO_FN_SDHICLK0, NULL);
++	gpio_request(GPIO_FN_SDHICD0, NULL);
++	gpio_request(GPIO_FN_SDHID0_0, NULL);
++	gpio_request(GPIO_FN_SDHID0_1, NULL);
++	gpio_request(GPIO_FN_SDHID0_2, NULL);
++	gpio_request(GPIO_FN_SDHID0_3, NULL);
++	gpio_request(GPIO_FN_SDHICMD0, NULL);
++	gpio_request(GPIO_FN_SDHIWP0, NULL);
++	gpio_pull_up(GPIO_SDHID0_D0);
++	gpio_pull_up(GPIO_SDHID0_D1);
++	gpio_pull_up(GPIO_SDHID0_D2);
++	gpio_pull_up(GPIO_SDHID0_D3);
++	gpio_pull_up(GPIO_SDHICMD0);
++
++	/* SDHI1 */
++	gpio_request(GPIO_FN_SDHICLK1, NULL);
++	gpio_request(GPIO_FN_SDHID1_0, NULL);
++	gpio_request(GPIO_FN_SDHID1_1, NULL);
++	gpio_request(GPIO_FN_SDHID1_2, NULL);
++	gpio_request(GPIO_FN_SDHID1_3, NULL);
++	gpio_request(GPIO_FN_SDHICMD1, NULL);
++	gpio_pull_up(GPIO_SDHID1_D0);
++	gpio_pull_up(GPIO_SDHID1_D1);
++	gpio_pull_up(GPIO_SDHID1_D2);
++	gpio_pull_up(GPIO_SDHID1_D3);
++	gpio_pull_up(GPIO_SDHICMD1);
++
+ 	sh7377_add_standard_devices();
+ 
+ 	platform_add_devices(g4evm_devices, ARRAY_SIZE(g4evm_devices));
+-- 
+1.6.3.3
+
