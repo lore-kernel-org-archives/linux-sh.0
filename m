@@ -1,172 +1,81 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 11 Feb 2010 16:50:05 +0000
-Subject: [PATCH 1/5] async-tx: fix DMA error handling in shdma.c
-Message-Id: <Pine.LNX.4.64.1002111705330.4484@axis700.grange>
+From: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+Date: Mon, 29 Mar 2010 06:31:46 +0000
+Subject: [PATCH] ARM: mach-shmobile: Add missing __initdata on intcs
+Message-Id: <u7hovvdt9.wl%morimoto.kuninori@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Present DMA error ISR in shdma.c is bogus, it locks the system hard in multiple
-ways. Fix it to abort all queued transactions on all channels on the affected
-controller and giving submitters a chance to get a DMA_ERROR status for aborted
-transactions. Afterwards further functionality is again possible without the
-need to re-load the driver.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- drivers/dma/shdma.c |   89 ++++++++++++++++++++++++++++++--------------------
- 1 files changed, 53 insertions(+), 36 deletions(-)
+ arch/arm/mach-shmobile/intc-sh7367.c |    6 +++---
+ arch/arm/mach-shmobile/intc-sh7377.c |    6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index b75ce8b..7731169 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -73,7 +73,7 @@ static void sh_dmae_ctl_stop(int id)
- {
- 	unsigned short dmaor = dmaor_read_reg(id);
+diff --git a/arch/arm/mach-shmobile/intc-sh7367.c b/arch/arm/mach-shmobile/intc-sh7367.c
+index 5ff70ca..b594969 100644
+--- a/arch/arm/mach-shmobile/intc-sh7367.c
++++ b/arch/arm/mach-shmobile/intc-sh7367.c
+@@ -75,7 +75,7 @@ enum {
+ 	ETM11, ARM11, USBHS, FLCTL, IIC1
+ };
  
--	dmaor &= ~(DMAOR_NMIF | DMAOR_AE);
-+	dmaor &= ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME);
- 	dmaor_write_reg(id, dmaor);
- }
+-static struct intc_vect intca_vectors[] = {
++static struct intc_vect intca_vectors[] __initdata = {
+ 	INTC_VECT(IRQ0A, 0x0200), INTC_VECT(IRQ1A, 0x0220),
+ 	INTC_VECT(IRQ2A, 0x0240), INTC_VECT(IRQ3A, 0x0260),
+ 	INTC_VECT(IRQ4A, 0x0280), INTC_VECT(IRQ5A, 0x02a0),
+@@ -162,7 +162,7 @@ static struct intc_group intca_groups[] __initdata = {
+ 	INTC_GROUP(IIC1, IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1),
+ };
  
-@@ -86,7 +86,7 @@ static int sh_dmae_rst(int id)
+-static struct intc_mask_reg intca_mask_registers[] = {
++static struct intc_mask_reg intca_mask_registers[] __initdata = {
+ 	{ 0xe6900040, 0xe6900060, 8, /* INTMSK00A / INTMSKCLR00A */
+ 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
+ 	{ 0xe6900044, 0xe6900064, 8, /* INTMSK10A / INTMSKCLR10A */
+@@ -211,7 +211,7 @@ static struct intc_mask_reg intca_mask_registers[] = {
+ 	    MISTY, CMT3, RWDT1, RWDT0 } },
+ };
  
- 	dmaor_write_reg(id, dmaor);
- 	if (dmaor_read_reg(id) & (DMAOR_AE | DMAOR_NMIF)) {
--		pr_warning(KERN_ERR "dma-sh: Can't initialize DMAOR.\n");
-+		pr_warning("dma-sh: Can't initialize DMAOR.\n");
- 		return -EINVAL;
- 	}
- 	return 0;
-@@ -661,7 +661,7 @@ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all)
+-static struct intc_prio_reg intca_prio_registers[] = {
++static struct intc_prio_reg intca_prio_registers[] __initdata = {
+ 	{ 0xe6900010, 0, 32, 4, /* INTPRI00A */
+ 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
+ 	{ 0xe6900014, 0, 32, 4, /* INTPRI10A */
+diff --git a/arch/arm/mach-shmobile/intc-sh7377.c b/arch/arm/mach-shmobile/intc-sh7377.c
+index 5c781e2..68901a4 100644
+--- a/arch/arm/mach-shmobile/intc-sh7377.c
++++ b/arch/arm/mach-shmobile/intc-sh7377.c
+@@ -90,7 +90,7 @@ enum {
+ 	ICUSB, ICUDMC
+ };
  
- static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
- {
--	struct sh_desc *sd;
-+	struct sh_desc *desc;
+-static struct intc_vect intca_vectors[] = {
++static struct intc_vect intca_vectors[] __initdata = {
+ 	INTC_VECT(IRQ0A, 0x0200), INTC_VECT(IRQ1A, 0x0220),
+ 	INTC_VECT(IRQ2A, 0x0240), INTC_VECT(IRQ3A, 0x0260),
+ 	INTC_VECT(IRQ4A, 0x0280), INTC_VECT(IRQ5A, 0x02a0),
+@@ -202,7 +202,7 @@ static struct intc_group intca_groups[] __initdata = {
+ 	INTC_GROUP(ICUDMC, ICUDMC_ICUDMC1, ICUDMC_ICUDMC2),
+ };
  
- 	spin_lock_bh(&sh_chan->desc_lock);
- 	/* DMA work check */
-@@ -671,10 +671,10 @@ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
- 	}
+-static struct intc_mask_reg intca_mask_registers[] = {
++static struct intc_mask_reg intca_mask_registers[] __initdata = {
+ 	{ 0xe6900040, 0xe6900060, 8, /* INTMSK00A / INTMSKCLR00A */
+ 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
+ 	{ 0xe6900044, 0xe6900064, 8, /* INTMSK10A / INTMSKCLR10A */
+@@ -272,7 +272,7 @@ static struct intc_mask_reg intca_mask_registers[] = {
+ 	    SCIFA6, 0, 0, 0 } },
+ };
  
- 	/* Find the first not transferred desciptor */
--	list_for_each_entry(sd, &sh_chan->ld_queue, node)
--		if (sd->mark = DESC_SUBMITTED) {
-+	list_for_each_entry(desc, &sh_chan->ld_queue, node)
-+		if (desc->mark = DESC_SUBMITTED) {
- 			/* Get the ld start address from ld_queue */
--			dmae_set_reg(sh_chan, &sd->hw);
-+			dmae_set_reg(sh_chan, &desc->hw);
- 			dmae_start(sh_chan);
- 			break;
- 		}
-@@ -696,6 +696,7 @@ static enum dma_status sh_dmae_is_complete(struct dma_chan *chan,
- 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
- 	dma_cookie_t last_used;
- 	dma_cookie_t last_complete;
-+	enum dma_status status;
- 
- 	sh_dmae_chan_ld_cleanup(sh_chan, false);
- 
-@@ -709,7 +710,27 @@ static enum dma_status sh_dmae_is_complete(struct dma_chan *chan,
- 	if (used)
- 		*used = last_used;
- 
--	return dma_async_is_complete(cookie, last_complete, last_used);
-+	spin_lock_bh(&sh_chan->desc_lock);
-+
-+	status = dma_async_is_complete(cookie, last_complete, last_used);
-+
-+	/*
-+	 * If we don't find cookie on the queue, it has been aborted and we have
-+	 * to report error
-+	 */
-+	if (status != DMA_SUCCESS) {
-+		struct sh_desc *desc;
-+		status = DMA_ERROR;
-+		list_for_each_entry(desc, &sh_chan->ld_queue, node)
-+			if (desc->cookie = cookie) {
-+				status = DMA_IN_PROGRESS;
-+				break;
-+			}
-+	}
-+
-+	spin_unlock_bh(&sh_chan->desc_lock);
-+
-+	return status;
- }
- 
- static irqreturn_t sh_dmae_interrupt(int irq, void *data)
-@@ -732,40 +753,36 @@ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
- #if defined(CONFIG_CPU_SH4)
- static irqreturn_t sh_dmae_err(int irq, void *data)
- {
--	int err = 0;
- 	struct sh_dmae_device *shdev = (struct sh_dmae_device *)data;
-+	int i;
- 
--	/* IRQ Multi */
--	if (shdev->pdata.mode & SHDMA_MIX_IRQ) {
--		int __maybe_unused cnt = 0;
--		switch (irq) {
--#if defined(DMTE6_IRQ) && defined(DMAE1_IRQ)
--		case DMTE6_IRQ:
--			cnt++;
--#endif
--		case DMTE0_IRQ:
--			if (dmaor_read_reg(cnt) & (DMAOR_NMIF | DMAOR_AE)) {
--				disable_irq(irq);
--				return IRQ_HANDLED;
-+	/* halt the dma controller */
-+	sh_dmae_ctl_stop(0);
-+	if (shdev->pdata.mode & SHDMA_DMAOR1)
-+		sh_dmae_ctl_stop(1);
-+
-+	/* We cannot detect, which channel caused the error, have to reset all */
-+	for (i = 0; i < MAX_DMA_CHANNELS; i++) {
-+		struct sh_dmae_chan *sh_chan = shdev->chan[i];
-+		if (sh_chan) {
-+			struct sh_desc *desc;
-+			/* Stop the channel */
-+			dmae_halt(sh_chan);
-+			/* Complete all  */
-+			list_for_each_entry(desc, &sh_chan->ld_queue, node) {
-+				struct dma_async_tx_descriptor *tx = &desc->async_tx;
-+				desc->mark = DESC_IDLE;
-+				if (tx->callback)
-+					tx->callback(tx->callback_param);
- 			}
--		default:
--			return IRQ_NONE;
-+			list_splice_init(&sh_chan->ld_queue, &sh_chan->ld_free);
- 		}
--	} else {
--		/* reset dma controller */
--		err = sh_dmae_rst(0);
--		if (err)
--			return err;
--#ifdef SH_DMAC_BASE1
--		if (shdev->pdata.mode & SHDMA_DMAOR1) {
--			err = sh_dmae_rst(1);
--			if (err)
--				return err;
--		}
--#endif
--		disable_irq(irq);
--		return IRQ_HANDLED;
- 	}
-+	sh_dmae_rst(0);
-+	if (shdev->pdata.mode & SHDMA_DMAOR1)
-+		sh_dmae_rst(1);
-+
-+	return IRQ_HANDLED;
- }
- #endif
- 
+-static struct intc_prio_reg intca_prio_registers[] = {
++static struct intc_prio_reg intca_prio_registers[] __initdata = {
+ 	{ 0xe6900010, 0, 32, 4, /* INTPRI00A */
+ 	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
+ 	{ 0xe6900014, 0, 32, 4, /* INTPRI10A */
 -- 
-1.6.2.4
+1.6.3.3
 
