@@ -1,477 +1,487 @@
-From: Yinghai Lu <yinghai@kernel.org>
-Date: Sun, 21 Mar 2010 07:13:08 +0000
-Subject: [PATCH 07/20] irq: move some interrupt arch_* functions into struct irq_chip.
-Message-Id: <1269155601-18247-8-git-send-email-yinghai@kernel.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 29 Mar 2010 07:45:22 +0000
+Subject: [PATCH 2/3 v3] V4L: v4l2-subdev driver for AK8813 and AK8814
+Message-Id: <Pine.LNX.4.64.1003290939560.4417@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1269155601-18247-1-git-send-email-yinghai@kernel.org>
-In-Reply-To: <1269155601-18247-1-git-send-email-yinghai@kernel.org>
+References: <Pine.LNX.4.64.1003290936280.4417@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1003290936280.4417@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, David Miller <davem@davemloft.net>, Jes
-Cc: linux-arch@vger.kernel.org, lguest@ozlabs.org, Jeremy Fitzhardinge <jeremy@goop.org>, Rusty Russell <rusty@rustcorp.com.au>, Ian Campbell <ian.campbell@citrix.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linuxppc-dev@ozlabs.org, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Yinghai Lu <yinghai@kernel.org>
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <damm@opensource.se>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-From: Ian Campbell <ian.campbell@citrix.com>
+AK8814 only differs from AK8813 by included Macrovision Copy Protection
+function. This patch adds a driver for AK8813 and AK8814 I2C PAL/NTSC TV
+encoders.
 
-Move arch_init_copy_chip_data and arch_free_chip_data into function
-pointers in struct irq_chip since they operate on irq_desc->chip_data.
-
-arch_init_chip_data cannot be moved into struct irq_chip because
-irq_desc->chip is not known at the time the irq_desc is setup. Instead
-rename arch_init_chip_data to arch_init_irq_desc for PowerPC, the
-only other user, whose usage better matches the new name.
-
-To replace the x86 arch_init_chip_data functionality
-irq_to_desc_alloc_node now takes a pointer to a function to allocate
-the chip data. This is necessary to ensure the allocation happens
-under the correct locking at the core level. On PowerPC and SH
-architectures (the other users of irq_to_desc_alloc_node) pass in NULL
-which retains existing chip_data behaviour.
-
-I've retained the chip_data behaviour for uv_irq although it isn't
-clear to me if these interrupt types support migration or how closely
-related to the APIC modes they really are. If it weren't for this the
-x86_{init,copy,free}_chip_data functions could be static to
-io_apic.c.
-
-I've tested by booting on an 64 bit x86 system with sparse IRQ enabled
-and 32 bit without, but it's not clear to me what actions I need to
-take to actually exercise some of these code paths.
-
--v4: yinghai add irq_to_desc_alloc_node_x...
-     so could leave default path not changed...
-
-Signed-off-by: Ian Campbell <ian.campbell@citrix.com>
-Acked-by: Michael Ellerman <michael@ellerman.id.au> [PowerPC rename portion]
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: H. Peter Anvin <hpa@zytor.com>
-Cc: Eric W. Biederman <ebiederm@xmission.com>
-Cc: Yinghai Lu <yinghai@kernel.org>
-Cc: Jeremy Fitzhardinge <jeremy@goop.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: x86@kernel.org
-Cc: linuxppc-dev@ozlabs.org
-Cc: linux-kernel@vger.kernel.org
-Cc: Rusty Russell <rusty@rustcorp.com.au>
-Cc: lguest@ozlabs.org
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/powerpc/kernel/irq.c      |    2 +-
- arch/x86/include/asm/hw_irq.h  |    7 +++++-
- arch/x86/kernel/apic/io_apic.c |   49 ++++++++++++++++++++++++++++++++++++---
- arch/x86/kernel/uv_irq.c       |    3 ++
- drivers/xen/events.c           |    7 +++++-
- include/linux/interrupt.h      |    1 -
- include/linux/irq.h            |   21 +++++++++++++----
- kernel/irq/chip.c              |    7 +++++
- kernel/irq/handle.c            |   13 ++++++----
- kernel/irq/numa_migrate.c      |   12 ++++++++-
- kernel/softirq.c               |    5 ----
- 11 files changed, 102 insertions(+), 25 deletions(-)
 
-diff --git a/arch/powerpc/kernel/irq.c b/arch/powerpc/kernel/irq.c
-index 64f6f20..cafd378 100644
---- a/arch/powerpc/kernel/irq.c
-+++ b/arch/powerpc/kernel/irq.c
-@@ -1088,7 +1088,7 @@ int arch_early_irq_init(void)
- 	return 0;
- }
+v2 -> v3:
+
+1. changed .s_std() method to also support multi-bit standards (thanks, 
+   Hans)
+
+ drivers/media/video/Kconfig     |    6 +
+ drivers/media/video/Makefile    |    2 +
+ drivers/media/video/ak881x.c    |  368 +++++++++++++++++++++++++++++++++++++++
+ include/media/ak881x.h          |   25 +++
+ include/media/v4l2-chip-ident.h |    4 +
+ 5 files changed, 405 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/media/video/ak881x.c
+ create mode 100644 include/media/ak881x.h
+
+diff --git a/drivers/media/video/Kconfig b/drivers/media/video/Kconfig
+index 503dffa..09cdd57 100644
+--- a/drivers/media/video/Kconfig
++++ b/drivers/media/video/Kconfig
+@@ -480,6 +480,12 @@ config VIDEO_ADV7343
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called adv7343.
  
--int arch_init_chip_data(struct irq_desc *desc, int node)
-+int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn)
- {
- 	desc->status |= IRQ_NOREQUEST;
- 	return 0;
-diff --git a/arch/x86/include/asm/hw_irq.h b/arch/x86/include/asm/hw_irq.h
-index 46c0fe0..767d3f8 100644
---- a/arch/x86/include/asm/hw_irq.h
-+++ b/arch/x86/include/asm/hw_irq.h
-@@ -20,9 +20,9 @@
- #include <linux/percpu.h>
- #include <linux/profile.h>
- #include <linux/smp.h>
-+#include <linux/irq.h>
- 
- #include <asm/atomic.h>
--#include <asm/irq.h>
- #include <asm/sections.h>
- 
- /* Interrupt handlers registered during init_IRQ */
-@@ -61,6 +61,11 @@ extern void init_VISWS_APIC_irqs(void);
- extern void setup_IO_APIC(void);
- extern void disable_IO_APIC(void);
- 
-+extern void x86_copy_chip_data(struct irq_desc *old_desc,
-+				  struct irq_desc *desc, int node);
-+extern void x86_free_chip_data(struct irq_desc *old_desc,
-+				  struct irq_desc *desc);
++config VIDEO_AK881X
++	tristate "AK8813/AK8814 video encoders"
++	depends on I2C
++	help
++	  Video output driver for AKM AK8813 and AK8814 TV encoders
 +
- struct io_apic_irq_attr {
- 	int ioapic;
- 	int ioapic_pin;
-diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index 463de9a..a917fdf 100644
---- a/arch/x86/kernel/apic/io_apic.c
-+++ b/arch/x86/kernel/apic/io_apic.c
-@@ -211,7 +211,7 @@ static struct irq_cfg *get_one_free_irq_cfg(int node)
- 	return cfg;
- }
+ comment "Video improvement chips"
  
--int arch_init_chip_data(struct irq_desc *desc, int node)
-+static int x86_init_chip_data(struct irq_desc *desc, int node)
- {
- 	struct irq_cfg *cfg;
+ config VIDEO_UPD64031A
+diff --git a/drivers/media/video/Makefile b/drivers/media/video/Makefile
+index ed52b6b..4555f5f 100644
+--- a/drivers/media/video/Makefile
++++ b/drivers/media/video/Makefile
+@@ -151,6 +151,8 @@ obj-$(CONFIG_VIDEO_CX18) += cx18/
+ obj-$(CONFIG_VIDEO_VIVI) += vivi.o
+ obj-$(CONFIG_VIDEO_CX23885) += cx23885/
  
-@@ -287,8 +287,8 @@ static void free_irq_2_pin(struct irq_cfg *old_cfg, struct irq_cfg *cfg)
- 	old_cfg->irq_2_pin = NULL;
- }
- 
--void arch_init_copy_chip_data(struct irq_desc *old_desc,
--				 struct irq_desc *desc, int node)
-+void x86_copy_chip_data(struct irq_desc *old_desc,
-+			   struct irq_desc *desc, int node)
- {
- 	struct irq_cfg *cfg;
- 	struct irq_cfg *old_cfg;
-@@ -312,7 +312,7 @@ static void free_irq_cfg(struct irq_cfg *old_cfg)
- 	kfree(old_cfg);
- }
- 
--void arch_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
-+void x86_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
- {
- 	struct irq_cfg *old_cfg, *cfg;
- 
-@@ -329,6 +329,14 @@ void arch_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
- 	}
- }
- /* end for move_irq_desc */
-+int arch_init_irq_desc(struct irq_desc *desc, int node,
-+			 init_chip_data_fn init_chip_data)
-+{
-+	if (!init_chip_data)
-+		return x86_init_chip_data(desc, node);
++obj-$(CONFIG_VIDEO_AK881X)		+= ak881x.o
 +
-+	return init_chip_data(desc, node);
-+}
- 
- #else
- struct irq_cfg *irq_cfg(unsigned int irq)
-@@ -336,6 +344,15 @@ struct irq_cfg *irq_cfg(unsigned int irq)
- 	return irq < nr_irqs ? irq_cfgx + irq : NULL;
- }
- 
-+void x86_copy_chip_data(struct irq_desc *old_desc,
-+			   struct irq_desc *desc, int node)
+ obj-$(CONFIG_VIDEO_OMAP2)		+= omap2cam.o
+ obj-$(CONFIG_SOC_CAMERA)		+= soc_camera.o soc_mediabus.o
+ obj-$(CONFIG_SOC_CAMERA_PLATFORM)	+= soc_camera_platform.o
+diff --git a/drivers/media/video/ak881x.c b/drivers/media/video/ak881x.c
+new file mode 100644
+index 0000000..35390d4
+--- /dev/null
++++ b/drivers/media/video/ak881x.c
+@@ -0,0 +1,368 @@
++/*
++ * Driver for AK8813 / AK8814 TV-ecoders from Asahi Kasei Microsystems Co., Ltd. (AKM)
++ *
++ * Copyright (C) 2010, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/i2c.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/videodev2.h>
++
++#include <media/ak881x.h>
++#include <media/v4l2-chip-ident.h>
++#include <media/v4l2-common.h>
++#include <media/v4l2-device.h>
++
++#define AK881X_INTERFACE_MODE	0
++#define AK881X_VIDEO_PROCESS1	1
++#define AK881X_VIDEO_PROCESS2	2
++#define AK881X_VIDEO_PROCESS3	3
++#define AK881X_DAC_MODE		5
++#define AK881X_STATUS		0x24
++#define AK881X_DEVICE_ID	0x25
++#define AK881X_DEVICE_REVISION	0x26
++
++struct ak881x {
++	struct v4l2_subdev subdev;
++	struct ak881x_pdata *pdata;
++	unsigned int lines;
++	int id;	/* DEVICE_ID code V4L2_IDENT_AK881X code from v4l2-chip-ident.h */
++	char revision;	/* DEVICE_REVISION content */
++};
++
++static int reg_read(struct i2c_client *client, const u8 reg)
 +{
++	return i2c_smbus_read_byte_data(client, reg);
 +}
 +
-+void x86_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
++static int reg_write(struct i2c_client *client, const u8 reg,
++		     const u8 data)
 +{
++	return i2c_smbus_write_byte_data(client, reg, data);
 +}
 +
- #endif
- 
- struct io_apic {
-@@ -2747,6 +2764,9 @@ static struct irq_chip ioapic_chip __read_mostly = {
- 	.set_affinity	= set_ioapic_affinity_irq,
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static struct irq_chip ir_ioapic_chip __read_mostly = {
-@@ -2762,6 +2782,9 @@ static struct irq_chip ir_ioapic_chip __read_mostly = {
- #endif
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static inline void init_IO_APIC_traps(void)
-@@ -3474,6 +3497,9 @@ static struct irq_chip msi_chip = {
- 	.set_affinity	= set_msi_irq_affinity,
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static struct irq_chip msi_ir_chip = {
-@@ -3487,6 +3513,9 @@ static struct irq_chip msi_ir_chip = {
- #endif
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- /*
-@@ -3646,6 +3675,9 @@ static struct irq_chip dmar_msi_type = {
- 	.set_affinity = dmar_msi_set_affinity,
- #endif
- 	.retrigger = ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- int arch_setup_dmar_msi(unsigned int irq)
-@@ -3703,6 +3735,9 @@ static struct irq_chip ir_hpet_msi_type = {
- #endif
- #endif
- 	.retrigger = ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static struct irq_chip hpet_msi_type = {
-@@ -3714,6 +3749,9 @@ static struct irq_chip hpet_msi_type = {
- 	.set_affinity = hpet_msi_set_affinity,
- #endif
- 	.retrigger = ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- int arch_setup_hpet_msi(unsigned int irq, unsigned int id)
-@@ -3800,6 +3838,9 @@ static struct irq_chip ht_irq_chip = {
- 	.set_affinity	= set_ht_irq_affinity,
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- int arch_setup_ht_irq(unsigned int irq, struct pci_dev *dev)
-diff --git a/arch/x86/kernel/uv_irq.c b/arch/x86/kernel/uv_irq.c
-index ece73d8..4c61f1b 100644
---- a/arch/x86/kernel/uv_irq.c
-+++ b/arch/x86/kernel/uv_irq.c
-@@ -55,6 +55,9 @@ struct irq_chip uv_irq_chip = {
- 	.eoi		= uv_ack_apic,
- 	.end		= uv_noop,
- 	.set_affinity	= uv_set_irq_affinity,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- /*
-diff --git a/drivers/xen/events.c b/drivers/xen/events.c
-index 2f84137..64cbbe4 100644
---- a/drivers/xen/events.c
-+++ b/drivers/xen/events.c
-@@ -329,6 +329,11 @@ static void unmask_evtchn(int port)
- 	put_cpu();
- }
- 
-+static int xen_init_chip_data(struct irq_desc *desc, int node)
++static int reg_set(struct i2c_client *client, const u8 reg,
++		   const u8 data, u8 mask)
 +{
++	int ret = reg_read(client, reg);
++	if (ret < 0)
++		return ret;
++	return reg_write(client, reg, (ret & ~mask) | (data & mask));
++}
++
++static struct ak881x *to_ak881x(const struct i2c_client *client)
++{
++	return container_of(i2c_get_clientdata(client), struct ak881x, subdev);
++}
++
++static int ak881x_g_chip_ident(struct v4l2_subdev *sd,
++			       struct v4l2_dbg_chip_ident *id)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ak881x *ak881x = to_ak881x(client);
++
++	if (id->match.type != V4L2_CHIP_MATCH_I2C_ADDR)
++		return -EINVAL;
++
++	if (id->match.addr != client->addr)
++		return -ENODEV;
++
++	id->ident	= ak881x->id;
++	id->revision	= ak881x->revision;
++
 +	return 0;
 +}
 +
- static int find_unbound_irq(void)
- {
- 	int irq;
-@@ -341,7 +346,7 @@ static int find_unbound_irq(void)
- 	if (irq = nr_irqs)
- 		panic("No available IRQ to bind to: increase nr_irqs!\n");
- 
--	desc = irq_to_desc_alloc_node(irq, 0);
-+	desc = irq_to_desc_alloc_node_x(irq, 0, xen_init_chip_data);
- 	if (WARN_ON(desc = NULL))
- 		return -1;
- 
-diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 75f3f00..0b0d679 100644
---- a/include/linux/interrupt.h
-+++ b/include/linux/interrupt.h
-@@ -611,6 +611,5 @@ struct irq_desc;
- extern int early_irq_init(void);
- extern int arch_probe_nr_irqs(void);
- extern int arch_early_irq_init(void);
--extern int arch_init_chip_data(struct irq_desc *desc, int node);
- 
- #endif
-diff --git a/include/linux/irq.h b/include/linux/irq.h
-index 707ab12..60f3368 100644
---- a/include/linux/irq.h
-+++ b/include/linux/irq.h
-@@ -140,6 +140,13 @@ struct irq_chip {
- 	 * Will disappear.
- 	 */
- 	const char	*typename;
-+
-+	/* for move_irq_desc */
-+	void		(*copy_chip_data)(struct irq_desc *old_desc,
-+					  struct irq_desc *desc, int node);
-+	void		(*free_chip_data)(struct irq_desc *old_desc,
-+					  struct irq_desc *desc);
-+
- };
- 
- struct timer_rand_state;
-@@ -208,10 +215,6 @@ struct irq_desc {
- 	const char		*name;
- } ____cacheline_internodealigned_in_smp;
- 
--extern void arch_init_copy_chip_data(struct irq_desc *old_desc,
--					struct irq_desc *desc, int node);
--extern void arch_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc);
--
- #ifndef CONFIG_SPARSE_IRQ
- extern struct irq_desc irq_desc[NR_IRQS];
- #endif
-@@ -225,7 +228,15 @@ static inline struct irq_desc *move_irq_desc(struct irq_desc *desc, int node)
- }
- #endif
- 
--extern struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node);
-+typedef int (*init_chip_data_fn)(struct irq_desc *, int node);
-+int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn);
-+struct irq_desc *irq_to_desc_alloc_node_x(unsigned int irq, int node,
-+					       init_chip_data_fn fn);
-+static inline struct irq_desc *irq_to_desc_alloc_node(unsigned int irq,
-+							 int node)
++#ifdef CONFIG_VIDEO_ADV_DEBUG
++static int ak881x_g_register(struct v4l2_subdev *sd,
++			     struct v4l2_dbg_register *reg)
 +{
-+	return irq_to_desc_alloc_node_x(irq, node, NULL);
-+}
- 
- /*
-  * Pick up the arch-dependent methods:
-diff --git a/kernel/irq/chip.c b/kernel/irq/chip.c
-index bbba585..3dcdd2f 100644
---- a/kernel/irq/chip.c
-+++ b/kernel/irq/chip.c
-@@ -758,3 +758,10 @@ void __init set_irq_probe(unsigned int irq)
- 	desc->status &= ~IRQ_NOPROBE;
- 	raw_spin_unlock_irqrestore(&desc->lock, flags);
- }
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
 +
-+int __weak arch_init_irq_desc(struct irq_desc *desc, int node,
-+				 init_chip_data_fn init_chip_data)
-+{
++	if (reg->match.type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0x26)
++		return -EINVAL;
++
++	if (reg->match.addr != client->addr)
++		return -ENODEV;
++
++	reg->val = reg_read(client, reg->reg);
++
++	if (reg->val > 0xffff)
++		return -EIO;
++
 +	return 0;
 +}
 +
-diff --git a/kernel/irq/handle.c b/kernel/irq/handle.c
-index 76d5a67..f30c9c7 100644
---- a/kernel/irq/handle.c
-+++ b/kernel/irq/handle.c
-@@ -100,7 +100,8 @@ void __ref init_kstat_irqs(struct irq_desc *desc, int node, int nr)
- 	}
- }
- 
--static void init_one_irq_desc(int irq, struct irq_desc *desc, int node)
-+static void init_one_irq_desc(int irq, struct irq_desc *desc, int node,
-+			      init_chip_data_fn init_chip_data)
- {
- 	memcpy(desc, &irq_desc_init, sizeof(struct irq_desc));
- 
-@@ -120,7 +121,7 @@ static void init_one_irq_desc(int irq, struct irq_desc *desc, int node)
- 		BUG_ON(1);
- 	}
- 	init_desc_masks(desc);
--	arch_init_chip_data(desc, node);
-+	arch_init_irq_desc(desc, node, init_chip_data);
- }
- 
- /*
-@@ -198,7 +199,8 @@ int __init early_irq_init(void)
- 	return arch_early_irq_init();
- }
- 
--struct irq_desc * __ref irq_to_desc_alloc_node(unsigned int irq, int node)
-+struct irq_desc * __ref irq_to_desc_alloc_node_x(unsigned int irq, int node,
-+					       init_chip_data_fn init_chip_data)
- {
- 	struct irq_desc *desc;
- 	unsigned long flags;
-@@ -227,7 +229,7 @@ struct irq_desc * __ref irq_to_desc_alloc_node(unsigned int irq, int node)
- 		printk(KERN_ERR "can not alloc irq_desc\n");
- 		BUG_ON(1);
- 	}
--	init_one_irq_desc(irq, desc, node);
-+	init_one_irq_desc(irq, desc, node, init_chip_data);
- 
- 	set_irq_desc(irq, desc);
- 
-@@ -277,7 +279,8 @@ struct irq_desc *irq_to_desc(unsigned int irq)
- 	return (irq < NR_IRQS) ? irq_desc + irq : NULL;
- }
- 
--struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node)
-+struct irq_desc *irq_to_desc_alloc_node_x(unsigned int irq, int node,
-+					init_chip_data_fn init_chip_data)
- {
- 	return irq_to_desc(irq);
- }
-diff --git a/kernel/irq/numa_migrate.c b/kernel/irq/numa_migrate.c
-index 963559d..9ea09c9 100644
---- a/kernel/irq/numa_migrate.c
-+++ b/kernel/irq/numa_migrate.c
-@@ -47,7 +47,8 @@ static bool init_copy_one_irq_desc(int irq, struct irq_desc *old_desc,
- 	lockdep_set_class(&desc->lock, &irq_desc_lock_class);
- 	init_copy_kstat_irqs(old_desc, desc, node, nr_cpu_ids);
- 	init_copy_desc_masks(old_desc, desc);
--	arch_init_copy_chip_data(old_desc, desc, node);
-+	if (desc->chip->copy_chip_data)
-+		desc->chip->copy_chip_data(old_desc, desc, node);
- 	return true;
- }
- 
-@@ -55,7 +56,8 @@ static void free_one_irq_desc(struct irq_desc *old_desc, struct irq_desc *desc)
- {
- 	free_kstat_irqs(old_desc, desc);
- 	free_desc_masks(old_desc, desc);
--	arch_free_chip_data(old_desc, desc);
-+	if (desc->chip->free_chip_data)
-+		desc->chip->free_chip_data(old_desc, desc);
- }
- 
- static struct irq_desc *__real_move_irq_desc(struct irq_desc *old_desc,
-@@ -107,9 +109,15 @@ out_unlock:
- 
- struct irq_desc *move_irq_desc(struct irq_desc *desc, int node)
- {
++static int ak881x_s_register(struct v4l2_subdev *sd,
++			     struct v4l2_dbg_register *reg)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
 +
- 	/* those static or target node is -1, do not move them */
- 	if (desc->irq < NR_IRQS_LEGACY || node = -1)
- 		return desc;
-+	/* IRQ chip does not support movement */
-+	if (desc->chip_data &&
-+	    (desc->chip->copy_chip_data = NULL ||
-+	     desc->chip->free_chip_data = NULL))
-+		return desc;
++	if (reg->match.type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0x26)
++		return -EINVAL;
++
++	if (reg->match.addr != client->addr)
++		return -ENODEV;
++
++	if (reg_write(client, reg->reg, reg->val) < 0)
++		return -EIO;
++
++	return 0;
++}
++#endif
++
++static int ak881x_try_g_mbus_fmt(struct v4l2_subdev *sd,
++				 struct v4l2_mbus_framefmt *mf)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ak881x *ak881x = to_ak881x(client);
++
++	v4l_bound_align_image(&mf->width, 0, 720, 2,
++			      &mf->height, 0, ak881x->lines, 1, 0);
++	mf->field	= V4L2_FIELD_INTERLACED;
++	mf->code	= V4L2_MBUS_FMT_YUYV8_2X8_LE;
++	mf->colorspace	= V4L2_COLORSPACE_SMPTE170M;
++
++	return 0;
++}
++
++static int ak881x_s_mbus_fmt(struct v4l2_subdev *sd,
++			     struct v4l2_mbus_framefmt *mf)
++{
++	if (mf->field != V4L2_FIELD_INTERLACED ||
++	    mf->code != V4L2_MBUS_FMT_YUYV8_2X8_LE)
++		return -EINVAL;
++
++	return ak881x_try_g_mbus_fmt(sd, mf);
++}
++
++static int ak881x_enum_mbus_fmt(struct v4l2_subdev *sd, int index,
++				enum v4l2_mbus_pixelcode *code)
++{
++	if (index)
++		return -EINVAL;
++
++	*code = V4L2_MBUS_FMT_YUYV8_2X8_LE;
++	return 0;
++}
++
++static int ak881x_cropcap(struct v4l2_subdev *sd, struct v4l2_cropcap *a)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ak881x *ak881x = to_ak881x(client);
++
++	a->bounds.left			= 0;
++	a->bounds.top			= 0;
++	a->bounds.width			= 720;
++	a->bounds.height		= ak881x->lines;
++	a->defrect			= a->bounds;
++	a->type				= V4L2_BUF_TYPE_VIDEO_OUTPUT;
++	a->pixelaspect.numerator	= 1;
++	a->pixelaspect.denominator	= 1;
++
++	return 0;
++}
++
++static int ak881x_s_std_output(struct v4l2_subdev *sd, v4l2_std_id std)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ak881x *ak881x = to_ak881x(client);
++	u8 vp1;
++
++	if (std = V4L2_STD_NTSC_443) {
++		vp1 = 3;
++		ak881x->lines = 480;
++	} else if (std = V4L2_STD_PAL_M) {
++		vp1 = 5;
++		ak881x->lines = 480;
++	} else if (std = V4L2_STD_PAL_60) {
++		vp1 = 7;
++		ak881x->lines = 480;
++	} else if (std && !(std & ~V4L2_STD_PAL)) {
++		vp1 = 0xf;
++		ak881x->lines = 576;
++	} else if (std && !(std & ~V4L2_STD_NTSC)) {
++		vp1 = 0;
++		ak881x->lines = 480;
++	} else {
++		/* No SECAM or PAL_N/Nc supported */
++		return -EINVAL;
++	}
++
++	reg_set(client, AK881X_VIDEO_PROCESS1, vp1, 0xf);
++
++	return 0;
++}
++
++static int ak881x_s_stream(struct v4l2_subdev *sd, int enable)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ak881x *ak881x = to_ak881x(client);
++
++	if (enable) {
++		u8 dac;
++		/* For colour-bar testing set bit 6 of AK881X_VIDEO_PROCESS1 */
++		/* Default: composite output */
++		if (ak881x->pdata->flags & AK881X_COMPONENT)
++			dac = 3;
++		else
++			dac = 4;
++		/* Turn on the DAC(s) */
++		reg_write(client, AK881X_DAC_MODE, dac);
++		dev_dbg(&client->dev, "chip status 0x%x\n",
++			reg_read(client, AK881X_STATUS));
++	} else {
++		/* ...and clear bit 6 of AK881X_VIDEO_PROCESS1 here */
++		reg_write(client, AK881X_DAC_MODE, 0);
++		dev_dbg(&client->dev, "chip status 0x%x\n",
++			reg_read(client, AK881X_STATUS));
++	}
++
++	return 0;
++}
++
++static struct v4l2_subdev_core_ops ak881x_subdev_core_ops = {
++	.g_chip_ident	= ak881x_g_chip_ident,
++#ifdef CONFIG_VIDEO_ADV_DEBUG
++	.g_register	= ak881x_g_register,
++	.s_register	= ak881x_s_register,
++#endif
++};
++
++static struct v4l2_subdev_video_ops ak881x_subdev_video_ops = {
++	.s_mbus_fmt	= ak881x_s_mbus_fmt,
++	.g_mbus_fmt	= ak881x_try_g_mbus_fmt,
++	.try_mbus_fmt	= ak881x_try_g_mbus_fmt,
++	.cropcap	= ak881x_cropcap,
++	.enum_mbus_fmt	= ak881x_enum_mbus_fmt,
++	.s_std_output	= ak881x_s_std_output,
++	.s_stream	= ak881x_s_stream,
++};
++
++static struct v4l2_subdev_ops ak881x_subdev_ops = {
++	.core	= &ak881x_subdev_core_ops,
++	.video	= &ak881x_subdev_video_ops,
++};
++
++static int ak881x_probe(struct i2c_client *client,
++			const struct i2c_device_id *did)
++{
++	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
++	struct ak881x *ak881x;
++	u8 ifmode, data;
++
++	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
++		dev_warn(&adapter->dev,
++			 "I2C-Adapter doesn't support I2C_FUNC_SMBUS_WORD\n");
++		return -EIO;
++	}
++
++	ak881x = kzalloc(sizeof(struct ak881x), GFP_KERNEL);
++	if (!ak881x)
++		return -ENOMEM;
++
++	v4l2_i2c_subdev_init(&ak881x->subdev, client, &ak881x_subdev_ops);
++
++	data = reg_read(client, AK881X_DEVICE_ID);
++
++	switch (data) {
++	case 0x13:
++		ak881x->id = V4L2_IDENT_AK8813;
++		break;
++	case 0x14:
++		ak881x->id = V4L2_IDENT_AK8814;
++		break;
++	default:
++		dev_err(&client->dev,
++			"No ak881x chip detected, register read %x\n", data);
++		kfree(ak881x);
++		return -ENODEV;
++	}
++
++	ak881x->revision = reg_read(client, AK881X_DEVICE_REVISION);
++	ak881x->pdata = client->dev.platform_data;
++
++	if (ak881x->pdata) {
++		if (ak881x->pdata->flags & AK881X_FIELD)
++			ifmode = 4;
++		else
++			ifmode = 0;
++
++		switch (ak881x->pdata->flags & AK881X_IF_MODE_MASK) {
++		case AK881X_IF_MODE_BT656:
++			ifmode |= 1;
++			break;
++		case AK881X_IF_MODE_MASTER:
++			ifmode |= 2;
++			break;
++		case AK881X_IF_MODE_SLAVE:
++		default:
++			break;
++		}
++
++		dev_dbg(&client->dev, "IF mode %x\n", ifmode);
++
++		/*
++		 * "Line Blanking No." seems to be the same as the number of
++		 * "black" lines on, e.g., SuperH VOU, whose default value of 20
++		 * "incidentally" matches ak881x' default
++		 */
++		reg_write(client, AK881X_INTERFACE_MODE, ifmode | (20 << 3));
++	}
++
++	/* Hardware default: NTSC-M */
++	ak881x->lines = 480;
++
++	dev_info(&client->dev, "Detected an ak881x chip ID %x, revision %x\n",
++		 data, ak881x->revision);
++
++	return 0;
++}
++
++static int ak881x_remove(struct i2c_client *client)
++{
++	struct ak881x *ak881x = to_ak881x(client);
++
++	v4l2_device_unregister_subdev(&ak881x->subdev);
++	kfree(ak881x);
++
++	return 0;
++}
++
++static const struct i2c_device_id ak881x_id[] = {
++	{ "ak8813", 0 },
++	{ "ak8814", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ak881x_id);
++
++static struct i2c_driver ak881x_i2c_driver = {
++	.driver = {
++		.name = "ak881x",
++	},
++	.probe		= ak881x_probe,
++	.remove		= ak881x_remove,
++	.id_table	= ak881x_id,
++};
++
++static int __init ak881x_module_init(void)
++{
++	return i2c_add_driver(&ak881x_i2c_driver);
++}
++
++static void __exit ak881x_module_exit(void)
++{
++	i2c_del_driver(&ak881x_i2c_driver);
++}
++
++module_init(ak881x_module_init);
++module_exit(ak881x_module_exit);
++
++MODULE_DESCRIPTION("TV-output driver for ak8813/ak8814");
++MODULE_AUTHOR("Guennadi Liakhovetski <g.liakhovetski@gmx.de>");
++MODULE_LICENSE("GPL v2");
+diff --git a/include/media/ak881x.h b/include/media/ak881x.h
+new file mode 100644
+index 0000000..b7f2add
+--- /dev/null
++++ b/include/media/ak881x.h
+@@ -0,0 +1,25 @@
++/*
++ * Header for AK8813 / AK8814 TV-ecoders from Asahi Kasei Microsystems Co., Ltd. (AKM)
++ *
++ * Copyright (C) 2010, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef AK881X_H
++#define AK881X_H
++
++#define AK881X_IF_MODE_MASK	(3 << 0)
++#define AK881X_IF_MODE_BT656	(0 << 0)
++#define AK881X_IF_MODE_MASTER	(1 << 0)
++#define AK881X_IF_MODE_SLAVE	(2 << 0)
++#define AK881X_FIELD		(1 << 2)
++#define AK881X_COMPONENT	(1 << 3)
++
++struct ak881x_pdata {
++	unsigned long flags;
++};
++
++#endif
+diff --git a/include/media/v4l2-chip-ident.h b/include/media/v4l2-chip-ident.h
+index bf937d3..2b70523 100644
+--- a/include/media/v4l2-chip-ident.h
++++ b/include/media/v4l2-chip-ident.h
+@@ -178,6 +178,10 @@ enum {
+ 	/* module cafe_ccic, just ident 8801 */
+ 	V4L2_IDENT_CAFE = 8801,
  
- 	if (desc->node != node)
- 		desc = __real_move_irq_desc(desc, node);
-diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 7c1a67e..7df0209 100644
---- a/kernel/softirq.c
-+++ b/kernel/softirq.c
-@@ -895,8 +895,3 @@ int __init __weak arch_early_irq_init(void)
- {
- 	return 0;
- }
--
--int __weak arch_init_chip_data(struct irq_desc *desc, int node)
--{
--	return 0;
--}
++	/* AKM AK8813/AK8814 */
++	V4L2_IDENT_AK8813 = 8813,
++	V4L2_IDENT_AK8814 = 8814,
++
+ 	/* module cx23885 and cx25840 */
+ 	V4L2_IDENT_CX23885    = 8850,
+ 	V4L2_IDENT_CX23885_AV = 8851, /* Integrated A/V decoder */
 -- 
-1.6.4.2
+1.6.2.4
 
