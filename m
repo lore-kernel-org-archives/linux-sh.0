@@ -1,466 +1,409 @@
-From: Yinghai Lu <yinghai@kernel.org>
-Date: Fri, 19 Mar 2010 19:02:22 +0000
-Subject: Re: [PATCH 1/2] irq: move some interrupt arch_* functions into struct
-Message-Id: <4BA3CA3E.7010207@kernel.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Mar 2010 13:56:18 +0000
+Subject: [PATCH] ARM: mach-shmobile: initial sh7377 clock framework
+Message-Id: <20100331135618.3072.17807.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1268998032.10129.44653.camel@zakaz.uk.xensource.com>
-	<1268998041-22707-1-git-send-email-ian.campbell@citrix.com>
-In-Reply-To: <1268998041-22707-1-git-send-email-ian.campbell@citrix.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Campbell <ian.campbell@citrix.com>
-Cc: lguest@ozlabs.org, Jeremy Fitzhardinge <jeremy@goop.org>, Rusty Russell <rusty@rustcorp.com.au>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linuxppc-dev@ozlabs.org, Ingo Molnar <mingo@redhat.com>, Paul Mackerras <paulus@samba.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
-please check
+From: Magnus Damm <damm@opensource.se>
 
-Subject: [PATCH -v4] irq: move some interrupt arch_* functions into struct irq_chip.
-From: Ian Campbell <ian.campbell@citrix.com>
+Add initial sh7377 clock framework support to
+SH-Mobile ARM. The implementation is far from
+complete but is enough to dynamically deal with
+module stop bits for CMT1, SDHI and KEYSC.
 
-Move arch_init_copy_chip_data and arch_free_chip_data into function
-pointers in struct irq_chip since they operate on irq_desc->chip_data.
+The peripheral clock is kept as a static dummy
+clock to satisfy the code in sh-sci.c.
 
-arch_init_chip_data cannot be moved into struct irq_chip because
-irq_desc->chip is not known at the time the irq_desc is setup. Instead
-rename arch_init_chip_data to arch_init_irq_desc for PowerPC, the
-only other user, whose usage better matches the new name.
+Clock parent selection and support for the rest
+of the module stop bits are still on the TODO.
 
-To replace the x86 arch_init_chip_data functionality
-irq_to_desc_alloc_node now takes a pointer to a function to allocate
-the chip data. This is necessary to ensure the allocation happens
-under the correct locking at the core level. On PowerPC and SH
-architectures (the other users of irq_to_desc_alloc_node) pass in NULL
-which retains existing chip_data behaviour.
+Also, move the clock framework init time to later
+to deal with the fact that the new clock framework
+code is using kmalloc().
 
-I've retained the chip_data behaviour for uv_irq although it isn't
-clear to me if these interrupt types support migration or how closely
-related to the APIC modes they really are. If it weren't for this the
-x86_{init,copy,free}_chip_data functions could be static to
-io_apic.c.
-
-I've tested by booting on an 64 bit x86 system with sparse IRQ enabled
-and 32 bit without, but it's not clear to me what actions I need to
-take to actually exercise some of these code paths.
-
--v4: yinghai add irq_to_desc_alloc_node_x...
-     so could leave default path not changed...
-
-Signed-off-by: Ian Campbell <ian.campbell@citrix.com>
-Acked-by: Michael Ellerman <michael@ellerman.id.au> [PowerPC rename portion]
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: H. Peter Anvin <hpa@zytor.com>
-Cc: Eric W. Biederman <ebiederm@xmission.com>
-Cc: Yinghai Lu <yinghai@kernel.org>
-Cc: Jeremy Fitzhardinge <jeremy@goop.org>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: x86@kernel.org
-Cc: linuxppc-dev@ozlabs.org
-Cc: linux-kernel@vger.kernel.org
-Cc: Rusty Russell <rusty@rustcorp.com.au>
-Cc: lguest@ozlabs.org
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/powerpc/kernel/irq.c      |    2 -
- arch/x86/include/asm/hw_irq.h  |    7 +++++
- arch/x86/kernel/apic/io_apic.c |   49 +++++++++++++++++++++++++++++++++++++----
- arch/x86/kernel/uv_irq.c       |    3 ++
- drivers/xen/events.c           |    7 +++++
- include/linux/interrupt.h      |    1 
- include/linux/irq.h            |   20 ++++++++++++----
- kernel/irq/chip.c              |    7 +++++
- kernel/irq/handle.c            |   13 ++++++----
- kernel/irq/numa_migrate.c      |   12 ++++++++--
- kernel/softirq.c               |    5 ----
- 11 files changed, 101 insertions(+), 25 deletions(-)
 
-Index: linux-2.6/arch/powerpc/kernel/irq.c
-=================================--- linux-2.6.orig/arch/powerpc/kernel/irq.c
-+++ linux-2.6/arch/powerpc/kernel/irq.c
-@@ -1088,7 +1088,7 @@ int arch_early_irq_init(void)
- 	return 0;
- }
+ Applies on top of the earlier clock framework patches.
+
+ arch/arm/mach-shmobile/Kconfig               |    2 
+ arch/arm/mach-shmobile/Makefile              |    2 
+ arch/arm/mach-shmobile/board-g4evm.c         |   19 +
+ arch/arm/mach-shmobile/clock-sh7377.c        |  283 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 
+ 5 files changed, 299 insertions(+), 8 deletions(-)
+
+--- 0008/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2010-03-31 21:56:22.000000000 +0900
+@@ -14,7 +14,7 @@ config ARCH_SH7377
+ 	bool "SH-Mobile G4 (SH7377)"
+ 	select CPU_V7
+ 	select HAVE_CLK
+-	select COMMON_CLKDEV
++	select SH_CLK_CPG
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
  
--int arch_init_chip_data(struct irq_desc *desc, int node)
-+int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn)
+--- 0008/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2010-03-31 21:56:22.000000000 +0900
+@@ -12,7 +12,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh737
+ 
+ # Clock framework
+ clk-$(CONFIG_ARCH_SH7367)	+-clk-$(CONFIG_ARCH_SH7377)	++clk-$(CONFIG_ARCH_SH7377)	+= clock-sh7377.o
+ clk-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
+ obj-$(CONFIG_SH_CLK_CPG)	+= $(clk-y) clock.o
+ 
+--- 0001/arch/arm/mach-shmobile/board-g4evm.c
++++ work/arch/arm/mach-shmobile/board-g4evm.c	2010-03-31 21:56:22.000000000 +0900
+@@ -36,6 +36,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
++#include <asm/mach/time.h>
+ 
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+@@ -191,9 +192,8 @@ static void __init g4evm_map_io(void)
  {
- 	desc->status |= IRQ_NOREQUEST;
- 	return 0;
-Index: linux-2.6/arch/x86/include/asm/hw_irq.h
-=================================--- linux-2.6.orig/arch/x86/include/asm/hw_irq.h
-+++ linux-2.6/arch/x86/include/asm/hw_irq.h
-@@ -20,9 +20,9 @@
- #include <linux/percpu.h>
- #include <linux/profile.h>
- #include <linux/smp.h>
-+#include <linux/irq.h>
+ 	iotable_init(g4evm_io_desc, ARRAY_SIZE(g4evm_io_desc));
  
- #include <asm/atomic.h>
--#include <asm/irq.h>
- #include <asm/sections.h>
- 
- /* Interrupt handlers registered during init_IRQ */
-@@ -61,6 +61,11 @@ extern void init_VISWS_APIC_irqs(void);
- extern void setup_IO_APIC(void);
- extern void disable_IO_APIC(void);
- 
-+extern void x86_copy_chip_data(struct irq_desc *old_desc,
-+				  struct irq_desc *desc, int node);
-+extern void x86_free_chip_data(struct irq_desc *old_desc,
-+				  struct irq_desc *desc);
-+
- struct io_apic_irq_attr {
- 	int ioapic;
- 	int ioapic_pin;
-Index: linux-2.6/arch/x86/kernel/apic/io_apic.c
-=================================--- linux-2.6.orig/arch/x86/kernel/apic/io_apic.c
-+++ linux-2.6/arch/x86/kernel/apic/io_apic.c
-@@ -211,7 +211,7 @@ static struct irq_cfg *get_one_free_irq_
- 	return cfg;
+-	/* setup early devices, clocks and console here as well */
++	/* setup early devices and console here as well */
+ 	sh7377_add_early_devices();
+-	sh7367_clock_init(); /* use g3 clocks for now */
+ 	shmobile_setup_console();
  }
  
--int arch_init_chip_data(struct irq_desc *desc, int node)
-+static int x86_init_chip_data(struct irq_desc *desc, int node)
- {
- 	struct irq_cfg *cfg;
+@@ -229,9 +229,6 @@ static void __init g4evm_init(void)
+ 	gpio_request(GPIO_FN_EXTLP, NULL);
+ 	gpio_request(GPIO_FN_IDIN, NULL);
  
-@@ -287,8 +287,8 @@ static void free_irq_2_pin(struct irq_cf
- 	old_cfg->irq_2_pin = NULL;
- }
- 
--void arch_init_copy_chip_data(struct irq_desc *old_desc,
--				 struct irq_desc *desc, int node)
-+void x86_copy_chip_data(struct irq_desc *old_desc,
-+			   struct irq_desc *desc, int node)
- {
- 	struct irq_cfg *cfg;
- 	struct irq_cfg *old_cfg;
-@@ -312,7 +312,7 @@ static void free_irq_cfg(struct irq_cfg
- 	kfree(old_cfg);
- }
- 
--void arch_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
-+void x86_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
- {
- 	struct irq_cfg *old_cfg, *cfg;
- 
-@@ -329,6 +329,14 @@ void arch_free_chip_data(struct irq_desc
- 	}
- }
- /* end for move_irq_desc */
-+int arch_init_irq_desc(struct irq_desc *desc, int node,
-+			 init_chip_data_fn init_chip_data)
-+{
-+	if (!init_chip_data)
-+		return x86_init_chip_data(desc, node);
-+
-+	return init_chip_data(desc, node);
-+}
- 
- #else
- struct irq_cfg *irq_cfg(unsigned int irq)
-@@ -336,6 +344,15 @@ struct irq_cfg *irq_cfg(unsigned int irq
- 	return irq < nr_irqs ? irq_cfgx + irq : NULL;
- }
- 
-+void x86_copy_chip_data(struct irq_desc *old_desc,
-+			   struct irq_desc *desc, int node)
-+{
-+}
-+
-+void x86_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc)
-+{
-+}
-+
- #endif
- 
- struct io_apic {
-@@ -2747,6 +2764,9 @@ static struct irq_chip ioapic_chip __rea
- 	.set_affinity	= set_ioapic_affinity_irq,
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static struct irq_chip ir_ioapic_chip __read_mostly = {
-@@ -2762,6 +2782,9 @@ static struct irq_chip ir_ioapic_chip __
- #endif
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static inline void init_IO_APIC_traps(void)
-@@ -3474,6 +3497,9 @@ static struct irq_chip msi_chip = {
- 	.set_affinity	= set_msi_irq_affinity,
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static struct irq_chip msi_ir_chip = {
-@@ -3487,6 +3513,9 @@ static struct irq_chip msi_ir_chip = {
- #endif
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- /*
-@@ -3646,6 +3675,9 @@ static struct irq_chip dmar_msi_type = {
- 	.set_affinity = dmar_msi_set_affinity,
- #endif
- 	.retrigger = ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- int arch_setup_dmar_msi(unsigned int irq)
-@@ -3703,6 +3735,9 @@ static struct irq_chip ir_hpet_msi_type
- #endif
- #endif
- 	.retrigger = ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- static struct irq_chip hpet_msi_type = {
-@@ -3714,6 +3749,9 @@ static struct irq_chip hpet_msi_type = {
- 	.set_affinity = hpet_msi_set_affinity,
- #endif
- 	.retrigger = ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- int arch_setup_hpet_msi(unsigned int irq, unsigned int id)
-@@ -3800,6 +3838,9 @@ static struct irq_chip ht_irq_chip = {
- 	.set_affinity	= set_ht_irq_affinity,
- #endif
- 	.retrigger	= ioapic_retrigger_irq,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- int arch_setup_ht_irq(unsigned int irq, struct pci_dev *dev)
-Index: linux-2.6/arch/x86/kernel/uv_irq.c
-=================================--- linux-2.6.orig/arch/x86/kernel/uv_irq.c
-+++ linux-2.6/arch/x86/kernel/uv_irq.c
-@@ -55,6 +55,9 @@ struct irq_chip uv_irq_chip = {
- 	.eoi		= uv_ack_apic,
- 	.end		= uv_noop,
- 	.set_affinity	= uv_set_irq_affinity,
-+
-+	.copy_chip_data = x86_copy_chip_data,
-+	.free_chip_data = x86_free_chip_data,
- };
- 
- /*
-Index: linux-2.6/drivers/xen/events.c
-=================================--- linux-2.6.orig/drivers/xen/events.c
-+++ linux-2.6/drivers/xen/events.c
-@@ -329,6 +329,11 @@ static void unmask_evtchn(int port)
- 	put_cpu();
- }
- 
-+static int xen_init_chip_data(struct irq_desc *desc, int node)
-+{
-+	return 0;
-+}
-+
- static int find_unbound_irq(void)
- {
- 	int irq;
-@@ -341,7 +346,7 @@ static int find_unbound_irq(void)
- 	if (irq = nr_irqs)
- 		panic("No available IRQ to bind to: increase nr_irqs!\n");
- 
--	desc = irq_to_desc_alloc_node(irq, 0);
-+	desc = irq_to_desc_alloc_node_x(irq, 0, xen_init_chip_data);
- 	if (WARN_ON(desc = NULL))
- 		return -1;
- 
-Index: linux-2.6/include/linux/interrupt.h
-=================================--- linux-2.6.orig/include/linux/interrupt.h
-+++ linux-2.6/include/linux/interrupt.h
-@@ -611,6 +611,5 @@ struct irq_desc;
- extern int early_irq_init(void);
- extern int arch_probe_nr_irqs(void);
- extern int arch_early_irq_init(void);
--extern int arch_init_chip_data(struct irq_desc *desc, int node);
- 
- #endif
-Index: linux-2.6/include/linux/irq.h
-=================================--- linux-2.6.orig/include/linux/irq.h
-+++ linux-2.6/include/linux/irq.h
-@@ -131,6 +131,12 @@ struct irq_chip {
- 	void		(*bus_lock)(unsigned int irq);
- 	void		(*bus_sync_unlock)(unsigned int irq);
- 
-+	/* for move_irq_desc */
-+	void		(*copy_chip_data)(struct irq_desc *old_desc,
-+					  struct irq_desc *desc, int node);
-+	void		(*free_chip_data)(struct irq_desc *old_desc,
-+					  struct irq_desc *desc);
-+
- 	/* Currently used only by UML, might disappear one day.*/
- #ifdef CONFIG_IRQ_RELEASE_METHOD
- 	void		(*release)(unsigned int irq, void *dev_id);
-@@ -208,10 +214,6 @@ struct irq_desc {
- 	const char		*name;
- } ____cacheline_internodealigned_in_smp;
- 
--extern void arch_init_copy_chip_data(struct irq_desc *old_desc,
--					struct irq_desc *desc, int node);
--extern void arch_free_chip_data(struct irq_desc *old_desc, struct irq_desc *desc);
+-	/* enable clock in SMSTPCR3 */
+-	__raw_writel(__raw_readl(0xe615013c) & ~(1 << 22), 0xe615013c);
 -
- #ifndef CONFIG_SPARSE_IRQ
- extern struct irq_desc irq_desc[NR_IRQS];
- #endif
-@@ -225,7 +227,15 @@ static inline struct irq_desc *move_irq_
+ 	/* setup USB phy */
+ 	__raw_writew(0x0200, 0xe605810a);       /* USBCR1 */
+ 	__raw_writew(0x00e0, 0xe60581c0);       /* CPFCH */
+@@ -258,11 +255,21 @@ static void __init g4evm_init(void)
+ 	platform_add_devices(g4evm_devices, ARRAY_SIZE(g4evm_devices));
  }
- #endif
  
--extern struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node);
-+typedef int (*init_chip_data_fn)(struct irq_desc *, int node);
-+int arch_init_irq_desc(struct irq_desc *desc, int node, init_chip_data_fn fn);
-+struct irq_desc *irq_to_desc_alloc_node_x(unsigned int irq, int node,
-+					       init_chip_data_fn fn);
-+static inline struct irq_desc *irq_to_desc_alloc_node(unsigned int irq,
-+							 int node)
++static void __init g4evm_timer_init(void)
 +{
-+	return irq_to_desc_alloc_node_x(irq, node, NULL);
-+}
- 
- /*
-  * Pick up the arch-dependent methods:
-Index: linux-2.6/kernel/irq/handle.c
-=================================--- linux-2.6.orig/kernel/irq/handle.c
-+++ linux-2.6/kernel/irq/handle.c
-@@ -100,7 +100,8 @@ void __ref init_kstat_irqs(struct irq_de
- 	}
- }
- 
--static void init_one_irq_desc(int irq, struct irq_desc *desc, int node)
-+static void init_one_irq_desc(int irq, struct irq_desc *desc, int node,
-+			      init_chip_data_fn init_chip_data)
- {
- 	memcpy(desc, &irq_desc_init, sizeof(struct irq_desc));
- 
-@@ -120,7 +121,7 @@ static void init_one_irq_desc(int irq, s
- 		BUG_ON(1);
- 	}
- 	init_desc_masks(desc);
--	arch_init_chip_data(desc, node);
-+	arch_init_irq_desc(desc, node, init_chip_data);
- }
- 
- /*
-@@ -198,7 +199,8 @@ int __init early_irq_init(void)
- 	return arch_early_irq_init();
- }
- 
--struct irq_desc * __ref irq_to_desc_alloc_node(unsigned int irq, int node)
-+struct irq_desc * __ref irq_to_desc_alloc_node_x(unsigned int irq, int node,
-+					       init_chip_data_fn init_chip_data)
- {
- 	struct irq_desc *desc;
- 	unsigned long flags;
-@@ -227,7 +229,7 @@ struct irq_desc * __ref irq_to_desc_allo
- 		printk(KERN_ERR "can not alloc irq_desc\n");
- 		BUG_ON(1);
- 	}
--	init_one_irq_desc(irq, desc, node);
-+	init_one_irq_desc(irq, desc, node, init_chip_data);
- 
- 	set_irq_desc(irq, desc);
- 
-@@ -277,7 +279,8 @@ struct irq_desc *irq_to_desc(unsigned in
- 	return (irq < NR_IRQS) ? irq_desc + irq : NULL;
- }
- 
--struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node)
-+struct irq_desc *irq_to_desc_alloc_node_x(unsigned int irq, int node,
-+					init_chip_data_fn init_chip_data)
- {
- 	return irq_to_desc(irq);
- }
-Index: linux-2.6/kernel/irq/numa_migrate.c
-=================================--- linux-2.6.orig/kernel/irq/numa_migrate.c
-+++ linux-2.6/kernel/irq/numa_migrate.c
-@@ -47,7 +47,8 @@ static bool init_copy_one_irq_desc(int i
- 	lockdep_set_class(&desc->lock, &irq_desc_lock_class);
- 	init_copy_kstat_irqs(old_desc, desc, node, nr_cpu_ids);
- 	init_copy_desc_masks(old_desc, desc);
--	arch_init_copy_chip_data(old_desc, desc, node);
-+	if (desc->chip->copy_chip_data)
-+		desc->chip->copy_chip_data(old_desc, desc, node);
- 	return true;
- }
- 
-@@ -55,7 +56,8 @@ static void free_one_irq_desc(struct irq
- {
- 	free_kstat_irqs(old_desc, desc);
- 	free_desc_masks(old_desc, desc);
--	arch_free_chip_data(old_desc, desc);
-+	if (desc->chip->free_chip_data)
-+		desc->chip->free_chip_data(old_desc, desc);
- }
- 
- static struct irq_desc *__real_move_irq_desc(struct irq_desc *old_desc,
-@@ -107,9 +109,15 @@ out_unlock:
- 
- struct irq_desc *move_irq_desc(struct irq_desc *desc, int node)
- {
-+
- 	/* those static or target node is -1, do not move them */
- 	if (desc->irq < NR_IRQS_LEGACY || node = -1)
- 		return desc;
-+	/* IRQ chip does not support movement */
-+	if (desc->chip_data &&
-+	    (desc->chip->copy_chip_data = NULL ||
-+	     desc->chip->free_chip_data = NULL))
-+		return desc;
- 
- 	if (desc->node != node)
- 		desc = __real_move_irq_desc(desc, node);
-Index: linux-2.6/kernel/softirq.c
-=================================--- linux-2.6.orig/kernel/softirq.c
-+++ linux-2.6/kernel/softirq.c
-@@ -895,8 +895,3 @@ int __init __weak arch_early_irq_init(vo
- {
- 	return 0;
- }
--
--int __weak arch_init_chip_data(struct irq_desc *desc, int node)
--{
--	return 0;
--}
-Index: linux-2.6/kernel/irq/chip.c
-=================================--- linux-2.6.orig/kernel/irq/chip.c
-+++ linux-2.6/kernel/irq/chip.c
-@@ -758,3 +758,10 @@ void __init set_irq_probe(unsigned int i
- 	desc->status &= ~IRQ_NOPROBE;
- 	raw_spin_unlock_irqrestore(&desc->lock, flags);
- }
-+
-+int __weak arch_init_irq_desc(struct irq_desc *desc, int node,
-+				 init_chip_data_fn init_chip_data)
-+{
-+	return 0;
++	sh7377_clock_init();
++	shmobile_timer.init();
 +}
 +
++static struct sys_timer g4evm_timer = {
++	.init		= g4evm_timer_init,
++};
++
+ MACHINE_START(G4EVM, "g4evm")
+ 	.phys_io	= 0xe6000000,
+ 	.io_pg_offst	= ((0xe6000000) >> 18) & 0xfffc,
+ 	.map_io		= g4evm_map_io,
+ 	.init_irq	= sh7377_init_irq,
+ 	.init_machine	= g4evm_init,
+-	.timer		= &shmobile_timer,
++	.timer		= &g4evm_timer,
+ MACHINE_END
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock-sh7377.c	2010-03-31 22:51:01.000000000 +0900
+@@ -0,0 +1,283 @@
++/*
++ * SH7377 clock framework support
++ *
++ * Copyright (C) 2010 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/sh_clk.h>
++
++/* SH7377 registers */
++#define RTFRQCR    0xe6150000
++#define SYFRQCR    0xe6150004
++#define CMFRQCR    0xe61500E0
++#define VCLKCR1    0xe6150008
++#define VCLKCR2    0xe615000C
++#define VCLKCR3    0xe615001C
++#define FMSICKCR   0xe6150010
++#define FMSOCKCR   0xe6150014
++#define FSICKCR    0xe6150018
++#define PLLC1CR    0xe6150028
++#define PLLC2CR    0xe615002C
++#define SUBUSBCKCR 0xe6150080
++#define SPUCKCR    0xe6150084
++#define MSUCKCR    0xe6150088
++#define MVI3CKCR   0xe6150090
++#define HDMICKCR   0xe6150094
++#define MFCK1CR    0xe6150098
++#define MFCK2CR    0xe615009C
++#define DSITCKCR   0xe6150060
++#define DSIPCKCR   0xe6150064
++#define SMSTPCR0   0xe6150130
++#define SMSTPCR1   0xe6150134
++#define SMSTPCR2   0xe6150138
++#define SMSTPCR3   0xe615013C
++#define SMSTPCR4   0xe6150140
++
++/* Fixed 32 KHz root clock from EXTALR pin */
++static struct clk r_clk = {
++	.name           = "r_clk",
++	.id             = -1,
++	.rate           = 32768,
++};
++
++/*
++ * 26MHz default rate for the EXTALC1 root input clock.
++ * If needed, reset this with clk_set_rate() from the platform code.
++ */
++struct clk extalc1_clk = {
++	.name		= "extalc1",
++	.id		= -1,
++	.rate		= 26666666,
++};
++
++/*
++ * 48MHz default rate for the EXTAL2 root input clock.
++ * If needed, reset this with clk_set_rate() from the platform code.
++ */
++struct clk extal2_clk = {
++	.name		= "extal2",
++	.id		= -1,
++	.rate		= 48000000,
++};
++
++/* A fixed divide-by-2 block */
++static unsigned long div2_recalc(struct clk *clk)
++{
++	return clk->parent->rate / 2;
++}
++
++static struct clk_ops div2_clk_ops = {
++	.recalc		= div2_recalc,
++};
++
++/* Divide extalc1 by two */
++static struct clk extalc1_div2_clk = {
++	.name		= "extalc1_div2_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &extalc1_clk,
++};
++
++/* Divide extal2 by two */
++static struct clk extal2_div2_clk = {
++	.name		= "extal2_div2_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &extal2_clk,
++};
++
++/* Divide extal2 by four */
++static struct clk extal2_div4_clk = {
++	.name		= "extal2_div4_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &extal2_div2_clk,
++};
++
++/* PLLC1 */
++static unsigned long pllc1_recalc(struct clk *clk)
++{
++	unsigned long mult = 1;
++
++	if (__raw_readl(PLLC1CR) & (1 << 14))
++		mult = (((__raw_readl(RTFRQCR) >> 24) & 0x3f) + 1) * 2;
++
++	return clk->parent->rate * mult;
++}
++
++static struct clk_ops pllc1_clk_ops = {
++	.recalc		= pllc1_recalc,
++};
++
++static struct clk pllc1_clk = {
++	.name		= "pllc1_clk",
++	.id		= -1,
++	.ops		= &pllc1_clk_ops,
++	.flags		= CLK_ENABLE_ON_INIT,
++	.parent		= &extalc1_div2_clk,
++};
++
++/* Divide PLLC1 by two */
++static struct clk pllc1_div2_clk = {
++	.name		= "pllc1_div2_clk",
++	.id		= -1,
++	.ops		= &div2_clk_ops,
++	.parent		= &pllc1_clk,
++};
++
++/* PLLC2 */
++static unsigned long pllc2_recalc(struct clk *clk)
++{
++	unsigned long mult = 1;
++
++	if (__raw_readl(PLLC2CR) & (1 << 31))
++		mult = (((__raw_readl(PLLC2CR) >> 24) & 0x3f) + 1) * 2;
++
++	return clk->parent->rate * mult;
++}
++
++static struct clk_ops pllc2_clk_ops = {
++	.recalc		= pllc2_recalc,
++};
++
++static struct clk pllc2_clk = {
++	.name		= "pllc2_clk",
++	.id		= -1,
++	.ops		= &pllc2_clk_ops,
++	.flags		= CLK_ENABLE_ON_INIT,
++	.parent		= &extalc1_div2_clk,
++};
++
++/* a static peripheral clock for now - enough to get sh-sci working */
++static struct clk peripheral_clk = {
++	.name	    = "peripheral_clk",
++	.rate	    = 48000000,
++};
++
++struct clk *main_clks[] = {
++	&r_clk,
++	&extalc1_clk,
++	&extal2_clk,
++	&extalc1_div2_clk,
++	&extal2_div2_clk,
++	&extal2_div4_clk,
++	&pllc1_clk,
++	&pllc1_div2_clk,
++	&pllc2_clk,
++	&peripheral_clk,
++};
++
++static void div4_kick(struct clk *clk)
++{
++	unsigned long value;
++
++	/* set KICK bit in SYFRQCR to update hardware setting */
++	value = __raw_readl(SYFRQCR);
++	value |= (1 << 31);
++	__raw_writel(value, SYFRQCR);
++}
++
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
++			  24, 32, 36, 48, 0, 72, 96, 0 };
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++	.kick = div4_kick,
++};
++
++enum { DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_CSIR,
++       DIV4_ZTR, DIV4_ZT, DIV4_Z, DIV4_HP,
++       DIV4_ZS, DIV4_ZB, DIV4_ZB3, DIV4_CP, DIV4_NR };
++
++#define DIV4(_str, _reg, _bit, _mask, _flags) \
++  SH_CLK_DIV4(_str, &pllc1_clk, _reg, _bit, _mask, _flags)
++
++struct clk div4_clks[DIV4_NR] = {
++	[DIV4_I] = DIV4("i_clk", RTFRQCR, 20, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_ZG] = DIV4("zg_clk", RTFRQCR, 16, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_B] = DIV4("b_clk", RTFRQCR, 8, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_M1] = DIV4("m1_clk", RTFRQCR, 4, 0x6fff, CLK_ENABLE_ON_INIT),
++	[DIV4_CSIR] = DIV4("csir_clk", RTFRQCR, 0, 0x6fff, 0),
++	[DIV4_ZTR] = DIV4("ztr_clk", SYFRQCR, 20, 0x6fff, 0),
++	[DIV4_ZT] = DIV4("zt_clk", SYFRQCR, 16, 0x6fff, 0),
++	[DIV4_Z] = DIV4("z_clk", SYFRQCR, 12, 0x6fff, 0),
++	[DIV4_HP] = DIV4("hp_clk", SYFRQCR, 4, 0x6fff, 0),
++	[DIV4_ZS] = DIV4("zs_clk", CMFRQCR, 12, 0x6fff, 0),
++	[DIV4_ZB] = DIV4("zb_clk", CMFRQCR, 8, 0x6fff, 0),
++	[DIV4_ZB3] = DIV4("zb3_clk", CMFRQCR, 4, 0x6fff, 0),
++	[DIV4_CP] = DIV4("cp_clk", CMFRQCR, 0, 0x6fff, 0),
++};
++
++struct clk div6_clks[] = {
++	SH_CLK_DIV6("sub_clk", &pllc1_div2_clk, SUBUSBCKCR, 0),
++	SH_CLK_DIV6("msu_clk", &pllc1_div2_clk, MSUCKCR, 0),
++	SH_CLK_DIV6("spu_clk", &pllc1_div2_clk, SPUCKCR, 0),
++	SH_CLK_DIV6("fsi_clk", &pllc1_div2_clk, FSICKCR, 0),
++	SH_CLK_DIV6("fmsi_clk", &pllc1_div2_clk, FMSICKCR, 0),
++	SH_CLK_DIV6("fmso_clk", &pllc1_div2_clk, FMSOCKCR, 0),
++	SH_CLK_DIV6("mvi3_clk", &pllc1_div2_clk, MVI3CKCR, 0),
++	SH_CLK_DIV6("mf1_clk", &pllc1_div2_clk, MFCK1CR, 0),
++	SH_CLK_DIV6("mf2_clk", &pllc1_div2_clk, MFCK2CR, 0),
++	SH_CLK_DIV6("dsit_clk", &pllc1_div2_clk, DSITCKCR, 0),
++	SH_CLK_DIV6("dsip_clk", &pllc1_div2_clk, DSIPCKCR, 0),
++	SH_CLK_DIV6("hdmi_clk", &pllc1_div2_clk, HDMICKCR, 0),
++	SH_CLK_DIV6("vck1_clk", &pllc1_div2_clk, VCLKCR1, 0),
++	SH_CLK_DIV6("vck2_clk", &pllc1_div2_clk, VCLKCR2, 0),
++	SH_CLK_DIV6("vck3_clk", &pllc1_div2_clk, VCLKCR3, 0),
++};
++
++#define MSTP(_str, _parent, _reg, _bit, _flags) \
++  SH_CLK_MSTP32(_str, -1, _parent, _reg, _bit, _flags)
++
++#define R_CLK (&r_clk)
++#define HP_CLK (&div4_clks[DIV4_HP])
++
++static struct clk mstp_clks[] = {
++	MSTP("sdhi0", HP_CLK, SMSTPCR3, 14, 0),
++	MSTP("sdhi1", HP_CLK, SMSTPCR3, 13, 0),
++	MSTP("usb0", HP_CLK, SMSTPCR3, 22, 0),
++	MSTP("cmt1", R_CLK, SMSTPCR3, 29, 0),
++	MSTP("keysc0", R_CLK, SMSTPCR4, 3, 0),
++};
++
++void __init sh7377_clock_init(void)
++{
++	int k, ret = 0;
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
++		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
++
++	if (!ret)
++		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
++
++	if (!ret)
++		clk_init();
++	else
++		panic("failed to setup sh7377 clocks\n");
++}
+--- 0008/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-03-31 21:56:22.000000000 +0900
+@@ -13,6 +13,7 @@ extern void sh7367_pinmux_init(void);
+ extern void sh7377_init_irq(void);
+ extern void sh7377_add_early_devices(void);
+ extern void sh7377_add_standard_devices(void);
++extern void sh7377_clock_init(void);
+ extern void sh7377_pinmux_init(void);
+ 
+ extern void sh7372_init_irq(void);
