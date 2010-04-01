@@ -1,72 +1,30 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 01 Apr 2010 07:37:26 +0000
-Subject: objdump on libgcc
-Message-Id: <201004010937.26235.fabio.giovagnini@aurion-tech.com>
+From: Andrew Stubbs <ams@codesourcery.com>
+Date: Thu, 01 Apr 2010 07:59:11 +0000
+Subject: Re: objdump on libgcc
+Message-Id: <4BB4524F.9060706@codesourcery.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201004010937.26235.fabio.giovagnini@aurion-tech.com>
+In-Reply-To: <201004010937.26235.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Andrew,
-in my crosstool dir I have only one libgcc.a
+On 01/04/10 08:37, Fabio Giovagnini wrote:
+> This is the result,
+> so I think libgcc is only for fdpic target, so if I need it for building
+> kernel (and for making zImage it seems to be essential) I can link only a
+> wrong libgcc.
 
-If on it I do
+Absolutely, there is only FDPIC libgcc in the release I sent to you.
 
-fgiovagnini@aurio01:~/sh7203/sh7203-uclinux-4.4-143/build/target/lib/gcc/sh-
-uclinux/4.4.1$ sh-uclinux-objdump -a libgcc.a | more
-In archive libgcc.a:
+The kernel has not needed glibc for a while now. The relevant routines 
+were copied/rewritten to arch/sh/lib.
 
-_ashiftrt.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0   1604 Mar 18 22:26 2010 _ashiftrt.o
+I expect that all the routines you need are present, so it should just 
+be makefile adjustments. If it does need something extra (that somehow 
+the whole of the rest of the kernel can do without) then I expect it can 
+be extracted from the compiler sources (gcc/config/sh/lib1funcs.asm). 
+The linker should have already told you this list of routines it needs.
 
-
-_ashiftrt_n.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    595 Mar 18 22:26 2010 _ashiftrt_n.o
-
-
-_ashiftlt.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    603 Mar 18 22:26 2010 _ashiftlt.o
-
-
-_lshiftrt.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    603 Mar 18 22:26 2010 _lshiftrt.o
-
-
-_movmem.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0   1535 Mar 18 22:26 2010 _movmem.o
-
-
-_movmem_i4.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    844 Mar 18 22:26 2010 _movmem_i4.o
-
-
-_mulsi3.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    524 Mar 18 22:26 2010 _mulsi3.o
-
-
-_sdivsi3.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    648 Mar 18 22:26 2010 _sdivsi3.o
-
-
-_sdivsi3_i4.o:     file format elf32-shbig-fdpic
-rw-r--r-- 2012/0    441 Mar 18 22:26 2010 _sdivsi3_i4.o
-
-This is the result,
-so I think libgcc is only for fdpic target, so if I need it for building 
-kernel (and for making zImage it seems to be essential) I can link only a 
-wrong libgcc.
-
-What can I test more?
-
-Cheers
-
-
--- 
-Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+Andrew
