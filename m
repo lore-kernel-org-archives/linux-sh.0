@@ -1,25 +1,56 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 29 Apr 2010 14:30:18 +0000
-Subject: Re: [PATCH] arch/sh: Fix wrong function prototype for native_cpu_disable
-Message-Id: <20100429143018.GC9621@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Thu, 01 Apr 2010 07:19:10 +0000
+Subject: Re: Sourcery G++ 4.4-136 Release
+Message-Id: <201004010919.10831.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201004290256.10506.PeterHuewe@gmx.de>
-In-Reply-To: <201004290256.10506.PeterHuewe@gmx.de>
+References: <201003271507.12509.fabio.giovagnini@aurion-tech.com>
+In-Reply-To: <201003271507.12509.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Peter Huewe <PeterHuewe@gmx.de>
-Cc: Rusty Russell <rusty@rustcorp.com.au>, Matt Fleming <matt@console-pimps.org>, Mike Travis <travis@sgi.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Thu, Apr 29, 2010 at 02:56:10AM +0200, Peter Huewe wrote:
-> From: Peter Huewe <peterhuewe@gmx.de>
-> 
-> This patch fixes the prototype of native_cpu_disable if
-> CONFIG_HOTPLUG_CPU is not set, and thus fixes a build failure[1]
-> 
-> References:
-> [1] http://kisskb.ellerman.id.au/kisskb/buildresult/2536296/
-> 
-> Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
+Hi Andrew, what are
+sh-uclinux-ld: Warning: size of symbol `sys_connect' changed from 12 in=20
+kernel/built-in.o to 164 in net/built-in.o
+sh-uclinux-ld: Warning: size of symbol `sys_socketpair' changed from 12 in =
 
-I've already applied Matt's patch for the same issue, thanks anyways!
+kernel/built-in.o to 312 in net/built-in.o
+sh-uclinux-ld: Warning: size of symbol `sys_getpeername' changed from 12 in=
+=20
+kernel/built-in.o to 164 in net/built-in.o
+
+
+Thanks
+
+Cheers
+
+In data marted=C3=AC 23 marzo 2010 11:04:52, Andrew Stubbs ha scritto:
+: > On 23/03/10 09:51, Fabio Giovagnini wrote:
+> > I logged in once but I failed to downloading;
+> > the second attempt to login and download failed; could I try later?
+>=20
+> I don't know of any reason why it would fail. I was just concerned that
+> maybe you wouldn't have permission to see the page. Please do try again.
+>=20
+> > Really now I cannot spend the amount of money for buy the toolchain,
+> > because this is a spto job I'm doing; if the work will be stable in the
+> > future I'll think if buy a license and support. Now I have no horizont =
+in
+> > front opf me about this kinds of works.
+>=20
+> No problem, Renesas are paying for a free Lite edition, so you can use
+> that. I only ask because we don't have a planned release date for the
+> pay-for edition yet.
+>=20
+> Andrew
+>=20
+
+--=20
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
