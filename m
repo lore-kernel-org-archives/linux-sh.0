@@ -1,32 +1,323 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 06 Apr 2010 15:48:29 +0000
-Subject: Re: [PATCH 00/03] i2c: i2c-sh_mobile update for SH-Mobile ARM
-Message-Id: <20100406154829.GA9261@linux-sh.org>
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sat, 03 Apr 2010 18:34:56 +0000
+Subject: [PATCH 1/4] panic: Allow warnings to set different taint flags
+Message-Id: <1270319696.12516.321.camel@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100311100526.15227.50813.sendpatchset@t400s> <20100315063005.GA21181@fluff.org.uk>
-In-Reply-To: <20100315063005.GA21181-elnMNo+KYs3pIgCt6eIbzw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben-linux-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org>
-Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nishimoto.hiroki-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, morimoto.kuninori-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org
+To: Jesse Barnes <jbarnes@virtuousgeek.org>
+Cc: David Woodhouse <dwmw2@infradead.org>, linux-pci@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linux-parisc@vger.kernel.org, linuxppc-dev@ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Mon, Mar 15, 2010 at 06:30:05AM +0000, Ben Dooks wrote:
-> On Thu, Mar 11, 2010 at 07:05:26PM +0900, Magnus Damm wrote:
-> > i2c: i2c-sh_mobile update for SH-Mobile ARM
-> > 
-> > [PATCH 01/03] i2c: i2c-sh_mobile register access code break out
-> > [PATCH 02/03] i2c: i2c-sh_mobile support for new ICIC bits
-> > [PATCH 03/03] i2c: i2c-sh_mobile kconfig update for SH-Mobile ARM
-> > 
-> > These patches add support for a newer version of the IIC block
-> > to the i2c-sh_mobile and enables the driver on SH-Mobile ARM.
-> > 
-> > Perhaps suitable for the SH tree?
-> 
-> I'll add these to i2c-next once I restart it in a few days
-> time.
-> 
-I still don't see these in -next, so I suppose I'll just roll these in to
-the genesis tree, especially since we have outstanding patches that
-depend on these.
+WARN() is used in some places to report firmware or hardware bugs that
+are then worked-around.  These bugs do not affect the stability of the
+kernel and should not set the flag for TAINT_WARN.  To allow for this,
+add WARN_TAINT() and WARN_TAINT_ONCE() macros that take a taint number
+as argument.
+
+Architectures that implement warnings using trap instructions instead
+of calls to warn_slowpath_*() now implement __WARN_TAINT(taint)
+instead of __WARN().
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+Changes since the previous version:
+- Added note to Documentation/oops-tracing.txt
+- Changed the commit message to distinguish taint numbers from taint
+  flags
+- Removed 'must' from last sentence of commit message; this patch
+  converts all mainline architectures
+
+Ben.
+
+ Documentation/oops-tracing.txt |    1 +
+ arch/parisc/include/asm/bug.h  |    8 ++++----
+ arch/powerpc/include/asm/bug.h |    6 +++---
+ arch/s390/include/asm/bug.h    |    8 ++++----
+ arch/sh/include/asm/bug.h      |    4 ++--
+ include/asm-generic/bug.h      |   34 ++++++++++++++++++++++++++++++++--
+ kernel/panic.c                 |   24 ++++++++++++++++++++----
+ lib/bug.c                      |    2 +-
+ 8 files changed, 67 insertions(+), 20 deletions(-)
+
+diff --git a/Documentation/oops-tracing.txt b/Documentation/oops-tracing.txt
+index c10c022..069fab3 100644
+--- a/Documentation/oops-tracing.txt
++++ b/Documentation/oops-tracing.txt
+@@ -256,6 +256,7 @@ characters, each representing a particular tainted value.
+   9: 'A' if the ACPI table has been overridden.
+ 
+  10: 'W' if a warning has previously been issued by the kernel.
++     (Though some warnings may set more specific taint flags.)
+ 
+  11: 'C' if a staging driver has been loaded.
+ 
+diff --git a/arch/parisc/include/asm/bug.h b/arch/parisc/include/asm/bug.h
+index 75e46c5..72cfdb0 100644
+--- a/arch/parisc/include/asm/bug.h
++++ b/arch/parisc/include/asm/bug.h
+@@ -44,7 +44,7 @@
+ #endif
+ 
+ #ifdef CONFIG_DEBUG_BUGVERBOSE
+-#define __WARN()							\
++#define __WARN_TAINT(taint)						\
+ 	do {								\
+ 		asm volatile("\n"					\
+ 			     "1:\t" PARISC_BUG_BREAK_ASM "\n"		\
+@@ -54,11 +54,11 @@
+ 			     "\t.org 2b+%c3\n"				\
+ 			     "\t.popsection"				\
+ 			     : : "i" (__FILE__), "i" (__LINE__),	\
+-			     "i" (BUGFLAG_WARNING),			\
++			     "i" (BUGFLAG_TAINT(taint)), 		\
+ 			     "i" (sizeof(struct bug_entry)) );		\
+ 	} while(0)
+ #else
+-#define __WARN()							\
++#define __WARN_TAINT(taint)						\
+ 	do {								\
+ 		asm volatile("\n"					\
+ 			     "1:\t" PARISC_BUG_BREAK_ASM "\n"		\
+@@ -67,7 +67,7 @@
+ 			     "\t.short %c0\n"				\
+ 			     "\t.org 2b+%c1\n"				\
+ 			     "\t.popsection"				\
+-			     : : "i" (BUGFLAG_WARNING),			\
++			     : : "i" (BUGFLAG_TAINT(taint)),		\
+ 			     "i" (sizeof(struct bug_entry)) );		\
+ 	} while(0)
+ #endif
+diff --git a/arch/powerpc/include/asm/bug.h b/arch/powerpc/include/asm/bug.h
+index 2c15212..065c590 100644
+--- a/arch/powerpc/include/asm/bug.h
++++ b/arch/powerpc/include/asm/bug.h
+@@ -85,12 +85,12 @@
+ 	}							\
+ } while (0)
+ 
+-#define __WARN() do {						\
++#define __WARN_TAINT(taint) do {				\
+ 	__asm__ __volatile__(					\
+ 		"1:	twi 31,0,0\n"				\
+ 		_EMIT_BUG_ENTRY					\
+ 		: : "i" (__FILE__), "i" (__LINE__),		\
+-		  "i" (BUGFLAG_WARNING),			\
++		  "i" (BUGFLAG_TAINT(taint)),			\
+ 		  "i" (sizeof(struct bug_entry)));		\
+ } while (0)
+ 
+@@ -104,7 +104,7 @@
+ 		"1:	"PPC_TLNEI"	%4,0\n"			\
+ 		_EMIT_BUG_ENTRY					\
+ 		: : "i" (__FILE__), "i" (__LINE__),		\
+-		  "i" (BUGFLAG_WARNING),			\
++		  "i" (BUGFLAG_TAINT(TAINT_WARN)),		\
+ 		  "i" (sizeof(struct bug_entry)),		\
+ 		  "r" (__ret_warn_on));				\
+ 	}							\
+diff --git a/arch/s390/include/asm/bug.h b/arch/s390/include/asm/bug.h
+index 9beeb9d..bf90d1f 100644
+--- a/arch/s390/include/asm/bug.h
++++ b/arch/s390/include/asm/bug.h
+@@ -46,18 +46,18 @@
+ 	unreachable();					\
+ } while (0)
+ 
+-#define __WARN() do {					\
+-	__EMIT_BUG(BUGFLAG_WARNING);			\
++#define __WARN_TAINT(taint) do {			\
++	__EMIT_BUG(BUGFLAG_TAINT(taint));		\
+ } while (0)
+ 
+ #define WARN_ON(x) ({					\
+ 	int __ret_warn_on = !!(x);			\
+ 	if (__builtin_constant_p(__ret_warn_on)) {	\
+ 		if (__ret_warn_on)			\
+-			__EMIT_BUG(BUGFLAG_WARNING);	\
++			__WARN();			\
+ 	} else {					\
+ 		if (unlikely(__ret_warn_on))		\
+-			__EMIT_BUG(BUGFLAG_WARNING);	\
++			__WARN();			\
+ 	}						\
+ 	unlikely(__ret_warn_on);			\
+ })
+diff --git a/arch/sh/include/asm/bug.h b/arch/sh/include/asm/bug.h
+index d02c01b..6323f86 100644
+--- a/arch/sh/include/asm/bug.h
++++ b/arch/sh/include/asm/bug.h
+@@ -48,7 +48,7 @@ do {							\
+ 		   "i" (sizeof(struct bug_entry)));	\
+ } while (0)
+ 
+-#define __WARN()					\
++#define __WARN_TAINT(taint)				\
+ do {							\
+ 	__asm__ __volatile__ (				\
+ 		"1:\t.short %O0\n"			\
+@@ -57,7 +57,7 @@ do {							\
+ 		 : "n" (TRAPA_BUG_OPCODE),		\
+ 		   "i" (__FILE__),			\
+ 		   "i" (__LINE__),			\
+-		   "i" (BUGFLAG_WARNING),		\
++		   "i" (BUGFLAG_TAINT(taint)),		\
+ 		   "i" (sizeof(struct bug_entry)));	\
+ } while (0)
+ 
+diff --git a/include/asm-generic/bug.h b/include/asm-generic/bug.h
+index 18c435d..c2c9ba0 100644
+--- a/include/asm-generic/bug.h
++++ b/include/asm-generic/bug.h
+@@ -25,7 +25,10 @@ struct bug_entry {
+ };
+ #endif		/* __ASSEMBLY__ */
+ 
+-#define BUGFLAG_WARNING	(1<<0)
++#define BUGFLAG_WARNING		(1 << 0)
++#define BUGFLAG_TAINT(taint)	(BUGFLAG_WARNING | ((taint) << 8))
++#define BUG_GET_TAINT(bug)	((bug)->flags >> 8)
++
+ #endif	/* CONFIG_GENERIC_BUG */
+ 
+ /*
+@@ -56,17 +59,25 @@ struct bug_entry {
+  * appear at runtime.  Use the versions with printk format strings
+  * to provide better diagnostics.
+  */
+-#ifndef __WARN
++#ifndef __WARN_TAINT
+ #ifndef __ASSEMBLY__
+ extern void warn_slowpath_fmt(const char *file, const int line,
+ 		const char *fmt, ...) __attribute__((format(printf, 3, 4)));
++extern void warn_slowpath_fmt_taint(const char *file, const int line,
++				    unsigned taint, const char *fmt, ...)
++	__attribute__((format(printf, 4, 5)));
+ extern void warn_slowpath_null(const char *file, const int line);
+ #define WANT_WARN_ON_SLOWPATH
+ #endif
+ #define __WARN()		warn_slowpath_null(__FILE__, __LINE__)
+ #define __WARN_printf(arg...)	warn_slowpath_fmt(__FILE__, __LINE__, arg)
++#define __WARN_printf_taint(taint, arg...)				\
++	warn_slowpath_fmt_taint(__FILE__, __LINE__, taint, arg)
+ #else
++#define __WARN()		__WARN_TAINT(TAINT_WARN)
+ #define __WARN_printf(arg...)	do { printk(arg); __WARN(); } while (0)
++#define __WARN_printf_taint(taint, arg...)				\
++	do { printk(arg); __WARN_TAINT(taint); } while (0)
+ #endif
+ 
+ #ifndef WARN_ON
+@@ -87,6 +98,13 @@ extern void warn_slowpath_null(const char *file, const int line);
+ })
+ #endif
+ 
++#define WARN_TAINT(condition, taint, format...) ({			\
++	int __ret_warn_on = !!(condition);				\
++	if (unlikely(__ret_warn_on))					\
++		__WARN_printf_taint(taint, format);			\
++	unlikely(__ret_warn_on);					\
++})
++
+ #else /* !CONFIG_BUG */
+ #ifndef HAVE_ARCH_BUG
+ #define BUG() do {} while(0)
+@@ -110,6 +128,8 @@ extern void warn_slowpath_null(const char *file, const int line);
+ })
+ #endif
+ 
++#define WARN_TAINT(condition, taint, format...) WARN_ON(condition)
++
+ #endif
+ 
+ #define WARN_ON_ONCE(condition)	({				\
+@@ -132,6 +152,16 @@ extern void warn_slowpath_null(const char *file, const int line);
+ 	unlikely(__ret_warn_once);				\
+ })
+ 
++#define WARN_TAINT_ONCE(condition, taint, format...)	({	\
++	static bool __warned;					\
++	int __ret_warn_once = !!(condition);			\
++								\
++	if (unlikely(__ret_warn_once))				\
++		if (WARN_TAINT(!__warned, taint, format))	\
++			__warned = true;			\
++	unlikely(__ret_warn_once);				\
++})
++
+ #define WARN_ON_RATELIMIT(condition, state)			\
+ 		WARN_ON((condition) && __ratelimit(state))
+ 
+diff --git a/kernel/panic.c b/kernel/panic.c
+index 13d966b..8b821bc 100644
+--- a/kernel/panic.c
++++ b/kernel/panic.c
+@@ -365,7 +365,8 @@ struct slowpath_args {
+ 	va_list args;
+ };
+ 
+-static void warn_slowpath_common(const char *file, int line, void *caller, struct slowpath_args *args)
++static void warn_slowpath_common(const char *file, int line, void *caller,
++				 unsigned taint, struct slowpath_args *args)
+ {
+ 	const char *board;
+ 
+@@ -381,7 +382,7 @@ static void warn_slowpath_common(const char *file, int line, void *caller, struc
+ 	print_modules();
+ 	dump_stack();
+ 	print_oops_end_marker();
+-	add_taint(TAINT_WARN);
++	add_taint(taint);
+ }
+ 
+ void warn_slowpath_fmt(const char *file, int line, const char *fmt, ...)
+@@ -390,14 +391,29 @@ void warn_slowpath_fmt(const char *file, int line, const char *fmt, ...)
+ 
+ 	args.fmt = fmt;
+ 	va_start(args.args, fmt);
+-	warn_slowpath_common(file, line, __builtin_return_address(0), &args);
++	warn_slowpath_common(file, line, __builtin_return_address(0),
++			     TAINT_WARN, &args);
+ 	va_end(args.args);
+ }
+ EXPORT_SYMBOL(warn_slowpath_fmt);
+ 
++void warn_slowpath_fmt_taint(const char *file, int line,
++			     unsigned taint, const char *fmt, ...)
++{
++	struct slowpath_args args;
++
++	args.fmt = fmt;
++	va_start(args.args, fmt);
++	warn_slowpath_common(file, line, __builtin_return_address(0),
++			     taint, &args);
++	va_end(args.args);
++}
++EXPORT_SYMBOL(warn_slowpath_fmt_taint);
++
+ void warn_slowpath_null(const char *file, int line)
+ {
+-	warn_slowpath_common(file, line, __builtin_return_address(0), NULL);
++	warn_slowpath_common(file, line, __builtin_return_address(0),
++			     TAINT_WARN, NULL);
+ }
+ EXPORT_SYMBOL(warn_slowpath_null);
+ #endif
+diff --git a/lib/bug.c b/lib/bug.c
+index 300e41a..f13daf4 100644
+--- a/lib/bug.c
++++ b/lib/bug.c
+@@ -165,7 +165,7 @@ enum bug_trap_type report_bug(unsigned long bugaddr, struct pt_regs *regs)
+ 			       (void *)bugaddr);
+ 
+ 		show_regs(regs);
+-		add_taint(TAINT_WARN);
++		add_taint(BUG_GET_TAINT(bug));
+ 		return BUG_TRAP_TYPE_WARN;
+ 	}
+ 
+-- 
+1.7.0.3
+
+
+
