@@ -1,61 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 Apr 2010 03:51:37 +0000
-Subject: Re: [PATCH 1/2 v2] MMC:Add support MMCIF for SuperH
-Message-Id: <o2uaec7e5c31004292051yff981cebg3bd05e2684036ae4@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 06 Apr 2010 15:48:29 +0000
+Subject: Re: [PATCH 00/03] i2c: i2c-sh_mobile update for SH-Mobile ARM
+Message-Id: <20100406154829.GA9261@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4BD7C240.5050800@renesas.com>
-	 <20100427221705.1628375b.akpm@linux-foundation.org>
-In-Reply-To: <20100427221705.1628375b.akpm@linux-foundation.org>
+References: <20100311100526.15227.50813.sendpatchset@t400s> <20100315063005.GA21181@fluff.org.uk>
+In-Reply-To: <20100315063005.GA21181-elnMNo+KYs3pIgCt6eIbzw@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, ben@decadent.org.uk, linux-mmc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ben Dooks <ben-linux-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org>
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nishimoto.hiroki-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, morimoto.kuninori-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org
 
-Hi Andrew,
-
-Thanks for your review!
-
-On Wed, Apr 28, 2010 at 11:17 AM, Andrew Morton
-<akpm@linux-foundation.org> wrote:
-> On Wed, 28 Apr 2010 14:06:08 +0900 Yusuke Goda <yusuke.goda.sx@renesas.co=
-m> wrote:
->
->> + =A0 =A0 time =3D wait_event_interruptible_timeout(host->intr_wait,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 host->wait_int =3D 1 ||
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 host->sd_error =3D 1, host->ti=
-meout);
->> + =A0 =A0 if (host->wait_int !=3D 1 && (time =3D 0 || host->sd_error !=
-=3D 0))
->> + =A0 =A0 =A0 =A0 =A0 =A0 return sh_mmcif_error_manage(host);
->
-> wait_event_interruptible_timeout() will return early with -ERESTARTSYS
-> if the calling process gets signalled (eg, ^C was hit).
->
-> The driver uses wait_event_interruptible_timeout() rather a lot and the
-> two sites I looked at seem to handle the signal_pending() case
-> correctly.
->
-> But incorrectly handling signals with interruptible waits is a
-> frequently-occurring error in drivers. =A0Did you deliberately cater for
-> this case, and have you runtime tested it?
-
-My plan is to use this driver on SH-Mobile ARM (sh7372), and I'd be
-happy to fix up the driver to become a bit less non-standard wrt
-blocking compared to the other MMC host drivers. Is it possible that
-Goda-san fixes up whatever minor bits that need rework and that you
-pick up at that point?
-
-I'd like to rework the MMCIF blocking code and perhaps also add
-dmaengine support as feature patches on top of Goda-sans work if
-that's ok with you. Better PM is also on the TODO. Not sure if any of
-these features will make it in time for the 2.6.35 merge window
-though.
-
-It would be very useful to have the MMCIF driver as-is in 2.6.35
-mainline to begin with if possible. Or do you think the driver needs
-to be reworked more before that can happen?
-
-Thanks,
-
-/ magnus
+On Mon, Mar 15, 2010 at 06:30:05AM +0000, Ben Dooks wrote:
+> On Thu, Mar 11, 2010 at 07:05:26PM +0900, Magnus Damm wrote:
+> > i2c: i2c-sh_mobile update for SH-Mobile ARM
+> > 
+> > [PATCH 01/03] i2c: i2c-sh_mobile register access code break out
+> > [PATCH 02/03] i2c: i2c-sh_mobile support for new ICIC bits
+> > [PATCH 03/03] i2c: i2c-sh_mobile kconfig update for SH-Mobile ARM
+> > 
+> > These patches add support for a newer version of the IIC block
+> > to the i2c-sh_mobile and enables the driver on SH-Mobile ARM.
+> > 
+> > Perhaps suitable for the SH tree?
+> 
+> I'll add these to i2c-next once I restart it in a few days
+> time.
+> 
+I still don't see these in -next, so I suppose I'll just roll these in to
+the genesis tree, especially since we have outstanding patches that
+depend on these.
