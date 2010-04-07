@@ -1,71 +1,58 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Thu, 22 Apr 2010 08:07:06 +0000
-Subject: libshveu 1.2.0 released
-Message-Id: <s2idba6c0831004220107xdf676a17o10d449e201b1fd1a@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 07 Apr 2010 07:33:46 +0000
+Subject: Re: [PATCH 0/3] AP4: I2C patches
+Message-Id: <20100407073346.GB17971@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-libshveu 1.2.0
-=======
+On Thu, Mar 11, 2010 at 07:42:11PM +0900, Kuninori Morimoto wrote:
+> Kuninori Morimoto (3):
+>       ARM: mach-shmobile: sh7372: Add I2C0, I2C1 support
+>       ARM: mach-shmobile: ap4evb: Add TouchScreen support
+>       ARM: mach-shmobile: ap4evb: Add R2025S RTC support
+> 
+> These 3 patches add I2C support to AP4-EVB board.
+> 
+> It are based on Magnus's
+>   - SDHI patche series
+>   - INTCS patche series
 
-libshveu: A library for controlling SH-Mobile VEU
+On Fri, Mar 12, 2010 at 07:07:55PM +0900, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+> ---
+> depend on
+> [PATCH 2/3] ARM: mach-shmobile: ap4evb: Add TouchScreen support
+> 
+>  arch/arm/mach-shmobile/board-ap4evb.c |   16 ++++++++++------
+>  1 files changed, 10 insertions(+), 6 deletions(-)
 
-The source archive, and more information about the library are available from:
+On Mon, Mar 29, 2010 at 03:31:36PM +0900, Kuninori Morimoto wrote:
+> This patch add SDHI support for G4 board.
+> Current gpio frame work doesn't have
+> the method to control only pull-up/down/free.
+> So, it have special gpio_pull_up function for SDHI.
+> It is quick hack, so this function should be replaced
+> by correct gpio frame work in future.
 
-	http://oss.renesas.com/modules/document/?libshveu
+On Mon, Mar 29, 2010 at 03:31:46PM +0900, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
+> ---
+>  arch/arm/mach-shmobile/intc-sh7367.c |    6 +++---
+>  arch/arm/mach-shmobile/intc-sh7377.c |    6 +++---
+>  2 files changed, 6 insertions(+), 6 deletions(-)
 
+On Mon, Mar 29, 2010 at 04:58:13PM +0900, Kuninori Morimoto wrote:
+> Add support for the sh7377 INTCS interrupt controller.
+> 
+> INTCS is the interrupt controller for the sh7377 SuperH
+> processor core. It is tied into the INTCA interrupt
+> controller which interfaces to the ARM processor.
+> 
+> INTCS support is implemented using a new INTC table
+> together with a chained interrupt handler that ties
+> into the already supported INTCA controller.
 
-New in this release
--------------------
-
-	* Added support for building for Android.
-
-	* Fixed colorspace issues when enlarging from VGA to D1
-
-	* Add detection of VEU hardware revision
-
-Changes
--------
-
-This release includes the following changes since version 1.1.0:
-
-Atsuhiro Ito (2):
-      Handle VRPBR register setting for enlargement
-      Add ifdef KERNEL 2.6.33 branch
-
-Conrad Parker (8):
-      configure.ac typo: shveu_pkgdeps
-      add VEU3F detection
-      Add VRPBR register handling for VEU3F (sh7724)
-      shveu_open: propagate error conditions
-      shveu_convert: fail on error opening VEU
-      add TODO file with some suggested improvements.
-      TODO: update with simpler API ideas
-      Release 1.2.0
-
-Katsuya Matsubara (3):
-      fix pixel density to calculate VDAYR offset for rotation
-      android: add Android.mk
-      shveu-convert: fix wrong destination pitch for shveu_operation()
-
-Phil Edworthy (1):
-      Added parameter checks.
-
- Android.mk                    |    4 ++
- TODO                          |   19 +++++++
- configure.ac                  |    4 +-
- src/Android.mk                |    1 +
- src/libshveu/Android.mk       |   17 +++++++
- src/libshveu/shveu_regs.h     |    2 +
- src/libshveu/veu_colorspace.c |  107 ++++++++++++++++++++++++++++++++++++-----
- src/tools/Android.mk          |   10 ++++
- src/tools/shveu-convert.c     |    7 ++-
- 9 files changed, 154 insertions(+), 17 deletions(-)
- create mode 100644 Android.mk
- create mode 100644 TODO
- create mode 100644 src/Android.mk
- create mode 100644 src/libshveu/Android.mk
- create mode 100644 src/tools/Android.mk
+All applied, thanks.
