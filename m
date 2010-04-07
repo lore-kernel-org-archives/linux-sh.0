@@ -1,46 +1,16 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Fri, 02 Apr 2010 02:35:05 +0000
-Subject: Re: O_DIRECT not found.
-Message-Id: <l2udba6c0831004011935w2cde4148j9f7350430c5681a0@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 07 Apr 2010 07:34:41 +0000
+Subject: Re: [PATCH 05/05] dmaengine: shdma: Enable on SH-Mobile ARM
+Message-Id: <20100407073440.GC17971@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201004011815.12072.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201004011815.12072.fabio.giovagnini@aurion-tech.com>
+References: <20100319044719.17051.57155.sendpatchset@t400s>
+In-Reply-To: <20100319044719.17051.57155.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 2 April 2010 01:15, Fabio Giovagnini
-<fabio.giovagnini@aurion-tech.com> wrote:
-> #include <sys/types.h>
-> #include <sys/stat.h>
-> #include <stdio.h> /* Standard input/output definitions */
-> #include <string.h> /* String function definitions */
-> #include <unistd.h> /* UNIX standard function definitions */
-> #include <fcntl.h> /* File control definitions */
-> #include <errno.h> /* Error number definitions */
-> #include <termios.h>
->
-> .
-> .
-> .
->
->
->
-> rs485TxEn_fd = open("/proc/mlcdports/rs485txen",O_WRONLY | O_NDELAY |
-> O_DIRECT);
->
-> .
-> .
-> .
->
-> Why I cannot find the flag O_DIRECT
+On Fri, Mar 19, 2010 at 01:47:19PM +0900, Magnus Damm wrote:
+> Enable the shdma dmaengine driver on SH-Mobile ARM.
 
-You'd need to #define _GNU_SOURCE before including <fcntl.h>
-
-from open(2):
-
- O_DIRECT is not specified in POSIX; one has to define _GNU_SOURCE to  get
- its definition.
-
-Conrad.
+Applied to the genesis tree, on top of the sh/dmaengine topic branch.
