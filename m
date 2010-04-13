@@ -1,263 +1,47 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Mon, 26 Apr 2010 04:22:57 +0000
-Subject: sighttpd 1.0.0 Released
-Message-Id: <n2ndba6c0831004252122lae80d13eh567aedeb9706da43@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Apr 2010 06:16:25 +0000
+Subject: [PATCH 1/2] ARM: mach-shmobile: intc-sh7372: modify wrong address
+Message-Id: <ufx2zyj0o.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sighttpd 1.0.0
-=======
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/mach-shmobile/intc-sh7372.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
-Sighttpd is an HTTP streaming server designed for distributing realtime
-input. It is particularly useful for making camera streams available to
-multiple clients, and has been designed for embedded systems use.
+diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
+index 3ce9d9b..cfba59f 100644
+--- a/arch/arm/mach-shmobile/intc-sh7372.c
++++ b/arch/arm/mach-shmobile/intc-sh7372.c
+@@ -319,17 +319,17 @@ static struct intc_prio_reg intca_prio_registers[] __initdata = {
+ 	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
+ 	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
+ 					       CMT14, CMT15 } },
+-	{ 0xe694003c, 0, 16, 4, /* IPRPA3 */ { 0, 0,
++	{ 0xe695003c, 0, 16, 4, /* IPRPA3 */ { 0, 0,
+ 					       MMC_MMC_ERR, MMC_MMC_NOR } },
+-	{ 0xe6940040, 0, 16, 4, /* IPRQA3 */ { IIC4_ALI4, IIC4_TACKI4,
++	{ 0xe6950040, 0, 16, 4, /* IPRQA3 */ { IIC4_ALI4, IIC4_TACKI4,
+ 					       IIC4_WAITI4, IIC4_DTEI4 } },
+-	{ 0xe6940044, 0, 16, 4, /* IPRRA3 */ { IIC3_ALI3, IIC3_TACKI3,
++	{ 0xe6950044, 0, 16, 4, /* IPRRA3 */ { IIC3_ALI3, IIC3_TACKI3,
+ 					       IIC3_WAITI3, IIC3_DTEI3 } },
+-	{ 0xe6940048, 0, 16, 4, /* IPRSA3 */ { 0/*ERI*/, 0/*RXI*/,
++	{ 0xe6950048, 0, 16, 4, /* IPRSA3 */ { 0/*ERI*/, 0/*RXI*/,
+ 					       0/*TXI*/, 0/*TEI*/} },
+-	{ 0xe694004c, 0, 16, 4, /* IPRTA3 */ { USB0_USB0I1, USB0_USB0I0,
++	{ 0xe695004c, 0, 16, 4, /* IPRTA3 */ { USB0_USB0I1, USB0_USB0I0,
+ 					       USB1_USB1I1, USB1_USB1I0 } },
+-	{ 0xe6940050, 0, 16, 4, /* IPRUA3 */ { USBHSDMAC1_USHDMI, 0, 0, 0 } },
++	{ 0xe6950050, 0, 16, 4, /* IPRUA3 */ { USBHSDMAC1_USHDMI, 0, 0, 0 } },
+ };
+ 
+ static struct intc_sense_reg intca_sense_registers[] __initdata = {
+-- 
+1.6.3.3
 
-This release is available as a source tarball from:
-
-        http://www.kfish.org/software/sighttpd/
-
-New in this release
-=========
-This release includes a new configuration file syntax allowing a single
-sighttpd instance to provide multiple streams. Examples are provided for
-streaming Ogg Theora, Motion JPEG and MPEG-4 AVC (H.264) video.
-
-Various example configuration files are now distributed in the examples/
-directory of the sighttpd source distribution. A new sighttpd.conf(5) man
-page describes the configuration syntax and available options. The file
-doc/admin-guide.txt contains a discussion and examples.
-
-This release introduces direct support for video capture and encode on
-SH-Mobile processors using the Linux V4L2 USERPTR interface, colorspace
-conversion and rescaling using the SH-Mobile Video Engine Unit (VEU), and
-encoding into H.264 and MPEG-4 using the SH-Mobile Video Processing Unit
-(VPU).
-
-Details
-===
-The following changes have been made since release 0.9.0:
-
-Conrad Parker (104):
-      set input fd in stream_open()
-      add TODO file with tasks and ideas for improvement.
-      README: add project source repo and contact info
-      always read config file, override with argv
-      init sighttpd with config, not just port number
-      move config file to /etc/sighttpd/sighttpd.conf
-      sighttpd.8: add note on Listen configuration parameter
-      keep portnum in host endian until socket init
-      add generic resource handling type
-      add per-resource data to resource methods
-      use resource type for flim handler
-      defer ringbuffer reset during initialization
-      use resource type for uiomux handler
-      use resource type for status page handler
-      use resource type for kongou handler
-      add internal list_join()
-      add statictext handler
-      add delete method to resources
-      add a generic fdstream handler
-      update ResourceDelete type
-      remove hardcoded stream handling, use fdstream
-      Add doc/admin-guide.txt
-      remove obsolete mjpeg.[ch] files
-      move mjpeg_test.sh to examples/, add to dist
-      rename local copy of xini to cfg-parse
-      rename xini to copa throughout
-      disallow ; as a comment character in configuration files
-      use angle brackets to mark blocks of config files
-      remove use of = in assignments
-      rename section to block throughout config parsing
-      add a block end callback to config file parser
-      add configure checks for uiomux,shveu,shcodecs
-      remove = from example configs in admin-guide.txt
-      add config_block_end callback
-      rename config to cfg_read, add private header
-      introduce struct cfg to hold pre-init configs
-      switch dictionaries on block start/end
-      add resources to struct cfg, to initialize sighttpd
-      Use custom block handling for multiple statictext
-      add examples/Makefile.am
-      add shrecord.c adapted from libshcodecs/tools
-      configure: AM_PROG_CC_C_O for per-target cflags
-      add missing sources
-      Merge branch 'master' into shrec
-      build shrecord module as a library
-      build shrecord module conditionally
-      rename shrec subdir to shrecord
-      build libshrecord.a into sighttpd
-      shrecord: add dummy resource methods
-      move shrecord sources into src
-      set shrecord content-type to video/mp4
-      update TODO: ogg, v4l2, html templating
-      simplify stdin streaming configuration
-      add syntax section to admin-guide
-      update INSTALL
-      update file headers
-      update TODO: case insensitive declarations, names
-      shrecord: remove signal handler
-      shrecord: remove arg handling, usage()
-      shrecord: move path and ctl filename
-      shrecord: use control filename from configuration
-      shrecord: move ctlfile reading into resource setup
-      shrecord: use pvt->encdata array to store resources
-      add shrecord.h
-      call shrecord_init(), shrecord_run() from main
-      shrecord: check encoders init'd, disable file write
-      shrecord: execute run() body in a new thread
-      shrecord: fix encoder i/o callback user data
-      run shrecord_cleanup() on signal exit
-      framerate: handle mean calc of unused measurer
-      remove unused stream_stream_body()
-      shrecord: write to stream ringbuffer, not file
-      shrecord: signal main thread to call cleanup()
-      shrecord: override frame limit for streaming
-      shrecord: turn off DEBUG
-      use shrecord uiomux to alloc capture buffers
-      Merge branch 'shrec'
-      add SHRecord configuration docs to admin-guide.txt
-      x_tree: use free_func on data pointer, not node
-      cfg-read: conditionally call shcodecs_resources()
-      statictext: keep a copy of path,text
-      shrecord: keep a copy of path, ctlfile
-      fdstream: keep a copy of path, content_type
-      shrecord: add "Preview off" config file option
-      Use CFLAGS of shcodecs,shveu,uiomux when building shrecord
-      shrecord: add prctl to disable alignment warnings
-      add -f config option, and -h, -v
-      add a note about -f option to admin-guide
-      fix documentation for /mjpeg streaming
-      add examples for 720p, multi-encode, h264, mjpeg
-      mention sighttpd-stdin-mjpeg.conf in mjpeg_test.sh
-      correct stdin example config file syntax
-      TODO: add ogg rate limiting
-      make config section names case insensitive
-      make config variable names case insensitive
-      document that block and directive names are case insensitive
-      add example config for stdin Ogg Video streaming
-      admin-guide.txt: add description of path and text directives
-      admin-guide: add note about examples
-      update uiomux,shveu,shcodecs required versions
-      add README.sh-mobile
-      add sighttpd.conf(5) man page
-      update README with homepage and new description
-      Release 1.0.0
-
-Phil Edworthy (1):
-      display: Fix errors when setting unusual positions, etc.
-
- INSTALL                               |  243 +++-
- Makefile.am                           |    2 +-
- README                                |   43 +-
- README.sh-mobile                      |   75 +
- TODO                                  |   32 +
- configure.ac                          |   53 +-
- doc/admin-guide.txt                   |  199 +++
- doc/sighttpd.8                        |   49 +-
- doc/sighttpd.conf.5                   |  262 ++++
- examples/Makefile.am                  |   12 +
- {src => examples}/mjpeg_test.sh       |   14 +-
- examples/sighttpd-720p.conf           |   16 +
- examples/sighttpd-multi.conf          |   30 +
- examples/sighttpd-stdin-h264.conf     |   15 +
- examples/sighttpd-stdin-mjpeg.conf    |   15 +
- examples/sighttpd-stdin-ogv.conf      |   15 +
- src/ControlFileUtil.c                 | 2580 +++++++++++++++++++++++++++++++++
- src/ControlFileUtil.h                 |   31 +
- src/Makefile.am                       |   53 +-
- src/avcbencsmp.h                      |   62 +
- src/capture.c                         |  682 +++++++++
- src/capture.h                         |   64 +
- src/{xini-test.c => cfg-parse-test.c} |   13 +-
- src/{xini.c => cfg-parse.c}           |  247 ++--
- src/cfg-parse.h                       |  122 ++
- src/cfg-read.c                        |   99 ++
- src/cfg-read.h                        |   15 +
- src/config.c                          |   33 -
- src/dictionary-test.c                 |    4 +
- src/dictionary.c                      |   38 +-
- src/dictionary.h                      |    3 +
- src/display.c                         |  262 ++++
- src/display.h                         |   72 +
- src/fdstream.c                        |  139 ++
- src/fdstream.h                        |    4 +
- src/flim.c                            |   34 +-
- src/flim.h                            |    6 +-
- src/framerate.c                       |  234 +++
- src/framerate.h                       |   71 +
- src/http-date.c                       |    4 +
- src/http-date_test.c                  |    4 +
- src/http-reqline.c                    |    4 +
- src/http-response.c                   |  129 +--
- src/http-status.c                     |    4 +
- src/kongou.c                          |   50 +-
- src/kongou.h                          |    6 +-
- src/list.c                            |   13 +
- src/list.h                            |    8 +
- src/log.c                             |    4 +
- src/main.c                            |  160 ++-
- src/mjpeg.c                           |   39 -
- src/mjpeg.h                           |    6 -
- src/resource.c                        |   29 +
- src/resource.h                        |   27 +
- src/ringbuffer.c                      |    5 +-
- src/shell.c                           |    3 +
- src/shrecord.c                        |  683 +++++++++
- src/shrecord.h                        |   10 +
- src/sighttpd.c                        |   55 +-
- src/sighttpd.h                        |    5 +-
- src/statictext.c                      |   93 ++
- src/statictext.h                      |    5 +
- src/status.c                          |   38 +-
- src/status.h                          |    5 +-
- src/stream.c                          |   47 +-
- src/thrqueue.c                        |  306 ++++
- src/thrqueue.h                        |   37 +
- src/timer.c                           |    4 +
- src/uiomux.c                          |   33 +-
- src/uiomux.h                          |    6 +-
- src/x_tree.c                          |    6 +-
- src/xini.h                            |  102 --
- 72 files changed, 7244 insertions(+), 629 deletions(-)
- create mode 100644 README.sh-mobile
- create mode 100644 TODO
- create mode 100644 doc/admin-guide.txt
- create mode 100644 doc/sighttpd.conf.5
- create mode 100644 examples/Makefile.am
- rename {src => examples}/mjpeg_test.sh (67%)
- create mode 100644 examples/sighttpd-720p.conf
- create mode 100644 examples/sighttpd-multi.conf
- create mode 100644 examples/sighttpd-stdin-h264.conf
- create mode 100644 examples/sighttpd-stdin-mjpeg.conf
- create mode 100644 examples/sighttpd-stdin-ogv.conf
- create mode 100644 src/ControlFileUtil.c
- create mode 100644 src/ControlFileUtil.h
- create mode 100644 src/avcbencsmp.h
- create mode 100644 src/capture.c
- create mode 100644 src/capture.h
- rename src/{xini-test.c => cfg-parse-test.c} (63%)
- rename src/{xini.c => cfg-parse.c} (66%)
- create mode 100644 src/cfg-parse.h
- create mode 100644 src/cfg-read.c
- create mode 100644 src/cfg-read.h
- delete mode 100644 src/config.c
- create mode 100644 src/display.c
- create mode 100644 src/display.h
- create mode 100644 src/fdstream.c
- create mode 100644 src/fdstream.h
- create mode 100644 src/framerate.c
- create mode 100644 src/framerate.h
- delete mode 100644 src/mjpeg.c
- delete mode 100644 src/mjpeg.h
- create mode 100644 src/resource.c
- create mode 100644 src/resource.h
- create mode 100644 src/shrecord.c
- create mode 100644 src/shrecord.h
- create mode 100644 src/statictext.c
- create mode 100644 src/statictext.h
- create mode 100644 src/thrqueue.c
- create mode 100644 src/thrqueue.h
- delete mode 100644 src/xini.h
