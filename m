@@ -1,51 +1,42 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Wed, 28 Apr 2010 02:23:35 +0000
-Subject: libshcodecs 1.1.1 Release
-Message-Id: <o2idba6c0831004271923w23be8b23oa10d1d79e14cfdf7@mail.gmail.com>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Tue, 13 Apr 2010 07:13:03 +0000
+Subject: Re: Sourcery G++ 4.4-136 Release - kernel 2.6.33 compiled with sh-uclinux-gcc works
+Message-Id: <201004130913.03701.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-libshcodecs 1.1.1 Release
-============
-libshcodecs is a library for controlling SH-Mobile hardware codecs.
+I have to fix some minors to make it perfectly running.
 
-The [SH-Mobile][0] processor series includes a hardware video processing
-unit that supports MPEG-4 and H.264 encoding and decoding.
-libshcodecs is available under the terms of the GNU LGPL.
+Regards
 
-The source archive, and more information about the library are available from:
 
-	https://oss.renesas.com/modules/document/?libshcodecs
 
-New in this release
-=========
-This is a brown paper bag release, including a missing file (display.h) and
-fixes for compile warnings and other cleanups. Following proper procedure, this
-new tarball has been generated with "make distcheck".
+In data marted=C3=AC 06 aprile 2010 11:11:07, Andrew Stubbs ha scritto:
+: > On 06/04/10 09:06, Fabio Giovagnini wrote:
+> > Hi Andrew, the warnign of the kernel I reported you are a problem or I
+> > can try the kernel I have built?
+> > I solved the problem of the path for FDPIC and  not FDPIC stuff
+>=20
+> I think you can ignore the 'size changed' warnings. If you have a kernel
+> image to boot then why not try it? Mine work on SH7203.
+>=20
+> I'm not sure how to fix the zImage libgcc issue. I could add a non-FDPIC
+> multilib to the toolchain somehow, but that's not as easy as it sounds,
+> and we wouldn't want it for anything else. I suggest just using
+> uncompressed kernels until the problem is solved.
+>=20
+> Andrew
+>=20
 
-Details
--------
 
-This release includes the following changes since version 1.1.0:
+--=20
+Fabio Giovagnini
 
-Conrad Parker (3):
-      add missing display.h to distribution
-      fix compile warnings throughout
-      Release 1.1.1
-
-Phil Edworthy (1):
-      Clean up: Remove unused symbols
-
- configure.ac                      |    2 +-
- src/libshcodecs/Version_script.in |   23 +++--------------------
- src/libshcodecs/m4driverif.c      |   12 +-----------
- src/tools/Makefile.am             |    1 +
- src/tools/capture.c               |    2 +-
- src/tools/display.c               |    6 ++++++
- src/tools/shcodecs-record.c       |    4 ++--
- 7 files changed, 15 insertions(+), 35 deletions(-)
-
-[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
