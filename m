@@ -1,36 +1,39 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 05 Apr 2010 21:46:27 +0000
-Subject: Re: [PATCH 1/4] panic: Allow warnings to set different taint flags
-Message-Id: <20100405214626.GA25192@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 14 Apr 2010 07:08:16 +0000
+Subject: Re: Hi Andrew
+Message-Id: <201004140908.16136.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1270319696.12516.321.camel@localhost>
-In-Reply-To: <1270319696.12516.321.camel@localhost>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <ben@decadent.org.uk>
-Cc: Jesse Barnes <jbarnes@virtuousgeek.org>, David Woodhouse <dwmw2@infradead.org>, linux-pci@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linux-parisc@vger.kernel.org, linuxppc-dev@ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Sat, Apr 03, 2010 at 07:34:56PM +0100, Ben Hutchings wrote:
-> WARN() is used in some places to report firmware or hardware bugs that
-> are then worked-around.  These bugs do not affect the stability of the
-> kernel and should not set the flag for TAINT_WARN.  To allow for this,
-> add WARN_TAINT() and WARN_TAINT_ONCE() macros that take a taint number
-> as argument.
-> 
-> Architectures that implement warnings using trap instructions instead
-> of calls to warn_slowpath_*() now implement __WARN_TAINT(taint)
-> instead of __WARN().
-> 
-> Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
-> ---
-> Changes since the previous version:
-> - Added note to Documentation/oops-tracing.txt
-> - Changed the commit message to distinguish taint numbers from taint
->   flags
-> - Removed 'must' from last sentence of commit message; this patch
->   converts all mainline architectures
-> 
-This seems to be missing my Tested-by from the last iteration, since
-there are no functional changes with this version feel free to add it in
-again.
+Ok. so the Makefile for zImage needs to be modified to use the libc functio=
+ns=20
+embedded into the kernel source tree. Is it right?
+If yes, how is it possible to have a general coccect behaviour?
+
+Regards
+
+
+
+In data marted=EC 13 aprile 2010 22:24:16, Andrew Stubbs ha scritto:
+: > On 13/04/10 20:50, Fabio Giovagnini wrote:
+> > What do Poal and others thinks about this?
+> > Did you talk to them about?
+>=20
+> Paul said so himself, here:
+>=20
+> http://article.gmane.org/gmane.linux.ports.sh.devel/7776
+>=20
+> Andrew
+>=20
+
+--=20
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
