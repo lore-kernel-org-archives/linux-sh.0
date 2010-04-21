@@ -1,50 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 02 Apr 2010 07:44:31 +0000
-Subject: [GIT PULL] sh updates for 2.6.34-rc4
-Message-Id: <20100402074431.GC14056@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 21 Apr 2010 15:14:19 +0000
+Subject: [PATCH] SH: fix TS field shift calculation for DMA drivers
+Message-Id: <Pine.LNX.4.64.1004211712500.5292@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+CHCR_TS_HIGH_SHIFT is defined as a shift of TS high bits in CHCR register,
+relative to low bits. The TS_INDEX2VAL() macro has to take this into account.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.34
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Which contains:
+Should be good for 2.6.34
 
-Andrea Gelmini (1):
-      USB gadget r8a66597-udc.c: duplicated include
+ arch/sh/include/cpu-sh4/cpu/dma-register.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Andrew Stubbs (1):
-      sh: Fix FDPIC binary loader
+diff --git a/arch/sh/include/cpu-sh4/cpu/dma-register.h b/arch/sh/include/cpu-sh4/cpu/dma-register.h
+index 55f9fec..de23595 100644
+--- a/arch/sh/include/cpu-sh4/cpu/dma-register.h
++++ b/arch/sh/include/cpu-sh4/cpu/dma-register.h
+@@ -76,7 +76,7 @@ enum {
+ }
+ 
+ #define TS_INDEX2VAL(i)	((((i) & 3) << CHCR_TS_LOW_SHIFT) | \
+-			 ((((i) >> 2) & 3) << CHCR_TS_HIGH_SHIFT))
++			 (((i) & 0xc) << CHCR_TS_HIGH_SHIFT))
+ 
+ #else /* CONFIG_CPU_SH4A */
+ 
+-- 
+1.6.2.4
 
-Julia Lawall (1):
-      arch/sh/kernel: Use set_cpus_allowed_ptr
-
-Matt Fleming (2):
-      sh: update the TLB replacement counter for entry wiring.
-      sh: Enable the mmu in start_secondary()
-
-Paul Mundt (2):
-      sh: export return_address() symbol.
-      sh: Fix up the SH-3 build for recent TLB changes.
-
-Yusuke Goda (1):
-      sh: Update ecovec_defconfig
-
- arch/sh/configs/ecovec24_defconfig        |  236 +++++++++++++++++++++++------
- arch/sh/include/asm/elf.h                 |    6 +-
- arch/sh/include/cpu-sh4/cpu/mmu_context.h |    2 +
- arch/sh/kernel/cpufreq.c                  |    4 +-
- arch/sh/kernel/return_address.c           |    3 +
- arch/sh/kernel/smp.c                      |    1 +
- arch/sh/mm/tlb-pteaex.c                   |   28 ++++
- arch/sh/mm/tlb-sh3.c                      |   19 +++
- arch/sh/mm/tlb-sh4.c                      |   28 ++++
- arch/sh/mm/tlb-urb.c                      |   22 ++-
- arch/sh/mm/tlbflush_32.c                  |   28 ----
- drivers/usb/gadget/r8a66597-udc.c         |    1 -
- 12 files changed, 294 insertions(+), 84 deletions(-)
