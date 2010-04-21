@@ -1,107 +1,317 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 22 Apr 2010 09:38:59 +0000
-Subject: Re: [PATCH 2/8] SH: add DMA slave IDs for two SDHI controllers, add
-Message-Id: <Pine.LNX.4.64.1004221136220.4655@axis700.grange>
+Date: Wed, 21 Apr 2010 15:36:49 +0000
+Subject: [PATCH 1/8] SH: constify multiple DMA related objects and references
+Message-Id: <Pine.LNX.4.64.1004211731440.5292@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
- <Pine.LNX.4.64.1004211732340.5292@axis700.grange>
- <j2xaec7e5c31004211702v9ba71743jedd24562f8dea0a5@mail.gmail.com>
- <Pine.LNX.4.64.1004220824200.4655@axis700.grange>
- <n2saec7e5c31004220005w331e3a0el4ef829558a74b132@mail.gmail.com>
-In-Reply-To: <n2saec7e5c31004220005w331e3a0el4ef829558a74b132@mail.gmail.com>
+In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
-On Thu, 22 Apr 2010, Magnus Damm wrote:
+Lists of DMA channels and slaves are not changed, make them constant. Besides,
+SH7724 channel and slave configuration of both DMA controllers is identical,
+remove the extra copy of the configuration data.
 
-> On Thu, Apr 22, 2010 at 3:28 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > On Wed, 21 Apr 2010, Magnus Damm wrote:
-> >> On Wed, Apr 21, 2010 at 11:36 AM, Guennadi Liakhovetski
-> >> <g.liakhovetski@gmx.de> wrote:
-> >> > SuperH SDHI controllers can use DMA, add slave IDs to the header and=
- slave
-> >> > definitions to sh7722.
-> >> >
-> >> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> >> > ---
-> >> > =A0arch/sh/include/asm/dmaengine.h =A0 =A0 =A0 =A0| =A0 =A04 ++++
-> >> > =A0arch/sh/kernel/cpu/sh4a/setup-sh7722.c | =A0 10 ++++++++++
-> >> > =A02 files changed, 14 insertions(+), 0 deletions(-)
-> >> >
-> >> > diff --git a/arch/sh/include/asm/dmaengine.h b/arch/sh/include/asm/d=
-maengine.h
-> >> > index 2a02b61..876e601 100644
-> >> > --- a/arch/sh/include/asm/dmaengine.h
-> >> > +++ b/arch/sh/include/asm/dmaengine.h
-> >> > @@ -29,6 +29,10 @@ enum {
-> >> > =A0 =A0 =A0 =A0SHDMA_SLAVE_SIUA_RX,
-> >> > =A0 =A0 =A0 =A0SHDMA_SLAVE_SIUB_TX,
-> >> > =A0 =A0 =A0 =A0SHDMA_SLAVE_SIUB_RX,
-> >> > + =A0 =A0 =A0 SHDMA_SLAVE_SDHI0_RX,
-> >> > + =A0 =A0 =A0 SHDMA_SLAVE_SDHI0_TX,
-> >> > + =A0 =A0 =A0 SHDMA_SLAVE_SDHI1_RX,
-> >> > + =A0 =A0 =A0 SHDMA_SLAVE_SDHI1_TX,
-> >> > =A0};
-> >> >
-> >> > =A0#endif
-> >>
-> >> Thanks for your work on this. Two SDHIs may be enough for most
-> >> processor types, but I think the G3 processor actually has three. With
-> >> that in mind, I think it makes more sense to keep the slave ids
-> >> together with the processor specific bits in for instance
-> >> arch/sh/include/cpu-sh4/cpu/sh7722.h.
-> >>
-> >> If you have time, can you please make a patch that moves the slave ids
-> >> into the processor specific header files? This on top of the other
-> >> code in the sh/dmaengine topic branch.
-> >
-> > Ok, yes, first, I forgot to mention - this patch series is based on your
-> > earlier SH dmaengine patches. Secondly - sure, we can move these defines
-> > in cpu-specific headers, otoh - why? This is just an enum, it doesn't t=
-ake
-> > space in binaries, and having them all together helps uniformity and
-> > avoids duplication, I think. So, I would just add those SDHI2 macros to
-> > this list. The important thing is, the actual slave definition array are
-> > per-CPU. Which is now the case after your patch series.
->=20
-> Like you say, the actual slave definition array is per processor type.
-> But the available hardware blocks varies with processor type, and we
-> already have other processor specific information in the cpu-specific
-> headers. It does not add any code size, true.
->=20
-> The reasons why I prefer them to be split out are:
->=20
-> 1) When someone adds support for a new processor it's easy to
-> implement the same type of information in the new cpu-specific header
-> as other processors. Adding and removing things from a global list of
-> processor blocks in a driver/framework specific header file hidden
-> somewhere is not going to happen. Also, people usually only focus on
-> one processor at a time. A long global list is just going to make
-> people confused. "Why is there a SDHI2 there when I only have SDHI on
-> my processor?"
->=20
-> 2) Having them in a global list adds an unneccesary point of patch
-> serialization.
->=20
-> 3) We keep other things like GPIOs and HWBLK in cpu-specific headers
-> already, why be special?
-
-ok... you mean headers like arch/sh/include/cpu-sh4/cpu/sh7722.h, yeah,=20
-that makes sense, agree. Will redo.
-
-> 4) Having it in a global list may encourage people to include this
-> header from drivers. Isn't it better to force the drivers to use this
-> value as a cookie instead? This prevents people from adding hardware
-> block specific workarounds to the driver that may or may not work on
-> all processors...
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+Just some preparatory clean up.
+
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    6 ++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   54 ++++---------------------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |    6 ++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |    6 ++--
+ drivers/dma/shdma.c                    |   12 ++++---
+ include/linux/sh_dma.h                 |    9 +++--
+ 6 files changed, 28 insertions(+), 65 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index fd7e363..fe28f52 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -24,7 +24,7 @@
+ #include <cpu/dma-register.h>
+ #include <cpu/sh7722.h>
+ 
+-static struct sh_dmae_slave_config sh7722_dmae_slaves[] = {
++static const struct sh_dmae_slave_config sh7722_dmae_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+ 		.addr		= 0xffe0000c,
+@@ -78,7 +78,7 @@ static struct sh_dmae_slave_config sh7722_dmae_slaves[] = {
+ 	},
+ };
+ 
+-static struct sh_dmae_channel sh7722_dmae_channels[] = {
++static const struct sh_dmae_channel sh7722_dmae_channels[] = {
+ 	{
+ 		.offset = 0,
+ 		.dmars = 0,
+@@ -106,7 +106,7 @@ static struct sh_dmae_channel sh7722_dmae_channels[] = {
+ 	}
+ };
+ 
+-static unsigned int ts_shift[] = TS_SHIFT;
++static const unsigned int ts_shift[] = TS_SHIFT;
+ 
+ static struct sh_dmae_pdata dma_platform_data = {
+ 	.slave		= sh7722_dmae_slaves,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index e7fa2a9..c4572b1 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -31,7 +31,7 @@
+ #include <cpu/sh7724.h>
+ 
+ /* DMA */
+-static struct sh_dmae_channel sh7724_dmae0_channels[] = {
++static const struct sh_dmae_channel sh7724_dmae_channels[] = {
+ 	{
+ 		.offset = 0,
+ 		.dmars = 0,
+@@ -59,51 +59,11 @@ static struct sh_dmae_channel sh7724_dmae0_channels[] = {
+ 	}
+ };
+ 
+-static struct sh_dmae_channel sh7724_dmae1_channels[] = {
+-	{
+-		.offset = 0,
+-		.dmars = 0,
+-		.dmars_bit = 0,
+-	}, {
+-		.offset = 0x10,
+-		.dmars = 0,
+-		.dmars_bit = 8,
+-	}, {
+-		.offset = 0x20,
+-		.dmars = 4,
+-		.dmars_bit = 0,
+-	}, {
+-		.offset = 0x30,
+-		.dmars = 4,
+-		.dmars_bit = 8,
+-	}, {
+-		.offset = 0x50,
+-		.dmars = 8,
+-		.dmars_bit = 0,
+-	}, {
+-		.offset = 0x60,
+-		.dmars = 8,
+-		.dmars_bit = 8,
+-	}
+-};
+-
+-static unsigned int ts_shift[] = TS_SHIFT;
+-
+-static struct sh_dmae_pdata dma0_platform_data = {
+-	.channel	= sh7724_dmae0_channels,
+-	.channel_num	= ARRAY_SIZE(sh7724_dmae0_channels),
+-	.ts_low_shift	= CHCR_TS_LOW_SHIFT,
+-	.ts_low_mask	= CHCR_TS_LOW_MASK,
+-	.ts_high_shift	= CHCR_TS_HIGH_SHIFT,
+-	.ts_high_mask	= CHCR_TS_HIGH_MASK,
+-	.ts_shift	= ts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(ts_shift),
+-	.dmaor_init	= DMAOR_INIT,
+-};
++static const unsigned int ts_shift[] = TS_SHIFT;
+ 
+-static struct sh_dmae_pdata dma1_platform_data = {
+-	.channel	= sh7724_dmae1_channels,
+-	.channel_num	= ARRAY_SIZE(sh7724_dmae1_channels),
++static struct sh_dmae_pdata dma_platform_data = {
++	.channel	= sh7724_dmae_channels,
++	.channel_num	= ARRAY_SIZE(sh7724_dmae_channels),
+ 	.ts_low_shift	= CHCR_TS_LOW_SHIFT,
+ 	.ts_low_mask	= CHCR_TS_LOW_MASK,
+ 	.ts_high_shift	= CHCR_TS_HIGH_SHIFT,
+@@ -187,7 +147,7 @@ static struct platform_device dma0_device = {
+ 	.resource	= sh7724_dmae0_resources,
+ 	.num_resources	= ARRAY_SIZE(sh7724_dmae0_resources),
+ 	.dev		= {
+-		.platform_data	= &dma0_platform_data,
++		.platform_data	= &dma_platform_data,
+ 	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_DMAC0,
+@@ -200,7 +160,7 @@ static struct platform_device dma1_device = {
+ 	.resource	= sh7724_dmae1_resources,
+ 	.num_resources	= ARRAY_SIZE(sh7724_dmae1_resources),
+ 	.dev		= {
+-		.platform_data	= &dma1_platform_data,
++		.platform_data	= &dma_platform_data,
+ 	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_DMAC1,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7780.c b/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
+index 02e792c..c3fcb39 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7780.c
+@@ -251,7 +251,7 @@ static struct platform_device rtc_device = {
+ };
+ 
+ /* DMA */
+-static struct sh_dmae_channel sh7780_dmae0_channels[] = {
++static const struct sh_dmae_channel sh7780_dmae0_channels[] = {
+ 	{
+ 		.offset = 0,
+ 		.dmars = 0,
+@@ -279,7 +279,7 @@ static struct sh_dmae_channel sh7780_dmae0_channels[] = {
+ 	}
+ };
+ 
+-static struct sh_dmae_channel sh7780_dmae1_channels[] = {
++static const struct sh_dmae_channel sh7780_dmae1_channels[] = {
+ 	{
+ 		.offset = 0,
+ 	}, {
+@@ -295,7 +295,7 @@ static struct sh_dmae_channel sh7780_dmae1_channels[] = {
+ 	}
+ };
+ 
+-static unsigned int ts_shift[] = TS_SHIFT;
++static const unsigned int ts_shift[] = TS_SHIFT;
+ 
+ static struct sh_dmae_pdata dma0_platform_data = {
+ 	.channel	= sh7780_dmae0_channels,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+index 1fcd88b..771ae76 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7785.c
+@@ -299,7 +299,7 @@ static struct platform_device tmu5_device = {
+ };
+ 
+ /* DMA */
+-static struct sh_dmae_channel sh7785_dmae0_channels[] = {
++static const struct sh_dmae_channel sh7785_dmae0_channels[] = {
+ 	{
+ 		.offset = 0,
+ 		.dmars = 0,
+@@ -327,7 +327,7 @@ static struct sh_dmae_channel sh7785_dmae0_channels[] = {
+ 	}
+ };
+ 
+-static struct sh_dmae_channel sh7785_dmae1_channels[] = {
++static const struct sh_dmae_channel sh7785_dmae1_channels[] = {
+ 	{
+ 		.offset = 0,
+ 	}, {
+@@ -343,7 +343,7 @@ static struct sh_dmae_channel sh7785_dmae1_channels[] = {
+ 	}
+ };
+ 
+-static unsigned int ts_shift[] = TS_SHIFT;
++static const unsigned int ts_shift[] = TS_SHIFT;
+ 
+ static struct sh_dmae_pdata dma0_platform_data = {
+ 	.channel	= sh7785_dmae0_channels,
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 549bae9..25ddb1e 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -188,7 +188,7 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ 	struct sh_dmae_device *shdev = container_of(sh_chan->common.device,
+ 						struct sh_dmae_device, common);
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+-	struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->id];
++	const struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->id];
+ 	u16 __iomem *addr = shdev->dmars + chan_pdata->dmars / sizeof(u16);
+ 	int shift = chan_pdata->dmars_bit;
+ 
+@@ -264,7 +264,7 @@ static struct sh_desc *sh_dmae_get_desc(struct sh_dmae_chan *sh_chan)
+ 	return NULL;
+ }
+ 
+-static struct sh_dmae_slave_config *sh_dmae_find_slave(
++static const struct sh_dmae_slave_config *sh_dmae_find_slave(
+ 	struct sh_dmae_chan *sh_chan, struct sh_dmae_slave *param)
+ {
+ 	struct dma_device *dma_dev = sh_chan->common.device;
+@@ -297,7 +297,7 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
+ 	 * never runs concurrently with itself or free_chan_resources.
+ 	 */
+ 	if (param) {
+-		struct sh_dmae_slave_config *cfg;
++		const struct sh_dmae_slave_config *cfg;
+ 
+ 		cfg = sh_dmae_find_slave(sh_chan, param);
+ 		if (!cfg) {
+@@ -572,12 +572,14 @@ static struct dma_async_tx_descriptor *sh_dmae_prep_slave_sg(
+ {
+ 	struct sh_dmae_slave *param;
+ 	struct sh_dmae_chan *sh_chan;
++	dma_addr_t slave_addr;
+ 
+ 	if (!chan)
+ 		return NULL;
+ 
+ 	sh_chan = to_sh_chan(chan);
+ 	param = chan->private;
++	slave_addr = param->config->addr;
+ 
+ 	/* Someone calling slave DMA on a public channel? */
+ 	if (!param || !sg_len) {
+@@ -590,7 +592,7 @@ static struct dma_async_tx_descriptor *sh_dmae_prep_slave_sg(
+ 	 * if (param != NULL), this is a successfully requested slave channel,
+ 	 * therefore param->config != NULL too.
+ 	 */
+-	return sh_dmae_prep_sg(sh_chan, sgl, sg_len, &param->config->addr,
++	return sh_dmae_prep_sg(sh_chan, sgl, sg_len, &slave_addr,
+ 			       direction, flags);
+ }
+ 
+@@ -871,7 +873,7 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
+ 					int irq, unsigned long flags)
+ {
+ 	int err;
+-	struct sh_dmae_channel *chan_pdata = &shdev->pdata->channel[id];
++	const struct sh_dmae_channel *chan_pdata = &shdev->pdata->channel[id];
+ 	struct platform_device *pdev = to_platform_device(shdev->common.dev);
+ 	struct sh_dmae_chan *new_sh_chan;
+ 
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index cdaaff4..b08cd4e 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -17,7 +17,7 @@
+ struct sh_dmae_slave {
+ 	unsigned int			slave_id; /* Set by the platform */
+ 	struct device			*dma_dev; /* Set by the platform */
+-	struct sh_dmae_slave_config	*config;  /* Set by the driver */
++	const struct sh_dmae_slave_config	*config;  /* Set by the driver */
+ };
+ 
+ struct sh_dmae_regs {
+@@ -36,6 +36,7 @@ struct sh_desc {
+ 	int chunks;
+ 	int mark;
+ };
++
+ struct sh_dmae_slave_config {
+ 	unsigned int			slave_id;
+ 	dma_addr_t			addr;
+@@ -50,15 +51,15 @@ struct sh_dmae_channel {
+ };
+ 
+ struct sh_dmae_pdata {
+-	struct sh_dmae_slave_config *slave;
++	const struct sh_dmae_slave_config *slave;
+ 	int slave_num;
+-	struct sh_dmae_channel *channel;
++	const struct sh_dmae_channel *channel;
+ 	int channel_num;
+ 	unsigned int ts_low_shift;
+ 	unsigned int ts_low_mask;
+ 	unsigned int ts_high_shift;
+ 	unsigned int ts_high_mask;
+-	unsigned int *ts_shift;
++	const unsigned int *ts_shift;
+ 	int ts_shift_num;
+ 	u16 dmaor_init;
+ };
+-- 
+1.6.2.4
+
