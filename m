@@ -1,67 +1,60 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 30 Apr 2010 16:07:14 +0000
-Subject: [PATCH 2/2] sh: make interrupt resource optional in SH framebuffer
-Message-Id: <Pine.LNX.4.64.1004301805371.4055@axis700.grange>
+Date: Wed, 21 Apr 2010 15:37:25 +0000
+Subject: [PATCH 5/8] SH: Add SDHI DMA support to ecovec
+Message-Id: <Pine.LNX.4.64.1004211734460.5292@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
-
-The SH LCDC driver can also function without the IRQ, in which case the
-FBIO_WAITFORVSYNC ioctl() cannot be supported. Enable such a mode.
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   19 ++++++++++++-------
- 1 files changed, 12 insertions(+), 7 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index e498fb5..b8f7811 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -791,6 +791,9 @@ static int sh_mobile_wait_for_vsync(struct fb_info *info)
- 	unsigned long ldintr;
- 	int ret;
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 0e36b04..ff330f0 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+@@ -31,6 +32,7 @@
+ #include <media/sh_mobile_ceu.h>
+ #include <media/tw9910.h>
+ #include <media/mt9t112.h>
++#include <asm/dmaengine.h>
+ #include <asm/heartbeat.h>
+ #include <asm/sh_eth.h>
+ #include <asm/clock.h>
+@@ -442,6 +444,8 @@ static void sdhi0_set_pwr(struct platform_device *pdev, int state)
+ }
  
-+	if (!ch->lcdc->irq)
-+		return -ENOIOCTLCMD;
-+
- 	/* Enable VSync End interrupt */
- 	ldintr = lcdc_read(ch->lcdc, _LDINTR);
- 	ldintr |= LDINTR_VEE;
-@@ -962,7 +965,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ static struct sh_mobile_sdhi_info sdhi0_info = {
++	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
+ 	.set_pwr = sdhi0_set_pwr,
+ };
  
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	i = platform_get_irq(pdev, 0);
--	if (!res || i < 0) {
-+	if (!res) {
- 		dev_err(&pdev->dev, "cannot get platform resources\n");
- 		return -ENOENT;
- 	}
-@@ -975,14 +978,16 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+@@ -478,6 +482,9 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ }
  
- 	platform_set_drvdata(pdev, priv);
+ static struct sh_mobile_sdhi_info sdhi1_info = {
++	.dma_slave_tx = SHDMA_SLAVE_SDHI1_TX,
++	.dma_slave_rx = SHDMA_SLAVE_SDHI1_RX,
++	.tmio_flags = TMIO_DEFER_RX_COMPLETE,
+ 	.set_pwr = sdhi1_set_pwr,
+ };
  
--	error = request_irq(i, sh_mobile_lcdc_irq, IRQF_DISABLED,
--			    dev_name(&pdev->dev), priv);
--	if (error) {
--		dev_err(&pdev->dev, "unable to request irq\n");
--		goto err1;
-+	if (i >= 0) {
-+		error = request_irq(i, sh_mobile_lcdc_irq, IRQF_DISABLED,
-+				    dev_name(&pdev->dev), priv);
-+		if (error) {
-+			dev_err(&pdev->dev, "unable to request irq\n");
-+			goto err1;
-+		}
-+		priv->irq = i;
- 	}
- 
--	priv->irq = i;
- 	pdata = pdev->dev.platform_data;
- 
- 	j = 0;
 -- 
 1.6.2.4
 
