@@ -1,120 +1,127 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 30 Apr 2010 16:07:00 +0000
-Subject: [PATCH 1/2] sh: fix a number of Oopses and leaks in SH framebuffer
-Message-Id: <Pine.LNX.4.64.1004301802370.4055@axis700.grange>
+Date: Wed, 21 Apr 2010 15:36:57 +0000
+Subject: [PATCH 3/8] SH: add DMA slave definitions to sh7724
+Message-Id: <Pine.LNX.4.64.1004211733110.5292@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
-Fix a number of Oopses, memory leaks and unbalanced calls on error paths in
-sh_mobile_lcdcfb.c.
+Add a list of SCIF and SDHI DMA slave definitions to sh7724.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   86 ++++++++++++++++++++++++++++++++
+ 1 files changed, 86 insertions(+), 0 deletions(-)
 
-Patches are not really related, but the second one applies on top of this 
-one.
-
- drivers/video/sh_mobile_lcdcfb.c |   27 +++++++++++++--------------
- 1 files changed, 13 insertions(+), 14 deletions(-)
-
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index bbd1dbf..e498fb5 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -694,6 +694,7 @@ static int sh_mobile_lcdc_setup_clocks(struct platform_device *pdev,
- 	 * 1) Enable Runtime PM
- 	 * 2) Force Runtime PM Resume since hardware is accessed from probe()
- 	 */
-+	priv->dev = &pdev->dev;
- 	pm_runtime_enable(priv->dev);
- 	pm_runtime_resume(priv->dev);
- 	return 0;
-@@ -956,25 +957,24 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index c4572b1..afdc5ad 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -31,6 +31,90 @@
+ #include <cpu/sh7724.h>
  
- 	if (!pdev->dev.platform_data) {
- 		dev_err(&pdev->dev, "no platform data defined\n");
--		error = -EINVAL;
--		goto err0;
-+		return -EINVAL;
- 	}
- 
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	i = platform_get_irq(pdev, 0);
- 	if (!res || i < 0) {
- 		dev_err(&pdev->dev, "cannot get platform resources\n");
--		error = -ENOENT;
--		goto err0;
-+		return -ENOENT;
- 	}
- 
- 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
- 	if (!priv) {
- 		dev_err(&pdev->dev, "cannot allocate device data\n");
--		error = -ENOMEM;
--		goto err0;
-+		return -ENOMEM;
- 	}
- 
-+	platform_set_drvdata(pdev, priv);
+ /* DMA */
++static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
++		.addr		= 0xffe0000c,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x21,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
++		.addr		= 0xffe00014,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x22,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
++		.addr		= 0xffe1000c,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x25,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
++		.addr		= 0xffe10014,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x26,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
++		.addr		= 0xffe2000c,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x29,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
++		.addr		= 0xffe20014,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2a,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
++		.addr		= 0xa4e30020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2d,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
++		.addr		= 0xa4e30024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2e,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
++		.addr		= 0xa4e40020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x31,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
++		.addr		= 0xa4e40024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x32,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
++		.addr		= 0xa4e50020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x35,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
++		.addr		= 0xa4e50024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x36,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0x04ce0030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0x04ce0030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
++		.addr		= 0x04cf0030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc9,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
++		.addr		= 0x04cf0030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xca,
++	},
++};
 +
- 	error = request_irq(i, sh_mobile_lcdc_irq, IRQF_DISABLED,
- 			    dev_name(&pdev->dev), priv);
- 	if (error) {
-@@ -983,8 +983,6 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 	}
+ static const struct sh_dmae_channel sh7724_dmae_channels[] = {
+ 	{
+ 		.offset = 0,
+@@ -62,6 +146,8 @@ static const struct sh_dmae_channel sh7724_dmae_channels[] = {
+ static const unsigned int ts_shift[] = TS_SHIFT;
  
- 	priv->irq = i;
--	priv->dev = &pdev->dev;
--	platform_set_drvdata(pdev, priv);
- 	pdata = pdev->dev.platform_data;
- 
- 	j = 0;
-@@ -1098,9 +1096,9 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		info = ch->info;
- 
- 		if (info->fbdefio) {
--			priv->ch->sglist = vmalloc(sizeof(struct scatterlist) *
-+			ch->sglist = vmalloc(sizeof(struct scatterlist) *
- 					info->fix.smem_len >> PAGE_SHIFT);
--			if (!priv->ch->sglist) {
-+			if (!ch->sglist) {
- 				dev_err(&pdev->dev, "cannot allocate sglist\n");
- 				goto err1;
- 			}
-@@ -1125,9 +1123,9 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 	}
- 
- 	return 0;
-- err1:
-+err1:
- 	sh_mobile_lcdc_remove(pdev);
-- err0:
-+
- 	return error;
- }
- 
-@@ -1138,7 +1136,7 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- 	int i;
- 
- 	for (i = 0; i < ARRAY_SIZE(priv->ch); i++)
--		if (priv->ch[i].info->dev)
-+		if (priv->ch[i].info && priv->ch[i].info->dev)
- 			unregister_framebuffer(priv->ch[i].info);
- 
- 	sh_mobile_lcdc_stop(priv);
-@@ -1161,7 +1159,8 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- 	if (priv->dot_clk)
- 		clk_put(priv->dot_clk);
- 
--	pm_runtime_disable(priv->dev);
-+	if (priv->dev)
-+		pm_runtime_disable(priv->dev);
- 
- 	if (priv->base)
- 		iounmap(priv->base);
+ static struct sh_dmae_pdata dma_platform_data = {
++	.slave		= sh7724_dmae_slaves,
++	.slave_num	= ARRAY_SIZE(sh7724_dmae_slaves),
+ 	.channel	= sh7724_dmae_channels,
+ 	.channel_num	= ARRAY_SIZE(sh7724_dmae_channels),
+ 	.ts_low_shift	= CHCR_TS_LOW_SHIFT,
 -- 
 1.6.2.4
 
