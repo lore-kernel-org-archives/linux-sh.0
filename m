@@ -1,100 +1,61 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 01 Apr 2010 13:52:21 +0000
-Subject: Re: PFC of SCIF 1
-Message-Id: <201004011552.22035.fabio.giovagnini@aurion-tech.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 21 Apr 2010 15:36:53 +0000
+Subject: [PATCH 2/8] SH: add DMA slave IDs for two SDHI controllers, add
+Message-Id: <Pine.LNX.4.64.1004211732340.5292@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201004011136.26340.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201004011136.26340.fabio.giovagnini@aurion-tech.com>
+References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
-My problem is in=20
-tcsetattr(HPort, /*TCSAFLUSH*/TCSANOW, &term)
+SuperH SDHI controllers can use DMA, add slave IDs to the header and slave
+definitions to sh7722.
 
-Where can I find a term setting working a a very basic raw mode (just like =
-the=20
-ttySC0 running the terminal console)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/include/asm/dmaengine.h        |    4 ++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   10 ++++++++++
+ 2 files changed, 14 insertions(+), 0 deletions(-)
 
-Thanks.
+diff --git a/arch/sh/include/asm/dmaengine.h b/arch/sh/include/asm/dmaengine.h
+index 2a02b61..876e601 100644
+--- a/arch/sh/include/asm/dmaengine.h
++++ b/arch/sh/include/asm/dmaengine.h
+@@ -29,6 +29,10 @@ enum {
+ 	SHDMA_SLAVE_SIUA_RX,
+ 	SHDMA_SLAVE_SIUB_TX,
+ 	SHDMA_SLAVE_SIUB_RX,
++	SHDMA_SLAVE_SDHI0_RX,
++	SHDMA_SLAVE_SDHI0_TX,
++	SHDMA_SLAVE_SDHI1_RX,
++	SHDMA_SLAVE_SDHI1_TX,
+ };
+ 
+ #endif
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index fe28f52..7f78cc2 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -75,6 +75,16 @@ static const struct sh_dmae_slave_config sh7722_dmae_slaves[] = {
+ 		.addr		= 0xa454c094,
+ 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb6,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0x04ce0030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0x04ce0030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
+ 	},
+ };
+ 
+-- 
+1.6.2.4
 
-
-
-In data gioved=EC 01 aprile 2010 12:16:13, Fabio Giovagnini ha scritto:
-: > Ok, now I'll get a look.
->=20
-> Thanks a lot
->=20
-> In data gioved=EC 01 aprile 2010 12:11:51, Magnus Damm ha scritto:
-> : > Hi Fabio,
-> >
-> > On Thu, Apr 1, 2010 at 7:06 PM, Fabio Giovagnini
-> >
-> > <fabio.giovagnini@aurion-tech.com> wrote:
-> > > Sorry Magnus, I do not understand.
-> > > I have ttySC0 as default console and the system works; now I'm writing
-> > > my application for managing teh ttySC1 port for my specif problem.
-> >
-> > If the boot loader usually sets up the pinmux and if the kernel does
-> > not touch it then it will work. On SH the proper way to do this is to
-> > let the kernel use the GPIO framework to configure the pinmux using
-> > request_irq().
-> >
-> > > Where can I find the PFC initialization for ttySC0 Port into the kern=
-el
-> > > tree?
-> >
-> > Have a look at this:
-> >
-> > damm@t400s ~/git/linux-2.6 $ find arch/sh | xargs grep gpio_request |
-> > grep SCIF
-> >  arch/sh/boards/mach-se/7724/setup.c:	gpio_request(GPIO_FN_SCIF3_I_SCK,
-> >  NULL);
-> >  arch/sh/boards/mach-se/7724/setup.c:	gpio_request(GPIO_FN_SCIF3_I_RXD,
-> >  NULL);
-> >  arch/sh/boards/mach-se/7724/setup.c:	gpio_request(GPIO_FN_SCIF3_I_TXD,
-> >  NULL);
-> >  arch/sh/boards/mach-se/7724/setup.c:	gpio_request(GPIO_FN_SCIF3_I_CTS,
-> >  NULL);
-> >  arch/sh/boards/mach-se/7724/setup.c:	gpio_request(GPIO_FN_SCIF3_I_RTS,
-> >  NULL);
-> >  arch/sh/boards/mach-ecovec24/setup.c:	gpio_request(GPIO_FN_SCIF0_TXD,
-> >  NULL);
-> >  arch/sh/boards/mach-ecovec24/setup.c:	gpio_request(GPIO_FN_SCIF0_RXD,
-> >  NULL);
-> >  arch/sh/boards/mach-kfr2r09/setup.c:	gpio_request(GPIO_FN_SCIF1_RXD,
-> >  NULL);
-> >  arch/sh/boards/mach-kfr2r09/setup.c:	gpio_request(GPIO_FN_SCIF1_TXD,
-> >  NULL);
-> >=20
-> > arch/sh/boards/mach-highlander/pinmux-r7785rp.c:	gpio_request(GPIO_FN_S=
-CI
-> >F 0_CTS, NULL);
-> > arch/sh/boards/mach-highlander/pinmux-r7785rp.c:	gpio_request(GPIO_FN_S=
-CI
-> >F0 _RTS, NULL);
-> > arch/sh/boards/mach-highlander/pinmux-r7785rp.c:	gpio_request(GPIO_FN_S=
-CI
-> >F0 _SCK, NULL);
-> > arch/sh/boards/mach-highlander/pinmux-r7785rp.c:	gpio_request(GPIO_FN_S=
-CI
-> >F0 _RXD, NULL);
-> > arch/sh/boards/mach-highlander/pinmux-r7785rp.c:	gpio_request(GPIO_FN_S=
-CI
-> >F0 _TXD, NULL);
-> > damm@t400s ~/git/linux-2.6 $
-> >
-> > Cheers,
-> >
-> > / magnus
->=20
-
---=20
-Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
