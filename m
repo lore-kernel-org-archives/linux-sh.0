@@ -1,337 +1,130 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 22 Apr 2010 16:18:02 +0000
-Subject: [PATCH] ARM: add DMA support to sh7372, enable DMA for SDHI
-Message-Id: <Pine.LNX.4.64.1004221806410.4655@axis700.grange>
+Date: Wed, 21 Apr 2010 08:45:25 +0000
+Subject: [PATCH] SH: add Video Output Unit and AK8813 video encoder support
+Message-Id: <Pine.LNX.4.64.1004211039220.5292@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-This adds DMA support for the sh7372 sh-mobile ARM core, using the shdma
-dmaengine driver, and uses DMA for the SDHI SD-card controller on this SoC.
+Ecovec uses the AK8813 video envoder similarly to the ms7724se platform with
+the only difference, that on ecovec GPIOs are used for resetting and powering
+up and down the chip.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-This depends on the clock and dmaengine patch-series from Magnus, and on 
-my "DMA for tmio" patch series
+This patch extends the SuperH VOU / AK881x patch series: 
+http://thread.gmane.org/gmane.linux.ports.sh.devel/7751/focusw53
 
-http://www.spinics.net/lists/linux-sh/index.html#04711
+ arch/sh/boards/mach-ecovec24/setup.c |   78 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 78 insertions(+), 0 deletions(-)
 
-but already does a better job by taking into account one of the comments 
-and adding DMA slave IDs in a CPU-specific header instead of a global 
-location.
-
- arch/arm/mach-shmobile/board-ap4evb.c        |    9 +
- arch/arm/mach-shmobile/include/mach/sh7372.h |   10 ++
- arch/arm/mach-shmobile/setup-sh7372.c        |  223 ++++++++++++++++++++++++++
- 3 files changed, 242 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 66e195c..d2bb7b0 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -23,6 +23,7 @@
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
-+#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
-@@ -208,6 +209,11 @@ static struct platform_device keysc_device = {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 6c13b92..6f5697f 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -771,6 +771,51 @@ static struct platform_device irda_device = {
+ 	.resource       = irda_resources,
  };
  
- /* SDHI0 */
-+static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
++#include <media/ak881x.h>
++#include <media/sh_vou.h>
++
++struct ak881x_pdata ak881x_pdata = {
++	.flags = AK881X_IF_MODE_SLAVE,
 +};
 +
- static struct resource sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
-@@ -226,6 +232,9 @@ static struct platform_device sdhi0_device = {
- 	.num_resources  = ARRAY_SIZE(sdhi0_resources),
- 	.resource       = sdhi0_resources,
- 	.id             = 0,
-+	.dev	= {
-+		.platform_data	= &sdhi0_info,
++static struct i2c_board_info ak8813 = {
++	I2C_BOARD_INFO("ak8813", 0x20),
++	.platform_data = &ak881x_pdata,
++};
++
++struct sh_vou_pdata sh_vou_pdata = {
++	.bus_fmt	= SH_VOU_BUS_8BIT,
++	.flags		= SH_VOU_HSYNC_LOW | SH_VOU_VSYNC_LOW,
++	.board_info	= &ak8813,
++	.i2c_adap	= 0,
++	.module_name	= "ak881x",
++};
++
++static struct resource sh_vou_resources[] = {
++	[0] = {
++		.start  = 0xfe960000,
++		.end    = 0xfe962043,
++		.flags  = IORESOURCE_MEM,
 +	},
- };
- 
- static struct platform_device *ap4evb_devices[] __initdata = {
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index dc34f00..57e033a 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -431,4 +431,14 @@ enum {
- 	GPIO_FN_SDENC_DV_CLKI,
- };
- 
-+/* DMA slave IDs */
-+enum {
-+	SHDMA_SLAVE_SDHI0_RX,
-+	SHDMA_SLAVE_SDHI0_TX,
-+	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_SDHI1_TX,
-+	SHDMA_SLAVE_SDHI2_RX,
-+	SHDMA_SLAVE_SDHI2_TX,
-+};
-+
- #endif /* __ASM_SH7372_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 1bcd279..b2788d0 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -26,9 +26,11 @@
- #include <linux/input.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
-+#include <mach/sh7372.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-@@ -169,6 +171,224 @@ static struct platform_device cmt10_device = {
- 	.num_resources	= ARRAY_SIZE(cmt10_resources),
- };
- 
-+/* DMA */
-+/* Transmit sizes and respective CHCR register values */
-+enum {
-+	XMIT_SZ_8BIT		= 0,
-+	XMIT_SZ_16BIT		= 1,
-+	XMIT_SZ_32BIT		= 2,
-+	XMIT_SZ_64BIT		= 7,
-+	XMIT_SZ_128BIT		= 3,
-+	XMIT_SZ_256BIT		= 4,
-+	XMIT_SZ_512BIT		= 5,
-+};
-+
-+/* log2(size / 8) - used to calculate number of transfers */
-+#define TS_SHIFT {			\
-+	[XMIT_SZ_8BIT]		= 0,	\
-+	[XMIT_SZ_16BIT]		= 1,	\
-+	[XMIT_SZ_32BIT]		= 2,	\
-+	[XMIT_SZ_64BIT]		= 3,	\
-+	[XMIT_SZ_128BIT]	= 4,	\
-+	[XMIT_SZ_256BIT]	= 5,	\
-+	[XMIT_SZ_512BIT]	= 6,	\
-+}
-+
-+#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | \
-+			 (((i) & 0xc) << (20 - 2)))
-+
-+static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0xe6850030,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0xe6850030,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
-+		.addr		= 0xe6860030,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc9,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
-+		.addr		= 0xe6860030,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
-+		.addr		= 0xe6870030,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xcd,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
-+		.addr		= 0xe6870030,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xce,
++	[1] = {
++		.start  = 55,
++		.flags  = IORESOURCE_IRQ,
 +	},
 +};
 +
-+static const struct sh_dmae_channel sh7724_dmae_channels[] = {
-+	{
-+		.offset = 0,
-+		.dmars = 0,
-+		.dmars_bit = 0,
-+	}, {
-+		.offset = 0x10,
-+		.dmars = 0,
-+		.dmars_bit = 8,
-+	}, {
-+		.offset = 0x20,
-+		.dmars = 4,
-+		.dmars_bit = 0,
-+	}, {
-+		.offset = 0x30,
-+		.dmars = 4,
-+		.dmars_bit = 8,
-+	}, {
-+		.offset = 0x50,
-+		.dmars = 8,
-+		.dmars_bit = 0,
-+	}, {
-+		.offset = 0x60,
-+		.dmars = 8,
-+		.dmars_bit = 8,
-+	}
-+};
-+
-+static const unsigned int ts_shift[] = TS_SHIFT;
-+
-+static struct sh_dmae_pdata dma_platform_data = {
-+	.slave		= sh7724_dmae_slaves,
-+	.slave_num	= ARRAY_SIZE(sh7724_dmae_slaves),
-+	.channel	= sh7724_dmae_channels,
-+	.channel_num	= ARRAY_SIZE(sh7724_dmae_channels),
-+	.ts_low_shift	= 3,
-+	.ts_low_mask	= 0x18,
-+	.ts_high_shift	= (20 - 2),	/* 2 bits for shifted low TS */
-+	.ts_high_mask	= 0x00300000,
-+	.ts_shift	= ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+};
-+
-+/* Resource order important! */
-+static struct resource sh7724_dmae0_resources[] = {
-+	{
-+		/* Channel registers and DMAOR */
-+		.start	= 0xfe008020,
-+		.end	= 0xfe00808f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMARSx */
-+		.start	= 0xfe009000,
-+		.end	= 0xfe00900b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMA error IRQ */
-+		.start	= 246,
-+		.end	= 246,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		/* IRQ for channels 0-5 */
-+		.start	= 240,
-+		.end	= 245,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+/* Resource order important! */
-+static struct resource sh7724_dmae1_resources[] = {
-+	{
-+		/* Channel registers and DMAOR */
-+		.start	= 0xfe018020,
-+		.end	= 0xfe01808f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMARSx */
-+		.start	= 0xfe019000,
-+		.end	= 0xfe01900b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMA error IRQ */
-+		.start	= 254,
-+		.end	= 254,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		/* IRQ for channels 0-5 */
-+		.start	= 248,
-+		.end	= 253,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+/* Resource order important! */
-+static struct resource sh7724_dmae2_resources[] = {
-+	{
-+		/* Channel registers and DMAOR */
-+		.start	= 0xfe028020,
-+		.end	= 0xfe02808f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMARSx */
-+		.start	= 0xfe029000,
-+		.end	= 0xfe02900b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMA error IRQ */
-+		.start	= 262,
-+		.end	= 262,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		/* IRQ for channels 0-5 */
-+		.start	= 256,
-+		.end	= 261,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device dma0_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 0,
-+	.resource	= sh7724_dmae0_resources,
-+	.num_resources	= ARRAY_SIZE(sh7724_dmae0_resources),
++static struct platform_device vou_device = {
++	.name           = "sh-vou",
++	.id		= -1,
++	.num_resources  = ARRAY_SIZE(sh_vou_resources),
++	.resource       = sh_vou_resources,
 +	.dev		= {
-+		.platform_data	= &dma_platform_data,
++		.platform_data	= &sh_vou_pdata,
++	},
++	.archdata	= {
++		.hwblk_id	= HWBLK_VOU,
 +	},
 +};
 +
-+static struct platform_device dma1_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 1,
-+	.resource	= sh7724_dmae1_resources,
-+	.num_resources	= ARRAY_SIZE(sh7724_dmae1_resources),
-+	.dev		= {
-+		.platform_data	= &dma_platform_data,
-+	},
-+};
-+
-+static struct platform_device dma2_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 2,
-+	.resource	= sh7724_dmae2_resources,
-+	.num_resources	= ARRAY_SIZE(sh7724_dmae2_resources),
-+	.dev		= {
-+		.platform_data	= &dma_platform_data,
-+	},
-+};
-+
- static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -178,6 +398,9 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif5_device,
- 	&scif6_device,
- 	&cmt10_device,
-+	&dma0_device,
-+	&dma1_device,
-+	&dma2_device,
+ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&nor_flash_device,
+@@ -792,6 +837,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&camera_devices[2],
+ 	&fsi_device,
+ 	&irda_device,
++	&vou_device,
  };
  
- void __init sh7372_add_standard_devices(void)
+ #ifdef CONFIG_I2C
+@@ -1175,6 +1221,38 @@ static int __init arch_setup(void)
+ 	i2c_register_board_info(1, i2c1_devices,
+ 				ARRAY_SIZE(i2c1_devices));
+ 
++	/* VOU */
++	gpio_request(GPIO_FN_DV_D15, NULL);
++	gpio_request(GPIO_FN_DV_D14, NULL);
++	gpio_request(GPIO_FN_DV_D13, NULL);
++	gpio_request(GPIO_FN_DV_D12, NULL);
++	gpio_request(GPIO_FN_DV_D11, NULL);
++	gpio_request(GPIO_FN_DV_D10, NULL);
++	gpio_request(GPIO_FN_DV_D9, NULL);
++	gpio_request(GPIO_FN_DV_D8, NULL);
++	gpio_request(GPIO_FN_DV_CLKI, NULL);
++	gpio_request(GPIO_FN_DV_CLK, NULL);
++	gpio_request(GPIO_FN_DV_VSYNC, NULL);
++	gpio_request(GPIO_FN_DV_HSYNC, NULL);
++
++	/* AK8813 power / reset sequence */
++	gpio_request(GPIO_PTG4, NULL);
++	gpio_request(GPIO_PTU3, NULL);
++	/* Reset */
++	gpio_direction_output(GPIO_PTG4, 0);
++	/* Power down */
++	gpio_direction_output(GPIO_PTU3, 1);
++
++	udelay(10);
++
++	/* Power up, reset */
++	gpio_set_value(GPIO_PTU3, 0);
++
++	udelay(10);
++
++	/* Remove reset */
++	gpio_set_value(GPIO_PTG4, 1);
++
+ 	return platform_add_devices(ecovec_devices,
+ 				    ARRAY_SIZE(ecovec_devices));
+ }
 -- 
 1.6.2.4
 
