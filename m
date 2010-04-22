@@ -1,42 +1,71 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 01 Apr 2010 17:24:11 +0000
-Subject: How usleep works?
-Message-Id: <201004011924.11879.fabio.giovagnini@aurion-tech.com>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Thu, 22 Apr 2010 08:07:06 +0000
+Subject: libshveu 1.2.0 released
+Message-Id: <s2idba6c0831004220107xdf676a17o10d449e201b1fd1a@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi all,
-I have this piece of software:
-	rs485TxEnVal = 1;
-	// set high a port of the sh2a 7203
-	rs485TxEnExit = write(rs485TxEn_fd,&rs485TxEnVal,sizeof(rs485TxEnVal)); 
-	if ((rs485TxEnExit != 1) || (rs485TxEnExit = -1)) {return 0;}
+libshveu 1.2.0
+=======
 
-	usleep(200);
+libshveu: A library for controlling SH-Mobile VEU
 
-	rs485TxEnVal = 0;
-	// set low a port of the sh2a 7203
-	rs485TxEnExit = write(rs485TxEn_fd,&rs485TxEnVal,sizeof(rs485TxEnVal));
-	if ((rs485TxEnExit != 1) || (rs485TxEnExit = -1)) {return 0;}
+The source archive, and more information about the library are available from:
 
-The pulse I read with the scope is not about 200 uS, but about 10000 uS.
+	http://oss.renesas.com/modules/document/?libshveu
 
-Does any of you know whay? 
-I suspect bucause the function suppose a time elapses every uS, even if it 
-really elapses every abotu 50 uS
 
-Is it possible?
+New in this release
+-------------------
 
-Thanks
+	* Added support for building for Android.
 
--- 
-Fabio Giovagnini
+	* Fixed colorspace issues when enlarging from VGA to D1
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+	* Add detection of VEU hardware revision
+
+Changes
+-------
+
+This release includes the following changes since version 1.1.0:
+
+Atsuhiro Ito (2):
+      Handle VRPBR register setting for enlargement
+      Add ifdef KERNEL 2.6.33 branch
+
+Conrad Parker (8):
+      configure.ac typo: shveu_pkgdeps
+      add VEU3F detection
+      Add VRPBR register handling for VEU3F (sh7724)
+      shveu_open: propagate error conditions
+      shveu_convert: fail on error opening VEU
+      add TODO file with some suggested improvements.
+      TODO: update with simpler API ideas
+      Release 1.2.0
+
+Katsuya Matsubara (3):
+      fix pixel density to calculate VDAYR offset for rotation
+      android: add Android.mk
+      shveu-convert: fix wrong destination pitch for shveu_operation()
+
+Phil Edworthy (1):
+      Added parameter checks.
+
+ Android.mk                    |    4 ++
+ TODO                          |   19 +++++++
+ configure.ac                  |    4 +-
+ src/Android.mk                |    1 +
+ src/libshveu/Android.mk       |   17 +++++++
+ src/libshveu/shveu_regs.h     |    2 +
+ src/libshveu/veu_colorspace.c |  107 ++++++++++++++++++++++++++++++++++++-----
+ src/tools/Android.mk          |   10 ++++
+ src/tools/shveu-convert.c     |    7 ++-
+ 9 files changed, 154 insertions(+), 17 deletions(-)
+ create mode 100644 Android.mk
+ create mode 100644 TODO
+ create mode 100644 src/Android.mk
+ create mode 100644 src/libshveu/Android.mk
+ create mode 100644 src/tools/Android.mk
