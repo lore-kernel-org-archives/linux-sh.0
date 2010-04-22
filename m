@@ -1,60 +1,38 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 21 Apr 2010 15:37:25 +0000
-Subject: [PATCH 5/8] SH: Add SDHI DMA support to ecovec
-Message-Id: <Pine.LNX.4.64.1004211734460.5292@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 Apr 2010 00:16:29 +0000
+Subject: Re: [PATCH 5/8] SH: Add SDHI DMA support to ecovec
+Message-Id: <p2iaec7e5c31004211716z430581dfn9a695537d4d8489a@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
+	 <Pine.LNX.4.64.1004211734460.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211734460.5292@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/sh/boards/mach-ecovec24/setup.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+On Wed, Apr 21, 2010 at 11:37 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> @@ -442,6 +444,8 @@ static void sdhi0_set_pwr(struct platform_device *pde=
+v, int state)
+> =A0}
+>
+> =A0static struct sh_mobile_sdhi_info sdhi0_info =3D {
+> + =A0 =A0 =A0 .dma_slave_tx =3D SHDMA_SLAVE_SDHI0_TX,
+> + =A0 =A0 =A0 .dma_slave_rx =3D SHDMA_SLAVE_SDHI0_RX,
+> =A0 =A0 =A0 =A0.set_pwr =3D sdhi0_set_pwr,
+> =A0};
+>
+> @@ -478,6 +482,9 @@ static void sdhi1_set_pwr(struct platform_device *pde=
+v, int state)
+> =A0}
+>
+> =A0static struct sh_mobile_sdhi_info sdhi1_info =3D {
+> + =A0 =A0 =A0 .dma_slave_tx =3D SHDMA_SLAVE_SDHI1_TX,
+> + =A0 =A0 =A0 .dma_slave_rx =3D SHDMA_SLAVE_SDHI1_RX,
+> + =A0 =A0 =A0 .tmio_flags =3D TMIO_DEFER_RX_COMPLETE,
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 0e36b04..ff330f0 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -11,6 +11,7 @@
- #include <linux/init.h>
- #include <linux/device.h>
- #include <linux/platform_device.h>
-+#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/gpio.h>
- #include <linux/interrupt.h>
-@@ -31,6 +32,7 @@
- #include <media/sh_mobile_ceu.h>
- #include <media/tw9910.h>
- #include <media/mt9t112.h>
-+#include <asm/dmaengine.h>
- #include <asm/heartbeat.h>
- #include <asm/sh_eth.h>
- #include <asm/clock.h>
-@@ -442,6 +444,8 @@ static void sdhi0_set_pwr(struct platform_device *pdev, int state)
- }
- 
- static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
- 	.set_pwr = sdhi0_set_pwr,
- };
- 
-@@ -478,6 +482,9 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
- }
- 
- static struct sh_mobile_sdhi_info sdhi1_info = {
-+	.dma_slave_tx = SHDMA_SLAVE_SDHI1_TX,
-+	.dma_slave_rx = SHDMA_SLAVE_SDHI1_RX,
-+	.tmio_flags = TMIO_DEFER_RX_COMPLETE,
- 	.set_pwr = sdhi1_set_pwr,
- };
- 
--- 
-1.6.2.4
+This is a bit odd. How come SDHI1 needs this flag and SDHI0 doesn't?
 
+/ magnus
