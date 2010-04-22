@@ -1,61 +1,60 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 21 Apr 2010 15:36:53 +0000
-Subject: [PATCH 2/8] SH: add DMA slave IDs for two SDHI controllers, add
-Message-Id: <Pine.LNX.4.64.1004211732340.5292@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 Apr 2010 00:02:57 +0000
+Subject: Re: [PATCH 2/8] SH: add DMA slave IDs for two SDHI controllers, add
+Message-Id: <j2xaec7e5c31004211702v9ba71743jedd24562f8dea0a5@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
+	 <Pine.LNX.4.64.1004211732340.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211732340.5292@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
-SuperH SDHI controllers can use DMA, add slave IDs to the header and slave
-definitions to sh7722.
+Hi Guennadi,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/sh/include/asm/dmaengine.h        |    4 ++++
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   10 ++++++++++
- 2 files changed, 14 insertions(+), 0 deletions(-)
+On Wed, Apr 21, 2010 at 11:36 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> SuperH SDHI controllers can use DMA, add slave IDs to the header and slave
+> definitions to sh7722.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> =A0arch/sh/include/asm/dmaengine.h =A0 =A0 =A0 =A0| =A0 =A04 ++++
+> =A0arch/sh/kernel/cpu/sh4a/setup-sh7722.c | =A0 10 ++++++++++
+> =A02 files changed, 14 insertions(+), 0 deletions(-)
+>
+> diff --git a/arch/sh/include/asm/dmaengine.h b/arch/sh/include/asm/dmaeng=
+ine.h
+> index 2a02b61..876e601 100644
+> --- a/arch/sh/include/asm/dmaengine.h
+> +++ b/arch/sh/include/asm/dmaengine.h
+> @@ -29,6 +29,10 @@ enum {
+> =A0 =A0 =A0 =A0SHDMA_SLAVE_SIUA_RX,
+> =A0 =A0 =A0 =A0SHDMA_SLAVE_SIUB_TX,
+> =A0 =A0 =A0 =A0SHDMA_SLAVE_SIUB_RX,
+> + =A0 =A0 =A0 SHDMA_SLAVE_SDHI0_RX,
+> + =A0 =A0 =A0 SHDMA_SLAVE_SDHI0_TX,
+> + =A0 =A0 =A0 SHDMA_SLAVE_SDHI1_RX,
+> + =A0 =A0 =A0 SHDMA_SLAVE_SDHI1_TX,
+> =A0};
+>
+> =A0#endif
 
-diff --git a/arch/sh/include/asm/dmaengine.h b/arch/sh/include/asm/dmaengine.h
-index 2a02b61..876e601 100644
---- a/arch/sh/include/asm/dmaengine.h
-+++ b/arch/sh/include/asm/dmaengine.h
-@@ -29,6 +29,10 @@ enum {
- 	SHDMA_SLAVE_SIUA_RX,
- 	SHDMA_SLAVE_SIUB_TX,
- 	SHDMA_SLAVE_SIUB_RX,
-+	SHDMA_SLAVE_SDHI0_RX,
-+	SHDMA_SLAVE_SDHI0_TX,
-+	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_SDHI1_TX,
- };
- 
- #endif
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-index fe28f52..7f78cc2 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-@@ -75,6 +75,16 @@ static const struct sh_dmae_slave_config sh7722_dmae_slaves[] = {
- 		.addr		= 0xa454c094,
- 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xb6,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0x04ce0030,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0x04ce0030,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
- 	},
- };
- 
--- 
-1.6.2.4
+Thanks for your work on this. Two SDHIs may be enough for most
+processor types, but I think the G3 processor actually has three. With
+that in mind, I think it makes more sense to keep the slave ids
+together with the processor specific bits in for instance
+arch/sh/include/cpu-sh4/cpu/sh7722.h.
 
+If you have time, can you please make a patch that moves the slave ids
+into the processor specific header files? This on top of the other
+code in the sh/dmaengine topic branch.
+
+With that in place it will be easy to extend each processor type by
+itself without having to tie in dependencies on a single asm file.
+
+Thanks,
+
+/ magnus
