@@ -1,42 +1,44 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Tue, 13 Apr 2010 07:13:03 +0000
-Subject: Re: Sourcery G++ 4.4-136 Release - kernel 2.6.33 compiled with sh-uclinux-gcc works
-Message-Id: <201004130913.03701.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 Apr 2010 06:21:10 +0000
+Subject: [PATCH] sh: sh7751 pci controller io port fix
+Message-Id: <20100422062110.11523.24354.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I have to fix some minors to make it perfectly running.
+From: Magnus Damm <damm@opensource.se>
 
-Regards
+This patch updates the sh7751 pci code to handle io ports
+correctly. The code is based on the sh7788x implementation.
 
+Tested on a R2D-1 board with CONFIG_8139TOO_PIO=y.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-In data marted=C3=AC 06 aprile 2010 11:11:07, Andrew Stubbs ha scritto:
-: > On 06/04/10 09:06, Fabio Giovagnini wrote:
-> > Hi Andrew, the warnign of the kernel I reported you are a problem or I
-> > can try the kernel I have built?
-> > I solved the problem of the path for FDPIC and  not FDPIC stuff
->=20
-> I think you can ignore the 'size changed' warnings. If you have a kernel
-> image to boot then why not try it? Mine work on SH7203.
->=20
-> I'm not sure how to fix the zImage libgcc issue. I could add a non-FDPIC
-> multilib to the toolchain somehow, but that's not as easy as it sounds,
-> and we wouldn't want it for anything else. I suggest just using
-> uncompressed kernels until the problem is solved.
->=20
-> Andrew
->=20
+ arch/sh/drivers/pci/pci-sh7751.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-
---=20
-Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+--- 0001/arch/sh/drivers/pci/pci-sh7751.c
++++ work/arch/sh/drivers/pci/pci-sh7751.c	2010-04-22 13:15:00.000000000 +0900
+@@ -17,6 +17,7 @@
+ #include <linux/io.h>
+ #include "pci-sh4.h"
+ #include <asm/addrspace.h>
++#include <asm/sizes.h>
+ 
+ static int __init __area_sdram_check(struct pci_channel *chan,
+ 				     unsigned int area)
+@@ -47,8 +48,8 @@ static int __init __area_sdram_check(str
+ static struct resource sh7751_pci_resources[] = {
+ 	{
+ 		.name	= "SH7751_IO",
+-		.start	= SH7751_PCI_IO_BASE,
+-		.end	= SH7751_PCI_IO_BASE + SH7751_PCI_IO_SIZE - 1,
++		.start	= 0x1000,
++		.end	= SZ_4M - 1,
+ 		.flags	= IORESOURCE_IO
+ 	}, {
+ 		.name	= "SH7751_mem",
