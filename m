@@ -1,82 +1,48 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 21 Apr 2010 15:37:28 +0000
-Subject: [PATCH 6/8] SH: Add SDHI DMA support to ms7724se
-Message-Id: <Pine.LNX.4.64.1004211735180.5292@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 Apr 2010 00:18:26 +0000
+Subject: Re: [PATCH 6/8] SH: Add SDHI DMA support to ms7724se
+Message-Id: <m2xaec7e5c31004211718t85936386k6c0f09684b17b10f@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1004211715050.5292@axis700.grange>
+	 <Pine.LNX.4.64.1004211735180.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211735180.5292@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/sh/boards/mach-se/7724/setup.c |   19 +++++++++++++++++++
- 1 files changed, 19 insertions(+), 0 deletions(-)
+On Wed, Apr 21, 2010 at 11:37 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> @@ -456,11 +458,20 @@ static struct resource sdhi0_cn7_resources[] =3D {
+> =A0 =A0 =A0 =A0},
+> =A0};
+>
+> +static struct sh_mobile_sdhi_info sh7724_sdhi0_data =3D {
+> + =A0 =A0 =A0 .dma_slave_tx =A0 =3D SHDMA_SLAVE_SDHI0_TX,
+> + =A0 =A0 =A0 .dma_slave_rx =A0 =3D SHDMA_SLAVE_SDHI0_RX,
+> + =A0 =A0 =A0 .tmio_flags =A0 =A0 =3D TMIO_IMMEDIATE_RX_COMPLETE,
+> +};
+> +
+> =A0static struct platform_device sdhi0_cn7_device =3D {
+> =A0 =A0 =A0 =A0.name =A0 =A0 =A0 =A0 =A0 =3D "sh_mobile_sdhi",
+> =A0 =A0 =A0 =A0.id =A0 =A0 =A0 =A0 =A0 =A0 =3D 0,
+> =A0 =A0 =A0 =A0.num_resources =A0=3D ARRAY_SIZE(sdhi0_cn7_resources),
+> =A0 =A0 =A0 =A0.resource =A0 =A0 =A0 =3D sdhi0_cn7_resources,
+> + =A0 =A0 =A0 .dev =3D {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .platform_data =A0=3D &sh7724_sdhi0_data,
+> + =A0 =A0 =A0 },
+> =A0 =A0 =A0 =A0.archdata =3D {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0.hwblk_id =3D HWBLK_SDHI0,
+> =A0 =A0 =A0 =A0},
+> @@ -479,11 +490,19 @@ static struct resource sdhi1_cn8_resources[] =3D {
+> =A0 =A0 =A0 =A0},
+> =A0};
+>
+> +static struct sh_mobile_sdhi_info sh7724_sdhi1_data =3D {
+> + =A0 =A0 =A0 .dma_slave_tx =3D SHDMA_SLAVE_SDHI1_TX,
+> + =A0 =A0 =A0 .dma_slave_rx =3D SHDMA_SLAVE_SDHI1_RX,
 
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 66cdbc3..70ddc92 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -14,6 +14,7 @@
- #include <linux/device.h>
- #include <linux/interrupt.h>
- #include <linux/platform_device.h>
-+#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/delay.h>
- #include <linux/smc91x.h>
-@@ -24,6 +25,7 @@
- #include <video/sh_mobile_lcdc.h>
- #include <media/sh_mobile_ceu.h>
- #include <sound/sh_fsi.h>
-+#include <asm/dmaengine.h>
- #include <asm/io.h>
- #include <asm/heartbeat.h>
- #include <asm/sh_eth.h>
-@@ -456,11 +458,20 @@ static struct resource sdhi0_cn7_resources[] = {
- 	},
- };
- 
-+static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+	.tmio_flags	= TMIO_IMMEDIATE_RX_COMPLETE,
-+};
-+
- static struct platform_device sdhi0_cn7_device = {
- 	.name           = "sh_mobile_sdhi",
- 	.id		= 0,
- 	.num_resources  = ARRAY_SIZE(sdhi0_cn7_resources),
- 	.resource       = sdhi0_cn7_resources,
-+	.dev = {
-+		.platform_data	= &sh7724_sdhi0_data,
-+	},
- 	.archdata = {
- 		.hwblk_id = HWBLK_SDHI0,
- 	},
-@@ -479,11 +490,19 @@ static struct resource sdhi1_cn8_resources[] = {
- 	},
- };
- 
-+static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
-+	.dma_slave_tx = SHDMA_SLAVE_SDHI1_TX,
-+	.dma_slave_rx = SHDMA_SLAVE_SDHI1_RX,
-+};
-+
- static struct platform_device sdhi1_cn8_device = {
- 	.name           = "sh_mobile_sdhi",
- 	.id		= 1,
- 	.num_resources  = ARRAY_SIZE(sdhi1_cn8_resources),
- 	.resource       = sdhi1_cn8_resources,
-+	.dev = {
-+		.platform_data	= &sh7724_sdhi1_data,
-+	},
- 	.archdata = {
- 		.hwblk_id = HWBLK_SDHI1,
- 	},
--- 
-1.6.2.4
+And these two are the opposite of Ecovec even though both are sh7724? Hm..
 
+/ magnus
