@@ -1,27 +1,25 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 29 Apr 2010 14:36:53 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: Set CONSISTENT_DMA_SIZE to 158 MB
-Message-Id: <20100429143653.GD9621@linux-sh.org>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Thu, 22 Apr 2010 18:04:38 +0000
+Subject: Hi guys, does any of you have experience with touchscreen controllers?
+Message-Id: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100428082530.29018.50464.sendpatchset@t400s>
-In-Reply-To: <20100428082530.29018.50464.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Apr 28, 2010 at 05:25:30PM +0900, Magnus Damm wrote:
-> This patch sets CONSISTENT_DMA_SIZE to 158 MB
-> for all SH-Mobile ARM processors.
-> 
-> The DMA area is mapped at 0xf6000000 - 0xffdfffff,
-> on top of the 256 MB I/O window at 0xe6000000.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+I'm working with ADS7843 and I have some troubles to get only the push event 
+on the screen.
+If any of you knows a better place where to talk about this argument it will 
+be appreciated very much to tell me.
 
-On Wed, Apr 28, 2010 at 05:36:57PM +0900, Magnus Damm wrote:
-> Extend VMALLOC_END to the I/O Window at 0xe6000000.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Best regards
 
-Both applied, thanks.
+-- 
+Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
