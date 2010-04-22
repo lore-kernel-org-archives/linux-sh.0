@@ -1,158 +1,52 @@
-From: Alexandre Courbot <alex@dcl.info.waseda.ac.jp>
-Date: Thu, 22 Apr 2010 05:54:13 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 Apr 2010 06:11:41 +0000
 Subject: Re: [PATCH] sh-sci: Extend sh-sci driver with early console V2
-Message-Id: <x2nea710c1b1004212254t37f887f9ua9f7f31def8f4d04@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="000e0cd13b6ee3683c0484ccf1ce"
+Message-Id: <w2vaec7e5c31004212311i860c8699vc646d436967e94d1@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20091214102442.13038.43809.sendpatchset@rxone.opensource.se>
 In-Reply-To: <20091214102442.13038.43809.sendpatchset@rxone.opensource.se>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
---000e0cd13b6ee3683c0484ccf1ce
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Hi Alexandre,
 
-Hello everybody,
-
-> > I'm in trouble with qemu-sh serial console. =C2=A0Don't you have any
-> > guide on this trouble?
+On Thu, Apr 22, 2010 at 2:54 PM, Alexandre Courbot
+<alex@dcl.info.waseda.ac.jp> wrote:
+> Hello everybody,
 >
-> Yes, I think the defconfig is missing one thing. Please try setting
-> CONFIG_SERIAL_SH_SCI_NR_UARTS=3D2. See below.
+>> > I'm in trouble with qemu-sh serial console. =A0Don't you have any
+>> > guide on this trouble?
+>>
+>> Yes, I think the defconfig is missing one thing. Please try setting
+>> CONFIG_SERIAL_SH_SCI_NR_UARTS=3D2. See below.
+>
+> Indeed, I ran into the same problem as Kawasaki-san and got it fixed
+> by setting=A0CONFIG_SERIAL_SH_SCI_NR_UARTS to 2 instead of 1. With this
+> value, I am able to boot correctly by using the=A0"earlyprintk=3Dsh-sci.1
+> console=3DttySC1" kernel parameters. FYI, my qemu command-line is:
+>
+> qemu-system-sh4 -M r2d -kernel arch/sh/boot/zImage -serial null
+> -serial stdio -append "earlyprintk=3Dsh-sci.1 console=3DttySC1"
 
-Indeed, I ran into the same problem as Kawasaki-san and got it fixed
-by setting=C2=A0CONFIG_SERIAL_SH_SCI_NR_UARTS to 2 instead of 1. With this
-value, I am able to boot correctly by using the=C2=A0"earlyprintk=3Dsh-sci.=
-1
-console=3DttySC1" kernel parameters. FYI, my qemu command-line is:
+Thanks for sharing this information.
 
-qemu-system-sh4 -M r2d -kernel arch/sh/boot/zImage -serial null
--serial stdio -append "earlyprintk=3Dsh-sci.1 console=3DttySC1"
+> Also, the r2dplus configuration file sets
+> CONFIG_SERIAL_SH_SCI_NR_UARTS to 1 currently - here is a patch that
+> fixes that. It is possible that other targets need this.
 
-Also, the r2dplus configuration file sets
-CONFIG_SERIAL_SH_SCI_NR_UARTS to 1 currently - here is a patch that
-fixes that. It is possible that other targets need this.
+Cool, thanks. It's very similar to the patch I just posted. =3D)
 
-We are also trying to get the latest Linux to run on the SH2007
-platform, and since the new serial driver boot fails during SCIF
-intialization. I have attached a boot log of what is sent to the
-serial line. The output gets cut right in the middle of displaying
-status for sh-sci.1. Any clue on that issue would be greatly
-appreciated.
+> We are also trying to get the latest Linux to run on the SH2007
+> platform, and since the new serial driver boot fails during SCIF
+> intialization. I have attached a boot log of what is sent to the
+> serial line. The output gets cut right in the middle of displaying
+> status for sh-sci.1. Any clue on that issue would be greatly
+> appreciated.
 
-Thanks,
-Alex.
+Is the SH2007 board based on sh7780? Perhaps it's a clock issue.
 
---000e0cd13b6ee3683c0484ccf1ce
-Content-Type: text/plain; charset=US-ASCII; name="sh2007-bootlog.txt"
-Content-Disposition: attachment; filename="sh2007-bootlog.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_g8b5ojar1
+Cheers,
 
-U0ggSVBMK2cgdmVyc2lvbiAxLjMwIEp1biAyMSAyMDA3LCBDb3B5cmlnaHQgKEMpIDIwMDEtMjAw
-NyBGcmVlIFNvZnR3YXJlIEZvdW5kYXRpb24sIEluYy4KClRoaXMgc29mdHdhcmUgY29tZXMgd2l0
-aCBBQlNPTFVURUxZIE5PIFdBUlJBTlRZOyBmb3IgZGV0YWlscyB0eXBlIGB3Jy4KVGhpcyBpcyBm
-cmVlIHNvZnR3YXJlLCBhbmQgeW91IGFyZSB3ZWxjb21lIHRvIHJlZGlzdHJpYnV0ZSBpdCB1bmRl
-cgpjZXJ0YWluIGNvbmRpdGlvbnM7IHR5cGUgYGwnIGZvciBkZXRhaWxzLgoKMTI4TWJ5dGUgbWVt
-b3J5ClBDSTogU3RhcnRpbmcgaW50aWFsaXphdGlvbi4KcGNpIGRldmljZSAwMDogVklEPTB4MTAz
-MyBESUQ9MHgwMDM1CkluaXRpYWxpemluZyB1UEQ3MjAxMDEgVVNCIEludGVyZmFjZQpEU1dbMS4u
-OF09MDAwMSAxMTEwCgpCb290aW5nIGZyb20gbmV0d29yayEKU01TQyBMQU45MTF4IERyaXZlciAo
-djEuMTIpCkxBTjkxMTgocmV2OjEpIGF0IDB4YjA4MDAwMDAgQUREUjogMDA6MTA6MGM6MDA6NTA6
-ZjIKU2VhcmNoaW5nIGZvciBzZXJ2ZXIgKEJPT1RQL0RIQ1ApLi4uCklQIEFkZHJlc3M6IDE5Mi4x
-NjguMS4xMDAKU2VydmVyOiAxOTIuMTY4LjEuMSwgR2F0ZXdheSAxOTIuMTY4LjEuMQpLZXJuZWwg
-dG8gbG9hZDogIi9uZnMvc2gyMDA3L2Jvb3Qvdm1saW51ei5zaDIwMDciCkhPU1ROQU1FOiBzaDIw
-MDctbWl0YWtlClJPT1QgUEFUSDogL25mcy9zaDIwMDcKTG9hZGluZyBLZXJuZWw6IC9uZnMvc2gy
-MDA3L2Jvb3Qvdm1saW51ei5zaDIwMDcgYXQgMHg4ODIxMDAwMCAuLi4uLi4uLi4uLi4uLi4uLi4u
-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi5hCmRvbmUKU2V0dGluZyBHREIg
-dHJhcCB2ZWN0b3IgdG8gODAwMDAxMDAKTGludXggdmVyc2lvbiAyLjYuMzQtcmMyIChtaXRha2VA
-bWl0YWtlaTcpIChnY2MgdmVyc2lvbiA0LjQuMyAoRGViaWFuIDQuNC4zLTMpICkgIzIzOCBUaHUg
-QXByIDE1IDE3OjMxOjQ1IEpTVCAyMDEwCkJvb3QgcGFyYW1zOgouLi4gTU9VTlRfUk9PVF9SRE9O
-TFkgLSAwMDAwMDAwMAouLi4gUkFNRElTS19GTEFHUyAgICAgLSAwMDAwMDAwMAouLi4gT1JJR19S
-T09UX0RFViAgICAgLSAwMDAwMDAwMAouLi4gTE9BREVSX1RZUEUgICAgICAgLSAwMDAwMDAwMAou
-Li4gSU5JVFJEX1NUQVJUICAgICAgLSAwMDAwMDAwMAouLi4gSU5JVFJEX1NJWkUgICAgICAgLSAw
-MDAwMDAwMApib290Y29uc29sZSBbYmlvczBdIGVuYWJsZWQKQm9vdGluZyBtYWNodmVjOiBzaDIw
-MDcKTm9kZSAwOiBzdGFydF9wZm4gPSAweDgwMDAsIGxvdyA9IDB4MTAwMDAKWm9uZSBQRk4gcmFu
-Z2VzOgogTm9ybWFsICAgMHgwMDAwODAwMCAtPiAweDAwMDEwMDAwCk1vdmFibGUgem9uZSBzdGFy
-dCBQRk4gZm9yIGVhY2ggbm9kZQplYXJseV9ub2RlX21hcFsxXSBhY3RpdmUgUEZOIHJhbmdlcwog
-ICAwOiAweDAwMDA4MDAwIC0+IDB4MDAwMTAwMDAKU0gtMjAwNyBTZXR1cC4uLmRvbmUuCkJ1aWx0
-IDEgem9uZWxpc3RzIGluIFpvbmUgb3JkZXIsIG1vYmlsaXR5IGdyb3VwaW5nIG9uLiAgVG90YWwg
-cGFnZXM6IDMyNTEyCktlcm5lbCBjb21tYW5kIGxpbmU6IGNvbnNvbGU9dHR5U0MxLDExNTIwMCBp
-cD1kaGNwIHJvb3Q9L2Rldi9uZnMgcncgbmZzcm9vdD0vbmZzL3NoMjAwNyxyc2l6ZT0xMDI0LHdz
-aXplPTEwMjQgZWFybHlwcmlucwpQSUQgaGFzaCB0YWJsZSBlbnRyaWVzOiA1MTIgKG9yZGVyOiAt
-MSwgMjA0OCBieXRlcykKRGVudHJ5IGNhY2hlIGhhc2ggdGFibGUgZW50cmllczogMTYzODQgKG9y
-ZGVyOiA0LCA2NTUzNiBieXRlcykKSW5vZGUtY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVzOiA4MTky
-IChvcmRlcjogMywgMzI3NjggYnl0ZXMpClBWUj0xMDIwMGEwMCBDVlI9NzM0NDAwMTAgUFJSPTAw
-MDAwOTIwCkktY2FjaGUgOiBuX3dheXM9NCBuX3NldHM9MjU2IHdheV9pbmNyPTgxOTIKSS1jYWNo
-ZSA6IGVudHJ5X21hc2s9MHgwMDAwMWZlMCBhbGlhc19tYXNrPTB4MDAwMDEwMDAgbl9hbGlhc2Vz
-PTIKRC1jYWNoZSA6IG5fd2F5cz00IG5fc2V0cz0yNTYgd2F5X2luY3I9ODE5MgpELWNhY2hlIDog
-ZW50cnlfbWFzaz0weDAwMDAxZmUwIGFsaWFzX21hc2s9MHgwMDAwMTAwMCBuX2FsaWFzZXM9MgpN
-ZW1vcnk6IDEyMzM5MmsvMTMxMDcyayBhdmFpbGFibGUgKDM5MThrIGtlcm5lbCBjb2RlLCAyMzIz
-ayBkYXRhLCAxODRrIGluaXQpCnZpcnR1YWwga2VybmVsIG1lbW9yeSBsYXlvdXQ6CiAgIGZpeG1h
-cCAgOiAweGRmZmY3MDAwIC0gMHhkZmZmZjAwMCAgICggIDMyIGtCKQogICB2bWFsbG9jIDogMHhj
-MDAwMDAwMCAtIDB4ZGZmZjUwMDAgICAoIDUxMSBNQikKICAgbG93bWVtICA6IDB4ODgwMDAwMDAg
-LSAweDkwMDAwMDAwICAgKCAxMjggTUIpIChjYWNoZWQpCiAgICAgICAgICAgOiAweGEwMDAwMDAw
-IC0gMHhjMDAwMDAwMCAgICggNTEyIE1CKSAodW5jYWNoZWQpCiAgICAgLmluaXQgOiAweDg4NjFh
-MDAwIC0gMHg4ODY0ODAwMCAgICggMTg0IGtCKQogICAgIC5kYXRhIDogMHg4ODNkNDllOCAtIDB4
-ODg2MTk5YTAgICAoMjMyMyBrQikKICAgICAudGV4dCA6IDB4ODgwMDEwMDAgLSAweDg4M2Q0OWU4
-ICAgKDM5MTgga0IpCkhpZXJhcmNoaWNhbCBSQ1UgaW1wbGVtZW50YXRpb24uCk5SX0lSUVM6MjU2
-IG5yX2lycXM6MjU2CkNvbnNvbGU6IGNvbG91ciBkdW1teSBkZXZpY2UgODB4MjUKIHNoX3RtdS4w
-OiB1c2VkIGZvciBjbG9jayBldmVudHMKIHNoX3RtdS4wOiB1c2VkIGZvciBwZXJpb2RpYyBjbG9j
-ayBldmVudHMKIHNoX3RtdS4xOiB1c2VkIGFzIGNsb2NrIHNvdXJjZQpDYWxpYnJhdGluZyBkZWxh
-eSBsb29wIChza2lwcGVkKS4uLiA2MDAuMDAgQm9nb01JUFMgUFJFU0VUIChscGo9MzAwMDAwMCkK
-TW91bnQtY2FjaGUgaGFzaCB0YWJsZSBlbnRyaWVzOiA1MTIKQ1BVOiBTSDc3ODAKTkVUOiBSZWdp
-c3RlcmVkIHByb3RvY29sIGZhbWlseSAxNgpQZXJmb3JtYW5jZSBFdmVudHM6IFNILTRBIHN1cHBv
-cnQgcmVnaXN0ZXJlZApIVyBCcmVha3BvaW50czogU0gtNEEgVUJDIHN1cHBvcnQgcmVnaXN0ZXJl
-ZApiaW86IGNyZWF0ZSBzbGFiIDxiaW8tMD4gYXQgMApTQ1NJIHN1YnN5c3RlbSBpbml0aWFsaXpl
-ZAp1c2Jjb3JlOiByZWdpc3RlcmVkIG5ldyBpbnRlcmZhY2UgZHJpdmVyIHVzYmZzCnVzYmNvcmU6
-IHJlZ2lzdGVyZWQgbmV3IGludGVyZmFjZSBkcml2ZXIgaHViCnVzYmNvcmU6IHJlZ2lzdGVyZWQg
-bmV3IGRldmljZSBkcml2ZXIgdXNiCkRNQTogUmVnaXN0ZXJpbmcgc2hfZG1hYyBoYW5kbGVyICgx
-MiBjaGFubmVscykuCkRNQTogUmVnaXN0ZXJpbmcgRE1BIEFQSS4KU3dpdGNoaW5nIHRvIGNsb2Nr
-c291cmNlIHNoX3RtdS4xCk5FVDogUmVnaXN0ZXJlZCBwcm90b2NvbCBmYW1pbHkgMgpJUCByb3V0
-ZSBjYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6IDEwMjQgKG9yZGVyOiAwLCA0MDk2IGJ5dGVzKQpw
-bGF0Zm9ybSBzaF90bXUuMDogdXNlZCBmb3Igb25lc2hvdCBjbG9jayBldmVudHMKVENQIGVzdGFi
-bGlzaGVkIGhhc2ggdGFibGUgZW50cmllczogNDA5NiAob3JkZXI6IDMsIDMyNzY4IGJ5dGVzKQpU
-Q1AgYmluZCBoYXNoIHRhYmxlIGVudHJpZXM6IDQwOTYgKG9yZGVyOiAyLCAxNjM4NCBieXRlcykK
-VENQOiBIYXNoIHRhYmxlcyBjb25maWd1cmVkIChlc3RhYmxpc2hlZCA0MDk2IGJpbmQgNDA5NikK
-VENQIHJlbm8gcmVnaXN0ZXJlZApVRFAgaGFzaCB0YWJsZSBlbnRyaWVzOiAyNTYgKG9yZGVyOiAw
-LCA0MDk2IGJ5dGVzKQpVRFAtTGl0ZSBoYXNoIHRhYmxlIGVudHJpZXM6IDI1NiAob3JkZXI6IDAs
-IDQwOTYgYnl0ZXMpCk5FVDogUmVnaXN0ZXJlZCBwcm90b2NvbCBmYW1pbHkgMQpSUEM6IFJlZ2lz
-dGVyZWQgdWRwIHRyYW5zcG9ydCBtb2R1bGUuClJQQzogUmVnaXN0ZXJlZCB0Y3AgdHJhbnNwb3J0
-IG1vZHVsZS4KUlBDOiBSZWdpc3RlcmVkIHRjcCBORlN2NC4xIGJhY2tjaGFubmVsIHRyYW5zcG9y
-dCBtb2R1bGUuClNIMjAwNyBQSU8gRHJpdmVyIHYwLjEKYXVkaXQ6IGluaXRpYWxpemluZyBuZXRs
-aW5rIHNvY2tldCAoZGlzYWJsZWQpCnR5cGU9MjAwMCBhdWRpdCg5NDY2ODQ4MDAuMTcwOjEpOiBp
-bml0aWFsaXplZAptc2dtbmkgaGFzIGJlZW4gc2V0IHRvIDI0MQphbGc6IE5vIHRlc3QgZm9yIGNp
-cGhlcl9udWxsIChjaXBoZXJfbnVsbC1nZW5lcmljKQphbGc6IE5vIHRlc3QgZm9yIGVjYihjaXBo
-ZXJfbnVsbCkgKGVjYi1jaXBoZXJfbnVsbCkKYWxnOiBObyB0ZXN0IGZvciBkaWdlc3RfbnVsbCAo
-ZGlnZXN0X251bGwtZ2VuZXJpYykKYWxnOiBObyB0ZXN0IGZvciBjb21wcmVzc19udWxsIChjb21w
-cmVzc19udWxsLWdlbmVyaWMpCmFsZzogTm8gdGVzdCBmb3IgZmNyeXB0IChmY3J5cHQtZ2VuZXJp
-YykKYWxnOiBObyB0ZXN0IGZvciBzdGRybmcgKGtybmcpCmlvIHNjaGVkdWxlciBub29wIHJlZ2lz
-dGVyZWQKaW8gc2NoZWR1bGVyIGRlYWRsaW5lIHJlZ2lzdGVyZWQKaW8gc2NoZWR1bGVyIGNmcSBy
-ZWdpc3RlcmVkIChkZWZhdWx0KQpTZXJpYWw6IDgyNTAvMTY1NTAgZHJpdmVyLCA4IHBvcnRzLCBJ
-UlEgc2hhcmluZyBlbmFibGVkClN1cGVySCBTQ0koRikgZHJpdmVyIGluaXRpYWxpemVkCnNoLXNj
-aS4wOiB0dHlTQzAgYXQgTU1JTyAweGZmZTAwMDAwIChpcnEgPSA0MCkgaXMgYSBzY2lmCnNoLXNj
-aS4xOiB0dHlTQzEgYXQgTU1JTyAweA==
---000e0cd13b6ee3683c0484ccf1ce
-Content-Type: text/x-patch; charset=US-ASCII; 
-	name="0001-SH-Fixed-number-of-UARTs-in-r2dplus-config.patch"
-Content-Disposition: attachment; 
-	filename="0001-SH-Fixed-number-of-UARTs-in-r2dplus-config.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_g8b5luxn0
-
-RnJvbSAxODg4NWE3NmUzMWFhY2NiYWY3OGM0M2I0MmNkYWY5MDMxYjNjMTNmIE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpGcm9tOiBBbGV4YW5kcmUgQ291cmJvdCA8Z251cm91QGdtYWlsLmNvbT4K
-RGF0ZTogTW9uLCAxOSBBcHIgMjAxMCAxNjoyOToyMSArMDkwMApTdWJqZWN0OiBbUEFUQ0hdIFtT
-SF0gRml4ZWQgbnVtYmVyIG9mIFVBUlRzIGluIHIyZHBsdXMgY29uZmlnCgotLS0KIGFyY2gvc2gv
-Y29uZmlncy9ydHM3NzUxcjJkcGx1c19kZWZjb25maWcgfCAgICAyICstCiAxIGZpbGVzIGNoYW5n
-ZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9hcmNoL3No
-L2NvbmZpZ3MvcnRzNzc1MXIyZHBsdXNfZGVmY29uZmlnIGIvYXJjaC9zaC9jb25maWdzL3J0czc3
-NTFyMmRwbHVzX2RlZmNvbmZpZwppbmRleCBhOGQ1MzhmLi42ZDUxMWQwIDEwMDY0NAotLS0gYS9h
-cmNoL3NoL2NvbmZpZ3MvcnRzNzc1MXIyZHBsdXNfZGVmY29uZmlnCisrKyBiL2FyY2gvc2gvY29u
-Zmlncy9ydHM3NzUxcjJkcGx1c19kZWZjb25maWcKQEAgLTk2Myw3ICs5NjMsNyBAQCBDT05GSUdf
-U0VSSUFMXzgyNTBfUlVOVElNRV9VQVJUUz00CiAjCiAjIENPTkZJR19TRVJJQUxfTUFYMzEwMCBp
-cyBub3Qgc2V0CiBDT05GSUdfU0VSSUFMX1NIX1NDST15Ci1DT05GSUdfU0VSSUFMX1NIX1NDSV9O
-Ul9VQVJUUz0xCitDT05GSUdfU0VSSUFMX1NIX1NDSV9OUl9VQVJUUz0yCiBDT05GSUdfU0VSSUFM
-X1NIX1NDSV9DT05TT0xFPXkKIENPTkZJR19TRVJJQUxfQ09SRT15CiBDT05GSUdfU0VSSUFMX0NP
-UkVfQ09OU09MRT15Ci0tIAoxLjcuMC41Cgo=
---000e0cd13b6ee3683c0484ccf1ce--
+/ magnus
