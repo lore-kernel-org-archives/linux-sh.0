@@ -1,7 +1,7 @@
-From: Dale <dlarson42@gmail.com>
-Date: Sun, 25 Apr 2010 02:26:01 +0000
+From: Dale Larson <d-larson@wi.rr.com>
+Date: Sun, 25 Apr 2010 02:26:51 +0000
 Subject: Re: Hi guys, does any of you have experience with touchscreen controllers?
-Message-Id: <4BD3A839.5080007@gmail.com>
+Message-Id: <4BD3A86B.9030007@wi.rr.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
