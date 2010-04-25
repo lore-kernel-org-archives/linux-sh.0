@@ -1,7 +1,7 @@
-From: Alexandre Courbot <alex@dcl.info.waseda.ac.jp>
-Date: Fri, 23 Apr 2010 11:16:18 +0000
+From: Shin-ichiro KAWASAKI <kawasaki@juno.dti.ne.jp>
+Date: Sun, 25 Apr 2010 12:30:09 +0000
 Subject: Re: [PATCH] sh-sci: Extend sh-sci driver with early console V2
-Message-Id: <h2hea710c1b1004230416ycd079c20gc930ea50dd9ccb3c@mail.gmail.com>
+Message-Id: <4BD435D1.3070000@juno.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20091214102442.13038.43809.sendpatchset@rxone.opensource.se>
 In-Reply-To: <20091214102442.13038.43809.sendpatchset@rxone.opensource.se>
@@ -10,40 +10,64 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-> The obvious remaining question would be are you sure that your serial
-> port is really on ttySC1? Most of the SH7780 boards placed the console on
-> ttySC0 by default, so make sure that you aren't just being bitten by a
-> bogus defconfig setting.
+Hi, Magnus-san, and Alex-san,
 
-Yes, I checked this too, and with older versions of the kernel I was
-also using ttySC1.
+Thank you very much for your guides.
+Setting "CONFIG_SERIAL_SH_SCI_NR_UARTS=2" solved my problem fully.
+I find no qemu crash, and happy to see login prompt again.
 
-> If you have board support patches that you've applied to the kernel then
-> you might also want to try backing those off and simply booting with the
-> default machvec with SH7780 support enabled. Given that the serial port
-> is an SoC property you shouldn't have any difficulty getting a console
-> even if you have no other board support built in.
+I tried out these two option with real R2D+ boards and recent sh-2.6 git.
+   CONFIG_SERIAL_SH_SCI_NR_UARTS=1  ... no serial output
+   CONFIG_SERIAL_SH_SCI_NR_UARTS=2  ... kernel boot log printed in serial output
 
-Just tried with the latest official branch, and unfortunately no luck.
-earlyprintk=bios,keep performs the same as our branch with respect to
-the SCI.
+I hope the patch applied soon :)
 
-> You may also want to disable sh-bios support in the off chance that this
-> is clobbering something it shouldn't be (note that sh-bios support itself
-> is almost never tested these days, and in the past it has always been a
-> source of inconsistency).
+Best Regards,
+Shin-ichiro KAWASAKI
 
-Did that too, did not help with "earlyprintk=sh-sci.1" or
-"earlyprintk=sh-sci.0" at all. :( Nothing is displayed, but the NFS
-activity testifies that the kernel boots.
 
-> If all else fails then we'll simply have to debug the init path, but I
-> suspect you're being bitten by something completely unrelated given that
-> none of the other SH7780's exhibit any sort of difficulty.
+(2010/04/21 17:30), Magnus Damm wrote:
+> Hey Kawasaki-san,
+>
+> 2010/4/11 Shin-ichiro KAWASAKI<kawasaki@juno.dti.ne.jp>:
+>> Hello Magnus,
+>>
+>> I'm in trouble with qemu-sh serial console.  Don't you have any
+>> guide on this trouble?
+>
+> Yes, I think the defconfig is missing one thing. Please try setting
+> CONFIG_SERIAL_SH_SCI_NR_UARTS=2. See below.
+>
+>> With the patch, qemu-sh serial console doesn't work.
+>> The emulated device is r2d+.
+>>
+>>   - no earlyprintk option
+>>   ... Qemu carshes with assertion. No kernel boot log printed.
+>>       I guess it touches sh-sci.0 registers, which qemu doesn't support.
+>
+> Hm, I'm not sure why this happens. Did you update the kernel command
+> line to use ttySC1?
+>
+> This commit in linux-2.6 git may be useful:
+>
+>   cd5f107628ab89c5dec5ad923f1c27f4cba41972
+>
+>>   - earlyprintk=sh-sci.1
+>>   ... Qemu boots up with kernel boot log output,
+>>       but the log message stops with
+>>       "turn off boot console early_ttySC0' message.
+>>       No login prompt appears.
+>>   - earlyprintk=sh-sci.1,115200,keep
+>>   ... The message "turn off boots up ..." disappears, but no
+>>       login prompt appears.
+>
+> I think this is because CONFIG_SERIAL_SH_SCI_NR_UARTS is set to 1. Or
+> perhaps is your user space still using ttySC0 instead of ttySC1?
+>
+> Does updating CONFIG_SERIAL_SH_SCI_NR_UARTS to 2 solve your issue?
+>
+> Thanks for the report and sorry about the breakage.
+>
+> / magnus
+>
 
-Indeed, this looks very strange to me too. Sorry for being clueless,
-but I'm rather new to kernel programming and debugging - what would
-you recommend me to try next?
-
-Thanks,
-Alex.
