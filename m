@@ -1,7 +1,7 @@
 From: Dale <dlarson42@gmail.com>
-Date: Sat, 24 Apr 2010 21:46:19 +0000
+Date: Sun, 25 Apr 2010 02:26:01 +0000
 Subject: Re: Hi guys, does any of you have experience with touchscreen controllers?
-Message-Id: <4BD366AB.1050909@gmail.com>
+Message-Id: <4BD3A839.5080007@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
@@ -79,4 +79,5 @@ spi_register_board_info(jcinap_spi_devices, ARRAY_SIZE(jcinap_spi_devices));
 
 Dale Larson
 Johnson Controls, Inc
+
 
