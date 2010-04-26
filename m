@@ -1,95 +1,31 @@
-From: Conrad Parker <conrad@metadecks.org>
-Date: Thu, 22 Apr 2010 07:49:01 +0000
-Subject: UIOMux release 1.1.0
-Message-Id: <s2odba6c0831004220049l72b686ccy6c5849923270cfe@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 26 Apr 2010 07:48:15 +0000
+Subject: [GIT PULL] sh updates for 2.6.34-rc6
+Message-Id: <20100426074815.GA17288@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-UIOMux Release 1.1.0
-==========
+Please pull from:
 
-UIOMux is a conflict manager for system resources, including UIO devices.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.34
 
-The source archive, and more information about the library are available from:
+Which contains:
 
-	http://oss.renesas.com/modules/document/?libuiomux
+Guennadi Liakhovetski (2):
+      SH: fix TS field shift calculation for DMA drivers
+      SH: fix error paths in DMA driver
 
-This release of libuiomux targets Renesas SH-Mobile processors.
+Magnus Damm (2):
+      sh: Fix maximum number of SCIF ports in R2D defconfigs
+      sh: sh7751 pci controller io port fix
 
-New in this release
--------------------
-
-	* Added support for building for Android.
-
-	* Added a physical to virtual address translation function, which is
-	useful for userspace applications that interface with hardware using
-	physical addresses: uiomux_phys_to_virt()
-
-	* Added debugging routines for dumping register values exposed
-	through UIO: uiomux_dump_mmio(), uiomux_dump_mmio_filename()
-
-	* Updated libtool shared version info to 3:0:2
-
-Changes
--------
-
-This release includes the following changes since version 1.0.0:
-
-Conrad Parker (9):
-      add uiomux_phys_to_virt() public API function
-      Update error return values for translation and mem access functions
-      Add mmio dump public API functions
-      add --version option to uiomux tool
-      Fix roundup of pagecount reported by uiomux info
-      update config.h.in, INSTALL
-      add TODO file with some suggested improvements.
-      add Matsubara-san to AUTHORS
-      Release 1.1.0
-
-Katsuya Matsubara (10):
-      Fix wrong page counting
-      Fix uninitialize variable access
-      Suppress a type mismatch warning in uiomux_dump_mmio()
-      Suppress a warning by compiler in init_owners_table()
-      Treat return value from system functions
-      Fix parameter type for memory address in uio_map_virt_to_phys()
-      Fix wrong comparison in uiomux_phys_to_virt()
-      Fix arithmetic expression with void pointer
-      Apply HAVE_CONFIG_H condition in src/tests/uiomux_test.h
-      Add Android.mk for the Android code tree
-
- AUTHORS                         |    4 ++
- Android.mk                      |    4 ++
- INSTALL                         |    2 +-
- TODO                            |   14 +++++++
- config.h.in                     |    3 ++
- configure.ac                    |    5 ++-
- doc/uiomux.1                    |   11 ++++++
- include/uiomux/Makefile.am      |    2 +-
- include/uiomux/dump.h           |   55 ++++++++++++++++++++++++++++
- include/uiomux/uiomux.h         |   18 ++++++++-
- src/Android.mk                  |    1 +
- src/libuiomux/Android.mk        |   18 +++++++++
- src/libuiomux/Makefile.am       |    1 +
- src/libuiomux/Version_script.in |    4 ++
- src/libuiomux/dump.c            |   77 +++++++++++++++++++++++++++++++++++++++
- src/libuiomux/state.c           |    2 +-
- src/libuiomux/uio.c             |   31 ++++++++++------
- src/libuiomux/uio.h             |    2 +-
- src/libuiomux/uiomux.c          |   69 +++++++++++++++++++++++++++++++----
- src/tests/Android.mk            |   65 +++++++++++++++++++++++++++++++++
- src/tests/uiomux_tests.h        |    2 +
- src/tools/Android.mk            |   10 +++++
- src/tools/uiomux.c              |   14 +++++++
- 23 files changed, 387 insertions(+), 27 deletions(-)
- create mode 100644 Android.mk
- create mode 100644 TODO
- create mode 100644 include/uiomux/dump.h
- create mode 100644 src/Android.mk
- create mode 100644 src/libuiomux/Android.mk
- create mode 100644 src/libuiomux/dump.c
- create mode 100644 src/tests/Android.mk
- create mode 100644 src/tools/Android.mk
+ arch/sh/configs/rts7751r2d1_defconfig      |    2 +-
+ arch/sh/configs/rts7751r2dplus_defconfig   |    2 +-
+ arch/sh/drivers/pci/pci-sh7751.c           |    5 +++--
+ arch/sh/include/cpu-sh4/cpu/dma-register.h |    2 +-
+ drivers/dma/shdma.c                        |   27 +++++++++++++++++++++------
+ 5 files changed, 27 insertions(+), 11 deletions(-)
