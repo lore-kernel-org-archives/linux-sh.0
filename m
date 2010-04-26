@@ -1,7 +1,7 @@
 From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Mon, 26 Apr 2010 06:50:11 +0000
+Date: Mon, 26 Apr 2010 07:13:47 +0000
 Subject: Re: Hi guys, does any of you have experience with touchscreen controllers?
-Message-Id: <201004260850.11481.fabio.giovagnini@aurion-tech.com>
+Message-Id: <201004260913.47950.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201004222004.38724.fabio.giovagnini@aurion-tech.com>
@@ -9,25 +9,6 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-
-Hi Dale, 
-maybe I need to be more clear about my condition.
-1) I connected the ads7843 to general I/O ports because the SPIs available on 
-sh2a7203 have been be used for other functions;
-2) My real problem is the following: I wrote an ADS7843 device driver as a 
-button driver of the input subsystem. I configured the ads7843 with INT 
-enabled; so when the touch is pressed I have a burst of IRQ. The IRQ handler 
-read the ads7843 and return to the input subsystem the abs values of the 
-touchscreen.
-The user program open the file /dev/input/event0 and with the select waits for 
-data; what I see is: during all the time I have a finger on the touch only IRQ 
-handler is exeuted and no action is done in the user program. I tried also 
-opening /dev/input/event0 with O_NONBLOCK flag but nothing changes.
-
-Did you use the ads7843 with INT enabled or not?
-And if yes, using the falling edge or the low level?
-
-Thanks
 
 In data domenica 25 aprile 2010 04:26:51, Dale Larson ha scritto:
 : > Fabio Giovagnini wrote:
@@ -56,6 +37,12 @@ In data domenica 25 aprile 2010 04:26:51, Dale Larson ha scritto:
 > {
 >       return (ctrl_inb(PGDR) & 0x40) ? 0 : 1;
 > }
+Is this the pin where is connected the INT line of the ADS7843?
+
+Thanks
+
+
+
 > 
 > static struct ads7846_platform_data ads_info = {
 >      .model              = 7843,
