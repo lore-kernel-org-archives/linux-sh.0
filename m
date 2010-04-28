@@ -1,21 +1,34 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 26 Apr 2010 07:09:19 +0000
-Subject: Re: [PATCH] SH: fix error paths in DMA driver
-Message-Id: <20100426070918.GF11770@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 28 Apr 2010 08:25:30 +0000
+Subject: [PATCH] ARM: mach-shmobile: Set CONSISTENT_DMA_SIZE to 158 MB
+Message-Id: <20100428082530.29018.50464.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1004191035480.4080@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1004191035480.4080@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Apr 19, 2010 at 10:39:39AM +0200, Guennadi Liakhovetski wrote:
-> If channel allocation is failing, mark the channel unused and give PM a chance
-> to power down the hardware.
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, Apr 21, 2010 at 05:14:19PM +0200, Guennadi Liakhovetski wrote:
-> CHCR_TS_HIGH_SHIFT is defined as a shift of TS high bits in CHCR register,
-> relative to low bits. The TS_INDEX2VAL() macro has to take this into account.
+This patch sets CONSISTENT_DMA_SIZE to 158 MB
+for all SH-Mobile ARM processors.
 
-Both applied for 2.6.34, thanks.
+The DMA area is mapped at 0xf6000000 - 0xffdfffff,
+on top of the 256 MB I/O window at 0xe6000000.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/include/mach/memory.h |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/memory.h
++++ work/arch/arm/mach-shmobile/include/mach/memory.h	2010-04-28 17:17:08.000000000 +0900
+@@ -4,4 +4,7 @@
+ #define PHYS_OFFSET	UL(CONFIG_MEMORY_START)
+ #define MEM_SIZE	UL(CONFIG_MEMORY_SIZE)
+ 
++/* DMA memory at 0xf6000000 - 0xffdfffff */
++#define CONSISTENT_DMA_SIZE (158 << 20)
++
+ #endif /* __ASM_MACH_MEMORY_H */
