@@ -1,45 +1,51 @@
 From: Conrad Parker <conrad@metadecks.org>
-Date: Tue, 27 Apr 2010 02:41:05 +0000
-Subject: libshveu 1.3.0 released
-Message-Id: <r2odba6c0831004261941gca92e353ie4595c3c5e90f868@mail.gmail.com>
+Date: Wed, 28 Apr 2010 02:23:35 +0000
+Subject: libshcodecs 1.1.1 Release
+Message-Id: <o2idba6c0831004271923w23be8b23oa10d1d79e14cfdf7@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-libshveu Release 1.3.0
-===========
+libshcodecs 1.1.1 Release
+============
+libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-libshveu: A library for controlling SH-Mobile VEU
+The [SH-Mobile][0] processor series includes a hardware video processing
+unit that supports MPEG-4 and H.264 encoding and decoding.
+libshcodecs is available under the terms of the GNU LGPL.
 
 The source archive, and more information about the library are available from:
 
-	http://oss.renesas.com/modules/document/?libshveu
+	https://oss.renesas.com/modules/document/?libshcodecs
 
 New in this release
--------------------
+=========
+This is a brown paper bag release, including a missing file (display.h) and
+fixes for compile warnings and other cleanups. Following proper procedure, this
+new tarball has been generated with "make distcheck".
 
-This is a quick bugfix release, adding the required VEU register settings for
-downscaling from D1 to VGA size. In version 1.2.0 this particular rescaling
-introduced green artifacts to the output image.
-
-Additionally, the shveu-convert tool was updated to include support for
-D1 (720x480) sized images.
-
-Changes
+Details
 -------
 
-This release includes the following changes since version 1.2.0:
+This release includes the following changes since version 1.1.0:
 
-Atsuhiro Ito (2):
-      Add D1 size in shveu-convert
-      Improve the condition of VRPBR register.
+Conrad Parker (3):
+      add missing display.h to distribution
+      fix compile warnings throughout
+      Release 1.1.1
 
-Conrad Parker (1):
-      Release 1.3.0
+Phil Edworthy (1):
+      Clean up: Remove unused symbols
 
- configure.ac                  |    2 +-
- src/libshveu/veu_colorspace.c |   15 +++++----------
- src/tools/shveu-convert.c     |   11 +++++++++--
- 3 files changed, 15 insertions(+), 13 deletions(-)
+ configure.ac                      |    2 +-
+ src/libshcodecs/Version_script.in |   23 +++--------------------
+ src/libshcodecs/m4driverif.c      |   12 +-----------
+ src/tools/Makefile.am             |    1 +
+ src/tools/capture.c               |    2 +-
+ src/tools/display.c               |    6 ++++++
+ src/tools/shcodecs-record.c       |    4 ++--
+ 7 files changed, 15 insertions(+), 35 deletions(-)
+
+[0]: http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/products/mpumcu/sh_mobile/
