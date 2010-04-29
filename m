@@ -1,34 +1,27 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Apr 2010 08:25:30 +0000
-Subject: [PATCH] ARM: mach-shmobile: Set CONSISTENT_DMA_SIZE to 158 MB
-Message-Id: <20100428082530.29018.50464.sendpatchset@t400s>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 29 Apr 2010 14:36:53 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: Set CONSISTENT_DMA_SIZE to 158 MB
+Message-Id: <20100429143653.GD9621@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20100428082530.29018.50464.sendpatchset@t400s>
+In-Reply-To: <20100428082530.29018.50464.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Apr 28, 2010 at 05:25:30PM +0900, Magnus Damm wrote:
+> This patch sets CONSISTENT_DMA_SIZE to 158 MB
+> for all SH-Mobile ARM processors.
+> 
+> The DMA area is mapped at 0xf6000000 - 0xffdfffff,
+> on top of the 256 MB I/O window at 0xe6000000.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-This patch sets CONSISTENT_DMA_SIZE to 158 MB
-for all SH-Mobile ARM processors.
+On Wed, Apr 28, 2010 at 05:36:57PM +0900, Magnus Damm wrote:
+> Extend VMALLOC_END to the I/O Window at 0xe6000000.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-The DMA area is mapped at 0xf6000000 - 0xffdfffff,
-on top of the 256 MB I/O window at 0xe6000000.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/include/mach/memory.h |    3 +++
- 1 file changed, 3 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/include/mach/memory.h
-+++ work/arch/arm/mach-shmobile/include/mach/memory.h	2010-04-28 17:17:08.000000000 +0900
-@@ -4,4 +4,7 @@
- #define PHYS_OFFSET	UL(CONFIG_MEMORY_START)
- #define MEM_SIZE	UL(CONFIG_MEMORY_SIZE)
- 
-+/* DMA memory at 0xf6000000 - 0xffdfffff */
-+#define CONSISTENT_DMA_SIZE (158 << 20)
-+
- #endif /* __ASM_MACH_MEMORY_H */
+Both applied, thanks.
