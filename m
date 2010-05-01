@@ -1,59 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 May 2010 21:23:01 +0000
-Subject: Re: [PATCH 9/9] ARM: add DMA support to sh7372, enable DMA for SDHI
-Message-Id: <Pine.LNX.4.64.1005262316330.22516@axis700.grange>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Sat, 01 May 2010 09:44:36 +0000
+Subject: Re: [PATCH] ARM: Add support for 10 hardirq bits
+Message-Id: <20100501094436.GC12172@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005041318200.4925@axis700.grange>
-	<Pine.LNX.4.64.1005041424330.4925@axis700.grange>
-	<20100512155224.65eba9ee.akpm@linux-foundation.org>
-	<Pine.LNX.4.64.1005130851030.4671@axis700.grange>
-	<20100526141231.38e85b58.akpm@linux-foundation.org>
-In-Reply-To: <20100526141231.38e85b58.akpm@linux-foundation.org>
+References: <20100310111749.18521.9002.sendpatchset@t400s>
+	<u2yaec7e5c31004292102rd561d7detc73e9fd2a5570ab0@mail.gmail.com>
+In-Reply-To: <u2yaec7e5c31004292102rd561d7detc73e9fd2a5570ab0@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Andrew
+On Fri, Apr 30, 2010 at 01:02:04PM +0900, Magnus Damm wrote:
+> On Wed, Mar 10, 2010 at 8:17 PM, Magnus Damm <magnus.damm@gmail.com> wrot=
+e:
+> > From: Magnus Damm <damm@opensource.se>
+> >
+> > This patch adds support for 10 hardirq bits to
+> > the ARM architecture. Needed by the SH-Mobile
+> > ARM processor sh7372 that has more than 512 IRQs.
+> >
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
+> > ---
+> >
+> > =A0arch/arm/include/asm/hardirq.h | =A0 =A04 +++-
+> > =A01 file changed, 3 insertions(+), 1 deletion(-)
+> >
+> > --- 0001/arch/arm/include/asm/hardirq.h
+> > +++ work/arch/arm/include/asm/hardirq.h 2010-03-09 21:08:10.000000000 +=
+0900
+> > @@ -12,7 +12,9 @@ typedef struct {
+> >
+> > =A0#include <linux/irq_cpustat.h> /* Standard mappings for irq_cpustat_=
+t above */
+> >
+> > -#if NR_IRQS > 256
+> > +#if NR_IRQS > 512
+> > +#define HARDIRQ_BITS =A0 10
+> > +#elif NR_IRQS > 256
+> > =A0#define HARDIRQ_BITS =A0 9
+> > =A0#else
+> > =A0#define HARDIRQ_BITS =A0 8
+> >
+>=20
+> Hi Russell,
+>=20
+> Good to hear that you are back online. Do you want me to rework this
+> patch somehow, or is it ready to be queued for upstream merge? I'm
+> asking because I have a pile of patches that depend on this one.
 
-On Wed, 26 May 2010, Andrew Morton wrote:
-
-> On Thu, 13 May 2010 08:57:06 +0200 (CEST)
-> Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> 
-> > On Wed, 12 May 2010, Andrew Morton wrote:
-> > 
-> > > On Tue, 4 May 2010 16:07:15 +0200 (CEST)
-> > > Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> > > 
-> > > > This patch depends on patch series from Magnus for shmobile, adding INTC 
-> > > > and clock support. This patch wasn't there in the first version of this 
-> > > > series.
-> > > 
-> > > Where is that patch series now?
-> > 
-> > AFAIU, these are two patch series - for the interrupt controller and for 
-> > the clock framework, and they are not upstream yet. So, I think, we can 
-> > leave patch 9/9 for later to be merged via the respective platform tree.
-> > 
-> 
-> Again, because of your lack of specificity in identifying patches I am
-> unable to determine whether
-> arm-add-dma-support-to-sh7372-enable-dma-for-sdhi.patch is presently
-> mergeable.
-> 
-> So I won't merge it.
-
-Thanks for keeping an eye on these patches! Actually, my above sentence "I 
-think, we can leave patch 9/9 for later to be merged via the respective 
-platform tree" was supposed to mean, that you can drop _this_ specific 
-patch, because it will be merged via the platform tree - in this case this 
-is the "genesis-2.6" tree, maintained by Paul Mundt. Sorry for not being 
-clear enough, please drop this patch.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+I guess it's ok; with 10 bits we're at the maximum which the generic
+kernel supports (see linux/hardirq.h)
