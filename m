@@ -1,44 +1,22 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Sun, 02 May 2010 08:17:50 +0000
-Subject: Re: Timer handling discussion
-Message-Id: <201005021017.50817.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 01 May 2010 12:08:21 +0000
+Subject: Re: [PATCH 2/2] sh: make interrupt resource optional in SH
+Message-Id: <v2laec7e5c31005010508ke98e31f4pe8d61600035fb12f@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201005010901.09335.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201005010901.09335.fabio.giovagnini@aurion-tech.com>
+References: <Pine.LNX.4.64.1004301805371.4055@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004301805371.4055@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Thanks Magnus. I'm solviing handling a timer directly into the buzzer /proc 
-driver
+On Sat, May 1, 2010 at 1:07 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> The SH LCDC driver can also function without the IRQ, in which case the
+> FBIO_WAITFORVSYNC ioctl() cannot be supported. Enable such a mode.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Thanks
+Why? Doesn't the LCDC hardware block always come with an IRQ line?
 
-
-In data sabato 01 maggio 2010 14:11:29, Magnus Damm ha scritto:
-: > Hi Fabio,
-> 
-> On Sat, May 1, 2010 at 4:01 PM, Fabio Giovagnini
-> 
-> <fabio.giovagnini@aurion-tech.com> wrote:
-> > Hi all,
-> > I'need to produce a 4KHz square wave to drive a buzzer.I have HZ set to
-> > 100; so the kernel timer expires each 10ms.
-> 
-> You may want to use hrtimers. One example how to use that is in the
-> following file:
-> 
-> sound/sh/sh_dac_audio.c
-> 
-> / magnus
-> 
-
--- 
-Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-Tel. +39.051.594.78.24
-Cell. +39.335.83.50.919
+/ magnus
