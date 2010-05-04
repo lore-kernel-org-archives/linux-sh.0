@@ -1,63 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 09:36:32 +0000
-Subject: [PATCH 10/15] sh: switch sh7763 to clkdev
-Message-Id: <20100511093632.28210.43133.sendpatchset@t400s>
+From: Andrew Stubbs <ams@codesourcery.com>
+Date: Tue, 04 May 2010 10:09:26 +0000
+Subject: Sourcery G++ Lite 4.4-200 for SuperH GNU/Linux now available
+Message-Id: <4BDFF256.4060700@codesourcery.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+[Corrected announcement. Apologies for the previous one with the 
+incorrect subject. Note to self: Don't send announcements until after 
+the second coffee break.]
 
-This patch converts the remaining sh7763 clocks
-to use clkdev for lookup. The now unused name
-and id from struct clk are also removed.
+CodeSourcery is pleased to announce the availability of a new Sourcery 
+G++ Lite Edition release for SuperH GNU/Linux.  This is available for 
+download from:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+     http://www.codesourcery.com/sgpp/lite/superh
 
- arch/sh/kernel/cpu/sh4a/clock-sh7763.c |   12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+Some of the new features in this release include:
 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7763.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7763.c	2010-05-11 17:30:53.000000000 +0900
-@@ -12,6 +12,8 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <asm/clkdev.h>
- #include <asm/clock.h>
- #include <asm/freq.h>
- #include <asm/io.h>
-@@ -77,7 +79,6 @@ static struct clk_ops sh7763_shyway_clk_
- };
- 
- static struct clk sh7763_shyway_clk = {
--	.name		= "shyway_clk",
- 	.flags		= CLK_ENABLE_ON_INIT,
- 	.ops		= &sh7763_shyway_clk_ops,
- };
-@@ -90,6 +91,13 @@ static struct clk *sh7763_onchip_clocks[
- 	&sh7763_shyway_clk,
- };
- 
-+#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+
-+static struct clk_lookup lookups[] = {
-+	/* main clocks */
-+	CLKDEV_CON_ID("shyway_clk", &sh7763_shyway_clk),
-+};
-+
- int __init arch_clk_init(void)
- {
- 	struct clk *clk;
-@@ -107,5 +115,7 @@ int __init arch_clk_init(void)
- 
- 	clk_put(clk);
- 
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
- 	return ret;
- }
+* Improved interoperability when compiling for a Debian target system.
+
+* Improvements to overall reliability and robustness.
+
+* Upgrades to many components, including GDB 7.0 and EGLIBC 2.11.
+
+Please see the Getting Started Guide for a complete set of release notes:
+
+http://www.codesourcery.com/sgpp/lite/superh/portal/doc7650/getting-started.pdf
+
+-- 
+Andrew Stubbs
+CodeSourcery
