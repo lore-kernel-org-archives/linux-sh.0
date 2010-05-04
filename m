@@ -1,93 +1,57 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sun, 23 May 2010 16:39:17 +0000
-Subject: [PATCH 3/4] ARM: mach-shmobile: SH7372 has 6 SCIFA and 1 SCIFB ports
-Message-Id: <Pine.LNX.4.64.1005231833300.3571@axis700.grange>
+Date: Tue, 04 May 2010 14:06:43 +0000
+Subject: [PATCH 7/9 v2] SH: Add SDHI DMA support to kfr2r09
+Message-Id: <Pine.LNX.4.64.1005041417440.4925@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005231820190.3571@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005231820190.3571@axis700.grange>
+References: <Pine.LNX.4.64.1005041318200.4925@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005041318200.4925@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
-
-The current SH7372 setup code registers 7 SCIF ports, which is wrong.
+Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-no change
+v1 -> v2:
 
- arch/arm/mach-shmobile/setup-sh7372.c |   14 +++++++-------
- 1 files changed, 7 insertions(+), 7 deletions(-)
+asm/dmaengine.h is now gone.
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 0a834d3..cc040a8 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -256,7 +256,7 @@ static struct platform_device dma2_device = {
- static struct plat_sci_port scif0_platform_data = {
- 	.mapbase	= 0xe6c40000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { 80, 80, 80, 80 },
+ arch/sh/boards/mach-kfr2r09/setup.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index b2cd0ed..95850aa 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -10,6 +10,7 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/onenand.h>
+ #include <linux/delay.h>
+@@ -356,10 +357,18 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
+ 	},
  };
  
-@@ -271,7 +271,7 @@ static struct platform_device scif0_device = {
- static struct plat_sci_port scif1_platform_data = {
- 	.mapbase	= 0xe6c50000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs           = { 81, 81, 81, 81 },
- };
- 
-@@ -286,7 +286,7 @@ static struct platform_device scif1_device = {
- static struct plat_sci_port scif2_platform_data = {
- 	.mapbase	= 0xe6c60000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs           = { 82, 82, 82, 82 },
- };
- 
-@@ -301,7 +301,7 @@ static struct platform_device scif2_device = {
- static struct plat_sci_port scif3_platform_data = {
- 	.mapbase	= 0xe6c70000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs           = { 83, 83, 83, 83 },
- };
- 
-@@ -316,7 +316,7 @@ static struct platform_device scif3_device = {
- static struct plat_sci_port scif4_platform_data = {
- 	.mapbase	= 0xe6c80000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs           = { 89, 89, 89, 89 },
- };
- 
-@@ -331,7 +331,7 @@ static struct platform_device scif4_device = {
- static struct plat_sci_port scif5_platform_data = {
- 	.mapbase	= 0xe6cb0000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs           = { 90, 90, 90, 90 },
- };
- 
-@@ -346,7 +346,7 @@ static struct platform_device scif5_device = {
- static struct plat_sci_port scif6_platform_data = {
- 	.mapbase	= 0xe6c30000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFB,
- 	.irqs           = { 91, 91, 91, 91 },
- };
- 
++static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
++	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
++};
++
+ static struct platform_device kfr2r09_sh_sdhi0_device = {
+ 	.name           = "sh_mobile_sdhi",
+ 	.num_resources  = ARRAY_SIZE(kfr2r09_sh_sdhi0_resources),
+ 	.resource       = kfr2r09_sh_sdhi0_resources,
++	.dev = {
++		.platform_data	= &sh7724_sdhi0_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI0,
+ 	},
 -- 
 1.6.2.4
 
