@@ -1,42 +1,60 @@
-From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Mon, 31 May 2010 07:59:52 +0000
-Subject: [PATCH 0/4] Add support for new board: SH-2007
-Message-Id: <1275292796-26602-1-git-send-email-mitake@dcl.info.waseda.ac.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 04 May 2010 14:06:35 +0000
+Subject: [PATCH 5/9 v2] SH: Add SDHI DMA support to ecovec
+Message-Id: <Pine.LNX.4.64.1005041413000.4925@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005041318200.4925@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005041318200.4925@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-mmc@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>
 
-This patch series add support of SH-2007.
-I brought these changes from the out-of-tree kernel
-provided by the manufacture of this board, ITO Inc.
-Website of company: http://www.itonet.co.jp/
-The URL of kernel: http://ms-n.org/sh-linux/kernel/
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Adding support of new board is trivial,
-but as I'll describe, 4/4 of this series contains
-some dirty and mysterious fixes.
+v1 -> v2:
 
-I'm new to SH architecture, so I'm looking forward to
-hearing your opinion and advice.
+asm/dmaengine.h is now gone.
 
-Hitoshi Mitake (4):
-  Add the directory mach-sh2007 for SH-2007 board support
-  Add sh2007_defconfig for default configuration of SH-2007
-  Add Kconfig and Makefile for SH-2007 support
-  Modify sh-sci.h to adopt specific serial behaviour of SH-2007
+ arch/sh/boards/mach-ecovec24/setup.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
 
- arch/sh/Makefile                       |    1 +
- arch/sh/boards/Kconfig                 |   10 +
- arch/sh/boards/mach-sh2007/Makefile    |    1 +
- arch/sh/boards/mach-sh2007/onboardio.c |  156 ++++
- arch/sh/boards/mach-sh2007/setup.c     |  477 ++++++++++
- arch/sh/configs/sh2007_defconfig       | 1578 ++++++++++++++++++++++++++++++++
- drivers/serial/sh-sci.h                |   16 +-
- 7 files changed, 2238 insertions(+), 1 deletions(-)
- create mode 100644 arch/sh/boards/mach-sh2007/Makefile
- create mode 100644 arch/sh/boards/mach-sh2007/onboardio.c
- create mode 100644 arch/sh/boards/mach-sh2007/setup.c
- create mode 100644 arch/sh/configs/sh2007_defconfig
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 0e36b04..37d9efc 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+@@ -442,7 +443,9 @@ static void sdhi0_set_pwr(struct platform_device *pdev, int state)
+ }
+ 
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+-	.set_pwr = sdhi0_set_pwr,
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.set_pwr	= sdhi0_set_pwr,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -478,7 +481,9 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ }
+ 
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+-	.set_pwr = sdhi1_set_pwr,
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++	.set_pwr	= sdhi1_set_pwr,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+-- 
+1.6.2.4
 
