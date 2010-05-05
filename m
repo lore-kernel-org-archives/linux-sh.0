@@ -1,30 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 26 May 2010 08:00:27 +0000
-Subject: Re: LCDC of 7203
-Message-Id: <AANLkTimJ-9GFWzpu3oPwQkal-JGAgluIcDIE1JO7P4rD@mail.gmail.com>
+From: Peter =?iso-8859-1?q?H=FCwe?= <PeterHuewe@gmx.de>
+Date: Wed, 05 May 2010 15:20:21 +0000
+Subject: [PATCH] media/IR: Add missing include file to rc-map.c
+Message-Id: <201005051720.22617.PeterHuewe@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201005241912.44976.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201005241912.44976.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mauro Carvalho Chehab <mchehab@infradead.org>, linuxppc-dev@ozlabs.org
+Cc: David =?iso-8859-1?q?H=E4rdeman?= <david@hardeman.nu>, linux-media@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mips@linux-mips.org, linux-m68k@lists.linux-m68k.org
 
-On Wed, May 26, 2010 at 3:54 AM, Fabio Giovagnini
-<fabio.giovagnini@aurion-tech.com> wrote:
-> There are some low cost LCD having a parallel interface with the synch signals
-> and 16 / 18 bit of data.
-> The sh2a LCDC can manage such LCD panels
->
-> Am I right or not?
+From: Peter Huewe <peterhuewe@gmx.de>
 
-I don't know, you will have to check the data sheet.
+This patch adds a missing include linux/delay.h to prevent
+build failures[1-5]
 
-It sounds like you are describing SYS-16/18, but it may also be RGB
-with 6 bits for each color. Some LCDC hardware blocks like the
-SH-Mobile support both RGB and SYS, but others only support one of the
-interface types.
+Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
+---
+KernelVersion: linux-next-20100505
 
-Cheers,
+References:
+[1] http://kisskb.ellerman.id.au/kisskb/buildresult/2571452/
+[2] http://kisskb.ellerman.id.au/kisskb/buildresult/2571188/
+[3] http://kisskb.ellerman.id.au/kisskb/buildresult/2571479/
+[4] http://kisskb.ellerman.id.au/kisskb/buildresult/2571429/
+[5] http://kisskb.ellerman.id.au/kisskb/buildresult/2571432/
 
-/ magnus
+drivers/media/IR/rc-map.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/media/IR/rc-map.c b/drivers/media/IR/rc-map.c
+index caf6a27..46a8f15 100644
+--- a/drivers/media/IR/rc-map.c
++++ b/drivers/media/IR/rc-map.c
+@@ -14,6 +14,7 @@
+ 
+ #include <media/ir-core.h>
+ #include <linux/spinlock.h>
++#include <linux/delay.h>
+ 
+ /* Used to handle IR raw handler extensions */
+ static LIST_HEAD(rc_map_list);
+-- 
+1.6.4.4
+
