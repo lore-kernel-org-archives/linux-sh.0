@@ -1,51 +1,45 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 May 2010 18:37:25 +0000
-Subject: [PATCH 1/2] mmc: let MFD's provide supported Vdd card voltages to
-Message-Id: <Pine.LNX.4.64.1005191826520.3099@axis700.grange>
+Date: Thu, 06 May 2010 07:17:05 +0000
+Subject: [PATCH] sh: balance recently added call to local_irq_disable() for
+Message-Id: <Pine.LNX.4.64.1005060908110.4557@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005191825160.3099@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005191825160.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Andrew Morton <akpm@linux-foundation.org>
+To: linux-sh@vger.kernel.org
+
+Commit f533c3d340536198a4889a42a68d6c0d79a504e7
+Author: Paul Mundt <lethal@linux-sh.org>
+Date:   Fri Oct 16 17:20:58 2009 +0900
+
+    sh: Idle loop chainsawing for SMP-based light sleep.
+
+added a call to local_irq_disable() to cpu_idle(), which, if the cpuidle driver
+is used, now stays unbalanced. This patch re-adds the missing
+local_irq_enable().
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Ian Molton <ian@mnementh.co.uk>
 ---
- drivers/mmc/host/tmio_mmc.c |    5 ++++-
- include/linux/mfd/tmio.h    |    1 +
- 2 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index a295328..73f6c3d 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -845,7 +845,10 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
- 	mmc->caps |= pdata->capabilities;
- 	mmc->f_max = pdata->hclk;
- 	mmc->f_min = mmc->f_max / 512;
--	mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
-+	if (pdata->ocr_mask)
-+		mmc->ocr_avail = pdata->ocr_mask;
-+	else
-+		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
+Unfortunately, even after this patch CPU_IDLE is still broken on sh, due 
+to some later PM changes, so, I'll remove it from all defconfigs with the 
+following patch.
+
+ arch/sh/kernel/cpu/shmobile/pm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/shmobile/pm.c b/arch/sh/kernel/cpu/shmobile/pm.c
+index e559687..874035f 100644
+--- a/arch/sh/kernel/cpu/shmobile/pm.c
++++ b/arch/sh/kernel/cpu/shmobile/pm.c
+@@ -61,6 +61,7 @@ void sh_mobile_call_standby(unsigned long mode)
+ 	if (mode & SUSP_SH_MMU)
+ 		flush_cache_all();
  
- 	/* Tell the MFD core we are ready to be enabled */
- 	if (cell->enable) {
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index feeed0b..f07425b 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -70,6 +70,7 @@ struct tmio_mmc_data {
- 	unsigned int			hclk;
- 	unsigned long			capabilities;
- 	unsigned long			flags;
-+	u32				ocr_mask;	/* available voltages */
- 	struct tmio_mmc_dma		*dma;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
++	local_irq_enable();
+ 	/* Let assembly snippet in on-chip memory handle the rest */
+ 	standby_onchip_mem(mode, RAM_BASE);
+ 
 -- 
 1.6.2.4
 
