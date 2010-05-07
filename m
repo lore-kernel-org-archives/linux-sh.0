@@ -1,34 +1,50 @@
-From: Roland McGrath <roland@redhat.com>
-Date: Tue, 25 May 2010 19:11:46 +0000
-Subject: Re: [Uclinux-dist-devel] [PATCH -mm 1/1] ptrace: PTRACE_GETFDPIC: fix
-Message-Id: <20100525191146.E70E549A54@magilla.sf.frob.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 07 May 2010 09:19:08 +0000
+Subject: [PATCH] sh: fix the id of scif in SH7757
+Message-Id: <4BE3DB0C.3020006@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100522165401.GB19573@redhat.com>
-	<1266280229-18469-1-git-send-email-vapier@gentoo.org>
-	<1274431345-22366-1-git-send-email-vapier@gentoo.org>
-	<20100521162659.GA16193@redhat.com>
-	<20100521183512.4477F40476@magilla.sf.frob.com>
-	<20100522165320.GA19573@redhat.com>
-	<25539.1274711817@redhat.com>
-	<20100524151445.GA6393@redhat.com>
-	<20100524234250.F158849A56@magilla.sf.frob.com>
-	<AANLkTinpMp1yZ2c5B5O7aT2NR57zBHlggvUXZ58bLGv2@mail.gmail.com>
-In-Reply-To: Mike Frysinger's message of  Monday, 24 May 2010 21:29:34 -0400 <AANLkTinpMp1yZ2c5B5O7aT2NR57zBHlggvUXZ58bLGv2@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Frysinger <vapier.adi@gmail.com>
-Cc: Oleg Nesterov <oleg@redhat.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, Andrew Morton <akpm@linux-foundation.org>
+To: linux-sh@vger.kernel.org
 
-> are you suggesting the FDPIC additions are ill-advised as well ?
-> curious how you would have implemented this if that's the case ...
+Because the value of CONFIG_SERIAL_SH_SCI_NR_UARTS is 3.
 
-They are certainly not as dismal as the arch PTRACE_PEEKUSR delivering
-mm->fields.  But, frankly I don't think ptrace is the right mechanism for
-delivering any read-only, process-shared information.  You can use some
-/proc/pid/foo for that.  (The "dismal" cases deliver things like
-start_code, which is already available in /proc/pid/stat.)
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 444aca9..93b7aa4 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -26,7 +26,7 @@ static struct plat_sci_port scif2_platform_data = {
 
-Thanks,
-Roland
+ static struct platform_device scif2_device = {
+ 	.name		= "sh-sci",
+-	.id		= 2,
++	.id		= 0,
+ 	.dev		= {
+ 		.platform_data	= &scif2_platform_data,
+ 	},
+@@ -41,7 +41,7 @@ static struct plat_sci_port scif3_platform_data = {
+
+ static struct platform_device scif3_device = {
+ 	.name		= "sh-sci",
+-	.id		= 3,
++	.id		= 1,
+ 	.dev		= {
+ 		.platform_data	= &scif3_platform_data,
+ 	},
+@@ -56,7 +56,7 @@ static struct plat_sci_port scif4_platform_data = {
+
+ static struct platform_device scif4_device = {
+ 	.name		= "sh-sci",
+-	.id		= 4,
++	.id		= 2,
+ 	.dev		= {
+ 		.platform_data	= &scif4_platform_data,
+ 	},
+-- 
+1.5.5
