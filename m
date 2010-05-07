@@ -1,87 +1,29 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 May 2010 11:24:59 +0000
-Subject: [PATCH 13/13] sh: Kill off clock lookup code
-Message-Id: <20100510112459.14587.11878.sendpatchset@t400s>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 07 May 2010 09:21:16 +0000
+Subject: [PATCH] sh: add PVR of SH7757 2nd cut
+Message-Id: <4BE3DB8C.9060205@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Get rid of the SH-specific special clock lookup.
-Also ditch the unused module ref counting code.
-This syncs the behaviour with the ARM code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ arch/sh/kernel/cpu/sh4/probe.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
- arch/sh/include/asm/clock.h |    1 -
- arch/sh/kernel/cpu/clock.c  |   37 ++-----------------------------------
- 2 files changed, 2 insertions(+), 36 deletions(-)
-
---- 0011/arch/sh/include/asm/clock.h
-+++ work/arch/sh/include/asm/clock.h	2010-05-10 19:50:07.000000000 +0900
-@@ -23,7 +23,6 @@ struct clk {
- 	struct list_head	node;
- 	const char		*name;
- 	int			id;
--	struct module		*owner;
- 
- 	struct clk		*parent;
- 	struct clk_ops		*ops;
---- 0006/arch/sh/kernel/cpu/clock.c
-+++ work/arch/sh/kernel/cpu/clock.c	2010-05-10 19:49:41.000000000 +0900
-@@ -398,49 +398,16 @@ EXPORT_SYMBOL_GPL(clk_round_rate);
-  * Returns a clock. Note that we first try to use device id on the bus
-  * and clock name. If this fails, we try to use clock name only.
-  */
--struct clk *clk_get(struct device *dev, const char *id)
-+struct clk *clk_get(struct device *dev, const char *con_id)
- {
- 	const char *dev_id = dev ? dev_name(dev) : NULL;
--	struct clk *p, *clk = ERR_PTR(-ENOENT);
--	int idno;
- 
--	clk = clk_get_sys(dev_id, id);
--	if (clk && !IS_ERR(clk))
--		return clk;
--
--	if (dev = NULL || dev->bus != &platform_bus_type)
--		idno = -1;
--	else
--		idno = to_platform_device(dev)->id;
--
--	mutex_lock(&clock_list_sem);
--	list_for_each_entry(p, &clock_list, node) {
--		if (p->name && p->id = idno &&
--		    strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
--			clk = p;
--			goto found;
--		}
--	}
--
--	list_for_each_entry(p, &clock_list, node) {
--		if (p->name &&
--		    strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
--			clk = p;
--			break;
--		}
--	}
--
--found:
--	mutex_unlock(&clock_list_sem);
--
--	return clk;
-+	return clk_get_sys(dev_id, con_id);
- }
- EXPORT_SYMBOL_GPL(clk_get);
- 
- void clk_put(struct clk *clk)
- {
--	if (clk && !IS_ERR(clk))
--		module_put(clk->owner);
- }
- EXPORT_SYMBOL_GPL(clk_put);
- 
+diff --git a/arch/sh/kernel/cpu/sh4/probe.c b/arch/sh/kernel/cpu/sh4/probe.c
+index d180f16..07ddcbd 100644
+--- a/arch/sh/kernel/cpu/sh4/probe.c
++++ b/arch/sh/kernel/cpu/sh4/probe.c
+@@ -151,6 +151,7 @@ void __cpuinit cpu_probe(void)
+ 			boot_cpu_data.flags |= CPU_HAS_L2_CACHE;
+ 			break;
+ 		case 0x50:
++		case 0x10:
+ 			boot_cpu_data.type = CPU_SH7757;
+ 			break;
+ 		}
+-- 
+1.5.5
