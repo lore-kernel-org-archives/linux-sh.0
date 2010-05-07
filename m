@@ -1,21 +1,80 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 31 May 2010 04:48:04 +0000
-Subject: Re: [PATCH 00/04] sh: romImage MMCIF boot patches V2
-Message-Id: <20100531044804.GB20358@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 07 May 2010 10:49:41 +0000
+Subject: [PATCH 1.5/4] sh: add a YUV422 output data format, that is also
+Message-Id: <Pine.LNX.4.64.1005071246500.4777@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100518144229.29239.19891.sendpatchset@t400s>
-In-Reply-To: <20100518144229.29239.19891.sendpatchset@t400s>
+References: <Pine.LNX.4.64.1005071054510.4777@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005071054510.4777@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, Tomi Valkeinen <tomi.valkeinen@nokia.com>
 
-On Tue, May 18, 2010 at 11:42:29PM +0900, Magnus Damm wrote:
-> sh: romImage MMCIF boot patches V2
-> 
-> [PATCH 01/04] sh: allow romImage data between head.S and the zero page
-> [PATCH 02/04] sh: prepare MMCIF driver header file
-> [PATCH 03/04] sh: add boot code to MMCIF driver header
-> [PATCH 04/04] sh: add romImage MMCIF boot for sh7724 and Ecovec V2
+The LCDC block is allowed to use one of the two output data formats, when used
+with MIPI DSI: RGB24 and YUV422. YUV422 is not currently handled by the LCDC
+driver, but we have to add a define for it for MIPI. Fix indentation while 
+at it.
 
-Applied, thanks.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+
+Hm, this one is actually worse, it actually has to go in before patch 2/4. 
+Sorry again.
+
+ include/video/sh_mobile_lcdc.h |   39 +++++++++++++++++++++------------------
+ 1 files changed, 21 insertions(+), 18 deletions(-)
+
+diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
+index 2cc893f..5eaea78 100644
+--- a/include/video/sh_mobile_lcdc.h
++++ b/include/video/sh_mobile_lcdc.h
+@@ -3,24 +3,27 @@
+ 
+ #include <linux/fb.h>
+ 
+-enum { RGB8,   /* 24bpp, 8:8:8 */
+-       RGB9,   /* 18bpp, 9:9 */
+-       RGB12A, /* 24bpp, 12:12 */
+-       RGB12B, /* 12bpp */
+-       RGB16,  /* 16bpp */
+-       RGB18,  /* 18bpp */
+-       RGB24,  /* 24bpp */
+-       SYS8A,  /* 24bpp, 8:8:8 */
+-       SYS8B,  /* 18bpp, 8:8:2 */
+-       SYS8C,  /* 18bpp, 2:8:8 */
+-       SYS8D,  /* 16bpp, 8:8 */
+-       SYS9,   /* 18bpp, 9:9 */
+-       SYS12,  /* 24bpp, 12:12 */
+-       SYS16A, /* 16bpp */
+-       SYS16B, /* 18bpp, 16:2 */
+-       SYS16C, /* 18bpp, 2:16 */
+-       SYS18,  /* 18bpp */
+-       SYS24 };/* 24bpp */
++enum {
++	RGB8,   /* 24bpp, 8:8:8 */
++	RGB9,   /* 18bpp, 9:9 */
++	RGB12A, /* 24bpp, 12:12 */
++	RGB12B, /* 12bpp */
++	RGB16,  /* 16bpp */
++	RGB18,  /* 18bpp */
++	RGB24,  /* 24bpp */
++	YUV422, /* 16bpp */
++	SYS8A,  /* 24bpp, 8:8:8 */
++	SYS8B,  /* 18bpp, 8:8:2 */
++	SYS8C,  /* 18bpp, 2:8:8 */
++	SYS8D,  /* 16bpp, 8:8 */
++	SYS9,   /* 18bpp, 9:9 */
++	SYS12,  /* 24bpp, 12:12 */
++	SYS16A, /* 16bpp */
++	SYS16B, /* 18bpp, 16:2 */
++	SYS16C, /* 18bpp, 2:16 */
++	SYS18,  /* 18bpp */
++	SYS24,  /* 24bpp */
++};
+ 
+ enum { LCDC_CHAN_DISABLED = 0,
+        LCDC_CHAN_MAINLCD,
+-- 
+1.6.2.4
+
