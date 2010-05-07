@@ -1,132 +1,132 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 04:59:58 +0000
-Subject: [PATCH 03/09] sh: sh7366 mstp32 index rework
-Message-Id: <20100511045958.26302.23975.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 07 May 2010 09:07:31 +0000
+Subject: [PATCH 4/4] video: switch OMAP LCD MIPI driver to use the common
+Message-Id: <Pine.LNX.4.64.1005071106280.4777@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005071054510.4777@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005071054510.4777@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, Tomi Valkeinen <tomi.valkeinen@nokia.com>
 
-From: Magnus Damm <damm@opensource.se>
-
-This patch adds sh7366 MSTP enums for mstp_clks[] index.
-The MSTP bit for the SIU is removed as well since it is
-not included in the documentation. Most likely an old
-copy paste error from sh7722.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/video/omap/lcd_mipid.c |   37 ++++++++++++++-----------------------
+ 1 files changed, 14 insertions(+), 23 deletions(-)
 
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c |   92 +++++++++++++++++---------------
- 1 file changed, 50 insertions(+), 42 deletions(-)
-
---- 0008/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7366.c	2010-05-11 12:31:39.000000000 +0900
-@@ -148,48 +148,56 @@ struct clk div6_clks[DIV6_NR] = {
- #define MSTP(_str, _parent, _reg, _bit, _flags) \
-   SH_CLK_MSTP32(_str, -1, _parent, _reg, _bit, _flags)
+diff --git a/drivers/video/omap/lcd_mipid.c b/drivers/video/omap/lcd_mipid.c
+index abe1c76..523393e 100644
+--- a/drivers/video/omap/lcd_mipid.c
++++ b/drivers/video/omap/lcd_mipid.c
+@@ -23,23 +23,14 @@
+ #include <linux/workqueue.h>
+ #include <linux/spi/spi.h>
  
--static struct clk mstp_clks[] = {
-+enum { MSTP031, MSTP030, MSTP029, MSTP028, MSTP026,
-+       MSTP023, MSTP022, MSTP021, MSTP020, MSTP019, MSTP018, MSTP017, MSTP016,
-+       MSTP015, MSTP014, MSTP013, MSTP012, MSTP011, MSTP010,
-+       MSTP007, MSTP006, MSTP005, MSTP002, MSTP001,
-+       MSTP109, MSTP100,
-+       MSTP227, MSTP226, MSTP224, MSTP223, MSTP222, MSTP218, MSTP217,
-+       MSTP211, MSTP207, MSTP205, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-+       MSTP_NR };
++#include <video/mipi_dsi.h>
 +
-+static struct clk mstp_clks[MSTP_NR] = {
- 	/* See page 52 of Datasheet V0.40: Overview -> Block Diagram */
--	MSTP("tlb0", &div4_clks[DIV4_I], MSTPCR0, 31, CLK_ENABLE_ON_INIT),
--	MSTP("ic0", &div4_clks[DIV4_I], MSTPCR0, 30, CLK_ENABLE_ON_INIT),
--	MSTP("oc0", &div4_clks[DIV4_I], MSTPCR0, 29, CLK_ENABLE_ON_INIT),
--	MSTP("rsmem0", &div4_clks[DIV4_SH], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
--	MSTP("xymem0", &div4_clks[DIV4_B], MSTPCR0, 26, CLK_ENABLE_ON_INIT),
--	MSTP("intc3", &div4_clks[DIV4_P], MSTPCR0, 23, 0),
--	MSTP("intc0", &div4_clks[DIV4_P], MSTPCR0, 22, 0),
--	MSTP("dmac0", &div4_clks[DIV4_P], MSTPCR0, 21, 0),
--	MSTP("sh0", &div4_clks[DIV4_P], MSTPCR0, 20, 0),
--	MSTP("hudi0", &div4_clks[DIV4_P], MSTPCR0, 19, 0),
--	MSTP("ubc0", &div4_clks[DIV4_P], MSTPCR0, 17, 0),
--	MSTP("tmu_fck", &div4_clks[DIV4_P], MSTPCR0, 15, 0),
--	MSTP("cmt_fck", &r_clk, MSTPCR0, 14, 0),
--	MSTP("rwdt0", &r_clk, MSTPCR0, 13, 0),
--	MSTP("mfi0", &div4_clks[DIV4_P], MSTPCR0, 11, 0),
--	MSTP("flctl0", &div4_clks[DIV4_P], MSTPCR0, 10, 0),
--	SH_CLK_MSTP32("sci_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 7, 0),
--	SH_CLK_MSTP32("sci_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 6, 0),
--	SH_CLK_MSTP32("sci_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 5, 0),
--	MSTP("msiof0", &div4_clks[DIV4_P], MSTPCR0, 2, 0),
--	MSTP("sbr0", &div4_clks[DIV4_P], MSTPCR0, 1, 0),
+ #include <plat/lcd_mipid.h>
+ 
+ #include "omapfb.h"
+ 
+ #define MIPID_MODULE_NAME		"lcd_mipid"
+ 
+-#define MIPID_CMD_READ_DISP_ID		0x04
+-#define MIPID_CMD_READ_RED		0x06
+-#define MIPID_CMD_READ_GREEN		0x07
+-#define MIPID_CMD_READ_BLUE		0x08
+-#define MIPID_CMD_READ_DISP_STATUS	0x09
+-#define MIPID_CMD_RDDSDR		0x0F
+-#define MIPID_CMD_SLEEP_IN		0x10
+-#define MIPID_CMD_SLEEP_OUT		0x11
+-#define MIPID_CMD_DISP_OFF		0x28
+-#define MIPID_CMD_DISP_ON		0x29
 -
--	MSTP("i2c0", &div4_clks[DIV4_P], MSTPCR1, 9, 0),
--
--	MSTP("icb0", &div4_clks[DIV4_P], MSTPCR2, 27, 0),
--	MSTP("meram0", &div4_clks[DIV4_P], MSTPCR2, 26, 0),
--	MSTP("dacy1", &div4_clks[DIV4_P], MSTPCR2, 24, 0),
--	MSTP("dacy0", &div4_clks[DIV4_P], MSTPCR2, 23, 0),
--	MSTP("tsif0", &div4_clks[DIV4_P], MSTPCR2, 22, 0),
--	MSTP("sdhi0", &div4_clks[DIV4_P], MSTPCR2, 18, 0),
--	MSTP("mmcif0", &div4_clks[DIV4_P], MSTPCR2, 17, 0),
--	MSTP("usbf0", &div4_clks[DIV4_P], MSTPCR2, 11, 0),
--	MSTP("siu0", &div4_clks[DIV4_B], MSTPCR2, 9, 0),
--	MSTP("veu1", &div4_clks[DIV4_B], MSTPCR2, 7, CLK_ENABLE_ON_INIT),
--	MSTP("vou0", &div4_clks[DIV4_B], MSTPCR2, 5, 0),
--	MSTP("beu0", &div4_clks[DIV4_B], MSTPCR2, 4, 0),
--	MSTP("ceu0", &div4_clks[DIV4_B], MSTPCR2, 3, 0),
--	MSTP("veu0", &div4_clks[DIV4_B], MSTPCR2, 2, CLK_ENABLE_ON_INIT),
--	MSTP("vpu0", &div4_clks[DIV4_B], MSTPCR2, 1, CLK_ENABLE_ON_INIT),
--	MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
-+	[MSTP031] = MSTP("tlb0", &div4_clks[DIV4_I], MSTPCR0, 31, CLK_ENABLE_ON_INIT),
-+	[MSTP030] = MSTP("ic0", &div4_clks[DIV4_I], MSTPCR0, 30, CLK_ENABLE_ON_INIT),
-+	[MSTP029] = MSTP("oc0", &div4_clks[DIV4_I], MSTPCR0, 29, CLK_ENABLE_ON_INIT),
-+	[MSTP028] = MSTP("rsmem0", &div4_clks[DIV4_SH], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
-+	[MSTP026] = MSTP("xymem0", &div4_clks[DIV4_B], MSTPCR0, 26, CLK_ENABLE_ON_INIT),
-+	[MSTP023] = MSTP("intc3", &div4_clks[DIV4_P], MSTPCR0, 23, 0),
-+	[MSTP022] = MSTP("intc0", &div4_clks[DIV4_P], MSTPCR0, 22, 0),
-+	[MSTP021] = MSTP("dmac0", &div4_clks[DIV4_P], MSTPCR0, 21, 0),
-+	[MSTP020] = MSTP("sh0", &div4_clks[DIV4_P], MSTPCR0, 20, 0),
-+	[MSTP019] = MSTP("hudi0", &div4_clks[DIV4_P], MSTPCR0, 19, 0),
-+	[MSTP017] = MSTP("ubc0", &div4_clks[DIV4_P], MSTPCR0, 17, 0),
-+	[MSTP015] = MSTP("tmu_fck", &div4_clks[DIV4_P], MSTPCR0, 15, 0),
-+	[MSTP014] = MSTP("cmt_fck", &r_clk, MSTPCR0, 14, 0),
-+	[MSTP013] = MSTP("rwdt0", &r_clk, MSTPCR0, 13, 0),
-+	[MSTP011] = MSTP("mfi0", &div4_clks[DIV4_P], MSTPCR0, 11, 0),
-+	[MSTP010] = MSTP("flctl0", &div4_clks[DIV4_P], MSTPCR0, 10, 0),
-+	[MSTP007] = SH_CLK_MSTP32("sci_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 7, 0),
-+	[MSTP006] = SH_CLK_MSTP32("sci_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 6, 0),
-+	[MSTP005] = SH_CLK_MSTP32("sci_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 5, 0),
-+	[MSTP002] = MSTP("msiof0", &div4_clks[DIV4_P], MSTPCR0, 2, 0),
-+	[MSTP001] = MSTP("sbr0", &div4_clks[DIV4_P], MSTPCR0, 1, 0),
-+
-+	[MSTP109] = MSTP("i2c0", &div4_clks[DIV4_P], MSTPCR1, 9, 0),
-+
-+	[MSTP227] = MSTP("icb0", &div4_clks[DIV4_P], MSTPCR2, 27, 0),
-+	[MSTP226] = MSTP("meram0", &div4_clks[DIV4_P], MSTPCR2, 26, 0),
-+	[MSTP224] = MSTP("dacy1", &div4_clks[DIV4_P], MSTPCR2, 24, 0),
-+	[MSTP223] = MSTP("dacy0", &div4_clks[DIV4_P], MSTPCR2, 23, 0),
-+	[MSTP222] = MSTP("tsif0", &div4_clks[DIV4_P], MSTPCR2, 22, 0),
-+	[MSTP218] = MSTP("sdhi0", &div4_clks[DIV4_P], MSTPCR2, 18, 0),
-+	[MSTP217] = MSTP("mmcif0", &div4_clks[DIV4_P], MSTPCR2, 17, 0),
-+	[MSTP211] = MSTP("usbf0", &div4_clks[DIV4_P], MSTPCR2, 11, 0),
-+	[MSTP207] = MSTP("veu1", &div4_clks[DIV4_B], MSTPCR2, 7, CLK_ENABLE_ON_INIT),
-+	[MSTP205] = MSTP("vou0", &div4_clks[DIV4_B], MSTPCR2, 5, 0),
-+	[MSTP204] = MSTP("beu0", &div4_clks[DIV4_B], MSTPCR2, 4, 0),
-+	[MSTP203] = MSTP("ceu0", &div4_clks[DIV4_B], MSTPCR2, 3, 0),
-+	[MSTP202] = MSTP("veu0", &div4_clks[DIV4_B], MSTPCR2, 2, CLK_ENABLE_ON_INIT),
-+	[MSTP201] = MSTP("vpu0", &div4_clks[DIV4_B], MSTPCR2, 1, CLK_ENABLE_ON_INIT),
-+	[MSTP200] = MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
- };
+ #define MIPID_ESD_CHECK_PERIOD		msecs_to_jiffies(5000)
  
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-@@ -221,7 +229,7 @@ int __init arch_clk_init(void)
- 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
--		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
-+		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
- 
- 	return ret;
+ #define to_mipid_device(p)		container_of(p, struct mipid_device, \
+@@ -152,14 +143,14 @@ static void set_data_lines(struct mipid_device *md, int data_lines)
+ 		par = 0x170;
+ 		break;
+ 	}
+-	mipid_write(md, 0x3a, (u8 *)&par, 2);
++	mipid_write(md, MIPI_DCS_SET_PIXEL_FORMAT, (u8 *)&par, 2);
  }
+ 
+ static void send_init_string(struct mipid_device *md)
+ {
+ 	u16 initpar[] = { 0x0102, 0x0100, 0x0100 };
+ 
+-	mipid_write(md, 0xc2, (u8 *)initpar, sizeof(initpar));
++	mipid_write(md, 0xc2, (u8 *)initpar, sizeof(initpar) * 2);
+ 	set_data_lines(md, md->panel.data_lines);
+ }
+ 
+@@ -184,9 +175,9 @@ static void set_sleep_mode(struct mipid_device *md, int on)
+ 	int cmd, sleep_time = 50;
+ 
+ 	if (on)
+-		cmd = MIPID_CMD_SLEEP_IN;
++		cmd = MIPI_DCS_ENTER_SLEEP_MODE;
+ 	else
+-		cmd = MIPID_CMD_SLEEP_OUT;
++		cmd = MIPI_DCS_EXIT_SLEEP_MODE;
+ 	hw_guard_wait(md);
+ 	mipid_cmd(md, cmd);
+ 	hw_guard_start(md, 120);
+@@ -203,7 +194,7 @@ static void set_sleep_mode(struct mipid_device *md, int on)
+ 
+ static void set_display_state(struct mipid_device *md, int enabled)
+ {
+-	int cmd = enabled ? MIPID_CMD_DISP_ON : MIPID_CMD_DISP_OFF;
++	int cmd = enabled ? MIPI_DCS_SET_DISPLAY_ON : MIPI_DCS_SET_DISPLAY_OFF;
+ 
+ 	mipid_cmd(md, cmd);
+ }
+@@ -258,9 +249,9 @@ static u16 read_first_pixel(struct mipid_device *md)
+ 	u8 red, green, blue;
+ 
+ 	mutex_lock(&md->mutex);
+-	mipid_read(md, MIPID_CMD_READ_RED, &red, 1);
+-	mipid_read(md, MIPID_CMD_READ_GREEN, &green, 1);
+-	mipid_read(md, MIPID_CMD_READ_BLUE, &blue, 1);
++	mipid_read(md, MIPI_DCS_GET_RED_CHANNEL, &red, 1);
++	mipid_read(md, MIPI_DCS_GET_GREEN_CHANNEL, &green, 1);
++	mipid_read(md, MIPI_DCS_GET_BLUE_CHANNEL, &blue, 1);
+ 	mutex_unlock(&md->mutex);
+ 
+ 	switch (md->panel.data_lines) {
+@@ -330,9 +321,9 @@ static void ls041y3_esd_check_mode1(struct mipid_device *md)
+ {
+ 	u8 state1, state2;
+ 
+-	mipid_read(md, MIPID_CMD_RDDSDR, &state1, 1);
++	mipid_read(md, MIPI_DCS_GET_DIAGNOSTIC_RESULT, &state1, 1);
+ 	set_sleep_mode(md, 0);
+-	mipid_read(md, MIPID_CMD_RDDSDR, &state2, 1);
++	mipid_read(md, MIPI_DCS_GET_DIAGNOSTIC_RESULT, &state2, 1);
+ 	dev_dbg(&md->spi->dev, "ESD mode 1 state1 %02x state2 %02x\n",
+ 		state1, state2);
+ 	/* Each sleep out command will trigger a self diagnostic and flip
+@@ -459,7 +450,7 @@ static int panel_enabled(struct mipid_device *md)
+ 	u32 disp_status;
+ 	int enabled;
+ 
+-	mipid_read(md, MIPID_CMD_READ_DISP_STATUS, (u8 *)&disp_status, 4);
++	mipid_read(md, MIPI_DCS_GET_DISPLAY_STATUS, (u8 *)&disp_status, 4);
+ 	disp_status = __be32_to_cpu(disp_status);
+ 	enabled = (disp_status & (1 << 17)) && (disp_status & (1 << 10));
+ 	dev_dbg(&md->spi->dev,
+@@ -537,7 +528,7 @@ static int mipid_detect(struct mipid_device *md)
+ 		return -ENOENT;
+ 	}
+ 
+-	mipid_read(md, MIPID_CMD_READ_DISP_ID, display_id, 3);
++	mipid_read(md, MIPI_DCS_GET_DISPLAY_ID, display_id, 3);
+ 	dev_dbg(&md->spi->dev, "MIPI display ID: %02x%02x%02x\n",
+ 		display_id[0], display_id[1], display_id[2]);
+ 
+-- 
+1.6.2.4
+
