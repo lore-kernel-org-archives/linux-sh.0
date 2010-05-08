@@ -1,46 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 May 2010 08:34:58 +0000
-Subject: [PATCH 02/05] ARM: mach-shmobile: Add CONFIG_FORCE_MAX_ZONEORDER
-Message-Id: <20100512083458.9395.98203.sendpatchset@t400s>
+From: "Webmail Internet Technical Support" <scott@scottludwick.com>
+Date: Sat, 08 May 2010 21:53:31 +0000
+Subject: Reactivation Of Your Email Account
+Message-Id: <W5558427660316651273355611@webmail35>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-Allow SH-Mobile ARM to specify CONFIG_FORCE_MAX_ZONEORDER.
-The Kconfig entry is taken from SH and non-4K page size
-stuff has been trimmed away.
+Attention E-mail Account Holder,
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Dear Webmail Email User. All mailhub systems will undergo regularly
+scheduled maintenance, and access to your mailbox via our mail portal will
+be unavailable for some time during this maintenance period.
 
- arch/arm/mach-shmobile/Kconfig |   15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+We shall be carrying out service maintenance/upgrade on our database and
+e-mail account center for better online services. We are also deleting all
+unused e-mail accounts to create more space for new accounts.In order to
+ensure you do not experience service interruptions or possible deactivation
+of your e-mail account, Please you must reply to this mail immediately
+confirming your e-mail account details below for confirmation and
+identification.
+_____________________________________
+1. First Name & Last:
+2. Full Login Email:
+3. Username:
+4  Password:
+5. Current Password:
+_____________________________________
+Failure to do this may automatically render your e-mail account
+deactivated from our e-mail database/mail server. To enable us upgrade
+your e-mail account, please do reply to this mail.
 
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2010-05-12 15:21:55.000000000 +0900
-@@ -69,6 +69,21 @@ config MEMORY_SIZE
- 	  be overridden as normal by the 'mem=' argument on the kernel command
- 	  line.
- 
-+config FORCE_MAX_ZONEORDER
-+	int "Maximum zone order"
-+	range 11 64
-+	default "11"
-+	help
-+	  The kernel memory allocator divides physically contiguous memory
-+	  blocks into "zones", where each zone is a power of two number of
-+	  pages.  This option selects the largest power of two that the kernel
-+	  keeps in the memory allocator.  If you need to allocate very large
-+	  blocks of physically contiguous memory, then you may need to
-+	  increase this value.
-+
-+	  This config option is actually maximum order plus one. For example,
-+	  a value of 11 means that the largest free memory block is 2^10 pages.
-+
- endmenu
- 
- menu "Timer and clock configuration"
+Webmaster Information
+Technical Services
+Account Management.
+
+
