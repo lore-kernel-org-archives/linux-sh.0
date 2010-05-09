@@ -1,7 +1,7 @@
-From: Paul Mundt <paul.mundt@renesas.com>
-Date: Thu, 06 May 2010 05:05:26 +0000
+From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+Date: Sun, 09 May 2010 14:37:13 +0000
 Subject: Re: Missing of "Uncompressing Linux... " message at boot sequence
-Message-Id: <20100506050526.GC31681@renesas.com>
+Message-Id: <4BE6C899.20307@dcl.info.waseda.ac.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4BDFCEF4.8010607@dcl.info.waseda.ac.jp>
 In-Reply-To: <4BDFCEF4.8010607@dcl.info.waseda.ac.jp>
@@ -10,21 +10,69 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, May 05, 2010 at 09:49:57PM -0700, Paul Mundt wrote:
-> On Tue, May 04, 2010 at 04:38:28PM +0900, Hitoshi Mitake wrote:
-> > If you have a plan to revive the message, I'd like to co-operate.
-> > Because I'm working on new board support, serial output is a big problem 
-> > for me.
-> > 
-> I'll have a look at restoring it, but be forewarned that there will
-> likely be outstanding sh-bios issues. If you're able to assist with
-> debugging this then of course I have no problem with reinstanting this
-> sort of support.
 
-Also note that the earlyprintk stuff should largely make this irrelevant
-for most people. The cases where the earlyprintk code ends up being
-useless is primarily with memory initialization or getting the serial
-port up on a new CPU (although the latter case is not so exceptional
-anymore), so it's quite possible that simply turning off the sh-bios
-stuff and using the earlyprintk code as-is will be sufficient for you to
-get early messages.
+Thanks for your reply, Paul!
+
+On 05/06/10 13:49, Paul Mundt wrote:
+ > On Tue, May 04, 2010 at 04:38:28PM +0900, Hitoshi Mitake wrote:
+ >> In arch/sh/boot/compressed/misc.c the function puts() is defined 
+like this:
+ >>
+ >> int puts(const char *s)
+ >> {
+ >> 	/* This should be updated to use the sh-sci routines */
+ >> 	return 0;
+ >> }
+ >>
+ >> Of course this makes no output.
+ >> So I cannot see the message "Uncompressing Linux... Ok, booting the
+ >> kernel." now.
+ >> # The change was made at abec86a80247ab3a40d2afc9c8e8c26efcab2391
+ >>
+ >> So I have a question:
+ >> Do you have any plan to revive the "Uncompressing" message?
+ >>
+ > I suppose you ran in to this because you are one of the few people still
+ > using sh-bios. The current sh-bios code has been generalized a fair bit,
+ > but we could restore this functionality if it ends up being useful for
+ > you.
+ >
+ > In my experience the sh-bios implementation has been unreliable at the
+ > best of times, so this early puts stuff was never really useful in the
+ > first place. I suspect there are also outstanding issues with trapping in
+ > to the bios after the system has booted, as this code doesn't see much
+ > use in general.
+ >
+
+I didn't care about quality of sh-bios,
+because I don't have serious SuperH development experience
+like working on several boards.
+Your opinion is really helpful for me, thanks :)
+
+ >> The comment says that puts() should use the routines of sh-sci.
+ >> But sh-sci is the thing built in vmlinux, so I think using it from
+ >> misc.c is hard.
+ >> To revive it, big change will be required.
+ >>
+ > Correct. The idea was to reuse parts of the sh-sci code, rather than
+ > linking it in directly. If it were just a simple case we could have
+ > easily accomodated this through the header alone and simply inlined it,
+ > but unfortunately there is not enough consistency between CPUs to make
+ > this terribly realistic. This is largely why things like the sh-bios
+ > abstraction exists in the first place.
+
+Ah, I didn't understand the relation between CPUs and serial.
+
+ >
+ >> If you have a plan to revive the message, I'd like to co-operate.
+ >> Because I'm working on new board support, serial output is a big problem
+ >> for me.
+ >>
+ > I'll have a look at restoring it, but be forewarned that there will
+ > likely be outstanding sh-bios issues. If you're able to assist with
+ > debugging this then of course I have no problem with reinstanting this
+ > sort of support.
+ >
+
+Thanks! If you make changes on this problem,
+could you tell me? I'll test on some boards.
