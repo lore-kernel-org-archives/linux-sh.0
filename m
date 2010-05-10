@@ -1,81 +1,52 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 04:58:55 +0000
-Subject: [PATCH 04/09] sh: sh7366 mstp32 clkdev lookup
-Message-Id: <20100511050006.26302.99263.sendpatchset@t400s>
+Date: Mon, 10 May 2010 11:23:18 +0000
+Subject: [PATCH 00/13] sh7724 clkdev lookup prototype
+Message-Id: <20100510112318.14587.10085.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+sh7724 clkdev lookup prototype
 
-Add sh7366 MSTP clocks to the clkdev lookup table.
+[PATCH 01/13] sh: Skip uninitialized hwblk clocks
+[PATCH 02/13] sh: Rework sh7724 hwblk index
+[PATCH 03/13] sh: Rework sh7724 SCIF clock lookup
+[PATCH 04/13] sh: Use clkdev for sh7724 hwblk clocks
+[PATCH 05/13] sh: Allow registering clocks without name
+[PATCH 06/13] sh: Get rid of sh7724 hwblk clock names
+[PATCH 07/13] sh: Use clkdev for sh7724 div6 clocks
+[PATCH 08/13] sh: Get rid of sh7724 div6 clock names
+[PATCH 09/13] sh: Use clkdev for sh7724 div4 clocks
+[PATCH 10/13] sh: Get rid of sh7724 div4 clock names
+[PATCH 11/13] sh: Use clkdev for sh7724 main clocks
+[PATCH 12/13] sh: Get rid of sh7724 main clock names
+[PATCH 13/13] sh: Kill off clock lookup code
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+This is a prototype for sh7724 that shows how to kill off the
+SH-specific clock lookup code. When all processors for SH
+are updated like this, only clkdev will be used to lookup clocks.
+In other words, the patches sync the SH behaviour with ARM.
+
+The patches are pretty rough, and many must be updated further to
+include all other SH processors. So please treat these patches
+as prototypes for now. Just wanted to get the code out of the door
+for feedback.
+
+[PATCH 01/13] and [PATCH 05/13] may be useful right now though.
+
+Let me know what you think and I'll update the rest of the code.
+
+On top of this it is not so difficult to remove the now unused 
+name" and "id" members of struct clk.
+
+Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c |   52 ++++++++++++++++++++++++++++++++
- 1 file changed, 52 insertions(+)
-
---- 0011/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7366.c	2010-05-11 12:41:43.000000000 +0900
-@@ -205,6 +205,58 @@ static struct clk mstp_clks[MSTP_NR] = {
- static struct clk_lookup lookups[] = {
- 	/* DIV6 clocks */
- 	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
-+
-+	/* MSTP32 clocks */
-+	CLKDEV_CON_ID("tlb0", &mstp_clks[MSTP031]),
-+	CLKDEV_CON_ID("ic0", &mstp_clks[MSTP030]),
-+	CLKDEV_CON_ID("oc0", &mstp_clks[MSTP029]),
-+	CLKDEV_CON_ID("rsmem0", &mstp_clks[MSTP028]),
-+	CLKDEV_CON_ID("xymem0", &mstp_clks[MSTP026]),
-+	CLKDEV_CON_ID("intc3", &mstp_clks[MSTP023]),
-+	CLKDEV_CON_ID("intc0", &mstp_clks[MSTP022]),
-+	CLKDEV_CON_ID("dmac0", &mstp_clks[MSTP021]),
-+	CLKDEV_CON_ID("sh0", &mstp_clks[MSTP020]),
-+	CLKDEV_CON_ID("hudi0", &mstp_clks[MSTP019]),
-+	CLKDEV_CON_ID("ubc0", &mstp_clks[MSTP017]),
-+	CLKDEV_CON_ID("tmu_fck", &mstp_clks[MSTP015]),
-+	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP014]),
-+	CLKDEV_CON_ID("rwdt0", &mstp_clks[MSTP013]),
-+	CLKDEV_CON_ID("mfi0", &mstp_clks[MSTP011]),
-+	CLKDEV_CON_ID("flctl0", &mstp_clks[MSTP010]),
-+	{
-+		/* SCIF0 */
-+		.dev_id		= "sh-sci.0",
-+		.con_id		= "sci_fck",
-+		.clk		= &mstp_clks[MSTP007],
-+	}, {
-+		/* SCIF1 */
-+		.dev_id		= "sh-sci.1",
-+		.con_id		= "sci_fck",
-+		.clk		= &mstp_clks[MSTP006],
-+	}, {
-+		/* SCIF2 */
-+		.dev_id		= "sh-sci.2",
-+		.con_id		= "sci_fck",
-+		.clk		= &mstp_clks[MSTP005],
-+	},
-+	CLKDEV_CON_ID("msiof0", &mstp_clks[MSTP002]),
-+	CLKDEV_CON_ID("sbr0", &mstp_clks[MSTP001]),
-+	CLKDEV_CON_ID("i2c0", &mstp_clks[MSTP109]),
-+	CLKDEV_CON_ID("icb0", &mstp_clks[MSTP227]),
-+	CLKDEV_CON_ID("meram0", &mstp_clks[MSTP226]),
-+	CLKDEV_CON_ID("dacy1", &mstp_clks[MSTP224]),
-+	CLKDEV_CON_ID("dacy0", &mstp_clks[MSTP223]),
-+	CLKDEV_CON_ID("tsif0", &mstp_clks[MSTP222]),
-+	CLKDEV_CON_ID("sdhi0", &mstp_clks[MSTP218]),
-+	CLKDEV_CON_ID("mmcif0", &mstp_clks[MSTP217]),
-+	CLKDEV_CON_ID("usbf0", &mstp_clks[MSTP211]),
-+	CLKDEV_CON_ID("veu1", &mstp_clks[MSTP207]),
-+	CLKDEV_CON_ID("vou0", &mstp_clks[MSTP205]),
-+	CLKDEV_CON_ID("beu0", &mstp_clks[MSTP204]),
-+	CLKDEV_CON_ID("ceu0", &mstp_clks[MSTP203]),
-+	CLKDEV_CON_ID("veu0", &mstp_clks[MSTP202]),
-+	CLKDEV_CON_ID("vpu0", &mstp_clks[MSTP201]),
-+	CLKDEV_CON_ID("lcdc0", &mstp_clks[MSTP200]),
- };
- 
- int __init arch_clk_init(void)
+ arch/sh/include/asm/clock.h            |   19 --
+ arch/sh/include/asm/hwblk.h            |    6 
+ arch/sh/kernel/cpu/clock.c             |   44 ----
+ arch/sh/kernel/cpu/hwblk.c             |    5 
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |  287 +++++++++++++++++++++-----------
+ 5 files changed, 210 insertions(+), 151 deletions(-)
