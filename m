@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 May 2010 08:35:23 +0000
-Subject: [PATCH 05/05] ARM: mach-shmobile: UIO platform data for sh7367
-Message-Id: <20100512083523.9395.59032.sendpatchset@t400s>
+Date: Mon, 10 May 2010 14:01:12 +0000
+Subject: [PATCH 02/07] sh: scif and tmu clkdev changes
+Message-Id: <20100510140112.32745.14842.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,303 +10,203 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Export the following sh7367 multimedia hardware blocks
-using UIO: VPU, VEU[0-3], VEU2H, JPU and SPU1
+Modify sh7722/sh7723/sh7724 to use clkdev for
+TMU and SCIF clock lookups.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/setup-sh7367.c |  258 +++++++++++++++++++++++++++++++++
- 1 file changed, 258 insertions(+)
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   43 +++++++++++++++++++++++++++++---
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |   42 ++++++++++++++++++++++++++-----
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   42 ++++++++++++++++++++++++++-----
+ 3 files changed, 112 insertions(+), 15 deletions(-)
 
---- 0001/arch/arm/mach-shmobile/setup-sh7367.c
-+++ work/arch/arm/mach-shmobile/setup-sh7367.c	2010-05-12 16:50:33.000000000 +0900
-@@ -22,12 +22,15 @@
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/platform_device.h>
-+#include <linux/uio_driver.h>
- #include <linux/delay.h>
- #include <linux/input.h>
+--- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2010-05-10 21:11:01.000000000 +0900
+@@ -21,6 +21,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
  #include <linux/io.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
-+#include <mach/common.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
++#include <asm/clkdev.h>
+ #include <asm/clock.h>
+ #include <asm/hwblk.h>
+ #include <cpu/sh7722.h>
+@@ -164,9 +165,9 @@ static struct clk mstp_clks[HWBLK_NR] = 
+ 	SH_HWBLK_CLK("cmt_fck", -1, R_CLK, HWBLK_CMT, 0),
+ 	SH_HWBLK_CLK("rwdt0", -1, R_CLK, HWBLK_RWDT, 0),
+ 	SH_HWBLK_CLK("flctl0", -1, P_CLK, HWBLK_FLCTL, 0),
+-	SH_HWBLK_CLK("sci_fck", 0, P_CLK, HWBLK_SCIF0, 0),
+-	SH_HWBLK_CLK("sci_fck", 1, P_CLK, HWBLK_SCIF1, 0),
+-	SH_HWBLK_CLK("sci_fck", 2, P_CLK, HWBLK_SCIF2, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF0, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF1, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF2, 0),
  
-@@ -168,6 +171,238 @@ static struct platform_device cmt10_devi
- 	.num_resources	= ARRAY_SIZE(cmt10_resources),
+ 	SH_HWBLK_CLK("i2c0", -1, P_CLK, HWBLK_IIC, 0),
+ 	SH_HWBLK_CLK("rtc0", -1, R_CLK, HWBLK_RTC, 0),
+@@ -185,6 +186,40 @@ static struct clk mstp_clks[HWBLK_NR] = 
+ 	SH_HWBLK_CLK("lcdc0", -1, P_CLK, HWBLK_LCDC, 0),
  };
  
-+/* VPU */
-+static struct uio_info vpu_platform_data = {
-+	.name = "VPU5",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x980),
-+};
-+
-+static struct resource vpu_resources[] = {
-+	[0] = {
-+		.name	= "VPU",
-+		.start	= 0xfe900000,
-+		.end	= 0xfe902807,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device vpu_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &vpu_platform_data,
-+	},
-+	.resource	= vpu_resources,
-+	.num_resources	= ARRAY_SIZE(vpu_resources),
-+};
-+
-+/* VEU0 */
-+static struct uio_info veu0_platform_data = {
-+	.name = "VEU0",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x700),
-+};
-+
-+static struct resource veu0_resources[] = {
-+	[0] = {
-+		.name	= "VEU0",
-+		.start	= 0xfe920000,
-+		.end	= 0xfe9200b7,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
++static struct clk_lookup lookups[] = {
++	{
++		/* TMU0 */
++		.dev_id		= "sh_tmu.0",
++		.con_id		= "tmu_fck",
++		.clk		= &mstp_clks[HWBLK_TMU],
++	}, {
++		/* TMU1 */
++		.dev_id		= "sh_tmu.1",
++		.con_id		= "tmu_fck",
++		.clk		= &mstp_clks[HWBLK_TMU],
++	}, {
++		/* TMU2 */
++		.dev_id		= "sh_tmu.2",
++		.con_id		= "tmu_fck",
++		.clk		= &mstp_clks[HWBLK_TMU],
++	}, {
++		/* SCIF0 */
++		.dev_id		= "sh-sci.0",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF0],
++	}, {
++		/* SCIF1 */
++		.dev_id		= "sh-sci.1",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF1],
++	}, {
++		/* SCIF2 */
++		.dev_id		= "sh-sci.2",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF2],
 +	},
 +};
 +
-+static struct platform_device veu0_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &veu0_platform_data,
-+	},
-+	.resource	= veu0_resources,
-+	.num_resources	= ARRAY_SIZE(veu0_resources),
-+};
-+
-+/* VEU1 */
-+static struct uio_info veu1_platform_data = {
-+	.name = "VEU1",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x720),
-+};
-+
-+static struct resource veu1_resources[] = {
-+	[0] = {
-+		.name	= "VEU1",
-+		.start	= 0xfe924000,
-+		.end	= 0xfe9240b7,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device veu1_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 2,
-+	.dev = {
-+		.platform_data	= &veu1_platform_data,
-+	},
-+	.resource	= veu1_resources,
-+	.num_resources	= ARRAY_SIZE(veu1_resources),
-+};
-+
-+/* VEU2 */
-+static struct uio_info veu2_platform_data = {
-+	.name = "VEU2",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x740),
-+};
-+
-+static struct resource veu2_resources[] = {
-+	[0] = {
-+		.name	= "VEU2",
-+		.start	= 0xfe928000,
-+		.end	= 0xfe9280b7,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device veu2_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 3,
-+	.dev = {
-+		.platform_data	= &veu2_platform_data,
-+	},
-+	.resource	= veu2_resources,
-+	.num_resources	= ARRAY_SIZE(veu2_resources),
-+};
-+
-+/* VEU3 */
-+static struct uio_info veu3_platform_data = {
-+	.name = "VEU3",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x760),
-+};
-+
-+static struct resource veu3_resources[] = {
-+	[0] = {
-+		.name	= "VEU3",
-+		.start	= 0xfe92c000,
-+		.end	= 0xfe92c0b7,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device veu3_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 4,
-+	.dev = {
-+		.platform_data	= &veu3_platform_data,
-+	},
-+	.resource	= veu3_resources,
-+	.num_resources	= ARRAY_SIZE(veu3_resources),
-+};
-+
-+/* VEU2H */
-+static struct uio_info veu2h_platform_data = {
-+	.name = "VEU2H",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x520),
-+};
-+
-+static struct resource veu2h_resources[] = {
-+	[0] = {
-+		.name	= "VEU2H",
-+		.start	= 0xfe93c000,
-+		.end	= 0xfe93c27b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device veu2h_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 5,
-+	.dev = {
-+		.platform_data	= &veu2h_platform_data,
-+	},
-+	.resource	= veu2h_resources,
-+	.num_resources	= ARRAY_SIZE(veu2h_resources),
-+};
-+
-+/* JPU */
-+static struct uio_info jpu_platform_data = {
-+	.name = "JPU",
-+	.version = "0",
-+	.irq = intcs_evt2irq(0x560),
-+};
-+
-+static struct resource jpu_resources[] = {
-+	[0] = {
-+		.name	= "JPU",
-+		.start	= 0xfe980000,
-+		.end	= 0xfe9902d3,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device jpu_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 6,
-+	.dev = {
-+		.platform_data	= &jpu_platform_data,
-+	},
-+	.resource	= jpu_resources,
-+	.num_resources	= ARRAY_SIZE(jpu_resources),
-+};
-+
-+/* SPU1 */
-+static struct uio_info spu1_platform_data = {
-+	.name = "SPU1",
-+	.version = "0",
-+	.irq = evt2irq(0xfc0),
-+};
-+
-+static struct resource spu1_resources[] = {
-+	[0] = {
-+		.name	= "SPU1",
-+		.start	= 0xfe300000,
-+		.end	= 0xfe3fffff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device spu1_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 7,
-+	.dev = {
-+		.platform_data	= &spu1_platform_data,
-+	},
-+	.resource	= spu1_resources,
-+	.num_resources	= ARRAY_SIZE(spu1_resources),
-+};
-+
- static struct platform_device *sh7367_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -179,10 +414,33 @@ static struct platform_device *sh7367_ea
- 	&cmt10_device,
- };
- 
-+static struct platform_device *sh7367_devices[] __initdata = {
-+	&vpu_device,
-+	&veu0_device,
-+	&veu1_device,
-+	&veu2_device,
-+	&veu3_device,
-+	&veu2h_device,
-+	&jpu_device,
-+	&spu1_device,
-+};
-+
- void __init sh7367_add_standard_devices(void)
+ int __init arch_clk_init(void)
  {
- 	platform_add_devices(sh7367_early_devices,
- 			     ARRAY_SIZE(sh7367_early_devices));
-+
-+	platform_resource_setup_memory(&vpu_device, "vpu", 2 << 20);
-+	platform_resource_setup_memory(&veu0_device, "veu0", 2 << 20);
-+	platform_resource_setup_memory(&veu1_device, "veu1", 2 << 20);
-+	platform_resource_setup_memory(&veu2_device, "veu2", 2 << 20);
-+	platform_resource_setup_memory(&veu3_device, "veu3", 2 << 20);
-+	platform_resource_setup_memory(&veu2h_device, "veu2h", 2 << 20);
-+	platform_resource_setup_memory(&jpu_device, "jpu", 2 << 20);
-+	platform_resource_setup_memory(&spu1_device, "spu1", 2 << 20);
-+
-+	platform_add_devices(sh7367_devices,
-+			    ARRAY_SIZE(sh7367_devices));
- }
+ 	int k, ret = 0;
+@@ -198,6 +233,8 @@ int __init arch_clk_init(void)
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
  
- #define SYMSTPCR2 0xe6158048
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+--- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2010-05-10 21:10:56.000000000 +0900
+@@ -179,12 +179,12 @@ static struct clk mstp_clks[] = {
+ 	SH_HWBLK_CLK("dmac1", -1, B_CLK, HWBLK_DMAC1, 0),
+ 	SH_HWBLK_CLK("tmu345_fck", -1, P_CLK, HWBLK_TMU1, 0),
+ 	SH_HWBLK_CLK("flctl0", -1, P_CLK, HWBLK_FLCTL, 0),
+-	SH_HWBLK_CLK("sci_fck", 0, P_CLK, HWBLK_SCIF0, 0),
+-	SH_HWBLK_CLK("sci_fck", 1, P_CLK, HWBLK_SCIF1, 0),
+-	SH_HWBLK_CLK("sci_fck", 2, P_CLK, HWBLK_SCIF2, 0),
+-	SH_HWBLK_CLK("sci_fck", 3, B_CLK, HWBLK_SCIF3, 0),
+-	SH_HWBLK_CLK("sci_fck", 4, B_CLK, HWBLK_SCIF4, 0),
+-	SH_HWBLK_CLK("sci_fck", 5, B_CLK, HWBLK_SCIF5, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF0, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF1, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF2, 0),
++	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF3, 0),
++	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF4, 0),
++	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF5, 0),
+ 	SH_HWBLK_CLK("msiof0", -1, B_CLK, HWBLK_MSIOF0, 0),
+ 	SH_HWBLK_CLK("msiof1", -1, B_CLK, HWBLK_MSIOF1, 0),
+ 	SH_HWBLK_CLK("meram0", -1, SH_CLK, HWBLK_MERAM, 0),
+@@ -244,6 +244,36 @@ static struct clk_lookup lookups[] = {
+ 		.dev_id		= "sh_tmu.5",
+ 		.con_id		= "tmu_fck",
+ 		.clk		= &mstp_clks[HWBLK_TMU1],
++	}, {
++		/* SCIF0 */
++		.dev_id		= "sh-sci.0",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF0],
++	}, {
++		/* SCIF1 */
++		.dev_id		= "sh-sci.1",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF1],
++	}, {
++		/* SCIF2 */
++		.dev_id		= "sh-sci.2",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF2],
++	}, {
++		/* SCIF3 */
++		.dev_id		= "sh-sci.3",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF3],
++	}, {
++		/* SCIF4 */
++		.dev_id		= "sh-sci.4",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF4],
++	}, {
++		/* SCIF5 */
++		.dev_id		= "sh-sci.5",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF5],
+ 	},
+ };
+ 
+--- 0002/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-05-10 21:07:04.000000000 +0900
+@@ -196,12 +196,12 @@ static struct clk mstp_clks[HWBLK_NR] = 
+ 	SH_HWBLK_CLK("rwdt0", -1, R_CLK, HWBLK_RWDT, 0),
+ 	SH_HWBLK_CLK("dmac1", -1, B_CLK, HWBLK_DMAC1, 0),
+ 	SH_HWBLK_CLK("tmu345_fck", -1, P_CLK, HWBLK_TMU1, 0),
+-	SH_HWBLK_CLK("sci_fck", 0, P_CLK, HWBLK_SCIF0, 0),
+-	SH_HWBLK_CLK("sci_fck", 1, P_CLK, HWBLK_SCIF1, 0),
+-	SH_HWBLK_CLK("sci_fck", 2, P_CLK, HWBLK_SCIF2, 0),
+-	SH_HWBLK_CLK("sci_fck", 3, B_CLK, HWBLK_SCIF3, 0),
+-	SH_HWBLK_CLK("sci_fck", 4, B_CLK, HWBLK_SCIF4, 0),
+-	SH_HWBLK_CLK("sci_fck", 5, B_CLK, HWBLK_SCIF5, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF0, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF1, 0),
++	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF2, 0),
++	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF3, 0),
++	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF4, 0),
++	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF5, 0),
+ 	SH_HWBLK_CLK("msiof0", -1, B_CLK, HWBLK_MSIOF0, 0),
+ 	SH_HWBLK_CLK("msiof1", -1, B_CLK, HWBLK_MSIOF1, 0),
+ 
+@@ -266,6 +266,36 @@ static struct clk_lookup lookups[] = {
+ 		.dev_id		= "sh_tmu.5",
+ 		.con_id		= "tmu_fck",
+ 		.clk		= &mstp_clks[HWBLK_TMU1],
++	}, {
++		/* SCIF0 */
++		.dev_id		= "sh-sci.0",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF0],
++	}, {
++		/* SCIF1 */
++		.dev_id		= "sh-sci.1",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF1],
++	}, {
++		/* SCIF2 */
++		.dev_id		= "sh-sci.2",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF2],
++	}, {
++		/* SCIF3 */
++		.dev_id		= "sh-sci.3",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF3],
++	}, {
++		/* SCIF4 */
++		.dev_id		= "sh-sci.4",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF4],
++	}, {
++		/* SCIF5 */
++		.dev_id		= "sh-sci.5",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[HWBLK_SCIF5],
+ 	},
+ };
+ 
