@@ -1,58 +1,43 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 07 Apr 2010 07:33:46 +0000
-Subject: Re: [PATCH 0/3] AP4: I2C patches
-Message-Id: <20100407073346.GB17971@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 10 May 2010 13:59:46 +0000
+Subject: [PATCH 00/07] SuperH clkdev rework round 1
+Message-Id: <20100510140052.32745.71055.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Mar 11, 2010 at 07:42:11PM +0900, Kuninori Morimoto wrote:
-> Kuninori Morimoto (3):
->       ARM: mach-shmobile: sh7372: Add I2C0, I2C1 support
->       ARM: mach-shmobile: ap4evb: Add TouchScreen support
->       ARM: mach-shmobile: ap4evb: Add R2025S RTC support
-> 
-> These 3 patches add I2C support to AP4-EVB board.
-> 
-> It are based on Magnus's
->   - SDHI patche series
->   - INTCS patche series
+SuperH clkdev rework round 1
 
-On Fri, Mar 12, 2010 at 07:07:55PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
-> depend on
-> [PATCH 2/3] ARM: mach-shmobile: ap4evb: Add TouchScreen support
-> 
->  arch/arm/mach-shmobile/board-ap4evb.c |   16 ++++++++++------
->  1 files changed, 10 insertions(+), 6 deletions(-)
+[PATCH 01/07] sh: hwblk index rework
+[PATCH 02/07] sh: scif and tmu clkdev changes
+[PATCH 03/07] sh: tie in hwblk clocks using clkdev
+[PATCH 04/07] sh: allow registering clocks without name
+[PATCH 05/07] sh: get rid of hwblk clock names
+[PATCH 06/07] sh: tie in div6 clocks using clkdev
+[PATCH 07/07] sh: get rid of div6 clock names
 
-On Mon, Mar 29, 2010 at 03:31:36PM +0900, Kuninori Morimoto wrote:
-> This patch add SDHI support for G4 board.
-> Current gpio frame work doesn't have
-> the method to control only pull-up/down/free.
-> So, it have special gpio_pull_up function for SDHI.
-> It is quick hack, so this function should be replaced
-> by correct gpio frame work in future.
+These patches contain the first part of the clkdev rework
+for SH. In this round hwblk and div6 clocks are converted.
 
-On Mon, Mar 29, 2010 at 03:31:46PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  arch/arm/mach-shmobile/intc-sh7367.c |    6 +++---
->  arch/arm/mach-shmobile/intc-sh7377.c |    6 +++---
->  2 files changed, 6 insertions(+), 6 deletions(-)
+Next round will convert div4 / mstp32 / main clocks.
 
-On Mon, Mar 29, 2010 at 04:58:13PM +0900, Kuninori Morimoto wrote:
-> Add support for the sh7377 INTCS interrupt controller.
-> 
-> INTCS is the interrupt controller for the sh7377 SuperH
-> processor core. It is tied into the INTCA interrupt
-> controller which interfaces to the ARM processor.
-> 
-> INTCS support is implemented using a new INTC table
-> together with a chained interrupt handler that ties
-> into the already supported INTCA controller.
+Finally there will be patches to share the clock framework 
+between the SH architecture and SH-Mobile ARM processors.
 
-All applied, thanks.
+Tested on Ecovec.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/sh/include/asm/clock.h            |   11 -
+ arch/sh/include/asm/hwblk.h            |   14 -
+ arch/sh/kernel/cpu/clock.c             |    7 
+ arch/sh/kernel/cpu/hwblk.c             |    5 
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c |   20 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7366.c |   20 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |  140 ++++++++++++-----
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |  222 ++++++++++++++++++---------
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |  261 ++++++++++++++++++++------------
+ 9 files changed, 470 insertions(+), 230 deletions(-)
