@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 May 2010 14:21:24 +0000
-Subject: [PATCH 01/02] ARM: mach-shmobile: Use shared clock framework
-Message-Id: <20100512142124.28459.11232.sendpatchset@t400s>
+Date: Mon, 10 May 2010 11:24:04 +0000
+Subject: [PATCH 06/13] sh: Get rid of sh7724 hwblk clock names
+Message-Id: <20100510112404.14587.85275.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,155 +10,143 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Teach SH-Mobile ARM how to make use of the shared SH clock
-framework. This commit is one atomic switch that dumps the
-local hackery and instead links in the shared clock framework
-code in drivers/sh. A few local functions are kept in clock.c.
+Get rid of name and id from sh7724 hwblk clocks.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/Kconfig               |    3 +
- arch/arm/mach-shmobile/Makefile              |    2 -
- arch/arm/mach-shmobile/clock-sh7367.c        |   36 ---------------------
- arch/arm/mach-shmobile/clock.c               |   44 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    2 +
- drivers/sh/Makefile                          |    2 -
- 6 files changed, 52 insertions(+), 37 deletions(-)
+ arch/sh/include/asm/hwblk.h            |    4 -
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |  108 ++++++++++++++++----------------
+ 2 files changed, 55 insertions(+), 57 deletions(-)
 
---- 0010/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2010-05-12 19:44:46.000000000 +0900
-@@ -102,4 +102,7 @@ config SH_TIMER_TMU
+--- 0003/arch/sh/include/asm/hwblk.h
++++ work/arch/sh/include/asm/hwblk.h	2010-05-10 18:55:52.000000000 +0900
+@@ -58,10 +58,8 @@ void hwblk_cnt_inc(struct hwblk_info *in
+ void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int cnt);
  
- endmenu
+ /* allow clocks to enable and disable hardware blocks */
+-#define SH_HWBLK_CLK(_name, _id, _parent, _hwblk, _flags)	\
++#define SH_HWBLK_CLK(_parent, _hwblk, _flags)	\
+ [_hwblk] = {							\
+-	.name		= _name,			\
+-	.id		= _id,				\
+ 	.parent		= _parent,			\
+ 	.arch_flags	= _hwblk,			\
+ 	.flags		= _flags,			\
+--- 0005/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-05-10 18:57:47.000000000 +0900
+@@ -179,60 +179,60 @@ struct clk div6_clks[] = {
+ #define SH_CLK (&div4_clks[DIV4_SH])
  
-+config SH_CLK_CPG
-+	bool
+ static struct clk mstp_clks[HWBLK_NR] = {
+-	SH_HWBLK_CLK("tlb0", -1, I_CLK, HWBLK_TLB, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("ic0", -1, I_CLK, HWBLK_IC, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("oc0", -1, I_CLK, HWBLK_OC, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("rs0", -1, B_CLK, HWBLK_RSMEM, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("ilmem0", -1, I_CLK, HWBLK_ILMEM, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("l2c0", -1, SH_CLK, HWBLK_L2C, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("fpu0", -1, I_CLK, HWBLK_FPU, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("intc0", -1, P_CLK, HWBLK_INTC, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("dmac0", -1, B_CLK, HWBLK_DMAC0, 0),
+-	SH_HWBLK_CLK("sh0", -1, SH_CLK, HWBLK_SHYWAY, CLK_ENABLE_ON_INIT),
+-	SH_HWBLK_CLK("hudi0", -1, P_CLK, HWBLK_HUDI, 0),
+-	SH_HWBLK_CLK("ubc0", -1, I_CLK, HWBLK_UBC, 0),
+-	SH_HWBLK_CLK("tmu012_fck", -1, P_CLK, HWBLK_TMU0, 0),
+-	SH_HWBLK_CLK("cmt_fck", -1, R_CLK, HWBLK_CMT, 0),
+-	SH_HWBLK_CLK("rwdt0", -1, R_CLK, HWBLK_RWDT, 0),
+-	SH_HWBLK_CLK("dmac1", -1, B_CLK, HWBLK_DMAC1, 0),
+-	SH_HWBLK_CLK("tmu345_fck", -1, P_CLK, HWBLK_TMU1, 0),
+-	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF0, 0),
+-	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF1, 0),
+-	SH_HWBLK_CLK("sci_fck", -1, P_CLK, HWBLK_SCIF2, 0),
+-	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF3, 0),
+-	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF4, 0),
+-	SH_HWBLK_CLK("sci_fck", -1, B_CLK, HWBLK_SCIF5, 0),
+-	SH_HWBLK_CLK("msiof0", -1, B_CLK, HWBLK_MSIOF0, 0),
+-	SH_HWBLK_CLK("msiof1", -1, B_CLK, HWBLK_MSIOF1, 0),
+-
+-	SH_HWBLK_CLK("keysc0", -1, R_CLK, HWBLK_KEYSC, 0),
+-	SH_HWBLK_CLK("rtc0", -1, R_CLK, HWBLK_RTC, 0),
+-	SH_HWBLK_CLK("i2c0", -1, P_CLK, HWBLK_IIC0, 0),
+-	SH_HWBLK_CLK("i2c1", -1, P_CLK, HWBLK_IIC1, 0),
+-
+-	SH_HWBLK_CLK("mmc0", -1, B_CLK, HWBLK_MMC, 0),
+-	SH_HWBLK_CLK("eth0", -1, B_CLK, HWBLK_ETHER, 0),
+-	SH_HWBLK_CLK("atapi0", -1, B_CLK, HWBLK_ATAPI, 0),
+-	SH_HWBLK_CLK("tpu0", -1, B_CLK, HWBLK_TPU, 0),
+-	SH_HWBLK_CLK("irda0", -1, P_CLK, HWBLK_IRDA, 0),
+-	SH_HWBLK_CLK("tsif0", -1, B_CLK, HWBLK_TSIF, 0),
+-	SH_HWBLK_CLK("usb1", -1, B_CLK, HWBLK_USB1, 0),
+-	SH_HWBLK_CLK("usb0", -1, B_CLK, HWBLK_USB0, 0),
+-	SH_HWBLK_CLK("2dg0", -1, B_CLK, HWBLK_2DG, 0),
+-	SH_HWBLK_CLK("sdhi0", -1, B_CLK, HWBLK_SDHI0, 0),
+-	SH_HWBLK_CLK("sdhi1", -1, B_CLK, HWBLK_SDHI1, 0),
+-	SH_HWBLK_CLK("veu1", -1, B_CLK, HWBLK_VEU1, 0),
+-	SH_HWBLK_CLK("ceu1", -1, B_CLK, HWBLK_CEU1, 0),
+-	SH_HWBLK_CLK("beu1", -1, B_CLK, HWBLK_BEU1, 0),
+-	SH_HWBLK_CLK("2ddmac0", -1, SH_CLK, HWBLK_2DDMAC, 0),
+-	SH_HWBLK_CLK("spu0", -1, B_CLK, HWBLK_SPU, 0),
+-	SH_HWBLK_CLK("jpu0", -1, B_CLK, HWBLK_JPU, 0),
+-	SH_HWBLK_CLK("vou0", -1, B_CLK, HWBLK_VOU, 0),
+-	SH_HWBLK_CLK("beu0", -1, B_CLK, HWBLK_BEU0, 0),
+-	SH_HWBLK_CLK("ceu0", -1, B_CLK, HWBLK_CEU0, 0),
+-	SH_HWBLK_CLK("veu0", -1, B_CLK, HWBLK_VEU0, 0),
+-	SH_HWBLK_CLK("vpu0", -1, B_CLK, HWBLK_VPU, 0),
+-	SH_HWBLK_CLK("lcdc0", -1, B_CLK, HWBLK_LCDC, 0),
++	SH_HWBLK_CLK(I_CLK, HWBLK_TLB, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(I_CLK, HWBLK_IC, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(I_CLK, HWBLK_OC, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(B_CLK, HWBLK_RSMEM, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(I_CLK, HWBLK_ILMEM, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(SH_CLK, HWBLK_L2C, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(I_CLK, HWBLK_FPU, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(P_CLK, HWBLK_INTC, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(B_CLK, HWBLK_DMAC0, 0),
++	SH_HWBLK_CLK(SH_CLK, HWBLK_SHYWAY, CLK_ENABLE_ON_INIT),
++	SH_HWBLK_CLK(P_CLK, HWBLK_HUDI, 0),
++	SH_HWBLK_CLK(I_CLK, HWBLK_UBC, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_TMU0, 0),
++	SH_HWBLK_CLK(R_CLK, HWBLK_CMT, 0),
++	SH_HWBLK_CLK(R_CLK, HWBLK_RWDT, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_DMAC1, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_TMU1, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_SCIF0, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_SCIF1, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_SCIF2, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_SCIF3, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_SCIF4, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_SCIF5, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_MSIOF0, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_MSIOF1, 0),
 +
- endif
---- 0005/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2010-05-12 19:21:36.000000000 +0900
-@@ -3,7 +3,7 @@
- #
++	SH_HWBLK_CLK(R_CLK, HWBLK_KEYSC, 0),
++	SH_HWBLK_CLK(R_CLK, HWBLK_RTC, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_IIC0, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_IIC1, 0),
++
++	SH_HWBLK_CLK(B_CLK, HWBLK_MMC, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_ETHER, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_ATAPI, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_TPU, 0),
++	SH_HWBLK_CLK(P_CLK, HWBLK_IRDA, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_TSIF, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_USB1, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_USB0, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_2DG, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_SDHI0, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_SDHI1, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_VEU1, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_CEU1, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_BEU1, 0),
++	SH_HWBLK_CLK(SH_CLK, HWBLK_2DDMAC, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_SPU, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_JPU, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_VOU, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_BEU0, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_CEU0, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_VEU0, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_VPU, 0),
++	SH_HWBLK_CLK(B_CLK, HWBLK_LCDC, 0),
+ };
  
- # Common objects
--obj-y				:= timer.o console.o memory.o
-+obj-y				:= timer.o console.o memory.o clock.o
- 
- # CPU objects
- obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o intc-sh7367.o
---- 0001/arch/arm/mach-shmobile/clock-sh7367.c
-+++ work/arch/arm/mach-shmobile/clock-sh7367.c	2010-05-12 19:21:36.000000000 +0900
-@@ -21,43 +21,9 @@
- #include <linux/kernel.h>
- #include <linux/list.h>
- #include <linux/clk.h>
--
--struct clk {
--	const char *name;
--	unsigned long rate;
--};
--
-+#include <linux/sh_clk.h>
- #include <asm/clkdev.h>
- 
--int __clk_get(struct clk *clk)
--{
--	return 1;
--}
--EXPORT_SYMBOL(__clk_get);
--
--void __clk_put(struct clk *clk)
--{
--}
--EXPORT_SYMBOL(__clk_put);
--
--
--int clk_enable(struct clk *clk)
--{
--	return 0;
--}
--EXPORT_SYMBOL(clk_enable);
--
--void clk_disable(struct clk *clk)
--{
--}
--EXPORT_SYMBOL(clk_disable);
--
--unsigned long clk_get_rate(struct clk *clk)
--{
--	return clk ? clk->rate : 0;
--}
--EXPORT_SYMBOL(clk_get_rate);
--
- /* a static peripheral clock for now - enough to get sh-sci working */
- static struct clk peripheral_clk = {
- 	.name	    = "peripheral_clk",
---- /dev/null
-+++ work/arch/arm/mach-shmobile/clock.c	2010-05-12 19:21:37.000000000 +0900
-@@ -0,0 +1,44 @@
-+/*
-+ * SH-Mobile Timer
-+ *
-+ * Copyright (C) 2010  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ *
-+ */
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/sh_clk.h>
-+
-+int __init clk_init(void)
-+{
-+	/* Kick the child clocks.. */
-+	recalculate_root_clocks();
-+
-+	/* Enable the necessary init clocks */
-+	clk_enable_init_clocks();
-+
-+	return 0;
-+}
-+
-+int __clk_get(struct clk *clk)
-+{
-+	return 1;
-+}
-+EXPORT_SYMBOL(__clk_get);
-+
-+void __clk_put(struct clk *clk)
-+{
-+}
-+EXPORT_SYMBOL(__clk_put);
---- 0005/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-05-12 19:21:36.000000000 +0900
-@@ -4,6 +4,8 @@
- extern struct sys_timer shmobile_timer;
- extern void shmobile_setup_console(void);
- 
-+extern int clk_init(void);
-+
- /* allocate contiguous memory chunk and fill in struct resource */
- extern int platform_resource_setup_memory(struct platform_device *pdev,
- 					  char *name, unsigned long memsize);
---- 0011/drivers/sh/Makefile
-+++ work/drivers/sh/Makefile	2010-05-12 19:21:36.000000000 +0900
-@@ -4,6 +4,6 @@
- obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
- obj-$(CONFIG_MAPLE)		+= maple/
- obj-$(CONFIG_GENERIC_GPIO)	+= pfc.o
--obj-$(CONFIG_SUPERH)		+= clk.o
- obj-$(CONFIG_SH_CLK_CPG)	+= clk-cpg.o
-+obj-y				+= clk.o
- obj-y				+= intc.o
+ #define CLKDEV_NO_DEV(_name, _clk)		\
