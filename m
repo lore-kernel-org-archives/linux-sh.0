@@ -1,48 +1,84 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 07 May 2010 10:05:25 +0000
-Subject: [PATCH 2.5/4] ARM: add LCDC and MIPI DSI-Tx clock definitions to
-Message-Id: <Pine.LNX.4.64.1005071200310.4777@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 11 May 2010 04:59:11 +0000
+Subject: [PATCH 06/09] sh: sh7785 mstp32 clkdev lookup
+Message-Id: <20100511050022.26302.96280.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005071054510.4777@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005071054510.4777@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, Tomi Valkeinen <tomi.valkeinen@nokia.com>
+To: linux-sh@vger.kernel.org
 
-Define clock objects for switching on and off clocks for LCDC0, LCDC1 and MIPI
-DSI-Tx.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add sh7785 MSTP clocks to the clkdev lookup table.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-Sorry, one more patch to add to the patch-series. In fact nothing breaks 
-if you apply this patch before or after the whole series, so, no 
-regressions, but to get LCD to actually work you also need this one;) And 
-best put it between patches 2 and 3 of the series - that's where 2.5 comes 
-from.
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c |   47 ++++++++++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
 
- arch/arm/mach-shmobile/clock-sh7372.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index abbc380..66ee47a 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -264,8 +264,12 @@ struct clk div6_clks[] = {
+--- 0013/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7785.c	2010-05-11 13:03:53.000000000 +0900
+@@ -120,7 +120,47 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP100] = SH_CLK_MSTP32("gdta_fck", -1, NULL, MSTPCR1, 0, 0),
+ };
  
- #define R_CLK (&r_clk)
- #define HP_CLK (&div4_clks[DIV4_HP])
-+#define B_CLK (&div4_clks[DIV4_B])
++#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++
+ static struct clk_lookup lookups[] = {
++	/* MSTP32 clocks */
++	{
++		/* SCIF5 */
++		.dev_id		= "sh-sci.5",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP029],
++	}, {
++		/* SCIF4 */
++		.dev_id		= "sh-sci.4",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP028],
++	}, {
++		/* SCIF3 */
++		.dev_id		= "sh-sci.3",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP027],
++	}, {
++		/* SCIF2 */
++		.dev_id		= "sh-sci.2",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP026],
++	}, {
++		/* SCIF1 */
++		.dev_id		= "sh-sci.1",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP025],
++	}, {
++		/* SCIF0 */
++		.dev_id		= "sh-sci.0",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP024],
++	},
++	CLKDEV_CON_ID("ssi1_fck", &mstp_clks[MSTP021]),
++	CLKDEV_CON_ID("ssi0_fck", &mstp_clks[MSTP020]),
++	CLKDEV_CON_ID("hac1_fck", &mstp_clks[MSTP017]),
++	CLKDEV_CON_ID("hac0_fck", &mstp_clks[MSTP016]),
++	CLKDEV_CON_ID("mmcif_fck", &mstp_clks[MSTP013]),
++	CLKDEV_CON_ID("flctl_fck", &mstp_clks[MSTP012]),
+ 	{
+ 		/* TMU0 */
+ 		.dev_id		= "sh_tmu.0",
+@@ -152,6 +192,13 @@ static struct clk_lookup lookups[] = {
+ 		.con_id		= "tmu_fck",
+ 		.clk		= &mstp_clks[MSTP009],
+ 	},
++	CLKDEV_CON_ID("siof_fck", &mstp_clks[MSTP003]),
++	CLKDEV_CON_ID("hspi_fck", &mstp_clks[MSTP002]),
++	CLKDEV_CON_ID("hudi_fck", &mstp_clks[MSTP119]),
++	CLKDEV_CON_ID("ubc_fck", &mstp_clks[MSTP117]),
++	CLKDEV_CON_ID("dmac_11_6_fck", &mstp_clks[MSTP105]),
++	CLKDEV_CON_ID("dmac_5_0_fck", &mstp_clks[MSTP104]),
++	CLKDEV_CON_ID("gdta_fck", &mstp_clks[MSTP100]),
+ };
  
- static struct clk mstp_clks[] = {
-+	MSTP("lcdc0", B_CLK, SMSTPCR1, 0, 0),
-+	MSTP("lcdc1", B_CLK, SMSTPCR1, 17, 0),
-+	MSTP("dsitx", B_CLK, SMSTPCR1, 18, 0),
- 	MSTP("sdhi0", HP_CLK, SMSTPCR3, 14, 0),
- 	MSTP("sdhi1", HP_CLK, SMSTPCR3, 13, 0),
- 	MSTP("keysc0", R_CLK, SMSTPCR4, 3, 0),
--- 
-1.6.2.4
-
+ int __init arch_clk_init(void)
