@@ -1,82 +1,138 @@
-From: Oleg Nesterov <oleg@redhat.com>
-Date: Thu, 27 May 2010 19:56:33 +0000
-Subject: [PATCH 2/2] blackfin: use ->mmap_sem to protect
-Message-Id: <20100527195633.GC25935@redhat.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 11 May 2010 04:59:43 +0000
+Subject: [PATCH 01/09] sh: sh7343 mstp32 index rework
+Message-Id: <20100511045943.26302.73670.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100521162659.GA16193@redhat.com> <20100521183512.4477F40476@magilla.sf.frob.com> <20100522165320.GA19573@redhat.com> <25539.1274711817@redhat.com> <20100524151445.GA6393@redhat.com> <17134.1274778852@redhat.com> <20100525102345.GA23574@redhat.com> <AANLkTilT3D8c86LYK2DxcNpM2F3D8iCbgY_sfUg8h58p@mail.gmail.com> <20100526124006.GA28358@redhat.com> <20100527195544.GA25935@redhat.com>
-In-Reply-To: <20100527195544.GA25935@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Frysinger <vapier.adi@gmail.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: David Howells <dhowells@redhat.com>, Roland McGrath <roland@redhat.com>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Any usage of mm->context.sram_list is not safe, is_user_addr_valid()
-and sram_free_with_lsl/sram_free_with_lsl can race with each other.
+From: Magnus Damm <damm@opensource.se>
 
-Change sram_free_with_lsl/sram_free_with_lsl to take mm->mmap_sem
-for writing, is_user_addr_valid() was already modified to take it
-for reading and it doesn't modify this list.
+This patch adds sh7343 MSTP enums for mstp_clks[] index.
 
-destroy_context() reaps this list lockless, this is OK.
-
-This patch assumes that sram_free() doesn't need to be serialized
-(afaics it does the locking correctly), and it is safe to call
-sram_free(addr) after its sram_list_struct was removed from list.
-
-Signed-off-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/blackfin/mm/sram-alloc.c |   24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c |  102 +++++++++++++++++---------------
+ 1 file changed, 56 insertions(+), 46 deletions(-)
 
---- 34-rc1/arch/blackfin/mm/sram-alloc.c~IUAV_2_SRAM_LIST_LOCKING	2010-05-27 17:51:48.000000000 +0200
-+++ 34-rc1/arch/blackfin/mm/sram-alloc.c	2010-05-27 21:31:01.000000000 +0200
-@@ -702,19 +702,23 @@ EXPORT_SYMBOL(l2_sram_free);
+--- 0008/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2010-05-11 12:07:32.000000000 +0900
+@@ -145,51 +145,61 @@ struct clk div6_clks[DIV6_NR] = {
+ #define MSTP(_str, _parent, _reg, _bit, _flags) \
+   SH_CLK_MSTP32(_str, -1, _parent, _reg, _bit, _flags)
  
- int sram_free_with_lsl(const void *addr)
- {
--	struct sram_list_struct *lsl, **tmp;
-+	struct sram_list_struct *lsl = NULL, **tmp;
- 	struct mm_struct *mm = current->mm;
- 
-+	down_write(&mm->mmap_sem);
- 	for (tmp = &mm->context.sram_list; *tmp; tmp = &(*tmp)->next)
--		if ((*tmp)->addr = addr)
--			goto found;
--	return -1;
--found:
--	lsl = *tmp;
-+		if ((*tmp)->addr = addr) {
-+			lsl = *tmp;
-+			*tmp = lsl->next;
-+			break;
-+		}
-+	up_write(&mm->mmap_sem);
-+
-+	if (!lsl)
-+		return -1;
-+
- 	sram_free(addr);
--	*tmp = lsl->next;
- 	kfree(lsl);
+-static struct clk mstp_clks[] = {
+-	MSTP("tlb0", &div4_clks[DIV4_I], MSTPCR0, 31, CLK_ENABLE_ON_INIT),
+-	MSTP("ic0", &div4_clks[DIV4_I], MSTPCR0, 30, CLK_ENABLE_ON_INIT),
+-	MSTP("oc0", &div4_clks[DIV4_I], MSTPCR0, 29, CLK_ENABLE_ON_INIT),
+-	MSTP("uram0", &div4_clks[DIV4_U], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
+-	MSTP("xymem0", &div4_clks[DIV4_B], MSTPCR0, 26, CLK_ENABLE_ON_INIT),
+-	MSTP("intc3", &div4_clks[DIV4_P], MSTPCR0, 23, 0),
+-	MSTP("intc0", &div4_clks[DIV4_P], MSTPCR0, 22, 0),
+-	MSTP("dmac0", &div4_clks[DIV4_P], MSTPCR0, 21, 0),
+-	MSTP("sh0", &div4_clks[DIV4_P], MSTPCR0, 20, 0),
+-	MSTP("hudi0", &div4_clks[DIV4_P], MSTPCR0, 19, 0),
+-	MSTP("ubc0", &div4_clks[DIV4_P], MSTPCR0, 17, 0),
+-	MSTP("tmu_fck", &div4_clks[DIV4_P], MSTPCR0, 15, 0),
+-	MSTP("cmt_fck", &r_clk, MSTPCR0, 14, 0),
+-	MSTP("rwdt0", &r_clk, MSTPCR0, 13, 0),
+-	MSTP("mfi0", &div4_clks[DIV4_P], MSTPCR0, 11, 0),
+-	MSTP("flctl0", &div4_clks[DIV4_P], MSTPCR0, 10, 0),
+-	SH_CLK_MSTP32("sci_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 7, 0),
+-	SH_CLK_MSTP32("sci_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 6, 0),
+-	SH_CLK_MSTP32("sci_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 5, 0),
+-	SH_CLK_MSTP32("sci_fck", 3, &div4_clks[DIV4_P], MSTPCR0, 4, 0),
+-	MSTP("sio0", &div4_clks[DIV4_P], MSTPCR0, 3, 0),
+-	MSTP("siof0", &div4_clks[DIV4_P], MSTPCR0, 2, 0),
+-	MSTP("siof1", &div4_clks[DIV4_P], MSTPCR0, 1, 0),
 -
- 	return 0;
- }
- EXPORT_SYMBOL(sram_free_with_lsl);
-@@ -749,10 +753,14 @@ void *sram_alloc_with_lsl(size_t size, u
- 		kfree(lsl);
- 		return NULL;
- 	}
+-	MSTP("i2c0", &div4_clks[DIV4_P], MSTPCR1, 9, 0),
+-	MSTP("i2c1", &div4_clks[DIV4_P], MSTPCR1, 8, 0),
+-
+-	MSTP("tpu0", &div4_clks[DIV4_P], MSTPCR2, 25, 0),
+-	MSTP("irda0", &div4_clks[DIV4_P], MSTPCR2, 24, 0),
+-	MSTP("sdhi0", &div4_clks[DIV4_P], MSTPCR2, 18, 0),
+-	MSTP("mmcif0", &div4_clks[DIV4_P], MSTPCR2, 17, 0),
+-	MSTP("sim0", &div4_clks[DIV4_P], MSTPCR2, 16, 0),
+-	MSTP("keysc0", &r_clk, MSTPCR2, 14, 0),
+-	MSTP("tsif0", &div4_clks[DIV4_P], MSTPCR2, 13, 0),
+-	MSTP("s3d40", &div4_clks[DIV4_P], MSTPCR2, 12, 0),
+-	MSTP("usbf0", &div4_clks[DIV4_P], MSTPCR2, 11, 0),
+-	MSTP("siu0", &div4_clks[DIV4_B], MSTPCR2, 8, 0),
+-	MSTP("jpu0", &div4_clks[DIV4_B], MSTPCR2, 6, CLK_ENABLE_ON_INIT),
+-	MSTP("vou0", &div4_clks[DIV4_B], MSTPCR2, 5, 0),
+-	MSTP("beu0", &div4_clks[DIV4_B], MSTPCR2, 4, 0),
+-	MSTP("ceu0", &div4_clks[DIV4_B], MSTPCR2, 3, 0),
+-	MSTP("veu0", &div4_clks[DIV4_B], MSTPCR2, 2, CLK_ENABLE_ON_INIT),
+-	MSTP("vpu0", &div4_clks[DIV4_B], MSTPCR2, 1, CLK_ENABLE_ON_INIT),
+-	MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
++enum { MSTP031, MSTP030, MSTP029, MSTP028, MSTP026,
++       MSTP023, MSTP022, MSTP021, MSTP020, MSTP019, MSTP018, MSTP017, MSTP016,
++       MSTP015, MSTP014, MSTP013, MSTP012, MSTP011, MSTP010,
++       MSTP007, MSTP006, MSTP005, MSTP004, MSTP003, MSTP002, MSTP001,
++       MSTP109, MSTP108, MSTP100,
++       MSTP225, MSTP224, MSTP218, MSTP217, MSTP216,
++       MSTP214, MSTP213, MSTP212, MSTP211, MSTP208,
++       MSTP206, MSTP205, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
++       MSTP_NR };
 +
-+	down_write(&mm->mmap_sem);
- 	lsl->addr = addr;
- 	lsl->length = size;
- 	lsl->next = mm->context.sram_list;
- 	mm->context.sram_list = lsl;
-+	up_write(&mm->mmap_sem);
++static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP031] = MSTP("tlb0", &div4_clks[DIV4_I], MSTPCR0, 31, CLK_ENABLE_ON_INIT),
++	[MSTP030] = MSTP("ic0", &div4_clks[DIV4_I], MSTPCR0, 30, CLK_ENABLE_ON_INIT),
++	[MSTP029] = MSTP("oc0", &div4_clks[DIV4_I], MSTPCR0, 29, CLK_ENABLE_ON_INIT),
++	[MSTP028] = MSTP("uram0", &div4_clks[DIV4_U], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
++	[MSTP026] = MSTP("xymem0", &div4_clks[DIV4_B], MSTPCR0, 26, CLK_ENABLE_ON_INIT),
++	[MSTP023] = MSTP("intc3", &div4_clks[DIV4_P], MSTPCR0, 23, 0),
++	[MSTP022] = MSTP("intc0", &div4_clks[DIV4_P], MSTPCR0, 22, 0),
++	[MSTP021] = MSTP("dmac0", &div4_clks[DIV4_P], MSTPCR0, 21, 0),
++	[MSTP020] = MSTP("sh0", &div4_clks[DIV4_P], MSTPCR0, 20, 0),
++	[MSTP019] = MSTP("hudi0", &div4_clks[DIV4_P], MSTPCR0, 19, 0),
++	[MSTP017] = MSTP("ubc0", &div4_clks[DIV4_P], MSTPCR0, 17, 0),
++	[MSTP015] = MSTP("tmu_fck", &div4_clks[DIV4_P], MSTPCR0, 15, 0),
++	[MSTP014] = MSTP("cmt_fck", &r_clk, MSTPCR0, 14, 0),
++	[MSTP013] = MSTP("rwdt0", &r_clk, MSTPCR0, 13, 0),
++	[MSTP011] = MSTP("mfi0", &div4_clks[DIV4_P], MSTPCR0, 11, 0),
++	[MSTP010] = MSTP("flctl0", &div4_clks[DIV4_P], MSTPCR0, 10, 0),
++	[MSTP007] = SH_CLK_MSTP32("sci_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 7, 0),
++	[MSTP006] = SH_CLK_MSTP32("sci_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 6, 0),
++	[MSTP005] = SH_CLK_MSTP32("sci_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 5, 0),
++	[MSTP004] = SH_CLK_MSTP32("sci_fck", 3, &div4_clks[DIV4_P], MSTPCR0, 4, 0),
++	[MSTP003] = MSTP("sio0", &div4_clks[DIV4_P], MSTPCR0, 3, 0),
++	[MSTP002] = MSTP("siof0", &div4_clks[DIV4_P], MSTPCR0, 2, 0),
++	[MSTP001] = MSTP("siof1", &div4_clks[DIV4_P], MSTPCR0, 1, 0),
 +
- 	return addr;
++	[MSTP109] = MSTP("i2c0", &div4_clks[DIV4_P], MSTPCR1, 9, 0),
++	[MSTP108] = MSTP("i2c1", &div4_clks[DIV4_P], MSTPCR1, 8, 0),
++
++	[MSTP225] = MSTP("tpu0", &div4_clks[DIV4_P], MSTPCR2, 25, 0),
++	[MSTP224] = MSTP("irda0", &div4_clks[DIV4_P], MSTPCR2, 24, 0),
++	[MSTP218] = MSTP("sdhi0", &div4_clks[DIV4_P], MSTPCR2, 18, 0),
++	[MSTP217] = MSTP("mmcif0", &div4_clks[DIV4_P], MSTPCR2, 17, 0),
++	[MSTP216] = MSTP("sim0", &div4_clks[DIV4_P], MSTPCR2, 16, 0),
++	[MSTP214] = MSTP("keysc0", &r_clk, MSTPCR2, 14, 0),
++	[MSTP213] = MSTP("tsif0", &div4_clks[DIV4_P], MSTPCR2, 13, 0),
++	[MSTP212] = MSTP("s3d40", &div4_clks[DIV4_P], MSTPCR2, 12, 0),
++	[MSTP211] = MSTP("usbf0", &div4_clks[DIV4_P], MSTPCR2, 11, 0),
++	[MSTP208] = MSTP("siu0", &div4_clks[DIV4_B], MSTPCR2, 8, 0),
++	[MSTP206] = MSTP("jpu0", &div4_clks[DIV4_B], MSTPCR2, 6, CLK_ENABLE_ON_INIT),
++	[MSTP205] = MSTP("vou0", &div4_clks[DIV4_B], MSTPCR2, 5, 0),
++	[MSTP204] = MSTP("beu0", &div4_clks[DIV4_B], MSTPCR2, 4, 0),
++	[MSTP203] = MSTP("ceu0", &div4_clks[DIV4_B], MSTPCR2, 3, 0),
++	[MSTP202] = MSTP("veu0", &div4_clks[DIV4_B], MSTPCR2, 2, CLK_ENABLE_ON_INIT),
++	[MSTP201] = MSTP("vpu0", &div4_clks[DIV4_B], MSTPCR2, 1, CLK_ENABLE_ON_INIT),
++	[MSTP200] = MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
+ };
+ 
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+@@ -221,7 +231,7 @@ int __init arch_clk_init(void)
+ 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
++		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+ 
+ 	return ret;
  }
- EXPORT_SYMBOL(sram_alloc_with_lsl);
-
