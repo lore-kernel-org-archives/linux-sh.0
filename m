@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 May 2010 11:24:20 +0000
-Subject: [PATCH 08/13] sh: Get rid of sh7724 div6 clock names
-Message-Id: <20100510112420.14587.34514.sendpatchset@t400s>
+Date: Tue, 11 May 2010 09:37:05 +0000
+Subject: [PATCH 14/15] sh: switch boards to clkdev
+Message-Id: <20100511093705.28210.6474.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,50 +10,86 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Get rid of the name from the sh7724 div6 clocks.
-The div6 clocks for all processors must be updated
-before this can be applied.
+This patch converts the remaining board clocks
+to use clkdev for lookup if needed. The unused
+name and id from struct clk are also removed.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/include/asm/clock.h            |    3 +--
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   13 +++++--------
- 2 files changed, 6 insertions(+), 10 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c   |    2 --
+ arch/sh/boards/mach-highlander/setup.c |   12 +++++++++++-
+ arch/sh/boards/mach-se/7724/setup.c    |    2 --
+ 3 files changed, 11 insertions(+), 5 deletions(-)
 
---- 0001/arch/sh/include/asm/clock.h
-+++ work/arch/sh/include/asm/clock.h	2010-05-10 19:18:09.000000000 +0900
-@@ -151,9 +151,8 @@ int sh_clk_div4_enable_register(struct c
- int sh_clk_div4_reparent_register(struct clk *clks, int nr,
- 			 struct clk_div4_table *table);
- 
--#define SH_CLK_DIV6(_name, _parent, _reg, _flags)	\
-+#define SH_CLK_DIV6(_parent, _reg, _flags)		\
- {							\
--	.name = _name,					\
- 	.parent = _parent,				\
- 	.enable_reg = (void __iomem *)_reg,		\
- 	.flags = _flags,				\
---- 0008/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-05-10 19:18:54.000000000 +0900
-@@ -166,15 +166,12 @@ struct clk div4_clks[DIV4_NR] = {
- 
- enum { DIV6_V, DIV6_FA, DIV6_FB, DIV6_I, DIV6_S, DIV6_NR };
- 
--#define DIV6(_str, _reg, _flags) \
--  SH_CLK_DIV6(_str, &div3_clk, _reg, _flags)
--
- struct clk div6_clks[DIV6_NR] = {
--	[DIV6_V] = DIV6("video_clk", VCLKCR, 0),
--	[DIV6_FA] = DIV6("fsia_clk", FCLKACR, 0),
--	[DIV6_FB] = DIV6("fsib_clk", FCLKBCR, 0),
--	[DIV6_I] = DIV6("irda_clk", IRDACLKCR, 0),
--	[DIV6_S] = DIV6("spu_clk", SPUCLKCR, CLK_ENABLE_ON_INIT),
-+	[DIV6_V] = SH_CLK_DIV6(&div3_clk, VCLKCR, 0),
-+	[DIV6_FA] = SH_CLK_DIV6(&div3_clk, FCLKACR, 0),
-+	[DIV6_FB] = SH_CLK_DIV6(&div3_clk, FCLKBCR, 0),
-+	[DIV6_I] = SH_CLK_DIV6(&div3_clk, IRDACLKCR, 0),
-+	[DIV6_S] = SH_CLK_DIV6(&div3_clk, SPUCLKCR, CLK_ENABLE_ON_INIT),
+--- 0001/arch/sh/boards/mach-ecovec24/setup.c
++++ work/arch/sh/boards/mach-ecovec24/setup.c	2010-05-11 18:00:17.000000000 +0900
+@@ -710,8 +710,6 @@ static struct clk_ops fsimck_clk_ops = {
  };
  
- #define R_CLK (&r_clk)
+ static struct clk fsimckb_clk = {
+-	.name		= "fsimckb_clk",
+-	.id		= -1,
+ 	.ops		= &fsimck_clk_ops,
+ 	.enable_reg	= (void __iomem *)FCLKBCR,
+ 	.rate		= 0, /* unknown */
+--- 0001/arch/sh/boards/mach-highlander/setup.c
++++ work/arch/sh/boards/mach-highlander/setup.c	2010-05-11 18:07:01.000000000 +0900
+@@ -14,6 +14,7 @@
+  * for more details.
+  */
+ #include <linux/init.h>
++#include <linux/io.h>
+ #include <linux/platform_device.h>
+ #include <linux/ata_platform.h>
+ #include <linux/types.h>
+@@ -26,6 +27,7 @@
+ #include <net/ax88796.h>
+ #include <asm/machvec.h>
+ #include <mach/highlander.h>
++#include <asm/clkdev.h>
+ #include <asm/clock.h>
+ #include <asm/heartbeat.h>
+ #include <asm/io.h>
+@@ -326,7 +328,6 @@ static struct clk_ops ivdr_clk_ops = {
+ };
+ 
+ static struct clk ivdr_clk = {
+-	.name		= "ivdr_clk",
+ 	.ops		= &ivdr_clk_ops,
+ };
+ 
+@@ -334,6 +335,13 @@ static struct clk *r7780rp_clocks[] = {
+ 	&ivdr_clk,
+ };
+ 
++#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++
++static struct clk_lookup lookups[] = {
++	/* main clocks */
++	CLKDEV_CON_ID("ivdr_clk", &ivdr_clk),
++};
++
+ static void r7780rp_power_off(void)
+ {
+ 	if (mach_is_r7780mp() || mach_is_r7785rp())
+@@ -370,6 +378,8 @@ static void __init highlander_setup(char
+ 		clk_enable(clk);
+ 	}
+ 
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
+ 	__raw_writew(0x0000, PA_OBLED);	/* Clear LED. */
+ 
+ 	if (mach_is_r7780rp())
+--- 0001/arch/sh/boards/mach-se/7724/setup.c
++++ work/arch/sh/boards/mach-se/7724/setup.c	2010-05-11 18:00:40.000000000 +0900
+@@ -276,8 +276,6 @@ static struct clk_ops fsimck_clk_ops = {
+ };
+ 
+ static struct clk fsimcka_clk = {
+-	.name		= "fsimcka_clk",
+-	.id		= -1,
+ 	.ops		= &fsimck_clk_ops,
+ 	.enable_reg	= (void __iomem *)FCLKACR,
+ 	.rate		= 0, /* unknown */
