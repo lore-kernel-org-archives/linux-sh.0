@@ -1,79 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 May 2010 07:11:17 +0000
-Subject: [PATCH] ARM: CONFG_FORCE_MAX_ZONEORDER update for SH-Mobile ARM
-Message-Id: <20100513071117.27899.94230.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 May 2010 09:52:35 +0000
+Subject: [PATCH 2/3] mfd: pass platform flags down to the tmio_mmc driver
+Message-Id: <Pine.LNX.4.64.1005111151380.6810@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Allow SH-Mobile ARM users to adjust FORCE_MAX_ZONEORDER.
-
-The Kconfig entry is taken from SH and non-4K page size
-stuff has been trimmed away. For now only SH-Mobile ARM is
-allowed to change this variable, SA1111 configs are kept at
-"9" and the rest at "11".
-
-CONFIG_FORCE_MAX_ZONEORDER lets the user tweak the maximum
-amount of physically contiguous memory that can be alloced by
-the kernel.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mfd/sh_mobile_sdhi.c       |    1 +
+ include/linux/mfd/sh_mobile_sdhi.h |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
- A previous version that modified arch/arm/mach-shmobile/Kconfig
- was yesterday posted to linux-sh@vger.kernel.org as
-
- "[PATCH 02/05] ARM: mach-shmobile: Add CONFIG_FORCE_MAX_ZONEORDER"
-
- I did however receive feedback that this change is more suitable
- for general consumption in arch/arm/Kconfig. Hopefully this change
- is acceptable as-is by the ARM community.
-
- Let me know if you want me to rework things. Thank you!
-
- Built on top of linux-next 20100512.
-
- arch/arm/Kconfig |   21 ++++++++++++++++-----
- 1 file changed, 16 insertions(+), 5 deletions(-)
-
---- 0001/arch/arm/Kconfig
-+++ work/arch/arm/Kconfig	2010-05-13 15:57:19.000000000 +0900
-@@ -1076,11 +1076,6 @@ endmenu
+diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
+index dafa988..d977982 100644
+--- a/drivers/mfd/sh_mobile_sdhi.c
++++ b/drivers/mfd/sh_mobile_sdhi.c
+@@ -106,6 +106,7 @@ static int __init sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->hclk = clk_get_rate(priv->clk);
+ 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
++	mmc_data->flags = p->tmio_flags;
  
- source "arch/arm/common/Kconfig"
+ 	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
+ 		priv->param_tx.slave_id = p->dma_slave_tx;
+diff --git a/include/linux/mfd/sh_mobile_sdhi.h b/include/linux/mfd/sh_mobile_sdhi.h
+index c305461..c7b47f8 100644
+--- a/include/linux/mfd/sh_mobile_sdhi.h
++++ b/include/linux/mfd/sh_mobile_sdhi.h
+@@ -4,6 +4,7 @@
+ struct sh_mobile_sdhi_info {
+ 	int dma_slave_tx;
+ 	int dma_slave_rx;
++	unsigned long tmio_flags;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ };
  
--config FORCE_MAX_ZONEORDER
--	int
--	depends on SA1111
--	default "9"
--
- menu "Bus support"
- 
- config ARM_AMBA
-@@ -1337,6 +1332,22 @@ config HW_PERF_EVENTS
- 
- source "mm/Kconfig"
- 
-+config FORCE_MAX_ZONEORDER
-+	int "Maximum zone order" if ARCH_SHMOBILE
-+	range 11 64 if ARCH_SHMOBILE
-+	default "9" if SA1111
-+	default "11"
-+	help
-+	  The kernel memory allocator divides physically contiguous memory
-+	  blocks into "zones", where each zone is a power of two number of
-+	  pages.  This option selects the largest power of two that the kernel
-+	  keeps in the memory allocator.  If you need to allocate very large
-+	  blocks of physically contiguous memory, then you may need to
-+	  increase this value.
-+
-+	  This config option is actually maximum order plus one. For example,
-+	  a value of 11 means that the largest free memory block is 2^10 pages.
-+
- config LEDS
- 	bool "Timer and CPU usage LEDs"
- 	depends on ARCH_CDB89712 || ARCH_EBSA110 || \
+-- 
+1.6.2.4
+
