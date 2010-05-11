@@ -1,52 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 May 2010 18:34:11 +0000
-Subject: [PATCH 4/10 v4] mmc: prepare tmio_mmc for passing of DMA configuration
-Message-Id: <Pine.LNX.4.64.1005191800000.3099@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 11 May 2010 09:36:03 +0000
+Subject: [PATCH 07/15] sh: switch sh7785 to clkdev
+Message-Id: <20100511093603.28210.42441.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>
-Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-After this patch, if the "dma" pointer in struct tmio_mmc_data is not NULL, it
-points to a struct, containing two tokens, that have to be passed to the
-dmaengine driver for channel configuration.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Samuel Ortiz <sameo@linux.intel.com>
+This patch converts the remaining sh7785 clocks
+to use clkdev for lookup. The now unused name
+and id from struct clk are also removed.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-This used to be [PATCH 4a/9]
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- include/linux/mfd/tmio.h |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index c3f7dff..360fc95 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -55,12 +55,18 @@ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
- void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
- 
-+struct tmio_mmc_dma {
-+	void *chan_priv_tx;
-+	void *chan_priv_rx;
-+};
-+
- /*
-  * data for the MMC controller
+--- 0019/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7785.c	2010-05-11 17:02:48.000000000 +0900
+@@ -24,8 +24,6 @@
+  * from the platform code.
   */
- struct tmio_mmc_data {
- 	unsigned int			hclk;
- 	unsigned long			capabilities;
-+	struct tmio_mmc_dma		*dma;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
+ static struct clk extal_clk = {
+-	.name		= "extal",
+-	.id		= -1,
+ 	.rate		= 33333333,
  };
--- 
-1.6.2.4
-
+ 
+@@ -43,8 +41,6 @@ static struct clk_ops pll_clk_ops = {
+ };
+ 
+ static struct clk pll_clk = {
+-	.name		= "pll_clk",
+-	.id		= -1,
+ 	.ops		= &pll_clk_ops,
+ 	.parent		= &extal_clk,
+ 	.flags		= CLK_ENABLE_ON_INIT,
+@@ -123,6 +119,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+ 
+ static struct clk_lookup lookups[] = {
++	/* main clocks */
++	CLKDEV_CON_ID("extal", &extal_clk),
++	CLKDEV_CON_ID("pll_clk", &pll_clk),
++
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("peripheral_clk", &div4_clks[DIV4_P]),
+ 	CLKDEV_CON_ID("du_clk", &div4_clks[DIV4_DU]),
