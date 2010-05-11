@@ -1,37 +1,64 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 07 May 2010 10:41:11 +0000
-Subject: Re: [PATCH] sh: add some INTC_VECT for SH7757
-Message-Id: <20100507104110.GH14009@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 May 2010 09:52:31 +0000
+Subject: [PATCH 1/3] tmio: add a platform flag to disable card write-protection
+Message-Id: <Pine.LNX.4.64.1005111150500.6810@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4BE3DBEB.5060209@renesas.com>
-In-Reply-To: <4BE3DBEB.5060209@renesas.com>
+References: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org
 
-On Fri, May 07, 2010 at 07:27:16PM +0900, Yoshihiro Shimoda wrote:
-> Paul Mundt wrote:
-> > On Fri, May 07, 2010 at 06:22:51PM +0900, Yoshihiro Shimoda wrote:
-> >> And I also add the setting of mv_nr_irqs because SH7757 has irqs
-> >> more than 256.
-> >>
-> > Since everything is using sparseirq these days, just bump up NR_IRQS to
-> > 512. CPUs should not be touching the machvec under any circumstances.
-> > 
-> May I change the NR_IRQS in arch/sh/include/asm/irq.h?
+Write-protection status is not always available, e.g., micro-SD cards do not
+have a write-protection switch at all. This patch adds a flag to let platforms
+force tmio_mmc to consider the card writable.
 
-Yes.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc.c |    5 ++++-
+ include/linux/mfd/tmio.h    |    4 ++++
+ 2 files changed, 8 insertions(+), 1 deletions(-)
 
-> I thought that if this define is changed, all CPUs were affected.
-> Also I thought that there was not good to add "#ifdef CONFIG_CPU_SUBTYPE_SH7757" here.
-> What should I do?
-
-These days everything uses sparseirq, and IRQ descs are allocated when
-the vector map is registered, as well as dynamically for the dynamic IRQ
-cases. Having a large NR_IRQS is not that much overhead since we no
-longer have an entire backing irq_desc[] array that spans the entire
-range.
-
-As such, you can just change the NR_IRQS definition to 512
-unconditionally without worrying too much about the overhead.
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 7e79ba4..11c19b0 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -640,8 +640,11 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct mfd_cell	*cell = host->pdev->dev.platform_data;
++	struct tmio_mmc_data *pdata = cell->driver_data;
+ 
+-	return (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT) ? 0 : 1;
++	return ((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
++		(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT)) ? 0 : 1;
+ }
+ 
+ static const struct mmc_host_ops tmio_mmc_ops = {
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 360fc95..feeed0b 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -50,6 +50,9 @@
+ 		tmio_iowrite16((val) >> 16, (base) + ((reg + 2) << (shift))); \
+ 	} while (0)
+ 
++/* tmio MMC platform flags */
++#define TMIO_MMC_WRPROTECT_DISABLE	(1 << 0)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+@@ -66,6 +69,7 @@ struct tmio_mmc_dma {
+ struct tmio_mmc_data {
+ 	unsigned int			hclk;
+ 	unsigned long			capabilities;
++	unsigned long			flags;
+ 	struct tmio_mmc_dma		*dma;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-- 
+1.6.2.4
