@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 May 2010 11:23:56 +0000
-Subject: [PATCH 05/13] sh: Allow registering clocks without name
-Message-Id: <20100510112356.14587.65518.sendpatchset@t400s>
+Date: Tue, 11 May 2010 09:35:38 +0000
+Subject: [PATCH 04/15] sh: switch sh7722 to clkdev
+Message-Id: <20100511093538.28210.72241.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,43 +10,64 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Stop-gap update for the SH specific clock code to allow
-registering clocks with name set to NULL. This code will
-get removed later in the patchset.
+This patch converts the remaining sh7722 clocks
+to use clkdev for lookup. The now unused name
+and id from struct clk are also removed.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/clock.c |    7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
---- 0001/arch/sh/kernel/cpu/clock.c
-+++ work/arch/sh/kernel/cpu/clock.c	2010-05-10 19:04:14.000000000 +0900
-@@ -415,7 +415,7 @@ struct clk *clk_get(struct device *dev, 
+--- 0019/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2010-05-11 16:32:56.000000000 +0900
+@@ -37,8 +37,6 @@
  
- 	mutex_lock(&clock_list_sem);
- 	list_for_each_entry(p, &clock_list, node) {
--		if (p->id = idno &&
-+		if (p->name && p->id = idno &&
- 		    strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
- 			clk = p;
- 			goto found;
-@@ -423,7 +423,8 @@ struct clk *clk_get(struct device *dev, 
- 	}
+ /* Fixed 32 KHz root clock for RTC and Power Management purposes */
+ static struct clk r_clk = {
+-	.name           = "rclk",
+-	.id             = -1,
+ 	.rate           = 32768,
+ };
  
- 	list_for_each_entry(p, &clock_list, node) {
--		if (strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
-+		if (p->name &&
-+		    strcmp(id, p->name) = 0 && try_module_get(p->owner)) {
- 			clk = p;
- 			break;
- 		}
-@@ -594,7 +595,7 @@ static int clk_debugfs_register(struct c
- 			return err;
- 	}
+@@ -47,8 +45,6 @@ static struct clk r_clk = {
+  * from the platform code.
+  */
+ struct clk extal_clk = {
+-	.name		= "extal",
+-	.id		= -1,
+ 	.rate		= 33333333,
+ };
  
--	if (!c->dentry) {
-+	if (!c->dentry && c->name) {
- 		err = clk_debugfs_register_one(c);
- 		if (err)
- 			return err;
+@@ -70,8 +66,6 @@ static struct clk_ops dll_clk_ops = {
+ };
+ 
+ static struct clk dll_clk = {
+-	.name           = "dll_clk",
+-	.id             = -1,
+ 	.ops		= &dll_clk_ops,
+ 	.parent		= &r_clk,
+ 	.flags		= CLK_ENABLE_ON_INIT,
+@@ -95,8 +89,6 @@ static struct clk_ops pll_clk_ops = {
+ };
+ 
+ static struct clk pll_clk = {
+-	.name		= "pll_clk",
+-	.id		= -1,
+ 	.ops		= &pll_clk_ops,
+ 	.flags		= CLK_ENABLE_ON_INIT,
+ };
+@@ -186,6 +178,12 @@ static struct clk mstp_clks[HWBLK_NR] = 
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+ 
+ static struct clk_lookup lookups[] = {
++	/* main clocks */
++	CLKDEV_CON_ID("rclk", &r_clk),
++	CLKDEV_CON_ID("extal", &extal_clk),
++	CLKDEV_CON_ID("dll_clk", &dll_clk),
++	CLKDEV_CON_ID("pll_clk", &pll_clk),
++
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 	CLKDEV_CON_ID("umem_clk", &div4_clks[DIV4_U]),
