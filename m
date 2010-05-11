@@ -1,37 +1,36 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 May 2010 14:21:14 +0000
-Subject: [PATCH 00/02] SH-Mobile ARM clock framework V2
-Message-Id: <20100512142114.28459.16246.sendpatchset@t400s>
+Date: Tue, 11 May 2010 07:05:32 +0000
+Subject: [PATCH 04/09] sh: sh7724 div4 clkdev lookup
+Message-Id: <20100511070532.20792.50767.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SH-Mobile ARM clock framework V2
+From: Magnus Damm <damm@opensource.se>
 
-[PATCH 01/02] ARM: mach-shmobile: Use shared clock framework
-[PATCH 02/02] ARM: mach-shmobile: sh7372 clock framework support V2
-
-These patches add SH-Mobile ARM clock framework support for sh7372
-using the clock framework in drivers/sh that is shared with SH.
-
-sh7377 and sh7367 clock framework tables will be posted in the not
-so distant future.
+Add sh7724 DIV4 clocks to the clkdev lookup list.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Applies to the genesis-2.6 git tree + UIO. Also needs the
- shared clock framework code from SH in place.
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
- arch/arm/mach-shmobile/Kconfig               |    4 
- arch/arm/mach-shmobile/Makefile              |    4 
- arch/arm/mach-shmobile/board-ap4evb.c        |   16 -
- arch/arm/mach-shmobile/clock-sh7367.c        |   36 --
- arch/arm/mach-shmobile/clock-sh7372.c        |  387 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock.c               |   44 ++
- arch/arm/mach-shmobile/include/mach/common.h |    3 
- arch/arm/mach-shmobile/setup-sh7372.c        |    8 
- drivers/sh/Makefile                          |    2 
- 9 files changed, 456 insertions(+), 48 deletions(-)
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-05-11 14:54:58.000000000 +0900
+@@ -234,6 +234,13 @@ static struct clk mstp_clks[HWBLK_NR] = 
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+ 
+ static struct clk_lookup lookups[] = {
++	/* DIV4 clocks */
++	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
++	CLKDEV_CON_ID("shyway_clk", &div4_clks[DIV4_SH]),
++	CLKDEV_CON_ID("bus_clk", &div4_clks[DIV4_B]),
++	CLKDEV_CON_ID("peripheral_clk", &div4_clks[DIV4_P]),
++	CLKDEV_CON_ID("vpu_clk", &div4_clks[DIV4_M1]),
++
+ 	/* DIV6 clocks */
+ 	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
+ 	CLKDEV_CON_ID("fsia_clk", &div6_clks[DIV6_FA]),
