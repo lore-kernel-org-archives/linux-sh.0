@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 May 2010 14:42:40 +0000
-Subject: [PATCH 01/04] sh: allow romImage data between head.S and the zero page
-Message-Id: <20100518144240.29239.58437.sendpatchset@t400s>
+Date: Tue, 11 May 2010 07:06:05 +0000
+Subject: [PATCH 08/09] sh: sh7786 div4 clkdev lookup
+Message-Id: <20100511070605.20792.45287.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,58 +10,28 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Extend the romImage code to allow putting data between
-the head.S file and the empty_zero_page. Needed in the
-case of more advanced loader code in a separate C file.
+Add sh7786 DIV4 clocks to the clkdev lookup list.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- This patch is identical to the one posted 2010-05-13.
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
- arch/sh/boot/romimage/head.S      |   12 +++++++++---
- arch/sh/boot/romimage/vmlinux.scr |    1 +
- 2 files changed, 10 insertions(+), 3 deletions(-)
-
---- 0001/arch/sh/boot/romimage/head.S
-+++ work/arch/sh/boot/romimage/head.S	2010-05-07 19:49:01.000000000 +0900
-@@ -13,7 +13,9 @@ romstart:
- #include <mach/romimage.h>
+--- 0010/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7786.c	2010-05-11 15:10:33.000000000 +0900
+@@ -133,6 +133,14 @@ static struct clk mstp_clks[MSTP_NR] = {
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
  
- 	/* copy the empty_zero_page contents to where vmlinux expects it */
--	mova	empty_zero_page_src, r0
-+	mova	extra_data_pos, r0
-+	mov.l	extra_data_size, r1
-+	add	r1, r0
- 	mov.l	empty_zero_page_dst, r1
- 	mov	#(PAGE_SHIFT - 4), r4
- 	mov	#1, r3
-@@ -37,7 +39,9 @@ romstart:
- 	mov	#PAGE_SHIFT, r4
- 	mov	#1, r1
- 	shld	r4, r1
--	mova	empty_zero_page_src, r0
-+	mova	extra_data_pos, r0
-+	add	r1, r0
-+	mov.l	extra_data_size, r1
- 	add	r1, r0
- 	jmp	@r0
- 	 nop
-@@ -45,4 +49,6 @@ romstart:
- 	.align 2
- empty_zero_page_dst:
- 	.long	_text
--empty_zero_page_src:
-+extra_data_pos:
-+extra_data_size:
-+	.long	zero_page_pos - extra_data_pos
---- 0001/arch/sh/boot/romimage/vmlinux.scr
-+++ work/arch/sh/boot/romimage/vmlinux.scr	2010-05-07 19:46:57.000000000 +0900
-@@ -1,6 +1,7 @@
- SECTIONS
- {
-   .text : {
-+	zero_page_pos = .;
- 	*(.data)
- 	}
- }
+ static struct clk_lookup lookups[] = {
++	/* DIV4 clocks */
++	CLKDEV_CON_ID("peripheral_clk", &div4_clks[DIV4_P]),
++	CLKDEV_CON_ID("du_clk", &div4_clks[DIV4_DU]),
++	CLKDEV_CON_ID("ddr_clk", &div4_clks[DIV4_DDR]),
++	CLKDEV_CON_ID("bus_clk", &div4_clks[DIV4_B]),
++	CLKDEV_CON_ID("shyway_clk", &div4_clks[DIV4_SH]),
++	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
++
+ 	/* MSTP32 clocks */
+ 	{
+ 		/* SCIF5 */
