@@ -1,43 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 20 May 2010 03:11:16 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 INTCS support
-Message-Id: <20100520031116.GB6661@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 May 2010 09:52:39 +0000
+Subject: [PATCH 3/3] sh: disable SD-card write-protection detection on kfr2r09
+Message-Id: <Pine.LNX.4.64.1005111152000.6810@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100311054221.27152.9839.sendpatchset@t400s>
-In-Reply-To: <20100311054221.27152.9839.sendpatchset@t400s>
+References: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org
 
-On Thu, Mar 11, 2010 at 02:42:21PM +0900, Magnus Damm wrote:
-> Add support for the sh7372 INTCS interrupt controller.
-> 
-> INTCS is the interrupt controller for the sh7372 SuperH
-> processor core. It is tied into the INTCA interrupt
-> controller which interfaces to the ARM processor.
-> 
-> INTCS support is implemented using a new INTC table
-> together with a chained interrupt handler that ties
-> into the already supported INTCA controller.
+kfr2r09 board has a micro-SD card slot, therefore card write-protection
+detection cannot work there, disable it.
 
-On Wed, May 12, 2010 at 06:03:19PM +0900, Magnus Damm wrote:
-> Allow users to build the TMU driver on SH-Mobile ARM.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/boards/mach-kfr2r09/setup.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-On Wed, May 12, 2010 at 11:21:14PM +0900, Magnus Damm wrote:
-> [PATCH 01/02] ARM: mach-shmobile: Use shared clock framework
-> [PATCH 02/02] ARM: mach-shmobile: sh7372 clock framework support V2
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 95850aa..68994a1 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -11,6 +11,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
+ #include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/onenand.h>
+ #include <linux/delay.h>
+@@ -358,8 +359,9 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
+ };
+ 
+ static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+-	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+ };
+ 
+ static struct platform_device kfr2r09_sh_sdhi0_device = {
+-- 
+1.6.2.4
 
-On Wed, May 19, 2010 at 07:29:47PM +0900, Magnus Damm wrote:
-> Change INTCS_VECT_BASE from 0x3400 to 0x2200.
-> 
-> The old value 0x3400 gave the INTCA and INTCS interrupt
-> conrollers separated spaces, but required ARM support
-> for more than 512 NR_IRQS which is not in place at this
-> point.
-> 
-> The value 0x2200 will make some of the INTCA interrupts
-> make use of empty INTCS areas. This is a bit more error
-> prone but works fine as a workaround for G3, G3 and AP4.
-
-All applied, thanks.
