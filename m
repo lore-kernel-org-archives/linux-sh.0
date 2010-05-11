@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 May 2010 11:24:12 +0000
-Subject: [PATCH 07/13] sh: Use clkdev for sh7724 div6 clocks
-Message-Id: <20100510112412.14587.95013.sendpatchset@t400s>
+Date: Tue, 11 May 2010 04:59:50 +0000
+Subject: [PATCH 02/09] sh: sh7343 mstp32 clkdev lookup
+Message-Id: <20100511045950.26302.96420.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,58 +10,82 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add sh7724 clkdev lookups for the div6 clocks.
+Add sh7343 MSTP clocks to the clkdev lookup table.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   24 ++++++++++++++++++------
- 1 file changed, 18 insertions(+), 6 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c |   62 ++++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
 
---- 0007/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-05-10 19:16:09.000000000 +0900
-@@ -164,12 +164,17 @@ struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_M1] = DIV4("vpu_clk", FRQCRB, 4, 0x2f7c, CLK_ENABLE_ON_INIT),
- };
- 
--struct clk div6_clks[] = {
--	SH_CLK_DIV6("video_clk", &div3_clk, VCLKCR, 0),
--	SH_CLK_DIV6("fsia_clk", &div3_clk, FCLKACR, 0),
--	SH_CLK_DIV6("fsib_clk", &div3_clk, FCLKBCR, 0),
--	SH_CLK_DIV6("irda_clk", &div3_clk, IRDACLKCR, 0),
--	SH_CLK_DIV6("spu_clk", &div3_clk, SPUCLKCR, CLK_ENABLE_ON_INIT),
-+enum { DIV6_V, DIV6_FA, DIV6_FB, DIV6_I, DIV6_S, DIV6_NR };
-+
-+#define DIV6(_str, _reg, _flags) \
-+  SH_CLK_DIV6(_str, &div3_clk, _reg, _flags)
-+
-+struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_V] = DIV6("video_clk", VCLKCR, 0),
-+	[DIV6_FA] = DIV6("fsia_clk", FCLKACR, 0),
-+	[DIV6_FB] = DIV6("fsib_clk", FCLKBCR, 0),
-+	[DIV6_I] = DIV6("irda_clk", IRDACLKCR, 0),
-+	[DIV6_S] = DIV6("spu_clk", SPUCLKCR, CLK_ENABLE_ON_INIT),
- };
- 
- #define R_CLK (&r_clk)
-@@ -242,6 +247,12 @@ static struct clk mstp_clks[HWBLK_NR] = 
- }
- 
+--- 0009/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2010-05-11 12:20:33.000000000 +0900
+@@ -207,6 +207,68 @@ static struct clk mstp_clks[MSTP_NR] = {
  static struct clk_lookup lookups[] = {
-+	CLKDEV_NO_DEV("video_clk", &div6_clks[DIV6_V]),
-+	CLKDEV_NO_DEV("fsia_clk", &div6_clks[DIV6_FA]),
-+	CLKDEV_NO_DEV("fsib_clk", &div6_clks[DIV6_FB]),
-+	CLKDEV_NO_DEV("irda_clk", &div6_clks[DIV6_I]),
-+	CLKDEV_NO_DEV("spu_clk", &div6_clks[DIV6_S]),
+ 	/* DIV6 clocks */
+ 	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
 +
- 	{
- 		/* TMU0 */
- 		.dev_id		= "sh_tmu.0",
-@@ -347,6 +358,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_NO_DEV("veu0", &mstp_clks[HWBLK_VEU0]),
- 	CLKDEV_NO_DEV("vpu0", &mstp_clks[HWBLK_VPU]),
- 	CLKDEV_NO_DEV("lcdc0", &mstp_clks[HWBLK_LCDC]),
++	/* MSTP32 clocks */
++	CLKDEV_CON_ID("tlb0", &mstp_clks[MSTP031]),
++	CLKDEV_CON_ID("ic0", &mstp_clks[MSTP030]),
++	CLKDEV_CON_ID("oc0", &mstp_clks[MSTP029]),
++	CLKDEV_CON_ID("uram0", &mstp_clks[MSTP028]),
++	CLKDEV_CON_ID("xymem0", &mstp_clks[MSTP026]),
++	CLKDEV_CON_ID("intc3", &mstp_clks[MSTP023]),
++	CLKDEV_CON_ID("intc0", &mstp_clks[MSTP022]),
 +
++	CLKDEV_CON_ID("dmac0", &mstp_clks[MSTP021]),
++	CLKDEV_CON_ID("sh0", &mstp_clks[MSTP020]),
++	CLKDEV_CON_ID("hudi0", &mstp_clks[MSTP019]),
++	CLKDEV_CON_ID("ubc0", &mstp_clks[MSTP017]),
++	CLKDEV_CON_ID("tmu_fck", &mstp_clks[MSTP015]),
++	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP014]),
++	CLKDEV_CON_ID("rwdt0", &mstp_clks[MSTP013]),
++	CLKDEV_CON_ID("mfi0", &mstp_clks[MSTP011]),
++	CLKDEV_CON_ID("flctl0", &mstp_clks[MSTP010]),
++	{
++		/* SCIF0 */
++		.dev_id		= "sh-sci.0",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP007],
++	}, {
++		/* SCIF1 */
++		.dev_id		= "sh-sci.1",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP006],
++	}, {
++		/* SCIF2 */
++		.dev_id		= "sh-sci.2",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP005],
++	}, {
++		/* SCIF3 */
++		.dev_id		= "sh-sci.3",
++		.con_id		= "sci_fck",
++		.clk		= &mstp_clks[MSTP004],
++	},
++	CLKDEV_CON_ID("sio0", &mstp_clks[MSTP003]),
++	CLKDEV_CON_ID("siof0", &mstp_clks[MSTP002]),
++	CLKDEV_CON_ID("siof1", &mstp_clks[MSTP001]),
++	CLKDEV_CON_ID("i2c0", &mstp_clks[MSTP109]),
++	CLKDEV_CON_ID("i2c1", &mstp_clks[MSTP108]),
++	CLKDEV_CON_ID("tpu0", &mstp_clks[MSTP225]),
++	CLKDEV_CON_ID("irda0", &mstp_clks[MSTP224]),
++	CLKDEV_CON_ID("sdhi0", &mstp_clks[MSTP218]),
++	CLKDEV_CON_ID("mmcif0", &mstp_clks[MSTP217]),
++	CLKDEV_CON_ID("sim0", &mstp_clks[MSTP216]),
++	CLKDEV_CON_ID("keysc0", &mstp_clks[MSTP214]),
++	CLKDEV_CON_ID("tsif0", &mstp_clks[MSTP213]),
++	CLKDEV_CON_ID("s3d40", &mstp_clks[MSTP212]),
++	CLKDEV_CON_ID("usbf0", &mstp_clks[MSTP211]),
++	CLKDEV_CON_ID("siu0", &mstp_clks[MSTP208]),
++	CLKDEV_CON_ID("jpu0", &mstp_clks[MSTP206]),
++	CLKDEV_CON_ID("vou0", &mstp_clks[MSTP205]),
++	CLKDEV_CON_ID("beu0", &mstp_clks[MSTP204]),
++	CLKDEV_CON_ID("ceu0", &mstp_clks[MSTP203]),
++	CLKDEV_CON_ID("veu0", &mstp_clks[MSTP202]),
++	CLKDEV_CON_ID("vpu0", &mstp_clks[MSTP201]),
++	CLKDEV_CON_ID("lcdc0", &mstp_clks[MSTP200]),
  };
  
  int __init arch_clk_init(void)
