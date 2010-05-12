@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 09:36:24 +0000
-Subject: [PATCH 09/15] sh: switch sh7780 to clkdev
-Message-Id: <20100511093624.28210.14137.sendpatchset@t400s>
+Date: Wed, 12 May 2010 08:34:58 +0000
+Subject: [PATCH 02/05] ARM: mach-shmobile: Add CONFIG_FORCE_MAX_ZONEORDER
+Message-Id: <20100512083458.9395.98203.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,54 +10,37 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-This patch converts the remaining sh7780 clocks
-to use clkdev for lookup. The now unused name
-and id from struct clk are also removed.
+Allow SH-Mobile ARM to specify CONFIG_FORCE_MAX_ZONEORDER.
+The Kconfig entry is taken from SH and non-4K page size
+stuff has been trimmed away.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/sh4a/clock-sh7780.c |   12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7780.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7780.c	2010-05-11 17:14:17.000000000 +0900
-@@ -11,6 +11,8 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <asm/clkdev.h>
- #include <asm/clock.h>
- #include <asm/freq.h>
- #include <asm/io.h>
-@@ -83,7 +85,6 @@ static struct clk_ops sh7780_shyway_clk_
- };
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2010-05-12 15:21:55.000000000 +0900
+@@ -69,6 +69,21 @@ config MEMORY_SIZE
+ 	  be overridden as normal by the 'mem=' argument on the kernel command
+ 	  line.
  
- static struct clk sh7780_shyway_clk = {
--	.name		= "shyway_clk",
- 	.flags		= CLK_ENABLE_ON_INIT,
- 	.ops		= &sh7780_shyway_clk_ops,
- };
-@@ -96,6 +97,13 @@ static struct clk *sh7780_onchip_clocks[
- 	&sh7780_shyway_clk,
- };
- 
-+#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++config FORCE_MAX_ZONEORDER
++	int "Maximum zone order"
++	range 11 64
++	default "11"
++	help
++	  The kernel memory allocator divides physically contiguous memory
++	  blocks into "zones", where each zone is a power of two number of
++	  pages.  This option selects the largest power of two that the kernel
++	  keeps in the memory allocator.  If you need to allocate very large
++	  blocks of physically contiguous memory, then you may need to
++	  increase this value.
 +
-+static struct clk_lookup lookups[] = {
-+	/* main clocks */
-+	CLKDEV_CON_ID("shyway_clk", &sh7780_shyway_clk),
-+};
++	  This config option is actually maximum order plus one. For example,
++	  a value of 11 means that the largest free memory block is 2^10 pages.
 +
- int __init arch_clk_init(void)
- {
- 	struct clk *clk;
-@@ -113,5 +121,7 @@ int __init arch_clk_init(void)
+ endmenu
  
- 	clk_put(clk);
- 
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
- 	return ret;
- }
+ menu "Timer and clock configuration"
