@@ -1,113 +1,164 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 24 May 2010 00:02:22 +0000
-Subject: [GIT PULL] [UPDATED] genesis updates for 2.6.35-rc1
-Message-Id: <20100524000222.GC19552@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 May 2010 14:21:24 +0000
+Subject: [PATCH 01/02] ARM: mach-shmobile: Use shared clock framework
+Message-Id: <20100512142124.28459.11232.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This is a resend of the genesis updates with a few more changes rolled
-in. I still have a few more changes on top of this, but they depend on
-the second batch of sh updates and can wait until -rc2.
+From: Magnus Damm <damm@opensource.se>
 
-Please pull from:
+Teach SH-Mobile ARM how to make use of the shared SH clock
+framework. This commit is one atomic switch that dumps the
+local hackery and instead links in the shared clock framework
+code in drivers/sh. A few local functions are kept in clock.c.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/genesis-2.6.git
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Which contains:
+ arch/arm/mach-shmobile/Kconfig               |    3 +
+ arch/arm/mach-shmobile/Makefile              |    2 -
+ arch/arm/mach-shmobile/clock-sh7367.c        |   36 ---------------------
+ arch/arm/mach-shmobile/clock.c               |   44 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +
+ drivers/sh/Makefile                          |    2 -
+ 6 files changed, 52 insertions(+), 37 deletions(-)
 
-Guennadi Liakhovetski (8):
-      fbdev: add a MIPI DSI header
-      ARM: mach-shmobile: add LCDC and MIPI DSI-Tx clock definitions to sh7372
-      sh: add a YUV422 output data format, that is also supported by LCDC
-      sh-mobile: add support for displays, connected over the MIPI bus
-      ARM: mach-shmobile: add framebuffer support for ap4evb
-      serial: add a new port type, found on some sh-mobile SoCs
-      serial: sh-sci: fix handling of SCIFB sh-mobile ports
-      ARM: mach-shmobile: SH7372 has 6 SCIFA and 1 SCIFB ports
-
-Kuninori Morimoto (10):
-      ARM: mach-shmobile: sh7372: Add I2C0, I2C1 support
-      ARM: mach-shmobile: ap4evb: Add TouchScreen support
-      ARM: mach-shmobile: ap4evb: Add SW43, SW3 tiny document
-      ARM: mach-shmobile: ap4evb: Add R2025S RTC support
-      ARM: mach-shmobile: intc-sh7377: Add INTCS support
-      ARM: mach-shmobile: Add missing __initdata on intcs sh7367/sh7377
-      ARM: mach-shmobile: Add SDHI support
-      ARM: mach-shmobile: intc-sh7372: modify wrong address
-      ARM: mach-shmobile: ap4evb: Add USB host support
-      ARM: mach-shmobile: g3evm: Add IrDA support
-
-Magnus Damm (19):
-      dmaengine: shdma: Enable on SH-Mobile ARM
-      i2c: i2c-sh_mobile register access code break out
-      i2c: i2c-sh_mobile support for new ICIC bits
-      i2c: i2c-sh_mobile kconfig update for SH-Mobile ARM
-      ARM: mach-shmobile: add INTCS macros
-      ARM: mach-shmobile: sh7367 INTCS support
-      ARM: mach-shmobile: Use 0x2200 as INTCS_VECT_BASE
-      ARM: mach-shmobile: sh7372 INTCS support
-      ARM: mach-shmobile: Enable TMU driver build
-      ARM: mach-shmobile: Use shared clock framework
-      ARM: mach-shmobile: sh7372 clock framework support V2
-      ARM: mach-shmobile: Set CONSISTENT_DMA_SIZE to 158 MB
-      ARM: mach-shmobile: Update VMALLOC_END
-      ARM: mach-shmobile: sh7367/G3EVM evt2irq() update
-      ARM: mach-shmobile: sh7377/G4EVM evt2irq() update
-      ARM: mach-shmobile: sh7372/AP4EVB evt2irq() update
-      ARM: mach-shmobile: sh7372 clock fixes
-      ARM: mach-shmobile: sh7367 clock framework V2
-      ARM: mach-shmobile: sh7377 clock framework V2
-
-Paul Mundt (2):
-      MAINTAINERS: Add a patchwork entry for ARM/SH-Mobile.
-      ARM: mach-shmobile: update defconfigs.
-
- MAINTAINERS                                   |    3 +-
- arch/arm/configs/ap4evb_defconfig             |   71 +++-
- arch/arm/configs/g3evm_defconfig              |   73 +++-
- arch/arm/configs/g4evm_defconfig              |   72 +++-
- arch/arm/mach-shmobile/Kconfig                |   13 +
- arch/arm/mach-shmobile/Makefile               |    6 +-
- arch/arm/mach-shmobile/board-ap4evb.c         |  248 ++++++++++++-
- arch/arm/mach-shmobile/board-g3evm.c          |   56 +++-
- arch/arm/mach-shmobile/board-g4evm.c          |  151 +++++++-
- arch/arm/mach-shmobile/clock-sh7367.c         |  357 +++++++++++++++---
- arch/arm/mach-shmobile/clock-sh7372.c         |  395 +++++++++++++++++++
- arch/arm/mach-shmobile/clock-sh7377.c         |  369 ++++++++++++++++++
- arch/arm/mach-shmobile/clock.c                |   44 +++
- arch/arm/mach-shmobile/include/mach/common.h  |   10 +
- arch/arm/mach-shmobile/include/mach/irqs.h    |    6 +
- arch/arm/mach-shmobile/include/mach/memory.h  |    3 +
- arch/arm/mach-shmobile/include/mach/vmalloc.h |    3 +-
- arch/arm/mach-shmobile/intc-sh7367.c          |  178 +++++++++-
- arch/arm/mach-shmobile/intc-sh7372.c          |  232 +++++++++++-
- arch/arm/mach-shmobile/intc-sh7377.c          |  300 +++++++++++++++-
- arch/arm/mach-shmobile/setup-sh7367.c         |   30 ++-
- arch/arm/mach-shmobile/setup-sh7372.c         |   98 ++++--
- arch/arm/mach-shmobile/setup-sh7377.c         |   34 ++-
- drivers/dma/Kconfig                           |    2 +-
- drivers/dma/shdma.c                           |    8 +-
- drivers/i2c/busses/Kconfig                    |    2 +-
- drivers/i2c/busses/i2c-sh_mobile.c            |  121 ++++--
- drivers/serial/sh-sci.c                       |   42 ++-
- drivers/serial/sh-sci.h                       |   29 ++-
- drivers/sh/Makefile                           |    5 +-
- drivers/video/Kconfig                         |    8 +
- drivers/video/Makefile                        |    1 +
- drivers/video/sh_mipi_dsi.c                   |  505 +++++++++++++++++++++++++
- include/linux/serial_core.h                   |    3 +
- include/linux/serial_sci.h                    |    2 +-
- include/video/mipi_display.h                  |  130 +++++++
- include/video/sh_mipi_dsi.h                   |   35 ++
- include/video/sh_mobile_lcdc.h                |   39 +-
- 38 files changed, 3435 insertions(+), 249 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/clock-sh7372.c
- create mode 100644 arch/arm/mach-shmobile/clock-sh7377.c
- create mode 100644 arch/arm/mach-shmobile/clock.c
- create mode 100644 drivers/video/sh_mipi_dsi.c
- create mode 100644 include/video/mipi_display.h
- create mode 100644 include/video/sh_mipi_dsi.h
+--- 0010/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2010-05-12 19:44:46.000000000 +0900
+@@ -102,4 +102,7 @@ config SH_TIMER_TMU
+ 
+ endmenu
+ 
++config SH_CLK_CPG
++	bool
++
+ endif
+--- 0005/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2010-05-12 19:21:36.000000000 +0900
+@@ -3,7 +3,7 @@
+ #
+ 
+ # Common objects
+-obj-y				:= timer.o console.o memory.o
++obj-y				:= timer.o console.o memory.o clock.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o intc-sh7367.o
+--- 0001/arch/arm/mach-shmobile/clock-sh7367.c
++++ work/arch/arm/mach-shmobile/clock-sh7367.c	2010-05-12 19:21:36.000000000 +0900
+@@ -21,43 +21,9 @@
+ #include <linux/kernel.h>
+ #include <linux/list.h>
+ #include <linux/clk.h>
+-
+-struct clk {
+-	const char *name;
+-	unsigned long rate;
+-};
+-
++#include <linux/sh_clk.h>
+ #include <asm/clkdev.h>
+ 
+-int __clk_get(struct clk *clk)
+-{
+-	return 1;
+-}
+-EXPORT_SYMBOL(__clk_get);
+-
+-void __clk_put(struct clk *clk)
+-{
+-}
+-EXPORT_SYMBOL(__clk_put);
+-
+-
+-int clk_enable(struct clk *clk)
+-{
+-	return 0;
+-}
+-EXPORT_SYMBOL(clk_enable);
+-
+-void clk_disable(struct clk *clk)
+-{
+-}
+-EXPORT_SYMBOL(clk_disable);
+-
+-unsigned long clk_get_rate(struct clk *clk)
+-{
+-	return clk ? clk->rate : 0;
+-}
+-EXPORT_SYMBOL(clk_get_rate);
+-
+ /* a static peripheral clock for now - enough to get sh-sci working */
+ static struct clk peripheral_clk = {
+ 	.name	    = "peripheral_clk",
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock.c	2010-05-12 19:21:37.000000000 +0900
+@@ -0,0 +1,44 @@
++/*
++ * SH-Mobile Timer
++ *
++ * Copyright (C) 2010  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/sh_clk.h>
++
++int __init clk_init(void)
++{
++	/* Kick the child clocks.. */
++	recalculate_root_clocks();
++
++	/* Enable the necessary init clocks */
++	clk_enable_init_clocks();
++
++	return 0;
++}
++
++int __clk_get(struct clk *clk)
++{
++	return 1;
++}
++EXPORT_SYMBOL(__clk_get);
++
++void __clk_put(struct clk *clk)
++{
++}
++EXPORT_SYMBOL(__clk_put);
+--- 0005/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-05-12 19:21:36.000000000 +0900
+@@ -4,6 +4,8 @@
+ extern struct sys_timer shmobile_timer;
+ extern void shmobile_setup_console(void);
+ 
++extern int clk_init(void);
++
+ /* allocate contiguous memory chunk and fill in struct resource */
+ extern int platform_resource_setup_memory(struct platform_device *pdev,
+ 					  char *name, unsigned long memsize);
+--- 0011/drivers/sh/Makefile
++++ work/drivers/sh/Makefile	2010-05-12 19:21:36.000000000 +0900
+@@ -4,6 +4,6 @@
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ obj-$(CONFIG_MAPLE)		+= maple/
+ obj-$(CONFIG_GENERIC_GPIO)	+= pfc.o
+-obj-$(CONFIG_SUPERH)		+= clk.o
+ obj-$(CONFIG_SH_CLK_CPG)	+= clk-cpg.o
++obj-y				+= clk.o
+ obj-y				+= intc.o
