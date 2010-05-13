@@ -1,31 +1,24 @@
-From: Andrew Stubbs <ams@codesourcery.com>
-Date: Tue, 04 May 2010 10:00:11 +0000
-Subject: [superh-gnu-discuss] Sourcery G++ Lite 4.4-45 for SuperH GNU/Linux
-Message-Id: <4BDFF02B.3060103@codesourcery.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 13 May 2010 14:15:34 +0000
+Subject: [PATCH 0/9 v4] add DMA support to tmio_mmc, using dmaengine API,
+Message-Id: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-CodeSourcery is pleased to announce the availability of a new Sourcery 
-G++ Lite Edition release for SuperH GNU/Linux.  This is available for 
-download from:
+This is yet another split of patch
 
-     http://www.codesourcery.com/sgpp/lite/superh
+[PATCH 4/9] MMC: add DMA support to tmio_mmc driver, when used on SuperH
 
-Some of the new features in this release include:
+whereby per Ian's request patch "4a" has been further split in tmio- and 
+sdhi-parts, so that now we have patches 4a/9, 4b/9 and 4c/9.
 
-* Improved interoperability when compiling for a Debian target system.
-
-* Improvements to overall reliability and robustness.
-
-* Upgrades to many components, including GDB 7.0 and EGLIBC 2.11.
-
-Please see the Getting Started Guide for a complete set of release notes:
-
-http://www.codesourcery.com/sgpp/lite/superh/portal/doc7650/getting-started.pdf
-
--- 
-Andrew Stubbs
-CodeSourcery
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
