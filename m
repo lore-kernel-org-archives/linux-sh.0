@@ -1,23 +1,42 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 20 May 2010 03:12:36 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: bump up NR_IRQS to 640
-Message-Id: <20100520031236.GC6661@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 13 May 2010 13:20:32 +0000
+Subject: Re: + mmc-add-dma-support-to-tmio_mmc-driver-when-used-on-superh.patch
+Message-Id: <Pine.LNX.4.64.1005131511540.4671@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100311053352.26717.21158.sendpatchset@t400s>
-In-Reply-To: <20100311053352.26717.21158.sendpatchset@t400s>
+References: <201005122255.o4CMtmvN025653@imap1.linux-foundation.org>
+ <AANLkTim5U-JbrVCBKHnERgHol2GcwTfweQyI4onR1Skh@mail.gmail.com>
+ <Pine.LNX.4.64.1005131357500.4671@axis700.grange>
+ <AANLkTinPW2W6aV1smLsQObLOAS3bECDZ7mhSGCm2aqgO@mail.gmail.com>
+ <Pine.LNX.4.64.1005131415460.4671@axis700.grange>
+ <AANLkTik4gzuZvrAwbK-dyCXVYf5gLD0RGrpvM55YLzOK@mail.gmail.com>
+In-Reply-To: <AANLkTik4gzuZvrAwbK-dyCXVYf5gLD0RGrpvM55YLzOK@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Thu, Mar 11, 2010 at 02:33:52PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Increase NR_IRQS to 640 on SH-Mobile ARM. With this
-> applied the INTCS controller on sh7372 can be supported.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+(re-adding CC)
 
-I've dropped this one due to the INTCS_VECT_BASE shifting, feel free to
-resubmit an updated version once support for 10-bit hardirqs hits
-upstream.
+On Thu, 13 May 2010, Ian Molton wrote:
+
+> Might be worth exposing for now, whilst the feature is new. but yes,
+> automatic select yes on all the platforms you are comfortable with.
+> 
+> Im not sure if it should be per MFD or per platform. I tend to think
+> the latter, given that its slave DMA and thus I could have the same
+> MFD in platforms with different CPUs (eg. e740 and e800) where a CPU
+> bug might upset one but not the other.
+
+So far I went for the least effort - not exposed, selected by MFDs. If we 
+ever have a need to change this, e.g., make it user-selectable or per 
+platform, we can always do so later. For now all SuperH / SH-Mobile 
+platforms I tested can use this driver with DMA. Expect updated patches 
+shortly.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
