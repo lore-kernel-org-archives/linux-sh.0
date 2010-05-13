@@ -1,37 +1,53 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 May 2010 06:59:32 +0000
-Subject: [GIT PULL] [RESEND] sh updates for 2.6.34-rc7
-Message-Id: <20100506065932.GD25493@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 13 May 2010 14:15:38 +0000
+Subject: [PATCH 4a/9 v4] mmc: prepare tmio_mmc for passing of DMA configuration
+Message-Id: <Pine.LNX.4.64.1005131604540.4671@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-This is a resend of the pull request for 2.6.34-rc6 with the addition of
-an lcdcfb patch. It hasn't been rebased, so if you've already pulled the
-previous changes then you should just get that patch.
+After this patch, if the "dma" pointer in struct tmio_mmc_data is not NULL, it
+points to a struct, containing two tokens, that have to be passed to the
+dmaengine driver for channel configuration.
 
-Please pull from:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh/for-2.6.34
+v3 -> v4:
 
-Which contains:
+tmio part of [PATCH 4a/9 v3], no changes in the code.
 
-Guennadi Liakhovetski (3):
-      SH: fix TS field shift calculation for DMA drivers
-      SH: fix error paths in DMA driver
-      sh: fix a number of Oopses and leaks in SH framebuffer driver
+ include/linux/mfd/tmio.h |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-Magnus Damm (2):
-      sh: Fix maximum number of SCIF ports in R2D defconfigs
-      sh: sh7751 pci controller io port fix
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index c3f7dff..360fc95 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -55,12 +55,18 @@ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
++struct tmio_mmc_dma {
++	void *chan_priv_tx;
++	void *chan_priv_rx;
++};
++
+ /*
+  * data for the MMC controller
+  */
+ struct tmio_mmc_data {
+ 	unsigned int			hclk;
+ 	unsigned long			capabilities;
++	struct tmio_mmc_dma		*dma;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ };
+-- 
+1.6.2.4
 
- arch/sh/configs/rts7751r2d1_defconfig      |    2 +-
- arch/sh/configs/rts7751r2dplus_defconfig   |    2 +-
- arch/sh/drivers/pci/pci-sh7751.c           |    5 +++--
- arch/sh/include/cpu-sh4/cpu/dma-register.h |    2 +-
- drivers/dma/shdma.c                        |   27 +++++++++++++++++++++------
- drivers/video/sh_mobile_lcdcfb.c           |   27 +++++++++++++--------------
- 6 files changed, 40 insertions(+), 25 deletions(-)
