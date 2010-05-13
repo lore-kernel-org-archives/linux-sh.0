@@ -1,37 +1,79 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 07:05:09 +0000
-Subject: [PATCH 01/09] sh: div4 reparent workaround
-Message-Id: <20100511070509.20792.80390.sendpatchset@t400s>
+Date: Thu, 13 May 2010 07:11:17 +0000
+Subject: [PATCH] ARM: CONFG_FORCE_MAX_ZONEORDER update for SH-Mobile ARM
+Message-Id: <20100513071117.27899.94230.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Update the div4 set_parent() callback to use the
-flags instead of name to determine parent index.
+Allow SH-Mobile ARM users to adjust FORCE_MAX_ZONEORDER.
+
+The Kconfig entry is taken from SH and non-4K page size
+stuff has been trimmed away. For now only SH-Mobile ARM is
+allowed to change this variable, SA1111 configs are kept at
+"9" and the rest at "11".
+
+CONFIG_FORCE_MAX_ZONEORDER lets the user tweak the maximum
+amount of physically contiguous memory that can be alloced by
+the kernel.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/clock-cpg.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ A previous version that modified arch/arm/mach-shmobile/Kconfig
+ was yesterday posted to linux-sh@vger.kernel.org as
 
---- 0001/arch/sh/kernel/cpu/clock-cpg.c
-+++ work/arch/sh/kernel/cpu/clock-cpg.c	2010-05-11 14:38:56.000000000 +0900
-@@ -168,7 +168,12 @@ static int sh_clk_div4_set_parent(struct
- 	u32 value;
- 	int ret;
+ "[PATCH 02/05] ARM: mach-shmobile: Add CONFIG_FORCE_MAX_ZONEORDER"
+
+ I did however receive feedback that this change is more suitable
+ for general consumption in arch/arm/Kconfig. Hopefully this change
+ is acceptable as-is by the ARM community.
+
+ Let me know if you want me to rework things. Thank you!
+
+ Built on top of linux-next 20100512.
+
+ arch/arm/Kconfig |   21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
+
+--- 0001/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2010-05-13 15:57:19.000000000 +0900
+@@ -1076,11 +1076,6 @@ endmenu
  
--	if (!strcmp("pll_clk", parent->name))
-+	/* we really need a better way to determine parent index, but for
-+	 * now assume internal parent comes with CLK_ENABLE_ON_INIT set,
-+	 * no CLK_ENABLE_ON_INIT means external clock...
-+	 */
+ source "arch/arm/common/Kconfig"
+ 
+-config FORCE_MAX_ZONEORDER
+-	int
+-	depends on SA1111
+-	default "9"
+-
+ menu "Bus support"
+ 
+ config ARM_AMBA
+@@ -1337,6 +1332,22 @@ config HW_PERF_EVENTS
+ 
+ source "mm/Kconfig"
+ 
++config FORCE_MAX_ZONEORDER
++	int "Maximum zone order" if ARCH_SHMOBILE
++	range 11 64 if ARCH_SHMOBILE
++	default "9" if SA1111
++	default "11"
++	help
++	  The kernel memory allocator divides physically contiguous memory
++	  blocks into "zones", where each zone is a power of two number of
++	  pages.  This option selects the largest power of two that the kernel
++	  keeps in the memory allocator.  If you need to allocate very large
++	  blocks of physically contiguous memory, then you may need to
++	  increase this value.
 +
-+	if (parent->flags & CLK_ENABLE_ON_INIT)
- 		value = __raw_readl(clk->enable_reg) & ~(1 << 7);
- 	else
- 		value = __raw_readl(clk->enable_reg) | (1 << 7);
++	  This config option is actually maximum order plus one. For example,
++	  a value of 11 means that the largest free memory block is 2^10 pages.
++
+ config LEDS
+ 	bool "Timer and CPU usage LEDs"
+ 	depends on ARCH_CDB89712 || ARCH_EBSA110 || \
