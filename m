@@ -1,483 +1,602 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 20 May 2010 14:49:28 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7367 clock framework V2
-Message-Id: <20100520144928.27662.44645.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 13 May 2010 14:15:46 +0000
+Subject: [PATCH 4c/9 v4] mmc: add DMA support to tmio_mmc driver, when used
+Message-Id: <Pine.LNX.4.64.1005131608490.4671@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+SDHI controllers on SuperH, served by the tmio_mmc driver, can use slave DMA
+for data transfer. This patch adds support for the dmaengine API to the
+tmio_mmc driver.
 
-This patch is V2 of clock framework tables/code for sh7367.
-MSTP support is included for the following hardware blocks:
-KEYSC, SCIF, IIC, IRDA, FLCTL, VOU, SIU, USB, SDHI and UIO.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- arch/arm/mach-shmobile/Kconfig               |    1 
- arch/arm/mach-shmobile/board-g3evm.c         |   19 -
- arch/arm/mach-shmobile/clock-sh7367.c        |  353 +++++++++++++++++++++++---
- arch/arm/mach-shmobile/include/mach/common.h |    2 
- 4 files changed, 337 insertions(+), 38 deletions(-)
+v3 -> v4:
 
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2010-05-20 23:19:59.000000000 +0900
-@@ -7,6 +7,7 @@ config ARCH_SH7367
- 	select CPU_V6
- 	select HAVE_CLK
- 	select COMMON_CLKDEV
-+	select SH_CLK_CPG
- 	select GENERIC_CLOCKEVENTS
+1. renamed three functions as per Ian's request
+2. DMA code now is only compiled in, if the respective MFD enables TMIO 
+DMA
+
+ drivers/mfd/Kconfig         |    7 +
+ drivers/mmc/host/tmio_mmc.c |  361 +++++++++++++++++++++++++++++++++++++++----
+ drivers/mmc/host/tmio_mmc.h |   13 ++
+ 3 files changed, 349 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
+index 2a5a0b7..57c55be 100644
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -49,6 +49,7 @@ config MFD_SH_MOBILE_SDHI
+ 	bool "Support for SuperH Mobile SDHI"
+ 	depends on SUPERH || ARCH_SHMOBILE
+ 	select MFD_CORE
++	select MFD_TMIO_DMA
+ 	 ---help---
+ 	  This driver supports the SDHI hardware block found in many
+ 	  SuperH Mobile SoCs.
+@@ -158,6 +159,12 @@ config MFD_TMIO
+ 	bool
+ 	default n
  
- config ARCH_SH7377
---- 0002/arch/arm/mach-shmobile/board-g3evm.c
-+++ work/arch/arm/mach-shmobile/board-g3evm.c	2010-05-20 23:19:59.000000000 +0900
-@@ -37,6 +37,7 @@
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
-+#include <asm/mach/time.h>
- 
- /*
-  * IrDA
-@@ -259,9 +260,8 @@ static void __init g3evm_map_io(void)
- {
- 	iotable_init(g3evm_io_desc, ARRAY_SIZE(g3evm_io_desc));
- 
--	/* setup early devices, clocks and console here as well */
-+	/* setup early devices and console here as well */
- 	sh7367_add_early_devices();
--	sh7367_clock_init();
- 	shmobile_setup_console();
- }
- 
-@@ -298,9 +298,6 @@ static void __init g3evm_init(void)
- 	gpio_request(GPIO_FN_EXTLP, NULL);
- 	gpio_request(GPIO_FN_IDIN, NULL);
- 
--	/* enable clock in SYMSTPCR2 */
--	__raw_writel(__raw_readl(0xe6158048) & ~(1 << 22), 0xe6158048);
--
- 	/* setup USB phy */
- 	__raw_writew(0x0300, 0xe605810a);	/* USBCR1 */
- 	__raw_writew(0x00e0, 0xe60581c0);	/* CPFCH */
-@@ -356,11 +353,21 @@ static void __init g3evm_init(void)
- 	platform_add_devices(g3evm_devices, ARRAY_SIZE(g3evm_devices));
- }
- 
-+static void __init g3evm_timer_init(void)
-+{
-+	sh7367_clock_init();
-+	shmobile_timer.init();
-+}
++config MFD_TMIO_DMA
++	bool
++	select MFD_CORE
++	select DMA_ENGINE
++	select DMADEVICES
 +
-+static struct sys_timer g3evm_timer = {
-+	.init		= g3evm_timer_init,
-+};
-+
- MACHINE_START(G3EVM, "g3evm")
- 	.phys_io	= 0xe6000000,
- 	.io_pg_offst	= ((0xe6000000) >> 18) & 0xfffc,
- 	.map_io		= g3evm_map_io,
- 	.init_irq	= sh7367_init_irq,
- 	.init_machine	= g3evm_init,
--	.timer		= &shmobile_timer,
-+	.timer		= &g3evm_timer,
- MACHINE_END
---- 0001/arch/arm/mach-shmobile/clock-sh7367.c
-+++ work/arch/arm/mach-shmobile/clock-sh7367.c	2010-05-20 23:19:59.000000000 +0900
-@@ -1,5 +1,5 @@
- /*
-- * Preliminary clock framework support for sh7367
-+ * SH7367 clock framework support
-  *
-  * Copyright (C) 2010  Magnus Damm
-  *
-@@ -17,53 +17,342 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ config MFD_T7L66XB
+ 	bool "Support Toshiba T7L66XB"
+ 	depends on ARM && HAVE_CLK
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index b2b577f..3985f3e 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -29,6 +29,7 @@
+ #include <linux/irq.h>
+ #include <linux/device.h>
+ #include <linux/delay.h>
++#include <linux/dmaengine.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mfd/core.h>
+ #include <linux/mfd/tmio.h>
+@@ -131,8 +132,8 @@ tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
+ 
+ 	host->cmd = cmd;
+ 
+-/* FIXME - this seems to be ok comented out but the spec suggest this bit should
+- *         be set when issuing app commands.
++/* FIXME - this seems to be ok commented out but the spec suggest this bit
++ *         should be set when issuing app commands.
+  *	if(cmd->flags & MMC_FLAG_ACMD)
+  *		c |= APP_CMD;
   */
- #include <linux/init.h>
--#include <linux/module.h>
- #include <linux/kernel.h>
--#include <linux/list.h>
--#include <linux/clk.h>
-+#include <linux/io.h>
- #include <linux/sh_clk.h>
-+#include <mach/common.h>
- #include <asm/clkdev.h>
- 
--/* a static peripheral clock for now - enough to get sh-sci working */
--static struct clk peripheral_clk = {
--	.name	    = "peripheral_clk",
--	.rate	    = 48000000,
--};
-+/* SH7367 registers */
-+#define RTFRQCR    0xe6150000
-+#define SYFRQCR    0xe6150004
-+#define CMFRQCR    0xe61500E0
-+#define VCLKCR1    0xe6150008
-+#define VCLKCR2    0xe615000C
-+#define VCLKCR3    0xe615001C
-+#define SCLKACR    0xe6150010
-+#define SCLKBCR    0xe6150014
-+#define SUBUSBCKCR 0xe6158080
-+#define SPUCKCR    0xe6150084
-+#define MSUCKCR    0xe6150088
-+#define MVI3CKCR   0xe6150090
-+#define VOUCKCR    0xe6150094
-+#define MFCK1CR    0xe6150098
-+#define MFCK2CR    0xe615009C
-+#define PLLC1CR    0xe6150028
-+#define PLLC2CR    0xe615002C
-+#define RTMSTPCR0  0xe6158030
-+#define RTMSTPCR2  0xe6158038
-+#define SYMSTPCR0  0xe6158040
-+#define SYMSTPCR2  0xe6158048
-+#define CMMSTPCR0  0xe615804c
- 
--/* a static rclk for now - enough to get sh_cmt working */
-+/* Fixed 32 KHz root clock from EXTALR pin */
- static struct clk r_clk = {
--	.name	    = "r_clk",
--	.rate	    = 32768,
-+	.rate           = 32768,
- };
- 
--/* a static usb0 for now - enough to get r8a66597 working */
--static struct clk usb0_clk = {
--	.name	    = "usb0",
-+/*
-+ * 26MHz default rate for the EXTALB1 root input clock.
-+ * If needed, reset this with clk_set_rate() from the platform code.
-+ */
-+struct clk sh7367_extalb1_clk = {
-+	.rate		= 26666666,
- };
- 
--/* a static keysc0 clk for now - enough to get sh_keysc working */
--static struct clk keysc0_clk = {
--	.name	    = "keysc0",
-+/*
-+ * 48MHz default rate for the EXTAL2 root input clock.
-+ * If needed, reset this with clk_set_rate() from the platform code.
-+ */
-+struct clk sh7367_extal2_clk = {
-+	.rate		= 48000000,
- };
- 
-+/* A fixed divide-by-2 block */
-+static unsigned long div2_recalc(struct clk *clk)
-+{
-+	return clk->parent->rate / 2;
-+}
-+
-+static struct clk_ops div2_clk_ops = {
-+	.recalc		= div2_recalc,
-+};
-+
-+/* Divide extalb1 by two */
-+static struct clk extalb1_div2_clk = {
-+	.ops		= &div2_clk_ops,
-+	.parent		= &sh7367_extalb1_clk,
-+};
-+
-+/* Divide extal2 by two */
-+static struct clk extal2_div2_clk = {
-+	.ops		= &div2_clk_ops,
-+	.parent		= &sh7367_extal2_clk,
-+};
-+
-+/* PLLC1 */
-+static unsigned long pllc1_recalc(struct clk *clk)
-+{
-+	unsigned long mult = 1;
-+
-+	if (__raw_readl(PLLC1CR) & (1 << 14))
-+		mult = (((__raw_readl(RTFRQCR) >> 24) & 0x3f) + 1) * 2;
-+
-+	return clk->parent->rate * mult;
-+}
-+
-+static struct clk_ops pllc1_clk_ops = {
-+	.recalc		= pllc1_recalc,
-+};
-+
-+static struct clk pllc1_clk = {
-+	.ops		= &pllc1_clk_ops,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+	.parent		= &extalb1_div2_clk,
-+};
-+
-+/* Divide PLLC1 by two */
-+static struct clk pllc1_div2_clk = {
-+	.ops		= &div2_clk_ops,
-+	.parent		= &pllc1_clk,
-+};
-+
-+/* PLLC2 */
-+static unsigned long pllc2_recalc(struct clk *clk)
-+{
-+	unsigned long mult = 1;
-+
-+	if (__raw_readl(PLLC2CR) & (1 << 31))
-+		mult = (((__raw_readl(PLLC2CR) >> 24) & 0x3f) + 1) * 2;
-+
-+	return clk->parent->rate * mult;
-+}
-+
-+static struct clk_ops pllc2_clk_ops = {
-+	.recalc		= pllc2_recalc,
-+};
-+
-+static struct clk pllc2_clk = {
-+	.ops		= &pllc2_clk_ops,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+	.parent		= &extalb1_div2_clk,
-+};
-+
-+static struct clk *main_clks[] = {
-+	&r_clk,
-+	&sh7367_extalb1_clk,
-+	&sh7367_extal2_clk,
-+	&extalb1_div2_clk,
-+	&extal2_div2_clk,
-+	&pllc1_clk,
-+	&pllc1_div2_clk,
-+	&pllc2_clk,
-+};
-+
-+static void div4_kick(struct clk *clk)
-+{
-+	unsigned long value;
-+
-+	/* set KICK bit in SYFRQCR to update hardware setting */
-+	value = __raw_readl(SYFRQCR);
-+	value |= (1 << 31);
-+	__raw_writel(value, SYFRQCR);
-+}
-+
-+static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
-+			  24, 32, 36, 48, 0, 72, 0, 0 };
-+
-+static struct clk_div_mult_table div4_div_mult_table = {
-+	.divisors = divisors,
-+	.nr_divisors = ARRAY_SIZE(divisors),
-+};
-+
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+	.kick = div4_kick,
-+};
-+
-+enum { DIV4_I, DIV4_G, DIV4_S, DIV4_B,
-+       DIV4_ZX, DIV4_ZT, DIV4_Z, DIV4_ZD, DIV4_HP,
-+       DIV4_ZS, DIV4_ZB, DIV4_ZB3, DIV4_CP, DIV4_NR };
-+
-+#define DIV4(_reg, _bit, _mask, _flags) \
-+  SH_CLK_DIV4(&pllc1_clk, _reg, _bit, _mask, _flags)
-+
-+static struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_I] = DIV4(RTFRQCR, 20, 0x6fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_G] = DIV4(RTFRQCR, 16, 0x6fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_S] = DIV4(RTFRQCR, 12, 0x6fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_B] = DIV4(RTFRQCR, 8, 0x6fff, CLK_ENABLE_ON_INIT),
-+	[DIV4_ZX] = DIV4(SYFRQCR, 20, 0x6fff, 0),
-+	[DIV4_ZT] = DIV4(SYFRQCR, 16, 0x6fff, 0),
-+	[DIV4_Z] = DIV4(SYFRQCR, 12, 0x6fff, 0),
-+	[DIV4_ZD] = DIV4(SYFRQCR, 8, 0x6fff, 0),
-+	[DIV4_HP] = DIV4(SYFRQCR, 4, 0x6fff, 0),
-+	[DIV4_ZS] = DIV4(CMFRQCR, 12, 0x6fff, 0),
-+	[DIV4_ZB] = DIV4(CMFRQCR, 8, 0x6fff, 0),
-+	[DIV4_ZB3] = DIV4(CMFRQCR, 4, 0x6fff, 0),
-+	[DIV4_CP] = DIV4(CMFRQCR, 0, 0x6fff, 0),
-+};
-+
-+enum { DIV6_SUB, DIV6_SIUA, DIV6_SIUB, DIV6_MSU, DIV6_SPU,
-+       DIV6_MVI3, DIV6_MF1, DIV6_MF2,
-+       DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_VOU,
-+       DIV6_NR };
-+
-+static struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_SUB] = SH_CLK_DIV6(&sh7367_extal2_clk, SUBUSBCKCR, 0),
-+	[DIV6_SIUA] = SH_CLK_DIV6(&pllc1_div2_clk, SCLKACR, 0),
-+	[DIV6_SIUB] = SH_CLK_DIV6(&pllc1_div2_clk, SCLKBCR, 0),
-+	[DIV6_MSU] = SH_CLK_DIV6(&pllc1_div2_clk, MSUCKCR, 0),
-+	[DIV6_SPU] = SH_CLK_DIV6(&pllc1_div2_clk, SPUCKCR, 0),
-+	[DIV6_MVI3] = SH_CLK_DIV6(&pllc1_div2_clk, MVI3CKCR, 0),
-+	[DIV6_MF1] = SH_CLK_DIV6(&pllc1_div2_clk, MFCK1CR, 0),
-+	[DIV6_MF2] = SH_CLK_DIV6(&pllc1_div2_clk, MFCK2CR, 0),
-+	[DIV6_VCK1] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR1, 0),
-+	[DIV6_VCK2] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR2, 0),
-+	[DIV6_VCK3] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR3, 0),
-+	[DIV6_VOU] = SH_CLK_DIV6(&pllc1_div2_clk, VOUCKCR, 0),
-+};
-+
-+enum { RTMSTP001,
-+       RTMSTP231, RTMSTP230, RTMSTP229, RTMSTP228, RTMSTP226,
-+       RTMSTP216, RTMSTP206, RTMSTP205, RTMSTP201,
-+       SYMSTP023, SYMSTP007, SYMSTP006, SYMSTP004,
-+       SYMSTP003, SYMSTP002, SYMSTP001, SYMSTP000,
-+       SYMSTP231, SYMSTP229, SYMSTP225, SYMSTP223, SYMSTP222,
-+       SYMSTP215, SYMSTP214, SYMSTP213, SYMSTP211,
-+       CMMSTP003,
-+       MSTP_NR };
-+
-+#define MSTP(_parent, _reg, _bit, _flags) \
-+  SH_CLK_MSTP32(_parent, _reg, _bit, _flags)
-+
-+static struct clk mstp_clks[MSTP_NR] = {
-+	[RTMSTP001] = MSTP(&div6_clks[DIV6_SUB], RTMSTPCR0, 1, 0), /* IIC2 */
-+	[RTMSTP231] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 31, 0), /* VEU3 */
-+	[RTMSTP230] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 30, 0), /* VEU2 */
-+	[RTMSTP229] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 29, 0), /* VEU1 */
-+	[RTMSTP228] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 28, 0), /* VEU0 */
-+	[RTMSTP226] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 26, 0), /* VEU2H */
-+	[RTMSTP216] = MSTP(&div6_clks[DIV6_SUB], RTMSTPCR2, 16, 0), /* IIC0 */
-+	[RTMSTP206] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 6, 0), /* JPU */
-+	[RTMSTP205] = MSTP(&div6_clks[DIV6_VOU], RTMSTPCR2, 5, 0), /* VOU */
-+	[RTMSTP201] = MSTP(&div4_clks[DIV4_B], RTMSTPCR2, 1, 0), /* VPU */
-+	[SYMSTP023] = MSTP(&div6_clks[DIV6_SPU], SYMSTPCR0, 23, 0), /* SPU1 */
-+	[SYMSTP007] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 7, 0), /* SCIFA5 */
-+	[SYMSTP006] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 6, 0), /* SCIFB */
-+	[SYMSTP004] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 4, 0), /* SCIFA0 */
-+	[SYMSTP003] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 3, 0), /* SCIFA1 */
-+	[SYMSTP002] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 2, 0), /* SCIFA2 */
-+	[SYMSTP001] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 1, 0), /* SCIFA3 */
-+	[SYMSTP000] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR0, 0, 0), /* SCIFA4 */
-+	[SYMSTP231] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR2, 31, 0), /* SIU */
-+	[SYMSTP229] = MSTP(&r_clk, SYMSTPCR2, 29, 0), /* CMT10 */
-+	[SYMSTP225] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR2, 25, 0), /* IRDA */
-+	[SYMSTP223] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR2, 23, 0), /* IIC1 */
-+	[SYMSTP222] = MSTP(&div6_clks[DIV6_SUB], SYMSTPCR2, 22, 0), /* USBHS */
-+	[SYMSTP215] = MSTP(&div4_clks[DIV4_HP], SYMSTPCR2, 15, 0), /* FLCTL */
-+	[SYMSTP214] = MSTP(&div4_clks[DIV4_HP], SYMSTPCR2, 14, 0), /* SDHI0 */
-+	[SYMSTP213] = MSTP(&div4_clks[DIV4_HP], SYMSTPCR2, 13, 0), /* SDHI1 */
-+	[SYMSTP211] = MSTP(&div4_clks[DIV4_HP], SYMSTPCR2, 11, 0), /* SDHI2 */
-+	[CMMSTP003] = MSTP(&r_clk, CMMSTPCR0, 3, 0), /* KEYSC */
-+};
-+
-+#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+#define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
-+
- static struct clk_lookup lookups[] = {
--	{
--		.clk = &peripheral_clk,
--	}, {
--		.clk = &r_clk,
--	}, {
--		.clk = &usb0_clk,
--	}, {
--		.clk = &keysc0_clk,
--	}
-+	/* main clocks */
-+	CLKDEV_CON_ID("r_clk", &r_clk),
-+	CLKDEV_CON_ID("extalb1", &sh7367_extalb1_clk),
-+	CLKDEV_CON_ID("extal2", &sh7367_extal2_clk),
-+	CLKDEV_CON_ID("extalb1_div2_clk", &extalb1_div2_clk),
-+	CLKDEV_CON_ID("extal2_div2_clk", &extal2_div2_clk),
-+	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
-+	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
-+	CLKDEV_CON_ID("pllc2_clk", &pllc2_clk),
-+
-+	/* DIV4 clocks */
-+	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-+	CLKDEV_CON_ID("g_clk", &div4_clks[DIV4_G]),
-+	CLKDEV_CON_ID("b_clk", &div4_clks[DIV4_B]),
-+	CLKDEV_CON_ID("zx_clk", &div4_clks[DIV4_ZX]),
-+	CLKDEV_CON_ID("zt_clk", &div4_clks[DIV4_ZT]),
-+	CLKDEV_CON_ID("z_clk", &div4_clks[DIV4_Z]),
-+	CLKDEV_CON_ID("zd_clk", &div4_clks[DIV4_ZD]),
-+	CLKDEV_CON_ID("hp_clk", &div4_clks[DIV4_HP]),
-+	CLKDEV_CON_ID("zs_clk", &div4_clks[DIV4_ZS]),
-+	CLKDEV_CON_ID("zb_clk", &div4_clks[DIV4_ZB]),
-+	CLKDEV_CON_ID("zb3_clk", &div4_clks[DIV4_ZB3]),
-+	CLKDEV_CON_ID("cp_clk", &div4_clks[DIV4_CP]),
-+
-+	/* DIV6 clocks */
-+	CLKDEV_CON_ID("sub_clk", &div6_clks[DIV6_SUB]),
-+	CLKDEV_CON_ID("siua_clk", &div6_clks[DIV6_SIUA]),
-+	CLKDEV_CON_ID("siub_clk", &div6_clks[DIV6_SIUB]),
-+	CLKDEV_CON_ID("msu_clk", &div6_clks[DIV6_MSU]),
-+	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
-+	CLKDEV_CON_ID("mvi3_clk", &div6_clks[DIV6_MVI3]),
-+	CLKDEV_CON_ID("mf1_clk", &div6_clks[DIV6_MF1]),
-+	CLKDEV_CON_ID("mf2_clk", &div6_clks[DIV6_MF2]),
-+	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
-+	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
-+	CLKDEV_CON_ID("vck3_clk", &div6_clks[DIV6_VCK3]),
-+	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
-+
-+	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[RTMSTP001]), /* IIC2 */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.4", &mstp_clks[RTMSTP231]), /* VEU3 */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.3", &mstp_clks[RTMSTP230]), /* VEU2 */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.2", &mstp_clks[RTMSTP229]), /* VEU1 */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.1", &mstp_clks[RTMSTP228]), /* VEU0 */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.5", &mstp_clks[RTMSTP226]), /* VEU2H */
-+	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[RTMSTP216]), /* IIC0 */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.6", &mstp_clks[RTMSTP206]), /* JPU */
-+	CLKDEV_DEV_ID("sh-vou", &mstp_clks[RTMSTP205]), /* VOU */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.0", &mstp_clks[RTMSTP201]), /* VPU */
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.7", &mstp_clks[SYMSTP023]), /* SPU1 */
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[SYMSTP007]), /* SCIFA5 */
-+	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[SYMSTP006]), /* SCIFB */
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[SYMSTP004]), /* SCIFA0 */
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[SYMSTP003]), /* SCIFA1 */
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[SYMSTP002]), /* SCIFA2 */
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[SYMSTP001]), /* SCIFA3 */
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[SYMSTP000]), /* SCIFA4 */
-+	CLKDEV_DEV_ID("sh_siu", &mstp_clks[SYMSTP231]), /* SIU */
-+	CLKDEV_CON_ID("cmt1", &mstp_clks[SYMSTP229]), /* CMT10 */
-+	CLKDEV_DEV_ID("sh_irda", &mstp_clks[SYMSTP225]), /* IRDA */
-+	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[SYMSTP223]), /* IIC1 */
-+	CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[SYMSTP222]), /* USBHS */
-+	CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[SYMSTP222]), /* USBHS */
-+	CLKDEV_DEV_ID("sh_flctl", &mstp_clks[SYMSTP215]), /* FLCTL */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[SYMSTP214]), /* SDHI0 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[SYMSTP213]), /* SDHI1 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[SYMSTP211]), /* SDHI2 */
-+	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[CMMSTP003]), /* KEYSC */
- };
- 
- void __init sh7367_clock_init(void)
- {
--	int i;
-+	int k, ret = 0;
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+
-+	if (!ret)
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
-+
-+	if (!ret)
-+		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
--	for (i = 0; i < ARRAY_SIZE(lookups); i++) {
--		lookups[i].con_id = lookups[i].clk->name;
--		clkdev_add(&lookups[i]);
--	}
-+	if (!ret)
-+		clk_init();
-+	else
-+		panic("failed to setup sh7367 clocks\n");
+@@ -155,12 +156,12 @@ tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command *cmd)
+ 	return 0;
  }
---- 0005/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-05-20 23:19:59.000000000 +0900
-@@ -11,6 +11,8 @@ extern void sh7367_add_early_devices(voi
- extern void sh7367_add_standard_devices(void);
- extern void sh7367_clock_init(void);
- extern void sh7367_pinmux_init(void);
-+extern struct clk sh7367_extalb1_clk;
-+extern struct clk sh7367_extal2_clk;
  
- extern void sh7377_init_irq(void);
- extern void sh7377_add_early_devices(void);
+-/* This chip always returns (at least?) as much data as you ask for.
++/*
++ * This chip always returns (at least?) as much data as you ask for.
+  * I'm unsure what happens if you ask for less than a block. This should be
+  * looked into to ensure that a funny length read doesnt hose the controller.
+- *
+  */
+-static inline void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
++static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ {
+ 	struct mmc_data *data = host->data;
+ 	unsigned short *buf;
+@@ -180,7 +181,7 @@ static inline void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 		count = data->blksz;
+ 
+ 	pr_debug("count: %08x offset: %08x flags %08x\n",
+-	    count, host->sg_off, data->flags);
++		 count, host->sg_off, data->flags);
+ 
+ 	/* Transfer the data */
+ 	if (data->flags & MMC_DATA_READ)
+@@ -198,15 +199,13 @@ static inline void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 	return;
+ }
+ 
+-static inline void tmio_mmc_data_irq(struct tmio_mmc_host *host)
++static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+ {
+ 	struct mmc_data *data = host->data;
+ 	struct mmc_command *stop;
+ 
+-	host->data = NULL;
+-
+ 	if (!data) {
+-		pr_debug("Spurious data end IRQ\n");
++		dev_warn(&host->pdev->dev, "Spurious data end IRQ\n");
+ 		return;
+ 	}
+ 	stop = data->stop;
+@@ -219,7 +218,8 @@ static inline void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 
+ 	pr_debug("Completed data request\n");
+ 
+-	/*FIXME - other drivers allow an optional stop command of any given type
++	/*
++	 * FIXME: other drivers allow an optional stop command of any given type
+ 	 *        which we dont do, as the chip can auto generate them.
+ 	 *        Perhaps we can be smarter about when to use auto CMD12 and
+ 	 *        only issue the auto request when we know this is the desired
+@@ -227,10 +227,17 @@ static inline void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 	 *        upper layers expect. For now, we do what works.
+ 	 */
+ 
+-	if (data->flags & MMC_DATA_READ)
+-		disable_mmc_irqs(host, TMIO_MASK_READOP);
+-	else
+-		disable_mmc_irqs(host, TMIO_MASK_WRITEOP);
++	if (data->flags & MMC_DATA_READ) {
++		if (!host->chan_rx)
++			disable_mmc_irqs(host, TMIO_MASK_READOP);
++		dev_dbg(&host->pdev->dev, "Complete Rx request %p\n",
++			host->mrq);
++	} else {
++		if (!host->chan_tx)
++			disable_mmc_irqs(host, TMIO_MASK_WRITEOP);
++		dev_dbg(&host->pdev->dev, "Complete Tx request %p\n",
++			host->mrq);
++	}
+ 
+ 	if (stop) {
+ 		if (stop->opcode = 12 && !stop->arg)
+@@ -242,7 +249,35 @@ static inline void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 	tmio_mmc_finish_request(host);
+ }
+ 
+-static inline void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
++static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
++{
++	struct mmc_data *data = host->data;
++
++	if (!data)
++		return;
++
++	if (host->chan_tx && (data->flags & MMC_DATA_WRITE)) {
++		/*
++		 * Has all data been written out yet? Testing on SuperH showed,
++		 * that in most cases the first interrupt comes already with the
++		 * BUSY status bit clear, but on some operations, like mount or
++		 * in the beginning of a write / sync / umount, there is one
++		 * DATAEND interrupt with the BUSY bit set, in this cases
++		 * waiting for one more interrupt fixes the problem.
++		 */
++		if (!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_CMD_BUSY)) {
++			disable_mmc_irqs(host, TMIO_STAT_DATAEND);
++			tasklet_schedule(&host->dma_complete);
++		}
++	} else if (host->chan_rx && (data->flags & MMC_DATA_READ)) {
++		disable_mmc_irqs(host, TMIO_STAT_DATAEND);
++		tasklet_schedule(&host->dma_complete);
++	} else {
++		tmio_mmc_do_data_irq(host);
++	}
++}
++
++static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 	unsigned int stat)
+ {
+ 	struct mmc_command *cmd = host->cmd;
+@@ -282,10 +317,16 @@ static inline void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 	 * If theres no data or we encountered an error, finish now.
+ 	 */
+ 	if (host->data && !cmd->error) {
+-		if (host->data->flags & MMC_DATA_READ)
+-			enable_mmc_irqs(host, TMIO_MASK_READOP);
+-		else
+-			enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
++		if (host->data->flags & MMC_DATA_READ) {
++			if (!host->chan_rx)
++				enable_mmc_irqs(host, TMIO_MASK_READOP);
++		} else {
++			struct dma_chan *chan = host->chan_tx;
++			if (!chan)
++				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
++			else
++				tasklet_schedule(&host->dma_issue);
++		}
+ 	} else {
+ 		tmio_mmc_finish_request(host);
+ 	}
+@@ -293,7 +334,6 @@ static inline void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 	return;
+ }
+ 
+-
+ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ {
+ 	struct tmio_mmc_host *host = devid;
+@@ -311,7 +351,7 @@ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 	if (!ireg) {
+ 		disable_mmc_irqs(host, status & ~irq_mask);
+ 
+-		pr_debug("tmio_mmc: Spurious irq, disabling! "
++		pr_warning("tmio_mmc: Spurious irq, disabling! "
+ 			"0x%08x 0x%08x 0x%08x\n", status, irq_mask, ireg);
+ 		pr_debug_status(status);
+ 
+@@ -363,16 +403,265 @@ out:
+ 	return IRQ_HANDLED;
+ }
+ 
++#ifdef CONFIG_MFD_TMIO_DMA
++static void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
++{
++#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
++	/* Switch DMA mode on or off - SuperH specific? */
++	sd_ctrl_write16(host, 0xd8, enable ? 2 : 0);
++#endif
++}
++
++static void tmio_dma_complete(void *arg)
++{
++	struct tmio_mmc_host *host = arg;
++
++	dev_dbg(&host->pdev->dev, "Command completed\n");
++
++	if (!host->data)
++		dev_warn(&host->pdev->dev, "NULL data in DMA completion!\n");
++	else
++		enable_mmc_irqs(host, TMIO_STAT_DATAEND);
++}
++
++static int tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
++{
++	struct scatterlist *sg = host->sg_ptr;
++	struct dma_async_tx_descriptor *desc = NULL;
++	struct dma_chan *chan = host->chan_rx;
++	int ret;
++
++	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_FROM_DEVICE);
++	if (ret > 0) {
++		host->dma_sglen = ret;
++		desc = chan->device->device_prep_slave_sg(chan, sg, ret,
++			DMA_FROM_DEVICE, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	}
++
++	if (desc) {
++		host->desc = desc;
++		desc->callback = tmio_dma_complete;
++		desc->callback_param = host;
++		host->cookie = desc->tx_submit(desc);
++		if (host->cookie < 0) {
++			host->desc = NULL;
++			ret = host->cookie;
++		} else {
++			chan->device->device_issue_pending(chan);
++		}
++	}
++	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
++		__func__, host->sg_len, ret, host->cookie, host->mrq);
++
++	if (!host->desc) {
++		/* DMA failed, fall back to PIO */
++		if (ret >= 0)
++			ret = -EIO;
++		host->chan_rx = NULL;
++		dma_release_channel(chan);
++		/* Free the Tx channel too */
++		chan = host->chan_tx;
++		if (chan) {
++			host->chan_tx = NULL;
++			dma_release_channel(chan);
++		}
++		dev_warn(&host->pdev->dev,
++			 "DMA failed: %d, falling back to PIO\n", ret);
++		tmio_mmc_enable_dma(host, false);
++		reset(host);
++		/* Fail this request, let above layers recover */
++		host->mrq->cmd->error = ret;
++		tmio_mmc_finish_request(host);
++	}
++
++	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
++		desc, host->cookie, host->sg_len);
++
++	return ret > 0 ? 0 : ret;
++}
++
++static int tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
++{
++	struct scatterlist *sg = host->sg_ptr;
++	struct dma_async_tx_descriptor *desc = NULL;
++	struct dma_chan *chan = host->chan_tx;
++	int ret;
++
++	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_TO_DEVICE);
++	if (ret > 0) {
++		host->dma_sglen = ret;
++		desc = chan->device->device_prep_slave_sg(chan, sg, ret,
++			DMA_TO_DEVICE, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	}
++
++	if (desc) {
++		host->desc = desc;
++		desc->callback = tmio_dma_complete;
++		desc->callback_param = host;
++		host->cookie = desc->tx_submit(desc);
++		if (host->cookie < 0) {
++			host->desc = NULL;
++			ret = host->cookie;
++		}
++	}
++	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
++		__func__, host->sg_len, ret, host->cookie, host->mrq);
++
++	if (!host->desc) {
++		/* DMA failed, fall back to PIO */
++		if (ret >= 0)
++			ret = -EIO;
++		host->chan_tx = NULL;
++		dma_release_channel(chan);
++		/* Free the Rx channel too */
++		chan = host->chan_rx;
++		if (chan) {
++			host->chan_rx = NULL;
++			dma_release_channel(chan);
++		}
++		dev_warn(&host->pdev->dev,
++			 "DMA failed: %d, falling back to PIO\n", ret);
++		tmio_mmc_enable_dma(host, false);
++		reset(host);
++		/* Fail this request, let above layers recover */
++		host->mrq->cmd->error = ret;
++		tmio_mmc_finish_request(host);
++	}
++
++	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d\n", __func__,
++		desc, host->cookie);
++
++	return ret > 0 ? 0 : ret;
++}
++
++static int tmio_mmc_start_dma(struct tmio_mmc_host *host,
++			       struct mmc_data *data)
++{
++	if (data->flags & MMC_DATA_READ) {
++		if (host->chan_rx)
++			return tmio_mmc_start_dma_rx(host);
++	} else {
++		if (host->chan_tx)
++			return tmio_mmc_start_dma_tx(host);
++	}
++
++	return 0;
++}
++
++static void tmio_issue_tasklet_fn(unsigned long priv)
++{
++	struct tmio_mmc_host *host = (struct tmio_mmc_host *)priv;
++	struct dma_chan *chan = host->chan_tx;
++
++	chan->device->device_issue_pending(chan);
++}
++
++static void tmio_tasklet_fn(unsigned long arg)
++{
++	struct tmio_mmc_host *host = (struct tmio_mmc_host *)arg;
++
++	if (host->data->flags & MMC_DATA_READ)
++		dma_unmap_sg(&host->pdev->dev, host->sg_ptr, host->dma_sglen,
++			     DMA_FROM_DEVICE);
++	else
++		dma_unmap_sg(&host->pdev->dev, host->sg_ptr, host->dma_sglen,
++			     DMA_TO_DEVICE);
++
++	tmio_mmc_do_data_irq(host);
++}
++
++/* It might be necessary to make filter MFD specific */
++static bool tmio_mmc_filter(struct dma_chan *chan, void *arg)
++{
++	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
++	chan->private = arg;
++	return true;
++}
++
++static void tmio_mmc_request_dma(struct tmio_mmc_host *host,
++				 struct tmio_mmc_data *pdata)
++{
++	host->cookie = -EINVAL;
++	host->desc = NULL;
++
++	/* We can only either use DMA for both Tx and Rx or not use it at all */
++	if (pdata->dma) {
++		dma_cap_mask_t mask;
++
++		dma_cap_zero(mask);
++		dma_cap_set(DMA_SLAVE, mask);
++
++		host->chan_tx = dma_request_channel(mask, tmio_mmc_filter,
++						    pdata->dma->chan_priv_tx);
++		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
++			host->chan_tx);
++
++		if (!host->chan_tx)
++			return;
++
++		host->chan_rx = dma_request_channel(mask, tmio_mmc_filter,
++						    pdata->dma->chan_priv_rx);
++		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
++			host->chan_rx);
++
++		if (!host->chan_rx) {
++			dma_release_channel(host->chan_tx);
++			host->chan_tx = NULL;
++			return;
++		}
++
++		tasklet_init(&host->dma_complete, tmio_tasklet_fn, (unsigned long)host);
++		tasklet_init(&host->dma_issue, tmio_issue_tasklet_fn, (unsigned long)host);
++
++		tmio_mmc_enable_dma(host, true);
++	}
++}
++
++static void tmio_mmc_release_dma(struct tmio_mmc_host *host)
++{
++	if (host->chan_tx) {
++		struct dma_chan *chan = host->chan_tx;
++		host->chan_tx = NULL;
++		dma_release_channel(chan);
++	}
++	if (host->chan_rx) {
++		struct dma_chan *chan = host->chan_rx;
++		host->chan_rx = NULL;
++		dma_release_channel(chan);
++	}
++
++	host->cookie = -EINVAL;
++	host->desc = NULL;
++}
++#else
++static int tmio_mmc_start_dma(struct tmio_mmc_host *host,
++			       struct mmc_data *data)
++{
++	return 0;
++}
++
++static void tmio_mmc_request_dma(struct tmio_mmc_host *host,
++				 struct tmio_mmc_data *pdata)
++{
++	host->chan_tx = NULL;
++	host->chan_rx = NULL;
++}
++
++static void tmio_mmc_release_dma(struct tmio_mmc_host *host)
++{
++}
++#endif
++
+ static int tmio_mmc_start_data(struct tmio_mmc_host *host,
+ 	struct mmc_data *data)
+ {
+ 	pr_debug("setup data transfer: blocksize %08x  nr_blocks %d\n",
+-	    data->blksz, data->blocks);
++		 data->blksz, data->blocks);
+ 
+ 	/* Hardware cannot perform 1 and 2 byte requests in 4 bit mode */
+ 	if (data->blksz < 4 && host->mmc->ios.bus_width = MMC_BUS_WIDTH_4) {
+-		printk(KERN_ERR "%s: %d byte block unsupported in 4 bit mode\n",
+-			mmc_hostname(host->mmc), data->blksz);
++		pr_err("%s: %d byte block unsupported in 4 bit mode\n",
++		       mmc_hostname(host->mmc), data->blksz);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -383,7 +672,7 @@ static int tmio_mmc_start_data(struct tmio_mmc_host *host,
+ 	sd_ctrl_write16(host, CTL_SD_XFER_LEN, data->blksz);
+ 	sd_ctrl_write16(host, CTL_XFER_BLK_COUNT, data->blocks);
+ 
+-	return 0;
++	return tmio_mmc_start_dma(host, data);
+ }
+ 
+ /* Process requests from the MMC layer */
+@@ -404,7 +693,6 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	}
+ 
+ 	ret = tmio_mmc_start_command(host, mrq->cmd);
+-
+ 	if (!ret)
+ 		return;
+ 
+@@ -459,10 +747,10 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 
+-	return (sd_ctrl_read16(host, CTL_STATUS) & TMIO_STAT_WRPROTECT) ? 0 : 1;
++	return (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT) ? 0 : 1;
+ }
+ 
+-static struct mmc_host_ops tmio_mmc_ops = {
++static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
+@@ -515,6 +803,7 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
+ 	struct tmio_mmc_host *host;
+ 	struct mmc_host *mmc;
+ 	int ret = -EINVAL;
++	u32 irq_mask = TMIO_MASK_CMD;
+ 
+ 	if (dev->num_resources != 2)
+ 		goto out;
+@@ -578,13 +867,20 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
+ 	if (ret)
+ 		goto cell_disable;
+ 
++	/* See if we also get DMA */
++	tmio_mmc_request_dma(host, pdata);
++
+ 	mmc_add_host(mmc);
+ 
+-	printk(KERN_INFO "%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
+-	       (unsigned long)host->ctl, host->irq);
++	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
++		(unsigned long)host->ctl, host->irq);
+ 
+ 	/* Unmask the IRQs we want to know about */
+-	enable_mmc_irqs(host, TMIO_MASK_IRQ);
++	if (!host->chan_rx)
++		irq_mask |= TMIO_MASK_READOP;
++	if (!host->chan_tx)
++		irq_mask |= TMIO_MASK_WRITEOP;
++	enable_mmc_irqs(host, irq_mask);
+ 
+ 	return 0;
+ 
+@@ -609,6 +905,7 @@ static int __devexit tmio_mmc_remove(struct platform_device *dev)
+ 	if (mmc) {
+ 		struct tmio_mmc_host *host = mmc_priv(mmc);
+ 		mmc_remove_host(mmc);
++		tmio_mmc_release_dma(host);
+ 		free_irq(host->irq, host);
+ 		if (cell->disable)
+ 			cell->disable(dev);
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index dafecfb..307bcf6 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -10,6 +10,8 @@
+  */
+ 
+ #include <linux/highmem.h>
++#include <linux/interrupt.h>
++#include <linux/dmaengine.h>
+ 
+ #define CTL_SD_CMD 0x00
+ #define CTL_ARG_REG 0x04
+@@ -106,6 +108,17 @@ struct tmio_mmc_host {
+ 	unsigned int            sg_off;
+ 
+ 	struct platform_device *pdev;
++
++	/* DMA support */
++	struct dma_chan		*chan_rx;
++	struct dma_chan		*chan_tx;
++	struct tasklet_struct	dma_complete;
++	struct tasklet_struct	dma_issue;
++#ifdef CONFIG_MFD_TMIO_DMA
++	struct dma_async_tx_descriptor *desc;
++	unsigned int            dma_sglen;
++	dma_cookie_t		cookie;
++#endif
+ };
+ 
+ #include <linux/io.h>
+-- 
+1.6.2.4
+
