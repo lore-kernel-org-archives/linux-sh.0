@@ -1,31 +1,62 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 May 2010 17:54:45 +0000
+From: "Charles D. Krebs" <ckrebs@therealtimegroup.com>
+Date: Fri, 14 May 2010 19:43:09 +0000
 Subject: Re: Status of tmio_mmc DMA support for SDIO
-Message-Id: <Pine.LNX.4.64.1005141953160.6147@axis700.grange>
+Message-Id: <1B215080664E44FE81F6BA1DCFA65A38@RSI45>
 List-Id: <linux-sh.vger.kernel.org>
-References: <A0C4AD4CC48F4CAAA4C9CB027472149D@RSI45>
- <Pine.LNX.4.64.1005140843320.6147@axis700.grange>
- <AANLkTikKmiRe0f9UXQo3bkwxjCVPzivTrTEYyzY3DcMB@mail.gmail.com>
-In-Reply-To: <AANLkTikKmiRe0f9UXQo3bkwxjCVPzivTrTEYyzY3DcMB@mail.gmail.com>
+References: <A0C4AD4CC48F4CAAA4C9CB027472149D@RSI45> <Pine.LNX.4.64.1005140843320.6147@axis700.grange> <AANLkTikKmiRe0f9UXQo3bkwxjCVPzivTrTEYyzY3DcMB@mail.gmail.com> <Pine.LNX.4.64.1005141953160.6147@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005141953160.6147@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>
-Cc: "Charles D. Krebs" <ckrebs@therealtimegroup.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, sailaja.sdn@redpinesignals.com, Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian@mnementh.co.uk>
+Cc: linux-sh@vger.kernel.org, sailaja.sdn@redpinesignals.com, Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org
 
-On Fri, 14 May 2010, Ian Molton wrote:
+>> Just saw this - am I right in thinking someone has written SDIO
+>> support for TMIO ? Im afraid I dont appear to have the preceeding
+>> emails.
+>
+> This is the first email regarding TMIO SDIO that I'm aware of - from
+> Charles, he's sent it tothe sh ML and to me and I've added you and the mmc
+> list to CC.
 
-> Just saw this - am I right in thinking someone has written SDIO
-> support for TMIO ? Im afraid I dont appear to have the preceeding
-> emails.
+To clarify - I didn't write that code.  It was developed by some of the 
+Kernel guys over at Renesas Japan specifically for my request to support 
+SDIO under their BSP for 2.6.33.  The code in tmio and sh_mobile_sdhi 
+replaces a previously closed source module for SD support on the hardware 
+due to licensing restrictions of the SD consortium.  Apparently those issues 
+were resolved and now the complete SD stack is integrated into the Kernel 
+directly.  However, the transition didn't include support for SDIO, so the 
+patch to tmio was provided in the interim.
 
-This is the first email regarding TMIO SDIO that I'm aware of - from 
-Charles, he's sent it tothe sh ML and to me and I've added you and the mmc 
-list to CC.
+Magnus - Do you know the author for the SDIO patch?
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Charles Krebs, Embedded Solutions Developer
+The Realtime Group
+
+--------------------------------------------------
+From: "Guennadi Liakhovetski" <g.liakhovetski@gmx.de>
+Sent: Friday, May 14, 2010 12:54 PM
+To: "Ian Molton" <ian@mnementh.co.uk>
+Cc: "Charles D. Krebs" <ckrebs@therealtimegroup.com>; 
+<linux-sh@vger.kernel.org>; <sailaja.sdn@redpinesignals.com>; "Magnus Damm" 
+<magnus.damm@gmail.com>; <linux-mmc@vger.kernel.org>
+Subject: Re: Status of tmio_mmc DMA support for SDIO
+
+> On Fri, 14 May 2010, Ian Molton wrote:
+>
+>> Just saw this - am I right in thinking someone has written SDIO
+>> support for TMIO ? Im afraid I dont appear to have the preceeding
+>> emails.
+>
+> This is the first email regarding TMIO SDIO that I'm aware of - from
+> Charles, he's sent it tothe sh ML and to me and I've added you and the mmc
+> list to CC.
+>
+> Thanks
+> Guennadi
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> 
+
