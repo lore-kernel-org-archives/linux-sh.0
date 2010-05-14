@@ -1,49 +1,55 @@
-From: Peter =?iso-8859-1?q?H=FCwe?= <PeterHuewe@gmx.de>
-Date: Fri, 14 May 2010 11:26:51 +0000
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Date: Fri, 14 May 2010 12:53:48 +0000
 Subject: Re: [PATCH] media/IR: Add missing include file to rc-map.c
-Message-Id: <201005141326.52099.PeterHuewe@gmx.de>
+Message-Id: <20100514225348.05e25821.sfr@canb.auug.org.au>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Fri__14_May_2010_22_53_48_+1000_F6ZXC=D=N=F2Vx.l"
 List-Id: <linux-sh.vger.kernel.org>
-References: <201005051720.22617.PeterHuewe@gmx.de> <201005112042.14889.PeterHuewe@gmx.de> <20100514060240.GD12002@linux-sh.org>
-In-Reply-To: <20100514060240.GD12002@linux-sh.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-next@vger.kernel.org
-Cc: Paul Mundt <lethal@linux-sh.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, linuxppc-dev@ozlabs.org, David H?rdeman <david@hardeman.nu>, linux-media@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mips@linux-mips.org, linux-m68k@lists.linux-m68k.org
+References: <201005051720.22617.PeterHuewe@gmx.de>
+	<201005112042.14889.PeterHuewe@gmx.de>
+	<20100514060240.GD12002@linux-sh.org>
+	<201005141326.52099.PeterHuewe@gmx.de>
+In-Reply-To: <201005141326.52099.PeterHuewe@gmx.de>
+To: Peter =?UTF-8?B?SMO8d2U=?= <PeterHuewe@gmx.de>
+Cc: linux-next@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, linuxppc-dev@ozlabs.org, David H?rdeman <david@hardeman.nu>, linux-media@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mips@linux-mips.org, linux-m68k@lists.linux-m68k.org
 
-From: Peter Huewe <peterhuewe@gmx.de>
+--Signature=_Fri__14_May_2010_22_53_48_+1000_F6ZXC=D=N=F2Vx.l
+Content-Type: text/plain; charset=UTF-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-This patch adds a missing include linux/delay.h to prevent
-build failures[1-5]
+Hi Peter,
 
-Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
----
-Forwarded to linux-next mailing list - 
-breakage still exists in linux-next of 20100514 - please apply
+On Fri, 14 May 2010 13:26:51 +0200 Peter H=C3=BCwe <PeterHuewe@gmx.de> wrot=
+e:
+>
+> From: Peter Huewe <peterhuewe@gmx.de>
+>=20
+> This patch adds a missing include linux/delay.h to prevent
+> build failures[1-5]
+>=20
+> Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
+> ---
+> Forwarded to linux-next mailing list -=20
+> breakage still exists in linux-next of 20100514 - please apply
 
-KernelVersion: linux-next-20100505
+This patch was included in the v4l-dvb tree (and thus linux-next) today
+-see commit 1e19cb4e7d15d724cf2c6ae23f0b871c84a92790.
 
-References:
-[1] http://kisskb.ellerman.id.au/kisskb/buildresult/2571452/
-[2] http://kisskb.ellerman.id.au/kisskb/buildresult/2571188/
-[3] http://kisskb.ellerman.id.au/kisskb/buildresult/2571479/
-[4] http://kisskb.ellerman.id.au/kisskb/buildresult/2571429/
-[5] http://kisskb.ellerman.id.au/kisskb/buildresult/2571432/
+--=20
+Cheers,
+Stephen Rothwell                    sfr@canb.auug.org.au
+http://www.canb.auug.org.au/~sfr/
 
-drivers/media/IR/rc-map.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+--Signature=_Fri__14_May_2010_22_53_48_+1000_F6ZXC=D=N=F2Vx.l
+Content-Type: application/pgp-signature
 
-diff --git a/drivers/media/IR/rc-map.c b/drivers/media/IR/rc-map.c
-index caf6a27..46a8f15 100644
---- a/drivers/media/IR/rc-map.c
-+++ b/drivers/media/IR/rc-map.c
-@@ -14,6 +14,7 @@
- 
- #include <media/ir-core.h>
- #include <linux/spinlock.h>
-+#include <linux/delay.h>
- 
- /* Used to handle IR raw handler extensions */
- static LIST_HEAD(rc_map_list);
--- 
-1.6.4.4
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEARECAAYFAkvtR90ACgkQjjKRsyhoI8wyygCfZDik8epd0H05Npyb+DFFvBOx
+CdwAoJMc/3TgT2LBEXA6b3UoshPylvNm
+=cIoQ
+-----END PGP SIGNATURE-----
+
+--Signature=_Fri__14_May_2010_22_53_48_+1000_F6ZXC=D=N=F2Vx.l--
