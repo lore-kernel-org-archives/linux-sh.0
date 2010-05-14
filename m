@@ -1,79 +1,50 @@
-From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Mon, 31 May 2010 07:59:56 +0000
-Subject: [PATCH 4/4] Modify sh-sci.h to adopt specific serial behaviour of SH-2007
-Message-Id: <1275292796-26602-5-git-send-email-mitake@dcl.info.waseda.ac.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 May 2010 10:34:37 +0000
+Subject: [PATCH 1/3] mmc: let MFD's provide supported Vdd card voltages to
+Message-Id: <Pine.LNX.4.64.1005141232530.6147@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005141228510.6147@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005141228510.6147@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Very dirty and easy fix for sh-sci.
-Default sh-sci cannot activate serial of SH-2007,
-so this fix is required.
-
-Two points are changed,
- * At end of sci_set_termios(), the value SCSCR_INIT(port)
-   is written to SCSCR. And the value of it for Subtype 7780
-   is 0x3a. This containts CKE1=1.
-   But, when this value is written to serial device of SH-2007,
-   this will stop. So we have to drop the flag of CKE1.
-
- * Baud rate written to SCBRR should be caliculated with this expression:
-   ((clk+16*bps)/(32*bps)-1)
-   Original form of this expression is:
-   ((clk+16*bps)/(16*bps)-1)
-
-These two points are really mysterious.
-But I don't have the way to validate processor on SH-2007,
-so I've mocked the kernel provided by the manufacture of this board :(
-( http://ms-n.org/sh-linux/kernel/ )
-
-This patch fix sh-sci.h in dirty way,
-but fortunately, this has no harm for other board and processors supports.
-If you permit to apply this patch,
-I'd like to find cause of this behaviour and revert this change someday.
-
-Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/serial/sh-sci.h |   16 +++++++++++++++-
- 1 files changed, 15 insertions(+), 1 deletions(-)
+ drivers/mmc/host/tmio_mmc.c |    5 ++++-
+ include/linux/mfd/tmio.h    |    1 +
+ 2 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
-index f70c49f..f8c684c 100644
---- a/drivers/serial/sh-sci.h
-+++ b/drivers/serial/sh-sci.h
-@@ -140,7 +140,15 @@
- # define SCSPTR0	0xffe00024	/* 16 bit SCIF */
- # define SCSPTR1	0xffe10024	/* 16 bit SCIF */
- # define SCIF_ORER	0x0001		/* Overrun error bit */
--# define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-+
-+#if defined(CONFIG_SH_SH2007)
-+/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=0 */
-+# define SCSCR_INIT(port)	0x38
-+#else
-+/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=1 */
-+# define SCSCR_INIT(port)	0x3a
-+#endif
-+
- #elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7786)
- # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
-@@ -602,7 +610,13 @@ static inline int sci_rxd_in(struct uart_port *port)
- #if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
-     defined(CONFIG_CPU_SUBTYPE_SH7785) || \
-     defined(CONFIG_CPU_SUBTYPE_SH7786)
-+
-+#if defined(CONFIG_SH_SH2007)
-+#define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(32*bps)-1)
-+#else
- #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
-+#endif
-+
- #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index a295328..73f6c3d 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -845,7 +845,10 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
+ 	mmc->caps |= pdata->capabilities;
+ 	mmc->f_max = pdata->hclk;
+ 	mmc->f_min = mmc->f_max / 512;
+-	mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
++	if (pdata->ocr_mask)
++		mmc->ocr_avail = pdata->ocr_mask;
++	else
++		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
+ 
+ 	/* Tell the MFD core we are ready to be enabled */
+ 	if (cell->enable) {
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index feeed0b..f07425b 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -70,6 +70,7 @@ struct tmio_mmc_data {
+ 	unsigned int			hclk;
+ 	unsigned long			capabilities;
+ 	unsigned long			flags;
++	u32				ocr_mask;	/* available voltages */
+ 	struct tmio_mmc_dma		*dma;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
 -- 
-1.6.5.2
+1.6.2.4
 
