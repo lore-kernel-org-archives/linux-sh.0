@@ -1,109 +1,160 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 May 2010 10:34:46 +0000
-Subject: [PATCH 3/3] ARM: add support for the second SD-/MMC-card slot on
-Message-Id: <Pine.LNX.4.64.1005141233510.6147@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 May 2010 14:43:04 +0000
+Subject: [PATCH 03/04] sh: add boot code to MMCIF driver header
+Message-Id: <20100518144304.29239.85313.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005141228510.6147@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005141228510.6147@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-The ap4evb board is equipped with two card slots: one SD-card slot and one
-SD-/MMC-card slot. The latter is connected to the second SDHI interface on
-sh7372 (SDHI1). Its power supply can be jumpered either to 1.8 or 3.3V, we fix
-it at default 1.8V for now.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch adds a set of MMCIF functions for the romImage
+boot loader that allows the kernel to be booted directly
+from an MMC card.
+
+Thanks to Jeremy Baker for the initial prototype.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |   44 +++++++++++++++++++++++++++++++-
- 1 files changed, 42 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 865e024..9faed01 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -25,6 +25,7 @@
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/mfd/sh_mobile_sdhi.h>
-+#include <linux/mmc/host.h>
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
-@@ -217,8 +218,8 @@ static struct platform_device keysc_device = {
- 
- /* SDHI0 */
- static struct sh_mobile_sdhi_info sdhi0_info = {
--	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
--	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -244,6 +245,36 @@ static struct platform_device sdhi0_device = {
- 	},
- };
- 
-+/* SDHI1 */
-+static struct sh_mobile_sdhi_info sdhi1_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
-+	.tmio_ocr_mask	= MMC_VDD_165_195,
-+};
-+
-+static struct resource sdhi1_resources[] = {
-+	[0] = {
-+		.name	= "SDHI1",
-+		.start  = 0xe6860000,
-+		.end    = 0xe68601ff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = evt2irq(0x0e80),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device sdhi1_device = {
-+	.name           = "sh_mobile_sdhi",
-+	.num_resources  = ARRAY_SIZE(sdhi1_resources),
-+	.resource       = sdhi1_resources,
-+	.id             = 1,
-+	.dev	= {
-+		.platform_data	= &sdhi1_info,
-+	},
-+};
-+
- static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
- 	.clock_source = LCDC_CLK_PERIPHERAL, /* One of interface clocks */
- 	.ch[0] = {
-@@ -322,6 +353,7 @@ static struct platform_device *ap4evb_devices[] __initdata = {
- 	&smc911x_device,
- 	&keysc_device,
- 	&sdhi0_device,
-+	&sdhi1_device,
- 	&lcdc_device,
- 	&mipidsi0_device,
- };
-@@ -448,6 +480,14 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1, NULL);
- 	gpio_request(GPIO_FN_SDHID0_0, NULL);
- 
-+	/* SDHI1 */
-+	gpio_request(GPIO_FN_SDHICMD1, NULL);
-+	gpio_request(GPIO_FN_SDHICLK1, NULL);
-+	gpio_request(GPIO_FN_SDHID1_3, NULL);
-+	gpio_request(GPIO_FN_SDHID1_2, NULL);
-+	gpio_request(GPIO_FN_SDHID1_1, NULL);
-+	gpio_request(GPIO_FN_SDHID1_0, NULL);
-+
- 	sh7372_add_standard_devices();
- 
- 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
--- 
-1.6.2.4
+ include/linux/mmc/sh_mmcif.h |  129 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 129 insertions(+)
 
+--- 0004/include/linux/mmc/sh_mmcif.h
++++ work/include/linux/mmc/sh_mmcif.h	2010-05-18 21:20:44.000000000 +0900
+@@ -68,4 +68,133 @@ extern inline void sh_mmcif_writel(void 
+ 	writel(val, addr + reg);
+ }
+ 
++#define SH_MMCIF_BBS 512 /* boot block size */
++
++extern inline void sh_mmcif_boot_cmd_send(void __iomem *base,
++					  unsigned long cmd, unsigned long arg)
++{
++	sh_mmcif_writel(base, MMCIF_CE_INT, 0);
++	sh_mmcif_writel(base, MMCIF_CE_ARG, arg);
++	sh_mmcif_writel(base, MMCIF_CE_CMD_SET, cmd);
++}
++
++extern inline int sh_mmcif_boot_cmd_poll(void __iomem *base, unsigned long mask)
++{
++	unsigned long tmp;
++	int cnt;
++
++	for (cnt = 0; cnt < 1000000; cnt++) {
++		tmp = sh_mmcif_readl(base, MMCIF_CE_INT);
++		if (tmp & mask) {
++			sh_mmcif_writel(base, MMCIF_CE_INT, tmp & ~mask);
++			return 0;
++		}
++	}
++
++	return -1;
++}
++
++extern inline int sh_mmcif_boot_cmd(void __iomem *base,
++				    unsigned long cmd, unsigned long arg)
++{
++	sh_mmcif_boot_cmd_send(base, cmd, arg);
++	return sh_mmcif_boot_cmd_poll(base, 0x00010000);
++}
++
++extern inline int sh_mmcif_boot_do_read_single(void __iomem *base,
++					       unsigned int block_nr,
++					       unsigned long *buf)
++{
++	int k;
++
++	/* CMD13 - Status */
++	sh_mmcif_boot_cmd(base, 0x0d400000, 0x00010000);
++
++	if (sh_mmcif_readl(base, MMCIF_CE_RESP0) != 0x0900)
++		return -1;
++
++	/* CMD17 - Read */
++	sh_mmcif_boot_cmd(base, 0x11480000, block_nr * SH_MMCIF_BBS);
++	if (sh_mmcif_boot_cmd_poll(base, 0x00100000) < 0)
++		return -1;
++
++	for (k = 0; k < (SH_MMCIF_BBS / 4); k++)
++		buf[k] = sh_mmcif_readl(base, MMCIF_CE_DATA);
++
++	return 0;
++}
++
++extern inline int sh_mmcif_boot_do_read(void __iomem *base,
++					unsigned long first_block,
++					unsigned long nr_blocks,
++					void *buf)
++{
++	unsigned long k;
++	int ret = 0;
++
++	/* CMD16 - Set the block size */
++	sh_mmcif_boot_cmd(base, 0x10400000, SH_MMCIF_BBS);
++
++	for (k = 0; !ret && k < nr_blocks; k++)
++		ret = sh_mmcif_boot_do_read_single(base, first_block + k,
++						   buf + (k * SH_MMCIF_BBS));
++
++	return ret;
++}
++
++extern inline void sh_mmcif_boot_init(void __iomem *base)
++{
++	unsigned long tmp;
++
++	/* reset */
++	tmp = sh_mmcif_readl(base, MMCIF_CE_VERSION);
++	sh_mmcif_writel(base, MMCIF_CE_VERSION, tmp | 0x80000000);
++	sh_mmcif_writel(base, MMCIF_CE_VERSION, tmp & ~0x80000000);
++
++	/* byte swap */
++	sh_mmcif_writel(base, MMCIF_CE_BUF_ACC, 0x00010000);
++
++	/* Set block size in MMCIF hardware */
++	sh_mmcif_writel(base, MMCIF_CE_BLOCK_SET, SH_MMCIF_BBS);
++
++	/* Enable the clock, set it to Bus clock/256 (about 325Khz)*/
++	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL, 0x01072fff);
++
++	/* CMD0 */
++	sh_mmcif_boot_cmd(base, 0x00000040, 0);
++
++	/* CMD1 - Get OCR */
++	do {
++		sh_mmcif_boot_cmd(base, 0x01405040, 0x40300000); /* CMD1 */
++	} while ((sh_mmcif_readl(base, MMCIF_CE_RESP0) & 0x80000000)
++		 != 0x80000000);
++
++	/* CMD2 - Get CID */
++	sh_mmcif_boot_cmd(base, 0x02806040, 0);
++
++	/* CMD3 - Set card relative address */
++	sh_mmcif_boot_cmd(base, 0x03400040, 0x00010000);
++}
++
++extern inline void sh_mmcif_boot_slurp(void __iomem *base,
++				       unsigned char *buf,
++				       unsigned long no_bytes)
++{
++	unsigned long tmp;
++
++	/* In data transfer mode: Set clock to Bus clock/4 (about 20Mhz) */
++	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL, 0x01012fff);
++
++	/* CMD9 - Get CSD */
++	sh_mmcif_boot_cmd(base, 0x09806000, 0x00010000);
++
++	/* CMD7 - Select the card */
++	sh_mmcif_boot_cmd(base, 0x07400000, 0x00010000);
++
++	tmp = no_bytes / SH_MMCIF_BBS;
++	tmp += (no_bytes % SH_MMCIF_BBS) ? 1 : 0;
++
++	sh_mmcif_boot_do_read(base, 512, tmp, buf);
++}
++
+ #endif /* __SH_MMCIF_H__ */
