@@ -1,58 +1,47 @@
-From: Ian Molton <ian@mnementh.co.uk>
-Date: Thu, 13 May 2010 21:46:31 +0000
-Subject: Re: + mmc-add-dma-support-to-tmio_mmc-driver-when-used-on-superh.patch
-Message-Id: <AANLkTikV-qMrdJq9hbdeRnqjZf811lY6eAHPP7rRV2qf@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 May 2010 14:42:29 +0000
+Subject: [PATCH 00/04] sh: romImage MMCIF boot patches V2
+Message-Id: <20100518144229.29239.19891.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201005122255.o4CMtmvN025653@imap1.linux-foundation.org>
-	<AANLkTim5U-JbrVCBKHnERgHol2GcwTfweQyI4onR1Skh@mail.gmail.com>
-	<Pine.LNX.4.64.1005131357500.4671@axis700.grange> <AANLkTinPW2W6aV1smLsQObLOAS3bECDZ7mhSGCm2aqgO@mail.gmail.com>
-	<Pine.LNX.4.64.1005131415460.4671@axis700.grange> <AANLkTik4gzuZvrAwbK-dyCXVYf5gLD0RGrpvM55YLzOK@mail.gmail.com>
-	<Pine.LNX.4.64.1005131511540.4671@axis700.grange> <Pine.LNX.4.64.1005131616230.4671@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005131616230.4671@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Sounds good to me, and you're right - the MFD level is good for this
-config option.
+sh: romImage MMCIF boot patches V2
 
--- 
-Ian Molton
-Linux, Automotive, and other hacking:
-http://www.mnementh.co.uk/
+[PATCH 01/04] sh: allow romImage data between head.S and the zero page
+[PATCH 02/04] sh: prepare MMCIF driver header file
+[PATCH 03/04] sh: add boot code to MMCIF driver header
+[PATCH 04/04] sh: add romImage MMCIF boot for sh7724 and Ecovec V2
 
+These patches makes it possible to build a Linux kernel that supports
+loading itself over the MMCIF interface on sh7724 processors.
 
+The SH kernel has been used as a boot loader ever since the romImage
+build target was introduced. This patch extends the romImage code from
+only supporting boot from NOR flash to support building a kernel image
+that can be written directly to a MMC card and booted by the sh7724
+processor.
 
-On 13 May 2010 15:18, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> On Thu, 13 May 2010, Guennadi Liakhovetski wrote:
->
->> On Thu, 13 May 2010, Ian Molton wrote:
->>
->> > Might be worth exposing for now, whilst the feature is new. but yes,
->> > automatic select yes on all the platforms you are comfortable with.
->> >
->> > Im not sure if it should be per MFD or per platform. I tend to think
->> > the latter, given that its slave DMA and thus I could have the same
->> > MFD in platforms with different CPUs (eg. e740 and e800) where a CPU
->> > bug might upset one but not the other.
->>
->> So far I went for the least effort - not exposed, selected by MFDs. If we
->> ever have a need to change this, e.g., make it user-selectable or per
->> platform, we can always do so later. For now all SuperH / SH-Mobile
->> platforms I tested can use this driver with DMA. Expect updated patches
->> shortly.
->
-> One more thing I forgot to mention - even if your MFD enables DMA, it
-> still can further decide when (on which platforms) to enable and when to
-> disable DMA by providing or not providing DMA slave configuration to
-> tmio_mmc.
->
-> Thanks
-> Guennadi
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
->
+Yes, on selected boards the upstream SH kernel can be booted without any
+boot loader using the romImage build target. Work is currently being done
+to support this feature on SH-Mobile ARM processors as well.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Applies to the sh-2.6 git tree and the MMCIF driver from mmotd
+
+ arch/sh/Kconfig                               |   11 +
+ arch/sh/boot/romimage/Makefile                |   13 +-
+ arch/sh/boot/romimage/head.S                  |   42 ++++++
+ arch/sh/boot/romimage/mmcif-sh7724.c          |   72 +++++++++++
+ arch/sh/boot/romimage/vmlinux.scr             |    2 
+ arch/sh/include/cpu-sh4/cpu/sh7724.h          |    1 
+ arch/sh/include/mach-common/mach/romimage.h   |   10 +
+ arch/sh/include/mach-ecovec24/mach/romimage.h |   27 ++++
+ arch/sh/include/mach-kfr2r09/mach/romimage.h  |   10 +
+ drivers/mmc/host/sh_mmcif.c                   |  125 +++++++------------
+ include/linux/mmc/sh_mmcif.h                  |  161 +++++++++++++++++++++++++
+ 11 files changed, 392 insertions(+), 82 deletions(-)
