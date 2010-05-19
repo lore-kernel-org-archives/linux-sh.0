@@ -1,36 +1,55 @@
-From: Promo <drbaha@btinternet.com>
-Date: Fri, 14 May 2010 18:31:45 +0000
-Subject: =?utf-8?B?wqMxLDAwMCwwMDAuMDAgR0JQ?=
-Message-Id: <1412.1273861905@dbmail.dk>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 19 May 2010 18:34:27 +0000
+Subject: [PATCH 7/10 v2] SH: Add SDHI DMA support to ecovec
+Message-Id: <Pine.LNX.4.64.1005191808420.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-You have just been awarded,the sum of =C2=A31,000,000.00 GBP in the UK LOTT=
-ERY
-2010 Anniversary Bonanza held this Month.Verify this mail By providing your=
- Complete
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/boards/mach-ecovec24/setup.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
 
-Details
-
-Names:...........
-
-Address:..
-
-Country:...............
-
-Age:..........
-
-Sex:.............
-
-Phone/cellphone........
-
-
-Regard
-Mrs.Rose Wood
-Co-ordinator
-
-
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 0e36b04..37d9efc 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+@@ -442,7 +443,9 @@ static void sdhi0_set_pwr(struct platform_device *pdev, int state)
+ }
+ 
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+-	.set_pwr = sdhi0_set_pwr,
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.set_pwr	= sdhi0_set_pwr,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -478,7 +481,9 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ }
+ 
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+-	.set_pwr = sdhi1_set_pwr,
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++	.set_pwr	= sdhi1_set_pwr,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+-- 
+1.6.2.4
 
