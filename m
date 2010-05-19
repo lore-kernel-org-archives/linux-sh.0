@@ -1,47 +1,31 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 21 May 2010 15:15:38 +0000
-Subject: [PATCH 2/5] ARM: add LCDC and MIPI DSI-Tx clock definitions to sh7372
-Message-Id: <Pine.LNX.4.64.1005211700420.8450@axis700.grange>
+Date: Wed, 19 May 2010 18:37:11 +0000
+Subject: [PATCH 0/2] tmio: Support board-specified voltages
+Message-Id: <Pine.LNX.4.64.1005191825160.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005201829260.26000@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005201829260.26000@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, "linux-fbdev, @vger.kernel.org" <linux-fbdev@vger.kernel.org>, "lin, ux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "Syrjala Ville (Nokia-D/Helsinki)" <ville.syrjala@nokia.com>, Tomi Valkeinen <tomi.valkeinen@nokia.com>
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Andrew Morton <akpm@linux-foundation.org>
 
-Define clock objects for switching on and off clocks for LCDC0, LCDC1 and MIPI
-DSI-Tx.
+Just re-sending with Ian's ack added. This used to be a series of 3 
+patches, patch 3 is ARM specific and will be merged via the architecture 
+tree.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Applies on top of
+
+"[PATCH 0/10] add DMA support to tmio_mmc, using dmaengine API, use it on SH"
+and
+"[PATCH 0/3] tmio: let platforms decide upon write-protection availability"
+
+patch series.
+
+Andrew, please, apply.
+
+Thanks
+Guennadi
 ---
-
-Now that the "fbdev: add a MIPI DSI header" patch has been acked, we can 
-add the rest of the patches in this series, which can completely be pulled 
-via the genesis tree. Paul, please apply. This patch is unchanged from its 
-original version.
-
- arch/arm/mach-shmobile/clock-sh7372.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index abbc380..66ee47a 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -264,8 +264,12 @@ struct clk div6_clks[] = {
- 
- #define R_CLK (&r_clk)
- #define HP_CLK (&div4_clks[DIV4_HP])
-+#define B_CLK (&div4_clks[DIV4_B])
- 
- static struct clk mstp_clks[] = {
-+	MSTP("lcdc0", B_CLK, SMSTPCR1, 0, 0),
-+	MSTP("lcdc1", B_CLK, SMSTPCR1, 17, 0),
-+	MSTP("dsitx", B_CLK, SMSTPCR1, 18, 0),
- 	MSTP("sdhi0", HP_CLK, SMSTPCR3, 14, 0),
- 	MSTP("sdhi1", HP_CLK, SMSTPCR3, 13, 0),
- 	MSTP("keysc0", R_CLK, SMSTPCR4, 3, 0),
--- 
-1.6.2.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
