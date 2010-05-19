@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 19 May 2010 09:05:53 +0000
+From: Eric Miao <eric.y.miao@gmail.com>
+Date: Wed, 19 May 2010 10:02:10 +0000
 Subject: Re: [PATCH] ARM: Add support for 10 hardirq bits
-Message-Id: <AANLkTinVmwrp8Xi7Bos1nJe5Rrs1UcxZSwGrZuqnWY4M@mail.gmail.com>
+Message-Id: <AANLkTilcUS0rPUIReGV25w9946eEKqMdIwXXvw9nkPOL@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20100310111749.18521.9002.sendpatchset@t400s>
 	<u2yaec7e5c31004292102rd561d7detc73e9fd2a5570ab0@mail.gmail.com>
@@ -9,66 +9,28 @@ References: <20100310111749.18521.9002.sendpatchset@t400s>
 	<AANLkTil63uNv-S3D4ECYwT500w9sZd_8TE_T-SX0cqxv@mail.gmail.com>
 	<AANLkTikTCvOIbrr4TDt2OfHrHWHIFE4Cha8YhwtLrvc7@mail.gmail.com>
 	<20100519083749.GA24520@n2100.arm.linux.org.uk>
-In-Reply-To: <20100519083749.GA24520@n2100.arm.linux.org.uk>
+	<AANLkTinVmwrp8Xi7Bos1nJe5Rrs1UcxZSwGrZuqnWY4M@mail.gmail.com>
+In-Reply-To: <AANLkTinVmwrp8Xi7Bos1nJe5Rrs1UcxZSwGrZuqnWY4M@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Russell,
-
-On Wed, May 19, 2010 at 5:37 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
-> On Wed, May 19, 2010 at 03:16:32PM +0800, Eric Miao wrote:
->> On Thu, May 13, 2010 at 3:30 PM, Magnus Damm <magnus.damm@gmail.com> wro=
-te:
->> > Hi again Russell,
->> >
->> > Will you pick up this one in your tree as-is, or would you like me to
->> > resubmit it somehow?
->> >
+>> This is probably the patch I was referring to in my notice of closure
+>> when I said:
+>> | I know there was someone who was complaining a week or so ago that I
+>> | hadn't applied their patch, which was only sent to the mailing list.
+>> | Unfortunately, it being only on the mailing list and not in the patch
+>> | system means I can't find it, nor the complaint about it not being
+>> | applied.
+>> |
+>> | Whoever it was, sorry.
 >>
->> Russell,
->>
->> I don't seem to find this patch in your -devel branch. I posted a same
->> version of patch earlier, so I'd also like to see this get merged.
->>
->> Acked-by: Eric Miao <eric.y.miao@gmail.com>
->>
->> Magnus,
->>
->> I guess you may please help submit this to rmk's patch tracking system?
+>> Especially as it's 4000 messages back in this mailbox!
 >
-> Getting it into the patch system would be a big help, but since I've
-> closed my tree down for this merge window already, it's missed the
-> boat. =A0(With Linus' new "random" behaviour wrt when things happen, I'm
-> not planning on a second ARM kernel pull request - and the first was
-> sent last night.)
-
-It's there now:
-
-http://www.arm.linux.org.uk/developer/patches/viewpatch.php?ida38/1
-
-Anything I can do to make a second pull request happen? There are
-quite a few patches that depend on this one, so I posted it well in
-advace at March 10. The patch was kindly reviewed by you a bit later.
-And now I got an ack. Unfortunately I didn't proceed and submit it to
-the ARM-specific patch tracking system.
-
-> This is probably the patch I was referring to in my notice of closure
-> when I said:
-> | I know there was someone who was complaining a week or so ago that I
-> | hadn't applied their patch, which was only sent to the mailing list.
-> | Unfortunately, it being only on the mailing list and not in the patch
-> | system means I can't find it, nor the complaint about it not being
-> | applied.
-> |
-> | Whoever it was, sorry.
+> Sounds painful. =)
 >
-> Especially as it's 4000 messages back in this mailbox!
 
-Sounds painful. =3D)
-
-Thanks for your help!
-
-/ magnus
+I don't mean to push, and I fully understand that workload due to such a
+short -rc phase this time. Just wondering this can actually be made into
+the .35-rc phase?
