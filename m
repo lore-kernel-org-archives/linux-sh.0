@@ -1,20 +1,21 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 May 2010 09:52:39 +0000
+Date: Wed, 19 May 2010 18:36:13 +0000
 Subject: [PATCH 3/3] sh: disable SD-card write-protection detection on kfr2r09
-Message-Id: <Pine.LNX.4.64.1005111152000.6810@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1005191819280.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
+References: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
 
 kfr2r09 board has a micro-SD card slot, therefore card write-protection
 detection cannot work there, disable it.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Ian Molton <ian@mnementh.co.uk>
 ---
  arch/sh/boards/mach-kfr2r09/setup.c |    6 ++++--
  1 files changed, 4 insertions(+), 2 deletions(-)
