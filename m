@@ -1,53 +1,73 @@
-From: "WESTERN UNIONWESTERN UNION" <union@unito.it>
-Date: Sun, 23 May 2010 17:07:53 +0000
-Subject: WESTERN UNION ALERT
-Message-Id: <34497.130.192.119.45.1274634473.squirrel@mail.unito.it>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 19 May 2010 18:34:32 +0000
+Subject: [PATCH 8/10 v2] SH: Add SDHI DMA support to ms7724se
+Message-Id: <Pine.LNX.4.64.1005191809310.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/boards/mach-se/7724/setup.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
-
-How are you today?
-
-I write to inform you that we have already sent you
-USD5000.00 dollars through Western union as we have been
-given the mandate to transfer your full compensation
-payment of  USD1.800,000.00 via western union by this
-government.
-
-I called to give you the information through phone as
-internet hackers were many but i cannot reach you
-yesterday even this morning.So,I decided to email you the
-MTCN and sender name so that can pick up this USD5000.00
-to enable us send another USD5000.00 by tomorrow as you
-knows we will be sending you only USD5000.00 per
-day.Please pick up this information and run to any western
-union in your country to pick up the USD5000.00 and send
-us email back to send you another payment tomorrow.
-
-Manager Mr Hamed Azeez
-Email: westernuniondelivery22@yahoo.com
-Tel: +2347063204559
-
-call or email us once you picked up this USD5000.00 today.
-
-Here is the western union information to pick up the
-USD5000.00,
-
-MTCN : 622 155 4897
-Sender's Name: Mark Winters
-Question: Honest
-Answer:Trust
-Amount:5000.00USD
-
-I am waiting for your call once you pick up USD5000.00,
-
-Thanks
-Mrs Fatimat Hasan.
-
-
-
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 66cdbc3..553cdfe 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -14,6 +14,7 @@
+ #include <linux/device.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/delay.h>
+ #include <linux/smc91x.h>
+@@ -456,11 +457,19 @@ static struct resource sdhi0_cn7_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++};
++
+ static struct platform_device sdhi0_cn7_device = {
+ 	.name           = "sh_mobile_sdhi",
+ 	.id		= 0,
+ 	.num_resources  = ARRAY_SIZE(sdhi0_cn7_resources),
+ 	.resource       = sdhi0_cn7_resources,
++	.dev = {
++		.platform_data	= &sh7724_sdhi0_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI0,
+ 	},
+@@ -479,11 +488,19 @@ static struct resource sdhi1_cn8_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++};
++
+ static struct platform_device sdhi1_cn8_device = {
+ 	.name           = "sh_mobile_sdhi",
+ 	.id		= 1,
+ 	.num_resources  = ARRAY_SIZE(sdhi1_cn8_resources),
+ 	.resource       = sdhi1_cn8_resources,
++	.dev = {
++		.platform_data	= &sh7724_sdhi1_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI1,
+ 	},
+-- 
+1.6.2.4
 
