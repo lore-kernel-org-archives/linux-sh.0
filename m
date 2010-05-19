@@ -1,40 +1,103 @@
-From: Tomi Valkeinen <tomi.valkeinen@nokia.com>
-Date: Fri, 21 May 2010 08:33:20 +0000
-Subject: Re: [PATCH 1/4 v3] fbdev: add a MIPI DSI header
-Message-Id: <1274430800.4246.87.camel@tubuntu.research.nokia.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 19 May 2010 08:34:48 +0000
+Subject: [PATCH/RFC] sh: simplify register access macros in the SCI serial
+Message-Id: <Pine.LNX.4.64.1005191028560.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005201829260.26000@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005201829260.26000@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ext Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "linux-fbdev, @vger.kernel.org" <linux-fbdev@vger.kernel.org>, "lin, ux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "Syrjala Ville (Nokia-D/Helsinki)" <ville.syrjala@nokia.com>
+To: linux-sh@vger.kernel.org
 
-On Thu, 2010-05-20 at 18:31 +0200, ext Guennadi Liakhovetski wrote:
-> This header adds defines for MIPI DSI and DCS commands and data formats. See
-> http://www.mipi.org/ for details.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> v2 -> v3:
-> 
-> 1. added peripheral-to-processor transaction types
-> 
-> v1 -> v2:
-> 
-> 1. renamed mpi_dsi.h to mipi_display.h
-> 2. improved introductory comment
-> 3. changed < 10 enum values to match others as "0x0N"
-> 4. changed "command" to "transaction"
-> 5. added a couple of missing transaction types
-> 6. enums are now unnamed
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Looks good to me.
+well, actually, I think, as long size is a constant, I think, even the 
+original macros would be resolved at compile time, wouldn't they? And they 
+have the advantage to also supporting non-constants. Whereas my version 
+explicitly requires constants, but looks a bit easier to me... Anyway, I 
+thought I just propose it, but I wouldn't be too upset if it just gets 
+dropped.
 
-Acked-by: Tomi Valkeinen <tomi.valkeinen@nokia.com>
+ drivers/serial/sh-sci.h |   36 ++++++++++++++----------------------
+ 1 files changed, 14 insertions(+), 22 deletions(-)
 
- Tomi
-
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index f70c49f..151c41f 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -307,17 +307,9 @@
+ #define SCI_EVENT_WRITE_WAKEUP	0
+ 
+ #define SCI_IN(size, offset)					\
+-  if ((size) = 8) {						\
+-    return ioread8(port->membase + (offset));			\
+-  } else {							\
+-    return ioread16(port->membase + (offset));			\
+-  }
++    return ioread ## size(port->membase + (offset));
+ #define SCI_OUT(size, offset, value)				\
+-  if ((size) = 8) {						\
+-    iowrite8(value, port->membase + (offset));			\
+-  } else if ((size) = 16) {					\
+-    iowrite16(value, port->membase + (offset));			\
+-  }
++    iowrite ## size(value, port->membase + (offset));
+ 
+ #define CPU_SCIx_FNS(name, sci_offset, sci_size, scif_offset, scif_size)\
+   static inline unsigned int sci_##name##_in(struct uart_port *port)	\
+@@ -435,7 +427,7 @@ SCIF_FNS(SCFCR,  0x18, 16)
+ SCIF_FNS(SCFDR,  0x1c, 16)
+ SCIF_FNS(SCxTDR, 0x20,  8)
+ SCIF_FNS(SCxRDR, 0x24,  8)
+-SCIF_FNS(SCLSR,  0x00,  0)
++SCIF_FNS(SCLSR,  0x00, 16)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7723) ||\
+       defined(CONFIG_CPU_SUBTYPE_SH7724)
+ SCIx_FNS(SCSMR,  0x00, 16, 0x00, 16)
+@@ -444,7 +436,7 @@ SCIx_FNS(SCSCR,  0x08, 16, 0x08, 16)
+ SCIx_FNS(SCxTDR, 0x20,  8, 0x0c,  8)
+ SCIx_FNS(SCxSR,  0x14, 16, 0x10, 16)
+ SCIx_FNS(SCxRDR, 0x24,  8, 0x14,  8)
+-SCIx_FNS(SCSPTR, 0,     0,    0,  0)
++SCIx_FNS(SCSPTR, 0,    16,    0, 16)
+ SCIF_FNS(SCTDSR, 0x0c,  8)
+ SCIF_FNS(SCFER,  0x10, 16)
+ SCIF_FNS(SCFCR,  0x18, 16)
+@@ -467,24 +459,24 @@ SCIF_FNS(SCFCR,                      0x0c,  8, 0x18, 16)
+ SCIF_FNS(SCFDR,			     0x0e, 16, 0x1C, 16)
+ SCIF_FNS(SCTFDR,		     0x0e, 16, 0x1C, 16)
+ SCIF_FNS(SCRFDR,		     0x0e, 16, 0x20, 16)
+-SCIF_FNS(SCSPTR,			0,  0, 0x24, 16)
+-SCIF_FNS(SCLSR,				0,  0, 0x28, 16)
++SCIF_FNS(SCSPTR,			0, 16, 0x24, 16)
++SCIF_FNS(SCLSR,				0, 16, 0x28, 16)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7763)
+-SCIF_FNS(SCFDR,				0,  0, 0x1C, 16)
+-SCIF_FNS(SCSPTR2,			0,  0, 0x20, 16)
+-SCIF_FNS(SCLSR2,			0,  0, 0x24, 16)
++SCIF_FNS(SCFDR,				0, 16, 0x1C, 16)
++SCIF_FNS(SCSPTR2,			0, 16, 0x20, 16)
++SCIF_FNS(SCLSR2,			0, 16, 0x24, 16)
+ SCIF_FNS(SCTFDR,		     0x0e, 16, 0x1C, 16)
+ SCIF_FNS(SCRFDR,		     0x0e, 16, 0x20, 16)
+-SCIF_FNS(SCSPTR,			0,  0, 0x24, 16)
+-SCIF_FNS(SCLSR,				0,  0, 0x28, 16)
++SCIF_FNS(SCSPTR,			0, 16, 0x24, 16)
++SCIF_FNS(SCLSR,				0, 16, 0x28, 16)
+ #else
+ SCIF_FNS(SCFDR,                      0x0e, 16, 0x1C, 16)
+ #if defined(CONFIG_CPU_SUBTYPE_SH7722)
+-SCIF_FNS(SCSPTR,                        0,  0, 0, 0)
++SCIF_FNS(SCSPTR,                        0, 16, 0, 16)
+ #else
+-SCIF_FNS(SCSPTR,                        0,  0, 0x20, 16)
++SCIF_FNS(SCSPTR,                        0, 16, 0x20, 16)
+ #endif
+-SCIF_FNS(SCLSR,                         0,  0, 0x24, 16)
++SCIF_FNS(SCLSR,                         0, 16, 0x24, 16)
+ #endif
+ #endif
+ #define sci_in(port, reg) sci_##reg##_in(port)
+-- 
+1.6.2.4
 
