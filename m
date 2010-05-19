@@ -1,24 +1,57 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 13 May 2010 14:15:34 +0000
-Subject: [PATCH 0/9 v4] add DMA support to tmio_mmc, using dmaengine API,
-Message-Id: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
+Date: Wed, 19 May 2010 18:34:36 +0000
+Subject: [PATCH 9/10 v2] SH: Add SDHI DMA support to kfr2r09
+Message-Id: <Pine.LNX.4.64.1005191810210.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Ian Molton <ian@mnementh.co.uk>
-Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-This is yet another split of patch
-
-[PATCH 4/9] MMC: add DMA support to tmio_mmc driver, when used on SuperH
-
-whereby per Ian's request patch "4a" has been further split in tmio- and 
-sdhi-parts, so that now we have patches 4a/9, 4b/9 and 4c/9.
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+v1 -> v2:
+
+asm/dmaengine.h is now gone.
+
+ arch/sh/boards/mach-kfr2r09/setup.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index b2cd0ed..95850aa 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -10,6 +10,7 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/onenand.h>
+ #include <linux/delay.h>
+@@ -356,10 +357,18 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
++	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
++};
++
+ static struct platform_device kfr2r09_sh_sdhi0_device = {
+ 	.name           = "sh_mobile_sdhi",
+ 	.num_resources  = ARRAY_SIZE(kfr2r09_sh_sdhi0_resources),
+ 	.resource       = kfr2r09_sh_sdhi0_resources,
++	.dev = {
++		.platform_data	= &sh7724_sdhi0_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI0,
+ 	},
+-- 
+1.6.2.4
+
