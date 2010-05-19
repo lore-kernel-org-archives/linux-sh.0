@@ -1,73 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 09:35:45 +0000
-Subject: [PATCH 05/15] sh: switch sh7343 to clkdev
-Message-Id: <20100511093545.28210.430.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 19 May 2010 18:34:39 +0000
+Subject: [PATCH 10/10 v2] SH: Add SDHI DMA support to migor
+Message-Id: <Pine.LNX.4.64.1005191810490.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-This patch converts the remaining sh7343 clocks
-to use clkdev for lookup. The now unused name
-and id from struct clk are also removed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+asm/dmaengine.h is now gone.
 
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c |   14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ arch/sh/boards/mach-migor/setup.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
---- 0019/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2010-05-11 16:41:37.000000000 +0900
-@@ -37,8 +37,6 @@
- 
- /* Fixed 32 KHz root clock for RTC and Power Management purposes */
- static struct clk r_clk = {
--	.name           = "rclk",
--	.id             = -1,
- 	.rate           = 32768,
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 7da0fc9..87185de 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -12,6 +12,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/nand.h>
+ #include <linux/i2c.h>
+@@ -402,10 +403,18 @@ static struct resource sdhi_cn9_resources[] = {
+ 	},
  };
  
-@@ -47,8 +45,6 @@ static struct clk r_clk = {
-  * from the platform code.
-  */
- struct clk extal_clk = {
--	.name		= "extal",
--	.id		= -1,
- 	.rate		= 33333333,
- };
- 
-@@ -70,8 +66,6 @@ static struct clk_ops dll_clk_ops = {
- };
- 
- static struct clk dll_clk = {
--	.name           = "dll_clk",
--	.id             = -1,
- 	.ops		= &dll_clk_ops,
- 	.parent		= &r_clk,
- 	.flags		= CLK_ENABLE_ON_INIT,
-@@ -92,8 +86,6 @@ static struct clk_ops pll_clk_ops = {
- };
- 
- static struct clk pll_clk = {
--	.name		= "pll_clk",
--	.id		= -1,
- 	.ops		= &pll_clk_ops,
- 	.flags		= CLK_ENABLE_ON_INIT,
- };
-@@ -205,6 +197,12 @@ static struct clk mstp_clks[MSTP_NR] = {
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
- 
- static struct clk_lookup lookups[] = {
-+	/* main clocks */
-+	CLKDEV_CON_ID("rclk", &r_clk),
-+	CLKDEV_CON_ID("extal", &extal_clk),
-+	CLKDEV_CON_ID("dll_clk", &dll_clk),
-+	CLKDEV_CON_ID("pll_clk", &pll_clk),
++static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++};
 +
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
- 	CLKDEV_CON_ID("umem_clk", &div4_clks[DIV4_U]),
+ static struct platform_device sdhi_cn9_device = {
+ 	.name		= "sh_mobile_sdhi",
+ 	.num_resources	= ARRAY_SIZE(sdhi_cn9_resources),
+ 	.resource	= sdhi_cn9_resources,
++	.dev = {
++		.platform_data	= &sh7724_sdhi_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI,
+ 	},
+-- 
+1.6.2.4
+
