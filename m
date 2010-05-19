@@ -1,39 +1,127 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 07:05:42 +0000
-Subject: [PATCH 05/09] sh: sh7343 div4 clkdev lookup
-Message-Id: <20100511070542.20792.98274.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 19 May 2010 18:34:03 +0000
+Subject: [PATCH 3/10 v2] SH: add DMA slave definitions to sh7724
+Message-Id: <Pine.LNX.4.64.1005191758340.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add a list of SCIF and SDHI DMA slave definitions to sh7724.
 
-Add sh7343 DIV4 clocks to the clkdev lookup list.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   86 ++++++++++++++++++++++++++++++++
+ 1 files changed, 86 insertions(+), 0 deletions(-)
 
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c |   10 ++++++++++
- 1 file changed, 10 insertions(+)
-
---- 0010/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2010-05-11 14:58:41.000000000 +0900
-@@ -205,6 +205,16 @@ static struct clk mstp_clks[MSTP_NR] = {
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 06a0683..febdedb 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -31,6 +31,90 @@
+ #include <cpu/sh7724.h>
  
- static struct clk_lookup lookups[] = {
-+	/* DIV4 clocks */
-+	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
-+	CLKDEV_CON_ID("umem_clk", &div4_clks[DIV4_U]),
-+	CLKDEV_CON_ID("shyway_clk", &div4_clks[DIV4_SH]),
-+	CLKDEV_CON_ID("bus_clk", &div4_clks[DIV4_B]),
-+	CLKDEV_CON_ID("b3_clk", &div4_clks[DIV4_B3]),
-+	CLKDEV_CON_ID("peripheral_clk", &div4_clks[DIV4_P]),
-+	CLKDEV_CON_ID("siua_clk", &div4_clks[DIV4_SIUA]),
-+	CLKDEV_CON_ID("siub_clk", &div4_clks[DIV4_SIUB]),
+ /* DMA */
++static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
++		.addr		= 0xffe0000c,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x21,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
++		.addr		= 0xffe00014,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x22,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
++		.addr		= 0xffe1000c,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x25,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
++		.addr		= 0xffe10014,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x26,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
++		.addr		= 0xffe2000c,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x29,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
++		.addr		= 0xffe20014,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2a,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
++		.addr		= 0xa4e30020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2d,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
++		.addr		= 0xa4e30024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2e,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
++		.addr		= 0xa4e40020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x31,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
++		.addr		= 0xa4e40024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x32,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
++		.addr		= 0xa4e50020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x35,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
++		.addr		= 0xa4e50024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x36,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0x04ce0030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0x04ce0030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
++		.addr		= 0x04cf0030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc9,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
++		.addr		= 0x04cf0030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xca,
++	},
++};
 +
- 	/* DIV6 clocks */
- 	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
+ static const struct sh_dmae_channel sh7724_dmae_channels[] = {
+ 	{
+ 		.offset = 0,
+@@ -62,6 +146,8 @@ static const struct sh_dmae_channel sh7724_dmae_channels[] = {
+ static const unsigned int ts_shift[] = TS_SHIFT;
  
+ static struct sh_dmae_pdata dma_platform_data = {
++	.slave		= sh7724_dmae_slaves,
++	.slave_num	= ARRAY_SIZE(sh7724_dmae_slaves),
+ 	.channel	= sh7724_dmae_channels,
+ 	.channel_num	= ARRAY_SIZE(sh7724_dmae_channels),
+ 	.ts_low_shift	= CHCR_TS_LOW_SHIFT,
+-- 
+1.6.2.4
+
