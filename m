@@ -1,26 +1,22 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 13 May 2010 14:15:42 +0000
-Subject: [PATCH 4b/9 v4] sh: prepare the SDHI MFD driver to pass DMA
-Message-Id: <Pine.LNX.4.64.1005131607240.4671@axis700.grange>
+Date: Wed, 19 May 2010 18:34:16 +0000
+Subject: [PATCH 5/10 v4] sh: prepare the SDHI MFD driver to pass DMA
+Message-Id: <Pine.LNX.4.64.1005191802580.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005131554030.4671@axis700.grange>
+References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Ian Molton <ian@mnementh.co.uk>
-Cc: Andrew Morton <akpm@linux-foundation.org>, mm-commits@vger.kernel.org, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Russell King <rmk@arm.linux.org.uk>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
 Pass DMA slave IDs from platform down to the tmio_mmc driver, to be used
 for dmaengine configuration.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Samuel Ortiz <sameo@linux.intel.com>
 ---
-
-v3 -> v4:
- 
-sdhi part of [PATCH 4a/9 v3], no changes in the code.
-
  drivers/mfd/sh_mobile_sdhi.c       |   24 ++++++++++++++++++++----
  include/linux/mfd/sh_mobile_sdhi.h |    2 ++
  2 files changed, 22 insertions(+), 4 deletions(-)
