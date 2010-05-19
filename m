@@ -1,24 +1,19 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 13 May 2010 16:08:08 +0000
+Date: Wed, 19 May 2010 18:36:08 +0000
 Subject: [PATCH 2/3 v2] mfd: pass platform flags down to the tmio_mmc driver
-Message-Id: <Pine.LNX.4.64.1005131806420.8527@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1005191818350.3099@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
- <Pine.LNX.4.64.1005111151380.6810@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005111151380.6810@axis700.grange>
+References: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org
+Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Ian Molton <ian@mnementh.co.uk>
 ---
-
-v1 -> v2:
-
-it's better without a NULL dereference
-
  drivers/mfd/sh_mobile_sdhi.c       |    2 ++
  include/linux/mfd/sh_mobile_sdhi.h |    1 +
  2 files changed, 3 insertions(+), 0 deletions(-)
