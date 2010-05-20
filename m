@@ -1,212 +1,43 @@
-From: Damian <dhobsong@igel.co.jp>
-Date: Wed, 19 May 2010 04:36:57 +0000
-Subject: Re: [PATCH 3/4 v2] ARM: add framebuffer support for ap4evb
-Message-Id: <4BF36AE9.1040009@igel.co.jp>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 20 May 2010 03:11:16 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 INTCS support
+Message-Id: <20100520031116.GB6661@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005071054510.4777@axis700.grange> <Pine.LNX.4.64.1005071105140.4777@axis700.grange> <Pine.LNX.4.64.1005071641440.4777@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005071641440.4777@axis700.grange>
+References: <20100311054221.27152.9839.sendpatchset@t400s>
+In-Reply-To: <20100311054221.27152.9839.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, Tomi Valkeinen <tomi.valkeinen@nokia.com>
+To: linux-sh@vger.kernel.org
 
-(4:59), Guennadi Liakhovetski wrote:
-> ap4evb uses an LCD, connected to the SoC over the MIPI bus. This patch adds
-> platform data to configure this display and a static clock activation.
->
-> Signed-off-by: Guennadi Liakhovetski<g.liakhovetski@gmx.de>
-Console framebuffer tested on sh-2.6 tree and sh/dmaengine branch with 
-the necessary clock and intc patches applied.
-Boot logo and framebuffer console displayed with no problems or unusual 
-effects.
+On Thu, Mar 11, 2010 at 02:42:21PM +0900, Magnus Damm wrote:
+> Add support for the sh7372 INTCS interrupt controller.
+> 
+> INTCS is the interrupt controller for the sh7372 SuperH
+> processor core. It is tied into the INTCA interrupt
+> controller which interfaces to the ARM processor.
+> 
+> INTCS support is implemented using a new INTC table
+> together with a chained interrupt handler that ties
+> into the already supported INTCA controller.
 
-Tested-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-> ---
->
-> v1 ->  v2:
->
-> Use the correct interrupt number for LCDC, based on INTCS.
->
->   arch/arm/mach-shmobile/Kconfig        |    1 +
->   arch/arm/mach-shmobile/board-ap4evb.c |  121 +++++++++++++++++++++++++++++++++
->   2 files changed, 122 insertions(+), 0 deletions(-)
->
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 9003ea9..e216132 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -42,6 +42,7 @@ config MACH_AP4EVB
->   	bool "AP4EVB board"
->   	depends on ARCH_SH7372
->   	select ARCH_REQUIRE_GPIOLIB
-> +	select SH_LCD_MIPI_DSI
->
->   comment "SH-Mobile System Configuration"
->
-> diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-> index d2bb7b0..e3f5375 100644
-> --- a/arch/arm/mach-shmobile/board-ap4evb.c
-> +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-> @@ -17,6 +17,7 @@
->    * along with this program; if not, write to the Free Software
->    * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->    */
-> +#include<linux/clk.h>
->   #include<linux/kernel.h>
->   #include<linux/init.h>
->   #include<linux/interrupt.h>
-> @@ -32,8 +33,14 @@
->   #include<linux/gpio.h>
->   #include<linux/input.h>
->   #include<linux/input/sh_keysc.h>
-> +
-> +#include<video/sh_mobile_lcdc.h>
-> +#include<video/sh_mipi_dsi.h>
-> +
->   #include<mach/common.h>
-> +#include<mach/irqs.h>
->   #include<mach/sh7372.h>
-> +
->   #include<asm/mach-types.h>
->   #include<asm/mach/arch.h>
->   #include<asm/mach/map.h>
-> @@ -237,11 +244,86 @@ static struct platform_device sdhi0_device = {
->   	},
->   };
->
-> +static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
-> +	.clock_source = LCDC_CLK_PERIPHERAL, /* One of interface clocks */
-> +	.ch[0] = {
-> +		.chan = LCDC_CHAN_MAINLCD,
-> +		.bpp = 16,
-> +		.interface_type = RGB24,
-> +		.clock_divider = 1,
-> +		.flags = LCDC_FLAGS_DWPOL,
-> +		.lcd_cfg = {
-> +			.name = "R63302(QHD)",
-> +			.xres = 544,
-> +			.yres = 961,
-> +			.left_margin = 72,
-> +			.right_margin = 1080,
-> +			.hsync_len = 16,
-> +			.upper_margin = 8,
-> +			.lower_margin = 8,
-> +			.vsync_len = 2,
-> +			.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
-> +		},
-> +		.lcd_size_cfg = {
-> +			.width = 44,
-> +			.height = 79,
-> +		},
-> +	}
-> +};
-> +
-> +static struct resource lcdc_resources[] = {
-> +	[0] = {
-> +		.name	= "LCDC",
-> +		.start	= 0xfe940000, /* P4-only space */
-> +		.end	= 0xfe943fff,
-> +		.flags	= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.start	= intcs_evt2irq(0x580),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +};
-> +
-> +static struct platform_device lcdc_device = {
-> +	.name		= "sh_mobile_lcdc_fb",
-> +	.num_resources	= ARRAY_SIZE(lcdc_resources),
-> +	.resource	= lcdc_resources,
-> +	.dev	= {
-> +		.platform_data	=&sh_mobile_lcdc_info,
-> +		.coherent_dma_mask = ~0,
-> +	},
-> +};
-> +
-> +static struct resource mipidsi0_resources[] = {
-> +	[0] = {
-> +		.start  = 0xffc60000,
-> +		.end    = 0xffc68fff,
-> +		.flags  = IORESOURCE_MEM,
-> +	},
-> +};
-> +
-> +static struct sh_mipi_dsi_info mipidsi0_info = {
-> +	.data_format	= MIPI_RGB888,
-> +	.lcd_chan	=&sh_mobile_lcdc_info.ch[0],
-> +};
-> +
-> +static struct platform_device mipidsi0_device = {
-> +	.name           = "sh-mipi-dsi",
-> +	.num_resources  = ARRAY_SIZE(mipidsi0_resources),
-> +	.resource       = mipidsi0_resources,
-> +	.id             = 0,
-> +	.dev	= {
-> +		.platform_data	=&mipidsi0_info,
-> +	},
-> +};
-> +
->   static struct platform_device *ap4evb_devices[] __initdata = {
->   	&nor_flash_device,
->   	&smc911x_device,
->   	&keysc_device,
->   	&sdhi0_device,
-> +	&lcdc_device,
-> +	&mipidsi0_device,
->   };
->
->   static struct map_desc ap4evb_io_desc[] __initdata = {
-> @@ -265,6 +347,45 @@ static void __init ap4evb_map_io(void)
->   	shmobile_setup_console();
->   }
->
-> +/* This function will disappear when we switch to (runtime) PM */
-> +static int __init ap4evb_init_display_clk(void)
-> +{
-> +	struct clk *lcdc_clk;
-> +	struct clk *dsitx_clk;
-> +	int ret;
-> +
-> +	lcdc_clk = clk_get(&lcdc_device.dev, "lcdc0");
-> +	if (IS_ERR(lcdc_clk))
-> +		return PTR_ERR(lcdc_clk);
-> +
-> +	dsitx_clk = clk_get(&mipidsi0_device.dev, "dsitx");
-> +	if (IS_ERR(dsitx_clk)) {
-> +		ret = PTR_ERR(dsitx_clk);
-> +		goto eclkdsitxget;
-> +	}
-> +
-> +	ret = clk_enable(lcdc_clk);
-> +	if (ret<  0)
-> +		goto eclklcdcon;
-> +
-> +	ret = clk_enable(dsitx_clk);
-> +	if (ret<  0)
-> +		goto eclkdsitxon;
-> +
-> +	return 0;
-> +
-> +eclkdsitxon:
-> +	clk_disable(lcdc_clk);
-> +eclklcdcon:
-> +	clk_put(dsitx_clk);
-> +eclkdsitxget:
-> +	clk_put(lcdc_clk);
-> +
-> +	return ret;
-> +}
-> +
-> +device_initcall(ap4evb_init_display_clk);
-> +
->   static void __init ap4evb_init(void)
->   {
->   	sh7372_pinmux_init();
+On Wed, May 12, 2010 at 06:03:19PM +0900, Magnus Damm wrote:
+> Allow users to build the TMU driver on SH-Mobile ARM.
 
+On Wed, May 12, 2010 at 11:21:14PM +0900, Magnus Damm wrote:
+> [PATCH 01/02] ARM: mach-shmobile: Use shared clock framework
+> [PATCH 02/02] ARM: mach-shmobile: sh7372 clock framework support V2
 
--- 
-Damian Hobson-Garcia
-IGEL Co.,Ltd
-http://www.igel.co.jp
+On Wed, May 19, 2010 at 07:29:47PM +0900, Magnus Damm wrote:
+> Change INTCS_VECT_BASE from 0x3400 to 0x2200.
+> 
+> The old value 0x3400 gave the INTCA and INTCS interrupt
+> conrollers separated spaces, but required ARM support
+> for more than 512 NR_IRQS which is not in place at this
+> point.
+> 
+> The value 0x2200 will make some of the INTCA interrupts
+> make use of empty INTCS areas. This is a bit more error
+> prone but works fine as a workaround for G3, G3 and AP4.
+
+All applied, thanks.
