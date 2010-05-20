@@ -1,27 +1,23 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 22 May 2010 08:10:56 +0000
-Subject: Re: [PATCH] sh: fix Oops in the serial SCI driver
-Message-Id: <20100522081056.GE17814@linux-sh.org>
+Date: Thu, 20 May 2010 03:12:36 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: bump up NR_IRQS to 640
+Message-Id: <20100520031236.GC6661@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005211728520.8450@axis700.grange> <Pine.LNX.4.64.1005211722410.8450@axis700.grange> <Pine.LNX.4.64.1005211721030.8450@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005211728520.8450@axis700.grange> <Pine.LNX.4.64.1005211722410.8450@axis700.grange> <Pine.LNX.4.64.1005211721030.8450@axis700.grange>
+References: <20100311053352.26717.21158.sendpatchset@t400s>
+In-Reply-To: <20100311053352.26717.21158.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-serial@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>
+To: linux-sh@vger.kernel.org
 
-On Fri, May 21, 2010 at 05:22:40PM +0200, Guennadi Liakhovetski wrote:
-> Fix an Oops, triggering, if the DMA buffer allocation for the Rx channel in
-> sh-sci.c fails.
+On Thu, Mar 11, 2010 at 02:33:52PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Increase NR_IRQS to 640 on SH-Mobile ARM. With this
+> applied the INTCS controller on sh7372 can be supported.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-On Fri, May 21, 2010 at 05:28:51PM +0200, Guennadi Liakhovetski wrote:
-> This prevents the driver from unloading, while it is in use. Unloading of the
-> driver, while its DMA channels are held, leads to a kernel Oops.
-
-On Fri, May 21, 2010 at 05:30:12PM +0200, Guennadi Liakhovetski wrote:
-> If all descriptors on a channel are terminated or the channel is released,
-> update the completed cookie counter to match the last cookie. This prevents
-> inconsistency warning on resumed DMA operation.
-
-Applied, thanks.
+I've dropped this one due to the INTCS_VECT_BASE shifting, feel free to
+resubmit an updated version once support for 10-bit hardirqs hits
+upstream.
