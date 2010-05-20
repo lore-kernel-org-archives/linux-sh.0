@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 May 2010 14:01:55 +0000
-Subject: [PATCH 06/07] sh: tie in div6 clocks using clkdev
-Message-Id: <20100510140155.32745.37435.sendpatchset@t400s>
+Date: Thu, 20 May 2010 14:41:00 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh7372/AP4EVB evt2irq() update
+Message-Id: <20100520144100.27640.19152.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,237 +10,200 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Use clkdev for div6 lookup on SH-Mobile processors:
-sh7343/sh7366/sh7722/sh7723/sh7724
+This patch updates the irq numbers on sh7372/AP4EVB
+to make use of evt2irq() and intcs_evt2irq().
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c |   18 +++++++++++++++---
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c |   18 +++++++++++++++---
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   11 ++++++++---
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |   11 ++++++++---
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   26 +++++++++++++++++++-------
- 5 files changed, 65 insertions(+), 19 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   11 ++++-----
+ arch/arm/mach-shmobile/setup-sh7372.c |   39 ++++++++++++++++++++++-----------
+ 2 files changed, 31 insertions(+), 19 deletions(-)
 
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2010-05-10 22:20:09.000000000 +0900
-@@ -21,6 +21,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
-+#include <asm/clkdev.h>
- #include <asm/clock.h>
- 
- /* SH7343 registers */
-@@ -135,8 +136,10 @@ struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x1fff, 0),
+--- 0001/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2010-05-20 23:13:43.000000000 +0900
+@@ -165,7 +165,7 @@ static struct resource smc911x_resources
+ 		.end	= 0x16000000 - 1,
+ 		.flags	= IORESOURCE_MEM,
+ 	}, {
+-		.start	= 6,
++		.start	= evt2irq(0x02c0) /* IRQ6A */,
+ 		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_LOWLEVEL,
+ 	},
+ };
+@@ -208,7 +208,7 @@ static struct resource keysc_resources[]
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start  = 79,
++		.start  = evt2irq(0x0be0), /* KEYSC_KEY */
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -232,7 +232,7 @@ static struct resource sdhi0_resources[]
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start  = 96,
++		.start  = evt2irq(0x0e00) /* SDHI0 */,
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -267,8 +267,7 @@ static struct resource usb1_host_resourc
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= 215,
+-		.end	= 215,
++		.start	= evt2irq(0x1ce0) /* USB1_USB1I0 */,
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -294,7 +293,7 @@ static struct platform_device *ap4evb_de
  };
  
--struct clk div6_clks[] = {
--	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
-+enum { DIV6_V, DIV6_NR };
-+
-+struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_V] = SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
+ /* TouchScreen (Needs SW3 set to OFF) */
+-#define IRQ28	396
++#define IRQ28	evt2irq(0x3380) /* IRQ28A */
+ struct tsc2007_platform_data tsc2007_info = {
+ 	.model			= 2007,
+ 	.x_plate_ohms		= 180,
+--- 0001/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2010-05-20 23:13:22.000000000 +0900
+@@ -32,12 +32,13 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-/* SCIF */
++/* SCIFA0 */
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xe6c40000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 80, 80, 80, 80 },
++	.irqs		= { evt2irq(0x0c00), evt2irq(0x0c00),
++			    evt2irq(0x0c00), evt2irq(0x0c00) },
  };
  
- #define MSTP(_str, _parent, _reg, _bit, _flags) \
-@@ -189,6 +192,13 @@ static struct clk mstp_clks[] = {
- 	MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
+ static struct platform_device scif0_device = {
+@@ -48,11 +49,13 @@ static struct platform_device scif0_devi
+ 	},
  };
  
-+#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+
-+static struct clk_lookup lookups[] = {
-+	/* DIV6 clocks */
-+	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
-+};
-+
- int __init arch_clk_init(void)
- {
- 	int k, ret = 0;
-@@ -202,11 +212,13 @@ int __init arch_clk_init(void)
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
- 
- 	if (!ret)
--		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
- 		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7366.c	2010-05-10 22:20:26.000000000 +0900
-@@ -21,6 +21,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
-+#include <asm/clkdev.h>
- #include <asm/clock.h>
- 
- /* SH7366 registers */
-@@ -138,8 +139,10 @@ struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x1fff, 0),
++/* SCIFA1 */
+ static struct plat_sci_port scif1_platform_data = {
+ 	.mapbase	= 0xe6c50000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs           = { 81, 81, 81, 81 },
++	.irqs		= { evt2irq(0x0c20), evt2irq(0x0c20),
++			    evt2irq(0x0c20), evt2irq(0x0c20) },
  };
  
--struct clk div6_clks[] = {
--	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
-+enum { DIV6_V, DIV6_NR };
-+
-+struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_V] = SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
+ static struct platform_device scif1_device = {
+@@ -63,11 +66,13 @@ static struct platform_device scif1_devi
+ 	},
  };
  
- #define MSTP(_str, _parent, _reg, _bit, _flags) \
-@@ -189,6 +192,13 @@ static struct clk mstp_clks[] = {
- 	MSTP("lcdc0", &div4_clks[DIV4_B], MSTPCR2, 0, 0),
++/* SCIFA2 */
+ static struct plat_sci_port scif2_platform_data = {
+ 	.mapbase	= 0xe6c60000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs           = { 82, 82, 82, 82 },
++	.irqs		= { evt2irq(0x0c40), evt2irq(0x0c40),
++			    evt2irq(0x0c40), evt2irq(0x0c40) },
  };
  
-+#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+
-+static struct clk_lookup lookups[] = {
-+	/* DIV6 clocks */
-+	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
-+};
-+
- int __init arch_clk_init(void)
- {
- 	int k, ret = 0;
-@@ -202,11 +212,13 @@ int __init arch_clk_init(void)
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
- 
- 	if (!ret)
--		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
- 		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
---- 0006/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2010-05-10 22:18:58.000000000 +0900
-@@ -149,8 +149,10 @@ struct clk div4_reparent_clks[DIV4_REPAR
- 	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x1fff, 0),
+ static struct platform_device scif2_device = {
+@@ -78,11 +83,13 @@ static struct platform_device scif2_devi
+ 	},
  };
  
--struct clk div6_clks[] = {
--	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
-+enum { DIV6_V, DIV6_NR };
-+
-+struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_V] = SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
++/* SCIFA3 */
+ static struct plat_sci_port scif3_platform_data = {
+ 	.mapbase	= 0xe6c70000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs           = { 83, 83, 83, 83 },
++	.irqs		= { evt2irq(0x0c60), evt2irq(0x0c60),
++			    evt2irq(0x0c60), evt2irq(0x0c60) },
  };
  
- static struct clk mstp_clks[HWBLK_NR] = {
-@@ -184,6 +186,9 @@ static struct clk mstp_clks[HWBLK_NR] = 
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
- 
- static struct clk_lookup lookups[] = {
-+	/* DIV6 clocks */
-+	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
-+
- 	/* MSTP clocks */
- 	CLKDEV_CON_ID("uram0", &mstp_clks[HWBLK_URAM]),
- 	CLKDEV_CON_ID("xymem0", &mstp_clks[HWBLK_XYMEM]),
-@@ -265,7 +270,7 @@ int __init arch_clk_init(void)
- 					DIV4_REPARENT_NR, &div4_table);
- 
- 	if (!ret)
--		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
- 		ret = sh_hwblk_clk_register(mstp_clks, HWBLK_NR);
---- 0006/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2010-05-10 22:16:14.000000000 +0900
-@@ -149,8 +149,10 @@ struct clk div4_reparent_clks[DIV4_REPAR
- 	[DIV4_SIUA] = DIV4("siua_clk", SCLKACR, 0, 0x0dbf, 0),
- 	[DIV4_SIUB] = DIV4("siub_clk", SCLKBCR, 0, 0x0dbf, 0),
- };
--struct clk div6_clks[] = {
--	SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
-+enum { DIV6_V, DIV6_NR };
-+
-+struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_V] = SH_CLK_DIV6("video_clk", &pll_clk, VCLKCR, 0),
+ static struct platform_device scif3_device = {
+@@ -93,11 +100,13 @@ static struct platform_device scif3_devi
+ 	},
  };
  
- static struct clk mstp_clks[] = {
-@@ -209,6 +211,9 @@ static struct clk mstp_clks[] = {
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
- 
- static struct clk_lookup lookups[] = {
-+	/* DIV6 clocks */
-+	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
-+
- 	/* MSTP clocks */
- 	CLKDEV_CON_ID("tlb0", &mstp_clks[HWBLK_TLB]),
- 	CLKDEV_CON_ID("ic0", &mstp_clks[HWBLK_IC]),
-@@ -341,7 +346,7 @@ int __init arch_clk_init(void)
- 					DIV4_REPARENT_NR, &div4_table);
- 
- 	if (!ret)
--		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
- 		ret = sh_hwblk_clk_register(mstp_clks, HWBLK_NR);
---- 0006/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2010-05-10 22:14:51.000000000 +0900
-@@ -164,12 +164,17 @@ struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_M1] = DIV4("vpu_clk", FRQCRB, 4, 0x2f7c, CLK_ENABLE_ON_INIT),
++/* SCIFA4 */
+ static struct plat_sci_port scif4_platform_data = {
+ 	.mapbase	= 0xe6c80000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs           = { 89, 89, 89, 89 },
++	.irqs		= { evt2irq(0x0d20), evt2irq(0x0d20),
++			    evt2irq(0x0d20), evt2irq(0x0d20) },
  };
  
--struct clk div6_clks[] = {
--	SH_CLK_DIV6("video_clk", &div3_clk, VCLKCR, 0),
--	SH_CLK_DIV6("fsia_clk", &div3_clk, FCLKACR, 0),
--	SH_CLK_DIV6("fsib_clk", &div3_clk, FCLKBCR, 0),
--	SH_CLK_DIV6("irda_clk", &div3_clk, IRDACLKCR, 0),
--	SH_CLK_DIV6("spu_clk", &div3_clk, SPUCLKCR, CLK_ENABLE_ON_INIT),
-+enum { DIV6_V, DIV6_FA, DIV6_FB, DIV6_I, DIV6_S, DIV6_NR };
-+
-+#define DIV6(_str, _reg, _flags) \
-+  SH_CLK_DIV6(_str, &div3_clk, _reg, _flags)
-+
-+struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_V] = DIV6("video_clk", VCLKCR, 0),
-+	[DIV6_FA] = DIV6("fsia_clk", FCLKACR, 0),
-+	[DIV6_FB] = DIV6("fsib_clk", FCLKBCR, 0),
-+	[DIV6_I] = DIV6("irda_clk", IRDACLKCR, 0),
-+	[DIV6_S] = DIV6("spu_clk", SPUCLKCR, CLK_ENABLE_ON_INIT),
+ static struct platform_device scif4_device = {
+@@ -108,11 +117,13 @@ static struct platform_device scif4_devi
+ 	},
  };
  
- static struct clk mstp_clks[HWBLK_NR] = {
-@@ -232,6 +237,13 @@ static struct clk mstp_clks[HWBLK_NR] = 
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++/* SCIFA5 */
+ static struct plat_sci_port scif5_platform_data = {
+ 	.mapbase	= 0xe6cb0000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs           = { 90, 90, 90, 90 },
++	.irqs		= { evt2irq(0x0d40), evt2irq(0x0d40),
++			    evt2irq(0x0d40), evt2irq(0x0d40) },
+ };
  
- static struct clk_lookup lookups[] = {
-+	/* DIV6 clocks */
-+	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
-+	CLKDEV_CON_ID("fsia_clk", &div6_clks[DIV6_FA]),
-+	CLKDEV_CON_ID("fsib_clk", &div6_clks[DIV6_FB]),
-+	CLKDEV_CON_ID("irda_clk", &div6_clks[DIV6_I]),
-+	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_S]),
-+
- 	/* MSTP clocks */
- 	CLKDEV_CON_ID("tlb0", &mstp_clks[HWBLK_TLB]),
- 	CLKDEV_CON_ID("ic0", &mstp_clks[HWBLK_IC]),
-@@ -360,7 +372,7 @@ int __init arch_clk_init(void)
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ static struct platform_device scif5_device = {
+@@ -123,11 +134,13 @@ static struct platform_device scif5_devi
+ 	},
+ };
  
- 	if (!ret)
--		ret = sh_clk_div6_register(div6_clks, ARRAY_SIZE(div6_clks));
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
++/* SCIFB */
+ static struct plat_sci_port scif6_platform_data = {
+ 	.mapbase	= 0xe6c30000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.type		= PORT_SCIF,
+-	.irqs           = { 91, 91, 91, 91 },
++	.irqs		= { evt2irq(0x0d60), evt2irq(0x0d60),
++			    evt2irq(0x0d60), evt2irq(0x0d60) },
+ };
  
- 	if (!ret)
- 		ret = sh_hwblk_clk_register(mstp_clks, HWBLK_NR);
+ static struct platform_device scif6_device = {
+@@ -156,7 +169,7 @@ static struct resource cmt10_resources[]
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= 72,
++		.start	= evt2irq(0x0b00), /* CMT1_CMT10 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -180,8 +193,8 @@ static struct resource iic0_resources[] 
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start  = intcs_evt2irq(0xe00),
+-		.end    = intcs_evt2irq(0xe60),
++		.start  = intcs_evt2irq(0xe00), /* IIC0_ALI0 */
++		.end    = intcs_evt2irq(0xe60), /* IIC0_DTEI0 */
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -201,8 +214,8 @@ static struct resource iic1_resources[] 
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start  = 44,
+-		.end    = 47,
++		.start  = evt2irq(0x780), /* IIC1_ALI1 */
++		.end    = evt2irq(0x7e0), /* IIC1_DTEI1 */
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
