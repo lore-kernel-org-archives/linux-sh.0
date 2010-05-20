@@ -1,37 +1,43 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 21 May 2010 15:30:12 +0000
-Subject: [PATCH] sh: guard cookie consistency across termination in the DMA
-Message-Id: <Pine.LNX.4.64.1005211728520.8450@axis700.grange>
+From: "MICROSOFT EMAIL PROMOTION" <info.winners@microsoft.com>
+Date: Thu, 20 May 2010 06:02:52 +0000
+Subject: Congratulations - You have won
+Message-Id: <48437.41.206.15.1.1274335372.squirrel@41.206.15.1>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-If all descriptors on a channel are terminated or the channel is released,
-update the completed cookie counter to match the last cookie. This prevents
-inconsistency warning on resumed DMA operation.
+Congratulations - You have won
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/dma/shdma.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+The MICROSOFT EMAIL PROMO TEAM is glad to announce that
+after a successful completion of the PROMO DRAWS held on the
+19th May 2010,your e-mail address,attached to winning
+numbers:(11) (80) (12)(96) (09) (43) won in the Tenth
+lottery category.
 
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 58563a0..041c6a3 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -714,6 +714,10 @@ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all)
- {
- 	while (__ld_cleanup(sh_chan, all))
- 		;
-+
-+	if (all)
-+		/* Terminating - forgive uncompleted cookies */
-+		sh_chan->completed_cookie = sh_chan->common.cookie;
- }
- 
- static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
--- 
-1.6.2.4
+You have therefore been approved to claim a total sum of
+=A3250,000,00 Pounds Sterling in cash credited to REF
+NO:MICRO-L/2009-END10.
+
+All participants were selected through our Microsoft computer
+ballot system drawn from 167,000 Names,as part of our
+International  "E-MAIL" Promotion Program for our prominent
+MS-WORD users all over the world and for the continuous use
+of the internet. You are advised to contact the claims
+processor with the details below via his e-mail address :
+
+NAME:  Ivan Nickerson
+EMAIL: mrivan.nickerson04@yahoo.com.hk
+
+PLEASE NOTE YOU ARE TO SEND THE FOLLOWING INFORMATION TO
+
+CLAIM YOUR PRIZE:
+1.Full Name:... 2.Address:... 3.Phone:... 4.Country:...
+
+5.Sex/Gender:...
+
+
+YOURS SINCERELY,
+ANASTACIA SHEFFIELD.
 
