@@ -1,65 +1,20 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 May 2010 18:36:02 +0000
-Subject: [PATCH 1/3] tmio: add a platform flag to disable card write-protection
-Message-Id: <Pine.LNX.4.64.1005191817300.3099@axis700.grange>
+Date: Fri, 21 May 2010 15:49:02 +0000
+Subject: [PATCH 0/4] sh-mobile SCIFB support
+Message-Id: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-serial@vger.kernel.org
 
-Write-protection status is not always available, e.g., micro-SD cards do not
-have a write-protection switch at all. This patch adds a flag to let platforms
-force tmio_mmc to consider the card writable.
+This patch series fixes support for SCIFA ports on sh7372 and adds SCIFB 
+support to sh-sci.c
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Ian Molton <ian@mnementh.co.uk>
+Thanks
+Guennadi
 ---
- drivers/mmc/host/tmio_mmc.c |    5 ++++-
- include/linux/mfd/tmio.h    |    4 ++++
- 2 files changed, 8 insertions(+), 1 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 7e79ba4..11c19b0 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -640,8 +640,11 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- static int tmio_mmc_get_ro(struct mmc_host *mmc)
- {
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct mfd_cell	*cell = host->pdev->dev.platform_data;
-+	struct tmio_mmc_data *pdata = cell->driver_data;
- 
--	return (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT) ? 0 : 1;
-+	return ((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
-+		(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT)) ? 0 : 1;
- }
- 
- static const struct mmc_host_ops tmio_mmc_ops = {
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 360fc95..feeed0b 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -50,6 +50,9 @@
- 		tmio_iowrite16((val) >> 16, (base) + ((reg + 2) << (shift))); \
- 	} while (0)
- 
-+/* tmio MMC platform flags */
-+#define TMIO_MMC_WRPROTECT_DISABLE	(1 << 0)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
-@@ -66,6 +69,7 @@ struct tmio_mmc_dma {
- struct tmio_mmc_data {
- 	unsigned int			hclk;
- 	unsigned long			capabilities;
-+	unsigned long			flags;
- 	struct tmio_mmc_dma		*dma;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--- 
-1.6.2.4
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
