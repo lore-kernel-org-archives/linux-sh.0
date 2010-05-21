@@ -1,38 +1,190 @@
-From: "Maciej W. Rozycki" <macro@linux-mips.org>
-Date: Sat, 22 May 2010 21:26:00 +0000
-Subject: Re: bkl: Pushdowns for sound/oss ?
-Message-Id: <alpine.LFD.2.00.1005222158340.4344@eddie.linux-mips.org>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 21 May 2010 08:42:25 +0000
+Subject: [PATCH v2] ptrace: unify FDPIC implementations
+Message-Id: <1274431345-22366-1-git-send-email-vapier@gentoo.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.LFD.2.00.1005211536330.25348@localhost.localdomain> <20100521144055.GB13174@linux-mips.org> <alpine.LFD.2.00.1005211613200.4344@eddie.linux-mips.org> <20100521154659.GA2346@linux-mips.org>
-In-Reply-To: <20100521154659.GA2346@linux-mips.org>
+References: <1266280229-18469-1-git-send-email-vapier@gentoo.org>
+In-Reply-To: <1266280229-18469-1-git-send-email-vapier@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ralf Baechle <ralf@linux-mips.org>
-Cc: John Kacur <jkacur@redhat.com>, linux-kernel@vger.kernel.org, Frederic Weisbecker <fweisbec@gmail.com>, Arnd Bergmann <arndbergmann@googlemail.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, linux-mips@linux-mips.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Roman Zippel <zippel@linux-m68k.org>, linux-m68k@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, Oleg Nesterov <oleg@redhat.com>, Roland McGrath <roland@redhat.com>
 
-On Fri, 21 May 2010, Ralf Baechle wrote:
+The Blackfin/FRV/SuperH guys all have the same exact FDPIC ptrace code in
+their arch handlers (since they were probably copied & pasted).  Since
+these ptrace interfaces are an arch independent aspect of the FDPIC code,
+unify them in the common ptrace code so new FDPIC ports don't need to copy
+and paste this fundamental stuff yet again.
 
-> I've patched up what there to build without warnings but that doesn't
-> make any less ugly or wrong.  I'm trying to motivate a few folks to
-> offload the work from you; until that has happened it might be nice if this
-> driver would stick around as some form of documentation.
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+Acked-by: Roland McGrath <roland@redhat.com>
+Acked-by: David Howells <dhowells@redhat.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+---
+v2
+	- rebased onto latest mainline
 
- The driver is of less use as an OSS module than it would be with ALSA.  
-It only offers one sample rate of 48kHz (that is the native frequency of 
-the codec) and my experience is 44.1kHz or its aliquots are what most 
-pieces of OSS client software expect (at least such that is not capable of 
-resampling itself).
+ arch/blackfin/kernel/ptrace.c |   33 +++++++++------------------------
+ arch/frv/kernel/ptrace.c      |   20 --------------------
+ arch/sh/kernel/ptrace_32.c    |   23 -----------------------
+ kernel/ptrace.c               |   20 ++++++++++++++++++++
+ 4 files changed, 29 insertions(+), 67 deletions(-)
 
- I'm not sure it makes a lot of sense to keep this piece around -- the 
-kernel repositories are not meant to lose their history IIUC, so the 
-driver will be available from an older revision for the foreseeable future 
-anyway.  This has happened to other drivers too, even those that were of 
-actual interest to people.
+diff --git a/arch/blackfin/kernel/ptrace.c b/arch/blackfin/kernel/ptrace.c
+index 43eb969..6ec7768 100644
+--- a/arch/blackfin/kernel/ptrace.c
++++ b/arch/blackfin/kernel/ptrace.c
+@@ -292,28 +292,6 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 			break;
+ 		}
+ 
+-#ifdef CONFIG_BINFMT_ELF_FDPIC
+-	case PTRACE_GETFDPIC: {
+-		unsigned long tmp = 0;
+-
+-		switch (addr) {
+-		case_PTRACE_GETFDPIC_EXEC:
+-		case PTRACE_GETFDPIC_EXEC:
+-			tmp = child->mm->context.exec_fdpic_loadmap;
+-			break;
+-		case_PTRACE_GETFDPIC_INTERP:
+-		case PTRACE_GETFDPIC_INTERP:
+-			tmp = child->mm->context.interp_fdpic_loadmap;
+-			break;
+-		default:
+-			break;
+-		}
+-
+-		ret = put_user(tmp, datap);
+-		break;
+-	}
+-#endif
+-
+ 		/* when I and D space are separate, this will have to be fixed. */
+ 	case PTRACE_POKEDATA:
+ 		pr_debug("ptrace: PTRACE_PEEKDATA\n");
+@@ -357,8 +335,14 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 	case PTRACE_PEEKUSR:
+ 		switch (addr) {
+ #ifdef CONFIG_BINFMT_ELF_FDPIC	/* backwards compat */
+-		case PT_FDPIC_EXEC:   goto case_PTRACE_GETFDPIC_EXEC;
+-		case PT_FDPIC_INTERP: goto case_PTRACE_GETFDPIC_INTERP;
++		case PT_FDPIC_EXEC:
++			request = PTRACE_GETFDPIC;
++			addr = PTRACE_GETFDPIC_EXEC;
++			goto case_default;
++		case PT_FDPIC_INTERP:
++			request = PTRACE_GETFDPIC;
++			addr = PTRACE_GETFDPIC_INTERP;
++			goto case_default;
+ #endif
+ 		default:
+ 			ret = get_reg(child, addr, datap);
+@@ -385,6 +369,7 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 					     0, sizeof(struct pt_regs),
+ 					     (const void __user *)data);
+ 
++	case_default:
+ 	default:
+ 		ret = ptrace_request(child, request, addr, data);
+ 		break;
+diff --git a/arch/frv/kernel/ptrace.c b/arch/frv/kernel/ptrace.c
+index 60eeed3..fac0289 100644
+--- a/arch/frv/kernel/ptrace.c
++++ b/arch/frv/kernel/ptrace.c
+@@ -344,26 +344,6 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 					     0, sizeof(child->thread.user->f),
+ 					     (const void __user *)data);
+ 
+-	case PTRACE_GETFDPIC:
+-		tmp = 0;
+-		switch (addr) {
+-		case PTRACE_GETFDPIC_EXEC:
+-			tmp = child->mm->context.exec_fdpic_loadmap;
+-			break;
+-		case PTRACE_GETFDPIC_INTERP:
+-			tmp = child->mm->context.interp_fdpic_loadmap;
+-			break;
+-		default:
+-			break;
+-		}
+-
+-		ret = 0;
+-		if (put_user(tmp, (unsigned long *) data)) {
+-			ret = -EFAULT;
+-			break;
+-		}
+-		break;
+-
+ 	default:
+ 		ret = ptrace_request(child, request, addr, data);
+ 		break;
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 7759a9a..75b74b2 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -436,29 +436,6 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
+ 					     0, sizeof(struct pt_dspregs),
+ 					     (const void __user *)data);
+ #endif
+-#ifdef CONFIG_BINFMT_ELF_FDPIC
+-	case PTRACE_GETFDPIC: {
+-		unsigned long tmp = 0;
+-
+-		switch (addr) {
+-		case PTRACE_GETFDPIC_EXEC:
+-			tmp = child->mm->context.exec_fdpic_loadmap;
+-			break;
+-		case PTRACE_GETFDPIC_INTERP:
+-			tmp = child->mm->context.interp_fdpic_loadmap;
+-			break;
+-		default:
+-			break;
+-		}
+-
+-		ret = 0;
+-		if (put_user(tmp, datap)) {
+-			ret = -EFAULT;
+-			break;
+-		}
+-		break;
+-	}
+-#endif
+ 	default:
+ 		ret = ptrace_request(child, request, addr, data);
+ 		break;
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index 42ad8ae..3ecb0a1 100644
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -596,6 +596,26 @@ int ptrace_request(struct task_struct *child, long request,
+ 		ret = ptrace_detach(child, data);
+ 		break;
+ 
++#ifdef CONFIG_BINFMT_ELF_FDPIC
++	case PTRACE_GETFDPIC: {
++		unsigned long tmp = 0;
++
++		switch (addr) {
++		case PTRACE_GETFDPIC_EXEC:
++			tmp = child->mm->context.exec_fdpic_loadmap;
++			break;
++		case PTRACE_GETFDPIC_INTERP:
++			tmp = child->mm->context.interp_fdpic_loadmap;
++			break;
++		default:
++			break;
++		}
++
++		ret = put_user(tmp, (unsigned long __user *) data);
++		break;
++	}
++#endif
++
+ #ifdef PTRACE_SINGLESTEP
+ 	case PTRACE_SINGLESTEP:
+ #endif
+-- 
+1.7.1
 
-> As for the grandchildren - is there something I haven't heared of yet?  :)
-
- Me neither, but I've thought I could perhaps borrow some from a friend or 
-suchlike and consider the matter ticked off. ;)
-
-  Maciej
