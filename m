@@ -1,59 +1,216 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 May 2010 10:34:41 +0000
-Subject: [PATCH 2/3] sh: allow platforms to specify SD-card supported voltages
-Message-Id: <Pine.LNX.4.64.1005141233250.6147@axis700.grange>
+Date: Fri, 21 May 2010 15:49:19 +0000
+Subject: [PATCH 3/4] sh: fix handling of SCIFB sh-mobile ports
+Message-Id: <Pine.LNX.4.64.1005211734200.8450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005141228510.6147@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005141228510.6147@axis700.grange>
+References: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-serial@vger.kernel.org
 
-Boards can have different supplied voltages on different SD card slots. This
-information has to be passed down to the SD/MMC driver.
+SCIFB ports have a slightly different register layout and a different FIFO
+size from SCIFA ports, in DMA mode they have to be treated just like SCIFA.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mfd/sh_mobile_sdhi.c       |    4 +++-
- include/linux/mfd/sh_mobile_sdhi.h |    3 +++
- 2 files changed, 6 insertions(+), 1 deletions(-)
+ drivers/serial/sh-sci.c |   42 ++++++++++++++++++++++++++++++++++--------
+ drivers/serial/sh-sci.h |   29 +++++++++++++++++++++++------
+ 2 files changed, 57 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-index 7970fe8..d9e4701 100644
---- a/drivers/mfd/sh_mobile_sdhi.c
-+++ b/drivers/mfd/sh_mobile_sdhi.c
-@@ -106,8 +106,10 @@ static int __init sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->hclk = clk_get_rate(priv->clk);
- 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
--	if (p)
-+	if (p) {
- 		mmc_data->flags = p->tmio_flags;
-+		mmc_data->ocr_mask = p->tmio_ocr_mask;
-+	}
- 
- 	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
- 		priv->param_tx.slave_id = p->dma_slave_tx;
-diff --git a/include/linux/mfd/sh_mobile_sdhi.h b/include/linux/mfd/sh_mobile_sdhi.h
-index c7b47f8..4906780 100644
---- a/include/linux/mfd/sh_mobile_sdhi.h
-+++ b/include/linux/mfd/sh_mobile_sdhi.h
-@@ -1,10 +1,13 @@
- #ifndef __SH_MOBILE_SDHI_H__
- #define __SH_MOBILE_SDHI_H__
- 
-+#include <linux/types.h>
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 7b273c9..21152ff 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -341,6 +341,27 @@ static int scif_rxfill(struct uart_port *port)
+ 		return sci_in(port, SCFDR) & SCIF2_RFDC_MASK;
+ 	}
+ }
++#elif defined(CONFIG_ARCH_SH7372)
++static int scif_txfill(struct uart_port *port)
++{
++	if (port->type = PORT_SCIFA)
++		return sci_in(port, SCFDR) >> 8;
++	else
++		return sci_in(port, SCTFDR);
++}
 +
- struct sh_mobile_sdhi_info {
- 	int dma_slave_tx;
- 	int dma_slave_rx;
- 	unsigned long tmio_flags;
-+	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- };
++static int scif_txroom(struct uart_port *port)
++{
++	return port->fifosize - scif_txfill(port);
++}
++
++static int scif_rxfill(struct uart_port *port)
++{
++	if (port->type = PORT_SCIFA)
++		return sci_in(port, SCFDR) & SCIF_RFDC_MASK;
++	else
++		return sci_in(port, SCRFDR);
++}
+ #else
+ static int scif_txfill(struct uart_port *port)
+ {
+@@ -678,7 +699,7 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 		u16 ssr = sci_in(port, SCxSR);
  
+ 		/* Disable future Rx interrupts */
+-		if (port->type = PORT_SCIFA) {
++		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 			disable_irq_nosync(irq);
+ 			scr |= 0x4000;
+ 		} else {
+@@ -931,7 +952,7 @@ static void sci_dma_tx_complete(void *arg)
+ 
+ 	if (!uart_circ_empty(xmit)) {
+ 		schedule_work(&s->work_tx);
+-	} else if (port->type = PORT_SCIFA) {
++	} else if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		u16 ctrl = sci_in(port, SCSCR);
+ 		sci_out(port, SCSCR, ctrl & ~SCI_CTRL_FLAGS_TIE);
+ 	}
+@@ -1187,7 +1208,7 @@ static void sci_start_tx(struct uart_port *port)
+ 	unsigned short ctrl;
+ 
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+-	if (port->type = PORT_SCIFA) {
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		u16 new, scr = sci_in(port, SCSCR);
+ 		if (s->chan_tx)
+ 			new = scr | 0x8000;
+@@ -1200,7 +1221,7 @@ static void sci_start_tx(struct uart_port *port)
+ 	    s->cookie_tx < 0)
+ 		schedule_work(&s->work_tx);
+ #endif
+-	if (!s->chan_tx || port->type = PORT_SCIFA) {
++	if (!s->chan_tx || port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		/* Set TIE (Transmit Interrupt Enable) bit in SCSCR */
+ 		ctrl = sci_in(port, SCSCR);
+ 		sci_out(port, SCSCR, ctrl | SCI_CTRL_FLAGS_TIE);
+@@ -1213,7 +1234,7 @@ static void sci_stop_tx(struct uart_port *port)
+ 
+ 	/* Clear TIE (Transmit Interrupt Enable) bit in SCSCR */
+ 	ctrl = sci_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA)
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		ctrl &= ~0x8000;
+ 	ctrl &= ~SCI_CTRL_FLAGS_TIE;
+ 	sci_out(port, SCSCR, ctrl);
+@@ -1225,7 +1246,7 @@ static void sci_start_rx(struct uart_port *port)
+ 
+ 	/* Set RIE (Receive Interrupt Enable) bit in SCSCR */
+ 	ctrl |= sci_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA)
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		ctrl &= ~0x4000;
+ 	sci_out(port, SCSCR, ctrl);
+ }
+@@ -1236,7 +1257,7 @@ static void sci_stop_rx(struct uart_port *port)
+ 
+ 	/* Clear RIE (Receive Interrupt Enable) bit in SCSCR */
+ 	ctrl = sci_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA)
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		ctrl &= ~0x4000;
+ 	ctrl &= ~(SCI_CTRL_FLAGS_RIE | SCI_CTRL_FLAGS_REIE);
+ 	sci_out(port, SCSCR, ctrl);
+@@ -1274,7 +1295,7 @@ static void rx_timer_fn(unsigned long arg)
+ 	struct uart_port *port = &s->port;
+ 	u16 scr = sci_in(port, SCSCR);
+ 
+-	if (port->type = PORT_SCIFA) {
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		scr &= ~0x4000;
+ 		enable_irq(s->irqs[1]);
+ 	}
+@@ -1527,6 +1548,8 @@ static const char *sci_type(struct uart_port *port)
+ 		return "scif";
+ 	case PORT_SCIFA:
+ 		return "scifa";
++	case PORT_SCIFB:
++		return "scifb";
+ 	}
+ 
+ 	return NULL;
+@@ -1615,6 +1638,9 @@ static void __devinit sci_init_single(struct platform_device *dev,
+ 	port->line	= index;
+ 
+ 	switch (p->type) {
++	case PORT_SCIFB:
++		port->fifosize = 256;
++		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
+ 		break;
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index f70c49f..9b52f77 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -322,7 +322,7 @@
+ #define CPU_SCIx_FNS(name, sci_offset, sci_size, scif_offset, scif_size)\
+   static inline unsigned int sci_##name##_in(struct uart_port *port)	\
+   {									\
+-    if (port->type = PORT_SCIF) {					\
++    if (port->type = PORT_SCIF || port->type = PORT_SCIFB) {		\
+       SCI_IN(scif_size, scif_offset)					\
+     } else {	/* PORT_SCI or PORT_SCIFA */				\
+       SCI_IN(sci_size, sci_offset);					\
+@@ -330,7 +330,7 @@
+   }									\
+   static inline void sci_##name##_out(struct uart_port *port, unsigned int value) \
+   {									\
+-    if (port->type = PORT_SCIF) {					\
++    if (port->type = PORT_SCIF || port->type = PORT_SCIFB) {		\
+       SCI_OUT(scif_size, scif_offset, value)				\
+     } else {	/* PORT_SCI or PORT_SCIFA */				\
+       SCI_OUT(sci_size, sci_offset, value);				\
+@@ -384,8 +384,12 @@
+       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+       defined(CONFIG_ARCH_SH7367) || \
+-      defined(CONFIG_ARCH_SH7377) || \
+-      defined(CONFIG_ARCH_SH7372)
++      defined(CONFIG_ARCH_SH7377)
++#define SCIF_FNS(name, scif_offset, scif_size) \
++  CPU_SCIF_FNS(name, scif_offset, scif_size)
++#elif defined(CONFIG_ARCH_SH7372)
++#define SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size, sh4_scifb_offset, sh4_scifb_size) \
++  CPU_SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size, sh4_scifb_offset, sh4_scifb_size)
+ #define SCIF_FNS(name, scif_offset, scif_size) \
+   CPU_SCIF_FNS(name, scif_offset, scif_size)
+ #else
+@@ -422,8 +426,7 @@
+     defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+     defined(CONFIG_ARCH_SH7367) || \
+-    defined(CONFIG_ARCH_SH7377) || \
+-    defined(CONFIG_ARCH_SH7372)
++    defined(CONFIG_ARCH_SH7377)
+ 
+ SCIF_FNS(SCSMR,  0x00, 16)
+ SCIF_FNS(SCBRR,  0x04,  8)
+@@ -436,6 +439,20 @@ SCIF_FNS(SCFDR,  0x1c, 16)
+ SCIF_FNS(SCxTDR, 0x20,  8)
+ SCIF_FNS(SCxRDR, 0x24,  8)
+ SCIF_FNS(SCLSR,  0x00,  0)
++#elif defined(CONFIG_ARCH_SH7372)
++SCIF_FNS(SCSMR,  0x00, 16)
++SCIF_FNS(SCBRR,  0x04,  8)
++SCIF_FNS(SCSCR,  0x08, 16)
++SCIF_FNS(SCTDSR, 0x0c, 16)
++SCIF_FNS(SCFER,  0x10, 16)
++SCIF_FNS(SCxSR,  0x14, 16)
++SCIF_FNS(SCFCR,  0x18, 16)
++SCIF_FNS(SCFDR,  0x1c, 16)
++SCIF_FNS(SCTFDR, 0x38, 16)
++SCIF_FNS(SCRFDR, 0x3c, 16)
++SCIx_FNS(SCxTDR, 0x20,  8, 0x40,  8)
++SCIx_FNS(SCxRDR, 0x24,  8, 0x60,  8)
++SCIF_FNS(SCLSR,  0x00,  0)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7723) ||\
+       defined(CONFIG_CPU_SUBTYPE_SH7724)
+ SCIx_FNS(SCSMR,  0x00, 16, 0x00, 16)
 -- 
 1.6.2.4
 
