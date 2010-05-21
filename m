@@ -1,184 +1,423 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 04:59:18 +0000
-Subject: [PATCH 07/09] sh: sh7786 mstp32 index rework
-Message-Id: <20100511050030.26302.72039.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 21 May 2010 15:49:23 +0000
+Subject: [PATCH 4/4] sh-mobile: add SCIFA and SCIFB DMA slave definitions
+Message-Id: <Pine.LNX.4.64.1005211736070.8450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-serial@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+SH7372 can use DMA with the SCI serial driver. Add required slave IDs, slave
+descriptors and move DMA platform device definitions to the top of the file for
+the time, when we have to reference them from SCI device data to enable DMA
+for them.
 
-This patch adds sh7786 MSTP enums for mstp_clks[] index.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   14 +
+ arch/arm/mach-shmobile/setup-sh7372.c        |  346 ++++++++++++++++----------
+ 2 files changed, 223 insertions(+), 137 deletions(-)
 
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c |   94 +++++++++++++++++---------------
- 1 file changed, 51 insertions(+), 43 deletions(-)
-
---- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-+++ work/arch/sh/kernel/cpu/sh4a/clock-sh7786.c	2010-05-11 13:14:31.000000000 +0900
-@@ -87,39 +87,47 @@ struct clk div4_clks[DIV4_NR] = {
- #define MSTPCR0		0xffc40030
- #define MSTPCR1		0xffc40034
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 57e033a..c2d2d81 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -433,6 +433,20 @@ enum {
  
--static struct clk mstp_clks[] = {
-+enum { MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024,
-+       MSTP023, MSTP022, MSTP021, MSTP020, MSTP017, MSTP016,
-+       MSTP015, MSTP014, MSTP011, MSTP010, MSTP009, MSTP008,
-+       MSTP005, MSTP004, MSTP002,
-+       MSTP112, MSTP110, MSTP109, MSTP108,
-+       MSTP105, MSTP104, MSTP103, MSTP102,
-+       MSTP_NR };
+ /* DMA slave IDs */
+ enum {
++	SHDMA_SLAVE_SCIF0_TX,
++	SHDMA_SLAVE_SCIF0_RX,
++	SHDMA_SLAVE_SCIF1_TX,
++	SHDMA_SLAVE_SCIF1_RX,
++	SHDMA_SLAVE_SCIF2_TX,
++	SHDMA_SLAVE_SCIF2_RX,
++	SHDMA_SLAVE_SCIF3_TX,
++	SHDMA_SLAVE_SCIF3_RX,
++	SHDMA_SLAVE_SCIF4_TX,
++	SHDMA_SLAVE_SCIF4_RX,
++	SHDMA_SLAVE_SCIF5_TX,
++	SHDMA_SLAVE_SCIF5_RX,
++	SHDMA_SLAVE_SCIF6_TX,
++	SHDMA_SLAVE_SCIF6_RX,
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI0_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index ba70910..927cbe8 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -34,143 +34,6 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xe6c40000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { 80, 80, 80, 80 },
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xe6c50000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFA,
+-	.irqs           = { 81, 81, 81, 81 },
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xe6c60000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFA,
+-	.irqs           = { 82, 82, 82, 82 },
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xe6c70000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFA,
+-	.irqs           = { 83, 83, 83, 83 },
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xe6c80000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFA,
+-	.irqs           = { 89, 89, 89, 89 },
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xe6cb0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFA,
+-	.irqs           = { 90, 90, 90, 90 },
+-};
+-
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif6_platform_data = {
+-	.mapbase	= 0xe6c30000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIFB,
+-	.irqs           = { 91, 91, 91, 91 },
+-};
+-
+-static struct platform_device scif6_device = {
+-	.name		= "sh-sci",
+-	.id		= 6,
+-	.dev		= {
+-		.platform_data	= &scif6_platform_data,
+-	},
+-};
+-
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clk = "cmt1",
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
+-};
+-
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 72,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
+-	.dev = {
+-		.platform_data	= &cmt10_platform_data,
+-	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
+-};
+-
+ /* DMA */
+ /* Transmit sizes and respective CHCR register values */
+ enum {
+@@ -199,6 +62,76 @@ enum {
+ 
+ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
+ 	{
++		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
++		.addr		= 0xe6c40020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x21,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
++		.addr		= 0xe6c40024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x22,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
++		.addr		= 0xe6c50020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x25,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
++		.addr		= 0xe6c50024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x26,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
++		.addr		= 0xe6c60020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x29,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
++		.addr		= 0xe6c60024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2a,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
++		.addr		= 0xe6c70020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2d,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
++		.addr		= 0xe6c70024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x2e,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
++		.addr		= 0xe6c80020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x39,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
++		.addr		= 0xe6c80024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x3a,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
++		.addr		= 0xe6cb0020,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x35,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
++		.addr		= 0xe6cb0024,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x36,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF6_TX,
++		.addr		= 0xe6c30040,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x3d,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SCIF6_RX,
++		.addr		= 0xe6c30060,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x3e,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0xe6850030,
+ 		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
+@@ -389,6 +322,145 @@ static struct platform_device dma2_device = {
+ 	},
+ };
+ 
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xe6c40000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs		= { 80, 80, 80, 80 },
++};
 +
-+static struct clk mstp_clks[MSTP_NR] = {
- 	/* MSTPCR0 */
--	SH_CLK_MSTP32("sci_fck", 5, &div4_clks[DIV4_P], MSTPCR0, 29, 0),
--	SH_CLK_MSTP32("sci_fck", 4, &div4_clks[DIV4_P], MSTPCR0, 28, 0),
--	SH_CLK_MSTP32("sci_fck", 3, &div4_clks[DIV4_P], MSTPCR0, 27, 0),
--	SH_CLK_MSTP32("sci_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 26, 0),
--	SH_CLK_MSTP32("sci_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 25, 0),
--	SH_CLK_MSTP32("sci_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 24, 0),
--	SH_CLK_MSTP32("ssi_fck", 3, &div4_clks[DIV4_P], MSTPCR0, 23, 0),
--	SH_CLK_MSTP32("ssi_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 22, 0),
--	SH_CLK_MSTP32("ssi_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 21, 0),
--	SH_CLK_MSTP32("ssi_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 20, 0),
--	SH_CLK_MSTP32("hac_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 17, 0),
--	SH_CLK_MSTP32("hac_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 16, 0),
--	SH_CLK_MSTP32("i2c_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 15, 0),
--	SH_CLK_MSTP32("i2c_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 14, 0),
--	SH_CLK_MSTP32("tmu9_11_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 11, 0),
--	SH_CLK_MSTP32("tmu678_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 10, 0),
--	SH_CLK_MSTP32("tmu345_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 9, 0),
--	SH_CLK_MSTP32("tmu012_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 8, 0),
--	SH_CLK_MSTP32("sdif_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 5, 0),
--	SH_CLK_MSTP32("sdif_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 4, 0),
--	SH_CLK_MSTP32("hspi_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 2, 0),
-+	[MSTP029] = SH_CLK_MSTP32("sci_fck", 5, &div4_clks[DIV4_P], MSTPCR0, 29, 0),
-+	[MSTP028] = SH_CLK_MSTP32("sci_fck", 4, &div4_clks[DIV4_P], MSTPCR0, 28, 0),
-+	[MSTP027] = SH_CLK_MSTP32("sci_fck", 3, &div4_clks[DIV4_P], MSTPCR0, 27, 0),
-+	[MSTP026] = SH_CLK_MSTP32("sci_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 26, 0),
-+	[MSTP025] = SH_CLK_MSTP32("sci_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 25, 0),
-+	[MSTP024] = SH_CLK_MSTP32("sci_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 24, 0),
-+	[MSTP023] = SH_CLK_MSTP32("ssi_fck", 3, &div4_clks[DIV4_P], MSTPCR0, 23, 0),
-+	[MSTP022] = SH_CLK_MSTP32("ssi_fck", 2, &div4_clks[DIV4_P], MSTPCR0, 22, 0),
-+	[MSTP021] = SH_CLK_MSTP32("ssi_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 21, 0),
-+	[MSTP020] = SH_CLK_MSTP32("ssi_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 20, 0),
-+	[MSTP017] = SH_CLK_MSTP32("hac_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 17, 0),
-+	[MSTP016] = SH_CLK_MSTP32("hac_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 16, 0),
-+	[MSTP015] = SH_CLK_MSTP32("i2c_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 15, 0),
-+	[MSTP014] = SH_CLK_MSTP32("i2c_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 14, 0),
-+	[MSTP011] = SH_CLK_MSTP32("tmu9_11_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 11, 0),
-+	[MSTP010] = SH_CLK_MSTP32("tmu678_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 10, 0),
-+	[MSTP009] = SH_CLK_MSTP32("tmu345_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 9, 0),
-+	[MSTP008] = SH_CLK_MSTP32("tmu012_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 8, 0),
-+	[MSTP005] = SH_CLK_MSTP32("sdif_fck", 1, &div4_clks[DIV4_P], MSTPCR0, 5, 0),
-+	[MSTP004] = SH_CLK_MSTP32("sdif_fck", 0, &div4_clks[DIV4_P], MSTPCR0, 4, 0),
-+	[MSTP002] = SH_CLK_MSTP32("hspi_fck", -1, &div4_clks[DIV4_P], MSTPCR0, 2, 0),
- 
- 	/* MSTPCR1 */
--	SH_CLK_MSTP32("usb_fck", -1, NULL, MSTPCR1, 12, 0),
--	SH_CLK_MSTP32("pcie_fck", 2, NULL, MSTPCR1, 10, 0),
--	SH_CLK_MSTP32("pcie_fck", 1, NULL, MSTPCR1, 9, 0),
--	SH_CLK_MSTP32("pcie_fck", 0, NULL, MSTPCR1, 8, 0),
--	SH_CLK_MSTP32("dmac_11_6_fck", -1, NULL, MSTPCR1, 5, 0),
--	SH_CLK_MSTP32("dmac_5_0_fck", -1, NULL, MSTPCR1, 4, 0),
--	SH_CLK_MSTP32("du_fck", -1, NULL, MSTPCR1, 3, 0),
--	SH_CLK_MSTP32("ether_fck", -1, NULL, MSTPCR1, 2, 0),
-+	[MSTP112] = SH_CLK_MSTP32("usb_fck", -1, NULL, MSTPCR1, 12, 0),
-+	[MSTP110] = SH_CLK_MSTP32("pcie_fck", 2, NULL, MSTPCR1, 10, 0),
-+	[MSTP109] = SH_CLK_MSTP32("pcie_fck", 1, NULL, MSTPCR1, 9, 0),
-+	[MSTP108] = SH_CLK_MSTP32("pcie_fck", 0, NULL, MSTPCR1, 8, 0),
-+	[MSTP105] = SH_CLK_MSTP32("dmac_11_6_fck", -1, NULL, MSTPCR1, 5, 0),
-+	[MSTP104] = SH_CLK_MSTP32("dmac_5_0_fck", -1, NULL, MSTPCR1, 4, 0),
-+	[MSTP103] = SH_CLK_MSTP32("du_fck", -1, NULL, MSTPCR1, 3, 0),
-+	[MSTP102] = SH_CLK_MSTP32("ether_fck", -1, NULL, MSTPCR1, 2, 0),
- };
- 
- static struct clk_lookup lookups[] = {
-@@ -127,62 +135,62 @@ static struct clk_lookup lookups[] = {
- 		/* TMU0 */
- 		.dev_id		= "sh_tmu.0",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[17],	/* tmu012_fck */
-+		.clk		= &mstp_clks[MSTP008],
- 	}, {
- 		/* TMU1 */
- 		.dev_id		= "sh_tmu.1",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[17],
-+		.clk		= &mstp_clks[MSTP008],
- 	}, {
- 		/* TMU2 */
- 		.dev_id		= "sh_tmu.2",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[17],
-+		.clk		= &mstp_clks[MSTP008],
- 	}, {
- 		/* TMU3 */
- 		.dev_id		= "sh_tmu.3",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[16],	/* tmu345_fck */
-+		.clk		= &mstp_clks[MSTP009],
- 	}, {
- 		/* TMU4 */
- 		.dev_id		= "sh_tmu.4",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[16],
-+		.clk		= &mstp_clks[MSTP009],
- 	}, {
- 		/* TMU5 */
- 		.dev_id		= "sh_tmu.5",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[16],
-+		.clk		= &mstp_clks[MSTP009],
- 	}, {
- 		/* TMU6 */
- 		.dev_id		= "sh_tmu.6",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[15],	/* tmu678_fck */
-+		.clk		= &mstp_clks[MSTP010],
- 	}, {
- 		/* TMU7 */
- 		.dev_id		= "sh_tmu.7",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[15],
-+		.clk		= &mstp_clks[MSTP010],
- 	}, {
- 		/* TMU8 */
- 		.dev_id		= "sh_tmu.8",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[15],
-+		.clk		= &mstp_clks[MSTP010],
- 	}, {
- 		/* TMU9 */
- 		.dev_id		= "sh_tmu.9",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[14],	/* tmu9_11_fck */
-+		.clk		= &mstp_clks[MSTP011],
- 	}, {
- 		/* TMU10 */
- 		.dev_id		= "sh_tmu.10",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[14],
-+		.clk		= &mstp_clks[MSTP011],
- 	}, {
- 		/* TMU11 */
- 		.dev_id		= "sh_tmu.11",
- 		.con_id		= "tmu_fck",
--		.clk		= &mstp_clks[14],
-+		.clk		= &mstp_clks[MSTP011],
- 	}
- };
- 
-@@ -199,7 +207,7 @@ int __init arch_clk_init(void)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
- 					   &div4_table);
- 	if (!ret)
--		ret = sh_clk_mstp32_register(mstp_clks, ARRAY_SIZE(mstp_clks));
-+		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
- 
- 	return ret;
- }
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &scif0_platform_data,
++	},
++};
++
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xe6c50000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs           = { 81, 81, 81, 81 },
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &scif1_platform_data,
++	},
++};
++
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xe6c60000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs           = { 82, 82, 82, 82 },
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data	= &scif2_platform_data,
++	},
++};
++
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xe6c70000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs           = { 83, 83, 83, 83 },
++};
++
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data	= &scif3_platform_data,
++	},
++};
++
++static struct plat_sci_port scif4_platform_data = {
++	.mapbase	= 0xe6c80000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs           = { 89, 89, 89, 89 },
++};
++
++static struct platform_device scif4_device = {
++	.name		= "sh-sci",
++	.id		= 4,
++	.dev		= {
++		.platform_data	= &scif4_platform_data,
++	},
++};
++
++static struct plat_sci_port scif5_platform_data = {
++	.mapbase	= 0xe6cb0000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFA,
++	.irqs           = { 90, 90, 90, 90 },
++};
++
++static struct platform_device scif5_device = {
++	.name		= "sh-sci",
++	.id		= 5,
++	.dev		= {
++		.platform_data	= &scif5_platform_data,
++		.coherent_dma_mask = ~0,
++	},
++};
++
++static struct plat_sci_port scif6_platform_data = {
++	.mapbase	= 0xe6c30000,
++	.flags		= UPF_BOOT_AUTOCONF,
++	.type		= PORT_SCIFB,
++	.irqs           = { 91, 91, 91, 91 },
++};
++
++static struct platform_device scif6_device = {
++	.name		= "sh-sci",
++	.id		= 6,
++	.dev		= {
++		.platform_data	= &scif6_platform_data,
++		.coherent_dma_mask = ~0,
++	},
++};
++
++static struct sh_timer_config cmt10_platform_data = {
++	.name = "CMT10",
++	.channel_offset = 0x10,
++	.timer_bit = 0,
++	.clk = "cmt1",
++	.clockevent_rating = 125,
++	.clocksource_rating = 125,
++};
++
++static struct resource cmt10_resources[] = {
++	[0] = {
++		.name	= "CMT10",
++		.start	= 0xe6138010,
++		.end	= 0xe613801b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 72,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device cmt10_device = {
++	.name		= "sh_cmt",
++	.id		= 10,
++	.dev = {
++		.platform_data	= &cmt10_platform_data,
++	},
++	.resource	= cmt10_resources,
++	.num_resources	= ARRAY_SIZE(cmt10_resources),
++};
++
+ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+-- 
+1.6.2.4
+
