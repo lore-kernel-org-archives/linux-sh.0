@@ -1,18 +1,38 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 22 May 2010 08:33:08 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7377 clock framework V2
-Message-Id: <20100522083308.GG17814@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 21 May 2010 15:22:40 +0000
+Subject: [PATCH] sh: fix Oops in the serial SCI driver
+Message-Id: <Pine.LNX.4.64.1005211721030.8450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100521051934.12306.61632.sendpatchset@t400s>
-In-Reply-To: <20100521051934.12306.61632.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-serial@vger.kernel.org
 
-On Fri, May 21, 2010 at 02:19:34PM +0900, Magnus Damm wrote:
-> This patch is V2 of clock framework tables/code for sh7377.
-> MSTP support is included for the following hardware blocks:
-> KEYSC, SCIF, IIC, IRDA, FLCTL, USB, SDHI and UIO.
+Fix an Oops, triggering, if the DMA buffer allocation for the Rx channel in
+sh-sci.c fails.
 
-This one too.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/serial/sh-sci.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index 304a877..7b273c9 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -1007,8 +1007,9 @@ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+ 	s->chan_rx = NULL;
+ 	s->cookie_rx[0] = s->cookie_rx[1] = -EINVAL;
+ 	dma_release_channel(chan);
+-	dma_free_coherent(port->dev, s->buf_len_rx * 2,
+-			  sg_virt(&s->sg_rx[0]), sg_dma_address(&s->sg_rx[0]));
++	if (sg_dma_address(&s->sg_rx[0]))
++		dma_free_coherent(port->dev, s->buf_len_rx * 2,
++				  sg_virt(&s->sg_rx[0]), sg_dma_address(&s->sg_rx[0]));
+ 	if (enable_pio)
+ 		sci_start_rx(port);
+ }
+-- 
+1.6.2.4
+
