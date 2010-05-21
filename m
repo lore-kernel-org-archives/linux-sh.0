@@ -1,44 +1,88 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 May 2010 09:52:35 +0000
-Subject: [PATCH 2/3] mfd: pass platform flags down to the tmio_mmc driver
-Message-Id: <Pine.LNX.4.64.1005111151380.6810@axis700.grange>
+Date: Fri, 21 May 2010 15:49:15 +0000
+Subject: [PATCH 2/4] sh: SH7372 has 6 SCIFA and 1 SCIFB ports
+Message-Id: <Pine.LNX.4.64.1005211735080.8450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005111146330.6810@axis700.grange>
+References: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005211731480.8450@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
+
+The current SH7372 setup code registers 7 SCIF ports, which is wrong.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mfd/sh_mobile_sdhi.c       |    1 +
- include/linux/mfd/sh_mobile_sdhi.h |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/setup-sh7372.c |   14 +++++++-------
+ 1 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-index dafa988..d977982 100644
---- a/drivers/mfd/sh_mobile_sdhi.c
-+++ b/drivers/mfd/sh_mobile_sdhi.c
-@@ -106,6 +106,7 @@ static int __init sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->hclk = clk_get_rate(priv->clk);
- 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-+	mmc_data->flags = p->tmio_flags;
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index b2788d0..ba70910 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -37,7 +37,7 @@
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xe6c40000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFA,
+ 	.irqs		= { 80, 80, 80, 80 },
+ };
  
- 	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
- 		priv->param_tx.slave_id = p->dma_slave_tx;
-diff --git a/include/linux/mfd/sh_mobile_sdhi.h b/include/linux/mfd/sh_mobile_sdhi.h
-index c305461..c7b47f8 100644
---- a/include/linux/mfd/sh_mobile_sdhi.h
-+++ b/include/linux/mfd/sh_mobile_sdhi.h
-@@ -4,6 +4,7 @@
- struct sh_mobile_sdhi_info {
- 	int dma_slave_tx;
- 	int dma_slave_rx;
-+	unsigned long tmio_flags;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
+@@ -52,7 +52,7 @@ static struct platform_device scif0_device = {
+ static struct plat_sci_port scif1_platform_data = {
+ 	.mapbase	= 0xe6c50000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFA,
+ 	.irqs           = { 81, 81, 81, 81 },
+ };
+ 
+@@ -67,7 +67,7 @@ static struct platform_device scif1_device = {
+ static struct plat_sci_port scif2_platform_data = {
+ 	.mapbase	= 0xe6c60000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFA,
+ 	.irqs           = { 82, 82, 82, 82 },
+ };
+ 
+@@ -82,7 +82,7 @@ static struct platform_device scif2_device = {
+ static struct plat_sci_port scif3_platform_data = {
+ 	.mapbase	= 0xe6c70000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFA,
+ 	.irqs           = { 83, 83, 83, 83 },
+ };
+ 
+@@ -97,7 +97,7 @@ static struct platform_device scif3_device = {
+ static struct plat_sci_port scif4_platform_data = {
+ 	.mapbase	= 0xe6c80000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFA,
+ 	.irqs           = { 89, 89, 89, 89 },
+ };
+ 
+@@ -112,7 +112,7 @@ static struct platform_device scif4_device = {
+ static struct plat_sci_port scif5_platform_data = {
+ 	.mapbase	= 0xe6cb0000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFA,
+ 	.irqs           = { 90, 90, 90, 90 },
+ };
+ 
+@@ -127,7 +127,7 @@ static struct platform_device scif5_device = {
+ static struct plat_sci_port scif6_platform_data = {
+ 	.mapbase	= 0xe6c30000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+-	.type		= PORT_SCIF,
++	.type		= PORT_SCIFB,
+ 	.irqs           = { 91, 91, 91, 91 },
  };
  
 -- 
