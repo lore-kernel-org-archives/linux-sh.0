@@ -1,41 +1,47 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 May 2010 08:34:43 +0000
-Subject: [PATCH 00/05] SH-Mobile ARM UIO Multimedia Support
-Message-Id: <20100512083443.9395.90768.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 21 May 2010 15:15:38 +0000
+Subject: [PATCH 2/5] ARM: add LCDC and MIPI DSI-Tx clock definitions to sh7372
+Message-Id: <Pine.LNX.4.64.1005211700420.8450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005201829260.26000@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005201829260.26000@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, "linux-fbdev, @vger.kernel.org" <linux-fbdev@vger.kernel.org>, "lin, ux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "Syrjala Ville (Nokia-D/Helsinki)" <ville.syrjala@nokia.com>, Tomi Valkeinen <tomi.valkeinen@nokia.com>
 
-SH-Mobile ARM UIO Multimedia Support
+Define clock objects for switching on and off clocks for LCDC0, LCDC1 and MIPI
+DSI-Tx.
 
-[PATCH 01/05] ARM: mach-shmobile: Add memchunk support
-[PATCH 02/05] ARM: mach-shmobile: Add CONFIG_FORCE_MAX_ZONEORDER
-[PATCH 03/05] ARM: mach-shmobile: UIO platform data for sh7372
-[PATCH 04/05] ARM: mach-shmobile: UIO platform data for sh7377
-[PATCH 05/05] ARM: mach-shmobile: UIO platform data for sh7367
-
-These patches use UIO to export various multimedia hardware blocks
-to user space. The code is for SH-Mobile ARM SoCs, but the same
-hardware blocks also exist in SH-Mobile SoCs with SH cores. The UIO
-interfaces have been in use on the SH architecture for soon two years.
-
-The memchunk patch makes the SH-Mobile ARM kernel behave as the
-SH-Mobile SH kernel. The same thing with CONFIG_FORCE_MAX_ZONEORDER,
-which is needed to allow allocation of large physically contiguous
-memory chunks.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- Applies to the genesis-2.6 git tree without any special dependencies.
+Now that the "fbdev: add a MIPI DSI header" patch has been acked, we can 
+add the rest of the patches in this series, which can completely be pulled 
+via the genesis tree. Paul, please apply. This patch is unchanged from its 
+original version.
 
- arch/arm/mach-shmobile/Kconfig               |   15 +
- arch/arm/mach-shmobile/Makefile              |    2 
- arch/arm/mach-shmobile/include/mach/common.h |    4 
- arch/arm/mach-shmobile/memory.c              |   74 +++++++
- arch/arm/mach-shmobile/setup-sh7367.c        |  258 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c        |  257 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh7377.c        |  257 +++++++++++++++++++++++++
- 7 files changed, 866 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index abbc380..66ee47a 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -264,8 +264,12 @@ struct clk div6_clks[] = {
+ 
+ #define R_CLK (&r_clk)
+ #define HP_CLK (&div4_clks[DIV4_HP])
++#define B_CLK (&div4_clks[DIV4_B])
+ 
+ static struct clk mstp_clks[] = {
++	MSTP("lcdc0", B_CLK, SMSTPCR1, 0, 0),
++	MSTP("lcdc1", B_CLK, SMSTPCR1, 17, 0),
++	MSTP("dsitx", B_CLK, SMSTPCR1, 18, 0),
+ 	MSTP("sdhi0", HP_CLK, SMSTPCR3, 14, 0),
+ 	MSTP("sdhi1", HP_CLK, SMSTPCR3, 13, 0),
+ 	MSTP("keysc0", R_CLK, SMSTPCR4, 3, 0),
+-- 
+1.6.2.4
+
