@@ -1,32 +1,28 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 22 May 2010 07:45:46 +0000
-Subject: Re: [PATCH 3/3] sh: add Video Output Unit (VOU) and AK8813 TV-encoder support to ms7724se
-Message-Id: <20100522074545.GB17814@linux-sh.org>
+Date: Sat, 22 May 2010 07:46:32 +0000
+Subject: Re: [PATCH] SH: add Video Output Unit and AK8813 video encoder support on ecovec
+Message-Id: <20100522074632.GC17814@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1003111124440.4385@axis700.grange> <Pine.LNX.4.64.1003111440300.4385@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1003111440300.4385@axis700.grange>
+References: <Pine.LNX.4.64.1004211039220.5292@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1004211039220.5292@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <damm@opensource.se>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Thu, Mar 11, 2010 at 02:45:00PM +0100, Guennadi Liakhovetski wrote:
-> Add platform bindings, GPIO initialisation and allocation and AK8813 reset code
-> to ms7724se.
+On Wed, Apr 21, 2010 at 10:45:25AM +0200, Guennadi Liakhovetski wrote:
+> Ecovec uses the AK8813 video envoder similarly to the ms7724se platform with
+> the only difference, that on ecovec GPIOs are used for resetting and powering
+> up and down the chip.
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > ---
 > 
-> Obviously depends on the previous two VOU and AK881x patches, sorry for 
-> not marking those with "PATCH x/3" accordingly. Those two patches do not 
-> depend upon each other and initially I wasn't sure I'd be able to clean up 
-> this patch sufficiently for submission. Two 10us delays are pretty random, 
-> maybe they can be optimised out completely. I just tried to reproduced the 
-> reset procedure from the ak8813 datasheet, and it says nothing about the 
-> duration of respective stages.
+> This patch extends the SuperH VOU / AK881x patch series: 
+> http://thread.gmane.org/gmane.linux.ports.sh.devel/7751/focusw53
 > 
->  arch/sh/boards/mach-se/7724/setup.c |   88 ++++++++++++++++++++++++++++++++---
->  1 files changed, 81 insertions(+), 7 deletions(-)
+>  arch/sh/boards/mach-ecovec24/setup.c |   78 ++++++++++++++++++++++++++++++++++
+>  1 files changed, 78 insertions(+), 0 deletions(-)
 > 
-Now that the other two patches are upstream, I've applied this.
+Applied, thanks.
