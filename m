@@ -1,83 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 11 May 2010 09:35:11 +0000
-Subject: [PATCH 01/15] sh: switch legacy clocks to clkdev
-Message-Id: <20100511093511.28210.25802.sendpatchset@t400s>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 22 May 2010 07:45:46 +0000
+Subject: Re: [PATCH 3/3] sh: add Video Output Unit (VOU) and AK8813 TV-encoder support to ms7724se
+Message-Id: <20100522074545.GB17814@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1003111124440.4385@axis700.grange> <Pine.LNX.4.64.1003111440300.4385@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1003111440300.4385@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <damm@opensource.se>
 
-From: Magnus Damm <damm@opensource.se>
-
-This patch converts the legacy clocks to register
-using clkdev. Also the clock name is removed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/sh/kernel/cpu/clock-cpg.c |   17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
-
---- 0011/arch/sh/kernel/cpu/clock-cpg.c
-+++ work/arch/sh/kernel/cpu/clock-cpg.c	2010-05-11 17:53:38.000000000 +0900
-@@ -2,6 +2,7 @@
- #include <linux/compiler.h>
- #include <linux/slab.h>
- #include <linux/io.h>
-+#include <asm/clkdev.h>
- #include <asm/clock.h>
- 
- static int sh_clk_mstp32_enable(struct clk *clk)
-@@ -299,25 +300,21 @@ int __init sh_clk_div4_reparent_register
- 
- #ifdef CONFIG_SH_CLK_CPG_LEGACY
- static struct clk master_clk = {
--	.name		= "master_clk",
- 	.flags		= CLK_ENABLE_ON_INIT,
- 	.rate		= CONFIG_SH_PCLK_FREQ,
- };
- 
- static struct clk peripheral_clk = {
--	.name		= "peripheral_clk",
- 	.parent		= &master_clk,
- 	.flags		= CLK_ENABLE_ON_INIT,
- };
- 
- static struct clk bus_clk = {
--	.name		= "bus_clk",
- 	.parent		= &master_clk,
- 	.flags		= CLK_ENABLE_ON_INIT,
- };
- 
- static struct clk cpu_clk = {
--	.name		= "cpu_clk",
- 	.parent		= &master_clk,
- 	.flags		= CLK_ENABLE_ON_INIT,
- };
-@@ -332,6 +329,16 @@ static struct clk *onchip_clocks[] = {
- 	&cpu_clk,
- };
- 
-+#define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+
-+static struct clk_lookup lookups[] = {
-+	/* main clocks */
-+	CLKDEV_CON_ID("master_clk", &master_clk),
-+	CLKDEV_CON_ID("peripheral_clk", &peripheral_clk),
-+	CLKDEV_CON_ID("bus_clk", &bus_clk),
-+	CLKDEV_CON_ID("cpu_clk", &cpu_clk),
-+};
-+
- int __init __deprecated cpg_clk_init(void)
- {
- 	int i, ret = 0;
-@@ -343,6 +350,8 @@ int __init __deprecated cpg_clk_init(voi
- 			ret |= clk_register(clk);
- 	}
- 
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
- 	clk_add_alias("tmu_fck", NULL, "peripheral_clk", NULL);
- 	clk_add_alias("mtu2_fck", NULL, "peripheral_clk", NULL);
- 	clk_add_alias("cmt_fck", NULL, "peripheral_clk", NULL);
+On Thu, Mar 11, 2010 at 02:45:00PM +0100, Guennadi Liakhovetski wrote:
+> Add platform bindings, GPIO initialisation and allocation and AK8813 reset code
+> to ms7724se.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> 
+> Obviously depends on the previous two VOU and AK881x patches, sorry for 
+> not marking those with "PATCH x/3" accordingly. Those two patches do not 
+> depend upon each other and initially I wasn't sure I'd be able to clean up 
+> this patch sufficiently for submission. Two 10us delays are pretty random, 
+> maybe they can be optimised out completely. I just tried to reproduced the 
+> reset procedure from the ak8813 datasheet, and it says nothing about the 
+> duration of respective stages.
+> 
+>  arch/sh/boards/mach-se/7724/setup.c |   88 ++++++++++++++++++++++++++++++++---
+>  1 files changed, 81 insertions(+), 7 deletions(-)
+> 
+Now that the other two patches are upstream, I've applied this.
