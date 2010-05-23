@@ -1,173 +1,337 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 17 May 2010 03:35:08 +0000
-Subject: Re: Status of tmio_mmc DMA support for SDIO
-Message-Id: <AANLkTimfjwXgMTh5Fw1_YJZNLthKW27TSnDxnlnLn2hs@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="0016361643c55509270486c1e931"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 23 May 2010 13:49:47 +0000
+Subject: [PATCH 9/9 v2] ARM: mach-shmobile: add DMA support to sh7372, enable
+Message-Id: <Pine.LNX.4.64.1005231546310.3571@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <A0C4AD4CC48F4CAAA4C9CB027472149D@RSI45>
-	 <Pine.LNX.4.64.1005140843320.6147@axis700.grange>
-	 <AANLkTikKmiRe0f9UXQo3bkwxjCVPzivTrTEYyzY3DcMB@mail.gmail.com>
-	 <Pine.LNX.4.64.1005141953160.6147@axis700.grange>
-	 <1B215080664E44FE81F6BA1DCFA65A38@RSI45>
-In-Reply-To: <1B215080664E44FE81F6BA1DCFA65A38@RSI45>
-To: "Charles D. Krebs" <ckrebs@therealtimegroup.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian@mnementh.co.uk>, linux-sh@vger.kernel.org, sailaja.sdn@redpinesignals.com, linux-mmc@vger.kernel.org
+References: <Pine.LNX.4.64.1005041318200.4925@axis700.grange>
+	<Pine.LNX.4.64.1005041424330.4925@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005041424330.4925@axis700.grange>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
---0016361643c55509270486c1e931
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+This adds DMA support for the sh7372 sh-mobile ARM core, using the shdma
+dmaengine driver, and uses DMA for the SDHI SD-card controller on this SoC.
 
-Hi Charles,
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-On Sat, May 15, 2010 at 4:43 AM, Charles D. Krebs
-<ckrebs@therealtimegroup.com> wrote:
->>> Just saw this - am I right in thinking someone has written SDIO
->>> support for TMIO ? Im afraid I dont appear to have the preceeding
->>> emails.
->>
->> This is the first email regarding TMIO SDIO that I'm aware of - from
->> Charles, he's sent it tothe sh ML and to me and I've added you and the m=
-mc
->> list to CC.
->
-> To clarify - I didn't write that code. =A0It was developed by some of the
-> Kernel guys over at Renesas Japan specifically for my request to support
-> SDIO under their BSP for 2.6.33. =A0The code in tmio and sh_mobile_sdhi
-> replaces a previously closed source module for SD support on the hardware
-> due to licensing restrictions of the SD consortium. =A0Apparently those i=
-ssues
-> were resolved and now the complete SD stack is integrated into the Kernel
-> directly. =A0However, the transition didn't include support for SDIO, so =
-the
-> patch to tmio was provided in the interim.
->
-> Magnus - Do you know the author for the SDIO patch?
+v1 -> v2:
 
-I believe that the patch was written by one of the BSP guys at
-Renesas. I guess I'm to blame for not posting anything better
-upstream, but I decided to hold until I could test this feature
-properly myself. There are a bunch of SDHI/tmio_mmc related patches
-posted for 2.6.35 already, and I guess SDIO would be targeted for
-2.6.36.
+1. updated to the current genesis tree HEAD
+2. adjusted the topic line to match platform preferences
+3. moved DMA platform devices to the top of the file, so that other 
+devices can reference them.
 
-The SDIO patch I've seen is not exactly upstream quality, but I've
-been working a bit on trying to come up with a more long term
-solution. At this point it's a bit stalled since my Wifi SDIO cards
-that i've ordered are still on hold for some unknown reason. I have
-however tested some other SDIO cards with the SDHI/tmio_mmc drivers
-and they seem ok. At least the one that actually has a linux driver.
-The quality of the driver for that card is far from perfect, so I'd
-like to test with hardware that has upstream SDIO drivers (broadcomm
-and perhaps also atheros chipsets) before claiming that SDIO works.
+Paul, this should be ready for you to merge now.
 
-FYI, you don't really need any patch for SDIO support. You can do SDIO
-on a non-SDIO host by the automatic polling mode that the kernel
-provides for you. So the SDHI/tmio_mmc code should work out of the box
-as-is. You may want to enable the IRQ pin feature, but for that you
-need to patch the SDHI/tmio_MMC driver(s).
+ arch/arm/mach-shmobile/board-ap4evb.c        |    9 +
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   10 ++
+ arch/arm/mach-shmobile/setup-sh7372.c        |  223 ++++++++++++++++++++++++++
+ 3 files changed, 242 insertions(+), 0 deletions(-)
 
-I've attached my prototype SDIO patch. It's a scaled down version of
-the BSP patch, but still in a hackish state.
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 4d197e3..6905ec4 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -23,6 +23,7 @@
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+@@ -224,6 +225,11 @@ static struct platform_device keysc_device = {
+ };
+ 
+ /* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info = {
++	.dma_slave_tx = SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = SHDMA_SLAVE_SDHI0_RX,
++};
++
+ static struct resource sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+@@ -242,6 +248,9 @@ static struct platform_device sdhi0_device = {
+ 	.num_resources  = ARRAY_SIZE(sdhi0_resources),
+ 	.resource       = sdhi0_resources,
+ 	.id             = 0,
++	.dev	= {
++		.platform_data	= &sdhi0_info,
++	},
+ };
+ 
+ /* USB1 */
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index dc34f00..57e033a 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -431,4 +431,14 @@ enum {
+ 	GPIO_FN_SDENC_DV_CLKI,
+ };
+ 
++/* DMA slave IDs */
++enum {
++	SHDMA_SLAVE_SDHI0_RX,
++	SHDMA_SLAVE_SDHI0_TX,
++	SHDMA_SLAVE_SDHI1_RX,
++	SHDMA_SLAVE_SDHI1_TX,
++	SHDMA_SLAVE_SDHI2_RX,
++	SHDMA_SLAVE_SDHI2_TX,
++};
++
+ #endif /* __ASM_SH7372_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 885dfaa..0a834d3 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -26,12 +26,232 @@
+ #include <linux/input.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
++#include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
+ #include <mach/hardware.h>
++#include <mach/sh7372.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* DMA */
++/* Transmit sizes and respective CHCR register values */
++enum {
++	XMIT_SZ_8BIT		= 0,
++	XMIT_SZ_16BIT		= 1,
++	XMIT_SZ_32BIT		= 2,
++	XMIT_SZ_64BIT		= 7,
++	XMIT_SZ_128BIT		= 3,
++	XMIT_SZ_256BIT		= 4,
++	XMIT_SZ_512BIT		= 5,
++};
++
++/* log2(size / 8) - used to calculate number of transfers */
++#define TS_SHIFT {			\
++	[XMIT_SZ_8BIT]		= 0,	\
++	[XMIT_SZ_16BIT]		= 1,	\
++	[XMIT_SZ_32BIT]		= 2,	\
++	[XMIT_SZ_64BIT]		= 3,	\
++	[XMIT_SZ_128BIT]	= 4,	\
++	[XMIT_SZ_256BIT]	= 5,	\
++	[XMIT_SZ_512BIT]	= 6,	\
++}
++
++#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | \
++			 (((i) & 0xc) << (20 - 2)))
++
++static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0xe6850030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0xe6850030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
++		.addr		= 0xe6860030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc9,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
++		.addr		= 0xe6860030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xca,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
++		.addr		= 0xe6870030,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xcd,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
++		.addr		= 0xe6870030,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xce,
++	},
++};
++
++static const struct sh_dmae_channel sh7724_dmae_channels[] = {
++	{
++		.offset = 0,
++		.dmars = 0,
++		.dmars_bit = 0,
++	}, {
++		.offset = 0x10,
++		.dmars = 0,
++		.dmars_bit = 8,
++	}, {
++		.offset = 0x20,
++		.dmars = 4,
++		.dmars_bit = 0,
++	}, {
++		.offset = 0x30,
++		.dmars = 4,
++		.dmars_bit = 8,
++	}, {
++		.offset = 0x50,
++		.dmars = 8,
++		.dmars_bit = 0,
++	}, {
++		.offset = 0x60,
++		.dmars = 8,
++		.dmars_bit = 8,
++	}
++};
++
++static const unsigned int ts_shift[] = TS_SHIFT;
++
++static struct sh_dmae_pdata dma_platform_data = {
++	.slave		= sh7724_dmae_slaves,
++	.slave_num	= ARRAY_SIZE(sh7724_dmae_slaves),
++	.channel	= sh7724_dmae_channels,
++	.channel_num	= ARRAY_SIZE(sh7724_dmae_channels),
++	.ts_low_shift	= 3,
++	.ts_low_mask	= 0x18,
++	.ts_high_shift	= (20 - 2),	/* 2 bits for shifted low TS */
++	.ts_high_mask	= 0x00300000,
++	.ts_shift	= ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(ts_shift),
++	.dmaor_init	= DMAOR_DME,
++};
++
++/* Resource order important! */
++static struct resource sh7724_dmae0_resources[] = {
++	{
++		/* Channel registers and DMAOR */
++		.start	= 0xfe008020,
++		.end	= 0xfe00808f,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		/* DMARSx */
++		.start	= 0xfe009000,
++		.end	= 0xfe00900b,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		/* DMA error IRQ */
++		.start	= 246,
++		.end	= 246,
++		.flags	= IORESOURCE_IRQ,
++	},
++	{
++		/* IRQ for channels 0-5 */
++		.start	= 240,
++		.end	= 245,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++/* Resource order important! */
++static struct resource sh7724_dmae1_resources[] = {
++	{
++		/* Channel registers and DMAOR */
++		.start	= 0xfe018020,
++		.end	= 0xfe01808f,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		/* DMARSx */
++		.start	= 0xfe019000,
++		.end	= 0xfe01900b,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		/* DMA error IRQ */
++		.start	= 254,
++		.end	= 254,
++		.flags	= IORESOURCE_IRQ,
++	},
++	{
++		/* IRQ for channels 0-5 */
++		.start	= 248,
++		.end	= 253,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++/* Resource order important! */
++static struct resource sh7724_dmae2_resources[] = {
++	{
++		/* Channel registers and DMAOR */
++		.start	= 0xfe028020,
++		.end	= 0xfe02808f,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		/* DMARSx */
++		.start	= 0xfe029000,
++		.end	= 0xfe02900b,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		/* DMA error IRQ */
++		.start	= 262,
++		.end	= 262,
++		.flags	= IORESOURCE_IRQ,
++	},
++	{
++		/* IRQ for channels 0-5 */
++		.start	= 256,
++		.end	= 261,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device dma0_device = {
++	.name		= "sh-dma-engine",
++	.id		= 0,
++	.resource	= sh7724_dmae0_resources,
++	.num_resources	= ARRAY_SIZE(sh7724_dmae0_resources),
++	.dev		= {
++		.platform_data	= &dma_platform_data,
++	},
++};
++
++static struct platform_device dma1_device = {
++	.name		= "sh-dma-engine",
++	.id		= 1,
++	.resource	= sh7724_dmae1_resources,
++	.num_resources	= ARRAY_SIZE(sh7724_dmae1_resources),
++	.dev		= {
++		.platform_data	= &dma_platform_data,
++	},
++};
++
++static struct platform_device dma2_device = {
++	.name		= "sh-dma-engine",
++	.id		= 2,
++	.resource	= sh7724_dmae2_resources,
++	.num_resources	= ARRAY_SIZE(sh7724_dmae2_resources),
++	.dev		= {
++		.platform_data	= &dma_platform_data,
++	},
++};
++
+ /* SCIF */
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xe6c40000,
+@@ -225,6 +445,9 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&cmt10_device,
+ 	&iic0_device,
+ 	&iic1_device,
++	&dma0_device,
++	&dma1_device,
++	&dma2_device,
+ };
+ 
+ void __init sh7372_add_standard_devices(void)
 
-/ magnus
+-- 
+1.6.2.4
 
---0016361643c55509270486c1e931
-Content-Type: application/octet-stream; 
-	name="linux-2.6.35-pre-sdhi-sdio-rewrite-20100427b.patch"
-Content-Disposition: attachment; 
-	filename="linux-2.6.35-pre-sdhi-sdio-rewrite-20100427b.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_g9aqnd0z0
-
-RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
-Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvc2gva2VybmVsL2NwdS9z
-aDRhL3NldHVwLXNoNzcyNC5jIHwgICAgNCArLS0KIGRyaXZlcnMvbWZkL3NoX21vYmlsZV9zZGhp
-LmMgICAgICAgICAgIHwgICAgMiAtCiBkcml2ZXJzL21tYy9ob3N0L3RtaW9fbW1jLmMgICAgICAg
-ICAgICB8ICAgNDEgKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0KIGRyaXZlcnMvbW1j
-L2hvc3QvdG1pb19tbWMuaCAgICAgICAgICAgIHwgICAgMiArCiA0IGZpbGVzIGNoYW5nZWQsIDQ1
-IGluc2VydGlvbnMoKyksIDQgZGVsZXRpb25zKC0pCgotLS0gMDAwMS9hcmNoL3NoL2tlcm5lbC9j
-cHUvc2g0YS9zZXR1cC1zaDc3MjQuYworKysgd29yay9hcmNoL3NoL2tlcm5lbC9jcHUvc2g0YS9z
-ZXR1cC1zaDc3MjQuYwkyMDEwLTA0LTI3IDE5OjQ1OjIwLjAwMDAwMDAwMCArMDkwMApAQCAtMTA1
-OSw3ICsxMDU5LDcgQEAgc3RhdGljIHN0cnVjdCBpbnRjX2dyb3VwIGdyb3Vwc1tdIF9faW5pdAog
-c3RhdGljIHN0cnVjdCBpbnRjX21hc2tfcmVnIG1hc2tfcmVnaXN0ZXJzW10gX19pbml0ZGF0YSA9
-IHsKIAl7IDB4YTQwODAwODAsIDB4YTQwODAwYzAsIDgsIC8qIElNUjAgLyBJTUNSMCAqLwogCSAg
-eyAwLCBUTVUxX1RVTkkyLCBUTVUxX1RVTkkxLCBUTVUxX1RVTkkwLAotCSAgICAwLCBESVNBQkxF
-RCwgRU5BQkxFRCwgRU5BQkxFRCB9IH0sCisJICAgIDAsIEVOQUJMRUQsIEVOQUJMRUQsIEVOQUJM
-RUQgfSB9LAogCXsgMHhhNDA4MDA4NCwgMHhhNDA4MDBjNCwgOCwgLyogSU1SMSAvIElNQ1IxICov
-CiAJICB7IFZJT19WT1UsIFZJT19WRVUxLCBWSU9fQkVVMCwgVklPX0NFVTAsCiAJICAgIERNQUMw
-QV9ERUkzLCBETUFDMEFfREVJMiwgRE1BQzBBX0RFSTEsIERNQUMwQV9ERUkwIH0gfSwKQEAgLTEw
-ODEsNyArMTA4MSw3IEBAIHN0YXRpYyBzdHJ1Y3QgaW50Y19tYXNrX3JlZyBtYXNrX3JlZ2lzdGUK
-IAkgIHsgSTJDMF9EVEVJLCBJMkMwX1dBSVRJLCBJMkMwX1RBQ0tJLCBJMkMwX0FMSSwKIAkgICAg
-STJDMV9EVEVJLCBJMkMxX1dBSVRJLCBJMkMxX1RBQ0tJLCBJMkMxX0FMSSB9IH0sCiAJeyAweGE0
-MDgwMGEwLCAweGE0MDgwMGUwLCA4LCAvKiBJTVI4IC8gSU1DUjggKi8KLQkgIHsgRElTQUJMRUQs
-IERJU0FCTEVELCBFTkFCTEVELCBFTkFCTEVELAorCSAgeyBESVNBQkxFRCwgRU5BQkxFRCwgRU5B
-QkxFRCwgRU5BQkxFRCwKIAkgICAgMCwgMCwgU0NJRkE1LCBGU0kgfSB9LAogCXsgMHhhNDA4MDBh
-NCwgMHhhNDA4MDBlNCwgOCwgLyogSU1SOSAvIElNQ1I5ICovCiAJICB7IDAsIDAsIDAsIENNVCwg
-MCwgVVNCMSwgVVNCMCwgMCB9IH0sCi0tLSAwMDAxL2RyaXZlcnMvbWZkL3NoX21vYmlsZV9zZGhp
-LmMKKysrIHdvcmsvZHJpdmVycy9tZmQvc2hfbW9iaWxlX3NkaGkuYwkyMDEwLTA0LTI3IDE5OjQ1
-OjIwLjAwMDAwMDAwMCArMDkwMApAQCAtOTgsNyArOTgsNyBAQCBzdGF0aWMgaW50IF9faW5pdCBz
-aF9tb2JpbGVfc2RoaV9wcm9iZShzCiAKIAlwcml2LT5tbWNfZGF0YS5oY2xrID0gY2xrX2dldF9y
-YXRlKHByaXYtPmNsayk7CiAJcHJpdi0+bW1jX2RhdGEuc2V0X3B3ciA9IHNoX21vYmlsZV9zZGhp
-X3NldF9wd3I7Ci0JcHJpdi0+bW1jX2RhdGEuY2FwYWJpbGl0aWVzID0gTU1DX0NBUF9NTUNfSElH
-SFNQRUVEOworCXByaXYtPm1tY19kYXRhLmNhcGFiaWxpdGllcyA9IE1NQ19DQVBfTU1DX0hJR0hT
-UEVFRCB8IE1NQ19DQVBfU0RJT19JUlE7CiAKIAltZW1jcHkoJnByaXYtPmNlbGxfbW1jLCAmc2hf
-bW9iaWxlX3NkaGlfY2VsbCwgc2l6ZW9mKHByaXYtPmNlbGxfbW1jKSk7CiAJcHJpdi0+Y2VsbF9t
-bWMuZHJpdmVyX2RhdGEgPSAmcHJpdi0+bW1jX2RhdGE7Ci0tLSAwMDAxL2RyaXZlcnMvbW1jL2hv
-c3QvdG1pb19tbWMuYworKysgd29yay9kcml2ZXJzL21tYy9ob3N0L3RtaW9fbW1jLmMJMjAxMC0w
-NC0yNyAxOTo0NTo0OS4wMDAwMDAwMDAgKzA5MDAKQEAgLTMwLDYgKzMwLDcgQEAKICNpbmNsdWRl
-IDxsaW51eC9kZXZpY2UuaD4KICNpbmNsdWRlIDxsaW51eC9kZWxheS5oPgogI2luY2x1ZGUgPGxp
-bnV4L21tYy9ob3N0Lmg+CisjaW5jbHVkZSA8bGludXgvbW1jL3NkaW8uaD4KICNpbmNsdWRlIDxs
-aW51eC9tZmQvY29yZS5oPgogI2luY2x1ZGUgPGxpbnV4L21mZC90bWlvLmg+CiAKQEAgLTU0LDgg
-KzU1LDEwIEBAIHN0YXRpYyB2b2lkIHRtaW9fbW1jX3NldF9jbG9jayhzdHJ1Y3QgdG0KIAogc3Rh
-dGljIHZvaWQgdG1pb19tbWNfY2xrX3N0b3Aoc3RydWN0IHRtaW9fbW1jX2hvc3QgKmhvc3QpCiB7
-CisjaWYgMAogCXNkX2N0cmxfd3JpdGUxNihob3N0LCBDVExfQ0xLX0FORF9XQUlUX0NUTCwgMHgw
-MDAwKTsKIAltc2xlZXAoMTApOworI2VuZGlmCiAJc2RfY3RybF93cml0ZTE2KGhvc3QsIENUTF9T
-RF9DQVJEX0NMS19DVEwsIH4weDAxMDAgJgogCQlzZF9jdHJsX3JlYWQxNihob3N0LCBDVExfU0Rf
-Q0FSRF9DTEtfQ1RMKSk7CiAJbXNsZWVwKDEwKTsKQEAgLTY2LDggKzY5LDEwIEBAIHN0YXRpYyB2
-b2lkIHRtaW9fbW1jX2Nsa19zdGFydChzdHJ1Y3QgdG0KIAlzZF9jdHJsX3dyaXRlMTYoaG9zdCwg
-Q1RMX1NEX0NBUkRfQ0xLX0NUTCwgMHgwMTAwIHwKIAkJc2RfY3RybF9yZWFkMTYoaG9zdCwgQ1RM
-X1NEX0NBUkRfQ0xLX0NUTCkpOwogCW1zbGVlcCgxMCk7CisjaWYgMAogCXNkX2N0cmxfd3JpdGUx
-Nihob3N0LCBDVExfQ0xLX0FORF9XQUlUX0NUTCwgMHgwMTAwKTsKIAltc2xlZXAoMTApOworI2Vu
-ZGlmCiB9CiAKIHN0YXRpYyB2b2lkIHJlc2V0KHN0cnVjdCB0bWlvX21tY19ob3N0ICpob3N0KQpA
-QCAtMjk4LDkgKzMwMywyNiBAQCBzdGF0aWMgaXJxcmV0dXJuX3QgdG1pb19tbWNfaXJxKGludCBp
-cnEsCiB7CiAJc3RydWN0IHRtaW9fbW1jX2hvc3QgKmhvc3QgPSBkZXZpZDsKIAl1bnNpZ25lZCBp
-bnQgaXJlZywgaXJxX21hc2ssIHN0YXR1czsKKwl1bnNpZ25lZCBpbnQgc2Rpb19pcmVnLCBzZGlv
-X2lycV9tYXNrLCBzZGlvX3N0YXR1czsKIAogCXByX2RlYnVnKCJNTUMgSVJRIGJlZ2luXG4iKTsK
-IAorCXNkaW9faXJlZyA9IDA7CisJaWYgKGhvc3QtPm1tYy0+Y2FwcyAmIE1NQ19DQVBfU0RJT19J
-UlEpIHsKKwkJc2Rpb19zdGF0dXMgPSBzZF9jdHJsX3JlYWQxNihob3N0LCBDVExfU0RJT19TVEFU
-VVMpOworCQlzZGlvX2lycV9tYXNrID0gc2RfY3RybF9yZWFkMTYoaG9zdCwgQ1RMX1NESU9fSVJR
-X01BU0spOworCQlzZGlvX2lyZWcgPSBzZGlvX3N0YXR1cyAmIDB4YzAwNyAmIH5zZGlvX2lycV9t
-YXNrOworCisJCWlmIChzZGlvX2lyZWcpCisJCQlwcmludGsoInh4eHh4eHh4eHh4eHh4IHNkaW8g
-MHglMDh4XG4iLCBzZGlvX2lyZWcpOworCisJCXNkX2N0cmxfd3JpdGUxNihob3N0LCBDVExfU0RJ
-T19TVEFUVVMsIHNkaW9fc3RhdHVzICYgfjB4YzAwNyk7CisKKwkJaWYgKHNkaW9faXJlZyAmIDEp
-IHsKKwkJCW1tY19zaWduYWxfc2Rpb19pcnEoaG9zdC0+bW1jKTsKKwkJfQorCX0KKwogCXN0YXR1
-cyA9IHNkX2N0cmxfcmVhZDMyKGhvc3QsIENUTF9TVEFUVVMpOwogCWlycV9tYXNrID0gc2RfY3Ry
-bF9yZWFkMzIoaG9zdCwgQ1RMX0lSUV9NQVNLKTsKIAlpcmVnID0gc3RhdHVzICYgVE1JT19NQVNL
-X0lSUSAmIH5pcnFfbWFzazsKQEAgLTMwOCw3ICszMzAsNyBAQCBzdGF0aWMgaXJxcmV0dXJuX3Qg
-dG1pb19tbWNfaXJxKGludCBpcnEsCiAJcHJfZGVidWdfc3RhdHVzKHN0YXR1cyk7CiAJcHJfZGVi
-dWdfc3RhdHVzKGlyZWcpOwogCi0JaWYgKCFpcmVnKSB7CisJaWYgKCFpcmVnICYmICFzZGlvX2ly
-ZWcpIHsKIAkJZGlzYWJsZV9tbWNfaXJxcyhob3N0LCBzdGF0dXMgJiB+aXJxX21hc2spOwogCiAJ
-CXByX2RlYnVnKCJ0bWlvX21tYzogU3B1cmlvdXMgaXJxLCBkaXNhYmxpbmchICIKQEAgLTQ2Miwx
-MCArNDg0LDI3IEBAIHN0YXRpYyBpbnQgdG1pb19tbWNfZ2V0X3JvKHN0cnVjdCBtbWNfaG8KIAly
-ZXR1cm4gKHNkX2N0cmxfcmVhZDE2KGhvc3QsIENUTF9TVEFUVVMpICYgVE1JT19TVEFUX1dSUFJP
-VEVDVCkgPyAwIDogMTsKIH0KIAorc3RhdGljIHZvaWQgdG1pb19tbWNfZW5hYmxlX3NkaW9faXJx
-KHN0cnVjdCBtbWNfaG9zdCAqbW1jLCBpbnQgZW5hYmxlKQoreworCXN0cnVjdCB0bWlvX21tY19o
-b3N0ICpob3N0ID0gbW1jX3ByaXYobW1jKTsKKworCXByaW50aygiZW5hYmxlX3NkaW9faXJxICVk
-XG4iLCBlbmFibGUpOworCisJaWYgKGVuYWJsZSkgeworCQlzZF9jdHJsX3dyaXRlMTYoaG9zdCwg
-Q1RMX1RSQU5TQUNUSU9OX0NUTCwgMHgwMDAxKTsKKwkJc2RfY3RybF93cml0ZTE2KGhvc3QsIENU
-TF9TRElPX0lSUV9NQVNLLCAweDAwMDYpOworCX0gZWxzZSB7CisJCXNkX2N0cmxfd3JpdGUxNiho
-b3N0LCBDVExfU0RJT19JUlFfTUFTSywgMHhjMDA3KTsKKwkJc2RfY3RybF93cml0ZTE2KGhvc3Qs
-IENUTF9UUkFOU0FDVElPTl9DVEwsIDB4MDAwMCk7CisJfQorCit9CisKIHN0YXRpYyBzdHJ1Y3Qg
-bW1jX2hvc3Rfb3BzIHRtaW9fbW1jX29wcyA9IHsKIAkucmVxdWVzdAk9IHRtaW9fbW1jX3JlcXVl
-c3QsCiAJLnNldF9pb3MJPSB0bWlvX21tY19zZXRfaW9zLAogCS5nZXRfcm8gICAgICAgICA9IHRt
-aW9fbW1jX2dldF9ybywKKwkuZW5hYmxlX3NkaW9faXJxID0gdG1pb19tbWNfZW5hYmxlX3NkaW9f
-aXJxLAogfTsKIAogI2lmZGVmIENPTkZJR19QTQotLS0gMDAwMS9kcml2ZXJzL21tYy9ob3N0L3Rt
-aW9fbW1jLmgKKysrIHdvcmsvZHJpdmVycy9tbWMvaG9zdC90bWlvX21tYy5oCTIwMTAtMDQtMjcg
-MTk6NDU6MjAuMDAwMDAwMDAwICswOTAwCkBAIC0yNCw2ICsyNCw4IEBACiAjZGVmaW5lIENUTF9T
-RF9FUlJPUl9ERVRBSUxfU1RBVFVTIDB4MmMKICNkZWZpbmUgQ1RMX1NEX0RBVEFfUE9SVCAweDMw
-CiAjZGVmaW5lIENUTF9UUkFOU0FDVElPTl9DVEwgMHgzNAorI2RlZmluZSBDVExfU0RJT19TVEFU
-VVMgMHgzNgorI2RlZmluZSBDVExfU0RJT19JUlFfTUFTSyAweDM4CiAjZGVmaW5lIENUTF9SRVNF
-VF9TRCAweGUwCiAjZGVmaW5lIENUTF9TRElPX1JFR1MgMHgxMDAKICNkZWZpbmUgQ1RMX0NMS19B
-TkRfV0FJVF9DVEwgMHgxMzgK
---0016361643c55509270486c1e931--
