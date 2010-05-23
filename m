@@ -1,33 +1,18 @@
-From: Andrea Gelmini <andrea.gelmini@gelma.net>
-Date: Sun, 23 May 2010 20:02:06 +0000
-Subject: [PATCH 179/199] arch/sh/lib/strlen.S: Checkpatch cleanup
-Message-Id: <1274644930-26600-22-git-send-email-andrea.gelmini@gelma.net>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sun, 23 May 2010 23:11:20 +0000
+Subject: Re: [PATCH 179/199] arch/sh/lib/strlen.S: Checkpatch cleanup
+Message-Id: <20100523231119.GA19552@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1274644930-26600-22-git-send-email-andrea.gelmini@gelma.net>
+In-Reply-To: <1274644930-26600-22-git-send-email-andrea.gelmini@gelma.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-arch/sh/lib/strlen.S:38: ERROR: trailing whitespace
+On Sun, May 23, 2010 at 10:02:06PM +0200, Andrea Gelmini wrote:
+> arch/sh/lib/strlen.S:38: ERROR: trailing whitespace
+> 
+> Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
 
-Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
----
- arch/sh/lib/strlen.S |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/arch/sh/lib/strlen.S b/arch/sh/lib/strlen.S
-index f8ab296..1bcc13f 100644
---- a/arch/sh/lib/strlen.S
-+++ b/arch/sh/lib/strlen.S
-@@ -35,7 +35,7 @@ ENTRY(strlen)
- 	mov.b	@r4+,r1
- 	tst	r1,r1
- 	bt	8f
--	add	#1,r2	
-+	add	#1,r2
- 
- 1:
- 	mov	#0,r3
--- 
-1.7.1.251.gf80a2
-
+Applied.
