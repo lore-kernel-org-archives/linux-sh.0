@@ -1,79 +1,219 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sun, 23 May 2010 23:59:40 +0000
-Subject: [GIT PULL] sh updates for 2.6.35-rc1, part 2.
-Message-Id: <20100523235939.GB19552@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 23 May 2010 16:39:09 +0000
+Subject: [PATCH 2/4] serial: sh-sci: fix handling of SCIFB sh-mobile ports
+Message-Id: <Pine.LNX.4.64.1005231832170.3571@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1005231820190.3571@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1005231820190.3571@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-Please pull from:
+SCIFB ports have a slightly different register layout and a different FIFO
+size from SCIFA ports, in DMA mode they have to be treated just like SCIFA.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Which contains:
+No change since the original version
 
-Andrea Gelmini (1):
-      arch/sh/lib/strlen.S: Checkpatch cleanup
+ drivers/serial/sh-sci.c |   42 ++++++++++++++++++++++++++++++++++--------
+ drivers/serial/sh-sci.h |   29 +++++++++++++++++++++++------
+ 2 files changed, 57 insertions(+), 14 deletions(-)
 
-Guennadi Liakhovetski (20):
-      sh: add Video Output Unit and AK8813 video encoder support on ecovec
-      sh: add Video Output Unit (VOU) and AK8813 TV-encoder support to ms7724se
-      sh: define DMA slaves per CPU type, remove now redundant header
-      sh: add DMA slaves for two SDHI controllers to sh7722
-      sh: add DMA slave definitions to sh7724
-      mmc: prepare tmio_mmc for passing of DMA configuration from the MFD cell
-      sh: prepare the SDHI MFD driver to pass DMA configuration to tmio_mmc.c
-      mmc: add DMA support to tmio_mmc driver, when used on SuperH
-      sh: Add SDHI DMA support to ecovec
-      sh: Add SDHI DMA support to ms7724se
-      sh: Add SDHI DMA support to kfr2r09
-      sh: Add SDHI DMA support to migor
-      tmio: add a platform flag to disable card write-protection detection
-      mfd: pass platform flags down to the tmio_mmc driver
-      sh: disable SD-card write-protection detection on kfr2r09
-      mmc: let MFD's provide supported Vdd card voltages to tmio_mmc
-      sh: allow platforms to specify SD-card supported voltages
-      sh: fix Oops in the serial SCI driver
-      sh: prevent the DMA driver from unloading, while in use
-      sh: guard cookie consistency across termination in the DMA driver
+diff --git a/drivers/serial/sh-sci.c b/drivers/serial/sh-sci.c
+index b985ffd..17eceaa 100644
+--- a/drivers/serial/sh-sci.c
++++ b/drivers/serial/sh-sci.c
+@@ -342,6 +342,27 @@ static int scif_rxfill(struct uart_port *port)
+ 		return sci_in(port, SCFDR) & SCIF2_RFDC_MASK;
+ 	}
+ }
++#elif defined(CONFIG_ARCH_SH7372)
++static int scif_txfill(struct uart_port *port)
++{
++	if (port->type = PORT_SCIFA)
++		return sci_in(port, SCFDR) >> 8;
++	else
++		return sci_in(port, SCTFDR);
++}
++
++static int scif_txroom(struct uart_port *port)
++{
++	return port->fifosize - scif_txfill(port);
++}
++
++static int scif_rxfill(struct uart_port *port)
++{
++	if (port->type = PORT_SCIFA)
++		return sci_in(port, SCFDR) & SCIF_RFDC_MASK;
++	else
++		return sci_in(port, SCRFDR);
++}
+ #else
+ static int scif_txfill(struct uart_port *port)
+ {
+@@ -679,7 +700,7 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 		u16 ssr = sci_in(port, SCxSR);
+ 
+ 		/* Disable future Rx interrupts */
+-		if (port->type = PORT_SCIFA) {
++		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 			disable_irq_nosync(irq);
+ 			scr |= 0x4000;
+ 		} else {
+@@ -924,7 +945,7 @@ static void sci_dma_tx_complete(void *arg)
+ 
+ 	if (!uart_circ_empty(xmit)) {
+ 		schedule_work(&s->work_tx);
+-	} else if (port->type = PORT_SCIFA) {
++	} else if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		u16 ctrl = sci_in(port, SCSCR);
+ 		sci_out(port, SCSCR, ctrl & ~SCI_CTRL_FLAGS_TIE);
+ 	}
+@@ -1180,7 +1201,7 @@ static void sci_start_tx(struct uart_port *port)
+ 	unsigned short ctrl;
+ 
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+-	if (port->type = PORT_SCIFA) {
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		u16 new, scr = sci_in(port, SCSCR);
+ 		if (s->chan_tx)
+ 			new = scr | 0x8000;
+@@ -1193,7 +1214,7 @@ static void sci_start_tx(struct uart_port *port)
+ 	    s->cookie_tx < 0)
+ 		schedule_work(&s->work_tx);
+ #endif
+-	if (!s->chan_tx || port->type = PORT_SCIFA) {
++	if (!s->chan_tx || port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		/* Set TIE (Transmit Interrupt Enable) bit in SCSCR */
+ 		ctrl = sci_in(port, SCSCR);
+ 		sci_out(port, SCSCR, ctrl | SCI_CTRL_FLAGS_TIE);
+@@ -1206,7 +1227,7 @@ static void sci_stop_tx(struct uart_port *port)
+ 
+ 	/* Clear TIE (Transmit Interrupt Enable) bit in SCSCR */
+ 	ctrl = sci_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA)
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		ctrl &= ~0x8000;
+ 	ctrl &= ~SCI_CTRL_FLAGS_TIE;
+ 	sci_out(port, SCSCR, ctrl);
+@@ -1218,7 +1239,7 @@ static void sci_start_rx(struct uart_port *port)
+ 
+ 	/* Set RIE (Receive Interrupt Enable) bit in SCSCR */
+ 	ctrl |= sci_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA)
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		ctrl &= ~0x4000;
+ 	sci_out(port, SCSCR, ctrl);
+ }
+@@ -1229,7 +1250,7 @@ static void sci_stop_rx(struct uart_port *port)
+ 
+ 	/* Clear RIE (Receive Interrupt Enable) bit in SCSCR */
+ 	ctrl = sci_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA)
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		ctrl &= ~0x4000;
+ 	ctrl &= ~(SCI_CTRL_FLAGS_RIE | SCI_CTRL_FLAGS_REIE);
+ 	sci_out(port, SCSCR, ctrl);
+@@ -1267,7 +1288,7 @@ static void rx_timer_fn(unsigned long arg)
+ 	struct uart_port *port = &s->port;
+ 	u16 scr = sci_in(port, SCSCR);
+ 
+-	if (port->type = PORT_SCIFA) {
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		scr &= ~0x4000;
+ 		enable_irq(s->irqs[1]);
+ 	}
+@@ -1520,6 +1541,8 @@ static const char *sci_type(struct uart_port *port)
+ 		return "scif";
+ 	case PORT_SCIFA:
+ 		return "scifa";
++	case PORT_SCIFB:
++		return "scifb";
+ 	}
+ 
+ 	return NULL;
+@@ -1608,6 +1631,9 @@ static int __devinit sci_init_single(struct platform_device *dev,
+ 	port->line	= index;
+ 
+ 	switch (p->type) {
++	case PORT_SCIFB:
++		port->fifosize = 256;
++		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
+ 		break;
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index f70c49f..9b52f77 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -322,7 +322,7 @@
+ #define CPU_SCIx_FNS(name, sci_offset, sci_size, scif_offset, scif_size)\
+   static inline unsigned int sci_##name##_in(struct uart_port *port)	\
+   {									\
+-    if (port->type = PORT_SCIF) {					\
++    if (port->type = PORT_SCIF || port->type = PORT_SCIFB) {		\
+       SCI_IN(scif_size, scif_offset)					\
+     } else {	/* PORT_SCI or PORT_SCIFA */				\
+       SCI_IN(sci_size, sci_offset);					\
+@@ -330,7 +330,7 @@
+   }									\
+   static inline void sci_##name##_out(struct uart_port *port, unsigned int value) \
+   {									\
+-    if (port->type = PORT_SCIF) {					\
++    if (port->type = PORT_SCIF || port->type = PORT_SCIFB) {		\
+       SCI_OUT(scif_size, scif_offset, value)				\
+     } else {	/* PORT_SCI or PORT_SCIFA */				\
+       SCI_OUT(sci_size, sci_offset, value);				\
+@@ -384,8 +384,12 @@
+       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+       defined(CONFIG_ARCH_SH7367) || \
+-      defined(CONFIG_ARCH_SH7377) || \
+-      defined(CONFIG_ARCH_SH7372)
++      defined(CONFIG_ARCH_SH7377)
++#define SCIF_FNS(name, scif_offset, scif_size) \
++  CPU_SCIF_FNS(name, scif_offset, scif_size)
++#elif defined(CONFIG_ARCH_SH7372)
++#define SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size, sh4_scifb_offset, sh4_scifb_size) \
++  CPU_SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size, sh4_scifb_offset, sh4_scifb_size)
+ #define SCIF_FNS(name, scif_offset, scif_size) \
+   CPU_SCIF_FNS(name, scif_offset, scif_size)
+ #else
+@@ -422,8 +426,7 @@
+     defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+     defined(CONFIG_ARCH_SH7367) || \
+-    defined(CONFIG_ARCH_SH7377) || \
+-    defined(CONFIG_ARCH_SH7372)
++    defined(CONFIG_ARCH_SH7377)
+ 
+ SCIF_FNS(SCSMR,  0x00, 16)
+ SCIF_FNS(SCBRR,  0x04,  8)
+@@ -436,6 +439,20 @@ SCIF_FNS(SCFDR,  0x1c, 16)
+ SCIF_FNS(SCxTDR, 0x20,  8)
+ SCIF_FNS(SCxRDR, 0x24,  8)
+ SCIF_FNS(SCLSR,  0x00,  0)
++#elif defined(CONFIG_ARCH_SH7372)
++SCIF_FNS(SCSMR,  0x00, 16)
++SCIF_FNS(SCBRR,  0x04,  8)
++SCIF_FNS(SCSCR,  0x08, 16)
++SCIF_FNS(SCTDSR, 0x0c, 16)
++SCIF_FNS(SCFER,  0x10, 16)
++SCIF_FNS(SCxSR,  0x14, 16)
++SCIF_FNS(SCFCR,  0x18, 16)
++SCIF_FNS(SCFDR,  0x1c, 16)
++SCIF_FNS(SCTFDR, 0x38, 16)
++SCIF_FNS(SCRFDR, 0x3c, 16)
++SCIx_FNS(SCxTDR, 0x20,  8, 0x40,  8)
++SCIx_FNS(SCxRDR, 0x24,  8, 0x60,  8)
++SCIF_FNS(SCLSR,  0x00,  0)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7723) ||\
+       defined(CONFIG_CPU_SUBTYPE_SH7724)
+ SCIx_FNS(SCSMR,  0x00, 16, 0x00, 16)
+-- 
+1.6.2.4
 
-Huang Weiyi (1):
-      sh: remove duplicated #include
-
-Paul Mundt (3):
-      sh: fix up the dwarf unwinder build for MODULES=n.
-      sh: fix up sh7786 dmaengine build.
-      sh: fix up sh7785lcr_32bit_defconfig.
-
- arch/sh/boards/mach-ecovec24/setup.c      |   87 +++++++-
- arch/sh/boards/mach-kfr2r09/setup.c       |   11 +
- arch/sh/boards/mach-migor/setup.c         |    9 +
- arch/sh/boards/mach-se/7724/setup.c       |  107 ++++++++-
- arch/sh/configs/sh7785lcr_32bit_defconfig |  273 +++++++++++++---------
- arch/sh/include/asm/dmaengine.h           |   34 ---
- arch/sh/include/asm/siu.h                 |    2 -
- arch/sh/include/cpu-sh4/cpu/sh7722.h      |   15 ++
- arch/sh/include/cpu-sh4/cpu/sh7724.h      |   19 ++
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c    |    1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c    |   11 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c    |   88 +++++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c    |    3 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c    |    2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c    |    2 +-
- arch/sh/kernel/dwarf.c                    |    4 +
- arch/sh/lib/strlen.S                      |    2 +-
- drivers/dma/shdma.c                       |    5 +
- drivers/mfd/Kconfig                       |    6 +
- drivers/mfd/sh_mobile_sdhi.c              |   28 ++-
- drivers/mmc/host/tmio_mmc.c               |  367 ++++++++++++++++++++++++++---
- drivers/mmc/host/tmio_mmc.h               |   13 +
- drivers/serial/sh-sci.c                   |    5 +-
- include/linux/mfd/sh_mobile_sdhi.h        |    6 +
- include/linux/mfd/tmio.h                  |   11 +
- sound/soc/sh/siu.h                        |    3 +-
- sound/soc/sh/siu_pcm.c                    |    9 +-
- 27 files changed, 916 insertions(+), 207 deletions(-)
- delete mode 100644 arch/sh/include/asm/dmaengine.h
