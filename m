@@ -1,36 +1,44 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 May 2010 05:17:08 +0000
-Subject: Re: Discussion about register definition header
-Message-Id: <20100506051708.GC25493@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 24 May 2010 07:53:24 +0000
+Subject: [PATCH] fbdev: fix erroneous index in drivers/video/sh_mobile_lcdcfb.c
+Message-Id: <Pine.LNX.4.64.1005240949130.2611@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201005021110.22111.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201005021110.22111.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, May 02, 2010 at 11:10:21AM +0200, Fabio Giovagnini wrote:
-> I think that into include/asm dir shoud be a file containing ALL the mpu 
-> registers address definitions, for avoiding to have same definitions across 
-> different files and an high probability to write something wrong each time.
-> I think this has not already done beacuse it is a long work for testing. Is it 
-> the main reason?
-> 
-The main reason is that there's simply no need for it. Many of the CPUs
-in question have similar register definitions but just position the
-blocks at different locations. This is the sort of change that should be
-managed between the driver and the CPU setup code in charge of
-registering the SoC's platform devices.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-For the most part we've evolved beyond simple hardcoded register
-definitions, and the few cases where we still have to put up with them
-now are mostly for blocks that aren't handled through the driver model.
-Also note that these days almost everything needs to be remapped (either
-via the TLB or via the PMB) so it's no longer possible to simply permit
-drivers to do absurd P1/P2 abuses.
+This is a fix, so, can go in rc2, no rush. In fact, maybe we can just 
+"continue" on "pdata->ch[i].chan = LCDC_CHAN_DISABLED" in that loop? 
+Doesn't look like anyone is relying on the current behaviour.
 
-If you want to see what a total mess having these sorts of headers
-quickly turns in to, you don't have to dig very far through the
-architecture tree to find them. ARM used to do this via an
-all-encompassing asm/hardware.h and has likewise moved on.
+ drivers/video/sh_mobile_lcdcfb.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index e8c7699..12c451a 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -991,13 +991,13 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ 		priv->ch[j].lcdc = priv;
+ 		memcpy(&priv->ch[j].cfg, &pdata->ch[i], sizeof(pdata->ch[i]));
+ 
+-		error = sh_mobile_lcdc_check_interface(&priv->ch[i]);
++		error = sh_mobile_lcdc_check_interface(&priv->ch[j]);
+ 		if (error) {
+ 			dev_err(&pdev->dev, "unsupported interface type\n");
+ 			goto err1;
+ 		}
+-		init_waitqueue_head(&priv->ch[i].frame_end_wait);
+-		init_completion(&priv->ch[i].vsync_completion);
++		init_waitqueue_head(&priv->ch[j].frame_end_wait);
++		init_completion(&priv->ch[j].vsync_completion);
+ 		priv->ch[j].pan_offset = 0;
+ 
+ 		switch (pdata->ch[i].chan) {
+-- 
+1.6.2.4
+
