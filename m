@@ -1,20 +1,55 @@
-From: David Howells <dhowells@redhat.com>
-Date: Tue, 25 May 2010 09:14:12 +0000
-Subject: Re: [PATCH -mm 1/1] ptrace: PTRACE_GETFDPIC: fix the unsafe usage of child->mm
-Message-Id: <17134.1274778852@redhat.com>
+From: Oleg Nesterov <oleg@redhat.com>
+Date: Tue, 25 May 2010 10:23:45 +0000
+Subject: Re: [PATCH -mm 1/1] ptrace: PTRACE_GETFDPIC: fix the unsafe usage
+Message-Id: <20100525102345.GA23574@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100524234250.F158849A56@magilla.sf.frob.com> <20100522165401.GB19573@redhat.com> <1266280229-18469-1-git-send-email-vapier@gentoo.org> <1274431345-22366-1-git-send-email-vapier@gentoo.org> <20100521162659.GA16193@redhat.com> <20100521183512.4477F40476@magilla.sf.frob.com> <20100522165320.GA19573@redhat.com> <25539.1274711817@redhat.com> <20100524151445.GA6393@redhat.com> 
-In-Reply-To: <20100524234250.F158849A56@magilla.sf.frob.com>
+References: <20100524234250.F158849A56@magilla.sf.frob.com> <20100522165401.GB19573@redhat.com> <1266280229-18469-1-git-send-email-vapier@gentoo.org> <1274431345-22366-1-git-send-email-vapier@gentoo.org> <20100521162659.GA16193@redhat.com> <20100521183512.4477F40476@magilla.sf.frob.com> <20100522165320.GA19573@redhat.com> <25539.1274711817@redhat.com> <20100524151445.GA6393@redhat.com> <17134.1274778852@redhat.com>
+In-Reply-To: <17134.1274778852@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Roland McGrath <roland@redhat.com>
-Cc: dhowells@redhat.com, Oleg Nesterov <oleg@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, Mike Frysinger <vapier@gentoo.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org
+To: David Howells <dhowells@redhat.com>
+Cc: Roland McGrath <roland@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, Mike Frysinger <vapier@gentoo.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-kernel@vger.kernel.org
 
-Roland McGrath <roland@redhat.com> wrote:
+On 05/25, David Howells wrote:
+>
+> Roland McGrath <roland@redhat.com> wrote:
+>
+> > The mm pointer is only used by these uncommon ptrace operations
+>
+> Like PEEKTEXT and POKETEXT?
 
-> The mm pointer is only used by these uncommon ptrace operations
+They use access_process_vm().
 
-Like PEEKTEXT and POKETEXT?
+According to grep, mm is only use to read a couple of members.
 
-David
+Perhaps can even add the simple helper
+
+	struct mm_xxx {
+		unsigned long start_code, end_code, start_data, end_data;
+		... some more ...
+	};
+
+	int get_mm_xxx(struct task_struct *tracee, struct mm_xxx *mm_xxx)
+	{
+		struct mm_struct *mm = get_task_mm(tracee);
+		...
+	}
+
+Except:
+
+	- arch/um/kernel/ptrace.c PTRACE_SWITCH_MM does something
+	  really strange
+
+	- arch/blackfin/kernel/ptrace.c:is_user_addr_valid()
+	  needs mmap_sem around find_vma()
+
+	  The lockless access to mm->context.sram_list doesn't look
+	  safe to me.
+
+	  If we add get_task_mm() - this protects us against
+	  destroy_context() only. What is the tracee's sub-thread
+	  does sys_sram_alloc() or sys_sram_free() in parallel?
+
+Oleg.
+
