@@ -1,73 +1,79 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 May 2010 18:34:32 +0000
-Subject: [PATCH 8/10 v2] SH: Add SDHI DMA support to ms7724se
-Message-Id: <Pine.LNX.4.64.1005191809310.3099@axis700.grange>
+From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+Date: Mon, 31 May 2010 07:59:56 +0000
+Subject: [PATCH 4/4] Modify sh-sci.h to adopt specific serial behaviour of SH-2007
+Message-Id: <1275292796-26602-5-git-send-email-mitake@dcl.info.waseda.ac.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005191750400.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>
-Cc: Andrew Morton <akpm@linux-foundation.org>, dan.j.williams@intel.com, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, sameo@linux.intel.com, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Very dirty and easy fix for sh-sci.
+Default sh-sci cannot activate serial of SH-2007,
+so this fix is required.
+
+Two points are changed,
+ * At end of sci_set_termios(), the value SCSCR_INIT(port)
+   is written to SCSCR. And the value of it for Subtype 7780
+   is 0x3a. This containts CKE1=1.
+   But, when this value is written to serial device of SH-2007,
+   this will stop. So we have to drop the flag of CKE1.
+
+ * Baud rate written to SCBRR should be caliculated with this expression:
+   ((clk+16*bps)/(32*bps)-1)
+   Original form of this expression is:
+   ((clk+16*bps)/(16*bps)-1)
+
+These two points are really mysterious.
+But I don't have the way to validate processor on SH-2007,
+so I've mocked the kernel provided by the manufacture of this board :(
+( http://ms-n.org/sh-linux/kernel/ )
+
+This patch fix sh-sci.h in dirty way,
+but fortunately, this has no harm for other board and processors supports.
+If you permit to apply this patch,
+I'd like to find cause of this behaviour and revert this change someday.
+
+Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
 ---
- arch/sh/boards/mach-se/7724/setup.c |   17 +++++++++++++++++
- 1 files changed, 17 insertions(+), 0 deletions(-)
+ drivers/serial/sh-sci.h |   16 +++++++++++++++-
+ 1 files changed, 15 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 66cdbc3..553cdfe 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -14,6 +14,7 @@
- #include <linux/device.h>
- #include <linux/interrupt.h>
- #include <linux/platform_device.h>
-+#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/delay.h>
- #include <linux/smc91x.h>
-@@ -456,11 +457,19 @@ static struct resource sdhi0_cn7_resources[] = {
- 	},
- };
- 
-+static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+};
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index f70c49f..f8c684c 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -140,7 +140,15 @@
+ # define SCSPTR0	0xffe00024	/* 16 bit SCIF */
+ # define SCSPTR1	0xffe10024	/* 16 bit SCIF */
+ # define SCIF_ORER	0x0001		/* Overrun error bit */
+-# define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
 +
- static struct platform_device sdhi0_cn7_device = {
- 	.name           = "sh_mobile_sdhi",
- 	.id		= 0,
- 	.num_resources  = ARRAY_SIZE(sdhi0_cn7_resources),
- 	.resource       = sdhi0_cn7_resources,
-+	.dev = {
-+		.platform_data	= &sh7724_sdhi0_data,
-+	},
- 	.archdata = {
- 		.hwblk_id = HWBLK_SDHI0,
- 	},
-@@ -479,11 +488,19 @@ static struct resource sdhi1_cn8_resources[] = {
- 	},
- };
- 
-+static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
-+};
++#if defined(CONFIG_SH_SH2007)
++/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=0 */
++# define SCSCR_INIT(port)	0x38
++#else
++/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=1 */
++# define SCSCR_INIT(port)	0x3a
++#endif
 +
- static struct platform_device sdhi1_cn8_device = {
- 	.name           = "sh_mobile_sdhi",
- 	.id		= 1,
- 	.num_resources  = ARRAY_SIZE(sdhi1_cn8_resources),
- 	.resource       = sdhi1_cn8_resources,
-+	.dev = {
-+		.platform_data	= &sh7724_sdhi1_data,
-+	},
- 	.archdata = {
- 		.hwblk_id = HWBLK_SDHI1,
- 	},
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7786)
+ # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
+@@ -602,7 +610,13 @@ static inline int sci_rxd_in(struct uart_port *port)
+ #if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7786)
++
++#if defined(CONFIG_SH_SH2007)
++#define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(32*bps)-1)
++#else
+ #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
++#endif
++
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7721) || \
 -- 
-1.6.2.4
+1.6.5.2
 
