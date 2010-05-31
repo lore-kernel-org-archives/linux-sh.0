@@ -1,48 +1,60 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 May 2010 18:36:08 +0000
-Subject: [PATCH 2/3 v2] mfd: pass platform flags down to the tmio_mmc driver
-Message-Id: <Pine.LNX.4.64.1005191818350.3099@axis700.grange>
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Mon, 31 May 2010 09:09:54 +0000
+Subject: [PATCH] sh_tmu: compute mult and shift before registration
+Message-Id: <1275296994-12005-1-git-send-email-aurelien@aurel32.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1005191815491.3099@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, linux-mmc@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Ian Molton <ian@mnementh.co.uk>
+Since commit 98962465ed9e6ea99c38e0af63fe1dcb5a79dc25 ("nohz: Prevent
+clocksource wrapping during idle"), the CPU of an R2D board never goes
+to idle. This commit assumes that mult and shift are assigned before
+the clocksource is registered. As a consequence the safe maximum sleep
+time is negative and the CPU never goes into idle.
+
+This patch fixes the problem by moving mult and shift initialization
+from sh_tmu_clocksource_enable() to sh_tmu_register_clocksource().
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
 ---
- drivers/mfd/sh_mobile_sdhi.c       |    2 ++
- include/linux/mfd/sh_mobile_sdhi.h |    1 +
- 2 files changed, 3 insertions(+), 0 deletions(-)
+ drivers/clocksource/sh_tmu.c |   14 +++++---------
+ 1 files changed, 5 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-index dafa988..7970fe8 100644
---- a/drivers/mfd/sh_mobile_sdhi.c
-+++ b/drivers/mfd/sh_mobile_sdhi.c
-@@ -106,6 +106,8 @@ static int __init sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->hclk = clk_get_rate(priv->clk);
- 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-+	if (p)
-+		mmc_data->flags = p->tmio_flags;
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 8e44e14..e9e35aa 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -199,16 +199,8 @@ static cycle_t sh_tmu_clocksource_read(struct clocksource *cs)
+ static int sh_tmu_clocksource_enable(struct clocksource *cs)
+ {
+ 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
+-	int ret;
+-
+-	ret = sh_tmu_enable(p);
+-	if (ret)
+-		return ret;
  
- 	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
- 		priv->param_tx.slave_id = p->dma_slave_tx;
-diff --git a/include/linux/mfd/sh_mobile_sdhi.h b/include/linux/mfd/sh_mobile_sdhi.h
-index c305461..c7b47f8 100644
---- a/include/linux/mfd/sh_mobile_sdhi.h
-+++ b/include/linux/mfd/sh_mobile_sdhi.h
-@@ -4,6 +4,7 @@
- struct sh_mobile_sdhi_info {
- 	int dma_slave_tx;
- 	int dma_slave_rx;
-+	unsigned long tmio_flags;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- };
+-	/* TODO: calculate good shift from rate and counter bit width */
+-	cs->shift = 10;
+-	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
+-	return 0;
++	return sh_tmu_enable(p);
+ }
  
+ static void sh_tmu_clocksource_disable(struct clocksource *cs)
+@@ -228,6 +220,10 @@ static int sh_tmu_register_clocksource(struct sh_tmu_priv *p,
+ 	cs->disable = sh_tmu_clocksource_disable;
+ 	cs->mask = CLOCKSOURCE_MASK(32);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
++	/* TODO: calculate good shift from rate and counter bit width */
++	cs->shift = 10;
++	/* channel will be configured at parent clock / 4 */
++	cs->mult = clocksource_hz2mult(clk_get_rate(p->clk) / 4, cs->shift);
+ 	dev_info(&p->pdev->dev, "used as clock source\n");
+ 	clocksource_register(cs);
+ 	return 0;
 -- 
-1.6.2.4
+1.7.1
 
