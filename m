@@ -1,65 +1,66 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 18 May 2010 22:02:38 +0000
-Subject: Re: [GIT PULL] sh updates for 2.6.35-rc1
-Message-Id: <20100518220237.GA5933@linux-sh.org>
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Mon, 31 May 2010 21:45:48 +0000
+Subject: [PATCH v2] sh_tmu: compute mult and shift before registration
+Message-Id: <1275342348-22499-1-git-send-email-aurelien@aurel32.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100518092532.GA3050@linux-sh.org> <AANLkTim6t8oG-vdLKE918Sd2TFKJpSf5Bw2PTtSsD_Fh@mail.gmail.com> <20100518101500.GA3156@linux-sh.org> <AANLkTinIVjwrQ9gza2FIvZN5w4nm8ZjSUe836oRmWYG7@mail.gmail.com> <AANLkTindMQ3Clk_qVnwUNYbbWcXjsUyyy4fQsjdDflFt@mail.gmail.com> <AANLkTilNQwo1YYT2pNJN5X0ae98iMKCdsBkcogjKZm-f@mail.gmail.com>
-In-Reply-To: <AANLkTilNQwo1YYT2pNJN5X0ae98iMKCdsBkcogjKZm-f@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jaswinder Singh Rajput <jaswinderlinux@gmail.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Russell King - ARM Linux <linux@arm.linux.org.uk>
+To: linux-sh@vger.kernel.org
 
-On Tue, May 18, 2010 at 04:46:12PM +0530, Jaswinder Singh Rajput wrote:
-> I am looking at the future, where multiple architecture will use each
-> other files.
-> 
-> I am just worried about the file count. Currently :
-> 
-> $ ls include/linux/ | wc -l
-> 1029
-> 
-> If other architecture will also start adding the files in
-> include/linux like you did then ?
-> 
-> So better make another directory in include.
-> 
-I think you're still missing the point here, this "future" case you speak
-of has been commonplace for years already now, and it's certainly not
-going to change (we've had mixed architecture multi-cores under Linux for
-almost 10 years now, so your future case has been going on for some time
-now). All of this started out with the header for the serial block being
-moved over, which is now used by 3 in-tree architectures and a 4th
-architecture under development.
+Since commit 98962465ed9e6ea99c38e0af63fe1dcb5a79dc25 ("nohz: Prevent
+clocksource wrapping during idle"), the CPU of an R2D board never goes
+to idle. This commit assumes that mult and shift are assigned before
+the clocksource is registered. As a consequence the safe maximum sleep
+time is negative and the CPU never goes into idle.
 
-Things like interrupt and clock controllers are not the first things that
-come to mind when people think of architecture independent drivers, but
-that's really what it has come down to at this point. The driver model
-and so on have helped a lot in this regard, and between that and the
-early platform extensions we implemented for the platform bus it's been
-possible to do things like move all of our clocksources/clockevents out
-in to the driver model and permit different architectures to tie in to
-them as necessary. There has been a lot of behind the scenes prep work
-that we've been doing to make as much of this stuff completely
-architecture independent as possible, so it's not like we've simply been
-lazily shuffling headers around based on some idea of what might possible
-pop up in the future. Each one of these headers has been explicitly
-placed for a reason and has (or will have in a subsequent merge) multiple
-architecture users.
+This patch fixes the problem by moving mult and shift initialization
+from sh_tmu_clocksource_enable() to sh_tmu_register_clocksource().
 
-While we could try to encapsulate some of this in some sort of pseudo
-architecture abstraction, that really doesn't accomplish anything, and it
-also suggests an architectural relationship where there simply isn't one.
-Sure, most of these drivers and IP blocks began life inside an SH core,
-but given that we now use them across a wide range of architectures, this
-continued relationship simply doesn't make any sense.
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+---
+ drivers/clocksource/sh_tmu.c |   20 +++++++++++---------
+ 1 files changed, 11 insertions(+), 9 deletions(-)
 
-Having said that, I do realize that include/linux is rather cluttered
-with hardware-related stuff these days, and that at least is perhaps
-something that we may wish to change some day. Having some sort of hw/
-abstraction for that stuff would make it easier to see what's hardware
-related and what isn't, but that's an entirely different discussion and
-one that needs a lot of thinking and consensus. asm/ certainly isn't the
-place for these things however, given that at the end of the day they
-really have nothing to do with any specific architecture.
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 8e44e14..de71590 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -199,16 +199,8 @@ static cycle_t sh_tmu_clocksource_read(struct clocksource *cs)
+ static int sh_tmu_clocksource_enable(struct clocksource *cs)
+ {
+ 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
+-	int ret;
+-
+-	ret = sh_tmu_enable(p);
+-	if (ret)
+-		return ret;
+ 
+-	/* TODO: calculate good shift from rate and counter bit width */
+-	cs->shift = 10;
+-	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
+-	return 0;
++	return sh_tmu_enable(p);
+ }
+ 
+ static void sh_tmu_clocksource_disable(struct clocksource *cs)
+@@ -228,6 +220,16 @@ static int sh_tmu_register_clocksource(struct sh_tmu_priv *p,
+ 	cs->disable = sh_tmu_clocksource_disable;
+ 	cs->mask = CLOCKSOURCE_MASK(32);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
++
++	/* clk_get_rate() needs an enabled clock */
++	clk_enable(p->clk);
++	/* channel will be configured at parent clock / 4 */
++	p->rate = clk_get_rate(p->clk) / 4;
++	clk_disable(p->clk);
++	/* TODO: calculate good shift from rate and counter bit width */
++	cs->shift = 10;
++	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
++
+ 	dev_info(&p->pdev->dev, "used as clock source\n");
+ 	clocksource_register(cs);
+ 	return 0;
+-- 
+1.7.1
+
