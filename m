@@ -1,42 +1,47 @@
-From: Pekka Enberg <penberg@cs.helsinki.fi>
-Date: Tue, 22 Jun 2010 12:41:24 +0000
-Subject: Re: [PATCH] kmemleak: config-options: Default buffer size for
-Message-Id: <AANLkTim-5W0BJ955VkIUpPCrPbXXZdCEkUVOIGeDZGo0@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 01 Jun 2010 02:40:32 +0000
+Subject: [PATCH] ARM: mach-shmobile: clock-sh7372: Add MMCIF clock
+Message-Id: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AANLkTimb7rP0rS0OU8nan5uNEhHx_kEYL99ImZ3c8o0D@mail.gmail.com>
-	<1277189909-16376-1-git-send-email-sankar.curiosity@gmail.com>
-	<4C20702C.1080405@cs.helsinki.fi>
-	<1277196403-20836-1-git-send-email-sankar.curiosity@gmail.com>
-	<20100622113135.GB20140@linux-sh.org>
-	<1277208351.29532.5.camel@e102109-lin.cambridge.arm.com>
-	<AANLkTin9ssqksoAvafRdsogmfrDUhShHCF9aCUb7CtCl@mail.gmail.com>
-	<1277210104.29532.13.camel@e102109-lin.cambridge.arm.com>
-In-Reply-To: <1277210104.29532.13.camel@e102109-lin.cambridge.arm.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Paul Mundt <lethal@linux-sh.org>, Sankar P <sankar.curiosity@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, lrodriguez@atheros.com, rnagarajan@novell.com, teheo@novell.com, linux-mm@kvack.org, paulmck@linux.vnet.ibm.com, mingo@elte.hu, akpm@linux-foundation.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Tue, Jun 22, 2010 at 3:35 PM, Catalin Marinas
-<catalin.marinas@arm.com> wrote:
-> On Tue, 2010-06-22 at 13:21 +0100, Pekka Enberg wrote:
->> On Tue, Jun 22, 2010 at 3:05 PM, Catalin Marinas
->> <catalin.marinas@arm.com> wrote:
->> > The defconfig change for this specific platform may be a better option
->> > but I thought defconfigs are to provide a stable (and maybe close to
->> > optimal) configuration without all the debugging features enabled
->> > (especially those slowing things down considerably).
->>
->> The defconfig change was definitely not a clean solution to this
->> problem. Better bake the fix in Kconfig proper even if it means
->> dependency on CONFIG_SH or something.
->
-> OK, maybe something like this
->
-> =A0 =A0 =A0 =A0default 1000 if SH
-> =A0 =A0 =A0 =A0default 400
->
-> It seems that kbuild only considers the first encounter of "default".
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-sh7372.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-Sure, I'm fine with that.
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 1364072..241caea 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -246,7 +246,7 @@ enum { MSTP001,
+        MSTP106, MSTP101, MSTP100,
+        MSTP223,
+        MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-       MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313,
++       MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
+        MSTP415, MSTP410, MSTP411, MSTP406, MSTP403,
+        MSTP_NR };
+ 
+@@ -279,6 +279,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 22, 0), /* USB0 */
+ 	[MSTP314] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP313] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 13, 0), /* SDHI1 */
++	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMC */
+ 	[MSTP415] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 15, 0), /* SDHI2 */
+ 	[MSTP411] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 11, 0), /* IIC3 */
+ 	[MSTP410] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 10, 0), /* IIC4 */
+@@ -363,6 +364,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[MSTP323]), /* USB0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP415]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* IIC3 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* IIC4 */
+-- 
+1.7.0.4
+
