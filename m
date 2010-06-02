@@ -1,45 +1,31 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 30 Jun 2010 09:26:35 +0000
-Subject: [PATCH] fbdev: sh-mobile-lcdc: fix potential Oops in SH-Mobile LCDC
-Message-Id: <Pine.LNX.4.64.1006301120560.17489@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Jun 2010 00:27:26 +0000
+Subject: [PATCH 1/4] sh: make sure static declaration on mach-ap325rxa
+Message-Id: <w3p8w6yb7o1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-sh_mobile_lcdc_setup_clocks() can perform IO, therefore it has to be called
-after ioremap(). Also check return code of ioremap() and use resource_size()
-instead of open-coding it.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ arch/sh/boards/mach-ap325rxa/setup.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index e8c7699..1ece226 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1020,14 +1020,16 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		goto err1;
- 	}
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 57e37e2..3a170bd 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -328,7 +328,7 @@ static struct soc_camera_platform_info camera_info = {
+ 	.set_capture = camera_set_capture,
+ };
  
-+	priv->base = ioremap_nocache(res->start, resource_size(res));
-+	if (!priv->base)
-+		goto err1;
-+
- 	error = sh_mobile_lcdc_setup_clocks(pdev, pdata->clock_source, priv);
- 	if (error) {
- 		dev_err(&pdev->dev, "unable to setup clocks\n");
- 		goto err1;
- 	}
- 
--	priv->base = ioremap_nocache(res->start, (res->end - res->start) + 1);
--
- 	for (i = 0; i < j; i++) {
- 		cfg = &priv->ch[i].cfg;
- 
+-struct soc_camera_link camera_link = {
++static struct soc_camera_link camera_link = {
+ 	.bus_id		= 0,
+ 	.add_device	= ap325rxa_camera_add,
+ 	.del_device	= ap325rxa_camera_del,
 -- 
-1.6.2.4
+1.7.0.4
 
