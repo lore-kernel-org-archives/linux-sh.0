@@ -1,58 +1,86 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Jun 2010 00:27:38 +0000
-Subject: [PATCH 4/4] sh: make sure static declaration on ms7724se
-Message-Id: <w3p6322b7np.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 02 Jun 2010 06:37:21 +0000
+Subject: Re: [PATCH 4/4] Modify sh-sci.h to adopt specific serial behaviour of SH-2007
+Message-Id: <20100602063721.GG15411@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/sh/boards/mach-se/7724/setup.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+On Mon, May 31, 2010 at 04:59:56PM +0900, Hitoshi Mitake wrote:
+> Two points are changed,
+>  * At end of sci_set_termios(), the value SCSCR_INIT(port)
+>    is written to SCSCR. And the value of it for Subtype 7780
+>    is 0x3a. This containts CKE1=1.
+>    But, when this value is written to serial device of SH-2007,
+>    this will stop. So we have to drop the flag of CKE1.
+> 
+>  * Baud rate written to SCBRR should be caliculated with this expression:
+>    ((clk+16*bps)/(32*bps)-1)
+>    Original form of this expression is:
+>    ((clk+16*bps)/(16*bps)-1)
+> 
+I don't have any particular problems with this, the entire serial setup
+is incredibly messy. I've been slowly rewriting most of the header to get
+rid of this stuff, but it will still be some time before that work is
+complete.
 
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index f9b8254..552ebd9 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -283,7 +283,7 @@ static struct clk fsimcka_clk = {
- };
- 
- /* change J20, J21, J22 pin to 1-2 connection to use slave mode */
--struct sh_fsi_platform_info fsi_info = {
-+static struct sh_fsi_platform_info fsi_info = {
- 	.porta_flags = SH_FSI_BRS_INV |
- 		       SH_FSI_OUT_SLAVE_MODE |
- 		       SH_FSI_IN_SLAVE_MODE |
-@@ -371,7 +371,7 @@ static struct resource sh_eth_resources[] = {
- 	},
- };
- 
--struct sh_eth_plat_data sh_eth_plat = {
-+static struct sh_eth_plat_data sh_eth_plat = {
- 	.phy = 0x1f, /* SMSC LAN8187 */
- 	.edmac_endian = EDMAC_LITTLE_ENDIAN,
- };
-@@ -535,7 +535,7 @@ static struct platform_device irda_device = {
- #include <media/ak881x.h>
- #include <media/sh_vou.h>
- 
--struct ak881x_pdata ak881x_pdata = {
-+static struct ak881x_pdata ak881x_pdata = {
- 	.flags = AK881X_IF_MODE_SLAVE,
- };
- 
-@@ -545,7 +545,7 @@ static struct i2c_board_info ak8813 = {
- 	.platform_data = &ak881x_pdata,
- };
- 
--struct sh_vou_pdata sh_vou_pdata = {
-+static struct sh_vou_pdata sh_vou_pdata = {
- 	.bus_fmt	= SH_VOU_BUS_8BIT,
- 	.flags		= SH_VOU_HSYNC_LOW | SH_VOU_VSYNC_LOW,
- 	.board_info	= &ak8813,
--- 
-1.7.0.4
+> These two points are really mysterious.
+> But I don't have the way to validate processor on SH-2007,
+> so I've mocked the kernel provided by the manufacture of this board :(
+> ( http://ms-n.org/sh-linux/kernel/ )
+> 
+> This patch fix sh-sci.h in dirty way,
+> but fortunately, this has no harm for other board and processors supports.
+> If you permit to apply this patch,
+> I'd like to find cause of this behaviour and revert this change someday.
+> 
+> Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+> ---
+>  drivers/serial/sh-sci.h |   16 +++++++++++++++-
+>  1 files changed, 15 insertions(+), 1 deletions(-)
+> 
+> diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+> index f70c49f..f8c684c 100644
+> --- a/drivers/serial/sh-sci.h
+> +++ b/drivers/serial/sh-sci.h
+>  # define SCIF_ORER	0x0001		/* Overrun error bit */
+> -# define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
+> +
+> +#if defined(CONFIG_SH_SH2007)
+> +/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=0 */
+> +# define SCSCR_INIT(port)	0x38
+> +#else
+> +/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=1 */
+> +# define SCSCR_INIT(port)	0x3a
+> +#endif
+> +
+>  #elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+>        defined(CONFIG_CPU_SUBTYPE_SH7786)
+>  # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
 
+This is ok, but..
+
+> @@ -602,7 +610,13 @@ static inline int sci_rxd_in(struct uart_port *port)
+>  #if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+>      defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+>      defined(CONFIG_CPU_SUBTYPE_SH7786)
+> +
+> +#if defined(CONFIG_SH_SH2007)
+> +#define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(32*bps)-1)
+> +#else
+>  #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
+> +#endif
+> +
+>  #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+>        defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+>        defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+
+This is just defaulting to the generic SH baudrate calculation, so you
+can accomplish the same thing by just changing this to:
+
+	#if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+	    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+	    defined(CONFIG_CPU_SUBTYPE_SH7786) && \
+	    !defined(CONFIG_SH_SH2007)
