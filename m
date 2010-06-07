@@ -1,25 +1,36 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Wed, 16 Jun 2010 15:43:58 +0000
-Subject: Re: [PATCH v2] soc/sh: Fix I2C dependency for SND_FSI_AK4642 and
-Message-Id: <20100616154358.GE24491@rakim.wolfsonmicro.main>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 07 Jun 2010 11:16:36 +0000
+Subject: [PATCH] initialise DMA engine before MMC
+Message-Id: <Pine.LNX.4.64.1006071312060.12965@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201006141739.42346.PeterHuewe@gmx.de>
- <201006151649.07554.PeterHuewe@gmx.de>
- <20100615151913.GJ14510@rakim.wolfsonmicro.main>
- <201006151738.56143.PeterHuewe@gmx.de>
-In-Reply-To: <201006151738.56143.PeterHuewe@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Huewe <PeterHuewe@gmx.de>
-Cc: Liam Girdwood <lrg@slimlogic.co.uk>, linux-sh@vger.kernel.org, Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.de>, Kuninori Morimoto <morimoto.kuninori@renesas.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, alsa-devel@alsa-project.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Dan Williams <dan.j.williams@intel.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-mmc@vger.kernel.org
 
-On Tue, Jun 15, 2010 at 05:38:55PM +0200, Peter Huewe wrote:
-> From: Peter Huewe <peterhuewe@gmx.de>
-> 
-> The config option SND_FSI_AK4642 selects SND_SOC_AK4642 which in turn
-> enables the compilation of ak4642.c - however this codec uses I2C to
-> communicate with the HW.
-> Same applies to DA7210.
+To use DMA engine based DMA with MMC in a non-modular build, the DMA 
+engine has to initialise before MMC.
 
-Applied, thanks.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 91874e0..b713e75 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -92,6 +92,7 @@ obj-$(CONFIG_EISA)		+= eisa/
+ obj-y				+= lguest/
+ obj-$(CONFIG_CPU_FREQ)		+= cpufreq/
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle/
++obj-$(CONFIG_DMA_ENGINE)	+= dma/
+ obj-$(CONFIG_MMC)		+= mmc/
+ obj-$(CONFIG_MEMSTICK)		+= memstick/
+ obj-$(CONFIG_NEW_LEDS)		+= leds/
+@@ -102,7 +103,6 @@ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+ obj-$(CONFIG_GENERIC_TIME)	+= clocksource/
+-obj-$(CONFIG_DMA_ENGINE)	+= dma/
+ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
