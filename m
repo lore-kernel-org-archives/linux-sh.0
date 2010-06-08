@@ -1,84 +1,60 @@
-From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Fri, 11 Jun 2010 04:51:32 +0000
-Subject: [PATCH v3 4/4] Modify sh-sci.h to adopt specific serial behaviour of SH-2007
-Message-Id: <1276231892-22850-5-git-send-email-mitake@dcl.info.waseda.ac.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Jun 2010 06:25:17 +0000
+Subject: [PATCH] net/irda/sh_irda: Modify clk_get lookups
+Message-Id: <w3p7hmaujlf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, "David S. Miller" <davem@davemloft.net>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Net <netdev@vger.kernel.org>
 
-Very dirty and easy fix for sh-sci.
-Default sh-sci cannot activate serial of SH-2007,
-so this fix is required.
-
-Two points are changed,
- * At end of sci_set_termios(), the value SCSCR_INIT(port)
-   is written to SCSCR. And the value of it for Subtype 7780
-   is 0x3a. This containts CKE1=1.
-   But, when this value is written to serial device of SH-2007,
-   this will stop. So we have to drop the flag of CKE1.
-
- * Baud rate written to SCBRR should be caliculated with this expression:
-   ((clk+16*bps)/(32*bps)-1)
-   Original form of this expression is:
-   ((clk+16*bps)/(16*bps)-1)
-
-These two points are really mysterious.
-But I don't have the way to validate processor on SH-2007,
-so I've mocked the kernel provided by the manufacture of this board :(
-( http://ms-n.org/sh-linux/kernel/ )
-
-This patch fix sh-sci.h in dirty way,
-but fortunately, this has no harm for other board and processors supports.
-If you permit to apply this patch,
-I'd like to find cause of this behaviour and revert this change someday.
-
-v2
- * It uses generic value calculation of SCBRR.
-
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/serial/sh-sci.h |   17 +++++++++++++----
- 1 files changed, 13 insertions(+), 4 deletions(-)
+This patch is v2 of
+ARM: mach-shmobile: clock-sh7367: modify IrDA clock
 
-diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
-index f70c49f..dfaeeaf 100644
---- a/drivers/serial/sh-sci.h
-+++ b/drivers/serial/sh-sci.h
-@@ -140,7 +140,15 @@
- # define SCSPTR0	0xffe00024	/* 16 bit SCIF */
- # define SCSPTR1	0xffe10024	/* 16 bit SCIF */
- # define SCIF_ORER	0x0001		/* Overrun error bit */
--# define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-+
-+#if defined(CONFIG_SH_SH2007)
-+/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=0 */
-+# define SCSCR_INIT(port)	0x38
-+#else
-+/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=1 */
-+# define SCSCR_INIT(port)	0x3a
-+#endif
-+
- #elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7786)
- # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
-@@ -599,9 +607,10 @@ static inline int sci_rxd_in(struct uart_port *port)
-  * -- Mitch Davis - 15 Jul 2000
-  */
+ arch/arm/mach-shmobile/board-g3evm.c |    1 +
+ drivers/net/irda/sh_irda.c           |    6 ++----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-g3evm.c b/arch/arm/mach-shmobile/board-g3evm.c
+index 95ccb94..a552590 100644
+--- a/arch/arm/mach-shmobile/board-g3evm.c
++++ b/arch/arm/mach-shmobile/board-g3evm.c
+@@ -232,6 +232,7 @@ static struct resource irda_resources[] = {
  
--#if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7786)
-+#if (defined(CONFIG_CPU_SUBTYPE_SH7780) || \
-+    defined(CONFIG_CPU_SUBTYPE_SH7785)  || \
-+    defined(CONFIG_CPU_SUBTYPE_SH7786))	   \
-+    && !defined(CONFIG_SH_SH2007)
- #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
- #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+ static struct platform_device irda_device = {
+ 	.name		= "sh_irda",
++	.id		= -1,
+ 	.resource	= irda_resources,
+ 	.num_resources	= ARRAY_SIZE(irda_resources),
+ };
+diff --git a/drivers/net/irda/sh_irda.c b/drivers/net/irda/sh_irda.c
+index 9a828b0..9db7084 100644
+--- a/drivers/net/irda/sh_irda.c
++++ b/drivers/net/irda/sh_irda.c
+@@ -748,7 +748,6 @@ static int __devinit sh_irda_probe(struct platform_device *pdev)
+ 	struct net_device *ndev;
+ 	struct sh_irda_self *self;
+ 	struct resource *res;
+-	char clk_name[8];
+ 	unsigned int irq;
+ 	int err = -ENOMEM;
+ 
+@@ -775,10 +774,9 @@ static int __devinit sh_irda_probe(struct platform_device *pdev)
+ 	if (err)
+ 		goto err_mem_2;
+ 
+-	snprintf(clk_name, sizeof(clk_name), "irda%d", pdev->id);
+-	self->clk = clk_get(&pdev->dev, clk_name);
++	self->clk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(self->clk)) {
+-		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
++		dev_err(&pdev->dev, "cannot get irda clock\n");
+ 		goto err_mem_3;
+ 	}
+ 
 -- 
-1.6.5.2
+1.7.0.4
 
