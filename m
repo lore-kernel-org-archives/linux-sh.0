@@ -1,7 +1,7 @@
-From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Mon, 07 Jun 2010 15:06:32 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 08 Jun 2010 04:00:41 +0000
 Subject: Re: [PATCH 1/4] Add the directory mach-sh2007 for SH-2007 board support
-Message-Id: <4C0D0AF8.80103@dcl.info.waseda.ac.jp>
+Message-Id: <20100608040041.GB6376@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1275292796-26602-2-git-send-email-mitake@dcl.info.waseda.ac.jp>
 In-Reply-To: <1275292796-26602-2-git-send-email-mitake@dcl.info.waseda.ac.jp>
@@ -10,87 +10,44 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 06/07/10 12:02, Paul Mundt wrote:
- > On Sat, Jun 05, 2010 at 10:32:19PM +0900, Hitoshi Mitake wrote:
- >> On 06/02/10 15:32, Paul Mundt wrote:
- >>>> +/* Support for external interrupt pins in IRQ mode */
- >>>> +enum {IRQ0 = 1, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7};
- >>>> +static struct intc_vect irq_vectors[] __initdata = {
- >>>> +	INTC_IRQ(IRQ0, IRQ_SMC0),
- >>>> +	INTC_IRQ(IRQ1, IRQ_SMC1),
- >>>> +	INTC_IRQ(IRQ2, IRQ_CFCARD),
- >>>> +	INTC_IRQ(IRQ3, IRQ_IDE),
- >>>> +	INTC_IRQ(IRQ4, 3),
- >>>> +	INTC_IRQ(IRQ5, 4),
- >>>> +	INTC_IRQ(IRQ6, 5),
- >>>> +	INTC_IRQ(IRQ7, 7),
- >>>> +};
- >>>> +
- >>>> +static struct intc_mask_reg irq_mask_registers[] __initdata = {
- >>>> +	{ INTC_INTMSK0, INTC_INTMSKCLR0, 32,
- >>>> +	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
- >>>> +};
- >>>> +
- >>>> +static struct intc_prio_reg irq_prio_registers[] __initdata = {
- >>>> +	{ INTC_INTPRI, 0, 32, 4,
- >>>> +	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
- >>>> +};
- >>>> +
- >>>> +static struct intc_sense_reg irq_sense_registers[] __initdata = {
- >>>> +	{ INTC_ICR1, 32, 2,
- >>>> +	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
- >>>> +};
- >>>> +
- >>>> +static struct intc_mask_reg irq_ack_registers[] __initdata = {
- >>>> +	{ INTC_INTREQ, 0, 32,
- >>>> +	  { IRQ0, IRQ1, IRQ2, IRQ3, IRQ4, IRQ5, IRQ6, IRQ7 } },
- >>>> +};
- >>>> +
- >>>> +static DECLARE_INTC_DESC_ACK(intc_irq_desc, "sh7780-irq", 
-irq_vectors,
- >>>> +			NULL, irq_mask_registers, irq_prio_registers,
- >>>> +			irq_sense_registers, irq_ack_registers);
- >>>> +
- >>> None of this is needed, it's all taken care of by the SH7780 CPU code
- >>> already.
- >>
- >> These IRQs are things for devicde specific,
- >> I think this is required for board support.
- >> # I'm an only newbie, if I make some mistakes,
- >> # please point out :)
- >
- > I suspect this just stems from a misunderstanding of how to interact with
- > the IRQ code. All of these registers are part of the SH7780 CPU IRQ
- > controllers, and have nothing to do with the device. The only thing that
- > is device specific is how these IRQs are used, and we already expose full
- > control for that to the boards.
- >
- > If you read through arch/sh/kernel/cpu/sh4a/setup-sh7780.c you can see
- > that everything is already centrally managed by the CPU, so the only
- > thing you need to take care of is the IRQ mapping and IRQ mode pins
- > setting.
- >
- > If your board has an FPGA that's chained off of the IRLs then you can set
- > the controller in to IRL mode, or if you're simply using them as IRQ0-7
- > directly and letting the CPU controller take care of the masking, then
- > you can simply throw the controller in to IRQ mode.
- >
- > Simply grep for plat_irq_setup_pins() to see how the CPU/board
- > interaction works for this, you'll likely want IRQ_MODE_IRQ for this
- > case.
- >
+On Tue, Jun 08, 2010 at 12:06:32AM +0900, Hitoshi Mitake wrote:
+> On 06/07/10 12:02, Paul Mundt wrote:
+> > If you read through arch/sh/kernel/cpu/sh4a/setup-sh7780.c you can see
+> > that everything is already centrally managed by the CPU, so the only
+> > thing you need to take care of is the IRQ mapping and IRQ mode pins
+> > setting.
+> >
+> > If your board has an FPGA that's chained off of the IRLs then you can set
+> > the controller in to IRL mode, or if you're simply using them as IRQ0-7
+> > directly and letting the CPU controller take care of the masking, then
+> > you can simply throw the controller in to IRQ mode.
+> >
+> > Simply grep for plat_irq_setup_pins() to see how the CPU/board
+> > interaction works for this, you'll likely want IRQ_MODE_IRQ for this
+> > case.
+> 
+> Ah, I noticed my misunderstanding.
+>  plat_irq_setup_pins(IRQ_MODE_IRQ);
+> is enough for me to init ICR.
+> Thanks for your correcting!
+> 
+> And I have a question,
+> Can I set evt2irq(INTEVT) to struct resource.start directly?
+> # INTEVT is the value like 0x220
+> If I do so, mv_irq_demux can be NULL because
+> evt2irq(INTEVT) is equal to the first argument of do_IRQ().
+> 
+> I don't know the traditional way of SH board support,
+> and it seems that there is no board takes the way I described above.
+> So I cannot judge this way is correct or not...
 
-Ah, I noticed my misunderstanding.
-  plat_irq_setup_pins(IRQ_MODE_IRQ);
-is enough for me to init ICR.
-Thanks for your correcting!
+There is no real rule for this, on some parts we've opted for open-coding
+the vector directly simply because it's immediately visible in the data
+sheet, while for others (especially the SH-2 and SH-2A parts) which don't
+really have anything to do for evt2irq() we just omit it entirely.
 
-And I have a question,
-Can I set evt2irq(INTEVT) to struct resource.start directly?
-# INTEVT is the value like 0x220
-If I do so, mv_irq_demux can be NULL because
-evt2irq(INTEVT) is equal to the first argument of do_IRQ().
+The data sheets for the newer CPUs all seem to prefer the event code
+numbering, so you can see that there are already a few boards that are
+using evt2irq() in their resource assignments directly, such as sdk7786.
 
-I don't know the traditional way of SH board support,
-and it seems that there is no board takes the way I described above.
-So I cannot judge this way is correct or not...
+So of course you can use whatever format you like.
