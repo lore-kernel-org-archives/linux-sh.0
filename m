@@ -1,29 +1,45 @@
-From: Aurelien Jarno <aurelien@aurel32.net>
-Date: Fri, 11 Jun 2010 06:33:19 +0000
-Subject: Re: [PATCH v2] sh_tmu: compute mult and shift before registration
-Message-Id: <20100611063319.GB21417@hall.aurel32.net>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Tue, 08 Jun 2010 02:00:13 +0000
+Subject: [PATCH 1/2] sh: Drop dependence for 29bit mode of
+Message-Id: <AANLkTim7PR--Y_fueeMtdvnVX8BUJZK0iwG-rModFYzK@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1275342348-22499-1-git-send-email-aurelien@aurel32.net>
-In-Reply-To: <1275342348-22499-1-git-send-email-aurelien@aurel32.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 11, 2010 at 03:01:51PM +0900, Paul Mundt wrote:
-> > I agree with adding a __clocksource_updatefreq_hz(cs, p->rate) line to
-> > sh_cmt_clocksource_enable(), but the p->rate value should already be
-> > up to date so I don't think you need to add any clk_get_rate() call.
-> > 
-> > Want me to hack up a replacement patch?
-> > 
-> This all started out from Aurelien's bug report, so as long as that
-> remains addressed I'm pretty flexible with how we handle the
-> registration/enable case. 
-> 
+When CONFIG_PMB enable, ITLB is not cleared by reset of watchdog timer.
+This should use trigger_address_error().
 
-I am ready to test new patches if needed.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/include/asm/system_32.h |   13 ++++++-------
+ 1 files changed, 6 insertions(+), 7 deletions(-)
 
+diff --git a/arch/sh/include/asm/system_32.h b/arch/sh/include/asm/system_32.h
+index 51296b3..9bd2684 100644
+--- a/arch/sh/include/asm/system_32.h
++++ b/arch/sh/include/asm/system_32.h
+@@ -216,13 +216,12 @@ int handle_unaligned_access(insn_size_t
+instruction, struct pt_regs *regs,
+
+ static inline void trigger_address_error(void)
+ {
+-	if (__in_29bit_mode())
+-		__asm__ __volatile__ (
+-			"ldc %0, sr\n\t"
+-			"mov.l @%1, %0"
+-			:
+-			: "r" (0x10000000), "r" (0x80000001)
+-		);
++	__asm__ __volatile__ (
++		"ldc %0, sr\n\t"
++		"mov.l @%1, %0"
++		:
++		: "r" (0x10000000), "r" (0x80000001)
++	);
+ }
+
+ asmlinkage void do_address_error(struct pt_regs *regs,
 -- 
-Aurelien Jarno	                        GPG: 1024D/F1BCDB73
-aurelien@aurel32.net                 http://www.aurel32.net
+1.7.0.3
