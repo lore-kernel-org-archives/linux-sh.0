@@ -1,42 +1,366 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 25 Jun 2010 09:19:14 +0000
-Subject: Re: [PATCH] sh: remove bogus highest / lowest logic from clock rate rounding
-Message-Id: <20100625091914.GB3133@linux-sh.org>
+From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+Date: Tue, 08 Jun 2010 10:08:44 +0000
+Subject: [PATCH v2 1/4] Add the directory mach-sh2007 for SH-2007 board support
+Message-Id: <1275991727-4730-2-git-send-email-mitake@dcl.info.waseda.ac.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1006250918150.1223@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1006250918150.1223@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 25, 2010 at 10:27:23AM +0200, Guennadi Liakhovetski wrote:
-> On Fri, 25 Jun 2010, Paul Mundt wrote:
-> 
-> > On Fri, Jun 25, 2010 at 09:19:39AM +0200, Guennadi Liakhovetski wrote:
-> > > The use of highest and lowest in clk_rate_table_round() is completely bogus
-> > > and superfluous. Remove it.
-> > > 
-> > In what way is it bogus or superfluous? They are there to provide
-> > high/low rate bounding when we have no idea what sort of frequencies are
-> > available for an underlying clock.
-> 
-> Well, firstly initialising lowest to 0 doesn't make sense - there are no 
-> unsigned integers below it;) It should have been ~0UL. "No idea" you mean 
-> when the frequency table is empty? But then the highest / lowest checks 
-> make even less sense - the function would just return 0 ATM. Otherwise 
-> what they look like they'd have to do, is: in the loop they find max and 
-> min clock values. If the requested frequency is below min or above max, 
-> one of them would be used respectively. But that's already done by the 
-> minimum error check, unless there's a wrap... Am I missing anything?
-> 
-Yes, the lowest initializer is wrong. I suppose we've just been getting
-lucky there. The highest/lowest things are used for bounding when probing
-the table for the high/low pairs (ie, rounding down from 0xffffffff and
-up from 0). I only have a vague memory of writing the code in question
-but seem to recall that the rate error calculation itself was not
-sufficient for this. Looking at it again though I don't specifically
-remember why, so I'll poke at it with your changes and see how it goes.
-Given that the lowest thing is already broken it doesn't seem like much
-of a stretch to assume that the rate error calculation is already saving
-us.
+This patch adds directory for SH-2007 support.
+mach-sh2007/setup.c ... Setup platform devices and provide machine vector.
+
+CAUTION: IDE support is not tested yet,
+	 because cable for 2.5 inch disk is hard to obtain.
+	 After obtaining the cable and testing,
+	 I'll remove #if 0 ... #endif and activate IDE support.
+v2:
+ * Pending onboardio.c, for dip switch reading and LED manipulating.
+   Because these deviced should be treated in more unified way
+   such as LED device class. Creating /dev/dipsw is dirty.
+   But the LED device is not physical device, it exists logicaly.
+   I'm pending my decision about treating dip switch and logical LED temporary.
+ * Cleaning. setup.c of v1 did lots of non board specific
+   (processor specific) things. According to Paul's advice, I reduced them.
+   And sh2007_init_irq() uses interrupt setting of 7780 specific.
+
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+---
+ arch/sh/boards/mach-sh2007/Makefile |    1 +
+ arch/sh/boards/mach-sh2007/setup.c  |  314 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 315 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/boards/mach-sh2007/Makefile
+ create mode 100644 arch/sh/boards/mach-sh2007/setup.c
+
+diff --git a/arch/sh/boards/mach-sh2007/Makefile b/arch/sh/boards/mach-sh2007/Makefile
+new file mode 100644
+index 0000000..2b9dba4
+--- /dev/null
++++ b/arch/sh/boards/mach-sh2007/Makefile
+@@ -0,0 +1 @@
++obj-y += setup.o
+diff --git a/arch/sh/boards/mach-sh2007/setup.c b/arch/sh/boards/mach-sh2007/setup.c
+new file mode 100644
+index 0000000..73bb2e9
+--- /dev/null
++++ b/arch/sh/boards/mach-sh2007/setup.c
+@@ -0,0 +1,314 @@
++/*
++ * linux/arch/sh/kernel/setup_sh2007.c
++ *
++ * Copyright (C) 2003,2004 SUGIOKA Toshinobu
++ * Ported to Linux 2.6.34 by Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/ide.h>
++#include <linux/mm.h>
++#include <linux/dma-mapping.h>
++#include <linux/vmalloc.h>
++#include <linux/delay.h>
++#include <linux/pci.h>
++#include <linux/smsc911x.h>
++#include <linux/platform_device.h>
++#include <linux/ata_platform.h>
++
++#include <asm/io.h>
++#include <asm/machvec.h>
++#include <asm/rtc.h>
++#include <asm/cacheflush.h>
++#include <asm/addrspace.h>
++
++#include "../../drivers/pci/pci-sh7780.h"
++
++#define INTEVT		0xff000028
++#define CPUOPM		0xff2f0000
++#define IRMCR		0xff000078
++#define CS5BCR		0xff802050
++#define CS5WCR		0xff802058
++#define CS5PCR		0xff802070
++
++#define BUS_SZ8		1
++#define BUS_SZ16	2
++#define BUS_SZ32	3
++
++#define PCMCIA_IODYN	1
++#define PCMCIA_ATA	0
++#define PCMCIA_IO8	2
++#define PCMCIA_IO16	3
++#define PCMCIA_COMM8	4
++#define PCMCIA_COMM16	5
++#define PCMCIA_ATTR8	6
++#define PCMCIA_ATTR16	7
++
++#define TYPE_SRAM	0
++#define TYPE_PCMCIA	4
++
++/* write-read/write-write delay (0-7:0,1,2,3,4,5,6,7) */
++#define IWW5		0
++#define IWW6		3
++/* different area, read-write delay (0-7:0,1,2,3,4,5,6,7) */
++#define IWRWD5		2
++#define IWRWD6		2
++/* same area, read-write delay (0-7:0,1,2,3,4,5,6,7) */
++#define IWRWS5		2
++#define IWRWS6		2
++/* different area, read-read delay (0-7:0,1,2,3,4,5,6,7) */
++#define IWRRD5		2
++#define IWRRD6		2
++/* same area, read-read delay (0-7:0,1,2,3,4,5,6,7) */
++#define IWRRS5		0
++#define IWRRS6		2
++/* burst count (0-3:4,8,16,32) */
++#define BST5		0
++#define BST6		0
++/* bus size */
++#define SZ5		BUS_SZ16
++#define SZ6		BUS_SZ16
++/* RD hold for SRAM (0-1:0,1) */
++#define RDSPL5		0
++#define RDSPL6		0
++/* Burst pitch (0-7:0,1,2,3,4,5,6,7) */
++#define BW5		0
++#define BW6		0
++/* Multiplex (0-1:0,1) */
++#define MPX5		0
++#define MPX6		0
++/* device type */
++#define TYPE5		TYPE_PCMCIA
++#define TYPE6		TYPE_PCMCIA
++/* address setup before assert CSn for SRAM (0-7:0,1,2,3,4,5,6,7) */
++#define ADS5		0
++#define ADS6		0
++/* address hold after negate CSn for SRAM (0-7:0,1,2,3,4,5,6,7) */
++#define ADH5		0
++#define ADH6		0
++/* CSn assert to RD assert delay for SRAM (0-7:0,1,2,3,4,5,6,7) */
++#define RDS5		0
++#define RDS6		0
++/* RD negate to CSn negate delay for SRAM (0-7:0,1,2,3,4,5,6,7) */
++#define RDH5		0
++#define RDH6		0
++/* CSn assert to WE assert delay for SRAM (0-7:0,1,2,3,4,5,6,7) */
++#define WTS5		0
++#define WTS6		0
++/* WE negate to CSn negate delay for SRAM (0-7:0,1,2,3,4,5,6,7) */
++#define WTH5		0
++#define WTH6		0
++/* BS hold (0-1:1,2) */
++#define BSH5		0
++#define BSH6		0
++/* wait cycle (0-15:0,1,2,3,4,5,6,7,8,9,11,13,15,17,21,25) */
++#define IW5		6	/* 60ns PIO mode 4 */
++#define IW6		15	/* 250ns */
++
++#define SAA5		PCMCIA_IODYN	/* IDE area b4000000-b5ffffff */
++#define SAB5		PCMCIA_IODYN	/* CF  area b6000000-b7ffffff */
++#define PCWA5		0	/* additional wait A (0-3:0,15,30,50) */
++#define PCWB5		0	/* additional wait B (0-3:0,15,30,50) */
++/* wait B (0-15:0,1,2,3,4,5,6,7,8,9,11,13,15,17,21,25) */
++#define PCIW5		12
++/* Address->OE/WE assert delay A (0-7:0,1,2,3,6,9,12,15) */
++#define TEDA5		2
++/* Address->OE/WE assert delay B (0-7:0,1,2,3,6,9,12,15) */
++#define TEDB5		4
++/* OE/WE negate->Address delay A (0-7:0,1,2,3,6,9,12,15) */
++#define TEHA5		2
++/* OE/WE negate->Address delay B (0-7:0,1,2,3,6,9,12,15) */
++#define TEHB5		3
++
++#define CS5BCR_D	((IWW5<<28)|(IWRWD5<<24)|(IWRWS5<<20)|		\
++			(IWRRD5<<16)|(IWRRS5<<12)|(BST5<<10)|		\
++			(SZ5<<8)|(RDSPL5<<7)|(BW5<<4)|(MPX5<<3)|TYPE5)
++#define CS5WCR_D	((ADS5<<28)|(ADH5<<24)|(RDS5<<20)|	\
++			(RDH5<<16)|(WTS5<<12)|(WTH5<<8)|(BSH5<<4)|IW5)
++#define CS5PCR_D	((SAA5<<28)|(SAB5<<24)|(PCWA5<<22)|		\
++			(PCWB5<<20)|(PCIW5<<16)|(TEDA5<<12)|		\
++			(TEDB5<<8)|(TEHA5<<4)|TEHB5)
++
++#define SMC0_BASE       0xb0800000      /* eth0 */
++#define SMC1_BASE       0xb0900000      /* eth1 */
++#define CF_BASE         0xb6100000      /* Compact Flash (I/O area) */
++#define IDE_BASE        0xb4000000      /* IDE */
++#define PC104_IO_BASE   0xb8000000
++#define PC104_MEM_BASE  0xba000000
++#define SMC_IO_SIZE     0x100
++
++#define CF_OFFSET       0x1f0
++#define IDE_OFFSET      0x170
++
++static void release_platform_dev(struct device *dev)
++{
++	dev->parent = NULL;
++}
++
++struct smsc911x_platform_config smc911x_info = {
++	.flags		= SMSC911X_USE_32BIT,
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++};
++
++static struct resource smsc9118_0_resources[] = {
++	[0] = {
++		.start	= SMC0_BASE,
++		.end	= SMC0_BASE + 0xff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= evt2irq(0x240),
++		.end	= evt2irq(0x240),
++		.flags	= IORESOURCE_IRQ,
++	}
++};
++
++static struct resource smsc9118_1_resources[] = {
++	[0] = {
++		.start	= SMC1_BASE,
++		.end	= SMC1_BASE + 0xff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= evt2irq(0x280),
++		.end	= evt2irq(0x280),
++		.flags	= IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device smsc9118_0_device = {
++	.name		= "smsc911x",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(smsc9118_0_resources),
++	.resource	= smsc9118_0_resources,
++	.dev = {
++		.release       = release_platform_dev,
++		.platform_data = &smc911x_info,
++	},
++};
++
++static struct platform_device smsc9118_1_device = {
++	.name		= "smsc911x",
++	.id		= 1,
++	.num_resources	= ARRAY_SIZE(smsc9118_1_resources),
++	.resource	= smsc9118_1_resources,
++	.dev = {
++		.release       = release_platform_dev,
++		.platform_data = &smc911x_info,
++	},
++};
++
++static struct resource cf_resources[] = {
++	[0] = {
++		.start	= CF_BASE + CF_OFFSET,
++		.end	= CF_BASE + CF_OFFSET + 0x0f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= CF_BASE + CF_OFFSET + 0x206,
++		.end	= CF_BASE + CF_OFFSET + 0x20f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= evt2irq(0x2c0),
++		.end	= evt2irq(0x2c0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct pata_platform_info cf_info = {
++};
++
++static struct platform_device cf_device  = {
++	.name		= "pata_platform",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(cf_resources),
++	.resource	= cf_resources,
++	.dev = {
++		.platform_data = &cf_info,
++	},
++};
++
++#if 0	/* I'll turn this code on after testing IDE... */
++static struct resource ide_resources[] = {
++	[0] = {
++		.start	= IDE_BASE + IDE_OFFSET,
++		.end	= IDE_BASE + IDE_OFFSET + 0x0f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= IDE_BASE + IDE_OFFSET + 0x206,
++		.end	= IDE_BASE + IDE_OFFSET + 0x20f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= evt2irq(0x300),
++		.end	= evt2irq(0x300),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++
++static struct pata_platform_info ide_info = {
++};
++
++static struct platform_device ide_device  = {
++	.name		= "pata_platform",
++	.id		= 1,
++	.num_resources	= ARRAY_SIZE(ide_resources),
++	.resource	= ide_resources,
++	.dev = {
++		.platform_data = &ide_info,
++	},
++};
++#endif
++
++static struct platform_device *sh2007_devices[] __initdata = {
++	&smsc9118_0_device,
++	&smsc9118_1_device,
++	&cf_device,
++#if 0
++	&ide_device,
++#endif
++};
++
++static int __init sh2007_io_init(void)
++{
++	platform_add_devices(sh2007_devices, ARRAY_SIZE(sh2007_devices));
++	return 0;
++}
++subsys_initcall(sh2007_io_init);
++
++static void __init sh2007_init_irq(void)
++{
++	plat_irq_setup_pins(IRQ_MODE_IRQ);
++}
++
++/*
++ * Initialize the board
++ */
++static void __init sh2007_setup(char **cmdline_p)
++{
++	printk(KERN_INFO "SH-2007 Setup...");
++
++	/* setup wait control registers for area 5 */
++	/* FIXME! */
++	__raw_writel(CS5BCR_D, CS5BCR);
++	__raw_writel(CS5WCR_D, CS5WCR);
++	__raw_writel(CS5PCR_D, CS5PCR);
++
++	printk(KERN_INFO " done.\n");
++}
++
++/*
++ * The Machine Vector
++ */
++struct sh_machine_vector mv_sh2007 __initmv = {
++	.mv_setup		= sh2007_setup,
++	.mv_name		= "sh2007",
++	.mv_init_irq		= sh2007_init_irq,
++};
+-- 
+1.6.5.2
+
