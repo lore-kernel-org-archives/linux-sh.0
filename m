@@ -1,12 +1,55 @@
-From: EuroMillions Promo <lmchunter@sbcglobal.net>
-Date: Sun, 06 Jun 2010 07:49:49 +0000
-Subject: 
-Message-Id: <883489.32590.qm@web81101.mail.mud.yahoo.com>
+From: "Microsoft E-mail Promo Department" <info.winner@microsoft.com>
+Date: Wed, 09 Jun 2010 23:06:18 +0000
+Subject: Official Prize Notification
+Message-Id: <20453.41.220.68.4.1276124778.squirrel@41.220.68.4>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 
-You Have Won =A32,500,000.00 GBP in the EuroMillions Promo.
-Names.
-Tel.=20
+Official Prize Notification
+
+The MICROSOFT EMAIL PROMO TEAM is glad to announce that
+after a successful completion of the PROMO DRAWS held on the
+8th June 2010, your e-mail address,attached to winning
+numbers:(11) (80) (12)(96) (09) (43) won in the Tenth
+lottery category.
+
+You have therefore been approved to claim a total sum of
+=A3250,000,00 GBP(Two Hundred and Fifty Thousand Great British
+Pounds Sterling) in cash credited to file REF NO:MICRO-L/2009-END10,
+BATCH NO:2009MJL-05, this is from a total prize money of
+=A33,750,000 (Three Million,Seven hundred and Fifty Thousand
+British Pounds Sterling),shared among the Twenty five (25)
+international winners in this category.
+
+All participants were selected through our Microsoft computer
+ballot system drawn from 167,000 Names,as part of our
+International  \"E-MAIL"\ Promotion Program for our prominent
+MS-WORD users all over the world and for the continuous use
+of the internet. You are advised to contact the claims
+processor with the details below via his e-mail address :
+
+NAME:  Ivan Nickerson
+EMAIL: ivan.nickerson@yahoo.com.hk
+
+PLEASE NOTE THAT YOU ARE TO SEND THE FOLLOWING INFORMATION TO
+CLAIM YOUR WINNINGS:
+
+1.Full Name....................................
+2.Address:....................................
+3.Phone:...............Fax:...................
+4.Country:....................................
+5.Sex/Gender...................................
+
+In order to avoid unnecessary delay and complications,please
+remember to quote your reference and winning ticket number in
+all correspondence with your claims officer.Your secret pin
+code is ML0757985.Be warned that cases of double claims and
+unwarranted abuse of this program will be legally pursued.
+
+
+
+YOURS SINCERELY,
+DOROTHY CAMPBELL.
+
