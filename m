@@ -1,31 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Jun 2010 00:25:14 +0000
-Subject: [PATCH 2/3] ARM: mach-shmobile: make sure static declaration on g4evm
-Message-Id: <w3pd3wab7rq.wl%kuninori.morimoto.gx@renesas.com>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 09 Jun 2010 08:24:47 +0000
+Subject: How to modify the bootup logo?
+Message-Id: <201006091024.47391.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-g4evm.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Hi All,
+I'd like to modify the bootup logo so T tried to get from the net the answer 
+to these questions:
+1) Is it possible to have a logo as great as all the screen? (mine is 320x240)
+2) If yes to question 1), how can I have the .c file staring from a .bmp file?
 
-diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
-index e256b7c..2c3ff6f 100644
---- a/arch/arm/mach-shmobile/board-g4evm.c
-+++ b/arch/arm/mach-shmobile/board-g4evm.c
-@@ -117,7 +117,7 @@ static struct platform_device nor_flash_device = {
- };
- 
- /* USBHS */
--void usb_host_port_power(int port, int power)
-+static void usb_host_port_power(int port, int power)
- {
- 	if (!power) /* only power-on supported for now */
- 		return;
+Any suggestion will be appreciated al lot
+
+Thanks in advance
+
+Cheers
+
 -- 
-1.7.0.4
+Fabio Giovagnini
 
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
+www.aurion-tech.com
