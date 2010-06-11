@@ -1,83 +1,58 @@
 From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Tue, 08 Jun 2010 10:08:47 +0000
-Subject: [PATCH v2 4/4] Modify sh-sci.h to adopt specific serial behaviour of SH-2007
-Message-Id: <1275991727-4730-5-git-send-email-mitake@dcl.info.waseda.ac.jp>
+Date: Fri, 11 Jun 2010 04:51:31 +0000
+Subject: [PATCH v3 3/4] Add Kconfig and Makefile for SH-2007 support
+Message-Id: <1276231892-22850-4-git-send-email-mitake@dcl.info.waseda.ac.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Very dirty and easy fix for sh-sci.
-Default sh-sci cannot activate serial of SH-2007,
-so this fix is required.
 
-Two points are changed,
- * At end of sci_set_termios(), the value SCSCR_INIT(port)
-   is written to SCSCR. And the value of it for Subtype 7780
-   is 0x3a. This containts CKE1=1.
-   But, when this value is written to serial device of SH-2007,
-   this will stop. So we have to drop the flag of CKE1.
+Modify Makefile and Kconfig for enabling and building SH-2007 related files.
 
- * Baud rate written to SCBRR should be caliculated with this expression:
-   ((clk+16*bps)/(32*bps)-1)
-   Original form of this expression is:
-   ((clk+16*bps)/(16*bps)-1)
-
-These two points are really mysterious.
-But I don't have the way to validate processor on SH-2007,
-so I've mocked the kernel provided by the manufacture of this board :(
-( http://ms-n.org/sh-linux/kernel/ )
-
-This patch fix sh-sci.h in dirty way,
-but fortunately, this has no harm for other board and processors supports.
-If you permit to apply this patch,
-I'd like to find cause of this behaviour and revert this change someday.
-
-v2
- * It uses generic value calculation of SCBRR.
-
+Cc: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
 Cc: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
 ---
- drivers/serial/sh-sci.h |   17 +++++++++++++----
- 1 files changed, 13 insertions(+), 4 deletions(-)
+ arch/sh/Makefile       |    1 +
+ arch/sh/boards/Kconfig |   11 +++++++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
-index f70c49f..dfaeeaf 100644
---- a/drivers/serial/sh-sci.h
-+++ b/drivers/serial/sh-sci.h
-@@ -140,7 +140,15 @@
- # define SCSPTR0	0xffe00024	/* 16 bit SCIF */
- # define SCSPTR1	0xffe10024	/* 16 bit SCIF */
- # define SCIF_ORER	0x0001		/* Overrun error bit */
--# define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-+
-+#if defined(CONFIG_SH_SH2007)
-+/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=0 */
-+# define SCSCR_INIT(port)	0x38
-+#else
-+/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=1 */
-+# define SCSCR_INIT(port)	0x3a
-+#endif
-+
- #elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7786)
- # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
-@@ -599,9 +607,10 @@ static inline int sci_rxd_in(struct uart_port *port)
-  * -- Mitch Davis - 15 Jul 2000
-  */
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 307b3a4..567fcd0 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -151,6 +151,7 @@ machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
+ machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
+ machdir-$(CONFIG_SH_CAYMAN)			+= mach-cayman
+ machdir-$(CONFIG_SH_RSK)			+= mach-rsk
++machdir-$(CONFIG_SH_SH2007)			+= mach-sh2007
  
--#if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7786)
-+#if (defined(CONFIG_CPU_SUBTYPE_SH7780) || \
-+    defined(CONFIG_CPU_SUBTYPE_SH7785)  || \
-+    defined(CONFIG_CPU_SUBTYPE_SH7786))	   \
-+    && !defined(CONFIG_SH_SH2007)
- #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
- #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
-       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+ ifneq ($(machdir-y),)
+ core-y	+= $(addprefix arch/sh/boards/, \
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index 938e87d..f76c81f 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -306,6 +306,17 @@ config SH_POLARIS
+ 	help
+ 	  Select if configuring for an SMSC Polaris development board
+ 
++config SH_SH2007
++	bool "SH-2007 board"
++	select NO_IOPORT
++	depends on CPU_SUBTYPE_SH7780
++	help
++	  SH-2007 is a single-board computer based around SH7780 chip
++	  intended for embedded applications.
++	  It has an Ethernet interface (SMC9118), direct connected
++	  Compact Flash socket, two serial ports and PC-104 bus.
++	  More information at <http://sh2000.sh-linux.org>.
++
+ endmenu
+ 
+ source "arch/sh/boards/mach-r2d/Kconfig"
 -- 
 1.6.5.2
 
