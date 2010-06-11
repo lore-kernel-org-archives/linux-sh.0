@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 11 Jun 2010 04:38:33 +0000
+Date: Fri, 11 Jun 2010 05:02:26 +0000
 Subject: Re: [PATCH v2] sh_tmu: compute mult and shift before registration
-Message-Id: <AANLkTimDPtdNGdip28i1Yv7vdrUcT0020Z-hmpw9EpFH@mail.gmail.com>
+Message-Id: <AANLkTinWaSNOjX65MSCg5_0IS-KLbHwzxgX446shFBlU@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1275342348-22499-1-git-send-email-aurelien@aurel32.net>
 In-Reply-To: <1275342348-22499-1-git-send-email-aurelien@aurel32.net>
@@ -10,48 +10,83 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 11, 2010 at 4:27 AM, john stultz <johnstul@us.ibm.com> wrote:
-> On Thu, 2010-06-10 at 15:20 +0900, Magnus Damm wrote:
->> On Tue, Jun 8, 2010 at 4:28 AM, john stultz <johnstul@us.ibm.com> wrote:
->> > I recently ran into this issue when looking to convert clocksources from
->> > using clocksource_register() to clocksource_register_hz()/khz().
+On Fri, Jun 11, 2010 at 12:03 PM, john stultz <johnstul@us.ibm.com> wrote:
+> On Thu, 2010-06-10 at 12:27 -0700, john stultz wrote:
+>> On Thu, 2010-06-10 at 15:20 +0900, Magnus Damm wrote:
+>> > On Tue, Jun 8, 2010 at 4:28 AM, john stultz <johnstul@us.ibm.com> wrote:
+>> > > Does that sound reasonable?
 >> >
->> > The point of those patches are to try to remove the mult/shift
->> > calculation from the clocksource driver code, keeping that logic in the
->> > timekeeping core (which will allow for better optimization of other
->> > values like max_idle_ns).
+>> > I think so. So like I mentioned earlier, we don't know what frequency
+>> > range is suitable at clock source registration time. So from that
+>> > point of view I can't really see why we should keep the
+>> > clocksource_register_hz()/khz() functions. Updating the frequency in
+>> > the ->enable() callback and using clocksource_register() sounds simple
+>> > and straightforward to me. Ideally I'd like to avoid setting up the
+>> > mult and shift values before registration and instead put all logic in
+>> > the ->enable() callback.
+>> >
+>> > The ->enable() callback is optional so we will have to deal with
+>> > clocksources without ->enable() callbacks. This should be trivial -
+>> > such drivers can manually setup shift/mult or call
+>> > __clocksource_update_freq() before clocksource_register().
 >>
->> This common code for mult/shift calculation is very useful I think.
->>
->> That aside, I have to admit that I don't fully understand which of the
->> _hz()/khz() I'm supposed to use. Say that I have a hardware counter
->> that is in the MHz range, which should I use?
->
-> You probably want use the _hz interface if possible. The khz() interface
-> is for very high frequency counters (like the TSC) where its possible
-> the hz value wouldn't fit in a u32.
+>> Why not instead register the tmu clocksource with a dummy freq initially
+>> and then update it in ->enable()?
 
-Ah, I see. Thanks for the explanation.
+Sure, that's doable, no problem. If that's what you prefer then that's fine.
 
->> And for a 4Khz counter?
->
-> Again, _hz is probably ideal for precision, but there's no issue using
-> the khz value if that's what the platform provides you with (ie: you
-> won't get any better precision by multiplying it up).
->
->
->> Isn't it possible to just have a single __clocksource_update_freq()
->> function that checks the range and adjusts the scale? Perhaps there is
->> something that I'm not getting...
+I do however think that the interface would be cleaner without an
+initial dummy frequency.
 
-I don't understand why you need two separate functions for the
-scaling? Perhaps for readability or making the code more determinstic
-somehow?
+Is there anything that actually needs the frequency at registration time?
 
-Sorry if this has been discussed before, but to me it seems easier to
-just pass the frequency as an u64 and calculate the khz/hz scaling
-from that. Although I have to admit that I'm somewhat lost in all the
-time calculations, so perhaps my suggestion is impossible...
+I may be wrong, but wouldn't the same thing be accomplished by keeping
+clocksource_register() as-is, use
+__clocksource_updatefreq_hz() before clocksource_register() for
+drivers that doesn't use ->enable(), and on top of all this extend
+timekeeper_setup_internals() to include the cs->max_idle_ns
+calculation?
+
+>> I'd just prefer to not complicate the majority of clocksources just to
+>> handle the few (2) cases where we don't know the frequency at
+>> registration time.
+
+Sure, I can understand that.
+
+> So I took a rough shot at this. Would you mind checking it out and
+> seeing if its sufficient?
+>
+> Its my first two patches from the conversion patchset here:
+> http://sr71.net/~jstultz/timekeeping/clocksourceregister_hz/patches/
+
+Thanks for your work on this!
+
+> Specifically:
+> http://sr71.net/~jstultz/timekeeping/clocksourceregister_hz/patches/0001-Add-__clocksource_updatefreq_hz-khz-methods.patch
+
+The patch above looks good, but if you decide to update then you may
+want to spellcheck the comment in the last hunk:
+s/clcoksource/clocksource/g
+
+> http://sr71.net/~jstultz/timekeeping/clocksourceregister_hz/patches/0002-Convert-sh_tmu-sh_cmt-clocksources-to-clocksource_re.patch
+>
+> Let me know if there's anything I'm missing.
+
+For the CMT driver I think it's best to begin with reverting the
+commit f4d7c3565c1692c54d9152b52090fe73f0029e37 and then add your
+changes on top of that.
+
+From my point of view we really don't want to have the unused
+clk_enable((), clk_get_rate(), clk_disable() hackery left in the
+drivers.
+
+Perhaps the same thing should be done for the TMU as well, any ideas Paul?
+
+I agree with adding a __clocksource_updatefreq_hz(cs, p->rate) line to
+sh_cmt_clocksource_enable(), but the p->rate value should already be
+up to date so I don't think you need to add any clk_get_rate() call.
+
+Want me to hack up a replacement patch?
 
 Thanks,
 
