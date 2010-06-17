@@ -1,33 +1,39 @@
-From: "ATM PAYOUT ALERT 2010" <info@atm.com>
-Date: Wed, 09 Jun 2010 00:37:09 +0000
-Subject: *****IMMEDIATE PAYMENT NOTIFICATION
-Message-Id: <201006082346.o58NkhSQ008272@mail.nstek.com>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Thu, 17 Jun 2010 10:32:56 +0000
+Subject: Userspace command line gcc options troubles
+Message-Id: <201006171232.56669.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-wireless@vger.kernel.org, linux-sh@vger.kernel.org, linux-rdma@vger.kernel.org, linux-pci@vger.kernel.org, linux-parisc@vger.kernel.org, linux-omap@vger.kernel.org, linux-media@vger.kernel.org, linux-kernel-owner@vger.kernel.org, linux-kernel@vger.kernel.org, linux-kbuild@vger.kernel.org, linux-input@vger.kernel.org, linux-ide@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-acpi@vger.kernel.org, lily@unitedenvirotech.com, linville@tuxdriver.com, linda.vieira@so.mnscu.edu, linux-driver@qlogic.com, linuxppc-dev@ozlabs.org, linda_alick@nps.gov, lisa.battles@mirant.com, linda.turner@microchip.com, linux-cifs-client@lists.samba.org, linux-mtd@lists.infradead.org, linux-geode@lists.infradead.org, linux-arm-kernel@lists.infradead.org, lilalola@laposte.net, lisa.f.vidonic1@jsc.nasa.gov, linell.l.rush@intel.com, lilymunster@hotmail.com, lindap@harmsco.com, lilian.aceves@gmail.com, limburg@globalxs.nl, linckens@geo.unibe.ch, lindsay.bulso@genzyme.com, linda.yenni@equivine.com, linnrandom@earthllink.net, lightrw@dow.com, linda.yung@compaq.com20larry.lo, linda.kupstis@cityofboston.gov, linda_zitzner@chemtrace.com, likelsey@charter.net, lindstadtgl@cdm.com, lindemande@cdm.com, lillsk9@ccrtc.com, linda.papenfus.b@bayer.com, lightng62@att.net, lindalewis9@aol.com
+To: linux-sh@vger.kernel.org
 
-OUR REF:FRN/ATM/882
-YOUR REF:CLAIMS/ATM/882
+Hi all
+when I try to build init.c application I get the following error:
+sh-uclinux-gcc -O2 -mfdpic -m2a -mb init.c
+/home/fgiovagnini/sh7203/sh7203-
+uclinux-4.4-206/build/target/bin/../lib/gcc/sh-uclinux/4.4.1/../../../../sh-
+uclinux/bin/as: unrecognized option '--fdpic--isa=sh2a'
+make[1]: *** [init.o] Errore 1
+
+I'm using as suggsted:
+sh-uclinux-gcc (Sourcery G++ Lite 4.4-206) 4.4.1
+Copyright (C) 2009 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 
-This is to officially inform you that(ATM Card Number;(5179123456789120) has
-been accredited in your favor.Your Personal Identification  Number is 882.
-The ATM Card Value is $6.8 MILLION USD.You are advice to contact
-Mr. Jeffery Simpson via Email(atmpayout_dept2010@yahoo.com.hk) with the following
-information's; you can call on this cell# +2348060770530
+How could I solve?
 
-Full Name:
-Delivery Address:
-Phone Number:
-Country:
-OCCUPATION:
-SEX:
-Age:
 
-Please Note that you are to pay the sum of $205 USD for the delivery of your
-ATM Card by Firstflight Courier Express.
+Thanks 
+-- 
+Fabio Giovagnini
 
-Best Regards,
-Senator David Mark.
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Cell. +39.335.83.50.919
+www.aurion-tech.com
