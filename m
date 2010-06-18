@@ -1,40 +1,46 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 21 Jun 2010 04:44:55 +0000
-Subject: Re: [uClinux-dev] Userspace command line gcc options troubles
-Message-Id: <20100621044455.GD29997@linux-sh.org>
+From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+Date: Fri, 18 Jun 2010 11:01:11 +0000
+Subject: [PATCH v4 0/4] Add support for new board: SH-2007
+Message-Id: <1276858875-10548-1-git-send-email-mitake@dcl.info.waseda.ac.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100617210346.GA422@minime.bse>
-In-Reply-To: <20100617210346.GA422@minime.bse>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-(Adding superh-gnu-discuss to the Cc..)
+This patch series add support of SH-2007.
+I brought these changes from the out-of-tree kernel
+provided by the manufacture of this board, ITO Inc.
+Website of company: http://www.itonet.co.jp/
+The URL of kernel: http://ms-n.org/sh-linux/kernel/
 
-On Fri, Jun 18, 2010 at 09:20:13AM +0200, Fabio Giovagnini wrote:
-> This is the result (i suppose):
-> *asm:
-> %(subtarget_asm_endian_spec) %{mrelax:-relax 
-> %(subtarget_asm_relax_spec)}%(subtarget_asm_isa_spec) %(subtarget_asm_spec) 
-> %{m2a:--isa=sh2a} %{m2a-single:--isa=sh2a} %{m2a-single-only:--isa=sh2a} 
-> %{m2a-nofpu:--isa=sh2a-nofpu} %{m5-compact*:--isa=SHcompact} %{m5-32media*:--
-> isa=SHmedia --abi2} %{m5-64media*:--isa=SHmedia --abid} %{m4al:-dsp} 
-> %{mcut2-workaround:-cut2-workaround}
-> 
-> Nowhere I can see :
-> --fdpic--isa=sh2a
-> 
-> I think it should be 
-> --fdpic --isa=sh2a
-> at most (with a blank space in between)
-> 
-> In data gioved? 17 giugno 2010 23:03:47, Daniel Gl?ckner ha scritto:
-> : > On Thu, Jun 17, 2010 at 12:32:56PM +0200, Fabio Giovagnini wrote:
-> > > uclinux/bin/as: unrecognized option '--fdpic--isa=sh2a'
-> > >
-> > > How could I solve?
-> > 
-> > cd /home/fgiovagnini/sh7203/sh7203-uclinux-4.4-206/build/target/
-> > ./bin/sh-uclinux-gcc -dumpspecs > lib/gcc/sh-uclinux/4.4.1/specs
-> > sed -i 's/subtarget_asm_spec)/& /' lib/gcc/sh-uclinux/4.4.1/specs
+Adding support of new board is trivial,
+but as I'll describe, 4/4 of this series contains
+some dirty and mysterious fixes.
+
+v3: I fixed this series according to advice by
+    Nobuhiro-san and Magnus. Thanks!
+
+v4: IDE support is disabled as temporary solution.
+    Testers are welcome!
+
+Hitoshi Mitake (4):
+  Add the directory mach-sh2007 for SH-2007 board support
+  Adds default configuration for SH-2007. This default configuration is
+    nfs boot oriented.
+  Modify Makefile and Kconfig for enabling and building SH-2007 related
+    files.
+  Very dirty and easy fix for sh-sci.
+
+ arch/sh/Makefile                    |    1 +
+ arch/sh/boards/Kconfig              |   11 +
+ arch/sh/boards/mach-sh2007/Makefile |    1 +
+ arch/sh/boards/mach-sh2007/setup.c  |  317 ++++++++
+ arch/sh/configs/sh2007_defconfig    | 1357 +++++++++++++++++++++++++++++++++++
+ arch/sh/tools/mach-types            |    1 +
+ drivers/serial/sh-sci.h             |   17 +-
+ 7 files changed, 1701 insertions(+), 4 deletions(-)
+ create mode 100644 arch/sh/boards/mach-sh2007/Makefile
+ create mode 100644 arch/sh/boards/mach-sh2007/setup.c
+ create mode 100644 arch/sh/configs/sh2007_defconfig
+
