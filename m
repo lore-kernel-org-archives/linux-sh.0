@@ -1,41 +1,83 @@
 From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Fri, 11 Jun 2010 04:51:28 +0000
-Subject: [PATCH v3 0/4] Add support for new board: SH-2007
-Message-Id: <1276231892-22850-1-git-send-email-mitake@dcl.info.waseda.ac.jp>
+Date: Fri, 18 Jun 2010 11:01:15 +0000
+Subject: [PATCH v4 4/4] Very dirty and easy fix for sh-sci.
+Message-Id: <1276858875-10548-5-git-send-email-mitake@dcl.info.waseda.ac.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch series add support of SH-2007.
-I brought these changes from the out-of-tree kernel
-provided by the manufacture of this board, ITO Inc.
-Website of company: http://www.itonet.co.jp/
-The URL of kernel: http://ms-n.org/sh-linux/kernel/
+Default sh-sci cannot activate serial of SH-2007,
+so this fix is required.
 
-Adding support of new board is trivial,
-but as I'll describe, 4/4 of this series contains
-some dirty and mysterious fixes.
+Two points are changed,
+ * At end of sci_set_termios(), the value SCSCR_INIT(port)
+   is written to SCSCR. And the value of it for Subtype 7780
+   is 0x3a. This containts CKE1=1.
+   But, when this value is written to serial device of SH-2007,
+   this will stop. So we have to drop the flag of CKE1.
 
-v3: I fixed this series according to advice by
-    Nobuhiro-san and Magnus. Thanks!
+ * Baud rate written to SCBRR should be caliculated with this expression:
+   ((clk+16*bps)/(32*bps)-1)
+   Original form of this expression is:
+   ((clk+16*bps)/(16*bps)-1)
 
-Hitoshi Mitake (4):
-  Add the directory mach-sh2007 for SH-2007 board support
-  Add sh2007_defconfig for default configuration of SH-2007
-  Add Kconfig and Makefile for SH-2007 support
-  Modify sh-sci.h to adopt specific serial behaviour of SH-2007
+These two points are really mysterious.
+But I don't have the way to validate processor on SH-2007,
+so I've mocked the kernel provided by the manufacture of this board :(
+( http://ms-n.org/sh-linux/kernel/ )
 
- arch/sh/Makefile                    |    1 +
- arch/sh/boards/Kconfig              |   11 +
- arch/sh/boards/mach-sh2007/Makefile |    1 +
- arch/sh/boards/mach-sh2007/setup.c  |  302 +++++++
- arch/sh/configs/sh2007_defconfig    | 1482 +++++++++++++++++++++++++++++++++++
- arch/sh/tools/mach-types            |    1 +
- drivers/serial/sh-sci.h             |   17 +-
- 7 files changed, 1811 insertions(+), 4 deletions(-)
- create mode 100644 arch/sh/boards/mach-sh2007/Makefile
- create mode 100644 arch/sh/boards/mach-sh2007/setup.c
- create mode 100644 arch/sh/configs/sh2007_defconfig
+This patch fix sh-sci.h in dirty way,
+but fortunately, this has no harm for other board and processors supports.
+If you permit to apply this patch,
+I'd like to find cause of this behaviour and revert this change someday.
+
+v2
+ * It uses generic value calculation of SCBRR.
+
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Signed-off-by: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+---
+ drivers/serial/sh-sci.h |   17 +++++++++++++----
+ 1 files changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/serial/sh-sci.h b/drivers/serial/sh-sci.h
+index f70c49f..dfaeeaf 100644
+--- a/drivers/serial/sh-sci.h
++++ b/drivers/serial/sh-sci.h
+@@ -140,7 +140,15 @@
+ # define SCSPTR0	0xffe00024	/* 16 bit SCIF */
+ # define SCSPTR1	0xffe10024	/* 16 bit SCIF */
+ # define SCIF_ORER	0x0001		/* Overrun error bit */
+-# define SCSCR_INIT(port)	0x3a	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
++
++#if defined(CONFIG_SH_SH2007)
++/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=0 */
++# define SCSCR_INIT(port)	0x38
++#else
++/* TIE=0,RIE=0,TE=1,RE=1,REIE=1,CKE1=1 */
++# define SCSCR_INIT(port)	0x3a
++#endif
++
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7786)
+ # define SCSPTR0	0xffea0024	/* 16 bit SCIF */
+@@ -599,9 +607,10 @@ static inline int sci_rxd_in(struct uart_port *port)
+  * -- Mitch Davis - 15 Jul 2000
+  */
+ 
+-#if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7786)
++#if (defined(CONFIG_CPU_SUBTYPE_SH7780) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7785)  || \
++    defined(CONFIG_CPU_SUBTYPE_SH7786))	   \
++    && !defined(CONFIG_SH_SH2007)
+ #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(16*bps)-1)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+       defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+-- 
+1.6.5.2
 
