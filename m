@@ -1,46 +1,35 @@
-From: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-Date: Fri, 18 Jun 2010 11:01:11 +0000
-Subject: [PATCH v4 0/4] Add support for new board: SH-2007
-Message-Id: <1276858875-10548-1-git-send-email-mitake@dcl.info.waseda.ac.jp>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 21 Jun 2010 06:22:41 +0000
+Subject: Re: [PATCH v4 0/4] Add support for new board: SH-2007
+Message-Id: <20100621062241.GF29997@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1276858875-10548-1-git-send-email-mitake@dcl.info.waseda.ac.jp>
+In-Reply-To: <1276858875-10548-1-git-send-email-mitake@dcl.info.waseda.ac.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch series add support of SH-2007.
-I brought these changes from the out-of-tree kernel
-provided by the manufacture of this board, ITO Inc.
-Website of company: http://www.itonet.co.jp/
-The URL of kernel: http://ms-n.org/sh-linux/kernel/
+Mitake-san,
 
-Adding support of new board is trivial,
-but as I'll describe, 4/4 of this series contains
-some dirty and mysterious fixes.
+Sorry for the delay, I've been a bit busy with highmem debugging!
 
-v3: I fixed this series according to advice by
-    Nobuhiro-san and Magnus. Thanks!
+On Fri, Jun 18, 2010 at 08:01:11PM +0900, Hitoshi Mitake wrote:
+> This patch series add support of SH-2007.
+> I brought these changes from the out-of-tree kernel
+> provided by the manufacture of this board, ITO Inc.
+> Website of company: http://www.itonet.co.jp/
+> The URL of kernel: http://ms-n.org/sh-linux/kernel/
+> 
 
-v4: IDE support is disabled as temporary solution.
-    Testers are welcome!
+I've rolled your patches together in to one larger patch and then did
+some more cosmetic cleanup on it. I've compile tested it and pushed it
+out, feel free to send additional updates as needed.
 
-Hitoshi Mitake (4):
-  Add the directory mach-sh2007 for SH-2007 board support
-  Adds default configuration for SH-2007. This default configuration is
-    nfs boot oriented.
-  Modify Makefile and Kconfig for enabling and building SH-2007 related
-    files.
-  Very dirty and easy fix for sh-sci.
+I removed the stub IDE support for now, but you can of course trivially
+patch this back in for testing and we can of course add it
+unconditionally once it's been verified.
 
- arch/sh/Makefile                    |    1 +
- arch/sh/boards/Kconfig              |   11 +
- arch/sh/boards/mach-sh2007/Makefile |    1 +
- arch/sh/boards/mach-sh2007/setup.c  |  317 ++++++++
- arch/sh/configs/sh2007_defconfig    | 1357 +++++++++++++++++++++++++++++++++++
- arch/sh/tools/mach-types            |    1 +
- drivers/serial/sh-sci.h             |   17 +-
- 7 files changed, 1701 insertions(+), 4 deletions(-)
- create mode 100644 arch/sh/boards/mach-sh2007/Makefile
- create mode 100644 arch/sh/boards/mach-sh2007/setup.c
- create mode 100644 arch/sh/configs/sh2007_defconfig
+You can find the final commit here:
 
+	http://git.kernel.org/?p=linux/kernel/git/lethal/sh-2.6.git;a=commitdiff;h:598264436e94c410c413088a7873fcad33616c
