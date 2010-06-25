@@ -1,53 +1,37 @@
-From: Anton Vorontsov <cbouatmailru@gmail.com>
-Date: Mon, 14 Jun 2010 15:41:51 +0000
-Subject: Re: [PATCH] power: Rename get_current to fix build failure / name
-Message-Id: <20100614154151.GA20343@oksana.dev.rtsoft.ru>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 Jun 2010 07:20:29 +0000
+Subject: [PATCH] sh: move a debug printk() to a more meaningful location in
+Message-Id: <Pine.LNX.4.64.1006250919410.1223@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201005130154.58459.PeterHuewe@gmx.de>
- <4BEB8DC0.4060808@compulab.co.il>
- <201006141712.22248.PeterHuewe@gmx.de>
-In-Reply-To: <201006141712.22248.PeterHuewe@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Huewe <PeterHuewe@gmx.de>
-Cc: Mike Rapoport <mike@compulab.co.il>, Wolfram Sang <w.sang@pengutronix.de>, Tejun Heo <tj@kernel.org>, Ryan Mallon <ryan@bluewatersys.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, sfr@canb.auug.org.au, Linus Torvalds <torvalds@linux-foundation.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Jun 14, 2010 at 05:12:22PM +0200, Peter Huewe wrote:
-> Am Donnerstag 13 Mai 2010 07:27:28 schrieb Mike Rapoport:
-> > Peter Huewe wrote:
-> > > From: Peter Huewe <peterhuewe@gmx.de>
-> > >
-> > > This patch changes the name of get_current function pointer to
-> > > get_battery_current to resolve a name conflict with the get_current
-> > > macro defined in current.h.
-> > >
-> > > This conflict resulted in a build-failure[1] for the sh4 arch
-> > > allyesconfig which is resolved by this patch.
-> > >
-> > > To be consistent the other function pointers (_voltage,_capacity) were
-> > > renamed too.
-> > >
-> > > Signed-off-by: Peter Huewe <peterhuewe@gmx.de> 
-> > Acked-by: Ryan Mallon <ryan@bluewatersys.com>
-> > Acked-by: Mike Rapoport <mike@compulab.co.il>
-> 
-> Unfortunately this build-failure still exists, in Linux-next and hit Linus' 
-> Tree :/
-> 
-> References:
-> http://kisskb.ellerman.id.au/kisskb/buildresult/2709436/
-> http://kisskb.ellerman.id.au/kisskb/buildresult/2687686/
+To actually output the _new_ clock rate it first has to be set.
 
-Thanks for the patch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/sh/clk.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-As this is not a 2.6.35 regression, and only affects just
-a few embedded platforms, I think this can wait for the next
-merge window.
-
-So, applied to battery-2.6.git (for -next).
-
+diff --git a/drivers/sh/clk.c b/drivers/sh/clk.c
+index 691f829..cede14e 100644
+--- a/drivers/sh/clk.c
++++ b/drivers/sh/clk.c
+@@ -341,10 +341,10 @@ int clk_set_parent(struct clk *clk, struct clk *parent)
+ 			ret = clk_reparent(clk, parent);
+ 
+ 		if (ret = 0) {
+-			pr_debug("clock: set parent of %s to %s (new rate %ld)\n",
+-				 clk->name, clk->parent->name, clk->rate);
+ 			if (clk->ops->recalc)
+ 				clk->rate = clk->ops->recalc(clk);
++			pr_debug("clock: set parent of %s to %s (new rate %ld)\n",
++				 clk->name, clk->parent->name, clk->rate);
+ 			propagate_rate(clk);
+ 		}
+ 	} else
 -- 
-Anton Vorontsov
-email: cbouatmailru@gmail.com
-irc://irc.freenode.net/bd2
+1.6.2.4
+
