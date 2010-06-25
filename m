@@ -1,33 +1,24 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 Jun 2010 07:22:31 +0000
-Subject: [PATCH] ARM: sh-mobile: fix EXTAL1 frequency on sh7372
-Message-Id: <Pine.LNX.4.64.1006250921420.1223@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 25 Jun 2010 08:32:54 +0000
+Subject: Re: [PATCH] ARM: sh-mobile: fix EXTAL1 frequency on sh7372
+Message-Id: <AANLkTik_BBXa7V_gm69EI9VgrxPhkw8fK3SbkYula7Il@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1006250921420.1223@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1006250921420.1223@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-EXTAL1 is clocked at 26.0MHz
+On Fri, Jun 25, 2010 at 4:22 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> EXTAL1 is clocked at 26.0MHz
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/arm/mach-shmobile/clock-sh7372.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Yes, it's supposed to be 26.0 MHz. Thank you!
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 82d3535..26521a7 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -60,7 +60,7 @@ static struct clk r_clk = {
-  * If needed, reset this with clk_set_rate() from the platform code.
-  */
- struct clk sh7372_extal1_clk = {
--	.rate		= 26666666,
-+	.rate		= 26000000,
- };
- 
- /*
--- 
-1.6.2.4
+Acked-by: Magnus Damm <damm@opensource.se>
 
+/ magnus
