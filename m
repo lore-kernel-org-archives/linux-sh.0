@@ -1,55 +1,56 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Tue, 15 Jun 2010 01:15:41 +0000
-Subject: [PATCH] Enable UIO block clocks at system initialization on SH7372
-Message-Id: <1276564541-24990-1-git-send-email-dhobsong@igel.co.jp>
+From: Conrad Parker <conrad@metadecks.org>
+Date: Mon, 28 Jun 2010 08:41:55 +0000
+Subject: UIOMux release 1.2.0
+Message-Id: <AANLkTiltmS7JSk-7DCaDYl98SWpYQgiSa9VGkRh1Msp9@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Temporary workaround to enable the clocks for the UIO blocks (VEU,
-JPU, VPU, SPU) until the runtime PM is ready. In order to have UIO support
-for these subsystems, the following patches (already available on the
-linux-sh mailing list) should be applied:
+UIOMux Release 1.2.0
+==========
 
-SH-Mobile ARM UIO Multimedia Support
-ARM: CONFG_FORCE_MAX_ZONEORDER update of SH-Mobile ARM
+UIOMux is a conflict manager for system resources, including UIO devices.
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
----
- arch/arm/mach-shmobile/clock-sh7372.c |   14 +++++++-------
- 1 files changed, 7 insertions(+), 7 deletions(-)
+The source archive, and more information about the library are available from:
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 241caea..aae0875 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -255,17 +255,17 @@ enum { MSTP001,
- 
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP001] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR0, 1, 0), /* IIC2 */
--	[MSTP131] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 31, 0), /* VEU3 */
--	[MSTP130] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 30, 0), /* VEU2 */
--	[MSTP129] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 29, 0), /* VEU1 */
--	[MSTP128] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 28, 0), /* VEU0 */
-+	[MSTP131] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 31, CLK_ENABLE_ON_INIT), /* VEU3 */
-+	[MSTP130] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 30, CLK_ENABLE_ON_INIT), /* VEU2 */
-+	[MSTP129] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 29, CLK_ENABLE_ON_INIT), /* VEU1 */
-+	[MSTP128] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 28, CLK_ENABLE_ON_INIT), /* VEU0 */
- 	[MSTP118] = MSTP(&div6_clks[DIV4_B], SMSTPCR1, 18, 0), /* DSITX */
- 	[MSTP117] = MSTP(&div6_clks[DIV4_B], SMSTPCR1, 17, 0), /* LCDC1 */
- 	[MSTP116] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 16, 0), /* IIC0 */
--	[MSTP106] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 6, 0), /* JPU */
--	[MSTP101] = MSTP(&div4_clks[DIV4_M1], SMSTPCR1, 1, 0), /* VPU */
-+	[MSTP106] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 6, CLK_ENABLE_ON_INIT), /* JPU */
-+	[MSTP101] = MSTP(&div4_clks[DIV4_M1], SMSTPCR1, 1, CLK_ENABLE_ON_INIT), /* VPU */
- 	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, 0), /* LCDC0 */
--	[MSTP223] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR2, 23, 0), /* SPU2 */
-+	[MSTP223] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR2, 23, CLK_ENABLE_ON_INIT), /* SPU2 */
- 	[MSTP207] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 7, 0), /* SCIFA5 */
- 	[MSTP206] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 6, 0), /* SCIFB */
- 	[MSTP204] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 4, 0), /* SCIFA0 */
--- 
-1.6.1
+	http://oss.renesas.com/modules/document/?libuiomux
 
+This release of libuiomux targets Renesas SH-Mobile processors.
+
+New in this release
+-------------------
+
+This release improves support for applications which use multiple UIO device
+instances by allowing nested calls to uiomux_open(). This allows calls to
+uiomux_open()/uiomux_close() to be encapsulated in device handling libraries,
+rather than requiring management by the top-level application.
+
+Changes
+-------
+
+This release includes the following changes since version 1.1.0:
+
+Conrad Parker (2):
+      Allow multiple uiomux_open() calls
+      Release 1.2.0
+
+Phil Edworthy (2):
+      tests: Added nested open test
+      Remove generated files.
+
+ INSTALL                           |    1 -
+ TODO                              |    1 -
+ config.h.in                       |   87 -------------------------------------
+ configure.ac                      |    2 +-
+ release_notes/libuiomux-1.2.0.txt |   42 ++++++++++++++++++
+ src/libuiomux/uiomux.c            |    8 +++-
+ src/tests/Android.mk              |    9 ++++
+ src/tests/Makefile.am             |    5 ++-
+ src/tests/multiple-open.c         |   56 ++++++++++++++++++++++++
+ 9 files changed, 119 insertions(+), 92 deletions(-)
+ delete mode 120000 INSTALL
+ delete mode 100644 config.h.in
+ create mode 100644 release_notes/libuiomux-1.2.0.txt
+ create mode 100644 src/tests/multiple-open.c
