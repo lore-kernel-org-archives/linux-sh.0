@@ -1,52 +1,189 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Jun 2010 06:19:45 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: clock-sh7367: modify IrDA clock
-Message-Id: <AANLkTikS50T9SzqmqtHWVUrzCp0I2oP9xWXvqBntbVBq@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 30 Jun 2010 09:55:47 +0000
+Subject: [PATCH 6/6] ARM: mach-shmobile: add HDMI support to the ap4evb board
+Message-Id: <Pine.LNX.4.64.1006301152570.17489@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p8w6qulxd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p8w6qulxd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev@vger.kernel.org
 
-Hi Paul and Morimoto-san,
+Support HDMI in 720p mode.
 
-Thanks for your work on this!
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |  128 ++++++++++++++++++++++++++++++++-
+ 1 files changed, 127 insertions(+), 1 deletions(-)
 
-On Tue, Jun 8, 2010 at 2:53 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Tue, Jun 08, 2010 at 02:34:55PM +0900, Kuninori Morimoto wrote:
->> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->> ---
->> =A0arch/arm/mach-shmobile/clock-sh7367.c | =A0 =A02 +-
->> =A01 files changed, 1 insertions(+), 1 deletions(-)
->>
->> diff --git a/arch/arm/mach-shmobile/clock-sh7367.c b/arch/arm/mach-shmob=
-ile/clock-sh7367.c
->> index b6454c9..98024eb 100644
->> --- a/arch/arm/mach-shmobile/clock-sh7367.c
->> +++ b/arch/arm/mach-shmobile/clock-sh7367.c
->> @@ -322,7 +322,7 @@ static struct clk_lookup lookups[] =3D {
->> =A0 =A0 =A0 CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[SYMSTP000]), /* SCIFA4 =
-*/
->> =A0 =A0 =A0 CLKDEV_DEV_ID("sh_siu", &mstp_clks[SYMSTP231]), /* SIU */
->> =A0 =A0 =A0 CLKDEV_CON_ID("cmt1", &mstp_clks[SYMSTP229]), /* CMT10 */
->> - =A0 =A0 CLKDEV_DEV_ID("sh_irda", &mstp_clks[SYMSTP225]), /* IRDA */
->> + =A0 =A0 CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[SYMSTP225]), /* IRDA */
->> =A0 =A0 =A0 CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[SYMSTP223]), /* =
-IIC1 */
->> =A0 =A0 =A0 CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[SYMSTP222]), /* U=
-SBHS */
->> =A0 =A0 =A0 CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[SYMSTP222]), /* U=
-SBHS */
->
-> Can we just fix the sh_irda driver to do clock lookups properly?
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 5d24d4e..4f4d8c4 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -44,6 +44,7 @@
+ 
+ #include <sound/sh_fsi.h>
+ 
++#include <video/sh_mobile_hdmi.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mipi_dsi.h>
+ 
+@@ -529,6 +530,90 @@ static struct platform_device fsi_device = {
+ 	},
+ };
+ 
++static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
++	.clock_source = LCDC_CLK_EXTERNAL,
++	.ch[0] = {
++		.chan = LCDC_CHAN_MAINLCD,
++		.bpp = 16,
++		.interface_type = RGB24,
++		.clock_divider = 1,
++		.flags = LCDC_FLAGS_DWPOL | LCDC_FLAGS_HDMI,
++		.lcd_cfg = {
++			.name = "HDMI",
++			/* So far only 720p is supported */
++			.xres = 1280,
++			.yres = 720,
++			/*
++			 * If left and right margins are not multiples of 8,
++			 * LDHAJR will be adjusted accordingly by the LCDC
++			 * driver. Until we start using EDID, these values
++			 * might have to be adjusted for different monitors.
++			 */
++			.left_margin = 200,
++			.right_margin = 88,
++			.hsync_len = 48,
++			.upper_margin = 20,
++			.lower_margin = 5,
++			.vsync_len = 5,
++			.pixclock = 13468,
++			.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++		},
++	}
++};
++
++static struct resource lcdc1_resources[] = {
++	[0] = {
++		.name	= "LCDC1",
++		.start	= 0xfe944000,
++		.end	= 0xfe947fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x17a0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc1_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc1_resources),
++	.resource	= lcdc1_resources,
++	.id             = 1,
++	.dev	= {
++		.platform_data	= &sh_mobile_lcdc1_info,
++		.coherent_dma_mask = ~0,
++	},
++};
++
++static struct sh_mobile_hdmi_info hdmi_info = {
++	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
++	.lcd_dev = &lcdc1_device.dev,
++};
++
++static struct resource hdmi_resources[] = {
++	[0] = {
++		.name	= "HDMI",
++		.start	= 0xe6be0000,
++		.end	= 0xe6be00ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
++		.start	= evt2irq(0x17e0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device hdmi_device = {
++	.name		= "sh-mobile-hdmi",
++	.num_resources	= ARRAY_SIZE(hdmi_resources),
++	.resource	= hdmi_resources,
++	.id             = -1,
++	.dev	= {
++		.platform_data	= &hdmi_info,
++	},
++};
++
+ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+@@ -539,7 +624,9 @@ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&lcdc_device,
+ 	&mipidsi0_device,
+ 	&fsi_device,
+-	&sh_mmcif_device
++	&sh_mmcif_device,
++	&lcdc1_device,
++	&hdmi_device,
+ };
+ 
+ /* TouchScreen (Needs SW3 set to OFF) */
+@@ -645,8 +732,36 @@ static void __init gpio_no_direction(u32 addr)
+ #define GPIO_PORT9CR	0xE6051009
+ #define GPIO_PORT10CR	0xE605100A
+ 
++static int __init hdmi_init_pm_clock(void)
++{
++	struct clk *hdmi_pm = clk_get(NULL, "sh-hdmi.0"),
++		*lcdc1_pm = clk_get(&lcdc1_device.dev, "sh_mobile_lcdc_fb.1");
++	int ret;
++
++	if (!IS_ERR(hdmi_pm)) {
++		ret = clk_enable(hdmi_pm);
++		if (ret < 0)
++			pr_err("Cannot enable clock: %d\n", ret);
++	} else {
++		pr_err("Cannot get HDMI PM: %ld\n", PTR_ERR(hdmi_pm));
++	}
++
++	if (!IS_ERR(lcdc1_pm)) {
++		ret = clk_enable(lcdc1_pm);
++		if (ret < 0)
++			pr_err("Cannot enable clock: %d\n", ret);
++	} else {
++		pr_err("Cannot get LCDC1 PM: %ld\n", PTR_ERR(lcdc1_pm));
++	}
++
++	return 0;
++}
++
++device_initcall(hdmi_init_pm_clock);
++
+ static void __init ap4evb_init(void)
+ {
++	u32 srcr4;
+ 	struct clk *clk;
+ 
+ 	sh7372_pinmux_init();
+@@ -787,6 +902,17 @@ static void __init ap4evb_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	/* HDMI */
++	gpio_request(GPIO_FN_HDMI_HPD, NULL);
++	gpio_request(GPIO_FN_HDMI_CEC, NULL);
++
++	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
++#define SRCR4 0xe61580bc
++	srcr4 = __raw_readl(SRCR4);
++	__raw_writel(srcr4 | (1 << 13), SRCR4);
++	udelay(50);
++	__raw_writel(srcr4 & ~(1 << 13), SRCR4);
++
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
+ }
+ 
+-- 
+1.6.2.4
 
-Morimoto-san,
-
-In this case please just adjust the irda platform data for SH-Mobile
-ARM and pass a -1 as id instead of 0.
-
-Cheers,
-
-/ magnus
