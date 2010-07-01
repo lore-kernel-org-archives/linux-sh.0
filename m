@@ -1,59 +1,45 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Jul 2010 09:46:50 +0000
-Subject: Re: [PATCH 3/6] ARM: mach-shmobile: extend clock definitions on
-Message-Id: <AANLkTimntNMLkSaiq5EErvTpF8I3yeKYRE8guPt9iozX@mail.gmail.com>
+Date: Thu, 01 Jul 2010 09:30:37 +0000
+Subject: Re: [PATCH 0/6] fbdev: sh-mobile: HDMI support for SH-Mobile SoCs
+Message-Id: <AANLkTimFd21-FyUr-a7bJOAWqNiQSffD7KGNmxvu6qGD@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1006301137290.17489@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1006301137290.17489@axis700.grange>
+References: <Pine.LNX.4.64.1006301128310.17489@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1006301128310.17489@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-2010/7/6 Guennadi Liakhovetski <g.liakhovetski@gmx.de>:
-> On Mon, 5 Jul 2010, Magnus Damm wrote:
->> On Fri, Jul 2, 2010 at 9:33 PM, Guennadi Liakhovetski
->> <g.liakhovetski@gmx.de> wrote:
->> > On Fri, 2 Jul 2010, Magnus Damm wrote:
->> >> On Wed, Jun 30, 2010 at 6:55 PM, Guennadi Liakhovetski
->> >> <g.liakhovetski@gmx.de> wrote:
->> >> > Add definitions for DV_CLKI and HDMI clocks, extend support for PLL=
-C2 and some
->> >> > other clocks.
->> >> >
->> >> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi Guennadi,
 
->> >> > + =A0 =A0 =A0 /*
->> >> > + =A0 =A0 =A0 =A0* TODO: If the PLL is off, mult should be =3D 1, b=
-ut the clock must be
->> >> > + =A0 =A0 =A0 =A0* stopped during re-parenting, a better solution t=
-o this conflict
->> >> > + =A0 =A0 =A0 =A0* should be found.
->> >> > + =A0 =A0 =A0 =A0*/
->> >> > + =A0 =A0 =A0 mult =3D (((__raw_readl(PLLC2CR) >> 24) & 0x3f) + 1) =
-* 2;
->> >>
->> >> Yes, this needs to be fixed.
->> >
->> > You mean now or in the future? If now - I don't see a reasonable fix so
->> > far... Do you?
->>
->> I'm not sure which way is the best, but I think this patch breaks the
->> case when the PLL is turned off.
->
-> Ok, I can re-add the test and just add a line
->
-> =9A =9A =9A =9A =9A =9A =9A =9Aclk->rate =3D pllc2_recalc(clk);
->
-> in pllc2_enable()? This even makes sense in a way - if we know, that
-> after enabling the ->rate can get out of sync with the actual frequency...
-> I'll prepare an updated patch to make it easier to see.
+On Wed, Jun 30, 2010 at 6:55 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> This patch set adds a static HDMI support to SH-Mobile SoCs, specifically,
+> to sh7372 (ap4evb) in this version. "Static" means only 720p is supported
+> ATM. Also hotplug support is implemented without changing the framebuffer
+> geometry. Dynamic geometry reconfiguration is planned for a future patch.
 
-After looking into the pllc2 part of the data sheet it looks more like
-it should be exported like a clock that cannot be disabled. So
-basically, extend the frequency table to include one more frequency
-and handle the pll-off case as a 1:1 mapping.
+I just gave your patches a quick try, and they seem to work fine on my
+AP4EVB board.
 
-Cheers,
+The timings are not perfect for my 16:9 LG monitor, but this is much
+better than nothing. I suppose next step will be to parse the EDID and
+dynamically configure the LCDC. This version ties in the LCDC, but
+does nothing with sound, right?
+
+With this set of patches the HDMI port comes up as /dev/fb1. My AP4EVB
+board does not have any LCD panel mounted - both MIPI-DSI ports are
+empty and I have not bothered attaching the Ecovec WVGA panel. I've
+heard that's the case for most AP4EVB boards these days. So /dev/fb0
+ends up being unused.
+
+Not sure how to get console output to /dev/fb1 easily - in my quick
+test I ended up removing the LCDC0 platform devices to get the HDMI on
+/dev/fb0. Also, I'm very sad to discover that the penguin is gone. I
+wonder why, hint-hint. =)
+
+I'll look at the patches in more detail tomorrow.
+
+Thanks!
 
 / magnus
