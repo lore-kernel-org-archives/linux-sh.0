@@ -1,51 +1,21 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Jul 2010 04:31:40 +0000
-Subject: [PATCH v2 2/6] sh: fix the id of scif in setup-sh7757
-Message-Id: <4C32B1AC.3020607@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 02 Jul 2010 08:15:44 +0000
+Subject: Re: [PATCH 1/6] sh: add a list of parent configurations to struct clk
+Message-Id: <AANLkTilW2Tsq0IbYHO4ir_iFpU1n519OqN4MYTUVj3GL@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Because the value of CONFIG_SERIAL_SH_SCI_NR_UARTS is 3.
+On Wed, Jun 30, 2010 at 6:55 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Many system clocks can select a parent by writing a value to a specific field
+> in the configuration register. Add a list of parents and location and width of
+> the source selection field in the clock configuration register to struct clk to
+> assist in clk_set_parent() implementation.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index 444aca9..93b7aa4 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -26,7 +26,7 @@ static struct plat_sci_port scif2_platform_data = {
-
- static struct platform_device scif2_device = {
- 	.name		= "sh-sci",
--	.id		= 2,
-+	.id		= 0,
- 	.dev		= {
- 		.platform_data	= &scif2_platform_data,
- 	},
-@@ -41,7 +41,7 @@ static struct plat_sci_port scif3_platform_data = {
-
- static struct platform_device scif3_device = {
- 	.name		= "sh-sci",
--	.id		= 3,
-+	.id		= 1,
- 	.dev		= {
- 		.platform_data	= &scif3_platform_data,
- 	},
-@@ -56,7 +56,7 @@ static struct plat_sci_port scif4_platform_data = {
-
- static struct platform_device scif4_device = {
- 	.name		= "sh-sci",
--	.id		= 4,
-+	.id		= 2,
- 	.dev		= {
- 		.platform_data	= &scif4_platform_data,
- 	},
--- 
-1.7.1
-
+Looks good, thank you!
+Acked-by: Magnus Damm <damm@opensource.se>
