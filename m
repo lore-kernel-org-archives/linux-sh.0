@@ -1,25 +1,31 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 27 Jul 2010 08:30:31 +0000
-Subject: Re: [PATCH 5/6 v3] fbdev: sh-mobile: HDMI support for SH-Mobile SoCs
-Message-Id: <AANLkTimRvT4B3F-6oV5emPtoPNsMwWEmp2yMEQRr9w63@mail.gmail.com>
+From: Bill Traynor <wmat@naoi.ca>
+Date: Sun, 04 Jul 2010 18:11:15 +0000
+Subject: upgrading u-boot from linux for SH7785LCR board
+Message-Id: <4C30CEC3.1050003@naoi.ca>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1007211156030.16933@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1007211156030.16933@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jul 21, 2010 at 7:13 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Some SH-Mobile SoCs have an HDMI controller and a PHY, attached to one of their
-> LCDC interfaces. This patch adds a preliminary static support for such
-> controllers, this means, that only the 720p mode is handled ATM. Support for
-> more modes and a dynamic switching between them will be added by a follow up
-> patch.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+I've compiled and tested u-boot from git for the 7785lcr board.  I'd 
+like to write the u-boot.bin to flash but do not have a JTAG to be able 
+to recover if the write fails.
 
-[v3]
+Given the MTD layout:
+dev:    size   erasesize  name
+mtd0: 00080000 00040000 "loader"
+mtd1: 00080000 00040000 "bootenv"
+mtd2: 00400000 00040000 "kernel"
+mtd3: 03b00000 00040000 "data"
 
-Acked-by: Magnus Damm <damm@opensource.se>
+Is it reasonable to do the following:
+
+flash_erase /dev/mtd[0]
+dd if=/tmp/u-boot.bin of=/dev/mtd0 bs8k conv=sync
+
+I'd rather not brick the board I have, so if someone who does have the 
+capability to recover could test this method for me, it'd be appreciated.
+
+Thanks
+Bill
