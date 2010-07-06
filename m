@@ -1,113 +1,51 @@
-From: "Phil Edworthy" <Phil.Edworthy@renesas.com>
-Date: Wed, 28 Jul 2010 13:08:19 +0000
-Subject: [PATCH] sh: Add sh7724 BEU resources
-Message-Id: <AB12B32E73474741A2C5361C433A44DE01F9977A@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 06 Jul 2010 04:31:40 +0000
+Subject: [PATCH v2 2/6] sh: fix the id of scif in setup-sh7757
+Message-Id: <4C32B1AC.3020607@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   68
-++++++++++++++++++++++++++++++++
- 1 files changed, 68 insertions(+), 0 deletions(-)
+Because the value of CONFIG_SERIAL_SH_SCI_NR_UARTS is 3.
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index 79c556e..93b2e0b 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -524,6 +524,70 @@ static struct platform_device veu1_device = {
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 444aca9..93b7aa4 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -26,7 +26,7 @@ static struct plat_sci_port scif2_platform_data = {
+
+ static struct platform_device scif2_device = {
+ 	.name		= "sh-sci",
+-	.id		= 2,
++	.id		= 0,
+ 	.dev		= {
+ 		.platform_data	= &scif2_platform_data,
  	},
- };
- 
-+/* BEU0 */
-+static struct uio_info beu0_platform_data = {
-+	.name = "BEU0",
-+	.version = "0",
-+	.irq = evt2irq(0x8A0),
-+};
-+
-+static struct resource beu0_resources[] = {
-+	[0] = {
-+		.name	= "BEU0",
-+		.start	= 0xfe930000,
-+		.end	= 0xfe933400,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device beu0_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 6,
-+	.dev = {
-+		.platform_data	= &beu0_platform_data,
-+	},
-+	.resource	= beu0_resources,
-+	.num_resources	= ARRAY_SIZE(beu0_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_BEU0,
-+	},
-+};
-+
-+/* BEU1 */
-+static struct uio_info beu1_platform_data = {
-+	.name = "BEU1",
-+	.version = "0",
-+	.irq = evt2irq(0xA00),
-+};
-+
-+static struct resource beu1_resources[] = {
-+	[0] = {
-+		.name	= "BEU1",
-+		.start	= 0xfe940000,
-+		.end	= 0xfe943400,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* place holder for contiguous memory */
-+	},
-+};
-+
-+static struct platform_device beu1_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 7,
-+	.dev = {
-+		.platform_data	= &beu1_platform_data,
-+	},
-+	.resource	= beu1_resources,
-+	.num_resources	= ARRAY_SIZE(beu1_resources),
-+	.archdata = {
-+		.hwblk_id = HWBLK_BEU1,
-+	},
-+};
-+
- static struct sh_timer_config cmt_platform_data = {
- 	.channel_offset = 0x60,
- 	.timer_bit = 5,
-@@ -857,6 +921,8 @@ static struct platform_device *sh7724_devices[]
-__initdata = {
- 	&vpu_device,
- 	&veu0_device,
- 	&veu1_device,
-+	&beu0_device,
-+	&beu1_device,
- 	&jpu_device,
- 	&spu0_device,
- 	&spu1_device,
-@@ -867,6 +933,8 @@ static int __init sh7724_devices_setup(void)
- 	platform_resource_setup_memory(&vpu_device, "vpu", 2 << 20);
- 	platform_resource_setup_memory(&veu0_device, "veu0", 2 << 20);
- 	platform_resource_setup_memory(&veu1_device, "veu1", 2 << 20);
-+	platform_resource_setup_memory(&beu0_device, "beu0", 2 << 20);
-+	platform_resource_setup_memory(&beu1_device, "beu1", 2 << 20);
- 	platform_resource_setup_memory(&jpu_device,  "jpu",  2 << 20);
- 	platform_resource_setup_memory(&spu0_device, "spu0", 2 << 20);
- 	platform_resource_setup_memory(&spu1_device, "spu1", 2 << 20);
+@@ -41,7 +41,7 @@ static struct plat_sci_port scif3_platform_data = {
+
+ static struct platform_device scif3_device = {
+ 	.name		= "sh-sci",
+-	.id		= 3,
++	.id		= 1,
+ 	.dev		= {
+ 		.platform_data	= &scif3_platform_data,
+ 	},
+@@ -56,7 +56,7 @@ static struct plat_sci_port scif4_platform_data = {
+
+ static struct platform_device scif4_device = {
+ 	.name		= "sh-sci",
+-	.id		= 4,
++	.id		= 2,
+ 	.dev		= {
+ 		.platform_data	= &scif4_platform_data,
+ 	},
 -- 
 1.7.1
+
