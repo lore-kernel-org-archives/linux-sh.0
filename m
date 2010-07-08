@@ -1,45 +1,27 @@
-From: Micro Customer Service <info@msl.com>
-Date: Mon, 26 Jul 2010 02:03:06 +0000
-Subject: REFNO.:MS/75-A08055161/2010
-Message-Id: <20100726050306.vbq9xfsgg0c088o0@webmail.welho.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 08 Jul 2010 14:12:47 +0000
+Subject: [PATCH 0/6 v2] fbdev: sh-mobile: HDMI support for SH-Mobile SoCs
+Message-Id: <Pine.LNX.4.64.1007081417340.32100@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev@vger.kernel.org
 
+This patch set adds a static HDMI support to SH-Mobile SoCs, specifically, 
+to sh7372 (ap4evb) in this version. "Static" means only 720p is supported 
+ATM. Also hotplug support is implemented without changing the framebuffer 
+geometry. Dynamic geometry reconfiguration is planned for a future patch.
 
---=20
-MICROSOFT CUSTOMER SERVICE
-REFNO.:MS/75-A08055161/2010
-Batch: 044/05/ZY369
+This series now depends on an arm-shmobile runtime PM RFC patch from 
+Magnus with my incremental patch to it [1].
 
-Dear E-mail Owner,
+Thanks
+Guennadi
 
-You are a winner of the just conclude Microsoft Online Email Promo. You have
-therefore been approved to claim a total sum Five Hundred Thousand Great
-Britain Pounds (=A3500,000.00). Please this informations are required for
-verification.
+[1] http://thread.gmane.org/gmane.linux.ports.sh.devel/8457
 
-Name:...................
-Address:...............
-Country:...............
-Age:..................
-Gender:................
-Occupation:..............
-Phone and Fax:...............
-Winning E-mail Address:................
-
-Please contact:
-Owens Gibson
-Email: msoftclaims10@w.cn
-
-Telephone: +44-704-570-7201
-
-Crosswhite Anita
-Annoucer For Microsoft Online Email Promo
-
-
-
-
-
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
