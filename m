@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 14 Jul 2010 07:01:07 +0000
+Date: Wed, 14 Jul 2010 07:01:16 +0000
 Subject: [PATCH] ARM: mach-shmobile: ap4evb: Add ts_get_pendown_state for
-Message-Id: <w3pmxtufsy3.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3plj9efsxu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <uhbpex68f.wl%morimoto.kuninori@renesas.com>
 In-Reply-To: <uhbpex68f.wl%morimoto.kuninori@renesas.com>
