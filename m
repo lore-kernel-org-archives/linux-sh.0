@@ -1,84 +1,56 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Fri, 23 Jul 2010 07:35:17 +0000
-Subject: Re: [bisected] sh_cmt Division by zero in kernel.
-Message-Id: <4C494635.5060808@arndnet.de>
+From: Mikael Pettersson <mikpe@it.uu.se>
+Date: Mon, 19 Jul 2010 21:58:42 +0000
+Subject: [PATCH] math-emu: correct test for downshifting fraction in _FP_FROM_INT()
+Message-Id: <19524.51858.992299.119315@pilspetsen.it.uu.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4C46A102.6000805@arndnet.de>
-In-Reply-To: <4C46A102.6000805@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: sparclinux@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linuxppc-dev@ozlabs.org, linux-alpha@vger.kernel.org
 
-Hi Magnus,
+The kernel's math-emu code contains a macro _FP_FROM_INT() which is
+used to convert an integer to a raw normalized floating-point value.
+It does this basically in three steps:
 
-Am 22.07.2010 15:55, schrieb Magnus Damm:
-> Hi Arnd,
->
-> Thanks for reporting and bisecting.
->
-> On Wed, Jul 21, 2010 at 4:25 PM, Arnd Hannemann <arnd@arndnet.de> wrote:
->   
->> Hi,
->>
->> when booting recent genesis-2.6 head on an AP4EVB board a division by zero
->> in kernel is reported:
->> (Looks identical to: http://thread.gmane.org/gmane.linux.ports.sh.devel/8497)
->>
->>
->> [    0.000000]  sh_cmt.10: using deprecated clock lookup
->> [    0.000000]  sh_cmt.10: used for clock events
->> [    0.000000]  sh_cmt.10: used for periodic clock events
->> [    0.000000] Division by zero in kernel.
->> [    0.000000] Backtrace:
->> [    0.000000] [<c0028f08>] (dump_backtrace+0x0/0x110) from [<c0202ecc>] (dump_stack+0x18/0x1c)
->> [    0.000000]  r6:c0298978 r5:cf80e600 r4:cf801460 r3:c02a37ac
->> [    0.000000] [<c0202eb4>] (dump_stack+0x0/0x1c) from [<c002904c>] (__div0+0x18/0x20)
->> [    0.000000] [<c0029034>] (__div0+0x0/0x20) from [<c01177fc> ](Ldiv0+0x8/0x10)
->> [    0.000000] [<c0202444>] (sh_cmt_probe+0x0/0x4e4) from [<c0016f40> ](early_platform_driver_probe+0x1c8/0x264)
->> [    0.000000] [<c0016d78>] (early_platform_driver_probe+0x0/0x264) from[<c000cbb8>] (shmobile_late_time_init+0x24/0x2c)
->> [    0.000000] [<c000cb94>] (shmobile_late_time_init+0x0/0x2c) from[<c0008978>] (start_kernel+0x208/0x2a8)
->> [    0.000000] [<c0008770>] (start_kernel+0x0/0x2a8) from [<40008034>](0x40008034)
->> [    0.000000]  r5:c02bd1f0 r4:10c53c7d
->> [    0.000000]  sh_cmt.10: used as clock source
->>
->> and as a result time is running too fast.
->> For example sleep 60 on bash returns after a few seconds.
->>     
-> I suspect 5967d33ce8a030f01a716fc0b25fcb03744a5fda fixes the issue
-> with the time running too fast.
->   
-Not sure what you mean, in the tested tree with the crash above
-5967d33ce8a030f01a716fc0b25fcb03744a5fda was already included.
+1. Compute the exponent from the number of leading zero bits.
+2. Downshift large fractions to put the MSB in the right position
+   for normalized fractions.
+3. Upshift small fractions to put the MSB in the right position.
 
->   
->> Git bisect identified following commit as bad:
->>
->> commit f4d7c3565c1692c54d9152b52090fe73f0029e37
->> Author: Paul Mundt <lethal@linux-sh.org>
->> Date:   Wed Jun 2 17:10:44 2010 +0900
->>
->>    clocksource: sh_cmt: compute mult and shift before registration
->>       Based on the sh_tmu change in 66f49121ffa41a19c59965b31b046d8368fec3c7
->>    ("clocksource: sh_tmu: compute mult and shift before registration").
->>    The same issues impact the sh_cmt driver, so we take the same approach
->>    here.
->>       Cc: stable@kernel.org
->>    Signed-off-by: Paul Mundt <lethal@linux-sh.org>
->>     
-> If you revert that one (and perhaps
-> 5967d33ce8a030f01a716fc0b25fcb03744a5fda as well), does it fix your
-> crash?
->   
+There is an boundary error in step 2, causing a fraction with its
+MSB exactly one bit above the normalized MSB position to not be
+downshifted.  This results in a non-normalized raw float, which when
+packed becomes a massively inaccurate representation for that input.
 
-Yes, if I revert both 5967d33ce8a030f01a716fc0b25fcb03744a5fda
-and f4d7c3565c1692c54d9152b52090fe73f0029e37, this fixes the
-crash and time is running "normal".
+The impact of this depends on a number of arch-specific factors,
+but it is known to have broken emulation of FXTOD instructions
+on UltraSPARC III, which was originally reported as GCC bug 44631
+<http://gcc.gnu.org/bugzilla/show_bug.cgi?idD631>.
 
-I reverted both mainly because the revert of
-f4d7c3565c1692c54d9152b52090fe73f0029e37 would not go
-through cleanly on top of the current tree.
+Any arch which uses math-emu to emulate conversions from integers to
+same-size floats may be affected.
 
+The fix is simple: the exponent comparison used to determine if the
+fraction should be downshifted must be "<=" not "<".
 
-Best regards,
-Arnd
+I'm sending a kernel module to test this as a reply to this message.
+There are also SPARC user-space test cases in the GCC bug entry.
+
+Signed-off-by: Mikael Pettersson <mikpe@it.uu.se>
+---
+ include/math-emu/op-common.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff -rupN linux-2.6.35-rc5/include/math-emu/op-common.h linux-2.6.35-rc5.mathemu-FP_FROM_INT-fraction-downshift-condition/include/math-emu/op-common.h
+--- linux-2.6.35-rc5/include/math-emu/op-common.h	2010-05-17 19:51:32.000000000 +0200
++++ linux-2.6.35-rc5.mathemu-FP_FROM_INT-fraction-downshift-condition/include/math-emu/op-common.h	2010-07-18 22:33:46.000000000 +0200
+@@ -799,7 +799,7 @@ do {									\
+ 		X##_e -= (_FP_W_TYPE_SIZE - rsize);			\
+ 	X##_e = rsize - X##_e - 1;					\
+ 									\
+-	if (_FP_FRACBITS_##fs < rsize && _FP_WFRACBITS_##fs < X##_e)	\
++	if (_FP_FRACBITS_##fs < rsize && _FP_WFRACBITS_##fs <= X##_e)	\
+ 	  __FP_FRAC_SRS_1(ur_, (X##_e - _FP_WFRACBITS_##fs + 1), rsize);\
+ 	_FP_FRAC_DISASSEMBLE_##wc(X, ur_, rsize);			\
+ 	if ((_FP_WFRACBITS_##fs - X##_e - 1) > 0)			\
