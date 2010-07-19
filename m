@@ -1,21 +1,104 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Jul 2010 08:15:44 +0000
-Subject: Re: [PATCH 1/6] sh: add a list of parent configurations to struct clk
-Message-Id: <AANLkTilW2Tsq0IbYHO4ir_iFpU1n519OqN4MYTUVj3GL@mail.gmail.com>
+From: "Phil Edworthy" <Phil.Edworthy@renesas.com>
+Date: Mon, 19 Jul 2010 12:13:26 +0000
+Subject: libshveu 1.4.0 release
+Message-Id: <AB12B32E73474741A2C5361C433A44DE01F2D61F@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jun 30, 2010 at 6:55 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Many system clocks can select a parent by writing a value to a specific field
-> in the configuration register. Add a list of parents and location and width of
-> the source selection field in the clock configuration register to struct clk to
-> assist in clk_set_parent() implementation.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+libshveu Release 1.4.0
+===========
 
-Looks good, thank you!
-Acked-by: Magnus Damm <damm@opensource.se>
+libshveu: A library for controlling SH-Mobile VEU
+
+The source archive, and more information about the library are available
+from:
+
+	http://oss.renesas.com/modules/document/?libshveu
+
+New in this release
+-------------------
+
+This release significantly changes the API. Now shveu_open returns a handle
+to a scaler instance and this handle must be used in all subsequent libshveu
+calls.
+The API has also been changed to allow selection of a sub-image on the
+source
+and cropping of the destination image. Both of these are performed with the 
+shveu_crop function.
+
+The calculation for the scale size has been corrected and also modified to
+use
+the full range of bits.
+
+Additionally, a new tool has been added, shveu-display, that can take raw
+YUV
+or RGB files and display them on the screen. The tool allows you to zoom
+in/out
+and pan the image. 
+
+Changes
+-------
+
+This release includes the following changes since version 1.3.0:
+
+Conrad Parker (1):
+      build shveu-display conditionally, if have ncurses
+
+Phil Edworthy (28):
+      Use UIOmux for device memory
+      Add UIOmux locking to library
+      Use standard mechanism to check VEU hardware version
+      Move probe contents into shveu_open
+      Fix VEU use when still running
+      Fix scale reg settings.
+      Modified API to allow multiple VEU instances.
+      Changed API to use v4l2 formats
+      Use typed VEU handle rather than void ptr
+      Change fn names to protect against accidential use.
+      tools: New tool to show zoomed image on display.
+      Add crop fn and simplify API (rescale & rotate fns).
+      Fix scaling calculation.
+      tools: Add 720p support to shveu-display
+      tools: Fix display_update for new API
+      tools: Add header guard to display.h
+      tools: Better error checking
+      tools: Add D1 size to shveu-display.
+      docs: Fix doxygen API comments.
+      Remove generated files
+      autotools: Clean up dependency on uiomux
+      autotools: Remove AC_CANONICAL_TARGET
+      autotools: Fix for autoreconf
+      docs: Remove old plan as its no longer accurate.
+      Merge branch 'master' into uiomux
+      Correct authors
+      Added support for RGBX888.
+      Merge branch 'uiomux'
+
+ AUTHORS                        |    2 +-
+ INSTALL                        |    1 -
+ Makefile.am                    |    2 +
+ README                         |   40 ---
+ TODO                           |    6 -
+ configure.ac                   |   59 ++---
+ include/shveu/shveu.h          |   14 +-
+ include/shveu/veu_colorspace.h |  126 ++++----
+ libshveu.plan                  |   16 -
+ src/libshveu/Version_script.in |    8 +-
+ src/libshveu/shveu_regs.h      |   11 +-
+ src/libshveu/veu_colorspace.c  |  584 ++++++++++++++++++++-----------------
+ src/tools/Makefile.am          |    9 +-
+ src/tools/display.c            |  244 +++++++++++++++
+ src/tools/display.h            |  102 +++++++
+ src/tools/shveu-convert.c      |   48 ++--
+ src/tools/shveu-display.c      |  635
+++++++++++++++++++++++++++++++++++++++++
+ 17 files changed, 1438 insertions(+), 469 deletions(-)
+ delete mode 120000 INSTALL
+ delete mode 100644 libshveu.plan
+ create mode 100644 src/tools/display.c
+ create mode 100644 src/tools/display.h
+ create mode 100644 src/tools/shveu-display.c
+
