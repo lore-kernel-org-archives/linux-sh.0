@@ -1,240 +1,128 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 08 Jul 2010 14:13:18 +0000
-Subject: [PATCH 6/6 v2] ARM: mach-shmobile: add HDMI support to the ap4evb
-Message-Id: <Pine.LNX.4.64.1007081608190.32100@axis700.grange>
+From: "Phil Edworthy" <Phil.Edworthy@renesas.com>
+Date: Mon, 19 Jul 2010 12:14:14 +0000
+Subject: libshcodecs 1.2.0 release
+Message-Id: <AB12B32E73474741A2C5361C433A44DE01F2D622@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Support HDMI in 720p mode.
+libshcodecs 1.2.0 Release
+============
+libshcodecs is a library for controlling SH-Mobile hardware codecs.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+The [SH-Mobile][0] processor series includes a hardware video processing
+unit that supports MPEG-4 and H.264 encoding and decoding.
+libshcodecs is available under the terms of the GNU LGPL.
 
-v2:
-1. Moved platform-specific clock configuration here
-2. Not managing function clocks here, since they are managed by the 
-   runtime PM now.
+The source archive, and more information about the library are available
+from:
 
- arch/arm/mach-shmobile/board-ap4evb.c |  157 ++++++++++++++++++++++++++++++++-
- 1 files changed, 153 insertions(+), 4 deletions(-)
+	https://oss.renesas.com/modules/document/?libshcodecs
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 3c61c9d..b0583be 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -44,6 +44,7 @@
- 
- #include <sound/sh_fsi.h>
- 
-+#include <video/sh_mobile_hdmi.h>
- #include <video/sh_mobile_lcdc.h>
- #include <video/sh_mipi_dsi.h>
- 
-@@ -529,6 +530,90 @@ static struct platform_device fsi_device = {
- 	},
- };
- 
-+static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
-+	.clock_source = LCDC_CLK_EXTERNAL,
-+	.ch[0] = {
-+		.chan = LCDC_CHAN_MAINLCD,
-+		.bpp = 16,
-+		.interface_type = RGB24,
-+		.clock_divider = 1,
-+		.flags = LCDC_FLAGS_DWPOL,
-+		.lcd_cfg = {
-+			.name = "HDMI",
-+			/* So far only 720p is supported */
-+			.xres = 1280,
-+			.yres = 720,
-+			/*
-+			 * If left and right margins are not multiples of 8,
-+			 * LDHAJR will be adjusted accordingly by the LCDC
-+			 * driver. Until we start using EDID, these values
-+			 * might have to be adjusted for different monitors.
-+			 */
-+			.left_margin = 200,
-+			.right_margin = 88,
-+			.hsync_len = 48,
-+			.upper_margin = 20,
-+			.lower_margin = 5,
-+			.vsync_len = 5,
-+			.pixclock = 13468,
-+			.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
-+		},
-+	}
-+};
-+
-+static struct resource lcdc1_resources[] = {
-+	[0] = {
-+		.name	= "LCDC1",
-+		.start	= 0xfe944000,
-+		.end	= 0xfe947fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0x17a0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device lcdc1_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(lcdc1_resources),
-+	.resource	= lcdc1_resources,
-+	.id             = 1,
-+	.dev	= {
-+		.platform_data	= &sh_mobile_lcdc1_info,
-+		.coherent_dma_mask = ~0,
-+	},
-+};
-+
-+static struct sh_mobile_hdmi_info hdmi_info = {
-+	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
-+	.lcd_dev = &lcdc1_device.dev,
-+};
-+
-+static struct resource hdmi_resources[] = {
-+	[0] = {
-+		.name	= "HDMI",
-+		.start	= 0xe6be0000,
-+		.end	= 0xe6be00ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
-+		.start	= evt2irq(0x17e0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device hdmi_device = {
-+	.name		= "sh-mobile-hdmi",
-+	.num_resources	= ARRAY_SIZE(hdmi_resources),
-+	.resource	= hdmi_resources,
-+	.id             = -1,
-+	.dev	= {
-+		.platform_data	= &hdmi_info,
-+	},
-+};
-+
- static struct platform_device *ap4evb_devices[] __initdata = {
- 	&nor_flash_device,
- 	&smc911x_device,
-@@ -536,10 +621,12 @@ static struct platform_device *ap4evb_devices[] __initdata = {
- 	&sdhi0_device,
- 	&sdhi1_device,
- 	&usb1_host_device,
--	&lcdc_device,
- 	&mipidsi0_device,
- 	&fsi_device,
--	&sh_mmcif_device
-+	&sh_mmcif_device,
-+	&lcdc1_device,
-+	&lcdc_device,
-+	&hdmi_device,
- };
- 
- /* TouchScreen (Needs SW3 set to OFF) */
-@@ -628,6 +715,55 @@ eclkdsitxget:
- 
- device_initcall(ap4evb_init_display_clk);
- 
-+static int __init hdmi_init_pm_clock(void)
-+{
-+	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
-+	int ret;
-+	long rate;
-+
-+	if (IS_ERR(hdmi_ick)) {
-+		ret = PTR_ERR(hdmi_ick);
-+		pr_err("Cannot get HDMI ICK: %d\n", ret);
-+		goto out;
-+	}
-+
-+	ret = clk_set_parent(&pllc2_clk, &dv_clki_div2_clk);
-+	if (ret < 0) {
-+		pr_err("Cannot set PLLC2 parent: %d, %d users\n", ret, pllc2_clk.usecount);
-+		goto out;
-+	}
-+
-+	pr_debug("PLLC2 initial frequency %lu\n", clk_get_rate(&pllc2_clk));
-+
-+	rate = clk_round_rate(&pllc2_clk, 594000000);
-+	if (rate < 0) {
-+		pr_err("Cannot get suitable rate: %ld\n", rate);
-+		ret = rate;
-+		goto out;
-+	}
-+
-+	ret = clk_set_rate(&pllc2_clk, rate);
-+	if (ret < 0) {
-+		pr_err("Cannot set rate %ld: %d\n", rate, ret);
-+		goto out;
-+	}
-+
-+	pr_debug("PLLC2 set frequency %lu\n", rate);
-+
-+	ret = clk_set_parent(hdmi_ick, &pllc2_clk);
-+	if (ret < 0) {
-+		pr_err("Cannot set HDMI parent: %d\n", ret);
-+		goto out;
-+	}
-+
-+out:
-+	if (!IS_ERR(hdmi_ick))
-+		clk_put(hdmi_ick);
-+	return ret;
-+}
-+
-+device_initcall(hdmi_init_pm_clock);
-+
- /*
-  * FIXME !!
-  *
-@@ -644,9 +780,9 @@ static void __init gpio_no_direction(u32 addr)
- 
- #define GPIO_PORT9CR	0xE6051009
- #define GPIO_PORT10CR	0xE605100A
--
- static void __init ap4evb_init(void)
- {
-+	u32 srcr4;
- 	struct clk *clk;
- 
- 	sh7372_pinmux_init();
-@@ -787,14 +923,27 @@ static void __init ap4evb_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	/* HDMI */
-+	gpio_request(GPIO_FN_HDMI_HPD, NULL);
-+	gpio_request(GPIO_FN_HDMI_CEC, NULL);
-+
-+	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
-+#define SRCR4 0xe61580bc
-+	srcr4 = __raw_readl(SRCR4);
-+	__raw_writel(srcr4 | (1 << 13), SRCR4);
-+	udelay(50);
-+	__raw_writel(srcr4 & ~(1 << 13), SRCR4);
-+
- 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
- }
- 
- static void __init ap4evb_timer_init(void)
- {
--	clk_set_rate(&dv_clki_clk, 27000000);
- 	sh7372_clock_init();
- 	shmobile_timer.init();
-+
-+	/* External clock source */
-+	clk_set_rate(&dv_clki_clk, 27000000);
- }
- 
- static struct sys_timer ap4evb_timer = {
--- 
-1.6.2.4
+New in this release
+=========
+The major change for this release is that the UIO kernel memory is now
+mapped
+using the UIOmux library. This provides a standard mechanism for accessing
+contiguous blocks of memory that can be used by the SH hardware.
+
+The API has changed subtly in that the encoder input buffer release callback
+is now called for all internally allocated input buffers before encoding the
+first frame.
+
+Details
+-------
+
+This release includes the following changes since version 1.1.1:
+
+Conrad Parker (13):
+      shcodecs-record: clean up size/target fps display
+      TODO: clear encode frame data on init
+      shcodecs-record: show fps of all streams in columns
+      shcodecs-record: run encoders in separate threads
+      shcodecs-record: add frame dropping at enc input
+      shcodecs-record: remove cap_framerate wait timer
+      rename 1.1.0 release notes
+      TODO: add doc updates for input_release()
+      add shcodecs_encoder_set_allocate_input_buffers()
+      Merge branch 'set-input-physical-addr' into request-release
+      call input_release from H.264, MPEG-4, MP4 BVOP
+      add type and setter for input_release callback
+      add shcodecs_encoder_set_input_physical_addr()
+
+Phil Edworthy (32):
+      autotools: Removed autogen.sh; use autoreconf.
+      Merge branch 'shveu2'
+      tools: Improve shcodecs-record encode information.
+      tools: Fix clean shutdown fo different frame rates
+      tools: Fix segfault on record shutdown
+      Merge remote branch 'kfish/master'
+      Merge branch 'master' into shveu2
+      autotools: Remove generated files
+      autotools: Remove AC_CANONICAL_TARGET
+      autotools: Fix for autoreconf
+      autotools: Further clean up
+      Simplify the check for UIOmux library.
+      Merge branch 'request-release'
+      Merge branch 'lowfps2'
+      tools: Reduce num capture bufs back to 2.
+      dec: Add debug msgs for VPU errors
+      dec: Allocate contiguous memory for frames.
+      encdec: New encode/decode tool added.
+      Merge branch 'uiomux'
+      enc: Fix bug in re-using local var.
+      enc: Merged double-buffer branch.
+      record: Removed captured queue as its no longer used.
+      record: Remove output of displayed frames.
+      record: Use queues for encoder input.
+      record: Move the convert processing into camera capture callback.
+      capenc: #define the number of capture buffers
+      Use UIOMux for base address of VPU registers.
+      Fix UIOMux initialisation for multiple instances.
+      Use UIOMux for all UIO memory operations.
+      Use UIOMux locking instead of local mutex.
+      Use UIOMux to find UIO device and memory.
+      tools: Modified to new shveu API.
+
+ INSTALL                             |  236 -----------
+ Makefile.am                         |    2 +
+ TODO                                |   19 +-
+ autogen.sh                          |  129 ------
+ config.h.in                         |   99 -----
+ configure.ac                        |   66 +---
+ include/shcodecs/shcodecs_encoder.h |   16 +
+ release_notes/libshcodecs-1.1.0     |  278 -------------
+ release_notes/libshcodecs-1.1.0.txt |  278 +++++++++++++
+ src/libshcodecs/Makefile.am         |    2 +-
+ src/libshcodecs/Version_script.in   |    1 +
+ src/libshcodecs/encoder_private.h   |    1 +
+ src/libshcodecs/h264_encode.c       |   23 +-
+ src/libshcodecs/m4driverif.c        |  498 +++++++-----------------
+ src/libshcodecs/m4driverif.h        |    4 +-
+ src/libshcodecs/mpeg4_encode.c      |   86 +++--
+ src/libshcodecs/shcodecs_decoder.c  |  156 ++++----
+ src/libshcodecs/shcodecs_encoder.c  |   32 ++-
+ src/tools/Makefile.am               |   11 +-
+ src/tools/capture.c                 |   10 +-
+ src/tools/capture.h                 |    2 +
+ src/tools/display.c                 |  252 ++++++-------
+ src/tools/display.h                 |   92 +++--
+ src/tools/shcodecs-cap.c            |    6 -
+ src/tools/shcodecs-encdec.c         |  741
++++++++++++++++++++++++++++++++++++
+ src/tools/shcodecs-play.c           |   17 +-
+ src/tools/shcodecs-record.c         |  332 +++++++++--------
+ 27 files changed, 1743 insertions(+), 1646 deletions(-)
+ delete mode 100644 INSTALL
+ delete mode 100755 autogen.sh
+ delete mode 100644 config.h.in
+ delete mode 100644 release_notes/libshcodecs-1.1.0
+ create mode 100644 release_notes/libshcodecs-1.1.0.txt
+ create mode 100644 src/tools/shcodecs-encdec.c
+
+[0]:
+http://www.renesas.com/fmwk.jsp?cnt=sh_mobile_family_landing.jsp&fp=/product
+s/mpumcu/sh_mobile/
 
