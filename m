@@ -1,17 +1,20 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 06 Jul 2010 08:41:58 +0000
-Subject: Re: [PATCH v2 1/6] sh: change PVR of SH7757 for 2nd cut
-Message-Id: <20100706084157.GA15985@linux-sh.org>
+From: "Sonia Porter" <sporter@jusd.k12.ca.us>
+Date: Tue, 20 Jul 2010 01:26:37 +0000
+Subject: Dear Webmail User
+Message-Id: <8A78544F83994B468EAC5A3D242C1E34C79054@exchsrv02.jusd.dom>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4C32B1A1.1080404@renesas.com>
-In-Reply-To: <4C32B1A1.1080404@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: info@upgrade.com
 
-On Tue, Jul 06, 2010 at 01:31:29PM +0900, Yoshihiro Shimoda wrote:
->  I asked my boss about the 1st cut supporting, and we decided to stop
->  the support.
-> 
-Looks much better! All applied, thanks.
+This message was sent automatically by a program on Web mail which periodically checks the size of in boxes, where new messages are received.The program is run weekly to ensure no one's in box grows too large. If your in box becomes too large,you will be unable to receive new email. Just before this message was sent,you had 18 Mega bytes (MB) or more of messages stored in your in box on your Web mail. To help's re-set your SPACE on our database prior to maintain your IN BOX.
+ 
+YOU MUST COPY AND PAST THE BELOW LINK TO INCREASE YOUR INBOX QUOTA AND UPGRADE YOUR WEBMAIL ACCOUNT
+
+http://www.eformit.com/eform.aspx?webmasterupgradesystem 
+ 
+ You will continue to receive this warning message periodically if your inbox size continues to be between 18 and 20 MB. If your in box size grows to 20MB,then a program on the Web mail will move your oldest email to a folder in your home directory to ensure that you will continue to be able to receive incoming email. You will be notified by email that this has taken place. If your in box grows to 25 MB, you will be unable to receive new email as it will be returned to the sender.After you read a message,it is best to REPLY and SAVE a copy.
+ 
+Thanks.
+Web mail Help Desk
