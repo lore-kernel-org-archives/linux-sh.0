@@ -1,31 +1,27 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 21 Jul 2010 01:45:48 +0000
-Subject: Re: [PATCH] math-emu: correct test for downshifting fraction in
-Message-Id: <20100720.184548.250802682.davem@davemloft.net>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 21 Jul 2010 10:13:02 +0000
+Subject: [PATCH 0/6 v3] fbdev: sh-mobile: HDMI support for SH-Mobile SoCs
+Message-Id: <Pine.LNX.4.64.1007211145420.16933@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <19524.51858.992299.119315@pilspetsen.it.uu.se>
-In-Reply-To: <19524.51858.992299.119315@pilspetsen.it.uu.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mikpe@it.uu.se
-Cc: linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linuxppc-dev@ozlabs.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Mikael Pettersson <mikpe@it.uu.se>
-Date: Mon, 19 Jul 2010 23:58:42 +0200
+This patch set adds a static HDMI support to SH-Mobile SoCs, specifically, 
+to sh7372 (ap4evb) in this version. "Static" means only 720p is supported 
+ATM. Also hotplug support is implemented without changing the framebuffer 
+geometry. Dynamic geometry reconfiguration is planned for a future patch.
 
-> The kernel's math-emu code contains a macro _FP_FROM_INT() which is
-> used to convert an integer to a raw normalized floating-point value.
-> It does this basically in three steps:
- ...
-> The fix is simple: the exponent comparison used to determine if the
-> fraction should be downshifted must be "<=" not "<".
-> 
-> I'm sending a kernel module to test this as a reply to this message.
-> There are also SPARC user-space test cases in the GCC bug entry.
-> 
-> Signed-off-by: Mikael Pettersson <mikpe@it.uu.se>
+This series now depends on an arm-shmobile runtime PM RFC patch from 
+Magnus with my incremental patch to it [1].
 
-Applied and I'll make sure this gets into -stable too.
+Thanks
+Guennadi
 
-Thanks!
+[1] http://thread.gmane.org/gmane.linux.ports.sh.devel/8457
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
