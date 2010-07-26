@@ -1,23 +1,62 @@
-From: "Grant Mayor" <grantfinancing@gmail.com>
-Date: Sat, 17 Jul 2010 08:06:45 +0000
-Subject: 
-Message-Id: <2148.41.138.190.28.1279354005.squirrel@www.scalabrini.net>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 26 Jul 2010 16:20:58 +0000
+Subject: [PATCH 3/5] V4L2: soc-camera: export soc-camera bus type for
+Message-Id: <Pine.LNX.4.64.1007261749500.9816@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1007261739180.9816@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1007261739180.9816@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-FUNDING NOTIFICATION.............I am Mr Grant Mayor. i am a loan lender
-as well as an angel investor, I offer funds based on demands and i use the
-best possible interest rate so that it can make both paties smile. I allow
-my clients to decide the loan repayment duration. So i have my door for
-funding opened to all that is in need, If you have been turned down be
-many financial institutions, this is a great time for you to make things
-up. If you need a stress free funing, kindly get back to me with a mail of
-application for funding and you will get funded within 3 working days.
-Send all mails of application to: to.grantfinancing@gmail.com.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/media/video/soc_camera.c |    3 ++-
+ include/media/soc_camera.h       |    3 +++
+ 2 files changed, 5 insertions(+), 1 deletions(-)
 
-I await your response.
-
-Grant Mayor.
+diff --git a/drivers/media/video/soc_camera.c b/drivers/media/video/soc_camera.c
+index 475757b..f203293 100644
+--- a/drivers/media/video/soc_camera.c
++++ b/drivers/media/video/soc_camera.c
+@@ -1107,13 +1107,14 @@ static int soc_camera_resume(struct device *dev)
+ 	return ret;
+ }
+ 
+-static struct bus_type soc_camera_bus_type = {
++struct bus_type soc_camera_bus_type = {
+ 	.name		= "soc-camera",
+ 	.probe		= soc_camera_probe,
+ 	.remove		= soc_camera_remove,
+ 	.suspend	= soc_camera_suspend,
+ 	.resume		= soc_camera_resume,
+ };
++EXPORT_SYMBOL_GPL(soc_camera_bus_type);
+ 
+ static struct device_driver ic_drv = {
+ 	.name	= "camera",
+diff --git a/include/media/soc_camera.h b/include/media/soc_camera.h
+index b8289c2..2ce9573 100644
+--- a/include/media/soc_camera.h
++++ b/include/media/soc_camera.h
+@@ -12,12 +12,15 @@
+ #ifndef SOC_CAMERA_H
+ #define SOC_CAMERA_H
+ 
++#include <linux/device.h>
+ #include <linux/mutex.h>
+ #include <linux/pm.h>
+ #include <linux/videodev2.h>
+ #include <media/videobuf-core.h>
+ #include <media/v4l2-device.h>
+ 
++extern struct bus_type soc_camera_bus_type;
++
+ struct soc_camera_device {
+ 	struct list_head list;
+ 	struct device dev;
+-- 
+1.6.2.4
 
