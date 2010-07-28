@@ -1,20 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Jul 2010 08:14:52 +0000
-Subject: Re: [PATCH] fbdev: sh-mobile-lcdc: fix potential Oops in SH-Mobile
-Message-Id: <AANLkTikcI1KTOsvhabvi1nPccEYFAgvR080jKXBfD3qs@mail.gmail.com>
+From: Kulikov Vasiliy <segooon@gmail.com>
+Date: Wed, 28 Jul 2010 16:39:26 +0000
+Subject: [PATCH 03/10] sh: dma: check return value of create_proc_read_entry()
+Message-Id: <1280335166-23225-1-git-send-email-segooon@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: kernel-janitors@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, Tejun Heo <tj@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Jun 30, 2010 at 6:26 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> sh_mobile_lcdc_setup_clocks() can perform IO, therefore it has to be called
-> after ioremap(). Also check return code of ioremap() and use resource_size()
-> instead of open-coding it.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+create_proc_read_entry() may fail, if so return -ENOMEM.
 
-Thanks, looks fine.
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kulikov Vasiliy <segooon@gmail.com>
+---
+ arch/sh/drivers/dma/dma-api.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index 4a27722..f46848f 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -412,8 +412,8 @@ EXPORT_SYMBOL(unregister_dmac);
+ static int __init dma_api_init(void)
+ {
+ 	printk(KERN_NOTICE "DMA: Registering DMA API.\n");
+-	create_proc_read_entry("dma", 0, 0, dma_read_proc, 0);
+-	return 0;
++	return create_proc_read_entry("dma", 0, 0, dma_read_proc, 0)
++		    ? 0 : -ENOMEM;
+ }
+ subsys_initcall(dma_api_init);
+ 
+-- 
+1.7.0.4
+
