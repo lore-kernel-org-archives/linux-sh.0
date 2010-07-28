@@ -1,93 +1,55 @@
-From: "Jeremy Baker" <Jeremy.Baker@renesas.com>
-Date: Wed, 28 Jul 2010 08:51:33 +0000
-Subject: RE: MMC slots on MS7724
-Message-Id: <AB12B32E73474741A2C5361C433A44DE01F994FE@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 28 Jul 2010 09:20:42 +0000
+Subject: Re: MMC slots on MS7724
+Message-Id: <AANLkTin3v4XdOyypOOnFBo8GZffk37HX5=pnajXpUq5N@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4C4DFEE4.1040409@naoi.ca>
 In-Reply-To: <4C4DFEE4.1040409@naoi.ca>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Morimoto - san, Bill,
+Hi Bill,
 
-> 
-> 
-> Dear Bill
-> 
-> > Thanks, after changing DS-2[6] to ON and DS-2[7] to OFF, dmesg reports
-> > the following on insertion of a card in the SD/MMC slot (SDHI1):
-> >
-> > mmc1: new SDHC card at address 1234
-> > mmcblk0: mmc1:1234 SA04G 3.68 GiB
-> >   mmcblk0: p1
-> >
-> > Oddly, the Android demo still reports no SD card though.  I'll try a few
-> > more things to try to get that working.
-> 
-> OK. I asked about Ecovec Android to expert.
-> I guess you got Android demo from Renesas OSS site.
-> correct ?
-> 
-> At first, we didn't check CN12 slot for Android demo.
-> We used CN11 slot.
-> 
-> Please check "mount" command.
-> Does your card mounted ?
-> 
-> If not, please check
-> /system/etc/vold.conf
-> 
-> meybe your conf show you "mmc0"
-> but your card is in "mmc1" now
-> 
-> > I'm using the latest ecovec24_defconfig in Paul's git tree.
-> 
-> Hmm..
-> When you compile kernel for Android, above defconfig is not enough.
-> Android setting is needed.
-> 
-> I wounder which kernel are you using ?
-> Android needs special kernel patches.
-> 
-> Please check here
-> https://oss.renesas.com/modules/download/index.php?cidf
-> 
-> Best regards
-> --
-> Kuninori Morimoto
-> 
-Don't forget that DS2:6 and DS2:7 are only associated with CN12 (and LED13),
+On Tue, Jul 27, 2010 at 9:49 PM, Bill Traynor <wmat@naoi.ca> wrote:
+> On 10-07-27 12:50 AM, Magnus Damm wrote:
+>>
+>> On Tue, Jul 27, 2010 at 6:32 AM, Bill Traynor<wmat@naoi.ca> =A0wrote:
+>>
+>>>
+>>> Can someone with an MS7724 ecovec board confirm something for me? =A0Wh=
+en
+>>> the
+>>> board is powered on, are the two MMC slot LED power indicators lit? =A0=
+The
+>>> LEDs are right off the back left corner of the slots. =A0On my board on=
+ly
+>>> one
+>>> LED lights up and only blinks sporadically. =A0I can't get the board to
+>>> recognize any SD cards at all and I suspect the hardware may be faulty.
+>>>
+>>
+>> I recognize the case with one LED blinking. For me I think it was
+>> caused by a mismatch in between the kernel configuration and the dip
+>> switch settings. If you still have problems then please post your
+>> kernel configure and I will give it a try.
+>>
+>
+> I'm using the latest ecovec24_defconfig in Paul's git tree.
 
-If DS2:6 = ON and DS2:7 = Off, SDHI peripheral is connected to CN12, if
-DS2:6 = OFF DS2:7 = ON, MMCIF peripheral is connected to CN12. DS2:4 has to
-be on for the SDHI peripheral to be connected to CN11, if DS2:4 is off,
-MSIOF peripheral is connected to CN11 (MSIOF is used for MMC via SPI).
+The ecovec defconfig seems to have the MMCIF driver disabled.
+Feel free to try CONFIG_MMC_SH_MMCIF=3Dy.
 
-LED 12 is associated with CN11.
+The MMC stuff on Ecovec is like a big maze. On the hardware side you
+have an external bus switch controlled by dip switches. Inside the SoC
+you can select between MMCIF or SDHI for one of the slots. On top of
+that you can use MSIOF for MMC-over-SPI.
 
-Regards
+The hardware setting need to be reflected by the kernel configuration.
+I recommend you to browse through the platform device comments in
+arch/sh/boards/mach-ecovec24/setup.c
 
-Jeremy Baker
+Cheers,
 
-
-This message is intended only for the use of the addressee(s) and may
-contain confidential and/or legally privileged information.
-If you are not the intended recipient, you are hereby notified that
-any dissemination of this email (including any attachments thereto)
-is strictly prohibited. If you have received this email in
-error, please notify the sender immediately by telephone or email
-and permanently destroy the original without making any copy.
-Please note that any material and advice from this mail is provided
-free of charge and shall be used as an example for demonstration
-purposes only.
-RENESAS MAKES NO WARRANTIES THAT THEIR USAGE WILL NOT INFRINGE ANY
-INTELLECTUAL PROPERTY RIGHTS (E.G. PATENTS, COPYRIGHTS).
-RENESAS CANNOT GUARANTEE BUG FREE OPERATION AND THE RECIPIENT WILL USE
-AND/OR DISTRIBUTE IT ONLY AT HIS OWN RISK. IN NO EVENT SHALL
-RENESAS BE LIABLE FOR ANY DAMAGE.
-This communication with Renesas Electronics Europe Ltd does not amend
-any written agreement in place.
-Thank you.
-Renesas Electronics Europe Ltd, Dukes Meadow, Millboard Road, Bourne End, Buckinghamshire, SL8 5FH, UK. Registered in England & Wales under Registered No. 04586709.
+/ magnus
