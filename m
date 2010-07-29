@@ -1,33 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 28 Jul 2010 02:54:23 +0000
-Subject: [PATCH] ARM: mach-shmobile: clock-sh7372: modify clock name for FSI2
-Message-Id: <w3peieogvtt.wl%kuninori.morimoto.gx@renesas.com>
+From: Andrew Murray <amurray@mpcdata.com>
+Date: Thu, 29 Jul 2010 11:50:59 +0000
+Subject: [PATCH] sh: Remove memset from coherent memory allocator (for
+Message-Id: <AANLkTi=0=kR49SHE8mistKJ0hPpjwUk=xXSMw=K_i9Ne@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Andrew Murray <amurray@mpc-data.co.uk>
+
+This patch removes unnecessary memset in coherent memory allocator.
+
+Signed-off-by: Andrew Murray <amurray@mpc-data.co.uk>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+--- linux-2.6-old/arch/sh/mm/consistent.c       2010-07-25
+05:01:33.813493496 +0100
++++ linux-2.6/arch/sh/mm/consistent.c   2010-07-25 05:03:42.763055056 +0100
+@@ -42,7 +42,6 @@ void *dma_generic_alloc_coherent(struct
+        if (!ret)
+                return NULL;
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 2b804aa..26d651c 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -514,7 +514,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
- 	CLKDEV_CON_ID("cmt1", &mstp_clks[MSTP329]), /* CMT10 */
--	CLKDEV_DEV_ID("sh_fsi", &mstp_clks[MSTP328]), /* FSI */
-+	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI2 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* IIC1 */
- 	CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[MSTP323]), /* USB0 */
- 	CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[MSTP323]), /* USB0 */
--- 
-1.7.0.4
+-       memset(ret, 0, size);
+        /*
+         * Pages from the page allocator may have data present in
+         * cache. So flush the cache before using uncached memory.
+@@ -141,7 +140,7 @@ int __init platform_resource_setup_memor
+        if (!memsize)
+                return 0;
 
+-       buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
++       buf = dma_alloc_coherent(NULL, memsize, &dma_handle,
+GFP_KERNEL | __GFP_ZERO);
+        if (!buf) {
+                pr_warning("%s: unable to allocate memory\n", name);
+                return -ENOMEM;
