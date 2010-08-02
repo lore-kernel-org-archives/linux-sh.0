@@ -1,38 +1,55 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 18 Aug 2010 21:47:37 +0000
-Subject: Re: [regression] in linux-next: sh_mobile_ceu_camera broken by
-Message-Id: <20100818214737.GB22254@n2100.arm.linux.org.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 02 Aug 2010 10:35:07 +0000
+Subject: Re: [bisected] sh_cmt Division by zero in kernel.
+Message-Id: <AANLkTimqFtU40THLEoZctJ5TcVGXVFMPnBUgkfoeAaWo@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4C5ED116.5000002@arndnet.de>
-	<201008101045.03547.philippe.retornaz@epfl.ch>
-	<20100810092759.GB31759@n2100.arm.linux.org.uk>
-	<Pine.LNX.4.64.1008102117000.18934@axis700.grange>
-	<20100810212638.GC7702@n2100.arm.linux.org.uk>
-	<Pine.LNX.4.64.1008182107210.17895@axis700.grange>
-	<20100818194109.GA19126@n2100.arm.linux.org.uk>
-	<Pine.LNX.4.64.1008182218150.17895@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1008182218150.17895@axis700.grange>
+References: <4C46A102.6000805@arndnet.de>
+In-Reply-To: <4C46A102.6000805@arndnet.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 18, 2010 at 10:31:10PM +0200, Guennadi Liakhovetski wrote:
-> I assume, you mean adding a new flag to skip ioremap(). But then we have 
-> to pass the virtual address to the function. Its prototype is
-> 
-> int dma_declare_coherent_memory(struct device *dev, dma_addr_t bus_addr,
-> 				dma_addr_t device_addr, size_t size, int flags);
-> 
-> bus_addr is unused in this case, but I don't think abusing it to pass a 
-> "void *" would be an acceptable solution - apart from all the ugly 
-> type-casting, if we ever get 64-bit virtual addresses on ARM with 32-bit 
-> DMA addresses, we've got a problem. Or is this never going to happen? Or 
-> whould I rather add a new function?
+Hi Arnd,
 
-Oh, and if it's going to be used as per your previous message,
-how about:
+On Fri, Jul 23, 2010 at 4:35 PM, Arnd Hannemann <arnd@arndnet.de> wrote:
+> Am 22.07.2010 15:55, schrieb Magnus Damm:
+>> On Wed, Jul 21, 2010 at 4:25 PM, Arnd Hannemann <arnd@arndnet.de> wrote:
+>>> Git bisect identified following commit as bad:
+>>>
+>>> commit f4d7c3565c1692c54d9152b52090fe73f0029e37
+>>> Author: Paul Mundt <lethal@linux-sh.org>
+>>> Date: =A0 Wed Jun 2 17:10:44 2010 +0900
+>>>
+>>> =A0 =A0clocksource: sh_cmt: compute mult and shift before registration
+>>> =A0 =A0 =A0 Based on the sh_tmu change in 66f49121ffa41a19c59965b31b046=
+d8368fec3c7
+>>> =A0 =A0("clocksource: sh_tmu: compute mult and shift before registratio=
+n").
+>>> =A0 =A0The same issues impact the sh_cmt driver, so we take the same ap=
+proach
+>>> =A0 =A0here.
+>>> =A0 =A0 =A0 Cc: stable@kernel.org
+>>> =A0 =A0Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+>>>
+>> If you revert that one (and perhaps
+>> 5967d33ce8a030f01a716fc0b25fcb03744a5fda as well), does it fix your
+>> crash?
+>>
+>
+> Yes, if I revert both 5967d33ce8a030f01a716fc0b25fcb03744a5fda
+> and f4d7c3565c1692c54d9152b52090fe73f0029e37, this fixes the
+> crash and time is running "normal".
+>
+> I reverted both mainly because the revert of
+> f4d7c3565c1692c54d9152b52090fe73f0029e37 would not go
+> through cleanly on top of the current tree.
 
-int dma_preallocate_coherent_memory(struct device *dev, size_t size);
+I think this patch should solve the issue:
+http://www.spinics.net/lists/linux-sh/msg05433.html
 
-so that it contains the dma_alloc_coherent() logic itself too?
+If you have time, please give it a try.
+
+Thanks,
+
+/ magnus
