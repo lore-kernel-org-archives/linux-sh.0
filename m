@@ -1,57 +1,72 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Fri, 27 Aug 2010 20:02:33 +0000
-Subject: Re: [PATCH RESEND] initialise DMA engine before MMC
-Message-Id: <20100827130233.893e7151.akpm@linux-foundation.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 02 Aug 2010 07:16:37 +0000
+Subject: [PATCH] i2c: i2c-sh_mobile irq rollback fix
+Message-Id: <20100802071637.18054.76993.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1006071312060.12965@axis700.grange>
-	<20100827194939.GJ23079@void.printf.net>
-In-Reply-To: <20100827194939.GJ23079@void.printf.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-kernel@vger.kernel.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Dan Williams <dan.j.williams@intel.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-mmc@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: khali@linux-fr.org, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-On Fri, 27 Aug 2010 20:49:39 +0100
-Chris Ball <cjb@laptop.org> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> Hi,
-> 
-> Andrew, mind taking this one?
-> 
-> From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Date: Mon, 7 Jun 2010 13:16:36 +0200 (CEST)
-> 
-> To use DMA engine based DMA with MMC in a non-modular build, the DMA 
-> engine has to initialise before MMC.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Acked-by: Dan Williams <dan.j.williams@intel.com>
-> ---
-> diff --git a/drivers/Makefile b/drivers/Makefile
-> index 91874e0..b713e75 100644
-> --- a/drivers/Makefile
-> +++ b/drivers/Makefile
-> @@ -92,6 +92,7 @@ obj-$(CONFIG_EISA)		+= eisa/
->  obj-y				+= lguest/
->  obj-$(CONFIG_CPU_FREQ)		+= cpufreq/
->  obj-$(CONFIG_CPU_IDLE)		+= cpuidle/
-> +obj-$(CONFIG_DMA_ENGINE)	+= dma/
->  obj-$(CONFIG_MMC)		+= mmc/
->  obj-$(CONFIG_MEMSTICK)		+= memstick/
->  obj-$(CONFIG_NEW_LEDS)		+= leds/
-> @@ -102,7 +103,6 @@ obj-$(CONFIG_CRYPTO)		+= crypto/
->  obj-$(CONFIG_SUPERH)		+= sh/
->  obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
->  obj-$(CONFIG_GENERIC_TIME)	+= clocksource/
-> -obj-$(CONFIG_DMA_ENGINE)	+= dma/
->  obj-$(CONFIG_DCA)		+= dca/
->  obj-$(CONFIG_HID)		+= hid/
->  obj-$(CONFIG_PPC_PS3)		+= ps3/
+Update the i2c-sh_mobile driver to properly free
+interrupts. The function sh_mobile_i2c_hook_irqs()
+is fixed so module both unload and load are working
+as expected.
 
-erk, doing this via link ordering isn't nice.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-It would be better to express this dependency via initcall levels -
-core_initcall() or something.
+ drivers/i2c/busses/i2c-sh_mobile.c |   23 +++++++++++++----------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
 
-
+--- 0001/drivers/i2c/busses/i2c-sh_mobile.c
++++ work/drivers/i2c/busses/i2c-sh_mobile.c	2010-08-02 15:14:48.000000000 +0900
+@@ -538,15 +538,17 @@ static int sh_mobile_i2c_hook_irqs(struc
+ {
+ 	struct resource *res;
+ 	int ret = -ENXIO;
+-	int q, m;
+-	int k = 0;
+-	int n = 0;
++	int n, k = 0;
+ 
+ 	while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
+ 		for (n = res->start; hook && n <= res->end; n++) {
+ 			if (request_irq(n, sh_mobile_i2c_isr, IRQF_DISABLED,
+-					dev_name(&dev->dev), dev))
++					dev_name(&dev->dev), dev)) {
++				for (n--; n >= res->start; n--)
++					free_irq(n, dev);
++
+ 				goto rollback;
++			}
+ 		}
+ 		k++;
+ 	}
+@@ -554,16 +556,17 @@ static int sh_mobile_i2c_hook_irqs(struc
+ 	if (hook)
+ 		return k > 0 ? 0 : -ENOENT;
+ 
+-	k--;
+ 	ret = 0;
+ 
+  rollback:
+-	for (q = k; k >= 0; k--) {
+-		for (m = n; m >= res->start; m--)
+-			free_irq(m, dev);
++	k--;
++
++	while (k >= 0) {
++		res = platform_get_resource(dev, IORESOURCE_IRQ, k);
++		for (n = res->start; n <= res->end; n++)
++			free_irq(n, dev);
+ 
+-		res = platform_get_resource(dev, IORESOURCE_IRQ, k - 1);
+-		m = res->end;
++		k--;
+ 	}
+ 
+ 	return ret;
