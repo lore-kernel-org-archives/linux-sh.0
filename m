@@ -1,69 +1,100 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 04 Aug 2010 04:31:38 +0000
-Subject: [PATCH] clocksource: sh_cmt: One-off clockevent fix V2
-Message-Id: <20100804043138.28089.32443.sendpatchset@t400s>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Sat, 14 Aug 2010 19:45:21 +0000
+Subject: [PATCH][RFC] ARM: mach-shmobile: AP4EVB: use gpio-leds for leds.
+Message-Id: <1281815121-3724-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100802092930.30883.59203.sendpatchset@t400s>
-In-Reply-To: <20100802092930.30883.59203.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This allows control of the leds on the AP4EVB board by kernel events (triggers)
+like mmc0/mmc1. In userland, the leds won't be available anymore over
+/sys/class/gpio but via /sys/class/leds.
 
-Fix a one-off error in the CMT driver V2. The match register
-should be programmed with the period minus one.
-
-Many thanks to Eiraku-san for tracking down this issue.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
+ arch/arm/mach-shmobile/board-ap4evb.c |   52 ++++++++++++++++++++++++---------
+ 1 files changed, 38 insertions(+), 14 deletions(-)
 
- Changes since V1:
- - the clocksource counter need to be adjusted as well
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 23d472f..88fdd40 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -39,6 +39,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/gpio.h>
+ #include <linux/input.h>
++#include <linux/leds.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/usb/r8a66597.h>
+ 
+@@ -650,7 +651,44 @@ static struct platform_device hdmi_device = {
+ 	},
+ };
+ 
++static struct gpio_led ap4evb_leds[] = { 
++	{
++		.name			= "led4",
++		.gpio			= GPIO_PORT185,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},  
++	{
++		.name			= "led2",
++		.gpio			= GPIO_PORT186,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},  
++	{
++		.name			= "led3",
++		.gpio			= GPIO_PORT187,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},  
++	{
++		.name			= "led1",
++		.gpio			= GPIO_PORT188,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}   
++};
++
++static struct gpio_led_platform_data ap4evb_leds_pdata = {
++	.num_leds = ARRAY_SIZE(ap4evb_leds),
++	.leds = &ap4evb_leds,
++};
++
++static struct platform_device leds_device = { 
++	.name = "leds-gpio",
++	.id = 0, 
++	.dev = {
++		.platform_data  = &ap4evb_leds_pdata,
++	},
++};
++
+ static struct platform_device *ap4evb_devices[] __initdata = {
++	&leds_device,
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&sdhi0_device,
+@@ -840,20 +878,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 
+-	/* enable LED 1 - 4 */
+-	gpio_request(GPIO_PORT185, NULL);
+-	gpio_request(GPIO_PORT186, NULL);
+-	gpio_request(GPIO_PORT187, NULL);
+-	gpio_request(GPIO_PORT188, NULL);
+-	gpio_direction_output(GPIO_PORT185, 1);
+-	gpio_direction_output(GPIO_PORT186, 1);
+-	gpio_direction_output(GPIO_PORT187, 1);
+-	gpio_direction_output(GPIO_PORT188, 1);
+-	gpio_export(GPIO_PORT185, 0);
+-	gpio_export(GPIO_PORT186, 0);
+-	gpio_export(GPIO_PORT187, 0);
+-	gpio_export(GPIO_PORT188, 0);
+-
+ 	/* enable Debug switch (S6) */
+ 	gpio_request(GPIO_PORT32, NULL);
+ 	gpio_request(GPIO_PORT33, NULL);
+-- 
+1.7.0.4
 
- drivers/clocksource/sh_cmt.c |   10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
-
---- 0006/drivers/clocksource/sh_cmt.c
-+++ work/drivers/clocksource/sh_cmt.c	2010-08-04 13:21:21.000000000 +0900
-@@ -308,7 +308,7 @@ static irqreturn_t sh_cmt_interrupt(int 
- 	 * isr before we end up here.
- 	 */
- 	if (p->flags & FLAG_CLOCKSOURCE)
--		p->total_cycles += p->match_value;
-+		p->total_cycles += p->match_value + 1;
- 
- 	if (!(p->flags & FLAG_REPROGRAM))
- 		p->next_match_value = p->max_match_value;
-@@ -403,7 +403,7 @@ static cycle_t sh_cmt_clocksource_read(s
- 	raw = sh_cmt_get_counter(p, &has_wrapped);
- 
- 	if (unlikely(has_wrapped))
--		raw += p->match_value;
-+		raw += p->match_value + 1;
- 	spin_unlock_irqrestore(&p->lock, flags);
- 
- 	return value + raw;
-@@ -478,7 +478,7 @@ static void sh_cmt_clock_event_start(str
- 	ced->min_delta_ns = clockevent_delta2ns(0x1f, ced);
- 
- 	if (periodic)
--		sh_cmt_set_next(p, (p->rate + HZ/2) / HZ);
-+		sh_cmt_set_next(p, ((p->rate + HZ/2) / HZ) - 1);
- 	else
- 		sh_cmt_set_next(p, p->max_match_value);
- }
-@@ -523,9 +523,9 @@ static int sh_cmt_clock_event_next(unsig
- 
- 	BUG_ON(ced->mode != CLOCK_EVT_MODE_ONESHOT);
- 	if (likely(p->flags & FLAG_IRQCONTEXT))
--		p->next_match_value = delta;
-+		p->next_match_value = delta - 1;
- 	else
--		sh_cmt_set_next(p, delta);
-+		sh_cmt_set_next(p, delta - 1);
- 
- 	return 0;
- }
