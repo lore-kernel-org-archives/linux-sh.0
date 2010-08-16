@@ -1,61 +1,104 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Mon, 23 Aug 2010 10:46:19 +0000
-Subject: [PATCH 1/3] sh: Accessor functions for the sh_pmu state
-Message-Id: <1282560381-7700-2-git-send-email-matt@console-pimps.org>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Mon, 16 Aug 2010 07:24:27 +0000
+Subject: [PATCH] ARM: mach-shmobile: AP4EVB: use gpio-leds for leds v2
+Message-Id: <1281943467-25582-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
-In-Reply-To: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Introduce some accessor functions for getting at the name and number of
-counters of the current sh_pmu instance.
+This allows control of the leds on the AP4EVB board by kernel events (triggers)
+like mmc0/mmc1. In userland, the leds won't be available anymore via
+/sys/class/gpio but via /sys/class/leds.
 
-Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
- arch/sh/include/asm/perf_event.h |    2 ++
- arch/sh/kernel/perf_event.c      |   13 +++++++++++++
- 2 files changed, 15 insertions(+), 0 deletions(-)
+ Changes since v1:
+ - remove trailing whitespaces
+ - removed unneeded dereference
 
-diff --git a/arch/sh/include/asm/perf_event.h b/arch/sh/include/asm/perf_event.h
-index 3d0c9f3..5b7fa84 100644
---- a/arch/sh/include/asm/perf_event.h
-+++ b/arch/sh/include/asm/perf_event.h
-@@ -25,6 +25,8 @@ struct sh_pmu {
- extern int register_sh_pmu(struct sh_pmu *);
- extern int reserve_pmc_hardware(void);
- extern void release_pmc_hardware(void);
-+extern int sh_pmu_num_events(void);
-+extern const char *sh_pmu_name(void);
+ arch/arm/mach-shmobile/board-ap4evb.c |   52 ++++++++++++++++++++++++---------
+ 1 files changed, 38 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 23d472f..88fdd40 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -39,6 +39,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/gpio.h>
+ #include <linux/input.h>
++#include <linux/leds.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/usb/r8a66597.h>
  
- static inline void set_perf_event_pending(void)
- {
-diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
-index 7a3dc35..086f788 100644
---- a/arch/sh/kernel/perf_event.c
-+++ b/arch/sh/kernel/perf_event.c
-@@ -60,6 +60,19 @@ static inline int sh_pmu_initialized(void)
- }
+@@ -650,7 +651,44 @@ static struct platform_device hdmi_device = {
+ 	},
+ };
  
- /*
-+ * Return the number of events for the current sh_pmu.
-+ */
-+int sh_pmu_num_events(void)
-+{
-+	return sh_pmu->num_events;
-+}
++static struct gpio_led ap4evb_leds[] = {
++	{
++		.name			= "led4",
++		.gpio			= GPIO_PORT185,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++	{
++		.name			= "led2",
++		.gpio			= GPIO_PORT186,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++	{
++		.name			= "led3",
++		.gpio			= GPIO_PORT187,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++	{
++		.name			= "led1",
++		.gpio			= GPIO_PORT188,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}
++};
 +
-+const char *sh_pmu_name(void)
-+{
-+	return sh_pmu->name;
-+}
++static struct gpio_led_platform_data ap4evb_leds_pdata = {
++	.num_leds = ARRAY_SIZE(ap4evb_leds),
++	.leds = ap4evb_leds,
++};
 +
-+/*
-  * Release the PMU if this is the last perf_event.
-  */
- static void hw_perf_event_destroy(struct perf_event *event)
++static struct platform_device leds_device = {
++	.name = "leds-gpio",
++	.id = 0,
++	.dev = {
++		.platform_data  = &ap4evb_leds_pdata,
++	},
++};
++
+ static struct platform_device *ap4evb_devices[] __initdata = {
++	&leds_device,
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&sdhi0_device,
+@@ -840,20 +878,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 
+-	/* enable LED 1 - 4 */
+-	gpio_request(GPIO_PORT185, NULL);
+-	gpio_request(GPIO_PORT186, NULL);
+-	gpio_request(GPIO_PORT187, NULL);
+-	gpio_request(GPIO_PORT188, NULL);
+-	gpio_direction_output(GPIO_PORT185, 1);
+-	gpio_direction_output(GPIO_PORT186, 1);
+-	gpio_direction_output(GPIO_PORT187, 1);
+-	gpio_direction_output(GPIO_PORT188, 1);
+-	gpio_export(GPIO_PORT185, 0);
+-	gpio_export(GPIO_PORT186, 0);
+-	gpio_export(GPIO_PORT187, 0);
+-	gpio_export(GPIO_PORT188, 0);
+-
+ 	/* enable Debug switch (S6) */
+ 	gpio_request(GPIO_PORT32, NULL);
+ 	gpio_request(GPIO_PORT33, NULL);
 -- 
-1.7.2.1
+1.7.0.4
 
