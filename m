@@ -1,31 +1,19 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Aug 2010 03:37:19 +0000
-Subject: [PATCH] ARM: mach-shmobile: ap4evb: modify FSI2 ID
-Message-Id: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 18 Aug 2010 07:31:06 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: ap4evb: modify FSI2 ID
+Message-Id: <20100818073106.GD10056@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-ap4evb.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 8afdb1d..1b95f12 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -559,7 +559,7 @@ static struct resource fsi_resources[] = {
- 
- static struct platform_device fsi_device = {
- 	.name		= "sh_fsi2",
--	.id		= 0,
-+	.id		= -1,
- 	.num_resources	= ARRAY_SIZE(fsi_resources),
- 	.resource	= fsi_resources,
- 	.dev	= {
--- 
-1.7.0.4
-
+On Wed, Aug 18, 2010 at 12:37:19PM +0900, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>  arch/arm/mach-shmobile/board-ap4evb.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+Applied, thanks.
