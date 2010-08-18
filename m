@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 18 Aug 2010 19:41:09 +0000
-Subject: Re: [regression] in linux-next: sh_mobile_ceu_camera broken by
-Message-Id: <20100818194109.GA19126@n2100.arm.linux.org.uk>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 18 Aug 2010 20:31:10 +0000
+Subject: Re: [regression] in linux-next: sh_mobile_ceu_camera broken by "ARM:
+Message-Id: <Pine.LNX.4.64.1008182218150.17895@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4C5ED116.5000002@arndnet.de>
 	<201008101045.03547.philippe.retornaz@epfl.ch>
@@ -9,60 +9,48 @@ References: <4C5ED116.5000002@arndnet.de>
 	<Pine.LNX.4.64.1008102117000.18934@axis700.grange>
 	<20100810212638.GC7702@n2100.arm.linux.org.uk>
 	<Pine.LNX.4.64.1008182107210.17895@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1008182107210.17895@axis700.grange>
+	<20100818194109.GA19126@n2100.arm.linux.org.uk>
+In-Reply-To: <20100818194109.GA19126@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 18, 2010 at 09:23:25PM +0200, Guennadi Liakhovetski wrote:
-> Resuming the week-old thread, to try to get a solution for this problem 
-> for 2.6.36.
-> 
-> On Tue, 10 Aug 2010, Russell King - ARM Linux wrote:
-> > Or just make the DMA coherent region larger and use that instead (and
-> > the DMA coherent region I hope will be fixed to omit the dual-mapping
-> > for the next merge window.)
-> 
-> Sorry, don't quite understand. Currently what those platforms do is they 
-> allocate at platform init time a sufficient DMA doherent region per
-> 
-> 	buf = dma_alloc_coherent(NULL, buf_size, &dma_handle, GFP_KERNEL);
-> 
-> and then "assign" it to the video platform device per
-> 
-> 	dma = dma_declare_coherent_memory(&mx3_camera.dev,
-> 					dma_handle, dma_handle, buf_size,
-> 					DMA_MEMORY_MAP | DMA_MEMORY_EXCLUSIVE);
+On Wed, 18 Aug 2010, Russell King - ARM Linux wrote:
 
-So, why have the DMA memory mapped in _correctly_ by dma_alloc_coherent(),
-and then have dma_declare_coherent_memory() map it in using ioremap(),
-thereby creating an incompatible DEVICE aliasing mapping of the already
-existing memory mapping.
+> On Wed, Aug 18, 2010 at 09:23:25PM +0200, Guennadi Liakhovetski wrote:
 
-This definitely falls outside of predicatible behaviour on ARMv6 and
-ARMv7, and doesn't even fall within the limits of the mitigated
-conditions for existing CPUs.
+[snip]
 
-The above will _not_ work reliably.  Good, my patch has identified
-something that's definitely broken.
-
-> Now the driver will be able to use the videobuf-dma-contig video-buffer 
-> allocation, which does
+> > The sole purpose of the preallocation in the platform code is to avoid 
+> > memory fragmentation. Sorry, if I'm repeating obvious things. So, we are 
+> > already allocating DMA coherent memory. The ioremap() problem in this case 
+> > is actually bogus - we do not need that ioremap(). The problem would be 
+> > solved, if ioremap() would just not be called in these cases. This is what 
+> > the drivers/staging/dt3155v4l/dt3155vfl.c driver is open-coding in its 
+> > dt3155_alloc_coherent() function, as pointed out by Marin Mitov (CCed) in 
+> > another thread. So, would it be acceptable to provide a second function, 
+> > doing exactly the same as dma_declare_coherent_memory() but without an 
+> > ioremap(), or add a new DMA_MEMORY_... flag to skip ioremap() in 
+> > dma_declare_coherent_memory(), as suggested by Uwe (CCed too)?
 > 
-> 	mem->vaddr = dma_alloc_coherent(q->dev, mem->size,
-> 					&mem->dma_handle, GFP_KERNEL);
-> 
-> The sole purpose of the preallocation in the platform code is to avoid 
-> memory fragmentation. Sorry, if I'm repeating obvious things. So, we are 
-> already allocating DMA coherent memory. The ioremap() problem in this case 
-> is actually bogus - we do not need that ioremap(). The problem would be 
-> solved, if ioremap() would just not be called in these cases. This is what 
-> the drivers/staging/dt3155v4l/dt3155vfl.c driver is open-coding in its 
-> dt3155_alloc_coherent() function, as pointed out by Marin Mitov (CCed) in 
-> another thread. So, would it be acceptable to provide a second function, 
-> doing exactly the same as dma_declare_coherent_memory() but without an 
-> ioremap(), or add a new DMA_MEMORY_... flag to skip ioremap() in 
-> dma_declare_coherent_memory(), as suggested by Uwe (CCed too)?
+> Sounds like a sane approach to fixing this to me.
 
-Sounds like a sane approach to fixing this to me.
+I assume, you mean adding a new flag to skip ioremap(). But then we have 
+to pass the virtual address to the function. Its prototype is
+
+int dma_declare_coherent_memory(struct device *dev, dma_addr_t bus_addr,
+				dma_addr_t device_addr, size_t size, int flags);
+
+bus_addr is unused in this case, but I don't think abusing it to pass a 
+"void *" would be an acceptable solution - apart from all the ugly 
+type-casting, if we ever get 64-bit virtual addresses on ARM with 32-bit 
+DMA addresses, we've got a problem. Or is this never going to happen? Or 
+whould I rather add a new function?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
