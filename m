@@ -1,7 +1,7 @@
 From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 18 Aug 2010 21:44:40 +0000
+Date: Wed, 18 Aug 2010 21:47:37 +0000
 Subject: Re: [regression] in linux-next: sh_mobile_ceu_camera broken by
-Message-Id: <20100818214440.GA22254@n2100.arm.linux.org.uk>
+Message-Id: <20100818214737.GB22254@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4C5ED116.5000002@arndnet.de>
 	<201008101045.03547.philippe.retornaz@epfl.ch>
@@ -18,9 +18,6 @@ Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
 On Wed, Aug 18, 2010 at 10:31:10PM +0200, Guennadi Liakhovetski wrote:
-> On Wed, 18 Aug 2010, Russell King - ARM Linux wrote:
-> > Sounds like a sane approach to fixing this to me.
-> 
 > I assume, you mean adding a new flag to skip ioremap(). But then we have 
 > to pass the virtual address to the function. Its prototype is
 > 
@@ -33,4 +30,9 @@ On Wed, Aug 18, 2010 at 10:31:10PM +0200, Guennadi Liakhovetski wrote:
 > DMA addresses, we've got a problem. Or is this never going to happen? Or 
 > whould I rather add a new function?
 
-A new function sounds saner.
+Oh, and if it's going to be used as per your previous message,
+how about:
+
+int dma_preallocate_coherent_memory(struct device *dev, size_t size);
+
+so that it contains the dma_alloc_coherent() logic itself too?
