@@ -1,140 +1,113 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 20 Aug 2010 12:04:24 +0000
-Subject: [GIT PULL] sh updates for 2.6.36-rc2
-Message-Id: <20100820120424.GC30659@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 19 Aug 2010 14:40:30 +0000
+Subject: [PATCH 5/5] SH: use dma_preallocate_coherent_memory() for platform
+Message-Id: <Pine.LNX.4.64.1008191637490.26145@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Please pull from:
+platform_resource_setup_memory() is used on SuperH to allocate large chunks
+of memory at system initialisation time for platform devices. Many of those
+devices are then handled by the UIO subsystem, and only one of them - the CEU
+has an in-kernel driver. This patch switches platform_resource_setup_memory()
+to use dma_preallocate_coherent_memory() and removes now unneeded call to
+dma_declare_coherent_memory() from the CEU driver.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/mm/consistent.c                    |   19 +++++++++----------
+ drivers/media/video/sh_mobile_ceu_camera.c |   19 +------------------
+ 2 files changed, 10 insertions(+), 28 deletions(-)
 
-Which contains:
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index c86a085..c617b99 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -127,8 +127,7 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
+ 					  char *name, unsigned long memsize)
+ {
+ 	struct resource *r;
+-	dma_addr_t dma_handle;
+-	void *buf;
++	int ret;
+ 
+ 	r = pdev->resource + pdev->num_resources - 1;
+ 	if (r->flags) {
+@@ -141,17 +140,17 @@ int __init platform_resource_setup_memory(struct platform_device *pdev,
+ 	if (!memsize)
+ 		return 0;
+ 
+-	buf = dma_alloc_coherent(NULL, memsize, &dma_handle, GFP_KERNEL);
+-	if (!buf) {
+-		pr_warning("%s: unable to allocate memory\n", name);
+-		return -ENOMEM;
++	ret = dma_preallocate_coherent_memory(&pdev->dev, memsize, GFP_KERNEL,
++					      DMA_MEMORY_MAP | DMA_MEMORY_EXCLUSIVE);
++	if (ret < 0) {
++		pr_warning("%s: unable to allocate memory: %d\n", name, ret);
++		return ret;
+ 	}
+ 
+-	memset(buf, 0, memsize);
+-
+ 	r->flags = IORESOURCE_MEM;
+-	r->start = dma_handle;
+-	r->end = r->start + memsize - 1;
++	/* Only the size is needed */
++	r->start = 0;
++	r->end = memsize - 1;
+ 	r->name = name;
+ 	return 0;
+ }
+diff --git a/drivers/media/video/sh_mobile_ceu_camera.c b/drivers/media/video/sh_mobile_ceu_camera.c
+index bfddad8..325671e 100644
+--- a/drivers/media/video/sh_mobile_ceu_camera.c
++++ b/drivers/media/video/sh_mobile_ceu_camera.c
+@@ -1951,20 +1951,8 @@ static int __devinit sh_mobile_ceu_probe(struct platform_device *pdev)
+ 	pcdev->video_limit = 0; /* only enabled if second resource exists */
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+-	if (res) {
+-		err = dma_declare_coherent_memory(&pdev->dev, res->start,
+-						  res->start,
+-						  resource_size(res),
+-						  DMA_MEMORY_MAP |
+-						  DMA_MEMORY_EXCLUSIVE);
+-		if (!err) {
+-			dev_err(&pdev->dev, "Unable to declare CEU memory.\n");
+-			err = -ENXIO;
+-			goto exit_iounmap;
+-		}
+-
++	if (res)
+ 		pcdev->video_limit = resource_size(res);
+-	}
+ 
+ 	/* request irq */
+ 	err = request_irq(pcdev->irq, sh_mobile_ceu_irq, IRQF_DISABLED,
+@@ -2036,9 +2024,6 @@ exit_free_clk:
+ 	pm_runtime_disable(&pdev->dev);
+ 	free_irq(pcdev->irq, pcdev);
+ exit_release_mem:
+-	if (platform_get_resource(pdev, IORESOURCE_MEM, 1))
+-		dma_release_declared_memory(&pdev->dev);
+-exit_iounmap:
+ 	iounmap(base);
+ exit_kfree:
+ 	kfree(pcdev);
+@@ -2056,8 +2041,6 @@ static int __devexit sh_mobile_ceu_remove(struct platform_device *pdev)
+ 	soc_camera_host_unregister(soc_host);
+ 	pm_runtime_disable(&pdev->dev);
+ 	free_irq(pcdev->irq, pcdev);
+-	if (platform_get_resource(pdev, IORESOURCE_MEM, 1))
+-		dma_release_declared_memory(&pdev->dev);
+ 	iounmap(pcdev->base);
+ 	if (csi2 && csi2->driver)
+ 		module_put(csi2->driver->owner);
+-- 
+1.7.2
 
-Andrew Murray (1):
-      sh: Use __GFP_ZERO for dma_generic_alloc_coherent().
-
-Guennadi Liakhovetski (3):
-      dmaengine: initialise DMA engine before MMC
-      sh: move a debug printk() to a more meaningful location in the clock driver
-      sh: remove bogus highest / lowest logic from clock rate rounding
-
-Hitoshi Mitake (1):
-      sh: SH-2007 board support.
-
-Kulikov Vasiliy (1):
-      sh: dma: check return value of create_proc_read_entry()
-
-Magnus Damm (3):
-      clocksource: sh_cmt: One-off clockevent fix V2
-      clocksource: sh_cmt: Rate calculation fix
-      i2c: i2c-sh_mobile irq rollback fix
-
-Markus Pietrek (1):
-      sound/soc/sh/siu: Fixed undefined dma_length of scatter gather list
-
-Matt Fleming (1):
-      sh: Fix typos in PCI initialization message
-
-Nobuhiro Iwamatsu (1):
-      sh: Drop dependence for 29bit mode of trigger_address_error()
-
-Paul Mundt (15):
-      sh: Add kprobe-based event tracer.
-      sh: split out ptrace header for _32/_64 variants.
-      sh: kprobes SMP support.
-      sh: update the FDPIC relocations.
-      sh: fix up an off-by-1 in the number of early ioremap fixmaps.
-      sh: Fix up PUD trampling in ranged page table init for X2TLB.
-      sh: Provide a global TLB flush for U/I-TLB clear.
-      sh: wire up fanotify/prlimit64 syscalls.
-      sh: fix up fallout from syscall arg constification.
-      sh: stub __flush_tlb_global() definition for nommu.
-      sh: Support type 1 accesses for SH7786 PCI.
-      sh: Fix up SH7786 PCIe PHY initialization.
-      sh: reinstate clock framework rate rounding.
-      sh: Relax devfn constraints for SH7786 PCIe.
-      sh: sh2007/sh7757lcr defconfig reduction.
-
-Phil Edworthy (1):
-      sh: Add sh7724 BEU resources
-
-Sam Ravnborg (1):
-      sh: fix recursive dependency in Kconfig
-
-Yoshihiro Shimoda (7):
-      sh: modify NR_IRQS from 256 to 512
-      sh: change PVR of SH7757 for 2nd cut
-      sh: fix the id of scif in setup-sh7757
-      sh: add some INTC_VECT for setup-sh7757
-      sh: modify pinmux for SH7757 2nd cut
-      sh: modify clock framework of SH7757
-      sh: add sh7757lcr board support
-
- arch/sh/Kconfig                           |    5 +-
- arch/sh/boards/Kconfig                    |   16 +
- arch/sh/boards/Makefile                   |    2 +
- arch/sh/boards/board-sh2007.c             |  133 +++
- arch/sh/boards/board-sh7757lcr.c          |  374 +++++++
- arch/sh/configs/sh2007_defconfig          |  213 ++++
- arch/sh/configs/sh7757lcr_defconfig       |   85 ++
- arch/sh/drivers/dma/dma-api.c             |    4 +-
- arch/sh/drivers/pci/ops-sh7786.c          |   27 +-
- arch/sh/drivers/pci/pci-sh7751.c          |    2 +-
- arch/sh/drivers/pci/pci-sh7780.c          |    2 +-
- arch/sh/drivers/pci/pcie-sh7786.c         |   32 +-
- arch/sh/include/asm/Kbuild                |    2 +
- arch/sh/include/asm/elf.h                 |   27 +-
- arch/sh/include/asm/fixmap.h              |    4 +-
- arch/sh/include/asm/irq.h                 |    2 +-
- arch/sh/include/asm/kprobes.h             |    1 -
- arch/sh/include/asm/processor_32.h        |    3 -
- arch/sh/include/asm/processor_64.h        |    3 -
- arch/sh/include/asm/ptrace.h              |  169 ++--
- arch/sh/include/asm/ptrace_32.h           |   83 ++
- arch/sh/include/asm/ptrace_64.h           |   20 +
- arch/sh/include/asm/syscalls_32.h         |    7 +-
- arch/sh/include/asm/system_32.h           |   13 +-
- arch/sh/include/asm/tlbflush.h            |    2 +
- arch/sh/include/asm/unistd_32.h           |    5 +-
- arch/sh/include/asm/unistd_64.h           |    5 +-
- arch/sh/include/cpu-sh4/cpu/sh7757.h      |  301 +++---
- arch/sh/include/mach-common/mach/sh2007.h |  117 +++
- arch/sh/kernel/Makefile                   |    2 +-
- arch/sh/kernel/cpu/sh4/probe.c            |    2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c    |  199 ++--
- arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c   | 1582 +++++++++++++++++------------
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c    |   66 ++
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c    |  222 +++--
- arch/sh/kernel/kprobes.c                  |  100 +-
- arch/sh/kernel/ptrace.c                   |   33 +
- arch/sh/kernel/ptrace_32.c                |   27 +
- arch/sh/kernel/ptrace_64.c                |   79 ++
- arch/sh/kernel/reboot.c                   |    4 +
- arch/sh/kernel/syscalls_32.S              |    3 +
- arch/sh/kernel/syscalls_64.S              |    3 +
- arch/sh/mm/consistent.c                   |    3 +-
- arch/sh/mm/init.c                         |   52 +-
- arch/sh/mm/nommu.c                        |    4 +
- arch/sh/mm/tlbflush_32.c                  |   16 +
- arch/sh/mm/tlbflush_64.c                  |    5 +
- arch/sh/tools/mach-types                  |    2 +
- drivers/Makefile                          |    2 +-
- drivers/clocksource/sh_cmt.c              |   12 +-
- drivers/i2c/busses/i2c-sh_mobile.c        |   23 +-
- drivers/serial/sh-sci.h                   |   17 +-
- drivers/sh/clk.c                          |    9 +-
- sound/soc/sh/siu_pcm.c                    |    2 +
- 54 files changed, 2919 insertions(+), 1209 deletions(-)
- create mode 100644 arch/sh/boards/board-sh2007.c
- create mode 100644 arch/sh/boards/board-sh7757lcr.c
- create mode 100644 arch/sh/configs/sh2007_defconfig
- create mode 100644 arch/sh/configs/sh7757lcr_defconfig
- create mode 100644 arch/sh/include/asm/ptrace_32.h
- create mode 100644 arch/sh/include/asm/ptrace_64.h
- create mode 100644 arch/sh/include/mach-common/mach/sh2007.h
- create mode 100644 arch/sh/kernel/ptrace.c
