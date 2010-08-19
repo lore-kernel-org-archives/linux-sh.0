@@ -1,60 +1,128 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Mon, 30 Aug 2010 12:41:58 +0000
-Subject: Re: [PATCH 2/4] sh: Accessor functions for the sh_pmu state
-Message-Id: <20100830124158.GY22783@erda.amd.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 19 Aug 2010 14:40:22 +0000
+Subject: [PATCH 4/5] DMA: Add functions to preallocate DMA memory dor devices
+Message-Id: <Pine.LNX.4.64.1008191636590.26145@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1282848651.git.matt@console-pimps.org>
- <f259830dbccb084d27d127676b979d9cb502e36f.1282848651.git.matt@console-pimps.org>
- <20100827134301.GL22783@erda.amd.com>
- <20100827191745.GA7258@console-pimps.org>
-In-Reply-To: <20100827191745.GA7258@console-pimps.org>
+References: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 27.08.10 15:17:45, Matt Fleming wrote:
+Currently dma_declare_coherent_memory() and dma_release_declared_memory() are
+provided to assign DMA memory to a device and to release it. These functions
+can be use with device local memory, like on-chip SRAM. However, they are
+unsuitable for assigning of generic system RAM to devices, because such system
+memory should not be ioremapped, and ioremap() is used internally in the former
+of these functions to map the memory.
 
-> > > --- a/arch/sh/kernel/perf_event.c
-> > > +++ b/arch/sh/kernel/perf_event.c
-> > > @@ -60,6 +60,19 @@ static inline int sh_pmu_initialized(void)
-> > >  }
-> > >  
-> > >  /*
-> > > + * Return the number of events for the current sh_pmu.
-> > > + */
-> > > +int sh_pmu_num_events(void)
-> > > +{
-> > > +	return sh_pmu->num_events;
-> > > +}
-> > > +
-> > > +const char *sh_pmu_name(void)
-> > > +{
-> > > +	return sh_pmu->name;
-> > > +}
+This patch solves this problem by adding two more functions:
+dma_preallocate_coherent_memory() and dma_release_preallocated_memory(), which
+allocate DMA coherent memory and assign it to the device, and release it back
+respectively.
 
-> > This accessor functions should be generic for all architectures.
-> 
-> This isn't going to work. ARM uses an integer ID whereas SH uses a
-> string name. This is specific to an architecture and making it generic
-> would probably involve some abstraction layer.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/base/dma-coherent.c        |   50 ++++++++++++++++++++++++++++++++++++
+ include/asm-generic/dma-coherent.h |    2 +
+ include/linux/dma-mapping.h        |   12 ++++++++
+ 3 files changed, 64 insertions(+), 0 deletions(-)
 
-Perf should provide the interface to detect the number of counters
-(btw. *num_events is wrong) and the name of the pmu. The information
-is part of perf and thus the functions accessing it should be part of
-perf too, not oprofile.
-
-We also need generic functions, because we want to have a generic
-oprofile-perf driver.
-
-I don't see that this is hard to implement. We could add function
-stubs returning an error or invalid value using the __weak attribute
-and implement it for those architectures where we need it.
-
--Robert
-
+diff --git a/drivers/base/dma-coherent.c b/drivers/base/dma-coherent.c
+index 8efdfd4..9eb2856 100644
+--- a/drivers/base/dma-coherent.c
++++ b/drivers/base/dma-coherent.c
+@@ -170,3 +170,53 @@ int dma_release_from_coherent(struct device *dev, int order, void *vaddr)
+ 	return 0;
+ }
+ EXPORT_SYMBOL(dma_release_from_coherent);
++
++int dma_preallocate_coherent_memory(struct device *dev, size_t size, gfp_t gfp,
++				    int flags)
++{
++	int pages = size >> PAGE_SHIFT;
++	int bitmap_size = BITS_TO_LONGS(pages) * sizeof(long);
++	dma_addr_t dma_handle;
++	void *buf;
++
++	if (!(flags & (DMA_MEMORY_MAP | DMA_MEMORY_IO)) || !dev)
++		return -EINVAL;
++
++	if (!size)
++		return 0;
++
++	buf = dma_alloc_coherent(NULL, size, &dma_handle, gfp);
++	if (!buf)
++		return -ENOMEM;
++
++	dev->dma_mem = kzalloc(sizeof(struct dma_coherent_mem) + bitmap_size, gfp);
++	if (!dev->dma_mem)
++		goto ealloc;
++
++	dev->dma_mem->virt_base = buf;
++	dev->dma_mem->device_base = dma_handle;
++	dev->dma_mem->size = pages;
++	dev->dma_mem->flags = flags;
++
++	return 0;
++
++ealloc:
++	dma_free_coherent(dev, size, buf, dma_handle);
++
++	return -ENOMEM;
++}
++EXPORT_SYMBOL(dma_preallocate_coherent_memory);
++
++void dma_release_preallocated_memory(struct device *dev)
++{
++	struct dma_coherent_mem *mem = dev->dma_mem;
++
++	if (!mem)
++		return;
++
++	dev->dma_mem = NULL;
++	dma_free_coherent(dev, mem->size << PAGE_SHIFT, mem->virt_base,
++			  mem->device_base);
++	kfree(mem);
++}
++EXPORT_SYMBOL(dma_release_preallocated_memory);
+diff --git a/include/asm-generic/dma-coherent.h b/include/asm-generic/dma-coherent.h
+index a92bc09..08a66a1 100644
+--- a/include/asm-generic/dma-coherent.h
++++ b/include/asm-generic/dma-coherent.h
+@@ -21,6 +21,8 @@ void dma_release_declared_memory(struct device *dev);
+ 
+ void *dma_mark_declared_memory_occupied(struct device *dev,
+ 				  dma_addr_t device_addr, size_t size);
++int dma_preallocate_coherent_memory(struct device *dev, size_t size, gfp_t gfp, int flags);
++void dma_release_preallocated_memory(struct device *dev);
+ #else
+ #define dma_alloc_from_coherent(dev, size, handle, ret) (0)
+ #define dma_release_from_coherent(dev, order, vaddr) (0)
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 77ce97f..0912abf 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -177,6 +177,18 @@ dma_mark_declared_memory_occupied(struct device *dev,
+ {
+ 	return ERR_PTR(-EBUSY);
+ }
++
++static inline int
++dma_preallocate_coherent_memory(struct device *dev, size_t size, gfp_t gfp, int flags)
++{
++	return -EINVAL;
++}
++
++static inline void
++dma_release_preallocated_memory(struct device *dev)
++{
++}
++
+ #endif
+ 
+ /*
 -- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
+1.7.2
 
