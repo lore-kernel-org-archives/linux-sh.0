@@ -1,146 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 27 Aug 2010 10:15:44 +0000
-Subject: [PATCH] fbdev: sh-mobile_hdmi: remove un-necessity settings
-Message-Id: <w3pfwy0icog.wl%kuninori.morimoto.gx@renesas.com>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Mon, 23 Aug 2010 10:46:19 +0000
+Subject: [PATCH 1/3] sh: Accessor functions for the sh_pmu state
+Message-Id: <1282560381-7700-2-git-send-email-matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
+In-Reply-To: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Current gamut, acp, isrc1, isrc2 settings are wrong,
-and not necessary for now.
+Introduce some accessor functions for getting at the name and number of
+counters of the current sh_pmu instance.
 
-Tested-by: Takanari Hayama <taki@igel.co.jp>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
 ---
- drivers/video/sh_mobile_hdmi.c |  106 ----------------------------------------
- 1 files changed, 0 insertions(+), 106 deletions(-)
+ arch/sh/include/asm/perf_event.h |    2 ++
+ arch/sh/kernel/perf_event.c      |   13 +++++++++++++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 2fde08c..afebe80 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -519,100 +519,6 @@ static void sh_hdmi_audio_infoframe_setup(struct sh_hdmi *hdmi)
+diff --git a/arch/sh/include/asm/perf_event.h b/arch/sh/include/asm/perf_event.h
+index 3d0c9f3..5b7fa84 100644
+--- a/arch/sh/include/asm/perf_event.h
++++ b/arch/sh/include/asm/perf_event.h
+@@ -25,6 +25,8 @@ struct sh_pmu {
+ extern int register_sh_pmu(struct sh_pmu *);
+ extern int reserve_pmc_hardware(void);
+ extern void release_pmc_hardware(void);
++extern int sh_pmu_num_events(void);
++extern const char *sh_pmu_name(void);
+ 
+ static inline void set_perf_event_pending(void)
+ {
+diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
+index 7a3dc35..086f788 100644
+--- a/arch/sh/kernel/perf_event.c
++++ b/arch/sh/kernel/perf_event.c
+@@ -60,6 +60,19 @@ static inline int sh_pmu_initialized(void)
  }
  
- /**
-- * sh_hdmi_gamut_metadata_setup() - Gamut Metadata Packet of CONTROL PACKET
-- */
--static void sh_hdmi_gamut_metadata_setup(struct sh_hdmi *hdmi)
--{
--	int i;
--
--	/* Gamut Metadata Packet */
--	hdmi_write(hdmi, 0x04, HDMI_CTRL_PKT_BUF_INDEX);
--
--	/* Packet Type = 0x0A */
--	hdmi_write(hdmi, 0x0A, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
--	/* Gamut Packet is not used, so default value */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
--	/* Gamut Packet is not used, so default value */
--	hdmi_write(hdmi, 0x10, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
--
--	/* GBD bytes 0 through 27 */
--	for (i = 0; i <= 27; i++)
--		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0_63H - PB27_7EH */
--		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
--}
--
--/**
-- * sh_hdmi_acp_setup() - Audio Content Protection Packet (ACP)
-- */
--static void sh_hdmi_acp_setup(struct sh_hdmi *hdmi)
--{
--	int i;
--
--	/* Audio Content Protection Packet (ACP) */
--	hdmi_write(hdmi, 0x01, HDMI_CTRL_PKT_BUF_INDEX);
--
--	/* Packet Type = 0x04 */
--	hdmi_write(hdmi, 0x04, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
--	/* ACP_Type */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
--	/* Reserved (0) */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
--
--	/* GBD bytes 0 through 27 */
--	for (i = 0; i <= 27; i++)
--		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0 - PB27 */
--		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
--}
--
--/**
-- * sh_hdmi_isrc1_setup() - ISRC1 Packet
-- */
--static void sh_hdmi_isrc1_setup(struct sh_hdmi *hdmi)
--{
--	int i;
--
--	/* ISRC1 Packet */
--	hdmi_write(hdmi, 0x02, HDMI_CTRL_PKT_BUF_INDEX);
--
--	/* Packet Type = 0x05 */
--	hdmi_write(hdmi, 0x05, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
--	/* ISRC_Cont, ISRC_Valid, Reserved (0), ISRC_Status */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
--	/* Reserved (0) */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
--
--	/* PB0 UPC_EAN_ISRC_0-15 */
--	/* Bytes PB16-PB27 shall be set to a value of 0. */
--	for (i = 0; i <= 27; i++)
--		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0 - PB27 */
--		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
--}
--
--/**
-- * sh_hdmi_isrc2_setup() - ISRC2 Packet
-- */
--static void sh_hdmi_isrc2_setup(struct sh_hdmi *hdmi)
--{
--	int i;
--
--	/* ISRC2 Packet */
--	hdmi_write(hdmi, 0x03, HDMI_CTRL_PKT_BUF_INDEX);
--
--	/* HB0 Packet Type = 0x06 */
--	hdmi_write(hdmi, 0x06, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
--	/* Reserved (0) */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
--	/* Reserved (0) */
--	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
--
--	/* PB0 UPC_EAN_ISRC_16-31 */
--	/* Bytes PB16-PB27 shall be set to a value of 0. */
--	for (i = 0; i <= 27; i++)
--		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0 - PB27 */
--		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
--}
--
--/**
-  * sh_hdmi_configure() - Initialise HDMI for output
+ /*
++ * Return the number of events for the current sh_pmu.
++ */
++int sh_pmu_num_events(void)
++{
++	return sh_pmu->num_events;
++}
++
++const char *sh_pmu_name(void)
++{
++	return sh_pmu->name;
++}
++
++/*
+  * Release the PMU if this is the last perf_event.
   */
- static void sh_hdmi_configure(struct sh_hdmi *hdmi)
-@@ -632,18 +538,6 @@ static void sh_hdmi_configure(struct sh_hdmi *hdmi)
- 	/* Audio InfoFrame */
- 	sh_hdmi_audio_infoframe_setup(hdmi);
- 
--	/* Gamut Metadata packet */
--	sh_hdmi_gamut_metadata_setup(hdmi);
--
--	/* Audio Content Protection (ACP) Packet */
--	sh_hdmi_acp_setup(hdmi);
--
--	/* ISRC1 Packet */
--	sh_hdmi_isrc1_setup(hdmi);
--
--	/* ISRC2 Packet */
--	sh_hdmi_isrc2_setup(hdmi);
--
- 	/*
- 	 * Control packet auto send with VSYNC control: auto send
- 	 * General control, Gamut metadata, ISRC, and ACP packets
+ static void hw_perf_event_destroy(struct perf_event *event)
 -- 
-1.7.0.4
+1.7.2.1
 
