@@ -1,47 +1,23 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Mon, 23 Aug 2010 10:46:18 +0000
-Subject: [PATCH 0/3] Generalise ARM perf-events backend for oprofile
-Message-Id: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
+From: Christoph Hellwig <hch@infradead.org>
+Date: Mon, 23 Aug 2010 10:57:59 +0000
+Subject: Re: [PATCH 0/3] Generalise ARM perf-events backend for oprofile
+Message-Id: <20100823105759.GA18638@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
+In-Reply-To: <1282560381-7700-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The perf-events backend for OProfile that Will Deacon wrote in
-8c1fc96f6fd1f361428ba805103af0d0eee65179 ("ARM: 6072/1: oprofile: use
-perf-events framework as backend") is of use to more architectures
-than just ARM. Move the code into drivers/oprofile/ so that SH can use
-it instead of the nearly identical copy of its OProfile code.
+On Mon, Aug 23, 2010 at 11:46:18AM +0100, Matt Fleming wrote:
+> The perf-events backend for OProfile that Will Deacon wrote in
+> 8c1fc96f6fd1f361428ba805103af0d0eee65179 ("ARM: 6072/1: oprofile: use
+> perf-events framework as backend") is of use to more architectures
+> than just ARM. Move the code into drivers/oprofile/ so that SH can use
+> it instead of the nearly identical copy of its OProfile code.
 
-The benefit of the backend is that it becomes necessary to only
-maintain one copy of the PMU accessor functions for each architecture,
-with bug fixes and new features benefiting both OProfile and perf.
-
-Note that I haven't been able to test these patches on an ARM board to
-see if I've caused any regressions. If anyone else could do that I'd
-appreciate it.
-
-This patch series is based on tip/master.
-
-Matt Fleming (3):
-  sh: Accessor functions for the sh_pmu state
-  oprofile: Abstract the perf-events backend for oprofile
-  sh: Use the perf-events backend for oprofile
-
- arch/arm/oprofile/Makefile       |    4 +
- arch/arm/oprofile/common.c       |  176 +-----------------------------------
- arch/sh/include/asm/perf_event.h |    2 +
- arch/sh/kernel/perf_event.c      |   13 +++
- arch/sh/oprofile/Makefile        |    4 +
- arch/sh/oprofile/common.c        |   95 +++----------------
- arch/sh/oprofile/op_impl.h       |   33 -------
- drivers/oprofile/oprofile_perf.c |  188 ++++++++++++++++++++++++++++++++++++++
- include/linux/oprofile.h         |   12 +++
- 9 files changed, 240 insertions(+), 287 deletions(-)
- delete mode 100644 arch/sh/oprofile/op_impl.h
- create mode 100644 drivers/oprofile/oprofile_perf.c
-
--- 
-1.7.2.1
+Nice, I didn't know such a backend already existed.  Now that you
+have made it generic we should aim towards making it the only oprofile
+backend and getting rid of all the duplication.
 
