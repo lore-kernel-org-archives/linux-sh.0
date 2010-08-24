@@ -1,122 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 31 Aug 2010 05:47:07 +0000
-Subject: [PATCH 2/4 v2] ASoC: Add sh_mobile_hdmi sound support
-Message-Id: <w3pwrr75o6d.wl%kuninori.morimoto.gx@renesas.com>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Tue, 24 Aug 2010 15:26:59 +0000
+Subject: [PATCH 1/4] tmio_mmc: Allow the mfd driver to specify get_cd handler
+Message-Id: <1282663622-20564-2-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
+References: <1282663622-20564-1-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1282663622-20564-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lrg@slimlogic.co.uk>
+To: ian@mnementh.co.uk
+Cc: sameo@linux.intel.com, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, yusuke.goda.sx@renesas.com, Arnd Hannemann <arnd@arndnet.de>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Some controllers, supported by the tmio_mmc driver do not have the card detect
+pin of a slot connected, so that polling needs to be used and card detection is
+handled by other means.
+This patch exposes a get_cd hook for that purpose.
+
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
-v1 -> v2
+ drivers/mmc/host/tmio_mmc.c |   13 +++++++++++++
+ include/linux/mfd/tmio.h    |    1 +
+ 2 files changed, 14 insertions(+), 0 deletions(-)
 
-o based on Mark's latest "for-2.6.37"
-
- drivers/video/sh_mobile_hdmi.c |   65 ++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 65 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index d25e348..f14c58a 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -22,6 +22,8 @@
- #include <linux/slab.h>
- #include <linux/types.h>
- #include <linux/workqueue.h>
-+#include <sound/soc-dapm.h>
-+#include <sound/initval.h>
- 
- #include <video/sh_mobile_hdmi.h>
- #include <video/sh_mobile_lcdc.h>
-@@ -222,6 +224,62 @@ static u8 hdmi_read(struct sh_hdmi *hdmi, u8 reg)
- 	return ioread8(hdmi->base + reg);
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index ee7d0a5..fe2ebf6 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -755,10 +755,23 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ 		(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT)) ? 0 : 1;
  }
  
-+/************************************************************************
-+
-+
-+			HDMI sound
-+
-+
-+************************************************************************/
-+static unsigned int sh_hdmi_snd_read(struct snd_soc_codec *codec,
-+				     unsigned int reg)
++static int tmio_mmc_get_cd(struct mmc_host *mmc)
 +{
-+	struct sh_hdmi *hdmi = snd_soc_codec_get_drvdata(codec);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct mfd_cell	*cell = host->pdev->dev.platform_data;
++	struct tmio_mmc_data *pdata = cell->driver_data;
 +
-+	return hdmi_read(hdmi, reg);
++	if (!pdata->get_cd)
++		return -ENOSYS;
++	else
++		return pdata->get_cd(host->pdev);
 +}
 +
-+static int sh_hdmi_snd_write(struct snd_soc_codec *codec,
-+			     unsigned int reg,
-+			     unsigned int value)
-+{
-+	struct sh_hdmi *hdmi = snd_soc_codec_get_drvdata(codec);
-+
-+	hdmi_write(hdmi, value, reg);
-+	return 0;
-+}
-+
-+static struct snd_soc_dai_driver sh_hdmi_dai = {
-+	.name = "sh_mobile_hdmi-hifi",
-+	.playback = {
-+		.stream_name = "Playback",
-+		.channels_min = 1,
-+		.channels_max = 2,
-+		.rates = SNDRV_PCM_RATE_8000_48000,
-+		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE,
-+	},
-+};
-+
-+static int sh_hdmi_snd_probe(struct snd_soc_codec *codec)
-+{
-+	dev_info(codec->dev, "SH Mobile HDMI Audio Codec");
-+
-+	return 0;
-+}
-+
-+static struct snd_soc_codec_driver soc_codec_dev_sh_hdmi = {
-+	.probe		= sh_hdmi_snd_probe,
-+	.read		= sh_hdmi_snd_read,
-+	.write		= sh_hdmi_snd_write,
-+};
-+
-+/************************************************************************
-+
-+
-+			HDMI video
-+
-+
-+************************************************************************/
- /* External video parameter settings */
- static void hdmi_external_video_param(struct sh_hdmi *hdmi)
- {
-@@ -804,6 +862,11 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
+ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
++	.get_cd		= tmio_mmc_get_cd,
+ };
  
-+	ret =  snd_soc_register_codec(&pdev->dev,
-+			&soc_codec_dev_sh_hdmi, &sh_hdmi_dai, 1);
-+	if (ret < 0)
-+		goto egetclk;
-+
- 	hdmi->dev = &pdev->dev;
+ #ifdef CONFIG_PM
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index f07425b..24c43bb 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -74,6 +74,7 @@ struct tmio_mmc_data {
+ 	struct tmio_mmc_dma		*dma;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
++	int (*get_cd)(struct platform_device *host);
+ };
  
- 	hdmi->hdmi_clk = clk_get(&pdev->dev, "ick");
-@@ -901,6 +964,8 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	int irq = platform_get_irq(pdev, 0);
- 
-+	snd_soc_unregister_codec(&pdev->dev);
-+
- 	pdata->lcd_chan->board_cfg.display_on = NULL;
- 	pdata->lcd_chan->board_cfg.display_off = NULL;
- 	pdata->lcd_chan->board_cfg.board_data = NULL;
+ /*
 -- 
 1.7.0.4
 
