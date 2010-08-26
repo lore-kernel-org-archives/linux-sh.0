@@ -1,32 +1,62 @@
-From: "FONDAZIONE Di VITTORIO & ECOWAS" <revseunrazaq@aol.com>
-Date: Sat, 28 Aug 2010 10:06:16 +0000
-Subject: Financial aid from FDV,Contact Dr.Razaq Immediately.
-Message-Id: <web-237900733@mailccs.icnet.com.ve>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Thu, 26 Aug 2010 19:09:17 +0000
+Subject: [PATCH 2/4] sh: Accessor functions for the sh_pmu state
+Message-Id: <f259830dbccb084d27d127676b979d9cb502e36f.1282848651.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <web-237897294@mailccs.icnet.com.ve>
-In-Reply-To: <web-237897294@mailccs.icnet.com.ve>
+References: <cover.1282848651.git.matt@console-pimps.org>
+In-Reply-To: <cover.1282848651.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Robert Richter <robert.richter@amd.com>, Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org
 
-FONDAZIONE Di VITTORIO & ECOWAS
-http://www.fondazionedivittorio.it
-Worldwide Donation Program "helping one to help 
-others...."
-=====================
-I have been directed to inform you that you have been 
-chosen for a cash grant 
-of 1,000,000.00usd (1million) by the board of trustees of 
-the above stated non-
-governmental aid organisation.
-Your grant number is B01-0147. Contact Rev.dr seun razaq 
-via telephone
-   +2348051809752 email revseunrazaq@aol.com, and provide 
-these
-details: 1).Full name. 2).Address 3).Telephone number. 
-[Cell preferably] 
-(4).Occupation.
+Introduce some accessor functions for getting at the name and number of
+counters of the current sh_pmu instance.
 
-Regards.
-Adolfo Pepe
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/sh/include/asm/perf_event.h |    2 ++
+ arch/sh/kernel/perf_event.c      |   13 +++++++++++++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/include/asm/perf_event.h b/arch/sh/include/asm/perf_event.h
+index 3d0c9f3..5b7fa84 100644
+--- a/arch/sh/include/asm/perf_event.h
++++ b/arch/sh/include/asm/perf_event.h
+@@ -25,6 +25,8 @@ struct sh_pmu {
+ extern int register_sh_pmu(struct sh_pmu *);
+ extern int reserve_pmc_hardware(void);
+ extern void release_pmc_hardware(void);
++extern int sh_pmu_num_events(void);
++extern const char *sh_pmu_name(void);
+ 
+ static inline void set_perf_event_pending(void)
+ {
+diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
+index 7a3dc35..086f788 100644
+--- a/arch/sh/kernel/perf_event.c
++++ b/arch/sh/kernel/perf_event.c
+@@ -60,6 +60,19 @@ static inline int sh_pmu_initialized(void)
+ }
+ 
+ /*
++ * Return the number of events for the current sh_pmu.
++ */
++int sh_pmu_num_events(void)
++{
++	return sh_pmu->num_events;
++}
++
++const char *sh_pmu_name(void)
++{
++	return sh_pmu->name;
++}
++
++/*
+  * Release the PMU if this is the last perf_event.
+  */
+ static void hw_perf_event_destroy(struct perf_event *event)
+-- 
+1.7.1
+
