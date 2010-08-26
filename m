@@ -1,148 +1,82 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 20 Aug 2010 20:05:30 +0000
+Date: Thu, 26 Aug 2010 09:06:20 +0000
 Subject: Re: [RFC][PATCH] add dma_reserve_coherent_memory()/dma_free_reserved_memory()
-Message-Id: <Pine.LNX.4.64.1008202148110.6103@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1008261100150.14167@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201008191818.36068.mitov@issp.bas.bg>
-In-Reply-To: <201008191818.36068.mitov@issp.bas.bg>
+References: <201008201450.12585.mitov@issp.bas.bg>
+	<20100826144000C.fujita.tomonori@lab.ntt.co.jp>
+	<201008260904.19973.mitov@issp.bas.bg>
+	<20100826152333K.fujita.tomonori@lab.ntt.co.jp>
+In-Reply-To: <20100826152333K.fujita.tomonori@lab.ntt.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, 19 Aug 2010, Marin Mitov wrote:
+On Thu, 26 Aug 2010, FUJITA Tomonori wrote:
 
-> Hi all,
+> On Thu, 26 Aug 2010 09:04:14 +0300
+> Marin Mitov <mitov@issp.bas.bg> wrote:
 > 
-> struct device contains a member: struct dma_coherent_mem *dma_mem;
-> to hold information for a piece of memory declared dma-coherent.
-> Alternatively the same member could also be used to hold preallocated
-> dma-coherent memory for latter per-device use.
+> > On Thursday, August 26, 2010 08:40:47 am FUJITA Tomonori wrote:
+> > > On Fri, 20 Aug 2010 14:50:12 +0300
+> > > Marin Mitov <mitov@issp.bas.bg> wrote:
+> > > 
+> > > > On Friday, August 20, 2010 11:35:06 am FUJITA Tomonori wrote:
+> > > > > On Fri, 20 Aug 2010 11:13:45 +0300
+> > > > > Marin Mitov <mitov@issp.bas.bg> wrote:
+> > > > > 
+> > > > > > > > This tric is already used in drivers/staging/dt3155v4l.c
+> > > > > > > > dt3155_alloc_coherent()/dt3155_free_coherent()
+> > > > > > > > 
+> > > > > > > > Here proposed for general use by popular demand from video4linux folks.
+> > > > > > > > Helps for videobuf-dma-contig framework.
+> > > > > > > 
+> > > > > > > What you guys exactly want to do? If you just want to pre-allocate
+> > > > > > > coherent memory for latter usage,
+> > > > > > 
+> > > > > > Yes, just to preallocate not coherent, but rather contiguous memory for latter usage.
+> > > > > > We use coherent memory because it turns out to be contiguous.
+> > > > > 
+> > > > > Hmm, you don't care about coherency? You just need contiguous memory?
+> > > > 
+> > > > Yes. We just need contiguous memory. Coherency is important as far as when dma
+> > > > transfer finishes user land is able to see the new data. Could be done by something like
+> > > > dma_{,un}map_single()
+> > > 
+> > > Then, we should avoid using coherent memory as I exaplained before. In
+> > > addition, dma_alloc_coherent can't provide large enough contigous
+> > > memory for some drivers so this patch doesn't help much.
+> > 
+> > Please, look at drivers/media/video/videobuf-dma-contig.c. Using coherent memory
+> > is inavoidable for now, there is no alternative for it for now. The two new functions,
+> > which I propose are just helpers for those of us who already use coherent memory
+> > (via videobuf-dma-contig API). May be adding these two functions to 
+> > drivers/media/video/videobuf-dma-contig.c will be better solution?
 > 
-> This tric is already used in drivers/staging/dt3155v4l.c
-> dt3155_alloc_coherent()/dt3155_free_coherent()
-> 
-> Here proposed for general use by popular demand from video4linux folks.
-> Helps for videobuf-dma-contig framework.
+> If you add something to the videobuf-dma-contig API, that's fine by me
+> because drivers/media/video/videobuf-dma-contig.c uses the own
+> structure and plays with dma_alloc_coherent. As long as a driver
+> doesn't touch device->dma_mem directly, it's fine, I think (that is,
+> dt3155v4l driver is broken). There are already some workarounds for
+> contigous memory in several drivers anyway.
 
-Ok, so, we've got two solutions to this problem submitted on the same 
-day;) Following this thread:
+No, this will not work - this API has to be used from board code and 
+videobuf can be built modular.
 
-http://marc.info/?t8128236400002&r=1&w=2
+> We will have the proper API for contiguous memory. I don't think that
+> adding such workaround to the DMA API is a good idea.
 
-on the ARM Linux kernel ML, I submitted a patch series
+We have currently a number of boards broken in the mainline. They must be 
+fixed for 2.6.36. I don't think the mentioned API will do this for us. So, 
+as I suggested earlier, we need either this or my patch series
 
 http://thread.gmane.org/gmane.linux.ports.sh.devel/8595
 
-with a couple of fixes and improvements, the actual new API and a use 
-example. My approach is slightly different, in that instead of requiring 
-drivers to issue two calls - one to reserve RAM (usually 
-dma_alloc_coherent()) and one to assign it to a device, my patch follows 
-the suggestion from Russell King from the first thread and unites these 
-two operations. So, now we have a choice;) Unfortunately, these two patch 
-series went to orthogonal sets of recepients, I'm trying to fix this by 
-adding a couple of CC entries.
+for 2.6.36.
 
 Thanks
 Guennadi
-
-> 
-> Signed-off-by: Marin Mitov <mitov@issp.bas.bg>
-> 
-> ===================================
-> --- a/drivers/base/dma-coherent.c	2010-08-19 15:50:42.000000000 +0300
-> +++ b/drivers/base/dma-coherent.c	2010-08-19 17:27:56.000000000 +0300
-> @@ -93,6 +93,83 @@ void *dma_mark_declared_memory_occupied(
->  EXPORT_SYMBOL(dma_mark_declared_memory_occupied);
->  
->  /**
-> + * dma_reserve_coherent_memory() - reserve coherent memory for per-device use
-> + *
-> + * @dev:	device from which we allocate memory
-> + * @size:	size of requested memory area in bytes
-> + * @flags:	same as in dma_declare_coherent_memory()
-> + *
-> + * This function reserves coherent memory allocating it early (during probe())
-> + * to support latter allocations from per-device coherent memory pools.
-> + * For a given device one could use either dma_declare_coherent_memory() or
-> + * dma_reserve_coherent_memory(), but not both, becase the result of these
-> + * functions is stored in a single struct device member - dma_mem
-> + *
-> + * Returns DMA_MEMORY_MAP on success, or 0 if failed.
-> + * (same as dma_declare_coherent_memory()
-> + */
-> +int dma_reserve_coherent_memory(struct device *dev, size_t size, int flags)
-> +{
-> +	struct dma_coherent_mem *mem;
-> +	dma_addr_t dev_base;
-> +	int pages = size >> PAGE_SHIFT;
-> +	int bitmap_size = BITS_TO_LONGS(pages) * sizeof(long);
-> +
-> +	if ((flags & DMA_MEMORY_MAP) = 0)
-> +		goto out;
-> +	if (!size)
-> +		goto out;
-> +	if (dev->dma_mem)
-> +		goto out;
-> +
-> +	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
-> +	if (!mem)
-> +		goto out;
-> +	mem->virt_base = dma_alloc_coherent(dev, size, &dev_base,
-> +							DT3155_COH_FLAGS);
-> +	if (!mem->virt_base)
-> +		goto err_alloc_coherent;
-> +	mem->bitmap = kzalloc(bitmap_size, GFP_KERNEL);
-> +	if (!mem->bitmap)
-> +		goto err_bitmap;
-> +
-> +	mem->device_base = dev_base;
-> +	mem->size = pages;
-> +	mem->flags = flags;
-> +	dev->dma_mem = mem;
-> +	return DMA_MEMORY_MAP;
-> +
-> +err_bitmap:
-> +	dma_free_coherent(dev, size, mem->virt_base, dev_base);
-> +err_alloc_coherent:
-> +	kfree(mem);
-> +out:
-> +	return 0;
-> +}
-> +EXPORT_SYMBOL(dma_reserve_coherent_memory);
-> +
-> +/**
-> + * dma_free_reserved_memory() - free the reserved dma-coherent memoty
-> + *
-> + * @dev:	device for which we free the dma-coherent memory
-> + *
-> + * same as dma_release_declared_memory()
-> + */
-> +void dma_free_reserved_memory(struct device *dev)
-> +{
-> +	struct dma_coherent_mem *mem = dev->dma_mem;
-> +
-> +	if (!mem)
-> +		return;
-> +	dev->dma_mem = NULL;
-> +	dma_free_coherent(dev, mem->size << PAGE_SHIFT,
-> +					mem->virt_base, mem->device_base);
-> +	kfree(mem->bitmap);
-> +	kfree(mem);
-> +}
-> +EXPORT_SYMBOL(dma_free_reserved_memory);
-> +
-> +/**
->   * dma_alloc_from_coherent() - try to allocate memory from the per-device coherent area
->   *
->   * @dev:	device from which we allocate memory
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
-
 ---
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
