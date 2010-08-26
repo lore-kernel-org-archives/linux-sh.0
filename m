@@ -1,42 +1,100 @@
-From: Namhyung Kim <namhyung@gmail.com>
-Date: Tue, 10 Aug 2010 03:09:43 +0000
-Subject: Re: [PATCH] sh: remove RELOC_HIDE on exception handlers and
-Message-Id: <1281409783.1670.14.camel@leonhard>
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
+Date: Thu, 26 Aug 2010 09:17:25 +0000
+Subject: Re: [RFC][PATCH] add
+Message-Id: <20100826091725.GC5355@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1281300825-3327-1-git-send-email-namhyung@gmail.com>
-	 <4C601ECD.2070503@st.com>
-In-Reply-To: <4C601ECD.2070503@st.com>
+References: <201008201450.12585.mitov@issp.bas.bg>
+	<20100826144000C.fujita.tomonori@lab.ntt.co.jp>
+	<201008260904.19973.mitov@issp.bas.bg>
+	<20100826152333K.fujita.tomonori@lab.ntt.co.jp>
+	<Pine.LNX.4.64.1008261100150.14167@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1008261100150.14167@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
-To: Stuart Menefy <stuart.menefy@st.com>
-Cc: Paul Mundt <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-2010-08-09 (=EC=9B=94), 16:29 +0100, Stuart Menefy:
-> Unfortunately these are necessary, although it is nothing to do with link=
-er
-> relocation. These functions take a struct pt_regs as a parameter (not a
-> pointer), and modify some of the fields of that structure. We needed a way
-> to ensure that gcc didn't optimise away those assignments - to gcc
-> they appear to be assignments to a local variable, so quite legitimately
-> get optimised away. So we used RELOC_HIDE() as a way of doing that.
+Hello,
+
+On Thu, Aug 26, 2010 at 11:06:20AM +0200, Guennadi Liakhovetski wrote:
+> On Thu, 26 Aug 2010, FUJITA Tomonori wrote:
 >=20
-
-Oh, I didn't know that. Thank you for the comments.
-
-
-> A clearer way to do this would be to pass in a struct pt_regs pointer,
-> but that would require going via a stub function which loads up the
-> pointer.
+> > On Thu, 26 Aug 2010 09:04:14 +0300
+> > Marin Mitov <mitov@issp.bas.bg> wrote:
+> >=20
+> > > On Thursday, August 26, 2010 08:40:47 am FUJITA Tomonori wrote:
+> > > > On Fri, 20 Aug 2010 14:50:12 +0300
+> > > > Marin Mitov <mitov@issp.bas.bg> wrote:
+> > > >=20
+> > > > > On Friday, August 20, 2010 11:35:06 am FUJITA Tomonori wrote:
+> > > > > > On Fri, 20 Aug 2010 11:13:45 +0300
+> > > > > > Marin Mitov <mitov@issp.bas.bg> wrote:
+> > > > > >=20
+> > > > > > > > > This tric is already used in drivers/staging/dt3155v4l.c
+> > > > > > > > > dt3155_alloc_coherent()/dt3155_free_coherent()
+> > > > > > > > >=20
+> > > > > > > > > Here proposed for general use by popular demand from vide=
+o4linux folks.
+> > > > > > > > > Helps for videobuf-dma-contig framework.
+> > > > > > > >=20
+> > > > > > > > What you guys exactly want to do? If you just want to pre-a=
+llocate
+> > > > > > > > coherent memory for latter usage,
+> > > > > > >=20
+> > > > > > > Yes, just to preallocate not coherent, but rather contiguous =
+memory for latter usage.
+> > > > > > > We use coherent memory because it turns out to be contiguous.
+> > > > > >=20
+> > > > > > Hmm, you don't care about coherency? You just need contiguous m=
+emory?
+> > > > >=20
+> > > > > Yes. We just need contiguous memory. Coherency is important as fa=
+r as when dma
+> > > > > transfer finishes user land is able to see the new data. Could be=
+ done by something like
+> > > > > dma_{,un}map_single()
+> > > >=20
+> > > > Then, we should avoid using coherent memory as I exaplained before.=
+ In
+> > > > addition, dma_alloc_coherent can't provide large enough contigous
+> > > > memory for some drivers so this patch doesn't help much.
+> > >=20
+> > > Please, look at drivers/media/video/videobuf-dma-contig.c. Using cohe=
+rent memory
+> > > is inavoidable for now, there is no alternative for it for now. The t=
+wo new functions,
+> > > which I propose are just helpers for those of us who already use cohe=
+rent memory
+> > > (via videobuf-dma-contig API). May be adding these two functions to=20
+> > > drivers/media/video/videobuf-dma-contig.c will be better solution?
+> >=20
+> > If you add something to the videobuf-dma-contig API, that's fine by me
+> > because drivers/media/video/videobuf-dma-contig.c uses the own
+> > structure and plays with dma_alloc_coherent. As long as a driver
+> > doesn't touch device->dma_mem directly, it's fine, I think (that is,
+> > dt3155v4l driver is broken). There are already some workarounds for
+> > contigous memory in several drivers anyway.
 >=20
-> Stuart
+> No, this will not work - this API has to be used from board code and=20
+> videobuf can be built modular.
 >=20
+> > We will have the proper API for contiguous memory. I don't think that
+> > adding such workaround to the DMA API is a good idea.
+>=20
+> We have currently a number of boards broken in the mainline. They must be=
+=20
+> fixed for 2.6.36. I don't think the mentioned API will do this for us. So=
+,=20
+> as I suggested earlier, we need either this or my patch series
+>=20
+> http://thread.gmane.org/gmane.linux.ports.sh.devel/8595
+this seems to be more mature to me.  The original patch in this thread
+uses a symbol DT3155_COH_FLAGS which seems misplaced in generic code and
+doesn't put the new functions in a header.
 
-So is it worth if I'm gonna work on it?
-
+Best regards
+Uwe
 
 --=20
-Regards,
-Namhyung Kim
-
-
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
