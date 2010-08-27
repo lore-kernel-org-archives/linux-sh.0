@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 27 Aug 2010 09:49:39 +0000
+Date: Fri, 27 Aug 2010 09:49:50 +0000
 Subject: [PATCH] ARM: mach-shmobile: ap4evb: modify tsc2007 platform settings
-Message-Id: <w3plj7sidvw.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3pk4ncidvm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
