@@ -1,77 +1,95 @@
 From: Marin Mitov <mitov@issp.bas.bg>
-Date: Thu, 26 Aug 2010 18:32:26 +0000
+Date: Fri, 27 Aug 2010 06:23:21 +0000
 Subject: Re: [RFC][PATCH] add dma_reserve_coherent_memory()/dma_free_reserved_memory() API
-Message-Id: <201008262132.35523.mitov@issp.bas.bg>
+Message-Id: <201008270923.30297.mitov@issp.bas.bg>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1008261100150.14167@axis700.grange>
-	<20100826185102I.fujita.tomonori@lab.ntt.co.jp>
-	<20100826174909.GA13224@n2100.arm.linux.org.uk>
-In-Reply-To: <20100826174909.GA13224@n2100.arm.linux.org.uk>
+References: <20100827044142.GB31863@pengutronix.de>
+	<20100827051907.GA17521@pengutronix.de>
+	<20100827145712Z.fujita.tomonori@lab.ntt.co.jp>
+In-Reply-To: <20100827145712Z.fujita.tomonori@lab.ntt.co.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday, August 26, 2010 08:49:09 pm Russell King - ARM Linux wrote:
-> On Thu, Aug 26, 2010 at 06:51:48PM +0900, FUJITA Tomonori wrote:
-> > On Thu, 26 Aug 2010 11:45:58 +0200 (CEST)
-> > Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> > 
-> > > On Thu, 26 Aug 2010, FUJITA Tomonori wrote:
-> > > 
-> > > > Why can't you revert a commit that causes the regression?
-> > > 
-> > > See this reply, and the complete thread too.
-> > > 
-> > > http://marc.info/?l=linux-sh&m8130485208262&w=2
-> > > 
-> > > > The related DMA API wasn't changed in 2.6.36-rc1. The DMA API is not
-> > > > responsible for the regression. And the patchset even exnteds the
-> > > > definition of the DMA API (dma_declare_coherent_memory). Such change
-> > > > shouldn't applied after rc1. I think that DMA-API.txt says that
-> > > > dma_declare_coherent_memory() handles coherent memory for a particular
-> > > > device. It's not for the API that reserves coherent memory that can be
-> > > > used for any device for a single device.
-> > > 
-> > > Anyway, we need a way to fix the regression.
-> > 
-> > Needs to find a different way.
+On Friday, August 27, 2010 08:57:59 am FUJITA Tomonori wrote:
+> On Fri, 27 Aug 2010 07:19:07 +0200
+> Uwe Kleine-König <u.kleine-koenig@pengutronix.de> wrote:
 > 
-> No.  ioremap on memory mapped by the kernel is just plain not permitted
-> with ARMv6 and ARMv7 architectures.
+> > Hey,
+> > 
+> > On Fri, Aug 27, 2010 at 02:00:17PM +0900, FUJITA Tomonori wrote:
+> > > On Fri, 27 Aug 2010 06:41:42 +0200
+> > > Uwe Kleine-König <u.kleine-koenig@pengutronix.de> wrote:
+> > > > On Thu, Aug 26, 2010 at 07:00:24PM +0900, FUJITA Tomonori wrote:
+> > > > > On Thu, 26 Aug 2010 11:53:11 +0200
+> > > > > Uwe Kleine-König <u.kleine-koenig@pengutronix.de> wrote:
+> > > > > 
+> > > > > > > > We have currently a number of boards broken in the mainline. They must be 
+> > > > > > > > fixed for 2.6.36. I don't think the mentioned API will do this for us. So, 
+> > > > > > > > as I suggested earlier, we need either this or my patch series
+> > > > > > > > 
+> > > > > > > > http://thread.gmane.org/gmane.linux.ports.sh.devel/8595
+> > > > > > > > 
+> > > > > > > > for 2.6.36.
+> > > > > > > 
+> > > > > > > Why can't you revert a commit that causes the regression?
+> > > > > > > 
+> > > > > > > The related DMA API wasn't changed in 2.6.36-rc1. The DMA API is not
+> > > > > > > responsible for the regression. And the patchset even exnteds the
+> > > > > > > definition of the DMA API (dma_declare_coherent_memory). Such change
+> > > > > > > shouldn't applied after rc1. I think that DMA-API.txt says that
+> > > > > > > dma_declare_coherent_memory() handles coherent memory for a particular
+> > > > > > > device. It's not for the API that reserves coherent memory that can be
+> > > > > > > used for any device for a single device.
+> > > > > > The patch that made the problem obvious for ARM is
+> > > > > > 309caa9cc6ff39d261264ec4ff10e29489afc8f8 aka v2.6.36-rc1~591^2~2^4~12.
+> > > > > > So this went in before v2.6.36-rc1.  One of the "architectures which
+> > > > > > similar restrictions" is x86 BTW.
+> > > > > > 
+> > > > > > And no, we won't revert 309caa9cc6ff39d261264ec4ff10e29489afc8f8 as it
+> > > > > > addresses a hardware restriction.
+> > > > > 
+> > > > > How these drivers were able to work without hitting the hardware restriction?
+> > > > In my case the machine in question is an ARMv5, the hardware restriction
+> > > > is on ARMv6+ only.  You could argue that so the breaking patch for arm
+> > > > should only break ARMv6, but I don't think this is sensible from a
+> > > > maintainers POV.  We need an API that works independant of the machine
+> > > > that runs the code.
+> > > 
+> > > Agreed. But insisting that the DMA API needs to be extended wrongly
+> > > after rc2 to fix the regression is not sensible too. The related DMA
+> > > API wasn't changed in 2.6.36-rc1. The API isn't responsible for the
+> > > regression at all.
+> > I think this isn't about "responsiblity".  Someone in arm-land found
+> > that the way dma memory allocation worked for some time doesn't work
+> > anymore on new generation chips.  As pointing out this problem was
+> > expected to find some matches it was merged in the merge window.  One
+> > such match is the current usage of the DMA API that doesn't currently
+> > offer a way to do it right, so it needs a patch, no?
+> 
+> No, I don't think so. We are talking about a regression, right?
+> 
+> On new generation chips, something often doesn't work (which have
+> worked on old chips for some time). It's not a regresiion. I don't
+> think that it's sensible to make large change (especially after rc1)
+> to fix such issue. If you say that the DMA API doesn't work on new
+> chips and proposes a patch for the next merge window, it's sensible, I
+> suppose.
+> 
+> Btw, the patch isn't a fix for the DMA API. It tries to extend the DMA
+> API (and IMO in the wrong way). 
+> In addition, the patch might break the
+> current code. 
 
-Hi Russell,
-
-Just because ioremap on memory mapped by the kernel is just plain not permitted
-I have proposed a new pair of functions: dma_reserve_coherent_memory()/dma_free_reserved_memory()
-
-http://lkml.org/lkml/2010/8/19/200
-
-but it is not quite well accepted from the community.
-What is your opinion?
+To "break the current code" is simply not possible. Sorry to oppose. As you have written it 
+"extend the DMA API", so if you do not use the new API (and no current code is using it)
+you cannot "break the current code". 
 
 Thanks,
 
 Marin Mitov
 
-> 
-> It's not something you can say "oh, need to find another way" because there
-> is _no_ software solution to having physical regions mapped multiple times
-> with different attributes.  It's an architectural restriction.
-> 
-> We can't unmap the kernel's memory mapping either, as I've already explained
-> several times this month - and I'm getting frustrated at having to keep
-> on explaining that point.
-> 
-> Just accept the plain fact that multiple mappings of the same physical
-> regions have become illegal.
-> 
-> What we need is another alternative other than using ioremap on memory
-> already mapped by the kernel - eg, by reserving a certain chunk of
-> memory for this purpose at boot time which his _never_ mapped by the
-> kernel, except via ioremap.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I really don't think that applying such patch after rc1
+> is senseble.
 > 
