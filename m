@@ -1,94 +1,67 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 31 Aug 2010 05:46:41 +0000
-Subject: [PATCH 1/4 v2] fbdev: sh-mobile: Add HDMI sound type selection
-Message-Id: <w3p1v9f72rk.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 27 Aug 2010 09:49:30 +0000
+Subject: [PATCH] sh: ecovec24: modify tsc2007 platform settings
+Message-Id: <w3pmxs8idw5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lrg@slimlogic.co.uk>
+To: linux-sh@vger.kernel.org
+
+This patch modify x_plate_ohms to correct value for tsc2007 panel,
+and removed un-necessary ts_get_pendown_state()
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
- no change
+ arch/sh/boards/mach-ecovec24/setup.c |   26 ++------------------------
+ 1 files changed, 2 insertions(+), 24 deletions(-)
 
- drivers/video/sh_mobile_hdmi.c |   21 ++++++++++++++++++++-
- include/video/sh_mobile_hdmi.h |   16 ++++++++++++++++
- 2 files changed, 36 insertions(+), 1 deletions(-)
-
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index afebe80..d25e348 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -318,6 +318,9 @@ static void sh_hdmi_video_config(struct sh_hdmi *hdmi)
-  */
- static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
- {
-+	u8 data;
-+	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
-+
- 	/*
- 	 * [7:4] L/R data swap control
- 	 * [3:0] appropriate N[19:16]
-@@ -335,7 +338,23 @@ static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
- 	 * [6:5] set required down sampling rate if required
- 	 * [4:3] set required audio source
- 	 */
--	hdmi_write(hdmi, 0x00, HDMI_AUDIO_SETTING_1);
-+	switch (pdata->flags & HDMI_SRC_MASK) {
-+	default:
-+		/* FALL THROUGH */
-+	case HDMI_SRC_I2S:
-+		data = (0x0 << 3);
-+		break;
-+	case HDMI_SRC_SPDIF:
-+		data = (0x1 << 3);
-+		break;
-+	case HDMI_SRC_DSD:
-+		data = (0x2 << 3);
-+		break;
-+	case HDMI_SRC_HBR:
-+		data = (0x3 << 3);
-+		break;
-+	}
-+	hdmi_write(hdmi, data, HDMI_AUDIO_SETTING_1);
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 1d7b495..db7a7c0 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -400,32 +400,9 @@ static struct platform_device keysc_device = {
  
- 	/* [3:0] set sending channel number for channel status */
- 	hdmi_write(hdmi, 0x40, HDMI_AUDIO_SETTING_2);
-diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
-index 577cf18..929c2d3 100644
---- a/include/video/sh_mobile_hdmi.h
-+++ b/include/video/sh_mobile_hdmi.h
-@@ -14,9 +14,25 @@
- struct sh_mobile_lcdc_chan_cfg;
- struct device;
- 
-+/*
-+ * flags format
-+ *
-+ * 0x0000000A
-+ *
-+ * A: Audio source select
-+ */
-+
-+/* Audio source select */
-+#define HDMI_SRC_MASK		(0xF << 0)
-+#define HDMI_SRC_I2S		(0 << 0) /* default */
-+#define HDMI_SRC_SPDIF		(1 << 0)
-+#define HDMI_SRC_DSD		(2 << 0)
-+#define HDMI_SRC_HBR		(3 << 0)
-+
- struct sh_mobile_hdmi_info {
- 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
- 	struct device			*lcd_dev;
-+	unsigned int			 flags;
+ /* TouchScreen */
+ #define IRQ0 32
+-static int ts_get_pendown_state(void)
+-{
+-	int val = 0;
+-	gpio_free(GPIO_FN_INTC_IRQ0);
+-	gpio_request(GPIO_PTZ0, NULL);
+-	gpio_direction_input(GPIO_PTZ0);
+-
+-	val = gpio_get_value(GPIO_PTZ0);
+-
+-	gpio_free(GPIO_PTZ0);
+-	gpio_request(GPIO_FN_INTC_IRQ0, NULL);
+-
+-	return val ? 0 : 1;
+-}
+-
+-static int ts_init(void)
+-{
+-	gpio_request(GPIO_FN_INTC_IRQ0, NULL);
+-	return 0;
+-}
+-
+ static struct tsc2007_platform_data tsc2007_info = {
+ 	.model			= 2007,
+-	.x_plate_ohms		= 180,
+-	.get_pendown_state	= ts_get_pendown_state,
+-	.init_platform_hw	= ts_init,
++	.x_plate_ohms		= 1000,
  };
  
- #endif
+ static struct i2c_board_info ts_i2c_clients = {
+@@ -1119,6 +1096,7 @@ static int __init arch_setup(void)
+ 		gpio_direction_output(GPIO_PTF4, 1);
+ 
+ 		/* enable TouchScreen */
++		gpio_request(GPIO_FN_INTC_IRQ0, NULL);
+ 		i2c_register_board_info(0, &ts_i2c_clients, 1);
+ 		set_irq_type(IRQ0, IRQ_TYPE_LEVEL_LOW);
+ 	}
 -- 
 1.7.0.4
 
