@@ -1,7 +1,7 @@
 From: Robert Richter <robert.richter@amd.com>
-Date: Fri, 27 Aug 2010 12:59:56 +0000
+Date: Fri, 27 Aug 2010 14:31:21 +0000
 Subject: Re: [PATCH V2 3/4] oprofile: Abstract the perf-events backend
-Message-Id: <20100827125956.GK22783@erda.amd.com>
+Message-Id: <20100827143121.GN22783@erda.amd.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1282848651.git.matt@console-pimps.org>
  <fe3e173aaa85f4cd73ea4b5abca50976fc40a01f.1282848651.git.matt@console-pimps.org>
@@ -30,11 +30,63 @@ On 26.08.10 15:09:18, Matt Fleming wrote:
 >  include/linux/oprofile.h         |   12 ++
 >  4 files changed, 242 insertions(+), 198 deletions(-)
 >  create mode 100644 drivers/oprofile/oprofile_perf.c
+> 
+> diff --git a/arch/arm/oprofile/Makefile b/arch/arm/oprofile/Makefile
+> index e666eaf..038d7af 100644
+> --- a/arch/arm/oprofile/Makefile
+> +++ b/arch/arm/oprofile/Makefile
+> @@ -6,4 +6,8 @@ DRIVER_OBJS = $(addprefix ../../../drivers/oprofile/, \
+>                 oprofilefs.o oprofile_stats.o \
+>                 timer_int.o )
+> 
+> +ifeq ($(CONFIG_HW_PERF_EVENTS), y)
+> +DRIVER_OBJS += $(addprefix ../../../drivers/oprofile/, oprofile_perf.o)
+> +endif
 
-Could we split this patch in 2 for better review? One that only moves
-the code and a 2nd that changes it.
+You use CONFIG_HW_PERF_EVENTS while CONFIG_PERF_EVENTS in oprofile.h.
+
+> +
+>  oprofile-y                             := $(DRIVER_OBJS) common.o
+
+> diff --git a/include/linux/oprofile.h b/include/linux/oprofile.h
+> index 5171639..99e0323 100644
+> --- a/include/linux/oprofile.h
+> +++ b/include/linux/oprofile.h
+> @@ -185,4 +185,16 @@ int oprofile_add_data(struct op_entry *entry, unsigned long val);
+>  int oprofile_add_data64(struct op_entry *entry, u64 val);
+>  int oprofile_write_commit(struct op_entry *entry);
+> 
+> +/* Oprofile perf wrapper functions. */
+> +
+> +#ifdef CONFIG_PERF_EVENTS
+> +int oprofile_perf_init(void);
+> +void oprofile_perf_exit(void);
+> +int oprofile_perf_setup(void);
+> +int oprofile_perf_start(void);
+> +void oprofile_perf_stop(void);
+> +int oprofile_perf_create_files(struct super_block *sb, struct dentry *root);
+> +void oprofile_perf_set_num_counters(int num_counters);
+> +#endif /* CONFIG_PERF_EVENTS */
+
+We need empty function stubs for all this functions for the
+!CONFIG_PERF_EVENTS case returning -ENODEV or so. Otherwise
+compliation will fail for it.
+
+For arm this does not happen because of #ifdefs, but for sh.
+
+Again, please first change the code and then move it without
+functional changes, one patch each.
+
+Thanks,
 
 -Robert
+
+> +
+>  #endif /* OPROFILE_H */
+> --
+> 1.7.1
+> 
+> 
 
 -- 
 Advanced Micro Devices, Inc.
