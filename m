@@ -1,119 +1,49 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Tue, 31 Aug 2010 13:26:51 +0000
-Subject: Re: [PATCH V2 4/4] sh: Use the perf-events backend for oprofile
-Message-Id: <20100831132651.GG22783@erda.amd.com>
+From: Chris Ball <cjb@laptop.org>
+Date: Fri, 27 Aug 2010 19:49:39 +0000
+Subject: [PATCH RESEND] initialise DMA engine before MMC
+Message-Id: <20100827194939.GJ23079@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1282848651.git.matt@console-pimps.org>
- <c741813aa911f0048cfab1a1a30534e8d7bb6765.1282848651.git.matt@console-pimps.org>
- <20100827145901.GO22783@erda.amd.com>
- <20100827201946.GB18829@console-pimps.org>
- <20100831112841.GF22783@erda.amd.com>
- <20100831122343.GB27532@console-pimps.org>
-In-Reply-To: <20100831122343.GB27532@console-pimps.org>
+References: <Pine.LNX.4.64.1006071312060.12965@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1006071312060.12965@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: akpm@linux-foundation.org, linux-kernel@vger.kernel.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Dan Williams <dan.j.williams@intel.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-mmc@vger.kernel.org
 
-On 31.08.10 08:23:43, Matt Fleming wrote:
-> > > > > -static int op_sh_start(void)
-> > > > > +static char *op_name_from_perf_name(const char *name)
-> > > > >  {
-> > > > > -	/* Enable performance monitoring for all counters.  */
-> > > > > -	on_each_cpu(model->cpu_start, NULL, 1);
-> > > > > +	if (!strcmp(name, "SH-4A"))
-> > > > > +		return "sh/sh4a";
-> > > > > +	if (!strcmp(name, "SH7750"))
-> > > > > +		return "sh/sh7750";
-> > > > 
-> > > > With that implementation we always have to touch the code for new
-> > > > cpus. Maybe we derive it from the perf name, e.g. making all lowercase
-> > > > and removing dashes?
-> > > 
-> > > Is this code really that bad that we need to start playing string
-> > > manipulation games?
-> > 
-> > No, but with that implementation we always have to update the cpu
-> > string with each new cpu though nothing else changes. We may keep this
-> > code. But, shouldn't we return a default string "sh/<name>" for all
-> > other cases? We will then need to update only the oprofile userland
-> > with new cpus.
-> 
-> These names are actually the names of types of performance counters,
-> not a specific cpu. All SH-4 cpus that have performance counters have
-> 7750-style performance counters and all SH-4A cpus have SH-4A-style
-> counters.
-> 
-> It's unlikely we'd have to update this code in the near future. Paul,
-> correct me if I'm wrong here.
+Hi,
 
-Ok, this shouldn't block this patch series, we still can make a patch
-if there is a use case.
+Andrew, mind taking this one?
 
-> > > > > +	ops->setup		= oprofile_perf_setup;
-> > > > > +	ops->create_files	= oprofile_perf_create_files;
-> > > > > +	ops->start		= oprofile_perf_start;
-> > > > > +	ops->stop		= oprofile_perf_stop;
-> > > > > +	ops->cpu_type		= op_name_from_perf_name(sh_pmu_name());
-> > > > >  
-> > > > > -	model = lmodel;
-> > > > > +	oprofile_perf_set_num_counters(sh_pmu_num_events());
-> > > > >  
-> > > > > -	ops->setup		= op_sh_setup;
-> > > > > -	ops->create_files	= op_sh_create_files;
-> > > > > -	ops->start		= op_sh_start;
-> > > > > -	ops->stop		= op_sh_stop;
-> > > > > -	ops->cpu_type		= lmodel->cpu_type;
-> > > > > +	ret = oprofile_perf_init();
-> > > > 
-> > > > Instead of exporting all the functions above implement something like:
-> > > > 
-> > > > 	name = op_name_from_perf_name(sh_pmu_name());
-> > > > 	num_events = sh_pmu_num_events();
-> > > > 	ret = oprofile_perf_init(ops, name, num_events);
-> > > > 
-> > > > We will then have only oprofile_perf_init() and oprofile_perf_exit()
-> > > > as interface which is much cleaner.
-> > > 
-> > > Well, the reason that I left it this way is so that architectures can
-> > > choose to implement wrappers around the oprofile_perf_* functions. I
-> > > don't think ARM or SH actually need wrappers (the only extra thing that
-> > > ARM does is locking which SH should probably do too) but I assumed there
-> > > was a reason that these functions pointers were exposed originally. I
-> > > haven't look at what other architectures would do. I'll take a look at
-> > > that.
-> > 
-> > I am not sure if we need such wrappers, and if so we could implement
-> > it anyway, e.g.:
-> > 
-> >  oprofile_perf_init(perf_ops, name, num_events);
-> > 
-> >  op_sh_setup():
-> > 
-> > 	/* setup something */
-> > 	...
-> > 
-> > 	perf_ops->setup();
-> > 
-> > 	/* setup more */
-> > 	...
-> > 
-> > But I don't think we need this. And the above makes the interface much
-> > cleaner.
-> 
-> OK, seeing as the two architectures that will use this initially don't
-> require wrappers I've no problem doing it your way. It can always be
-> extended later if necessary. And more importantly, with a proper
-> usecase we'll be able to see exactly _how_ it needs to be extended.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 7 Jun 2010 13:16:36 +0200 (CEST)
 
-Yes, right. So I am looking forward to your new version.
+To use DMA engine based DMA with MMC in a non-modular build, the DMA 
+engine has to initialise before MMC.
 
-Thanks,
-
--Robert
-
--- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Dan Williams <dan.j.williams@intel.com>
+---
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 91874e0..b713e75 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -92,6 +92,7 @@ obj-$(CONFIG_EISA)		+= eisa/
+ obj-y				+= lguest/
+ obj-$(CONFIG_CPU_FREQ)		+= cpufreq/
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle/
++obj-$(CONFIG_DMA_ENGINE)	+= dma/
+ obj-$(CONFIG_MMC)		+= mmc/
+ obj-$(CONFIG_MEMSTICK)		+= memstick/
+ obj-$(CONFIG_NEW_LEDS)		+= leds/
+@@ -102,7 +103,6 @@ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+ obj-$(CONFIG_GENERIC_TIME)	+= clocksource/
+-obj-$(CONFIG_DMA_ENGINE)	+= dma/
+ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
+--
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
