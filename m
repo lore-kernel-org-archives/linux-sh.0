@@ -1,7 +1,7 @@
 From: Marin Mitov <mitov@issp.bas.bg>
-Date: Fri, 27 Aug 2010 07:02:20 +0000
+Date: Sat, 28 Aug 2010 06:14:25 +0000
 Subject: Re: [RFC][PATCH] add dma_reserve_coherent_memory()/dma_free_reserved_memory() API
-Message-Id: <201008271002.29297.mitov@issp.bas.bg>
+Message-Id: <201008280914.34233.mitov@issp.bas.bg>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20100827051907.GA17521@pengutronix.de>
 	<201008270923.30297.mitov@issp.bas.bg>
@@ -95,8 +95,17 @@ On Friday, August 27, 2010 09:32:14 am FUJITA Tomonori wrote:
 > could break too.
 > 
 > http://thread.gmane.org/gmane.linux.ports.sh.devel/8595
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+The above reference is not my patch. I am speaking for my patch:
+
+http://lkml.org/lkml/2010/8/19/200
+
+The only point my patch touches the existing code is struct device's member dma_mem
+and that is in condition you __use__ the new API, so you could decide yourself if it 
+could break the current code. As far as one does not use the new API - nothing is touched,
+nothing can break. If one uses the new API, only the user can suffer if the new API have
+bugs.
+
+Thanks,
+
+Marin Mitov
