@@ -1,32 +1,30 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 04 Aug 2010 07:45:17 +0000
-Subject: Re: [PATCH] clocksource: sh_cmt: Rate calculation fix
-Message-Id: <20100804074517.GD15098@linux-sh.org>
+From: "FONDAZIONE Di VITTORIO & ECOWAS" <revseunrazaq@aol.com>
+Date: Sat, 28 Aug 2010 09:28:27 +0000
+Subject: Financial aid from FDV,Contact Dr.Razaq Immediately.
+Message-Id: <web-237897294@mailccs.icnet.com.ve>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100802092405.30680.9349.sendpatchset@t400s>
-In-Reply-To: <20100802092405.30680.9349.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 02, 2010 at 06:24:05PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Fix the rate calculation in the CMT driver.
-> Without this fix the clocksource runs way
-> too fast and we get a divide-by-zero error.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+FONDAZIONE Di VITTORIO & ECOWAS
+http://www.fondazionedivittorio.it
+Worldwide Donation Program "helping one to help 
+others...."
+=====================
+I have been directed to inform you that you have been 
+chosen for a cash grant 
+of 1,000,000.00usd (1million) by the board of trustees of 
+the above stated non-
+governmental aid organisation.
+Your grant number is B01-0147. Contact Rev.dr seun razaq 
+via telephone
+   +2348051809752 email revseunrazaq@aol.com, and provide 
+these
+details: 1).Full name. 2).Address 3).Telephone number. 
+[Cell preferably] 
+(4).Occupation.
 
-On Wed, Aug 04, 2010 at 01:31:38PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Fix a one-off error in the CMT driver V2. The match register
-> should be programmed with the period minus one.
-> 
-> Many thanks to Eiraku-san for tracking down this issue.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-
-Applied, thanks.
+Regards.
+Adolfo Pepe
