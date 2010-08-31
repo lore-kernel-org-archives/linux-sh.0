@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 31 Aug 2010 05:46:53 +0000
-Subject: [PATCH 2/4 v2] ASoC: fsi-codec: Add FSI - HDMI support
-Message-Id: <w3pzkw35o6s.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 31 Aug 2010 05:46:41 +0000
+Subject: [PATCH 1/4 v2] fbdev: sh-mobile: Add HDMI sound type selection
+Message-Id: <w3p1v9f72rk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
@@ -14,116 +14,81 @@ Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
 v1 -> v2
+ no change
 
-o based on latest Mark's "for-2.6.37"
+ drivers/video/sh_mobile_hdmi.c |   21 ++++++++++++++++++++-
+ include/video/sh_mobile_hdmi.h |   16 ++++++++++++++++
+ 2 files changed, 36 insertions(+), 1 deletions(-)
 
- sound/soc/sh/Kconfig    |    7 +++++
- sound/soc/sh/Makefile   |    2 +
- sound/soc/sh/fsi-hdmi.c |   61 +++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 70 insertions(+), 0 deletions(-)
- create mode 100644 sound/soc/sh/fsi-hdmi.c
-
-diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
-index 52d7e8e..6b224d2 100644
---- a/sound/soc/sh/Kconfig
-+++ b/sound/soc/sh/Kconfig
-@@ -62,6 +62,13 @@ config SND_FSI_DA7210
- 	  This option enables generic sound support for the
- 	  FSI - DA7210 unit
- 
-+config SND_FSI_HDMI
-+	bool "FSI-HDMI sound support"
-+	depends on SND_SOC_SH4_FSI && FB_SH_MOBILE_HDMI
-+	help
-+	  This option enables generic sound support for the
-+	  FSI - HDMI unit
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index afebe80..d25e348 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -318,6 +318,9 @@ static void sh_hdmi_video_config(struct sh_hdmi *hdmi)
+  */
+ static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
+ {
++	u8 data;
++	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
 +
- config SND_SIU_MIGOR
- 	tristate "SIU sound support on Migo-R"
- 	depends on SH_MIGOR
-diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
-index 8a5a192..94476d4 100644
---- a/sound/soc/sh/Makefile
-+++ b/sound/soc/sh/Makefile
-@@ -16,9 +16,11 @@ obj-$(CONFIG_SND_SOC_SH4_SIU)	+= snd-soc-siu.o
- snd-soc-sh7760-ac97-objs	:= sh7760-ac97.o
- snd-soc-fsi-ak4642-objs		:= fsi-ak4642.o
- snd-soc-fsi-da7210-objs		:= fsi-da7210.o
-+snd-soc-fsi-hdmi-objs		:= fsi-hdmi.o
- snd-soc-migor-objs		:= migor.o
+ 	/*
+ 	 * [7:4] L/R data swap control
+ 	 * [3:0] appropriate N[19:16]
+@@ -335,7 +338,23 @@ static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
+ 	 * [6:5] set required down sampling rate if required
+ 	 * [4:3] set required audio source
+ 	 */
+-	hdmi_write(hdmi, 0x00, HDMI_AUDIO_SETTING_1);
++	switch (pdata->flags & HDMI_SRC_MASK) {
++	default:
++		/* FALL THROUGH */
++	case HDMI_SRC_I2S:
++		data = (0x0 << 3);
++		break;
++	case HDMI_SRC_SPDIF:
++		data = (0x1 << 3);
++		break;
++	case HDMI_SRC_DSD:
++		data = (0x2 << 3);
++		break;
++	case HDMI_SRC_HBR:
++		data = (0x3 << 3);
++		break;
++	}
++	hdmi_write(hdmi, data, HDMI_AUDIO_SETTING_1);
  
- obj-$(CONFIG_SND_SH7760_AC97)	+= snd-soc-sh7760-ac97.o
- obj-$(CONFIG_SND_FSI_AK4642)	+= snd-soc-fsi-ak4642.o
- obj-$(CONFIG_SND_FSI_DA7210)	+= snd-soc-fsi-da7210.o
-+obj-$(CONFIG_SND_FSI_HDMI)	+= snd-soc-fsi-hdmi.o
- obj-$(CONFIG_SND_SIU_MIGOR)	+= snd-soc-migor.o
-diff --git a/sound/soc/sh/fsi-hdmi.c b/sound/soc/sh/fsi-hdmi.c
-new file mode 100644
-index 0000000..950e3e0
---- /dev/null
-+++ b/sound/soc/sh/fsi-hdmi.c
-@@ -0,0 +1,61 @@
+ 	/* [3:0] set sending channel number for channel status */
+ 	hdmi_write(hdmi, 0x40, HDMI_AUDIO_SETTING_2);
+diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
+index 577cf18..929c2d3 100644
+--- a/include/video/sh_mobile_hdmi.h
++++ b/include/video/sh_mobile_hdmi.h
+@@ -14,9 +14,25 @@
+ struct sh_mobile_lcdc_chan_cfg;
+ struct device;
+ 
 +/*
-+ * FSI - HDMI sound support
++ * flags format
 + *
-+ * Copyright (C) 2010 Renesas Solutions Corp.
-+ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * 0x0000000A
 + *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * A: Audio source select
 + */
 +
-+#include <linux/platform_device.h>
-+#include <sound/sh_fsi.h>
-+#include <video/sh_mobile_hdmi.h>
++/* Audio source select */
++#define HDMI_SRC_MASK		(0xF << 0)
++#define HDMI_SRC_I2S		(0 << 0) /* default */
++#define HDMI_SRC_SPDIF		(1 << 0)
++#define HDMI_SRC_DSD		(2 << 0)
++#define HDMI_SRC_HBR		(3 << 0)
 +
-+static struct snd_soc_dai_link fsi_dai_link = {
-+	.name		= "HDMI",
-+	.stream_name	= "HDMI",
-+	.cpu_dai_name	= "fsib-dai", /* fsi B */
-+	.codec_dai_name	= "sh_mobile_hdmi-hifi",
-+	.platform_name	= "sh_fsi2",
-+	.codec_name	= "sh-mobile-hdmi",
-+};
-+
-+static struct snd_soc_card fsi_soc_card  = {
-+	.name		= "FSI",
-+	.dai_link	= &fsi_dai_link,
-+	.num_links	= 1,
-+};
-+
-+static struct platform_device *fsi_snd_device;
-+
-+static int __init fsi_hdmi_init(void)
-+{
-+	int ret = -ENOMEM;
-+
-+	fsi_snd_device = platform_device_alloc("soc-audio", FSI_PORT_B);
-+	if (!fsi_snd_device)
-+		goto out;
-+
-+	platform_set_drvdata(fsi_snd_device, &fsi_soc_card);
-+	ret = platform_device_add(fsi_snd_device);
-+
-+	if (ret)
-+		platform_device_put(fsi_snd_device);
-+
-+out:
-+	return ret;
-+}
-+
-+static void __exit fsi_hdmi_exit(void)
-+{
-+	platform_device_unregister(fsi_snd_device);
-+}
-+
-+module_init(fsi_hdmi_init);
-+module_exit(fsi_hdmi_exit);
-+
-+MODULE_LICENSE("GPL");
-+MODULE_DESCRIPTION("Generic SH4 FSI-HDMI sound card");
-+MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
+ struct sh_mobile_hdmi_info {
+ 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
+ 	struct device			*lcd_dev;
++	unsigned int			 flags;
+ };
+ 
+ #endif
 -- 
 1.7.0.4
 
