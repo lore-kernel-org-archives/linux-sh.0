@@ -1,8 +1,10 @@
 From: David Howells <dhowells@redhat.com>
-Date: Fri, 27 Aug 2010 01:30:13 +0000
+Date: Tue, 31 Aug 2010 15:52:52 +0000
 Subject: [PATCH] SH: Add missing consts to sys_execve() declaration
-Message-Id: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
+Message-Id: <20100831155252.11126.33342.stgit@warthog.procyon.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
+In-Reply-To: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
