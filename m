@@ -1,36 +1,83 @@
-From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Tue, 31 Aug 2010 11:12:50 +0000
-Subject: [PATCH 1/1] sh: fix sys_execve decleration
-Message-Id: <1283253170-2508-1-git-send-email-plagnioj@jcrosoft.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 31 Aug 2010 09:27:53 +0000
+Subject: [PATCH] ARM: mach-shmobile: Use evt2irq() for sh7372 DMAC
+Message-Id: <20100831092753.14892.19054.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+From: Magnus Damm <damm@opensource.se>
+
+Use evt2irq() for DMAC resources on sh7372.
+
+This makes the code easier to read and also
+allows adjusting the INTC base offset without
+breaking platform data.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/include/asm/syscalls_32.h |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/include/asm/syscalls_32.h b/arch/sh/include/asm/syscalls_32.h
-index be201fd..ae717e3 100644
---- a/arch/sh/include/asm/syscalls_32.h
-+++ b/arch/sh/include/asm/syscalls_32.h
-@@ -19,9 +19,10 @@ asmlinkage int sys_clone(unsigned long clone_flags, unsigned long newsp,
- asmlinkage int sys_vfork(unsigned long r4, unsigned long r5,
- 			 unsigned long r6, unsigned long r7,
- 			 struct pt_regs __regs);
--asmlinkage int sys_execve(const char __user *ufilename, char __user * __user *uargv,
--			  char __user * __user *uenvp, unsigned long r7,
--			  struct pt_regs __regs);
-+asmlinkage int sys_execve(const char __user *ufilename,
-+			  const char __user *const __user *uargv,
-+			  const char __user *const __user *uenvp,
-+			  unsigned long r7, struct pt_regs __regs);
- asmlinkage int sys_sigsuspend(old_sigset_t mask, unsigned long r5,
- 			      unsigned long r6, unsigned long r7,
- 			      struct pt_regs __regs);
--- 
-1.7.1
+ arch/arm/mach-shmobile/setup-sh7372.c |   24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2010-08-31 16:03:53.000000000 +0900
+@@ -419,14 +419,14 @@ static struct resource sh7372_dmae0_reso
+ 	},
+ 	{
+ 		/* DMA error IRQ */
+-		.start	= 246,
+-		.end	= 246,
++		.start	= evt2irq(0x20c0),
++		.end	= evt2irq(0x20c0),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ 	{
+ 		/* IRQ for channels 0-5 */
+-		.start	= 240,
+-		.end	= 245,
++		.start	= evt2irq(0x2000),
++		.end	= evt2irq(0x20a0),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -447,14 +447,14 @@ static struct resource sh7372_dmae1_reso
+ 	},
+ 	{
+ 		/* DMA error IRQ */
+-		.start	= 254,
+-		.end	= 254,
++		.start	= evt2irq(0x21c0),
++		.end	= evt2irq(0x21c0),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ 	{
+ 		/* IRQ for channels 0-5 */
+-		.start	= 248,
+-		.end	= 253,
++		.start	= evt2irq(0x2100),
++		.end	= evt2irq(0x21a0),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -475,14 +475,14 @@ static struct resource sh7372_dmae2_reso
+ 	},
+ 	{
+ 		/* DMA error IRQ */
+-		.start	= 262,
+-		.end	= 262,
++		.start	= evt2irq(0x22c0),
++		.end	= evt2irq(0x22c0),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ 	{
+ 		/* IRQ for channels 0-5 */
+-		.start	= 256,
+-		.end	= 261,
++		.start	= evt2irq(0x2200),
++		.end	= evt2irq(0x22a0),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
