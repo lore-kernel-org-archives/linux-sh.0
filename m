@@ -1,33 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 16 Sep 2010 08:21:40 +0000
-Subject: Re: [PATCH 1/2] ARM: mach-shmobile: modify wrong array size of div6_reparent_clks
-Message-Id: <20100916082140.GD12314@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 01 Sep 2010 05:02:11 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: ap4evb: modify tsc2007 platform
+Message-Id: <w3piq2qgip8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3peicvwlyp.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3peicvwlyp.wl%kuninori.morimoto.gx@renesas.com>
+References: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 15, 2010 at 03:38:07PM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/clock-sh7372.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-> index 7594689..ea384e1 100644
-> --- a/arch/arm/mach-shmobile/clock-sh7372.c
-> +++ b/arch/arm/mach-shmobile/clock-sh7372.c
-> @@ -548,7 +548,7 @@ void __init sh7372_clock_init(void)
->  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
->  
->  	if (!ret)
-> -		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_NR);
-> +		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
->  
->  	if (!ret)
->  		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
 
-Applied, thanks.
+Hi Magnus
+
+Thank you for checking/testing patch
+
+> Top left corner: Pressure value 140-440
+> Top right corner: Pressure value 650-800
+> Bottom left corner: Pressure value 200-900
+> Bottom right corner: Pressure value 140-840
+(snip)
+> I did not test without your patch. Maybe the pressure ranges are
+> strange because the touch screen is rotated incorrectly?
+> 
+> Do you see the same behavior on your hardware? Thanks for your help!
+
+It is same behavior on your hardware too.
+
+I tested without my patch.
+The pressure ranges seem not to depend on the parts.
+This mean my patch seems not correct...
+
+Best regards
+--
+Kuninori Morimoto
