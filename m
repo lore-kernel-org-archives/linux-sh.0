@@ -1,42 +1,30 @@
 From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Wed, 01 Sep 2010 11:13:02 +0000
+Date: Wed, 01 Sep 2010 11:18:46 +0000
 Subject: Re: [RFC] [PATCH] arm & sh: factorised duplicated clkdev.c
-Message-Id: <20100901111302.GE22790@game.jcrosoft.org>
+Message-Id: <20100901111846.GF22790@game.jcrosoft.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1283253402-3139-1-git-send-email-plagnioj@jcrosoft.com>
-	<20100901091233.GK8142@n2100.arm.linux.org.uk>
-In-Reply-To: <20100901091233.GK8142@n2100.arm.linux.org.uk>
+	<20100901095121.GA11107@pengutronix.de>
+In-Reply-To: <20100901095121.GA11107@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 10:12 Wed 01 Sep     , Russell King - ARM Linux wrote:
-> On Tue, Aug 31, 2010 at 01:16:42PM +0200, Jean-Christophe PLAGNIOL-VILLARD wrote:
-> > factorise some generic infrastructure to assist looking up struct clks
-> > for the ARM & SH architecture.
-> > +/*
-> > + * Returns a clock. Note that we first try to use device id on the bus
-> > + * and clock name. If this fails, we try to use clock name only.
-> > + */
-> >  struct clk *clk_get(struct device *dev, const char *con_id)
-> >  {
-> >  	const char *dev_id = dev ? dev_name(dev) : NULL;
 > >  
-> >  	return clk_get_sys(dev_id, con_id);
-> >  }
-> > -EXPORT_SYMBOL(clk_get);
-> > +EXPORT_SYMBOL_GPL(clk_get);
-> >  
-> >  void clk_put(struct clk *clk)
-> >  {
-> >  	__clk_put(clk);
-> >  }
-> > -EXPORT_SYMBOL(clk_put);
-> > +EXPORT_SYMBOL_GPL(clk_put);
+> > -struct clk_lookup *clkdev_alloc(struct clk *clk, const char *con_id,
+> > -	const char *dev_fmt, ...)
+> > +struct clk_lookup * __init_refok
+> Why do you need __init_refok?  __init_refok is defined as follows in
+> include/linux/init.h:
 > 
-> Please leave these as-is.
-ok but on SH it's GPL so it is ok with you Paul too?
+> 	/* compatibility defines */
+> 	#define __init_refok     __ref
+> 
+> So if really needed better use __ref.  Couldn't this be __init?  
+ok for __ref but __init_refok is more clear IMHO
+and yes we need it as for early device we may use bootmem as slab allocators
+may no be availlable in some case
 
 Best Regards,
 J.
