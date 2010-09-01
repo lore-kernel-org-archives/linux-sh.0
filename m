@@ -1,23 +1,36 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Fri, 24 Sep 2010 08:13:28 +0000
-Subject: Re: [PATCH 2/2] tmio_mmc: fix CMD irq handling
-Message-Id: <4C9C5DA8.5080904@arndnet.de>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Wed, 01 Sep 2010 09:12:33 +0000
+Subject: Re: [RFC] [PATCH] arm & sh: factorised duplicated clkdev.c
+Message-Id: <20100901091233.GK8142@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4C9B5BF4.3070109@arndnet.de> <AANLkTi=B=pcxVTMSxk2Orftp8zH7o8jebL1hbQ52dyzH@mail.gmail.com>
-In-Reply-To: <AANLkTi=B=pcxVTMSxk2Orftp8zH7o8jebL1hbQ52dyzH@mail.gmail.com>
+References: <1283253402-3139-1-git-send-email-plagnioj@jcrosoft.com>
+In-Reply-To: <1283253402-3139-1-git-send-email-plagnioj@jcrosoft.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>
-Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Added MLs into CC
+On Tue, Aug 31, 2010 at 01:16:42PM +0200, Jean-Christophe PLAGNIOL-VILLARD wrote:
+> factorise some generic infrastructure to assist looking up struct clks
+> for the ARM & SH architecture.
+> +/*
+> + * Returns a clock. Note that we first try to use device id on the bus
+> + * and clock name. If this fails, we try to use clock name only.
+> + */
+>  struct clk *clk_get(struct device *dev, const char *con_id)
+>  {
+>  	const char *dev_id = dev ? dev_name(dev) : NULL;
+>  
+>  	return clk_get_sys(dev_id, con_id);
+>  }
+> -EXPORT_SYMBOL(clk_get);
+> +EXPORT_SYMBOL_GPL(clk_get);
+>  
+>  void clk_put(struct clk *clk)
+>  {
+>  	__clk_put(clk);
+>  }
+> -EXPORT_SYMBOL(clk_put);
+> +EXPORT_SYMBOL_GPL(clk_put);
 
-Am 23.09.2010 21:28, schrieb Ian Molton:
-> This looks good - what testing has it had ?
-
-Tested with the SDHI hardware block in sh7372 (on AP4EVB).
-Both with PIO and DMA. Tested with MMC and SD cards.
-
-Regards
-Arnd
+Please leave these as-is.
