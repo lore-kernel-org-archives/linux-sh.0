@@ -1,21 +1,47 @@
-From: David Howells <dhowells@redhat.com>
-Date: Thu, 02 Sep 2010 09:50:50 +0000
-Subject: Re: [PATCH] SH: Add missing consts to sys_execve() declaration
-Message-Id: <6591.1283421050@redhat.com>
+From: Carmelo AMOROSO <carmelo.amoroso@st.com>
+Date: Wed, 01 Sep 2010 01:49:30 +0000
+Subject: [PATCH] sh_net: Do not implement socketcall, use specific syscalls.
+Message-Id: <1283305771-31182-2-git-send-email-carmelo.amoroso@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
-In-Reply-To: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Paul Mundt <lethal@linux-sh.org> wrote:
+Socket syscalls entries are now available in the syscall table,
+so it does not need to implement the multipler syscall.
+It is mapped into the sys_ni_syscall.
 
-> And in both cases it has already been fixed in my tree for some time,
-> presumably Linus was unhappy with my -rc2 changes, so I'll have another
-> go at breakig things down for -rc4.
+Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+ arch/sh/include/asm/unistd_32.h |    1 -
+ arch/sh/include/asm/unistd_64.h |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
 
-Feel fry to add my Acked-by to it.
+diff --git a/arch/sh/include/asm/unistd_32.h b/arch/sh/include/asm/unistd_32.h
+index 2000709..a683d2f 100644
+--- a/arch/sh/include/asm/unistd_32.h
++++ b/arch/sh/include/asm/unistd_32.h
+@@ -387,7 +387,6 @@
+ #define __ARCH_WANT_SYS_TIME
+ #define __ARCH_WANT_SYS_UTIME
+ #define __ARCH_WANT_SYS_WAITPID
+-#define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
+ #define __ARCH_WANT_SYS_LLSEEK
+diff --git a/arch/sh/include/asm/unistd_64.h b/arch/sh/include/asm/unistd_64.h
+index 09aa93f..2a91bb2 100644
+--- a/arch/sh/include/asm/unistd_64.h
++++ b/arch/sh/include/asm/unistd_64.h
+@@ -408,7 +408,6 @@
+ #define __ARCH_WANT_SYS_TIME
+ #define __ARCH_WANT_SYS_UTIME
+ #define __ARCH_WANT_SYS_WAITPID
+-#define __ARCH_WANT_SYS_SOCKETCALL
+ #define __ARCH_WANT_SYS_FADVISE64
+ #define __ARCH_WANT_SYS_GETPGRP
+ #define __ARCH_WANT_SYS_LLSEEK
+-- 
+1.5.5.6
 
-David
