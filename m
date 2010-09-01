@@ -1,8 +1,10 @@
 From: Carmelo AMOROSO <carmelo.amoroso@st.com>
-Date: Wed, 01 Sep 2010 01:49:30 +0000
+Date: Wed, 01 Sep 2010 01:57:09 +0000
 Subject: [PATCH] sh_net: Do not implement socketcall, use specific syscalls.
-Message-Id: <1283305771-31182-2-git-send-email-carmelo.amoroso@st.com>
+Message-Id: <1283306229-803-1-git-send-email-carmelo.amoroso@st.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1283305771-31182-2-git-send-email-carmelo.amoroso@st.com>
+In-Reply-To: <1283305771-31182-2-git-send-email-carmelo.amoroso@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
