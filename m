@@ -1,44 +1,30 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Thu, 16 Sep 2010 12:46:56 +0000
-Subject: Re: [PATCH 2/6] ARM: oprofile: Rename op_arm to oprofile_perf
-Message-Id: <20100916124656.GY13563@erda.amd.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Thu, 02 Sep 2010 10:50:55 +0000
+Subject: Re: [PATCH 4/5] DMA: Add functions to preallocate DMA memory dor
+Message-Id: <20100902105055.GS26319@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1284357372.git.matt@console-pimps.org>
- <61369979994f435ba2ac62f06717644d722ee002.1284357372.git.matt@console-pimps.org>
-In-Reply-To: <61369979994f435ba2ac62f06717644d722ee002.1284357372.git.matt@console-pimps.org>
+References: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
+	<Pine.LNX.4.64.1008191636590.26145@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1008191636590.26145@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 13.09.10 02:07:33, Matt Fleming wrote:
-> In preparation for moving the generic functions out of this file, give
-> the functions more general names (e.g. remove "arm" from the names).
+On Thu, Aug 19, 2010 at 04:40:22PM +0200, Guennadi Liakhovetski wrote:
+> Currently dma_declare_coherent_memory() and dma_release_declared_memory() are
+> provided to assign DMA memory to a device and to release it. These functions
+> can be use with device local memory, like on-chip SRAM. However, they are
+> unsuitable for assigning of generic system RAM to devices, because such system
+> memory should not be ioremapped, and ioremap() is used internally in the former
+> of these functions to map the memory.
 > 
-> Signed-off-by: Matt Fleming <matt@console-pimps.org>
-> ---
->  arch/arm/oprofile/common.c |   68 ++++++++++++++++++++++----------------------
->  1 files changed, 34 insertions(+), 34 deletions(-)
+> This patch solves this problem by adding two more functions:
+> dma_preallocate_coherent_memory() and dma_release_preallocated_memory(), which
+> allocate DMA coherent memory and assign it to the device, and release it back
+> respectively.
 
->  static struct platform_driver oprofile_driver = {
->  	.driver		= {
-> -		.name		= "arm-oprofile",
-> +		.name		= "perf-oprofile",
+This looks like a much saner interface for pre-allocating DMA memory from
+system memory, rather than trying to use dma_declare_coherent_memory().
 
-This should be "oprofile-perf" instead, otherwise the driver belongs
-to perf.
-
--Robert
-
->  	},
-> -	.resume		= op_arm_resume,
-> -	.suspend	= op_arm_suspend,
-> +	.resume		= oprofile_perf_resume,
-> +	.suspend	= oprofile_perf_suspend,
->  };
-
--- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
-
+Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
