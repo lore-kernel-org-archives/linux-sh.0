@@ -1,42 +1,52 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 01 Sep 2010 23:18:49 +0000
+From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+Date: Thu, 02 Sep 2010 02:37:12 +0000
 Subject: Re: [RFC] [PATCH] arm & sh: factorised duplicated clkdev.c
-Message-Id: <20100901231849.GB25860@n2100.arm.linux.org.uk>
+Message-Id: <20100902023712.GH22790@game.jcrosoft.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1283253402-3139-1-git-send-email-plagnioj@jcrosoft.com>
-	<20100901095121.GA11107@pengutronix.de>
-	<20100901111846.GF22790@game.jcrosoft.org>
-	<20100901150112.GF11107@pengutronix.de>
-In-Reply-To: <20100901150112.GF11107@pengutronix.de>
+	<20100901091233.GK8142@n2100.arm.linux.org.uk>
+	<20100901111302.GE22790@game.jcrosoft.org>
+	<20100901231752.GA25860@n2100.arm.linux.org.uk>
+In-Reply-To: <20100901231752.GA25860@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 01, 2010 at 05:01:12PM +0200, Uwe Kleine-K=F6nig wrote:
-> On Wed, Sep 01, 2010 at 01:18:46PM +0200, Jean-Christophe PLAGNIOL-VILLAR=
-D wrote:
-> > > > =20
-> > > > -struct clk_lookup *clkdev_alloc(struct clk *clk, const char *con_i=
-d,
-> > > > -	const char *dev_fmt, ...)
-> > > > +struct clk_lookup * __init_refok
-> > > Why do you need __init_refok?  __init_refok is defined as follows in
-> > > include/linux/init.h:
-> > >=20
-> > > 	/* compatibility defines */
-> > > 	#define __init_refok     __ref
-> > >=20
-> > > So if really needed better use __ref.  Couldn't this be __init? =20
-> > ok for __ref but __init_refok is more clear IMHO
-> For me it was not, because before your mail I didn't know __init_refok
-> so I had to look it up.
->=20
-> > and yes we need it as for early device we may use bootmem as slab alloc=
-ators
-> > may no be availlable in some case
-> Yes I got that, but it doesn't explain why you need to mark your
-> function as __ref or why you cannot use __init.
+On 00:17 Thu 02 Sep     , Russell King - ARM Linux wrote:
+> On Wed, Sep 01, 2010 at 01:13:02PM +0200, Jean-Christophe PLAGNIOL-VILLARD wrote:
+> > On 10:12 Wed 01 Sep     , Russell King - ARM Linux wrote:
+> > > On Tue, Aug 31, 2010 at 01:16:42PM +0200, Jean-Christophe PLAGNIOL-VILLARD wrote:
+> > > > factorise some generic infrastructure to assist looking up struct clks
+> > > > for the ARM & SH architecture.
+> > > > +/*
+> > > > + * Returns a clock. Note that we first try to use device id on the bus
+> > > > + * and clock name. If this fails, we try to use clock name only.
+> > > > + */
+> > > >  struct clk *clk_get(struct device *dev, const char *con_id)
+> > > >  {
+> > > >  	const char *dev_id = dev ? dev_name(dev) : NULL;
+> > > >  
+> > > >  	return clk_get_sys(dev_id, con_id);
+> > > >  }
+> > > > -EXPORT_SYMBOL(clk_get);
+> > > > +EXPORT_SYMBOL_GPL(clk_get);
+> > > >  
+> > > >  void clk_put(struct clk *clk)
+> > > >  {
+> > > >  	__clk_put(clk);
+> > > >  }
+> > > > -EXPORT_SYMBOL(clk_put);
+> > > > +EXPORT_SYMBOL_GPL(clk_put);
+> > > 
+> > > Please leave these as-is.
+> > ok but on SH it's GPL so it is ok with you Paul too?
+> 
+> If you want to get that pedantic... I created clkdev, and Sascha Hauer
+> extended it with some refactoring to create the clk_get_sys() interface.
+personnaly It's fine for I
+I just get in mind to knon if Paul have a specific reason to put it as GPL
+EXPORT_SYMBOL
 
-You can't use __init for this because this function may be used for
-non-init code.
+Best Regards,
+J.
