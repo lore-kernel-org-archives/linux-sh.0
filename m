@@ -1,43 +1,24 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 19 Aug 2010 14:40:00 +0000
-Subject: [PATCH 1/5] DMA: Remove unneeded "extern" from function declarations
-Message-Id: <Pine.LNX.4.64.1008191632260.26145@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 02 Sep 2010 02:57:25 +0000
+Subject: Re: [PATCH] SH: Add missing consts to sys_execve() declaration
+Message-Id: <20100902025725.GD10947@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
+References: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
+In-Reply-To: <20100827013013.13712.88419.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- include/asm-generic/dma-coherent.h |    9 +++------
- 1 files changed, 3 insertions(+), 6 deletions(-)
-
-diff --git a/include/asm-generic/dma-coherent.h b/include/asm-generic/dma-coherent.h
-index 85a3ffa..a92bc09 100644
---- a/include/asm-generic/dma-coherent.h
-+++ b/include/asm-generic/dma-coherent.h
-@@ -14,15 +14,12 @@ int dma_release_from_coherent(struct device *dev, int order, void *vaddr);
-  * Standard interface
-  */
- #define ARCH_HAS_DMA_DECLARE_COHERENT_MEMORY
--extern int
--dma_declare_coherent_memory(struct device *dev, dma_addr_t bus_addr,
-+int dma_declare_coherent_memory(struct device *dev, dma_addr_t bus_addr,
- 			    dma_addr_t device_addr, size_t size, int flags);
- 
--extern void
--dma_release_declared_memory(struct device *dev);
-+void dma_release_declared_memory(struct device *dev);
- 
--extern void *
--dma_mark_declared_memory_occupied(struct device *dev,
-+void *dma_mark_declared_memory_occupied(struct device *dev,
- 				  dma_addr_t device_addr, size_t size);
- #else
- #define dma_alloc_from_coherent(dev, size, handle, ret) (0)
--- 
-1.7.2
-
+On Tue, Aug 31, 2010 at 07:05:48PM +0200, Jean-Christophe PLAGNIOL-VILLARD wrote:
+> On 16:52 Tue 31 Aug     , David Howells wrote:
+> > Add missing consts to the sys_execve() declaration which result in the
+> > following error:
+> > 
+> > arch/sh/kernel/process_32.c:303: error: conflicting types for 'sys_execve'
+> > /warthog/nfs/linux-2.6-fscache/arch/sh/include/asm/syscalls_32.h:24: error: previous declaration of 'sys_execve' was here
+> I send it too just before :p
+> 
+And in both cases it has already been fixed in my tree for some time,
+presumably Linus was unhappy with my -rc2 changes, so I'll have another
+go at breakig things down for -rc4.
