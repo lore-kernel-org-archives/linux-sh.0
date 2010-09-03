@@ -1,85 +1,162 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 03 Sep 2010 07:20:42 +0000
-Subject: [PATCH 15/15] ARM: mach-shmobile: add two more video modes for HDMI
-Message-Id: <Pine.LNX.4.64.1009030917340.2883@axis700.grange>
+Date: Fri, 03 Sep 2010 09:06:07 +0000
+Subject: Re: [PATCH] fbdev: sh-mobile_hdmi: remove un-necessity settings
+Message-Id: <Pine.LNX.4.64.1009031104390.2883@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Add video modes for 480p and SXGA (1280x1024).
+On Fri, 27 Aug 2010, Kuninori Morimoto wrote:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> Current gamut, acp, isrc1, isrc2 settings are wrong,
+> and not necessary for now.
+> 
+> Tested-by: Takanari Hayama <taki@igel.co.jp>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Doesn't seem to break anything here
+
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Thanks
+Guennadi
+
+> ---
+>  drivers/video/sh_mobile_hdmi.c |  106 ----------------------------------------
+>  1 files changed, 0 insertions(+), 106 deletions(-)
+> 
+> diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+> index 2fde08c..afebe80 100644
+> --- a/drivers/video/sh_mobile_hdmi.c
+> +++ b/drivers/video/sh_mobile_hdmi.c
+> @@ -519,100 +519,6 @@ static void sh_hdmi_audio_infoframe_setup(struct sh_hdmi *hdmi)
+>  }
+>  
+>  /**
+> - * sh_hdmi_gamut_metadata_setup() - Gamut Metadata Packet of CONTROL PACKET
+> - */
+> -static void sh_hdmi_gamut_metadata_setup(struct sh_hdmi *hdmi)
+> -{
+> -	int i;
+> -
+> -	/* Gamut Metadata Packet */
+> -	hdmi_write(hdmi, 0x04, HDMI_CTRL_PKT_BUF_INDEX);
+> -
+> -	/* Packet Type = 0x0A */
+> -	hdmi_write(hdmi, 0x0A, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
+> -	/* Gamut Packet is not used, so default value */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
+> -	/* Gamut Packet is not used, so default value */
+> -	hdmi_write(hdmi, 0x10, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
+> -
+> -	/* GBD bytes 0 through 27 */
+> -	for (i = 0; i <= 27; i++)
+> -		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0_63H - PB27_7EH */
+> -		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
+> -}
+> -
+> -/**
+> - * sh_hdmi_acp_setup() - Audio Content Protection Packet (ACP)
+> - */
+> -static void sh_hdmi_acp_setup(struct sh_hdmi *hdmi)
+> -{
+> -	int i;
+> -
+> -	/* Audio Content Protection Packet (ACP) */
+> -	hdmi_write(hdmi, 0x01, HDMI_CTRL_PKT_BUF_INDEX);
+> -
+> -	/* Packet Type = 0x04 */
+> -	hdmi_write(hdmi, 0x04, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
+> -	/* ACP_Type */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
+> -	/* Reserved (0) */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
+> -
+> -	/* GBD bytes 0 through 27 */
+> -	for (i = 0; i <= 27; i++)
+> -		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0 - PB27 */
+> -		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
+> -}
+> -
+> -/**
+> - * sh_hdmi_isrc1_setup() - ISRC1 Packet
+> - */
+> -static void sh_hdmi_isrc1_setup(struct sh_hdmi *hdmi)
+> -{
+> -	int i;
+> -
+> -	/* ISRC1 Packet */
+> -	hdmi_write(hdmi, 0x02, HDMI_CTRL_PKT_BUF_INDEX);
+> -
+> -	/* Packet Type = 0x05 */
+> -	hdmi_write(hdmi, 0x05, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
+> -	/* ISRC_Cont, ISRC_Valid, Reserved (0), ISRC_Status */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
+> -	/* Reserved (0) */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
+> -
+> -	/* PB0 UPC_EAN_ISRC_0-15 */
+> -	/* Bytes PB16-PB27 shall be set to a value of 0. */
+> -	for (i = 0; i <= 27; i++)
+> -		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0 - PB27 */
+> -		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
+> -}
+> -
+> -/**
+> - * sh_hdmi_isrc2_setup() - ISRC2 Packet
+> - */
+> -static void sh_hdmi_isrc2_setup(struct sh_hdmi *hdmi)
+> -{
+> -	int i;
+> -
+> -	/* ISRC2 Packet */
+> -	hdmi_write(hdmi, 0x03, HDMI_CTRL_PKT_BUF_INDEX);
+> -
+> -	/* HB0 Packet Type = 0x06 */
+> -	hdmi_write(hdmi, 0x06, HDMI_CTRL_PKT_BUF_ACCESS_HB0);
+> -	/* Reserved (0) */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB1);
+> -	/* Reserved (0) */
+> -	hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_HB2);
+> -
+> -	/* PB0 UPC_EAN_ISRC_16-31 */
+> -	/* Bytes PB16-PB27 shall be set to a value of 0. */
+> -	for (i = 0; i <= 27; i++)
+> -		/* HDMI_CTRL_PKT_BUF_ACCESS_PB0 - PB27 */
+> -		hdmi_write(hdmi, 0x00, HDMI_CTRL_PKT_BUF_ACCESS_PB0 + i);
+> -}
+> -
+> -/**
+>   * sh_hdmi_configure() - Initialise HDMI for output
+>   */
+>  static void sh_hdmi_configure(struct sh_hdmi *hdmi)
+> @@ -632,18 +538,6 @@ static void sh_hdmi_configure(struct sh_hdmi *hdmi)
+>  	/* Audio InfoFrame */
+>  	sh_hdmi_audio_infoframe_setup(hdmi);
+>  
+> -	/* Gamut Metadata packet */
+> -	sh_hdmi_gamut_metadata_setup(hdmi);
+> -
+> -	/* Audio Content Protection (ACP) Packet */
+> -	sh_hdmi_acp_setup(hdmi);
+> -
+> -	/* ISRC1 Packet */
+> -	sh_hdmi_isrc1_setup(hdmi);
+> -
+> -	/* ISRC2 Packet */
+> -	sh_hdmi_isrc2_setup(hdmi);
+> -
+>  	/*
+>  	 * Control packet auto send with VSYNC control: auto send
+>  	 * General control, Gamut metadata, ISRC, and ACP packets
+> -- 
+> 1.7.0.4
+> 
+> 
+
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |   41 ++++++++++++++++++++++++++++-----
- 1 files changed, 35 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 0a7bab2..eca4703 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -599,18 +599,18 @@ static struct platform_device fsi_device = {
- 	},
- };
- 
-+/*
-+ * If left and right margins are not multiples of 8,
-+ * LDHAJR will be adjusted accordingly by the LCDC
-+ * driver. Until we start using EDID, these values
-+ * might have to be adjusted for different monitors.
-+ */
- const static struct fb_videomode ap4evb_hdmi_modes[] = {
- 	{
- 		.name = "HDMI 720p",
- 		.xres = 1280,
- 		.yres = 720,
- 
--		/*
--		 * If left and right margins are not multiples of 8,
--		 * LDHAJR will be adjusted accordingly by the LCDC
--		 * driver. Until we start using EDID, these values
--		 * might have to be adjusted for different monitors.
--		 */
- 		.left_margin = 200,
- 		.right_margin = 88,
- 		.hsync_len = 48,
-@@ -621,6 +621,35 @@ const static struct fb_videomode ap4evb_hdmi_modes[] = {
- 
- 		.pixclock = 13468,
- 		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
-+	}, {
-+		.name = "1280x1024",
-+		.xres = 1280,
-+		.yres = 1024,
-+
-+		.left_margin = 144,
-+		.right_margin = 48,
-+		.hsync_len = 64,
-+
-+		.upper_margin = 35,
-+		.lower_margin = 5,
-+		.vsync_len = 3,
-+
-+		.pixclock = 9800,
-+		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
-+	}, {
-+		.name = "HDMI 480p",
-+		.xres = 720,
-+		.yres = 480,
-+
-+		.left_margin = 36,
-+		.right_margin = 18,
-+		.hsync_len = 68,
-+
-+		.upper_margin = 36,
-+		.lower_margin = 3,
-+		.vsync_len = 6,
-+		.pixclock = 37037,
-+		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
- 	},
- };
- 
--- 
-1.7.1
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
