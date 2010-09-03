@@ -1,21 +1,36 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 02 Sep 2010 08:45:41 +0000
-Subject: Re: [RFC] [PATCH] arm & sh: factorised duplicated clkdev.c
-Message-Id: <20100902084541.GC26319@n2100.arm.linux.org.uk>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 03 Sep 2010 07:19:45 +0000
+Subject: [PATCH 00/15] ARM: mach-shmobile: HDMI hot-plug and improvements
+Message-Id: <Pine.LNX.4.64.1009030856020.2883@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1283253402-3139-1-git-send-email-plagnioj@jcrosoft.com>
-	<20100901095121.GA11107@pengutronix.de>
-	<20100901111846.GF22790@game.jcrosoft.org>
-	<20100901150112.GF11107@pengutronix.de>
-	<20100901231849.GB25860@n2100.arm.linux.org.uk>
-	<20100902054630.GB14214@pengutronix.de>
-In-Reply-To: <20100902054630.GB14214@pengutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev@vger.kernel.org
 
-On Thu, Sep 02, 2010 at 07:46:30AM +0200, Uwe Kleine-K=F6nig wrote:
-> I guess the first is simple, the rest trivial, no?
+The main purpose of this patch set is supporting dynamic framebuffer 
+reconfiguration upon monitor hot-plug. The good thing is - it works. The 
+not so good thing is - only to the extent, that the current fbdev API 
+allows. Specifically, there is currently no possibility under the fbdev 
+API to inform framebuffer users about a changed framebuffer configuration, 
+as can easily be the case, when a new monitor has been plugged in. It is, 
+however, possible to inform in-kernel framebuffer users, e.g., the fbcon 
+console, about such a change, using framebuffer notifications. This patch 
+series implements support for monitor hot-plug on the hardware level, 
+i.e., the LCD and HDMI controllers get reconfigured for a new device. The 
+user configuration remains untouched. With this approach with a new 
+monitor plugged in, the user either gets to see the upper left corner of 
+the framebuffer image, or the whole framebuffer will be displayed in the 
+upper left corner of the display.
 
-Stop it.  Just accept that we don't want clk_add_alias to be __init.
+The patch series also contains a number of improvements to both the lcdc 
+and hdmi SH-Mobile drivers.
+
+Based on the current (commit 410d878b) genesis-2.6/master tree.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
