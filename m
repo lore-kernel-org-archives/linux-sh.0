@@ -1,65 +1,75 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 03 Sep 2010 07:19:53 +0000
-Subject: [PATCH 02/15] fbdev: sh_mobile_hdmi: simplify the EDID reading
-Message-Id: <Pine.LNX.4.64.1009030910350.2883@axis700.grange>
+Date: Fri, 03 Sep 2010 07:20:12 +0000
+Subject: [PATCH 07/15] fbdev: sh_mobile_lcdcfb: allocate memory, sufficient
+Message-Id: <Pine.LNX.4.64.1009030913380.2883@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The present SH-Mobile HDMI driver reads and parses the EDID block into a
-variable screeninfo object, but since it is still unable to dynamically
-reconfigure the framebuffer, it overwrites the EDID information with preset
-values again. This patch just uses a temporary variable to store the EDID
-timing information instead.
+Now, that we add support for multiple modes to the sh_mobile_lcdcfb driver, it
+has to allocate memory, sufficient for the biggest of them.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_hdmi.c |   23 +++--------------------
- 1 files changed, 3 insertions(+), 20 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   26 ++++++++++++++++++++------
+ 1 files changed, 20 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 2fde08c..03bcb20 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -663,10 +663,9 @@ static void sh_hdmi_configure(struct sh_hdmi *hdmi)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 2f6e37e..ddd6c46 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1103,8 +1103,10 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
  
- static void sh_hdmi_read_edid(struct sh_hdmi *hdmi)
- {
--	struct fb_var_screeninfo *var = &hdmi->var;
--	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
--	struct fb_videomode *lcd_cfg = &pdata->lcd_chan->lcd_cfg;
--	unsigned long height = var->height, width = var->width;
-+	struct fb_var_screeninfo tmpvar;
-+	/* TODO: When we are ready to use EDID, use this to fill &hdmi->var */
-+	struct fb_var_screeninfo *var = &tmpvar;
- 	int i;
- 	u8 edid[128];
+ 	for (i = 0; i < j; i++) {
+ 		struct fb_var_screeninfo *var;
+-		const struct fb_videomode *lcd_cfg;
++		const struct fb_videomode *lcd_cfg, *max_cfg = NULL;
+ 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
++		unsigned long max_size = 0;
++		int k;
  
-@@ -692,22 +691,6 @@ static void sh_hdmi_read_edid(struct sh_hdmi *hdmi)
- 		 var->upper_margin, var->yres, var->lower_margin, var->vsync_len,
- 		 PICOS2KHZ(var->pixclock));
+ 		cfg = &ch->cfg;
  
--	/* FIXME: Use user-provided configuration instead of EDID */
--	var->width		= width;
--	var->xres		= lcd_cfg->xres;
--	var->xres_virtual	= lcd_cfg->xres;
--	var->left_margin	= lcd_cfg->left_margin;
--	var->right_margin	= lcd_cfg->right_margin;
--	var->hsync_len		= lcd_cfg->hsync_len;
--	var->height		= height;
--	var->yres		= lcd_cfg->yres;
--	var->yres_virtual	= lcd_cfg->yres * 2;
--	var->upper_margin	= lcd_cfg->upper_margin;
--	var->lower_margin	= lcd_cfg->lower_margin;
--	var->vsync_len		= lcd_cfg->vsync_len;
--	var->sync		= lcd_cfg->sync;
--	var->pixclock		= lcd_cfg->pixclock;
--
- 	hdmi_external_video_param(hdmi);
- }
+@@ -1117,9 +1119,8 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
  
+ 		info = ch->info;
+ 		var = &info->var;
+-		lcd_cfg = &cfg->lcd_cfg[0];
+ 		info->fbops = &sh_mobile_lcdc_ops;
+-		fb_videomode_to_var(var, lcd_cfg);
++		fb_videomode_to_var(var, &cfg->lcd_cfg[0]);
+ 		/* Default Y virtual resolution is 2x panel size */
+ 		var->yres_virtual = var->yres * 2;
+ 
+@@ -1127,10 +1128,23 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ 		if (error)
+ 			break;
+ 
++		for (k = 0, lcd_cfg = cfg->lcd_cfg;
++		     k < cfg->num_cfg;
++		     k++, lcd_cfg++) {
++			unsigned long size = lcd_cfg->yres * lcd_cfg->xres;
++
++			if (size > max_size) {
++				max_cfg = lcd_cfg;
++				max_size = size;
++			}
++		}
++
++		dev_dbg(&pdev->dev, "Found largest videomode %ux%u\n",
++			max_cfg->xres, max_cfg->yres);
++
+ 		info->fix = sh_mobile_lcdc_fix;
+-		info->fix.line_length = lcd_cfg->xres * (cfg->bpp / 8);
+-		info->fix.smem_len = info->fix.line_length *
+-			var->yres_virtual;
++		info->fix.line_length = cfg->lcd_cfg[0].xres * (cfg->bpp / 8);
++		info->fix.smem_len = max_size * (cfg->bpp / 8) * 2;
+ 
+ 		buf = dma_alloc_coherent(&pdev->dev, info->fix.smem_len,
+ 					 &ch->dma_handle, GFP_KERNEL);
 -- 
 1.7.1
 
