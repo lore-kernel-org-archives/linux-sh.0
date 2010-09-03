@@ -1,130 +1,85 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 03 Sep 2010 05:36:43 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372: modify INTCS table
-Message-Id: <w3pd3svbd78.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 03 Sep 2010 07:20:42 +0000
+Subject: [PATCH 15/15] ARM: mach-shmobile: add two more video modes for HDMI
+Message-Id: <Pine.LNX.4.64.1009030917340.2883@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Add ignored device name by comment-out in INTCS.
-And MSIOF which has been forgotten is added
+Add video modes for 480p and SXGA (1280x1024).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/intc-sh7372.c |   28 ++++++++++++++++++++++++++++
- 1 files changed, 28 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   41 ++++++++++++++++++++++++++++-----
+ 1 files changed, 35 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
-index e3551b5..4cd3cae 100644
---- a/arch/arm/mach-shmobile/intc-sh7372.c
-+++ b/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -369,9 +369,13 @@ enum {
- 	INTCS,
- 
- 	/* interrupt sources INTCS */
-+
-+	/* IRQ0S - IRQ31S */
- 	VEU_VEU0, VEU_VEU1, VEU_VEU2, VEU_VEU3,
- 	RTDMAC_1_DEI0, RTDMAC_1_DEI1, RTDMAC_1_DEI2, RTDMAC_1_DEI3,
- 	CEU, BEU_BEU0, BEU_BEU1, BEU_BEU2,
-+	/* MFI */
-+	/* BBIF2 */
- 	VPU,
- 	TSIF1,
- 	_3DG_SGX530,
-@@ -379,13 +383,17 @@ enum {
- 	IIC2_ALI2, IIC2_TACKI2, IIC2_WAITI2, IIC2_DTEI2,
- 	IPMMU_IPMMUR, IPMMU_IPMMUR2,
- 	RTDMAC_2_DEI4, RTDMAC_2_DEI5, RTDMAC_2_DADERR,
-+	/* KEYSC */
-+	/* TTI20 */
- 	MSIOF,
- 	IIC0_ALI0, IIC0_TACKI0, IIC0_WAITI0, IIC0_DTEI0,
- 	TMU_TUNI0, TMU_TUNI1, TMU_TUNI2,
- 	CMT0,
- 	TSIF0,
-+	/* CMT2 */
- 	LMB,
- 	CTI,
-+	/* RWDT0 */
- 	ICB,
- 	JPU_JPEG,
- 	LCDC,
-@@ -397,11 +405,17 @@ enum {
- 	CSIRX,
- 	DSITX_DSITX0,
- 	DSITX_DSITX1,
-+	/* SPU2 */
-+	/* FSI */
-+	/* FMSI */
-+	/* HDMI */
- 	TMU1_TUNI0, TMU1_TUNI1, TMU1_TUNI2,
- 	CMT4,
- 	DSITX1_DSITX1_0,
- 	DSITX1_DSITX1_1,
-+	/* MFIS2 */
- 	CPORTS2R,
-+	/* CEC */
- 	JPU6E,
- 
- 	/* interrupt groups INTCS */
-@@ -410,12 +424,15 @@ enum {
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0a7bab2..eca4703 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -599,18 +599,18 @@ static struct platform_device fsi_device = {
+ 	},
  };
  
- static struct intc_vect intcs_vectors[] = {
-+	/* IRQ0S - IRQ31S */
- 	INTCS_VECT(VEU_VEU0, 0x700), INTCS_VECT(VEU_VEU1, 0x720),
- 	INTCS_VECT(VEU_VEU2, 0x740), INTCS_VECT(VEU_VEU3, 0x760),
- 	INTCS_VECT(RTDMAC_1_DEI0, 0x800), INTCS_VECT(RTDMAC_1_DEI1, 0x820),
- 	INTCS_VECT(RTDMAC_1_DEI2, 0x840), INTCS_VECT(RTDMAC_1_DEI3, 0x860),
- 	INTCS_VECT(CEU, 0x880), INTCS_VECT(BEU_BEU0, 0x8a0),
- 	INTCS_VECT(BEU_BEU1, 0x8c0), INTCS_VECT(BEU_BEU2, 0x8e0),
-+	/* MFI */
-+	/* BBIF2 */
- 	INTCS_VECT(VPU, 0x980),
- 	INTCS_VECT(TSIF1, 0x9a0),
- 	INTCS_VECT(_3DG_SGX530, 0x9e0),
-@@ -425,14 +442,19 @@ static struct intc_vect intcs_vectors[] = {
- 	INTCS_VECT(IPMMU_IPMMUR, 0xb00), INTCS_VECT(IPMMU_IPMMUR2, 0xb20),
- 	INTCS_VECT(RTDMAC_2_DEI4, 0xb80), INTCS_VECT(RTDMAC_2_DEI5, 0xba0),
- 	INTCS_VECT(RTDMAC_2_DADERR, 0xbc0),
-+	/* KEYSC */
-+	/* TTI20 */
-+	INTCS_VECT(MSIOF, 0x0d20),
- 	INTCS_VECT(IIC0_ALI0, 0xe00), INTCS_VECT(IIC0_TACKI0, 0xe20),
- 	INTCS_VECT(IIC0_WAITI0, 0xe40), INTCS_VECT(IIC0_DTEI0, 0xe60),
- 	INTCS_VECT(TMU_TUNI0, 0xe80), INTCS_VECT(TMU_TUNI1, 0xea0),
- 	INTCS_VECT(TMU_TUNI2, 0xec0),
- 	INTCS_VECT(CMT0, 0xf00),
- 	INTCS_VECT(TSIF0, 0xf20),
-+	/* CMT2 */
- 	INTCS_VECT(LMB, 0xf60),
- 	INTCS_VECT(CTI, 0x400),
-+	/* RWDT0 */
- 	INTCS_VECT(ICB, 0x480),
- 	INTCS_VECT(JPU_JPEG, 0x560),
- 	INTCS_VECT(LCDC, 0x580),
-@@ -446,12 +468,18 @@ static struct intc_vect intcs_vectors[] = {
- 	INTCS_VECT(CSIRX, 0x17a0),
- 	INTCS_VECT(DSITX_DSITX0, 0x17c0),
- 	INTCS_VECT(DSITX_DSITX1, 0x17e0),
-+	/* SPU2 */
-+	/* FSI */
-+	/* FMSI */
-+	/* HDMI */
- 	INTCS_VECT(TMU1_TUNI0, 0x1900), INTCS_VECT(TMU1_TUNI1, 0x1920),
- 	INTCS_VECT(TMU1_TUNI2, 0x1940),
- 	INTCS_VECT(CMT4, 0x1980),
- 	INTCS_VECT(DSITX1_DSITX1_0, 0x19a0),
- 	INTCS_VECT(DSITX1_DSITX1_1, 0x19c0),
-+	/* MFIS2 */
- 	INTCS_VECT(CPORTS2R, 0x1a20),
-+	/* CEC */
- 	INTCS_VECT(JPU6E, 0x1a80),
++/*
++ * If left and right margins are not multiples of 8,
++ * LDHAJR will be adjusted accordingly by the LCDC
++ * driver. Until we start using EDID, these values
++ * might have to be adjusted for different monitors.
++ */
+ const static struct fb_videomode ap4evb_hdmi_modes[] = {
+ 	{
+ 		.name = "HDMI 720p",
+ 		.xres = 1280,
+ 		.yres = 720,
  
- 	INTC_VECT(INTCS, 0xf80),
+-		/*
+-		 * If left and right margins are not multiples of 8,
+-		 * LDHAJR will be adjusted accordingly by the LCDC
+-		 * driver. Until we start using EDID, these values
+-		 * might have to be adjusted for different monitors.
+-		 */
+ 		.left_margin = 200,
+ 		.right_margin = 88,
+ 		.hsync_len = 48,
+@@ -621,6 +621,35 @@ const static struct fb_videomode ap4evb_hdmi_modes[] = {
+ 
+ 		.pixclock = 13468,
+ 		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++	}, {
++		.name = "1280x1024",
++		.xres = 1280,
++		.yres = 1024,
++
++		.left_margin = 144,
++		.right_margin = 48,
++		.hsync_len = 64,
++
++		.upper_margin = 35,
++		.lower_margin = 5,
++		.vsync_len = 3,
++
++		.pixclock = 9800,
++		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++	}, {
++		.name = "HDMI 480p",
++		.xres = 720,
++		.yres = 480,
++
++		.left_margin = 36,
++		.right_margin = 18,
++		.hsync_len = 68,
++
++		.upper_margin = 36,
++		.lower_margin = 3,
++		.vsync_len = 6,
++		.pixclock = 37037,
++		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
+ 	},
+ };
+ 
 -- 
-1.7.0.4
+1.7.1
 
