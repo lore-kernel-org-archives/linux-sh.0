@@ -1,7 +1,7 @@
-From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Fri, 03 Sep 2010 10:32:44 +0000
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
+Date: Fri, 03 Sep 2010 18:23:23 +0000
 Subject: Re: [PATCH V3] arm & sh: factorised duplicated clkdev.c
-Message-Id: <20100903103244.GF21449@game.jcrosoft.org>
+Message-Id: <20100903182323.GA17152@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1283434786-26479-1-git-send-email-plagnioj@jcrosoft.com>
 In-Reply-To: <1283434786-26479-1-git-send-email-plagnioj@jcrosoft.com>
@@ -10,7 +10,11 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On 19:18 Fri 03 Sep     , Magnus Damm wrote:
+Hello,
+
+[added git ML to Cc:]
+
+On Fri, Sep 03, 2010 at 07:18:43PM +0900, Magnus Damm wrote:
 > On Thu, Sep 2, 2010 at 10:39 PM, Jean-Christophe PLAGNIOL-VILLARD
 > <plagnioj@jcrosoft.com> wrote:
 > > factorise some generic infrastructure to assist looking up struct clks
@@ -44,11 +48,13 @@ On 19:18 Fri 03 Sep     , Magnus Damm wrote:
 > I guess this is caused by the last "renaming" hunk, see below.
 >=20
 > I thought these things were supposed to work out of the box...
-I generate it as usual with git (1.7.1)
+Yes, they work out of the box, but only for people using git :-)
 
-with the following options git format-patch -M -B -C
+Maybe git-apply can be used instead of patch?
 
-and I agree it's supposed to work out of the box
+Best regards
+Uwe
 
-Best Regards,
-J.
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
