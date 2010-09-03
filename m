@@ -1,396 +1,420 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Wed, 22 Sep 2010 12:41:55 +0000
-Subject: Re: [PATCH] SOUND-OSS: Remove sh_dac_audio
-Message-Id: <20100922124155.GB16333@console-pimps.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 03 Sep 2010 07:20:23 +0000
+Subject: [PATCH 10/15] fbdev: sh_mobile_hdmi: implement locking
+Message-Id: <Pine.LNX.4.64.1009030914550.2883@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1285156021-4973-1-git-send-email-jkacur@redhat.com>
-In-Reply-To: <1285156021-4973-1-git-send-email-jkacur@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Kacur <jkacur@redhat.com>
-Cc: lkml <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Takashi Iwai <tiwai@suse.de>, alsa-devel@alsa-project.org, Jaroslav Kysela <perex@perex.cz>, ralf@linux-mips.org, Frederic Weisbecker <fweisbec@gmail.com>, Andriy Skulysh <askulysh@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <damm@igel.co.jp>
+To: linux-fbdev@vger.kernel.org
 
-(CC various people that might care about this..)
+The SH-Mobile HDMI driver runs in several contexts: ISR, delayed work-queue,
+task context, when called from the sh_mobile_lcdc framebuffer driver. This
+creates ample race possibilities. Even though most these races are purely
+theoretical, it is better to close them. To trace fb_info validity we install a
+notification callback in the HDMI driver, and the only way for it to get to
+driver internal data is by using struct sh_mobile_lcdc_chan, therefore it had
+to be extracted into a separate common header.
 
-On Wed, Sep 22, 2010 at 01:47:01PM +0200, John Kacur wrote:
-> Remove the SH DAC oss driver since there is an equivalent alsa driver.
-> oss has been deprecated for years. Furthermore this driver has BKL code
-> which we are trying to remove. Rather than attempt to fix this, simply
-> remove the driver.
-> 
-> Signed-off-by: John Kacur <jkacur@redhat.com>
-> ---
->  sound/oss/Kconfig        |    8 -
->  sound/oss/Makefile       |    1 -
->  sound/oss/sh_dac_audio.c |  325 ----------------------------------------------
->  3 files changed, 0 insertions(+), 334 deletions(-)
->  delete mode 100644 sound/oss/sh_dac_audio.c
-> 
-> diff --git a/sound/oss/Kconfig b/sound/oss/Kconfig
-> index a513651..76c0902 100644
-> --- a/sound/oss/Kconfig
-> +++ b/sound/oss/Kconfig
-> @@ -545,11 +545,3 @@ config SOUND_KAHLUA
->  
->  endif	# SOUND_OSS
->  
-> -config SOUND_SH_DAC_AUDIO
-> -	tristate "SuperH DAC audio support"
-> -	depends on CPU_SH3 && HIGH_RES_TIMERS
-> -
-> -config SOUND_SH_DAC_AUDIO_CHANNEL
-> -	int "DAC channel"
-> -	default "1"
-> -	depends on SOUND_SH_DAC_AUDIO
-> diff --git a/sound/oss/Makefile b/sound/oss/Makefile
-> index 567b8a7..96f14dc 100644
-> --- a/sound/oss/Makefile
-> +++ b/sound/oss/Makefile
-> @@ -9,7 +9,6 @@ obj-$(CONFIG_SOUND_OSS)		+= sound.o
->  
->  # Please leave it as is, cause the link order is significant !
->  
-> -obj-$(CONFIG_SOUND_SH_DAC_AUDIO)	+= sh_dac_audio.o
->  obj-$(CONFIG_SOUND_AEDSP16)	+= aedsp16.o
->  obj-$(CONFIG_SOUND_PSS)		+= pss.o ad1848.o mpu401.o
->  obj-$(CONFIG_SOUND_TRIX)	+= trix.o ad1848.o sb_lib.o uart401.o
-> diff --git a/sound/oss/sh_dac_audio.c b/sound/oss/sh_dac_audio.c
-> deleted file mode 100644
-> index 479e302..0000000
-> --- a/sound/oss/sh_dac_audio.c
-> +++ /dev/null
-> @@ -1,325 +0,0 @@
-> -/*
-> - * sound/oss/sh_dac_audio.c
-> - *
-> - * SH DAC based sound :(
-> - *
-> - *  Copyright (C) 2004,2005  Andriy Skulysh
-> - *
-> - * This file is subject to the terms and conditions of the GNU General Public
-> - * License.  See the file "COPYING" in the main directory of this archive
-> - * for more details.
-> - */
-> -#include <linux/module.h>
-> -#include <linux/init.h>
-> -#include <linux/sched.h>
-> -#include <linux/linkage.h>
-> -#include <linux/slab.h>
-> -#include <linux/fs.h>
-> -#include <linux/sound.h>
-> -#include <linux/smp_lock.h>
-> -#include <linux/soundcard.h>
-> -#include <linux/interrupt.h>
-> -#include <linux/hrtimer.h>
-> -#include <asm/io.h>
-> -#include <asm/uaccess.h>
-> -#include <asm/irq.h>
-> -#include <asm/delay.h>
-> -#include <asm/clock.h>
-> -#include <cpu/dac.h>
-> -#include <asm/machvec.h>
-> -#include <mach/hp6xx.h>
-> -#include <asm/hd64461.h>
-> -
-> -#define MODNAME "sh_dac_audio"
-> -
-> -#define BUFFER_SIZE 48000
-> -
-> -static int rate;
-> -static int empty;
-> -static char *data_buffer, *buffer_begin, *buffer_end;
-> -static int in_use, device_major;
-> -static struct hrtimer hrtimer;
-> -static ktime_t wakeups_per_second;
-> -
-> -static void dac_audio_start_timer(void)
-> -{
-> -	hrtimer_start(&hrtimer, wakeups_per_second, HRTIMER_MODE_REL);
-> -}
-> -
-> -static void dac_audio_stop_timer(void)
-> -{
-> -	hrtimer_cancel(&hrtimer);
-> -}
-> -
-> -static void dac_audio_reset(void)
-> -{
-> -	dac_audio_stop_timer();
-> -	buffer_begin = buffer_end = data_buffer;
-> -	empty = 1;
-> -}
-> -
-> -static void dac_audio_sync(void)
-> -{
-> -	while (!empty)
-> -		schedule();
-> -}
-> -
-> -static void dac_audio_start(void)
-> -{
-> -	if (mach_is_hp6xx()) {
-> -		u16 v = __raw_readw(HD64461_GPADR);
-> -		v &= ~HD64461_GPADR_SPEAKER;
-> -		__raw_writew(v, HD64461_GPADR);
-> -	}
-> -
-> -	sh_dac_enable(CONFIG_SOUND_SH_DAC_AUDIO_CHANNEL);
-> -}
-> -static void dac_audio_stop(void)
-> -{
-> -	dac_audio_stop_timer();
-> -
-> -	if (mach_is_hp6xx()) {
-> -		u16 v = __raw_readw(HD64461_GPADR);
-> -		v |= HD64461_GPADR_SPEAKER;
-> -		__raw_writew(v, HD64461_GPADR);
-> -	}
-> -
-> -	sh_dac_output(0, CONFIG_SOUND_SH_DAC_AUDIO_CHANNEL);
-> -	sh_dac_disable(CONFIG_SOUND_SH_DAC_AUDIO_CHANNEL);
-> -}
-> -
-> -static void dac_audio_set_rate(void)
-> -{
-> -	wakeups_per_second = ktime_set(0, 1000000000 / rate);
-> -}
-> -
-> -static int dac_audio_ioctl(struct file *file,
-> -			   unsigned int cmd, unsigned long arg)
-> -{
-> -	int val;
-> -
-> -	switch (cmd) {
-> -	case OSS_GETVERSION:
-> -		return put_user(SOUND_VERSION, (int *)arg);
-> -
-> -	case SNDCTL_DSP_SYNC:
-> -		dac_audio_sync();
-> -		return 0;
-> -
-> -	case SNDCTL_DSP_RESET:
-> -		dac_audio_reset();
-> -		return 0;
-> -
-> -	case SNDCTL_DSP_GETFMTS:
-> -		return put_user(AFMT_U8, (int *)arg);
-> -
-> -	case SNDCTL_DSP_SETFMT:
-> -		return put_user(AFMT_U8, (int *)arg);
-> -
-> -	case SNDCTL_DSP_NONBLOCK:
-> -		spin_lock(&file->f_lock);
-> -		file->f_flags |= O_NONBLOCK;
-> -		spin_unlock(&file->f_lock);
-> -		return 0;
-> -
-> -	case SNDCTL_DSP_GETCAPS:
-> -		return 0;
-> -
-> -	case SOUND_PCM_WRITE_RATE:
-> -		val = *(int *)arg;
-> -		if (val > 0) {
-> -			rate = val;
-> -			dac_audio_set_rate();
-> -		}
-> -		return put_user(rate, (int *)arg);
-> -
-> -	case SNDCTL_DSP_STEREO:
-> -		return put_user(0, (int *)arg);
-> -
-> -	case SOUND_PCM_WRITE_CHANNELS:
-> -		return put_user(1, (int *)arg);
-> -
-> -	case SNDCTL_DSP_SETDUPLEX:
-> -		return -EINVAL;
-> -
-> -	case SNDCTL_DSP_PROFILE:
-> -		return -EINVAL;
-> -
-> -	case SNDCTL_DSP_GETBLKSIZE:
-> -		return put_user(BUFFER_SIZE, (int *)arg);
-> -
-> -	case SNDCTL_DSP_SETFRAGMENT:
-> -		return 0;
-> -
-> -	default:
-> -		printk(KERN_ERR "sh_dac_audio: unimplemented ioctl=0x%x\n",
-> -		       cmd);
-> -		return -EINVAL;
-> -	}
-> -	return -EINVAL;
-> -}
-> -
-> -static long dac_audio_unlocked_ioctl(struct file *file, u_int cmd, u_long arg)
-> -{
-> -	int ret;
-> -
-> -	lock_kernel();
-> -	ret = dac_audio_ioctl(file, cmd, arg);
-> -	unlock_kernel();
-> -
-> -	return ret;
-> -}
-> -
-> -static ssize_t dac_audio_write(struct file *file, const char *buf, size_t count,
-> -			       loff_t * ppos)
-> -{
-> -	int free;
-> -	int nbytes;
-> -
-> -	if (!count) {
-> -		dac_audio_sync();
-> -		return 0;
-> -	}
-> -
-> -	free = buffer_begin - buffer_end;
-> -
-> -	if (free < 0)
-> -		free += BUFFER_SIZE;
-> -	if ((free = 0) && (empty))
-> -		free = BUFFER_SIZE;
-> -	if (count > free)
-> -		count = free;
-> -	if (buffer_begin > buffer_end) {
-> -		if (copy_from_user((void *)buffer_end, buf, count))
-> -			return -EFAULT;
-> -
-> -		buffer_end += count;
-> -	} else {
-> -		nbytes = data_buffer + BUFFER_SIZE - buffer_end;
-> -		if (nbytes > count) {
-> -			if (copy_from_user((void *)buffer_end, buf, count))
-> -				return -EFAULT;
-> -			buffer_end += count;
-> -		} else {
-> -			if (copy_from_user((void *)buffer_end, buf, nbytes))
-> -				return -EFAULT;
-> -			if (copy_from_user
-> -			    ((void *)data_buffer, buf + nbytes, count - nbytes))
-> -				return -EFAULT;
-> -			buffer_end = data_buffer + count - nbytes;
-> -		}
-> -	}
-> -
-> -	if (empty) {
-> -		empty = 0;
-> -		dac_audio_start_timer();
-> -	}
-> -
-> -	return count;
-> -}
-> -
-> -static ssize_t dac_audio_read(struct file *file, char *buf, size_t count,
-> -			      loff_t * ppos)
-> -{
-> -	return -EINVAL;
-> -}
-> -
-> -static int dac_audio_open(struct inode *inode, struct file *file)
-> -{
-> -	if (file->f_mode & FMODE_READ)
-> -		return -ENODEV;
-> -
-> -	lock_kernel();
-> -	if (in_use) {
-> -		unlock_kernel();
-> -		return -EBUSY;
-> -	}
-> -
-> -	in_use = 1;
-> -
-> -	dac_audio_start();
-> -	unlock_kernel();
-> -	return 0;
-> -}
-> -
-> -static int dac_audio_release(struct inode *inode, struct file *file)
-> -{
-> -	dac_audio_sync();
-> -	dac_audio_stop();
-> -	in_use = 0;
-> -
-> -	return 0;
-> -}
-> -
-> -const struct file_operations dac_audio_fops = {
-> -      .read =		dac_audio_read,
-> -      .write =		dac_audio_write,
-> -      .unlocked_ioctl =	dac_audio_unlocked_ioctl,
-> -      .open =		dac_audio_open,
-> -      .release =	dac_audio_release,
-> -};
-> -
-> -static enum hrtimer_restart sh_dac_audio_timer(struct hrtimer *handle)
-> -{
-> -	if (!empty) {
-> -		sh_dac_output(*buffer_begin, CONFIG_SOUND_SH_DAC_AUDIO_CHANNEL);
-> -		buffer_begin++;
-> -
-> -		if (buffer_begin = data_buffer + BUFFER_SIZE)
-> -			buffer_begin = data_buffer;
-> -		if (buffer_begin = buffer_end)
-> -			empty = 1;
-> -	}
-> -
-> -	if (!empty)
-> -		hrtimer_start(&hrtimer, wakeups_per_second, HRTIMER_MODE_REL);
-> -
-> -	return HRTIMER_NORESTART;
-> -}
-> -
-> -static int __init dac_audio_init(void)
-> -{
-> -	if ((device_major = register_sound_dsp(&dac_audio_fops, -1)) < 0) {
-> -		printk(KERN_ERR "Cannot register dsp device");
-> -		return device_major;
-> -	}
-> -
-> -	in_use = 0;
-> -
-> -	data_buffer = kmalloc(BUFFER_SIZE, GFP_KERNEL);
-> -	if (data_buffer = NULL)
-> -		return -ENOMEM;
-> -
-> -	dac_audio_reset();
-> -	rate = 8000;
-> -	dac_audio_set_rate();
-> -
-> -	/* Today: High Resolution Timer driven DAC playback.
-> -	 * The timer callback gets called once per sample. Ouch.
-> -	 *
-> -	 * Future: A much better approach would be to use the
-> -	 * SH7720 CMT+DMAC+DAC hardware combination like this:
-> -	 * - Program sample rate using CMT0 or CMT1
-> -	 * - Program DMAC to use CMT for timing and output to DAC
-> -	 * - Play sound using DMAC, let CPU sleep.
-> -	 * - While at it, rewrite this driver to use ALSA.
-> -	 */
-> -
-> -	hrtimer_init(&hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-> -	hrtimer.function = sh_dac_audio_timer;
-> -
-> -	return 0;
-> -}
-> -
-> -static void __exit dac_audio_exit(void)
-> -{
-> -	unregister_sound_dsp(device_major);
-> -	kfree((void *)data_buffer);
-> -}
-> -
-> -module_init(dac_audio_init);
-> -module_exit(dac_audio_exit);
-> -
-> -MODULE_AUTHOR("Andriy Skulysh, askulysh@image.kiev.ua");
-> -MODULE_DESCRIPTION("SH DAC sound driver");
-> -MODULE_LICENSE("GPL");
-> -- 
-> 1.7.2.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/video/sh_mobile_hdmi.c   |  103 ++++++++++++++++++++++++++++++++------
+ drivers/video/sh_mobile_lcdcfb.c |   46 ++++++-----------
+ drivers/video/sh_mobile_lcdcfb.h |   37 ++++++++++++++
+ include/video/sh_mobile_lcdc.h   |    2 +
+ 4 files changed, 141 insertions(+), 47 deletions(-)
+ create mode 100644 drivers/video/sh_mobile_lcdcfb.h
+
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 293b16d..a645d71 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -26,6 +26,8 @@
+ #include <video/sh_mobile_hdmi.h>
+ #include <video/sh_mobile_lcdc.h>
+ 
++#include "sh_mobile_lcdcfb.h"
++
+ #define HDMI_SYSTEM_CTRL			0x00 /* System control */
+ #define HDMI_L_R_DATA_SWAP_CTRL_RPKT		0x01 /* L/R data swap control,
+ 							bits 19..16 of 20-bit N for Audio Clock Regeneration packet */
+@@ -209,6 +211,7 @@ struct sh_hdmi {
+ 	struct clk *hdmi_clk;
+ 	struct device *dev;
+ 	struct fb_info *info;
++	struct mutex mutex;		/* Protect the info pointer */
+ 	struct delayed_work edid_work;
+ 	struct fb_var_screeninfo var;
+ };
+@@ -826,17 +829,21 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
++/* locking:	called with info->lock held, or before register_framebuffer() */
+ static void hdmi_display_on(void *arg, struct fb_info *info)
+ {
++	/*
++	 * info is guaranteed to be valid, when we are called, because our
++	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
++	 */
+ 	struct sh_hdmi *hdmi = arg;
+ 	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
+ 
+ 	pr_debug("%s(%p): state %x\n", __func__, pdata->lcd_dev, info->state);
+-	/*
+-	 * FIXME: not a good place to store fb_info. And we cannot nullify it
+-	 * even on monitor disconnect. What should the lifecycle be?
+-	 */
++
++	/* No need to lock */
+ 	hdmi->info = info;
++
+ 	switch (hdmi->hp_state) {
+ 	case HDMI_HOTPLUG_EDID_DONE:
+ 		/* PS mode d->e. All functions are active */
+@@ -850,6 +857,7 @@ static void hdmi_display_on(void *arg, struct fb_info *info)
+ 	}
+ }
+ 
++/* locking: called with info->lock held */
+ static void hdmi_display_off(void *arg)
+ {
+ 	struct sh_hdmi *hdmi = arg;
+@@ -872,6 +880,8 @@ static void edid_work_fn(struct work_struct *work)
+ 	if (!pdata->lcd_dev)
+ 		return;
+ 
++	mutex_lock(&hdmi->mutex);
++
+ 	if (hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE) {
+ 		pm_runtime_get_sync(hdmi->dev);
+ 		/* A device has been plugged in */
+@@ -882,21 +892,25 @@ static void edid_work_fn(struct work_struct *work)
+ 		msleep(10);
+ 
+ 		if (!hdmi->info)
+-			return;
++			goto out;
+ 
+ 		acquire_console_sem();
+ 
+ 		/* HDMI plug in */
+ 		hdmi->info->var = hdmi->var;
+-		if (hdmi->info->state != FBINFO_STATE_RUNNING)
++		if (hdmi->info->state != FBINFO_STATE_RUNNING) {
+ 			fb_set_suspend(hdmi->info, 0);
+-		else
+-			hdmi_display_on(hdmi, hdmi->info);
++		} else {
++			if (lock_fb_info(hdmi->info)) {
++				hdmi_display_on(hdmi, hdmi->info);
++				unlock_fb_info(hdmi->info);
++			}
++		}
+ 
+ 		release_console_sem();
+ 	} else {
+ 		if (!hdmi->info)
+-			return;
++			goto out;
+ 
+ 		acquire_console_sem();
+ 
+@@ -907,13 +921,61 @@ static void edid_work_fn(struct work_struct *work)
+ 		pm_runtime_put(hdmi->dev);
+ 	}
+ 
++out:
++	mutex_unlock(&hdmi->mutex);
++
+ 	pr_debug("%s(%p): end\n", __func__, pdata->lcd_dev);
+ }
+ 
++static int sh_hdmi_notify(struct notifier_block *nb,
++			  unsigned long action, void *data);
++
++static struct notifier_block sh_hdmi_notifier = {
++	.notifier_call = sh_hdmi_notify,
++};
++
++static int sh_hdmi_notify(struct notifier_block *nb,
++			  unsigned long action, void *data)
++{
++	struct fb_event *event = data;
++	struct fb_info *info = event->info;
++	struct sh_mobile_lcdc_chan *ch = info->par;
++	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
++	struct sh_hdmi *hdmi = board_cfg->board_data;
++
++	if (nb != &sh_hdmi_notifier || !hdmi || hdmi->info != info)
++		return NOTIFY_DONE;
++
++	switch(action) {
++	case FB_EVENT_FB_REGISTERED:
++		/* Unneeded, activation taken care by hdmi_display_on() */
++		break;
++	case FB_EVENT_FB_UNREGISTERED:
++		/*
++		 * We are called from unregister_framebuffer() with the
++		 * info->lock held. This is bad for us, because we can race with
++		 * the scheduled work, which has to call fb_set_suspend(), which
++		 * takes info->lock internally, so, edid_work_fn() cannot take
++		 * and hold info->lock for the whole function duration. Using an
++		 * additional lock creates a classical AB-BA lock up. Therefore,
++		 * we have to release the info->lock temporarily, synchronise
++		 * with the work queue and re-acquire the info->lock.
++		 */
++		unlock_fb_info(hdmi->info);
++		mutex_lock(&hdmi->mutex);
++		hdmi->info = NULL;
++		mutex_unlock(&hdmi->mutex);
++		lock_fb_info(hdmi->info);
++		return NOTIFY_OK;
++	}
++	return NOTIFY_DONE;
++}
++
+ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
+ 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	struct sh_mobile_lcdc_board_cfg	*board_cfg;
+ 	int irq = platform_get_irq(pdev, 0), ret;
+ 	struct sh_hdmi *hdmi;
+ 	long rate;
+@@ -927,6 +989,7 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
++	mutex_init(&hdmi->mutex);
+ 	hdmi->dev = &pdev->dev;
+ 
+ 	hdmi->hdmi_clk = clk_get(&pdev->dev, "ick");
+@@ -984,9 +1047,11 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ #endif
+ 
+ 	/* Set up LCDC callbacks */
+-	pdata->lcd_chan->board_cfg.board_data = hdmi;
+-	pdata->lcd_chan->board_cfg.display_on = hdmi_display_on;
+-	pdata->lcd_chan->board_cfg.display_off = hdmi_display_off;
++	board_cfg = &pdata->lcd_chan->board_cfg;
++	board_cfg->owner = THIS_MODULE;
++	board_cfg->board_data = hdmi;
++	board_cfg->display_on = hdmi_display_on;
++	board_cfg->display_off = hdmi_display_off;
+ 
+ 	INIT_DELAYED_WORK(&hdmi->edid_work, edid_work_fn);
+ 
+@@ -1013,6 +1078,7 @@ eclkenable:
+ erate:
+ 	clk_put(hdmi->hdmi_clk);
+ egetclk:
++	mutex_destroy(&hdmi->mutex);
+ 	kfree(hdmi);
+ 
+ 	return ret;
+@@ -1023,19 +1089,24 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
+ 	struct sh_hdmi *hdmi = platform_get_drvdata(pdev);
+ 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	struct sh_mobile_lcdc_board_cfg	*board_cfg = &pdata->lcd_chan->board_cfg;
+ 	int irq = platform_get_irq(pdev, 0);
+ 
+-	pdata->lcd_chan->board_cfg.display_on = NULL;
+-	pdata->lcd_chan->board_cfg.display_off = NULL;
+-	pdata->lcd_chan->board_cfg.board_data = NULL;
++	board_cfg->display_on = NULL;
++	board_cfg->display_off = NULL;
++	board_cfg->board_data = NULL;
++	board_cfg->owner = NULL;
+ 
++	/* No new work will be scheduled, wait for running ISR */
+ 	free_irq(irq, hdmi);
+-	pm_runtime_disable(&pdev->dev);
++	/* Wait for already scheduled work */
+ 	cancel_delayed_work_sync(&hdmi->edid_work);
++	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(hdmi->hdmi_clk);
+ 	clk_put(hdmi->hdmi_clk);
+ 	iounmap(hdmi->base);
+ 	release_mem_region(res->start, resource_size(res));
++	mutex_destroy(&hdmi->mutex);
+ 	kfree(hdmi);
+ 
+ 	return 0;
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index ddd6c46..29d7ce7 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -12,7 +12,6 @@
+ #include <linux/init.h>
+ #include <linux/delay.h>
+ #include <linux/mm.h>
+-#include <linux/fb.h>
+ #include <linux/clk.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/platform_device.h>
+@@ -24,7 +23,8 @@
+ #include <video/sh_mobile_lcdc.h>
+ #include <asm/atomic.h>
+ 
+-#define PALETTE_NR 16
++#include "sh_mobile_lcdcfb.h"
++
+ #define SIDE_B_OFFSET 0x1000
+ #define MIRROR_OFFSET 0x2000
+ 
+@@ -53,12 +53,6 @@ static int lcdc_shared_regs[] = {
+ };
+ #define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
+ 
+-/* per-channel registers */
+-enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+-       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR,
+-       LDHAJR,
+-       NR_CH_REGS };
+-
+ static unsigned long lcdc_offs_mainlcd[NR_CH_REGS] = {
+ 	[LDDCKPAT1R] = 0x400,
+ 	[LDDCKPAT2R] = 0x404,
+@@ -112,25 +106,6 @@ static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
+ #define LDRCNTR_MRC	0x00000001
+ #define LDSR_MRS	0x00000100
+ 
+-struct sh_mobile_lcdc_priv;
+-struct sh_mobile_lcdc_chan {
+-	struct sh_mobile_lcdc_priv *lcdc;
+-	unsigned long *reg_offs;
+-	unsigned long ldmt1r_value;
+-	unsigned long enabled; /* ME and SE in LDCNT2R */
+-	struct sh_mobile_lcdc_chan_cfg cfg;
+-	u32 pseudo_palette[PALETTE_NR];
+-	unsigned long saved_ch_regs[NR_CH_REGS];
+-	struct fb_info *info;
+-	dma_addr_t dma_handle;
+-	struct fb_deferred_io defio;
+-	struct scatterlist *sglist;
+-	unsigned long frame_end;
+-	unsigned long pan_offset;
+-	wait_queue_head_t frame_end_wait;
+-	struct completion vsync_completion;
+-};
+-
+ struct sh_mobile_lcdc_priv {
+ 	void __iomem *base;
+ 	int irq;
+@@ -589,8 +564,10 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 			continue;
+ 
+ 		board_cfg = &ch->cfg.board_cfg;
+-		if (board_cfg->display_on)
++		if (try_module_get(board_cfg->owner) && board_cfg->display_on) {
+ 			board_cfg->display_on(board_cfg->board_data, ch->info);
++			module_put(board_cfg->owner);
++		}
+ 	}
+ 
+ 	return 0;
+@@ -622,8 +599,10 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
+ 		}
+ 
+ 		board_cfg = &ch->cfg.board_cfg;
+-		if (board_cfg->display_off)
++		if (try_module_get(board_cfg->owner) && board_cfg->display_off) {
+ 			board_cfg->display_off(board_cfg->board_data);
++			module_put(board_cfg->owner);
++		}
+ 	}
+ 
+ 	/* stop the lcdc */
+@@ -954,6 +933,7 @@ static const struct dev_pm_ops sh_mobile_lcdc_dev_pm_ops = {
+ 	.runtime_resume = sh_mobile_lcdc_runtime_resume,
+ };
+ 
++/* locking: called with info->lock held */
+ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
+ 				 unsigned long action, void *data)
+ {
+@@ -971,16 +951,20 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
+ 
+ 	switch(action) {
+ 	case FB_EVENT_SUSPEND:
+-		if (board_cfg->display_off)
++		if (try_module_get(board_cfg->owner) && board_cfg->display_off) {
+ 			board_cfg->display_off(board_cfg->board_data);
++			module_put(board_cfg->owner);
++		}
+ 		pm_runtime_put(info->device);
+ 		break;
+ 	case FB_EVENT_RESUME:
+ 		var = &info->var;
+ 
+ 		/* HDMI must be enabled before LCDC configuration */
+-		if (board_cfg->display_on)
++		if (try_module_get(board_cfg->owner) && board_cfg->display_on) {
+ 			board_cfg->display_on(board_cfg->board_data, ch->info);
++			module_put(board_cfg->owner);
++		}
+ 
+ 		/* Check if the new display is not in our modelist */
+ 		if (ch->info->modelist.next &&
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+new file mode 100644
+index 0000000..6fcfc0f
+--- /dev/null
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -0,0 +1,37 @@
++#ifndef SH_MOBILE_LCDCFB_H
++#define SH_MOBILE_LCDCFB_H
++
++#include <linux/completion.h>
++#include <linux/fb.h>
++#include <linux/wait.h>
++
++/* per-channel registers */
++enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
++       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR,
++       LDHAJR,
++       NR_CH_REGS };
++
++#define PALETTE_NR 16
++
++struct sh_mobile_lcdc_priv;
++struct fb_info;
++
++struct sh_mobile_lcdc_chan {
++	struct sh_mobile_lcdc_priv *lcdc;
++	unsigned long *reg_offs;
++	unsigned long ldmt1r_value;
++	unsigned long enabled; /* ME and SE in LDCNT2R */
++	struct sh_mobile_lcdc_chan_cfg cfg;
++	u32 pseudo_palette[PALETTE_NR];
++	unsigned long saved_ch_regs[NR_CH_REGS];
++	struct fb_info *info;
++	dma_addr_t dma_handle;
++	struct fb_deferred_io defio;
++	struct scatterlist *sglist;
++	unsigned long frame_end;
++	unsigned long pan_offset;
++	wait_queue_head_t frame_end_wait;
++	struct completion vsync_completion;
++};
++
++#endif
+diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
+index 19c69d7..daabae5 100644
+--- a/include/video/sh_mobile_lcdc.h
++++ b/include/video/sh_mobile_lcdc.h
+@@ -49,7 +49,9 @@ struct sh_mobile_lcdc_sys_bus_ops {
+ 	unsigned long (*read_data)(void *handle);
+ };
+ 
++struct module;
+ struct sh_mobile_lcdc_board_cfg {
++	struct module *owner;
+ 	void *board_data;
+ 	int (*setup_sys)(void *board_data, void *sys_ops_handle,
+ 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+-- 
+1.7.1
+
