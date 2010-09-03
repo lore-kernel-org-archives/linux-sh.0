@@ -1,420 +1,709 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 03 Sep 2010 07:20:23 +0000
-Subject: [PATCH 10/15] fbdev: sh_mobile_hdmi: implement locking
-Message-Id: <Pine.LNX.4.64.1009030914550.2883@axis700.grange>
+Date: Fri, 03 Sep 2010 07:20:04 +0000
+Subject: [PATCH 05/15] fbdev: sh_mobile_lcdcfb: Support multiple video modes
+Message-Id: <Pine.LNX.4.64.1009030912230.2883@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The SH-Mobile HDMI driver runs in several contexts: ISR, delayed work-queue,
-task context, when called from the sh_mobile_lcdc framebuffer driver. This
-creates ample race possibilities. Even though most these races are purely
-theoretical, it is better to close them. To trace fb_info validity we install a
-notification callback in the HDMI driver, and the only way for it to get to
-driver internal data is by using struct sh_mobile_lcdc_chan, therefore it had
-to be extracted into a separate common header.
+This is a preparation for HDMI hotplug support. This patch just moves all
+platform defined video modes for the sh_mobile_lcdcfb driver to separate
+arrays and switches all users to use element 0 of that array, so, this patch
+doesn't introduce any functional changes and as such should not cause any
+regressions.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_hdmi.c   |  103 ++++++++++++++++++++++++++++++++------
- drivers/video/sh_mobile_lcdcfb.c |   46 ++++++-----------
- drivers/video/sh_mobile_lcdcfb.h |   37 ++++++++++++++
- include/video/sh_mobile_lcdc.h   |    2 +
- 4 files changed, 141 insertions(+), 47 deletions(-)
- create mode 100644 drivers/video/sh_mobile_lcdcfb.h
+ arch/arm/mach-shmobile/board-ap4evb.c |   98 +++++++++++++++++++--------------
+ arch/sh/boards/mach-ap325rxa/setup.c  |   29 ++++++----
+ arch/sh/boards/mach-ecovec24/setup.c  |   60 ++++++++++++--------
+ arch/sh/boards/mach-kfr2r09/setup.c   |   29 ++++++----
+ arch/sh/boards/mach-migor/setup.c     |   58 ++++++++++---------
+ arch/sh/boards/mach-se/7724/setup.c   |   54 +++++++++++-------
+ drivers/video/sh_mipi_dsi.c           |   32 ++++++-----
+ drivers/video/sh_mobile_hdmi.c        |    3 +-
+ drivers/video/sh_mobile_lcdcfb.c      |   10 ++--
+ include/video/sh_mobile_lcdc.h        |    3 +-
+ 10 files changed, 219 insertions(+), 157 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 95935c8..0a7bab2 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -375,10 +375,40 @@ static struct platform_device usb1_host_device = {
+ 	.resource	= usb1_host_resources,
+ };
+ 
++const static struct fb_videomode ap4evb_lcdc_modes[] = {
++	{
++#ifdef CONFIG_AP4EVB_QHD
++		.name		= "R63302(QHD)",
++		.xres		= 544,
++		.yres		= 961,
++		.left_margin	= 72,
++		.right_margin	= 600,
++		.hsync_len	= 16,
++		.upper_margin	= 8,
++		.lower_margin	= 8,
++		.vsync_len	= 2,
++		.sync		= FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++#else
++		.name		= "WVGA Panel",
++		.xres		= 800,
++		.yres		= 480,
++		.left_margin	= 220,
++		.right_margin	= 110,
++		.hsync_len	= 70,
++		.upper_margin	= 20,
++		.lower_margin	= 5,
++		.vsync_len	= 5,
++		.sync		= 0,
++#endif
++	},
++};
++
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.bpp = 16,
++		.lcd_cfg = ap4evb_lcdc_modes,
++		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
+ 	}
+ };
+ 
+@@ -569,6 +599,31 @@ static struct platform_device fsi_device = {
+ 	},
+ };
+ 
++const static struct fb_videomode ap4evb_hdmi_modes[] = {
++	{
++		.name = "HDMI 720p",
++		.xres = 1280,
++		.yres = 720,
++
++		/*
++		 * If left and right margins are not multiples of 8,
++		 * LDHAJR will be adjusted accordingly by the LCDC
++		 * driver. Until we start using EDID, these values
++		 * might have to be adjusted for different monitors.
++		 */
++		.left_margin = 200,
++		.right_margin = 88,
++		.hsync_len = 48,
++
++		.upper_margin = 20,
++		.lower_margin = 5,
++		.vsync_len = 5,
++
++		.pixclock = 13468,
++		.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++	},
++};
++
+ static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
+ 	.clock_source = LCDC_CLK_EXTERNAL,
+ 	.ch[0] = {
+@@ -577,26 +632,8 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
+ 		.interface_type = RGB24,
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
+-		.lcd_cfg = {
+-			.name = "HDMI",
+-			/* So far only 720p is supported */
+-			.xres = 1280,
+-			.yres = 720,
+-			/*
+-			 * If left and right margins are not multiples of 8,
+-			 * LDHAJR will be adjusted accordingly by the LCDC
+-			 * driver. Until we start using EDID, these values
+-			 * might have to be adjusted for different monitors.
+-			 */
+-			.left_margin = 200,
+-			.right_margin = 88,
+-			.hsync_len = 48,
+-			.upper_margin = 20,
+-			.lower_margin = 5,
+-			.vsync_len = 5,
+-			.pixclock = 13468,
+-			.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
+-		},
++		.lcd_cfg = ap4evb_hdmi_modes,
++		.num_cfg = ARRAY_SIZE(ap4evb_hdmi_modes),
+ 	}
+ };
+ 
+@@ -1004,17 +1041,6 @@ static void __init ap4evb_init(void)
+ 	lcdc_info.ch[0].interface_type		= RGB24;
+ 	lcdc_info.ch[0].clock_divider		= 1;
+ 	lcdc_info.ch[0].flags			= LCDC_FLAGS_DWPOL;
+-	lcdc_info.ch[0].lcd_cfg.name		= "R63302(QHD)";
+-	lcdc_info.ch[0].lcd_cfg.xres		= 544;
+-	lcdc_info.ch[0].lcd_cfg.yres		= 961;
+-	lcdc_info.ch[0].lcd_cfg.left_margin	= 72;
+-	lcdc_info.ch[0].lcd_cfg.right_margin	= 600;
+-	lcdc_info.ch[0].lcd_cfg.hsync_len	= 16;
+-	lcdc_info.ch[0].lcd_cfg.upper_margin	= 8;
+-	lcdc_info.ch[0].lcd_cfg.lower_margin	= 8;
+-	lcdc_info.ch[0].lcd_cfg.vsync_len	= 2;
+-	lcdc_info.ch[0].lcd_cfg.sync		= FB_SYNC_VERT_HIGH_ACT |
+-						  FB_SYNC_HOR_HIGH_ACT;
+ 	lcdc_info.ch[0].lcd_size_cfg.width	= 44;
+ 	lcdc_info.ch[0].lcd_size_cfg.height	= 79;
+ 
+@@ -1055,16 +1081,6 @@ static void __init ap4evb_init(void)
+ 	lcdc_info.ch[0].interface_type		= RGB18;
+ 	lcdc_info.ch[0].clock_divider		= 2;
+ 	lcdc_info.ch[0].flags			= 0;
+-	lcdc_info.ch[0].lcd_cfg.name		= "WVGA Panel";
+-	lcdc_info.ch[0].lcd_cfg.xres		= 800;
+-	lcdc_info.ch[0].lcd_cfg.yres		= 480;
+-	lcdc_info.ch[0].lcd_cfg.left_margin	= 220;
+-	lcdc_info.ch[0].lcd_cfg.right_margin	= 110;
+-	lcdc_info.ch[0].lcd_cfg.hsync_len	= 70;
+-	lcdc_info.ch[0].lcd_cfg.upper_margin	= 20;
+-	lcdc_info.ch[0].lcd_cfg.lower_margin	= 5;
+-	lcdc_info.ch[0].lcd_cfg.vsync_len	= 5;
+-	lcdc_info.ch[0].lcd_cfg.sync		= 0;
+ 	lcdc_info.ch[0].lcd_size_cfg.width	= 152;
+ 	lcdc_info.ch[0].lcd_size_cfg.height	= 91;
+ 
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 3da116f..0055323 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -176,6 +176,21 @@ static void ap320_wvga_power_off(void *board_data)
+ 	__raw_writew(0, FPGA_LCDREG);
+ }
+ 
++const static struct fb_videomode ap325rxa_lcdc_modes[] = {
++	{
++		.name = "LB070WV1",
++		.xres = 800,
++		.yres = 480,
++		.left_margin = 32,
++		.right_margin = 160,
++		.hsync_len = 8,
++		.upper_margin = 63,
++		.lower_margin = 80,
++		.vsync_len = 1,
++		.sync = 0, /* hsync and vsync are active low */
++	},
++};
++
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.clock_source = LCDC_CLK_EXTERNAL,
+ 	.ch[0] = {
+@@ -183,18 +198,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.bpp = 16,
+ 		.interface_type = RGB18,
+ 		.clock_divider = 1,
+-		.lcd_cfg = {
+-			.name = "LB070WV1",
+-			.xres = 800,
+-			.yres = 480,
+-			.left_margin = 32,
+-			.right_margin = 160,
+-			.hsync_len = 8,
+-			.upper_margin = 63,
+-			.lower_margin = 80,
+-			.vsync_len = 1,
+-			.sync = 0, /* hsync and vsync are active low */
+-		},
++		.lcd_cfg = ap325rxa_lcdc_modes,
++		.num_cfg = ARRAY_SIZE(ap325rxa_lcdc_modes),
+ 		.lcd_size_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 1d7b495..feadf5d 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -231,14 +231,41 @@ static struct platform_device usb1_common_device = {
+ };
+ 
+ /* LCDC */
++const static struct fb_videomode ecovec_lcd_modes[] = {
++	{
++		.name		= "Panel",
++		.xres		= 800,
++		.yres		= 480,
++		.left_margin	= 220,
++		.right_margin	= 110,
++		.hsync_len	= 70,
++		.upper_margin	= 20,
++		.lower_margin	= 5,
++		.vsync_len	= 5,
++		.sync		= 0, /* hsync and vsync are active low */
++	},
++};
++
++const static struct fb_videomode ecovec_dvi_modes[] = {
++	{
++		.name		= "DVI",
++		.xres		= 1280,
++		.yres		= 720,
++		.left_margin	= 220,
++		.right_margin	= 110,
++		.hsync_len	= 40,
++		.upper_margin	= 20,
++		.lower_margin	= 5,
++		.vsync_len	= 5,
++		.sync = 0, /* hsync and vsync are active low */
++	},
++};
++
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.interface_type = RGB18,
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.bpp = 16,
+-		.lcd_cfg = {
+-			.sync = 0, /* hsync and vsync are active low */
+-		},
+ 		.lcd_size_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+@@ -1079,33 +1106,18 @@ static int __init arch_setup(void)
+ 	if (gpio_get_value(GPIO_PTE6)) {
+ 		/* DVI */
+ 		lcdc_info.clock_source			= LCDC_CLK_EXTERNAL;
+-		lcdc_info.ch[0].clock_divider		= 1,
+-		lcdc_info.ch[0].lcd_cfg.name		= "DVI";
+-		lcdc_info.ch[0].lcd_cfg.xres		= 1280;
+-		lcdc_info.ch[0].lcd_cfg.yres		= 720;
+-		lcdc_info.ch[0].lcd_cfg.left_margin	= 220;
+-		lcdc_info.ch[0].lcd_cfg.right_margin	= 110;
+-		lcdc_info.ch[0].lcd_cfg.hsync_len	= 40;
+-		lcdc_info.ch[0].lcd_cfg.upper_margin	= 20;
+-		lcdc_info.ch[0].lcd_cfg.lower_margin	= 5;
+-		lcdc_info.ch[0].lcd_cfg.vsync_len	= 5;
++		lcdc_info.ch[0].clock_divider		= 1;
++		lcdc_info.ch[0].lcd_cfg			= ecovec_dvi_modes;
++		lcdc_info.ch[0].num_cfg			= ARRAY_SIZE(ecovec_dvi_modes);
+ 
+ 		gpio_set_value(GPIO_PTA2, 1);
+ 		gpio_set_value(GPIO_PTU1, 1);
+ 	} else {
+ 		/* Panel */
+-
+ 		lcdc_info.clock_source			= LCDC_CLK_PERIPHERAL;
+-		lcdc_info.ch[0].clock_divider		= 2,
+-		lcdc_info.ch[0].lcd_cfg.name		= "Panel";
+-		lcdc_info.ch[0].lcd_cfg.xres		= 800;
+-		lcdc_info.ch[0].lcd_cfg.yres		= 480;
+-		lcdc_info.ch[0].lcd_cfg.left_margin	= 220;
+-		lcdc_info.ch[0].lcd_cfg.right_margin	= 110;
+-		lcdc_info.ch[0].lcd_cfg.hsync_len	= 70;
+-		lcdc_info.ch[0].lcd_cfg.upper_margin	= 20;
+-		lcdc_info.ch[0].lcd_cfg.lower_margin	= 5;
+-		lcdc_info.ch[0].lcd_cfg.vsync_len	= 5;
++		lcdc_info.ch[0].clock_divider		= 2;
++		lcdc_info.ch[0].lcd_cfg			= ecovec_lcd_modes;
++		lcdc_info.ch[0].num_cfg			= ARRAY_SIZE(ecovec_lcd_modes);
+ 
+ 		gpio_set_value(GPIO_PTR1, 1);
+ 
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 68994a1..87d4b90 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -126,6 +126,21 @@ static struct platform_device kfr2r09_sh_keysc_device = {
+ 	},
+ };
+ 
++const static struct fb_videomode kfr2r09_lcdc_modes[] = {
++	{
++		.name = "TX07D34VM0AAA",
++		.xres = 240,
++		.yres = 400,
++		.left_margin = 0,
++		.right_margin = 16,
++		.hsync_len = 8,
++		.upper_margin = 0,
++		.lower_margin = 1,
++		.vsync_len = 1,
++		.sync = FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	},
++};
++
+ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 	.clock_source = LCDC_CLK_BUS,
+ 	.ch[0] = {
+@@ -134,18 +149,8 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 		.interface_type = SYS18,
+ 		.clock_divider = 6,
+ 		.flags = LCDC_FLAGS_DWPOL,
+-		.lcd_cfg = {
+-			.name = "TX07D34VM0AAA",
+-			.xres = 240,
+-			.yres = 400,
+-			.left_margin = 0,
+-			.right_margin = 16,
+-			.hsync_len = 8,
+-			.upper_margin = 0,
+-			.lower_margin = 1,
+-			.vsync_len = 1,
+-			.sync = FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-		},
++		.lcd_cfg = kfr2r09_lcdc_modes,
++		.num_cfg = ARRAY_SIZE(kfr2r09_lcdc_modes),
+ 		.lcd_size_cfg = {
+ 			.width = 35,
+ 			.height = 58,
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 662debe..9204cbb 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -213,51 +213,55 @@ static struct platform_device migor_nand_flash_device = {
+ 	}
+ };
+ 
++const static struct fb_videomode migor_lcd_modes[] = {
++	{
++#if defined(CONFIG_SH_MIGOR_RTA_WVGA)
++		.name = "LB070WV1",
++		.xres = 800,
++		.yres = 480,
++		.left_margin = 64,
++		.right_margin = 16,
++		.hsync_len = 120,
++		.sync = 0,
++#elif defined(CONFIG_SH_MIGOR_QVGA)
++		.name = "PH240320T",
++		.xres = 320,
++		.yres = 240,
++		.left_margin = 0,
++		.right_margin = 16,
++		.hsync_len = 8,
++		.sync = FB_SYNC_HOR_HIGH_ACT,
++#endif
++		.upper_margin = 1,
++		.lower_margin = 17,
++		.vsync_len = 2,
++	},
++};
++
+ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+-#ifdef CONFIG_SH_MIGOR_RTA_WVGA
++#if defined(CONFIG_SH_MIGOR_RTA_WVGA)
+ 	.clock_source = LCDC_CLK_BUS,
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.bpp = 16,
+ 		.interface_type = RGB16,
+ 		.clock_divider = 2,
+-		.lcd_cfg = {
+-			.name = "LB070WV1",
+-			.xres = 800,
+-			.yres = 480,
+-			.left_margin = 64,
+-			.right_margin = 16,
+-			.hsync_len = 120,
+-			.upper_margin = 1,
+-			.lower_margin = 17,
+-			.vsync_len = 2,
+-			.sync = 0,
+-		},
++		.lcd_cfg = migor_lcd_modes,
++		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
+ 		.lcd_size_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+ 	}
+-#endif
+-#ifdef CONFIG_SH_MIGOR_QVGA
++#elif defined(CONFIG_SH_MIGOR_QVGA)
+ 	.clock_source = LCDC_CLK_PERIPHERAL,
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.bpp = 16,
+ 		.interface_type = SYS16A,
+ 		.clock_divider = 10,
+-		.lcd_cfg = {
+-			.name = "PH240320T",
+-			.xres = 320,
+-			.yres = 240,
+-			.left_margin = 0,
+-			.right_margin = 16,
+-			.hsync_len = 8,
+-			.upper_margin = 1,
+-			.lower_margin = 17,
+-			.vsync_len = 2,
+-			.sync = FB_SYNC_HOR_HIGH_ACT,
+-		},
++		.lcd_cfg = migor_lcd_modes,
++		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
+ 		.lcd_size_cfg = { /* 2.4 inch */
+ 			.width = 49,
+ 			.height = 37,
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 552ebd9..3099c36 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -144,16 +144,42 @@ static struct platform_device nor_flash_device = {
+ };
+ 
+ /* LCDC */
++const static struct fb_videomode lcdc_720p_modes[] = {
++	{
++		.name		= "LB070WV1",
++		.sync		= 0, /* hsync and vsync are active low */
++		.xres		= 1280;
++		.yres		= 720;
++		.left_margin	= 220;
++		.right_margin	= 110;
++		.hsync_len	= 40;
++		.upper_margin	= 20;
++		.lower_margin	= 5;
++		.vsync_len	= 5;
++	},
++};
++
++const static struct fb_videomode lcdc_vga_modes[] = {
++	{
++		.name		= "LB070WV1",
++		.sync		= 0, /* hsync and vsync are active low */
++		.xres		= 640;
++		.yres		= 480;
++		.left_margin	= 105;
++		.right_margin	= 50;
++		.hsync_len	= 96;
++		.upper_margin	= 33;
++		.lower_margin	= 10;
++		.vsync_len	= 2;
++	},
++};
++
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.clock_source = LCDC_CLK_EXTERNAL,
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.bpp = 16,
+ 		.clock_divider = 1,
+-		.lcd_cfg = {
+-			.name = "LB070WV1",
+-			.sync = 0, /* hsync and vsync are active low */
+-		},
+ 		.lcd_size_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+@@ -909,24 +935,12 @@ static int __init devices_setup(void)
+ 
+ 	if (sw & SW41_B) {
+ 		/* 720p */
+-		lcdc_info.ch[0].lcd_cfg.xres         = 1280;
+-		lcdc_info.ch[0].lcd_cfg.yres         = 720;
+-		lcdc_info.ch[0].lcd_cfg.left_margin  = 220;
+-		lcdc_info.ch[0].lcd_cfg.right_margin = 110;
+-		lcdc_info.ch[0].lcd_cfg.hsync_len    = 40;
+-		lcdc_info.ch[0].lcd_cfg.upper_margin = 20;
+-		lcdc_info.ch[0].lcd_cfg.lower_margin = 5;
+-		lcdc_info.ch[0].lcd_cfg.vsync_len    = 5;
++		lcdc_info.ch[0].lcd_cfg	= lcdc_720p_modes;
++		lcdc_info.ch[0].num_cfg	= ARRAY_SIZE(lcdc_720p_modes);
+ 	} else {
+ 		/* VGA */
+-		lcdc_info.ch[0].lcd_cfg.xres         = 640;
+-		lcdc_info.ch[0].lcd_cfg.yres         = 480;
+-		lcdc_info.ch[0].lcd_cfg.left_margin  = 105;
+-		lcdc_info.ch[0].lcd_cfg.right_margin = 50;
+-		lcdc_info.ch[0].lcd_cfg.hsync_len    = 96;
+-		lcdc_info.ch[0].lcd_cfg.upper_margin = 33;
+-		lcdc_info.ch[0].lcd_cfg.lower_margin = 10;
+-		lcdc_info.ch[0].lcd_cfg.vsync_len    = 2;
++		lcdc_info.ch[0].lcd_cfg	= lcdc_vga_modes;
++		lcdc_info.ch[0].num_cfg	= ARRAY_SIZE(lcdc_vga_modes);
+ 	}
+ 
+ 	if (sw & SW41_A) {
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 5699ce0..3f3d431 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -123,83 +123,87 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	u32 linelength;
+ 	bool yuv;
+ 
+-	/* Select data format */
++	/*
++	 * Select data format. MIPI DSI is not hot-pluggable, so, we just use
++	 * the default videomode. If this ever becomes a problem, We'll have to
++	 * move this to mipi_display_on() above and use info->var.xres
++	 */
+ 	switch (pdata->data_format) {
+ 	case MIPI_RGB888:
+ 		pctype = 0;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg.xres * 3;
++		linelength = ch->lcd_cfg[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB565:
+ 		pctype = 1;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg.xres * 2;
++		linelength = ch->lcd_cfg[0].xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666_LP:
+ 		pctype = 2;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg.xres * 3;
++		linelength = ch->lcd_cfg[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666:
+ 		pctype = 3;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_cfg.xres * 18 + 7) / 8;
++		linelength = (ch->lcd_cfg[0].xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR888:
+ 		pctype = 8;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg.xres * 3;
++		linelength = ch->lcd_cfg[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR565:
+ 		pctype = 9;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg.xres * 2;
++		linelength = ch->lcd_cfg[0].xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666_LP:
+ 		pctype = 0xa;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg.xres * 3;
++		linelength = ch->lcd_cfg[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666:
+ 		pctype = 0xb;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_cfg.xres * 18 + 7) / 8;
++		linelength = (ch->lcd_cfg[0].xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_YUYV:
+ 		pctype = 4;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg.xres * 2;
++		linelength = ch->lcd_cfg[0].xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_UYVY:
+ 		pctype = 5;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg.xres * 2;
++		linelength = ch->lcd_cfg[0].xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420_L:
+ 		pctype = 6;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+-		linelength = (ch->lcd_cfg.xres * 12 + 7) / 8;
++		linelength = (ch->lcd_cfg[0].xres * 12 + 7) / 8;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420:
+@@ -207,7 +211,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+ 		/* Length of U/V line */
+-		linelength = (ch->lcd_cfg.xres + 1) / 2;
++		linelength = (ch->lcd_cfg[0].xres + 1) / 2;
+ 		yuv = true;
+ 		break;
+ 	default:
+@@ -281,7 +285,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	iowrite32(0x00e00000, base + 0x8024); /* VMCTR2 */
+ 	/*
+ 	 * 0x660 = 1632 bytes per line (RGB24, 544 pixels: see
+-	 * sh_mobile_lcdc_info.ch[0].lcd_cfg.xres), HSALEN = 1 - default
++	 * sh_mobile_lcdc_info.ch[0].lcd_cfg[0].xres), HSALEN = 1 - default
+ 	 * (unused, since VMCTR2[HSABM] = 0)
+ 	 */
+ 	iowrite32(1 | (linelength << 16), base + 0x8028); /* VMLEN1 */
 diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 293b16d..a645d71 100644
+index 03bcb20..5583cd6 100644
 --- a/drivers/video/sh_mobile_hdmi.c
 +++ b/drivers/video/sh_mobile_hdmi.c
-@@ -26,6 +26,8 @@
- #include <video/sh_mobile_hdmi.h>
- #include <video/sh_mobile_lcdc.h>
- 
-+#include "sh_mobile_lcdcfb.h"
-+
- #define HDMI_SYSTEM_CTRL			0x00 /* System control */
- #define HDMI_L_R_DATA_SWAP_CTRL_RPKT		0x01 /* L/R data swap control,
- 							bits 19..16 of 20-bit N for Audio Clock Regeneration packet */
-@@ -209,6 +211,7 @@ struct sh_hdmi {
- 	struct clk *hdmi_clk;
- 	struct device *dev;
- 	struct fb_info *info;
-+	struct mutex mutex;		/* Protect the info pointer */
- 	struct delayed_work edid_work;
- 	struct fb_var_screeninfo var;
- };
-@@ -826,17 +829,21 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
- 
-+/* locking:	called with info->lock held, or before register_framebuffer() */
- static void hdmi_display_on(void *arg, struct fb_info *info)
- {
-+	/*
-+	 * info is guaranteed to be valid, when we are called, because our
-+	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
-+	 */
- 	struct sh_hdmi *hdmi = arg;
- 	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
- 
- 	pr_debug("%s(%p): state %x\n", __func__, pdata->lcd_dev, info->state);
--	/*
--	 * FIXME: not a good place to store fb_info. And we cannot nullify it
--	 * even on monitor disconnect. What should the lifecycle be?
--	 */
-+
-+	/* No need to lock */
- 	hdmi->info = info;
-+
- 	switch (hdmi->hp_state) {
- 	case HDMI_HOTPLUG_EDID_DONE:
- 		/* PS mode d->e. All functions are active */
-@@ -850,6 +857,7 @@ static void hdmi_display_on(void *arg, struct fb_info *info)
- 	}
- }
- 
-+/* locking: called with info->lock held */
- static void hdmi_display_off(void *arg)
- {
- 	struct sh_hdmi *hdmi = arg;
-@@ -872,6 +880,8 @@ static void edid_work_fn(struct work_struct *work)
- 	if (!pdata->lcd_dev)
- 		return;
- 
-+	mutex_lock(&hdmi->mutex);
-+
- 	if (hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE) {
- 		pm_runtime_get_sync(hdmi->dev);
- 		/* A device has been plugged in */
-@@ -882,21 +892,25 @@ static void edid_work_fn(struct work_struct *work)
- 		msleep(10);
- 
- 		if (!hdmi->info)
--			return;
-+			goto out;
- 
- 		acquire_console_sem();
- 
- 		/* HDMI plug in */
- 		hdmi->info->var = hdmi->var;
--		if (hdmi->info->state != FBINFO_STATE_RUNNING)
-+		if (hdmi->info->state != FBINFO_STATE_RUNNING) {
- 			fb_set_suspend(hdmi->info, 0);
--		else
--			hdmi_display_on(hdmi, hdmi->info);
-+		} else {
-+			if (lock_fb_info(hdmi->info)) {
-+				hdmi_display_on(hdmi, hdmi->info);
-+				unlock_fb_info(hdmi->info);
-+			}
-+		}
- 
- 		release_console_sem();
- 	} else {
- 		if (!hdmi->info)
--			return;
-+			goto out;
- 
- 		acquire_console_sem();
- 
-@@ -907,13 +921,61 @@ static void edid_work_fn(struct work_struct *work)
- 		pm_runtime_put(hdmi->dev);
+@@ -883,7 +883,8 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		goto egetclk;
  	}
  
-+out:
-+	mutex_unlock(&hdmi->mutex);
-+
- 	pr_debug("%s(%p): end\n", __func__, pdata->lcd_dev);
- }
+-	rate = PICOS2KHZ(pdata->lcd_chan->lcd_cfg.pixclock) * 1000;
++	/* TODO: reconfigure the clock on monitor plug in */
++	rate = PICOS2KHZ(pdata->lcd_chan->lcd_cfg[0].pixclock) * 1000;
  
-+static int sh_hdmi_notify(struct notifier_block *nb,
-+			  unsigned long action, void *data);
-+
-+static struct notifier_block sh_hdmi_notifier = {
-+	.notifier_call = sh_hdmi_notify,
-+};
-+
-+static int sh_hdmi_notify(struct notifier_block *nb,
-+			  unsigned long action, void *data)
-+{
-+	struct fb_event *event = data;
-+	struct fb_info *info = event->info;
-+	struct sh_mobile_lcdc_chan *ch = info->par;
-+	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
-+	struct sh_hdmi *hdmi = board_cfg->board_data;
-+
-+	if (nb != &sh_hdmi_notifier || !hdmi || hdmi->info != info)
-+		return NOTIFY_DONE;
-+
-+	switch(action) {
-+	case FB_EVENT_FB_REGISTERED:
-+		/* Unneeded, activation taken care by hdmi_display_on() */
-+		break;
-+	case FB_EVENT_FB_UNREGISTERED:
-+		/*
-+		 * We are called from unregister_framebuffer() with the
-+		 * info->lock held. This is bad for us, because we can race with
-+		 * the scheduled work, which has to call fb_set_suspend(), which
-+		 * takes info->lock internally, so, edid_work_fn() cannot take
-+		 * and hold info->lock for the whole function duration. Using an
-+		 * additional lock creates a classical AB-BA lock up. Therefore,
-+		 * we have to release the info->lock temporarily, synchronise
-+		 * with the work queue and re-acquire the info->lock.
-+		 */
-+		unlock_fb_info(hdmi->info);
-+		mutex_lock(&hdmi->mutex);
-+		hdmi->info = NULL;
-+		mutex_unlock(&hdmi->mutex);
-+		lock_fb_info(hdmi->info);
-+		return NOTIFY_OK;
-+	}
-+	return NOTIFY_DONE;
-+}
-+
- static int __init sh_hdmi_probe(struct platform_device *pdev)
- {
- 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	struct sh_mobile_lcdc_board_cfg	*board_cfg;
- 	int irq = platform_get_irq(pdev, 0), ret;
- 	struct sh_hdmi *hdmi;
- 	long rate;
-@@ -927,6 +989,7 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
- 
-+	mutex_init(&hdmi->mutex);
- 	hdmi->dev = &pdev->dev;
- 
- 	hdmi->hdmi_clk = clk_get(&pdev->dev, "ick");
-@@ -984,9 +1047,11 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- #endif
- 
- 	/* Set up LCDC callbacks */
--	pdata->lcd_chan->board_cfg.board_data = hdmi;
--	pdata->lcd_chan->board_cfg.display_on = hdmi_display_on;
--	pdata->lcd_chan->board_cfg.display_off = hdmi_display_off;
-+	board_cfg = &pdata->lcd_chan->board_cfg;
-+	board_cfg->owner = THIS_MODULE;
-+	board_cfg->board_data = hdmi;
-+	board_cfg->display_on = hdmi_display_on;
-+	board_cfg->display_off = hdmi_display_off;
- 
- 	INIT_DELAYED_WORK(&hdmi->edid_work, edid_work_fn);
- 
-@@ -1013,6 +1078,7 @@ eclkenable:
- erate:
- 	clk_put(hdmi->hdmi_clk);
- egetclk:
-+	mutex_destroy(&hdmi->mutex);
- 	kfree(hdmi);
- 
- 	return ret;
-@@ -1023,19 +1089,24 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
- 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
- 	struct sh_hdmi *hdmi = platform_get_drvdata(pdev);
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	struct sh_mobile_lcdc_board_cfg	*board_cfg = &pdata->lcd_chan->board_cfg;
- 	int irq = platform_get_irq(pdev, 0);
- 
--	pdata->lcd_chan->board_cfg.display_on = NULL;
--	pdata->lcd_chan->board_cfg.display_off = NULL;
--	pdata->lcd_chan->board_cfg.board_data = NULL;
-+	board_cfg->display_on = NULL;
-+	board_cfg->display_off = NULL;
-+	board_cfg->board_data = NULL;
-+	board_cfg->owner = NULL;
- 
-+	/* No new work will be scheduled, wait for running ISR */
- 	free_irq(irq, hdmi);
--	pm_runtime_disable(&pdev->dev);
-+	/* Wait for already scheduled work */
- 	cancel_delayed_work_sync(&hdmi->edid_work);
-+	pm_runtime_disable(&pdev->dev);
- 	clk_disable(hdmi->hdmi_clk);
- 	clk_put(hdmi->hdmi_clk);
- 	iounmap(hdmi->base);
- 	release_mem_region(res->start, resource_size(res));
-+	mutex_destroy(&hdmi->mutex);
- 	kfree(hdmi);
- 
- 	return 0;
+ 	rate = clk_round_rate(hdmi->hdmi_clk, rate);
+ 	if (rate < 0) {
 diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index ddd6c46..29d7ce7 100644
+index e4f6012..ce3ed4b 100644
 --- a/drivers/video/sh_mobile_lcdcfb.c
 +++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -12,7 +12,6 @@
- #include <linux/init.h>
- #include <linux/delay.h>
- #include <linux/mm.h>
--#include <linux/fb.h>
- #include <linux/clk.h>
- #include <linux/pm_runtime.h>
- #include <linux/platform_device.h>
-@@ -24,7 +23,8 @@
- #include <video/sh_mobile_lcdc.h>
- #include <asm/atomic.h>
+@@ -989,8 +989,8 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
+ 			int ret;
  
--#define PALETTE_NR 16
-+#include "sh_mobile_lcdcfb.h"
-+
- #define SIDE_B_OFFSET 0x1000
- #define MIRROR_OFFSET 0x2000
+ 			/* Can we handle this display? */
+-			if (var->xres > ch->cfg.lcd_cfg.xres ||
+-			    var->yres > ch->cfg.lcd_cfg.yres)
++			if (var->xres > ch->cfg.lcd_cfg[0].xres ||
++			    var->yres > ch->cfg.lcd_cfg[0].yres)
+ 				return -ENOMEM;
  
-@@ -53,12 +53,6 @@ static int lcdc_shared_regs[] = {
- };
- #define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
+ 			/* Add to the modelist */
+@@ -1115,7 +1115,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
  
--/* per-channel registers */
--enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
--       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR,
--       LDHAJR,
--       NR_CH_REGS };
--
- static unsigned long lcdc_offs_mainlcd[NR_CH_REGS] = {
- 	[LDDCKPAT1R] = 0x400,
- 	[LDDCKPAT2R] = 0x404,
-@@ -112,25 +106,6 @@ static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
- #define LDRCNTR_MRC	0x00000001
- #define LDSR_MRS	0x00000100
- 
--struct sh_mobile_lcdc_priv;
--struct sh_mobile_lcdc_chan {
--	struct sh_mobile_lcdc_priv *lcdc;
--	unsigned long *reg_offs;
--	unsigned long ldmt1r_value;
--	unsigned long enabled; /* ME and SE in LDCNT2R */
--	struct sh_mobile_lcdc_chan_cfg cfg;
--	u32 pseudo_palette[PALETTE_NR];
--	unsigned long saved_ch_regs[NR_CH_REGS];
--	struct fb_info *info;
--	dma_addr_t dma_handle;
--	struct fb_deferred_io defio;
--	struct scatterlist *sglist;
--	unsigned long frame_end;
--	unsigned long pan_offset;
--	wait_queue_head_t frame_end_wait;
--	struct completion vsync_completion;
--};
--
- struct sh_mobile_lcdc_priv {
- 	void __iomem *base;
- 	int irq;
-@@ -589,8 +564,10 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 			continue;
- 
- 		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->display_on)
-+		if (try_module_get(board_cfg->owner) && board_cfg->display_on) {
- 			board_cfg->display_on(board_cfg->board_data, ch->info);
-+			module_put(board_cfg->owner);
-+		}
- 	}
- 
- 	return 0;
-@@ -622,8 +599,10 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- 		}
- 
- 		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->display_off)
-+		if (try_module_get(board_cfg->owner) && board_cfg->display_off) {
- 			board_cfg->display_off(board_cfg->board_data);
-+			module_put(board_cfg->owner);
-+		}
- 	}
- 
- 	/* stop the lcdc */
-@@ -954,6 +933,7 @@ static const struct dev_pm_ops sh_mobile_lcdc_dev_pm_ops = {
- 	.runtime_resume = sh_mobile_lcdc_runtime_resume,
- };
- 
-+/* locking: called with info->lock held */
- static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 				 unsigned long action, void *data)
- {
-@@ -971,16 +951,20 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 
- 	switch(action) {
- 	case FB_EVENT_SUSPEND:
--		if (board_cfg->display_off)
-+		if (try_module_get(board_cfg->owner) && board_cfg->display_off) {
- 			board_cfg->display_off(board_cfg->board_data);
-+			module_put(board_cfg->owner);
-+		}
- 		pm_runtime_put(info->device);
- 		break;
- 	case FB_EVENT_RESUME:
+ 		info = ch->info;
  		var = &info->var;
+-		lcd_cfg = &cfg->lcd_cfg;
++		lcd_cfg = &cfg->lcd_cfg[0];
+ 		info->fbops = &sh_mobile_lcdc_ops;
+ 		fb_videomode_to_var(var, lcd_cfg);
+ 		/* Default Y virtual resolution is 2x panel size */
+@@ -1187,8 +1187,8 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ 			 pdev->name,
+ 			 (ch->cfg.chan = LCDC_CHAN_MAINLCD) ?
+ 			 "mainlcd" : "sublcd",
+-			 (int) ch->cfg.lcd_cfg.xres,
+-			 (int) ch->cfg.lcd_cfg.yres,
++			 (int) ch->cfg.lcd_cfg[0].xres,
++			 (int) ch->cfg.lcd_cfg[0].yres,
+ 			 ch->cfg.bpp);
  
- 		/* HDMI must be enabled before LCDC configuration */
--		if (board_cfg->display_on)
-+		if (try_module_get(board_cfg->owner) && board_cfg->display_on) {
- 			board_cfg->display_on(board_cfg->board_data, ch->info);
-+			module_put(board_cfg->owner);
-+		}
- 
- 		/* Check if the new display is not in our modelist */
- 		if (ch->info->modelist.next &&
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-new file mode 100644
-index 0000000..6fcfc0f
---- /dev/null
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -0,0 +1,37 @@
-+#ifndef SH_MOBILE_LCDCFB_H
-+#define SH_MOBILE_LCDCFB_H
-+
-+#include <linux/completion.h>
-+#include <linux/fb.h>
-+#include <linux/wait.h>
-+
-+/* per-channel registers */
-+enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
-+       LDSM2R, LDSA1R, LDMLSR, LDHCNR, LDHSYNR, LDVLNR, LDVSYNR, LDPMR,
-+       LDHAJR,
-+       NR_CH_REGS };
-+
-+#define PALETTE_NR 16
-+
-+struct sh_mobile_lcdc_priv;
-+struct fb_info;
-+
-+struct sh_mobile_lcdc_chan {
-+	struct sh_mobile_lcdc_priv *lcdc;
-+	unsigned long *reg_offs;
-+	unsigned long ldmt1r_value;
-+	unsigned long enabled; /* ME and SE in LDCNT2R */
-+	struct sh_mobile_lcdc_chan_cfg cfg;
-+	u32 pseudo_palette[PALETTE_NR];
-+	unsigned long saved_ch_regs[NR_CH_REGS];
-+	struct fb_info *info;
-+	dma_addr_t dma_handle;
-+	struct fb_deferred_io defio;
-+	struct scatterlist *sglist;
-+	unsigned long frame_end;
-+	unsigned long pan_offset;
-+	wait_queue_head_t frame_end_wait;
-+	struct completion vsync_completion;
-+};
-+
-+#endif
+ 		/* deferred io mode: disable clock to save power */
 diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index 19c69d7..daabae5 100644
+index 55d700e..19c69d7 100644
 --- a/include/video/sh_mobile_lcdc.h
 +++ b/include/video/sh_mobile_lcdc.h
-@@ -49,7 +49,9 @@ struct sh_mobile_lcdc_sys_bus_ops {
- 	unsigned long (*read_data)(void *handle);
- };
- 
-+struct module;
- struct sh_mobile_lcdc_board_cfg {
-+	struct module *owner;
- 	void *board_data;
- 	int (*setup_sys)(void *board_data, void *sys_ops_handle,
- 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+@@ -70,7 +70,8 @@ struct sh_mobile_lcdc_chan_cfg {
+ 	int interface_type; /* selects RGBn or SYSn I/F, see above */
+ 	int clock_divider;
+ 	unsigned long flags; /* LCDC_FLAGS_... */
+-	struct fb_videomode lcd_cfg;
++	const struct fb_videomode *lcd_cfg;
++	int num_cfg;
+ 	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
+ 	struct sh_mobile_lcdc_board_cfg board_cfg;
+ 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
 -- 
 1.7.1
 
