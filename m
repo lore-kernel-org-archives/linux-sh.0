@@ -1,79 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 17 Sep 2010 10:07:20 +0000
-Subject: Re: [PATCH] sound/soc/sh/siu: Fixed undefined dma_length of scatter
-Message-Id: <Pine.LNX.4.64.1009171205250.4988@axis700.grange>
+From: Jonathan Nieder <jrnieder@gmail.com>
+Date: Fri, 03 Sep 2010 18:43:51 +0000
+Subject: [BUG?] rename patch accepted with --dry-run, rejected without (Re:
+Message-Id: <20100903184351.GC2341@burratino>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4C3C7E45.8010102@emtrion.de>
-In-Reply-To: <4C3C7E45.8010102@emtrion.de>
+References: <1283431716-21540-1-git-send-email-plagnioj@jcrosoft.com>
+ <1283434786-26479-1-git-send-email-plagnioj@jcrosoft.com>
+ <AANLkTimRKCYYQmgwY0DHu5+e-ggT8grJbdjWFvUqTzH=@mail.gmail.com>
+ <20100903182323.GA17152@pengutronix.de>
+In-Reply-To: <20100903182323.GA17152@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+To: Uwe =?utf-8?Q?Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, git@vger.kernel.org, bug-patch@gnu.org
 
-Paul, this patch is also required for 2.6.36, AFAICS, you've only merged=20
-it for 2.6.37?
+(+cc: bug-patch)
 
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi,
 
-Thanks
-Guennadi
+Uwe Kleine-K=C3=B6nig wrote:
+> On Fri, Sep 03, 2010 at 07:18:43PM +0900, Magnus Damm wrote:
 
-On Tue, 13 Jul 2010, Markus Pietrek wrote:
+>> Using --dry-run is fine, but omitting dry-run gives me:
+>>=20
+>> ...
+>> patching file arch/arm/common/clkdev.c
+>> patching file arch/sh/include/asm/clkdev.h
+>> Hunk #1 FAILED at 1.
+>> Hunk #2 FAILED at 11.
+>> 2 out of 2 hunks FAILED -- saving rejects to file
+>> arch/sh/include/asm/clkdev.h.rej
+>>=20
+>> I guess this is caused by the last "renaming" hunk, see below.
 
->=20
-> Please use this patch. The first patch was based on a modified driver whe=
-re sg is provided as a pointer and not as a local variable.
->=20
-> Signed-off-by: Markus Pietrek <markus.pietrek@emtrion.de>
-> ---
->  sound/soc/sh/siu_pcm.c |    2 ++
->  1 files changed, 2 insertions(+), 0 deletions(-)
->=20
-> diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
-> index 36170be..b0ccd0b 100644
-> --- a/sound/soc/sh/siu_pcm.c
-> +++ b/sound/soc/sh/siu_pcm.c
-> @@ -127,6 +127,7 @@ static int siu_pcm_wr_set(struct siu_port *port_info,
->         sg_init_table(&sg, 1);
->         sg_set_page(&sg, pfn_to_page(PFN_DOWN(buff)),
->                     size, offset_in_page(buff));
-> +       sg_dma_len(&sg) =3D size;
->         sg_dma_address(&sg) =3D buff;
->=20
->         desc =3D siu_stream->chan->device->device_prep_slave_sg(siu_strea=
-m->chan,
-> @@ -176,6 +177,7 @@ static int siu_pcm_rd_set(struct siu_port *port_info,
->         sg_init_table(&sg, 1);
->         sg_set_page(&sg, pfn_to_page(PFN_DOWN(buff)),
->                     size, offset_in_page(buff));
-> +       sg_dma_len(&sg) =3D size;
->         sg_dma_address(&sg) =3D buff;
->=20
->         desc =3D siu_stream->chan->device->device_prep_slave_sg(siu_strea=
-m->chan,
->=20
-> _____________________________________
->=20
-> Amtsgericht Mannheim
-> HRB 110 300
-> Gesch=E4ftsf=FChrer: Dieter Baur, Ramona Maurer
-> _____________________________________
->=20
-> Important Note:
-> - This e-mail may contain trade secrets or privileged, undisclosed or oth=
-erwise confidential information.
-> - If you have received this e-mail in error, you are hereby notified that=
- any review, copying or distribution of it is strictly prohibited.
-> - Please inform us immediately and destroy the original transmittal.
->=20
-> Thank you for your cooperation.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+Yep, I can reproduce this.  Patch applies with "git apply",
+"patch --dry-run -p1" accepts it, "patch -p1" fails.
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ $ patch --version | head -1
+ GNU patch 2.6.1.85-423d
+ $ cd ~/src/linux-2.6
+ $ git checkout 2bfc96a12
+ $ git clean -fd
+ $ wget http://download.gmane.org/gmane.linux.ports.sh.devel/8747/8748
+ $ patch -p1 --quiet --dry-run <8748=20
+ $ echo $?
+ 0
+ $ patch -p1 --quiet <8748=20
+ 2 out of 2 hunks FAILED -- saving rejects to file include/linux/clkdev.h.r=
+ej
+ $ echo $?
+ 1
+
+Andreas: ideas?
