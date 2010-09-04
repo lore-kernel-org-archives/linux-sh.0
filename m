@@ -1,30 +1,27 @@
-From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Sat, 04 Sep 2010 03:21:17 +0000
-Subject: Re: [bug-patch] [BUG?] rename patch accepted with --dry-run,
-Message-Id: <20100904032117.GL17702@game.jcrosoft.org>
+From: Andreas Gruenbacher <agruen@suse.de>
+Date: Sat, 04 Sep 2010 21:33:51 +0000
+Subject: Re: [bug-patch] Re: [BUG?] rename patch accepted with --dry-run, rejected without (Re: [PATCH V3] ar
+Message-Id: <201009042333.51419.agruen@suse.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1283431716-21540-1-git-send-email-plagnioj@jcrosoft.com>
- <20100903182323.GA17152@pengutronix.de>
- <20100903184351.GC2341@burratino>
- <201009040058.18028.agruen@suse.de>
-In-Reply-To: <201009040058.18028.agruen@suse.de>
+References: <1283431716-21540-1-git-send-email-plagnioj@jcrosoft.com> <20100903193309.GC29821@pengutronix.de> <20100904000348.GA7498@n2100.arm.linux.org.uk>
+In-Reply-To: <20100904000348.GA7498@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andreas Gruenbacher <agruen@suse.de>
-Cc: Jonathan Nieder <jrnieder@gmail.com>, bug-patch@gnu.org, Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-arm-kernel@lists.infradead.org, git@vger.kernel.org
+To: bug-patch@gnu.org
+Cc: Russell King - ARM Linux <linux@arm.linux.org.uk>, Uwe =?iso-8859-1?q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Jonathan Nieder <jrnieder@gmail.com>, git@vger.kernel.org, Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>, linux-arm-kernel@lists.infradead.org
 
-> 
-> So "git apply" and "patch --dry-run" seem to work only by accident.
-> 
-> How was this patch generated: with git itself?
-I did as usual
-git format-patch -M -B -C HEAD~
-> 
-> The fact that "patch --dry-run" may not work for patches that modify the same 
-> file twice is a known defect.  I don't know how to solve this in a reasonably 
-> elegant way.  Luckily the problem only triggers when people are doing 
-> something "strange" such as concatenating patches.
+On Saturday 04 September 2010 02:03:48 Russell King - ARM Linux wrote:
+> As I say, it's because GNU patch doesn't (currently) understand GIT
+> patches.  I wouldn't call that a bug in GNU patch.
 
-Best Regards,
-J.
+GNU patch in the version used does understand GIT patch headers and does 
+support things like renames.
+
+The --dry-run option often will not work when the same file is modified more 
+than once in the same patch, though.  This is because GNU patch doesn't 
+remember the intermediary states of files.
+
+In this case, the patch itself is broken.
+
+Andreas
