@@ -1,115 +1,32 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 06 Sep 2010 07:32:37 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 06 Sep 2010 09:49:21 +0000
 Subject: Re: [PATCH 1/4 v2] fbdev: sh-mobile: Add HDMI sound type selection
-Message-Id: <Pine.LNX.4.64.1009060915100.20387@axis700.grange>
+Message-Id: <w3pmxrv5hi6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
- <w3p1v9f72rk.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p1v9f72rk.wl%kuninori.morimoto.gx@renesas.com>
+	<w3p1v9f72rk.wl%kuninori.morimoto.gx@renesas.com>
+	<Pine.LNX.4.64.1009060915100.20387@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1009060915100.20387@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Paul Mundt <lethal@linux-sh.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lrg@slimlogic.co.uk>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Paul Mundt <lethal@linux-sh.org>, Liam Girdwood <lrg@slimlogic.co.uk>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-Hi Morimoto-san
 
-On Tue, 31 Aug 2010, Kuninori Morimoto wrote:
+Dear Guennadi
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
->  no change
-> 
->  drivers/video/sh_mobile_hdmi.c |   21 ++++++++++++++++++++-
->  include/video/sh_mobile_hdmi.h |   16 ++++++++++++++++
->  2 files changed, 36 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-> index afebe80..d25e348 100644
-> --- a/drivers/video/sh_mobile_hdmi.c
-> +++ b/drivers/video/sh_mobile_hdmi.c
-> @@ -318,6 +318,9 @@ static void sh_hdmi_video_config(struct sh_hdmi *hdmi)
->   */
->  static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
->  {
-> +	u8 data;
-> +	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
-> +
->  	/*
->  	 * [7:4] L/R data swap control
->  	 * [3:0] appropriate N[19:16]
-> @@ -335,7 +338,23 @@ static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
->  	 * [6:5] set required down sampling rate if required
->  	 * [4:3] set required audio source
->  	 */
-> -	hdmi_write(hdmi, 0x00, HDMI_AUDIO_SETTING_1);
-> +	switch (pdata->flags & HDMI_SRC_MASK) {
-> +	default:
-> +		/* FALL THROUGH */
+Thank you for checking patch !!
 
-I'm not sure I like the capitalisation here - no reason to shout;)
+But ALSA side patches are already applied to Mark's tree.
+So, I will send bug fix patch to ALSA ML
+(add new label for snd_soc_unregister_codec etc...)
 
-> +	case HDMI_SRC_I2S:
-> +		data = (0x0 << 3);
-> +		break;
-> +	case HDMI_SRC_SPDIF:
-> +		data = (0x1 << 3);
-> +		break;
-> +	case HDMI_SRC_DSD:
-> +		data = (0x2 << 3);
-> +		break;
-> +	case HDMI_SRC_HBR:
-> +		data = (0x3 << 3);
+and send v2 patches to SH ML
 
-In all above cases parenthesis are superfluous.
+EC No. W                  # public
 
-> +		break;
-> +	}
-> +	hdmi_write(hdmi, data, HDMI_AUDIO_SETTING_1);
->  
->  	/* [3:0] set sending channel number for channel status */
->  	hdmi_write(hdmi, 0x40, HDMI_AUDIO_SETTING_2);
-> diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
-> index 577cf18..929c2d3 100644
-> --- a/include/video/sh_mobile_hdmi.h
-> +++ b/include/video/sh_mobile_hdmi.h
-> @@ -14,9 +14,25 @@
->  struct sh_mobile_lcdc_chan_cfg;
->  struct device;
->  
-> +/*
-> + * flags format
-> + *
-> + * 0x0000000A
-> + *
-> + * A: Audio source select
-> + */
-> +
-> +/* Audio source select */
-> +#define HDMI_SRC_MASK		(0xF << 0)
-> +#define HDMI_SRC_I2S		(0 << 0) /* default */
-> +#define HDMI_SRC_SPDIF		(1 << 0)
-> +#define HDMI_SRC_DSD		(2 << 0)
-> +#define HDMI_SRC_HBR		(3 << 0)
-
-I would be more specific with these macro names, i.e., include "AUDIO" or 
-"SND" or something similar in them, e.g., HDMI_AUDIO_SRC_I2S.
-
-> +
->  struct sh_mobile_hdmi_info {
->  	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
->  	struct device			*lcd_dev;
-> +	unsigned int			 flags;
->  };
->  
->  #endif
-> -- 
-> 1.7.0.4
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Best regards
+--
+Kuninori Morimoto
+ 
