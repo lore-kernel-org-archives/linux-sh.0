@@ -1,20 +1,62 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Sun, 19 Sep 2010 15:04:48 +0000
-Subject: Re: [PATCH 1/5] ASoC: fix compile breakage of the sh/siu driver
-Message-Id: <20100919150448.GB18789@opensource.wolfsonmicro.com>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Mon, 13 Sep 2010 06:07:36 +0000
+Subject: [PATCH 5/6] ARM: Make oprofile depend on CONFIG_HW_PERF_EVENTS
+Message-Id: <831bc9523fe04ce899bc78230990033fbe009431.1284357372.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1009171211580.4988@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1009171211580.4988@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Sep 17, 2010 at 12:29:46PM +0200, Guennadi Liakhovetski wrote:
-> The sh/siu ASoC driver doesn't compile because of a function defined static in
-> the source and extern in a header. Remove the unneeded declaration in the
-> header.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Currently, oprofile support is only functional if CONFIG_HW_PERF_EVENTS
+is set. If this symbol is not set, oprofile initialisation will fail at
+runtime. Instead of allowing the oprofile code to build but fail at
+runtime it seems less confusing to not allow the code to be built unless
+hardware performance counter support is available.
 
-Applied, thanks.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/arm/Kconfig           |    2 +-
+ arch/arm/oprofile/common.c |    9 ---------
+ 2 files changed, 1 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index a7ed21f..d29075c 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -14,7 +14,7 @@ config ARM
+ 	select RTC_LIB
+ 	select SYS_SUPPORTS_APM_EMULATION
+ 	select GENERIC_ATOMIC64 if (!CPU_32v6K)
+-	select HAVE_OPROFILE if (HAVE_PERF_EVENTS)
++	select HAVE_OPROFILE if (HW_PERF_EVENTS)
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_KPROBES if (!XIP_KERNEL)
+ 	select HAVE_KRETPROBES if (HAVE_KPROBES)
+diff --git a/arch/arm/oprofile/common.c b/arch/arm/oprofile/common.c
+index 9a3ed26..444ea86 100644
+--- a/arch/arm/oprofile/common.c
++++ b/arch/arm/oprofile/common.c
+@@ -24,7 +24,6 @@
+ #include <asm/perf_event.h>
+ #include <asm/ptrace.h>
+ 
+-#ifdef CONFIG_HW_PERF_EVENTS
+ static char *op_name_from_perf_id(enum arm_perf_pmu_ids id)
+ {
+ 	switch (id) {
+@@ -119,11 +118,3 @@ void __exit oprofile_arch_exit(void)
+ {
+ 	oprofile_perf_exit();
+ }
+-#else
+-int __init oprofile_arch_init(struct oprofile_operations *ops)
+-{
+-	pr_info("oprofile: hardware counters not available\n");
+-	return -ENODEV;
+-}
+-void __exit oprofile_arch_exit(void) {}
+-#endif /* CONFIG_HW_PERF_EVENTS */
+-- 
+1.7.1
+
