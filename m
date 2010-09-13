@@ -1,33 +1,91 @@
 From: Matt Fleming <matt@console-pimps.org>
-Date: Wed, 15 Sep 2010 06:19:52 +0000
-Subject: Re: IRQ flags patch
-Message-Id: <20100915061952.GB26815@console-pimps.org>
+Date: Mon, 13 Sep 2010 06:07:34 +0000
+Subject: [PATCH 3/6] ARM: oprofile: Move non-ARM code into separate init/exit functions
+Message-Id: <7f520b235254cdbf6444ed9f4839fb5c12ff1199.1284357372.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6218.1284051389@redhat.com>
-In-Reply-To: <6218.1284051389@redhat.com>
+References: <cover.1284357372.git.matt@console-pimps.org>
+In-Reply-To: <cover.1284357372.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org
 
-On Mon, Sep 13, 2010 at 11:48:26PM +0100, David Howells wrote:
-> Matt Fleming <matt@console-pimps.org> wrote:
-> 
-> > I'm guessing the underscores should be dropped from
-> > __arch_local_irq_save() in arch/sh/kernel/irq_32.c seeing as there are
-> > no callers of that function anywhere?
-> > 
-> > However, this patch series fails to run on my 7785lcr board. You also
-> > need to move RAW_IRQ_DISABLED and RAW_IRQ_ENABLED in
-> > arch/sh/include/asm/irqflags.h to ARCH_IRQ_DISABLED and
-> > ARCH_IRQ_ENABLED. The attached diff gets my board booting.
-> 
-> Seems likely, thanks.  I've merged your patch into my GIT tree and rebased.
-> 
-> http://git.kernel.org/?p=linux/kernel/git/dhowells/linux-2.6-irqflags.git;a=summary
-> 
-> If you could check that, that'd be great!
+In preparation for moving the majority of this oprofile code into an
+architecture-neutral place separate the architecture-independent code
+into oprofile_perf_init() and oprofile_perf_exit().
 
-This looks good to me and it boots fine. Thanks!
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/arm/oprofile/common.c |   34 +++++++++++++++++++++++++---------
+ 1 files changed, 25 insertions(+), 9 deletions(-)
 
-Acked-by: Matt Fleming <matt@console-pimps.org>
+diff --git a/arch/arm/oprofile/common.c b/arch/arm/oprofile/common.c
+index ed8291a..4d814c3 100644
+--- a/arch/arm/oprofile/common.c
++++ b/arch/arm/oprofile/common.c
+@@ -346,7 +346,7 @@ static void arm_backtrace(struct pt_regs * const regs, unsigned int depth)
+ 		tail = user_backtrace(tail);
+ }
+ 
+-int __init oprofile_arch_init(struct oprofile_operations *ops)
++int __init oprofile_perf_init(struct oprofile_operations *ops)
+ {
+ 	int cpu, ret = 0;
+ 
+@@ -377,13 +377,16 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 		}
+ 	}
+ 
+-	ops->backtrace		= arm_backtrace;
+-	ops->create_files	= oprofile_perf_create_files;
+-	ops->setup		= oprofile_perf_setup;
+-	ops->start		= oprofile_perf_start;
+-	ops->stop		= oprofile_perf_stop;
+-	ops->shutdown		= oprofile_perf_stop;
+-	ops->cpu_type		= op_name_from_perf_id(armpmu_get_pmu_id());
++	if (!ops->create_files)
++		ops->create_files = oprofile_perf_create_files;
++	if (!ops->setup)
++		ops->setup = oprofile_perf_setup;
++	if (!ops->start)
++		ops->start = oprofile_perf_start;
++	if (!ops->stop)
++		ops->stop = oprofile_perf_stop;
++	if (!ops->shutdown)
++		ops->shutdown = oprofile_perf_stop;
+ 
+ 	if (!ops->cpu_type)
+ 		ret = -ENODEV;
+@@ -400,7 +403,15 @@ out:
+ 	return ret;
+ }
+ 
+-void __exit oprofile_arch_exit(void)
++int __init oprofile_arch_init(struct oprofile_operations *ops)
++{
++	ops->backtrace		= arm_backtrace;
++	ops->cpu_type		= op_name_from_perf_id(armpmu_get_pmu_id());
++
++	return oprofile_perf_init(ops);
++}
++
++void __exit oprofile_perf_exit(void)
+ {
+ 	int cpu, id;
+ 	struct perf_event *event;
+@@ -418,6 +429,11 @@ void __exit oprofile_arch_exit(void)
+ 	kfree(counter_config);
+ 	exit_driverfs();
+ }
++
++void __exit oprofile_arch_exit(void)
++{
++	oprofile_perf_exit();
++}
+ #else
+ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ {
+-- 
+1.7.1
+
