@@ -1,69 +1,25 @@
 From: Matt Fleming <matt@console-pimps.org>
-Date: Mon, 13 Sep 2010 06:07:31 +0000
-Subject: [PATCH V3 0/6] Generalise ARM perf-events backend for oprofile
-Message-Id: <cover.1284357372.git.matt@console-pimps.org>
+Date: Mon, 13 Sep 2010 07:50:25 +0000
+Subject: Re: [PATCH V3 0/6] Generalise ARM perf-events backend for oprofile
+Message-Id: <20100913075025.GA14882@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1284357372.git.matt@console-pimps.org> <SNT125-W35B89F6AA83C8DD22E7946BA770@phx.gbl>
+In-Reply-To: <SNT125-W35B89F6AA83C8DD22E7946BA770@phx.gbl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robert Richter <robert.richter@amd.com>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org
+To: Marc Titinger <mtittinge@hotmail.com>
+Cc: robert.richter@amd.com, linux-arch@vger.kernel.org, linux@arm.linux.org.uk, linux-sh@vger.kernel.org, peterz@infradead.org, fweisbec@gmail.com, will.deacon@arm.com, acme@redhat.com, lethal@linux-sh.org, mingo@elte.hu, linux-arm-kernel@lists.infradead.org
 
-The perf-events backend for OProfile that Will Deacon wrote in
-8c1fc96f6fd1f361428ba805103af0d0eee65179 ("ARM: 6072/1: oprofile: use
-perf-events framework as backend") is of use to more architectures
-than just ARM. Move the code into drivers/oprofile/ so that SH can use
-it instead of the nearly identical copy of its OProfile code.
+On Mon, Sep 13, 2010 at 09:13:32AM +0200, Marc Titinger wrote:
+> 
+> Hi, 
+> 
+> I'm just being curious : do these patches change the way those chips
+> should be supported, that do not have a PMU-like IP, but implement
+> PC-sampling thanks to a general purpose timer (not the system timer)
+> ?
 
-The benefit of the backend is that it becomes necessary to only
-maintain one copy of the PMU accessor functions for each architecture,
-with bug fixes and new features benefiting both OProfile and perf.
-
-Note that I haven't been able to test these patches on an ARM board to
-see if I've caused any regressions. If anyone else could do that I'd
-appreciate it. Though, I have been able to compile this version of the
-series.
-
-This patch series is based on,
-
-    git://git.kernel.org/pub/scm/linux/kernel/git/rric/oprofile.git core
-
-These patches can also be found at,
-
-    git://git.kernel.org/pub/scm/linux/kernel/git/mfleming/sh-2.6.git perf-oprofile
-
-Changes from v2:
- - Rebased against Robert's oprofile core branch
- - Moved even more of the ARM code into the generic oprofile code
- - Broke the patches up into more logical steps
-
-Changes from v1:
- - Prefix the new functons with "oprofile_" instead of "op_".
- - Fix ARM compilation errors
- - Move all the oprofile-perf logic into oprofile_perf.c
- - Include cleanup patch from Will
-
-Matt Fleming (6):
-  perf: Add helper function to return number of counters
-  ARM: oprofile: Rename op_arm to oprofile_perf
-  ARM: oprofile: Move non-ARM code into separate init/exit functions
-  oprofile: Abstract the perf-events backend
-  ARM: Make oprofile depend on CONFIG_HW_PERF_EVENTS
-  sh: oprofile: Use perf-events oprofile backend
-
- arch/arm/Kconfig                 |    2 +-
- arch/arm/kernel/perf_event.c     |    6 +
- arch/arm/oprofile/Makefile       |    2 +-
- arch/arm/oprofile/common.c       |  315 +------------------------------------
- arch/sh/Kconfig                  |    2 +-
- arch/sh/kernel/perf_event.c      |   17 ++
- arch/sh/oprofile/Makefile        |    2 +-
- arch/sh/oprofile/common.c        |  104 ++-----------
- arch/sh/oprofile/op_impl.h       |   33 ----
- drivers/oprofile/oprofile_perf.c |  322 ++++++++++++++++++++++++++++++++++++++
- include/linux/oprofile.h         |    6 +
- include/linux/perf_event.h       |    1 +
- 12 files changed, 368 insertions(+), 444 deletions(-)
- delete mode 100644 arch/sh/oprofile/op_impl.h
- create mode 100644 drivers/oprofile/oprofile_perf.c
-
+CPUs that do not have a PMU are not required to use the perf-events
+oprofile backend, it is entirely optional. The pc-sampling timer in
+oprofile is not affected by this series.
