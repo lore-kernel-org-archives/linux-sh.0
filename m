@@ -1,200 +1,36 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Thu, 16 Sep 2010 12:32:49 +0000
-Subject: Re: [PATCH 1/6] perf: Add helper function to return number of
-Message-Id: <20100916123249.GX13563@erda.amd.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 14 Sep 2010 08:37:12 +0000
+Subject: Re: [PATCH] sh: Set CONFIG_SYSFS_DEPRECATED_V2=n
+Message-Id: <20100914083712.GN7336@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1284357372.git.matt@console-pimps.org>
- <2c5f545e9dafada4780d48ee778b4424ee093839.1284357372.git.matt@console-pimps.org>
-In-Reply-To: <2c5f545e9dafada4780d48ee778b4424ee093839.1284357372.git.matt@console-pimps.org>
+References: <2bf9c3bb585d142503d6b7f3669e2138ba9ed112.1282398356.git.matt@console-pimps.org>
+In-Reply-To: <2bf9c3bb585d142503d6b7f3669e2138ba9ed112.1282398356.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 13.09.10 02:07:32, Matt Fleming wrote:
-> The number of counters for the registered pmu is needed in a few places
-> so provide a helper function that returns this number.
+On Sun, Aug 22, 2010 at 07:06:01PM +0900, Paul Mundt wrote:
+> On Sat, Aug 21, 2010 at 03:13:44PM +0100, Matt Fleming wrote:
+> > On Sat, Aug 21, 2010 at 02:47:59PM +0100, Matt Fleming wrote:
+> > > As the help for the config option suggests, this option really shouldn't
+> > > be set by default for any recent distribution as it changes the layout
+> > > of sysfs. I spotted this while running debian when udev got very
+> > > confused by the sysfs layout and failed to create some device nodes.
+> > > 
+> > > Signed-off-by: Matt Fleming <matt@console-pimps.org>
+> > > ---
+> > >  arch/sh/configs/sh7785lcr_defconfig |    1 -
+> > >  1 files changed, 0 insertions(+), 1 deletions(-)
+> > 
+> > Hmm.. on second thought, this option should probably be removed from all
+> > the defconfigs in arch/sh/configs as it defaults to 'n' in
+> > init/Kconfig. Unless anyone knows of a specific reason to leave it
+> > enabled for a particular board?
 > 
-> Signed-off-by: Matt Fleming <matt@console-pimps.org>
-> ---
->  arch/arm/kernel/perf_event.c |    6 ++++++
->  arch/arm/oprofile/common.c   |   25 +++++++++++--------------
->  arch/sh/kernel/perf_event.c  |    9 +++++++++
->  include/linux/perf_event.h   |    1 +
->  4 files changed, 27 insertions(+), 14 deletions(-)
-> 
-> diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
-> index 417c392..3b0aedf 100644
-> --- a/arch/arm/kernel/perf_event.c
-> +++ b/arch/arm/kernel/perf_event.c
-> @@ -123,6 +123,12 @@ armpmu_get_max_events(void)
->  }
->  EXPORT_SYMBOL_GPL(armpmu_get_max_events);
->  
-> +int perf_num_counters(void)
-> +{
-> +	return armpmu_get_max_events();
-> +}
-> +EXPORT_SYMBOL_GPL(perf_num_counters);
-> +
->  #define HW_OP_UNSUPPORTED		0xFFFF
->  
->  #define C(_x) \
-> diff --git a/arch/arm/oprofile/common.c b/arch/arm/oprofile/common.c
-> index d660cb8..6498e58 100644
-> --- a/arch/arm/oprofile/common.c
-> +++ b/arch/arm/oprofile/common.c
-> @@ -43,7 +43,6 @@ static DEFINE_MUTEX(op_arm_mutex);
->  
->  static struct op_counter_config *counter_config;
->  static struct perf_event **perf_events[nr_cpumask_bits];
-> -static int perf_num_counters;
->  
->  /*
->   * Overflow callback for oprofile.
-> @@ -54,11 +53,11 @@ static void op_overflow_handler(struct perf_event *event, int unused,
->  	int id;
->  	u32 cpu = smp_processor_id();
->  
-> -	for (id = 0; id < perf_num_counters; ++id)
-> +	for (id = 0; id < perf_num_counters(); ++id)
->  		if (perf_events[cpu][id] = event)
->  			break;
->  
-> -	if (id != perf_num_counters)
-> +	if (id != perf_num_counters())
->  		oprofile_add_sample(regs, id);
->  	else
->  		pr_warning("oprofile: ignoring spurious overflow "
-> @@ -76,7 +75,7 @@ static void op_perf_setup(void)
->  	u32 size = sizeof(struct perf_event_attr);
->  	struct perf_event_attr *attr;
->  
-> -	for (i = 0; i < perf_num_counters; ++i) {
-> +	for (i = 0; i < perf_num_counters(); ++i) {
->  		attr = &counter_config[i].attr;
->  		memset(attr, 0, size);
->  		attr->type		= PERF_TYPE_RAW;
-> @@ -131,7 +130,7 @@ static int op_perf_start(void)
->  	int cpu, event, ret = 0;
->  
->  	for_each_online_cpu(cpu) {
-> -		for (event = 0; event < perf_num_counters; ++event) {
-> +		for (event = 0; event < perf_num_counters(); ++event) {
->  			ret = op_create_counter(cpu, event);
->  			if (ret)
->  				goto out;
-> @@ -150,7 +149,7 @@ static void op_perf_stop(void)
->  	int cpu, event;
->  
->  	for_each_online_cpu(cpu)
-> -		for (event = 0; event < perf_num_counters; ++event)
-> +		for (event = 0; event < perf_num_counters(); ++event)
->  			op_destroy_counter(cpu, event);
->  }
->  
-> @@ -179,7 +178,7 @@ static int op_arm_create_files(struct super_block *sb, struct dentry *root)
->  {
->  	unsigned int i;
->  
-> -	for (i = 0; i < perf_num_counters; i++) {
-> +	for (i = 0; i < perf_num_counters(); i++) {
->  		struct dentry *dir;
->  		char buf[4];
->  
-> @@ -353,14 +352,12 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
->  
->  	memset(&perf_events, 0, sizeof(perf_events));
->  
-> -	perf_num_counters = armpmu_get_max_events();
-> -
+> No, the only reason it is still enabled for some boards is because people
+> rarely if ever send defconfigs updates that actually match the configs
+> being regularly used. Killing it off uniformly is fine.
 
-Maybe we keep this variable and only call perf_num_counters() once
-during initialization as the function's return value should be
-constant.  Otherwise this will cause unnecessary cache pollution and
-execution cycles esp. in the overflow handler.
-
-Also it wouldn't be safe if the value changes anyway, for example you
-enable 4 counters and and after the value changed you disable only 3.
-
-Module initialization should fail on errors or if no counters are
-available.
-
--Robert
-
-> -	counter_config = kcalloc(perf_num_counters,
-> +	counter_config = kcalloc(perf_num_counters(),
->  			sizeof(struct op_counter_config), GFP_KERNEL);
->  
->  	if (!counter_config) {
->  		pr_info("oprofile: failed to allocate %d "
-> -				"counters\n", perf_num_counters);
-> +				"counters\n", perf_num_counters());
->  		ret = -ENOMEM;
->  		goto out;
->  	}
-> @@ -370,11 +367,11 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
->  		goto out;
->  
->  	for_each_possible_cpu(cpu) {
-> -		perf_events[cpu] = kcalloc(perf_num_counters,
-> +		perf_events[cpu] = kcalloc(perf_num_counters(),
->  				sizeof(struct perf_event *), GFP_KERNEL);
->  		if (!perf_events[cpu]) {
->  			pr_info("oprofile: failed to allocate %d perf events "
-> -					"for cpu %d\n", perf_num_counters, cpu);
-> +					"for cpu %d\n", perf_num_counters(), cpu);
->  			ret = -ENOMEM;
->  			goto out;
->  		}
-> @@ -409,7 +406,7 @@ void __exit oprofile_arch_exit(void)
->  	struct perf_event *event;
->  
->  	for_each_possible_cpu(cpu) {
-> -		for (id = 0; id < perf_num_counters; ++id) {
-> +		for (id = 0; id < perf_num_counters(); ++id) {
->  			event = perf_events[cpu][id];
->  			if (event)
->  				perf_event_release_kernel(event);
-> diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
-> index 7a3dc35..2cb9ad5 100644
-> --- a/arch/sh/kernel/perf_event.c
-> +++ b/arch/sh/kernel/perf_event.c
-> @@ -59,6 +59,15 @@ static inline int sh_pmu_initialized(void)
->  	return !!sh_pmu;
->  }
->  
-> +int perf_num_counters(void)
-> +{
-> +	if (!sh_pmu)
-> +		return 0;
-> +
-> +	return sh_pmu->num_events;
-> +}
-> +EXPORT_SYMBOL_GPL(perf_num_counters);
-> +
->  /*
->   * Release the PMU if this is the last perf_event.
->   */
-> diff --git a/include/linux/perf_event.h b/include/linux/perf_event.h
-> index 716f99b..1a02192 100644
-> --- a/include/linux/perf_event.h
-> +++ b/include/linux/perf_event.h
-> @@ -849,6 +849,7 @@ extern int perf_max_events;
->  
->  extern const struct pmu *hw_perf_event_init(struct perf_event *event);
->  
-> +extern int perf_num_counters(void);
->  extern void perf_event_task_sched_in(struct task_struct *task);
->  extern void perf_event_task_sched_out(struct task_struct *task, struct task_struct *next);
->  extern void perf_event_task_tick(struct task_struct *task);
-> -- 
-> 1.7.1
-> 
-> 
-
--- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
-
+Ok, I actually forgot to apply this, so it's applied now. Hopefully that
+will be the end of that!
