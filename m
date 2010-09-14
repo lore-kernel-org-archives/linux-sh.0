@@ -1,52 +1,43 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Wed, 15 Sep 2010 07:28:50 +0000
-Subject: Re: [PATCH 4/5] DMA: Add functions to preallocate DMA memory dor
-Message-Id: <20100915072850.GB17325@pengutronix.de>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 14 Sep 2010 08:52:06 +0000
+Subject: Re: [PATCH 3/5] DMA: reduce the number of memory allocations
+Message-Id: <20100914085206.GP7336@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1008191623580.26145@axis700.grange>
-	<Pine.LNX.4.64.1008191636590.26145@axis700.grange>
-	<20100902105055.GS26319@n2100.arm.linux.org.uk>
-In-Reply-To: <20100902105055.GS26319@n2100.arm.linux.org.uk>
+	<Pine.LNX.4.64.1008191634160.26145@axis700.grange>
+	<20100819153527.GE2985@suse.de>
+	<Pine.LNX.4.64.1008191744560.26145@axis700.grange>
+	<20100819160255.GA3948@suse.de>
+In-Reply-To: <20100819160255.GA3948@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+On Thu, Aug 19, 2010 at 09:02:55AM -0700, Greg KH wrote:
+> On Thu, Aug 19, 2010 at 05:46:38PM +0200, Guennadi Liakhovetski wrote:
+> > On Thu, 19 Aug 2010, Greg KH wrote:
+> > 
+> > > On Thu, Aug 19, 2010 at 04:40:15PM +0200, Guennadi Liakhovetski wrote:
+> > > > Allocate the bitmap in dma_declare_coherent_memory() together with the struct
+> > > > dma_coherent_mem object.
+> > > 
+> > > You describe what you did, but _why_ are you doing it?
+> > 
+> > Well, to me the subject "_reduce_ the number..." is already a reason 
+> > enough - the fewer kmalloc's of 20 bytes - the better, I think. But if you 
+> > like, I can update the description too.
+> 
+> Yes, as I missed that, others might as well :)
+> 
+Indeed. When this is reposted, it should also include an update for
+Documentation/DMA-API.txt. I'm simply not going to take any DMA API
+patches if they don't include the documentation update. DMA-API.txt is
+one of the few useful parts of Documentation/, we should really strive to
+keep it that way.
 
-On Thu, Sep 02, 2010 at 11:50:55AM +0100, Russell King - ARM Linux wrote:
-> On Thu, Aug 19, 2010 at 04:40:22PM +0200, Guennadi Liakhovetski wrote:
-> > Currently dma_declare_coherent_memory() and dma_release_declared_memory=
-() are
-> > provided to assign DMA memory to a device and to release it. These func=
-tions
-> > can be use with device local memory, like on-chip SRAM. However, they a=
-re
-> > unsuitable for assigning of generic system RAM to devices, because such=
- system
-> > memory should not be ioremapped, and ioremap() is used internally in th=
-e former
-> > of these functions to map the memory.
-> >=20
-> > This patch solves this problem by adding two more functions:
-> > dma_preallocate_coherent_memory() and dma_release_preallocated_memory()=
-, which
-> > allocate DMA coherent memory and assign it to the device, and release i=
-t back
-> > respectively.
->=20
-> This looks like a much saner interface for pre-allocating DMA memory from
-> system memory, rather than trying to use dma_declare_coherent_memory().
->=20
-> Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
-Acked-by: Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
+It would also be nice if on the next iteration DMA API people were Cc'ed,
+this would be at least:
 
-If this series isn't acceptable for the DMA people, I suggest to add it
-locally for ARM if no other solution is found before .36 is released.
-
-Best regards
-Uwe
-
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+	FUJITA Tomonori <fujita.tomonori@lab.ntt.co.jp>
+	James Bottomley <James.Bottomley@HansenPartnership.com>
