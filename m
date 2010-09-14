@@ -1,25 +1,29 @@
-From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Thu, 09 Sep 2010 09:53:47 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 14 Sep 2010 07:59:22 +0000
 Subject: Re: [PATCH V3] arm & sh: factorised duplicated clkdev.c
-Message-Id: <20100909095347.GA9112@game.jcrosoft.org>
+Message-Id: <20100914075922.GH7336@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1283434786-26479-1-git-send-email-plagnioj@jcrosoft.com>
-In-Reply-To: <1283434786-26479-1-git-send-email-plagnioj@jcrosoft.com>
+References: <1283431716-21540-1-git-send-email-plagnioj@jcrosoft.com>
+	<1283434786-26479-1-git-send-email-plagnioj@jcrosoft.com>
+	<20100909095347.GA9112@game.jcrosoft.org>
+In-Reply-To: <20100909095347.GA9112@game.jcrosoft.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 15:39 Thu 02 Sep     , Jean-Christophe PLAGNIOL-VILLARD wrote:
-> factorise some generic infrastructure to assist looking up struct clks
-> for the ARM & SH architecture.
+On Thu, Sep 09, 2010 at 11:53:47AM +0200, Jean-Christophe PLAGNIOL-VILLARD wrote:
+> On 15:39 Thu 02 Sep     , Jean-Christophe PLAGNIOL-VILLARD wrote:
+> > factorise some generic infrastructure to assist looking up struct clks
+> > for the ARM & SH architecture.
+> > 
+> > as the code is identical at 99%
+> > 
+> > put the arch specific code for allocation as example in asm/clkdev.h
+> > 
+> > Signed-off-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+> is it ok?
 > 
-> as the code is identical at 99%
-> 
-> put the arch specific code for allocation as example in asm/clkdev.h
-> 
-> Signed-off-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-is it ok?
-
-Best Regards,
-J.
+It's fine with me, but this will want to go via the ARM tree. You'll
+probably want to submit this to the ARM patch tracker, and you can add my
+Acked-by for the SH and SH-Mobile bits.
