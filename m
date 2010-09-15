@@ -1,37 +1,88 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Wed, 15 Sep 2010 06:08:44 +0000
+From: Colin Cross <ccross@google.com>
+Date: Wed, 15 Sep 2010 23:15:41 +0000
 Subject: Re: [PATCH 0/3] Common struct clk implementation, v7
-Message-Id: <1284530924.3350.7.camel@pororo>
+Message-Id: <AANLkTim++mNF=KDabCBCk=jDxbwNFWu=hrDQq=UWR=yM@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1284522014.516876.675872472687.0.gpush@pororo>
-	<20100915055320.GB23518@game.jcrosoft.org>
-In-Reply-To: <20100915055320.GB23518@game.jcrosoft.org>
+In-Reply-To: <1284522014.516876.675872472687.0.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Jean,
+On Tue, Sep 14, 2010 at 8:40 PM, Jeremy Kerr <jeremy.kerr@canonical.com> wrote:
+> Hi all,
+>
+> These patches are an attempt to allow platforms to share clock code. At
+> present, the definitions of 'struct clk' are local to platform code,
+> which makes allocating and initialising cross-platform clock sources
+> difficult, and makes it impossible to compile a single image containing
+> support for two ARM platforms with different struct clks.
 
-> 	please put sh ml in cc too as we use the same clkdev
+Having just finished implementing the clock tree support on Tegra, I
+have a few concerns about these patches, and how they relate to the
+clk api.
 
-Sure, the sh folks may be interested in this too; would be nice to share
-the common clock with sh.
+On the spinlock vs. mutex issue (I know, it's been beaten to death).
+The clk api does not specify whether or not implementations can sleep.
+ In fact, it explicitly states that clk_get and clk_put can't be
+called from atomic context, but does not say anything about the rest
+of the api, which vaguely implies that they can be called from atomic
+context.
 
-However, these changes won't affect any platform unless
-CONFIG_USE_COMMON_STRUCT_CLK is set; so the changes won't affect sh by
-default. When/if this is merged, I'd like to look at integrating other
-arches (powerpc and sh). Of course, comments are welcome in the
-meantime.
+There are situations in which a non-sleeping clk api is useful, if not
+necessary.  On msm with a smart panel, the vsync is connected to a
+gpio, and the vsync interrupt enables the dma controller clock is to
+start the dma of the framebuffer to the display block.  A similar
+problem can happen in dma audio, where a low watermark interrupt from
+the audio block needs to trigger dma to refill the buffer.  Leaving
+the dma clock on before the vsync or low watermark interrupt would
+prevent entering the lowest power idle state.
 
-sh folks: to avoid fragmenting the discussion and filling up everyone's
-inbox I'll refrain from re-posting this series. Patches are here if
-you're interested:
+There is also a very common use case for clk_disable in an interrupt.
+When an I2C transaction completes, the irq handler should disable the
+clock if there are no other queued transactions.  With a non-sleeping
+clk api, this is easy.  With a sleeping clk api, the clk_disable needs
+to be deferred to non-atomic context.  Because of the refcounting in
+clk_disable, this is not particularly difficult, but a
+clk_disable_later helper function might simplify it.
 
-http://kernel.ubuntu.com/git?p=jk/dt/linux-2.6.git;a=shortlog;h=refs/heads/clk-common
+However, some of the clocks on Tegra can not be controlled from atomic
+context.  Some clocks have voltage requirements, so enabling the clock
+may require a call to the regulator api to increase the voltage, which
+will call into the i2c api, which sleeps.
 
-Cheers,
+Additionally, using a lock per clk struct can cause AB-BA locking
+issues.  In my implementation, calling clk_enable on a child clock in
+the clock tree can call clk_enable on its parent if the child clock
+was not already enabled.  This leads to the child clock lock being
+taken, followed by the parent clock lock.  Calling clk_set_rate on the
+parent requires recalculating the rate of all of the children, which
+leads to the parent clock lock being taken first, followed by the
+child clock lock.  Deadlock.
 
+I solved these problems by using a single spinlock around all of the
+clocks, plus an additional mutex around the clocks that need to sleep.
+ I also locally added clk_*_cansleep functions to the clk api, and
+used might_sleep to prevent calls to the non-cansleep clk api on
+clocks that require sleeping.  I'm not happy with this solution, as it
+uses a local extension to a cross-platform api, but I don't see any
+way around it.  Some clocks really need to be enabled or disabled from
+atomic context, and some clocks are impossible to use in atomic
+context.
 
-Jeremy
+I think something a little like the gpio api style of cansleep and non
+cansleep functions would help would preserve the ability for clocks to
+avoid sleeping on platforms that don't need to sleep, while allowing
+drivers that can handle sleeping clocks to remain as widely
+cross-platform as possible.  Instead of changing all the calls, add a
+clk_get_nosleep for drivers that will call the clk apis in atomic
+context, which will catch drivers that are not compatible with the
+clock they are requesting early on during probe.
 
+Either way, the clk api could use some notes on the restrictions for
+both the callers and the implementers to ensure compatibility between
+architectures.  Which calls can sleep?  Can clk_set_rate or
+clk_set_parent be called on a clock that is already enabled, and, if
+so, what is the expected behavior for the children of the clock that
+is changed?
