@@ -1,14 +1,29 @@
-From: Blake David <dblake885@yahoo.com>
-Date: Wed, 29 Sep 2010 04:55:49 +0000
-Subject: Urgent mail from Mr David
-Message-Id: <E1P0ohp-000FIp-ED@dbe13.shared.masterhost.ru>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 15 Sep 2010 06:37:19 +0000
+Subject: [PATCH 0/2] FSI clock patches
+Message-Id: <w3pfwxbwm01.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-My name is David Blake From Scotland, I am at the hospital waiting to die. I have a  Charity project that i want you to do and it will benefit you and it is risk free and it is also Legal. Please get back to me so that i can give you more details.
 
+Dear Paul, Magnus, Guennadi
 
+These patches are for FSI parent select support on clock frame work
 
+Kuninori Morimoto (2):
+      ARM: mach-shmobile: modify wrong array size of div6_reparent_clks
+      ARM: mach-shmobile: clock-sh7372: FSI parent select support
+
+1st patch is just bug fix.
+I need some comment/advice in 2nd patch
+
+2nd patch is 1st step to add FSIDIV support
+which is needed for HDMI sound support
+
+Best regards
+--
+Kuninori Morimoto
+ 
