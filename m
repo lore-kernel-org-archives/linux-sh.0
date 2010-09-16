@@ -1,88 +1,36 @@
-From: Colin Cross <ccross@google.com>
-Date: Wed, 15 Sep 2010 23:15:41 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 16 Sep 2010 01:51:06 +0000
 Subject: Re: [PATCH 0/3] Common struct clk implementation, v7
-Message-Id: <AANLkTim++mNF=KDabCBCk=jDxbwNFWu=hrDQq=UWR=yM@mail.gmail.com>
+Message-Id: <20100916015105.GC7266@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1284522014.516876.675872472687.0.gpush@pororo>
-In-Reply-To: <1284522014.516876.675872472687.0.gpush@pororo>
+	<20100915055320.GB23518@game.jcrosoft.org>
+	<1284530924.3350.7.camel@pororo>
+In-Reply-To: <1284530924.3350.7.camel@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 14, 2010 at 8:40 PM, Jeremy Kerr <jeremy.kerr@canonical.com> wrote:
-> Hi all,
->
-> These patches are an attempt to allow platforms to share clock code. At
-> present, the definitions of 'struct clk' are local to platform code,
-> which makes allocating and initialising cross-platform clock sources
-> difficult, and makes it impossible to compile a single image containing
-> support for two ARM platforms with different struct clks.
+On Wed, Sep 15, 2010 at 02:08:44PM +0800, Jeremy Kerr wrote:
+> sh folks: to avoid fragmenting the discussion and filling up everyone's
+> inbox I'll refrain from re-posting this series. Patches are here if
+> you're interested:
+> 
+> http://kernel.ubuntu.com/git?p=jk/dt/linux-2.6.git;a=shortlog;h=refs/heads/clk-common
+> 
+I've been passively monitoring these patches as they were going by on
+l-k, so there aren't really any surprises here. We'll need to do a bit of
+refactoring to start using it once it is merged, but that shouldn't be
+too problematic.
 
-Having just finished implementing the clock tree support on Tegra, I
-have a few concerns about these patches, and how they relate to the
-clk api.
+Right now we're using a shared clock framework between sh and ARM-based
+SH-Mobile CPUs (drivers/sh/clk.c and include/linux/sh_clk.h), so both
+should convert fairly easily at the same time.
 
-On the spinlock vs. mutex issue (I know, it's been beaten to death).
-The clk api does not specify whether or not implementations can sleep.
- In fact, it explicitly states that clk_get and clk_put can't be
-called from atomic context, but does not say anything about the rest
-of the api, which vaguely implies that they can be called from atomic
-context.
+It also doesn't seem like this really poses any problems or overlap with
+Jean-Christophe's work for making the clkdev bits generic, so we should
+be able to do both independently. If you haven't seen that, it's
+currently pending in the ARM patch tracker:
 
-There are situations in which a non-sleeping clk api is useful, if not
-necessary.  On msm with a smart panel, the vsync is connected to a
-gpio, and the vsync interrupt enables the dma controller clock is to
-start the dma of the framebuffer to the display block.  A similar
-problem can happen in dma audio, where a low watermark interrupt from
-the audio block needs to trigger dma to refill the buffer.  Leaving
-the dma clock on before the vsync or low watermark interrupt would
-prevent entering the lowest power idle state.
-
-There is also a very common use case for clk_disable in an interrupt.
-When an I2C transaction completes, the irq handler should disable the
-clock if there are no other queued transactions.  With a non-sleeping
-clk api, this is easy.  With a sleeping clk api, the clk_disable needs
-to be deferred to non-atomic context.  Because of the refcounting in
-clk_disable, this is not particularly difficult, but a
-clk_disable_later helper function might simplify it.
-
-However, some of the clocks on Tegra can not be controlled from atomic
-context.  Some clocks have voltage requirements, so enabling the clock
-may require a call to the regulator api to increase the voltage, which
-will call into the i2c api, which sleeps.
-
-Additionally, using a lock per clk struct can cause AB-BA locking
-issues.  In my implementation, calling clk_enable on a child clock in
-the clock tree can call clk_enable on its parent if the child clock
-was not already enabled.  This leads to the child clock lock being
-taken, followed by the parent clock lock.  Calling clk_set_rate on the
-parent requires recalculating the rate of all of the children, which
-leads to the parent clock lock being taken first, followed by the
-child clock lock.  Deadlock.
-
-I solved these problems by using a single spinlock around all of the
-clocks, plus an additional mutex around the clocks that need to sleep.
- I also locally added clk_*_cansleep functions to the clk api, and
-used might_sleep to prevent calls to the non-cansleep clk api on
-clocks that require sleeping.  I'm not happy with this solution, as it
-uses a local extension to a cross-platform api, but I don't see any
-way around it.  Some clocks really need to be enabled or disabled from
-atomic context, and some clocks are impossible to use in atomic
-context.
-
-I think something a little like the gpio api style of cansleep and non
-cansleep functions would help would preserve the ability for clocks to
-avoid sleeping on platforms that don't need to sleep, while allowing
-drivers that can handle sleeping clocks to remain as widely
-cross-platform as possible.  Instead of changing all the calls, add a
-clk_get_nosleep for drivers that will call the clk apis in atomic
-context, which will catch drivers that are not compatible with the
-clock they are requesting early on during probe.
-
-Either way, the clk api could use some notes on the restrictions for
-both the callers and the implementers to ensure compatibility between
-architectures.  Which calls can sleep?  Can clk_set_rate or
-clk_set_parent be called on a clock that is already enabled, and, if
-so, what is the expected behavior for the children of the clock that
-is changed?
+	http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idc90/1
