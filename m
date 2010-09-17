@@ -1,32 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 06 Sep 2010 09:49:21 +0000
-Subject: Re: [PATCH 1/4 v2] fbdev: sh-mobile: Add HDMI sound type selection
-Message-Id: <w3pmxrv5hi6.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 17 Sep 2010 09:25:10 +0000
+Subject: [PATCH] sh: fix a kfree address in clkdev code
+Message-Id: <Pine.LNX.4.64.1009171124350.4988@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
-	<w3p1v9f72rk.wl%kuninori.morimoto.gx@renesas.com>
-	<Pine.LNX.4.64.1009060915100.20387@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1009060915100.20387@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Paul Mundt <lethal@linux-sh.org>, Liam Girdwood <lrg@slimlogic.co.uk>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: linux-sh@vger.kernel.org
 
+kfree() in clkdev_drop() function should actually be called with an address of
+a struct clk_lookup_alloc object, and not struct clk_lookup, as presently done.
+This just happens to work, because "struct clk_lookup cl" is the first
+member in struct clk_lookup_alloc.
 
-Dear Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/kernel/clkdev.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-Thank you for checking patch !!
+diff --git a/arch/sh/kernel/clkdev.c b/arch/sh/kernel/clkdev.c
+index befc255..1f800ef 100644
+--- a/arch/sh/kernel/clkdev.c
++++ b/arch/sh/kernel/clkdev.c
+@@ -161,9 +161,11 @@ EXPORT_SYMBOL(clk_add_alias);
+  */
+ void clkdev_drop(struct clk_lookup *cl)
+ {
++	struct clk_lookup_alloc *cla = container_of(cl, struct clk_lookup_alloc, cl);
++
+ 	mutex_lock(&clocks_mutex);
+ 	list_del(&cl->node);
+ 	mutex_unlock(&clocks_mutex);
+-	kfree(cl);
++	kfree(cla);
+ }
+ EXPORT_SYMBOL(clkdev_drop);
+-- 
+1.7.1
 
-But ALSA side patches are already applied to Mark's tree.
-So, I will send bug fix patch to ALSA ML
-(add new label for snd_soc_unregister_codec etc...)
-
-and send v2 patches to SH ML
-
-EC No. W                  # public
-
-Best regards
---
-Kuninori Morimoto
- 
