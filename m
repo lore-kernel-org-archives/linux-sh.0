@@ -1,21 +1,34 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Sun, 19 Sep 2010 15:05:54 +0000
-Subject: Re: [PATCH 5/5] ASoC: fix SIU driver breakage, occurred during the
-Message-Id: <20100919150553.GE18789@opensource.wolfsonmicro.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 17 Sep 2010 10:29:46 +0000
+Subject: [PATCH 1/5] ASoC: fix compile breakage of the sh/siu driver
+Message-Id: <Pine.LNX.4.64.1009171211580.4988@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
- <Pine.LNX.4.64.1009171215470.4988@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1009171215470.4988@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Liam Girdwood <lrg@slimlogic.co.uk>
+To: linux-sh@vger.kernel.org
 
-On Fri, Sep 17, 2010 at 12:30:18PM +0200, Guennadi Liakhovetski wrote:
-> This patch fixes multiple bugs and a typo, occurred during the multi-
-> component transition.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The sh/siu ASoC driver doesn't compile because of a function defined static in
+the source and extern in a header. Remove the unneeded declaration in the
+header.
 
-Applied, thanks.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ sound/soc/sh/siu.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/sound/soc/sh/siu.h b/sound/soc/sh/siu.h
+index aa239ff..1c0e1f7 100644
+--- a/sound/soc/sh/siu.h
++++ b/sound/soc/sh/siu.h
+@@ -182,7 +182,6 @@ static inline u32 siu_read32(u32 __iomem *addr)
+ #define SIU_BRRB	(0x10c / sizeof(u32))
+ 
+ extern struct snd_soc_platform_driver siu_platform;
+-extern struct snd_soc_dai_driver siu_i2s_dai;
+ extern struct siu_info *siu_i2s_data;
+ 
+ int siu_init_port(int port, struct siu_port **port_info, struct snd_card *card);
+-- 
+1.7.1
+
