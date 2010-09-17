@@ -1,29 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 02 Sep 2010 06:13:13 +0000
-Subject: Re: [PATCH] sh: Remove unused __IGNORE_recvmmsg macro.
-Message-Id: <20100902061312.GF10947@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 17 Sep 2010 10:30:00 +0000
+Subject: [PATCH 2/5] sh: fix an SIU device name mismatch
+Message-Id: <Pine.LNX.4.64.1009171212280.4988@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1283306055-761-1-git-send-email-carmelo.amoroso@st.com>
-In-Reply-To: <1283306055-761-1-git-send-email-carmelo.amoroso@st.com>
+References: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: alsa-devel@alsa-project.org
+Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Liam Girdwood <lrg@slimlogic.co.uk>, Paul Mundt <lethal@linux-sh.org>
 
-On Thu, Sep 02, 2010 at 06:29:11AM +0200, Carmelo AMOROSO wrote:
-> Your patch wiring up the broken out syscalls does not wire up recvmmsg,
-> so could you explain your reasoning for why you think this is unused?
-> 
-> Paul,
-> I've grep-ed across all the kernel source and I did not find any use of this macro.
-> It is not relates to the sockecall at all.
-> 
-The macro isn't, but the syscall is. recvmmsg is accessible through
-socketcall, which is why we don't define it. Now that you have provided
-broken out implementations to co-exist with the socketcall interface,
-you'll want to wire up the recvmmsg syscall also (note that this is
-different from recvmsg, which you already handle).
+Recent ASoC changes unified all PCM names, fix the platform code to match.
 
-The IGNORE macros are there to tell the syscall checker that we don't
-care about it, so not to warn during the build about the syscall being
-unimplemented -- see scripts/checksyscalls.sh.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 156ccc9..d551ed8 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -551,7 +551,7 @@ static struct resource siu_resources[] = {
+ };
+ 
+ static struct platform_device siu_device = {
+-	.name		= "sh_siu",
++	.name		= "siu-pcm-audio",
+ 	.id		= -1,
+ 	.dev = {
+ 		.platform_data	= &siu_platform_data,
+-- 
+1.7.1
+
