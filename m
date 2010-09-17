@@ -1,152 +1,154 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 06 Sep 2010 09:17:07 +0000
-Subject: Re: [PATCH 2/4 v2] ASoC: fsi-codec: Add FSI - HDMI support
-Message-Id: <Pine.LNX.4.64.1009061042060.20387@axis700.grange>
+Date: Fri, 17 Sep 2010 10:30:18 +0000
+Subject: [PATCH 5/5] ASoC: fix SIU driver breakage, occurred during the
+Message-Id: <Pine.LNX.4.64.1009171215470.4988@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p39tv72sx.wl%kuninori.morimoto.gx@renesas.com>
-	<w3pzkw35o6s.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pzkw35o6s.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Paul Mundt <lethal@linux-sh.org>, Liam Girdwood <lrg@slimlogic.co.uk>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: alsa-devel@alsa-project.org
+Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Liam Girdwood <lrg@slimlogic.co.uk>
 
-On Tue, 31 Aug 2010, Kuninori Morimoto wrote:
+This patch fixes multiple bugs and a typo, occurred during the multi-
+component transition.
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
-> 
-> o based on latest Mark's "for-2.6.37"
-> 
->  sound/soc/sh/Kconfig    |    7 +++++
->  sound/soc/sh/Makefile   |    2 +
->  sound/soc/sh/fsi-hdmi.c |   61 +++++++++++++++++++++++++++++++++++++++++++++++
->  3 files changed, 70 insertions(+), 0 deletions(-)
->  create mode 100644 sound/soc/sh/fsi-hdmi.c
-> 
-> diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
-> index 52d7e8e..6b224d2 100644
-> --- a/sound/soc/sh/Kconfig
-> +++ b/sound/soc/sh/Kconfig
-> @@ -62,6 +62,13 @@ config SND_FSI_DA7210
->  	  This option enables generic sound support for the
->  	  FSI - DA7210 unit
->  
-> +config SND_FSI_HDMI
-> +	bool "FSI-HDMI sound support"
-> +	depends on SND_SOC_SH4_FSI && FB_SH_MOBILE_HDMI
-> +	help
-> +	  This option enables generic sound support for the
-> +	  FSI - HDMI unit
-> +
-
-"bool" means, if someone is linking the whole ASoC into the kernel, they 
-will not be able to build this as a module. Not a big deal, but you're 
-stealing some freedom from the user.
-
-With this config option you will have 3 SND_SOC_SH4_FSI implementations in 
-the Kconfig, all selectable independently. Do you really think it makes 
-sense and would work, if someone were to select more than one of those 
-options at the same time?
-
->  config SND_SIU_MIGOR
->  	tristate "SIU sound support on Migo-R"
->  	depends on SH_MIGOR
-> diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
-> index 8a5a192..94476d4 100644
-> --- a/sound/soc/sh/Makefile
-> +++ b/sound/soc/sh/Makefile
-> @@ -16,9 +16,11 @@ obj-$(CONFIG_SND_SOC_SH4_SIU)	+= snd-soc-siu.o
->  snd-soc-sh7760-ac97-objs	:= sh7760-ac97.o
->  snd-soc-fsi-ak4642-objs		:= fsi-ak4642.o
->  snd-soc-fsi-da7210-objs		:= fsi-da7210.o
-> +snd-soc-fsi-hdmi-objs		:= fsi-hdmi.o
->  snd-soc-migor-objs		:= migor.o
->  
->  obj-$(CONFIG_SND_SH7760_AC97)	+= snd-soc-sh7760-ac97.o
->  obj-$(CONFIG_SND_FSI_AK4642)	+= snd-soc-fsi-ak4642.o
->  obj-$(CONFIG_SND_FSI_DA7210)	+= snd-soc-fsi-da7210.o
-> +obj-$(CONFIG_SND_FSI_HDMI)	+= snd-soc-fsi-hdmi.o
->  obj-$(CONFIG_SND_SIU_MIGOR)	+= snd-soc-migor.o
-> diff --git a/sound/soc/sh/fsi-hdmi.c b/sound/soc/sh/fsi-hdmi.c
-> new file mode 100644
-> index 0000000..950e3e0
-> --- /dev/null
-> +++ b/sound/soc/sh/fsi-hdmi.c
-> @@ -0,0 +1,61 @@
-> +/*
-> + * FSI - HDMI sound support
-> + *
-> + * Copyright (C) 2010 Renesas Solutions Corp.
-> + * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> + *
-> + * This file is subject to the terms and conditions of the GNU General Public
-> + * License.  See the file "COPYING" in the main directory of this archive
-> + * for more details.
-> + */
-> +
-> +#include <linux/platform_device.h>
-> +#include <sound/sh_fsi.h>
-> +#include <video/sh_mobile_hdmi.h>
-
-Now that everything is done with strings - do you still need these 
-headers?
-
-> +
-> +static struct snd_soc_dai_link fsi_dai_link = {
-> +	.name		= "HDMI",
-> +	.stream_name	= "HDMI",
-> +	.cpu_dai_name	= "fsib-dai", /* fsi B */
-> +	.codec_dai_name	= "sh_mobile_hdmi-hifi",
-> +	.platform_name	= "sh_fsi2",
-> +	.codec_name	= "sh-mobile-hdmi",
-> +};
-> +
-> +static struct snd_soc_card fsi_soc_card  = {
-> +	.name		= "FSI",
-> +	.dai_link	= &fsi_dai_link,
-> +	.num_links	= 1,
-> +};
-> +
-> +static struct platform_device *fsi_snd_device;
-> +
-> +static int __init fsi_hdmi_init(void)
-> +{
-> +	int ret = -ENOMEM;
-> +
-> +	fsi_snd_device = platform_device_alloc("soc-audio", FSI_PORT_B);
-> +	if (!fsi_snd_device)
-> +		goto out;
-> +
-> +	platform_set_drvdata(fsi_snd_device, &fsi_soc_card);
-> +	ret = platform_device_add(fsi_snd_device);
-> +
-> +	if (ret)
-> +		platform_device_put(fsi_snd_device);
-> +
-> +out:
-> +	return ret;
-> +}
-> +
-> +static void __exit fsi_hdmi_exit(void)
-> +{
-> +	platform_device_unregister(fsi_snd_device);
-> +}
-> +
-> +module_init(fsi_hdmi_init);
-> +module_exit(fsi_hdmi_exit);
-> +
-> +MODULE_LICENSE("GPL");
-> +MODULE_DESCRIPTION("Generic SH4 FSI-HDMI sound card");
-> +MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
-> -- 
-> 1.7.0.4
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ sound/soc/sh/siu.h     |    2 ++
+ sound/soc/sh/siu_dai.c |   41 +++++++++++++++++++++++++++++------------
+ sound/soc/sh/siu_pcm.c |    2 +-
+ 3 files changed, 32 insertions(+), 13 deletions(-)
+
+diff --git a/sound/soc/sh/siu.h b/sound/soc/sh/siu.h
+index 1c0e1f7..9f4dcb9 100644
+--- a/sound/soc/sh/siu.h
++++ b/sound/soc/sh/siu.h
+@@ -98,7 +98,9 @@ enum {
+ 	SIU_CLKB_EXT
+ };
+ 
++struct device;
+ struct siu_info {
++	struct device		*dev;
+ 	int			port_id;
+ 	u32 __iomem		*pram;
+ 	u32 __iomem		*xram;
+diff --git a/sound/soc/sh/siu_dai.c b/sound/soc/sh/siu_dai.c
+index 827940a..af53b64 100644
+--- a/sound/soc/sh/siu_dai.c
++++ b/sound/soc/sh/siu_dai.c
+@@ -71,8 +71,7 @@ struct port_flag {
+ 	struct format_flag	capture;
+ };
+ 
+-struct siu_info *siu_i2s_data = NULL;
+-EXPORT_SYMBOL_GPL(siu_i2s_data);
++struct siu_info *siu_i2s_data;
+ 
+ static struct port_flag siu_flags[SIU_PORT_NUM] = {
+ 	[SIU_PORT_A] = {
+@@ -113,7 +112,7 @@ static void siu_dai_start(struct siu_port *port_info)
+ 	dev_dbg(port_info->pcm->card->dev, "%s\n", __func__);
+ 
+ 	/* Turn on SIU clock */
+-	pm_runtime_get_sync(port_info->pcm->card->dev);
++	pm_runtime_get_sync(info->dev);
+ 
+ 	/* Issue software reset to siu */
+ 	siu_write32(base + SIU_SRCTL, 0);
+@@ -160,7 +159,7 @@ static void siu_dai_stop(struct siu_port *port_info)
+ 	siu_write32(base + SIU_SRCTL, 0);
+ 
+ 	/* Turn off SIU clock */
+-	pm_runtime_put_sync(port_info->pcm->card->dev);
++	pm_runtime_put_sync(info->dev);
+ }
+ 
+ static void siu_dai_spbAselect(struct siu_port *port_info)
+@@ -675,20 +674,36 @@ static int siu_dai_set_sysclk(struct snd_soc_dai *dai, int clk_id,
+ 	}
+ 
+ 	siu_clk = clk_get(dai->dev, siu_name);
+-	if (IS_ERR(siu_clk))
++	if (IS_ERR(siu_clk)) {
++		dev_err(dai->dev, "%s: cannot get a SIU clock: %ld\n", __func__,
++			PTR_ERR(siu_clk));
+ 		return PTR_ERR(siu_clk);
++	}
+ 
+ 	parent_clk = clk_get(dai->dev, parent_name);
+-	if (!IS_ERR(parent_clk)) {
+-		ret = clk_set_parent(siu_clk, parent_clk);
+-		if (!ret)
+-			clk_set_rate(siu_clk, freq);
+-		clk_put(parent_clk);
++	if (IS_ERR(parent_clk)) {
++		ret = PTR_ERR(parent_clk);
++		dev_err(dai->dev, "cannot get a SIU clock parent: %d\n", ret);
++		goto epclkget;
++	}
++
++	ret = clk_set_parent(siu_clk, parent_clk);
++	if (ret < 0) {
++		dev_err(dai->dev, "cannot reparent the SIU clock: %d\n", ret);
++		goto eclksetp;
+ 	}
+ 
++	ret = clk_set_rate(siu_clk, freq);
++	if (ret < 0)
++		dev_err(dai->dev, "cannot set SIU clock rate: %d\n", ret);
++
++	/* TODO: when clkdev gets reference counting we'll move these to siu_dai_shutdown() */
++eclksetp:
++	clk_put(parent_clk);
++epclkget:
+ 	clk_put(siu_clk);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static struct snd_soc_dai_ops siu_dai_ops = {
+@@ -700,7 +715,7 @@ static struct snd_soc_dai_ops siu_dai_ops = {
+ };
+ 
+ static struct snd_soc_dai_driver siu_i2s_dai = {
+-	.name	= "sui-i2s-dai",
++	.name	= "siu-i2s-dai",
+ 	.playback = {
+ 		.channels_min = 2,
+ 		.channels_max = 2,
+@@ -727,6 +742,7 @@ static int __devinit siu_probe(struct platform_device *pdev)
+ 	if (!info)
+ 		return -ENOMEM;
+ 	siu_i2s_data = info;
++	info->dev = &pdev->dev;
+ 
+ 	ret = request_firmware(&fw_entry, "siu_spb.bin", &pdev->dev);
+ 	if (ret)
+@@ -828,6 +844,7 @@ static int __devexit siu_remove(struct platform_device *pdev)
+ 
+ static struct platform_driver siu_driver = {
+ 	.driver 	= {
++		.owner	= THIS_MODULE,
+ 		.name	= "siu-pcm-audio",
+ 	},
+ 	.probe		= siu_probe,
+diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
+index d8c6139..ed29c9e 100644
+--- a/sound/soc/sh/siu_pcm.c
++++ b/sound/soc/sh/siu_pcm.c
+@@ -343,7 +343,7 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
+ {
+ 	/* Playback / Capture */
+ 	struct snd_soc_pcm_runtime *rtd = ss->private_data;
+-	struct siu_platform *pdata = snd_soc_platform_get_drvdata(rtd->platform);
++	struct siu_platform *pdata = rtd->platform->dev->platform_data;
+ 	struct siu_info *info = siu_i2s_data;
+ 	struct siu_port *port_info = siu_port_info(ss);
+ 	struct siu_stream *siu_stream;
+-- 
+1.7.1
+
