@@ -1,36 +1,47 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 14 Sep 2010 08:37:12 +0000
-Subject: Re: [PATCH] sh: Set CONFIG_SYSFS_DEPRECATED_V2=n
-Message-Id: <20100914083712.GN7336@linux-sh.org>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Thu, 23 Sep 2010 13:33:54 +0000
+Subject: [PATCH 2/2] tmio_mmc: fix CMD irq handling
+Message-Id: <1285248834-4434-2-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2bf9c3bb585d142503d6b7f3669e2138ba9ed112.1282398356.git.matt@console-pimps.org>
-In-Reply-To: <2bf9c3bb585d142503d6b7f3669e2138ba9ed112.1282398356.git.matt@console-pimps.org>
+References: <1285248834-4434-1-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1285248834-4434-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Ian Molton <spyro@f2s.com>, linux-sh@vger.kernel.org, Arnd Hannemann <arnd@arndnet.de>
 
-On Sun, Aug 22, 2010 at 07:06:01PM +0900, Paul Mundt wrote:
-> On Sat, Aug 21, 2010 at 03:13:44PM +0100, Matt Fleming wrote:
-> > On Sat, Aug 21, 2010 at 02:47:59PM +0100, Matt Fleming wrote:
-> > > As the help for the config option suggests, this option really shouldn't
-> > > be set by default for any recent distribution as it changes the layout
-> > > of sysfs. I spotted this while running debian when udev got very
-> > > confused by the sysfs layout and failed to create some device nodes.
-> > > 
-> > > Signed-off-by: Matt Fleming <matt@console-pimps.org>
-> > > ---
-> > >  arch/sh/configs/sh7785lcr_defconfig |    1 -
-> > >  1 files changed, 0 insertions(+), 1 deletions(-)
-> > 
-> > Hmm.. on second thought, this option should probably be removed from all
-> > the defconfigs in arch/sh/configs as it defaults to 'n' in
-> > init/Kconfig. Unless anyone knows of a specific reason to leave it
-> > enabled for a particular board?
-> 
-> No, the only reason it is still enabled for some boards is because people
-> rarely if ever send defconfigs updates that actually match the configs
-> being regularly used. Killing it off uniformly is fine.
+With current code card insert/eject interrupts will acknowledge outstanding
+commands. Normally this seems to be no problem, however if the hardware gets
+stuck and no interrupts for CMD_TIMEOUT or CMD_RESPEND are generated, then
+inserting and ejecting cards will falsely acknowledge outstanding commands from
+the core.
 
-Ok, I actually forgot to apply this, so it's applied now. Hopefully that
-will be the end of that!
+This patch changes the behavior so that CMDs are only acked, if
+CMD_TIMEOUT or CMD_RESPEND is received.
+
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+---
+ drivers/mmc/host/tmio_mmc.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index cb66af5..75a0aca 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -430,8 +430,10 @@ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
+  */
+ 
+ 		/* Command completion */
+-		if (ireg & TMIO_MASK_CMD) {
+-			ack_mmc_irqs(host, TMIO_MASK_CMD);
++		if (ireg & (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT)) {
++			ack_mmc_irqs(host,
++				     TMIO_STAT_CMDRESPEND |
++				     TMIO_STAT_CMDTIMEOUT);
+ 			tmio_mmc_cmd_irq(host, status);
+ 		}
+ 
+-- 
+1.7.0.4
+
