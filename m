@@ -1,40 +1,73 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 17 Sep 2010 13:13:13 +0000
-Subject: Re: [PATCH 0/5] fix SIU and Migo-R sound for 2.6.37
-Message-Id: <Pine.LNX.4.64.1009171509280.4988@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 24 Sep 2010 09:05:38 +0000
+Subject: [PATCH] sh: boot kernel with SR.BL set
+Message-Id: <20100924090538.13826.99190.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
-	<20100917121931.GC4322@rakim.wolfsonmicro.main>
-	<Pine.LNX.4.64.1009171433270.4988@axis700.grange>
-	<20100917125939.GG4322@rakim.wolfsonmicro.main>
-In-Reply-To: <20100917125939.GG4322@rakim.wolfsonmicro.main>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: alsa-devel@alsa-project.org, Liam Girdwood <lrg@slimlogic.co.uk>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, 17 Sep 2010, Mark Brown wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> On Fri, Sep 17, 2010 at 02:35:09PM +0200, Guennadi Liakhovetski wrote:
-> 
-> > Ok, sorry, but in fact this patch and the rest of the series are 
-> > independent, so, it should be no problem just to pick it up from here, or 
-> > do I have to re-send anything?
-> 
-> I've not yet tried applying it
+Update the SH kernel to keep SR.BL set until the VBR
+register has been initialized. Useful to allow boot
+of the kernel even though exceptions are pending.
 
-I did, worked fine - only with offsets. Otherwise, I certainly wouldn't 
-suggest to take it directly.
+Without this patch there is a window of time when
+exceptions such as NMI are enabled but no exception
+handlers are installed.
 
-> but I'd anticipate some breakage trying
-> to do so due to the multi-component changes in the file in for-2.6.37.
-> I'll do so later today or tomorrow, if it applies fine there's no need
-> to resubmit.
+This patch modifies both the zImage loader and the
+actual kernel to boot with BL=1, but the zImage
+loader is modfied in such a way that the init_sr
+value is unchanged to not break the zImage loader
+provided by kexec.
 
-Good, thanks!
-Guennadi
+Tested on sh7724 Ecovec and on the SH4AL-DSP core
+included in sh7372.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ arch/sh/boot/compressed/head_32.S |    4 +++-
+ arch/sh/kernel/head_32.S          |    2 +-
+ arch/sh/kernel/traps_32.c         |    3 +++
+ 3 files changed, 7 insertions(+), 2 deletions(-)
+
+--- 0001/arch/sh/boot/compressed/head_32.S
++++ work/arch/sh/boot/compressed/head_32.S	2010-09-24 17:52:43.000000000 +0900
+@@ -91,7 +91,9 @@ bss_start_addr:
+ end_addr:
+ 	.long	_end
+ init_sr:
+-	.long	0x400000F0	/* Privileged mode, Bank=0, Block=0, IMASK=0xF */
++	.long	0x500000F0	/* Privileged mode, Bank=0, Block=1, IMASK=0xF */
++kexec_magic:
++	.long	0x400000F0	/* magic used by kexec to parse zImage format */
+ init_stack_addr:
+ 	.long	stack_start
+ decompress_kernel_addr:
+--- 0001/arch/sh/kernel/head_32.S
++++ work/arch/sh/kernel/head_32.S	2010-09-24 17:48:10.000000000 +0900
+@@ -330,7 +330,7 @@ ENTRY(_stext)
+ #if defined(CONFIG_CPU_SH2)
+ 1:	.long	0x000000F0		! IMASK=0xF
+ #else
+-1:	.long	0x400080F0		! MD=1, RB=0, BL=0, FD=1, IMASK=0xF
++1:	.long	0x500080F0		! MD=1, RB=0, BL=1, FD=1, IMASK=0xF
+ #endif
+ ENTRY(stack_start)
+ 2:	.long	init_thread_union+THREAD_SIZE
+--- 0001/arch/sh/kernel/traps_32.c
++++ work/arch/sh/kernel/traps_32.c	2010-09-24 17:48:10.000000000 +0900
+@@ -802,6 +802,9 @@ void __cpuinit per_cpu_trap_init(void)
+ 		     : /* no output */
+ 		     : "r" (&vbr_base)
+ 		     : "memory");
++
++	/* disable exception blocking now when the vbr has been setup */
++	clear_bl_bit();
+ }
+ 
+ void *set_exception_table_vec(unsigned int vec, void *handler)
