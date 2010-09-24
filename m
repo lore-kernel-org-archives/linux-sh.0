@@ -1,29 +1,58 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Mon, 20 Sep 2010 09:29:08 +0000
-Subject: Re: [alsa-devel] [PATCH 3/5] ASoC: lowercase wm8978 codec name to
-Message-Id: <20100920092908.GA3414@rakim.wolfsonmicro.main>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 24 Sep 2010 07:33:28 +0000
+Subject: Re: [PATCH 2/2 v2] ARM: mach-shmobile: clock-sh7372: FSI parent select
+Message-Id: <w3piq1vsiif.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1009171129550.4988@axis700.grange>
- <Pine.LNX.4.64.1009171214281.4988@axis700.grange>
- <20100917125319.GF4322@rakim.wolfsonmicro.main>
- <1284970372.3403.15.camel@odin>
-In-Reply-To: <1284970372.3403.15.camel@odin>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Liam Girdwood <lrg@slimlogic.co.uk>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 20, 2010 at 09:12:52AM +0100, Liam Girdwood wrote:
 
-> Fwiw, the reason for the "-codec" suffix was to distinguish codec
-> devices from their other multi-function IC siblings. It also makes sense
+Hi Magnus
 
-Yes, MFDs do need something to distinguish them.
+Thank you for checking patch !!
 
-> here to use convention with the device naming too (even if the device is
-> single purpose).
+> > +       /*
+> > +        * FSIACK is connected to AK4642,
+> > +        * and the rate is depend on playing sound rate.
+> > +        * So, set dummy rate (= 48k) here
+> > +        */
+> > +       ret = clk_set_rate(&sh7372_fsiack_clk, FSIACK_DUMMY_RATE);
+> > +       if (ret < 0) {
+> > +               pr_err("Cannot set FSIACK dummy rate: %d\n", ret);
+> > +               return ret;
+> > +       }
+> > +
+> > +       fsia_ick = clk_get(&fsi_device.dev, "icka");
+> > +       if (IS_ERR(fsia_ick)) {
+> > +               ret = PTR_ERR(fsia_ick);
+> > +               pr_err("Cannot get FSI ICK: %d\n", ret);
+> > +               return ret;
+> > +       }
+> > +
+> > +       ret = clk_set_parent(fsia_ick, &sh7372_fsiack_clk);
+> > +       if (ret < 0) {
+> > +               pr_err("Cannot set FSI-A parent: %d\n", ret);
+> > +               goto out;
+> > +       }
+> > +
+> > +       ret = clk_set_rate(fsia_ick, FSIACK_DUMMY_RATE);
+> > +       if (ret < 0)
+> > +               pr_err("Cannot set FSI-A rate: %d\n", ret);
+> 
+> Is it really necessary to perform clk_set_rate() two times?
 
-I don't find it adds much more than making the name longer to type - we
-always use the name in a context where it's fairly obvious that the
-device is a CODEC.
+Yes. both are needed.
+
+1st dummy clk_set_rate is needed to ensure
+clk->rate of external pin (which is needed for 2nd clk_set_rate).
+
+2nd clk_set_rate assure 1/1 clock divide for FSI-A.
+because default FSI-A division ratio is 1/64.
+
+Thanks
+
+Best regards
+--
+Kuninori Morimoto
