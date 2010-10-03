@@ -1,50 +1,64 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Wed, 06 Oct 2010 18:37:05 +0000
-Subject: Re: [PATCH 7/7] sh: Annotate oprofile_arch_exit() with __exit
-Message-Id: <20101006183705.GX13563@erda.amd.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 03 Oct 2010 04:24:42 +0000
+Subject: [PATCH] sh: fix an ms7724se compile breakage
+Message-Id: <Pine.LNX.4.64.1010030622230.15920@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1286222593.git.matt@console-pimps.org>
- <4426d17460dc88dcb3d6e3af1b91af4db83785ae.1286222593.git.matt@console-pimps.org>
-In-Reply-To: <4426d17460dc88dcb3d6e3af1b91af4db83785ae.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org
 
-On 04.10.10 16:44:25, Matt Fleming wrote:
-> In order to avoid a section mismatch we need to annotate
-> oprofile_arch_exit() with an __exit marker.
-> 
-> Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Fix a compile breakage, caused by my own careless copy-paste.
 
-Looks good.
-
--Robert
-
-> ---
->  arch/sh/oprofile/common.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/sh/oprofile/common.c b/arch/sh/oprofile/common.c
-> index 449f842..93033d8 100644
-> --- a/arch/sh/oprofile/common.c
-> +++ b/arch/sh/oprofile/common.c
-> @@ -29,7 +29,7 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
->  	return oprofile_perf_init(ops);
->  }
->  
-> -void oprofile_arch_exit(void)
-> +void __exit oprofile_arch_exit(void)
->  {
->  	oprofile_perf_exit();
->  }
-> -- 
-> 1.7.1
-> 
-> 
-
--- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 3099c36..fe208d6 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -148,14 +148,14 @@ const static struct fb_videomode lcdc_720p_modes[] = {
+ 	{
+ 		.name		= "LB070WV1",
+ 		.sync		= 0, /* hsync and vsync are active low */
+-		.xres		= 1280;
+-		.yres		= 720;
+-		.left_margin	= 220;
+-		.right_margin	= 110;
+-		.hsync_len	= 40;
+-		.upper_margin	= 20;
+-		.lower_margin	= 5;
+-		.vsync_len	= 5;
++		.xres		= 1280,
++		.yres		= 720,
++		.left_margin	= 220,
++		.right_margin	= 110,
++		.hsync_len	= 40,
++		.upper_margin	= 20,
++		.lower_margin	= 5,
++		.vsync_len	= 5,
+ 	},
+ };
+ 
+@@ -163,14 +163,14 @@ const static struct fb_videomode lcdc_vga_modes[] = {
+ 	{
+ 		.name		= "LB070WV1",
+ 		.sync		= 0, /* hsync and vsync are active low */
+-		.xres		= 640;
+-		.yres		= 480;
+-		.left_margin	= 105;
+-		.right_margin	= 50;
+-		.hsync_len	= 96;
+-		.upper_margin	= 33;
+-		.lower_margin	= 10;
+-		.vsync_len	= 2;
++		.xres		= 640,
++		.yres		= 480,
++		.left_margin	= 105,
++		.right_margin	= 50,
++		.hsync_len	= 96,
++		.upper_margin	= 33,
++		.lower_margin	= 10,
++		.vsync_len	= 2,
+ 	},
+ };
+ 
