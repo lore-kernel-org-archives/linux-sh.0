@@ -1,148 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 28 Oct 2010 12:34:56 +0000
-Subject: [PATCH 4/4] fbdev: sh_mobile_hdmi: add support for E-EDID parsing
-Message-Id: <Pine.LNX.4.64.1010281433300.1257@axis700.grange>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Mon, 04 Oct 2010 20:44:25 +0000
+Subject: [PATCH 7/7] sh: Annotate oprofile_arch_exit() with __exit marker
+Message-Id: <4426d17460dc88dcb3d6e3af1b91af4db83785ae.1286222593.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1010150952030.3945@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1010150952030.3945@axis700.grange>
+References: <cover.1286222593.git.matt@console-pimps.org>
+In-Reply-To: <cover.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-Many HDMI clients implement enhanced EDID blocks, which often contain
-additional supported video modes. This patch implements parsing of such
-E-EDID blocks.
+In order to avoid a section mismatch we need to annotate
+oprofile_arch_exit() with an __exit marker.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
 ---
- drivers/video/sh_mobile_hdmi.c |   60 ++++++++++++++++++++++++++++++++-------
- 1 files changed, 49 insertions(+), 11 deletions(-)
+ arch/sh/oprofile/common.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index b1c6aed..df6a01b 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -208,6 +208,9 @@ struct sh_hdmi {
- 	void __iomem *base;
- 	enum hotplug_state hp_state;	/* hot-plug status */
- 	bool preprogrammed_mode;	/* use a pre-programmed VIC or the external mode */
-+	u8 edid_block_addr;
-+	u8 edid_segment_nr;
-+	u8 edid_blocks;
- 	struct clk *hdmi_clk;
- 	struct device *dev;
- 	struct fb_info *info;
-@@ -677,7 +680,38 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
- 	printk(KERN_CONT "\n");
- #endif
+diff --git a/arch/sh/oprofile/common.c b/arch/sh/oprofile/common.c
+index 449f842..93033d8 100644
+--- a/arch/sh/oprofile/common.c
++++ b/arch/sh/oprofile/common.c
+@@ -29,7 +29,7 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 	return oprofile_perf_init(ops);
+ }
  
--	fb_edid_to_monspecs(edid, &hdmi->monspec);
-+	if (!hdmi->edid_blocks) {
-+		fb_edid_to_monspecs(edid, &hdmi->monspec);
-+		hdmi->edid_blocks = edid[126] + 1;
-+
-+		dev_dbg(hdmi->dev, "%d main modes, %d extension blocks\n",
-+			hdmi->monspec.modedb_len, hdmi->edid_blocks - 1);
-+	} else {
-+		dev_dbg(hdmi->dev, "Extension %u detected, DTD start %u\n",
-+			edid[0], edid[2]);
-+		fb_edid_add_monspecs(edid, &hdmi->monspec);
-+	}
-+
-+	if (hdmi->edid_blocks > hdmi->edid_segment_nr * 2 +
-+	    (hdmi->edid_block_addr >> 7) + 1) {
-+		/* More blocks to read */
-+		if (hdmi->edid_block_addr) {
-+			hdmi->edid_block_addr = 0;
-+			hdmi->edid_segment_nr++;
-+		} else {
-+			hdmi->edid_block_addr = 0x80;
-+		}
-+		/* Set EDID word address  */
-+		hdmi_write(hdmi, hdmi->edid_block_addr, HDMI_EDID_WORD_ADDRESS);
-+		/* Enable EDID interrupt */
-+		hdmi_write(hdmi, 0xC6, HDMI_INTERRUPT_MASK_1);
-+		/* Set EDID segment pointer - starts reading EDID */
-+		hdmi_write(hdmi, hdmi->edid_segment_nr, HDMI_EDID_SEGMENT_POINTER);
-+		return -EAGAIN;
-+	}
-+
-+	/* All E-EDID blocks ready */
-+	dev_dbg(hdmi->dev, "%d main and extended modes\n", hdmi->monspec.modedb_len);
- 
- 	fb_get_options("sh_mobile_lcdc", &forced);
- 	if (forced && *forced) {
-@@ -816,32 +850,34 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- 		/* Check, if hot plug & MSENS pin status are both high */
- 		if ((msens & 0xC0) = 0xC0) {
- 			/* Display plug in */
-+			hdmi->edid_segment_nr = 0;
-+			hdmi->edid_block_addr = 0;
-+			hdmi->edid_blocks = 0;
- 			hdmi->hp_state = HDMI_HOTPLUG_CONNECTED;
- 
- 			/* Set EDID word address  */
- 			hdmi_write(hdmi, 0x00, HDMI_EDID_WORD_ADDRESS);
--			/* Set EDID segment pointer */
--			hdmi_write(hdmi, 0x00, HDMI_EDID_SEGMENT_POINTER);
- 			/* Enable EDID interrupt */
- 			hdmi_write(hdmi, 0xC6, HDMI_INTERRUPT_MASK_1);
-+			/* Set EDID segment pointer - starts reading EDID */
-+			hdmi_write(hdmi, 0x00, HDMI_EDID_SEGMENT_POINTER);
- 		} else if (!(status1 & 0x80)) {
- 			/* Display unplug, beware multiple interrupts */
--			if (hdmi->hp_state != HDMI_HOTPLUG_DISCONNECTED)
-+			if (hdmi->hp_state != HDMI_HOTPLUG_DISCONNECTED) {
-+				hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED;
- 				schedule_delayed_work(&hdmi->edid_work, 0);
--
--			hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED;
-+			}
- 			/* display_off will switch back to mode_a */
- 		}
- 	} else if (status1 & 2) {
- 		/* EDID error interrupt: retry */
- 		/* Set EDID word address  */
--		hdmi_write(hdmi, 0x00, HDMI_EDID_WORD_ADDRESS);
-+		hdmi_write(hdmi, hdmi->edid_block_addr, HDMI_EDID_WORD_ADDRESS);
- 		/* Set EDID segment pointer */
--		hdmi_write(hdmi, 0x00, HDMI_EDID_SEGMENT_POINTER);
-+		hdmi_write(hdmi, hdmi->edid_segment_nr, HDMI_EDID_SEGMENT_POINTER);
- 	} else if (status1 & 4) {
- 		/* Disable EDID interrupt */
- 		hdmi_write(hdmi, 0xC0, HDMI_INTERRUPT_MASK_1);
--		hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE;
- 		schedule_delayed_work(&hdmi->edid_work, msecs_to_jiffies(10));
- 	}
- 
-@@ -970,7 +1006,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 
- 	mutex_lock(&hdmi->mutex);
- 
--	if (hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE) {
-+	if (hdmi->hp_state = HDMI_HOTPLUG_CONNECTED) {
- 		unsigned long parent_rate = 0, hdmi_rate;
- 
- 		/* A device has been plugged in */
-@@ -980,6 +1016,8 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 		if (ret < 0)
- 			goto out;
- 
-+		hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE;
-+
- 		/* Reconfigure the clock */
- 		ret = sh_hdmi_clk_configure(hdmi, hdmi_rate, parent_rate);
- 		if (ret < 0)
-@@ -1030,7 +1068,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 	}
- 
- out:
--	if (ret < 0)
-+	if (ret < 0 && ret != -EAGAIN)
- 		hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED;
- 	mutex_unlock(&hdmi->mutex);
- 
+-void oprofile_arch_exit(void)
++void __exit oprofile_arch_exit(void)
+ {
+ 	oprofile_perf_exit();
+ }
 -- 
 1.7.1
 
