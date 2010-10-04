@@ -1,52 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Oct 2010 07:17:57 +0000
-Subject: [PATCH 03/08] ARM: Make alignment_trap macro self-contained
-Message-Id: <20101006071757.28048.71028.sendpatchset@t400s>
+From: "Microsoft Email Promo Team" <information@microsoft.com>
+Date: Mon, 04 Oct 2010 22:07:04 +0000
+Subject: You have won (Congratulations)
+Message-Id: <35519.41.220.68.3.1286230024.squirrel@41.220.68.3>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101006071731.28048.89938.sendpatchset@t400s>
-In-Reply-To: <20101006071731.28048.89938.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+You have won (Congratulations)
 
-Remove the .LCcralign dependency from the aligment_trap
-macro. Needed to create multiple __irq_usr instances.
+The MICROSOFT EMAIL PROMO TEAM is glad to announce that
+after a successful completion of the PROMO DRAWS held on the 3rd October
+2010,your e-mail address,attached to winning
+numbers:(11) (80) (12)(96) (09) (43) won in the Tenth
+lottery category.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+You have therefore been approved to claim a total sum of
+=A3450,000,00 Pounds Sterling in cash credited to REF NO:MICRO-L/2009-END10.
+All participants were selected through our Microsoft computer ballot
+system drawn from 167,000 Names,as part of our International  "E-MAIL"
+Promotion Program for our prominent MS-WORD users all over the world and
+for the continuous use of the internet. You are advised to contact the
+claims
+processor with the details below via his e-mail address :
 
- arch/arm/include/asm/entry-header.S |    6 +++++-
- arch/arm/kernel/entry-armv.S        |    2 --
- 2 files changed, 5 insertions(+), 3 deletions(-)
+NAME:  Glenn Bradley
+EMAIL: glennbradley1@yahoo.com.hk
 
---- 0003/arch/arm/include/asm/entry-header.S
-+++ work/arch/arm/include/asm/entry-header.S	2010-10-06 15:06:16.000000000 +0900
-@@ -38,9 +38,13 @@
- 
- 	.macro	alignment_trap, rtemp
- #ifdef CONFIG_ALIGNMENT_TRAP
--	ldr	\rtemp, .LCcralign
-+	ldr	\rtemp, 1f
- 	ldr	\rtemp, [\rtemp]
- 	mcr	p15, 0, \rtemp, c1, c0
-+	b	2f
-+1:
-+	.word	cr_alignment
-+2:
- #endif
- 	.endm
- 
---- 0003/arch/arm/kernel/entry-armv.S
-+++ work/arch/arm/kernel/entry-armv.S	2010-10-06 14:28:47.000000000 +0900
-@@ -255,8 +255,6 @@ __pabt_svc:
- ENDPROC(__pabt_svc)
- 
- 	.align	5
--.LCcralign:
--	.word	cr_alignment
- #ifdef MULTI_DABORT
- .LCprocfns:
- 	.word	processor
+PLEASE NOTE YOU ARE TO SEND THE FOLLOWING INFORMATION TO CLAIM YOUR PRIZE:
+1.Full Name:... 2.Address:... 3.Phone:... 4.Country:... 5.Sex/Gender:...
+
+YOURS SINCERELY,
+Eileen Quincy.
+
