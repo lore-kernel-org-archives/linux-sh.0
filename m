@@ -1,32 +1,75 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Wed, 06 Oct 2010 12:41:05 +0000
-Subject: Re: [PATCH 3/7] ARM: oprofile: Rename op_arm to oprofile_perf
-Message-Id: <20101006124105.GN13563@erda.amd.com>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Mon, 04 Oct 2010 20:44:22 +0000
+Subject: [PATCH 4/7] ARM: oprofile: Move non-ARM code into separate init/exit
+Message-Id: <74092b0d162aafc21e408033cec6146e227363b5.1286222593.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1286222593.git.matt@console-pimps.org>
- <094e8a33da82ce840f77fd1f7646391c08205b6e.1286222593.git.matt@console-pimps.org>
-In-Reply-To: <094e8a33da82ce840f77fd1f7646391c08205b6e.1286222593.git.matt@console-pimps.org>
+In-Reply-To: <cover.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On 04.10.10 16:44:21, Matt Fleming wrote:
-> In preparation for moving the generic functions out of this file, give
-> the functions more general names (e.g. remove "arm" from the names).
-> 
-> Signed-off-by: Matt Fleming <matt@console-pimps.org>
-> Tested-by: Will Deacon <will.deacon@arm.com>
-> ---
->  arch/arm/oprofile/common.c |   68 ++++++++++++++++++++++----------------------
->  1 files changed, 34 insertions(+), 34 deletions(-)
+In preparation for moving the majority of this oprofile code into an
+architecture-neutral place separate the architecture-independent code
+into oprofile_perf_init() and oprofile_perf_exit().
 
-This patch looks good.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Tested-by: Will Deacon <will.deacon@arm.com>
+---
+ arch/arm/oprofile/common.c |   17 ++++++++++++++---
+ 1 files changed, 14 insertions(+), 3 deletions(-)
 
--Robert
-
+diff --git a/arch/arm/oprofile/common.c b/arch/arm/oprofile/common.c
+index 86df75f..e4cd332 100644
+--- a/arch/arm/oprofile/common.c
++++ b/arch/arm/oprofile/common.c
+@@ -327,7 +327,7 @@ static void arm_backtrace(struct pt_regs * const regs, unsigned int depth)
+ 		tail = user_backtrace(tail);
+ }
+ 
+-int __init oprofile_arch_init(struct oprofile_operations *ops)
++int __init oprofile_perf_init(struct oprofile_operations *ops)
+ {
+ 	int cpu, ret = 0;
+ 
+@@ -365,7 +365,6 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 		}
+ 	}
+ 
+-	ops->backtrace		= arm_backtrace;
+ 	ops->create_files	= oprofile_perf_create_files;
+ 	ops->setup		= oprofile_perf_setup;
+ 	ops->start		= oprofile_perf_start;
+@@ -388,7 +387,14 @@ out:
+ 	return ret;
+ }
+ 
+-void __exit oprofile_arch_exit(void)
++int __init oprofile_arch_init(struct oprofile_operations *ops)
++{
++	ops->backtrace		= arm_backtrace;
++
++	return oprofile_perf_init(ops);
++}
++
++void __exit oprofile_perf_exit(void)
+ {
+ 	int cpu, id;
+ 	struct perf_event *event;
+@@ -406,6 +412,11 @@ void __exit oprofile_arch_exit(void)
+ 	kfree(counter_config);
+ 	exit_driverfs();
+ }
++
++void __exit oprofile_arch_exit(void)
++{
++	oprofile_perf_exit();
++}
+ #else
+ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ {
 -- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
+1.7.1
 
