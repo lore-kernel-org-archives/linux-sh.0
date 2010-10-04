@@ -1,153 +1,243 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 28 Oct 2010 18:55:26 +0000
-Subject: Re: [GIT PULL] genesis updates for 2.6.37-rc1
-Message-Id: <20101028185525.GA14720@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Mon, 04 Oct 2010 20:44:24 +0000
+Subject: [PATCH 6/7] sh: oprofile: Use perf-events oprofile backend
+Message-Id: <db62cbe463d5bce89196d6456ad386129ce0022a.1286222593.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101025014825.GD2173@linux-sh.org>
-	<20101028100912.GC3122@n2100.arm.linux.org.uk>
-In-Reply-To: <20101028100912.GC3122@n2100.arm.linux.org.uk>
+References: <cover.1286222593.git.matt@console-pimps.org>
+In-Reply-To: <cover.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On Thu, Oct 28, 2010 at 11:09:12AM +0100, Russell King - ARM Linux wrote:
-> On Mon, Oct 25, 2010 at 10:48:25AM +0900, Paul Mundt wrote:
-> > Please pull from:
-> > 
-> > 	master.kernel.org:/pub/scm/linux/kernel/git/lethal/genesis-2.6.git
-> 
-> I'm seeing a merge conflict against current mainline.  I'm not convinced
-> that there's a simple solution to this - it looks to me like the
-> snd_soc_register_codec() is not correctly placed here - as the codec
-> code references the hdmi data structure, but it's registered before the
-> hdmi data structure is setup.
-> 
-I was afraid that would happen. The ordering is certainly suspect, so
-I've moved it down and reworked it a bit. This seems to work ok:
+Now that we've got a generic perf-events based oprofile backend we might
+as well make use of it seeing as SH doesn't do anything special with its
+oprofile backend. Also introduce a new CONFIG_HW_PERF_EVENTS symbol so
+that we can fallback to using the timer interrupt for oprofile if the
+CPU doesn't support perf events.
 
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
 ---
+ arch/sh/Kconfig            |   13 +++++
+ arch/sh/oprofile/Makefile  |    4 ++
+ arch/sh/oprofile/common.c  |  109 ++++---------------------------------------
+ arch/sh/oprofile/op_impl.h |   33 -------------
+ 4 files changed, 28 insertions(+), 131 deletions(-)
+ delete mode 100644 arch/sh/oprofile/op_impl.h
 
-diff --cc drivers/video/sh_mobile_hdmi.c
-index ef989d9,f0ff284..0000000
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@@ -224,60 -227,8 +229,60 @@@ static u8 hdmi_read(struct sh_hdmi *hdm
-  	return ioread8(hdmi->base + reg);
-  }
-  
- +/*
- + *	HDMI sound
- + */
- +static unsigned int sh_hdmi_snd_read(struct snd_soc_codec *codec,
- +				     unsigned int reg)
- +{
- +	struct sh_hdmi *hdmi = snd_soc_codec_get_drvdata(codec);
- +
- +	return hdmi_read(hdmi, reg);
- +}
- +
- +static int sh_hdmi_snd_write(struct snd_soc_codec *codec,
- +			     unsigned int reg,
- +			     unsigned int value)
- +{
- +	struct sh_hdmi *hdmi = snd_soc_codec_get_drvdata(codec);
- +
- +	hdmi_write(hdmi, value, reg);
- +	return 0;
- +}
- +
- +static struct snd_soc_dai_driver sh_hdmi_dai = {
- +	.name = "sh_mobile_hdmi-hifi",
- +	.playback = {
- +		.stream_name = "Playback",
- +		.channels_min = 2,
- +		.channels_max = 8,
- +		.rates = SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100  |
- +			 SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_88200  |
- +			 SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_176400 |
- +			 SNDRV_PCM_RATE_192000,
- +		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE,
- +	},
- +};
- +
- +static int sh_hdmi_snd_probe(struct snd_soc_codec *codec)
- +{
- +	dev_info(codec->dev, "SH Mobile HDMI Audio Codec");
- +
- +	return 0;
- +}
- +
- +static struct snd_soc_codec_driver soc_codec_dev_sh_hdmi = {
- +	.probe		= sh_hdmi_snd_probe,
- +	.read		= sh_hdmi_snd_read,
- +	.write		= sh_hdmi_snd_write,
- +};
- +
- +/*
- + *	HDMI video
- + */
- +
-  /* External video parameter settings */
-- static void hdmi_external_video_param(struct sh_hdmi *hdmi)
-+ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
-  {
-  	struct fb_var_screeninfo *var = &hdmi->var;
-  	u16 htotal, hblank, hdelay, vtotal, vblank, vdelay, voffset;
-@@@ -964,11 -1079,7 +1152,8 @@@ static int __init sh_hdmi_probe(struct 
-  		return -ENOMEM;
-  	}
-  
-- 	ret =  snd_soc_register_codec(&pdev->dev,
-- 			&soc_codec_dev_sh_hdmi, &sh_hdmi_dai, 1);
-- 	if (ret < 0)
-- 		goto esndreg;
-+ 	mutex_init(&hdmi->mutex);
- +
-  	hdmi->dev = &pdev->dev;
-  
-  	hdmi->hdmi_clk = clk_get(&pdev->dev, "ick");
-@@@ -1041,8 -1136,8 +1210,17 @@@
-  		goto ereqirq;
-  	}
-  
-++	ret = snd_soc_register_codec(&pdev->dev,
-++			&soc_codec_dev_sh_hdmi, &sh_hdmi_dai, 1);
-++	if (ret < 0) {
-++		dev_err(&pdev->dev, "codec registration failed\n");
-++		goto ecodec;
-++	}
-++
-  	return 0;
-  
-++ecodec:
-++	free_irq(irq, hdmi);
-  ereqirq:
-  	pm_runtime_disable(&pdev->dev);
-  	iounmap(hdmi->base);
-@@@ -1066,17 -1159,19 +1242,21 @@@ static int __exit sh_hdmi_remove(struc
-  	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
-  	struct sh_hdmi *hdmi = platform_get_drvdata(pdev);
-  	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &pdata->lcd_chan->board_cfg;
-  	int irq = platform_get_irq(pdev, 0);
-  
- +	snd_soc_unregister_codec(&pdev->dev);
- +
-- 	pdata->lcd_chan->board_cfg.display_on = NULL;
-- 	pdata->lcd_chan->board_cfg.display_off = NULL;
-- 	pdata->lcd_chan->board_cfg.board_data = NULL;
-+ 	board_cfg->display_on = NULL;
-+ 	board_cfg->display_off = NULL;
-+ 	board_cfg->board_data = NULL;
-+ 	board_cfg->owner = NULL;
-  
-+ 	/* No new work will be scheduled, wait for running ISR */
-  	free_irq(irq, hdmi);
-- 	pm_runtime_disable(&pdev->dev);
-+ 	/* Wait for already scheduled work */
-  	cancel_delayed_work_sync(&hdmi->edid_work);
-+ 	pm_runtime_disable(&pdev->dev);
-  	clk_disable(hdmi->hdmi_clk);
-  	clk_put(hdmi->hdmi_clk);
-  	iounmap(hdmi->base);
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 33990fa..35b6c3f 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -249,6 +249,11 @@ config ARCH_SHMOBILE
+ 	select PM
+ 	select PM_RUNTIME
+ 
++config CPU_HAS_PMU
++       depends on CPU_SH4 || CPU_SH4A
++       default y
++       bool
++
+ if SUPERH32
+ 
+ choice
+@@ -738,6 +743,14 @@ config GUSA_RB
+ 	  LLSC, this should be more efficient than the other alternative of
+ 	  disabling interrupts around the atomic sequence.
+ 
++config HW_PERF_EVENTS
++	bool "Enable hardware performance counter support for perf events"
++	depends on PERF_EVENTS && CPU_HAS_PMU
++	default y
++	help
++	  Enable hardware performance counter support for perf events. If
++	  disabled, perf events will use software events only.
++
+ source "drivers/sh/Kconfig"
+ 
+ endmenu
+diff --git a/arch/sh/oprofile/Makefile b/arch/sh/oprofile/Makefile
+index 4886c5c..e85aae7 100644
+--- a/arch/sh/oprofile/Makefile
++++ b/arch/sh/oprofile/Makefile
+@@ -6,4 +6,8 @@ DRIVER_OBJS = $(addprefix ../../../drivers/oprofile/, \
+ 		oprofilefs.o oprofile_stats.o \
+ 		timer_int.o )
+ 
++ifeq ($(CONFIG_HW_PERF_EVENTS),y)
++DRIVER_OBJS += $(addprefix ../../../drivers/oprofile/, oprofile_perf.o)
++endif
++
+ oprofile-y	:= $(DRIVER_OBJS) common.o backtrace.o
+diff --git a/arch/sh/oprofile/common.c b/arch/sh/oprofile/common.c
+index ac60493..449f842 100644
+--- a/arch/sh/oprofile/common.c
++++ b/arch/sh/oprofile/common.c
+@@ -18,113 +18,26 @@
+ #include <linux/errno.h>
+ #include <linux/smp.h>
+ #include <asm/processor.h>
+-#include "op_impl.h"
+-
+-static struct op_sh_model *model;
+-
+-static struct op_counter_config ctr[20];
+ 
++#ifdef CONFIG_HW_PERF_EVENTS
+ extern void sh_backtrace(struct pt_regs * const regs, unsigned int depth);
+ 
+-static int op_sh_setup(void)
+-{
+-	/* Pre-compute the values to stuff in the hardware registers.  */
+-	model->reg_setup(ctr);
+-
+-	/* Configure the registers on all cpus.  */
+-	on_each_cpu(model->cpu_setup, NULL, 1);
+-
+-        return 0;
+-}
+-
+-static int op_sh_create_files(struct super_block *sb, struct dentry *root)
+-{
+-	int i, ret = 0;
+-
+-	for (i = 0; i < model->num_counters; i++) {
+-		struct dentry *dir;
+-		char buf[4];
+-
+-		snprintf(buf, sizeof(buf), "%d", i);
+-		dir = oprofilefs_mkdir(sb, root, buf);
+-
+-		ret |= oprofilefs_create_ulong(sb, dir, "enabled", &ctr[i].enabled);
+-		ret |= oprofilefs_create_ulong(sb, dir, "event", &ctr[i].event);
+-		ret |= oprofilefs_create_ulong(sb, dir, "kernel", &ctr[i].kernel);
+-		ret |= oprofilefs_create_ulong(sb, dir, "user", &ctr[i].user);
+-
+-		if (model->create_files)
+-			ret |= model->create_files(sb, dir);
+-		else
+-			ret |= oprofilefs_create_ulong(sb, dir, "count", &ctr[i].count);
+-
+-		/* Dummy entries */
+-		ret |= oprofilefs_create_ulong(sb, dir, "unit_mask", &ctr[i].unit_mask);
+-	}
+-
+-	return ret;
+-}
+-
+-static int op_sh_start(void)
+-{
+-	/* Enable performance monitoring for all counters.  */
+-	on_each_cpu(model->cpu_start, NULL, 1);
+-
+-	return 0;
+-}
+-
+-static void op_sh_stop(void)
+-{
+-	/* Disable performance monitoring for all counters.  */
+-	on_each_cpu(model->cpu_stop, NULL, 1);
+-}
+-
+ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ {
+-	struct op_sh_model *lmodel = NULL;
+-	int ret;
+-
+-	/*
+-	 * Always assign the backtrace op. If the counter initialization
+-	 * fails, we fall back to the timer which will still make use of
+-	 * this.
+-	 */
+ 	ops->backtrace = sh_backtrace;
+ 
+-	/*
+-	 * XXX
+-	 *
+-	 * All of the SH7750/SH-4A counters have been converted to perf,
+-	 * this infrastructure hook is left for other users until they've
+-	 * had a chance to convert over, at which point all of this
+-	 * will be deleted.
+-	 */
+-
+-	if (!lmodel)
+-		return -ENODEV;
+-	if (!(current_cpu_data.flags & CPU_HAS_PERF_COUNTER))
+-		return -ENODEV;
+-
+-	ret = lmodel->init();
+-	if (unlikely(ret != 0))
+-		return ret;
+-
+-	model = lmodel;
+-
+-	ops->setup		= op_sh_setup;
+-	ops->create_files	= op_sh_create_files;
+-	ops->start		= op_sh_start;
+-	ops->stop		= op_sh_stop;
+-	ops->cpu_type		= lmodel->cpu_type;
+-
+-	printk(KERN_INFO "oprofile: using %s performance monitoring.\n",
+-	       lmodel->cpu_type);
+-
+-	return 0;
++	return oprofile_perf_init(ops);
+ }
+ 
+ void oprofile_arch_exit(void)
+ {
+-	if (model && model->exit)
+-		model->exit();
++	oprofile_perf_exit();
++}
++#else
++int __init oprofile_arch_init(struct oprofile_operations *ops)
++{
++	pr_info("oprofile: hardware counters not available\n");
++	return -ENODEV;
+ }
++void __exit oprofile_arch_exit(void) {}
++#endif /* CONFIG_HW_PERF_EVENTS */
+diff --git a/arch/sh/oprofile/op_impl.h b/arch/sh/oprofile/op_impl.h
+deleted file mode 100644
+index 1244479..0000000
+--- a/arch/sh/oprofile/op_impl.h
++++ /dev/null
+@@ -1,33 +0,0 @@
+-#ifndef __OP_IMPL_H
+-#define __OP_IMPL_H
+-
+-/* Per-counter configuration as set via oprofilefs.  */
+-struct op_counter_config {
+-	unsigned long enabled;
+-	unsigned long event;
+-
+-	unsigned long count;
+-
+-	/* Dummy values for userspace tool compliance */
+-	unsigned long kernel;
+-	unsigned long user;
+-	unsigned long unit_mask;
+-};
+-
+-/* Per-architecture configury and hooks.  */
+-struct op_sh_model {
+-	void (*reg_setup)(struct op_counter_config *);
+-	int (*create_files)(struct super_block *sb, struct dentry *dir);
+-	void (*cpu_setup)(void *dummy);
+-	int (*init)(void);
+-	void (*exit)(void);
+-	void (*cpu_start)(void *args);
+-	void (*cpu_stop)(void *args);
+-	char *cpu_type;
+-	unsigned char num_counters;
+-};
+-
+-/* arch/sh/oprofile/common.c */
+-extern void sh_backtrace(struct pt_regs * const regs, unsigned int depth);
+-
+-#endif /* __OP_IMPL_H */
+-- 
+1.7.1
+
