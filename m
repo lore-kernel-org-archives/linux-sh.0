@@ -1,23 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Oct 2010 08:02:46 +0000
-Subject: Re: [PATCH] sh: fix uninitialized spinlock
-Message-Id: <20101006080246.GC15712@linux-sh.org>
+From: Nicolas Kaiser <nikai@nikai.net>
+Date: Mon, 04 Oct 2010 10:39:29 +0000
+Subject: [PATCH 3/5] arm/shmobile: remove duplicated include
+Message-Id: <20101004123929.094848ba@absol.kitzblitz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1286294040-6171-1-git-send-email-akinobu.mita@gmail.com>
-In-Reply-To: <1286294040-6171-1-git-send-email-akinobu.mita@gmail.com>
+References: <20101004122436.7092868f@absol.kitzblitz>
+In-Reply-To: <20101004122436.7092868f@absol.kitzblitz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 06, 2010 at 12:54:00AM +0900, Akinobu Mita wrote:
-> The spinlock in traps_64.c is used without initialization.
-> This fixes it by declaring DEFINE_SPINLOCK() and makes the spinlock static
-> variable.
-> 
-> Signed-off-by: Akinobu Mita <akinobu.mita@gmail.com>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Cc: linux-sh@vger.kernel.org
+Remove duplicated include.
 
-Hmm, there was a reason why this was non-static before, but it seems like
-whatever that was has since corrected itself.  Applied, thanks!
+Signed-off-by: Nicolas Kaiser <nikai@nikai.net>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 95935c8..3ebb5be 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -30,7 +30,6 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+-#include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+-- 
+1.7.2.2
