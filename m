@@ -1,20 +1,157 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 25 Oct 2010 01:42:44 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: ap4evb: modify LCDC1 irq number
-Message-Id: <20101025014244.GB2173@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Mon, 04 Oct 2010 20:44:20 +0000
+Subject: [PATCH 2/7] perf: New helper function for pmu name
+Message-Id: <59a8e68894a2e755232189abbe9b1a3b892e309c.1286222593.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1286222593.git.matt@console-pimps.org>
+In-Reply-To: <cover.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On Wed, Oct 20, 2010 at 11:53:17AM +0900, Kuninori Morimoto wrote:
-> From: TAKEI Mitsuharu <takei.andr@gmail.com>
-> 
-> Signed-off-by: TAKEI Mitsuharu <takei.andr@gmail.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Introduce perf_pmu_name() helper function that returns the name of the
+pmu. This gives us a generic way to get the name of a pmu regardless of
+how an architecture identifies it internally, e.g. ARM uses an id
+whereas SH currently uses a string.
 
-Applied, thanks.
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+---
+ arch/arm/kernel/perf_event.c |   23 +++++++++++++++++++++++
+ arch/arm/oprofile/common.c   |   22 +---------------------
+ arch/sh/kernel/perf_event.c  |   14 ++++++++++++++
+ include/linux/perf_event.h   |    1 +
+ kernel/perf_event.c          |    5 +++++
+ 5 files changed, 44 insertions(+), 21 deletions(-)
+
+diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
+index ef3bc33..3bff24d 100644
+--- a/arch/arm/kernel/perf_event.c
++++ b/arch/arm/kernel/perf_event.c
+@@ -123,6 +123,29 @@ armpmu_get_max_events(void)
+ }
+ EXPORT_SYMBOL_GPL(armpmu_get_max_events);
+ 
++const char *perf_pmu_name(void)
++{
++	enum arm_perf_pmu_ids id = armpmu_get_pmu_id();
++
++	switch (id) {
++	case ARM_PERF_PMU_ID_XSCALE1:
++		return "arm/xscale1";
++	case ARM_PERF_PMU_ID_XSCALE2:
++		return "arm/xscale2";
++	case ARM_PERF_PMU_ID_V6:
++		return "arm/armv6";
++	case ARM_PERF_PMU_ID_V6MP:
++		return "arm/mpcore";
++	case ARM_PERF_PMU_ID_CA8:
++		return "arm/armv7";
++	case ARM_PERF_PMU_ID_CA9:
++		return "arm/armv7-ca9";
++	default:
++		return NULL;
++	}
++}
++EXPORT_SYMBOL_GPL(perf_pmu_name);
++
+ int perf_num_counters(void)
+ {
+ 	return armpmu_get_max_events();
+diff --git a/arch/arm/oprofile/common.c b/arch/arm/oprofile/common.c
+index 23f18a0..cb224ee 100644
+--- a/arch/arm/oprofile/common.c
++++ b/arch/arm/oprofile/common.c
+@@ -155,26 +155,6 @@ static void op_perf_stop(void)
+ }
+ 
+ 
+-static char *op_name_from_perf_id(enum arm_perf_pmu_ids id)
+-{
+-	switch (id) {
+-	case ARM_PERF_PMU_ID_XSCALE1:
+-		return "arm/xscale1";
+-	case ARM_PERF_PMU_ID_XSCALE2:
+-		return "arm/xscale2";
+-	case ARM_PERF_PMU_ID_V6:
+-		return "arm/armv6";
+-	case ARM_PERF_PMU_ID_V6MP:
+-		return "arm/mpcore";
+-	case ARM_PERF_PMU_ID_CA8:
+-		return "arm/armv7";
+-	case ARM_PERF_PMU_ID_CA9:
+-		return "arm/armv7-ca9";
+-	default:
+-		return NULL;
+-	}
+-}
+-
+ static int op_arm_create_files(struct super_block *sb, struct dentry *root)
+ {
+ 	unsigned int i;
+@@ -391,7 +371,7 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 	ops->start		= op_arm_start;
+ 	ops->stop		= op_arm_stop;
+ 	ops->shutdown		= op_arm_stop;
+-	ops->cpu_type		= op_name_from_perf_id(armpmu_get_pmu_id());
++	ops->cpu_type		= perf_pmu_name();
+ 
+ 	if (!ops->cpu_type)
+ 		ret = -ENODEV;
+diff --git a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
+index 2cb9ad5..e065a1d 100644
+--- a/arch/sh/kernel/perf_event.c
++++ b/arch/sh/kernel/perf_event.c
+@@ -59,6 +59,20 @@ static inline int sh_pmu_initialized(void)
+ 	return !!sh_pmu;
+ }
+ 
++const char *perf_pmu_name(void)
++{
++	if (!sh_pmu)
++		return NULL;
++
++	if (!strcmp(sh_pmu->name, "SH7750"))
++		return "sh/sh7750";
++	if (!strcmp(sh_pmu->name, "SH-4A"))
++		return "sh/sh4a";
++
++	return NULL;
++}
++EXPORT_SYMBOL_GPL(perf_pmu_name);
++
+ int perf_num_counters(void)
+ {
+ 	if (!sh_pmu)
+diff --git a/include/linux/perf_event.h b/include/linux/perf_event.h
+index 1a02192..33f08da 100644
+--- a/include/linux/perf_event.h
++++ b/include/linux/perf_event.h
+@@ -850,6 +850,7 @@ extern int perf_max_events;
+ extern const struct pmu *hw_perf_event_init(struct perf_event *event);
+ 
+ extern int perf_num_counters(void);
++extern const char *perf_pmu_name(void);
+ extern void perf_event_task_sched_in(struct task_struct *task);
+ extern void perf_event_task_sched_out(struct task_struct *task, struct task_struct *next);
+ extern void perf_event_task_tick(struct task_struct *task);
+diff --git a/kernel/perf_event.c b/kernel/perf_event.c
+index db5b560..fc51268 100644
+--- a/kernel/perf_event.c
++++ b/kernel/perf_event.c
+@@ -85,6 +85,11 @@ void __weak hw_perf_enable(void)		{ barrier(); }
+ 
+ void __weak perf_event_print_debug(void)	{ }
+ 
++extern __weak const char *perf_pmu_name(void)
++{
++	return "pmu";
++}
++
+ static DEFINE_PER_CPU(int, perf_disable_count);
+ 
+ void perf_disable(void)
+-- 
+1.7.1
+
