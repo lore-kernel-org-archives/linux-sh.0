@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 05 Oct 2010 00:55:16 +0000
+Date: Tue, 05 Oct 2010 00:55:22 +0000
 Subject: Re: [PATCH 1/2 v2] ARM: mach-shmobile: clock-sh7372: Add FSIDIV clock
-Message-Id: <w3pbp79mpan.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3paamtmpad.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <w3pbp79mpan.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3pbp79mpan.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
