@@ -1,65 +1,214 @@
-From: Akinobu Mita <akinobu.mita@gmail.com>
-Date: Fri, 22 Oct 2010 07:55:10 +0000
-Subject: Re: [PATCH v2 22/22] bitops: remove minix bitops from asm/bitops.h
-Message-Id: <AANLkTikgRWWH0RhR2S5cFE+jkJbW30Arwsjic4UANuVd@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Oct 2010 00:55:16 +0000
+Subject: Re: [PATCH 1/2 v2] ARM: mach-shmobile: clock-sh7372: Add FSIDIV clock
+Message-Id: <w3pbp79mpan.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1287672077-5797-1-git-send-email-akinobu.mita@gmail.com>
-	<1287672077-5797-23-git-send-email-akinobu.mita@gmail.com>
-	<4CC0CA8E.4050600@monstr.eu>
-In-Reply-To: <4CC0CA8E.4050600@monstr.eu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: monstr@monstr.eu
-Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, Christoph Hellwig <hch@infradead.org>, Andrew Morton <akpm@linux-foundation.org>, Greg Ungerer <gerg@uclinux.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Roman Zippel <zippel@linux-m68k.org>, Andreas Schwab <schwab@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux390@de.ibm.com, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, microblaze-uclinux@itee.uq.edu.au, "David S. Miller" <davem@davemloft.net>, sparclinux@vger.kernel.org, Hirokazu Takata <takata@linux-m32r.org>, linux-m32r@ml.linux-m32r.org, Ralf Baechle <ralf@linux-mips.org>, linux-mips@linux-mips.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Zankel <chris@zankel.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-2010/10/22 Michal Simek <monstr@monstr.eu>:
-> Akinobu Mita wrote:
->> minix bit operations are only used by minix filesystem and useless
->> by other modules. Because byte order of inode and block bitmaps is
->> defferent on each architecture like below:
->>
->> m68k:
->> =A0 =A0 =A0 big-endian 16bit indexed bitmaps
->>
->> h8300, microblaze, s390, sparc, m68knommu:
->> =A0 =A0 =A0 big-endian 32 or 64bit indexed bitmaps
->
-> Just one small fix microblaze little endian support is ready for merging
-> to mainline which means that microblaze is
-> big-endian 32bit =A0and =A0little-endian 32bit
->
->>
->> m32r, mips, sh, xtensa:
->> =A0 =A0 =A0 big-endian 32 or 64bit indexed bitmaps for big-endian mode
->> =A0 =A0 =A0 little-endian bitmaps for little-endian mode
->>
->> Others:
->> =A0 =A0 =A0 little-endian bitmaps
->>
->> In order to move minix bit operations from asm/bitops.h to
->> architecture independent code in minix file system, this provides two
->> config options.
->>
->> CONFIG_MINIX_FS_BIG_ENDIAN_16BIT_INDEXED is only selected by m68k.
->> CONFIG_MINIX_FS_NATIVE_ENDIAN is selected by the architectures which
->> use native byte order bitmaps (h8300, microblaze, s390, sparc,
->> m68knommu, m32r, mips, sh, xtensa).
->> The architectures which always use little-endian bitmaps do not select
->> these options.
->
-> I haven't created any Kconfig option for little/big endian microblaze
-> but there should be a little bit different handling for MINIX_FS_NATIVE_E=
-NDIAN
-> as you are describing above.
-> Anyway I think you don't need to reflect this in your patch because
-> we are not using that filesystem and I will write it to my to-do list and
-> will fix it later.
+All fsidiv_xxx functions which use enable_reg care about
+its value on this patch.
+Because ioremap_nocache might be failed and
+the return value of clk_ops :: init function which
+use ioremap for it is void.
 
-If upcomming microblade little-endian mode will use little-endian
-bitmaps for minixfs, microblade can continue to select
-CONFIG_MINIX_FS_NATIVE_ENDIAN and you don't need to change it.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+Paul, Magnus, Guennadi
 
-But if it will use big-endian bitmaps, it may need some extra work
-to support it. Becuase there is no little-endian architecture
-which uses bit-endian bitmaps for minixfs.
+This patch still use clk_ops :: init function to use ioremap,
+but other fsidiv_xxx funcion care about enable_reg.
+
+ arch/arm/mach-shmobile/clock-sh7372.c        |  147 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 +
+ 2 files changed, 149 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 8b9f50a..5622861 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -50,6 +50,9 @@
+ #define SMSTPCR3	0xe615013c
+ #define SMSTPCR4	0xe6150140
+ 
++#define FSIDIVA		0xFE1F8000
++#define FSIDIVB		0xFE1F8008
++
+ /* Platforms must set frequency on their DV_CLKI pin */
+ struct clk sh7372_dv_clki_clk = {
+ };
+@@ -417,6 +420,147 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 				      fsibckcr_parent, ARRAY_SIZE(fsibckcr_parent), 6, 2),
+ };
+ 
++/* FSI DIV */
++
++static void fsidiv_init(struct clk *clk)
++{
++	/* other fsidiv_xxx function should care about clk->enable_reg value
++	 * because ioremap_nocache might be failed
++	 * and clk_ops :: init return value is void */
++	clk->enable_reg = ioremap_nocache((unsigned long)clk->enable_reg, 8);
++}
++
++static unsigned long fsidiv_recalc(struct clk *clk)
++{
++	unsigned long value;
++
++	if (!clk->enable_reg)
++		return 0;
++
++	value = __raw_readl(clk->enable_reg);
++
++	if ((value & 0x3) != 0x3)
++		return 0;
++
++	value = (value >> 16) & 0xffff;
++
++	if (value < 2)
++		return 0;
++
++	return clk->parent->rate / value;
++}
++
++static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
++{
++	/*
++	 * FSIDIV doesn't have freq_table.
++	 * it mean fsidiv can not use clk_rate_table_round.
++	 * self calculate here
++	 */
++	unsigned long rate_error, rate_error_prev = ~0UL;
++	unsigned long rate_best_fit = rate;
++	unsigned long highest, lowest;
++	int i;
++
++	highest = lowest = 0;
++
++	for (i = 2; i <= 0xffff; i++) {
++		unsigned long freq = clk->parent->rate / i;
++
++		if (freq > highest)
++			highest = freq;
++		if (freq < lowest)
++			lowest = freq;
++
++		rate_error = abs(freq - rate);
++		if (rate_error < rate_error_prev) {
++			rate_best_fit = freq;
++			rate_error_prev = rate_error;
++		}
++
++		if (rate_error = 0)
++			break;
++	}
++
++	if (rate >= highest)
++		rate_best_fit = highest;
++	if (rate <= lowest)
++		rate_best_fit = lowest;
++
++	return rate_best_fit;
++}
++
++static void fsidiv_disable(struct clk *clk)
++{
++	if (clk->enable_reg)
++		__raw_writel(0, clk->enable_reg);
++}
++
++static int fsidiv_enable(struct clk *clk)
++{
++	unsigned long value;
++
++	if (!clk->enable_reg)
++		return -EIO;
++
++	value  = __raw_readl(clk->enable_reg) >> 16;
++	if (value < 2) {
++		fsidiv_disable(clk);
++		return -ENOENT;
++	}
++
++	__raw_writel((value << 16) | 0x3, clk->enable_reg);
++
++	return 0;
++}
++
++static int fsidiv_set_rate(struct clk *clk,
++			   unsigned long rate, int algo_id)
++{
++	int idx;
++
++	if (!clk->enable_reg)
++		return -EIO;
++
++	if (clk->parent->rate = rate) {
++		fsidiv_disable(clk);
++		return 0;
++	}
++
++	idx = (clk->parent->rate / rate) & 0xffff;
++	if (idx < 2)
++		return -ENOENT;
++
++	__raw_writel(idx << 16, clk->enable_reg);
++	return fsidiv_enable(clk);
++}
++
++static struct clk_ops fsidiv_clk_ops = {
++	.init		= fsidiv_init,
++	.recalc		= fsidiv_recalc,
++	.round_rate	= fsidiv_round_rate,
++	.set_rate	= fsidiv_set_rate,
++	.enable		= fsidiv_enable,
++	.disable	= fsidiv_disable,
++};
++
++struct clk sh7372_fsidiva_clk = {
++	.ops		= &fsidiv_clk_ops,
++	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
++	.enable_reg	= (void __iomem *)FSIDIVA,
++};
++
++struct clk sh7372_fsidivb_clk = {
++	.ops		= &fsidiv_clk_ops,
++	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
++	.enable_reg	= (void __iomem *)FSIDIVB,
++};
++
++static struct clk *late_main_clks[] = {
++	&sh7372_fsidiva_clk,
++	&sh7372_fsidivb_clk,
++};
++
+ enum { MSTP001,
+        MSTP131, MSTP130,
+        MSTP129, MSTP128, MSTP127, MSTP126,
+@@ -582,6 +726,9 @@ void __init sh7372_clock_init(void)
+ 	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+ 
++	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
++		ret = clk_register(late_main_clks[k]);
++
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 147775a..e4f9004 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -464,5 +464,7 @@ extern struct clk sh7372_dv_clki_div2_clk;
+ extern struct clk sh7372_pllc2_clk;
+ extern struct clk sh7372_fsiack_clk;
+ extern struct clk sh7372_fsibck_clk;
++extern struct clk sh7372_fsidiva_clk;
++extern struct clk sh7372_fsidivb_clk;
+ 
+ #endif /* __ASM_SH7372_H__ */
+-- 
+1.7.0.4
+
