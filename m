@@ -1,30 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Oct 2010 08:14:40 +0000
-Subject: Re: [PATCH] sh: fix an ms7724se compile breakage
-Message-Id: <20101006081440.GE15712@linux-sh.org>
+From: Akinobu Mita <akinobu.mita@gmail.com>
+Date: Tue, 05 Oct 2010 15:54:00 +0000
+Subject: [PATCH] sh: fix uninitialized spinlock
+Message-Id: <1286294040-6171-1-git-send-email-akinobu.mita@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1010030622230.15920@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1010030622230.15920@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Oct 06, 2010 at 10:13:13AM +0200, Guennadi Liakhovetski wrote:
-> On Wed, 6 Oct 2010, Paul Mundt wrote:
-> 
-> > On Sun, Oct 03, 2010 at 06:24:42AM +0200, Guennadi Liakhovetski wrote:
-> > > Fix a compile breakage, caused by my own careless copy-paste.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > 
-> > Hmm, I'm confused. This doesn't apply to my tree at present, so the
-> > breakage at least was not introduced there. Is there some patch that this
-> > is against that I've overlooked?
-> 
-> Strange, it's against next, and the patch, that introduces the breakage is 
-> http://marc.info/?l=linux-fbdev&m8349840517874&w=2 (44432407) and it's 
-> signed-off-by you, so, it went via one of your trees. Ah, I see, you 
-> pushed it via genesis.
-> 
-Aha. I'll apply it over there then, thanks.
+The spinlock in traps_64.c is used without initialization.
+This fixes it by declaring DEFINE_SPINLOCK() and makes the spinlock static
+variable.
+
+Signed-off-by: Akinobu Mita <akinobu.mita@gmail.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/traps_64.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/traps_64.c b/arch/sh/kernel/traps_64.c
+index e67e140..fda6355 100644
+--- a/arch/sh/kernel/traps_64.c
++++ b/arch/sh/kernel/traps_64.c
+@@ -50,7 +50,7 @@ asmlinkage void do_##name(unsigned long error_code, struct pt_regs *regs) \
+ 	do_unhandled_exception(trapnr, signr, str, __stringify(name), error_code, regs, current); \
+ }
+ 
+-spinlock_t die_lock;
++static DEFINE_SPINLOCK(die_lock);
+ 
+ void die(const char * str, struct pt_regs * regs, long err)
+ {
+-- 
+1.6.0.6
+
