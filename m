@@ -1,18 +1,18 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 05 Oct 2010 08:08:34 +0000
+From: Robert Richter <robert.richter@amd.com>
+Date: Wed, 06 Oct 2010 18:35:49 +0000
 Subject: Re: [PATCH 6/7] sh: oprofile: Use perf-events oprofile backend
-Message-Id: <20101005080833.GA7984@linux-sh.org>
+Message-Id: <20101006183549.GW13563@erda.amd.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1286222593.git.matt@console-pimps.org>
-	<db62cbe463d5bce89196d6456ad386129ce0022a.1286222593.git.matt@console-pimps.org>
+ <db62cbe463d5bce89196d6456ad386129ce0022a.1286222593.git.matt@console-pimps.org>
 In-Reply-To: <db62cbe463d5bce89196d6456ad386129ce0022a.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Matt Fleming <matt@console-pimps.org>
-Cc: linux-arch@vger.kernel.org, Grant Likely <grant.likely@secretlab.ca>, Russell King <linux@arm.linux.org.uk>, linux-sh@vger.kernel.org, Robert Richter <robert.richter@amd.com>, Frederic Weisbecker <fweisbec@gmail.com>, Will Deacon <will.deacon@arm.com>, linux-kernel@vger.kernel.org, Arnaldo Carvalho de Melo <acme@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Ingo Molnar <mingo@elte.hu>, linux-arm-kernel@lists.infradead.org
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On Mon, Oct 04, 2010 at 09:44:24PM +0100, Matt Fleming wrote:
+On 04.10.10 16:44:24, Matt Fleming wrote:
 > Now that we've got a generic perf-events based oprofile backend we might
 > as well make use of it seeing as SH doesn't do anything special with its
 > oprofile backend. Also introduce a new CONFIG_HW_PERF_EVENTS symbol so
@@ -20,5 +20,21 @@ On Mon, Oct 04, 2010 at 09:44:24PM +0100, Matt Fleming wrote:
 > CPU doesn't support perf events.
 > 
 > Signed-off-by: Matt Fleming <matt@console-pimps.org>
+> ---
+>  arch/sh/Kconfig            |   13 +++++
+>  arch/sh/oprofile/Makefile  |    4 ++
+>  arch/sh/oprofile/common.c  |  109 ++++---------------------------------------
+>  arch/sh/oprofile/op_impl.h |   33 -------------
+>  4 files changed, 28 insertions(+), 131 deletions(-)
+>  delete mode 100644 arch/sh/oprofile/op_impl.h
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+This patch looks good.
+
+We might merge it with patch 7/7.
+
+-Robert
+
+-- 
+Advanced Micro Devices, Inc.
+Operating System Research Center
+
