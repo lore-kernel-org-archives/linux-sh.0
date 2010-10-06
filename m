@@ -1,36 +1,86 @@
-From: "Microsoft Email Promo Team" <information@microsoft.com>
-Date: Mon, 04 Oct 2010 22:07:04 +0000
-Subject: You have won (Congratulations)
-Message-Id: <35519.41.220.68.3.1286230024.squirrel@41.220.68.3>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Oct 2010 07:18:29 +0000
+Subject: [PATCH 07/08] ARM: Add CONFIG_DEFAULT_IRQ_DEMUX
+Message-Id: <20101006071829.28048.45307.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101006071731.28048.89938.sendpatchset@t400s>
+In-Reply-To: <20101006071731.28048.89938.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-You have won (Congratulations)
+From: Magnus Damm <damm@opensource.se>
 
-The MICROSOFT EMAIL PROMO TEAM is glad to announce that
-after a successful completion of the PROMO DRAWS held on the 3rd October
-2010,your e-mail address,attached to winning
-numbers:(11) (80) (12)(96) (09) (43) won in the Tenth
-lottery category.
+Add a CONFIG_DEFAULT_IRQ_DEMUX to allow removing the
+default IRQ demuxer from the ARM kernel. This will
+reduce the memory footprint and also remove the need
+for some of the macros in entry-macro.S.
 
-You have therefore been approved to claim a total sum of
-=A3450,000,00 Pounds Sterling in cash credited to REF NO:MICRO-L/2009-END10.
-All participants were selected through our Microsoft computer ballot
-system drawn from 167,000 Names,as part of our International  "E-MAIL"
-Promotion Program for our prominent MS-WORD users all over the world and
-for the continuous use of the internet. You are advised to contact the
-claims
-processor with the details below via his e-mail address :
+In the case of CONFIG_DEFAULT_IRQ_DEMUX=n the default
+IRQ demux code is omitted from the kernel and the per-
+mach/plat demux code must then be registered using the
+function setup_irq_stubs(). CONFIG_DEFAULT_IRQ_DEMUX=y
+keeps the default IRQ demuxer code as-is in the kernel.
 
-NAME:  Glenn Bradley
-EMAIL: glennbradley1@yahoo.com.hk
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-PLEASE NOTE YOU ARE TO SEND THE FOLLOWING INFORMATION TO CLAIM YOUR PRIZE:
-1.Full Name:... 2.Address:... 3.Phone:... 4.Country:... 5.Sex/Gender:...
+ arch/arm/Kconfig             |    3 +++
+ arch/arm/kernel/entry-armv.S |   13 +++++++++++--
+ 2 files changed, 14 insertions(+), 2 deletions(-)
 
-YOURS SINCERELY,
-Eileen Quincy.
-
+--- 0001/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2010-10-05 20:36:45.000000000 +0900
+@@ -1337,6 +1337,9 @@ config SPARSE_IRQ
+ 	  number of off-chip IRQs will want to treat this as
+ 	  experimental until they have been independently verified.
+ 
++config DEFAULT_IRQ_DEMUX
++	def_bool y
++
+ source "mm/Kconfig"
+ 
+ config FORCE_MAX_ZONEORDER
+--- 0009/arch/arm/kernel/entry-armv.S
++++ work/arch/arm/kernel/entry-armv.S	2010-10-05 20:34:16.000000000 +0900
+@@ -128,8 +128,9 @@ __dabt_svc:
+  UNWIND(.fnend		)
+ ENDPROC(__dabt_svc)
+ 
++#ifdef CONFIG_DEFAULT_IRQ_DEMUX
+ 	__irq_svc	default
+-
++#endif
+ 	.align	5
+ __und_svc:
+ #ifdef CONFIG_KPROBES
+@@ -258,8 +259,9 @@ __dabt_usr:
+  UNWIND(.fnend		)
+ ENDPROC(__dabt_usr)
+ 
++#ifdef CONFIG_DEFAULT_IRQ_DEMUX
+ 	__irq_usr	default
+-
++#endif
+ 	.align	5
+ __und_usr:
+ 	usr_entry
+@@ -885,10 +887,17 @@ __stubs_start:
+ 
+ 	.globl	__stubs_irq
+ __stubs_irq:
++#ifdef CONFIG_DEFAULT_IRQ_DEMUX
+ 	.long	__irq_usr_default		@  0  (USR_26 / USR_32)
+ 	.long	__irq_invalid			@  1  (FIQ_26 / FIQ_32)
+ 	.long	__irq_invalid			@  2  (IRQ_26 / IRQ_32)
+ 	.long	__irq_svc_default		@  3  (SVC_26 / SVC_32)
++#else
++	.long	__irq_invalid			@  0  (USR_26 / USR_32)
++	.long	__irq_invalid			@  1  (FIQ_26 / FIQ_32)
++	.long	__irq_invalid			@  2  (IRQ_26 / IRQ_32)
++	.long	__irq_invalid			@  3  (SVC_26 / SVC_32)
++#endif
+ 	.long	__irq_invalid			@  4
+ 	.long	__irq_invalid			@  5
+ 	.long	__irq_invalid			@  6
