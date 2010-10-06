@@ -1,368 +1,199 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 25 Oct 2010 01:50:21 +0000
-Subject: [GIT PULL] sh updates for 2.6.37-rc1
-Message-Id: <20101025015021.GA12579@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Oct 2010 07:18:37 +0000
+Subject: [PATCH 08/08] ARM: Dynamic IRQ demux for SH-Mobile
+Message-Id: <20101006071837.28048.58439.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101006071731.28048.89938.sendpatchset@t400s>
+In-Reply-To: <20101006071731.28048.89938.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Please pull from:
+From: Magnus Damm <damm@opensource.se>
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
+This patch adds Dynamic IRQ demux support to the
+SH-Mobile line of processors. The actual demux code
+is implemented in entry-irq-common.S and each INTC
+implementation is responsible for registering the
+shared demux code using setup_irq_stubs().
 
-Which contains:
+Future processors will add a new a IRQ demux instance
+and register that from the INTC implementation for
+that particular processor.
 
-Akinobu Mita (1):
-      sh: fix uninitialized spinlock
+Tested on sh7372 and AP4EVB.
 
-Andrew Murray (1):
-      sh: Use __GFP_ZERO for dma_generic_alloc_coherent().
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Arnd Bergmann (1):
-      sh: kill big kernel lock
+ arch/arm/Kconfig                                  |    1 
+ arch/arm/mach-shmobile/Makefile                   |    1 
+ arch/arm/mach-shmobile/entry-irq-common.S         |   38 +++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h      |    1 
+ arch/arm/mach-shmobile/include/mach/entry-macro.S |   17 ---------
+ arch/arm/mach-shmobile/intc-sh7367.c              |    4 ++
+ arch/arm/mach-shmobile/intc-sh7372.c              |    4 ++
+ arch/arm/mach-shmobile/intc-sh7377.c              |    4 ++
+ 8 files changed, 53 insertions(+), 17 deletions(-)
 
-Carmelo AMOROSO (1):
-      sh: Add syscall entries for non multiplexed socket calls
-
-Guennadi Liakhovetski (5):
-      dmaengine: initialise DMA engine before MMC
-      sh: move a debug printk() to a more meaningful location in the clock driver
-      sh: remove bogus highest / lowest logic from clock rate rounding
-      sh: fix a kfree address in clkdev code
-      sh: fix clk_get() error handling
-
-Hitoshi Mitake (1):
-      sh: SH-2007 board support.
-
-Kulikov Vasiliy (2):
-      sh: dma: check return value of create_proc_read_entry()
-      sh: boards/mach-x3proto: gpio: fix error handling code
-
-Kuninori Morimoto (2):
-      sh: ecovec24: modify tsc2007 platform settings
-      sh: clkfwk: modify for_each_frequency end condition
-
-Magnus Damm (6):
-      clocksource: sh_cmt: One-off clockevent fix V2
-      clocksource: sh_cmt: Rate calculation fix
-      i2c: i2c-sh_mobile irq rollback fix
-      sh: boot kernel with SR.BL set
-      sh: free-without-alloc fix for sh_mobile_lcdcfb
-      sh: remove name and id from struct clk
-
-Markus Pietrek (1):
-      sound/soc/sh/siu: Fixed undefined dma_length of scatter gather list
-
-Matt Fleming (3):
-      sh: Fix typos in PCI initialization message
-      sh: Additional register definitions for SH7786 PCIe.
-      sh: Set CONFIG_SYSFS_DEPRECATED_V2=n
-
-Nobuhiro Iwamatsu (3):
-      sh: Drop dependence for 29bit mode of trigger_address_error()
-      sh: Fix address calculation of Initrd
-      sh: i2c-sh7760: Replase from ctrl_* to __raw_*
-
-Paul Mundt (73):
-      sh: Add kprobe-based event tracer.
-      sh: split out ptrace header for _32/_64 variants.
-      sh: kprobes SMP support.
-      sh: update the FDPIC relocations.
-      sh: fix up an off-by-1 in the number of early ioremap fixmaps.
-      sh: Fix up PUD trampling in ranged page table init for X2TLB.
-      sh: Provide a global TLB flush for U/I-TLB clear.
-      sh: wire up fanotify/prlimit64 syscalls.
-      sh: fix up fallout from syscall arg constification.
-      sh: stub __flush_tlb_global() definition for nommu.
-      sh: Support type 1 accesses for SH7786 PCI.
-      sh: Fix up SH7786 PCIe PHY initialization.
-      sh: reinstate clock framework rate rounding.
-      sh: Relax devfn constraints for SH7786 PCIe.
-      sh: sh2007/sh7757lcr defconfig reduction.
-      sh: Make SH7786 PCIe port reset logic more aggressive.
-      sh: Establish a SuperHyway<->PCIe window mapping on SH7786 PCIe.
-      sh: Ignore 32-bit windows in 29-bit mode for SH7786 PCIe.
-      sh: Properly wire up channel 2's I/O window on SH7786 PCIe.
-      sh: Hook up 3rd memory window for all SH7786 PCIe channels.
-      sh: Provide a non-multiplexed sys_recvmmsg path.
-      Revert "sh: ecovec24: modify tsc2007 platform settings"
-      mfd: Fix up section mismatches in SH SDHI.
-      usb: Fix up r8a66597-hcd section mismatches.
-      sh: pci: Use generic pci_enable_resources() for pcibios_enable_device().
-      sh: pci: Toggle configuration accesses on SH7786.
-      sh: pci: Give SH7786 PHY some time to settle.
-      sh: pci: Move Renesas PCI IDs to a better place.
-      sh: pci: Support root complex config accesses on SH7786 PCIe.
-      sh: pci: Discard initial PCICONF4/5 settings for SH7786 PCIe.
-      sh: pci: Support ports with disabled links on SH7786 PCIe.
-      sh: pci: Use I/O accessors consistently in SH7786 PCIe init code.
-      sh: pci: clock framework support for SH7786 PCIe.
-      sh: pci: Use a generic raw spinlock for PCI config access locking.
-      sh: provide generic arch_debugfs_dir.
-      sh: Update SH-X3 subtype for clkdev lookups.
-      sh: Support userimask for all SH-X3 interrupt controllers.
-      sh: Support IRQ balancing for SH-X3 proto cores, too.
-      sh: pinmux support for SH-X3 proto CPUs.
-      sh: Handle pinmux for SH-X3 proto IRQ/IRL modes.
-      sh: Support early IRQ vector map reservation for delayed controllers.
-      sh: Allow GPIO chips to register IRQ mappings.
-      sh: mach-x3proto: Move the ilsel header to a better place.
-      sh: mach-x3proto: Support for baseboard GPIOs.
-      sh: mach-x3proto: gpio-keys support.
-      sh: mach-x3proto: Improve ILSEL debugging.
-      sh: pfc: support pinmux deregistration.
-      sh: Drop __initdata for SH-X3 pinmux tables.
-      sh: pfc: Fix up BUG() triggered by gpiolib debugfs lookups.
-      sh: intc: Implement reverse mapping for IRQs to per-controller IDs.
-      sh: intc: Support virtual mappings for IRQ subgroups.
-      sh: intc: Handle early lookups of subgroup IRQs.
-      sh: intc: Split up the INTC code.
-      sh: Wire up INTC subgroup splitting for SH7786 SCIF1.
-      sh: intc: Add missing files.
-      sh: intc: Fix build with IRQ balancing disabled.
-      sh: Fix up the SH-3 build.
-      sh: wire up perf alignment and emulation faults.
-      sh: perf: Support SH-X3 hardware counters.
-      sh: perf: Set up perf_max_events.
-      sh: use pr_fmt for clock framework, too.
-      sh: mach-sdk7786: Add support for fpga gpios.
-      sh: Fix up PMB locking.
-      sh: pci: Support slot 4 routing on SDK7786.
-      sh: pci: Support secondary FPGA-driven PCIe clocks on SDK7786.
-      sh: Provide a generic SRAM pool for tiny memories.
-      sh: mach-sdk7786: Add support for the FPGA SRAM.
-      sh: pci: Convert to upper/lower_32_bits() helpers.
-      sh: clkfwk: support clock remapping.
-      sh: clkfwk: Abstract rate rounding helper.
-      sh: clkfwk: Add a helper for rate rounding by divisor ranges.
-      sh: clkfwk: Fix fault in frequency iterator.
-      sh: clkfwk: Shuffle around to match the intc split up.
-
-Phil Edworthy (1):
-      sh: Add sh7724 BEU resources
-
-Sam Ravnborg (1):
-      sh: fix recursive dependency in Kconfig
-
-Yoshihiro Shimoda (7):
-      sh: modify NR_IRQS from 256 to 512
-      sh: change PVR of SH7757 for 2nd cut
-      sh: fix the id of scif in setup-sh7757
-      sh: add some INTC_VECT for setup-sh7757
-      sh: modify pinmux for SH7757 2nd cut
-      sh: modify clock framework of SH7757
-      sh: add sh7757lcr board support
-
-matt mooney (1):
-      sh: change to new flag variable
-
- arch/sh/Kconfig                                    |    6 +-
- arch/sh/boards/Kconfig                             |   18 +
- arch/sh/boards/Makefile                            |    2 +
- arch/sh/boards/board-sh2007.c                      |  133 ++
- arch/sh/boards/board-sh7757lcr.c                   |  374 +++++
- arch/sh/boards/mach-ecovec24/setup.c               |    6 +-
- arch/sh/boards/mach-sdk7786/Makefile               |    5 +-
- arch/sh/boards/mach-sdk7786/gpio.c                 |   49 +
- arch/sh/boards/mach-sdk7786/setup.c                |   54 +-
- arch/sh/boards/mach-sdk7786/sram.c                 |   72 +
- arch/sh/boards/mach-x3proto/Makefile               |    2 +
- arch/sh/boards/mach-x3proto/gpio.c                 |  135 ++
- arch/sh/boards/mach-x3proto/ilsel.c                |   18 +-
- arch/sh/boards/mach-x3proto/setup.c                |  132 ++-
- arch/sh/boot/compressed/head_32.S                  |    4 +-
- arch/sh/cchips/hd6446x/Makefile                    |    2 +-
- arch/sh/configs/ap325rxa_defconfig                 |    1 -
- arch/sh/configs/cayman_defconfig                   |    1 -
- arch/sh/configs/dreamcast_defconfig                |    1 -
- arch/sh/configs/ecovec24-romimage_defconfig        |    1 -
- arch/sh/configs/edosk7760_defconfig                |    1 -
- arch/sh/configs/espt_defconfig                     |    1 -
- arch/sh/configs/hp6xx_defconfig                    |    1 -
- arch/sh/configs/kfr2r09-romimage_defconfig         |    1 -
- arch/sh/configs/kfr2r09_defconfig                  |    1 -
- arch/sh/configs/landisk_defconfig                  |    1 -
- arch/sh/configs/lboxre2_defconfig                  |    1 -
- arch/sh/configs/magicpanelr2_defconfig             |    1 -
- arch/sh/configs/microdev_defconfig                 |    1 -
- arch/sh/configs/migor_defconfig                    |    1 -
- arch/sh/configs/polaris_defconfig                  |    1 -
- arch/sh/configs/r7780mp_defconfig                  |    1 -
- arch/sh/configs/r7785rp_defconfig                  |    1 -
- arch/sh/configs/rts7751r2d1_defconfig              |    1 -
- arch/sh/configs/rts7751r2dplus_defconfig           |    1 -
- arch/sh/configs/sdk7780_defconfig                  |    1 -
- arch/sh/configs/se7343_defconfig                   |    1 -
- arch/sh/configs/se7712_defconfig                   |    1 -
- arch/sh/configs/se7721_defconfig                   |    1 -
- arch/sh/configs/se7722_defconfig                   |    1 -
- arch/sh/configs/se7724_defconfig                   |    1 -
- arch/sh/configs/se7750_defconfig                   |    1 -
- arch/sh/configs/se7751_defconfig                   |    1 -
- arch/sh/configs/se7780_defconfig                   |    1 -
- arch/sh/configs/sh03_defconfig                     |    1 -
- arch/sh/configs/sh2007_defconfig                   |  212 +++
- arch/sh/configs/sh7710voipgw_defconfig             |    1 -
- arch/sh/configs/sh7757lcr_defconfig                |   85 ++
- arch/sh/configs/sh7763rdp_defconfig                |    1 -
- arch/sh/configs/sh7785lcr_defconfig                |    1 -
- arch/sh/configs/shx3_defconfig                     |    1 -
- arch/sh/configs/snapgear_defconfig                 |    1 -
- arch/sh/configs/systemh_defconfig                  |    1 -
- arch/sh/configs/titan_defconfig                    |    1 -
- arch/sh/configs/ul2_defconfig                      |    1 -
- arch/sh/drivers/dma/dma-api.c                      |    4 +-
- arch/sh/drivers/pci/Makefile                       |    1 +
- arch/sh/drivers/pci/fixups-sdk7786.c               |   67 +
- arch/sh/drivers/pci/ops-sh4.c                      |   11 +-
- arch/sh/drivers/pci/ops-sh7786.c                   |   69 +-
- arch/sh/drivers/pci/pci-sh7751.c                   |    2 +-
- arch/sh/drivers/pci/pci-sh7780.c                   |    2 +-
- arch/sh/drivers/pci/pci-sh7780.h                   |    6 -
- arch/sh/drivers/pci/pci.c                          |   43 +-
- arch/sh/drivers/pci/pcie-sh7786.c                  |  251 +++-
- arch/sh/drivers/pci/pcie-sh7786.h                  |   56 +-
- arch/sh/include/asm/Kbuild                         |    2 +
- arch/sh/include/asm/elf.h                          |   27 +-
- arch/sh/include/asm/fixmap.h                       |    4 +-
- arch/sh/include/asm/gpio.h                         |    6 +-
- arch/sh/include/asm/irq.h                          |    2 +-
- arch/sh/include/asm/kprobes.h                      |    1 -
- arch/sh/include/asm/pci.h                          |    2 +
- arch/sh/include/asm/processor_32.h                 |    3 -
- arch/sh/include/asm/processor_64.h                 |    3 -
- arch/sh/include/asm/ptrace.h                       |  169 +--
- arch/sh/include/asm/ptrace_32.h                    |   83 +
- arch/sh/include/asm/ptrace_64.h                    |   20 +
- arch/sh/include/asm/sizes.h                        |    1 +
- arch/sh/include/asm/sram.h                         |   38 +
- arch/sh/include/asm/syscalls_32.h                  |    7 +-
- arch/sh/include/asm/system.h                       |    2 -
- arch/sh/include/asm/system_32.h                    |   15 +-
- arch/sh/include/asm/tlbflush.h                     |    2 +
- arch/sh/include/asm/unistd_32.h                    |   27 +-
- arch/sh/include/asm/unistd_64.h                    |    5 +-
- arch/sh/include/cpu-sh3/cpu/mmu_context.h          |    1 +
- arch/sh/include/cpu-sh4/cpu/freq.h                 |    4 +-
- arch/sh/include/cpu-sh4/cpu/sh7757.h               |  301 ++--
- arch/sh/include/cpu-sh4/cpu/shx3.h                 |   64 +
- arch/sh/include/mach-common/mach/sh2007.h          |  117 ++
- arch/sh/include/mach-sdk7786/mach/fpga.h           |   26 +-
- arch/sh/include/mach-x3proto/mach/hardware.h       |   12 +
- arch/sh/include/{asm => mach-x3proto/mach}/ilsel.h |    0
- arch/sh/kernel/Makefile                            |    8 +-
- arch/sh/kernel/clkdev.c                            |    4 +-
- arch/sh/kernel/cpu/sh4/probe.c                     |    2 +-
- arch/sh/kernel/cpu/sh4a/Makefile                   |    5 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c             |  199 ++--
- arch/sh/kernel/cpu/sh4a/clock-shx3.c               |  225 ++-
- arch/sh/kernel/cpu/sh4a/intc-shx3.c                |   34 +
- arch/sh/kernel/cpu/sh4a/perf_event.c               |   20 +-
- arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c            | 1582 ++++++++++++--------
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c              |  587 ++++++++
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |   66 +
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c             |  222 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c             |  126 +-
- arch/sh/kernel/cpu/sh4a/setup-shx3.c               |   42 +-
- arch/sh/kernel/head_32.S                           |    2 +-
- arch/sh/kernel/io_trapped.c                        |    2 +-
- arch/sh/kernel/irq.c                               |    2 +
- arch/sh/kernel/kdebugfs.c                          |   16 +
- arch/sh/kernel/kprobes.c                           |  100 +-
- arch/sh/kernel/perf_event.c                        |    1 +
- arch/sh/kernel/ptrace.c                            |   33 +
- arch/sh/kernel/ptrace_32.c                         |   27 +
- arch/sh/kernel/ptrace_64.c                         |   88 +-
- arch/sh/kernel/reboot.c                            |    4 +
- arch/sh/kernel/setup.c                             |   22 +-
- arch/sh/kernel/syscalls_32.S                       |   22 +
- arch/sh/kernel/syscalls_64.S                       |    3 +
- arch/sh/kernel/traps_32.c                          |   29 +-
- arch/sh/kernel/traps_64.c                          |   11 +-
- arch/sh/lib/Makefile                               |    2 +-
- arch/sh/math-emu/math.c                            |    3 +
- arch/sh/mm/Kconfig                                 |    4 +
- arch/sh/mm/Makefile                                |    3 +-
- arch/sh/mm/asids-debugfs.c                         |    2 +-
- arch/sh/mm/cache-debugfs.c                         |   10 +-
- arch/sh/mm/consistent.c                            |    3 +-
- arch/sh/mm/init.c                                  |   52 +-
- arch/sh/mm/nommu.c                                 |    4 +
- arch/sh/mm/pmb.c                                   |   35 +-
- arch/sh/mm/sram.c                                  |   34 +
- arch/sh/mm/tlb-debugfs.c                           |   11 +-
- arch/sh/mm/tlbflush_32.c                           |   16 +
- arch/sh/mm/tlbflush_64.c                           |    5 +
- arch/sh/tools/mach-types                           |    2 +
- drivers/Makefile                                   |    2 +-
- drivers/clocksource/sh_cmt.c                       |   12 +-
- drivers/i2c/busses/i2c-sh7760.c                    |    4 +-
- drivers/i2c/busses/i2c-sh_mobile.c                 |   23 +-
- drivers/mfd/sh_mobile_sdhi.c                       |    2 +-
- drivers/serial/sh-sci.h                            |   17 +-
- drivers/sh/Kconfig                                 |   25 +-
- drivers/sh/Makefile                                |    7 +-
- drivers/sh/clk/Makefile                            |    3 +
- drivers/sh/{clk.c => clk/core.c}                   |  203 +++-
- drivers/sh/{clk-cpg.c => clk/cpg.c}                |   11 +-
- drivers/sh/intc.c                                  | 1390 -----------------
- drivers/sh/intc/Kconfig                            |   35 +
- drivers/sh/intc/Makefile                           |    5 +
- drivers/sh/intc/access.c                           |  237 +++
- drivers/sh/intc/balancing.c                        |   97 ++
- drivers/sh/intc/chip.c                             |  215 +++
- drivers/sh/intc/core.c                             |  469 ++++++
- drivers/sh/intc/dynamic.c                          |  135 ++
- drivers/sh/intc/handle.c                           |  307 ++++
- drivers/sh/intc/internals.h                        |  186 +++
- drivers/sh/intc/userimask.c                        |   83 +
- drivers/sh/intc/virq-debugfs.c                     |   64 +
- drivers/sh/intc/virq.c                             |  255 ++++
- drivers/sh/pfc.c                                   |   17 +-
- drivers/usb/host/r8a66597-hcd.c                    |    4 +-
- drivers/video/sh_mobile_lcdcfb.c                   |    6 +-
- include/linux/pci_ids.h                            |    7 +
- include/linux/sh_clk.h                             |   17 +-
- include/linux/sh_intc.h                            |   16 +-
- include/linux/sh_pfc.h                             |    1 +
- sound/soc/sh/siu_pcm.c                             |    2 +
- 170 files changed, 7270 insertions(+), 3059 deletions(-)
- create mode 100644 arch/sh/boards/board-sh2007.c
- create mode 100644 arch/sh/boards/board-sh7757lcr.c
- create mode 100644 arch/sh/boards/mach-sdk7786/gpio.c
- create mode 100644 arch/sh/boards/mach-sdk7786/sram.c
- create mode 100644 arch/sh/boards/mach-x3proto/gpio.c
- create mode 100644 arch/sh/configs/sh2007_defconfig
- create mode 100644 arch/sh/configs/sh7757lcr_defconfig
- create mode 100644 arch/sh/drivers/pci/fixups-sdk7786.c
- create mode 100644 arch/sh/include/asm/ptrace_32.h
- create mode 100644 arch/sh/include/asm/ptrace_64.h
- create mode 100644 arch/sh/include/asm/sram.h
- create mode 100644 arch/sh/include/cpu-sh4/cpu/shx3.h
- create mode 100644 arch/sh/include/mach-common/mach/sh2007.h
- create mode 100644 arch/sh/include/mach-x3proto/mach/hardware.h
- rename arch/sh/include/{asm => mach-x3proto/mach}/ilsel.h (100%)
- create mode 100644 arch/sh/kernel/cpu/sh4a/intc-shx3.c
- create mode 100644 arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
- create mode 100644 arch/sh/kernel/kdebugfs.c
- create mode 100644 arch/sh/kernel/ptrace.c
- create mode 100644 arch/sh/mm/sram.c
- create mode 100644 drivers/sh/clk/Makefile
- rename drivers/sh/{clk.c => clk/core.c} (74%)
- rename drivers/sh/{clk-cpg.c => clk/cpg.c} (96%)
- delete mode 100644 drivers/sh/intc.c
- create mode 100644 drivers/sh/intc/Kconfig
- create mode 100644 drivers/sh/intc/Makefile
- create mode 100644 drivers/sh/intc/access.c
- create mode 100644 drivers/sh/intc/balancing.c
- create mode 100644 drivers/sh/intc/chip.c
- create mode 100644 drivers/sh/intc/core.c
- create mode 100644 drivers/sh/intc/dynamic.c
- create mode 100644 drivers/sh/intc/handle.c
- create mode 100644 drivers/sh/intc/internals.h
- create mode 100644 drivers/sh/intc/userimask.c
- create mode 100644 drivers/sh/intc/virq-debugfs.c
- create mode 100644 drivers/sh/intc/virq.c
+--- 0008/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2010-10-06 14:43:07.000000000 +0900
+@@ -1377,6 +1377,7 @@ config SPARSE_IRQ
+ 	  experimental until they have been independently verified.
+ 
+ config DEFAULT_IRQ_DEMUX
++	default n if ARCH_SHMOBILE
+ 	def_bool y
+ 
+ source "mm/Kconfig"
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2010-10-06 14:36:27.000000000 +0900
+@@ -4,6 +4,7 @@
+ 
+ # Common objects
+ obj-y				:= timer.o console.o clock.o pm_runtime.o
++obj-y				+= entry-irq-common.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o intc-sh7367.o
+--- /dev/null
++++ work/arch/arm/mach-shmobile/entry-irq-common.S	2010-10-06 14:38:29.000000000 +0900
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (C) 2010 Magnus Damm
++ * Copyright (C) 2008 Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <mach/hardware.h>
++#include <mach/irqs.h>
++#include <asm/entry-header.S>
++
++	.macro  get_irqnr_preamble, base, tmp
++	ldr     \base, =INTFLGA
++	.endm
++
++	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
++	ldr     \irqnr, [\base]
++	cmp	\irqnr, #0
++	beq	1000f
++	/* intevt to irq number */
++	lsr	\irqnr, \irqnr, #0x5
++	subs	\irqnr, \irqnr, #16
++
++1000:
++	.endm
++
++	__irq_svc shmobile_common
++	__irq_usr shmobile_common
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-10-06 14:39:29.000000000 +0900
+@@ -5,6 +5,7 @@ extern struct sys_timer shmobile_timer;
+ extern void shmobile_setup_console(void);
+ struct clk;
+ extern int clk_init(void);
++extern char __irq_usr_shmobile_common[], __irq_svc_shmobile_common[];
+ 
+ extern void sh7367_init_irq(void);
+ extern void sh7367_add_early_devices(void);
+--- 0001/arch/arm/mach-shmobile/include/mach/entry-macro.S
++++ work/arch/arm/mach-shmobile/include/mach/entry-macro.S	2010-10-06 14:38:01.000000000 +0900
+@@ -14,26 +14,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+-#include <mach/hardware.h>
+-#include <mach/irqs.h>
+ 
+ 	.macro  disable_fiq
+ 	.endm
+ 
+-	.macro  get_irqnr_preamble, base, tmp
+-	ldr     \base, =INTFLGA
+-	.endm
+-
+ 	.macro  arch_ret_to_user, tmp1, tmp2
+ 	.endm
+-
+-	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
+-	ldr     \irqnr, [\base]
+-	cmp	\irqnr, #0
+-	beq	1000f
+-	/* intevt to irq number */
+-	lsr	\irqnr, \irqnr, #0x5
+-	subs	\irqnr, \irqnr, #16
+-
+-1000:
+-	.endm
+--- 0001/arch/arm/mach-shmobile/intc-sh7367.c
++++ work/arch/arm/mach-shmobile/intc-sh7367.c	2010-10-06 14:44:20.000000000 +0900
+@@ -24,6 +24,8 @@
+ #include <linux/sh_intc.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/traps.h>
++#include <mach/common.h>
+ 
+ enum {
+ 	UNUSED_INTCA = 0,
+@@ -431,6 +433,8 @@ void __init sh7367_init_irq(void)
+ {
+ 	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
+ 
++	setup_irq_stubs(__irq_usr_shmobile_common, __irq_svc_shmobile_common);
++
+ 	register_intc_controller(&intca_desc);
+ 	register_intc_controller(&intcs_desc);
+ 
+--- 0001/arch/arm/mach-shmobile/intc-sh7372.c
++++ work/arch/arm/mach-shmobile/intc-sh7372.c	2010-10-06 14:44:09.000000000 +0900
+@@ -24,6 +24,8 @@
+ #include <linux/sh_intc.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/traps.h>
++#include <mach/common.h>
+ 
+ enum {
+ 	UNUSED_INTCA = 0,
+@@ -580,6 +582,8 @@ void __init sh7372_init_irq(void)
+ {
+ 	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
+ 
++	setup_irq_stubs(__irq_usr_shmobile_common, __irq_svc_shmobile_common);
++
+ 	register_intc_controller(&intca_desc);
+ 	register_intc_controller(&intcs_desc);
+ 
+--- 0001/arch/arm/mach-shmobile/intc-sh7377.c
++++ work/arch/arm/mach-shmobile/intc-sh7377.c	2010-10-06 14:44:28.000000000 +0900
+@@ -24,6 +24,8 @@
+ #include <linux/sh_intc.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/traps.h>
++#include <mach/common.h>
+ 
+ enum {
+ 	UNUSED_INTCA = 0,
+@@ -637,6 +639,8 @@ void __init sh7377_init_irq(void)
+ {
+ 	void __iomem *intevtsa = ioremap_nocache(INTEVTSA, PAGE_SIZE);
+ 
++	setup_irq_stubs(__irq_usr_shmobile_common, __irq_svc_shmobile_common);
++
+ 	register_intc_controller(&intca_desc);
+ 	register_intc_controller(&intcs_desc);
+ 
