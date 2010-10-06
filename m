@@ -1,65 +1,43 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Oct 2010 13:30:41 +0000
+Date: Wed, 06 Oct 2010 14:13:47 +0000
 Subject: Re: [PATCH 2/7] perf: New helper function for pmu name
-Message-Id: <20101006133041.GA29273@linux-sh.org>
+Message-Id: <20101006141347.GA32376@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1286222593.git.matt@console-pimps.org> <59a8e68894a2e755232189abbe9b1a3b892e309c.1286222593.git.matt@console-pimps.org> <20101006122736.GL13563@erda.amd.com> <20101006123950.GA29118@linux-sh.org> <20101006131825.GO13563@erda.amd.com>
-In-Reply-To: <20101006131825.GO13563@erda.amd.com>
+References: <cover.1286222593.git.matt@console-pimps.org> <59a8e68894a2e755232189abbe9b1a3b892e309c.1286222593.git.matt@console-pimps.org> <20101006122736.GL13563@erda.amd.com> <20101006123950.GA29118@linux-sh.org> <20101006131825.GO13563@erda.amd.com> <20101006133041.GA29273@linux-sh.org>
+In-Reply-To: <20101006133041.GA29273@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Robert Richter <robert.richter@amd.com>
 Cc: Peter Zijlstra <peterz@infradead.org>, Matt Fleming <matt@console-pimps.org>, Will Deacon <will.deacon@arm.com>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On Wed, Oct 06, 2010 at 03:18:25PM +0200, Robert Richter wrote:
-> I don't want to be the perf_pmu_name() discussion a show stopper for
-> this patch set. We don't have a generic perf interface available now
-> that allows us to detect the pmu type for sh cpus. I also don't see a
-> name string as a final solution for pmu detection. So it will be more
-> than just adding perf_pmu_name().
+On Wed, Oct 06, 2010 at 10:30:41PM +0900, Paul Mundt wrote:
+> On Wed, Oct 06, 2010 at 03:18:25PM +0200, Robert Richter wrote:
+> > I am not against adding the pmu name to the perf API. But the oprofile
+> > cpu_type strings are oprofile centric esp. for the userland. So these
+> > strings will remain part of oprofile. Also I don't think we want to
+> > polute the perf pmu names with it.
+> > 
+> And those architectures that have opted to use different strings for perf
+> events are free to mangle them however they want for the oprofile case.
+> It doesn't change the fact that strings are still being managed by all of
+> the architectures. The perf PMU names aren't presently locked in to an
+> ABI, whereas the oprofile strings are, so it seems fairly straightforward
+> to develop standard mangling rules for preventing an oprofile-facing
+> string, or to simply reuse the strings verbatim.
 > 
-Whether you see it as a show stopper or not is not the issue, I will not
-expose sh_pmu generically. Nor do I imagine that the x86 people or any
-other architecture wishing to tie in to the oprofile wrapper are
-interested in doing the equivalent there. We have a registration
-interface to do, and I will not provide oprofile-specific workarounds
-for it hidden in the arch code.
+So to add a bit of context here, I was just looking at the oprofile
+tools. The naming format here is one of:
 
-> Until then, as we currently would only need the name for SH, I don't
-> see something wrong here to include architectural interfaces from
-> <asm/perf_event.h> directly by architectural code until a general
-> solution is available.  If you run a 'git grep include..asm/perf' this
-> is common for other architectures.
-> 
-This is nonsense. Every architecture that needs to support the oprofile
-userspace tools needs to support the string interface. At the same time,
-everyone supporting hardware perf events in the kernel today already has
-a string to pmu mapping somewhere in their data structures. This can
-easily be exposed generically, and platforms that have special mangling
-they need to do before exposing the string to oprofile can do so if the
-need to.
+	<arch>/<pmu>
 
-> I am not against adding the pmu name to the perf API. But the oprofile
-> cpu_type strings are oprofile centric esp. for the userland. So these
-> strings will remain part of oprofile. Also I don't think we want to
-> polute the perf pmu names with it.
-> 
-And those architectures that have opted to use different strings for perf
-events are free to mangle them however they want for the oprofile case.
-It doesn't change the fact that strings are still being managed by all of
-the architectures. The perf PMU names aren't presently locked in to an
-ABI, whereas the oprofile strings are, so it seems fairly straightforward
-to develop standard mangling rules for preventing an oprofile-facing
-string, or to simply reuse the strings verbatim.
+if there were a generic perf to oprofile pmu name mangler that did this
+it would cover almost all of the ARM cases already, the SH strings I'm
+happy to convert to work this way, and a good chunk of the PowerPC PMUs
+would work fine, too. PowerPC already has an oprofile CPU string in its
+CPU spec, so this would be even more trivial to wire up there if such a
+generic interface were to exist.
 
-> > sh_pmu is created for use solely by the perf events code, we are not
-> > going to have oprofile poking around in data structures it has no place
-> > knowing anything about when 99% of everything else it is doing is already
-> > abstracted cleanly through the perf events interfaces. Likewise for
-> > special oprofile-specific APIs.
-> 
-> So, I am also fine with implementing a generic perf_pmu_name() for sh
-> and then derive the oprofile cpu_type string from it in the oprofile
-> code.
-> 
-Again, this is unacceptable.
+This would just leave x86 as the odd one out, but I suppose if x86 were
+to move to the oprofile perf wrapper in the future then a bit of id to
+name mangling as an override wouldn't be too much work.
