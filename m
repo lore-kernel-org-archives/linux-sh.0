@@ -1,32 +1,88 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 30 Oct 2010 11:50:32 +0000
-Subject: Re: [PATCH/RFC 3/3 v2] ARM: mach-shmobile: implement parent clock optimization
-Message-Id: <20101030115032.GA6955@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Sat, 09 Oct 2010 00:46:15 +0000
+Subject: [PATCH V5 0/7] Generalise ARM perf-events backend for oprofile
+Message-Id: <cover.1286584677.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1010291436210.25084@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1010291436210.25084@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On Fri, Oct 29, 2010 at 02:42:16PM +0200, Guennadi Liakhovetski wrote:
-> This new function allows to select a parent frequency, which provides the 
-> best matching child clock rate.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> Paul, something like this? I know, this is against an "old" kernel, only 
-> compile tested so far, so, this is even more of an RFC than the previous 
-> version, just to ask your opinion, if this is the direction you were 
-> thinking about. Unfortunately, I don't think re-using 
-> clk_rate_round_helper() would be wise here, but we can discuss that too. 
-> 
-Yes, that basically looks like what I had in mind. 
+The perf-events backend for OProfile that Will Deacon wrote in
+8c1fc96f6fd1f361428ba805103af0d0eee65179 ("ARM: 6072/1: oprofile: use
+perf-events framework as backend") is of use to more architectures
+than just ARM. Move the code into drivers/oprofile/ so that SH can use
+it instead of the nearly identical copy of its OProfile code.
 
-Re-using clk_rate_round_helper() probably won't help here since it's
-doing sufficiently different things anyways.
+The benefit of the backend is that it becomes necessary to only
+maintain one copy of the PMU accessor functions for each architecture,
+with bug fixes and new features benefiting both OProfile and perf.
 
-If this ends up working for you then please test it and respin it against
-a current kernel. This can go upstream pretty easily by itself.
+Note that I haven't been able to test these patches on an ARM board to
+see if I've caused any regressions. If anyone else could do that I'd
+appreciate it. Though, I have been able to compile this version of the
+series.
+
+This patch series is based on,
+
+    git://git.kernel.org/pub/scm/linux/kernel/git/rric/oprofile.git core
+
+These patches can also be found at,
+
+    git://git.kernel.org/pub/scm/linux/kernel/git/mfleming/sh-2.6.git perf-oprofile
+
+
+Robert, I haven't rebased this work on your oprofile updates for
+2.6.37. If you need me to do that, just shout. If you have any comments
+I'll respin this ASAP but it's probably ready for merging now.
+
+
+Changes from v4:
+ - SH is the only arch that doesn't default perf_pmu_name()
+ - Changed perf_nr_counters to num_counters
+ 
+Changes from v3:
+ - New perf_pmu_name() function
+ - Sprinkled an EXPORT_SYMBOL_GPL()
+ - Don't repeatedly call perf_num_counters()
+ - Change name of oprofile_driver to "oprofile-perf"
+ - Hard overwrite the oprofile_operations in oprofile_perf_init()
+ - Dropped the patch that made oprofile depend on HW_PERF_EVENTS for ARM
+
+Changes from v2:
+ - Rebased against Robert's oprofile core branch
+ - Moved even more of the ARM code into the generic oprofile code
+ - Broke the patches up into more logical steps
+
+Changes from v1:
+ - Prefix the new functons with "oprofile_" instead of "op_".
+ - Fix ARM compilation errors
+ - Move all the oprofile-perf logic into oprofile_perf.c
+ - Include cleanup patch from Will
+
+Matt Fleming (7):
+  perf: Add helper function to return number of counters
+  perf: New helper function for pmu name
+  oprofile: Make op_name_from_perf_id() global
+  ARM: oprofile: Rename op_arm to oprofile_perf
+  ARM: oprofile: Move non-ARM code into separate init/exit
+  oprofile: Abstract the perf-events backend
+  sh: oprofile: Use perf-events oprofile backend
+
+ arch/arm/kernel/perf_event.c     |    6 +
+ arch/arm/oprofile/Makefile       |    4 +
+ arch/arm/oprofile/common.c       |  309 +-----------------------------------
+ arch/sh/Kconfig                  |   13 ++
+ arch/sh/kernel/perf_event.c      |   18 ++
+ arch/sh/oprofile/Makefile        |    4 +
+ arch/sh/oprofile/common.c        |  115 +++-----------
+ arch/sh/oprofile/op_impl.h       |   33 ----
+ drivers/oprofile/oprofile_perf.c |  326 ++++++++++++++++++++++++++++++++++++++
+ include/linux/oprofile.h         |    7 +
+ include/linux/perf_event.h       |    2 +
+ kernel/perf_event.c              |    5 +
+ 12 files changed, 412 insertions(+), 430 deletions(-)
+ delete mode 100644 arch/sh/oprofile/op_impl.h
+ create mode 100644 drivers/oprofile/oprofile_perf.c
+
