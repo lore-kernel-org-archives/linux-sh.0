@@ -1,60 +1,260 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 28 Oct 2010 06:53:04 +0000
-Subject: Re: [PATCH/RFC 3/3] ARM: mach-shmobile: implement parent clock optimization for HDMI
-Message-Id: <20101028065304.GB16806@linux-sh.org>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Sat, 09 Oct 2010 00:46:22 +0000
+Subject: [PATCH 7/7] sh: oprofile: Use perf-events oprofile backend
+Message-Id: <a0c83396f5fb8a29baff3daf43d29b2e601511ff.1286584677.git.matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1010271821580.11687@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1010271821580.11687@axis700.grange>
+References: <cover.1286584677.git.matt@console-pimps.org>
+In-Reply-To: <cover.1286584677.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Robert Richter <robert.richter@amd.com>
+Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
 
-On Thu, Oct 28, 2010 at 08:29:54AM +0200, Guennadi Liakhovetski wrote:
-> On Thu, 28 Oct 2010, Paul Mundt wrote:
-> 
-> > On Wed, Oct 27, 2010 at 06:24:26PM +0200, Guennadi Liakhovetski wrote:
-> > > On ap4evb PLLC2 is used as a parent clock for the HDMI clock. To configure the
-> > > HDMI clock with the highest precision this patch scans all available PLLC2
-> > > frequencies and picks up the best one.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > 
-> > So, what exactly does ap4evb_clk_optimize() do that you can't already do
-> > with either clk_rate_table_round() or clk_rate_div_range_round()?
-> 
-> No, it does something pretty different: it selects the best _parent_ 
-> frequency to optimize that of the _child_. So, it actually tells you "to 
-> configure your clock as close as possible to frequency X you have to 
-> reconfigure its parent with frequency Y." Which I don't think any of the 
-> aforementioned functions does.
-> 
-Ok, that sounds fine.
+Now that we've got a generic perf-events based oprofile backend we might
+as well make use of it seeing as SH doesn't do anything special with its
+oprofile backend. Also introduce a new CONFIG_HW_PERF_EVENTS symbol so
+that we can fallback to using the timer interrupt for oprofile if the
+CPU doesn't support perf events.
 
-> Well, there is a reason, why this is marked an "RFC":-) I also don't like 
-> very much touching clock internals in platform code, but in a way it is 
-> specific for each case. This implementation only works for clocks, whose 
-> divisors are integer numbers in a certain range (without holes). Ok, with 
-> clk_get_parent() the other two callbacks .clk_set_rate_parent() and 
-> .clk_get_rate_parent() are automatically not needed, which is good! And I 
-> would be happy to try to convert the ap4evb_clk_optimize() function into a 
-> generic helper too, if we reach such an agreement.
-> 
-I wonder if this is something you can use/adapt clk_rate_round_helper()
-for? In any event, the best place for this is in drivers/sh/clk/core.c
-along with the other helpers. The ranged div iterator already takes the
-parent frequency in to account, so you might be able to use a similar
-approach for an iterator here, too (albeit probably inverted). If you
-introduce a generic clk_rate_parent_round() or whatever then that's
-pretty easy to support without any of the nasty layering violations.
+Also, to avoid a section mismatch warning we need to annotate
+oprofile_arch_exit() with an __exit marker.
 
-I don't like having this sort of knowledge in the platform code because
-there is really nothing platform specific about it. If a platform happens
-to be the first to exhibit a certain type of clock topology interactivity,
-then that's something the clock framework needs to expand to accomodate.
-Most of these things will invariably show up on other platforms in the
-future, and by then the same algorithm will have been copied all over the
-place, mangled, and probably broken in a dozen different hard to debug
-ways. Keeping all of the rounders centrally managed will help prevent
-this, regardless of what sort of obscure topology perversion the hardware
-folks come up with :-)
+Signed-off-by: Matt Fleming <matt@console-pimps.org>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+---
+ arch/sh/Kconfig            |   13 +++++
+ arch/sh/oprofile/Makefile  |    4 ++
+ arch/sh/oprofile/common.c  |  115 +++++++++-----------------------------------
+ arch/sh/oprofile/op_impl.h |   33 -------------
+ 4 files changed, 40 insertions(+), 125 deletions(-)
+ delete mode 100644 arch/sh/oprofile/op_impl.h
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 33990fa..35b6c3f 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -249,6 +249,11 @@ config ARCH_SHMOBILE
+ 	select PM
+ 	select PM_RUNTIME
+ 
++config CPU_HAS_PMU
++       depends on CPU_SH4 || CPU_SH4A
++       default y
++       bool
++
+ if SUPERH32
+ 
+ choice
+@@ -738,6 +743,14 @@ config GUSA_RB
+ 	  LLSC, this should be more efficient than the other alternative of
+ 	  disabling interrupts around the atomic sequence.
+ 
++config HW_PERF_EVENTS
++	bool "Enable hardware performance counter support for perf events"
++	depends on PERF_EVENTS && CPU_HAS_PMU
++	default y
++	help
++	  Enable hardware performance counter support for perf events. If
++	  disabled, perf events will use software events only.
++
+ source "drivers/sh/Kconfig"
+ 
+ endmenu
+diff --git a/arch/sh/oprofile/Makefile b/arch/sh/oprofile/Makefile
+index 4886c5c..e85aae7 100644
+--- a/arch/sh/oprofile/Makefile
++++ b/arch/sh/oprofile/Makefile
+@@ -6,4 +6,8 @@ DRIVER_OBJS = $(addprefix ../../../drivers/oprofile/, \
+ 		oprofilefs.o oprofile_stats.o \
+ 		timer_int.o )
+ 
++ifeq ($(CONFIG_HW_PERF_EVENTS),y)
++DRIVER_OBJS += $(addprefix ../../../drivers/oprofile/, oprofile_perf.o)
++endif
++
+ oprofile-y	:= $(DRIVER_OBJS) common.o backtrace.o
+diff --git a/arch/sh/oprofile/common.c b/arch/sh/oprofile/common.c
+index ac60493..e10d893 100644
+--- a/arch/sh/oprofile/common.c
++++ b/arch/sh/oprofile/common.c
+@@ -17,114 +17,45 @@
+ #include <linux/init.h>
+ #include <linux/errno.h>
+ #include <linux/smp.h>
++#include <linux/perf_event.h>
+ #include <asm/processor.h>
+-#include "op_impl.h"
+-
+-static struct op_sh_model *model;
+-
+-static struct op_counter_config ctr[20];
+ 
++#ifdef CONFIG_HW_PERF_EVENTS
+ extern void sh_backtrace(struct pt_regs * const regs, unsigned int depth);
+ 
+-static int op_sh_setup(void)
+-{
+-	/* Pre-compute the values to stuff in the hardware registers.  */
+-	model->reg_setup(ctr);
+-
+-	/* Configure the registers on all cpus.  */
+-	on_each_cpu(model->cpu_setup, NULL, 1);
+-
+-        return 0;
+-}
+-
+-static int op_sh_create_files(struct super_block *sb, struct dentry *root)
++char *op_name_from_perf_id(void)
+ {
+-	int i, ret = 0;
++	const char *pmu;
++	char buf[20];
++	int size;
+ 
+-	for (i = 0; i < model->num_counters; i++) {
+-		struct dentry *dir;
+-		char buf[4];
++	pmu = perf_pmu_name();
++	if (!pmu)
++		return NULL;
+ 
+-		snprintf(buf, sizeof(buf), "%d", i);
+-		dir = oprofilefs_mkdir(sb, root, buf);
++	size = snprintf(buf, sizeof(buf), "sh/%s", pmu);
++	if (size > -1 && size < sizeof(buf))
++		return buf;
+ 
+-		ret |= oprofilefs_create_ulong(sb, dir, "enabled", &ctr[i].enabled);
+-		ret |= oprofilefs_create_ulong(sb, dir, "event", &ctr[i].event);
+-		ret |= oprofilefs_create_ulong(sb, dir, "kernel", &ctr[i].kernel);
+-		ret |= oprofilefs_create_ulong(sb, dir, "user", &ctr[i].user);
+-
+-		if (model->create_files)
+-			ret |= model->create_files(sb, dir);
+-		else
+-			ret |= oprofilefs_create_ulong(sb, dir, "count", &ctr[i].count);
+-
+-		/* Dummy entries */
+-		ret |= oprofilefs_create_ulong(sb, dir, "unit_mask", &ctr[i].unit_mask);
+-	}
+-
+-	return ret;
++	return NULL;
+ }
+ 
+-static int op_sh_start(void)
++int __init oprofile_arch_init(struct oprofile_operations *ops)
+ {
+-	/* Enable performance monitoring for all counters.  */
+-	on_each_cpu(model->cpu_start, NULL, 1);
++	ops->backtrace = sh_backtrace;
+ 
+-	return 0;
++	return oprofile_perf_init(ops);
+ }
+ 
+-static void op_sh_stop(void)
++void __exit oprofile_arch_exit(void)
+ {
+-	/* Disable performance monitoring for all counters.  */
+-	on_each_cpu(model->cpu_stop, NULL, 1);
++	oprofile_perf_exit();
+ }
+-
++#else
+ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ {
+-	struct op_sh_model *lmodel = NULL;
+-	int ret;
+-
+-	/*
+-	 * Always assign the backtrace op. If the counter initialization
+-	 * fails, we fall back to the timer which will still make use of
+-	 * this.
+-	 */
+-	ops->backtrace = sh_backtrace;
+-
+-	/*
+-	 * XXX
+-	 *
+-	 * All of the SH7750/SH-4A counters have been converted to perf,
+-	 * this infrastructure hook is left for other users until they've
+-	 * had a chance to convert over, at which point all of this
+-	 * will be deleted.
+-	 */
+-
+-	if (!lmodel)
+-		return -ENODEV;
+-	if (!(current_cpu_data.flags & CPU_HAS_PERF_COUNTER))
+-		return -ENODEV;
+-
+-	ret = lmodel->init();
+-	if (unlikely(ret != 0))
+-		return ret;
+-
+-	model = lmodel;
+-
+-	ops->setup		= op_sh_setup;
+-	ops->create_files	= op_sh_create_files;
+-	ops->start		= op_sh_start;
+-	ops->stop		= op_sh_stop;
+-	ops->cpu_type		= lmodel->cpu_type;
+-
+-	printk(KERN_INFO "oprofile: using %s performance monitoring.\n",
+-	       lmodel->cpu_type);
+-
+-	return 0;
+-}
+-
+-void oprofile_arch_exit(void)
+-{
+-	if (model && model->exit)
+-		model->exit();
++	pr_info("oprofile: hardware counters not available\n");
++	return -ENODEV;
+ }
++void __exit oprofile_arch_exit(void) {}
++#endif /* CONFIG_HW_PERF_EVENTS */
+diff --git a/arch/sh/oprofile/op_impl.h b/arch/sh/oprofile/op_impl.h
+deleted file mode 100644
+index 1244479..0000000
+--- a/arch/sh/oprofile/op_impl.h
++++ /dev/null
+@@ -1,33 +0,0 @@
+-#ifndef __OP_IMPL_H
+-#define __OP_IMPL_H
+-
+-/* Per-counter configuration as set via oprofilefs.  */
+-struct op_counter_config {
+-	unsigned long enabled;
+-	unsigned long event;
+-
+-	unsigned long count;
+-
+-	/* Dummy values for userspace tool compliance */
+-	unsigned long kernel;
+-	unsigned long user;
+-	unsigned long unit_mask;
+-};
+-
+-/* Per-architecture configury and hooks.  */
+-struct op_sh_model {
+-	void (*reg_setup)(struct op_counter_config *);
+-	int (*create_files)(struct super_block *sb, struct dentry *dir);
+-	void (*cpu_setup)(void *dummy);
+-	int (*init)(void);
+-	void (*exit)(void);
+-	void (*cpu_start)(void *args);
+-	void (*cpu_stop)(void *args);
+-	char *cpu_type;
+-	unsigned char num_counters;
+-};
+-
+-/* arch/sh/oprofile/common.c */
+-extern void sh_backtrace(struct pt_regs * const regs, unsigned int depth);
+-
+-#endif /* __OP_IMPL_H */
+-- 
+1.7.1
+
