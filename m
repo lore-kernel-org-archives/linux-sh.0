@@ -1,42 +1,46 @@
-From: Robert Richter <robert.richter@amd.com>
-Date: Wed, 06 Oct 2010 18:34:22 +0000
-Subject: Re: [PATCH 5/7] oprofile: Abstract the perf-events backend
-Message-Id: <20101006183422.GV13563@erda.amd.com>
+From: Vasiliy Kulikov <segooon@gmail.com>
+Date: Sun, 10 Oct 2010 17:28:27 +0000
+Subject: [PATCH] sh: boards/mach-x3proto: gpio: fix error handling code
+Message-Id: <1286731708-17822-1-git-send-email-segooon@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1286222593.git.matt@console-pimps.org>
- <f1c48cb70de8129566db8a9196bcf3a3bc500aa8.1286222593.git.matt@console-pimps.org>
-In-Reply-To: <f1c48cb70de8129566db8a9196bcf3a3bc500aa8.1286222593.git.matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
+To: kernel-janitors@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 04.10.10 16:44:23, Matt Fleming wrote:
-> Move the perf-events backend from arch/arm/oprofile into
-> drivers/oprofile so that the code can be shared between architectures.
-> 
-> This allows each architecture to maintain only a single copy of the PMU
-> accessor functions instead of one for both perf and OProfile. It also
-> becomes possible for other architectures to delete much of their
-> OProfile code in favour of the common code now available in
-> drivers/oprofile/oprofile_perf.c.
-> 
-> Signed-off-by: Matt Fleming <matt@console-pimps.org>
-> Tested-by: Will Deacon <will.deacon@arm.com>
-> ---
->  arch/arm/oprofile/Makefile       |    4 +
->  arch/arm/oprofile/common.c       |  319 -------------------------------------
->  drivers/oprofile/oprofile_perf.c |  326 ++++++++++++++++++++++++++++++++++++++
->  include/linux/oprofile.h         |    6 +
->  4 files changed, 336 insertions(+), 319 deletions(-)
->  create mode 100644 drivers/oprofile/oprofile_perf.c
+Checks for (irq < 0) and (ilsel < 0) didn't make sense since they were
+unsigned.  Made them signed.
 
-This patch looks good.
+Signed-off-by: Vasiliy Kulikov <segooon@gmail.com>
+---
+ I cannot compile this driver, so it is not tested.
 
--Robert
+ arch/sh/boards/mach-x3proto/gpio.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
+index 9fcd7ce..594adf7 100644
+--- a/arch/sh/boards/mach-x3proto/gpio.c
++++ b/arch/sh/boards/mach-x3proto/gpio.c
+@@ -79,7 +79,7 @@ struct gpio_chip x3proto_gpio_chip = {
+ 
+ int __init x3proto_gpio_setup(void)
+ {
+-	unsigned int ilsel;
++	int ilsel;
+ 	int ret, i;
+ 
+ 	ilsel = ilsel_enable(ILSEL_KEY);
+@@ -92,7 +92,7 @@ int __init x3proto_gpio_setup(void)
+ 
+ 	for (i = 0; i < NR_BASEBOARD_GPIOS; i++) {
+ 		unsigned long flags;
+-		unsigned int irq = create_irq();
++		int irq = create_irq();
+ 
+ 		if (unlikely(irq < 0)) {
+ 			ret = -EINVAL;
 -- 
-Advanced Micro Devices, Inc.
-Operating System Research Center
+1.7.0.4
 
