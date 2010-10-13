@@ -1,48 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Oct 2010 07:22:11 +0000
-Subject: [PATCH] ARM: shmobile: break out sh7372 platform devices
-Message-Id: <20101013072211.19725.56630.sendpatchset@t400s>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 13 Oct 2010 09:49:07 +0000
+Subject: Re: [PATCH] ARM: shmobile: break out sh7372 platform devices
+Message-Id: <20101013094907.GC10013@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101013072211.19725.56630.sendpatchset@t400s>
+In-Reply-To: <20101013072211.19725.56630.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Oct 13, 2010 at 04:22:11PM +0900, Magnus Damm wrote:
+> This patch introduces sh7372_late_devices which
+> should include all regular processor specific
+> platform devices.
+> 
+> Early platform devices for console and timers
+> should be put on the sh7372_early_devices list,
+> all other devices should be on sh7372_late_devices.
 
-This patch introduces sh7372_late_devices which
-should include all regular processor specific
-platform devices.
+On Wed, Oct 13, 2010 at 04:29:31PM +0900, Magnus Damm wrote:
+> Move SH-Mobile ARM systems over from the legacy
+> "clk" member of struct sh_timer_config to using
+> the device name and clkdev for clock matching.
 
-Early platform devices for console and timers
-should be put on the sh7372_early_devices list,
-all other devices should be on sh7372_late_devices.
+On Wed, Oct 13, 2010 at 04:39:18PM +0900, Magnus Damm wrote:
+> Just use MMCIF as name to match the sh7372 data sheet.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/setup-sh7372.c |    6 ++++++
- 1 file changed, 6 insertions(+)
-
---- 0003/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2010-10-13 15:35:44.000000000 +0900
-@@ -527,6 +527,9 @@ static struct platform_device *sh7372_ea
- 	&scif5_device,
- 	&scif6_device,
- 	&cmt10_device,
-+};
-+
-+static struct platform_device *sh7372_late_devices[] __initdata = {
- 	&iic0_device,
- 	&iic1_device,
- 	&dma0_device,
-@@ -538,6 +541,9 @@ void __init sh7372_add_standard_devices(
- {
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
-+
-+	platform_add_devices(sh7372_late_devices,
-+			    ARRAY_SIZE(sh7372_late_devices));
- }
- 
- void __init sh7372_add_early_devices(void)
+These are all applied to the genesis tree now, thanks.
