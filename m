@@ -1,37 +1,224 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 15 Oct 2010 06:30:49 +0000
-Subject: Re: [PATCH 0/3] ARM: mach-shmobile: FSI clock patches
-Message-Id: <20101015063049.GB7489@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 14 Oct 2010 09:12:33 +0000
+Subject: [patch v3 2/2] ARM: mach-shmobile: Add zboot support for SuperH Mobile ARM
+Message-Id: <20101014091434.501864612@vergenet.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3ppqvc11ij.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3ppqvc11ij.wl%kuninori.morimoto.gx@renesas.com>
+References: <20101014091231.858799238@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 15, 2010 at 02:14:00PM +0900, Kuninori Morimoto wrote:
-> These are latest version of my FSIDIV clock support patches.
-> 
-> Kuninori Morimoto (3):
->       ARM: mach-shmobile: clock-sh7372: add sh7372_ prefix to global clocks
->       ARM: mach-shmobile: clock-sh7372: FSI parent select support
->       ARM: mach-shmobile: clock-sh7372: Add FSIDIV clock support
-> 
-> These are based on Paul's "sh_clk mapping" patch.
-> 1st patch was required from Maguns.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-It's good to see that the clk mapping stuff worked out for you! I'll
-merge it up now that it's been tested.
+When CONFIG_ZBOOT_ROM is selected, the resulting zImage file will be small
+boot loader and may be burned to rom or flash.
 
-The first two patches look good as-is, so I'll merge those right away.
-This will now also allow us to kill off the ->init() op for all
-non-legacy CPG users, which puts us in pretty good shape for supporting
-the generic struct clk work when that gets finished.
+This is the board-specific portion of this patch-set.
 
-> This time, I don't send patch which adds HDMI sound support for AP4,
-> because I noticed that it is depend on ALSA git tree.
-> I will send it if it were merged
-> 
-Ok, we can deal with that later in the merge window too then, so that's
-not a problem.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
+--- 
+
+v2:
+* As suggested by Magnus Damm; Implemented by Simon Horman
+  - Initialise atags in framework and pass atags to kernel.
+    This removes the need for board-specific fixup code.
+
+Index: linux-2.6-arm/arch/arm/mach-shmobile/board-ap4evb.c
+=================================--- linux-2.6-arm.orig/arch/arm/mach-shmobile/board-ap4evb.c	2010-10-14 16:55:20.000000000 +0900
++++ linux-2.6-arm/arch/arm/mach-shmobile/board-ap4evb.c	2010-10-14 16:58:11.000000000 +0900
+@@ -58,6 +58,7 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
++#include <asm/setup.h>
+ 
+ /*
+  * Address	Interface		BusWidth	note
+Index: linux-2.6-arm/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
+=================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6-arm/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt	2010-10-14 16:58:11.000000000 +0900
+@@ -0,0 +1,87 @@
++LIST "partner-jet-setup.txt"
++LIST "(C) Copyright 2010 Renesas Solutions Corp"
++LIST "Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>"
++
++LIST "RWT Setting"
++EW 0xE6020004, 0xA500
++EW 0xE6030004, 0xA500
++
++DD 0x01001000, 0x01001000
++
++LIST "GPIO Setting"
++EB 0xE6051013, 0xA2
++
++LIST "CPG"
++ED 0xE6150080, 0x00000180
++ED 0xE61500C0, 0x00000002
++
++WAIT 1, 0xFE40009C
++
++LIST "FRQCR"
++ED 0xE6150000, 0x2D1305C3
++ED 0xE61500E0, 0x9E40358E
++ED 0xE6150004, 0x80331050
++
++WAIT 1, 0xFE40009C
++
++ED 0xE61500E4, 0x00002000
++
++WAIT 1, 0xFE40009C
++
++LIST "PLL"
++ED 0xE6150028, 0x00004000
++
++WAIT 1, 0xFE40009C
++
++ED 0xE615002C, 0x93000040
++
++WAIT 1, 0xFE40009C
++
++LIST "BSC"
++ED 0xFEC10000, 0x00E0001B
++
++LIST "SBSC1"
++ED 0xFE400354, 0x01AD8000
++ED 0xFE400354, 0x01AD8001
++
++WAIT 5, 0xFE40009C
++
++ED 0xFE400008, 0xBCC90151
++ED 0xFE400040, 0x41774113
++ED 0xFE400044, 0x2712E229
++ED 0xFE400048, 0x20C18505
++ED 0xFE40004C, 0x00110209
++ED 0xFE400010, 0x00000087
++
++WAIT 10, 0xFE40009C
++
++ED 0xFE400084, 0x0000003F
++EB 0xFE500000, 0x00
++
++WAIT 5, 0xFE40009C
++
++ED 0xFE400084, 0x0000FF0A
++EB 0xFE500000, 0x00
++
++WAIT 1, 0xFE40009C
++
++ED 0xFE400084, 0x00002201
++EB 0xFE500000, 0x00
++ED 0xFE400084, 0x00000302
++EB 0xFE500000, 0x00
++EB 0xFE5C0000, 0x00
++ED 0xFE400008, 0xBCC90159
++ED 0xFE40008C, 0x88800004
++ED 0xFE400094, 0x00000004
++ED 0xFE400028, 0xA55A0032
++ED 0xFE40002C, 0xA55A000C
++ED 0xFE400020, 0xA55A2048
++ED 0xFE400008, 0xBCC90959
++
++LIST "Change CPGA setting"
++ED 0xE61500E0, 0x9E40352E
++ED 0xE6150004, 0x80331050
++
++WAIT 1, 0xFE40009C
++
++ED 0xE6150354, 0x00000002
+Index: linux-2.6-arm/arch/arm/mach-shmobile/include/mach/zboot_macros.h
+=================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6-arm/arch/arm/mach-shmobile/include/mach/zboot_macros.h	2010-10-14 16:58:11.000000000 +0900
+@@ -0,0 +1,65 @@
++#ifndef __ZBOOT_MACRO_H
++#define __ZBOOT_MACRO_H
++
++/* The LIST command is used to include comments in the script */
++.macro	LIST comment
++.endm
++
++/* The ED command is used to write a 32-bit word */
++.macro ED, addr, data
++	LDR	r0, 1f
++	LDR	r1, 2f
++	STR	r1, [r0]
++	B	3f
++1 :	.long	\addr
++2 :	.long	\data
++3 :
++.endm
++
++/* The EW command is used to write a 16-bit word */
++.macro EW, addr, data
++	LDR	r0, 1f
++	LDR	r1, 2f
++	STRH	r1, [r0]
++	B	3f
++1 :	.long	\addr
++2 :	.long	\data
++3 :
++.endm
++
++/* The EB command is used to write an 8-bit word */
++.macro EB, addr, data
++	LDR	r0, 1f
++	LDR	r1, 2f
++	STRB	r1, [r0]
++	B	3f
++1 :	.long	\addr
++2 :	.long	\data
++3 :
++.endm
++
++/* The WAIT command is used to delay the execution */
++.macro  WAIT, time, reg
++	LDR	r1, 1f
++	LDR	r0, 2f
++	STR	r0, [r1]
++10 :
++	LDR	r0, [r1]
++	CMP	r0, #0x00000000
++	BNE	10b
++	NOP
++	B	3f
++1 :	.long	\reg
++2 :	.long	\time * 100
++3 :
++.endm
++
++/* The DD command is used to read a 32-bit word */
++.macro  DD, start, end
++	LDR	r1, 1f
++	B	2f
++1 :	.long	\start
++2 :
++.endm
++
++#endif /* __ZBOOT_MACRO_H */
+Index: linux-2.6-arm/arch/arm/mach-shmobile/include/mach/zboot.h
+=================================--- linux-2.6-arm.orig/arch/arm/mach-shmobile/include/mach/zboot.h	2010-10-14 16:55:20.000000000 +0900
++++ linux-2.6-arm/arch/arm/mach-shmobile/include/mach/zboot.h	2010-10-14 16:58:11.000000000 +0900
+@@ -1,12 +1,20 @@
+ #ifndef ZBOOT_H
+ #define ZBOOT_H
+ 
++#include <asm/mach-types.h>
++#include <mach/zboot_macros.h>
++
+ /**************************************************
+  *
+  *		board specific settings
+  *
+  **************************************************/
+ 
++#ifdef CONFIG_MACH_AP4EVB
++#define MACH_TYPE	MACH_TYPE_AP4EVB
++#include "mach/head-ap4evb.txt"
++#else
+ #error "unsupported board."
++#endif
+ 
+ #endif /* ZBOOT_H */
+
