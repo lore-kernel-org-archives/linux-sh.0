@@ -1,209 +1,249 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Oct 2010 07:53:52 +0000
-Subject: [PATCH 1/4] fbdev: sh_mobile_lcdc: make platform videomode table
-Message-Id: <Pine.LNX.4.64.1010150950200.3945@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 15 Oct 2010 05:15:05 +0000
+Subject: [PATCH 2/3] ARM: mach-shmobile: clock-sh7372: FSI parent select support
+Message-Id: <w3plj6011gm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Add a default 720p mode to the sh_mobile_lcdc driver to be used, when no
-videomode is specified in the platform data. This can be used, e.g., with HDMI.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/video/sh_mobile_hdmi.c   |    3 +-
- drivers/video/sh_mobile_lcdcfb.c |   73 +++++++++++++++++++++++++------------
- 2 files changed, 51 insertions(+), 25 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c        |   70 +++++++++++++++-----------
+ arch/arm/mach-shmobile/clock-sh7372.c        |   45 ++++++++++++++---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 +
+ 3 files changed, 80 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index e782983..3b2e893 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -1129,7 +1129,8 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- 		goto egetclk;
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index f879eb3..1e7beee 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -546,27 +546,6 @@ static struct platform_device *qhd_devices[] __initdata = {
+ 
+ /* FSI */
+ #define IRQ_FSI		evt2irq(0x1840)
+-#define FSIACKCR	0xE6150018
+-static void fsiackcr_init(struct clk *clk)
+-{
+-	u32 status = __raw_readl(clk->enable_reg);
+-
+-	/* use external clock */
+-	status &= ~0x000000ff;
+-	status |= 0x00000080;
+-	__raw_writel(status, clk->enable_reg);
+-}
+-
+-static struct clk_ops fsiackcr_clk_ops = {
+-	.init = fsiackcr_init,
+-};
+-
+-static struct clk fsiackcr_clk = {
+-	.ops		= &fsiackcr_clk_ops,
+-	.enable_reg	= (void __iomem *)FSIACKCR,
+-	.rate		= 0, /* unknown */
+-};
+-
+ static struct sh_fsi_platform_info fsi_info = {
+ 	.porta_flags = SH_FSI_BRS_INV |
+ 		       SH_FSI_OUT_SLAVE_MODE |
+@@ -817,6 +796,47 @@ out:
+ 
+ device_initcall(hdmi_init_pm_clock);
+ 
++#define FSIACK_DUMMY_RATE 48000
++static int __init fsi_init_pm_clock(void)
++{
++	struct clk *fsia_ick;
++	int ret;
++
++	/*
++	 * FSIACK is connected to AK4642,
++	 * and the rate is depend on playing sound rate.
++	 * So, set dummy rate (= 48k) here
++	 */
++	ret = clk_set_rate(&sh7372_fsiack_clk, FSIACK_DUMMY_RATE);
++	if (ret < 0) {
++		pr_err("Cannot set FSIACK dummy rate: %d\n", ret);
++		return ret;
++	}
++
++	fsia_ick = clk_get(&fsi_device.dev, "icka");
++	if (IS_ERR(fsia_ick)) {
++		ret = PTR_ERR(fsia_ick);
++		pr_err("Cannot get FSI ICK: %d\n", ret);
++		return ret;
++	}
++
++	ret = clk_set_parent(fsia_ick, &sh7372_fsiack_clk);
++	if (ret < 0) {
++		pr_err("Cannot set FSI-A parent: %d\n", ret);
++		goto out;
++	}
++
++	ret = clk_set_rate(fsia_ick, FSIACK_DUMMY_RATE);
++	if (ret < 0)
++		pr_err("Cannot set FSI-A rate: %d\n", ret);
++
++out:
++	clk_put(fsia_ick);
++
++	return ret;
++}
++device_initcall(fsi_init_pm_clock);
++
+ /*
+  * FIXME !!
+  *
+@@ -1007,14 +1027,6 @@ static void __init ap4evb_init(void)
+ 		clk_put(clk);
  	}
  
--	rate = sh_hdmi_clk_configure(hdmi, pdata->lcd_chan->lcd_cfg[0].pixclock);
-+	/* Some arbitrary relaxed pixclock just to get things started */
-+	rate = sh_hdmi_clk_configure(hdmi, 37037);
- 	if (rate < 0) {
- 		ret = rate;
- 		goto erate;
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index d6e9ff5..d931382 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -54,6 +54,9 @@ static int lcdc_shared_regs[] = {
+-	/* change parent of FSI A */
+-	clk = clk_get(NULL, "fsia_clk");
+-	if (!IS_ERR(clk)) {
+-		clk_register(&fsiackcr_clk);
+-		clk_set_parent(clk, &fsiackcr_clk);
+-		clk_put(clk);
+-	}
+-
+ 	/*
+ 	 * set irq priority, to avoid sound chopping
+ 	 * when NFS rootfs is used
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 50c3971..4557084 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -292,6 +292,13 @@ struct clk sh7372_pllc2_clk = {
+ 	.parent_num	= ARRAY_SIZE(pllc2_parent),
  };
- #define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
  
-+#define DEFAULT_XRES 1280
-+#define DEFAULT_YRES 1024
-+
- static unsigned long lcdc_offs_mainlcd[NR_CH_REGS] = {
- 	[LDDCKPAT1R] = 0x400,
- 	[LDDCKPAT2R] = 0x404,
-@@ -107,6 +110,23 @@ static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
- #define LDRCNTR_MRC	0x00000001
- #define LDSR_MRS	0x00000100
- 
-+static const struct fb_videomode default_720p = {
-+	.name = "HDMI 720p",
-+	.xres = 1280,
-+	.yres = 720,
-+
-+	.left_margin = 200,
-+	.right_margin = 88,
-+	.hsync_len = 48,
-+
-+	.upper_margin = 20,
-+	.lower_margin = 5,
-+	.vsync_len = 5,
-+
-+	.pixclock = 13468,
-+	.sync = FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++/* External input clock (pin name: FSIACK/FSIBCK ) */
++struct clk sh7372_fsiack_clk = {
 +};
 +
- struct sh_mobile_lcdc_priv {
- 	void __iomem *base;
- 	int irq;
-@@ -1045,7 +1065,6 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 	struct fb_info *info = event->info;
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
--	struct fb_var_screeninfo *var;
- 	int ret;
- 
- 	if (&ch->lcdc->notifier != nb)
-@@ -1064,8 +1083,6 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 		sh_mobile_lcdc_stop(ch->lcdc);
- 		break;
- 	case FB_EVENT_RESUME:
--		var = &info->var;
--
- 		mutex_lock(&ch->open_lock);
- 		sh_mobile_fb_reconfig(info);
- 		mutex_unlock(&ch->open_lock);
-@@ -1091,7 +1108,6 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 	struct fb_info *info;
- 	struct sh_mobile_lcdc_priv *priv;
- 	struct sh_mobile_lcdc_info *pdata = pdev->dev.platform_data;
--	struct sh_mobile_lcdc_chan_cfg *cfg;
- 	struct resource *res;
- 	int error;
- 	void *buf;
-@@ -1177,11 +1193,11 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		struct fb_var_screeninfo *var;
- 		const struct fb_videomode *lcd_cfg, *max_cfg = NULL;
- 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
-+		struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
-+		const struct fb_videomode *mode = cfg->lcd_cfg;
- 		unsigned long max_size = 0;
- 		int k;
- 
--		cfg = &ch->cfg;
--
- 		ch->info = framebuffer_alloc(0, &pdev->dev);
- 		if (!ch->info) {
- 			dev_err(&pdev->dev, "unable to allocate fb_info\n");
-@@ -1192,20 +1208,12 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		info = ch->info;
- 		var = &info->var;
- 		info->fbops = &sh_mobile_lcdc_ops;
-+		info->par = ch;
- 
- 		mutex_init(&ch->open_lock);
- 
--		fb_videomode_to_var(var, &cfg->lcd_cfg[0]);
--		/* Default Y virtual resolution is 2x panel size */
--		var->yres_virtual = var->yres * 2;
--		var->activate = FB_ACTIVATE_NOW;
--
--		error = sh_mobile_lcdc_set_bpp(var, cfg->bpp);
--		if (error)
--			break;
--
--		for (k = 0, lcd_cfg = cfg->lcd_cfg;
--		     k < cfg->num_cfg;
-+		for (k = 0, lcd_cfg = mode;
-+		     k < cfg->num_cfg && lcd_cfg;
- 		     k++, lcd_cfg++) {
- 			unsigned long size = lcd_cfg->yres * lcd_cfg->xres;
- 
-@@ -1215,13 +1223,27 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 			}
- 		}
- 
--		dev_dbg(&pdev->dev, "Found largest videomode %ux%u\n",
--			max_cfg->xres, max_cfg->yres);
-+		if (!mode)
-+			max_size = DEFAULT_XRES * DEFAULT_YRES;
-+		else if (max_cfg)
-+			dev_dbg(&pdev->dev, "Found largest videomode %ux%u\n",
-+				max_cfg->xres, max_cfg->yres);
- 
- 		info->fix = sh_mobile_lcdc_fix;
--		info->fix.line_length = cfg->lcd_cfg[0].xres * (cfg->bpp / 8);
- 		info->fix.smem_len = max_size * (cfg->bpp / 8) * 2;
- 
-+		if (!mode)
-+			mode = &default_720p;
++struct clk sh7372_fsibck_clk = {
++};
 +
-+		fb_videomode_to_var(var, mode);
-+		/* Default Y virtual resolution is 2x panel size */
-+		var->yres_virtual = var->yres * 2;
-+		var->activate = FB_ACTIVATE_NOW;
+ static struct clk *main_clks[] = {
+ 	&sh7372_dv_clki_clk,
+ 	&r_clk,
+@@ -305,6 +312,8 @@ static struct clk *main_clks[] = {
+ 	&pllc1_clk,
+ 	&pllc1_div2_clk,
+ 	&sh7372_pllc2_clk,
++	&sh7372_fsiack_clk,
++	&sh7372_fsibck_clk,
+ };
+ 
+ static void div4_kick(struct clk *clk)
+@@ -357,7 +366,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
+ 
+ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_FMSI, DIV6_FMSO,
+-       DIV6_FSIA, DIV6_FSIB, DIV6_SUB, DIV6_SPU,
++       DIV6_SUB, DIV6_SPU,
+        DIV6_VOU, DIV6_DSIT, DIV6_DSI0P, DIV6_DSI1P,
+        DIV6_NR };
+ 
+@@ -367,8 +376,6 @@ static struct clk div6_clks[DIV6_NR] = {
+ 	[DIV6_VCK3] = SH_CLK_DIV6(&pllc1_div2_clk, VCLKCR3, 0),
+ 	[DIV6_FMSI] = SH_CLK_DIV6(&pllc1_div2_clk, FMSICKCR, 0),
+ 	[DIV6_FMSO] = SH_CLK_DIV6(&pllc1_div2_clk, FMSOCKCR, 0),
+-	[DIV6_FSIA] = SH_CLK_DIV6(&pllc1_div2_clk, FSIACKCR, 0),
+-	[DIV6_FSIB] = SH_CLK_DIV6(&pllc1_div2_clk, FSIBCKCR, 0),
+ 	[DIV6_SUB] = SH_CLK_DIV6(&sh7372_extal2_clk, SUBCKCR, 0),
+ 	[DIV6_SPU] = SH_CLK_DIV6(&pllc1_div2_clk, SPUCKCR, 0),
+ 	[DIV6_VOU] = SH_CLK_DIV6(&pllc1_div2_clk, VOUCKCR, 0),
+@@ -377,7 +384,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 	[DIV6_DSI1P] = SH_CLK_DIV6(&pllc1_div2_clk, DSI1PCKCR, 0),
+ };
+ 
+-enum { DIV6_HDMI, DIV6_REPARENT_NR };
++enum { DIV6_HDMI, DIV6_FSIA, DIV6_FSIB, DIV6_REPARENT_NR };
+ 
+ /* Indices are important - they are the actual src selecting values */
+ static struct clk *hdmi_parent[] = {
+@@ -387,9 +394,27 @@ static struct clk *hdmi_parent[] = {
+ 	[3] = NULL,	/* pllc2_div4 not implemented yet */
+ };
+ 
++static struct clk *fsiackcr_parent[] = {
++	[0] = &pllc1_div2_clk,
++	[1] = &sh7372_pllc2_clk,
++	[2] = &sh7372_fsiack_clk, /* external input for FSI A */
++	[3] = NULL,	/* setting prohibited */
++};
 +
-+		error = sh_mobile_lcdc_set_bpp(var, cfg->bpp);
-+		if (error)
-+			break;
++static struct clk *fsibckcr_parent[] = {
++	[0] = &pllc1_div2_clk,
++	[1] = &sh7372_pllc2_clk,
++	[2] = &sh7372_fsibck_clk, /* external input for FSI B */
++	[3] = NULL,	/* setting prohibited */
++};
 +
- 		buf = dma_alloc_coherent(&pdev->dev, info->fix.smem_len,
- 					 &ch->dma_handle, GFP_KERNEL);
- 		if (!buf) {
-@@ -1242,9 +1264,9 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		}
+ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 	[DIV6_HDMI] = SH_CLK_DIV6_EXT(&pllc1_div2_clk, HDMICKCR, 0,
+ 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
++	[DIV6_FSIA] = SH_CLK_DIV6_EXT(&pllc1_div2_clk, FSIACKCR, 0,
++				      fsiackcr_parent, ARRAY_SIZE(fsiackcr_parent), 6, 2),
++	[DIV6_FSIB] = SH_CLK_DIV6_EXT(&pllc1_div2_clk, FSIBCKCR, 0,
++				      fsibckcr_parent, ARRAY_SIZE(fsibckcr_parent), 6, 2),
+ };
  
- 		info->fix.smem_start = ch->dma_handle;
-+		info->fix.line_length = var->xres * (cfg->bpp / 8);
- 		info->screen_base = buf;
- 		info->device = &pdev->dev;
--		info->par = ch;
- 		ch->display_var = *var;
- 	}
+ enum { MSTP001,
+@@ -429,7 +454,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP201] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 1, 0), /* SCIFA3 */
+ 	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
+ 	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
+-	[MSTP328] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR3, 28, 0), /* FSIA */
++	[MSTP328] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR3, 28, 0), /* FSI2 */
+ 	[MSTP323] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 23, 0), /* IIC1 */
+ 	[MSTP322] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 22, 0), /* USB0 */
+ 	[MSTP314] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -445,6 +470,7 @@ static struct clk mstp_clks[MSTP_NR] = {
  
-@@ -1259,6 +1281,10 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+ #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
++#define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
  
- 	for (i = 0; i < j; i++) {
- 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
-+		const struct fb_videomode *mode = ch->cfg.lcd_cfg;
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+@@ -483,8 +509,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("vck3_clk", &div6_clks[DIV6_VCK3]),
+ 	CLKDEV_CON_ID("fmsi_clk", &div6_clks[DIV6_FMSI]),
+ 	CLKDEV_CON_ID("fmso_clk", &div6_clks[DIV6_FMSO]),
+-	CLKDEV_CON_ID("fsia_clk", &div6_clks[DIV6_FSIA]),
+-	CLKDEV_CON_ID("fsib_clk", &div6_clks[DIV6_FSIB]),
++	CLKDEV_CON_ID("fsia_clk", &div6_reparent_clks[DIV6_FSIA]),
++	CLKDEV_CON_ID("fsib_clk", &div6_reparent_clks[DIV6_FSIB]),
+ 	CLKDEV_CON_ID("sub_clk", &div6_clks[DIV6_SUB]),
+ 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
+ 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
+@@ -531,7 +557,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
+ 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+-	{.con_id = "ick", .dev_id = "sh-mobile-hdmi", .clk = &div6_reparent_clks[DIV6_HDMI]},
 +
-+		if (!mode)
-+			mode = &default_720p;
++	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
++	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
++	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
+ };
  
- 		info = ch->info;
+ void __init sh7372_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 9838fcf..147775a 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -462,5 +462,7 @@ extern struct clk sh7372_extal2_clk;
+ extern struct clk sh7372_dv_clki_clk;
+ extern struct clk sh7372_dv_clki_div2_clk;
+ extern struct clk sh7372_pllc2_clk;
++extern struct clk sh7372_fsiack_clk;
++extern struct clk sh7372_fsibck_clk;
  
-@@ -1271,7 +1297,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 			}
- 		}
- 
--		fb_videomode_to_modelist(ch->cfg.lcd_cfg, ch->cfg.num_cfg, &info->modelist);
-+		fb_videomode_to_modelist(mode, ch->cfg.num_cfg, &info->modelist);
- 		error = register_framebuffer(info);
- 		if (error < 0)
- 			goto err1;
-@@ -1281,8 +1307,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 			 pdev->name,
- 			 (ch->cfg.chan = LCDC_CHAN_MAINLCD) ?
- 			 "mainlcd" : "sublcd",
--			 (int) ch->cfg.lcd_cfg[0].xres,
--			 (int) ch->cfg.lcd_cfg[0].yres,
-+			 info->var.xres, info->var.yres,
- 			 ch->cfg.bpp);
- 
- 		/* deferred io mode: disable clock to save power */
+ #endif /* __ASM_SH7372_H__ */
 -- 
-1.7.1
+1.7.0.4
 
