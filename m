@@ -1,155 +1,182 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 18 Oct 2010 03:50:39 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: clock-sh7372: Add FSIDIV clock support
-Message-Id: <w3p39s4upkh.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 15 Oct 2010 05:14:54 +0000
+Subject: [PATCH 1/3] ARM: mach-shmobile: clock-sh7372: add sh7372_ prefix to
+Message-Id: <w3pmxqg11gx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+This patch also registered global extal clocks to sh7372.h
+
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c        |  101 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 +
- 2 files changed, 103 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c        |   14 +++++++-------
+ arch/arm/mach-shmobile/clock-sh7372.c        |   24 ++++++++++++------------
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    8 +++++---
+ 3 files changed, 24 insertions(+), 22 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index aaac8b0..f879eb3 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -780,22 +780,22 @@ static int __init hdmi_init_pm_clock(void)
+ 		goto out;
+ 	}
+ 
+-	ret = clk_set_parent(&pllc2_clk, &dv_clki_div2_clk);
++	ret = clk_set_parent(&sh7372_pllc2_clk, &sh7372_dv_clki_div2_clk);
+ 	if (ret < 0) {
+-		pr_err("Cannot set PLLC2 parent: %d, %d users\n", ret, pllc2_clk.usecount);
++		pr_err("Cannot set PLLC2 parent: %d, %d users\n", ret, sh7372_pllc2_clk.usecount);
+ 		goto out;
+ 	}
+ 
+-	pr_debug("PLLC2 initial frequency %lu\n", clk_get_rate(&pllc2_clk));
++	pr_debug("PLLC2 initial frequency %lu\n", clk_get_rate(&sh7372_pllc2_clk));
+ 
+-	rate = clk_round_rate(&pllc2_clk, 594000000);
++	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
+ 	if (rate < 0) {
+ 		pr_err("Cannot get suitable rate: %ld\n", rate);
+ 		ret = rate;
+ 		goto out;
+ 	}
+ 
+-	ret = clk_set_rate(&pllc2_clk, rate);
++	ret = clk_set_rate(&sh7372_pllc2_clk, rate);
+ 	if (ret < 0) {
+ 		pr_err("Cannot set rate %ld: %d\n", rate, ret);
+ 		goto out;
+@@ -803,7 +803,7 @@ static int __init hdmi_init_pm_clock(void)
+ 
+ 	pr_debug("PLLC2 set frequency %lu\n", rate);
+ 
+-	ret = clk_set_parent(hdmi_ick, &pllc2_clk);
++	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
+ 	if (ret < 0) {
+ 		pr_err("Cannot set HDMI parent: %d\n", ret);
+ 		goto out;
+@@ -1132,7 +1132,7 @@ static void __init ap4evb_timer_init(void)
+ 	shmobile_timer.init();
+ 
+ 	/* External clock source */
+-	clk_set_rate(&dv_clki_clk, 27000000);
++	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ }
+ 
+ static struct sys_timer ap4evb_timer = {
 diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 8565aef..fe7fa15 100644
+index 3ab190a..50c3971 100644
 --- a/arch/arm/mach-shmobile/clock-sh7372.c
 +++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -50,6 +50,9 @@
- #define SMSTPCR3	0xe615013c
+@@ -51,7 +51,7 @@
  #define SMSTPCR4	0xe6150140
  
-+#define FSIDIVA		0xFE1F8000
-+#define FSIDIVB		0xFE1F8008
-+
  /* Platforms must set frequency on their DV_CLKI pin */
- struct clk sh7372_dv_clki_clk = {
- };
-@@ -417,6 +420,101 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
- 				      fsibckcr_parent, ARRAY_SIZE(fsibckcr_parent), 6, 2),
+-struct clk dv_clki_clk = {
++struct clk sh7372_dv_clki_clk = {
  };
  
-+/* FSI DIV */
-+static unsigned long fsidiv_recalc(struct clk *clk)
-+{
-+	unsigned long value;
-+
-+	value = __raw_readl(clk->mapping->base);
-+
-+	if ((value & 0x3) != 0x3)
-+		return 0;
-+
-+	value >>= 16;
-+	if (value < 2)
-+		return 0;
-+
-+	return clk->parent->rate / value;
-+}
-+
-+static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
-+{
-+	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
-+}
-+
-+static void fsidiv_disable(struct clk *clk)
-+{
-+	__raw_writel(0, clk->mapping->base);
-+}
-+
-+static int fsidiv_enable(struct clk *clk)
-+{
-+	unsigned long value;
-+
-+	value  = __raw_readl(clk->mapping->base) >> 16;
-+	if (value < 2) {
-+		fsidiv_disable(clk);
-+		return -ENOENT;
-+	}
-+
-+	__raw_writel((value << 16) | 0x3, clk->mapping->base);
-+
-+	return 0;
-+}
-+
-+static int fsidiv_set_rate(struct clk *clk,
-+			   unsigned long rate, int algo_id)
-+{
-+	int idx;
-+
-+	if (clk->parent->rate = rate) {
-+		fsidiv_disable(clk);
-+		return 0;
-+	}
-+
-+	idx = (clk->parent->rate / rate) & 0xffff;
-+	if (idx < 2)
-+		return -ENOENT;
-+
-+	__raw_writel(idx << 16, clk->mapping->base);
-+	return fsidiv_enable(clk);
-+}
-+
-+static struct clk_ops fsidiv_clk_ops = {
-+	.recalc		= fsidiv_recalc,
-+	.round_rate	= fsidiv_round_rate,
-+	.set_rate	= fsidiv_set_rate,
-+	.enable		= fsidiv_enable,
-+	.disable	= fsidiv_disable,
-+};
-+
-+static struct clk_mapping sh7372_fsidiva_clk_mapping = {
-+	.phys	= FSIDIVA,
-+	.len	= 8,
-+};
-+
-+struct clk sh7372_fsidiva_clk = {
-+	.ops		= &fsidiv_clk_ops,
-+	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
-+	.mapping	= &sh7372_fsidiva_clk_mapping,
-+};
-+
-+static struct clk_mapping sh7372_fsidivb_clk_mapping = {
-+	.phys	= FSIDIVB,
-+	.len	= 8,
-+};
-+
-+struct clk sh7372_fsidivb_clk = {
-+	.ops		= &fsidiv_clk_ops,
-+	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
-+	.mapping	= &sh7372_fsidivb_clk_mapping,
-+};
-+
-+static struct clk *late_main_clks[] = {
-+	&sh7372_fsidiva_clk,
-+	&sh7372_fsidivb_clk,
-+};
-+
- enum { MSTP001,
-        MSTP131, MSTP130,
-        MSTP129, MSTP128, MSTP127, MSTP126, MSTP125,
-@@ -585,6 +683,9 @@ void __init sh7372_clock_init(void)
- 	if (!ret)
- 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+ /* Fixed 32 KHz root clock from EXTALR pin */
+@@ -86,9 +86,9 @@ static struct clk_ops div2_clk_ops = {
+ };
  
-+	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
-+		ret = clk_register(late_main_clks[k]);
-+
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ /* Divide dv_clki by two */
+-struct clk dv_clki_div2_clk = {
++struct clk sh7372_dv_clki_div2_clk = {
+ 	.ops		= &div2_clk_ops,
+-	.parent		= &dv_clki_clk,
++	.parent		= &sh7372_dv_clki_clk,
+ };
  
- 	if (!ret)
+ /* Divide extal1 by two */
+@@ -150,7 +150,7 @@ static struct clk pllc1_div2_clk = {
+ static struct clk *pllc2_parent[] = {
+ 	[0] = &extal1_div2_clk,
+ 	[1] = &extal2_div2_clk,
+-	[2] = &dv_clki_div2_clk,
++	[2] = &sh7372_dv_clki_div2_clk,
+ };
+ 
+ /* Only multipliers 20 * 2 to 46 * 2 are valid, last entry for CPUFREQ_TABLE_END */
+@@ -284,7 +284,7 @@ static struct clk_ops pllc2_clk_ops = {
+ 	.set_parent	= pllc2_set_parent,
+ };
+ 
+-struct clk pllc2_clk = {
++struct clk sh7372_pllc2_clk = {
+ 	.ops		= &pllc2_clk_ops,
+ 	.parent		= &extal1_div2_clk,
+ 	.freq_table	= pllc2_freq_table,
+@@ -293,18 +293,18 @@ struct clk pllc2_clk = {
+ };
+ 
+ static struct clk *main_clks[] = {
+-	&dv_clki_clk,
++	&sh7372_dv_clki_clk,
+ 	&r_clk,
+ 	&sh7372_extal1_clk,
+ 	&sh7372_extal2_clk,
+-	&dv_clki_div2_clk,
++	&sh7372_dv_clki_div2_clk,
+ 	&extal1_div2_clk,
+ 	&extal2_div2_clk,
+ 	&extal2_div4_clk,
+ 	&pllc0_clk,
+ 	&pllc1_clk,
+ 	&pllc1_div2_clk,
+-	&pllc2_clk,
++	&sh7372_pllc2_clk,
+ };
+ 
+ static void div4_kick(struct clk *clk)
+@@ -382,8 +382,8 @@ enum { DIV6_HDMI, DIV6_REPARENT_NR };
+ /* Indices are important - they are the actual src selecting values */
+ static struct clk *hdmi_parent[] = {
+ 	[0] = &pllc1_div2_clk,
+-	[1] = &pllc2_clk,
+-	[2] = &dv_clki_clk,
++	[1] = &sh7372_pllc2_clk,
++	[2] = &sh7372_dv_clki_clk,
+ 	[3] = NULL,	/* pllc2_div4 not implemented yet */
+ };
+ 
+@@ -448,7 +448,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+-	CLKDEV_CON_ID("dv_clki_div2_clk", &dv_clki_div2_clk),
++	CLKDEV_CON_ID("dv_clki_div2_clk", &sh7372_dv_clki_div2_clk),
+ 	CLKDEV_CON_ID("r_clk", &r_clk),
+ 	CLKDEV_CON_ID("extal1", &sh7372_extal1_clk),
+ 	CLKDEV_CON_ID("extal2", &sh7372_extal2_clk),
+@@ -458,7 +458,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc0_clk", &pllc0_clk),
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+-	CLKDEV_CON_ID("pllc2_clk", &pllc2_clk),
++	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
 diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index 147775a..e4f9004 100644
+index 33e9700..9838fcf 100644
 --- a/arch/arm/mach-shmobile/include/mach/sh7372.h
 +++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -464,5 +464,7 @@ extern struct clk sh7372_dv_clki_div2_clk;
- extern struct clk sh7372_pllc2_clk;
- extern struct clk sh7372_fsiack_clk;
- extern struct clk sh7372_fsibck_clk;
-+extern struct clk sh7372_fsidiva_clk;
-+extern struct clk sh7372_fsidivb_clk;
+@@ -457,8 +457,10 @@ enum {
+ 	SHDMA_SLAVE_SDHI2_TX,
+ };
+ 
+-extern struct clk dv_clki_clk;
+-extern struct clk dv_clki_div2_clk;
+-extern struct clk pllc2_clk;
++extern struct clk sh7372_extal1_clk;
++extern struct clk sh7372_extal2_clk;
++extern struct clk sh7372_dv_clki_clk;
++extern struct clk sh7372_dv_clki_div2_clk;
++extern struct clk sh7372_pllc2_clk;
  
  #endif /* __ASM_SH7372_H__ */
 -- 
