@@ -1,128 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 14 Oct 2010 09:21:52 +0000
-Subject: [PATCH] ARM: mach-shmobile: Add memchunk support V2
-Message-Id: <20101014092152.2046.29572.sendpatchset@t400s>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 15 Oct 2010 10:39:17 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: Add memchunk support V2
+Message-Id: <20101015103917.GE7489@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101014092152.2046.29572.sendpatchset@t400s>
+In-Reply-To: <20101014092152.2046.29572.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Oct 14, 2010 at 06:21:52PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add SH-Mobile ARM support for "memchunk" V2. The code is based
+> on the SH implementation but has been slightly modified to use 
+> memblock for physical memory reservation.
+> 
+There are two issues here..
 
-Add SH-Mobile ARM support for "memchunk" V2. The code is based
-on the SH implementation but has been slightly modified to use 
-memblock for physical memory reservation.
+- first:
 
-The function shmobile_memchunk_setup() should be called during
-boot from the ->reserve() callback in struct machine_desc.
+Is there any reason not to use the same approach on SH? I rather dislike
+having wholly generic code split between the architectures for no reason,
+as seems to be the trend lately.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+All of this started out abusing the platform_ namespace because it
+related to platform devices, as it still does. You were told previously
+to run this by gregkh and make a drivers/base/platform.c push for it
+the last time you posted these patches, and so far I haven't seen any
+progress in that department.
 
- arch/arm/mach-shmobile/Makefile              |    1 
- arch/arm/mach-shmobile/include/mach/common.h |    3 +
- arch/arm/mach-shmobile/memchunk.c            |   76 ++++++++++++++++++++++++++
- 3 files changed, 80 insertions(+)
+Now you've moved on to memblock allocation/reservation, which while not
+as generic as the DMA allocator, is still common between all the
+platforms that care about this. The only stuff that really belongs in the
+architecture subdirectories are the reservation callbacks, which in this
+case we can quite easily wrap in to a generic callback.
 
---- 0008/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2010-10-14 17:44:33.000000000 +0900
-@@ -4,6 +4,7 @@
- 
- # Common objects
- obj-y				:= timer.o console.o clock.o pm_runtime.o
-+obj-y				+= memchunk.o
- 
- # CPU objects
- obj-$(CONFIG_ARCH_AP45)		+= head-ap45.o
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-10-14 17:53:04.000000000 +0900
-@@ -3,6 +3,9 @@
- 
- extern struct sys_timer shmobile_timer;
- extern void shmobile_setup_console(void);
-+struct platform_device;
-+extern int shmobile_memchunk_setup(struct platform_device *pdev,
-+				   char *name, unsigned long memsize);
- struct clk;
- extern int clk_init(void);
- 
---- /dev/null
-+++ work/arch/arm/mach-shmobile/memchunk.c	2010-10-14 17:53:22.000000000 +0900
-@@ -0,0 +1,76 @@
-+/*
-+ * SH-Mobile "memchunk" - Physically contiguous memory reservation code
-+ *
-+ * Copyright (C) 2010  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ *
-+ */
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+#include <linux/memblock.h>
-+#include <mach/common.h>
-+
-+static int __init memchunk_setup(char *str)
-+{
-+	return 1; /* accept anything that begins with "memchunk." */
-+}
-+__setup("memchunk.", memchunk_setup);
-+
-+static void __init memchunk_cmdline_override(char *name, unsigned long *sizep)
-+{
-+	char *p = boot_command_line;
-+	int k = strlen(name);
-+
-+	while ((p = strstr(p, "memchunk."))) {
-+		p += 9; /* strlen("memchunk.") */
-+		if (!strncmp(name, p, k) && p[k] = '=') {
-+			p += k + 1;
-+			*sizep = memparse(p, NULL);
-+			pr_info("%s: forcing memory chunk size to 0x%08lx\n",
-+				name, *sizep);
-+			break;
-+		}
-+	}
-+}
-+
-+int __init shmobile_memchunk_setup(struct platform_device *pdev,
-+				   char *name, unsigned long memsize)
-+{
-+	struct resource *r;
-+	u64 addr;
-+
-+	r = pdev->resource + pdev->num_resources - 1;
-+	if (r->flags) {
-+		pr_warning("%s: unable to find empty space for resource\n",
-+			name);
-+		return -EINVAL;
-+	}
-+
-+	memchunk_cmdline_override(name, &memsize);
-+	if (!memsize)
-+		return 0;
-+
-+	addr = memblock_alloc(memsize, PAGE_SIZE);
-+	if (addr = ~(u64)0) {
-+		pr_warning("%s: unable to allocate memory\n", name);
-+		return -ENOMEM;
-+	}
-+
-+	r->flags = IORESOURCE_MEM;
-+	r->start = addr;
-+	r->end = r->start + memsize - 1;
-+	r->name = name;
-+	return 0;
-+}
+Now that memblock is common enough, the alternative you have is simply to
+do the reservations from the ->reserve() callback and then have the
+driver code grovel for a mapping with memblock_find(). You can of course
+use ATAGs to aid in this if you wish, as OMAP does for its framebuffer
+memory.
+
+- second, and more fundamental:
+
+My main concern however is that this basically won't work for the common
+platform device case on ARM given that all of the memblock allocations
+have valid backing PFNs. The UIO case "works" by virtue of blindsiding
+the remap path and calling in to remap_pfn_range() directly, which is
+unaware of any architectural limitations. Any non-UIO driver using this
+scheme today will just error out on the first ioremap() once the
+pfn_valid() check returns.
+
+In order to support this properly you will need to punch out memblock
+region holes, not unlike the ARCH_HAS_HOLES_MEMORYMODEL behaviour, albeit
+with a bit more flexibility. I vaguely recall having mentioned this
+before, too.
