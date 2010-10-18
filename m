@@ -1,423 +1,157 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Oct 2010 07:17:40 +0000
-Subject: [PATCH 01/08] ARM: Move entry-header.S to asm/
-Message-Id: <20101006071740.28048.45621.sendpatchset@t400s>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 18 Oct 2010 03:50:39 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: clock-sh7372: Add FSIDIV clock support
+Message-Id: <w3p39s4upkh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101006071731.28048.89938.sendpatchset@t400s>
-In-Reply-To: <20101006071731.28048.89938.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-This patch moves the file arch/arm/kernel/entry-header.S
-to arch/arm/include/asm/entry-header.S. The reason for
-this move is to allow per-mach assembly IRQ demux code.
-
-The #includes in entry-armv.S and entry-common.S are 
-updated to reflect the new file location. The actual code
-logic is untouched by this patch.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/clock-sh7372.c        |  101 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 +
+ 2 files changed, 103 insertions(+), 0 deletions(-)
 
- arch/arm/include/asm/entry-header.S |  181 +++++++++++++++++++++++++++++++++++
- arch/arm/kernel/entry-armv.S        |    3 
- arch/arm/kernel/entry-common.S      |    3 
- arch/arm/kernel/entry-header.S      |  181 -----------------------------------
- 4 files changed, 183 insertions(+), 185 deletions(-)
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 8565aef..fe7fa15 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -50,6 +50,9 @@
+ #define SMSTPCR3	0xe615013c
+ #define SMSTPCR4	0xe6150140
+ 
++#define FSIDIVA		0xFE1F8000
++#define FSIDIVB		0xFE1F8008
++
+ /* Platforms must set frequency on their DV_CLKI pin */
+ struct clk sh7372_dv_clki_clk = {
+ };
+@@ -417,6 +420,101 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 				      fsibckcr_parent, ARRAY_SIZE(fsibckcr_parent), 6, 2),
+ };
+ 
++/* FSI DIV */
++static unsigned long fsidiv_recalc(struct clk *clk)
++{
++	unsigned long value;
++
++	value = __raw_readl(clk->mapping->base);
++
++	if ((value & 0x3) != 0x3)
++		return 0;
++
++	value >>= 16;
++	if (value < 2)
++		return 0;
++
++	return clk->parent->rate / value;
++}
++
++static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
++{
++	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
++}
++
++static void fsidiv_disable(struct clk *clk)
++{
++	__raw_writel(0, clk->mapping->base);
++}
++
++static int fsidiv_enable(struct clk *clk)
++{
++	unsigned long value;
++
++	value  = __raw_readl(clk->mapping->base) >> 16;
++	if (value < 2) {
++		fsidiv_disable(clk);
++		return -ENOENT;
++	}
++
++	__raw_writel((value << 16) | 0x3, clk->mapping->base);
++
++	return 0;
++}
++
++static int fsidiv_set_rate(struct clk *clk,
++			   unsigned long rate, int algo_id)
++{
++	int idx;
++
++	if (clk->parent->rate = rate) {
++		fsidiv_disable(clk);
++		return 0;
++	}
++
++	idx = (clk->parent->rate / rate) & 0xffff;
++	if (idx < 2)
++		return -ENOENT;
++
++	__raw_writel(idx << 16, clk->mapping->base);
++	return fsidiv_enable(clk);
++}
++
++static struct clk_ops fsidiv_clk_ops = {
++	.recalc		= fsidiv_recalc,
++	.round_rate	= fsidiv_round_rate,
++	.set_rate	= fsidiv_set_rate,
++	.enable		= fsidiv_enable,
++	.disable	= fsidiv_disable,
++};
++
++static struct clk_mapping sh7372_fsidiva_clk_mapping = {
++	.phys	= FSIDIVA,
++	.len	= 8,
++};
++
++struct clk sh7372_fsidiva_clk = {
++	.ops		= &fsidiv_clk_ops,
++	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
++	.mapping	= &sh7372_fsidiva_clk_mapping,
++};
++
++static struct clk_mapping sh7372_fsidivb_clk_mapping = {
++	.phys	= FSIDIVB,
++	.len	= 8,
++};
++
++struct clk sh7372_fsidivb_clk = {
++	.ops		= &fsidiv_clk_ops,
++	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
++	.mapping	= &sh7372_fsidivb_clk_mapping,
++};
++
++static struct clk *late_main_clks[] = {
++	&sh7372_fsidiva_clk,
++	&sh7372_fsidivb_clk,
++};
++
+ enum { MSTP001,
+        MSTP131, MSTP130,
+        MSTP129, MSTP128, MSTP127, MSTP126, MSTP125,
+@@ -585,6 +683,9 @@ void __init sh7372_clock_init(void)
+ 	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+ 
++	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
++		ret = clk_register(late_main_clks[k]);
++
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 147775a..e4f9004 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -464,5 +464,7 @@ extern struct clk sh7372_dv_clki_div2_clk;
+ extern struct clk sh7372_pllc2_clk;
+ extern struct clk sh7372_fsiack_clk;
+ extern struct clk sh7372_fsibck_clk;
++extern struct clk sh7372_fsidiva_clk;
++extern struct clk sh7372_fsidivb_clk;
+ 
+ #endif /* __ASM_SH7372_H__ */
+-- 
+1.7.0.4
 
---- /dev/null
-+++ work/arch/arm/include/asm/entry-header.S	2010-09-16 17:22:01.000000000 +0900
-@@ -0,0 +1,181 @@
-+#include <linux/init.h>
-+#include <linux/linkage.h>
-+
-+#include <asm/assembler.h>
-+#include <asm/asm-offsets.h>
-+#include <asm/errno.h>
-+#include <asm/thread_info.h>
-+
-+@ Bad Abort numbers
-+@ -----------------
-+@
-+#define BAD_PREFETCH	0
-+#define BAD_DATA	1
-+#define BAD_ADDREXCPTN	2
-+#define BAD_IRQ		3
-+#define BAD_UNDEFINSTR	4
-+
-+@
-+@ Most of the stack format comes from struct pt_regs, but with
-+@ the addition of 8 bytes for storing syscall args 5 and 6.
-+@ This _must_ remain a multiple of 8 for EABI.
-+@
-+#define S_OFF		8
-+
-+/* 
-+ * The SWI code relies on the fact that R0 is at the bottom of the stack
-+ * (due to slow/fast restore user regs).
-+ */
-+#if S_R0 != 0
-+#error "Please fix"
-+#endif
-+
-+	.macro	zero_fp
-+#ifdef CONFIG_FRAME_POINTER
-+	mov	fp, #0
-+#endif
-+	.endm
-+
-+	.macro	alignment_trap, rtemp
-+#ifdef CONFIG_ALIGNMENT_TRAP
-+	ldr	\rtemp, .LCcralign
-+	ldr	\rtemp, [\rtemp]
-+	mcr	p15, 0, \rtemp, c1, c0
-+#endif
-+	.endm
-+
-+	@
-+	@ Store/load the USER SP and LR registers by switching to the SYS
-+	@ mode. Useful in Thumb-2 mode where "stm/ldm rd, {sp, lr}^" is not
-+	@ available. Should only be called from SVC mode
-+	@
-+	.macro	store_user_sp_lr, rd, rtemp, offset = 0
-+	mrs	\rtemp, cpsr
-+	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
-+	msr	cpsr_c, \rtemp			@ switch to the SYS mode
-+
-+	str	sp, [\rd, #\offset]		@ save sp_usr
-+	str	lr, [\rd, #\offset + 4]		@ save lr_usr
-+
-+	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
-+	msr	cpsr_c, \rtemp			@ switch back to the SVC mode
-+	.endm
-+
-+	.macro	load_user_sp_lr, rd, rtemp, offset = 0
-+	mrs	\rtemp, cpsr
-+	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
-+	msr	cpsr_c, \rtemp			@ switch to the SYS mode
-+
-+	ldr	sp, [\rd, #\offset]		@ load sp_usr
-+	ldr	lr, [\rd, #\offset + 4]		@ load lr_usr
-+
-+	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
-+	msr	cpsr_c, \rtemp			@ switch back to the SVC mode
-+	.endm
-+
-+#ifndef CONFIG_THUMB2_KERNEL
-+	.macro	svc_exit, rpsr
-+	msr	spsr_cxsf, \rpsr
-+#if defined(CONFIG_CPU_32v6K)
-+	clrex					@ clear the exclusive monitor
-+	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
-+#elif defined (CONFIG_CPU_V6)
-+	ldr	r0, [sp]
-+	strex	r1, r2, [sp]			@ clear the exclusive monitor
-+	ldmib	sp, {r1 - pc}^			@ load r1 - pc, cpsr
-+#else
-+	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
-+#endif
-+	.endm
-+
-+	.macro	restore_user_regs, fast = 0, offset = 0
-+	ldr	r1, [sp, #\offset + S_PSR]	@ get calling cpsr
-+	ldr	lr, [sp, #\offset + S_PC]!	@ get pc
-+	msr	spsr_cxsf, r1			@ save in spsr_svc
-+#if defined(CONFIG_CPU_32v6K)
-+	clrex					@ clear the exclusive monitor
-+#elif defined (CONFIG_CPU_V6)
-+	strex	r1, r2, [sp]			@ clear the exclusive monitor
-+#endif
-+	.if	\fast
-+	ldmdb	sp, {r1 - lr}^			@ get calling r1 - lr
-+	.else
-+	ldmdb	sp, {r0 - lr}^			@ get calling r0 - lr
-+	.endif
-+	mov	r0, r0				@ ARMv5T and earlier require a nop
-+						@ after ldm {}^
-+	add	sp, sp, #S_FRAME_SIZE - S_PC
-+	movs	pc, lr				@ return & move spsr_svc into cpsr
-+	.endm
-+
-+	.macro	get_thread_info, rd
-+	mov	\rd, sp, lsr #13
-+	mov	\rd, \rd, lsl #13
-+	.endm
-+
-+	@
-+	@ 32-bit wide "mov pc, reg"
-+	@
-+	.macro	movw_pc, reg
-+	mov	pc, \reg
-+	.endm
-+#else	/* CONFIG_THUMB2_KERNEL */
-+	.macro	svc_exit, rpsr
-+	clrex					@ clear the exclusive monitor
-+	ldr	r0, [sp, #S_SP]			@ top of the stack
-+	ldr	r1, [sp, #S_PC]			@ return address
-+	tst	r0, #4				@ orig stack 8-byte aligned?
-+	stmdb	r0, {r1, \rpsr}			@ rfe context
-+	ldmia	sp, {r0 - r12}
-+	ldr	lr, [sp, #S_LR]
-+	addeq	sp, sp, #S_FRAME_SIZE - 8	@ aligned
-+	addne	sp, sp, #S_FRAME_SIZE - 4	@ not aligned
-+	rfeia	sp!
-+	.endm
-+
-+	.macro	restore_user_regs, fast = 0, offset = 0
-+	clrex					@ clear the exclusive monitor
-+	mov	r2, sp
-+	load_user_sp_lr r2, r3, \offset + S_SP	@ calling sp, lr
-+	ldr	r1, [sp, #\offset + S_PSR]	@ get calling cpsr
-+	ldr	lr, [sp, #\offset + S_PC]	@ get pc
-+	add	sp, sp, #\offset + S_SP
-+	msr	spsr_cxsf, r1			@ save in spsr_svc
-+	.if	\fast
-+	ldmdb	sp, {r1 - r12}			@ get calling r1 - r12
-+	.else
-+	ldmdb	sp, {r0 - r12}			@ get calling r0 - r12
-+	.endif
-+	add	sp, sp, #S_FRAME_SIZE - S_SP
-+	movs	pc, lr				@ return & move spsr_svc into cpsr
-+	.endm
-+
-+	.macro	get_thread_info, rd
-+	mov	\rd, sp
-+	lsr	\rd, \rd, #13
-+	mov	\rd, \rd, lsl #13
-+	.endm
-+
-+	@
-+	@ 32-bit wide "mov pc, reg"
-+	@
-+	.macro	movw_pc, reg
-+	mov	pc, \reg
-+	nop
-+	.endm
-+#endif	/* !CONFIG_THUMB2_KERNEL */
-+
-+/*
-+ * These are the registers used in the syscall handler, and allow us to
-+ * have in theory up to 7 arguments to a function - r0 to r6.
-+ *
-+ * r7 is reserved for the system call number for thumb mode.
-+ *
-+ * Note that tbl = why is intentional.
-+ *
-+ * We must set at least "tsk" and "why" when calling ret_with_reschedule.
-+ */
-+scno	.req	r7		@ syscall number
-+tbl	.req	r8		@ syscall table pointer
-+why	.req	r8		@ Linux syscall (!= 0)
-+tsk	.req	r9		@ current thread_info
---- 0001/arch/arm/kernel/entry-armv.S
-+++ work/arch/arm/kernel/entry-armv.S	2010-10-05 20:03:00.000000000 +0900
-@@ -23,8 +23,7 @@
- #include <asm/unwind.h>
- #include <asm/unistd.h>
- #include <asm/tls.h>
--
--#include "entry-header.S"
-+#include <asm/entry-header.S>
- 
- /*
-  * Interrupt handling.  Preserves r7, r8, r9
---- 0001/arch/arm/kernel/entry-common.S
-+++ work/arch/arm/kernel/entry-common.S	2010-10-05 20:03:14.000000000 +0900
-@@ -12,8 +12,7 @@
- #include <asm/ftrace.h>
- #include <mach/entry-macro.S>
- #include <asm/unwind.h>
--
--#include "entry-header.S"
-+#include <asm/entry-header.S>
- 
- 
- 	.align	5
---- 0001/arch/arm/kernel/entry-header.S
-+++ /dev/null	2010-09-30 18:32:39.608254290 +0900
-@@ -1,181 +0,0 @@
--#include <linux/init.h>
--#include <linux/linkage.h>
--
--#include <asm/assembler.h>
--#include <asm/asm-offsets.h>
--#include <asm/errno.h>
--#include <asm/thread_info.h>
--
--@ Bad Abort numbers
--@ -----------------
--@
--#define BAD_PREFETCH	0
--#define BAD_DATA	1
--#define BAD_ADDREXCPTN	2
--#define BAD_IRQ		3
--#define BAD_UNDEFINSTR	4
--
--@
--@ Most of the stack format comes from struct pt_regs, but with
--@ the addition of 8 bytes for storing syscall args 5 and 6.
--@ This _must_ remain a multiple of 8 for EABI.
--@
--#define S_OFF		8
--
--/* 
-- * The SWI code relies on the fact that R0 is at the bottom of the stack
-- * (due to slow/fast restore user regs).
-- */
--#if S_R0 != 0
--#error "Please fix"
--#endif
--
--	.macro	zero_fp
--#ifdef CONFIG_FRAME_POINTER
--	mov	fp, #0
--#endif
--	.endm
--
--	.macro	alignment_trap, rtemp
--#ifdef CONFIG_ALIGNMENT_TRAP
--	ldr	\rtemp, .LCcralign
--	ldr	\rtemp, [\rtemp]
--	mcr	p15, 0, \rtemp, c1, c0
--#endif
--	.endm
--
--	@
--	@ Store/load the USER SP and LR registers by switching to the SYS
--	@ mode. Useful in Thumb-2 mode where "stm/ldm rd, {sp, lr}^" is not
--	@ available. Should only be called from SVC mode
--	@
--	.macro	store_user_sp_lr, rd, rtemp, offset = 0
--	mrs	\rtemp, cpsr
--	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
--	msr	cpsr_c, \rtemp			@ switch to the SYS mode
--
--	str	sp, [\rd, #\offset]		@ save sp_usr
--	str	lr, [\rd, #\offset + 4]		@ save lr_usr
--
--	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
--	msr	cpsr_c, \rtemp			@ switch back to the SVC mode
--	.endm
--
--	.macro	load_user_sp_lr, rd, rtemp, offset = 0
--	mrs	\rtemp, cpsr
--	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
--	msr	cpsr_c, \rtemp			@ switch to the SYS mode
--
--	ldr	sp, [\rd, #\offset]		@ load sp_usr
--	ldr	lr, [\rd, #\offset + 4]		@ load lr_usr
--
--	eor	\rtemp, \rtemp, #(SVC_MODE ^ SYSTEM_MODE)
--	msr	cpsr_c, \rtemp			@ switch back to the SVC mode
--	.endm
--
--#ifndef CONFIG_THUMB2_KERNEL
--	.macro	svc_exit, rpsr
--	msr	spsr_cxsf, \rpsr
--#if defined(CONFIG_CPU_32v6K)
--	clrex					@ clear the exclusive monitor
--	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
--#elif defined (CONFIG_CPU_V6)
--	ldr	r0, [sp]
--	strex	r1, r2, [sp]			@ clear the exclusive monitor
--	ldmib	sp, {r1 - pc}^			@ load r1 - pc, cpsr
--#else
--	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
--#endif
--	.endm
--
--	.macro	restore_user_regs, fast = 0, offset = 0
--	ldr	r1, [sp, #\offset + S_PSR]	@ get calling cpsr
--	ldr	lr, [sp, #\offset + S_PC]!	@ get pc
--	msr	spsr_cxsf, r1			@ save in spsr_svc
--#if defined(CONFIG_CPU_32v6K)
--	clrex					@ clear the exclusive monitor
--#elif defined (CONFIG_CPU_V6)
--	strex	r1, r2, [sp]			@ clear the exclusive monitor
--#endif
--	.if	\fast
--	ldmdb	sp, {r1 - lr}^			@ get calling r1 - lr
--	.else
--	ldmdb	sp, {r0 - lr}^			@ get calling r0 - lr
--	.endif
--	mov	r0, r0				@ ARMv5T and earlier require a nop
--						@ after ldm {}^
--	add	sp, sp, #S_FRAME_SIZE - S_PC
--	movs	pc, lr				@ return & move spsr_svc into cpsr
--	.endm
--
--	.macro	get_thread_info, rd
--	mov	\rd, sp, lsr #13
--	mov	\rd, \rd, lsl #13
--	.endm
--
--	@
--	@ 32-bit wide "mov pc, reg"
--	@
--	.macro	movw_pc, reg
--	mov	pc, \reg
--	.endm
--#else	/* CONFIG_THUMB2_KERNEL */
--	.macro	svc_exit, rpsr
--	clrex					@ clear the exclusive monitor
--	ldr	r0, [sp, #S_SP]			@ top of the stack
--	ldr	r1, [sp, #S_PC]			@ return address
--	tst	r0, #4				@ orig stack 8-byte aligned?
--	stmdb	r0, {r1, \rpsr}			@ rfe context
--	ldmia	sp, {r0 - r12}
--	ldr	lr, [sp, #S_LR]
--	addeq	sp, sp, #S_FRAME_SIZE - 8	@ aligned
--	addne	sp, sp, #S_FRAME_SIZE - 4	@ not aligned
--	rfeia	sp!
--	.endm
--
--	.macro	restore_user_regs, fast = 0, offset = 0
--	clrex					@ clear the exclusive monitor
--	mov	r2, sp
--	load_user_sp_lr r2, r3, \offset + S_SP	@ calling sp, lr
--	ldr	r1, [sp, #\offset + S_PSR]	@ get calling cpsr
--	ldr	lr, [sp, #\offset + S_PC]	@ get pc
--	add	sp, sp, #\offset + S_SP
--	msr	spsr_cxsf, r1			@ save in spsr_svc
--	.if	\fast
--	ldmdb	sp, {r1 - r12}			@ get calling r1 - r12
--	.else
--	ldmdb	sp, {r0 - r12}			@ get calling r0 - r12
--	.endif
--	add	sp, sp, #S_FRAME_SIZE - S_SP
--	movs	pc, lr				@ return & move spsr_svc into cpsr
--	.endm
--
--	.macro	get_thread_info, rd
--	mov	\rd, sp
--	lsr	\rd, \rd, #13
--	mov	\rd, \rd, lsl #13
--	.endm
--
--	@
--	@ 32-bit wide "mov pc, reg"
--	@
--	.macro	movw_pc, reg
--	mov	pc, \reg
--	nop
--	.endm
--#endif	/* !CONFIG_THUMB2_KERNEL */
--
--/*
-- * These are the registers used in the syscall handler, and allow us to
-- * have in theory up to 7 arguments to a function - r0 to r6.
-- *
-- * r7 is reserved for the system call number for thumb mode.
-- *
-- * Note that tbl = why is intentional.
-- *
-- * We must set at least "tsk" and "why" when calling ret_with_reschedule.
-- */
--scno	.req	r7		@ syscall number
--tbl	.req	r8		@ syscall table pointer
--why	.req	r8		@ Linux syscall (!= 0)
--tsk	.req	r9		@ current thread_info
