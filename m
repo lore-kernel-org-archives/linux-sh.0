@@ -1,20 +1,25 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 11 Oct 2010 15:33:28 +0000
-Subject: Re: [PATCH] sh: boards/mach-x3proto: gpio: fix error handling code
-Message-Id: <20101011153328.GB12338@linux-sh.org>
+From: "Dr. Robert William" <pascale.vial@noos.fr>
+Date: Wed, 27 Oct 2010 00:14:32 +0000
+Subject: Yours Faithfully
+Message-Id: <ea-mime-4cc76ee8-7cb7-8596c7b@webmail.numericable.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1286731708-17822-1-git-send-email-segooon@gmail.com>
-In-Reply-To: <1286731708-17822-1-git-send-email-segooon@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vasiliy Kulikov <segooon@gmail.com>
-Cc: kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sctp@vger.kernel.org
 
-On Sun, Oct 10, 2010 at 09:28:27PM +0400, Vasiliy Kulikov wrote:
-> Checks for (irq < 0) and (ilsel < 0) didn't make sense since they were
-> unsigned.  Made them signed.
-> 
-> Signed-off-by: Vasiliy Kulikov <segooon@gmail.com>
+Good News My Dear Friend,
+ 
+I'm happy to inform you about my success in getting those funds transferred under the co-operation of a new partner from Paraguay. Presently i'm in Paraguay for investment projects with my own share of the total sum. meanwhile,i didn't forget your past efforts and attempts to assist me in transferring those funds despite that it failed us some how.
+Now contact my secretary in Benin Republic
 
-Applied, thanks.
+His name is Mr. Timothy Adams
+Phone Number: +229 97373889
+Email:  timothyadams90@gmail.com
+ 
+Please do let me know immediately you receive it so that we can share the joy after all the sufferings at that time. in the moment, I'm very busy here because of the investment projects which me and the new partner are having at hand, finally, remember that I had forwarded instruction to the secretary on your behalf to receive that money, so feel free to get in touch with Mr. Timothy Adams on timothyadams90@gmail.com, he will send the amount to you without any delay.
+ 
+Yours Faithfully
+Dr Robert William
+
+
