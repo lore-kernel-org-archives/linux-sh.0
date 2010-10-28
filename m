@@ -1,39 +1,117 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 06 Oct 2010 21:03:18 +0000
-Subject: Re: [PATCH 6/7] sh: oprofile: Use perf-events oprofile backend
-Message-Id: <20101006210317.GA7294@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 28 Oct 2010 12:34:48 +0000
+Subject: [PATCH 2/4] fbdev: export fb_edid_add_monspecs() for modules, improve
+Message-Id: <Pine.LNX.4.64.1010281431560.1257@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1286222593.git.matt@console-pimps.org> <db62cbe463d5bce89196d6456ad386129ce0022a.1286222593.git.matt@console-pimps.org> <20101006183549.GW13563@erda.amd.com> <20101006194507.GA30419@console-pimps.org>
-In-Reply-To: <20101006194507.GA30419@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Matt Fleming <matt@console-pimps.org>
-Cc: Robert Richter <robert.richter@amd.com>, Will Deacon <will.deacon@arm.com>, Russell King <linux@arm.linux.org.uk>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-fbdev@vger.kernel.org
 
-On Wed, Oct 06, 2010 at 08:45:07PM +0100, Matt Fleming wrote:
-> On Wed, Oct 06, 2010 at 08:35:49PM +0200, Robert Richter wrote:
-> > On 04.10.10 16:44:24, Matt Fleming wrote:
-> > > Now that we've got a generic perf-events based oprofile backend we might
-> > > as well make use of it seeing as SH doesn't do anything special with its
-> > > oprofile backend. Also introduce a new CONFIG_HW_PERF_EVENTS symbol so
-> > > that we can fallback to using the timer interrupt for oprofile if the
-> > > CPU doesn't support perf events.
-> > > 
-> > > Signed-off-by: Matt Fleming <matt@console-pimps.org>
-> > > ---
-> > >  arch/sh/Kconfig            |   13 +++++
-> > >  arch/sh/oprofile/Makefile  |    4 ++
-> > >  arch/sh/oprofile/common.c  |  109 ++++---------------------------------------
-> > >  arch/sh/oprofile/op_impl.h |   33 -------------
-> > >  4 files changed, 28 insertions(+), 131 deletions(-)
-> > >  delete mode 100644 arch/sh/oprofile/op_impl.h
-> > 
-> > This patch looks good.
-> > 
-> > We might merge it with patch 7/7.
-> 
-> This patch was broken out for Paul's benefit to ease review. If he's
-> happy for me to merge this with 7/7 then that's fine with me.
+fb_edid_add_monspecs() should also be exported for use in modules, and it
+requires a dummy version for the case, when CONFIG_FB_MODE_HELPERS is not
+selected. This patch also improves the algorithm by removing a redundant
+memory allocation.
 
-Yes, no objections from me.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/video/fbmon.c |   46 +++++++++++++++++++++-------------------------
+ 1 files changed, 21 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/video/fbmon.c b/drivers/video/fbmon.c
+index 7a77170..d9ba6c1 100644
+--- a/drivers/video/fbmon.c
++++ b/drivers/video/fbmon.c
+@@ -976,10 +976,11 @@ void fb_edid_to_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ {
+ 	unsigned char *block;
+-	struct fb_videomode *mode, *m;
+-	int num = 0, i, first = 1;
++	struct fb_videomode *m;
++	int num = 0, i;
++	u8 edt[(128 - 4) / DETAILED_TIMING_DESCRIPTION_SIZE];
+ 
+-	if (edid = NULL)
++	if (!edid)
+ 		return;
+ 
+ 	if (!edid_checksum(edid))
+@@ -988,43 +989,34 @@ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ 	if (edid[0] != 0x2)
+ 		return;
+ 
+-	mode = kzalloc(50 * sizeof(struct fb_videomode), GFP_KERNEL);
+-	if (mode = NULL)
+-		return;
+-
+ 	block = edid + edid[0x2];
+ 
+ 	DPRINTK("  Extended Detailed Timings\n");
+ 
+ 	for (i = 0; i < (128 - edid[0x2]) / DETAILED_TIMING_DESCRIPTION_SIZE;
+-	     i++, block += DETAILED_TIMING_DESCRIPTION_SIZE) {
+-		if (!(block[0] = 0x00 && block[1] = 0x00)) {
+-			get_detailed_timing(block, &mode[num]);
+-			if (first) {
+-			        mode[num].flag |= FB_MODE_IS_FIRST;
+-				first = 0;
+-			}
+-			num++;
+-		}
+-	}
++	     i++, block += DETAILED_TIMING_DESCRIPTION_SIZE)
++		if (!(block[0] = 0x00 && block[1] = 0x00))
++			edt[num++] = block - edid;
+ 
+ 	/* Yikes, EDID data is totally useless */
+-	if (!num) {
+-		kfree(mode);
++	if (!num)
+ 		return;
+-	}
+ 
+ 	m = kzalloc((specs->modedb_len + num) *
+ 		       sizeof(struct fb_videomode), GFP_KERNEL);
+ 
+-	if (!m) {
+-		kfree(mode);
++	if (!m)
+ 		return;
+-	}
+ 
+ 	memmove(m, specs->modedb, specs->modedb_len * sizeof(struct fb_videomode));
+-	memmove(m + specs->modedb_len, mode, num * sizeof(struct fb_videomode));
+-	kfree(mode);
++
++	for (i = specs->modedb_len; i < specs->modedb_len + num; i++) {
++		get_detailed_timing(edid + edt[i - specs->modedb_len], &m[i]);
++		if (i = specs->modedb_len)
++			m[i].flag |= FB_MODE_IS_FIRST;
++		pr_debug("Adding %ux%u@%u\n", m[i].xres, m[i].yres, m[i].refresh);
++	}
++
+ 	kfree(specs->modedb);
+ 	specs->modedb = m;
+ 	specs->modedb_len = specs->modedb_len + num;
+@@ -1345,6 +1337,9 @@ int fb_parse_edid(unsigned char *edid, struct fb_var_screeninfo *var)
+ void fb_edid_to_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ {
+ }
++void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
++{
++}
+ void fb_destroy_modedb(struct fb_videomode *modedb)
+ {
+ }
+@@ -1452,6 +1447,7 @@ EXPORT_SYMBOL(fb_firmware_edid);
+ 
+ EXPORT_SYMBOL(fb_parse_edid);
+ EXPORT_SYMBOL(fb_edid_to_monspecs);
++EXPORT_SYMBOL(fb_edid_add_monspecs);
+ EXPORT_SYMBOL(fb_get_mode);
+ EXPORT_SYMBOL(fb_validate_mode);
+ EXPORT_SYMBOL(fb_destroy_modedb);
+-- 
+1.7.1
+
