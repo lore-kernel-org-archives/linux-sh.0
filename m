@@ -1,83 +1,98 @@
-From: Matt Fleming <matt@console-pimps.org>
-Date: Mon, 04 Oct 2010 20:44:18 +0000
-Subject: [PATCH V4 0/7] Generalise ARM perf-events backend for oprofile
-Message-Id: <cover.1286222593.git.matt@console-pimps.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 28 Oct 2010 17:11:35 +0000
+Subject: [GIT PULL] sh updates for 2.6.37-rc1, part 2.
+Message-Id: <20101028171134.GA2114@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robert Richter <robert.richter@amd.com>
-Cc: Will Deacon <will.deacon@arm.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Arnaldo Carvalho de Melo <acme@redhat.com>, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Deng-Cheng Zhu <dengcheng.zhu@gmail.com>, Grant Likely <grant.likely@secretlab.ca>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The perf-events backend for OProfile that Will Deacon wrote in
-8c1fc96f6fd1f361428ba805103af0d0eee65179 ("ARM: 6072/1: oprofile: use
-perf-events framework as backend") is of use to more architectures
-than just ARM. Move the code into drivers/oprofile/ so that SH can use
-it instead of the nearly identical copy of its OProfile code.
+Please pull from:
 
-The benefit of the backend is that it becomes necessary to only
-maintain one copy of the PMU accessor functions for each architecture,
-with bug fixes and new features benefiting both OProfile and perf.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git
 
-Note that I haven't been able to test these patches on an ARM board to
-see if I've caused any regressions. If anyone else could do that I'd
-appreciate it. Though, I have been able to compile this version of the
-series.
+Which contains:
 
-This patch series is based on,
+Paul Mundt (31):
+      sh: Expose physical addressing mode through cpuinfo.
+      sh: Tidy up genirq Kconfig bits.
+      sh: Switch dynamic IRQ creation to generic irq allocator.
+      sh: Fix the sparsemem disabled build.
+      cdrom: gdrom: ctrl_in/outX to __raw_read/writeX conversion.
+      sh: maple: ctrl_in/outX to __raw_read/writeX conversion.
+      sh: mach-dreamcast: irq_data conversion.
+      sh: IPR IRQs irq_data conversion.
+      sh: mach-landisk: irq_data conversion.
+      sh: mach-microdev: irq_data conversion.
+      sh: imask IRQs irq_data conversion.
+      sh: mach-systemh: irq_data conversion.
+      sh: mach-x3proto: irq_data conversion.
+      sh: hd64461: irq_data conversion.
+      input: jornada680_kbd: ctrl_in/outX to __raw_read/writeX conversion.
+      input: hp680_ts_input: ctrl_in/outX to __raw_read/writeX conversion.
+      sh: mach-se: irq_data conversion.
+      rtc: rtc-rs5c313: ctrl_in/outX to __raw_read/writeX conversion.
+      sh64: update for IRQ flag handling naming changes.
+      sh64: irq_data conversion.
+      sh: intc: irq_data conversion.
+      sh: update show_interrupts() for irq_data chip lookup.
+      sh: disable deprecated genirq support.
+      sound: sh: ctrl_in/outX to __raw_read/writeX conversion.
+      sh64: _PAGE_SPECIAL support.
+      sh: lockless get_user_pages_fast()
+      sh: oprofile: Fix up and extend op_name_from_perf_id().
+      sh64: oprofile: Fix up kernel stack pointer size mismatch.
+      sh: oprofile: Make sure the backtrace op is available for timer-fallback.
+      sh: fix up cpu hotplug IRQ migration for irq_data changes.
+      sh: intc: switch irq_desc iteration to new active IRQ iterator.
 
-    git://git.kernel.org/pub/scm/linux/kernel/git/rric/oprofile.git core
+Thomas Gleixner (1):
+      sh: Sanitize sparse irq
 
-These patches can also be found at,
-
-    git://git.kernel.org/pub/scm/linux/kernel/git/mfleming/sh-2.6.git perf-oprofile
-
-
-Robert, I haven't rebased this work on your oprofile updates for
-2.6.37. If you need me to do that, just shout.
-
-
-Changes from v3:
- - New perf_pmu_name() function
- - Sprinkled an EXPORT_SYMBOL_GPL()
- - Don't repeatedly call perf_num_counters()
- - Change name of oprofile_driver to "oprofile-perf"
- - Hard overwrite the oprofile_operations in oprofile_perf_init()
- - Dropped the patch that made oprofile depend on HW_PERF_EVENTS for ARM
-
-Changes from v2:
- - Rebased against Robert's oprofile core branch
- - Moved even more of the ARM code into the generic oprofile code
- - Broke the patches up into more logical steps
-
-Changes from v1:
- - Prefix the new functons with "oprofile_" instead of "op_".
- - Fix ARM compilation errors
- - Move all the oprofile-perf logic into oprofile_perf.c
- - Include cleanup patch from Will
-
-Matt Fleming (7):
-  perf: Add helper function to return number of counters
-  perf: New helper function for pmu name
-  ARM: oprofile: Rename op_arm to oprofile_perf
-  ARM: oprofile: Move non-ARM code into separate init/exit
-  oprofile: Abstract the perf-events backend
-  sh: oprofile: Use perf-events oprofile backend
-  sh: Annotate oprofile_arch_exit() with __exit marker
-
- arch/arm/kernel/perf_event.c     |   29 ++++
- arch/arm/oprofile/Makefile       |    4 +
- arch/arm/oprofile/common.c       |  327 +-------------------------------------
- arch/sh/Kconfig                  |   13 ++
- arch/sh/kernel/perf_event.c      |   23 +++
- arch/sh/oprofile/Makefile        |    4 +
- arch/sh/oprofile/common.c        |  109 ++------------
- arch/sh/oprofile/op_impl.h       |   33 ----
- drivers/oprofile/oprofile_perf.c |  326 +++++++++++++++++++++++++++++++++++++
- include/linux/oprofile.h         |    6 +
- include/linux/perf_event.h       |    2 +
- kernel/perf_event.c              |    5 +
- 12 files changed, 425 insertions(+), 456 deletions(-)
- delete mode 100644 arch/sh/oprofile/op_impl.h
- create mode 100644 drivers/oprofile/oprofile_perf.c
-
+ arch/sh/Kconfig                            |   14 +-
+ arch/sh/boards/mach-cayman/irq.c           |   16 +-
+ arch/sh/boards/mach-dreamcast/irq.c        |   17 +-
+ arch/sh/boards/mach-landisk/irq.c          |   15 +-
+ arch/sh/boards/mach-microdev/irq.c         |   30 +--
+ arch/sh/boards/mach-se/7206/irq.c          |   20 +-
+ arch/sh/boards/mach-se/7343/irq.c          |   15 +-
+ arch/sh/boards/mach-se/7722/irq.c          |   15 +-
+ arch/sh/boards/mach-se/7724/irq.c          |   13 +-
+ arch/sh/boards/mach-systemh/irq.c          |   57 ++----
+ arch/sh/boards/mach-x3proto/gpio.c         |    7 +-
+ arch/sh/cchips/hd6446x/hd64461.c           |   19 +-
+ arch/sh/include/asm/pgtable.h              |    2 +
+ arch/sh/include/asm/pgtable_32.h           |    2 -
+ arch/sh/include/asm/pgtable_64.h           |    9 +-
+ arch/sh/include/asm/processor.h            |    1 +
+ arch/sh/kernel/cpu/init.c                  |    2 +
+ arch/sh/kernel/cpu/irq/imask.c             |   14 +-
+ arch/sh/kernel/cpu/irq/intc-sh5.c          |   49 +----
+ arch/sh/kernel/cpu/irq/ipr.c               |   29 ++--
+ arch/sh/kernel/cpu/sh4/perf_event.c        |    2 +-
+ arch/sh/kernel/cpu/sh4a/perf_event.c       |    2 +-
+ arch/sh/kernel/irq.c                       |   37 ++--
+ arch/sh/kernel/irq_64.c                    |   16 +-
+ arch/sh/kernel/setup.c                     |    4 +
+ arch/sh/mm/Makefile                        |    2 +-
+ arch/sh/mm/gup.c                           |  273 ++++++++++++++++++++++++++++
+ arch/sh/oprofile/Makefile                  |    2 +
+ arch/sh/oprofile/backtrace.c               |    2 +-
+ arch/sh/oprofile/common.c                  |   35 ++--
+ drivers/cdrom/gdrom.c                      |   76 ++++----
+ drivers/input/keyboard/jornada680_kbd.c    |   28 ++--
+ drivers/input/touchscreen/hp680_ts_input.c |   16 +-
+ drivers/rtc/rtc-rs5c313.c                  |   34 ++--
+ drivers/sh/intc/chip.c                     |   53 +++---
+ drivers/sh/intc/core.c                     |   45 +++--
+ drivers/sh/intc/dynamic.c                  |   91 +--------
+ drivers/sh/intc/internals.h                |    2 +-
+ drivers/sh/intc/virq.c                     |   14 +-
+ drivers/sh/maple/maple.c                   |   20 +-
+ include/linux/sh_intc.h                    |    3 -
+ sound/sh/aica.c                            |    2 +-
+ sound/soc/sh/sh7760-ac97.c                 |    4 +-
+ 43 files changed, 646 insertions(+), 463 deletions(-)
+ create mode 100644 arch/sh/mm/gup.c
