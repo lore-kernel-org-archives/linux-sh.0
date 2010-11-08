@@ -1,22 +1,39 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Wed, 24 Nov 2010 09:56:21 +0000
-Subject: Re: [PATCH 2/6 v2] ARM: mach-shmobile: ap4evb: FSI clock use
-Message-Id: <20101124095621.GB5139@opensource.wolfsonmicro.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 08 Nov 2010 05:45:09 +0000
+Subject: [PATCH ARM: mach-shmobile: ap4evb: MTD loader become readonly
+Message-Id: <w3py694v063.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3ptyj7zbim.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3ptyj7zbim.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 24, 2010 at 11:44:06AM +0900, Kuninori Morimoto wrote:
-> Current AP4 FSI set_rate function used bogus clock process
-> which didn't care enable/disable and clk->usecound.
-> To solve this issue, this patch also modify FSI driver to call
-> set_rate with enough options.
-> This patch modify it.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Yusuke Goda <yusuke.goda.sx@renesas.com>
 
-Acked-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0de010e..ed92604 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -159,11 +159,13 @@ static struct mtd_partition nor_flash_partitions[] = {
+ 		.name		= "loader",
+ 		.offset		= 0x00000000,
+ 		.size		= 512 * 1024,
++		.mask_flags	= MTD_WRITEABLE,
+ 	},
+ 	{
+ 		.name		= "bootenv",
+ 		.offset		= MTDPART_OFS_APPEND,
+ 		.size		= 512 * 1024,
++		.mask_flags	= MTD_WRITEABLE,
+ 	},
+ 	{
+ 		.name		= "kernel_ro",
+-- 
+1.7.0.4
+
