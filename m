@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 08 Nov 2010 04:07:47 +0000
+Date: Mon, 08 Nov 2010 04:37:35 +0000
 Subject: [PATCH] ARM: mach-shmobile: intc-sh7372: fix interrupt number
-Message-Id: <w3p1v6wwhv2.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3p39rcwhv4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <w3p1v6wwhv2.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3p1v6wwhv2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
