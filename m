@@ -1,25 +1,52 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 02 Nov 2010 11:27:10 +0000
-Subject: [PATCH 0/4 v2] implement HDMI clock rate optimization
-Message-Id: <Pine.LNX.4.64.1011021207050.4552@axis700.grange>
+Date: Thu, 11 Nov 2010 07:41:05 +0000
+Subject: [PATCH 6/6] ARM: mach-shmobile: enable MMCIF DMA on ap4evb
+Message-Id: <Pine.LNX.4.64.1011110840090.15747@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Yusuke Goda <yusuke.goda.sx@renesas.com>
 
-This is a further improvement of HDMI quality on sh-mobile, by improving 
-clock precision. Currently on ap4evb PLLC2 is used as HDMI clock parent, 
-clocked at 594MHz, which provides exact 74.25MHz, required for 720p, when 
-divided through 8. However, for other video modes other parent clock 
-frequencies can provide better precision for the HDMI clock. This patch 
-adds necessary platform callbacks to reconfigure the parent clock and 
-implements this optimization in the sh clock framework and uses it on 
-ap4evb.
+Have to add DMA slave configuration to enable DMA for the sh7372 MMCIF
+controller.
 
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/board-ap4evb.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index f01ba9f..a8fac79 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -270,6 +270,15 @@ static struct resource sh_mmcif_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mmcif_dma sh_mmcif_dma = {
++	.chan_priv_rx	= {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++	},
++	.chan_priv_tx	= {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++	},
++};
++
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.sup_pclk	= 0,
+ 	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+@@ -277,6 +286,7 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.get_cd		= slot_cn7_get_cd,
++	.dma		= &sh_mmcif_dma,
+ };
+ 
+ static struct platform_device sh_mmcif_device = {
+-- 
+1.7.2.3
+
