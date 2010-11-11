@@ -1,17 +1,17 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 11 Nov 2010 14:44:34 +0000
-Subject: [PATCH 0/4 v3] E-EDID for framebuffer and sh-mobile HDMI
-Message-Id: <Pine.LNX.4.64.1011111516430.15747@axis700.grange>
+Date: Thu, 11 Nov 2010 07:40:42 +0000
+Subject: [PATCH 0/6] MMC: DMA for SH MMCIF
+Message-Id: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Yusuke Goda <yusuke.goda.sx@renesas.com>
 
-This is v3 of the patch series, that adds support for E-EDID parsing to 
-the framebuffer subsystem and extends the sh_mobile_hdmi driver to use it. 
-The first patch is unmodified patch from Erik Gilling, included here only 
-for completeness. Patches now also address comments from Paul (thanks).
+This patch series slightly cleans up the sh_mmcif MMC driver and adds a 
+DMA capability to it. One of the patches is not directly related, but is 
+required for a proper DMA functionality.
 
 Thanks
 Guennadi
@@ -19,4 +19,3 @@ Guennadi
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
 http://www.open-technology.de/
-
