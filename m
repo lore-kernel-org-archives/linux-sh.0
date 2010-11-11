@@ -1,67 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 26 Nov 2010 23:05:57 +0000
-Subject: [PATCH 2/2] [hack] sh: disable initialisation of SDRAM
-Message-Id: <1290812757-20571-3-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 11 Nov 2010 07:40:48 +0000
+Subject: [PATCH 2/6] ARM: mach-shmobile: add DMA defines for MMCIF on sh7372
+Message-Id: <Pine.LNX.4.64.1011110832140.15747@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1290812757-20571-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1290812757-20571-1-git-send-email-horms@verge.net.au>
+References: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Yusuke Goda <yusuke.goda.sx@renesas.com>
 
-This disables SDRAM initialisation in very early boot
-to allow a zImage to be booted from uboot.
+Add DMA slave IDs and slave definitions for MMCIF on sh7372.
 
-This change applies on top of "ARM: mach-shmobile: Add zboot support for
-SuperH Mobile ARM".
-
-Signed-off-by: Simon Horman <horms@verge.net.au>
-
-Index: linux-2.6/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt	2010-11-27 07:17:38.000000000 +0900
-+++ linux-2.6/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt	2010-11-27 07:18:01.000000000 +0900
-@@ -40,6 +40,7 @@ WAIT 1, 0xFE40009C
- LIST "BSC"
- ED 0xFEC10000, 0x00E0001B
-
-+#if 0
- LIST "SBSC1"
- ED 0xFE400354, 0x01AD8000
- ED 0xFE400354, 0x01AD8001
-@@ -77,6 +78,7 @@ ED 0xFE400028, 0xA55A0032
- ED 0xFE40002C, 0xA55A000C
- ED 0xFE400020, 0xA55A2048
- ED 0xFE400008, 0xBCC90959
-+#endif
-
- LIST "Change CPGA setting"
- ED 0xE61500E0, 0x9E40352E
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- .../arm/mach-shmobile/include/mach/head-ap4evb.txt |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   10 ++++++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-index e3ebfa7..1e06943 100644
---- a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-+++ b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-@@ -40,6 +40,7 @@ WAIT 1, 0xFE40009C
- LIST "BSC"
- ED 0xFEC10000, 0x00E0001B
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 147775a..35e06e6 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -455,6 +455,8 @@ enum {
+ 	SHDMA_SLAVE_SDHI1_TX,
+ 	SHDMA_SLAVE_SDHI2_RX,
+ 	SHDMA_SLAVE_SDHI2_TX,
++	SHDMA_SLAVE_MMCIF_RX,
++	SHDMA_SLAVE_MMCIF_TX,
+ };
  
-+#if 0
- LIST "SBSC1"
- ED 0xFE400354, 0x01AD8000
- ED 0xFE400354, 0x01AD8001
-@@ -77,6 +78,7 @@ ED 0xFE400028, 0xA55A0032
- ED 0xFE40002C, 0xA55A000C
- ED 0xFE400020, 0xA55A2048
- ED 0xFE400008, 0xBCC90959
-+#endif
+ extern struct clk sh7372_extal1_clk;
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 564a6d0..2e3e11e 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -416,6 +416,16 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.addr		= 0xe6870030,
+ 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xce,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++		.addr		= 0xe6bd0034,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++		.addr		= 0xe6bd0034,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
+ 	},
+ };
  
- LIST "Change CPGA setting"
- ED 0xE61500E0, 0x9E40352E
 -- 
 1.7.2.3
 
