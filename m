@@ -1,63 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 19 Nov 2010 07:23:52 +0000
-Subject: [RFC][PATCH 6/6] ARM: mach-shmobile: clock-sh7372: remove pllc2 clock
-Message-Id: <w3p4obd4vzr.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 11 Nov 2010 11:13:15 +0000
+Subject: [PATCH] mmc: tmio_mmc: allow multi-element scatter-gather lists
+Message-Id: <Pine.LNX.4.64.1011111210590.15747@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-ap4evb.c |    5 +++++
- arch/arm/mach-shmobile/clock-sh7372.c |   12 ++----------
- 2 files changed, 7 insertions(+), 10 deletions(-)
+The driver is capable of handling multi-element sg lists in both PIO and DMA
+modes. In DMA mode this also allows to use the DMA sg capability more
+efficiently and almost doubles the throughput.
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 53a281b..a1d8384 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -969,6 +969,11 @@ static int __init hdmi_init_pm_clock(void)
- 		goto out;
- 	}
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index e7765a8..9034414 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -864,10 +864,14 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
+ 		goto host_free;
  
-+	ret = clk_enable(&sh7372_pllc2_clk);
-+	if (ret < 0) {
-+		pr_err("Cannot enable pllc2 clock\n");
-+		goto out;
-+	}
- 	pr_debug("PLLC2 set frequency %lu\n", rate);
- 
- 	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index cbeca28..e18a124 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -230,21 +230,13 @@ static int pllc2_set_rate(struct clk *clk,
- 	if (idx < 0)
- 		return idx;
- 
--	if (rate = clk->parent->rate) {
--		pllc2_disable(clk);
--		return 0;
--	}
-+	if (rate = clk->parent->rate)
-+		return -EINVAL;
- 
- 	value = __raw_readl(PLLC2CR) & ~(0x3f << 24);
- 
--	if (value & 0x80000000)
--		pllc2_disable(clk);
--
- 	__raw_writel((value & ~0x80000000) | ((idx + 19) << 24), PLLC2CR);
- 
--	if (value & 0x80000000)
--		return pllc2_enable(clk);
--
- 	return 0;
- }
- 
+ 	mmc->ops = &tmio_mmc_ops;
+-	mmc->caps = MMC_CAP_4_BIT_DATA;
+-	mmc->caps |= pdata->capabilities;
++	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
+ 	mmc->f_max = pdata->hclk;
+ 	mmc->f_min = mmc->f_max / 512;
++	mmc->max_segs = 32;
++	mmc->max_blk_size = 512;
++	mmc->max_blk_count = PAGE_CACHE_SIZE / mmc->max_blk_size * mmc->max_segs;
++	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
++	mmc->max_seg_size = mmc->max_req_size;
+ 	if (pdata->ocr_mask)
+ 		mmc->ocr_avail = pdata->ocr_mask;
+ 	else
 -- 
-1.7.0.4
+1.7.2.3
 
