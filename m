@@ -1,152 +1,167 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 17 Nov 2010 06:44:44 +0000
-Subject: [PATCH 04/05] fbdev: sh_mipi_dsi: Require two I/O resources
-Message-Id: <20101117064444.18139.93049.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 11 Nov 2010 14:45:04 +0000
+Subject: [PATCH 3/4 v3] fbdev: when parsing E-EDID blocks, also use SVD
+Message-Id: <Pine.LNX.4.64.1011111540150.15747@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101117064405.18139.57035.sendpatchset@t400s>
-In-Reply-To: <20101117064405.18139.57035.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, g.liakhovetski@gmx.de, linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add parsing of E-EDID SVD entries. In this first version only a few
+CEA/EIA-861E modes are implemented, more can be added as needed.
 
-This patch updates the MIPI-DSI driver to use a
-second I/O resource to specify the base address
-for the link hardware block. The base address for
-the link hardware block seems to vary with SoC
-type. Using two I/O resources to describe the
-MIPI-DSI hardware allows us to support both newer
-and older SoCs.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- drivers/video/sh_mipi_dsi.c |   44 +++++++++++++++++++++++++++----------------
- 1 file changed, 28 insertions(+), 16 deletions(-)
+v3: moved cea_modes to drivers/video/modedb.c
 
---- 0006/drivers/video/sh_mipi_dsi.c
-+++ work/drivers/video/sh_mipi_dsi.c	2010-11-16 17:30:10.000000000 +0900
-@@ -34,19 +34,20 @@
- #define DSIINTE		0x0060
- #define PHYCTRL		0x0070
+v2: no change
+
+ drivers/video/fbmon.c  |   37 +++++++++++++++++++++++++++++++++----
+ drivers/video/modedb.c |   43 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/fb.h     |    1 +
+ 3 files changed, 77 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/video/fbmon.c b/drivers/video/fbmon.c
+index b25399a..4f57485 100644
+--- a/drivers/video/fbmon.c
++++ b/drivers/video/fbmon.c
+@@ -983,7 +983,8 @@ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ 	unsigned char *block;
+ 	struct fb_videomode *m;
+ 	int num = 0, i;
+-	u8 edt[(128 - 4) / DETAILED_TIMING_DESCRIPTION_SIZE];
++	u8 svd[64], edt[(128 - 4) / DETAILED_TIMING_DESCRIPTION_SIZE];
++	u8 pos = 4, svd_n = 0;
  
--#define DTCTR		0x8000
--#define VMCTR1		0x8020
--#define VMCTR2		0x8024
--#define VMLEN1		0x8028
--#define CMTSRTREQ	0x8070
--#define CMTSRTCTR	0x80d0
--
-+/* relative to linkbase */
-+#define DTCTR		0x0000
-+#define VMCTR1		0x0020
-+#define VMCTR2		0x0024
-+#define VMLEN1		0x0028
-+#define CMTSRTREQ	0x0070
-+#define CMTSRTCTR	0x00d0
+ 	if (!edid)
+ 		return;
+@@ -995,6 +996,21 @@ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ 	    edid[2] < 4 || edid[2] > 128 - DETAILED_TIMING_DESCRIPTION_SIZE)
+ 		return;
  
- /* E.g., sh7372 has 2 MIPI-DSIs - one for each LCDC */
- #define MAX_SH_MIPI_DSI 2
- 
- struct sh_mipi {
- 	void __iomem	*base;
-+	void __iomem	*linkbase;
- 	struct clk	*dsit_clk;
- 	struct clk	*dsip_clk;
- };
-@@ -71,10 +72,10 @@ static int sh_mipi_send_short(struct sh_
- 	int cnt = 100;
- 
- 	/* transmit a short packet to LCD panel */
--	iowrite32(1 | data, mipi->base + CMTSRTCTR);
--	iowrite32(1, mipi->base + CMTSRTREQ);
-+	iowrite32(1 | data, mipi->linkbase + CMTSRTCTR);
-+	iowrite32(1, mipi->linkbase + CMTSRTREQ);
- 
--	while ((ioread32(mipi->base + CMTSRTREQ) & 1) && --cnt)
-+	while ((ioread32(mipi->linkbase + CMTSRTREQ) & 1) && --cnt)
- 		udelay(1);
- 
- 	return cnt ? 0 : -ETIMEDOUT;
-@@ -106,7 +107,7 @@ static void sh_mipi_dsi_enable(struct sh
- 	 * enable LCDC data tx, transition to LPS after completion of each HS
- 	 * packet
- 	 */
--	iowrite32(0x00000002 | enable, mipi->base + DTCTR);
-+	iowrite32(0x00000002 | enable, mipi->linkbase + DTCTR);
- }
- 
- static void sh_mipi_shutdown(struct platform_device *pdev)
-@@ -291,20 +292,21 @@ static int __init sh_mipi_setup(struct s
- 	 * Enable transmission of all packets,
- 	 * transmit LPS after each HS packet completion
- 	 */
--	iowrite32(0x00000006, base + DTCTR);
-+	iowrite32(0x00000006, mipi->linkbase + DTCTR);
- 	/* VSYNC width = 2 (<< 17) */
--	iowrite32(0x00040000 | (pctype << 12) | datatype, base + VMCTR1);
-+	iowrite32(0x00040000 | (pctype << 12) | datatype,
-+		  mipi->linkbase + VMCTR1);
- 	/*
- 	 * Non-burst mode with sync pulses: VSE and HSE are output,
- 	 * HSA period allowed, no commands in LP
- 	 */
--	iowrite32(0x00e00000, base + VMCTR2);
-+	iowrite32(0x00e00000, mipi->linkbase + VMCTR2);
- 	/*
- 	 * 0x660 = 1632 bytes per line (RGB24, 544 pixels: see
- 	 * sh_mobile_lcdc_info.ch[0].lcd_cfg[0].xres), HSALEN = 1 - default
- 	 * (unused, since VMCTR2[HSABM] = 0)
- 	 */
--	iowrite32(1 | (linelength << 16), base + VMLEN1);
-+	iowrite32(1 | (linelength << 16), mipi->linkbase + VMLEN1);
- 
- 	msleep(5);
- 
-@@ -337,11 +339,12 @@ static int __init sh_mipi_probe(struct p
- 	struct sh_mipi *mipi;
- 	struct sh_mipi_dsi_info *pdata = pdev->dev.platform_data;
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	struct resource *res2 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
- 	unsigned long rate, f_current;
- 	int idx = pdev->id, ret;
- 	char dsip_clk[] = "dsi.p_clk";
- 
--	if (!res || idx >= ARRAY_SIZE(mipi_dsi) || !pdata)
-+	if (!res || !res2 || idx >= ARRAY_SIZE(mipi_dsi) || !pdata)
- 		return -ENODEV;
- 
- 	mutex_lock(&array_lock);
-@@ -366,6 +369,12 @@ static int __init sh_mipi_probe(struct p
- 		goto emap;
- 	}
- 
-+	mipi->linkbase = ioremap(res2->start, resource_size(res2));
-+	if (!mipi->linkbase) {
-+		ret = -ENOMEM;
-+		goto emap2;
++	DPRINTK("  Short Video Descriptors\n");
++
++	while (pos < edid[2]) {
++		u8 len = edid[pos] & 0x1f, type = (edid[pos] >> 5) & 7;
++		pr_debug("Data block %u of %u bytes\n", type, len);
++		if (type = 2)
++			for (i = pos; i < pos + len; i++) {
++				u8 idx = edid[pos + i] & 0x7f;
++				svd[svd_n++] = idx;
++				pr_debug("N%sative mode #%d\n",
++					 edid[pos + i] & 0x80 ? "" : "on-n", idx);
++			}
++		pos += len + 1;
 +	}
 +
- 	mipi->dsit_clk = clk_get(&pdev->dev, "dsit_clk");
- 	if (IS_ERR(mipi->dsit_clk)) {
- 		ret = PTR_ERR(mipi->dsit_clk);
-@@ -441,6 +450,8 @@ eclkpget:
- esettrate:
- 	clk_put(mipi->dsit_clk);
- eclktget:
-+	iounmap(mipi->linkbase);
-+emap2:
- 	iounmap(mipi->base);
- emap:
- 	kfree(mipi);
-@@ -483,6 +494,7 @@ static int __exit sh_mipi_remove(struct 
- 	clk_disable(mipi->dsit_clk);
- 	clk_put(mipi->dsit_clk);
- 	clk_put(mipi->dsip_clk);
-+	iounmap(mipi->linkbase);
- 	iounmap(mipi->base);
- 	platform_set_drvdata(pdev, NULL);
- 	kfree(mipi);
+ 	block = edid + edid[2];
+ 
+ 	DPRINTK("  Extended Detailed Timings\n");
+@@ -1005,10 +1021,10 @@ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ 			edt[num++] = block - edid;
+ 
+ 	/* Yikes, EDID data is totally useless */
+-	if (!num)
++	if (!(num + svd_n))
+ 		return;
+ 
+-	m = kzalloc((specs->modedb_len + num) *
++	m = kzalloc((specs->modedb_len + num + svd_n) *
+ 		       sizeof(struct fb_videomode), GFP_KERNEL);
+ 
+ 	if (!m)
+@@ -1023,9 +1039,22 @@ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
+ 		pr_debug("Adding %ux%u@%u\n", m[i].xres, m[i].yres, m[i].refresh);
+ 	}
+ 
++	for (i = specs->modedb_len + num; i < specs->modedb_len + num + svd_n; i++) {
++		int idx = svd[i - specs->modedb_len - num];
++		if (!idx || idx > 63) {
++			pr_warning("Reserved SVD code %d\n", idx);
++		} else if (idx > ARRAY_SIZE(cea_modes) || !cea_modes[idx].xres) {
++			pr_warning("Unimplemented SVD code %d\n", idx);
++		} else {
++			memcpy(&m[i], cea_modes + idx, sizeof(m[i]));
++			pr_debug("Adding SVD #%d: %ux%u@%u\n", idx,
++				 m[i].xres, m[i].yres, m[i].refresh);
++		}
++	}
++
+ 	kfree(specs->modedb);
+ 	specs->modedb = m;
+-	specs->modedb_len = specs->modedb_len + num;
++	specs->modedb_len = specs->modedb_len + num + svd_n;
+ }
+ 
+ /*
+diff --git a/drivers/video/modedb.c b/drivers/video/modedb.c
+index 0a4dbdc..9a0ae6c 100644
+--- a/drivers/video/modedb.c
++++ b/drivers/video/modedb.c
+@@ -278,6 +278,49 @@ static const struct fb_videomode modedb[] = {
+ };
+ 
+ #ifdef CONFIG_FB_MODE_HELPERS
++const struct fb_videomode cea_modes[64] = {
++	/* #1: 640x480p@59.94/60Hz */
++	[1] = {
++		NULL, 60, 640, 480, 39722, 48, 16, 33, 10, 96, 2, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++	/* #3: 720x480p@59.94/60Hz */
++	[3] = {
++		NULL, 60, 720, 480, 37037, 60, 16, 30, 9, 62, 6, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++	/* #5: 1920x1080i@59.94/60Hz */
++	[5] = {
++		NULL, 60, 1920, 1080, 13763, 148, 88, 15, 2, 44, 5, 0, FB_VMODE_INTERLACED, 0,
++	},
++	/* #7: 720(1440)x480iH@59.94/60Hz */
++	[7] = {
++		NULL, 60, 1440, 480, 18554/*37108*/, 114, 38, 15, 4, 124, 3, 0, FB_VMODE_INTERLACED, 0,
++	},
++	/* #9: 720(1440)x240pH@59.94/60Hz */
++	[9] = {
++		NULL, 60, 1440, 240, 18554, 114, 38, 16, 4, 124, 3, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++	/* #18: 720x576pH@50Hz */
++	[18] = {
++		NULL, 50, 720, 576, 37037, 68, 12, 39, 5, 64, 5, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++	/* #19: 1280x720p@50Hz */
++	[19] = {
++		NULL, 50, 1280, 720, 13468, 220, 440, 20, 5, 40, 5, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++	/* #20: 1920x1080i@50Hz */
++	[20] = {
++		NULL, 50, 1920, 1080, 13480, 148, 528, 15, 5, 528, 5, 0, FB_VMODE_INTERLACED, 0,
++	},
++	/* #32: 1920x1080p@23.98/24Hz */
++	[32] = {
++		NULL, 24, 1920, 1080, 13468, 148, 638, 36, 4, 44, 5, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++	/* #35: (2880)x480p4x@59.94/60Hz */
++	[35] = {
++		NULL, 50, 2880, 480, 11100, 240, 64, 30, 9, 248, 6, 0, FB_VMODE_NONINTERLACED, 0,
++	},
++};
++
+ const struct fb_videomode vesa_modes[] = {
+ 	/* 0 640x350-85 VESA */
+ 	{ NULL, 85, 640, 350, 31746,  96, 32, 60, 32, 64, 3,
+diff --git a/include/linux/fb.h b/include/linux/fb.h
+index 6f0274d..e154a79 100644
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -1151,6 +1151,7 @@ struct fb_videomode {
+ 
+ extern const char *fb_mode_option;
+ extern const struct fb_videomode vesa_modes[];
++extern const struct fb_videomode cea_modes[64];
+ 
+ struct fb_modelist {
+ 	struct list_head list;
+-- 
+1.7.2.3
+
