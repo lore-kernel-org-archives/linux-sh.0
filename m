@@ -1,49 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 19 Nov 2010 07:22:58 +0000
-Subject: [PATCH 1/6] ARM: mach-shmobile: clock-sh7372: remove fsidiv bogus
-Message-Id: <w3pbp5l4w1a.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 15 Nov 2010 06:25:12 +0000
+Subject: [GIT PULL] sh updates for 2.6.37-rc2, part 2.
+Message-Id: <20101115062512.GD8489@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Current FSIDIV clock framework had bogus disable.
-This patch remove it.
+Nothing too interesting here, all trivial changes.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/clock-sh7372.c |    9 +--------
- 1 files changed, 1 insertions(+), 8 deletions(-)
+Please pull from:
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 7db31e6..1322632 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -453,10 +453,8 @@ static int fsidiv_enable(struct clk *clk)
- 	unsigned long value;
- 
- 	value  = __raw_readl(clk->mapping->base) >> 16;
--	if (value < 2) {
--		fsidiv_disable(clk);
-+	if (value < 2)
- 		return -ENOENT;
--	}
- 
- 	__raw_writel((value << 16) | 0x3, clk->mapping->base);
- 
-@@ -468,11 +466,6 @@ static int fsidiv_set_rate(struct clk *clk,
- {
- 	int idx;
- 
--	if (clk->parent->rate = rate) {
--		fsidiv_disable(clk);
--		return 0;
--	}
--
- 	idx = (clk->parent->rate / rate) & 0xffff;
- 	if (idx < 2)
- 		return -ENOENT;
--- 
-1.7.0.4
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
 
+Which contains:
+
+Axel Lin (1):
+      rtc: rtc-sh - fix a memory leak
+
+Paul Mundt (4):
+      sh: intc: Fix up initializers for gcc 4.5.
+      sh: clkfwk: fix up compiler warnings.
+      MAINTAINERS: update the sh git tree entry.
+      sh: intc: Fix up build failure introduced by radix tree changes.
+
+ MAINTAINERS             |    2 +-
+ drivers/rtc/rtc-sh.c    |    4 ++--
+ drivers/sh/clk/core.c   |    4 ++--
+ drivers/sh/intc/virq.c  |    2 +-
+ include/linux/sh_intc.h |    2 +-
+ 5 files changed, 7 insertions(+), 7 deletions(-)
