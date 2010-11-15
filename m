@@ -1,35 +1,35 @@
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Date: Fri, 19 Nov 2010 13:21:32 +0000
-Subject: [PATCH 2/2] ARM: sh-mobile: ag5evm i2c_shmobile support.
-Message-Id: <4CE679DC.5010807@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 15 Nov 2010 06:25:15 +0000
+Subject: [GIT PULL] rmobile fixes for 2.6.37-rc2, part 2.
+Message-Id: <20101115062515.GA24925@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Just add port multiplex settings to enable i2c modules.
+More trivial bits..
 
-Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
----
- arch/arm/mach-shmobile/board-ag5evm.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+Please pull from:
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 4758690..02f64d9 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -193,6 +193,12 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_FN_KEYOUT8, NULL);
- 	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
- 
-+	/* enable IC2 2 and 3 */
-+	gpio_request(GPIO_FN_PORT236_I2C_SDA2, NULL);
-+	gpio_request(GPIO_FN_PORT237_I2C_SCL2, NULL);
-+	gpio_request(GPIO_FN_PORT248_I2C_SCL3, NULL);
-+	gpio_request(GPIO_FN_PORT249_I2C_SDA3, NULL);
-+
- 	/* enable SMSC911X */
- 	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
- 	gpio_direction_input(GPIO_PORT144);
--- 1.7.2.2 
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-fixes-for-linus
+
+Which contains:
+
+Kuninori Morimoto (1):
+      ARM: mach-shmobile: ap4evb: add fsib 44100Hz rate
+
+Paul Mundt (1):
+      MAINTAINERS: update the ARM SH-Mobile git tree entry.
+
+Tony SIM (1):
+      ARM: mach-shmobile: intc-sh7372: fix interrupt number
+
+Yusuke Goda (1):
+      ARM: mach-shmobile: ap4evb: Mark NOR boot loader partitions read-only.
+
+ MAINTAINERS                           |    2 +-
+ arch/arm/mach-shmobile/board-ap4evb.c |    6 ++++++
+ arch/arm/mach-shmobile/intc-sh7372.c  |    2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
