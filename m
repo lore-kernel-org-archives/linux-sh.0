@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 16 Nov 2010 07:34:34 +0000
-Subject: [PATCH v2] ARM: mach-shmobile: ap4evb: add fsib 44100Hz rate fixup
-Message-Id: <w3p62vxraba.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 16 Nov 2010 08:48:26 +0000
+Subject: Re: [PATCH v2] ARM: mach-shmobile: ap4evb: add fsib 44100Hz rate fixup
+Message-Id: <20101116084826.GC1330@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3pd3wmt65q.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <w3pd3wmt65q.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,43 +10,30 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-FSIDIVB is used when HDMI sound is 48kHz,
-but it should be disabled when 44.1kHz.
-And fsidiv_set_rate do that if selected rate is same as parent rate.
-This patch select parent rate to fdiv_clk when 44.1kHz
+On Tue, Nov 16, 2010 at 04:34:34PM +0900, Kuninori Morimoto wrote:
+> FSIDIVB is used when HDMI sound is 48kHz,
+> but it should be disabled when 44.1kHz.
+> And fsidiv_set_rate do that if selected rate is same as parent rate.
+> This patch select parent rate to fdiv_clk when 44.1kHz
+> 
+Ok, now that I now what this is doing, this is also totally bogus.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
-- add new_rate
-- add long explan
+You have hard-coded some bizzare enable/disable logic in the middle of
+the ->set_rate() op that completely blindsides the refcounting. This
+might be ok in practice since you probably only have 1 user of the clock
+at the moment, but consider what would happen if you had 2 users and one
+just happens to randomly turn the clock off on the other. We do
+refcounting and API abstraction for a reason. Any time you are deviating
+from the API, you are probably doing something wrong.
 
- arch/arm/mach-shmobile/board-ap4evb.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+Furthermore, what does any of this have to do with rate setting? And if
+it has nothing to do with rate setting, why would you bother adding it to
+the ->set_rate op?
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index b63010f..09a9481 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -569,6 +569,7 @@ static int fsi_set_rate(int is_porta, int rate)
- {
- 	struct clk *fsib_clk;
- 	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	unsigned long new_rate;
- 	int ret;
- 
- 	/* set_rate is not needed if port A */
-@@ -581,7 +582,9 @@ static int fsi_set_rate(int is_porta, int rate)
- 
- 	switch (rate) {
- 	case 44100:
--		clk_set_rate(fsib_clk, clk_round_rate(fsib_clk, 11283000));
-+		new_rate = clk_round_rate(fsib_clk, 11283000);
-+		clk_set_rate(fsib_clk, new_rate);
-+		clk_set_rate(fdiv_clk, new_rate);
- 		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
- 		break;
- 	case 48000:
--- 
-1.7.0.4
+Disabling of the parent clock will happen automatically by the clock
+framework when the refcount on it drops. Disabling of the sibling clock
+will happen automatically when its refcount drops, too. It seems that all
+of your use cases here can be fixed up by simply using proper
+clk_get/put() and enable/disable() refcounting.
 
+It is never acceptable to bypass the refcount, under any situation.
