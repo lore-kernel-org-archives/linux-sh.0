@@ -1,27 +1,62 @@
-From: Andrew Stubbs <ams@codesourcery.com>
-Date: Mon, 22 Nov 2010 11:00:10 +0000
-Subject: Sourcery G++ Lite 2010.09-60 for SuperH uClinux now available
-Message-Id: <4CEA4D3A.6060504@codesourcery.com>
+From: Giuseppe CAVALLARO <peppe.cavallaro@st.com>
+Date: Wed, 17 Nov 2010 06:51:52 +0000
+Subject: [PATCH (sh-2.6)] sh: fix vsyscall compilation due to .eh_frame issue
+Message-Id: <1289976712-27750-1-git-send-email-peppe.cavallaro@st.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-CodeSourcery is pleased to announce the availability of a new Sourcery 
-G++ Lite Edition release for SuperH uClinux.  This is available for 
-download from:
+This patch fixes the following error obtained when
+compile the Kernel with the VSYSCALL support enabled:
 
-     http://www.codesourcery.com/sgpp/lite/superh
+  SYSCALL arch/sh/kernel/vsyscall/vsyscall-trapa.so
+  sh4-linux/bin/ld: error in arch/sh/kernel/vsyscall/vsyscall-trapa.o(.eh_frame);
+  no .eh_frame_hdr table will be created.
+  AS      arch/sh/kernel/vsyscall/vsyscall-syscall.o
 
-(This page provides both uClinux and full GNU/Linux releases.)
+Disassembling the vsyscall-trapa.o code, with this fix applied,
+we get the __kernel_vsyscall symbol defined; otherwise it was
+missing.
 
-This new release features an upgrade to GCC 4.5.1.
+Disassembly of section .text:
 
-Please see the Getting Started Guide for a complete set of release notes:
+00000000 <__kernel_vsyscall>:
+   0:	10 00       	.word 0x0010
+   2:	00 00       	.word 0x0000
+[snip]
+0000040 <__kernel_sigreturn>:
+  40:	05 93       	mov.w	4e <__kernel_sigreturn+0xe>,r3	! 77
+  42:	10 c3       	trapa	#16
+[snip]
 
-http://www.codesourcery.com/sgpp/lite/superh/portal/doc9967/getting-started.pdf
+00000060 <__kernel_rt_sigreturn>:
+  60:	05 93       	mov.w	6e <__kernel_rt_sigreturn+0xe>,r3	! ad
+  62:	10 c3       	trapa	#16
+[snip]
 
+Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
+Reviewed-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+ arch/sh/kernel/vsyscall/vsyscall-trapa.S |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/vsyscall/vsyscall-trapa.S b/arch/sh/kernel/vsyscall/vsyscall-trapa.S
+index 3b6eb34..3e70f85 100644
+--- a/arch/sh/kernel/vsyscall/vsyscall-trapa.S
++++ b/arch/sh/kernel/vsyscall/vsyscall-trapa.S
+@@ -8,9 +8,9 @@ __kernel_vsyscall:
+ 	 * fill out .eh_frame -- PFM. */
+ .LEND_vsyscall:
+ 	.size __kernel_vsyscall,.-.LSTART_vsyscall
+-	.previous
+ 
+ 	.section .eh_frame,"a",@progbits
++	.previous
+ .LCIE:
+ 	.ualong	.LCIE_end - .LCIE_start
+ .LCIE_start:
 -- 
-Andrew Stubbs
-CodeSourcery
+1.5.5.6
+
