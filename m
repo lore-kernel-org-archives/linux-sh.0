@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 19 Nov 2010 05:20:29 +0000
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Date: Fri, 19 Nov 2010 06:08:51 +0000
 Subject: Re: [PATCH 0/2] GPIO support for sh73a0/ag5evm
-Message-Id: <20101119052029.GA16739@linux-sh.org>
+Message-Id: <4CE61473.3080508@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20101119130656.8b8a50b9.takashi.yoshii.zj@renesas.com>
 In-Reply-To: <20101119130656.8b8a50b9.takashi.yoshii.zj@renesas.com>
@@ -10,14 +10,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Nov 19, 2010 at 01:06:56PM +0900, Takashi Yoshii wrote:
-> These patches add GPIO/Pin-multiplex support to sh73a0 CPU and ag5evm board.
-> A few of them have been tested to work by using keysc, LEDs, switches and others.
-> Most of others have been checked only by eyes, comparing with hardware manual.
-> This system seems to be too big to do full test, sorry.
-> 
-> Takashi YOSHII (2):
->   ARM: mach-shmobile: Add sh73a0 pinmux support
->   ARM: mach-shmobile: ag5evm: use gpio.
-> 
-Did something happen to your 1/2 patch?
+Hi,
+
+> Did something happen to your 1/2 patch?
+
+http://vger.kernel.org/majordomo-info.html says,
+> Message size exceeding 100 000 characters causes blocking. 
+
+Seems to be this one. I've re-sent it to you directory.
+Should I re-send it compressed form to ML? (perhaps NO).
+
+Cheers,
+/yoshii
