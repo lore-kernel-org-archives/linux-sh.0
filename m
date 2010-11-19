@@ -1,58 +1,29 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 11 Nov 2010 07:40:48 +0000
-Subject: [PATCH 2/6] ARM: mach-shmobile: add DMA defines for MMCIF on sh7372
-Message-Id: <Pine.LNX.4.64.1011110832140.15747@axis700.grange>
+From: Yoshii Takashi <takashi.yoshii.zj@renesas.com>
+Date: Fri, 19 Nov 2010 13:18:13 +0000
+Subject: [PATCH 0/2] ARM: sh-mobile: ag5evm i2c-sh_mobile support.
+Message-Id: <4CE67915.1010707@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011110815070.15747@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Yusuke Goda <yusuke.goda.sx@renesas.com>
 
-Add DMA slave IDs and slave definitions for MMCIF on sh7372.
+Hi,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
- arch/arm/mach-shmobile/setup-sh7372.c        |   10 ++++++++++
- 2 files changed, 12 insertions(+), 0 deletions(-)
+Following patches make sh73a0/ag5evm support i2c-sh_mobile i2c bus controller.
+Currently, no target device support is included.
+CPU part is just a list of resource definitions. And what needed in board
+part is only pinmux setting.
+These(platform/pinmux/clkdev/pm/..) systems are great!
+/yoshii
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index 147775a..35e06e6 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -455,6 +455,8 @@ enum {
- 	SHDMA_SLAVE_SDHI1_TX,
- 	SHDMA_SLAVE_SDHI2_RX,
- 	SHDMA_SLAVE_SDHI2_TX,
-+	SHDMA_SLAVE_MMCIF_RX,
-+	SHDMA_SLAVE_MMCIF_TX,
- };
- 
- extern struct clk sh7372_extal1_clk;
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 564a6d0..2e3e11e 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -416,6 +416,16 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
- 		.addr		= 0xe6870030,
- 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xce,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
- 	},
- };
- 
--- 
-1.7.2.3
+Takashi YOSHII (2):
+  ARM: sh-mobile: sh73a0 i2c_shmobile support.
+  ARM: sh-mobile: ag5evm i2c_shmobile support.
 
+ arch/arm/mach-shmobile/board-ag5evm.c |    6 ++
+ arch/arm/mach-shmobile/clock-sh73a0.c |   21 ++++++-
+ arch/arm/mach-shmobile/setup-sh73a0.c |  115 +++++++++++++++++++++++++++++++++
+ 3 files changed, 140 insertions(+), 2 deletions(-)
+
+-- 1.7.2.2 
