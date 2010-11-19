@@ -1,55 +1,49 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 04 Nov 2010 14:14:29 +0000
-Subject: [PATCH] sh: make some needlessly global sh7724 clocks static
-Message-Id: <Pine.LNX.4.64.1011041511320.13123@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 19 Nov 2010 07:22:58 +0000
+Subject: [PATCH 1/6] ARM: mach-shmobile: clock-sh7372: remove fsidiv bogus
+Message-Id: <w3pbp5l4w1a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-These clocks are currently only used inside one .c file and are not 
-declared in any headers, therefore having them global is useless.
+Current FSIDIV clock framework had bogus disable.
+This patch remove it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/clock-sh7372.c |    9 +--------
+ 1 files changed, 1 insertions(+), 8 deletions(-)
 
-other CPU-type clocks could use a similar clean-up.
-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-index 2d9700c..0fe2e93 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-@@ -48,7 +48,7 @@ static struct clk r_clk = {
-  * Default rate for the root input clock, reset this with clk_set_rate()
-  * from the platform code.
-  */
--struct clk extal_clk = {
-+static struct clk extal_clk = {
- 	.rate		= 33333333,
- };
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 7db31e6..1322632 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -453,10 +453,8 @@ static int fsidiv_enable(struct clk *clk)
+ 	unsigned long value;
  
-@@ -111,7 +111,7 @@ static struct clk div3_clk = {
- 	.parent		= &pll_clk,
- };
+ 	value  = __raw_readl(clk->mapping->base) >> 16;
+-	if (value < 2) {
+-		fsidiv_disable(clk);
++	if (value < 2)
+ 		return -ENOENT;
+-	}
  
--struct clk *main_clks[] = {
-+static struct clk *main_clks[] = {
- 	&r_clk,
- 	&extal_clk,
- 	&fll_clk,
-@@ -156,7 +156,7 @@ struct clk div4_clks[DIV4_NR] = {
+ 	__raw_writel((value << 16) | 0x3, clk->mapping->base);
  
- enum { DIV6_V, DIV6_FA, DIV6_FB, DIV6_I, DIV6_S, DIV6_NR };
+@@ -468,11 +466,6 @@ static int fsidiv_set_rate(struct clk *clk,
+ {
+ 	int idx;
  
--struct clk div6_clks[DIV6_NR] = {
-+static struct clk div6_clks[DIV6_NR] = {
- 	[DIV6_V] = SH_CLK_DIV6(&div3_clk, VCLKCR, 0),
- 	[DIV6_FA] = SH_CLK_DIV6(&div3_clk, FCLKACR, 0),
- 	[DIV6_FB] = SH_CLK_DIV6(&div3_clk, FCLKBCR, 0),
+-	if (clk->parent->rate = rate) {
+-		fsidiv_disable(clk);
+-		return 0;
+-	}
+-
+ 	idx = (clk->parent->rate / rate) & 0xffff;
+ 	if (idx < 2)
+ 		return -ENOENT;
 -- 
-1.7.2.3
+1.7.0.4
 
