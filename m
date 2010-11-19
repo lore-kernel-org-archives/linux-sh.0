@@ -1,48 +1,16 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 11 Nov 2010 11:15:06 +0000
-Subject: [PATCH/RESEND] mmc: tmio_mmc: allow multi-element scatter-gather
-Message-Id: <Pine.LNX.4.64.1011111214020.15747@axis700.grange>
+From: "ITOCHU Corporation." <info55@mail.com>
+Date: Fri, 19 Nov 2010 19:56:43 +0000
+Subject: Winning Notice.........Congratulations
+Message-Id: <2012.41.138.188.239.1290196603.squirrel@squirrel.jetband.com.ar>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>
+To: @casper.infradead.org
 
-The driver is capable of handling multi-element sg lists in both PIO and DMA
-modes. In DMA mode this also allows to use the DMA sg capability more
-efficiently and almost doubles the throughput.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
-
-Sorry, one of the addresses was wrong last time, resending to all again to 
-simplify commenting.
-
- drivers/mmc/host/tmio_mmc.c |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index e7765a8..9034414 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -864,10 +864,14 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
- 		goto host_free;
- 
- 	mmc->ops = &tmio_mmc_ops;
--	mmc->caps = MMC_CAP_4_BIT_DATA;
--	mmc->caps |= pdata->capabilities;
-+	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
- 	mmc->f_max = pdata->hclk;
- 	mmc->f_min = mmc->f_max / 512;
-+	mmc->max_segs = 32;
-+	mmc->max_blk_size = 512;
-+	mmc->max_blk_count = PAGE_CACHE_SIZE / mmc->max_blk_size * mmc->max_segs;
-+	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
-+	mmc->max_seg_size = mmc->max_req_size;
- 	if (pdata->ocr_mask)
- 		mmc->ocr_avail = pdata->ocr_mask;
- 	else
--- 
-1.7.2.3
+We are please to inform you that your e-mail just won you 1,000.000.00 pounds
+sterlings in the Yahoo/Msn.
+lottery program fill your claim by sending your contact info such as
+Names:Age:Address: occupation:country: Agent Name: Mrs. Rose Elvis
+Email:claimsmicrosoft56@yahoo.com.hk
 
