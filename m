@@ -1,489 +1,119 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Nov 2010 16:24:11 +0000
-Subject: [PATCH 1/3] mmc: tmio: merge the private header into the driver
-Message-Id: <Pine.LNX.4.64.1011231718500.25676@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 22 Nov 2010 23:15:15 +0000
+Subject: [patch v4 1/2] ARM: Add zboot support for SuperH Mobile ARM
+Message-Id: <20101122231759.865310149@vergenet.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
+References: <20101122231514.766413220@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-drivers/mmc/host/tmio_mmc.h is only used by drivers/mmc/host/tmio_mmc.c, this
-needlessly complicates source-code handling.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/tmio_mmc.c |  215 ++++++++++++++++++++++++++++++++++++++++-
- drivers/mmc/host/tmio_mmc.h |  226 -------------------------------------------
- 2 files changed, 210 insertions(+), 231 deletions(-)
- delete mode 100644 drivers/mmc/host/tmio_mmc.h
+When CONFIG_ZBOOT_ROM is selected, the resulting zImage file will be small
+boot loader and may be burned to rom or flash.
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 10416c3..118ad86 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -25,16 +25,221 @@
-  *   double buffer support
-  *
-  */
--#include <linux/module.h>
--#include <linux/irq.h>
--#include <linux/device.h>
-+
- #include <linux/delay.h>
-+#include <linux/device.h>
- #include <linux/dmaengine.h>
--#include <linux/mmc/host.h>
-+#include <linux/highmem.h>
-+#include <linux/interrupt.h>
-+#include <linux/io.h>
-+#include <linux/irq.h>
- #include <linux/mfd/core.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/mmc/host.h>
-+#include <linux/module.h>
-+#include <linux/pagemap.h>
-+#include <linux/scatterlist.h>
-+
-+#define CTL_SD_CMD 0x00
-+#define CTL_ARG_REG 0x04
-+#define CTL_STOP_INTERNAL_ACTION 0x08
-+#define CTL_XFER_BLK_COUNT 0xa
-+#define CTL_RESPONSE 0x0c
-+#define CTL_STATUS 0x1c
-+#define CTL_IRQ_MASK 0x20
-+#define CTL_SD_CARD_CLK_CTL 0x24
-+#define CTL_SD_XFER_LEN 0x26
-+#define CTL_SD_MEM_CARD_OPT 0x28
-+#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
-+#define CTL_SD_DATA_PORT 0x30
-+#define CTL_TRANSACTION_CTL 0x34
-+#define CTL_RESET_SD 0xe0
-+#define CTL_SDIO_REGS 0x100
-+#define CTL_CLK_AND_WAIT_CTL 0x138
-+#define CTL_RESET_SDIO 0x1e0
-+
-+/* Definitions for values the CTRL_STATUS register can take. */
-+#define TMIO_STAT_CMDRESPEND    0x00000001
-+#define TMIO_STAT_DATAEND       0x00000004
-+#define TMIO_STAT_CARD_REMOVE   0x00000008
-+#define TMIO_STAT_CARD_INSERT   0x00000010
-+#define TMIO_STAT_SIGSTATE      0x00000020
-+#define TMIO_STAT_WRPROTECT     0x00000080
-+#define TMIO_STAT_CARD_REMOVE_A 0x00000100
-+#define TMIO_STAT_CARD_INSERT_A 0x00000200
-+#define TMIO_STAT_SIGSTATE_A    0x00000400
-+#define TMIO_STAT_CMD_IDX_ERR   0x00010000
-+#define TMIO_STAT_CRCFAIL       0x00020000
-+#define TMIO_STAT_STOPBIT_ERR   0x00040000
-+#define TMIO_STAT_DATATIMEOUT   0x00080000
-+#define TMIO_STAT_RXOVERFLOW    0x00100000
-+#define TMIO_STAT_TXUNDERRUN    0x00200000
-+#define TMIO_STAT_CMDTIMEOUT    0x00400000
-+#define TMIO_STAT_RXRDY         0x01000000
-+#define TMIO_STAT_TXRQ          0x02000000
-+#define TMIO_STAT_ILL_FUNC      0x20000000
-+#define TMIO_STAT_CMD_BUSY      0x40000000
-+#define TMIO_STAT_ILL_ACCESS    0x80000000
-+
-+/* Define some IRQ masks */
-+/* This is the mask used at reset by the chip */
-+#define TMIO_MASK_ALL           0x837f031d
-+#define TMIO_MASK_READOP  (TMIO_STAT_RXRDY | TMIO_STAT_DATAEND)
-+#define TMIO_MASK_WRITEOP (TMIO_STAT_TXRQ | TMIO_STAT_DATAEND)
-+#define TMIO_MASK_CMD     (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT | \
-+		TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT)
-+#define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
-+
-+#define enable_mmc_irqs(host, i) \
-+	do { \
-+		u32 mask;\
-+		mask  = sd_ctrl_read32((host), CTL_IRQ_MASK); \
-+		mask &= ~((i) & TMIO_MASK_IRQ); \
-+		sd_ctrl_write32((host), CTL_IRQ_MASK, mask); \
-+	} while (0)
-+
-+#define disable_mmc_irqs(host, i) \
-+	do { \
-+		u32 mask;\
-+		mask  = sd_ctrl_read32((host), CTL_IRQ_MASK); \
-+		mask |= ((i) & TMIO_MASK_IRQ); \
-+		sd_ctrl_write32((host), CTL_IRQ_MASK, mask); \
-+	} while (0)
-+
-+#define ack_mmc_irqs(host, i) \
-+	do { \
-+		sd_ctrl_write32((host), CTL_STATUS, ~(i)); \
-+	} while (0)
-+
-+
-+struct tmio_mmc_host {
-+	void __iomem *ctl;
-+	unsigned long bus_shift;
-+	struct mmc_command      *cmd;
-+	struct mmc_request      *mrq;
-+	struct mmc_data         *data;
-+	struct mmc_host         *mmc;
-+	int                     irq;
-+
-+	/* Callbacks for clock / power control */
-+	void (*set_pwr)(struct platform_device *host, int state);
-+	void (*set_clk_div)(struct platform_device *host, int state);
-+
-+	/* pio related stuff */
-+	struct scatterlist      *sg_ptr;
-+	unsigned int            sg_len;
-+	unsigned int            sg_off;
-+
-+	struct platform_device *pdev;
-+
-+	/* DMA support */
-+	struct dma_chan		*chan_rx;
-+	struct dma_chan		*chan_tx;
-+	struct tasklet_struct	dma_complete;
-+	struct tasklet_struct	dma_issue;
-+#ifdef CONFIG_TMIO_MMC_DMA
-+	unsigned int            dma_sglen;
-+#endif
-+};
+This is the non-board-specific framework portion of this patch-set.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
+--- 
+
+v2:
+* As suggested by Magnus Damm; Implemented by Simon Horman
+  - Initialise atags in framework and pass atags to kernel
+
+v3:
+* As suggested by Magnus Damm; Implemented by Simon Horman
+  - Initialise atags directly rather than using assembly
+
+Index: linux-2.6-arm/arch/arm/boot/compressed/Makefile
+=================================--- linux-2.6-arm.orig/arch/arm/boot/compressed/Makefile	2010-10-14 16:47:47.000000000 +0900
++++ linux-2.6-arm/arch/arm/boot/compressed/Makefile	2010-10-14 16:47:53.000000000 +0900
+@@ -45,6 +45,10 @@ else
+ endif
+ endif
  
--#include "tmio_mmc.h"
-+static u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
-+{
-+	return readw(host->ctl + (addr << host->bus_shift));
-+}
++ifeq ($(CONFIG_ARCH_SHMOBILE),y)
++OBJS		+= head-shmobile.o
++endif
 +
-+static void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
-+		u16 *buf, int count)
-+{
-+	readsw(host->ctl + (addr << host->bus_shift), buf, count);
-+}
+ #
+ # We now have a PIC decompressor implementation.  Decompressors running
+ # from RAM should not define ZTEXTADDR.  Decompressors running directly
+Index: linux-2.6-arm/arch/arm/boot/compressed/head-shmobile.S
+=================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6-arm/arch/arm/boot/compressed/head-shmobile.S	2010-10-14 16:57:54.000000000 +0900
+@@ -0,0 +1,53 @@
++/*
++ * The head-file for SH-Mobile ARM platforms
++ *
++ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Simon Horman <horms@verge.net.au>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
 +
-+static u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
-+{
-+	return readw(host->ctl + (addr << host->bus_shift)) |
-+	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
-+}
++#ifdef CONFIG_ZBOOT_ROM
 +
-+static void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
-+{
-+	writew(val, host->ctl + (addr << host->bus_shift));
-+}
++	.section	".start", "ax"
 +
-+static void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
-+		u16 *buf, int count)
-+{
-+	writesw(host->ctl + (addr << host->bus_shift), buf, count);
-+}
++	/* load board-specific initialization code */
++#include <mach/zboot.h>
 +
-+static void sd_ctrl_write32(struct tmio_mmc_host *host, int addr, u32 val)
-+{
-+	writew(val, host->ctl + (addr << host->bus_shift));
-+	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
-+}
++	b	1f
++__atags:@ tag #1
++	.long	12			@ tag->hdr.size = tag_size(tag_core);
++	.long	0x54410001		@ tag->hdr.tag = ATAG_CORE;
++	.long   0			@ tag->u.core.flags = 0;
++	.long	0			@ tag->u.core.pagesize = 0;
++	.long	0			@ tag->u.core.rootdev = 0;
++	@ tag #2
++	.long	8			@ tag->hdr.size = tag_size(tag_mem32);
++	.long	0x54410002		@ tag->hdr.tag = ATAG_MEM;
++	.long	CONFIG_MEMORY_SIZE	@ tag->u.mem.size = CONFIG_MEMORY_SIZE;
++	.long	CONFIG_MEMORY_START	@ @ tag->u.mem.start = CONFIG_MEMORY_START;
++	@ tag #3
++	.long	0			@ tag->hdr.size = 0
++	.long	0			@ tag->hdr.tag = ATAG_NONE;
++1:
 +
-+static void tmio_mmc_init_sg(struct tmio_mmc_host *host, struct mmc_data *data)
-+{
-+	host->sg_len = data->sg_len;
-+	host->sg_ptr = data->sg;
-+	host->sg_off = 0;
-+}
++	/* Set board ID necessary for boot */
++	ldr	r7, 1f				@ Set machine type register
++	adr	r8, __atags			@ Set atag register
++	b	2f
 +
-+static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
-+{
-+	host->sg_ptr = sg_next(host->sg_ptr);
-+	host->sg_off = 0;
-+	return --host->sg_len;
-+}
++1 :	.long MACH_TYPE
++2 :
 +
-+static char *tmio_mmc_kmap_atomic(struct scatterlist *sg, unsigned long *flags)
-+{
-+	local_irq_save(*flags);
-+	return kmap_atomic(sg_page(sg), KM_BIO_SRC_IRQ) + sg->offset;
-+}
++#endif /* CONFIG_ZBOOT_ROM */
+Index: linux-2.6-arm/arch/arm/mach-shmobile/include/mach/zboot.h
+=================================--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6-arm/arch/arm/mach-shmobile/include/mach/zboot.h	2010-10-14 16:55:20.000000000 +0900
+@@ -0,0 +1,12 @@
++#ifndef ZBOOT_H
++#define ZBOOT_H
 +
-+static void tmio_mmc_kunmap_atomic(void *virt, unsigned long *flags)
-+{
-+	kunmap_atomic(virt, KM_BIO_SRC_IRQ);
-+	local_irq_restore(*flags);
-+}
++/**************************************************
++ *
++ *		board specific settings
++ *
++ **************************************************/
 +
-+#ifdef CONFIG_MMC_DEBUG
++#error "unsupported board."
 +
-+#define STATUS_TO_TEXT(a) \
-+	do { \
-+		if (status & TMIO_STAT_##a) \
-+			printk(#a); \
-+	} while (0)
-+
-+void pr_debug_status(u32 status)
-+{
-+	printk(KERN_DEBUG "status: %08x = ", status);
-+	STATUS_TO_TEXT(CARD_REMOVE);
-+	STATUS_TO_TEXT(CARD_INSERT);
-+	STATUS_TO_TEXT(SIGSTATE);
-+	STATUS_TO_TEXT(WRPROTECT);
-+	STATUS_TO_TEXT(CARD_REMOVE_A);
-+	STATUS_TO_TEXT(CARD_INSERT_A);
-+	STATUS_TO_TEXT(SIGSTATE_A);
-+	STATUS_TO_TEXT(CMD_IDX_ERR);
-+	STATUS_TO_TEXT(STOPBIT_ERR);
-+	STATUS_TO_TEXT(ILL_FUNC);
-+	STATUS_TO_TEXT(CMD_BUSY);
-+	STATUS_TO_TEXT(CMDRESPEND);
-+	STATUS_TO_TEXT(DATAEND);
-+	STATUS_TO_TEXT(CRCFAIL);
-+	STATUS_TO_TEXT(DATATIMEOUT);
-+	STATUS_TO_TEXT(CMDTIMEOUT);
-+	STATUS_TO_TEXT(RXOVERFLOW);
-+	STATUS_TO_TEXT(TXUNDERRUN);
-+	STATUS_TO_TEXT(RXRDY);
-+	STATUS_TO_TEXT(TXRQ);
-+	STATUS_TO_TEXT(ILL_ACCESS);
-+	printk("\n");
-+}
-+
-+#else
-+#define pr_debug_status(s)  do { } while (0)
-+#endif
- 
- static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- {
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-deleted file mode 100644
-index 0b7d916..0000000
---- a/drivers/mmc/host/tmio_mmc.h
-+++ /dev/null
-@@ -1,226 +0,0 @@
--/* Definitons for use with the tmio_mmc.c
-- *
-- * (c) 2004 Ian Molton <spyro@f2s.com>
-- * (c) 2007 Ian Molton <spyro@f2s.com>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- *
-- */
--
--#include <linux/highmem.h>
--#include <linux/interrupt.h>
--#include <linux/dmaengine.h>
--
--#define CTL_SD_CMD 0x00
--#define CTL_ARG_REG 0x04
--#define CTL_STOP_INTERNAL_ACTION 0x08
--#define CTL_XFER_BLK_COUNT 0xa
--#define CTL_RESPONSE 0x0c
--#define CTL_STATUS 0x1c
--#define CTL_IRQ_MASK 0x20
--#define CTL_SD_CARD_CLK_CTL 0x24
--#define CTL_SD_XFER_LEN 0x26
--#define CTL_SD_MEM_CARD_OPT 0x28
--#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
--#define CTL_SD_DATA_PORT 0x30
--#define CTL_TRANSACTION_CTL 0x34
--#define CTL_RESET_SD 0xe0
--#define CTL_SDIO_REGS 0x100
--#define CTL_CLK_AND_WAIT_CTL 0x138
--#define CTL_RESET_SDIO 0x1e0
--
--/* Definitions for values the CTRL_STATUS register can take. */
--#define TMIO_STAT_CMDRESPEND    0x00000001
--#define TMIO_STAT_DATAEND       0x00000004
--#define TMIO_STAT_CARD_REMOVE   0x00000008
--#define TMIO_STAT_CARD_INSERT   0x00000010
--#define TMIO_STAT_SIGSTATE      0x00000020
--#define TMIO_STAT_WRPROTECT     0x00000080
--#define TMIO_STAT_CARD_REMOVE_A 0x00000100
--#define TMIO_STAT_CARD_INSERT_A 0x00000200
--#define TMIO_STAT_SIGSTATE_A    0x00000400
--#define TMIO_STAT_CMD_IDX_ERR   0x00010000
--#define TMIO_STAT_CRCFAIL       0x00020000
--#define TMIO_STAT_STOPBIT_ERR   0x00040000
--#define TMIO_STAT_DATATIMEOUT   0x00080000
--#define TMIO_STAT_RXOVERFLOW    0x00100000
--#define TMIO_STAT_TXUNDERRUN    0x00200000
--#define TMIO_STAT_CMDTIMEOUT    0x00400000
--#define TMIO_STAT_RXRDY         0x01000000
--#define TMIO_STAT_TXRQ          0x02000000
--#define TMIO_STAT_ILL_FUNC      0x20000000
--#define TMIO_STAT_CMD_BUSY      0x40000000
--#define TMIO_STAT_ILL_ACCESS    0x80000000
--
--/* Define some IRQ masks */
--/* This is the mask used at reset by the chip */
--#define TMIO_MASK_ALL           0x837f031d
--#define TMIO_MASK_READOP  (TMIO_STAT_RXRDY | TMIO_STAT_DATAEND)
--#define TMIO_MASK_WRITEOP (TMIO_STAT_TXRQ | TMIO_STAT_DATAEND)
--#define TMIO_MASK_CMD     (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT | \
--		TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT)
--#define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
--
--
--#define enable_mmc_irqs(host, i) \
--	do { \
--		u32 mask;\
--		mask  = sd_ctrl_read32((host), CTL_IRQ_MASK); \
--		mask &= ~((i) & TMIO_MASK_IRQ); \
--		sd_ctrl_write32((host), CTL_IRQ_MASK, mask); \
--	} while (0)
--
--#define disable_mmc_irqs(host, i) \
--	do { \
--		u32 mask;\
--		mask  = sd_ctrl_read32((host), CTL_IRQ_MASK); \
--		mask |= ((i) & TMIO_MASK_IRQ); \
--		sd_ctrl_write32((host), CTL_IRQ_MASK, mask); \
--	} while (0)
--
--#define ack_mmc_irqs(host, i) \
--	do { \
--		sd_ctrl_write32((host), CTL_STATUS, ~(i)); \
--	} while (0)
--
--
--struct tmio_mmc_host {
--	void __iomem *ctl;
--	unsigned long bus_shift;
--	struct mmc_command      *cmd;
--	struct mmc_request      *mrq;
--	struct mmc_data         *data;
--	struct mmc_host         *mmc;
--	int                     irq;
--
--	/* Callbacks for clock / power control */
--	void (*set_pwr)(struct platform_device *host, int state);
--	void (*set_clk_div)(struct platform_device *host, int state);
--
--	/* pio related stuff */
--	struct scatterlist      *sg_ptr;
--	unsigned int            sg_len;
--	unsigned int            sg_off;
--
--	struct platform_device *pdev;
--
--	/* DMA support */
--	struct dma_chan		*chan_rx;
--	struct dma_chan		*chan_tx;
--	struct tasklet_struct	dma_complete;
--	struct tasklet_struct	dma_issue;
--#ifdef CONFIG_TMIO_MMC_DMA
--	unsigned int            dma_sglen;
--#endif
--};
--
--#include <linux/io.h>
--
--static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
--{
--	return readw(host->ctl + (addr << host->bus_shift));
--}
--
--static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
--		u16 *buf, int count)
--{
--	readsw(host->ctl + (addr << host->bus_shift), buf, count);
--}
--
--static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
--{
--	return readw(host->ctl + (addr << host->bus_shift)) |
--	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
--}
--
--static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr,
--		u16 val)
--{
--	writew(val, host->ctl + (addr << host->bus_shift));
--}
--
--static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
--		u16 *buf, int count)
--{
--	writesw(host->ctl + (addr << host->bus_shift), buf, count);
--}
--
--static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int addr,
--		u32 val)
--{
--	writew(val, host->ctl + (addr << host->bus_shift));
--	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
--}
--
--#include <linux/scatterlist.h>
--#include <linux/blkdev.h>
--
--static inline void tmio_mmc_init_sg(struct tmio_mmc_host *host,
--	struct mmc_data *data)
--{
--	host->sg_len = data->sg_len;
--	host->sg_ptr = data->sg;
--	host->sg_off = 0;
--}
--
--static inline int tmio_mmc_next_sg(struct tmio_mmc_host *host)
--{
--	host->sg_ptr = sg_next(host->sg_ptr);
--	host->sg_off = 0;
--	return --host->sg_len;
--}
--
--static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
--	unsigned long *flags)
--{
--	local_irq_save(*flags);
--	return kmap_atomic(sg_page(sg), KM_BIO_SRC_IRQ) + sg->offset;
--}
--
--static inline void tmio_mmc_kunmap_atomic(void *virt,
--	unsigned long *flags)
--{
--	kunmap_atomic(virt, KM_BIO_SRC_IRQ);
--	local_irq_restore(*flags);
--}
--
--#ifdef CONFIG_MMC_DEBUG
--
--#define STATUS_TO_TEXT(a) \
--	do { \
--		if (status & TMIO_STAT_##a) \
--			printk(#a); \
--	} while (0)
--
--void pr_debug_status(u32 status)
--{
--	printk(KERN_DEBUG "status: %08x = ", status);
--	STATUS_TO_TEXT(CARD_REMOVE);
--	STATUS_TO_TEXT(CARD_INSERT);
--	STATUS_TO_TEXT(SIGSTATE);
--	STATUS_TO_TEXT(WRPROTECT);
--	STATUS_TO_TEXT(CARD_REMOVE_A);
--	STATUS_TO_TEXT(CARD_INSERT_A);
--	STATUS_TO_TEXT(SIGSTATE_A);
--	STATUS_TO_TEXT(CMD_IDX_ERR);
--	STATUS_TO_TEXT(STOPBIT_ERR);
--	STATUS_TO_TEXT(ILL_FUNC);
--	STATUS_TO_TEXT(CMD_BUSY);
--	STATUS_TO_TEXT(CMDRESPEND);
--	STATUS_TO_TEXT(DATAEND);
--	STATUS_TO_TEXT(CRCFAIL);
--	STATUS_TO_TEXT(DATATIMEOUT);
--	STATUS_TO_TEXT(CMDTIMEOUT);
--	STATUS_TO_TEXT(RXOVERFLOW);
--	STATUS_TO_TEXT(TXUNDERRUN);
--	STATUS_TO_TEXT(RXRDY);
--	STATUS_TO_TEXT(TXRQ);
--	STATUS_TO_TEXT(ILL_ACCESS);
--	printk("\n");
--}
--
--#else
--#define pr_debug_status(s)  do { } while (0)
--#endif
--- 
-1.7.2.3
++#endif /* ZBOOT_H */
 
