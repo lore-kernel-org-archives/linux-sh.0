@@ -1,50 +1,25 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 29 Nov 2010 10:56:52 +0000
-Subject: Re: [PATCH 2/5] ARM: mach-shmobile: mackerel: Add SMSC support
-Message-Id: <w3pzkss2ya3.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 22 Nov 2010 23:15:14 +0000
+Subject: [patch v4 0/2] ARM: mach-shmobile: Add zboot support for SuperH Mobile ARM
+Message-Id: <20101122231514.766413220@vergenet.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pfwuk50pb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pfwuk50pb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Hi,
 
-Hi Magnus
+this short patch series by Kuninori Morimoto and myself adds
+zboot support to mach-shmobile.
 
-Thank you for your advice
+This is v4 of the patch series, which includes
+a minor rediff to apply cleanly against linux-2.6-arm/devel
+without any fuzz.
 
-> > Yes. mackerel doesn't have EEPROM for SMSC
-> 
-> Is it possible that we can extend the kernel to located the MAC address somehow?
+v2 implemented Magnus's suggestion to initialising atags directly rather
+than using assembly.
 
-Hmm...
-I think it is sore spot of this board.
-Can we use flash area ?
+v2 implemented Magnus's suggestion of setting atags in the framework and
+passing them to the kernel rather than using a board-specific fixup.
 
-> The memory window signal timing values associated with the CS signal
-> can be programmed using the BSC. The timings should be optimized so we
-> get decent performance. On some boards we got transmission/reception
-> errors with the slowest settings, and usually the U-boot settings are
-> far from optimal.
-> 
-> Also, if we use romImage we need to setup the BSC settings for the CS
-> signal anyway.
-> 
-> Look at these two linux-2.6 git commits as examples:
-> 
-> a30c89ad41099f58922e0941e346e7c4371655b9
-> 724cfb944007b7f8d346523a7810b53a35921bc5
-> 
-> Please check to see if you can optimize the throughput.
-
-Thank you I understand.
-I don't know current BSC is optimized or not.
-But for now, it seems not so bad.
-Of course I will care it continuously.
-Thanks
-
-Best regards
---
-Kuninori Morimoto
