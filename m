@@ -1,184 +1,204 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 15 Oct 2010 05:14:54 +0000
-Subject: [PATCH 1/3] ARM: mach-shmobile: clock-sh7372: add sh7372_ prefix to
-Message-Id: <w3pmxqg11gx.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Nov 2010 16:24:15 +0000
+Subject: [PATCH 2/3] mmc: tmio: implement a bounce buffer for unaligned DMA
+Message-Id: <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-This patch also registered global extal clocks to sh7372.h
+For example, with SDIO WLAN cards, some transfers happen with buffers at odd
+addresses, whereas the SH-Mobile DMA engine requires even addresses for SDHI.
+This patch extends the tmio driver with a bounce buffer, that is used for
+single entry scatter-gather lists both for sending and receiving. If we ever
+encounter unaligned transfers with multi-element sg lists, this patch will have
+to be extended. For now it just falls back to PIO in this and other unsupported
+cases.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c        |   14 +++++++-------
- arch/arm/mach-shmobile/clock-sh7372.c        |   24 ++++++++++++------------
- arch/arm/mach-shmobile/include/mach/sh7372.h |    8 +++++---
- 3 files changed, 24 insertions(+), 22 deletions(-)
+ drivers/mmc/host/tmio_mmc.c |   81 +++++++++++++++++++++++++++++++++++++++----
+ include/linux/mfd/tmio.h    |    1 +
+ 2 files changed, 75 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index aaac8b0..f879eb3 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -780,22 +780,22 @@ static int __init hdmi_init_pm_clock(void)
- 		goto out;
- 	}
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 118ad86..57ece9d 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -111,6 +111,8 @@
+ 		sd_ctrl_write32((host), CTL_STATUS, ~(i)); \
+ 	} while (0)
  
--	ret = clk_set_parent(&pllc2_clk, &dv_clki_div2_clk);
-+	ret = clk_set_parent(&sh7372_pllc2_clk, &sh7372_dv_clki_div2_clk);
- 	if (ret < 0) {
--		pr_err("Cannot set PLLC2 parent: %d, %d users\n", ret, pllc2_clk.usecount);
-+		pr_err("Cannot set PLLC2 parent: %d, %d users\n", ret, sh7372_pllc2_clk.usecount);
- 		goto out;
- 	}
++/* This is arbitrary, just noone needed any higher alignment yet */
++#define MAX_ALIGN 4
  
--	pr_debug("PLLC2 initial frequency %lu\n", clk_get_rate(&pllc2_clk));
-+	pr_debug("PLLC2 initial frequency %lu\n", clk_get_rate(&sh7372_pllc2_clk));
+ struct tmio_mmc_host {
+ 	void __iomem *ctl;
+@@ -127,6 +129,7 @@ struct tmio_mmc_host {
  
--	rate = clk_round_rate(&pllc2_clk, 594000000);
-+	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
- 	if (rate < 0) {
- 		pr_err("Cannot get suitable rate: %ld\n", rate);
- 		ret = rate;
- 		goto out;
- 	}
+ 	/* pio related stuff */
+ 	struct scatterlist      *sg_ptr;
++	struct scatterlist      *sg_orig;
+ 	unsigned int            sg_len;
+ 	unsigned int            sg_off;
  
--	ret = clk_set_rate(&pllc2_clk, rate);
-+	ret = clk_set_rate(&sh7372_pllc2_clk, rate);
- 	if (ret < 0) {
- 		pr_err("Cannot set rate %ld: %d\n", rate, ret);
- 		goto out;
-@@ -803,7 +803,7 @@ static int __init hdmi_init_pm_clock(void)
+@@ -139,6 +142,8 @@ struct tmio_mmc_host {
+ 	struct tasklet_struct	dma_issue;
+ #ifdef CONFIG_TMIO_MMC_DMA
+ 	unsigned int            dma_sglen;
++	u8			bounce_buf[PAGE_CACHE_SIZE] __attribute__((aligned(MAX_ALIGN)));
++	struct scatterlist	bounce_sg;
+ #endif
+ };
  
- 	pr_debug("PLLC2 set frequency %lu\n", rate);
- 
--	ret = clk_set_parent(hdmi_ick, &pllc2_clk);
-+	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
- 	if (ret < 0) {
- 		pr_err("Cannot set HDMI parent: %d\n", ret);
- 		goto out;
-@@ -1132,7 +1132,7 @@ static void __init ap4evb_timer_init(void)
- 	shmobile_timer.init();
- 
- 	/* External clock source */
--	clk_set_rate(&dv_clki_clk, 27000000);
-+	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+@@ -180,6 +185,7 @@ static void tmio_mmc_init_sg(struct tmio_mmc_host *host, struct mmc_data *data)
+ {
+ 	host->sg_len = data->sg_len;
+ 	host->sg_ptr = data->sg;
++	host->sg_orig = data->sg;
+ 	host->sg_off = 0;
  }
  
- static struct sys_timer ap4evb_timer = {
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 3ab190a..50c3971 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -51,7 +51,7 @@
- #define SMSTPCR4	0xe6150140
+@@ -436,8 +442,14 @@ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+ 	 */
  
- /* Platforms must set frequency on their DV_CLKI pin */
--struct clk dv_clki_clk = {
-+struct clk sh7372_dv_clki_clk = {
+ 	if (data->flags & MMC_DATA_READ) {
+-		if (!host->chan_rx)
++		if (!host->chan_rx) {
+ 			disable_mmc_irqs(host, TMIO_MASK_READOP);
++		} else if (host->sg_ptr = &host->bounce_sg) {
++			unsigned long flags;
++			void *sg_vaddr = tmio_mmc_kmap_atomic(host->sg_orig, &flags);
++			memcpy(sg_vaddr, host->bounce_buf, host->bounce_sg.length);
++			tmio_mmc_kunmap_atomic(sg_vaddr, &flags);
++		}
+ 		dev_dbg(&host->pdev->dev, "Complete Rx request %p\n",
+ 			host->mrq);
+ 	} else {
+@@ -529,8 +541,7 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 			if (!host->chan_rx)
+ 				enable_mmc_irqs(host, TMIO_MASK_READOP);
+ 		} else {
+-			struct dma_chan *chan = host->chan_tx;
+-			if (!chan)
++			if (!host->chan_tx)
+ 				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
+ 			else
+ 				tasklet_schedule(&host->dma_issue);
+@@ -634,11 +645,36 @@ static void tmio_dma_complete(void *arg)
+ 
+ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ {
+-	struct scatterlist *sg = host->sg_ptr;
++	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_rx;
++	struct mfd_cell	*cell = host->pdev->dev.platform_data;
++	struct tmio_mmc_data *pdata = cell->driver_data;
+ 	dma_cookie_t cookie;
+-	int ret;
++	int ret, i;
++	bool aligned = true, multiple = true;
++	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
++
++	for_each_sg(sg, sg_tmp, host->sg_len, i) {
++		if (sg_tmp->offset & align)
++			aligned = false;
++		if (sg_tmp->length & align) {
++			multiple = false;
++			break;
++		}
++	}
++
++	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
++			  align >= MAX_ALIGN)) || !multiple)
++		goto pio;
++
++	/* The only sg element can be unaligned, use our bounce buffer then */
++	if (!aligned) {
++		/* The first sg element unaligned, use our bounce-buffer */
++		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
++		host->sg_ptr = &host->bounce_sg;
++		sg = host->sg_ptr;
++	}
+ 
+ 	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_FROM_DEVICE);
+ 	if (ret > 0) {
+@@ -661,6 +697,7 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+ 		__func__, host->sg_len, ret, cookie, host->mrq);
+ 
++pio:
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
+ 		if (ret >= 0)
+@@ -684,11 +721,40 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 
+ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ {
+-	struct scatterlist *sg = host->sg_ptr;
++	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_tx;
++	struct mfd_cell	*cell = host->pdev->dev.platform_data;
++	struct tmio_mmc_data *pdata = cell->driver_data;
+ 	dma_cookie_t cookie;
+-	int ret;
++	int ret, i;
++	bool aligned = true, multiple = true;
++	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
++
++	for_each_sg(sg, sg_tmp, host->sg_len, i) {
++		if (sg_tmp->offset & align)
++			aligned = false;
++		if (sg_tmp->length & align) {
++			multiple = false;
++			break;
++		}
++	}
++
++	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
++			  align >= MAX_ALIGN)) || !multiple)
++		goto pio;
++
++	/* The only sg element can be unaligned, use our bounce buffer then */
++	if (!aligned) {
++		unsigned long flags;
++		void *sg_vaddr = tmio_mmc_kmap_atomic(sg, &flags);
++		/* The first sg element unaligned, use our bounce-buffer */
++		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
++		memcpy(host->bounce_buf, sg_vaddr, host->bounce_sg.length);
++		tmio_mmc_kunmap_atomic(sg_vaddr, &flags);
++		host->sg_ptr = &host->bounce_sg;
++		sg = host->sg_ptr;
++	}
+ 
+ 	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_TO_DEVICE);
+ 	if (ret > 0) {
+@@ -709,6 +775,7 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+ 		__func__, host->sg_len, ret, cookie, host->mrq);
+ 
++pio:
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
+ 		if (ret >= 0)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 085f041..dbfc053 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -66,6 +66,7 @@ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+ 	void *chan_priv_rx;
++	int alignment_shift;
  };
  
- /* Fixed 32 KHz root clock from EXTALR pin */
-@@ -86,9 +86,9 @@ static struct clk_ops div2_clk_ops = {
- };
- 
- /* Divide dv_clki by two */
--struct clk dv_clki_div2_clk = {
-+struct clk sh7372_dv_clki_div2_clk = {
- 	.ops		= &div2_clk_ops,
--	.parent		= &dv_clki_clk,
-+	.parent		= &sh7372_dv_clki_clk,
- };
- 
- /* Divide extal1 by two */
-@@ -150,7 +150,7 @@ static struct clk pllc1_div2_clk = {
- static struct clk *pllc2_parent[] = {
- 	[0] = &extal1_div2_clk,
- 	[1] = &extal2_div2_clk,
--	[2] = &dv_clki_div2_clk,
-+	[2] = &sh7372_dv_clki_div2_clk,
- };
- 
- /* Only multipliers 20 * 2 to 46 * 2 are valid, last entry for CPUFREQ_TABLE_END */
-@@ -284,7 +284,7 @@ static struct clk_ops pllc2_clk_ops = {
- 	.set_parent	= pllc2_set_parent,
- };
- 
--struct clk pllc2_clk = {
-+struct clk sh7372_pllc2_clk = {
- 	.ops		= &pllc2_clk_ops,
- 	.parent		= &extal1_div2_clk,
- 	.freq_table	= pllc2_freq_table,
-@@ -293,18 +293,18 @@ struct clk pllc2_clk = {
- };
- 
- static struct clk *main_clks[] = {
--	&dv_clki_clk,
-+	&sh7372_dv_clki_clk,
- 	&r_clk,
- 	&sh7372_extal1_clk,
- 	&sh7372_extal2_clk,
--	&dv_clki_div2_clk,
-+	&sh7372_dv_clki_div2_clk,
- 	&extal1_div2_clk,
- 	&extal2_div2_clk,
- 	&extal2_div4_clk,
- 	&pllc0_clk,
- 	&pllc1_clk,
- 	&pllc1_div2_clk,
--	&pllc2_clk,
-+	&sh7372_pllc2_clk,
- };
- 
- static void div4_kick(struct clk *clk)
-@@ -382,8 +382,8 @@ enum { DIV6_HDMI, DIV6_REPARENT_NR };
- /* Indices are important - they are the actual src selecting values */
- static struct clk *hdmi_parent[] = {
- 	[0] = &pllc1_div2_clk,
--	[1] = &pllc2_clk,
--	[2] = &dv_clki_clk,
-+	[1] = &sh7372_pllc2_clk,
-+	[2] = &sh7372_dv_clki_clk,
- 	[3] = NULL,	/* pllc2_div4 not implemented yet */
- };
- 
-@@ -448,7 +448,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 
- static struct clk_lookup lookups[] = {
- 	/* main clocks */
--	CLKDEV_CON_ID("dv_clki_div2_clk", &dv_clki_div2_clk),
-+	CLKDEV_CON_ID("dv_clki_div2_clk", &sh7372_dv_clki_div2_clk),
- 	CLKDEV_CON_ID("r_clk", &r_clk),
- 	CLKDEV_CON_ID("extal1", &sh7372_extal1_clk),
- 	CLKDEV_CON_ID("extal2", &sh7372_extal2_clk),
-@@ -458,7 +458,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc0_clk", &pllc0_clk),
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
--	CLKDEV_CON_ID("pllc2_clk", &pllc2_clk),
-+	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index 33e9700..9838fcf 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -457,8 +457,10 @@ enum {
- 	SHDMA_SLAVE_SDHI2_TX,
- };
- 
--extern struct clk dv_clki_clk;
--extern struct clk dv_clki_div2_clk;
--extern struct clk pllc2_clk;
-+extern struct clk sh7372_extal1_clk;
-+extern struct clk sh7372_extal2_clk;
-+extern struct clk sh7372_dv_clki_clk;
-+extern struct clk sh7372_dv_clki_div2_clk;
-+extern struct clk sh7372_pllc2_clk;
- 
- #endif /* __ASM_SH7372_H__ */
+ /*
 -- 
-1.7.0.4
+1.7.2.3
 
