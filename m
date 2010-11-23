@@ -1,21 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 17 Nov 2010 08:18:11 +0000
-Subject: Re: [PATCH (sh-2.6)] sh: avoid to flush all cache in sys_cacheflush
-Message-Id: <20101117081811.GB11447@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Nov 2010 16:24:19 +0000
+Subject: [PATCH 3/3] mfd: sdhi: require the tmio-mmc driver to bounce unaligned
+Message-Id: <Pine.LNX.4.64.1011231723370.25676@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1289976668-27728-1-git-send-email-peppe.cavallaro@st.com>
-In-Reply-To: <1289976668-27728-1-git-send-email-peppe.cavallaro@st.com>
+References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-On Wed, Nov 17, 2010 at 07:51:08AM +0100, Giuseppe CAVALLARO wrote:
-> Calling sys_cacheflush with ICACHE we can direclty flush
-> the icache without invoking the flush_cache_all function.
+The SDHI controller on SH-Mobile SoCs requires even buffer addresses, when used
+with DMA.
 
-On Wed, Nov 17, 2010 at 07:51:52AM +0100, Giuseppe CAVALLARO wrote:
-> This patch fixes the following error obtained when
-> compile the Kernel with the VSYSCALL support enabled:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mfd/sh_mobile_sdhi.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-These both look good, I'll add them to the .37 queue, thanks!
+diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
+index f1714f9..3ca20ec 100644
+--- a/drivers/mfd/sh_mobile_sdhi.c
++++ b/drivers/mfd/sh_mobile_sdhi.c
+@@ -136,6 +136,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		priv->param_rx.slave_id = p->dma_slave_rx;
+ 		priv->dma_priv.chan_priv_tx = &priv->param_tx;
+ 		priv->dma_priv.chan_priv_rx = &priv->param_rx;
++		priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
+ 		mmc_data->dma = &priv->dma_priv;
+ 	}
+ 
+-- 
+1.7.2.3
+
