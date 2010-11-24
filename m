@@ -1,25 +1,30 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 08 Nov 2010 01:13:27 +0000
-Subject: [GIT PULL] rmobile updates for 2.6.37-rc2
-Message-Id: <20101108011327.GA10728@linux-sh.org>
+Date: Wed, 24 Nov 2010 13:50:47 +0000
+Subject: [GIT PULL] rmobile updates for 2.6.37-rc4
+Message-Id: <20101124135047.GA3270@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101108011327.GA10728@linux-sh.org>
+In-Reply-To: <20101108011327.GA10728@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linus Torvalds <torvalds@linux-foundation.org>
 Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-As discussed at kernel summit, here's the first attempt at bringing the
-SH/R-Mobile bits in to a more coherent branch topology within the SH tree
-proper. Following this I'll be killing off my ARM tree completely and
-simply sticking with this approach.
+This was going to be a fairly simple set of changes, but it was
+unfortunately discovered that the FSIDIV clock has been doing some fairly
+bogus things with regards to finding creative ways to sidestep its
+refcount, leading to situations where users of the clock in question can
+find themselves invariably shafted by the alsa driver. As a result of
+this, a bit of a rethink was needed, resulting in the FSIDIV and PLLC2
+clock handling being refactored for AP4.
 
-There's nothing really exciting here, with the exception of the FSIDIV
-clock addition. This is something that the HDMI audio depends on and has
-up until now been blocked on core infrastructure patches in the SH tree,
-all of which were merged during -rc1. These have all been sitting in
--next for the last few weeks and have had extensive out-of-tree testing
-since well before that, so there should be no real surprises here.
+As we're already at -rc3 this is obviously a lot bigger than I would care
+for at this point. The alternative would be a series of reverts that
+would result in a similar amount of churn, and then giving it all a go
+again for .38. I can prepare a topic branch that does that if you'd
+prefer that option, this would however render the alsa driver unusable
+for .37.
 
 Please pull from:
 
@@ -27,29 +32,19 @@ Please pull from:
 
 Which contains:
 
-Guennadi Liakhovetski (1):
-      ARM: mach-shmobile: fix sh7372 after a recent clock framework rework
-
-Kuninori Morimoto (2):
-      ARM: mach-shmobile: clock-sh7372: Add FSIDIV clock support
-      ARM: mach-shmobile: ap4evb: Add HDMI sound support
+Kuninori Morimoto (6):
+      ARM: mach-shmobile: clock-sh7372: remove fsidiv bogus disable
+      ARM: mach-shmobile: ap4evb: FSI clock use proper process for HDMI
+      ARM: mach-shmobile: ap4evb: FSI clock use proper process for ak4642
+      ARM: mach-shmobile: clock-sh7372: modify error code
+      ARM: mach-shmobile: clock-sh7372: remove unnecessary fsi clocks
+      ARM: mach-shmobile: clock-sh7372: remove bogus pllc2 clock toggling.
 
 Magnus Damm (1):
-      ARM: shmobile: remove sh_timer_config clk member
+      ARM: mach-shmobile: sh7372 USB0/IIC1 MSTP fix
 
-Paul Mundt (3):
-      ARM: mach-shmobile: include drivers/sh/Kconfig
-      ARM: mach-shmobile: Allow GPIO chips to register IRQ mappings.
-      mmc: sh_mmcif: Convert extern inline to static inline.
-
- arch/arm/mach-shmobile/Kconfig               |    2 +
- arch/arm/mach-shmobile/board-ap4evb.c        |   46 +++++++++++-
- arch/arm/mach-shmobile/clock-sh7372.c        |  102 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/gpio.h   |    4 +-
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 +
- drivers/clocksource/sh_cmt.c                 |   10 +--
- drivers/clocksource/sh_mtu2.c                |   10 +--
- drivers/clocksource/sh_tmu.c                 |   10 +--
- include/linux/mmc/sh_mmcif.h                 |   18 ++--
- include/linux/sh_timer.h                     |    1 -
- 10 files changed, 171 insertions(+), 34 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |  147 +++++++++++++++++++++++++--------
+ arch/arm/mach-shmobile/clock-sh7372.c |   33 ++------
+ include/sound/sh_fsi.h                |    6 +-
+ sound/soc/sh/fsi.c                    |   25 ++++--
+ 4 files changed, 140 insertions(+), 71 deletions(-)
