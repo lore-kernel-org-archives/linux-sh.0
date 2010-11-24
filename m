@@ -1,67 +1,45 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 04 Nov 2010 11:06:11 +0000
-Subject: [PATCH 4/5] fbdev: sh_mobile_lcdc: use correct number of modes, when
-Message-Id: <Pine.LNX.4.64.1011041200340.13123@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 24 Nov 2010 07:38:00 +0000
+Subject: [GIT PULL] sh updates for 2.6.37-rc4
+Message-Id: <20101124073800.GA2212@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Fix zero mode number, when using the default 720p mode.
+A fairly straightforward set of fixes. Now that we're later in .37, I've
+also opted to kill off an unused API call in the clock framework, isolate
+legacy support, and update the users accordingly. This will prevent new
+users being added in .38, which are already popping up.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/video/sh_mobile_lcdcfb.c |   14 ++++++++------
- 1 files changed, 8 insertions(+), 6 deletions(-)
+Please pull from:
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 8e8d698..993be38 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1188,6 +1188,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		const struct fb_videomode *mode = cfg->lcd_cfg;
- 		unsigned long max_size = 0;
- 		int k;
-+		int num_cfg;
- 
- 		ch->info = framebuffer_alloc(0, &pdev->dev);
- 		if (!ch->info) {
-@@ -1223,8 +1224,14 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		info->fix = sh_mobile_lcdc_fix;
- 		info->fix.smem_len = max_size * (cfg->bpp / 8) * 2;
- 
--		if (!mode)
-+		if (!mode) {
- 			mode = &default_720p;
-+			num_cfg = 1;
-+		} else {
-+			num_cfg = ch->cfg.num_cfg;
-+		}
-+
-+		fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
- 
- 		fb_videomode_to_var(var, mode);
- 		/* Default Y virtual resolution is 2x panel size */
-@@ -1272,10 +1279,6 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 
- 	for (i = 0; i < j; i++) {
- 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
--		const struct fb_videomode *mode = ch->cfg.lcd_cfg;
--
--		if (!mode)
--			mode = &default_720p;
- 
- 		info = ch->info;
- 
-@@ -1288,7 +1291,6 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 			}
- 		}
- 
--		fb_videomode_to_modelist(mode, ch->cfg.num_cfg, &info->modelist);
- 		error = register_framebuffer(info);
- 		if (error < 0)
- 			goto err1;
--- 
-1.7.2.3
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
 
+Which contains:
+
+Giuseppe CAVALLARO (3):
+      sh: avoid to flush all cache in sys_cacheflush
+      sh: fix vsyscall compilation due to .eh_frame issue
+      sh: Use GCC __builtin_prefetch() to implement prefetch().
+
+Paul Mundt (4):
+      sh: clkfwk: Kill off unused clk_set_rate_ex().
+      sh: clkfwk: Kill off now unused algo_id in set_rate op.
+      sh: clkfwk: Disable init clk op for non-legacy clocks.
+      sh: clkfwk: Build fix for non-legacy CPG changes.
+
+ Documentation/DocBook/sh.tmpl            |    4 ---
+ Documentation/sh/clk.txt                 |   32 ----------------------------
+ arch/arm/mach-shmobile/clock-sh7372.c    |    6 +---
+ arch/sh/include/asm/processor_32.h       |    7 ++++-
+ arch/sh/kernel/cpu/sh4/clock-sh4-202.c   |    2 +-
+ arch/sh/kernel/sys_sh.c                  |    2 +-
+ arch/sh/kernel/vsyscall/vsyscall-trapa.S |    2 +-
+ drivers/sh/clk/core.c                    |   16 +++++--------
+ drivers/sh/clk/cpg.c                     |    7 ++---
+ include/linux/sh_clk.h                   |   34 ++---------------------------
+ 10 files changed, 22 insertions(+), 90 deletions(-)
+ delete mode 100644 Documentation/sh/clk.txt
