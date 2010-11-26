@@ -1,31 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 19 Nov 2010 07:23:32 +0000
-Subject: [PATCH 5/6] ARM: mach-shmobile: clock-sh7372: remove unnecessary fsi
-Message-Id: <w3p62vt4w0b.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 26 Nov 2010 23:05:57 +0000
+Subject: [PATCH 2/2] [hack] sh: disable initialisation of SDRAM
+Message-Id: <1290812757-20571-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1290812757-20571-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1290812757-20571-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This disables SDRAM initialisation in very early boot
+to allow a zImage to be booted from uboot.
+
+This change applies on top of "ARM: mach-shmobile: Add zboot support for
+SuperH Mobile ARM".
+
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt	2010-11-27 07:17:38.000000000 +0900
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt	2010-11-27 07:18:01.000000000 +0900
+@@ -40,6 +40,7 @@ WAIT 1, 0xFE40009C
+ LIST "BSC"
+ ED 0xFEC10000, 0x00E0001B
+
++#if 0
+ LIST "SBSC1"
+ ED 0xFE400354, 0x01AD8000
+ ED 0xFE400354, 0x01AD8001
+@@ -77,6 +78,7 @@ ED 0xFE400028, 0xA55A0032
+ ED 0xFE40002C, 0xA55A000C
+ ED 0xFE400020, 0xA55A2048
+ ED 0xFE400008, 0xBCC90959
++#endif
+
+ LIST "Change CPGA setting"
+ ED 0xE61500E0, 0x9E40352E
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+ .../arm/mach-shmobile/include/mach/head-ap4evb.txt |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 41663e0..cbeca28 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -602,8 +602,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("vck3_clk", &div6_clks[DIV6_VCK3]),
- 	CLKDEV_CON_ID("fmsi_clk", &div6_clks[DIV6_FMSI]),
- 	CLKDEV_CON_ID("fmso_clk", &div6_clks[DIV6_FMSO]),
--	CLKDEV_CON_ID("fsia_clk", &div6_reparent_clks[DIV6_FSIA]),
--	CLKDEV_CON_ID("fsib_clk", &div6_reparent_clks[DIV6_FSIB]),
- 	CLKDEV_CON_ID("sub_clk", &div6_clks[DIV6_SUB]),
- 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
- 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
+diff --git a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
+index e3ebfa7..1e06943 100644
+--- a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
++++ b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
+@@ -40,6 +40,7 @@ WAIT 1, 0xFE40009C
+ LIST "BSC"
+ ED 0xFEC10000, 0x00E0001B
+ 
++#if 0
+ LIST "SBSC1"
+ ED 0xFE400354, 0x01AD8000
+ ED 0xFE400354, 0x01AD8001
+@@ -77,6 +78,7 @@ ED 0xFE400028, 0xA55A0032
+ ED 0xFE40002C, 0xA55A000C
+ ED 0xFE400020, 0xA55A2048
+ ED 0xFE400008, 0xBCC90959
++#endif
+ 
+ LIST "Change CPGA setting"
+ ED 0xE61500E0, 0x9E40352E
 -- 
-1.7.0.4
+1.7.2.3
 
