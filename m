@@ -1,38 +1,200 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 09 Nov 2010 16:26:33 +0000
-Subject: Re: [ANNOUNCE] Changes in the SH and Genesis/R-Mobile git trees
-Message-Id: <20101109162633.GC22740@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 26 Nov 2010 23:05:56 +0000
+Subject: [PATCH 1/2] [rfc] mmc, sh: Read MMCIF during zboot
+Message-Id: <1290812757-20571-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101109083518.GA21086@linux-sh.org>
-In-Reply-To: <20101109083518.GA21086@linux-sh.org>
+References: <1290812757-20571-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1290812757-20571-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
 
-On Wed, Nov 10, 2010 at 02:09:50AM +1100, Stephen Rothwell wrote:
-> On Tue, 9 Nov 2010 17:35:18 +0900 Paul Mundt <lethal@linux-sh.org> wrote:
-> > rmobile-fixes-for-linus / sh-fixes-for-linus
-> > 	- These are my pull branches for upstream. They will always
-> > 	  contain that which is bound for the next -rc, regardless of
-> > 	  whether we are in a merge window or late in an -rc series. They
-> > 	  will only be advanced as new things come in that need to be
-> > 	  merged in to the next -rc, and may very well stay put for
-> > 	  awhile if I've just completed a merge and all of the new
-> > 	  patches are aimed at the next kernel.
-> 
-> Should I include these branches among my other "current" trees?  These
-> trees contain fixes for Linus' current -rc series and are merged very
-> early in linux-next.  They are in linux-next so that bugs already fixed
-> are not reported again against linux-next before Linus has merged the
-> fixes.
-> 
-Oh, I hadn't even noticed those. Yes, it seems like these would be a good
-fit for that. I haven't had a strict rule on rebasing for these in the
-past simply because there was no immediate downstream, but I can probably
-avoid that. 
+This is a prototype of code to read the MMCIF during
+zboot initialisation. The intention is that it will form
+part of enabling booting from MMC. Very roughly the plan is
 
-> I will replace the sh and genesis trees in linux-next with the above two
-> branches starting with next-20101110 (and rename genesis to rmobile).
-> 
-Great, thanks.
+1) The Mask Rom will load a small boot program from MMC.
+   Essentially this will be the first portion of
+   the kernel to be booted.
+2) That program will load the remainder of the kernel
+   from MMC and boot from it.
+
+This patch demonstrates code to perform the read portion of 2).
+It uses a dummy buffer and only reads in one 512 byte sector.
+A full implementation of 2) would of course read much more.
+
+The patch currently hooks into head-shmobile.S as it
+depends on initialisation that occurs in that file.
+However, it is likely that the final implementation
+will need to be located in head.S where relocation is
+currently handled.
+
+I used a multi-voltage MMC mobile card to test this code.
+I observed that a single-voltage MMC and MMCplus card caused
+the code to time-out in sh_mmcif_boot_init() which causes
+the boot to stop.
+
+This patch depends on "ARM: mach-shmobile: Add zboot support for SuperH
+Mobile ARM" and "mmc, sh: Correct value for reset".
+
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/boot/compressed/Makefile        |    4 +
+ arch/arm/boot/compressed/head-shmobile.S |   16 +++++
+ arch/arm/boot/compressed/mmcif-sh7372.c  |  100 ++++++++++++++++++++++++++++++
+ 3 files changed, 120 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/boot/compressed/mmcif-sh7372.c
+
+diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
+index 0a8f748..f730c10 100644
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -49,6 +49,10 @@ ifeq ($(CONFIG_ARCH_SHMOBILE),y)
+ OBJS		+= head-shmobile.o
+ endif
+ 
++ifeq ($(CONFIG_ARCH_SH7372),y)
++OBJS		+= mmcif-sh7372.o
++endif
++
+ #
+ # We now have a PIC decompressor implementation.  Decompressors running
+ # from RAM should not define ZTEXTADDR.  Decompressors running directly
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+index 30973b7..700d622 100644
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ b/arch/arm/boot/compressed/head-shmobile.S
+@@ -26,6 +26,22 @@
+ #include <mach/zboot.h>
+ 
+ 	b	1f
++	.align
++__tmp_stack:
++	.space	128
++__dummy_buf:
++	.space	512
++__dummy_buf_size:
++	.long	512
++1:
++	adr	sp, __tmp_stack
++	add	sp, sp, #128
++	adr	r0, __dummy_buf
++	ldr	r1, __dummy_buf_size
++	mov	lr, pc
++	b	mmcif_loader
++
++	b	1f
+ __atags:@ tag #1
+ 	.long	12			@ tag->hdr.size = tag_size(tag_core);
+ 	.long	0x54410001		@ tag->hdr.tag = ATAG_CORE;
+diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
+new file mode 100644
+index 0000000..7ffaf27
+--- /dev/null
++++ b/arch/arm/boot/compressed/mmcif-sh7372.c
+@@ -0,0 +1,100 @@
++/*
++ * sh7372 MMCIF loader
++ *
++ * Copyright (C) 2010 Magnus Damm
++ * Copyright (C) 2010 Simon Horman
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/mmc/sh_mmcif.h>
++
++#define MMCIF_BASE      (void __iomem *)0xe6bd0000
++
++#define PORT84CR	0xe6050054
++#define PORT85CR	0xe6050055
++#define PORT86CR	0xe6050056
++#define PORT87CR	0xe6050057
++#define PORT88CR	0xe6050058
++#define PORT89CR	0xe6050059
++#define PORT90CR	0xe605005a
++#define PORT91CR	0xe605005b
++#define PORT92CR	0xe605005c
++#define PORT99CR	0xe6050063
++#define PORT185CR	0xe60520b9
++#define PORT186CR	0xe60520ba
++#define PORT187CR	0xe60520bb
++#define PORT188CR	0xe60520bc
++#define PORTR191_160DR  0xe6056014
++
++#define SMSTPCR3	0xe615013c
++
++enum { MMCIF_PROGRESS_ENTER, MMCIF_PROGRESS_INIT,
++       MMCIF_PROGRESS_LOAD, MMCIF_PROGRESS_DONE };
++
++static void mmcif_update_progress(int n)
++{
++	__raw_writel((__raw_readl(PORTR191_160DR) & ~(0xf << 25)) |
++		     (1 << (25 + n)), PORTR191_160DR);
++}
++
++/* SH7372 specific MMCIF loader
++ *
++ * loads the romImage from an MMC card starting from block 512
++ * use the following line to write the romImage to an MMC card
++ * # dd if=arch/sh/boot/romImage of=/dev/sdx bsQ2 seekQ2
++ */
++asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
++{
++	/* Initialise LEDS1-4
++	 * registers: PORT185CR-PORT188CR (LED1-LED4 Control)
++	 * value:     0x10 - enable output
++	 */
++	__raw_writeb(0x10, PORT185CR);
++	__raw_writeb(0x10, PORT186CR);
++	__raw_writeb(0x10, PORT187CR);
++	__raw_writeb(0x10, PORT188CR);
++
++	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
++
++	/* Initialise MMC
++	 * registers: PORT84CR-PORT92CR
++	 *            (MMCD0_0-MMCD0_7,MMCCMD0 Control)
++	 * value: 0x04 - select function 4
++	 */
++	 __raw_writeb(0x04, PORT84CR);
++	 __raw_writeb(0x04, PORT85CR);
++	 __raw_writeb(0x04, PORT86CR);
++	 __raw_writeb(0x04, PORT87CR);
++	 __raw_writeb(0x04, PORT88CR);
++	 __raw_writeb(0x04, PORT89CR);
++	 __raw_writeb(0x04, PORT90CR);
++	 __raw_writeb(0x04, PORT91CR);
++	 __raw_writeb(0x04, PORT92CR);
++
++	/* Initialise MMC
++	 * registers: PORT99CR (MMCCLK0 Control)
++	 * value: 0x10 | 0x04 - enable output | select function 4
++	 */
++	__raw_writeb(0x14, PORT99CR);
++
++	/* Enable clock to MMC hardware block */
++	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 12), SMSTPCR3);
++
++	mmcif_update_progress(MMCIF_PROGRESS_INIT);
++
++	/* setup MMCIF hardware */
++	sh_mmcif_boot_init(MMCIF_BASE);
++
++	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
++
++	/* load kernel via MMCIF interface */
++	sh_mmcif_boot_slurp(MMCIF_BASE, buf, no_bytes);
++
++	/* Disable clock to MMC hardware block */
++	__raw_writel(__raw_readl(SMSTPCR3) & (1 << 12), SMSTPCR3);
++
++	mmcif_update_progress(MMCIF_PROGRESS_DONE);
++}
+-- 
+1.7.2.3
+
