@@ -1,51 +1,59 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sun, 14 Nov 2010 23:22:55 +0000
-Subject: Re: [patch v3 2/2] ARM: mach-shmobile: Add zboot support for
-Message-Id: <20101114232255.GA19510@verge.net.au>
+Date: Fri, 26 Nov 2010 23:02:58 +0000
+Subject: [PATCH 2/3] mmc, sh: Correct value for reset
+Message-Id: <1290812579-20410-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101014091231.858799238@vergenet.net>
-	<20101014091434.501864612@vergenet.net>
-	<20101107172310.GG1759@n2100.arm.linux.org.uk>
-	<20101108015714.GB15671@verge.net.au>
-In-Reply-To: <20101108015714.GB15671@verge.net.au>
+References: <1290812579-20410-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1290812579-20410-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
 
-On Mon, Nov 08, 2010 at 10:57:14AM +0900, Simon Horman wrote:
-> On Sun, Nov 07, 2010 at 05:23:10PM +0000, Russell King - ARM Linux wrote:
-> > On Thu, Oct 14, 2010 at 06:12:33PM +0900, Simon Horman wrote:
-> > > +LIST "partner-jet-setup.txt"
-> > > +LIST "(C) Copyright 2010 Renesas Solutions Corp"
-> > > +LIST "Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>"
-> > > +
-> > > +LIST "RWT Setting"
-> > > +EW 0xE6020004, 0xA500
-> > > +EW 0xE6030004, 0xA500
-> > 
-> > Can you explain the necessity of this special scripting language, and
-> > where it comes from?
-> > 
-> > It looks like the file implementing the scripting language comes from
-> > something other than Linux, but it isn't clear what the licensing is
-> > of that.  Please confirm that it is GPL'd.
-> 
-> Hi Russell,
-> 
-> The aim is to allow JTAG scripts to be used in-place.
-> The script is constructed from ASM macros which are defined
-> in arch/arm/mach-shmobile/include/mach/zboot_macros.h which is
-> included later on in the patch. The same macros exist in SH assembly
-> in arch/sh/include/asm/romimage-macros.h.
-> 
-> With regards to the license, I have confirmed that it is GPL.
-> Would you be more comfortable if that was stated explicitly
-> in the new files?
+This resolves a regression that I introduced in
+"mmc, sh: Move constants to sh_mmcif.h". Having
+examined the manual and tested the code on an AP4EVB board
+it seems that the correct sequence is.
 
-Hi Russell,
+1) Write 1 to bit 31 and zeros to all other bits
+2) Write zero to all bits
 
-I'm wondering if you have had any time to consider this series again.
+Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ include/linux/mmc/sh_mmcif.h |    9 +++------
+ 1 files changed, 3 insertions(+), 6 deletions(-)
 
-Thanks
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index f216a88..519a2cd 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -87,7 +87,7 @@ struct sh_mmcif_plat_data {
+ 
+ /* CE_VERSION */
+ #define SOFT_RST_ON		(1 << 31)
+-#define SOFT_RST_OFF		~SOFT_RST_ON
++#define SOFT_RST_OFF		0
+ 
+ static inline u32 sh_mmcif_readl(void __iomem *addr, int reg)
+ {
+@@ -175,12 +175,9 @@ static inline int sh_mmcif_boot_do_read(void __iomem *base,
+ 
+ static inline void sh_mmcif_boot_init(void __iomem *base)
+ {
+-	unsigned long tmp;
+-
+ 	/* reset */
+-	tmp = sh_mmcif_readl(base, MMCIF_CE_VERSION);
+-	sh_mmcif_writel(base, MMCIF_CE_VERSION, tmp | SOFT_RST_ON);
+-	sh_mmcif_writel(base, MMCIF_CE_VERSION, tmp & SOFT_RST_OFF);
++	sh_mmcif_writel(base, MMCIF_CE_VERSION, SOFT_RST_ON);
++	sh_mmcif_writel(base, MMCIF_CE_VERSION, SOFT_RST_OFF);
+ 
+ 	/* byte swap */
+ 	sh_mmcif_writel(base, MMCIF_CE_BUF_ACC, BUF_ACC_ATYP);
+-- 
+1.7.2.3
 
