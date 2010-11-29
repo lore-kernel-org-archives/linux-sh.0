@@ -1,132 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 29 Nov 2010 02:21:43 +0000
-Subject: [PATCH 3/5] ARM: mach-shmobile: mackerel: Add LCDC support
-Message-Id: <w3peia450p5.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 29 Nov 2010 04:30:55 +0000
+Subject: Re: [PATCH 3/5] ARM: mach-shmobile: mackerel: Add LCDC support
+Message-Id: <AANLkTikxOEuy3J=HRiQEusdWgSYKpBUndatJbTW4HfTK@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <w3peia450p5.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3peia450p5.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-mackerel.c |   86 +++++++++++++++++++++++++++++++
- 1 files changed, 86 insertions(+), 0 deletions(-)
+Hi Morimoto-san,
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index e2def7e..21443fe 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -34,6 +34,8 @@
- #include <linux/mtd/physmap.h>
- #include <linux/smsc911x.h>
- 
-+#include <video/sh_mobile_lcdc.h>
-+
- #include <mach/common.h>
- #include <mach/sh7372.h>
- 
-@@ -138,9 +140,64 @@ static struct platform_device smc911x_device = {
- 	},
- };
- 
-+/* LCDC */
-+static struct fb_videomode mackerel_lcdc_modes[] = {
-+	{
-+		.name		= "WVGA Panel",
-+		.xres		= 800,
-+		.yres		= 480,
-+		.left_margin	= 220,
-+		.right_margin	= 110,
-+		.hsync_len	= 70,
-+		.upper_margin	= 20,
-+		.lower_margin	= 5,
-+		.vsync_len	= 5,
-+		.sync		= 0,
-+	},
-+};
-+
-+static struct sh_mobile_lcdc_info lcdc_info = {
-+	.clock_source = LCDC_CLK_BUS,
-+	.ch[0] = {
-+		.chan = LCDC_CHAN_MAINLCD,
-+		.bpp = 16,
-+		.lcd_cfg = mackerel_lcdc_modes,
-+		.num_cfg = ARRAY_SIZE(mackerel_lcdc_modes),
-+		.interface_type		= RGB24,
-+		.clock_divider		= 2,
-+		.flags			= 0,
-+		.lcd_size_cfg.width	= 152,
-+		.lcd_size_cfg.height	= 91,
-+	}
-+};
-+
-+static struct resource lcdc_resources[] = {
-+	[0] = {
-+		.name	= "LCDC",
-+		.start	= 0xfe940000,
-+		.end	= 0xfe943fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0x580),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device lcdc_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(lcdc_resources),
-+	.resource	= lcdc_resources,
-+	.dev	= {
-+		.platform_data	= &lcdc_info,
-+		.coherent_dma_mask = ~0,
-+	},
-+};
-+
- static struct platform_device *mackerel_devices[] __initdata = {
- 	&nor_flash_device,
- 	&smc911x_device,
-+	&lcdc_device,
- };
- 
- static struct map_desc mackerel_io_desc[] __initdata = {
-@@ -176,6 +233,35 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_CS5A,	NULL);
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
- 
-+	/* LCDC */
-+	gpio_request(GPIO_FN_LCDD17,   NULL);
-+	gpio_request(GPIO_FN_LCDD16,   NULL);
-+	gpio_request(GPIO_FN_LCDD15,   NULL);
-+	gpio_request(GPIO_FN_LCDD14,   NULL);
-+	gpio_request(GPIO_FN_LCDD13,   NULL);
-+	gpio_request(GPIO_FN_LCDD12,   NULL);
-+	gpio_request(GPIO_FN_LCDD11,   NULL);
-+	gpio_request(GPIO_FN_LCDD10,   NULL);
-+	gpio_request(GPIO_FN_LCDD9,    NULL);
-+	gpio_request(GPIO_FN_LCDD8,    NULL);
-+	gpio_request(GPIO_FN_LCDD7,    NULL);
-+	gpio_request(GPIO_FN_LCDD6,    NULL);
-+	gpio_request(GPIO_FN_LCDD5,    NULL);
-+	gpio_request(GPIO_FN_LCDD4,    NULL);
-+	gpio_request(GPIO_FN_LCDD3,    NULL);
-+	gpio_request(GPIO_FN_LCDD2,    NULL);
-+	gpio_request(GPIO_FN_LCDD1,    NULL);
-+	gpio_request(GPIO_FN_LCDD0,    NULL);
-+	gpio_request(GPIO_FN_LCDDISP,  NULL);
-+	gpio_request(GPIO_FN_LCDDCK,   NULL);
-+
-+	gpio_request(GPIO_PORT31, NULL); /* backlight */
-+	gpio_direction_output(GPIO_PORT31, 1);
-+
-+	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
-+	gpio_direction_output(GPIO_PORT151, 1);
-+
-+
- 	sh7372_add_standard_devices();
- 
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
--- 
-1.7.0.4
+On Mon, Nov 29, 2010 at 11:21 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> +static struct sh_mobile_lcdc_info lcdc_info =3D {
+> + =A0 =A0 =A0 .clock_source =3D LCDC_CLK_BUS,
+> + =A0 =A0 =A0 .ch[0] =3D {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .chan =3D LCDC_CHAN_MAINLCD,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .bpp =3D 16,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .lcd_cfg =3D mackerel_lcdc_modes,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .num_cfg =3D ARRAY_SIZE(mackerel_lcdc_modes=
+),
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .interface_type =A0 =A0 =A0 =A0 =3D RGB24,
 
+..and..
+
+> + =A0 =A0 =A0 /* LCDC */
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD17, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD16, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD15, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD14, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD13, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD12, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD11, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD10, =A0 NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD9, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD8, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD7, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD6, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD5, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD4, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD3, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD2, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD1, =A0 =A0NULL);
+> + =A0 =A0 =A0 gpio_request(GPIO_FN_LCDD0, =A0 =A0NULL);
+
+Hm, it looks like you are requesting too few pins here.
+
+Today you request 18 data pins (LCDD0 -> LCDD17) for the pinmux, but
+the platform data for the LCDC is set to RGB24.
+
+With RGB24 I think you should select 24 data pins (LCDD0 -> LCDD23).
+
+Or perhaps there is some magic bus switch somewhere that I am not seeing? =
+=3D)
+
+Thanks,
+
+/ magnus
