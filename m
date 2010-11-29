@@ -1,90 +1,132 @@
-From: Simon Horman <simon@horms.net>
-Date: Sat, 27 Nov 2010 00:01:10 +0000
-Subject: Re: [PATCH 3/3] sh, mmc: Use defines when setting CE_CLK_CTRL
-Message-Id: <20101127000109.GA29427@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 29 Nov 2010 02:21:43 +0000
+Subject: [PATCH 3/5] ARM: mach-shmobile: mackerel: Add LCDC support
+Message-Id: <w3peia450p5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1290812579-20410-1-git-send-email-horms@verge.net.au>
- <1290812579-20410-3-git-send-email-horms@verge.net.au>
-In-Reply-To: <1290812579-20410-3-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-On Sat, Nov 27, 2010 at 08:02:59AM +0900, Simon Horman wrote:
-> The 16-19th bits of CE_CLK_CTRL set the
-> MMC clock frequency.
-> 
-> Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-> ---
->  include/linux/mmc/sh_mmcif.h |   19 +++++++++++--------
->  1 files changed, 11 insertions(+), 8 deletions(-)
-> 
-> diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-> index 519a2cd..adf9dba 100644
-> --- a/include/linux/mmc/sh_mmcif.h
-> +++ b/include/linux/mmc/sh_mmcif.h
-> @@ -77,6 +77,9 @@ struct sh_mmcif_plat_data {
->  #define CLK_ENABLE		(1 << 24) /* 1: output mmc clock */
->  #define CLK_CLEAR		((1 << 19) | (1 << 18) | (1 << 17) | (1 << 16))
->  #define CLK_SUP_PCLK		((1 << 19) | (1 << 18) | (1 << 17) | (1 << 16))
-> +#define CLKDIV_4		(1<<16) /* mmc clock frequency.
-> +					 * n: bus clock/(2^(n+1)) */
-> +#define CLKDIV_256		(7<<16) /* mmc clock frequency. (see above) */
->  #define SRSPTO_256		((1 << 13) | (0 << 12)) /* resp timeout */
->  #define SRBSYTO_29		((1 << 11) | (1 << 10) |	\
->  				 (1 << 9) | (1 << 8)) /* resp busy timeout */
-> @@ -185,14 +188,10 @@ static inline void sh_mmcif_boot_init(void __iomem *base)
->  	/* Set block size in MMCIF hardware */
->  	sh_mmcif_writel(base, MMCIF_CE_BLOCK_SET, SH_MMCIF_BBS);
->  
-> -	/* Enable the clock, set it to Bus clock/256 (about 325Khz).
-> -	 * It is unclear where 0x70000 comes from or if it is even needed.
-> -	 * It is there for byte-compatibility with code that is known to
-> -	 * work.
-> -	 */
-> +	/* Enable the clock, set it to Bus clock/256 (about 325Khz). */
->  	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL,
-> -			CLK_ENABLE | SRSPTO_256 | SRBSYTO_29 | SRWDTO_29 |
-> -			SCCSTO_29 | 0x70000);
-> +			CLK_ENABLE | CLKDIV_256 | SRSPTO_256 |
-> +			SRBSYTO_29 | SRWDTO_29 | SCCSTO_29);
->  
->  	/* CMD0 */
->  	sh_mmcif_boot_cmd(base, 0x00000040, 0);
-> @@ -216,8 +215,12 @@ static inline void sh_mmcif_boot_slurp(void __iomem *base,
->  {
->  	unsigned long tmp;
->  
-> +	return;
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |   86 +++++++++++++++++++++++++++++++
+ 1 files changed, 86 insertions(+), 0 deletions(-)
 
-Sorry, this line is bogus and crept in as part of some
-other testing. I will repost this patch.
-
-> +
->  	/* In data transfer mode: Set clock to Bus clock/4 (about 20Mhz) */
-> -	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL, 0x01012fff);
-> +	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL,
-> +			CLK_ENABLE | CLKDIV_4 | SRSPTO_256 |
-> +			SRBSYTO_29 | SRWDTO_29 | SCCSTO_29);
->  
->  	/* CMD9 - Get CSD */
->  	sh_mmcif_boot_cmd(base, 0x09806000, 0x00010000);
-> -- 
-> 1.7.2.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index e2def7e..21443fe 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -34,6 +34,8 @@
+ #include <linux/mtd/physmap.h>
+ #include <linux/smsc911x.h>
+ 
++#include <video/sh_mobile_lcdc.h>
++
+ #include <mach/common.h>
+ #include <mach/sh7372.h>
+ 
+@@ -138,9 +140,64 @@ static struct platform_device smc911x_device = {
+ 	},
+ };
+ 
++/* LCDC */
++static struct fb_videomode mackerel_lcdc_modes[] = {
++	{
++		.name		= "WVGA Panel",
++		.xres		= 800,
++		.yres		= 480,
++		.left_margin	= 220,
++		.right_margin	= 110,
++		.hsync_len	= 70,
++		.upper_margin	= 20,
++		.lower_margin	= 5,
++		.vsync_len	= 5,
++		.sync		= 0,
++	},
++};
++
++static struct sh_mobile_lcdc_info lcdc_info = {
++	.clock_source = LCDC_CLK_BUS,
++	.ch[0] = {
++		.chan = LCDC_CHAN_MAINLCD,
++		.bpp = 16,
++		.lcd_cfg = mackerel_lcdc_modes,
++		.num_cfg = ARRAY_SIZE(mackerel_lcdc_modes),
++		.interface_type		= RGB24,
++		.clock_divider		= 2,
++		.flags			= 0,
++		.lcd_size_cfg.width	= 152,
++		.lcd_size_cfg.height	= 91,
++	}
++};
++
++static struct resource lcdc_resources[] = {
++	[0] = {
++		.name	= "LCDC",
++		.start	= 0xfe940000,
++		.end	= 0xfe943fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x580),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc_resources),
++	.resource	= lcdc_resources,
++	.dev	= {
++		.platform_data	= &lcdc_info,
++		.coherent_dma_mask = ~0,
++	},
++};
++
+ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
++	&lcdc_device,
+ };
+ 
+ static struct map_desc mackerel_io_desc[] __initdata = {
+@@ -176,6 +233,35 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 
++	/* LCDC */
++	gpio_request(GPIO_FN_LCDD17,   NULL);
++	gpio_request(GPIO_FN_LCDD16,   NULL);
++	gpio_request(GPIO_FN_LCDD15,   NULL);
++	gpio_request(GPIO_FN_LCDD14,   NULL);
++	gpio_request(GPIO_FN_LCDD13,   NULL);
++	gpio_request(GPIO_FN_LCDD12,   NULL);
++	gpio_request(GPIO_FN_LCDD11,   NULL);
++	gpio_request(GPIO_FN_LCDD10,   NULL);
++	gpio_request(GPIO_FN_LCDD9,    NULL);
++	gpio_request(GPIO_FN_LCDD8,    NULL);
++	gpio_request(GPIO_FN_LCDD7,    NULL);
++	gpio_request(GPIO_FN_LCDD6,    NULL);
++	gpio_request(GPIO_FN_LCDD5,    NULL);
++	gpio_request(GPIO_FN_LCDD4,    NULL);
++	gpio_request(GPIO_FN_LCDD3,    NULL);
++	gpio_request(GPIO_FN_LCDD2,    NULL);
++	gpio_request(GPIO_FN_LCDD1,    NULL);
++	gpio_request(GPIO_FN_LCDD0,    NULL);
++	gpio_request(GPIO_FN_LCDDISP,  NULL);
++	gpio_request(GPIO_FN_LCDDCK,   NULL);
++
++	gpio_request(GPIO_PORT31, NULL); /* backlight */
++	gpio_direction_output(GPIO_PORT31, 1);
++
++	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
++	gpio_direction_output(GPIO_PORT151, 1);
++
++
+ 	sh7372_add_standard_devices();
+ 
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
 -- 
-Simon Horman                                                simon@horms.net
-Horms Solutions Ltd.                                          www.horms.net
-1701 Emblem Court Akashicho, 6-13 Akashicho, Chuo-ku, Tokyo 104-0044, Japan
-Phone: +81 3 6365 5977                                 Fax: +81 3 6673 4268
+1.7.0.4
 
