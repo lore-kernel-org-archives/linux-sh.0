@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 03 Dec 2010 04:39:14 +0000
+Date: Fri, 03 Dec 2010 04:39:17 +0000
 Subject: Re: [PATCH 2/2] sh: se/7724: Update clock of FSI to non-legacy
-Message-Id: <w3pmxoneahc.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3plj47eah6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1291349817-3077-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 In-Reply-To: <1291349817-3077-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
