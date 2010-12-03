@@ -1,32 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 Dec 2010 14:15:08 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh73a0: fix div4 table
-Message-Id: <20101222141508.2302.53930.sendpatchset@t400s>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 03 Dec 2010 04:16:56 +0000
+Subject: [PATCH 1/2] sh: ecovec: Update clock of FSI to non-legacy
+Message-Id: <1291349817-3077-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+Current FSI clock of ecovec uses legacy clock.
+This update to non-legacy.
 
-sh73a0 has divisor[12] setting as 1/7 on FRQCRA.
-
-Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
+ arch/sh/boards/mach-ecovec24/setup.c |   17 +++++++++++++++--
+ 1 files changed, 15 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/clock-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2010-12-22 23:10:48.000000000 +0900
-@@ -191,7 +191,7 @@ static void div4_kick(struct clk *clk)
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 2eaeb9e..1f3377d 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -725,7 +725,7 @@ static struct platform_device camera_devices[] = {
+  * So, we should change parent of fsi
+  */
+ #define FCLKBCR		0xa415000c
+-static void fsimck_init(struct clk *clk)
++static int fsimck_enable(struct clk *clk)
+ {
+ 	u32 status = __raw_readl(clk->enable_reg);
+ 
+@@ -734,10 +734,23 @@ static void fsimck_init(struct clk *clk)
+ 	status |= 0x00000080;
+ 
+ 	__raw_writel(status, clk->enable_reg);
++
++	return 0;
++}
++
++static void fsimck_disable(struct clk *clk)
++{
++	u32 status = __raw_readl(clk->enable_reg);
++
++	/* use external clock */
++	status &= ~0x00000080;
++
++	__raw_writel(status, clk->enable_reg);
  }
  
- static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
--			  24, 0, 36, 48 };
-+			  24, 0, 36, 48, 7 };
+ static struct clk_ops fsimck_clk_ops = {
+-	.init = fsimck_init,
++	.enable = fsimck_enable,
++	.disable = fsimck_disable,
+ };
  
- static struct clk_div_mult_table div4_div_mult_table = {
- 	.divisors = divisors,
+ static struct clk fsimckb_clk = {
+-- 
+1.7.2.3
+
