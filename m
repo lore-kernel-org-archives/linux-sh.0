@@ -1,108 +1,94 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 23 Dec 2010 09:01:17 +0000
-Subject: [PATCH] [patch v3] ARM: mach-shmobile: mackerel: Add zboot MMCIF support
-Message-Id: <1293094877-28875-1-git-send-email-horms@verge.net.au>
+Date: Mon, 06 Dec 2010 00:12:45 +0000
+Subject: [patch 2/3] mmc, sh: Remove sh_mmcif_boot_slurp()
+Message-Id: <20101206001310.744889412@vergenet.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101206001243.949375995@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch wires up LED debugging for the MMCIF boot
-on the mackerel, which is all that is required to get MMCIF
-boot functioning.
+As the only caller of sh_mmcif_boot_do_read() is
+sh_mmcif_boot_slurp() the configuration portion of
+sh_mmcif_boot_slurp() can be merged into sh_mmcif_boot_do_read().
+
+Once this is done sh_mmcif_boot_slurp() is only a call
+to sh_mmcif_boot_do_read() with platform specific information -
+the offset that images are stored on MMC. So make the
+sh_mmcif_boot_do_read() call directly from platform code
+and remove sh_mmcif_boot_slurp() altogether.
 
 Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
----
-This patch depends on:
-* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
-  (merged into the devel branch of Russel King's linux-2.6-arm tree)
-* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
-  (merged into the devel branch of Russel King's linux-2.6-arm tree)
-* MACH_MACKEREL (3211) being present in arch/arm/tools/mach-types
-* ARM: mach-shmobile: mackerel: Add zboot support
-* rfc v3: mmc, ARM: Add zboot from MMC support for SuperH Mobile ARM,
-  which depends on
-  * mmc, sh: Remove sh_mmcif_boot_slurp()
-    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
-  * sh, mmc: Use defines when setting CE_CLK_CTRL
-    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
-  * mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
-    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
 
-v2
-* Use correct GPIO ports
-  - my previous assumptions turned out to be incorrect
+--- 
 
-v3
-* Actually make the v2 change
-  - my git-foo was poor this morning
----
- .../mach-shmobile/include/mach/mmcif-mackerel.h    |   39 ++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/mmcif.h        |    2 +
- 2 files changed, 41 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-new file mode 100644
-index 0000000..e07fb3f
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-@@ -0,0 +1,39 @@
-+#ifndef MMCIF_MACKEREL_H
-+#define MMCIF_MACKEREL_H
-+
-+#define PORT0CR      0xe6051000
-+#define PORT1CR      0xe6051001
-+#define PORT2CR      0xe6051002
-+#define PORT159CR    0xe605009f
-+
-+#define PORTR031_000DR 0xe6055000
-+#define PORTL159_128DR 0xe6054010
-+
-+static inline void mmcif_init_progress(void)
-+{
-+       /* Initialise LEDS0-3
-+        * registers: PORT0CR-PORT2CR,PORT159CR (LED0-LED3 Control)
-+        * value:     0x10 - enable output
-+        */
-+       __raw_writeb(0x10, PORT0CR);
-+       __raw_writeb(0x10, PORT1CR);
-+       __raw_writeb(0x10, PORT2CR);
-+       __raw_writeb(0x10, PORT159CR);
-+}
-+
-+static inline void mmcif_update_progress(int n)
-+{
-+	unsigned a = 0, b = 0;
-+
-+	if (n < 3)
-+		a = 1 << n;
-+	else
-+		b = 1 << 31;
-+
-+	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
-+		     PORTR031_000DR);
-+	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
-+		     PORTL159_128DR);
-+}
-+
-+#endif /* MMCIF_MACKEREL_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
-index 0812f1e..f4dc327 100644
---- a/arch/arm/mach-shmobile/include/mach/mmcif.h
-+++ b/arch/arm/mach-shmobile/include/mach/mmcif.h
-@@ -9,6 +9,8 @@
+This patch applies on top of
+"sh, mmc: Use defines when setting CE_CLK_CTR"
+which has been merged into the common/mmcif
+branch of Paul Mundt's sh-2.6 tree.
+Index: linux-2.6-ap4/arch/sh/boot/romimage/mmcif-sh7724.c
+=================================--- linux-2.6-ap4.orig/arch/sh/boot/romimage/mmcif-sh7724.c	2010-12-06 09:08:13.000000000 +0900
++++ linux-2.6-ap4/arch/sh/boot/romimage/mmcif-sh7724.c	2010-12-06 09:08:14.000000000 +0900
+@@ -60,7 +60,9 @@ asmlinkage void mmcif_loader(unsigned ch
+ 	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
  
- #ifdef CONFIG_MACH_AP4EVB
- #include "mach/mmcif-ap4eb.h"
-+#elif CONFIG_MACH_MACKEREL
-+#include "mach/mmcif-mackerel.h"
- #else
- #error "unsupported board."
- #endif
--- 
-1.7.2.3
+ 	/* load kernel via MMCIF interface */
+-	sh_mmcif_boot_slurp(MMCIF_BASE, buf, no_bytes);
++	sh_mmcif_boot_do_read(MMCIF_BASE, 512,
++	                      (no_bytes + SH_MMCIF_BBS - 1) / SH_MMCIF_BBS,
++			      buf);
+ 
+ 	/* disable clock to the MMCIF hardware block */
+ 	__raw_writel(__raw_readl(MSTPCR2) | 0x20000000, MSTPCR2);
+Index: linux-2.6-ap4/include/linux/mmc/sh_mmcif.h
+=================================--- linux-2.6-ap4.orig/include/linux/mmc/sh_mmcif.h	2010-12-06 09:08:13.000000000 +0900
++++ linux-2.6-ap4/include/linux/mmc/sh_mmcif.h	2010-12-06 09:08:14.000000000 +0900
+@@ -162,6 +162,17 @@ static inline int sh_mmcif_boot_do_read(
+ 	unsigned long k;
+ 	int ret = 0;
+ 
++	/* In data transfer mode: Set clock to Bus clock/4 (about 20Mhz) */
++	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL,
++			CLK_ENABLE | CLKDIV_4 | SRSPTO_256 |
++			SRBSYTO_29 | SRWDTO_29 | SCCSTO_29);
++
++	/* CMD9 - Get CSD */
++	sh_mmcif_boot_cmd(base, 0x09806000, 0x00010000);
++
++	/* CMD7 - Select the card */
++	sh_mmcif_boot_cmd(base, 0x07400000, 0x00010000);
++
+ 	/* CMD16 - Set the block size */
+ 	sh_mmcif_boot_cmd(base, 0x10400000, SH_MMCIF_BBS);
+ 
+@@ -205,27 +216,4 @@ static inline void sh_mmcif_boot_init(vo
+ 	sh_mmcif_boot_cmd(base, 0x03400040, 0x00010000);
+ }
+ 
+-static inline void sh_mmcif_boot_slurp(void __iomem *base,
+-				       unsigned char *buf,
+-				       unsigned long no_bytes)
+-{
+-	unsigned long tmp;
+-
+-	/* In data transfer mode: Set clock to Bus clock/4 (about 20Mhz) */
+-	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL,
+-			CLK_ENABLE | CLKDIV_4 | SRSPTO_256 |
+-			SRBSYTO_29 | SRWDTO_29 | SCCSTO_29);
+-
+-	/* CMD9 - Get CSD */
+-	sh_mmcif_boot_cmd(base, 0x09806000, 0x00010000);
+-
+-	/* CMD7 - Select the card */
+-	sh_mmcif_boot_cmd(base, 0x07400000, 0x00010000);
+-
+-	tmp = no_bytes / SH_MMCIF_BBS;
+-	tmp += (no_bytes % SH_MMCIF_BBS) ? 1 : 0;
+-
+-	sh_mmcif_boot_do_read(base, 512, tmp, buf);
+-}
+-
+ #endif /* __SH_MMCIF_H__ */
 
