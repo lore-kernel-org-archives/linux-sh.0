@@ -1,127 +1,65 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 27 Dec 2010 10:23:09 +0000
-Subject: [PATCH 2/2 v2] ARM: mach-shmobile: improve MIPI DSI clock configuration
-Message-Id: <Pine.LNX.4.64.1012271120300.669@axis700.grange>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Mon, 06 Dec 2010 17:35:40 +0000
+Subject: [PATCH 2/4] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
+Message-Id: <1291656942-18100-2-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1291656942-18100-1-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1291656942-18100-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Arnd Hannemann <arnd@arndnet.de>
 
-Now, that the MIPI DSI driver implements runtime PM, we don't need anymore to
-configure clocks statically in the platform code. This patch also adds a DSITX1
-clock definition for sh7372 and attaches PHY clocks to respective devices.
+This patch enables the interrupt generation for SDIO IRQs
+of the sdhi controllers of the soc. To make sure interrupts
+are handled announce the MMC_CAP_SDIO_IRQ capability
+on AP4EVB. Tested with a b43-based SDIO wireless card.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
-
-v2: duplicate the dsit_clk clock for both MIPI DSI instances on sh7372
-
- arch/arm/mach-shmobile/board-ap4evb.c |   38 ---------------------------------
- arch/arm/mach-shmobile/clock-sh7372.c |   13 +++++++----
- 2 files changed, 8 insertions(+), 43 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |    3 ++-
+ arch/arm/mach-shmobile/intc-sh7372.c  |    4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index ed999a3..f0b8650 100644
+index 16eba07..5763b0d 100644
 --- a/arch/arm/mach-shmobile/board-ap4evb.c
 +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -531,44 +531,6 @@ static struct platform_device mipidsi0_device = {
- 	},
+@@ -310,6 +310,7 @@ static u64 sdhi0_dma_mask = DMA_BIT_MASK(32);
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_caps	= MMC_CAP_SDIO_IRQ,
  };
  
--/* This function will disappear when we switch to (runtime) PM */
--static int __init ap4evb_init_display_clk(void)
--{
--	struct clk *lcdc_clk;
--	struct clk *dsitx_clk;
--	int ret;
--
--	lcdc_clk = clk_get(&lcdc_device.dev, "sh_mobile_lcdc_fb.0");
--	if (IS_ERR(lcdc_clk))
--		return PTR_ERR(lcdc_clk);
--
--	dsitx_clk = clk_get(&mipidsi0_device.dev, "sh-mipi-dsi.0");
--	if (IS_ERR(dsitx_clk)) {
--		ret = PTR_ERR(dsitx_clk);
--		goto eclkdsitxget;
--	}
--
--	ret = clk_enable(lcdc_clk);
--	if (ret < 0)
--		goto eclklcdcon;
--
--	ret = clk_enable(dsitx_clk);
--	if (ret < 0)
--		goto eclkdsitxon;
--
--	return 0;
--
--eclkdsitxon:
--	clk_disable(lcdc_clk);
--eclklcdcon:
--	clk_put(dsitx_clk);
--eclkdsitxget:
--	clk_put(lcdc_clk);
--
--	return ret;
--}
--device_initcall(ap4evb_init_display_clk);
--
- static struct platform_device *qhd_devices[] __initdata = {
- 	&mipidsi0_device,
- 	&keysc_device,
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index eb92fef..33fee57 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -507,7 +507,7 @@ enum { MSTP001,
-        MSTP223,
-        MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-        MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
--       MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403,
-+       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403,
-        MSTP_NR };
+ static struct resource sdhi0_resources[] = {
+@@ -344,7 +345,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195,
+ 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+-	.tmio_caps	= MMC_CAP_NEEDS_POLL,
++	.tmio_caps	= MMC_CAP_NEEDS_POLL | MMC_CAP_SDIO_IRQ,
+ 	.get_cd		= slot_cn7_get_cd,
+ };
  
- #define MSTP(_parent, _reg, _bit, _flags) \
-@@ -543,6 +543,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP314] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 14, 0), /* SDHI0 */
- 	[MSTP313] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 13, 0), /* SDHI1 */
- 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMC */
-+	[MSTP423] = MSTP(&div4_clks[DIV4_B], SMSTPCR4, 23, 0), /* DSITX1 */
- 	[MSTP415] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 15, 0), /* SDHI2 */
- 	[MSTP413] = MSTP(&pllc1_div2_clk, SMSTPCR4, 13, 0), /* HDMI */
- 	[MSTP411] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 11, 0), /* IIC3 */
-@@ -596,9 +597,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
- 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
- 	CLKDEV_CON_ID("hdmi_clk", &div6_reparent_clks[DIV6_HDMI]),
--	CLKDEV_CON_ID("dsit_clk", &div6_clks[DIV6_DSIT]),
--	CLKDEV_CON_ID("dsi0p_clk", &div6_clks[DIV6_DSI0P]),
--	CLKDEV_CON_ID("dsi1p_clk", &div6_clks[DIV6_DSI1P]),
-+	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
-+	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
-+	CLKDEV_ICK_ID("dsi0p_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
-+	CLKDEV_ICK_ID("dsi1p_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
- 
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
-@@ -610,7 +612,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
--	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
-+	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX0 */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* IIC0 */
- 	CLKDEV_DEV_ID("uio_pdrv_genirq.5", &mstp_clks[MSTP106]), /* JPU */
-@@ -633,6 +635,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMC */
-+	CLKDEV_DEV_ID("sh-mipi-dsi.1", &mstp_clks[MSTP423]), /* DSITX1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP415]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh-mobile-hdmi", &mstp_clks[MSTP413]), /* HDMI */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* IIC3 */
+diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
+index 30b2f40..f78a1ea 100644
+--- a/arch/arm/mach-shmobile/intc-sh7372.c
++++ b/arch/arm/mach-shmobile/intc-sh7372.c
+@@ -230,10 +230,10 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
+ 	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
+ 	    0, 0, MSIOF2, 0 } },
+ 	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED,
++	  { DISABLED, ENABLED, ENABLED, ENABLED,
+ 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
+ 	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
+-	  { 0, DISABLED, ENABLED, ENABLED,
++	  { 0, ENABLED, ENABLED, ENABLED,
+ 	    TTI20, USBHSDMAC0_USHDMI, 0, 0 } },
+ 	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
+ 	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
 -- 
-1.7.2.3
+1.7.0.4
 
