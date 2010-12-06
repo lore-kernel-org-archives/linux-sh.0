@@ -1,45 +1,43 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 14 Dec 2010 09:57:03 +0000
-Subject: Re: [PATCH 00/03] ARM: mach-shmobile: Initial SMP support
-Message-Id: <20101214095703.GG14606@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Dec 2010 00:12:44 +0000
+Subject: [patch 1/3] mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
+Message-Id: <20101206001310.658304531@vergenet.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101214075647.11275.25933.sendpatchset@t400s>
-In-Reply-To: <20101214075647.11275.25933.sendpatchset@t400s>
+References: <20101206001243.949375995@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 14, 2010 at 04:56:47PM +0900, Magnus Damm wrote:
-> ARM: mach-shmobile: Initial SMP support
-> 
-> [PATCH 01/03] ARM: mach-shmobile: SMP base support 
-> [PATCH 02/03] ARM: mach-shmobile: Enable SMP support
-> [PATCH 03/03] ARM: mach-shmobile: sh73a0 SMP support
-> 
-> These patches add SMP framework support for R-Mobile and
-> SH-Mobile processors, together with hardware specific SMP
-> support for the sh73a0 processor.
-> 
-> Survives onlining and offlining of secondary processor cores
-> through sysfs. Should compile and boot regardless of 
-> CONFIG_SMP, CONFIG_HOTPLUG_CPU and CONFIG_LOCAL_TIMERS.
-> 
-> I suggest that patch 1 and 3 are taken through sh-2.6 and
-> patch 2 goes through the RMK patch tracker.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Allow MMCIF_PROGRESS_* to be shared.
 
-Applied to rmobile/smp, thanks.
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-There are integration issues with regards to the GIC changes that I'll
-have to take care of during the merge window regardless, so resolving the
-CONFIG_SMP thing at that point should be pretty straightforward. My plan
-is to wait until after Russell merges, merge your stuff on top of that,
-and then send the updated bits to Linus in one shot.
+Index: linux-2.6-ap4/arch/sh/boot/romimage/mmcif-sh7724.c
+=================================--- linux-2.6-ap4.orig/arch/sh/boot/romimage/mmcif-sh7724.c	2010-12-06 08:59:11.000000000 +0900
++++ linux-2.6-ap4/arch/sh/boot/romimage/mmcif-sh7724.c	2010-12-06 08:59:16.000000000 +0900
+@@ -21,9 +21,6 @@
+ #define HIZCRC		0xa405015c
+ #define DRVCRA		0xa405018a
+ 
+-enum { MMCIF_PROGRESS_ENTER, MMCIF_PROGRESS_INIT,
+-       MMCIF_PROGRESS_LOAD, MMCIF_PROGRESS_DONE };
+-
+ /* SH7724 specific MMCIF loader
+  *
+  * loads the romImage from an MMC card starting from block 512
+Index: linux-2.6-ap4/include/linux/mmc/sh_mmcif.h
+=================================--- linux-2.6-ap4.orig/include/linux/mmc/sh_mmcif.h	2010-12-06 08:59:11.000000000 +0900
++++ linux-2.6-ap4/include/linux/mmc/sh_mmcif.h	2010-12-06 08:59:16.000000000 +0900
+@@ -97,6 +97,9 @@ static inline void sh_mmcif_writel(void
+ 
+ #define SH_MMCIF_BBS 512 /* boot block size */
+ 
++enum { MMCIF_PROGRESS_ENTER, MMCIF_PROGRESS_INIT,
++       MMCIF_PROGRESS_LOAD, MMCIF_PROGRESS_DONE };
++
+ static inline void sh_mmcif_boot_cmd_send(void __iomem *base,
+ 					  unsigned long cmd, unsigned long arg)
+ {
 
-In order to avoid clashes with -next for now however I won't be merging
-the topic branch in to my -latest branch. Given that the number of boards
-in the wild for this at the moment are in the single digits, I'm not too
-worried about the amount of time these changes spend in -next so long as
-no regressions are introduced for the other boards.
