@@ -1,32 +1,68 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 06 Dec 2010 03:55:04 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: AG5 clock framework improvements
-Message-Id: <20101206035503.GA4968@linux-sh.org>
+From: Filippo ARCIDIACONO <filippo.arcidiacono@st.com>
+Date: Tue, 07 Dec 2010 10:20:54 +0000
+Subject: [PATCH (sh-2.6) 2/2] arm: use generic implementation of
+Message-Id: <1291717254-17455-2-git-send-email-filippo.arcidiacono@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101203072231.9395.36382.sendpatchset@t400s>
-In-Reply-To: <20101203072231.9395.36382.sendpatchset@t400s>
+References: <1291717254-17455-1-git-send-email-filippo.arcidiacono@st.com>
+In-Reply-To: <1291717254-17455-1-git-send-email-filippo.arcidiacono@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 03, 2010 at 04:22:31PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> This patch improves the state of the AG5 clock
-> framework support. The main clock parent is
-> automatically detected, but most of the clocks
-> are not used by any driver or subsystem at this
-> point. More work is needed for support of multi
-> media hardware such as FSI and/or LCDC/MIPI-DSI.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Applies to the "rmobile/ag5" branch in the sh-2.6 git repo.
-> 
->  arch/arm/mach-shmobile/clock-sh73a0.c        |  279 +++++++++++++++++++++++---
->  arch/arm/mach-shmobile/include/mach/common.h |    2 
->  2 files changed, 256 insertions(+), 25 deletions(-)
-> 
-Applied, thanks.
+All architectures using __stack_chk_guard global variable as canary
+could use a generic implementation of boot_init_stack_canary.
+
+Signed-off-by: Filippo Arcidiacono <filippo.arcidiacono@st.com>
+Reviewed-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+ arch/arm/include/asm/stackprotector.h |   32 ++------------------------------
+ 1 files changed, 2 insertions(+), 30 deletions(-)
+
+diff --git a/arch/arm/include/asm/stackprotector.h b/arch/arm/include/asm/stackprotector.h
+index de00332..1ae30bc 100644
+--- a/arch/arm/include/asm/stackprotector.h
++++ b/arch/arm/include/asm/stackprotector.h
+@@ -1,38 +1,10 @@
+ /*
+- * GCC stack protector support.
+- *
+- * Stack protector works by putting predefined pattern at the start of
+- * the stack frame and verifying that it hasn't been overwritten when
+- * returning from the function.  The pattern is called stack canary
+- * and gcc expects it to be defined by a global variable called
+- * "__stack_chk_guard" on ARM.  This unfortunately means that on SMP
+- * we cannot have a different canary value per task.
++ * ARM specific GCC stack protector support.
+  */
+ 
+ #ifndef _ASM_STACKPROTECTOR_H
+ #define _ASM_STACKPROTECTOR_H 1
+ 
+-#include <linux/random.h>
+-#include <linux/version.h>
+-
+-extern unsigned long __stack_chk_guard;
+-
+-/*
+- * Initialize the stackprotector canary value.
+- *
+- * NOTE: this must only be called from functions that never return,
+- * and it must always be inlined.
+- */
+-static __always_inline void boot_init_stack_canary(void)
+-{
+-	unsigned long canary;
+-
+-	/* Try to get a semi random initial value. */
+-	get_random_bytes(&canary, sizeof(canary));
+-	canary ^= LINUX_VERSION_CODE;
+-
+-	current->stack_canary = canary;
+-	__stack_chk_guard = current->stack_canary;
+-}
++#include <asm-generic/stackprotector.h>
+ 
+ #endif	/* _ASM_STACKPROTECTOR_H */
+-- 
+1.5.5.6
