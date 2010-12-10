@@ -1,54 +1,123 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Tue, 28 Dec 2010 22:22:30 +0000
-Subject: [PATCH 0/6 v3] mmc: tmio: Add SDIO IRQ support
-Message-Id: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 10 Dec 2010 05:58:44 +0000
+Subject: [PATCH 01/02][RFC] ARM: Introduce Subarch IRQ handler macros
+Message-Id: <20101210055844.8635.36194.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101210055835.8635.98614.sendpatchset@t400s>
+In-Reply-To: <20101210055835.8635.98614.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-[PATCH 1/6 v3] mmc: tmio: implement SDIO IRQ
-[PATCH 2/6 v3] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
-[PATCH 3/6 v3] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
-[PATCH 4/6 v3] sh: sh7724 Enable SDIO IRQs
-[PATCH 5/6 v3] sh: sh7722 Enable SDIO IRQs
-[PATCH 6/6 v3] sh: sh7723 / ap325rxa enable SDIO IRQs
+From: Magnus Damm <damm@opensource.se>
 
-These patches add SDIO IRQ support for the tmio mmc cell
-of the sh_mobile_sdhi mfd and activate the usage of
-SDIO IRQs on all SoCs where sh_mobile_sdhi is currently
-used.
+Break out code from the irq_handler macro into the two
+macros arch_irq_handler and arch_irq_handler_default.
 
-The patchset depends on:
-    mmc: tmio_mmc: allow multi-element scatter-gather lists
-        https://patchwork.kernel.org/patch/317142/
-    mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
-        https://patchwork.kernel.org/patch/317162/
-    mmc: tmio: merge the private header into the driver
-        https://patchwork.kernel.org/patch/349931/
-    mmc: tmio: implement a bounce buffer for unaligned DMA
-        https://patchwork.kernel.org/patch/349941/
+Put the macros in the header file "entry-macro-multi.S"
 
-Changes in v3:
-- Drop the patch which disables IRQs early in remove
-  it caused hangs during rmmod
-- Disable device IRQ in tmio_mmc_clk_start/stop to
-  avoid spurious SDIO IRQs (previously there was a
-  small time window where this could happen)
-- Fix a null pointer dereference which would have been
-  triggered when spurious SDIO IRQs would have been generated
-- Include patch for sh7723 / ap325rx
+The macro arch_irq_handler_default is designed to be
+used by the irq_handler macro in entry-armv.S while
+arch_irq_handler is suitable for per-subarch use.
 
-Changes in v2:
-- Add TMIO_MMC_SDIO_IRQ flag, which expresses that  the hardware is known
-  to support SDIO IRQ as suggested by Magnus Damm
-- Activate this flag for sh_mobile_sdhi
-- Add a patch which disables IRQs early in remove
-  to avoid spurious SDIO IRQs, during module unload
-- Patches 4-6 are unmodified but included for
-  completeness
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+ arch/arm/include/asm/entry-macro-multi.S |   43 ++++++++++++++++++++++++++++++
+ arch/arm/kernel/entry-armv.S             |   31 +--------------------
+ 2 files changed, 45 insertions(+), 29 deletions(-)
 
+--- /dev/null
++++ work/arch/arm/include/asm/entry-macro-multi.S	2010-12-09 23:07:01.000000000 +0900
+@@ -0,0 +1,43 @@
++/*
++ * Interrupt handling.  Preserves r7, r8, r9
++ */
++	.macro	arch_irq_handler_default
++	get_irqnr_preamble r5, lr
++1:	get_irqnr_and_base r0, r6, r5, lr
++	movne	r1, sp
++	@
++	@ routine called with r0 = irq number, r1 = struct pt_regs *
++	@
++	adrne	lr, BSYM(1b)
++	bne	asm_do_IRQ
++
++#ifdef CONFIG_SMP
++	/*
++	 * XXX
++	 *
++	 * this macro assumes that irqstat (r6) and base (r5) are
++	 * preserved from get_irqnr_and_base above
++	 */
++	ALT_SMP(test_for_ipi r0, r6, r5, lr)
++	ALT_UP_B(9998f)
++	movne	r1, sp
++	adrne	lr, BSYM(1b)
++	bne	do_IPI
++
++#ifdef CONFIG_LOCAL_TIMERS
++	test_for_ltirq r0, r6, r5, lr
++	movne	r0, sp
++	adrne	lr, BSYM(1b)
++	bne	do_local_timer
++#endif
++9998:
++#endif
++	.endm
++
++	.macro	arch_irq_handler, symbol_name
++	.align	5
++	.global \symbol_name
++\symbol_name:
++	arch_irq_handler_default
++	mov     pc, lr
++	.endm
+--- 0002/arch/arm/kernel/entry-armv.S
++++ work/arch/arm/kernel/entry-armv.S	2010-12-09 23:07:13.000000000 +0900
+@@ -19,6 +19,7 @@
+ #include <asm/glue.h>
+ #include <asm/vfpmacros.h>
+ #include <mach/entry-macro.S>
++#include <asm/entry-macro-multi.S>
+ #include <asm/thread_notify.h>
+ #include <asm/unwind.h>
+ #include <asm/unistd.h>
+@@ -38,35 +39,7 @@
+ 	adrne	lr, BSYM(9997f)
+ 	ldrne	pc, [r1]
+ #endif
+-	get_irqnr_preamble r5, lr
+-1:	get_irqnr_and_base r0, r6, r5, lr
+-	movne	r1, sp
+-	@
+-	@ routine called with r0 = irq number, r1 = struct pt_regs *
+-	@
+-	adrne	lr, BSYM(1b)
+-	bne	asm_do_IRQ
+-
+-#ifdef CONFIG_SMP
+-	/*
+-	 * XXX
+-	 *
+-	 * this macro assumes that irqstat (r6) and base (r5) are
+-	 * preserved from get_irqnr_and_base above
+-	 */
+-	ALT_SMP(test_for_ipi r0, r6, r5, lr)
+-	ALT_UP_B(9997f)
+-	movne	r1, sp
+-	adrne	lr, BSYM(1b)
+-	bne	do_IPI
+-
+-#ifdef CONFIG_LOCAL_TIMERS
+-	test_for_ltirq r0, r6, r5, lr
+-	movne	r0, sp
+-	adrne	lr, BSYM(1b)
+-	bne	do_local_timer
+-#endif
+-#endif
++	arch_irq_handler_default
+ 9997:
+ 	.endm
+ 
