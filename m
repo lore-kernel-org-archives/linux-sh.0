@@ -1,94 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 23 Dec 2010 01:48:11 +0000
-Subject: [PATCH] [patch v2] ARM: mach-shmobile: mackerel: Add zboot MMCIF support
-Message-Id: <1293068891-25526-1-git-send-email-horms@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 10 Dec 2010 05:58:35 +0000
+Subject: [PATCH 00/02][RFC] ARM: Subarch IRQ handler macro support
+Message-Id: <20101210055835.8635.98614.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch wires up LED debugging for the MMCIF boot
-on the mackerel, which is all that is required to get MMCIF
-boot functioning.
+ARM: Subarch IRQ handler macro support
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+[PATCH 01/02][RFC] ARM: Introduce Subarch IRQ handler macros
+[PATCH 02/02][RFC] ARM: shmobile: Use Subarch IRQ handler for INTC
+
+These patches add a macro for per-subarch use together with some
+example code that shows how to use it.
+
+The first patch simply breaks out code from the irq_handler macro
+in entry-armv.S to the new macro arch_irq_handler that is put in a
+shared header file. The new header file also adds the new macro
+arch_irq_handler_default which replaces previous code in the
+entry-armv.S file.
+
+Patch number two gives an example on how to make use of the macro
+arch_irq_handler on the SH-Mobile ARM subarch. Compile-time tested
+on top of RMKs devel tree with the CONFIG_MULTI_IRQ_HANDLER patch
+by Eric Miao. Please note that this patch isn't suitable for merge
+since it needs to be reworked to fit on the sh-2.6 tree where the
+rest of the SH-Mobile changes are.
+
+In short, the per-subarch code is reduced to the following on the
+sh7372 uniprocessor:
+
++#include <asm/entry-macro-multi.S>
++
++#define INTFLGA        0xe6980018
++
++       .macro  get_irqnr_preamble, base, tmp
++       ldr     \base, =INTFLGA
++       .endm
++
++       .macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
++       ldr     \irqnr, [\base]
++       cmp     \irqnr, #0
++       beq     1000f
++       /* intevt to irq number */
++       lsr     \irqnr, \irqnr, #0x5
++       subs    \irqnr, \irqnr, #16
++1000:
++       .endm
++
++       arch_irq_handler shmobile_handle_irq_intc
+
+This code depends on the following patch by Eric Miao:
+
+ [PATCH] ARM: Allow machine to specify it's own IRQ handlers at run-time
+
+Comments are more than welcome!
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-This patch depends on:
-* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
-  (merged into the devel branch of Russel King's linux-2.6-arm tree)
-* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
-  (merged into the devel branch of Russel King's linux-2.6-arm tree)
-* MACH_MACKEREL (3211) being present in arch/arm/tools/mach-types
-* ARM: mach-shmobile: mackerel: Add zboot support
-* rfc v3: mmc, ARM: Add zboot from MMC support for SuperH Mobile ARM,
-  which depends on
-  * mmc, sh: Remove sh_mmcif_boot_slurp()
-    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
-  * sh, mmc: Use defines when setting CE_CLK_CTRL
-    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
-  * mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
-    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
-
-v2
-* Use correct GPIO ports
-  - my previous assumptions turned out to be incorrect
----
- .../mach-shmobile/include/mach/mmcif-mackerel.h    |   29 ++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/mmcif.h        |    2 +
- 2 files changed, 31 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-new file mode 100644
-index 0000000..34253c1
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-@@ -0,0 +1,29 @@
-+#ifndef MMCIF_MACKEREL_H
-+#define MMCIF_MACKEREL_H
-+
-+#define PORT0CR      0xe6051001
-+#define PORT1CR      0xe6051002
-+#define PORT2CR      0xe6051003
-+#define PORT3CR      0xe6051004
-+
-+#define PORTR031_000DR 0xe6055000
-+
-+static inline void mmcif_init_progress(void)
-+{
-+       /* Initialise LEDS0-3
-+        * registers: PORT0CR-PORT1CR (LED0-LED3 Control)
-+        * value:     0x10 - enable output
-+        */
-+       __raw_writeb(0x10, PORT0CR);
-+       __raw_writeb(0x10, PORT1CR);
-+       __raw_writeb(0x10, PORT2CR);
-+       __raw_writeb(0x10, PORT3CR);
-+}
-+
-+static inline void mmcif_update_progress(int n)
-+{
-+	__raw_writel((__raw_readl(PORTR031_000DR) & 0xf) |
-+		     (1 << n), PORTR031_000DR);
-+}
-+
-+#endif /* MMCIF_MACKEREL_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
-index 0812f1e..f4dc327 100644
---- a/arch/arm/mach-shmobile/include/mach/mmcif.h
-+++ b/arch/arm/mach-shmobile/include/mach/mmcif.h
-@@ -9,6 +9,8 @@
- 
- #ifdef CONFIG_MACH_AP4EVB
- #include "mach/mmcif-ap4eb.h"
-+#elif CONFIG_MACH_MACKEREL
-+#include "mach/mmcif-mackerel.h"
- #else
- #error "unsupported board."
- #endif
--- 
-1.7.2.3
+ arch/arm/include/asm/entry-macro-multi.S          |   43 +++++++++++++++++++++
+ arch/arm/kernel/entry-armv.S                      |   31 ---------------
+ arch/arm/mach-shmobile/Kconfig                    |    3 +
+ arch/arm/mach-shmobile/Makefile                   |   12 ++++-
+ arch/arm/mach-shmobile/board-ap4evb.c             |    1 
+ arch/arm/mach-shmobile/board-g3evm.c              |    1 
+ arch/arm/mach-shmobile/board-g4evm.c              |    1 
+ arch/arm/mach-shmobile/entry-intc.S               |   30 ++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h      |    1 
+ arch/arm/mach-shmobile/include/mach/entry-macro.S |   27 -------------
+ arch/arm/mach-shmobile/include/mach/hardware.h    |    3 -
+ 11 files changed, 91 insertions(+), 62 deletions(-)
 
