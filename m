@@ -1,62 +1,89 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 29 Dec 2010 08:12:29 +0000
-Subject: [PATCH 3/3] fbdev: sh_mipi_dsi: use platform provided register layout
-Message-Id: <Pine.LNX.4.64.1012290909220.14233@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 12 Dec 2010 06:57:07 +0000
+Subject: [PATCH] rfc v1: ARM: mach-shmobile: mackerel: Add zboot MMCIF support
+Message-Id: <1292137027-17779-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Different sh-mobile SoCs have variations in their MIPI DSI register layouts,
-besides, different LCD panels require different configuration parameters. This
-patch switches the driver to use platform-provided MIPI DSI parameters.
+Hi Magnus, Hi Morimoto-san, I wonder if this might
+be sufficient to get MMCIF zboot working on mackerel.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch depends on
+* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
+  (merged into the devel branch of Russel King's linux-2.6-arm tree)
+* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
+  (merged into the devel branch of Russel King's linux-2.6-arm tree)
+* MACH_MACKEREL (3211) being present in arch/arm/tools/mach-types
+* ARM: mach-shmobile: mackerel: Add zboot support
+* rfc v3: mmc, ARM: Add zboot from MMC support for SuperH Mobile ARM,
+  which depends on
+  * mmc, sh: Remove sh_mmcif_boot_slurp()
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+  * sh, mmc: Use defines when setting CE_CLK_CTRL
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+  * mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/video/sh_mipi_dsi.c |   15 ++++++++++-----
- 1 files changed, 10 insertions(+), 5 deletions(-)
+ .../mach-shmobile/include/mach/mmcif-mackerel.h    |   29 ++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/mmcif.h        |    2 +
+ 2 files changed, 31 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index 3563188..884af92 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -123,8 +123,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- {
- 	void __iomem *base = mipi->base;
- 	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
--	u32 pctype, datatype, pixfmt;
--	u32 linelength;
-+	u32 pctype, datatype, pixfmt, linelength, vmctr2 = 0x00e00000;
- 	bool yuv;
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+new file mode 100644
+index 0000000..34253c1
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+@@ -0,0 +1,29 @@
++#ifndef MMCIF_MACKEREL_H
++#define MMCIF_MACKEREL_H
++
++#define PORT0CR      0xe6051001
++#define PORT1CR      0xe6051002
++#define PORT2CR      0xe6051003
++#define PORT3CR      0xe6051004
++
++#define PORTR031_000DR 0xe6055000
++
++static inline void mmcif_init_progress(void)
++{
++       /* Initialise LEDS0-3
++        * registers: PORT0CR-PORT1CR (LED0-LED3 Control)
++        * value:     0x10 - enable output
++        */
++       __raw_writeb(0x10, PORT0CR);
++       __raw_writeb(0x10, PORT1CR);
++       __raw_writeb(0x10, PORT2CR);
++       __raw_writeb(0x10, PORT3CR);
++}
++
++static inline void mmcif_update_progress(int n)
++{
++	__raw_writel((__raw_readl(PORTR031_000DR) & 0xf) |
++		     (1 << n), PORTR031_000DR);
++}
++
++#endif /* MMCIF_MACKEREL_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
+index 0812f1e..f4dc327 100644
+--- a/arch/arm/mach-shmobile/include/mach/mmcif.h
++++ b/arch/arm/mach-shmobile/include/mach/mmcif.h
+@@ -9,6 +9,8 @@
  
- 	/*
-@@ -281,16 +280,22 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	 */
- 	iowrite32(0x00000006, base + 0x8000); /* DTCTR */
- 	/* VSYNC width = 2 (<< 17) */
--	iowrite32(0x00040000 | (pctype << 12) | datatype, base + 0x8020); /* VMCTR1 */
-+	iowrite32((ch->lcd_cfg[0].vsync_len << pdata->vsynw_offset) |
-+		  (pdata->clksrc << 16) | (pctype << 12) | datatype,
-+		  base + 0x8020); /* VMCTR1 */
- 	/*
- 	 * Non-burst mode with sync pulses: VSE and HSE are output,
- 	 * HSA period allowed, no commands in LP
- 	 */
--	iowrite32(0x00e00000, base + 0x8024); /* VMCTR2 */
-+	if (pdata->flags & SH_MIPI_DSI_HSABM)
-+		vmctr2 |= 0x20;
-+	if (pdata->flags & SH_MIPI_DSI_HSPBM)
-+		vmctr2 |= 0x10;
-+	iowrite32(vmctr2, base + 0x8024); /* VMCTR2 */
- 	/*
- 	 * 0x660 = 1632 bytes per line (RGB24, 544 pixels: see
- 	 * sh_mobile_lcdc_info.ch[0].lcd_cfg[0].xres), HSALEN = 1 - default
--	 * (unused, since VMCTR2[HSABM] = 0)
-+	 * (unused, if VMCTR2[HSABM] = 0)
- 	 */
- 	iowrite32(1 | (linelength << 16), base + 0x8028); /* VMLEN1 */
- 
+ #ifdef CONFIG_MACH_AP4EVB
+ #include "mach/mmcif-ap4eb.h"
++#elif CONFIG_MACH_MACKEREL
++#include "mach/mmcif-mackerel.h"
+ #else
+ #error "unsupported board."
+ #endif
 -- 
 1.7.2.3
 
