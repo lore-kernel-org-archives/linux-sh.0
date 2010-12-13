@@ -1,75 +1,42 @@
-From: Nicolas Pitre <nicolas.pitre@linaro.org>
-Date: Tue, 07 Dec 2010 18:29:42 +0000
-Subject: Re: [PATCH (sh-2.6) 2/2] arm: use generic implementation of
-Message-Id: <alpine.LFD.2.00.1012071328560.10437@xanadu.home>
+From: Carmelo AMOROSO <carmelo.amoroso@st.com>
+Date: Mon, 13 Dec 2010 10:20:26 +0000
+Subject: [PATCH (sh-2.6)] sh: wire up accept4 syscall (non-multiplexed path)
+Message-Id: <1292235626-23589-1-git-send-email-carmelo.amoroso@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1291717254-17455-1-git-send-email-filippo.arcidiacono@st.com>
-	<1291717254-17455-2-git-send-email-filippo.arcidiacono@st.com>
-In-Reply-To: <1291717254-17455-2-git-send-email-filippo.arcidiacono@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, 7 Dec 2010, Filippo ARCIDIACONO wrote:
+Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+ arch/sh/include/asm/unistd_32.h |    3 ++-
+ arch/sh/kernel/syscalls_32.S    |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-> All architectures using __stack_chk_guard global variable as canary
-> could use a generic implementation of boot_init_stack_canary.
-> 
-> Signed-off-by: Filippo Arcidiacono <filippo.arcidiacono@st.com>
-> Reviewed-by: Carmelo Amoroso <carmelo.amoroso@st.com>
-
-Acked-by: Nicolas Pitre <nicolas.pitre@linaro.org>
-
-> ---
->  arch/arm/include/asm/stackprotector.h |   32 ++------------------------------
->  1 files changed, 2 insertions(+), 30 deletions(-)
-> 
-> diff --git a/arch/arm/include/asm/stackprotector.h b/arch/arm/include/asm/stackprotector.h
-> index de00332..1ae30bc 100644
-> --- a/arch/arm/include/asm/stackprotector.h
-> +++ b/arch/arm/include/asm/stackprotector.h
-> @@ -1,38 +1,10 @@
->  /*
-> - * GCC stack protector support.
-> - *
-> - * Stack protector works by putting predefined pattern at the start of
-> - * the stack frame and verifying that it hasn't been overwritten when
-> - * returning from the function.  The pattern is called stack canary
-> - * and gcc expects it to be defined by a global variable called
-> - * "__stack_chk_guard" on ARM.  This unfortunately means that on SMP
-> - * we cannot have a different canary value per task.
-> + * ARM specific GCC stack protector support.
->   */
->  
->  #ifndef _ASM_STACKPROTECTOR_H
->  #define _ASM_STACKPROTECTOR_H 1
->  
-> -#include <linux/random.h>
-> -#include <linux/version.h>
-> -
-> -extern unsigned long __stack_chk_guard;
-> -
-> -/*
-> - * Initialize the stackprotector canary value.
-> - *
-> - * NOTE: this must only be called from functions that never return,
-> - * and it must always be inlined.
-> - */
-> -static __always_inline void boot_init_stack_canary(void)
-> -{
-> -	unsigned long canary;
-> -
-> -	/* Try to get a semi random initial value. */
-> -	get_random_bytes(&canary, sizeof(canary));
-> -	canary ^= LINUX_VERSION_CODE;
-> -
-> -	current->stack_canary = canary;
-> -	__stack_chk_guard = current->stack_canary;
-> -}
-> +#include <asm-generic/stackprotector.h>
->  
->  #endif	/* _ASM_STACKPROTECTOR_H */
-> -- 
-> 1.5.5.6
-> 
+diff --git a/arch/sh/include/asm/unistd_32.h b/arch/sh/include/asm/unistd_32.h
+index 903cd61..d6741fc 100644
+--- a/arch/sh/include/asm/unistd_32.h
++++ b/arch/sh/include/asm/unistd_32.h
+@@ -368,8 +368,9 @@
+ #define __NR_sendmsg		355
+ #define __NR_recvmsg		356
+ #define __NR_recvmmsg		357
++#define __NR_accept4		358
+ 
+-#define NR_syscalls 358
++#define NR_syscalls 359
+ 
+ #ifdef __KERNEL__
+ 
+diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+index e872e81..6fc347e 100644
+--- a/arch/sh/kernel/syscalls_32.S
++++ b/arch/sh/kernel/syscalls_32.S
+@@ -375,3 +375,4 @@ ENTRY(sys_call_table)
+ 	.long sys_sendmsg		/* 355 */
+ 	.long sys_recvmsg
+ 	.long sys_recvmmsg
++	.long sys_accept4
+-- 
+1.5.5.6
