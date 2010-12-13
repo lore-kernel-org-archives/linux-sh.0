@@ -1,78 +1,82 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 29 Dec 2010 07:59:25 +0000
-Subject: [PATCH] mmc: sh_mmcif: make DMA support by the driver unconditional
-Message-Id: <Pine.LNX.4.64.1012290852530.14233@axis700.grange>
+From: "Szafranek, Michael" <Michael.Szafranek@emtrion.de>
+Date: Mon, 13 Dec 2010 09:19:54 +0000
+Subject: sh: sh7723/7724 nmi: nmi stops DMA transfers
+Message-Id: <95F51F4B902CAC40AF459205F6322F0187A9C8F819@BMK019S01.emtrion.local>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-Simplify the driver by removing the possibility to build it without the DMA
-support and remove the respective Kconfig parameter.
+Hello,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/Kconfig    |    6 ------
- drivers/mmc/host/sh_mmcif.c |   20 --------------------
- 2 files changed, 0 insertions(+), 26 deletions(-)
+I've got a patch that fixes a problem when a NMI occurs which stops DMA transfers. The code in the patch resumes the DMA transfers. But it does not look like the proper place to solve this problem. If you could give me a hint were to move the code.
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 859e352..d618e86 100644
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -466,12 +466,6 @@ config MMC_SH_MMCIF
- 
- 	  This driver supports MMCIF in sh7724/sh7757/sh7372.
- 
--config SH_MMCIF_DMA
--	bool "Use DMA for MMCIF"
--	depends on MMC_SH_MMCIF
--	help
--	  Use SH dma-engine driver for data transfer
--
- config MMC_JZ4740
- 	tristate "JZ4740 SD/Multimedia Card Interface support"
- 	depends on MACH_JZ4740
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index d09a2b3..12884c2 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -184,7 +184,6 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
- 	writel(~val & readl(host->addr + reg), host->addr + reg);
- }
- 
--#ifdef CONFIG_SH_MMCIF_DMA
- static void mmcif_dma_complete(void *arg)
- {
- 	struct sh_mmcif_host *host = arg;
-@@ -367,25 +366,6 @@ static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
- 
- 	host->dma_sglen = 0;
- }
--#else
--static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
--{
--}
--
--static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
--{
--}
--
--static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
--				 struct sh_mmcif_plat_data *pdata)
--{
--	/* host->chan_tx, host->chan_tx and host->dma_sglen are all zero */
--}
--
--static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
--{
--}
--#endif
- 
- static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
- {
--- 
-1.7.2.3
+diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
+index 0830c2a..67f24bc 100644
+--- a/arch/sh/kernel/traps.c
++++ b/arch/sh/kernel/traps.c
+@@ -8,6 +8,8 @@
+#include <linux/hardirq.h>
+#include <asm/unwinder.h>
+#include <asm/system.h>
++#include <asm/dma.h>
++#include <asm/dma-sh.h>
 
+#ifdef CONFIG_GENERIC_BUG
+static void handle_BUG(struct pt_regs *regs)
+@@ -95,11 +97,13 @@ BUILD_TRAP_HANDLER(bug)
+
+BUILD_TRAP_HANDLER(nmi)
+{
++       unsigned long dmaor;
+        unsigned int cpu = smp_processor_id();
+        TRAP_HANDLER_DECL;
+
+        nmi_enter();
+        nmi_count(cpu)++;
++
+
+        switch (notify_die(DIE_NMI, "NMI", regs, 0, vec & 0xff, SIGINT)) {
+        case NOTIFY_OK:
+@@ -111,6 +115,22 @@ BUILD_TRAP_HANDLER(nmi)
+                printk(KERN_ALERT "Got NMI, but nobody cared. Ignoring...\n");
+                break;
+        }
+-
++
++/* every NMI usually stops all active DMA transfers. These lines simply reanimate the */
++/* DMA channels so that the transfers are resumed                                     */
++#if defined(CONFIG_SH_HICO7723) || defined(CONFIG_SH_HICO7724)
++       dmaor = __raw_readw(SH_DMAC_BASE0 + DMAOR);
++       dmaor &= ~(DMAOR_NMIF | DMAOR_AE); // resetting NMI flag and address error flag
++       __raw_writew( dmaor, SH_DMAC_BASE0 + DMAOR );
++       dmaor |= DMAOR_INIT;               // restarting DMA
++       __raw_writew( dmaor, SH_DMAC_BASE0 + DMAOR );
++
++       dmaor = __raw_readw(SH_DMAC_BASE1 + DMAOR);
++       dmaor &= ~(DMAOR_NMIF | DMAOR_AE); // resetting NMI flag and address error flag
++       __raw_writew( dmaor, SH_DMAC_BASE1 + DMAOR );
++       dmaor |= DMAOR_INIT;               // restarting DMA
++       __raw_writew( dmaor, SH_DMAC_BASE1 + DMAOR );
++#endif
++
+        nmi_exit();
+}
+
+
+
+
+_____________________________________
+
+Amtsgericht Mannheim
+HRB 110 300
+Gesch?ftsf?hrer: Dieter Baur, Ramona Maurer
+_____________________________________
+
+Important Note:
+- This e-mail may contain trade secrets or privileged, undisclosed or otherwise confidential information.
+- If you have received this e-mail in error, you are hereby notified that any review, copying or distribution of it is strictly prohibited.
+- Please inform us immediately and destroy the original transmittal.
+
+Thank you for your cooperation.
