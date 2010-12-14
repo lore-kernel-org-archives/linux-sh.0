@@ -1,42 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 14 Dec 2010 03:49:20 +0000
-Subject: [PATCH] ARM: mach-shmobile: SCIF port for earlyprintk when using zboot
-Message-Id: <1292298560-31329-1-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 14 Dec 2010 16:07:53 +0000
+Subject: Re: [PATCH 0/3] handle unaligned buffers, when using TMIO-MMC with
+Message-Id: <Pine.LNX.4.64.1012141704330.8500@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-Initialise the SCIF serial port to allow earlyprintk
-output when using zboot.
+Hi Ian
 
-This patch requires the following patches which are going through
-Russell King's tree.
+It's been 3 weeks... Have you had a chance to look at these and previous 
+my tmio patches? Any comments or are they ok to go?
 
-* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
-* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
+Thanks
+Guennadi
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+On Tue, 23 Nov 2010, Guennadi Liakhovetski wrote:
+
+> While testing SDIO on SuperH with TMIO and DMA, it turned out, that 
+> buffers, submitted to the driver can be arbitrarily aligned, and this is 
+> not handled by the tmio driver. This patch series fixes this issue.
+> 
+> Thanks
+> Guennadi
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> 
+
 ---
- .../arm/mach-shmobile/include/mach/head-ap4evb.txt |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-index e3ebfa7..efd3687 100644
---- a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-+++ b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-@@ -85,3 +85,10 @@ ED 0xE6150004, 0x80331050
- WAIT 1, 0xFE40009C
- 
- ED 0xE6150354, 0x00000002
-+
-+LIST "SCIF0 - Serial port for earlyprintk"
-+EB 0xE6053098, 0x11
-+EB 0xE6053098, 0xe1
-+EW 0xE6C40000, 0x0000
-+EB 0xE6C40004, 0x19
-+EW 0xE6C40008, 0x3000
--- 
-1.7.2.3
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
