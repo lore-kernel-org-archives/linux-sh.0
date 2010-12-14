@@ -1,32 +1,40 @@
-From: Samuel Ortiz <sameo@linux.intel.com>
-Date: Fri, 24 Dec 2010 11:03:31 +0000
-Subject: Re: [PATCH 2/6 v2] mfd: sh_mobile_sdhi: activate SDIO IRQ for
-Message-Id: <20101224110330.GD27832@sortiz-mobl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 14 Dec 2010 07:56:47 +0000
+Subject: [PATCH 00/03] ARM: mach-shmobile: Initial SMP support
+Message-Id: <20101214075647.11275.25933.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
- <1292860431-16195-3-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1292860431-16195-3-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+ARM: mach-shmobile: Initial SMP support
 
-On Mon, Dec 20, 2010 at 03:53:47PM +0000, Arnd Hannemann wrote:
-> The SDHI Controller on SH-Mobile SoCs supports SDIO IRQ signalling.
-> This patch advertises this fact to the tmio_mmc driver.
-> 
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
-Since this one depends on the first patch on the series, I won't be able to
-carry it. Please add my:
+[PATCH 01/03] ARM: mach-shmobile: SMP base support 
+[PATCH 02/03] ARM: mach-shmobile: Enable SMP support
+[PATCH 03/03] ARM: mach-shmobile: sh73a0 SMP support
 
-Acked-by: Samuel Ortiz <sameo@linux.intel.com>
+These patches add SMP framework support for R-Mobile and
+SH-Mobile processors, together with hardware specific SMP
+support for the sh73a0 processor.
 
-Cheers,
-Samuel.
+Survives onlining and offlining of secondary processor cores
+through sysfs. Should compile and boot regardless of 
+CONFIG_SMP, CONFIG_HOTPLUG_CPU and CONFIG_LOCAL_TIMERS.
 
--- 
-Intel Open Source Technology Centre
-http://oss.intel.com/
+I suggest that patch 1 and 3 are taken through sh-2.6 and
+patch 2 goes through the RMK patch tracker.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+ arch/arm/Kconfig                                       |    3 
+ arch/arm/mach-shmobile/Makefile                        |    7 +
+ arch/arm/mach-shmobile/headsmp.S                       |   26 ++++
+ arch/arm/mach-shmobile/hotplug.c                       |   41 ++++++
+ arch/arm/mach-shmobile/include/mach/common.h           |    6 
+ arch/arm/mach-shmobile/include/mach/entry-macro-intc.S |    6 
+ arch/arm/mach-shmobile/include/mach/smp.h              |   16 ++
+ arch/arm/mach-shmobile/localtimer.c                    |   25 ++++
+ arch/arm/mach-shmobile/platsmp.c                       |   87 ++++++++++++++
+ arch/arm/mach-shmobile/smp-sh73a0.c                    |   98 ++++++++++++++++
+ 10 files changed, 313 insertions(+), 2 deletions(-)
