@@ -1,48 +1,42 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 03 Dec 2010 05:37:54 +0000
-Subject: [PATCH] sh: se/7724: Remove FSI/B of GPIO init code
-Message-Id: <1291354674-13100-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 14 Dec 2010 03:49:20 +0000
+Subject: [PATCH] ARM: mach-shmobile: SCIF port for earlyprintk when using zboot
+Message-Id: <1292298560-31329-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-se7724 board does not have FSI/B.
+Initialise the SCIF serial port to allow earlyprintk
+output when using zboot.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+This patch requires the following patches which are going through
+Russell King's tree.
+
+* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
+* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
+
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/sh/boards/mach-se/7724/setup.c |   10 +---------
- 1 files changed, 1 insertions(+), 9 deletions(-)
+ .../arm/mach-shmobile/include/mach/head-ap4evb.txt |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 1486ab7..527a0cd 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -827,22 +827,14 @@ static int __init devices_setup(void)
- 	gpio_request(GPIO_FN_KEYOUT0,     NULL);
+diff --git a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
+index e3ebfa7..efd3687 100644
+--- a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
++++ b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
+@@ -85,3 +85,10 @@ ED 0xE6150004, 0x80331050
+ WAIT 1, 0xFE40009C
  
- 	/* enable FSI */
--	gpio_request(GPIO_FN_FSIMCKB,    NULL);
- 	gpio_request(GPIO_FN_FSIMCKA,    NULL);
-+	gpio_request(GPIO_FN_FSIIASD,    NULL);
- 	gpio_request(GPIO_FN_FSIOASD,    NULL);
- 	gpio_request(GPIO_FN_FSIIABCK,   NULL);
- 	gpio_request(GPIO_FN_FSIIALRCK,  NULL);
- 	gpio_request(GPIO_FN_FSIOABCK,   NULL);
- 	gpio_request(GPIO_FN_FSIOALRCK,  NULL);
- 	gpio_request(GPIO_FN_CLKAUDIOAO, NULL);
--	gpio_request(GPIO_FN_FSIIBSD,    NULL);
--	gpio_request(GPIO_FN_FSIOBSD,    NULL);
--	gpio_request(GPIO_FN_FSIIBBCK,   NULL);
--	gpio_request(GPIO_FN_FSIIBLRCK,  NULL);
--	gpio_request(GPIO_FN_FSIOBBCK,   NULL);
--	gpio_request(GPIO_FN_FSIOBLRCK,  NULL);
--	gpio_request(GPIO_FN_CLKAUDIOBO, NULL);
--	gpio_request(GPIO_FN_FSIIASD,    NULL);
- 
- 	/* set SPU2 clock to 83.4 MHz */
- 	clk = clk_get(NULL, "spu_clk");
+ ED 0xE6150354, 0x00000002
++
++LIST "SCIF0 - Serial port for earlyprintk"
++EB 0xE6053098, 0x11
++EB 0xE6053098, 0xe1
++EW 0xE6C40000, 0x0000
++EB 0xE6C40004, 0x19
++EW 0xE6C40008, 0x3000
 -- 
 1.7.2.3
 
