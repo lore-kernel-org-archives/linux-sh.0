@@ -1,31 +1,19 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 14 Dec 2010 10:05:47 +0000
-Subject: [GIT PULL] sh updates for 2.6.37-rc6
-Message-Id: <20101214100547.GH14606@linux-sh.org>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Tue, 14 Dec 2010 11:08:50 +0000
+Subject: Re: [GIT PULL] sh updates for 2.6.37-rc6
+Message-Id: <20101214110850.GB11489@rakim.wolfsonmicro.main>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101214100547.GH14606@linux-sh.org>
+In-Reply-To: <20101214100547.GH14606@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Not much of note here. A missing syscall for non-multiplexed socketcalls,
-and we've temporarily re-enabled the deprecated IRQ chip APIs to give the
-MFD and GPIO drivers a chance to catch up in .38 as requested by Mark Brown.
+On Tue, Dec 14, 2010 at 07:05:47PM +0900, Paul Mundt wrote:
 
-Please pull from:
+> and we've temporarily re-enabled the deprecated IRQ chip APIs to give the
+> MFD and GPIO drivers a chance to catch up in .38 as requested by Mark Brown.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
-
-Which contains:
-
-Carmelo AMOROSO (1):
-      sh: wire up accept4 syscall (non-multiplexed path)
-
-Paul Mundt (1):
-      sh: Enable deprecated IRQ chip APIs for MFD and GPIOLIB drivers.
-
- arch/sh/Kconfig                 |    3 ++-
- arch/sh/include/asm/unistd_32.h |    3 ++-
- arch/sh/kernel/syscalls_32.S    |    1 +
- 3 files changed, 5 insertions(+), 2 deletions(-)
+Thanks!
