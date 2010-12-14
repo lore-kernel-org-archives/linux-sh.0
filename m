@@ -1,40 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 14 Dec 2010 07:56:47 +0000
-Subject: [PATCH 00/03] ARM: mach-shmobile: Initial SMP support
-Message-Id: <20101214075647.11275.25933.sendpatchset@t400s>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 14 Dec 2010 09:57:03 +0000
+Subject: Re: [PATCH 00/03] ARM: mach-shmobile: Initial SMP support
+Message-Id: <20101214095703.GG14606@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101214075647.11275.25933.sendpatchset@t400s>
+In-Reply-To: <20101214075647.11275.25933.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: mach-shmobile: Initial SMP support
+On Tue, Dec 14, 2010 at 04:56:47PM +0900, Magnus Damm wrote:
+> ARM: mach-shmobile: Initial SMP support
+> 
+> [PATCH 01/03] ARM: mach-shmobile: SMP base support 
+> [PATCH 02/03] ARM: mach-shmobile: Enable SMP support
+> [PATCH 03/03] ARM: mach-shmobile: sh73a0 SMP support
+> 
+> These patches add SMP framework support for R-Mobile and
+> SH-Mobile processors, together with hardware specific SMP
+> support for the sh73a0 processor.
+> 
+> Survives onlining and offlining of secondary processor cores
+> through sysfs. Should compile and boot regardless of 
+> CONFIG_SMP, CONFIG_HOTPLUG_CPU and CONFIG_LOCAL_TIMERS.
+> 
+> I suggest that patch 1 and 3 are taken through sh-2.6 and
+> patch 2 goes through the RMK patch tracker.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-[PATCH 01/03] ARM: mach-shmobile: SMP base support 
-[PATCH 02/03] ARM: mach-shmobile: Enable SMP support
-[PATCH 03/03] ARM: mach-shmobile: sh73a0 SMP support
+Applied to rmobile/smp, thanks.
 
-These patches add SMP framework support for R-Mobile and
-SH-Mobile processors, together with hardware specific SMP
-support for the sh73a0 processor.
+There are integration issues with regards to the GIC changes that I'll
+have to take care of during the merge window regardless, so resolving the
+CONFIG_SMP thing at that point should be pretty straightforward. My plan
+is to wait until after Russell merges, merge your stuff on top of that,
+and then send the updated bits to Linus in one shot.
 
-Survives onlining and offlining of secondary processor cores
-through sysfs. Should compile and boot regardless of 
-CONFIG_SMP, CONFIG_HOTPLUG_CPU and CONFIG_LOCAL_TIMERS.
-
-I suggest that patch 1 and 3 are taken through sh-2.6 and
-patch 2 goes through the RMK patch tracker.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
- arch/arm/Kconfig                                       |    3 
- arch/arm/mach-shmobile/Makefile                        |    7 +
- arch/arm/mach-shmobile/headsmp.S                       |   26 ++++
- arch/arm/mach-shmobile/hotplug.c                       |   41 ++++++
- arch/arm/mach-shmobile/include/mach/common.h           |    6 
- arch/arm/mach-shmobile/include/mach/entry-macro-intc.S |    6 
- arch/arm/mach-shmobile/include/mach/smp.h              |   16 ++
- arch/arm/mach-shmobile/localtimer.c                    |   25 ++++
- arch/arm/mach-shmobile/platsmp.c                       |   87 ++++++++++++++
- arch/arm/mach-shmobile/smp-sh73a0.c                    |   98 ++++++++++++++++
- 10 files changed, 313 insertions(+), 2 deletions(-)
+In order to avoid clashes with -next for now however I won't be merging
+the topic branch in to my -latest branch. Given that the number of boards
+in the wild for this at the moment are in the single digits, I'm not too
+worried about the amount of time these changes spend in -next so long as
+no regressions are introduced for the other boards.
