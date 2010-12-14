@@ -1,253 +1,255 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 14 Dec 2010 06:57:10 +0000
-Subject: Re: sh: sh7723/7724 nmi: nmi stops DMA transfers
-Message-Id: <20101214065710.GA6694@linux-sh.org>
+From: "Szafranek, Michael" <Michael.Szafranek@emtrion.de>
+Date: Tue, 14 Dec 2010 09:15:05 +0000
+Subject: AW: sh: sh7723/7724 nmi: nmi stops DMA transfers
+Message-Id: <95F51F4B902CAC40AF459205F6322F0187A9C8F881@BMK019S01.emtrion.local>
 List-Id: <linux-sh.vger.kernel.org>
 References: <95F51F4B902CAC40AF459205F6322F0187A9C8F819@BMK019S01.emtrion.local>
 In-Reply-To: <95F51F4B902CAC40AF459205F6322F0187A9C8F819@BMK019S01.emtrion.local>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Mon, Dec 13, 2010 at 07:28:41PM +0900, Paul Mundt wrote:
-> On Mon, Dec 13, 2010 at 10:19:54AM +0100, Szafranek, Michael wrote:
-> > I've got a patch that fixes a problem when a NMI occurs which stops DMA
-> > transfers. The code in the patch resumes the DMA transfers. But it does
-> > not look like the proper place to solve this problem. If you could give
-> > me a hint were to move the code.
-...
+Yes, I saw this notifier chain but I didn't think that it was so simple.
+So, I reworked my patch, it's a little simpler than yours. But it works fin=
+e. I'm not sure which is the preferable.
 
-> Simply register a die notifier in the DMA driver and take care of this
-> there.
+diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c in=
+dex 8272087..5a1c6f9 100644
+--- a/arch/sh/drivers/dma/dma-sh.c
++++ b/arch/sh/drivers/dma/dma-sh.c
+@@ -276,6 +276,26 @@ static struct dma_info sh_dmac_info =3D {
+        .flags          =3D DMAC_CHANNELS_TEI_CAPABLE,
+ };
 
-Ok, so it turned out to be a bit more work than I expected, but here's a
-trivial proof of concept that ought to work for both SH and ARM:
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) ||
++defined(CONFIG_CPU_SUBTYPE_SH7724)
++int sh_dma_notifier(struct notifier_block *nb, unsigned long val, void
++*args) {
++       if (!in_nmi())
++               return NOTIFY_DONE;
++
++       /* every NMI usually stops all active DMA transfers. */
++       /* Reset DMA channels so that the transfers are resumed */
++       dmaor_reset(0);
++       dmaor_reset(1);
++
++       return NOTIFY_OK;
++}
++
++static struct notifier_block sh_dma_nb =3D {
++       .notifier_call  =3D sh_dma_notifier,
++       .priority       =3D 0,
++};
++#endif
++
+ #ifdef CONFIG_CPU_SH4
+ static unsigned int get_dma_error_irq(int n)  { @@ -330,6 +350,12 @@ stati=
+c int __init sh_dmac_init(void)
+                return i;
+ #endif
 
----
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) || defined(CONFIG_CPU_SUBTYPE_SH772=
+4)
++       i =3D register_die_notifier(&sh_dma_nb);
++       if (unlikely(i !=3D 0))
++               return i;
++#endif
++
+        return register_dmac(info);
+ }
 
- drivers/dma/shdma.c |  129 ++++++++++++++++++++++++++++++++++++++++++++--------
- drivers/dma/shdma.h |    1 
- 2 files changed, 112 insertions(+), 18 deletions(-)
+@@ -338,6 +364,10 @@ static void __exit sh_dmac_exit(void)  #ifdef CONFIG_C=
+PU_SH4
+        int n;
 
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 85ffd5e..89cce17 100644
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) || defined(CONFIG_CPU_SUBTYPE_SH772=
+4)
++       unregister_die_notifier(&sh_dma_nb);
++#endif
++
+        for (n =3D 0; n < NR_DMAE; n++) {
+                free_irq(get_dma_error_irq(n), (void *)dmae_name[n]);
+        }
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c index eb6b54d..76dd7=
+0b 100644
 --- a/drivers/dma/shdma.c
 +++ b/drivers/dma/shdma.c
-@@ -27,7 +27,10 @@
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/sh_dma.h>
--
-+#include <linux/notifier.h>
-+#include <linux/kdebug.h>
-+#include <linux/spinlock.h>
-+#include <linux/rculist.h>
- #include "shdma.h"
- 
- /* DMA descriptor control */
-@@ -43,6 +46,13 @@ enum sh_dmae_desc_status {
- /* Default MEMCPY transfer size = 2^2 = 4 bytes */
- #define LOG2_DEFAULT_XFER_SIZE	2
- 
-+/*
-+ * Used for write-side mutual exclusion for the global device list,
-+ * read-side synchronization by way of RCU.
-+ */
-+static DEFINE_SPINLOCK(sh_dmae_lock);
-+static LIST_HEAD(sh_dmae_devices);
+@@ -849,6 +849,22 @@ static irqreturn_t sh_dmae_err(int irq, void *data)  }=
+  #endif
+
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) ||
++defined(CONFIG_CPU_SUBTYPE_SH7724)
++int dmae_notifier_call(struct notifier_block *nb, unsigned long val,
++void *args) {
++       struct sh_dmae_device *shdev =3D container_of(nb, struct sh_dmae_de=
+vice,
++nb);
 +
- /* A bitmask with bits enough for enum sh_dmae_slave_chan_id */
- static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SH_DMA_SLAVE_NUMBER)];
- 
-@@ -817,10 +827,9 @@ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
- 	return ret;
- }
- 
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
--static irqreturn_t sh_dmae_err(int irq, void *data)
-+static unsigned int sh_dmae_reset(struct sh_dmae_device *shdev)
- {
--	struct sh_dmae_device *shdev = (struct sh_dmae_device *)data;
-+	unsigned int handled = 0;
- 	int i;
- 
- 	/* halt the dma controller */
-@@ -829,25 +838,35 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
- 	/* We cannot detect, which channel caused the error, have to reset all */
- 	for (i = 0; i < SH_DMAC_MAX_CHANNELS; i++) {
- 		struct sh_dmae_chan *sh_chan = shdev->chan[i];
--		if (sh_chan) {
--			struct sh_desc *desc;
--			/* Stop the channel */
--			dmae_halt(sh_chan);
--			/* Complete all  */
--			list_for_each_entry(desc, &sh_chan->ld_queue, node) {
--				struct dma_async_tx_descriptor *tx = &desc->async_tx;
--				desc->mark = DESC_IDLE;
--				if (tx->callback)
--					tx->callback(tx->callback_param);
--			}
--			list_splice_init(&sh_chan->ld_queue, &sh_chan->ld_free);
-+		struct sh_desc *desc;
++       if (!in_nmi())
++               return NOTIFY_DONE;
 +
-+		if (!sh_chan)
-+			continue;
++       /* every NMI usually stops all active DMA transfers. */
++       /* Reset DMA channels so that the transfers are resumed */
++       sh_dmae_rst(shdev);
 +
-+		/* Stop the channel */
-+		dmae_halt(sh_chan);
-+
-+		/* Complete all  */
-+		list_for_each_entry(desc, &sh_chan->ld_queue, node) {
-+			struct dma_async_tx_descriptor *tx = &desc->async_tx;
-+			desc->mark = DESC_IDLE;
-+			if (tx->callback)
-+				tx->callback(tx->callback_param);
- 		}
-+
-+		list_splice_init(&sh_chan->ld_queue, &sh_chan->ld_free);
-+		handled++;
- 	}
-+
- 	sh_dmae_rst(shdev);
- 
--	return IRQ_HANDLED;
-+	return !!handled;
++       return NOTIFY_OK;
 +}
++#endif
 +
-+static irqreturn_t sh_dmae_err(int irq, void *data)
-+{
-+	return IRQ_RETVAL(sh_dmae_reset(data));
- }
--#endif
- 
- static void dmae_do_tasklet(unsigned long data)
- {
-@@ -876,6 +895,57 @@ static void dmae_do_tasklet(unsigned long data)
- 	sh_dmae_chan_ld_cleanup(sh_chan, false);
- }
- 
-+static bool sh_dmae_nmi_notify(struct sh_dmae_device *shdev)
-+{
-+	unsigned int handled;
+ static void dmae_do_tasklet(unsigned long data)  {
+        struct sh_dmae_chan *sh_chan =3D (struct sh_dmae_chan *)data; @@ -1=
+085,6 +1101,18 @@ static int __init sh_dmae_probe(struct platform_device *p=
+dev)
+        chanirq_res =3D errirq_res;
+ #endif /* CONFIG_CPU_SH4 || CONFIG_ARCH_SHMOBILE */
+
 +
-+	/* Fast path out if NMIF is not asserted for this controller */
-+	if ((dmaor_read(shdev) & DMAOR_NMIF) = 0)
-+		return false;
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) || defined(CONFIG_CPU_SUBTYPE_SH772=
+4)
++       shdev->nb.notifier_call =3D dmae_notifier_call;
++       shdev->nb.priority      =3D 0;
 +
-+	handled = sh_dmae_reset(shdev);
-+	if (handled)
-+		return true;
++       err =3D register_die_notifier(&shdev->nb);
++       if (err) {
++               dev_err(&pdev->dev, "Registering NMI notifier failed\n");
++               goto eirqres;
++       }
++#endif
 +
-+	return false;
-+}
+        if (chanirq_res->start =3D chanirq_res->end &&
+            !platform_get_resource(pdev, IORESOURCE_IRQ, 1)) {
+                /* Special case - all multiplexed */
+@@ -1157,6 +1185,10 @@ static int __exit sh_dmae_remove(struct platform_dev=
+ice *pdev)
+        struct resource *res;
+        int errirq =3D platform_get_irq(pdev, 0);
+
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) || defined(CONFIG_CPU_SUBTYPE_SH772=
+4)
++       unregister_die_notifier(&shdev->nb);
++#endif
 +
-+static int sh_dmae_nmi_handler(struct notifier_block *self,
-+			       unsigned long cmd, void *data)
-+{
-+	struct sh_dmae_device *shdev;
-+	int ret = NOTIFY_DONE;
-+	bool triggered;
-+
-+	/*
-+	 * Only concern ourselves with NMI events.
-+	 *
-+	 * Normally we would check the die chain value, but as this needs
-+	 * to be architecture independent, check for NMI context instead.
-+	 */
-+	if (!in_nmi())
-+		return NOTIFY_DONE;
-+
-+	rcu_read_lock();
-+	list_for_each_entry_rcu(shdev, &sh_dmae_devices, node) {
-+		/*
-+		 * Only stop if one of the controllers has NMIF asserted,
-+		 * we do not want to interfere with regular address error
-+		 * handling or NMI events that don't concern the DMACs.
-+		 */
-+		triggered = sh_dmae_nmi_notify(shdev);
-+		if (triggered = true)
-+			ret = NOTIFY_STOP;
-+	}
-+	rcu_read_unlock();
-+
-+	return ret;
-+}
-+
-+static struct notifier_block sh_dmae_nmi_notifier __read_mostly = {
-+	.notifier_call		= sh_dmae_nmi_handler,
-+};
-+
- static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
- 					int irq, unsigned long flags)
- {
-@@ -967,6 +1037,7 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
- 	unsigned long irqflags = IRQF_DISABLED,
- 		chan_flag[SH_DMAC_MAX_CHANNELS] = {};
-+	unsigned long flags;
- 	int errirq, chan_irq[SH_DMAC_MAX_CHANNELS];
- 	int err, i, irq_cnt = 0, irqres = 0;
- 	struct sh_dmae_device *shdev;
-@@ -1032,6 +1103,15 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_get_sync(&pdev->dev);
- 
-+	spin_lock_irqsave(&sh_dmae_lock, flags);
-+	list_add_tail_rcu(&shdev->node, &sh_dmae_devices);
-+	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+
-+	/* Wire up NMI handling before bringing the controller online */
-+	err = register_die_notifier(&sh_dmae_nmi_notifier);
-+	if (err)
-+		goto notifier_err;
-+
- 	/* reset dma controller */
- 	err = sh_dmae_rst(shdev);
- 	if (err)
-@@ -1135,6 +1215,12 @@ eirqres:
- eirq_err:
- #endif
- rst_err:
-+	unregister_die_notifier(&sh_dmae_nmi_notifier);
-+notifier_err:
-+	spin_lock_irqsave(&sh_dmae_lock, flags);
-+	list_del_rcu(&shdev->node);
-+	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+
- 	pm_runtime_put(&pdev->dev);
- 	if (dmars)
- 		iounmap(shdev->dmars);
-@@ -1155,6 +1241,7 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
- {
- 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
- 	struct resource *res;
-+	unsigned long flags;
- 	int errirq = platform_get_irq(pdev, 0);
- 
- 	dma_async_device_unregister(&shdev->common);
-@@ -1162,6 +1249,12 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
- 	if (errirq > 0)
- 		free_irq(errirq, shdev);
- 
-+	unregister_die_notifier(&sh_dmae_nmi_notifier);
-+
-+	spin_lock_irqsave(&sh_dmae_lock, flags);
-+	list_del_rcu(&shdev->node);
-+	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+
- 	/* channel data remove */
- 	sh_dmae_chan_remove(shdev);
- 
-diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
-index 4021275..52e4fb1 100644
+        dma_async_device_unregister(&shdev->common);
+
+        if (errirq > 0)
+diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h index 4021275..2a017=
+54 100644
 --- a/drivers/dma/shdma.h
 +++ b/drivers/dma/shdma.h
-@@ -43,6 +43,7 @@ struct sh_dmae_device {
- 	struct dma_device common;
- 	struct sh_dmae_chan *chan[SH_DMAC_MAX_CHANNELS];
- 	struct sh_dmae_pdata *pdata;
-+	struct list_head node;
- 	u32 __iomem *chan_reg;
- 	u16 __iomem *dmars;
+@@ -43,6 +43,9 @@ struct sh_dmae_device {
+        struct dma_device common;
+        struct sh_dmae_chan *chan[SH_DMAC_MAX_CHANNELS];
+        struct sh_dmae_pdata *pdata;
++#if defined(CONFIG_CPU_SUBTYPE_SH7723) || defined(CONFIG_CPU_SUBTYPE_SH772=
+4)
++       struct notifier_block nb;
++#endif
+        u32 __iomem *chan_reg;
+        u16 __iomem *dmars;
  };
+
+
+-----Urspr=FCngliche Nachricht-----
+Von: linux-sh-owner@vger.kernel.org [mailto:linux-sh-owner@vger.kernel.org]=
+ Im Auftrag von Paul Mundt
+Gesendet: Montag, 13. Dezember 2010 11:29
+An: Szafranek, Michael
+Cc: linux-sh@vger.kernel.org
+Betreff: Re: sh: sh7723/7724 nmi: nmi stops DMA transfers
+
+On Mon, Dec 13, 2010 at 10:19:54AM +0100, Szafranek, Michael wrote:
+> I've got a patch that fixes a problem when a NMI occurs which stops
+> DMA transfers. The code in the patch resumes the DMA transfers. But it
+> does not look like the proper place to solve this problem. If you
+> could give me a hint were to move the code.
+>
+> diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c index
+> 0830c2a..67f24bc 100644
+> --- a/arch/sh/kernel/traps.c
+> +++ b/arch/sh/kernel/traps.c
+>         switch (notify_die(DIE_NMI, "NMI", regs, 0, vec & 0xff, SIGINT)) {
+>         case NOTIFY_OK:
+...
+
+You surely must have noticed the notifier chain literally right above where=
+ you decided to add your hack?
+
+
+-----Urspr=FCngliche Nachricht-----
+Von: linux-sh-owner@vger.kernel.org [mailto:linux-sh-owner@vger.kernel.org]=
+ Im Auftrag von Paul Mundt
+Gesendet: Montag, 13. Dezember 2010 11:29
+An: Szafranek, Michael
+Cc: linux-sh@vger.kernel.org
+Betreff: Re: sh: sh7723/7724 nmi: nmi stops DMA transfers
+
+On Mon, Dec 13, 2010 at 10:19:54AM +0100, Szafranek, Michael wrote:
+> I've got a patch that fixes a problem when a NMI occurs which stops DMA
+> transfers. The code in the patch resumes the DMA transfers. But it does
+> not look like the proper place to solve this problem. If you could give
+> me a hint were to move the code.
+>
+> diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
+> index 0830c2a..67f24bc 100644
+> --- a/arch/sh/kernel/traps.c
+> +++ b/arch/sh/kernel/traps.c
+>         switch (notify_die(DIE_NMI, "NMI", regs, 0, vec & 0xff, SIGINT)) {
+>         case NOTIFY_OK:
+...
+
+You surely must have noticed the notifier chain literally right above
+where you decided to add your hack?
+
+> @@ -111,6 +115,22 @@ BUILD_TRAP_HANDLER(nmi)
+>                 printk(KERN_ALERT "Got NMI, but nobody cared. Ignoring...=
+\n");
+>                 break;
+>         }
+> -
+> +
+> +/* every NMI usually stops all active DMA transfers. These lines simply =
+reanimate the */
+> +/* DMA channels so that the transfers are resumed                       =
+              */
+> +#if defined(CONFIG_SH_HICO7723) || defined(CONFIG_SH_HICO7724)
+> +       dmaor =3D __raw_readw(SH_DMAC_BASE0 + DMAOR);
+> +       dmaor &=3D ~(DMAOR_NMIF | DMAOR_AE); // resetting NMI flag and ad=
+dress error flag
+> +       __raw_writew( dmaor, SH_DMAC_BASE0 + DMAOR );
+> +       dmaor |=3D DMAOR_INIT;               // restarting DMA
+> +       __raw_writew( dmaor, SH_DMAC_BASE0 + DMAOR );
+> +
+> +       dmaor =3D __raw_readw(SH_DMAC_BASE1 + DMAOR);
+> +       dmaor &=3D ~(DMAOR_NMIF | DMAOR_AE); // resetting NMI flag and ad=
+dress error flag
+> +       __raw_writew( dmaor, SH_DMAC_BASE1 + DMAOR );
+> +       dmaor |=3D DMAOR_INIT;               // restarting DMA
+> +       __raw_writew( dmaor, SH_DMAC_BASE1 + DMAOR );
+> +#endif
+> +
+>         nmi_exit();
+> }
+>
+Simply register a die notifier in the DMA driver and take care of this
+there.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+_____________________________________
+
+Amtsgericht Mannheim
+HRB 110 300
+Gesch=E4ftsf=FChrer: Dieter Baur, Ramona Maurer
+_____________________________________
+
+Important Note:
+- This e-mail may contain trade secrets or privileged, undisclosed or other=
+wise confidential information.
+- If you have received this e-mail in error, you are hereby notified that a=
+ny review, copying or distribution of it is strictly prohibited.
+- Please inform us immediately and destroy the original transmittal.
+
+Thank you for your cooperation.
