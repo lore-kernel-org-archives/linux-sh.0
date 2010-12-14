@@ -1,75 +1,37 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 10 Dec 2010 05:58:35 +0000
-Subject: [PATCH 00/02][RFC] ARM: Subarch IRQ handler macro support
-Message-Id: <20101210055835.8635.98614.sendpatchset@t400s>
+Date: Tue, 14 Dec 2010 07:57:03 +0000
+Subject: [PATCH 02/03] ARM: mach-shmobile: Enable SMP support
+Message-Id: <20101214075703.11275.42101.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101214075647.11275.25933.sendpatchset@t400s>
+In-Reply-To: <20101214075647.11275.25933.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: Subarch IRQ handler macro support
+From: Magnus Damm <damm@opensource.se>
 
-[PATCH 01/02][RFC] ARM: Introduce Subarch IRQ handler macros
-[PATCH 02/02][RFC] ARM: shmobile: Use Subarch IRQ handler for INTC
-
-These patches add a macro for per-subarch use together with some
-example code that shows how to use it.
-
-The first patch simply breaks out code from the irq_handler macro
-in entry-armv.S to the new macro arch_irq_handler that is put in a
-shared header file. The new header file also adds the new macro
-arch_irq_handler_default which replaces previous code in the
-entry-armv.S file.
-
-Patch number two gives an example on how to make use of the macro
-arch_irq_handler on the SH-Mobile ARM subarch. Compile-time tested
-on top of RMKs devel tree with the CONFIG_MULTI_IRQ_HANDLER patch
-by Eric Miao. Please note that this patch isn't suitable for merge
-since it needs to be reworked to fit on the sh-2.6 tree where the
-rest of the SH-Mobile changes are.
-
-In short, the per-subarch code is reduced to the following on the
-sh7372 uniprocessor:
-
-+#include <asm/entry-macro-multi.S>
-+
-+#define INTFLGA        0xe6980018
-+
-+       .macro  get_irqnr_preamble, base, tmp
-+       ldr     \base, =INTFLGA
-+       .endm
-+
-+       .macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
-+       ldr     \irqnr, [\base]
-+       cmp     \irqnr, #0
-+       beq     1000f
-+       /* intevt to irq number */
-+       lsr     \irqnr, \irqnr, #0x5
-+       subs    \irqnr, \irqnr, #16
-+1000:
-+       .endm
-+
-+       arch_irq_handler shmobile_handle_irq_intc
-
-This code depends on the following patch by Eric Miao:
-
- [PATCH] ARM: Allow machine to specify it's own IRQ handlers at run-time
-
-Comments are more than welcome!
+Allow SMP to be enabled on R-Mobile / SH-Mobile.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/include/asm/entry-macro-multi.S          |   43 +++++++++++++++++++++
- arch/arm/kernel/entry-armv.S                      |   31 ---------------
- arch/arm/mach-shmobile/Kconfig                    |    3 +
- arch/arm/mach-shmobile/Makefile                   |   12 ++++-
- arch/arm/mach-shmobile/board-ap4evb.c             |    1 
- arch/arm/mach-shmobile/board-g3evm.c              |    1 
- arch/arm/mach-shmobile/board-g4evm.c              |    1 
- arch/arm/mach-shmobile/entry-intc.S               |   30 ++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h      |    1 
- arch/arm/mach-shmobile/include/mach/entry-macro.S |   27 -------------
- arch/arm/mach-shmobile/include/mach/hardware.h    |    3 -
- 11 files changed, 91 insertions(+), 62 deletions(-)
 
+ May need to be reworked to fit the current state of the tree
+ associated with the RMK patch tracker.
+
+ arch/arm/Kconfig |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2010-12-14 13:31:02.000000000 +0900
+@@ -1211,7 +1211,8 @@ config SMP
+ 	depends on GENERIC_CLOCKEVENTS
+ 	depends on REALVIEW_EB_ARM11MP || REALVIEW_EB_A9MP || \
+ 		 MACH_REALVIEW_PB11MP || MACH_REALVIEW_PBX || ARCH_OMAP4 ||\
+-		 ARCH_S5PV310 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4
++		 ARCH_S5PV310 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || \
++		 ARCH_SHMOBILE
+ 	select USE_GENERIC_SMP_HELPERS
+ 	select HAVE_ARM_SCU
+ 	help
