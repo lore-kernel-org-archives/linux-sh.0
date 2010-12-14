@@ -1,47 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 Dec 2010 06:30:19 +0000
-Subject: [PATCH] ARM: mach-shmobile: Use pullups for AG5EVM KEYSC pins
-Message-Id: <20101222063019.28467.5098.sendpatchset@t400s>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Tue, 14 Dec 2010 07:23:15 +0000
+Subject: Suggestion if possible about kernel debug
+Message-Id: <201012140823.15706.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+Hi All,
+I should to get your opinio about the following problem I'm having just in 
+these days.
+I control the touch screen of my board with a very simple drive written by me 
+for ADS7843 and I control a buzzer with a pwm produced by kernel using MTU2 
+timer channel A.
 
-Follow up to pfc-sh73a0.c's pull-up support.
-Change GPIO_FN_KEYINx to GPIO_FN_KEYINx_PU.
+If I write an image on the screen and I drive the buzzer in a very simple 
+software derived by the bootstrap software everything works fine; if I do the 
+same (writing and image on the screen and driving the buzzer) from the user 
+space through the kernel I see on the screen some time few glitch of the 
+image, but the image is not corrupted unreversibly.
 
-Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+The difference is that in the simple bootstrap I have the ram variable needed 
+to manage the software PWM into the ON CHIP ram (sh2a 7203), while in the 
+other case I have both ram (video ram and buizzer kernel driver ram) on top of 
+SDRAM.
+Can I have a problem of asynchronous ram access between LCDC and buzzer 
+interrupt handler?
+Where could I verify how the LCDC and a generic interrupt handler of the linux 
+kernel access the SDRAM
 
- arch/arm/mach-shmobile/board-ag5evm.c |   16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+Sorry for my question and thanks in advance
 
---- 0004/arch/arm/mach-shmobile/board-ag5evm.c
-+++ work/arch/arm/mach-shmobile/board-ag5evm.c	2010-12-22 15:27:07.000000000 +0900
-@@ -197,14 +197,14 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
- 
- 	/* enable KEYSC */
--	gpio_request(GPIO_FN_KEYIN0, NULL);
--	gpio_request(GPIO_FN_KEYIN1, NULL);
--	gpio_request(GPIO_FN_KEYIN2, NULL);
--	gpio_request(GPIO_FN_KEYIN3, NULL);
--	gpio_request(GPIO_FN_KEYIN4, NULL);
--	gpio_request(GPIO_FN_KEYIN5, NULL);
--	gpio_request(GPIO_FN_KEYIN6, NULL);
--	gpio_request(GPIO_FN_KEYIN7, NULL);
-+	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN2_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN3_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN4_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN5_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN6_PU, NULL);
-+	gpio_request(GPIO_FN_KEYIN7_PU, NULL);
- 	gpio_request(GPIO_FN_KEYOUT0, NULL);
- 	gpio_request(GPIO_FN_KEYOUT1, NULL);
- 	gpio_request(GPIO_FN_KEYOUT2, NULL);
+
+-- 
+Ing. Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
