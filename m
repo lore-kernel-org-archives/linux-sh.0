@@ -1,96 +1,161 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Wed, 29 Dec 2010 13:35:51 +0000
-Subject: Re: outstanding TMIO MMC patches
-Message-Id: <4D1B3937.80708@arndnet.de>
+From: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Date: Wed, 15 Dec 2010 08:31:04 +0000
+Subject: [PATCH v2] ARM: mach-shmobile: mackerel: Add mmcif support
+Message-Id: <4D087CC8.6020803@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1012281211560.21647@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1012281211560.21647@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@linux-foundation.org>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>, Magnus Damm <damm@opensource.se>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+v2
+ Add comment of J22 and OCR field.
 
-Am 29.12.2010 00:32, schrieb Guennadi Liakhovetski:
-> Hi Ian
-> 
-> There are a number of outstanding tmio-mmc patches from Arnd Hannemann and 
-> myself, many of them posted weeks ago. We really would like to have them 
-> in 2.6.38. Would you have time to process them? Otherwise, could someone 
-> else maybe apply them? Listed in the order, in which they should be 
-> applied.
-> 
-> my patches:
-> 
-> mmc: tmio_mmc: allow multi-element scatter-gather lists
-> 	https://patchwork.kernel.org/patch/317142/
-> 	should go in via linux-mmc
-> 
-> mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
-> 	https://patchwork.kernel.org/patch/317162/
-> 	should go in via linux-mmc
-> 
-> [1/3] mmc: tmio: merge the private header into the driver
-> 	https://patchwork.kernel.org/patch/349931/
-> 	should go in via linux-mmc
-> 
-> [2/3] mmc: tmio: implement a bounce buffer for unaligned DMA
-> 	https://patchwork.kernel.org/patch/426661/
-> 	should go in via linux-mmc
-> 
-> [3/3] mfd: sdhi: require the tmio-mmc driver to bounce unaligned buffers
-> 	https://patchwork.kernel.org/patch/349961/
-> 	acked by Samuel Ortiz, should go in via linux-mmc
-> 
-> patches from Arnd Hannemann:
-> 
-> mmc: tmio_mmc: silence compiler warnings
-> 	https://patchwork.kernel.org/patch/418931/
-> 	should go in via linux-mmc
-> 
-> [1/6] mmc: tmio: implement SDIO IRQ
-> 	https://patchwork.kernel.org/patch/437441/
-> 	should go in via linux-mmc
-> 
-> [2/6] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
-> 	https://patchwork.kernel.org/patch/437451/
-> 	acked by Samual Ortiz, should go in via linux-mmc
-> 
-> [3/6] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
-> 	https://patchwork.kernel.org/patch/437491/
-> 	Either via linux-mmc: Ack needed by Paul Mundt
-> 	or later separately via sh-2.6
-> 
-> [4/6] sh: sh7724 Enable SDIO IRQs
-> 	https://patchwork.kernel.org/patch/437471/
-> 	Either via linux-mmc: Ack needed by Paul Mundt
-> 	or later separately via sh-2.6
-> 
-> [5/6] sh: sh7722 Enable SDIO IRQs
-> 	https://patchwork.kernel.org/patch/437521/
-> 	Either via linux-mmc: Ack needed by Paul Mundt
-> 	or later separately via sh-2.6
-> 
-> [6/6] sh: sh7723 / ap325rxa enable SDIO IRQs
-> 	https://patchwork.kernel.org/patch/437511/
-> 	Either via linux-mmc: Ack needed by Paul Mundt
-> 	or later separately via sh-2.6
-> 
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |   67 ++++++++++++++++++++++++++++++-
+ 1 files changed, 66 insertions(+), 1 deletions(-)
 
-There are also these two:
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index f62f9b9..fd46f06 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -34,6 +34,7 @@
+ #include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+@@ -153,10 +154,14 @@
+  * I/O voltage : 1.8v
+  *
+  * Power voltage : 1.8v or 3.3v
+- *  J22 : select power voltage
++ *  J22 : select power voltage *1
+  *	1-2 pin : 1.8v
+  *	2-3 pin : 3.3v
+  *
++ * *1
++ * Please change J22 depends the card to be used.
++ * MMC's OCR field set to support either voltage for the card inserted.
++ *
+  *	SW1	|	SW33
+  *		| bit1 | bit2 | bit3 | bit4
+  * -------------+------+------+------+-------
+@@ -481,6 +486,7 @@ static struct platform_device sdhi0_device = {
+ 	},
+ };
 
-[1/2] tmio_mmc: handle missing HW interrupts
-	https://patchwork.kernel.org/patch/201962/
-[2/2] tmio_mmc: fix CMD irq handling
-	https://patchwork.kernel.org/patch/201982/
++#if !defined(CONFIG_MMC_SH_MMCIF)
+ /* SDHI1 */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+@@ -514,6 +520,7 @@ static struct platform_device sdhi1_device = {
+ 		.platform_data	= &sdhi1_info,
+ 	},
+ };
++#endif
 
-I reposted them rebased on top of your header merge, otherwise
-that would have been a mess:
+ /* SDHI2 */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
+@@ -547,6 +554,47 @@ static struct platform_device sdhi2_device = {
+ 	},
+ };
 
-http://marc.info/?l=linux-mmc&m9362888209455&w=2
++/* SH_MMCIF */
++static struct resource sh_mmcif_resources[] = {
++	[0] = {
++		.name	= "MMCIF",
++		.start	= 0xE6BD0000,
++		.end	= 0xE6BD00FF,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* MMC ERR */
++		.start	= evt2irq(0x1ac0),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		/* MMC NOR */
++		.start	= evt2irq(0x1ae0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct sh_mmcif_plat_data sh_mmcif_plat = {
++	.sup_pclk	= 0,
++	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.caps		= MMC_CAP_4_BIT_DATA |
++			  MMC_CAP_8_BIT_DATA |
++			  MMC_CAP_NEEDS_POLL,
++	.get_cd		= slot_cn7_get_cd,
++};
++
++static struct platform_device sh_mmcif_device = {
++	.name		= "sh_mmcif",
++	.id		= 0,
++	.dev		= {
++		.dma_mask		= NULL,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &sh_mmcif_plat,
++	},
++	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
++	.resource	= sh_mmcif_resources,
++};
++
+ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+@@ -556,8 +604,11 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&fsi_device,
+ 	&fsi_ak4643_device,
+ 	&sdhi0_device,
++#if !defined(CONFIG_MMC_SH_MMCIF)
+ 	&sdhi1_device,
++#endif
+ 	&sdhi2_device,
++	&sh_mmcif_device,
+ };
 
-Thanks,
-Arnd
+ /* Keypad Initialization */
+@@ -723,6 +774,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+
++#if !defined(CONFIG_MMC_SH_MMCIF)
+ 	/* enable SDHI1 */
+ 	gpio_request(GPIO_FN_SDHICMD1, NULL);
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+@@ -730,6 +782,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_2, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
++#endif
+ 	/* card detect pin for MMC slot (CN7) */
+ 	gpio_request(GPIO_PORT41, NULL);
+ 	gpio_direction_input(GPIO_PORT41);
+@@ -742,6 +795,18 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+
++	/* MMCIF */
++	gpio_request(GPIO_FN_MMCD0_0, NULL);
++	gpio_request(GPIO_FN_MMCD0_1, NULL);
++	gpio_request(GPIO_FN_MMCD0_2, NULL);
++	gpio_request(GPIO_FN_MMCD0_3, NULL);
++	gpio_request(GPIO_FN_MMCD0_4, NULL);
++	gpio_request(GPIO_FN_MMCD0_5, NULL);
++	gpio_request(GPIO_FN_MMCD0_6, NULL);
++	gpio_request(GPIO_FN_MMCD0_7, NULL);
++	gpio_request(GPIO_FN_MMCCMD0, NULL);
++	gpio_request(GPIO_FN_MMCCLK0, NULL);
++
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+ 	i2c_register_board_info(1, i2c1_devices,
+-- 
+1.5.6.5
+
 
