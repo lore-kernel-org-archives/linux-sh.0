@@ -1,41 +1,76 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 14 Dec 2010 09:48:16 +0000
-Subject: Re: sh: sh7723/7724 nmi: nmi stops DMA transfers
-Message-Id: <20101214094816.GD14606@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 17 Dec 2010 07:25:09 +0000
+Subject: [PATCH] clocksource: sh_cmt: Remove nested spinlock fix
+Message-Id: <20101217072509.32699.95165.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <95F51F4B902CAC40AF459205F6322F0187A9C8F819@BMK019S01.emtrion.local>
-In-Reply-To: <95F51F4B902CAC40AF459205F6322F0187A9C8F819@BMK019S01.emtrion.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 14, 2010 at 10:15:05AM +0100, Szafranek, Michael wrote:
-> Yes, I saw this notifier chain but I didn't think that it was so
-> simple.  So, I reworked my patch, it's a little simpler than yours. But
-> it works fine. I'm not sure which is the preferable.
-> 
-Now that I think about it, we probably don't really want the NOTIFY_STOP
-semantics that mine adds, as we still want nmi_debug to be able to get a
-handle on it without the dmaengine chomping it. I also forgot about the
-old dma-sh stuff, so I'll fix that up too.
+From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
 
-Most of the complexity from my patch comes from dealing with NMI
-broadcasting on SMP, in addition to having to support both ARM and SH at
-the same time. With NOTIFY_STOP dropped we probably could get away with a
-per-device notifier block, but it's preferable to keep the die chains as
-short as possible under NMI context, particularly as we want to avoid
-contending on any write-side locks.
+There are control flow that sh_cmt_set_next() does double
+spin-lock. The callers sh_cmt_{start,stop}() already have
+lock. But another callers sh_cmt_clock_event_{start,next}()
+does not.
+    
+Now sh_cmt_set_next() does not lock by itself. All the
+callers should hold spin-lock before calling it.
 
-The in_nmi() check itself is pretty much a blatant hack. We really should
-be looking at the die chain value itself, which we can in the dma-sh
-case, but not in the ARM case which conveniently doesn't propagate a die
-chain based NMI. It will still need a bit of a rethink later on if we
-start using a reserved interrupt priority level for pseudo-NMI for the
-SMP NMI watchdog, but the DMAC isn't able to latch that in hardware
-either.
+[damm@opensource.se: use __sh_cmt_set_next() to simplify code]
+[damm@opensource.se: added stable, suitable for v2.6.35 + v2.6.36]
+Cc: stable@kernel.org
+Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-In any event, I'll rework the patch I have now for a NOTIFY_DONE/OK
-fallback and add in the dma-sh bits. I'll do them as two separate commits
-so that they're easily backported in to .37 for anyone that wants this
-behaviour, though they'll both be intended for the .38 merge window.
+ drivers/clocksource/sh_cmt.c |   17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+--- 0001/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2010-12-17 15:42:31.000000000 +0900
+@@ -283,16 +283,21 @@ static void sh_cmt_clock_event_program_v
+ 	} while (delay);
+ }
+ 
+-static void sh_cmt_set_next(struct sh_cmt_priv *p, unsigned long delta)
++static void __sh_cmt_set_next(struct sh_cmt_priv *p, unsigned long delta)
+ {
+-	unsigned long flags;
+-
+ 	if (delta > p->max_match_value)
+ 		dev_warn(&p->pdev->dev, "delta out of range\n");
+ 
+-	spin_lock_irqsave(&p->lock, flags);
+ 	p->next_match_value = delta;
+ 	sh_cmt_clock_event_program_verify(p, 0);
++}
++
++static void sh_cmt_set_next(struct sh_cmt_priv *p, unsigned long delta)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&p->lock, flags);
++	__sh_cmt_set_next(p, delta);
+ 	spin_unlock_irqrestore(&p->lock, flags);
+ }
+ 
+@@ -359,7 +364,7 @@ static int sh_cmt_start(struct sh_cmt_pr
+ 
+ 	/* setup timeout if no clockevent */
+ 	if ((flag = FLAG_CLOCKSOURCE) && (!(p->flags & FLAG_CLOCKEVENT)))
+-		sh_cmt_set_next(p, p->max_match_value);
++		__sh_cmt_set_next(p, p->max_match_value);
+  out:
+ 	spin_unlock_irqrestore(&p->lock, flags);
+ 
+@@ -381,7 +386,7 @@ static void sh_cmt_stop(struct sh_cmt_pr
+ 
+ 	/* adjust the timeout to maximum if only clocksource left */
+ 	if ((flag = FLAG_CLOCKEVENT) && (p->flags & FLAG_CLOCKSOURCE))
+-		sh_cmt_set_next(p, p->max_match_value);
++		__sh_cmt_set_next(p, p->max_match_value);
+ 
+ 	spin_unlock_irqrestore(&p->lock, flags);
+ }
