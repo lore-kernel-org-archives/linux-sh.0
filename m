@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 13 Dec 2010 12:21:31 +0000
-Subject: [PATCH] ARM: Subarch IRQ handler macros V2
-Message-Id: <20101213122131.17831.79005.sendpatchset@t400s>
+Date: Fri, 17 Dec 2010 11:36:38 +0000
+Subject: [PATCH] ARM: Subarch IRQ handler macros V3
+Message-Id: <20101217113638.15505.99479.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20101213122131.17831.79005.sendpatchset@t400s>
+In-Reply-To: <20101213122131.17831.79005.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,7 +12,7 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Per subarch interrupt handler macros V2.
+Per subarch interrupt handler macros V3.
 
 This patch breaks out code from the irq_handler macro
 into arch_irq_handler and arch_irq_handler_default.
@@ -23,6 +25,10 @@ is suitable for per-subarch use.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
+
+ Changes since V2:
+ - Rebased patch to fit on top of linux-2.6-arm git devel-stable + 6532/1
+ - Tested on mackerel board with local patch similar to V1 [PATCH 02/02]
 
  Changes since V1:
  - Dropped the RFC tag and the example code
@@ -42,7 +48,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  2 files changed, 46 insertions(+), 29 deletions(-)
 
 --- /dev/null
-+++ work/arch/arm/include/asm/entry-macro-multi.S	2010-12-13 21:09:39.000000000 +0900
++++ work/arch/arm/include/asm/entry-macro-multi.S	2010-12-17 19:52:59.000000000 +0900
 @@ -0,0 +1,44 @@
 +/*
 + * Interrupt handling.  Preserves r7, r8, r9
@@ -65,8 +71,8 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	 * preserved from get_irqnr_and_base above
 +	 */
 +	ALT_SMP(test_for_ipi r0, r6, r5, lr)
-+	ALT_UP_B(9998f)
-+	movne	r1, sp
++	ALT_UP_B(9997f)
++	movne	r0, sp
 +	adrne	lr, BSYM(1b)
 +	bne	do_IPI
 +
@@ -76,8 +82,8 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	adrne	lr, BSYM(1b)
 +	bne	do_local_timer
 +#endif
-+9998:
 +#endif
++9997:
 +	.endm
 +
 +	.macro	arch_irq_handler, symbol_name
@@ -88,16 +94,16 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	arch_irq_handler_default
 +	mov     pc, r4
 +	.endm
---- 0020/arch/arm/kernel/entry-armv.S
-+++ work/arch/arm/kernel/entry-armv.S	2010-12-13 19:39:26.000000000 +0900
-@@ -26,6 +26,7 @@
+--- 0004/arch/arm/kernel/entry-armv.S
++++ work/arch/arm/kernel/entry-armv.S	2010-12-17 19:56:38.000000000 +0900
+@@ -25,6 +25,7 @@
+ #include <asm/tls.h>
  
  #include "entry-header.S"
- 
 +#include <asm/entry-macro-multi.S>
+ 
  /*
   * Interrupt handling.  Preserves r7, r8, r9
-  */
 @@ -38,35 +39,7 @@
  	teq	r5, #0
  	movne	pc, r5
@@ -120,7 +126,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 -	 */
 -	ALT_SMP(test_for_ipi r0, r6, r5, lr)
 -	ALT_UP_B(9997f)
--	movne	r1, sp
+-	movne	r0, sp
 -	adrne	lr, BSYM(1b)
 -	bne	do_IPI
 -
