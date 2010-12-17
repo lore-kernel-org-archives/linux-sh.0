@@ -1,52 +1,104 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Mon, 20 Dec 2010 15:53:51 +0000
-Subject: [PATCH 6/6 v2] [RFC] sh: sh7722 Enable SDIO IRQs
-Message-Id: <1292860431-16195-7-git-send-email-arnd@arndnet.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 17 Dec 2010 06:15:48 +0000
+Subject: [PATCH] ARM: mach-shmobile: INTC interrupt priority level demux fix
+Message-Id: <20101217061548.26708.13030.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
-In-Reply-To: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
+To: linux-sh@vger.kernel.org
 
-This patch enables the interrupt generation for SDIO IRQs
-of the sdhi controllers of the soc. To make sure SDIO IRQs
-are used announce the MMC_CAP_SDIO_IRQ capability
-on migor. Untested, therefore RFC.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Fix interrupt priority level handling on SH-Mobile ARM.
+
+SH-Mobile ARM platforms using multiple interrupt priority
+levels need this patch to fix a potential dead lock that
+may occur if multiple interrupts with different levels
+are pending simultaneously.
+
+The default INTC configuration is to use the same priority
+level for all interrupts, so this issue does not trigger by
+default. It is however common for board code to override the
+interrupt priority for certain interrupt sources depending
+on the application. Without this fix such boards may lock up.
+
+In detail, this patch updates the INTC code in entry-macro.S
+to make sure that the INTLVLA register gets set as expected.
+
+To trigger this bug modify the board specific code to adjust
+the interrupt priority level for the ethernet chip. After
+changing the priority level simply use flood ping to drown
+the board with interrupts.
+
+This patch applies to INTCA-based processors such as sh7372,
+sh7377 and sh7372. GIC-based processors are not affected.
+
+Suitable for v2.6.37-rc and stable from v2.6.34 to v2.6.36.
+
+Cc: stable@kernel.org
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-migor/setup.c      |    1 +
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    2 +-
- 2 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index 5dc72b4..b9cba53 100644
---- a/arch/sh/boards/mach-migor/setup.c
-+++ b/arch/sh/boards/mach-migor/setup.c
-@@ -413,6 +413,7 @@ static struct resource sdhi_cn9_resources[] = {
- static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+	.tmio_caps      = MMC_CAP_SDIO_IRQ,
- };
+ arch/arm/mach-shmobile/include/mach/entry-macro.S |   30 ++++++++++++++++++---
+ 1 file changed, 26 insertions(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/entry-macro.S
++++ work/arch/arm/mach-shmobile/include/mach/entry-macro.S	2010-12-17 13:33:58.000000000 +0900
+@@ -1,4 +1,5 @@
+ /*
++ * Copyright (C) 2010 Magnus Damm
+  * Copyright (C) 2008 Renesas Solutions Corp.
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -14,24 +15,45 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+-#include <mach/hardware.h>
+ #include <mach/irqs.h>
  
- static struct platform_device sdhi_cn9_device = {
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-index d551ed8..a164f89 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-@@ -699,7 +699,7 @@ static struct intc_mask_reg mask_registers[] __initdata = {
- 	  { I2C_DTEI, I2C_WAITI, I2C_TACKI, I2C_ALI,
- 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLENDI, FLCTL_FLSTEI } },
- 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
--	  { DISABLED, DISABLED, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
-+	  { DISABLED, ENABLED, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
- 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
- 	  { 0, 0, 0, CMT, 0, USB_USBI1, USB_USBI0, } },
- 	{ 0xa40800a8, 0xa40800e8, 8, /* IMR10 / IMCR10 */
--- 
-1.7.2.3
-
++#define INTCA_BASE	0xe6980000
++#define INTFLGA_OFFS	0x00000018 /* accept pending interrupt */
++#define INTEVTA_OFFS	0x00000020 /* vector number of accepted interrupt */
++#define INTLVLA_OFFS	0x00000030 /* priority level of accepted interrupt */
++#define INTLVLB_OFFS	0x00000034 /* previous priority level */
++
+ 	.macro  disable_fiq
+ 	.endm
+ 
+ 	.macro  get_irqnr_preamble, base, tmp
+-	ldr     \base, =INTFLGA
++	ldr     \base, =INTCA_BASE
+ 	.endm
+ 
+ 	.macro  arch_ret_to_user, tmp1, tmp2
+ 	.endm
+ 
+ 	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
+-	ldr     \irqnr, [\base]
++	/* The single INTFLGA read access below results in the following:
++	 *
++	 * 1. INTLVLB is updated with old priority value from INTLVLA
++	 * 2. Highest priority interrupt is accepted
++	 * 3. INTLVLA is updated to contain priority of accepted interrupt
++	 * 4. Accepted interrupt vector is stored in INTFLGA and INTEVTA
++	 */
++	ldr     \irqnr, [\base, #INTFLGA_OFFS]
++
++	/* Restore INTLVLA with the value saved in INTLVLB.
++	 * This is required to support interrupt priorities properly.
++	 */
++	ldrb	\tmp, [\base, #INTLVLB_OFFS]
++	strb    \tmp, [\base, #INTLVLA_OFFS]
++
++	/* Handle invalid vector number case */
+ 	cmp	\irqnr, #0
+ 	beq	1000f
+-	/* intevt to irq number */
++
++	/* Convert vector to irq number, same as the evt2irq() macro */
+ 	lsr	\irqnr, \irqnr, #0x5
+ 	subs	\irqnr, \irqnr, #16
+ 
