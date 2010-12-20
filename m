@@ -1,170 +1,102 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 14 Dec 2010 15:44:03 +0000
+Date: Mon, 20 Dec 2010 03:58:26 +0000
 Subject: Re: [PATCH 1/4] mmc: tmio: Implement SDIO IRQ
-Message-Id: <AANLkTikukY6t-4tLTtYhG1=zEfegD4WpictkxBryhHaK@mail.gmail.com>
+Message-Id: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1291656942-18100-1-git-send-email-arnd@arndnet.de>
 	<AANLkTimHqoHzO8-5mdTiB03sp_mB0Ose6enOXsTvT5R+@mail.gmail.com>
 	<4CFE26FE.2070206@arndnet.de>
 	<AANLkTinzGuZjyqLqKJEz6t_CShBUfusobAs-8Md=ix4E@mail.gmail.com>
 	<4CFE4DD3.8050302@arndnet.de>
-In-Reply-To: <4CFE4DD3.8050302@arndnet.de>
+	<AANLkTikukY6t-4tLTtYhG1=zEfegD4WpictkxBryhHaK@mail.gmail.com>
+In-Reply-To: <AANLkTikukY6t-4tLTtYhG1=zEfegD4WpictkxBryhHaK@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: Arnd Hannemann <arnd@arndnet.de>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-Hi Arnd,
+Hi again Arnd,
 
-Thanks a lot for your help so far. I've found a bit of time to test stuff n=
-ow.
-
-On Wed, Dec 8, 2010 at 12:08 AM, Arnd Hannemann <arnd@arndnet.de> wrote:
-> Am 07.12.2010 09:37, schrieb Magnus Damm:
->> On Tue, Dec 7, 2010 at 9:22 PM, Arnd Hannemann <arnd@arndnet.de> wrote:
->>> Am 07.12.2010 00:39, schrieb Magnus Damm:
->>>> On Tue, Dec 7, 2010 at 2:35 AM, Arnd Hannemann <arnd@arndnet.de> wrote:
->>>>> This patch implements SDIO IRQ support for mfds which
->>>>> announce the MMC_CAP_SDIO_IRQ capability for tmio_mmc.
->>>>> Tested with a b43-based wireless SDIO card and sh_mobile_sdhi.
+On Wed, Dec 15, 2010 at 12:44 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> On Wed, Dec 8, 2010 at 12:08 AM, Arnd Hannemann <arnd@arndnet.de> wrote:
+>> Am 07.12.2010 09:37, schrieb Magnus Damm:
+>>> On Tue, Dec 7, 2010 at 9:22 PM, Arnd Hannemann <arnd@arndnet.de> wrote:
+>>>> Am 07.12.2010 00:39, schrieb Magnus Damm:
+>>>>> On Tue, Dec 7, 2010 at 2:35 AM, Arnd Hannemann <arnd@arndnet.de> wrot=
+e:
+>>>>>> This patch implements SDIO IRQ support for mfds which
+>>>>>> announce the MMC_CAP_SDIO_IRQ capability for tmio_mmc.
+>>>>>> Tested with a b43-based wireless SDIO card and sh_mobile_sdhi.
+>>>>>>
+>>>>>> This patch applies on top of:
+>>>>>> mmc: tmio_mmc: allow multi-element scatter-gather lists
+>>>>>> mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
+>>>>>> mmc: tmio: merge the private header into the driver
+>>>>>> mmc: tmio: implement a bounce buffer for unaligned DMA
+>>>>>>
+>>>>>> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+>>>>>> CC: Ian Molton <ian@mnementh.co.uk>
+>>>>>> CC: Samuel Ortiz <sameo@linux.intel.com>
+>>>>>> CC: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+>>>>>> ---
+>>>>>> =A0drivers/mmc/host/tmio_mmc.c | =A0 54 ++++++++++++++++++++++++++++=
+++++++++++++++-
+>>>>>> =A01 files changed, 53 insertions(+), 1 deletions(-)
 >>>>>
->>>>> This patch applies on top of:
->>>>> mmc: tmio_mmc: allow multi-element scatter-gather lists
->>>>> mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
->>>>> mmc: tmio: merge the private header into the driver
->>>>> mmc: tmio: implement a bounce buffer for unaligned DMA
->>>>>
->>>>> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
->>>>> CC: Ian Molton <ian@mnementh.co.uk>
->>>>> CC: Samuel Ortiz <sameo@linux.intel.com>
->>>>> CC: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->>>>> ---
->>>>> =A0drivers/mmc/host/tmio_mmc.c | =A0 54 +++++++++++++++++++++++++++++=
-+++++++++++++-
->>>>> =A01 files changed, 53 insertions(+), 1 deletions(-)
->>>>
->>>> Thanks for your work on this!
->>>>
->>>> Just curious, did you test this change in 4-bit mode and/or 1-bit
->>>> mode? I believe that 1-bit mode support is rather simple, but 4-bit
->>>> mode requires toggling between the IRQ and DATA function which happen
->>>> to be using the same pin. It looks like the current code only deals
->>>> with 1-bit mode - perhaps 4-bit mode isn't supported by the b43
->>>> driver?
->>>
->>> Yes, I tested this in 1-bit and 4-bit mode. At least the card claims it=
- is using it,
->>> it says "width=3D2". I also read about the toggling, and expected to do
->>> something fancy, but when tests where successful I came to the conclusi=
-on
->>> that the controller does the toggling for us. Do you believe otherwise?
+
+>>> I'll try to find my AR6002 card, maybe that will shed some light...
 >>
->> Yes, I believe something more advanced is needed for 4-bit mode. But I
->> don't really have any proof. I just know that I spent quite some time
->> trying to get it to work and ended up staying in polling mode because
->> enabling real IRQs seemed to require too much time. This was before
->> some interrupt ack fixes so things may have improved since then. I
->> also remember both testing on b43 hardware and AR6002.
+>> Yeah, that would be really cool.
 >
-> There was also this nasty DMA issue Guennadi fixed recently...
+> I'll try again next time I have a bit of time to spare. =3D)
 
-Good with issues fixed, we like that. =3D)
+Alright, now my AR6002-based card is working with your patches. At
+least it seems to be working - my antenna cable is broken so I can
+unfortunately not do any more proper than a simple "iwlist wlan0
+scan". Good thing is that the SDIO IRQ mode and polling mode seem to
+behave about the same.
 
-We also like fixes ending up in mainline - does someone need to
-resubmit their patches I wonder? =3D)
-
->> There are a couple of things against us at this point:
->>
->> a) b43 hardware may not be enough to test this
->
-> Ok, do you still have that AR6002 and could test with that by any chance?
-
-So I tried my AR6002 card - spent half an evening - but I couldn't get
-it working with the driver in staging.
-
-I tested at least 3 different drivers last time around, and I ended up
-using the ar6k android driver:
+Please note that I did not test using the upstream driver. I couldn't
+get that one working last week, so today I reverted to using my last
+known working configuration - the out-of-tree "ar69_sdk" driver
+pointed out by the following instructions:
 http://armin762.wordpress.com/2010/05/24/nvidia-tegra2-getting-wifiatheros-=
 6002-working/
 
-I suppose I should retry with the out-of-tree driver above. Hm.
+Anyway, I'm all for including your SDIO IRQ patches, but I think that
+they should be reworked a bit.
 
->> are you really sure 4-bit mode is enabled? =3D)
->> is the b43 driver doing multi-block data transfers? i believe IRQs
->> work differently for multi-block data transfers and single-block.
->
-> I'm pretty sure its using 4-bit mode, from the probe of the card:
->
-> mmc1: clock 0Hz busmode 1 powermode 1 cs 0 Vdd 21 width 0 timing 0
-> mmc1: clock 400000Hz busmode 1 powermode 2 cs 0 Vdd 21 width 0 timing 0
-> mmc1: clock 400000Hz busmode 1 powermode 2 cs 1 Vdd 21 width 0 timing 0
-> mmc1: clock 400000Hz busmode 1 powermode 2 cs 0 Vdd 21 width 0 timing 0
-> mmc1: clock 400000Hz busmode 1 powermode 2 cs 0 Vdd 21 width 0 timing 0
-> mmc1: clock 400000Hz busmode 2 powermode 2 cs 0 Vdd 21 width 0 timing 0
-> mmc1: clock 25000000Hz busmode 2 powermode 2 cs 0 Vdd 21 width 0 timing 0
-> mmc1: clock 25000000Hz busmode 2 powermode 2 cs 0 Vdd 21 width 2 timing 0
+I propose using two flags:
 
-Ok, that looks good.
+1) A hardware-has-sdio-irq-support flag for include/linux/mfd/tmio.h,
+perhaps TMIO_MMC_SDIO_IRQ
 
-> Its doing probably not doing any multi-block data transfers, but I'll
-> recheck. Actually most data transfers are very small.
+The SDIO IRQ hardware registers are only touched when tmio-mmc is
+provided the TMIO_MMC_SDIO_IRQ flag. The default behavior would be to
+mask the SDIO IRQ interrupt source regardless of the MMC_CAP_SDIO_IRQ
+flag. This should allow us to always enable the SDIO IRQ interrupt
+source in INTC. The SDIO driver should set the TMIO_MMC_SDIO_IRQ flag
+to show that SDHI is known to support SDIO IRQ.
 
-So I at least managed to test b43 with DMA enabled and your SDIO IRQ
-patch applied.
+Hopefully this TMIO_MMC_SDIO_IRQ flag will make it easier for Ian to
+review the code and see that it doesn't break any other platforms that
+may or may not lack SDIO IRQ support.
 
-Your SDIO IRQ patch significantly decreases interrupt load. Without
-your SDIO IRQ patch about 100 interrupts per second are generated from
-the polling. Same test but with the SDIO IRQ patch applied (b43 wlan0
-up but not associated) I receive no IRQs at all until I perform some
-kind of action like "iwlist wlan0 scan". I suppose this shows the
-benefit of IRQs vs polled mode. =3D)
+2) The regular MMC_CAP_SDIO_IRQ flag.
 
->> b) we don't have any public data sheet for the SDHI hardware block
->>
->> how good is that?
->>
->> c) the simplified SDIO spec is not exactly full of details:
->>
->> 8.1.3
->> Interrupt Period Definition
->> This section is not included in the Simplified Specification.
->> 8.1.4
->> Interrupt Period at the Data Block Gap in 4-bit SD Mode (Optional)
->> This section is not included in the Simplified Specification.
->> 8.1.5
->> Inhibited Interrupts (Removed Section)
->> This section is not included in the Simplified Specification.
->> 8.1.6
->> End of Interrupt Cycles
->> This section is not included in the Simplified Specification.
->
-> Yes I read this too, but this is of course only interface
-> between host and card, so we may be just lucky that the controller
-> hides these details from us.
+This is enabled per board. If the SDIO IRQ feature doesn't work in
+some case then the system integrator can simply just simply go back to
+polled mode by not setting MMC_CAP_SIDO_IRQ.
 
-True, or that everyone just implements the same thing regardless of the spe=
-c.
-
->>>> Not sure how the Linux MMC stack supports 4-bit IRQs, but the S4MI bit
->>>> in the CCCR should specify if it's allowed to enable interrupts in
->>>> between data transfers or not. Perhaps that is something we need to
->>>> deal with in the driver? Or maybe the framework needs to be extended?
->>>
->>> I quick grep shows that nobody seems to care about this bit until now...
->>
->> Yeah, that seems to be the case. I guess it's a non-issue then. =3D)
->>
->> I'll try to find my AR6002 card, maybe that will shed some light...
->
-> Yeah, that would be really cool.
-
-I'll try again next time I have a bit of time to spare. =3D)
-
-Until then, is there any chance you can look into supporting INTC
-forwarding in ENABLED for the CPU code but not setting
-MMC_CAP_SDIO_IRQ? I wonder if there is any pending interrupt source
-that drowns the CPU with the current code?
+I'm not sure if we can keep the SDIO IRQ interrupt source constantly
+enabled in INTC though. Your current patches require the board
+specific MMC_CAP_SDIO_IRQ flag to be paired with the cpu-specific INTC
+enable change. If someone wishes tho disable SDIO_IRQ support for
+their board then they must know that they also need to revert the INTC
+enable bits, otherwise they'll get endless interrupts when the
+tmio-mmc driver starts. I believe the two-flag approach above will
+solve this problem.
 
 Thanks,
 
