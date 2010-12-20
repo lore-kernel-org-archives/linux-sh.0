@@ -1,57 +1,41 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 27 Dec 2010 01:47:46 +0000
-Subject: Re: SDHI polling
-Message-Id: <AANLkTikw99ydXBJ0hRoLLDAEpGLy_UgU23vLkNA0Kutm@mail.gmail.com>
+Date: Mon, 20 Dec 2010 11:04:50 +0000
+Subject: [PATCH] ARM: mach-shmobile: Clean up headsmp.S
+Message-Id: <20101220110450.6824.92672.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101226224506.GD21535@verge.net.au>
-In-Reply-To: <20101226224506.GD21535@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 27, 2010 at 10:36 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Mon, Dec 27, 2010 at 10:03:06AM +0900, Magnus Damm wrote:
->> On Mon, Dec 27, 2010 at 9:10 AM, Paul Mundt <lethal@linux-sh.org> wrote:
->> > In any event, just because the boot loader people are useless doesn't
->> > mean you can't set the bar a bit higher for yourself when designing new
->> > features.
->>
->> Sure, but I don't think that raising the bar by implementing interrupt
->> support is a good idea in this case. This since all you're doing is
->> loading a kernel image from a single device.
->>
-> I agree that things should be kept as simple as possible, we basically
-> want as few variables that can lead to failure as possible at that stage.
-> If this can be accomplished without having to model some sort of an
-> asynchronous state machine, then of course that's the most
-> straightforward.
->
-> The entire point after all is to get away from this sort of boot loader
-> ineptitude, so we don't really want to recreate a boot loader within the
-> image loading stubs as a replacement.
+From: Magnus Damm <damm@opensource.se>
 
-Exactly.
+Use PAGE_OFFSET and PHYS_OFFSET for secondary_startup
+entry point as recommended by Russell King.
 
-> I don't know enough about how SDHI works to have any strong opinions on
-> the matter one way or the other, but one does need to keep in mind that
-> cards will degrade over time and will need to have recoverable errors
-> handled for any sort of real-world application, whether this is something
-> we will invariably have to install an exception handler for or not I
-> don't know. Ideally if there is some retry logic in the mask ROM then
-> this all gets much simpler.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-There is most likely some retry logic in the Mask ROM. At least the
-MMCIF Mask ROM code does retry according to the docs I've seen.
+ Tested on the AG5EVB board using the sh73a0 processor.
 
-On top of that we do probably need to make the MMCIF/SDHI loader code
-more robust. I suspect that most errors can be dealt with by just
-implementing correct error handing of status flag bits in each
-"driver", ie MMCIF/SDHI loader code. If that's not enough then we may
-have to checksum the image as well. I don't think any exceptions will
-be raised.
+ Applies on top of the rmobile/smp topic branch in sh-2.6 git.
 
-Just loading the image as a first step would most likely put us on a
-similar level as U-boot.
+ arch/arm/mach-shmobile/headsmp.S |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-/ magnus
+--- 0001/arch/arm/mach-shmobile/headsmp.S
++++ work/arch/arm/mach-shmobile/headsmp.S	2010-12-20 17:10:34.000000000 +0900
+@@ -12,6 +12,7 @@
+  */
+ #include <linux/linkage.h>
+ #include <linux/init.h>
++#include <asm/memory.h>
+ 
+ 	__INIT
+ 
+@@ -23,4 +24,4 @@
+ 	.align  12
+ ENTRY(shmobile_secondary_vector)
+ 	ldr     pc, 1f
+-1:	.long   secondary_startup - CONFIG_PAGE_OFFSET + CONFIG_MEMORY_START
++1:	.long   secondary_startup - PAGE_OFFSET + PHYS_OFFSET
