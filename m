@@ -1,63 +1,52 @@
 From: Arnd Hannemann <arnd@arndnet.de>
-Date: Sun, 19 Dec 2010 21:16:07 +0000
-Subject: [PATCH] mmc: tmio_mmc: silence compiler warnings
-Message-Id: <1292793367-5638-1-git-send-email-arnd@arndnet.de>
+Date: Mon, 20 Dec 2010 15:53:51 +0000
+Subject: [PATCH 6/6 v2] [RFC] sh: sh7722 Enable SDIO IRQs
+Message-Id: <1292860431-16195-7-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
+References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
+In-Reply-To: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: g.liakhovetski@gmx.de, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
 
-with "mmc: tmio: implement a bounce buffer for unaligned DMA"
-gcc generates the following warnings:
-
-drivers/mmc/host/tmio_mmc.c:654:6: warning: 'ret' may be used uninitialized in this function
-drivers/mmc/host/tmio_mmc.c:730:6: warning: 'ret' may be used uninitialized in this function
-
-This patch fixes these by setting ret to -EINVAL in the affected code paths.
-
-This patch applies on top of -rc6 plus the following patches:
-  mmc: tmio_mmc: allow multi-element scatter-gather lists
-  mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
-  mmc: tmio: merge the private header into the driver
-  mmc: tmio: implement a bounce buffer for unaligned DMA
+This patch enables the interrupt generation for SDIO IRQs
+of the sdhi controllers of the soc. To make sure SDIO IRQs
+are used announce the MMC_CAP_SDIO_IRQ capability
+on migor. Untested, therefore RFC.
 
 Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
- drivers/mmc/host/tmio_mmc.c |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+ arch/sh/boards/mach-migor/setup.c      |    1 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    2 +-
+ 2 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 57ece9d..61e97d1 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -665,8 +665,10 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 	}
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 5dc72b4..b9cba53 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -413,6 +413,7 @@ static struct resource sdhi_cn9_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
  
- 	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
--			  align >= MAX_ALIGN)) || !multiple)
-+			  align >= MAX_ALIGN)) || !multiple) {
-+		ret = -EINVAL;
- 		goto pio;
-+	}
- 
- 	/* The only sg element can be unaligned, use our bounce buffer then */
- 	if (!aligned) {
-@@ -741,8 +743,10 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- 	}
- 
- 	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
--			  align >= MAX_ALIGN)) || !multiple)
-+			  align >= MAX_ALIGN)) || !multiple) {
-+		ret = -EINVAL;
- 		goto pio;
-+	}
- 
- 	/* The only sg element can be unaligned, use our bounce buffer then */
- 	if (!aligned) {
+ static struct platform_device sdhi_cn9_device = {
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index d551ed8..a164f89 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -699,7 +699,7 @@ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	  { I2C_DTEI, I2C_WAITI, I2C_TACKI, I2C_ALI,
+ 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLENDI, FLCTL_FLSTEI } },
+ 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
++	  { DISABLED, ENABLED, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
+ 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
+ 	  { 0, 0, 0, CMT, 0, USB_USBI1, USB_USBI0, } },
+ 	{ 0xa40800a8, 0xa40800e8, 8, /* IMR10 / IMCR10 */
 -- 
 1.7.2.3
 
