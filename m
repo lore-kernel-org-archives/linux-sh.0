@@ -1,191 +1,105 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 Dec 2010 06:26:06 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh73a0 GPIO pullup improvement
-Message-Id: <20101222062606.26942.75674.sendpatchset@t400s>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Mon, 20 Dec 2010 15:53:50 +0000
+Subject: [PATCH 5/6 v2] sh: sh7724 Enable SDIO IRQs
+Message-Id: <1292860431-16195-6-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
+In-Reply-To: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
 
-From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+This patch enables the interrupt generation for SDIO IRQs
+of the sdhi controllers of the SoC. To make sure interrupt
+are handled announce the MMC_CAP_SDIO_IRQ capability
+on ecovec, kfr2r09 and se7724.
 
-On SH-Mobile, Pull UP/Downs can be controlled independently
-from Function selectors (by lower nibble of PFCR).
-It means people may want to use GPIO_FN_xxx_PU/PD in addition
-to GPIO_IN_PU/PD which is currently supported.
-This patch adds pull-up version for some input signals on
-KEYSC, MMC, FSIA as well as SDHI1.
+Tested with a b43-based SDIO wireless card on ecovec.
 
-Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
+ arch/sh/boards/mach-ecovec24/setup.c   |    2 ++
+ arch/sh/boards/mach-kfr2r09/setup.c    |    1 +
+ arch/sh/boards/mach-se/7724/setup.c    |    2 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |    4 ++--
+ 4 files changed, 7 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/sh73a0.h |   21 ++++++
- arch/arm/mach-shmobile/pfc-sh73a0.c          |   85 +++++++++++++++++++++++---
- 2 files changed, 97 insertions(+), 9 deletions(-)
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 4e0e65a..36d7ca7 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -476,6 +476,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.set_pwr	= sdhi0_set_pwr,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -517,6 +518,7 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ 	.set_pwr	= sdhi1_set_pwr,
+ };
+ 
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 1423aa3..4e2eefe 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -369,6 +369,7 @@ static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device kfr2r09_sh_sdhi0_device = {
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index ab187c9..4eeb7c7 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -470,6 +470,7 @@ static struct resource sdhi0_cn7_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi0_cn7_device = {
+@@ -504,6 +505,7 @@ static struct resource sdhi1_cn8_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi1_cn8_device = {
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 828c965..c598a7f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -1144,7 +1144,7 @@ static struct intc_group groups[] __initdata = {
+ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	{ 0xa4080080, 0xa40800c0, 8, /* IMR0 / IMCR0 */
+ 	  { 0, TMU1_TUNI2, TMU1_TUNI1, TMU1_TUNI0,
+-	    0, DISABLED, ENABLED, ENABLED } },
++	    0, ENABLED, ENABLED, ENABLED } },
+ 	{ 0xa4080084, 0xa40800c4, 8, /* IMR1 / IMCR1 */
+ 	  { VIO_VOU, VIO_VEU1, VIO_BEU0, VIO_CEU0,
+ 	    DMAC0A_DEI3, DMAC0A_DEI2, DMAC0A_DEI1, DMAC0A_DEI0 } },
+@@ -1166,7 +1166,7 @@ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	  { I2C0_DTEI, I2C0_WAITI, I2C0_TACKI, I2C0_ALI,
+ 	    I2C1_DTEI, I2C1_WAITI, I2C1_TACKI, I2C1_ALI } },
+ 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED,
++	  { DISABLED, ENABLED, ENABLED, ENABLED,
+ 	    0, 0, SCIFA5, FSI } },
+ 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
+ 	  { 0, 0, 0, CMT, 0, USB1, USB0, 0 } },
+-- 
+1.7.2.3
 
---- 0001/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh73a0.h	2010-12-22 15:21:58.000000000 +0900
-@@ -441,6 +441,27 @@ enum {
- 	GPIO_FN_RESETA_N_PU_OFF,
- 	GPIO_FN_EDBGREQ_PD,
- 	GPIO_FN_EDBGREQ_PU,
-+
-+	/* Functions with pull-ups */
-+	GPIO_FN_KEYIN0_PU,
-+	GPIO_FN_KEYIN1_PU,
-+	GPIO_FN_KEYIN2_PU,
-+	GPIO_FN_KEYIN3_PU,
-+	GPIO_FN_KEYIN4_PU,
-+	GPIO_FN_KEYIN5_PU,
-+	GPIO_FN_KEYIN6_PU,
-+	GPIO_FN_KEYIN7_PU,
-+	GPIO_FN_SDHID1_0_PU,
-+	GPIO_FN_SDHID1_1_PU,
-+	GPIO_FN_SDHID1_2_PU,
-+	GPIO_FN_SDHID1_3_PU,
-+	GPIO_FN_SDHICMD1_PU,
-+	GPIO_FN_MMCCMD0_PU,
-+	GPIO_FN_MMCCMD1_PU,
-+	GPIO_FN_FSIACK_PU,
-+	GPIO_FN_FSIAILR_PU,
-+	GPIO_FN_FSIAIBT_PU,
-+	GPIO_FN_FSIAISLD_PU,
- };
- 
- #endif /* __ASM_SH73A0_H__ */
---- 0001/arch/arm/mach-shmobile/pfc-sh73a0.c
-+++ work/arch/arm/mach-shmobile/pfc-sh73a0.c	2010-12-22 15:21:58.000000000 +0900
-@@ -479,6 +479,27 @@ enum {
- 	EDBGREQ_PD_MARK,
- 	EDBGREQ_PU_MARK,
- 
-+	/* Functions with pull-ups */
-+	KEYIN0_PU_MARK,
-+	KEYIN1_PU_MARK,
-+	KEYIN2_PU_MARK,
-+	KEYIN3_PU_MARK,
-+	KEYIN4_PU_MARK,
-+	KEYIN5_PU_MARK,
-+	KEYIN6_PU_MARK,
-+	KEYIN7_PU_MARK,
-+	SDHID1_0_PU_MARK,
-+	SDHID1_1_PU_MARK,
-+	SDHID1_2_PU_MARK,
-+	SDHID1_3_PU_MARK,
-+	SDHICMD1_PU_MARK,
-+	MMCCMD0_PU_MARK,
-+	MMCCMD1_PU_MARK,
-+	FSIACK_PU_MARK,
-+	FSIAILR_PU_MARK,
-+	FSIAIBT_PU_MARK,
-+	FSIAISLD_PU_MARK,
-+
- 	PINMUX_MARK_END,
- };
- 
-@@ -935,26 +956,26 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(KEYOUT0_MARK, PORT65_FN2), \
- 	PINMUX_DATA(MSIOF0_TXD_MARK, PORT65_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A20_MARK, PORT66_FN1), \
--	PINMUX_DATA(KEYIN0_MARK, PORT66_FN2, PORT66_IN_PU), \
-+	PINMUX_DATA(KEYIN0_MARK, PORT66_FN2), \
- 	PINMUX_DATA(MSIOF0_RSCK_MARK, PORT66_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A21_MARK, PORT67_FN1), \
--	PINMUX_DATA(KEYIN1_MARK, PORT67_FN2, PORT67_IN_PU), \
-+	PINMUX_DATA(KEYIN1_MARK, PORT67_FN2), \
- 	PINMUX_DATA(MSIOF0_RSYNC_MARK, PORT67_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A22_MARK, PORT68_FN1), \
--	PINMUX_DATA(KEYIN2_MARK, PORT68_FN2, PORT68_IN_PU), \
-+	PINMUX_DATA(KEYIN2_MARK, PORT68_FN2), \
- 	PINMUX_DATA(MSIOF0_MCK0_MARK, PORT68_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A23_MARK, PORT69_FN1), \
--	PINMUX_DATA(KEYIN3_MARK, PORT69_FN2, PORT69_IN_PU), \
-+	PINMUX_DATA(KEYIN3_MARK, PORT69_FN2), \
- 	PINMUX_DATA(MSIOF0_MCK1_MARK, PORT69_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A24_MARK, PORT70_FN1), \
--	PINMUX_DATA(KEYIN4_MARK, PORT70_FN2, PORT70_IN_PU), \
-+	PINMUX_DATA(KEYIN4_MARK, PORT70_FN2), \
- 	PINMUX_DATA(MSIOF0_RXD_MARK, PORT70_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A25_MARK, PORT71_FN1), \
--	PINMUX_DATA(KEYIN5_MARK, PORT71_FN2, PORT71_IN_PU), \
-+	PINMUX_DATA(KEYIN5_MARK, PORT71_FN2), \
- 	PINMUX_DATA(MSIOF0_SS2_MARK, PORT71_FN4, MSEL3CR_MSEL11_0),
- 	PINMUX_DATA(A26_MARK, PORT72_FN1), \
--	PINMUX_DATA(KEYIN6_MARK, PORT72_FN2, PORT72_IN_PU),
--	PINMUX_DATA(KEYIN7_MARK, PORT73_FN2, PORT73_IN_PU),
-+	PINMUX_DATA(KEYIN6_MARK, PORT72_FN2),
-+	PINMUX_DATA(KEYIN7_MARK, PORT73_FN2),
- 	PINMUX_DATA(D0_NAF0_MARK, PORT74_FN1),
- 	PINMUX_DATA(D1_NAF1_MARK, PORT75_FN1),
- 	PINMUX_DATA(D2_NAF2_MARK, PORT76_FN1),
-@@ -1484,6 +1505,31 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(RESETA_N_PU_OFF_MARK, MSEL4CR_MSEL4_1),
- 	PINMUX_DATA(EDBGREQ_PD_MARK, MSEL4CR_MSEL1_0),
- 	PINMUX_DATA(EDBGREQ_PU_MARK, MSEL4CR_MSEL1_1),
-+
-+	/* Functions with pull-ups */
-+	PINMUX_DATA(KEYIN0_PU_MARK, PORT66_FN2, PORT66_IN_PU),
-+	PINMUX_DATA(KEYIN1_PU_MARK, PORT67_FN2, PORT67_IN_PU),
-+	PINMUX_DATA(KEYIN2_PU_MARK, PORT68_FN2, PORT68_IN_PU),
-+	PINMUX_DATA(KEYIN3_PU_MARK, PORT69_FN2, PORT69_IN_PU),
-+	PINMUX_DATA(KEYIN4_PU_MARK, PORT70_FN2, PORT70_IN_PU),
-+	PINMUX_DATA(KEYIN5_PU_MARK, PORT71_FN2, PORT71_IN_PU),
-+	PINMUX_DATA(KEYIN6_PU_MARK, PORT72_FN2, PORT72_IN_PU),
-+	PINMUX_DATA(KEYIN7_PU_MARK, PORT73_FN2, PORT73_IN_PU),
-+
-+	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_IN_PU, PORT259_FN1),
-+	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_IN_PU, PORT260_FN1),
-+	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_IN_PU, PORT261_FN1),
-+	PINMUX_DATA(SDHID1_3_PU_MARK, PORT262_IN_PU, PORT262_FN1),
-+	PINMUX_DATA(SDHICMD1_PU_MARK, PORT263_IN_PU, PORT263_FN1),
-+
-+	PINMUX_DATA(MMCCMD0_PU_MARK, PORT279_FN1, PORT279_IN_PU,
-+		MSEL4CR_MSEL15_0),
-+	PINMUX_DATA(MMCCMD1_PU_MARK, PORT297_FN2, PORT279_IN_PU,
-+		MSEL4CR_MSEL15_1),
-+	PINMUX_DATA(FSIACK_PU_MARK, PORT49_FN1, PORT49_IN_PU),
-+	PINMUX_DATA(FSIAILR_PU_MARK, PORT50_FN5, PORT50_IN_PU),
-+	PINMUX_DATA(FSIAIBT_PU_MARK, PORT51_FN5, PORT51_IN_PU),
-+	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
- };
- 
- #define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
-@@ -2125,6 +2171,27 @@ static struct pinmux_gpio pinmux_gpios[]
- 	GPIO_FN(RESETA_N_PU_OFF),
- 	GPIO_FN(EDBGREQ_PD),
- 	GPIO_FN(EDBGREQ_PU),
-+
-+	/* Functions with pull-ups */
-+	GPIO_FN(KEYIN0_PU),
-+	GPIO_FN(KEYIN1_PU),
-+	GPIO_FN(KEYIN2_PU),
-+	GPIO_FN(KEYIN3_PU),
-+	GPIO_FN(KEYIN4_PU),
-+	GPIO_FN(KEYIN5_PU),
-+	GPIO_FN(KEYIN6_PU),
-+	GPIO_FN(KEYIN7_PU),
-+	GPIO_FN(SDHID1_0_PU),
-+	GPIO_FN(SDHID1_1_PU),
-+	GPIO_FN(SDHID1_2_PU),
-+	GPIO_FN(SDHID1_3_PU),
-+	GPIO_FN(SDHICMD1_PU),
-+	GPIO_FN(MMCCMD0_PU),
-+	GPIO_FN(MMCCMD1_PU),
-+	GPIO_FN(FSIACK_PU),
-+	GPIO_FN(FSIAILR_PU),
-+	GPIO_FN(FSIAIBT_PU),
-+	GPIO_FN(FSIAISLD_PU),
- };
- 
- #define PORTCR(nr, reg)	\
-@@ -2663,7 +2730,7 @@ static struct pinmux_info sh73a0_pinmux_
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 
- 	.first_gpio = GPIO_PORT0,
--	.last_gpio = GPIO_FN_EDBGREQ_PU,
-+	.last_gpio = GPIO_FN_FSIAISLD_PU,
- 
- 	.gpios = pinmux_gpios,
- 	.cfg_regs = pinmux_config_regs,
