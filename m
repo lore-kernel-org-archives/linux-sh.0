@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 20 Dec 2010 08:20:32 +0000
+Date: Mon, 20 Dec 2010 08:20:37 +0000
 Subject: Re: about sh_mobile_lcdcfb.c :: lcd_size_cfg
-Message-Id: <w3paak06ejz.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3p8vzk6eju.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3pd3ow6f3t.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <w3pd3ow6f3t.wl%kuninori.morimoto.gx@renesas.com>
