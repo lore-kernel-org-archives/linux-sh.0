@@ -1,48 +1,35 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 Dec 2010 13:54:26 +0000
-Subject: Re: [PATCH 0/6 v2] mmc: tmio: Add SDIO IRQ support
-Message-Id: <AANLkTi=oaLjQmz+G8_kK70JCxVfGfzv0VhRt3s9OsVXw@mail.gmail.com>
+Date: Mon, 20 Dec 2010 10:56:30 +0000
+Subject: [PATCH] ARM: mach-shmobile: Bump up NR_IRQS to 1024
+Message-Id: <20101220110019.6581.88408.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
-	<1292860431-16195-1-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1292860431-16195-1-git-send-email-arnd@arndnet.de>
+References: <20100311053352.26717.21158.sendpatchset@t400s>
+In-Reply-To: <20100311053352.26717.21158.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 21, 2010 at 12:53 AM, Arnd Hannemann <arnd@arndnet.de> wrote:
-> [PATCH 1/6 v2] mmc: tmio: implement SDIO IRQ
-> [PATCH 2/6 v2] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
-> [PATCH 3/6 v2] mmc: tmio: disable IRQs early in remove
-> [PATCH 4/6 v2] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
-> [PATCH 5/6 v2] sh: sh7724 Enable SDIO IRQs
-> [PATCH 6/6 v2] [RFC] sh: sh7722 Enable SDIO IRQs
->
-> These patches add SDIO IRQ support for the tmio mmc cell
-> of the sh_mobile_sdhi mfd and activate the usage of
-> SDIO IRQs on all SoCs where sh_mobile_sdhi is currently
-> used.
->
-> Changes since the earlier patchset:
-> - Add TMIO_MMC_SDIO_IRQ flag, which expresses that =A0the hardware is kno=
-wn
-> =A0to support SDIO IRQ as suggested by Magnus Damm
-> - Activate this flag for sh_mobile_sdhi
-> - Add a patch which disables IRQs early in remove
-> =A0to avoid spurious SDIO IRQs, during module unload
-> - Patches 4-6 are unmodified but included for
-> =A0completeness
->
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+From: Magnus Damm <damm@opensource.se>
 
-Looking good, this patch series:
+Increase NR_IRQS from 512 to 1024 on SH-Mobile ARM.
 
-Acked-by: Magnus Damm <damm@opensource.se>
+Needed to support vectors in the sh73a0 INTCS block.
 
-Feel free to hack up support for sh7723 as well if you have time! =3D)
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Cheers,
+ arch/arm/mach-shmobile/include/mach/irqs.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-/ magnus
+--- 0001/arch/arm/mach-shmobile/include/mach/irqs.h
++++ work/arch/arm/mach-shmobile/include/mach/irqs.h	2010-12-20 19:55:57.000000000 +0900
+@@ -1,7 +1,7 @@
+ #ifndef __ASM_MACH_IRQS_H
+ #define __ASM_MACH_IRQS_H
+ 
+-#define NR_IRQS         512
++#define NR_IRQS         1024
+ 
+ /* GIC */
+ #define gic_spi(nr)		((nr) + 32)
