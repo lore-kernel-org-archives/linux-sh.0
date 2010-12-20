@@ -1,7 +1,7 @@
 From: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Date: Wed, 15 Dec 2010 07:59:40 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: mackerel: Add mmcif support
-Message-Id: <4D08756C.7050902@renesas.com>
+Date: Mon, 20 Dec 2010 01:06:04 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel: Add GPS support
+Message-Id: <4D0EABFC.9030605@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,37 +10,27 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus-san
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-(2010/12/15 16:39), Magnus Damm wrote:
-> Hi Goda-san,
-> 
-> On Wed, Dec 15, 2010 at 4:35 PM, Yusuke Goda <yusuke.goda.sx@renesas.com> wrote:
->> (2010/12/15 15:43), Magnus Damm wrote:
->>> 2010/12/15 Yusuke Goda <yusuke.goda.sx@renesas.com>:
->>>> Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
->>>> ---
->>>> +static struct sh_mmcif_plat_data sh_mmcif_plat = {
->>>> +       .sup_pclk       = 0,
->>>> +       .ocr            = MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
->>>> +       .caps           = MMC_CAP_4_BIT_DATA |
->>>> +                         MMC_CAP_8_BIT_DATA |
->>>> +                         MMC_CAP_NEEDS_POLL,
->>>> +       .get_cd         = slot_cn7_get_cd,
->>>> +};
->>>
->>> Can we select VDD voltage on this board? I thought it was fixed to
->>> 3.3V? Or perhaps I don't understand how the OCR field is supposed to
->>> work.
->> The mackerel(and ap4evb) can select 1.8v or 3.3v by J22.
->> This OCR field set to support either voltage for the card inserted.
->> User have to change J22 depends the card to be used.
-> 
-> Ok, I understand. If it is not documented in the board source code
-> already, please send a patch to add comment about J22 and the OCR
-> field.
-OK!
-I send v2 patch.
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index fd46f06..c0d18cb 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -807,6 +807,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_MMCCMD0, NULL);
+ 	gpio_request(GPIO_FN_MMCCLK0, NULL);
 
-/Goda
++	/* enable GPS module (GT-720F) */
++	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
++	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
++
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+ 	i2c_register_board_info(1, i2c1_devices,
+-- 
+1.5.6.5
+
 
