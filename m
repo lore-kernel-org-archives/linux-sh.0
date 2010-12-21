@@ -1,21 +1,31 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 04 Nov 2010 11:05:51 +0000
-Subject: [PATCH 0/5] More sh-mobile HDMI improvements and extensions
-Message-Id: <Pine.LNX.4.64.1011041152330.13123@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Dec 2010 11:20:45 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel: fixup default momory size
+Message-Id: <w3p8vzjnzhu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-A couple of random mostly unrelated SH HDMI patches. Mostly independent 
-from each other, only #5 needs #3 to actually have a chance to work, but 
-nothing would break if they also get applied in any other order. #4 
-actually would be good to have for 2.6.37.
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 285dbbd..cb33753 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -86,7 +86,7 @@ config MEMORY_SIZE
+ 	hex "Physical memory size"
+ 	default "0x08000000" if MACH_G3EVM
+ 	default "0x08000000" if MACH_G4EVM
+-	default "0x10000000" if MACH_AP4EVB
++	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
+ 	default "0x20000000" if MACH_AG5EVM
+ 	default "0x04000000"
+ 	help
+-- 
+1.7.1
+
