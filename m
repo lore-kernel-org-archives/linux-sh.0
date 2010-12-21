@@ -1,65 +1,57 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Tue, 28 Dec 2010 22:22:33 +0000
-Subject: [PATCH 3/6 v3] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
-Message-Id: <1293574956-30035-4-git-send-email-arnd@arndnet.de>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 21 Dec 2010 10:46:35 +0000
+Subject: [PATCH 2/3] fbdev: sh-mobile: retrieve and propagate display sizes
+Message-Id: <Pine.LNX.4.64.1012211054060.32347@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
+To: linux-fbdev@vger.kernel.org
 
-This patch enables the interrupt generation for SDIO IRQs
-of the sdhi controllers of the SoC. To make sure interrupts
-are handled announce the MMC_CAP_SDIO_IRQ capability
-on AP4EVB. Tested with a b43-based SDIO wireless card.
+Monitor EDID contains information about physical display sizes. Retrieve 
+it and propagate to the framebuffer driver.
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |    3 ++-
- arch/arm/mach-shmobile/intc-sh7372.c  |    4 ++--
- 2 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 16eba07..5763b0d 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -310,6 +310,7 @@ static u64 sdhi0_dma_mask = DMA_BIT_MASK(32);
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+	.tmio_caps	= MMC_CAP_SDIO_IRQ,
- };
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index d7df103..fcda0e9 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -787,6 +787,9 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi)
+ 		found_rate_error = rate_error;
+ 	}
  
- static struct resource sdhi0_resources[] = {
-@@ -344,7 +345,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_ocr_mask	= MMC_VDD_165_195,
- 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_NEEDS_POLL,
-+	.tmio_caps	= MMC_CAP_NEEDS_POLL | MMC_CAP_SDIO_IRQ,
- 	.get_cd		= slot_cn7_get_cd,
- };
++	hdmi->var.width = hdmi->monspec.max_x * 10;
++	hdmi->var.height = hdmi->monspec.max_y * 10;
++
+ 	/*
+ 	 * TODO 1: if no ->info is present, postpone running the config until
+ 	 * after ->info first gets registered.
+@@ -960,8 +963,12 @@ static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
+ 	dev_dbg(info->dev, "Old %ux%u, new %ux%u\n",
+ 		mode1.xres, mode1.yres, mode2.xres, mode2.yres);
  
-diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
-index 30b2f40..f78a1ea 100644
---- a/arch/arm/mach-shmobile/intc-sh7372.c
-+++ b/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -230,10 +230,10 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
- 	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
- 	    0, 0, MSIOF2, 0 } },
- 	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
--	  { DISABLED, DISABLED, ENABLED, ENABLED,
-+	  { DISABLED, ENABLED, ENABLED, ENABLED,
- 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
- 	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
--	  { 0, DISABLED, ENABLED, ENABLED,
-+	  { 0, ENABLED, ENABLED, ENABLED,
- 	    TTI20, USBHSDMAC0_USHDMI, 0, 0 } },
- 	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
- 	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
--- 
-1.7.2.3
-
+-	if (fb_mode_is_equal(&mode1, &mode2))
++	if (fb_mode_is_equal(&mode1, &mode2)) {
++		/* It can be a different monitor with an equal video-mode */
++		old_var->width = new_var->width;
++		old_var->height = new_var->height;
+ 		return false;
++	}
+ 
+ 	dev_dbg(info->dev, "Switching %u -> %u lines\n",
+ 		mode1.yres, mode2.yres);
+@@ -1057,8 +1064,11 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 			 * on, if we run a resume here, the logo disappears
+ 			 */
+ 			if (lock_fb_info(hdmi->info)) {
+-				sh_hdmi_display_on(hdmi, hdmi->info);
+-				unlock_fb_info(hdmi->info);
++				struct fb_info *info = hdmi->info;
++				info->var.width = hdmi->var.width;
++				info->var.height = hdmi->var.height;
++				sh_hdmi_display_on(hdmi, info);
++				unlock_fb_info(info);
+ 			}
+ 		} else {
+ 			/* New monitor or have to wake up */
