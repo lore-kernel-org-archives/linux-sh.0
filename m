@@ -1,61 +1,100 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 03 Dec 2010 07:50:07 +0000
-Subject: [GIT PULL] sh updates for 2.6.37-rc5
-Message-Id: <20101203075006.GA1560@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 Dec 2010 12:17:09 +0000
+Subject: [PATCH] ARM: mach-shmobile: Use shared GIC entry macros
+Message-Id: <20101222121709.9942.76569.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This contains some fixups for the SH7724 FSI utilization and fixes up the
-clock refcounting problems, as per the R-Mobile changes, as well as a
-fix for lazy dcache writeback that follows an identical ARM change.
+From: Magnus Damm <damm@opensource.se>
 
-It's been an uphill battle for the PG_dcache_dirty case, and the current
-tree is unreliable for some combintions of root on MMC, CF, and USB for a
-number of configurations. Newer parts are D-cache coherent so this hasn't
-really been much of a problem except for on older configurations, which
-unfortunately people have started hitting and reporting.
+Use the GIC demux code in asm/hardware/entry-macro-gic.S
+on the R-Mobile / SH-Mobile processors.
 
-This will result in potentially more aggressive flushing than we
-specifically need at the moment, but it does fix up all of the
-outstanding bugs reported. It should be possible to back off of the
-flush_kernel_dcache_page() implementation with this in place, but that's
-left as a .38 exercise where we have more time to test the configurations
-with reported problems.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Please pull from:
+ Depends the following ARM patch:
+ "[PATCH 01/07] ARM: Introduce asm/hardware/entry-macro-gic.S"
+ http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idd75/1
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
+ arch/arm/mach-shmobile/include/mach/entry-macro-gic.S |   62 -----------------
+ 1 file changed, 1 insertion(+), 61 deletions(-)
 
-Which contains:
-
-Guennadi Liakhovetski (1):
-      dma: shdma: add a MODULE_ALIAS() to allow module autoloading
-
-Kuninori Morimoto (1):
-      sh: Add div6_reparent_clks to clock framework for FSI
-
-Nobuhiro Iwamatsu (2):
-      sh: se/7724: Update clock framework of FSI clock to non-legacy
-      sh: se/7724: Remove FSI/B of GPIO init code
-
-Paul Mundt (1):
-      sh: Assume new page cache pages have dirty dcache lines.
-
-Vasiliy Kulikov (1):
-      sh: boards: mach-se: use IS_ERR() instead of NULL check
-
- arch/sh/boards/mach-ecovec24/setup.c   |   34 +++--------------------
- arch/sh/boards/mach-se/7724/setup.c    |   47 +++++---------------------------
- arch/sh/include/asm/cacheflush.h       |    2 +-
- arch/sh/include/cpu-sh4/cpu/sh7724.h   |    3 ++
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   44 ++++++++++++++++++++++++++---
- arch/sh/mm/cache-sh4.c                 |    4 +-
- arch/sh/mm/cache-sh7705.c              |    2 +-
- arch/sh/mm/cache.c                     |   14 +++++-----
- arch/sh/mm/kmap.c                      |    2 +-
- drivers/dma/shdma.c                    |    1 +
- 10 files changed, 66 insertions(+), 87 deletions(-)
+--- 0001/arch/arm/mach-shmobile/include/mach/entry-macro-gic.S
++++ work/arch/arm/mach-shmobile/include/mach/entry-macro-gic.S	2010-12-22 21:09:21.000000000 +0900
+@@ -16,6 +16,7 @@
+  */
+ #include <mach/hardware.h>
+ #include <asm/hardware/gic.h>
++#include <asm/hardware/entry-macro-gic.S>
+ 
+ 	.macro  disable_fiq
+ 	.endm
+@@ -26,64 +27,3 @@
+ 
+ 	.macro  arch_ret_to_user, tmp1, tmp2
+ 	.endm
+-
+-	/*
+-	 * The interrupt numbering scheme is defined in the
+-	 * interrupt controller spec.  To wit:
+-	 *
+-	 * Interrupts 0-15 are IPI
+-	 * 16-28 are reserved
+-	 * 29-31 are local.  We allow 30 to be used for the watchdog.
+-	 * 32-1020 are global
+-	 * 1021-1022 are reserved
+-	 * 1023 is "spurious" (no interrupt)
+-	 *
+-	 * For now, we ignore all local interrupts so only return an
+-	 * interrupt if it's between 30 and 1020.  The test_for_ipi
+-	 * routine below will pick up on IPIs.
+-	 *
+-	 * A simple read from the controller will tell us the number of
+-	 * the highest priority enabled interrupt.  We then just need to
+-	 * check whether it is in the valid range for an IRQ (30-1020
+-	 * inclusive).
+-	 */
+-
+-	.macro	get_irqnr_and_base, irqnr, irqstat, base, tmp
+-
+-	ldr	\irqstat, [\base, #GIC_CPU_INTACK]
+-	/* bits 12-10 = src CPU, 9-0 = int # */
+-
+-	ldr	\tmp, 21
+-	bic	\irqnr, \irqstat, #0x1c00
+-	cmp	\irqnr, #29
+-	cmpcc	\irqnr, \irqnr
+-	cmpne	\irqnr, \tmp
+-	cmpcs	\irqnr, \irqnr
+-
+-	.endm
+-
+-	/*
+-	 * We assume that irqstat (the raw value of the IRQ acknowledge
+-	 * register) is preserved from the macro above.
+-	 * If there is an IPI, we immediately signal end of interrupt on the
+-	 * controller, since this requires the original irqstat value which
+-	 * we won't easily be able to recreate later.
+-	 */
+-
+-	.macro test_for_ipi, irqnr, irqstat, base, tmp
+-	bic	\irqnr, \irqstat, #0x1c00
+-	cmp	\irqnr, #16
+-	strcc	\irqstat, [\base, #GIC_CPU_EOI]
+-	cmpcs	\irqnr, \irqnr
+-	.endm
+-
+-	/* As above, this assumes that irqstat and base are preserved.. */
+-
+-	.macro test_for_ltirq, irqnr, irqstat, base, tmp
+-	bic	\irqnr, \irqstat, #0x1c00
+-	mov 	\tmp, #0
+-	cmp	\irqnr, #29
+-	moveq	\tmp, #1
+-	streq	\irqstat, [\base, #GIC_CPU_EOI]
+-	cmp	\tmp, #0
+-	.endm
