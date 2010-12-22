@@ -1,41 +1,191 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Tue, 28 Dec 2010 22:22:32 +0000
-Subject: [PATCH 2/6 v3] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
-Message-Id: <1293574956-30035-3-git-send-email-arnd@arndnet.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 Dec 2010 06:26:06 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh73a0 GPIO pullup improvement
+Message-Id: <20101222062606.26942.75674.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
+To: linux-sh@vger.kernel.org
 
-The SDHI Controller on SH-Mobile SoCs supports SDIO IRQ signalling.
-This patch advertises this fact to the tmio_mmc driver.
+From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
-Acked-by: Samuel Ortiz <sameo@linux.intel.com>
+On SH-Mobile, Pull UP/Downs can be controlled independently
+from Function selectors (by lower nibble of PFCR).
+It means people may want to use GPIO_FN_xxx_PU/PD in addition
+to GPIO_IN_PU/PD which is currently supported.
+This patch adds pull-up version for some input signals on
+KEYSC, MMC, FSIA as well as SDHI1.
+
+Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mfd/sh_mobile_sdhi.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-index 3ca20ec..0a7df44 100644
---- a/drivers/mfd/sh_mobile_sdhi.c
-+++ b/drivers/mfd/sh_mobile_sdhi.c
-@@ -131,6 +131,11 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_BLKSZ_2BYTES;
- 
-+	/*
-+	 * All SDHI blocks support SDIO IRQ signalling.
-+	 */
-+	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |   21 ++++++
+ arch/arm/mach-shmobile/pfc-sh73a0.c          |   85 +++++++++++++++++++++++---
+ 2 files changed, 97 insertions(+), 9 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ work/arch/arm/mach-shmobile/include/mach/sh73a0.h	2010-12-22 15:21:58.000000000 +0900
+@@ -441,6 +441,27 @@ enum {
+ 	GPIO_FN_RESETA_N_PU_OFF,
+ 	GPIO_FN_EDBGREQ_PD,
+ 	GPIO_FN_EDBGREQ_PU,
 +
- 	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
- 		priv->param_tx.slave_id = p->dma_slave_tx;
- 		priv->param_rx.slave_id = p->dma_slave_rx;
--- 
-1.7.2.3
-
++	/* Functions with pull-ups */
++	GPIO_FN_KEYIN0_PU,
++	GPIO_FN_KEYIN1_PU,
++	GPIO_FN_KEYIN2_PU,
++	GPIO_FN_KEYIN3_PU,
++	GPIO_FN_KEYIN4_PU,
++	GPIO_FN_KEYIN5_PU,
++	GPIO_FN_KEYIN6_PU,
++	GPIO_FN_KEYIN7_PU,
++	GPIO_FN_SDHID1_0_PU,
++	GPIO_FN_SDHID1_1_PU,
++	GPIO_FN_SDHID1_2_PU,
++	GPIO_FN_SDHID1_3_PU,
++	GPIO_FN_SDHICMD1_PU,
++	GPIO_FN_MMCCMD0_PU,
++	GPIO_FN_MMCCMD1_PU,
++	GPIO_FN_FSIACK_PU,
++	GPIO_FN_FSIAILR_PU,
++	GPIO_FN_FSIAIBT_PU,
++	GPIO_FN_FSIAISLD_PU,
+ };
+ 
+ #endif /* __ASM_SH73A0_H__ */
+--- 0001/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ work/arch/arm/mach-shmobile/pfc-sh73a0.c	2010-12-22 15:21:58.000000000 +0900
+@@ -479,6 +479,27 @@ enum {
+ 	EDBGREQ_PD_MARK,
+ 	EDBGREQ_PU_MARK,
+ 
++	/* Functions with pull-ups */
++	KEYIN0_PU_MARK,
++	KEYIN1_PU_MARK,
++	KEYIN2_PU_MARK,
++	KEYIN3_PU_MARK,
++	KEYIN4_PU_MARK,
++	KEYIN5_PU_MARK,
++	KEYIN6_PU_MARK,
++	KEYIN7_PU_MARK,
++	SDHID1_0_PU_MARK,
++	SDHID1_1_PU_MARK,
++	SDHID1_2_PU_MARK,
++	SDHID1_3_PU_MARK,
++	SDHICMD1_PU_MARK,
++	MMCCMD0_PU_MARK,
++	MMCCMD1_PU_MARK,
++	FSIACK_PU_MARK,
++	FSIAILR_PU_MARK,
++	FSIAIBT_PU_MARK,
++	FSIAISLD_PU_MARK,
++
+ 	PINMUX_MARK_END,
+ };
+ 
+@@ -935,26 +956,26 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(KEYOUT0_MARK, PORT65_FN2), \
+ 	PINMUX_DATA(MSIOF0_TXD_MARK, PORT65_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A20_MARK, PORT66_FN1), \
+-	PINMUX_DATA(KEYIN0_MARK, PORT66_FN2, PORT66_IN_PU), \
++	PINMUX_DATA(KEYIN0_MARK, PORT66_FN2), \
+ 	PINMUX_DATA(MSIOF0_RSCK_MARK, PORT66_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A21_MARK, PORT67_FN1), \
+-	PINMUX_DATA(KEYIN1_MARK, PORT67_FN2, PORT67_IN_PU), \
++	PINMUX_DATA(KEYIN1_MARK, PORT67_FN2), \
+ 	PINMUX_DATA(MSIOF0_RSYNC_MARK, PORT67_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A22_MARK, PORT68_FN1), \
+-	PINMUX_DATA(KEYIN2_MARK, PORT68_FN2, PORT68_IN_PU), \
++	PINMUX_DATA(KEYIN2_MARK, PORT68_FN2), \
+ 	PINMUX_DATA(MSIOF0_MCK0_MARK, PORT68_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A23_MARK, PORT69_FN1), \
+-	PINMUX_DATA(KEYIN3_MARK, PORT69_FN2, PORT69_IN_PU), \
++	PINMUX_DATA(KEYIN3_MARK, PORT69_FN2), \
+ 	PINMUX_DATA(MSIOF0_MCK1_MARK, PORT69_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A24_MARK, PORT70_FN1), \
+-	PINMUX_DATA(KEYIN4_MARK, PORT70_FN2, PORT70_IN_PU), \
++	PINMUX_DATA(KEYIN4_MARK, PORT70_FN2), \
+ 	PINMUX_DATA(MSIOF0_RXD_MARK, PORT70_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A25_MARK, PORT71_FN1), \
+-	PINMUX_DATA(KEYIN5_MARK, PORT71_FN2, PORT71_IN_PU), \
++	PINMUX_DATA(KEYIN5_MARK, PORT71_FN2), \
+ 	PINMUX_DATA(MSIOF0_SS2_MARK, PORT71_FN4, MSEL3CR_MSEL11_0),
+ 	PINMUX_DATA(A26_MARK, PORT72_FN1), \
+-	PINMUX_DATA(KEYIN6_MARK, PORT72_FN2, PORT72_IN_PU),
+-	PINMUX_DATA(KEYIN7_MARK, PORT73_FN2, PORT73_IN_PU),
++	PINMUX_DATA(KEYIN6_MARK, PORT72_FN2),
++	PINMUX_DATA(KEYIN7_MARK, PORT73_FN2),
+ 	PINMUX_DATA(D0_NAF0_MARK, PORT74_FN1),
+ 	PINMUX_DATA(D1_NAF1_MARK, PORT75_FN1),
+ 	PINMUX_DATA(D2_NAF2_MARK, PORT76_FN1),
+@@ -1484,6 +1505,31 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(RESETA_N_PU_OFF_MARK, MSEL4CR_MSEL4_1),
+ 	PINMUX_DATA(EDBGREQ_PD_MARK, MSEL4CR_MSEL1_0),
+ 	PINMUX_DATA(EDBGREQ_PU_MARK, MSEL4CR_MSEL1_1),
++
++	/* Functions with pull-ups */
++	PINMUX_DATA(KEYIN0_PU_MARK, PORT66_FN2, PORT66_IN_PU),
++	PINMUX_DATA(KEYIN1_PU_MARK, PORT67_FN2, PORT67_IN_PU),
++	PINMUX_DATA(KEYIN2_PU_MARK, PORT68_FN2, PORT68_IN_PU),
++	PINMUX_DATA(KEYIN3_PU_MARK, PORT69_FN2, PORT69_IN_PU),
++	PINMUX_DATA(KEYIN4_PU_MARK, PORT70_FN2, PORT70_IN_PU),
++	PINMUX_DATA(KEYIN5_PU_MARK, PORT71_FN2, PORT71_IN_PU),
++	PINMUX_DATA(KEYIN6_PU_MARK, PORT72_FN2, PORT72_IN_PU),
++	PINMUX_DATA(KEYIN7_PU_MARK, PORT73_FN2, PORT73_IN_PU),
++
++	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_IN_PU, PORT259_FN1),
++	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_IN_PU, PORT260_FN1),
++	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_IN_PU, PORT261_FN1),
++	PINMUX_DATA(SDHID1_3_PU_MARK, PORT262_IN_PU, PORT262_FN1),
++	PINMUX_DATA(SDHICMD1_PU_MARK, PORT263_IN_PU, PORT263_FN1),
++
++	PINMUX_DATA(MMCCMD0_PU_MARK, PORT279_FN1, PORT279_IN_PU,
++		MSEL4CR_MSEL15_0),
++	PINMUX_DATA(MMCCMD1_PU_MARK, PORT297_FN2, PORT279_IN_PU,
++		MSEL4CR_MSEL15_1),
++	PINMUX_DATA(FSIACK_PU_MARK, PORT49_FN1, PORT49_IN_PU),
++	PINMUX_DATA(FSIAILR_PU_MARK, PORT50_FN5, PORT50_IN_PU),
++	PINMUX_DATA(FSIAIBT_PU_MARK, PORT51_FN5, PORT51_IN_PU),
++	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
+ };
+ 
+ #define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+@@ -2125,6 +2171,27 @@ static struct pinmux_gpio pinmux_gpios[]
+ 	GPIO_FN(RESETA_N_PU_OFF),
+ 	GPIO_FN(EDBGREQ_PD),
+ 	GPIO_FN(EDBGREQ_PU),
++
++	/* Functions with pull-ups */
++	GPIO_FN(KEYIN0_PU),
++	GPIO_FN(KEYIN1_PU),
++	GPIO_FN(KEYIN2_PU),
++	GPIO_FN(KEYIN3_PU),
++	GPIO_FN(KEYIN4_PU),
++	GPIO_FN(KEYIN5_PU),
++	GPIO_FN(KEYIN6_PU),
++	GPIO_FN(KEYIN7_PU),
++	GPIO_FN(SDHID1_0_PU),
++	GPIO_FN(SDHID1_1_PU),
++	GPIO_FN(SDHID1_2_PU),
++	GPIO_FN(SDHID1_3_PU),
++	GPIO_FN(SDHICMD1_PU),
++	GPIO_FN(MMCCMD0_PU),
++	GPIO_FN(MMCCMD1_PU),
++	GPIO_FN(FSIACK_PU),
++	GPIO_FN(FSIAILR_PU),
++	GPIO_FN(FSIAIBT_PU),
++	GPIO_FN(FSIAISLD_PU),
+ };
+ 
+ #define PORTCR(nr, reg)	\
+@@ -2663,7 +2730,7 @@ static struct pinmux_info sh73a0_pinmux_
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.first_gpio = GPIO_PORT0,
+-	.last_gpio = GPIO_FN_EDBGREQ_PU,
++	.last_gpio = GPIO_FN_FSIAISLD_PU,
+ 
+ 	.gpios = pinmux_gpios,
+ 	.cfg_regs = pinmux_config_regs,
