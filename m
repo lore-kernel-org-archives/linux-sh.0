@@ -1,42 +1,32 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Mon, 20 Dec 2010 15:53:48 +0000
-Subject: [PATCH 3/6 v2] mmc: tmio: disable IRQs early in remove
-Message-Id: <1292860431-16195-4-git-send-email-arnd@arndnet.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 Dec 2010 14:15:08 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh73a0: fix div4 table
+Message-Id: <20101222141508.2302.53930.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
-In-Reply-To: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
+To: linux-sh@vger.kernel.org
 
-With SDIO IRQ, spurious interrupts are generated on
-module unloading.
+From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
 
-This patch fixes that by disabling IRQs early.
-Tested with a b43-based wireless SDIO card and sh_mobile_sdhi.
+sh73a0 has divisor[12] setting as 1/7 on FRQCRA.
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/tmio_mmc.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 18771b4..37721aa 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -1249,9 +1249,9 @@ static int __devexit tmio_mmc_remove(struct platform_device *dev)
+ arch/arm/mach-shmobile/clock-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2010-12-22 23:10:48.000000000 +0900
+@@ -191,7 +191,7 @@ static void div4_kick(struct clk *clk)
+ }
  
- 	if (mmc) {
- 		struct tmio_mmc_host *host = mmc_priv(mmc);
--		mmc_remove_host(mmc);
- 		tmio_mmc_release_dma(host);
- 		free_irq(host->irq, host);
-+		mmc_remove_host(mmc);
- 		if (cell->disable)
- 			cell->disable(dev);
- 		iounmap(host->ctl);
--- 
-1.7.2.3
-
+ static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
+-			  24, 0, 36, 48 };
++			  24, 0, 36, 48, 7 };
+ 
+ static struct clk_div_mult_table div4_div_mult_table = {
+ 	.divisors = divisors,
