@@ -1,26 +1,47 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 29 Dec 2010 08:12:18 +0000
-Subject: [PATCH 0/3] fbdev: make the sh-mobile MIPI DSI driver more flexible
-Message-Id: <Pine.LNX.4.64.1012290859290.14233@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 Dec 2010 06:30:19 +0000
+Subject: [PATCH] ARM: mach-shmobile: Use pullups for AG5EVM KEYSC pins
+Message-Id: <20101222063019.28467.5098.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-These patches teach the sh-mobile MIPI DSI driver to use platform data to 
-support different SoC with register layout variations and different LCD 
-panels. Two of these patches affect the actual driver and one - currently 
-its only user - the ap4evb board. To avoid compilation and run-time 
-regressions we have to first add new gields to the header, then set them 
-in the affected platform, and only then modify the driver to use them. 
-This produces an unpleasant dependency chain. Alternatively, all these 
-patches could be merged into one, but that would span multiple subsystems. 
-I leave it to the maintainer to decide:)
+From: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
 
-Thanks
-Guennadi
+Follow up to pfc-sh73a0.c's pull-up support.
+Change GPIO_FN_KEYINx to GPIO_FN_KEYINx_PU.
+
+Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ arch/arm/mach-shmobile/board-ag5evm.c |   16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- 0004/arch/arm/mach-shmobile/board-ag5evm.c
++++ work/arch/arm/mach-shmobile/board-ag5evm.c	2010-12-22 15:27:07.000000000 +0900
+@@ -197,14 +197,14 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
+ 
+ 	/* enable KEYSC */
+-	gpio_request(GPIO_FN_KEYIN0, NULL);
+-	gpio_request(GPIO_FN_KEYIN1, NULL);
+-	gpio_request(GPIO_FN_KEYIN2, NULL);
+-	gpio_request(GPIO_FN_KEYIN3, NULL);
+-	gpio_request(GPIO_FN_KEYIN4, NULL);
+-	gpio_request(GPIO_FN_KEYIN5, NULL);
+-	gpio_request(GPIO_FN_KEYIN6, NULL);
+-	gpio_request(GPIO_FN_KEYIN7, NULL);
++	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN2_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN3_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN4_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN5_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN6_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN7_PU, NULL);
+ 	gpio_request(GPIO_FN_KEYOUT0, NULL);
+ 	gpio_request(GPIO_FN_KEYOUT1, NULL);
+ 	gpio_request(GPIO_FN_KEYOUT2, NULL);
