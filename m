@@ -1,79 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 28 Dec 2010 08:27:10 +0000
-Subject: [PATCH 03/04] ARM: mach-shmobile: Run-time IRQ handler for GIC
-Message-Id: <20101228082710.11806.65512.sendpatchset@t400s>
+From: Filippo ARCIDIACONO <filippo.arcidiacono@st.com>
+Date: Thu, 23 Dec 2010 13:44:11 +0000
+Subject: [PATCH 2/2] sh: stackprotector: change the canary value per task
+Message-Id: <1293111851-7175-2-git-send-email-filippo.arcidiacono@st.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1293111851-7175-1-git-send-email-filippo.arcidiacono@st.com>
+In-Reply-To: <1293111851-7175-1-git-send-email-filippo.arcidiacono@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The variable __stack_chk_guard can be updated with the canary
+value stored in the task struct whenever a task switch occurs.
+Because the __stack_chk_guard is global, this cannot work on SMP,
+where the initial canary is always used.
 
-Break-out GIC specific IRQ demux code from the file
-entry-macro-intc.S and register during run-time.
-
-Covers sh73a0.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Filippo Arcidiacono <filippo.arcidiacono@st.com>
+Reviewed-by: Carmelo Amoroso <carmelo.amoroso@st.com>
 ---
+ arch/sh/kernel/process_32.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
- arch/arm/mach-shmobile/Makefile              |    1 +
- arch/arm/mach-shmobile/board-ag5evm.c        |    1 +
- arch/arm/mach-shmobile/entry-gic.S           |   20 ++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- 4 files changed, 23 insertions(+)
-
---- 0007/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2010-12-28 14:53:22.000000000 +0900
-@@ -22,6 +22,7 @@ pfc-$(CONFIG_ARCH_SH73A0)	+= pfc-sh73a0.
- obj-$(CONFIG_ARCH_SH7367)	+= entry-intc.o
- obj-$(CONFIG_ARCH_SH7377)	+= entry-intc.o
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
-+obj-$(CONFIG_ARCH_SH73A0)	+= entry-gic.o
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index 762a139..e98a981 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -21,6 +21,7 @@
+ #include <linux/fs.h>
+ #include <linux/ftrace.h>
+ #include <linux/hw_breakpoint.h>
++#include <linux/stackprotector.h>
+ #include <asm/uaccess.h>
+ #include <asm/mmu_context.h>
+ #include <asm/system.h>
+@@ -221,6 +222,10 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
+ {
+ 	struct thread_struct *next_t = &next->thread;
  
- # Board objects
- obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
---- 0001/arch/arm/mach-shmobile/board-ag5evm.c
-+++ work/arch/arm/mach-shmobile/board-ag5evm.c	2010-12-28 14:52:15.000000000 +0900
-@@ -309,6 +309,7 @@ struct sys_timer ag5evm_timer = {
- MACHINE_START(AG5EVM, "ag5evm")
- 	.map_io		= ag5evm_map_io,
- 	.init_irq	= ag5evm_init_irq,
-+	.handle_irq	= shmobile_handle_irq_gic,
- 	.init_machine	= ag5evm_init,
- 	.timer		= &ag5evm_timer,
- MACHINE_END
---- /dev/null
-+++ work/arch/arm/mach-shmobile/entry-gic.S	2010-12-28 14:51:24.000000000 +0900
-@@ -0,0 +1,20 @@
-+/*
-+ * ARM Interrupt demux handler using GIC
-+ *
-+ * Copyright (C) 2010 Magnus Damm
-+ * Copyright (C) 2010 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under  the terms of the GNU General Public
-+ * License version 2. This program is licensed "as is" without any
-+ * warranty of any kind, whether express or implied.
-+ */
++#if defined CONFIG_CC_STACKPROTECTOR && !defined CONFIG_SMP
++	__stack_chk_guard = next->stack_canary;
++#endif
 +
-+#include <asm/entry-macro-multi.S>
-+#include <asm/hardware/gic.h>
-+#include <asm/hardware/entry-macro-gic.S>
-+
-+	.macro	get_irqnr_preamble, base, tmp
-+	ldr	\base, =(0xf0000100)
-+	.endm
-+
-+	arch_irq_handler shmobile_handle_irq_gic
---- 0007/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2010-12-28 14:51:36.000000000 +0900
-@@ -6,6 +6,7 @@ extern void shmobile_setup_console(void)
- struct clk;
- extern int clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
-+extern void shmobile_handle_irq_gic(struct pt_regs *);
+ 	unlazy_fpu(prev, task_pt_regs(prev));
  
- extern void sh7367_init_irq(void);
- extern void sh7367_add_early_devices(void);
+ 	/* we're going to use this soon, after a few expensive things */
+-- 
+1.5.5.6
