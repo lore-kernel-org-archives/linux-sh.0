@@ -1,74 +1,100 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 28 Dec 2010 21:46:25 +0000
-Subject: Re: [PATCH] mmc: sh: Add SH_DMAE to depends of sh_mmcif
-Message-Id: <Pine.LNX.4.64.1012282243540.21647@axis700.grange>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Thu, 23 Dec 2010 10:45:20 +0000
+Subject: [PATCH] [RFC] sh: sh7723 / ap325rxa enable SDIO IRQs
+Message-Id: <1293101120-31162-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293502664-26214-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1293502664-26214-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <AANLkTi=oaLjQmz+G8_kK70JCxVfGfzv0VhRt3s9OsVXw@mail.gmail.com>
+In-Reply-To: <AANLkTi=oaLjQmz+G8_kK70JCxVfGfzv0VhRt3s9OsVXw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
 
-On Tue, 28 Dec 2010, Nobuhiro Iwamatsu wrote:
+This patch enables the interrupt generation for SDIO IRQs
+of the sdhi controllers of the SoC. To make sure SDIO IRQs
+are used announce the MMC_CAP_SDIO_IRQ capability
+on ap325rxa. Untested, therefore RFC.
 
-> sh_mmcif can choose DMA support.
-> But compile error when SH_DMAE is not enable.
-
-This error is fixed by https://patchwork.kernel.org/patch/427351/ so, this 
-is not really required. Besides, we want to remove CONFIG_SH_MMCIF_DMA 
-completely, i.e., have it always enabled. So, even though this doesn't 
-hurt for now, it won't help much in the future.
-
-Thanks
-Guennadi
-
-> 
-> -----
-> drivers/built-in.o: In function `sh_mmcif_start_dma_tx':
-> drivers/mmc/host/sh_mmcif.c:856: undefined reference to `dma_release_channel'
-> drivers/built-in.o: In function `sh_mmcif_multi_read':
-> drivers/mmc/host/sh_mmcif.c:513: undefined reference to `dma_release_channel'
-> drivers/built-in.o: In function `sh_mmcif_probe':
-> drivers/mmc/host/sh_mmcif.c:1082: undefined reference to `__dma_request_channel'
-> drivers/mmc/host/sh_mmcif.c:1082: undefined reference to `dma_release_channel'
-> drivers/built-in.o: In function `sh_mmcif_remove':
-> drivers/mmc/host/sh_mmcif.c:1109: undefined reference to `dma_release_channel'
-> -----
-> 
-> When we use DMA-support in sh_mmcif, SH_DMAE is necessary.
-> 
-> Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> CC: Chris Ball <cjb@laptop.org>
-> CC: Paul Mundt <lethal@linux-sh.org> 
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> ---
->  drivers/mmc/host/Kconfig |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-> index 859e352..b400940 100644
-> --- a/drivers/mmc/host/Kconfig
-> +++ b/drivers/mmc/host/Kconfig
-> @@ -468,7 +468,7 @@ config MMC_SH_MMCIF
->  
->  config SH_MMCIF_DMA
->  	bool "Use DMA for MMCIF"
-> -	depends on MMC_SH_MMCIF
-> +	depends on MMC_SH_MMCIF && SH_DMAE
->  	help
->  	  Use SH dma-engine driver for data transfer
->  
-> -- 
-> 1.7.2.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/sh/boards/mach-ap325rxa/setup.c   |   16 ++++++++++++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |    4 ++--
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 07ea908..3e5fc3b 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -14,6 +14,8 @@
+ #include <linux/device.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/delay.h>
+@@ -430,11 +432,18 @@ static struct resource sdhi0_cn3_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mobile_sdhi_info sdhi0_cn3_data = {
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++};
++
+ static struct platform_device sdhi0_cn3_device = {
+ 	.name		= "sh_mobile_sdhi",
+ 	.id             = 0, /* "sdhi0" clock */
+ 	.num_resources	= ARRAY_SIZE(sdhi0_cn3_resources),
+ 	.resource	= sdhi0_cn3_resources,
++	.dev = {
++		.platform_data = &sdhi0_cn3_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI0,
+ 	},
+@@ -453,11 +462,18 @@ static struct resource sdhi1_cn7_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mobile_sdhi_info sdhi1_cn7_data = {
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++};
++
+ static struct platform_device sdhi1_cn7_device = {
+ 	.name		= "sh_mobile_sdhi",
+ 	.id             = 1, /* "sdhi1" clock */
+ 	.num_resources	= ARRAY_SIZE(sdhi1_cn7_resources),
+ 	.resource	= sdhi1_cn7_resources,
++	.dev = {
++		.platform_data = &sdhi1_cn7_data,
++	},
+ 	.archdata = {
+ 		.hwblk_id = HWBLK_SDHI1,
+ 	},
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index 0eadefd..d764122 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -719,7 +719,7 @@ static struct intc_group groups[] __initdata = {
+ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	{ 0xa4080080, 0xa40800c0, 8, /* IMR0 / IMCR0 */
+ 	  { 0, TMU1_TUNI2, TMU1_TUNI1, TMU1_TUNI0,
+-	    0, DISABLED, ENABLED, ENABLED } },
++	    0, ENABLED, ENABLED, ENABLED } },
+ 	{ 0xa4080084, 0xa40800c4, 8, /* IMR1 / IMCR1 */
+ 	  { VIO_VOUI, VIO_VEU2HI,VIO_BEUI,VIO_CEUI,DMAC0A_DEI3,DMAC0A_DEI2,DMAC0A_DEI1,DMAC0A_DEI0 } },
+ 	{ 0xa4080088, 0xa40800c8, 8, /* IMR2 / IMCR2 */
+@@ -736,7 +736,7 @@ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	  { I2C_DTEI, I2C_WAITI, I2C_TACKI, I2C_ALI,
+ 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
+ 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
+-	  { 0, DISABLED, ENABLED, ENABLED,
++	  { 0, ENABLED, ENABLED, ENABLED,
+ 	    0, 0, SCIFA_SCIFA2, SIU_SIUI } },
+ 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
+ 	  { 0, 0, 0, CMT_CMTI, 0, 0, USB_USI0,0 } },
+-- 
+1.7.2.3
+
