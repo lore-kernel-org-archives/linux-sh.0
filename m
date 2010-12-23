@@ -1,104 +1,94 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 17 Dec 2010 06:15:48 +0000
-Subject: [PATCH] ARM: mach-shmobile: INTC interrupt priority level demux fix
-Message-Id: <20101217061548.26708.13030.sendpatchset@t400s>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 23 Dec 2010 01:48:11 +0000
+Subject: [PATCH] [patch v2] ARM: mach-shmobile: mackerel: Add zboot MMCIF support
+Message-Id: <1293068891-25526-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch wires up LED debugging for the MMCIF boot
+on the mackerel, which is all that is required to get MMCIF
+boot functioning.
 
-Fix interrupt priority level handling on SH-Mobile ARM.
-
-SH-Mobile ARM platforms using multiple interrupt priority
-levels need this patch to fix a potential dead lock that
-may occur if multiple interrupts with different levels
-are pending simultaneously.
-
-The default INTC configuration is to use the same priority
-level for all interrupts, so this issue does not trigger by
-default. It is however common for board code to override the
-interrupt priority for certain interrupt sources depending
-on the application. Without this fix such boards may lock up.
-
-In detail, this patch updates the INTC code in entry-macro.S
-to make sure that the INTLVLA register gets set as expected.
-
-To trigger this bug modify the board specific code to adjust
-the interrupt priority level for the ethernet chip. After
-changing the priority level simply use flood ping to drown
-the board with interrupts.
-
-This patch applies to INTCA-based processors such as sh7372,
-sh7377 and sh7372. GIC-based processors are not affected.
-
-Suitable for v2.6.37-rc and stable from v2.6.34 to v2.6.36.
-
-Cc: stable@kernel.org
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
+This patch depends on:
+* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
+  (merged into the devel branch of Russel King's linux-2.6-arm tree)
+* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
+  (merged into the devel branch of Russel King's linux-2.6-arm tree)
+* MACH_MACKEREL (3211) being present in arch/arm/tools/mach-types
+* ARM: mach-shmobile: mackerel: Add zboot support
+* rfc v3: mmc, ARM: Add zboot from MMC support for SuperH Mobile ARM,
+  which depends on
+  * mmc, sh: Remove sh_mmcif_boot_slurp()
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+  * sh, mmc: Use defines when setting CE_CLK_CTRL
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+  * mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
 
- arch/arm/mach-shmobile/include/mach/entry-macro.S |   30 ++++++++++++++++++---
- 1 file changed, 26 insertions(+), 4 deletions(-)
+v2
+* Use correct GPIO ports
+  - my previous assumptions turned out to be incorrect
+---
+ .../mach-shmobile/include/mach/mmcif-mackerel.h    |   29 ++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/mmcif.h        |    2 +
+ 2 files changed, 31 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
 
---- 0001/arch/arm/mach-shmobile/include/mach/entry-macro.S
-+++ work/arch/arm/mach-shmobile/include/mach/entry-macro.S	2010-12-17 13:33:58.000000000 +0900
-@@ -1,4 +1,5 @@
- /*
-+ * Copyright (C) 2010 Magnus Damm
-  * Copyright (C) 2008 Renesas Solutions Corp.
-  *
-  * This program is free software; you can redistribute it and/or modify
-@@ -14,24 +15,45 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
--#include <mach/hardware.h>
- #include <mach/irqs.h>
- 
-+#define INTCA_BASE	0xe6980000
-+#define INTFLGA_OFFS	0x00000018 /* accept pending interrupt */
-+#define INTEVTA_OFFS	0x00000020 /* vector number of accepted interrupt */
-+#define INTLVLA_OFFS	0x00000030 /* priority level of accepted interrupt */
-+#define INTLVLB_OFFS	0x00000034 /* previous priority level */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+new file mode 100644
+index 0000000..34253c1
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+@@ -0,0 +1,29 @@
++#ifndef MMCIF_MACKEREL_H
++#define MMCIF_MACKEREL_H
 +
- 	.macro  disable_fiq
- 	.endm
- 
- 	.macro  get_irqnr_preamble, base, tmp
--	ldr     \base, =INTFLGA
-+	ldr     \base, =INTCA_BASE
- 	.endm
- 
- 	.macro  arch_ret_to_user, tmp1, tmp2
- 	.endm
- 
- 	.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
--	ldr     \irqnr, [\base]
-+	/* The single INTFLGA read access below results in the following:
-+	 *
-+	 * 1. INTLVLB is updated with old priority value from INTLVLA
-+	 * 2. Highest priority interrupt is accepted
-+	 * 3. INTLVLA is updated to contain priority of accepted interrupt
-+	 * 4. Accepted interrupt vector is stored in INTFLGA and INTEVTA
-+	 */
-+	ldr     \irqnr, [\base, #INTFLGA_OFFS]
++#define PORT0CR      0xe6051001
++#define PORT1CR      0xe6051002
++#define PORT2CR      0xe6051003
++#define PORT3CR      0xe6051004
 +
-+	/* Restore INTLVLA with the value saved in INTLVLB.
-+	 * This is required to support interrupt priorities properly.
-+	 */
-+	ldrb	\tmp, [\base, #INTLVLB_OFFS]
-+	strb    \tmp, [\base, #INTLVLA_OFFS]
++#define PORTR031_000DR 0xe6055000
 +
-+	/* Handle invalid vector number case */
- 	cmp	\irqnr, #0
- 	beq	1000f
--	/* intevt to irq number */
++static inline void mmcif_init_progress(void)
++{
++       /* Initialise LEDS0-3
++        * registers: PORT0CR-PORT1CR (LED0-LED3 Control)
++        * value:     0x10 - enable output
++        */
++       __raw_writeb(0x10, PORT0CR);
++       __raw_writeb(0x10, PORT1CR);
++       __raw_writeb(0x10, PORT2CR);
++       __raw_writeb(0x10, PORT3CR);
++}
 +
-+	/* Convert vector to irq number, same as the evt2irq() macro */
- 	lsr	\irqnr, \irqnr, #0x5
- 	subs	\irqnr, \irqnr, #16
++static inline void mmcif_update_progress(int n)
++{
++	__raw_writel((__raw_readl(PORTR031_000DR) & 0xf) |
++		     (1 << n), PORTR031_000DR);
++}
++
++#endif /* MMCIF_MACKEREL_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
+index 0812f1e..f4dc327 100644
+--- a/arch/arm/mach-shmobile/include/mach/mmcif.h
++++ b/arch/arm/mach-shmobile/include/mach/mmcif.h
+@@ -9,6 +9,8 @@
  
+ #ifdef CONFIG_MACH_AP4EVB
+ #include "mach/mmcif-ap4eb.h"
++#elif CONFIG_MACH_MACKEREL
++#include "mach/mmcif-mackerel.h"
+ #else
+ #error "unsupported board."
+ #endif
+-- 
+1.7.2.3
+
