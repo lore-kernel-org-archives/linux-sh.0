@@ -1,106 +1,108 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 27 Dec 2010 10:23:05 +0000
-Subject: [PATCH 1/2 v2] fbdev: sh-mobile: implement MIPI DSI runtime PM
-Message-Id: <Pine.LNX.4.64.1012271119471.669@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 23 Dec 2010 09:01:17 +0000
+Subject: [PATCH] [patch v3] ARM: mach-shmobile: mackerel: Add zboot MMCIF support
+Message-Id: <1293094877-28875-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On SH-Mobile platforms using runtime PM with the MIPI DSI driver switches the
-DSI Tx link clock on PM events.
+This patch wires up LED debugging for the MMCIF boot
+on the mackerel, which is all that is required to get MMCIF
+boot functioning.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
+This patch depends on:
+* ARM: 6515/1: Add zboot support for SuperH Mobile ARM
+  (merged into the devel branch of Russel King's linux-2.6-arm tree)
+* ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
+  (merged into the devel branch of Russel King's linux-2.6-arm tree)
+* MACH_MACKEREL (3211) being present in arch/arm/tools/mach-types
+* ARM: mach-shmobile: mackerel: Add zboot support
+* rfc v3: mmc, ARM: Add zboot from MMC support for SuperH Mobile ARM,
+  which depends on
+  * mmc, sh: Remove sh_mmcif_boot_slurp()
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+  * sh, mmc: Use defines when setting CE_CLK_CTRL
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
+  * mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
+    (merged into the common/mmcif branch of Paul Mundt's sh-2.6 tree)
 
-v2: keep the device pointer in clk_get() call
+v2
+* Use correct GPIO ports
+  - my previous assumptions turned out to be incorrect
 
- drivers/video/sh_mipi_dsi.c |   13 +++++++++++++
- 1 files changed, 13 insertions(+), 0 deletions(-)
+v3
+* Actually make the v2 change
+  - my git-foo was poor this morning
+---
+ .../mach-shmobile/include/mach/mmcif-mackerel.h    |   39 ++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/mmcif.h        |    2 +
+ 2 files changed, 41 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index 3f3d431..3563188 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -13,6 +13,7 @@
- #include <linux/init.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
- #include <linux/slab.h>
- #include <linux/string.h>
- #include <linux/types.h>
-@@ -33,6 +34,7 @@ struct sh_mipi {
- 	void __iomem	*base;
- 	struct clk	*dsit_clk;
- 	struct clk	*dsip_clk;
-+	struct device	*dev;
- };
- 
- static struct sh_mipi *mipi_dsi[MAX_SH_MIPI_DSI];
-@@ -104,6 +106,7 @@ static void mipi_display_on(void *arg, struct fb_info *info)
- {
- 	struct sh_mipi *mipi = arg;
- 
-+	pm_runtime_get_sync(mipi->dev);
- 	sh_mipi_dsi_enable(mipi, true);
- }
- 
-@@ -112,6 +115,7 @@ static void mipi_display_off(void *arg)
- 	struct sh_mipi *mipi = arg;
- 
- 	sh_mipi_dsi_enable(mipi, false);
-+	pm_runtime_put(mipi->dev);
- }
- 
- static int __init sh_mipi_setup(struct sh_mipi *mipi,
-@@ -356,6 +360,8 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 		goto emap;
- 	}
- 
-+	mipi->dev = &pdev->dev;
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+new file mode 100644
+index 0000000..e07fb3f
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+@@ -0,0 +1,39 @@
++#ifndef MMCIF_MACKEREL_H
++#define MMCIF_MACKEREL_H
 +
- 	mipi->dsit_clk = clk_get(&pdev->dev, "dsit_clk");
- 	if (IS_ERR(mipi->dsit_clk)) {
- 		ret = PTR_ERR(mipi->dsit_clk);
-@@ -405,6 +411,9 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 
- 	mipi_dsi[idx] = mipi;
- 
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_resume(&pdev->dev);
++#define PORT0CR      0xe6051000
++#define PORT1CR      0xe6051001
++#define PORT2CR      0xe6051002
++#define PORT159CR    0xe605009f
 +
- 	ret = sh_mipi_setup(mipi, pdata);
- 	if (ret < 0)
- 		goto emipisetup;
-@@ -416,11 +425,13 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	pdata->lcd_chan->board_cfg.board_data = mipi;
- 	pdata->lcd_chan->board_cfg.display_on = mipi_display_on;
- 	pdata->lcd_chan->board_cfg.display_off = mipi_display_off;
-+	pdata->lcd_chan->board_cfg.owner = THIS_MODULE;
++#define PORTR031_000DR 0xe6055000
++#define PORTL159_128DR 0xe6054010
++
++static inline void mmcif_init_progress(void)
++{
++       /* Initialise LEDS0-3
++        * registers: PORT0CR-PORT2CR,PORT159CR (LED0-LED3 Control)
++        * value:     0x10 - enable output
++        */
++       __raw_writeb(0x10, PORT0CR);
++       __raw_writeb(0x10, PORT1CR);
++       __raw_writeb(0x10, PORT2CR);
++       __raw_writeb(0x10, PORT159CR);
++}
++
++static inline void mmcif_update_progress(int n)
++{
++	unsigned a = 0, b = 0;
++
++	if (n < 3)
++		a = 1 << n;
++	else
++		b = 1 << 31;
++
++	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
++		     PORTR031_000DR);
++	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
++		     PORTL159_128DR);
++}
++
++#endif /* MMCIF_MACKEREL_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
+index 0812f1e..f4dc327 100644
+--- a/arch/arm/mach-shmobile/include/mach/mmcif.h
++++ b/arch/arm/mach-shmobile/include/mach/mmcif.h
+@@ -9,6 +9,8 @@
  
- 	return 0;
- 
- emipisetup:
- 	mipi_dsi[idx] = NULL;
-+	pm_runtime_disable(&pdev->dev);
- 	clk_disable(mipi->dsip_clk);
- eclkpon:
- 	clk_disable(mipi->dsit_clk);
-@@ -467,10 +478,12 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
- 	if (ret < 0)
- 		return ret;
- 
-+	pdata->lcd_chan->board_cfg.owner = NULL;
- 	pdata->lcd_chan->board_cfg.display_on = NULL;
- 	pdata->lcd_chan->board_cfg.display_off = NULL;
- 	pdata->lcd_chan->board_cfg.board_data = NULL;
- 
-+	pm_runtime_disable(&pdev->dev);
- 	clk_disable(mipi->dsip_clk);
- 	clk_disable(mipi->dsit_clk);
- 	clk_put(mipi->dsit_clk);
+ #ifdef CONFIG_MACH_AP4EVB
+ #include "mach/mmcif-ap4eb.h"
++#elif CONFIG_MACH_MACKEREL
++#include "mach/mmcif-mackerel.h"
+ #else
+ #error "unsupported board."
+ #endif
 -- 
 1.7.2.3
 
