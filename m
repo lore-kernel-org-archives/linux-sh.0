@@ -1,37 +1,62 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 14 Dec 2010 07:57:03 +0000
-Subject: [PATCH 02/03] ARM: mach-shmobile: Enable SMP support
-Message-Id: <20101214075703.11275.42101.sendpatchset@t400s>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Thu, 23 Dec 2010 10:42:50 +0000
+Subject: [PATCH 6/6 v3] [RFC] sh: sh7722 Enable SDIO IRQs
+Message-Id: <1293100970-31053-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101214075647.11275.25933.sendpatchset@t400s>
-In-Reply-To: <20101214075647.11275.25933.sendpatchset@t400s>
+References: <1292860431-16195-7-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1292860431-16195-7-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
 
-From: Magnus Damm <damm@opensource.se>
+This patch enables the interrupt generation for SDIO IRQs
+of the sdhi controllers of the SoC. To make sure SDIO IRQs
+are used, announce the MMC_CAP_SDIO_IRQ capability
+on migor. Untested, therefore RFC.
 
-Allow SMP to be enabled on R-Mobile / SH-Mobile.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
+Changes since v2:
+- Added missing include
 
- May need to be reworked to fit the current state of the tree
- associated with the RMK patch tracker.
+ arch/sh/boards/mach-migor/setup.c      |    2 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    2 +-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
- arch/arm/Kconfig |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 5dc72b4..affeec4 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -14,6 +14,7 @@
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/nand.h>
+ #include <linux/i2c.h>
+@@ -413,6 +414,7 @@ static struct resource sdhi_cn9_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi_cn9_device = {
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index d551ed8..a164f89 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -699,7 +699,7 @@ static struct intc_mask_reg mask_registers[] __initdata = {
+ 	  { I2C_DTEI, I2C_WAITI, I2C_TACKI, I2C_ALI,
+ 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLENDI, FLCTL_FLSTEI } },
+ 	{ 0xa40800a0, 0xa40800e0, 8, /* IMR8 / IMCR8 */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
++	  { DISABLED, ENABLED, ENABLED, ENABLED, 0, 0, TWODG, SIU } },
+ 	{ 0xa40800a4, 0xa40800e4, 8, /* IMR9 / IMCR9 */
+ 	  { 0, 0, 0, CMT, 0, USB_USBI1, USB_USBI0, } },
+ 	{ 0xa40800a8, 0xa40800e8, 8, /* IMR10 / IMCR10 */
+-- 
+1.7.2.3
 
---- 0001/arch/arm/Kconfig
-+++ work/arch/arm/Kconfig	2010-12-14 13:31:02.000000000 +0900
-@@ -1211,7 +1211,8 @@ config SMP
- 	depends on GENERIC_CLOCKEVENTS
- 	depends on REALVIEW_EB_ARM11MP || REALVIEW_EB_A9MP || \
- 		 MACH_REALVIEW_PB11MP || MACH_REALVIEW_PBX || ARCH_OMAP4 ||\
--		 ARCH_S5PV310 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4
-+		 ARCH_S5PV310 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || \
-+		 ARCH_SHMOBILE
- 	select USE_GENERIC_SMP_HELPERS
- 	select HAVE_ARM_SCU
- 	help
