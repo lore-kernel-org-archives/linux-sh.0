@@ -1,40 +1,32 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Date: Mon, 20 Dec 2010 15:53:47 +0000
-Subject: [PATCH 2/6 v2] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
-Message-Id: <1292860431-16195-3-git-send-email-arnd@arndnet.de>
+From: Samuel Ortiz <sameo@linux.intel.com>
+Date: Fri, 24 Dec 2010 11:03:31 +0000
+Subject: Re: [PATCH 2/6 v2] mfd: sh_mobile_sdhi: activate SDIO IRQ for
+Message-Id: <20101224110330.GD27832@sortiz-mobl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
-In-Reply-To: <AANLkTi=HuQKRuTLLKt3Y4r9Boo71dq4qGtHLNy2=RD-V@mail.gmail.com>
+ <1292860431-16195-3-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1292860431-16195-3-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Arnd Hannemann <arnd@arndnet.de>
+To: Arnd Hannemann <arnd@arndnet.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>
 
-The SDHI Controller on SH-Mobile SoCs supports SDIO IRQ signalling.
-This patch advertises this fact to the tmio_mmc driver.
+Hi Arnd,
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
----
- drivers/mfd/sh_mobile_sdhi.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+On Mon, Dec 20, 2010 at 03:53:47PM +0000, Arnd Hannemann wrote:
+> The SDHI Controller on SH-Mobile SoCs supports SDIO IRQ signalling.
+> This patch advertises this fact to the tmio_mmc driver.
+> 
+> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Since this one depends on the first patch on the series, I won't be able to
+carry it. Please add my:
 
-diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-index 3ca20ec..0a7df44 100644
---- a/drivers/mfd/sh_mobile_sdhi.c
-+++ b/drivers/mfd/sh_mobile_sdhi.c
-@@ -131,6 +131,11 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	 */
- 	mmc_data->flags |= TMIO_MMC_BLKSZ_2BYTES;
- 
-+	/*
-+	 * All SDHI blocks support SDIO IRQ signalling.
-+	 */
-+	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
-+
- 	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
- 		priv->param_tx.slave_id = p->dma_slave_tx;
- 		priv->param_rx.slave_id = p->dma_slave_rx;
+Acked-by: Samuel Ortiz <sameo@linux.intel.com>
+
+Cheers,
+Samuel.
+
 -- 
-1.7.2.3
-
+Intel Open Source Technology Centre
+http://oss.intel.com/
