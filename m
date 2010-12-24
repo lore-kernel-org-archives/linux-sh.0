@@ -1,237 +1,35 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 22 Dec 2010 11:02:15 +0000
-Subject: [PATCH 2/3 v2] mmc: tmio: implement a bounce buffer for unaligned
-Message-Id: <Pine.LNX.4.64.1012221156580.14483@axis700.grange>
+From: Samuel Ortiz <sameo@linux.intel.com>
+Date: Fri, 24 Dec 2010 11:11:00 +0000
+Subject: Re: [PATCH 2/3 v2] mmc: tmio: implement a bounce buffer for
+Message-Id: <20101224111100.GF27832@sortiz-mobl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
  <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
+ <Pine.LNX.4.64.1012221156580.14483@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1012221156580.14483@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>, Magnus Damm <damm@opensource.se>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <damm@opensource.se>
 
-For example, with SDIO WLAN cards, some transfers happen with buffers at odd
-addresses, whereas the SH-Mobile DMA engine requires even addresses for SDHI.
-This patch extends the tmio driver with a bounce buffer, that is used for
-single entry scatter-gather lists both for sending and receiving. If we ever
-encounter unaligned transfers with multi-element sg lists, this patch will have
-to be extended. For now it just falls back to PIO in this and other unsupported
-cases.
+On Wed, Dec 22, 2010 at 12:02:15PM +0100, Guennadi Liakhovetski wrote:
+> For example, with SDIO WLAN cards, some transfers happen with buffers at odd
+> addresses, whereas the SH-Mobile DMA engine requires even addresses for SDHI.
+> This patch extends the tmio driver with a bounce buffer, that is used for
+> single entry scatter-gather lists both for sending and receiving. If we ever
+> encounter unaligned transfers with multi-element sg lists, this patch will have
+> to be extended. For now it just falls back to PIO in this and other unsupported
+> cases.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Samuel Ortiz <sameo@linux.intel.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+for the MFD part.
 
-v2:
+Cheers,
+Samuel.
 
-1. fixed compilation without DMA support. Thanks to Magnus Damm 
-<damm@opensource.se> for reporting
-
- drivers/mmc/host/tmio_mmc.c |   81 +++++++++++++++++++++++++++++++++++++++----
- include/linux/mfd/tmio.h    |    1 +
- 2 files changed, 75 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 118ad86..eadf951 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -111,6 +111,8 @@
- 		sd_ctrl_write32((host), CTL_STATUS, ~(i)); \
- 	} while (0)
- 
-+/* This is arbitrary, just noone needed any higher alignment yet */
-+#define MAX_ALIGN 4
- 
- struct tmio_mmc_host {
- 	void __iomem *ctl;
-@@ -127,6 +129,7 @@ struct tmio_mmc_host {
- 
- 	/* pio related stuff */
- 	struct scatterlist      *sg_ptr;
-+	struct scatterlist      *sg_orig;
- 	unsigned int            sg_len;
- 	unsigned int            sg_off;
- 
-@@ -139,9 +142,13 @@ struct tmio_mmc_host {
- 	struct tasklet_struct	dma_issue;
- #ifdef CONFIG_TMIO_MMC_DMA
- 	unsigned int            dma_sglen;
-+	u8			bounce_buf[PAGE_CACHE_SIZE] __attribute__((aligned(MAX_ALIGN)));
-+	struct scatterlist	bounce_sg;
- #endif
- };
- 
-+static void tmio_check_bounce_buffer(struct tmio_mmc_host *host);
-+
- static u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
- {
- 	return readw(host->ctl + (addr << host->bus_shift));
-@@ -180,6 +187,7 @@ static void tmio_mmc_init_sg(struct tmio_mmc_host *host, struct mmc_data *data)
- {
- 	host->sg_len = data->sg_len;
- 	host->sg_ptr = data->sg;
-+	host->sg_orig = data->sg;
- 	host->sg_off = 0;
- }
- 
-@@ -438,6 +446,8 @@ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
- 	if (data->flags & MMC_DATA_READ) {
- 		if (!host->chan_rx)
- 			disable_mmc_irqs(host, TMIO_MASK_READOP);
-+		else
-+			tmio_check_bounce_buffer(host);
- 		dev_dbg(&host->pdev->dev, "Complete Rx request %p\n",
- 			host->mrq);
- 	} else {
-@@ -529,8 +539,7 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
- 			if (!host->chan_rx)
- 				enable_mmc_irqs(host, TMIO_MASK_READOP);
- 		} else {
--			struct dma_chan *chan = host->chan_tx;
--			if (!chan)
-+			if (!host->chan_tx)
- 				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
- 			else
- 				tasklet_schedule(&host->dma_issue);
-@@ -612,6 +621,16 @@ out:
- }
- 
- #ifdef CONFIG_TMIO_MMC_DMA
-+static void tmio_check_bounce_buffer(struct tmio_mmc_host *host)
-+{
-+	if (host->sg_ptr = &host->bounce_sg) {
-+		unsigned long flags;
-+		void *sg_vaddr = tmio_mmc_kmap_atomic(host->sg_orig, &flags);
-+		memcpy(sg_vaddr, host->bounce_buf, host->bounce_sg.length);
-+		tmio_mmc_kunmap_atomic(sg_vaddr, &flags);
-+	}
-+}
-+
- static void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- {
- #if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
-@@ -634,11 +653,36 @@ static void tmio_dma_complete(void *arg)
- 
- static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- {
--	struct scatterlist *sg = host->sg_ptr;
-+	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
- 	struct dma_async_tx_descriptor *desc = NULL;
- 	struct dma_chan *chan = host->chan_rx;
-+	struct mfd_cell	*cell = host->pdev->dev.platform_data;
-+	struct tmio_mmc_data *pdata = cell->driver_data;
- 	dma_cookie_t cookie;
--	int ret;
-+	int ret, i;
-+	bool aligned = true, multiple = true;
-+	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
-+
-+	for_each_sg(sg, sg_tmp, host->sg_len, i) {
-+		if (sg_tmp->offset & align)
-+			aligned = false;
-+		if (sg_tmp->length & align) {
-+			multiple = false;
-+			break;
-+		}
-+	}
-+
-+	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
-+			  align >= MAX_ALIGN)) || !multiple)
-+		goto pio;
-+
-+	/* The only sg element can be unaligned, use our bounce buffer then */
-+	if (!aligned) {
-+		/* The first sg element unaligned, use our bounce-buffer */
-+		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
-+		host->sg_ptr = &host->bounce_sg;
-+		sg = host->sg_ptr;
-+	}
- 
- 	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_FROM_DEVICE);
- 	if (ret > 0) {
-@@ -661,6 +705,7 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
- 		__func__, host->sg_len, ret, cookie, host->mrq);
- 
-+pio:
- 	if (!desc) {
- 		/* DMA failed, fall back to PIO */
- 		if (ret >= 0)
-@@ -684,11 +729,40 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 
- static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- {
--	struct scatterlist *sg = host->sg_ptr;
-+	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
- 	struct dma_async_tx_descriptor *desc = NULL;
- 	struct dma_chan *chan = host->chan_tx;
-+	struct mfd_cell	*cell = host->pdev->dev.platform_data;
-+	struct tmio_mmc_data *pdata = cell->driver_data;
- 	dma_cookie_t cookie;
--	int ret;
-+	int ret, i;
-+	bool aligned = true, multiple = true;
-+	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
-+
-+	for_each_sg(sg, sg_tmp, host->sg_len, i) {
-+		if (sg_tmp->offset & align)
-+			aligned = false;
-+		if (sg_tmp->length & align) {
-+			multiple = false;
-+			break;
-+		}
-+	}
-+
-+	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
-+			  align >= MAX_ALIGN)) || !multiple)
-+		goto pio;
-+
-+	/* The only sg element can be unaligned, use our bounce buffer then */
-+	if (!aligned) {
-+		unsigned long flags;
-+		void *sg_vaddr = tmio_mmc_kmap_atomic(sg, &flags);
-+		/* The first sg element unaligned, use our bounce-buffer */
-+		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
-+		memcpy(host->bounce_buf, sg_vaddr, host->bounce_sg.length);
-+		tmio_mmc_kunmap_atomic(sg_vaddr, &flags);
-+		host->sg_ptr = &host->bounce_sg;
-+		sg = host->sg_ptr;
-+	}
- 
- 	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_TO_DEVICE);
- 	if (ret > 0) {
-@@ -709,6 +783,7 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- 	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
- 		__func__, host->sg_len, ret, cookie, host->mrq);
- 
-+pio:
- 	if (!desc) {
- 		/* DMA failed, fall back to PIO */
- 		if (ret >= 0)
-@@ -822,6 +897,10 @@ static void tmio_mmc_release_dma(struct tmio_mmc_host *host)
- 	}
- }
- #else
-+static void tmio_check_bounce_buffer(struct tmio_mmc_host *host)
-+{
-+}
-+
- static void tmio_mmc_start_dma(struct tmio_mmc_host *host,
- 			       struct mmc_data *data)
- {
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 085f041..dbfc053 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -66,6 +66,7 @@ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
- struct tmio_mmc_dma {
- 	void *chan_priv_tx;
- 	void *chan_priv_rx;
-+	int alignment_shift;
- };
- 
- /*
 -- 
-1.7.2.3
-
+Intel Open Source Technology Centre
+http://oss.intel.com/
