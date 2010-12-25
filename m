@@ -1,311 +1,99 @@
-From: Filippo ARCIDIACONO <filippo.arcidiacono@st.com>
-Date: Thu, 23 Dec 2010 13:44:10 +0000
-Subject: [PATCH 1/2] stackprotector: add stack smashing protector generic
-Message-Id: <1293111851-7175-1-git-send-email-filippo.arcidiacono@st.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sat, 25 Dec 2010 21:44:35 +0000
+Subject: Re: [PATCH 3/5] fbdev: sh_mobile_lcdc: increase maximum framebuffer
+Message-Id: <Pine.LNX.4.64.1012252235130.5248@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011041200050.13123@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011041200050.13123@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-The current implementation of SSP used for ARM architecture is based
-on the global variable __stack_chk_guard
-(see commit c743f38013aeff58ef6252601e397b5ba281c633 by Nicolas Pitre).
-This implementation should be generic enough to be used for all
-architectures that rely upon that global variable (i.e. SH), so the
-ARM code can be widely used for all those architectures.
-The kbuild uses a script to check if the architecture does actually
-need to define the __stack_chk_guard, so it will use the generic SSP
-code, otherwise it will fall back to the architecture specific one
-(i.e. x86, x86_64).
+Paul, apart from increasing the fb size to 1080p, this patch also fixes a 
+regression, which leads to unusable by applications framebuffer on some 
+platforms, including migor. This happens, when one of parameters lies 
+outside of limits, being checked in sh_mobile_check_var(). On migor it is
 
-Signed-off-by: Filippo Arcidiacono <filippo.arcidiacono@st.com>
-Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+		.left_margin = 0,
+
+Then the fb-console is working, but, e.g., mplayer is not. So, we need 
+this patch in 2.6.37 too, please. Unfortunately, it also introduces a 
+wrong format printk format, which a later patch of yours fixes, so, you 
+might want to push that patch too, although, that's not that important.
+
+Thanks
+Guennadi
+
+On Thu, 4 Nov 2010, Guennadi Liakhovetski wrote:
+
+> LCDC hardware can support 1920x1080 formats, adjust the driver to cover them.
+> Besides, instead of guessing some "reasonable" validity checks, only verify
+> values in .fb_check_var(), that we are sure, we cannot support.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+>  drivers/video/sh_mobile_lcdcfb.c |   26 ++++++++------------------
+>  1 files changed, 8 insertions(+), 18 deletions(-)
+> 
+> diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+> index a87dace..8e8d698 100644
+> --- a/drivers/video/sh_mobile_lcdcfb.c
+> +++ b/drivers/video/sh_mobile_lcdcfb.c
+> @@ -54,8 +54,8 @@ static int lcdc_shared_regs[] = {
+>  };
+>  #define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
+>  
+> -#define DEFAULT_XRES 1280
+> -#define DEFAULT_YRES 1024
+> +#define MAX_XRES 1920
+> +#define MAX_YRES 1080
+>  
+>  static unsigned long lcdc_offs_mainlcd[NR_CH_REGS] = {
+>  	[LDDCKPAT1R] = 0x400,
+> @@ -914,22 +914,12 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+>  {
+>  	struct sh_mobile_lcdc_chan *ch = info->par;
+>  
+> -	if (var->xres < 160 || var->xres > 1920 ||
+> -	    var->yres < 120 || var->yres > 1080 ||
+> -	    var->left_margin < 32 || var->left_margin > 320 ||
+> -	    var->right_margin < 12 || var->right_margin > 240 ||
+> -	    var->upper_margin < 12 || var->upper_margin > 120 ||
+> -	    var->lower_margin < 1 || var->lower_margin > 64 ||
+> -	    var->hsync_len < 32 || var->hsync_len > 240 ||
+> -	    var->vsync_len < 2 || var->vsync_len > 64 ||
+> -	    var->pixclock < 6000 || var->pixclock > 40000 ||
+> +	if (var->xres > MAX_XRES || var->yres > MAX_YRES ||
+>  	    var->xres * var->yres * (ch->cfg.bpp / 8) * 2 > info->fix.smem_len) {
+> -		dev_warn(info->dev, "Invalid info: %u %u %u %u %u %u %u %u %u!\n",
+> -			 var->xres, var->yres,
+> -			 var->left_margin, var->right_margin,
+> -			 var->upper_margin, var->lower_margin,
+> -			 var->hsync_len, var->vsync_len,
+> -			 var->pixclock);
+> +		dev_warn(info->dev, "Invalid info: %u-%u-%u-%u x %u-%u-%u-%u @ %ukHz!\n",
+> +			 var->left_margin, var->xres, var->right_margin, var->hsync_len,
+> +			 var->upper_margin, var->yres, var->lower_margin, var->vsync_len,
+> +			 PICOS2KHZ(var->pixclock));
+>  		return -EINVAL;
+>  	}
+>  	return 0;
+> @@ -1225,7 +1215,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+>  		}
+>  
+>  		if (!mode)
+> -			max_size = DEFAULT_XRES * DEFAULT_YRES;
+> +			max_size = MAX_XRES * MAX_YRES;
+>  		else if (max_cfg)
+>  			dev_dbg(&pdev->dev, "Found largest videomode %ux%u\n",
+>  				max_cfg->xres, max_cfg->yres);
+> -- 
+> 1.7.2.3
+> 
+> 
+
 ---
- Makefile                                   |   14 ++++++++-
- arch/Kconfig                               |   16 +++++++++++
- arch/arm/Kconfig                           |   12 --------
- arch/arm/Makefile                          |    4 ---
- arch/arm/include/asm/stackprotector.h      |   38 ---------------------------
- arch/arm/kernel/process.c                  |    6 ----
- arch/x86/Kconfig                           |   16 -----------
- include/asm-generic/stackprotector.h       |   39 ++++++++++++++++++++++++++++
- include/linux/stackprotector.h             |    6 +++-
- init/main.c                                |    5 +++
- scripts/gcc-generic-has-stack-protector.sh |    9 ++++++
- 11 files changed, 86 insertions(+), 79 deletions(-)
- delete mode 100644 arch/arm/include/asm/stackprotector.h
- create mode 100644 include/asm-generic/stackprotector.h
- create mode 100755 scripts/gcc-generic-has-stack-protector.sh
-
-diff --git a/Makefile b/Makefile
-index 77044b7..7530650 100644
---- a/Makefile
-+++ b/Makefile
-@@ -550,8 +550,18 @@ KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
- endif
- 
- # Force gcc to behave correct even for buggy distributions
--ifndef CONFIG_CC_STACKPROTECTOR
--KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
-+ifdef CONFIG_CC_STACKPROTECTOR
-+stackp-y := $(call cc-option,-fstack-protector)
-+ifeq ($(stackp-y),)
-+  $(warning stack protector enabled but no compiler support)
-+else
-+cc_has_sp := $(srctree)/scripts/gcc-generic-has-stack-protector.sh
-+ifeq ($(shell $(CONFIG_SHELL) $(cc_has_sp) $(CC)), y)
-+  KBUILD_CFLAGS += $(stackp-y) -D__ARCH_WANT_STACK_CHK_GUARD
-+endif
-+endif
-+else
-+  KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
- endif
- 
- ifdef CONFIG_FRAME_POINTER
-diff --git a/arch/Kconfig b/arch/Kconfig
-index 8bf0fa6..083245d 100644
---- a/arch/Kconfig
-+++ b/arch/Kconfig
-@@ -175,4 +175,20 @@ config HAVE_PERF_EVENTS_NMI
- config HAVE_ARCH_JUMP_LABEL
- 	bool
- 
-+config CC_STACKPROTECTOR
-+	bool "Enable -fstack-protector buffer overflow detection"
-+	help
-+	  This option turns on the -fstack-protector GCC feature. This
-+	  feature puts, at the beginning of functions, a canary value on
-+	  the stack just before the return address, and validates
-+	  the value just before actually returning.  Stack based buffer
-+	  overflows (that need to overwrite this return address) now also
-+	  overwrite the canary, which gets detected and the attack is then
-+	  neutralized via a kernel panic.
-+
-+	  This feature requires gcc version 4.2 or above, or a distribution
-+	  gcc with the feature backported. Older versions are automatically
-+	  detected and for those versions, this configuration option is
-+	  ignored. (and a warning is printed during bootup)
-+
- source "kernel/gcov/Kconfig"
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index d56d21c..58c29a5 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1522,18 +1522,6 @@ config SECCOMP
- 	  and the task is only allowed to execute a few safe syscalls
- 	  defined by each seccomp mode.
- 
--config CC_STACKPROTECTOR
--	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
--	help
--	  This option turns on the -fstack-protector GCC feature. This
--	  feature puts, at the beginning of functions, a canary value on
--	  the stack just before the return address, and validates
--	  the value just before actually returning.  Stack based buffer
--	  overflows (that need to overwrite this return address) now also
--	  overwrite the canary, which gets detected and the attack is then
--	  neutralized via a kernel panic.
--	  This feature requires gcc version 4.2 or above.
--
- config DEPRECATED_PARAM_STRUCT
- 	bool "Provide old way to pass kernel parameters"
- 	help
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index b87aed0..ebbd003 100644
---- a/arch/arm/Makefile
-+++ b/arch/arm/Makefile
-@@ -37,10 +37,6 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
- KBUILD_CFLAGS	+=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
- endif
- 
--ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
--KBUILD_CFLAGS	+=-fstack-protector
--endif
--
- ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
- KBUILD_CPPFLAGS	+= -mbig-endian
- AS		+= -EB
-diff --git a/arch/arm/include/asm/stackprotector.h b/arch/arm/include/asm/stackprotector.h
-deleted file mode 100644
-index de00332..0000000
---- a/arch/arm/include/asm/stackprotector.h
-+++ /dev/null
-@@ -1,38 +0,0 @@
--/*
-- * GCC stack protector support.
-- *
-- * Stack protector works by putting predefined pattern at the start of
-- * the stack frame and verifying that it hasn't been overwritten when
-- * returning from the function.  The pattern is called stack canary
-- * and gcc expects it to be defined by a global variable called
-- * "__stack_chk_guard" on ARM.  This unfortunately means that on SMP
-- * we cannot have a different canary value per task.
-- */
--
--#ifndef _ASM_STACKPROTECTOR_H
--#define _ASM_STACKPROTECTOR_H 1
--
--#include <linux/random.h>
--#include <linux/version.h>
--
--extern unsigned long __stack_chk_guard;
--
--/*
-- * Initialize the stackprotector canary value.
-- *
-- * NOTE: this must only be called from functions that never return,
-- * and it must always be inlined.
-- */
--static __always_inline void boot_init_stack_canary(void)
--{
--	unsigned long canary;
--
--	/* Try to get a semi random initial value. */
--	get_random_bytes(&canary, sizeof(canary));
--	canary ^= LINUX_VERSION_CODE;
--
--	current->stack_canary = canary;
--	__stack_chk_guard = current->stack_canary;
--}
--
--#endif	/* _ASM_STACKPROTECTOR_H */
-diff --git a/arch/arm/kernel/process.c b/arch/arm/kernel/process.c
-index e76fcaa..067b4de 100644
---- a/arch/arm/kernel/process.c
-+++ b/arch/arm/kernel/process.c
-@@ -39,12 +39,6 @@
- #include <asm/stacktrace.h>
- #include <asm/mach/time.h>
- 
--#ifdef CONFIG_CC_STACKPROTECTOR
--#include <linux/stackprotector.h>
--unsigned long __stack_chk_guard __read_mostly;
--EXPORT_SYMBOL(__stack_chk_guard);
--#endif
--
- static const char *processor_modes[] = {
-   "USER_26", "FIQ_26" , "IRQ_26" , "SVC_26" , "UK4_26" , "UK5_26" , "UK6_26" , "UK7_26" ,
-   "UK8_26" , "UK9_26" , "UK10_26", "UK11_26", "UK12_26", "UK13_26", "UK14_26", "UK15_26",
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index e330da2..b8704dd 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -1455,22 +1455,6 @@ config SECCOMP
- 
- 	  If unsure, say Y. Only embedded should say N here.
- 
--config CC_STACKPROTECTOR
--	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
--	---help---
--	  This option turns on the -fstack-protector GCC feature. This
--	  feature puts, at the beginning of functions, a canary value on
--	  the stack just before the return address, and validates
--	  the value just before actually returning.  Stack based buffer
--	  overflows (that need to overwrite this return address) now also
--	  overwrite the canary, which gets detected and the attack is then
--	  neutralized via a kernel panic.
--
--	  This feature requires gcc version 4.2 or above, or a distribution
--	  gcc with the feature backported. Older versions are automatically
--	  detected and for those versions, this configuration option is
--	  ignored. (and a warning is printed during bootup)
--
- source kernel/Kconfig.hz
- 
- config KEXEC
-diff --git a/include/asm-generic/stackprotector.h b/include/asm-generic/stackprotector.h
-new file mode 100644
-index 0000000..2cf9c65
---- /dev/null
-+++ b/include/asm-generic/stackprotector.h
-@@ -0,0 +1,39 @@
-+/*
-+ * GCC stack protector support.
-+ * (Generic implementation based on __stack_chk_guard)
-+ *
-+ * Stack protector works by putting predefined pattern at the start of
-+ * the stack frame and verifying that it hasn't been overwritten when
-+ * returning from the function.  The pattern is called stack canary
-+ * and gcc expects it to be defined by a global variable called
-+ * "__stack_chk_guard". This unfortunately means that on SMP
-+ * we cannot have a different canary value per task.
-+ */
-+
-+#ifndef _LINUX_STACKPROTECTOR_H
-+#error "Never use <asm-generic/stackprotector.h> directly; \
-+include <linux/stackprotector.h> instead."
-+#endif
-+
-+#include <linux/random.h>
-+#include <linux/version.h>
-+
-+extern unsigned long __stack_chk_guard;
-+
-+/*
-+ * Initialize the stackprotector canary value.
-+ *
-+ * NOTE: this must only be called from functions that never return,
-+ * and it must always be inlined.
-+ */
-+static __always_inline void boot_init_stack_canary(void)
-+{
-+	unsigned long canary;
-+
-+	/* Try to get a semi random initial value. */
-+	get_random_bytes(&canary, sizeof(canary));
-+	canary ^= LINUX_VERSION_CODE;
-+
-+	current->stack_canary = canary;
-+	__stack_chk_guard = current->stack_canary;
-+}
-diff --git a/include/linux/stackprotector.h b/include/linux/stackprotector.h
-index 6f3e54c..d71a437 100644
---- a/include/linux/stackprotector.h
-+++ b/include/linux/stackprotector.h
-@@ -6,7 +6,11 @@
- #include <linux/random.h>
- 
- #ifdef CONFIG_CC_STACKPROTECTOR
--# include <asm/stackprotector.h>
-+#ifdef __ARCH_WANT_STACK_CHK_GUARD
-+#include <asm-generic/stackprotector.h>
-+#else
-+#include <asm/stackprotector.h>
-+#endif
- #else
- static inline void boot_init_stack_canary(void)
- {
-diff --git a/init/main.c b/init/main.c
-index 8646401..8b2e070 100644
---- a/init/main.c
-+++ b/init/main.c
-@@ -78,6 +78,11 @@
- #include <asm/smp.h>
- #endif
- 
-+#if defined CONFIG_CC_STACKPROTECTOR && defined __ARCH_WANT_STACK_CHK_GUARD
-+unsigned long __stack_chk_guard __read_mostly;
-+EXPORT_SYMBOL(__stack_chk_guard);
-+#endif
-+
- static int kernel_init(void *);
- 
- extern void init_IRQ(void);
-diff --git a/scripts/gcc-generic-has-stack-protector.sh b/scripts/gcc-generic-has-stack-protector.sh
-new file mode 100755
-index 0000000..11cc914
---- /dev/null
-+++ b/scripts/gcc-generic-has-stack-protector.sh
-@@ -0,0 +1,9 @@
-+#!/bin/sh
-+
-+echo "int foo(void) { char X[200]; return 3; }" | $1 -S -xc -c -O0 \
-+-fstack-protector - -o - 2> /dev/null | grep -q __stack_chk_guard
-+if [ "$?" -eq "0" ] ; then
-+	echo y
-+else
-+	echo n
-+fi
--- 
-1.5.5.6
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
