@@ -1,100 +1,127 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 Dec 2010 12:17:09 +0000
-Subject: [PATCH] ARM: mach-shmobile: Use shared GIC entry macros
-Message-Id: <20101222121709.9942.76569.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 27 Dec 2010 10:23:09 +0000
+Subject: [PATCH 2/2 v2] ARM: mach-shmobile: improve MIPI DSI clock configuration
+Message-Id: <Pine.LNX.4.64.1012271120300.669@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Now, that the MIPI DSI driver implements runtime PM, we don't need anymore to
+configure clocks statically in the platform code. This patch also adds a DSITX1
+clock definition for sh7372 and attaches PHY clocks to respective devices.
 
-Use the GIC demux code in asm/hardware/entry-macro-gic.S
-on the R-Mobile / SH-Mobile processors.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- Depends the following ARM patch:
- "[PATCH 01/07] ARM: Introduce asm/hardware/entry-macro-gic.S"
- http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idd75/1
+v2: duplicate the dsit_clk clock for both MIPI DSI instances on sh7372
 
- arch/arm/mach-shmobile/include/mach/entry-macro-gic.S |   62 -----------------
- 1 file changed, 1 insertion(+), 61 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   38 ---------------------------------
+ arch/arm/mach-shmobile/clock-sh7372.c |   13 +++++++----
+ 2 files changed, 8 insertions(+), 43 deletions(-)
 
---- 0001/arch/arm/mach-shmobile/include/mach/entry-macro-gic.S
-+++ work/arch/arm/mach-shmobile/include/mach/entry-macro-gic.S	2010-12-22 21:09:21.000000000 +0900
-@@ -16,6 +16,7 @@
-  */
- #include <mach/hardware.h>
- #include <asm/hardware/gic.h>
-+#include <asm/hardware/entry-macro-gic.S>
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index ed999a3..f0b8650 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -531,44 +531,6 @@ static struct platform_device mipidsi0_device = {
+ 	},
+ };
  
- 	.macro  disable_fiq
- 	.endm
-@@ -26,64 +27,3 @@
+-/* This function will disappear when we switch to (runtime) PM */
+-static int __init ap4evb_init_display_clk(void)
+-{
+-	struct clk *lcdc_clk;
+-	struct clk *dsitx_clk;
+-	int ret;
+-
+-	lcdc_clk = clk_get(&lcdc_device.dev, "sh_mobile_lcdc_fb.0");
+-	if (IS_ERR(lcdc_clk))
+-		return PTR_ERR(lcdc_clk);
+-
+-	dsitx_clk = clk_get(&mipidsi0_device.dev, "sh-mipi-dsi.0");
+-	if (IS_ERR(dsitx_clk)) {
+-		ret = PTR_ERR(dsitx_clk);
+-		goto eclkdsitxget;
+-	}
+-
+-	ret = clk_enable(lcdc_clk);
+-	if (ret < 0)
+-		goto eclklcdcon;
+-
+-	ret = clk_enable(dsitx_clk);
+-	if (ret < 0)
+-		goto eclkdsitxon;
+-
+-	return 0;
+-
+-eclkdsitxon:
+-	clk_disable(lcdc_clk);
+-eclklcdcon:
+-	clk_put(dsitx_clk);
+-eclkdsitxget:
+-	clk_put(lcdc_clk);
+-
+-	return ret;
+-}
+-device_initcall(ap4evb_init_display_clk);
+-
+ static struct platform_device *qhd_devices[] __initdata = {
+ 	&mipidsi0_device,
+ 	&keysc_device,
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index eb92fef..33fee57 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -507,7 +507,7 @@ enum { MSTP001,
+        MSTP223,
+        MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+        MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
+-       MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403,
++       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403,
+        MSTP_NR };
  
- 	.macro  arch_ret_to_user, tmp1, tmp2
- 	.endm
--
--	/*
--	 * The interrupt numbering scheme is defined in the
--	 * interrupt controller spec.  To wit:
--	 *
--	 * Interrupts 0-15 are IPI
--	 * 16-28 are reserved
--	 * 29-31 are local.  We allow 30 to be used for the watchdog.
--	 * 32-1020 are global
--	 * 1021-1022 are reserved
--	 * 1023 is "spurious" (no interrupt)
--	 *
--	 * For now, we ignore all local interrupts so only return an
--	 * interrupt if it's between 30 and 1020.  The test_for_ipi
--	 * routine below will pick up on IPIs.
--	 *
--	 * A simple read from the controller will tell us the number of
--	 * the highest priority enabled interrupt.  We then just need to
--	 * check whether it is in the valid range for an IRQ (30-1020
--	 * inclusive).
--	 */
--
--	.macro	get_irqnr_and_base, irqnr, irqstat, base, tmp
--
--	ldr	\irqstat, [\base, #GIC_CPU_INTACK]
--	/* bits 12-10 = src CPU, 9-0 = int # */
--
--	ldr	\tmp, 21
--	bic	\irqnr, \irqstat, #0x1c00
--	cmp	\irqnr, #29
--	cmpcc	\irqnr, \irqnr
--	cmpne	\irqnr, \tmp
--	cmpcs	\irqnr, \irqnr
--
--	.endm
--
--	/*
--	 * We assume that irqstat (the raw value of the IRQ acknowledge
--	 * register) is preserved from the macro above.
--	 * If there is an IPI, we immediately signal end of interrupt on the
--	 * controller, since this requires the original irqstat value which
--	 * we won't easily be able to recreate later.
--	 */
--
--	.macro test_for_ipi, irqnr, irqstat, base, tmp
--	bic	\irqnr, \irqstat, #0x1c00
--	cmp	\irqnr, #16
--	strcc	\irqstat, [\base, #GIC_CPU_EOI]
--	cmpcs	\irqnr, \irqnr
--	.endm
--
--	/* As above, this assumes that irqstat and base are preserved.. */
--
--	.macro test_for_ltirq, irqnr, irqstat, base, tmp
--	bic	\irqnr, \irqstat, #0x1c00
--	mov 	\tmp, #0
--	cmp	\irqnr, #29
--	moveq	\tmp, #1
--	streq	\irqstat, [\base, #GIC_CPU_EOI]
--	cmp	\tmp, #0
--	.endm
+ #define MSTP(_parent, _reg, _bit, _flags) \
+@@ -543,6 +543,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP314] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP313] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMC */
++	[MSTP423] = MSTP(&div4_clks[DIV4_B], SMSTPCR4, 23, 0), /* DSITX1 */
+ 	[MSTP415] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 15, 0), /* SDHI2 */
+ 	[MSTP413] = MSTP(&pllc1_div2_clk, SMSTPCR4, 13, 0), /* HDMI */
+ 	[MSTP411] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 11, 0), /* IIC3 */
+@@ -596,9 +597,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
+ 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
+ 	CLKDEV_CON_ID("hdmi_clk", &div6_reparent_clks[DIV6_HDMI]),
+-	CLKDEV_CON_ID("dsit_clk", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_CON_ID("dsi0p_clk", &div6_clks[DIV6_DSI0P]),
+-	CLKDEV_CON_ID("dsi1p_clk", &div6_clks[DIV6_DSI1P]),
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsi0p_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
++	CLKDEV_ICK_ID("dsi1p_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
+@@ -610,7 +612,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
+-	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
++	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX0 */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* IIC0 */
+ 	CLKDEV_DEV_ID("uio_pdrv_genirq.5", &mstp_clks[MSTP106]), /* JPU */
+@@ -633,6 +635,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMC */
++	CLKDEV_DEV_ID("sh-mipi-dsi.1", &mstp_clks[MSTP423]), /* DSITX1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP415]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-mobile-hdmi", &mstp_clks[MSTP413]), /* HDMI */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* IIC3 */
+-- 
+1.7.2.3
+
