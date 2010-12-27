@@ -1,23 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 23 Dec 2010 06:36:28 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: mackerel: Add sdhi support
-Message-Id: <20101223063626.GA4540@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 27 Dec 2010 04:42:20 +0000
+Subject: [PATCH] fbdev: sh_mobile_hdmi: fixup compile error
+Message-Id: <w3phbdzu8ra.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lrg@slimlogic.co.uk>
 
-Hi Goda-san,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Paul
 
-The SDHI1 portions of this code do not seem to work for me.
-If I remove then then I can access SDHI0 and 2, but if they
-are included then I can't access any MMC devices.
+This patch is not needed for now on Paul's tree.
+But seems to be needed after ALSA tree merge.
 
-I can access the same port that SDHI1 uses by using
-the MMCIF driver as per your subsequent patch.
+>> Mark, Liam
 
-Let me know if I can provide any more information.
+this patch is needed on current Mark's "for-2.6.38" tree.
+
+
+ drivers/video/sh_mobile_hdmi.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index d7df103..b19941d 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -22,6 +22,7 @@
+ #include <linux/slab.h>
+ #include <linux/types.h>
+ #include <linux/workqueue.h>
++#include <sound/soc.h>
+ #include <sound/soc-dapm.h>
+ #include <sound/initval.h>
+ 
+-- 
+1.7.1
 
