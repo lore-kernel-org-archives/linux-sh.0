@@ -1,94 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Dec 2010 00:12:45 +0000
-Subject: [patch 2/3] mmc, sh: Remove sh_mmcif_boot_slurp()
-Message-Id: <20101206001310.744889412@vergenet.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 28 Dec 2010 08:26:43 +0000
+Subject: [PATCH 00/04] ARM: mach-shmobile: Add run-time IRQ handler support
+Message-Id: <20101228082643.11806.88798.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101206001243.949375995@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-As the only caller of sh_mmcif_boot_do_read() is
-sh_mmcif_boot_slurp() the configuration portion of
-sh_mmcif_boot_slurp() can be merged into sh_mmcif_boot_do_read().
+ARM: mach-shmobile: Add run-time IRQ handler support
 
-Once this is done sh_mmcif_boot_slurp() is only a call
-to sh_mmcif_boot_do_read() with platform specific information -
-the offset that images are stored on MMC. So make the
-sh_mmcif_boot_do_read() call directly from platform code
-and remove sh_mmcif_boot_slurp() altogether.
+[PATCH 01/04] ARM: mach-shmobile: Enable CONFIG_MULTI_IRQ_HANDLER
+[PATCH 02/04] ARM: mach-shmobile: Run-time IRQ handler for INTCA
+[PATCH 03/04] ARM: mach-shmobile: Run-time IRQ handler for GIC
+[PATCH 04/04] ARM: mach-shmobile: Rely on run-time IRQ handlers
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+These patches add run-time IRQ handler support for R-Mobile and
+SH-Mobile processors. Nothing out of the ordinary really, except
+merge dependency fun. Built on top of rmobile-latest plus below.
 
---- 
+Depends on:
+"[PATCH 01/07] ARM: Introduce asm/hardware/entry-macro-gic.S"
+http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idd75/1
 
-This patch applies on top of
-"sh, mmc: Use defines when setting CE_CLK_CTR"
-which has been merged into the common/mmcif
-branch of Paul Mundt's sh-2.6 tree.
-Index: linux-2.6-ap4/arch/sh/boot/romimage/mmcif-sh7724.c
-=================================--- linux-2.6-ap4.orig/arch/sh/boot/romimage/mmcif-sh7724.c	2010-12-06 09:08:13.000000000 +0900
-+++ linux-2.6-ap4/arch/sh/boot/romimage/mmcif-sh7724.c	2010-12-06 09:08:14.000000000 +0900
-@@ -60,7 +60,9 @@ asmlinkage void mmcif_loader(unsigned ch
- 	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
- 
- 	/* load kernel via MMCIF interface */
--	sh_mmcif_boot_slurp(MMCIF_BASE, buf, no_bytes);
-+	sh_mmcif_boot_do_read(MMCIF_BASE, 512,
-+	                      (no_bytes + SH_MMCIF_BBS - 1) / SH_MMCIF_BBS,
-+			      buf);
- 
- 	/* disable clock to the MMCIF hardware block */
- 	__raw_writel(__raw_readl(MSTPCR2) | 0x20000000, MSTPCR2);
-Index: linux-2.6-ap4/include/linux/mmc/sh_mmcif.h
-=================================--- linux-2.6-ap4.orig/include/linux/mmc/sh_mmcif.h	2010-12-06 09:08:13.000000000 +0900
-+++ linux-2.6-ap4/include/linux/mmc/sh_mmcif.h	2010-12-06 09:08:14.000000000 +0900
-@@ -162,6 +162,17 @@ static inline int sh_mmcif_boot_do_read(
- 	unsigned long k;
- 	int ret = 0;
- 
-+	/* In data transfer mode: Set clock to Bus clock/4 (about 20Mhz) */
-+	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL,
-+			CLK_ENABLE | CLKDIV_4 | SRSPTO_256 |
-+			SRBSYTO_29 | SRWDTO_29 | SCCSTO_29);
-+
-+	/* CMD9 - Get CSD */
-+	sh_mmcif_boot_cmd(base, 0x09806000, 0x00010000);
-+
-+	/* CMD7 - Select the card */
-+	sh_mmcif_boot_cmd(base, 0x07400000, 0x00010000);
-+
- 	/* CMD16 - Set the block size */
- 	sh_mmcif_boot_cmd(base, 0x10400000, SH_MMCIF_BBS);
- 
-@@ -205,27 +216,4 @@ static inline void sh_mmcif_boot_init(vo
- 	sh_mmcif_boot_cmd(base, 0x03400040, 0x00010000);
- }
- 
--static inline void sh_mmcif_boot_slurp(void __iomem *base,
--				       unsigned char *buf,
--				       unsigned long no_bytes)
--{
--	unsigned long tmp;
--
--	/* In data transfer mode: Set clock to Bus clock/4 (about 20Mhz) */
--	sh_mmcif_writel(base, MMCIF_CE_CLK_CTRL,
--			CLK_ENABLE | CLKDIV_4 | SRSPTO_256 |
--			SRBSYTO_29 | SRWDTO_29 | SCCSTO_29);
--
--	/* CMD9 - Get CSD */
--	sh_mmcif_boot_cmd(base, 0x09806000, 0x00010000);
--
--	/* CMD7 - Select the card */
--	sh_mmcif_boot_cmd(base, 0x07400000, 0x00010000);
--
--	tmp = no_bytes / SH_MMCIF_BBS;
--	tmp += (no_bytes % SH_MMCIF_BBS) ? 1 : 0;
--
--	sh_mmcif_boot_do_read(base, 512, tmp, buf);
--}
--
- #endif /* __SH_MMCIF_H__ */
+"[PATCH] ARM: Allow machine to specify it's own IRQ handlers at run-time"
+http://www.arm.linux.org.uk/developer/patches/viewpatch.php?ide32/1
 
+"[PATCH] ARM: Subarch IRQ handler macros V3"
+http://www.arm.linux.org.uk/developer/patches/viewpatch.php?ide38/1
+
+"[PATCH] ARM: mach-shmobile: Use shared GIC entry macros"
+https://patchwork.kernel.org/patch/426981/
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+ arch/arm/Kconfig                                       |    1 
+ arch/arm/mach-shmobile/Makefile                        |    6 +
+ arch/arm/mach-shmobile/board-ag5evm.c                  |    1 
+ arch/arm/mach-shmobile/board-ap4evb.c                  |    1 
+ arch/arm/mach-shmobile/board-g3evm.c                   |    1 
+ arch/arm/mach-shmobile/board-g4evm.c                   |    1 
+ arch/arm/mach-shmobile/board-mackerel.c                |    1 
+ arch/arm/mach-shmobile/entry-gic.S                     |   20 +++++
+ arch/arm/mach-shmobile/entry-intc.S                    |   57 ++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h           |    2 
+ arch/arm/mach-shmobile/include/mach/entry-macro-gic.S  |   29 -------
+ arch/arm/mach-shmobile/include/mach/entry-macro-intc.S |   61 ----------------
+ arch/arm/mach-shmobile/include/mach/entry-macro.S      |   23 ++++--
+ arch/arm/mach-shmobile/include/mach/hardware.h         |    3 
+ 14 files changed, 109 insertions(+), 98 deletions(-)
