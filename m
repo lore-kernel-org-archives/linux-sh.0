@@ -1,75 +1,77 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 24 Dec 2010 22:52:35 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: Mackerel VGA camera support
-Message-Id: <Pine.LNX.4.64.1012242334520.12192@axis700.grange>
+Date: Tue, 28 Dec 2010 23:32:13 +0000
+Subject: outstanding TMIO MMC patches
+Message-Id: <Pine.LNX.4.64.1012281211560.21647@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101222144740.23663.49079.sendpatchset@t400s>
-In-Reply-To: <20101222144740.23663.49079.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@linux-foundation.org>, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>, Magnus Damm <damm@opensource.se>, linux-sh@vger.kernel.org
 
-On Fri, 24 Dec 2010, Paul Mundt wrote:
+Hi Ian
 
-> On Wed, Dec 22, 2010 at 11:47:40PM +0900, Magnus Damm wrote:
-> > +static struct soc_camera_link camera_link = {
-> > +	.bus_id		= 0,
-> > +	.add_device	= mackerel_camera_add,
-> > +	.del_device	= mackerel_camera_del,
-> > +	.module_name	= "soc_camera_platform",
-> > +	.priv		= &camera_info,
-> > +};
-> > +
-> > +static void dummy_release(struct device *dev)
-> > +{
-> > +}
-> > +
-> > +static struct platform_device camera_device = {
-> > +	.name		= "soc_camera_platform",
-> > +	.dev		= {
-> > +		.platform_data	= &camera_info,
-> > +		.release	= dummy_release,
-> > +	},
-> > +};
-> > +
-> > +static int mackerel_camera_add(struct soc_camera_link *icl,
-> > +			       struct device *dev)
-> > +{
-> > +	if (icl != &camera_link)
-> > +		return -ENODEV;
-> > +
-> > +	camera_info.dev = dev;
-> > +
-> > +	return platform_device_register(&camera_device);
-> > +}
-> > +
-> I guess we should probably have the resource request doing here and
-> tidied up after in the ->release()? The ordering here is pretty magical.
-> 
-> > +static void mackerel_camera_del(struct soc_camera_link *icl)
-> > +{
-> > +	if (icl != &camera_link)
-> > +		return;
-> > +
-> > +	platform_device_unregister(&camera_device);
-> > +	memset(&camera_device.dev.kobj, 0,
-> > +	       sizeof(camera_device.dev.kobj));
-> > +}
-> > +
-> Any time a board needs to touch a device's kobject resources there's
-> something horribly horribly wrong. If the kobject is left particually
-> constructed after unregistration and causing corruption when the camera
-> is re-attached, then this needs to be corrected in the driver model, not
-> here.
+There are a number of outstanding tmio-mmc patches from Arnd Hannemann and 
+myself, many of them posted weeks ago. We really would like to have them 
+in 2.6.38. Would you have time to process them? Otherwise, could someone 
+else maybe apply them? Listed in the order, in which they should be 
+applied.
 
-Been there many times before... The official reply from Greg is: device 
-objects _must_ be allocated dynamically and must _not_ be reused. No, 
-soc-camera is not obeying to this yet.
+my patches:
 
-> The camera_link checks also look pretty bogus. This will only be called
-> in to for non-i2c devices, which already establish the reference to
-> &camera_link in the platform device's private data.
+mmc: tmio_mmc: allow multi-element scatter-gather lists
+	https://patchwork.kernel.org/patch/317142/
+	should go in via linux-mmc
+
+mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
+	https://patchwork.kernel.org/patch/317162/
+	should go in via linux-mmc
+
+[1/3] mmc: tmio: merge the private header into the driver
+	https://patchwork.kernel.org/patch/349931/
+	should go in via linux-mmc
+
+[2/3] mmc: tmio: implement a bounce buffer for unaligned DMA
+	https://patchwork.kernel.org/patch/426661/
+	should go in via linux-mmc
+
+[3/3] mfd: sdhi: require the tmio-mmc driver to bounce unaligned buffers
+	https://patchwork.kernel.org/patch/349961/
+	acked by Samuel Ortiz, should go in via linux-mmc
+
+patches from Arnd Hannemann:
+
+mmc: tmio_mmc: silence compiler warnings
+	https://patchwork.kernel.org/patch/418931/
+	should go in via linux-mmc
+
+[1/6] mmc: tmio: implement SDIO IRQ
+	https://patchwork.kernel.org/patch/437441/
+	should go in via linux-mmc
+
+[2/6] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
+	https://patchwork.kernel.org/patch/437451/
+	acked by Samual Ortiz, should go in via linux-mmc
+
+[3/6] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
+	https://patchwork.kernel.org/patch/437491/
+	Either via linux-mmc: Ack needed by Paul Mundt
+	or later separately via sh-2.6
+
+[4/6] sh: sh7724 Enable SDIO IRQs
+	https://patchwork.kernel.org/patch/437471/
+	Either via linux-mmc: Ack needed by Paul Mundt
+	or later separately via sh-2.6
+
+[5/6] sh: sh7722 Enable SDIO IRQs
+	https://patchwork.kernel.org/patch/437521/
+	Either via linux-mmc: Ack needed by Paul Mundt
+	or later separately via sh-2.6
+
+[6/6] sh: sh7723 / ap325rxa enable SDIO IRQs
+	https://patchwork.kernel.org/patch/437511/
+	Either via linux-mmc: Ack needed by Paul Mundt
+	or later separately via sh-2.6
 
 Thanks
 Guennadi
@@ -77,3 +79,4 @@ Guennadi
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
 http://www.open-technology.de/
+
