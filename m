@@ -1,65 +1,54 @@
 From: Arnd Hannemann <arnd@arndnet.de>
-Date: Mon, 06 Dec 2010 17:35:40 +0000
-Subject: [PATCH 2/4] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
-Message-Id: <1291656942-18100-2-git-send-email-arnd@arndnet.de>
+Date: Tue, 28 Dec 2010 22:22:30 +0000
+Subject: [PATCH 0/6 v3] mmc: tmio: Add SDIO IRQ support
+Message-Id: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1291656942-18100-1-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1291656942-18100-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Arnd Hannemann <arnd@arndnet.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-This patch enables the interrupt generation for SDIO IRQs
-of the sdhi controllers of the soc. To make sure interrupts
-are handled announce the MMC_CAP_SDIO_IRQ capability
-on AP4EVB. Tested with a b43-based SDIO wireless card.
+[PATCH 1/6 v3] mmc: tmio: implement SDIO IRQ
+[PATCH 2/6 v3] mfd: sh_mobile_sdhi: activate SDIO IRQ for tmio_mmc
+[PATCH 3/6 v3] ARM: mach-shmobile: sh7372 Enable SDIO IRQs
+[PATCH 4/6 v3] sh: sh7724 Enable SDIO IRQs
+[PATCH 5/6 v3] sh: sh7722 Enable SDIO IRQs
+[PATCH 6/6 v3] sh: sh7723 / ap325rxa enable SDIO IRQs
+
+These patches add SDIO IRQ support for the tmio mmc cell
+of the sh_mobile_sdhi mfd and activate the usage of
+SDIO IRQs on all SoCs where sh_mobile_sdhi is currently
+used.
+
+The patchset depends on:
+    mmc: tmio_mmc: allow multi-element scatter-gather lists
+        https://patchwork.kernel.org/patch/317142/
+    mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
+        https://patchwork.kernel.org/patch/317162/
+    mmc: tmio: merge the private header into the driver
+        https://patchwork.kernel.org/patch/349931/
+    mmc: tmio: implement a bounce buffer for unaligned DMA
+        https://patchwork.kernel.org/patch/349941/
+
+Changes in v3:
+- Drop the patch which disables IRQs early in remove
+  it caused hangs during rmmod
+- Disable device IRQ in tmio_mmc_clk_start/stop to
+  avoid spurious SDIO IRQs (previously there was a
+  small time window where this could happen)
+- Fix a null pointer dereference which would have been
+  triggered when spurious SDIO IRQs would have been generated
+- Include patch for sh7723 / ap325rx
+
+Changes in v2:
+- Add TMIO_MMC_SDIO_IRQ flag, which expresses that  the hardware is known
+  to support SDIO IRQ as suggested by Magnus Damm
+- Activate this flag for sh_mobile_sdhi
+- Add a patch which disables IRQs early in remove
+  to avoid spurious SDIO IRQs, during module unload
+- Patches 4-6 are unmodified but included for
+  completeness
 
 Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
----
- arch/arm/mach-shmobile/board-ap4evb.c |    3 ++-
- arch/arm/mach-shmobile/intc-sh7372.c  |    4 ++--
- 2 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 16eba07..5763b0d 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -310,6 +310,7 @@ static u64 sdhi0_dma_mask = DMA_BIT_MASK(32);
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+	.tmio_caps	= MMC_CAP_SDIO_IRQ,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -344,7 +345,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_ocr_mask	= MMC_VDD_165_195,
- 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_NEEDS_POLL,
-+	.tmio_caps	= MMC_CAP_NEEDS_POLL | MMC_CAP_SDIO_IRQ,
- 	.get_cd		= slot_cn7_get_cd,
- };
- 
-diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
-index 30b2f40..f78a1ea 100644
---- a/arch/arm/mach-shmobile/intc-sh7372.c
-+++ b/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -230,10 +230,10 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
- 	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
- 	    0, 0, MSIOF2, 0 } },
- 	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
--	  { DISABLED, DISABLED, ENABLED, ENABLED,
-+	  { DISABLED, ENABLED, ENABLED, ENABLED,
- 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
- 	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
--	  { 0, DISABLED, ENABLED, ENABLED,
-+	  { 0, ENABLED, ENABLED, ENABLED,
- 	    TTI20, USBHSDMAC0_USHDMI, 0, 0 } },
- 	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
- 	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
--- 
-1.7.0.4
 
