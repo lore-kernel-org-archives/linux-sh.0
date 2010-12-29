@@ -1,53 +1,78 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 24 Dec 2010 08:28:13 +0000
-Subject: Re: [PATCH 1/2] fbdev: sh-mobile: implement MIPI DSI runtime PM
-Message-Id: <Pine.LNX.4.64.1012240919430.12192@axis700.grange>
+Date: Wed, 29 Dec 2010 07:59:25 +0000
+Subject: [PATCH] mmc: sh_mmcif: make DMA support by the driver unconditional
+Message-Id: <Pine.LNX.4.64.1012290852530.14233@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1012221050400.14483@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1012221050400.14483@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-On Fri, 24 Dec 2010, Paul Mundt wrote:
+Simplify the driver by removing the possibility to build it without the DMA
+support and remove the respective Kconfig parameter.
 
-> On Thu, Dec 23, 2010 at 01:08:34AM +0100, Guennadi Liakhovetski wrote:
-> > On Thu, 23 Dec 2010, Paul Mundt wrote:
-> > 
-> > > On Wed, Dec 22, 2010 at 10:52:18AM +0100, Guennadi Liakhovetski wrote:
-> > > > @@ -356,7 +360,9 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
-> > > >  		goto emap;
-> > > >  	}
-> > > >  
-> > > > -	mipi->dsit_clk = clk_get(&pdev->dev, "dsit_clk");
-> > > > +	mipi->dev = &pdev->dev;
-> > > > +
-> > > > +	mipi->dsit_clk = clk_get(NULL, "dsit_clk");
-> > > 
-> > > Why did you drop &pdev->dev from clk_get()?
-> > 
-> > Because that clock is not associated with that device, it sisn't work 
-> > correctly until now. You also cannot associate it with that device 
-> > exclusively, because it serves two devices...
-> > 
-> I'm not sure I see what the problem is. If there is no special lookup
-> matching this clock to the device pointer then the lookup will resolve to
-> whatever generically provides that clock. There is also nothing that
-> stops someone from providing the same clock to multiple devices via the
-> same lookup string, this is largely what clock lookups are for in the
-> first place. Any move away from a device pointer to clk_get() is a step
-> in the wrong direction.
-
-That device also has other clocks, so, previously, with the device pointer 
-but with an unmatching device string I was getting a wrong clock - the one 
-from the device... So, it is a step in the "right" direction in the sense, 
-that I am now getting a correct clock. But yes, if I can associate one 
-clock with several devices, that's even better! I'll try that.
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/mmc/host/Kconfig    |    6 ------
+ drivers/mmc/host/sh_mmcif.c |   20 --------------------
+ 2 files changed, 0 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 859e352..d618e86 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -466,12 +466,6 @@ config MMC_SH_MMCIF
+ 
+ 	  This driver supports MMCIF in sh7724/sh7757/sh7372.
+ 
+-config SH_MMCIF_DMA
+-	bool "Use DMA for MMCIF"
+-	depends on MMC_SH_MMCIF
+-	help
+-	  Use SH dma-engine driver for data transfer
+-
+ config MMC_JZ4740
+ 	tristate "JZ4740 SD/Multimedia Card Interface support"
+ 	depends on MACH_JZ4740
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d09a2b3..12884c2 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -184,7 +184,6 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
+ 	writel(~val & readl(host->addr + reg), host->addr + reg);
+ }
+ 
+-#ifdef CONFIG_SH_MMCIF_DMA
+ static void mmcif_dma_complete(void *arg)
+ {
+ 	struct sh_mmcif_host *host = arg;
+@@ -367,25 +366,6 @@ static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
+ 
+ 	host->dma_sglen = 0;
+ }
+-#else
+-static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+-{
+-}
+-
+-static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+-{
+-}
+-
+-static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+-				 struct sh_mmcif_plat_data *pdata)
+-{
+-	/* host->chan_tx, host->chan_tx and host->dma_sglen are all zero */
+-}
+-
+-static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
+-{
+-}
+-#endif
+ 
+ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+ {
+-- 
+1.7.2.3
+
