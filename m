@@ -1,170 +1,271 @@
-From: Simon Horman <simon@horms.net>
-Date: Mon, 06 Dec 2010 01:42:32 +0000
-Subject: Re: [patch 3/3] mmc, ARM: Add zboot from MMC support for SuperH
-Message-Id: <20101206014231.GB3735@verge.net.au>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Wed, 29 Dec 2010 13:21:13 +0000
+Subject: [PATCH 1/2 v2] mmc: tmio: handle missing HW interrupts
+Message-Id: <1293628874-8140-2-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101206001243.949375995@vergenet.net>
-	<20101206001310.825497890@vergenet.net>
-	<AANLkTin91C9XJKaKTNgvN9b=ExCYbt0ujPFe-qEx57hm@mail.gmail.com>
-	<20101206011138.GA623@verge.net.au>
-	<AANLkTi=HkKP9rUW7F=AmhDf+pXgMUqTZ2+8UwsMfX-fb@mail.gmail.com>
-In-Reply-To: <AANLkTi=HkKP9rUW7F=AmhDf+pXgMUqTZ2+8UwsMfX-fb@mail.gmail.com>
+References: <1293628874-8140-1-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1293628874-8140-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>
+Cc: linux-sh@vger.kernel.org, Arnd Hannemann <arnd@arndnet.de>
 
-On Mon, Dec 06, 2010 at 10:33:40AM +0900, Magnus Damm wrote:
-> On Mon, Dec 6, 2010 at 10:11 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Dec 06, 2010 at 09:51:55AM +0900, Magnus Damm wrote:
-> >> On Mon, Dec 6, 2010 at 9:12 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> > This allows a ROM-able zImage to be written to MMC and
-> >> > for SuperH Mobile ARM to boot directly from the MMCIF
-> >> > hardware block.
-> >> >
-> >> > This is achieved by the MaskROM loading the first portion
-> >> > of the image into MERAM and then jumping to it. This portion
-> >> > contains loader code which copies the entire image to SDRAM
-> >> > and jumps to it. From there the zImage boot code proceeds
-> >> > as normal, uncompressing the image into its final location
-> >> > and then jumping to it.
-> >> >
-> >> > Cc: Magnus Damm <magnus.damm@gmail.com>
-> >> > Signed-off-by: Simon Horman <horms@verge.net.au>
-> >> >
-> >> > ---
-> >> >
-> >> > This patch depends on "ARM: 6514/1: mach-shmobile: Add zboot support for
-> >> > SuperH Mobile ARM" which has been merged into the devel branch
-> >> > of Russell King's linux-2.6-arm tree.
-> >> >
-> >> > Index: linux-2.6-ap4/arch/arm/boot/compressed/mmcif-sh7372.c
-> >> > =================================> >> > --- /dev/null   1970-01-01 00:00:00.000000000 +0000
-> >> > +++ linux-2.6-ap4/arch/arm/boot/compressed/mmcif-sh7372.c       2010-12-06 09:11:42.000000000 +0900
-> >> > @@ -0,0 +1,99 @@
-> >> > +/*
-> >> > + * sh7372 MMCIF loader
-> >> > + *
-> >> > + * Copyright (C) 2010 Magnus Damm
-> >> > + * Copyright (C) 2010 Simon Horman
-> >> > + *
-> >> > + * This file is subject to the terms and conditions of the GNU General Public
-> >> > + * License.  See the file "COPYING" in the main directory of this archive
-> >> > + * for more details.
-> >> > + */
-> >> > +
-> >> > +#include <linux/mmc/sh_mmcif.h>
-> >> > +#include <mach/mmcif.h>
-> >> > +
-> >> > +#define MMCIF_BASE      (void __iomem *)0xe6bd0000
-> >> > +
-> >> > +#define PORT84CR       0xe6050054
-> >> > +#define PORT85CR       0xe6050055
-> >> > +#define PORT86CR       0xe6050056
-> >> > +#define PORT87CR       0xe6050057
-> >> > +#define PORT88CR       0xe6050058
-> >> > +#define PORT89CR       0xe6050059
-> >> > +#define PORT90CR       0xe605005a
-> >> > +#define PORT91CR       0xe605005b
-> >> > +#define PORT92CR       0xe605005c
-> >> > +#define PORT99CR       0xe6050063
-> >> > +#define PORT185CR      0xe60520b9
-> >> > +#define PORT186CR      0xe60520ba
-> >> > +#define PORT187CR      0xe60520bb
-> >> > +#define PORT188CR      0xe60520bc
-> >> > +
-> >> > +#define SMSTPCR3       0xe615013c
-> >> > +
-> >> > +/* SH7372 specific MMCIF loader
-> >> > + *
-> >> > + * loads the zImage from an MMC card starting from block 1.
-> >> > + *
-> >> > + * The image must be start with a vrl4 header and
-> >> > + * the zImage must start at offset 512 of the image. That is,
-> >> > + * at block 2 (=byte 1024) on the media
-> >> > + *
-> >> > + * Use the following line to write the vrl4 formated zImage
-> >> > + * to an MMC card
-> >> > + * # dd if=vrl4.out of=/dev/sdx bsQ2 seek=1
-> >> > + */
-> >> > +asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
-> >> > +{
-> >> > +       /* Initialise LEDS1-4
-> >> > +        * registers: PORT185CR-PORT188CR (LED1-LED4 Control)
-> >> > +        * value:     0x10 - enable output
-> >> > +        */
-> >> > +       __raw_writeb(0x10, PORT185CR);
-> >> > +       __raw_writeb(0x10, PORT186CR);
-> >> > +       __raw_writeb(0x10, PORT187CR);
-> >> > +       __raw_writeb(0x10, PORT188CR);
-> >>
-> >> Aren't these LEDs a board-specific property?
-> >>
-> >> I believe the rest of the code is common across multiple boards, so
-> >> making it fully sharable would be nice.
-> >>
-> >> Please break out the board-specific somehow, perhaps into
-> >> mmcif_update_progress().
-> >
-> > Sure, perhaps we could just move this initialisation into head-ap4evb.txt?
-> 
-> Sounds good!
-> 
-> > Or remove mmcif_update_progress() all together?
-> 
-> Nah, I prefer to keep some kind of abstraction for the progress meter.
-> 
-> >> > Index: linux-2.6-ap4/arch/arm/boot/compressed/head-shmobile.S
-> >> > =================================> >> > --- linux-2.6-ap4.orig/arch/arm/boot/compressed/head-shmobile.S 2010-12-06 09:11:35.000000000 +0900
-> >> > +++ linux-2.6-ap4/arch/arm/boot/compressed/head-shmobile.S      2010-12-06 09:11:42.000000000 +0900
-> >> > @@ -40,14 +59,19 @@ __atags:@ tag #1
-> >> >        @ tag #3
-> >> >        .long   0                       @ tag->hdr.size = 0
-> >> >        .long   0                       @ tag->hdr.tag = ATAG_NONE;
-> >> > -1:
-> >> > +__mach_type:
-> >> > +       .long   MACH_TYPE
-> >> > +__image_start:
-> >> > +       .long   _start
-> >> > +__image_end:
-> >> > +       .long   _got_end
-> >> > +__load_base:
-> >> > +       .long   CONFIG_MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
-> >>
-> >> Just curious, where does these 32Mb come from?
-> >
-> > IMHO Its fairly arbitrary where the zImage is copied to.
-> > I chose 32Mb as it is the same place that uboot puts images.
-> 
-> That makes sense.
-> 
-> >> Say that a board with be equipped with less than 32Mb, how is that handled?
-> >
-> > It isn't.
-> >
-> > An alternate approach might be to just place it at the end of the
-> > destination, which can be approximated using 4 * the compressed image size.
-> > The same assumption is made in arch/arm/boot/compressed/vmlinux.lds.in.
-> >
-> > I'm open to other ideas about where to copy the zImage to.
-> 
-> What's stopping us from loading the kernel image from MMC straight to
-> CONFIG_MEMORY_START?
+When doing excessive hotplug, e.g., repeated insert/eject operations,
+the hardware may get confused to a point where no CMDTIMEOUT/CMDRESPEND
+interrupts are generated any more.
+As a result requests get stuck, e.g.:
 
-Because what is expected in the end is an uncompressed
-kernel at CONFIG_MEMORY_START + TEXT_OFFSET and the compressed
-image won't fit between in TEXT_OFFSET bytes.
+[  360.351562] INFO: task kworker/u:0:5 blocked for more than 120 seconds.
+[  360.351562] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  360.359375] kworker/u:0   D c020c2b4     0     5      2 0x00000000
+[  360.367187] Backtrace:
+[  360.367187] [<c020bfb0>] (schedule+0x0/0x340) from [<c020c480>] (schedule_timeout+0x20/0x190)
+[  360.375000]  r8:c702fd70 r7:00000002 r6:c702e000 r5:c702fdc4 r4:7fffffff
+[  360.375000] r3:c701e040
+[  360.382812] [<c020c460>] (schedule_timeout+0x0/0x190) from [<c020be78>] (wait_for_common+0xc4/0x150)
+[  360.390625]  r6:c702e000 r5:c702fdc4 r4:7fffffff
+[  360.390625] [<c020bdb4>] (wait_for_common+0x0/0x150) from [<c020bfac>] (wait_for_completion+0x18/0x1c)
+[  360.398437] [<c020bf94>] (wait_for_completion+0x0/0x1c) from [<c0185590>] (mmc_wait_for_req+0x214/0x234)
+[  360.406250] [<c018537c>] (mmc_wait_for_req+0x0/0x234) from [<c01889d0>] (mmc_sd_switch+0xfc/0x114)
+[  360.414062]  r7:c702fe4c r6:c702fe20 r5:c7179800 r4:00fffff0
+[  360.421875] [<c01888d4>] (mmc_sd_switch+0x0/0x114) from [<c0187f70>] (mmc_sd_setup_card+0x260/0x384)
+[  360.429687] [<c0187d10>] (mmc_sd_setup_card+0x0/0x384) from [<c01885e0>] (mmc_sd_init_card+0x13c/0x1e0)
+[  360.437500] [<c01884a4>] (mmc_sd_init_card+0x0/0x1e0) from [<c01887a8>] (mmc_attach_sd+0x124/0x1a8)
+[  360.445312]  r8:c02db404 r7:ffffff92 r6:c702ff34 r5:c6007da8 r4:c6007c00
+[  360.453125] [<c0188684>] (mmc_attach_sd+0x0/0x1a8) from [<c0185140>] (mmc_rescan+0x248/0x2f0)
+[  360.460937]  r5:c6007da8 r4:c6007c00
+[  360.468750] [<c0184ef8>] (mmc_rescan+0x0/0x2f0) from [<c00467f0>] (process_one_work+0x1ec/0x318)
+[  360.476562]  r7:c6007da8 r6:00000000 r5:c710ec00 r4:c701bde0
+[  360.484375] [<c0046604>] (process_one_work+0x0/0x318) from [<c0047fb0>] (worker_thread+0x1b0/0x2cc)
+[  360.492187] [<c0047e00>] (worker_thread+0x0/0x2cc) from [<c004b338>] (kthread+0x8c/0x94)
+[  360.500000] [<c004b2ac>] (kthread+0x0/0x94) from [<c0037fc4>] (do_exit+0x0/0x590)
+[  360.507812]  r7:00000013 r6:c0037fc4 r5:c004b2ac r4:c7021f00
 
-> At least that's simple - but I suppose it isn't working right out of the box.
-> 
-> Judging by the code in arch/arm/boot/compressed/head.S it looks like
-> the zImage should be able to relocate itself.
-> 
-> Perhaps the code wrapped in #ifndef CONFIG_ZBOOT_ROM in
-> arch/arm/boot/compressed/head.S isn't enabled properly for the MMC
-> boot case. It looks like the CONFIG_ZBOOT_ROM=y case assumes that the
-> kernel is executing from flash or rom, which is true for our NOR flash
-> boot case, but is false when we're booting from MMC.
+This patch addresses this problem by introducing timeouts for outstanding
+interrupts. If a hardware interrupt is missing, a soft reset will be performed
+to bring the hardware back to a working state.
+Tested with the SDHI hardware block in sh7372 / AP4EVB.
 
-Could you be more specific about which bits of head.S you are looking at?
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+---
+Changes in v2:
+    - rebased against -rc7
+    - depends on:
+        mmc: tmio: merge the private header into the driver
+            https://patchwork.kernel.org/patch/349931/
+
+ drivers/mmc/host/tmio_mmc.c |   90 +++++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 86 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index a0cf04a..f980042 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -39,6 +39,8 @@
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
+ #include <linux/scatterlist.h>
++#include <linux/workqueue.h>
++#include <linux/spinlock.h>
+ 
+ #define CTL_SD_CMD 0x00
+ #define CTL_ARG_REG 0x04
+@@ -154,6 +156,11 @@ struct tmio_mmc_host {
+ 	u8			bounce_buf[PAGE_CACHE_SIZE] __attribute__((aligned(MAX_ALIGN)));
+ 	struct scatterlist	bounce_sg;
+ #endif
++
++	/* Track lost interrupts */
++	struct delayed_work delayed_reset_work;
++	spinlock_t      lock;
++	unsigned long       last_req_ts;
+ };
+ 
+ static u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
+@@ -342,15 +349,60 @@ static void reset(struct tmio_mmc_host *host)
+ 	msleep(10);
+ }
+ 
++static void tmio_mmc_reset_work(struct work_struct *work)
++{
++	struct tmio_mmc_host *host = container_of(work, struct tmio_mmc_host,
++						  delayed_reset_work.work);
++	struct mmc_request *mrq;
++	unsigned long flags;
++
++	spin_lock_irqsave(&host->lock, flags);
++	mrq = host->mrq;
++
++	/* request already finished */
++	if (!mrq
++	    || time_is_after_jiffies(host->last_req_ts +
++		msecs_to_jiffies(2000))) {
++		spin_unlock_irqrestore(&host->lock, flags);
++		return;
++	}
++
++	dev_warn(&host->pdev->dev,
++		"timeout waiting for hardware interrupt (CMD%u)\n",
++		mrq->cmd->opcode);
++
++	if (host->data)
++		host->data->error = -ETIMEDOUT;
++	else if (host->cmd)
++		host->cmd->error = -ETIMEDOUT;
++	else
++		mrq->cmd->error = -ETIMEDOUT;
++
++	host->cmd = NULL;
++	host->data = NULL;
++	host->mrq = NULL;
++
++	spin_unlock_irqrestore(&host->lock, flags);
++
++	reset(host);
++
++	mmc_request_done(host->mmc, mrq);
++}
++
+ static void
+ tmio_mmc_finish_request(struct tmio_mmc_host *host)
+ {
+ 	struct mmc_request *mrq = host->mrq;
+ 
++	if (!mrq)
++		return;
++
+ 	host->mrq = NULL;
+ 	host->cmd = NULL;
+ 	host->data = NULL;
+ 
++	cancel_delayed_work(&host->delayed_reset_work);
++
+ 	mmc_request_done(host->mmc, mrq);
+ }
+ 
+@@ -460,6 +512,7 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 	return;
+ }
+ 
++/* needs to be called with host->lock held */
+ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+ {
+ 	struct mmc_data *data = host->data;
+@@ -520,10 +573,12 @@ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+ 
+ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ {
+-	struct mmc_data *data = host->data;
++	struct mmc_data *data;
++	spin_lock(&host->lock);
++	data = host->data;
+ 
+ 	if (!data)
+-		return;
++		goto out;
+ 
+ 	if (host->chan_tx && (data->flags & MMC_DATA_WRITE)) {
+ 		/*
+@@ -544,6 +599,8 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 	} else {
+ 		tmio_mmc_do_data_irq(host);
+ 	}
++out:
++	spin_unlock(&host->lock);
+ }
+ 
+ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+@@ -552,9 +609,11 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 	struct mmc_command *cmd = host->cmd;
+ 	int i, addr;
+ 
++	spin_lock(&host->lock);
++
+ 	if (!host->cmd) {
+ 		pr_debug("Spurious CMD irq\n");
+-		return;
++		goto out;
+ 	}
+ 
+ 	host->cmd = NULL;
+@@ -599,6 +658,9 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 		tmio_mmc_finish_request(host);
+ 	}
+ 
++out:
++	spin_unlock(&host->lock);
++
+ 	return;
+ }
+ 
+@@ -899,6 +961,12 @@ static void tmio_issue_tasklet_fn(unsigned long priv)
+ static void tmio_tasklet_fn(unsigned long arg)
+ {
+ 	struct tmio_mmc_host *host = (struct tmio_mmc_host *)arg;
++	unsigned long flags;
++
++	spin_lock_irqsave(&host->lock, flags);
++
++	if (!host->data)
++		goto out;
+ 
+ 	if (host->data->flags & MMC_DATA_READ)
+ 		dma_unmap_sg(&host->pdev->dev, host->sg_ptr, host->dma_sglen,
+@@ -908,6 +976,8 @@ static void tmio_tasklet_fn(unsigned long arg)
+ 			     DMA_TO_DEVICE);
+ 
+ 	tmio_mmc_do_data_irq(host);
++out:
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ /* It might be necessary to make filter MFD specific */
+@@ -1026,6 +1096,8 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	if (host->mrq)
+ 		pr_debug("request not null\n");
+ 
++	host->last_req_ts = jiffies;
++	wmb();
+ 	host->mrq = mrq;
+ 
+ 	if (mrq->data) {
+@@ -1035,10 +1107,14 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	}
+ 
+ 	ret = tmio_mmc_start_command(host, mrq->cmd);
+-	if (!ret)
++	if (!ret) {
++		schedule_delayed_work(&host->delayed_reset_work,
++				      msecs_to_jiffies(2000));
+ 		return;
++	}
+ 
+ fail:
++	host->mrq = NULL;
+ 	mrq->cmd->error = ret;
+ 	mmc_request_done(mmc, mrq);
+ }
+@@ -1235,6 +1311,11 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
+ 	if (ret)
+ 		goto cell_disable;
+ 
++	spin_lock_init(&host->lock);
++
++	/* Init delayed work for request timeouts */
++	INIT_DELAYED_WORK(&host->delayed_reset_work, tmio_mmc_reset_work);
++
+ 	/* See if we also get DMA */
+ 	tmio_mmc_request_dma(host, pdata);
+ 
+@@ -1273,6 +1354,7 @@ static int __devexit tmio_mmc_remove(struct platform_device *dev)
+ 	if (mmc) {
+ 		struct tmio_mmc_host *host = mmc_priv(mmc);
+ 		mmc_remove_host(mmc);
++		cancel_delayed_work_sync(&host->delayed_reset_work);
+ 		tmio_mmc_release_dma(host);
+ 		free_irq(host->irq, host);
+ 		if (cell->disable)
+-- 
+1.7.2.3
 
