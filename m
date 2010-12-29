@@ -1,41 +1,33 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 29 Dec 2010 08:12:22 +0000
-Subject: [PATCH 1/3] fbdev: sh_mipi_dsi: support different register layouts
-Message-Id: <Pine.LNX.4.64.1012290907440.14233@axis700.grange>
+Date: Wed, 29 Dec 2010 08:12:26 +0000
+Subject: [PATCH 2/3] ARM: mach-shmobile: specify sh7372 MIPI DSI register
+Message-Id: <Pine.LNX.4.64.1012290908350.14233@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The register layout of the MIPI DSI unit on sh-mobile SoCs differ. Add platform
-parameters to support such variations.
+Prepare the ap4evb board for the MIPI DSI driver transition to support
+different register layouts.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- include/video/sh_mipi_dsi.h |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
-index 18bca08..6cb95c9 100644
---- a/include/video/sh_mipi_dsi.h
-+++ b/include/video/sh_mipi_dsi.h
-@@ -27,9 +27,15 @@ enum sh_mipi_dsi_data_fmt {
- 
- struct sh_mobile_lcdc_chan_cfg;
- 
-+#define SH_MIPI_DSI_HSABM	(1 << 0)
-+#define SH_MIPI_DSI_HSPBM	(1 << 1)
-+
- struct sh_mipi_dsi_info {
- 	enum sh_mipi_dsi_data_fmt	data_format;
- 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
-+	unsigned long			flags;
-+	u32				clksrc;
-+	unsigned int			vsynw_offset;
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index f0b8650..b1b372e 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -519,6 +519,7 @@ static struct resource mipidsi0_resources[] = {
+ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.data_format	= MIPI_RGB888,
+ 	.lcd_chan	= &lcdc_info.ch[0],
++	.vsynw_offset	= 17,
  };
  
- #endif
+ static struct platform_device mipidsi0_device = {
 -- 
 1.7.2.3
 
