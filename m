@@ -1,123 +1,25 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 10 Dec 2010 05:58:44 +0000
-Subject: [PATCH 01/02][RFC] ARM: Introduce Subarch IRQ handler macros
-Message-Id: <20101210055844.8635.36194.sendpatchset@t400s>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Wed, 29 Dec 2010 13:21:12 +0000
+Subject: [PATCH 0/2 v2] mmc: tmio: handle missing HW interrupts
+Message-Id: <1293628874-8140-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101210055835.8635.98614.sendpatchset@t400s>
-In-Reply-To: <20101210055835.8635.98614.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+[PATCH 1/2 v2] mmc: tmio: handle missing HW interrupts
+[PATCH 2/2 v2] mmc: tmio: fix CMD irq handling
 
-Break out code from the irq_handler macro into the two
-macros arch_irq_handler and arch_irq_handler_default.
+This are rebased equivalents to the patches:
+[1/2] tmio_mmc: handle missing HW interrupts
+	https://patchwork.kernel.org/patch/201962/
+[2/2] tmio_mmc: fix CMD irq handling
+	https://patchwork.kernel.org/patch/201982/
 
-Put the macros in the header file "entry-macro-multi.S"
+They now depend on -rc7 and:
+    mmc: tmio: merge the private header into the driver
+            https://patchwork.kernel.org/patch/349931/
 
-The macro arch_irq_handler_default is designed to be
-used by the irq_handler macro in entry-armv.S while
-arch_irq_handler is suitable for per-subarch use.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/include/asm/entry-macro-multi.S |   43 ++++++++++++++++++++++++++++++
- arch/arm/kernel/entry-armv.S             |   31 +--------------------
- 2 files changed, 45 insertions(+), 29 deletions(-)
-
---- /dev/null
-+++ work/arch/arm/include/asm/entry-macro-multi.S	2010-12-09 23:07:01.000000000 +0900
-@@ -0,0 +1,43 @@
-+/*
-+ * Interrupt handling.  Preserves r7, r8, r9
-+ */
-+	.macro	arch_irq_handler_default
-+	get_irqnr_preamble r5, lr
-+1:	get_irqnr_and_base r0, r6, r5, lr
-+	movne	r1, sp
-+	@
-+	@ routine called with r0 = irq number, r1 = struct pt_regs *
-+	@
-+	adrne	lr, BSYM(1b)
-+	bne	asm_do_IRQ
-+
-+#ifdef CONFIG_SMP
-+	/*
-+	 * XXX
-+	 *
-+	 * this macro assumes that irqstat (r6) and base (r5) are
-+	 * preserved from get_irqnr_and_base above
-+	 */
-+	ALT_SMP(test_for_ipi r0, r6, r5, lr)
-+	ALT_UP_B(9998f)
-+	movne	r1, sp
-+	adrne	lr, BSYM(1b)
-+	bne	do_IPI
-+
-+#ifdef CONFIG_LOCAL_TIMERS
-+	test_for_ltirq r0, r6, r5, lr
-+	movne	r0, sp
-+	adrne	lr, BSYM(1b)
-+	bne	do_local_timer
-+#endif
-+9998:
-+#endif
-+	.endm
-+
-+	.macro	arch_irq_handler, symbol_name
-+	.align	5
-+	.global \symbol_name
-+\symbol_name:
-+	arch_irq_handler_default
-+	mov     pc, lr
-+	.endm
---- 0002/arch/arm/kernel/entry-armv.S
-+++ work/arch/arm/kernel/entry-armv.S	2010-12-09 23:07:13.000000000 +0900
-@@ -19,6 +19,7 @@
- #include <asm/glue.h>
- #include <asm/vfpmacros.h>
- #include <mach/entry-macro.S>
-+#include <asm/entry-macro-multi.S>
- #include <asm/thread_notify.h>
- #include <asm/unwind.h>
- #include <asm/unistd.h>
-@@ -38,35 +39,7 @@
- 	adrne	lr, BSYM(9997f)
- 	ldrne	pc, [r1]
- #endif
--	get_irqnr_preamble r5, lr
--1:	get_irqnr_and_base r0, r6, r5, lr
--	movne	r1, sp
--	@
--	@ routine called with r0 = irq number, r1 = struct pt_regs *
--	@
--	adrne	lr, BSYM(1b)
--	bne	asm_do_IRQ
--
--#ifdef CONFIG_SMP
--	/*
--	 * XXX
--	 *
--	 * this macro assumes that irqstat (r6) and base (r5) are
--	 * preserved from get_irqnr_and_base above
--	 */
--	ALT_SMP(test_for_ipi r0, r6, r5, lr)
--	ALT_UP_B(9997f)
--	movne	r1, sp
--	adrne	lr, BSYM(1b)
--	bne	do_IPI
--
--#ifdef CONFIG_LOCAL_TIMERS
--	test_for_ltirq r0, r6, r5, lr
--	movne	r0, sp
--	adrne	lr, BSYM(1b)
--	bne	do_local_timer
--#endif
--#endif
-+	arch_irq_handler_default
- 9997:
- 	.endm
- 
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
