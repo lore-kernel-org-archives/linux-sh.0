@@ -1,39 +1,47 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 14 Dec 2010 16:07:53 +0000
-Subject: Re: [PATCH 0/3] handle unaligned buffers, when using TMIO-MMC with
-Message-Id: <Pine.LNX.4.64.1012141704330.8500@axis700.grange>
+From: Arnd Hannemann <arnd@arndnet.de>
+Date: Wed, 29 Dec 2010 15:50:28 +0000
+Subject: [PATCH] sh: mach-ecovec24: enable runtime PM for SDHI
+Message-Id: <1293637828-8817-1-git-send-email-arnd@arndnet.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011231711240.25676@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-sh@vger.kernel.org
 
-Hi Ian
+This patch enables runtime PM for SDHI on ecovec.
+Tested with a b43 based SDIO card.
 
-It's been 3 weeks... Have you had a chance to look at these and previous 
-my tmio patches? Any comments or are they ok to go?
-
-Thanks
-Guennadi
-
-On Tue, 23 Nov 2010, Guennadi Liakhovetski wrote:
-
-> While testing SDIO on SuperH with TMIO and DMA, it turned out, that 
-> buffers, submitted to the driver can be arbitrarily aligned, and this is 
-> not handled by the tmio driver. This patch series fixes this issue.
-> 
-> Thanks
-> Guennadi
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> 
-
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+This patch applies on top of:
+	[4/6] sh: sh7724 Enable SDIO IRQs
+		https://patchwork.kernel.org/patch/437471/
+
+ arch/sh/boards/mach-ecovec24/setup.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 36d7ca7..0f0bd63 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -476,7 +476,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.set_pwr	= sdhi0_set_pwr,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -518,7 +518,7 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD,
+ 	.set_pwr	= sdhi1_set_pwr,
+ };
+ 
+-- 
+1.7.2.3
+
