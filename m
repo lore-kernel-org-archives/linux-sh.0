@@ -1,79 +1,35 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jan 2011 18:24:02 +0000
-Subject: [PATCH 3/3] fbdev: sh_mobile_hdmi: simplify pointer handling
-Message-Id: <Pine.LNX.4.64.1101061923230.1248@axis700.grange>
+From: Chris Ball <cjb@laptop.org>
+Date: Wed, 05 Jan 2011 20:48:27 +0000
+Subject: Re: [PATCH] mmc: tmio_mmc: silence compiler warnings
+Message-Id: <20110105204827.GE9198@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011231723090.25676@axis700.grange> <1292793367-5638-1-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1292793367-5638-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Arnd Hannemann <arnd@arndnet.de>
+Cc: g.liakhovetski@gmx.de, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/video/sh_mobile_hdmi.c |   18 +++++++++---------
- 1 files changed, 9 insertions(+), 9 deletions(-)
+On Sun, Dec 19, 2010 at 09:16:07PM +0000, Arnd Hannemann wrote:
+> with "mmc: tmio: implement a bounce buffer for unaligned DMA"
+> gcc generates the following warnings:
+> 
+> drivers/mmc/host/tmio_mmc.c:654:6: warning: 'ret' may be used uninitialized in this function
+> drivers/mmc/host/tmio_mmc.c:730:6: warning: 'ret' may be used uninitialized in this function
+> 
+> This patch fixes these by setting ret to -EINVAL in the affected code paths.
+> 
+> This patch applies on top of -rc6 plus the following patches:
+>   mmc: tmio_mmc: allow multi-element scatter-gather lists
+>   mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
+>   mmc: tmio: merge the private header into the driver
+>   mmc: tmio: implement a bounce buffer for unaligned DMA
+> 
+> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 4a1f3f4..ac7e5d8 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -821,9 +821,9 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi)
- 	 * driver, and passing ->info with HDMI platform data.
- 	 */
- 	if (info && !found) {
--		modelist = hdmi->info->modelist.next &&
--			!list_empty(&hdmi->info->modelist) ?
--			list_entry(hdmi->info->modelist.next,
-+		modelist = info->modelist.next &&
-+			!list_empty(&info->modelist) ?
-+			list_entry(info->modelist.next,
- 				   struct fb_modelist, list) :
- 			NULL;
- 
-@@ -1055,6 +1055,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 	mutex_lock(&hdmi->mutex);
- 
- 	if (hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE) {
-+		struct fb_info *info = hdmi->info;
- 		/* A device has been plugged in */
- 		pm_runtime_get_sync(hdmi->dev);
- 
-@@ -1073,22 +1074,21 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 		/* Switched to another (d) power-save mode */
- 		msleep(10);
- 
--		if (!hdmi->info)
-+		if (!info)
- 			goto out;
- 
--		ch = hdmi->info->par;
-+		ch = info->par;
- 
- 		acquire_console_sem();
- 
- 		/* HDMI plug in */
- 		if (!sh_hdmi_must_reconfigure(hdmi) &&
--		    hdmi->info->state = FBINFO_STATE_RUNNING) {
-+		    info->state = FBINFO_STATE_RUNNING) {
- 			/*
- 			 * First activation with the default monitor - just turn
- 			 * on, if we run a resume here, the logo disappears
- 			 */
--			if (lock_fb_info(hdmi->info)) {
--				struct fb_info *info = hdmi->info;
-+			if (lock_fb_info(info)) {
- 				info->var.width = hdmi->var.width;
- 				info->var.height = hdmi->var.height;
- 				sh_hdmi_display_on(hdmi, info);
-@@ -1096,7 +1096,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 			}
- 		} else {
- 			/* New monitor or have to wake up */
--			fb_set_suspend(hdmi->info, 0);
-+			fb_set_suspend(info, 0);
- 		}
- 
- 		release_console_sem();
+Thanks, pushed to mmc-next for .38.
+
 -- 
-1.7.2.3
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
