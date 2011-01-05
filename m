@@ -1,22 +1,26 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 13 Jan 2011 06:20:14 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: Kill off unused !gpio_is_valid() case
-Message-Id: <20110113062014.GF12013@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Jan 2011 11:24:45 +0000
+Subject: [PATCH 0/3] ARM: mach-shmobile: mackerel: HDMI support
+Message-Id: <w3pwrmjk2yu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110112104307.11071.4228.sendpatchset@t400s>
-In-Reply-To: <20110112104307.11071.4228.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jan 12, 2011 at 07:43:07PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> The Card Detect GPIOs used on AP4EVB and Mackerel are
-> alwayws valid, so kill off the unused !gpio_is_valid()
-> case.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Applied, thanks.
+Dear Paul
+
+These are HDMI support for mackerel board.
+
+Kuninori Morimoto (3):
+      ARM: mach-shmobile: mackerel: Add fsi_set_rate
+      ARM: mach-shmobile: mackerel: add HDMI video support
+      ARM: mach-shmobile: mackerel: Add HDMI sound support
+
+These are based on Paul's rmobile-latest branch (not mackerel branch)
+
+Best regards
+--
+Kuninori Morimoto
+ 
