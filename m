@@ -1,99 +1,136 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jan 2011 18:23:58 +0000
-Subject: [PATCH 2/3] fbdev: sh_mobile_hdmi: framebuffer notifiers have to be
-Message-Id: <Pine.LNX.4.64.1101061920270.1248@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Jan 2011 11:25:57 +0000
+Subject: [PATCH 3/3] ARM: mach-shmobile: mackerel: Add HDMI sound support
+Message-Id: <w3psjx7k2wq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-A previous patch added a framebuffer notifier to sh_mobile_hdmi.c,
-but did not register it with the framebuffer core. This patch adds
-such a registration and moves the notifier block into dynamically
-allocated per-device private data.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+based on Paul's rmobile-latest branch (not mackerel branch)
 
-On the one hand this patch fixes a bug - a notifier has been added to the 
-driver, but it had never been registered. OTOH, this notifier will only be 
-called on sh_mobile_lcdcfb module unloading, but modular functionality of 
-sh-mobile framebuffer drivers seems to be largely broken to me. So, this 
-patch only makes this driver look correct, but the functionality has to be 
-fixed further.
+ arch/arm/mach-shmobile/board-mackerel.c |   67 ++++++++++++++++++++++++++++++-
+ 1 files changed, 66 insertions(+), 1 deletions(-)
 
- drivers/video/sh_mobile_hdmi.c |   19 +++++++++----------
- 1 files changed, 9 insertions(+), 10 deletions(-)
-
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index f18a619..4a1f3f4 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -217,6 +217,7 @@ struct sh_hdmi {
- 	struct delayed_work edid_work;
- 	struct fb_var_screeninfo var;
- 	struct fb_monspecs monspec;
-+	struct notifier_block notifier;
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 069377b..4247569 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -331,6 +331,7 @@ static struct platform_device hdmi_lcdc_device = {
+ static struct sh_mobile_hdmi_info hdmi_info = {
+ 	.lcd_chan	= &hdmi_lcdc_info.ch[0],
+ 	.lcd_dev	= &hdmi_lcdc_device.dev,
++	.flags		= HDMI_SND_SRC_SPDIF,
  };
  
- static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
-@@ -1126,13 +1127,6 @@ out:
+ static struct resource hdmi_resources[] = {
+@@ -559,6 +560,52 @@ fsia_ick_out:
+ 	return 0;
  }
  
- static int sh_hdmi_notify(struct notifier_block *nb,
--			  unsigned long action, void *data);
--
--static struct notifier_block sh_hdmi_notifier = {
--	.notifier_call = sh_hdmi_notify,
--};
--
--static int sh_hdmi_notify(struct notifier_block *nb,
- 			  unsigned long action, void *data)
++static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
++{
++	struct clk *fsib_clk;
++	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
++	long fsib_rate = 0;
++	long fdiv_rate = 0;
++	int ackmd_bpfmd;
++	int ret;
++
++	switch (rate) {
++	case 44100:
++		fsib_rate	= rate * 256;
++		ackmd_bpfmd	= SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
++		break;
++	case 48000:
++		fsib_rate	= 85428000; /* around 48kHz x 256 x 7 */
++		fdiv_rate	= rate * 256;
++		ackmd_bpfmd	= SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
++		break;
++	default:
++		pr_err("unsupported rate in FSI2 port B\n");
++		return -EINVAL;
++	}
++
++	/* FSI B setting */
++	fsib_clk = clk_get(dev, "ickb");
++	if (IS_ERR(fsib_clk))
++		return -EIO;
++
++	ret = __fsi_set_round_rate(fsib_clk, fsib_rate, enable);
++	clk_put(fsib_clk);
++	if (ret < 0)
++		return ret;
++
++	/* FSI DIV setting */
++	ret = __fsi_set_round_rate(fdiv_clk, fdiv_rate, enable);
++	if (ret < 0) {
++		/* disable FSI B */
++		if (enable)
++			__fsi_set_round_rate(fsib_clk, fsib_rate, 0);
++		return ret;
++	}
++
++	return ackmd_bpfmd;
++}
++
+ static int fsi_set_rate(struct device *dev, int is_porta, int rate, int enable)
  {
- 	struct fb_event *event = data;
-@@ -1141,7 +1135,7 @@ static int sh_hdmi_notify(struct notifier_block *nb,
- 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
- 	struct sh_hdmi *hdmi = board_cfg->board_data;
+ 	int ret;
+@@ -566,7 +613,7 @@ static int fsi_set_rate(struct device *dev, int is_porta, int rate, int enable)
+ 	if (is_porta)
+ 		ret = fsi_ak4642_set_rate(dev, rate, enable);
+ 	else
+-		ret = -EINVAL;
++		ret = fsi_hdmi_set_rate(dev, rate, enable);
  
--	if (nb != &sh_hdmi_notifier || !hdmi || hdmi->info != info)
-+	if (!hdmi || nb != &hdmi->notifier || hdmi->info != info)
- 		return NOTIFY_DONE;
+ 	return ret;
+ }
+@@ -578,6 +625,11 @@ static struct sh_fsi_platform_info fsi_info = {
+ 			SH_FSI_OFMT(PCM)	|
+ 			SH_FSI_IFMT(PCM),
  
- 	switch(action) {
-@@ -1160,11 +1154,11 @@ static int sh_hdmi_notify(struct notifier_block *nb,
- 		 * temporarily, synchronise with the work queue and re-acquire
- 		 * the info->lock.
- 		 */
--		unlock_fb_info(hdmi->info);
-+		unlock_fb_info(info);
- 		mutex_lock(&hdmi->mutex);
- 		hdmi->info = NULL;
- 		mutex_unlock(&hdmi->mutex);
--		lock_fb_info(hdmi->info);
-+		lock_fb_info(info);
- 		return NOTIFY_OK;
- 	}
- 	return NOTIFY_DONE;
-@@ -1253,6 +1247,9 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- 		goto ecodec;
- 	}
- 
-+	hdmi->notifier.notifier_call = sh_hdmi_notify;
-+	fb_register_client(&hdmi->notifier);
++	.portb_flags =	SH_FSI_BRS_INV	|
++			SH_FSI_BRM_INV	|
++			SH_FSI_LRS_INV	|
++			SH_FSI_OFMT(SPDIF),
 +
- 	return 0;
+ 	.set_rate = fsi_set_rate,
+ };
  
- ecodec:
-@@ -1283,6 +1280,8 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+@@ -694,9 +746,11 @@ static void __init mackerel_map_io(void)
+ #define GPIO_PORT9CR	0xE6051009
+ #define GPIO_PORT10CR	0xE605100A
+ #define SRCR4		0xe61580bc
++#define USCCR1		0xE6058144
+ static void __init mackerel_init(void)
+ {
+ 	u32 srcr4;
++	struct clk *clk;
  
- 	snd_soc_unregister_codec(&pdev->dev);
+ 	sh7372_pinmux_init();
  
-+	fb_unregister_client(&hdmi->notifier);
+@@ -768,6 +822,17 @@ static void __init mackerel_init(void)
+ 
+ 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
+ 
++	/* setup FSI2 port B (HDMI) */
++	gpio_request(GPIO_FN_FSIBCK, NULL);
++	__raw_writew(__raw_readw(USCCR1) & ~(1 << 6), USCCR1); /* use SPDIF */
 +
- 	board_cfg->display_on = NULL;
- 	board_cfg->display_off = NULL;
- 	board_cfg->board_data = NULL;
++	/* set SPU2 clock to 119.6 MHz */
++	clk = clk_get(NULL, "spu_clk");
++	if (!IS_ERR(clk)) {
++		clk_set_rate(clk, clk_round_rate(clk, 119600000));
++		clk_put(clk);
++	}
++
+ 	/* enable Keypad */
+ 	gpio_request(GPIO_FN_IRQ9_42,	NULL);
+ 	set_irq_type(IRQ9, IRQ_TYPE_LEVEL_HIGH);
 -- 
-1.7.2.3
+1.7.1
 
