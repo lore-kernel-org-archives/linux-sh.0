@@ -1,157 +1,222 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Fri, 07 Jan 2011 02:58:16 +0000
-Subject: [PATCH 5/5] sh: Use device_initcall() instead of __initcall()
-Message-Id: <1294369335-4064-5-git-send-email-iwamatsu@nigauri.org>
+From: Chris Ball <cjb@laptop.org>
+Date: Wed, 05 Jan 2011 19:56:56 +0000
+Subject: Re: [PATCH 2/3] mmc: tmio: implement a bounce buffer for unaligned
+Message-Id: <20110105195655.GD9198@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange> <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011231723090.25676@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
----
- arch/sh/boards/board-edosk7705.c    |    2 +-
- arch/sh/boards/board-edosk7760.c    |    2 +-
- arch/sh/boards/board-sh7785lcr.c    |    2 +-
- arch/sh/boards/mach-cayman/setup.c  |    2 +-
- arch/sh/boards/mach-landisk/setup.c |    2 +-
- arch/sh/boards/mach-r2d/setup.c     |    2 +-
- arch/sh/boards/mach-sdk7786/setup.c |    2 +-
- arch/sh/boards/mach-se/7206/setup.c |    2 +-
- arch/sh/boards/mach-se/7751/setup.c |    2 +-
- arch/sh/boards/mach-sh03/setup.c    |    2 +-
- 10 files changed, 10 insertions(+), 10 deletions(-)
+Hi Guennadi, could you resend this one with some style changes:
 
-diff --git a/arch/sh/boards/board-edosk7705.c b/arch/sh/boards/board-edosk7705.c
-index 4cb3bb7..541d8a2 100644
---- a/arch/sh/boards/board-edosk7705.c
-+++ b/arch/sh/boards/board-edosk7705.c
-@@ -66,7 +66,7 @@ static int __init init_edosk7705_devices(void)
- 	return platform_add_devices(edosk7705_devices,
- 				    ARRAY_SIZE(edosk7705_devices));
- }
--__initcall(init_edosk7705_devices);
-+device_initcall(init_edosk7705_devices);
- 
- /*
-  * The Machine Vector
-diff --git a/arch/sh/boards/board-edosk7760.c b/arch/sh/boards/board-edosk7760.c
-index 35dc099..f47ac82 100644
---- a/arch/sh/boards/board-edosk7760.c
-+++ b/arch/sh/boards/board-edosk7760.c
-@@ -182,7 +182,7 @@ static int __init init_edosk7760_devices(void)
- 	return platform_add_devices(edosk7760_devices,
- 				    ARRAY_SIZE(edosk7760_devices));
- }
--__initcall(init_edosk7760_devices);
-+device_initcall(init_edosk7760_devices);
- 
- /*
-  * The Machine Vector
-diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh7785lcr.c
-index fe7e686..ee65ff0 100644
---- a/arch/sh/boards/board-sh7785lcr.c
-+++ b/arch/sh/boards/board-sh7785lcr.c
-@@ -284,7 +284,7 @@ static int __init sh7785lcr_devices_setup(void)
- 	return platform_add_devices(sh7785lcr_devices,
- 				    ARRAY_SIZE(sh7785lcr_devices));
- }
--__initcall(sh7785lcr_devices_setup);
-+device_initcall(sh7785lcr_devices_setup);
- 
- /* Initialize IRQ setting */
- void __init init_sh7785lcr_IRQ(void)
-diff --git a/arch/sh/boards/mach-cayman/setup.c b/arch/sh/boards/mach-cayman/setup.c
-index 7e8216a..e89e8e1 100644
---- a/arch/sh/boards/mach-cayman/setup.c
-+++ b/arch/sh/boards/mach-cayman/setup.c
-@@ -165,7 +165,7 @@ static int __init smsc_superio_setup(void)
- 
- 	return 0;
- }
--__initcall(smsc_superio_setup);
-+device_initcall(smsc_superio_setup);
- 
- static void __iomem *cayman_ioport_map(unsigned long port, unsigned int len)
- {
-diff --git a/arch/sh/boards/mach-landisk/setup.c b/arch/sh/boards/mach-landisk/setup.c
-index c693121..94186cf 100644
---- a/arch/sh/boards/mach-landisk/setup.c
-+++ b/arch/sh/boards/mach-landisk/setup.c
-@@ -81,7 +81,7 @@ static int __init landisk_devices_setup(void)
- 				    ARRAY_SIZE(landisk_devices));
- }
- 
--__initcall(landisk_devices_setup);
-+device_initcall(landisk_devices_setup);
- 
- static void __init landisk_setup(char **cmdline_p)
- {
-diff --git a/arch/sh/boards/mach-r2d/setup.c b/arch/sh/boards/mach-r2d/setup.c
-index b84df6a..4b98a52 100644
---- a/arch/sh/boards/mach-r2d/setup.c
-+++ b/arch/sh/boards/mach-r2d/setup.c
-@@ -258,7 +258,7 @@ static int __init rts7751r2d_devices_setup(void)
- 	return platform_add_devices(rts7751r2d_devices,
- 				    ARRAY_SIZE(rts7751r2d_devices));
- }
--__initcall(rts7751r2d_devices_setup);
-+device_initcall(rts7751r2d_devices_setup);
- 
- static void rts7751r2d_power_off(void)
- {
-diff --git a/arch/sh/boards/mach-sdk7786/setup.c b/arch/sh/boards/mach-sdk7786/setup.c
-index 75e4ddb..c2e110b 100644
---- a/arch/sh/boards/mach-sdk7786/setup.c
-+++ b/arch/sh/boards/mach-sdk7786/setup.c
-@@ -135,7 +135,7 @@ static int __init sdk7786_devices_setup(void)
- 
- 	return sdk7786_i2c_setup();
- }
--__initcall(sdk7786_devices_setup);
-+device_initcall(sdk7786_devices_setup);
- 
- static int sdk7786_mode_pins(void)
- {
-diff --git a/arch/sh/boards/mach-se/7206/setup.c b/arch/sh/boards/mach-se/7206/setup.c
-index 33039e0..8ab8330 100644
---- a/arch/sh/boards/mach-se/7206/setup.c
-+++ b/arch/sh/boards/mach-se/7206/setup.c
-@@ -77,7 +77,7 @@ static int __init se7206_devices_setup(void)
- {
- 	return platform_add_devices(se7206_devices, ARRAY_SIZE(se7206_devices));
- }
--__initcall(se7206_devices_setup);
-+device_initcall(se7206_devices_setup);
- 
- static int se7206_mode_pins(void)
- {
-diff --git a/arch/sh/boards/mach-se/7751/setup.c b/arch/sh/boards/mach-se/7751/setup.c
-index 9fbc51b..4ed60c5 100644
---- a/arch/sh/boards/mach-se/7751/setup.c
-+++ b/arch/sh/boards/mach-se/7751/setup.c
-@@ -48,7 +48,7 @@ static int __init se7751_devices_setup(void)
- {
- 	return platform_add_devices(se7751_devices, ARRAY_SIZE(se7751_devices));
- }
--__initcall(se7751_devices_setup);
-+device_initcall(se7751_devices_setup);
- 
- /*
-  * The Machine Vector
-diff --git a/arch/sh/boards/mach-sh03/setup.c b/arch/sh/boards/mach-sh03/setup.c
-index af4a0c0..d4f79b2 100644
---- a/arch/sh/boards/mach-sh03/setup.c
-+++ b/arch/sh/boards/mach-sh03/setup.c
-@@ -96,7 +96,7 @@ static int __init sh03_devices_setup(void)
- 
- 	return platform_add_devices(sh03_devices, ARRAY_SIZE(sh03_devices));
- }
--__initcall(sh03_devices_setup);
-+device_initcall(sh03_devices_setup);
- 
- static struct sh_machine_vector mv_sh03 __initmv = {
- 	.mv_name		= "Interface (CTP/PCI-SH03)",
+On Tue, Nov 23, 2010 at 05:24:15PM +0100, Guennadi Liakhovetski wrote:
+> For example, with SDIO WLAN cards, some transfers happen with buffers at odd
+> addresses, whereas the SH-Mobile DMA engine requires even addresses for SDHI.
+> This patch extends the tmio driver with a bounce buffer, that is used for
+> single entry scatter-gather lists both for sending and receiving. If we ever
+> encounter unaligned transfers with multi-element sg lists, this patch will have
+> to be extended. For now it just falls back to PIO in this and other unsupported
+> cases.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Please wrap commit messages at 72 cols, not 80.
+
+> ---
+>  drivers/mmc/host/tmio_mmc.c |   81 +++++++++++++++++++++++++++++++++++++++----
+>  include/linux/mfd/tmio.h    |    1 +
+>  2 files changed, 75 insertions(+), 7 deletions(-)
+> 
+> diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+> index 118ad86..57ece9d 100644
+> --- a/drivers/mmc/host/tmio_mmc.c
+> +++ b/drivers/mmc/host/tmio_mmc.c
+> @@ -111,6 +111,8 @@
+>  		sd_ctrl_write32((host), CTL_STATUS, ~(i)); \
+>  	} while (0)
+>  
+> +/* This is arbitrary, just noone needed any higher alignment yet */
+> +#define MAX_ALIGN 4
+>  
+>  struct tmio_mmc_host {
+>  	void __iomem *ctl;
+> @@ -127,6 +129,7 @@ struct tmio_mmc_host {
+>  
+>  	/* pio related stuff */
+>  	struct scatterlist      *sg_ptr;
+> +	struct scatterlist      *sg_orig;
+>  	unsigned int            sg_len;
+>  	unsigned int            sg_off;
+>  
+> @@ -139,6 +142,8 @@ struct tmio_mmc_host {
+>  	struct tasklet_struct	dma_issue;
+>  #ifdef CONFIG_TMIO_MMC_DMA
+>  	unsigned int            dma_sglen;
+> +	u8			bounce_buf[PAGE_CACHE_SIZE] __attribute__((aligned(MAX_ALIGN)));
+> +	struct scatterlist	bounce_sg;
+>  #endif
+>  };
+>  
+> @@ -180,6 +185,7 @@ static void tmio_mmc_init_sg(struct tmio_mmc_host *host, struct mmc_data *data)
+>  {
+>  	host->sg_len = data->sg_len;
+>  	host->sg_ptr = data->sg;
+> +	host->sg_orig = data->sg;
+>  	host->sg_off = 0;
+>  }
+>  
+> @@ -436,8 +442,14 @@ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+>  	 */
+>  
+>  	if (data->flags & MMC_DATA_READ) {
+> -		if (!host->chan_rx)
+> +		if (!host->chan_rx) {
+>  			disable_mmc_irqs(host, TMIO_MASK_READOP);
+> +		} else if (host->sg_ptr = &host->bounce_sg) {
+> +			unsigned long flags;
+> +			void *sg_vaddr = tmio_mmc_kmap_atomic(host->sg_orig, &flags);
+
+Would be nice to stay within 80-chars where possible.
+
+> +			memcpy(sg_vaddr, host->bounce_buf, host->bounce_sg.length);
+> +			tmio_mmc_kunmap_atomic(sg_vaddr, &flags);
+> +		}
+>  		dev_dbg(&host->pdev->dev, "Complete Rx request %p\n",
+>  			host->mrq);
+>  	} else {
+> @@ -529,8 +541,7 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+>  			if (!host->chan_rx)
+>  				enable_mmc_irqs(host, TMIO_MASK_READOP);
+>  		} else {
+> -			struct dma_chan *chan = host->chan_tx;
+> -			if (!chan)
+> +			if (!host->chan_tx)
+>  				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
+>  			else
+>  				tasklet_schedule(&host->dma_issue);
+> @@ -634,11 +645,36 @@ static void tmio_dma_complete(void *arg)
+>  
+>  static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+>  {
+> -	struct scatterlist *sg = host->sg_ptr;
+> +	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+>  	struct dma_async_tx_descriptor *desc = NULL;
+>  	struct dma_chan *chan = host->chan_rx;
+> +	struct mfd_cell	*cell = host->pdev->dev.platform_data;
+> +	struct tmio_mmc_data *pdata = cell->driver_data;
+>  	dma_cookie_t cookie;
+> -	int ret;
+> +	int ret, i;
+> +	bool aligned = true, multiple = true;
+> +	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
+> +
+> +	for_each_sg(sg, sg_tmp, host->sg_len, i) {
+> +		if (sg_tmp->offset & align)
+> +			aligned = false;
+> +		if (sg_tmp->length & align) {
+> +			multiple = false;
+> +			break;
+> +		}
+> +	}
+> +
+> +	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
+> +			  align >= MAX_ALIGN)) || !multiple)
+> +		goto pio;
+> +
+> +	/* The only sg element can be unaligned, use our bounce buffer then */
+> +	if (!aligned) {
+> +		/* The first sg element unaligned, use our bounce-buffer */
+> +		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
+> +		host->sg_ptr = &host->bounce_sg;
+> +		sg = host->sg_ptr;
+> +	}
+
+The second comment is missing a verb, and looks redundant with the first.
+
+>
+>  	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_FROM_DEVICE);
+>  	if (ret > 0) {
+> @@ -661,6 +697,7 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+>  	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+>  		__func__, host->sg_len, ret, cookie, host->mrq);
+>  
+> +pio:
+>  	if (!desc) {
+>  		/* DMA failed, fall back to PIO */
+>  		if (ret >= 0)
+> @@ -684,11 +721,40 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+>  
+>  static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+>  {
+> -	struct scatterlist *sg = host->sg_ptr;
+> +	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+>  	struct dma_async_tx_descriptor *desc = NULL;
+>  	struct dma_chan *chan = host->chan_tx;
+> +	struct mfd_cell	*cell = host->pdev->dev.platform_data;
+> +	struct tmio_mmc_data *pdata = cell->driver_data;
+>  	dma_cookie_t cookie;
+> -	int ret;
+> +	int ret, i;
+> +	bool aligned = true, multiple = true;
+> +	unsigned int align = (1 << pdata->dma->alignment_shift) - 1;
+> +
+> +	for_each_sg(sg, sg_tmp, host->sg_len, i) {
+> +		if (sg_tmp->offset & align)
+> +			aligned = false;
+> +		if (sg_tmp->length & align) {
+> +			multiple = false;
+> +			break;
+> +		}
+> +	}
+> +
+> +	if ((!aligned && (host->sg_len > 1 || sg->length > PAGE_CACHE_SIZE ||
+> +			  align >= MAX_ALIGN)) || !multiple)
+> +		goto pio;
+> +
+> +	/* The only sg element can be unaligned, use our bounce buffer then */
+> +	if (!aligned) {
+> +		unsigned long flags;
+> +		void *sg_vaddr = tmio_mmc_kmap_atomic(sg, &flags);
+> +		/* The first sg element unaligned, use our bounce-buffer */
+> +		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
+> +		memcpy(host->bounce_buf, sg_vaddr, host->bounce_sg.length);
+> +		tmio_mmc_kunmap_atomic(sg_vaddr, &flags);
+> +		host->sg_ptr = &host->bounce_sg;
+> +		sg = host->sg_ptr;
+> +	}
+
+Same here.
+
+>  
+>  	ret = dma_map_sg(&host->pdev->dev, sg, host->sg_len, DMA_TO_DEVICE);
+>  	if (ret > 0) {
+> @@ -709,6 +775,7 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+>  	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
+>  		__func__, host->sg_len, ret, cookie, host->mrq);
+>  
+> +pio:
+>  	if (!desc) {
+>  		/* DMA failed, fall back to PIO */
+>  		if (ret >= 0)
+> diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+> index 085f041..dbfc053 100644
+> --- a/include/linux/mfd/tmio.h
+> +++ b/include/linux/mfd/tmio.h
+> @@ -66,6 +66,7 @@ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+>  struct tmio_mmc_dma {
+>  	void *chan_priv_tx;
+>  	void *chan_priv_rx;
+> +	int alignment_shift;
+>  };
+>  
+>  /*
+
+Thanks,
+
 -- 
-1.7.2.3
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
