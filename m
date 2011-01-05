@@ -1,22 +1,24 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 18 Jan 2011 04:51:57 +0000
-Subject: Re: [PATCH] sh: fix MSIOF0 SPI on ecovec: it conflicts with VOU
-Message-Id: <20110118045157.GK2122@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jan 2011 01:45:49 +0000
+Subject: Re: [PATCH] mmc: sh_mmcif: make DMA support by the driver unconditional
+Message-Id: <AANLkTikh5yYj_kXM6fD+SNmurXqmB_ATaKnDfWM5Cwva@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1101170901520.11874@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1101170901520.11874@axis700.grange>
+References: <Pine.LNX.4.64.1012290852530.14233@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1012290852530.14233@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-On Mon, Jan 17, 2011 at 09:02:53AM +0100, Guennadi Liakhovetski wrote:
-> MSIOF0 and VOU share pins on sh7724, make MSIOF0 available again, as long as
-> VOU is not configured.
-> 
+On Wed, Dec 29, 2010 at 4:59 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Simplify the driver by removing the possibility to build it without the DMA
+> support and remove the respective Kconfig parameter.
+>
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> Should be good for 2.6.37
-> 
-Applied, thanks.
+
+Excellent, this helps against bitrot and makes kernel configuration
+easier for newbies.
+
+Acked-by: Magnus Damm <damm@opensource.se>
