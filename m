@@ -1,27 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 05 Jan 2011 07:57:38 +0000
-Subject: Re: [PATCH] sh: correct definitions to access stack pointers
-Message-Id: <20110105075737.GB23889@linux-sh.org>
+From: Chris Ball <cjb@laptop.org>
+Date: Wed, 05 Jan 2011 21:22:23 +0000
+Subject: Re: [PATCH 1/2 v2] mmc: tmio: handle missing HW interrupts
+Message-Id: <20110105212223.GJ9198@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4D1F7434.4090108@gmail.com>
-In-Reply-To: <4D1F7434.4090108@gmail.com>
+References: <1293628874-8140-1-git-send-email-arnd@arndnet.de> <1293628874-8140-2-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1293628874-8140-2-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: roel kluin <roel.kluin@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Arnd Hannemann <arnd@arndnet.de>
+Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, linux-sh@vger.kernel.org
 
-On Sat, Jan 01, 2011 at 07:36:36PM +0100, roel kluin wrote:
-> A definition like:
-> 
-> #define regs_return_value(regs)	((regs)->regs[0])
-> 
-> called with regs_return_value(foo) will be preprocessed to:
-> 
-> ((foo)->foo[0])
->         ^^^
-> So to fix this to ensure the preprocessor compiles such calls correctly.
-> 
-> Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
+Hi Arnd,
 
-Applied, thanks.
+On Wed, Dec 29, 2010 at 02:21:13PM +0100, Arnd Hannemann wrote:
+> This patch addresses this problem by introducing timeouts for outstanding
+> interrupts. If a hardware interrupt is missing, a soft reset will be performed
+> to bring the hardware back to a working state.
+> Tested with the SDHI hardware block in sh7372 / AP4EVB.
+> 
+> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+
+This breaks compilation without CONFIG_TMIO_MMC_DMA=y, because it
+attempts to compile tmio_mmc_reset_work() unconditionally even though
+delayed_reset_work is only a member of tmio_mmc_host if TMIO_MMC_DMA=y:
+
+drivers/mmc/host/tmio_mmc.c: In function ‘tmio_mmc_reset_work’:
+drivers/mmc/host/tmio_mmc.c:357:31: error: ‘struct tmio_mmc_host’ has no member named ‘delayed_reset_work’
+
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
