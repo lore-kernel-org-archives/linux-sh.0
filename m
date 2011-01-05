@@ -1,52 +1,29 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 06 Jan 2011 02:43:00 +0000
-Subject: [PATCH] ARM: mach-shmobile: ap4evb: fixup clk_put timing of fsib_clk
-Message-Id: <w3pipy2ycp7.wl%kuninori.morimoto.gx@renesas.com>
+From: Chris Ball <cjb@laptop.org>
+Date: Wed, 05 Jan 2011 19:50:16 +0000
+Subject: Re: [PATCH 1/3] mmc: tmio: merge the private header into the driver
+Message-Id: <20110105195016.GC9198@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1011231711240.25676@axis700.grange> <Pine.LNX.4.64.1011231718500.25676@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1011231718500.25676@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-fsib_clk will be used when fdiv_clk failed on fsi_hdmi_set_rate.
+On Tue, Nov 23, 2010 at 05:24:11PM +0100, Guennadi Liakhovetski wrote:
+> drivers/mmc/host/tmio_mmc.h is only used by drivers/mmc/host/tmio_mmc.c, this
+> needlessly complicates source-code handling.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-ap4evb.c |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
+Ouch; but fixing it needlessly complicates patch handling, because now
+all future patches apply or don't based on whether they saw this patch.
+I think this decision should just be made once and lived with, without
+a stronger reason than this one to change it.
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 5b07952..79cdf16 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -674,9 +674,8 @@ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
- 		return -EIO;
- 
- 	ret = __fsi_set_round_rate(fsib_clk, fsib_rate, enable);
--	clk_put(fsib_clk);
- 	if (ret < 0)
--		return ret;
-+		goto fsi_set_rate_end;
- 
- 	/* FSI DIV setting */
- 	ret = __fsi_set_round_rate(fdiv_clk, fdiv_rate, enable);
-@@ -684,10 +683,14 @@ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
- 		/* disable FSI B */
- 		if (enable)
- 			__fsi_set_round_rate(fsib_clk, fsib_rate, 0);
--		return ret;
-+		goto fsi_set_rate_end;
- 	}
- 
--	return ackmd_bpfmd;
-+	ret = ackmd_bpfmd;
-+
-+fsi_set_rate_end:
-+	clk_put(fsib_clk);
-+	return ret;
- }
- 
- static int fsi_set_rate(struct device *dev, int is_porta, int rate, int enable)
+I'll apply it since it's become a dependency now.  Pushed to mmc-next.
+
 -- 
-1.7.1
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
