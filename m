@@ -1,38 +1,49 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 07 Jan 2011 01:41:26 +0000
-Subject: Re: [PATCH 00/04] ARM: mach-shmobile: Add run-time IRQ handler support
-Message-Id: <20110107014126.GD22477@linux-sh.org>
+From: Chris Ball <cjb@laptop.org>
+Date: Wed, 05 Jan 2011 20:58:17 +0000
+Subject: Re: [PATCH 2/6 v3] mfd: sh_mobile_sdhi: activate SDIO IRQ for
+Message-Id: <20110105205817.GH9198@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-3-git-send-email-arnd@arndnet.de>
+In-Reply-To: <1293574956-30035-3-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Arnd Hannemann <arnd@arndnet.de>
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-On Tue, Dec 28, 2010 at 05:26:43PM +0900, Magnus Damm wrote:
-> ARM: mach-shmobile: Add run-time IRQ handler support
-> 
-> [PATCH 01/04] ARM: mach-shmobile: Enable CONFIG_MULTI_IRQ_HANDLER
-> [PATCH 02/04] ARM: mach-shmobile: Run-time IRQ handler for INTCA
-> [PATCH 03/04] ARM: mach-shmobile: Run-time IRQ handler for GIC
-> [PATCH 04/04] ARM: mach-shmobile: Rely on run-time IRQ handlers
-> 
-> These patches add run-time IRQ handler support for R-Mobile and
-> SH-Mobile processors. Nothing out of the ordinary really, except
-> merge dependency fun. Built on top of rmobile-latest plus below.
-> 
-> Depends on:
-> "[PATCH 01/07] ARM: Introduce asm/hardware/entry-macro-gic.S"
-> http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idd75/1
-> 
-> "[PATCH] ARM: Allow machine to specify it's own IRQ handlers at run-time"
-> http://www.arm.linux.org.uk/developer/patches/viewpatch.php?ide32/1
-> 
-> "[PATCH] ARM: Subarch IRQ handler macros V3"
-> http://www.arm.linux.org.uk/developer/patches/viewpatch.php?ide38/1
-> 
-> "[PATCH] ARM: mach-shmobile: Use shared GIC entry macros"
-> https://patchwork.kernel.org/patch/426981/
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Hi Arnd,
 
-Applied, thanks.
+On Tue, Dec 28, 2010 at 11:22:32PM +0100, Arnd Hannemann wrote:
+> The SDHI Controller on SH-Mobile SoCs supports SDIO IRQ signalling.
+> This patch advertises this fact to the tmio_mmc driver.
+> 
+> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+> Acked-by: Samuel Ortiz <sameo@linux.intel.com>
+> ---
+>  drivers/mfd/sh_mobile_sdhi.c |    5 +++++
+>  1 files changed, 5 insertions(+), 0 deletions(-)
+> 
+> diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
+> index 3ca20ec..0a7df44 100644
+> --- a/drivers/mfd/sh_mobile_sdhi.c
+> +++ b/drivers/mfd/sh_mobile_sdhi.c
+> @@ -131,6 +131,11 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+>  	 */
+>  	mmc_data->flags |= TMIO_MMC_BLKSZ_2BYTES;
+>  
+> +	/*
+> +	 * All SDHI blocks support SDIO IRQ signalling.
+> +	 */
+> +	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
+> +
+>  	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
+>  		priv->param_tx.slave_id = p->dma_slave_tx;
+>  		priv->param_rx.slave_id = p->dma_slave_rx;
+
+Thanks, pushed to mmc-next for .38.  You can send on the arch
+dependencies now, explaining that the code they depend on is
+waiting in -next.
+
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
