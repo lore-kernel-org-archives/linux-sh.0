@@ -1,97 +1,216 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 06 Jan 2011 10:16:24 +0000
-Subject: [PATCH 04/08] sh: Convert sh7722, Migo-R and se7722 to mem_init
-Message-Id: <20110106101624.1617.15198.sendpatchset@t400s>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Jan 2011 11:25:40 +0000
+Subject: [PATCH 2/3] ARM: mach-shmobile: mackerel: add HDMI video support
+Message-Id: <w3ptyhnk2x7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Convert sh7722 to use shmobile_memchunk_setup().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+based on Paul's rmobile-latest branch (not mackerel branch)
 
- arch/sh/boards/mach-migor/setup.c      |    9 +++++++--
- arch/sh/boards/mach-se/7722/setup.c    |    1 +
- arch/sh/include/cpu-sh4/cpu/sh7722.h   |    2 ++
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   12 ++++++++----
- 4 files changed, 18 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |  141 +++++++++++++++++++++++++++++++
+ 1 files changed, 141 insertions(+), 0 deletions(-)
 
---- 0001/arch/sh/boards/mach-migor/setup.c
-+++ work/arch/sh/boards/mach-migor/setup.c	2011-01-06 18:04:30.000000000 +0900
-@@ -631,8 +631,6 @@ static int __init migor_devices_setup(vo
- #endif
- 	__raw_writew(__raw_readw(PORT_MSELCRB) | 0x2000, PORT_MSELCRB); /* D15->D8 */
- 
--	platform_resource_setup_memory(&migor_ceu_device, "ceu", 4 << 20);
--
- 	/* SIU: Port B */
- 	gpio_request(GPIO_FN_SIUBOLR, NULL);
- 	gpio_request(GPIO_FN_SIUBOBT, NULL);
-@@ -664,10 +662,17 @@ static int migor_mode_pins(void)
- 	return MODE_PIN0 | MODE_PIN1 | MODE_PIN5;
- }
- 
-+static void __init migor_mem_init(void)
-+{
-+	sh7722_mem_init();
-+	shmobile_memchunk_setup(&migor_ceu_device, "ceu", 4 << 20);
-+}
-+
- /*
-  * The Machine Vector
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 83e83e8..069377b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -21,6 +21,7 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   */
- static struct sh_machine_vector mv_migor __initmv = {
- 	.mv_name		= "Migo-R",
- 	.mv_mode_pins		= migor_mode_pins,
-+	.mv_mem_init		= migor_mem_init,
- };
---- 0001/arch/sh/boards/mach-se/7722/setup.c
-+++ work/arch/sh/boards/mach-se/7722/setup.c	2011-01-06 18:07:20.000000000 +0900
-@@ -191,4 +191,5 @@ static struct sh_machine_vector mv_se772
- 	.mv_name                = "Solution Engine 7722" ,
- 	.mv_setup               = se7722_setup ,
- 	.mv_init_irq		= init_se7722_IRQ,
-+	.mv_mem_init		= sh7722_mem_init,
- };
---- 0001/arch/sh/include/cpu-sh4/cpu/sh7722.h
-+++ work/arch/sh/include/cpu-sh4/cpu/sh7722.h	2011-01-06 18:04:58.000000000 +0900
-@@ -250,4 +250,6 @@ enum {
- 	SHDMA_SLAVE_SDHI0_RX,
++#include <linux/delay.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+@@ -39,6 +40,7 @@
+ #include <linux/tca6416_keypad.h>
+ #include <linux/usb/r8a66597.h>
+ 
++#include <video/sh_mobile_hdmi.h>
+ #include <video/sh_mobile_lcdc.h>
+ 
+ #include <sound/sh_fsi.h>
+@@ -290,6 +292,127 @@ static struct platform_device lcdc_device = {
+ 	},
  };
  
-+void sh7722_mem_init(void);
++/* HDMI */
++static struct sh_mobile_lcdc_info hdmi_lcdc_info = {
++	.clock_source = LCDC_CLK_EXTERNAL,
++	.ch[0] = {
++		.chan = LCDC_CHAN_MAINLCD,
++		.bpp = 16,
++		.interface_type = RGB24,
++		.clock_divider = 1,
++		.flags = LCDC_FLAGS_DWPOL,
++	}
++};
 +
- #endif /* __ASM_SH7722_H__ */
---- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ work/arch/sh/kernel/cpu/sh4a/setup-sh7722.c	2011-01-06 18:06:26.000000000 +0900
-@@ -583,10 +583,6 @@ static struct platform_device *sh7722_de
- 
- static int __init sh7722_devices_setup(void)
- {
--	platform_resource_setup_memory(&vpu_device, "vpu", 1 << 20);
--	platform_resource_setup_memory(&veu_device, "veu", 2 << 20);
--	platform_resource_setup_memory(&jpu_device, "jpu", 2 << 20);
--
- 	return platform_add_devices(sh7722_devices,
- 				    ARRAY_SIZE(sh7722_devices));
- }
-@@ -608,6 +604,14 @@ void __init plat_early_device_setup(void
- 				   ARRAY_SIZE(sh7722_early_devices));
- }
- 
-+void __init sh7722_mem_init(void)
++static struct resource hdmi_lcdc_resources[] = {
++	[0] = {
++		.name	= "LCDC1",
++		.start	= 0xfe944000,
++		.end	= 0xfe947fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x1780),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device hdmi_lcdc_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(hdmi_lcdc_resources),
++	.resource	= hdmi_lcdc_resources,
++	.id		= 1,
++	.dev	= {
++		.platform_data	= &hdmi_lcdc_info,
++		.coherent_dma_mask = ~0,
++	},
++};
++
++static struct sh_mobile_hdmi_info hdmi_info = {
++	.lcd_chan	= &hdmi_lcdc_info.ch[0],
++	.lcd_dev	= &hdmi_lcdc_device.dev,
++};
++
++static struct resource hdmi_resources[] = {
++	[0] = {
++		.name	= "HDMI",
++		.start	= 0xe6be0000,
++		.end	= 0xe6be00ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
++		.start	= evt2irq(0x17e0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device hdmi_device = {
++	.name		= "sh-mobile-hdmi",
++	.num_resources	= ARRAY_SIZE(hdmi_resources),
++	.resource	= hdmi_resources,
++	.id             = -1,
++	.dev	= {
++		.platform_data	= &hdmi_info,
++	},
++};
++
++static int __init hdmi_init_pm_clock(void)
 +{
-+	generic_mem_init();
-+	shmobile_memchunk_setup(&vpu_device, "vpu", 1 << 20);
-+	shmobile_memchunk_setup(&veu_device, "veu", 2 << 20);
-+	shmobile_memchunk_setup(&jpu_device, "jpu", 2 << 20);
-+}
++	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
++	int ret;
++	long rate;
 +
- enum {
- 	UNUSED=0,
- 	ENABLED,
++	if (IS_ERR(hdmi_ick)) {
++		ret = PTR_ERR(hdmi_ick);
++		pr_err("Cannot get HDMI ICK: %d\n", ret);
++		goto out;
++	}
++
++	ret = clk_set_parent(&sh7372_pllc2_clk, &sh7372_dv_clki_div2_clk);
++	if (ret < 0) {
++		pr_err("Cannot set PLLC2 parent: %d, %d users\n",
++		       ret, sh7372_pllc2_clk.usecount);
++		goto out;
++	}
++
++	pr_debug("PLLC2 initial frequency %lu\n",
++		 clk_get_rate(&sh7372_pllc2_clk));
++
++	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
++	if (rate < 0) {
++		pr_err("Cannot get suitable rate: %ld\n", rate);
++		ret = rate;
++		goto out;
++	}
++
++	ret = clk_set_rate(&sh7372_pllc2_clk, rate);
++	if (ret < 0) {
++		pr_err("Cannot set rate %ld: %d\n", rate, ret);
++		goto out;
++	}
++
++	ret = clk_enable(&sh7372_pllc2_clk);
++	if (ret < 0) {
++		pr_err("Cannot enable pllc2 clock\n");
++		goto out;
++	}
++
++	pr_debug("PLLC2 set frequency %lu\n", rate);
++
++	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
++	if (ret < 0) {
++		pr_err("Cannot set HDMI parent: %d\n", ret);
++		goto out;
++	}
++
++out:
++	if (!IS_ERR(hdmi_ick))
++		clk_put(hdmi_ick);
++	return ret;
++}
++device_initcall(hdmi_init_pm_clock);
++
+ /* USB1 (Host) */
+ static void usb1_host_port_power(int port, int power)
+ {
+@@ -493,6 +616,8 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&leds_device,
+ 	&fsi_device,
+ 	&fsi_ak4643_device,
++	&hdmi_lcdc_device,
++	&hdmi_device,
+ };
+ 
+ /* Keypad Initialization */
+@@ -568,8 +693,11 @@ static void __init mackerel_map_io(void)
+ 
+ #define GPIO_PORT9CR	0xE6051009
+ #define GPIO_PORT10CR	0xE605100A
++#define SRCR4		0xe61580bc
+ static void __init mackerel_init(void)
+ {
++	u32 srcr4;
++
+ 	sh7372_pinmux_init();
+ 
+ 	/* enable SCIFA0 */
+@@ -648,6 +776,16 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_IRQ21,	NULL);
+ 	set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
+ 
++	/* HDMI */
++	gpio_request(GPIO_FN_HDMI_HPD, NULL);
++	gpio_request(GPIO_FN_HDMI_CEC, NULL);
++
++	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
++	srcr4 = __raw_readl(SRCR4);
++	__raw_writel(srcr4 | (1 << 13), SRCR4);
++	udelay(50);
++	__raw_writel(srcr4 & ~(1 << 13), SRCR4);
++
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+ 	i2c_register_board_info(1, i2c1_devices,
+@@ -662,6 +800,9 @@ static void __init mackerel_timer_init(void)
+ {
+ 	sh7372_clock_init();
+ 	shmobile_timer.init();
++
++	/* External clock source */
++	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ }
+ 
+ static struct sys_timer mackerel_timer = {
+-- 
+1.7.1
+
