@@ -1,77 +1,35 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 05 Jan 2011 21:09:42 +0000
+From: Chris Ball <cjb@laptop.org>
+Date: Wed, 05 Jan 2011 22:10:03 +0000
 Subject: Re: [PATCH 1/6 v3] mmc: tmio: implement SDIO IRQ
-Message-Id: <Pine.LNX.4.64.1101052203090.5375@axis700.grange>
+Message-Id: <20110105221003.GL9198@void.printf.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293574956-30035-1-git-send-email-arnd@arndnet.de>
- <1293574956-30035-2-git-send-email-arnd@arndnet.de> <20110105205717.GG9198@void.printf.net>
-In-Reply-To: <20110105205717.GG9198@void.printf.net>
+References: <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-2-git-send-email-arnd@arndnet.de> <20110105205717.GG9198@void.printf.net> <Pine.LNX.4.64.1101052203090.5375@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1101052203090.5375@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: Arnd Hannemann <arnd@arndnet.de>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
 
-Hi Chris
+Hi Guennadi,
 
-On Wed, 5 Jan 2011, Chris Ball wrote:
-
-> Hi Arnd,
+On Wed, Jan 05, 2011 at 10:09:42PM +0100, Guennadi Liakhovetski wrote:
+> > -			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
+> > -				sdio_status, sdio_irq_mask, sdio_ireg);
+> > +			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! "
+> > +				   "0x%04x 0x%04x 0x%04x\n",
+> > +				   sdio_status, sdio_irq_mask, sdio_ireg);
 > 
-> On Tue, Dec 28, 2010 at 11:22:31PM +0100, Arnd Hannemann wrote:
-> > This patch implements SDIO IRQ support for mfds which
-> > announce the TMIO_MMC_SDIO_IRQ flag for tmio_mmc.
-> > If MMC_CAP_SDIO_IRQ is also set SDIO IRQ signalling is activated.
-> > Tested with a b43-based wireless SDIO card and sh_mobile_sdhi.
-> > 
-> > Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
-> 
-> Thanks, pushed to mmc-next for .38 with minor 80-col changes below:
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-> index d74cdac..8d55b8a 100644
-> --- a/drivers/mmc/host/tmio_mmc.c
-> +++ b/drivers/mmc/host/tmio_mmc.c
-> @@ -298,8 +298,9 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
->  
->  	/*
->  	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
-> -	 * CTL_CLK_AND_WAIT_CTL gets written, so we have to disable the device IRQ
-> -	 * here and restore the SDIO IRQ mask before re-enabling the device IRQ.
-> +	 * CTL_CLK_AND_WAIT_CTL gets written, so we have to disable the
-> +	 * device IRQ here and restore the SDIO IRQ mask before
-> +	 * re-enabling the device IRQ.
->  	 */
->  	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
->  		disable_irq(host->irq);
-> @@ -623,8 +624,9 @@ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
->  		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
->  
->  		if (sdio_ireg && !host->sdio_irq_enabled) {
-> -			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
-> -				sdio_status, sdio_irq_mask, sdio_ireg);
-> +			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! "
-> +				   "0x%04x 0x%04x 0x%04x\n",
-> +				   sdio_status, sdio_irq_mask, sdio_ireg);
+> Don't think this is a good idea. 80-columns restriction stopped being a 
+> requirement since some time, and - it has always been explicitly requested 
+> _not_ to break strings in prints because of this. Yes, it is not very 
+> likely, that someone will grep for "IRQ.*\%" or similar, still, I would 
+> prefer to keep the original version.
 
-Don't think this is a good idea. 80-columns restriction stopped being a 
-requirement since some time, and - it has always been explicitly requested 
-_not_ to break strings in prints because of this. Yes, it is not very 
-likely, that someone will grep for "IRQ.*\%" or similar, still, I would 
-prefer to keep the original version.
+Okay, I'll use the original version of the pr_warning().
 
-Thanks
-Guennadi
+Thanks,
 
->  			tmio_mmc_enable_sdio_irq(host->mmc, 0);
->  			goto out;
->  		}
-> -- 
-> Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-> One Laptop Per Child
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
