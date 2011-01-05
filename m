@@ -1,54 +1,118 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 25 Jan 2011 09:52:01 +0000
-Subject: [GIT PULL] rmobile updates for 2.6.38-rc3
-Message-Id: <20110125095201.GA18669@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 05 Jan 2011 11:25:26 +0000
+Subject: [PATCH 1/3] ARM: mach-shmobile: mackerel: Add fsi_set_rate
+Message-Id: <w3pvd23k2xl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110107033931.GK22477@linux-sh.org>
-In-Reply-To: <20110107033931.GK22477@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This is a fairly straightforward set of fixes. The bulk of the additions
-here are simply plugging in some platform data for AG5.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+based on Paul's rmobile-latest branch (not mackerel branch)
 
-Please pull from:
+ arch/arm/mach-shmobile/board-mackerel.c |   81 +++++++++++++++++++++++++++++++
+ 1 files changed, 81 insertions(+), 0 deletions(-)
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-fixes-for-linus
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 3e30a52..83e83e8 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -369,12 +369,93 @@ static struct platform_device leds_device = {
+ 
+ /* FSI */
+ #define IRQ_FSI evt2irq(0x1840)
++static int __fsi_set_rate(struct clk *clk, long rate, int enable)
++{
++	int ret = 0;
++
++	if (rate <= 0)
++		return ret;
++
++	if (enable) {
++		ret = clk_set_rate(clk, rate);
++		if (0 = ret)
++			ret = clk_enable(clk);
++	} else {
++		clk_disable(clk);
++	}
++
++	return ret;
++}
++
++static int __fsi_set_round_rate(struct clk *clk, long rate, int enable)
++{
++	return __fsi_set_rate(clk, clk_round_rate(clk, rate), enable);
++}
++
++static int fsi_ak4642_set_rate(struct device *dev, int rate, int enable)
++{
++	struct clk *fsia_ick;
++	struct clk *fsiack;
++	int ret = -EIO;
++
++	fsia_ick = clk_get(dev, "icka");
++	if (IS_ERR(fsia_ick))
++		return PTR_ERR(fsia_ick);
++
++	/*
++	 * FSIACK is connected to AK4642,
++	 * and use external clock pin from it.
++	 * it is parent of fsia_ick now.
++	 */
++	fsiack = clk_get_parent(fsia_ick);
++	if (!fsiack)
++		goto fsia_ick_out;
++
++	/*
++	 * we get 1/1 divided clock by setting same rate to fsiack and fsia_ick
++	 *
++	 ** FIXME **
++	 * Because the freq_table of external clk (fsiack) are all 0,
++	 * the return value of clk_round_rate became 0.
++	 * So, it use __fsi_set_rate here.
++	 */
++	ret = __fsi_set_rate(fsiack, rate, enable);
++	if (ret < 0)
++		goto fsiack_out;
++
++	ret = __fsi_set_round_rate(fsia_ick, rate, enable);
++	if ((ret < 0) && enable)
++		__fsi_set_round_rate(fsiack, rate, 0); /* disable FSI ACK */
++
++fsiack_out:
++	clk_put(fsiack);
++
++fsia_ick_out:
++	clk_put(fsia_ick);
++
++	return 0;
++}
++
++static int fsi_set_rate(struct device *dev, int is_porta, int rate, int enable)
++{
++	int ret;
++
++	if (is_porta)
++		ret = fsi_ak4642_set_rate(dev, rate, enable);
++	else
++		ret = -EINVAL;
++
++	return ret;
++}
++
+ static struct sh_fsi_platform_info fsi_info = {
+ 	.porta_flags =	SH_FSI_BRS_INV		|
+ 			SH_FSI_OUT_SLAVE_MODE	|
+ 			SH_FSI_IN_SLAVE_MODE	|
+ 			SH_FSI_OFMT(PCM)	|
+ 			SH_FSI_IFMT(PCM),
++
++	.set_rate = fsi_set_rate,
+ };
+ 
+ static struct resource fsi_resources[] = {
+-- 
+1.7.1
 
-Which contains:
-
-Kuninori Morimoto (2):
-      ARM: mach-shmobile: clock-sh7372: fixup pllc2 set_rate
-      ARM: mach-shmobile: ag5evm: Add IrDA support
-
-Magnus Damm (6):
-      ARM: mach-shmobile: sh7372 INTCS MFIS2 interrupt update
-      ARM: mach-shmobile: remove sh7367 on-chip set_irq_type()
-      ARM: mach-shmobile: sh73a0 CPGA fix for FRQCRA M3
-      ARM: mach-shmobile: sh73a0 CPGA fix for IrDA MSTP
-      ARM: mach-shmobile: sh73a0 CPGA fix for PLL CFG bit
-      ARM: mach-shmobile: AG5EVM LCDC / MIPI-DSI platform data
-
-Paul Mundt (1):
-      mmc: sh_mmcif: Convert to __raw_xxx() I/O accessors.
-
-Simon Horman (1):
-      ARM: mach-shmobile: mackerel: clarify shdi/mmcif switch settings
-
-Takashi YOSHII (2):
-      ARM: mach-shmobile: fix cpu_base of gic_init() on sh73a0
-      ARM: mach-shmobile: ag5evm requires GPIOLIB
-
- arch/arm/mach-shmobile/Kconfig          |    2 +
- arch/arm/mach-shmobile/board-ag5evm.c   |  180 ++++++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/board-g3evm.c    |    1 -
- arch/arm/mach-shmobile/board-mackerel.c |    5 +-
- arch/arm/mach-shmobile/clock-sh7372.c   |    4 +-
- arch/arm/mach-shmobile/clock-sh73a0.c   |   29 +++++-
- arch/arm/mach-shmobile/intc-sh7372.c    |   11 ++-
- arch/arm/mach-shmobile/intc-sh73a0.c    |    5 +-
- include/linux/mmc/sh_mmcif.h            |    4 +-
- 9 files changed, 222 insertions(+), 19 deletions(-)
