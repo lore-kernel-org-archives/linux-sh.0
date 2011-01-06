@@ -1,53 +1,47 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Mon, 17 Jan 2011 17:26:33 +0000
-Subject: Re: [PATCH] SPI: spi_sh_msiof: fix a wrong free_irq() parameter
-Message-Id: <20110117172633.GA29462@angua.secretlab.ca>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Jan 2011 10:38:47 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh7367 Enable SDIO IRQs
+Message-Id: <20110106103847.7691.38739.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1101171700370.16051@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1101171700370.16051@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: spi-devel-general@lists.sourceforge.net, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jan 17, 2011 at 05:01:07PM +0100, Guennadi Liakhovetski wrote:
-> Without this fix reloading of the driver is impossible.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-Applied, thanks.
+This patch enables interrupt generation for SDIO IRQs
+of the SDHI block on the sh7367 aka G3 processor. Use
+together with a recent SDHI driver using TMIO_MMC_SDIO_IRQ
+and with the MMC_CAP_SDIO_IRQ flag in the board code.
 
-g.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> ---
->  drivers/spi/spi_sh_msiof.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/spi/spi_sh_msiof.c b/drivers/spi/spi_sh_msiof.c
-> index d93b667..56f60c8 100644
-> --- a/drivers/spi/spi_sh_msiof.c
-> +++ b/drivers/spi/spi_sh_msiof.c
-> @@ -635,7 +635,7 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
->  	ret = spi_bitbang_stop(&p->bitbang);
->  	if (!ret) {
->  		pm_runtime_disable(&pdev->dev);
-> -		free_irq(platform_get_irq(pdev, 0), sh_msiof_spi_irq);
-> +		free_irq(platform_get_irq(pdev, 0), p);
->  		iounmap(p->mapbase);
->  		clk_put(p->clk);
->  		spi_master_put(p->bitbang.master);
-> -- 
-> 1.7.2.3
-> 
-> 
-> ------------------------------------------------------------------------------
-> Protect Your Site and Customers from Malware Attacks
-> Learn about various malware tactics and how to avoid them. Understand 
-> malware threats, the impact they can have on your business, and how you 
-> can protect your company and customers by using code signing.
-> http://p.sf.net/sfu/oracle-sfdevnl
-> _______________________________________________
-> spi-devel-general mailing list
-> spi-devel-general@lists.sourceforge.net
-> https://lists.sourceforge.net/lists/listinfo/spi-devel-general
+ arch/arm/mach-shmobile/intc-sh7367.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/intc-sh7367.c
++++ work/arch/arm/mach-shmobile/intc-sh7367.c	2011-01-06 19:23:28.000000000 +0900
+@@ -189,10 +189,10 @@ static struct intc_mask_reg intca_mask_r
+ 	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
+ 	    0, 0, MSIOF2, 0 } },
+ 	{ 0xe694009c, 0xe69400dc, 8, /* IMR7A / IMCR7A */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED,
++	  { DISABLED, ENABLED, ENABLED, ENABLED,
+ 	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
+ 	{ 0xe69400a0, 0xe69400e0, 8, /* IMR8A / IMCR8A */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED,
++	  { DISABLED, ENABLED, ENABLED, ENABLED,
+ 	    TTI20, USBDMAC_USHDMI, SPU, SIU } },
+ 	{ 0xe69400a4, 0xe69400e4, 8, /* IMR9A / IMCR9A */
+ 	  { CMT1_CMT13, CMT1_CMT12, CMT1_CMT11, CMT1_CMT10,
+@@ -207,7 +207,7 @@ static struct intc_mask_reg intca_mask_r
+ 	  { 0, 0, TPU0, TPU1,
+ 	    TPU2, TPU3, TPU4, 0 } },
+ 	{ 0xe69400b4, 0xe69400f4, 8, /* IMR13A / IMCR13A */
+-	  { DISABLED, DISABLED, ENABLED, ENABLED,
++	  { DISABLED, ENABLED, ENABLED, ENABLED,
+ 	    MISTY, CMT3, RWDT1, RWDT0 } },
+ };
+ 
