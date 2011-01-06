@@ -1,20 +1,32 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 19 Jan 2011 03:13:46 +0000
-Subject: Re: [PATCH] sh: Fix sh build failure when CONFIG_SFC=m
-Message-Id: <20110119031345.GC19486@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Jan 2011 05:33:15 +0000
+Subject: [PATCH] sh: include Migo-R TS driver in Migo-R defconfig
+Message-Id: <20110106053315.13938.11769.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1295384134-26329-1-git-send-email-aurelien@aurel32.net>
-In-Reply-To: <1295384134-26329-1-git-send-email-aurelien@aurel32.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 18, 2011 at 09:55:34PM +0100, Aurelien Jarno wrote:
-> CONFIG_SFC=m uses topology_core_cpumask() which, for sh, expects
-> cpu_core_map to be exported. It is not. This patch exports the needed
-> symbol.
-> 
-> Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+From: Magnus Damm <damm@opensource.se>
 
-Applied, thanks.
+This patch enables the Migo-R specific touch screen
+driver in the Migo-R defconfig.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/sh/configs/migor_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- 0001/arch/sh/configs/migor_defconfig
++++ work/arch/sh/configs/migor_defconfig	2011-01-06 14:21:31.000000000 +0900
+@@ -54,6 +54,8 @@ CONFIG_INPUT_EVDEV=y
+ # CONFIG_KEYBOARD_ATKBD is not set
+ CONFIG_KEYBOARD_SH_KEYSC=y
+ # CONFIG_INPUT_MOUSE is not set
++CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_MIGOR=y
+ # CONFIG_SERIO is not set
+ CONFIG_VT_HW_CONSOLE_BINDING=y
+ CONFIG_SERIAL_SH_SCI=y
