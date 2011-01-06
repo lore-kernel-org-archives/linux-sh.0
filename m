@@ -1,180 +1,183 @@
-From: Ben Hutchings <bhutchings@solarflare.com>
-Date: Tue, 11 Jan 2011 15:57:06 +0000
-Subject: Re: [PATCH v2] sh: sh_eth: Add support ethtool
-Message-Id: <1294761426.3637.8.camel@bwh-desktop>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Jan 2011 10:16:59 +0000
+Subject: [PATCH 08/08] sh: Move new memblock reservation code to drivers/sh
+Message-Id: <20110106101659.1617.32582.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1294747109-11511-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1294747109-11511-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: nobuhiro.iwamatsu.yj@renesas.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com
+To: linux-sh@vger.kernel.org
 
-On Tue, 2011-01-11 at 20:58 +0900, nobuhiro.iwamatsu.yj@renesas.com
-wrote:
-> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> 
-> This commit supports following functions.
->  - get_drvinfo
->  - get_settings
->  - set_settings
->  - nway_reset
->  - get_msglevel
->  - set_msglevel
->  - get_link
->  - get_strings
->  - get_ethtool_stats
->  - get_sset_count
-> 
-> About other function, the device does not support.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> ---
->  v2: reverted one part of the checks of checkpatch.pl.
->        foo *bar -> foo * bar.
-> 	 changed function copying of net_device_stats from *for* to memcopy.
->  
->  drivers/net/sh_eth.c |  186 ++++++++++++++++++++++++++++++++++++++++++++++---
->  1 files changed, 174 insertions(+), 12 deletions(-)
-> 
-> diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
-> index 819c175..0b2cb7d 100644
-> --- a/drivers/net/sh_eth.c
-> +++ b/drivers/net/sh_eth.c
-[...]
-> @@ -1063,6 +1074,154 @@ static int sh_eth_phy_start(struct net_device *ndev)
->  	return 0;
->  }
->  
-> +static void sh_eth_get_drvinfo(struct net_device *ndev,
-> +			struct ethtool_drvinfo *info)
-> +{
-> +	strncpy(info->driver, "sh_eth", sizeof(info->driver) - 1);
-> +	strcpy(info->version, "N/A");
-> +	strcpy(info->fw_version, "N/A");
-> +	strlcpy(info->bus_info, dev_name(ndev->dev.parent),
-> +		sizeof(info->bus_info));
-> +}
+From: Magnus Damm <damm@opensource.se>
 
-This is redundant; the default implementation already does this.
+Move the new physically contiguous memory reservation
+code from arch/sh into drivers/sh/memchunk.c to it can
+be shared with SH-Mobile / R-Mobile ARM processors.
 
-[...]
-> +static int sh_eth_set_settings(struct net_device *ndev,
-> +		struct ethtool_cmd *ecmd)
-> +{
-> +	struct sh_eth_private *mdp = netdev_priv(ndev);
-> +	unsigned long flags;
-> +	int ret;
-> +	u32 ioaddr = ndev->base_addr;
-> +
-> +	spin_lock_irqsave(&mdp->lock, flags);
-> +
-> +	/* disable tx and rx */
-> +	sh_eth_linkdown(ioaddr);
-> +
-> +	ret = phy_ethtool_sset(mdp->phydev, ecmd);
-> +	if (ret)
-> +		goto error_exit;
-> +
-> +	if (ecmd->duplex = DUPLEX_FULL)
-> +		mdp->duplex = 1;
-> +	else
-> +		mdp->duplex = 0;
-> +
-> +	if (mdp->cd->set_duplex)
-> +		mdp->cd->set_duplex(ndev);
-> +
-> +error_exit:
-> +	mdelay(100);
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Ugh, 100 ms holding a spinlock?!
+ arch/sh/mm/consistent.c |   58 ----------------------------------
+ drivers/sh/Makefile     |    1 
+ drivers/sh/memchunk.c   |   78 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 79 insertions(+), 58 deletions(-)
 
-> +	/* enable tx and rx */
-> +	sh_eth_linkup(ioaddr);
-
-How do you know the link is up?  Shouldn't this be left to the link
-polling function?
-
-[...]
-> +static u32 sh_eth_get_msglevel(struct net_device *ndev)
-> +{
-> +	struct sh_eth_private *mdp = netdev_priv(ndev);
-> +	return mdp->msg_enable;
-> +}
-> +
-> +static void sh_eth_set_msglevel(struct net_device *ndev, u32 value)
-> +{
-> +	struct sh_eth_private *mdp = netdev_priv(ndev);
-> +	mdp->msg_enable = value;
-> +}
-
-This would be more useful if msg_enable was actually used anywhere in
-the driver.
-
-[...]
-> @@ -1073,8 +1232,8 @@ static int sh_eth_open(struct net_device *ndev)
->  
->  	ret = request_irq(ndev->irq, sh_eth_interrupt,
->  #if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
-> -    defined(CONFIG_CPU_SUBTYPE_SH7764) || \
-> -    defined(CONFIG_CPU_SUBTYPE_SH7757)
-> +	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
-> +	defined(CONFIG_CPU_SUBTYPE_SH7757)
->  				IRQF_SHARED,
->  #else
->  				0,
-> @@ -1232,11 +1391,11 @@ static int sh_eth_close(struct net_device *ndev)
->  	sh_eth_ring_free(ndev);
->  
->  	/* free DMA buffer */
-> -	ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
-> +	ringsize = sizeof(struct sh_eth_rxdesc) *RX_RING_SIZE;
->  	dma_free_coherent(NULL, ringsize, mdp->rx_ring, mdp->rx_desc_dma);
->  
->  	/* free DMA buffer */
-> -	ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
-> +	ringsize = sizeof(struct sh_eth_txdesc) *TX_RING_SIZE;
->  	dma_free_coherent(NULL, ringsize, mdp->tx_ring, mdp->tx_desc_dma);
->  
->  	pm_runtime_put_sync(&mdp->pdev->dev);
-
-Please do not include these space changes.
-
-> @@ -1497,8 +1656,11 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
->  
->  	/* set function */
->  	ndev->netdev_ops = &sh_eth_netdev_ops;
-> +	SET_ETHTOOL_OPS(ndev, &sh_eth_ethtool_ops);
->  	ndev->watchdog_timeo = TX_TIMEOUT;
->  
-> +	/* debug message level */
-> +	mdp->msg_enable = (1 << 3) - 1;
-
-If you're actually going to *use* msg_enable, its value should be
-initialised in terms of the NETIF_MSG_* flags defined in
-<linux/netdevice.h>.
-
->  	mdp->post_rx = POST_RX >> (devno << 1);
->  	mdp->post_fw = POST_FW >> (devno << 1);
->  
-> @@ -1572,7 +1734,7 @@ static int sh_eth_runtime_nop(struct device *dev)
->  	return 0;
->  }
->  
-> -static struct dev_pm_ops sh_eth_dev_pm_ops = {
-> +static const struct dev_pm_ops sh_eth_dev_pm_ops = {
->  	.runtime_suspend = sh_eth_runtime_nop,
->  	.runtime_resume = sh_eth_runtime_nop,
->  };
-
-This is worthwhile but unrelated to ethtool!
-
-Ben.
-
--- 
-Ben Hutchings, Senior Software Engineer, Solarflare Communications
-Not speaking for my employer; that's the marketing department's job.
-They asked us to note that Solarflare product names are trademarked.
-
+--- 0012/arch/sh/mm/consistent.c
++++ work/arch/sh/mm/consistent.c	2011-01-06 18:45:52.000000000 +0900
+@@ -17,7 +17,6 @@
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/gfp.h>
+-#include <linux/memblock.h>
+ #include <asm/cacheflush.h>
+ #include <asm/addrspace.h>
+ 
+@@ -100,60 +99,3 @@ void dma_cache_sync(struct device *dev, 
+ 	}
+ }
+ EXPORT_SYMBOL(dma_cache_sync);
+-
+-static int __init memchunk_setup(char *str)
+-{
+-	return 1; /* accept anything that begins with "memchunk." */
+-}
+-__setup("memchunk.", memchunk_setup);
+-
+-static void __init memchunk_cmdline_override(char *name, unsigned long *sizep)
+-{
+-	char *p = boot_command_line;
+-	int k = strlen(name);
+-
+-	while ((p = strstr(p, "memchunk."))) {
+-		p += 9; /* strlen("memchunk.") */
+-		if (!strncmp(name, p, k) && p[k] = '=') {
+-			p += k + 1;
+-			*sizep = memparse(p, NULL);
+-			pr_info("%s: forcing memory chunk size to 0x%08lx\n",
+-				name, *sizep);
+-			break;
+-		}
+-	}
+-}
+-
+-int __init shmobile_memchunk_setup(struct platform_device *pdev,
+-				   char *name, unsigned long memsize)
+-{
+-	struct resource *r;
+-	u64 addr;
+-
+-	r = pdev->resource + pdev->num_resources - 1;
+-	if (r->flags) {
+-		pr_warning("%s: unable to find empty space for resource\n",
+-			name);
+-		return -EINVAL;
+-	}
+-
+-	memchunk_cmdline_override(name, &memsize);
+-	if (!memsize)
+-		return 0;
+-
+-	addr = memblock_alloc(memsize, PAGE_SIZE);
+-	if (addr = ~(u64)0) {
+-		pr_warning("%s: unable to allocate memory\n", name);
+-		return -ENOMEM;
+-	}
+-	memblock_free(addr, memsize);
+-	memblock_remove(addr, memsize);
+-
+-	r->flags = IORESOURCE_MEM;
+-	r->start = addr;
+-	r->end = r->start + memsize - 1;
+-	r->name = name;
+-	return 0;
+-}
+-
+-
+--- 0001/drivers/sh/Makefile
++++ work/drivers/sh/Makefile	2011-01-06 18:44:42.000000000 +0900
+@@ -7,3 +7,4 @@ obj-$(CONFIG_HAVE_CLK)		+= clk/
+ obj-$(CONFIG_MAPLE)		+= maple/
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ obj-$(CONFIG_GENERIC_GPIO)	+= pfc.o
++obj-$(CONFIG_ARCH_SHMOBILE)	+= memchunk.o
+--- /dev/null
++++ work/drivers/sh/memchunk.c	2011-01-06 18:45:19.000000000 +0900
+@@ -0,0 +1,78 @@
++/*
++ * SH-Mobile "memchunk" - Physically contiguous memory reservation code
++ *
++ * Copyright (C) 2011  Magnus Damm
++ * Copyright (C) 2004 - 2007  Paul Mundt
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/memblock.h>
++
++static int __init memchunk_setup(char *str)
++{
++	return 1; /* accept anything that begins with "memchunk." */
++}
++__setup("memchunk.", memchunk_setup);
++
++static void __init memchunk_cmdline_override(char *name, unsigned long *sizep)
++{
++	char *p = boot_command_line;
++	int k = strlen(name);
++
++	while ((p = strstr(p, "memchunk."))) {
++		p += 9; /* strlen("memchunk.") */
++		if (!strncmp(name, p, k) && p[k] = '=') {
++			p += k + 1;
++			*sizep = memparse(p, NULL);
++			pr_info("%s: forcing memory chunk size to 0x%08lx\n",
++				name, *sizep);
++			break;
++		}
++	}
++}
++
++int __init shmobile_memchunk_setup(struct platform_device *pdev,
++				   char *name, unsigned long memsize)
++{
++	struct resource *r;
++	u64 addr;
++
++	r = pdev->resource + pdev->num_resources - 1;
++	if (r->flags) {
++		pr_warning("%s: unable to find empty space for resource\n",
++			name);
++		return -EINVAL;
++	}
++
++	memchunk_cmdline_override(name, &memsize);
++	if (!memsize)
++		return 0;
++
++	addr = memblock_alloc(memsize, PAGE_SIZE);
++	if (addr = ~(u64)0) {
++		pr_warning("%s: unable to allocate memory\n", name);
++		return -ENOMEM;
++	}
++	memblock_free(addr, memsize);
++	memblock_remove(addr, memsize);
++
++	r->flags = IORESOURCE_MEM;
++	r->start = addr;
++	r->end = r->start + memsize - 1;
++	r->name = name;
++	return 0;
++}
