@@ -1,70 +1,60 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 05 Jan 2011 19:32:18 +0000
-Subject: Re: [PATCH/RESEND] mmc: tmio_mmc: allow multi-element
-Message-Id: <20110105193218.GA9198@void.printf.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Jan 2011 10:15:49 +0000
+Subject: [PATCH 00/08] sh: Physically contiguous memory reservation rework
+Message-Id: <20110106101549.1617.28207.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011111214020.15747@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011111214020.15747@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+sh: Physically contiguous memory reservation rework
 
-On Thu, Nov 11, 2010 at 12:15:06PM +0100, Guennadi Liakhovetski wrote:
-> The driver is capable of handling multi-element sg lists in both PIO and DMA
-> modes. In DMA mode this also allows to use the DMA sg capability more
-> efficiently and almost doubles the throughput.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> Sorry, one of the addresses was wrong last time, resending to all again to 
-> simplify commenting.
-> 
->  drivers/mmc/host/tmio_mmc.c |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-> index e7765a8..9034414 100644
-> --- a/drivers/mmc/host/tmio_mmc.c
-> +++ b/drivers/mmc/host/tmio_mmc.c
-> @@ -864,10 +864,14 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
->  		goto host_free;
->  
->  	mmc->ops = &tmio_mmc_ops;
-> -	mmc->caps = MMC_CAP_4_BIT_DATA;
-> -	mmc->caps |= pdata->capabilities;
-> +	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
->  	mmc->f_max = pdata->hclk;
->  	mmc->f_min = mmc->f_max / 512;
-> +	mmc->max_segs = 32;
-> +	mmc->max_blk_size = 512;
-> +	mmc->max_blk_count = PAGE_CACHE_SIZE / mmc->max_blk_size * mmc->max_segs;
-> +	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
-> +	mmc->max_seg_size = mmc->max_req_size;
->  	if (pdata->ocr_mask)
->  		mmc->ocr_avail = pdata->ocr_mask;
->  	else
+[PATCH 01/08] sh: Add new memblock reservation code for mem_init
+[PATCH 02/08] sh: Convert sh7366 to mem_init
+[PATCH 03/08] sh: Convert sh7343 and se7343 to mem_init
+[PATCH 04/08] sh: Convert sh7722, Migo-R and se7722 to mem_init
+[PATCH 05/08] sh: Convert sh7723 and AP325RXA to mem_init
+[PATCH 06/08] sh: Convert sh7724, Ecovec, se7724 and kfr2r09 to mem_init
+[PATCH 07/08] sh: Remove old physically contiguous reservation code
+[PATCH 08/08] sh: Move new memblock reservation code to drivers/sh
 
-Thanks, pushed to mmc-next for .38 with a trivial style change:
+These patches convert the SH-Mobile processors in the SH architecture
+to make use of memblock for physically contiguous memory reservation.
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 9034414..4e75799 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -869,7 +869,8 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
- 	mmc->f_min = mmc->f_max / 512;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
--	mmc->max_blk_count = PAGE_CACHE_SIZE / mmc->max_blk_size * mmc->max_segs;
-+	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
-+		mmc->max_segs;
- 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
- 	mmc->max_seg_size = mmc->max_req_size;
- 	if (pdata->ocr_mask)
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+With these patches applied the physically contiguous memory is excluded
+from the system memory - this can be determined by /proc/iomem contents.
+
+Excluding the physically contiguous memory from main system memory is
+not a requirement for the SH architecture, but after converting the SH
+side we can easily tie in the same implementation for ARM where this
+is a hardware requirement.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Compile time tested for all SH-Mobile processors.
+ Runtime tested on sh7724 and Ecovec using mplayer (VEU over UIO).
+
+ arch/sh/boards/mach-ap325rxa/setup.c   |    9 +-
+ arch/sh/boards/mach-ecovec24/setup.c   |   10 ++
+ arch/sh/boards/mach-kfr2r09/setup.c    |    9 +-
+ arch/sh/boards/mach-migor/setup.c      |    9 +-
+ arch/sh/boards/mach-se/7343/setup.c    |    2 
+ arch/sh/boards/mach-se/7722/setup.c    |    1 
+ arch/sh/boards/mach-se/7724/setup.c    |   10 ++
+ arch/sh/include/asm/device.h           |    4 -
+ arch/sh/include/cpu-sh4/cpu/sh7343.h   |    6 +
+ arch/sh/include/cpu-sh4/cpu/sh7366.h   |    6 +
+ arch/sh/include/cpu-sh4/cpu/sh7722.h   |    2 
+ arch/sh/include/cpu-sh4/cpu/sh7723.h   |    2 
+ arch/sh/include/cpu-sh4/cpu/sh7724.h   |    2 
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   13 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   13 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   12 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   12 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   18 ++--
+ arch/sh/mm/consistent.c                |  126 ++++++++------------------------
+ drivers/sh/Makefile                    |    1 
+ drivers/sh/memchunk.c                  |   78 +++++++++++++++++++
+ 21 files changed, 219 insertions(+), 126 deletions(-)
