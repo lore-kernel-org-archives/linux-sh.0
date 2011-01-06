@@ -1,53 +1,66 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 05 Jan 2011 22:48:10 +0000
-Subject: Re: [PATCH 2/2 v2] mmc: tmio: fix CMD irq handling
-Message-Id: <20110105224810.GB13209@void.printf.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Jan 2011 10:16:06 +0000
+Subject: [PATCH 02/08] sh: Convert sh7366 to mem_init
+Message-Id: <20110106101606.1617.88477.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293628874-8140-1-git-send-email-arnd@arndnet.de> <1293628874-8140-3-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1293628874-8140-3-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Arnd,
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, Dec 29, 2010 at 02:21:14PM +0100, Arnd Hannemann wrote:
-> With current code card insert/eject interrupts will acknowledge outstanding
-> commands. Normally this seems to be no problem, however if the hardware gets
-> stuck and no interrupts for CMD_TIMEOUT or CMD_RESPEND are generated, then
-> inserting and ejecting cards will falsely acknowledge outstanding commands from
-> the core.
-> 
-> This patch changes the behavior so that CMDs are only acked, if
-> CMD_TIMEOUT or CMD_RESPEND is received.
-> 
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
-> ---
->  drivers/mmc/host/tmio_mmc.c |    6 ++++--
->  1 files changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-> index f980042..e4926c7 100644
-> --- a/drivers/mmc/host/tmio_mmc.c
-> +++ b/drivers/mmc/host/tmio_mmc.c
-> @@ -728,8 +728,10 @@ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
->   */
->  
->  		/* Command completion */
-> -		if (ireg & TMIO_MASK_CMD) {
-> -			ack_mmc_irqs(host, TMIO_MASK_CMD);
-> +		if (ireg & (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT)) {
-> +			ack_mmc_irqs(host,
-> +				     TMIO_STAT_CMDRESPEND |
-> +				     TMIO_STAT_CMDTIMEOUT);
->  			tmio_mmc_cmd_irq(host, status);
->  		}
->  
+Convert sh7366 to use shmobile_memchunk_setup().
 
-Thanks, pushed to mmc-next for .38.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+ arch/sh/include/cpu-sh4/cpu/sh7366.h   |    6 ++++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   13 +++++++++----
+ 2 files changed, 15 insertions(+), 4 deletions(-)
+
+--- /dev/null
++++ work/arch/sh/include/cpu-sh4/cpu/sh7366.h	2011-01-06 18:33:25.000000000 +0900
+@@ -0,0 +1,6 @@
++#ifndef __ASM_SH7366_H__
++#define __ASM_SH7366_H__
++
++void sh7366_mem_init(void);
++
++#endif /* __ASM_SH7366_H__ */
+--- 0001/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
++++ work/arch/sh/kernel/cpu/sh4a/setup-sh7366.c	2011-01-06 18:33:35.000000000 +0900
+@@ -17,6 +17,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/usb/r8a66597.h>
+ #include <asm/clock.h>
++#include <cpu/sh7366.h>
+ 
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xffe00000,
+@@ -294,10 +295,6 @@ static struct platform_device *sh7366_de
+ 
+ static int __init sh7366_devices_setup(void)
+ {
+-	platform_resource_setup_memory(&vpu_device, "vpu", 2 << 20);
+-	platform_resource_setup_memory(&veu0_device, "veu0", 2 << 20);
+-	platform_resource_setup_memory(&veu1_device, "veu1", 2 << 20);
+-
+ 	return platform_add_devices(sh7366_devices,
+ 				    ARRAY_SIZE(sh7366_devices));
+ }
+@@ -317,6 +314,14 @@ void __init plat_early_device_setup(void
+ 				   ARRAY_SIZE(sh7366_early_devices));
+ }
+ 
++void __init sh7366_mem_init(void)
++{
++	generic_mem_init();
++	shmobile_memchunk_setup(&vpu_device, "vpu", 2 << 20);
++	shmobile_memchunk_setup(&veu0_device, "veu0", 2 << 20);
++	shmobile_memchunk_setup(&veu1_device, "veu1", 2 << 20);
++}
++
+ enum {
+ 	UNUSED=0,
+ 
