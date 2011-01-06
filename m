@@ -1,91 +1,49 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 13 Jan 2011 06:58:46 +0000
-Subject: Re: cache disabling
-Message-Id: <201101130758.46943.fabio.giovagnini@aurion-tech.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Jan 2011 10:55:41 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh7372 Enable SDIO IRQs for Mackerel
+Message-Id: <20110106105541.16675.33745.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201101121904.21051.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201101121904.21051.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I Apologize and I thank you again.
-Regards
+From: Magnus Damm <damm@opensource.se>
 
+Enable SDIO IRQ support for the Mackerel board.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-On Thursday 13 January 2011 07:50:25 Paul Mundt wrote:
-> On Thu, Jan 13, 2011 at 06:28:44AM +0100, Fabio Giovagnini wrote:
-> > Hi Paul thanks a lot for you patience with my stupid questions.
-> > But it is not so surprising, because I verified in previuos kernels, that
-> > disabling all the options of the cache still the file cache-<cpu_type>
-> > was compiled and linked into the built-in.o file.
-> > This has been the reason of my question.
-> > Anyway if you confirm I'm really sure.
-> 
-> I'm not sure what exactly linking has to do with anything, but a cursory
-> inspection of the code would have made it pretty apparent.
-> 
-> arch/sh/mm/cache.c shows:
-> 
-> void (*local_flush_cache_all)(void *args) = cache_noop;
-> void (*local_flush_cache_mm)(void *args) = cache_noop;
-> void (*local_flush_cache_dup_mm)(void *args) = cache_noop;
-> void (*local_flush_cache_page)(void *args) = cache_noop;
-> void (*local_flush_cache_range)(void *args) = cache_noop;
-> void (*local_flush_dcache_page)(void *args) = cache_noop;
-> void (*local_flush_icache_range)(void *args) = cache_noop;
-> void (*local_flush_icache_page)(void *args) = cache_noop;
-> void (*local_flush_cache_sigtramp)(void *args) = cache_noop;
-> 
-> ....
-> void __init cpu_cache_init(void)
-> {
->         unsigned int cache_disabled = 0;
-> 
-> #ifdef CCR
->         cache_disabled = !(__raw_readl(CCR) & CCR_CACHE_ENABLE);
-> #endif
-> 
->         /*
->          * No flushing is necessary in the disabled cache case so we can
->          * just keep the noop functions in local_flush_..() and
-> __flush_..() */
->         if (unlikely(cache_disabled))
->                 goto skip;
-> 
-> 	...
-> 
-> skip:
->         emit_cache_params();
-> }
-> 
-> I really shouldn't need to paste completely obvious code paths that have
-> already been documented to outline what happens in the case you describe. 
-> Next time you have a question like this, rather than opening up your
-> mailer, how about opening up your text editor and just looking at the
-> code?
-> 
-> Contrary to popular belief, I don't generally comment code for my own
-> benefit, and it's becoming increasingly obvious that it's not of much
-> benefit to people who can't be bothered to read, either.
-> 
-> In the future, do not expect answers to questions you can easily answer
-> yourself.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
--- 
-Ing. Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
+--- 0001/arch/arm/mach-shmobile/board-mackerel.c
++++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-01-06 19:48:22.000000000 +0900
+@@ -462,7 +462,7 @@ static int slot_cn7_get_cd(struct platfo
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -495,7 +495,7 @@ static struct sh_mobile_sdhi_info sdhi1_
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195,
+ 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED |
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.get_cd		= slot_cn7_get_cd,
+ };
+@@ -529,7 +529,7 @@ static struct sh_mobile_sdhi_info sdhi2_
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+ 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED |
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+ };
+ 
