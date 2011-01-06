@@ -1,66 +1,84 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Wed, 26 Jan 2011 15:27:51 +0000
-Subject: Re: AW: Hi All, we are looking for support for developing our sh2a 7203 based board
-Message-Id: <201101261627.51590.fabio.giovagnini@aurion-tech.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jan 2011 17:04:50 +0000
+Subject: [PATCH] dma: shdma: don't register the global die notifier multiple
+Message-Id: <Pine.LNX.4.64.1101061759460.1248@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201101261311.28480.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201101261311.28480.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, Magnus Damm <damm@opensource.se>, Dan Williams <dan.j.williams@intel.com>, linux-kernel@vger.kernel.org
 
-The board si already done, and when we designed it sh2a 7203 was the only=20
-available for us.
-Furthermore we bought a rsk+ dev kit so it was easier to design.
+A recent patch has added a die notifier to the shdma driver, however, 
+it registers a static die-notifier object in the probe routine, i.e., 
+for each device instance. This is wrong and leads to a system lockup. 
+This patch moves the die notifier registration to module init and 
+exit routines respectively.
 
-By the way I have problem only with the video ram management.
-I have just one SDRAM chip connected to the sh2a bus, and I use that ram fo=
-r=20
-code and framebuffer; the ram is 32 bit wide.
-Sometime I have a glitch pixel on the screen and I suppose because of I do =
-not=20
-allocate into the uCLinux kernel properly the framebuffer.
-But I'm not sure of this.
+Reported-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
+This fixes the lock up on sh7372. Patch against current sh-2.6/master.
 
-On Wednesday 26 January 2011 16:20:51 Christian Bauer wrote:
-> Hi Fabio,
->=20
-> Developing a 7203 based board should not be very complicated if it based =
-on
-> the Renesas RSK+.
->=20
-> Have you any reason to select a 7203? Renesas designed the 7262/7264 that
-> also supports uCLinux and is much better documented as it was developed by
-> Renesas and not mpc data (like the 7203/7201 port).
->=20
-> Christian J. Bauer
-> Software-Development
-> MONDIAL electronic GmbH, Austria
->=20
-> -----Urspr=FCngliche Nachricht-----
-> Von: linux-sh-owner@vger.kernel.org [mailto:linux-sh-owner@vger.kernel.or=
-g]
-> Im Auftrag von Fabio Giovagnini Gesendet: Mittwoch, 26. J=E4nner 2011 13:=
-11
-> An: linux-sh@vger.kernel.org
-> Betreff: Hi All, we are looking for support for developing our sh2a 7203
-> based board
->=20
-> Hi All
-> we are lloking for support (paying of course) for developing our sh2a 7203
-> based board.
-> Is any of you interested to talk about?
+ drivers/dma/shdma.c |   16 +++++++---------
+ 1 files changed, 7 insertions(+), 9 deletions(-)
 
---=20
-Ing. Fabio Giovagnini
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index a0069c1..28720d3 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -1110,11 +1110,6 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	list_add_tail_rcu(&shdev->node, &sh_dmae_devices);
+ 	spin_unlock_irqrestore(&sh_dmae_lock, flags);
+ 
+-	/* Wire up NMI handling before bringing the controller online */
+-	err = register_die_notifier(&sh_dmae_nmi_notifier);
+-	if (err)
+-		goto notifier_err;
+-
+ 	/* reset dma controller */
+ 	err = sh_dmae_rst(shdev);
+ 	if (err)
+@@ -1218,8 +1213,6 @@ eirqres:
+ eirq_err:
+ #endif
+ rst_err:
+-	unregister_die_notifier(&sh_dmae_nmi_notifier);
+-notifier_err:
+ 	spin_lock_irqsave(&sh_dmae_lock, flags);
+ 	list_del_rcu(&shdev->node);
+ 	spin_unlock_irqrestore(&sh_dmae_lock, flags);
+@@ -1252,8 +1245,6 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ 	if (errirq > 0)
+ 		free_irq(errirq, shdev);
+ 
+-	unregister_die_notifier(&sh_dmae_nmi_notifier);
+-
+ 	spin_lock_irqsave(&sh_dmae_lock, flags);
+ 	list_del_rcu(&shdev->node);
+ 	spin_unlock_irqrestore(&sh_dmae_lock, flags);
+@@ -1296,6 +1287,11 @@ static struct platform_driver sh_dmae_driver = {
+ 
+ static int __init sh_dmae_init(void)
+ {
++	/* Wire up NMI handling */
++	int err = register_die_notifier(&sh_dmae_nmi_notifier);
++	if (err)
++		return err;
++
+ 	return platform_driver_probe(&sh_dmae_driver, sh_dmae_probe);
+ }
+ module_init(sh_dmae_init);
+@@ -1303,6 +1299,8 @@ module_init(sh_dmae_init);
+ static void __exit sh_dmae_exit(void)
+ {
+ 	platform_driver_unregister(&sh_dmae_driver);
++
++	unregister_die_notifier(&sh_dmae_nmi_notifier);
+ }
+ module_exit(sh_dmae_exit);
+ 
+-- 
+1.7.2.3
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
