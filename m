@@ -1,60 +1,99 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 06 Jan 2011 10:15:49 +0000
-Subject: [PATCH 00/08] sh: Physically contiguous memory reservation rework
-Message-Id: <20110106101549.1617.28207.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jan 2011 18:23:58 +0000
+Subject: [PATCH 2/3] fbdev: sh_mobile_hdmi: framebuffer notifiers have to be
+Message-Id: <Pine.LNX.4.64.1101061920270.1248@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-sh: Physically contiguous memory reservation rework
+A previous patch added a framebuffer notifier to sh_mobile_hdmi.c,
+but did not register it with the framebuffer core. This patch adds
+such a registration and moves the notifier block into dynamically
+allocated per-device private data.
 
-[PATCH 01/08] sh: Add new memblock reservation code for mem_init
-[PATCH 02/08] sh: Convert sh7366 to mem_init
-[PATCH 03/08] sh: Convert sh7343 and se7343 to mem_init
-[PATCH 04/08] sh: Convert sh7722, Migo-R and se7722 to mem_init
-[PATCH 05/08] sh: Convert sh7723 and AP325RXA to mem_init
-[PATCH 06/08] sh: Convert sh7724, Ecovec, se7724 and kfr2r09 to mem_init
-[PATCH 07/08] sh: Remove old physically contiguous reservation code
-[PATCH 08/08] sh: Move new memblock reservation code to drivers/sh
-
-These patches convert the SH-Mobile processors in the SH architecture
-to make use of memblock for physically contiguous memory reservation.
-
-With these patches applied the physically contiguous memory is excluded
-from the system memory - this can be determined by /proc/iomem contents.
-
-Excluding the physically contiguous memory from main system memory is
-not a requirement for the SH architecture, but after converting the SH
-side we can easily tie in the same implementation for ARM where this
-is a hardware requirement.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- Compile time tested for all SH-Mobile processors.
- Runtime tested on sh7724 and Ecovec using mplayer (VEU over UIO).
+On the one hand this patch fixes a bug - a notifier has been added to the 
+driver, but it had never been registered. OTOH, this notifier will only be 
+called on sh_mobile_lcdcfb module unloading, but modular functionality of 
+sh-mobile framebuffer drivers seems to be largely broken to me. So, this 
+patch only makes this driver look correct, but the functionality has to be 
+fixed further.
 
- arch/sh/boards/mach-ap325rxa/setup.c   |    9 +-
- arch/sh/boards/mach-ecovec24/setup.c   |   10 ++
- arch/sh/boards/mach-kfr2r09/setup.c    |    9 +-
- arch/sh/boards/mach-migor/setup.c      |    9 +-
- arch/sh/boards/mach-se/7343/setup.c    |    2 
- arch/sh/boards/mach-se/7722/setup.c    |    1 
- arch/sh/boards/mach-se/7724/setup.c    |   10 ++
- arch/sh/include/asm/device.h           |    4 -
- arch/sh/include/cpu-sh4/cpu/sh7343.h   |    6 +
- arch/sh/include/cpu-sh4/cpu/sh7366.h   |    6 +
- arch/sh/include/cpu-sh4/cpu/sh7722.h   |    2 
- arch/sh/include/cpu-sh4/cpu/sh7723.h   |    2 
- arch/sh/include/cpu-sh4/cpu/sh7724.h   |    2 
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |   13 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |   13 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   12 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |   12 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   18 ++--
- arch/sh/mm/consistent.c                |  126 ++++++++------------------------
- drivers/sh/Makefile                    |    1 
- drivers/sh/memchunk.c                  |   78 +++++++++++++++++++
- 21 files changed, 219 insertions(+), 126 deletions(-)
+ drivers/video/sh_mobile_hdmi.c |   19 +++++++++----------
+ 1 files changed, 9 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index f18a619..4a1f3f4 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -217,6 +217,7 @@ struct sh_hdmi {
+ 	struct delayed_work edid_work;
+ 	struct fb_var_screeninfo var;
+ 	struct fb_monspecs monspec;
++	struct notifier_block notifier;
+ };
+ 
+ static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
+@@ -1126,13 +1127,6 @@ out:
+ }
+ 
+ static int sh_hdmi_notify(struct notifier_block *nb,
+-			  unsigned long action, void *data);
+-
+-static struct notifier_block sh_hdmi_notifier = {
+-	.notifier_call = sh_hdmi_notify,
+-};
+-
+-static int sh_hdmi_notify(struct notifier_block *nb,
+ 			  unsigned long action, void *data)
+ {
+ 	struct fb_event *event = data;
+@@ -1141,7 +1135,7 @@ static int sh_hdmi_notify(struct notifier_block *nb,
+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+ 	struct sh_hdmi *hdmi = board_cfg->board_data;
+ 
+-	if (nb != &sh_hdmi_notifier || !hdmi || hdmi->info != info)
++	if (!hdmi || nb != &hdmi->notifier || hdmi->info != info)
+ 		return NOTIFY_DONE;
+ 
+ 	switch(action) {
+@@ -1160,11 +1154,11 @@ static int sh_hdmi_notify(struct notifier_block *nb,
+ 		 * temporarily, synchronise with the work queue and re-acquire
+ 		 * the info->lock.
+ 		 */
+-		unlock_fb_info(hdmi->info);
++		unlock_fb_info(info);
+ 		mutex_lock(&hdmi->mutex);
+ 		hdmi->info = NULL;
+ 		mutex_unlock(&hdmi->mutex);
+-		lock_fb_info(hdmi->info);
++		lock_fb_info(info);
+ 		return NOTIFY_OK;
+ 	}
+ 	return NOTIFY_DONE;
+@@ -1253,6 +1247,9 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		goto ecodec;
+ 	}
+ 
++	hdmi->notifier.notifier_call = sh_hdmi_notify;
++	fb_register_client(&hdmi->notifier);
++
+ 	return 0;
+ 
+ ecodec:
+@@ -1283,6 +1280,8 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 
+ 	snd_soc_unregister_codec(&pdev->dev);
+ 
++	fb_unregister_client(&hdmi->notifier);
++
+ 	board_cfg->display_on = NULL;
+ 	board_cfg->display_off = NULL;
+ 	board_cfg->board_data = NULL;
+-- 
+1.7.2.3
+
