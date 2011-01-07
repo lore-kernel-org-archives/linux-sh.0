@@ -1,34 +1,91 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 Jan 2011 04:12:28 +0000
-Subject: Re: [PATCH 4/6 v3] sh: sh7724 Enable SDIO IRQs
-Message-Id: <20110106041228.GM23889@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 07 Jan 2011 11:57:59 +0000
+Subject: [PATCH 2/3 v2] fbdev: sh_mobile_hdmi: framebuffer notifiers have to
+Message-Id: <Pine.LNX.4.64.1101071256300.32550@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-7-git-send-email-arnd@arndnet.de> <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-6-git-send-email-arnd@arndnet.de> <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-5-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1293574956-30035-7-git-send-email-arnd@arndnet.de> <1293574956-30035-6-git-send-email-arnd@arndnet.de> <1293574956-30035-5-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-fbdev@vger.kernel.org
 
-On Tue, Dec 28, 2010 at 11:22:34PM +0100, Arnd Hannemann wrote:
-> This patch enables the interrupt generation for SDIO IRQs
-> of the sdhi controllers of the SoC. To make sure interrupt
-> are handled announce the MMC_CAP_SDIO_IRQ capability
-> on ecovec, kfr2r09 and se7724.
-> 
-> Tested with a b43-based SDIO wireless card on ecovec.
+A previous patch added a framebuffer notifier to sh_mobile_hdmi.c,
+but did not register it with the framebuffer core. This patch adds
+such a registration and moves the notifier block into dynamically
+allocated per-device private data.
 
-On Tue, Dec 28, 2010 at 11:22:35PM +0100, Arnd Hannemann wrote:
-> This patch enables the interrupt generation for SDIO IRQs
-> of the sdhi controllers of the SoC. To make sure SDIO IRQs
-> are used, announce the MMC_CAP_SDIO_IRQ capability
-> on migor.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/video/sh_mobile_hdmi.c |   19 +++++++++----------
+ 1 files changed, 9 insertions(+), 10 deletions(-)
 
-On Tue, Dec 28, 2010 at 11:22:36PM +0100, Arnd Hannemann wrote:
-> This patch enables the interrupt generation for SDIO IRQs
-> of the sdhi controllers of the SoC. To make sure SDIO IRQs
-> are used announce the MMC_CAP_SDIO_IRQ capability
-> on ap325rxa.
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 571bd9f..46ab355 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -221,6 +221,7 @@ struct sh_hdmi {
+ 	struct delayed_work edid_work;
+ 	struct fb_var_screeninfo var;
+ 	struct fb_monspecs monspec;
++	struct notifier_block notifier;
+ };
+ 
+ static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
+@@ -1197,13 +1198,6 @@ out:
+ }
+ 
+ static int sh_hdmi_notify(struct notifier_block *nb,
+-			  unsigned long action, void *data);
+-
+-static struct notifier_block sh_hdmi_notifier = {
+-	.notifier_call = sh_hdmi_notify,
+-};
+-
+-static int sh_hdmi_notify(struct notifier_block *nb,
+ 			  unsigned long action, void *data)
+ {
+ 	struct fb_event *event = data;
+@@ -1212,7 +1206,7 @@ static int sh_hdmi_notify(struct notifier_block *nb,
+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+ 	struct sh_hdmi *hdmi = board_cfg->board_data;
+ 
+-	if (nb != &sh_hdmi_notifier || !hdmi || hdmi->info != info)
++	if (!hdmi || nb != &hdmi->notifier || hdmi->info != info)
+ 		return NOTIFY_DONE;
+ 
+ 	switch(action) {
+@@ -1231,11 +1225,11 @@ static int sh_hdmi_notify(struct notifier_block *nb,
+ 		 * temporarily, synchronise with the work queue and re-acquire
+ 		 * the info->lock.
+ 		 */
+-		unlock_fb_info(hdmi->info);
++		unlock_fb_info(info);
+ 		mutex_lock(&hdmi->mutex);
+ 		hdmi->info = NULL;
+ 		mutex_unlock(&hdmi->mutex);
+-		lock_fb_info(hdmi->info);
++		lock_fb_info(info);
+ 		return NOTIFY_OK;
+ 	}
+ 	return NOTIFY_DONE;
+@@ -1333,6 +1327,9 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		goto ecodec;
+ 	}
+ 
++	hdmi->notifier.notifier_call = sh_hdmi_notify;
++	fb_register_client(&hdmi->notifier);
++
+ 	return 0;
+ 
+ ecodec:
+@@ -1363,6 +1360,8 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 
+ 	snd_soc_unregister_codec(&pdev->dev);
+ 
++	fb_unregister_client(&hdmi->notifier);
++
+ 	board_cfg->display_on = NULL;
+ 	board_cfg->display_off = NULL;
+ 	board_cfg->board_data = NULL;
+-- 
+1.7.2.3
 
-All applied to sh/sdio, thanks.
