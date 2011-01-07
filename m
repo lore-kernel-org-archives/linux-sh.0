@@ -1,37 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Jan 2011 23:18:00 +0000
-Subject: [PATCH 1/2] ARM: mach-shmobile: mackerel: SCIF port for earlyprintk when using zboot
-Message-Id: <1294701481-30950-2-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 07 Jan 2011 10:24:29 +0000
+Subject: Re: [RFC][PATCH 6/6] ARM: mach-shmobile: clock-sh7372: remove pllc2
+Message-Id: <Pine.LNX.4.64.1101071122080.32550@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Initialise the SCIF serial port to allow earlyprintk
-output when using zboot. It is based on a very similar
-patched for AP4EB.
+On Fri, 19 Nov 2010, Kuninori Morimoto wrote:
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch kills HDMI video with
+
+sh-mobile-hdmi sh-mobile-hdmi: Cannot set rate 74250000: -2
+
+and sometimes locks the ap4evb up.
+
+Thanks
+Guennadi
+
+> ---
+>  arch/arm/mach-shmobile/board-ap4evb.c |    5 +++++
+>  arch/arm/mach-shmobile/clock-sh7372.c |   12 ++----------
+>  2 files changed, 7 insertions(+), 10 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+> index 53a281b..a1d8384 100644
+> --- a/arch/arm/mach-shmobile/board-ap4evb.c
+> +++ b/arch/arm/mach-shmobile/board-ap4evb.c
+> @@ -969,6 +969,11 @@ static int __init hdmi_init_pm_clock(void)
+>  		goto out;
+>  	}
+>  
+> +	ret = clk_enable(&sh7372_pllc2_clk);
+> +	if (ret < 0) {
+> +		pr_err("Cannot enable pllc2 clock\n");
+> +		goto out;
+> +	}
+>  	pr_debug("PLLC2 set frequency %lu\n", rate);
+>  
+>  	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
+> diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+> index cbeca28..e18a124 100644
+> --- a/arch/arm/mach-shmobile/clock-sh7372.c
+> +++ b/arch/arm/mach-shmobile/clock-sh7372.c
+> @@ -230,21 +230,13 @@ static int pllc2_set_rate(struct clk *clk,
+>  	if (idx < 0)
+>  		return idx;
+>  
+> -	if (rate = clk->parent->rate) {
+> -		pllc2_disable(clk);
+> -		return 0;
+> -	}
+> +	if (rate = clk->parent->rate)
+> +		return -EINVAL;
+>  
+>  	value = __raw_readl(PLLC2CR) & ~(0x3f << 24);
+>  
+> -	if (value & 0x80000000)
+> -		pllc2_disable(clk);
+> -
+>  	__raw_writel((value & ~0x80000000) | ((idx + 19) << 24), PLLC2CR);
+>  
+> -	if (value & 0x80000000)
+> -		return pllc2_enable(clk);
+> -
+>  	return 0;
+>  }
+>  
+> -- 
+> 1.7.0.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
 ---
- .../mach-shmobile/include/mach/head-mackerel.txt   |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/head-mackerel.txt b/arch/arm/mach-shmobile/include/mach/head-mackerel.txt
-index e3ebfa7..efd3687 100644
---- a/arch/arm/mach-shmobile/include/mach/head-mackerel.txt
-+++ b/arch/arm/mach-shmobile/include/mach/head-mackerel.txt
-@@ -85,3 +85,10 @@ ED 0xE6150004, 0x80331050
- WAIT 1, 0xFE40009C
- 
- ED 0xE6150354, 0x00000002
-+
-+LIST "SCIF0 - Serial port for earlyprintk"
-+EB 0xE6053098, 0x11
-+EB 0xE6053098, 0xe1
-+EW 0xE6C40000, 0x0000
-+EB 0xE6C40004, 0x19
-+EW 0xE6C40008, 0x3000
--- 
-1.7.2.3
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
