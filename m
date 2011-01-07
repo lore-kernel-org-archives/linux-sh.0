@@ -1,19 +1,19 @@
 From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Fri, 07 Jan 2011 02:58:16 +0000
+Date: Fri, 07 Jan 2011 03:08:11 +0000
 Subject: [PATCH 4/5] sh: intc - convert board specific landisk code
-Message-Id: <1294369335-4064-4-git-send-email-iwamatsu@nigauri.org>
+Message-Id: <1294369691-4256-1-git-send-email-iwamatsu@nigauri.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1294369335-4064-4-git-send-email-iwamatsu@nigauri.org>
+In-Reply-To: <1294369335-4064-4-git-send-email-iwamatsu@nigauri.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <iwamatsu@nigarui.org>
-
 This converts the board specific interrupt code for landisk to make
 use of intc (use register_intc_controller).
 
-Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigarui.org>
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
 ---
  arch/sh/boards/mach-landisk/irq.c |   59 ++++++++++++++++++++++---------------
  1 files changed, 35 insertions(+), 24 deletions(-)
