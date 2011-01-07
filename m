@@ -1,216 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 05 Jan 2011 11:25:40 +0000
-Subject: [PATCH 2/3] ARM: mach-shmobile: mackerel: add HDMI video support
-Message-Id: <w3ptyhnk2x7.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 07 Jan 2011 10:26:26 +0000
+Subject: sh: update sh7757lcr_defconfig
+Message-Id: <4D26EA52.8050005@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ - disable the 8250 driver (fix the build error on sh7757lcr)
+ - enable sh_eth driver
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-based on Paul's rmobile-latest branch (not mackerel branch)
+ arch/sh/configs/sh7757lcr_defconfig |   11 +----------
+ 1 files changed, 1 insertions(+), 10 deletions(-)
 
- arch/arm/mach-shmobile/board-mackerel.c |  141 +++++++++++++++++++++++++++++++
- 1 files changed, 141 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 83e83e8..069377b 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -21,6 +21,7 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/delay.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -39,6 +40,7 @@
- #include <linux/tca6416_keypad.h>
- #include <linux/usb/r8a66597.h>
- 
-+#include <video/sh_mobile_hdmi.h>
- #include <video/sh_mobile_lcdc.h>
- 
- #include <sound/sh_fsi.h>
-@@ -290,6 +292,127 @@ static struct platform_device lcdc_device = {
- 	},
- };
- 
-+/* HDMI */
-+static struct sh_mobile_lcdc_info hdmi_lcdc_info = {
-+	.clock_source = LCDC_CLK_EXTERNAL,
-+	.ch[0] = {
-+		.chan = LCDC_CHAN_MAINLCD,
-+		.bpp = 16,
-+		.interface_type = RGB24,
-+		.clock_divider = 1,
-+		.flags = LCDC_FLAGS_DWPOL,
-+	}
-+};
-+
-+static struct resource hdmi_lcdc_resources[] = {
-+	[0] = {
-+		.name	= "LCDC1",
-+		.start	= 0xfe944000,
-+		.end	= 0xfe947fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0x1780),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device hdmi_lcdc_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(hdmi_lcdc_resources),
-+	.resource	= hdmi_lcdc_resources,
-+	.id		= 1,
-+	.dev	= {
-+		.platform_data	= &hdmi_lcdc_info,
-+		.coherent_dma_mask = ~0,
-+	},
-+};
-+
-+static struct sh_mobile_hdmi_info hdmi_info = {
-+	.lcd_chan	= &hdmi_lcdc_info.ch[0],
-+	.lcd_dev	= &hdmi_lcdc_device.dev,
-+};
-+
-+static struct resource hdmi_resources[] = {
-+	[0] = {
-+		.name	= "HDMI",
-+		.start	= 0xe6be0000,
-+		.end	= 0xe6be00ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
-+		.start	= evt2irq(0x17e0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device hdmi_device = {
-+	.name		= "sh-mobile-hdmi",
-+	.num_resources	= ARRAY_SIZE(hdmi_resources),
-+	.resource	= hdmi_resources,
-+	.id             = -1,
-+	.dev	= {
-+		.platform_data	= &hdmi_info,
-+	},
-+};
-+
-+static int __init hdmi_init_pm_clock(void)
-+{
-+	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
-+	int ret;
-+	long rate;
-+
-+	if (IS_ERR(hdmi_ick)) {
-+		ret = PTR_ERR(hdmi_ick);
-+		pr_err("Cannot get HDMI ICK: %d\n", ret);
-+		goto out;
-+	}
-+
-+	ret = clk_set_parent(&sh7372_pllc2_clk, &sh7372_dv_clki_div2_clk);
-+	if (ret < 0) {
-+		pr_err("Cannot set PLLC2 parent: %d, %d users\n",
-+		       ret, sh7372_pllc2_clk.usecount);
-+		goto out;
-+	}
-+
-+	pr_debug("PLLC2 initial frequency %lu\n",
-+		 clk_get_rate(&sh7372_pllc2_clk));
-+
-+	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
-+	if (rate < 0) {
-+		pr_err("Cannot get suitable rate: %ld\n", rate);
-+		ret = rate;
-+		goto out;
-+	}
-+
-+	ret = clk_set_rate(&sh7372_pllc2_clk, rate);
-+	if (ret < 0) {
-+		pr_err("Cannot set rate %ld: %d\n", rate, ret);
-+		goto out;
-+	}
-+
-+	ret = clk_enable(&sh7372_pllc2_clk);
-+	if (ret < 0) {
-+		pr_err("Cannot enable pllc2 clock\n");
-+		goto out;
-+	}
-+
-+	pr_debug("PLLC2 set frequency %lu\n", rate);
-+
-+	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
-+	if (ret < 0) {
-+		pr_err("Cannot set HDMI parent: %d\n", ret);
-+		goto out;
-+	}
-+
-+out:
-+	if (!IS_ERR(hdmi_ick))
-+		clk_put(hdmi_ick);
-+	return ret;
-+}
-+device_initcall(hdmi_init_pm_clock);
-+
- /* USB1 (Host) */
- static void usb1_host_port_power(int port, int power)
- {
-@@ -493,6 +616,8 @@ static struct platform_device *mackerel_devices[] __initdata = {
- 	&leds_device,
- 	&fsi_device,
- 	&fsi_ak4643_device,
-+	&hdmi_lcdc_device,
-+	&hdmi_device,
- };
- 
- /* Keypad Initialization */
-@@ -568,8 +693,11 @@ static void __init mackerel_map_io(void)
- 
- #define GPIO_PORT9CR	0xE6051009
- #define GPIO_PORT10CR	0xE605100A
-+#define SRCR4		0xe61580bc
- static void __init mackerel_init(void)
- {
-+	u32 srcr4;
-+
- 	sh7372_pinmux_init();
- 
- 	/* enable SCIFA0 */
-@@ -648,6 +776,16 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_IRQ21,	NULL);
- 	set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
- 
-+	/* HDMI */
-+	gpio_request(GPIO_FN_HDMI_HPD, NULL);
-+	gpio_request(GPIO_FN_HDMI_CEC, NULL);
-+
-+	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
-+	srcr4 = __raw_readl(SRCR4);
-+	__raw_writel(srcr4 | (1 << 13), SRCR4);
-+	udelay(50);
-+	__raw_writel(srcr4 & ~(1 << 13), SRCR4);
-+
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
- 	i2c_register_board_info(1, i2c1_devices,
-@@ -662,6 +800,9 @@ static void __init mackerel_timer_init(void)
- {
- 	sh7372_clock_init();
- 	shmobile_timer.init();
-+
-+	/* External clock source */
-+	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
- }
- 
- static struct sys_timer mackerel_timer = {
+diff --git a/arch/sh/configs/sh7757lcr_defconfig b/arch/sh/configs/sh7757lcr_defconfig
+index 273f3fa..5f7f667 100644
+--- a/arch/sh/configs/sh7757lcr_defconfig
++++ b/arch/sh/configs/sh7757lcr_defconfig
+@@ -39,21 +39,15 @@ CONFIG_IPV6=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_FW_LOADER is not set
+ CONFIG_BLK_DEV_RAM=y
+-# CONFIG_MISC_DEVICES is not set
+ CONFIG_NETDEVICES=y
+-CONFIG_PHYLIB=y
+ CONFIG_VITESSE_PHY=y
+-CONFIG_MDIO_BITBANG=y
+ CONFIG_NET_ETHERNET=y
+-CONFIG_MII=y
++CONFIG_SH_ETH=y
+ # CONFIG_NETDEV_10000 is not set
+ # CONFIG_WLAN is not set
+ # CONFIG_KEYBOARD_ATKBD is not set
+ # CONFIG_MOUSE_PS2 is not set
+ # CONFIG_SERIO is not set
+-CONFIG_SERIAL_8250=y
+-CONFIG_SERIAL_8250_CONSOLE=y
+-CONFIG_SERIAL_8250_NR_UARTS=2
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=3
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+@@ -63,7 +57,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT3_FS=y
+-CONFIG_INOTIFY=y
+ CONFIG_ISO9660_FS=y
+ CONFIG_VFAT_FS=y
+ CONFIG_PROC_KCORE=y
+@@ -76,10 +69,8 @@ CONFIG_NLS_CODEPAGE_437=y
+ CONFIG_NLS_CODEPAGE_932=y
+ CONFIG_NLS_ISO8859_1=y
+ CONFIG_DEBUG_KERNEL=y
+-# CONFIG_DETECT_SOFTLOCKUP is not set
+ # CONFIG_SCHED_DEBUG is not set
+ # CONFIG_DEBUG_BUGVERBOSE is not set
+ CONFIG_DEBUG_INFO=y
+-# CONFIG_RCU_CPU_STALL_DETECTOR is not set
+ # CONFIG_FTRACE is not set
+ # CONFIG_CRYPTO_ANSI_CPRNG is not set
 -- 
 1.7.1
 
