@@ -1,13 +1,16 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sun, 09 Jan 2011 12:39:32 +0000
+Date: Sun, 09 Jan 2011 12:49:28 +0000
 Subject: [PATCH] mmc, ARM: Add zboot from MMC support for SuperH Mobile ARM
-Message-Id: <1294576772-26935-1-git-send-email-horms@verge.net.au>
+Message-Id: <20110109124928.GC25591@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1294576772-26935-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1294576772-26935-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk
-Cc: Russell King - ARM Linux <linux@arm.linux.org.uk>, Chris Ball <cjb@laptop.org>, Yusuke Goda <yusuke.goda.sx@renesas.com>, Paul Mundt <lethal@lethal-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
+
+[ Reposted with correct addresses for arm and Paul ]
 
 This allows a ROM-able zImage to be written to MMC and
 for SuperH Mobile ARM to boot directly from the MMCIF
