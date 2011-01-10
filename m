@@ -1,72 +1,61 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Wed, 26 Jan 2011 21:31:35 +0000
-Subject: Re: linux 2.6.37+ seems to go to sleep
-Message-Id: <201101262231.35682.fabio.giovagnini@aurion-tech.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 10 Jan 2011 23:05:49 +0000
+Subject: [PATCH] mmc, sh: Move MMCIF_PROGRESS_* into sh_mmcif.h
+Message-Id: <20110110230549.GA20886@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201101191719.05926.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201101191719.05926.fabio.giovagnini@aurion-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Why in
-arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+Allow MMCIF_PROGRESS_* to be shared.
 
-#define STBCR3 0xfffe0408
-#define STBCR4 0xfffe040c
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+---
+ arch/sh/boot/romimage/mmcif-sh7724.c |    3 ---
+ include/linux/mmc/sh_mmcif.h         |    3 +++
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-void __init plat_early_device_setup(void)
-{
-	/* enable CMT clock */
-	__raw_writeb(__raw_readb(STBCR4) & ~0x04, STBCR4);
+Hi Paul,
 
-	/* enable MTU2 clock */
-	__raw_writeb(__raw_readb(STBCR3) & ~0x20, STBCR3);
+this change didn't seem to make it into your
+rc1 pull request, although it is present in
+remotes/sh-2.6/common/mmcif.
 
-	early_platform_add_devices(sh7203_early_devices,
-				   ARRAY_SIZE(sh7203_early_devices));
-}
+It is needed by "[patch v5] mmc, ARM: Add zboot from MMC support for SuperH
+Mobile ARM", which I was hoping to get Russell to merge post 2.6.38-rc1.
+Perhaps I should just add the enums directly to
+arch/arm/boot/compressed/mmcif-sh7372.c in that patch for now?
 
-we put out from the stand-by CMt and MTU and not SCIF?
-
-Tnahks
-
-
-On Wednesday 26 January 2011 19:28:08 Fabio Giovagnini wrote:
-> In which arch/sh/boards/ could I study hoe to setup the clock framework for
-> my board?
-> P.S.
-> I tried to build RSK+ board, not for mine, and running on mine teh kernel
-> does not work.
-> 
-> Thanks in advance
-> 
-> On Thursday 20 January 2011 10:01:23 Magnus Damm wrote:
-> > On Thu, Jan 20, 2011 at 5:43 PM, Fabio Giovagnini
-> > 
-> > <fabio.giovagnini@aurion-tech.com> wrote:
-> > > Can I be sure the BRR setting algorithm used is proper for my sh2a
-> > > 7203?
-> > 
-> > The BRR setting depends on the clock framework. And the clock
-> > framework settings may depend on your board.
-> > 
-> > > Do you know if anyone tested teh last linux version on rsk+ 7203?
-> > 
-> > Not sure. I recall hacking on timer code on rsk7203 in April 2009,
-> > after that I have no idea about the status.
-> > 
-> > / magnus
-
+diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romimage/mmcif-sh7724.c
+index 14863d7..16b9c6f 100644
+--- a/arch/sh/boot/romimage/mmcif-sh7724.c
++++ b/arch/sh/boot/romimage/mmcif-sh7724.c
+@@ -21,9 +21,6 @@
+ #define HIZCRC		0xa405015c
+ #define DRVCRA		0xa405018a
+ 
+-enum { MMCIF_PROGRESS_ENTER, MMCIF_PROGRESS_INIT,
+-       MMCIF_PROGRESS_LOAD, MMCIF_PROGRESS_DONE };
+-
+ /* SH7724 specific MMCIF loader
+  *
+  * loads the romImage from an MMC card starting from block 512
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index ffabf8c..6a98e97 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -97,6 +97,9 @@ static inline void sh_mmcif_writel(void __iomem *addr, int reg, u32 val)
+ 
+ #define SH_MMCIF_BBS 512 /* boot block size */
+ 
++enum { MMCIF_PROGRESS_ENTER, MMCIF_PROGRESS_INIT,
++       MMCIF_PROGRESS_LOAD, MMCIF_PROGRESS_DONE };
++
+ static inline void sh_mmcif_boot_cmd_send(void __iomem *base,
+ 					  unsigned long cmd, unsigned long arg)
+ {
 -- 
-Ing. Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
+1.7.2.3
