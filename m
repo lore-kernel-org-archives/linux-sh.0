@@ -1,67 +1,38 @@
-From: Sascha Hauer <s.hauer@pengutronix.de>
-Date: Tue, 11 Jan 2011 09:03:11 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 11 Jan 2011 09:16:07 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110111090311.GM12078@pengutronix.de>
+Message-Id: <20110111091607.GI12552@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
-	<20110111031552.GJ3760@linux-sh.org>
-	<201101111211.30172.jeremy.kerr@canonical.com>
-In-Reply-To: <201101111211.30172.jeremy.kerr@canonical.com>
+In-Reply-To: <201101111016.42819.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 11, 2011 at 12:11:29PM +0800, Jeremy Kerr wrote:
-> Hi Paul,
+On Tue, Jan 11, 2011 at 10:16:42AM +0800, Jeremy Kerr wrote:
+> At present, we can satisfy these with:
 > 
-> > This looks like a complete disaster, and is also completely inconsistent
-> > with how the API is being used by the vast majority of users today.
-> 
-> I've been basing this on the mxc clock code, which acquires a mutex for all 
-> clk_enable()s. This may not be representative of the majority of clock usage.
+> * clk_enable: may sleep
 
-For i.MX we can generally turn this into a spinlock. There are some exceptions
-though. Most clocks directly visible for drivers are simple clock gates
-which can be made atomic. The root clocks are often enough plls which
-can't be enabled atomically, but where we have to spin until the pll is
-locked. So we we have exactly the case Russell described: Whether we can
-enable a clocks atomically depends on the parent (pll) being enabled or
-disabled. We can work around this by calling clk_enable to the pll
-explicitely from the platform code.
+I object to this as one of the purposes behind the clk API is to allow
+power savings to be made, and unless we can perform clk enable/disable
+from atomic contexts, the best you can do is enable the clock when the
+device is probed and disable it when it's released.
 
-> 
-> From a quick search there are a few other cases of non-atomic clock usage:
-> 
-> tcc:		clk_enable() acquires a global clocks_mutex
-> tegra:	has a clk_enable_cansleep()
-> davinci: clk_set_parent() aquires a global clocks_mutex
-> 
-> Excluding the davinci code (we won't worry about set_parent for now...), if we 
-> can port mxc and tcc to a sleepable clk_enable, perhaps we could just go with 
-> purely atomic operations.
-> 
-> We'd still need some method of using sleeping clocks though. How about making 
-> clk_enable() BUG if the clock is not atomic, and add clk_enable_cansleep() for 
-> the cases where clk->ops.enable may sleep.
+For a lot of systems, modules are loaded at boot, and devices are probed
+at boot time.  They're never unloaded.
 
-Quoting Russell:
+This means that clocks will be enabled at boot time and never turned off.
 
-> I hate the GPIO APIs for doing this _cansleep crap as the decision of
-> whether to use the _cansleep or normal APIs normally can't be made at
-> the time when the API is used, but sometime later.  Many people just use
-> the non-_cansleep versions irrespective of the context they're in -
-> which is unnecessarily restrictive - consider what happens if you then
-> have that driver use a GPIO on an I2C peripheral...
+If you're lucky, there may be open/release methods which can be used to
+enable/disable the clock, which reduces the 'clock on' period down to
+the point where userspace opens/closes the device.  That's still
+insufficient and in some cases there aren't calls for this.
 
-Sounds like we should rather have s sleeping clk_enable and a
-clk_enable_atomic. This way people can use standard clk_enable until
-a 'scheduling while atomic' gives a hint in the right direction.
+Sometimes the only point that you know you need the clock enabled is when
+your driver has already been called in an atomic context.
 
-Sascha
-
--- 
-Pengutronix e.K.                           |                             |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+If such a requirement is imposed, it means that a driver would either have
+to leave the clock always on, or would have to drop such calls if the
+clock wasn't already enabled.
