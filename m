@@ -1,7 +1,7 @@
-From: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Date: Fri, 07 Jan 2011 09:48:36 +0000
-Subject: [PATCH] ARM: mach-shmobile: mackerel: Add support get_cd in CN23
-Message-Id: <4D26E174.9050302@renesas.com>
+From: chinyeow.sim.xt@renesas.com
+Date: Tue, 11 Jan 2011 00:47:59 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel: Add touchscreen ST1232 support
+Message-Id: <1294706879-5290-1-git-send-email-chinyeow.sim.xt@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,50 +10,49 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+From: Tony SIM <chinyeow.sim.xt@renesas.com>
+
+
+Signed-off-by: Tony SIM <chinyeow.sim.xt@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 42f7c0d..bea5320 100644
+index 42f7c0d..b0027d2 100644
 --- a/arch/arm/mach-shmobile/board-mackerel.c
 +++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -524,6 +524,15 @@ static struct platform_device sdhi1_device = {
+@@ -746,6 +746,7 @@ static struct tca6416_keys_platform_data mackerel_tca6416_keys_info = {
  };
- #endif
-
-+/*
-+ * The card detect pin of the top SD/MMC slot (CN23) is active low and is
-+ * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
-+ */
-+static int slot_cn23_get_cd(struct platform_device *pdev)
-+{
-+	return !gpio_get_value(GPIO_PORT162);
-+}
-+
- /* SDHI2 */
- static struct sh_mobile_sdhi_info sdhi2_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
-@@ -531,6 +540,7 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
- 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED |
- 			  MMC_CAP_NEEDS_POLL,
-+	.get_cd		= slot_cn23_get_cd,
+ 
+ /* I2C */
++#define IRQ7 evt2irq(0x02e0)
+ #define IRQ9 evt2irq(0x0320)
+ 
+ static struct i2c_board_info i2c0_devices[] = {
+@@ -758,6 +759,11 @@ static struct i2c_board_info i2c0_devices[] = {
+ 		.platform_data = &mackerel_tca6416_keys_info,
+ 		.irq = IRQ9,
+ 	},
++	/* Touchscreen */
++	{
++		I2C_BOARD_INFO("st1232-ts", 0x55),
++		.irq = IRQ7,
++	},
  };
-
- static struct resource sdhi2_resources[] = {
-@@ -904,6 +914,10 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID2_1, NULL);
- 	gpio_request(GPIO_FN_SDHID2_0, NULL);
-
-+	/* card detect pin for microSD slot (CN23) */
-+	gpio_request(GPIO_PORT162, NULL);
-+	gpio_direction_input(GPIO_PORT162);
+ 
+ #define IRQ21 evt2irq(0x32a0)
+@@ -869,6 +875,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_IRQ9_42,	NULL);
+ 	set_irq_type(IRQ9, IRQ_TYPE_LEVEL_HIGH);
+ 
++	/* enable Touchscreen */
++	gpio_request(GPIO_FN_IRQ7_40,	NULL);
++	set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
 +
- 	/* MMCIF */
- 	gpio_request(GPIO_FN_MMCD0_0, NULL);
- 	gpio_request(GPIO_FN_MMCD0_1, NULL);
+ 	/* enable Accelerometer */
+ 	gpio_request(GPIO_FN_IRQ21,	NULL);
+ 	set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
 -- 
-1.5.6.5
+1.7.2.3
 
