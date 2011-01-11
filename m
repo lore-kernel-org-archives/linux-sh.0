@@ -1,30 +1,25 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 07 Jan 2011 10:26:24 +0000
-Subject: sh: add PVR probing for SH7757 3rd cut
-Message-Id: <4D26EA50.1000403@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 11 Jan 2011 03:49:31 +0000
+Subject: Re: sh: add PVR probing for SH7757 3rd cut
+Message-Id: <20110111034931.GL3760@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4D26EA50.1000403@renesas.com>
+In-Reply-To: <4D26EA50.1000403@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/sh/kernel/cpu/sh4/probe.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+On Fri, Jan 07, 2011 at 07:26:24PM +0900, Yoshihiro Shimoda wrote:
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>  arch/sh/kernel/cpu/sh4/probe.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4/probe.c b/arch/sh/kernel/cpu/sh4/probe.c
-index b93458f..b1edc90 100644
---- a/arch/sh/kernel/cpu/sh4/probe.c
-+++ b/arch/sh/kernel/cpu/sh4/probe.c
-@@ -151,6 +151,7 @@ void __cpuinit cpu_probe(void)
- 			boot_cpu_data.flags |= CPU_HAS_L2_CACHE;
- 			break;
- 		case 0x10:
-+		case 0x11:
- 			boot_cpu_data.type = CPU_SH7757;
- 			break;
- 		}
--- 
-1.7.1
+On Fri, Jan 07, 2011 at 07:26:26PM +0900, Yoshihiro Shimoda wrote:
+>  - disable the 8250 driver (fix the build error on sh7757lcr)
+>  - enable sh_eth driver
+> 
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
+Both applied, thanks.
