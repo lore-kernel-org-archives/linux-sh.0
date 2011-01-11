@@ -1,48 +1,30 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Tue, 11 Jan 2011 13:52:14 +0000
+From: Pavel Machek <pavel@ucw.cz>
+Date: Tue, 11 Jan 2011 14:34:06 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110111135214.GR24920@pengutronix.de>
+Message-Id: <20110111143406.GC22390@atrey.karlin.mff.cuni.cz>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
-	<201101111744.59712.jeremy.kerr@canonical.com>
-	<20110111101314.GA774@linux-sh.org>
-	<201101111830.18597.jeremy.kerr@canonical.com>
-	<20110111121816.GB774@linux-sh.org>
-In-Reply-To: <20110111121816.GB774@linux-sh.org>
+	<20110111031552.GJ3760@linux-sh.org>
+	<201101111211.30172.jeremy.kerr@canonical.com>
+	<20110111090311.GM12078@pengutronix.de>
+	<20110111092842.GJ12552@n2100.arm.linux.org.uk>
+In-Reply-To: <20110111092842.GJ12552@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 11, 2011 at 09:18:16PM +0900, Paul Mundt wrote:
-> On Tue, Jan 11, 2011 at 06:30:18PM +0800, Jeremy Kerr wrote:
-> > Hi Paul,
-> >=20
-> > > No, the sleeping clock case is and always will be a corner case, and I
-> > > have no interest in pretending otherwise. On SH we have hundreds of
-> > > clocks that are all usable in the atomic context and perhaps less tha=
-n a
-> > > dozen that aren't (and even in those cases much of the PLL negotiatio=
-n is
-> > > handled in hardware so there's never any visibility for the lock-down
-> > > from the software side, other architectures also have similar behavio=
-ur).
-> >=20
-> > I'm not too worried about the corner-cases on the *implementation* side=
-, more=20
-> > the corner-cases on the API side: are we seeing more users of the API t=
-hat=20
-> > require an atomic clock, or more that don't care?
-> >=20
-> Again, you are approaching it from the angle that an atomic clock is a
-> special requirement rather than the default behaviour. Sleeping for
-particularly if atomic behaviour is the common behaviour it's important
-to get it right, because the less common sleeping clocks don't get much
-test covering.
+Hi!
 
-Best regards
-Uwe
+> Another solution occurs to me: clk_enable() which returns -EAGAIN if
+> it's called in an atomic context but needs to sleep, and let the driver
+> deal with the clock not being enabled when it wants it.  The down side
+> is it requires the driver to have additional code to sort out such a
+> problem.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+I do not think that "atomic context" is possible to reliably detect
+inside a function like that.
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
