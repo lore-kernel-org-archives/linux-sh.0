@@ -1,39 +1,41 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 11 Jan 2011 03:15:52 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Tue, 11 Jan 2011 04:11:29 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110111031552.GJ3760@linux-sh.org>
+Message-Id: <201101111211.30172.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
-In-Reply-To: <201101111016.42819.jeremy.kerr@canonical.com>
+	<20110111031552.GJ3760@linux-sh.org>
+In-Reply-To: <20110111031552.GJ3760@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 11, 2011 at 10:16:42AM +0800, Jeremy Kerr wrote:
-> * clk_enable: may sleep
-> 
-> * clk_disable: may not sleep, but it's possible to make the global
->   clk_disable() atomic and defer the actual disable (clk->ops.disable()) to a
->   non-atomic context.
-> 
-> * clk_get_rate: may not sleep
-> 
-> * clk_set_rate: may sleep
-> 
-> As we build up our requirements, we can adjust as suitable.
-> 
-This looks like a complete disaster, and is also completely inconsistent
-with how the API is being used by the vast majority of users today. You
-have an API that can or can not sleep with no indication as to which is
-which based off of the API naming, which is just asking for trouble.
+Hi Paul,
 
-As it is today, most users expect that these are all usable from atomic
-context, and as far as I can tell the only special case you have are for
-some crap busses with insane latencies. In this case you should simply
-pile on _cansleep() versions of the API and make it apparent that those
-drivers are the special cases, not the other way around.
+> This looks like a complete disaster, and is also completely inconsistent
+> with how the API is being used by the vast majority of users today.
 
-Having half of the API sleepable and the other not with no indication of
-which is which simply makes it completely unusable and error prone for
-both atomic and non-atomic contexts.
+I've been basing this on the mxc clock code, which acquires a mutex for all 
+clk_enable()s. This may not be representative of the majority of clock usage.
+
+From a quick search there are a few other cases of non-atomic clock usage:
+
+tcc:		clk_enable() acquires a global clocks_mutex
+tegra:	has a clk_enable_cansleep()
+davinci: clk_set_parent() aquires a global clocks_mutex
+
+Excluding the davinci code (we won't worry about set_parent for now...), if we 
+can port mxc and tcc to a sleepable clk_enable, perhaps we could just go with 
+purely atomic operations.
+
+We'd still need some method of using sleeping clocks though. How about making 
+clk_enable() BUG if the clock is not atomic, and add clk_enable_cansleep() for 
+the cases where clk->ops.enable may sleep.
+
+Do we need something similar for other parts of the API? (clk_set_rate?)
+
+Cheers,
+
+
+Jeremy
