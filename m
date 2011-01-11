@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 11 Jan 2011 04:54:23 +0000
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Tue, 11 Jan 2011 09:03:11 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110111045423.GP3760@linux-sh.org>
+Message-Id: <20110111090311.GM12078@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110111031552.GJ3760@linux-sh.org>
@@ -12,14 +12,24 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Jeremy,
-
 On Tue, Jan 11, 2011 at 12:11:29PM +0800, Jeremy Kerr wrote:
+> Hi Paul,
+> 
 > > This looks like a complete disaster, and is also completely inconsistent
 > > with how the API is being used by the vast majority of users today.
 > 
 > I've been basing this on the mxc clock code, which acquires a mutex for all 
 > clk_enable()s. This may not be representative of the majority of clock usage.
+
+For i.MX we can generally turn this into a spinlock. There are some exceptions
+though. Most clocks directly visible for drivers are simple clock gates
+which can be made atomic. The root clocks are often enough plls which
+can't be enabled atomically, but where we have to spin until the pll is
+locked. So we we have exactly the case Russell described: Whether we can
+enable a clocks atomically depends on the parent (pll) being enabled or
+disabled. We can work around this by calling clk_enable to the pll
+explicitely from the platform code.
+
 > 
 > From a quick search there are a few other cases of non-atomic clock usage:
 > 
@@ -34,43 +44,24 @@ On Tue, Jan 11, 2011 at 12:11:29PM +0800, Jeremy Kerr wrote:
 > We'd still need some method of using sleeping clocks though. How about making 
 > clk_enable() BUG if the clock is not atomic, and add clk_enable_cansleep() for 
 > the cases where clk->ops.enable may sleep.
-> 
-Yes, that sounds reasonable. I don't particularly care for the atomic
-flag on the clock however since that's really the default behaviour for
-almost everyone at the moment. On the other hand, the mutex API will
-already blow up if someone tries to grab it within atomic context (with
-the _trylock exception). Still, making the API explicit and tossing in a
-might_sleep() or so will at least help figure out which assumptions are
-being made and/or violated.
 
-> Do we need something similar for other parts of the API? (clk_set_rate?)
-> 
-I suppose that's an inevitable thing at least in terms of keeping the API
-balanced and consistent.
+Quoting Russell:
 
-One other thing to be aware of is that the clkdev code maintains its own
-list mutex, so the addition and deletion of clkdev lookups in addition to
-the clkdev-backed clk_get() will all be sleepable. It would however be
-possible to back a one-shot atomic-safe clk_get() with a mutex_trylock()
-for the common cases, but it's not entirely obvious that it would be
-worth the complexity it would introduce.
+> I hate the GPIO APIs for doing this _cansleep crap as the decision of
+> whether to use the _cansleep or normal APIs normally can't be made at
+> the time when the API is used, but sometime later.  Many people just use
+> the non-_cansleep versions irrespective of the context they're in -
+> which is unnecessarily restrictive - consider what happens if you then
+> have that driver use a GPIO on an I2C peripheral...
 
-If you're going to do this work it would also be helpful to spell out the
-locking semantics within linux/clk.h at the same time (it might even be
-worthwhile doing this incrementally and getting all of the platforms
-in-line before attempting to consolidate things too aggressively), as
-it's apparent from the cases you cite there are at least a couple of
-boards that aren't quite in line with what everyone else is doing.
+Sounds like we should rather have s sleeping clk_enable and a
+clk_enable_atomic. This way people can use standard clk_enable until
+a 'scheduling while atomic' gives a hint in the right direction.
 
-In general we have to accept that the dynamic creation, deletion, and
-looking up of clocks is going to be a sleepable case, and the rest will
-likely have to be split out in to _cansleep and default atomic-safe
-variants.
+Sascha
 
-set_rate/parent and friends likewise are done atomically for some and
-sleepable for others, so it doesn't seem like there's going to be much
-choice other than simply splitting out the API for these cases.
-
-Also, I'm not sure if you've noticed yet or not, but note that there is
-now a drivers/clk due to the shuffling of the clkdev code, so you may
-want to piggyback on top of this instead of using the top-level kernel/
+-- 
+Pengutronix e.K.                           |                             |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
