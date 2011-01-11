@@ -1,53 +1,31 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 11 Jan 2011 10:13:14 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Tue, 11 Jan 2011 10:30:18 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110111101314.GA774@linux-sh.org>
+Message-Id: <201101111830.18597.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
-	<20110111091607.GI12552@n2100.arm.linux.org.uk>
 	<201101111744.59712.jeremy.kerr@canonical.com>
-In-Reply-To: <201101111744.59712.jeremy.kerr@canonical.com>
+	<20110111101314.GA774@linux-sh.org>
+In-Reply-To: <20110111101314.GA774@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 11, 2011 at 05:44:59PM +0800, Jeremy Kerr wrote:
-> So, it sounds like the best approach is to provide an atomic clk_enable. I 
-> agree with Sascha that the clk_enable and clk_enable_atomic polarity makes the 
-> most sense, so how about:
-> 
-> int clk_enable(struct clk *clk)
-> {
-> 	might_sleep();
-> 
-> 	[...]
-> }
-> 
-> int clk_enable_atomic(struct clk *clk)
-> {
-> 	BUG_ON(!(clk->flags & CLK_ATOMIC));
-> 
-> 	[...]
-> }
-> 
-> Paul: even though you mention that the atomic clocks are the usual case, I 
-> think that this way around illustrates the atomic 'restriction' at the call 
-> site more clearly. When the drivers don't care about the atomicity, 
-> clk_enable() is fine. When drivers do need an atomic clock, 
-> clk_enable_atomic() shows this requirement.
-> 
-No, the sleeping clock case is and always will be a corner case, and I
-have no interest in pretending otherwise. On SH we have hundreds of
-clocks that are all usable in the atomic context and perhaps less than a
-dozen that aren't (and even in those cases much of the PLL negotiation is
-handled in hardware so there's never any visibility for the lock-down
-from the software side, other architectures also have similar behaviour).
+Hi Paul,
 
-Keep in mind that all users except for the few that you cited were
-already quite content with the atomic context use, so this 'restriction'
-you speak of is just an artificial limitation introduced by a couple of
-new platforms that deviated from what everyone else was already doing.
+> No, the sleeping clock case is and always will be a corner case, and I
+> have no interest in pretending otherwise. On SH we have hundreds of
+> clocks that are all usable in the atomic context and perhaps less than a
+> dozen that aren't (and even in those cases much of the PLL negotiation is
+> handled in hardware so there's never any visibility for the lock-down
+> from the software side, other architectures also have similar behaviour).
 
-If you want to go this route, then SH and ARM-based SH-Mobiles will at
-least not be making use of the generic struct clk.
+I'm not too worried about the corner-cases on the *implementation* side, more 
+the corner-cases on the API side: are we seeing more users of the API that 
+require an atomic clock, or more that don't care?
+
+Cheers,
+
+
+Jeremy
