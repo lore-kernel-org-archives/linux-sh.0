@@ -1,35 +1,18 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 05 Jan 2011 20:48:27 +0000
-Subject: Re: [PATCH] mmc: tmio_mmc: silence compiler warnings
-Message-Id: <20110105204827.GE9198@void.printf.net>
+From: "Rama Djirama" <rama.1@ryelm1220.plus.com>
+Date: Wed, 12 Jan 2011 05:43:01 +0000
+Subject: Sincere Friendship.
+Message-Id: <4df798d7efe4bcbb721f40f0c9445d3a.squirrel@webmail.plus.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011231723090.25676@axis700.grange> <1292793367-5638-1-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1292793367-5638-1-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: g.liakhovetski@gmx.de, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-sh@vger.kernel.org
 
-On Sun, Dec 19, 2010 at 09:16:07PM +0000, Arnd Hannemann wrote:
-> with "mmc: tmio: implement a bounce buffer for unaligned DMA"
-> gcc generates the following warnings:
-> 
-> drivers/mmc/host/tmio_mmc.c:654:6: warning: 'ret' may be used uninitialized in this function
-> drivers/mmc/host/tmio_mmc.c:730:6: warning: 'ret' may be used uninitialized in this function
-> 
-> This patch fixes these by setting ret to -EINVAL in the affected code paths.
-> 
-> This patch applies on top of -rc6 plus the following patches:
->   mmc: tmio_mmc: allow multi-element scatter-gather lists
->   mmc: tmio_mmc: fix PIO fallback on DMA descriptor allocation failure
->   mmc: tmio: merge the private header into the driver
->   mmc: tmio: implement a bounce buffer for unaligned DMA
-> 
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Hello
+My name is Rama, I saw your profile today and i will like to be your
+friend. I will like to know more about you and i want you to contact me
+for further introduction.
+Regards.
+Rama.
+rdjirama@gmail.com
 
-Thanks, pushed to mmc-next for .38.
-
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
