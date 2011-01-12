@@ -1,63 +1,29 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jan 2011 16:53:00 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: clock-sh7372: fixup pllc2 set_rate
-Message-Id: <Pine.LNX.4.64.1101141752160.1889@axis700.grange>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 12 Jan 2011 18:04:20 +0000
+Subject: cache disabling
+Message-Id: <201101121904.21051.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Morimoto-san
+Hi All,
 
-Thanks for the patch, it does fix the regression.
+If I set off the configuration of the cache am I sure no initialization of the 
+cache is done and during all the working time of the CPU no cache is used?
 
-On Tue, 11 Jan 2011, Kuninori Morimoto wrote:
+Thanks a lot in advance
 
-> This patch fixup 421b446abeec55bed1251fab80cb5c12be58b773
->  - Care clk->rate
->  - Don't over write PLLC2 enable bit
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Reported-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+-- 
+Ing. Fabio Giovagnini
 
-Thanks
-Guennadi
-
-> ---
-> Guennadi
-> 
-> Thank you for your report about it.
-> Is this patch solve your issue ?
-> I tested this patch on ap4evb, mackerel on Paul's rmobile-latest.
-> 
->  arch/arm/mach-shmobile/clock-sh7372.c |    4 +++-
->  1 files changed, 3 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-> index 9aa8d68..e9731b5 100644
-> --- a/arch/arm/mach-shmobile/clock-sh7372.c
-> +++ b/arch/arm/mach-shmobile/clock-sh7372.c
-> @@ -234,7 +234,9 @@ static int pllc2_set_rate(struct clk *clk, unsigned long rate)
->  
->  	value = __raw_readl(PLLC2CR) & ~(0x3f << 24);
->  
-> -	__raw_writel((value & ~0x80000000) | ((idx + 19) << 24), PLLC2CR);
-> +	__raw_writel(value | ((idx + 19) << 24), PLLC2CR);
-> +
-> +	clk->rate = clk->freq_table[idx].frequency;
->  
->  	return 0;
->  }
-> -- 
-> 1.7.1
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
