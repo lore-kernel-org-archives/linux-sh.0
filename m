@@ -1,71 +1,55 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Wed, 12 Jan 2011 07:40:09 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Wed, 12 Jan 2011 09:03:01 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110112074009.GX24920@pengutronix.de>
+Message-Id: <20110112090301.GS11039@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
-	<201101111830.18597.jeremy.kerr@canonical.com>
-	<20110111121816.GB774@linux-sh.org>
-	<201101112235.43061.jeremy.kerr@canonical.com>
-	<4D2D1F0D.5040208@codeaurora.org>
-In-Reply-To: <4D2D1F0D.5040208@codeaurora.org>
+	<20110111091607.GI12552@n2100.arm.linux.org.uk>
+	<4D2D184A.8020405@codeaurora.org>
+In-Reply-To: <4D2D184A.8020405@codeaurora.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Saravana,
+On Tue, Jan 11, 2011 at 06:56:10PM -0800, Saravana Kannan wrote:
+> On 01/11/2011 01:16 AM, Russell King - ARM Linux wrote:
+>> On Tue, Jan 11, 2011 at 10:16:42AM +0800, Jeremy Kerr wrote:
+>>> At present, we can satisfy these with:
+>>>
+>>> * clk_enable: may sleep
+>>
+>> I object to this as one of the purposes behind the clk API is to allow
+>> power savings to be made, and unless we can perform clk enable/disable
+>> from atomic contexts, the best you can do is enable the clock when the
+>> device is probed and disable it when it's released.
+>
+> Since dev_pm_ops.suspend is not atomic anymore (am I wrong?), what is  
 
-On Tue, Jan 11, 2011 at 07:25:01PM -0800, Saravana Kannan wrote:
-> On 01/11/2011 06:35 AM, Jeremy Kerr wrote:
-> >Hi Paul,
-> >
-> >>Again, you are approaching it from the angle that an atomic clock is a
-> >>special requirement rather than the default behaviour.
-> >
-> >I'm not considering it a special requirement, but it's still a requireme=
-nt
-> >(that the called function does not sleep).
-> >
-> >The problem with the inverse logic (clk_enable/clk_enable_sleepable) is =
-that
-> >now you've made the caller need to know what kind of clock it has, or mi=
-ght
-> >have one day.
->=20
-> I think it's just a matter of how you interpret the name of the API
-> in English. It doesn't make the decision making of the developer any
-> easier.
->=20
-> Just having a _atomic suffix doesn't mean the driver developer
-> doesn't need to know what type of clock it is. They are still making
-> the assumption that the enable/disable for that clock can be done
-> atomically -- namely an "atomic clock".
-But there is a difference to 'one function to rule both sleepable and
-atomic clocks'.  When calling _atomic on a sleepable clock you get
--ESOMETHING back (and the clock stays off).  With a generic clk_enable
-you get an oops and so cannot handle the error.
+That never has been, and that is called for the _system_ going into
+suspend.  That's not what I'm talking about.  I'm talking about drivers
+doing their own power management in response to (a) their knowledge of
+how the device behaves and (b) in response to the user state they know.
 
-> Similarly, when a driver developer calls the _sleepable APIs in
-> their code, for all practical purposes, they are making an
-> assumption that the enable/disable for that clock *needs to* (not
-> may) sleep.
-IMHO this is not right.  If the driver developer doesn't care if the
-clock sleeps or not (which is the norm I think) he calls the _sleepable
-function and if the clock happen to be an atomic one it doesn't hurt
-him.
+In the case of a UART, that means enabling the clock when the user opens
+the device and turning it off when the user closes the device - and in
+the case of the UART being used as the system console, enabled when
+printk calls it, disabled when finished outputting the message.
 
-And looking at the usage of the sleeping functions in the gpio API, I'd
-bet that at least 50% of the calls to gpio_set_value can/should be
-gpio_set_value_cansleep.  That's because driver developers don't care or
-are not aware of the issue.  If it would be gpio_set_value
-vs.gpio_set_value_atomic most developers would use the sleeping variant
-and the few that should use the _atomic function would notice that when
-seeing the corresponding oops.
+The latter is a case where you're called in atomic context.
 
-Best regards
-Uwe
+Another case - a storage device.  While you may receive open/close calls,
+these are meaningless for power management - you'll receive an open call
+when you mount a filesystem, and a close call when you finally unmount it.
+That doesn't mean it's going to be used.  Your request handler will
+generally run in an atomic context, so in order to do dynamic power
+saving you need to be able to enable/disable clocks in that context.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+A touchscreen controller which you communicate with over a dedicated bus.
+The touchscreen controller doesn't require the host to be constantly
+clocked - it only needs to be clocked when communicating with the
+touchscreen.  The touchscreen controller raises an interrupt for service.
+You'd want to enable the clock in the interrupt handler to communicate
+with the device and turn it off afterwards.
+
+Shall I continue?
