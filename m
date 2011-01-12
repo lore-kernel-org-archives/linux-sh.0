@@ -1,33 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 05 Jan 2011 08:33:18 +0000
-Subject: Re: [PATCH 0/2 v2] runtime PM for the sh-mobile MIPI DSI driver
-Message-Id: <20110105083318.GE23889@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Jan 2011 10:43:07 +0000
+Subject: [PATCH] ARM: mach-shmobile: Kill off unused !gpio_is_valid() case
+Message-Id: <20110112104307.11071.4228.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1012271115470.669@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1012271115470.669@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 27, 2010 at 11:23:02AM +0100, Guennadi Liakhovetski wrote:
-> This is v2 of the patch series, implementing runtime-pm for the sh-mobile 
-> mipi-dsi driver and removing the static clock configuration on the AP4EVB 
-> board.
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, Dec 29, 2010 at 09:12:18AM +0100, Guennadi Liakhovetski wrote:
-> These patches teach the sh-mobile MIPI DSI driver to use platform data to 
-> support different SoC with register layout variations and different LCD 
-> panels. Two of these patches affect the actual driver and one - currently 
-> its only user - the ap4evb board. To avoid compilation and run-time 
-> regressions we have to first add new gields to the header, then set them 
-> in the affected platform, and only then modify the driver to use them. 
-> This produces an unpleasant dependency chain. Alternatively, all these 
-> patches could be merged into one, but that would span multiple subsystems. 
-> I leave it to the maintainer to decide:)
+The Card Detect GPIOs used on AP4EVB and Mackerel are
+alwayws valid, so kill off the unused !gpio_is_valid()
+case.
 
-I've merged both of these patch series in to the common/fdev-mipi branch
-in the SH/R-Mobile tree and then merged that topic branch in to the fbdev
-tree. Both needed a bit of mangling to merge on top of Magnus's earlier
-patches, so you may want to verify that I haven't broken anything
-accidentally.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-ap4evb.c   |    5 +----
+ arch/arm/mach-shmobile/board-mackerel.c |    5 +----
+ 2 files changed, 2 insertions(+), 8 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2011-01-12 14:42:46.000000000 +0900
+@@ -247,10 +247,7 @@ static struct platform_device smc911x_de
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+-	if (gpio_is_valid(GPIO_PORT41))
+-		return !gpio_get_value(GPIO_PORT41);
+-	else
+-		return -ENXIO;
++	return !gpio_get_value(GPIO_PORT41);
+ }
+ 
+ /* SH_MMCIF */
+--- 0001/arch/arm/mach-shmobile/board-mackerel.c
++++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-01-12 14:32:00.000000000 +0900
+@@ -657,10 +657,7 @@ static struct platform_device fsi_ak4643
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+-	if (gpio_is_valid(GPIO_PORT41))
+-		return !gpio_get_value(GPIO_PORT41);
+-	else
+-		return -ENXIO;
++	return !gpio_get_value(GPIO_PORT41);
+ }
+ 
+ /* SDHI0 */
