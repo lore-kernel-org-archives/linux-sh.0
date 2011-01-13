@@ -1,49 +1,41 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 05 Jan 2011 20:58:17 +0000
-Subject: Re: [PATCH 2/6 v3] mfd: sh_mobile_sdhi: activate SDIO IRQ for
-Message-Id: <20110105205817.GH9198@void.printf.net>
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Date: Thu, 13 Jan 2011 13:17:15 +0000
+Subject: [PATCH] ARM: mach-shmobile: fix cpu_base of gic_init() on sh73a0
+Message-Id: <4D2EFB5B.70209@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-3-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1293574956-30035-3-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-sh@vger.kernel.org
 
-Hi Arnd,
+The latest rmobile-latest doesn't run on ag5evm because of a
+small mistake on initialization.
+Though, I don't have any idea to write them smart.
+anyway,
 
-On Tue, Dec 28, 2010 at 11:22:32PM +0100, Arnd Hannemann wrote:
-> The SDHI Controller on SH-Mobile SoCs supports SDIO IRQ signalling.
-> This patch advertises this fact to the tmio_mmc driver.
-> 
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
-> Acked-by: Samuel Ortiz <sameo@linux.intel.com>
-> ---
->  drivers/mfd/sh_mobile_sdhi.c |    5 +++++
->  1 files changed, 5 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-> index 3ca20ec..0a7df44 100644
-> --- a/drivers/mfd/sh_mobile_sdhi.c
-> +++ b/drivers/mfd/sh_mobile_sdhi.c
-> @@ -131,6 +131,11 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
->  	 */
->  	mmc_data->flags |= TMIO_MMC_BLKSZ_2BYTES;
->  
-> +	/*
-> +	 * All SDHI blocks support SDIO IRQ signalling.
-> +	 */
-> +	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
-> +
->  	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
->  		priv->param_tx.slave_id = p->dma_slave_tx;
->  		priv->param_rx.slave_id = p->dma_slave_rx;
+On sh73a0, GIC cpu_base is 0xf0000100 but 0xf0001000.
 
-Thanks, pushed to mmc-next for .38.  You can send on the arch
-dependencies now, explaining that the code they depend on is
-waiting in -next.
+Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+---
+ arch/arm/mach-shmobile/intc-sh73a0.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index 322d8d5..5d0e150 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -252,10 +252,11 @@ static irqreturn_t sh73a0_intcs_demux(int irq, void *dev_id)
+ 
+ void __init sh73a0_init_irq(void)
+ {
+-	void __iomem *gic_base = __io(0xf0001000);
++	void __iomem *gic_dist_base = __io(0xf0001000);
++	void __iomem *gic_cpu_base = __io(0xf0000100);
+ 	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
+ 
+-	gic_init(0, 29, gic_base, gic_base);
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+ 
+ 	register_intc_controller(&intcs_desc);
+ 
+-- 1.7.2.2 
