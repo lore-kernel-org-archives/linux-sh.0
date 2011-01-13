@@ -1,33 +1,35 @@
-From: Saravana Kannan <skannan@codeaurora.org>
-Date: Fri, 28 Jan 2011 03:29:39 +0000
-Subject: Re: Locking in the clk API
-Message-Id: <4D423823.4070009@codeaurora.org>
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Date: Thu, 13 Jan 2011 12:58:56 +0000
+Subject: [PATCH] ARM: sh-mobile: ag5evm requires GPIOLIB
+Message-Id: <4D2EF710.6080103@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201101111744.59712.jeremy.kerr@canonical.com>	<20110111103929.GN24920@pengutronix.de>	<AANLkTinHL9X_bqMPR=W8Va01O4xngUnpGCkCiE3xEdiQ@mail.gmail.com>	<4D386ABF.9060908@fluff.org>	<20110120190822.GK6335@n2100.arm.linux.org.uk>	<4D3932B4.8010904@codeaurora.org>	<20110121094042.GD13235@n2100.arm.linux.org.uk>	<4D40F5CC.6080809@codeaurora.org>	<20110127085438.GA25239@n2100.arm.linux.org.uk>	<4D41D5EC.6030405@codeaurora.org>	<20110127204354.GB1597@n2100.arm.linux.org.uk>
-	<20110127210729.79eef2c1@lxorguk.ukuu.org.uk>
-In-Reply-To: <20110127210729.79eef2c1@lxorguk.ukuu.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 01/27/2011 01:07 PM, Alan Cox wrote:
->>> For internal tree purposes, does .set_termios need to be atomic? Can it
->>> grab mutexes instead of spinlock?
->>
->> I think I already answered that question above where I said "protect
->> against the interrupt handler accessing the port->* stuff".
->
-> I'm not sure you answered it correctly however as the locking nowdays is
-> a bit different.
->
-> Architecturally the termios handling doesn't need a spin lock nor is it
-> called under one. In fact it's vital this is the case because of USB.
+Because ag5evm board setup code uses gpio functions,
+ARCH_REQUIRE_GPIOLIB should be set in Kconfig.
+Otherwise, the first build with defconfig fails.
 
-Thanks for the clarification Alan. This is what I was looking for.
+Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
+---
+ arch/arm/mach-shmobile/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
--Saravana
-
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4d1b4c5..a33c44f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -60,6 +60,7 @@ endchoice
+ 
+ config MACH_AG5EVM
+ 	bool "AG5EVM board"
++	select ARCH_REQUIRE_GPIOLIB
+ 	depends on ARCH_SH73A0
+ 
+ config MACH_MACKEREL
 -- 
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+1.7.2.2
+
+
