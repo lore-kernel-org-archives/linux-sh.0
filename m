@@ -1,7 +1,7 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Sat, 15 Jan 2011 16:31:55 +0000
+From: Christer Weinigel <christer@weinigel.se>
+Date: Sat, 15 Jan 2011 17:07:38 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110115163155.GF6917@pengutronix.de>
+Message-Id: <4D31D45A.8080509@weinigel.se>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110111091607.GI12552@n2100.arm.linux.org.uk>
@@ -9,74 +9,53 @@ References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110112090301.GS11039@n2100.arm.linux.org.uk>
 	<4D31A8F1.4080301@weinigel.se>
 	<20110115145358.GC15996@n2100.arm.linux.org.uk>
-	<20110115150331.GB6917@pengutronix.de>
-	<20110115151507.GD15996@n2100.arm.linux.org.uk>
-	<20110115160329.GD6917@pengutronix.de>
-	<20110115162121.GI15996@n2100.arm.linux.org.uk>
-In-Reply-To: <20110115162121.GI15996@n2100.arm.linux.org.uk>
+In-Reply-To: <20110115145358.GC15996@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jan 15, 2011 at 04:21:21PM +0000, Russell King - ARM Linux wrote:
-> On Sat, Jan 15, 2011 at 05:03:29PM +0100, Uwe Kleine-K=F6nig wrote:
-> > On Sat, Jan 15, 2011 at 03:15:07PM +0000, Russell King - ARM Linux wrot=
-e:
-> > > No - I've been suggesting for about a week now about doing two entire=
-ly
-> > > separate consolidations.
-> > I didn't read that out of your mails.
->=20
-> It was actually four days ago:
-> | Maybe another approach for the time being is to unify in two steps: fir=
-st
-> | unify the implementations which use a spinlock - and those which can use
-> | a spinlock, and separately those which must use a mutex.
-> |=20
-> | Then this issue can be revisited in the future.
->=20
-> > > I think it would be insane to do the consolidation of the two differe=
-nt
-> > > implementations in one patch or even one patch set.  There needs to be
-> > > a consolidation of spinlock-based clks as one patch set, which is
-> > > entirely separate and independent from the consolidation of mutex-bas=
-ed
-> > > clks.
-> > I think they should share most of the code.  Apart from calling
-> > different locking functions they should be pretty much identical, no?
->=20
-> That way you get unions of mutexes and spinlocks (which is one thing
-> we're trying to avoid) and conditionals controlling whether a mutex
-> or spinlock is taken - which we've already ascertained was strongly
-> objected to by folk in mainline (and quite rightfully so IMHO.)
-If the decision is done basing on a Kconfig symbol it's an #ifdef.
-That's not great but IMHO much better than a runtime decision.
-=20
-> > > What if one of the consolidations turns out to be a problem?  Do we w=
-ant
-> > > to throw both out, or do we want to keep as much as we possibly can?
-> > Do you really expect fundamental problems that make it necessary to
-> > switch all platforms that use the (say) sleeping variant back to their
-> > original implementation?  I don't think that when the general idea of
-> > using clk_ops prooves for the atomic case it cannot happen that a
-> > "native" implementation for a sleeping clk is better that a sleeping
-> > clk_ops implementation.
->=20
-> I'm saying keep all the options open until we've got the whole thing
-> sorted out.  If you think it's possible to do without creating a mess
-> in the process - and without unions of mutexes and spinlocks or
-> conditionals controlling whether we use mutex_lock vs spin_lock then
-> please show the patches.
+On 01/15/2011 03:53 PM, Russell King - ARM Linux wrote:
+> On Sat, Jan 15, 2011 at 03:02:25PM +0100, Christer Weinigel wrote:
+>> On platforms that need to sleep to enable the UART clock, configuring
+>> the UART as the kernel console should be equivalent to userspace opening
+>> the UART device, i.e. enable the clock.  At least to me that feels like
+>> an acceptable tradeoff, and if I wanted to save the last bit of power
+>> I'll have to refrain from using UART as the kernel console.
+>
+> Well, we're not discussing a _new_ API here - we're discussing an API
+> with existing users which works completely fine on the devices its
+> used, with differing expectations between implementations.
 
-Jeremy: I think it would be quite easy to convert your series to use an
-#ifdef instead of the flag.  I don't want to do this (at least not
-without asking first) because it's your series, not mine.  How should we
-proceed?
+Yes, so to fulfil the requirement that printk needs to call clk_enable 
+from atomic contexts, document that clk_enable can not sleep.  Or add 
+the clk_enable_atomic call and modify printk to use it.
 
-Best regards
-Uwe
+>> Both of these feel like they should use a call such as clk_get_atomic
+>> and be able to handle EWOULDBLOCK/EAGAIN (or whatever error code is used
+>> to indicate that it would have to sleep) and delegate to a worker thread
+>> to enable the clock.  To catch uses of plain clk_enable from atomic
+>> contects, add a WARN_ON/BUG_ON(in_atomic()).  It won't catch everything,
+>> but would help a bit at least.
+>
+> We've never allowed clk_get() to be called in interruptible context,
+> so that's not the issue.  The issue is purely about clk_enable() and
+> clk_disable() and whether they should be able to be called in atomic
+> context or not.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+My bad, it should have said "clk_enable_atomic".
+
+> There's been a lot of talk on this issue for ages with no real progress
+> that I'm just going to repeat: let's unify those implementations which
+> use a spinlock for their clks into one consolidated solution, and
+> a separate consolidated solution for those which use a mutex.
+>
+> This will at least allow us to have _some_ consolidation of the existing
+> implementations - and it doesn't add anything to the problem at hand.
+> It might actually help identify what can be done at code level to resolve
+> this issue.
+
+Won't that cause a lot of code duplication?  If it's possible to have 
+one sane implementation, why not go for it at once?
+
+   /Christer
