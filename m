@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Sat, 15 Jan 2011 20:30:55 +0000
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Sun, 16 Jan 2011 06:59:51 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110115203055.GA15283@n2100.arm.linux.org.uk>
+Message-Id: <AANLkTikw-O-VJxSnmtRubiWx=9Ykt3939x4Nx-QsUs1a@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110111091607.GI12552@n2100.arm.linux.org.uk>
@@ -9,69 +9,61 @@ References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110112090301.GS11039@n2100.arm.linux.org.uk>
 	<4D31A8F1.4080301@weinigel.se>
 	<20110115145358.GC15996@n2100.arm.linux.org.uk>
-	<4D31D45A.8080509@weinigel.se>
-	<20110115172033.GM15996@n2100.arm.linux.org.uk>
-	<4D31DCF6.7090805@weinigel.se>
-In-Reply-To: <4D31DCF6.7090805@weinigel.se>
+	<20110115150331.GB6917@pengutronix.de>
+	<20110115151507.GD15996@n2100.arm.linux.org.uk>
+In-Reply-To: <20110115151507.GD15996@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jan 15, 2011 at 06:44:22PM +0100, Christer Weinigel wrote:
-> On 01/15/2011 06:20 PM, Russell King - ARM Linux wrote:
-> > You really need to read the entire thread - I've already said that yet
->
->> discussion continues about how to solve the problem.  This thread which
->> has been running for a number of days now has been entirely about how
->> to solve this.
->
->
-> Sigh, the always oh so polite Russell.  I have read the thread before; I  
-> reread the whole thread one more time before posting.
-
-Look, the clk API unification issue has been rattling around for six months
-or more not making very much progress.  Should it continue to be discussed
-for another six months while nothing happens because agreement can't be
-reached?
-
-Do you not realise what you suggested has already been proposed?
-
-Does it help the discussion to have more people coming into the discussion
-saying "we should do X" when we've already had people suggesting that we
-should already do X - and we've had people saying afterwards "we should
-do Y"?
-
-Do you really think that you saying "we should do X" means that we'll have
-lots of people suddenly saying "oh yes, you're right" when they didn't
-before?
-
-It's covering old ground over and over again.  Raising the same points
-over and over again is just a pointless waste of time - it just sends the
-discussion around the same loops time and time again.  Nothing actually
-ever gets resolved but lots of time gets wasted discussing it.
-
->> Consider this: is it better to continue talking about this for the next
->> six months, while still having N spinlock based implementations, and M
->> mutex based implementations.
+2011/1/15 Russell King - ARM Linux <linux@arm.linux.org.uk>:
+> On Sat, Jan 15, 2011 at 04:03:31PM +0100, Uwe Kleine-K=F6nig wrote:
+>> Hi Russell,
 >>
->> Or is it better to consolidate the N spinlock based implementations
->> down to one spinlock implementation, and M mutex based implementations
->> down to one mutex implementation, and then discuss how to resolve the
->> differences between the two implementations?
+>> On Sat, Jan 15, 2011 at 02:53:58PM +0000, Russell King - ARM Linux wrote:
+>> > We've been around returning EAGAIN, WARN_ONs, BUG_ONs, having clk_enab=
+le()
+>> > vs clk_enable_atomic(), clk_enable_cansleep() vs clk_enable(), etc.
+>> >
+>> > There's been a lot of talk on this issue for ages with no real progress
+>> > that I'm just going to repeat: let's unify those implementations which
+>> > use a spinlock for their clks into one consolidated solution, and
+>> > a separate consolidated solution for those which use a mutex.
+>> >
+>> > This will at least allow us to have _some_ consolidation of the existi=
+ng
+>> > implementations - and it doesn't add anything to the problem at hand.
+>> > It might actually help identify what can be done at code level to reso=
+lve
+>> > this issue.
+>> Great, so how should we do it? =A0Take Jeremy's patch and make the
+>> differenciation between sleeping and atomic implementation a Kconfig
+>> variable?
 >
+> No - I've been suggesting for about a week now about doing two entirely
+> separate consolidations.
 >
-> Going that way might very well mean that you will be stuck with two  
-> implementations forever.  But yes, it might be better with two working  
-> ones than one which takes a bit longer to finish.
->
-> But my impression is that the different suggestions in the thread aren't  
-> that far apart.  Except for the discussion if clk_enable/disable should  
-> be able to sleep or not, people seem to agree on most of the rest of the  
-> API.
+> I think it would be insane to do the consolidation of the two different
+> implementations in one patch or even one patch set. =A0There needs to be
+> a consolidation of spinlock-based clks as one patch set, which is
+> entirely separate and independent from the consolidation of mutex-based
+> clks.
 
-As I said, at this point I _really_ don't care what happens provided
-it doesn't end up screwing the facilities enjoyed by the existing
-implementations.
++1
 
-I'm tired of reading this discussion.
+>
+> What if one of the consolidations turns out to be a problem? =A0Do we want
+> to throw both out, or do we want to keep as much as we possibly can?
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at =A0http://www.tux.org/lkml/
+>
+
+
+
+--=20
+Grant Likely, B.Sc., P.Eng.
+Secret Lab Technologies Ltd.
