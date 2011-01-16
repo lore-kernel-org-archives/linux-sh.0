@@ -1,34 +1,26 @@
-From: "UNITED NATIONS" <robin@mail.ranksitt.net>
-Date: Tue, 25 Jan 2011 03:28:59 +0000
-Subject: (((MTCN INFORMATION)))
-Message-Id: <008309f8b2ab9cf1992458ae14b38020.squirrel@webmail.ucam.ac.ma>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Sun, 16 Jan 2011 16:39:57 +0000
+Subject: Booting kernel 2.6.37+ for renesas sh on sh2a 7203
+Message-Id: <201101161739.57933.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <754de77a94bf4388b038f177aff93308.squirrel@webmail.ucam.ac.ma>
-In-Reply-To: <754de77a94bf4388b038f177aff93308.squirrel@webmail.ucam.ac.ma>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-
-
-
-Your Email ID has just been compensated with the sum of  $500,000.00 USD 
-by the United Nations Organization Of Nigeria and payment will be remitted
-to you via western union money transfer. Note that $5,000 USD has already
-be send to you since last week but we were unable to give you the
-information on phone for the past 7working days but due to bad network
-here, i was not able to get to you on phone.
-
-Here is the western union information to pick up the USD5000.00.
-
-MTCN : 9402 727 310
-SENDER'S NAME: MARYLIN JOHNSON
-TEXT QUESTION: IN GOD
-ANSWER:WE TRUST
-AMOUNT SENT: $5000.00 USD
-COUNTRY:NIGERIA
+Hi All,
+did nay of you booted such a kernel release on rsk+ dev board?
 
 Thanks
-Mrs. Linda Hall
 
+-- 
+Ing. Fabio Giovagnini
 
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
