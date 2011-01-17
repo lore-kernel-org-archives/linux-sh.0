@@ -1,23 +1,34 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 18 Jan 2011 04:50:23 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 INTCS MFIS2 interrupt update
-Message-Id: <20110118045023.GJ2122@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 17 Jan 2011 16:01:07 +0000
+Subject: [PATCH] SPI: spi_sh_msiof: fix a wrong free_irq() parameter
+Message-Id: <Pine.LNX.4.64.1101171700370.16051@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20100311054221.27152.9839.sendpatchset@t400s>
-In-Reply-To: <20100311054221.27152.9839.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: spi-devel-general@lists.sourceforge.net
+Cc: linux-sh@vger.kernel.org
 
-On Tue, Jan 18, 2011 at 12:13:44PM +0900, Magnus Damm wrote:
-> Enable the MFIS2 interrupt source in the INTCS interrupt
-> controller included in the sh7372 processor. The priority
-> field is constantly enabled to let the interrupt through to
-> both the ARM side and the SH side.
+Without this fix reloading of the driver is impossible.
 
-On Tue, Jan 18, 2011 at 12:41:04PM +0900, Magnus Damm wrote:
-> set_irq_type() should only be used for external IRQ pins,
-> so update the G3EVM board code to remove low level request.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/spi/spi_sh_msiof.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Both applied, thanks.
+diff --git a/drivers/spi/spi_sh_msiof.c b/drivers/spi/spi_sh_msiof.c
+index d93b667..56f60c8 100644
+--- a/drivers/spi/spi_sh_msiof.c
++++ b/drivers/spi/spi_sh_msiof.c
+@@ -635,7 +635,7 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
+ 	ret = spi_bitbang_stop(&p->bitbang);
+ 	if (!ret) {
+ 		pm_runtime_disable(&pdev->dev);
+-		free_irq(platform_get_irq(pdev, 0), sh_msiof_spi_irq);
++		free_irq(platform_get_irq(pdev, 0), p);
+ 		iounmap(p->mapbase);
+ 		clk_put(p->clk);
+ 		spi_master_put(p->bitbang.master);
+-- 
+1.7.2.3
+
