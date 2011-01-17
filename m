@@ -1,7 +1,7 @@
-From: Jeremy Kerr <jk@ozlabs.org>
-Date: Mon, 17 Jan 2011 01:19:44 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Mon, 17 Jan 2011 01:27:43 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <201101170919.45100.jk@ozlabs.org>
+Message-Id: <201101170927.44239.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
 In-Reply-To: <201101111016.42819.jeremy.kerr@canonical.com>
@@ -9,6 +9,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Ben Herrenschmidt <benh@kernel.crashing.org>, Sascha Hauer <s.hauer@pengutronix.de>, Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>, Vincent Guittot <vincent.guittot@linaro.org>, Uwe =?iso-8859-1?q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>
 
 Hi all,
 
@@ -18,8 +19,8 @@ Based on the discussion from this thread, my plan is to:
 This means that clk_{en,dis}able will acquire a per-clk spinlock (for enable 
 counts), and be callable from atomic contexts.
 
-* Rework the initial docs (posted in the first mail of this thread) document 
-to illustrate the new locking requirements.
+* Rework the initial docs (posted in the first mail of this thread) to 
+illustrate the new locking requirements.
 
 * Request input from the platforms that require clk_enable (etc) to sleep, 
 about how we can merge the two implementations.
