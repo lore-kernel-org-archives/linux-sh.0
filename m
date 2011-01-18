@@ -1,48 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Jan 2011 22:41:34 +0000
-Subject: Re: [PATCH] mmc, ARM: Add zboot from MMC support for SuperH Mobile
-Message-Id: <20110110224134.GA7420@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 Jan 2011 08:48:17 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh73a0 CPGA fix for IrDA MSTP
+Message-Id: <20110118084817.1687.40570.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110109124928.GC25591@verge.net.au>
-	<1294589548.8897.1.camel@rojo>
-	<20110109225042.GB29257@verge.net.au>
-	<c1e9db480d82d1804930ddcc7bb0db02@rootnode.net>
-	<20110110154514.GC3760@linux-sh.org>
-In-Reply-To: <20110110154514.GC3760@linux-sh.org>
+References: <20101222061405.25163.82564.sendpatchset@t400s>
+In-Reply-To: <20101222061405.25163.82564.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 11, 2011 at 12:45:14AM +0900, Paul Mundt wrote:
-> On Mon, Jan 10, 2011 at 10:10:19AM +0000, Pawel Moll wrote:
-> > On Mon, 10 Jan 2011 07:50:42 +0900, Simon Horman <horms@verge.net.au> 
-> > wrote:
-> > >>>  Documentation/arm/SH-Mobile/Makefile              |    8 +
-> > >>>  Documentation/arm/SH-Mobile/vrl4.c                |  169 
-> > >>+++++++++++++++++++++
-> > >>How about putting those two into "tools" (in particular "tools/arm")
-> > >>instead of "Documentation"?
-> > >>Just a thought... ;-)
-> > >
-> > >Thats fine by me except that tools/arm doesn't exist yet.
-> > >It would be good to get some consensus before creating it.
-> > 
-> > I think there is consensus regarding "tools" as a place for user-space 
-> > tools - eg. perf tools used to live in "Documentation/..." and then were 
-> > moved to "tools/perf".
-> > 
-> > Now, whether your stuff should be in "tools/SH-Mobile" or 
-> > "tools/arm/SH-Mobile", I have no opinion ;-)
-> > 
-> I agree that this is a worthwhile direction to move to, but we're a long
-> way from a consensus. x86 has traditionally littered scripts/ and others
-> have sunk to arch/<foo>/tools hostprogs abuse and so forth. perf is a bit
-> of a special case in that it's fairly architecture agnostic. 
+From: Magnus Damm <damm@opensource.se>
 
-I would prefer to leave the code in Documentation/arm/SH-Mobile/ as
-it complements the document that is in the same directory - weather
-its more code or documentation is debatable IMHO.
+Fix a typo for the sh73a0 CPGA code dealing with the IrDA
+hardware block on the AG5EVM board.
 
-I'm happy to move things later if a consensus is reached.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ arch/arm/mach-shmobile/clock-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-01-18 17:44:58.000000000 +0900
+@@ -279,7 +279,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
+ 	[MSTP331] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 31, 0), /* SCIFA6 */
+ 	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
+-	[MSTP325] = MSTP(&div4_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
++	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
+ 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
+ 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
+ 	[MSTP411] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 11, 0), /* IIC3 */
