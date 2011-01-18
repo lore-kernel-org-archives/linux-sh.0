@@ -1,7 +1,7 @@
-From: Raviraj <raviraj.bhat@globaledgesoft.com>
-Date: Tue, 18 Jan 2011 06:51:13 +0000
-Subject: Camera select time out error
-Message-Id: <4D353591.3090407@globaledgesoft.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 Jan 2011 07:07:38 +0000
+Subject: Re: Camera select time out error
+Message-Id: <AANLkTimovWBsCew3KDN+aASeM0HeuFLwGbewUDzdfPVw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4D352AD4.4080908@globaledgesoft.com>
 In-Reply-To: <4D352AD4.4080908@globaledgesoft.com>
@@ -10,16 +10,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+On Tue, Jan 18, 2011 at 3:39 PM, Raviraj
+<raviraj.bhat@globaledgesoft.com> wrote:
+> I am observing select time out error whenever shcodecs-record is run 3-4
+> times continuously on ecovec-SH7724.
 
-I am observing select time out error whenever shcodecs-record is run 3-4 
-times continuously on ecovec-SH7724.
+Sounds like a cable problem to me. The Ecovec cables are pretty fragile.
 
-I am getting same error even in my sample capture - encode program if I 
-run it many times. To get the camera working, I have to restart the board.
+Does mplayer and/or other V4L2 applications behave the same?
 
-Is it a problem with camera driver ?
-
-Regards,
-Raviraj
-
+/ magnus
