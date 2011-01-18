@@ -1,85 +1,79 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 07 Jan 2011 10:24:29 +0000
-Subject: Re: [RFC][PATCH 6/6] ARM: mach-shmobile: clock-sh7372: remove pllc2
-Message-Id: <Pine.LNX.4.64.1101071122080.32550@axis700.grange>
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 18 Jan 2011 20:06:06 +0000
+Subject: Re: sh: sh7751 pci controller io port fix
+Message-Id: <20110118200606.GA5539@volta.aurel32.net>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, 19 Nov 2010, Kuninori Morimoto wrote:
+Hi,
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch kills HDMI video with
-
-sh-mobile-hdmi sh-mobile-hdmi: Cannot set rate 74250000: -2
-
-and sometimes locks the ap4evb up.
-
-Thanks
-Guennadi
-
+On Thu, Apr 22, 2010 at 06:21:10AM -0000, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> This patch updates the sh7751 pci code to handle io ports
+> correctly. The code is based on the sh7788x implementation.
+> 
+> Tested on a R2D-1 board with CONFIG_8139TOO_PIO=y.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> 
 > ---
->  arch/arm/mach-shmobile/board-ap4evb.c |    5 +++++
->  arch/arm/mach-shmobile/clock-sh7372.c |   12 ++----------
->  2 files changed, 7 insertions(+), 10 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-> index 53a281b..a1d8384 100644
-> --- a/arch/arm/mach-shmobile/board-ap4evb.c
-> +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-> @@ -969,6 +969,11 @@ static int __init hdmi_init_pm_clock(void)
->  		goto out;
->  	}
->  
-> +	ret = clk_enable(&sh7372_pllc2_clk);
-> +	if (ret < 0) {
-> +		pr_err("Cannot enable pllc2 clock\n");
-> +		goto out;
-> +	}
->  	pr_debug("PLLC2 set frequency %lu\n", rate);
->  
->  	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
-> diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-> index cbeca28..e18a124 100644
-> --- a/arch/arm/mach-shmobile/clock-sh7372.c
-> +++ b/arch/arm/mach-shmobile/clock-sh7372.c
-> @@ -230,21 +230,13 @@ static int pllc2_set_rate(struct clk *clk,
->  	if (idx < 0)
->  		return idx;
->  
-> -	if (rate = clk->parent->rate) {
-> -		pllc2_disable(clk);
-> -		return 0;
-> -	}
-> +	if (rate = clk->parent->rate)
-> +		return -EINVAL;
->  
->  	value = __raw_readl(PLLC2CR) & ~(0x3f << 24);
->  
-> -	if (value & 0x80000000)
-> -		pllc2_disable(clk);
-> -
->  	__raw_writel((value & ~0x80000000) | ((idx + 19) << 24), PLLC2CR);
->  
-> -	if (value & 0x80000000)
-> -		return pllc2_enable(clk);
-> -
->  	return 0;
->  }
->  
-> -- 
-> 1.7.0.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> arch/sh/drivers/pci/pci-sh7751.c |    5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Sorry to contact you so long after this patch has been submitted, but it
+appears to break PCI I/O support in QEMU emulating an R2D board. My
+guess is that one address translation layer is not fully emulated (some
+PCI registers are ignored), so I would like to ask a question.
+
+> --- 0001/arch/sh/drivers/pci/pci-sh7751.c
+> +++ work/arch/sh/drivers/pci/pci-sh7751.c	2010-04-22 13:15:00.000000000 +0900
+> @@ -17,6 +17,7 @@
+>  #include <linux/io.h>
+>  #include "pci-sh4.h"
+>  #include <asm/addrspace.h>
+> +#include <asm/sizes.h>
+>  
+>  static int __init __area_sdram_check(struct pci_channel *chan,
+>  				     unsigned int area)
+> @@ -47,8 +48,8 @@ static int __init __area_sdram_check(str
+>  static struct resource sh7751_pci_resources[] = {
+>  	{
+>  		.name	= "SH7751_IO",
+> -		.start	= SH7751_PCI_IO_BASE,
+> -		.end	= SH7751_PCI_IO_BASE + SH7751_PCI_IO_SIZE - 1,
+> +		.start	= 0x1000,
+> +		.end	= SZ_4M - 1,
+>  		.flags	= IORESOURCE_IO
+>  	}, {
+>  		.name	= "SH7751_mem",
+
+The address in start is used later in the code to write the PCI I/O base
+register:
+
+|        /* Make sure the MSB's of IO window are set to access PCI space
+|         * correctly */
+|        word = chan->resources[0].start & SH4_PCIIOBR_MASK;
+|        pr_debug("PCI: Setting upper bits of IO window to 0x%x\n", word);
+|        pci_write_reg(chan, word, SH4_PCIIOBR);
+
+With this change, 0 is written to this register (SH4_PCIIOBR_MASK is 
+0xFFFC0000), so QEMU maps the I/O port range starting at address 
+0x00000000. However the kernel still use the SH7751_PCI_IO_BASE value to
+define .io_map_base. As a results access to the PCI I/O space end up in 
+the 0xFE240000 range.
+
+It seems that the PCI IO space range is not only computed from the PCI
+I/O base register, but also from some other registers. However, I fail
+to find how in the datasheet. Would it be possible to tell me how it is
+computed?
+
+Thanks,
+Aurelien
+
+-- 
+Aurelien Jarno                          GPG: 1024D/F1BCDB73
+aurelien@aurel32.net                 http://www.aurel32.net
