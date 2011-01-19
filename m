@@ -1,27 +1,46 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 Jan 2011 03:17:00 +0000
-Subject: Re: [PATCH 1/2 v2] ARM: mach-shmobile: mackerel: add HDMI video support
-Message-Id: <20110106031700.GK23889@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 19 Jan 2011 00:09:09 +0000
+Subject: SDHC Read Performance
+Message-Id: <20110119000909.GA9412@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3phbdmycna.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3phbdmycna.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Arnd Hannemann <arnd@arndnet.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Thu, Jan 06, 2011 at 11:44:09AM +0900, Kuninori Morimoto wrote:
-> @@ -412,6 +535,8 @@ static struct platform_device *mackerel_devices[] __initdata = {
->  	&leds_device,
->  	&fsi_device,
->  	&fsi_ak4643_device,
-> +	&hdmi_lcdc_device,
-> +	&hdmi_device,
->  };
->  
->  /* Keypad Initialization */
+Hi,
 
-Note that this doesn't match what's in rmobile-latest, so it looks like
-you used an earlier version (or possibly what's in rmobile/mackerel?). I
-fixed it up by hand, but you may wish to double check you're on the
-branch you think you are :-)
+I am currently interested in the read performance of the SDHI driver.  I
+ran the following tests on a Mackerel board using Linus's latest tree
+(6845a44a), which I believe has all of the outstanding patches from Arnd
+and Guennadi merged.
+
+I have made the following crude performance measurements using
+several different cards.
+
+dd if=/dev/mmcblk1 of=/dev/null bsQ2 count0000
+
+SD1.1:		7.0 MB/s
+SD2.0:		7.0 MB/s
+SDHC Class 2:	7.1 MB/s
+SDHC Class 10:	7.2 MB/s
+
+Whereas I would expect something like:
+
+SD1.1 card:	12 MB/s
+SD2.0 card:	24 MB/s
+SDHC Class 2:	24 MB/s
+SDHC Class 10:	Faster?
+
+Possibly relevant portions of my .config are:
+
+CONFIG_MFD_SH_MOBILE_SDHI=y
+CONFIG_TMIO_MMC_DMA=y
+CONFIG_MMC_TMIO=y
+
+
+Arnd, Guennadi, I believe that you have been working on SDHI recently.
+If you have any suggestions I would be most grateful. Else I will
+poke some more and see what I can come up with.
+
