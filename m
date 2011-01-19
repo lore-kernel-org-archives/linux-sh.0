@@ -1,30 +1,31 @@
-From: Carmelo AMOROSO <carmelo.amoroso@st.com>
-Date: Tue, 11 Jan 2011 15:56:02 +0000
-Subject: Re: [PATCH 1/2] stackprotector: add stack smashing protector
-Message-Id: <4D2C7D92.1090104@st.com>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 19 Jan 2011 16:19:05 +0000
+Subject: linux 2.6.37+ seems to go to sleep
+Message-Id: <201101191719.05926.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293111851-7175-1-git-send-email-filippo.arcidiacono@st.com>
-	<4D245D16.5010702@st.com>
-	<AANLkTinZCDRVwwchcB85Wock8nBYK1eJrTWPbgJ-roGh@mail.gmail.com>
-In-Reply-To: <AANLkTinZCDRVwwchcB85Wock8nBYK1eJrTWPbgJ-roGh@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-LS0tLS1CRUdJTiBQR1AgU0lHTkVEIE1FU1NBR0UtLS0tLQpIYXNoOiBTSEExCgpPbiAxLzExLzIw
-MTEgNjozMCBBTSwgTWlrZSBGcnlzaW5nZXIgd3JvdGU6Cj4gd2hhdCBhcmUgeW91IHVzaW5nIHRv
-IHRlc3QgdGhpcyA/IGlzIHRoZXJlIGEgc2ltcGxlIHN0cmNweSBvciBzaW1pbGFyCj4gY29kZSB5
-b3UgcnVuIGFzIGEga2VybmVsIG1vZHVsZSB0aGF0J2xsIGFsbG93IG1lIHRvIHZlcmlmeSA/Cj4g
-LW1pa2UKPiAKSGkgTWlrZSwKeWVzLCBhIHNpbXBsZSBrZXJuZWwgbW9kdWxlIHdpdGggYSBpbml0
-IGZ1bmMgdGhhdCB1c2Ugc3RyY3B5IG9yIG1lbWNweQp0byB3cml0ZSBvdmVyIHRoZSBib3VuZGFy
-aWVzIG9mIGFuIGxvY2FsIGFycmF5IHZhcmlhYmxlIGlzIGVub3VnaC4KQXMgeW91IGtub3csIHRo
-ZSBhcnJheSBoYXMgdG8gYmUgbGFyZ2VyIHRoYW4gOCBieXRlcyB0byBtYXRjaCB3aXRoIHRoZQpn
-Y2MgaGV1cmlzdGljIGFuZCBnZW5lcmF0ZSB0aGUgY2FsbCB0byB0aGUgZ3VhcmQuCgpDaGVlcnMs
-CkNhcm1lbG8KCgoKLS0tLS1CRUdJTiBQR1AgU0lHTkFUVVJFLS0tLS0KVmVyc2lvbjogR251UEcg
-djEuNC4xMCAoTWluZ1czMikKQ29tbWVudDogVXNpbmcgR251UEcgd2l0aCBNb3ppbGxhIC0gaHR0
-cDovL2VuaWdtYWlsLm1vemRldi5vcmcvCgppRVlFQVJFQ0FBWUZBazBzZlpJQUNna1FvUnEvM0Jy
-SzFzOGtmd0NlSWpheUlvYUhhcHdlRzUzaWNwMXlvQ04rCnlwTUFuQTA4Y2h4VHU0OWVQNFFZVFFV
-OFV6TzRQVnBwCj15c2k0Ci0tLS0tRU5EIFBHUCBTSUdOQVRVUkUtLS0tLQr/9Oi6ey5uxyuJt5+u
-ia2GKyWKy/+x6d22F6WKd/+6ey5uxyuJt6WKe7H+yP+Ke2F5uh3Kh9qZ6yxqB62iZqOit2iaj++B
-6v+R6ud6X+iuAyit6ZqOit2iaiKd+hq2G22n//++B6v+R6ud6f+iuD+ZqOit2iaj+Kd+j+EK
+Hi All,
+using the emulator and u-boot  together, I have seen that my kernel stops into 
+sleep instruction.
+How could I avoid this?
+Is it possible I cannot see anything on the serial terminal because of this 
+sleep instruction?
+
+Regards
+
+
+-- 
+Ing. Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
