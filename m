@@ -1,54 +1,40 @@
 From: Ben Dooks <ben-linux@fluff.org>
-Date: Thu, 20 Jan 2011 16:40:04 +0000
+Date: Thu, 20 Jan 2011 16:53:14 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <4D386564.2090601@fluff.org>
+Message-Id: <4D38687A.6040307@fluff.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201101111016.42819.jeremy.kerr@canonical.com>	<20110111091607.GI12552@n2100.arm.linux.org.uk>	<201101111744.59712.jeremy.kerr@canonical.com>
-	<20110111101314.GA774@linux-sh.org>
-In-Reply-To: <20110111101314.GA774@linux-sh.org>
+References: <201101111016.42819.jeremy.kerr@canonical.com>	<201101111744.59712.jeremy.kerr@canonical.com>	<20110111101314.GA774@linux-sh.org>	<201101111830.18597.jeremy.kerr@canonical.com>
+	<20110111121816.GB774@linux-sh.org>
+In-Reply-To: <20110111121816.GB774@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 11/01/11 10:13, Paul Mundt wrote:
-> On Tue, Jan 11, 2011 at 05:44:59PM +0800, Jeremy Kerr wrote:
->> So, it sounds like the best approach is to provide an atomic clk_enable. I 
->> agree with Sascha that the clk_enable and clk_enable_atomic polarity makes the 
->> most sense, so how about:
+On 11/01/11 12:18, Paul Mundt wrote:
+> On Tue, Jan 11, 2011 at 06:30:18PM +0800, Jeremy Kerr wrote:
+>> Hi Paul,
 >>
->> int clk_enable(struct clk *clk)
->> {
->> 	might_sleep();
+>>> No, the sleeping clock case is and always will be a corner case, and I
+>>> have no interest in pretending otherwise. On SH we have hundreds of
+>>> clocks that are all usable in the atomic context and perhaps less than a
+>>> dozen that aren't (and even in those cases much of the PLL negotiation is
+>>> handled in hardware so there's never any visibility for the lock-down
+>>> from the software side, other architectures also have similar behaviour).
 >>
->> 	[...]
->> }
+>> I'm not too worried about the corner-cases on the *implementation* side, more 
+>> the corner-cases on the API side: are we seeing more users of the API that 
+>> require an atomic clock, or more that don't care?
 >>
->> int clk_enable_atomic(struct clk *clk)
->> {
->> 	BUG_ON(!(clk->flags & CLK_ATOMIC));
->>
->> 	[...]
->> }
->>
->> Paul: even though you mention that the atomic clocks are the usual case, I 
->> think that this way around illustrates the atomic 'restriction' at the call 
->> site more clearly. When the drivers don't care about the atomicity, 
->> clk_enable() is fine. When drivers do need an atomic clock, 
->> clk_enable_atomic() shows this requirement.
->>
-> No, the sleeping clock case is and always will be a corner case, and I
-> have no interest in pretending otherwise. On SH we have hundreds of
-> clocks that are all usable in the atomic context and perhaps less than a
-> dozen that aren't (and even in those cases much of the PLL negotiation is
-> handled in hardware so there's never any visibility for the lock-down
-> from the software side, other architectures also have similar behaviour).
+> Again, you are approaching it from the angle that an atomic clock is a
+> special requirement rather than the default behaviour. Sleeping for
+> lookup, addition, and deletion are all quite acceptable, but
+> enable/disable pairs have always been intended to be usable from atomic
+> context. Anyone that doesn't count on that fact is either dealing with
+> special case clocks (PLLs, root clocks, etc.) or simply hasn't bothered
+> implementing any sort of fine grained runtime power management for their
+> platform.
 
-So, how does the software deal with the clock not being available if the
-PLL powers up and takes time to lock and the software goes and tries to
-use the device? We need to ensure the clock is on and stable before the
-clk_enable() call returns.
-
-For all the drivers I've written so far, clk_enable() and disable()
-calls are done from sleep-able contexts such as the mmc work queue
-or other such systems.
+No, the API has always been defined to ensure clk_enable() returns once
+a clock is running and usable, so if the case where there are PLLs in
+the way is inconvenient to you, then sorry but they exist already.
