@@ -1,7 +1,7 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Thu, 20 Jan 2011 06:26:51 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 20 Jan 2011 08:17:48 +0000
 Subject: Re: linux 2.6.37+ seems to go to sleep
-Message-Id: <201101200726.51944.fabio.giovagnini@aurion-tech.com>
+Message-Id: <AANLkTi=6Ya2z7Hx=Kfvoj2sCy0fUrwvt1Fxt+ZRy3QjZ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101191719.05926.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201101191719.05926.fabio.giovagnini@aurion-tech.com>
@@ -10,53 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
-could you write to me please the exact cmdline to put in boot option and / or 
-bootargs env variable of u-boot?
+Hi Fabio,
 
-Thanks
+On Thu, Jan 20, 2011 at 3:26 PM, Fabio Giovagnini
+<fabio.giovagnini@aurion-tech.com> wrote:
+> Hi Magnus,
+> could you write to me please the exact cmdline to put in boot option and / or
+> bootargs env variable of u-boot?
 
+You know, you can always grep the default kernel configurations:
 
-On Thursday 20 January 2011 02:00:22 Magnus Damm wrote:
-> Hi Fabio,
-> 
-> On Thu, Jan 20, 2011 at 1:19 AM, Fabio Giovagnini
-> 
-> <fabio.giovagnini@aurion-tech.com> wrote:
-> > Hi All,
-> > using the emulator and u-boot  together, I have seen that my kernel stops
-> > into sleep instruction.
-> 
-> Sounds like a fully working system to me - the sleep instruction is
-> normally used by the idle loop for power management purpose.
-> 
-> > How could I avoid this?
-> 
-> Not sure why you would like to do so, but the kernel command line
-> option "nohlt" may help if you wish to disable CPU core power
-> managment.
-> 
-> > Is it possible I cannot see anything on the serial terminal because of
-> > this sleep instruction?
-> 
-> I don't think so. You most likely don't see anything because you have
-> problems with your serial console.
-> 
-> Why don't you try using "earlyprintk" to get early console printouts
-> from your SCIF port?
-> 
-> Cheers,
-> 
-> / magnus
+For the rsk7302 board try this:
 
--- 
-Ing. Fabio Giovagnini
+$ grep CONFIG_CMDLINE arch/sh/configs/rsk7203_defconfig
+CONFIG_CMDLINE_OVERWRITE=y
+CONFIG_CMDLINE="console=ttySC0,115200 earlyprintk=serial ignore_loglevel"
+$
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
+The earlyprintk format seems a bit outdated though - it unfortunately
+looks like too few people are submitting rsk7302 patches upstream.
+
+Try using this kernel command line:
+CONFIG_CMDLINE="console=ttySC0,115200 earlyprintk=sh-sci.0,115200
+ignore_loglevel"
+
+You can also look at this commit for more information about
+earlyprintk and sh-sci:
+$ git log 7b6fd3bf82c4901f6ba0101ba71a5c507c24f9cf
+
+/ magnus
