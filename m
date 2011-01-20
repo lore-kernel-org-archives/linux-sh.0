@@ -1,66 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 20 Jan 2011 04:01:04 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 20 Jan 2011 07:07:40 +0000
 Subject: Re: SDHC Read Performance
-Message-Id: <AANLkTi=fw1C0cj9U9=c0PxvOPHZtM66pDc+zpR9p=68c@mail.gmail.com>
+Message-Id: <20110120070738.GA32495@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110119000909.GA9412@verge.net.au>
-	<AANLkTinNtL0v2cnhz7Ci+a8TqQTcQXBMVW5EkX8qujy+@mail.gmail.com>
-	<20110119080542.GE1960@verge.net.au>
-	<20110120033020.GA32120@verge.net.au>
-In-Reply-To: <20110120033020.GA32120@verge.net.au>
+ <AANLkTinNtL0v2cnhz7Ci+a8TqQTcQXBMVW5EkX8qujy+@mail.gmail.com>
+ <20110119080542.GE1960@verge.net.au>
+ <20110120033020.GA32120@verge.net.au>
+ <AANLkTi=fw1C0cj9U9=c0PxvOPHZtM66pDc+zpR9p=68c@mail.gmail.com>
+In-Reply-To: <AANLkTi=fw1C0cj9U9=c0PxvOPHZtM66pDc+zpR9p=68c@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Simon Horman <horms@verge.net.au>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Magnus Damm <magnus.damm@gmail.com>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Arnd Hannemann <arnd@arndnet.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Thu, Jan 20, 2011 at 12:30 PM, Simon Horman <horms@verge.net.au> wrote:
-> I ran my tests again with CONFIG_SH_DMAE (and CONFIG_DMA_ENGINE)
-> enabled and the results are substantially better. Although
-> the results are still below the theoretical speeds of the cards.
->
-> Read Speed - SHDI
-> SD1.1: =A0 =A0 =A0 =A0 =A0 9.9 MB/s
-> SD2.0: =A0 =A0 =A0 =A0 =A017.2 MB/s
-> SDHC Class 2: =A0 17.0 MB/s
-> SDHC Class 10: =A017.2 MB/s
-> MMC4.0: =A0 =A0 =A0 =A0 =A08.6 MB/s =A0 <-- Clocked down to 12Mhz due to =
-driver limitations
->
-> I also tested the Write Speed
-> SD1.1: =A0 =A0 =A0 =A0 =A0 2.4 MB/s =A0 <-- Faster than expected
-> SD2.0: =A0 =A0 =A0 =A0 =A0 2.8 MB/s =A0 <-- Faster than expected
-> SDHC Class 2: =A0 =A02.5 MB/s =A0 <-- Faster than expected
-> SDHC Class 10: =A0 3.8 MB/s =A0 <-- Slower than expected
-> MMC4.0: =A0 =A0 =A0 =A0 =A02.1 MB/s =A0 <-- Clocked down to 12Mhz due to =
-driver limitations
->
-> For reference I obtained the following results on my laptop,
-> which according to dmesg has a SAMSUNG MMCRE28G VBM1 PQ.
->
-> Read
-> SD1.1: =A0 =A0 =A0 =A0 =A010.0 MB/s
-> SD2.0: =A0 =A0 =A0 =A0 =A019.2 MB/s
-> SDHC Class 2: =A0 19.4 MB/s
-> SDHC Class10: =A0 17.9 MB/s =A0<---- What!!!?
-> MMC4.0: =A0 =A0 =A0 =A0 =A08.2 MB/s
->
-> Write
-> SD1.1: =A0 =A0 =A0 =A0 =A0 2.7 MB/s
-> SD2.0: =A0 =A0 =A0 =A0 =A0 3.4 MB/s
-> SDHC Class 2: =A0 =A03.1 MB/s
-> SDHC Class10: =A0 =A03.8 MB/s =A0<---- What!!!?
-> MMC4.0: =A0 =A0 =A0 =A0 =A02.0 MB/s
+On Thu, Jan 20, 2011 at 01:01:04PM +0900, Magnus Damm wrote:
+> 1) Can you try a different SDHC Class 10 card? I'd just simply buy a
+> top-of-the-line SanDisk card myself and try that, but anything
+> different from what you're having is probably useful as a contrast.
 
-Interesting, thanks for running these tests. Two things cross my mind:
+Sure, will do.
 
-1) Can you try a different SDHC Class 10 card? I'd just simply buy a
-top-of-the-line SanDisk card myself and try that, but anything
-different from what you're having is probably useful as a contrast.
+> 2) How about the MMC4.0 down-clocking. Is there anything we can do
+> about that software-wise?
 
-2) How about the MMC4.0 down-clocking. Is there anything we can do
-about that software-wise?
+As I understand it, the problem is that the SDHI allows a simple
+divisor to applied to a clock source. Effectively this means
+that the driver may use use 12Mhz, 24Mhz and 50Mhz.
 
-Cheers,
+In the case of MMC the desired speed is 20Mhz, but the highest
+value from the list above that the driver can use is 12Mhz.
 
-/ magnus
+As we discussed (offline) yesterday, it ought to be possible
+to change the frequency of the clock source. And in the case of
+the mackerel this can probably be done without disturbing anything
+else as there are per SHDI clock sources.
+
+I imagine it would be possible to manipulate the frequency
+such that MMC can be run closer to 20Mhz than 12Mhz.
+
+However, I am unsure if this would improve performance in any way.
+
