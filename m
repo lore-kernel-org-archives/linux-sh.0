@@ -1,7 +1,7 @@
-From: Colin Cross <ccross@google.com>
-Date: Fri, 21 Jan 2011 22:28:15 +0000
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Fri, 21 Jan 2011 22:29:33 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <AANLkTimT+vfg9p4GSnn1jGW9r_gVom7xEUzMVJDscPg2@mail.gmail.com>
+Message-Id: <alpine.LFD.2.00.1101211723220.8580@xanadu.home>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110111031552.GJ3760@linux-sh.org> <4D3862DB.5000708@fluff.org>
@@ -14,80 +14,60 @@ References: <201101111016.42819.jeremy.kerr@canonical.com>
 	<20110121220238.GE23151@n2100.arm.linux.org.uk>
 In-Reply-To: <20110121220238.GE23151@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 21, 2011 at 2:02 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
+On Fri, 21 Jan 2011, Russell King - ARM Linux wrote:
+
 > On Fri, Jan 21, 2011 at 04:53:44PM -0500, Nicolas Pitre wrote:
->> So I think that the API must be augmented with more methods, such as:
->>
->> clk_slow_enable():
->> =A0 - may sleep
->> =A0 - may be a no-op if the clk_fast_enable() is supported
->>
->> clk_fast_enable():
->> =A0 - may not sleep, used in atomic context
->> =A0 - may be a no-op if controlling the clock takes time, in which case
->> =A0 =A0 clk_slow_enable() must have set the clock up entirely
->>
->> ... and similar for clk_slow_disable() and clk_fast_disable().
->
+> > So I think that the API must be augmented with more methods, such as:
+> > 
+> > clk_slow_enable():
+> >   - may sleep
+> >   - may be a no-op if the clk_fast_enable() is supported
+> > 
+> > clk_fast_enable():
+> >   - may not sleep, used in atomic context
+> >   - may be a no-op if controlling the clock takes time, in which case 
+> >     clk_slow_enable() must have set the clock up entirely
+> > 
+> > ... and similar for clk_slow_disable() and clk_fast_disable().
+> 
 > Isn't this along the same lines as my clk_prepare() vs clk_enable()
 > suggestion?
->
+> 
 > I suggested that clk_prepare() be callable only from non-atomic contexts,
-> and do whatever's required to ensure that the clock is available. =A0That
+> and do whatever's required to ensure that the clock is available.  That
 > may end up enabling the clock as a result.
->
+> 
 > clk_enable() callable from atomic contexts, and turns the clock on if
 > the hardware supports such an operation.
->
+> 
 > So, if you have something like:
->
+> 
 > Xtal--->PLL--->Routing/Masking--->Device
->
-> clk =3D clk_get() returns the clock for the device.
->
+> 
+> clk = clk_get() returns the clock for the device.
+> 
 > clk_prepare(clk) would walk up the clock tree, selecting the routing and
-> preparing each clock. =A0Clocks prior to _and_ including the PLL would ne=
-ed
+> preparing each clock.  Clocks prior to _and_ including the PLL would need
 > to be enabled.
->
+> 
 > clk_enable(clk) would walk up the tree if the clock isn't already enabled,
-> calling clk_enable() on the parent clock. =A0As we require prepared clocks
+> calling clk_enable() on the parent clock.  As we require prepared clocks
 > to already be enabled, this automatically stops at the PLL.
->
+> 
 > To encourage correct usage, we just need to make sure that clk_prepare()
 > has a might_sleep() thing, and clk_enable() throws a fit if it's used
-> on a clk without prepare being used first. =A0The second point is not easy
+> on a clk without prepare being used first.  The second point is not easy
 > to do in a foolproof manner though, but doing _something_ is better than
 > nothing.
 
-I like this proposal, and I prefer the clk_prepare naming over
-clk_slow_enable - too many people would call clk_slow_enable instead
-of, and not as well as, clk_fast_enable.
+Exactly.  That model does cover both situations: i.e. clocks with slow 
+setups which need to sleep, and clocks with fast setups that can be 
+dealt with and taken advantage of within atomic context.  And in some 
+cases there is even a mixture of both involved.
 
-On Tegra, I currently use the ugly conditional mutex or spinlock
-method to deal with voltage scaling based on clock frequency.  Clocks
-that have a voltage dependency, or depend on a clock that has a
-voltage dependency, are non-atomic, everything else is atomic.  PLLs
-are atomic because they lock very fast (300 uS or 1ms) and are shared
-by so many clocks that they realistically don't get turned off very
-often, and if I made them non-atomic, all clocks would be non-atomic.
 
-If clk_prepare, clk_unprepare, and clk_set_rate were only callable in
-sleepable contexts, I could make PLLs and voltage-dependent clocks
-sleepable, but allow atomic clocks to depend on them.  Calling
-clk_prepare on a voltage-dependent clock would bump the voltage up if
-necessary, but not enable the clock.  Drivers that don't need atomic
-clocks can call clk_prepare and clk_enable when they want the clock
-on, keeping the same power savings as my current implementation.
-
-Converting all the existing clk API users could be hard, but with a
-little trickery backwards compatibility with the previous API could
-also be maintained.  clk_enable could call clk_prepare if it hasn't
-been called, with a WARN_ON_ONCE to find drivers that need to be
-fixed, and the last clk_disable could call clk_unprepare.  For systems
-where all clocks are atomic, everything would continue to work.
+Nicolas
