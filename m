@@ -1,98 +1,89 @@
-From: Colin Cross <ccross@google.com>
-Date: Sat, 22 Jan 2011 02:22:34 +0000
+From: Richard Zhao <linuxzsc@gmail.com>
+Date: Sat, 22 Jan 2011 04:08:00 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <AANLkTi=T=mBBT=1G7DpwQEOnrXSamfwppv6j8uUPE4Sj@mail.gmail.com>
+Message-Id: <20110122040757.GA2094@richard-laptop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201101111016.42819.jeremy.kerr@canonical.com>
-	<20110111031552.GJ3760@linux-sh.org> <4D3862DB.5000708@fluff.org>
-	<20110120185617.GI6335@n2100.arm.linux.org.uk>
-	<alpine.LFD.2.00.1101201623480.8580@xanadu.home>
-	<AANLkTimwBruVgGQWs5NQG7U3PcF6RQHZ6Pd1hjxyGpcA@mail.gmail.com>
-	<4D3907BD.4040900@codeaurora.org>
-	<AANLkTik53zyXytvuAd5zK0_zExfQT3FmOgTr8BexmGeT@mail.gmail.com>
-	<alpine.LFD.2.00.1101211618170.8580@xanadu.home>
-	<20110121220238.GE23151@n2100.arm.linux.org.uk>
-	<AANLkTimT+vfg9p4GSnn1jGW9r_gVom7xEUzMVJDscPg2@mail.gmail.com>
-	<4D3A346E.9070709@codeaurora.org>
-In-Reply-To: <4D3A346E.9070709@codeaurora.org>
+	<20110111091607.GI12552@n2100.arm.linux.org.uk>
+	<201101111744.59712.jeremy.kerr@canonical.com>
+	<20110111103929.GN24920@pengutronix.de>
+	<AANLkTinHL9X_bqMPR=W8Va01O4xngUnpGCkCiE3xEdiQ@mail.gmail.com>
+	<4D386ABF.9060908@fluff.org>
+	<20110120190822.GK6335@n2100.arm.linux.org.uk>
+	<AANLkTim5N_sCCoOR40y7sTvdDoFkUJd4tUSSbrCccGjy@mail.gmail.com>
+	<AANLkTikJjkJvr2J-9eq2-Jj8L=JvwUQS+QNj9gWFX-TL@mail.gmail.com>
+In-Reply-To: <AANLkTikJjkJvr2J-9eq2-Jj8L=JvwUQS+QNj9gWFX-TL@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 21, 2011 at 5:35 PM, Saravana Kannan <skannan@codeaurora.org> w=
-rote:
-> On 01/21/2011 02:28 PM, Colin Cross wrote:
->>
->> On Fri, Jan 21, 2011 at 2:02 PM, Russell King - ARM Linux
->> <linux@arm.linux.org.uk> =A0wrote:
->>>
->>> On Fri, Jan 21, 2011 at 04:53:44PM -0500, Nicolas Pitre wrote:
->>>>
->>>> So I think that the API must be augmented with more methods, such as:
->>>>
->>>> clk_slow_enable():
->>>> =A0 - may sleep
->>>> =A0 - may be a no-op if the clk_fast_enable() is supported
->>>>
->>>> clk_fast_enable():
->>>> =A0 - may not sleep, used in atomic context
->>>> =A0 - may be a no-op if controlling the clock takes time, in which case
->>>> =A0 =A0 clk_slow_enable() must have set the clock up entirely
->>>>
->>>> ... and similar for clk_slow_disable() and clk_fast_disable().
->>>
->>> Isn't this along the same lines as my clk_prepare() vs clk_enable()
->>> suggestion?
->>>
->>> I suggested that clk_prepare() be callable only from non-atomic context=
-s,
->>> and do whatever's required to ensure that the clock is available. =A0Th=
-at
->>> may end up enabling the clock as a result.
->>>
->>> clk_enable() callable from atomic contexts, and turns the clock on if
->>> the hardware supports such an operation.
->>>
->>> So, if you have something like:
->>>
->>> Xtal--->PLL--->Routing/Masking--->Device
->>>
->>> clk =3D clk_get() returns the clock for the device.
->>>
->>> clk_prepare(clk) would walk up the clock tree, selecting the routing and
->>> preparing each clock. =A0Clocks prior to _and_ including the PLL would =
-need
->>> to be enabled.
->>>
->>> clk_enable(clk) would walk up the tree if the clock isn't already
->>> enabled,
->>> calling clk_enable() on the parent clock. =A0As we require prepared clo=
-cks
->>> to already be enabled, this automatically stops at the PLL.
->>>
->>> To encourage correct usage, we just need to make sure that clk_prepare()
->>> has a might_sleep() thing, and clk_enable() throws a fit if it's used
->>> on a clk without prepare being used first. =A0The second point is not e=
-asy
->>> to do in a foolproof manner though, but doing _something_ is better than
->>> nothing.
->>
->> I like this proposal, and I prefer the clk_prepare naming over
->> clk_slow_enable - too many people would call clk_slow_enable instead
->> of, and not as well as, clk_fast_enable.
->>
->> On Tegra, I currently use the ugly conditional mutex or spinlock
->> method to deal with voltage scaling based on clock frequency.
->
-> Colin,
->
-> MSM is in a similar situation, so thought I should bring this up to you
-> attention -- do you have no use case for changing the rate in atomic
-> context? If you do, the clk_prepare/unprepare() approach won't work.
->
-> Do you have no such requirement?
+On Fri, Jan 21, 2011 at 01:47:29PM +0900, Jassi Brar wrote:
+> On Fri, Jan 21, 2011 at 9:09 AM, Jassi Brar <jassisinghbrar@gmail.com> wr=
+ote:
+> > On Fri, Jan 21, 2011 at 4:08 AM, Russell King - ARM Linux
+> > <linux@arm.linux.org.uk> wrote:
+> >> On Thu, Jan 20, 2011 at 05:02:55PM +0000, Ben Dooks wrote:
+> >>> If you want to make it so that each low-power mode has to work
+> >>> out what PLLs need to be disabled and then re-enabled makes me
+> >>> want to be sick. Hiding this stuff behind specific implementations
+> >>> is a recipe for disaster.
+> >>
+> >> Why should systems which don't suffer from such problems be prevented
+> >> from gaining power saving from turning off their clocks when devices
+> >> are not being used (eg, the console serial port.)
+> >>
+> >> One solution to your root PLL issue would be to have a separate set of
+> >> enable/disable API calls which get called at setup/release time (or
+> >> whatever you'd like to call it) which can only be called from non-atom=
+ic
+> >> context. =A0Maybe clk_prepare() and clk_unprepare(). =A0These functions
+> >> should perform whatever is necessary to ensure that the clock source
+> >> is available for use atomically when clk_enable() is called.
+> >>
+> >> So, in your case, clk_prepare() ensures that the root PLL is enabled,
+> >> clk_unprepare() allows it to be turned off.
+> >>
+> >> In the case of a console driver, clk_prepare() can be called when we
+> >> know the port will be used as a console. =A0clk_enable() is then called
+> >> before writing out the string, and clk_disable() after we've completely
+> >> sent the last character.
+> >>
+> >> This allows the best of both worlds. =A0We now have a clk_enable() whi=
+ch
+> >> can be used to turn the clocks off through the clock tree up to the fi=
+rst
+> >> non-atomic clock, and we also have a way to deal with those which need
+> >> to sleep. =A0So not only do "sleeping clock" implementations become po=
+ssible
+> >> but these "sleeping clock" implementations also get the opportunity to
+> >> shutdown some of their clock tree with minimal latency for doing so.
+> >
+> > This is exactly what I suggested in my last post, except the console ex=
+ample.
+> > Only to be a part of common clock api because it's not very safe to ass=
+ume
+> > future SoCs will have the same simple clock topologies that they have t=
+oday.
+> >
+> > Not to mean to teach, but I hope you realize with more and more
+> > device controller being crammed into ever shrinking SoCs,
+> > clock would eventually have to be flexible in functionality
+> > and complicated in hierarchy. Ben already gave examples
+> > of Audio, MFC and Video controllers of latest Samsung SoCs.
+>=20
+> plus
+>=20
+> a) If only Samsung bsp implements the api, it would be impossible to
+> share drivers, those that can be, with other platforms without nasty ifde=
+f's.
+> b) If the task of unification starts with only a particular platform made=
+ to
+> implement a new api, the attempt kills its own purpose.
+I'm not clear. Why does Samsung SoC go against clk_prepare/unprepare?
+If its clock tree has many plls and device clock is not far away from plls =
+and
+may sleep, we may use prepare/unprepare to do actually clock enable/disable.
 
-I can't think of any case that requires clk_set_rate in atomic
-context.  We usually only scale frequencies to save power, so we can
-always scale up early in sleepable context for a minor power penalty.
+Thanks
+Richard
