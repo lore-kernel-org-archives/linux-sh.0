@@ -1,51 +1,38 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 07 Jan 2011 01:51:39 +0000
-Subject: Re: [PATCH 00/03] ARM: mach-shmobile: Initial SMP support
-Message-Id: <20110107015139.GE22477@linux-sh.org>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Mon, 24 Jan 2011 01:40:17 +0000
+Subject: [PATCH] sh: Fix build of sh7750 base boards
+Message-Id: <1295833217-5799-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20101214075647.11275.25933.sendpatchset@t400s>
-	<20101214095703.GG14606@linux-sh.org>
-In-Reply-To: <20101214095703.GG14606@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 14, 2010 at 06:57:03PM +0900, Paul Mundt wrote:
-> On Tue, Dec 14, 2010 at 04:56:47PM +0900, Magnus Damm wrote:
-> > ARM: mach-shmobile: Initial SMP support
-> > 
-> > [PATCH 01/03] ARM: mach-shmobile: SMP base support 
-> > [PATCH 02/03] ARM: mach-shmobile: Enable SMP support
-> > [PATCH 03/03] ARM: mach-shmobile: sh73a0 SMP support
-> > 
-> > These patches add SMP framework support for R-Mobile and
-> > SH-Mobile processors, together with hardware specific SMP
-> > support for the sh73a0 processor.
-> > 
-> > Survives onlining and offlining of secondary processor cores
-> > through sysfs. Should compile and boot regardless of 
-> > CONFIG_SMP, CONFIG_HOTPLUG_CPU and CONFIG_LOCAL_TIMERS.
-> > 
-> > I suggest that patch 1 and 3 are taken through sh-2.6 and
-> > patch 2 goes through the RMK patch tracker.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Applied to rmobile/smp, thanks.
-> 
-> There are integration issues with regards to the GIC changes that I'll
-> have to take care of during the merge window regardless, so resolving the
-> CONFIG_SMP thing at that point should be pretty straightforward. My plan
-> is to wait until after Russell merges, merge your stuff on top of that,
-> and then send the updated bits to Linus in one shot.
-> 
-> In order to avoid clashes with -next for now however I won't be merging
-> the topic branch in to my -latest branch. Given that the number of boards
-> in the wild for this at the moment are in the single digits, I'm not too
-> worried about the amount of time these changes spend in -next so long as
-> no regressions are introduced for the other boards.
+Renamed platform_register_device to platform_device_register.
 
-I've now merged the rmobile/smp branch in to rmobile-latest, which
-resolves the minor clashes with Russell's merge as well as the
-entry-macro rework.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+index c2b0aaa..672944f 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+@@ -230,10 +230,10 @@ static struct platform_device *sh7750_devices[] __initdata = {
+ static int __init sh7750_devices_setup(void)
+ {
+ 	if (mach_is_rts7751r2d()) {
+-		platform_register_device(&scif_device);
++		platform_device_register(&scif_device);
+ 	} else {
+-		platform_register_device(&sci_device);
+-		platform_register_device(&scif_device);
++		platform_device_register(&sci_device);
++		platform_device_register(&scif_device);
+ 	}
+ 
+ 	return platform_add_devices(sh7750_devices,
+-- 
+1.7.2.3
+
