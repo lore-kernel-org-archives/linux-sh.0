@@ -1,37 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Jan 2011 02:09:36 +0000
-Subject: Re: [PATCH] rfc v3: ARM: mach-shmobile: mackerel: Add zboot support
-Message-Id: <20110107020935.GA9221@verge.net.au>
+From: mahdi hamzeh <mahdy.hamzeh@gmail.com>
+Date: Mon, 24 Jan 2011 23:04:57 +0000
+Subject: DMA
+Message-Id: <AANLkTimiLJz-F3QMppVjh9ZaF8JbGeRawPgNme1dWjVJ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1291855635-30882-1-git-send-email-horms@verge.net.au>
-	<20110107013725.GB22477@linux-sh.org>
-In-Reply-To: <20110107013725.GB22477@linux-sh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Fri, Jan 07, 2011 at 10:37:25AM +0900, Paul Mundt wrote:
-> On Thu, Dec 09, 2010 at 09:47:15AM +0900, Simon Horman wrote:
-> > When CONFIG_ZBOOT_ROM is selected, the resulting zImage file will be small
-> > boot loader and may be burned to rom or flash.
-> > 
-> > Compile tested only.
-> > 
-> > This patch assumes that head-mackerel.txt will be the same as head-ap4evb.txt.
-> > I am waiting for verification of this.
-> > 
-> > This patch depends on
-> > * ARM: 6515/1: Add zboot support for SuperH Mobile ARM
-> >   (merged into the devel branch of Russel King's linux-2.6-arm tree)
-> > * ARM: 6514/1: mach-shmobile: Add zboot support for SuperH Mobile ARM
-> >   (merged into the devel branch of Russel King's linux-2.6-arm tree)
-> > * MACH_MACKEREL (3211) being present in arch/arm/tools/mach-types
-> > 
-> Ok, I've applied this one now that the dependencies are out of the way.
-> 
-> I plan to send my rmobile updates to Linus today, at which point you
-> should be able to submit the outstanding MMCIF patch to Russell's patch
-> tracker.
+Hi,
+I am working on a research project for which I should be able to
+transfer data from memory to memory using DMA. I am working on a x86
+machine but I want my code to be architecture independent as much as
+possible. Please=A0accept=A0my=A0apology=A0if my question is too basic to be
+asked from this mailing list. Here is my problem:
+I=A0used "struct dma_chan" to define a channel structure but when I use
+"dma_request_channel" function to get a DMA channel, with all
+different possible masks including=A0DMA_MEMCPY,=A0DMA_PRIVATE,....
+anything, the function returns always NULL. This function is defined
+in "dmaengine.h".=A0I also tried a low level function to see dma channel
+availability=A0and "request_dma" function defined in "dma.h" works
+perfect.
+Any comment, help, document, program, reference anything that helps me
+to create a simple DMA transaction would really be appreciated.
+PS: There is a test program called dmatest.c is provided in the linux
+kernel files. I tried to get it compiled but I could not since the
+functions and structures used in this file has been changed in the
+kernel header files.
 
 Thanks
+--
+---Mahdi Hamzeh
