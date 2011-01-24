@@ -1,31 +1,34 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 06 Jan 2011 03:11:16 +0000
-Subject: Re: [PATCH 0/3] ARM: mach-shmobile: mackerel: HDMI support
-Message-Id: <20110106031116.GJ23889@linux-sh.org>
+From: "UNITED NATIONS" <robin@mail.ranksitt.net>
+Date: Mon, 24 Jan 2011 05:12:57 +0000
+Subject: (((MTCN INFORMATION)))
+Message-Id: <754de77a94bf4388b038f177aff93308.squirrel@webmail.ucam.ac.ma>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pwrmjk2yu.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pwrmjk2yu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Jan 06, 2011 at 09:51:14AM +0900, Kuninori Morimoto wrote:
-> > Kuninori Morimoto (3):
-> >       ARM: mach-shmobile: mackerel: Add fsi_set_rate
-> >       ARM: mach-shmobile: mackerel: add HDMI video support
-> >       ARM: mach-shmobile: mackerel: Add HDMI sound support
-> > 
-> > These are based on Paul's rmobile-latest branch (not mackerel branch)
-> 
-> I'm so sorry.
-> I noticed big mistake on these patches.
-> Please drop it.
-> And give me 2nd chance
-> 
-Ok, I've taken the second version.
 
-On Thu, Jan 06, 2011 at 11:43:00AM +0900, Kuninori Morimoto wrote:
-> fsib_clk will be used when fdiv_clk failed on fsi_hdmi_set_rate.
 
-And also applied this, thanks.
+
+Your Email ID has just been compensated with the sum of  $500,000.00 USD 
+by the United Nations Organization Of Nigeria and payment will be remitted
+to you via western union money transfer. Note that $5,000 USD has already
+be send to you since last week but we were unable to give you the
+information on phone for the past 7working days but due to bad network
+here, i was not able to get to you on phone.
+
+Here is the western union information to pick up the USD5000.00.
+
+MTCN : 9402 727 310
+SENDER'S NAME: MARYLIN JOHNSON
+TEXT QUESTION: IN GOD
+ANSWER:WE TRUST
+AMOUNT SENT: $5000.00 USD
+COUNTRY:NIGERIA
+
+Thanks
+Mrs. Linda Hall
++2348134245815
+SMS ONLY
+
