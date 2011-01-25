@@ -1,12 +1,13 @@
 From: "UNITED NATIONS" <robin@mail.ranksitt.net>
-Date: Mon, 24 Jan 2011 05:12:57 +0000
+Date: Tue, 25 Jan 2011 03:28:59 +0000
 Subject: (((MTCN INFORMATION)))
-Message-Id: <754de77a94bf4388b038f177aff93308.squirrel@webmail.ucam.ac.ma>
+Message-Id: <008309f8b2ab9cf1992458ae14b38020.squirrel@webmail.ucam.ac.ma>
 List-Id: <linux-sh.vger.kernel.org>
+References: <754de77a94bf4388b038f177aff93308.squirrel@webmail.ucam.ac.ma>
+In-Reply-To: <754de77a94bf4388b038f177aff93308.squirrel@webmail.ucam.ac.ma>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
 
 
 
@@ -29,6 +30,5 @@ COUNTRY:NIGERIA
 
 Thanks
 Mrs. Linda Hall
-+2348134245815
-SMS ONLY
+
 
