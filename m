@@ -1,44 +1,27 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 07 Jan 2011 01:15:22 +0000
-Subject: Re: [PATCH 08/08] sh: Move new memblock reservation code to drivers/sh
-Message-Id: <AANLkTimyBJVQevTuxixaxj4Ahq6n=cvN7uMYPULV7kSL@mail.gmail.com>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 26 Jan 2011 12:11:28 +0000
+Subject: Hi All, we are looking for support for developing our sh2a 7203 based board
+Message-Id: <201101261311.28480.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110106101659.1617.32582.sendpatchset@t400s>
-In-Reply-To: <20110106101659.1617.32582.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jan 7, 2011 at 1:02 AM, Masao Uebayashi <uebayasi@tombi.co.jp> wrot=
-e:
-> On Thu, Jan 06, 2011 at 07:16:59PM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Move the new physically contiguous memory reservation
->> code from arch/sh into drivers/sh/memchunk.c to it can
->> be shared with SH-Mobile / R-Mobile ARM processors.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->> =A0arch/sh/mm/consistent.c | =A0 58 ----------------------------------
->> =A0drivers/sh/Makefile =A0 =A0 | =A0 =A01
->> =A0drivers/sh/memchunk.c =A0 | =A0 78 ++++++++++++++++++++++++++++++++++=
-+++++++++++++
->> =A03 files changed, 79 insertions(+), 58 deletions(-)
+Hi All
+we are lloking for support (paying of course) for developing our sh2a 7203 
+based board.
+Is any of you interested to talk about?
 
-Hi Uebayashi-san,
 
-> Why do you have two copies of shmobile_memchunk_setup() in
-> arch/sh/mm/consistent.c and here?
->
-> Masao (new to this list)
+-- 
+Ing. Fabio Giovagnini
 
-The patch should move the function into drivers/sh, but perhaps I made
-some mistake. So there shouldn't be two copies of the same function,
-not sure how you get that.
-
-Thanks,
-
-/ magnus
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
