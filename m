@@ -1,7 +1,7 @@
 From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 27 Jan 2011 21:11:51 +0000
+Date: Thu, 27 Jan 2011 21:15:56 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <20110127211151.GC1597@n2100.arm.linux.org.uk>
+Message-Id: <20110127211556.GD1597@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <AANLkTinHL9X_bqMPR=W8Va01O4xngUnpGCkCiE3xEdiQ@mail.gmail.com>
 	<4D386ABF.9060908@fluff.org>
@@ -28,14 +28,15 @@ On Thu, Jan 27, 2011 at 09:07:29PM +0000, Alan Cox wrote:
 > 
 > I'm not sure you answered it correctly however as the locking nowdays is
 > a bit different.
-> 
-> Architecturally the termios handling doesn't need a spin lock nor is it
-> called under one. In fact it's vital this is the case because of USB.
 
-It needs to protect against the read_status_mask and ignore_status_mask
-being read half-way through an update by the interrupt handler, otherwise
-you can end up with god-knows-what coming through from each termios
-change.
+Oh, and the other bit to this is protecting the hardware against two
+concurrent accesses if that's what's required.
 
-Eg, you could see an effective CREAD flip when the state of CREAD wasn't
-actually changed.
+Eg, 8250 having characters written to the 'transmit' register while
+DLAB is set, thereby corrupting the divisor being programmed into it.
+There's other UARTs which shouldn't have FIFOs loaded while the UART
+is disabled across an update.
+
+Can you guarantee without locks that writes to the UART registers by
+the interrupt handler won't happen while the .set_termios is
+reprogramming the UART?
