@@ -1,81 +1,62 @@
-From: Jassi Brar <jassisinghbrar@gmail.com>
-Date: Sat, 22 Jan 2011 05:30:51 +0000
+From: Saravana Kannan <skannan@codeaurora.org>
+Date: Thu, 27 Jan 2011 04:34:20 +0000
 Subject: Re: Locking in the clk API
-Message-Id: <AANLkTimW70Wq7hEhgz021ZEknGgsaTXs3nVPNig4F3Tj@mail.gmail.com>
+Message-Id: <4D40F5CC.6080809@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201101111016.42819.jeremy.kerr@canonical.com>
-	<20110111091607.GI12552@n2100.arm.linux.org.uk>
-	<201101111744.59712.jeremy.kerr@canonical.com>
-	<20110111103929.GN24920@pengutronix.de>
-	<AANLkTinHL9X_bqMPR=W8Va01O4xngUnpGCkCiE3xEdiQ@mail.gmail.com>
-	<4D386ABF.9060908@fluff.org>
-	<20110120190822.GK6335@n2100.arm.linux.org.uk>
-	<AANLkTim5N_sCCoOR40y7sTvdDoFkUJd4tUSSbrCccGjy@mail.gmail.com>
-	<AANLkTikJjkJvr2J-9eq2-Jj8L=JvwUQS+QNj9gWFX-TL@mail.gmail.com>
-	<20110122040757.GA2094@richard-laptop>
-In-Reply-To: <20110122040757.GA2094@richard-laptop>
+References: <201101111016.42819.jeremy.kerr@canonical.com>	<20110111091607.GI12552@n2100.arm.linux.org.uk>	<201101111744.59712.jeremy.kerr@canonical.com>	<20110111103929.GN24920@pengutronix.de>	<AANLkTinHL9X_bqMPR=W8Va01O4xngUnpGCkCiE3xEdiQ@mail.gmail.com>	<4D386ABF.9060908@fluff.org>	<20110120190822.GK6335@n2100.arm.linux.org.uk>	<4D3932B4.8010904@codeaurora.org>
+	<20110121094042.GD13235@n2100.arm.linux.org.uk>
+In-Reply-To: <20110121094042.GD13235@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jan 22, 2011 at 1:08 PM, Richard Zhao <linuxzsc@gmail.com> wrote:
-> On Fri, Jan 21, 2011 at 01:47:29PM +0900, Jassi Brar wrote:
->> On Fri, Jan 21, 2011 at 9:09 AM, Jassi Brar <jassisinghbrar@gmail.com> wrote:
->> > On Fri, Jan 21, 2011 at 4:08 AM, Russell King - ARM Linux
->> > <linux@arm.linux.org.uk> wrote:
->> >> On Thu, Jan 20, 2011 at 05:02:55PM +0000, Ben Dooks wrote:
->> >>> If you want to make it so that each low-power mode has to work
->> >>> out what PLLs need to be disabled and then re-enabled makes me
->> >>> want to be sick. Hiding this stuff behind specific implementations
->> >>> is a recipe for disaster.
->> >>
->> >> Why should systems which don't suffer from such problems be prevented
->> >> from gaining power saving from turning off their clocks when devices
->> >> are not being used (eg, the console serial port.)
->> >>
->> >> One solution to your root PLL issue would be to have a separate set of
->> >> enable/disable API calls which get called at setup/release time (or
->> >> whatever you'd like to call it) which can only be called from non-atomic
->> >> context.  Maybe clk_prepare() and clk_unprepare().  These functions
->> >> should perform whatever is necessary to ensure that the clock source
->> >> is available for use atomically when clk_enable() is called.
->> >>
->> >> So, in your case, clk_prepare() ensures that the root PLL is enabled,
->> >> clk_unprepare() allows it to be turned off.
->> >>
->> >> In the case of a console driver, clk_prepare() can be called when we
->> >> know the port will be used as a console.  clk_enable() is then called
->> >> before writing out the string, and clk_disable() after we've completely
->> >> sent the last character.
->> >>
->> >> This allows the best of both worlds.  We now have a clk_enable() which
->> >> can be used to turn the clocks off through the clock tree up to the first
->> >> non-atomic clock, and we also have a way to deal with those which need
->> >> to sleep.  So not only do "sleeping clock" implementations become possible
->> >> but these "sleeping clock" implementations also get the opportunity to
->> >> shutdown some of their clock tree with minimal latency for doing so.
->> >
->> > This is exactly what I suggested in my last post, except the console example.
->> > Only to be a part of common clock api because it's not very safe to assume
->> > future SoCs will have the same simple clock topologies that they have today.
->> >
->> > Not to mean to teach, but I hope you realize with more and more
->> > device controller being crammed into ever shrinking SoCs,
->> > clock would eventually have to be flexible in functionality
->> > and complicated in hierarchy. Ben already gave examples
->> > of Audio, MFC and Video controllers of latest Samsung SoCs.
->>
->> plus
->>
->> a) If only Samsung bsp implements the api, it would be impossible to
->> share drivers, those that can be, with other platforms without nasty ifdef's.
->> b) If the task of unification starts with only a particular platform made to
->> implement a new api, the attempt kills its own purpose.
-> I'm not clear. Why does Samsung SoC go against clk_prepare/unprepare?
-> If its clock tree has many plls and device clock is not far away from plls and
-> may sleep, we may use prepare/unprepare to do actually clock enable/disable.
+On 01/21/2011 01:40 AM, Russell King - ARM Linux wrote:
+> On Thu, Jan 20, 2011 at 11:16:04PM -0800, Saravana Kannan wrote:
+>> This suggestion looked promising till I realized that clk_set_rate()
+>> will still be atomic. clk_set_rate() will need to enable/disable the
+>> PLLs depending on which PLLs the rates are derived from. So, the locking
+>> in clk_prepare/unprepare() still has to be atomic since the "slow stuff"
+>> is shared with clk_set_rate().
+>
+> Who calls clk_set_rate() from an atomic context?  Do we know whether
+> anyone does?
 
-I am not against clk_prepare/unprepare.
-I rather suggest make it part of common clock API.
-Please read my last two posts again.
+As promised I looked into this in the upstream kernel and with the 
+internal teams.
+
+In the upstream (torvalds/master) kernel, I found at least one example 
+of calling clk_set_rate() from atomic context (spinlock in this case):
+cpm_uart/cpm_uart_core.c
+
+I'm not too familiar with serial/tty, does anyone know if the 
+.set_termios needs to be atmoic? If not, we could just change 
+cpm_uart/cpm_uart_core.c to use mutex instead of spinlock.
+
+In our internal tree (which we upstream), we have UART HS driver that 
+needs to do the same stuff as cpm_uart_core.c. The problem is 
+essentially the UART baud rate range being too high to be controllable 
+by just the dividers in the UART core. So, the clock rate has to be 
+changed in the .set_termios function.
+
+Another concern (not present in MSM) for upstream kernel is that some 
+arch/mach might use the clock driver to control the CPU frequency and 
+might want to drop it to a low freq in the final stages of an idle 
+suspend. In that case, the call would be from atomic context. Similar 
+issue during normal suspend.
+
+Except UART, looks like internal teams don't care much for atomic 
+clk_set_rate(). So, if .set_termios can use mutex, MSM is good to go for 
+prepare/unprepare.
+
+Russell,
+
+If UART does not need clk_set_rate() to be atomic, would you be 
+comfortable marking clk_set_rate() as sleepable in the clk.h comments?
+
+Thanks,
+Saravana
+
+-- 
+Sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
