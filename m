@@ -1,44 +1,54 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 25 Jan 2011 09:52:00 +0000
-Subject: [GIT PULL] sh updates for 2.6.38-rc3
-Message-Id: <20110125095200.GA18488@linux-sh.org>
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Fri, 28 Jan 2011 21:58:34 +0000
+Subject: [PATCH] sh: sh7750: Fix incompatible pointer type
+Message-Id: <1296252241-25330-1-git-send-email-iwamatsu@nigauri.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Please pull from:
+It is necessary to set array of struct platform_device in
+early_platform_add_devices().
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
+arch/sh/kernel/cpu/sh4/setup-sh7750.c: In function ‘plat_early_device_setup’:
+arch/sh/kernel/cpu/sh4/setup-sh7750.c:260: warning: passing argument 1 of ‘early_platform_add_devices’ from incompatible pointer type
+include/linux/platform_device.h:159: note: expected ‘struct platform_device **’ but argument is of type ‘struct platform_device *’
+arch/sh/kernel/cpu/sh4/setup-sh7750.c:262: warning: passing argument 1 of ‘early_platform_add_devices’ from incompatible pointer type
+include/linux/platform_device.h:159: note: expected ‘struct platform_device **’ but argument is of type ‘struct platform_device *’
+arch/sh/kernel/cpu/sh4/setup-sh7750.c:263: warning: passing argument 1 of ‘early_platform_add_devices’ from incompatible pointer type
+include/linux/platform_device.h:159: note: expected ‘struct platform_device **’ but argument is of type ‘struct platform_device *’
 
-Which contains:
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+---
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |   11 ++++++++---
+ 1 files changed, 8 insertions(+), 3 deletions(-)
 
-Aurelien Jarno (1):
-      sh: Fix sh build failure when CONFIG_SFC=m
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+index 84230e9..e53b4b3 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+@@ -255,12 +255,17 @@ static struct platform_device *sh7750_early_devices[] __initdata = {
+ 
+ void __init plat_early_device_setup(void)
+ {
++	struct platform_device *dev[1];
++
+ 	if (mach_is_rts7751r2d()) {
+ 		scif_platform_data.scscr |= SCSCR_CKE1;
+-		early_platform_add_devices(&scif_device, 1);
++		dev[0] = &scif_device;
++		early_platform_add_devices(dev, 1);
+ 	} else {
+-		early_platform_add_devices(&sci_device, 1);
+-		early_platform_add_devices(&scif_device, 1);
++		dev[0] = &sci_device;
++		early_platform_add_devices(dev, 1);
++		dev[0] = &scif_device;
++		early_platform_add_devices(dev, 1);
+ 	}
+ 
+ 	early_platform_add_devices(sh7750_early_devices,
+-- 
+1.7.2.3
 
-Guennadi Liakhovetski (1):
-      sh: fix MSIOF0 SPI on ecovec: it conflicts with VOU
-
-Magnus Damm (1):
-      sh: update INTC to clear IRQ sense valid flag
-
-Nobuhiro Iwamatsu (1):
-      sh: Fix build of sh7750 base boards
-
-Paul Mundt (2):
-      sh: Fix up breakage from asm-generic/pgtable.h changes.
-      sh: support XZ-compressed kernel.
-
- arch/sh/Kconfig                       |    1 +
- arch/sh/Makefile                      |    3 ++-
- arch/sh/boards/mach-ecovec24/setup.c  |    2 ++
- arch/sh/boot/Makefile                 |   11 +++++++++--
- arch/sh/boot/compressed/Makefile      |    4 +++-
- arch/sh/boot/compressed/misc.c        |    4 ++++
- arch/sh/include/asm/pgtable.h         |    1 +
- arch/sh/kernel/cpu/sh4/setup-sh7750.c |    6 +++---
- arch/sh/kernel/topology.c             |    1 +
- drivers/sh/intc/chip.c                |    6 ++++--
- 10 files changed, 30 insertions(+), 9 deletions(-)
