@@ -1,32 +1,35 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 05 Jan 2011 19:42:09 +0000
-Subject: Re: [PATCH] mmc: tmio_mmc: fix PIO fallback on DMA descriptor
-Message-Id: <20110105194209.GB9198@void.printf.net>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 28 Jan 2011 07:07:13 +0000
+Subject: [PATCH] sh: sh7750: move machtypes.h to include/generated
+Message-Id: <1296198433-1706-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1011111215120.15747@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1011111215120.15747@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+By commit 3252b11fc4790d046b93f300c898df2f7cd7c176,
+machtypes.h moved to include/generated.
+However, this forgot kernel/cpu/sh4/setup-sh7750.
 
-On Thu, Nov 11, 2010 at 12:19:47PM +0100, Guennadi Liakhovetski wrote:
-> The easiest way to fall back to PIO, when a DMA descriptor allocation fails is
-> to disable DMA on the controller but continue with the current request in PIO
-> mode. This way tmio_mmc_start_dma() can become void, since it cannot be failing
-> any more. The current version is also broken: it is testing a wrong 
-> pointer and thus failing to recognise, that a descriptor allocation wasn't 
-> successful.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Thanks, pushed to mmc-next for .38.  I wrapped the commit message back
-to 72 chars, so that it doesn't overflow when running "git log" on an
-80-char term.
-
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+index 672944f..84230e9 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+@@ -14,7 +14,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_timer.h>
+ #include <linux/serial_sci.h>
+-#include <asm/machtypes.h>
++#include <generated/machtypes.h>
+ 
+ static struct resource rtc_resources[] = {
+ 	[0] = {
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.2.3
+
