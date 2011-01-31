@@ -1,32 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Jan 2011 22:48:48 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: mackerel: Add sdhi support
-Message-Id: <20110111224848.GD3848@verge.net.au>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Mon, 31 Jan 2011 05:45:09 +0000
+Subject: sh-2.6 v2.6.37 and rsk+7203 framebuffer management
+Message-Id: <201101310645.09489.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p7hfw4po7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 11, 2011 at 06:27:30PM +0900, Yusuke Goda wrote:
-> Hi Simon-san
-> 
-> Sorry for the late reply.
-> 
-> As for AP4 and the mackerel board,
-> the I/O voltage of SDHI1 and MMCIF is 1.8v fixation.
-> So do not recognize the memory card.(Requires 3.3v)
-> The new memory card, 3.3v from 1.8v seems to be able to bring down.
-> However, AP4 and mackerel board can not support.
-> 
-> Perhaps that supports 1.8v eSD and eMMC would be recognized only.
+Hi all,
+first of all thanks a lot for your support.
+Now I'm synchronized with the last kernel v2.6.37 and I can boot the system.
+In this thee under drivers/video the is no more the sh7203fc.c driver.
+Two questions:
+1) is it possible to use as is teh sh_mobile_lcdc driver as is?
+2) If 1) not; which one existing is it better to get for starting thr 
+workaround?
 
-Hi Goda-san,
+Thanks
 
-sorry for not replying to my own post earlier.
-Magnus pointed out that the problem I was seeing
-was due to not setting SW33 correctly. Other than
-the proposed documentation update that I posted
-(and you commented on) everything is fine now.
+
+-- 
+Ing. Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
