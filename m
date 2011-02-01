@@ -1,7 +1,9 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 01 Feb 2011 19:56:04 +0000
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Tue, 01 Feb 2011 20:06:09 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110201195604.GS31216@n2100.arm.linux.org.uk>
+Message-Id: <alpine.LFD.2.00.1102011503550.8580@xanadu.home>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8323328-845050105-1296590771=:8580"
 List-Id: <linux-sh.vger.kernel.org>
 References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110201105449.GY1147@pengutronix.de>
@@ -14,23 +16,29 @@ References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110201170637.GR31216@n2100.arm.linux.org.uk>
 	<20110201193201.GH1147@pengutronix.de>
 In-Reply-To: <20110201193201.GH1147@pengutronix.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 01, 2011 at 08:32:01PM +0100, Uwe Kleine-K=F6nig wrote:
-> On Tue, Feb 01, 2011 at 05:06:37PM +0000, Russell King - ARM Linux wrote:
-> > So?  You're not _supposed_ to call it from any atomic context ever.
->
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+
+--8323328-845050105-1296590771=:8580
+Content-Type: TEXT/PLAIN; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, 1 Feb 2011, Uwe Kleine-K=F6nig wrote:
+
 > My motivation for a more complicated clk_prepare was to make clk_prepare
 > atomic when that's possible (i.e. when the clk is already prepared) and
 > call it before the enable callback in clk_enable.  Then everything
 > behaves nicely even if clk_enable is called from atomic context provided
 > that the clock was prepared before (or doesn't need to).
 
-You really don't get the point of clk_prepare() do you.  I'm not
-going to bother trying to educate you anymore.
+NOOOOOOOOO!!!
 
-Hopefully someone with more patience can give you the necessary
-teaching to make you understand.
+We _do_ want drivers to _always_ call clk_prepare() in sleepable=20
+context, and _then_ always call clk_enable() in whatever context they=20
+wish.  Period.
+
+
+Nicolas
+--8323328-845050105-1296590771=:8580--
