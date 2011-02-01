@@ -1,56 +1,128 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 05 Jan 2011 20:57:17 +0000
-Subject: Re: [PATCH 1/6 v3] mmc: tmio: implement SDIO IRQ
-Message-Id: <20110105205717.GG9198@void.printf.net>
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Tue, 01 Feb 2011 09:11:29 +0000
+Subject: Locking in the clk API, part 2: clk_prepare/clk_unprepare
+Message-Id: <201102011711.31258.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1293574956-30035-1-git-send-email-arnd@arndnet.de> <1293574956-30035-2-git-send-email-arnd@arndnet.de>
-In-Reply-To: <1293574956-30035-2-git-send-email-arnd@arndnet.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, g.liakhovetski@gmx.de, Ian Molton <ian@mnementh.co.uk>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+Hi all,
 
-On Tue, Dec 28, 2010 at 11:22:31PM +0100, Arnd Hannemann wrote:
-> This patch implements SDIO IRQ support for mfds which
-> announce the TMIO_MMC_SDIO_IRQ flag for tmio_mmc.
-> If MMC_CAP_SDIO_IRQ is also set SDIO IRQ signalling is activated.
-> Tested with a b43-based wireless SDIO card and sh_mobile_sdhi.
-> 
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+> I suggested that clk_prepare() be callable only from non-atomic contexts,
+> and do whatever's required to ensure that the clock is available.  That
+> may end up enabling the clock as a result.
 
-Thanks, pushed to mmc-next for .38 with minor 80-col changes below:
+I think that clk_prepare/clk_unprepare looks like the most promising solution, 
+so will try to get some preliminary patches done. Here's what I'm planning:
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index d74cdac..8d55b8a 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -298,8 +298,9 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- 
- 	/*
- 	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
--	 * CTL_CLK_AND_WAIT_CTL gets written, so we have to disable the device IRQ
--	 * here and restore the SDIO IRQ mask before re-enabling the device IRQ.
-+	 * CTL_CLK_AND_WAIT_CTL gets written, so we have to disable the
-+	 * device IRQ here and restore the SDIO IRQ mask before
-+	 * re-enabling the device IRQ.
- 	 */
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		disable_irq(host->irq);
-@@ -623,8 +624,9 @@ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
- 		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
- 
- 		if (sdio_ireg && !host->sdio_irq_enabled) {
--			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
--				sdio_status, sdio_irq_mask, sdio_ireg);
-+			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! "
-+				   "0x%04x 0x%04x 0x%04x\n",
-+				   sdio_status, sdio_irq_mask, sdio_ireg);
- 			tmio_mmc_enable_sdio_irq(host->mmc, 0);
- 			goto out;
- 		}
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+-----
+
+The changes to the API are essentially:
+
+1) Document clk_enable/clk_disable as callable from atomic contexts, and
+   so clock implementations must not sleep within this function.
+
+2) For clock implementations that may sleep to turn on a clock, we add a
+   new pair of functions to the clock API: clk_prepare and clk_unprepare.
+
+   These will provide hooks for the clock implmentation to do any sleepable
+   work (eg, wait for PLLs to settle) in preparation for a later clk_enable.
+
+   For the most common clock implemntation cases (where clocks can be enabled 
+   atomically), these functions will be a no-op, and all of the enable/disable
+   work can be done in clk_enable/clk_disable.
+
+   For implementations where clocks require blocking on enable/disable, most
+   of the work will be done in clk_prepare/clk_unprepare. The clk_enable
+   and clk_disable functions may be no-ops.
+
+For drivers, this means that clk_prepare must be called (and have returned) 
+before calling clk_enable.
+
+= Enable/Prepare counts =
+
+I intend to do the enable and prepare "counting" in the core clock API, 
+meaning that that the clk_ops callbacks will only invoked on the first 
+prepare/enable and the last unprepare/disable.
+
+= Concurrency =
+
+Splitting the prepare and enable stages introduces the concurrency 
+requirements:
+
+1) clk_enable must not return before the clock is outputting a valid clock 
+   signal.
+
+2) clk_prepare must not return before the clock is fully prepared (ie, it is 
+   safe to call clk_enable).
+
+It is not possible for clk_enable to wait for the clock to be prepared, 
+because that would require synchronisation with clk_prepare, which may then 
+require blocking. Therefore:
+
+3) The clock consumer *must* respect the proper ordering of clk_prepare and 
+   clk_enable. For example, drivers that call clk_enable during an interrupt 
+   must ensure that the interrupt handler will not be invoked until 
+   clk_prepare has returned.
+
+= Other considerations =
+
+The time that a clock spends "prepared" is a superset of the the time that a 
+clock spends "enabled". Therefore, clocks that are switched on during 
+clk_prepare (ie, non-atomic clocks) will be running for a larger amount of 
+time. In some cases, this can be mitigated by moving some of the final 
+(atomic) switching functionality to the clk_enable function.
+
+= Implementation =
+
+Basically:
+
+struct clk {
+	const struct clk_ops *ops
+	int                  enable_count;
+	spinlock_t           enable_lock;
+	int                  prepare_count;
+	struct mutex         prepare_lock;
+};
+
+int clk_enable(struct clk *clk)
+{
+	int ret = 0;
+
+	spin_lock(&clk->enable_lock);
+	if (!clk->enable_count)
+		ret = clk->ops->enable(clk);
+
+	if (!ret)
+		clk->enable_count++;
+	spin_unlock(&clk->enable_lock);
+
+	return ret;
+}
+
+int clk_prepare(struct clk *clk)
+{
+	int ret = 0;
+
+	mutex_lock(&clk->prepare_lock);
+	if (!clk->prepare_count)
+		ret = clk->ops->prepare(clk);
+
+	if (!ret)
+		clk->prepare_count++;
+	mutex_unlock(&clk->prepare_lock);
+
+	return ret;
+}
+
+-----
+
+Comments welcome, code coming soon.
+
+Cheers,
+
+
+Jeremy
+
