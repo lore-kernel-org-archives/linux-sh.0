@@ -1,30 +1,58 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Mon, 21 Feb 2011 23:29:11 +0000
-Subject: Re: [PATCH 2/2] clk: Generic support for fixed-rate clocks
-Message-Id: <201102220729.13708.jeremy.kerr@canonical.com>
+From: Phil Edworthy <PHIL.EDWORTHY@renesas.com>
+Date: Tue, 01 Feb 2011 17:37:36 +0000
+Subject: [PATCH] sh: Fix ptrace FPU state initialisation
+Message-Id: <AB12B32E73474741A2C5361C433A44DE02911887@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298256658.862488.956979497586.2.gpush@pororo>
-	<4D62C237.1020803@bluewatersys.com>
-In-Reply-To: <4D62C237.1020803@bluewatersys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Ryan,
+RFC:
 
-> If we never need to dynamically create fixed clocks (which seems
-> unlikely) then rate can be const.
+Commit 0ea820cf introduced the PTRACE_GETFPREGS/SETFPREGS cmds,
+but gdb-server still accesses the FPU state using the
+PTRACE_PEEKUSR/POKEUSR commands. In this case, xstate was not
+initialised. The patch below against 2.6.35 fixes this. I'll
+rework this for head if it's ok.
 
-There's been a few cases where I've needed to set the rate of a fixed clock 
-during boot - for example when a clock rate varies between boards, it may be 
-defined in a platform-wide file, but have the rate modified early (ie, 
-clk_foo.rate = 32678) in a board file.
+However, should we still allow PEEKUSR/POKEUSR for FPU registers,
+or should we return an error?
 
-Also, if we're parsing clocks from the device tree (or any other discovery 
-mechanism), we'll need to modify rate.
+---
+ arch/sh/kernel/ptrace_32.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
 
-Cheers,
-
-
-Jeremy
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 6c4bbba..df0144c 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -363,9 +363,13 @@ long arch_ptrace(struct task_struct *child, long
+request, long addr, long data)
+ 					tmp = FPSCR_INIT;
+ 				else
+ 					tmp = 0;
+-			} else
++			} else {
++				ret = init_fpu(child);
++				if (ret)
++					break;
+ 				tmp = ((long *)child->thread.xstate)
+ 					[(addr - (long)&dummy->fpu) >> 2];
++			}
+ 		} else if (addr = (long) &dummy->u_fpvalid)
+ 			tmp = !!tsk_used_math(child);
+ 		else if (addr = PT_TEXT_ADDR)
+@@ -392,6 +396,9 @@ long arch_ptrace(struct task_struct *child, long
+request, long addr, long data)
+ 			ret = put_stack_long(child, addr, data);
+ 		else if (addr >= (long) &dummy->fpu &&
+ 			 addr < (long) &dummy->u_fpvalid) {
++			ret = init_fpu(child);
++			if (ret)
++				break;
+ 			set_stopped_child_used_math(child);
+ 			((long *)child->thread.xstate)
+ 				[(addr - (long)&dummy->fpu) >> 2] = data;
+-- 
+1.7.1
