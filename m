@@ -1,67 +1,48 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Tue, 01 Feb 2011 14:40:37 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 01 Feb 2011 15:14:18 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <201102012240.38100.jeremy.kerr@canonical.com>
+Message-Id: <20110201151418.GN31216@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201102011711.31258.jeremy.kerr@canonical.com>
-	<20110201131512.GH31216@n2100.arm.linux.org.uk>
-	<20110201141837.GA1147@pengutronix.de>
-In-Reply-To: <20110201141837.GA1147@pengutronix.de>
+	<20110201105449.GY1147@pengutronix.de>
+	<AANLkTimayMAfr+zA6uO_yUmZqsOLmJ3fiiS696mL_evn@mail.gmail.com>
+	<20110201140024.GZ1147@pengutronix.de>
+In-Reply-To: <20110201140024.GZ1147@pengutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Uwe,
+On Tue, Feb 01, 2011 at 03:00:24PM +0100, Uwe Kleine-K=F6nig wrote:
+> On Tue, Feb 01, 2011 at 10:05:56PM +0900, Jassi Brar wrote:
+> > 2011/2/1 Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>:
+> >=20
+> > .....
+> >=20
+> > > Do you plan to handle the case that clk_enable is called while prepare
+> > > isn't completed (considering the special case "not called at all")?
+> > > Maybe BUG_ON(clk->ops->prepare && !clk->prepare_count)?
+> > Sounds better than the second option.
+> >=20
+> > > Alternatively don't force the sleep in clk_prepare (e.g. by protecting
+> > > prepare_count by a spinlock (probably enable_lock)) and call clk_prep=
+are
+> > > before calling clk->ops->enable?
+> > That might result in a driver working on some platforms(those have
+> > atomic clk_prepare)
+> > and not on others(those have sleeping).
+> The first option has the same result.  E.g. on some platforms
+> clk->ops->prepare might be NULL, on others it's not.
 
-Thanks for the feedback, I'm not sure I like the more complex approach though:
+If clk->ops->prepare is NULL, then clk_prepare() better return success
+as it should mean "no preparation necessary", not "someone didn't
+implement it so its an error".
 
-> Right, but I thought it a bit further than you did.  Like the following:
-> 
-> int clk_prepare(struct clk *clk)
-> {
-> 	int ret = 0, first;
-> 	unsigned long flags;
-> 
-> 	spin_lock_irqsave(&clk->enable_lock, flags);
-> 	if (clk->flags & CLK_BUSY) {
-> 		/*
-> 		 * this must not happen, please serialize calls to
-> 		 * clk_prepare/clk_enable
-> 		 */
-> 		ret = -EBUSY;
-> 		goto out_unlock;
+Calling clk->ops->enable() with a spinlock held will ensure that no one
+tries to make that method sleep, so if people want sleeping stuff they
+have to use the clk_prepare() stuff.  It's a self-enforcing API which
+ensures that we don't get sleeping stuff inside clk_enable().
 
-Why is this an error? Two separate drivers may be clk_prepare()-ing at the 
-same time, which should be acceptable. Both calls should block until the 
-prepare is complete.
-
-> 	}
-> 	first = clk->prepare_count++ = 0;
-> 	if (first)
-> 		clk->flags |= CLK_BUSY;
-> 	spin_unlock_irqrestore(&clk->enable_lock, flags);
-> 
-> 	if (!first)
-> 		return 0;
-> 
-> 	if (clk->ops->prepare) {
-> 		might_sleep();
-> 		ret = clk->ops->prepare(clk);
-> 	}
-> 
-> 	spin_lock_irqsave(&clk->enable_lock, flags);
-> 	clk->flags &= ~CLK_BUSY;
-> 	if (ret)
-> 		clk->prepare_count--;
-> out_unlock:
-> 	spin_unlock_irqrestore(&clk->enable_lock, flags);
-> 
-> 	return ret;
-> }
-
-Cheers,
-
-
-Jeremy
-
+And with a check in clk_enable() for a preparation, it helps to ensure
+that drivers do call clk_prepare() before clk_enable() - though it can't
+guarantee it in every case.
