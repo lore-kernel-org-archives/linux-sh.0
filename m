@@ -1,34 +1,47 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 01 Feb 2011 15:28:20 +0000
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
+Date: Tue, 01 Feb 2011 15:53:44 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110201152820.GQ31216@n2100.arm.linux.org.uk>
+Message-Id: <20110201155344.GF1147@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110201105449.GY1147@pengutronix.de>
-	<AANLkTimayMAfr+zA6uO_yUmZqsOLmJ3fiiS696mL_evn@mail.gmail.com>
-	<20110201140024.GZ1147@pengutronix.de>
-	<20110201151418.GN31216@n2100.arm.linux.org.uk>
-	<20110201152203.GE1147@pengutronix.de>
-In-Reply-To: <20110201152203.GE1147@pengutronix.de>
+	<20110201131512.GH31216@n2100.arm.linux.org.uk>
+	<20110201141837.GA1147@pengutronix.de>
+	<20110201143932.GK31216@n2100.arm.linux.org.uk>
+	<20110201151846.GD1147@pengutronix.de>
+	<20110201152458.GP31216@n2100.arm.linux.org.uk>
+In-Reply-To: <20110201152458.GP31216@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 01, 2011 at 04:22:03PM +0100, Uwe Kleine-K=F6nig wrote:
-> Full ack.  (I wonder if you misunderstood me or wanted to put my
-> statement into more words.  Jassi didn't like that a clk_enable without
-> a previous clk_prepare worked on some platforms and on others it
-> doesn't.  With BUG_ON(clk->ops->prepare && !clk->prepare_count) in
-> clk_enable we have exactly this situation.)
+On Tue, Feb 01, 2011 at 03:24:58PM +0000, Russell King - ARM Linux wrote:
+> On Tue, Feb 01, 2011 at 04:18:46PM +0100, Uwe Kleine-K=F6nig wrote:
+> > yeah, didn't thought about multiple consumers, so (as Jeremy suggested)
+> > the right thing is to sleep until CLK_BUSY is cleared.
+>=20
+> A simpler way to write this is:
+>=20
+> int clk_prepare(struct clk *clk)
+> {
+> 	int ret =3D 0;
+>=20
+> 	mutex_lock(&clk->mutex);
+> 	if (clk->prepared =3D 0)
+> 		ret =3D clk->ops->prepare(clk);
+> 	if (ret =3D 0)
+> 		clk->prepared++;
+> 	mutex_unlock(&clk->mutex);
+>=20
+> 	return ret;
+> }
+But you cannot call this in atomic context when you know the clock is
+already prepared.
 
-Even with a NULL clk->ops->prepare function, we still want drivers to
-have called clk_prepare().  So we can do something like:
+Best regards
+Uwe
 
-	if (WARN_ON(clk->prepare_count =3D 0))
-		return -EINVAL;
-
-in clk_enable() should be sufficient and noisy enough not to be missed.
-
-I'd avoid BUG_ON() here as that will take the system down, which may
-increase the chances of getting useful bug reports.
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
