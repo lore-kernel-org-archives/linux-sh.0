@@ -1,80 +1,38 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 01 Feb 2011 13:15:12 +0000
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
+Date: Tue, 01 Feb 2011 14:00:24 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110201131512.GH31216@n2100.arm.linux.org.uk>
+Message-Id: <20110201140024.GZ1147@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110201105449.GY1147@pengutronix.de>
-In-Reply-To: <20110201105449.GY1147@pengutronix.de>
+	<AANLkTimayMAfr+zA6uO_yUmZqsOLmJ3fiiS696mL_evn@mail.gmail.com>
+In-Reply-To: <AANLkTimayMAfr+zA6uO_yUmZqsOLmJ3fiiS696mL_evn@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 01, 2011 at 11:54:49AM +0100, Uwe Kleine-K=F6nig wrote:
-> Alternatively don't force the sleep in clk_prepare (e.g. by protecting
-> prepare_count by a spinlock (probably enable_lock)) and call clk_prepare
-> before calling clk->ops->enable?
+On Tue, Feb 01, 2011 at 10:05:56PM +0900, Jassi Brar wrote:
+> 2011/2/1 Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>:
+>=20
+> .....
+>=20
+> > Do you plan to handle the case that clk_enable is called while prepare
+> > isn't completed (considering the special case "not called at all")?
+> > Maybe BUG_ON(clk->ops->prepare && !clk->prepare_count)?
+> Sounds better than the second option.
+>=20
+> > Alternatively don't force the sleep in clk_prepare (e.g. by protecting
+> > prepare_count by a spinlock (probably enable_lock)) and call clk_prepare
+> > before calling clk->ops->enable?
+> That might result in a driver working on some platforms(those have
+> atomic clk_prepare)
+> and not on others(those have sleeping).
+The first option has the same result.  E.g. on some platforms
+clk->ops->prepare might be NULL, on others it's not.
 
-That's a completely bad idea.  I assume you haven't thought about this
-very much.
+Uwe
 
-There's two ways I can think of doing what you're suggesting:
-
-int clk_prepare(struct clk *clk)
-{
-	unsigned long flags;
-	int ret =3D 0;
-
-	might_sleep();
-
-	spin_lock_irqsave(&clk->enable_lock, flags);
-	if (clk->prepare_count++ =3D 0)
-		ret =3D clk->ops->prepare(clk);
-	spin_unlock_irqrestore(&clk->enable_clock, flags);
-
-	return ret;
-}
-
-The problem is that clk->ops->prepare() is called in a non-sleepable
-context.  So this breaks the whole idea of clk_prepare(), and so isn't
-a solution.
-
-The other solution is:
-
-int clk_prepare(struct clk *clk)
-{
-	unsigned long flags;
-	int ret =3D 0;
-	bool first;
-
-	might_sleep();
-
-	spin_lock_irqsave(clk->enable_lock, flags);
-	first =3D clk->prepare_count++ =3D 0;
-	spin_unlock_irqrestore(clk->enable_clock, flags);
-
-	if (first)
-		ret =3D clk->ops->prepare(clk);
-
-	return ret;
-}
-
-The problem with this is that you now don't have any sane locking on
-the prepare callback, and the circumstances under which it's called
-are very indefinite.  For example, consider a preempt-enabled system:
-
-	thread 1		thread 2		prepare_count
-	clk_prepare					0
-	clk->prepare_count++				1
-	<thread switch>
-				clk_prepare		1
-				clk->prepare_count++	2
-				clk_prepare returns	2
-
-				clk_enable		2
-				<explodes as clock is not prepared>
-				<thread switch>
-	clk->ops->prepare(clk)
-
-So really, what you're suggesting is completely broken.
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
