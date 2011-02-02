@@ -1,103 +1,34 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 24 Feb 2011 06:05:38 +0000
-Subject: Re: [PATCH 1/2] fbdev: sh_mobile_lcdc: Add YUV input support
-Message-Id: <AANLkTikCo9CruLWE5=XjaspnM6CdKhbyPs3rajPLMV0G@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 02 Feb 2011 03:44:01 +0000
+Subject: build error in ehci-hcd when disable PCI bus
+Message-Id: <4D48D301.9080705@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298456210-26519-2-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1298456210-26519-2-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-fbdev@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Thu, Feb 24, 2011 at 00:28, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Wed, Feb 23, 2011 at 8:22 PM, Damian <dhobsong@igel.co.jp> wrote:
->>>> diff --git a/include/linux/sh_mobile_fb.h b/include/linux/sh_mobile_fb.h
->>>> new file mode 100644
->>>> index 0000000..ec448bc
->>>> --- /dev/null
->>>> +++ b/include/linux/sh_mobile_fb.h
->>>> @@ -0,0 +1,14 @@
->>>> +/*
->>>> + * SH-Mobile High-Definition Multimedia Interface (HDMI)
->>>> + *
->>>> + * Copyright (C) 2011, Damian Hobson-Garciax<dhobsong@igel.co.jp>
->>>> + *
->>>> + * This program is free software; you can redistribute it and/or modify
->>>> + * it under the terms of the GNU General Public License version 2 as
->>>> + * published by the Free Software Foundation.
->>>> + */
->>>> +#ifndef SH_MOBILE_FB_H
->>>> +#define SH_MOBILE_FB_H
->>>> +
->>>> +#define SH_FB_YUV      0x1
->>>> +#endif /* SH_MOBILE_FB_H */
->>>> diff --git a/include/video/sh_mobile_lcdc.h
->>>> b/include/video/sh_mobile_lcdc.h
->>>> index daabae5..650ff17 100644
->>>> --- a/include/video/sh_mobile_lcdc.h
->>>> +++ b/include/video/sh_mobile_lcdc.h
->>>> @@ -77,6 +77,7 @@ struct sh_mobile_lcdc_chan_cfg {
->>>>        struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
->>>>        struct sh_mobile_lcdc_board_cfg board_cfg;
->>>>        struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn
->>>> I/F */
->>>> +       int nonstd;
->>>>  };
->>>>
->>>>  struct sh_mobile_lcdc_info {
->>>> --
->>>> 1.7.1
->>>
->>> Can't the SH_FB_YUV macro definition go into
->>> include/video/sh_mobile_lcdc.h too?
->>
->> My thinking behind separating this out was that I wanted this
->> define to be accessible from user space.  The reason is so that
->> an application can test the value of .nonstd against the flag to
->> know for sure if it is dealing with a YUV framebuffer or not.
->
-> Hm, but ideally we want something standard. How do you know the nonstd
-> flag is working as you expect from user space? All of a sudden you
-> have code that depends on what type of fbdev driver you are using.
-> This is ugly, but abstracting the nonstd interface does not make it
-> better IMO.
->
-> The nonstd thing is a hack, but for now it is close enough. V4L2 has
-> standard NV12/NV16 support already, but I don't think there is any
-> such thing for fbdev. So i see your patches as a stop-gap, but I
-> really don't want to make it more complicated than it has to be. So
-> exporting nonstd values in a header file to user space seems too
-> complicated IMO.
->
-> Please just live with the fact that nonstd is special for now. We need
-> to rework the entire LCDC/HDMI/DSI area to support multiple planes and
-> better PM anyway. Perhaps KMS is the way forward, or perhaps Media
-> Controller? Maybe both?
->
->> I was under the impression that only headers under include/linux/ should be
->> accessed from user space, but to be honest, I'm not sure about that.
->> If that is in fact not the case, then I totally agree that it can go
->> into include/video/sh_mobile_lcdc.h.
->
-> Please ditch the SH_FB_YUV constant all together. No need to build
-> some abstraction on top of a hackish interface. Just check if nonstd
-> is non-zero in the driver and assume that means YUV for now. That's
-> good enough.
+Hi Paul,
 
-For YUV (do you mean YCbCr?), I'm inclined to suggest adding a new FB_VISUAL_*
-type instead, which indicates the fb_var_screeninfo.{red,green,blue} fields are
-YCbCr instead of RGB.
-Depending on the frame buffer organization, you also need new FB_TYPE_*/FB_AUX_*
-types.
+I found the build error when I am debugging other board.
+Also I can duplicate this issue on sdk7786 when the PCI bus is disabled.
+I tested linux-2.6.38-rc3.
+Do you think what souce code should I fix?
 
-Gr{oetje,eeting}s,
+******* build Log *******
+In file included from drivers/usb/host/ehci-hcd.c:340:
+drivers/usb/host/ehci-sched.c: In function =91ehci_quirk_amd_L1=92:
+drivers/usb/host/ehci-sched.c:1606: error: implicit declaration of function=
+ =91outb_p=92
+drivers/usb/host/ehci-sched.c:1607: error: implicit declaration of function=
+ =91inb_p=92
+drivers/usb/host/ehci-sched.c:1611: error: implicit declaration of function=
+ =91outl_p=92
+drivers/usb/host/ehci-sched.c:1614: error: implicit declaration of function=
+ =91inl_p=92
+make[3]: *** [drivers/usb/host/ehci-hcd.o] Error 1
+**************************
 
-                        Geert
+Best regards,
+Yoshihiro Shimoda
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
