@@ -1,44 +1,36 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 02 Feb 2011 04:39:18 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 02 Feb 2011 23:36:02 +0000
 Subject: Re: build error in ehci-hcd when disable PCI bus
-Message-Id: <AANLkTikvCaeiOt4B-diOzja6EDFxAGKOcZ=Y1NqcgF=J@mail.gmail.com>
+Message-Id: <20110202233602.GA11610@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4D48D301.9080705@renesas.com>
 In-Reply-To: <4D48D301.9080705@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi, Shimoda-san.
-
-2011/2/2 Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>:
-> Hi Paul,
->
+On Wed, Feb 02, 2011 at 12:44:01PM +0900, Yoshihiro Shimoda wrote:
 > I found the build error when I am debugging other board.
 > Also I can duplicate this issue on sdk7786 when the PCI bus is disabled.
 > I tested linux-2.6.38-rc3.
 > Do you think what souce code should I fix?
->
+> 
 > ******* build Log *******
 > In file included from drivers/usb/host/ehci-hcd.c:340:
-> drivers/usb/host/ehci-sched.c: In function =91ehci_quirk_amd_L1=92:
-> drivers/usb/host/ehci-sched.c:1606: error: implicit declaration of functi=
-on =91outb_p=92
-> drivers/usb/host/ehci-sched.c:1607: error: implicit declaration of functi=
-on =91inb_p=92
-> drivers/usb/host/ehci-sched.c:1611: error: implicit declaration of functi=
-on =91outl_p=92
-> drivers/usb/host/ehci-sched.c:1614: error: implicit declaration of functi=
-on =91inl_p=92
+> drivers/usb/host/ehci-sched.c: In function ?ehci_quirk_amd_L1?:
+> drivers/usb/host/ehci-sched.c:1606: error: implicit declaration of function ?outb_p?
+> drivers/usb/host/ehci-sched.c:1607: error: implicit declaration of function ?inb_p?
+> drivers/usb/host/ehci-sched.c:1611: error: implicit declaration of function ?outl_p?
+> drivers/usb/host/ehci-sched.c:1614: error: implicit declaration of function ?inl_p?
 > make[3]: *** [drivers/usb/host/ehci-hcd.o] Error 1
 > **************************
+> 
+When the PCI bus is disabled we don't really have any concept of PIO, so
+PIO support and the associated accessors are explicitly disabled.
 
-I am working to  convert from in/out to __raw_read/__raw_write now in arch/=
-sh .
+The quirk this refers to looks like it may depend on PCI, and if not, it
+certainly has a platform dependency that can be used to encapsulate it.
 
-Best regaerds,
-  Nobuhiro
-
---=20
-Nobuhiro Iwamatsu
+The proper fix here is to fix ehci-sched.c, not re-introduce broken PIO
+crap that wraps in to MMIO.
