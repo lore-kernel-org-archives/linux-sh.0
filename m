@@ -1,62 +1,54 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 01 Feb 2011 21:24:09 +0000
+From: Jassi Brar <jassisinghbrar@gmail.com>
+Date: Wed, 02 Feb 2011 02:31:53 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110201212409.GU31216@n2100.arm.linux.org.uk>
+Message-Id: <AANLkTik_QFqas7yTWDpWhMfxfdOvKNh--DDFxY8x8v51@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110201105449.GY1147@pengutronix.de>
-	<20110201131512.GH31216@n2100.arm.linux.org.uk>
-	<20110201141837.GA1147@pengutronix.de>
-	<20110201143932.GK31216@n2100.arm.linux.org.uk>
-	<20110201151846.GD1147@pengutronix.de>
-	<20110201152458.GP31216@n2100.arm.linux.org.uk>
-	<4D48741F.8060006@codeaurora.org>
-In-Reply-To: <4D48741F.8060006@codeaurora.org>
+	<AANLkTimayMAfr+zA6uO_yUmZqsOLmJ3fiiS696mL_evn@mail.gmail.com>
+	<20110201140024.GZ1147@pengutronix.de>
+	<20110201151418.GN31216@n2100.arm.linux.org.uk>
+	<20110201152203.GE1147@pengutronix.de>
+	<20110201152820.GQ31216@n2100.arm.linux.org.uk>
+In-Reply-To: <20110201152820.GQ31216@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 01, 2011 at 12:59:11PM -0800, Stephen Boyd wrote:
-> On 02/01/2011 07:24 AM, Russell King - ARM Linux wrote:
-> > I'd also be tempted at this stage to build-in a no-op dummy clock,
-> > that being the NULL clk:
-> >
-> > int clk_prepare(struct clk *clk)
-> > {
-> > 	int ret = 0;
-> >
-> > 	if (clk) {
-> > 		mutex_lock(&clk->mutex);
-> > 		if (clk->prepared = 0)
-> > 			ret = clk->ops->prepare(clk);
-> > 		if (ret = 0)
-> > 			clk->prepared++;
-> > 		mutex_unlock(&clk->mutex);
-> > 	}
-> >
-> > 	return ret;
-> > }
-> 
-> I'm afraid this will hide enable/disable imbalances on some targets and
-> then expose them on others. Maybe its not a big problem though since
-> this also elegantly handles the root(s) of the tree.
+2011/2/2 Russell King - ARM Linux <linux@arm.linux.org.uk>:
+> On Tue, Feb 01, 2011 at 04:22:03PM +0100, Uwe Kleine-König wrote:
+>> Full ack.  (I wonder if you misunderstood me or wanted to put my
+>> statement into more words.  Jassi didn't like that a clk_enable without
+>> a previous clk_prepare worked on some platforms and on others it
+>> doesn't.  With BUG_ON(clk->ops->prepare && !clk->prepare_count) in
+>> clk_enable we have exactly this situation.)
+>
+> Even with a NULL clk->ops->prepare function, we still want drivers to
+> have called clk_prepare().  So we can do something like:
+>
+>        if (WARN_ON(clk->prepare_count = 0))
+>                return -EINVAL;
+>
+> in clk_enable() should be sufficient and noisy enough not to be missed.
+>
+> I'd avoid BUG_ON() here as that will take the system down, which may
+> increase the chances of getting useful bug reports.
 
-You can't catch enable/disable imbalances in the prepare code, and you
-can't really catch them in the unprepare code either.
+Having thought about it, I think it's not necessary to immediately catch
+drivers that work on some platforms and not on others -- a mere comment
+'please add clk_prepare' during code review or a patch adding 'clk_prepare'
+later upon stumbling across a platform on which the driver doesn't work,
+should be OK. Let us not fret about it.
 
-Consider two drivers sharing the same struct clk.  When the second driver
-prepares the clock, the enable count could well be non-zero, caused by
-the first driver.  Ditto for when the second driver is removed, and it
-calls unprepare - the enable count may well be non-zero.
+That leaves us with only having to ensure that :-
+a) No two calls to clk_prepare/unprepare _hooks_ are consecutive.
+b) clk_prepare is done on the clock (not necessarily by the driver
+    under consideration) before calls to clk_enable.
 
-The only thing you can check is that when the prepare count is zero,
-the enable count is also zero.  You can also check in clk_enable() and
-clk_disable() that the prepare count is non-zero.
+I think (a) is already easily managed by having the prepare_count,
+and (b) can be reasonably managed by what Russell suggests above.
 
-If you want tigher checking than that, you need to somehow identify and
-match up the clk_prepare/clk_enable/clk_disable/clk_unprepare calls from
-a particular driver instance.  Addresses of the functions don't work as
-you can't be certain that driver code will be co-located within a certain
-range.  Adding an additional argument to these functions which is driver
-instance specific seems to be horrible too.
+So, FWIW, I am for the idea.
+
+Njoi!
