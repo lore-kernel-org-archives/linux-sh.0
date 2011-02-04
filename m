@@ -1,67 +1,74 @@
 From: Richard Zhao <linuxzsc@gmail.com>
-Date: Fri, 04 Feb 2011 09:33:32 +0000
+Date: Fri, 04 Feb 2011 09:54:24 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110204093332.GA2347@richard-laptop>
+Message-Id: <20110204095424.GB2347@richard-laptop>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110201141837.GA1147@pengutronix.de>
+References: <201102011711.31258.jeremy.kerr@canonical.com>
+	<20110201105449.GY1147@pengutronix.de>
+	<20110201131512.GH31216@n2100.arm.linux.org.uk>
+	<20110201141837.GA1147@pengutronix.de>
 	<20110201143932.GK31216@n2100.arm.linux.org.uk>
 	<20110201151846.GD1147@pengutronix.de>
 	<20110201152458.GP31216@n2100.arm.linux.org.uk>
-	<20110201155344.GF1147@pengutronix.de>
-	<20110201170637.GR31216@n2100.arm.linux.org.uk>
-	<20110201193201.GH1147@pengutronix.de>
-	<20110201195604.GS31216@n2100.arm.linux.org.uk>
-	<4D486B59.6010106@codeaurora.org>
-	<20110201204330.GJ1147@pengutronix.de>
-In-Reply-To: <20110201204330.GJ1147@pengutronix.de>
+	<4D48741F.8060006@codeaurora.org>
+	<20110201212409.GU31216@n2100.arm.linux.org.uk>
+In-Reply-To: <20110201212409.GU31216@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 01, 2011 at 09:43:31PM +0100, Uwe Kleine-K=F6nig wrote:
-> Hello,
->=20
-> On Tue, Feb 01, 2011 at 12:21:45PM -0800, Saravana Kannan wrote:
-> > If the driver is calling clk_prepare() right next to clk_enable()
-> > knowing it's been already prepared and will hence be "atomic" (this
-> > is actually not true), then by your description, it's pointless to
-> > call clk_prepare().
-> Well not completely, as it increases the reference count.  The advantage
-> would be that clk_enable counts addionally as prepare, so it would be
-> impossible to unprepare an enabled clock.  And the other way round an
-> unprepared clock would never be enabled.
-> =20
-> > If you want the driver to call clk_prepare() in atomic context
-> > because it will be atomic in most cases -- well, that's wrong. It's
-> > either atomic or is NOT atomic. There is no in between. If a call is
-> > NOT atomic, it can't be called in atomic context. Long story short,
-> > if you expect clk_prepare() to be atomic under any circumstance, it
-> > beats the point of introducing clk_prepare().
-> Well, with my suggestion it's atomic when certain precondions are given.
-> IMHO that's better than "atomic in most cases" because the caller can
-> assert that everything goes smooth.
-> These preconditions are asserted when the driver writer is careful
-> enough to stick to the API.
-IMHO, clk_prepare is always called in non-atomic context, so it doesn't mat=
-ter
-whether it's really atomic or not. We don't have to make it as atomic as
-possible.
+On Tue, Feb 01, 2011 at 09:24:09PM +0000, Russell King - ARM Linux wrote:
+> On Tue, Feb 01, 2011 at 12:59:11PM -0800, Stephen Boyd wrote:
+> > On 02/01/2011 07:24 AM, Russell King - ARM Linux wrote:
+> > > I'd also be tempted at this stage to build-in a no-op dummy clock,
+> > > that being the NULL clk:
+> > >
+> > > int clk_prepare(struct clk *clk)
+> > > {
+> > > 	int ret = 0;
+> > >
+> > > 	if (clk) {
+> > > 		mutex_lock(&clk->mutex);
+> > > 		if (clk->prepared = 0)
+> > > 			ret = clk->ops->prepare(clk);
+> > > 		if (ret = 0)
+> > > 			clk->prepared++;
+> > > 		mutex_unlock(&clk->mutex);
+> > > 	}
+> > >
+> > > 	return ret;
+> > > }
+> > 
+> > I'm afraid this will hide enable/disable imbalances on some targets and
+> > then expose them on others. Maybe its not a big problem though since
+> > this also elegantly handles the root(s) of the tree.
+> 
+> You can't catch enable/disable imbalances in the prepare code, and you
+> can't really catch them in the unprepare code either.
+> 
+> Consider two drivers sharing the same struct clk.  When the second driver
+> prepares the clock, the enable count could well be non-zero, caused by
+> the first driver.  Ditto for when the second driver is removed, and it
+> calls unprepare - the enable count may well be non-zero.
+> 
+> The only thing you can check is that when the prepare count is zero,
+> the enable count is also zero.  You can also check in clk_enable() and
+> clk_disable() that the prepare count is non-zero.
+but how can we check prepare count without mutex lock? Even if prepare count
+is atomic_t, it can not guarantee the clock is actually prepared or unprepared.
+So it's important for driver writer to maintain the call sequence.
 
 Thanks
 Richard
->=20
-> Either my idea is bad or I'm unable to sell it appropriately.  Be it as
-> it is, I will stop to make a case for it.
->=20
-> Best regards and thanks for your try,
-> Uwe
->=20
-> --=20
-> Pengutronix e.K.                           | Uwe Kleine-K=F6nig          =
-  |
-> Industrial Linux Solutions                 | http://www.pengutronix.de/  |
->=20
+> 
+> If you want tigher checking than that, you need to somehow identify and
+> match up the clk_prepare/clk_enable/clk_disable/clk_unprepare calls from
+> a particular driver instance.  Addresses of the functions don't work as
+> you can't be certain that driver code will be co-located within a certain
+> range.  Adding an additional argument to these functions which is driver
+> instance specific seems to be horrible too.
+> 
 > _______________________________________________
 > linux-arm-kernel mailing list
 > linux-arm-kernel@lists.infradead.org
