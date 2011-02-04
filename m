@@ -1,7 +1,7 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Fri, 04 Feb 2011 10:21:20 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Fri, 04 Feb 2011 10:48:32 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110204102120.GJ30452@pengutronix.de>
+Message-Id: <20110204104832.GE14627@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110201105449.GY1147@pengutronix.de>
@@ -15,64 +15,55 @@ References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<20110204095424.GB2347@richard-laptop>
 In-Reply-To: <20110204095424.GB2347@richard-laptop>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
-
-Hello Richard,
 
 On Fri, Feb 04, 2011 at 05:54:24PM +0800, Richard Zhao wrote:
 > On Tue, Feb 01, 2011 at 09:24:09PM +0000, Russell King - ARM Linux wrote:
-> > On Tue, Feb 01, 2011 at 12:59:11PM -0800, Stephen Boyd wrote:
-> > > On 02/01/2011 07:24 AM, Russell King - ARM Linux wrote:
-> > > > I'd also be tempted at this stage to build-in a no-op dummy clock,
-> > > > that being the NULL clk:
-> > > >
-> > > > int clk_prepare(struct clk *clk)
-> > > > {
-> > > > 	int ret =3D 0;
-> > > >
-> > > > 	if (clk) {
-> > > > 		mutex_lock(&clk->mutex);
-> > > > 		if (clk->prepared =3D 0)
-> > > > 			ret =3D clk->ops->prepare(clk);
-> > > > 		if (ret =3D 0)
-> > > > 			clk->prepared++;
-> > > > 		mutex_unlock(&clk->mutex);
-> > > > 	}
-> > > >
-> > > > 	return ret;
-> > > > }
-> > >=20
-> > > I'm afraid this will hide enable/disable imbalances on some targets a=
-nd
-> > > then expose them on others. Maybe its not a big problem though since
-> > > this also elegantly handles the root(s) of the tree.
-> >=20
 > > You can't catch enable/disable imbalances in the prepare code, and you
 > > can't really catch them in the unprepare code either.
-> >=20
-> > Consider two drivers sharing the same struct clk.  When the second driv=
-er
+> > 
+> > Consider two drivers sharing the same struct clk.  When the second driver
 > > prepares the clock, the enable count could well be non-zero, caused by
 > > the first driver.  Ditto for when the second driver is removed, and it
 > > calls unprepare - the enable count may well be non-zero.
-> >=20
+> > 
 > > The only thing you can check is that when the prepare count is zero,
 > > the enable count is also zero.  You can also check in clk_enable() and
 > > clk_disable() that the prepare count is non-zero.
-> but how can we check prepare count without mutex lock? Even if prepare co=
-unt
-> is atomic_t, it can not guarantee the clock is actually prepared or unpre=
-pared.
+>
+> but how can we check prepare count without mutex lock? Even if prepare count
+> is atomic_t, it can not guarantee the clock is actually prepared or unprepared.
 > So it's important for driver writer to maintain the call sequence.
-I happily point out that the prepare_count needs to be protected by a
-spinlock and you need a flag that signals a prepare or unprepare is
-currently running.
 
-SCNR
-Uwe
+Forget atomic_t - it's the most abused type in the kernel.  Just because
+something says its atomic doesn't make it so.  In a use like this,
+atomic_t just buys you additional needless complexity with no benefit.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Of course we can check the prepared count.  What we can't do is check
+that it doesn't change concurrently - but that's something we can't do
+anyway.
+
+int clk_enable(struct clk *clk)
+{
+	unsigned long flags;
+	int ret = 0;
+
+	if (clk) {
+		if (WARN_ON(!clk->prepare_count))
+			return -EINVAL;
+
+		spin_lock_irqsave(&clk->lock, flags);
+		if (clk->enable_count++ = 0)
+			ret = clk->ops->enable(clk);
+		spin_unlock_irqrestore(&clk->lock, flags);
+	}
+	return ret;
+}
+
+is entirely sufficient to catch the case of a single-use clock not being
+prepared before clk_enable() is called.
+
+We're after detecting drivers missing calls to clk_prepare(), we're not
+after detecting concurrent calls to clk_prepare()/clk_unprepare().
