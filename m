@@ -1,10 +1,9 @@
 From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 04 Feb 2011 10:48:32 +0000
+Date: Fri, 04 Feb 2011 10:57:10 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110204104832.GE14627@n2100.arm.linux.org.uk>
+Message-Id: <20110204105710.GF14627@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201102011711.31258.jeremy.kerr@canonical.com>
-	<20110201105449.GY1147@pengutronix.de>
+References: <20110201105449.GY1147@pengutronix.de>
 	<20110201131512.GH31216@n2100.arm.linux.org.uk>
 	<20110201141837.GA1147@pengutronix.de>
 	<20110201143932.GK31216@n2100.arm.linux.org.uk>
@@ -13,57 +12,53 @@ References: <201102011711.31258.jeremy.kerr@canonical.com>
 	<4D48741F.8060006@codeaurora.org>
 	<20110201212409.GU31216@n2100.arm.linux.org.uk>
 	<20110204095424.GB2347@richard-laptop>
-In-Reply-To: <20110204095424.GB2347@richard-laptop>
+	<20110204102120.GJ30452@pengutronix.de>
+In-Reply-To: <20110204102120.GJ30452@pengutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 04, 2011 at 05:54:24PM +0800, Richard Zhao wrote:
-> On Tue, Feb 01, 2011 at 09:24:09PM +0000, Russell King - ARM Linux wrote:
-> > You can't catch enable/disable imbalances in the prepare code, and you
-> > can't really catch them in the unprepare code either.
-> > 
-> > Consider two drivers sharing the same struct clk.  When the second driver
-> > prepares the clock, the enable count could well be non-zero, caused by
-> > the first driver.  Ditto for when the second driver is removed, and it
-> > calls unprepare - the enable count may well be non-zero.
-> > 
-> > The only thing you can check is that when the prepare count is zero,
-> > the enable count is also zero.  You can also check in clk_enable() and
-> > clk_disable() that the prepare count is non-zero.
->
-> but how can we check prepare count without mutex lock? Even if prepare count
-> is atomic_t, it can not guarantee the clock is actually prepared or unprepared.
-> So it's important for driver writer to maintain the call sequence.
+On Fri, Feb 04, 2011 at 11:21:20AM +0100, Uwe Kleine-K=F6nig wrote:
+> I happily point out that the prepare_count needs to be protected by a
+> spinlock and you need a flag that signals a prepare or unprepare is
+> currently running.
 
-Forget atomic_t - it's the most abused type in the kernel.  Just because
-something says its atomic doesn't make it so.  In a use like this,
-atomic_t just buys you additional needless complexity with no benefit.
+It's really simple.  You don't use a struct clk pointer in any way until
+you've called a clk_get() to get a pointer.  So what's the problem with
+ensuring that you do clk_prepare() on it before you register whatever
+services may end up calling clk_enable().
 
-Of course we can check the prepared count.  What we can't do is check
-that it doesn't change concurrently - but that's something we can't do
-anyway.
+That is good practice.  It's precisely the same practice which says that
+you shall not register device drivers with subsystems, thereby making
+them visible, until you're absolutely ready in the driver to start taking
+requests to use your driver.  Precisely the same thing applies here.
 
-int clk_enable(struct clk *clk)
-{
-	unsigned long flags;
-	int ret = 0;
+In other words, to go back to the UART console driver case, in the
+UART console setup function, you do this:
 
-	if (clk) {
-		if (WARN_ON(!clk->prepare_count))
-			return -EINVAL;
+	clk =3D clk_get(...);
+	if (IS_ERR(clk))
+		return PTR_ERR(clk);
 
-		spin_lock_irqsave(&clk->lock, flags);
-		if (clk->enable_count++ = 0)
-			ret = clk->ops->enable(clk);
-		spin_unlock_irqrestore(&clk->lock, flags);
+	err =3D clk_prepare(clk);
+	if (err) {
+		clk_put(clk);
+		return err;
 	}
-	return ret;
-}
 
-is entirely sufficient to catch the case of a single-use clock not being
-prepared before clk_enable() is called.
+	rate =3D clk_get_rate(clk);
+	... setup UART, setup baud rate according to rate ...
 
-We're after detecting drivers missing calls to clk_prepare(), we're not
-after detecting concurrent calls to clk_prepare()/clk_unprepare().
+	return 0;
+
+So, this means that clk_enable() in the console write function will not
+be called until after the initialization function has finished - by which
+time clk_prepare() will have completed.
+
+There is no need for any kind of spinlocking, atomic types or other such
+crap for the prepare count.  We do not care about concurrent clk_enables().
+
+The only time you'd need such games as you're suggesting is if you're still
+promoting your idea about calling clk_prepare() from clk_enable() "in case
+driver writers forget it", which is soo broken it's untrue.
