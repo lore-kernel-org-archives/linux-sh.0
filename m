@@ -1,110 +1,144 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 04 Feb 2011 12:05:25 +0000
+From: Richard Zhao <linuxzsc@gmail.com>
+Date: Fri, 04 Feb 2011 12:45:34 +0000
 Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110204120525.GH14627@n2100.arm.linux.org.uk>
+Message-Id: <20110204124534.GA2597@richard-laptop>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110201143932.GK31216@n2100.arm.linux.org.uk>
-	<20110201151846.GD1147@pengutronix.de>
-	<20110201152458.GP31216@n2100.arm.linux.org.uk>
-	<4D48741F.8060006@codeaurora.org>
-	<20110201212409.GU31216@n2100.arm.linux.org.uk>
-	<20110204095424.GB2347@richard-laptop>
-	<20110204104832.GE14627@n2100.arm.linux.org.uk>
-	<AANLkTi=sfBTHLXejWxAWGa=Tcw+LoQfw6sUtcn6L+JeM@mail.gmail.com>
-	<20110204111841.GG14627@n2100.arm.linux.org.uk>
-	<AANLkTinB7jin5jDyNdTJYN2DZdTA3iJFvGJtsmtCUNsE@mail.gmail.com>
-In-Reply-To: <AANLkTinB7jin5jDyNdTJYN2DZdTA3iJFvGJtsmtCUNsE@mail.gmail.com>
+References: <201102011711.31258.jeremy.kerr@canonical.com>
+In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 04, 2011 at 08:51:15PM +0900, Jassi Brar wrote:
-> On Fri, Feb 4, 2011 at 8:18 PM, Russell King - ARM Linux
-> <linux@arm.linux.org.uk> wrote:
-> > On Fri, Feb 04, 2011 at 08:04:03PM +0900, Jassi Brar wrote:
-> >> On Fri, Feb 4, 2011 at 7:48 PM, Russell King - ARM Linux
-> >> <linux@arm.linux.org.uk> wrote:
-> >>
-> >> > int clk_enable(struct clk *clk)
-> >> > {
-> >> > =A0 =A0 =A0 =A0unsigned long flags;
-> >> > =A0 =A0 =A0 =A0int ret =3D 0;
-> >> >
-> >> > =A0 =A0 =A0 =A0if (clk) {
-> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (WARN_ON(!clk->prepare_count))
-> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return -EINVAL;
-> >> >
-> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0spin_lock_irqsave(&clk->lock, flags);
-> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (clk->enable_count++ =3D 0)
-> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D clk->ops->ena=
-ble(clk);
-> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0spin_unlock_irqrestore(&clk->lock, fl=
-ags);
-> >> > =A0 =A0 =A0 =A0}
-> >> > =A0 =A0 =A0 =A0return ret;
-> >> > }
-> >> >
-> >> > is entirely sufficient to catch the case of a single-use clock not b=
-eing
-> >> > prepared before clk_enable() is called.
-> >> >
-> >> > We're after detecting drivers missing calls to clk_prepare(), we're =
-not
-> >> > after detecting concurrent calls to clk_prepare()/clk_unprepare().
-> >>
-> >> I hope you mean 'making sure the clock is prepared before it's enabled
-> >> ' rather than
-> >> 'catching a driver that doesn't do clk_prepare before clk_enable'.
-> >> Because, the above implementation still doesn't catch a driver that
-> >> doesn't call clk_prepare
-> >> but simply uses a clock that happens to have been already prepare'd by
-> >> some other
-> >> driver or the platform.
-> >
-> > No, I mean what I said.
-> Then, how does that function catch a driver that, say, doesn't do clk_pre=
-pare
-> but share the clk with another already active driver?
+On Tue, Feb 01, 2011 at 05:11:29PM +0800, Jeremy Kerr wrote:
+> Hi all,
+> 
+> > I suggested that clk_prepare() be callable only from non-atomic contexts,
+> > and do whatever's required to ensure that the clock is available.  That
+> > may end up enabling the clock as a result.
+> 
+> I think that clk_prepare/clk_unprepare looks like the most promising solution, 
+> so will try to get some preliminary patches done. Here's what I'm planning:
+> 
+> -----
+> 
+> The changes to the API are essentially:
+> 
+> 1) Document clk_enable/clk_disable as callable from atomic contexts, and
+>    so clock implementations must not sleep within this function.
+> 
+> 2) For clock implementations that may sleep to turn on a clock, we add a
+>    new pair of functions to the clock API: clk_prepare and clk_unprepare.
+> 
+>    These will provide hooks for the clock implmentation to do any sleepable
+>    work (eg, wait for PLLs to settle) in preparation for a later clk_enable.
+> 
+>    For the most common clock implemntation cases (where clocks can be enabled 
+>    atomically), these functions will be a no-op, and all of the enable/disable
+>    work can be done in clk_enable/clk_disable.
+> 
+>    For implementations where clocks require blocking on enable/disable, most
+>    of the work will be done in clk_prepare/clk_unprepare. The clk_enable
+>    and clk_disable functions may be no-ops.
+> 
+> For drivers, this means that clk_prepare must be called (and have returned) 
+> before calling clk_enable.
+> 
+> = Enable/Prepare counts =
+> 
+> I intend to do the enable and prepare "counting" in the core clock API, 
+> meaning that that the clk_ops callbacks will only invoked on the first 
+> prepare/enable and the last unprepare/disable.
+> 
+> = Concurrency =
+> 
+> Splitting the prepare and enable stages introduces the concurrency 
+> requirements:
+> 
+> 1) clk_enable must not return before the clock is outputting a valid clock 
+>    signal.
+> 
+> 2) clk_prepare must not return before the clock is fully prepared (ie, it is 
+>    safe to call clk_enable).
+> 
+> It is not possible for clk_enable to wait for the clock to be prepared, 
+> because that would require synchronisation with clk_prepare, which may then 
+> require blocking. Therefore:
+> 
+> 3) The clock consumer *must* respect the proper ordering of clk_prepare and 
+>    clk_enable. For example, drivers that call clk_enable during an interrupt 
+>    must ensure that the interrupt handler will not be invoked until 
+>    clk_prepare has returned.
+> 
+> = Other considerations =
+> 
+> The time that a clock spends "prepared" is a superset of the the time that a 
+> clock spends "enabled". Therefore, clocks that are switched on during 
+> clk_prepare (ie, non-atomic clocks) will be running for a larger amount of 
+> time. In some cases, this can be mitigated by moving some of the final 
+> (atomic) switching functionality to the clk_enable function.
+> 
+> = Implementation =
+> 
+> Basically:
+> 
+> struct clk {
+> 	const struct clk_ops *ops
+> 	int                  enable_count;
+> 	spinlock_t           enable_lock;
+> 	int                  prepare_count;
+> 	struct mutex         prepare_lock;
+> };
+> 
+> int clk_enable(struct clk *clk)
+> {
+> 	int ret = 0;
+> 
+> 	spin_lock(&clk->enable_lock);
+> 	if (!clk->enable_count)
+> 		ret = clk->ops->enable(clk);
+> 
+> 	if (!ret)
+> 		clk->enable_count++;
+> 	spin_unlock(&clk->enable_lock);
+> 
+> 	return ret;
+> }
+Why do we not call parent's clk_enable in this function? For flexible? How many
+different cases is causing us to move the effert to platform clock driver?
+> 
+> int clk_prepare(struct clk *clk)
+> {
+> 	int ret = 0;
+> 
+> 	mutex_lock(&clk->prepare_lock);
+> 	if (!clk->prepare_count)
+> 		ret = clk->ops->prepare(clk);
+> 
+> 	if (!ret)
+> 		clk->prepare_count++;
+> 	mutex_unlock(&clk->prepare_lock);
+> 
+> 	return ret;
+> }
+Same as above.
+And for most clocks, prepare/unprepare may be NULL. So in such case, is it
+better to call parent's prepare and increase its own prepare_count here?
 
-As per the code I just supplied!
-
-> Because you said - "We're after detecting drivers missing calls to
-> clk_prepare()"
->=20
-> The point is, there is difference between detecting drivers that miss
-> the clk_prepare
-> and ensuring clk_prepare has been called before any call to
-> clk_enable. And making
-> that clear helps get rid of lots of confusion/misunderstanding. Uwe
-> seems to have
-> had similar confusions.
-
-As I said on the 1st February.
-
-> > The only way to do what you're asking is to attach a list of identifiers
-> > which have prepared a clock to the struct clk, where each identifier is
-> > unique to each driver instance.
-> I am not asking what you think.
-> In my second last post, I am rather asking the other way around - that
-> let us not worry
-> about drivers missing the clk_prepare and not try to catch those by the
-> new API.
-
-No.  That means we have no way to flag a call to clk_enable on an
-unprepared clock, and will lead to unexplained system lockups.  What
-I've been suggesting all along is the "best efforts" approach.  I'm
-sorry you can't see that, but that's really not my problem.
-
-> > I think that's going completely over the top, and adds needless complex=
-ity
-> > to drivers, which now have to pass an instance specific cookie into eve=
-ry
-> > clk API call.
-> Exactly.
-> All we need is to ensure clk_prepare has been called atleast once before
-> any call to clk_enable.
-
-I described this fully in my reply to Stephen Boyd on 1st February,
-which is a parent to this sub-thread.
-
+Thanks
+Richard
+> 
+> -----
+> 
+> Comments welcome, code coming soon.
+> 
+> Cheers,
+> 
+> 
+> Jeremy
+> 
+> 
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
