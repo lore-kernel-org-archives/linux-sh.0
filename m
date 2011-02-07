@@ -1,38 +1,89 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Sun, 20 Feb 2011 13:13:09 +0000
-Subject: Re: [RFC,PATCH 1/3] Add a common struct clk
-Message-Id: <20110220131309.GF14495@n2100.arm.linux.org.uk>
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Mon, 07 Feb 2011 06:07:57 +0000
+Subject: [RFC,PATCH 0/3] Common struct clk implementation, v11
+Message-Id: <1297058877.799617.749783078584.0.gpush@pororo>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1297233693.242364.862698430999.1.gpush@pororo>
-	<4D53749B.6010102@codeaurora.org>
-	<201102151041.40655.jeremy.kerr@canonical.com>
-	<4D5A100F.9000809@codeaurora.org>
-In-Reply-To: <4D5A100F.9000809@codeaurora.org>
+In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 14, 2011 at 09:33:03PM -0800, Saravana Kannan wrote:
-> Assuming Russell and/or the community agrees on the semantics of  
-> "parent", without the generic implementation grabbing the prepare_lock  
-> while setting the parent, there is no way for the specific clock driver  
-> implementations to cleanly ensure correctness. The only option for them  
-> would be to peek into the generic clock struct and grab the prepare lock  
-> -- to me that would be an ugly hack and/or layering violation that would  
-> cause problems later on.
->
-> Russell/All,
->
-> What's the meaning of a parent clock? Do you agree with my definition --  
-> "the parent clock is the clock that generates the clock signal from  
-> which the child clock derives (divide, etc) it's clock signal from."? Or  
-> is it open to interpretation by each implementation?
+Hi all,
 
-Your definition seems sane - I'm not sure what use a parent clock which
-had nothing to do with a child would be.
+These patches are an attempt to allow platforms to share clock code. At
+present, the definitions of 'struct clk' are local to platform code,
+which makes allocating and initialising cross-platform clock sources
+difficult, and makes it impossible to compile a single image containing
+support for two ARM platforms with different struct clks.
 
-As for the locking issue, I've no idea on that at the moment.  I don't
-think implementations should grab the prepare lock, I think that's
-something the generic code should take care of for clk_set_rate(),
-clk_set_parent() etc.
+The three patches are for the architecture-independent kernel code,
+introducing the common clk infrastructure. The changelog for the first
+patch includes details about the new clock definitions.
+
+Ben Herrenschmidt is looking at using common struct clk code for powerpc
+too, hence the kernel-wide approach.
+
+Many thanks to the following for their input:
+ * Ben Dooks <ben-linux@fluff.org>
+ * Baruch Siach <baruch@tkos.co.il>
+ * Russell King <linux@arm.linux.org.uk>
+ * Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
+ * Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>
+ * Vincent Guittot <vincent.guittot@linaro.org>
+ * Sascha Hauer <s.hauer@pengutronix.de>
+
+Cheers,
+
+
+Jeremy
+
+--
+v11:
+ * add prepare/unprepare for non-atomic switching, document atomicity
+ * move to drivers/clk/
+
+v10:
+ * comment fixups, from Uwe's review
+ * added DEFINE_CLK_FIXED
+
+v9:
+ * comment improvements
+ * kerneldoc fixups
+ * add WARN_ON to clk_disable
+
+v8:
+ * add atomic clocks, and locking wrappers
+ * expand comments on clk and clk_ops
+
+v7:
+ * change CLK_INIT to initialise clk->mutex statically
+
+v6:
+ * fixed up references to 'clk_operations' in the changelog
+
+v5:
+ * uninline main API, and share definitions with !USE_COMMON_STRUCT_CLK
+ * add __clk_get
+ * delay mutex init
+ * kerneldoc for struct clk
+
+v4:
+ * use mutex for enable/disable locking
+ * DEFINE_CLK -> INIT_CLK, and pass the clk name for mutex init
+ * struct clk_operations -> struct clk_ops
+
+v3:
+ * do clock usage refcounting in common code
+ * provide sample port
+
+v2:
+ * no longer ARM-specific
+ * use clk_operations
+
+---
+Jeremy Kerr (3):
+      Add a common struct clk
+      clk: Generic support for fixed-rate clocks
+      clk: add warnings for incorrect enable/prepare semantics
+
