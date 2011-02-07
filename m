@@ -1,37 +1,48 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Tue, 15 Feb 2011 17:51:07 +0000
-Subject: Problems with sh7203fb
-Message-Id: <201102151851.07803.fabio.giovagnini@aurion-tech.com>
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Mon, 07 Feb 2011 06:07:57 +0000
+Subject: [RFC,
+Message-Id: <1297058877.800990.238556019385.3.gpush@pororo>
 List-Id: <linux-sh.vger.kernel.org>
+In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi friends,
-this is my rpopblem with linux  v2.6.37
+This change adds warnings to check for:
 
-I have u-bbot working and getting a splash welcome image.
-I have derived sh7203fb.c / .h from sh7760fb.c / .h 
-I have followed Documentation/fb/sh7760fb.txt
+ 1) enabling a clock that hasn't been prepared; and
 
-I probe the frame buffer.
-But at the kernel boot the driver turn off the LCD.
-when I try a /dev/fb0 test program it execute without problems, but nothing 
-appears on the screen.
+ 2) unpreparing a clock that is still enabled
 
-Any suggetions?
+While the correctness can't be guaranteed, these warnings should cover
+most situations.
 
-Thnaks
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
 
--- 
-Ing. Fabio Giovagnini
+---
+ drivers/clk/clk.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 51dbd33..2369959 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -35,6 +35,8 @@ void clk_unprepare(struct clk *clk)
+ 	if (!clk->ops->unprepare)
+ 		return;
+ 
++	WARN_ON(clk->enable_count);
++
+ 	mutex_lock(&clk->prepare_lock);
+ 	if (--clk->prepare_count = 0)
+ 		clk->ops->unprepare(clk);
+@@ -50,6 +52,8 @@ int clk_enable(struct clk *clk)
+ 	if (!clk->ops->enable)
+ 		return 0;
+ 
++	WARN_ON(clk->ops->prepare && clk->prepare_count);
++
+ 	spin_lock(&clk->enable_lock);
+ 	if (!clk->enable_count)
+ 		ret = clk->ops->enable(clk);
