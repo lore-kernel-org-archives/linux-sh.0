@@ -1,159 +1,133 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Tue, 08 Feb 2011 02:54:57 +0000
+From: Ryan Mallon <ryan@bluewatersys.com>
+Date: Tue, 08 Feb 2011 03:30:08 +0000
 Subject: Re: [RFC,PATCH 1/3] Add a common struct clk
-Message-Id: <201102081054.58005.jeremy.kerr@canonical.com>
+Message-Id: <4D50B8C0.7050701@bluewatersys.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1297058877.800158.458894385837.1.gpush@pororo>
 	<4D50541B.2030405@bluewatersys.com>
-In-Reply-To: <4D50541B.2030405@bluewatersys.com>
+	<201102081054.58005.jeremy.kerr@canonical.com>
+In-Reply-To: <201102081054.58005.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ryan,
-
-> > +int clk_prepare(struct clk *clk)
-> > +{
-> > +	int ret = 0;
-> > +
-> > +	if (!clk->ops->prepare)
-> > +		return 0;
+On 02/08/2011 03:54 PM, Jeremy Kerr wrote:
+> Hi Ryan,
 > 
-> If there is no ops->prepare function then we never increment
-> prepare_count, which means that driver writers can get sloppy if they
-> know that ops->prepare is no-op on their platform since they will not
-> get warned for omitting clk_prepare.
-
-Yeah, as discussed in other replies, it's probably best that we do the 
-counting unconditionally. I've removed these optimisations - I think we'd best 
-enforce the checking here, at least at the introduction of this API.
- 
-> Also, why are the warnings added in a separate patch rather than being
-> rolled into this patch?
-
-Just splitting things up; the warnings were the most discussed issue 
-previously, so I wanted to separate that discussion from the API side.
-
-> Again, you should still increment enable_count even if ops->enabled is a
-> no-op since it provides valuable warnings when clk_enable/disable calls
-> are not matched correctly.
-
-Yep, as above.
-
-> > +unsigned long clk_get_rate(struct clk *clk)
-> > +{
-> > +	if (clk->ops->get_rate)
-> > +		return clk->ops->get_rate(clk);
+>>> +unsigned long clk_get_rate(struct clk *clk)
+>>> +{
+>>> +	if (clk->ops->get_rate)
+>>> +		return clk->ops->get_rate(clk);
+>>
+>> Possibly we should shadow the clock rate if ops->get_rate is no-op? So
+>> clock initialisation and clk_set_rate store the rate in the shadow
+>> field, and then do:
+>>
+>> 	if (clk->ops->get_rate)
+>> 		return clk->ops->get_rate(clk);
+>> 	return clk->shadow_rate;
+>>
+>> Because the API is generic, driver writers should reasonably expect that
+>> clk_get_rate will return something valid without having to know the
+>> platform implementation details. It may also be worth having a warning
+>> to let the user know that the returned rate may be approximate.
 > 
-> Possibly we should shadow the clock rate if ops->get_rate is no-op? So
-> clock initialisation and clk_set_rate store the rate in the shadow
-> field, and then do:
+> I'd prefer to require that get_rate is implemented as an op, rather than 
+> allowing two methods for retrieving the rate of the clock.
+
+If a platform does not provide ops->get_rate and a driver writer does
+not know this, they could naively use the 0 return from clk_get_rate in
+calculations, which is especially bad if they ever divide by the rate.
+At the very least the documentation for clk_get_rate should state that
+the return value needs to be checked and that 0 means the rate is unknown.
+
 > 
-> 	if (clk->ops->get_rate)
-> 		return clk->ops->get_rate(clk);
-> 	return clk->shadow_rate;
+>>> +	return 0;
+>>> +}
+>>> +EXPORT_SYMBOL_GPL(clk_get_rate);
+>>> +
+>>> +int __clk_get(struct clk *clk)
+>>> +{
+>>> +	if (clk->ops->get)
+>>> +		return clk->ops->get(clk);
+>>> +	return 1;
+>>> +}
+>>> +EXPORT_SYMBOL_GPL(__clk_get);
+>>> +
+>>> +void clk_put(struct clk *clk)
+>>> +{
+>>> +	if (clk->ops->put)
+>>> +		clk->ops->put(clk);
+>>> +}
+>>> +EXPORT_SYMBOL_GPL(clk_put);
+>>
+>> This has probably been covered, and I have probably missed it, but why
+>> don't the generic clk_get/put functions do ref-counting? Drivers must
+>> have matched clk_get/put calls so it should work like enable/prepare
+>> counting right?
 > 
-> Because the API is generic, driver writers should reasonably expect that
-> clk_get_rate will return something valid without having to know the
-> platform implementation details. It may also be worth having a warning
-> to let the user know that the returned rate may be approximate.
-
-I'd prefer to require that get_rate is implemented as an op, rather than 
-allowing two methods for retrieving the rate of the clock.
-
-> > +	return 0;
-> > +}
-> > +EXPORT_SYMBOL_GPL(clk_get_rate);
-> > +
-> > +int __clk_get(struct clk *clk)
-> > +{
-> > +	if (clk->ops->get)
-> > +		return clk->ops->get(clk);
-> > +	return 1;
-> > +}
-> > +EXPORT_SYMBOL_GPL(__clk_get);
-> > +
-> > +void clk_put(struct clk *clk)
-> > +{
-> > +	if (clk->ops->put)
-> > +		clk->ops->put(clk);
-> > +}
-> > +EXPORT_SYMBOL_GPL(clk_put);
+> clk_get is used to find a clock; most implementations will not use this for 
+> refcounting.
 > 
-> This has probably been covered, and I have probably missed it, but why
-> don't the generic clk_get/put functions do ref-counting? Drivers must
-> have matched clk_get/put calls so it should work like enable/prepare
-> counting right?
+> However, for the case where clocks are dynamically allocated, we need clk_put 
+> to do any possible freeing. There's an existing API for this type of reference 
+> counting (kref), so for the cases where this matters, the clock 
+> implementations can use that.
 
-clk_get is used to find a clock; most implementations will not use this for 
-refcounting.
+Ah, I see how the clkdev part fits in now. You are correct, the ref
+counting is only needed/useful for dynamic allocation of clocks and
+should therefore be done in the platform specific code.
 
-However, for the case where clocks are dynamically allocated, we need clk_put 
-to do any possible freeing. There's an existing API for this type of reference 
-counting (kref), so for the cases where this matters, the clock 
-implementations can use that.
+We do currently have the slightly indirect route to getting a clock of
+doing: clk_get -> __clk_get -> clk->ops->get. I'm guessing that the long
+term goal is to remove the middle step once everything is using the
+common clock api?
 
-> > + * The choice of atomic or non-atomic clock depends on how the clock is
-> > enabled. + * Typically, you'll want to use a non-atomic clock. For
-> > clocks that need to be + * enabled/disabled in interrupt context, use
-> > CLK_ATOMIC. Note that atomic + * clocks with parents will typically
-> > cascade enable/disable operations to + * their parent, so the parent of
-> > an atomic clock *must* be atomic too.
+Also, how come you decided to keep the clk_get -> __clk_get call in
+clkdev.c, but ifdef'ed clk_put? If you just leave clk_put as is in
+clkdev.c and change clk_put to __clk_put in the generic clock code then
+you need zero changes to clkdev.c
+
 > 
-> This comment seems out of date now that we have the prepare/enable
-> semantics?
-
-Yep, will update.
-
-> > + * @unprepare:	Release the clock from its prepared state. This will
-> > typically + *		undo any work done in the @prepare callback. Called 
-> > with + *		clk->prepare_lock held.
+>>> + * The choice of atomic or non-atomic clock depends on how the clock is
+>>> enabled. + * Typically, you'll want to use a non-atomic clock. For
+>>> clocks that need to be + * enabled/disabled in interrupt context, use
+>>> CLK_ATOMIC. Note that atomic + * clocks with parents will typically
+>>> cascade enable/disable operations to + * their parent, so the parent of
+>>> an atomic clock *must* be atomic too.
+>>
+>> This comment seems out of date now that we have the prepare/enable
+>> semantics?
 > 
-> I think you need to make it more clear the prepare/unprepare must be
-> called from a sleepable context.
-
-The documentation on clk_ops is intended for the clock implementor, so it's 
-not really the right place to descibe the caller's requirements.
-
-Indeed, the documentation for clk_prepare & clk_unprepare describe the 
-caller's requirements for these (and contain the words "This function may 
-sleep").
-
-> > + * Typically, drivers will call clk_prepare when a clock may be needed
-> > later + * (eg. when a device is opened), and clk_enable when the clock
-> > is actually + * required (eg. from an interrupt).
+> Yep, will update.
 > 
-> Drivers _must_ call clk_prepare before clk_enable (not typically)?
-
-This 'typically' is about the actual placement of the clk_prepare and 
-clk_enable calls in the driver code, but I will clarify.
-
-> > +/**
-> > + * __clk_get - update clock-specific refcounter
-> > + *
-> > + * @clk: The clock to refcount
-> > + *
-> > + * Before a clock is returned from clk_get, this function should be
-> > called + * to update any clock-specific refcounting.
-> > + *
-> > + * Returns non-zero on success, zero on failure.
-> > + *
-> > + * Drivers should not need this function; it is only needed by the
-> > + * arch-specific clk_get() implementations.
-> > + */
-> > +int __clk_get(struct clk *clk);
+>>> + * @unprepare:	Release the clock from its prepared state. This will
+>>> typically + *		undo any work done in the @prepare callback. Called 
+>>> with + *		clk->prepare_lock held.
+>>
+>> I think you need to make it more clear the prepare/unprepare must be
+>> called from a sleepable context.
 > 
-> I don't understand this. Are architectures supposed to provide a
-> function called clk_get? Doesn't this break the whole idea of having a
-> common struct clk?
+> The documentation on clk_ops is intended for the clock implementor, so it's 
+> not really the right place to descibe the caller's requirements.
+> 
+> Indeed, the documentation for clk_prepare & clk_unprepare describe the 
+> caller's requirements for these (and contain the words "This function may 
+> sleep").
 
-clk_get() is now provided in drivers/clk/clkdev.c; the arch-specific part of 
-this comment is old (I'll remove it).
+Okay. Should we document for the implementer that clk_enable/disable
+must not sleep then? I don't think atomically is necessarily the right
+word to use here. For example Documentation/serial/driver uses "This
+call must not sleep".
 
-Thanks for taking the time to review, I appreciate it.
+~Ryan
 
-Cheers,
+-- 
+Bluewater Systems Ltd - ARM Technology Solution Centre
 
-
-Jeremy
+Ryan Mallon         		5 Amuri Park, 404 Barbadoes St
+ryan@bluewatersys.com         	PO Box 13 889, Christchurch 8013
+http://www.bluewatersys.com	New Zealand
+Phone: +64 3 3779127		Freecall: Australia 1800 148 751
+Fax:   +64 3 3779135			  USA 1800 261 2934
