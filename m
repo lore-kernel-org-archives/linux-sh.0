@@ -1,40 +1,44 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Wed, 09 Feb 2011 09:00:05 +0000
+From: Ryan Mallon <ryan@bluewatersys.com>
+Date: Wed, 09 Feb 2011 20:21:14 +0000
 Subject: Re: [RFC,PATCH 1/3] Add a common struct clk
-Message-Id: <20110209090005.GN27982@pengutronix.de>
+Message-Id: <4D52F73A.4010707@bluewatersys.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1297233693.241680.897691111624.0.gpush@pororo>
-	<1297233693.242364.862698430999.1.gpush@pororo>
+References: <1297233693.242364.862698430999.1.gpush@pororo>
 In-Reply-To: <1297233693.242364.862698430999.1.gpush@pororo>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+
+On 02/09/2011 07:41 PM, Jeremy Kerr wrote:
 
 Hi Jeremy,
 
-On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
+Couple more comments below.
+
+~Ryan
+
 > We currently have ~21 definitions of struct clk in the ARM architecture,
 > each defined on a per-platform basis. This makes it difficult to define
 > platform- (or architecture-) independent clock sources without making
 > assumptions about struct clk, and impossible to compile two
 > platforms with different struct clks into a single image.
->=20
+> 
 > This change is an effort to unify struct clk where possible, by defining
 > a common struct clk, containing a set of clock operations. Different
 > clock implementations can set their own operations, and have a standard
 > interface for generic code. The callback interface is exposed to the
 > kernel proper, while the clock implementations only need to be seen by
 > the platform internals.
->=20
+> 
 > This allows us to share clock code among platforms, and makes it
 > possible to dynamically create clock devices in platform-independent
 > code.
->=20
+> 
 > Platforms can enable the generic struct clock through
 > CONFIG_USE_COMMON_STRUCT_CLK. In this case, the clock infrastructure
 > consists of a common struct clk:
->=20
+> 
 > struct clk {
 > 	const struct clk_ops	*ops;
 > 	unsigned int		enable_count;
@@ -42,41 +46,41 @@ On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
 > 	spinlock_t		enable_lock;
 > 	struct mutex		prepare_lock;
 > };
->=20
+> 
 > And a set of clock operations (defined per type of clock):
->=20
+> 
 > struct clk_ops {
 > 	int             (*enable)(struct clk *);
 > 	void            (*disable)(struct clk *);
 > 	unsigned long   (*get_rate)(struct clk *);
 > 	[...]
 > };
->=20
+> 
 > To define a hardware-specific clock, machine code can "subclass" the
 > struct clock into a new struct (adding any device-specific data), and
 > provide a set of operations:
->=20
+> 
 > struct clk_foo {
 > 	struct clk	clk;
 > 	void __iomem	*some_register;
 > };
->=20
-> struct clk_ops clk_foo_ops =3D {
-> 	.get_rate =3D clk_foo_get_rate,
+> 
+> struct clk_ops clk_foo_ops = {
+> 	.get_rate = clk_foo_get_rate,
 > };
->=20
+> 
 > The common clock definitions are based on a development patch from Ben
 > Herrenschmidt <benh@kernel.crashing.org>.
->=20
+> 
 > Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
->=20
+> 
 > ---
->  drivers/clk/Kconfig  |    3=20
->  drivers/clk/Makefile |    1=20
+>  drivers/clk/Kconfig  |    3 
+>  drivers/clk/Makefile |    1 
 >  drivers/clk/clk.c    |  126 +++++++++++++++++++++++++++
 >  include/linux/clk.h  |  194 +++++++++++++++++++++++++++++++++++++++++--
 >  4 files changed, 315 insertions(+), 9 deletions(-)
->=20
+> 
 > diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
 > index 4168c88..6e3ae54 100644
 > --- a/drivers/clk/Kconfig
@@ -93,9 +97,9 @@ On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
 > --- a/drivers/clk/Makefile
 > +++ b/drivers/clk/Makefile
 > @@ -1,2 +1,3 @@
-> =20
->  obj-$(CONFIG_CLKDEV_LOOKUP)	+=3D clkdev.o
-> +obj-$(CONFIG_USE_COMMON_STRUCT_CLK) +=3D clk.o
+>  
+>  obj-$(CONFIG_CLKDEV_LOOKUP)	+= clkdev.o
+> +obj-$(CONFIG_USE_COMMON_STRUCT_CLK) += clk.o
 > diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
 > new file mode 100644
 > index 0000000..c35478a
@@ -117,11 +121,11 @@ On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
 > +
 > +int clk_prepare(struct clk *clk)
 > +{
-> +	int ret =3D 0;
+> +	int ret = 0;
 > +
 > +	mutex_lock(&clk->prepare_lock);
-> +	if (clk->prepare_count =3D 0 && clk->ops->prepare)
-> +		ret =3D clk->ops->prepare(clk);
+> +	if (clk->prepare_count = 0 && clk->ops->prepare)
+> +		ret = clk->ops->prepare(clk);
 > +
 > +	if (!ret)
 > +		clk->prepare_count++;
@@ -135,9 +139,9 @@ On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
 > +{
 > +	mutex_lock(&clk->prepare_lock);
 > +
-> +	WARN_ON(clk->prepare_count =3D 0);
+> +	WARN_ON(clk->prepare_count = 0);
 > +
-> +	if (--clk->prepare_count =3D 0 && clk->ops->unprepare)
+> +	if (--clk->prepare_count = 0 && clk->ops->unprepare)
 > +		clk->ops->unprepare(clk);
 > +
 > +	mutex_unlock(&clk->prepare_lock);
@@ -147,11 +151,24 @@ On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
 > +int clk_enable(struct clk *clk)
 > +{
 > +	unsigned long flags;
-> +	int ret =3D 0;
+> +	int ret = 0;
 > +
 > +	spin_lock_irqsave(&clk->enable_lock, flags);
-> +	if (clk->enable_count =3D 0 && clk->ops->enable)
-> +		ret =3D clk->ops->enable(clk);
+
+	WARN_ON(clk->prepare_count = 0); ?
+
+> +	if (clk->enable_count = 0 && clk->ops->enable)
+> +		ret = clk->ops->enable(clk);
+
+Does it make sense to have a clock with no enable function which still
+returns success from clk_enable? Do we have any platforms which have
+NULL clk_enable functions?
+
+I think that for enable/disable at least we should require platforms to
+provide functions and oops if they have failed to do so. In the rare
+case that a platform doesn't need to do anything for enable/disable they
+can just supply empty functions.
+
 > +
 > +	if (!ret)
 > +		clk->enable_count++;
@@ -167,11 +184,9 @@ On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
 > +
 > +	spin_lock_irqsave(&clk->enable_lock, flags);
 > +
-> +	WARN_ON(clk->enable_count =3D 0);
+> +	WARN_ON(clk->enable_count = 0);
 > +
-> +	if (!--clk->enable_count =3D 0 && clk->ops->disable)
-s/!//
-
+> +	if (!--clk->enable_count = 0 && clk->ops->disable)
 > +		clk->ops->disable(clk);
 > +
 > +	spin_unlock_irqrestore(&clk->enable_lock, flags);
@@ -245,19 +260,18 @@ s/!//
 > @@ -11,18 +12,198 @@
 >  #ifndef __LINUX_CLK_H
 >  #define __LINUX_CLK_H
-> =20
+>  
 > +#include <linux/err.h>
 > +#include <linux/mutex.h>
 > +#include <linux/spinlock.h>
 > +
 >  struct device;
-> =20
+>  
 > -/*
 > - * The base API.
 > +#ifdef CONFIG_USE_COMMON_STRUCT_CLK
 > +
-> +/* If we're using the common struct clk, we define the base clk object h=
-ere */
+> +/* If we're using the common struct clk, we define the base clk object here */
 > +
 > +/**
 > + * struct clk - hardware independent clock structure
@@ -267,10 +281,8 @@ ere */
 > + * @prepare_count:	count of clk_prepare() calls active on this clock
 > + * @prepare_lock:	lock for sleepable prepare
 > + *
-> + * The base clock object, used by drivers for hardware-independent manip=
-ulation
-> + * of clock lines. This will be 'subclassed' by device-specific implemen=
-tations,
+> + * The base clock object, used by drivers for hardware-independent manipulation
+> + * of clock lines. This will be 'subclassed' by device-specific implementations,
 > + * which add device-specific data to struct clk. For example:
 > + *
 > + *  struct clk_foo {
@@ -282,8 +294,7 @@ tations,
 > + * clk_foo.clk to the common clock code. The clock driver will be called
 > + * through the @ops callbacks.
 > + *
-> + * The @enable_lock and @prepare_lock members are used to serialise acce=
-sses
+> + * The @enable_lock and @prepare_lock members are used to serialise accesses
 > + * to the ops->enable and ops->prepare functions (and the corresponding
 > + * ops->disable and ops->unprepare functions).
 > + */
@@ -297,18 +308,16 @@ sses
 > +
 > +/* static initialiser for clocks */
 > +#define INIT_CLK(name, o) {						\
-> +	.ops		=3D &o,						\
-> +	.enable_count	=3D 0,						\
-> +	.prepare_count	=3D 0,						\
-> +	.enable_lock	=3D __SPIN_LOCK_UNLOCKED(name.enable_lock),	\
-> +	.prepare_lock	=3D __MUTEX_INITIALIZER(name.prepare_lock),	\
+> +	.ops		= &o,						\
+> +	.enable_count	= 0,						\
+> +	.prepare_count	= 0,						\
+> +	.enable_lock	= __SPIN_LOCK_UNLOCKED(name.enable_lock),	\
+> +	.prepare_lock	= __MUTEX_INITIALIZER(name.prepare_lock),	\
 > +}
 > +
 > +/**
-> + * struct clk_ops -  Callback operations for clocks; these are to be pro=
-vided
-> + * by the clock implementation, and will be called by drivers through th=
-e clk_*
+> + * struct clk_ops -  Callback operations for clocks; these are to be provided
+> + * by the clock implementation, and will be called by drivers through the clk_*
 > + * API.
 > + *
 > + * @prepare:	Prepare the clock for enabling. This must not return until
@@ -317,8 +326,7 @@ e clk_*
 > + *		do any initialisation that may block. Called with
 > + *		clk->prepare_lock held.
 > + *
-> + * @unprepare:	Release the clock from its prepared state. This will typi=
-cally
+> + * @unprepare:	Release the clock from its prepared state. This will typically
 > + *		undo any work done in the @prepare callback. Called with
 > + *		clk->prepare_lock held.
 > + *
@@ -327,8 +335,7 @@ cally
 > + *		devices. Called with clk->enable_lock held. This function
 > + *		must not sleep.
 > + *
-> + * @disable:	Disable the clock atomically. Called with clk->enable_lock =
-held.
+> + * @disable:	Disable the clock atomically. Called with clk->enable_lock held.
 > + *		This function must not sleep.
 > + *
 > + * @get:	Called by the core clock code when a device driver acquires a
@@ -338,29 +345,20 @@ held.
 > + *		clock via clk_put(). Optional.
 > + *
 > + * The clk_enable/clk_disable and clk_prepare/clk_unprepare pairs allow
-> + * implementations to split any work between atomic (enable) and sleepab=
-le
-> + * (prepare) contexts.  If a clock requires blocking code to be turned o=
-n, this
-> + * should be done in clk_prepare. Switching that will not block should b=
-e done
+> + * implementations to split any work between atomic (enable) and sleepable
+> + * (prepare) contexts.  If a clock requires blocking code to be turned on, this
+> + * should be done in clk_prepare. Switching that will not block should be done
 > + * in clk_enable.
 > + *
-> + * Typically, drivers will call clk_prepare when a clock may be needed l=
-ater
-> + * (eg. when a device is opened), and clk_enable when the clock is actua=
-lly
-> + * required (eg. from an interrupt). Note that clk_prepare *must* have b=
-een
+> + * Typically, drivers will call clk_prepare when a clock may be needed later
+> + * (eg. when a device is opened), and clk_enable when the clock is actually
+> + * required (eg. from an interrupt). Note that clk_prepare *must* have been
 > + * called before clk_enable.
 > + *
-> + * For other callbacks, see the corresponding clk_* functions. Parameter=
-s and
+> + * For other callbacks, see the corresponding clk_* functions. Parameters and
 > + * return values are passed directly from/to these API functions, or
-> + * -ENOSYS (or zero, in the case of clk_get_rate) is returned if the cal=
-lback
-> + * is NULL, see kernel/clk.c for implementation details. All are optiona=
-l.
+> + * -ENOSYS (or zero, in the case of clk_get_rate) is returned if the callback
+> + * is NULL, see kernel/clk.c for implementation details. All are optional.
 > + */
 > +struct clk_ops {
 > +	int		(*prepare)(struct clk *);
@@ -381,14 +379,18 @@ l.
 > + *
 > + * @clk: The clock to refcount
 > + *
-> + * Before a clock is returned from clk_get, this function should be call=
-ed
+> + * Before a clock is returned from clk_get, this function should be called
 > + * to update any clock-specific refcounting.
+
+This is a bit misleading. It's not "should be called", it "is called". I
+think you should just remove the documentation for __clk_get/__clk_put
+or move it into clk.c since the functions are only used internally by
+the common clock code.
+
 > + *
 > + * Returns non-zero on success, zero on failure.
 > + *
-> + * Drivers should not need this function, it is called by the common clo=
-ck
+> + * Drivers should not need this function, it is called by the common clock
 > + * infrastructure.
 > + */
 > +int __clk_get(struct clk *clk);
@@ -401,8 +403,7 @@ ck
 > + * Called by clock infrastructure code to indicate that a clock consumer
 > + * has released a clock, to update any clock-specific refcounting.
 > + *
-> + * Drivers should not need this function, it is called by the common clo=
-ck
+> + * Drivers should not need this function, it is called by the common clock
 > + * infrastructure.
 > + */
 > +void __clk_put(struct clk *clk);
@@ -414,6 +415,9 @@ ck
 > + *
 > + * Do any blocking initialisation on @clk, allowing the clock to be later
 > + * enabled atomically (via clk_enable). This function may sleep.
+
+"Possibly blocking" as below?
+
 > + */
 > +int clk_prepare(struct clk *clk);
 > +
@@ -423,11 +427,83 @@ ck
 > + * @clk: The clock to release
 > + *
 > + * Do any (possbly blocking) cleanup on clk. This function may sleep.
-s/possbly/possibly/
 
-Best regards
-Uwe
+Typo "possbly".
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+>   */
+> +void clk_unprepare(struct clk *clk);
+>  
+> +/**
+> + * clk_common_init - initialise a clock for driver usage
+> + *
+> + * @clk: The clock to initialise
+> + *
+> + * Used for runtime intialization of clocks; you don't need to call this
+> + * if your clock has been (statically) initialized with INIT_CLK.
+> + */
+> +static inline void clk_common_init(struct clk *clk)
+> +{
+> +	clk->enable_count = clk->prepare_count = 0;
+> +	spin_lock_init(&clk->enable_lock);
+> +	mutex_init(&clk->prepare_lock);
+> +}
+> +
+> +#else /* !CONFIG_USE_COMMON_STRUCT_CLK */
+>  
+>  /*
+> - * struct clk - an machine class defined object / cookie.
+> + * Global clock object, actual structure is declared per-machine
+>   */
+>  struct clk;
+>  
+> +static inline void clk_common_init(struct clk *clk) { }
+> +
+> +/*
+> + * For !CONFIG_USE_COMMON_STRUCT_CLK, we don't enforce any atomicity
+> + * requirements for clk_enable/clk_disable, so the prepare and unprepare
+> + * functions are no-ops
+> + */
+> +int clk_prepare(struct clk *clk) { return 0; }
+> +void clk_unprepare(struct clk *clk) { }
+> +
+> +#endif /* !CONFIG_USE_COMMON_STRUCT_CLK */
+> +
+>  /**
+>   * clk_get - lookup and obtain a reference to a clock producer.
+>   * @dev: device for clock "consumer"
+> @@ -67,6 +248,7 @@ void clk_disable(struct clk *clk);
+>  /**
+>   * clk_get_rate - obtain the current clock rate (in Hz) for a clock source.
+>   *		  This is only valid once the clock source has been enabled.
+> + *		  Returns zero if the clock rate is unknown.
+>   * @clk: clock source
+>   */
+>  unsigned long clk_get_rate(struct clk *clk);
+> @@ -83,12 +265,6 @@ unsigned long clk_get_rate(struct clk *clk);
+>   */
+>  void clk_put(struct clk *clk);
+>  
+> -
+> -/*
+> - * The remaining APIs are optional for machine class support.
+> - */
+> -
+> -
+>  /**
+>   * clk_round_rate - adjust a rate to the exact rate a clock can provide
+>   * @clk: clock source
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+
+
+-- 
+Bluewater Systems Ltd - ARM Technology Solution Centre
+
+Ryan Mallon         		5 Amuri Park, 404 Barbadoes St
+ryan@bluewatersys.com         	PO Box 13 889, Christchurch 8013
+http://www.bluewatersys.com	New Zealand
+Phone: +64 3 3779127		Freecall: Australia 1800 148 751
+Fax:   +64 3 3779135			  USA 1800 261 2934
