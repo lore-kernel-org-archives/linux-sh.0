@@ -1,9 +1,11 @@
 From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Mon, 07 Feb 2011 06:07:57 +0000
-Subject: [RFC,PATCH 0/3] Common struct clk implementation, v11
-Message-Id: <1297058877.799617.749783078584.0.gpush@pororo>
+Date: Wed, 09 Feb 2011 06:41:33 +0000
+Subject: [RFC,PATCH 0/3] Common struct clk implementation, v12
+Message-Id: <1297233693.241680.897691111624.0.gpush@pororo>
 List-Id: <linux-sh.vger.kernel.org>
 In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
+References: <1297058877.799617.749783078584.0.gpush@pororo>
+In-Reply-To: <1297058877.799617.749783078584.0.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
@@ -32,6 +34,9 @@ Many thanks to the following for their input:
  * Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>
  * Vincent Guittot <vincent.guittot@linaro.org>
  * Sascha Hauer <s.hauer@pengutronix.de>
+ * Ryan Mallon <ryan@bluewatersys.com>
+ * Colin Cross <ccross@google.com>
+ * Jassi Brar <jassisinghbrar@gmail.com>
 
 Cheers,
 
@@ -39,6 +44,13 @@ Cheers,
 Jeremy
 
 --
+v12:
+ * Always refcount, even when enable/prepare ops are NULL
+ * Unify prepare & enable count checking
+ * Update comments for prepare/unprepare
+ * Use spin_{lock,unlock}_irqsave
+ * Change clk_put to __clk_put, and use the shared clk_put
+
 v11:
  * add prepare/unprepare for non-atomic switching, document atomicity
  * move to drivers/clk/
