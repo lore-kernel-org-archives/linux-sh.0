@@ -1,45 +1,41 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 09 Feb 2011 04:05:41 +0000
-Subject: Re: [PATCH] sh: Provide in/out{b,w,l}
-Message-Id: <AANLkTinWbYne1gZQy=oR7ZoYSdtVFdF_WF1Djm5tH8vY@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 09 Feb 2011 07:46:47 +0000
+Subject: [PATCH v2] dma: shdma: add checking the DMAOR_AE in sh_dmae_err
+Message-Id: <4D524667.3040306@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1296630315-21264-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1296630315-21264-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi, Paul.
+The irq numbers of tranfer end and address error are assigned same number
+on some CPU. So the sh_dmae_err() should check the AE flag in DMAOR.
 
-2011/2/3 Paul Mundt <lethal@linux-sh.org>:
-> On Wed, Feb 02, 2011 at 04:05:15PM +0900, Nobuhiro Iwamatsu wrote:
->> By commit 37b7a97884ba64bf7d403351ac2a9476ab4f1bba,
->> delete machvec IO routines.
->> Because the definition of in/out_{b,w,l} was deleted,
->> driver needing these cannot build.
->> This defines it again.
->>
-> Wrong. Please actually study the change and try to figure out what it is
-> doing before re-introducing stuff it intentionally removed.
->
-> The only time we have PIO is when PCI is available, anything else is just
-> broken wrapping in to MMIO due to drivers using legacy PIO accessors.
-> These are now few enough that it's trivial to simply fix up the drivers
-> accordingly.
->
-> If IOPORT support is enabled (by way of CONFIG_PCI) then all of the PIO
-> routines likewise become available -- these are constructed by the
-> BUILDIO_IOPORT macro. The PIO offsets in question are then relative to
-> the PCI channel's I/O base.
->
-> It took us years to get rid of all of the crap SuperIO fake PIO nonsense,
-> any attempt to re-add bogus PIO routines in an IOMEM only configuration
-> are fundamentally broken.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v2:
+  - remove unnecessary cast
 
-I read asm/io.h again and understood your indication.
-Sorry, and thanks!
+ drivers/dma/shdma.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-  Nobuhiro
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 28720d3..3e4c627 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -865,7 +865,12 @@ static unsigned int sh_dmae_reset(struct sh_dmae_device *shdev)
+
+ static irqreturn_t sh_dmae_err(int irq, void *data)
+ {
+-	return IRQ_RETVAL(sh_dmae_reset(data));
++	struct sh_dmae_device *shdev = data;
++
++	if (dmaor_read(shdev) & DMAOR_AE)
++		return IRQ_RETVAL(sh_dmae_reset(data));
++	else
++		return IRQ_NONE;
+ }
+
+ static void dmae_do_tasklet(unsigned long data)
 -- 
-Nobuhiro Iwamatsu
+1.7.1
