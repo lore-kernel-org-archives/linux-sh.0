@@ -1,29 +1,38 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Tue, 15 Feb 2011 02:00:28 +0000
-Subject: Re: [RFC, PATCH 3/3] clk: add warnings for incorrect enable/prepare semantics
-Message-Id: <201102151000.29385.jeremy.kerr@canonical.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 09 Feb 2011 06:51:44 +0000
+Subject: [PATCH] dma: shdma: add checking the DMAOR_AE in sh_dmae_err
+Message-Id: <4D523980.2080309@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1297233693.241680.897691111624.0.gpush@pororo>
-	<1297233693.243373.411051105619.3.gpush@pororo>
-	<20110210093756.GA24710@b20223-02.ap.freescale.net>
-In-Reply-To: <20110210093756.GA24710@b20223-02.ap.freescale.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Richard,
+The irq numbers of tranfer end and address error are assigned same number
+on some CPU. So the sh_dmae_err() should check the AE flag in DMAOR.
 
-> >  void clk_unprepare(struct clk *clk)
-> >  {
-> > 
-> > +	WARN_ON(clk->enable_count != 0);
-> > +
-> 
-> Other drivers may be using the clock and increased the enable_count.
-> This check may be moved to where we actually do unprepare.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/dma/shdma.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-Of course, thanks. Will update the series.
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 28720d3..588b92f 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -865,7 +865,12 @@ static unsigned int sh_dmae_reset(struct sh_dmae_device *shdev)
 
+ static irqreturn_t sh_dmae_err(int irq, void *data)
+ {
+-	return IRQ_RETVAL(sh_dmae_reset(data));
++	struct sh_dmae_device *shdev = (struct sh_dmae_device *)data;
++
++	if (dmaor_read(shdev) & DMAOR_AE)
++		return IRQ_RETVAL(sh_dmae_reset(data));
++	else
++		return IRQ_NONE;
+ }
 
-Jeremy
+ static void dmae_do_tasklet(unsigned long data)
+-- 
+1.7.1
