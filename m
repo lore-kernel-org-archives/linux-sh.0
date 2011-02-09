@@ -1,34 +1,27 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Wed, 23 Feb 2011 08:15:39 +0000
-Subject: Re: [PATCH] wip: convert imx27 to common struct clk
-Message-Id: <20110223081539.GM22310@pengutronix.de>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Wed, 09 Feb 2011 15:12:50 +0000
+Subject: sh used greatest stack depth: 6628 bytes left
+Message-Id: <201102091612.51193.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298256658.861611.43913489619.0.gpush@pororo>
-	<1298417599-23522-1-git-send-email-u.kleine-koenig@pengutronix.de>
-	<4D648A3D.7020402@codeaurora.org>
-In-Reply-To: <4D648A3D.7020402@codeaurora.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hi Saravana,
+Hi all, what means the subject's message?
+Is it dangerous?
+Where could I check it?
 
-On Tue, Feb 22, 2011 at 08:17:01PM -0800, Saravana Kannan wrote:
-> On 02/22/2011 03:33 PM, Uwe Kleine-K=F6nig wrote:
-> >I had to degrade one WARN_ON to WARN_ON_ONCE in drivers/clk/clk.c to
-> >actually make it work.  Otherwise console output results in a warning
-> >that results in console output ...
->=20
-> You won't be able to do mainline the WARN_ON_ONCE because that will
-> only warn for the first clock that violates whatever condition it's
-> warning about.
-I wonder if it is more sensible while the warning is new.  But I don't
-care much because I'm going to fix the serial driver before switching.
-=20
-Best regards
-Uwe
+Thanks
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+-- 
+Ing. Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
