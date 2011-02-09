@@ -1,9 +1,11 @@
 From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Mon, 07 Feb 2011 06:07:57 +0000
+Date: Wed, 09 Feb 2011 06:41:33 +0000
 Subject: [RFC,PATCH 2/3] clk: Generic support for fixed-rate clocks
-Message-Id: <1297058877.800455.891273153193.2.gpush@pororo>
+Message-Id: <1297233693.242725.820672531799.2.gpush@pororo>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
+In-Reply-To: <1297233693.241680.897691111624.0.gpush@pororo>
+References: <1297058877.800455.891273153193.2.gpush@pororo>
+In-Reply-To: <1297058877.800455.891273153193.2.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,13 +22,13 @@ Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
  2 files changed, 30 insertions(+)
 
 diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 12e0daf..51dbd33 100644
+index c35478a..bbbdb0d 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -132,3 +132,17 @@ struct clk *clk_get_parent(struct clk *clk)
- 	return ERR_PTR(-ENOSYS);
+@@ -124,3 +124,17 @@ void __clk_put(struct clk *clk)
+ 	if (clk->ops->put)
+ 		clk->ops->put(clk);
  }
- EXPORT_SYMBOL_GPL(clk_get_parent);
 +
 +/* clk_fixed support */
 +
@@ -42,10 +44,10 @@ index 12e0daf..51dbd33 100644
 +};
 +EXPORT_SYMBOL_GPL(clk_fixed_ops);
 diff --git a/include/linux/clk.h b/include/linux/clk.h
-index e081ca1..daa2d5a 100644
+index fe806b7..e67fdb0 100644
 --- a/include/linux/clk.h
 +++ b/include/linux/clk.h
-@@ -176,6 +176,22 @@ static inline void clk_common_init(struct clk *clk)
+@@ -185,6 +185,22 @@ static inline void clk_common_init(struct clk *clk)
  	mutex_init(&clk->prepare_lock);
  }
  
