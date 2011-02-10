@@ -1,35 +1,30 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Wed, 23 Feb 2011 02:49:17 +0000
-Subject: Re: [PATCH 1/2] Add a common struct clk
-Message-Id: <201102231049.17466.jeremy.kerr@canonical.com>
+From: Alexandre Courbot <gnurou@gmail.com>
+Date: Thu, 10 Feb 2011 15:22:44 +0000
+Subject: [PATCH 0/2] backlight support for sh_mobile_lcdcfb
+Message-Id: <1297351366-7374-1-git-send-email-gnurou@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298256658.861611.43913489619.0.gpush@pororo>
-	<1298256658.862188.178150188637.1.gpush@pororo>
-	<20110222201725.GF22310@pengutronix.de>
-In-Reply-To: <20110222201725.GF22310@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Uwe,
+These patches add initial support for per-channel GPIO-controlled backlights to the sh_mobile_lcdcfb driver. A backlight device for the ecovec24 board is also provided.
 
-> > +static inline void clk_common_init(struct clk *clk) { }
-> > +
-> > +/*
-> > + * For !CONFIG_USE_COMMON_STRUCT_CLK, we don't enforce any atomicity
-> > + * requirements for clk_enable/clk_disable, so the prepare and unprepare
-> > + * functions are no-ops
-> > + */
-> > +int clk_prepare(struct clk *clk) { return 0; }
-> > +void clk_unprepare(struct clk *clk) { }
-> 
-> these should be static inline.  Otherwise these functions end up in many
-> files and so provoke a build failure.
+Backlight support is directly integrated into the lcdcfb driver, because external usage seems unlikely and this facilitates integration with the fb backlight support. However, it should be be easy to split it into another driver if needed.
 
-Ugh, brown paper bag time. Thanks for that, I'll update this patch.
+This series should be considered a first draft, since some points could probably be improved. In particular, the gpio is not acquired by the driver since board support code (at least for ecovec24) request it during early setup and do not seem to release it.
 
-Cheers,
+Alexandre Courbot (2):
+  fbdev: sh_mobile_lcdcfb: add backlight support
+  sh: mach-ecovec24: support for main lcd backlight
 
+ arch/sh/boards/mach-ecovec24/setup.c |    6 +++
+ drivers/video/Kconfig                |    1 +
+ drivers/video/sh_mobile_lcdcfb.c     |   73 ++++++++++++++++++++++++++++++++++
+ drivers/video/sh_mobile_lcdcfb.h     |    2 +
+ include/video/sh_mobile_lcdc.h       |    7 +++
+ 5 files changed, 89 insertions(+), 0 deletions(-)
 
-Jeremy
+-- 
+1.7.4
+
