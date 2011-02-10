@@ -1,7 +1,7 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Wed, 09 Feb 2011 06:58:17 +0000
+From: Ryan Mallon <ryan@bluewatersys.com>
+Date: Thu, 10 Feb 2011 23:23:56 +0000
 Subject: Re: [RFC,PATCH 2/3] clk: Generic support for fixed-rate clocks
-Message-Id: <201102090758.21020.fabio.giovagnini@aurion-tech.com>
+Message-Id: <4D54738C.80900@bluewatersys.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1297233693.242725.820672531799.2.gpush@pororo>
 In-Reply-To: <1297233693.242725.820672531799.2.gpush@pororo>
@@ -10,14 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi, guys,
-is there a documentation about clk framework?
-Or only to read the sources?
-
-Thanks a lot, and best regards
-
-
-On Wednesday 09 February 2011 07:41:33 Jeremy Kerr wrote:
+On 02/09/2011 07:41 PM, Jeremy Kerr wrote:
 > Since most platforms will need a fixed-rate clock, add one. This will
 > also serve as a basic example of an implementation of struct clk.
 > 
@@ -57,7 +50,7 @@ On Wednesday 09 February 2011 07:41:33 Jeremy Kerr wrote:
 > @@ -185,6 +185,22 @@ static inline void clk_common_init(struct clk *clk)
 >  	mutex_init(&clk->prepare_lock);
 >  }
-> 
+>  
 > +/* Simple fixed-rate clock */
 > +struct clk_fixed {
 > +	struct clk	clk;
@@ -70,26 +63,26 @@ On Wednesday 09 February 2011 07:41:33 Jeremy Kerr wrote:
 > +	.clk = INIT_CLK(name.clk, clk_fixed_ops), \
 > +	.rate = (r) \
 > +}
-> +
-> +#define DEFINE_CLK_FIXED(name, r) \
-> +	struct clk_fixed name = INIT_CLK_FIXED(name, r)
-> +
->  #else /* !CONFIG_USE_COMMON_STRUCT_CLK */
-> 
->  /*
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+A fixed clock may still have other operations such as enable/disable.
+Maybe do something like this instead:
+
+#define INIT_CLK_FIXED(name, ops, r) { 		\
+	.clk = INIT_CLK(name.clk, ops, rate), 	\
+	.clk.ops.get_rate = clk_fixed_get_rate, \
+	.rate = (r),				\
+}
+
+That's untested though. I'm not sure if you can reliably assign
+something twice in a struct initialiser?
+
+~Ryan
 
 -- 
-Ing. Fabio Giovagnini
+Bluewater Systems Ltd - ARM Technology Solution Centre
 
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
+Ryan Mallon         		5 Amuri Park, 404 Barbadoes St
+ryan@bluewatersys.com         	PO Box 13 889, Christchurch 8013
+http://www.bluewatersys.com	New Zealand
+Phone: +64 3 3779127		Freecall: Australia 1800 148 751
+Fax:   +64 3 3779135			  USA 1800 261 2934
