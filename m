@@ -1,48 +1,65 @@
-From: Saravana Kannan <skannan@codeaurora.org>
-Date: Thu, 10 Feb 2011 04:26:44 +0000
-Subject: Re: [RFC, PATCH 3/3] clk: add warnings for incorrect enable/prepare
-Message-Id: <4D536904.5080708@codeaurora.org>
+From: Richard Zhao <richard.zhao@freescale.com>
+Date: Thu, 10 Feb 2011 09:37:57 +0000
+Subject: Re: [RFC, PATCH 3/3] clk: add warnings for incorrect
+Message-Id: <20110210093756.GA24710@b20223-02.ap.freescale.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201102011711.31258.jeremy.kerr@canonical.com>	<1297058877.800990.238556019385.3.gpush@pororo>	<20110207080555.GC27982@pengutronix.de>	<201102071608.42855.jeremy.kerr@canonical.com>
-	<alpine.LFD.2.00.1102070908120.14920@xanadu.home>
-In-Reply-To: <alpine.LFD.2.00.1102070908120.14920@xanadu.home>
+References: <1297233693.241680.897691111624.0.gpush@pororo>
+	<1297233693.243373.411051105619.3.gpush@pororo>
+In-Reply-To: <1297233693.243373.411051105619.3.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 02/07/2011 06:24 AM, Nicolas Pitre wrote:
-> On Mon, 7 Feb 2011, Jeremy Kerr wrote:
->
->> Hi Uwe,
->>
->>> This implies the warning is only issued on clocks that have a prepare
->>> callback.  If we want to enforce the new API the warning here shouldn't
->>> depend on clk->ops->prepare.  (clk_prepare and clk_unprepare need to
->>> be changed then to adapt the prepare_count even in the absence of
->>> clk->ops->prepare.)
->>
->> Yeah, it's a decision about either adding a small cost to all clk_prepare()s
->> (ie, adding cost when there is no prepare callback), or checking for the
->> correct prepare/enable semantics for all clocks (even when it doesn't matter
->> for that particular clock). I chose the first as more important, but happy to
->> go either way here.
->
-> The prepare method being called from non-atomic context cannot be
-> considered to be in a speed critical path.  Most of the time, this is
-> going to be called on driver initialization or the like, and that's a
-> relatively rare event. Therefore this really small cost to clk_prepare()
-> is definitively worth it to help proper usage of the API.  If this ever
-> becomes a problem then this could be confined to some CONFIG_CLK_DEBUG
-> or the like.  But when introducing a new API it is best to be more
-> strict to help people get its usage right (without going overboard with
-> it of course).
->
+Hi Jeremy,
 
-Agree with Nicholas and Uwe. +1 for this request.
+On Wed, Feb 09, 2011 at 02:41:33PM +0800, Jeremy Kerr wrote:
+> This change adds warnings to check for:
+> 
+>  1) enabling a clock that hasn't been prepared; and
+> 
+>  2) unpreparing a clock that is still enabled
+> 
+> While the correctness can't be guaranteed, the warnings should cover
+> most situations, and won't indicate false positives.
+> 
+> Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+> 
+> ---
+>  drivers/clk/clk.c |    4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+> index bbbdb0d..8c96623 100644
+> --- a/drivers/clk/clk.c
+> +++ b/drivers/clk/clk.c
+> @@ -29,6 +29,8 @@ EXPORT_SYMBOL_GPL(clk_prepare);
+>  
+>  void clk_unprepare(struct clk *clk)
+>  {
+> +	WARN_ON(clk->enable_count != 0);
+> +
+Other drivers may be using the clock and increased the enable_count.
+This check may be moved to where we actually do unprepare.
 
--Saravana
+Thanks
+Richard
+>  	mutex_lock(&clk->prepare_lock);
+>  
+>  	WARN_ON(clk->prepare_count = 0);
+> @@ -45,6 +47,8 @@ int clk_enable(struct clk *clk)
+>  	unsigned long flags;
+>  	int ret = 0;
+>  
+> +	WARN_ON(clk->prepare_count = 0);
+> +
+>  	spin_lock_irqsave(&clk->enable_lock, flags);
+>  	if (clk->enable_count = 0 && clk->ops->enable)
+>  		ret = clk->ops->enable(clk);
+> 
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+> 
 
--- 
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
