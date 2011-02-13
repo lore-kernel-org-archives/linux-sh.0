@@ -1,70 +1,76 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 18 Feb 2011 08:13:45 +0000
-Subject: [PATCH 4/4] V4l: sh_mobile_ceu_camera: fix cropping offset calculation
-Message-Id: <Pine.LNX.4.64.1102180911430.1851@axis700.grange>
+From: Daniel Palmer <me@danielpalmer.co.uk>
+Date: Sun, 13 Feb 2011 03:59:14 +0000
+Subject: Landisk: Recent kernels don't boot.
+Message-Id: <4D575712.3010204@danielpalmer.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1102180857360.1851@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1102180857360.1851@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: linux-sh@vger.kernel.org
 
-Use the correct scales to calculate cropping offsets.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
-
-This one is unrelated to vb2, but it touches the same file.
-
- drivers/media/video/sh_mobile_ceu_camera.c |   12 ++++--------
- 1 files changed, 4 insertions(+), 8 deletions(-)
-
-diff --git a/drivers/media/video/sh_mobile_ceu_camera.c b/drivers/media/video/sh_mobile_ceu_camera.c
-index 325f50d..61f3701 100644
---- a/drivers/media/video/sh_mobile_ceu_camera.c
-+++ b/drivers/media/video/sh_mobile_ceu_camera.c
-@@ -1348,7 +1348,7 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
- 	struct device *dev = icd->dev.parent;
- 	struct v4l2_mbus_framefmt mf;
- 	unsigned int scale_cam_h, scale_cam_v, scale_ceu_h, scale_ceu_v,
--		out_width, out_height, scale_h, scale_v;
-+		out_width, out_height;
- 	int interm_width, interm_height;
- 	u32 capsr, cflcr;
- 	int ret;
-@@ -1406,10 +1406,6 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
- 	scale_ceu_h	= calc_scale(interm_width, &out_width);
- 	scale_ceu_v	= calc_scale(interm_height, &out_height);
- 
--	/* Calculate camera scales */
--	scale_h		= calc_generic_scale(cam_rect->width, out_width);
--	scale_v		= calc_generic_scale(cam_rect->height, out_height);
--
- 	dev_geo(dev, "5: CEU scales %u:%u\n", scale_ceu_h, scale_ceu_v);
- 
- 	/* Apply CEU scales. */
-@@ -1421,8 +1417,8 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
- 
- 	icd->user_width	 = out_width;
- 	icd->user_height = out_height;
--	cam->ceu_left	 = scale_down(rect->left - cam_rect->left, scale_h) & ~1;
--	cam->ceu_top	 = scale_down(rect->top - cam_rect->top, scale_v) & ~1;
-+	cam->ceu_left	 = scale_down(rect->left - cam_rect->left, scale_cam_h) & ~1;
-+	cam->ceu_top	 = scale_down(rect->top - cam_rect->top, scale_cam_v) & ~1;
- 
- 	/* 6. Use CEU cropping to crop to the new window. */
- 	sh_mobile_ceu_set_rect(icd);
-@@ -1433,7 +1429,7 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
- 		icd->user_width, icd->user_height,
- 		cam->ceu_left, cam->ceu_top);
- 
--	/* Restore capture */
-+	/* Restore capture. The CE bit can be cleared by the hardware */
- 	if (pcdev->active)
- 		capsr |= 1;
- 	capture_restore(pcdev, capsr);
--- 
-1.7.2.3
-
+SSByZWNlbnRseSBnb3QgYSBMYW5kaXNrIChIREwtPz8/VSBtb2RlbCkuIEkndmUgaGFkIHNvbWUg
+aXNzdWVzIHdpdGggdGhlIApQQVRBIGNvbnRyb2xsZXIgbm90IGRldGVjdGluZyB0aGUgYXR0YWNo
+ZWQgZGlzayB3aXRoIDIuNi4zNS4xMCBzbyBJJ3ZlIApiZWVuIHRyeWluZyB0byBnZXQgYSBuZXdl
+ciBrZXJuZWwgcnVubmluZyB0byBzZWUgaWYgaXQgbWFrZXMgYW55IApkaWZmZXJlbmNlLi4KQWxs
+IGtlcm5lbHMgbmV3ZXIgdGhhbiAyLjYuMzUuMTAgc2VlbSB0byBwYW5pYyBqdXN0IGFmdGVyIGJv
+b3RpbmcuIEkgCmhhdmUgYXBwZW5kZWQgb3V0cHV0IG9mICAyLjYuMzgtcmM0LW5leHQtMjAxMTAy
+MTEgYnV0IGl0J3MgdGhlIHNhbWUgd2l0aCAKMi42LjM3LiBUaGUga2VybmVsIGNvbmZpZyBpcyB0
+aGUgZGVmYXVsdCBsYW5kaXNrIG9uZS4KCgoKU2V0dGluZyBHREIgdHJhcCB2ZWN0b3IgdG8gODAw
+MDAxMDAKTGludXggdmVyc2lvbiAyLjYuMzgtcmM0LW5leHQtMjAxMTAyMTEgKGRhbmllbEBreW9y
+bykgKGdjYyB2ZXJzaW9uIDQuNC41IAooRGViaWFuIDQuNC41LTEwKSApICMxIFNhdCBGZWIgMTIg
+MjE6Mjg6NTQgR01UIDIwMTEKQm9vdCBwYXJhbXM6Ci4uLiBNT1VOVF9ST09UX1JET05MWSAtIDAw
+MDAwMDAxCi4uLiBSQU1ESVNLX0ZMQUdTICAgICAtIDAwMDAwMDAwCi4uLiBPUklHX1JPT1RfREVW
+ICAgICAtIDAwMDAwMzAxCi4uLiBMT0FERVJfVFlQRSAgICAgICAtIDAwMDAwMDAxCi4uLiBJTklU
+UkRfU1RBUlQgICAgICAtIDAwMDAwMDAwCi4uLiBJTklUUkRfU0laRSAgICAgICAtIDAwMDAwMDAw
+Ck1lbW9yeSBsaW1pdGVkIHRvIDY0TUIKQm9vdGluZyBtYWNodmVjOiBMQU5ESVNLCmJvb3Rjb25z
+b2xlIFtlYXJseV90dHlTQzFdIGVuYWJsZWQKTm9kZSAwOiBzdGFydF9wZm4gPSAweGMwMDAsIGxv
+dyA9IDB4MTAwMDAKWm9uZSBQRk4gcmFuZ2VzOgogICBOb3JtYWwgICAweDAwMDBjMDAwIC0+IDB4
+MDAwMTAwMDAKTW92YWJsZSB6b25lIHN0YXJ0IFBGTiBmb3IgZWFjaCBub2RlCmVhcmx5X25vZGVf
+bWFwWzFdIGFjdGl2ZSBQRk4gcmFuZ2VzCiAgICAgMDogMHgwMDAwYzAwMCAtPiAweDAwMDEwMDAw
+CkktTyBEQVRBIERFVklDRSwgSU5DLiAiTEFORElTSyBTZXJpZXMiIHN1cHBvcnQuCkJ1aWx0IDEg
+em9uZWxpc3RzIGluIFpvbmUgb3JkZXIsIG1vYmlsaXR5IGdyb3VwaW5nIG9uLiAgVG90YWwgcGFn
+ZXM6IDE2MjU2Cktlcm5lbCBjb21tYW5kIGxpbmU6IHJvIEJPT1RfRklMRT0vYm9vdC96SW1hZ2Vu
+ZXh0IG1lbWRNIApjb25zb2xlPXR0eVNDMSw5NjAwIHJvb3Q9L2Rldi9oZGEzIHJvb3RkZWxheSAg
+ZWFybHlwcmludGs9c2gtc2NpLjEsOTYwMApQSUQgaGFzaCB0YWJsZSBlbnRyaWVzOiAyNTYgKG9y
+ZGVyOiAtMiwgMTAyNCBieXRlcykKRGVudHJ5IGNhY2hlIGhhc2ggdGFibGUgZW50cmllczogODE5
+MiAob3JkZXI6IDMsIDMyNzY4IGJ5dGVzKQpJbm9kZS1jYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6
+IDQwOTYgKG9yZGVyOiAyLCAxNjM4NCBieXRlcykKUFZSBDA1MDAwNSBDVlIgNDgwMDAwIFBSUgAw
+MDAxMTMKSS1jYWNoZSA6IG5fd2F5cz0yIG5fc2V0cyU2IHdheV9pbmNygTkyCkktY2FjaGUgOiBl
+bnRyeV9tYXNrPTB4MDAwMDFmZTAgYWxpYXNfbWFzaz0weDAwMDAxMDAwIG5fYWxpYXNlcz0yCkQt
+Y2FjaGUgOiBuX3dheXM9MiBuX3NldHNRMiB3YXlfaW5jchYzODQKRC1jYWNoZSA6IGVudHJ5X21h
+c2s9MHgwMDAwM2ZlMCBhbGlhc19tYXNrPTB4MDAwMDMwMDAgbl9hbGlhc2VzPTQKTWVtb3J5OiA2
+MjAxMmsvNjU1MzZrIGF2YWlsYWJsZSAoMjAwM2sga2VybmVsIGNvZGUsIDcxMWsgZGF0YSwgMTAw
+ayBpbml0KQp2aXJ0dWFsIGtlcm5lbCBtZW1vcnkgbGF5b3V0OgogICAgIGZpeG1hcCAgOiAweGRm
+ZmY3MDAwIC0gMHhkZmZmZjAwMCAgICggIDMyIGtCKQogICAgIHZtYWxsb2MgOiAweGMwMDAwMDAw
+IC0gMHhkZmZmNTAwMCAgICggNTExIE1CKQogICAgIGxvd21lbSAgOiAweDhjMDAwMDAwIC0gMHg5
+MDAwMDAwMCAgICggIDY0IE1CKSAoY2FjaGVkKQogICAgICAgICAgICAgOiAweGEwMDAwMDAwIC0g
+MHhjMDAwMDAwMCAgICggNTEyIE1CKSAodW5jYWNoZWQpCiAgICAgICAuaW5pdCA6IDB4OGMyYTgw
+MDAgLSAweDhjMmMxMDAwICAgKCAxMDAga0IpCiAgICAgICAuZGF0YSA6IDB4OGMxZjVmYzQgLSAw
+eDhjMmE3ZGEwICAgKCA3MTEga0IpCiAgICAgICAudGV4dCA6IDB4OGMwMDEwMDAgLSAweDhjMWY1
+ZmM0ICAgKDIwMDMga0IpCk5SX0lSUVM6NTEyIG5yX2lycXM6NzIgOAppbnRjOiBSZWdpc3RlcmVk
+IGNvbnRyb2xsZXIgJ3NoNzc1MCcgd2l0aCAyMCBJUlFzCmludGM6IFJlZ2lzdGVyZWQgY29udHJv
+bGxlciAnc2g3NzUwX2RtYTgnIHdpdGggOSBJUlFzCmludGM6IFJlZ2lzdGVyZWQgY29udHJvbGxl
+ciAnc2g3NzUwX3RtdTM0JyB3aXRoIDIgSVJRcwpUcnlpbmcgdG8gaW5zdGFsbCBjaGlwIGZvciBJ
+UlE3MgotLS0tLS0tLS0tLS1bIGN1dCBoZXJlIF0tLS0tLS0tLS0tLS0KV0FSTklORzogYXQga2Vy
+bmVsL2lycS9jaGlwLmM6MzIKTW9kdWxlcyBsaW5rZWQgaW46CgpQaWQgOiAwLCBDb21tOiAgICAg
+ICAgICBzd2FwcGVyCkNQVSA6IDAgICAgICAgICAgICAgICAgIE5vdCB0YWludGVkICAoMi42LjM4
+LXJjNC1uZXh0LTIwMTEwMjExICMxKQoKUEMgaXMgYXQgc2V0X2lycV9jaGlwKzB4MjIvMHg3OApQ
+UiBpcyBhdCBzZXRfaXJxX2NoaXArMHgyMi8weDc4ClBDICA6IDhjMDM5ODdhIFNQICA6IDhjMjkz
+ZjU0IFNSICA6IDQwMDA4MGYxIFRFQSA6IDAwMDAwMDAwClIwICA6IDAwMDAwMDI3IFIxICA6IDAw
+MDAwMGYwIFIyICA6IDAwMDAwMDAxIFIzICA6IDhjMmMyNzYwClI0ICA6IDAwMDAwMGYwIFI1ICA6
+IDAwMDAwOTlkIFI2ICA6IGZmZmZmZmZmIFI3ICA6IDhjMTJjOTNjClI4ICA6IDAwMDAwMDQ4IFI5
+ICA6IDhmYzA2MmM4IFIxMCA6IDAwMDAwMDAwIFIxMSA6IDA2MDY3ODg4ClIxMiA6IDhjMmJiOWU4
+IFIxMyA6IDAwMDAwMDAwIFIxNCA6IDAwMDAwMDEwCk1BQ0g6IDA5MzMzNGNjIE1BQ0w6IDAwMDAw
+MGU0IEdCUiA6IDY1NDQwODRjIFBSICA6IDhjMDM5ODdhCgpDYWxsIHRyYWNlOgogIFs8OGMwMzlh
+MmE+XSBzZXRfaXJxX2NoaXBfYW5kX2hhbmRsZXJfbmFtZSsweDEyLzB4MzAKICBbPDhjMDM5Y2I0
+Pl0gaGFuZGxlX2xldmVsX2lycSsweDAvMHhjOAogIFs8OGMyYjU3NGE+XSByZWdpc3Rlcl9pbnRj
+X2NvbnRyb2xsZXIrMHg0ZGEvMHg3MmMKICBbPDhjMDM3ZGYwPl0gYWxsb2NfZGVzYysweDAvMHg4
+MAogIFs8OGMyYTlkYTA+XSBwbGF0X2lycV9zZXR1cCsweDE4LzB4MzgKICBbPDhjMTAyNDgwPl0g
+c3RybGVuKzB4MC8weDU4CiAgWzw4YzAwMzdjOD5dIGFyY2hfbG9jYWxfaXJxX3Jlc3RvcmUrMHgw
+LzB4MjQKICBbPDhjMWYyNmQ4Pl0gcHJpbnRrKzB4MC8weDI4CiAgWzw4YzJiNTI3MD5dIHJlZ2lz
+dGVyX2ludGNfY29udHJvbGxlcisweDAvMHg3MmMKICBbPDhjMmE5NjE4Pl0gaW5pdF9JUlErMHg4
+LzB4MjgKICBbPDhjMmE4NjFhPl0gc3RhcnRfa2VybmVsKzB4MTRlLzB4NDI4CiAgWzw4YzAwMjAy
+ND5dIF9zdGV4dCsweDI0LzB4MzAKLS0KVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNl
+bmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LXNoIiBpbgp0aGUgYm9keSBvZiBhIG1lc3Nh
+Z2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwpNb3JlIG1ham9yZG9tbyBpbmZvIGF0ICBo
+dHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWw=
