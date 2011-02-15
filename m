@@ -1,34 +1,38 @@
-From: Saravana Kannan <skannan@codeaurora.org>
-Date: Tue, 15 Feb 2011 04:51:11 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Tue, 15 Feb 2011 06:18:37 +0000
 Subject: Re: [RFC,PATCH 2/3] clk: Generic support for fixed-rate clocks
-Message-Id: <4D5A063F.1010102@codeaurora.org>
+Message-Id: <201102151418.37780.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1297233693.242725.820672531799.2.gpush@pororo>	<4D54738C.80900@bluewatersys.com>
+References: <1297233693.242725.820672531799.2.gpush@pororo>
 	<201102150941.00668.jeremy.kerr@canonical.com>
-In-Reply-To: <201102150941.00668.jeremy.kerr@canonical.com>
+	<4D5A063F.1010102@codeaurora.org>
+In-Reply-To: <4D5A063F.1010102@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 02/14/2011 05:41 PM, Jeremy Kerr wrote:
-> Hi Ryan,
->
->> A fixed clock may still have other operations such as enable/disable.
->
-> Then it's not a fixed clock; I'd prefer this to be a separate type, as it's
-> now hardware dependent.
->
+Hi Saravana,
 
-I'm confused. If a clock's rate can't be changed and it can't be enabled 
-or disabled, then what's the point of representing that clock 
-signal/line as a clock in the driver. Seems like a "nothing to see here, 
-move along" type of clock. To express it differently, I find this 
-similar to "if (1) { ... }". Obviously I'm missing something here. What 
-is it?
+> >> A fixed clock may still have other operations such as enable/disable.
+> > 
+> > Then it's not a fixed clock; I'd prefer this to be a separate type, as
+> > it's now hardware dependent.
+> 
+> I'm confused. If a clock's rate can't be changed and it can't be enabled
+> or disabled, then what's the point of representing that clock
+> signal/line as a clock in the driver.
 
--Saravana
+Because the drivers using this clock don't know that it's a fixed clock.
 
--- 
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+For example, a uart needs to know the rate of its clock source, so that it can 
+set its internal divisors to get a valid baud rate. The uart driver will query  
+the input rate using clk_get_rate(). The driver still needs to call 
+clk_enable/clk_prepare/etc, because on some systems it may have a switchable 
+clock.
+
+Cheers,
+
+
+Jeremy
+
