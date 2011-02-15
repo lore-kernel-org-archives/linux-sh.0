@@ -1,29 +1,83 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 10 Feb 2011 13:13:08 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Tue, 15 Feb 2011 01:36:25 +0000
 Subject: Re: [RFC,PATCH 1/3] Add a common struct clk
-Message-Id: <20110210131308.GB1742@n2100.arm.linux.org.uk>
+Message-Id: <201102150936.26110.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1297233693.242364.862698430999.1.gpush@pororo>
 	<4D52F73A.4010707@bluewatersys.com>
-	<20110210100319.GB24710@b20223-02.ap.freescale.net>
-	<20110210104639.GZ27982@pengutronix.de>
-	<20110210130800.GB3316@richard-laptop>
-In-Reply-To: <20110210130800.GB3316@richard-laptop>
+In-Reply-To: <4D52F73A.4010707@bluewatersys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 10, 2011 at 09:08:00PM +0800, Richard Zhao wrote:
-> Why? what restriction will it cause to add parent in clk?
-> Two benifits at least I can see:
-> 1. null ops handle, as I said above.
-> 2. export clock tree to user level for debug. It's very helpfull.
+Hi Ryan,
 
-Don't be tempted to expand what's done at the generic level.  Platforms
-may need special handling at the current clock level before the parent
-clock level is considered.  Also platforms may not have parents so it
-becomes mere bloat.
+> > +int clk_enable(struct clk *clk)
+> > +{
+> > +	unsigned long flags;
+> > +	int ret = 0;
+> > +
+> > +	spin_lock_irqsave(&clk->enable_lock, flags);
+> 
+> 	WARN_ON(clk->prepare_count = 0); ?
 
-The more complicated the generic level becomes, the more platforms won't
-covert to it.
+Added later, but yes.
+
+> 
+> > +	if (clk->enable_count = 0 && clk->ops->enable)
+> > +		ret = clk->ops->enable(clk);
+> 
+> Does it make sense to have a clock with no enable function which still
+> returns success from clk_enable? Do we have any platforms which have
+> NULL clk_enable functions?
+
+It does, yes. Driver code should be always be calling clk_enable before using 
+a clock, regardless of the implementation (which it shouldn't have to care 
+abut), and should abort their initialisation if the clk_enable() fails.
+
+Some clocks are always running, so the enable op will be empty. This is not an 
+error, so the driver is free to continue.
+
+> I think that for enable/disable at least we should require platforms to
+> provide functions and oops if they have failed to do so. In the rare
+> case that a platform doesn't need to do anything for enable/disable they
+> can just supply empty functions.
+
+Sounds like useless boilerplate - it's not an error to not need 
+enable/disable, so I don't see why we need to add extra effort to handle this 
+case.
+
+> > +/**
+> > + * __clk_get - acquire a reference to a clock
+> > + *
+> > + * @clk: The clock to refcount
+> > + *
+> > + * Before a clock is returned from clk_get, this function should be
+> > called + * to update any clock-specific refcounting.
+> 
+> This is a bit misleading. It's not "should be called", it "is called". I
+> think you should just remove the documentation for __clk_get/__clk_put
+> or move it into clk.c since the functions are only used internally by
+> the common clock code.
+
+It'd be nice to remove this from the header, but this means we'll need extern 
+prototypes in clkdev.c. Might be a reasonable compromise though.
+
+
+> > +/**
+> > + * clk_prepare - prepare clock for atomic enabling.
+> > + *
+> > + * @clk: The clock to prepare
+> > + *
+> > + * Do any blocking initialisation on @clk, allowing the clock to be
+> > later + * enabled atomically (via clk_enable). This function may sleep.
+> 
+> "Possibly blocking" as below?
+
+Yep, will unify these (and spell "possibly" correctly :) )
+
+Cheers,
+
+
+Jeremy
