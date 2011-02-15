@@ -1,30 +1,193 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 25 Feb 2011 07:38:47 +0000
-Subject: [PATCH 1/7] sh: add USB_ARCH_HAS_EHCI and OHCI for SH7757
-Message-Id: <4D675C87.9050204@renesas.com>
+Date: Tue, 15 Feb 2011 11:47:30 +0000
+Subject: [RFC, PATCH 3/4] net: sh_eth: remove almost #ifdef of SH7763
+Message-Id: <4D5A67D2.7090903@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>
+
+The SH7763 has GETHER. So the specification of some registers differs than
+other CPUs. This patch removes almost #ifdef of CONFIG_CPU_SUBTYPE_SH7763.
+Then we are able to add other CPU's GETHER easily.
 
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/sh/Kconfig |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ drivers/net/sh_eth.c |   72 +++++++++++++++++++++++++++++--------------------
+ drivers/net/sh_eth.h |   14 +++-------
+ 2 files changed, 47 insertions(+), 39 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 8a9011d..ca649d3 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -434,6 +434,8 @@ config CPU_SUBTYPE_SH7757
- 	select CPU_SH4A
- 	select CPU_SHX2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select USB_ARCH_HAS_OHCI
-+	select USB_ARCH_HAS_EHCI
- 	help
- 	  Select SH7757 if you have a SH4A SH7757 CPU.
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index 0593f29..ca7ff4e 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -148,7 +148,7 @@ static void sh_eth_reset(struct net_device *ndev)
+ 	int cnt = 100;
 
+ 	sh_eth_write(ndev, EDSR_ENALL, EDSR);
+-	sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST, EDMR);
++	sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST_GETHER, EDMR);
+ 	while (cnt > 0) {
+ 		if (!(sh_eth_read(ndev, EDMR) & 0x3))
+ 			break;
+@@ -274,9 +274,9 @@ static void sh_eth_set_default_cpu_data(struct sh_eth_cpu_data *cd)
+ /* Chip Reset */
+ static void sh_eth_reset(struct net_device *ndev)
+ {
+-	sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST, EDMR);
++	sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST_ETHER, EDMR);
+ 	mdelay(3);
+-	sh_eth_write(ndev, sh_eth_read(ndev, EDMR) & ~EDMR_SRST, EDMR);
++	sh_eth_write(ndev, sh_eth_read(ndev, EDMR) & ~EDMR_SRST_ETHER, EDMR);
+ }
+ #endif
+
+@@ -354,6 +354,22 @@ static void read_mac_address(struct net_device *ndev, unsigned char *mac)
+ 	}
+ }
+
++static int sh_eth_is_gether(struct sh_eth_private *mdp)
++{
++	if (mdp->reg_offset = sh_eth_offset_gigabit)
++		return 1;
++	else
++		return 0;
++}
++
++static unsigned long sh_eth_get_edtrr_trns(struct sh_eth_private *mdp)
++{
++	if (sh_eth_is_gether(mdp))
++		return EDTRR_TRNS_GETHER;
++	else
++		return EDTRR_TRNS_ETHER;
++}
++
+ struct bb_info {
+ 	struct mdiobb_ctrl ctrl;
+ 	u32 addr;
+@@ -493,9 +509,8 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		/* Rx descriptor address set */
+ 		if (i = 0) {
+ 			sh_eth_write(ndev, mdp->rx_desc_dma, RDLAR);
+-#if defined(CONFIG_CPU_SUBTYPE_SH7763)
+-			sh_eth_write(ndev, mdp->rx_desc_dma, RDFAR);
+-#endif
++			if (sh_eth_is_gether(mdp))
++				sh_eth_write(ndev, mdp->rx_desc_dma, RDFAR);
+ 		}
+ 	}
+
+@@ -515,9 +530,8 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		if (i = 0) {
+ 			/* Tx descriptor address set */
+ 			sh_eth_write(ndev, mdp->tx_desc_dma, TDLAR);
+-#if defined(CONFIG_CPU_SUBTYPE_SH7763)
+-			sh_eth_write(ndev, mdp->tx_desc_dma, TDFAR);
+-#endif
++			if (sh_eth_is_gether(mdp))
++				sh_eth_write(ndev, mdp->tx_desc_dma, TDFAR);
+ 		}
+ 	}
+
+@@ -897,9 +911,9 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
+ 		sh_eth_txfree(ndev);
+
+ 		/* SH7712 BUG */
+-		if (edtrr ^ EDTRR_TRNS) {
++		if (edtrr ^ sh_eth_get_edtrr_trns(mdp)) {
+ 			/* tx dma start */
+-			sh_eth_write(ndev, EDTRR_TRNS, EDTRR);
++			sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
+ 		}
+ 		/* wakeup */
+ 		netif_wake_queue(ndev);
+@@ -1177,8 +1191,8 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+
+ 	mdp->cur_tx++;
+
+-	if (!(sh_eth_read(ndev, EDTRR) & EDTRR_TRNS))
+-		sh_eth_write(ndev, EDTRR_TRNS, EDTRR);
++	if (!(sh_eth_read(ndev, EDTRR) & sh_eth_get_edtrr_trns(mdp)))
++		sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
+
+ 	return NETDEV_TX_OK;
+ }
+@@ -1236,15 +1250,15 @@ static struct net_device_stats *sh_eth_get_stats(struct net_device *ndev)
+ 	sh_eth_write(ndev, 0, CDCR);	/* (write clear) */
+ 	mdp->stats.tx_carrier_errors += sh_eth_read(ndev, LCCR);
+ 	sh_eth_write(ndev, 0, LCCR);	/* (write clear) */
+-#if defined(CONFIG_CPU_SUBTYPE_SH7763)
+-	mdp->stats.tx_carrier_errors += sh_eth_read(ndev, CERCR);/* CERCR */
+-	sh_eth_write(ndev, 0, CERCR);	/* (write clear) */
+-	mdp->stats.tx_carrier_errors += sh_eth_read(ndev, CEECR);/* CEECR */
+-	sh_eth_write(ndev, 0, CEECR);	/* (write clear) */
+-#else
+-	mdp->stats.tx_carrier_errors += sh_eth_read(ndev, CNDCR);
+-	sh_eth_write(ndev, 0, CNDCR);	/* (write clear) */
+-#endif
++	if (sh_eth_is_gether(mdp)) {
++		mdp->stats.tx_carrier_errors += sh_eth_read(ndev, CERCR);
++		sh_eth_write(ndev, 0, CERCR);	/* (write clear) */
++		mdp->stats.tx_carrier_errors += sh_eth_read(ndev, CEECR);
++		sh_eth_write(ndev, 0, CEECR);	/* (write clear) */
++	} else {
++		mdp->stats.tx_carrier_errors += sh_eth_read(ndev, CNDCR);
++		sh_eth_write(ndev, 0, CNDCR);	/* (write clear) */
++	}
+ 	pm_runtime_put_sync(&mdp->pdev->dev);
+
+ 	return &mdp->stats;
+@@ -1294,13 +1308,13 @@ static void sh_eth_tsu_init(struct sh_eth_private *mdp)
+ 	sh_eth_tsu_write(mdp, 0, TSU_FWSL0);
+ 	sh_eth_tsu_write(mdp, 0, TSU_FWSL1);
+ 	sh_eth_tsu_write(mdp, TSU_FWSLC_POSTENU | TSU_FWSLC_POSTENL, TSU_FWSLC);
+-#if defined(CONFIG_CPU_SUBTYPE_SH7763)
+-	sh_eth_tsu_write(mdp, 0, TSU_QTAG0);	/* Disable QTAG(0->1) */
+-	sh_eth_tsu_write(mdp, 0, TSU_QTAG1);	/* Disable QTAG(1->0) */
+-#else
+-	sh_eth_tsu_write(mdp, 0, TSU_QTAGM0);	/* Disable QTAG(0->1) */
+-	sh_eth_tsu_write(mdp, 0, TSU_QTAGM1);	/* Disable QTAG(1->0) */
+-#endif
++	if (sh_eth_is_gether(mdp)) {
++		sh_eth_tsu_write(mdp, 0, TSU_QTAG0);	/* Disable QTAG(0->1) */
++		sh_eth_tsu_write(mdp, 0, TSU_QTAG1);	/* Disable QTAG(1->0) */
++	} else {
++		sh_eth_tsu_write(mdp, 0, TSU_QTAGM0);	/* Disable QTAG(0->1) */
++		sh_eth_tsu_write(mdp, 0, TSU_QTAGM1);	/* Disable QTAG(1->0) */
++	}
+ 	sh_eth_tsu_write(mdp, 0, TSU_FWSR);	/* all interrupt status clear */
+ 	sh_eth_tsu_write(mdp, 0, TSU_FWINMK);	/* Disable all interrupt */
+ 	sh_eth_tsu_write(mdp, 0, TSU_TEN);	/* Disable all CAM entry */
+diff --git a/drivers/net/sh_eth.h b/drivers/net/sh_eth.h
+index 1a32dc0..1e7d90a 100644
+--- a/drivers/net/sh_eth.h
++++ b/drivers/net/sh_eth.h
+@@ -398,20 +398,14 @@ enum GECMR_BIT {
+ enum DMAC_M_BIT {
+ 	EDMR_EL = 0x40, /* Litte endian */
+ 	EDMR_DL1 = 0x20, EDMR_DL0 = 0x10,
+-#ifdef CONFIG_CPU_SUBTYPE_SH7763
+-	EDMR_SRST = 0x03,
+-#else /* CONFIG_CPU_SUBTYPE_SH7763 */
+-	EDMR_SRST = 0x01,
+-#endif
++	EDMR_SRST_GETHER = 0x03,
++	EDMR_SRST_ETHER = 0x01,
+ };
+
+ /* EDTRR */
+ enum DMAC_T_BIT {
+-#ifdef CONFIG_CPU_SUBTYPE_SH7763
+-	EDTRR_TRNS = 0x03,
+-#else
+-	EDTRR_TRNS = 0x01,
+-#endif
++	EDTRR_TRNS_GETHER = 0x03,
++	EDTRR_TRNS_ETHER = 0x01,
+ };
+
+ /* EDRRR*/
 -- 
 1.7.1
