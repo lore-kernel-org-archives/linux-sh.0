@@ -1,78 +1,75 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Tue, 15 Feb 2011 07:26:53 +0000
+From: "Saravana Kannan" <skannan@codeaurora.org>
+Date: Tue, 15 Feb 2011 08:33:25 +0000
 Subject: Re: [RFC,PATCH 1/3] Add a common struct clk
-Message-Id: <201102151526.54280.jeremy.kerr@canonical.com>
+Message-Id: <9c19ea8f4feb750f9f17486226099cd0.squirrel@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1297233693.242364.862698430999.1.gpush@pororo>
 	<201102151041.40655.jeremy.kerr@canonical.com>
 	<4D5A100F.9000809@codeaurora.org>
-In-Reply-To: <4D5A100F.9000809@codeaurora.org>
+	<201102151526.54280.jeremy.kerr@canonical.com>
+In-Reply-To: <201102151526.54280.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Saravana,
+Hi Jeremy,
 
-> Sure, one could argue that in some archs for a certain set of clocks the
-> slow stuff in prepare/unprepare won't need to be done during set rate --
-> say, a simple clock that always runs off the same PLL but just has a
-> integer divider to change the rate.
-> 
-> In those cases, not grabbing the prepare_lock would make the code less
-> "locky".
-> 
-> > We
-> > may even want to disallow set_rate (and set_parent) when prepare_count is
-> > non- zero.
-> 
-> This is definitely not right.
+Sorry, if the formatting is weird. Using webmail client
 
-Why is that? Consider two devices using one clock; one does some 
-initialisation based on the return value of clk_get_rate(), the other calls 
-clk_set_rate() some time later. Now the first device is incorrectly 
-initialised.
+On Mon, February 14, 2011 11:26 pm, Jeremy Kerr wrote:
+>> > We
+>> > may even want to disallow set_rate (and set_parent) when prepare_count
+>> is
+>> > non- zero.
+>>
+>> This is definitely not right.
+>
+> Why is that? Consider two devices using one clock; one does some
+> initialisation based on the return value of clk_get_rate(), the other
+> calls
+> clk_set_rate() some time later. Now the first device is incorrectly
+> initialised.
 
-Regardless, this is definitely something to flag for a later discussion. I'm 
-happy to return to that, but we should focus on one issue at a time here.
+The case you describe is certainly something I consider as incorrect and
+agree with you in that we should try to prevent it. But
 
-> Changing the rate of a clock when it's
-> already enabled/prepared is a very reasonable thing to do. It's only
-> doing a set rate at the "same time" as a prepare/unprepare that's wrong
-> for some clocks. We could have the specific implementation deal with the
-> locking internally.
+(prepare_count != 0) != (two devices using one clock).
 
-Yes, hence leaving the locking here to the clock implementation.
+For one, prepare_count = 1 would be a normal case when a clock is enabled
+and the MSM drivers certainly want to be able to set the rate when the
+clock is enabled.
 
-> > I'd prefer to enforce the 'sleepability' with might_sleep instead.
-> 
-> Yeah, I realized this option after sending out my previous email. Please
-> do add a might_sleep(). It will actually point out errors (per the new
-> clarification) in some serial drivers.
+But (prepare_count > 1 || enable_count > 1) doesn't mean more than one
+device/device driver using the clock either. A simple example would be a
+driver wrapping all it's register accesses with a clk_enable/clk_disable
+and not having to worry about if a clock is enabled during register access
+when it has multiple execution paths (threads, interrupt handler, timers,
+etc) that access registers. The driver would just do the enable/disable
+around register accesses and let the clock code's ref counting dealing
+with making sure a clock is never turned off when it's needed. In these
+case both the prepare_count (less likely, but likely) and enable_count can
+greater than 1.
 
-Yep, will do.
+Long story short, I support your desire to prevent one driver from
+changing the rate from underneath another driver, but the condition you
+chose to figure that out is not accurate.
 
-> >>> +	.enable_lock	= __SPIN_LOCK_UNLOCKED(name.enable_lock),	\
-> >>> +	.prepare_lock	= __MUTEX_INITIALIZER(name.prepare_lock),	\
-> >> 
-> >> After a long day, I'm not able to wrap my head around this. Probably a
-> >> stupid question, but will this name.xxx thing prevent using this
-> >> INIT_CLK macro to initialize an array of clocks? More specifically,
-> >> prevent the sub class macro (like INIT_CLK_FIXED) from being used to
-> >> initialize an array of clocks?
-> > 
-> > That's correct. For an array of clocks, you'll have to use a different
-> > initialiser. We can add helpers for that that when (and if) the need
-> > arises.
-> 
-> Would it even be possible to get this to work for an array? You don't
-> have to change this in the patch, but I'm curious to know how to get
-> this to work for an array without doing a run time init of the lock.
+> Regardless, this is definitely something to flag for a later discussion.
+> I'm
+> happy to return to that, but we should focus on one issue at a time here.
 
-I'd assume that you'd have to do this at run time, as with any other array of 
-structs that contain a mutex or spinlock.
+Sure, this discussion of set rate with count is non-zero can be reserved
+for later. But I think the discussion of grabbing the lock during
+set_parent should be discussed in the context of this patch.
 
-Cheers,
+Waiting to see how others feel about this.
+
+Thanks,
+Saravana
+
+-- 
+Sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
 
 
-Jeremy
