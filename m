@@ -1,225 +1,182 @@
-From: Alexandre Courbot <gnurou@gmail.com>
-Date: Wed, 16 Feb 2011 03:49:01 +0000
-Subject: [PATCH v2 1/3] fbdev: sh_mobile_lcdcfb: add backlight support
-Message-Id: <1297828143-11798-2-git-send-email-gnurou@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 15 Feb 2011 11:47:32 +0000
+Subject: [RFC, PATCH 4/4] net: sh_eth: add support for SH7757's GETHER
+Message-Id: <4D5A67D4.2000408@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Support for backlight devices controlled through board-specific
-routines. Backlights can be defined per-channel and follow fbdev
-directives to switch off as the LCD blanks or is turned on/off.
+The SH7757 have GETHER and ETHER both. This patch supports them.
 
-Signed-off-by: Alexandre Courbot <gnurou@gmail.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/video/Kconfig            |    1 +
- drivers/video/sh_mobile_lcdcfb.c |   81 ++++++++++++++++++++++++++++++++++++++
- drivers/video/sh_mobile_lcdcfb.h |    2 +
- include/video/sh_mobile_lcdc.h   |    9 ++++
- 4 files changed, 93 insertions(+), 0 deletions(-)
+ drivers/net/sh_eth.c |  136 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 135 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index 6bafb51b..a222d65 100644
---- a/drivers/video/Kconfig
-+++ b/drivers/video/Kconfig
-@@ -2005,6 +2005,7 @@ config FB_SH_MOBILE_LCDC
- 	select FB_SYS_IMAGEBLIT
- 	select FB_SYS_FOPS
- 	select FB_DEFERRED_IO
-+	select FB_BACKLIGHT
- 	select SH_MIPI_DSI if SH_LCD_MIPI_DSI
- 	---help---
- 	  Frame buffer driver for the on-chip SH-Mobile LCD controller.
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index bf12e53..e040e46 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -21,6 +21,8 @@
- #include <linux/ioctl.h>
- #include <linux/slab.h>
- #include <linux/console.h>
-+#include <linux/backlight.h>
-+#include <linux/gpio.h>
- #include <video/sh_mobile_lcdc.h>
- #include <asm/atomic.h>
- 
-@@ -618,6 +620,11 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 			board_cfg->display_on(board_cfg->board_data, ch->info);
- 			module_put(board_cfg->owner);
- 		}
-+
-+		if (ch->bl) {
-+			ch->bl->props.power = FB_BLANK_UNBLANK;
-+			backlight_update_status(ch->bl);
-+		}
- 	}
- 
- 	return 0;
-@@ -648,6 +655,11 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- 			sh_mobile_lcdc_clk_on(priv);
- 		}
- 
-+		if (ch->bl) {
-+			ch->bl->props.power = FB_BLANK_POWERDOWN;
-+			backlight_update_status(ch->bl);
-+		}
-+
- 		board_cfg = &ch->cfg.board_cfg;
- 		if (try_module_get(board_cfg->owner) && board_cfg->display_off) {
- 			board_cfg->display_off(board_cfg->board_data);
-@@ -980,6 +992,64 @@ static struct fb_ops sh_mobile_lcdc_ops = {
- 	.fb_check_var	= sh_mobile_check_var,
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index ca7ff4e..330f608 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -87,7 +87,8 @@ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.rpadir_value	= 0x00020000, /* NET_IP_ALIGN assumed to be 2 */
  };
- 
-+static int sh_mobile_lcdc_update_bl(struct backlight_device *bdev)
-+{
-+	struct sh_mobile_lcdc_chan *ch = bl_get_data(bdev);
-+	struct sh_mobile_lcdc_board_cfg *cfg = &ch->cfg.board_cfg;
-+	int brightness = bdev->props.brightness;
-+
-+	if (bdev->props.power != FB_BLANK_UNBLANK ||
-+	    bdev->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
-+		brightness = 0;
-+
-+	return cfg->set_brightness(cfg->board_data, brightness);
-+}
-+
-+static int sh_mobile_lcdc_get_brightness(struct backlight_device *bdev)
-+{
-+	struct sh_mobile_lcdc_chan *ch = bl_get_data(bdev);
-+	struct sh_mobile_lcdc_board_cfg *cfg = &ch->cfg.board_cfg;
-+
-+	return cfg->get_brightness(cfg->board_data);
-+}
-+
-+static int sh_mobile_lcdc_check_fb(struct backlight_device *bdev,
-+				   struct fb_info *info)
-+{
-+	return (info->bl_dev = bdev);
-+}
-+
-+static struct backlight_ops sh_mobile_lcdc_bl_ops = {
-+	.options	= BL_CORE_SUSPENDRESUME,
-+	.update_status	= sh_mobile_lcdc_update_bl,
-+	.get_brightness	= sh_mobile_lcdc_get_brightness,
-+	.check_fb	= sh_mobile_lcdc_check_fb,
-+};
-+
-+static struct backlight_device *sh_mobile_lcdc_bl_probe(struct device *parent,
-+					       struct sh_mobile_lcdc_chan *ch)
-+{
-+	struct backlight_device *bl;
-+
-+	bl = backlight_device_register(ch->cfg.bl_info.name, parent, ch,
-+				       &sh_mobile_lcdc_bl_ops, NULL);
-+	if (!bl) {
-+		dev_err(parent, "unable to register backlight device\n");
-+		return NULL;
-+	}
-+
-+	bl->props.max_brightness = ch->cfg.bl_info.max_brightness;
-+	bl->props.brightness = bl->props.max_brightness;
-+	backlight_update_status(bl);
-+
-+	return bl;
-+}
-+
-+static void sh_mobile_lcdc_bl_remove(struct backlight_device *bdev)
-+{
-+	backlight_device_unregister(bdev);
-+}
-+
- static int sh_mobile_lcdc_set_bpp(struct fb_var_screeninfo *var, int bpp)
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7757)
+-#define SH_ETH_RESET_DEFAULT	1
++#define SH_ETH_HAS_BOTH_MODULES	1
++#define SH_ETH_HAS_TSU	1
+ static void sh_eth_set_duplex(struct net_device *ndev)
  {
- 	switch (bpp) {
-@@ -1198,6 +1268,10 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		init_completion(&ch->vsync_completion);
- 		ch->pan_offset = 0;
- 
-+		/* probe the backlight is there is one defined */
-+		if (ch->cfg.bl_info.max_brightness)
-+			ch->bl = sh_mobile_lcdc_bl_probe(&pdev->dev, ch);
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -134,6 +135,135 @@ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.no_ade		= 1,
+ };
+
++#define SH_GIGA_ETH_BASE	0xfee00000
++#define GIGA_MALR(port)		(SH_GIGA_ETH_BASE + 0x800 * (port) + 0x05c8)
++#define GIGA_MAHR(port)		(SH_GIGA_ETH_BASE + 0x800 * (port) + 0x05c0)
++static void sh_eth_chip_reset_giga(struct net_device *ndev)
++{
++	int i;
++	unsigned long mahr[2], malr[2];
 +
- 		switch (pdata->ch[i].chan) {
- 		case LCDC_CHAN_MAINLCD:
- 			ch->enabled = 1 << 1;
-@@ -1345,6 +1419,8 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 			}
- 		}
- 
-+		info->bl_dev = ch->bl;
-+
- 		error = register_framebuffer(info);
- 		if (error < 0)
- 			goto err1;
-@@ -1404,6 +1480,11 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- 		framebuffer_release(info);
- 	}
- 
-+	for (i = 0; i < ARRAY_SIZE(priv->ch); i++) {
-+		if (priv->ch[i].bl)
-+			sh_mobile_lcdc_bl_remove(priv->ch[i].bl);
++	/* save MAHR and MALR */
++	for (i = 0; i < 2; i++) {
++		malr[i] = readl(GIGA_MALR(i));
++		mahr[i] = readl(GIGA_MAHR(i));
 +	}
 +
- 	if (priv->dot_clk)
- 		clk_put(priv->dot_clk);
- 
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 9ecee2f..03a22dc 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -16,6 +16,7 @@ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
- 
- struct sh_mobile_lcdc_priv;
- struct fb_info;
-+struct backlight_device;
- 
- struct sh_mobile_lcdc_chan {
- 	struct sh_mobile_lcdc_priv *lcdc;
-@@ -26,6 +27,7 @@ struct sh_mobile_lcdc_chan {
- 	u32 pseudo_palette[PALETTE_NR];
- 	unsigned long saved_ch_regs[NR_CH_REGS];
- 	struct fb_info *info;
-+	struct backlight_device *bl;
- 	dma_addr_t dma_handle;
- 	struct fb_deferred_io defio;
- 	struct scatterlist *sglist;
-diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index daabae5..f2e6ab8 100644
---- a/include/video/sh_mobile_lcdc.h
-+++ b/include/video/sh_mobile_lcdc.h
-@@ -59,6 +59,8 @@ struct sh_mobile_lcdc_board_cfg {
- 			       struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
- 	void (*display_on)(void *board_data, struct fb_info *info);
- 	void (*display_off)(void *board_data);
-+	int (*set_brightness)(void *board_data, int brightness);
-+	int (*get_brightness)(void *board_data);
- };
- 
- struct sh_mobile_lcdc_lcd_size_cfg { /* width and height of panel in mm */
-@@ -66,6 +68,12 @@ struct sh_mobile_lcdc_lcd_size_cfg { /* width and height of panel in mm */
- 	unsigned long height;
- };
- 
-+/* backlight info */
-+struct sh_mobile_lcdc_bl_info {
-+	const char *name;
-+	int max_brightness;
++	/* reset device */
++	writel(ARSTR_ARSTR, SH_GIGA_ETH_BASE + 0x1800);
++	mdelay(1);
++
++	/* restore MAHR and MALR */
++	for (i = 0; i < 2; i++) {
++		writel(malr[i], GIGA_MALR(i));
++		writel(mahr[i], GIGA_MAHR(i));
++	}
++}
++
++static int sh_eth_is_gether(struct sh_eth_private *mdp);
++static void sh_eth_reset(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++	int cnt = 100;
++
++	if (sh_eth_is_gether(mdp)) {
++		sh_eth_write(ndev, 0x03, EDSR);
++		sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST_GETHER,
++				EDMR);
++		while (cnt > 0) {
++			if (!(sh_eth_read(ndev, EDMR) & 0x3))
++				break;
++			mdelay(1);
++			cnt--;
++		}
++		if (cnt < 0)
++			printk(KERN_ERR "Device reset fail\n");
++
++		/* Table Init */
++		sh_eth_write(ndev, 0x0, TDLAR);
++		sh_eth_write(ndev, 0x0, TDFAR);
++		sh_eth_write(ndev, 0x0, TDFXR);
++		sh_eth_write(ndev, 0x0, TDFFR);
++		sh_eth_write(ndev, 0x0, RDLAR);
++		sh_eth_write(ndev, 0x0, RDFAR);
++		sh_eth_write(ndev, 0x0, RDFXR);
++		sh_eth_write(ndev, 0x0, RDFFR);
++	} else {
++		sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST_ETHER,
++				EDMR);
++		mdelay(3);
++		sh_eth_write(ndev, sh_eth_read(ndev, EDMR) & ~EDMR_SRST_ETHER,
++				EDMR);
++	}
++}
++
++static void sh_eth_set_duplex_giga(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++
++	if (mdp->duplex) /* Full */
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
++	else		/* Half */
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
++}
++
++static void sh_eth_set_rate_giga(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++
++	switch (mdp->speed) {
++	case 10: /* 10BASE */
++		sh_eth_write(ndev, 0x00000000, GECMR);
++		break;
++	case 100:/* 100BASE */
++		sh_eth_write(ndev, 0x00000010, GECMR);
++		break;
++	case 1000: /* 1000BASE */
++		sh_eth_write(ndev, 0x00000020, GECMR);
++		break;
++	default:
++		break;
++	}
++}
++
++/* SH7757(GETHERC) */
++static struct sh_eth_cpu_data sh_eth_my_cpu_data_giga = {
++	.chip_reset	= sh_eth_chip_reset_giga,
++	.set_duplex	= sh_eth_set_duplex_giga,
++	.set_rate	= sh_eth_set_rate_giga,
++
++	.ecsr_value	= ECSR_ICD | ECSR_MPD,
++	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
++	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
++
++	.tx_check	= EESR_TC1 | EESR_FTC,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT | \
++			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE | \
++			  EESR_ECI,
++	.tx_error_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_TDE | \
++			  EESR_TFE,
++	.fdr_value	= 0x0000072f,
++	.rmcr_value	= 0x00000001,
++
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.bculr		= 1,
++	.hw_swap	= 1,
++	.rpadir		= 1,
++	.rpadir_value   = 2 << 16,
++	.no_trimd	= 1,
++	.no_ade		= 1,
 +};
 +
- struct sh_mobile_lcdc_chan_cfg {
- 	int chan;
- 	int bpp;
-@@ -76,6 +84,7 @@ struct sh_mobile_lcdc_chan_cfg {
- 	int num_cfg;
- 	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
- 	struct sh_mobile_lcdc_board_cfg board_cfg;
-+	struct sh_mobile_lcdc_bl_info bl_info;
- 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
- };
- 
--- 
-1.7.4.1
++static struct sh_eth_cpu_data *sh_eth_get_cpu_data(struct sh_eth_private *mdp)
++{
++	if (sh_eth_is_gether(mdp))
++		return &sh_eth_my_cpu_data_giga;
++	else
++		return &sh_eth_my_cpu_data;
++}
++
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7763)
+ #define SH_ETH_HAS_TSU	1
+ static void sh_eth_chip_reset(struct net_device *ndev)
+@@ -1515,7 +1645,11 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	mdp->reg_offset = sh_eth_get_register_offset(pd->register_type);
 
+ 	/* set cpu data */
++#if defined(SH_ETH_HAS_BOTH_MODULES)
++	mdp->cd = sh_eth_get_cpu_data(mdp);
++#else
+ 	mdp->cd = &sh_eth_my_cpu_data;
++#endif
+ 	sh_eth_set_default_cpu_data(mdp->cd);
+
+ 	/* set function */
+-- 
+1.7.1
