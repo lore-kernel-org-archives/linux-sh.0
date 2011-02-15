@@ -1,36 +1,34 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Tue, 15 Feb 2011 01:41:00 +0000
+From: Saravana Kannan <skannan@codeaurora.org>
+Date: Tue, 15 Feb 2011 04:51:11 +0000
 Subject: Re: [RFC,PATCH 2/3] clk: Generic support for fixed-rate clocks
-Message-Id: <201102150941.00668.jeremy.kerr@canonical.com>
+Message-Id: <4D5A063F.1010102@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1297233693.242725.820672531799.2.gpush@pororo>
-	<4D54738C.80900@bluewatersys.com>
-In-Reply-To: <4D54738C.80900@bluewatersys.com>
+References: <1297233693.242725.820672531799.2.gpush@pororo>	<4D54738C.80900@bluewatersys.com>
+	<201102150941.00668.jeremy.kerr@canonical.com>
+In-Reply-To: <201102150941.00668.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ryan,
+On 02/14/2011 05:41 PM, Jeremy Kerr wrote:
+> Hi Ryan,
+>
+>> A fixed clock may still have other operations such as enable/disable.
+>
+> Then it's not a fixed clock; I'd prefer this to be a separate type, as it's
+> now hardware dependent.
+>
 
-> A fixed clock may still have other operations such as enable/disable.
+I'm confused. If a clock's rate can't be changed and it can't be enabled 
+or disabled, then what's the point of representing that clock 
+signal/line as a clock in the driver. Seems like a "nothing to see here, 
+move along" type of clock. To express it differently, I find this 
+similar to "if (1) { ... }". Obviously I'm missing something here. What 
+is it?
 
-Then it's not a fixed clock; I'd prefer this to be a separate type, as it's 
-now hardware dependent.
+-Saravana
 
-> Maybe do something like this instead:
-> #define INIT_CLK_FIXED(name, ops, r) { 		\
-> 	.clk = INIT_CLK(name.clk, ops, rate), 	\
-> 	.clk.ops.get_rate = clk_fixed_get_rate, \
-> 	.rate = (r),				\
-> }
-> 
-> That's untested though. I'm not sure if you can reliably assign
-> something twice in a struct initialiser?
-
-also, clk->ops is a const.
-
-Cheers,
-
-
-Jeremy
+-- 
+Sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
