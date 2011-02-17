@@ -1,97 +1,86 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 15 Feb 2011 11:47:27 +0000
-Subject: [RFC, PATCH 2/4] net: sh_eth: remove the SH_TSU_ADDR
-Message-Id: <4D5A67CF.3040406@renesas.com>
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Thu, 17 Feb 2011 00:24:39 +0000
+Subject: Re: [RFC, PATCH 2/4] net: sh_eth: remove the SH_TSU_ADDR
+Message-Id: <AANLkTimJM0yEOU6RgoAs+Njv5b7ixVRnPubnUg=F72GX@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4D5A67CF.3040406@renesas.com>
+In-Reply-To: <4D5A67CF.3040406@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: netdev@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
 
-The defination is hardcoded in this driver for some CPUs. This patch
-modifies to get resource of TSU address from platform_device.
+2011/2/15 Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>:
+> The defination is hardcoded in this driver for some CPUs. This patch
+> modifies to get resource of TSU address from platform_device.
+>
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+> =A0drivers/net/sh_eth.c | =A0 16 ++++++++++++----
+> =A0drivers/net/sh_eth.h | =A0 15 ---------------
+> =A02 files changed, 12 insertions(+), 19 deletions(-)
+>
+> diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+> index 3b6d545..0593f29 100644
+> --- a/drivers/net/sh_eth.c
+> +++ b/drivers/net/sh_eth.c
+> @@ -1446,7 +1446,7 @@ static const struct net_device_ops sh_eth_netdev_op=
+s =3D {
+> =A0static int sh_eth_drv_probe(struct platform_device *pdev)
+> =A0{
+> =A0 =A0 =A0 =A0int ret, devno =3D 0;
+> - =A0 =A0 =A0 struct resource *res;
+> + =A0 =A0 =A0 struct resource *res, *res_tsu;
+> =A0 =A0 =A0 =A0struct net_device *ndev =3D NULL;
+> =A0 =A0 =A0 =A0struct sh_eth_private *mdp;
+> =A0 =A0 =A0 =A0struct sh_eth_plat_data *pd;
+> @@ -1520,9 +1520,13 @@ static int sh_eth_drv_probe(struct platform_device=
+ *pdev)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mdp->cd->chip_reset(ndev);
+>
+> =A0#if defined(SH_ETH_HAS_TSU)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* TSU init (Init only)*/
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 mdp->tsu_addr =3D SH_TSU_ADDR;
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 sh_eth_tsu_init(mdp);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 res_tsu =3D platform_get_resource(pdev, IOR=
+ESOURCE_MEM, 1);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (res_tsu) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 mdp->tsu_addr =3D ioremap(r=
+es_tsu->start,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 resource_size(res_tsu));
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* TSU init (Init only)*/
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 sh_eth_tsu_init(mdp);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+> =A0#endif
+> =A0 =A0 =A0 =A0}
+>
+> @@ -1549,6 +1553,8 @@ out_unregister:
+>
+> =A0out_release:
+> =A0 =A0 =A0 =A0/* net_dev free */
+> + =A0 =A0 =A0 if (mdp->tsu_addr)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 iounmap(mdp->tsu_addr);
+> =A0 =A0 =A0 =A0if (ndev)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0free_netdev(ndev);
+>
+> @@ -1559,7 +1565,9 @@ out:
+> =A0static int sh_eth_drv_remove(struct platform_device *pdev)
+> =A0{
+> =A0 =A0 =A0 =A0struct net_device *ndev =3D platform_get_drvdata(pdev);
+> + =A0 =A0 =A0 struct sh_eth_private *mdp =3D netdev_priv(ndev);
+>
+> + =A0 =A0 =A0 iounmap(mdp->tsu_addr);
+> =A0 =A0 =A0 =A0sh_mdio_release(ndev);
+> =A0 =A0 =A0 =A0unregister_netdev(ndev);
+> =A0 =A0 =A0 =A0pm_runtime_disable(&pdev->dev);
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/net/sh_eth.c |   16 ++++++++++++----
- drivers/net/sh_eth.h |   15 ---------------
- 2 files changed, 12 insertions(+), 19 deletions(-)
+You forget to fix for ARSTR.
 
-diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
-index 3b6d545..0593f29 100644
---- a/drivers/net/sh_eth.c
-+++ b/drivers/net/sh_eth.c
-@@ -1446,7 +1446,7 @@ static const struct net_device_ops sh_eth_netdev_ops = {
- static int sh_eth_drv_probe(struct platform_device *pdev)
- {
- 	int ret, devno = 0;
--	struct resource *res;
-+	struct resource *res, *res_tsu;
- 	struct net_device *ndev = NULL;
- 	struct sh_eth_private *mdp;
- 	struct sh_eth_plat_data *pd;
-@@ -1520,9 +1520,13 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 			mdp->cd->chip_reset(ndev);
-
- #if defined(SH_ETH_HAS_TSU)
--		/* TSU init (Init only)*/
--		mdp->tsu_addr = SH_TSU_ADDR;
--		sh_eth_tsu_init(mdp);
-+		res_tsu = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-+		if (res_tsu) {
-+			mdp->tsu_addr = ioremap(res_tsu->start,
-+						resource_size(res_tsu));
-+			/* TSU init (Init only)*/
-+			sh_eth_tsu_init(mdp);
-+		}
- #endif
- 	}
-
-@@ -1549,6 +1553,8 @@ out_unregister:
-
- out_release:
- 	/* net_dev free */
-+	if (mdp->tsu_addr)
-+		iounmap(mdp->tsu_addr);
- 	if (ndev)
- 		free_netdev(ndev);
-
-@@ -1559,7 +1565,9 @@ out:
- static int sh_eth_drv_remove(struct platform_device *pdev)
- {
- 	struct net_device *ndev = platform_get_drvdata(pdev);
-+	struct sh_eth_private *mdp = netdev_priv(ndev);
-
-+	iounmap(mdp->tsu_addr);
- 	sh_mdio_release(ndev);
- 	unregister_netdev(ndev);
- 	pm_runtime_disable(&pdev->dev);
-diff --git a/drivers/net/sh_eth.h b/drivers/net/sh_eth.h
-index 1510a7c..1a32dc0 100644
---- a/drivers/net/sh_eth.h
-+++ b/drivers/net/sh_eth.h
-@@ -371,21 +371,6 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
-
- };
-
--#if defined(CONFIG_CPU_SUBTYPE_SH7763)
--/* This CPU register maps is very difference by other SH4 CPU */
--/* Chip Base Address */
--# define SH_TSU_ADDR	0xFEE01800
--# define ARSTR		SH_TSU_ADDR
--#elif defined(CONFIG_CPU_SH4)	/* #if defined(CONFIG_CPU_SUBTYPE_SH7763) */
--#else /* #elif defined(CONFIG_CPU_SH4) */
--/* This section is SH3 or SH2 */
--#ifndef CONFIG_CPU_SUBTYPE_SH7619
--/* Chip base address */
--# define SH_TSU_ADDR  0xA7000804
--# define ARSTR		  0xA7000800
--#endif
--#endif /* CONFIG_CPU_SUBTYPE_SH7763 */
--
- /* Driver's parameters */
- #if defined(CONFIG_CPU_SH4)
- #define SH4_SKB_RX_ALIGN	32
--- 
-1.7.1
+Best regards,
+  Nobuhiro
+--=20
+Nobuhiro Iwamatsu
+=A0=A0 iwamatsu at {nigauri.org / debian.org}
+=A0=A0 GPG ID: 40AD1FA6
