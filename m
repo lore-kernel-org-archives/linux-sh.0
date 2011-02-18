@@ -1,81 +1,70 @@
-From: Alexandre Courbot <gnurou@gmail.com>
-Date: Wed, 16 Feb 2011 03:49:03 +0000
-Subject: [PATCH v2 3/3] sh: mach-ap325rxa: move backlight control code
-Message-Id: <1297828143-11798-4-git-send-email-gnurou@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 18 Feb 2011 08:13:45 +0000
+Subject: [PATCH 4/4] V4l: sh_mobile_ceu_camera: fix cropping offset calculation
+Message-Id: <Pine.LNX.4.64.1102180911430.1851@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1102180857360.1851@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1102180857360.1851@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: linux-sh@vger.kernel.org
 
-Move the backlight control code into the appropriate hooks for the LCDC
-driver.
+Use the correct scales to calculate cropping offsets.
 
-Signed-off-by: Alexandre Courbot <gnurou@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/mach-ap325rxa/setup.c |   32 ++++++++++++++++++++++++--------
- 1 files changed, 24 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
-index 3e5fc3b..d695e43 100644
---- a/arch/sh/boards/mach-ap325rxa/setup.c
-+++ b/arch/sh/boards/mach-ap325rxa/setup.c
-@@ -156,24 +156,34 @@ static struct platform_device nand_flash_device = {
- #define PORT_DRVCRA	0xA405018A
- #define PORT_DRVCRB	0xA405018C
+This one is unrelated to vb2, but it touches the same file.
+
+ drivers/media/video/sh_mobile_ceu_camera.c |   12 ++++--------
+ 1 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/media/video/sh_mobile_ceu_camera.c b/drivers/media/video/sh_mobile_ceu_camera.c
+index 325f50d..61f3701 100644
+--- a/drivers/media/video/sh_mobile_ceu_camera.c
++++ b/drivers/media/video/sh_mobile_ceu_camera.c
+@@ -1348,7 +1348,7 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
+ 	struct device *dev = icd->dev.parent;
+ 	struct v4l2_mbus_framefmt mf;
+ 	unsigned int scale_cam_h, scale_cam_v, scale_ceu_h, scale_ceu_v,
+-		out_width, out_height, scale_h, scale_v;
++		out_width, out_height;
+ 	int interm_width, interm_height;
+ 	u32 capsr, cflcr;
+ 	int ret;
+@@ -1406,10 +1406,6 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
+ 	scale_ceu_h	= calc_scale(interm_width, &out_width);
+ 	scale_ceu_v	= calc_scale(interm_height, &out_height);
  
-+static int ap320_wvga_set_brightness(void *board_data, int brightness)
-+{
-+	if (brightness) {
-+		gpio_set_value(GPIO_PTS3, 0);
-+		__raw_writew(0x100, FPGA_BKLREG);
-+	} else {
-+		__raw_writew(0, FPGA_BKLREG);
-+		gpio_set_value(GPIO_PTS3, 1);
-+	}
-+	
-+	return 0;
-+}
-+
-+static int ap320_wvga_get_brightness(void *board_data)
-+{
-+	return gpio_get_value(GPIO_PTS3);
-+}
-+
- static void ap320_wvga_power_on(void *board_data, struct fb_info *info)
- {
- 	msleep(100);
- 
- 	/* ASD AP-320/325 LCD ON */
- 	__raw_writew(FPGA_LCDREG_VAL, FPGA_LCDREG);
+-	/* Calculate camera scales */
+-	scale_h		= calc_generic_scale(cam_rect->width, out_width);
+-	scale_v		= calc_generic_scale(cam_rect->height, out_height);
 -
--	/* backlight */
--	gpio_set_value(GPIO_PTS3, 0);
--	__raw_writew(0x100, FPGA_BKLREG);
- }
+ 	dev_geo(dev, "5: CEU scales %u:%u\n", scale_ceu_h, scale_ceu_v);
  
- static void ap320_wvga_power_off(void *board_data)
- {
--	/* backlight */
--	__raw_writew(0, FPGA_BKLREG);
--	gpio_set_value(GPIO_PTS3, 1);
--
- 	/* ASD AP-320/325 LCD OFF */
- 	__raw_writew(0, FPGA_LCDREG);
- }
-@@ -209,6 +219,12 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 		.board_cfg = {
- 			.display_on = ap320_wvga_power_on,
- 			.display_off = ap320_wvga_power_off,
-+			.set_brightness = ap320_wvga_set_brightness,
-+			.get_brightness = ap320_wvga_get_brightness,
-+		},
-+		.bl_info = {
-+			.name = "sh_mobile_lcdc_bl",
-+			.max_brightness = 1,
- 		},
- 	}
- };
+ 	/* Apply CEU scales. */
+@@ -1421,8 +1417,8 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
+ 
+ 	icd->user_width	 = out_width;
+ 	icd->user_height = out_height;
+-	cam->ceu_left	 = scale_down(rect->left - cam_rect->left, scale_h) & ~1;
+-	cam->ceu_top	 = scale_down(rect->top - cam_rect->top, scale_v) & ~1;
++	cam->ceu_left	 = scale_down(rect->left - cam_rect->left, scale_cam_h) & ~1;
++	cam->ceu_top	 = scale_down(rect->top - cam_rect->top, scale_cam_v) & ~1;
+ 
+ 	/* 6. Use CEU cropping to crop to the new window. */
+ 	sh_mobile_ceu_set_rect(icd);
+@@ -1433,7 +1429,7 @@ static int sh_mobile_ceu_set_crop(struct soc_camera_device *icd,
+ 		icd->user_width, icd->user_height,
+ 		cam->ceu_left, cam->ceu_top);
+ 
+-	/* Restore capture */
++	/* Restore capture. The CE bit can be cleared by the hardware */
+ 	if (pcdev->active)
+ 		capsr |= 1;
+ 	capture_restore(pcdev, capsr);
 -- 
-1.7.4.1
+1.7.2.3
 
