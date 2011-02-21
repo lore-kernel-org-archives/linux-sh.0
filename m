@@ -1,71 +1,30 @@
-From: Ryan Mallon <ryan@bluewatersys.com>
-Date: Mon, 21 Feb 2011 19:51:19 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Mon, 21 Feb 2011 23:29:11 +0000
 Subject: Re: [PATCH 2/2] clk: Generic support for fixed-rate clocks
-Message-Id: <4D62C237.1020803@bluewatersys.com>
+Message-Id: <201102220729.13708.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1298256658.862488.956979497586.2.gpush@pororo>
-In-Reply-To: <1298256658.862488.956979497586.2.gpush@pororo>
+	<4D62C237.1020803@bluewatersys.com>
+In-Reply-To: <4D62C237.1020803@bluewatersys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 02/21/2011 03:50 PM, Jeremy Kerr wrote:
-> Since most platforms will need a fixed-rate clock, add one. This will
-> also serve as a basic example of an implementation of struct clk.
-> 
-> Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
-> 
-> ---
->  drivers/clk/clk.c   |   14 ++++++++++++++
->  include/linux/clk.h |   16 ++++++++++++++++
->  2 files changed, 30 insertions(+)
-> 
-> diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-> index 0bc9c6f..0da0bb9 100644
-> --- a/drivers/clk/clk.c
-> +++ b/drivers/clk/clk.c
-> @@ -130,3 +130,17 @@ void __clk_put(struct clk *clk)
->  	if (clk->ops->put)
->  		clk->ops->put(clk);
->  }
-> +
-> +/* clk_fixed support */
-> +
-> +#define to_clk_fixed(clk) (container_of(clk, struct clk_fixed, clk))
-> +
-> +static unsigned long clk_fixed_get_rate(struct clk *clk)
-> +{
-> +	return to_clk_fixed(clk)->rate;
-> +}
-> +
-> +struct clk_ops clk_fixed_ops = {
-> +	.get_rate = clk_fixed_get_rate,
-> +};
-> +EXPORT_SYMBOL_GPL(clk_fixed_ops);
-> diff --git a/include/linux/clk.h b/include/linux/clk.h
-> index 604be74..7c0808c 100644
-> --- a/include/linux/clk.h
-> +++ b/include/linux/clk.h
-> @@ -155,6 +155,22 @@ static inline void clk_common_init(struct clk *clk)
->  	mutex_init(&clk->prepare_lock);
->  }
->  
-> +/* Simple fixed-rate clock */
-> +struct clk_fixed {
-> +	struct clk	clk;
-> +	unsigned long	rate;
+Hi Ryan,
 
-If we never need to dynamically create fixed clocks (which seems
-unlikely) then rate can be const.
+> If we never need to dynamically create fixed clocks (which seems
+> unlikely) then rate can be const.
 
-~Ryan
+There's been a few cases where I've needed to set the rate of a fixed clock 
+during boot - for example when a clock rate varies between boards, it may be 
+defined in a platform-wide file, but have the rate modified early (ie, 
+clk_foo.rate = 32678) in a board file.
 
--- 
-Bluewater Systems Ltd - ARM Technology Solution Centre
+Also, if we're parsing clocks from the device tree (or any other discovery 
+mechanism), we'll need to modify rate.
 
-Ryan Mallon         		5 Amuri Park, 404 Barbadoes St
-ryan@bluewatersys.com         	PO Box 13 889, Christchurch 8013
-http://www.bluewatersys.com	New Zealand
-Phone: +64 3 3779127		Freecall: Australia 1800 148 751
-Fax:   +64 3 3779135			  USA 1800 261 2934
+Cheers,
+
+
+Jeremy
