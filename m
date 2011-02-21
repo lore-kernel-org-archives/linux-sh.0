@@ -1,58 +1,23 @@
-From: Phil Edworthy <PHIL.EDWORTHY@renesas.com>
-Date: Tue, 01 Feb 2011 17:37:36 +0000
-Subject: [PATCH] sh: Fix ptrace FPU state initialisation
-Message-Id: <AB12B32E73474741A2C5361C433A44DE02911887@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 21 Feb 2011 09:50:31 +0000
+Subject: [BUG] Serial driver broken on migor
+Message-Id: <Pine.LNX.4.64.1102211046270.26977@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-RFC:
+Hi,
 
-Commit 0ea820cf introduced the PTRACE_GETFPREGS/SETFPREGS cmds,
-but gdb-server still accesses the FPU state using the
-PTRACE_PEEKUSR/POKEUSR commands. In this case, xstate was not
-initialised. The patch below against 2.6.35 fixes this. I'll
-rework this for head if it's ok.
+As earlier reported on IRC, commit 
+906b17dc089f7fa87e37a9cfe6ee185efc90e0da locks up migor hard without any 
+output on the serial console. I haven't re-tested the very latest kernel 
+versions, but I don't see any fixes being committed either.
 
-However, should we still allow PEEKUSR/POKEUSR for FPU registers,
-or should we return an error?
-
+Thanks
+Guennadi
 ---
- arch/sh/kernel/ptrace_32.c |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
-
-diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-index 6c4bbba..df0144c 100644
---- a/arch/sh/kernel/ptrace_32.c
-+++ b/arch/sh/kernel/ptrace_32.c
-@@ -363,9 +363,13 @@ long arch_ptrace(struct task_struct *child, long
-request, long addr, long data)
- 					tmp = FPSCR_INIT;
- 				else
- 					tmp = 0;
--			} else
-+			} else {
-+				ret = init_fpu(child);
-+				if (ret)
-+					break;
- 				tmp = ((long *)child->thread.xstate)
- 					[(addr - (long)&dummy->fpu) >> 2];
-+			}
- 		} else if (addr = (long) &dummy->u_fpvalid)
- 			tmp = !!tsk_used_math(child);
- 		else if (addr = PT_TEXT_ADDR)
-@@ -392,6 +396,9 @@ long arch_ptrace(struct task_struct *child, long
-request, long addr, long data)
- 			ret = put_stack_long(child, addr, data);
- 		else if (addr >= (long) &dummy->fpu &&
- 			 addr < (long) &dummy->u_fpvalid) {
-+			ret = init_fpu(child);
-+			if (ret)
-+				break;
- 			set_stopped_child_used_math(child);
- 			((long *)child->thread.xstate)
- 				[(addr - (long)&dummy->fpu) >> 2] = data;
--- 
-1.7.1
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
