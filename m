@@ -1,96 +1,71 @@
-From: Kieran Bingham <kieranbingham@gmail.com>
-Date: Wed, 09 Feb 2011 16:26:20 +0000
-Subject: Re: sh used greatest stack depth: 6628 bytes left
-Message-Id: <AANLkTinD3jP0PbQv5hR7PWnWBU=CE2cZerzcFwZLf6ie@mail.gmail.com>
+From: Ryan Mallon <ryan@bluewatersys.com>
+Date: Mon, 21 Feb 2011 19:51:19 +0000
+Subject: Re: [PATCH 2/2] clk: Generic support for fixed-rate clocks
+Message-Id: <4D62C237.1020803@bluewatersys.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201102091612.51193.fabio.giovagnini@aurion-tech.com>
-In-Reply-To: <201102091612.51193.fabio.giovagnini@aurion-tech.com>
+References: <1298256658.862488.956979497586.2.gpush@pororo>
+In-Reply-To: <1298256658.862488.956979497586.2.gpush@pororo>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-What you have shown so far is not a stack overflow.
+On 02/21/2011 03:50 PM, Jeremy Kerr wrote:
+> Since most platforms will need a fixed-rate clock, add one. This will
+> also serve as a basic example of an implementation of struct clk.
+> 
+> Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+> 
+> ---
+>  drivers/clk/clk.c   |   14 ++++++++++++++
+>  include/linux/clk.h |   16 ++++++++++++++++
+>  2 files changed, 30 insertions(+)
+> 
+> diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+> index 0bc9c6f..0da0bb9 100644
+> --- a/drivers/clk/clk.c
+> +++ b/drivers/clk/clk.c
+> @@ -130,3 +130,17 @@ void __clk_put(struct clk *clk)
+>  	if (clk->ops->put)
+>  		clk->ops->put(clk);
+>  }
+> +
+> +/* clk_fixed support */
+> +
+> +#define to_clk_fixed(clk) (container_of(clk, struct clk_fixed, clk))
+> +
+> +static unsigned long clk_fixed_get_rate(struct clk *clk)
+> +{
+> +	return to_clk_fixed(clk)->rate;
+> +}
+> +
+> +struct clk_ops clk_fixed_ops = {
+> +	.get_rate = clk_fixed_get_rate,
+> +};
+> +EXPORT_SYMBOL_GPL(clk_fixed_ops);
+> diff --git a/include/linux/clk.h b/include/linux/clk.h
+> index 604be74..7c0808c 100644
+> --- a/include/linux/clk.h
+> +++ b/include/linux/clk.h
+> @@ -155,6 +155,22 @@ static inline void clk_common_init(struct clk *clk)
+>  	mutex_init(&clk->prepare_lock);
+>  }
+>  
+> +/* Simple fixed-rate clock */
+> +struct clk_fixed {
+> +	struct clk	clk;
+> +	unsigned long	rate;
 
-Do  you suspect an overflow? Or are you just worrying about verbose message=
-s?
+If we never need to dynamically create fixed clocks (which seems
+unlikely) then rate can be const.
 
-From what I recall, on SH2, stack size was specified for the
-application at link time. However that was on the old elf2flt stuff.
-I presume you are now on FDPIC which may be different, and I haven't used.
+~Ryan
 
---
-Kieran
+-- 
+Bluewater Systems Ltd - ARM Technology Solution Centre
 
-On 9 February 2011 16:15, Fabio Giovagnini
-<fabio.giovagnini@aurion-tech.com> wrote:
-> Thanks Kieram
-> Is it possible to avoid this stack overflow or the kernel automatically a=
-djust
-> then stack size if an application overflow it?
->
-> Thanks a lot
->
->
-> On Wednesday 09 February 2011 16:44:24 Kieran Bingham wrote:
->> On 9 February 2011 15:12, Fabio Giovagnini
->> <fabio.giovagnini@aurion-tech.com
->>
->> > wrote:
->> >
->> > Hi all, what means the subject's message?
->>
->> CONFIG_DEBUG_STACK_USAGE is enabled,
->> and /bin/sh has used the largest amount of stack so far.
->> Which is likely until you run another application.
->>
->> > Is it dangerous?
->>
->> I don't think its dangerous, its informative!,
->> and you still have a whopping 6k left of stack.
->> Don't spend it all at once!
->>
->> > Where could I check it?
->>
->> cd $YOUR_KERNEL
->> git grep CONFIG_DEBUG_STACK_USAGE
->>
->> (or google!)
->>
->> --
->> Kieran
->>
->>
->>
->>
->>
->> Thanks
->>
->> > --
->> > Ing. Fabio Giovagnini
->> >
->> > Aurion s.r.l.
->> > P.I e C.F.
->> > 00885711200
->> > skype: aurion.giovagnini
->> > Tel. +39.051.594.78.24
->> > Fax. +39.051.082.14.49
->> > Cell. +39.335.83.50.919
->> > www.aurion-tech.com
->> > --
->> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
->> > the body of a message to majordomo@vger.kernel.org
->> > More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.html
->
-> --
-> Ing. Fabio Giovagnini
->
-> Aurion s.r.l.
-> P.I e C.F.
-> 00885711200
-> skype: aurion.giovagnini
-> Tel. +39.051.594.78.24
-> Fax. +39.051.082.14.49
-> Cell. +39.335.83.50.919
-> www.aurion-tech.com
->
+Ryan Mallon         		5 Amuri Park, 404 Barbadoes St
+ryan@bluewatersys.com         	PO Box 13 889, Christchurch 8013
+http://www.bluewatersys.com	New Zealand
+Phone: +64 3 3779127		Freecall: Australia 1800 148 751
+Fax:   +64 3 3779135			  USA 1800 261 2934
