@@ -1,44 +1,73 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 04 Feb 2011 13:20:40 +0000
-Subject: Re: Locking in the clk API, part 2: clk_prepare/clk_unprepare
-Message-Id: <20110204132040.GI14627@n2100.arm.linux.org.uk>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 22 Feb 2011 09:57:49 +0000
+Subject: [PATCH 3/3] ARM: switch mackerel to dynamically manage the platform
+Message-Id: <Pine.LNX.4.64.1102221057040.1380@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201102011711.31258.jeremy.kerr@canonical.com>
-	<20110204124534.GA2597@richard-laptop>
-In-Reply-To: <20110204124534.GA2597@richard-laptop>
+References: <Pine.LNX.4.64.1102221049240.1380@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1102221049240.1380@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Fri, Feb 04, 2011 at 08:45:34PM +0800, Richard Zhao wrote:
-> > = Implementation =
-> > 
-> > Basically:
-> > 
-> > struct clk {
-> > 	const struct clk_ops *ops
-> > 	int                  enable_count;
-> > 	spinlock_t           enable_lock;
-> > 	int                  prepare_count;
-> > 	struct mutex         prepare_lock;
-> > };
-> > 
-> > int clk_enable(struct clk *clk)
-> > {
-> > 	int ret = 0;
-> > 
-> > 	spin_lock(&clk->enable_lock);
-> > 	if (!clk->enable_count)
-> > 		ret = clk->ops->enable(clk);
-> > 
-> > 	if (!ret)
-> > 		clk->enable_count++;
-> > 	spin_unlock(&clk->enable_lock);
-> > 
-> > 	return ret;
-> > }
-> Why do we not call parent's clk_enable in this function? For flexible? How many
-> different cases is causing us to move the effert to platform clock driver?
+Use soc_camera_platform helper functions to dynamically manage the
+camera device.
 
-You may notice that struct clk above doesn't have a parent.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |   28 +++++++---------------------
+ 1 files changed, 7 insertions(+), 21 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 7b15d21..257355e 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -843,37 +843,23 @@ static struct soc_camera_link camera_link = {
+ 	.priv		= &camera_info,
+ };
+ 
+-static void dummy_release(struct device *dev)
++static struct platform_device *camera_device;
++
++static void mackerel_camera_release(struct device *dev)
+ {
++	soc_camera_platform_release(&camera_device);
+ }
+ 
+-static struct platform_device camera_device = {
+-	.name		= "soc_camera_platform",
+-	.dev		= {
+-		.platform_data	= &camera_info,
+-		.release	= dummy_release,
+-	},
+-};
+-
+ static int mackerel_camera_add(struct soc_camera_link *icl,
+ 			       struct device *dev)
+ {
+-	if (icl != &camera_link)
+-		return -ENODEV;
+-
+-	camera_info.dev = dev;
+-
+-	return platform_device_register(&camera_device);
++	return soc_camera_platform_add(icl, dev, &camera_device, &camera_link,
++				       mackerel_camera_release, 0);
+ }
+ 
+ static void mackerel_camera_del(struct soc_camera_link *icl)
+ {
+-	if (icl != &camera_link)
+-		return;
+-
+-	platform_device_unregister(&camera_device);
+-	memset(&camera_device.dev.kobj, 0,
+-	       sizeof(camera_device.dev.kobj));
++	soc_camera_platform_del(icl, camera_device, &camera_link);
+ }
+ 
+ static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
+-- 
+1.7.2.3
+
