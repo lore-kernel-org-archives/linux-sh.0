@@ -1,100 +1,162 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 16 Feb 2011 07:04:50 +0000
-Subject: Re: [PATCH v2] sh: sh_eth: Add support ethtool
-Message-Id: <AANLkTi=M=BdfzGVeWU-a1YA50ygxji_0Odk264xX0FLC@mail.gmail.com>
+From: Peppe CAVALLARO <peppe.cavallaro@st.com>
+Date: Tue, 22 Feb 2011 10:17:41 +0000
+Subject: [PATCH (sh-2.6) 1/4] clksource: Generic timer infrastructure
+Message-Id: <1298369864-24429-2-git-send-email-peppe.cavallaro@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1294747109-11511-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
- <1294748343.2927.57.camel@edumazet-laptop>
-In-Reply-To: <1294748343.2927.57.camel@edumazet-laptop>
+References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
+In-Reply-To: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Eric Dumazet <eric.dumazet@gmail.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com, bhutchings@solarflare.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: Stuart MENEFY <stuart.menefy@st.com>
 
-2011/1/11 Eric Dumazet <eric.dumazet@gmail.com>:
-> Le mardi 11 janvier 2011 =E0 20:58 +0900, nobuhiro.iwamatsu.yj@renesas.com
-> a =E9crit :
->> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->>
->> This commit supports following functions.
->> =A0- get_drvinfo
->> =A0- get_settings
->> =A0- set_settings
->> =A0- nway_reset
->> =A0- get_msglevel
->> =A0- set_msglevel
->> =A0- get_link
->> =A0- get_strings
->> =A0- get_ethtool_stats
->> =A0- get_sset_count
->>
->> About other function, the device does not support.
->>
->> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> ---
->
->> +static const char sh_eth_gstrings_stats[][ETH_GSTRING_LEN] =3D {
->> + =A0 =A0 "rx_packets", "tx_packets", "rx_bytes", "tx_bytes", "rx_errors=
-",
->> + =A0 =A0 "tx_errors", "rx_dropped", "tx_dropped", "multicast", "collisi=
-ons",
->> + =A0 =A0 "rx_length_errors", "rx_over_errors", "rx_crc_errors",
->> + =A0 =A0 "rx_frame_errors", "rx_fifo_errors", "rx_missed_errors",
->> + =A0 =A0 "tx_aborted_errors", "tx_carrier_errors", "tx_fifo_errors",
->> + =A0 =A0 "tx_heartbeat_errors", "tx_window_errors",
->> + =A0 =A0 /* device-specific stats */
->> + =A0 =A0 "rx_current", "tx_current",
->> + =A0 =A0 "rx_dirty", "tx_dirty",
->> +};
->> +#define SH_ETH_NET_STATS_LEN =A021
->> +#define SH_ETH_STATS_LEN =A0ARRAY_SIZE(sh_eth_gstrings_stats)
->
-> Why is it needed to report standard device stats ?
->
+From: Stuart Menefy <stuart.menefy@st.com>
 
-I dont know that we could get standart device status from basic interface.
-I removed this.
+Many devices targeted at the embedded market provide a number of
+generic timers which are capable of generating interrupts at a
+requested rate. These can then be used in the implementation of drivers
+for other peripherals which require a timer interrupt, without having
+to provide an additional timer as part of that peripheral.
 
->
->> +
->> +static int sh_eth_get_sset_count(struct net_device *netdev, int sset)
->> +{
->> + =A0 =A0 switch (sset) {
->> + =A0 =A0 case ETH_SS_STATS:
->> + =A0 =A0 =A0 =A0 =A0 =A0 return SH_ETH_STATS_LEN;
->> + =A0 =A0 default:
->> + =A0 =A0 =A0 =A0 =A0 =A0 return -EOPNOTSUPP;
->> + =A0 =A0 }
->> +}
->> +
->> +static void sh_eth_get_ethtool_stats(struct net_device *ndev,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct ethtool_stats *stats, u=
-64 *data)
->> +{
->> + =A0 =A0 struct sh_eth_private *mdp =3D netdev_priv(ndev);
->> + =A0 =A0 int i =3D SH_ETH_NET_STATS_LEN;
->> +
->> + =A0 =A0 memcpy(data, (unsigned long *)&ndev->stats,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 SH_ETH_NET_STA=
-TS_LEN * sizeof(unsigned long));
->
-> This is wrong on 32bit arches.
-> ndev->stats is an array of "long" values, not u64 ones.
+A code provides a simple abstraction layer which allows a timer to be
+registered, and for a driver to request a timer.
 
-I removed this too.
+Currently this doesn't provide any of the additional information, such
+as precision or position in clock framework which might be required
+for a fully featured driver.
 
->> +
->> + =A0 =A0 /* device-specific stats */
->> + =A0 =A0 data[i++] =3D mdp->cur_rx;
->> + =A0 =A0 data[i++] =3D mdp->cur_tx;
->> + =A0 =A0 data[i++] =3D mdp->dirty_rx;
->> + =A0 =A0 data[i++] =3D mdp->dirty_tx;
->> +}
->> +
->
+Signed-off-by: Stuart Menefy <stuart.menefy@st.com>
+Hacked-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
+---
+ drivers/clocksource/Makefile       |    1 +
+ drivers/clocksource/generictimer.c |   60 ++++++++++++++++++++++++++++++++++++
+ include/linux/generictimer.h       |   41 ++++++++++++++++++++++++
+ 3 files changed, 102 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/clocksource/generictimer.c
+ create mode 100644 include/linux/generictimer.h
 
-
---=20
-Nobuhiro Iwamatsu
+diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
+index be61ece..b0be293 100644
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
+@@ -6,3 +6,4 @@ obj-$(CONFIG_CS5535_CLOCK_EVENT_SRC)	+= cs5535-clockevt.o
+ obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
+ obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
+ obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
++obj-y				+= generictimer.o
+diff --git a/drivers/clocksource/generictimer.c b/drivers/clocksource/generictimer.c
+new file mode 100644
+index 0000000..a74a87a
+--- /dev/null
++++ b/drivers/clocksource/generictimer.c
+@@ -0,0 +1,60 @@
++/*
++ * Simple generic hardware timer interface
++ *
++ * Copyright (C) 2010 STMicroelectronics Limited
++ * Authors: Giuseppe Cavallaro <peppe.cavallaro@st.com>
++ *          Stuart Menefy <stuart.menefy@st.com>
++ *
++ * May be copied or modified under the terms of the GNU General Public
++ * License. See linux/COPYING for more information.
++ */
++
++#include <linux/kernel.h>
++#include <linux/mutex.h>
++#include <linux/list.h>
++#include <linux/generictimer.h>
++
++static DEFINE_MUTEX(gt_mutex);
++static LIST_HEAD(gt_list);
++
++void generic_timer_register_device(struct generic_timer *gt)
++{
++	mutex_lock(&gt_mutex);
++	list_add(&gt->list, &gt_list);
++	mutex_unlock(&gt_mutex);
++}
++
++struct generic_timer *generic_timer_claim(void (*handler) (void *), void *data)
++{
++	struct generic_timer *gt = NULL;
++
++	if (!handler) {
++		pr_err("%s: invalid handler\n", __func__);
++		return NULL;
++	}
++
++	mutex_lock(&gt_mutex);
++	if (!list_empty(&gt_list)) {
++		struct list_head *list = gt_list.next;
++		list_del(list);
++		gt = container_of(list, struct generic_timer, list);
++	}
++	mutex_unlock(&gt_mutex);
++
++	if (!gt)
++		return NULL;
++
++	/* Prepare the new handler */
++	gt->priv_handler = handler;
++	gt->data = data;
++
++	return gt;
++}
++
++void generic_timer_release(struct generic_timer *gt)
++{
++	/* Just in case... */
++	generic_timer_stop(gt);
++
++	generic_timer_register_device(gt);
++}
+diff --git a/include/linux/generictimer.h b/include/linux/generictimer.h
+new file mode 100644
+index 0000000..87fb656
+--- /dev/null
++++ b/include/linux/generictimer.h
+@@ -0,0 +1,41 @@
++#ifndef __STM_GENERIC_TIMER_H
++#define __STM_GENERIC_TIMER_H
++
++#include <linux/list.h>
++
++/* Generic timer device intrface */
++
++struct generic_timer {
++	char *name;
++	struct list_head list;
++	void (*priv_handler)(void *data);
++	void *data;
++	void (*timer_start)(struct generic_timer *gt);
++	void (*timer_stop)(struct generic_timer *gt);
++	void (*set_rate)(struct generic_timer *gt, unsigned long rate);
++};
++
++void generic_timer_register_device(struct generic_timer *gt);
++
++/* Driver interface */
++
++struct generic_timer *generic_timer_claim(void (*handler)(void *), void *data);
++void generic_timer_release(struct generic_timer *gt);
++
++static inline void generic_timer_start(struct generic_timer *gt)
++{
++	gt->timer_start(gt);
++}
++
++static inline void generic_timer_stop(struct generic_timer *gt)
++{
++	gt->timer_stop(gt);
++}
++
++static inline void generic_timer_set_rate(struct generic_timer *gt,
++		unsigned long rate)
++{
++	gt->set_rate(gt, rate);
++}
++
++#endif /* __STM_GENERIC_TIMER_H */
+-- 
+1.7.4
