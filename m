@@ -1,40 +1,130 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 23 Feb 2011 10:16:48 +0000
-Subject: [PATCH 0/2] fbdev: sh_mobile_lcdc: YUV framebuffer support
-Message-Id: <1298456210-26519-1-git-send-email-dhobsong@igel.co.jp>
+From: Peppe CAVALLARO <peppe.cavallaro@st.com>
+Date: Tue, 22 Feb 2011 10:17:42 +0000
+Subject: [PATCH (sh-2.6) 2/4] sh_timer: add the support to use the generic
+Message-Id: <1298369864-24429-3-git-send-email-peppe.cavallaro@st.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
+In-Reply-To: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: Stuart MENEFY <stuart.menefy@st.com>, Peppe CAVALLARO <peppe.cavallaro@st.com>
 
-These patches add support for 12, 16, and 24 bit YUV framebuffers.
+Add the support to register and use a TMU channel as
+generic timer. For example the stmmac network device
+driver, on STM platforms, uses the TMU channel 2 for
+mitigating the number of interrupts.
 
-These patches are a reworking of an earlier submitted patch 
-"Add NV12 input framebuffer support" to include the two other modes.
+Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
+Signed-off-by: Stuart Menefy <stuart.menefy@st.com>
+---
+ drivers/clocksource/sh_tmu.c |   72 ++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 72 insertions(+), 0 deletions(-)
 
-Additionally updated are:
-
-* Y and C plane ordering.  When double-buffering both Y planes appear before
-  the C planes (Y-Y-C-C), instead of Y-C-Y-C.  
-* In YUV 420 mode, panning is only possible in 2 line increments
-* Additionally in YUV 420 mode the value of yres must be set to an even number
-* The value of .nonstd in struct sh_mobile_lcdc_chan_cfg from the platform data is
-  exposed to applications via the .nonstd element of struct fb_var_screeninfo.
-  Additionally this value is written to bits 16-31 of LDDFR in the LCDC.
-* Chip dependent flags for the bits of LDDFR greater that bit 17 are defined
-* Add a userspace include file <linux/sh_mobile_fb.h> as a place to hold defines
-  and future ioctl definitions.
-
-Damian Hobson-Garcia (2):
-  fbdev: sh_mobile_lcdc: Add YUV input support
-  fbdev: sh_mobile_lcdc: Define additional .nonstd flags for sh7372
-
- arch/arm/mach-shmobile/include/mach/sh7372.h |   11 ++
- drivers/video/sh_mobile_lcdcfb.c             |  142 +++++++++++++++++++++-----
- drivers/video/sh_mobile_lcdcfb.h             |    2 +-
- include/linux/sh_mobile_fb.h                 |   14 +++
- include/video/sh_mobile_lcdc.h               |    1 +
- 5 files changed, 141 insertions(+), 29 deletions(-)
- create mode 100644 include/linux/sh_mobile_fb.h
-
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 36aba99..8199556 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -29,6 +29,7 @@
+ #include <linux/err.h>
+ #include <linux/clocksource.h>
+ #include <linux/clockchips.h>
++#include <linux/generictimer.h>
+ #include <linux/sh_timer.h>
+ #include <linux/slab.h>
+ 
+@@ -41,6 +42,7 @@ struct sh_tmu_priv {
+ 	unsigned long periodic;
+ 	struct clock_event_device ced;
+ 	struct clocksource cs;
++	struct generic_timer gt;
+ };
+ 
+ static DEFINE_SPINLOCK(sh_tmu_lock);
+@@ -184,6 +186,74 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
++static struct sh_tmu_priv *gt_to_sh_tmu(struct generic_timer *gt)
++{
++	return container_of(gt, struct sh_tmu_priv, gt);
++}
++
++static void sh_tmu_generic_timer_start(struct generic_timer *gt)
++{
++	struct sh_tmu_priv *p = gt_to_sh_tmu(gt);
++
++	sh_tmu_write(p, TCR, 0x0020);
++	sh_tmu_start_stop_ch(p, 1);
++}
++
++static void sh_tmu_generic_timer_stop(struct generic_timer *gt)
++{
++	struct sh_tmu_priv *p = gt_to_sh_tmu(gt);
++
++	sh_tmu_start_stop_ch(p, 0);
++	sh_tmu_write(p, TCR, 0x0000);
++}
++
++static void sh_tmu_generic_timer_set_rate(struct generic_timer *gt,
++					  unsigned long rate)
++{
++	struct sh_tmu_priv *p = gt_to_sh_tmu(gt);
++
++	sh_tmu_enable(p);
++	p->periodic = p->rate / rate;
++	sh_tmu_set_next(p, p->periodic, 1);
++}
++
++static irqreturn_t sh_tmu_generic_timer_interrupt(int irq, void *dev_id)
++{
++	struct sh_tmu_priv *p = dev_id;
++
++	sh_tmu_write(p, TCR, 0x0020);
++
++	p->gt.priv_handler(p->gt.data);
++	return IRQ_HANDLED;
++}
++
++static void sh_tmu_register_generic_timer(struct sh_tmu_priv *p, char *name)
++{
++	struct generic_timer *gt = &p->gt;
++	int ret;
++
++	gt->name = name;
++	gt->timer_start = sh_tmu_generic_timer_start;
++	gt->timer_stop = sh_tmu_generic_timer_stop;
++	gt->set_rate = sh_tmu_generic_timer_set_rate;
++
++	p->irqaction.handler = sh_tmu_generic_timer_interrupt;
++
++	ret = setup_irq(p->irqaction.irq, &p->irqaction);
++	if (unlikely(ret)) {
++		dev_err(&p->pdev->dev, "failed to request irq %d\n",
++			p->irqaction.irq);
++		return;
++	}
++
++	sh_tmu_generic_timer_stop(gt);
++	sh_tmu_write(p, TCOR, 0xffffffff);
++	sh_tmu_write(p, TCNT, 0xffffffff);
++
++	dev_info(&p->pdev->dev, "used for generic timer\n");
++	generic_timer_register_device(gt);
++}
++
+ static struct sh_tmu_priv *cs_to_sh_tmu(struct clocksource *cs)
+ {
+ 	return container_of(cs, struct sh_tmu_priv, cs);
+@@ -342,6 +412,8 @@ static int sh_tmu_register(struct sh_tmu_priv *p, char *name,
+ 		sh_tmu_register_clockevent(p, name, clockevent_rating);
+ 	else if (clocksource_rating)
+ 		sh_tmu_register_clocksource(p, name, clocksource_rating);
++	else
++		sh_tmu_register_generic_timer(p, name);
+ 
+ 	return 0;
+ }
+-- 
+1.7.4
