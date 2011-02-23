@@ -1,101 +1,98 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Wed, 09 Feb 2011 06:41:33 +0000
-Subject: [RFC,PATCH 0/3] Common struct clk implementation, v12
-Message-Id: <1297233693.241680.897691111624.0.gpush@pororo>
+From: Alexandre Courbot <gnurou@gmail.com>
+Date: Wed, 23 Feb 2011 08:36:30 +0000
+Subject: [PATCH] fbdev: sh_mobile_lcdcfb: add blanking support
+Message-Id: <1298450190-3803-1-git-send-email-gnurou@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
-References: <1297058877.799617.749783078584.0.gpush@pororo>
-In-Reply-To: <1297058877.799617.749783078584.0.gpush@pororo>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hi all,
+Add a blanking callback to the LCDC driver in order to support both
+FBIOBLANK and TIOCLINUX blanking ioctls. LCDC clocks are also released
+if the requested blanking level is superior to FB_BLANK_NORMAL, to allow
+runtime PM to disable the clocks if possible.
 
-These patches are an attempt to allow platforms to share clock code. At
-present, the definitions of 'struct clk' are local to platform code,
-which makes allocating and initialising cross-platform clock sources
-difficult, and makes it impossible to compile a single image containing
-support for two ARM platforms with different struct clks.
-
-The three patches are for the architecture-independent kernel code,
-introducing the common clk infrastructure. The changelog for the first
-patch includes details about the new clock definitions.
-
-Ben Herrenschmidt is looking at using common struct clk code for powerpc
-too, hence the kernel-wide approach.
-
-Many thanks to the following for their input:
- * Ben Dooks <ben-linux@fluff.org>
- * Baruch Siach <baruch@tkos.co.il>
- * Russell King <linux@arm.linux.org.uk>
- * Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
- * Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>
- * Vincent Guittot <vincent.guittot@linaro.org>
- * Sascha Hauer <s.hauer@pengutronix.de>
- * Ryan Mallon <ryan@bluewatersys.com>
- * Colin Cross <ccross@google.com>
- * Jassi Brar <jassisinghbrar@gmail.com>
-
-Cheers,
-
-
-Jeremy
-
---
-v12:
- * Always refcount, even when enable/prepare ops are NULL
- * Unify prepare & enable count checking
- * Update comments for prepare/unprepare
- * Use spin_{lock,unlock}_irqsave
- * Change clk_put to __clk_put, and use the shared clk_put
-
-v11:
- * add prepare/unprepare for non-atomic switching, document atomicity
- * move to drivers/clk/
-
-v10:
- * comment fixups, from Uwe's review
- * added DEFINE_CLK_FIXED
-
-v9:
- * comment improvements
- * kerneldoc fixups
- * add WARN_ON to clk_disable
-
-v8:
- * add atomic clocks, and locking wrappers
- * expand comments on clk and clk_ops
-
-v7:
- * change CLK_INIT to initialise clk->mutex statically
-
-v6:
- * fixed up references to 'clk_operations' in the changelog
-
-v5:
- * uninline main API, and share definitions with !USE_COMMON_STRUCT_CLK
- * add __clk_get
- * delay mutex init
- * kerneldoc for struct clk
-
-v4:
- * use mutex for enable/disable locking
- * DEFINE_CLK -> INIT_CLK, and pass the clk name for mutex init
- * struct clk_operations -> struct clk_ops
-
-v3:
- * do clock usage refcounting in common code
- * provide sample port
-
-v2:
- * no longer ARM-specific
- * use clk_operations
-
+Signed-off-by: Alexandre Courbot <gnurou@gmail.com>
 ---
-Jeremy Kerr (3):
-      Add a common struct clk
-      clk: Generic support for fixed-rate clocks
-      clk: add warnings for incorrect enable/prepare semantics
+ drivers/video/sh_mobile_lcdcfb.c |   44 ++++++++++++++++++++++++++++++++++++++
+ drivers/video/sh_mobile_lcdcfb.h |    1 +
+ 2 files changed, 45 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index bf12e53..994bcc7 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -965,6 +965,49 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	return 0;
+ }
+ 
++/*
++ * Screen blanking. Behavior is as follows:
++ * FB_BLANK_UNBLANK: screen unblanked, clocks enabled
++ * FB_BLANK_NORMAL: screen blanked, clocks enabled
++ * FB_BLANK_VSYNC,
++ * FB_BLANK_HSYNC,
++ * FB_BLANK_POWEROFF: screen blanked, clocks disabled
++ */
++static int sh_mobile_lcdc_blank(int blank, struct fb_info *info)
++{
++	struct sh_mobile_lcdc_chan *ch = info->par;
++	struct sh_mobile_lcdc_priv *p = ch->lcdc;
++
++	/* blank the screen? */
++	if (blank > FB_BLANK_UNBLANK && ch->blank_status = FB_BLANK_UNBLANK) {
++		struct fb_fillrect rect = {
++			.width = info->var.xres,
++			.height = info->var.yres,
++		};
++		sh_mobile_lcdc_fillrect(info, &rect);
++	}
++	/* turn clocks on? */
++	if (blank <= FB_BLANK_NORMAL && ch->blank_status > FB_BLANK_NORMAL) {
++		sh_mobile_lcdc_clk_on(p);
++	}
++	/* turn clocks off? */
++	if (blank > FB_BLANK_NORMAL && ch->blank_status <= FB_BLANK_NORMAL) {
++		/* make sure the screen is updated with the black fill before
++		 * switching the clocks off. one vsync is not enough since
++		 * blanking may occur in the middle of a refresh. deferred io
++		 * mode will reenable the clocks and update the screen in time,
++		 * so it does not need this. */
++		if (!info->fbdefio) {
++			sh_mobile_wait_for_vsync(info);
++			sh_mobile_wait_for_vsync(info);
++		}
++		sh_mobile_lcdc_clk_off(p);
++	}
++
++	ch->blank_status = blank;
++	return 0;
++}
++
+ static struct fb_ops sh_mobile_lcdc_ops = {
+ 	.owner          = THIS_MODULE,
+ 	.fb_setcolreg	= sh_mobile_lcdc_setcolreg,
+@@ -973,6 +1016,7 @@ static struct fb_ops sh_mobile_lcdc_ops = {
+ 	.fb_fillrect	= sh_mobile_lcdc_fillrect,
+ 	.fb_copyarea	= sh_mobile_lcdc_copyarea,
+ 	.fb_imageblit	= sh_mobile_lcdc_imageblit,
++	.fb_blank	= sh_mobile_lcdc_blank,
+ 	.fb_pan_display = sh_mobile_fb_pan_display,
+ 	.fb_ioctl       = sh_mobile_ioctl,
+ 	.fb_open	= sh_mobile_open,
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index 9ecee2f..948dd24 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -35,6 +35,7 @@ struct sh_mobile_lcdc_chan {
+ 	struct completion vsync_completion;
+ 	struct fb_var_screeninfo display_var;
+ 	int use_count;
++	int blank_status;
+ 	struct mutex open_lock;		/* protects the use counter */
+ };
+ 
+-- 
+1.7.4.1
 
