@@ -1,76 +1,45 @@
-From: Daniel Palmer <me@danielpalmer.co.uk>
-Date: Sun, 13 Feb 2011 03:59:14 +0000
-Subject: Landisk: Recent kernels don't boot.
-Message-Id: <4D575712.3010204@danielpalmer.co.uk>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 23 Feb 2011 10:16:50 +0000
+Subject: [PATCH 2/2] fbdev: sh_mobile_lcdc: Define additional .nonstd flags for sh7372
+Message-Id: <1298456210-26519-3-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1254"
-Content-Transfer-Encoding: base64
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev@vger.kernel.org
 
-SSByZWNlbnRseSBnb3QgYSBMYW5kaXNrIChIREwtPz8/VSBtb2RlbCkuIEkndmUgaGFkIHNvbWUg
-aXNzdWVzIHdpdGggdGhlIApQQVRBIGNvbnRyb2xsZXIgbm90IGRldGVjdGluZyB0aGUgYXR0YWNo
-ZWQgZGlzayB3aXRoIDIuNi4zNS4xMCBzbyBJJ3ZlIApiZWVuIHRyeWluZyB0byBnZXQgYSBuZXdl
-ciBrZXJuZWwgcnVubmluZyB0byBzZWUgaWYgaXQgbWFrZXMgYW55IApkaWZmZXJlbmNlLi4KQWxs
-IGtlcm5lbHMgbmV3ZXIgdGhhbiAyLjYuMzUuMTAgc2VlbSB0byBwYW5pYyBqdXN0IGFmdGVyIGJv
-b3RpbmcuIEkgCmhhdmUgYXBwZW5kZWQgb3V0cHV0IG9mICAyLjYuMzgtcmM0LW5leHQtMjAxMTAy
-MTEgYnV0IGl0J3MgdGhlIHNhbWUgd2l0aCAKMi42LjM3LiBUaGUga2VybmVsIGNvbmZpZyBpcyB0
-aGUgZGVmYXVsdCBsYW5kaXNrIG9uZS4KCgoKU2V0dGluZyBHREIgdHJhcCB2ZWN0b3IgdG8gODAw
-MDAxMDAKTGludXggdmVyc2lvbiAyLjYuMzgtcmM0LW5leHQtMjAxMTAyMTEgKGRhbmllbEBreW9y
-bykgKGdjYyB2ZXJzaW9uIDQuNC41IAooRGViaWFuIDQuNC41LTEwKSApICMxIFNhdCBGZWIgMTIg
-MjE6Mjg6NTQgR01UIDIwMTEKQm9vdCBwYXJhbXM6Ci4uLiBNT1VOVF9ST09UX1JET05MWSAtIDAw
-MDAwMDAxCi4uLiBSQU1ESVNLX0ZMQUdTICAgICAtIDAwMDAwMDAwCi4uLiBPUklHX1JPT1RfREVW
-ICAgICAtIDAwMDAwMzAxCi4uLiBMT0FERVJfVFlQRSAgICAgICAtIDAwMDAwMDAxCi4uLiBJTklU
-UkRfU1RBUlQgICAgICAtIDAwMDAwMDAwCi4uLiBJTklUUkRfU0laRSAgICAgICAtIDAwMDAwMDAw
-Ck1lbW9yeSBsaW1pdGVkIHRvIDY0TUIKQm9vdGluZyBtYWNodmVjOiBMQU5ESVNLCmJvb3Rjb25z
-b2xlIFtlYXJseV90dHlTQzFdIGVuYWJsZWQKTm9kZSAwOiBzdGFydF9wZm4gPSAweGMwMDAsIGxv
-dyA9IDB4MTAwMDAKWm9uZSBQRk4gcmFuZ2VzOgogICBOb3JtYWwgICAweDAwMDBjMDAwIC0+IDB4
-MDAwMTAwMDAKTW92YWJsZSB6b25lIHN0YXJ0IFBGTiBmb3IgZWFjaCBub2RlCmVhcmx5X25vZGVf
-bWFwWzFdIGFjdGl2ZSBQRk4gcmFuZ2VzCiAgICAgMDogMHgwMDAwYzAwMCAtPiAweDAwMDEwMDAw
-CkktTyBEQVRBIERFVklDRSwgSU5DLiAiTEFORElTSyBTZXJpZXMiIHN1cHBvcnQuCkJ1aWx0IDEg
-em9uZWxpc3RzIGluIFpvbmUgb3JkZXIsIG1vYmlsaXR5IGdyb3VwaW5nIG9uLiAgVG90YWwgcGFn
-ZXM6IDE2MjU2Cktlcm5lbCBjb21tYW5kIGxpbmU6IHJvIEJPT1RfRklMRT0vYm9vdC96SW1hZ2Vu
-ZXh0IG1lbWRNIApjb25zb2xlPXR0eVNDMSw5NjAwIHJvb3Q9L2Rldi9oZGEzIHJvb3RkZWxheSAg
-ZWFybHlwcmludGs9c2gtc2NpLjEsOTYwMApQSUQgaGFzaCB0YWJsZSBlbnRyaWVzOiAyNTYgKG9y
-ZGVyOiAtMiwgMTAyNCBieXRlcykKRGVudHJ5IGNhY2hlIGhhc2ggdGFibGUgZW50cmllczogODE5
-MiAob3JkZXI6IDMsIDMyNzY4IGJ5dGVzKQpJbm9kZS1jYWNoZSBoYXNoIHRhYmxlIGVudHJpZXM6
-IDQwOTYgKG9yZGVyOiAyLCAxNjM4NCBieXRlcykKUFZSBDA1MDAwNSBDVlIgNDgwMDAwIFBSUgAw
-MDAxMTMKSS1jYWNoZSA6IG5fd2F5cz0yIG5fc2V0cyU2IHdheV9pbmNygTkyCkktY2FjaGUgOiBl
-bnRyeV9tYXNrPTB4MDAwMDFmZTAgYWxpYXNfbWFzaz0weDAwMDAxMDAwIG5fYWxpYXNlcz0yCkQt
-Y2FjaGUgOiBuX3dheXM9MiBuX3NldHNRMiB3YXlfaW5jchYzODQKRC1jYWNoZSA6IGVudHJ5X21h
-c2s9MHgwMDAwM2ZlMCBhbGlhc19tYXNrPTB4MDAwMDMwMDAgbl9hbGlhc2VzPTQKTWVtb3J5OiA2
-MjAxMmsvNjU1MzZrIGF2YWlsYWJsZSAoMjAwM2sga2VybmVsIGNvZGUsIDcxMWsgZGF0YSwgMTAw
-ayBpbml0KQp2aXJ0dWFsIGtlcm5lbCBtZW1vcnkgbGF5b3V0OgogICAgIGZpeG1hcCAgOiAweGRm
-ZmY3MDAwIC0gMHhkZmZmZjAwMCAgICggIDMyIGtCKQogICAgIHZtYWxsb2MgOiAweGMwMDAwMDAw
-IC0gMHhkZmZmNTAwMCAgICggNTExIE1CKQogICAgIGxvd21lbSAgOiAweDhjMDAwMDAwIC0gMHg5
-MDAwMDAwMCAgICggIDY0IE1CKSAoY2FjaGVkKQogICAgICAgICAgICAgOiAweGEwMDAwMDAwIC0g
-MHhjMDAwMDAwMCAgICggNTEyIE1CKSAodW5jYWNoZWQpCiAgICAgICAuaW5pdCA6IDB4OGMyYTgw
-MDAgLSAweDhjMmMxMDAwICAgKCAxMDAga0IpCiAgICAgICAuZGF0YSA6IDB4OGMxZjVmYzQgLSAw
-eDhjMmE3ZGEwICAgKCA3MTEga0IpCiAgICAgICAudGV4dCA6IDB4OGMwMDEwMDAgLSAweDhjMWY1
-ZmM0ICAgKDIwMDMga0IpCk5SX0lSUVM6NTEyIG5yX2lycXM6NzIgOAppbnRjOiBSZWdpc3RlcmVk
-IGNvbnRyb2xsZXIgJ3NoNzc1MCcgd2l0aCAyMCBJUlFzCmludGM6IFJlZ2lzdGVyZWQgY29udHJv
-bGxlciAnc2g3NzUwX2RtYTgnIHdpdGggOSBJUlFzCmludGM6IFJlZ2lzdGVyZWQgY29udHJvbGxl
-ciAnc2g3NzUwX3RtdTM0JyB3aXRoIDIgSVJRcwpUcnlpbmcgdG8gaW5zdGFsbCBjaGlwIGZvciBJ
-UlE3MgotLS0tLS0tLS0tLS1bIGN1dCBoZXJlIF0tLS0tLS0tLS0tLS0KV0FSTklORzogYXQga2Vy
-bmVsL2lycS9jaGlwLmM6MzIKTW9kdWxlcyBsaW5rZWQgaW46CgpQaWQgOiAwLCBDb21tOiAgICAg
-ICAgICBzd2FwcGVyCkNQVSA6IDAgICAgICAgICAgICAgICAgIE5vdCB0YWludGVkICAoMi42LjM4
-LXJjNC1uZXh0LTIwMTEwMjExICMxKQoKUEMgaXMgYXQgc2V0X2lycV9jaGlwKzB4MjIvMHg3OApQ
-UiBpcyBhdCBzZXRfaXJxX2NoaXArMHgyMi8weDc4ClBDICA6IDhjMDM5ODdhIFNQICA6IDhjMjkz
-ZjU0IFNSICA6IDQwMDA4MGYxIFRFQSA6IDAwMDAwMDAwClIwICA6IDAwMDAwMDI3IFIxICA6IDAw
-MDAwMGYwIFIyICA6IDAwMDAwMDAxIFIzICA6IDhjMmMyNzYwClI0ICA6IDAwMDAwMGYwIFI1ICA6
-IDAwMDAwOTlkIFI2ICA6IGZmZmZmZmZmIFI3ICA6IDhjMTJjOTNjClI4ICA6IDAwMDAwMDQ4IFI5
-ICA6IDhmYzA2MmM4IFIxMCA6IDAwMDAwMDAwIFIxMSA6IDA2MDY3ODg4ClIxMiA6IDhjMmJiOWU4
-IFIxMyA6IDAwMDAwMDAwIFIxNCA6IDAwMDAwMDEwCk1BQ0g6IDA5MzMzNGNjIE1BQ0w6IDAwMDAw
-MGU0IEdCUiA6IDY1NDQwODRjIFBSICA6IDhjMDM5ODdhCgpDYWxsIHRyYWNlOgogIFs8OGMwMzlh
-MmE+XSBzZXRfaXJxX2NoaXBfYW5kX2hhbmRsZXJfbmFtZSsweDEyLzB4MzAKICBbPDhjMDM5Y2I0
-Pl0gaGFuZGxlX2xldmVsX2lycSsweDAvMHhjOAogIFs8OGMyYjU3NGE+XSByZWdpc3Rlcl9pbnRj
-X2NvbnRyb2xsZXIrMHg0ZGEvMHg3MmMKICBbPDhjMDM3ZGYwPl0gYWxsb2NfZGVzYysweDAvMHg4
-MAogIFs8OGMyYTlkYTA+XSBwbGF0X2lycV9zZXR1cCsweDE4LzB4MzgKICBbPDhjMTAyNDgwPl0g
-c3RybGVuKzB4MC8weDU4CiAgWzw4YzAwMzdjOD5dIGFyY2hfbG9jYWxfaXJxX3Jlc3RvcmUrMHgw
-LzB4MjQKICBbPDhjMWYyNmQ4Pl0gcHJpbnRrKzB4MC8weDI4CiAgWzw4YzJiNTI3MD5dIHJlZ2lz
-dGVyX2ludGNfY29udHJvbGxlcisweDAvMHg3MmMKICBbPDhjMmE5NjE4Pl0gaW5pdF9JUlErMHg4
-LzB4MjgKICBbPDhjMmE4NjFhPl0gc3RhcnRfa2VybmVsKzB4MTRlLzB4NDI4CiAgWzw4YzAwMjAy
-ND5dIF9zdGV4dCsweDI0LzB4MzAKLS0KVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNl
-bmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LXNoIiBpbgp0aGUgYm9keSBvZiBhIG1lc3Nh
-Z2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwpNb3JlIG1ham9yZG9tbyBpbmZvIGF0ICBo
-dHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWw=
+The value of the .nonstd member of struct sh_mobile_lcdc_info is written
+directly into bits 16 and up of LDDFR in the LCDC. This patch defines
+additional flags that can be "or'ed" with the .nonstd value to control
+the LCDC behaviour when operating the the YUV display mode.
+
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 5736efc..cdbc2cf 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -13,6 +13,17 @@
+ 
+ #include <linux/sh_clk.h>
+ 
++/* LCDC YUV support:
++ * The following bit flags are used to set the bits 17 and up
++ * in the MLDDFR. These flags should be used to set the
++ * .nonstd field in the struct sh_mobile_lcdc_info.
++ * Bit 16, which is accessible from user space is defined in
++ * <linux/sh_mobile_fb.h>
++ * The flags have different values for different chips
++ */
++#define LCDC_YUV_FULL_RANGE ((0x1 << 17) >> 16)
++#define LCDC_YUV_BT_709 ((0x1 << 18) >> 16)
++
+ /*
+  * Pin Function Controller:
+  *	GPIO_FN_xx - GPIO used to select pin function
+-- 
+1.7.1
+
