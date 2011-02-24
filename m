@@ -1,39 +1,44 @@
-From: Alexandre Courbot <gnurou@gmail.com>
-Date: Tue, 15 Feb 2011 03:23:20 +0000
-Subject: Re: [PATCH 0/2] backlight support for sh_mobile_lcdcfb
-Message-Id: <AANLkTinwV6A_qYi3OUJJ=J_9xt+G1AYyX+VNBdtavQcu@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 24 Feb 2011 07:43:00 +0000
+Subject: [PATCH] usb: add EHCI and OHCI support for SH7757
+Message-Id: <4D660C04.9070800@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1297351366-7374-1-git-send-email-gnurou@gmail.com>
-In-Reply-To: <1297351366-7374-1-git-send-email-gnurou@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus, thanks for your feedback!
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/host/ehci-hcd.c |    3 ++-
+ drivers/usb/host/ohci-hcd.c |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-> I'd like to use the driver portion of your code on other platforms,
-> but for that to work your code needs to be updated to fit other boards
-> as well. Mainly, not all boards control their back light with GPIO
-> pins. For instance, have a look at linux-2.6 git commit
-> 170c7ab58f41c526c54e9dd04044857d5d73f9e6.
+diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
+index 4c77a81..b5aae43 100644
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -1184,7 +1184,8 @@ MODULE_LICENSE ("GPL");
+ #define PLATFORM_DRIVER		ehci_mxc_driver
+ #endif
 
-Indeed, I overlooked the board_cfg struct. We could have additional
-backlight intensity get/set callbacks there that would mostly work
-like the generic_bl driver.
+-#ifdef CONFIG_CPU_SUBTYPE_SH7786
++#if defined(CONFIG_CPU_SUBTYPE_SH7757) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7785)
+ #include "ehci-sh.c"
+ #define PLATFORM_DRIVER		ehci_hcd_sh_driver
+ #endif
+diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
+index 759a12f..257974e 100644
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -1070,6 +1070,7 @@ MODULE_LICENSE ("GPL");
 
-> Please think about how to rework the code to allow both GPIO pins and
-> other types of back light control. I would simply go with some board
-> callbacks, but perhaps there is some overlap with the existing ones.
-
-display_on and display_off callbacks currently control the backlight,
-but they also turn power off when it is possible (for instance on
-ap325rxa). So they could probably not be replaced by backlight
-intensity settings alone. However, since backlight control will be
-transferred to the LCDC driver, it should be removed from these
-callbacks once the backlight device is used for the sake of
-consistency.
-
-I will try and come with a new patch sometime tomorrow!
-
-Alex.
+ #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
++    defined(CONFIG_CPU_SUBTYPE_SH7757) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7786)
+ #include "ohci-sh.c"
+-- 
+1.7.1
