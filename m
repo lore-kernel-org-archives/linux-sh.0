@@ -1,104 +1,50 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Mon, 21 Feb 2011 02:50:58 +0000
-Subject: [PATCH 0/2] Common struct clk implementation, v13
-Message-Id: <1298256658.861611.43913489619.0.gpush@pororo>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 Feb 2011 15:58:38 +0000
+Subject: [PATCH] mmc: sh_mmcif: support aggressive clock gating
+Message-Id: <Pine.LNX.4.64.1102251657290.26361@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <201102011711.31258.jeremy.kerr@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org
 
-Hi all,
+To support MMC aggressive clock gating the driver has to stop the interface
+clock, when the .set_ios() method is called with .clock = 0.
 
-These patches are an attempt to allow platforms to share clock code. At
-present, the definitions of 'struct clk' are local to platform code,
-which makes allocating and initialising cross-platform clock sources
-difficult, and makes it impossible to compile a single image containing
-support for two ARM platforms with different struct clks.
-
-The three patches are for the architecture-independent kernel code,
-introducing the common clk infrastructure. The changelog for the first
-patch includes details about the new clock definitions.
-
-Many thanks to the following for their input:
- * Benjamin Herrenschmidt <benh@kernel.crashing.org>
- * Ben Dooks <ben-linux@fluff.org>
- * Baruch Siach <baruch@tkos.co.il>
- * Russell King <linux@arm.linux.org.uk>
- * Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
- * Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>
- * Vincent Guittot <vincent.guittot@linaro.org>
- * Sascha Hauer <s.hauer@pengutronix.de>
- * Ryan Mallon <ryan@bluewatersys.com>
- * Colin Cross <ccross@google.com>
- * Jassi Brar <jassisinghbrar@gmail.com>
- * Saravana Kannan <skannan@codeaurora.org>
-
-Cheers,
-
-
-Jeremy
-
---
-v13:
- * Don't expose __clk_get and clk_put - prototypes in clkdev.c instead
- * Add might_sleep to clk_set_rate
- * Comment clarifications & fixups
- * Remove zero initialisers
- * Fold warnings into main clk.c change
-
-v12:
- * Always refcount, even when enable/prepare ops are NULL
- * Unify prepare & enable count checking
- * Update comments for prepare/unprepare
- * Use spin_{lock,unlock}_irqsave
- * Change clk_put to __clk_put, and use the shared clk_put
-
-v11:
- * add prepare/unprepare for non-atomic switching, document atomicity
- * move to drivers/clk/
-
-v10:
- * comment fixups, from Uwe's review
- * added DEFINE_CLK_FIXED
-
-v9:
- * comment improvements
- * kerneldoc fixups
- * add WARN_ON to clk_disable
-
-v8:
- * add atomic clocks, and locking wrappers
- * expand comments on clk and clk_ops
-
-v7:
- * change CLK_INIT to initialise clk->mutex statically
-
-v6:
- * fixed up references to 'clk_operations' in the changelog
-
-v5:
- * uninline main API, and share definitions with !USE_COMMON_STRUCT_CLK
- * add __clk_get
- * delay mutex init
- * kerneldoc for struct clk
-
-v4:
- * use mutex for enable/disable locking
- * DEFINE_CLK -> INIT_CLK, and pass the clk name for mutex init
- * struct clk_operations -> struct clk_ops
-
-v3:
- * do clock usage refcounting in common code
- * provide sample port
-
-v2:
- * no longer ARM-specific
- * use clk_operations
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Jeremy Kerr (2):
-      Add a common struct clk
-      clk: Generic support for fixed-rate clocks
+
+Tested on ap4evb and ecovec
+
+ drivers/mmc/host/sh_mmcif.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 12884c2..3d735da 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -850,15 +850,15 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	struct sh_mmcif_host *host = mmc_priv(mmc);
+ 	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
+ 
+-	if (ios->power_mode = MMC_POWER_OFF) {
++	if (ios->power_mode = MMC_POWER_UP) {
++		if (p->set_pwr)
++			p->set_pwr(host->pd, ios->power_mode);
++	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
+ 		/* clock stop */
+ 		sh_mmcif_clock_control(host, 0);
+-		if (p->down_pwr)
++		if (ios->power_mode = MMC_POWER_OFF && p->down_pwr)
+ 			p->down_pwr(host->pd);
+ 		return;
+-	} else if (ios->power_mode = MMC_POWER_UP) {
+-		if (p->set_pwr)
+-			p->set_pwr(host->pd, ios->power_mode);
+ 	}
+ 
+ 	if (ios->clock)
+-- 
+1.7.2.3
 
