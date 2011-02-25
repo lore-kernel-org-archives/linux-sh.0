@@ -1,130 +1,112 @@
-From: Peppe CAVALLARO <peppe.cavallaro@st.com>
-Date: Tue, 22 Feb 2011 10:17:42 +0000
-Subject: [PATCH (sh-2.6) 2/4] sh_timer: add the support to use the generic
-Message-Id: <1298369864-24429-3-git-send-email-peppe.cavallaro@st.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Feb 2011 07:40:27 +0000
+Subject: [PATCH 6/7] sh: add platform_device of tmio_mmc and sh_mmcif to
+Message-Id: <4D675CEB.70100@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
-In-Reply-To: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>
-Cc: Stuart MENEFY <stuart.menefy@st.com>, Peppe CAVALLARO <peppe.cavallaro@st.com>
+To: linux-sh@vger.kernel.org
 
-Add the support to register and use a TMU channel as
-generic timer. For example the stmmac network device
-driver, on STM platforms, uses the TMU channel 2 for
-mitigating the number of interrupts.
-
-Signed-off-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
-Signed-off-by: Stuart Menefy <stuart.menefy@st.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/clocksource/sh_tmu.c |   72 ++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 72 insertions(+), 0 deletions(-)
+ arch/sh/boards/board-sh7757lcr.c |   73 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 73 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 36aba99..8199556 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -29,6 +29,7 @@
- #include <linux/err.h>
- #include <linux/clocksource.h>
- #include <linux/clockchips.h>
-+#include <linux/generictimer.h>
- #include <linux/sh_timer.h>
- #include <linux/slab.h>
- 
-@@ -41,6 +42,7 @@ struct sh_tmu_priv {
- 	unsigned long periodic;
- 	struct clock_event_device ced;
- 	struct clocksource cs;
-+	struct generic_timer gt;
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index be5f5cf..80e502c 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -15,6 +15,9 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
+ #include <linux/io.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
++#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <cpu/sh7757.h>
+ #include <asm/sh_eth.h>
+ #include <asm/heartbeat.h>
+@@ -98,10 +101,80 @@ static struct platform_device sh7757_eth1_device = {
+ 	},
  };
- 
- static DEFINE_SPINLOCK(sh_tmu_lock);
-@@ -184,6 +186,74 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
- 
-+static struct sh_tmu_priv *gt_to_sh_tmu(struct generic_timer *gt)
-+{
-+	return container_of(gt, struct sh_tmu_priv, gt);
-+}
+
++/* SH_MMCIF */
++static struct resource sh_mmcif_resources[] = {
++	[0] = {
++		.start	= 0xffcb0000,
++		.end	= 0xffcb00ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 211,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start	= 212,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
 +
-+static void sh_tmu_generic_timer_start(struct generic_timer *gt)
-+{
-+	struct sh_tmu_priv *p = gt_to_sh_tmu(gt);
++static struct sh_mmcif_dma sh7757lcr_mmcif_dma = {
++	.chan_priv_tx	= SHDMA_SLAVE_MMCIF_TX,
++	.chan_priv_rx	= SHDMA_SLAVE_MMCIF_RX,
++};
 +
-+	sh_tmu_write(p, TCR, 0x0020);
-+	sh_tmu_start_stop_ch(p, 1);
-+}
++static struct sh_mmcif_plat_data sh_mmcif_plat = {
++	.dma		= &sh7757lcr_mmcif_dma,
++	.sup_pclk	= 0x0f,
++	.caps		= MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA,
++	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
++};
 +
-+static void sh_tmu_generic_timer_stop(struct generic_timer *gt)
-+{
-+	struct sh_tmu_priv *p = gt_to_sh_tmu(gt);
++static struct platform_device sh_mmcif_device = {
++	.name		= "sh_mmcif",
++	.id		= 0,
++	.dev		= {
++		.platform_data		= &sh_mmcif_plat,
++	},
++	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
++	.resource	= sh_mmcif_resources,
++};
 +
-+	sh_tmu_start_stop_ch(p, 0);
-+	sh_tmu_write(p, TCR, 0x0000);
-+}
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI_RX,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++};
 +
-+static void sh_tmu_generic_timer_set_rate(struct generic_timer *gt,
-+					  unsigned long rate)
-+{
-+	struct sh_tmu_priv *p = gt_to_sh_tmu(gt);
++static struct resource sdhi_resources[] = {
++	[0] = {
++		.start  = 0xffe50000,
++		.end    = 0xffe501ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 20,
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
-+	sh_tmu_enable(p);
-+	p->periodic = p->rate / rate;
-+	sh_tmu_set_next(p, p->periodic, 1);
-+}
++static struct platform_device sdhi_device = {
++	.name           = "sh_mobile_sdhi",
++	.num_resources  = ARRAY_SIZE(sdhi_resources),
++	.resource       = sdhi_resources,
++	.id             = 0,
++	.dev	= {
++		.platform_data	= &sdhi_info,
++	},
++};
 +
-+static irqreturn_t sh_tmu_generic_timer_interrupt(int irq, void *dev_id)
-+{
-+	struct sh_tmu_priv *p = dev_id;
-+
-+	sh_tmu_write(p, TCR, 0x0020);
-+
-+	p->gt.priv_handler(p->gt.data);
-+	return IRQ_HANDLED;
-+}
-+
-+static void sh_tmu_register_generic_timer(struct sh_tmu_priv *p, char *name)
-+{
-+	struct generic_timer *gt = &p->gt;
-+	int ret;
-+
-+	gt->name = name;
-+	gt->timer_start = sh_tmu_generic_timer_start;
-+	gt->timer_stop = sh_tmu_generic_timer_stop;
-+	gt->set_rate = sh_tmu_generic_timer_set_rate;
-+
-+	p->irqaction.handler = sh_tmu_generic_timer_interrupt;
-+
-+	ret = setup_irq(p->irqaction.irq, &p->irqaction);
-+	if (unlikely(ret)) {
-+		dev_err(&p->pdev->dev, "failed to request irq %d\n",
-+			p->irqaction.irq);
-+		return;
-+	}
-+
-+	sh_tmu_generic_timer_stop(gt);
-+	sh_tmu_write(p, TCOR, 0xffffffff);
-+	sh_tmu_write(p, TCNT, 0xffffffff);
-+
-+	dev_info(&p->pdev->dev, "used for generic timer\n");
-+	generic_timer_register_device(gt);
-+}
-+
- static struct sh_tmu_priv *cs_to_sh_tmu(struct clocksource *cs)
- {
- 	return container_of(cs, struct sh_tmu_priv, cs);
-@@ -342,6 +412,8 @@ static int sh_tmu_register(struct sh_tmu_priv *p, char *name,
- 		sh_tmu_register_clockevent(p, name, clockevent_rating);
- 	else if (clocksource_rating)
- 		sh_tmu_register_clocksource(p, name, clocksource_rating);
-+	else
-+		sh_tmu_register_generic_timer(p, name);
- 
- 	return 0;
- }
+ static struct platform_device *sh7757lcr_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&sh7757_eth0_device,
+ 	&sh7757_eth1_device,
++	&sh_mmcif_device,
++	&sdhi_device,
+ };
+
+ static struct flash_platform_data spi_flash_data = {
 -- 
-1.7.4
+1.7.1
