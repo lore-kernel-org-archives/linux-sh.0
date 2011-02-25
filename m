@@ -1,20 +1,31 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 25 Feb 2011 03:19:01 +0000
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 25 Feb 2011 04:26:18 +0000
 Subject: Re: [PATCH] usb: add EHCI and OHCI support for SH7757
-Message-Id: <20110225031901.GA3847@linux-sh.org>
+Message-Id: <4D672F6A.2080701@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4D660C04.9070800@renesas.com>
 In-Reply-To: <4D660C04.9070800@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 24, 2011 at 06:47:10PM +0900, Yoshihiro Shimoda wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  about v2:
->   - fix the condition for other CPU in ehci-hcd.c.
-> 
-And how exactly are you enabling this when the 7757 Kconfig entry doesn't
-select either of USB_ARCH_HAS_OHCI or USB_ARCH_HAS_EHCI?
+Hi Paul,
+
+2011/02/25 12:19, Paul Mundt wrote:
+> On Thu, Feb 24, 2011 at 06:47:10PM +0900, Yoshihiro Shimoda wrote:
+>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>> ---
+>>  about v2:
+>>   - fix the condition for other CPU in ehci-hcd.c.
+>>
+> And how exactly are you enabling this when the 7757 Kconfig entry doesn't
+> select either of USB_ARCH_HAS_OHCI or USB_ARCH_HAS_EHCI?
+>=20
+I intended to submit a patch which modified Kconfig after this patch applie=
+d.
+But I should also have submitted the patch together.
+I will submit it and other necessary patches=E3=80=80to linux-sh ml.
+
+Best regards,
+Yoshihiro Shimoda
