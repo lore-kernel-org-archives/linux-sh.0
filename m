@@ -1,63 +1,20 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Mar 2011 09:09:10 +0000
-Subject: Re: [PATCH 3/6] mmc: tmio: convert the SDHI MMC driver from MFD to a
-Message-Id: <AANLkTimgNYbz973XLoQhKEQ9W+8mhAOnG3_OHxnGvGwf@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 01 Mar 2011 06:41:50 +0000
+Subject: Re: [PATCH] sh: Enable PMB support on SH4AL-DSP
+Message-Id: <20110301064150.GB5985@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
-	<Pine.LNX.4.64.1103110846000.23675@axis700.grange>
-	<AANLkTi=ywRE0omJ1t0yxqzMS4k+PpjfFH7aLtWMW7C=3@mail.gmail.com>
-	<Pine.LNX.4.64.1103140857350.6125@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103140857350.6125@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Mar 14, 2011 at 5:01 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Sun, 13 Mar 2011, Magnus Damm wrote:
->> On Fri, Mar 11, 2011 at 4:52 PM, Guennadi Liakhovetski
->> <g.liakhovetski@gmx.de> wrote:
->> > On sh-mobile platforms the SDHI driver was using the tmio_mmc SD/SDIO
->> > MFD cell driver. Now that the tmio_mmc driver has been split into a
->> > core and a separate MFD glue, we can support SDHI natively without the
->> > need to emulate an MFD controller. This also allows to support systems
->> > with an on-SoC SDHI controller and a separate MFD with a TMIO core.
->> >
->> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->> > ---
->>
->> Nice, I believe this is the right direction..
->>
->> > --- a/drivers/mmc/host/tmio_mmc.h
->> > +++ b/drivers/mmc/host/tmio_mmc.h
->> > @@ -92,7 +92,7 @@ struct tmio_mmc_host {
->> > =A0 =A0 =A0 =A0struct tasklet_struct =A0 dma_complete;
->> > =A0 =A0 =A0 =A0struct tasklet_struct =A0 dma_issue;
->> > =A0 =A0 =A0 =A0struct scatterlist =A0 =A0 =A0bounce_sg;
->> > -#ifdef CONFIG_TMIO_MMC_DMA
->> > +#if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
->> > =A0 =A0 =A0 =A0u8 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0bounce_bu=
-f[PAGE_CACHE_SIZE] __attribute__((aligned(TMIO_MAX_ALIGN)));
->> > =A0#else
->> > =A0 =A0 =A0 =A0u8 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0bounce_bu=
-f[1]; =A0/* A dummy in no-DMA case */
->>
->> ... but it would be nice if all this #ifdeffery could be avoided somehow.
->>
->> Is it possible to use devres to allocate the bounce buffer dynamically
->> in the dma portion of the code?
->
-> Well, this #ifdef has been there before, it's not new. But sure, we could
-> get rid of it. Basically, what you're suggesting, is to allocate that
-> bounce buffer dynamically - whether or not using devres. Just calling
-> __get_free_page() in tmio_mmc_request_dma() and __free_pages() in
-> tmio_mmc_release_dma() should work without any memory-leaking too. Would
-> this be ok?
+On Tue, Mar 01, 2011 at 03:45:14PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> The SH4AL-DSP core included in sh7372 requires use of the PMB,
+> update the CONFIG_PMB Kconfig entry to reflect this.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Yes, tmio_mmc_request_dma() and tmio_mmc_free_dma() happen very
-infrequently so that seems like a very good location for dynamic
-allocation / free of the bounce buffer. Thanks!
-
-/ magnus
+No. SH4AL-DSP does not in general have a PMB. If this CPU subtype is
+special, then it needs to be special cased.
