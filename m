@@ -1,56 +1,133 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 22 Mar 2011 12:11:01 +0000
-Subject: Re: [PATCH 3/3] ARM: switch mackerel to dynamically manage the
-Message-Id: <AANLkTi=q_Spa9hWDDKZJ0UBnYtLBZTS+tkFx1J5B_3gk@mail.gmail.com>
+From: Stuart Menefy <stuart.menefy@st.com>
+Date: Tue, 01 Mar 2011 15:20:03 +0000
+Subject: Re: [PATCH (sh-2.6) 1/4] clksource: Generic timer infrastructure
+Message-Id: <4D6D0EA3.9000504@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1102221049240.1380@axis700.grange>
-	<Pine.LNX.4.64.1102221057040.1380@axis700.grange>
-	<AANLkTikA0QDCLNSrM3FGobEzBBh9hcP_ZpyC+4YPSbx7@mail.gmail.com>
-	<Pine.LNX.4.64.1103211421040.24139@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103211421040.24139@axis700.grange>
+References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com> <1298369864-24429-2-git-send-email-peppe.cavallaro@st.com> <201102241820.55873.arnd@arndb.de>
+In-Reply-To: <201102241820.55873.arnd@arndb.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: Peppe CAVALLARO <peppe.cavallaro@st.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, John Stultz <johnstul@us.ibm.com>, Thomas Gleixner <tglx@linutronix.de>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Mon, Mar 21, 2011 at 10:22 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Wed, 16 Mar 2011, Magnus Damm wrote:
->
->> On Tue, Feb 22, 2011 at 6:57 PM, Guennadi Liakhovetski
->> <g.liakhovetski@gmx.de> wrote:
->> > Use soc_camera_platform helper functions to dynamically manage the
->> > camera device.
->> >
->> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->> > ---
->> > =A0arch/arm/mach-shmobile/board-mackerel.c | =A0 28 +++++++-----------=
-----------
->> > =A01 files changed, 7 insertions(+), 21 deletions(-)
+Hi Arnd
+
+Thanks for the comments.
+
+On 24/02/11 17:20, Arnd Bergmann wrote:
+> On Tuesday 22 February 2011, Peppe CAVALLARO wrote:
+>> From: Stuart Menefy <stuart.menefy@st.com>
 >>
->> I just tested patch 1/3 and patch 3/3 on my Mackerel board.
->
-> Thanks for testing!
->
->> Unfortunately I get this printout on the console:
+>> Many devices targeted at the embedded market provide a number of
+>> generic timers which are capable of generating interrupts at a
+>> requested rate. These can then be used in the implementation of drivers
+>> for other peripherals which require a timer interrupt, without having
+>> to provide an additional timer as part of that peripheral.
 >>
->> sh_mobile_ceu sh_mobile_ceu.0: SuperH Mobile CEU driver attached to came=
-ra 0
->> soc_camera_platform soc_camera_platform.0: Platform has not set
->> soc_camera_device pointer!
->> soc_camera_platform: probe of soc_camera_platform.0 failed with error -22
->> sh_mobile_ceu sh_mobile_ceu.0: SuperH Mobile CEU driver detached from ca=
-mera 0
+>> A code provides a simple abstraction layer which allows a timer to be
+>> registered, and for a driver to request a timer.
 >>
->> Without these two patches everything work just fine. Any ideas on how
->> to fix it? I'd be happy to test V2. =3D)
->
-> Hm, yes, looks like I'm initialising the pointer too late. Could you,
-> please, test the patch below on top, if it helps, I'll send v2.
+>> Currently this doesn't provide any of the additional information, such
+>> as precision or position in clock framework which might be required
+>> for a fully featured driver.
+> 
+> This code should probably be discussed on a more broader
+> platform than the netdev and linux-sh mailing lists,
+> as the scope is neither sh nor network specific.
+> 
+> You should at least add linux-kernel@vger.kernel.org, possibly
+> also linux-arch@vger.kernel.org.
+> 
+> Further, John and Thomas are responsible for the timekeeping
+> infrastructure, and they are probably interested in this
+> as well.
+> 
+> Why is this code useful to you? In the scenarios I've seen, the
+> board can always assign a timer to a specific device in a fixed
+> way that can be describe in a board file or device tree.
 
-Yes, this incremental change solves the problem. Thanks!
+What we were trying to do was separate the code which actually manipulates
+the timer hardware from the code which wants that timer service. In this
+case it was a network device driver which is used on multiple SoC devices,
+while the timer hardware tends to differ from device to device.
 
-Please post V2 and add:
+The other user of this code which we have is an OProfile driver, which
+with this change can now be independent of the hardware it is running on,
+while the previous version manipulated the timer hardware directly.
 
-Acked-by: Magnus Damm <damm@opensource.se>
+> Also, what is the difference between this and clkdev?
+
+clkdev can be used to find a struct clk, which is fine if you just want to
+read the time. In this instance we want to get interrupts from the timer
+hardware, which isn't supported by the clk infrastructure.
+
+If anything this duplicates clockevents. The main reason for not using
+clockevents was that nobody else does! Currently clockevents are
+used strictly for time keeping within the kernel, and most architectures
+only register those which are intended to be used for this purpose.
+We felt a bit nervous about adding code to register all the device's timers
+as clockevents, and having the network device driver pick up one of those
+for its own use.
+
+>> Signed-off-by: Stuart Menefy <stuart.menefy@st.com>
+>> Hacked-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
+>> ---
+>>  drivers/clocksource/Makefile       |    1 +
+>>  drivers/clocksource/generictimer.c |   60 ++++++++++++++++++++++++++++++++++++
+>>  include/linux/generictimer.h       |   41 ++++++++++++++++++++++++
+>>  3 files changed, 102 insertions(+), 0 deletions(-)
+>>  create mode 100644 drivers/clocksource/generictimer.c
+>>  create mode 100644 include/linux/generictimer.h
+> 
+> I don't think it fits that well into the drivers/clocksource directory,
+> because you don't actually register a struct clock_event_device or
+> struct clocksource.
+
+True. The intent was that this would be a third interface onto timer
+hardware, alongside clocksources and clockevents.
+
+> I don't know if this could also be merged with the clocksource infrastructure,
+> but your code currently doesn't do that.
+
+It would probably be clockevent rather than clocksource, but it could be if
+people felt that was a better way to go.
+
+>> +struct generic_timer *generic_timer_claim(void (*handler) (void *), void *data)
+>> +{
+>> +	struct generic_timer *gt = NULL;
+>> +
+>> +	if (!handler) {
+>> +		pr_err("%s: invalid handler\n", __func__);
+>> +		return NULL;
+>> +	}
+>> +
+>> +	mutex_lock(&gt_mutex);
+>> +	if (!list_empty(&gt_list)) {
+>> +		struct list_head *list = gt_list.next;
+>> +		list_del(list);
+>> +		gt = container_of(list, struct generic_timer, list);
+>> +	}
+>> +	mutex_unlock(&gt_mutex);
+>> +
+>> +	if (!gt)
+>> +		return NULL;
+>> +
+>> +	/* Prepare the new handler */
+>> +	gt->priv_handler = handler;
+>> +	gt->data = data;
+>> +
+>> +	return gt;
+>> +}
+> 
+> This does not seem very generic. You put timers into the list and take
+> them out again, but don't have any way to deal with timers that match
+> specific purposes. It obviously works for your specific use case where
+> you register exactly one timer, and use that in exactly one driver.
+> 
+> If more drivers were converted to generic_timer, which is obviously
+> the intention, then you might have a situation with very different
+> timers (fixed/variable tick, high/low frequencies, accurate/inaccurate),
+> or you might have fewer timers than users.
+
+Agreed, this was a first 'keep it simple' pass, maybe its too simple.
