@@ -1,74 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 29 Mar 2011 07:11:12 +0000
-Subject: Re: [PATCH] Input: tca6416-keypad: Change to module_init()
-Message-Id: <AANLkTimX+SQHaFjc=zARjuvdzX8OisQMHCBUgcR4V7sa@mail.gmail.com>
+From: Damian <dhobsong@igel.co.jp>
+Date: Tue, 01 Mar 2011 03:13:28 +0000
+Subject: Re: [PATCH 1/2] fbdev: sh_mobile_lcdc: Add YUV input support
+Message-Id: <4D6C6458.6090902@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110322142619.1109.89105.sendpatchset@t400s>
-	<20110322142855.GB2202@sirena.org.uk>
-	<20110322143307.GB24004@linux-sh.org>
-	<AANLkTimRV9vzOE7+VPX48y3KebLJSvBOkqxoM--9gqGb@mail.gmail.com>
-	<20110322153226.GC30303@linux-sh.org>
-	<AANLkTimyxdcJ-eEke9x7X1zdiJNbFtncfv0=NzKjtAme@mail.gmail.com>
-	<20110322155730.GD30303@linux-sh.org>
-	<AANLkTi=Fjc2f837ifH152Rh8W0PfiZvViYaLe=8XZo4Z@mail.gmail.com>
-	<20110322163144.GC2202@sirena.org.uk>
-	<AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
-	<20110322165907.GG22583@opensource.wolfsonmicro.com>
-	<AANLkTin1jG36-EsvAk9o-KxdxaBBhx=5Rf+JMidjYqsT@mail.gmail.com>
-In-Reply-To: <AANLkTin1jG36-EsvAk9o-KxdxaBBhx=5Rf+JMidjYqsT@mail.gmail.com>
+References: <1298456210-26519-2-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1298456210-26519-2-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Thu, Mar 24, 2011 at 1:04 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Wed, Mar 23, 2011 at 1:59 AM, Mark Brown
-> <broonie@opensource.wolfsonmicro.com> wrote:
->> On Wed, Mar 23, 2011 at 01:51:02AM +0900, Magnus Damm wrote:
+Hi Geert,
+On 2011/02/24 15:05, Geert Uytterhoeven wrote:
+>>>
+>>> My thinking behind separating this out was that I wanted this
+>>> define to be accessible from user space.  The reason is so that
+>>> an application can test the value of .nonstd against the flag to
+>>> know for sure if it is dealing with a YUV framebuffer or not.
 >>
->>> I'm not sure if this is i2c specific though - in general you probably
->>> need to register the parent bus driver first.
+>> Hm, but ideally we want something standard. How do you know the nonstd
+>> flag is working as you expect from user space? All of a sudden you
+>> have code that depends on what type of fbdev driver you are using.
+>> This is ugly, but abstracting the nonstd interface does not make it
+>> better IMO.
 >>
->> This was my original question - I'm not aware of any reason why you
->> should need to register the driver for the specific bus first, it seems
->> odd.
+>> The nonstd thing is a hack, but for now it is close enough. V4L2 has
+>> standard NV12/NV16 support already, but I don't think there is any
+>> such thing for fbdev. So i see your patches as a stop-gap, but I
+>> really don't want to make it more complicated than it has to be. So
+>> exporting nonstd values in a header file to user space seems too
+>> complicated IMO.
+>>
+>> Please just live with the fact that nonstd is special for now. We need
+>> to rework the entire LCDC/HDMI/DSI area to support multiple planes and
+>> better PM anyway. Perhaps KMS is the way forward, or perhaps Media
+>> Controller? Maybe both?
+>>
+>>> I was under the impression that only headers under include/linux/ should be
+>>> accessed from user space, but to be honest, I'm not sure about that.
+>>> If that is in fact not the case, then I totally agree that it can go
+>>> into include/video/sh_mobile_lcdc.h.
+>>
+>> Please ditch the SH_FB_YUV constant all together. No need to build
+>> some abstraction on top of a hackish interface. Just check if nonstd
+>> is non-zero in the driver and assume that means YUV for now. That's
+>> good enough.
 >
-> Can't see why it wouldn't work - in theory at least. I'll have a look tomorrow.
+> For YUV (do you mean YCbCr?), I'm inclined to suggest adding a new FB_VISUAL_*
+> type instead, which indicates the fb_var_screeninfo.{red,green,blue} fields are
+> YCbCr instead of RGB.
+> Depending on the frame buffer organization, you also need new FB_TYPE_*/FB_AUX_*
+> types.
+I just wanted to clarify here.  Is your comment about these new flags in 
+specific reference to this patch or to Magnus' "going forward" comment? 
+  It seems like the beginnings of a method to standardize YCbCr support 
+in fbdev across all platforms.
+Also, do I understand correctly that FB_VISUAL_ would specify the 
+colorspace (RGB, YCbCr), FB_TYPE_* would be a format specifier (i.e. 
+planar, semiplanar, interleaved, etc)?  I'm not really sure what you are 
+referring to with the FB_AUX_* however.
+>
+> Gr{oetje,eeting}s,
+>
+>                          Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                  -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Ok, it seems like the I2C bus registration is working as expected.
-After digging into this a bit more I've discovered that the root cause
-seems to be related to clocks. On sh7372 the I2C controller and the
-serial console share the parent clock, and the setup order is
-affecting the serial console.
-
-Without this patch, if subsys_init() is used for tca6416-keypad then
-the I2C controller will be used at probe() time from the function
-tca6416_setup_registers() - this before the serial console driver has
-been initialized properly. The I2C controller used by tca6416 will
-stop the parent clock when the I2C bus access is finished. The serial
-console driver is driven early using earlyprintk at this time, and the
-clock is assumed to be enabled until the real driver is installed at
-module_init() time. So with subsys_init() in tca6416 the I2C
-controller stops the clock while the earlyprintk code assumes it to be
-on. This is causing delays.
-
-If the tca6416 driver is changed to module_init() then the serial
-console driver will be initialized before the tca6416 driver due to
-the linking order and all is working fine.
-
-As we already knew, the clock framework code in drivers/sh/clk should
-be updated to turn off unused clocks. To fix the issue in this mail
-thread we should also update the code to force the console clock to be
-enabled early on to make sure the serial console clock isn't turned
-off by accident.
-
-I propose that we convert the tca6416 driver to module_init() as a
-short term fix _and_ at the same time work on improving the clock
-framework code.
-
-Can anyone think of a reason why the tca6416 driver shouldn't be
-changed to module_init()?
-
-Thanks,
-
-/ magnus
+Thanks very much,
+Damian
