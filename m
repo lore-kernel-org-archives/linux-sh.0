@@ -1,46 +1,29 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 01 Mar 2011 16:43:19 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 01 Mar 2011 16:48:33 +0000
 Subject: Re: [PATCH (sh-2.6) 1/4] clksource: Generic timer infrastructure
-Message-Id: <201103011743.19847.arnd@arndb.de>
+Message-Id: <alpine.LFD.2.00.1103011630080.2701@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com> <201102241820.55873.arnd@arndb.de> <4D6D0EA3.9000504@st.com>
+References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com> <1298369864-24429-2-git-send-email-peppe.cavallaro@st.com> <201102241820.55873.arnd@arndb.de> <4D6D0EA3.9000504@st.com>
 In-Reply-To: <4D6D0EA3.9000504@st.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Stuart Menefy <stuart.menefy@st.com>
-Cc: Peppe CAVALLARO <peppe.cavallaro@st.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, John Stultz <johnstul@us.ibm.com>, Thomas Gleixner <tglx@linutronix.de>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Russell King - ARM Linux <linux@arm.linux.org.uk>
+Cc: Arnd Bergmann <arnd@arndb.de>, Peppe CAVALLARO <peppe.cavallaro@st.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, John Stultz <johnstul@us.ibm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Tuesday 01 March 2011, Stuart Menefy wrote:
+On Tue, 1 Mar 2011, Stuart Menefy wrote:
 > On 24/02/11 17:20, Arnd Bergmann wrote:
->
-> > Why is this code useful to you? In the scenarios I've seen, the
-> > board can always assign a timer to a specific device in a fixed
-> > way that can be describe in a board file or device tree.
-> 
-> What we were trying to do was separate the code which actually manipulates
-> the timer hardware from the code which wants that timer service. In this
-> case it was a network device driver which is used on multiple SoC devices,
-> while the timer hardware tends to differ from device to device.
+> > On Tuesday 22 February 2011, Peppe CAVALLARO wrote:
+> >> From: Stuart Menefy <stuart.menefy@st.com>
+> >>
+> >> Many devices targeted at the embedded market provide a number of
+> >> generic timers which are capable of generating interrupts at a
+> >> requested rate. These can then be used in the implementation of drivers
+> >> for other peripherals which require a timer interrupt, without having
+> >> to provide an additional timer as part of that peripheral.
 
-Right. It certainly makes sense to have an well-defined interface between
-the user and the provider of a timer interrupt.
-
-> The other user of this code which we have is an OProfile driver, which
-> with this change can now be independent of the hardware it is running on,
-> while the previous version manipulated the timer hardware directly.
-
-Ok.
-
-> > Also, what is the difference between this and clkdev?
-> 
-> clkdev can be used to find a struct clk, which is fine if you just want to
-> read the time. In this instance we want to get interrupts from the timer
-> hardware, which isn't supported by the clk infrastructure.
-
-(adding Russell to Cc)
-
-Is this something that could sensibly be added to clk/clkdev?
+Why can't you just use an hrtimer and be done with it? Just because
+there is some extra hardware in the chip?
 
 > If anything this duplicates clockevents. The main reason for not using
 > clockevents was that nobody else does! Currently clockevents are
@@ -50,20 +33,28 @@ Is this something that could sensibly be added to clk/clkdev?
 > as clockevents, and having the network device driver pick up one of those
 > for its own use.
 
-I see. Using a clock_event_device for anything but the system timer tick
-is currently not supported, so it certainly would not be straightforward.
+We had this discussion before and there was never an real outcome as
+it turned out that hrtimers provide enough abstraction for this kind
+of problems.
+ 
+> True. The intent was that this would be a third interface onto timer
+> hardware, alongside clocksources and clockevents.
+> 
+> > I don't know if this could also be merged with the clocksource infrastructure,
+> > but your code currently doesn't do that.
+> 
+> It would probably be clockevent rather than clocksource, but it could be if
+> people felt that was a better way to go.
 
-I think you need a bit of both, clkdev and clockevent. I think the
-options you have are:
+If we get some reasonable explanation why an extra timer interrupt is
+solving a specific problem better than hrtimers we can do that, but
+that needs more thought than picking the first available clockevent
+from a list. If we come to the conclusion, that we want/need this kind
+of functionality then I really prefer not to create yet another piece
+of infrastructure which deals with timer devices.
 
-1. copy the clkdev code to make it possible to associate a device with
-a periodic timer.
-2. extend the clkdev/clk code to handle periodic interrupts and reuse
-the infrastructure there.
-3. extend the clockevent code to make it possible for regular device
-drivers to use a clockevent source.
+Thanks,
 
-I have no idea which makes the most sense (or if there are other ideas).
-Maybe Russell, Thomas or John can comment.
+	tglx
 
-	Arnd
+
