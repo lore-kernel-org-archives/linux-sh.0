@@ -1,41 +1,38 @@
-From: Alan Cox <alan@lxorguk.ukuu.org.uk>
-Date: Wed, 02 Mar 2011 11:27:52 +0000
-Subject: Re: [PATCH 1/2] fbdev: sh_mobile_lcdc: Add YUV input support
-Message-Id: <20110302112752.297116dc@lxorguk.ukuu.org.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Mar 2011 09:05:44 +0000
+Subject: [PATCH] ARM: mach-shmobile: ap4evb: modify LCDC clock divider value
+Message-Id: <w3pmxldhoyf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298456210-26519-1-git-send-email-dhobsong@igel.co.jp>
-	<1298456210-26519-2-git-send-email-dhobsong@igel.co.jp>
-	<Pine.LNX.4.64.1102231132030.10099@axis700.grange>
-	<4D64EDFC.6070203@igel.co.jp>
-	<AANLkTi=rKDRbQYzPLHmRj+fEvAgpHzG2HXBwaBZi0vn_@mail.gmail.com>
-	<AANLkTikCo9CruLWE5=XjaspnM6CdKhbyPs3rajPLMV0G@mail.gmail.com>
-	<AANLkTikpL3m_8YVMiRRRULmB_Px9asdK-Fto07WeyJgG@mail.gmail.com>
-	<AANLkTi=Kc6wueQPJrw1ZtAe4qkOrmn1O7eXgF5oze-FP@mail.gmail.com>
-	<AANLkTikFPdZ1ER=Cb59LL2CwBTA2NExSiVaTPzbGsE_o@mail.gmail.com>
-In-Reply-To: <AANLkTikFPdZ1ER=Cb59LL2CwBTA2NExSiVaTPzbGsE_o@mail.gmail.com>
+References: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3p1v9weglx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Corbin Simpson <mostawesomedude@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, matsu@igel.co.jp, linux-fbdev@vger.kernel.org, taki@igel.co.jp, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, dri-devel@lists.freedesktop.org, Damian <dhobsong@igel.co.jp>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-On Tue, 1 Mar 2011 13:31:19 -0800
-Corbin Simpson <mostawesomedude@gmail.com> wrote:
+ap4evb WVGA LCDC panel expect 33.3MHz for dot-clock,
+but current dot-clock was 50.0MHz.
+This patch modify clock divider value.
 
-> I am slightly curious about this as well; I have a device with only YUV
-> scanout and was considering KMS, but don't know what the best approach is.
+Signed-off-by: Makoto Ueda <makoto.ueda.ub@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-The problem with hiding behind a fake RGB frame buffer is you've then
-completely stuffed any framebuffer based apps that could use YUV happily
-(eg framebuffer video playback).
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 3cf0951..81d6536 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1303,7 +1303,7 @@ static void __init ap4evb_init(void)
+ 
+ 	lcdc_info.clock_source			= LCDC_CLK_BUS;
+ 	lcdc_info.ch[0].interface_type		= RGB18;
+-	lcdc_info.ch[0].clock_divider		= 2;
++	lcdc_info.ch[0].clock_divider		= 3;
+ 	lcdc_info.ch[0].flags			= 0;
+ 	lcdc_info.ch[0].lcd_size_cfg.width	= 152;
+ 	lcdc_info.ch[0].lcd_size_cfg.height	= 91;
+-- 
+1.7.1
 
-Far better to make the kernel tell the truth in these cases. You'll need
-to add some tweaks to the fb code for it and a YUV boot penguin.[1]
-
-If you want to run X on it then you can use shadowfb on the X side to do
-your YUV/RGB adaptation.
-
-Alan
---
-[1] Am I the only one who thinks the fb code also needs an imagine of an
-embarassed penguin that has wet itself to go with oops output ?
