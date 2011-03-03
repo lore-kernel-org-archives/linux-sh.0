@@ -1,35 +1,72 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Tue, 29 Mar 2011 03:35:55 +0000
-Subject: [RFC][PATCH 0/3] MERAM support for LCDC
-Message-Id: <1301369758-18394-1-git-send-email-dhobsong@igel.co.jp>
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Thu, 03 Mar 2011 06:40:29 +0000
+Subject: [PATCH 2/2] clk: Generic support for fixed-rate clocks
+Message-Id: <1299134429.101464.204953289514.2.gpush@pororo>
 List-Id: <linux-sh.vger.kernel.org>
+In-Reply-To: <1299134429.100626.661279191478.0.gpush@pororo>
+References: <4D62C237.1020803@bluewatersys.com>
+In-Reply-To: <4D62C237.1020803@bluewatersys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch series is based on the fbdev tree.  
+Since most platforms will need a fixed-rate clock, add one. This will
+also serve as a basic example of an implementation of struct clk.
 
-This series adds support for read-ahead cache access through the ICBs and
-MERAM available on SH devices.  The exact ICBs to use are chip specific
-and are specified in the platform data. 
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
 
-Damian Hobson-Garcia (3):
-  sh_mobile_meram: MERAM framework for LCDC
-  sh_mobile_meram: Add support for NV24 framebuffers
-  sh_mobile_meram: MERAM platform data for LCDC
+---
+ drivers/clk/clk.c   |   14 ++++++++++++++
+ include/linux/clk.h |   16 ++++++++++++++++
+ 2 files changed, 30 insertions(+)
 
- arch/arm/mach-shmobile/board-ap4evb.c |   69 ++++
- drivers/video/Kconfig                 |   12 +
- drivers/video/Makefile                |    1 +
- drivers/video/sh_mobile_lcdcfb.c      |  104 ++++++-
- drivers/video/sh_mobile_lcdcfb.h      |    1 +
- drivers/video/sh_mobile_meram.c       |  567 +++++++++++++++++++++++++++++++++
- drivers/video/sh_mobile_meram.h       |   41 +++
- include/video/sh_mobile_lcdc.h        |    2 +
- include/video/sh_mobile_meram.h       |   69 ++++
- 9 files changed, 857 insertions(+), 9 deletions(-)
- create mode 100644 drivers/video/sh_mobile_meram.c
- create mode 100644 drivers/video/sh_mobile_meram.h
- create mode 100644 include/video/sh_mobile_meram.h
-
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 0bc9c6f..0da0bb9 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -130,3 +130,17 @@ void __clk_put(struct clk *clk)
+ 	if (clk->ops->put)
+ 		clk->ops->put(clk);
+ }
++
++/* clk_fixed support */
++
++#define to_clk_fixed(clk) (container_of(clk, struct clk_fixed, clk))
++
++static unsigned long clk_fixed_get_rate(struct clk *clk)
++{
++	return to_clk_fixed(clk)->rate;
++}
++
++struct clk_ops clk_fixed_ops = {
++	.get_rate = clk_fixed_get_rate,
++};
++EXPORT_SYMBOL_GPL(clk_fixed_ops);
+diff --git a/include/linux/clk.h b/include/linux/clk.h
+index 7b406bd..d2f0db0 100644
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
+@@ -155,6 +155,22 @@ static inline void clk_common_init(struct clk *clk)
+ 	mutex_init(&clk->prepare_lock);
+ }
+ 
++/* Simple fixed-rate clock */
++struct clk_fixed {
++	struct clk	clk;
++	unsigned long	rate;
++};
++
++extern struct clk_ops clk_fixed_ops;
++
++#define INIT_CLK_FIXED(name, r) { \
++	.clk = INIT_CLK(name.clk, clk_fixed_ops), \
++	.rate = (r) \
++}
++
++#define DEFINE_CLK_FIXED(name, r) \
++	struct clk_fixed name = INIT_CLK_FIXED(name, r)
++
+ #else /* !CONFIG_USE_COMMON_STRUCT_CLK */
+ 
+ /*
