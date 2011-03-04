@@ -1,49 +1,36 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Wed, 16 Mar 2011 05:51:02 +0000
-Subject: Re: [PATCH] Input: tca6416-keypad: Suspend/Resume wakeup support
-Message-Id: <20110316055102.GC14604@core.coreip.homeip.net>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 04 Mar 2011 08:09:20 +0000
+Subject: [GIT PULL] rmobile updates for 2.6.38-rc8
+Message-Id: <20110304080920.GA13319@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110316051030.2399.19707.sendpatchset@t400s>
- <20110316053202.GA14604@core.coreip.homeip.net>
- <AANLkTimj3W_SdnHDs1tpWxDZEN8S17zHMDVAU+Zr=fG9@mail.gmail.com>
-In-Reply-To: <AANLkTimj3W_SdnHDs1tpWxDZEN8S17zHMDVAU+Zr=fG9@mail.gmail.com>
+References: <20110107033931.GK22477@linux-sh.org>
+In-Reply-To: <20110107033931.GK22477@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: srk@ti.com, linux-sh@vger.kernel.org, chinyeow.sim.xt@renesas.com, linux-input@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Mar 16, 2011 at 02:45:11PM +0900, Magnus Damm wrote:
-> On Wed, Mar 16, 2011 at 2:32 PM, Dmitry Torokhov
-> <dmitry.torokhov@gmail.com> wrote:
-> > On Wed, Mar 16, 2011 at 02:10:30PM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> Extend the tca6416 driver to use enable_irq_wake()
-> >> and disable_irq_wake() in the suspend/resume hooks.
-> >>
-> >> This makes it possible to wake up from suspend-to-ram
-> >> using a tca6416 key on the sh7372 mackerel board.
-> >>
-> >
-> > Hi Magnus,
-> >
-> > Looks good, but why don't we guard PM code with CONFIG_PM_SLEEP, like
-> > below? I also believe we should use bus-specific helpers to access
-> > private driver data since it does not have to stay alias for the
-> > core data pointer.
-> 
-> Hi Dmitry,
-> 
-> Thank you for the updated patch, your version looks much better than
-> mine. I tested your version on my Mackerel board a few minutes ago and
-> it is still working as expected. Unless there are any objections,
-> please merge your version of the patch.
-> 
+Please pull from:
 
-Excellent, I'll queue it up.
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-fixes-for-linus
 
-Thank you for testing the updated patch.
+Which contains:
 
--- 
-Dmitry
+Kuninori Morimoto (4):
+      ARM: mach-shmobile: ap4evb: fixup memory initialize for zboot
+      ARM: mach-shmobile: mackerel: fixup memory initialize for zboot
+      ARM: mach-shmobile: ap4evb: modify LCDC clock divider value
+      ARM: mach-shmobile: mackerel: modify LCDC clock divider value
+
+Magnus Damm (2):
+      ARM: mach-shmobile: AG5EVM MIPI-DSI LCD reset delay fix
+      ARM: mach-shmobile: Add sh73a0 MIPI-CSI and CEU clocks
+
+ arch/arm/mach-shmobile/board-ag5evm.c              |    1 +
+ arch/arm/mach-shmobile/board-ap4evb.c              |    2 +-
+ arch/arm/mach-shmobile/board-mackerel.c            |    2 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c              |   17 ++++++++++++++---
+ .../arm/mach-shmobile/include/mach/head-ap4evb.txt |   10 +++++-----
+ .../mach-shmobile/include/mach/head-mackerel.txt   |   10 +++++-----
+ 6 files changed, 27 insertions(+), 15 deletions(-)
