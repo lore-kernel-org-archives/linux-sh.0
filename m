@@ -1,73 +1,102 @@
-From: Prasad Joshi <prasadjoshi124@gmail.com>
-Date: Fri, 18 Mar 2011 19:41:35 +0000
-Subject: [RFC][PATCH v3 00/22] __vmalloc: Propagating GFP allocation flag
-Message-Id: <20110318194135.GA4746@prasad-kvm>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Sat, 05 Mar 2011 11:32:02 +0000
+Subject: Question about  perform fb specific mmap
+Message-Id: <201103051232.02755.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, prasadjoshi124@gmail.com, mitra@kqinfotech.com
-Cc: chris@zankel.net, x86@kernel.org, jdike@addtoit.com, tj@kernel.org, cmetcalf@tilera.com, linux-sh@vger.kernel.org, liqin.chen@sunplusct.com, lennox.wu@gmail.com, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, linux390@de.ibm.com, benh@kernel.crashing.org, paulus@samba.org, linuxppc-dev@lists.ozlabs.org, kyle@mcmartin.ca, deller@gmx.de, jejb@parisc-linux.org, linux-parisc@vger.kernel.org, dhowells@redhat.com, yasutake.koichi@jp.panasonic.com, linux-am33-list@redhat.com, ralf@linux-mips.org, linux-mips@linux-mips.org, monstr@monstr.eu, microblaze-uclinux@itee.uq.edu.au, geert@linux-m68k.org, zippel@linux-m68k.org, sammy@sammy.net, linux-m68k@lists.linux-m68k.org, takata@linux-m32r.org, linux-m32r@ml.linux-m32r.org, tony.luck@intel.com, fenghua.yu@intel.com, linux-ia64@vger.kernel.org, starvik@axis.com, jesper.nilsson@axis.com, linux-cris-kernel@axis.com, hans-christ
+To: linux-sh@vger.kernel.org
 
-A filesystem might run into a problem while calling __vmalloc(GFP_NOFS)
-inside a lock.
+Hi All,
+sorry if I write some dummy question but I'm tring to undersatnd better all 
+the kernel structure.
+In linux v2.6.37 drivers/video/sh7760fb.c
+no 	
+/* perform fb specific mmap */
+int (*fb_mmap)(struct fb_info *info, struct vm_area_struct *vma);
 
-It is expected than __vmalloc when called with GFP_NOFS should not
-callback the filesystem code even incase of the increased memory
-pressure. But the problem is that even if we pass this flag, __vmalloc
-itself allocates memory with GFP_KERNEL.
+is implemented.
+How the kernel manage this situation?
 
-Using GFP_KERNEL allocations may go into the memory reclaim path and try
-to free memory by calling file system evict_inode function. Which might
-lead into deadlock.
+I'm asking this, because I'm tring to write sh7203fb.c and when I execute my 
+driver I can read.
+fabioDebug: STBCR4 0x39
+fabioDebug: sh7203fb_get_color_info - lddfr=0x2d;LDDFR_COLOR_MASK=0x7f
+fabioDebug: sh7203fb_get_color_info - bpp
+fabioDebug: sh7203fb_get_color_info - Exit
+fabioDebug: sh7203fb_check_var
+fabioDebug: sh7203fb_get_color_info - lddfr=0x2d;LDDFR_COLOR_MASK=0x7f
+fabioDebug: sh7203fb_get_color_info - bpp
+fabioDebug: sh7203fb_get_color_info - Exit
+fabioDebug: sh7203fb_alloc_mem - 
+info->screen_base:25800
+info->screen_size:e100000
+info->fix.smem_start25800
+info->fix.smem_lenc1691f8
+sh7203-lcdc: memory at phys 0x0e100000-0x0e1257ff, size 150 KiB
+fabioDebug: sh7203fb_set_par
+fabioDebug: sh7203fb_get_color_info - lddfr=0x2d;LDDFR_COLOR_MASK=0x7f
+fabioDebug: sh7203fb_get_color_info - bpp
+fabioDebug: sh7203fb_get_color_info - gray=0
+fabioDebug: sh7203fb_get_color_info - Exit
+fabioDebug: sh7203fb_blank
+fabioDebug: tring to stop the LCD
+fabioDebug: wait_for_lps
+fabioDebug: sh7203fb_check_var
+fabioDebug: sh7203fb_get_color_info - lddfr=0x2d;LDDFR_COLOR_MASK=0x7f
+fabioDebug: sh7203fb_get_color_info - bpp
+fabioDebug: sh7203fb_get_color_info - Exit
+fabioDebug: sh7203fb_blank
+fabioDebug: tring to start the LCD
+fabioDebug: wait_for_lps
+hdcn  :    320 htcn  :    520
+hsynw :     96 hsynp :    344
+vdln  :    240 vtln  :    272
+vsynw :      1 vsynp :    241
+clksrc:      1 clkdiv:      2
+ldpmmr: 0x0000 ldpspr: 0xffff
+ldmtr : 0xc42b lddfr : 0x002d
+ldlaor: 640
+ldsaru: 0x0e100000 ldsarl: 0x00000000
+SuperH SCI(F) driver initialized
 
-For further details
-http://marc.info/?l=linux-mm&m8942194520631&w=4
-https://bugzilla.kernel.org/show_bug.cgi?id0702
+0x0e100000 is the base address.
 
-The patch passes the gfp allocation flag all the way down to those
-allocating functions.
+what I read in the user space is:
+The framebuffer device was opened successfully.
+320x240, 16bpp
+The framebuffer device was mapped to memory successfully.
+The framebuffer base address:0xe9c0000.
+fbtest used greatest stack depth: 6396 bytes left
 
- arch/arm/include/asm/pgalloc.h           |   11 +++++-
- arch/avr32/include/asm/pgalloc.h         |    8 ++++-
- arch/cris/include/asm/pgalloc.h          |   10 ++++-
- arch/frv/include/asm/pgalloc.h           |    3 ++
- arch/frv/include/asm/pgtable.h           |    1 +
- arch/frv/mm/pgalloc.c                    |    9 ++++-
- arch/ia64/include/asm/pgalloc.h          |   24 +++++++++++--
- arch/m32r/include/asm/pgalloc.h          |   11 ++++--
- arch/m68k/include/asm/motorola_pgalloc.h |   20 +++++++++--
- arch/m68k/include/asm/sun3_pgalloc.h     |   14 ++++++--
- arch/m68k/mm/memory.c                    |    9 ++++-
- arch/microblaze/include/asm/pgalloc.h    |    3 ++
- arch/microblaze/mm/pgtable.c             |   13 +++++--
- arch/mips/include/asm/pgalloc.h          |   22 ++++++++----
- arch/mn10300/include/asm/pgalloc.h       |    2 +
- arch/mn10300/mm/pgtable.c                |   10 ++++-
- arch/parisc/include/asm/pgalloc.h        |   21 ++++++++---
- arch/powerpc/include/asm/pgalloc-32.h    |    2 +
- arch/powerpc/include/asm/pgalloc-64.h    |   27 +++++++++++---
- arch/powerpc/mm/pgtable_32.c             |   10 ++++-
- arch/s390/include/asm/pgalloc.h          |   30 +++++++++++++---
- arch/s390/mm/pgtable.c                   |   22 +++++++++---
- arch/score/include/asm/pgalloc.h         |   13 ++++---
- arch/sh/include/asm/pgalloc.h            |    8 ++++-
- arch/sh/mm/pgtable.c                     |    8 ++++-
- arch/sparc/include/asm/pgalloc_32.h      |    5 +++
- arch/sparc/include/asm/pgalloc_64.h      |   17 ++++++++-
- arch/tile/include/asm/pgalloc.h          |   13 ++++++-
- arch/tile/mm/pgtable.c                   |   10 ++++-
- arch/um/include/asm/pgalloc.h            |    1 +
- arch/um/kernel/mem.c                     |   21 ++++++++---
- arch/x86/include/asm/pgalloc.h           |   17 ++++++++-
- arch/x86/mm/pgtable.c                    |    8 ++++-
- arch/xtensa/include/asm/pgalloc.h        |    9 ++++-
- arch/xtensa/mm/pgtable.c                 |   11 +++++-
- include/asm-generic/4level-fixup.h       |    8 +++-
- include/asm-generic/pgtable-nopmd.h      |    3 +-
- include/asm-generic/pgtable-nopud.h      |    1 +
- include/linux/mm.h                       |   40 ++++++++++++++++-----
- mm/memory.c                              |   14 ++++---
- mm/vmalloc.c                             |   57 ++++++++++++++++++++----------
- 41 files changed, 427 insertions(+), 119 deletions(-)
+How could I solve
 
+On Friday 04 March 2011 07:03:26 Paul Mundt wrote:
+> On Wed, Mar 02, 2011 at 06:05:21PM +0900, Kuninori Morimoto wrote:
+> > mackerel WVGA LCDC panel expect 33.3MHz for dot-clock,
+> > but current dot-clock was 50.0MHz.
+> > This patch modify clock divider value.
+> 
+> On Wed, Mar 02, 2011 at 06:05:44PM +0900, Kuninori Morimoto wrote:
+> > ap4evb WVGA LCDC panel expect 33.3MHz for dot-clock,
+> > but current dot-clock was 50.0MHz.
+> > This patch modify clock divider value.
+> 
+> Both applied for .38, thanks.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+-- 
+Ing. Fabio Giovagnini
+
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
