@@ -1,96 +1,144 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 13 Mar 2011 13:02:47 +0000
-Subject: [PATCH 9-10/10] Allow subsystems to avoid using sysdevs for defining "core" PM callbacks
-Message-Id: <201103131402.48129.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 07 Mar 2011 18:47:59 +0000
+Subject: [PATCH 4/5] sh: use the new TMIO_MMC_HI_REGS_MISSING flag for SDHI
+Message-Id: <Pine.LNX.4.64.1103071945320.29543@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201103100131.58206.rjw@sisk.pl> <201103122212.40828.rjw@sisk.pl>
-In-Reply-To: <201103122212.40828.rjw@sisk.pl>
+References: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Greg KH <gregkh@suse.de>, Kay Sievers <kay.sievers@suse.de>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Russell King <linux@arm.linux.org.uk>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-On Saturday, March 12, 2011, Rafael J. Wysocki wrote:
-> Hi,
-> 
-> On Thursday, March 10, 2011, Rafael J. Wysocki wrote:
-> > There are multiple problems with sysdevs, or struct sys_device objects to
-> > be precise, that are so annoying that some people have started to think
-> > of removind them entirely from the kernel.  To me, personally, the most
-> > obvious issue is the way sysdevs are used for defining suspend/resume
-> > callbacks to be executed with one CPU on-line and interrupts disabled.
-> > Greg and Kay may tell you more about the other problems with sysdevs. :-)
-> > 
-> > Some subsystems need to carry out certain operations during suspend after
-> > we've disabled non-boot CPUs and interrupts have been switched off on the
-> > only on-line one.  Currently, the only way to achieve that is to define
-> > sysdev suspend/resume callbacks, but this is cumbersome and inefficient.
-> > Namely, to do that, one has to define a sysdev class providing the callbacks
-> > and a sysdev actually using them, which is excessively complicated.  Moreover,
-> > the sysdev suspend/resume callbacks take arguments that are not really used
-> > by the majority of subsystems defining sysdev suspend/resume callbacks
-> > (or even if they are used, they don't really _need_ to be used, so they
-> > are simply unnecessary).  Of course, if a sysdev is only defined to provide
-> > suspend/resume (and maybe shutdown) callbacks, there's no real reason why
-> > it should show up in sysfs.
-> > 
-> > For this reason, I thought it would be a good idea to provide a simpler
-> > interface for subsystems to define "very late" suspend callbacks and
-> > "very early" resume callbacks (and "very late" shutdown callbacks as well)
-> > without the entire bloat related to sysdevs.  The interface is introduced
-> > by the first of the following patches, while the second patch converts some
-> > sysdev users related to the x86 architecture to using the new interface.
-> > 
-> > I believe that call sysdev users who need to define suspend/resume/shutdown
-> > callbacks may be converted to using the interface provided by the first patch,
-> > which in turn should allow us to convert the remaining sysdev functionality
-> > into "normal" struct device interfaces.  Still, even if that turns out to be
-> > too complicated, the bloat reduction resulting from the second patch kind of
-> > shows that moving at least some sysdev users to a simpler interface (like in
-> > the first patch) is a good idea anyway.
-> > 
-> > This is a proof of concept, so the patches have not been tested.  Please be
-> > extrememly careful, because they touch sensitive code, so to speak.  In the
-> > majority of cases the changes are rather straightforward, but there are some
-> > more interesting cases as well (io_apic.c most importantly).
-> 
-> Since Greg likes the idea and there haven't been any objections so far, here's
-> the official submission.  The patches have been tested on HP nx6325 and
-> Toshiba Portege R500.
-> 
-> Patch [1/8] is regareded as 2.6.38 material, following Greg's advice.  The
-> other patches in the set are regarded as 2.6.39 material.  The last one
-> obviously depends on all of the previous ones.
-> 
-> [1/8] - Introduce struct syscore_ops for registering operations to be run on
->         one CPU during suspend/resume/shutdown.
-> 
-> [2/8] - Convert sysdev users in arch/x86 to using struct syscore_ops.
-> 
-> [3/8] - Make ACPI use struct syscore_ops for irqrouter_resume().
-> 
-> [4/8] - Make timekeeping use struct syscore_ops for suspend/resume.
-> 
-> [5/8] - Make Intel IOMMU use struct syscore_ops for suspend/resume.
-> 
-> [6/8] - Make KVM use struct syscore_ops for suspend/resume.
-> 
-> [7/8] - Make cpufreq use struct syscore_ops for boot CPU suspend/resume.
-> 
-> [8/8] - Introduce config switch allowing architectures to skip sysdev
->         suspend/resume/shutdown code.
-> 
-> If there are no objectsions, I'd like to push these patches through the suspend
-> tree.
+Prevent access to addresses above 0xff on SDHI instances on sh-mobile SoCs.
 
-A little followup with two ARM-related patches.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/boards/mach-ap325rxa/setup.c |    3 +++
+ arch/sh/boards/mach-ecovec24/setup.c |    3 +++
+ arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
+ arch/sh/boards/mach-migor/setup.c    |    2 ++
+ arch/sh/boards/mach-se/7724/setup.c  |    3 +++
+ 5 files changed, 12 insertions(+), 1 deletions(-)
 
-[9/10] - Make sh drivers use struct syscore_ops for suspend/resume (instead of
-         sysdevs).
-[10/10] - Use struct syscore_ops for suspend/resume (instead of sysdevs) in
-          core ARM code.
-
-Thanks,
-Rafael
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 33bfebc..ea1f1a3 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -15,6 +15,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+ #include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
+@@ -427,6 +428,7 @@ static struct resource sdhi0_cn3_resources[] = {
+ };
+ 
+ static struct sh_mobile_sdhi_info sdhi0_cn3_data = {
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+@@ -457,6 +459,7 @@ static struct resource sdhi1_cn7_resources[] = {
+ };
+ 
+ static struct sh_mobile_sdhi_info sdhi1_cn7_data = {
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index aa620fd..0cc86a4 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -12,6 +12,7 @@
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
+ #include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mtd/physmap.h>
+@@ -473,6 +474,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.set_pwr	= sdhi0_set_pwr,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD,
+ };
+ 
+@@ -512,6 +514,7 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD,
+ 	.set_pwr	= sdhi1_set_pwr,
+ };
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 7504daa..fa473d4 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -366,7 +366,7 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 03a7ffe..20e641e 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -13,6 +13,7 @@
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/nand.h>
+@@ -411,6 +412,7 @@ static struct resource sdhi_cn9_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 5276793..2ca3253 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -15,6 +15,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+ #include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/delay.h>
+@@ -472,6 +473,7 @@ static struct resource sdhi0_cn7_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+@@ -504,6 +506,7 @@ static struct resource sdhi1_cn8_resources[] = {
+ static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ,
+ };
+ 
+-- 
+1.7.2.3
 
