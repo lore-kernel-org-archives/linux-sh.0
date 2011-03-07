@@ -1,58 +1,159 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 08 Mar 2011 09:29:05 +0000
-Subject: Re: [PATCH 0/5] tmio PM: aggressive clock gating, register layout
-Message-Id: <Pine.LNX.4.64.1103081004270.3903@axis700.grange>
+Date: Mon, 07 Mar 2011 13:30:35 +0000
+Subject: [PATCH 2/2] mmc: tmio: use PIO for short transfers
+Message-Id: <Pine.LNX.4.64.1103071429420.29543@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
- <20110308084251.GB28316@linux-sh.org>
-In-Reply-To: <20110308084251.GB28316@linux-sh.org>
+References: <Pine.LNX.4.64.1103071417340.29543@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103071417340.29543@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
 
-On Tue, 8 Mar 2011, Paul Mundt wrote:
+This patch allows transferring of some requests in PIO and some in DMA
+mode and defaults to using DMA only for transfers longer than 8 bytes.
+This is especially useful with SDIO, which can have lots of 2- and 4-byte
+transfers, creating unnecessary high overhead, when executed in DMA.
 
-> On Mon, Mar 07, 2011 at 07:47:45PM +0100, Guennadi Liakhovetski wrote:
-> > 5 more patches, that fix high register access on sh-mobile in a correct 
-> > way and implement aggressive clock gating. Marked as RFC because testing 
-> > on non-SDHI platforms is required! The next step would be to add 
-> > runtime-pm to clock gating, but I'm refraining from this for now, because 
-> > similar patches for SDHCI have still not been committed and it seems, 
-> > there are still doubts about the right way to do that.
-> > 
-> > Patches apply on top of my previous 2 patches from earlier today.
-> > 
-> I'm a bit confused about this series in general. Patch 1 and 5 are both
-> marked RFC but 2/3/4 seem to be unrelated and intended for merging,
-> despite the fact I find the approach itself to be rather suspect. So why
-> exactly are these all lumped together?
-
-They all affect the clocking behaviour, but yes, you're certainly right, 
-they could and should be separated into two patch-series. Following your 
-idea from a previous mail, patches 2, 3, and 4 should be using resource 
-sizes.
-
-It might, probably, be better to redo all these patches in a completely 
-different way. Since none of them is a fix, I propose to drop the complete 
-series for now. The previous series "tmio_mmc: improve DMA reliability" is 
-anaffected.
-
-Thanks
-Guennadi
-
-> Please do not create patch series that are intentionally muddled. Since
-> you have two distinct things here with completely different intentions
-> and you've not explicitly stated whether there's any dependencies between
-> the two it simply creates a giant mess.
-> 
-> A patch series should be logically structured in some way other than
-> "here's a bunch of random patches I have pending for this particular
-> driver", particularly if only parts of it are intended to be merged.
-> 
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/mmc/host/tmio_mmc.c |   33 +++++++++++++++++++++++----------
+ 1 files changed, 23 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index aa384ba..f5ec5e6 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -100,6 +100,8 @@
+ 		TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT)
+ #define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
+ 
++#define TMIO_MIN_DMA_LEN 8
++
+ #define enable_mmc_irqs(host, i) \
+ 	do { \
+ 		u32 mask;\
+@@ -147,6 +149,7 @@ struct tmio_mmc_host {
+ 	struct platform_device *pdev;
+ 
+ 	/* DMA support */
++	bool			force_pio;
+ 	struct dma_chan		*chan_rx;
+ 	struct dma_chan		*chan_tx;
+ 	struct tasklet_struct	dma_complete;
+@@ -384,6 +387,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+ 	host->cmd = NULL;
+ 	host->data = NULL;
+ 	host->mrq = NULL;
++	host->force_pio = false;
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+@@ -403,6 +407,7 @@ tmio_mmc_finish_request(struct tmio_mmc_host *host)
+ 	host->mrq = NULL;
+ 	host->cmd = NULL;
+ 	host->data = NULL;
++	host->force_pio = false;
+ 
+ 	cancel_delayed_work(&host->delayed_reset_work);
+ 
+@@ -484,7 +489,7 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 	unsigned int count;
+ 	unsigned long flags;
+ 
+-	if (host->chan_tx || host->chan_rx) {
++	if ((host->chan_tx || host->chan_rx) && !host->force_pio) {
+ 		pr_err("PIO IRQ in DMA mode!\n");
+ 		return;
+ 	} else if (!data) {
+@@ -550,15 +555,11 @@ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+ 	 */
+ 
+ 	if (data->flags & MMC_DATA_READ) {
+-		if (!host->chan_rx)
+-			disable_mmc_irqs(host, TMIO_MASK_READOP);
+-		else
++		if (host->chan_rx && !host->force_pio)
+ 			tmio_check_bounce_buffer(host);
+ 		dev_dbg(&host->pdev->dev, "Complete Rx request %p\n",
+ 			host->mrq);
+ 	} else {
+-		if (!host->chan_tx)
+-			disable_mmc_irqs(host, TMIO_MASK_WRITEOP);
+ 		dev_dbg(&host->pdev->dev, "Complete Tx request %p\n",
+ 			host->mrq);
+ 	}
+@@ -582,7 +583,7 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 	if (!data)
+ 		goto out;
+ 
+-	if (host->chan_tx && (data->flags & MMC_DATA_WRITE)) {
++	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
+ 		/*
+ 		 * Has all data been written out yet? Testing on SuperH showed,
+ 		 * that in most cases the first interrupt comes already with the
+@@ -595,11 +596,12 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
+ 			disable_mmc_irqs(host, TMIO_STAT_DATAEND);
+ 			tasklet_schedule(&host->dma_complete);
+ 		}
+-	} else if (host->chan_rx && (data->flags & MMC_DATA_READ)) {
++	} else if (host->chan_rx && (data->flags & MMC_DATA_READ) && !host->force_pio) {
+ 		disable_mmc_irqs(host, TMIO_STAT_DATAEND);
+ 		tasklet_schedule(&host->dma_complete);
+ 	} else {
+ 		tmio_mmc_do_data_irq(host);
++		disable_mmc_irqs(host, TMIO_MASK_READOP | TMIO_MASK_WRITEOP);
+ 	}
+ out:
+ 	spin_unlock(&host->lock);
+@@ -648,12 +650,12 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
+ 	 */
+ 	if (host->data && !cmd->error) {
+ 		if (host->data->flags & MMC_DATA_READ) {
+-			if (!host->chan_rx)
++			if (host->force_pio || !host->chan_rx)
+ 				enable_mmc_irqs(host, TMIO_MASK_READOP);
+ 			else
+ 				tasklet_schedule(&host->dma_issue);
+ 		} else {
+-			if (!host->chan_tx)
++			if (host->force_pio || !host->chan_tx)
+ 				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
+ 			else
+ 				tasklet_schedule(&host->dma_issue);
+@@ -811,6 +813,11 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ 		goto pio;
+ 	}
+ 
++	if (sg->length < TMIO_MIN_DMA_LEN) {
++		host->force_pio = true;
++		return;
++	}
++
+ 	disable_mmc_irqs(host, TMIO_STAT_RXRDY);
+ 
+ 	/* The only sg element can be unaligned, use our bounce buffer then */
+@@ -886,6 +893,11 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 		goto pio;
+ 	}
+ 
++	if (sg->length < TMIO_MIN_DMA_LEN) {
++		host->force_pio = true;
++		return;
++	}
++
+ 	disable_mmc_irqs(host, TMIO_STAT_TXRQ);
+ 
+ 	/* The only sg element can be unaligned, use our bounce buffer then */
+@@ -1132,6 +1144,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+ fail:
+ 	host->mrq = NULL;
++	host->force_pio = false;
+ 	mrq->cmd->error = ret;
+ 	mmc_request_done(mmc, mrq);
+ }
+-- 
+1.7.2.3
+
