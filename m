@@ -1,30 +1,108 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 22 Mar 2011 14:42:27 +0000
-Subject: Re: [RFC][PATCH v3 07/22] mm, sh: add gfp flags variant of pmd and pte allocations
-Message-Id: <20110322144227.GA30303@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 07 Mar 2011 18:47:51 +0000
+Subject: [PATCH 2/5] mmc: tmio: add a flag to prohibit access to registers
+Message-Id: <Pine.LNX.4.64.1103071944200.29543@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110318194135.GA4746@prasad-kvm> <20110318194341.GB4746@prasad-kvm> <20110318194600.GC4746@prasad-kvm> <20110318194740.GD4746@prasad-kvm> <20110318194929.GE4746@prasad-kvm> <20110318195035.GF4746@prasad-kvm> <20110318195141.GG4746@prasad-kvm> <20110318195307.GH4746@prasad-kvm>
-In-Reply-To: <20110318195307.GH4746@prasad-kvm>
+References: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Prasad Joshi <prasadjoshi124@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, mitra@kqinfotech.com
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-On Fri, Mar 18, 2011 at 07:53:07PM +0000, Prasad Joshi wrote:
-> 
-> - Added __pte_alloc_one_kernel() function to allow caller to allocation flag.
->    Like pte_alloc_one_kernel() this newly added function calls
->    quicklist_alloc() and passes the allocation flag down the call hierarchy.
-> 
-> - The function pte_alloc_one_kernel() is modified to call
->   __pte_alloc_one_kernel() using the correct allocation flag.
-> 
-> - Similar changes for pmd allocations. Added function __pmd_alloc_one().
-> 
-> - The changes help in fixing the Bug 30702.
-> 
-> Signed-off-by: Prasad Joshi <prasadjoshi124@gmail.com>
-> Signed-off-by: Anand Mitra <mitra@kqinfotech.com>
+On some implementations there are no registers above 0xff and any
+access to them mirrors to registers at addresses with bit 8 masked
+out, which leads to malfunction. Add a flag to prevent such accesses.
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc.c |   38 +++++++++++++++-----------------------
+ include/linux/mfd/tmio.h    |    6 ++++++
+ 2 files changed, 21 insertions(+), 23 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 91a31d2..5e880c06 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -306,19 +306,9 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 	struct mfd_cell *cell = host->pdev->dev.platform_data;
+ 	struct tmio_mmc_data *pdata = cell->driver_data;
+ 
+-	/*
+-	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
+-	 * CTL_CLK_AND_WAIT_CTL gets written, so we have to disable the
+-	 * device IRQ here and restore the SDIO IRQ mask before
+-	 * re-enabling the device IRQ.
+-	 */
+-	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+-		disable_irq(host->irq);
+-	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
+-	msleep(10);
+-	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
+-		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
+-		enable_irq(host->irq);
++	if (!(pdata->flags & TMIO_MMC_HI_REGS_MISSING)) {
++		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
++		msleep(10);
+ 	}
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+@@ -333,25 +323,27 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+ 	msleep(10);
+-	/* see comment in tmio_mmc_clk_stop above */
+-	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+-		disable_irq(host->irq);
+-	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
+-	msleep(10);
+-	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
+-		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
+-		enable_irq(host->irq);
++	if (!(pdata->flags & TMIO_MMC_HI_REGS_MISSING)) {
++		if (pdata->flags & TMIO_MMC_SDIO_IRQ)
++			disable_irq(host->irq);
++		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
++		msleep(10);
+ 	}
+ }
+ 
+ static void reset(struct tmio_mmc_host *host)
+ {
++	struct mfd_cell *cell = host->pdev->dev.platform_data;
++	struct tmio_mmc_data *pdata = cell->driver_data;
++
+ 	/* FIXME - should we set stop clock reg here */
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
+-	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
++	if (!(pdata->flags & TMIO_MMC_HI_REGS_MISSING))
++		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
+ 	msleep(10);
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
+-	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
++	if (!(pdata->flags & TMIO_MMC_HI_REGS_MISSING))
++		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
+ 	msleep(10);
+ }
+ 
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 8e70310..243ad58 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -61,6 +61,12 @@
+  * Some controllers can support SDIO IRQ signalling.
+  */
+ #define TMIO_MMC_SDIO_IRQ		(1 << 2)
++/*
++ * Some controllers are missing all registers in the 0x100-0x1ff address range,
++ * on them accesses to the CTL_CLK_AND_WAIT_CTL (0x138) register end up in 0x38,
++ * which breaks the SDIO functionality.
++ */
++#define TMIO_MMC_HI_REGS_MISSING	(1 << 3)
+ 
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+-- 
+1.7.2.3
+
