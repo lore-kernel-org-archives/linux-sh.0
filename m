@@ -1,33 +1,75 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 30 Mar 2011 01:46:15 +0000
-Subject: [PATCH] sh: fix build error in board-sh7757lcr.c
-Message-Id: <4D928B67.1010702@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 07 Mar 2011 18:47:55 +0000
+Subject: [PATCH 3/5] ARM: mach-shmobile: use the new TMIO_MMC_HI_REGS_MISSING
+Message-Id: <Pine.LNX.4.64.1103071944480.29543@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-Fix the problem that the sh_mobile_sdhi.h changed the directory from
-"linux/mfd/" to "linux/mmc/".
+Prevent access to addresses above 0xff on SDHI instances on sh-mobile SoCs.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/board-sh7757lcr.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    3 ++-
+ arch/arm/mach-shmobile/board-mackerel.c |    5 +++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-index a9e3356..fa2a208 100644
---- a/arch/sh/boards/board-sh7757lcr.c
-+++ b/arch/sh/boards/board-sh7757lcr.c
-@@ -17,7 +17,7 @@
- #include <linux/io.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <cpu/sh7757.h>
- #include <asm/sh_eth.h>
- #include <asm/heartbeat.h>
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 3cf0951..7a7b472 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -305,6 +305,7 @@ static struct platform_device sh_mmcif_device = {
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+@@ -336,7 +337,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps	= MMC_CAP_NEEDS_POLL | MMC_CAP_SDIO_IRQ,
+ 	.get_cd		= slot_cn7_get_cd,
+ };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 6c9d8b8..2e81352 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -663,6 +663,7 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
+@@ -695,7 +696,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.get_cd		= slot_cn7_get_cd,
+@@ -738,7 +739,7 @@ static int slot_cn23_get_cd(struct platform_device *pdev)
+ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HI_REGS_MISSING,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.get_cd		= slot_cn23_get_cd,
 -- 
-1.7.1
+1.7.2.3
+
