@@ -1,28 +1,36 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 07 Mar 2011 18:47:45 +0000
-Subject: [PATCH 0/5] tmio PM: aggressive clock gating, register layout
-Message-Id: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 08 Mar 2011 08:42:52 +0000
+Subject: Re: [PATCH 0/5] tmio PM: aggressive clock gating, register layout limitation
+Message-Id: <20110308084251.GB28316@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103071937010.29543@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-Hi
+On Mon, Mar 07, 2011 at 07:47:45PM +0100, Guennadi Liakhovetski wrote:
+> 5 more patches, that fix high register access on sh-mobile in a correct 
+> way and implement aggressive clock gating. Marked as RFC because testing 
+> on non-SDHI platforms is required! The next step would be to add 
+> runtime-pm to clock gating, but I'm refraining from this for now, because 
+> similar patches for SDHCI have still not been committed and it seems, 
+> there are still doubts about the right way to do that.
+> 
+> Patches apply on top of my previous 2 patches from earlier today.
+> 
+I'm a bit confused about this series in general. Patch 1 and 5 are both
+marked RFC but 2/3/4 seem to be unrelated and intended for merging,
+despite the fact I find the approach itself to be rather suspect. So why
+exactly are these all lumped together?
 
-5 more patches, that fix high register access on sh-mobile in a correct 
-way and implement aggressive clock gating. Marked as RFC because testing 
-on non-SDHI platforms is required! The next step would be to add 
-runtime-pm to clock gating, but I'm refraining from this for now, because 
-similar patches for SDHCI have still not been committed and it seems, 
-there are still doubts about the right way to do that.
+Please do not create patch series that are intentionally muddled. Since
+you have two distinct things here with completely different intentions
+and you've not explicitly stated whether there's any dependencies between
+the two it simply creates a giant mess.
 
-Patches apply on top of my previous 2 patches from earlier today.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+A patch series should be logically structured in some way other than
+"here's a bunch of random patches I have pending for this particular
+driver", particularly if only parts of it are intended to be merged.
