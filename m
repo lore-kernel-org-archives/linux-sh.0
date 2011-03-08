@@ -1,26 +1,81 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 16 Mar 2011 08:28:32 +0000
-Subject: Re: [PATCH v2] fbdev: sh_mobile_lcdc: Add YUV input support
-Message-Id: <20110316082832.GB5591@linux-sh.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 08 Mar 2011 07:59:45 +0000
+Subject: [PATCH 4/6] net: sh_eth: modify the PHY_INTERFACE_MODE
+Message-Id: <4D75E1F1.5090306@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298526433-6621-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1298526433-6621-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-On Tue, Mar 15, 2011 at 10:23:44AM +0900, Damian wrote:
-> On 2011/03/11 13:54, Paul Mundt wrote:
-> >You may wish to double check to make sure that what has been merged is in
-> >sync with your latest changes.
-> I tried to find this merged into the fbdev tree, but the head shows as
-> 3b0fd9d75598584478d1d3f6551f8a8a9696c34e
-> 'fbdev: sh_mobile_lcdcfb: add backlight support', and I can't find in in 
-> the log before that.
-> 
-> I don't have access to master.kernel.org, so I'm pulling from 
-> git.kernel.org.
-> 
-Oops, I forgot to push from my work machine so I've just applied it and
-pushed it out now. It'll be included for the merge window changes.
+The previous code had hardcoded the PHY_INTERFACE_MODE_MII of phy_connect.
+So some Gigabit PHYs will not behave correctly.
+The patch adds the phy_interface in sh_eth_plat_data, so we can select
+the phy interface.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch are based on net-next-2.6.git.
+
+ arch/sh/include/asm/sh_eth.h |    3 +++
+ drivers/net/sh_eth.c         |    3 ++-
+ drivers/net/sh_eth.h         |    1 +
+ 3 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/include/asm/sh_eth.h b/arch/sh/include/asm/sh_eth.h
+index 1557696..e86c880 100644
+--- a/arch/sh/include/asm/sh_eth.h
++++ b/arch/sh/include/asm/sh_eth.h
+@@ -1,6 +1,8 @@
+ #ifndef __ASM_SH_ETH_H__
+ #define __ASM_SH_ETH_H__
+
++#include <linux/phy.h>
++
+ enum {EDMAC_LITTLE_ENDIAN, EDMAC_BIG_ENDIAN};
+ enum {
+ 	SH_ETH_REG_GIGABIT,
+@@ -12,6 +14,7 @@ struct sh_eth_plat_data {
+ 	int phy;
+ 	int edmac_endian;
+ 	int register_type;
++	phy_interface_t phy_interface;
+
+ 	unsigned char mac_addr[6];
+ 	unsigned no_ether_link:1;
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index 6734311..5d28ce6 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -1071,7 +1071,7 @@ static int sh_eth_phy_init(struct net_device *ndev)
+
+ 	/* Try connect to PHY */
+ 	phydev = phy_connect(ndev, phy_id, sh_eth_adjust_link,
+-				0, PHY_INTERFACE_MODE_MII);
++				0, mdp->phy_interface);
+ 	if (IS_ERR(phydev)) {
+ 		dev_err(&ndev->dev, "phy_connect failed\n");
+ 		return PTR_ERR(phydev);
+@@ -1669,6 +1669,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	pd = (struct sh_eth_plat_data *)(pdev->dev.platform_data);
+ 	/* get PHY ID */
+ 	mdp->phy_id = pd->phy;
++	mdp->phy_interface = pd->phy_interface;
+ 	/* EDMAC endian */
+ 	mdp->edmac_endian = pd->edmac_endian;
+ 	mdp->no_ether_link = pd->no_ether_link;
+diff --git a/drivers/net/sh_eth.h b/drivers/net/sh_eth.h
+index b349c5e..c3048a6 100644
+--- a/drivers/net/sh_eth.h
++++ b/drivers/net/sh_eth.h
+@@ -781,6 +781,7 @@ struct sh_eth_private {
+ 	struct mii_bus *mii_bus;	/* MDIO bus control */
+ 	struct phy_device *phydev;	/* PHY device control */
+ 	enum phy_state link;
++	phy_interface_t phy_interface;
+ 	int msg_enable;
+ 	int speed;
+ 	int duplex;
+-- 
+1.7.1
