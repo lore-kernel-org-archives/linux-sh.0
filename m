@@ -1,85 +1,42 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 01 Mar 2011 07:58:37 +0000
-Subject: [PATCH] usb: EHCI, OHCI: Add configuration for the SH USB controller
-Message-Id: <4D6CA72D.8030205@renesas.com>
+From: Stephen Wilson <wilsons@start.ca>
+Date: Wed, 09 Mar 2011 00:31:57 +0000
+Subject: [PATCH 1/5] x86: add context tag to mark mm when running a task in 32-bit compatibility mode
+Message-Id: <1299630721-4337-2-git-send-email-wilsons@start.ca>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1299630721-4337-1-git-send-email-wilsons@start.ca>
+In-Reply-To: <1299630721-4337-1-git-send-email-wilsons@start.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux390@de.ibm.com, Paul Mundt <lethal@linux-sh.org>, Andi Kleen <ak@linux.intel.com>, Michel Lespinasse <walken@google.com>, Andrew Morton <akpm@linux-foundation.org>, Alexander Viro <viro@zeniv.linux.org.uk>, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Stephen Wilson <wilsons@start.ca>
 
-The SH EHCI/OHCI driver hardcoded the CPU type in {ehci,ohci}-hcd.c.
-So if we will add the new CPU, we had to add to the hcd driver each time.
-The patch adds the CONFIG_USB_{EHCI,OHCI}_SH configuration. So if we
-want to use the SH EHCI/OHCI, we only enable the configuration.
+This tag is intended to mirror the thread info TIF_IA32 flag.  Will be used to
+identify mm's which support 32 bit tasks running in compatibility mode without
+requiring a reference to the task itself.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Stephen Wilson <wilsons@start.ca>
 ---
- drivers/usb/host/Kconfig    |   14 ++++++++++++++
- drivers/usb/host/ehci-hcd.c |    2 +-
- drivers/usb/host/ohci-hcd.c |    5 +----
- 3 files changed, 16 insertions(+), 5 deletions(-)
+ arch/x86/include/asm/mmu.h |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index 923e5a0..9116d30 100644
---- a/drivers/usb/host/Kconfig
-+++ b/drivers/usb/host/Kconfig
-@@ -173,6 +173,13 @@ config USB_EHCI_HCD_PPC_OF
- 	  Enables support for the USB controller present on the PowerPC
- 	  OpenFirmware platform bus.
-
-+config USB_EHCI_SH
-+	bool "EHCI support for SuperH USB controller"
-+	depends on USB_EHCI_HCD && SUPERH
-+	---help---
-+	  Enables support for the on-chip EHCI controller on the SuperH.
-+	  If you use the PCI EHCI controller, this option is not necessary.
+diff --git a/arch/x86/include/asm/mmu.h b/arch/x86/include/asm/mmu.h
+index 80a1dee..8a2e5b4 100644
+--- a/arch/x86/include/asm/mmu.h
++++ b/arch/x86/include/asm/mmu.h
+@@ -13,6 +13,12 @@ typedef struct {
+ 	int size;
+ 	struct mutex lock;
+ 	void *vdso;
 +
- config USB_W90X900_EHCI
- 	bool "W90X900(W90P910) EHCI support"
- 	depends on USB_EHCI_HCD && ARCH_W90X900
-@@ -326,6 +333,13 @@ config USB_OHCI_HCD_SSB
-
- 	  If unsure, say N.
-
-+config USB_OHCI_SH
-+	bool "OHCI support for SuperH USB controller"
-+	depends on USB_OHCI_HCD && SUPERH
-+	---help---
-+	  Enables support for the on-chip OHCI controller on the SuperH.
-+	  If you use the PCI OHCI controller, this option is not necessary.
++#ifdef CONFIG_X86_64
++	/* True if mm supports a task running in 32 bit compatibility mode. */
++	unsigned short compat;
++#endif
 +
- config USB_CNS3XXX_OHCI
- 	bool "Cavium CNS3XXX OHCI Module"
- 	depends on USB_OHCI_HCD && ARCH_CNS3XXX
-diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
-index f69305d..3b24090 100644
---- a/drivers/usb/host/ehci-hcd.c
-+++ b/drivers/usb/host/ehci-hcd.c
-@@ -1184,7 +1184,7 @@ MODULE_LICENSE ("GPL");
- #define PLATFORM_DRIVER		ehci_mxc_driver
- #endif
-
--#ifdef CONFIG_CPU_SUBTYPE_SH7786
-+#ifdef CONFIG_USB_EHCI_SH
- #include "ehci-sh.c"
- #define PLATFORM_DRIVER		ehci_hcd_sh_driver
- #endif
-diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
-index 759a12f..64faf7f 100644
---- a/drivers/usb/host/ohci-hcd.c
-+++ b/drivers/usb/host/ohci-hcd.c
-@@ -1068,10 +1068,7 @@ MODULE_LICENSE ("GPL");
- #define PLATFORM_DRIVER		ohci_hcd_da8xx_driver
- #endif
-
--#if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7721) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7763) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7786)
-+#ifdef CONFIG_USB_OHCI_SH
- #include "ohci-sh.c"
- #define PLATFORM_DRIVER		ohci_hcd_sh_driver
- #endif
+ } mm_context_t;
+ 
+ #ifdef CONFIG_SMP
 -- 
-1.7.1
+1.7.3.5
+
