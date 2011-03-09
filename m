@@ -1,47 +1,232 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 31 Mar 2011 06:21:29 +0000
-Subject: [GIT PULL] SuperH Mobile ARM
-Message-Id: <1301552490-16064-1-git-send-email-horms@verge.net.au>
+From: Stephen Wilson <wilsons@start.ca>
+Date: Wed, 09 Mar 2011 00:31:59 +0000
+Subject: [PATCH 3/5] mm: arch: make get_gate_vma take an mm_struct instead of a task_struct
+Message-Id: <1299630721-4337-4-git-send-email-wilsons@start.ca>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1299630721-4337-1-git-send-email-wilsons@start.ca>
+In-Reply-To: <1299630721-4337-1-git-send-email-wilsons@start.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux390@de.ibm.com, Paul Mundt <lethal@linux-sh.org>, Andi Kleen <ak@linux.intel.com>, Michel Lespinasse <walken@google.com>, Andrew Morton <akpm@linux-foundation.org>, Alexander Viro <viro@zeniv.linux.org.uk>, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Stephen Wilson <wilsons@start.ca>
 
-Hi Russell,
+Morally, the presence of a gate vma is more an attribute of a particular mm than
+a particular task.  Moreover, dropping the dependency on task_struct will help
+make both existing and future operations on mm's more flexible and convenient.
 
-please considder pulling
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/shmobile-2.6.git for-russell
+Signed-off-by: Stephen Wilson <wilsons@start.ca>
+---
+ arch/powerpc/kernel/vdso.c         |    2 +-
+ arch/s390/kernel/vdso.c            |    2 +-
+ arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
+ arch/x86/mm/init_64.c              |    6 +++---
+ arch/x86/vdso/vdso32-setup.c       |   11 ++++++-----
+ fs/binfmt_elf.c                    |    2 +-
+ fs/proc/task_mmu.c                 |    8 +++++---
+ include/linux/mm.h                 |    2 +-
+ mm/memory.c                        |    4 ++--
+ mm/mlock.c                         |    4 ++--
+ 10 files changed, 23 insertions(+), 20 deletions(-)
 
-To get the following changes since commit 0ce790e7d736cedc563e1fb4e998babf5a4dbc3d:
+diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
+index fd87287..6169f17 100644
+--- a/arch/powerpc/kernel/vdso.c
++++ b/arch/powerpc/kernel/vdso.c
+@@ -830,7 +830,7 @@ int in_gate_area(struct task_struct *task, unsigned long addr)
+ 	return 0;
+ }
+ 
+-struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
++struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ {
+ 	return NULL;
+ }
+diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
+index f438d74..d19f305 100644
+--- a/arch/s390/kernel/vdso.c
++++ b/arch/s390/kernel/vdso.c
+@@ -347,7 +347,7 @@ int in_gate_area(struct task_struct *task, unsigned long addr)
+ 	return 0;
+ }
+ 
+-struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
++struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ {
+ 	return NULL;
+ }
+diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
+index 242117c..3f9b6f4 100644
+--- a/arch/sh/kernel/vsyscall/vsyscall.c
++++ b/arch/sh/kernel/vsyscall/vsyscall.c
+@@ -94,7 +94,7 @@ const char *arch_vma_name(struct vm_area_struct *vma)
+ 	return NULL;
+ }
+ 
+-struct vm_area_struct *get_gate_vma(struct task_struct *task)
++struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ {
+ 	return NULL;
+ }
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index 71a5929..2c1799f 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -870,10 +870,10 @@ static struct vm_area_struct gate_vma = {
+ 	.vm_flags	= VM_READ | VM_EXEC
+ };
+ 
+-struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
++struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ {
+ #ifdef CONFIG_IA32_EMULATION
+-	if (test_tsk_thread_flag(tsk, TIF_IA32))
++	if (!mm || mm->context.compat)
+ 		return NULL;
+ #endif
+ 	return &gate_vma;
+@@ -881,7 +881,7 @@ struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
+ 
+ int in_gate_area(struct task_struct *task, unsigned long addr)
+ {
+-	struct vm_area_struct *vma = get_gate_vma(task);
++	struct vm_area_struct *vma = get_gate_vma(task->mm);
+ 
+ 	if (!vma)
+ 		return 0;
+diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
+index 36df991..1f651f6 100644
+--- a/arch/x86/vdso/vdso32-setup.c
++++ b/arch/x86/vdso/vdso32-setup.c
+@@ -417,11 +417,12 @@ const char *arch_vma_name(struct vm_area_struct *vma)
+ 	return NULL;
+ }
+ 
+-struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
++struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ {
+-	struct mm_struct *mm = tsk->mm;
+-
+-	/* Check to see if this task was created in compat vdso mode */
++	/*
++	 * Check to see if the corresponding task was created in compat vdso
++	 * mode.
++	 */
+ 	if (mm && mm->context.vdso = (void *)VDSO_HIGH_BASE)
+ 		return &gate_vma;
+ 	return NULL;
+@@ -429,7 +430,7 @@ struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
+ 
+ int in_gate_area(struct task_struct *task, unsigned long addr)
+ {
+-	const struct vm_area_struct *vma = get_gate_vma(task);
++	const struct vm_area_struct *vma = get_gate_vma(task->mm);
+ 
+ 	return vma && addr >= vma->vm_start && addr < vma->vm_end;
+ }
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index d5b640b..bbabdcc 100644
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -1906,7 +1906,7 @@ static int elf_core_dump(struct coredump_params *cprm)
+ 	segs = current->mm->map_count;
+ 	segs += elf_core_extra_phdrs();
+ 
+-	gate_vma = get_gate_vma(current);
++	gate_vma = get_gate_vma(current->mm);
+ 	if (gate_vma != NULL)
+ 		segs++;
+ 
+diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
+index 60b9148..bb548d4 100644
+--- a/fs/proc/task_mmu.c
++++ b/fs/proc/task_mmu.c
+@@ -126,7 +126,7 @@ static void *m_start(struct seq_file *m, loff_t *pos)
+ 		return NULL;
+ 	down_read(&mm->mmap_sem);
+ 
+-	tail_vma = get_gate_vma(priv->task);
++	tail_vma = get_gate_vma(priv->task->mm);
+ 	priv->tail_vma = tail_vma;
+ 
+ 	/* Start with last addr hint */
+@@ -277,7 +277,8 @@ static int show_map(struct seq_file *m, void *v)
+ 	show_map_vma(m, vma);
+ 
+ 	if (m->count < m->size)  /* vma is copied successfully */
+-		m->version = (vma != get_gate_vma(task))? vma->vm_start: 0;
++		m->version = (vma != get_gate_vma(task->mm))
++			? vma->vm_start : 0;
+ 	return 0;
+ }
+ 
+@@ -436,7 +437,8 @@ static int show_smap(struct seq_file *m, void *v)
+ 			(unsigned long)(mss.pss >> (10 + PSS_SHIFT)) : 0);
+ 
+ 	if (m->count < m->size)  /* vma is copied successfully */
+-		m->version = (vma != get_gate_vma(task)) ? vma->vm_start : 0;
++		m->version = (vma != get_gate_vma(task->mm))
++			? vma->vm_start : 0;
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index f6385fc..b571921 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1568,7 +1568,7 @@ static inline bool kernel_page_present(struct page *page) { return true; }
+ #endif /* CONFIG_HIBERNATION */
+ #endif
+ 
+-extern struct vm_area_struct *get_gate_vma(struct task_struct *tsk);
++extern struct vm_area_struct *get_gate_vma(struct mm_struct *mm);
+ #ifdef	__HAVE_ARCH_GATE_AREA
+ int in_gate_area_no_task(unsigned long addr);
+ int in_gate_area(struct task_struct *task, unsigned long addr);
+diff --git a/mm/memory.c b/mm/memory.c
+index 5823698..aec7cbd 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -1439,7 +1439,7 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
+ 		vma = find_extend_vma(mm, start);
+ 		if (!vma && in_gate_area(tsk, start)) {
+ 			unsigned long pg = start & PAGE_MASK;
+-			struct vm_area_struct *gate_vma = get_gate_vma(tsk);
++			struct vm_area_struct *gate_vma = get_gate_vma(tsk->mm);
+ 			pgd_t *pgd;
+ 			pud_t *pud;
+ 			pmd_t *pmd;
+@@ -3439,7 +3439,7 @@ static int __init gate_vma_init(void)
+ __initcall(gate_vma_init);
+ #endif
+ 
+-struct vm_area_struct *get_gate_vma(struct task_struct *tsk)
++struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ {
+ #ifdef AT_SYSINFO_EHDR
+ 	return &gate_vma;
+diff --git a/mm/mlock.c b/mm/mlock.c
+index c3924c7f..2689a08c 100644
+--- a/mm/mlock.c
++++ b/mm/mlock.c
+@@ -237,7 +237,7 @@ long mlock_vma_pages_range(struct vm_area_struct *vma,
+ 
+ 	if (!((vma->vm_flags & (VM_DONTEXPAND | VM_RESERVED)) ||
+ 			is_vm_hugetlb_page(vma) ||
+-			vma = get_gate_vma(current))) {
++			vma = get_gate_vma(current->mm))) {
+ 
+ 		__mlock_vma_pages_range(vma, start, end, NULL);
+ 
+@@ -332,7 +332,7 @@ static int mlock_fixup(struct vm_area_struct *vma, struct vm_area_struct **prev,
+ 	int lock = newflags & VM_LOCKED;
+ 
+ 	if (newflags = vma->vm_flags || (vma->vm_flags & VM_SPECIAL) ||
+-	    is_vm_hugetlb_page(vma) || vma = get_gate_vma(current))
++	    is_vm_hugetlb_page(vma) || vma = get_gate_vma(current->mm))
+ 		goto out;	/* don't set VM_LOCKED,  don't count */
+ 
+ 	pgoff = vma->vm_pgoff + ((start - vma->vm_start) >> PAGE_SHIFT);
+-- 
+1.7.3.5
 
-  Linux 2.6.39-rc1 (2011-03-29 12:09:47 -0700)
-
-I apologised for not sending this earlier, however the last
-dependency for this patch only went in just before 2.6.39-rc1 -
-the 2nd last patch of the last merge.
-
-I believe that the potential fall out of this patch is
-limited to breaking (non-eSD) zboot support for SuperH Mobile ARM
-and as such I would like it considered for inclusion in 2.6.39-rc2.
-
-Simon Horman (1):
-      mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
-
- Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt    |   43 ++
- arch/arm/Kconfig                                  |   33 ++-
- arch/arm/boot/compressed/Makefile                 |   10 +-
- arch/arm/boot/compressed/head-shmobile.S          |   12 +-
- arch/arm/boot/compressed/mmcif-sh7372.c           |    2 +-
- arch/arm/boot/compressed/sdhi-sh7372.c            |   95 +++++
- arch/arm/boot/compressed/sdhi-shmobile.c          |  449 +++++++++++++++++++++
- arch/arm/boot/compressed/sdhi-shmobile.h          |   11 +
- arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h |   21 +
- arch/arm/mach-shmobile/include/mach/sdhi.h        |   16 +
- 10 files changed, 675 insertions(+), 17 deletions(-)
- create mode 100644 Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt
- create mode 100644 arch/arm/boot/compressed/sdhi-sh7372.c
- create mode 100644 arch/arm/boot/compressed/sdhi-shmobile.c
- create mode 100644 arch/arm/boot/compressed/sdhi-shmobile.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/sdhi.h
