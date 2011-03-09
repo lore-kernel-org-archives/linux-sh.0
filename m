@@ -1,572 +1,171 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Mar 2011 13:43:01 +0000
-Subject: [PATCH 3/6 v2] mmc: tmio: convert the SDHI MMC driver from MFD to
-Message-Id: <Pine.LNX.4.64.1103231433070.6836@axis700.grange>
+From: Stephen Wilson <wilsons@start.ca>
+Date: Wed, 09 Mar 2011 00:32:01 +0000
+Subject: [PATCH 5/5] mm: arch: rename in_gate_area_no_task to in_gate_area_no_mm
+Message-Id: <1299630721-4337-6-git-send-email-wilsons@start.ca>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
+References: <1299630721-4337-1-git-send-email-wilsons@start.ca>
+In-Reply-To: <1299630721-4337-1-git-send-email-wilsons@start.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Paul Mundt <lethal@linux-sh.org>
+To: x86@kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux390@de.ibm.com, Paul Mundt <lethal@linux-sh.org>, Andi Kleen <ak@linux.intel.com>, Michel Lespinasse <walken@google.com>, Andrew Morton <akpm@linux-foundation.org>, Alexander Viro <viro@zeniv.linux.org.uk>, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Stephen Wilson <wilsons@start.ca>
 
-On sh-mobile platforms the SDHI driver was using the tmio_mmc SD/SDIO
-MFD cell driver. Now that the tmio_mmc driver has been split into a
-core and a separate MFD glue, we can support SDHI natively without the
-need to emulate an MFD controller. This also allows to support systems
-with an on-SoC SDHI controller and a separate MFD with a TMIO core.
+Now that gate vma's are referenced with respect to a particular mm and not a
+particular task it only makes sense to propagate the change to this predicate as
+well.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Stephen Wilson <wilsons@start.ca>
 ---
+ arch/powerpc/kernel/vdso.c         |    2 +-
+ arch/s390/kernel/vdso.c            |    2 +-
+ arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
+ arch/x86/mm/init_64.c              |    8 ++++----
+ arch/x86/vdso/vdso32-setup.c       |    2 +-
+ include/linux/mm.h                 |    6 +++---
+ kernel/kallsyms.c                  |    4 ++--
+ mm/memory.c                        |    2 +-
+ mm/nommu.c                         |    2 +-
+ 9 files changed, 15 insertions(+), 15 deletions(-)
 
-v2: updated to the dynamic bounce buffer version
-
- drivers/mfd/Kconfig                |   14 ---
- drivers/mfd/Makefile               |    1 -
- drivers/mfd/sh_mobile_sdhi.c       |  200 ------------------------------------
- drivers/mmc/host/Kconfig           |    9 ++-
- drivers/mmc/host/Makefile          |    7 +-
- drivers/mmc/host/sh_mobile_sdhi.c  |  171 ++++++++++++++++++++++++++++++
- drivers/mmc/host/tmio_mmc.h        |    2 +-
- include/linux/mfd/sh_mobile_sdhi.h |   19 +---
- include/linux/mmc/sh_mobile_sdhi.h |   16 +++
- 9 files changed, 206 insertions(+), 233 deletions(-)
- delete mode 100644 drivers/mfd/sh_mobile_sdhi.c
- create mode 100644 drivers/mmc/host/sh_mobile_sdhi.c
- create mode 100644 include/linux/mmc/sh_mobile_sdhi.h
-
-diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index 7509858..1928ed3 100644
---- a/drivers/mfd/Kconfig
-+++ b/drivers/mfd/Kconfig
-@@ -60,15 +60,6 @@ config MFD_ASIC3
- 	  This driver supports the ASIC3 multifunction chip found on many
- 	  PDAs (mainly iPAQ and HTC based ones)
+diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
+index 467aa9e..142ab10 100644
+--- a/arch/powerpc/kernel/vdso.c
++++ b/arch/powerpc/kernel/vdso.c
+@@ -820,7 +820,7 @@ static int __init vdso_init(void)
+ }
+ arch_initcall(vdso_init);
  
--config MFD_SH_MOBILE_SDHI
--	bool "Support for SuperH Mobile SDHI"
--	depends on SUPERH || ARCH_SHMOBILE
--	select MFD_CORE
--	select TMIO_MMC_DMA
--	 ---help---
--	  This driver supports the SDHI hardware block found in many
--	  SuperH Mobile SoCs.
--
- config MFD_DAVINCI_VOICECODEC
- 	tristate
- 	select MFD_CORE
-@@ -243,11 +234,6 @@ config MFD_TMIO
- 	bool
- 	default n
+-int in_gate_area_no_task(unsigned long addr)
++int in_gate_area_no_mm(unsigned long addr)
+ {
+ 	return 0;
+ }
+diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
+index 9006e96..d73630b 100644
+--- a/arch/s390/kernel/vdso.c
++++ b/arch/s390/kernel/vdso.c
+@@ -337,7 +337,7 @@ static int __init vdso_init(void)
+ }
+ arch_initcall(vdso_init);
  
--config TMIO_MMC_DMA
--	bool
--	select DMA_ENGINE
--	select DMADEVICES
--
- config MFD_T7L66XB
- 	bool "Support Toshiba T7L66XB"
- 	depends on ARM && HAVE_CLK
-diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
-index b51d353..b755293 100644
---- a/drivers/mfd/Makefile
-+++ b/drivers/mfd/Makefile
-@@ -6,7 +6,6 @@
- obj-$(CONFIG_MFD_88PM860X)	+= 88pm860x.o
- obj-$(CONFIG_MFD_SM501)		+= sm501.o
- obj-$(CONFIG_MFD_ASIC3)		+= asic3.o tmio_core.o
--obj-$(CONFIG_MFD_SH_MOBILE_SDHI)		+= sh_mobile_sdhi.o
- 
- obj-$(CONFIG_HTC_EGPIO)		+= htc-egpio.o
- obj-$(CONFIG_HTC_PASIC3)	+= htc-pasic3.o
-diff --git a/drivers/mfd/sh_mobile_sdhi.c b/drivers/mfd/sh_mobile_sdhi.c
-deleted file mode 100644
-index 53a6302..0000000
---- a/drivers/mfd/sh_mobile_sdhi.c
-+++ /dev/null
-@@ -1,200 +0,0 @@
--/*
-- * SuperH Mobile SDHI
-- *
-- * Copyright (C) 2009 Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- *
-- * Based on "Compaq ASIC3 support":
-- *
-- * Copyright 2001 Compaq Computer Corporation.
-- * Copyright 2004-2005 Phil Blundell
-- * Copyright 2007-2008 OpenedHand Ltd.
-- *
-- * Authors: Phil Blundell <pb@handhelds.org>,
-- *	    Samuel Ortiz <sameo@openedhand.com>
-- *
-- */
--
--#include <linux/kernel.h>
--#include <linux/clk.h>
--#include <linux/slab.h>
--#include <linux/platform_device.h>
--#include <linux/mmc/host.h>
--#include <linux/mfd/core.h>
--#include <linux/mfd/tmio.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
--#include <linux/sh_dma.h>
--
--struct sh_mobile_sdhi {
--	struct clk *clk;
--	struct tmio_mmc_data mmc_data;
--	struct mfd_cell cell_mmc;
--	struct sh_dmae_slave param_tx;
--	struct sh_dmae_slave param_rx;
--	struct tmio_mmc_dma dma_priv;
--};
--
--static struct resource sh_mobile_sdhi_resources[] = {
--	{
--		.start = 0x000,
--		.end   = 0x1ff,
--		.flags = IORESOURCE_MEM,
--	},
--	{
--		.start = 0,
--		.end   = 0,
--		.flags = IORESOURCE_IRQ,
--	},
--};
--
--static struct mfd_cell sh_mobile_sdhi_cell = {
--	.name          = "tmio-mmc",
--	.num_resources = ARRAY_SIZE(sh_mobile_sdhi_resources),
--	.resources     = sh_mobile_sdhi_resources,
--};
--
--static void sh_mobile_sdhi_set_pwr(struct platform_device *tmio, int state)
--{
--	struct platform_device *pdev = to_platform_device(tmio->dev.parent);
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--
--	if (p && p->set_pwr)
--		p->set_pwr(pdev, state);
--}
--
--static int sh_mobile_sdhi_get_cd(struct platform_device *tmio)
--{
--	struct platform_device *pdev = to_platform_device(tmio->dev.parent);
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--
--	if (p && p->get_cd)
--		return p->get_cd(pdev);
--	else
--		return -ENOSYS;
--}
--
--static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
--{
--	struct sh_mobile_sdhi *priv;
--	struct tmio_mmc_data *mmc_data;
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--	struct resource *mem;
--	char clk_name[8];
--	int ret, irq;
--
--	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!mem)
--		dev_err(&pdev->dev, "missing MEM resource\n");
--
--	irq = platform_get_irq(pdev, 0);
--	if (irq < 0)
--		dev_err(&pdev->dev, "missing IRQ resource\n");
--
--	if (!mem || (irq < 0))
--		return -EINVAL;
--
--	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
--	if (priv = NULL) {
--		dev_err(&pdev->dev, "kzalloc failed\n");
--		return -ENOMEM;
--	}
--
--	mmc_data = &priv->mmc_data;
--
--	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
--	priv->clk = clk_get(&pdev->dev, clk_name);
--	if (IS_ERR(priv->clk)) {
--		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
--		ret = PTR_ERR(priv->clk);
--		kfree(priv);
--		return ret;
--	}
--
--	clk_enable(priv->clk);
--
--	mmc_data->hclk = clk_get_rate(priv->clk);
--	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
--	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
--	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
--	if (p) {
--		mmc_data->flags = p->tmio_flags;
--		mmc_data->ocr_mask = p->tmio_ocr_mask;
--		mmc_data->capabilities |= p->tmio_caps;
--	}
--
--	/*
--	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
--	 * bus width mode.
--	 */
--	mmc_data->flags |= TMIO_MMC_BLKSZ_2BYTES;
--
--	/*
--	 * All SDHI blocks support SDIO IRQ signalling.
--	 */
--	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
--
--	if (p && p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
--		priv->param_tx.slave_id = p->dma_slave_tx;
--		priv->param_rx.slave_id = p->dma_slave_rx;
--		priv->dma_priv.chan_priv_tx = &priv->param_tx;
--		priv->dma_priv.chan_priv_rx = &priv->param_rx;
--		priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
--		mmc_data->dma = &priv->dma_priv;
--	}
--
--	memcpy(&priv->cell_mmc, &sh_mobile_sdhi_cell, sizeof(priv->cell_mmc));
--	priv->cell_mmc.mfd_data = mmc_data;
--
--	platform_set_drvdata(pdev, priv);
--
--	ret = mfd_add_devices(&pdev->dev, pdev->id,
--			      &priv->cell_mmc, 1, mem, irq);
--	if (ret) {
--		clk_disable(priv->clk);
--		clk_put(priv->clk);
--		kfree(priv);
--	}
--
--	return ret;
--}
--
--static int sh_mobile_sdhi_remove(struct platform_device *pdev)
--{
--	struct sh_mobile_sdhi *priv = platform_get_drvdata(pdev);
--
--	mfd_remove_devices(&pdev->dev);
--	clk_disable(priv->clk);
--	clk_put(priv->clk);
--	kfree(priv);
--
--	return 0;
--}
--
--static struct platform_driver sh_mobile_sdhi_driver = {
--	.driver		= {
--		.name	= "sh_mobile_sdhi",
--		.owner	= THIS_MODULE,
--	},
--	.probe		= sh_mobile_sdhi_probe,
--	.remove		= __devexit_p(sh_mobile_sdhi_remove),
--};
--
--static int __init sh_mobile_sdhi_init(void)
--{
--	return platform_driver_register(&sh_mobile_sdhi_driver);
--}
--
--static void __exit sh_mobile_sdhi_exit(void)
--{
--	platform_driver_unregister(&sh_mobile_sdhi_driver);
--}
--
--module_init(sh_mobile_sdhi_init);
--module_exit(sh_mobile_sdhi_exit);
--
--MODULE_DESCRIPTION("SuperH Mobile SDHI driver");
--MODULE_AUTHOR("Magnus Damm");
--MODULE_LICENSE("GPL v2");
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 4d16166..0b03cee 100644
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -444,12 +444,19 @@ config MMC_TMIO_CORE
- 
- config MMC_TMIO
- 	tristate "Toshiba Mobile IO Controller (TMIO) MMC/SD function support"
--	depends on MFD_TMIO || MFD_ASIC3 || MFD_SH_MOBILE_SDHI
-+	depends on MFD_TMIO || MFD_ASIC3
- 	select MMC_TMIO_CORE
- 	help
- 	  This provides support for the SD/MMC cell found in TC6393XB,
- 	  T7L66XB and also HTC ASIC3
- 
-+config MMC_SDHI
-+	tristate "SH-Mobile SDHI SD/SDIO controller support"
-+	select MMC_TMIO_CORE
-+	help
-+	  This provides support for the SDHI SD/SDIO controller found in
-+	  SuperH and ARM SH-Mobile SoCs
-+
- config MMC_CB710
- 	tristate "ENE CB710 MMC/SD Interface support"
- 	depends on PCI
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index 79c42dd..4f1df0a 100644
---- a/drivers/mmc/host/Makefile
-+++ b/drivers/mmc/host/Makefile
-@@ -31,8 +31,11 @@ obj-$(CONFIG_MMC_SDRICOH_CS)	+= sdricoh_cs.o
- obj-$(CONFIG_MMC_TMIO)		+= tmio_mmc.o
- obj-$(CONFIG_MMC_TMIO_CORE)	+= tmio_mmc_core.o
- tmio_mmc_core-y			:= tmio_mmc_pio.o
--tmio_mmc_core-$(CONFIG_TMIO_MMC_DMA)	+= tmio_mmc_dma.o
--obj-$(CONFIG_MMC_CB710)	+= cb710-mmc.o
-+ifneq ($(CONFIG_MMC_SDHI),n)
-+tmio_mmc_core-y			+= tmio_mmc_dma.o
-+endif
-+obj-$(CONFIG_MMC_SDHI)		+= sh_mobile_sdhi.o
-+obj-$(CONFIG_MMC_CB710)		+= cb710-mmc.o
- obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
- obj-$(CONFIG_SDH_BFIN)		+= bfin_sdh.o
- obj-$(CONFIG_MMC_DW)		+= dw_mmc.o
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-new file mode 100644
-index 0000000..cc70123
---- /dev/null
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -0,0 +1,171 @@
-+/*
-+ * SuperH Mobile SDHI
-+ *
-+ * Copyright (C) 2009 Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ *
-+ * Based on "Compaq ASIC3 support":
-+ *
-+ * Copyright 2001 Compaq Computer Corporation.
-+ * Copyright 2004-2005 Phil Blundell
-+ * Copyright 2007-2008 OpenedHand Ltd.
-+ *
-+ * Authors: Phil Blundell <pb@handhelds.org>,
-+ *	    Samuel Ortiz <sameo@openedhand.com>
-+ *
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/clk.h>
-+#include <linux/slab.h>
-+#include <linux/platform_device.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mfd/tmio.h>
-+#include <linux/sh_dma.h>
-+
-+#include "tmio_mmc.h"
-+
-+struct sh_mobile_sdhi {
-+	struct clk *clk;
-+	struct tmio_mmc_data mmc_data;
-+	struct sh_dmae_slave param_tx;
-+	struct sh_dmae_slave param_rx;
-+	struct tmio_mmc_dma dma_priv;
-+};
-+
-+static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
-+{
-+	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-+
-+	if (p && p->set_pwr)
-+		p->set_pwr(pdev, state);
-+}
-+
-+static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
-+{
-+	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-+
-+	if (p && p->get_cd)
-+		return p->get_cd(pdev);
-+	else
-+		return -ENOSYS;
-+}
-+
-+static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
-+{
-+	struct sh_mobile_sdhi *priv;
-+	struct tmio_mmc_data *mmc_data;
-+	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-+	struct tmio_mmc_host *host;
-+	char clk_name[8];
-+	int ret;
-+
-+	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
-+	if (priv = NULL) {
-+		dev_err(&pdev->dev, "kzalloc failed\n");
-+		return -ENOMEM;
-+	}
-+
-+	mmc_data = &priv->mmc_data;
-+
-+	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
-+	priv->clk = clk_get(&pdev->dev, clk_name);
-+	if (IS_ERR(priv->clk)) {
-+		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
-+		ret = PTR_ERR(priv->clk);
-+		goto eclkget;
-+	}
-+
-+	clk_enable(priv->clk);
-+
-+	mmc_data->hclk = clk_get_rate(priv->clk);
-+	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
-+	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
-+	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-+	if (p) {
-+		mmc_data->flags = p->tmio_flags;
-+		mmc_data->ocr_mask = p->tmio_ocr_mask;
-+		mmc_data->capabilities |= p->tmio_caps;
-+
-+		if (p->dma_slave_tx >= 0 && p->dma_slave_rx >= 0) {
-+			priv->param_tx.slave_id = p->dma_slave_tx;
-+			priv->param_rx.slave_id = p->dma_slave_rx;
-+			priv->dma_priv.chan_priv_tx = &priv->param_tx;
-+			priv->dma_priv.chan_priv_rx = &priv->param_rx;
-+			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
-+			mmc_data->dma = &priv->dma_priv;
-+		}
-+	}
-+
-+	/*
-+	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
-+	 * bus width mode.
-+	 */
-+	mmc_data->flags |= TMIO_MMC_BLKSZ_2BYTES;
-+
-+	/*
-+	 * All SDHI blocks support SDIO IRQ signalling.
-+	 */
-+	mmc_data->flags |= TMIO_MMC_SDIO_IRQ;
-+
-+	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
-+	if (ret < 0)
-+		goto eprobe;
-+
-+	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
-+		(unsigned long)host->ctl, host->irq);
-+
-+	return ret;
-+
-+eprobe:
-+	clk_disable(priv->clk);
-+	clk_put(priv->clk);
-+eclkget:
-+	kfree(priv);
-+	return ret;
-+}
-+
-+static int sh_mobile_sdhi_remove(struct platform_device *pdev)
-+{
-+	struct mmc_host *mmc = platform_get_drvdata(pdev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+
-+	tmio_mmc_host_remove(host);
-+	clk_disable(priv->clk);
-+	clk_put(priv->clk);
-+	kfree(priv);
-+
-+	return 0;
-+}
-+
-+static struct platform_driver sh_mobile_sdhi_driver = {
-+	.driver		= {
-+		.name	= "sh_mobile_sdhi",
-+		.owner	= THIS_MODULE,
-+	},
-+	.probe		= sh_mobile_sdhi_probe,
-+	.remove		= __devexit_p(sh_mobile_sdhi_remove),
-+};
-+
-+static int __init sh_mobile_sdhi_init(void)
-+{
-+	return platform_driver_register(&sh_mobile_sdhi_driver);
-+}
-+
-+static void __exit sh_mobile_sdhi_exit(void)
-+{
-+	platform_driver_unregister(&sh_mobile_sdhi_driver);
-+}
-+
-+module_init(sh_mobile_sdhi_init);
-+module_exit(sh_mobile_sdhi_exit);
-+
-+MODULE_DESCRIPTION("SuperH Mobile SDHI driver");
-+MODULE_AUTHOR("Magnus Damm");
-+MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:sh_mobile_sdhi");
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 8dedf0a..7d79b14 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -120,7 +120,7 @@ static inline void tmio_mmc_kunmap_atomic(struct scatterlist *sg,
- 	local_irq_restore(*flags);
+-int in_gate_area_no_task(unsigned long addr)
++int in_gate_area_no_mm(unsigned long addr)
+ {
+ 	return 0;
+ }
+diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
+index 62c36a8..1d6d51a 100644
+--- a/arch/sh/kernel/vsyscall/vsyscall.c
++++ b/arch/sh/kernel/vsyscall/vsyscall.c
+@@ -104,7 +104,7 @@ int in_gate_area(struct mm_struct *mm, unsigned long address)
+ 	return 0;
  }
  
--#ifdef CONFIG_TMIO_MMC_DMA
-+#if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
- void tmio_mmc_start_dma(struct tmio_mmc_host *host, struct mmc_data *data);
- void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata);
- void tmio_mmc_release_dma(struct tmio_mmc_host *host);
-diff --git a/include/linux/mfd/sh_mobile_sdhi.h b/include/linux/mfd/sh_mobile_sdhi.h
-index c981b95..10af7f9 100644
---- a/include/linux/mfd/sh_mobile_sdhi.h
-+++ b/include/linux/mfd/sh_mobile_sdhi.h
-@@ -1,16 +1,7 @@
--#ifndef __SH_MOBILE_SDHI_H__
--#define __SH_MOBILE_SDHI_H__
-+#ifndef MFD_SH_MOBILE_SDHI_H
-+#define MFD_SH_MOBILE_SDHI_H
+-int in_gate_area_no_task(unsigned long address)
++int in_gate_area_no_mm(unsigned long address)
+ {
+ 	return 0;
+ }
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index 3af0da3..d3b5e2c 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -890,11 +890,11 @@ int in_gate_area(struct mm_struct *mm, unsigned long addr)
+ }
  
--#include <linux/types.h>
-+/* Compatibility header - will disappear once all platforms are converted */
-+#include <linux/mmc/sh_mobile_sdhi.h>
+ /*
+- * Use this when you have no reliable task/vma, typically from interrupt
+- * context. It is less reliable than using the task's vma and may give
+- * false positives:
++ * Use this when you have no reliable mm, typically from interrupt
++ * context. It is less reliable than using a task's mm and may give
++ * false positives.
+  */
+-int in_gate_area_no_task(unsigned long addr)
++int in_gate_area_no_mm(unsigned long addr)
+ {
+ 	return (addr >= VSYSCALL_START) && (addr < VSYSCALL_END);
+ }
+diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
+index f849bb2..468d591 100644
+--- a/arch/x86/vdso/vdso32-setup.c
++++ b/arch/x86/vdso/vdso32-setup.c
+@@ -435,7 +435,7 @@ int in_gate_area(struct mm_struct *mm, unsigned long addr)
+ 	return vma && addr >= vma->vm_start && addr < vma->vm_end;
+ }
  
--struct sh_mobile_sdhi_info {
--	int dma_slave_tx;
--	int dma_slave_rx;
--	unsigned long tmio_flags;
--	unsigned long tmio_caps;
--	u32 tmio_ocr_mask;	/* available MMC voltages */
--	void (*set_pwr)(struct platform_device *pdev, int state);
--	int (*get_cd)(struct platform_device *pdev);
--};
--
--#endif /* __SH_MOBILE_SDHI_H__ */
-+#endif /* MFD_SH_MOBILE_SDHI_H */
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-new file mode 100644
-index 0000000..c981b95
---- /dev/null
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -0,0 +1,16 @@
-+#ifndef __SH_MOBILE_SDHI_H__
-+#define __SH_MOBILE_SDHI_H__
-+
-+#include <linux/types.h>
-+
-+struct sh_mobile_sdhi_info {
-+	int dma_slave_tx;
-+	int dma_slave_rx;
-+	unsigned long tmio_flags;
-+	unsigned long tmio_caps;
-+	u32 tmio_ocr_mask;	/* available MMC voltages */
-+	void (*set_pwr)(struct platform_device *pdev, int state);
-+	int (*get_cd)(struct platform_device *pdev);
-+};
-+
-+#endif /* __SH_MOBILE_SDHI_H__ */
+-int in_gate_area_no_task(unsigned long addr)
++int in_gate_area_no_mm(unsigned long addr)
+ {
+ 	return 0;
+ }
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index c700bbb..694512d 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1570,11 +1570,11 @@ static inline bool kernel_page_present(struct page *page) { return true; }
+ 
+ extern struct vm_area_struct *get_gate_vma(struct mm_struct *mm);
+ #ifdef	__HAVE_ARCH_GATE_AREA
+-int in_gate_area_no_task(unsigned long addr);
++int in_gate_area_no_mm(unsigned long addr);
+ int in_gate_area(struct mm_struct *mm, unsigned long addr);
+ #else
+-int in_gate_area_no_task(unsigned long addr);
+-#define in_gate_area(mm, addr) ({(void)mm; in_gate_area_no_task(addr);})
++int in_gate_area_no_mm(unsigned long addr);
++#define in_gate_area(mm, addr) ({(void)mm; in_gate_area_no_mm(addr);})
+ #endif	/* __HAVE_ARCH_GATE_AREA */
+ 
+ int drop_caches_sysctl_handler(struct ctl_table *, int,
+diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
+index 6f6d091..b9d0fd1 100644
+--- a/kernel/kallsyms.c
++++ b/kernel/kallsyms.c
+@@ -64,14 +64,14 @@ static inline int is_kernel_text(unsigned long addr)
+ 	if ((addr >= (unsigned long)_stext && addr <= (unsigned long)_etext) ||
+ 	    arch_is_kernel_text(addr))
+ 		return 1;
+-	return in_gate_area_no_task(addr);
++	return in_gate_area_no_mm(addr);
+ }
+ 
+ static inline int is_kernel(unsigned long addr)
+ {
+ 	if (addr >= (unsigned long)_stext && addr <= (unsigned long)_end)
+ 		return 1;
+-	return in_gate_area_no_task(addr);
++	return in_gate_area_no_mm(addr);
+ }
+ 
+ static int is_ksym_addr(unsigned long addr)
+diff --git a/mm/memory.c b/mm/memory.c
+index d1347ac..3863e86 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -3448,7 +3448,7 @@ struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
+ #endif
+ }
+ 
+-int in_gate_area_no_task(unsigned long addr)
++int in_gate_area_no_mm(unsigned long addr)
+ {
+ #ifdef AT_SYSINFO_EHDR
+ 	if ((addr >= FIXADDR_USER_START) && (addr < FIXADDR_USER_END))
+diff --git a/mm/nommu.c b/mm/nommu.c
+index f59e142..e629143 100644
+--- a/mm/nommu.c
++++ b/mm/nommu.c
+@@ -1963,7 +1963,7 @@ error:
+ 	return -ENOMEM;
+ }
+ 
+-int in_gate_area_no_task(unsigned long addr)
++int in_gate_area_no_mm(unsigned long addr)
+ {
+ 	return 0;
+ }
 -- 
-1.7.2.5
+1.7.3.5
 
