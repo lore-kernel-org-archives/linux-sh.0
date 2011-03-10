@@ -1,25 +1,14 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 Mar 2011 07:37:57 +0000
-Subject: migor compile breakage in Linus' tree
-Message-Id: <Pine.LNX.4.64.1103250836510.22824@axis700.grange>
+From: WESTERN UNION <info@yahoo.com>
+Date: Thu, 10 Mar 2011 07:38:35 +0000
+Subject: 
+Message-Id: <1299742715.4d787ffb97d66@webmail.unitedtelecom.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: @casper.infradead.org
 
-Getting the following errors, when building for migor (sh7722 - no FPU):
 
-arch/sh/kernel/built-in.o: In function `arch_ptrace':
-(.text+0x1874): undefined reference to `init_fpu'
-arch/sh/kernel/built-in.o: In function `arch_ptrace':
-(.text+0x190c): undefined reference to `init_fpu'
-make[1]: *** [.tmp_vmlinux1] Error 1
-make: *** [sub-make] Error 2
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+You have earned 1,000,000.00 USD,Send info:Names,Age,Country,phone number
+To:(westernu_online2@hotmail.co.uk)
