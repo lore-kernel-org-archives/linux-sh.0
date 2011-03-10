@@ -1,565 +1,832 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 10 Mar 2011 07:05:52 +0000
-Subject: [PATCH 01/02] virtio: Break out lguest virtio code to virtio_lguest.c
-Message-Id: <20110310070552.27327.37436.sendpatchset@t400s>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 10 Mar 2011 08:14:00 +0000
+Subject: [PATCH] [rfc v2] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
+Message-Id: <1299744840-5775-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110310070541.27327.52089.sendpatchset@t400s>
-In-Reply-To: <20110310070541.27327.52089.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, rusty@rustcorp.com.au, virtualization@lists.linux-foundation.org, mst@redhat.com, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-arm-kernel@lists.arm.linux.org.uk, linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm@opensource.se>
+This allows a ROM-able zImage to be written to eSD and for SuperH Mobile
+ARM to boot directly from the SDHI hardware block.
 
-This patch breaks out code from lguest_device.c to the new file
-virtio_lguest.c. The new file is built when CONFIG_VIRTIO_LGUEST
-is selected. The x86 architecture is updated to select this kconfig
-variable in the case of lguest.
+This is achieved by the MaskROM loading the first portion of the image into
+MERAM and then jumping to it.  This portion contains loader code which
+copies the entire image to SDRAM and jumps to it. From there the zImage
+boot code proceeds as normal, uncompressing the image into its final
+location and then jumping to it.
 
-Needed by the virtio platform driver that shares configuration data
-structures with lguest.
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/x86/lguest/Kconfig        |    1 
- drivers/lguest/lguest_device.c |  209 ----------------------------------------
- drivers/virtio/Kconfig         |    2 
- drivers/virtio/Makefile        |    1 
- drivers/virtio/virtio_lguest.c |  205 +++++++++++++++++++++++++++++++++++++++
- include/linux/lguest.h         |    1 
- include/linux/lguest_device.h  |   46 ++++++++
- 7 files changed, 258 insertions(+), 207 deletions(-)
+This patch is based on the for-next branch of
+Russell King's linux-2.6-arm tree
 
---- 0001/arch/x86/lguest/Kconfig
-+++ work/arch/x86/lguest/Kconfig	2011-03-03 10:16:11.000000000 +0900
-@@ -4,6 +4,7 @@ config LGUEST_GUEST
- 	depends on X86_32
- 	select VIRTUALIZATION
- 	select VIRTIO
-+	select VIRTIO_LGUEST
- 	select VIRTIO_RING
- 	select VIRTIO_CONSOLE
- 	help
---- 0001/drivers/lguest/lguest_device.c
-+++ work/drivers/lguest/lguest_device.c	2011-03-03 10:16:11.000000000 +0900
-@@ -14,6 +14,7 @@
- #include <linux/virtio_config.h>
- #include <linux/interrupt.h>
- #include <linux/virtio_ring.h>
-+#include <linux/lguest_device.h>
- #include <linux/err.h>
- #include <linux/slab.h>
- #include <asm/io.h>
-@@ -37,137 +38,6 @@ static inline void lguest_unmap(void *ad
- 	iounmap((__force void __iomem *)addr);
- }
+* v2
+  Consistently use __raw_readw().
+  As pointed out by Paul Mundt
+---
+ Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt     |   43 ++
+ arch/arm/Kconfig                                   |   35 +-
+ arch/arm/boot/compressed/Makefile                  |    9 +-
+ arch/arm/boot/compressed/head-shmobile.S           |   12 +-
+ arch/arm/boot/compressed/mmcif-sh7372.c            |    2 +-
+ arch/arm/boot/compressed/sdhi-shmobile.c           |  573 ++++++++++++++++++++
+ .../mach-shmobile/include/mach/mmcif-mackerel.h    |   13 +
+ arch/sh/boot/romimage/mmcif-sh7724.c               |    2 +-
+ 8 files changed, 670 insertions(+), 19 deletions(-)
+ create mode 100644 Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt
+ create mode 100644 arch/arm/boot/compressed/sdhi-shmobile.c
+
+diff --git a/Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt b/Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt
+new file mode 100644
+index 0000000..dbd21ef
+--- /dev/null
++++ b/Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt
+@@ -0,0 +1,43 @@
++ROM-able zImage boot from eSD
++-----------------------------
++
++An ROM-able zImage compiled with ZBOOT_ROM_SDHI may be written to eSD and
++SuperH Mobile ARM will to boot directly from the SDHI hardware block.
++
++This is achieved by the mask ROM loading the first portion of the image into
++MERAM and then jumping to it. This portion contains loader code which
++copies the entire image to SDRAM and jumps to it. From there the zImage
++boot code proceeds as normal, uncompressing the image into its final
++location and then jumping to it.
++
++This code has been tested on an mackerel board using the developer 1A eSD
++boot mode which is configured using the following jumper settings.
++
++   8 7 6 5 4 3 2 1
++   x|x|x|x| |x|x|
++S4 -+-+-+-+-+-+-+-
++    | | | |x| | |x on
++
++The eSD card needs to be present in SDHI slot 1 (CN7).
++As such S1 and S33 also need to be configured as per
++the notes in arch/arm/mach-shmobile/board-mackerel.c.
++
++A partial zImage must be written to physical partition #1 (boot)
++of the eSD at sector 0 in vrl4 format. A utility vrl4 is supplied to
++accomplish this.
++
++e.g.
++	vrl4 < zImage | dd of=/dev/sdX bsQ2 count=9
++
++A full copy of _the same_ zImage should be written to physical partition #1
++(boot) of the eSD at sector 0. This should _not_ be in vrl4 format.
++
++	vrl4 < zImage | dd of=/dev/sdX bsQ2
++
++Note: The commands above assume that the physical partition has been
++switched. No such facility currently exists in the Linux Kernel.
++
++Physical partitions are described in the eSD specification.  At the time of
++writing they are not the same as partitions that are typically configured
++using fdisk and visible through /proc/partitions
++
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 574ce60..55892eb 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1685,17 +1685,34 @@ config ZBOOT_ROM
+ 	  Say Y here if you intend to execute your compressed kernel image
+ 	  (zImage) directly from ROM or flash.  If unsure, say N.
  
--/*D:100
-- * Each lguest device is just a virtio device plus a pointer to its entry
-- * in the lguest_devices page.
-- */
--struct lguest_device {
--	struct virtio_device vdev;
--
--	/* The entry in the lguest_devices page for this device. */
--	struct lguest_device_desc *desc;
--};
--
--/*
-- * Since the virtio infrastructure hands us a pointer to the virtio_device all
-- * the time, it helps to have a curt macro to get a pointer to the struct
-- * lguest_device it's enclosed in.
-- */
--#define to_lgdev(vd) container_of(vd, struct lguest_device, vdev)
--
--/*D:130
-- * Device configurations
-- *
-- * The configuration information for a device consists of one or more
-- * virtqueues, a feature bitmap, and some configuration bytes.  The
-- * configuration bytes don't really matter to us: the Launcher sets them up, and
-- * the driver will look at them during setup.
-- *
-- * A convenient routine to return the device's virtqueue config array:
-- * immediately after the descriptor.
-- */
--static struct lguest_vqconfig *lg_vq(const struct lguest_device_desc *desc)
--{
--	return (void *)(desc + 1);
--}
--
--/* The features come immediately after the virtqueues. */
--static u8 *lg_features(const struct lguest_device_desc *desc)
--{
--	return (void *)(lg_vq(desc) + desc->num_vq);
--}
--
--/* The config space comes after the two feature bitmasks. */
--static u8 *lg_config(const struct lguest_device_desc *desc)
--{
--	return lg_features(desc) + desc->feature_len * 2;
--}
--
--/* The total size of the config page used by this device (incl. desc) */
--static unsigned desc_size(const struct lguest_device_desc *desc)
--{
--	return sizeof(*desc)
--		+ desc->num_vq * sizeof(struct lguest_vqconfig)
--		+ desc->feature_len * 2
--		+ desc->config_len;
--}
--
--/* This gets the device's feature bits. */
--static u32 lg_get_features(struct virtio_device *vdev)
--{
--	unsigned int i;
--	u32 features = 0;
--	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
--	u8 *in_features = lg_features(desc);
--
--	/* We do this the slow but generic way. */
--	for (i = 0; i < min(desc->feature_len * 8, 32); i++)
--		if (in_features[i / 8] & (1 << (i % 8)))
--			features |= (1 << i);
--
--	return features;
--}
--
--/*
-- * The virtio core takes the features the Host offers, and copies the ones
-- * supported by the driver into the vdev->features array.  Once that's all
-- * sorted out, this routine is called so we can tell the Host which features we
-- * understand and accept.
-- */
--static void lg_finalize_features(struct virtio_device *vdev)
--{
--	unsigned int i, bits;
--	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
--	/* Second half of bitmap is features we accept. */
--	u8 *out_features = lg_features(desc) + desc->feature_len;
--
--	/* Give virtio_ring a chance to accept features. */
--	vring_transport_features(vdev);
--
--	/*
--	 * The vdev->feature array is a Linux bitmask: this isn't the same as a
--	 * the simple array of bits used by lguest devices for features.  So we
--	 * do this slow, manual conversion which is completely general.
--	 */
--	memset(out_features, 0, desc->feature_len);
--	bits = min_t(unsigned, desc->feature_len, sizeof(vdev->features)) * 8;
--	for (i = 0; i < bits; i++) {
--		if (test_bit(i, vdev->features))
--			out_features[i / 8] |= (1 << (i % 8));
--	}
--}
--
--/* Once they've found a field, getting a copy of it is easy. */
--static void lg_get(struct virtio_device *vdev, unsigned int offset,
--		   void *buf, unsigned len)
--{
--	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
--
--	/* Check they didn't ask for more than the length of the config! */
--	BUG_ON(offset + len > desc->config_len);
--	memcpy(buf, lg_config(desc) + offset, len);
--}
--
--/* Setting the contents is also trivial. */
--static void lg_set(struct virtio_device *vdev, unsigned int offset,
--		   const void *buf, unsigned len)
--{
--	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
--
--	/* Check they didn't ask for more than the length of the config! */
--	BUG_ON(offset + len > desc->config_len);
--	memcpy(lg_config(desc) + offset, buf, len);
--}
--
--/*
-- * The operations to get and set the status word just access the status field
-- * of the device descriptor.
-- */
--static u8 lg_get_status(struct virtio_device *vdev)
--{
--	return to_lgdev(vdev)->desc->status;
--}
--
- /*
-  * To notify on status updates, we (ab)use the NOTIFY hypercall, with the
-  * descriptor address of the device.  A zero status means "reset".
-@@ -392,81 +262,6 @@ static struct virtio_config_ops lguest_c
++choice
++	prompt "Include SD/MMC loader in zImage (EXPERIMENTAL)"
++	depends on ZBOOT_ROM && ARCH_SHMOBILE && EXPERIMENTAL
++	default ZBOOT_ROM_NONE
++	help
++	  Include experimental SD/MMC loading code in the ROM-able zImage.
++	  With this enabled it is possible to write the the ROM-able zImage
++	  kernel image to an MMC or SD card and boot the kernel straight
++	  from the reset vector. At reset the processor Mask ROM will load
++	  the first part of the the ROM-able zImage which in turn loads the
++	  rest the kernel image to RAM.
++
++config ZBOOT_ROM_NONE
++	bool "No SD/MMC loader in zImage (EXPERIMENTAL)"
++	help
++	  Do not load image from SD or MMC
++
+ config ZBOOT_ROM_MMCIF
+ 	bool "Include MMCIF loader in zImage (EXPERIMENTAL)"
+-	depends on ZBOOT_ROM && ARCH_SH7372 && EXPERIMENTAL
+-	help
+-	  Say Y here to include experimental MMCIF loading code in the
+-	  ROM-able zImage. With this enabled it is possible to write the
+-	  the ROM-able zImage kernel image to an MMC card and boot the
+-	  kernel straight from the reset vector. At reset the processor
+-	  Mask ROM will load the first part of the the ROM-able zImage
+-	  which in turn loads the rest the kernel image to RAM using the
+-	  MMCIF hardware block.
++	help
++	  Load image from MMCIF hardware block.
++
++config ZBOOT_ROM_SH_MOBILE_SDHI
++	bool "Include SuperH Mobile SDHI loader in zImage (EXPERIMENTAL)"
++	help
++	  Load image from SDHI hardware block
++
++endchoice
+ 
+ config CMDLINE
+ 	string "Default kernel command string"
+diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
+index f9f77c6..60bd76d 100644
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -6,13 +6,18 @@
+ 
+ OBJS		 
+-# Ensure that mmcif loader code appears early in the image
++# Ensure that MMCIF loader code appears early in the image
+ # to minimise that number of bocks that have to be read in
+ # order to load it.
+ ifeq ($(CONFIG_ZBOOT_ROM_MMCIF),y)
+-ifeq ($(CONFIG_ARCH_SH7372),y)
+ OBJS		+= mmcif-sh7372.o
+ endif
++
++# Ensure that SDHI loader code appears early in the image
++# to minimise that number of bocks that have to be read in
++# order to load it.
++ifeq ($(CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI),y)
++OBJS		+= sdhi-shmobile.o
+ endif
+ 
+ AFLAGS_head.o += -DTEXT_OFFSET=$(TEXT_OFFSET)
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+index c943d2e..fe3719b 100644
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ b/arch/arm/boot/compressed/head-shmobile.S
+@@ -25,14 +25,14 @@
+ 	/* load board-specific initialization code */
+ #include <mach/zboot.h>
+ 
+-#ifdef CONFIG_ZBOOT_ROM_MMCIF
+-	/* Load image from MMC */
+-	adr	sp, __tmp_stack + 128
++#if defined(CONFIG_ZBOOT_ROM_MMCIF) || defined(CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI)
++	/* Load image from MMC/SD */
++	adr	sp, __tmp_stack + 256
+ 	ldr	r0, __image_start
+ 	ldr	r1, __image_end
+ 	subs	r1, r1, r0
+ 	ldr	r0, __load_base
+-	bl	mmcif_loader
++	bl	mmc_loader
+ 
+ 	/* Jump to loaded code */
+ 	ldr	r0, __loaded
+@@ -51,9 +51,9 @@ __loaded:
+ 	.long	__continue
+ 	.align
+ __tmp_stack:
+-	.space	128
++	.space	256
+ __continue:
+-#endif /* CONFIG_ZBOOT_ROM_MMCIF */
++#endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
+ 
+ 	b	1f
+ __atags:@ tag #1
+diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
+index e6180af..74d24e4 100644
+--- a/arch/arm/boot/compressed/mmcif-sh7372.c
++++ b/arch/arm/boot/compressed/mmcif-sh7372.c
+@@ -39,7 +39,7 @@
+  * to an MMC card
+  * # dd if=vrl4.out of=/dev/sdx bsQ2 seek=1
   */
- static struct device *lguest_root;
- 
--/*D:120
-- * This is the core of the lguest bus: actually adding a new device.
-- * It's a separate function because it's neater that way, and because an
-- * earlier version of the code supported hotplug and unplug.  They were removed
-- * early on because they were never used.
-- *
-- * As Andrew Tridgell says, "Untested code is buggy code".
-- *
-- * It's worth reading this carefully: we start with a pointer to the new device
-- * descriptor in the "lguest_devices" page, and the offset into the device
-- * descriptor page so we can uniquely identify it if things go badly wrong.
-- */
--static void add_lguest_device(struct lguest_device_desc *d,
--			      unsigned int offset)
--{
--	struct lguest_device *ldev;
--
--	/* Start with zeroed memory; Linux's device layer counts on it. */
--	ldev = kzalloc(sizeof(*ldev), GFP_KERNEL);
--	if (!ldev) {
--		printk(KERN_EMERG "Cannot allocate lguest dev %u type %u\n",
--		       offset, d->type);
--		return;
--	}
--
--	/* This devices' parent is the lguest/ dir. */
--	ldev->vdev.dev.parent = lguest_root;
--	/*
--	 * The device type comes straight from the descriptor.  There's also a
--	 * device vendor field in the virtio_device struct, which we leave as
--	 * 0.
--	 */
--	ldev->vdev.id.device = d->type;
--	/*
--	 * We have a simple set of routines for querying the device's
--	 * configuration information and setting its status.
--	 */
--	ldev->vdev.config = &lguest_config_ops;
--	/* And we remember the device's descriptor for lguest_config_ops. */
--	ldev->desc = d;
--
--	/*
--	 * register_virtio_device() sets up the generic fields for the struct
--	 * virtio_device and calls device_register().  This makes the bus
--	 * infrastructure look for a matching driver.
--	 */
--	if (register_virtio_device(&ldev->vdev) != 0) {
--		printk(KERN_ERR "Failed to register lguest dev %u type %u\n",
--		       offset, d->type);
--		kfree(ldev);
--	}
--}
--
--/*D:110
-- * scan_devices() simply iterates through the device page.  The type 0 is
-- * reserved to mean "end of devices".
-- */
--static void scan_devices(void)
--{
--	unsigned int i;
--	struct lguest_device_desc *d;
--
--	/* We start at the page beginning, and skip over each entry. */
--	for (i = 0; i < PAGE_SIZE; i += desc_size(d)) {
--		d = lguest_devices + i;
--
--		/* Once we hit a zero, stop. */
--		if (d->type = 0)
--			break;
--
--		printk("Device at %i has size %u\n", i, desc_size(d));
--		add_lguest_device(d, i);
--	}
--}
--
- /*D:105
-  * Fairly early in boot, lguest_devices_init() is called to set up the
-  * lguest device infrastructure.  We check that we are a Guest by checking
-@@ -493,7 +288,7 @@ static int __init lguest_devices_init(vo
- 	/* Devices are in a single page above top of "normal" mem */
- 	lguest_devices = lguest_map(max_pfn<<PAGE_SHIFT, 1);
- 
--	scan_devices();
-+	lg_scan_devices(lguest_devices, lguest_root, &lguest_config_ops);
- 	return 0;
- }
- /* We do this after core stuff, but before the drivers. */
---- 0001/drivers/virtio/Kconfig
-+++ work/drivers/virtio/Kconfig	2011-03-03 10:16:11.000000000 +0900
-@@ -33,3 +33,5 @@ config VIRTIO_BALLOON
- 
- 	 If unsure, say M.
- 
-+config VIRTIO_LGUEST
-+	tristate
---- 0001/drivers/virtio/Makefile
-+++ work/drivers/virtio/Makefile	2011-03-03 10:16:11.000000000 +0900
-@@ -2,3 +2,4 @@ obj-$(CONFIG_VIRTIO) += virtio.o
- obj-$(CONFIG_VIRTIO_RING) += virtio_ring.o
- obj-$(CONFIG_VIRTIO_PCI) += virtio_pci.o
- obj-$(CONFIG_VIRTIO_BALLOON) += virtio_balloon.o
-+obj-$(CONFIG_VIRTIO_LGUEST) += virtio_lguest.o
+-asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
++asmlinkage void mmc_loader(unsigned char *buf, unsigned long len)
+ {
+ 	mmcif_init_progress();
+ 	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
+diff --git a/arch/arm/boot/compressed/sdhi-shmobile.c b/arch/arm/boot/compressed/sdhi-shmobile.c
+new file mode 100644
+index 0000000..d617f6f
 --- /dev/null
-+++ work/drivers/virtio/virtio_lguest.c	2011-03-03 10:16:12.000000000 +0900
-@@ -0,0 +1,205 @@
-+/*P:050
-+ * Lguest guests use a very simple method to describe devices.  It's a
-+ * series of device descriptors contained just above the top of normal Guest
-+ * memory.
-+ *
-+ * We use the standard "virtio" device infrastructure, which provides us with a
-+ * console, a network and a block driver.  Each one expects some configuration
-+ * information and a "virtqueue" or two to send and receive data.
-+:*/
-+#include <linux/init.h>
-+#include <linux/bootmem.h>
-+#include <linux/lguest_launcher.h>
-+#include <linux/virtio.h>
-+#include <linux/virtio_config.h>
-+#include <linux/interrupt.h>
-+#include <linux/virtio_ring.h>
-+#include <linux/lguest_device.h>
-+#include <linux/err.h>
-+#include <linux/slab.h>
-+#include <asm/io.h>
-+
-+/*D:130
-+ * Device configurations
-+ *
-+ * The configuration information for a device consists of one or more
-+ * virtqueues, a feature bitmap, and some configuration bytes.  The
-+ * configuration bytes don't really matter to us: the Launcher sets them up, and
-+ * the driver will look at them during setup.
-+ */
-+
-+/* The features come immediately after the virtqueues. */
-+static u8 *lg_features(const struct lguest_device_desc *desc)
-+{
-+	return (void *)(lg_vq(desc) + desc->num_vq);
-+}
-+
-+/* The config space comes after the two feature bitmasks. */
-+static u8 *lg_config(const struct lguest_device_desc *desc)
-+{
-+	return lg_features(desc) + desc->feature_len * 2;
-+}
-+
-+/* The total size of the config page used by this device (incl. desc) */
-+static unsigned desc_size(const struct lguest_device_desc *desc)
-+{
-+	return sizeof(*desc)
-+		+ desc->num_vq * sizeof(struct lguest_vqconfig)
-+		+ desc->feature_len * 2
-+		+ desc->config_len;
-+}
-+
-+/* This gets the device's feature bits. */
-+u32 lg_get_features(struct virtio_device *vdev)
-+{
-+	unsigned int i;
-+	u32 features = 0;
-+	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
-+	u8 *in_features = lg_features(desc);
-+
-+	/* We do this the slow but generic way. */
-+	for (i = 0; i < min(desc->feature_len * 8, 32); i++)
-+		if (in_features[i / 8] & (1 << (i % 8)))
-+			features |= (1 << i);
-+
-+	return features;
-+}
-+
++++ b/arch/arm/boot/compressed/sdhi-shmobile.c
+@@ -0,0 +1,573 @@
 +/*
-+ * The virtio core takes the features the Host offers, and copies the ones
-+ * supported by the driver into the vdev->features array.  Once that's all
-+ * sorted out, this routine is called so we can tell the Host which features we
-+ * understand and accept.
-+ */
-+void lg_finalize_features(struct virtio_device *vdev)
-+{
-+	unsigned int i, bits;
-+	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
-+	/* Second half of bitmap is features we accept. */
-+	u8 *out_features = lg_features(desc) + desc->feature_len;
-+
-+	/* Give virtio_ring a chance to accept features. */
-+	vring_transport_features(vdev);
-+
-+	/*
-+	 * The vdev->feature array is a Linux bitmask: this isn't the same as a
-+	 * the simple array of bits used by lguest devices for features.  So we
-+	 * do this slow, manual conversion which is completely general.
-+	 */
-+	memset(out_features, 0, desc->feature_len);
-+	bits = min_t(unsigned, desc->feature_len, sizeof(vdev->features)) * 8;
-+	for (i = 0; i < bits; i++) {
-+		if (test_bit(i, vdev->features))
-+			out_features[i / 8] |= (1 << (i % 8));
-+	}
-+}
-+
-+/* Once they've found a field, getting a copy of it is easy. */
-+void lg_get(struct virtio_device *vdev, unsigned int offset,
-+	    void *buf, unsigned len)
-+{
-+	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
-+
-+	/* Check they didn't ask for more than the length of the config! */
-+	BUG_ON(offset + len > desc->config_len);
-+	memcpy(buf, lg_config(desc) + offset, len);
-+}
-+
-+/* Setting the contents is also trivial. */
-+void lg_set(struct virtio_device *vdev, unsigned int offset,
-+	    const void *buf, unsigned len)
-+{
-+	struct lguest_device_desc *desc = to_lgdev(vdev)->desc;
-+
-+	/* Check they didn't ask for more than the length of the config! */
-+	BUG_ON(offset + len > desc->config_len);
-+	memcpy(lg_config(desc) + offset, buf, len);
-+}
-+
-+/*
-+ * The operations to get and set the status word just access the status field
-+ * of the device descriptor.
-+ */
-+u8 lg_get_status(struct virtio_device *vdev)
-+{
-+	return to_lgdev(vdev)->desc->status;
-+}
-+
-+/*D:120
-+ * This is the core of the lguest bus: actually adding a new device.
-+ * It's a separate function because it's neater that way, and because an
-+ * earlier version of the code supported hotplug and unplug.  They were removed
-+ * early on because they were never used.
++ * SuperH Mobile SDHI
 + *
-+ * As Andrew Tridgell says, "Untested code is buggy code".
++ * Copyright (C) 2010 Magnus Damm
++ * Copyright (C) 2010 Kuninori Morimoto
++ * Copyright (C) 2010 Simon Horman
 + *
-+ * It's worth reading this carefully: we start with a pointer to the new device
-+ * descriptor in the "lguest_devices" page, and the offset into the device
-+ * descriptor page so we can uniquely identify it if things go badly wrong.
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Parts inspired by u-boot
 + */
-+static void add_lguest_device(struct lguest_device_desc *d,
-+			      unsigned int offset,
-+			      struct device *root,
-+			      struct virtio_config_ops *ops)
++
++#include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/core.h>
++#include <linux/mmc/mmc.h>
++#include <linux/mmc/sd.h>
++#include <mach/mmcif.h>
++
++#define PORT179CR	0xe60520b3
++#define PORT180CR	0xe60520b4
++#define PORT181CR	0xe60520b5
++#define PORT182CR	0xe60520b6
++#define PORT183CR	0xe60520b7
++#define PORT184CR	0xe60520b8
++
++#define SMSTPCR3	0xe615013c
++#define SDGENCNTA	0xfe40009c
++#define CR_INPUT_ENABLE 0x10
++#define CR_FUNCTION1	0x01
++
++#define SDHI_BBS	512
++
++#define CTL_SD_CMD		0x00
++#define CTL_ARG_REG		0x04
++#define CTL_RESPONSE		0x0c
++#define CTL_STATUS		0x1c
++#define CTL_IRQ_MASK		0x20
++#define CTL_SD_CARD_CLK_CTL	0x24
++#define CTL_SD_XFER_LEN		0x26
++#define CTL_SD_MEM_CARD_OPT	0x28
++#define CTL_RESET_SD		0xe0
++#define CTL_CLK_AND_WAIT_CTL	0x138
++
++/* Definitions for values the CTRL_STATUS register can take. */
++#define TMIO_STAT_CMDRESPEND	0x00000001
++#define TMIO_STAT_DATAEND	0x00000004
++#define TMIO_STAT_CMD_IDX_ERR	0x00010000
++#define TMIO_STAT_CRCFAIL	0x00020000
++#define TMIO_STAT_STOPBIT_ERR	0x00040000
++#define TMIO_STAT_DATATIMEOUT	0x00080000
++#define TMIO_STAT_RXOVERFLOW	0x00100000
++#define TMIO_STAT_TXUNDERRUN	0x00200000
++#define TMIO_STAT_CMDTIMEOUT	0x00400000
++#define TMIO_STAT_RXRDY		0x01000000
++#define TMIO_STAT_ILL_FUNC	0x20000000
++#define TMIO_STAT_CMD_BUSY	0x40000000
++#define TMIO_STAT_ILL_ACCESS	0x80000000
++
++#define OCR_FASTBOOT		(1<<29)
++#define OCR_HCS			(1<<30)
++#define OCR_BUSY		(1<<31)
++
++#define SDHI_EXT_SWAP		0xf0
++
++#define SDHI1_BASE		(void __iomem *)0xe6860000
++#define SDHI_BASE		 SDHI1_BASE
++
++/* The countdown of SDGENCNTA is controlled by
++ * ZB3D2CLK which runs at 149.5MHz.
++ * That is 149.5ticks/us. Approximate this as 150ticks/us.
++ */
++void udelay(int us)
 +{
-+	struct lguest_device *ldev;
-+
-+	/* Start with zeroed memory; Linux's device layer counts on it. */
-+	ldev = kzalloc(sizeof(*ldev), GFP_KERNEL);
-+	if (!ldev) {
-+		printk(KERN_EMERG "Cannot allocate lguest dev %u type %u\n",
-+		       offset, d->type);
-+		return;
-+	}
-+
-+	/* This devices' parent is the lguest/ dir. */
-+	ldev->vdev.dev.parent = root;
-+	/*
-+	 * The device type comes straight from the descriptor.  There's also a
-+	 * device vendor field in the virtio_device struct, which we leave as
-+	 * 0.
-+	 */
-+	ldev->vdev.id.device = d->type;
-+	/*
-+	 * We have a simple set of routines for querying the device's
-+	 * configuration information and setting its status.
-+	 */
-+	ldev->vdev.config = ops;
-+	/* And we remember the device's descriptor. */
-+	ldev->desc = d;
-+
-+	/*
-+	 * register_virtio_device() sets up the generic fields for the struct
-+	 * virtio_device and calls device_register().  This makes the bus
-+	 * infrastructure look for a matching driver.
-+	 */
-+	if (register_virtio_device(&ldev->vdev) != 0) {
-+		printk(KERN_ERR "Failed to register lguest dev %u type %u\n",
-+		       offset, d->type);
-+		kfree(ldev);
-+	}
++	__raw_writel(us * 150, SDGENCNTA);
++	while(__raw_readl(SDGENCNTA)) ;
 +}
 +
-+/*D:110
-+ * lg_scan_devices() simply iterates through the device page.  The type 0 is
-+ * reserved to mean "end of devices".
-+ */
-+void lg_scan_devices(void *lguest_devices,
-+		     struct device *root,
-+		     struct virtio_config_ops *ops)
++void msleep(int ms)
 +{
-+	unsigned int i;
-+	struct lguest_device_desc *d;
++	udelay(ms * 1000);
++}
 +
-+	/* We start at the page beginning, and skip over each entry. */
-+	for (i = 0; i < PAGE_SIZE; i += desc_size(d)) {
-+		d = lguest_devices + i;
++static inline u16 sd_ctrl_read16(void __iomem *base, int addr)
++{
++        return __raw_readw(base + addr);
++}
 +
-+		/* Once we hit a zero, stop. */
-+		if (d->type = 0)
++static inline u32 sd_ctrl_read32(void __iomem *base, int addr)
++{
++	return __raw_readw(base + addr) |
++	       __raw_readw(base + addr + 2) << 16;
++}
++
++static inline void sd_ctrl_write16(void __iomem *base, int addr, u16 val)
++{
++	__raw_writew(val, base + addr);
++}
++
++static inline void sd_ctrl_write32(void __iomem *base, int addr, u32 val)
++{
++	__raw_writew(val, base + addr);
++	__raw_writew(val >> 16, base + addr + 2);
++}
++
++#define ALL_ERROR (TMIO_STAT_CMD_IDX_ERR | TMIO_STAT_CRCFAIL |		\
++		   TMIO_STAT_STOPBIT_ERR | TMIO_STAT_DATATIMEOUT |	\
++		   TMIO_STAT_RXOVERFLOW | TMIO_STAT_TXUNDERRUN |	\
++		   TMIO_STAT_CMDTIMEOUT | TMIO_STAT_ILL_ACCESS |	\
++		   TMIO_STAT_ILL_FUNC)
++
++static int sdhi_intr(void __iomem *base)
++{
++	unsigned long state = sd_ctrl_read32(base, CTL_STATUS);
++
++	if (state & ALL_ERROR) {
++		sd_ctrl_write32(base, CTL_STATUS, ~ALL_ERROR);
++		sd_ctrl_write32(base, CTL_IRQ_MASK,
++				ALL_ERROR |
++				sd_ctrl_read32(base, CTL_IRQ_MASK));
++		return -EINVAL;
++	}
++	if (state & TMIO_STAT_CMDRESPEND) {
++		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_CMDRESPEND);
++		sd_ctrl_write32(base, CTL_IRQ_MASK,
++				TMIO_STAT_CMDRESPEND |
++				sd_ctrl_read32(base, CTL_IRQ_MASK));
++		return 0;
++	}
++	if (state & TMIO_STAT_RXRDY) {
++		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_RXRDY);
++		sd_ctrl_write32(base, CTL_IRQ_MASK,
++				TMIO_STAT_RXRDY | TMIO_STAT_TXUNDERRUN |
++				sd_ctrl_read32(base, CTL_IRQ_MASK));
++		return 0;
++	}
++	if (state & TMIO_STAT_DATAEND) {
++		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_DATAEND);
++		sd_ctrl_write32(base, CTL_IRQ_MASK,
++				TMIO_STAT_DATAEND |
++				sd_ctrl_read32(base, CTL_IRQ_MASK));
++		return 0;
++	}
++
++	//mmcif_update_progress2(4<<1);
++	return -EAGAIN;
++}
++
++static int sdhi_boot_wait_resp_end(void __iomem *base)
++{
++	int err = -EAGAIN, timeout = 10000000;
++
++	while (timeout--) {
++		err = sdhi_intr(base);
++		if (err != -EAGAIN)
 +			break;
-+
-+		printk("Device at %i has size %u\n", i, desc_size(d));
-+		add_lguest_device(d, i, root, ops);
++		udelay(1);
 +	}
++
++	return err;
 +}
---- 0001/include/linux/lguest.h
-+++ work/include/linux/lguest.h	2011-03-03 10:16:11.000000000 +0900
-@@ -71,5 +71,6 @@ struct lguest_data {
- 	unsigned int syscall_vec;
- };
- extern struct lguest_data lguest_data;
 +
- #endif /* __ASSEMBLY__ */
- #endif	/* _LINUX_LGUEST_H */
---- /dev/null
-+++ work/include/linux/lguest_device.h	2011-03-03 16:07:51.000000000 +0900
-@@ -0,0 +1,46 @@
-+#ifndef _LINUX_LGUEST_DEVICE_H
-+#define _LINUX_LGUEST_DEVICE_H
++/* SDHI_CLK_CTRL */
++#define CLK_MMC_ENABLE                 (1 << 8)
++#define CLK_MMC_INIT                   (1 << 6)        /* clk / 256 */
 +
-+#include <linux/virtio.h>
-+#include <linux/lguest_launcher.h>
-+
-+/*D:100
-+ * Each lguest device is just a virtio device plus a pointer to its entry
-+ * in the lguest_devices page.
-+ */
-+struct lguest_device {
-+	struct virtio_device vdev;
-+
-+	/* The entry in the lguest_devices page for this device. */
-+	struct lguest_device_desc *desc;
-+};
-+
-+u32 lg_get_features(struct virtio_device *vdev);
-+void lg_finalize_features(struct virtio_device *vdev);
-+void lg_get(struct virtio_device *vdev, unsigned int offset,
-+	    void *buf, unsigned len);
-+void lg_set(struct virtio_device *vdev, unsigned int offset,
-+	    const void *buf, unsigned len);
-+u8 lg_get_status(struct virtio_device *vdev);
-+void lg_scan_devices(void *lguest_devices,
-+		     struct device *root,
-+		     struct virtio_config_ops *ops);
-+
-+/*
-+ * A convenient routine to return the device's virtqueue config array:
-+ * immediately after the descriptor.
-+ */
-+static inline struct lguest_vqconfig *
-+lg_vq(const struct lguest_device_desc *desc)
++static void shdi_boot_mmc_clk_stop(void __iomem *base)
 +{
-+	return (void *)(desc + 1);
++	sd_ctrl_write16(base, CTL_CLK_AND_WAIT_CTL, 0x0000);
++	msleep(10);
++	sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL, ~CLK_MMC_ENABLE &
++		sd_ctrl_read16(base, CTL_SD_CARD_CLK_CTL));
++	msleep(10);
 +}
 +
-+/*
-+ * Since the virtio infrastructure hands us a pointer to the virtio_device all
-+ * the time, it helps to have a curt macro to get a pointer to the struct
-+ * lguest_device it's enclosed in.
-+ */
-+#define to_lgdev(vd) container_of(vd, struct lguest_device, vdev)
++static void shdi_boot_mmc_clk_start(void __iomem *base)
++{
++	sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL, CLK_MMC_ENABLE |
++		sd_ctrl_read16(base, CTL_SD_CARD_CLK_CTL));
++	msleep(10);
++	sd_ctrl_write16(base, CTL_CLK_AND_WAIT_CTL, CLK_MMC_ENABLE);
++	msleep(10);
++}
 +
-+#endif	/* _LINUX_LGUEST_DEVICE_H */
++static void sdhi_boot_reset(void __iomem *base)
++{
++	sd_ctrl_write16(base, CTL_RESET_SD, 0x0000);
++	msleep(10);
++	sd_ctrl_write16(base, CTL_RESET_SD, 0x0001);
++	msleep(10);
++}
++
++/* Set MMC clock / power.
++ * Note: This controller uses a simple divider scheme therefore it cannot
++ * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
++ * MMC wont run that fast, it has to be clocked at 12MHz which is the next
++ * slowest setting.
++ */
++static int shdi_boot_mmc_set_ios(void __iomem *base, struct mmc_ios *ios)
++{
++	if (sd_ctrl_read32(base, CTL_STATUS) & TMIO_STAT_CMD_BUSY)
++		return -EBUSY;
++
++	if (ios->clock)
++		sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL,
++				ios->clock | CLK_MMC_ENABLE);
++
++	/* Power sequence - OFF -> ON -> UP */
++	switch (ios->power_mode) {
++	case MMC_POWER_OFF: /* power down SD bus */
++		shdi_boot_mmc_clk_stop(base);
++		break;
++	case MMC_POWER_ON: /* power up SD bus */
++		break;
++	case MMC_POWER_UP: /* start bus clock */
++		shdi_boot_mmc_clk_start(base);
++		break;
++	}
++
++	switch (ios->bus_width) {
++	case MMC_BUS_WIDTH_1:
++		sd_ctrl_write16(base, CTL_SD_MEM_CARD_OPT, 0x80e0);
++	break;
++	case MMC_BUS_WIDTH_4:
++		sd_ctrl_write16(base, CTL_SD_MEM_CARD_OPT, 0x00e0);
++	break;
++	}
++
++	/* Let things settle. delay taken from winCE driver */
++	udelay(140);
++
++	return 0;
++}
++
++/* These are the bitmasks the tmio chip requires to implement the MMC response
++ * types. Note that R1 and R6 are the same in this scheme. */
++#define RESP_NONE      0x0300
++#define RESP_R1        0x0400
++#define RESP_R1B       0x0500
++#define RESP_R2        0x0600
++#define RESP_R3        0x0700
++#define DATA_PRESENT   0x0800
++#define TRANSFER_READ  0x1000
++
++static int sdhi_boot_request(void __iomem *base, struct mmc_command *cmd)
++{
++	int err, c = cmd->opcode;
++
++	switch (mmc_resp_type(cmd)) {
++	case MMC_RSP_NONE: c |= RESP_NONE; break;
++	case MMC_RSP_R1:   c |= RESP_R1;   break;
++	case MMC_RSP_R1B:  c |= RESP_R1B;  break;
++	case MMC_RSP_R2:   c |= RESP_R2;   break;
++	case MMC_RSP_R3:   c |= RESP_R3;   break;
++	default:
++		return -EINVAL;
++	}
++
++	/* No interrupts so this may not be cleared */
++	sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_CMDRESPEND);
++
++	sd_ctrl_write32(base, CTL_IRQ_MASK, TMIO_STAT_CMDRESPEND |
++			sd_ctrl_read32(base, CTL_IRQ_MASK));
++	sd_ctrl_write32(base, CTL_ARG_REG, cmd->arg);
++	sd_ctrl_write16(base, CTL_SD_CMD, c);
++
++
++	sd_ctrl_write32(base, CTL_IRQ_MASK,
++			~(TMIO_STAT_CMDRESPEND | ALL_ERROR) &
++			sd_ctrl_read32(base, CTL_IRQ_MASK));
++
++	err = sdhi_boot_wait_resp_end(base);
++	if (err)
++		return err;
++
++	cmd->resp[0] = sd_ctrl_read32(base, CTL_RESPONSE);
++
++	return 0;
++}
++
++static int sdhi_boot_do_read_single(void __iomem *base, int high_capacity,
++				    unsigned long block, unsigned short *buf)
++{
++	int err, i;
++
++	/* CMD17 - Read */
++	{
++		struct mmc_command cmd;
++
++		cmd.opcode = MMC_READ_SINGLE_BLOCK | \
++			     TRANSFER_READ | DATA_PRESENT;
++		if (high_capacity)
++			cmd.arg = block;
++		else
++			cmd.arg = block * SDHI_BBS;
++		cmd.flags = MMC_RSP_R1;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++	}
++
++	sd_ctrl_write32(base, CTL_IRQ_MASK,
++			~(TMIO_STAT_DATAEND | TMIO_STAT_RXRDY |
++			  TMIO_STAT_TXUNDERRUN) &
++			sd_ctrl_read32(base, CTL_IRQ_MASK));
++	err = sdhi_boot_wait_resp_end(base);
++	if (err)
++		return err;
++
++	sd_ctrl_write16(base, CTL_SD_XFER_LEN, SDHI_BBS);
++	for (i = 0; i < SDHI_BBS / sizeof(*buf); i++)
++		*buf++ = sd_ctrl_read16(base, MMCIF_CE_RESP_CMD12);
++
++	err = sdhi_boot_wait_resp_end(base);
++	if (err)
++		return err;
++
++	return 0;
++}
++
++static int sdhi_boot_do_read(void __iomem *base, int high_capacity,
++			     unsigned long offset, unsigned short count,
++			     unsigned short *buf)
++{
++	unsigned long i;
++	int err = 0;
++
++	for (i = 0; i < count; i++) {
++		if ((i & 0xf) = 0)
++			mmcif_update_progress2((i >> 4) & 0xf);
++		err = sdhi_boot_do_read_single(base, high_capacity, offset + i,
++					       buf + (i * SDHI_BBS /
++						      sizeof(*buf)));
++		if (err)
++			return err;
++	}
++
++	mmcif_update_progress2(0);
++	return 0;
++}
++
++#define VOLTAGES (MMC_VDD_32_33 | MMC_VDD_33_34)
++
++static int sdhi_boot_init(void __iomem *base)
++{
++	bool sd_v2 = false, sd_v1_0 = false;
++	unsigned short cid;
++	int err, high_capacity = 0;
++
++	shdi_boot_mmc_clk_stop(base);
++	sdhi_boot_reset(base);
++
++	/* mmc0: clock 400000Hz busmode 1 powermode 2 cs 0 Vdd 21 width 0 timing 0 */
++	{
++		struct mmc_ios ios;
++		ios.power_mode = MMC_POWER_ON;
++		ios.bus_width = MMC_BUS_WIDTH_1;
++		ios.clock = CLK_MMC_INIT;
++		err = shdi_boot_mmc_set_ios(base, &ios);
++		if (err)
++			return err;
++	}
++
++	/* CMD0 */
++	{
++		struct mmc_command cmd;
++		msleep(1);
++		cmd.opcode = MMC_GO_IDLE_STATE;
++		cmd.arg = 0;
++		cmd.flags = MMC_RSP_NONE;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++		msleep(2);
++	}
++
++	/* CMD8 - Test for SD version 2 */
++	{
++		struct mmc_command cmd;
++		cmd.opcode = SD_SEND_IF_COND;
++		cmd.arg = (VOLTAGES != 0) << 8 | 0xaa;
++		cmd.flags = MMC_RSP_R1;
++		err = sdhi_boot_request(base, &cmd); /* Ignore error */
++		if ((cmd.resp[0] & 0xff) = 0xaa)
++			sd_v2 = true;
++	}
++
++	/* CMD55 - Get OCR (SD) */
++	{
++		int timeout = 1000;
++		struct mmc_command cmd;
++
++		cmd.arg = 0;
++
++		do {
++			cmd.opcode = MMC_APP_CMD;
++			cmd.flags = MMC_RSP_R1;
++			cmd.arg = 0;
++			err = sdhi_boot_request(base, &cmd);
++			if (err)
++				break;
++
++			cmd.opcode = SD_APP_OP_COND;
++			cmd.flags = MMC_RSP_R3;
++			cmd.arg = (VOLTAGES & 0xff8000);
++			if (sd_v2)
++				cmd.arg |= OCR_HCS;
++			cmd.arg |= OCR_FASTBOOT;
++			err = sdhi_boot_request(base, &cmd);
++			if (err)
++				break;
++
++			msleep(1);
++		} while((!(cmd.resp[0] & OCR_BUSY)) && --timeout);
++
++		if (!err && timeout) {
++			if (!sd_v2)
++				sd_v1_0 = true;
++			high_capacity = (cmd.resp[0] & OCR_HCS) = OCR_HCS;
++		}
++	}
++
++	/* CMD1 - Get OCR (MMC) */
++	if (!sd_v2 && !sd_v1_0) {
++		int timeout = 1000;
++		struct mmc_command cmd;
++
++		do {
++			cmd.opcode = MMC_SEND_OP_COND;
++			cmd.arg = VOLTAGES | OCR_HCS;
++			cmd.flags = MMC_RSP_R3;
++			err = sdhi_boot_request(base, &cmd);
++			if (err)
++				return err;
++
++			msleep(1);
++		} while((!(cmd.resp[0] & OCR_BUSY)) && --timeout);
++
++		if (!timeout)
++			return -EAGAIN;
++
++		high_capacity = (cmd.resp[0] & OCR_HCS) = OCR_HCS;
++	}
++
++	/* CMD2 - Get CID */
++	{
++		struct mmc_command cmd;
++		cmd.opcode = MMC_ALL_SEND_CID;
++		cmd.arg = 0;
++		cmd.flags = MMC_RSP_R2;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++	}
++
++	/* CMD3
++	 * MMC: Set the relative address
++	 * SD:  Get the relative address
++	 * Also puts the card into the standby state
++	 */
++	{
++		struct mmc_command cmd;
++		cmd.opcode = MMC_SET_RELATIVE_ADDR;
++		cmd.arg = 0;
++		cmd.flags = MMC_RSP_R1;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++		cid = cmd.resp[0] >> 16;
++	}
++
++	/* CMD9 - Get CSD */
++	{
++		struct mmc_command cmd;
++		cmd.opcode = MMC_SEND_CSD;
++		cmd.arg = cid << 16;
++		cmd.flags = MMC_RSP_R2;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++	}
++
++	/* CMD7 - Select the card */
++	{
++		struct mmc_command cmd;
++		cmd.opcode = MMC_SELECT_CARD;
++		//cmd.arg = rca << 16;
++		cmd.arg = cid << 16;
++		//cmd.flags = MMC_RSP_R1B;
++		cmd.flags = MMC_RSP_R1;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++	}
++
++	/* CMD16 - Set the block size */
++	{
++		struct mmc_command cmd;
++		cmd.opcode = MMC_SET_BLOCKLEN;
++		cmd.arg = SDHI_BBS;
++		cmd.flags = MMC_RSP_R1;
++		err = sdhi_boot_request(base, &cmd);
++		if (err)
++			return err;
++	}
++
++	return high_capacity;
++}
++
++/*  SuperH Mobile SDHI loader
++ *
++ * loads the zImage from an SD card starting from block 0
++ * on physical partition 1
++ *
++ * The image must be start with a vrl4 header and
++ * the zImage must start at offset 512 of the image. That is,
++ * at block 1 (=byte 512) of physical partition 1
++ *
++ * Use the following line to write the vrl4 formated zImage
++ * to an SD card
++ * # dd if=vrl4.out of=/dev/sdx bsQ2
++ */
++asmlinkage void mmc_loader(unsigned short *buf, unsigned long len)
++{
++	int high_capacity;
++
++	mmcif_init_progress();
++	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
++
++	/* Initialise SDHI1 */
++	/* PORT184CR: GPIO_FN_SDHICMD1 Control */
++	__raw_writeb(CR_FUNCTION1, PORT184CR);
++	/* PORT179CR: GPIO_FN_SDHICLK1 Control */
++	__raw_writeb(CR_INPUT_ENABLE|CR_FUNCTION1, PORT179CR);
++	/* PORT181CR: GPIO_FN_SDHID1_3 Control */
++	__raw_writeb(CR_FUNCTION1, PORT183CR);
++	/* PORT182CR: GPIO_FN_SDHID1_2 Control */
++	__raw_writeb(CR_FUNCTION1, PORT182CR);
++	/* PORT183CR: GPIO_FN_SDHID1_1 Control */
++	__raw_writeb(CR_FUNCTION1, PORT181CR);
++	/* PORT180CR: GPIO_FN_SDHID1_0 Control */
++	__raw_writeb(CR_FUNCTION1, PORT180CR);
++
++	/* Enable clock to SDHI1 hardware block */
++	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 13), SMSTPCR3);
++
++	/* setup SDHI hardware */
++	mmcif_update_progress(MMCIF_PROGRESS_INIT);
++	high_capacity = sdhi_boot_init(SDHI_BASE);
++	if (high_capacity < 0)
++		goto err;
++
++	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
++	/* load kernel */
++	if (sdhi_boot_do_read(SDHI_BASE, high_capacity,
++			      0, /* Kernel is at block 1 */
++			      (len + SDHI_BBS - 1) / SDHI_BBS, buf))
++		goto err;
++
++	/* Disable clock to SDHI1 hardware block */
++	__raw_writel(__raw_readl(SMSTPCR3) & (1 << 13), SMSTPCR3);
++
++	mmcif_update_progress(MMCIF_PROGRESS_DONE);
++
++	return;
++err:
++	__raw_writel(__raw_readl(PORTR031_000DR) | 1, PORTR031_000DR);
++	for(;;);
++
++}
++
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+index 4b4f694..0d13e7e 100644
+--- a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
++++ b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+@@ -36,4 +36,17 @@ static inline void mmcif_update_progress(int n)
+ 		     PORTL159_128DR);
+ }
+ 
++static inline void mmcif_update_progress2(int n)
++{
++	unsigned a, b;
++
++	a = n & 0x7;
++	b = ((n & 0x8) != 0) << 31;
++
++	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
++		     PORTR031_000DR);
++	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
++		     PORTL159_128DR);
++}
++
+ #endif /* MMCIF_MACKEREL_H */
+diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romimage/mmcif-sh7724.c
+index c84e783..4ded8ba 100644
+--- a/arch/sh/boot/romimage/mmcif-sh7724.c
++++ b/arch/sh/boot/romimage/mmcif-sh7724.c
+@@ -27,7 +27,7 @@
+  * use the following line to write the romImage to an MMC card
+  * # dd if=arch/sh/boot/romImage of=/dev/sdx bsQ2 seekQ2
+  */
+-asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
++asmlinkage void mmc_loader(unsigned char *buf, unsigned long no_bytes)
+ {
+ 	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
+ 
+-- 
+1.7.2.3
+
