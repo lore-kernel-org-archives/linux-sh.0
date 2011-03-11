@@ -1,26 +1,98 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 29 Mar 2011 03:13:08 +0000
-Subject: Re: [RFC][PATCH] PM / Platform: Remove __weak definitions of runtime PM callbacks
-Message-Id: <20110329031308.GC7338@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 11 Mar 2011 07:52:35 +0000
+Subject: [PATCH 5/6] sh: convert boards to use linux/mmc/sh_mobile_sdhi.h
+Message-Id: <Pine.LNX.4.64.1103110847120.23675@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201103270058.41632.rjw@sisk.pl>
-In-Reply-To: <201103270058.41632.rjw@sisk.pl>
+References: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-On Sun, Mar 27, 2011 at 12:58:41AM +0100, Rafael J. Wysocki wrote:
-> Remove the __weak definitions of platform bus type runtime PM
-> callbacks, make platform_dev_pm_ops point to the generic routines
-> as appropriate and allow architectures using platform_dev_pm_ops to
-> replace the runtime PM callbacks in that structure with their own
-> set.
-> 
-> Convert architectures providing its own definitions of the platform
-> runtime PM callbacks to use the new mechanism.
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Prepare to remove the temporary header.
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/boards/mach-ap325rxa/setup.c |    2 +-
+ arch/sh/boards/mach-ecovec24/setup.c |    2 +-
+ arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
+ arch/sh/boards/mach-migor/setup.c    |    2 +-
+ arch/sh/boards/mach-se/7724/setup.c  |    2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 33bfebc..60d109f 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -14,8 +14,8 @@
+ #include <linux/device.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/delay.h>
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 37ad5dc..710be27c9 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -11,9 +11,9 @@
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 7504daa..7021b59 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -10,8 +10,8 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/onenand.h>
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 03a7ffe..37e64a6 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -12,8 +12,8 @@
+ #include <linux/interrupt.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/nand.h>
+ #include <linux/i2c.h>
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index c8bcf6a..58cefd3 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -14,8 +14,8 @@
+ #include <linux/device.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/delay.h>
+ #include <linux/smc91x.h>
+-- 
+1.7.2.3
+
