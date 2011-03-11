@@ -1,124 +1,60 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 08:09:40 +0000
-Subject: [PATCH 3/4 v2] sh: fix SDHI IO address-range
-Message-Id: <Pine.LNX.4.64.1103110905210.23675@axis700.grange>
+Date: Fri, 11 Mar 2011 08:24:06 +0000
+Subject: [PATCH/RFC 1/2 v2] mmc: tmio: fix power-mode interpretation
+Message-Id: <Pine.LNX.4.64.1103110920180.23675@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
+References: <Pine.LNX.4.64.1103110915290.23675@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103110915290.23675@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-SDHI registers occupy only a 0x100 byte large window, not 0x200 byte.
+The power-mode sequence on MMC is MMC_POWER_OFF -> MMC_POWER_UP ->
+MMC_POWER_ON and not MMC_POWER_ON -> MMC_POWER_UP, as the driver currently
+is implying.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-v2:
+Please, test on MFD!
+
+V2: rebase on top of driver split
+
+ drivers/mmc/host/tmio_mmc_pio.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e1aed25..69772ab 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -746,20 +746,20 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	if (ios->clock)
+ 		tmio_mmc_set_clock(host, ios->clock);
  
-1. fix the resource size instead of adding a flag
-
- arch/sh/boards/mach-ap325rxa/setup.c |    4 ++--
- arch/sh/boards/mach-ecovec24/setup.c |    4 ++--
- arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
- arch/sh/boards/mach-migor/setup.c    |    2 +-
- arch/sh/boards/mach-se/7724/setup.c  |    4 ++--
- 5 files changed, 8 insertions(+), 8 deletions(-)
-
-diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
-index 60d109f..65bd042 100644
---- a/arch/sh/boards/mach-ap325rxa/setup.c
-+++ b/arch/sh/boards/mach-ap325rxa/setup.c
-@@ -417,7 +417,7 @@ static struct resource sdhi0_cn3_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start	= 0x04ce0000,
--		.end	= 0x04ce01ff,
-+		.end	= 0x04ce00ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -447,7 +447,7 @@ static struct resource sdhi1_cn7_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
- 		.start	= 0x04cf0000,
--		.end	= 0x04cf01ff,
-+		.end	= 0x04cf00ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 710be27c9..fd0cb36 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -480,7 +480,7 @@ static struct resource sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start  = 0x04ce0000,
--		.end    = 0x04ce01ff,
-+		.end    = 0x04ce00ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -520,7 +520,7 @@ static struct resource sdhi1_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
- 		.start  = 0x04cf0000,
--		.end    = 0x04cf01ff,
-+		.end    = 0x04cf00ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 7021b59..8b4abbb 100644
---- a/arch/sh/boards/mach-kfr2r09/setup.c
-+++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -354,7 +354,7 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start  = 0x04ce0000,
--		.end    = 0x04ce01ff,
-+		.end    = 0x04ce00ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index 37e64a6..184fde1 100644
---- a/arch/sh/boards/mach-migor/setup.c
-+++ b/arch/sh/boards/mach-migor/setup.c
-@@ -399,7 +399,7 @@ static struct resource sdhi_cn9_resources[] = {
- 	[0] = {
- 		.name	= "SDHI",
- 		.start	= 0x04ce0000,
--		.end	= 0x04ce01ff,
-+		.end	= 0x04ce00ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 58cefd3..1235767 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -456,7 +456,7 @@ static struct resource sdhi0_cn7_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start  = 0x04ce0000,
--		.end    = 0x04ce01ff,
-+		.end    = 0x04ce00ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -488,7 +488,7 @@ static struct resource sdhi1_cn8_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
- 		.start  = 0x04cf0000,
--		.end    = 0x04cf01ff,
-+		.end    = 0x04cf00ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
+-	/* Power sequence - OFF -> ON -> UP */
++	/* Power sequence - OFF -> UP -> ON */
+ 	switch (ios->power_mode) {
+ 	case MMC_POWER_OFF: /* power down SD bus */
+ 		if (host->set_pwr)
+ 			host->set_pwr(host->pdev, 0);
+ 		tmio_mmc_clk_stop(host);
+ 		break;
+-	case MMC_POWER_ON: /* power up SD bus */
++	case MMC_POWER_ON: /* start bus clock */
++		tmio_mmc_clk_start(host);
++		break;
++	case MMC_POWER_UP: /* power up SD bus */
+ 		if (host->set_pwr)
+ 			host->set_pwr(host->pdev, 1);
+ 		break;
+-	case MMC_POWER_UP: /* start bus clock */
+-		tmio_mmc_clk_start(host);
+-		break;
+ 	}
+ 
+ 	switch (ios->bus_width) {
 -- 
 1.7.2.3
 
