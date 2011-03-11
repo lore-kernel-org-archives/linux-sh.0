@@ -1,53 +1,103 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Mon, 28 Mar 2011 13:39:04 +0000
-Subject: Re: [PATCH] mmc: SDHI should depend on SUPERH || ARCH_SHMOBILE
-Message-Id: <m3lizzicuf.fsf@pullcord.laptop.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 11 Mar 2011 08:09:32 +0000
+Subject: [PATCH 1/4 v2] mmc: mn57xx: only access registers above 0xff, if
+Message-Id: <Pine.LNX.4.64.1103110900080.23675@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110328131018.96742ebb.sfr@canb.auug.org.au>
-	<Pine.LNX.4.64.1103280913170.6625@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103280913170.6625@axis700.grange> (Guennadi
-	Liakhovetski's message of "Mon, 28 Mar 2011 09:16:33 +0200 (CEST)")
+References: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Stephen Rothwell <sfr@canb.auug.org.au>, linux-next@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-Hi,
+Not all mn57xx / tmio implementations have registers above oxff.
+Accessing them on thise platforms is dangerous. In some cases it leads
+to address wrapping to addresses below 0x100, which corrupts random
+unrelated registers.
 
-On Mon, Mar 28 2011, Guennadi Liakhovetski wrote:
-> Fix build breakage on platforms, not providing readsw and writesw
-> functions, e.g., on x86(_64).
->
-> Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->
-> Subject: Re: linux-next: build failure after merge of the mmc tree
->
-> On Mon, 28 Mar 2011, Stephen Rothwell wrote:
->
->> Hi Chris,
->> 
->> After merging the mmc tree, today's linux-next build (x86_64 allmodconfig)
->> failed like this:
->> 
->> drivers/mmc/host/tmio_mmc_pio.c: In function 'sd_ctrl_read16_rep':
->> drivers/mmc/host/tmio_mmc_pio.c:56: error: implicit declaration of function 'readsw'
->> drivers/mmc/host/tmio_mmc_pio.c: In function 'sd_ctrl_write16_rep':
->> drivers/mmc/host/tmio_mmc_pio.c:73: error: implicit declaration of function 'writesw'
->> 
->> Presumably caused by commit b6147490e6aa ("mmc: tmio: split core
->> functionality, DMA and MFD glue").
->> 
->> I have used the mmc tree from next-20110325 for tdoay.
->
-> Stephen, please verify, that this fixes your problem.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-I've verified the fix and pushed it to mmc-next, so this should be fixed
-tomorrow.  Thanks!
+v2:
 
-- Chris.
+1. rebase on top of driver split
+2. use Paul's idea to check the resource size
+3. avoid even a shortest regression between two patches in a series - 
+   first add a check, then fix users, and only then remove the 
+   work-around.
+
+ drivers/mmc/host/tmio_mmc_pio.c |   25 +++++++++++++++++++------
+ 1 files changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index a7406e3..28e14c7 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -209,6 +209,7 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ {
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
+ 
+ 	/*
+ 	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
+@@ -218,8 +219,11 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 	 */
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+ 		disable_irq(host->irq);
+-	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
+-	msleep(10);
++	/* implicit BUG_ON(!res) */
++	if (resource_size(res) > 0x100) {
++		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
++		msleep(10);
++	}
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
+ 		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
+ 		enable_irq(host->irq);
+@@ -232,6 +236,7 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ {
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
+ 
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+@@ -239,8 +244,11 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 	/* see comment in tmio_mmc_clk_stop above */
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+ 		disable_irq(host->irq);
+-	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
+-	msleep(10);
++	/* implicit BUG_ON(!res) */
++	if (resource_size(res) > 0x100) {
++		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
++		msleep(10);
++	}
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
+ 		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
+ 		enable_irq(host->irq);
+@@ -249,12 +257,17 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 
+ static void tmio_mmc_reset(struct tmio_mmc_host *host)
+ {
++	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
++
+ 	/* FIXME - should we set stop clock reg here */
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
+-	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
++	/* implicit BUG_ON(!res) */
++	if (resource_size(res) > 0x100)
++		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
+ 	msleep(10);
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
+-	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
++	if (resource_size(res) > 0x100)
++		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
+ 	msleep(10);
+ }
+ 
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.2.3
+
