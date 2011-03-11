@@ -1,29 +1,22 @@
-From: "Information Technology" <laura.miehlich@cilla.de>
-Date: Tue, 22 Mar 2011 14:38:39 +0000
-Subject: Update Your E-Mail Details Account
-Message-Id: <201103221438.p2MEciFZ031349@auth3.smtp.vt.edu>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 11 Mar 2011 08:24:02 +0000
+Subject: [PATCH/RFC 0/2 v2] mmc: tmio: power management and clock gating
+Message-Id: <Pine.LNX.4.64.1103110915290.23675@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-Confirm Your E-Mail Details
-                                     
-Dear Email User
-This message is from Information Technology Services of This EMAIL to all our Staff. We are currently upgrading our database and e-mail center and this is our final notification to you.we have sent several messages to you without response.
-We are deleting all unused Mail account to create space for new accounts. In order not to be suspended, you will have to update your account by providing the information listed below:
+I think, the tmio driver currently misinterprets MMC power modes, which is 
+fixed by the first patch in this series. The second one implements 
+aggressive clock gating. Both are marked "RFC," because I cannot test them 
+on MFD-based hardware.
 
-Confirm Your E-Mail Details..
-Email.......................
-User name: ..................
-Password:..............
-Re Confirm Password:.............
-
-If you fail to confirm your continuous usage of our services by confirming your email password now, your account will be disable and you will not be able to access your email.
-
-You should immediately reply this email:  upgrading2010@mail.md   and enter your password in the above password column.
-Thanks for your understanding.
-
-Regard,
-IT Services
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
