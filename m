@@ -1,133 +1,14 @@
-From: Stephen Wilson <wilsons@start.ca>
-Date: Wed, 09 Mar 2011 00:32:00 +0000
-Subject: [PATCH 4/5] mm: arch: make in_gate_area take an mm_struct instead of a task_struct
-Message-Id: <1299630721-4337-5-git-send-email-wilsons@start.ca>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 11 Mar 2011 03:39:11 +0000
+Subject: Re: [PATCH 1/7] sh: add USB_ARCH_HAS_EHCI and OHCI for SH7757
+Message-Id: <20110311033910.GB8065@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1299630721-4337-1-git-send-email-wilsons@start.ca>
-In-Reply-To: <1299630721-4337-1-git-send-email-wilsons@start.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux390@de.ibm.com, Paul Mundt <lethal@linux-sh.org>, Andi Kleen <ak@linux.intel.com>, Michel Lespinasse <walken@google.com>, Andrew Morton <akpm@linux-foundation.org>, Alexander Viro <viro@zeniv.linux.org.uk>, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Stephen Wilson <wilsons@start.ca>
+To: linux-sh@vger.kernel.org
 
-Morally, the question of whether an address lies in a gate vma should be asked
-with respect to an mm, not a particular task.  Moreover, dropping the dependency
-on task_struct will help make existing and future operations on mm's more
-flexible and convenient.
+On Fri, Feb 25, 2011 at 04:38:47PM +0900, Yoshihiro Shimoda wrote:
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Signed-off-by: Stephen Wilson <wilsons@start.ca>
----
- arch/powerpc/kernel/vdso.c         |    2 +-
- arch/s390/kernel/vdso.c            |    2 +-
- arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
- arch/x86/mm/init_64.c              |    4 ++--
- arch/x86/vdso/vdso32-setup.c       |    4 ++--
- include/linux/mm.h                 |    4 ++--
- mm/memory.c                        |    2 +-
- 7 files changed, 10 insertions(+), 10 deletions(-)
-
-diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
-index 6169f17..467aa9e 100644
---- a/arch/powerpc/kernel/vdso.c
-+++ b/arch/powerpc/kernel/vdso.c
-@@ -825,7 +825,7 @@ int in_gate_area_no_task(unsigned long addr)
- 	return 0;
- }
- 
--int in_gate_area(struct task_struct *task, unsigned long addr)
-+int in_gate_area(struct mm_struct *mm, unsigned long addr)
- {
- 	return 0;
- }
-diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
-index d19f305..9006e96 100644
---- a/arch/s390/kernel/vdso.c
-+++ b/arch/s390/kernel/vdso.c
-@@ -342,7 +342,7 @@ int in_gate_area_no_task(unsigned long addr)
- 	return 0;
- }
- 
--int in_gate_area(struct task_struct *task, unsigned long addr)
-+int in_gate_area(struct mm_struct *mm, unsigned long addr)
- {
- 	return 0;
- }
-diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
-index 3f9b6f4..62c36a8 100644
---- a/arch/sh/kernel/vsyscall/vsyscall.c
-+++ b/arch/sh/kernel/vsyscall/vsyscall.c
-@@ -99,7 +99,7 @@ struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
- 	return NULL;
- }
- 
--int in_gate_area(struct task_struct *task, unsigned long address)
-+int in_gate_area(struct mm_struct *mm, unsigned long address)
- {
- 	return 0;
- }
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index 2c1799f..3af0da3 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -879,9 +879,9 @@ struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
- 	return &gate_vma;
- }
- 
--int in_gate_area(struct task_struct *task, unsigned long addr)
-+int in_gate_area(struct mm_struct *mm, unsigned long addr)
- {
--	struct vm_area_struct *vma = get_gate_vma(task->mm);
-+	struct vm_area_struct *vma = get_gate_vma(mm);
- 
- 	if (!vma)
- 		return 0;
-diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
-index 1f651f6..f849bb2 100644
---- a/arch/x86/vdso/vdso32-setup.c
-+++ b/arch/x86/vdso/vdso32-setup.c
-@@ -428,9 +428,9 @@ struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
- 	return NULL;
- }
- 
--int in_gate_area(struct task_struct *task, unsigned long addr)
-+int in_gate_area(struct mm_struct *mm, unsigned long addr)
- {
--	const struct vm_area_struct *vma = get_gate_vma(task->mm);
-+	const struct vm_area_struct *vma = get_gate_vma(mm);
- 
- 	return vma && addr >= vma->vm_start && addr < vma->vm_end;
- }
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index b571921..c700bbb 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1571,10 +1571,10 @@ static inline bool kernel_page_present(struct page *page) { return true; }
- extern struct vm_area_struct *get_gate_vma(struct mm_struct *mm);
- #ifdef	__HAVE_ARCH_GATE_AREA
- int in_gate_area_no_task(unsigned long addr);
--int in_gate_area(struct task_struct *task, unsigned long addr);
-+int in_gate_area(struct mm_struct *mm, unsigned long addr);
- #else
- int in_gate_area_no_task(unsigned long addr);
--#define in_gate_area(task, addr) ({(void)task; in_gate_area_no_task(addr);})
-+#define in_gate_area(mm, addr) ({(void)mm; in_gate_area_no_task(addr);})
- #endif	/* __HAVE_ARCH_GATE_AREA */
- 
- int drop_caches_sysctl_handler(struct ctl_table *, int,
-diff --git a/mm/memory.c b/mm/memory.c
-index aec7cbd..d1347ac 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -1437,7 +1437,7 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
- 		struct vm_area_struct *vma;
- 
- 		vma = find_extend_vma(mm, start);
--		if (!vma && in_gate_area(tsk, start)) {
-+		if (!vma && in_gate_area(tsk->mm, start)) {
- 			unsigned long pg = start & PAGE_MASK;
- 			struct vm_area_struct *gate_vma = get_gate_vma(tsk->mm);
- 			pgd_t *pgd;
--- 
-1.7.3.5
-
+Patches 1-7 applied, thanks.
