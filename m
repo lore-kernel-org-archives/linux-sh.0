@@ -1,24 +1,31 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 14 Mar 2011 21:11:17 +0000
-Subject: Re: [PATCH 6/6] net: sh_eth: add set_mdio_gate in bb_info
-Message-Id: <20110314.141117.246516850.davem@davemloft.net>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 11 Mar 2011 07:51:54 +0000
+Subject: [PATCH 0/6] mmc: split the tmio driver into several modules
+Message-Id: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4D75E1FB.6000607@renesas.com>
-In-Reply-To: <4D75E1FB.6000607@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro.shimoda.uh@renesas.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 08 Mar 2011 16:59:55 +0900
+Hi all
 
-> The SH7757's ETHER and GETHER use common MDIO pin. The MDIO pin is
-> selected by specific register. So this patch adds new interface in
-> bb_info, and when the sh_eth driver use the mdio, the register can
-> be changed by the function.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+The tmio_mmc SD/SDIO driver is serving very different hardware 
+configurations: on the one hand multi-function style chips from Toshiba, 
+Compaq, on the other hand SDHI units in ARM- and SuperH-based sh-mobile 
+SoCs. Apart from the different native APIs: MFD for the former and 
+platform-device in the latter, sh-mobile implementations also have a 
+number of features, exclusive to them, which, if implemented in the common 
+driver, clutter it needlessly and make its maintenance more difficult. 
+This patch series simplifies the situation by splitting the driver up into 
+3 modules: the core, consisting of the main part and, on sh-mobile, of the 
+DMA part; the mfd glue; and the platform glue. This way also (imaginary) 
+sh-mobile systems with additional tmio mfd chips on them can be supported.
 
-Applied.
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
