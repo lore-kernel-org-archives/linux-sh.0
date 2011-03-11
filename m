@@ -1,23 +1,69 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 14 Mar 2011 21:10:55 +0000
-Subject: Re: [PATCH v2 3/6] net: sh_eth: remove almost #ifdef of SH7763
-Message-Id: <20110314.141055.115922945.davem@davemloft.net>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 11 Mar 2011 07:52:28 +0000
+Subject: [PATCH 4/6] ARM: mach-shmobile: convert boards to use
+Message-Id: <Pine.LNX.4.64.1103110846390.23675@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4D75E1EA.50006@renesas.com>
-In-Reply-To: <4D75E1EA.50006@renesas.com>
+References: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro.shimoda.uh@renesas.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 08 Mar 2011 16:59:38 +0900
+Prepare to remove the temporary header.
 
-> The SH7763 has GETHER. So the specification of some registers differs than
-> other CPUs. This patch removes almost #ifdef of CONFIG_CPU_SUBTYPE_SH7763.
-> Then we are able to add other CPU's GETHER easily.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c   |    2 +-
+ arch/arm/mach-shmobile/board-g4evm.c    |    2 +-
+ arch/arm/mach-shmobile/board-mackerel.c |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-Applied.
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 1a8118c..7ae9e3b 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -24,9 +24,9 @@
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
+index dee3e92..cccdf2d 100644
+--- a/arch/arm/mach-shmobile/board-g4evm.c
++++ b/arch/arm/mach-shmobile/board-g4evm.c
+@@ -31,7 +31,7 @@
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/mmc/host.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/gpio.h>
+ #include <mach/sh7377.h>
+ #include <mach/common.h>
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index bbfc167..05fc5ac 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -32,10 +32,10 @@
+ #include <linux/io.h>
+ #include <linux/i2c.h>
+ #include <linux/leds.h>
+-#include <linux/mfd/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+-- 
+1.7.2.3
+
