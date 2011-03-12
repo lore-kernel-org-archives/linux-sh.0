@@ -1,55 +1,48 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 07:52:02 +0000
-Subject: [PATCH 2/6] sh: ecovec: use the CONFIG_MMC_TMIO symbols instead of
-Message-Id: <Pine.LNX.4.64.1103110845220.23675@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 12 Mar 2011 16:18:22 +0000
+Subject: Re: [PATCH 2/6] sh: ecovec: use the CONFIG_MMC_TMIO symbols instead
+Message-Id: <AANLkTikjTNVQT7gzhGQy-wKmfTT=BWikAJ+Wo5+-kZvX@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
+	<Pine.LNX.4.64.1103110845220.23675@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103110845220.23675@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-The CONFIG_MFD_SH_MOBILE_SDHI Kconfig symbol is going to disappear soon,
-switch ecovec to using CONFIG_MMC_TMIO(_MODULE).
+On Fri, Mar 11, 2011 at 4:52 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> The CONFIG_MFD_SH_MOBILE_SDHI Kconfig symbol is going to disappear soon,
+> switch ecovec to using CONFIG_MMC_TMIO(_MODULE).
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> =A0arch/sh/boards/mach-ecovec24/setup.c | =A0 =A06 +++---
+> =A01 files changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-e=
+covec24/setup.c
+> index 52751f0..37ad5dc 100644
+> --- a/arch/sh/boards/mach-ecovec24/setup.c
+> +++ b/arch/sh/boards/mach-ecovec24/setup.c
+> @@ -462,7 +462,7 @@ static struct i2c_board_info ts_i2c_clients =3D {
+> =A0 =A0 =A0 =A0.irq =A0 =A0 =A0 =A0 =A0 =A0=3D IRQ0,
+> =A0};
+>
+> -#ifdef CONFIG_MFD_SH_MOBILE_SDHI
+> +#if defined(CONFIG_MMC_TMIO) || defined(CONFIG_MMC_TMIO_MODULE)
+> =A0/* SDHI0 */
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/sh/boards/mach-ecovec24/setup.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+What's wrong with CONFIG_MMC_SDHI? Too early in the patch series?
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 52751f0..37ad5dc 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -462,7 +462,7 @@ static struct i2c_board_info ts_i2c_clients = {
- 	.irq		= IRQ0,
- };
- 
--#ifdef CONFIG_MFD_SH_MOBILE_SDHI
-+#if defined(CONFIG_MMC_TMIO) || defined(CONFIG_MMC_TMIO_MODULE)
- /* SDHI0 */
- static void sdhi0_set_pwr(struct platform_device *pdev, int state)
- {
-@@ -887,7 +887,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&ceu0_device,
- 	&ceu1_device,
- 	&keysc_device,
--#ifdef CONFIG_MFD_SH_MOBILE_SDHI
-+#if defined(CONFIG_MMC_TMIO) || defined(CONFIG_MMC_TMIO_MODULE)
- 	&sdhi0_device,
- #if !defined(CONFIG_MMC_SH_MMCIF)
- 	&sdhi1_device,
-@@ -1169,7 +1169,7 @@ static int __init arch_setup(void)
- 	gpio_direction_input(GPIO_PTR5);
- 	gpio_direction_input(GPIO_PTR6);
- 
--#ifdef CONFIG_MFD_SH_MOBILE_SDHI
-+#if defined(CONFIG_MMC_TMIO) || defined(CONFIG_MMC_TMIO_MODULE)
- 	/* enable SDHI0 on CN11 (needs DS2.4 set to ON) */
- 	gpio_request(GPIO_FN_SDHI0CD,  NULL);
- 	gpio_request(GPIO_FN_SDHI0WP,  NULL);
--- 
-1.7.2.3
+I can't really see what the ecovec board has in common with the tmio
+mmc implementation. Or did you mean the CONFIG_MMC_TMIO_CORE?
 
+Perhaps this is just a stop-gap solution and it is being fixed in V2 patch =
+7/7 ?
+
+Thanks,
+
+/ magnus
