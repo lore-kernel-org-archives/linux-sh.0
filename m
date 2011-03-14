@@ -1,92 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 08:09:44 +0000
-Subject: [PATCH 4/4 v2] mmc: mn57xx: remove work-around for unmasked SDIO
-Message-Id: <Pine.LNX.4.64.1103110907460.23675@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 14 Mar 2011 02:57:11 +0000
+Subject: [PATCH 0/4] [rfc v3] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
+Message-Id: <1300071435-26759-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-SDIO IRQs got unmasked on sh-mobile while writing to the
-CTL_CLK_AND_WAIT_CTL register, because that register at address 0x138
-is not implemented on those SoCs and writes to it overwrite the
-register at address 0x38: CTL_SDIO_IRQ_MASK. Previous patches
-eliminated access to register above 0xff on sh-mobile, so that this
-work-around isn't needed anymore.
+This allows a ROM-able zImage to be written to eSD and for SuperH Mobile
+ARM to boot directly from the SDHI hardware block.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+The first three patches shuffle some code around.
+The fourth patch has the new boot code and the bulk of the code.
 
-v2:
- 
-1. rebase on top of driver split
-2. remove the work-around only after users have been updated
-
- drivers/mmc/host/tmio_mmc_pio.c |   23 ++---------------------
- 1 files changed, 2 insertions(+), 21 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 28e14c7..e1aed25 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -208,26 +208,14 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- {
--	struct tmio_mmc_data *pdata = host->pdata;
- 	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
- 
--	/*
--	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
--	 * CTL_CLK_AND_WAIT_CTL gets written, so we have to disable the
--	 * device IRQ here and restore the SDIO IRQ mask before
--	 * re-enabling the device IRQ.
--	 */
--	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
--		disable_irq(host->irq);
- 	/* implicit BUG_ON(!res) */
- 	if (resource_size(res) > 0x100) {
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
- 		msleep(10);
- 	}
--	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
--		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
--		enable_irq(host->irq);
--	}
-+
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
- 	msleep(10);
-@@ -235,24 +223,17 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- 
- static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- {
--	struct tmio_mmc_data *pdata = host->pdata;
- 	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
- 
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
- 	msleep(10);
--	/* see comment in tmio_mmc_clk_stop above */
--	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
--		disable_irq(host->irq);
-+
- 	/* implicit BUG_ON(!res) */
- 	if (resource_size(res) > 0x100) {
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
- 		msleep(10);
- 	}
--	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
--		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
--		enable_irq(host->irq);
--	}
- }
- 
- static void tmio_mmc_reset(struct tmio_mmc_host *host)
--- 
-1.7.2.3
+ Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt       |   43 +
+ arch/arm/Kconfig                                     |   35 -
+ arch/arm/boot/compressed/Makefile                    |    9 
+ arch/arm/boot/compressed/head-shmobile.S             |   12 
+ arch/arm/boot/compressed/mmcif-sh7372.c              |   14 
+ arch/arm/boot/compressed/sdhi-shmobile.c             |  501 ++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h      |   29 +
+ arch/arm/mach-shmobile/include/mach/mmc-mackerel.h   |   38 +
+ arch/arm/mach-shmobile/include/mach/mmc.h            |   18 
+ arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h    |   29 -
+ arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h |   39 -
+ arch/arm/mach-shmobile/include/mach/mmcif.h          |   18 
+ arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h    |   58 ++
+ arch/arm/mach-shmobile/include/mach/sdhi.h           |   16 
+ arch/sh/boot/romimage/mmcif-sh7724.c                 |   10 
+ drivers/mmc/host/tmio_mmc.c                          |   46 -
+ include/linux/mmc/boot.h                             |    7 
+ include/linux/mmc/sh_mmcif.h                         |    3 
+ include/linux/mmc/tmio.h                             |   49 +
+ 19 files changed, 812 insertions(+), 162 deletions(-)
 
