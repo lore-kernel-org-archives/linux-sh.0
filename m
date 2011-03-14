@@ -1,165 +1,205 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 07 Mar 2011 13:30:31 +0000
-Subject: [PATCH 1/2] mmc: tmio: Improve DMA stability on sh-mobile
-Message-Id: <Pine.LNX.4.64.1103071428110.29543@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 14 Mar 2011 19:54:57 +0000
+Subject: [Update] Re: [PATCH 10/10] ARM: Use struct syscore_ops instead of sysdevs for PM in timer and leds
+Message-Id: <201103142054.57999.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103071417340.29543@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103071417340.29543@axis700.grange>
+References: <201103100131.58206.rjw@sisk.pl> <201103131404.33311.rjw@sisk.pl> <4D7DDA9C.9020700@codeaurora.org>
+In-Reply-To: <4D7DDA9C.9020700@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+To: Stephen Boyd <sboyd@codeaurora.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Greg KH <gregkh@suse.de>, Kay Sievers <kay.sievers@suse.de>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Russell King <linux@arm.linux.org.uk>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On some SDHI tmio implementations the order of DMA and command completion
-interrupts swaps, which leads to malfunction. This patch postpones
-DMA activation until the MMC command completion IRQ time.
+On Monday, March 14, 2011, Stephen Boyd wrote:
+> On 3/13/2011 6:04 AM, Rafael J. Wysocki wrote:
+> >   #if defined(CONFIG_PM)&&  !defined(CONFIG_GENERIC_CLOCKEVENTS)
+> > -static int timer_suspend(struct sys_device *dev, pm_message_t state)
+> > +static int timer_suspend(void)
+> >   {
+> > -	struct sys_timer *timer = container_of(dev, struct sys_timer, dev);
+> > -
+> > -	if (timer->suspend != NULL)
+> > +	if (system_timer->suspend)
+> >   		timer->suspend();
+> >
+> 
+> Shouldn't this be system_timer->suspend() ?
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Indeed, thanks a lot!
+
+I must have forgotten to test it with CONFIG_GENERIC_CLOCKEVENTS unset.
+
+Updated patch follows.
+
 ---
- drivers/mmc/host/tmio_mmc.c |   56 +++++++++++++++++++++++--------------------
- 1 files changed, 30 insertions(+), 26 deletions(-)
+From: Rafael J. Wysocki <rjw@sisk.pl>
+Subject: ARM: Use struct syscore_ops instead of sysdevs for PM in timer and leds
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index e3c6ef2..aa384ba 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -484,7 +484,10 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
- 	unsigned int count;
- 	unsigned long flags;
+Convert arch/arm/kernel/time.c and arch/arm/kernel/leds.c to using
+struct syscore_ops for power management instead of sysdev classes
+and sysdevs.
+
+This simplifies the code in arch/arm/kernel/time.c quite a bit and is
+necessary for removing sysdevs from the kernel entirely in future.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/include/asm/mach/time.h |    1 -
+ arch/arm/kernel/leds.c           |   28 ++++++++++++++++------------
+ arch/arm/kernel/time.c           |   35 ++++++++++++-----------------------
+ 3 files changed, 28 insertions(+), 36 deletions(-)
+
+Index: linux-2.6/arch/arm/kernel/time.c
+=================================--- linux-2.6.orig/arch/arm/kernel/time.c
++++ linux-2.6/arch/arm/kernel/time.c
+@@ -21,7 +21,7 @@
+ #include <linux/timex.h>
+ #include <linux/errno.h>
+ #include <linux/profile.h>
+-#include <linux/sysdev.h>
++#include <linux/syscore_ops.h>
+ #include <linux/timer.h>
+ #include <linux/irq.h>
  
--	if (!data) {
-+	if (host->chan_tx || host->chan_rx) {
-+		pr_err("PIO IRQ in DMA mode!\n");
-+		return;
-+	} else if (!data) {
- 		pr_debug("Spurious PIO IRQ\n");
- 		return;
- 	}
-@@ -647,6 +650,8 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
- 		if (host->data->flags & MMC_DATA_READ) {
- 			if (!host->chan_rx)
- 				enable_mmc_irqs(host, TMIO_MASK_READOP);
-+			else
-+				tasklet_schedule(&host->dma_issue);
- 		} else {
- 			if (!host->chan_tx)
- 				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
-@@ -779,18 +784,6 @@ static void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+@@ -117,48 +117,37 @@ void timer_tick(void)
  #endif
+ 
+ #if defined(CONFIG_PM) && !defined(CONFIG_GENERIC_CLOCKEVENTS)
+-static int timer_suspend(struct sys_device *dev, pm_message_t state)
++static int timer_suspend(void)
+ {
+-	struct sys_timer *timer = container_of(dev, struct sys_timer, dev);
+-
+-	if (timer->suspend != NULL)
+-		timer->suspend();
++	if (system_timer->suspend)
++		system_timer->suspend();
+ 
+ 	return 0;
  }
  
--static void tmio_dma_complete(void *arg)
--{
--	struct tmio_mmc_host *host = arg;
--
--	dev_dbg(&host->pdev->dev, "Command completed\n");
--
--	if (!host->data)
--		dev_warn(&host->pdev->dev, "NULL data in DMA completion!\n");
--	else
--		enable_mmc_irqs(host, TMIO_STAT_DATAEND);
--}
--
- static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+-static int timer_resume(struct sys_device *dev)
++static void timer_resume(void)
  {
- 	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
-@@ -818,6 +811,8 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 		goto pio;
- 	}
+-	struct sys_timer *timer = container_of(dev, struct sys_timer, dev);
+-
+-	if (timer->resume != NULL)
+-		timer->resume();
+-
+-	return 0;
++	if (system_timer->resume)
++		system_timer->resume();
+ }
+ #else
+ #define timer_suspend NULL
+ #define timer_resume NULL
+ #endif
  
-+	disable_mmc_irqs(host, TMIO_STAT_RXRDY);
-+
- 	/* The only sg element can be unaligned, use our bounce buffer then */
- 	if (!aligned) {
- 		sg_init_one(&host->bounce_sg, host->bounce_buf, sg->length);
-@@ -829,18 +824,14 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 	if (ret > 0) {
- 		host->dma_sglen = ret;
- 		desc = chan->device->device_prep_slave_sg(chan, sg, ret,
--			DMA_FROM_DEVICE, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+			DMA_FROM_DEVICE, DMA_CTRL_ACK);
- 	}
+-static struct sysdev_class timer_sysclass = {
+-	.name		= "timer",
++static struct syscore_ops timer_syscore_ops = {
+ 	.suspend	= timer_suspend,
+ 	.resume		= timer_resume,
+ };
  
- 	if (desc) {
--		desc->callback = tmio_dma_complete;
--		desc->callback_param = host;
- 		cookie = desc->tx_submit(desc);
- 		if (cookie < 0) {
- 			desc = NULL;
- 			ret = cookie;
--		} else {
--			chan->device->device_issue_pending(chan);
- 		}
- 	}
- 	dev_dbg(&host->pdev->dev, "%s(): mapped %d -> %d, cookie %d, rq %p\n",
-@@ -895,6 +886,8 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- 		goto pio;
- 	}
- 
-+	disable_mmc_irqs(host, TMIO_STAT_TXRQ);
-+
- 	/* The only sg element can be unaligned, use our bounce buffer then */
- 	if (!aligned) {
- 		unsigned long flags;
-@@ -910,12 +903,10 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- 	if (ret > 0) {
- 		host->dma_sglen = ret;
- 		desc = chan->device->device_prep_slave_sg(chan, sg, ret,
--			DMA_TO_DEVICE, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+			DMA_TO_DEVICE, DMA_CTRL_ACK);
- 	}
- 
- 	if (desc) {
--		desc->callback = tmio_dma_complete;
--		desc->callback_param = host;
- 		cookie = desc->tx_submit(desc);
- 		if (cookie < 0) {
- 			desc = NULL;
-@@ -962,17 +953,30 @@ static void tmio_mmc_start_dma(struct tmio_mmc_host *host,
- static void tmio_issue_tasklet_fn(unsigned long priv)
+-static int __init timer_init_sysfs(void)
++static int __init timer_init_syscore_ops(void)
  {
- 	struct tmio_mmc_host *host = (struct tmio_mmc_host *)priv;
--	struct dma_chan *chan = host->chan_tx;
-+	struct dma_chan *chan = NULL;
-+
-+	spin_lock_irq(&host->lock);
-+
-+	if (host && host->data) {
-+		if (host->data->flags & MMC_DATA_READ)
-+			chan = host->chan_rx;
-+		else
-+			chan = host->chan_tx;
-+	}
-+
-+	spin_unlock_irq(&host->lock);
-+
-+	enable_mmc_irqs(host, TMIO_STAT_DATAEND);
+-	int ret = sysdev_class_register(&timer_sysclass);
+-	if (ret = 0) {
+-		system_timer->dev.cls = &timer_sysclass;
+-		ret = sysdev_register(&system_timer->dev);
+-	}
++	register_syscore_ops(&timer_syscore_ops);
  
--	chan->device->device_issue_pending(chan);
-+	if (chan)
-+		chan->device->device_issue_pending(chan);
+-	return ret;
++	return 0;
  }
  
- static void tmio_tasklet_fn(unsigned long arg)
+-device_initcall(timer_init_sysfs);
++device_initcall(timer_init_syscore_ops);
+ 
+ void __init time_init(void)
  {
- 	struct tmio_mmc_host *host = (struct tmio_mmc_host *)arg;
--	unsigned long flags;
+Index: linux-2.6/arch/arm/include/asm/mach/time.h
+=================================--- linux-2.6.orig/arch/arm/include/asm/mach/time.h
++++ linux-2.6/arch/arm/include/asm/mach/time.h
+@@ -34,7 +34,6 @@
+  *   timer interrupt which may be pending.
+  */
+ struct sys_timer {
+-	struct sys_device	dev;
+ 	void			(*init)(void);
+ 	void			(*suspend)(void);
+ 	void			(*resume)(void);
+Index: linux-2.6/arch/arm/kernel/leds.c
+=================================--- linux-2.6.orig/arch/arm/kernel/leds.c
++++ linux-2.6/arch/arm/kernel/leds.c
+@@ -10,6 +10,7 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/sysdev.h>
++#include <linux/syscore_ops.h>
  
--	spin_lock_irqsave(&host->lock, flags);
-+	spin_lock_irq(&host->lock);
+ #include <asm/leds.h>
  
- 	if (!host->data)
- 		goto out;
-@@ -986,7 +990,7 @@ static void tmio_tasklet_fn(unsigned long arg)
+@@ -69,36 +70,37 @@ static ssize_t leds_store(struct sys_dev
  
- 	tmio_mmc_do_data_irq(host);
- out:
--	spin_unlock_irqrestore(&host->lock, flags);
-+	spin_unlock_irq(&host->lock);
+ static SYSDEV_ATTR(event, 0200, NULL, leds_store);
+ 
+-static int leds_suspend(struct sys_device *dev, pm_message_t state)
++static struct sysdev_class leds_sysclass = {
++	.name		= "leds",
++};
++
++static struct sys_device leds_device = {
++	.id		= 0,
++	.cls		= &leds_sysclass,
++};
++
++static int leds_suspend(void)
+ {
+ 	leds_event(led_stop);
+ 	return 0;
  }
  
- /* It might be necessary to make filter MFD specific */
--- 
-1.7.2.3
-
+-static int leds_resume(struct sys_device *dev)
++static void leds_resume(void)
+ {
+ 	leds_event(led_start);
+-	return 0;
+ }
+ 
+-static int leds_shutdown(struct sys_device *dev)
++static void leds_shutdown(void)
+ {
+ 	leds_event(led_halted);
+-	return 0;
+ }
+ 
+-static struct sysdev_class leds_sysclass = {
+-	.name		= "leds",
++static struct syscore_ops leds_syscore_ops = {
+ 	.shutdown	= leds_shutdown,
+ 	.suspend	= leds_suspend,
+ 	.resume		= leds_resume,
+ };
+ 
+-static struct sys_device leds_device = {
+-	.id		= 0,
+-	.cls		= &leds_sysclass,
+-};
+-
+ static int __init leds_init(void)
+ {
+ 	int ret;
+@@ -107,6 +109,8 @@ static int __init leds_init(void)
+ 		ret = sysdev_register(&leds_device);
+ 	if (ret = 0)
+ 		ret = sysdev_create_file(&leds_device, &attr_event);
++	if (ret = 0)
++		register_syscore_ops(&leds_syscore_ops);
+ 	return ret;
+ }
+ 
