@@ -1,50 +1,21 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Mon, 14 Mar 2011 10:16:12 +0000
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Tue, 15 Mar 2011 04:31:08 +0000
 Subject: Re: [PATCH 0/2] Common struct clk implementation, v14
-Message-Id: <20110314101612.GD28960@pengutronix.de>
+Message-Id: <201103151231.10106.jeremy.kerr@canonical.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201102011711.31258.jeremy.kerr@canonical.com>
-	<1299134429.100626.661279191478.0.gpush@pororo>
+References: <1299134429.100626.661279191478.0.gpush@pororo>
 In-Reply-To: <1299134429.100626.661279191478.0.gpush@pororo>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 03, 2011 at 02:40:29PM +0800, Jeremy Kerr wrote:
-> Hi all,
->=20
-> These patches are an attempt to allow platforms to share clock code. At
-> present, the definitions of 'struct clk' are local to platform code,
-> which makes allocating and initialising cross-platform clock sources
-> difficult, and makes it impossible to compile a single image containing
-> support for two ARM platforms with different struct clks.
->=20
-> The three patches are for the architecture-independent kernel code,
-> introducing the common clk infrastructure. The changelog for the first
-> patch includes details about the new clock definitions.
->=20
-> Many thanks to the following for their input:
->  * Benjamin Herrenschmidt <benh@kernel.crashing.org>
->  * Ben Dooks <ben-linux@fluff.org>
->  * Baruch Siach <baruch@tkos.co.il>
->  * Russell King <linux@arm.linux.org.uk>
->  * Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
->  * Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>
->  * Vincent Guittot <vincent.guittot@linaro.org>
->  * Sascha Hauer <s.hauer@pengutronix.de>
->  * Ryan Mallon <ryan@bluewatersys.com>
->  * Colin Cross <ccross@google.com>
->  * Jassi Brar <jassisinghbrar@gmail.com>
->  * Saravana Kannan <skannan@codeaurora.org>
+Hi Russell,
 
-Tested-by: Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
+Any thughts on merging this? Would you like me to add to your patch tracking 
+system, or would you prefer it to go through some other path?
 
-who is responsible to take this patch?  Russell?
+Cheers,
 
-Best regards
-Uwe
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Jeremy
