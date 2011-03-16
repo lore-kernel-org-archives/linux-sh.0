@@ -1,31 +1,45 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Mar 2011 08:38:27 +0000
-Subject: Re: [PATCH] [rfc] mmc, ARM: Add zboot from eSD support for SuperH
-Message-Id: <AANLkTinnc=w3Q1ytTDvy9nR=crKbdW3=A84xtu+jQn=-@mail.gmail.com>
+Date: Wed, 16 Mar 2011 13:11:07 +0000
+Subject: Re: [PATCH 3/3] ARM: switch mackerel to dynamically manage the
+Message-Id: <AANLkTikA0QDCLNSrM3FGobEzBBh9hcP_ZpyC+4YPSbx7@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1299743892-3668-1-git-send-email-horms@verge.net.au>
-	<AANLkTimiaTpz+Cjq_s0U=whNvwSAaZdk8UVKAS6mVkNC@mail.gmail.com>
-	<20110310084158.GB6508@verge.net.au>
-	<20110314012802.GD15317@verge.net.au>
-In-Reply-To: <20110314012802.GD15317@verge.net.au>
+References: <Pine.LNX.4.64.1102221049240.1380@axis700.grange>
+	<Pine.LNX.4.64.1102221057040.1380@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1102221057040.1380@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
-To: Simon Horman <horms@verge.net.au>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Simon,
-
-On Mon, Mar 14, 2011 at 10:28 AM, Simon Horman <horms@verge.net.au> wrote:
-> Hi Magnus,
+On Tue, Feb 22, 2011 at 6:57 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Use soc_camera_platform helper functions to dynamically manage the
+> camera device.
 >
-> are the following also sh7372 specific?
->
-> #define SDHI1_BASE =A0 =A0 =A0 =A0 =A0 =A0 =A0(void __iomem *)0xe6860000
-> #define SDHI_BASE =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0SDHI1_BASE
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> =A0arch/arm/mach-shmobile/board-mackerel.c | =A0 28 +++++++--------------=
+-------
+> =A01 files changed, 7 insertions(+), 21 deletions(-)
 
-Yes, you want to specify the base address of the SDHI hardware block
-instance in the cpu specific code.
+Hi Guennadi,
+
+Thanks for your work on this. The soc_camera_platform interface has
+become much much nicer with these patches.
+
+I just tested patch 1/3 and patch 3/3 on my Mackerel board.
+Unfortunately I get this printout on the console:
+
+sh_mobile_ceu sh_mobile_ceu.0: SuperH Mobile CEU driver attached to camera 0
+soc_camera_platform soc_camera_platform.0: Platform has not set
+soc_camera_device pointer!
+soc_camera_platform: probe of soc_camera_platform.0 failed with error -22
+sh_mobile_ceu sh_mobile_ceu.0: SuperH Mobile CEU driver detached from camer=
+a 0
+
+Without these two patches everything work just fine. Any ideas on how
+to fix it? I'd be happy to test V2. =3D)
 
 Thanks,
 
