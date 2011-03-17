@@ -1,94 +1,87 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Mar 2011 13:49:03 +0000
-Subject: [PATCH 1/4 v3] mmc: tmio: only access registers above 0xff, if
-Message-Id: <Pine.LNX.4.64.1103231446280.6836@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 17 Mar 2011 08:43:40 +0000
+Subject: [GIT PULL] sh updates for 2.6.39-rc1
+Message-Id: <20110317084340.GA14122@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Not all tmio implementations have registers above oxff. Accessing
-them on thise platforms is dangerous. In some cases it leads to
-address wrapping to addresses below 0x100, which corrupts random
-unrelated registers.
+Please pull from:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/tmio_mmc_pio.c |   25 +++++++++++++++++++------
- 1 files changed, 19 insertions(+), 6 deletions(-)
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-latest
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index a7406e3..28e14c7 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -209,6 +209,7 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- {
- 	struct tmio_mmc_data *pdata = host->pdata;
-+	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
- 
- 	/*
- 	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
-@@ -218,8 +219,11 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- 	 */
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		disable_irq(host->irq);
--	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
--	msleep(10);
-+	/* implicit BUG_ON(!res) */
-+	if (resource_size(res) > 0x100) {
-+		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
-+		msleep(10);
-+	}
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
- 		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
- 		enable_irq(host->irq);
-@@ -232,6 +236,7 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- {
- 	struct tmio_mmc_data *pdata = host->pdata;
-+	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
- 
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
-@@ -239,8 +244,11 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- 	/* see comment in tmio_mmc_clk_stop above */
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		disable_irq(host->irq);
--	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
--	msleep(10);
-+	/* implicit BUG_ON(!res) */
-+	if (resource_size(res) > 0x100) {
-+		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
-+		msleep(10);
-+	}
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
- 		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
- 		enable_irq(host->irq);
-@@ -249,12 +257,17 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- 
- static void tmio_mmc_reset(struct tmio_mmc_host *host)
- {
-+	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
-+
- 	/* FIXME - should we set stop clock reg here */
- 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
--	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
-+	/* implicit BUG_ON(!res) */
-+	if (resource_size(res) > 0x100)
-+		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
- 	msleep(10);
- 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
--	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
-+	if (resource_size(res) > 0x100)
-+		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
- 	msleep(10);
- }
- 
--- 
-1.7.2.5
+Which contains:
 
+Alexandre Courbot (1):
+      serial: sh-sci: fix deadlock when resuming from S3 sleep
+
+Chris Smith (1):
+      sh: Enable CONFIG_GCOV_PROFILE_ALL for sh
+
+Paul Mundt (22):
+      watchdog: shwdt: Kill off mmap stub and superfluous comments.
+      watchdog: shwdt: driver model conversion.
+      sh: pci: Support asynchronous initialization of SH-X3 PCIe channels.
+      serial: sh-sci: Kill off unused clock string.
+      serial: sh-sci: Kill off unused membase kludge.
+      serial: sh-sci: Provide a helper for muxed IRQs.
+      serial: sh-sci: Consolidate port definition structures.
+      serial: sh-sci: Kill off some DMA ifdeffery.
+      serial: sh-sci: Require a device per port mapping.
+      serial: sh-sci: Handle request_irq() failures.
+      serial: sh-sci: Kill off unused SCSCR definitions.
+      serial: sh-sci: Fix up ioremap handling.
+      serial: sh-sci: Handle port memory region reservations.
+      serial: sh-sci: Bring oversized error handlers out of line.
+      serial: sh-sci: Fix up break timer scheduling race.
+      serial: sh-sci: Limit early console to one device.
+      serial: sh-sci: Fix up earlyprintk port mapping.
+      serial: sh-sci: Use dev_name() for region reservations.
+      serial: sh-sci: Kill off the special earlyprintk device.
+      sh: Fix up async PCIe probing on SMP.
+      sh: Wire up new fhandle and clock_adjtime syscalls.
+      sh: Convert to generic show_interrupts.
+
+Thomas Renninger (1):
+      sh: Rename cpuidle states to fit general conventions
+
+Yoshihiro Shimoda (9):
+      sh: add USB_ARCH_HAS_EHCI and OHCI for SH7757
+      sh: add platform_device for SPI
+      sh: add spi_board_info in sh7757lcr
+      sh: add mmc clock in clock-sh7757
+      sh: dmaengine support for SH7757
+      sh: add platform_device of tmio_mmc and sh_mmcif to sh7757lcr
+      sh: update sh7757lcr_defconfig
+      sh: add GETHER's platform_device in board-sh7757lcr
+      sh: modify platform_device for sh_eth driver
+
+ arch/sh/Kconfig                            |    3 +
+ arch/sh/boards/board-espt.c                |    7 +
+ arch/sh/boards/board-sh7757lcr.c           |  185 ++++++++++
+ arch/sh/boards/mach-ecovec24/setup.c       |    2 +
+ arch/sh/boards/mach-sh7763rdp/setup.c      |    6 +
+ arch/sh/boot/compressed/Makefile           |    2 +
+ arch/sh/configs/sh7757lcr_defconfig        |   19 +-
+ arch/sh/drivers/pci/pcie-sh7786.c          |   46 ++-
+ arch/sh/include/asm/unistd_32.h            |    5 +-
+ arch/sh/include/asm/unistd_64.h            |    5 +-
+ arch/sh/include/cpu-sh4/cpu/dma-register.h |    5 +
+ arch/sh/include/cpu-sh4/cpu/sh7757.h       |   32 ++
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c     |    7 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c     |  542 +++++++++++++++++++++++++++-
+ arch/sh/kernel/cpu/shmobile/cpuidle.c      |    6 +-
+ arch/sh/kernel/irq.c                       |   61 +---
+ arch/sh/kernel/syscalls_32.S               |    3 +
+ arch/sh/kernel/syscalls_64.S               |    3 +
+ arch/sh/mm/Makefile                        |    2 +
+ drivers/tty/serial/sh-sci.c                |  431 +++++++++++-----------
+ drivers/tty/serial/sh-sci.h                |   39 --
+ drivers/watchdog/Kconfig                   |    8 -
+ drivers/watchdog/shwdt.c                   |  365 +++++++++----------
+ include/linux/serial_sci.h                 |   16 +-
+ kernel/gcov/Kconfig                        |    2 +-
+ 25 files changed, 1250 insertions(+), 552 deletions(-)
