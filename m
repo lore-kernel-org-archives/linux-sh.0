@@ -1,48 +1,31 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Wed, 09 Feb 2011 06:41:33 +0000
-Subject: [RFC,
-Message-Id: <1297233693.243373.411051105619.3.gpush@pororo>
+From: Dan Carpenter <error27@gmail.com>
+Date: Sun, 20 Mar 2011 11:12:49 +0000
+Subject: [patch] sh: clkfwk: potential null deref in debug code
+Message-Id: <20110320111249.GH2008@bicker>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <1297233693.241680.897691111624.0.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This change adds warnings to check for:
+This function is designed to accept a NULL for "best_freq" but the
+debug code dereferences it unconditionally.
 
- 1) enabling a clock that hasn't been prepared; and
-
- 2) unpreparing a clock that is still enabled
-
-While the correctness can't be guaranteed, the warnings should cover
-most situations, and won't indicate false positives.
-
-Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
-
+Signed-off-by: Dan Carpenter <error27@gmail.com>
 ---
- drivers/clk/clk.c |    4 ++++
- 1 file changed, 4 insertions(+)
+Btw.  Smatch complains that "best" could NULL as well, but I don't
+know if actually that's possible so I left it as is.
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index bbbdb0d..8c96623 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -29,6 +29,8 @@ EXPORT_SYMBOL_GPL(clk_prepare);
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index 5f63c3b..dee971c 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -616,7 +616,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
  
- void clk_unprepare(struct clk *clk)
- {
-+	WARN_ON(clk->enable_count != 0);
-+
- 	mutex_lock(&clk->prepare_lock);
+ 		pr_debug("%u / %lu = %lu, / %lu = %lu, best %lu, parent %u\n",
+ 			 freq->frequency, div, freq_high, div + 1, freq_low,
+-			 *best_freq, best->frequency);
++			 best_freq ? *best_freq : -1, best->frequency);
  
- 	WARN_ON(clk->prepare_count = 0);
-@@ -45,6 +47,8 @@ int clk_enable(struct clk *clk)
- 	unsigned long flags;
- 	int ret = 0;
- 
-+	WARN_ON(clk->prepare_count = 0);
-+
- 	spin_lock_irqsave(&clk->enable_lock, flags);
- 	if (clk->enable_count = 0 && clk->ops->enable)
- 		ret = clk->ops->enable(clk);
+ 		if (!error)
+ 			break;
