@@ -1,137 +1,31 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Tue, 29 Mar 2011 03:35:58 +0000
-Subject: [RFC][PATCH 3/3] sh_mobile_meram: MERAM platform data for LCDC
-Message-Id: <1301369758-18394-4-git-send-email-dhobsong@igel.co.jp>
+From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
+Date: Mon, 21 Mar 2011 15:30:58 +0000
+Subject: sh7203 LCDC - mmap problem
+Message-Id: <201103211630.59224.fabio.giovagnini@aurion-tech.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Based on the patch by Takanari Hayama <taki@igel.co.jp>
+Hi All,
+I can manage the vodeo memori, but I cannot access it through mmap
+.
+The dma_alloc_coherent(info->dev, vram, &par->fbdma, GFP_KERNEL) funciotn 
+returns to me 0x0e100000;
+mmap from the userspace returns to me 0xe1800000.
+What do I need to check?
 
-Add the necessary platform data to add MERAM functionality to LCDC
+Thanks a lot in advance
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
----
- arch/arm/mach-shmobile/board-ap4evb.c |   69 +++++++++++++++++++++++++++++++++
- 1 files changed, 69 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index a94f29d..e467696 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -249,6 +249,31 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
- {
- 	return !gpio_get_value(GPIO_PORT41);
- }
-+#ifdef CONFIG_FB_SH_MOBILE_MERAM
-+/* MERAM */
-+static struct sh_mobile_meram_info mackerel_meram_info = {
-+	.addr_mode      = SH_MOBILE_MERAM_MODE1,
-+};
-+
-+static struct resource meram_resources[] = {
-+	[0] = {
-+		.name   = "MERAM",
-+		.start  = 0xe8000000,
-+		.end    = 0xe81fffff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device meram_device = {
-+	.name           = "sh_mobile_meram",
-+	.id             = -1,
-+	.num_resources  = ARRAY_SIZE(meram_resources),
-+	.resource       = meram_resources,
-+	.dev            = {
-+		.platform_data = &mackerel_meram_info,
-+	},
-+};
-+#endif
- 
- /* SH_MMCIF */
- static struct resource sh_mmcif_resources[] = {
-@@ -431,6 +456,23 @@ const static struct fb_videomode ap4evb_lcdc_modes[] = {
- #endif
- 	},
- };
-+#ifdef CONFIG_FB_SH_MOBILE_MERAM
-+static struct sh_mobile_meram_cfg lcd_meram_cfg = {
-+	.meram_dev = &mackerel_meram_info,
-+	.icb[0] = {
-+		.marker_icb     = 28,
-+		.cache_icb      = 24,
-+		.meram_offset   = 0x0,
-+		.meram_size     = 0x40,
-+	},
-+	.icb[1] = {
-+		.marker_icb     = 29,
-+		.cache_icb      = 25,
-+		.meram_offset   = 0x40,
-+		.meram_size     = 0x40,
-+	},
-+};
-+#endif
- 
- static struct sh_mobile_lcdc_info lcdc_info = {
- 	.ch[0] = {
-@@ -438,6 +480,9 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 		.bpp = 16,
- 		.lcd_cfg = ap4evb_lcdc_modes,
- 		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
-+#ifdef CONFIG_FB_SH_MOBILE_MERAM
-+		.meram_cfg = &lcd_meram_cfg,
-+#endif
- 	}
- };
- 
-@@ -708,6 +753,23 @@ static struct platform_device fsi_device = {
- static struct platform_device fsi_ak4643_device = {
- 	.name		= "sh_fsi2_a_ak4643",
- };
-+#ifdef CONFIG_FB_SH_MOBILE_MERAM
-+static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
-+	.meram_dev = &mackerel_meram_info,
-+	.icb[0] = {
-+		.marker_icb     = 30,
-+		.cache_icb      = 26,
-+		.meram_offset   = 0x80,
-+		.meram_size     = 0x100,
-+	},
-+	.icb[1] = {
-+		.marker_icb     = 31,
-+		.cache_icb      = 27,
-+		.meram_offset   = 0x180,
-+		.meram_size     = 0x100,
-+	},
-+};
-+#endif
- 
- static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
- 	.clock_source = LCDC_CLK_EXTERNAL,
-@@ -717,6 +779,10 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
- 		.interface_type = RGB24,
- 		.clock_divider = 1,
- 		.flags = LCDC_FLAGS_DWPOL,
-+#ifdef CONFIG_FB_SH_MOBILE_MERAM
-+		.meram_cfg = &hdmi_meram_cfg,
-+#endif
-+
- 	}
- };
- 
-@@ -945,6 +1011,9 @@ static struct platform_device *ap4evb_devices[] __initdata = {
- 	&csi2_device,
- 	&ceu_device,
- 	&ap4evb_camera,
-+#ifdef CONFIG_FB_SH_MOBILE_MERAM
-+	&meram_device,
-+#endif
- };
- 
- static int __init hdmi_init_pm_clock(void)
 -- 
-1.7.1
+Ing. Fabio Giovagnini
 
+Aurion s.r.l.
+P.I e C.F.
+00885711200
+skype: aurion.giovagnini
+Tel. +39.051.594.78.24
+Fax. +39.051.082.14.49
+Cell. +39.335.83.50.919
+www.aurion-tech.com
