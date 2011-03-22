@@ -1,21 +1,52 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 23 Mar 2011 13:25:06 +0000
-Subject: Re: [PATCH] sh: Fix ptrace fpu state initialisation
-Message-Id: <20110323132506.GA17693@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 22 Mar 2011 14:26:19 +0000
+Subject: [PATCH] Input: tca6416-keypad: Change to module_init()
+Message-Id: <20110322142619.1109.89105.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AB12B32E73474741A2C5361C433A44DE02911887@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
-In-Reply-To: <AB12B32E73474741A2C5361C433A44DE02911887@rte-ben-exch.RTE.ADWIN.RENESAS.COM>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 18, 2011 at 02:16:31PM +0000, Phil Edworthy wrote:
-> Commit 0ea820cf introduced the PTRACE_GETFPREGS/SETFPREGS cmds,
-> but gdb-server still accesses the FPU state using the
-> PTRACE_PEEKUSR/POKEUSR commands. In this case, xstate was not
-> initialised.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Applied, thanks.
+The tca6416 driver makes use of the I2C bus for chatting
+with the actual hardware device. Without this patch both
+the I2C bus driver and the tca6416 driver are initialized
+at the subsys_initcall() level. This may lead to problems
+with the tca6416 driver being initialized before the I2C
+bus driver.
+
+By using module_init() in the tca6416 driver we make sure
+the I2C bus driver always is initialized before the keypad
+driver.
+
+With this patch applied the boot order becomes:
+ - arch_initcall: the ARM architecture ->init_machine()
+ - arch_initcall: i2c_register_board_info()
+ - arch_initcall: I2C bus device registration
+ - subsys_initcall: I2C bus driver probe()
+ - module_init: tca6416 driver probe()
+
+Affects the following in-tree platforms:
+ - arch/arm/mach-davinci/board-da850-evm.c
+ - arch/arm/mach-omap2/board-am3517evm.c
+ - arch/arm/mach-shmobile/board-mackerel.c
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/input/keyboard/tca6416-keypad.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/drivers/input/keyboard/tca6416-keypad.c
++++ work/drivers/input/keyboard/tca6416-keypad.c	2011-03-22 22:44:26.000000000 +0900
+@@ -369,7 +369,7 @@ static int __init tca6416_keypad_init(vo
+ 	return i2c_add_driver(&tca6416_keypad_driver);
+ }
+ 
+-subsys_initcall(tca6416_keypad_init);
++module_init(tca6416_keypad_init);
+ 
+ static void __exit tca6416_keypad_exit(void)
+ {
