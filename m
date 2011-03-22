@@ -1,7 +1,7 @@
-From: Fabio Giovagnini <fabio.giovagnini@aurion-tech.com>
-Date: Tue, 22 Mar 2011 13:50:27 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 22 Mar 2011 14:36:45 +0000
 Subject: Re: sh2a 7203 LCDC memory access
-Message-Id: <201103221450.27805.fabio.giovagnini@aurion-tech.com>
+Message-Id: <20110322143645.GA3915@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201103220853.19384.fabio.giovagnini@aurion-tech.com>
 In-Reply-To: <201103220853.19384.fabio.giovagnini@aurion-tech.com>
@@ -10,25 +10,20 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Many thanks Magnus.
-Very clear
-
-
-On Tuesday 22 March 2011 13:21:48 Magnus Damm wrote:
+On Tue, Mar 22, 2011 at 09:21:48PM +0900, Magnus Damm wrote:
 > Hi Fabio,
 > 
 > On Tue, Mar 22, 2011 at 4:53 PM, Fabio Giovagnini
-> 
 > <fabio.giovagnini@aurion-tech.com> wrote:
 > > Hi All,
-> > I'd likt to keep you informed about my last discovering about LCDC of
-> > sh2a 7203.
-> > If I build the kernel with cache off, the image is clean and stable but
-> > the performances are very very poor;
-> > if I build with cache write back the performaces are very good but the
-> > image is stable but sometimes dirty; fi I build with cache write through
-> > the performances seems to be a little bit less than write back but the
-> > image is stiil clean and stable.
+> > I'd likt to keep you informed about my last discovering about LCDC of sh2a
+> > 7203.
+> > If I build the kernel with cache off, the image is clean and stable but the
+> > performances are very very poor;
+> > if I build with cache write back the performaces are very good but the image
+> > is stable but sometimes dirty; fi I build with cache write through the
+> > performances seems to be a little bit less than write back but the image is
+> > stiil clean and stable.
 > > Does this make sense?
 > 
 > Yes.
@@ -51,18 +46,11 @@ On Tuesday 22 March 2011 13:21:48 Magnus Damm wrote:
 > You need to make sure your frame buffer is flushed after writing. Or
 > use an uncached memory area for the frame buffer - that's even easier.
 > 
-> Good luck!
-> 
-> / magnus
+Note that the vast majority of SH-2/SH-2A development was done on
+write-through caches, so it's quite possible that there are still some
+outstanding issues with write-back mode.
 
--- 
-Ing. Fabio Giovagnini
-
-Aurion s.r.l.
-P.I e C.F.
-00885711200
-skype: aurion.giovagnini
-Tel. +39.051.594.78.24
-Fax. +39.051.082.14.49
-Cell. +39.335.83.50.919
-www.aurion-tech.com
+That being said, the LCDC fb driver at least gets its DMA buffer
+management right as we know from other CPU subtypes, so we already get
+the cache management logic for free by virtue of the DMA mapping
+interface.
