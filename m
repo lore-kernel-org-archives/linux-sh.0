@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 22 Mar 2011 12:09:21 +0000
+Date: Tue, 22 Mar 2011 12:11:01 +0000
 Subject: Re: [PATCH 3/3] ARM: switch mackerel to dynamically manage the
-Message-Id: <AANLkTin73zvAxBWryZ+_+HLTCm+VcJC8cugnhGdE70m7@mail.gmail.com>
+Message-Id: <AANLkTi=q_Spa9hWDDKZJ0UBnYtLBZTS+tkFx1J5B_3gk@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1102221049240.1380@axis700.grange>
 	<Pine.LNX.4.64.1102221057040.1380@axis700.grange>
@@ -49,7 +49,7 @@ mera 0
 > Hm, yes, looks like I'm initialising the pointer too late. Could you,
 > please, test the patch below on top, if it helps, I'll send v2.
 
-Yes, this fix incremental change solves the problem. Thanks!
+Yes, this incremental change solves the problem. Thanks!
 
 Please post V2 and add:
 
