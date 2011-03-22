@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 22 Mar 2011 16:51:02 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Tue, 22 Mar 2011 16:59:07 +0000
 Subject: Re: [PATCH] Input: tca6416-keypad: Change to module_init()
-Message-Id: <AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
+Message-Id: <20110322165907.GG22583@opensource.wolfsonmicro.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110322142619.1109.89105.sendpatchset@t400s>
 	<20110322142855.GB2202@sirena.org.uk>
@@ -12,70 +12,40 @@ References: <20110322142619.1109.89105.sendpatchset@t400s>
 	<20110322155730.GD30303@linux-sh.org>
 	<AANLkTi=Fjc2f837ifH152Rh8W0PfiZvViYaLe=8XZo4Z@mail.gmail.com>
 	<20110322163144.GC2202@sirena.org.uk>
-In-Reply-To: <20110322163144.GC2202@sirena.org.uk>
+	<AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
+In-Reply-To: <AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 23, 2011 at 1:31 AM, Mark Brown
-<broonie@opensource.wolfsonmicro.com> wrote:
-> On Wed, Mar 23, 2011 at 01:20:23AM +0900, Magnus Damm wrote:
->> On Wed, Mar 23, 2011 at 12:57 AM, Paul Mundt <lethal@linux-sh.org> wrote:
->
->> > In this case I would suspect general indifference or simply copying ot=
-her
->> > drivers. I2C is a bit of a tricky case with regards to ordering in
->> > general, but at least input devices are relatively straightforward.
->
->> I remember having to move the init order around at least once before
->> in the case of i2c, so I'm not so surprised when new initcall issues
->> come up now and then.
->
-> It's mostly an issue for PMICs (and possibly some other similar things)
-> so that the regulators are present before their consumers try to start.
-> I'm not aware of any issues with I2C itself.
+On Wed, Mar 23, 2011 at 01:51:02AM +0900, Magnus Damm wrote:
 
-I recall changing my i2c bus driver i2c-sh_mobile.c from module_init()
-to subsys_initcall() a few years ago (see
-ccb3bc16b4891a82649d4bccbeefe60b1d9a62e2) - this because regular
-drivers tend to use module_init() and following the link order is not
-enough. I think the patch for tca6416 is more or less the same issue
-but on subsys_initcall() level instead.
+> I'm not sure if this is i2c specific though - in general you probably
+> need to register the parent bus driver first.
 
-I'm not sure if this is i2c specific though - in general you probably
-need to register the parent bus driver first.
+This was my original question - I'm not aware of any reason why you
+should need to register the driver for the specific bus first, it seems
+odd.
 
-I've seen some SH-Mobile designs with PMICs, and they all use a
-dedicated i2c bus.
+> I've seen some SH-Mobile designs with PMICs, and they all use a
+> dedicated i2c bus.
 
->> The "may" above comes from that I don't know the i2c bus driver
->> initcall time on non-SH-Mobile platforms. So this may trigger on other
->> platforms, or it may not depending on their cpu/board code and I2c bus
->> driver.
->
-> In general embedded platforms register I2C early as things like PMICs
-> typically hang off them. =A0Grant was trying to push people to use
-> deferred registration for this stuff but it didn't happen yet and I'd
-> personally be more comfortable with more infastructure supporting that.
+It's the most common bus for PMICs but some use SPI for performance
+reasons, especially if they integrate other mixed signal functionality
+such as touchscreen controllers that might be high volume.
 
-The dependency tracking is a bit primitive with only initcalls. I
-wouldn't mind something like this:
+> > In general embedded platforms register I2C early as things like PMICs
+> > typically hang off them. =A0Grant was trying to push people to use
+> > deferred registration for this stuff but it didn't happen yet and I'd
+> > personally be more comfortable with more infastructure supporting that.
 
--static int __init tca6416_keypad_init(void)
--{
--	return i2c_add_driver(&tca6416_keypad_driver);
--}
--
--subsys_initcall(tca6416_keypad_init);
--
--static void __exit tca6416_keypad_exit(void)
--{
--	i2c_del_driver(&tca6416_keypad_driver);
--}
--module_exit(tca6416_keypad_exit);
-+i2c_driver_module(&tca6416_keypad_driver);
+> The dependency tracking is a bit primitive with only initcalls. I
+> wouldn't mind something like this:
 
-Cheers,
-
-/ magnus
+That's not a general solution as it doesn't cover things like cross
+dependencies between devices on the same bus type.  You really want to
+be able to say "I depend on this set of other devices" somehow, the
+proposal from Grant that I'm talking about was to only register devices
+once their dependencies had appeared which solves the issue but is a bit
+manual for the board files.
