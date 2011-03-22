@@ -1,47 +1,87 @@
-From: Kay Sievers <kay.sievers@suse.de>
-Date: Tue, 22 Mar 2011 23:05:11 +0000
-Subject: Re: [PATCH 9/10] sh: Use struct syscore_ops instead of sysdev
-Message-Id: <1300835111.1815.69.camel@zag>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 22 Mar 2011 23:32:37 +0000
+Subject: Re: [PATCH 9/10] sh: Use struct syscore_ops instead of sysdev class and sysdev
+Message-Id: <201103230032.37417.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201103100131.58206.rjw@sisk.pl>
-	 <201103222200.52131.rjw@sisk.pl> <1300828356.1815.15.camel@zag>
-	 <201103222305.01808.rjw@sisk.pl>
-In-Reply-To: <201103222305.01808.rjw@sisk.pl>
+References: <201103100131.58206.rjw@sisk.pl> <201103222323.42627.rjw@sisk.pl> <1300833843.1815.53.camel@zag>
+In-Reply-To: <1300833843.1815.53.camel@zag>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: LKML <linux-kernel@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Greg KH <gregkh@suse.de>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Russell King <linux@arm.linux.org.uk>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Kay Sievers <kay.sievers@suse.de>
+Cc: Paul Mundt <lethal@linux-sh.org>, LKML <linux-kernel@vger.kernel.org>, Greg KH <gregkh@suse.de>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Russell King <linux@arm.linux.org.uk>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Tue, 2011-03-22 at 23:05 +0100, Rafael J. Wysocki wrote:
-> On Tuesday, March 22, 2011, Kay Sievers wrote:
-
-> >> Because they are devices, and there is a lot to win, if the kernel
-> > exports all "devices" in the same way. This is not about saving an inode
-> > in /sys, it's the ability to do runtime device configuration with common
-> > tools.
+On Tuesday, March 22, 2011, Kay Sievers wrote:
+> On Tue, 2011-03-22 at 23:23 +0100, Rafael J. Wysocki wrote:
+> > On Tuesday, March 22, 2011, Kay Sievers wrote:
+...
+> > 
+> > Now, I can easily understand arguments about representing everything under
+> > /sys/devices/ by struct device objects, no question about that.  However,
+> > I also think there should be a place for things like those mentioned in the
+> > comment in sys.c, presumably outside of /sys/devices/.
 > 
-> If I understand you correctly, the goal is to have everything under
-> /sys/devices/ been represented by struct device objects and there are good
-> reasons to do that.
+> No, please. We have all we need. Let's do one example, which you might
+> apply to any other thing, because you never know what's the next big
+> thing in hardware. We need to be a future-proof-as-possible, and that's
+> not some second-class out-of-scope sysfs directory.
 > 
-> In that case we either have to move the things exported via sysdevs somewhere
-> else (presumably having to create that "somewhere" before), or we have to
-> introduce struct device objects specifically for exporting them.  I don't
-> really think the latter approach will be very popular, so quite likely we'll
-> need to have a plan for moving those things to different locations.
+> Lets' take CPUs:
+>   - they send events when registered
+>   - they want to export device specific properties
+>   - userspace wants to take actions when such devices are available
+> 
+> That all fits properly into the driver model in theory. Unless you do
+> coldplug and bootup a box.
+> 
+> These devices are already there before userspace even starts, hence we
+> find all these devices and "trigger" an fake uevent for all of them at
+> bootup. That will match execute all the rules specified for that device,
+> just as it would be hotplugges in that moment, hence we call it
+> coldplug, which works for all devices with the hotplug code, even when
+> they are never hot-pluggable.
+> 
+> What we do for coldplug is that we iterate over all flat lists of
+> subsystems and find the devices lists and trigger the event by poking in
+> the "uevent" sysfs file. Now all the sysdevs do not have a subsystem to
+> find, and do not have a standard "uevent" file.
+> 
+> Back to the CPUs, we have all the nice device directories which could
+> have all the CPU features in properties we need to make autoloading of
+> cpufreq, governer, kvm possible (patch exists from Andi Kleen already) 
+> 
+> But these dumb CPU sysfs device directories are completely invisible for
+> the *usual* logic, and should just join the model and all will just work
+> out-of-the-box.
 
-Ok, now that we sorted the misunderstanding out, let's start this topic
-from here again. (I really read your reply as: "let's move the CPUS
-somewhere else")
+That all is cool, but I'm not sure how it is related to things like
+available_clocksource and current_clocksource (which happen to be located
+under /sys/devices/system/clocksource/clocksource0/ being simply a path
+in sysfs).
 
+> When we started to clean up /sys (again only talking about devices, not
+> other stuff) we had:
+>   /block/*
+>   /class/<subsys>/*
+>   /bus/<subsys>/devices/*
+>   /devices/system/<subsys>/*
+> which are 4 different exports of exactly the same thing, a "device".
+> "Block" we converted to "class" already, "class" will be converted to
+> "bus", and "bus" will be renamed to "subsystem". All the current names
+> will be kept as compat symlinks, just as we did for "block". After that,
+> _all_ devices have a "subsystem" and a subsystem global directory where
+> people can add custom stuff shared by all devices-of-the-same-type. Ev
 
-What's the list of stuff you discovered using sysdevs, which is not a
-device at all, and has never more than a single instance of stuff of the
-same type? The clocksource?
+OK, sounds good.
 
-And let's find some place for them to put their properties instead of
-messing around with device from the driver core.
+> You can also argument from the other side, if a kernel device export is
+> not worth the few bytes of /sys/devices/ and a "subsystem" (struct
+> bus_type) it should not be in /sys at all, especially not hidden
+> somehwere outside of /sys/devices when it is something remotely close to
+> a device.
 
-Kay
+Well, Greg apparently thinks that available_clocksource and current_clocksource
+could be located under /sys/bus/clock/.  Perhaps other attributes now exported
+through sysdevs could be moved to places like this?
 
+Rafael
