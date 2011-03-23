@@ -1,60 +1,94 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 08:24:06 +0000
-Subject: [PATCH/RFC 1/2 v2] mmc: tmio: fix power-mode interpretation
-Message-Id: <Pine.LNX.4.64.1103110920180.23675@axis700.grange>
+Date: Wed, 23 Mar 2011 13:49:03 +0000
+Subject: [PATCH 1/4 v3] mmc: tmio: only access registers above 0xff, if
+Message-Id: <Pine.LNX.4.64.1103231446280.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110915290.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110915290.23675@axis700.grange>
+References: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-The power-mode sequence on MMC is MMC_POWER_OFF -> MMC_POWER_UP ->
-MMC_POWER_ON and not MMC_POWER_ON -> MMC_POWER_UP, as the driver currently
-is implying.
+Not all tmio implementations have registers above oxff. Accessing
+them on thise platforms is dangerous. In some cases it leads to
+address wrapping to addresses below 0x100, which corrupts random
+unrelated registers.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-
-Please, test on MFD!
-
-V2: rebase on top of driver split
-
- drivers/mmc/host/tmio_mmc_pio.c |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |   25 +++++++++++++++++++------
+ 1 files changed, 19 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e1aed25..69772ab 100644
+index a7406e3..28e14c7 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -746,20 +746,20 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	if (ios->clock)
- 		tmio_mmc_set_clock(host, ios->clock);
+@@ -209,6 +209,7 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ {
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
  
--	/* Power sequence - OFF -> ON -> UP */
-+	/* Power sequence - OFF -> UP -> ON */
- 	switch (ios->power_mode) {
- 	case MMC_POWER_OFF: /* power down SD bus */
- 		if (host->set_pwr)
- 			host->set_pwr(host->pdev, 0);
- 		tmio_mmc_clk_stop(host);
- 		break;
--	case MMC_POWER_ON: /* power up SD bus */
-+	case MMC_POWER_ON: /* start bus clock */
-+		tmio_mmc_clk_start(host);
-+		break;
-+	case MMC_POWER_UP: /* power up SD bus */
- 		if (host->set_pwr)
- 			host->set_pwr(host->pdev, 1);
- 		break;
--	case MMC_POWER_UP: /* start bus clock */
--		tmio_mmc_clk_start(host);
--		break;
- 	}
+ 	/*
+ 	 * Testing on sh-mobile showed that SDIO IRQs are unmasked when
+@@ -218,8 +219,11 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 	 */
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+ 		disable_irq(host->irq);
+-	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
+-	msleep(10);
++	/* implicit BUG_ON(!res) */
++	if (resource_size(res) > 0x100) {
++		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
++		msleep(10);
++	}
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
+ 		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
+ 		enable_irq(host->irq);
+@@ -232,6 +236,7 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ {
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
  
- 	switch (ios->bus_width) {
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+@@ -239,8 +244,11 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 	/* see comment in tmio_mmc_clk_stop above */
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+ 		disable_irq(host->irq);
+-	sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
+-	msleep(10);
++	/* implicit BUG_ON(!res) */
++	if (resource_size(res) > 0x100) {
++		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
++		msleep(10);
++	}
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ) {
+ 		tmio_mmc_enable_sdio_irq(host->mmc, host->sdio_irq_enabled);
+ 		enable_irq(host->irq);
+@@ -249,12 +257,17 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 
+ static void tmio_mmc_reset(struct tmio_mmc_host *host)
+ {
++	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
++
+ 	/* FIXME - should we set stop clock reg here */
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
+-	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
++	/* implicit BUG_ON(!res) */
++	if (resource_size(res) > 0x100)
++		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
+ 	msleep(10);
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
+-	sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
++	if (resource_size(res) > 0x100)
++		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
+ 	msleep(10);
+ }
+ 
 -- 
-1.7.2.3
+1.7.2.5
 
