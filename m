@@ -1,69 +1,100 @@
-From: Prasad Joshi <prasadjoshi124@gmail.com>
-Date: Mon, 14 Mar 2011 17:59:48 +0000
-Subject: [RFC][PATCH v2 16/23] (sh) __vmalloc: add gfp flags variant of pte
-Message-Id: <AANLkTim9zfcfMkLhQeXE7TCdFGGF8Ypb_h=s4bxFMZ9E@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Mar 2011 13:49:07 +0000
+Subject: [PATCH 2/4 v3] ARM: mach-shmobile: fix SDHI IO address-range
+Message-Id: <Pine.LNX.4.64.1103231447040.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Prasad Joshi <prasadjoshi124@gmail.com>, Anand Mitra <mitra@kqinfotech.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, linux-arch@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-__vmalloc: propagating GFP allocation flag.
+SDHI registers occupy only a 0x100 byte large window, not 0x200 byte.
 
-- adds functions to allow caller to pass the GFP flag for memory allocation
-- helps in fixing the Bug 30702 (__vmalloc(GFP_NOFS) can callback
-		  file system evict_inode).
-
-Signed-off-by: Anand Mitra <mitra@kqinfotech.com>
-Signed-off-by: Prasad Joshi <prasadjoshi124@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Chnagelog:
-arch/sh/include/asm/pgalloc.h |    8 +++++++-
-arch/sh/mm/pgtable.c          |    8 +++++++-
-2 files changed, 14 insertions(+), 2 deletions(-)
----
-diff --git a/arch/sh/include/asm/pgalloc.h b/arch/sh/include/asm/pgalloc.h
-index 8c00785..aaed989 100644
---- a/arch/sh/include/asm/pgalloc.h
-+++ b/arch/sh/include/asm/pgalloc.h
-@@ -31,10 +31,16 @@ static inline void pmd_populate(struct mm_struct
-*mm, pmd_t *pmd,
- /*
-  * Allocate and free page tables.
-  */
-+static inline pte_t *__pte_alloc_one_kernel(struct mm_struct *mm,
-+					  unsigned long address, gfp_t gfp_mask)
-+{
-+	return quicklist_alloc(QUICK_PT, gfp_mask, NULL);
-+}
-+
- static inline pte_t *pte_alloc_one_kernel(struct mm_struct *mm,
- 					  unsigned long address)
- {
--	return quicklist_alloc(QUICK_PT, GFP_KERNEL | __GFP_REPEAT, NULL);
-+	return __pte_alloc_one_kernel(mm, address, GFP_KERNEL | __GFP_REPEAT);
- }
+ arch/arm/mach-shmobile/board-ap4evb.c   |    4 ++--
+ arch/arm/mach-shmobile/board-g4evm.c    |    4 ++--
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++---
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
- static inline pgtable_t pte_alloc_one(struct mm_struct *mm,
-diff --git a/arch/sh/mm/pgtable.c b/arch/sh/mm/pgtable.c
-index 26e03a1..b938eb8 100644
---- a/arch/sh/mm/pgtable.c
-+++ b/arch/sh/mm/pgtable.c
-@@ -45,9 +45,15 @@ void pud_populate(struct mm_struct *mm, pud_t *pud,
-pmd_t *pmd)
- 	set_pud(pud, __pud((unsigned long)pmd));
- }
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 7ae9e3b..da8931d 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -312,7 +312,7 @@ static struct resource sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start  = 0xe6850000,
+-		.end    = 0xe68501ff,
++		.end    = 0xe68500ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -345,7 +345,7 @@ static struct resource sdhi1_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+ 		.start  = 0xe6860000,
+-		.end    = 0xe68601ff,
++		.end    = 0xe68600ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
+index cccdf2d..c87a7b7 100644
+--- a/arch/arm/mach-shmobile/board-g4evm.c
++++ b/arch/arm/mach-shmobile/board-g4evm.c
+@@ -205,7 +205,7 @@ static struct resource sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start  = 0xe6d50000,
+-		.end    = 0xe6d501ff,
++		.end    = 0xe6d50nff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -232,7 +232,7 @@ static struct resource sdhi1_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+ 		.start  = 0xe6d60000,
+-		.end    = 0xe6d601ff,
++		.end    = 0xe6d600ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 05fc5ac..0ae0bc6 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -670,7 +670,7 @@ static struct resource sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start	= 0xe6850000,
+-		.end	= 0xe68501ff,
++		.end	= 0xe68500ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -705,7 +705,7 @@ static struct resource sdhi1_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+ 		.start	= 0xe6860000,
+-		.end	= 0xe68601ff,
++		.end	= 0xe68600ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -748,7 +748,7 @@ static struct resource sdhi2_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI2",
+ 		.start	= 0xe6870000,
+-		.end	= 0xe68701ff,
++		.end	= 0xe68700ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-- 
+1.7.2.5
 
-+pmd_t *
-+__pmd_alloc_one(struct mm_struct *mm, unsigned long address, gfp_t gfp_mask)
-+{
-+	return kmem_cache_alloc(pmd_cachep, gfp_mask | __GFP_ZERO);
-+}
-+
- pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address)
- {
--	return kmem_cache_alloc(pmd_cachep, PGALLOC_GFP);
-+	return __pmd_alloc_one(mm, address, GFP_KERNEL | __GFP_REPEAT);
- }
-
- void pmd_free(struct mm_struct *mm, pmd_t *pmd)
