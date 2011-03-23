@@ -1,288 +1,119 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 24 Mar 2011 07:04:37 +0000
-Subject: [PATCH 1/2] mmc, ARM: Rename SuperH Mobile ARM zboot helpers
-Message-Id: <1300950278-17274-2-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Mar 2011 13:49:11 +0000
+Subject: [PATCH 3/4 v3] sh: fix SDHI IO address-range
+Message-Id: <Pine.LNX.4.64.1103231447350.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1300950278-17274-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1300950278-17274-1-git-send-email-horms@verge.net.au>
+References: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103231445070.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
 
-These headers and helpers will also be used for SDHI boot
-so the mmcif name will start to make a lot less sense.
+SDHI registers occupy only a 0x100 byte large window, not 0x200 byte.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/compressed/mmcif-sh7372.c            |   12 +++---
- arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h    |   29 +++++++++++++++
- arch/arm/mach-shmobile/include/mach/mmc-mackerel.h |   38 +++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/mmc.h          |   18 +++++++++
- arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h  |   29 ---------------
- .../mach-shmobile/include/mach/mmcif-mackerel.h    |   39 --------------------
- arch/arm/mach-shmobile/include/mach/mmcif.h        |   18 ---------
- 7 files changed, 91 insertions(+), 92 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/mmc-mackerel.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/mmc.h
- delete mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h
- delete mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
- delete mode 100644 arch/arm/mach-shmobile/include/mach/mmcif.h
+ arch/sh/boards/mach-ap325rxa/setup.c |    4 ++--
+ arch/sh/boards/mach-ecovec24/setup.c |    4 ++--
+ arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
+ arch/sh/boards/mach-migor/setup.c    |    2 +-
+ arch/sh/boards/mach-se/7724/setup.c  |    4 ++--
+ 5 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
-index e6180af..28bcf3c 100644
---- a/arch/arm/boot/compressed/mmcif-sh7372.c
-+++ b/arch/arm/boot/compressed/mmcif-sh7372.c
-@@ -10,7 +10,7 @@
-  */
- 
- #include <linux/mmc/sh_mmcif.h>
--#include <mach/mmcif.h>
-+#include <mach/mmc.h>
- 
- #define MMCIF_BASE      (void __iomem *)0xe6bd0000
- 
-@@ -41,8 +41,8 @@
-  */
- asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
- {
--	mmcif_init_progress();
--	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
-+	mmc_init_progress();
-+	mmc_update_progress(MMCIF_PROGRESS_ENTER);
- 
- 	/* Initialise MMC
- 	 * registers: PORT84CR-PORT92CR
-@@ -68,12 +68,12 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
- 	/* Enable clock to MMC hardware block */
- 	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 12), SMSTPCR3);
- 
--	mmcif_update_progress(MMCIF_PROGRESS_INIT);
-+	mmc_update_progress(MMCIF_PROGRESS_INIT);
- 
- 	/* setup MMCIF hardware */
- 	sh_mmcif_boot_init(MMCIF_BASE);
- 
--	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
-+	mmc_update_progress(MMCIF_PROGRESS_LOAD);
- 
- 	/* load kernel via MMCIF interface */
- 	sh_mmcif_boot_do_read(MMCIF_BASE, 2, /* Kernel is at block 2 */
-@@ -83,5 +83,5 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
- 	/* Disable clock to MMC hardware block */
- 	__raw_writel(__raw_readl(SMSTPCR3) & (1 << 12), SMSTPCR3);
- 
--	mmcif_update_progress(MMCIF_PROGRESS_DONE);
-+	mmc_update_progress(MMCIF_PROGRESS_DONE);
- }
-diff --git a/arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h b/arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h
-new file mode 100644
-index 0000000..db59fdb
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h
-@@ -0,0 +1,29 @@
-+#ifndef MMC_AP4EB_H
-+#define MMC_AP4EB_H
-+
-+#define PORT185CR      (void __iomem *)0xe60520b9
-+#define PORT186CR      (void __iomem *)0xe60520ba
-+#define PORT187CR      (void __iomem *)0xe60520bb
-+#define PORT188CR      (void __iomem *)0xe60520bc
-+
-+#define PORTR191_160DR (void __iomem *)0xe6056014
-+
-+static inline void mmc_init_progress(void)
-+{
-+       /* Initialise LEDS1-4
-+        * registers: PORT185CR-PORT188CR (LED1-LED4 Control)
-+        * value:     0x10 - enable output
-+        */
-+       __raw_writeb(0x10, PORT185CR);
-+       __raw_writeb(0x10, PORT186CR);
-+       __raw_writeb(0x10, PORT187CR);
-+       __raw_writeb(0x10, PORT188CR);
-+}
-+
-+static inline void mmc_update_progress(int n)
-+{
-+	__raw_writel((__raw_readl(PORTR191_160DR) & ~(0xf << 25)) |
-+		     (1 << (25 + n)), PORTR191_160DR);
-+}
-+
-+#endif /* MMC_AP4EB_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmc-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmc-mackerel.h
-new file mode 100644
-index 0000000..15d3a9e
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/mmc-mackerel.h
-@@ -0,0 +1,38 @@
-+#ifndef MMC_MACKEREL_H
-+#define MMC_MACKEREL_H
-+
-+#define PORT0CR      (void __iomem *)0xe6051000
-+#define PORT1CR      (void __iomem *)0xe6051001
-+#define PORT2CR      (void __iomem *)0xe6051002
-+#define PORT159CR    (void __iomem *)0xe605009f
-+
-+#define PORTR031_000DR (void __iomem *)0xe6055000
-+#define PORTL159_128DR (void __iomem *)0xe6054010
-+
-+static inline void mmc_init_progress(void)
-+{
-+       /* Initialise LEDS0-3
-+        * registers: PORT0CR-PORT2CR,PORT159CR (LED0-LED3 Control)
-+        * value:     0x10 - enable output
-+        */
-+       __raw_writeb(0x10, PORT0CR);
-+       __raw_writeb(0x10, PORT1CR);
-+       __raw_writeb(0x10, PORT2CR);
-+       __raw_writeb(0x10, PORT159CR);
-+}
-+
-+static inline void mmc_update_progress(int n)
-+{
-+	unsigned a = 0, b = 0;
-+
-+	if (n < 3)
-+		a = 1 << n;
-+	else
-+		b = 1 << 31;
-+
-+	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
-+		     PORTR031_000DR);
-+	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
-+		     PORTL159_128DR);
-+}
-+#endif /* MMC_MACKEREL_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmc.h b/arch/arm/mach-shmobile/include/mach/mmc.h
-new file mode 100644
-index 0000000..e11560a
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/mmc.h
-@@ -0,0 +1,18 @@
-+#ifndef MMC_H
-+#define MMC_H
-+
-+/**************************************************
-+ *
-+ *		board specific settings
-+ *
-+ **************************************************/
-+
-+#ifdef CONFIG_MACH_AP4EVB
-+#include "mach/mmc-ap4eb.h"
-+#elif CONFIG_MACH_MACKEREL
-+#include "mach/mmc-mackerel.h"
-+#else
-+#error "unsupported board."
-+#endif
-+
-+#endif /* MMC_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h b/arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h
-deleted file mode 100644
-index a8d02be..0000000
---- a/arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h
-+++ /dev/null
-@@ -1,29 +0,0 @@
--#ifndef MMCIF_AP4EB_H
--#define MMCIF_AP4EB_H
--
--#define PORT185CR      (void __iomem *)0xe60520b9
--#define PORT186CR      (void __iomem *)0xe60520ba
--#define PORT187CR      (void __iomem *)0xe60520bb
--#define PORT188CR      (void __iomem *)0xe60520bc
--
--#define PORTR191_160DR (void __iomem *)0xe6056014
--
--static inline void mmcif_init_progress(void)
--{
--       /* Initialise LEDS1-4
--        * registers: PORT185CR-PORT188CR (LED1-LED4 Control)
--        * value:     0x10 - enable output
--        */
--       __raw_writeb(0x10, PORT185CR);
--       __raw_writeb(0x10, PORT186CR);
--       __raw_writeb(0x10, PORT187CR);
--       __raw_writeb(0x10, PORT188CR);
--}
--
--static inline void mmcif_update_progress(int n)
--{
--	__raw_writel((__raw_readl(PORTR191_160DR) & ~(0xf << 25)) |
--		     (1 << (25 + n)), PORTR191_160DR);
--}
--
--#endif /* MMCIF_AP4EB_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-deleted file mode 100644
-index 4b4f694..0000000
---- a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
-+++ /dev/null
-@@ -1,39 +0,0 @@
--#ifndef MMCIF_MACKEREL_H
--#define MMCIF_MACKEREL_H
--
--#define PORT0CR      (void __iomem *)0xe6051000
--#define PORT1CR      (void __iomem *)0xe6051001
--#define PORT2CR      (void __iomem *)0xe6051002
--#define PORT159CR    (void __iomem *)0xe605009f
--
--#define PORTR031_000DR (void __iomem *)0xe6055000
--#define PORTL159_128DR (void __iomem *)0xe6054010
--
--static inline void mmcif_init_progress(void)
--{
--       /* Initialise LEDS0-3
--        * registers: PORT0CR-PORT2CR,PORT159CR (LED0-LED3 Control)
--        * value:     0x10 - enable output
--        */
--       __raw_writeb(0x10, PORT0CR);
--       __raw_writeb(0x10, PORT1CR);
--       __raw_writeb(0x10, PORT2CR);
--       __raw_writeb(0x10, PORT159CR);
--}
--
--static inline void mmcif_update_progress(int n)
--{
--	unsigned a = 0, b = 0;
--
--	if (n < 3)
--		a = 1 << n;
--	else
--		b = 1 << 31;
--
--	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
--		     PORTR031_000DR);
--	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
--		     PORTL159_128DR);
--}
--
--#endif /* MMCIF_MACKEREL_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
-deleted file mode 100644
-index f4dc327..0000000
---- a/arch/arm/mach-shmobile/include/mach/mmcif.h
-+++ /dev/null
-@@ -1,18 +0,0 @@
--#ifndef MMCIF_H
--#define MMCIF_H
--
--/**************************************************
-- *
-- *		board specific settings
-- *
-- **************************************************/
--
--#ifdef CONFIG_MACH_AP4EVB
--#include "mach/mmcif-ap4eb.h"
--#elif CONFIG_MACH_MACKEREL
--#include "mach/mmcif-mackerel.h"
--#else
--#error "unsupported board."
--#endif
--
--#endif /* MMCIF_H */
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 60d109f..65bd042 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -417,7 +417,7 @@ static struct resource sdhi0_cn3_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start	= 0x04ce0000,
+-		.end	= 0x04ce01ff,
++		.end	= 0x04ce00ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -447,7 +447,7 @@ static struct resource sdhi1_cn7_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+ 		.start	= 0x04cf0000,
+-		.end	= 0x04cf01ff,
++		.end	= 0x04cf00ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 710be27c9..fd0cb36 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -480,7 +480,7 @@ static struct resource sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start  = 0x04ce0000,
+-		.end    = 0x04ce01ff,
++		.end    = 0x04ce00ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -520,7 +520,7 @@ static struct resource sdhi1_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+ 		.start  = 0x04cf0000,
+-		.end    = 0x04cf01ff,
++		.end    = 0x04cf00ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 7021b59..8b4abbb 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -354,7 +354,7 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start  = 0x04ce0000,
+-		.end    = 0x04ce01ff,
++		.end    = 0x04ce00ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 37e64a6..184fde1 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -399,7 +399,7 @@ static struct resource sdhi_cn9_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI",
+ 		.start	= 0x04ce0000,
+-		.end	= 0x04ce01ff,
++		.end	= 0x04ce00ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 58cefd3..1235767 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -456,7 +456,7 @@ static struct resource sdhi0_cn7_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+ 		.start  = 0x04ce0000,
+-		.end    = 0x04ce01ff,
++		.end    = 0x04ce00ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -488,7 +488,7 @@ static struct resource sdhi1_cn8_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI1",
+ 		.start  = 0x04cf0000,
+-		.end    = 0x04cf01ff,
++		.end    = 0x04cf00ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
 -- 
-1.7.2.3
+1.7.2.5
 
