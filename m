@@ -1,36 +1,31 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 23 Mar 2011 09:59:20 +0000
-Subject: Re: [PATCH 9/10] sh: Use struct syscore_ops instead of sysdev class and sysdev
-Message-Id: <20110323095920.GA6008@linux-sh.org>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Wed, 23 Mar 2011 11:12:20 +0000
+Subject: Re: [PATCH 9/10] sh: Use struct syscore_ops instead of sysdev
+Message-Id: <20110323111220.GB27671@sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201103100131.58206.rjw@sisk.pl> <201103190147.28001.rjw@sisk.pl> <20110322140420.GA24004@linux-sh.org> <201103222119.28328.rjw@sisk.pl>
-In-Reply-To: <201103222119.28328.rjw@sisk.pl>
+References: <201103100131.58206.rjw@sisk.pl> <201103222130.46603.rjw@sisk.pl> <1300826390.1815.5.camel@zag> <201103222200.52131.rjw@sisk.pl> <1300828356.1815.15.camel@zag> <20110322214922.GA7503@linux-sh.org> <1300831256.1815.22.camel@zag> <20110322222347.GA3978@linux-sh.org>
+In-Reply-To: <20110322222347.GA3978@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: LKML <linux-kernel@vger.kernel.org>, Greg KH <gregkh@suse.de>, Kay Sievers <kay.sievers@suse.de>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Russell King <linux@arm.linux.org.uk>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Kay Sievers <kay.sievers@suse.de>, "Rafael J. Wysocki" <rjw@sisk.pl>, LKML <linux-kernel@vger.kernel.org>, Greg KH <gregkh@suse.de>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Russell King <linux@arm.linux.org.uk>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Tue, Mar 22, 2011 at 09:19:28PM +0100, Rafael J. Wysocki wrote:
-> Convert the SuperH clocks framework and shared interrupt handling
-> code to using struct syscore_ops instead of a sysdev classes and
-> sysdevs for power managment.
-> 
-> This reduces the code size significantly and simplifies it.  The
-> optimizations causing things not to be restored after creating a
-> hibernation image are removed, but they might lead to undesirable
-> effects during resume from hibernation (e.g. the clocks would be left
-> as the boot kernel set them, which might be not the same way as the
-> hibernated kernel had seen them before the hibernation).
-> 
-> This also is necessary for removing sysdevs from the kernel entirely
-> in the future.
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> ---
->  drivers/sh/clk/core.c       |   68 ++++++++-----------------------
->  drivers/sh/intc/core.c      |   95 +++++++++++++++++++++-----------------------
->  drivers/sh/intc/internals.h |    1 
->  3 files changed, 65 insertions(+), 99 deletions(-)
-> 
-This one looks good, and seems to work fine. Applied, thanks.
+On Wed, Mar 23, 2011 at 07:23:48AM +0900, Paul Mundt wrote:
+> On Tue, Mar 22, 2011 at 11:00:56PM +0100, Kay Sievers wrote:
+
+> > Which is what we need to get rid of. It does not make any sense on the
+> > global picture to have anything like that exported to userspace.
+
+> So far I haven't heard any rationale for why it doesn't. Exporting CPU
+> state to userspace certainly makes sense, and the sysdev model has worked
+> reasonably for CPUs, memory nodes, etc.
+
+FWIW it'd be really helpful to have CPUs (or at least SoCs) be regular
+struct devices for integration with the regulator API so we can have all
+things that might use a regulator (like DVFS) be struct devices but...
+
+> Once cpufreq, timekeeping, and NUMA node state have migrated to whatever
+> the driver model folks find acceptable, I'll happily follow suit.
+
+...we're not precisely there yet :/
