@@ -1,20 +1,21 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 07:52:28 +0000
+Date: Wed, 23 Mar 2011 13:43:10 +0000
 Subject: [PATCH 4/6] ARM: mach-shmobile: convert boards to use
-Message-Id: <Pine.LNX.4.64.1103110846390.23675@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1103231435330.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
+References: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
-
-Prepare to remove the temporary header.
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Paul Mundt <lethal@linux-sh.org>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ 
+No change, here for completeness
+ 
  arch/arm/mach-shmobile/board-ap4evb.c   |    2 +-
  arch/arm/mach-shmobile/board-g4evm.c    |    2 +-
  arch/arm/mach-shmobile/board-mackerel.c |    2 +-
@@ -65,5 +66,5 @@ index bbfc167..05fc5ac 100644
  #include <linux/mtd/partitions.h>
  #include <linux/mtd/physmap.h>
 -- 
-1.7.2.3
+1.7.2.5
 
