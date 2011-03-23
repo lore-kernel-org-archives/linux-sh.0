@@ -1,28 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 24 Mar 2011 09:03:44 +0000
-Subject: Re: [PATCH 1/4] mmc: tmio_mmc: Move some defines into a shared
-Message-Id: <20110324090344.GB11071@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Mar 2011 09:29:16 +0000
+Subject: [PATCH] ARM: mach-shmobile: add coherent DMA mask to CEU camera
+Message-Id: <Pine.LNX.4.64.1103231025560.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103240952280.15629@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103240952280.15629@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>
 
-On Thu, Mar 24, 2011 at 09:54:59AM +0100, Guennadi Liakhovetski wrote:
-> From: Simon Horman <horms@verge.net.au>
-> 
-> Also add TMIO_BBS.
-> 
-> This allows these defines to also be used by zboot.
-> 
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> As requested by Simon, this is now rebased on top of all my current tmio 
-> patches.
+Cameras are currently broken on ARM sh-mobile platforms. They need a
+suitable coherent DMA mask.
 
-Thanks Guennadi.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c   |    3 ++-
+ arch/arm/mach-shmobile/board-mackerel.c |    3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 81d6536..77bf226 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -923,7 +923,8 @@ static struct platform_device ceu_device = {
+ 	.num_resources	= ARRAY_SIZE(ceu_resources),
+ 	.resource	= ceu_resources,
+ 	.dev	= {
+-		.platform_data	= &sh_mobile_ceu_info,
++		.platform_data		= &sh_mobile_ceu_info,
++		.coherent_dma_mask	= 0xffffffff,
+ 	},
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 063a320..71de352 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -887,7 +887,8 @@ static struct platform_device ceu_device = {
+ 	.num_resources	= ARRAY_SIZE(ceu_resources),
+ 	.resource	= ceu_resources,
+ 	.dev		= {
+-		.platform_data	= &sh_mobile_ceu_info,
++		.platform_data		= &sh_mobile_ceu_info,
++		.coherent_dma_mask	= 0xffffffff,
+ 	},
+ };
+ 
+-- 
+1.7.2.5
+
