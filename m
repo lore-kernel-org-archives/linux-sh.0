@@ -1,20 +1,21 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 07:52:35 +0000
+Date: Wed, 23 Mar 2011 13:43:21 +0000
 Subject: [PATCH 5/6] sh: convert boards to use linux/mmc/sh_mobile_sdhi.h
-Message-Id: <Pine.LNX.4.64.1103110847120.23675@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1103231436300.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110831510.23675@axis700.grange>
+References: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
-
-Prepare to remove the temporary header.
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Paul Mundt <lethal@linux-sh.org>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ 
+No change, here for completeness
+ 
  arch/sh/boards/mach-ap325rxa/setup.c |    2 +-
  arch/sh/boards/mach-ecovec24/setup.c |    2 +-
  arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
@@ -94,5 +95,5 @@ index c8bcf6a..58cefd3 100644
  #include <linux/delay.h>
  #include <linux/smc91x.h>
 -- 
-1.7.2.3
+1.7.2.5
 
