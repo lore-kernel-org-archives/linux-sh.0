@@ -1,99 +1,45 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Mar 2011 13:43:21 +0000
-Subject: [PATCH 5/6] sh: convert boards to use linux/mmc/sh_mobile_sdhi.h
-Message-Id: <Pine.LNX.4.64.1103231436300.6836@axis700.grange>
+Date: Wed, 23 Mar 2011 13:42:29 +0000
+Subject: [PATCH 0/6 v2] mmc: split the tmio driver into several modules
+Message-Id: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103231156220.6836@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Paul Mundt <lethal@linux-sh.org>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi all
+
+This is version 2 of the patch series, posted on 11th of March. The only 
+change in this version is the dynamic allocation of the DMA bounce buffer, 
+as suggested by Magnus. Desription from the original post:
+
+The tmio_mmc SD/SDIO driver is serving very different hardware 
+configurations: on the one hand multi-function style chips from Toshiba, 
+Compaq, on the other hand SDHI units in ARM- and SuperH-based sh-mobile 
+SoCs. Apart from the different native APIs: MFD for the former and 
+platform-device in the latter, sh-mobile implementations also have a 
+number of features, exclusive to them, which, if implemented in the common 
+driver, clutter it needlessly and make its maintenance more difficult. 
+This patch series simplifies the situation by splitting the driver up into 
+3 modules: the core, consisting of the main part and, on sh-mobile, of the 
+DMA part; the mfd glue; and the platform glue. This way also (imaginary) 
+sh-mobile systems with additional tmio mfd chips on them can be supported.
+
+This patch-series touches code under
+
+arch/arm/mach-shmobile
+arch/sh/boards
+drivers/mfd
+drivers/mmc/host
+
+Perhaps, it would be best to collect necessary acks from Paul and push 
+them all via mmc?
+
+Thanks
+Guennadi
 ---
- 
-No change, here for completeness
- 
- arch/sh/boards/mach-ap325rxa/setup.c |    2 +-
- arch/sh/boards/mach-ecovec24/setup.c |    2 +-
- arch/sh/boards/mach-kfr2r09/setup.c  |    2 +-
- arch/sh/boards/mach-migor/setup.c    |    2 +-
- arch/sh/boards/mach-se/7724/setup.c  |    2 +-
- 5 files changed, 5 insertions(+), 5 deletions(-)
-
-diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
-index 33bfebc..60d109f 100644
---- a/arch/sh/boards/mach-ap325rxa/setup.c
-+++ b/arch/sh/boards/mach-ap325rxa/setup.c
-@@ -14,8 +14,8 @@
- #include <linux/device.h>
- #include <linux/interrupt.h>
- #include <linux/platform_device.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/sh_flctl.h>
- #include <linux/delay.h>
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 37ad5dc..710be27c9 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -11,9 +11,9 @@
- #include <linux/init.h>
- #include <linux/device.h>
- #include <linux/platform_device.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/gpio.h>
- #include <linux/interrupt.h>
-diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 7504daa..7021b59 100644
---- a/arch/sh/boards/mach-kfr2r09/setup.c
-+++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -10,8 +10,8 @@
- #include <linux/init.h>
- #include <linux/platform_device.h>
- #include <linux/interrupt.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/onenand.h>
-diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index 03a7ffe..37e64a6 100644
---- a/arch/sh/boards/mach-migor/setup.c
-+++ b/arch/sh/boards/mach-migor/setup.c
-@@ -12,8 +12,8 @@
- #include <linux/interrupt.h>
- #include <linux/input.h>
- #include <linux/input/sh_keysc.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/nand.h>
- #include <linux/i2c.h>
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index c8bcf6a..58cefd3 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -14,8 +14,8 @@
- #include <linux/device.h>
- #include <linux/interrupt.h>
- #include <linux/platform_device.h>
--#include <linux/mfd/sh_mobile_sdhi.h>
- #include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/delay.h>
- #include <linux/smc91x.h>
--- 
-1.7.2.5
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
