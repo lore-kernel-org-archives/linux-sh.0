@@ -1,11 +1,9 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 23 Mar 2011 16:04:31 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Wed, 23 Mar 2011 16:20:22 +0000
 Subject: Re: [PATCH] Input: tca6416-keypad: Change to module_init()
-Message-Id: <AANLkTin1jG36-EsvAk9o-KxdxaBBhx=5Rf+JMidjYqsT@mail.gmail.com>
+Message-Id: <20110323162021.GA26594@opensource.wolfsonmicro.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110322142619.1109.89105.sendpatchset@t400s>
-	<20110322142855.GB2202@sirena.org.uk>
-	<20110322143307.GB24004@linux-sh.org>
+References: <20110322143307.GB24004@linux-sh.org>
 	<AANLkTimRV9vzOE7+VPX48y3KebLJSvBOkqxoM--9gqGb@mail.gmail.com>
 	<20110322153226.GC30303@linux-sh.org>
 	<AANLkTimyxdcJ-eEke9x7X1zdiJNbFtncfv0=NzKjtAme@mail.gmail.com>
@@ -14,46 +12,18 @@ References: <20110322142619.1109.89105.sendpatchset@t400s>
 	<20110322163144.GC2202@sirena.org.uk>
 	<AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
 	<20110322165907.GG22583@opensource.wolfsonmicro.com>
-In-Reply-To: <20110322165907.GG22583@opensource.wolfsonmicro.com>
+	<AANLkTin1jG36-EsvAk9o-KxdxaBBhx=5Rf+JMidjYqsT@mail.gmail.com>
+In-Reply-To: <AANLkTin1jG36-EsvAk9o-KxdxaBBhx=5Rf+JMidjYqsT@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 23, 2011 at 1:59 AM, Mark Brown
-<broonie@opensource.wolfsonmicro.com> wrote:
-> On Wed, Mar 23, 2011 at 01:51:02AM +0900, Magnus Damm wrote:
->
->> I'm not sure if this is i2c specific though - in general you probably
->> need to register the parent bus driver first.
->
-> This was my original question - I'm not aware of any reason why you
-> should need to register the driver for the specific bus first, it seems
-> odd.
+On Thu, Mar 24, 2011 at 01:04:31AM +0900, Magnus Damm wrote:
 
-Can't see why it wouldn't work - in theory at least. I'll have a look tomor=
-row.
+> Sounds nice. Hopefully that will allow us to use module_init() in
+> drivers instead of other initcall levels depending on bus type.
 
-The use of subsys_initcall() in the keypad driver is also a bit odd IMO.
-
->> > In general embedded platforms register I2C early as things like PMICs
->> > typically hang off them. =A0Grant was trying to push people to use
->> > deferred registration for this stuff but it didn't happen yet and I'd
->> > personally be more comfortable with more infastructure supporting that.
->
->> The dependency tracking is a bit primitive with only initcalls. I
->> wouldn't mind something like this:
->
-> That's not a general solution as it doesn't cover things like cross
-> dependencies between devices on the same bus type. =A0You really want to
-> be able to say "I depend on this set of other devices" somehow, the
-> proposal from Grant that I'm talking about was to only register devices
-> once their dependencies had appeared which solves the issue but is a bit
-> manual for the board files.
-
-Sounds nice. Hopefully that will allow us to use module_init() in
-drivers instead of other initcall levels depending on bus type.
-
-Thanks,
-
-/ magnus
+None of this is anything to do with the bus type - it's to do with the
+function of the devices within the system.  Things that are required for
+early init of the kernel get bumped up the list.
