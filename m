@@ -1,7 +1,7 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Tue, 22 Mar 2011 16:59:07 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 23 Mar 2011 16:04:31 +0000
 Subject: Re: [PATCH] Input: tca6416-keypad: Change to module_init()
-Message-Id: <20110322165907.GG22583@opensource.wolfsonmicro.com>
+Message-Id: <AANLkTin1jG36-EsvAk9o-KxdxaBBhx=5Rf+JMidjYqsT@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110322142619.1109.89105.sendpatchset@t400s>
 	<20110322142855.GB2202@sirena.org.uk>
@@ -13,39 +13,47 @@ References: <20110322142619.1109.89105.sendpatchset@t400s>
 	<AANLkTi=Fjc2f837ifH152Rh8W0PfiZvViYaLe=8XZo4Z@mail.gmail.com>
 	<20110322163144.GC2202@sirena.org.uk>
 	<AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
-In-Reply-To: <AANLkTiniBVWhSiNZMRYbO857D_Vj03KxH4qYqkVo-11J@mail.gmail.com>
+	<20110322165907.GG22583@opensource.wolfsonmicro.com>
+In-Reply-To: <20110322165907.GG22583@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 23, 2011 at 01:51:02AM +0900, Magnus Damm wrote:
+On Wed, Mar 23, 2011 at 1:59 AM, Mark Brown
+<broonie@opensource.wolfsonmicro.com> wrote:
+> On Wed, Mar 23, 2011 at 01:51:02AM +0900, Magnus Damm wrote:
+>
+>> I'm not sure if this is i2c specific though - in general you probably
+>> need to register the parent bus driver first.
+>
+> This was my original question - I'm not aware of any reason why you
+> should need to register the driver for the specific bus first, it seems
+> odd.
 
-> I'm not sure if this is i2c specific though - in general you probably
-> need to register the parent bus driver first.
+Can't see why it wouldn't work - in theory at least. I'll have a look tomor=
+row.
 
-This was my original question - I'm not aware of any reason why you
-should need to register the driver for the specific bus first, it seems
-odd.
+The use of subsys_initcall() in the keypad driver is also a bit odd IMO.
 
-> I've seen some SH-Mobile designs with PMICs, and they all use a
-> dedicated i2c bus.
+>> > In general embedded platforms register I2C early as things like PMICs
+>> > typically hang off them. =A0Grant was trying to push people to use
+>> > deferred registration for this stuff but it didn't happen yet and I'd
+>> > personally be more comfortable with more infastructure supporting that.
+>
+>> The dependency tracking is a bit primitive with only initcalls. I
+>> wouldn't mind something like this:
+>
+> That's not a general solution as it doesn't cover things like cross
+> dependencies between devices on the same bus type. =A0You really want to
+> be able to say "I depend on this set of other devices" somehow, the
+> proposal from Grant that I'm talking about was to only register devices
+> once their dependencies had appeared which solves the issue but is a bit
+> manual for the board files.
 
-It's the most common bus for PMICs but some use SPI for performance
-reasons, especially if they integrate other mixed signal functionality
-such as touchscreen controllers that might be high volume.
+Sounds nice. Hopefully that will allow us to use module_init() in
+drivers instead of other initcall levels depending on bus type.
 
-> > In general embedded platforms register I2C early as things like PMICs
-> > typically hang off them. =A0Grant was trying to push people to use
-> > deferred registration for this stuff but it didn't happen yet and I'd
-> > personally be more comfortable with more infastructure supporting that.
+Thanks,
 
-> The dependency tracking is a bit primitive with only initcalls. I
-> wouldn't mind something like this:
-
-That's not a general solution as it doesn't cover things like cross
-dependencies between devices on the same bus type.  You really want to
-be able to say "I depend on this set of other devices" somehow, the
-proposal from Grant that I'm talking about was to only register devices
-once their dependencies had appeared which solves the issue but is a bit
-manual for the board files.
+/ magnus
