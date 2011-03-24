@@ -1,162 +1,288 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 Mar 2011 13:36:17 +0000
-Subject: [PATCH 2/2 v2] mmc: tmio: use PIO for short transfers
-Message-Id: <Pine.LNX.4.64.1103251434040.22824@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 24 Mar 2011 07:04:37 +0000
+Subject: [PATCH 1/2] mmc, ARM: Rename SuperH Mobile ARM zboot helpers
+Message-Id: <1300950278-17274-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103251430260.22824@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103251430260.22824@axis700.grange>
+References: <1300950278-17274-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1300950278-17274-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch allows transferring of some requests in PIO and some in DMA
-mode and defaults to using DMA only for transfers longer than 8 bytes.
-This is especially useful with SDIO, which can have lots of 2- and 4-byte
-transfers, creating unnecessary high overhead, when executed in DMA.
+These headers and helpers will also be used for SDHI boot
+so the mmcif name will start to make a lot less sense.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
+ arch/arm/boot/compressed/mmcif-sh7372.c            |   12 +++---
+ arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h    |   29 +++++++++++++++
+ arch/arm/mach-shmobile/include/mach/mmc-mackerel.h |   38 +++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/mmc.h          |   18 +++++++++
+ arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h  |   29 ---------------
+ .../mach-shmobile/include/mach/mmcif-mackerel.h    |   39 --------------------
+ arch/arm/mach-shmobile/include/mach/mmcif.h        |   18 ---------
+ 7 files changed, 91 insertions(+), 92 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h
+ create mode 100644 arch/arm/mach-shmobile/include/mach/mmc-mackerel.h
+ create mode 100644 arch/arm/mach-shmobile/include/mach/mmc.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/mmcif.h
 
-v2: rebased on top of DMA API update patches from Linus Walleij
-
- drivers/mmc/host/tmio_mmc.c |   33 +++++++++++++++++++++++----------
- 1 files changed, 23 insertions(+), 10 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index e88627b..32ab145 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -100,6 +100,8 @@
- 		TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT)
- #define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
+diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
+index e6180af..28bcf3c 100644
+--- a/arch/arm/boot/compressed/mmcif-sh7372.c
++++ b/arch/arm/boot/compressed/mmcif-sh7372.c
+@@ -10,7 +10,7 @@
+  */
  
-+#define TMIO_MIN_DMA_LEN 8
-+
- #define enable_mmc_irqs(host, i) \
- 	do { \
- 		u32 mask;\
-@@ -147,6 +149,7 @@ struct tmio_mmc_host {
- 	struct platform_device *pdev;
+ #include <linux/mmc/sh_mmcif.h>
+-#include <mach/mmcif.h>
++#include <mach/mmc.h>
  
- 	/* DMA support */
-+	bool			force_pio;
- 	struct dma_chan		*chan_rx;
- 	struct dma_chan		*chan_tx;
- 	struct tasklet_struct	dma_complete;
-@@ -385,6 +388,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
- 	host->cmd = NULL;
- 	host->data = NULL;
- 	host->mrq = NULL;
-+	host->force_pio = false;
+ #define MMCIF_BASE      (void __iomem *)0xe6bd0000
  
- 	spin_unlock_irqrestore(&host->lock, flags);
+@@ -41,8 +41,8 @@
+  */
+ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
+ {
+-	mmcif_init_progress();
+-	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
++	mmc_init_progress();
++	mmc_update_progress(MMCIF_PROGRESS_ENTER);
  
-@@ -404,6 +408,7 @@ tmio_mmc_finish_request(struct tmio_mmc_host *host)
- 	host->mrq = NULL;
- 	host->cmd = NULL;
- 	host->data = NULL;
-+	host->force_pio = false;
+ 	/* Initialise MMC
+ 	 * registers: PORT84CR-PORT92CR
+@@ -68,12 +68,12 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
+ 	/* Enable clock to MMC hardware block */
+ 	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 12), SMSTPCR3);
  
- 	cancel_delayed_work(&host->delayed_reset_work);
+-	mmcif_update_progress(MMCIF_PROGRESS_INIT);
++	mmc_update_progress(MMCIF_PROGRESS_INIT);
  
-@@ -485,7 +490,7 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
- 	unsigned int count;
- 	unsigned long flags;
+ 	/* setup MMCIF hardware */
+ 	sh_mmcif_boot_init(MMCIF_BASE);
  
--	if (host->chan_tx || host->chan_rx) {
-+	if ((host->chan_tx || host->chan_rx) && !host->force_pio) {
- 		pr_err("PIO IRQ in DMA mode!\n");
- 		return;
- 	} else if (!data) {
-@@ -551,15 +556,11 @@ static void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
- 	 */
+-	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
++	mmc_update_progress(MMCIF_PROGRESS_LOAD);
  
- 	if (data->flags & MMC_DATA_READ) {
--		if (!host->chan_rx)
--			disable_mmc_irqs(host, TMIO_MASK_READOP);
--		else
-+		if (host->chan_rx && !host->force_pio)
- 			tmio_check_bounce_buffer(host);
- 		dev_dbg(&host->pdev->dev, "Complete Rx request %p\n",
- 			host->mrq);
- 	} else {
--		if (!host->chan_tx)
--			disable_mmc_irqs(host, TMIO_MASK_WRITEOP);
- 		dev_dbg(&host->pdev->dev, "Complete Tx request %p\n",
- 			host->mrq);
- 	}
-@@ -583,7 +584,7 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 	if (!data)
- 		goto out;
+ 	/* load kernel via MMCIF interface */
+ 	sh_mmcif_boot_do_read(MMCIF_BASE, 2, /* Kernel is at block 2 */
+@@ -83,5 +83,5 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
+ 	/* Disable clock to MMC hardware block */
+ 	__raw_writel(__raw_readl(SMSTPCR3) & (1 << 12), SMSTPCR3);
  
--	if (host->chan_tx && (data->flags & MMC_DATA_WRITE)) {
-+	if (host->chan_tx && (data->flags & MMC_DATA_WRITE) && !host->force_pio) {
- 		/*
- 		 * Has all data been written out yet? Testing on SuperH showed,
- 		 * that in most cases the first interrupt comes already with the
-@@ -596,11 +597,12 @@ static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
- 			disable_mmc_irqs(host, TMIO_STAT_DATAEND);
- 			tasklet_schedule(&host->dma_complete);
- 		}
--	} else if (host->chan_rx && (data->flags & MMC_DATA_READ)) {
-+	} else if (host->chan_rx && (data->flags & MMC_DATA_READ) && !host->force_pio) {
- 		disable_mmc_irqs(host, TMIO_STAT_DATAEND);
- 		tasklet_schedule(&host->dma_complete);
- 	} else {
- 		tmio_mmc_do_data_irq(host);
-+		disable_mmc_irqs(host, TMIO_MASK_READOP | TMIO_MASK_WRITEOP);
- 	}
- out:
- 	spin_unlock(&host->lock);
-@@ -649,12 +651,12 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
- 	 */
- 	if (host->data && !cmd->error) {
- 		if (host->data->flags & MMC_DATA_READ) {
--			if (!host->chan_rx)
-+			if (host->force_pio || !host->chan_rx)
- 				enable_mmc_irqs(host, TMIO_MASK_READOP);
- 			else
- 				tasklet_schedule(&host->dma_issue);
- 		} else {
--			if (!host->chan_tx)
-+			if (host->force_pio || !host->chan_tx)
- 				enable_mmc_irqs(host, TMIO_MASK_WRITEOP);
- 			else
- 				tasklet_schedule(&host->dma_issue);
-@@ -810,6 +812,11 @@ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
- 		goto pio;
- 	}
- 
-+	if (sg->length < TMIO_MIN_DMA_LEN) {
-+		host->force_pio = true;
-+		return;
-+	}
-+
- 	disable_mmc_irqs(host, TMIO_STAT_RXRDY);
- 
- 	/* The only sg element can be unaligned, use our bounce buffer then */
-@@ -878,6 +885,11 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
- 		goto pio;
- 	}
- 
-+	if (sg->length < TMIO_MIN_DMA_LEN) {
-+		host->force_pio = true;
-+		return;
-+	}
-+
- 	disable_mmc_irqs(host, TMIO_STAT_TXRQ);
- 
- 	/* The only sg element can be unaligned, use our bounce buffer then */
-@@ -1119,6 +1131,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 
- fail:
- 	host->mrq = NULL;
-+	host->force_pio = false;
- 	mrq->cmd->error = ret;
- 	mmc_request_done(mmc, mrq);
+-	mmcif_update_progress(MMCIF_PROGRESS_DONE);
++	mmc_update_progress(MMCIF_PROGRESS_DONE);
  }
+diff --git a/arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h b/arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h
+new file mode 100644
+index 0000000..db59fdb
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h
+@@ -0,0 +1,29 @@
++#ifndef MMC_AP4EB_H
++#define MMC_AP4EB_H
++
++#define PORT185CR      (void __iomem *)0xe60520b9
++#define PORT186CR      (void __iomem *)0xe60520ba
++#define PORT187CR      (void __iomem *)0xe60520bb
++#define PORT188CR      (void __iomem *)0xe60520bc
++
++#define PORTR191_160DR (void __iomem *)0xe6056014
++
++static inline void mmc_init_progress(void)
++{
++       /* Initialise LEDS1-4
++        * registers: PORT185CR-PORT188CR (LED1-LED4 Control)
++        * value:     0x10 - enable output
++        */
++       __raw_writeb(0x10, PORT185CR);
++       __raw_writeb(0x10, PORT186CR);
++       __raw_writeb(0x10, PORT187CR);
++       __raw_writeb(0x10, PORT188CR);
++}
++
++static inline void mmc_update_progress(int n)
++{
++	__raw_writel((__raw_readl(PORTR191_160DR) & ~(0xf << 25)) |
++		     (1 << (25 + n)), PORTR191_160DR);
++}
++
++#endif /* MMC_AP4EB_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmc-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmc-mackerel.h
+new file mode 100644
+index 0000000..15d3a9e
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/mmc-mackerel.h
+@@ -0,0 +1,38 @@
++#ifndef MMC_MACKEREL_H
++#define MMC_MACKEREL_H
++
++#define PORT0CR      (void __iomem *)0xe6051000
++#define PORT1CR      (void __iomem *)0xe6051001
++#define PORT2CR      (void __iomem *)0xe6051002
++#define PORT159CR    (void __iomem *)0xe605009f
++
++#define PORTR031_000DR (void __iomem *)0xe6055000
++#define PORTL159_128DR (void __iomem *)0xe6054010
++
++static inline void mmc_init_progress(void)
++{
++       /* Initialise LEDS0-3
++        * registers: PORT0CR-PORT2CR,PORT159CR (LED0-LED3 Control)
++        * value:     0x10 - enable output
++        */
++       __raw_writeb(0x10, PORT0CR);
++       __raw_writeb(0x10, PORT1CR);
++       __raw_writeb(0x10, PORT2CR);
++       __raw_writeb(0x10, PORT159CR);
++}
++
++static inline void mmc_update_progress(int n)
++{
++	unsigned a = 0, b = 0;
++
++	if (n < 3)
++		a = 1 << n;
++	else
++		b = 1 << 31;
++
++	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
++		     PORTR031_000DR);
++	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
++		     PORTL159_128DR);
++}
++#endif /* MMC_MACKEREL_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmc.h b/arch/arm/mach-shmobile/include/mach/mmc.h
+new file mode 100644
+index 0000000..e11560a
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/mmc.h
+@@ -0,0 +1,18 @@
++#ifndef MMC_H
++#define MMC_H
++
++/**************************************************
++ *
++ *		board specific settings
++ *
++ **************************************************/
++
++#ifdef CONFIG_MACH_AP4EVB
++#include "mach/mmc-ap4eb.h"
++#elif CONFIG_MACH_MACKEREL
++#include "mach/mmc-mackerel.h"
++#else
++#error "unsupported board."
++#endif
++
++#endif /* MMC_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h b/arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h
+deleted file mode 100644
+index a8d02be..0000000
+--- a/arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-#ifndef MMCIF_AP4EB_H
+-#define MMCIF_AP4EB_H
+-
+-#define PORT185CR      (void __iomem *)0xe60520b9
+-#define PORT186CR      (void __iomem *)0xe60520ba
+-#define PORT187CR      (void __iomem *)0xe60520bb
+-#define PORT188CR      (void __iomem *)0xe60520bc
+-
+-#define PORTR191_160DR (void __iomem *)0xe6056014
+-
+-static inline void mmcif_init_progress(void)
+-{
+-       /* Initialise LEDS1-4
+-        * registers: PORT185CR-PORT188CR (LED1-LED4 Control)
+-        * value:     0x10 - enable output
+-        */
+-       __raw_writeb(0x10, PORT185CR);
+-       __raw_writeb(0x10, PORT186CR);
+-       __raw_writeb(0x10, PORT187CR);
+-       __raw_writeb(0x10, PORT188CR);
+-}
+-
+-static inline void mmcif_update_progress(int n)
+-{
+-	__raw_writel((__raw_readl(PORTR191_160DR) & ~(0xf << 25)) |
+-		     (1 << (25 + n)), PORTR191_160DR);
+-}
+-
+-#endif /* MMCIF_AP4EB_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h b/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
+deleted file mode 100644
+index 4b4f694..0000000
+--- a/arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h
++++ /dev/null
+@@ -1,39 +0,0 @@
+-#ifndef MMCIF_MACKEREL_H
+-#define MMCIF_MACKEREL_H
+-
+-#define PORT0CR      (void __iomem *)0xe6051000
+-#define PORT1CR      (void __iomem *)0xe6051001
+-#define PORT2CR      (void __iomem *)0xe6051002
+-#define PORT159CR    (void __iomem *)0xe605009f
+-
+-#define PORTR031_000DR (void __iomem *)0xe6055000
+-#define PORTL159_128DR (void __iomem *)0xe6054010
+-
+-static inline void mmcif_init_progress(void)
+-{
+-       /* Initialise LEDS0-3
+-        * registers: PORT0CR-PORT2CR,PORT159CR (LED0-LED3 Control)
+-        * value:     0x10 - enable output
+-        */
+-       __raw_writeb(0x10, PORT0CR);
+-       __raw_writeb(0x10, PORT1CR);
+-       __raw_writeb(0x10, PORT2CR);
+-       __raw_writeb(0x10, PORT159CR);
+-}
+-
+-static inline void mmcif_update_progress(int n)
+-{
+-	unsigned a = 0, b = 0;
+-
+-	if (n < 3)
+-		a = 1 << n;
+-	else
+-		b = 1 << 31;
+-
+-	__raw_writel((__raw_readl(PORTR031_000DR) & ~0x7) | a,
+-		     PORTR031_000DR);
+-	__raw_writel((__raw_readl(PORTL159_128DR) & ~(1 << 31)) | b,
+-		     PORTL159_128DR);
+-}
+-
+-#endif /* MMCIF_MACKEREL_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/mmcif.h b/arch/arm/mach-shmobile/include/mach/mmcif.h
+deleted file mode 100644
+index f4dc327..0000000
+--- a/arch/arm/mach-shmobile/include/mach/mmcif.h
++++ /dev/null
+@@ -1,18 +0,0 @@
+-#ifndef MMCIF_H
+-#define MMCIF_H
+-
+-/**************************************************
+- *
+- *		board specific settings
+- *
+- **************************************************/
+-
+-#ifdef CONFIG_MACH_AP4EVB
+-#include "mach/mmcif-ap4eb.h"
+-#elif CONFIG_MACH_MACKEREL
+-#include "mach/mmcif-mackerel.h"
+-#else
+-#error "unsupported board."
+-#endif
+-
+-#endif /* MMCIF_H */
 -- 
-1.7.2.5
+1.7.2.3
 
