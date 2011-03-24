@@ -1,105 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 08:09:35 +0000
-Subject: [PATCH 2/4 v2] ARM: mach-shmobile: fix SDHI IO address-range
-Message-Id: <Pine.LNX.4.64.1103110902070.23675@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 24 Mar 2011 16:35:36 +0000
+Subject: [GIT PULL] rmobile updates for 2.6.39-rc1
+Message-Id: <20110324163535.GC18002@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-SDHI registers occupy only a 0x100 byte large window, not 0x200 byte.
+Please pull from:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-latest
 
-v2:
- 
-1. fix the resource size instead of adding a flag
+Which contains:
 
- arch/arm/mach-shmobile/board-ap4evb.c   |    4 ++--
- arch/arm/mach-shmobile/board-g4evm.c    |    4 ++--
- arch/arm/mach-shmobile/board-mackerel.c |    6 +++---
- 3 files changed, 7 insertions(+), 7 deletions(-)
+Guennadi Liakhovetski (1):
+      ARM: mach-shmobile: add coherent DMA mask to CEU camera devices
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 7ae9e3b..da8931d 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -312,7 +312,7 @@ static struct resource sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start  = 0xe6850000,
--		.end    = 0xe68501ff,
-+		.end    = 0xe68500ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -345,7 +345,7 @@ static struct resource sdhi1_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
- 		.start  = 0xe6860000,
--		.end    = 0xe68601ff,
-+		.end    = 0xe68600ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
-index cccdf2d..c87a7b7 100644
---- a/arch/arm/mach-shmobile/board-g4evm.c
-+++ b/arch/arm/mach-shmobile/board-g4evm.c
-@@ -205,7 +205,7 @@ static struct resource sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start  = 0xe6d50000,
--		.end    = 0xe6d501ff,
-+		.end    = 0xe6d50nff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -232,7 +232,7 @@ static struct resource sdhi1_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
- 		.start  = 0xe6d60000,
--		.end    = 0xe6d601ff,
-+		.end    = 0xe6d600ff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 05fc5ac..0ae0bc6 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -670,7 +670,7 @@ static struct resource sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
- 		.start	= 0xe6850000,
--		.end	= 0xe68501ff,
-+		.end	= 0xe68500ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -705,7 +705,7 @@ static struct resource sdhi1_resources[] = {
- 	[0] = {
- 		.name	= "SDHI1",
- 		.start	= 0xe6860000,
--		.end	= 0xe68601ff,
-+		.end	= 0xe68600ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-@@ -748,7 +748,7 @@ static struct resource sdhi2_resources[] = {
- 	[0] = {
- 		.name	= "SDHI2",
- 		.start	= 0xe6870000,
--		.end	= 0xe68701ff,
-+		.end	= 0xe68700ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--- 
-1.7.2.3
+Magnus Damm (1):
+      ARM: mach-shmobile: Dynamic backlight control for Mackerel
 
+Simon Horman (2):
+      mmc, ARM: Rename SuperH Mobile ARM zboot helpers
+      mmc: Add MMC_PROGRESS_*
+
+ arch/arm/boot/compressed/mmcif-sh7372.c            |   13 +++++----
+ arch/arm/mach-shmobile/board-ap4evb.c              |    3 +-
+ arch/arm/mach-shmobile/board-mackerel.c            |   25 ++++++++++++++++++-
+ .../include/mach/{mmcif-ap4eb.h => mmc-ap4eb.h}    |   10 ++++----
+ .../mach/{mmcif-mackerel.h => mmc-mackerel.h}      |   11 ++++----
+ .../mach-shmobile/include/mach/{mmcif.h => mmc.h}  |   10 ++++----
+ arch/sh/boot/romimage/mmcif-sh7724.c               |    9 ++++---
+ include/linux/mmc/boot.h                           |    7 +++++
+ include/linux/mmc/sh_mmcif.h                       |    3 --
+ 9 files changed, 59 insertions(+), 32 deletions(-)
+ rename arch/arm/mach-shmobile/include/mach/{mmcif-ap4eb.h => mmc-ap4eb.h} (80%)
+ rename arch/arm/mach-shmobile/include/mach/{mmcif-mackerel.h => mmc-mackerel.h} (82%)
+ rename arch/arm/mach-shmobile/include/mach/{mmcif.h => mmc.h} (67%)
+ create mode 100644 include/linux/mmc/boot.h
