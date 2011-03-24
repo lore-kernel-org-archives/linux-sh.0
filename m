@@ -1,14 +1,16 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Mar 2011 02:57:12 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 24 Mar 2011 08:54:59 +0000
 Subject: [PATCH 1/4] mmc: tmio_mmc: Move some defines into a shared header
-Message-Id: <1300071435-26759-2-git-send-email-horms@verge.net.au>
+Message-Id: <Pine.LNX.4.64.1103240952280.15629@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1300071435-26759-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1300071435-26759-1-git-send-email-horms@verge.net.au>
+References: <1300071435-26759-2-git-send-email-horms@verge.net.au>
+In-Reply-To: <1300071435-26759-2-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+
+From: Simon Horman <horms@verge.net.au>
 
 Also add TMIO_BBS.
 
@@ -16,52 +18,30 @@ This allows these defines to also be used by zboot.
 
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
-This almost certainly conflicts with recent work by Guennadi.
-Though it should be trivial for either of us to rebase our patches.
----
- drivers/mmc/host/tmio_mmc.c |   46 +--------------------------------------
- include/linux/mmc/tmio.h    |   49 +++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 51 insertions(+), 44 deletions(-)
+As requested by Simon, this is now rebased on top of all my current tmio 
+patches.
+
+ drivers/mmc/host/tmio_mmc.h     |   30 +++--------------------
+ drivers/mmc/host/tmio_mmc_dma.c |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c |   21 +----------------
+ include/linux/mmc/tmio.h        |   49 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 55 insertions(+), 46 deletions(-)
  create mode 100644 include/linux/mmc/tmio.h
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index e3c6ef2..c1a81f8 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -36,55 +36,13 @@
- #include <linux/mfd/core.h>
- #include <linux/mfd/tmio.h>
- #include <linux/mmc/host.h>
-+#include <linux/mmc/tmio.h>
- #include <linux/module.h>
- #include <linux/pagemap.h>
- #include <linux/scatterlist.h>
- #include <linux/workqueue.h>
- #include <linux/spinlock.h>
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 7d79b14..099ed49 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -17,36 +17,14 @@
+ #define TMIO_MMC_H
  
--#define CTL_SD_CMD 0x00
--#define CTL_ARG_REG 0x04
--#define CTL_STOP_INTERNAL_ACTION 0x08
--#define CTL_XFER_BLK_COUNT 0xa
--#define CTL_RESPONSE 0x0c
--#define CTL_STATUS 0x1c
--#define CTL_IRQ_MASK 0x20
--#define CTL_SD_CARD_CLK_CTL 0x24
--#define CTL_SD_XFER_LEN 0x26
--#define CTL_SD_MEM_CARD_OPT 0x28
--#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
--#define CTL_SD_DATA_PORT 0x30
--#define CTL_TRANSACTION_CTL 0x34
--#define CTL_SDIO_STATUS 0x36
--#define CTL_SDIO_IRQ_MASK 0x38
--#define CTL_RESET_SD 0xe0
--#define CTL_SDIO_REGS 0x100
--#define CTL_CLK_AND_WAIT_CTL 0x138
--#define CTL_RESET_SDIO 0x1e0
--
+ #include <linux/highmem.h>
++#include <linux/mmc/tmio.h>
+ #include <linux/pagemap.h>
+ 
 -/* Definitions for values the CTRL_STATUS register can take. */
 -#define TMIO_STAT_CMDRESPEND    0x00000001
 -#define TMIO_STAT_DATAEND       0x00000004
@@ -86,45 +66,95 @@ index e3c6ef2..c1a81f8 100644
 -#define TMIO_STAT_ILL_ACCESS    0x80000000
 -
  /* Definitions for values the CTRL_SDIO_STATUS register can take. */
- #define TMIO_SDIO_STAT_IOIRQ	0x0001
+-#define TMIO_SDIO_STAT_IOIRQ		0x0001
++#define TMIO_SDIO_STAT_IOIRQ	0x0001
  #define TMIO_SDIO_STAT_EXPUB52	0x4000
-@@ -1290,7 +1248,7 @@ static int __devinit tmio_mmc_probe(struct platform_device *dev)
- 	mmc->f_max = pdata->hclk;
- 	mmc->f_min = mmc->f_max / 512;
- 	mmc->max_segs = 32;
--	mmc->max_blk_size = 512;
-+	mmc->max_blk_size = TMIO_BBS;
- 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
- 		mmc->max_segs;
- 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+-#define TMIO_SDIO_STAT_EXWT		0x8000
+-#define TMIO_SDIO_MASK_ALL		0xc007
++#define TMIO_SDIO_STAT_EXWT	0x8000
++#define TMIO_SDIO_MASK_ALL	0xc007
+ 
+ /* Define some IRQ masks */
+ /* This is the mask used at reset by the chip */
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index c505278..d3de74a 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -14,6 +14,7 @@
+ #include <linux/dmaengine.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/tmio.h>
+ #include <linux/pagemap.h>
+ #include <linux/scatterlist.h>
+ 
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e35e179..6ae8d2f 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -35,6 +35,7 @@
+ #include <linux/irq.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/tmio.h>
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
+@@ -44,26 +45,6 @@
+ 
+ #include "tmio_mmc.h"
+ 
+-#define CTL_SD_CMD 0x00
+-#define CTL_ARG_REG 0x04
+-#define CTL_STOP_INTERNAL_ACTION 0x08
+-#define CTL_XFER_BLK_COUNT 0xa
+-#define CTL_RESPONSE 0x0c
+-#define CTL_STATUS 0x1c
+-#define CTL_IRQ_MASK 0x20
+-#define CTL_SD_CARD_CLK_CTL 0x24
+-#define CTL_SD_XFER_LEN 0x26
+-#define CTL_SD_MEM_CARD_OPT 0x28
+-#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
+-#define CTL_SD_DATA_PORT 0x30
+-#define CTL_TRANSACTION_CTL 0x34
+-#define CTL_SDIO_STATUS 0x36
+-#define CTL_SDIO_IRQ_MASK 0x38
+-#define CTL_RESET_SD 0xe0
+-#define CTL_SDIO_REGS 0x100
+-#define CTL_CLK_AND_WAIT_CTL 0x138
+-#define CTL_RESET_SDIO 0x1e0
+-
+ static u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
+ {
+ 	return readw(host->ctl + (addr << host->bus_shift));
 diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
 new file mode 100644
-index 0000000..cb3f868
+index 0000000..7131f8d
 --- /dev/null
 +++ b/include/linux/mmc/tmio.h
 @@ -0,0 +1,49 @@
-+#ifndef TMIO_MMC_H
-+#define TMIO_MMC_H
++#ifndef TMIO_H
++#define TMIO_H
 +
-+#define CTL_SD_CMD			0x00
-+#define CTL_ARG_REG			0x04
-+#define CTL_STOP_INTERNAL_ACTION	0x08
-+#define CTL_XFER_BLK_COUNT		0xa
-+#define CTL_RESPONSE			0x0c
-+#define CTL_STATUS			0x1c
-+#define CTL_IRQ_MASK			0x20
-+#define CTL_SD_CARD_CLK_CTL		0x24
-+#define CTL_SD_XFER_LEN			0x26
-+#define CTL_SD_MEM_CARD_OPT		0x28
-+#define CTL_SD_ERROR_DETAIL_STATUS	0x2c
-+#define CTL_SD_DATA_PORT		0x30
-+#define CTL_TRANSACTION_CTL		0x34
-+#define CTL_SDIO_STATUS			0x36
-+#define CTL_SDIO_IRQ_MASK		0x38
-+#define CTL_RESET_SD			0xe0
-+#define CTL_SDIO_REGS			0x100
-+#define CTL_CLK_AND_WAIT_CTL		0x138
-+#define CTL_RESET_SDIO			0x1e0
++#define CTL_SD_CMD 0x00
++#define CTL_ARG_REG 0x04
++#define CTL_STOP_INTERNAL_ACTION 0x08
++#define CTL_XFER_BLK_COUNT 0xa
++#define CTL_RESPONSE 0x0c
++#define CTL_STATUS 0x1c
++#define CTL_IRQ_MASK 0x20
++#define CTL_SD_CARD_CLK_CTL 0x24
++#define CTL_SD_XFER_LEN 0x26
++#define CTL_SD_MEM_CARD_OPT 0x28
++#define CTL_SD_ERROR_DETAIL_STATUS 0x2c
++#define CTL_SD_DATA_PORT 0x30
++#define CTL_TRANSACTION_CTL 0x34
++#define CTL_SDIO_STATUS 0x36
++#define CTL_SDIO_IRQ_MASK 0x38
++#define CTL_RESET_SD 0xe0
++#define CTL_SDIO_REGS 0x100
++#define CTL_CLK_AND_WAIT_CTL 0x138
++#define CTL_RESET_SDIO 0x1e0
 +
 +/* Definitions for values the CTRL_STATUS register can take. */
 +#define TMIO_STAT_CMDRESPEND    0x00000001
@@ -149,9 +179,9 @@ index 0000000..cb3f868
 +#define TMIO_STAT_CMD_BUSY      0x40000000
 +#define TMIO_STAT_ILL_ACCESS    0x80000000
 +
-+#define TMIO_BBS	512
++#define TMIO_BBS		512		/* Boot block size */
 +
 +#endif
 -- 
-1.7.2.3
+1.7.2.5
 
