@@ -1,111 +1,370 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Mar 2011 10:03:55 +0000
-Subject: [PATCH] V4L: soc-camera: fix a recent multi-camera breakage on
-Message-Id: <Pine.LNX.4.64.1103231102550.6836@axis700.grange>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 25 Mar 2011 13:56:05 +0000
+Subject: [patch 2/2] sh: Convert to new function names
+Message-Id: <20110325135543.066370574@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-With the introduction of CSI2 support on sh-mobile, the host driver
-switched to using v4l2_device_call_until_err() with grp_id = 0 to
-call subdev operations on the sensor and the CSI2 subdev. However,
-this has broken multi-client set ups like the one on migor, because
-that way all operations get called on both clients. To fix this add
-a grp_id and set it to the client private context.
+Scripted with coccinelle.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- drivers/media/video/sh_mobile_ceu_camera.c |   10 +++++-----
- drivers/media/video/sh_mobile_csi2.c       |    1 +
- drivers/media/video/soc_camera.c           |    4 +++-
- 3 files changed, 9 insertions(+), 6 deletions(-)
+ arch/sh/boards/board-magicpanelr2.c  |   12 ++++++------
+ arch/sh/boards/mach-cayman/irq.c     |    4 ++--
+ arch/sh/boards/mach-dreamcast/irq.c  |    3 +--
+ arch/sh/boards/mach-ecovec24/setup.c |    2 +-
+ arch/sh/boards/mach-microdev/irq.c   |    2 +-
+ arch/sh/boards/mach-se/7206/irq.c    |    2 +-
+ arch/sh/boards/mach-se/7343/irq.c    |   23 ++++++++++++-----------
+ arch/sh/boards/mach-se/7722/irq.c    |   15 ++++++++-------
+ arch/sh/boards/mach-se/7724/irq.c    |   15 +++++++--------
+ arch/sh/boards/mach-x3proto/gpio.c   |    8 ++++----
+ arch/sh/cchips/hd6446x/hd64461.c     |    6 +++---
+ arch/sh/kernel/cpu/irq/imask.c       |    4 ++--
+ arch/sh/kernel/cpu/irq/intc-sh5.c    |    2 +-
+ arch/sh/kernel/cpu/irq/ipr.c         |    6 +++---
+ drivers/sh/intc/core.c               |   14 +++++++-------
+ drivers/sh/intc/virq.c               |   12 ++++++------
+ 16 files changed, 65 insertions(+), 65 deletions(-)
 
-diff --git a/drivers/media/video/sh_mobile_ceu_camera.c b/drivers/media/video/sh_mobile_ceu_camera.c
-index 3fe54bf..d84daf1 100644
---- a/drivers/media/video/sh_mobile_ceu_camera.c
-+++ b/drivers/media/video/sh_mobile_ceu_camera.c
-@@ -922,7 +922,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
- 			/* Try 2560x1920, 1280x960, 640x480, 320x240 */
- 			mf.width	= 2560 >> shift;
- 			mf.height	= 1920 >> shift;
--			ret = v4l2_device_call_until_err(sd->v4l2_dev, 0, video,
-+			ret = v4l2_device_call_until_err(sd->v4l2_dev, (int)icd, video,
- 							 s_mbus_fmt, &mf);
- 			if (ret < 0)
- 				return ret;
-@@ -1224,7 +1224,7 @@ static int client_s_fmt(struct soc_camera_device *icd,
- 	struct v4l2_cropcap cap;
- 	int ret;
+Index: linux-2.6-tip/arch/sh/boards/board-magicpanelr2.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/board-magicpanelr2.c
++++ linux-2.6-tip/arch/sh/boards/board-magicpanelr2.c
+@@ -388,12 +388,12 @@ static void __init init_mpr2_IRQ(void)
+ {
+ 	plat_irq_setup_pins(IRQ_MODE_IRQ); /* install handlers for IRQ0-5 */
  
--	ret = v4l2_device_call_until_err(sd->v4l2_dev, 0, video,
-+	ret = v4l2_device_call_until_err(sd->v4l2_dev, (int)icd, video,
- 					 s_mbus_fmt, mf);
- 	if (ret < 0)
- 		return ret;
-@@ -1254,7 +1254,7 @@ static int client_s_fmt(struct soc_camera_device *icd,
- 		tmp_h = min(2 * tmp_h, max_height);
- 		mf->width = tmp_w;
- 		mf->height = tmp_h;
--		ret = v4l2_device_call_until_err(sd->v4l2_dev, 0, video,
-+		ret = v4l2_device_call_until_err(sd->v4l2_dev, (int)icd, video,
- 						 s_mbus_fmt, mf);
- 		dev_geo(dev, "Camera scaled to %ux%u\n",
- 			mf->width, mf->height);
-@@ -1658,7 +1658,7 @@ static int sh_mobile_ceu_try_fmt(struct soc_camera_device *icd,
- 	mf.code		= xlate->code;
- 	mf.colorspace	= pix->colorspace;
+-	set_irq_type(32, IRQ_TYPE_LEVEL_LOW);    /* IRQ0 CAN1 */
+-	set_irq_type(33, IRQ_TYPE_LEVEL_LOW);    /* IRQ1 CAN2 */
+-	set_irq_type(34, IRQ_TYPE_LEVEL_LOW);    /* IRQ2 CAN3 */
+-	set_irq_type(35, IRQ_TYPE_LEVEL_LOW);    /* IRQ3 SMSC9115 */
+-	set_irq_type(36, IRQ_TYPE_EDGE_RISING);  /* IRQ4 touchscreen */
+-	set_irq_type(37, IRQ_TYPE_EDGE_FALLING); /* IRQ5 touchscreen */
++	irq_set_irq_type(32, IRQ_TYPE_LEVEL_LOW);    /* IRQ0 CAN1 */
++	irq_set_irq_type(33, IRQ_TYPE_LEVEL_LOW);    /* IRQ1 CAN2 */
++	irq_set_irq_type(34, IRQ_TYPE_LEVEL_LOW);    /* IRQ2 CAN3 */
++	irq_set_irq_type(35, IRQ_TYPE_LEVEL_LOW);    /* IRQ3 SMSC9115 */
++	irq_set_irq_type(36, IRQ_TYPE_EDGE_RISING);  /* IRQ4 touchscreen */
++	irq_set_irq_type(37, IRQ_TYPE_EDGE_FALLING); /* IRQ5 touchscreen */
  
--	ret = v4l2_device_call_until_err(sd->v4l2_dev, 0, video, try_mbus_fmt, &mf);
-+	ret = v4l2_device_call_until_err(sd->v4l2_dev, (int)icd, video, try_mbus_fmt, &mf);
- 	if (ret < 0)
- 		return ret;
+ 	intc_set_priority(32, 13);		/* IRQ0 CAN1 */
+ 	intc_set_priority(33, 13);		/* IRQ0 CAN2 */
+Index: linux-2.6-tip/arch/sh/boards/mach-cayman/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-cayman/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-cayman/irq.c
+@@ -149,8 +149,8 @@ void init_cayman_irq(void)
+ 	}
  
-@@ -1682,7 +1682,7 @@ static int sh_mobile_ceu_try_fmt(struct soc_camera_device *icd,
- 			 */
- 			mf.width = 2560;
- 			mf.height = 1920;
--			ret = v4l2_device_call_until_err(sd->v4l2_dev, 0, video,
-+			ret = v4l2_device_call_until_err(sd->v4l2_dev, (int)icd, video,
- 							 try_mbus_fmt, &mf);
- 			if (ret < 0) {
- 				/* Shouldn't actually happen... */
-diff --git a/drivers/media/video/sh_mobile_csi2.c b/drivers/media/video/sh_mobile_csi2.c
-index dd1b81b..94e575f 100644
---- a/drivers/media/video/sh_mobile_csi2.c
-+++ b/drivers/media/video/sh_mobile_csi2.c
-@@ -208,6 +208,7 @@ static int sh_csi2_notify(struct notifier_block *nb,
- 	case BUS_NOTIFY_BOUND_DRIVER:
- 		snprintf(priv->subdev.name, V4L2_SUBDEV_NAME_SIZE, "%s%s",
- 			 dev_name(v4l2_dev->dev), ".mipi-csi");
-+		priv->subdev.grp_id = (int)icd;
- 		ret = v4l2_device_register_subdev(v4l2_dev, &priv->subdev);
- 		dev_dbg(dev, "%s(%p): ret(register_subdev) = %d\n", __func__, priv, ret);
- 		if (ret < 0)
-diff --git a/drivers/media/video/soc_camera.c b/drivers/media/video/soc_camera.c
-index 4628448..e97be53 100644
---- a/drivers/media/video/soc_camera.c
-+++ b/drivers/media/video/soc_camera.c
-@@ -1071,6 +1071,9 @@ static int soc_camera_probe(struct device *dev)
+ 	for (i = 0; i < NR_EXT_IRQS; i++) {
+-		set_irq_chip_and_handler(START_EXT_IRQS + i, &cayman_irq_type,
+-					 handle_level_irq);
++		irq_set_chip_and_handler(START_EXT_IRQS + i,
++					 &cayman_irq_type, handle_level_irq);
+ 	}
+ 
+ 	/* Setup the SMSC interrupt */
+Index: linux-2.6-tip/arch/sh/boards/mach-dreamcast/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-dreamcast/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-dreamcast/irq.c
+@@ -161,7 +161,6 @@ void systemasic_irq_init(void)
+ 			return;
+ 		}
+ 
+-		set_irq_chip_and_handler(i, &systemasic_int,
+-					 handle_level_irq);
++		irq_set_chip_and_handler(i, &systemasic_int, handle_level_irq);
+ 	}
+ }
+Index: linux-2.6-tip/arch/sh/boards/mach-ecovec24/setup.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-ecovec24/setup.c
++++ linux-2.6-tip/arch/sh/boards/mach-ecovec24/setup.c
+@@ -1102,7 +1102,7 @@ static int __init arch_setup(void)
+ 
+ 		/* enable TouchScreen */
+ 		i2c_register_board_info(0, &ts_i2c_clients, 1);
+-		set_irq_type(IRQ0, IRQ_TYPE_LEVEL_LOW);
++		irq_set_irq_type(IRQ0, IRQ_TYPE_LEVEL_LOW);
+ 	}
+ 
+ 	/* enable CEU0 */
+Index: linux-2.6-tip/arch/sh/boards/mach-microdev/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-microdev/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-microdev/irq.c
+@@ -117,7 +117,7 @@ static struct irq_chip microdev_irq_type
+ static void __init make_microdev_irq(unsigned int irq)
+ {
+ 	disable_irq_nosync(irq);
+-	set_irq_chip_and_handler(irq, &microdev_irq_type, handle_level_irq);
++	irq_set_chip_and_handler(irq, &microdev_irq_type, handle_level_irq);
+ 	disable_microdev_irq(irq_get_irq_data(irq));
+ }
+ 
+Index: linux-2.6-tip/arch/sh/boards/mach-se/7206/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-se/7206/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-se/7206/irq.c
+@@ -126,7 +126,7 @@ static struct irq_chip se7206_irq_chip _
+ static void make_se7206_irq(unsigned int irq)
+ {
+ 	disable_irq_nosync(irq);
+-	set_irq_chip_and_handler_name(irq, &se7206_irq_chip,
++	irq_set_chip_and_handler_name(irq, &se7206_irq_chip,
+ 				      handle_level_irq, "level");
+ 	disable_se7206_irq(irq_get_irq_data(irq));
+ }
+Index: linux-2.6-tip/arch/sh/boards/mach-se/7343/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-se/7343/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-se/7343/irq.c
+@@ -67,19 +67,20 @@ void __init init_7343se_IRQ(void)
+ 			return;
+ 		se7343_fpga_irq[i] = irq;
+ 
+-		set_irq_chip_and_handler_name(se7343_fpga_irq[i],
++		irq_set_chip_and_handler_name(se7343_fpga_irq[i],
+ 					      &se7343_irq_chip,
+-					      handle_level_irq, "level");
++					      handle_level_irq,
++					      "level");
+ 
+-		set_irq_chip_data(se7343_fpga_irq[i], (void *)i);
++		irq_set_chip_data(se7343_fpga_irq[i], (void *)i);
+ 	}
+ 
+-	set_irq_chained_handler(IRQ0_IRQ, se7343_irq_demux);
+-	set_irq_type(IRQ0_IRQ, IRQ_TYPE_LEVEL_LOW);
+-	set_irq_chained_handler(IRQ1_IRQ, se7343_irq_demux);
+-	set_irq_type(IRQ1_IRQ, IRQ_TYPE_LEVEL_LOW);
+-	set_irq_chained_handler(IRQ4_IRQ, se7343_irq_demux);
+-	set_irq_type(IRQ4_IRQ, IRQ_TYPE_LEVEL_LOW);
+-	set_irq_chained_handler(IRQ5_IRQ, se7343_irq_demux);
+-	set_irq_type(IRQ5_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ0_IRQ, se7343_irq_demux);
++	irq_set_irq_type(IRQ0_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ1_IRQ, se7343_irq_demux);
++	irq_set_irq_type(IRQ1_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ4_IRQ, se7343_irq_demux);
++	irq_set_irq_type(IRQ4_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ5_IRQ, se7343_irq_demux);
++	irq_set_irq_type(IRQ5_IRQ, IRQ_TYPE_LEVEL_LOW);
+ }
+Index: linux-2.6-tip/arch/sh/boards/mach-se/7722/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-se/7722/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-se/7722/irq.c
+@@ -67,16 +67,17 @@ void __init init_se7722_IRQ(void)
+ 			return;
+ 		se7722_fpga_irq[i] = irq;
+ 
+-		set_irq_chip_and_handler_name(se7722_fpga_irq[i],
++		irq_set_chip_and_handler_name(se7722_fpga_irq[i],
+ 					      &se7722_irq_chip,
+-					      handle_level_irq, "level");
++					      handle_level_irq,
++					      "level");
+ 
+-		set_irq_chip_data(se7722_fpga_irq[i], (void *)i);
++		irq_set_chip_data(se7722_fpga_irq[i], (void *)i);
+ 	}
+ 
+-	set_irq_chained_handler(IRQ0_IRQ, se7722_irq_demux);
+-	set_irq_type(IRQ0_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ0_IRQ, se7722_irq_demux);
++	irq_set_irq_type(IRQ0_IRQ, IRQ_TYPE_LEVEL_LOW);
+ 
+-	set_irq_chained_handler(IRQ1_IRQ, se7722_irq_demux);
+-	set_irq_type(IRQ1_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ1_IRQ, se7722_irq_demux);
++	irq_set_irq_type(IRQ1_IRQ, IRQ_TYPE_LEVEL_LOW);
+ }
+Index: linux-2.6-tip/arch/sh/boards/mach-se/7724/irq.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-se/7724/irq.c
++++ linux-2.6-tip/arch/sh/boards/mach-se/7724/irq.c
+@@ -140,17 +140,16 @@ void __init init_se7724_IRQ(void)
+ 			return;
+ 		}
+ 
+-		set_irq_chip_and_handler_name(irq,
+-					      &se7724_irq_chip,
++		irq_set_chip_and_handler_name(irq, &se7724_irq_chip,
+ 					      handle_level_irq, "level");
+ 	}
+ 
+-	set_irq_chained_handler(IRQ0_IRQ, se7724_irq_demux);
+-	set_irq_type(IRQ0_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ0_IRQ, se7724_irq_demux);
++	irq_set_irq_type(IRQ0_IRQ, IRQ_TYPE_LEVEL_LOW);
+ 
+-	set_irq_chained_handler(IRQ1_IRQ, se7724_irq_demux);
+-	set_irq_type(IRQ1_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ1_IRQ, se7724_irq_demux);
++	irq_set_irq_type(IRQ1_IRQ, IRQ_TYPE_LEVEL_LOW);
+ 
+-	set_irq_chained_handler(IRQ2_IRQ, se7724_irq_demux);
+-	set_irq_type(IRQ2_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(IRQ2_IRQ, se7724_irq_demux);
++	irq_set_irq_type(IRQ2_IRQ, IRQ_TYPE_LEVEL_LOW);
+ }
+Index: linux-2.6-tip/arch/sh/boards/mach-x3proto/gpio.c
+=================================--- linux-2.6-tip.orig/arch/sh/boards/mach-x3proto/gpio.c
++++ linux-2.6-tip/arch/sh/boards/mach-x3proto/gpio.c
+@@ -102,8 +102,8 @@ int __init x3proto_gpio_setup(void)
+ 
+ 		spin_lock_irqsave(&x3proto_gpio_lock, flags);
+ 		x3proto_gpio_irq_map[i] = irq;
+-		set_irq_chip_and_handler_name(irq, &dummy_irq_chip,
+-					handle_simple_irq, "gpio");
++		irq_set_chip_and_handler_name(irq, &dummy_irq_chip,
++					      handle_simple_irq, "gpio");
+ 		spin_unlock_irqrestore(&x3proto_gpio_lock, flags);
+ 	}
+ 
+@@ -113,8 +113,8 @@ int __init x3proto_gpio_setup(void)
+ 		x3proto_gpio_chip.base + x3proto_gpio_chip.ngpio,
+ 		ilsel);
+ 
+-	set_irq_chained_handler(ilsel, x3proto_gpio_irq_handler);
+-	set_irq_wake(ilsel, 1);
++	irq_set_chained_handler(ilsel, x3proto_gpio_irq_handler);
++	irq_set_irq_wake(ilsel, 1);
+ 
+ 	return 0;
+ 
+Index: linux-2.6-tip/arch/sh/cchips/hd6446x/hd64461.c
+=================================--- linux-2.6-tip.orig/arch/sh/cchips/hd6446x/hd64461.c
++++ linux-2.6-tip/arch/sh/cchips/hd6446x/hd64461.c
+@@ -107,12 +107,12 @@ int __init setup_hd64461(void)
+ 			return -EINVAL;
+ 		}
+ 
+-		set_irq_chip_and_handler(i, &hd64461_irq_chip,
++		irq_set_chip_and_handler(i, &hd64461_irq_chip,
+ 					 handle_level_irq);
+ 	}
+ 
+-	set_irq_chained_handler(CONFIG_HD64461_IRQ, hd64461_irq_demux);
+-	set_irq_type(CONFIG_HD64461_IRQ, IRQ_TYPE_LEVEL_LOW);
++	irq_set_chained_handler(CONFIG_HD64461_IRQ, hd64461_irq_demux);
++	irq_set_irq_type(CONFIG_HD64461_IRQ, IRQ_TYPE_LEVEL_LOW);
+ 
+ #ifdef CONFIG_HD64461_ENABLER
+ 	printk(KERN_INFO "HD64461: enabling PCMCIA devices\n");
+Index: linux-2.6-tip/arch/sh/kernel/cpu/irq/imask.c
+=================================--- linux-2.6-tip.orig/arch/sh/kernel/cpu/irq/imask.c
++++ linux-2.6-tip/arch/sh/kernel/cpu/irq/imask.c
+@@ -80,6 +80,6 @@ static struct irq_chip imask_irq_chip = 
+ 
+ void make_imask_irq(unsigned int irq)
+ {
+-	set_irq_chip_and_handler_name(irq, &imask_irq_chip,
+-				      handle_level_irq, "level");
++	irq_set_chip_and_handler_name(irq, &imask_irq_chip, handle_level_irq,
++				      "level");
+ }
+Index: linux-2.6-tip/arch/sh/kernel/cpu/irq/intc-sh5.c
+=================================--- linux-2.6-tip.orig/arch/sh/kernel/cpu/irq/intc-sh5.c
++++ linux-2.6-tip/arch/sh/kernel/cpu/irq/intc-sh5.c
+@@ -135,7 +135,7 @@ void __init plat_irq_setup(void)
+ 
+ 	/* Set default: per-line enable/disable, priority driven ack/eoi */
+ 	for (i = 0; i < NR_INTC_IRQS; i++)
+-		set_irq_chip_and_handler(i, &intc_irq_type, handle_level_irq);
++		irq_set_chip_and_handler(i, &intc_irq_type, handle_level_irq);
+ 
+ 
+ 	/* Disable all interrupts and set all priorities to 0 to avoid trouble */
+Index: linux-2.6-tip/arch/sh/kernel/cpu/irq/ipr.c
+=================================--- linux-2.6-tip.orig/arch/sh/kernel/cpu/irq/ipr.c
++++ linux-2.6-tip/arch/sh/kernel/cpu/irq/ipr.c
+@@ -74,9 +74,9 @@ void register_ipr_controller(struct ipr_
+ 		}
+ 
+ 		disable_irq_nosync(p->irq);
+-		set_irq_chip_and_handler_name(p->irq, &desc->chip,
+-				      handle_level_irq, "level");
+-		set_irq_chip_data(p->irq, p);
++		irq_set_chip_and_handler_name(p->irq, &desc->chip,
++					      handle_level_irq, "level");
++		irq_set_chip_data(p->irq, p);
+ 		disable_ipr_irq(irq_get_irq_data(p->irq));
+ 	}
+ }
+Index: linux-2.6-tip/drivers/sh/intc/core.c
+=================================--- linux-2.6-tip.orig/drivers/sh/intc/core.c
++++ linux-2.6-tip/drivers/sh/intc/core.c
+@@ -62,7 +62,7 @@ void intc_set_prio_level(unsigned int ir
+ 
+ static void intc_redirect_irq(unsigned int irq, struct irq_desc *desc)
+ {
+-	generic_handle_irq((unsigned int)get_irq_data(irq));
++	generic_handle_irq((unsigned int)irq_get_handler_data(irq));
+ }
+ 
+ static void __init intc_register_irq(struct intc_desc *desc,
+@@ -115,9 +115,9 @@ static void __init intc_register_irq(str
+ 	irq_data = irq_get_irq_data(irq);
+ 
+ 	disable_irq_nosync(irq);
+-	set_irq_chip_and_handler_name(irq, &d->chip,
+-				      handle_level_irq, "level");
+-	set_irq_chip_data(irq, (void *)data[primary]);
++	irq_set_chip_and_handler_name(irq, &d->chip, handle_level_irq,
++				      "level");
++	irq_set_chip_data(irq, (void *)data[primary]);
+ 
+ 	/*
+ 	 * set priority level
+@@ -339,9 +339,9 @@ int __init register_intc_controller(stru
+ 			vect2->enum_id = 0;
+ 
+ 			/* redirect this interrupts to the first one */
+-			set_irq_chip(irq2, &dummy_irq_chip);
+-			set_irq_chained_handler(irq2, intc_redirect_irq);
+-			set_irq_data(irq2, (void *)irq);
++			irq_set_chip(irq2, &dummy_irq_chip);
++			irq_set_chained_handler(irq2, intc_redirect_irq);
++			irq_set_handler_data(irq2, (void *)irq);
  		}
  	}
  
-+	sd = soc_camera_to_subdev(icd);
-+	sd->grp_id = (int)icd;
-+
- 	/* At this point client .probe() should have run already */
- 	ret = soc_camera_init_user_formats(icd);
- 	if (ret < 0)
-@@ -1092,7 +1095,6 @@ static int soc_camera_probe(struct device *dev)
- 		goto evidstart;
+Index: linux-2.6-tip/drivers/sh/intc/virq.c
+=================================--- linux-2.6-tip.orig/drivers/sh/intc/virq.c
++++ linux-2.6-tip/drivers/sh/intc/virq.c
+@@ -110,7 +110,7 @@ static void intc_virq_handler(unsigned i
+ {
+ 	struct irq_data *data = irq_get_irq_data(irq);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+-	struct intc_virq_list *entry, *vlist = irq_data_get_irq_data(data);
++	struct intc_virq_list *entry, *vlist = irq_data_get_irq_handler_data(data);
+ 	struct intc_desc_int *d = get_intc_desc(irq);
  
- 	/* Try to improve our guess of a reasonable window format */
--	sd = soc_camera_to_subdev(icd);
- 	if (!v4l2_subdev_call(sd, video, g_mbus_fmt, &mf)) {
- 		icd->user_width		= mf.width;
- 		icd->user_height	= mf.height;
--- 
-1.7.2.5
+ 	chip->irq_mask_ack(data);
+@@ -118,7 +118,7 @@ static void intc_virq_handler(unsigned i
+ 	for_each_virq(entry, vlist) {
+ 		unsigned long addr, handle;
+ 
+-		handle = (unsigned long)get_irq_data(entry->irq);
++		handle = (unsigned long)irq_get_handler_data(entry->irq);
+ 		addr = INTC_REG(d, _INTC_ADDR_E(handle), 0);
+ 
+ 		if (intc_reg_fns[_INTC_FN(handle)](addr, handle, 0))
+@@ -229,13 +229,13 @@ restart:
+ 
+ 		intc_irq_xlate_set(irq, entry->enum_id, d);
+ 
+-		set_irq_chip_and_handler_name(irq, get_irq_chip(entry->pirq),
++		irq_set_chip_and_handler_name(irq, irq_get_chip(entry->pirq),
+ 					      handle_simple_irq, "virq");
+-		set_irq_chip_data(irq, get_irq_chip_data(entry->pirq));
++		irq_set_chip_data(irq, irq_get_chip_data(entry->pirq));
+ 
+-		set_irq_data(irq, (void *)entry->handle);
++		irq_set_handler_data(irq, (void *)entry->handle);
+ 
+-		set_irq_chained_handler(entry->pirq, intc_virq_handler);
++		irq_set_chained_handler(entry->pirq, intc_virq_handler);
+ 		add_virq_to_pirq(entry->pirq, irq);
+ 
+ 		radix_tree_tag_clear(&d->tree, entry->enum_id,
+
 
