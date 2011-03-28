@@ -1,28 +1,36 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 14 Mar 2011 07:46:33 +0000
-Subject: Re: [PATCH 1/4 v2] mmc: mn57xx: only access registers above 0xff,
-Message-Id: <Pine.LNX.4.64.1103140844080.6125@axis700.grange>
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Mon, 28 Mar 2011 02:34:35 +0000
+Subject: [PATCH] sh: sh-sci: Check initialization for earlyprintk
+Message-Id: <1301279675-16519-1-git-send-email-iwamatsu@nigauri.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
- <Pine.LNX.4.64.1103110900080.23675@axis700.grange>
- <AANLkTi=CwkzwvDy+CTzJBni-OtZUMEtmceNr+-xpuVOK@mail.gmail.com>
- <Pine.LNX.4.64.1103122349080.28741@axis700.grange>
- <AANLkTi=cGjomEu4uPbOFcwQfMYu6q4kjMwmdetRXeefC@mail.gmail.com>
-In-Reply-To: <AANLkTi=cGjomEu4uPbOFcwQfMYu6q4kjMwmdetRXeefC@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: linux-sh@vger.kernel.org
 
-...unrelated to comments by Magnus, I noticed, that titles and commit 
-messages to two patches from this series contain references to mn57xx, 
-which shouldn't be there. I'll have to resumbit them without those 
-references.
+When user do not set earlyprink, initialization is performed in the state
+that setting is not performed. In this case sh-sci does not work.
+This checks the initialization.
 
-Thanks
-Guennadi
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/tty/serial/sh-sci.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index eb7958c..cc4c329 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1836,6 +1836,9 @@ static int __devinit serial_console_setup(struct console *co, char *options)
+ 	sci_port = &sci_ports[co->index];
+ 	port = &sci_port->port;
+ 
++	if (port->ops = NULL)
++		return -ENODEV;
++
+ 	ret = sci_remap_port(port);
+ 	if (unlikely(ret != 0))
+ 		return ret;
+-- 
+1.7.4.1
+
