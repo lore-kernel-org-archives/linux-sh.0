@@ -1,47 +1,59 @@
-From: Peppe CAVALLARO <peppe.cavallaro@st.com>
-Date: Fri, 04 Mar 2011 06:53:50 +0000
-Subject: Re: [PATCH (sh-2.6) 1/4] clksource: Generic timer infrastructure
-Message-Id: <4D708C7E.8010204@st.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 28 Mar 2011 07:16:33 +0000
+Subject: [PATCH] mmc: SDHI should depend on SUPERH || ARCH_SHMOBILE
+Message-Id: <Pine.LNX.4.64.1103280913170.6625@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
- <201103030945.07486.arnd@arndb.de> <4D6F6C96.1010303@st.com>
- <201103031455.25089.arnd@arndb.de>
-In-Reply-To: <201103031455.25089.arnd@arndb.de>
+References: <20110328131018.96742ebb.sfr@canb.auug.org.au>
+In-Reply-To: <20110328131018.96742ebb.sfr@canb.auug.org.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Stuart MENEFY <stuart.menefy@st.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, John Stultz <johnstul@us.ibm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux@arm.linux.org.uk" <linux@arm.linux.org.uk>
+To: Stephen Rothwell <sfr@canb.auug.org.au>
+Cc: Chris Ball <cjb@laptop.org>, linux-next@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
 
-On 3/3/2011 2:55 PM, Arnd Bergmann wrote:
->
-> On Thursday 03 March 2011, Peppe CAVALLARO wrote:
-> > This logic is already in the driver, indeed.
-> > What I've seen on our embedded systems is that the
-> > cost of RX interrupts is very hight and NAPI partially helps.
-> > Typically, in an IP-STB, I receive a burst of UDP pkt
-> > and this  means that many interrupts occur (~99% of CPU
-> > usage on slow platforms).
-> > With the ext timer I was able to reduce the CPU usage in
-> > these kind of scenarios to ~50%.
->
-> I don't understand. Shouldn't the interrupts be stopped as long
-> as the system is busy? This sounds like a bug in your NAPI
-> handling, or maybe you just need to use a lower NAPI_WEIGHT
-> so you stay in polling mode longer.
->
+Fix build breakage on platforms, not providing readsw and writesw
+functions, e.g., on x86(_64).
 
-Hi Arnd,
-yes you are right, in fact, I do not receive an interrupt
-for each frame received but the average of the frames
-I found in the ring is very low.
-At any rate, let me do some tests so i'll come back with
-some numbers. In the meantime, I'm looking at the napi
-support inside the driver and experiment with lower
-NAPI_WEIGHT (default is 64).
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Peppe
->
->
->         Arnd
->
+Subject: Re: linux-next: build failure after merge of the mmc tree
+
+On Mon, 28 Mar 2011, Stephen Rothwell wrote:
+
+> Hi Chris,
+> 
+> After merging the mmc tree, today's linux-next build (x86_64 allmodconfig)
+> failed like this:
+> 
+> drivers/mmc/host/tmio_mmc_pio.c: In function 'sd_ctrl_read16_rep':
+> drivers/mmc/host/tmio_mmc_pio.c:56: error: implicit declaration of function 'readsw'
+> drivers/mmc/host/tmio_mmc_pio.c: In function 'sd_ctrl_write16_rep':
+> drivers/mmc/host/tmio_mmc_pio.c:73: error: implicit declaration of function 'writesw'
+> 
+> Presumably caused by commit b6147490e6aa ("mmc: tmio: split core
+> functionality, DMA and MFD glue").
+> 
+> I have used the mmc tree from next-20110325 for tdoay.
+
+Stephen, please verify, that this fixes your problem.
+
+ drivers/mmc/host/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 0b03cee..94df405 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -452,6 +452,7 @@ config MMC_TMIO
+ 
+ config MMC_SDHI
+ 	tristate "SH-Mobile SDHI SD/SDIO controller support"
++	depends on SUPERH || ARCH_SHMOBILE
+ 	select MMC_TMIO_CORE
+ 	help
+ 	  This provides support for the SDHI SD/SDIO controller found in
+-- 
+1.7.2.5
+
