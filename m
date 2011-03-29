@@ -1,126 +1,137 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Mar 2011 02:57:14 +0000
-Subject: [PATCH 3/4] mmc: Add MMC_PROGRESS_*
-Message-Id: <1300071435-26759-4-git-send-email-horms@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Tue, 29 Mar 2011 03:35:58 +0000
+Subject: [RFC][PATCH 3/3] sh_mobile_meram: MERAM platform data for LCDC
+Message-Id: <1301369758-18394-4-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1300071435-26759-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1300071435-26759-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-This is my second attempt to make this enum generally available.
-The first attempt added MMCIF_PROGRESS_* to include/linux/mmc/sh_mmcif.h.
-However this is not sufficiently generic as the enum will be
-used by SDHI boot code.
+Based on the patch by Takanari Hayama <taki@igel.co.jp>
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Add the necessary platform data to add MERAM functionality to LCDC
+
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- arch/arm/boot/compressed/mmcif-sh7372.c |    8 ++++----
- arch/sh/boot/romimage/mmcif-sh7724.c    |    8 ++++----
- include/linux/mmc/boot.h                |    7 +++++++
- include/linux/mmc/sh_mmcif.h            |    3 ---
- 4 files changed, 15 insertions(+), 11 deletions(-)
- create mode 100644 include/linux/mmc/boot.h
+ arch/arm/mach-shmobile/board-ap4evb.c |   69 +++++++++++++++++++++++++++++++++
+ 1 files changed, 69 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
-index 28bcf3c..86b26a1 100644
---- a/arch/arm/boot/compressed/mmcif-sh7372.c
-+++ b/arch/arm/boot/compressed/mmcif-sh7372.c
-@@ -42,7 +42,7 @@
- asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index a94f29d..e467696 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -249,6 +249,31 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
  {
- 	mmc_init_progress();
--	mmc_update_progress(MMCIF_PROGRESS_ENTER);
-+	mmc_update_progress(MMC_PROGRESS_ENTER);
- 
- 	/* Initialise MMC
- 	 * registers: PORT84CR-PORT92CR
-@@ -68,12 +68,12 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
- 	/* Enable clock to MMC hardware block */
- 	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 12), SMSTPCR3);
- 
--	mmc_update_progress(MMCIF_PROGRESS_INIT);
-+	mmc_update_progress(MMC_PROGRESS_INIT);
- 
- 	/* setup MMCIF hardware */
- 	sh_mmcif_boot_init(MMCIF_BASE);
- 
--	mmc_update_progress(MMCIF_PROGRESS_LOAD);
-+	mmc_update_progress(MMC_PROGRESS_LOAD);
- 
- 	/* load kernel via MMCIF interface */
- 	sh_mmcif_boot_do_read(MMCIF_BASE, 2, /* Kernel is at block 2 */
-@@ -83,5 +83,5 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long len)
- 	/* Disable clock to MMC hardware block */
- 	__raw_writel(__raw_readl(SMSTPCR3) & (1 << 12), SMSTPCR3);
- 
--	mmc_update_progress(MMCIF_PROGRESS_DONE);
-+	mmc_update_progress(MMC_PROGRESS_DONE);
+ 	return !gpio_get_value(GPIO_PORT41);
  }
-diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romimage/mmcif-sh7724.c
-index c84e783..1d13335 100644
---- a/arch/sh/boot/romimage/mmcif-sh7724.c
-+++ b/arch/sh/boot/romimage/mmcif-sh7724.c
-@@ -29,7 +29,7 @@
-  */
- asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
- {
--	mmcif_update_progress(MMCIF_PROGRESS_ENTER);
-+	mmcif_update_progress(MMC_PROGRESS_ENTER);
- 
- 	/* enable clock to the MMCIF hardware block */
- 	__raw_writel(__raw_readl(MSTPCR2) & ~0x20000000, MSTPCR2);
-@@ -52,12 +52,12 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
- 	/* high drive capability for MMC pins */
- 	__raw_writew(__raw_readw(DRVCRA) | 0x3000, DRVCRA);
- 
--	mmcif_update_progress(MMCIF_PROGRESS_INIT);
-+	mmcif_update_progress(MMC_PROGRESS_INIT);
- 
- 	/* setup MMCIF hardware */
- 	sh_mmcif_boot_init(MMCIF_BASE);
- 
--	mmcif_update_progress(MMCIF_PROGRESS_LOAD);
-+	mmcif_update_progress(MMC_PROGRESS_LOAD);
- 
- 	/* load kernel via MMCIF interface */
- 	sh_mmcif_boot_do_read(MMCIF_BASE, 512,
-@@ -67,5 +67,5 @@ asmlinkage void mmcif_loader(unsigned char *buf, unsigned long no_bytes)
- 	/* disable clock to the MMCIF hardware block */
- 	__raw_writel(__raw_readl(MSTPCR2) | 0x20000000, MSTPCR2);
- 
--	mmcif_update_progress(MMCIF_PROGRESS_DONE);
-+	mmcif_update_progress(MMC_PROGRESS_DONE);
- }
-diff --git a/include/linux/mmc/boot.h b/include/linux/mmc/boot.h
-new file mode 100644
-index 0000000..39d787c
---- /dev/null
-+++ b/include/linux/mmc/boot.h
-@@ -0,0 +1,7 @@
-+#ifndef MMC_BOOT_H
-+#define MMC_BOOT_H
++#ifdef CONFIG_FB_SH_MOBILE_MERAM
++/* MERAM */
++static struct sh_mobile_meram_info mackerel_meram_info = {
++	.addr_mode      = SH_MOBILE_MERAM_MODE1,
++};
 +
-+enum { MMC_PROGRESS_ENTER, MMC_PROGRESS_INIT,
-+       MMC_PROGRESS_LOAD, MMC_PROGRESS_DONE };
++static struct resource meram_resources[] = {
++	[0] = {
++		.name   = "MERAM",
++		.start  = 0xe8000000,
++		.end    = 0xe81fffff,
++		.flags  = IORESOURCE_MEM,
++	},
++};
 +
++static struct platform_device meram_device = {
++	.name           = "sh_mobile_meram",
++	.id             = -1,
++	.num_resources  = ARRAY_SIZE(meram_resources),
++	.resource       = meram_resources,
++	.dev            = {
++		.platform_data = &mackerel_meram_info,
++	},
++};
 +#endif
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 38d3930..9eb9b4b 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -104,9 +104,6 @@ static inline void sh_mmcif_writel(void __iomem *addr, int reg, u32 val)
  
- #define SH_MMCIF_BBS 512 /* boot block size */
+ /* SH_MMCIF */
+ static struct resource sh_mmcif_resources[] = {
+@@ -431,6 +456,23 @@ const static struct fb_videomode ap4evb_lcdc_modes[] = {
+ #endif
+ 	},
+ };
++#ifdef CONFIG_FB_SH_MOBILE_MERAM
++static struct sh_mobile_meram_cfg lcd_meram_cfg = {
++	.meram_dev = &mackerel_meram_info,
++	.icb[0] = {
++		.marker_icb     = 28,
++		.cache_icb      = 24,
++		.meram_offset   = 0x0,
++		.meram_size     = 0x40,
++	},
++	.icb[1] = {
++		.marker_icb     = 29,
++		.cache_icb      = 25,
++		.meram_offset   = 0x40,
++		.meram_size     = 0x40,
++	},
++};
++#endif
  
--enum { MMCIF_PROGRESS_ENTER, MMCIF_PROGRESS_INIT,
--       MMCIF_PROGRESS_LOAD, MMCIF_PROGRESS_DONE };
--
- static inline void sh_mmcif_boot_cmd_send(void __iomem *base,
- 					  unsigned long cmd, unsigned long arg)
- {
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+@@ -438,6 +480,9 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.bpp = 16,
+ 		.lcd_cfg = ap4evb_lcdc_modes,
+ 		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
++#ifdef CONFIG_FB_SH_MOBILE_MERAM
++		.meram_cfg = &lcd_meram_cfg,
++#endif
+ 	}
+ };
+ 
+@@ -708,6 +753,23 @@ static struct platform_device fsi_device = {
+ static struct platform_device fsi_ak4643_device = {
+ 	.name		= "sh_fsi2_a_ak4643",
+ };
++#ifdef CONFIG_FB_SH_MOBILE_MERAM
++static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
++	.meram_dev = &mackerel_meram_info,
++	.icb[0] = {
++		.marker_icb     = 30,
++		.cache_icb      = 26,
++		.meram_offset   = 0x80,
++		.meram_size     = 0x100,
++	},
++	.icb[1] = {
++		.marker_icb     = 31,
++		.cache_icb      = 27,
++		.meram_offset   = 0x180,
++		.meram_size     = 0x100,
++	},
++};
++#endif
+ 
+ static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
+ 	.clock_source = LCDC_CLK_EXTERNAL,
+@@ -717,6 +779,10 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
+ 		.interface_type = RGB24,
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
++#ifdef CONFIG_FB_SH_MOBILE_MERAM
++		.meram_cfg = &hdmi_meram_cfg,
++#endif
++
+ 	}
+ };
+ 
+@@ -945,6 +1011,9 @@ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&csi2_device,
+ 	&ceu_device,
+ 	&ap4evb_camera,
++#ifdef CONFIG_FB_SH_MOBILE_MERAM
++	&meram_device,
++#endif
+ };
+ 
+ static int __init hdmi_init_pm_clock(void)
 -- 
-1.7.2.3
+1.7.1
 
