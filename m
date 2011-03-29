@@ -1,46 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Mar 2011 11:21:36 +0000
-Subject: Re: SH Core Linux 20110317
-Message-Id: <AANLkTimZd0ac9c4qaJHndzZ-f=4omQkHs49jKuVhjSGE@mail.gmail.com>
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Tue, 29 Mar 2011 11:36:59 +0000
+Subject: [PATCH] sh: Fix build arch_ptrace function by init_fpu
+Message-Id: <1301398619-10753-1-git-send-email-iwamatsu@nigauri.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <AANLkTikhuHy8iZO+K6OOARG7fAt90hXbcEFE91dirMOX@mail.gmail.com>
-In-Reply-To: <AANLkTikhuHy8iZO+K6OOARG7fAt90hXbcEFE91dirMOX@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Mar 17, 2011 at 4:55 PM, Mike Frysinger <vapier@gentoo.org> wrote:
-> On Thursday, March 17, 2011 03:10:41 Magnus Damm wrote:
->> On Thu, Mar 17, 2011 at 3:56 PM, Mike Frysinger <vapier@gentoo.org> wrot=
-e:
->> > i wonder if there's some way we can centralize/focus efforts on the Li=
-nux
->> > side so each SoC vendor doesnt keep coming up with its own magic sauce
->> > to glue worlds together. =A0i really dont see this as being a useful a=
-rea
->> > for everyone to "innovate" on their own. =A0the advantage to being the
->> > first one into mainline is that everyone else will have to migrate to =
-it
->> > :).
->> >
->> > perhaps start a list on vger.kernel.org and a wiki on wiki.kernel.org ?
->>
->> I believe the answer to all this is Virtio, but I'm not sure if
->> everyone will agree with me. =3D)
->
-> so if i had to summarize your SuperH effort, it'd be "use virtio" ? =A0i =
-can
-> work with that and see about driving stuff internally in that direction.
+init_fpu can use only with CPU having FPU.
+his was used in arch_ptrace, but came to use even the CPU which did not
+have an FPU.
 
-Yes! It would be great to see other vendors using Virtio.
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+---
+ arch/sh/kernel/ptrace_32.c |    4 ++++
+ arch/sh/kernel/ptrace_64.c |    4 ++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
 
-I have not done any performance tuning yet though, so I guess the only
-unknown factor is the overhead. But since Virtio is already used in
-virtualized environments I believe that some optimization has been
-done already. If that's not enough then future virtio specific driver
-optimizations can be benefit both enterprise and embedded.
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 2130ca6..e00ddad 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -394,9 +394,11 @@ long arch_ptrace(struct task_struct *child, long request,
+ 					tmp = 0;
+ 			} else {
+ 				unsigned long index;
++#ifdef CONFIG_SH_FPU
+ 				ret = init_fpu(child);
+ 				if (ret)
+ 					break;
++#endif
+ 				index = addr - offsetof(struct user, fpu);
+ 				tmp = ((unsigned long *)child->thread.xstate)
+ 					[index >> 2];
+@@ -428,9 +430,11 @@ long arch_ptrace(struct task_struct *child, long request,
+ 		else if (addr >= offsetof(struct user, fpu) &&
+ 			 addr < offsetof(struct user, u_fpvalid)) {
+ 			unsigned long index;
++#ifdef CONFIG_SH_FPU
+ 			ret = init_fpu(child);
+ 			if (ret)
+ 				break;
++#endif
+ 			index = addr - offsetof(struct user, fpu);
+ 			set_stopped_child_used_math(child);
+ 			((unsigned long *)child->thread.xstate)
+diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
+index c8f9764..d675b0e 100644
+--- a/arch/sh/kernel/ptrace_64.c
++++ b/arch/sh/kernel/ptrace_64.c
+@@ -403,9 +403,11 @@ long arch_ptrace(struct task_struct *child, long request,
+ 		else if ((addr >= offsetof(struct user, fpu)) &&
+ 			 (addr <  offsetof(struct user, u_fpvalid))) {
+ 			unsigned long index;
++#ifdef CONFIG_SH_FPU
+ 			ret = init_fpu(child);
+ 			if (ret)
+ 				break;
++#endif
+ 			index = addr - offsetof(struct user, fpu);
+ 			tmp = get_fpu_long(child, index);
+ 		} else if (addr = offsetof(struct user, u_fpvalid)) {
+@@ -445,9 +447,11 @@ long arch_ptrace(struct task_struct *child, long request,
+ 		else if ((addr >= offsetof(struct user, fpu)) &&
+ 			 (addr <  offsetof(struct user, u_fpvalid))) {
+ 			unsigned long index;
++#ifdef CONFIG_SH_FPU
+ 			ret = init_fpu(child);
+ 			if (ret)
+ 				break;
++#endif
+ 			index = addr - offsetof(struct user, fpu);
+ 			ret = put_fpu_long(child, index, data);
+ 		}
+-- 
+1.7.4.1
 
-Thanks,
-
-/ magnus
