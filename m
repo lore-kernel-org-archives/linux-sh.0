@@ -1,52 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 27 Mar 2011 00:20:11 +0000
+From: Chris Ball <cjb@laptop.org>
+Date: Tue, 29 Mar 2011 22:18:55 +0000
 Subject: Re: outstanding tmio patches
-Message-Id: <20110327002011.GC31554@verge.net.au>
+Message-Id: <m3aagdd0z4.fsf@pullcord.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1103231505450.6836@axis700.grange>
- <m3k4folztx.fsf@pullcord.laptop.org>
- <m3mxkjl2nr.fsf@pullcord.laptop.org>
- <Pine.LNX.4.64.1103251518290.22824@axis700.grange>
- <m3ipv7l07b.fsf@pullcord.laptop.org>
-In-Reply-To: <m3ipv7l07b.fsf@pullcord.laptop.org>
+	<m3k4folztx.fsf@pullcord.laptop.org>
+	<m3mxkjl2nr.fsf@pullcord.laptop.org>
+	<Pine.LNX.4.64.1103251518290.22824@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1103251518290.22824@axis700.grange> (Guennadi
+	Liakhovetski's message of "Fri, 25 Mar 2011 15:19:50 +0100 (CET)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Paul Mundt <lethal@linux-sh.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Paul Mundt <lethal@linux-sh.org>
 
-On Fri, Mar 25, 2011 at 10:54:48AM -0400, Chris Ball wrote:
-> Hi,
-> 
-> On Fri, Mar 25 2011, Guennadi Liakhovetski wrote:
-> > Hm, strange, now all patches should be correct - if the correct versions 
-> > are taken. Let's do it easier: I've uploaded all 15 patches (14 mine and 1 
-> > from Simon) as a quilt series to
-> >
-> > http://download.open-technology.de/tmio-for-2.6.39/
-> 
-> Thanks, I just needed to pull changes from Linus into mmc-next.
-> 
-> I've pushed everything out to mmc-next now.  If anyone else is able to
-> grab mmc-next and supply a Tested-by: for their hardware, that'd be
-> appreciated.
+Hi Guennadi,
 
-Hi,
+On Fri, Mar 25 2011, Guennadi Liakhovetski wrote:
+> Let's do it easier: I've uploaded all 15 patches (14 mine and 1 from
+> Simon) as a quilt series to
+>
+> http://download.open-technology.de/tmio-for-2.6.39/
+>
+> Please, just try those.
 
-I have done some tests on a Renesas Mackerel board (Guennadi likely has
-one too) both with and without my "mmc, ARM: Add zboot from eSD support for
-SuperH Mobile ARM" change - which needs to go through RMK's tree
-and is the motivation for the " mmc: tmio_mmc: Move some defines into a
-shared header" patch.
+These made it in as the last merge before the .39 window closed.  :)
+Let's talk a few weeks before the .40 merge window opens about what the
+.40 tmio merge should look like; it would have been better for these to
+have spent longer in linux-next before merging.
 
-I didn't notice any problems.
+Thanks,
 
-FWIW
-
-Tested-by: Simon Horman <horms@verge.net.au>
-
-> Also, if anyone thinks that some of this should wait until .40, now's a
-> good time to speak up.  :)
-
-I have no particular objections though I do agree that it
-is a lot of churn at this stage of the release cycle.
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
