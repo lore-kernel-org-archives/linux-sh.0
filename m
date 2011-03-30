@@ -1,20 +1,20 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 11 Mar 2011 08:09:28 +0000
-Subject: [PATCH 0/4 v2] mmc: tmio: don't access nonexisting registers
-Message-Id: <Pine.LNX.4.64.1103110854050.23675@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 30 Mar 2011 02:59:14 +0000
+Subject: [PATCH v6] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
+Message-Id: <1301453955-15759-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Some tmio implementations don't implement registers above 0xff. The driver 
-must take care not to access them in such cases.
+Hi Magnus,
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+could I get an Ack or otherwise from you on this change?
+All the pre-requisites are in 2.6.39-rc1.
+
+Note that if you are inclined to build a 2.6.39-rc1 kernel for mackerel you
+will also need "sh: intc: fix build error in interrupts.h"
+(https://patchwork.kernel.org/patch/672972/) or similar.  That change is
+unrelated to my work.
+
