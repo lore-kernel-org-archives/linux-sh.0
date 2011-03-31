@@ -1,39 +1,44 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 31 Mar 2011 03:16:49 +0000
-Subject: Re: [PATCH] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
-Message-Id: <20110331031648.GA3225@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 31 Mar 2011 05:44:17 +0000
+Subject: Re: [PATCH] mmc, ARM: Add zboot from eSD support for SuperH Mobile
+Message-Id: <20110331054416.GA19085@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1301453955-15759-1-git-send-email-horms@verge.net.au>
 	<1301453955-15759-2-git-send-email-horms@verge.net.au>
 	<AANLkTin6TdEWjQoNCGw1gV1BnzHjOQss9DA_0BRMdvNE@mail.gmail.com>
-In-Reply-To: <AANLkTin6TdEWjQoNCGw1gV1BnzHjOQss9DA_0BRMdvNE@mail.gmail.com>
+	<20110331031648.GA3225@linux-sh.org>
+In-Reply-To: <20110331031648.GA3225@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 31, 2011 at 11:06:24AM +0900, Magnus Damm wrote:
-> On Wed, Mar 30, 2011 at 11:59 AM, Simon Horman <horms@verge.net.au> wrote:
-> > This allows a ROM-able zImage to be written to eSD and for SuperH Mobile
-> > ARM to boot directly from the SDHI hardware block.
-> >
-> > This is achieved by the MaskROM loading the first portion of the image into
-> > MERAM and then jumping to it. ?This portion contains loader code which
-> > copies the entire image to SDRAM and jumps to it. From there the zImage
-> > boot code proceeds as normal, uncompressing the image into its final
-> > location and then jumping to it.
-> >
-> > Cc: Paul Mundt <lethal@linux-sh.org>
-> > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > Signed-off-by: Simon Horman <horms@verge.net.au>
+On Thu, Mar 31, 2011 at 12:16:49PM +0900, Paul Mundt wrote:
+> On Thu, Mar 31, 2011 at 11:06:24AM +0900, Magnus Damm wrote:
+> > On Wed, Mar 30, 2011 at 11:59 AM, Simon Horman <horms@verge.net.au> wrote:
+> > > This allows a ROM-able zImage to be written to eSD and for SuperH Mobile
+> > > ARM to boot directly from the SDHI hardware block.
+> > >
+> > > This is achieved by the MaskROM loading the first portion of the image into
+> > > MERAM and then jumping to it. ?This portion contains loader code which
+> > > copies the entire image to SDRAM and jumps to it. From there the zImage
+> > > boot code proceeds as normal, uncompressing the image into its final
+> > > location and then jumping to it.
+> > >
+> > > Cc: Paul Mundt <lethal@linux-sh.org>
+> > > Cc: Magnus Damm <magnus.damm@gmail.com>
+> > > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > > Signed-off-by: Simon Horman <horms@verge.net.au>
+> > 
+> > Hi Simon,
+> > 
+> > Thanks for your work on this. v6 of this patch looks good to me!
+> > 
+> > Acked-by: Magnus Damm <damm@opensource.se>
 > 
-> Hi Simon,
+> Likewise. Feel free to shovel it in to the patch tracker at your leisure.
 > 
-> Thanks for your work on this. v6 of this patch looks good to me!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+> Acked-by: Paul Mundt <lethal@linux-sh.org>
 
-Likewise. Feel free to shovel it in to the patch tracker at your leisure.
+Thanks, will do.
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
