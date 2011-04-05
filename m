@@ -1,105 +1,70 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 04 Apr 2011 15:08:05 +0000
-Subject: [PATCH/RFC] ARM: arch-shmobile: only run HDMI init on respective
-Message-Id: <Pine.LNX.4.64.1104041636280.4668@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Apr 2011 01:22:33 +0000
+Subject: [PATCH/RFC] ARM: arch-shmobile: only run FSI init on respective boards
+Message-Id: <w3pk4f9h4q3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1104041636280.4668@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1104041636280.4668@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-If several boards are enabled in the kernel configuration, 
-hdmi_init_pm_clock() functions from board-ap4evb.c and board-mackerel.c 
-will run on any of them. Prevent this by calling these functions from the 
+If several boards are enabled in the kernel configuration,
+fsi_init_pm_clock() functions from board-ap4evb.c
+will run on any of them. Prevent this by calling these functions from the
 .init_machine() callback instead of using device_initcall().
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Cc: Magnus Damm <damm@opensource.se>
 ---
+This patch is depend on Guennadi's
+[PATCH/RFC] ARM: arch-shmobile: only run HDMI init on respective boards
 
-Marked as RFC, until tested on mackerel
+ arch/arm/mach-shmobile/board-ap4evb.c |    8 +++-----
+ 1 files changed, 3 insertions(+), 5 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index a94f29d..fee4f6b 100644
+index 53c15e1..1e35fa9 100644
 --- a/arch/arm/mach-shmobile/board-ap4evb.c
 +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -947,7 +947,7 @@ static struct platform_device *ap4evb_devices[] __initdata = {
- 	&ap4evb_camera,
- };
- 
--static int __init hdmi_init_pm_clock(void)
-+static void __init hdmi_init_pm_clock(void)
- {
- 	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
- 	int ret;
-@@ -988,19 +988,14 @@ static int __init hdmi_init_pm_clock(void)
- 	pr_debug("PLLC2 set frequency %lu\n", rate);
- 
- 	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
--	if (ret < 0) {
-+	if (ret < 0)
- 		pr_err("Cannot set HDMI parent: %d\n", ret);
--		goto out;
--	}
- 
- out:
- 	if (!IS_ERR(hdmi_ick))
+@@ -996,7 +996,7 @@ out:
  		clk_put(hdmi_ick);
--	return ret;
  }
  
--device_initcall(hdmi_init_pm_clock);
--
- static int __init fsi_init_pm_clock(void)
+-static int __init fsi_init_pm_clock(void)
++static void __init fsi_init_pm_clock(void)
  {
  	struct clk *fsia_ick;
-@@ -1348,6 +1343,8 @@ static void __init ap4evb_init(void)
- 	__raw_writel(srcr4 & ~(1 << 13), SRCR4);
+ 	int ret;
+@@ -1005,7 +1005,7 @@ static int __init fsi_init_pm_clock(void)
+ 	if (IS_ERR(fsia_ick)) {
+ 		ret = PTR_ERR(fsia_ick);
+ 		pr_err("Cannot get FSI ICK: %d\n", ret);
+-		return ret;
++		return;
+ 	}
  
+ 	ret = clk_set_parent(fsia_ick, &sh7372_fsiack_clk);
+@@ -1013,10 +1013,7 @@ static int __init fsi_init_pm_clock(void)
+ 		pr_err("Cannot set FSI-A parent: %d\n", ret);
+ 
+ 	clk_put(fsia_ick);
+-
+-	return ret;
+ }
+-device_initcall(fsi_init_pm_clock);
+ 
+ /*
+  * FIXME !!
+@@ -1345,6 +1342,7 @@ static void __init ap4evb_init(void)
  	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
-+
-+	hdmi_init_pm_clock();
+ 
+ 	hdmi_init_pm_clock();
++	fsi_init_pm_clock();
  }
  
  static void __init ap4evb_timer_init(void)
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 49bc074..e70dd57 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -423,7 +423,7 @@ static struct platform_device fsi_hdmi_device = {
- 	.name		= "sh_fsi2_b_hdmi",
- };
- 
--static int __init hdmi_init_pm_clock(void)
-+static void __init hdmi_init_pm_clock(void)
- {
- 	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
- 	int ret;
-@@ -467,17 +467,13 @@ static int __init hdmi_init_pm_clock(void)
- 	pr_debug("PLLC2 set frequency %lu\n", rate);
- 
- 	ret = clk_set_parent(hdmi_ick, &sh7372_pllc2_clk);
--	if (ret < 0) {
-+	if (ret < 0)
- 		pr_err("Cannot set HDMI parent: %d\n", ret);
--		goto out;
--	}
- 
- out:
- 	if (!IS_ERR(hdmi_ick))
- 		clk_put(hdmi_ick);
--	return ret;
- }
--device_initcall(hdmi_init_pm_clock);
- 
- /* USB1 (Host) */
- static void usb1_host_port_power(int port, int power)
-@@ -1218,6 +1214,8 @@ static void __init mackerel_init(void)
- 	sh7372_add_standard_devices();
- 
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
-+
-+	hdmi_init_pm_clock();
- }
- 
- static void __init mackerel_timer_init(void)
+-- 
+1.7.1
+
