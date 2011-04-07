@@ -1,46 +1,90 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Thu, 14 Apr 2011 06:01:34 +0000
-Subject: [PATCH 4/5] sh: convert to asm-generic ptrace.h
-Message-Id: <1302760895-13459-5-git-send-email-vapier@gentoo.org>
+From: Kevin Hilman <khilman@ti.com>
+Date: Thu, 07 Apr 2011 00:02:48 +0000
+Subject: [PATCH/RFC 5/6] ARM: use common clock-based runtime PM implementation on SH-mobile & OMAP1
+Message-Id: <1302134569-22825-6-git-send-email-khilman@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1302760895-13459-1-git-send-email-vapier@gentoo.org>
-In-Reply-To: <1302760895-13459-1-git-send-email-vapier@gentoo.org>
+References: <1302134569-22825-1-git-send-email-khilman@ti.com>
+In-Reply-To: <1302134569-22825-1-git-send-email-khilman@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, Jason Wessel <jason.wessel@windriver.com>
-Cc: x86@kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Andrew Morton <akpm@linux-foundation.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+Signed-off-by: Kevin Hilman <khilman@ti.com>
 ---
- arch/sh/include/asm/ptrace.h |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ arch/arm/mach-omap1/Makefile        |    2 +-
+ arch/arm/mach-omap1/pm_runtime.c    |   18 ++++++++++++++++++
+ arch/arm/mach-shmobile/pm_runtime.c |   23 +++++++++++++++++++++++
+ 3 files changed, 42 insertions(+), 1 deletions(-)
+ create mode 100644 arch/arm/mach-omap1/pm_runtime.c
+ create mode 100644 arch/arm/mach-shmobile/pm_runtime.c
 
-diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
-index b219a08..3f2a6e7 100644
---- a/arch/sh/include/asm/ptrace.h
-+++ b/arch/sh/include/asm/ptrace.h
-@@ -40,9 +40,8 @@
- #include <asm/system.h>
+diff --git a/arch/arm/mach-omap1/Makefile b/arch/arm/mach-omap1/Makefile
+index 1913c2d..04c60f9 100644
+--- a/arch/arm/mach-omap1/Makefile
++++ b/arch/arm/mach-omap1/Makefile
+@@ -11,7 +11,7 @@ obj-$(CONFIG_OMAP_MCBSP) += mcbsp.o
+ obj-$(CONFIG_OMAP_32K_TIMER)	+= timer32k.o
  
- #define user_mode(regs)			(((regs)->sr & 0x40000000)=0)
--#define user_stack_pointer(_regs)	((unsigned long)(_regs)->regs[15])
- #define kernel_stack_pointer(_regs)	((unsigned long)(_regs)->regs[15])
--#define instruction_pointer(regs)	((unsigned long)(regs)->pc)
-+#define GET_USP(regs) ((regs)->regs[15])
+ # Power Management
+-obj-$(CONFIG_PM) += pm.o sleep.o
++obj-$(CONFIG_PM) += pm.o sleep.o pm_runtime.o
  
- #define arch_has_single_step()	(1)
- 
-@@ -137,6 +136,9 @@ static inline unsigned long profile_pc(struct pt_regs *regs)
- 
- 	return pc;
- }
-+#define profile_pc profile_pc
+ # DSP
+ obj-$(CONFIG_OMAP_MBOX_FWK)	+= mailbox_mach.o
+diff --git a/arch/arm/mach-omap1/pm_runtime.c b/arch/arm/mach-omap1/pm_runtime.c
+new file mode 100644
+index 0000000..bbceb64
+--- /dev/null
++++ b/arch/arm/mach-omap1/pm_runtime.c
+@@ -0,0 +1,18 @@
++/*
++ * Runtime PM support code for TI OMAP1
++ *
++ *  Copyright (C) 2011 Texas Instruments, Inc.
++ *  Author: Kevin Hilman <khilman@ti.com>
++ *
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
 +
-+#include <asm-generic/ptrace.h>
- #endif /* __KERNEL__ */
- 
- #endif /* __ASM_SH_PTRACE_H */
++#include <asm/pm_runtime.h>
++
++static int __init omap1_pm_runtime_init(void)
++{
++	pm_runtime_clock_init();
++	return 0;
++}
++core_initcall(omap1_pm_runtime_init);
+diff --git a/arch/arm/mach-shmobile/pm_runtime.c b/arch/arm/mach-shmobile/pm_runtime.c
+new file mode 100644
+index 0000000..edc0fa5
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm_runtime.c
+@@ -0,0 +1,23 @@
++/*
++ * arch/arm/mach-shmobile/pm_runtime.c
++ *
++ * Runtime PM support code for SuperH Mobile ARM
++ *
++ *  Copyright (C) 2009-2010 Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++
++#include <asm/pm_runtime.h>
++
++static int __init sh_pm_runtime_init(void)
++{
++	pm_runtime_clock_init();
++	return 0;
++}
++core_initcall(sh_pm_runtime_init);
 -- 
-1.7.5.rc1
+1.7.4
 
