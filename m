@@ -1,55 +1,84 @@
-From: Greg KH <gregkh@suse.de>
-Date: Fri, 29 Apr 2011 20:54:56 +0000
-Subject: Re: [RFC][PATCH 1/2] PM / Runtime: Support for generic I/O power
-Message-Id: <20110429205456.GC16989@suse.de>
+From: Kevin Hilman <khilman@ti.com>
+Date: Thu, 07 Apr 2011 00:02:44 +0000
+Subject: [PATCH/RFC 1/6] ARM: sh-mobile: runtime PM: convert to device powerdomains
+Message-Id: <1302134569-22825-2-git-send-email-khilman@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl>
- <201104290154.56145.rjw@sisk.pl>
-In-Reply-To: <201104290154.56145.rjw@sisk.pl>
+References: <1302134569-22825-1-git-send-email-khilman@ti.com>
+In-Reply-To: <1302134569-22825-1-git-send-email-khilman@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Apr 29, 2011 at 01:54:55AM +0200, Rafael J. Wysocki wrote:
-> From: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> Introcude common headers, helper functions and callbacks allowing
-> platforms to use simple generic power domains for runtime power
-> management.
-> 
-> Introduce struct generic_power_domain to be used for representing
-> power domains that each contain a number of devices and may be
-> master domains or subdomains with respect to other power domains.
-> Among other things, this structure includes callbacks to be
-> provided by platforms for performing specific tasks related to
-> power management (i.e. ->stop_device() may disable a device's
-> clocks, while ->start_device() may enable them, ->power_on() is
-> supposed to remove power from the entire power domain
-> and ->power_off() is supposed to restore it).
-> 
-> Introduce functions that can be used as power domain runtime PM
-> callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
-> as well as helper functions for the initialization of a power
-> domain represented by a struct generic_power_domain object,
-> adding a device to or removing a device from it and adding or
-> removing subdomains.
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> ---
->  drivers/base/power/Makefile |    2 
->  drivers/base/power/domain.c |  416 ++++++++++++++++++++++++++++++++++++++++++++
->  include/linux/pm.h          |    3 
->  include/linux/pm_domain.h   |   82 ++++++++
->  4 files changed, 501 insertions(+), 2 deletions(-)
+Remove the deprecated use of weak platform_bus symbols in favor of using
+the new device power domains.
 
-If this solves the power domain issue, and no one has any problems with
-getting to work on their platforms, it looks great to me.
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Kevin Hilman <khilman@ti.com>
+---
+ arch/arm/mach-shmobile/pm_runtime.c |   20 +++++++++++++++-----
+ 1 files changed, 15 insertions(+), 5 deletions(-)
 
-Very nice job:
-	Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
+diff --git a/arch/arm/mach-shmobile/pm_runtime.c b/arch/arm/mach-shmobile/pm_runtime.c
+index 94912d3..6c75c3f 100644
+--- a/arch/arm/mach-shmobile/pm_runtime.c
++++ b/arch/arm/mach-shmobile/pm_runtime.c
+@@ -66,7 +66,7 @@ static void platform_pm_runtime_bug(struct device *dev,
+ 		dev_err(dev, "runtime pm suspend before resume\n");
+ }
+ 
+-int platform_pm_runtime_suspend(struct device *dev)
++static int platform_pm_runtime_suspend(struct device *dev)
+ {
+ 	struct pm_runtime_data *prd = __to_prd(dev);
+ 
+@@ -82,7 +82,7 @@ int platform_pm_runtime_suspend(struct device *dev)
+ 	return 0;
+ }
+ 
+-int platform_pm_runtime_resume(struct device *dev)
++static int platform_pm_runtime_resume(struct device *dev)
+ {
+ 	struct pm_runtime_data *prd = __to_prd(dev);
+ 
+@@ -98,12 +98,20 @@ int platform_pm_runtime_resume(struct device *dev)
+ 	return 0;
+ }
+ 
+-int platform_pm_runtime_idle(struct device *dev)
++static int platform_pm_runtime_idle(struct device *dev)
+ {
+ 	/* suspend synchronously to disable clocks immediately */
+ 	return pm_runtime_suspend(dev);
+ }
+ 
++static struct dev_power_domain platform_pm_power_domain = {
++	.ops = {
++		.runtime_suspend = platform_pm_runtime_suspend,
++		.runtime_resume = platform_pm_runtime_resume,
++		.runtime_idle = platform_pm_runtime_idle,
++	},
++};
++
+ static int platform_bus_notify(struct notifier_block *nb,
+ 			       unsigned long action, void *data)
+ {
+@@ -114,10 +122,12 @@ static int platform_bus_notify(struct notifier_block *nb,
+ 
+ 	if (action = BUS_NOTIFY_BIND_DRIVER) {
+ 		prd = devres_alloc(__devres_release, sizeof(*prd), GFP_KERNEL);
+-		if (prd)
++		if (prd) {
+ 			devres_add(dev, prd);
+-		else
++			dev->pwr_domain = &platform_pm_power_domain;
++		} else {
+ 			dev_err(dev, "unable to alloc memory for runtime pm\n");
++		}
+ 	}
+ 
+ 	return 0;
+-- 
+1.7.4
 
-thanks,
-
-greg k-h
