@@ -1,33 +1,59 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Tue, 19 Apr 2011 01:57:41 +0000
-Subject: Re: [PATCH] MMC: fix a race between card-detect rescan and clock-gate work instances
-Message-Id: <m3fwpfq9s3.fsf@pullcord.laptop.org>
+From: Kevin Hilman <khilman@ti.com>
+Date: Thu, 07 Apr 2011 00:02:43 +0000
+Subject: [PATCH/RFC 0/6] ARM: runtime PM: consolidate runtime PM implementations
+Message-Id: <1302134569-22825-1-git-send-email-khilman@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1104152006110.18593@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1104152006110.18593@axis700.grange> (Guennadi
-	Liakhovetski's message of "Fri, 15 Apr 2011 20:08:19 +0200 (CEST)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Guennadi,
+This series aims to consolidate OMAP and SH-mobile runtime PM
+implementations around the new device power domains.
 
-On Fri, Apr 15 2011, Guennadi Liakhovetski wrote:
-> Currently there is a race in the MMC core between a card-detect
-> rescan work and the clock-gating work, scheduled from a command
-> completion. Fix it by removing the dedicated clock-gating mutex and
-> using the MMC standard locking mechanism instead.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: Magnus Damm <damm@opensource.se>
-> Cc: Linus Walleij <linus.walleij@linaro.org>
+In 2.6.39, device power domains were added (commit
+7538e3db6e015e890825fbd9f8659952896ddd5b, PM: add support for device
+power domains).  In converting both OMAP and SH-mobile to use device
+power domains, the overlap between implementations was almost 100%.  
 
-Thanks, pushed to mmc-next with Linus' ACK and a stable@ tag.
+To share the runtime PM implementation based on simple clock gating,
+move it to arch/arm/common and initialize it from OMAP and SH-mobile.
 
-- Chris.
+Also, OMAP was the only user of platform_bus_set_pm_ops().  Now that
+it has been converted to device power domains, remove
+platform_bus_set_pm_ops().
+
+Kevin Hilman (6):
+  ARM: sh-mobile: runtime PM: convert to device powerdomains
+  OMAP2+: PM: move runtime PM implementation to use device power
+    domains
+  OMAP1: runtime PM: drop platform bus implementation
+  ARM: move SH-mobile runtime PM to arm/common for sharing with other
+    platforms
+  ARM: use common clock-based runtime PM implementation on SH-mobile &
+    OMAP1
+  Revert "driver core: platform_bus: allow runtime override of
+    dev_pm_ops"
+
+ arch/arm/common/Makefile            |    1 +
+ arch/arm/common/pm_runtime_clock.c  |  176 +++++++++++++++++++++++++++++++++++
+ arch/arm/include/asm/pm_runtime.h   |   17 ++++
+ arch/arm/mach-omap1/Makefile        |    2 +-
+ arch/arm/mach-omap1/pm_bus.c        |  100 --------------------
+ arch/arm/mach-omap1/pm_runtime.c    |   18 ++++
+ arch/arm/mach-omap2/Makefile        |    6 +-
+ arch/arm/mach-omap2/pm_bus.c        |   85 -----------------
+ arch/arm/mach-shmobile/pm_runtime.c |  152 +-----------------------------
+ arch/arm/plat-omap/omap_device.c    |   22 +++++
+ drivers/base/platform.c             |   35 -------
+ include/linux/platform_device.h     |    3 -
+ 12 files changed, 241 insertions(+), 376 deletions(-)
+ create mode 100644 arch/arm/common/pm_runtime_clock.c
+ create mode 100644 arch/arm/include/asm/pm_runtime.h
+ delete mode 100644 arch/arm/mach-omap1/pm_bus.c
+ create mode 100644 arch/arm/mach-omap1/pm_runtime.c
+ delete mode 100644 arch/arm/mach-omap2/pm_bus.c
+
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.4
+
