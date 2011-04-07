@@ -1,59 +1,45 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Thu, 07 Apr 2011 00:02:43 +0000
-Subject: [PATCH/RFC 0/6] ARM: runtime PM: consolidate runtime PM implementations
-Message-Id: <1302134569-22825-1-git-send-email-khilman@ti.com>
+From: "Rafael J. Wysocki" <rjw@suse.com>
+Date: Thu, 07 Apr 2011 05:38:42 +0000
+Subject: Re: [PATCH/RFC 0/6] ARM: runtime PM: consolidate runtime PM implementations
+Message-Id: <201104070738.42956.rjw@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1302134569-22825-1-git-send-email-khilman@ti.com>
+In-Reply-To: <1302134569-22825-1-git-send-email-khilman@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This series aims to consolidate OMAP and SH-mobile runtime PM
-implementations around the new device power domains.
+On Thursday, April 07, 2011, Kevin Hilman wrote:
+> This series aims to consolidate OMAP and SH-mobile runtime PM
+> implementations around the new device power domains.
+> 
+> In 2.6.39, device power domains were added (commit
+> 7538e3db6e015e890825fbd9f8659952896ddd5b, PM: add support for device
+> power domains).  In converting both OMAP and SH-mobile to use device
+> power domains, the overlap between implementations was almost 100%.  
+> 
+> To share the runtime PM implementation based on simple clock gating,
+> move it to arch/arm/common and initialize it from OMAP and SH-mobile.
+> 
+> Also, OMAP was the only user of platform_bus_set_pm_ops().  Now that
+> it has been converted to device power domains, remove
+> platform_bus_set_pm_ops().
 
-In 2.6.39, device power domains were added (commit
-7538e3db6e015e890825fbd9f8659952896ddd5b, PM: add support for device
-power domains).  In converting both OMAP and SH-mobile to use device
-power domains, the overlap between implementations was almost 100%.  
+Please, don't do it this way.
 
-To share the runtime PM implementation based on simple clock gating,
-move it to arch/arm/common and initialize it from OMAP and SH-mobile.
+First, we'll still need platform_bus_set_pm_ops() on shmobile and the reason
+is that we want to override the platform bus type PM ops for _all_ devices on
+that platform, which power domains are not really suitable for.
 
-Also, OMAP was the only user of platform_bus_set_pm_ops().  Now that
-it has been converted to device power domains, remove
-platform_bus_set_pm_ops().
+Second, we're going to introduce code for handling real power domains for
+shmobile that would conflict with the way you're using power domains for
+overriding the default PM ops.
 
-Kevin Hilman (6):
-  ARM: sh-mobile: runtime PM: convert to device powerdomains
-  OMAP2+: PM: move runtime PM implementation to use device power
-    domains
-  OMAP1: runtime PM: drop platform bus implementation
-  ARM: move SH-mobile runtime PM to arm/common for sharing with other
-    platforms
-  ARM: use common clock-based runtime PM implementation on SH-mobile &
-    OMAP1
-  Revert "driver core: platform_bus: allow runtime override of
-    dev_pm_ops"
+Besides, the way you've used power domains appears to assume that drivers
+will not define their own runtime PM callbacks, because if they do, those
+callbacks will be called _in_ _addition_ to the power domain callbacks you're
+trying to add (from the default platform bus type callbacks).
 
- arch/arm/common/Makefile            |    1 +
- arch/arm/common/pm_runtime_clock.c  |  176 +++++++++++++++++++++++++++++++++++
- arch/arm/include/asm/pm_runtime.h   |   17 ++++
- arch/arm/mach-omap1/Makefile        |    2 +-
- arch/arm/mach-omap1/pm_bus.c        |  100 --------------------
- arch/arm/mach-omap1/pm_runtime.c    |   18 ++++
- arch/arm/mach-omap2/Makefile        |    6 +-
- arch/arm/mach-omap2/pm_bus.c        |   85 -----------------
- arch/arm/mach-shmobile/pm_runtime.c |  152 +-----------------------------
- arch/arm/plat-omap/omap_device.c    |   22 +++++
- drivers/base/platform.c             |   35 -------
- include/linux/platform_device.h     |    3 -
- 12 files changed, 241 insertions(+), 376 deletions(-)
- create mode 100644 arch/arm/common/pm_runtime_clock.c
- create mode 100644 arch/arm/include/asm/pm_runtime.h
- delete mode 100644 arch/arm/mach-omap1/pm_bus.c
- create mode 100644 arch/arm/mach-omap1/pm_runtime.c
- delete mode 100644 arch/arm/mach-omap2/pm_bus.c
-
--- 
-1.7.4
-
+Thanks,
+Rafael
