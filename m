@@ -1,31 +1,31 @@
-From: <mcrosft06@cox.net>
-Date: Sat, 30 Apr 2011 00:20:37 +0000
-Subject: CONGRATULATIONS
-Message-Id: <20110429202037.IG8ZS.235758.imail@eastrmwml43>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 07 Apr 2011 18:42:51 +0000
+Subject: [GIT PULL] rmobile fixes for 2.6.39-rc3
+Message-Id: <20110407184251.GA29901@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Dear Recipient,
+Please pull from:
 
-We are pleased to inform you that you won the sum of 1,000,000.00 Euros on =
-the
-Microsoft Promo Commission.your e-mail address attached to:Ticket Number:03=
--02-1,
-Reference Number:SL/07/4009,Please acknowledge the receipt of this mail to
-Pastor Alan Jonathan With the details below:
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-fixes-for-linus
 
-EMAIL: mcrawrdprtmnt@aol.com
+Which contains:
 
-1.) Name...
-2.) Address..
-3.) Phone...
-4.) Sex...
-5.) Occupation....
-6.) Age...
-7.) Country Of Origin....
+Guennadi Liakhovetski (1):
+      ARM: arch-shmobile: only run HDMI init on respective boards
 
-Sir Ivan Smith
-Mircosoft =C2=A9 Promo Cordinator
+Kuninori Morimoto (1):
+      ARM: arch-shmobile: only run FSI init on respective boards
+
+Simon Horman (1):
+      ARM: mach-shmobile: Correctly check for CONFIG_MACH_MACKEREL
+
+ arch/arm/mach-shmobile/board-ap4evb.c       |   19 +++++++------------
+ arch/arm/mach-shmobile/board-mackerel.c     |   10 ++++------
+ arch/arm/mach-shmobile/include/mach/mmc.h   |    2 +-
+ arch/arm/mach-shmobile/include/mach/zboot.h |    2 +-
+ 4 files changed, 13 insertions(+), 20 deletions(-)
