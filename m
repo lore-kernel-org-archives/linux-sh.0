@@ -1,290 +1,309 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 24 Apr 2011 21:37:31 +0000
-Subject: [PATCH 2/9] PM: Export platform bus type's default PM callbacks
-Message-Id: <201104242337.31524.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 11 Apr 2011 19:49:11 +0000
+Subject: [PATCH/RFC] ARM: mach-shmobile: sh7372 power domain prototype
+Message-Id: <20110411194911.7991.79950.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
-In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Magnus Damm <damm@opensource.se>
 
-Export the default PM callbacks defined for the platform bus type so
-that they can be used by power domains for suspending and resuming
-platform devices in the future.
+This experimental sh7372-specific Runtime PM prototype
+adds support for the A4LC and A4MP power domains.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Tested on the Mackerel board together with the LCDC:
+
+# blank HDMI fbdev
+echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.1/graphics/fb1/blank
+
+# blank LCD panel fbdev
+echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+# unblank LCD panel fbdev
+echo 0 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+
+Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/base/platform.c         |   72 ++++++++++------------------------------
- include/linux/platform_device.h |   60 +++++++++++++++++++++++++++++++++
- 2 files changed, 78 insertions(+), 54 deletions(-)
 
-Index: linux-2.6/drivers/base/platform.c
-=================================--- linux-2.6.orig/drivers/base/platform.c
-+++ linux-2.6/drivers/base/platform.c
-@@ -667,7 +667,7 @@ static int platform_legacy_resume(struct
- 	return ret;
- }
- 
--static int platform_pm_prepare(struct device *dev)
-+int platform_pm_prepare(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -678,7 +678,7 @@ static int platform_pm_prepare(struct de
- 	return ret;
- }
- 
--static void platform_pm_complete(struct device *dev)
-+void platform_pm_complete(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 
-@@ -686,16 +686,11 @@ static void platform_pm_complete(struct
- 		drv->pm->complete(dev);
- }
- 
--#else /* !CONFIG_PM_SLEEP */
--
--#define platform_pm_prepare		NULL
--#define platform_pm_complete		NULL
--
--#endif /* !CONFIG_PM_SLEEP */
-+#endif /* CONFIG_PM_SLEEP */
- 
- #ifdef CONFIG_SUSPEND
- 
--int __weak platform_pm_suspend(struct device *dev)
-+int platform_pm_suspend(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -713,7 +708,7 @@ int __weak platform_pm_suspend(struct de
- 	return ret;
- }
- 
--int __weak platform_pm_suspend_noirq(struct device *dev)
-+int platform_pm_suspend_noirq(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -729,7 +724,7 @@ int __weak platform_pm_suspend_noirq(str
- 	return ret;
- }
- 
--int __weak platform_pm_resume(struct device *dev)
-+int platform_pm_resume(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -747,7 +742,7 @@ int __weak platform_pm_resume(struct dev
- 	return ret;
- }
- 
--int __weak platform_pm_resume_noirq(struct device *dev)
-+int platform_pm_resume_noirq(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -763,18 +758,11 @@ int __weak platform_pm_resume_noirq(stru
- 	return ret;
- }
- 
--#else /* !CONFIG_SUSPEND */
--
--#define platform_pm_suspend		NULL
--#define platform_pm_resume		NULL
--#define platform_pm_suspend_noirq	NULL
--#define platform_pm_resume_noirq	NULL
--
--#endif /* !CONFIG_SUSPEND */
-+#endif /* CONFIG_SUSPEND */
- 
- #ifdef CONFIG_HIBERNATE_CALLBACKS
- 
--static int platform_pm_freeze(struct device *dev)
-+int platform_pm_freeze(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -792,7 +780,7 @@ static int platform_pm_freeze(struct dev
- 	return ret;
- }
- 
--static int platform_pm_freeze_noirq(struct device *dev)
-+int platform_pm_freeze_noirq(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -808,7 +796,7 @@ static int platform_pm_freeze_noirq(stru
- 	return ret;
- }
- 
--static int platform_pm_thaw(struct device *dev)
-+int platform_pm_thaw(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -826,7 +814,7 @@ static int platform_pm_thaw(struct devic
- 	return ret;
- }
- 
--static int platform_pm_thaw_noirq(struct device *dev)
-+int platform_pm_thaw_noirq(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -842,7 +830,7 @@ static int platform_pm_thaw_noirq(struct
- 	return ret;
- }
- 
--static int platform_pm_poweroff(struct device *dev)
-+int platform_pm_poweroff(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -860,7 +848,7 @@ static int platform_pm_poweroff(struct d
- 	return ret;
- }
- 
--static int platform_pm_poweroff_noirq(struct device *dev)
-+int platform_pm_poweroff_noirq(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -876,7 +864,7 @@ static int platform_pm_poweroff_noirq(st
- 	return ret;
- }
- 
--static int platform_pm_restore(struct device *dev)
-+int platform_pm_restore(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -894,7 +882,7 @@ static int platform_pm_restore(struct de
- 	return ret;
- }
- 
--static int platform_pm_restore_noirq(struct device *dev)
-+int platform_pm_restore_noirq(struct device *dev)
- {
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
-@@ -910,18 +898,7 @@ static int platform_pm_restore_noirq(str
- 	return ret;
- }
- 
--#else /* !CONFIG_HIBERNATE_CALLBACKS */
--
--#define platform_pm_freeze		NULL
--#define platform_pm_thaw		NULL
--#define platform_pm_poweroff		NULL
--#define platform_pm_restore		NULL
--#define platform_pm_freeze_noirq	NULL
--#define platform_pm_thaw_noirq		NULL
--#define platform_pm_poweroff_noirq	NULL
--#define platform_pm_restore_noirq	NULL
--
--#endif /* !CONFIG_HIBERNATE_CALLBACKS */
-+#endif /* CONFIG_HIBERNATE_CALLBACKS */
+ arch/arm/mach-shmobile/pm_runtime.c |  227 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 222 insertions(+), 5 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/pm_runtime.c
++++ work/arch/arm/mach-shmobile/pm_runtime.c	2011-04-12 04:37:17.000000000 +0900
+@@ -3,7 +3,7 @@
+  *
+  * Runtime PM support code for SuperH Mobile ARM
+  *
+- *  Copyright (C) 2009-2010 Magnus Damm
++ *  Copyright (C) 2009-2011 Magnus Damm
+  *
+  * This file is subject to the terms and conditions of the GNU General Public
+  * License.  See the file "COPYING" in the main directory of this archive
+@@ -20,13 +20,71 @@
+ #include <linux/bitmap.h>
  
  #ifdef CONFIG_PM_RUNTIME
++
++struct pm_runtime_power_domain {
++	spinlock_t lock;
++	struct list_head idle_list;
++	unsigned int use_cnt;
++	unsigned int powered_off;
++	unsigned int power_domain_bit;
++};
++
++/* sh7372 specific stuff in common file, FIXME this should be broken out */
++
++static struct pm_runtime_power_domain sh7372_a4lc = {
++	.power_domain_bit = 1,
++};
++
++static struct pm_runtime_power_domain sh7372_a4mp = {
++	.power_domain_bit = 2,
++};
++
++#define SPDCR 0xe6180008
++#define SWUCR 0xe6180014
++#define PSTR 0xe6180080
++
++static void power_down(struct pm_runtime_power_domain *domain_data)
++{
++	unsigned int mask = 1 << domain_data->power_domain_bit;
++
++	if (__raw_readl(PSTR) & mask) {
++		__raw_writel(mask, SPDCR);
++
++		while (__raw_readl(SPDCR) & mask)
++			;
++
++		pr_info("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
++		       mask, __raw_readl(PSTR));
++	}
++}
++
++static void power_up(struct pm_runtime_power_domain *domain_data)
++{
++	unsigned int mask = 1 << domain_data->power_domain_bit;
++
++	if (!(__raw_readl(PSTR) & mask)) {
++		__raw_writel(mask, SWUCR);
++
++		while (__raw_readl(SWUCR) & mask)
++			;
++
++		pr_info("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
++			mask, __raw_readl(PSTR));
++	}
++}
++
+ #define BIT_ONCE 0
+ #define BIT_ACTIVE 1
+ #define BIT_CLK_ENABLED 2
++#define BIT_SUSPENDED 3
  
-@@ -949,23 +926,10 @@ int __weak platform_pm_runtime_idle(stru
- #endif /* !CONFIG_PM_RUNTIME */
- 
- static const struct dev_pm_ops platform_dev_pm_ops = {
--	.prepare = platform_pm_prepare,
--	.complete = platform_pm_complete,
--	.suspend = platform_pm_suspend,
--	.resume = platform_pm_resume,
--	.freeze = platform_pm_freeze,
--	.thaw = platform_pm_thaw,
--	.poweroff = platform_pm_poweroff,
--	.restore = platform_pm_restore,
--	.suspend_noirq = platform_pm_suspend_noirq,
--	.resume_noirq = platform_pm_resume_noirq,
--	.freeze_noirq = platform_pm_freeze_noirq,
--	.thaw_noirq = platform_pm_thaw_noirq,
--	.poweroff_noirq = platform_pm_poweroff_noirq,
--	.restore_noirq = platform_pm_restore_noirq,
- 	.runtime_suspend = platform_pm_runtime_suspend,
- 	.runtime_resume = platform_pm_runtime_resume,
- 	.runtime_idle = platform_pm_runtime_idle,
-+	USE_PLATFORM_PM_SLEEP_OPS
+ struct pm_runtime_data {
+ 	unsigned long flags;
+ 	struct clk *clk;
++
++	struct device *dev;
++	struct list_head entry; /* for pm_runtime_power_domain idle_list */
++	struct pm_runtime_power_domain *domain_data;
  };
  
- struct bus_type platform_bus_type = {
-Index: linux-2.6/include/linux/platform_device.h
-=================================--- linux-2.6.orig/include/linux/platform_device.h
-+++ linux-2.6/include/linux/platform_device.h
-@@ -205,4 +205,64 @@ static inline char *early_platform_drive
+ static void __devres_release(struct device *dev, void *res)
+@@ -47,6 +105,159 @@ static struct pm_runtime_data *__to_prd(
+ 	return devres_find(dev, __devres_release, NULL, NULL);
  }
- #endif /* MODULE */
  
-+#ifdef CONFIG_PM_SLEEP
-+extern int platform_pm_prepare(struct device *dev);
-+extern void platform_pm_complete(struct device *dev);
-+#else
-+#define platform_pm_prepare	NULL
-+#define platform_pm_complete	NULL
-+#endif
++static int __power_domain_runtime_suspend(struct device *d)
++{
++	struct pm_runtime_data *prd = __to_prd(d);
++	int ret = 0;
 +
-+#ifdef CONFIG_SUSPEND
-+extern int platform_pm_suspend(struct device *dev);
-+extern int platform_pm_suspend_noirq(struct device *dev);
-+extern int platform_pm_resume(struct device *dev);
-+extern int platform_pm_resume_noirq(struct device *dev);
-+#else
-+#define platform_pm_suspend		NULL
-+#define platform_pm_resume		NULL
-+#define platform_pm_suspend_noirq	NULL
-+#define platform_pm_resume_noirq	NULL
-+#endif
++	dev_dbg(d, "__power_domain_runtime_suspend()\n");
 +
-+#ifdef CONFIG_HIBERNATE_CALLBACKS
-+extern int platform_pm_freeze(struct device *dev);
-+extern int platform_pm_freeze_noirq(struct device *dev);
-+extern int platform_pm_thaw(struct device *dev);
-+extern int platform_pm_thaw_noirq(struct device *dev);
-+extern int platform_pm_poweroff(struct device *dev);
-+extern int platform_pm_poweroff_noirq(struct device *dev);
-+extern int platform_pm_restore(struct device *dev);
-+extern int platform_pm_restore_noirq(struct device *dev);
-+#else
-+#define platform_pm_freeze		NULL
-+#define platform_pm_thaw		NULL
-+#define platform_pm_poweroff		NULL
-+#define platform_pm_restore		NULL
-+#define platform_pm_freeze_noirq	NULL
-+#define platform_pm_thaw_noirq		NULL
-+#define platform_pm_poweroff_noirq	NULL
-+#define platform_pm_restore_noirq	NULL
-+#endif
++	BUG_ON(!prd);
 +
-+#ifdef CONFIG_PM_SLEEP
-+#define USE_PLATFORM_PM_SLEEP_OPS \
-+	.prepare = platform_pm_prepare, \
-+	.complete = platform_pm_complete, \
-+	.suspend = platform_pm_suspend, \
-+	.resume = platform_pm_resume, \
-+	.freeze = platform_pm_freeze, \
-+	.thaw = platform_pm_thaw, \
-+	.poweroff = platform_pm_poweroff, \
-+	.restore = platform_pm_restore, \
-+	.suspend_noirq = platform_pm_suspend_noirq, \
-+	.resume_noirq = platform_pm_resume_noirq, \
-+	.freeze_noirq = platform_pm_freeze_noirq, \
-+	.thaw_noirq = platform_pm_thaw_noirq, \
-+	.poweroff_noirq = platform_pm_poweroff_noirq, \
-+	.restore_noirq = platform_pm_restore_noirq,
-+#else
-+#define USE_PLATFORM_PM_SLEEP_OPS
-+#endif
++	if (!test_bit(BIT_SUSPENDED, &prd->flags)) {
++		if (d->driver && d->driver->pm &&
++		    d->driver->pm->runtime_suspend) {
++			if (!test_bit(BIT_CLK_ENABLED, &prd->flags))
++				clk_enable(prd->clk);
++			ret = d->driver->pm->runtime_suspend(d);
++			clk_disable(prd->clk);
++			clear_bit(BIT_CLK_ENABLED, &prd->flags);
 +
- #endif /* _PLATFORM_DEVICE_H_ */
-
++			if (ret = 0)
++				set_bit(BIT_SUSPENDED, &prd->flags);
++		}
++	}
++
++	return ret;
++}
++
++static int power_domain_runtime_suspend(struct device *dev)
++{
++	struct pm_runtime_data *prd = __to_prd(dev);
++	struct pm_runtime_power_domain *domain_data = prd->domain_data;
++	unsigned long flags;
++	int ret = 0;
++
++	dev_dbg(dev, "power_domain_runtime_suspend() %d\n",
++		domain_data->use_cnt);
++
++	spin_lock_irqsave(&domain_data->lock, flags);
++
++	list_add_tail(&prd->entry, &domain_data->idle_list);
++	domain_data->use_cnt--;
++
++	if (domain_data->use_cnt = 0) {
++		struct pm_runtime_data *p;
++
++		list_for_each_entry(p, &domain_data->idle_list, entry) {
++			ret = __power_domain_runtime_suspend(p->dev);
++			if (ret)
++				break;
++		}
++
++		if (ret = 0)
++			power_down(domain_data);
++	}
++
++	spin_unlock_irqrestore(&domain_data->lock, flags);
++
++	return ret;
++}
++
++static int __power_domain_runtime_resume(struct device *d)
++{
++	struct pm_runtime_data *prd = __to_prd(d);
++	int ret = 0;
++
++	dev_dbg(d, "__power_domain_runtime_resume()\n");
++
++	BUG_ON(!prd);
++
++	if (test_bit(BIT_SUSPENDED, &prd->flags)) {
++		if (!test_bit(BIT_CLK_ENABLED, &prd->flags)) {
++			clk_enable(prd->clk);
++			set_bit(BIT_CLK_ENABLED, &prd->flags);
++		}
++
++		if (d->driver && d->driver->pm &&
++		    d->driver->pm->runtime_resume)
++			ret = d->driver->pm->runtime_resume(d);
++
++		if (ret = 0)
++			clear_bit(BIT_SUSPENDED, &prd->flags);
++		else {
++			clk_disable(prd->clk);
++			clear_bit(BIT_CLK_ENABLED, &prd->flags);
++		}
++	}
++
++	return ret;
++}
++
++static int power_domain_runtime_resume(struct device *dev)
++{
++	struct pm_runtime_data *prd = __to_prd(dev);
++	struct pm_runtime_power_domain *domain_data = prd->domain_data;
++	unsigned long flags;
++	int ret = 0;
++
++	dev_dbg(dev, "power_domain_runtime_resume() %d\n",
++		domain_data->use_cnt);
++
++	spin_lock_irqsave(&domain_data->lock, flags);
++
++	if (domain_data->use_cnt = 0)
++		power_up(domain_data);
++
++	ret = __power_domain_runtime_resume(dev);
++
++	if (ret = 0) {
++		domain_data->use_cnt++;
++		list_del(&prd->entry);
++	} else {
++		if (domain_data->use_cnt = 0)
++			power_down(domain_data);
++	}
++
++	spin_unlock_irqrestore(&domain_data->lock, flags);
++
++	return ret;
++}
++
++static struct dev_power_domain power_domain = {
++	.ops.runtime_suspend = power_domain_runtime_suspend,
++	.ops.runtime_resume = power_domain_runtime_resume,
++};
++
++static void power_domain_init(struct device *dev, struct pm_runtime_data *prd)
++{
++	struct pm_runtime_power_domain *domain_data = NULL;
++
++	if (strcmp(dev_name(dev), "sh_mobile_lcdc_fb.0") = 0)
++		domain_data = &sh7372_a4lc;
++
++	if (strcmp(dev_name(dev), "sh_mobile_lcdc_fb.1") = 0)
++		domain_data = &sh7372_a4lc;
++
++	if (strcmp(dev_name(dev), "sh_fsi2") = 0)
++		domain_data = &sh7372_a4mp;
++
++	if (domain_data) {
++		dev->pwr_domain = &power_domain;
++		prd->dev = dev;
++		INIT_LIST_HEAD(&prd->entry);
++		prd->domain_data = domain_data;
++		domain_data->use_cnt++;
++		if (domain_data->use_cnt = 1) {
++			INIT_LIST_HEAD(&domain_data->idle_list);
++			spin_lock_init(&domain_data->lock);
++		}
++
++		dev_dbg(dev, "domain data available use cnt = %d\n",
++			domain_data->use_cnt);
++	}
++}
++
+ static void platform_pm_runtime_init(struct device *dev,
+ 				     struct pm_runtime_data *prd)
+ {
+@@ -55,6 +266,7 @@ static void platform_pm_runtime_init(str
+ 		if (!IS_ERR(prd->clk)) {
+ 			set_bit(BIT_ACTIVE, &prd->flags);
+ 			dev_info(dev, "clocks managed by runtime pm\n");
++			power_domain_init(dev, prd);
+ 		}
+ 	}
+ }
+@@ -75,8 +287,11 @@ int platform_pm_runtime_suspend(struct d
+ 	platform_pm_runtime_bug(dev, prd);
+ 
+ 	if (prd && test_bit(BIT_ACTIVE, &prd->flags)) {
+-		clk_disable(prd->clk);
+-		clear_bit(BIT_CLK_ENABLED, &prd->flags);
++		if (test_bit(BIT_CLK_ENABLED, &prd->flags)) {
++			clk_disable(prd->clk);
++			clear_bit(BIT_CLK_ENABLED, &prd->flags);
++		}
++
+ 	}
+ 
+ 	return 0;
+@@ -91,8 +306,10 @@ int platform_pm_runtime_resume(struct de
+ 	platform_pm_runtime_init(dev, prd);
+ 
+ 	if (prd && test_bit(BIT_ACTIVE, &prd->flags)) {
+-		clk_enable(prd->clk);
+-		set_bit(BIT_CLK_ENABLED, &prd->flags);
++		if (!test_bit(BIT_CLK_ENABLED, &prd->flags)) {
++			clk_enable(prd->clk);
++			set_bit(BIT_CLK_ENABLED, &prd->flags);
++		}
+ 	}
+ 
+ 	return 0;
