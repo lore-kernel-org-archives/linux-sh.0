@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 14 Apr 2011 15:38:14 +0000
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Thu, 14 Apr 2011 16:06:40 +0000
 Subject: Re: [PATCH 0/2] Common struct clk implementation, v14
-Message-Id: <20110414153813.GC6259@n2100.arm.linux.org.uk>
+Message-Id: <alpine.LFD.2.00.1104141154390.24613@xanadu.home>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<1302754859.2767.30.camel@pororo>
@@ -11,62 +11,58 @@ References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<alpine.LFD.2.00.1104140751220.24613@xanadu.home>
 	<20110414120904.GH1611@n2100.arm.linux.org.uk>
 	<alpine.LFD.2.00.1104140920110.24613@xanadu.home>
-In-Reply-To: <alpine.LFD.2.00.1104140920110.24613@xanadu.home>
+	<20110414153813.GC6259@n2100.arm.linux.org.uk>
+In-Reply-To: <20110414153813.GC6259@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 14, 2011 at 09:39:58AM -0400, Nicolas Pitre wrote:
-> I might have a look later.  However it is clear that the ARM tree will 
-> _never_ be as small as, say, X86 or even PPC given the indisputable 
-> amount of hardware variations within the ARM landscape that is not to be 
-> seen anywhere else.  Until the ARM ecosystem converge towards a single 
-> whole-system architecture we won't be able to match X86 in terms of code 
-> reduction.  Anyone thinking otherwise is living in a different universe.
+On Thu, 14 Apr 2011, Russell King - ARM Linux wrote:
+
+> On Thu, Apr 14, 2011 at 09:39:58AM -0400, Nicolas Pitre wrote:
+> > However we can and must do better in consolidation work in order to make 
+> > the tree more maintainable of course.  _That_ is the real issue and 
+> > _that_ is what the ARM tree sucks at.  The fact that this consolidation 
+> > work might reduce the size of the ARM code is only a side effect, not 
+> > the primary goal.  So let's not get too hung up about LOC but focus on 
+> > improving the infrastructure instead.
 > 
-> However we can and must do better in consolidation work in order to make 
-> the tree more maintainable of course.  _That_ is the real issue and 
-> _that_ is what the ARM tree sucks at.  The fact that this consolidation 
-> work might reduce the size of the ARM code is only a side effect, not 
-> the primary goal.  So let's not get too hung up about LOC but focus on 
-> improving the infrastructure instead.
+> Look, this is what is in amongst the 6K lines of new code - these are
+> the top two in the diffstat with the highest number of additional lines:
+> 
+>  arch/arm/mach-ux500/clock-db8500.c                 | 1291 +++++++++++++
+>  arch/arm/mach-ux500/prcmu-db8500.c                 | 2018 ++++++++++++++++++++
+> 
+> These comprise 50% of the 6K of new code.  clock-db8500.c is a mixture
+> of code and data declarations for individual clocks - which is essentially
+> what Linus picked up with his complaint on under OMAP.  That in itself
+> makes me worried.
 
-Look, this is what is in amongst the 6K lines of new code - these are
-the top two in the diffstat with the highest number of additional lines:
+Sure.  So... let's see what we can do about it.  Having 1300 lines only 
+for clock stuff on only one platform certainly looks silly.  Either we 
+can consolidate some of that stuff with another similar-enough platform, 
+or we're stuck with the ST-E hardware being just too different from, 
+say, the OMAP clock hardware for those to be consolidated.  In the 
+former case we can work towards a solution and that code currently in 
+next won't make it to mainline, or in the later case... well... we'll 
+have to live with it.  If in doubt let's simply ask the opinion of those 
+mainline people who said they're willing to help with advices.  If in 
+the end they have no better solutions than what we have now then it will 
+be harder for them to complain.
 
- arch/arm/mach-ux500/clock-db8500.c                 | 1291 +++++++++++++
- arch/arm/mach-ux500/prcmu-db8500.c                 | 2018 ++++++++++++++++++++
+> Looking at the other file, prcmu-db8500.c seems to contain at least 5 sets
+> of mailbox support code.  Take a look at "Subject: [PATCH 9/9] mach-ux500:
+> add DB5500 PRCMU interface" from Linus Walleij on 31st March on this list
+> for the patch.  Are we sure that this couldn't be consolidated in some
+> way, at least at file level?
+> 
+> So while you can say about not getting hung up about LOC, LOC is a good
+> indication that things are still going wrong in much the same way.
 
-These comprise 50% of the 6K of new code.  clock-db8500.c is a mixture
-of code and data declarations for individual clocks - which is essentially
-what Linus picked up with his complaint on under OMAP.  That in itself
-makes me worried.
+Agreed.  My point is, we shouldn't be afraid to add more code if that 
+code is allowing for some consolidation to happen down the road, which 
+should be the case with the initial subject of this thread.
 
-Looking at the other file, prcmu-db8500.c seems to contain at least 5 sets
-of mailbox support code.  Take a look at "Subject: [PATCH 9/9] mach-ux500:
-add DB5500 PRCMU interface" from Linus Walleij on 31st March on this list
-for the patch.  Are we sure that this couldn't be consolidated in some
-way, at least at file level?
 
-So while you can say about not getting hung up about LOC, LOC is a good
-indication that things are still going wrong in much the same way.
-
-On the positive note, it looks like MX3 is being merged into IMX stuff,
-which is good news, and the mxc91231 has been dropped.  We need to ensure
-that good work like this, which will make Linus happy, doesn't get
-swamped by new stuff.
-
-We must take Linus' complaint about 'churn' seriously - it's not something
-new that he's just started to complain about in the last month.  It's
-something which he's complained about on a number of occasions.  Feel free
-to think what you may about that, but just bear in mind that Linus holds
-the keys to the mainline kernel, and he can put us in a different universe.
-
-Now, the next thing is that Linus hasn't been too happy about driver stuff
-coming via my tree either - it's something which has been the subject of
-concern in private email.  I've _already_ said something about that prior
-to the recent merge window.  So should I take the clk API stuff which
-touches the drivers subtree?  If yes, it needs to be kept entirely separate
-from the rest of the ARM stuff so we don't end up mixing drivers stuff with
-ARM stuff.
+Nicolas
