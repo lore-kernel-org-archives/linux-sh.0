@@ -1,7 +1,7 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Thu, 14 Apr 2011 10:23:04 +0000
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Thu, 14 Apr 2011 10:25:05 +0000
 Subject: Re: [PATCH 0/2] Common struct clk implementation, v14
-Message-Id: <1302776584.2767.55.camel@pororo>
+Message-Id: <1302776705.28876.113.camel@pasglop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<1302754859.2767.30.camel@pororo>
@@ -12,12 +12,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Russell,
+On Thu, 2011-04-14 at 11:00 +0100, Russell King - ARM Linux wrote:
+> 
+> I will take it, but at the moment I'm rather unhappy about the response
+> from the community to Linus' complaint.
+> 
+> If existing platform maintainers can show that moving over to this will
+> result in a net reduction of code under arch/arm, then that will be good.
+> What I don't want to see at the moment is arch/arm increasing in size as
+> a result of any change.  We desperately need to see a reduction for the
+> next merge window.
 
-> We desperately need to see a reduction for the next merge window.
+It's a chicken and egg... platform maintainers wait for you to take it
+and you wait for them to take it :-)
 
-I can put it all on one line if you like :D
+It seems to me that this fits well into the category of "better common
+abstractions" that was discussed in the thread initiated by Linus as one
+of the ways to improve on the "clutter"...
 
+Cheers,
+Ben.
 
-Jeremy
 
