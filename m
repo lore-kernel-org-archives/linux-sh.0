@@ -1,68 +1,44 @@
 From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Thu, 14 Apr 2011 16:08:48 +0000
+Date: Thu, 14 Apr 2011 17:20:17 +0000
 Subject: Re: [PATCH 0/2] Common struct clk implementation, v14
-Message-Id: <20110414160848.GC31990@pengutronix.de>
+Message-Id: <20110414172017.GD31990@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<1302754859.2767.30.camel@pororo>
 	<20110414100048.GB1611@n2100.arm.linux.org.uk>
 	<1302776705.28876.113.camel@pasglop>
 	<20110414103200.GF1611@n2100.arm.linux.org.uk>
-In-Reply-To: <20110414103200.GF1611@n2100.arm.linux.org.uk>
+	<alpine.LFD.2.00.1104140751220.24613@xanadu.home>
+	<20110414120904.GH1611@n2100.arm.linux.org.uk>
+	<alpine.LFD.2.00.1104140920110.24613@xanadu.home>
+	<20110414153813.GC6259@n2100.arm.linux.org.uk>
+In-Reply-To: <20110414153813.GC6259@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 14, 2011 at 11:32:00AM +0100, Russell King - ARM Linux wrote:
-> On Thu, Apr 14, 2011 at 08:25:05PM +1000, Benjamin Herrenschmidt wrote:
-> > On Thu, 2011-04-14 at 11:00 +0100, Russell King - ARM Linux wrote:
-> > >=20
-> > > I will take it, but at the moment I'm rather unhappy about the respon=
-se
-> > > from the community to Linus' complaint.
-> > >=20
-> > > If existing platform maintainers can show that moving over to this wi=
-ll
-> > > result in a net reduction of code under arch/arm, then that will be g=
-ood.
-> > > What I don't want to see at the moment is arch/arm increasing in size=
- as
-> > > a result of any change.  We desperately need to see a reduction for t=
-he
-> > > next merge window.
-> >=20
-> > It's a chicken and egg... platform maintainers wait for you to take it
-> > and you wait for them to take it :-)
-> >=20
-> > It seems to me that this fits well into the category of "better common
-> > abstractions" that was discussed in the thread initiated by Linus as one
-> > of the ways to improve on the "clutter"...
->=20
-> That depends - sometimes creating generic stuff results in a net increase
-> in the overall size, and that's something that Linus also complained abou=
-t.
->=20
-> According to linux-next, where we are at the moment with arch/arm is a
-> net increase of 6000 lines since the close of the last merge window,
-> and arch/arm is responsible for almost 75% of arch/ changes.  It looks
-> very much like the same situation which Linus complained about.
-Well, looking at the output of
+Hello,
 
-	git diff --dirstat=3D3 linus/master...next/master -- arch
+On Thu, Apr 14, 2011 at 04:38:14PM +0100, Russell King - ARM Linux wrote:
+> On Thu, Apr 14, 2011 at 09:39:58AM -0400, Nicolas Pitre wrote:
+> Now, the next thing is that Linus hasn't been too happy about driver stuff
+> coming via my tree either - it's something which has been the subject of
+> concern in private email.  I've _already_ said something about that prior
+> to the recent merge window.  So should I take the clk API stuff which
+> touches the drivers subtree?  If yes, it needs to be kept entirely separa=
+te
+> from the rest of the ARM stuff so we don't end up mixing drivers stuff wi=
+th
+> ARM stuff.
+OK, so the solution is to put this in a seperate branch. But then when
+platform maintainers start working with it the resulting changes will
+most probably go to arch/arm. So if Linus doesn't want to pull a tree
+that touches both drivers/clk and arch/arm, then either he has to pull
+the clk branch first or we have to wait for the next merge window until
+we can use it.
 
-(with linus/master =3D 85f2e689a and next/master =3D 9e06a6ea7) I think
-the main culprit is 12dc7eff5 that moved arch/arm/mach-mx3 to
-arch/arm/mach-imx. (75 files changed, 9783 insertions(+), 9731
-deletions(-)) That's a part of the effort to consolidate the i.MX
-platforms and allow to compile more SoCs in a single image.
-
-That commit accounts for more than the half of the (loc) changes in
-arch/arm.
-
-OK, this doesn't discuss away the 6000 added lines, but at least the
-percentage thingy. And I think when you point out this commit Linus will
-be much quiter when replying to your pull request.
+I prefer the former.
 
 Best regards
 Uwe
