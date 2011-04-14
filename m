@@ -1,41 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 21 Apr 2011 13:08:46 +0000
-Subject: [PATCH] serial: sh-sci: suspend/resume wakeup support V2
-Message-Id: <20110421130846.3032.33724.sendpatchset@t400s>
+From: Sergei Shtylyov <sshtylyov@mvista.com>
+Date: Thu, 14 Apr 2011 14:22:17 +0000
+Subject: Re: [Kgdb-bugreport] [PATCH 4/5] sh: convert to asm-generic ptrace.h
+Message-Id: <4DA70319.8000902@mvista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110419104344.23764.93511.sendpatchset@t400s>
-In-Reply-To: <20110419104344.23764.93511.sendpatchset@t400s>
+References: <1302760895-13459-1-git-send-email-vapier@gentoo.org> <1302760895-13459-5-git-send-email-vapier@gentoo.org>
+In-Reply-To: <1302760895-13459-5-git-send-email-vapier@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mike Frysinger <vapier@gentoo.org>
+Cc: Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, Jason Wessel <jason.wessel@windriver.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, x86@kernel.org, Paul Mundt <lethal@linux-sh.org>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>
 
-From: Magnus Damm <damm@opensource.se>
+Hello.
 
-This patch adds wakeup support to the sh-sci driver. The serial
-core deals with all details but defaults to wakeup disabled. So
-to make use of this feature enable wakeup in sysfs:
+Mike Frysinger wrote:
 
-echo enabled > /sys/class/tty/ttySC0/power/wakeup
+> Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+> ---
+>  arch/sh/include/asm/ptrace.h |    6 ++++--
+>  1 files changed, 4 insertions(+), 2 deletions(-)
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+> diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
+> index b219a08..3f2a6e7 100644
+> --- a/arch/sh/include/asm/ptrace.h
+> +++ b/arch/sh/include/asm/ptrace.h
+[...]
+> @@ -137,6 +136,9 @@ static inline unsigned long profile_pc(struct pt_regs *regs)
+>  
+>  	return pc;
+>  }
+> +#define profile_pc profile_pc
 
- Changes since V1:
- - drop device_init_wakeup() and enable/disable_irq_wake() bits
- - let port->irq point out receive IRQ 
+    Same question about preprocessor...
 
- drivers/tty/serial/sh-sci.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2011-04-21 17:53:17.000000000 +0900
-@@ -1777,7 +1777,7 @@ static int __devinit sci_init_single(str
- 	 *
- 	 * For the muxed case there's nothing more to do.
- 	 */
--	port->irq		= p->irqs[SCIx_TXI_IRQ];
-+	port->irq		= p->irqs[SCIx_RXI_IRQ];
- 
- 	if (p->dma_dev)
- 		dev_dbg(port->dev, "DMA device %p, tx %d, rx %d\n",
+WBR, Sergei
