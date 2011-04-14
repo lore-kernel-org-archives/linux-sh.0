@@ -1,81 +1,36 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 30 Apr 2011 01:02:58 +0000
-Subject: Re: [PATCH/RFC] ARM: mach-shmobile: sh7372 power domain prototype
-Message-Id: <201104300302.58675.rjw@sisk.pl>
+From: Sergei Shtylyov <sshtylyov@mvista.com>
+Date: Thu, 14 Apr 2011 14:16:53 +0000
+Subject: Re: [Kgdb-bugreport] [PATCH 3/5] x86: convert to asm-generic ptrace.h
+Message-Id: <4DA701D5.5050205@mvista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110411194911.7991.79950.sendpatchset@t400s>
-In-Reply-To: <20110411194911.7991.79950.sendpatchset@t400s>
+References: <1302760895-13459-1-git-send-email-vapier@gentoo.org> <1302760895-13459-4-git-send-email-vapier@gentoo.org>
+In-Reply-To: <1302760895-13459-4-git-send-email-vapier@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mike Frysinger <vapier@gentoo.org>
+Cc: Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, Jason Wessel <jason.wessel@windriver.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, x86@kernel.org, Paul Mundt <lethal@linux-sh.org>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>
 
-On Friday, April 29, 2011, Rafael J. Wysocki wrote:
-> On Friday, April 29, 2011, Guennadi Liakhovetski wrote:
-> > On Thu, 21 Apr 2011, Guennadi Liakhovetski wrote:
-> > 
-> > > On Tue, 19 Apr 2011, Guennadi Liakhovetski wrote:
-> > > 
-> > > > On Fri, 15 Apr 2011, Guennadi Liakhovetski wrote:
-> > > > 
-> > > > > Hi Magnus
-> > > > > 
-> > > > > On Tue, 12 Apr 2011, Magnus Damm wrote:
-> > > > > 
-> > > > > > From: Magnus Damm <damm@opensource.se>
-> > > > > > 
-> > > > > > This experimental sh7372-specific Runtime PM prototype
-> > > > > > adds support for the A4LC and A4MP power domains.
-> > > > > > 
-> > > > > > Tested on the Mackerel board together with the LCDC:
-> > > > > > 
-> > > > > > # blank HDMI fbdev
-> > > > > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.1/graphics/fb1/blank
-> > > > > > 
-> > > > > > # blank LCD panel fbdev
-> > > > > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
-> > > > > > # unblank LCD panel fbdev
-> > > > > > echo 0 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
-> > > > > > 
-> > > > > > Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
-> > > > > > ---
-> > > > > > 
-> > > > > >  arch/arm/mach-shmobile/pm_runtime.c |  227 ++++++++++++++++++++++++++++++++++-
-> > > > > >  1 file changed, 222 insertions(+), 5 deletions(-)
-> > > > > 
-> > > > > Your patch worked mostly, below is a small addition (to be applied on top 
-> > > > > of your patch), that adds several new domains and devices and fixes a 
-> > > > > couple of issues with your original patch. Notice an "#if 0" around i2c 
-> > > > > devices: activating them causes problems - output on the LCDC disappears 
-> > > > > and the boot process doesn't complete, but without a serial console I 
-> > > > > couldn't tell, what exactly was the problem. Should be investigated 
-> > > > > further.
-> > > > 
-> > > > Below is a fixed version of the earlier proposed fix;)
-> > > 
-> > > v3: I think, I've got the use-counting and power-domain initialisation 
-> > > correct this time too. At least this version works without any need to 
-> > > modify the runtime PM core.
-> > 
-> > v4: (1) add checks for BIT_ACTIVE for devices without any clocks 
-> > associated with them, this fixes Oopses. (2) I think, this time I've 
-> > finally found _the_ correct time and place to remove the "prd" from the 
-> > list. As before, this is a work in progress, subject to change, depending 
-> > on surrounding developments. Posting here just for reference.
-> 
-> Please have a look at these patches:
-> https://patchwork.kernel.org/patch/740162/
-> https://patchwork.kernel.org/patch/740152/
-> which are based on the patchset from:
-> git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git power-domains
+Hello.
 
-I had to rebase this branch due to recent modifications requested by reviewers.
+Mike Frysinger wrote:
 
-Also the two patches above have been updated, but the latest versions have
-been tested with the A4LC power domain and LCDC and confirmed to work.
+> Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+> ---
+>  arch/x86/include/asm/ptrace.h |   18 +++++-------------
+>  1 files changed, 5 insertions(+), 13 deletions(-)
 
-> Do you think it would be possible to rebase your work on top of them?
-> If not, please tell me what the problems are.
+> diff --git a/arch/x86/include/asm/ptrace.h b/arch/x86/include/asm/ptrace.h
+> index 78cd1ea..98a5e97 100644
+> --- a/arch/x86/include/asm/ptrace.h
+> +++ b/arch/x86/include/asm/ptrace.h
+> @@ -136,6 +136,7 @@ struct cpuinfo_x86;
+>  struct task_struct;
+>  
+>  extern unsigned long profile_pc(struct pt_regs *regs);
+> +#define profile_pc profile_pc
 
-Thanks,
-Rafael
+    Er, won't this lead to infinite recursion in preprocessor? :-)
+
+WBR, Sergei
+
