@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Apr 2011 17:33:45 +0000
-Subject: Re: Linux kernel 2.6.35 webcam issue
-Message-Id: <BANLkTikJ4f7QqsLx5=w+mT3ny04zEvZ7ng@mail.gmail.com>
+From: Feng Yang <feng.yang.xb@renesas.com>
+Date: Thu, 14 Apr 2011 04:50:11 +0000
+Subject: RE: Linux kernel 2.6.35 webcam issue
+Message-Id: <35FC1A56EEC91A42A0EB92079193ED8D033B7292@ASISML10.asia-idc.local>
 List-Id: <linux-sh.vger.kernel.org>
 References: <35FC1A56EEC91A42A0EB92079193ED8D0335279D@ASISML10.asia-idc.local>
 In-Reply-To: <35FC1A56EEC91A42A0EB92079193ED8D0335279D@ASISML10.asia-idc.local>
@@ -9,6 +9,26 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
+
+Hi Magnus Damm,
+
+Thanks for your reply.
+Following is my platform information.
+
+Processor:SH7724
+Platform: Renesas MS7724 platform
+Gadget driver:R8A66597
+No local patches.
+
+Thanks
+Feng
+
+-----Original Message-----
+From: Magnus Damm [mailto:magnus.damm@gmail.com]=20
+Sent: Thursday, April 14, 2011 1:34 AM
+To: Feng Yang
+Cc: linux-sh@vger.kernel.org
+Subject: Re: Linux kernel 2.6.35 webcam issue
 
 Hi Feng Yang,
 
