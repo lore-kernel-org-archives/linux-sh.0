@@ -1,73 +1,150 @@
-From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
-Date: Wed, 20 Apr 2011 06:55:53 +0000
-Subject: [RFC PATCH V3 0/4] cpuidle: global registration of idle states with
-Message-Id: <20110420065445.332.13688.stgit@tringupt.in.ibm.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Apr 2011 18:30:51 +0000
+Subject: [PATCH 2/3] MMC: add runtime and system power-management support to
+Message-Id: <Pine.LNX.4.64.1104152027010.18593@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1104152021510.18593@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1104152021510.18593@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com
-Cc: davinci-linux-open-source@linux.davincidsp.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-The core change in this series is to split the cpuidle_device structure 
-into parts that can be global and parts that has to remain per-cpu. 
-The per-cpu pieces are mostly generic statistics that can be independent 
-of current running driver. As a result of these changes, there is single 
-copy of cpuidle_states structure and single registration done by one 
-cpu. The low level driver is free to set per-cpu driver data on
-each cpu if needed using the cpuidle_set_statedata() as the case
-today. Only in very rare cases asymmetric C-states exist which can be 
-handled within the cpuidle driver. Most architectures do not have 
-asymmetric C-states.
+Adding support for runtime power-management to the MMCIF driver allows
+it to save power as long as no card is present. System-wide power
+management has been verified with experimental PM patches on AP4-
+based systems.
 
-This patch series along with Len Brown's pm_idle() cleanup 
-(ref:https://lkml.org/lkml/2011/4/2/8) will simplify the cpuidle framework 
-and make it easy to port to other architectures like POWER.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <damm@opensource.se>
+---
 
-References: 
-https://lkml.org/lkml/2011/2/10/37
-https://lkml.org/lkml/2011/3/25/52
+To use this patch experimental PM patches from Magnus are needed, but even 
+without them this patch can be applied and shouldn't cause any 
+regressions.
 
-First two patches in the series facilitate splitting of cpuidle_states
-and cpuidle_device structure and next two patches do the actual split,
-change the API's and make existing code follow the changed API.
+ drivers/mmc/host/sh_mmcif.c |   59 +++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 57 insertions(+), 2 deletions(-)
 
-[1/4] - Move the idle residency accounting part from cpuidle.c to
-  the respective low level drivers, so that the accounting can
-  be accurately maintained if the driver decides to demote the
-  chosen (suggested) by the governor.
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d3871b6..519d827 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -29,6 +29,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+ 
+ #define DRIVER_NAME	"sh_mmcif"
+@@ -173,6 +174,7 @@ struct sh_mmcif_host {
+ 	struct completion intr_wait;
+ 	enum mmcif_state state;
+ 	spinlock_t lock;
++	bool power;
+ 
+ 	/* DMA support */
+ 	struct dma_chan		*chan_rx;
+@@ -877,11 +879,21 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	if (ios->power_mode = MMC_POWER_UP) {
+ 		if (p->set_pwr)
+ 			p->set_pwr(host->pd, ios->power_mode);
++		if (!host->power) {
++			pm_runtime_get_sync(&host->pd->dev);
++			host->power = true;
++		}
+ 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
+ 		/* clock stop */
+ 		sh_mmcif_clock_control(host, 0);
+-		if (ios->power_mode = MMC_POWER_OFF && p->down_pwr)
+-			p->down_pwr(host->pd);
++		if (ios->power_mode = MMC_POWER_OFF) {
++			if (host->power) {
++				pm_runtime_put(&host->pd->dev);
++				host->power = false;
++			}
++			if (p->down_pwr)
++				p->down_pwr(host->pd);
++		}
+ 		host->state = STATE_IDLE;
+ 		return;
+ 	}
+@@ -1053,6 +1065,12 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	sh_mmcif_sync_reset(host);
+ 	platform_set_drvdata(pdev, host);
+ 
++	pm_runtime_enable(&pdev->dev);
++	host->power = false;
++	ret = pm_runtime_resume(&pdev->dev);
++	if (ret < 0)
++		goto clean_up2;
++
+ 	/* See if we also get DMA */
+ 	sh_mmcif_request_dma(host, pd);
+ 
+@@ -1080,6 +1098,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	return ret;
+ 
+ clean_up2:
++	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(host->hclk);
+ clean_up1:
+ 	mmc_free_host(mmc);
+@@ -1112,15 +1131,51 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
+ 
+ 	clk_disable(host->hclk);
+ 	mmc_free_host(host->mmc);
++	pm_runtime_disable(&pdev->dev);
+ 
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM
++static int sh_mmcif_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
++	int ret = mmc_suspend_host(host->mmc);
++
++	if (!ret) {
++		sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
++		clk_disable(host->hclk);
++	}
++
++	return ret;
++}
++
++static int sh_mmcif_resume(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
++
++	clk_enable(host->hclk);
++
++	return mmc_resume_host(host->mmc);
++}
++#else
++#define sh_mmcif_suspend	NULL
++#define sh_mmcif_resume		NULL
++#endif	/* CONFIG_PM */
++
++static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
++	.suspend = sh_mmcif_suspend,
++	.resume = sh_mmcif_resume,
++};
++
+ static struct platform_driver sh_mmcif_driver = {
+ 	.probe		= sh_mmcif_probe,
+ 	.remove		= sh_mmcif_remove,
+ 	.driver		= {
+ 		.name	= DRIVER_NAME,
++		.pm	= &sh_mmcif_dev_pm_ops,
+ 	},
+ };
+ 
+-- 
+1.7.2.5
 
-[2/4] - removes the cpuidle_device()->prepare API since is is not
-  widely used and the only use case was to allow software
-  demotion using CPUIDLE_FLAG_IGNORE flag.  Both these
-  functions can be absorbed within the cpuidle back-end
-  driver ad hence deprecating the prepare routine and the
-  CPUIDLE_FLAG_IGNORE flag.
-
-  - Ref: https://lkml.org/lkml/2011/3/25/52
-
-[3/4] - Splits the usage statistics (read/write) part out of
-  cpuidle_state structure, so that the states can become read
-  only and hence made global.
-
-[4/4] - most APIs will now need to pass pointer to both global
-   cpuidle_driver and per-cpu cpuidle_device structure.
-
-Version 1 is at https://lkml.org/lkml/2011/3/22/161
-Version 2 is at https://lkml.org/lkml/2011/4/11/32
-
-Changes from V2:
-
-1. Enabled global registration for arm at91_idle_driver,
-  davinci_idle_driver, kirkwood_idle_driver, omap3_idle_driver cpuidle
-  drivers. Enabled global registration for x86 intel_idle_driver also.
-
-2. Made ladder governor follow new changed API. Thus both menu and ladder
-  governors work with these changes.
-
-This patch series applies on top of 2.6.39-rc2 and is tested on x86 Nehalem 
-system with multiple ACPI C-States with both acpi_idle and intel_idle
-cpuidle drivers. Note that this code is not tested for arm yet.
-
-Thanks,
--Trinabh
