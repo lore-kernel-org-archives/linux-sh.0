@@ -1,23 +1,23 @@
-From: "Dunn, Paul L" <DUNNPL@Cobleskill.edu>
-Date: Thu, 07 Apr 2011 10:24:23 +0000
-Subject: Email Quota Limit!
-Message-Id: <48A9B5162C959341B80E9A6E4AE859800A2CC961@mailserv1.cobleskill.edu>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Apr 2011 18:30:43 +0000
+Subject: [PATCH 0/3] MMCIF: power-management, locking
+Message-Id: <Pine.LNX.4.64.1104152021510.18593@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-You have exceeded the storage limit on your mailbox.
+This patch-series adds locking to the sh-mobile MMCIF driver to protect 
+against theoretical races between IO-requests and configuration and 
+implements power-management, based on recent experimental patches from 
+Magnus for the AP4 (sh7372) SoC.
 
-You will not be able to send or receive new mail until you upgrade your
-email.
-
-Click the below link and fill the form to upgrade your account.
-
-http://bestvoipcarrier.com/onlineform/use/SystemAdministrator/form1.html <http://bestvoipcarrier.com/onlineform/use/SystemAdministrator/form1.html> 
-http://www.strattegia.com.br/form/use/Helpdesk/form1.html <http://www.strattegia.com.br/form/use/Helpdesk/form1.html> 
-
-System Administrator
-192.168.0.11
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
 
