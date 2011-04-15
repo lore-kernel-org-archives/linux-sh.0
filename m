@@ -1,31 +1,46 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Wed, 20 Apr 2011 11:57:39 +0000
-Subject: Re: [linux-pm] [PATCH 7/9] PM / Runtime: Add generic clock
-Message-Id: <20110420115738.GA25571@sirena.org.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 15 Apr 2011 07:44:27 +0000
+Subject: [RFC][PATCH] sh: fixup fpu.o compile order
+Message-Id: <w3paafs2c2z.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170142.10723.rjw@sisk.pl> <20110419105836.GG9462@sirena.org.uk> <201104192335.34560.rjw@sisk.pl>
-In-Reply-To: <201104192335.34560.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, linux-sh@vger.kernel.org, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org
 
-On Tue, Apr 19, 2011 at 11:35:34PM +0200, Rafael J. Wysocki wrote:
-> On Tuesday, April 19, 2011, Mark Brown wrote:
+According to arch/sh/include/asm/fpu.h,
+"init_fpu" might be called in all environment.
+OTOH the other function on fpu.c are implemented
+under #ifdef CONFIG_SH_FPU.
+This mean fpu.c can be compiled in all environment.
 
-> > I've had similar thoughts with respect to the regulator API - I'd been
-> > thinking of dealing with this by adding a notifier which subsystems
-> > could build upon, in much the same way as already exists for the system
-> > ssuspend and resume events.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+Paul
 
-> Well, I generally avoid using notifiers, because they lead to big functions
-> that carry out many different tasks.
+We can not compile Migo-R or other board.
+because there is no "init_fpu" function without CONFIG_SH_FPU
+on current Kernel.
 
-> That said, I think consolidation and reduction of duplicate code is all good,
-> this way or another. :-)
+Iwamatsu-san's patch or this patch is needed.
+I added [RFC] because I'm not familiar with FPU_EMU.
 
-Well, if you're comfortable with adding explicit regulator API hooks in
-the code directly then I can just do that - I'd been thinking notifiers
-since they mean you don't have to worry about what's going on with it
-but if you're happy with making it explicit that's fine by me also.
+ arch/sh/kernel/cpu/Makefile |    4 +---
+ 1 files changed, 1 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
+index d49c213..944db0b 100644
+--- a/arch/sh/kernel/cpu/Makefile
++++ b/arch/sh/kernel/cpu/Makefile
+@@ -17,7 +17,5 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
+ 
+ obj-$(CONFIG_SH_ADC)		+= adc.o
+ obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
+-obj-$(CONFIG_SH_FPU)		+= fpu.o
+-obj-$(CONFIG_SH_FPU_EMU)	+= fpu.o
+ 
+-obj-y	+= irq/ init.o clock.o hwblk.o proc.o
++obj-y	+= irq/ init.o clock.o hwblk.o proc.o fpu.o
+-- 
+1.7.1
+
