@@ -1,62 +1,47 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:12:08 +0000
-Subject: Re: [RFC][PATCH] PM: Make power domain callbacks take precedence over subsystem ones
-Message-Id: <201104170112.08292.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Apr 2011 18:05:27 +0000
+Subject: [PATCH] sh: cosmetic improvement: use an existing pointer
+Message-Id: <Pine.LNX.4.64.1104152004360.18593@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.44L0.1104151033020.2051-100000@iolanthe.rowland.org> <201104160118.24113.rjw@sisk.pl> <1302974133.2719.31.camel@vence>
-In-Reply-To: <1302974133.2719.31.camel@vence>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: Alan Stern <stern@rowland.harvard.edu>, Magnus Damm <magnus.damm@gmail.com>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org
+To: linux-sh@vger.kernel.org
 
-On Saturday, April 16, 2011, Kevin Hilman wrote:
-> On Sat, 2011-04-16 at 01:18 +0200, Rafael J. Wysocki wrote:
-> > On Friday, April 15, 2011, Alan Stern wrote:
-> > > On Fri, 15 Apr 2011, Rafael J. Wysocki wrote:
-> > > 
-> > > > On Thursday, April 14, 2011, Magnus Damm wrote:
-> > > 
-> > > > > My only thought on this is if we really want to limit ourselves to
-> > > > > only control power domains using these callbacks. I can imagine that
-> > > > > some SoCs want to do other non-power domain specific operations with
-> > > > > these callbacks, and if so, perhaps using the term power domain as
-> > > > > name of the pointer in struct device would be somewhat odd. OTOH, I
-> > > > > really dislike naming discussions in general and I can't really think
-> > > > > of any good names. So it all looks more like a set of system specific
-> > > > > PM override hooks.
-> > > > > 
-> > > > > Or is there something that is really power domain specific with these hooks?
-> > > > 
-> > > > Not in principle, but I think there is.  Namely, if there are two groups
-> > > > of devices belonging to the same bus type (e.g. platform) that each require
-> > > > different PM handling, it is legitimate to call them "power domains" (where
-> > > > "domain" means "a set of devices related to each other because of the way
-> > > > they need to be handled"), even if they don't share power resources.
-> > > > 
-> > > > Of course, if they do share power resources, the term is just right. :-)
-> > > 
-> > > They could be called "PM domains" instead of "power domains".  That's 
-> > > legitimate because they do get used by the PM core, even if they don't 
-> > > literally involve groups of devices sharing the same power supply.
-> > 
-> > Well, "power domain" can be regarded as a short form of "power management
-> > domain", which makes the point kind of moot. ;-)
-> 
-> Except that on most embedded SoCs, the term power domain has specific
-> meaning in hardware, so using something other than that is preferred
-> IMO.
-> 
-> What this really is is just per-device dev_pm_ops, which platform code
-> can use to group devices however it likes.
-> 
-> So rather than call it a power domain, or a PM domain, we could also
-> just add a struct dev_pm_ops to struct device. 
+Use an existing local variable, instead of calculating the pointer
+multiple times explicitly.
 
-Well, right.  But in the future this thing will be necessary to provide
-additional information to _real_ power domain PM callbacks.  So it will
-be more than just struct dev_pm_ops.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <damm@opensource.se>
+---
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-Thanks,
-Rafael
+diff --git a/arch/sh/kernel/cpu/shmobile/pm_runtime.c b/arch/sh/kernel/cpu/shmobile/pm_runtime.c
+index 6dcb816..db56e3a 100644
+--- a/arch/sh/kernel/cpu/shmobile/pm_runtime.c
++++ b/arch/sh/kernel/cpu/shmobile/pm_runtime.c
+@@ -157,7 +157,7 @@ int platform_pm_runtime_suspend(struct device *dev)
+ 	might_sleep();
+ 
+ 	/* catch misconfigured drivers not starting with resume */
+-	if (test_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags)) {
++	if (test_bit(PDEV_ARCHDATA_FLAG_INIT, &ad->flags)) {
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+@@ -170,8 +170,8 @@ int platform_pm_runtime_suspend(struct device *dev)
+ 
+ 	/* put device on idle list */
+ 	spin_lock_irqsave(&hwblk_lock, flags);
+-	list_add_tail(&pdev->archdata.entry, &hwblk_idle_list);
+-	__set_bit(PDEV_ARCHDATA_FLAG_IDLE, &pdev->archdata.flags);
++	list_add_tail(&ad->entry, &hwblk_idle_list);
++	__set_bit(PDEV_ARCHDATA_FLAG_IDLE, &ad->flags);
+ 	spin_unlock_irqrestore(&hwblk_lock, flags);
+ 
+ 	/* increase idle count */
+-- 
+1.7.2.5
+
