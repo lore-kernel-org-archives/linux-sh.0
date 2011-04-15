@@ -1,40 +1,30 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Sat, 30 Apr 2011 05:58:33 +0000
-Subject: Re: Resend [PATCH 00/10] ARM: SMP initialization consolidation
-Message-Id: <4DBBA509.6080203@codeaurora.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Apr 2011 18:17:34 +0000
+Subject: [PATCH] ALSA: add a module alias to the FSI driver
+Message-Id: <Pine.LNX.4.64.1104152015190.18593@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, alsa-devel@alsa-project.org, Liam Girdwood <lrg@slimlogic.co.uk>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On 04/29/2011 07:08 PM, Rob Herring wrote:
-> From: Rob Herring <rob.herring@calxeda.com>
->
-> Resending since the patches didn't make it thru the 1st time.
->
-> In order to avoid duplicating the same platform code yet again for a new 
-> platform, this series consolidates platforms using similar SMP startup code to
-> a common implementation. A new kconfig entry SMP_COMMON_PEN is added for
-> platforms using the common pen functions.
->
-> OMAP uses a h/w mechansism for its pen, but it seems like it could use the same
-> mechansism.
+This patch enables FSI driver autoloading on sh-mobile systems.
 
-Have you seen Russell's response to similar attempts posted a few months
-back?
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ sound/soc/sh/fsi.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-https://lkml.org/lkml/2010/11/30/243
-
-and
-
-http://lists.linaro.org/pipermail/linaro-dev/2010-November/001663.html
-
-Just something to look over and consider.
-
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index 0c9997e..88b669c 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1321,3 +1321,4 @@ module_exit(fsi_mobile_exit);
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("SuperH onchip FSI audio driver");
+ MODULE_AUTHOR("Kuninori Morimoto <morimoto.kuninori@renesas.com>");
++MODULE_ALIAS("platform:fsi-pcm-audio");
 -- 
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+1.7.2.5
 
