@@ -1,34 +1,69 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 18 Apr 2011 10:00:24 +0000
-Subject: Re: [RFC][PATCH] sh: fixup fpu.o compile order
-Message-Id: <20110418100024.GJ32457@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 16 Apr 2011 23:38:53 +0000
+Subject: [PATCH 4/9] PM / Platform: Use generic runtime PM callbacks directly
+Message-Id: <201104170138.54163.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3paafs2c2z.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3paafs2c2z.wl%kuninori.morimoto.gx@renesas.com>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
+In-Reply-To: <201104170135.19388.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
 
-On Fri, Apr 15, 2011 at 04:44:27PM +0900, Kuninori Morimoto wrote:
-> According to arch/sh/include/asm/fpu.h,
-> "init_fpu" might be called in all environment.
-> OTOH the other function on fpu.c are implemented
-> under #ifdef CONFIG_SH_FPU.
-> This mean fpu.c can be compiled in all environment.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> Paul
-> 
-> We can not compile Migo-R or other board.
-> because there is no "init_fpu" function without CONFIG_SH_FPU
-> on current Kernel.
-> 
-> Iwamatsu-san's patch or this patch is needed.
-> I added [RFC] because I'm not familiar with FPU_EMU.
-> 
->  arch/sh/kernel/cpu/Makefile |    4 +---
->  1 files changed, 1 insertions(+), 3 deletions(-)
-> 
-Your approach is certainly the cleanest, so lets just go with that.
+From: Rafael J. Wysocki <rjw@sisk.pl>
+
+Once shmobile platforms have been converted to using power domains
+for overriding the platform bus type's PM callbacks, it isn't
+necessary to use the __weakly defined wrappers around the generinc
+runtime PM callbacks in the platform bus type any more.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/platform.c |   31 +++----------------------------
+ 1 file changed, 3 insertions(+), 28 deletions(-)
+
+Index: linux-2.6/drivers/base/platform.c
+=================================--- linux-2.6.orig/drivers/base/platform.c
++++ linux-2.6/drivers/base/platform.c
+@@ -900,36 +900,11 @@ int platform_pm_restore_noirq(struct dev
+ 
+ #endif /* CONFIG_HIBERNATE_CALLBACKS */
+ 
+-#ifdef CONFIG_PM_RUNTIME
+-
+-int __weak platform_pm_runtime_suspend(struct device *dev)
+-{
+-	return pm_generic_runtime_suspend(dev);
+-};
+-
+-int __weak platform_pm_runtime_resume(struct device *dev)
+-{
+-	return pm_generic_runtime_resume(dev);
+-};
+-
+-int __weak platform_pm_runtime_idle(struct device *dev)
+-{
+-	return pm_generic_runtime_idle(dev);
+-};
+-
+-#else /* !CONFIG_PM_RUNTIME */
+-
+-#define platform_pm_runtime_suspend NULL
+-#define platform_pm_runtime_resume NULL
+-#define platform_pm_runtime_idle NULL
+-
+-#endif /* !CONFIG_PM_RUNTIME */
+-
+ static const struct dev_pm_ops platform_dev_pm_ops = {
+ 	USE_PLATFORM_PM_SLEEP_OPS,
+-	.runtime_suspend = platform_pm_runtime_suspend,
+-	.runtime_resume = platform_pm_runtime_resume,
+-	.runtime_idle = platform_pm_runtime_idle,
++	.runtime_suspend = pm_generic_runtime_suspend,
++	.runtime_resume = pm_generic_runtime_resume,
++	.runtime_idle = pm_generic_runtime_idle,
+ };
+ 
+ struct bus_type platform_bus_type = {
+
