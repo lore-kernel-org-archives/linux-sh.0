@@ -1,286 +1,275 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 29 Apr 2011 17:09:21 +0000
-Subject: [PATCH 1/2] dmaengine: shdma: fix locking
-Message-Id: <Pine.LNX.4.64.1104291906140.17813@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 16 Apr 2011 23:36:29 +0000
+Subject: [PATCH 1/9] PM: Make power domain callbacks take precedence over subsystem ones
+Message-Id: <201104170136.29873.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1104291901200.17813@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1104291901200.17813@axis700.grange>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
+In-Reply-To: <201104170135.19388.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>
 
-Close multiple theoretical races, especially the one in
-.device_free_chan_resources().
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Change the PM core's behavior related to power domains in such a way
+that, if a power domain is defined for a given device, its callbacks
+will be executed instead of and not in addition to the device
+subsystem's PM callbacks.
+
+The idea behind the initial implementation of power domains handling
+by the PM core was that power domain callbacks would be executed in
+addition to subsystem callbacks, so that it would be possible to
+extend the subsystem callbacks by using power domains.  It turns out,
+however, that this wouldn't be really convenient in some important
+situations.
+
+For example, there are systems in which power can only be removed
+from entire power domains.  On those systems it is not desirable to
+execute device drivers' PM callbacks until it is known that power is
+going to be removed from the devices in question, which means that
+they should be executed by power domain callbacks rather then by
+subsystem (e.g. bus type) PM callbacks, because subsystems generally
+have no information about what devices belong to which power domain.
+Thus, for instance, if the bus type in question is the platform bus
+type, its PM callbacks generally should not be called in addition to
+power domain callbacks, because they run device drivers' callbacks
+unconditionally if defined.
+
+While in principle the default subsystem PM callbacks, or a subset of
+them, may be replaced with different functions, it doesn't seem
+correct to do so, because that would change the subsystem's behavior
+with respect to all devices in the system, regardless of whether or
+not they belong to any power domains.  Thus, the only remaining
+option is to make power domain callbacks take precedence over
+subsystem callbacks.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Grant Likely <grant.likely@secretlab.ca>
+Acked-by: Kevin Hilman <khilman@ti.com>
 ---
- drivers/dma/shdma.c |  104 +++++++++++++++++++++++++++++++++-----------------
- 1 files changed, 68 insertions(+), 36 deletions(-)
+ drivers/base/power/main.c    |   64 ++++++++++++++++++++-----------------------
+ drivers/base/power/runtime.c |   29 ++++++-------------
+ 2 files changed, 41 insertions(+), 52 deletions(-)
 
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index b7f27f5..d0f402b 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -48,7 +48,7 @@ enum sh_dmae_desc_status {
- 
- /*
-  * Used for write-side mutual exclusion for the global device list,
-- * read-side synchronization by way of RCU.
-+ * read-side synchronization by way of RCU, and per-controller data.
-  */
- static DEFINE_SPINLOCK(sh_dmae_lock);
- static LIST_HEAD(sh_dmae_devices);
-@@ -85,22 +85,35 @@ static void dmaor_write(struct sh_dmae_device *shdev, u16 data)
-  */
- static void sh_dmae_ctl_stop(struct sh_dmae_device *shdev)
+Index: linux-2.6/drivers/base/power/runtime.c
+=================================--- linux-2.6.orig/drivers/base/power/runtime.c
++++ linux-2.6/drivers/base/power/runtime.c
+@@ -168,7 +168,6 @@ static int rpm_check_suspend_allowed(str
+ static int rpm_idle(struct device *dev, int rpmflags)
  {
--	unsigned short dmaor = dmaor_read(shdev);
-+	unsigned short dmaor;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&sh_dmae_lock, flags);
+ 	int (*callback)(struct device *);
+-	int (*domain_callback)(struct device *);
+ 	int retval;
  
-+	dmaor = dmaor_read(shdev);
- 	dmaor_write(shdev, dmaor & ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME));
-+
-+	spin_unlock_irqrestore(&sh_dmae_lock, flags);
- }
+ 	retval = rpm_check_suspend_allowed(dev);
+@@ -214,7 +213,9 @@ static int rpm_idle(struct device *dev,
  
- static int sh_dmae_rst(struct sh_dmae_device *shdev)
- {
- 	unsigned short dmaor;
-+	unsigned long flags;
+ 	dev->power.idle_notification = true;
  
--	sh_dmae_ctl_stop(shdev);
--	dmaor = dmaor_read(shdev) | shdev->pdata->dmaor_init;
-+	spin_lock_irqsave(&sh_dmae_lock, flags);
+-	if (dev->type && dev->type->pm)
++	if (dev->pwr_domain)
++		callback = dev->pwr_domain->ops.runtime_idle;
++	else if (dev->type && dev->type->pm)
+ 		callback = dev->type->pm->runtime_idle;
+ 	else if (dev->class && dev->class->pm)
+ 		callback = dev->class->pm->runtime_idle;
+@@ -223,19 +224,10 @@ static int rpm_idle(struct device *dev,
+ 	else
+ 		callback = NULL;
  
--	dmaor_write(shdev, dmaor);
--	if (dmaor_read(shdev) & (DMAOR_AE | DMAOR_NMIF)) {
--		pr_warning("dma-sh: Can't initialize DMAOR.\n");
--		return -EINVAL;
-+	dmaor = dmaor_read(shdev) & ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME);
-+
-+	dmaor_write(shdev, dmaor | shdev->pdata->dmaor_init);
-+
-+	dmaor = dmaor_read(shdev);
-+
-+	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+
-+	if (dmaor & (DMAOR_AE | DMAOR_NMIF)) {
-+		dev_warn(shdev->common.dev, "Can't initialize DMAOR.\n");
-+		return -EIO;
+-	if (dev->pwr_domain)
+-		domain_callback = dev->pwr_domain->ops.runtime_idle;
+-	else
+-		domain_callback = NULL;
+-
+-	if (callback || domain_callback) {
++	if (callback) {
+ 		spin_unlock_irq(&dev->power.lock);
+ 
+-		if (domain_callback)
+-			retval = domain_callback(dev);
+-
+-		if (!retval && callback)
+-			callback(dev);
++		callback(dev);
+ 
+ 		spin_lock_irq(&dev->power.lock);
  	}
+@@ -382,7 +374,9 @@ static int rpm_suspend(struct device *de
+ 
+ 	__update_runtime_status(dev, RPM_SUSPENDING);
+ 
+-	if (dev->type && dev->type->pm)
++	if (dev->pwr_domain)
++		callback = dev->pwr_domain->ops.runtime_suspend;
++	else if (dev->type && dev->type->pm)
+ 		callback = dev->type->pm->runtime_suspend;
+ 	else if (dev->class && dev->class->pm)
+ 		callback = dev->class->pm->runtime_suspend;
+@@ -400,8 +394,6 @@ static int rpm_suspend(struct device *de
+ 		else
+ 			pm_runtime_cancel_pending(dev);
+ 	} else {
+-		if (dev->pwr_domain)
+-			rpm_callback(dev->pwr_domain->ops.runtime_suspend, dev);
+  no_callback:
+ 		__update_runtime_status(dev, RPM_SUSPENDED);
+ 		pm_runtime_deactivate_timer(dev);
+@@ -582,9 +574,8 @@ static int rpm_resume(struct device *dev
+ 	__update_runtime_status(dev, RPM_RESUMING);
+ 
+ 	if (dev->pwr_domain)
+-		rpm_callback(dev->pwr_domain->ops.runtime_resume, dev);
+-
+-	if (dev->type && dev->type->pm)
++		callback = dev->pwr_domain->ops.runtime_resume;
++	else if (dev->type && dev->type->pm)
+ 		callback = dev->type->pm->runtime_resume;
+ 	else if (dev->class && dev->class->pm)
+ 		callback = dev->class->pm->runtime_resume;
+Index: linux-2.6/drivers/base/power/main.c
+=================================--- linux-2.6.orig/drivers/base/power/main.c
++++ linux-2.6/drivers/base/power/main.c
+@@ -425,10 +425,8 @@ static int device_resume_noirq(struct de
+ 
+ 	if (dev->pwr_domain) {
+ 		pm_dev_dbg(dev, state, "EARLY power domain ");
+-		pm_noirq_op(dev, &dev->pwr_domain->ops, state);
+-	}
+-
+-	if (dev->type && dev->type->pm) {
++		error = pm_noirq_op(dev, &dev->pwr_domain->ops, state);
++	} else if (dev->type && dev->type->pm) {
+ 		pm_dev_dbg(dev, state, "EARLY type ");
+ 		error = pm_noirq_op(dev, dev->type->pm, state);
+ 	} else if (dev->class && dev->class->pm) {
+@@ -516,7 +514,8 @@ static int device_resume(struct device *
+ 
+ 	if (dev->pwr_domain) {
+ 		pm_dev_dbg(dev, state, "power domain ");
+-		pm_op(dev, &dev->pwr_domain->ops, state);
++		error = pm_op(dev, &dev->pwr_domain->ops, state);
++		goto End;
+ 	}
+ 
+ 	if (dev->type && dev->type->pm) {
+@@ -628,12 +627,11 @@ static void device_complete(struct devic
+ {
+ 	device_lock(dev);
+ 
+-	if (dev->pwr_domain && dev->pwr_domain->ops.complete) {
++	if (dev->pwr_domain) {
+ 		pm_dev_dbg(dev, state, "completing power domain ");
+-		dev->pwr_domain->ops.complete(dev);
+-	}
+-
+-	if (dev->type && dev->type->pm) {
++		if (dev->pwr_domain->ops.complete)
++			dev->pwr_domain->ops.complete(dev);
++	} else if (dev->type && dev->type->pm) {
+ 		pm_dev_dbg(dev, state, "completing type ");
+ 		if (dev->type->pm->complete)
+ 			dev->type->pm->complete(dev);
+@@ -731,7 +729,12 @@ static int device_suspend_noirq(struct d
+ {
+ 	int error;
+ 
+-	if (dev->type && dev->type->pm) {
++	if (dev->pwr_domain) {
++		pm_dev_dbg(dev, state, "LATE power domain ");
++		error = pm_noirq_op(dev, &dev->pwr_domain->ops, state);
++		if (error)
++			return error;
++	} else if (dev->type && dev->type->pm) {
+ 		pm_dev_dbg(dev, state, "LATE type ");
+ 		error = pm_noirq_op(dev, dev->type->pm, state);
+ 		if (error)
+@@ -748,11 +751,6 @@ static int device_suspend_noirq(struct d
+ 			return error;
+ 	}
+ 
+-	if (dev->pwr_domain) {
+-		pm_dev_dbg(dev, state, "LATE power domain ");
+-		pm_noirq_op(dev, &dev->pwr_domain->ops, state);
+-	}
+-
  	return 0;
  }
-@@ -184,7 +197,7 @@ static void dmae_init(struct sh_dmae_chan *sh_chan)
  
- static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
- {
--	/* When DMA was working, can not set data to CHCR */
-+	/* If DMA is active, cannot set CHCR. TODO: remove this superfluous check */
- 	if (dmae_is_busy(sh_chan))
- 		return -EBUSY;
- 
-@@ -374,7 +387,12 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
- 	LIST_HEAD(list);
- 	int descs = sh_chan->descs_allocated;
- 
-+	/* Protect against ISR */
-+	spin_lock_irq(&sh_chan->desc_lock);
- 	dmae_halt(sh_chan);
-+	spin_unlock_irq(&sh_chan->desc_lock);
-+
-+	/* Now no new interrupts will occur */
- 
- 	/* Prepared and not submitted descriptors can still be on the queue */
- 	if (!list_empty(&sh_chan->ld_queue))
-@@ -384,6 +402,7 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
- 		/* The caller is holding dma_list_mutex */
- 		struct sh_dmae_slave *param = chan->private;
- 		clear_bit(param->slave_id, sh_dmae_slave_used);
-+		chan->private = NULL;
+@@ -840,21 +838,27 @@ static int __device_suspend(struct devic
+ 		goto End;
  	}
  
- 	spin_lock_bh(&sh_chan->desc_lock);
-@@ -563,8 +582,6 @@ static struct dma_async_tx_descriptor *sh_dmae_prep_memcpy(
- 	if (!chan || !len)
- 		return NULL;
++	if (dev->pwr_domain) {
++		pm_dev_dbg(dev, state, "power domain ");
++		error = pm_op(dev, &dev->pwr_domain->ops, state);
++		goto End;
++	}
++
+ 	if (dev->type && dev->type->pm) {
+ 		pm_dev_dbg(dev, state, "type ");
+ 		error = pm_op(dev, dev->type->pm, state);
+-		goto Domain;
++		goto End;
+ 	}
  
--	chan->private = NULL;
--
- 	sh_chan = to_sh_chan(chan);
- 
- 	sg_init_table(&sg, 1);
-@@ -620,9 +637,9 @@ static int sh_dmae_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
- 	if (!chan)
- 		return -EINVAL;
- 
-+	spin_lock_bh(&sh_chan->desc_lock);
- 	dmae_halt(sh_chan);
- 
--	spin_lock_bh(&sh_chan->desc_lock);
- 	if (!list_empty(&sh_chan->ld_queue)) {
- 		/* Record partial transfer */
- 		struct sh_desc *desc = list_entry(sh_chan->ld_queue.next,
-@@ -716,6 +733,14 @@ static dma_async_tx_callback __ld_cleanup(struct sh_dmae_chan *sh_chan, bool all
- 			list_move(&desc->node, &sh_chan->ld_free);
+ 	if (dev->class) {
+ 		if (dev->class->pm) {
+ 			pm_dev_dbg(dev, state, "class ");
+ 			error = pm_op(dev, dev->class->pm, state);
+-			goto Domain;
++			goto End;
+ 		} else if (dev->class->suspend) {
+ 			pm_dev_dbg(dev, state, "legacy class ");
+ 			error = legacy_suspend(dev, state, dev->class->suspend);
+-			goto Domain;
++			goto End;
  		}
  	}
-+
-+	if (all && !callback)
-+		/*
-+		 * Terminating and the loop completed normally: forgive
-+		 * uncompleted cookies
-+		 */
-+		sh_chan->completed_cookie = sh_chan->common.cookie;
-+
- 	spin_unlock_bh(&sh_chan->desc_lock);
  
- 	if (callback)
-@@ -733,10 +758,6 @@ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all)
- {
- 	while (__ld_cleanup(sh_chan, all))
- 		;
--
--	if (all)
--		/* Terminating - forgive uncompleted cookies */
--		sh_chan->completed_cookie = sh_chan->common.cookie;
- }
- 
- static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
-@@ -782,8 +803,10 @@ static enum dma_status sh_dmae_tx_status(struct dma_chan *chan,
- 
- 	sh_dmae_chan_ld_cleanup(sh_chan, false);
- 
--	last_used = chan->cookie;
-+	/* First read completed cookie to avoid a skew */
- 	last_complete = sh_chan->completed_cookie;
-+	rmb();
-+	last_used = chan->cookie;
- 	BUG_ON(last_complete < 0);
- 	dma_set_tx_state(txstate, last_complete, last_used, 0);
- 
-@@ -813,8 +836,12 @@ static enum dma_status sh_dmae_tx_status(struct dma_chan *chan,
- static irqreturn_t sh_dmae_interrupt(int irq, void *data)
- {
- 	irqreturn_t ret = IRQ_NONE;
--	struct sh_dmae_chan *sh_chan = (struct sh_dmae_chan *)data;
--	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
-+	struct sh_dmae_chan *sh_chan = data;
-+	u32 chcr;
-+
-+	spin_lock(&sh_chan->desc_lock);
-+
-+	chcr = sh_dmae_readl(sh_chan, CHCR);
- 
- 	if (chcr & CHCR_TE) {
- 		/* DMA stop */
-@@ -824,10 +851,13 @@ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
- 		tasklet_schedule(&sh_chan->tasklet);
- 	}
- 
-+	spin_unlock(&sh_chan->desc_lock);
-+
- 	return ret;
- }
- 
--static unsigned int sh_dmae_reset(struct sh_dmae_device *shdev)
-+/* Called from error IRQ or NMI */
-+static bool sh_dmae_reset(struct sh_dmae_device *shdev)
- {
- 	unsigned int handled = 0;
- 	int i;
-@@ -839,22 +869,32 @@ static unsigned int sh_dmae_reset(struct sh_dmae_device *shdev)
- 	for (i = 0; i < SH_DMAC_MAX_CHANNELS; i++) {
- 		struct sh_dmae_chan *sh_chan = shdev->chan[i];
- 		struct sh_desc *desc;
-+		LIST_HEAD(dl);
- 
- 		if (!sh_chan)
- 			continue;
- 
-+		spin_lock(&sh_chan->desc_lock);
-+
- 		/* Stop the channel */
- 		dmae_halt(sh_chan);
- 
-+		list_splice_init(&sh_chan->ld_queue, &dl);
-+
-+		spin_unlock(&sh_chan->desc_lock);
-+
- 		/* Complete all  */
--		list_for_each_entry(desc, &sh_chan->ld_queue, node) {
-+		list_for_each_entry(desc, &dl, node) {
- 			struct dma_async_tx_descriptor *tx = &desc->async_tx;
- 			desc->mark = DESC_IDLE;
- 			if (tx->callback)
- 				tx->callback(tx->callback_param);
+@@ -868,12 +872,6 @@ static int __device_suspend(struct devic
  		}
- 
--		list_splice_init(&sh_chan->ld_queue, &sh_chan->ld_free);
-+		spin_lock(&sh_chan->desc_lock);
-+		list_splice(&dl, &sh_chan->ld_free);
-+		spin_unlock(&sh_chan->desc_lock);
-+
- 		handled++;
  	}
  
-@@ -867,10 +907,11 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
- {
- 	struct sh_dmae_device *shdev = data;
- 
--	if (dmaor_read(shdev) & DMAOR_AE)
--		return IRQ_RETVAL(sh_dmae_reset(data));
--	else
-+	if (!(dmaor_read(shdev) & DMAOR_AE))
- 		return IRQ_NONE;
-+
-+	sh_dmae_reset(data);
-+	return IRQ_HANDLED;
- }
- 
- static void dmae_do_tasklet(unsigned long data)
-@@ -902,17 +943,11 @@ static void dmae_do_tasklet(unsigned long data)
- 
- static bool sh_dmae_nmi_notify(struct sh_dmae_device *shdev)
- {
--	unsigned int handled;
+- Domain:
+-	if (!error && dev->pwr_domain) {
+-		pm_dev_dbg(dev, state, "power domain ");
+-		pm_op(dev, &dev->pwr_domain->ops, state);
+-	}
 -
- 	/* Fast path out if NMIF is not asserted for this controller */
- 	if ((dmaor_read(shdev) & DMAOR_NMIF) = 0)
- 		return false;
+  End:
+ 	device_unlock(dev);
+ 	complete_all(&dev->power.completion);
+@@ -964,7 +962,14 @@ static int device_prepare(struct device
  
--	handled = sh_dmae_reset(shdev);
--	if (handled)
--		return true;
+ 	device_lock(dev);
+ 
+-	if (dev->type && dev->type->pm) {
++	if (dev->pwr_domain) {
++		pm_dev_dbg(dev, state, "preparing power domain ");
++		if (dev->pwr_domain->ops.prepare)
++			error = dev->pwr_domain->ops.prepare(dev);
++		suspend_report_result(dev->pwr_domain->ops.prepare, error);
++		if (error)
++			goto End;
++	} else if (dev->type && dev->type->pm) {
+ 		pm_dev_dbg(dev, state, "preparing type ");
+ 		if (dev->type->pm->prepare)
+ 			error = dev->type->pm->prepare(dev);
+@@ -983,13 +988,6 @@ static int device_prepare(struct device
+ 		if (dev->bus->pm->prepare)
+ 			error = dev->bus->pm->prepare(dev);
+ 		suspend_report_result(dev->bus->pm->prepare, error);
+-		if (error)
+-			goto End;
+-	}
 -
--	return false;
-+	return sh_dmae_reset(shdev);
- }
+-	if (dev->pwr_domain && dev->pwr_domain->ops.prepare) {
+-		pm_dev_dbg(dev, state, "preparing power domain ");
+-		dev->pwr_domain->ops.prepare(dev);
+ 	}
  
- static int sh_dmae_nmi_handler(struct notifier_block *self,
-@@ -982,9 +1017,6 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
- 	tasklet_init(&new_sh_chan->tasklet, dmae_do_tasklet,
- 			(unsigned long)new_sh_chan);
- 
--	/* Init the channel */
--	dmae_init(new_sh_chan);
--
- 	spin_lock_init(&new_sh_chan->desc_lock);
- 
- 	/* Init descripter manage list */
-@@ -1114,7 +1146,7 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	list_add_tail_rcu(&shdev->node, &sh_dmae_devices);
- 	spin_unlock_irq(&sh_dmae_lock);
- 
--	/* reset dma controller */
-+	/* reset dma controller - only needed as a test */
- 	err = sh_dmae_rst(shdev);
- 	if (err)
- 		goto rst_err;
--- 
-1.7.2.5
+  End:
 
