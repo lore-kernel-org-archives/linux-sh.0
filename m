@@ -1,54 +1,86 @@
-From: Greg KH <gregkh@suse.de>
-Date: Sat, 30 Apr 2011 01:08:18 +0000
-Subject: Re: [Update][RFC][PATCH 1/2] PM / Runtime: Support for generic I/O
-Message-Id: <20110430010818.GA32601@suse.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 16 Apr 2011 23:44:14 +0000
+Subject: [PATCH 9/9] PM: Revert "driver core: platform_bus: allow runtime override of dev_pm_ops"
+Message-Id: <201104170144.15043.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl>
- <201104290154.56145.rjw@sisk.pl>
- <201104300254.46973.rjw@sisk.pl>
-In-Reply-To: <201104300254.46973.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
+In-Reply-To: <201104170135.19388.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
 
-On Sat, Apr 30, 2011 at 02:54:46AM +0200, Rafael J. Wysocki wrote:
-> From: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> Introcude common headers, helper functions and callbacks allowing
-> platforms to use simple generic power domains for runtime power
-> management.
-> 
-> Introduce struct generic_power_domain to be used for representing
-> power domains that each contain a number of devices and may be
-> master domains or subdomains with respect to other power domains.
-> Among other things, this structure includes callbacks to be
-> provided by platforms for performing specific tasks related to
-> power management (i.e. ->stop_device() may disable a device's
-> clocks, while ->start_device() may enable them, ->power_on() is
-> supposed to remove power from the entire power domain
-> and ->power_off() is supposed to restore it).
-> 
-> Introduce functions that can be used as power domain runtime PM
-> callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
-> as well as helper functions for the initialization of a power
-> domain represented by a struct generic_power_domain object,
-> adding a device to or removing a device from it and adding or
-> removing subdomains.
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
-> ---
-> 
-> Hi,
-> 
-> This version of the patch fixes a bug that caused pm_runtime_suspend()
-> (and equivalent) to return -EBUSY erroneously when suspending the last
-> active device in a power domain.  It has been tested on an ARM shmobile
-> system.
-> 
-> Greg, I hope your ACK is still valid. :-)
+From: Kevin Hilman <khilman@ti.com>
 
-Yes, it is.
+The platform_bus_set_pm_ops() operation is deprecated in favor of the
+new device power domain infrastructre implemented in commit
+7538e3db6e015e890825fbd9f8659952896ddd5b (PM: add support for device
+power domains)
+
+Signed-off-by: Kevin Hilman <khilman@ti.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/platform.c         |   35 -----------------------------------
+ include/linux/platform_device.h |    3 ---
+ 2 files changed, 38 deletions(-)
+
+Index: linux-2.6/drivers/base/platform.c
+=================================--- linux-2.6.orig/drivers/base/platform.c
++++ linux-2.6/drivers/base/platform.c
+@@ -916,41 +916,6 @@ struct bus_type platform_bus_type = {
+ };
+ EXPORT_SYMBOL_GPL(platform_bus_type);
+ 
+-/**
+- * platform_bus_get_pm_ops() - return pointer to busses dev_pm_ops
+- *
+- * This function can be used by platform code to get the current
+- * set of dev_pm_ops functions used by the platform_bus_type.
+- */
+-const struct dev_pm_ops * __init platform_bus_get_pm_ops(void)
+-{
+-	return platform_bus_type.pm;
+-}
+-
+-/**
+- * platform_bus_set_pm_ops() - update dev_pm_ops for the platform_bus_type
+- *
+- * @pm: pointer to new dev_pm_ops struct to be used for platform_bus_type
+- *
+- * Platform code can override the dev_pm_ops methods of
+- * platform_bus_type by using this function.  It is expected that
+- * platform code will first do a platform_bus_get_pm_ops(), then
+- * kmemdup it, then customize selected methods and pass a pointer to
+- * the new struct dev_pm_ops to this function.
+- *
+- * Since platform-specific code is customizing methods for *all*
+- * devices (not just platform-specific devices) it is expected that
+- * any custom overrides of these functions will keep existing behavior
+- * and simply extend it.  For example, any customization of the
+- * runtime PM methods should continue to call the pm_generic_*
+- * functions as the default ones do in addition to the
+- * platform-specific behavior.
+- */
+-void __init platform_bus_set_pm_ops(const struct dev_pm_ops *pm)
+-{
+-	platform_bus_type.pm = pm;
+-}
+-
+ int __init platform_bus_init(void)
+ {
+ 	int error;
+Index: linux-2.6/include/linux/platform_device.h
+=================================--- linux-2.6.orig/include/linux/platform_device.h
++++ linux-2.6/include/linux/platform_device.h
+@@ -150,9 +150,6 @@ extern struct platform_device *platform_
+ 					struct resource *res, unsigned int n_res,
+ 					const void *data, size_t size);
+ 
+-extern const struct dev_pm_ops * platform_bus_get_pm_ops(void);
+-extern void platform_bus_set_pm_ops(const struct dev_pm_ops *pm);
+-
+ /* early platform driver interface */
+ struct early_platform_driver {
+ 	const char *class_str;
 
