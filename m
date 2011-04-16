@@ -1,39 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Sat, 16 Apr 2011 19:17:57 +0000
-Subject: Re: [Kgdb-bugreport] [PATCH 4/5] sh: convert to asm-generic ptrace.h
-Message-Id: <20110416191757.GA11609@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 16 Apr 2011 23:35:18 +0000
+Subject: [PATCH 0/9] PM: Rework shmobile and OMAP runtime PM using power domains
+Message-Id: <201104170135.19388.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1302760895-13459-1-git-send-email-vapier@gentoo.org> <1302760895-13459-5-git-send-email-vapier@gentoo.org> <4DA70319.8000902@mvista.com>
-In-Reply-To: <4DA70319.8000902@mvista.com>
+References: <201104130205.26988.rjw@sisk.pl>
+In-Reply-To: <201104130205.26988.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sshtylyov@mvista.com>
-Cc: Mike Frysinger <vapier@gentoo.org>, Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, Jason Wessel <jason.wessel@windriver.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
 
-On Thu, Apr 14, 2011 at 06:22:17PM +0400, Sergei Shtylyov wrote:
-> Mike Frysinger wrote:
-> 
-> >Signed-off-by: Mike Frysinger <vapier@gentoo.org>
-> >---
-> > arch/sh/include/asm/ptrace.h |    6 ++++--
-> > 1 files changed, 4 insertions(+), 2 deletions(-)
-> 
-> >diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
-> >index b219a08..3f2a6e7 100644
-> >--- a/arch/sh/include/asm/ptrace.h
-> >+++ b/arch/sh/include/asm/ptrace.h
-> [...]
-> >@@ -137,6 +136,9 @@ static inline unsigned long profile_pc(struct pt_regs 
-> >*regs)
-> > 
-> > 	return pc;
-> > }
-> >+#define profile_pc profile_pc
-> 
->    Same question about preprocessor...
-> 
-Same response.
+Hi,
 
-There are many places in the kernel where this convention is used, and
-for a good reason. Grep harder.
+The following series of patches is my attempt to consolidate the shmobile and
+OMAP runtime PM code using power domains so that it is not necessary to
+replace the platform bus type's runtime PM callbacks any more.
+
+Some of the patches have already been posted, some are new and some are
+from Kevin. :-)
+
+[1/9] - Make power domain callbacks take precedence over subsystem ones
+        (this one has been discussed already).
+
+[2/9] - Export the platform bus type's default PM callbacks so that they
+        can be used in power domain objects.
+
+[3/9] - Use a default power domain for runtime PM on shmobile (both ARM
+        and SH flavors) instead of replacing the platform bus type's
+        runtime PM callbacks (using __weak).
+
+[4/9] - Use generic runtime PM callbacks directly in the platform bus type.
+
+[5/9] - Move OMAP2 runtime PM implementation to using a power domain object
+        (patch from Kevin rebased on top of [1-4/9]).
+
+[6/9] - Add subsystem data field to struct dev_pm_info.
+
+[7/9] - Introduce generic clock manipulation routines for runtime PM and
+        convert ARM shmobile to using them.
+
+[8/9] - Move OMAP1 runtime PM to the new core infrastructure.
+
+[9/9] - Remove platform_bus_set_pm_ops() (patch from Kevin).
+
+Comments welcome.
+
+Thanks,
+Rafael
+
