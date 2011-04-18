@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 16 Apr 2011 10:38:26 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 18 Apr 2011 09:09:21 +0000
 Subject: Re: [PATCH] ARM: mach-shmobile: fix Oops during system wake up
-Message-Id: <20110416103826.GH16353@verge.net.au>
+Message-Id: <20110418090921.GE32457@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1104152009080.18593@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1104152009080.18593@axis700.grange>
@@ -21,8 +21,17 @@ On Fri, Apr 15, 2011 at 08:37:55PM +0200, Guennadi Liakhovetski wrote:
 > which I accidentally dropped in my tests, which caused this Oops. So, 
 > maybe his patch to check rate in clks_core_resume() is a better fix for 
 > this problem. Feel free to ignore this then.
+> 
+Having a solution that doesn't exist in the list archives is effectively
+the same as not having a solution at all.
 
-Hi Guennadi,
+From your description I imagine you mean something like checking if
+clkp->rate is set prior to calling in to ->set_rate, however this
+probably needs a bit more of a think. Your example stipulates that we're
+resuming clocks that haven't been "used", which suggests that we're
+probably better off simply not touching the clock at all in the resume
+path. I expect if you were to set the rate via the recalc path instead it
+also wouldn't have the desired effect for your case.
 
-do you have a link/title for Magnus's patch?
-
+In any event, it's quite obvious that clks_core_resume() is going to need
+to be reworked a bit.
