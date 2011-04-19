@@ -1,68 +1,68 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 24 Apr 2011 21:39:33 +0000
-Subject: [PATCH 4/9] PM / Platform: Use generic runtime PM callbacks directly
-Message-Id: <201104242339.33422.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 19 Apr 2011 10:43:44 +0000
+Subject: [PATCH] serial: sh-sci: suspend/resume wakeup support
+Message-Id: <20110419104344.23764.93511.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
-In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Magnus Damm <damm@opensource.se>
 
-Once shmobile platforms have been converted to using power domains
-for overriding the platform bus type's PM callbacks, it isn't
-necessary to use the __weakly defined wrappers around the generinc
-runtime PM callbacks in the platform bus type any more.
+This patch adds wakeup support to the sh-sci driver. As usual,
+device_init_wakeup() and enable_irq_wake()/disable_irq_wake()
+are used to determine if the port should be suspended/resumed
+as usual or if it should be enabled to act as a wakeup source.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/base/platform.c |   31 +++----------------------------
- 1 file changed, 3 insertions(+), 28 deletions(-)
 
-Index: linux-2.6/drivers/base/platform.c
-=================================--- linux-2.6.orig/drivers/base/platform.c
-+++ linux-2.6/drivers/base/platform.c
-@@ -900,35 +900,10 @@ int platform_pm_restore_noirq(struct dev
- 
- #endif /* CONFIG_HIBERNATE_CALLBACKS */
- 
--#ifdef CONFIG_PM_RUNTIME
--
--int __weak platform_pm_runtime_suspend(struct device *dev)
--{
--	return pm_generic_runtime_suspend(dev);
--};
--
--int __weak platform_pm_runtime_resume(struct device *dev)
--{
--	return pm_generic_runtime_resume(dev);
--};
--
--int __weak platform_pm_runtime_idle(struct device *dev)
--{
--	return pm_generic_runtime_idle(dev);
--};
--
--#else /* !CONFIG_PM_RUNTIME */
--
--#define platform_pm_runtime_suspend NULL
--#define platform_pm_runtime_resume NULL
--#define platform_pm_runtime_idle NULL
--
--#endif /* !CONFIG_PM_RUNTIME */
--
- static const struct dev_pm_ops platform_dev_pm_ops = {
--	.runtime_suspend = platform_pm_runtime_suspend,
--	.runtime_resume = platform_pm_runtime_resume,
--	.runtime_idle = platform_pm_runtime_idle,
-+	.runtime_suspend = pm_generic_runtime_suspend,
-+	.runtime_resume = pm_generic_runtime_resume,
-+	.runtime_idle = pm_generic_runtime_idle,
- 	USE_PLATFORM_PM_SLEEP_OPS
- };
- 
+ drivers/tty/serial/sh-sci.c |   22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
 
+--- 0001/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2011-04-19 18:32:51.000000000 +0900
+@@ -1962,7 +1962,11 @@ static int __devinit sci_probe_single(st
+ 	if (ret)
+ 		return ret;
+ 
+-	return uart_add_one_port(&sci_uart_driver, &sciport->port);
++	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
++	if (!ret)
++		device_init_wakeup(&dev->dev, 1);
++
++	return ret;
+ }
+ 
+ static int __devinit sci_probe(struct platform_device *dev)
+@@ -2007,8 +2011,12 @@ static int sci_suspend(struct device *de
+ {
+ 	struct sci_port *sport = dev_get_drvdata(dev);
+ 
+-	if (sport)
+-		uart_suspend_port(&sci_uart_driver, &sport->port);
++	if (sport) {
++		if (device_may_wakeup(dev))
++			enable_irq_wake(sport->cfg->irqs[SCIx_RXI_IRQ]);
++		else
++			uart_suspend_port(&sci_uart_driver, &sport->port);
++	}
+ 
+ 	return 0;
+ }
+@@ -2017,8 +2025,12 @@ static int sci_resume(struct device *dev
+ {
+ 	struct sci_port *sport = dev_get_drvdata(dev);
+ 
+-	if (sport)
+-		uart_resume_port(&sci_uart_driver, &sport->port);
++	if (sport) {
++		if (device_may_wakeup(dev))
++			disable_irq_wake(sport->cfg->irqs[SCIx_RXI_IRQ]);
++		else
++			uart_resume_port(&sci_uart_driver, &sport->port);
++	}
+ 
+ 	return 0;
+ }
