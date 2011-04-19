@@ -1,57 +1,170 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Apr 2011 03:17:15 +0000
-Subject: [PATCH] ARM: mach-shmobile: ap4evb, mackerel: fixup scif initialisation for zboot
-Message-Id: <1303874235-3344-1-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 19 Apr 2011 10:52:01 +0000
+Subject: [PATCH 2/3 v2] MMC: add runtime and system power-management support
+Message-Id: <Pine.LNX.4.64.1104191248190.16641@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1104152021510.18593@axis700.grange>
+ <Pine.LNX.4.64.1104152027010.18593@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1104152027010.18593@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, Alan Stern <stern@rowland.harvard.edu>, "Rafael J. Wysocki" <rjw@sisk.pl>
 
-* Set receive enable and transmit enable bits of SCASCR0 (E6C400089).
-  Values previously written to this register was bogus.
+Adding support for runtime power-management to the MMCIF driver allows
+it to save power as long as no card is present. System-wide power
+management has been verified with experimental PM patches on AP4-
+based systems.
 
-  Curiously earlyprintk works with the previous code.
-
-* Remove duplicate initialisation of GPIO port 152, SCIFA0_TXD (0xE6053098).
-  This should have no effect other than to very slightly reduce the amount of
-  code.
-
-Reported-by: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- .../arm/mach-shmobile/include/mach/head-ap4evb.txt |    3 +--
- .../mach-shmobile/include/mach/head-mackerel.txt   |    3 +--
- 2 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-index 3029aba..9f134df 100644
---- a/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-+++ b/arch/arm/mach-shmobile/include/mach/head-ap4evb.txt
-@@ -87,8 +87,7 @@ WAIT 1, 0xFE40009C
- ED 0xFE400354, 0x01AD8002
- 
- LIST "SCIF0 - Serial port for earlyprintk"
--EB 0xE6053098, 0x11
- EB 0xE6053098, 0xe1
- EW 0xE6C40000, 0x0000
- EB 0xE6C40004, 0x19
--EW 0xE6C40008, 0x3000
-+EW 0xE6C40008, 0x0030
-diff --git a/arch/arm/mach-shmobile/include/mach/head-mackerel.txt b/arch/arm/mach-shmobile/include/mach/head-mackerel.txt
-index 3029aba..9f134df 100644
---- a/arch/arm/mach-shmobile/include/mach/head-mackerel.txt
-+++ b/arch/arm/mach-shmobile/include/mach/head-mackerel.txt
-@@ -87,8 +87,7 @@ WAIT 1, 0xFE40009C
- ED 0xFE400354, 0x01AD8002
- 
- LIST "SCIF0 - Serial port for earlyprintk"
--EB 0xE6053098, 0x11
- EB 0xE6053098, 0xe1
- EW 0xE6C40000, 0x0000
- EB 0xE6C40004, 0x19
--EW 0xE6C40008, 0x3000
-+EW 0xE6C40008, 0x0030
--- 
-1.7.2.3
+With this patch and with the patch to mmc/core/bus.c, that I've sent a 
+couple of minutes ago
 
+http://article.gmane.org/gmane.linux.kernel.mmc/7433
+
+PM works correctly with all possible modprobe / rmmod, card-insert / 
+eject, and STR scenarios, that I could come up with. The part in 
+sh_mmcif_remove() is a bit rough though...
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d3871b6..23eb0ec 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -29,6 +29,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+ 
+ #define DRIVER_NAME	"sh_mmcif"
+@@ -173,6 +174,7 @@ struct sh_mmcif_host {
+ 	struct completion intr_wait;
+ 	enum mmcif_state state;
+ 	spinlock_t lock;
++	bool power;
+ 
+ 	/* DMA support */
+ 	struct dma_chan		*chan_rx;
+@@ -877,11 +879,21 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	if (ios->power_mode = MMC_POWER_UP) {
+ 		if (p->set_pwr)
+ 			p->set_pwr(host->pd, ios->power_mode);
++		if (!host->power) {
++			pm_runtime_get_sync(&host->pd->dev);
++			host->power = true;
++		}
+ 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
+ 		/* clock stop */
+ 		sh_mmcif_clock_control(host, 0);
+-		if (ios->power_mode = MMC_POWER_OFF && p->down_pwr)
+-			p->down_pwr(host->pd);
++		if (ios->power_mode = MMC_POWER_OFF) {
++			if (host->power) {
++				pm_runtime_put(&host->pd->dev);
++				host->power = false;
++			}
++			if (p->down_pwr)
++				p->down_pwr(host->pd);
++		}
+ 		host->state = STATE_IDLE;
+ 		return;
+ 	}
+@@ -1053,6 +1065,12 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	sh_mmcif_sync_reset(host);
+ 	platform_set_drvdata(pdev, host);
+ 
++	pm_runtime_enable(&pdev->dev);
++	host->power = false;
++	ret = pm_runtime_resume(&pdev->dev);
++	if (ret < 0)
++		goto clean_up2;
++
+ 	/* See if we also get DMA */
+ 	sh_mmcif_request_dma(host, pd);
+ 
+@@ -1063,13 +1081,13 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	ret = request_irq(irq[0], sh_mmcif_intr, 0, "sh_mmc:error", host);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
+-		goto clean_up2;
++		goto clean_up3;
+ 	}
+ 	ret = request_irq(irq[1], sh_mmcif_intr, 0, "sh_mmc:int", host);
+ 	if (ret) {
+ 		free_irq(irq[0], host);
+ 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
+-		goto clean_up2;
++		goto clean_up3;
+ 	}
+ 
+ 	sh_mmcif_detect(host->mmc);
+@@ -1079,7 +1097,10 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
+ 	return ret;
+ 
++clean_up3:
++	pm_runtime_suspend(&pdev->dev);
+ clean_up2:
++	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(host->hclk);
+ clean_up1:
+ 	mmc_free_host(mmc);
+@@ -1112,15 +1133,54 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
+ 
+ 	clk_disable(host->hclk);
+ 	mmc_free_host(host->mmc);
++	pm_runtime_put_noidle(&pdev->dev);
++	pm_runtime_suspend(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++	pm_runtime_get_noresume(&pdev->dev);
+ 
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM
++static int sh_mmcif_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
++	int ret = mmc_suspend_host(host->mmc);
++
++	if (!ret) {
++		sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
++		clk_disable(host->hclk);
++	}
++
++	return ret;
++}
++
++static int sh_mmcif_resume(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
++
++	clk_enable(host->hclk);
++
++	return mmc_resume_host(host->mmc);
++}
++#else
++#define sh_mmcif_suspend	NULL
++#define sh_mmcif_resume		NULL
++#endif	/* CONFIG_PM */
++
++static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
++	.suspend = sh_mmcif_suspend,
++	.resume = sh_mmcif_resume,
++};
++
+ static struct platform_driver sh_mmcif_driver = {
+ 	.probe		= sh_mmcif_probe,
+ 	.remove		= sh_mmcif_remove,
+ 	.driver		= {
+ 		.name	= DRIVER_NAME,
++		.pm	= &sh_mmcif_dev_pm_ops,
+ 	},
+ };
+ 
