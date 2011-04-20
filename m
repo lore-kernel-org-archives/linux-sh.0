@@ -1,38 +1,31 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 19 Apr 2011 21:35:34 +0000
-Subject: Re: [linux-pm] [PATCH 7/9] PM / Runtime: Add generic clock manipulation rountines for runtime PM
-Message-Id: <201104192335.34560.rjw@sisk.pl>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Wed, 20 Apr 2011 11:57:39 +0000
+Subject: Re: [linux-pm] [PATCH 7/9] PM / Runtime: Add generic clock
+Message-Id: <20110420115738.GA25571@sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170142.10723.rjw@sisk.pl> <20110419105836.GG9462@sirena.org.uk>
-In-Reply-To: <20110419105836.GG9462@sirena.org.uk>
+References: <201104130205.26988.rjw@sisk.pl> <201104170142.10723.rjw@sisk.pl> <20110419105836.GG9462@sirena.org.uk> <201104192335.34560.rjw@sisk.pl>
+In-Reply-To: <201104192335.34560.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
 Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, linux-sh@vger.kernel.org, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>
 
-On Tuesday, April 19, 2011, Mark Brown wrote:
-> On Sun, Apr 17, 2011 at 01:42:10AM +0200, Rafael J. Wysocki wrote:
-> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> > 
-> > Many different platforms and subsystems may want to disable device
-> > clocks during suspend and enable them during resume which is going to
-> > be done in a very similar way in all those cases.  For this reason,
-> > provide generic routines for the manipulation of device clocks during
-> > suspend and resume.
-> 
-> > Convert the ARM shmobile platform to using the new routines.
-> 
-> I've had similar thoughts with respect to the regulator API - I'd been
-> thinking of dealing with this by adding a notifier which subsystems
-> could build upon, in much the same way as already exists for the system
-> ssuspend and resume events.
+On Tue, Apr 19, 2011 at 11:35:34PM +0200, Rafael J. Wysocki wrote:
+> On Tuesday, April 19, 2011, Mark Brown wrote:
 
-Well, I generally avoid using notifiers, because they lead to big functions
-that carry out many different tasks.
+> > I've had similar thoughts with respect to the regulator API - I'd been
+> > thinking of dealing with this by adding a notifier which subsystems
+> > could build upon, in much the same way as already exists for the system
+> > ssuspend and resume events.
 
-That said, I think consolidation and reduction of duplicate code is all good,
-this way or another. :-)
+> Well, I generally avoid using notifiers, because they lead to big functions
+> that carry out many different tasks.
 
-Thanks,
-Rafael
+> That said, I think consolidation and reduction of duplicate code is all good,
+> this way or another. :-)
+
+Well, if you're comfortable with adding explicit regulator API hooks in
+the code directly then I can just do that - I'd been thinking notifiers
+since they mean you don't have to worry about what's going on with it
+but if you're happy with making it explicit that's fine by me also.
