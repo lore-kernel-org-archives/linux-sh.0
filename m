@@ -1,7 +1,9 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
-Date: Wed, 20 Apr 2011 14:28:16 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 20 Apr 2011 16:41:04 +0000
 Subject: Re: [PATCH 0/2] Common struct clk implementation, v14
-Message-Id: <20110420142816.GZ31131@pengutronix.de>
+Message-Id: <alpine.LFD.2.02.1104201830500.3323@ionos>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8323328-63488165-1303317666=:3323"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<1302754859.2767.30.camel@pororo>
@@ -13,78 +15,41 @@ References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<alpine.LFD.2.00.1104140920110.24613@xanadu.home>
 	<20110414153813.GC6259@n2100.arm.linux.org.uk>
 	<20110418105442.GB27864@linux-sh.org>
-In-Reply-To: <20110418105442.GB27864@linux-sh.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+	<20110420142816.GZ31131@pengutronix.de>
+In-Reply-To: <20110420142816.GZ31131@pengutronix.de>
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
 
-On Mon, Apr 18, 2011 at 07:54:42PM +0900, Paul Mundt wrote:
-> If you'd prefer not to be the guinea pig for the clock bits going in to
-> .40 I'm certainly happy to take them in a topic branch, convert my
-> platforms on top of that and send the bits off to Linus early in the
-> merge window.
-To get this forward I set up a branch with the generic bits sent to the
-list so far. I really think this should be fixed better now than later
-to give enough time for potential users of the new API to implement it
-for their platform.
+--8323328-63488165-1303317666=:3323
+Content-Type: TEXT/PLAIN; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-The following changes since commit f0e615c3cb72b42191b558c130409335812621d8:
+On Wed, 20 Apr 2011, Uwe Kleine-K=F6nig wrote:
+> I declare this to be stable, so assuming people are OK with it, you can
+> use that as a base to convert your platforms.
 
-  Linux 2.6.39-rc4 (2011-04-18 21:26:00 -0700)
+You declare that stable? Interesting.
+=20
+> There is a 2nd branch on that repository that also contains my RFC patch
+> just sent to this list in case you want to test it.
 
-are available in the git repository at:
-  git://git.pengutronix.de/git/ukl/linux-2.6.git common-struct-clk
+Which is utter crap as I pointed out a few minutes ago.
 
-Jeremy Kerr (2):
-      Add a common struct clk
-      clk: Generic support for fixed-rate clocks
+Also that clk thing is neither stable nor complete. It's just designed
+wrong.=20
 
-Russell King - ARM Linux (1):
-      Fix clkdev return value for NULL clk case
+As long as it does not handle nested clocks proper and by default w/o
+your tasteless add ons, it's just moving the status quo of ARM into a
+common infrastructure file.
 
-Sascha Hauer (1):
-      clk: Make NULL a valid clock again
+Yes, that's probably better than not having common infrastructure at
+all, but trying to build up conversions on that lot would be a
+complete waste of time and resources. Simply because you need to
+convert the already converted stuff another time.
 
- drivers/clk/Kconfig  |    3 +
- drivers/clk/Makefile |    1 +
- drivers/clk/clk.c    |  173 ++++++++++++++++++++++++++++++++++++++++++++++=
-++
- drivers/clk/clkdev.c |   26 +++++---
- include/linux/clk.h  |  180 ++++++++++++++++++++++++++++++++++++++++++++++=
-+---
- 5 files changed, 364 insertions(+), 19 deletions(-)
- create mode 100644 drivers/clk/clk.c
+Thanks,
 
-I declare this to be stable, so assuming people are OK with it, you can
-use that as a base to convert your platforms.
-
-@Linus: I hope you're willing to pull this branch after .39?! (A public
-"yes" might motivate one or the other maintainer to convert their
-platform to it.)
-
-There is a 2nd branch on that repository that also contains my RFC patch
-just sent to this list in case you want to test it.
-
-The following changes since commit 0ddb7f510fd51213801bf33194629fabf0818f39:
-
-  clk: Make NULL a valid clock again (2011-04-20 16:02:29 +0200)
-
-are available in the git repository at:
-  git://git.pengutronix.de/git/ukl/linux-2.6.git common-struct-clk-wip
-
-Uwe Kleine-K=F6nig (1):
-      [RFC] clk: add support for automatic parent handling
-
- drivers/clk/clk.c   |   43 +++++++++++++++++++++++++++++++++++++++++++
- include/linux/clk.h |    8 ++++++++
- 2 files changed, 51 insertions(+), 0 deletions(-)
-
-Best regards
-Uwe
-
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+	tglx
+--8323328-63488165-1303317666=:3323--
