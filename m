@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 18 Apr 2011 10:54:42 +0000
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=
+Date: Wed, 20 Apr 2011 14:28:16 +0000
 Subject: Re: [PATCH 0/2] Common struct clk implementation, v14
-Message-Id: <20110418105442.GB27864@linux-sh.org>
+Message-Id: <20110420142816.GZ31131@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<1302754859.2767.30.camel@pororo>
@@ -12,59 +12,79 @@ References: <1299134429.100626.661279191478.0.gpush@pororo>
 	<20110414120904.GH1611@n2100.arm.linux.org.uk>
 	<alpine.LFD.2.00.1104140920110.24613@xanadu.home>
 	<20110414153813.GC6259@n2100.arm.linux.org.uk>
-In-Reply-To: <20110414153813.GC6259@n2100.arm.linux.org.uk>
+	<20110418105442.GB27864@linux-sh.org>
+In-Reply-To: <20110418105442.GB27864@linux-sh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 14, 2011 at 04:38:14PM +0100, Russell King - ARM Linux wrote:
-> On Thu, Apr 14, 2011 at 09:39:58AM -0400, Nicolas Pitre wrote:
-> > However we can and must do better in consolidation work in order to make 
-> > the tree more maintainable of course.  _That_ is the real issue and 
-> > _that_ is what the ARM tree sucks at.  The fact that this consolidation 
-> > work might reduce the size of the ARM code is only a side effect, not 
-> > the primary goal.  So let's not get too hung up about LOC but focus on 
-> > improving the infrastructure instead.
-> 
-> Look, this is what is in amongst the 6K lines of new code - these are
-> the top two in the diffstat with the highest number of additional lines:
-> 
->  arch/arm/mach-ux500/clock-db8500.c                 | 1291 +++++++++++++
->  arch/arm/mach-ux500/prcmu-db8500.c                 | 2018 ++++++++++++++++++++
-> 
-> These comprise 50% of the 6K of new code.  clock-db8500.c is a mixture
-> of code and data declarations for individual clocks - which is essentially
-> what Linus picked up with his complaint on under OMAP.  That in itself
-> makes me worried.
-> 
-A common struct clk implementation will at least allow you to whittle
-this number down a bit, but it's obviously not possible to attempt to
-work with the generic infrastructure prior to it being merged. Given that
-there is nothing ARM-specific about the patch series it doesn't much
-matter which tree it ultimately gets merged through, so long as it's in
-place for people to build on top of for the next merge window.
+Hello,
 
-> Now, the next thing is that Linus hasn't been too happy about driver stuff
-> coming via my tree either - it's something which has been the subject of
-> concern in private email.  I've _already_ said something about that prior
-> to the recent merge window.  So should I take the clk API stuff which
-> touches the drivers subtree?  If yes, it needs to be kept entirely separate
-> from the rest of the ARM stuff so we don't end up mixing drivers stuff with
-> ARM stuff.
+On Mon, Apr 18, 2011 at 07:54:42PM +0900, Paul Mundt wrote:
+> If you'd prefer not to be the guinea pig for the clock bits going in to
+> .40 I'm certainly happy to take them in a topic branch, convert my
+> platforms on top of that and send the bits off to Linus early in the
+> merge window.
+To get this forward I set up a branch with the generic bits sent to the
+list so far. I really think this should be fixed better now than later
+to give enough time for potential users of the new API to implement it
+for their platform.
 
-ARM has been the defacto owner for the clock bits to date, but between
-clkdev and a common struct clk it's certainly possible to move to a clock
-tree and treat it the same as any other subsystem. Moving things out of
-arch/arm and in to more generic maintenance paths certainly reduces the
-chance for abuse -- and also provides a path for driver stuff.
+The following changes since commit f0e615c3cb72b42191b558c130409335812621d8:
 
-SH and ARM-based SH/R-Mobile CPUs already share a clock framework, which
-I've slowly been refactoring in preparation for Jeremy's common struct
-clk. With that merged I'll be able to kill off a couple hundred lines
-from the existing implementation at least.
+  Linux 2.6.39-rc4 (2011-04-18 21:26:00 -0700)
 
-If you'd prefer not to be the guinea pig for the clock bits going in to
-.40 I'm certainly happy to take them in a topic branch, convert my
-platforms on top of that and send the bits off to Linus early in the
-merge window.
+are available in the git repository at:
+  git://git.pengutronix.de/git/ukl/linux-2.6.git common-struct-clk
+
+Jeremy Kerr (2):
+      Add a common struct clk
+      clk: Generic support for fixed-rate clocks
+
+Russell King - ARM Linux (1):
+      Fix clkdev return value for NULL clk case
+
+Sascha Hauer (1):
+      clk: Make NULL a valid clock again
+
+ drivers/clk/Kconfig  |    3 +
+ drivers/clk/Makefile |    1 +
+ drivers/clk/clk.c    |  173 ++++++++++++++++++++++++++++++++++++++++++++++=
+++
+ drivers/clk/clkdev.c |   26 +++++---
+ include/linux/clk.h  |  180 ++++++++++++++++++++++++++++++++++++++++++++++=
++---
+ 5 files changed, 364 insertions(+), 19 deletions(-)
+ create mode 100644 drivers/clk/clk.c
+
+I declare this to be stable, so assuming people are OK with it, you can
+use that as a base to convert your platforms.
+
+@Linus: I hope you're willing to pull this branch after .39?! (A public
+"yes" might motivate one or the other maintainer to convert their
+platform to it.)
+
+There is a 2nd branch on that repository that also contains my RFC patch
+just sent to this list in case you want to test it.
+
+The following changes since commit 0ddb7f510fd51213801bf33194629fabf0818f39:
+
+  clk: Make NULL a valid clock again (2011-04-20 16:02:29 +0200)
+
+are available in the git repository at:
+  git://git.pengutronix.de/git/ukl/linux-2.6.git common-struct-clk-wip
+
+Uwe Kleine-K=F6nig (1):
+      [RFC] clk: add support for automatic parent handling
+
+ drivers/clk/clk.c   |   43 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/clk.h |    8 ++++++++
+ 2 files changed, 51 insertions(+), 0 deletions(-)
+
+Best regards
+Uwe
+
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
