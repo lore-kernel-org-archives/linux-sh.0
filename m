@@ -1,68 +1,85 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Sat, 30 Apr 2011 02:08:11 +0000
-Subject: [PATCH 04/10] ARM: add common scu_init_cpus
-Message-Id: <1304129297-6614-5-git-send-email-robherring2@gmail.com>
+From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
+Date: Wed, 20 Apr 2011 06:56:32 +0000
+Subject: [RFC PATCH V3 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and
+Message-Id: <20110420065542.332.76633.stgit@tringupt.in.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
+References: <20110420065445.332.13688.stgit@tringupt.in.ibm.com>
+In-Reply-To: <20110420065445.332.13688.stgit@tringupt.in.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com
+Cc: linux-kernel@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, davinci-linux-open-source@linux.davincidsp.com, linux-omap@vger.kernel.org, linux-acpi@vger.kernel.org
 
-From: Rob Herring <rob.herring@calxeda.com>
+The cpuidle_device->prepare() mechanism causes updates to the
+cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+to tell the governor not to chose a state on a per-cpu basis at
+run-time. State demotion is now handled by the driver and it returns
+the actual state entered. Hence, this mechanism is not required.
+Also this removes per-cpu flags from cpuidle_state enabling
+it to be made global.
 
-Cortex-A9 SCU based platforms use the same code for smp_init_cpus, so create
-a common implementation for systems with an SCU.
-
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+Signed-off-by: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
 ---
- arch/arm/include/asm/smp_scu.h |    1 +
- arch/arm/kernel/smp_scu.c      |   19 +++++++++++++++++++
- 2 files changed, 20 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/include/asm/smp_scu.h b/arch/arm/include/asm/smp_scu.h
-index 4eb6d00..6b03557 100644
---- a/arch/arm/include/asm/smp_scu.h
-+++ b/arch/arm/include/asm/smp_scu.h
-@@ -7,6 +7,7 @@
- 
- #ifndef __ASSEMBLER__
- unsigned int scu_get_core_count(void __iomem *);
-+void scu_init_cpus(void __iomem *);
- void scu_enable(void __iomem *);
- int scu_power_mode(void __iomem *, unsigned int);
+ drivers/cpuidle/cpuidle.c        |   10 ----------
+ drivers/cpuidle/governors/menu.c |    2 --
+ include/linux/cpuidle.h          |    3 ---
+ 3 files changed, 0 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index 355b078..92a6216 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -75,16 +75,6 @@ static void cpuidle_idle_call(void)
+ 	hrtimer_peek_ahead_timers();
  #endif
-diff --git a/arch/arm/kernel/smp_scu.c b/arch/arm/kernel/smp_scu.c
-index a1e757c..e58b8c4 100644
---- a/arch/arm/kernel/smp_scu.c
-+++ b/arch/arm/kernel/smp_scu.c
-@@ -29,6 +29,25 @@ unsigned int __init scu_get_core_count(void __iomem *scu_base)
- 	return (ncores & 0x03) + 1;
- }
  
-+void __init scu_init_cpus(void __iomem *scu_base)
-+{
-+	unsigned int i, ncores;
-+
-+	ncores = scu_get_core_count(scu_base);
-+
-+	/* sanity check */
-+	if (ncores > NR_CPUS) {
-+		printk(KERN_WARNING
-+		       "SCU: No. of cores (%d) greater than configured "
-+		       "maximum of %d - clipping\n",
-+		       ncores, NR_CPUS);
-+		ncores = NR_CPUS;
-+	}
-+
-+	for (i = 0; i < ncores; i++)
-+		set_cpu_possible(i, true);
-+}
-+
- /*
-  * Enable the SCU
-  */
--- 
-1.7.1
+-	/*
+-	 * Call the device's prepare function before calling the
+-	 * governor's select function.  ->prepare gives the device's
+-	 * cpuidle driver a chance to update any dynamic information
+-	 * of its cpuidle states for the current idle period, e.g.
+-	 * state availability, latencies, residencies, etc.
+-	 */
+-	if (dev->prepare)
+-		dev->prepare(dev);
+-
+ 	/* ask the governor for the next state */
+ 	next_state = cpuidle_curr_governor->select(dev);
+ 	if (need_resched()) {
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index 70d9982..40b5630 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -286,8 +286,6 @@ static int menu_select(struct cpuidle_device *dev)
+ 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
+ 		struct cpuidle_state *s = &dev->states[i];
+ 
+-		if (s->flags & CPUIDLE_FLAG_IGNORE)
+-			continue;
+ 		if (s->target_residency > data->predicted_us)
+ 			continue;
+ 		if (s->exit_latency > latency_req)
+diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
+index 45eef60..a3306be 100644
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -47,7 +47,6 @@ struct cpuidle_state {
+ 
+ /* Idle State Flags */
+ #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
+-#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 
+ #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+ 
+@@ -93,8 +92,6 @@ struct cpuidle_device {
+ 	struct completion	kobj_unregister;
+ 	void			*governor_data;
+ 	int			safe_state_index;
+-
+-	int (*prepare)		(struct cpuidle_device *dev);
+ };
+ 
+ DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
 
