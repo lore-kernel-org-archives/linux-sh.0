@@ -1,85 +1,93 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 Apr 2011 17:39:32 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372 Core Standby CPUIdle
-Message-Id: <20110428173932.3811.2688.sendpatchset@t400s>
+Date: Thu, 21 Apr 2011 13:22:54 +0000
+Subject: [PATCH] i2c: i2c-sh_mobile bus speed platform data
+Message-Id: <20110421132254.3725.84300.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110428172808.3636.13888.sendpatchset@t400s>
-In-Reply-To: <20110428172808.3636.13888.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, lethal@linux-sh.org, simon@horms.net, ben-linux@fluff.org, khali@linux-fr.org, Magnus Damm <magnus.damm@gmail.com>
 
 From: Magnus Damm <damm@opensource.se>
 
-This patch ties in the previously added sh7372 sleep
-mode known as Core Standby together with the shared
-SH-Mobile ARM CPUIdle implementation.
+Add support to the i2c-sh_mobile driver for setting
+the I2C bus speed using platform data.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/pm-sh7372.c |   33 +++++++++++++++++++++++++++++++--
- 1 file changed, 31 insertions(+), 2 deletions(-)
+ drivers/i2c/busses/i2c-sh_mobile.c |   13 +++++++++++--
+ include/linux/i2c-sh_mobile.h      |   10 ++++++++++
+ 2 files changed, 21 insertions(+), 2 deletions(-)
 
---- 0003/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-04-29 02:09:33.000000000 +0900
-@@ -10,6 +10,7 @@
+--- 0013/drivers/i2c/busses/i2c-sh_mobile.c
++++ work/drivers/i2c/busses/i2c-sh_mobile.c	2011-04-21 20:20:23.000000000 +0900
+@@ -32,6 +32,7 @@
+ #include <linux/clk.h>
+ #include <linux/io.h>
+ #include <linux/slab.h>
++#include <linux/i2c-sh_mobile.h>
  
- #include <linux/pm.h>
- #include <linux/suspend.h>
-+#include <linux/cpuidle.h>
- #include <linux/module.h>
- #include <linux/list.h>
- #include <linux/err.h>
-@@ -24,8 +25,7 @@
- #define SBAR 0xe6180020
- #define APARMBAREA 0xe6f10020
+ /* Transmit operation:                                                      */
+ /*                                                                          */
+@@ -117,7 +118,7 @@ struct sh_mobile_i2c_data {
+ 	struct device *dev;
+ 	void __iomem *reg;
+ 	struct i2c_adapter adap;
+-
++	unsigned long bus_speed;
+ 	struct clk *clk;
+ 	u_int8_t icic;
+ 	u_int8_t iccl;
+@@ -205,7 +206,7 @@ static void activate_ch(struct sh_mobile
+ 	 * We also round off the result.
+ 	 */
+ 	num = i2c_clk * 5;
+-	denom = NORMAL_SPEED * 9;
++	denom = pd->bus_speed * 9;
+ 	tmp = num * 10 / denom;
+ 	if (tmp % 10 >= 5)
+ 		pd->iccl = (u_int8_t)((num/denom) + 1);
+@@ -574,6 +575,7 @@ static int sh_mobile_i2c_hook_irqs(struc
  
--#ifdef CONFIG_SUSPEND
--static void sh7372_enter_core_standby(void)
-+void sh7372_enter_core_standby(void)
+ static int sh_mobile_i2c_probe(struct platform_device *dev)
  {
- 	void __iomem *smfram = (void __iomem *)SMFRAM;
++	struct i2c_sh_mobile_platform_data *pdata = dev->dev.platform_data;
+ 	struct sh_mobile_i2c_data *pd;
+ 	struct i2c_adapter *adap;
+ 	struct resource *res;
+@@ -618,6 +620,11 @@ static int sh_mobile_i2c_probe(struct pl
+ 		goto err_irq;
+ 	}
  
-@@ -51,6 +51,34 @@ static void sh7372_enter_core_standby(vo
- 	__raw_writel(0, SBAR); /* disable reset vector translation */
- }
++	/* Use platformd data bus speed or NORMAL_SPEED */
++	pd->bus_speed = NORMAL_SPEED;
++	if (pdata && pdata->bus_speed)
++		pd->bus_speed = pdata->bus_speed;
++
+ 	/* The IIC blocks on SH-Mobile ARM processors
+ 	 * come with two new bits in ICIC.
+ 	 */
+@@ -658,6 +665,8 @@ static int sh_mobile_i2c_probe(struct pl
+ 		goto err_all;
+ 	}
  
-+#ifdef CONFIG_CPU_IDLE
-+static void sh7372_cpuidle_setup(struct cpuidle_device *dev)
-+{
-+	struct cpuidle_state *state;
-+	int i = dev->state_count;
-+
-+	state = &dev->states[i];
-+	snprintf(state->name, CPUIDLE_NAME_LEN, "C2");
-+	strncpy(state->desc, "Core Standby Mode", CPUIDLE_DESC_LEN);
-+	state->exit_latency = 10;
-+	state->target_residency = 20 + 10;
-+	state->power_usage = 1; /* perhaps not */
-+	state->flags = 0;
-+	state->flags |= CPUIDLE_FLAG_TIME_VALID;
-+	shmobile_cpuidle_modes[i] = sh7372_enter_core_standby;
-+
-+	dev->state_count = i + 1;
-+}
-+
-+static void sh7372_cpuidle_init(void)
-+{
-+	shmobile_cpuidle_setup = sh7372_cpuidle_setup;
-+}
-+#else
-+static void sh7372_cpuidle_init(void) {}
-+#endif
-+
-+#ifdef CONFIG_SUSPEND
- static int sh7372_enter_suspend(suspend_state_t suspend_state)
- {
- 	sh7372_enter_core_standby();
-@@ -76,4 +104,5 @@ void __init sh7372_pm_init(void)
- 	__raw_writel(0x00000000, DBGREG1);
++	dev_info(&dev->dev, "I2C adapter %d with bus speed %lu Hz\n",
++		 adap->nr, pd->bus_speed);
+ 	return 0;
  
- 	sh7372_suspend_init();
-+	sh7372_cpuidle_init();
- }
+  err_all:
+--- /dev/null
++++ work/include/linux/i2c-sh_mobile.h	2011-04-21 20:06:59.000000000 +0900
+@@ -0,0 +1,10 @@
++#ifndef __I2C_SH_MOBILE_H__
++#define __I2C_SH_MOBILE_H__
++
++#include <linux/platform_device.h>
++
++struct i2c_sh_mobile_platform_data {
++	unsigned long bus_speed;
++};
++
++#endif /* __I2C_SH_MOBILE_H__ */
