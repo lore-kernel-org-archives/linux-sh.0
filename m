@@ -1,187 +1,249 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 24 Apr 2011 21:41:26 +0000
-Subject: [PATCH 5/9] OMAP2+ / PM: move runtime PM implementation to use device power domains
-Message-Id: <201104242341.26825.rjw@sisk.pl>
+From: Saravana Kannan <skannan@codeaurora.org>
+Date: Thu, 21 Apr 2011 06:58:50 +0000
+Subject: Re: [PATCH RFC] clk: add support for automatic parent handling
+Message-Id: <4DAFD5AA.9020404@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
-In-Reply-To: <201104242330.13607.rjw@sisk.pl>
+References: <alpine.LFD.2.00.1104192339180.2744@localhost6.localdomain6>	<1303308457-7501-1-git-send-email-u.kleine-koenig@pengutronix.de>	<alpine.LFD.2.02.1104201704350.3323@ionos>	<20110420185922.GD31131@pengutronix.de>
+	<alpine.LFD.2.02.1104202113250.3323@ionos>
+In-Reply-To: <alpine.LFD.2.02.1104202113250.3323@ionos>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kevin Hilman <khilman@ti.com>
+Like most of what you had to say. Although, I think Jeremy did a pretty=20
+good job of trying to push things along in the right direction. So, I=20
+wouldn't call this an utter failure. I hope you aren't confusing=20
+Jeremy's patches with the additional patches that Sascha is adding on=20
+top. I haven't looked much at Sascha's patch series -- so I can't=20
+comment on them.
 
-In commit 7538e3db6e015e890825fbd9f8659952896ddd5b (PM: add support
-for device power domains) a better way for handling platform-specific
-power hooks was introduced.
+More comments follow.
 
-Rather than using the platform_bus dev_pm_ops overrides
-(platform_bus_set_pm_ops()), this patch moves the OMAP runtime PM
-implementation over to using device power domains.
+On 04/20/2011 12:52 PM, Thomas Gleixner wrote:
+> On Wed, 20 Apr 2011, Uwe Kleine-K=F6nig wrote:
+>> On Wed, Apr 20, 2011 at 06:16:39PM +0200, Thomas Gleixner wrote:
+>>> On Wed, 20 Apr 2011, Uwe Kleine-K=F6nig wrote:
+>>>
+>>> Very useful changelog.
+>> IMHO OK for a RFC patch.
+>
+> Not at all.
+>
+>>>
+>>> And this whole mess should be written:
+>>>
+>>>      ret =3D clk_prepare(clk->parent);
+>>>      if (ret)
+>>> 		return ret;
+>>>
+>>> Which returns 0 when there is no parent and it also returns 0 when
+>>> there is no prepare callback for the parent. Why the hell do we need
+>>> all this ERRPTR checking mess and all this conditional crap ?
+>>
+>> struct clk has no parent member, there is only clk_get_parent(). If
+>
+> Which is a complete failure to begin with. Why the heck do you need a
+> callback to figure that out?
+>
+> Because someone claimed, that you need a callback to make it safe from
+> changing? Or what's the reason for this?
+>
+>> there is no parent it returns ERR_PTR(-ENOSYS) and if you pass that
+>> to clk_prepare it tries to dereference it. So either it must not be
+>> called with an error pointer or clk_prepare et al. need adaption to
+>> handle
+>
+> The whole clk struct is an utter failure.
+>
+> It's simply the least common denominator of all clk madness in the
+> tree. Which results in a half documented data structure and a handful
+> helper functions of which most of them are exported, though the
+> functionality in them is less than the overhead of the EXPORT_SYMBOL.
+>
+> That's not an abstraction and neither it's a framework. It's a half
+> arsed conglomorate of primitives w/o the minimal documentation how
+> those primitives should be used and why they are there in the first
+> place.
+>
+> This is new code and it should be aimed to cleanup things not to
+> shuffle things around in a frenzy.
+>
+> So what's wrong with that code:
+>
+> 1) struct clk is just a collection of function pointers and two locks
+>
+>     It lacks:
+>
+>     - a flag field for properties
+Agree. I would very much like it.
 
-Since OMAP is the only user of platform_bus_set_pm_ops(), that
-interface can be removed (and will be in a forthcoming patch.)
+>     - a field for the parent
 
-[rjw: Rebased on top of a previous change modifying the handling of
- power domains by the PM core so that power domain callbacks take
- precendence over subsystem-level PM callbacks.]
+Agree.
 
-Signed-off-by: Kevin Hilman <khilman@ti.com>
-Acked-by: Grant Likely <grant.likely@secretlab.ca>
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- arch/arm/mach-omap2/Makefile     |    6 +-
- arch/arm/mach-omap2/pm_bus.c     |   85 ---------------------------------------
- arch/arm/plat-omap/omap_device.c |   23 ++++++++++
- 3 files changed, 26 insertions(+), 88 deletions(-)
- delete mode 100644 arch/arm/mach-omap2/pm_bus.c
+>     - a field for the current clock rate
 
-Index: linux-2.6/arch/arm/mach-omap2/Makefile
-=================================--- linux-2.6.orig/arch/arm/mach-omap2/Makefile
-+++ linux-2.6/arch/arm/mach-omap2/Makefile
-@@ -59,10 +59,10 @@ endif
- # Power Management
- ifeq ($(CONFIG_PM),y)
- obj-$(CONFIG_ARCH_OMAP2)		+= pm24xx.o
--obj-$(CONFIG_ARCH_OMAP2)		+= sleep24xx.o pm_bus.o
-+obj-$(CONFIG_ARCH_OMAP2)		+= sleep24xx.o
- obj-$(CONFIG_ARCH_OMAP3)		+= pm34xx.o sleep34xx.o \
--					   cpuidle34xx.o pm_bus.o
--obj-$(CONFIG_ARCH_OMAP4)		+= pm44xx.o pm_bus.o
-+					   cpuidle34xx.o
-+obj-$(CONFIG_ARCH_OMAP4)		+= pm44xx.o
- obj-$(CONFIG_PM_DEBUG)			+= pm-debug.o
- obj-$(CONFIG_OMAP_SMARTREFLEX)          += sr_device.o smartreflex.o
- obj-$(CONFIG_OMAP_SMARTREFLEX_CLASS3)	+= smartreflex-class3.o
-Index: linux-2.6/arch/arm/mach-omap2/pm_bus.c
-=================================--- linux-2.6.orig/arch/arm/mach-omap2/pm_bus.c
-+++ /dev/null
-@@ -1,85 +0,0 @@
--/*
-- * Runtime PM support code for OMAP
-- *
-- * Author: Kevin Hilman, Deep Root Systems, LLC
-- *
-- * Copyright (C) 2010 Texas Instruments, Inc.
-- *
-- * This file is licensed under the terms of the GNU General Public
-- * License version 2. This program is licensed "as is" without any
-- * warranty of any kind, whether express or implied.
-- */
--#include <linux/init.h>
--#include <linux/kernel.h>
--#include <linux/io.h>
--#include <linux/pm_runtime.h>
--#include <linux/platform_device.h>
--#include <linux/mutex.h>
--
--#include <plat/omap_device.h>
--#include <plat/omap-pm.h>
--
--#ifdef CONFIG_PM_RUNTIME
--static int omap_pm_runtime_suspend(struct device *dev)
--{
--	struct platform_device *pdev = to_platform_device(dev);
--	int r, ret = 0;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	ret = pm_generic_runtime_suspend(dev);
--
--	if (!ret && dev->parent = &omap_device_parent) {
--		r = omap_device_idle(pdev);
--		WARN_ON(r);
--	}
--
--	return ret;
--};
--
--static int omap_pm_runtime_resume(struct device *dev)
--{
--	struct platform_device *pdev = to_platform_device(dev);
--	int r;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	if (dev->parent = &omap_device_parent) {
--		r = omap_device_enable(pdev);
--		WARN_ON(r);
--	}
--
--	return pm_generic_runtime_resume(dev);
--};
--#else
--#define omap_pm_runtime_suspend NULL
--#define omap_pm_runtime_resume NULL
--#endif /* CONFIG_PM_RUNTIME */
--
--static int __init omap_pm_runtime_init(void)
--{
--	const struct dev_pm_ops *pm;
--	struct dev_pm_ops *omap_pm;
--
--	pm = platform_bus_get_pm_ops();
--	if (!pm) {
--		pr_err("%s: unable to get dev_pm_ops from platform_bus\n",
--			__func__);
--		return -ENODEV;
--	}
--
--	omap_pm = kmemdup(pm, sizeof(struct dev_pm_ops), GFP_KERNEL);
--	if (!omap_pm) {
--		pr_err("%s: unable to alloc memory for new dev_pm_ops\n",
--			__func__);
--		return -ENOMEM;
--	}
--
--	omap_pm->runtime_suspend = omap_pm_runtime_suspend;
--	omap_pm->runtime_resume = omap_pm_runtime_resume;
--
--	platform_bus_set_pm_ops(omap_pm);
--
--	return 0;
--}
--core_initcall(omap_pm_runtime_init);
-Index: linux-2.6/arch/arm/plat-omap/omap_device.c
-=================================--- linux-2.6.orig/arch/arm/plat-omap/omap_device.c
-+++ linux-2.6/arch/arm/plat-omap/omap_device.c
-@@ -536,6 +536,28 @@ int omap_early_device_register(struct om
- 	return 0;
- }
- 
-+static int _od_runtime_suspend(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+
-+	return omap_device_idle(pdev);
-+}
-+
-+static int _od_runtime_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+
-+	return omap_device_enable(pdev);
-+}
-+
-+static struct dev_power_domain omap_device_power_domain = {
-+	.ops = {
-+		.runtime_suspend = _od_runtime_suspend,
-+		.runtime_resume = _od_runtime_resume,
-+		USE_PLATFORM_PM_SLEEP_OPS
-+	}
-+};
-+
- /**
-  * omap_device_register - register an omap_device with one omap_hwmod
-  * @od: struct omap_device * to register
-@@ -549,6 +571,7 @@ int omap_device_register(struct omap_dev
- 	pr_debug("omap_device: %s: registering\n", od->pdev.name);
- 
- 	od->pdev.dev.parent = &omap_device_parent;
-+	od->pdev.dev.pwr_domain = &omap_device_power_domain;
- 	return platform_device_register(&od->pdev);
- }
- 
+Meh! Not a big deal. Some clocks don't have the concept of setting their=20
+rate since they share a parent with another unrelated clock (Ah, looks=20
+like you talk about with the tree diagram). So, it might be easier to=20
+have the rate inside each implementation if they need it. I shouldn't=20
+add too much code.
 
+>     - a field for the base register
+
+Definitely no. It's completely useless for clocks whose registers don't=20
+all line up with fixed offsets from the base register. Now I will have=20
+to put one register here and the rest of the registers in the internal data?
+
+>     - a struct for the offsets of the most common registers relative to
+>       base
+
+Ok, you thought about rest of the registers. But, how can this fit in=20
+the common code? Each clock h/w implementation has totally different set=20
+of registers. Sometimes different even within the same SoC. This would=20
+be quite wasteful and doesn't even make sense to store at the top level.=20
+Also, storing offsets is a pain in the neck when the register space is=20
+not clean (happens more often than we would like :-().
+
+>     optionally a set of common register accessor functions like I did
+>     for the generic irq chip.
+
+Again, I don't see the point in having this in the common code. May be=20
+I'm missing something?
+
+IMO, a better option instead of the base register and the offsets would=20
+be an option to have a priv_data pointer. I forgot the exact use case,=20
+but we thought that would have been helpful when we tried to port the=20
+msm clock driver in our tree on top of Jeremy's patches.
+
+> 2) The "framework" API is just a set of low level primitive helper
+>     functions
+>
+>     It lacks:
+>
+>     - proper refcounting. clk_get() / clk_put() should do that at the
+>       framework level.
+
+This has nothing to do with the patches Jeremy made. clk_get()/_put() is=20
+in clkdev. Also, I'm not sure if clk_get()/put() needs refcounting.=20
+That's like asking kalloc/kfree to have refcounting.
+
+>     - the ability to propagate enable/disable/prepare/unprepare down
+>       through the parent tree
+
+Agree. That would be nice. I think the main reason people were not=20
+pushing for it was to do things in manageable steps. It took a long time=20
+for people to agree on even the current framework Jeremy added.
+
+>     - proper mechanisms to sanity check clk_set_parent(),
+>       clk_set_rate() et. al.
+>
+>       This is not a implementation detail inside a specific clock. It's
+>       a problem which is common at least on the tree level:
+>
+>                      rootclk
+>                   /          \
+>                clk1          clk2
+>               /   \
+>             clk3  clk4
+> 	   /
+>           clk5
+>
+>      So now you want to change the rate of clk1. Can you do that?
+>
+>      No, but where is the sanity check which prevents that ?
+ >
+>          In the clk1->set_rate() callback ?
+>
+> 	Great, that's the wrong place.
+
+Ah! Nice to see that this bothers you too. This has been a point of=20
+contention with in our internal team too. I keep pushing back on=20
+requests to make child clock's set rate propagate up to the patent when=20
+the parent has two unrelated child clocks going to different devices.
+
+IMO, the set rate should only work on the parent clock and if there=20
+really in a need to change the child clock rates, then the users of=20
+those child clocks will have to co-ordinate it amongst themselves.=20
+Although, our use case is a bit simpler in that most of the time the=20
+child clocks are direct branches (no dividers) of the parent.
+
+To handle, more complex cases like these, I think a
+clk_set_divider(div)
+and/or
+clk_set_frac_mult(numerator, denominator)
+
+might be an API that we should add. If a child clock cares only about a=20
+ratio with the parent clock, clk_set_divider() is a much better API that=20
+clk_set_rate(). And we have real use cases of for these in MSM.
+
+>      So now you want to switch the parent of clk3 from clk1 to
+>      clk2. Can you do that?
+
+At least in h/w I have seen so far, all the clocks that can really=20
+change parents fall under one of these categories:
+1. A clock with a mux for input from several PLLs running at fixed rates=20
+(fixed at least after boot). So, these clocks can actually generate=20
+frequencies that they can guarantee won't change from underneath.
+
+2. Clocks with are a mux from a bunch of external inputs that's=20
+completely end user/board defined.
+
+For (1) the parent is really changed as part of "clk_set_rate()". For=20
+(2) I think we should just let set_parent() control the mux.
+
+I'm not sure how realistic/common your example of switching parents for=20
+clk3 is. May be it is -- I would interested in what people have to say.
+
+So, between clk_set_divider(), clk_set_parent() and clk_set_rate(), I=20
+think we should be able to cover most clock trees as long as we don't=20
+propagate clk_set_rate() to parents with more than one children. In=20
+those case, the children should just implement clk_set_divider() (or not=20
+even that if there is no divider) and not allow clk_set_rate().
+
+>      No, but where is the sanity check which prevents that ?
+>
+>      	In the clk3->set_parent() callback ?
+>
+> 	Again, the wrong place.
+>
+>      And these are not problems of a particular clk implementation,
+>      these are general problems and those want to be addressed in a
+>      real framework.
+>
+>      It's debatable, whether you want to be able to change clocks which
+>      have active childs or not. If not the decision function is pretty
+>      simple. If yes, you need a list of child clks which you want to
+>      consult first before committing the change.
+>
+> So unless you fix this stuff you should not even think about
+> converting anything to this "framework". That's just waste of time and
+> effort. Aside of declaring it stable and useful ....
+
+I think you haven't seen all the repetition of refcounting and each=20
+mach's implementation of some variant of clock ops. The current patch=20
+set from Jeremy will certainly help cut down some of that. If we get the=20
+"enable parent before you enable child, etc" in now, I don't think there=20
+will be much churn when we try to add code to enforce the tree=20
+restrictions you mention above.
+
+> The least thing which we need now are half baken "abstractions" which
+> just shuffle code around for no value.
+
+While a lot of your points are correct, I don't think the current=20
+patches from Jeremy are useless. May be I'm completely mistaken in=20
+assuming that you are referring to Jeremy's patches?
+
+Btw, on a slight tangent, there is also the problem of clk_round_rate()=20
+not being sufficient when a driver is trying to work across different=20
+mach's. I think we need a clk_set_rate_range(min, ideal, max) but I can=20
+start a separate thread on that if you want. I talked about it a bit in=20
+another thread.
+
+Thanks,
+Saravana
+
+--=20
+Sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
