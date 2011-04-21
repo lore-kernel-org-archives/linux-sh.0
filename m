@@ -1,88 +1,45 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Thu, 07 Apr 2011 00:02:49 +0000
-Subject: [PATCH/RFC 6/6] Revert "driver core: platform_bus: allow runtime override of dev_pm_ops"
-Message-Id: <1302134569-22825-7-git-send-email-khilman@ti.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Apr 2011 13:20:39 +0000
+Subject: [PATCH] i2c: i2c-sh_mobile clock string removal
+Message-Id: <20110421132039.3717.13185.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1302134569-22825-1-git-send-email-khilman@ti.com>
-In-Reply-To: <1302134569-22825-1-git-send-email-khilman@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, lethal@linux-sh.org, simon@horms.net, ben-linux@fluff.org, khali@linux-fr.org, Magnus Damm <magnus.damm@gmail.com>
 
-This reverts commit c64a0926710153b9d44c979d2942f4a8648fd74e.
+From: Magnus Damm <damm@opensource.se>
 
-The platform_bus_set_pm_ops() is deprecated in favor of the new device
-power domain infrastructre implemented in commit
-7538e3db6e015e890825fbd9f8659952896ddd5b (PM: add support for device
-power domains)
+Remove the clock string magic from the i2c-sh_mobile driver
+now when all platforms support clkdev properly.
 
-Signed-off-by: Kevin Hilman <khilman@ti.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/base/platform.c         |   35 -----------------------------------
- include/linux/platform_device.h |    3 ---
- 2 files changed, 0 insertions(+), 38 deletions(-)
 
-diff --git a/drivers/base/platform.c b/drivers/base/platform.c
-index f051cff..46335ca 100644
---- a/drivers/base/platform.c
-+++ b/drivers/base/platform.c
-@@ -976,41 +976,6 @@ struct bus_type platform_bus_type = {
- };
- EXPORT_SYMBOL_GPL(platform_bus_type);
- 
--/**
-- * platform_bus_get_pm_ops() - return pointer to busses dev_pm_ops
-- *
-- * This function can be used by platform code to get the current
-- * set of dev_pm_ops functions used by the platform_bus_type.
-- */
--const struct dev_pm_ops * __init platform_bus_get_pm_ops(void)
--{
--	return platform_bus_type.pm;
--}
--
--/**
-- * platform_bus_set_pm_ops() - update dev_pm_ops for the platform_bus_type
-- *
-- * @pm: pointer to new dev_pm_ops struct to be used for platform_bus_type
-- *
-- * Platform code can override the dev_pm_ops methods of
-- * platform_bus_type by using this function.  It is expected that
-- * platform code will first do a platform_bus_get_pm_ops(), then
-- * kmemdup it, then customize selected methods and pass a pointer to
-- * the new struct dev_pm_ops to this function.
-- *
-- * Since platform-specific code is customizing methods for *all*
-- * devices (not just platform-specific devices) it is expected that
-- * any custom overrides of these functions will keep existing behavior
-- * and simply extend it.  For example, any customization of the
-- * runtime PM methods should continue to call the pm_generic_*
-- * functions as the default ones do in addition to the
-- * platform-specific behavior.
-- */
--void __init platform_bus_set_pm_ops(const struct dev_pm_ops *pm)
--{
--	platform_bus_type.pm = pm;
--}
--
- int __init platform_bus_init(void)
- {
- 	int error;
-diff --git a/include/linux/platform_device.h b/include/linux/platform_device.h
-index d96db98..53745dc 100644
---- a/include/linux/platform_device.h
-+++ b/include/linux/platform_device.h
-@@ -145,9 +145,6 @@ extern struct platform_device *platform_create_bundle(struct platform_driver *dr
- 					struct resource *res, unsigned int n_res,
- 					const void *data, size_t size);
- 
--extern const struct dev_pm_ops * platform_bus_get_pm_ops(void);
--extern void platform_bus_set_pm_ops(const struct dev_pm_ops *pm);
--
- /* early platform driver interface */
- struct early_platform_driver {
- 	const char *class_str;
--- 
-1.7.4
+ drivers/i2c/busses/i2c-sh_mobile.c |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
+--- 0005/drivers/i2c/busses/i2c-sh_mobile.c
++++ work/drivers/i2c/busses/i2c-sh_mobile.c	2011-04-21 19:53:51.000000000 +0900
+@@ -577,7 +577,6 @@ static int sh_mobile_i2c_probe(struct pl
+ 	struct sh_mobile_i2c_data *pd;
+ 	struct i2c_adapter *adap;
+ 	struct resource *res;
+-	char clk_name[8];
+ 	int size;
+ 	int ret;
+ 
+@@ -587,10 +586,9 @@ static int sh_mobile_i2c_probe(struct pl
+ 		return -ENOMEM;
+ 	}
+ 
+-	snprintf(clk_name, sizeof(clk_name), "i2c%d", dev->id);
+-	pd->clk = clk_get(&dev->dev, clk_name);
++	pd->clk = clk_get(&dev->dev, NULL);
+ 	if (IS_ERR(pd->clk)) {
+-		dev_err(&dev->dev, "cannot get clock \"%s\"\n", clk_name);
++		dev_err(&dev->dev, "cannot get clock\n");
+ 		ret = PTR_ERR(pd->clk);
+ 		goto err;
+ 	}
