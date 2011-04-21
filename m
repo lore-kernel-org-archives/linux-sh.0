@@ -1,37 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Mar 2011 02:57:11 +0000
-Subject: [PATCH 0/4] [rfc v3] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
-Message-Id: <1300071435-26759-1-git-send-email-horms@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Apr 2011 13:38:24 +0000
+Subject: [PATCH] input: sh_keysc: Switch to threaded IRQ handler
+Message-Id: <20110421133824.8698.22092.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-input@vger.kernel.org
+Cc: lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, dmitry.torokhov@gmail.com, simon@horms.net, linux-sh@vger.kernel.org
 
-This allows a ROM-able zImage to be written to eSD and for SuperH Mobile
-ARM to boot directly from the SDHI hardware block.
+From: Magnus Damm <damm@opensource.se>
 
-The first three patches shuffle some code around.
-The fourth patch has the new boot code and the bulk of the code.
+Update the KEYSC driver to make use of threaded IRQs
+with IRQF_ONESHOT.
 
- Documentation/arm/SH-Mobile/zboot-rom-sdhi.txt       |   43 +
- arch/arm/Kconfig                                     |   35 -
- arch/arm/boot/compressed/Makefile                    |    9 
- arch/arm/boot/compressed/head-shmobile.S             |   12 
- arch/arm/boot/compressed/mmcif-sh7372.c              |   14 
- arch/arm/boot/compressed/sdhi-shmobile.c             |  501 ++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/mmc-ap4eb.h      |   29 +
- arch/arm/mach-shmobile/include/mach/mmc-mackerel.h   |   38 +
- arch/arm/mach-shmobile/include/mach/mmc.h            |   18 
- arch/arm/mach-shmobile/include/mach/mmcif-ap4eb.h    |   29 -
- arch/arm/mach-shmobile/include/mach/mmcif-mackerel.h |   39 -
- arch/arm/mach-shmobile/include/mach/mmcif.h          |   18 
- arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h    |   58 ++
- arch/arm/mach-shmobile/include/mach/sdhi.h           |   16 
- arch/sh/boot/romimage/mmcif-sh7724.c                 |   10 
- drivers/mmc/host/tmio_mmc.c                          |   46 -
- include/linux/mmc/boot.h                             |    7 
- include/linux/mmc/sh_mmcif.h                         |    3 
- include/linux/mmc/tmio.h                             |   49 +
- 19 files changed, 812 insertions(+), 162 deletions(-)
+Also pass dev_name() as string for /proc/interrupts.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/input/keyboard/sh_keysc.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0011/drivers/input/keyboard/sh_keysc.c
++++ work/drivers/input/keyboard/sh_keysc.c	2011-04-21 19:42:33.000000000 +0900
+@@ -231,7 +231,8 @@ static int __devinit sh_keysc_probe(stru
+ 	input->keycodesize = sizeof(pdata->keycodes[0]);
+ 	input->keycodemax = ARRAY_SIZE(pdata->keycodes);
+ 
+-	error = request_irq(irq, sh_keysc_isr, 0, pdev->name, pdev);
++	error = request_threaded_irq(irq, NULL, sh_keysc_isr, IRQF_ONESHOT,
++				     dev_name(&pdev->dev), pdev);
+ 	if (error) {
+ 		dev_err(&pdev->dev, "failed to request IRQ\n");
+ 		goto err3;
