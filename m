@@ -1,249 +1,223 @@
-From: Saravana Kannan <skannan@codeaurora.org>
-Date: Thu, 21 Apr 2011 06:58:50 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 21 Apr 2011 10:33:49 +0000
 Subject: Re: [PATCH RFC] clk: add support for automatic parent handling
-Message-Id: <4DAFD5AA.9020404@codeaurora.org>
+Message-Id: <alpine.LFD.2.02.1104211147300.3323@ionos>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.LFD.2.00.1104192339180.2744@localhost6.localdomain6>	<1303308457-7501-1-git-send-email-u.kleine-koenig@pengutronix.de>	<alpine.LFD.2.02.1104201704350.3323@ionos>	<20110420185922.GD31131@pengutronix.de>
+References: <alpine.LFD.2.00.1104192339180.2744@localhost6.localdomain6>
+	<1303308457-7501-1-git-send-email-u.kleine-koenig@pengutronix.de>
+	<alpine.LFD.2.02.1104201704350.3323@ionos>
+	<20110420185922.GD31131@pengutronix.de>
 	<alpine.LFD.2.02.1104202113250.3323@ionos>
-In-Reply-To: <alpine.LFD.2.02.1104202113250.3323@ionos>
+	<4DAFD5AA.9020404@codeaurora.org>
+In-Reply-To: <4DAFD5AA.9020404@codeaurora.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Like most of what you had to say. Although, I think Jeremy did a pretty=20
-good job of trying to push things along in the right direction. So, I=20
-wouldn't call this an utter failure. I hope you aren't confusing=20
-Jeremy's patches with the additional patches that Sascha is adding on=20
-top. I haven't looked much at Sascha's patch series -- so I can't=20
-comment on them.
+On Wed, 20 Apr 2011, Saravana Kannan wrote:
+> On 04/20/2011 12:52 PM, Thomas Gleixner wrote:
+> > So what's wrong with that code:
+> > 
+> > 1) struct clk is just a collection of function pointers and two locks
+> > 
+> >     It lacks:
+> > 
+> >     - a flag field for properties
+> Agree. I would very much like it.
+> 
+> >     - a field for the parent
+> 
+> Agree.
+> 
+> >     - a field for the current clock rate
+> 
+> Meh! Not a big deal. Some clocks don't have the concept of setting their rate
+> since they share a parent with another unrelated clock (Ah, looks like you
+> talk about with the tree diagram). So, it might be easier to have the rate
+> inside each implementation if they need it. I shouldn't add too much code.
 
-More comments follow.
-
-On 04/20/2011 12:52 PM, Thomas Gleixner wrote:
-> On Wed, 20 Apr 2011, Uwe Kleine-K=F6nig wrote:
->> On Wed, Apr 20, 2011 at 06:16:39PM +0200, Thomas Gleixner wrote:
->>> On Wed, 20 Apr 2011, Uwe Kleine-K=F6nig wrote:
->>>
->>> Very useful changelog.
->> IMHO OK for a RFC patch.
+No. Each clock has a rate, even if it's fixed and there is no point in
+calling down the tree to figure that out.
+ 
+> >     - a field for the base register
+> 
+> Definitely no. It's completely useless for clocks whose registers don't all
+> line up with fixed offsets from the base register. Now I will have to put one
+> register here and the rest of the registers in the internal data?
 >
-> Not at all.
->
->>>
->>> And this whole mess should be written:
->>>
->>>      ret =3D clk_prepare(clk->parent);
->>>      if (ret)
->>> 		return ret;
->>>
->>> Which returns 0 when there is no parent and it also returns 0 when
->>> there is no prepare callback for the parent. Why the hell do we need
->>> all this ERRPTR checking mess and all this conditional crap ?
->>
->> struct clk has no parent member, there is only clk_get_parent(). If
->
-> Which is a complete failure to begin with. Why the heck do you need a
-> callback to figure that out?
->
-> Because someone claimed, that you need a callback to make it safe from
-> changing? Or what's the reason for this?
->
->> there is no parent it returns ERR_PTR(-ENOSYS) and if you pass that
->> to clk_prepare it tries to dereference it. So either it must not be
->> called with an error pointer or clk_prepare et al. need adaption to
->> handle
->
-> The whole clk struct is an utter failure.
->
-> It's simply the least common denominator of all clk madness in the
-> tree. Which results in a half documented data structure and a handful
-> helper functions of which most of them are exported, though the
-> functionality in them is less than the overhead of the EXPORT_SYMBOL.
->
-> That's not an abstraction and neither it's a framework. It's a half
-> arsed conglomorate of primitives w/o the minimal documentation how
-> those primitives should be used and why they are there in the first
-> place.
->
-> This is new code and it should be aimed to cleanup things not to
-> shuffle things around in a frenzy.
->
-> So what's wrong with that code:
->
-> 1) struct clk is just a collection of function pointers and two locks
->
->     It lacks:
->
->     - a flag field for properties
-Agree. I would very much like it.
+> >     - a struct for the offsets of the most common registers relative to
+> >       base
+> 
+> Ok, you thought about rest of the registers. But, how can this fit in the
+> common code? Each clock h/w implementation has totally different set of
+> registers. Sometimes different even within the same SoC. This would be quite
+> wasteful and doesn't even make sense to store at the top level. Also, storing
+> offsets is a pain in the neck when the register space is not clean (happens
+> more often than we would like :-().
 
->     - a field for the parent
+Depends, there is a lot of sane hardware out there (not necessarily in
+the ARM SoC world). We can do with a pointer if the need arises.
+ 
+> >     optionally a set of common register accessor functions like I did
+> >     for the generic irq chip.
+> 
+> Again, I don't see the point in having this in the common code. May be I'm
+> missing something?
 
-Agree.
+See my RFC patch of a generic irq chip implementation and how much
+duplicated five line inline functions they removed.
+ 
+> IMO, a better option instead of the base register and the offsets would be an
+> option to have a priv_data pointer. I forgot the exact use case, but we
+> thought that would have been helpful when we tried to port the msm clock
+> driver in our tree on top of Jeremy's patches.
 
->     - a field for the current clock rate
+It works either way, but we should try to comeup with a sensible
+common base struct for sane hardware.
+ 
+> > 2) The "framework" API is just a set of low level primitive helper
+> >     functions
+> > 
+> >     It lacks:
+> > 
+> >     - proper refcounting. clk_get() / clk_put() should do that at the
+> >       framework level.
+> 
+> This has nothing to do with the patches Jeremy made. clk_get()/_put() is in
+> clkdev. Also, I'm not sure if clk_get()/put() needs refcounting. That's like
+> asking kalloc/kfree to have refcounting.
 
-Meh! Not a big deal. Some clocks don't have the concept of setting their=20
-rate since they share a parent with another unrelated clock (Ah, looks=20
-like you talk about with the tree diagram). So, it might be easier to=20
-have the rate inside each implementation if they need it. I shouldn't=20
-add too much code.
+Ok. I missed the clkdev part.
+ 
+> >     - the ability to propagate enable/disable/prepare/unprepare down
+> >       through the parent tree
+> 
+> Agree. That would be nice. I think the main reason people were not pushing for
+> it was to do things in manageable steps. It took a long time for people to
+> agree on even the current framework Jeremy added.
 
->     - a field for the base register
+Sad enough. But I'm not happy about that in any way. I know where it
+ends if you try to please everyone and agree on everything.
 
-Definitely no. It's completely useless for clocks whose registers don't=20
-all line up with fixed offsets from the base register. Now I will have=20
-to put one register here and the rest of the registers in the internal data?
+> >     - proper mechanisms to sanity check clk_set_parent(),
+> >       clk_set_rate() et. al.
+> > 
+> >       This is not a implementation detail inside a specific clock. It's
+> >       a problem which is common at least on the tree level:
+> > 
+> >                      rootclk
+> >                   /          \
+> >                clk1          clk2
+> >               /   \
+> >             clk3  clk4
+> > 	   /
+> >           clk5
+> > 
+> >      So now you want to change the rate of clk1. Can you do that?
+> > 
+> >      No, but where is the sanity check which prevents that ?
+> >
+> >          In the clk1->set_rate() callback ?
+> > 
+> > 	Great, that's the wrong place.
+> 
+> Ah! Nice to see that this bothers you too. This has been a point of contention
+> with in our internal team too. I keep pushing back on requests to make child
+> clock's set rate propagate up to the patent when the parent has two unrelated
+> child clocks going to different devices.
+> 
+> IMO, the set rate should only work on the parent clock and if there really in
+> a need to change the child clock rates, then the users of those child clocks
+> will have to co-ordinate it amongst themselves. Although, our use case is a
+> bit simpler in that most of the time the child clocks are direct branches (no
+> dividers) of the parent.
 
->     - a struct for the offsets of the most common registers relative to
->       base
+Still most of this should be handled in the common code. It's not a
+unique problem to a single hardware implementation. It's just a given
+problem due to the tree nature. And the current code completely lacks
+a representation of that and therefor all needs to be done at the
+implementation detail level.
+ 
+> I'm not sure how realistic/common your example of switching parents for clk3
+> is. May be it is -- I would interested in what people have to say.
 
-Ok, you thought about rest of the registers. But, how can this fit in=20
-the common code? Each clock h/w implementation has totally different set=20
-of registers. Sometimes different even within the same SoC. This would=20
-be quite wasteful and doesn't even make sense to store at the top level.=20
-Also, storing offsets is a pain in the neck when the register space is=20
-not clean (happens more often than we would like :-().
+I just used it to illustrate what common code should handle.
+ 
+> So, between clk_set_divider(), clk_set_parent() and clk_set_rate(), I think we
+> should be able to cover most clock trees as long as we don't propagate
+> clk_set_rate() to parents with more than one children. In those case, the
+> children should just implement clk_set_divider() (or not even that if there is
+> no divider) and not allow clk_set_rate().
 
->     optionally a set of common register accessor functions like I did
->     for the generic irq chip.
+The problem starts exactly at the point where you have all that
+propagation decision stuff in the chip implementation.
 
-Again, I don't see the point in having this in the common code. May be=20
-I'm missing something?
+clk_set_rate(clk, rate)
+{
+	u64 parent_rate = 0;
 
-IMO, a better option instead of the base register and the offsets would=20
-be an option to have a priv_data pointer. I forgot the exact use case,=20
-but we thought that would have been helpful when we tried to port the=20
-msm clock driver in our tree on top of Jeremy's patches.
+        if (clk->users > 1)
+	      	 return -EBUSY;
 
-> 2) The "framework" API is just a set of low level primitive helper
->     functions
->
->     It lacks:
->
->     - proper refcounting. clk_get() / clk_put() should do that at the
->       framework level.
+	if (!clk->set_rate)
+	   	 return rate = clk->rate ? 0 : -EINVAL;
 
-This has nothing to do with the patches Jeremy made. clk_get()/_put() is=20
-in clkdev. Also, I'm not sure if clk_get()/put() needs refcounting.=20
-That's like asking kalloc/kfree to have refcounting.
+	ret = clk->set_rate(rate, &div, &parent_rate);
+	if (!ret)
+		return 0;
 
->     - the ability to propagate enable/disable/prepare/unprepare down
->       through the parent tree
+	if (ret != NEED_PARENT_CHANGE)
+	   	return ret;
 
-Agree. That would be nice. I think the main reason people were not=20
-pushing for it was to do things in manageable steps. It took a long time=20
-for people to agree on even the current framework Jeremy added.
+	if (WARN_ON(!clk->parent))
+		return -EINVAL;
 
->     - proper mechanisms to sanity check clk_set_parent(),
->       clk_set_rate() et. al.
->
->       This is not a implementation detail inside a specific clock. It's
->       a problem which is common at least on the tree level:
->
->                      rootclk
->                   /          \
->                clk1          clk2
->               /   \
->             clk3  clk4
-> 	   /
->           clk5
->
->      So now you want to change the rate of clk1. Can you do that?
->
->      No, but where is the sanity check which prevents that ?
- >
->          In the clk1->set_rate() callback ?
->
-> 	Great, that's the wrong place.
+        ret = clk_set_rate(clk->parent, parent_rate);
+        return ret ? ret : clk->set_rate(rate, NULL);
+}
 
-Ah! Nice to see that this bothers you too. This has been a point of=20
-contention with in our internal team too. I keep pushing back on=20
-requests to make child clock's set rate propagate up to the patent when=20
-the parent has two unrelated child clocks going to different devices.
+Something along that will cover the tree traversal and remove the
+propagation from the chip implementations. 
 
-IMO, the set rate should only work on the parent clock and if there=20
-really in a need to change the child clock rates, then the users of=20
-those child clocks will have to co-ordinate it amongst themselves.=20
-Although, our use case is a bit simpler in that most of the time the=20
-child clocks are direct branches (no dividers) of the parent.
+> > So unless you fix this stuff you should not even think about
+> > converting anything to this "framework". That's just waste of time and
+> > effort. Aside of declaring it stable and useful ....
+> 
+> I think you haven't seen all the repetition of refcounting and each mach's
+> implementation of some variant of clock ops. The current patch set from Jeremy
 
-To handle, more complex cases like these, I think a
-clk_set_divider(div)
-and/or
-clk_set_frac_mult(numerator, denominator)
+Yes, I have looked through the maze as I went through all irq stuff
+recently. Jeremys stuff is a start, but I think we should start with
+something a bit more complete than that minimal set. I know the pain
+when you start with a minimal set and try to force people into
+cleaning up their stuff over and over. :(
 
-might be an API that we should add. If a child clock cares only about a=20
-ratio with the parent clock, clk_set_divider() is a much better API that=20
-clk_set_rate(). And we have real use cases of for these in MSM.
+And we can identify stuff already, so it should be added now.
 
->      So now you want to switch the parent of clk3 from clk1 to
->      clk2. Can you do that?
+> will certainly help cut down some of that. If we get the "enable parent before
+> you enable child, etc" in now, I don't think there will be much churn when we
+> try to add code to enforce the tree restrictions you mention above.
 
-At least in h/w I have seen so far, all the clocks that can really=20
-change parents fall under one of these categories:
-1. A clock with a mux for input from several PLLs running at fixed rates=20
-(fixed at least after boot). So, these clocks can actually generate=20
-frequencies that they can guarantee won't change from underneath.
+Yes, that's needs to be done before we start churning the tree.
+ 
+> > The least thing which we need now are half baken "abstractions" which
+> > just shuffle code around for no value.
+> 
+> While a lot of your points are correct, I don't think the current patches from
+> Jeremy are useless. May be I'm completely mistaken in assuming that you are
+> referring to Jeremy's patches?
 
-2. Clocks with are a mux from a bunch of external inputs that's=20
-completely end user/board defined.
+I'm not saying they are useless, but they need to be more complete
+before we start converting code to it.
+ 
+> Btw, on a slight tangent, there is also the problem of clk_round_rate() not
+> being sufficient when a driver is trying to work across different mach's. I
+> think we need a clk_set_rate_range(min, ideal, max) but I can start a separate
+> thread on that if you want. I talked about it a bit in another thread.
 
-For (1) the parent is really changed as part of "clk_set_rate()". For=20
-(2) I think we should just let set_parent() control the mux.
-
-I'm not sure how realistic/common your example of switching parents for=20
-clk3 is. May be it is -- I would interested in what people have to say.
-
-So, between clk_set_divider(), clk_set_parent() and clk_set_rate(), I=20
-think we should be able to cover most clock trees as long as we don't=20
-propagate clk_set_rate() to parents with more than one children. In=20
-those case, the children should just implement clk_set_divider() (or not=20
-even that if there is no divider) and not allow clk_set_rate().
-
->      No, but where is the sanity check which prevents that ?
->
->      	In the clk3->set_parent() callback ?
->
-> 	Again, the wrong place.
->
->      And these are not problems of a particular clk implementation,
->      these are general problems and those want to be addressed in a
->      real framework.
->
->      It's debatable, whether you want to be able to change clocks which
->      have active childs or not. If not the decision function is pretty
->      simple. If yes, you need a list of child clks which you want to
->      consult first before committing the change.
->
-> So unless you fix this stuff you should not even think about
-> converting anything to this "framework". That's just waste of time and
-> effort. Aside of declaring it stable and useful ....
-
-I think you haven't seen all the repetition of refcounting and each=20
-mach's implementation of some variant of clock ops. The current patch=20
-set from Jeremy will certainly help cut down some of that. If we get the=20
-"enable parent before you enable child, etc" in now, I don't think there=20
-will be much churn when we try to add code to enforce the tree=20
-restrictions you mention above.
-
-> The least thing which we need now are half baken "abstractions" which
-> just shuffle code around for no value.
-
-While a lot of your points are correct, I don't think the current=20
-patches from Jeremy are useless. May be I'm completely mistaken in=20
-assuming that you are referring to Jeremy's patches?
-
-Btw, on a slight tangent, there is also the problem of clk_round_rate()=20
-not being sufficient when a driver is trying to work across different=20
-mach's. I think we need a clk_set_rate_range(min, ideal, max) but I can=20
-start a separate thread on that if you want. I talked about it a bit in=20
-another thread.
+Yes, but that's one step after the minimal set :)
 
 Thanks,
-Saravana
 
---=20
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+	tglx
