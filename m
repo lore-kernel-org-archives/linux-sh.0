@@ -1,54 +1,47 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Wed, 20 Apr 2011 17:33:25 +0000
-Subject: Re: [linux-pm] [RFC PATCH V3 4/4] cpuidle: Single/Global registration of idle states
-Message-Id: <87k4eo6d5m.fsf@ti.com>
+From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
+Date: Thu, 21 Apr 2011 04:53:49 +0000
+Subject: Re: [linux-pm] [RFC PATCH V3 4/4] cpuidle: Single/Global registration
+Message-Id: <4DAFB847.50404@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110420065445.332.13688.stgit@tringupt.in.ibm.com>
-	<20110420065608.332.30043.stgit@tringupt.in.ibm.com>
-In-Reply-To: <20110420065608.332.30043.stgit@tringupt.in.ibm.com> (Trinabh
-	Gupta's message of "Wed, 20 Apr 2011 12:26:34 +0530")
+References: <20110420065445.332.13688.stgit@tringupt.in.ibm.com> <20110420065608.332.30043.stgit@tringupt.in.ibm.com> <87k4eo6d5m.fsf@ti.com>
+In-Reply-To: <87k4eo6d5m.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
-Cc: venki@google.com, davinci-linux-open-source@linux.davincidsp.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, arjan@linux.intel.com, linux-arm-kernel@lists.infradead.org, lenb@kernel.org
+To: Kevin Hilman <khilman@ti.com>
+Cc: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com, davinci-linux-open-source@linux.davincidsp.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-Trinabh Gupta <trinabh@linux.vnet.ibm.com> writes:
 
-> With this patch there is single copy of cpuidle_states structure
-> instead of per-cpu. The statistics needed on per-cpu basis
-> by the governor are kept per-cpu. This simplifies the cpuidle
-> subsystem as state registration is done by single cpu only.
-> Having single copy of cpuidle_states saves memory. Rare case
-> of asymmetric C-states can be handled within the cpuidle driverand
-> architectures such as POWER do not have asymmetric C-states.
 
-I haven't actually tested this series on OMAP yet, but it currently
-doesn't compile.
+On 04/20/2011 11:03 PM, Kevin Hilman wrote:
+> Trinabh Gupta<trinabh@linux.vnet.ibm.com>  writes:
+>
+>> With this patch there is single copy of cpuidle_states structure
+>> instead of per-cpu. The statistics needed on per-cpu basis
+>> by the governor are kept per-cpu. This simplifies the cpuidle
+>> subsystem as state registration is done by single cpu only.
+>> Having single copy of cpuidle_states saves memory. Rare case
+>> of asymmetric C-states can be handled within the cpuidle driverand
+>> architectures such as POWER do not have asymmetric C-states.
+>
+> I haven't actually tested this series on OMAP yet, but it currently
+> doesn't compile.
 
-The patch below (on top of your series) is required to compile on OMAP,
-I think it's doing what you intended, but please confirm.
+Hi Kevin,
 
-Kevin
+Yes, I tested it only for x86 (as I had mentioned in the description
+of the patch series). I just wanted to get comments on the design
+and understand how it affects various architectures in question. It
+looks to me as if the design should be okay and infact better for
+architectures like ARM since they do not have different idle
+states for different cpus and thus do not require per-cpu registration.
+Global registration would work and be simpler; please correct me if I am
+wrong.
 
-diff --git a/arch/arm/mach-omap2/cpuidle34xx.c b/arch/arm/mach-omap2/cpuidle34xx.c
-index 6641574..ab77ba3 100644
---- a/arch/arm/mach-omap2/cpuidle34xx.c
-+++ b/arch/arm/mach-omap2/cpuidle34xx.c
-@@ -512,6 +512,7 @@ static int omap3_cpuidle_driver_init(void)
- 	int i, retval, count = 0;
- 	struct omap3_processor_cx *cx;
- 	struct cpuidle_state *state;
-+	struct cpuidle_driver *drv = &omap3_idle_driver;
- 
- 	mpu_pd = pwrdm_lookup("mpu_pwrdm");
- 	core_pd = pwrdm_lookup("core_pwrdm");
-@@ -532,7 +533,7 @@ static int omap3_cpuidle_driver_init(void)
- 		state->enter = (state->flags & CPUIDLE_FLAG_CHECK_BM) ?
- 			omap3_enter_idle_bm : omap3_enter_idle;
- 		if (cx->type = OMAP3_STATE_C1)
--			dev->safe_state_index = count;
-+			drv->safe_state_index = count;
- 		sprintf(state->name, "C%d", count+1);
- 		strncpy(state->desc, cx->desc, CPUIDLE_DESC_LEN);
- 		count++;
+>
+> The patch below (on top of your series) is required to compile on OMAP,
+> I think it's doing what you intended, but please confirm.
+
+Thanks for helping with this.
+
+-Trinabh
