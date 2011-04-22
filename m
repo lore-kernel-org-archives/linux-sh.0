@@ -1,47 +1,36 @@
-From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
-Date: Thu, 21 Apr 2011 04:53:49 +0000
-Subject: Re: [linux-pm] [RFC PATCH V3 4/4] cpuidle: Single/Global registration
-Message-Id: <4DAFB847.50404@linux.vnet.ibm.com>
+From: Kevin Hilman <khilman@ti.com>
+Date: Fri, 22 Apr 2011 23:06:42 +0000
+Subject: Re: [linux-pm] [RFC PATCH V3 4/4] cpuidle: Single/Global registration of idle states
+Message-Id: <871v0tvqbh.fsf@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110420065445.332.13688.stgit@tringupt.in.ibm.com> <20110420065608.332.30043.stgit@tringupt.in.ibm.com> <87k4eo6d5m.fsf@ti.com>
-In-Reply-To: <87k4eo6d5m.fsf@ti.com>
+References: <20110420065445.332.13688.stgit@tringupt.in.ibm.com>
+	<20110420065608.332.30043.stgit@tringupt.in.ibm.com>
+	<87k4eo6d5m.fsf@ti.com> <4DAFB847.50404@linux.vnet.ibm.com>
+In-Reply-To: <4DAFB847.50404@linux.vnet.ibm.com> (Trinabh Gupta's message of
+	"Thu, 21 Apr 2011 10:23:27 +0530")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
+To: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
 Cc: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com, davinci-linux-open-source@linux.davincidsp.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
+Hi Trinabh,
 
+Trinabh Gupta <trinabh@linux.vnet.ibm.com> writes:
 
-On 04/20/2011 11:03 PM, Kevin Hilman wrote:
-> Trinabh Gupta<trinabh@linux.vnet.ibm.com>  writes:
->
->> With this patch there is single copy of cpuidle_states structure
->> instead of per-cpu. The statistics needed on per-cpu basis
->> by the governor are kept per-cpu. This simplifies the cpuidle
->> subsystem as state registration is done by single cpu only.
->> Having single copy of cpuidle_states saves memory. Rare case
->> of asymmetric C-states can be handled within the cpuidle driverand
->> architectures such as POWER do not have asymmetric C-states.
->
-> I haven't actually tested this series on OMAP yet, but it currently
-> doesn't compile.
+[...]
 
-Hi Kevin,
+> I just wanted to get comments on the design and understand how it
+> affects various architectures in question. It looks to me as if the
+> design should be okay and infact better for architectures like ARM
+> since they do not have different idle states for different cpus and
+> thus do not require per-cpu registration.  Global registration would
+> work and be simpler; please correct me if I am wrong.
 
-Yes, I tested it only for x86 (as I had mentioned in the description
-of the patch series). I just wanted to get comments on the design
-and understand how it affects various architectures in question. It
-looks to me as if the design should be okay and infact better for
-architectures like ARM since they do not have different idle
-states for different cpus and thus do not require per-cpu registration.
-Global registration would work and be simpler; please correct me if I am
-wrong.
+Yes, I agree that the new design is better, I especially like that it's
+more clear (and expected) that final state decision making is to be done
+directly in the driver without the back-and-forth in the current setup.
 
->
-> The patch below (on top of your series) is required to compile on OMAP,
-> I think it's doing what you intended, but please confirm.
+Thanks,
 
-Thanks for helping with this.
-
--Trinabh
+Kevin
