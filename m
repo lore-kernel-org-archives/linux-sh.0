@@ -1,7 +1,7 @@
-From: torbenh <torbenh@gmx.de>
-Date: Thu, 21 Apr 2011 19:22:58 +0000
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Sat, 23 Apr 2011 23:26:21 +0000
 Subject: Re: [PATCH RFC] clk: add support for automatic parent handling
-Message-Id: <20110421192258.GD13755@siel.b>
+Message-Id: <1303601181.2513.132.camel@pasglop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <alpine.LFD.2.00.1104192339180.2744@localhost6.localdomain6>
 	<1303308457-7501-1-git-send-email-u.kleine-koenig@pengutronix.de>
@@ -16,60 +16,35 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 21, 2011 at 12:33:49PM +0200, Thomas Gleixner wrote:
-> On Wed, 20 Apr 2011, Saravana Kannan wrote:
-> > On 04/20/2011 12:52 PM, Thomas Gleixner wrote:
-> > > 2) The "framework" API is just a set of low level primitive helper
-> > >     functions
-> > > 
-> > >     It lacks:
-> > > 
-> > >     - proper refcounting. clk_get() / clk_put() should do that at the
-> > >       framework level.
-> > 
-> > This has nothing to do with the patches Jeremy made. clk_get()/_put() is in
-> > clkdev. Also, I'm not sure if clk_get()/put() needs refcounting. That's like
-> > asking kalloc/kfree to have refcounting.
+On Thu, 2011-04-21 at 12:33 +0200, Thomas Gleixner wrote:
 > 
-> Ok. I missed the clkdev part.
+> Depends, there is a lot of sane hardware out there (not necessarily in
+> the ARM SoC world). We can do with a pointer if the need arises.
+>  
+> > >     optionally a set of common register accessor functions like I did
+> > >     for the generic irq chip.
+> > 
+> > Again, I don't see the point in having this in the common code. May be I'm
+> > missing something?
+> 
+> See my RFC patch of a generic irq chip implementation and how much
+> duplicated five line inline functions they removed.
+>  
+> > IMO, a better option instead of the base register and the offsets would be an
+> > option to have a priv_data pointer. I forgot the exact use case, but we
+> > thought that would have been helpful when we tried to port the msm clock
+> > driver in our tree on top of Jeremy's patches.
+> 
+> It works either way, but we should try to comeup with a sensible
+> common base struct for sane hardware. 
 
-well... just look at this:
+Doesn't have to be in the base struct tho. I think a better approach is
+to keep the base struct reasonably API-only, and have an
+"implementation" subclass called something like simple_clk for example,
+that carries those few fields common to most MMIO based implementation
+and which can be created with existing "helper" code for the most common
+ones.
 
--> git grep __clk_get
-arch/arm/mach-bcmring/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-davinci/include/mach/clkdev.h:static inline int __clk_get(struct clk *clk)
-arch/arm/mach-ep93xx/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-integrator/include/mach/clkdev.h:static inline int __clk_get(struct clk *clk)
-arch/arm/mach-lpc32xx/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-mmp/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-msm/include/mach/clkdev.h:static inline int __clk_get(struct clk *clk) { return 1; }
-arch/arm/mach-mxs/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-nomadik/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-nuc93x/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-pnx4008/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-pxa/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-realview/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-shmobile/clock.c:int __clk_get(struct clk *clk)
-arch/arm/mach-shmobile/clock.c:EXPORT_SYMBOL(__clk_get);
-arch/arm/mach-shmobile/include/mach/clkdev.h:int __clk_get(struct clk *clk);
-arch/arm/mach-tegra/include/mach/clkdev.h:static inline int __clk_get(struct clk *clk)
-arch/arm/mach-u300/clock.c:int __clk_get(struct clk *clk)
-arch/arm/mach-u300/clock.c:EXPORT_SYMBOL(__clk_get);
-arch/arm/mach-u300/include/mach/clkdev.h:int __clk_get(struct clk *clk);
-arch/arm/mach-ux500/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-versatile/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-vexpress/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/mach-w90x900/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/plat-mxc/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/plat-omap/include/plat/clkdev.h:static inline int __clk_get(struct clk *clk)
-arch/arm/plat-spear/include/plat/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/plat-stmp3xxx/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/arm/plat-tcc/include/mach/clkdev.h:#define __clk_get(clk) ({ 1; })
-arch/sh/include/asm/clkdev.h:#define __clk_get(clk) ({ 1; })
-drivers/clk/clkdev.c:   if (clk && !__clk_get(clk))
+Ben.
 
 
-
-
--- 
-torben Hohn
