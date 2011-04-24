@@ -1,10 +1,10 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:39:56 +0000
-Subject: [PATCH 5/9] OMAP2+ / PM: Move runtime PM implementation to use power domains
-Message-Id: <201104170139.56905.rjw@sisk.pl>
+Date: Sun, 24 Apr 2011 21:41:26 +0000
+Subject: [PATCH 5/9] OMAP2+ / PM: move runtime PM implementation to use device power domains
+Message-Id: <201104242341.26825.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
-In-Reply-To: <201104170135.19388.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
+In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -167,9 +167,9 @@ Index: linux-2.6/arch/arm/plat-omap/omap_device.c
 +
 +static struct dev_power_domain omap_device_power_domain = {
 +	.ops = {
-+		USE_PLATFORM_PM_SLEEP_OPS,
 +		.runtime_suspend = _od_runtime_suspend,
 +		.runtime_resume = _od_runtime_resume,
++		USE_PLATFORM_PM_SLEEP_OPS
 +	}
 +};
 +
