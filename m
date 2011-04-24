@@ -1,10 +1,10 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:38:53 +0000
+Date: Sun, 24 Apr 2011 21:39:33 +0000
 Subject: [PATCH 4/9] PM / Platform: Use generic runtime PM callbacks directly
-Message-Id: <201104170138.54163.rjw@sisk.pl>
+Message-Id: <201104242339.33422.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
-In-Reply-To: <201104170135.19388.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
+In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -26,7 +26,7 @@ Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 Index: linux-2.6/drivers/base/platform.c
 =================================--- linux-2.6.orig/drivers/base/platform.c
 +++ linux-2.6/drivers/base/platform.c
-@@ -900,36 +900,11 @@ int platform_pm_restore_noirq(struct dev
+@@ -900,35 +900,10 @@ int platform_pm_restore_noirq(struct dev
  
  #endif /* CONFIG_HIBERNATE_CALLBACKS */
  
@@ -56,14 +56,13 @@ Index: linux-2.6/drivers/base/platform.c
 -#endif /* !CONFIG_PM_RUNTIME */
 -
  static const struct dev_pm_ops platform_dev_pm_ops = {
- 	USE_PLATFORM_PM_SLEEP_OPS,
 -	.runtime_suspend = platform_pm_runtime_suspend,
 -	.runtime_resume = platform_pm_runtime_resume,
 -	.runtime_idle = platform_pm_runtime_idle,
 +	.runtime_suspend = pm_generic_runtime_suspend,
 +	.runtime_resume = pm_generic_runtime_resume,
 +	.runtime_idle = pm_generic_runtime_idle,
+ 	USE_PLATFORM_PM_SLEEP_OPS
  };
  
- struct bus_type platform_bus_type = {
 
