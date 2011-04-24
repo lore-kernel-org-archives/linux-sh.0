@@ -1,15 +1,15 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:36:29 +0000
+Date: Sun, 24 Apr 2011 21:36:45 +0000
 Subject: [PATCH 1/9] PM: Make power domain callbacks take precedence over subsystem ones
-Message-Id: <201104170136.29873.rjw@sisk.pl>
+Message-Id: <201104242336.46210.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
-In-Reply-To: <201104170135.19388.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
+In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>
+Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
@@ -132,7 +132,7 @@ Index: linux-2.6/drivers/base/power/runtime.c
 Index: linux-2.6/drivers/base/power/main.c
 =================================--- linux-2.6.orig/drivers/base/power/main.c
 +++ linux-2.6/drivers/base/power/main.c
-@@ -425,10 +425,8 @@ static int device_resume_noirq(struct de
+@@ -426,10 +426,8 @@ static int device_resume_noirq(struct de
  
  	if (dev->pwr_domain) {
  		pm_dev_dbg(dev, state, "EARLY power domain ");
@@ -145,7 +145,7 @@ Index: linux-2.6/drivers/base/power/main.c
  		pm_dev_dbg(dev, state, "EARLY type ");
  		error = pm_noirq_op(dev, dev->type->pm, state);
  	} else if (dev->class && dev->class->pm) {
-@@ -516,7 +514,8 @@ static int device_resume(struct device *
+@@ -517,7 +515,8 @@ static int device_resume(struct device *
  
  	if (dev->pwr_domain) {
  		pm_dev_dbg(dev, state, "power domain ");
@@ -155,7 +155,7 @@ Index: linux-2.6/drivers/base/power/main.c
  	}
  
  	if (dev->type && dev->type->pm) {
-@@ -628,12 +627,11 @@ static void device_complete(struct devic
+@@ -629,12 +628,11 @@ static void device_complete(struct devic
  {
  	device_lock(dev);
  
@@ -172,7 +172,7 @@ Index: linux-2.6/drivers/base/power/main.c
  		pm_dev_dbg(dev, state, "completing type ");
  		if (dev->type->pm->complete)
  			dev->type->pm->complete(dev);
-@@ -731,7 +729,12 @@ static int device_suspend_noirq(struct d
+@@ -732,7 +730,12 @@ static int device_suspend_noirq(struct d
  {
  	int error;
  
@@ -186,7 +186,7 @@ Index: linux-2.6/drivers/base/power/main.c
  		pm_dev_dbg(dev, state, "LATE type ");
  		error = pm_noirq_op(dev, dev->type->pm, state);
  		if (error)
-@@ -748,11 +751,6 @@ static int device_suspend_noirq(struct d
+@@ -749,11 +752,6 @@ static int device_suspend_noirq(struct d
  			return error;
  	}
  
@@ -198,7 +198,7 @@ Index: linux-2.6/drivers/base/power/main.c
  	return 0;
  }
  
-@@ -840,21 +838,27 @@ static int __device_suspend(struct devic
+@@ -841,21 +839,27 @@ static int __device_suspend(struct devic
  		goto End;
  	}
  
@@ -229,7 +229,7 @@ Index: linux-2.6/drivers/base/power/main.c
  		}
  	}
  
-@@ -868,12 +872,6 @@ static int __device_suspend(struct devic
+@@ -869,12 +873,6 @@ static int __device_suspend(struct devic
  		}
  	}
  
@@ -242,7 +242,7 @@ Index: linux-2.6/drivers/base/power/main.c
   End:
  	device_unlock(dev);
  	complete_all(&dev->power.completion);
-@@ -964,7 +962,14 @@ static int device_prepare(struct device
+@@ -965,7 +963,14 @@ static int device_prepare(struct device
  
  	device_lock(dev);
  
@@ -258,7 +258,7 @@ Index: linux-2.6/drivers/base/power/main.c
  		pm_dev_dbg(dev, state, "preparing type ");
  		if (dev->type->pm->prepare)
  			error = dev->type->pm->prepare(dev);
-@@ -983,13 +988,6 @@ static int device_prepare(struct device
+@@ -984,13 +989,6 @@ static int device_prepare(struct device
  		if (dev->bus->pm->prepare)
  			error = dev->bus->pm->prepare(dev);
  		suspend_report_result(dev->bus->pm->prepare, error);
