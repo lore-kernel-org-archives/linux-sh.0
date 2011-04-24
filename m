@@ -1,10 +1,10 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:44:14 +0000
+Date: Sun, 24 Apr 2011 21:44:22 +0000
 Subject: [PATCH 9/9] PM: Revert "driver core: platform_bus: allow runtime override of dev_pm_ops"
-Message-Id: <201104170144.15043.rjw@sisk.pl>
+Message-Id: <201104242344.22918.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
-In-Reply-To: <201104170135.19388.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
+In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
