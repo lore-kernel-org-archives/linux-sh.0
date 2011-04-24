@@ -1,10 +1,10 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:37:10 +0000
+Date: Sun, 24 Apr 2011 21:37:31 +0000
 Subject: [PATCH 2/9] PM: Export platform bus type's default PM callbacks
-Message-Id: <201104170137.11205.rjw@sisk.pl>
+Message-Id: <201104242337.31524.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
-In-Reply-To: <201104170135.19388.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl> <201104242330.13607.rjw@sisk.pl>
+In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -194,7 +194,7 @@ Index: linux-2.6/drivers/base/platform.c
  
  #ifdef CONFIG_PM_RUNTIME
  
-@@ -949,20 +926,7 @@ int __weak platform_pm_runtime_idle(stru
+@@ -949,23 +926,10 @@ int __weak platform_pm_runtime_idle(stru
  #endif /* !CONFIG_PM_RUNTIME */
  
  static const struct dev_pm_ops platform_dev_pm_ops = {
@@ -212,10 +212,13 @@ Index: linux-2.6/drivers/base/platform.c
 -	.thaw_noirq = platform_pm_thaw_noirq,
 -	.poweroff_noirq = platform_pm_poweroff_noirq,
 -	.restore_noirq = platform_pm_restore_noirq,
-+	USE_PLATFORM_PM_SLEEP_OPS,
  	.runtime_suspend = platform_pm_runtime_suspend,
  	.runtime_resume = platform_pm_runtime_resume,
  	.runtime_idle = platform_pm_runtime_idle,
++	USE_PLATFORM_PM_SLEEP_OPS
+ };
+ 
+ struct bus_type platform_bus_type = {
 Index: linux-2.6/include/linux/platform_device.h
 =================================--- linux-2.6.orig/include/linux/platform_device.h
 +++ linux-2.6/include/linux/platform_device.h
@@ -278,7 +281,7 @@ Index: linux-2.6/include/linux/platform_device.h
 +	.freeze_noirq = platform_pm_freeze_noirq, \
 +	.thaw_noirq = platform_pm_thaw_noirq, \
 +	.poweroff_noirq = platform_pm_poweroff_noirq, \
-+	.restore_noirq = platform_pm_restore_noirq
++	.restore_noirq = platform_pm_restore_noirq,
 +#else
 +#define USE_PLATFORM_PM_SLEEP_OPS
 +#endif
