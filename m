@@ -1,10 +1,10 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 16 Apr 2011 23:35:18 +0000
-Subject: [PATCH 0/9] PM: Rework shmobile and OMAP runtime PM using power domains
-Message-Id: <201104170135.19388.rjw@sisk.pl>
+Date: Sun, 24 Apr 2011 21:30:13 +0000
+Subject: [PATCH 0/9] PM: Rework shmobile and OMAP runtime PM using power domains (v2)
+Message-Id: <201104242330.13607.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl>
-In-Reply-To: <201104130205.26988.rjw@sisk.pl>
+References: <201104130205.26988.rjw@sisk.pl> <201104170135.19388.rjw@sisk.pl>
+In-Reply-To: <201104170135.19388.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,12 +13,22 @@ Cc: Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Li
 
 Hi,
 
-The following series of patches is my attempt to consolidate the shmobile and
-OMAP runtime PM code using power domains so that it is not necessary to
-replace the platform bus type's runtime PM callbacks any more.
+Taking the feedback from the last version of the patchset into account
+I reworked patches [7/9] and [8/9] so that multiple clocks can be used for
+runtime PM.  I also fixed a couple of build issues (the patches have been
+built for x86, ARM/shmobile and ARM/OMAP1).
 
-Some of the patches have already been posted, some are new and some are
-from Kevin. :-)
+On Sunday, April 17, 2011, Rafael J. Wysocki wrote:
+> Hi,
+> 
+> The following series of patches is my attempt to consolidate the shmobile and
+> OMAP runtime PM code using power domains so that it is not necessary to
+> replace the platform bus type's runtime PM callbacks any more.
+> 
+> Some of the patches have already been posted, some are new and some are
+> from Kevin. :-)
+
+The high-level description of what the patches do hasn't changed, so:
 
 [1/9] - Make power domain callbacks take precedence over subsystem ones
         (this one has been discussed already).
@@ -44,8 +54,8 @@ from Kevin. :-)
 
 [9/9] - Remove platform_bus_set_pm_ops() (patch from Kevin).
 
-Comments welcome.
+If there are no objections (or reports of breakage), I'd like to push these
+patches through the suspend-2.6 tree in the 2.6.40 merge window.
 
 Thanks,
 Rafael
-
