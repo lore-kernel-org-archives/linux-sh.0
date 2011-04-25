@@ -1,36 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Apr 2011 08:16:23 +0000
-Subject: Re: [PATCH 2/2] sh: update SDHI configuration symbols in defconfigs
-Message-Id: <20110418081623.GC3720@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Apr 2011 13:38:37 +0000
+Subject: [PATCH] clocksource: sh_tmu: __clocksource_updatefreq_hz() update
+Message-Id: <20110425133837.4242.80952.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1104152003190.18593@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1104152003190.18593@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: johnstul@us.ibm.com, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-On Mon, Apr 18, 2011 at 08:49:50AM +0200, Guennadi Liakhovetski wrote:
-> On Sat, 16 Apr 2011, Simon Horman wrote:
-> 
-> > On Fri, Apr 15, 2011 at 08:04:12PM +0200, Guennadi Liakhovetski wrote:
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > Cc: Simon Horman <horms@verge.net.au>
-> > > Cc: Magnus Damm <damm@opensource.se>
-> > > ---
-> > >  arch/sh/configs/ecovec24_defconfig  |    2 +-
-> > >  arch/sh/configs/sh7757lcr_defconfig |    2 +-
-> > >  2 files changed, 2 insertions(+), 2 deletions(-)
-> > 
-> > MMC_TMIO is also present in arch/arm/configs/eseries_pxa_defconfig
-> > Should that also be updated?
-> 
-> No, rather not;) If you look in Kconfig, you'll see, that CONFIG_MMC_TMIO 
-> is still there, it just means something _slightly_ different now: it means 
-> now an MFD-based TMIO MMC implementation. So, it is still the correct 
-> symbol to be used on all platforms, except SH / SH-Mobile SDHI-based.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I understand now.
+This patch updates the clocksource part of the TMU driver
+to make use of the __clocksource_updatefreq_hz() function.
 
-Acked-by: Simon Horman <horms@verge.net.au>
+Without this patch the old code uses clocksource_register()
+together with a hack that assumes a never changing clock rate
+(see clk_enable(), clk_get_rate() and clk_disable()).
 
+The patch uses clocksource_register_hz() with 1 Hz as initial
+value, then lets the ->enable() callback update the value
+with __clocksource_updatefreq_hz() once the struct clk has
+been enabled and the frequency is stable.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Thanks to John Stultz for the framework changes and the
+ initial implementation.
+
+ Tested on the sh7372 Mackerel board with TMU00 and TMU01.
+
+ drivers/clocksource/sh_tmu.c |   19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+--- 0001/drivers/clocksource/sh_tmu.c
++++ work/drivers/clocksource/sh_tmu.c	2011-04-25 15:07:41.000000000 +0900
+@@ -199,8 +199,12 @@ static cycle_t sh_tmu_clocksource_read(s
+ static int sh_tmu_clocksource_enable(struct clocksource *cs)
+ {
+ 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
++	int ret;
+ 
+-	return sh_tmu_enable(p);
++	ret = sh_tmu_enable(p);
++	if (!ret)
++		__clocksource_updatefreq_hz(cs, p->rate);
++	return ret;
+ }
+ 
+ static void sh_tmu_clocksource_disable(struct clocksource *cs)
+@@ -221,17 +225,10 @@ static int sh_tmu_register_clocksource(s
+ 	cs->mask = CLOCKSOURCE_MASK(32);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
+ 
+-	/* clk_get_rate() needs an enabled clock */
+-	clk_enable(p->clk);
+-	/* channel will be configured at parent clock / 4 */
+-	p->rate = clk_get_rate(p->clk) / 4;
+-	clk_disable(p->clk);
+-	/* TODO: calculate good shift from rate and counter bit width */
+-	cs->shift = 10;
+-	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
+-
+ 	dev_info(&p->pdev->dev, "used as clock source\n");
+-	clocksource_register(cs);
++
++	/* Register with dummy 1 Hz value, gets updated in ->enable() */
++	clocksource_register_hz(cs, 1);
+ 	return 0;
+ }
+ 
