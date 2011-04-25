@@ -1,65 +1,79 @@
-From: Greg KH <gregkh@suse.de>
-Date: Sun, 24 Apr 2011 23:36:44 +0000
-Subject: Re: [PATCH 0/9] PM: Rework shmobile and OMAP runtime PM using power
-Message-Id: <20110424233644.GA20577@suse.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Apr 2011 13:40:26 +0000
+Subject: [PATCH] clocksource: sh_tmu: Runtime PM support
+Message-Id: <20110425134026.4249.13858.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl>
- <201104170135.19388.rjw@sisk.pl>
- <201104242330.13607.rjw@sisk.pl>
-In-Reply-To: <201104242330.13607.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>
+To: linux-kernel@vger.kernel.org
+Cc: johnstul@us.ibm.com, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-On Sun, Apr 24, 2011 at 11:30:13PM +0200, Rafael J. Wysocki wrote:
-> Hi,
-> 
-> Taking the feedback from the last version of the patchset into account
-> I reworked patches [7/9] and [8/9] so that multiple clocks can be used for
-> runtime PM.  I also fixed a couple of build issues (the patches have been
-> built for x86, ARM/shmobile and ARM/OMAP1).
-> 
-> On Sunday, April 17, 2011, Rafael J. Wysocki wrote:
-> > Hi,
-> > 
-> > The following series of patches is my attempt to consolidate the shmobile and
-> > OMAP runtime PM code using power domains so that it is not necessary to
-> > replace the platform bus type's runtime PM callbacks any more.
-> > 
-> > Some of the patches have already been posted, some are new and some are
-> > from Kevin. :-)
-> 
-> The high-level description of what the patches do hasn't changed, so:
-> 
-> [1/9] - Make power domain callbacks take precedence over subsystem ones
->         (this one has been discussed already).
-> 
-> [2/9] - Export the platform bus type's default PM callbacks so that they
->         can be used in power domain objects.
-> 
-> [3/9] - Use a default power domain for runtime PM on shmobile (both ARM
->         and SH flavors) instead of replacing the platform bus type's
->         runtime PM callbacks (using __weak).
-> 
-> [4/9] - Use generic runtime PM callbacks directly in the platform bus type.
-> 
-> [5/9] - Move OMAP2 runtime PM implementation to using a power domain object
->         (patch from Kevin rebased on top of [1-4/9]).
-> 
-> [6/9] - Add subsystem data field to struct dev_pm_info.
-> 
-> [7/9] - Introduce generic clock manipulation routines for runtime PM and
->         convert ARM shmobile to using them.
-> 
-> [8/9] - Move OMAP1 runtime PM to the new core infrastructure.
-> 
-> [9/9] - Remove platform_bus_set_pm_ops() (patch from Kevin).
-> 
-> If there are no objections (or reports of breakage), I'd like to push these
-> patches through the suspend-2.6 tree in the 2.6.40 merge window.
+From: Magnus Damm <damm@opensource.se>
 
-No objections from me at all, looks great, thanks for doing this.
+Add Runtime PM support to the TMU driver.
 
-greg k-h
+The hardware device is enabled as long as the clocksource
+or the clockevent portion of the driver is used.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Tested on the sh7372 Mackerel board with TMU00 and TMU01.
+
+ drivers/clocksource/sh_tmu.c |   12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+--- 0010/drivers/clocksource/sh_tmu.c
++++ work/drivers/clocksource/sh_tmu.c	2011-04-25 15:13:20.000000000 +0900
+@@ -25,6 +25,7 @@
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <linux/clk.h>
++#include <linux/pm_runtime.h>
+ #include <linux/irq.h>
+ #include <linux/err.h>
+ #include <linux/clocksource.h>
+@@ -109,10 +110,12 @@ static int sh_tmu_enable(struct sh_tmu_p
+ {
+ 	int ret;
+ 
+-	/* enable clock */
++	/* wake up device and enable clock */
++	pm_runtime_get_sync(&p->pdev->dev);
+ 	ret = clk_enable(p->clk);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "cannot enable clock\n");
++		pm_runtime_put_sync(&p->pdev->dev);
+ 		return ret;
+ 	}
+ 
+@@ -141,8 +144,9 @@ static void sh_tmu_disable(struct sh_tmu
+ 	/* disable interrupts in TMU block */
+ 	sh_tmu_write(p, TCR, 0x0000);
+ 
+-	/* stop clock */
++	/* stop clock and mark device as idle */
+ 	clk_disable(p->clk);
++	pm_runtime_put_sync(&p->pdev->dev);
+ }
+ 
+ static void sh_tmu_set_next(struct sh_tmu_priv *p, unsigned long delta,
+@@ -411,6 +415,7 @@ static int __devinit sh_tmu_probe(struct
+ 
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
++		pm_runtime_enable(&pdev->dev);
+ 		return 0;
+ 	}
+ 
+@@ -425,6 +430,9 @@ static int __devinit sh_tmu_probe(struct
+ 		kfree(p);
+ 		platform_set_drvdata(pdev, NULL);
+ 	}
++
++	if (!is_early_platform_device(pdev))
++		pm_runtime_enable(&pdev->dev);
+ 	return ret;
+ }
+ 
