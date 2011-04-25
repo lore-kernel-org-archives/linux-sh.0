@@ -1,86 +1,77 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 29 Apr 2011 20:29:56 +0000
-Subject: Re: [Update x2][PATCH 7/9] PM / Runtime: Generic clock manipulation rountines for runtime PM (v5)
-Message-Id: <201104292229.56518.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 25 Apr 2011 13:32:11 +0000
+Subject: [PATCH] clocksource: sh_cmt: __clocksource_updatefreq_hz() update
+Message-Id: <20110425133211.3957.30006.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104282136.26163.rjw@sisk.pl> <4DBB12EF.9030000@codeaurora.org>
-In-Reply-To: <4DBB12EF.9030000@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Boyd <sboyd@codeaurora.org>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Colin Cross <ccross@google.com>, Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
+To: linux-kernel@vger.kernel.org
+Cc: johnstul@us.ibm.com, Magnus Damm <magnus.damm@gmail.com>, lethal@linux-sh.org, simon@horms.net, linux-sh@vger.kernel.org
 
-On Friday, April 29, 2011, Stephen Boyd wrote:
-> On 04/28/2011 12:36 PM, Rafael J. Wysocki wrote:
-> > +/**
-> > + * pm_runtime_clk_add - Start using a device clock for runtime PM.
-> > + * @dev: Device whose clock is going to be used for runtime PM.
-> > + * @con_id: Connection ID of the clock.
-> > + *
-> > + * Add the clock represented by @con_id to the list of clocks used for
-> > + * the runtime PM of @dev.
-> > + */
-> > +int pm_runtime_clk_add(struct device *dev, const char *con_id)
-> > +{
-> > +	struct pm_runtime_clk_data *prd = __to_prd(dev);
-> > +	struct pm_clock_entry *ce;
-> > +
-> > +	if (!prd)
-> > +		return -EINVAL;
-> > +
-> > +	ce = kzalloc(sizeof(*ce), GFP_KERNEL);
-> > +	if (!ce) {
-> > +		dev_err(dev, "Not enough memory for clock entry.\n");
-> > +		return -ENOMEM;
-> > +	}
-> > +
-> > +	if (con_id) {
-> > +		ce->con_id = kstrdup(con_id, GFP_KERNEL);
-> > +		if (!ce->con_id) {
-> > +			dev_err(dev,
-> > +				"Not enough memory for clock conection ID.\n");
-> 
-> Missing an 'n' in connection.
+From: Magnus Damm <damm@opensource.se>
 
-Right, thanks!
+This patch updates the clocksource part of the CMT driver
+to make use of the __clocksource_updatefreq_hz() function.
 
-> > +			kfree(ce);
-> > +			return -ENOMEM;
-> > +		}
-> > +	}
-> > +
-> > +	mutex_lock(&prd->lock);
-> > +	list_add_tail(&ce->node, &prd->clock_list);
-> > +	mutex_unlock(&prd->lock);
-> > +	return 0;
-> > +}
-> > +
-> > +/**
-> > + * __pm_runtime_clk_remove - Destroy runtime PM clock entry.
-> > + * @ce: Runtime PM clock entry to destroy.
-> > + *
-> > + * This routine must be called under the mutex protecting the runtime PM list
-> > + * of clocks corresponding the the @ce's device.
-> > + */
-> > +static void __pm_runtime_clk_remove(struct pm_clock_entry *ce)
-> > +{
-> > +	if (!ce)
-> > +		return;
-> > +
-> > +	list_del(&ce->node);
-> > +
-> > +	if (!IS_ERR_OR_NULL(ce->clk)) {
-> 
-> NULL is a valid clock so you'll need to figure out some way to handle
-> that throughout this code.
+Without this patch the old code uses clocksource_register()
+together with a hack that assumes a never changing clock rate
+(see clk_enable(), clk_get_rate() and clk_disable()).
 
-Well, I didn't know that, thanks!  I'll need to add the "active" flag
-back, then, after all.  In addition to that, I'll need to distinguish between
-the "clk = NULL because it's not initialized" and "clk = NULL becuase it's
-a valid clock" cases. 
+The patch uses clocksource_register_hz() with 1 Hz as initial
+value, then lets the ->enable() callback update the value
+with __clocksource_updatefreq_hz() once the struct clk has
+been enabled and the frequency is stable.
 
-I guess I'll use combinations of two flags.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Thanks,
-Rafael
+ Thanks to John Stultz for the framework changes and the
+ initial implementation.
+
+ Tested on the sh7372 Mackerel board with CMT10.
+
+ drivers/clocksource/sh_cmt.c |   19 +++++++------------
+ 1 file changed, 7 insertions(+), 12 deletions(-)
+
+--- 0001/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2011-04-25 14:47:06.000000000 +0900
+@@ -416,11 +416,15 @@ static cycle_t sh_cmt_clocksource_read(s
+ 
+ static int sh_cmt_clocksource_enable(struct clocksource *cs)
+ {
++	int ret;
+ 	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
+ 
+ 	p->total_cycles = 0;
+ 
+-	return sh_cmt_start(p, FLAG_CLOCKSOURCE);
++	ret = sh_cmt_start(p, FLAG_CLOCKSOURCE);
++	if (!ret)
++		__clocksource_updatefreq_hz(cs, p->rate);
++	return ret;
+ }
+ 
+ static void sh_cmt_clocksource_disable(struct clocksource *cs)
+@@ -448,19 +452,10 @@ static int sh_cmt_register_clocksource(s
+ 	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
+ 
+-	/* clk_get_rate() needs an enabled clock */
+-	clk_enable(p->clk);
+-	p->rate = clk_get_rate(p->clk) / ((p->width = 16) ? 512 : 8);
+-	clk_disable(p->clk);
+-
+-	/* TODO: calculate good shift from rate and counter bit width */
+-	cs->shift = 0;
+-	cs->mult = clocksource_hz2mult(p->rate, cs->shift);
+-
+ 	dev_info(&p->pdev->dev, "used as clock source\n");
+ 
+-	clocksource_register(cs);
+-
++	/* Register with dummy 1 Hz value, gets updated in ->enable() */
++	clocksource_register_hz(cs, 1);
+ 	return 0;
+ }
+ 
