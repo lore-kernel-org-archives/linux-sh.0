@@ -1,84 +1,144 @@
-From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
-Date: Thu, 28 Apr 2011 16:44:10 +0000
-Subject: [RFC PATCH V4 0/4] cpuidle: global registration of idle states with
-Message-Id: <20110428163201.4868.6984.stgit@tringupt.in.ibm.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 28 Apr 2011 17:36:07 +0000
+Subject: [PATCH] ARM: mach-shmobile: CPUIdle support
+Message-Id: <20110428173607.3647.365.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com, khilman@ti.com
-Cc: linux-kernel@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org, linux-acpi@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The following patch series implements global registration of cpuidle
-states, and also has the necessary data structure changes to
-accommodate the per-cpu writable members of the cpuidle_states
-structure.
+From: Magnus Damm <damm@opensource.se>
 
-Previous version of the series (V3) is at 
-https://lkml.org/lkml/2011/4/20/23
+This patch adds a shared SH-Mobile ARM specific CPUIdle
+implementation supporting WFI only at this point. It
+serves as a common point for late registration of the
+arch-specific CPUIdle code, and supports adding extra
+sleep modes using the callback shmobile_cpuidle_setup()
+together with shmobile_cpuidle_modes[].
 
-This series applies on 2.6.39-rc5 with Len Brown's pm_idle() cleanup
-version 3 (https://lkml.org/lkml/2011/4/2/8) plus the patch 
-https://lkml.org/lkml/diff/2011/4/25/54/1
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Changes from previous version (V3):
+ arch/arm/mach-shmobile/Makefile              |    1 
+ arch/arm/mach-shmobile/cpuidle.c             |   92 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    3 
+ 3 files changed, 96 insertions(+)
 
-1. Compile tested for ARM using the following configs: da8xx_omapl_defconfig,
-  kirkwood_defconfig, stamp9g20_defconfig, omap2plus_defconfig. Boot tested on
-  Panda SoC (OMAP4430) but it doesn't really use cpuidle.
-
-2. Boot tested on x86 nehalem with multiple C-states for both intel_idle
-  and acpi_idle drivers. 
-
-3. Boot tested on T60p thinkpad that has T2600 cpu with multiple C-states.
-  Additionally tested the case when C-state tables change on 
-  AC <-> Battery power switch.
-
-4. De-duplicated code in [1/4] and moved common code related to
-  update of cpuidle statistics to drivers/cpuidle/cpuidle.c
-
-5. Handled the case when acpi_processor_cst_has_changed() is called on x86
-  on switching power from AC <-> Battery. The implementation is just 
-  a prototype. Please provide suggestions.
-
-
-Brief description of the patches:
-
-The core change in this series is to split the cpuidle_device structure 
-into parts that can be global and parts that has to remain per-cpu. 
-The per-cpu pieces are mostly generic statistics that can be independent 
-of current running driver. As a result of these changes, there is single 
-copy of cpuidle_states structure and single registration done by one 
-cpu. The low level driver is free to set per-cpu driver data on
-each cpu if needed using the cpuidle_set_statedata() as the case
-today. Only in very rare cases asymmetric C-states exist which can be 
-handled within the cpuidle driver. Most architectures do not have 
-asymmetric C-states.
-
-First two patches in the series facilitate splitting of cpuidle_states
-and cpuidle_device structure and next two patches do the actual split,
-change the API's and make existing code follow the changed API.
-
-[1/4] - Move the idle residency accounting part from cpuidle.c to
-  the respective low level drivers, so that the accounting can
-  be accurately maintained if the driver decides to demote the
-  chosen (suggested) by the governor.
-
-[2/4] - removes the cpuidle_device()->prepare API since is is not
-  widely used and the only use case was to allow software
-  demotion using CPUIDLE_FLAG_IGNORE flag.  Both these
-  functions can be absorbed within the cpuidle back-end
-  driver ad hence deprecating the prepare routine and the
-  CPUIDLE_FLAG_IGNORE flag.
-
-  - Ref: https://lkml.org/lkml/2011/3/25/52
-
-[3/4] - Splits the usage statistics (read/write) part out of
-  cpuidle_state structure, so that the states can become read
-  only and hence made global.
-
-[4/4] - most APIs will now need to pass pointer to both global
-   cpuidle_driver and per-cpu cpuidle_device structure.
-
-Thanks,
--Trinabh
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2011-04-29 00:57:05.000000000 +0900
+@@ -32,6 +32,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= entry-gic.o
+ 
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
++obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+ 
+ # Board objects
+--- /dev/null
++++ work/arch/arm/mach-shmobile/cpuidle.c	2011-04-29 01:23:13.000000000 +0900
+@@ -0,0 +1,92 @@
++/*
++ * CPUIdle support code for SH-Mobile ARM
++ *
++ *  Copyright (C) 2011 Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/pm.h>
++#include <linux/cpuidle.h>
++#include <linux/suspend.h>
++#include <linux/module.h>
++#include <linux/err.h>
++#include <asm/system.h>
++#include <asm/io.h>
++
++static void shmobile_enter_wfi(void)
++{
++	cpu_do_idle();
++}
++
++void (*shmobile_cpuidle_modes[CPUIDLE_STATE_MAX])(void) = {
++	shmobile_enter_wfi, /* regular sleep mode */
++};
++
++static int shmobile_cpuidle_enter(struct cpuidle_device *dev,
++				  struct cpuidle_state *state)
++{
++	ktime_t before, after;
++	int requested_state = state - &dev->states[0];
++
++	dev->last_state = &dev->states[requested_state];
++	before = ktime_get();
++
++	local_irq_disable();
++	local_fiq_disable();
++
++	shmobile_cpuidle_modes[requested_state]();
++
++	local_irq_enable();
++	local_fiq_enable();
++
++	after = ktime_get();
++	return ktime_to_ns(ktime_sub(after, before)) >> 10;
++}
++
++static struct cpuidle_device shmobile_cpuidle_dev;
++static struct cpuidle_driver shmobile_cpuidle_driver = {
++	.name =		"shmobile_cpuidle",
++	.owner =	THIS_MODULE,
++};
++
++void (*shmobile_cpuidle_setup)(struct cpuidle_device *dev);
++
++static int shmobile_cpuidle_init(void)
++{
++	struct cpuidle_device *dev = &shmobile_cpuidle_dev;
++	struct cpuidle_state *state;
++	int i;
++
++	cpuidle_register_driver(&shmobile_cpuidle_driver);
++
++	for (i = 0; i < CPUIDLE_STATE_MAX; i++) {
++		dev->states[i].name[0] = '\0';
++		dev->states[i].desc[0] = '\0';
++		dev->states[i].enter = shmobile_cpuidle_enter;
++	}
++
++	i = CPUIDLE_DRIVER_STATE_START;
++
++	state = &dev->states[i++];
++	snprintf(state->name, CPUIDLE_NAME_LEN, "C1");
++	strncpy(state->desc, "WFI", CPUIDLE_DESC_LEN);
++	state->exit_latency = 1;
++	state->target_residency = 1 * 2;
++	state->power_usage = 3;
++	state->flags = 0;
++	state->flags |= CPUIDLE_FLAG_TIME_VALID;
++
++	dev->safe_state = state;
++	dev->state_count = i;
++
++	if (shmobile_cpuidle_setup)
++		shmobile_cpuidle_setup(dev);
++
++	cpuidle_register_device(dev);
++
++	return 0;
++}
++late_initcall(shmobile_cpuidle_init);
+--- 0003/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-04-29 01:21:16.000000000 +0900
+@@ -9,6 +9,9 @@ extern int clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+ extern void shmobile_handle_irq_gic(struct pt_regs *);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
++struct cpuidle_device;
++extern void (*shmobile_cpuidle_modes[])(void);
++extern void (*shmobile_cpuidle_setup)(struct cpuidle_device *dev);
+ 
+ extern void sh7367_init_irq(void);
+ extern void sh7367_add_early_devices(void);
