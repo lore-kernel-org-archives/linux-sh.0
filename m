@@ -1,52 +1,25 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Sat, 30 Apr 2011 02:08:13 +0000
-Subject: [PATCH 06/10] ARM: realview: use common scu_init_cpus
-Message-Id: <1304129297-6614-7-git-send-email-robherring2@gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 28 Apr 2011 23:54:12 +0000
+Subject: [RFC][PATCH 0/2] PM: Support for generic I/O power domains
+Message-Id: <201104290154.12966.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Rob Herring <rob.herring@calxeda.com>
+Hi,
 
-Convert realview to use common scu_init_cpus function.
+The first of the following two patches adds common definitions and code
+for supporting generic I/O power domains and the second patch shows how
+it can be used by the example of ARM shmobile platform.
 
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
----
- arch/arm/mach-realview/platsmp.c |   17 +----------------
- 1 files changed, 1 insertions(+), 16 deletions(-)
+The patches are on top of the branch at:
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git power-domains
 
-diff --git a/arch/arm/mach-realview/platsmp.c b/arch/arm/mach-realview/platsmp.c
-index f443ef3..655a93b 100644
---- a/arch/arm/mach-realview/platsmp.c
-+++ b/arch/arm/mach-realview/platsmp.c
-@@ -43,22 +43,7 @@ static void __iomem *scu_base_addr(void)
-  */
- void __init smp_init_cpus(void)
- {
--	void __iomem *scu_base = scu_base_addr();
--	unsigned int i, ncores;
--
--	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
--
--	/* sanity check */
--	if (ncores > NR_CPUS) {
--		printk(KERN_WARNING
--		       "Realview: no. of cores (%d) greater than configured "
--		       "maximum of %d - clipping\n",
--		       ncores, NR_CPUS);
--		ncores = NR_CPUS;
--	}
--
--	for (i = 0; i < ncores; i++)
--		set_cpu_possible(i, true);
-+	scu_init_cpus(scu_base_addr());
- }
- 
- void __init platform_smp_prepare_cpus(unsigned int max_cpus)
--- 
-1.7.1
+Comments welcome.
+
+Thanks,
+Rafael
 
