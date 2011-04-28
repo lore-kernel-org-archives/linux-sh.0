@@ -1,55 +1,87 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Sat, 30 Apr 2011 02:08:12 +0000
-Subject: [PATCH 05/10] ARM: omap: use common scu_init_cpus
-Message-Id: <1304129297-6614-6-git-send-email-robherring2@gmail.com>
+From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
+Date: Thu, 28 Apr 2011 16:44:43 +0000
+Subject: [RFC PATCH V4 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and
+Message-Id: <20110428163238.4868.31866.stgit@tringupt.in.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
+References: <20110428163201.4868.6984.stgit@tringupt.in.ibm.com>
+In-Reply-To: <20110428163201.4868.6984.stgit@tringupt.in.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com, khilman@ti.com
+Cc: linux-kernel@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org, linux-acpi@vger.kernel.org
 
-From: Rob Herring <rob.herring@calxeda.com>
+The cpuidle_device->prepare() mechanism causes updates to the
+cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+to tell the governor not to chose a state on a per-cpu basis at
+run-time. State demotion is now handled by the driver and it returns
+the actual state entered. Hence, this mechanism is not required.
+Also this removes per-cpu flags from cpuidle_state enabling
+it to be made global.
 
-Convert omap to use common scu_init_cpus function.
+Ref: https://lkml.org/lkml/2011/3/25/52
 
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+Signed-off-by: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
 ---
- arch/arm/mach-omap2/omap-smp.c |   16 +---------------
- 1 files changed, 1 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/omap-smp.c b/arch/arm/mach-omap2/omap-smp.c
-index b66cfe8..831c8a0 100644
---- a/arch/arm/mach-omap2/omap-smp.c
-+++ b/arch/arm/mach-omap2/omap-smp.c
-@@ -99,25 +99,11 @@ static void __init wakeup_secondary(void)
-  */
- void __init smp_init_cpus(void)
- {
--	unsigned int i, ncores;
--
- 	/* Never released */
- 	scu_base = ioremap(OMAP44XX_SCU_BASE, SZ_256);
- 	BUG_ON(!scu_base);
+ drivers/cpuidle/cpuidle.c        |   10 ----------
+ drivers/cpuidle/governors/menu.c |    2 --
+ include/linux/cpuidle.h          |    3 ---
+ 3 files changed, 0 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index 0f97261..a194527 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
+ 	hrtimer_peek_ahead_timers();
+ #endif
  
--	ncores = scu_get_core_count(scu_base);
+-	/*
+-	 * Call the device's prepare function before calling the
+-	 * governor's select function.  ->prepare gives the device's
+-	 * cpuidle driver a chance to update any dynamic information
+-	 * of its cpuidle states for the current idle period, e.g.
+-	 * state availability, latencies, residencies, etc.
+-	 */
+-	if (dev->prepare)
+-		dev->prepare(dev);
 -
--	/* sanity check */
--	if (ncores > NR_CPUS) {
--		printk(KERN_WARNING
--		       "OMAP4: no. of cores (%d) greater than configured "
--		       "maximum of %d - clipping\n",
--		       ncores, NR_CPUS);
--		ncores = NR_CPUS;
--	}
--
--	for (i = 0; i < ncores; i++)
--		set_cpu_possible(i, true);
-+	scu_init_cpus(scu_base);
- }
+ 	/* ask the governor for the next state */
+ 	next_state = cpuidle_curr_governor->select(dev);
+ 	if (need_resched()) {
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index e4b200c..af724e8 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
+ 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
+ 		struct cpuidle_state *s = &dev->states[i];
  
- void __init platform_smp_prepare_cpus(unsigned int max_cpus)
--- 
-1.7.1
+-		if (s->flags & CPUIDLE_FLAG_IGNORE)
+-			continue;
+ 		if (s->target_residency > data->predicted_us)
+ 			continue;
+ 		if (s->exit_latency > latency_req)
+diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
+index 8da811b..c6d85cf 100644
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -47,7 +47,6 @@ struct cpuidle_state {
+ 
+ /* Idle State Flags */
+ #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
+-#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 
+ #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+ 
+@@ -93,8 +92,6 @@ struct cpuidle_device {
+ 	struct completion	kobj_unregister;
+ 	void			*governor_data;
+ 	int			safe_state_index;
+-
+-	int (*prepare)		(struct cpuidle_device *dev);
+ };
+ 
+ DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
 
