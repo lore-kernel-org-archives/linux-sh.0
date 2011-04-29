@@ -1,24 +1,15 @@
-From: "George" <george@info.com>
-Date: Tue, 12 Apr 2011 14:25:54 +0000
-Subject: Mutual Aid (Stash of Fortune) 37.5 million USD
-Message-Id: <45715.64.20.0.20.1302618354.squirrel@64.20.0.20>
+From: Mr Tsu-Hing Wong <congbao@dienbien.gov.vn>
+Date: Fri, 29 Apr 2011 00:55:48 +0000
+Subject: Top Urgent  Needed
+Message-Id: <27412453.721.1304038548371.JavaMail.root@mail.dienbien.gov.vn>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 
-Mutual Aid (Stash of Fortune) 37.5 million USD
+Contact me immediately for more information with respect to a transfer of $22,700,000.00 to you.I intend given you 30percent of the total funds if you are interested   for more information.
 
-Hi
-I would hold back certain information for security reasons for now until
-you have found time to visit the BBC website stated below to enable you
-have an insight into what I intend sharing with you.
+E-mail: mrtsuhingwong8@msn.com
 
-http://news.bbc.co.uk/2/hi/middle_east/2988455.stm
 
-Get back to me having visited the above website with this email:
-ivannickerson.claims@yahoo.com.hk
-
-Best Regards
-A former member of the  3rd Infantry Division
-
+Mr Tsu-Hing Wong
