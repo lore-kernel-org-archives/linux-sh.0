@@ -1,140 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Apr 2011 07:43:57 +0000
-Subject: [PATCH 1/2] mmc: tmio: Allow SDHI MMC to use multiple IRQ vectors
-Message-Id: <1303890238-8372-2-git-send-email-horms@verge.net.au>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 29 Apr 2011 18:25:03 +0000
+Subject: Re: [PATCH 00/10] ARM: SMP initialization consolidation
+Message-Id: <4DBB027F.2010405@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1303940515-8807-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1303940515-8807-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-SDHI blocks may have up to 4 IRQ vectors.
-The first three are of use to us, the 4th one
-relates to DRM features that I don't have documentation
-for and are almost certainly tainted by licensing issues.
+On 04/27/2011 04:41 PM, Rob Herring wrote:
+> From: Rob Herring<rob.herring@calxeda.com>
+>
+> In order to avoid duplicating the same platform code yet again for a new
+> platform, this series consolidates platforms using similar SMP startup code to
+> a common implementation. A new kconfig entry SMP_COMMON_PEN is added for
+> platforms using the common pen functions.
+>
+> OMAP uses a h/w mechansism for its pen, but it seems like it could use the same
+> mechansism.
+>
+> Rob
+> Rob Herring (10):
+>    ARM: move Versatile SMP pen code to common location
+>    ARM: ux500: convert to use common secondary pen code
+>    ARM: msm: use common secondary pen code
+>    ARM: add common scu_init_cpus
+>    ARM: omap: use common scu_init_cpus
+>    ARM: realview: use common scu_init_cpus
+>    ARM: vexpress: use common scu_init_cpus
+>    ARM: ux500: use common scu_init_cpus
+>    ARM: shmobile: use common scu_init_cpus
+>    ARM: move set_cpu_present calls to common smp code
+>
+>   arch/arm/Kconfig                             |    8 ++
+>   arch/arm/include/asm/smp.h                   |    4 +
+>   arch/arm/include/asm/smp_scu.h               |    1 +
+>   arch/arm/kernel/Makefile                     |    3 +-
+>   arch/arm/kernel/headsmp.S                    |   40 ++++++++++
+>   arch/arm/kernel/smp.c                        |    4 +
+>   arch/arm/kernel/smp_pen.c                    |  104 +++++++++++++++++++++++++
+>   arch/arm/kernel/smp_scu.c                    |   19 +++++
+>   arch/arm/mach-msm/Makefile                   |    2 +-
+>   arch/arm/mach-msm/headsmp.S                  |   40 ----------
+>   arch/arm/mach-msm/platsmp.c                  |   84 +-------------------
+>   arch/arm/mach-omap2/omap-smp.c               |   25 +------
+>   arch/arm/mach-realview/include/mach/smp.h    |    3 +
+>   arch/arm/mach-realview/platsmp.c             |   30 +-------
+>   arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+>   arch/arm/mach-shmobile/platsmp.c             |   20 +-----
+>   arch/arm/mach-shmobile/smp-sh73a0.c          |    6 +-
+>   arch/arm/mach-ux500/Kconfig                  |    1 +
+>   arch/arm/mach-ux500/Makefile                 |    2 +-
+>   arch/arm/mach-ux500/headsmp.S                |   37 ---------
+>   arch/arm/mach-ux500/include/mach/smp.h       |    4 +-
+>   arch/arm/mach-ux500/platsmp.c                |  105 +-------------------------
+>   arch/arm/mach-vexpress/ct-ca9x4.c            |    9 +--
+>   arch/arm/mach-vexpress/include/mach/smp.h    |    3 +
+>   arch/arm/mach-vexpress/platsmp.c             |    9 +--
+>   arch/arm/plat-versatile/Makefile             |    1 -
+>   arch/arm/plat-versatile/headsmp.S            |   40 ----------
+>   arch/arm/plat-versatile/platsmp.c            |  104 -------------------------
+>   28 files changed, 210 insertions(+), 500 deletions(-)
+>   create mode 100644 arch/arm/kernel/headsmp.S
+>   create mode 100644 arch/arm/kernel/smp_pen.c
+>   delete mode 100644 arch/arm/mach-msm/headsmp.S
+>   delete mode 100644 arch/arm/mach-ux500/headsmp.S
+>   delete mode 100644 arch/arm/plat-versatile/headsmp.S
+>   delete mode 100644 arch/arm/plat-versatile/platsmp.c
+>
 
-This patch allows multiple vectors to be used if supplied
-in the platform data. Which will allow IRQ multiplexing hacks
-to be removed.
+Comments?
 
-I plan to do further work to split tmio_mmc_irq() into per-vector
-handlers. But this patch should be useful by itself.
+I only have a Versatile Express to test on, so any Tested-by's would be 
+appreciated.
 
-Cc: Chris Ball <cjb@laptop.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- drivers/mmc/host/sh_mobile_sdhi.c |    7 ++++---
- drivers/mmc/host/tmio_mmc.h       |    2 +-
- drivers/mmc/host/tmio_mmc_pio.c   |   32 ++++++++++++++++++++++----------
- 3 files changed, 27 insertions(+), 14 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index cc70123..2216210 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -62,7 +62,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
- 	char clk_name[8];
--	int ret;
-+	int i, ret;
- 
- 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
-@@ -116,8 +116,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto eprobe;
- 
--	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
--		(unsigned long)host->ctl, host->irq);
-+	for (i = 0; host->irq[i] >= 0 && i < 3; i++)
-+		pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
-+			(unsigned long)host->ctl, host->irq[i]);
- 
- 	return ret;
- 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 099ed49..6b240f5 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -44,7 +44,7 @@ struct tmio_mmc_host {
- 	struct mmc_request      *mrq;
- 	struct mmc_data         *data;
- 	struct mmc_host         *mmc;
--	int                     irq;
-+	int                     irq[3];
- 	unsigned int		sdio_irq_enabled;
- 
- 	/* Callbacks for clock / power control */
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 62d37de..9d84d90 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -790,7 +790,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	struct tmio_mmc_host *_host;
- 	struct mmc_host *mmc;
- 	struct resource *res_ctl;
--	int ret;
-+	int i, ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
- 
- 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -837,20 +837,29 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	tmio_mmc_clk_stop(_host);
- 	tmio_mmc_reset(_host);
- 
--	ret = platform_get_irq(pdev, 0);
--	if (ret < 0)
--		goto unmap_ctl;
--
--	_host->irq = ret;
-+	for (i = 0; i < 3; i++) {
-+		_host->irq[i] = ret = platform_get_irq(pdev, i);
-+		if (ret < 0) {
-+			if (i = 1)
-+				break;
-+			else
-+				goto unmap_ctl;
-+		}
-+	}
- 
- 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		tmio_mmc_enable_sdio_irq(mmc, 0);
- 
--	ret = request_irq(_host->irq, tmio_mmc_irq, IRQF_DISABLED |
-+	for (i = 0; _host->irq[i] >= 0 && i < 3; i++) {
-+		ret = request_irq(_host->irq[i], tmio_mmc_irq, IRQF_DISABLED |
- 		IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), _host);
--	if (ret)
--		goto unmap_ctl;
-+		if (ret) {
-+			while (--i > 0)
-+				free_irq(_host->irq[i], host);
-+			goto unmap_ctl;
-+		}
-+	}
- 
- 	spin_lock_init(&_host->lock);
- 
-@@ -885,10 +894,13 @@ EXPORT_SYMBOL(tmio_mmc_host_probe);
- 
- void tmio_mmc_host_remove(struct tmio_mmc_host *host)
- {
-+	int i;
-+
- 	mmc_remove_host(host->mmc);
- 	cancel_delayed_work_sync(&host->delayed_reset_work);
- 	tmio_mmc_release_dma(host);
--	free_irq(host->irq, host);
-+	for (i = 0; host->irq[i] >= 0 && i < 3; i++)
-+		free_irq(host->irq[i], host);
- 	iounmap(host->ctl);
- 	mmc_free_host(host->mmc);
- }
--- 
-1.7.4.1
-
+Rob
