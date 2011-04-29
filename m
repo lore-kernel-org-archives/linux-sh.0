@@ -1,23 +1,77 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 04 Apr 2011 06:55:43 +0000
-Subject: Re: ARM: mach-shmobile: zboot MMC fixes
-Message-Id: <BANLkTin2p=KRPh6x4LhyAC_V5o5P8VJKRA@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 29 Apr 2011 17:11:00 +0000
+Subject: [PATCH] mmc: tmio: fix PM in DMA mode
+Message-Id: <Pine.LNX.4.64.1104291909290.17813@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1301899522-20546-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1301899522-20546-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>
 
-Hi Simon,
+DMA mode has to be re-enabled during a resume.
 
-On Mon, Apr 4, 2011 at 3:45 PM, Simon Horman <horms@verge.net.au> wrote:
-> Hi Paul,
->
-> please consider the following two patches for 2.6.39.
-> They fix two minor problems pointed out by Magnus.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc_dma.c |   21 ++++++++++++---------
+ drivers/mmc/host/tmio_mmc_pio.c |    1 +
+ 2 files changed, 13 insertions(+), 9 deletions(-)
 
-Thanks for fixing these things!
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index d3de74a..25f1ad6 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -256,7 +256,10 @@ static bool tmio_mmc_filter(struct dma_chan *chan, void *arg)
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ {
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	if (pdata->dma) {
++	if (!pdata->dma)
++		return;
++
++	if (!host->chan_tx && !host->chan_rx) {
+ 		dma_cap_mask_t mask;
+ 
+ 		dma_cap_zero(mask);
+@@ -284,18 +287,18 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 
+ 		tasklet_init(&host->dma_complete, tmio_mmc_tasklet_fn, (unsigned long)host);
+ 		tasklet_init(&host->dma_issue, tmio_mmc_issue_tasklet_fn, (unsigned long)host);
++	}
+ 
+-		tmio_mmc_enable_dma(host, true);
++	tmio_mmc_enable_dma(host, true);
++
++	return;
+ 
+-		return;
+ ebouncebuf:
+-		dma_release_channel(host->chan_rx);
+-		host->chan_rx = NULL;
++	dma_release_channel(host->chan_rx);
++	host->chan_rx = NULL;
+ ereqrx:
+-		dma_release_channel(host->chan_tx);
+-		host->chan_tx = NULL;
+-		return;
+-	}
++	dma_release_channel(host->chan_tx);
++	host->chan_tx = NULL;
+ }
+ 
+ void tmio_mmc_release_dma(struct tmio_mmc_host *host)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 26598f1..27fc11c 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -995,6 +995,7 @@ int tmio_mmc_host_resume(struct device *dev)
+ 		pm_runtime_get_sync(dev);
+ 
+ 	tmio_mmc_reset(mmc_priv(mmc));
++	tmio_mmc_request_dma(host, host->pdata);
+ 
+ 	return mmc_resume_host(mmc);
+ }
+-- 
+1.7.2.5
 
-/ magnus
