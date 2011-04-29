@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 21 Apr 2011 07:37:58 +0000
+Date: Fri, 29 Apr 2011 17:19:26 +0000
 Subject: Re: [PATCH/RFC] ARM: mach-shmobile: sh7372 power domain prototype
-Message-Id: <Pine.LNX.4.64.1104210933100.6893@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1104291913000.17813@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110411194911.7991.79950.sendpatchset@t400s>
 In-Reply-To: <20110411194911.7991.79950.sendpatchset@t400s>
@@ -10,48 +10,56 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, 19 Apr 2011, Guennadi Liakhovetski wrote:
+On Thu, 21 Apr 2011, Guennadi Liakhovetski wrote:
 
-> On Fri, 15 Apr 2011, Guennadi Liakhovetski wrote:
+> On Tue, 19 Apr 2011, Guennadi Liakhovetski wrote:
 > 
-> > Hi Magnus
+> > On Fri, 15 Apr 2011, Guennadi Liakhovetski wrote:
 > > 
-> > On Tue, 12 Apr 2011, Magnus Damm wrote:
+> > > Hi Magnus
+> > > 
+> > > On Tue, 12 Apr 2011, Magnus Damm wrote:
+> > > 
+> > > > From: Magnus Damm <damm@opensource.se>
+> > > > 
+> > > > This experimental sh7372-specific Runtime PM prototype
+> > > > adds support for the A4LC and A4MP power domains.
+> > > > 
+> > > > Tested on the Mackerel board together with the LCDC:
+> > > > 
+> > > > # blank HDMI fbdev
+> > > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.1/graphics/fb1/blank
+> > > > 
+> > > > # blank LCD panel fbdev
+> > > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+> > > > # unblank LCD panel fbdev
+> > > > echo 0 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+> > > > 
+> > > > Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
+> > > > ---
+> > > > 
+> > > >  arch/arm/mach-shmobile/pm_runtime.c |  227 ++++++++++++++++++++++++++++++++++-
+> > > >  1 file changed, 222 insertions(+), 5 deletions(-)
+> > > 
+> > > Your patch worked mostly, below is a small addition (to be applied on top 
+> > > of your patch), that adds several new domains and devices and fixes a 
+> > > couple of issues with your original patch. Notice an "#if 0" around i2c 
+> > > devices: activating them causes problems - output on the LCDC disappears 
+> > > and the boot process doesn't complete, but without a serial console I 
+> > > couldn't tell, what exactly was the problem. Should be investigated 
+> > > further.
 > > 
-> > > From: Magnus Damm <damm@opensource.se>
-> > > 
-> > > This experimental sh7372-specific Runtime PM prototype
-> > > adds support for the A4LC and A4MP power domains.
-> > > 
-> > > Tested on the Mackerel board together with the LCDC:
-> > > 
-> > > # blank HDMI fbdev
-> > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.1/graphics/fb1/blank
-> > > 
-> > > # blank LCD panel fbdev
-> > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
-> > > # unblank LCD panel fbdev
-> > > echo 0 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
-> > > 
-> > > Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
-> > > ---
-> > > 
-> > >  arch/arm/mach-shmobile/pm_runtime.c |  227 ++++++++++++++++++++++++++++++++++-
-> > >  1 file changed, 222 insertions(+), 5 deletions(-)
-> > 
-> > Your patch worked mostly, below is a small addition (to be applied on top 
-> > of your patch), that adds several new domains and devices and fixes a 
-> > couple of issues with your original patch. Notice an "#if 0" around i2c 
-> > devices: activating them causes problems - output on the LCDC disappears 
-> > and the boot process doesn't complete, but without a serial console I 
-> > couldn't tell, what exactly was the problem. Should be investigated 
-> > further.
+> > Below is a fixed version of the earlier proposed fix;)
 > 
-> Below is a fixed version of the earlier proposed fix;)
+> v3: I think, I've got the use-counting and power-domain initialisation 
+> correct this time too. At least this version works without any need to 
+> modify the runtime PM core.
 
-v3: I think, I've got the use-counting and power-domain initialisation 
-correct this time too. At least this version works without any need to 
-modify the runtime PM core.
+v4: (1) add checks for BIT_ACTIVE for devices without any clocks 
+associated with them, this fixes Oopses. (2) I think, this time I've 
+finally found _the_ correct time and place to remove the "prd" from the 
+list. As before, this is a work in progress, subject to change, depending 
+on surrounding developments. Posting here just for reference.
 
 Thanks
 Guennadi
@@ -61,7 +69,7 @@ Freelance Open-Source Software Developer
 http://www.open-technology.de/
 
 diff --git a/arch/arm/mach-shmobile/pm_runtime.c b/arch/arm/mach-shmobile/pm_runtime.c
-index 48d6e4d..cd0266f 100644
+index 48d6e4d..320d24d 100644
 --- a/arch/arm/mach-shmobile/pm_runtime.c
 +++ b/arch/arm/mach-shmobile/pm_runtime.c
 @@ -31,6 +33,12 @@ struct pm_runtime_power_domain {
@@ -92,7 +100,31 @@ index 48d6e4d..cd0266f 100644
  #define SPDCR 0xe6180008
  #define SWUCR 0xe6180014
  #define PSTR 0xe6180080
-@@ -143,7 +159,14 @@ static int power_domain_runtime_suspend(struct device *dev)
+@@ -93,6 +109,8 @@ static void __devres_release(struct device *dev, void *res)
+ 
+ 	dev_dbg(dev, "__devres_release()\n");
+ 
++	list_del(&prd->entry);
++
+ 	if (test_bit(BIT_CLK_ENABLED, &prd->flags))
+ 		clk_disable(prd->clk);
+ 
+@@ -117,10 +135,12 @@ static int __power_domain_runtime_suspend(struct device *d)
+ 	if (!test_bit(BIT_SUSPENDED, &prd->flags)) {
+ 		if (d->driver && d->driver->pm &&
+ 		    d->driver->pm->runtime_suspend) {
+-			if (!test_bit(BIT_CLK_ENABLED, &prd->flags))
++			if (test_bit(BIT_ACTIVE, &prd->flags) &&
++			    !test_bit(BIT_CLK_ENABLED, &prd->flags))
+ 				clk_enable(prd->clk);
+ 			ret = d->driver->pm->runtime_suspend(d);
+-			clk_disable(prd->clk);
++			if (test_bit(BIT_ACTIVE, &prd->flags))
++				clk_disable(prd->clk);
+ 			clear_bit(BIT_CLK_ENABLED, &prd->flags);
+ 
+ 			if (ret = 0)
+@@ -143,7 +163,14 @@ static int power_domain_runtime_suspend(struct device *dev)
  
  	spin_lock_irqsave(&domain_data->lock, flags);
  
@@ -108,7 +140,33 @@ index 48d6e4d..cd0266f 100644
  	domain_data->use_cnt--;
  
  	if (domain_data->use_cnt = 0) {
-@@ -213,7 +236,7 @@ static int power_domain_runtime_resume(struct device *dev)
+@@ -169,12 +196,13 @@ static int __power_domain_runtime_resume(struct device *d)
+ 	struct pm_runtime_data *prd = __to_prd(d);
+ 	int ret = 0;
+ 
+-	dev_dbg(d, "__power_domain_runtime_resume()\n");
++	dev_dbg(d, "__power_domain_runtime_resume(): %lu\n", prd->flags);
+ 
+ 	BUG_ON(!prd);
+ 
+ 	if (test_bit(BIT_SUSPENDED, &prd->flags)) {
+-		if (!test_bit(BIT_CLK_ENABLED, &prd->flags)) {
++		if (test_bit(BIT_ACTIVE, &prd->flags) &&
++		    !test_bit(BIT_CLK_ENABLED, &prd->flags)) {
+ 			clk_enable(prd->clk);
+ 			set_bit(BIT_CLK_ENABLED, &prd->flags);
+ 		}
+@@ -186,7 +214,8 @@ static int __power_domain_runtime_resume(struct device *d)
+ 		if (ret = 0)
+ 			clear_bit(BIT_SUSPENDED, &prd->flags);
+ 		else {
+-			clk_disable(prd->clk);
++			if (test_bit(BIT_ACTIVE, &prd->flags))
++				clk_disable(prd->clk);
+ 			clear_bit(BIT_CLK_ENABLED, &prd->flags);
+ 		}
+ 	}
+@@ -213,7 +242,7 @@ static int power_domain_runtime_resume(struct device *dev)
  
  	if (ret = 0) {
  		domain_data->use_cnt++;
@@ -117,7 +175,7 @@ index 48d6e4d..cd0266f 100644
  	} else {
  		if (domain_data->use_cnt = 0)
  			power_down(domain_data);
-@@ -235,23 +258,60 @@ static void power_domain_init(struct device *dev, struct pm_runtime_data *prd)
+@@ -235,23 +264,60 @@ static void power_domain_init(struct device *dev, struct pm_runtime_data *prd)
  
  	if (strcmp(dev_name(dev), "sh_mobile_lcdc_fb.0") = 0)
  		domain_data = &sh7372_a4lc;
@@ -187,15 +245,17 @@ index 48d6e4d..cd0266f 100644
  
  		dev_dbg(dev, "domain data available use cnt = %d\n",
  			domain_data->use_cnt);
-@@ -266,7 +326,6 @@ static void platform_pm_runtime_init(struct device *dev,
+@@ -266,7 +332,8 @@ static void platform_pm_runtime_init(struct device *dev,
  		if (!IS_ERR(prd->clk)) {
  			set_bit(BIT_ACTIVE, &prd->flags);
  			dev_info(dev, "clocks managed by runtime pm\n");
 -			power_domain_init(dev, prd);
++		} else {
++			dev_err(dev, "clk-get error %ld\n", PTR_ERR(prd->clk));
  		}
  	}
  }
-@@ -291,7 +350,6 @@ int platform_pm_runtime_suspend(struct device *dev)
+@@ -291,7 +358,6 @@ int platform_pm_runtime_suspend(struct device *dev)
  			clk_disable(prd->clk);
  			clear_bit(BIT_CLK_ENABLED, &prd->flags);
  		}
@@ -203,7 +263,7 @@ index 48d6e4d..cd0266f 100644
  	}
  
  	return 0;
-@@ -329,12 +387,24 @@ static int platform_bus_notify(struct notifier_block *nb,
+@@ -329,12 +395,19 @@ static int platform_bus_notify(struct notifier_block *nb,
  
  	dev_dbg(dev, "platform_bus_notify() %ld !\n", action);
  
@@ -220,18 +280,13 @@ index 48d6e4d..cd0266f 100644
  			dev_err(dev, "unable to alloc memory for runtime pm\n");
 +		}
 +		break;
-+	case BUS_NOTIFY_UNBIND_DRIVER:
-+		prd = __to_prd(dev);
-+		if (prd)
-+			list_del(&prd->entry);
-+		break;
 +	case BUS_NOTIFY_UNBOUND_DRIVER:
 +		dev->pwr_domain = NULL;
 +		break;
  	}
  
  	return 0;
-@@ -380,6 +450,15 @@ static struct notifier_block platform_bus_notifier = {
+@@ -380,6 +453,15 @@ static struct notifier_block platform_bus_notifier = {
  
  static int __init sh_pm_runtime_init(void)
  {
