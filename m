@@ -1,68 +1,71 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 18 Apr 2011 10:23:22 +0000
-Subject: Re: Linux kernel 2.6.35 webcam issue
-Message-Id: <20110418102322.GK32457@linux-sh.org>
+From: Rob Herring <robherring2@gmail.com>
+Date: Sat, 30 Apr 2011 02:08:07 +0000
+Subject: Resend [PATCH 00/10] ARM: SMP initialization consolidation
+Message-Id: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <35FC1A56EEC91A42A0EB92079193ED8D0335279D@ASISML10.asia-idc.local>
-In-Reply-To: <35FC1A56EEC91A42A0EB92079193ED8D0335279D@ASISML10.asia-idc.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 12, 2011 at 09:39:47AM +0800, Feng Yang wrote:
-> Hi 
-> I have trouble in load uvc(USB Video Class) driver on SH platform.
-> I build kernel config option as below.
-> <*>   USB Gadget Support  --->   
-> <M>   USB Gadget Drivers
-> <M>     USB Webcam Gadget 
-> 
-> #insmod /lib/modules/2.6.35/kernel/drivers/usb/gadget/g_webcam.ko
-> I insert USB cable form webcam, then I get error message as below.
-> The webcam brand is "Logitech C270"
-> 
-> ------------[ cut here ]------------
-> kernel BUG at mm/slab.c:3058!
-> Kernel BUG: 003e [#1]
-> last sysfs file: /sys/class/usb_device/usbdev1.2/dev
-> Modules linked in: g_webcam
-> 
-> Pid : 193, Comm:                khubd
-> CPU : 0                 Not tainted  (2.6.35 #4)
-> 
-> PC  : 88065038 SP  : 97051dd8 SR  : 400081f1 TEA : c000f7ec
-> R0  : 970032e8 R1  : 97195cc0 R2  : 0000000c R3  : 00000001
-> R4  : 97001420 R5  : 000000d0 R6  : 970032e8 R7  : ffffffff
-> R8  : 97001420 R9  : 9700b1a0 R10 : 000000d0 R11 : 00000000
-> R12 : 970032e0 R13 : 970032f0 R14 : 00000000
-> MACH: 00000010 MACL: 1bb01000 GBR : 00000000 PR  : 880653e2
-> 
-> Call trace:
->  [<880653e2>] 0x880653e2
->  [<8817f08a>] 0x8817f08a
->  [<8817dc8e>] 0x8817dc8e
->  [<8817dd32>] 0x8817dd32
->  [<881773a2>] 0x881773a2
->  [<88177aa4>] 0x88177aa4
->  [<88177d66>] 0x88177d66
->  [<88178f6e>] 0x88178f6e
->  [<8810d462>] 0x8810d462
->  [<8802791c>] 0x8802791c
->  [<88027622>] 0x88027622
->  [<88178790>] 0x88178790
->  [<88003e92>] 0x88003e92
->  [<880275cc>] 0x880275cc
->  [<88003e8c>] 0x88003e8c
-> 
-You've unfortunately not enabled debug info, so this backtrace is useless
-without the corresponding System.map.
+From: Rob Herring <rob.herring@calxeda.com>
 
-If you're able to reproduce this, you may wish to rebuild with both
-CONFIG_DEBUG_INFO and CONFIG_DEBUG_BUGVERBOSE set, and post the more
-detailed log.
+Resending since the patches didn't make it thru the 1st time.
 
-In any event, 2.6.35 is a very old kernel, so you can save yourself a lot
-of trouble by testing a new kernel and seeing if the problem persists --
-backporting fixes is always less work than debugging something that has
-already been debugged!
+In order to avoid duplicating the same platform code yet again for a new 
+platform, this series consolidates platforms using similar SMP startup code to
+a common implementation. A new kconfig entry SMP_COMMON_PEN is added for
+platforms using the common pen functions.
+
+OMAP uses a h/w mechansism for its pen, but it seems like it could use the same
+mechansism.
+
+Rob
+Rob Herring (10):
+  ARM: move Versatile SMP pen code to common location
+  ARM: ux500: convert to use common secondary pen code
+  ARM: msm: use common secondary pen code
+  ARM: add common scu_init_cpus
+  ARM: omap: use common scu_init_cpus
+  ARM: realview: use common scu_init_cpus
+  ARM: vexpress: use common scu_init_cpus
+  ARM: ux500: use common scu_init_cpus
+  ARM: shmobile: use common scu_init_cpus
+  ARM: move set_cpu_present calls to common smp code
+
+ arch/arm/Kconfig                             |    8 ++
+ arch/arm/include/asm/smp.h                   |    4 +
+ arch/arm/include/asm/smp_scu.h               |    1 +
+ arch/arm/kernel/Makefile                     |    3 +-
+ arch/arm/kernel/headsmp.S                    |   40 ++++++++++
+ arch/arm/kernel/smp.c                        |    4 +
+ arch/arm/kernel/smp_pen.c                    |  104 +++++++++++++++++++++++++
+ arch/arm/kernel/smp_scu.c                    |   19 +++++
+ arch/arm/mach-msm/Makefile                   |    2 +-
+ arch/arm/mach-msm/headsmp.S                  |   40 ----------
+ arch/arm/mach-msm/platsmp.c                  |   84 +-------------------
+ arch/arm/mach-omap2/omap-smp.c               |   25 +------
+ arch/arm/mach-realview/include/mach/smp.h    |    3 +
+ arch/arm/mach-realview/platsmp.c             |   30 +-------
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+ arch/arm/mach-shmobile/platsmp.c             |   20 +-----
+ arch/arm/mach-shmobile/smp-sh73a0.c          |    6 +-
+ arch/arm/mach-ux500/Kconfig                  |    1 +
+ arch/arm/mach-ux500/Makefile                 |    2 +-
+ arch/arm/mach-ux500/headsmp.S                |   37 ---------
+ arch/arm/mach-ux500/include/mach/smp.h       |    4 +-
+ arch/arm/mach-ux500/platsmp.c                |  105 +-------------------------
+ arch/arm/mach-vexpress/ct-ca9x4.c            |    9 +--
+ arch/arm/mach-vexpress/include/mach/smp.h    |    3 +
+ arch/arm/mach-vexpress/platsmp.c             |    9 +--
+ arch/arm/plat-versatile/Makefile             |    1 -
+ arch/arm/plat-versatile/headsmp.S            |   40 ----------
+ arch/arm/plat-versatile/platsmp.c            |  104 -------------------------
+ 28 files changed, 210 insertions(+), 500 deletions(-)
+ create mode 100644 arch/arm/kernel/headsmp.S
+ create mode 100644 arch/arm/kernel/smp_pen.c
+ delete mode 100644 arch/arm/mach-msm/headsmp.S
+ delete mode 100644 arch/arm/mach-ux500/headsmp.S
+ delete mode 100644 arch/arm/plat-versatile/headsmp.S
+ delete mode 100644 arch/arm/plat-versatile/platsmp.c
+
