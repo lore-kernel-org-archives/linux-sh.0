@@ -1,96 +1,85 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 Apr 2011 02:55:59 +0000
-Subject: [PATCH] ARM: mach-shmobile: Use SCIFA and SCIFB port types on sh7377
-Message-Id: <20110428030240.19870.42931.sendpatchset@t400s>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 30 Apr 2011 09:56:26 +0000
+Subject: [RFC][PATCH] ARM / shmobile: Support for power domain A4MP on SH7372
+Message-Id: <201104301156.26565.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201104290154.12966.rjw@sisk.pl> <201104290155.41434.rjw@sisk.pl> <201104300259.08477.rjw@sisk.pl>
+In-Reply-To: <201104300259.08477.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Update the sh7377 serial port types to make use of 
-PORT_SCIFA and PORT_SCIFB. This makes the software
-match the sh7377 data sheet.
+Use the power domains support code added by the previous
+patches to implement support for power domain A4MP on SH7372.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
 
- arch/arm/mach-shmobile/setup-sh7377.c |   16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+Hi,
 
---- 0004/arch/arm/mach-shmobile/setup-sh7377.c
-+++ work/arch/arm/mach-shmobile/setup-sh7377.c	2011-04-27 21:46:36.000000000 +0900
-@@ -39,7 +39,7 @@ static struct plat_sci_port scif0_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { evt2irq(0xc00), evt2irq(0xc00),
- 			    evt2irq(0xc00), evt2irq(0xc00) },
- };
-@@ -58,7 +58,7 @@ static struct plat_sci_port scif1_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { evt2irq(0xc20), evt2irq(0xc20),
- 			    evt2irq(0xc20), evt2irq(0xc20) },
- };
-@@ -77,7 +77,7 @@ static struct plat_sci_port scif2_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { evt2irq(0xc40), evt2irq(0xc40),
- 			    evt2irq(0xc40), evt2irq(0xc40) },
- };
-@@ -96,7 +96,7 @@ static struct plat_sci_port scif3_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { evt2irq(0xc60), evt2irq(0xc60),
- 			    evt2irq(0xc60), evt2irq(0xc60) },
- };
-@@ -115,7 +115,7 @@ static struct plat_sci_port scif4_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { evt2irq(0xd20), evt2irq(0xd20),
- 			    evt2irq(0xd20), evt2irq(0xd20) },
- };
-@@ -134,7 +134,7 @@ static struct plat_sci_port scif5_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { evt2irq(0xd40), evt2irq(0xd40),
- 			    evt2irq(0xd40), evt2irq(0xd40) },
- };
-@@ -153,7 +153,7 @@ static struct plat_sci_port scif6_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFA,
- 	.irqs		= { intcs_evt2irq(0x1a80), intcs_evt2irq(0x1a80),
- 			    intcs_evt2irq(0x1a80), intcs_evt2irq(0x1a80) },
- };
-@@ -172,7 +172,7 @@ static struct plat_sci_port scif7_platfo
- 	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIF,
-+	.type		= PORT_SCIFB,
- 	.irqs		= { evt2irq(0xd60), evt2irq(0xd60),
- 			    evt2irq(0xd60), evt2irq(0xd60) },
- };
+This patch is on top of https://lkml.org/lkml/2011/4/29/490 .
+
+Thanks,
+Rafael
+
+---
+ arch/arm/mach-shmobile/board-mackerel.c      |    2 ++
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +++
+ arch/arm/mach-shmobile/pm-sh7372.c           |    7 +++++++
+ 3 files changed, 12 insertions(+)
+
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -90,9 +90,16 @@ static struct sh7372_domain_data sh7372_
+ 
+ struct generic_power_domain sh7372_a4lc_domain;
+ 
++static struct sh7372_domain_data sh7372_a4mp_domain_data = {
++	.bit_shift = 2,
++};
++
++struct generic_power_domain sh7372_a4mp_domain;
++
+ static int __init sh7372_power_domains_init(void)
+ {
+ 	sh7372_init_domain(&sh7372_a4lc_domain, &sh7372_a4lc_domain_data);
++	sh7372_init_domain(&sh7372_a4mp_domain, &sh7372_a4mp_domain_data);
+ 	return 0;
+ }
+ core_initcall(sh7372_power_domains_init);
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -475,11 +475,14 @@ struct platform_device;
+ #ifdef CONFIG_PM
+ extern struct generic_power_domain sh7372_a4lc_domain;
+ #define SH7372_A4LC	(&sh7372_a4lc_domain)
++extern struct generic_power_domain sh7372_a4mp_domain;
++#define SH7372_A4MP	(&sh7372_a4mp_domain)
+ 
+ extern void sh7372_add_device_to_domain(struct generic_power_domain *domain,
+ 					struct platform_device *pdev);
+ #else
+ #define SH7372_A4LC	NULL
++#define SH7372_A4PM	NULL
+ 
+ static inline void sh7372_add_device_to_domain(struct generic_power_domain *dom,
+ 					       struct platform_device *pd) {}
+Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1218,6 +1218,8 @@ static void __init mackerel_init(void)
+ 	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
+ 	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
+ 
++	sh7372_add_device_to_domain(SH7372_A4MP, &fsi_device);
++
+ 	hdmi_init_pm_clock();
+ }
+ 
+
