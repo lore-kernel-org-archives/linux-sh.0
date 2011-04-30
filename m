@@ -1,16 +1,40 @@
-From: TONY KINGS <info@live.com>
-Date: Mon, 11 Apr 2011 02:15:28 +0000
-Subject: (no subject)
-Message-Id: <2917bbd5a131853e23f25f1d65e48c98@192.168.0.1>
+From: Rob Herring <robherring2@gmail.com>
+Date: Sat, 30 Apr 2011 02:08:14 +0000
+Subject: [PATCH 07/10] ARM: vexpress: use common scu_init_cpus
+Message-Id: <1304129297-6614-8-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Rob Herring <rob.herring@calxeda.com>
 
+Convert Versatile Express to use common scu_init_cpus function.
 
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+---
+ arch/arm/mach-vexpress/ct-ca9x4.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
 
+diff --git a/arch/arm/mach-vexpress/ct-ca9x4.c b/arch/arm/mach-vexpress/ct-ca9x4.c
+index a96772d..4d1476f 100644
+--- a/arch/arm/mach-vexpress/ct-ca9x4.c
++++ b/arch/arm/mach-vexpress/ct-ca9x4.c
+@@ -206,10 +206,7 @@ static void __init ct_ca9x4_init(void)
+ #ifdef CONFIG_SMP
+ static void ct_ca9x4_init_cpu_map(void)
+ {
+-	int i, ncores = scu_get_core_count(MMIO_P2V(A9_MPCORE_SCU));
+-
+-	for (i = 0; i < ncores; ++i)
+-		set_cpu_possible(i, true);
++	scu_init_cpus(MMIO_P2V(A9_MPCORE_SCU));
+ }
+ 
+ static void ct_ca9x4_smp_enable(unsigned int max_cpus)
 -- 
-Are you in need of getting a loan today.Contact us via mail
-at:tonykings_loans@yahoo.com
+1.7.1
+
