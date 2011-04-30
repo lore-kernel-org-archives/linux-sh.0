@@ -1,198 +1,214 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 21 Apr 2011 06:55:45 +0000
-Subject: [PATCH 2/3 v3] MMC: add runtime and system power-management support
-Message-Id: <Pine.LNX.4.64.1104210841060.6893@axis700.grange>
+From: Rob Herring <robherring2@gmail.com>
+Date: Sat, 30 Apr 2011 02:08:09 +0000
+Subject: [PATCH 02/10] ARM: ux500: convert to use common secondary pen code
+Message-Id: <1304129297-6614-3-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1104152021510.18593@axis700.grange>
- <Pine.LNX.4.64.1104152027010.18593@axis700.grange>
- <Pine.LNX.4.64.1104191248190.16641@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1104191248190.16641@axis700.grange>
+References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, Alan Stern <stern@rowland.harvard.edu>, "Rafael J. Wysocki" <rjw@sisk.pl>
+To: linux-arm-kernel@lists.infradead.org
 
-Adding support for runtime power-management to the MMCIF driver allows
-it to save power as long as no card is present. System-wide power
-management has been verified with experimental PM patches on AP4-
-based systems.
+From: Rob Herring <rob.herring@calxeda.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
 ---
-v3: A further improvement over v2, but in any case waiting for a result of 
-the runtime PM vs. driver unbinding discussion:
+ arch/arm/mach-ux500/Kconfig            |    1 +
+ arch/arm/mach-ux500/Makefile           |    2 +-
+ arch/arm/mach-ux500/headsmp.S          |   37 ---------------
+ arch/arm/mach-ux500/include/mach/smp.h |    4 +-
+ arch/arm/mach-ux500/platsmp.c          |   79 +-------------------------------
+ 5 files changed, 5 insertions(+), 118 deletions(-)
+ delete mode 100644 arch/arm/mach-ux500/headsmp.S
 
-http://thread.gmane.org/gmane.linux.kernel.mmc/7433/focust76
-
-specific changes are:
-
-(1) the patch to bus.c is dropped as wrong, instead, platform specific 
-runtime PM prototype code has been fixed
-
-(2) consolidated calls to
-
-	pm_runtime_put_noidle();
-	pm_runtime_suspend();
-
-to one call to
-
-	pm_runtime_put_sync()
-
-(3) fixed probe() error path.
-
-v2: With this patch and with the patch to mmc/core/bus.c, that I've sent a 
-couple of minutes ago
-
-http://article.gmane.org/gmane.linux.kernel.mmc/7433
-
-PM works correctly with all possible modprobe / rmmod, card-insert / 
-eject, and STR scenarios, that I could come up with. The part in 
-sh_mmcif_remove() is a bit rough though...
-
- drivers/mmc/host/sh_mmcif.c |   69 ++++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 65 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index d3871b6..1889d64 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -29,6 +29,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/pagemap.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
- #include <linux/spinlock.h>
+diff --git a/arch/arm/mach-ux500/Kconfig b/arch/arm/mach-ux500/Kconfig
+index 5862601..ba5c78c 100644
+--- a/arch/arm/mach-ux500/Kconfig
++++ b/arch/arm/mach-ux500/Kconfig
+@@ -7,6 +7,7 @@ config UX500_SOC_COMMON
+ 	select HAS_MTU
+ 	select NOMADIK_GPIO
+ 	select ARM_ERRATA_753970
++	select SMP_COMMON_PEN if SMP
  
- #define DRIVER_NAME	"sh_mmcif"
-@@ -173,6 +174,7 @@ struct sh_mmcif_host {
- 	struct completion intr_wait;
- 	enum mmcif_state state;
- 	spinlock_t lock;
-+	bool power;
+ menu "Ux500 SoC"
  
- 	/* DMA support */
- 	struct dma_chan		*chan_rx;
-@@ -877,11 +879,21 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	if (ios->power_mode = MMC_POWER_UP) {
- 		if (p->set_pwr)
- 			p->set_pwr(host->pd, ios->power_mode);
-+		if (!host->power) {
-+			pm_runtime_get_sync(&host->pd->dev);
-+			host->power = true;
-+		}
- 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
- 		/* clock stop */
- 		sh_mmcif_clock_control(host, 0);
--		if (ios->power_mode = MMC_POWER_OFF && p->down_pwr)
--			p->down_pwr(host->pd);
-+		if (ios->power_mode = MMC_POWER_OFF) {
-+			if (host->power) {
-+				pm_runtime_put(&host->pd->dev);
-+				host->power = false;
-+			}
-+			if (p->down_pwr)
-+				p->down_pwr(host->pd);
-+		}
- 		host->state = STATE_IDLE;
- 		return;
- 	}
-@@ -1053,6 +1065,12 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	sh_mmcif_sync_reset(host);
- 	platform_set_drvdata(pdev, host);
+diff --git a/arch/arm/mach-ux500/Makefile b/arch/arm/mach-ux500/Makefile
+index b549a8f..8c89d18 100644
+--- a/arch/arm/mach-ux500/Makefile
++++ b/arch/arm/mach-ux500/Makefile
+@@ -12,7 +12,7 @@ obj-$(CONFIG_MACH_U8500)	+= board-mop500.o board-mop500-sdi.o \
+ 				board-mop500-u8500uib.o \
+ 				board-mop500-pins.o
+ obj-$(CONFIG_MACH_U5500)	+= board-u5500.o board-u5500-sdi.o
+-obj-$(CONFIG_SMP)		+= platsmp.o headsmp.o
++obj-$(CONFIG_SMP)		+= platsmp.o
+ obj-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
+ obj-$(CONFIG_LOCAL_TIMERS)	+= localtimer.o
+ obj-$(CONFIG_U5500_MODEM_IRQ)	+= modem-irq-db5500.o
+diff --git a/arch/arm/mach-ux500/headsmp.S b/arch/arm/mach-ux500/headsmp.S
+deleted file mode 100644
+index 64fa451..0000000
+--- a/arch/arm/mach-ux500/headsmp.S
++++ /dev/null
+@@ -1,37 +0,0 @@
+-/*
+- *  Copyright (c) 2009 ST-Ericsson
+- *	This file is based  ARM Realview platform
+- *  Copyright (c) 2003 ARM Limited
+- *  All Rights Reserved
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-#include <linux/linkage.h>
+-#include <linux/init.h>
+-
+-	__INIT
+-
+-/*
+- * U8500 specific entry point for secondary CPUs.
+- */
+-ENTRY(u8500_secondary_startup)
+-	mrc	p15, 0, r0, c0, c0, 5
+-	and	r0, r0, #15
+-	adr	r4, 1f
+-	ldmia	r4, {r5, r6}
+-	sub	r4, r4, r5
+-	add	r6, r6, r4
+-pen:	ldr	r7, [r6]
+-	cmp	r7, r0
+-	bne	pen
+-
+-	/*
+-	 * we've been released from the holding pen: secondary_stack
+-	 * should now contain the SVC stack for this core
+-	 */
+-	b	secondary_startup
+-
+-1:	.long	.
+-	.long	pen_release
+diff --git a/arch/arm/mach-ux500/include/mach/smp.h b/arch/arm/mach-ux500/include/mach/smp.h
+index ca2b15b..a99d674 100644
+--- a/arch/arm/mach-ux500/include/mach/smp.h
++++ b/arch/arm/mach-ux500/include/mach/smp.h
+@@ -11,8 +11,8 @@
  
-+	pm_runtime_enable(&pdev->dev);
-+	host->power = false;
-+	ret = pm_runtime_resume(&pdev->dev);
-+	if (ret < 0)
-+		goto clean_up2;
-+
- 	/* See if we also get DMA */
- 	sh_mmcif_request_dma(host, pd);
+ #include <asm/hardware/gic.h>
  
-@@ -1063,13 +1081,13 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	ret = request_irq(irq[0], sh_mmcif_intr, 0, "sh_mmc:error", host);
- 	if (ret) {
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
--		goto clean_up2;
-+		goto clean_up3;
- 	}
- 	ret = request_irq(irq[1], sh_mmcif_intr, 0, "sh_mmc:int", host);
- 	if (ret) {
- 		free_irq(irq[0], host);
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
--		goto clean_up2;
-+		goto clean_up3;
- 	}
+-/* This is required to wakeup the secondary core */
+-extern void u8500_secondary_startup(void);
++#define boot_secondary pen_boot_secondary
++#define platform_secondary_init pen_secondary_init
  
- 	sh_mmcif_detect(host->mmc);
-@@ -1079,7 +1097,12 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
- 	return ret;
+ /*
+  * We use IRQ1 as the IPI
+diff --git a/arch/arm/mach-ux500/platsmp.c b/arch/arm/mach-ux500/platsmp.c
+index 4fff4d4..88f30b8 100644
+--- a/arch/arm/mach-ux500/platsmp.c
++++ b/arch/arm/mach-ux500/platsmp.c
+@@ -22,25 +22,6 @@
+ #include <mach/hardware.h>
+ #include <mach/setup.h>
  
-+clean_up3:
-+	mmc_remove_host(mmc);
-+	sh_mmcif_release_dma(host);
-+	pm_runtime_suspend(&pdev->dev);
- clean_up2:
-+	pm_runtime_disable(&pdev->dev);
- 	clk_disable(host->hclk);
- clean_up1:
- 	mmc_free_host(mmc);
-@@ -1112,15 +1135,53 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
- 
- 	clk_disable(host->hclk);
- 	mmc_free_host(host->mmc);
-+	pm_runtime_put_sync(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
-+	pm_runtime_get_noresume(&pdev->dev);
- 
- 	return 0;
+-/*
+- * control for which core is the next to come out of the secondary
+- * boot "holding pen"
+- */
+-volatile int pen_release = -1;
+-
+-/*
+- * Write pen_release in a way that is guaranteed to be visible to all
+- * observers, irrespective of whether they're taking part in coherency
+- * or not.  This is necessary for the hotplug code to work reliably.
+- */
+-static void write_pen_release(int val)
+-{
+-	pen_release = val;
+-	smp_wmb();
+-	__cpuc_flush_dcache_area((void *)&pen_release, sizeof(pen_release));
+-	outer_clean_range(__pa(&pen_release), __pa(&pen_release + 1));
+-}
+-
+ static void __iomem *scu_base_addr(void)
+ {
+ 	if (cpu_is_u5500())
+@@ -53,64 +34,6 @@ static void __iomem *scu_base_addr(void)
+ 	return NULL;
  }
  
-+#ifdef CONFIG_PM
-+static int sh_mmcif_suspend(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
-+	int ret = mmc_suspend_host(host->mmc);
-+
-+	if (!ret) {
-+		sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
-+		clk_disable(host->hclk);
-+	}
-+
-+	return ret;
-+}
-+
-+static int sh_mmcif_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
-+
-+	clk_enable(host->hclk);
-+
-+	return mmc_resume_host(host->mmc);
-+}
-+#else
-+#define sh_mmcif_suspend	NULL
-+#define sh_mmcif_resume		NULL
-+#endif	/* CONFIG_PM */
-+
-+static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
-+	.suspend = sh_mmcif_suspend,
-+	.resume = sh_mmcif_resume,
-+};
-+
- static struct platform_driver sh_mmcif_driver = {
- 	.probe		= sh_mmcif_probe,
- 	.remove		= sh_mmcif_remove,
- 	.driver		= {
- 		.name	= DRIVER_NAME,
-+		.pm	= &sh_mmcif_dev_pm_ops,
- 	},
- };
+-static DEFINE_SPINLOCK(boot_lock);
+-
+-void __cpuinit platform_secondary_init(unsigned int cpu)
+-{
+-	/*
+-	 * if any interrupts are already enabled for the primary
+-	 * core (e.g. timer irq), then they will not have been enabled
+-	 * for us: do so
+-	 */
+-	gic_secondary_init(0);
+-
+-	/*
+-	 * let the primary processor know we're out of the
+-	 * pen, then head off into the C entry point
+-	 */
+-	write_pen_release(-1);
+-
+-	/*
+-	 * Synchronise with the boot thread.
+-	 */
+-	spin_lock(&boot_lock);
+-	spin_unlock(&boot_lock);
+-}
+-
+-int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
+-{
+-	unsigned long timeout;
+-
+-	/*
+-	 * set synchronisation state between this boot processor
+-	 * and the secondary one
+-	 */
+-	spin_lock(&boot_lock);
+-
+-	/*
+-	 * The secondary processor is waiting to be released from
+-	 * the holding pen - release it, then wait for it to flag
+-	 * that it has been released by resetting pen_release.
+-	 */
+-	write_pen_release(cpu);
+-
+-	smp_cross_call(cpumask_of(cpu), 1);
+-
+-	timeout = jiffies + (1 * HZ);
+-	while (time_before(jiffies, timeout)) {
+-		if (pen_release = -1)
+-			break;
+-	}
+-
+-	/*
+-	 * now the secondary core is starting up let it run its
+-	 * calibrations, then wait for it to finish
+-	 */
+-	spin_unlock(&boot_lock);
+-
+-	return pen_release != -1 ? -ENOSYS : 0;
+-}
+-
+ static void __init wakeup_secondary(void)
+ {
+ 	void __iomem *backupram;
+@@ -129,7 +52,7 @@ static void __init wakeup_secondary(void)
+ 	 * is waiting for. This would wake up the secondary core from WFE
+ 	 */
+ #define UX500_CPU1_JUMPADDR_OFFSET 0x1FF4
+-	__raw_writel(virt_to_phys(u8500_secondary_startup),
++	__raw_writel(virt_to_phys(pen_secondary_startup),
+ 		     backupram + UX500_CPU1_JUMPADDR_OFFSET);
  
+ #define UX500_CPU1_WAKEMAGIC_OFFSET 0x1FF0
 -- 
-1.7.2.5
+1.7.1
 
