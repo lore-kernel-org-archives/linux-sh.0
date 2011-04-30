@@ -1,40 +1,31 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Sat, 30 Apr 2011 02:08:14 +0000
-Subject: [PATCH 07/10] ARM: vexpress: use common scu_init_cpus
-Message-Id: <1304129297-6614-8-git-send-email-robherring2@gmail.com>
+From: <mcrosft06@cox.net>
+Date: Sat, 30 Apr 2011 00:20:37 +0000
+Subject: CONGRATULATIONS
+Message-Id: <20110429202037.IG8ZS.235758.imail@eastrmwml43>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1304129297-6614-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-From: Rob Herring <rob.herring@calxeda.com>
+Dear Recipient,
 
-Convert Versatile Express to use common scu_init_cpus function.
+We are pleased to inform you that you won the sum of 1,000,000.00 Euros on =
+the
+Microsoft Promo Commission.your e-mail address attached to:Ticket Number:03=
+-02-1,
+Reference Number:SL/07/4009,Please acknowledge the receipt of this mail to
+Pastor Alan Jonathan With the details below:
 
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
----
- arch/arm/mach-vexpress/ct-ca9x4.c |    5 +----
- 1 files changed, 1 insertions(+), 4 deletions(-)
+EMAIL: mcrawrdprtmnt@aol.com
 
-diff --git a/arch/arm/mach-vexpress/ct-ca9x4.c b/arch/arm/mach-vexpress/ct-ca9x4.c
-index a96772d..4d1476f 100644
---- a/arch/arm/mach-vexpress/ct-ca9x4.c
-+++ b/arch/arm/mach-vexpress/ct-ca9x4.c
-@@ -206,10 +206,7 @@ static void __init ct_ca9x4_init(void)
- #ifdef CONFIG_SMP
- static void ct_ca9x4_init_cpu_map(void)
- {
--	int i, ncores = scu_get_core_count(MMIO_P2V(A9_MPCORE_SCU));
--
--	for (i = 0; i < ncores; ++i)
--		set_cpu_possible(i, true);
-+	scu_init_cpus(MMIO_P2V(A9_MPCORE_SCU));
- }
- 
- static void ct_ca9x4_smp_enable(unsigned int max_cpus)
--- 
-1.7.1
+1.) Name...
+2.) Address..
+3.) Phone...
+4.) Sex...
+5.) Occupation....
+6.) Age...
+7.) Country Of Origin....
 
+Sir Ivan Smith
+Mircosoft =C2=A9 Promo Cordinator
