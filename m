@@ -1,170 +1,230 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 19 Apr 2011 10:52:01 +0000
-Subject: [PATCH 2/3 v2] MMC: add runtime and system power-management support
-Message-Id: <Pine.LNX.4.64.1104191248190.16641@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 30 Apr 2011 00:59:08 +0000
+Subject: [Update][RFC][PATCH 2/2] ARM / shmobile: Support for I/O power domains for SH7372 (v2)
+Message-Id: <201104300259.08477.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1104152021510.18593@axis700.grange>
- <Pine.LNX.4.64.1104152027010.18593@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1104152027010.18593@axis700.grange>
+References: <201104290154.12966.rjw@sisk.pl> <201104290155.41434.rjw@sisk.pl>
+In-Reply-To: <201104290155.41434.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, Alan Stern <stern@rowland.harvard.edu>, "Rafael J. Wysocki" <rjw@sisk.pl>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Adding support for runtime power-management to the MMCIF driver allows
-it to save power as long as no card is present. System-wide power
-management has been verified with experimental PM patches on AP4-
-based systems.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Use the generic power domains support introduced by the previous
+patch to implement support for power domains on SH7372.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
 
-With this patch and with the patch to mmc/core/bus.c, that I've sent a 
-couple of minutes ago
+Hi,
 
-http://article.gmane.org/gmane.linux.kernel.mmc/7433
+This version of the patch has been modified to make it more
+straightforward to add more power domains to SH7372 in the future.
 
-PM works correctly with all possible modprobe / rmmod, card-insert / 
-eject, and STR scenarios, that I could come up with. The part in 
-sh_mmcif_remove() is a bit rough though...
+Thanks,
+Rafael
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index d3871b6..23eb0ec 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -29,6 +29,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/pagemap.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
- #include <linux/spinlock.h>
+---
+ arch/arm/mach-shmobile/Makefile              |    4 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    3 
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   16 ++++
+ arch/arm/mach-shmobile/pm-sh7372.c           |   98 +++++++++++++++++++++++++++
+ include/linux/platform_device.h              |   22 +++++-
+ 5 files changed, 142 insertions(+), 1 deletion(-)
+
+Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1215,6 +1215,9 @@ static void __init mackerel_init(void)
  
- #define DRIVER_NAME	"sh_mmcif"
-@@ -173,6 +174,7 @@ struct sh_mmcif_host {
- 	struct completion intr_wait;
- 	enum mmcif_state state;
- 	spinlock_t lock;
-+	bool power;
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
  
- 	/* DMA support */
- 	struct dma_chan		*chan_rx;
-@@ -877,11 +879,21 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	if (ios->power_mode = MMC_POWER_UP) {
- 		if (p->set_pwr)
- 			p->set_pwr(host->pd, ios->power_mode);
-+		if (!host->power) {
-+			pm_runtime_get_sync(&host->pd->dev);
-+			host->power = true;
-+		}
- 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
- 		/* clock stop */
- 		sh_mmcif_clock_control(host, 0);
--		if (ios->power_mode = MMC_POWER_OFF && p->down_pwr)
--			p->down_pwr(host->pd);
-+		if (ios->power_mode = MMC_POWER_OFF) {
-+			if (host->power) {
-+				pm_runtime_put(&host->pd->dev);
-+				host->power = false;
-+			}
-+			if (p->down_pwr)
-+				p->down_pwr(host->pd);
-+		}
- 		host->state = STATE_IDLE;
- 		return;
- 	}
-@@ -1053,6 +1065,12 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	sh_mmcif_sync_reset(host);
- 	platform_set_drvdata(pdev, host);
- 
-+	pm_runtime_enable(&pdev->dev);
-+	host->power = false;
-+	ret = pm_runtime_resume(&pdev->dev);
-+	if (ret < 0)
-+		goto clean_up2;
++	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
++	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
 +
- 	/* See if we also get DMA */
- 	sh_mmcif_request_dma(host, pd);
- 
-@@ -1063,13 +1081,13 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	ret = request_irq(irq[0], sh_mmcif_intr, 0, "sh_mmc:error", host);
- 	if (ret) {
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
--		goto clean_up2;
-+		goto clean_up3;
- 	}
- 	ret = request_irq(irq[1], sh_mmcif_intr, 0, "sh_mmc:int", host);
- 	if (ret) {
- 		free_irq(irq[0], host);
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
--		goto clean_up2;
-+		goto clean_up3;
- 	}
- 
- 	sh_mmcif_detect(host->mmc);
-@@ -1079,7 +1097,10 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
- 	return ret;
- 
-+clean_up3:
-+	pm_runtime_suspend(&pdev->dev);
- clean_up2:
-+	pm_runtime_disable(&pdev->dev);
- 	clk_disable(host->hclk);
- clean_up1:
- 	mmc_free_host(mmc);
-@@ -1112,15 +1133,54 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
- 
- 	clk_disable(host->hclk);
- 	mmc_free_host(host->mmc);
-+	pm_runtime_put_noidle(&pdev->dev);
-+	pm_runtime_suspend(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
-+	pm_runtime_get_noresume(&pdev->dev);
- 
- 	return 0;
+ 	hdmi_init_pm_clock();
  }
  
-+#ifdef CONFIG_PM
-+static int sh_mmcif_suspend(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
-+	int ret = mmc_suspend_host(host->mmc);
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- /dev/null
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -0,0 +1,98 @@
++/*
++ * arch/arm/mach-shmobile/pm-sh7372.c
++ *
++ * Power domains support code for SH7372
++ *
++ * Copyright (C) 2011 Rafael J. Wysocki <rjw@sisk.pl>, Renesas Electronics Corp.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License v2.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
 +
-+	if (!ret) {
-+		sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
-+		clk_disable(host->hclk);
-+	}
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/pm_runtime.h>
++#include <linux/platform_device.h>
 +
-+	return ret;
-+}
++#include <mach/sh7372.h>
 +
-+static int sh_mmcif_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
-+
-+	clk_enable(host->hclk);
-+
-+	return mmc_resume_host(host->mmc);
-+}
-+#else
-+#define sh_mmcif_suspend	NULL
-+#define sh_mmcif_resume		NULL
-+#endif	/* CONFIG_PM */
-+
-+static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
-+	.suspend = sh_mmcif_suspend,
-+	.resume = sh_mmcif_resume,
++struct sh7372_domain_data {
++	unsigned int bit_shift;
 +};
 +
- static struct platform_driver sh_mmcif_driver = {
- 	.probe		= sh_mmcif_probe,
- 	.remove		= sh_mmcif_remove,
- 	.driver		= {
- 		.name	= DRIVER_NAME,
-+		.pm	= &sh_mmcif_dev_pm_ops,
- 	},
- };
++#define SPDCR 0xe6180008
++#define SWUCR 0xe6180014
++#define PSTR 0xe6180080
++
++static int pd_power_down(struct dev_power_domain *domain)
++{
++	struct sh7372_domain_data *dd = domain->platform_data;
++	unsigned int mask = 1 << dd->bit_shift;
++
++	if (__raw_readl(PSTR) & mask) {
++		__raw_writel(mask, SPDCR);
++
++		while (__raw_readl(SPDCR) & mask) {}
++
++		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
++	}
++
++	return 0;
++}
++
++static int pd_power_up(struct dev_power_domain *domain)
++{
++	struct sh7372_domain_data *dd = domain->platform_data;
++	unsigned int mask = 1 << dd->bit_shift;
++
++	if (!(__raw_readl(PSTR) & mask)) {
++		__raw_writel(mask, SWUCR);
++
++		while (__raw_readl(SWUCR) & mask) {}
++
++		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
++	}
++
++	return 0;
++}
++
++static void sh7372_init_domain(struct generic_power_domain *domain,
++			       struct sh7372_domain_data *pdata)
++{
++	pm_genpd_init(domain, NULL, false);
++	add_platform_pm_sleep_ops(&domain->domain.ops);
++	domain->domain.platform_data = pdata;
++	domain->stop_device = pm_runtime_clk_suspend;
++	domain->start_device = pm_runtime_clk_resume;
++	domain->power_off = pd_power_down;
++	domain->power_on = pd_power_up;
++}
++
++void sh7372_add_device_to_domain(struct generic_power_domain *domain,
++				 struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	if (!dev->power.subsys_data) {
++		pm_runtime_clk_init(dev);
++		pm_runtime_clk_add(dev, NULL);
++	}
++	pm_genpd_add_device(domain, dev);
++}
++
++static struct sh7372_domain_data sh7372_a4lc_domain_data = {
++	.bit_shift = 1,
++};
++
++struct generic_power_domain sh7372_a4lc_domain;
++
++static int __init sh7372_power_domains_init(void)
++{
++	sh7372_init_domain(&sh7372_a4lc_domain, &sh7372_a4lc_domain_data);
++	return 0;
++}
++core_initcall(sh7372_power_domains_init);
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -12,6 +12,7 @@
+ #define __ASM_SH7372_H__
  
+ #include <linux/sh_clk.h>
++#include <linux/pm_domain.h>
+ 
+ /*
+  * Pin Function Controller:
+@@ -469,4 +470,19 @@ extern struct clk sh7372_fsibck_clk;
+ extern struct clk sh7372_fsidiva_clk;
+ extern struct clk sh7372_fsidivb_clk;
+ 
++struct platform_device;
++
++#ifdef CONFIG_PM
++extern struct generic_power_domain sh7372_a4lc_domain;
++#define SH7372_A4LC	(&sh7372_a4lc_domain)
++
++extern void sh7372_add_device_to_domain(struct generic_power_domain *domain,
++					struct platform_device *pdev);
++#else
++#define SH7372_A4LC	NULL
++
++static inline void sh7372_add_device_to_domain(struct generic_power_domain *dom,
++					       struct platform_device *pd) {}
++#endif /* CONFIG_PM */
++
+ #endif /* __ASM_SH7372_H__ */
+Index: linux-2.6/arch/arm/mach-shmobile/Makefile
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/Makefile
++++ linux-2.6/arch/arm/mach-shmobile/Makefile
+@@ -37,6 +37,10 @@ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4ev
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ 
++# PM objects
++pm-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
++
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+ obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
++obj-$(CONFIG_PM)		+= $(pm-y)
+Index: linux-2.6/include/linux/platform_device.h
+=================================--- linux-2.6.orig/include/linux/platform_device.h
++++ linux-2.6/include/linux/platform_device.h
+@@ -258,8 +258,28 @@ extern int platform_pm_restore_noirq(str
+ 	.thaw_noirq = platform_pm_thaw_noirq, \
+ 	.poweroff_noirq = platform_pm_poweroff_noirq, \
+ 	.restore_noirq = platform_pm_restore_noirq,
++
++static inline void add_platform_pm_sleep_ops(struct dev_pm_ops *pm_ops)
++{
++	pm_ops->prepare = platform_pm_prepare;
++	pm_ops->complete = platform_pm_complete;
++	pm_ops->suspend = platform_pm_suspend;
++	pm_ops->resume = platform_pm_resume;
++	pm_ops->freeze = platform_pm_freeze;
++	pm_ops->thaw = platform_pm_thaw;
++	pm_ops->poweroff = platform_pm_poweroff;
++	pm_ops->restore = platform_pm_restore;
++	pm_ops->suspend_noirq = platform_pm_suspend_noirq;
++	pm_ops->resume_noirq = platform_pm_resume_noirq;
++	pm_ops->freeze_noirq = platform_pm_freeze_noirq;
++	pm_ops->thaw_noirq = platform_pm_thaw_noirq;
++	pm_ops->poweroff_noirq = platform_pm_poweroff_noirq;
++	pm_ops->restore_noirq = platform_pm_restore_noirq;
++}
+ #else
+ #define USE_PLATFORM_PM_SLEEP_OPS
+-#endif
++
++static inline void add_platform_pm_sleep_ops(struct dev_pm_ops *pm_ops) {}
++#endif /* CONFIG_PM_SLEEP */
+ 
+ #endif /* _PLATFORM_DEVICE_H_ */
