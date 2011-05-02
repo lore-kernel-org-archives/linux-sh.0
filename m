@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 02 May 2011 08:55:22 +0000
-Subject: Re: [PATCH 1/2] mmc: tmio: Allow SDHI MMC to use multiple IRQ vectors
-Message-Id: <Pine.LNX.4.64.1105021038230.13244@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 02 May 2011 11:16:32 +0000
+Subject: Re: [PATCH 1/2] mmc: tmio: Allow SDHI MMC to use multiple IRQ
+Message-Id: <20110502111631.GD32576@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1303890238-8372-2-git-send-email-horms@verge.net.au>
 In-Reply-To: <1303890238-8372-2-git-send-email-horms@verge.net.au>
@@ -10,155 +10,49 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon
-
-On Wed, 27 Apr 2011, Simon Horman wrote:
-
-> SDHI blocks may have up to 4 IRQ vectors.
-> The first three are of use to us, the 4th one
-> relates to DRM features that I don't have documentation
-> for and are almost certainly tainted by licensing issues.
+On Mon, May 02, 2011 at 10:55:22AM +0200, Guennadi Liakhovetski wrote:
+> Hi Simon
 > 
-> This patch allows multiple vectors to be used if supplied
-> in the platform data. Which will allow IRQ multiplexing hacks
-> to be removed.
+> On Wed, 27 Apr 2011, Simon Horman wrote:
 > 
-> I plan to do further work to split tmio_mmc_irq() into per-vector
-> handlers. But this patch should be useful by itself.
-
-I have one nitpick: using a constant like "3" at multiple locations makes 
-code less future-proof. I would use a macro like TMIO_MMC_MAX_IRQS, at 
-some locations you can also do ARRAY_SIZE(host->irq). Also, are we sure, 
-that only "1 IRQ" or "max IRQs" (currently 3) are valid? Can there not be 
-a valid configuration with 2 IRQs? Don't we have such controllers on some 
-SoCs? For example, ap4 SDHI0 and SDHI2 have 4 IRQ vectors, but SDHI1 only 
-3... But ok, no, I don't see any controllers with < 3 IRQs, so, should 
-work for now.
-
-Thanks
-Guennadi
-
+> > SDHI blocks may have up to 4 IRQ vectors.
+> > The first three are of use to us, the 4th one
+> > relates to DRM features that I don't have documentation
+> > for and are almost certainly tainted by licensing issues.
+> > 
+> > This patch allows multiple vectors to be used if supplied
+> > in the platform data. Which will allow IRQ multiplexing hacks
+> > to be removed.
+> > 
+> > I plan to do further work to split tmio_mmc_irq() into per-vector
+> > handlers. But this patch should be useful by itself.
 > 
-> Cc: Chris Ball <cjb@laptop.org>
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-> ---
->  drivers/mmc/host/sh_mobile_sdhi.c |    7 ++++---
->  drivers/mmc/host/tmio_mmc.h       |    2 +-
->  drivers/mmc/host/tmio_mmc_pio.c   |   32 ++++++++++++++++++++++----------
->  3 files changed, 27 insertions(+), 14 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index cc70123..2216210 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -62,7 +62,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
->  	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
->  	struct tmio_mmc_host *host;
->  	char clk_name[8];
-> -	int ret;
-> +	int i, ret;
->  
->  	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
->  	if (priv = NULL) {
-> @@ -116,8 +116,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
->  	if (ret < 0)
->  		goto eprobe;
->  
-> -	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
-> -		(unsigned long)host->ctl, host->irq);
-> +	for (i = 0; host->irq[i] >= 0 && i < 3; i++)
-> +		pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
-> +			(unsigned long)host->ctl, host->irq[i]);
->  
->  	return ret;
->  
-> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> index 099ed49..6b240f5 100644
-> --- a/drivers/mmc/host/tmio_mmc.h
-> +++ b/drivers/mmc/host/tmio_mmc.h
-> @@ -44,7 +44,7 @@ struct tmio_mmc_host {
->  	struct mmc_request      *mrq;
->  	struct mmc_data         *data;
->  	struct mmc_host         *mmc;
-> -	int                     irq;
-> +	int                     irq[3];
->  	unsigned int		sdio_irq_enabled;
->  
->  	/* Callbacks for clock / power control */
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-> index 62d37de..9d84d90 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -790,7 +790,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
->  	struct tmio_mmc_host *_host;
->  	struct mmc_host *mmc;
->  	struct resource *res_ctl;
-> -	int ret;
-> +	int i, ret;
->  	u32 irq_mask = TMIO_MASK_CMD;
->  
->  	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> @@ -837,20 +837,29 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
->  	tmio_mmc_clk_stop(_host);
->  	tmio_mmc_reset(_host);
->  
-> -	ret = platform_get_irq(pdev, 0);
-> -	if (ret < 0)
-> -		goto unmap_ctl;
-> -
-> -	_host->irq = ret;
-> +	for (i = 0; i < 3; i++) {
-> +		_host->irq[i] = ret = platform_get_irq(pdev, i);
-> +		if (ret < 0) {
-> +			if (i = 1)
-> +				break;
-> +			else
-> +				goto unmap_ctl;
-> +		}
-> +	}
->  
->  	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
->  	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
->  		tmio_mmc_enable_sdio_irq(mmc, 0);
->  
-> -	ret = request_irq(_host->irq, tmio_mmc_irq, IRQF_DISABLED |
-> +	for (i = 0; _host->irq[i] >= 0 && i < 3; i++) {
-> +		ret = request_irq(_host->irq[i], tmio_mmc_irq, IRQF_DISABLED |
->  		IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), _host);
-> -	if (ret)
-> -		goto unmap_ctl;
-> +		if (ret) {
-> +			while (--i > 0)
-> +				free_irq(_host->irq[i], host);
-> +			goto unmap_ctl;
-> +		}
-> +	}
->  
->  	spin_lock_init(&_host->lock);
->  
-> @@ -885,10 +894,13 @@ EXPORT_SYMBOL(tmio_mmc_host_probe);
->  
->  void tmio_mmc_host_remove(struct tmio_mmc_host *host)
->  {
-> +	int i;
-> +
->  	mmc_remove_host(host->mmc);
->  	cancel_delayed_work_sync(&host->delayed_reset_work);
->  	tmio_mmc_release_dma(host);
-> -	free_irq(host->irq, host);
-> +	for (i = 0; host->irq[i] >= 0 && i < 3; i++)
-> +		free_irq(host->irq[i], host);
->  	iounmap(host->ctl);
->  	mmc_free_host(host->mmc);
->  }
-> -- 
-> 1.7.4.1
-> 
+> I have one nitpick: using a constant like "3" at multiple locations makes 
+> code less future-proof. I would use a macro like TMIO_MMC_MAX_IRQS, at 
+> some locations you can also do ARRAY_SIZE(host->irq).
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Good thinking, I'll fix that up.
+
+> Also, are we sure, 
+> that only "1 IRQ" or "max IRQs" (currently 3) are valid? Can there not be 
+> a valid configuration with 2 IRQs? Don't we have such controllers on some 
+> SoCs? For example, ap4 SDHI0 and SDHI2 have 4 IRQ vectors, but SDHI1 only 
+> 3... But ok, no, I don't see any controllers with < 3 IRQs, so, should 
+> work for now.
+
+As far as I know there are currently controllers with 1, 3 and 4 IRQs.
+But in the case of controllers with 4 IRQs we can treat this as 3,
+as the 4th IRQ has some secret IP sauce that I believe we are best to
+say away from.
+
+So handling 1 and 3 IRQs is sufficient to deal with all controllers that
+I am aware of. If there are other combinations that need to be handled
+the obviously my code will need to be extended accordingly.
+
+I think the easiest way to support other numbers of IRQs would be to probe
+up to TMIO_MMC_MAX_IRQS, And then either record how many we found in a new
+element of tmio_mmc_host, or make the irq[] element terminated by a
+negative value.
+
+I can change the code around to do that, though I think that
+I prefer the current approach given the hardware that I am aware of.
