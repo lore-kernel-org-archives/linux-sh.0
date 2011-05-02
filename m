@@ -1,246 +1,40 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 27 May 2011 23:18:52 +0000
-Subject: [PATCH 4/5] PM / Domains: Support for multiple generic power domain states
-Message-Id: <201105280118.52316.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 02 May 2011 15:10:24 +0000
+Subject: [PATCH 03/04] mmc: sdhi: print out something useful
+Message-Id: <20110502151024.21327.66767.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl> <201105280115.14556.rjw@sisk.pl>
-In-Reply-To: <201105280115.14556.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Magnus Damm <damm@opensource.se>
 
-Allow the generic power domains support code to handle power
-domains with multiple states.  Replace the .power_down_ok()
-callback in struct dev_power_governor with a new callback
-.choose_state() that will return the number of the state to put the
-power domain into.  Add new fields nr_states and current_state to
-struct generic_power_domain with the assumption that state 0 will be
-the full power state and states 1 through (nr_states - 1) will be low
-power.  Replace power domain callbacks .power_off() and .power_on()
-with a single .set_state() callback taking the number of the state
-to put the power domain into as its second argument.  Add a new
-generic power domain callback .power_off_state() (taking a state
-number as its second argument) allowing the core to check if
-device runtime PM callbacks need to be executed before putting the
-given power domain into the given state.  Modify the core power
-domains code and the ARM shmobile platform code to take all of the
-above changes into account.
+Instead of printing out useless information such
+as the virtual base address and one of 4 interrupts,
+convert the SDHI probe() to print out physical base
+address together with clock rate.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
+We do have a struct device so make use of dev_info().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/pm-sh7372.c |   11 ++++--
- drivers/base/power/domain.c        |   60 +++++++++++++++++++++++++++----------
- include/linux/pm_domain.h          |   16 ++++++---
- 3 files changed, 63 insertions(+), 24 deletions(-)
 
-Index: linux-2.6/include/linux/pm_domain.h
-=================================--- linux-2.6.orig/include/linux/pm_domain.h
-+++ linux-2.6/include/linux/pm_domain.h
-@@ -12,7 +12,7 @@
- #include <linux/device.h>
- 
- struct dev_power_governor {
--	bool (*power_down_ok)(struct dev_power_domain *domain);
-+	int (*choose_state)(struct dev_power_domain *domain);
- };
- 
- struct generic_power_domain {
-@@ -23,12 +23,14 @@ struct generic_power_domain {
- 	struct list_head device_list;
- 	struct mutex lock;
- 	struct dev_power_governor *gov;
--	unsigned int in_progress;
-+	int nr_states;
-+	int current_state;
- 	bool power_is_off;
-+	unsigned int in_progress;
- 	unsigned int device_count;
- 	unsigned int suspended_count;
--	int (*power_off)(struct dev_power_domain *domain);
--	int (*power_on)(struct dev_power_domain *domain);
-+	int (*set_state)(struct dev_power_domain *domain, int state);
-+	bool (*power_off_state)(struct dev_power_domain *domain, int state);
- 	int (*start_device)(struct device *dev);
- 	int (*stop_device)(struct device *dev);
- };
-@@ -48,7 +50,8 @@ extern int pm_genpd_add_subdomain(struct
- extern int pm_genpd_remove_subdomain(struct generic_power_domain *genpd,
- 				     struct generic_power_domain *target);
- extern void pm_genpd_init(struct generic_power_domain *genpd,
--			  struct dev_power_governor *gov, bool is_off);
-+			  struct dev_power_governor *gov, int nr_states,
-+			  int cur_state);
- #else
- static inline int pm_genpd_add_device(struct generic_power_domain *genpd,
- 				      struct device *dev)
-@@ -71,7 +74,8 @@ static inline int pm_genpd_remove_subdom
- 	return -ENOSYS;
- }
- static inline void pm_genpd_init(struct generic_power_domain *genpd,
--				 struct dev_power_governor *gov, bool is_off) {}
-+				 struct dev_power_governor *gov,
-+				 int nr_states, int cur_state) {}
- #endif
- 
- #endif /* _LINUX_PM_DOMAIN_H */
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -62,6 +62,7 @@ static int __pm_genpd_poweroff(struct ge
- 	struct generic_power_domain *subdomain;
- 	struct dev_list_entry *dle;
- 	unsigned int not_suspended;
-+	int new_state;
- 	int ret;
- 
- 	if (genpd->power_is_off)
-@@ -83,9 +84,23 @@ static int __pm_genpd_poweroff(struct ge
- 			return ret;
- 	}
- 
--	if (genpd->gov && genpd->gov->power_down_ok) {
--		if (!genpd->gov->power_down_ok(&genpd->domain))
--			return -EAGAIN;
-+	new_state = (genpd->gov && genpd->gov->choose_state) ?
-+			genpd->gov->choose_state(&genpd->domain) : 1;
-+	if (new_state < 0 || new_state >= genpd->nr_states)
-+		return -EAGAIN;
-+
-+	if (new_state = genpd->current_state)
-+		return 0;
-+
-+	if (genpd->power_off_state
-+	    && !genpd->power_off_state(&genpd->domain, new_state)) {
-+		if (genpd->set_state) {
-+			ret = genpd->set_state(&genpd->domain, new_state);
-+			if (ret)
-+				return ret;
-+		}
-+		genpd->current_state = new_state;
-+		return 0;
- 	}
- 
- 	list_for_each_entry_reverse(dle, &genpd->device_list, node) {
-@@ -105,9 +120,13 @@ static int __pm_genpd_poweroff(struct ge
- 			goto err_dev;
- 	}
- 
--	if (genpd->power_off)
--		genpd->power_off(&genpd->domain);
-+	if (genpd->set_state) {
-+		ret = genpd->set_state(&genpd->domain, new_state);
-+		if (ret)
-+			goto err_dev;
-+	}
- 
-+	genpd->current_state = new_state;
- 	genpd->power_is_off = true;
- 
- 	return 0;
-@@ -199,14 +218,17 @@ static int __pm_genpd_poweron(struct gen
- {
- 	struct dev_list_entry *dle;
- 
--	if (!genpd->power_is_off)
-+	if (genpd->current_state = 0)
- 		return 0;
- 
--	if (genpd->power_on) {
--		int ret = genpd->power_on(&genpd->domain);
-+	if (genpd->set_state) {
-+		int ret = genpd->set_state(&genpd->domain, 0);
- 		if (ret)
- 			return ret;
- 	}
-+	genpd->current_state = 0;
-+	if (!genpd->power_is_off)
-+		return 0;
- 
- 	genpd->power_is_off = false;
- 
-@@ -363,8 +385,8 @@ static int pm_genpd_suspend_noirq(struct
- 
- 	mutex_lock(&genpd->lock);
- 	if (++genpd->suspended_count = genpd->device_count) {
--		if (genpd->power_off)
--			genpd->power_off(&genpd->domain);
-+		if (genpd->set_state)
-+			genpd->set_state(&genpd->domain, genpd->nr_states - 1);
- 	}
- 	mutex_unlock(&genpd->lock);
- 
-@@ -395,8 +417,8 @@ static int pm_genpd_resume_noirq(struct
- 
- 	mutex_lock(&genpd->lock);
- 	if (genpd->suspended_count = genpd->device_count) {
--		if (genpd->power_on) {
--			int ret = genpd->power_on(&genpd->domain);
-+		if (genpd->set_state) {
-+			int ret = genpd->set_state(&genpd->domain, 0);
- 			if (ret) {
- 				mutex_unlock(&genpd->lock);
- 				return ret;
-@@ -713,10 +735,12 @@ int pm_genpd_remove_subdomain(struct gen
-  * pm_genpd_init - Initialize a generic I/O power domain object.
-  * @genpd: Power domain object to initialize.
-  * @gov: Power domain governor to associate with the domain (may be NULL).
-- * @is_off: Initial value of the domain's power_is_off field.
-+ * @nr_states: Number of power domain states (must be greater than 1).
-+ * @cur_state: Initial state of the power domain.
-  */
- void pm_genpd_init(struct generic_power_domain *genpd,
--		   struct dev_power_governor *gov, bool is_off)
-+		   struct dev_power_governor *gov, int nr_states,
-+		   int cur_state)
- {
- 	if (IS_ERR_OR_NULL(genpd))
- 		return;
-@@ -727,8 +751,14 @@ void pm_genpd_init(struct generic_power_
- 	INIT_LIST_HEAD(&genpd->subdomain_list);
- 	mutex_init(&genpd->lock);
- 	genpd->gov = gov;
-+	genpd->nr_states = nr_states > 1 ? nr_states : 2;
-+	if (cur_state < 0 || cur_state >= nr_states)
-+		cur_state = 0;
-+	genpd->current_state = cur_state;
-+	genpd->power_is_off = genpd->power_off_state ?
-+		genpd->power_off_state(&genpd->domain, cur_state) :
-+			(cur_state > 0);
- 	genpd->in_progress = 0;
--	genpd->power_is_off = is_off;
- 	genpd->device_count = 0;
- 	genpd->suspended_count = 0;
- 	genpd->domain.ops.runtime_suspend = pm_genpd_runtime_suspend;
-Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -70,15 +70,20 @@ static int pd_power_up(struct dev_power_
- 	return 0;
- }
- 
-+static int pd_set_state(struct dev_power_domain *domain, int state)
-+{
-+	return state > 0 ? pd_power_down(domain) : pd_power_up(domain);
-+}
-+
- static void sh7372_init_domain(struct generic_power_domain *domain,
- 			       struct sh7372_domain_data *pdata)
- {
--	pm_genpd_init(domain, NULL, false);
- 	domain->domain.platform_data = pdata;
- 	domain->stop_device = pm_runtime_clk_suspend;
- 	domain->start_device = pm_runtime_clk_resume;
--	domain->power_off = pd_power_down;
--	domain->power_on = pd_power_up;
-+	domain->set_state = pd_set_state;
-+	domain->power_off_state = NULL;
-+	pm_genpd_init(domain, NULL, 2, 0);
- }
- 
- void sh7372_add_device_to_domain(struct generic_power_domain *domain,
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
+--- 0003/drivers/mmc/host/sh_mobile_sdhi.c
++++ work/drivers/mmc/host/sh_mobile_sdhi.c	2011-05-02 23:31:22.000000000 +0900
+@@ -124,8 +124,10 @@ static int __devinit sh_mobile_sdhi_prob
+ 	if (ret)
+ 		goto eirq;
+ 
+-	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
+-		(unsigned long)host->ctl, irq);
++	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
++		 mmc_hostname(host->mmc), (unsigned long)
++		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
++		 mmc_data->hclk / 1000000);
+ 
+ 	return ret;
+ 
