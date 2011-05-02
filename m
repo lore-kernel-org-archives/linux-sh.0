@@ -1,143 +1,97 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 18 May 2011 11:10:08 +0000
-Subject: [PATCH 3/6] sh_mobile_meram: Add support for NV24 framebuffers
-Message-Id: <1305717011-20742-4-git-send-email-dhobsong@igel.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 02 May 2011 07:59:02 +0000
+Subject: [PATCH/RFC] dmaengine: shdma: synchronize RCU before freeing, simplify
+Message-Id: <Pine.LNX.4.64.1105020950420.13244@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Since the NV24 framebuffer has a CbCr plane that is twice as wide
-as the Y plane, it needs to be handled as a special case.
+List elements, deleted using list_del_rcu(), cannot be freed without
+synchronising RCU. Further, the spinlock, used to protect the RCU
+writer, is called in process context, so, we don't have to save flags.
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   10 +++++++---
- drivers/video/sh_mobile_meram.c  |   24 +++++++++++++++++++-----
- include/video/sh_mobile_meram.h  |    3 ++-
- 3 files changed, 28 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 3a2cbd1..1c652da 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -627,10 +627,14 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+Paul, you added the NMI handler to shdma, using RCU and a global spinlock. 
+Please, have a look, whether this patch is correct.
+
+ drivers/dma/shdma.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index d50da41..b7f27f5 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -1045,7 +1045,6 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
+ 	unsigned long irqflags = IRQF_DISABLED,
+ 		chan_flag[SH_DMAC_MAX_CHANNELS] = {};
+-	unsigned long flags;
+ 	int errirq, chan_irq[SH_DMAC_MAX_CHANNELS];
+ 	int err, i, irq_cnt = 0, irqres = 0;
+ 	struct sh_dmae_device *shdev;
+@@ -1111,9 +1110,9 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_get_sync(&pdev->dev);
  
- 			ch->meram_enabled = 0;
+-	spin_lock_irqsave(&sh_dmae_lock, flags);
++	spin_lock_irq(&sh_dmae_lock);
+ 	list_add_tail_rcu(&shdev->node, &sh_dmae_devices);
+-	spin_unlock_irqrestore(&sh_dmae_lock, flags);
++	spin_unlock_irq(&sh_dmae_lock);
  
--			if (ch->info->var.nonstd)
--				pf = SH_MOBILE_MERAM_PF_NV;
--			else
-+			if (ch->info->var.nonstd) {
-+				if (ch->info->var.bits_per_pixel = 24)
-+					pf = SH_MOBILE_MERAM_PF_NV24;
-+				else
-+					pf = SH_MOBILE_MERAM_PF_NV;
-+			} else {
- 				pf = SH_MOBILE_MERAM_PF_RGB;
-+			}
+ 	/* reset dma controller */
+ 	err = sh_dmae_rst(shdev);
+@@ -1218,15 +1217,16 @@ eirqres:
+ eirq_err:
+ #endif
+ rst_err:
+-	spin_lock_irqsave(&sh_dmae_lock, flags);
++	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
+-	spin_unlock_irqrestore(&sh_dmae_lock, flags);
++	spin_unlock_irq(&sh_dmae_lock);
  
- 			ret = mdev->ops->meram_register(mdev, cfg, pitch,
- 						ch->info->var.yres,
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index bd68f3d..9170c82 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -164,6 +164,16 @@ static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
- 	}
- }
+ 	pm_runtime_put(&pdev->dev);
+ 	if (dmars)
+ 		iounmap(shdev->dmars);
+ emapdmars:
+ 	iounmap(shdev->chan_reg);
++	synchronize_rcu();
+ emapchan:
+ 	kfree(shdev);
+ ealloc:
+@@ -1242,7 +1242,6 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
+ 	struct resource *res;
+-	unsigned long flags;
+ 	int errirq = platform_get_irq(pdev, 0);
  
-+/*
-+ * is this a YCbCr(NV12, NV16 or NV24) colorspace
-+ */
-+static inline int is_nvcolor(int cspace)
-+{
-+	if (cspace = SH_MOBILE_MERAM_PF_NV ||
-+			cspace = SH_MOBILE_MERAM_PF_NV24)
-+		return 1;
-+	return 0;
-+}
+ 	dma_async_device_unregister(&shdev->common);
+@@ -1250,9 +1249,9 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ 	if (errirq > 0)
+ 		free_irq(errirq, shdev);
  
- /*
-  * set the next address to fetch
-@@ -184,7 +194,7 @@ static inline void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
- 	meram_write_icb(priv->base, cfg->icb[0].marker_icb, target,
- 			base_addr_y + cfg->icb[0].cache_unit);
+-	spin_lock_irqsave(&sh_dmae_lock, flags);
++	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
+-	spin_unlock_irqrestore(&sh_dmae_lock, flags);
++	spin_unlock_irq(&sh_dmae_lock);
  
--	if (cfg->pixelformat = SH_MOBILE_MERAM_PF_NV) {
-+	if (is_nvcolor(cfg->pixelformat)) {
- 		meram_write_icb(priv->base, cfg->icb[1].cache_icb,  target,
- 				base_addr_c);
- 		meram_write_icb(priv->base, cfg->icb[1].marker_icb, target,
-@@ -208,7 +218,7 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
- 		icb_offset = 0xc0000000 | (cfg->current_reg << 23);
+ 	/* channel data remove */
+ 	sh_dmae_chan_remove(shdev);
+@@ -1263,6 +1262,7 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ 		iounmap(shdev->dmars);
+ 	iounmap(shdev->chan_reg);
  
- 	*icb_addr_y = icb_offset | (cfg->icb[0].marker_icb << 24);
--	if ((*icb_addr_c) && cfg->pixelformat = SH_MOBILE_MERAM_PF_NV)
-+	if ((*icb_addr_c) && is_nvcolor(cfg->pixelformat))
- 		*icb_addr_c = icb_offset | (cfg->icb[1].marker_icb << 24);
- }
++	synchronize_rcu();
+ 	kfree(shdev);
  
-@@ -316,6 +326,7 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 		return -EINVAL;
- 
- 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
-+	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
- 		return -EINVAL;
- 
-@@ -366,7 +377,7 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 		n = 2;
- 	}
- 
--	if (pixelformat = SH_MOBILE_MERAM_PF_NV && n != 2) {
-+	if (is_nvcolor(pixelformat) && n != 2) {
- 		dev_err(&pdev->dev, "requires two ICB sets for planar Y/C.");
- 		error =  -EINVAL;
- 		goto err;
-@@ -375,7 +386,7 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 	/* we now register the ICB */
- 	cfg->pixelformat = pixelformat;
- 	meram_mark(priv, &cfg->icb[0]);
--	if (pixelformat = SH_MOBILE_MERAM_PF_NV)
-+	if (is_nvcolor(pixelformat))
- 		meram_mark(priv, &cfg->icb[1]);
- 
- 	/* initialize MERAM */
-@@ -384,6 +395,9 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 	if (pixelformat = SH_MOBILE_MERAM_PF_NV)
- 		meram_init(priv, &cfg->icb[1], xres, (yres + 1) / 2,
- 			&out_pitch);
-+	else if (pixelformat = SH_MOBILE_MERAM_PF_NV24)
-+		meram_init(priv, &cfg->icb[1], 2 * xres, (yres + 1) / 2,
-+			&out_pitch);
- 
- 	cfg->current_reg = 1;
- 	meram_set_next_addr(priv, cfg, base_addr_y, base_addr_c);
-@@ -410,7 +424,7 @@ static int sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata,
- 	mutex_lock(&priv->lock);
- 
- 	/* deinit & unmark */
--	if (cfg->pixelformat = SH_MOBILE_MERAM_PF_NV) {
-+	if (is_nvcolor(cfg->pixelformat)) {
- 		meram_deinit(priv, &cfg->icb[1]);
- 		meram_unmark(priv, &cfg->icb[1]);
- 	}
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index 15fbb3d..af602d6 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -9,7 +9,8 @@ enum {
- 
- enum {
- 	SH_MOBILE_MERAM_PF_NV = 0,
--	SH_MOBILE_MERAM_PF_RGB
-+	SH_MOBILE_MERAM_PF_RGB,
-+	SH_MOBILE_MERAM_PF_NV24
- };
- 
- 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 -- 
-1.7.1
+1.7.2.5
 
