@@ -1,54 +1,125 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 25 May 2011 05:40:18 +0000
-Subject: Re: [PATCH 2/2] ARM: mach-shmobile: mackerel: add renesas_usbhs support for USB1
-Message-Id: <20110525054017.GA7317@linux-sh.org>
+From: "Koul, Vinod" <vinod.koul@intel.com>
+Date: Mon, 02 May 2011 08:15:11 +0000
+Subject: Re: [PATCH 2/2] dmaengine: shdma: add runtime- and system-level
+Message-Id: <1304323391.1589.9.camel@vkoul-udesk3>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3phbc5yjly.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3phbc5yjly.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1104291901200.17813@axis700.grange>
+	 <Pine.LNX.4.64.1104291908090.17813@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1104291908090.17813@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>
 
-On Wed, May 25, 2011 at 01:24:10PM +0900, Kuninori Morimoto wrote:
-> > > OTOH, CN22 USB0 which is only USB Function
-> > > can not use USB-phy interrupt (IRQ7) on mackerel board.
-> > > Because IRQ7 is already used by Touchscreen,
-> > > and it is impossible to use cascaded IRQ7.
-> > > 
-> > Why is it impossible to have an IRQ7 demux?
+On Fri, 2011-04-29 at 19:09 +0200, Guennadi Liakhovetski wrote:
+> This patch extends and fixes runtime power management in the shdma
+> driver to support powering down the DMA controller and adds support
+> for system-level suspend and resume.
 > 
-> Sorry for insufficient explanation.
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+>  drivers/dma/shdma.c |   68 +++++++++++++++++++++++++++++++++++++++++++++++++++
+>  drivers/dma/shdma.h |    1 +
+>  2 files changed, 69 insertions(+), 0 deletions(-)
 > 
-> USB-phy needs IRQ7-PORT167, and Touchscreen needs IRQ7-PORT40.
-> IRQ7 PORT 167/40 are controlled by GPIO.
-> I think it is impossible to have IRQ7 demux.
-> 
-Ok, it would be nice to see this documented somewhere (or at least in the
-changelog), as it's not immediately obvious to anyone that isn't staring
-at the data sheet.
 
-> > > But you can not select both CONFIG_USB_R8A66597_HCD and
-> > > CONFIG_USB_RENESAS_USBHS in same time for now.
-> > > Because IRQ8 will be requested in different driver.
-> > > 
-> > Is there some particular reason why IRQF_SHARED isn't sufficient for
-> > working around this? Since you're leveraging the IORESOURCE PnP IRQ bits
-> > anyways, you could easily just or in IORESOURCE_IRQ_SHAREABLE and
-> > translate that in to an IRQF_SHARED at request_irq() time for the cases
-> > that need it.
-> 
-> renesas_usbhs is new version of r8a66597_xxx driver.
-> This means both will access to same register.
-> So, we can not keep correct operation
-> if these driver are probed in same time.
-> 
-> Does this become reason ?
-> If yes, shall I send v2 patch ?
-> 
-That's ok, there are enough drivers like that in the kernel that it's
-quite acceptable to fall back on a runtime error (ie, request_irq()
-failing and the device simply never coming up). The situation we want to
-avoid is build-time errors for run-time behavioural problems. In this
-case you can simply kill off the #ifdef/#error mess and leave it to the
-regular error paths if the user has both configured.
+>  
+> +static int sh_dmae_runtime_suspend(struct device *dev)
+> +{
+> +	return 0;
+> +}
+Don't you need to initialize you device on resume...????
+
+
+> +
+> +static int sh_dmae_runtime_resume(struct device *dev)
+> +{
+> +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
+> +
+> +	return sh_dmae_rst(shdev);
+> +}
+> +
+> +#ifdef CONFIG_PM
+This should be removed...
+> +static int sh_dmae_suspend(struct device *dev)
+> +{
+> +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
+> +	int i;
+> +
+> +	for (i = 0; i < shdev->pdata->channel_num; i++) {
+> +		struct sh_dmae_chan *sh_chan = shdev->chan[i];
+> +		if (sh_chan->descs_allocated)
+> +			sh_chan->pm_error = pm_runtime_put_sync(dev);
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+> +static int sh_dmae_resume(struct device *dev)
+> +{
+> +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
+> +	int i;
+> +
+> +	for (i = 0; i < shdev->pdata->channel_num; i++) {
+> +		struct sh_dmae_chan *sh_chan = shdev->chan[i];
+> +		struct sh_dmae_slave *param = sh_chan->common.private;
+> +
+> +		if (!sh_chan->descs_allocated)
+> +			continue;
+> +
+> +		if (!sh_chan->pm_error)
+> +			pm_runtime_get_sync(dev);
+> +
+> +		if (param) {
+> +			const struct sh_dmae_slave_config *cfg = param->config;
+> +			dmae_set_dmars(sh_chan, cfg->mid_rid);
+> +			dmae_set_chcr(sh_chan, cfg->chcr);
+> +		} else {
+> +			dmae_init(sh_chan);
+> +		}
+> +	}
+> +
+> +	return 0;
+> +}
+> +#else
+> +#define sh_dmae_suspend NULL
+> +#define sh_dmae_resume NULL
+> +#endif
+> +
+> +const struct dev_pm_ops sh_dmae_pm = {
+> +	.suspend		= sh_dmae_suspend,
+> +	.resume			= sh_dmae_resume,
+> +	.runtime_suspend	= sh_dmae_runtime_suspend,
+> +	.runtime_resume		= sh_dmae_runtime_resume,
+> +};
+> +
+>  static struct platform_driver sh_dmae_driver = {
+>  	.remove		= __exit_p(sh_dmae_remove),
+>  	.shutdown	= sh_dmae_shutdown,
+>  	.driver = {
+>  		.owner	= THIS_MODULE,
+>  		.name	= "sh-dma-engine",
+> +		.pm	= &sh_dmae_pm,
+>  	},
+>  };
+>  
+> diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
+> index 52e4fb1..3f9d3cd 100644
+> --- a/drivers/dma/shdma.h
+> +++ b/drivers/dma/shdma.h
+> @@ -37,6 +37,7 @@ struct sh_dmae_chan {
+>  	int id;				/* Raw id of this channel */
+>  	u32 __iomem *base;
+>  	char dev_id[16];		/* unique name per DMAC of channel */
+> +	int pm_error;
+>  };
+>  
+>  struct sh_dmae_device {
+
+And please remember to CC maintainers...
+
+
+-- 
+~Vinod
+
