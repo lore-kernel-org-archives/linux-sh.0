@@ -1,123 +1,61 @@
 From: "Koul, Vinod" <vinod.koul@intel.com>
-Date: Mon, 02 May 2011 08:15:11 +0000
+Date: Mon, 02 May 2011 08:50:06 +0000
 Subject: Re: [PATCH 2/2] dmaengine: shdma: add runtime- and system-level
-Message-Id: <1304323391.1589.9.camel@vkoul-udesk3>
+Message-Id: <1304325486.1589.15.camel@vkoul-udesk3>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1104291901200.17813@axis700.grange>
 	 <Pine.LNX.4.64.1104291908090.17813@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1104291908090.17813@axis700.grange>
+	 <1304323391.1589.9.camel@vkoul-udesk3>
+	 <Pine.LNX.4.64.1105021056231.13244@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1105021056231.13244@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>
 
-On Fri, 2011-04-29 at 19:09 +0200, Guennadi Liakhovetski wrote:
-> This patch extends and fixes runtime power management in the shdma
-> driver to support powering down the DMA controller and adds support
-> for system-level suspend and resume.
+On Mon, 2011-05-02 at 11:04 +0200, Guennadi Liakhovetski wrote:
+> On Mon, 2 May 2011, Koul, Vinod wrote:
 > 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  drivers/dma/shdma.c |   68 +++++++++++++++++++++++++++++++++++++++++++++++++++
->  drivers/dma/shdma.h |    1 +
->  2 files changed, 69 insertions(+), 0 deletions(-)
+> > On Fri, 2011-04-29 at 19:09 +0200, Guennadi Liakhovetski wrote:
+> > > This patch extends and fixes runtime power management in the shdma
+> > > driver to support powering down the DMA controller and adds support
+> > > for system-level suspend and resume.
+> > > 
+> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > > ---
+> > >  drivers/dma/shdma.c |   68 +++++++++++++++++++++++++++++++++++++++++++++++++++
+> > >  drivers/dma/shdma.h |    1 +
+> > >  2 files changed, 69 insertions(+), 0 deletions(-)
+> > > 
+> > 
+> > >  
+> > > +static int sh_dmae_runtime_suspend(struct device *dev)
+> > > +{
+> > > +	return 0;
+> > > +}
+> > Don't you need to initialize you device on resume...????
 > 
-
->  
-> +static int sh_dmae_runtime_suspend(struct device *dev)
-> +{
-> +	return 0;
-> +}
-Don't you need to initialize you device on resume...????
-
-
-> +
-> +static int sh_dmae_runtime_resume(struct device *dev)
-> +{
-> +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
-> +
-> +	return sh_dmae_rst(shdev);
-> +}
-> +
-> +#ifdef CONFIG_PM
-This should be removed...
-> +static int sh_dmae_suspend(struct device *dev)
-> +{
-> +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
-> +	int i;
-> +
-> +	for (i = 0; i < shdev->pdata->channel_num; i++) {
-> +		struct sh_dmae_chan *sh_chan = shdev->chan[i];
-> +		if (sh_chan->descs_allocated)
-> +			sh_chan->pm_error = pm_runtime_put_sync(dev);
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +static int sh_dmae_resume(struct device *dev)
-> +{
-> +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
-> +	int i;
-> +
-> +	for (i = 0; i < shdev->pdata->channel_num; i++) {
-> +		struct sh_dmae_chan *sh_chan = shdev->chan[i];
-> +		struct sh_dmae_slave *param = sh_chan->common.private;
-> +
-> +		if (!sh_chan->descs_allocated)
-> +			continue;
-> +
-> +		if (!sh_chan->pm_error)
-> +			pm_runtime_get_sync(dev);
-> +
-> +		if (param) {
-> +			const struct sh_dmae_slave_config *cfg = param->config;
-> +			dmae_set_dmars(sh_chan, cfg->mid_rid);
-> +			dmae_set_chcr(sh_chan, cfg->chcr);
-> +		} else {
-> +			dmae_init(sh_chan);
-> +		}
-> +	}
-> +
-> +	return 0;
-> +}
-> +#else
-> +#define sh_dmae_suspend NULL
-> +#define sh_dmae_resume NULL
-> +#endif
-> +
-> +const struct dev_pm_ops sh_dmae_pm = {
-> +	.suspend		= sh_dmae_suspend,
-> +	.resume			= sh_dmae_resume,
-> +	.runtime_suspend	= sh_dmae_runtime_suspend,
-> +	.runtime_resume		= sh_dmae_runtime_resume,
-> +};
-> +
->  static struct platform_driver sh_dmae_driver = {
->  	.remove		= __exit_p(sh_dmae_remove),
->  	.shutdown	= sh_dmae_shutdown,
->  	.driver = {
->  		.owner	= THIS_MODULE,
->  		.name	= "sh-dma-engine",
-> +		.pm	= &sh_dmae_pm,
->  	},
->  };
->  
-> diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
-> index 52e4fb1..3f9d3cd 100644
-> --- a/drivers/dma/shdma.h
-> +++ b/drivers/dma/shdma.h
-> @@ -37,6 +37,7 @@ struct sh_dmae_chan {
->  	int id;				/* Raw id of this channel */
->  	u32 __iomem *base;
->  	char dev_id[16];		/* unique name per DMAC of channel */
-> +	int pm_error;
->  };
->  
->  struct sh_dmae_device {
-
-And please remember to CC maintainers...
+> Hm, yes, but this is suspend... Resume is below. Sorry, I probably don't 
+> understand your question.
+Opps, my question was for empty suspend. Dont you need to power off you
+device.
+> 
+> > > +
+> > > +static int sh_dmae_runtime_resume(struct device *dev)
+> > > +{
+> > > +	struct sh_dmae_device *shdev = dev_get_drvdata(dev);
+> > > +
+> > > +	return sh_dmae_rst(shdev);
+> > > +}
+> > > +
+> > > +#ifdef CONFIG_PM
+> > This should be removed...
+> 
+> You mean, these functions just won't be called, but this way we save a 
+> couple of bytes if PM is not set, don't we?
+I meant you dont need to have this, PM is usually part of core options
+which ppl enable nowadays. Do you run with PM disabled?
 
 
 -- 
