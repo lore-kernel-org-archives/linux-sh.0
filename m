@@ -1,39 +1,108 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Tue, 31 May 2011 03:28:30 +0000
-Subject: Re: [PATCH] fbdev: sh_mobile_lcdcfb: Change BGR24 to RGB24
-Message-Id: <4DE4605E.6070102@igel.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 03 May 2011 08:22:57 +0000
+Subject: Re: [PATCH/RFC] ARM: mach-shmobile: sh7372 power domain prototype
+Message-Id: <Pine.LNX.4.64.1105030913400.15004@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1306400942-26956-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1306400942-26956-1-git-send-email-dhobsong@igel.co.jp>
+References: <20110411194911.7991.79950.sendpatchset@t400s>
+In-Reply-To: <20110411194911.7991.79950.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
-On 2011/05/27 17:14, Magnus Damm wrote:
-> Hi Damian,
-> 
-> On Thu, May 26, 2011 at 6:09 PM, Damian Hobson-Garcia
-> <dhobsong@igel.co.jp> wrote:
->> The ordering of the bytes in the 24 bpp RGB colour mode was
->> being set to BGR.
->>
->> This now matches the values returned in the
->> struct fb_var_screeninfo .red, .green, and .blue offsets as well as
->> the output format of other blocs, such as the VEU
->>
->> Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
->> ---
-> 
-> Thanks for your patch. With this change in place, is the fbdev console
-> still working as expected?
-> 
-> Also, the byte swap settings in _LDDDSR are ok as-is?
-Actually, let me look into this a bit more.  After thinking about it
-some more there are one or two more things I want to check on this
-first.  Please ignore this patch for now.  I'll resubmit it again once
-its properly completed. Sorry for the mess.
+On Sat, 30 Apr 2011, Rafael J. Wysocki wrote:
 
-Thanks,
-Damian
+> On Friday, April 29, 2011, Rafael J. Wysocki wrote:
+> > On Friday, April 29, 2011, Guennadi Liakhovetski wrote:
+> > > On Thu, 21 Apr 2011, Guennadi Liakhovetski wrote:
+> > > 
+> > > > On Tue, 19 Apr 2011, Guennadi Liakhovetski wrote:
+> > > > 
+> > > > > On Fri, 15 Apr 2011, Guennadi Liakhovetski wrote:
+> > > > > 
+> > > > > > Hi Magnus
+> > > > > > 
+> > > > > > On Tue, 12 Apr 2011, Magnus Damm wrote:
+> > > > > > 
+> > > > > > > From: Magnus Damm <damm@opensource.se>
+> > > > > > > 
+> > > > > > > This experimental sh7372-specific Runtime PM prototype
+> > > > > > > adds support for the A4LC and A4MP power domains.
+> > > > > > > 
+> > > > > > > Tested on the Mackerel board together with the LCDC:
+> > > > > > > 
+> > > > > > > # blank HDMI fbdev
+> > > > > > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.1/graphics/fb1/blank
+> > > > > > > 
+> > > > > > > # blank LCD panel fbdev
+> > > > > > > echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+> > > > > > > # unblank LCD panel fbdev
+> > > > > > > echo 0 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+> > > > > > > 
+> > > > > > > Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
+> > > > > > > ---
+> > > > > > > 
+> > > > > > >  arch/arm/mach-shmobile/pm_runtime.c |  227 ++++++++++++++++++++++++++++++++++-
+> > > > > > >  1 file changed, 222 insertions(+), 5 deletions(-)
+> > > > > > 
+> > > > > > Your patch worked mostly, below is a small addition (to be applied on top 
+> > > > > > of your patch), that adds several new domains and devices and fixes a 
+> > > > > > couple of issues with your original patch. Notice an "#if 0" around i2c 
+> > > > > > devices: activating them causes problems - output on the LCDC disappears 
+> > > > > > and the boot process doesn't complete, but without a serial console I 
+> > > > > > couldn't tell, what exactly was the problem. Should be investigated 
+> > > > > > further.
+> > > > > 
+> > > > > Below is a fixed version of the earlier proposed fix;)
+> > > > 
+> > > > v3: I think, I've got the use-counting and power-domain initialisation 
+> > > > correct this time too. At least this version works without any need to 
+> > > > modify the runtime PM core.
+> > > 
+> > > v4: (1) add checks for BIT_ACTIVE for devices without any clocks 
+> > > associated with them, this fixes Oopses. (2) I think, this time I've 
+> > > finally found _the_ correct time and place to remove the "prd" from the 
+> > > list. As before, this is a work in progress, subject to change, depending 
+> > > on surrounding developments. Posting here just for reference.
+> > 
+> > Please have a look at these patches:
+> > https://patchwork.kernel.org/patch/740162/
+> > https://patchwork.kernel.org/patch/740152/
+> > which are based on the patchset from:
+> > git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git power-domains
+> 
+> I had to rebase this branch due to recent modifications requested by reviewers.
+> 
+> Also the two patches above have been updated, but the latest versions have
+> been tested with the A4LC power domain and LCDC and confirmed to work.
+
+Ok, I rebased my patches on top of your work. In principle, it works 
+nicely practically out of the box. Just had to add power domain 
+definitions, and add my devices to those domains - nice work!
+
+But now I have the following question: currently for rtpm to power down a 
+domain, all devices' rtpm has to be enabled. Which is not the case by 
+default without drivers loaded. This is already my first doubt - if there 
+is no driver, shall the device be really holding the domain? Does it have 
+to be powered on? Maybe we could define a flag in device PM properties for 
+this? Then, if a driver is bound to a device, it usually enables rtpm, so, 
+as long as it is bound, it can put the device, which can lead to domain 
+powering down - if all other devices agree. But when the driver unbinds 
+from the device again we have the same problem as above. Also, in some 
+cases unbinding the driver is (almost) the only possibility to identify 
+the moment, from which the device is not needed anymore. Shall we keep its 
+rtpm enabled then?
+
+For example, consider SDHI / TMIO SD-host driver on sh-mobile. As long as 
+TMIO is bound to the device, it has to watch for card insert / eject 
+events, and for that it has to be powered on. There are also many other 
+peripherals in the same power domain, so, to power the domain down you 
+either have to disable card-detection, or unbind the driver, but keep the 
+rtpm enabled. What do you think is the preferred way to handle this?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
