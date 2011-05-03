@@ -1,82 +1,102 @@
-From: dong chen <china.gd.sz.cd@gmail.com>
-Date: Wed, 04 May 2011 00:59:38 +0000
-Subject: Re: [PATCH] i2c: i2c-sh_mobile bus speed platform data
-Message-Id: <-7669036502097985728@unknownmsgid>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 03 May 2011 17:00:58 +0000
+Subject: Re: [Update x3][PATCH 7/9] PM / Runtime: Generic clock manipulation
+Message-Id: <4DC034CA.6000505@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110421132254.3725.84300.sendpatchset@t400s>
-In-Reply-To: <20110421132254.3725.84300.sendpatchset@t400s>
+References: <201104130205.26988.rjw@sisk.pl> <4DBB12EF.9030000@codeaurora.org> <201104292229.56518.rjw@sisk.pl> <201104300004.02601.rjw@sisk.pl>
+In-Reply-To: <201104300004.02601.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, "linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "ben-linux-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org" <ben-linux-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org>, "khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org" <khali-PUYAD+kWke1g9hUCZPvPmw@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Colin Cross <ccross@google.com>, Kevin Hilman <khilman@ti.com>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
 
-Magnus Damm <magnus.damm@gmail.com>编写：
+On 04/29/2011 03:04 PM, Rafael J. Wysocki wrote:
+> +
+> +/**
+> + * enable_clock - Enable a device clock.
+> + * @dev: Device whose clock is to be enabled.
+> + * @con_id: Connection ID of the clock.
+> + */
+> +static void enable_clock(struct device *dev, const char *con_id)
+> +{
+> +	struct clk *clk;
+> +
+> +	clk = clk_get(dev, con_id);
+> +	if (!IS_ERR(clk)) {
+> +		clk_enable(clk);
+> +		clk_put(clk);
+> +		dev_info(dev, "Runtime PM disabled, clock forced on.\n");
+> +	}
+> +}
 
+This doesn't make much sense to me. You're getting a clock and then
+enabling it and then putting the clock? How can you be so sure that
+clk_put() won't one day do some kind of lower power mode on the clock
+when clk_put() is called on it? I don't think anyone does anything
+today, but I don't think its safe to assume that clk_put() won't try to
+forcibly shut off the clock once all clk_get() callers have clk_put().
 
-On Thu, Apr 28, 2011 at 12:11 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Thu, Apr 28, 2011 at 11:46:37AM +0900, Magnus Damm wrote:
->> On Thu, Apr 28, 2011 at 11:22 AM, Paul Mundt <lethal@linux-sh.org> wrote:
->> > On Thu, Apr 28, 2011 at 10:18:01AM +0900, Simon Horman wrote:
->> >> On Thu, Apr 28, 2011 at 10:06:38AM +0900, Magnus Damm wrote:
->> >> > On Thu, Apr 28, 2011 at 7:14 AM, Simon Horman <horms@verge.net.au> wrote:
->> >> > > I believe that on the sh73a0 and so far only the sh73a0
->> >> > > denom needs to be doubled.
->> >> >
->> >> > Uhm, I don't think this patch is specific to any SoC type. It may of
->> >> > course be used on sh73a0 to adjust the denom value, but setting the
->> >> > I2C bus speed is something that can be used on any SoC. So I'd say
->> >> > that this is a fairly generic feature.
->> >>
->> >> I'm just saying that that I've observed the value being doubled for sh73a0.
->> >>
->> > The general rule of thumb is that whatever unusual behaviour is observed
->> > in the latest CPU we will see become the standard for future ones.
->>
->> This may also be an attempt to simply double the I2C bus speed on that
->> particular platform for that particular application. So in the end it
->> may have nothing to do with sh73a0. Actually, now when I think about
->> it, I recall hacking up a prototype to control the LCD backlight via
->> I2C on sh73a0 and AG5EVM, and I did not have to modify any part of the
->> I2C bus driver to get that going as expected.
->>
-> Ok, that bit of information was missing from your patch. That's obviously
-> a bit more dodgy. We don't want to have the default behaviour out of spec
-> for some specific application.
+Perhaps we should document the meaning of clk_enable() followed by
+clk_put() somewhere instead?
 
-I suspect that I may have chosen my words poorly. By writing "This may
-also be an attempt to simply double the I2C bus speed on that
-particular platform for that particular application." I am not
-referring to this patch. I am commenting on something Simon may see
-when he is going though kernel source that has been mangled by people
-doing integration.
+> +
+> +/**
+> + * disable_clock - Disable a device clock.
+> + * @dev: Device whose clock is to be disabled.
+> + * @con_id: Connection ID of the clock.
+> + */
+> +static void disable_clock(struct device *dev, const char *con_id)
+> +{
+> +	struct clk *clk;
+> +
+> +	clk = clk_get(dev, con_id);
+> +	if (!IS_ERR(clk)) {
+> +		clk_disable(clk);
+> +		clk_put(clk);
+> +		dev_info(dev, "Runtime PM disabled, clock forced off.\n");
+> +	}
+> +}
 
-As for configuring the i2c bus speed, I wouldn't call it dodgy. It is
-something that is fairly common but of course needs to be handled with
-care. Other drivers handle this through module parameters, but since
-we want to configure this with per-device instance granularity
-platform data is a better fit.
+This might not be as bad, but it looks like a similar problem.
 
->> > Abstracting the denom value seems reasonable as a cautionary measure, and
->> > it does do the NORMAL_SPEED as a default fallback so there is no adverse
->> > impact for normalized platforms.
->> >
->> > This really should be going in to include/linux/i2c/ or so though, no
->> > need to dump these tiny stubs in to include/linux/ directly.
->>
->> I guess I just followed what other i2c drivers do, but yes, putting
->> the header file in include/linux/i2c/ makes more sense.
->>
-> Other i2c drivers put things in include/linux/i2c, too. There's also an
-> include/linux/platform_data/ now as well for things that don't fit
-> anywhere else. "This is the way we used to do it" tends to be a pretty
-> pointless argument going forward.
+> -
+> -static int platform_bus_notify(struct notifier_block *nb,
+> -			       unsigned long action, void *data)
+> -{
+> -	struct device *dev = data;
+> -	struct clk *clk;
+> -
+> -	dev_dbg(dev, "platform_bus_notify() %ld !\n", action);
+> -
+> -	switch (action) {
+> -	case BUS_NOTIFY_BIND_DRIVER:
+> -		clk = clk_get(dev, NULL);
+> -		if (!IS_ERR(clk)) {
+> -			clk_enable(clk);
+> -			clk_put(clk);
+> -			dev_info(dev, "runtime pm disabled, clock forced on\n");
+> -		}
+> -		break;
+> -	case BUS_NOTIFY_UNBOUND_DRIVER:
+> -		clk = clk_get(dev, NULL);
+> -		if (!IS_ERR(clk)) {
+> -			clk_disable(clk);
+> -			clk_put(clk);
+> -			dev_info(dev, "runtime pm disabled, clock forced off\n");
+> -		}
 
-I looks like I have been unclear in my writing once again. I'm not
-arguing that the header should be kept in include/linux/.
+Ah ok I see that it's coming from here.
 
-/ magnus
---
-To unsubscribe from this list: send the line "unsubscribe linux-i2c" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+BTW, whatever is in linux-next is failing to compile:
+
+drivers/base/power/clock_ops.c:391: error: 'con_id' undeclared (first
+use in this function)
+drivers/base/power/clock_ops.c:391: error: (Each undeclared identifier
+is reported only once
+drivers/base/power/clock_ops.c:391: error: for each function it appears in.)
+
+-- 
+Sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+
