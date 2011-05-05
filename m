@@ -1,79 +1,52 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Thu, 26 May 2011 06:31:37 +0000
-Subject: Re: [PATCH 0/6 v2] MERAM support for LCDC
-Message-Id: <alpine.DEB.2.00.1105261502320.31722@localhost6.localdomain6>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="269091478-1312783175-1306391508=:31722"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 May 2011 15:56:27 +0000
+Subject: [PATCH 1/2] ARM: mach-shmobile: MMCIF on mackerel can also be a
+Message-Id: <Pine.LNX.4.64.1105051752490.29735@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1305717011-20742-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1305717011-20742-1-git-send-email-dhobsong@igel.co.jp>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+Remember to also check for the CONFIG_MMC_SH_MMCIF_MODULE option
+for the case of a modular MMCIF driver.
 
---269091478-1312783175-1306391508=:31722
-Content-Type: TEXT/PLAIN; charset="iso-8859-1"; format="flowed"
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-Hi Magnus,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 53fe219..8fe1f00 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -705,7 +705,7 @@ static struct platform_device sdhi0_device = {
+ 	},
+ };
+ 
+-#if !defined(CONFIG_MMC_SH_MMCIF)
++#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+@@ -940,7 +940,7 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&fsi_ak4643_device,
+ 	&fsi_hdmi_device,
+ 	&sdhi0_device,
+-#if !defined(CONFIG_MMC_SH_MMCIF)
++#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ 	&sdhi1_device,
+ #endif
+ 	&sdhi2_device,
+@@ -1140,7 +1140,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+ 
+-#if !defined(CONFIG_MMC_SH_MMCIF)
++#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ 	/* enable SDHI1 */
+ 	gpio_request(GPIO_FN_SDHICMD1, NULL);
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-- 
+1.7.2.5
 
-On Thu, 26 May 2011, Magnus Damm wrote:
-
-> Hi Damian,
->
-> On Tue, May 24, 2011 at 11:53 AM, Damian Hobson-Garcia
-> <dhobsong@igel.co.jp> wrote:
->> Hi Paul,
->>
->> On 2011/05/23 15:51, Paul Mundt wrote:
->>> On Wed, May 18, 2011 at 08:10:05PM +0900, Damian Hobson-Garcia wrote:
->>>>
->>>> Damian Hobson-Garcia (6):
->>>> =A0 sh_mobile: Add MSTP clock for MERAM
->>>> =A0 sh_mobile_meram: MERAM framework for LCDC
->>>> =A0 sh_mobile_meram: Add support for NV24 framebuffers
->>>
->>> These basically seem to be fine, and make up for the bulk of the new
->>> code, so I'll take them as-is. I'll let you and Magnus hash out the
->>> remaining bits after this.
->>
->> Ok great, thanks a lot. I'll submit any further patches to apply on top
->> of these three.
->
-> The LCDC driver does no longer compile:
->
-> linux-2.6 git 14d74e0cab7a7779a7ff0c3863c04c8a8e507106
->
->  CC      drivers/video/sh_mobile_meram.o
->  CC      drivers/video/sh_mobile_lcdcfb.o
-> drivers/video/sh_mobile_lcdcfb.c: In function 'sh_mobile_lcdc_start':
-> drivers/video/sh_mobile_lcdcfb.c:640:4: error: 'ret' undeclared (first
-> use in this function)
-> drivers/video/sh_mobile_lcdcfb.c:640:4: note: each undeclared
-> identifier is reported only once for each function it appears in
-> make[2]: *** [drivers/video/sh_mobile_lcdcfb.o] Error 1
-> make[1]: *** [drivers/video] Error 2
-> make: *** [drivers] Error 2
->
-> I suspect this change may be related to the MERAM patch, but I'm not sure.
->
-> Can you please have a look?
-
-It seems that when this patch
-
-69843ba7f24950f8ef5dadacfbfbd08f53e3455b
-fbdev: sh_mobile_lcdc: reduce scope of a variable
-
-and the meram stuff was merged together there was a problem.
-
-The definition of ret got stashed away into an if-clause, making it
-unavaliable for the call on line 640 that the compiler complains about.
-
-I'll submit another pactch to the list that will resolve the conflict, but
-as it looks like a merge issue, I don't know how exactly that should be=20
-dealt with.
-
-Thanks,
-Damian
---269091478-1312783175-1306391508=:31722--
