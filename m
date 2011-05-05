@@ -1,62 +1,273 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 15 May 2011 23:17:46 +0000
-Subject: [PATCH 0/6] PM: Support for generic I/O power domains (v3)
-Message-Id: <201105160117.46927.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 May 2011 16:13:12 +0000
+Subject: [PATCH v2] mmc: Add runtime and system-wide PM to the TMIO MMC driver
+Message-Id: <Pine.LNX.4.64.1105051802200.29735@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
-In-Reply-To: <201105082320.57185.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>, Ian Molton <ian@mnementh.co.uk>
 
-Hi,
+Add runtime and system-wide power management to the TMIO MMC driver
+in PIO and DMA modes, allowing it to properly save and restore its
+state during system suspend. Runtime PM is very crude ATM, because
+the controller has to be powered on all the time to detect card
+hotplug events.
 
-This is the second update of the patchset adding support for generic I/O power
-domains. Patches [1-5/6] have been posted and discussed already, although in
-a slightly different form.  The last patch is new.  The short description of
-all the patches and changes since the previous update follow.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-The patches are on top of the branch at:
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git power-domains
-which is going to be pushed for 2.6.40.  I'd like to push patch [1/6] for
-2.6.40 too, since it's only slightly related to the rest of the patchset that
-depends on it.  Patches [2-5/6] are regarded as 2.6.41 material.  Patch [6/6]
-is an RFC and it may become 2.6.41 material depending on what you think.
+This patch supersedes
 
-The entire patchset has been tested with an ARM shmobile Mackerel board.
+[PATCH 2/2] MMC: add runtime and system power-management support to the TMIO MMCI driver
+[PATCH] MMC: add runtime PM calls to global suspend() / redume() methods on TMIO
+[PATCH] mmc: tmio: fix PM in DMA mode
 
-[1/6] - Introduction of generic prepare and complete callbacks for subsystems.
-        This patch hasn't changed since it was posted last time.
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++
+ drivers/mmc/host/tmio_mmc.c       |   11 ++----
+ drivers/mmc/host/tmio_mmc.h       |   10 ++++++
+ drivers/mmc/host/tmio_mmc_dma.c   |   21 ++++++++------
+ drivers/mmc/host/tmio_mmc_pio.c   |   57 +++++++++++++++++++++++++++++++++++--
+ 5 files changed, 86 insertions(+), 19 deletions(-)
 
-[2/6] - Support for generic I/O power domains (runtime PM part).
-        There are a few changes relative to the previous version.  First,
-        I added CONFIG_PM_GENERIC_DOMAINS to be selected by platforms
-        wanting to use the new code (this allows, for example, x86 to avoid
-        compiling it unnecessarily).  Second, the loop over devices in
-        __pm_genpd_poweroff() doesn't increment "not_suspended" for devices
-        without drivers, so that they don't prevent the domain from being
-        powered down.  Finally, the kerneldoc comment for pm_genpd_init()
-        has been fixed.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index cc70123..f60e954 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -143,10 +143,16 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
++	.suspend = tmio_mmc_host_suspend,
++	.resume = tmio_mmc_host_resume,
++};
++
+ static struct platform_driver sh_mobile_sdhi_driver = {
+ 	.driver		= {
+ 		.name	= "sh_mobile_sdhi",
+ 		.owner	= THIS_MODULE,
++		.pm	= &tmio_mmc_dev_pm_ops,
+ 	},
+ 	.probe		= sh_mobile_sdhi_probe,
+ 	.remove		= __devexit_p(sh_mobile_sdhi_remove),
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 79c5684..be739f7 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -30,7 +30,7 @@ static int tmio_mmc_suspend(struct platform_device *dev, pm_message_t state)
+ 	struct mmc_host *mmc = platform_get_drvdata(dev);
+ 	int ret;
+ 
+-	ret = mmc_suspend_host(mmc);
++	ret = tmio_mmc_host_suspend(&dev->dev);
+ 
+ 	/* Tell MFD core it can disable us now.*/
+ 	if (!ret && cell->disable)
+@@ -46,15 +46,12 @@ static int tmio_mmc_resume(struct platform_device *dev)
+ 	int ret = 0;
+ 
+ 	/* Tell the MFD core we are ready to be enabled */
+-	if (cell->resume) {
++	if (cell->resume)
+ 		ret = cell->resume(dev);
+-		if (ret)
+-			goto out;
+-	}
+ 
+-	mmc_resume_host(mmc);
++	if (!ret)
++		ret = tmio_mmc_host_resume(&dev->dev);
+ 
+-out:
+ 	return ret;
+ }
+ #else
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 099ed49..c1470e6 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -51,6 +51,8 @@ struct tmio_mmc_host {
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 
++	int			pm_error;
++
+ 	/* pio related stuff */
+ 	struct scatterlist      *sg_ptr;
+ 	struct scatterlist      *sg_orig;
+@@ -120,4 +122,12 @@ static inline void tmio_mmc_release_dma(struct tmio_mmc_host *host)
+ }
+ #endif
+ 
++#ifdef CONFIG_PM
++int tmio_mmc_host_suspend(struct device *dev);
++int tmio_mmc_host_resume(struct device *dev);
++#else
++#define tmio_mmc_host_suspend NULL
++#define tmio_mmc_host_resume NULL
++#endif
++
+ #endif
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index d3de74a..25f1ad6 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -256,7 +256,10 @@ static bool tmio_mmc_filter(struct dma_chan *chan, void *arg)
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ {
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	if (pdata->dma) {
++	if (!pdata->dma)
++		return;
++
++	if (!host->chan_tx && !host->chan_rx) {
+ 		dma_cap_mask_t mask;
+ 
+ 		dma_cap_zero(mask);
+@@ -284,18 +287,18 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 
+ 		tasklet_init(&host->dma_complete, tmio_mmc_tasklet_fn, (unsigned long)host);
+ 		tasklet_init(&host->dma_issue, tmio_mmc_issue_tasklet_fn, (unsigned long)host);
++	}
+ 
+-		tmio_mmc_enable_dma(host, true);
++	tmio_mmc_enable_dma(host, true);
++
++	return;
+ 
+-		return;
+ ebouncebuf:
+-		dma_release_channel(host->chan_rx);
+-		host->chan_rx = NULL;
++	dma_release_channel(host->chan_rx);
++	host->chan_rx = NULL;
+ ereqrx:
+-		dma_release_channel(host->chan_tx);
+-		host->chan_tx = NULL;
+-		return;
+-	}
++	dma_release_channel(host->chan_tx);
++	host->chan_tx = NULL;
+ }
+ 
+ void tmio_mmc_release_dma(struct tmio_mmc_host *host)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 62d37de..d29d707 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -39,6 +39,7 @@
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/scatterlist.h>
+ #include <linux/workqueue.h>
+ #include <linux/spinlock.h>
+@@ -834,12 +835,17 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	else
+ 		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
+ 
++	pm_runtime_enable(&pdev->dev);
++	ret = pm_runtime_resume(&pdev->dev);
++	if (ret < 0)
++		goto pm_disable;
++
+ 	tmio_mmc_clk_stop(_host);
+ 	tmio_mmc_reset(_host);
+ 
+ 	ret = platform_get_irq(pdev, 0);
+ 	if (ret < 0)
+-		goto unmap_ctl;
++		goto pm_suspend;
+ 
+ 	_host->irq = ret;
+ 
+@@ -850,7 +856,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	ret = request_irq(_host->irq, tmio_mmc_irq, IRQF_DISABLED |
+ 		IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), _host);
+ 	if (ret)
+-		goto unmap_ctl;
++		goto pm_suspend;
+ 
+ 	spin_lock_init(&_host->lock);
+ 
+@@ -860,6 +866,9 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	/* See if we also get DMA */
+ 	tmio_mmc_request_dma(_host, pdata);
+ 
++	/* We have to keep the device powered for its card detection to work */
++	pm_runtime_get_noresume(&pdev->dev);
++
+ 	mmc_add_host(mmc);
+ 
+ 	/* Unmask the IRQs we want to know about */
+@@ -874,7 +883,10 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 
+ 	return 0;
+ 
+-unmap_ctl:
++pm_suspend:
++	pm_runtime_suspend(&pdev->dev);
++pm_disable:
++	pm_runtime_disable(&pdev->dev);
+ 	iounmap(_host->ctl);
+ host_free:
+ 	mmc_free_host(mmc);
+@@ -885,13 +897,52 @@ EXPORT_SYMBOL(tmio_mmc_host_probe);
+ 
+ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
+ {
++	struct platform_device *pdev = host->pdev;
++
+ 	mmc_remove_host(host->mmc);
+ 	cancel_delayed_work_sync(&host->delayed_reset_work);
+ 	tmio_mmc_release_dma(host);
+ 	free_irq(host->irq, host);
+ 	iounmap(host->ctl);
+ 	mmc_free_host(host->mmc);
++
++	/* Compensate for pm_runtime_get_sync() in probe() above */
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ }
+ EXPORT_SYMBOL(tmio_mmc_host_remove);
+ 
++#ifdef CONFIG_PM
++int tmio_mmc_host_suspend(struct device *dev)
++{
++	struct mmc_host *mmc = dev_get_drvdata(dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	int ret = mmc_suspend_host(mmc);
++
++	if (!ret)
++		tmio_mmc_disable_mmc_irqs(host, TMIO_MASK_ALL);
++
++	host->pm_error = pm_runtime_put_sync(dev);
++
++	return ret;
++}
++EXPORT_SYMBOL(tmio_mmc_host_suspend);
++
++int tmio_mmc_host_resume(struct device *dev)
++{
++	struct mmc_host *mmc = dev_get_drvdata(dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++
++	if (!host->pm_error)
++		pm_runtime_get_sync(dev);
++
++	tmio_mmc_reset(mmc_priv(mmc));
++	tmio_mmc_request_dma(host, host->pdata);
++
++	return mmc_resume_host(mmc);
++}
++EXPORT_SYMBOL(tmio_mmc_host_resume);
++
++#endif	/* CONFIG_PM */
++
+ MODULE_LICENSE("GPL v2");
+-- 
+1.7.2.5
 
-[3/6] - Support for generic I/O power domains (system sleep part).
-        pm_genpd_prepare() has been modified to execute pm_runtime_resume()
-        for the device is the domain's power_is_off flag is clear (the
-        device needs to be "active" from the runtime PM viewpoint, so that
-        we can save its registers before suspending the whole system).
-        Accordingly, pm_genpd_suspend() and pm_genpd_freeze() don't call
-        pm_runtime_resume() any more (they don't need to do that).
-
-[4/6] - Implementation of generic I/O power domains support for SH7372.
-
-[5/6] - Introduction of SH7372's A4MP power domain.
-
-[6/6] - [RFC] Support of multiple power domain states.
-        This shows how I think we can handle multiple power domain states
-        on top of the previous patches.
-
-Comments welcome.
-
-Thanks,
-Rafael
