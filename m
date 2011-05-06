@@ -1,22 +1,21 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 11 May 2011 16:51:02 +0000
-Subject: [PATCH 0/3] cold card detection on TMIO / SDHI
-Message-Id: <Pine.LNX.4.64.1105111843290.5557@axis700.grange>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 06 May 2011 14:14:05 +0000
+Subject: superh perf events broken ?
+Message-Id: <BANLkTinDMcB4_JfEqaXWPr0PwUCM1HLjwg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>, Ian Molton <ian@mnementh.co.uk>
 
-This patch series implemnts card detection, when the TMIO SD/SDIO 
-controller is powered down. Yes, I know, I have to rebase all my TMIO 
-patches, will do and repost this one too, so, this is just FYI / for 
-review.
+unless i'm missing something, it seems the core
+sh/kernel/perf_events.c code broke at some point.  the events[] array
+is updated in sh_pmu_{start,stop}, but no one ever reads it.  when i
+look at the alpha version, that events array is walked in the
+pmu_enable step before setting the global enable bit while in the
+superh one, only the global enable bit is set.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+so it seems like the superh pmu_enable func too should walk its
+events[] array to update its settings before enabling things ...
+otherwise, the whole events[] array maintenance is pointless ...
+-mike
