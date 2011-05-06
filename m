@@ -1,76 +1,24 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 20 May 2011 22:19:56 +0000
-Subject: Re: [PATCH 4/4] clk: Add simple gated clock
-Message-Id: <4DD6E90C.9030109@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 06 May 2011 11:02:30 +0000
+Subject: [PATCH 0/4] mmc: tmio / sdhi: support multiple IRQs
+Message-Id: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1305876469.327589.409938867568.4.gpush@pororo>
-In-Reply-To: <1305876469.327589.409938867568.4.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: cjb@laptop.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, horms@verge.net.au, linux-mmc@vger.kernel.org
 
-On 05/20/2011 02:27 AM, Jeremy Kerr wrote:
-> Signed-off-by: Jeremy Kerr<jeremy.kerr@canonical.com>
->
-> ---
->   drivers/clk/Kconfig    |    4 ++++
->   drivers/clk/Makefile   |    1 +
->   drivers/clk/clk-gate.c |   41 +++++++++++++++++++++++++++++++++++++++++
->   include/linux/clk.h    |   13 +++++++++++++
->   4 files changed, 59 insertions(+)
->
-> diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-> index 0a27963..75d2902 100644
-> --- a/drivers/clk/Kconfig
-> +++ b/drivers/clk/Kconfig
-> @@ -9,3 +9,7 @@ config GENERIC_CLK
->   config GENERIC_CLK_FIXED
->   	bool
->   	depends on GENERIC_CLK
-> +
-> +config GENERIC_CLK_GATE
-> +	bool
-> +	depends on GENERIC_CLK
-> diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-> index 9a3325a..d186446 100644
-> --- a/drivers/clk/Makefile
-> +++ b/drivers/clk/Makefile
-> @@ -2,3 +2,4 @@
->   obj-$(CONFIG_CLKDEV_LOOKUP)	+= clkdev.o
->   obj-$(CONFIG_GENERIC_CLK)	+= clk.o
->   obj-$(CONFIG_GENERIC_CLK_FIXED)	+= clk-fixed.o
-> +obj-$(CONFIG_GENERIC_CLK_GATE)	+= clk-gate.o
-> diff --git a/drivers/clk/clk-gate.c b/drivers/clk/clk-gate.c
-> new file mode 100644
-> index 0000000..833e0da
-> --- /dev/null
-> +++ b/drivers/clk/clk-gate.c
-> @@ -0,0 +1,41 @@
-> +
-> +#include<linux/clk.h>
-> +#include<linux/module.h>
-> +#include<asm/io.h>
-> +
-> +#define to_clk_gate(clk) container_of(clk, struct clk_gate, hw)
-> +
-> +static unsigned long clk_gate_get_rate(struct clk_hw *clk)
-> +{
-> +	return clk_get_rate(clk_get_parent(clk->clk));
-> +}
-> +
-> +static int clk_gate_enable(struct clk_hw *clk)
-> +{
-> +	struct clk_gate *gate = to_clk_gate(clk);
-> +	u32 reg;
-> +
-> +	reg = __raw_readl(gate->reg);
-> +	reg |= 1<<  gate->bit_idx;
-> +	__raw_writel(reg, gate->reg);
+This is just a rebase of patches from Magnus, based on earlier patches by 
+Simon, on top of my PM patch from yesterday [1] with some minor 
+improvements.
 
-This should be protected with a spinlock for h/w access. You could have 
-a mixture of enable bits with divider fields in one register, so the 
-enable lock won't help here. However, you would have to find a way to 
-have a common spinlock for all accesses to the h/w.
+Thanks
+Guennadi
 
-Rob
+[1] http://article.gmane.org/gmane.linux.kernel.mmc/7836
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
