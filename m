@@ -1,78 +1,107 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Sun, 08 May 2011 19:38:18 +0000
-Subject: Re: Resend [PATCH 00/10] ARM: SMP initialization consolidation
-Message-Id: <4DC6F12A.9010904@gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 07 May 2011 16:53:50 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: Suspend-to-RAM support
+Message-Id: <201105071853.50540.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304129297-6614-1-git-send-email-robherring2@gmail.com>	<4DBBA509.6080203@codeaurora.org>	<20110502234012.GJ28001@n2100.arm.linux.org.uk>	<201105031557.42355.arnd@arndb.de>
-	<20110508094215.GC27807@n2100.arm.linux.org.uk>
-In-Reply-To: <20110508094215.GC27807@n2100.arm.linux.org.uk>
+References: <20110428172328.3626.92816.sendpatchset@t400s>
+In-Reply-To: <20110428172328.3626.92816.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 05/08/2011 04:42 AM, Russell King - ARM Linux wrote:
-> On Tue, May 03, 2011 at 03:57:42PM +0200, Arnd Bergmann wrote:
->> On Tuesday 03 May 2011, Russell King - ARM Linux wrote:
->>> Such a SoC may wish to do things differently from the current approach
->>> (which is basically bring up all cores at boot) particularly as the
->>> performance gained from each CPU is far from identical.  So I've been
->>> nervous about moving the CPU map initialization into core code.
->>>
->>> Note that the low power CPU may not be the last in the set, so merely
->>> limiting the system to two CPUs is not the answer.
->>
->> If I read the patches correctly, it's still strictly opt-in per platform.
->
-> Except where things are moved into the generic code, such as the setting
-> of present CPUs.
+On Thursday, April 28, 2011, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> This patch adds a simple Suspend-to-RAM implementation
+> for SH-Mobile ARM. The struct shmobile_suspend_ops are
+> kept global to allow cpu-specific code to override
+> the callbacks if needed.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
 
-Is there any harm in making the default be mark all cores present then 
-let the platform code clear the present state if so desired? This was my 
-intention.
+I'd like to test some of my patches on top of this one, but I'm not sure
+how to wake up the system from sleep.
 
->
->> When a platform wants to support the setup you mentioned or something
->> even stranger, all it would have to do is provide its own versions of
->> the SMP pen and scu init function, right?
->
-> No.
->
-> As I've already said in the past, I doubt that very many platforms actually
-> need the SMP pen stuff.  There are two situations where you need that:
->
-> 1. If you have more than two CPUs, _and_ you have no way to control which
->     of those CPUs are triggered to jump into the kernel.
-> 2. If you have hotplug and you have no way to power down or reset the
->     CPUs.
->
-> There seems to be few platforms which fall into (1) - most SMP
-> implementations are based around two CPUs today so if you only have one
-> secondary CPU, there's no point triggering it via a soft irq to enter the
-> kernel, then hold it in a pen, then release it from the pen, etc.
->
-> Those which seem to fall into (2) do so because they've cut'n'pasted the
-> code from the Realview platforms, along with its bugs with the auxillary
-> control register, which subseqently get tweaked.
->
-> My feeling is that most of the hotplug implementations are just basic "this
-> seems to approximately work" kind of things rather than someone taking a
-> look at what the hardware supports and doing something more useful (such
-> as powering down the CPU, placing it in reset, etc.)
->
-> However, (2) is dependent on (1) as both share pen_release.  (2) needs to
-> be sorted by platforms before the (1) can be eliminated from platform code.
->
-> I'd much rather see the pen_release stuff being eliminated from platforms
-> where it's not necessary, rather than being turned into a generic thing
-> which everyone uses because its there.  Not only should this simplify the
-> code, but also reduce the size of the platform SMP support code.
->
+Thanks,
+Rafael
 
-Thanks for the explanation. I now see that for my case I won't need the 
-pen code at all.
 
-What about the scu_init_cpus patch? You posted something similar as 
-Stephen pointed out that I had missed. Do you plan to merge that?
-
-Rob
+>  arch/arm/mach-shmobile/Makefile              |    3 +
+>  arch/arm/mach-shmobile/include/mach/common.h |    1 
+>  arch/arm/mach-shmobile/suspend.c             |   47 ++++++++++++++++++++++++++
+>  3 files changed, 51 insertions(+)
+> 
+> --- 0001/arch/arm/mach-shmobile/Makefile
+> +++ work/arch/arm/mach-shmobile/Makefile	2011-04-29 00:43:15.000000000 +0900
+> @@ -30,6 +30,9 @@ obj-$(CONFIG_ARCH_SH7377)	+= entry-intc.
+>  obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+>  obj-$(CONFIG_ARCH_SH73A0)	+= entry-gic.o
+>  
+> +# PM objects
+> +obj-$(CONFIG_SUSPEND)		+= suspend.o
+> +
+>  # Board objects
+>  obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
+>  obj-$(CONFIG_MACH_G4EVM)	+= board-g4evm.o
+> --- 0001/arch/arm/mach-shmobile/include/mach/common.h
+> +++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-04-29 00:43:10.000000000 +0900
+> @@ -8,6 +8,7 @@ struct clk;
+>  extern int clk_init(void);
+>  extern void shmobile_handle_irq_intc(struct pt_regs *);
+>  extern void shmobile_handle_irq_gic(struct pt_regs *);
+> +extern struct platform_suspend_ops shmobile_suspend_ops;
+>  
+>  extern void sh7367_init_irq(void);
+>  extern void sh7367_add_early_devices(void);
+> --- /dev/null
+> +++ work/arch/arm/mach-shmobile/suspend.c	2011-04-29 00:43:11.000000000 +0900
+> @@ -0,0 +1,47 @@
+> +/*
+> + * Suspend-to-RAM support code for SH-Mobile ARM
+> + *
+> + *  Copyright (C) 2011 Magnus Damm
+> + *
+> + * This file is subject to the terms and conditions of the GNU General Public
+> + * License.  See the file "COPYING" in the main directory of this archive
+> + * for more details.
+> + */
+> +
+> +#include <linux/pm.h>
+> +#include <linux/suspend.h>
+> +#include <linux/module.h>
+> +#include <linux/err.h>
+> +#include <asm/system.h>
+> +#include <asm/io.h>
+> +
+> +static int shmobile_suspend_default_enter(suspend_state_t suspend_state)
+> +{
+> +	cpu_do_idle();
+> +	return 0;
+> +}
+> +
+> +static int shmobile_suspend_begin(suspend_state_t state)
+> +{
+> +	disable_hlt();
+> +	return 0;
+> +}
+> +
+> +static void shmobile_suspend_end(void)
+> +{
+> +	enable_hlt();
+> +}
+> +
+> +struct platform_suspend_ops shmobile_suspend_ops = {
+> +	.begin		= shmobile_suspend_begin,
+> +	.end		= shmobile_suspend_end,
+> +	.enter		= shmobile_suspend_default_enter,
+> +	.valid		= suspend_valid_only_mem,
+> +};
+> +
+> +static int __init shmobile_suspend_init(void)
+> +{
+> +	suspend_set_ops(&shmobile_suspend_ops);
+> +	return 0;
+> +}
+> +late_initcall(shmobile_suspend_init);
