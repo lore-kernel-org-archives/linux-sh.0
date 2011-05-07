@@ -1,7 +1,7 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 07 May 2011 16:53:50 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sat, 07 May 2011 18:38:36 +0000
 Subject: Re: [PATCH] ARM: mach-shmobile: Suspend-to-RAM support
-Message-Id: <201105071853.50540.rjw@sisk.pl>
+Message-Id: <Pine.LNX.4.64.1105072036360.21602@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110428172328.3626.92816.sendpatchset@t400s>
 In-Reply-To: <20110428172328.3626.92816.sendpatchset@t400s>
@@ -10,98 +10,120 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday, April 28, 2011, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Sat, 7 May 2011, Rafael J. Wysocki wrote:
+
+> On Thursday, April 28, 2011, Magnus Damm wrote:
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > This patch adds a simple Suspend-to-RAM implementation
+> > for SH-Mobile ARM. The struct shmobile_suspend_ops are
+> > kept global to allow cpu-specific code to override
+> > the callbacks if needed.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
+> > ---
 > 
-> This patch adds a simple Suspend-to-RAM implementation
-> for SH-Mobile ARM. The struct shmobile_suspend_ops are
-> kept global to allow cpu-specific code to override
-> the callbacks if needed.
+> I'd like to test some of my patches on top of this one, but I'm not sure
+> how to wake up the system from sleep.
+
+On mackerel you press one of the buttons on the edge of the board between 
+the power-supply and the USB console connectors. On ap4evb it might be 
+possible to use "phone" buttons on the board for that too, but you 
+probably have to allow wake up somewhere, last I checked it didn't work 
+out of the box.
+
+Thanks
+Guennadi
+
 > 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-
-I'd like to test some of my patches on top of this one, but I'm not sure
-how to wake up the system from sleep.
-
-Thanks,
-Rafael
-
-
->  arch/arm/mach-shmobile/Makefile              |    3 +
->  arch/arm/mach-shmobile/include/mach/common.h |    1 
->  arch/arm/mach-shmobile/suspend.c             |   47 ++++++++++++++++++++++++++
->  3 files changed, 51 insertions(+)
+> Thanks,
+> Rafael
 > 
-> --- 0001/arch/arm/mach-shmobile/Makefile
-> +++ work/arch/arm/mach-shmobile/Makefile	2011-04-29 00:43:15.000000000 +0900
-> @@ -30,6 +30,9 @@ obj-$(CONFIG_ARCH_SH7377)	+= entry-intc.
->  obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
->  obj-$(CONFIG_ARCH_SH73A0)	+= entry-gic.o
->  
-> +# PM objects
-> +obj-$(CONFIG_SUSPEND)		+= suspend.o
-> +
->  # Board objects
->  obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
->  obj-$(CONFIG_MACH_G4EVM)	+= board-g4evm.o
-> --- 0001/arch/arm/mach-shmobile/include/mach/common.h
-> +++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-04-29 00:43:10.000000000 +0900
-> @@ -8,6 +8,7 @@ struct clk;
->  extern int clk_init(void);
->  extern void shmobile_handle_irq_intc(struct pt_regs *);
->  extern void shmobile_handle_irq_gic(struct pt_regs *);
-> +extern struct platform_suspend_ops shmobile_suspend_ops;
->  
->  extern void sh7367_init_irq(void);
->  extern void sh7367_add_early_devices(void);
-> --- /dev/null
-> +++ work/arch/arm/mach-shmobile/suspend.c	2011-04-29 00:43:11.000000000 +0900
-> @@ -0,0 +1,47 @@
-> +/*
-> + * Suspend-to-RAM support code for SH-Mobile ARM
-> + *
-> + *  Copyright (C) 2011 Magnus Damm
-> + *
-> + * This file is subject to the terms and conditions of the GNU General Public
-> + * License.  See the file "COPYING" in the main directory of this archive
-> + * for more details.
-> + */
-> +
-> +#include <linux/pm.h>
-> +#include <linux/suspend.h>
-> +#include <linux/module.h>
-> +#include <linux/err.h>
-> +#include <asm/system.h>
-> +#include <asm/io.h>
-> +
-> +static int shmobile_suspend_default_enter(suspend_state_t suspend_state)
-> +{
-> +	cpu_do_idle();
-> +	return 0;
-> +}
-> +
-> +static int shmobile_suspend_begin(suspend_state_t state)
-> +{
-> +	disable_hlt();
-> +	return 0;
-> +}
-> +
-> +static void shmobile_suspend_end(void)
-> +{
-> +	enable_hlt();
-> +}
-> +
-> +struct platform_suspend_ops shmobile_suspend_ops = {
-> +	.begin		= shmobile_suspend_begin,
-> +	.end		= shmobile_suspend_end,
-> +	.enter		= shmobile_suspend_default_enter,
-> +	.valid		= suspend_valid_only_mem,
-> +};
-> +
-> +static int __init shmobile_suspend_init(void)
-> +{
-> +	suspend_set_ops(&shmobile_suspend_ops);
-> +	return 0;
-> +}
-> +late_initcall(shmobile_suspend_init);
+> 
+> >  arch/arm/mach-shmobile/Makefile              |    3 +
+> >  arch/arm/mach-shmobile/include/mach/common.h |    1 
+> >  arch/arm/mach-shmobile/suspend.c             |   47 ++++++++++++++++++++++++++
+> >  3 files changed, 51 insertions(+)
+> > 
+> > --- 0001/arch/arm/mach-shmobile/Makefile
+> > +++ work/arch/arm/mach-shmobile/Makefile	2011-04-29 00:43:15.000000000 +0900
+> > @@ -30,6 +30,9 @@ obj-$(CONFIG_ARCH_SH7377)	+= entry-intc.
+> >  obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+> >  obj-$(CONFIG_ARCH_SH73A0)	+= entry-gic.o
+> >  
+> > +# PM objects
+> > +obj-$(CONFIG_SUSPEND)		+= suspend.o
+> > +
+> >  # Board objects
+> >  obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
+> >  obj-$(CONFIG_MACH_G4EVM)	+= board-g4evm.o
+> > --- 0001/arch/arm/mach-shmobile/include/mach/common.h
+> > +++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-04-29 00:43:10.000000000 +0900
+> > @@ -8,6 +8,7 @@ struct clk;
+> >  extern int clk_init(void);
+> >  extern void shmobile_handle_irq_intc(struct pt_regs *);
+> >  extern void shmobile_handle_irq_gic(struct pt_regs *);
+> > +extern struct platform_suspend_ops shmobile_suspend_ops;
+> >  
+> >  extern void sh7367_init_irq(void);
+> >  extern void sh7367_add_early_devices(void);
+> > --- /dev/null
+> > +++ work/arch/arm/mach-shmobile/suspend.c	2011-04-29 00:43:11.000000000 +0900
+> > @@ -0,0 +1,47 @@
+> > +/*
+> > + * Suspend-to-RAM support code for SH-Mobile ARM
+> > + *
+> > + *  Copyright (C) 2011 Magnus Damm
+> > + *
+> > + * This file is subject to the terms and conditions of the GNU General Public
+> > + * License.  See the file "COPYING" in the main directory of this archive
+> > + * for more details.
+> > + */
+> > +
+> > +#include <linux/pm.h>
+> > +#include <linux/suspend.h>
+> > +#include <linux/module.h>
+> > +#include <linux/err.h>
+> > +#include <asm/system.h>
+> > +#include <asm/io.h>
+> > +
+> > +static int shmobile_suspend_default_enter(suspend_state_t suspend_state)
+> > +{
+> > +	cpu_do_idle();
+> > +	return 0;
+> > +}
+> > +
+> > +static int shmobile_suspend_begin(suspend_state_t state)
+> > +{
+> > +	disable_hlt();
+> > +	return 0;
+> > +}
+> > +
+> > +static void shmobile_suspend_end(void)
+> > +{
+> > +	enable_hlt();
+> > +}
+> > +
+> > +struct platform_suspend_ops shmobile_suspend_ops = {
+> > +	.begin		= shmobile_suspend_begin,
+> > +	.end		= shmobile_suspend_end,
+> > +	.enter		= shmobile_suspend_default_enter,
+> > +	.valid		= suspend_valid_only_mem,
+> > +};
+> > +
+> > +static int __init shmobile_suspend_init(void)
+> > +{
+> > +	suspend_set_ops(&shmobile_suspend_ops);
+> > +	return 0;
+> > +}
+> > +late_initcall(shmobile_suspend_init);
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
