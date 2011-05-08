@@ -1,46 +1,35 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 18 May 2011 11:10:11 +0000
-Subject: [PATCH 6/6] fbdev: sh_mobile_meram: Enable/disable MERAM clocks along with LCDC clocks
-Message-Id: <1305717011-20742-7-git-send-email-dhobsong@igel.co.jp>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 08 May 2011 21:20:56 +0000
+Subject: [RFC][PATCH 0/5] PM: Support for generic I/O power domains (v2)
+Message-Id: <201105082320.57185.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201104290154.12966.rjw@sisk.pl>
+In-Reply-To: <201104290154.12966.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
----
- drivers/video/sh_mobile_lcdcfb.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+On Friday, April 29, 2011, Rafael J. Wysocki wrote:
+Hi,
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 1c652da..b987647 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -259,6 +259,11 @@ static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
- 		pm_runtime_get_sync(priv->dev);
- 		if (priv->dot_clk)
- 			clk_enable(priv->dot_clk);
-+		if (priv->meram_dev) {
-+			struct sh_mobile_meram_info *mdev;
-+			mdev = priv->meram_dev;
-+			mdev->ops->meram_clk_on(mdev);
-+		}
- 	}
- }
+This is an update of the patchset adding support for generic I/O power domains.
+The first patch and the last two patches have been posted already and
+discussed, the remaining two are new.
  
-@@ -267,6 +272,11 @@ static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
- 	if (atomic_sub_return(1, &priv->hw_usecnt) = -1) {
- 		if (priv->dot_clk)
- 			clk_disable(priv->dot_clk);
-+		if (priv->meram_dev) {
-+			struct sh_mobile_meram_info *mdev;
-+			mdev = priv->meram_dev;
-+			mdev->ops->meram_clk_off(mdev);
-+		}
- 		pm_runtime_put(priv->dev);
- 	}
- }
--- 
-1.7.1
+The patches are on top of the branch at:
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git power-domains
 
+[1/5] - Add support for generic I/O power domains (runtime PM).
+[2/5] - Introduce generic prepare and complete callbacks for system-wide
+        power transitions.
+[3/5] - Add PM sleep support to the generic I/O power domains code introduced
+        in [1/5]
+[4/5] - Use the new code to add support for I/O power domains on the SH7372 SoC.
+[5/5] - Add support for power domain A4MP on SH7372.
+
+Please let me know what you think.
+
+Thanks,
+Rafael
