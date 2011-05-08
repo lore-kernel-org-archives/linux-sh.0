@@ -1,79 +1,186 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 11 May 2011 16:51:15 +0000
-Subject: [PATCH 2/3] mmc: sdhi: allow platforms to power down the controller
-Message-Id: <Pine.LNX.4.64.1105111850200.5557@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 08 May 2011 21:25:01 +0000
+Subject: [PATCH 4/5] ARM / shmobile: Support for I/O power domains for SH7372 (v4)
+Message-Id: <201105082325.02212.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105111843290.5557@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105111843290.5557@axis700.grange>
+References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
+In-Reply-To: <201105082320.57185.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>, Ian Molton <ian@mnementh.co.uk>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Supply a link to TMIO private data for platforms to implement own
-card detection.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Use the generic power domains support introduced by the previous
+patch to implement support for power domains on SH7372.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  |    6 ++++++
- include/linux/mmc/sh_mobile_sdhi.h |    4 ++++
- 2 files changed, 10 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/Makefile              |    4 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    3 
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   16 ++++
+ arch/arm/mach-shmobile/pm-sh7372.c           |   97 +++++++++++++++++++++++++++
+ 4 files changed, 120 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index d264bbe..b365429 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -71,6 +71,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	}
+Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1215,6 +1215,9 @@ static void __init mackerel_init(void)
  
- 	mmc_data = &priv->mmc_data;
-+	p->pdata = mmc_data;
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
  
- 	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
- 	priv->clk = clk_get(&pdev->dev, clk_name);
-@@ -159,8 +160,11 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- 	struct mmc_host *mmc = platform_get_drvdata(pdev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	int i, irq;
- 
-+	p->pdata = NULL;
++	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
++	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
 +
- 	for (i = 0; i < 3; i++) {
- 		irq = platform_get_irq(pdev, i);
- 		if (irq >= 0)
-@@ -178,6 +182,8 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
- 	.suspend = tmio_mmc_host_suspend,
- 	.resume = tmio_mmc_host_resume,
-+	.runtime_suspend = tmio_mmc_host_runtime_suspend,
-+	.runtime_resume = tmio_mmc_host_runtime_resume,
- };
+ 	hdmi_init_pm_clock();
+ }
  
- static struct platform_driver sh_mobile_sdhi_driver = {
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index c981b95..faf32b6 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -3,12 +3,16 @@
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- /dev/null
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -0,0 +1,97 @@
++/*
++ * arch/arm/mach-shmobile/pm-sh7372.c
++ *
++ * Power domains support code for SH7372
++ *
++ * Copyright (C) 2011 Rafael J. Wysocki <rjw@sisk.pl>, Renesas Electronics Corp.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License v2.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/pm_runtime.h>
++#include <linux/platform_device.h>
++
++#include <mach/sh7372.h>
++
++struct sh7372_domain_data {
++	unsigned int bit_shift;
++};
++
++#define SPDCR 0xe6180008
++#define SWUCR 0xe6180014
++#define PSTR 0xe6180080
++
++static int pd_power_down(struct dev_power_domain *domain)
++{
++	struct sh7372_domain_data *dd = domain->platform_data;
++	unsigned int mask = 1 << dd->bit_shift;
++
++	if (__raw_readl(PSTR) & mask) {
++		__raw_writel(mask, SPDCR);
++
++		while (__raw_readl(SPDCR) & mask) {}
++
++		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
++	}
++
++	return 0;
++}
++
++static int pd_power_up(struct dev_power_domain *domain)
++{
++	struct sh7372_domain_data *dd = domain->platform_data;
++	unsigned int mask = 1 << dd->bit_shift;
++
++	if (!(__raw_readl(PSTR) & mask)) {
++		__raw_writel(mask, SWUCR);
++
++		while (__raw_readl(SWUCR) & mask) {}
++
++		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
++	}
++
++	return 0;
++}
++
++static void sh7372_init_domain(struct generic_power_domain *domain,
++			       struct sh7372_domain_data *pdata)
++{
++	pm_genpd_init(domain, NULL, false);
++	domain->domain.platform_data = pdata;
++	domain->stop_device = pm_runtime_clk_suspend;
++	domain->start_device = pm_runtime_clk_resume;
++	domain->power_off = pd_power_down;
++	domain->power_on = pd_power_up;
++}
++
++void sh7372_add_device_to_domain(struct generic_power_domain *domain,
++				 struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	if (!dev->power.subsys_data) {
++		pm_runtime_clk_init(dev);
++		pm_runtime_clk_add(dev, NULL);
++	}
++	pm_genpd_add_device(domain, dev);
++}
++
++static struct sh7372_domain_data sh7372_a4lc_domain_data = {
++	.bit_shift = 1,
++};
++
++struct generic_power_domain sh7372_a4lc_domain;
++
++static int __init sh7372_power_domains_init(void)
++{
++	sh7372_init_domain(&sh7372_a4lc_domain, &sh7372_a4lc_domain_data);
++	return 0;
++}
++core_initcall(sh7372_power_domains_init);
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -12,6 +12,7 @@
+ #define __ASM_SH7372_H__
  
- #include <linux/types.h>
+ #include <linux/sh_clk.h>
++#include <linux/pm_domain.h>
+ 
+ /*
+  * Pin Function Controller:
+@@ -469,4 +470,19 @@ extern struct clk sh7372_fsibck_clk;
+ extern struct clk sh7372_fsidiva_clk;
+ extern struct clk sh7372_fsidivb_clk;
  
 +struct platform_device;
-+struct tmio_mmc_data;
 +
- struct sh_mobile_sdhi_info {
- 	int dma_slave_tx;
- 	int dma_slave_rx;
- 	unsigned long tmio_flags;
- 	unsigned long tmio_caps;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
-+	struct tmio_mmc_data *pdata;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- 	int (*get_cd)(struct platform_device *pdev);
- };
--- 
-1.7.2.5
++#ifdef CONFIG_PM
++extern struct generic_power_domain sh7372_a4lc_domain;
++#define SH7372_A4LC	(&sh7372_a4lc_domain)
++
++extern void sh7372_add_device_to_domain(struct generic_power_domain *domain,
++					struct platform_device *pdev);
++#else
++#define SH7372_A4LC	NULL
++
++static inline void sh7372_add_device_to_domain(struct generic_power_domain *dom,
++					       struct platform_device *pd) {}
++#endif /* CONFIG_PM */
++
+ #endif /* __ASM_SH7372_H__ */
+Index: linux-2.6/arch/arm/mach-shmobile/Makefile
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/Makefile
++++ linux-2.6/arch/arm/mach-shmobile/Makefile
+@@ -40,6 +40,10 @@ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4ev
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ 
++# PM objects
++pm-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
++
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+ obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
++obj-$(CONFIG_PM)		+= $(pm-y)
 
