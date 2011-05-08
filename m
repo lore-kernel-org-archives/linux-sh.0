@@ -1,38 +1,142 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 May 2011 02:48:36 +0000
-Subject: [PATCH 0/2] ARM: mach-shmobile: mackerel: renesas_usbhs support
-Message-Id: <w3pd3j7v6kg.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 08 May 2011 21:23:34 +0000
+Subject: [PATCH 2/5] PM: Introduce generic prepare and complete callbacks for subsystems
+Message-Id: <201105082323.35035.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
+In-Reply-To: <201105082320.57185.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Dear Paul, Magnus
+Introduce generic ->prepare() and ->complete() power management
+callbacks that can be used by subsystems and power domains, export
+them and make the generic_subsys_pm_ops object point to them.
+Additionally, provide NULL definitions of all the generic system
+sleep callbacks for CONFIG_PM_SLEEP unset.
 
-These are renesas_usbhs driver support for mackerel
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/generic_ops.c |   39 +++++++++++++++++++++++++++++++++++++++
+ include/linux/pm.h               |   26 +++++++++++++++++++-------
+ 2 files changed, 58 insertions(+), 7 deletions(-)
 
-Kuninori Morimoto(2)
-         ARM: arch-shmobile: sh7372: add renesas_usbhs irq support
-         ARM: mach-shmobile: mackerel: add renesas_usbhs support for USB1
-
-I think #2 is challenge-full patch.
-This patch try to add renesas_usbhs driver for USB1 which can be Host/Func.
-
-USB1 can use USB-phy interrupt for connect/disconnect on mackerel.
-This mean we can power off it by renesas_usbhs when USB-Func.
-
-But for now, renesas_usbhs support Func only.
-And many people want to use Host by r8a66597 (it is already supported).
-
-This patch adds renesas_usbhs to USB1, but doesn't allow
-both CONFIG_USB_RENESAS_USBHS and CONFIG_USB_R8A66597_HCD in same time.
-Because same IRQ will be requested in different driver.
-
-Please check it carefully.
-
-Best regards
---
-Kuninori Morimoto
+Index: linux-2.6/drivers/base/power/generic_ops.c
+=================================--- linux-2.6.orig/drivers/base/power/generic_ops.c
++++ linux-2.6/drivers/base/power/generic_ops.c
+@@ -74,6 +74,23 @@ EXPORT_SYMBOL_GPL(pm_generic_runtime_res
  
+ #ifdef CONFIG_PM_SLEEP
+ /**
++ * pm_generic_prepare - Generic routine preparing a device for power transition.
++ * @dev: Device to prepare.
++ *
++ * Prepare a device for a system-wide power transition.
++ */
++int pm_generic_prepare(struct device *dev)
++{
++	struct device_driver *drv = dev->driver;
++	int ret = 0;
++
++	if (drv && drv->pm && drv->pm->prepare)
++		ret = drv->pm->prepare(dev);
++
++	return ret;
++}
++
++/**
+  * __pm_generic_call - Generic suspend/freeze/poweroff/thaw subsystem callback.
+  * @dev: Device to handle.
+  * @event: PM transition of the system under way.
+@@ -213,16 +230,38 @@ int pm_generic_restore(struct device *de
+ 	return __pm_generic_resume(dev, PM_EVENT_RESTORE);
+ }
+ EXPORT_SYMBOL_GPL(pm_generic_restore);
++
++/**
++ * pm_generic_complete - Generic routine competing a device power transition.
++ * @dev: Device to handle.
++ *
++ * Complete a device power transition during a system-wide power transition.
++ */
++void pm_generic_complete(struct device *dev)
++{
++	struct device_driver *drv = dev->driver;
++
++	if (drv && drv->pm && drv->pm->complete)
++		drv->pm->complete(dev);
++
++	/*
++	 * Let runtime PM try to suspend devices that haven't been in use before
++	 * going into the system-wide sleep state we're resuming from.
++	 */
++	pm_runtime_idle(dev);
++}
+ #endif /* CONFIG_PM_SLEEP */
+ 
+ struct dev_pm_ops generic_subsys_pm_ops = {
+ #ifdef CONFIG_PM_SLEEP
++	.prepare = pm_generic_prepare,
+ 	.suspend = pm_generic_suspend,
+ 	.resume = pm_generic_resume,
+ 	.freeze = pm_generic_freeze,
+ 	.thaw = pm_generic_thaw,
+ 	.poweroff = pm_generic_poweroff,
+ 	.restore = pm_generic_restore,
++	.complete = pm_generic_complete,
+ #endif
+ #ifdef CONFIG_PM_RUNTIME
+ 	.runtime_suspend = pm_generic_runtime_suspend,
+Index: linux-2.6/include/linux/pm.h
+=================================--- linux-2.6.orig/include/linux/pm.h
++++ linux-2.6/include/linux/pm.h
+@@ -547,6 +547,16 @@ extern void __suspend_report_result(cons
+ 	} while (0)
+ 
+ extern int device_pm_wait_for_dev(struct device *sub, struct device *dev);
++
++extern int pm_generic_prepare(struct device *dev);
++extern int pm_generic_suspend(struct device *dev);
++extern int pm_generic_resume(struct device *dev);
++extern int pm_generic_freeze(struct device *dev);
++extern int pm_generic_thaw(struct device *dev);
++extern int pm_generic_restore(struct device *dev);
++extern int pm_generic_poweroff(struct device *dev);
++extern void pm_generic_complete(struct device *dev);
++
+ #else /* !CONFIG_PM_SLEEP */
+ 
+ #define device_pm_lock() do {} while (0)
+@@ -563,6 +573,15 @@ static inline int device_pm_wait_for_dev
+ {
+ 	return 0;
+ }
++
++#define pm_generic_prepare	NULL
++#define pm_generic_suspend	NULL
++#define pm_generic_resume	NULL
++#define pm_generic_freeze	NULL
++#define pm_generic_thaw		NULL
++#define pm_generic_restore	NULL
++#define pm_generic_poweroff	NULL
++#define pm_generic_complete	NULL
+ #endif /* !CONFIG_PM_SLEEP */
+ 
+ /* How to reorder dpm_list after device_move() */
+@@ -573,11 +592,4 @@ enum dpm_order {
+ 	DPM_ORDER_DEV_LAST,
+ };
+ 
+-extern int pm_generic_suspend(struct device *dev);
+-extern int pm_generic_resume(struct device *dev);
+-extern int pm_generic_freeze(struct device *dev);
+-extern int pm_generic_thaw(struct device *dev);
+-extern int pm_generic_restore(struct device *dev);
+-extern int pm_generic_poweroff(struct device *dev);
+-
+ #endif /* _LINUX_PM_H */
+
