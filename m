@@ -1,41 +1,181 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 May 2011 00:24:48 +0000
-Subject: [PATCH] ARM: Enable GIC support when TWD is selected
-Message-Id: <20110519002448.357.5477.sendpatchset@t400s>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 09 May 2011 00:55:11 +0000
+Subject: [PATCH 1/6] MMC: protect the tmio_mmc driver against a theoretical race
+Message-Id: <1304902516-14150-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1304902516-14150-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1304902516-14150-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-The TWD code in smp_twd.c has been calling gic_enable_ppi()
-since ac61d143ffe2a6db4d4bcf47c21a5159d6a1b644.
+The MMC subsystem does not guarantee, that host driver .request() and
+.set_ios() callbacks are serialised. Such concurrent calls, however,
+do not have to be meaningfully supported, drivers just have to make
+sure to avoid any severe problems.
 
-Without this fix kernel configs with CONFIG_HAVE_ARM_TWD=y
-and CONFIG_ARM_GIC=n results in the following build error:
-
-arch/arm/kernel/built-in.o: In function `twd_timer_setup':
-io.c:(.cpuinit.text+0x580): undefined reference to `gic_enable_ppi'
-make: *** [.tmp_vmlinux1] Error 1
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Reviewed-by: Simon Horman <horms@verge.net.au>
 ---
+ drivers/mmc/host/tmio_mmc.h     |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c |   62 +++++++++++++++++++++++++++++++++++----
+ 2 files changed, 57 insertions(+), 6 deletions(-)
 
- Or perhaps mach-shmobile should always select ARM_GIC even
- though some SoC parts do not include GIC hardware?
-
- arch/arm/Kconfig |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/arch/arm/Kconfig
-+++ work/arch/arm/Kconfig	2011-05-03 10:40:26.000000000 +0900
-@@ -1368,6 +1368,7 @@ config HAVE_ARM_TWD
- 	bool
- 	depends on SMP
- 	select TICK_ONESHOT
-+	select ARM_GIC
- 	help
- 	  This options enables support for the ARM timer and watchdog unit
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 099ed49..f353624 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -19,6 +19,7 @@
+ #include <linux/highmem.h>
+ #include <linux/mmc/tmio.h>
+ #include <linux/pagemap.h>
++#include <linux/spinlock.h>
  
+ /* Definitions for values the CTRL_SDIO_STATUS register can take. */
+ #define TMIO_SDIO_STAT_IOIRQ	0x0001
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 722cdbb..b4aef53 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -243,8 +243,12 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+ 	spin_lock_irqsave(&host->lock, flags);
+ 	mrq = host->mrq;
+ 
+-	/* request already finished */
+-	if (!mrq
++	/*
++	 * is request already finished? Since we use a non-blocking
++	 * cancel_delayed_work(), it can happen, that a .set_ios() call preempts
++	 * us, so, have to check for IS_ERR(host->mrq)
++	 */
++	if (IS_ERR_OR_NULL(mrq)
+ 	    || time_is_after_jiffies(host->last_req_ts +
+ 		msecs_to_jiffies(2000))) {
+ 		spin_unlock_irqrestore(&host->lock, flags);
+@@ -264,16 +268,19 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+ 
+ 	host->cmd = NULL;
+ 	host->data = NULL;
+-	host->mrq = NULL;
+ 	host->force_pio = false;
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	tmio_mmc_reset(host);
+ 
++	/* Ready for new calls */
++	host->mrq = NULL;
++
+ 	mmc_request_done(host->mmc, mrq);
+ }
+ 
++/* called with host->lock held, interrupts disabled */
+ static void tmio_mmc_finish_request(struct tmio_mmc_host *host)
+ {
+ 	struct mmc_request *mrq = host->mrq;
+@@ -281,13 +288,15 @@ static void tmio_mmc_finish_request(struct tmio_mmc_host *host)
+ 	if (!mrq)
+ 		return;
+ 
+-	host->mrq = NULL;
+ 	host->cmd = NULL;
+ 	host->data = NULL;
+ 	host->force_pio = false;
+ 
+ 	cancel_delayed_work(&host->delayed_reset_work);
+ 
++	host->mrq = NULL;
++
++	/* FIXME: mmc_request_done() can schedule! */
+ 	mmc_request_done(host->mmc, mrq);
+ }
+ 
+@@ -685,15 +694,27 @@ static int tmio_mmc_start_data(struct tmio_mmc_host *host,
+ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
++	unsigned long flags;
+ 	int ret;
+ 
+-	if (host->mrq)
++	spin_lock_irqsave(&host->lock, flags);
++
++	if (host->mrq) {
+ 		pr_debug("request not null\n");
++		if (IS_ERR(host->mrq)) {
++			spin_unlock_irqrestore(&host->lock, flags);
++			mrq->cmd->error = -EAGAIN;
++			mmc_request_done(mmc, mrq);
++			return;
++		}
++	}
+ 
+ 	host->last_req_ts = jiffies;
+ 	wmb();
+ 	host->mrq = mrq;
+ 
++	spin_unlock_irqrestore(&host->lock, flags);
++
+ 	if (mrq->data) {
+ 		ret = tmio_mmc_start_data(host, mrq->data);
+ 		if (ret)
+@@ -708,8 +729,8 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	}
+ 
+ fail:
+-	host->mrq = NULL;
+ 	host->force_pio = false;
++	host->mrq = NULL;
+ 	mrq->cmd->error = ret;
+ 	mmc_request_done(mmc, mrq);
+ }
+@@ -723,6 +744,29 @@ fail:
+ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
++	unsigned long flags;
++
++	spin_lock_irqsave(&host->lock, flags);
++	if (host->mrq) {
++		if (IS_ERR(host->mrq)) {
++			dev_dbg(&host->pdev->dev,
++				"%s.%d: concurrent .set_ios(), clk %u, mode %u\n",
++				current->comm, task_pid_nr(current),
++				ios->clock, ios->power_mode);
++			host->mrq = ERR_PTR(-EINTR);
++		} else {
++			dev_dbg(&host->pdev->dev,
++				"%s.%d: CMD%u active since %lu, now %lu!\n",
++				current->comm, task_pid_nr(current),
++				host->mrq->cmd->opcode, host->last_req_ts, jiffies);
++		}
++		spin_unlock_irqrestore(&host->lock, flags);
++		return;
++	}
++
++	host->mrq = ERR_PTR(-EBUSY);
++
++	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	if (ios->clock)
+ 		tmio_mmc_set_clock(host, ios->clock);
+@@ -753,6 +797,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 
+ 	/* Let things settle. delay taken from winCE driver */
+ 	udelay(140);
++	if (PTR_ERR(host->mrq) = -EINTR)
++		dev_dbg(&host->pdev->dev,
++			"%s.%d: IOS interrupted: clk %u, mode %u",
++			current->comm, task_pid_nr(current),
++			ios->clock, ios->power_mode);
++	host->mrq = NULL;
+ }
+ 
+ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+-- 
+1.7.4.4
+
