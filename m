@@ -1,51 +1,63 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 May 2011 16:32:36 +0000
-Subject: [PATCH] fbdev: sh_mobile_lcdc: reduce scope of a variable
-Message-Id: <Pine.LNX.4.64.1105051831270.29735@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 09 May 2011 00:55:10 +0000
+Subject: mmc: sdhi, tmio: updates
+Message-Id: <1304902516-14150-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
 
-The "ret" variable in sh_mobile_lcdc_start() is only used at one
-location, move its definition to the inner-most scope.
+Hi,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/video/sh_mobile_lcdcfb.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+there are currently a number of patches floating around for
+TMIO and SDHI. This post is an attempt to collect together the latest
+version of each of these patches.
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 9bcc61b..466834c 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -469,7 +469,6 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	int bpp = 0;
- 	unsigned long ldddsr;
- 	int k, m;
--	int ret = 0;
- 
- 	/* enable clocks before accessing the hardware */
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
-@@ -538,11 +537,12 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 		lcdc_write_chan(ch, LDPMR, 0);
- 
- 		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->setup_sys)
--			ret = board_cfg->setup_sys(board_cfg->board_data, ch,
--						   &sh_mobile_lcdc_sys_bus_ops);
--		if (ret)
--			return ret;
-+		if (board_cfg->setup_sys) {
-+			int ret = board_cfg->setup_sys(board_cfg->board_data,
-+						ch, &sh_mobile_lcdc_sys_bus_ops);
-+			if (ret)
-+				return ret;
-+		}
- 	}
- 
- 	/* word and long word swap */
--- 
-1.7.2.5
+I have also changed the author of the following patches
+from Magnus to Guennadi to reflect that Guennadi wrote
+the most recent version. In each case I have noted that the patch
+is based on work by Magnus and as appropriate work by myself.
+
+	mmc: tmio / sdhi: break out interrupt request/free
+	mmc: sdhi: support up to 3 interrupt sources
+
+I have also removed Signed-off-by lines from the following
+patches which were not supplied by the person whose name
+features in the Signed-off-by line.
+
+	mmc: sdhi: support up to 3 interrupt sources
+	mmc: tmio / sdhi: break out interrupt request/free
+
+Or in other words, I removed Magnus's Signed-off-by lines
+where Guennadi had posted a revised version of the patch.
+
+Magnus, could you add a Reviewed-by, Acked-by
+or Signed-off-by as you feel is appropriate?
+
+
+For reference the patches are available at:
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/shmobile-2.6.git sdhi-next
+
+Which is based on:
+  git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git mmc/mmc-next
+
+
+Guennadi Liakhovetski (4):
+      MMC: protect the tmio_mmc driver against a theoretical race
+      mmc: Add runtime and system-wide PM to the TMIO MMC driver
+      mmc: tmio / sdhi: break out interrupt request/free
+      mmc: sdhi: support up to 3 interrupt sources
+
+Magnus Damm (2):
+      mmc: sdhi: no need for special interrupt flags
+      mmc: sdhi: print out something useful
+
+ drivers/mmc/host/sh_mobile_sdhi.c |   44 ++++++++++++-
+ drivers/mmc/host/tmio_mmc.c       |   32 ++++++---
+ drivers/mmc/host/tmio_mmc.h       |   13 ++++-
+ drivers/mmc/host/tmio_mmc_dma.c   |   21 ++++---
+ drivers/mmc/host/tmio_mmc_pio.c   |  128 +++++++++++++++++++++++++++++++------
+ 5 files changed, 195 insertions(+), 43 deletions(-)
 
