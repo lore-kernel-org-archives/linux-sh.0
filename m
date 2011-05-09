@@ -1,38 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 May 2011 06:30:59 +0000
-Subject: [PATCH] ARM: mach-shmobile: AG5EVM DSI resource string update
-Message-Id: <20110519063059.27931.76032.sendpatchset@t400s>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Mon, 09 May 2011 03:51:15 +0000
+Subject: arch_reset on AP4
+Message-Id: <alpine.DEB.2.00.1105091235180.10149@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi,
 
-Update the struct resources for DSI0 to include the
-hardware block name. Purely cosmetic, makes /proc/iomem
-look slightly better.
+It seems that on the AP4EVB and mackerel boards, I am unable to properly 
+issue a 'reboot' or 'shutdown' command from the command line.  The system 
+will lock immediately after rebooting.
+I looked into it a bit further and it seems that arch_reset() called in
+  system.h makes a call to cpu_reset() that doesn't do anything but jump
+to address 0.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Should this code be making use of the software reset offered in the 
+SYSC register on the AP4? I threw together a quick patch and it seems to 
+let me reboot sucessfully.  (See my next post: [PATCH] sh_mobile: Use 
+SYSC.RESCNT2 to perform soft reboot).
 
- arch/arm/mach-shmobile/board-ag5evm.c |    2 ++
- 1 file changed, 2 insertions(+)
+I don't know if the register address and reset bit is common across all 
+sh_mobile products though, so something more sophisticated might be 
+needed.
 
---- 0001/arch/arm/mach-shmobile/board-ag5evm.c
-+++ work/arch/arm/mach-shmobile/board-ag5evm.c	2011-05-19 15:04:16.000000000 +0900
-@@ -296,11 +296,13 @@ static struct platform_device lcdc0_devi
- /* MIPI-DSI */
- static struct resource mipidsi0_resources[] = {
- 	[0] = {
-+		.name	= "DSI0",
- 		.start  = 0xfeab0000,
- 		.end    = 0xfeab3fff,
- 		.flags  = IORESOURCE_MEM,
- 	},
- 	[1] = {
-+		.name	= "DSI0",
- 		.start  = 0xfeab4000,
- 		.end    = 0xfeab7fff,
- 		.flags  = IORESOURCE_MEM,
+Thanks,
+Damian.
