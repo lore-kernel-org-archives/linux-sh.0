@@ -1,83 +1,79 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 21 May 2011 12:09:33 +0000
-Subject: [PATCH 1/3] PM / Hibernate: Update some comments in core hibernate code
-Message-Id: <201105211409.34012.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 11 May 2011 16:51:15 +0000
+Subject: [PATCH 2/3] mmc: sdhi: allow platforms to power down the controller
+Message-Id: <Pine.LNX.4.64.1105111850200.5557@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201105211408.28671.rjw@sisk.pl>
-In-Reply-To: <201105211408.28671.rjw@sisk.pl>
+References: <Pine.LNX.4.64.1105111843290.5557@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1105111843290.5557@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Frank Hofmann <frank.hofmann@tomtom.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>, Ian Molton <ian@mnementh.co.uk>
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Supply a link to TMIO private data for platforms to implement own
+card detection.
 
-Some comments in the core hibernate code are outdated, some aren't
-necessary any more and at least one of them is plain wrong.  Remove
-those comments or update them.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- kernel/power/hibernate.c |   21 +++++++--------------
- 1 file changed, 7 insertions(+), 14 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c  |    6 ++++++
+ include/linux/mmc/sh_mobile_sdhi.h |    4 ++++
+ 2 files changed, 10 insertions(+), 0 deletions(-)
 
-Index: linux-2.6/kernel/power/hibernate.c
-=================================--- linux-2.6.orig/kernel/power/hibernate.c
-+++ linux-2.6/kernel/power/hibernate.c
-@@ -248,12 +248,6 @@ static int create_image(int platform_mod
- 	if (error)
- 		return error;
- 
--	/* At this point, dpm_suspend_start() has been called, but *not*
--	 * dpm_suspend_noirq(). We *must* call dpm_suspend_noirq() now.
--	 * Otherwise, drivers for some devices (e.g. interrupt controllers)
--	 * become desynchronized with the actual state of the hardware
--	 * at resume time, and evil weirdness ensues.
--	 */
- 	error = dpm_suspend_noirq(PMSG_FREEZE);
- 	if (error) {
- 		printk(KERN_ERR "PM: Some devices failed to power down, "
-@@ -297,9 +291,6 @@ static int create_image(int platform_mod
- 
-  Power_up:
- 	syscore_resume();
--	/* NOTE:  dpm_resume_noirq() is just a resume() for devices
--	 * that suspended with irqs off ... no overall powerup.
--	 */
- 
-  Enable_irqs:
- 	local_irq_enable();
-@@ -416,24 +407,26 @@ static int resume_target_kernel(bool pla
- 	if (error)
- 		goto Enable_irqs;
- 
--	/* We'll ignore saved state, but this gets preempt count (etc) right */
- 	save_processor_state();
- 	error = restore_highmem();
- 	if (!error) {
- 		error = swsusp_arch_resume();
- 		/*
- 		 * The code below is only ever reached in case of a failure.
--		 * Otherwise execution continues at place where
--		 * swsusp_arch_suspend() was called
-+		 * Otherwise, execution continues at the place where
-+		 * swsusp_arch_suspend() was called.
- 		 */
- 		BUG_ON(!error);
--		/* This call to restore_highmem() undos the previous one */
-+		/*
-+		 * This call to restore_highmem() reverts the changes made by
-+		 * the previous one.
-+		 */
- 		restore_highmem();
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index d264bbe..b365429 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -71,6 +71,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
  	}
- 	/*
- 	 * The only reason why swsusp_arch_resume() can fail is memory being
- 	 * very tight, so we have to free it as soon as we can to avoid
--	 * subsequent failures
-+	 * subsequent failures.
- 	 */
- 	swsusp_free();
- 	restore_processor_state();
+ 
+ 	mmc_data = &priv->mmc_data;
++	p->pdata = mmc_data;
+ 
+ 	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
+ 	priv->clk = clk_get(&pdev->dev, clk_name);
+@@ -159,8 +160,11 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ 	struct mmc_host *mmc = platform_get_drvdata(pdev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	int i, irq;
+ 
++	p->pdata = NULL;
++
+ 	for (i = 0; i < 3; i++) {
+ 		irq = platform_get_irq(pdev, i);
+ 		if (irq >= 0)
+@@ -178,6 +182,8 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ static const struct dev_pm_ops tmio_mmc_dev_pm_ops = {
+ 	.suspend = tmio_mmc_host_suspend,
+ 	.resume = tmio_mmc_host_resume,
++	.runtime_suspend = tmio_mmc_host_runtime_suspend,
++	.runtime_resume = tmio_mmc_host_runtime_resume,
+ };
+ 
+ static struct platform_driver sh_mobile_sdhi_driver = {
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index c981b95..faf32b6 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -3,12 +3,16 @@
+ 
+ #include <linux/types.h>
+ 
++struct platform_device;
++struct tmio_mmc_data;
++
+ struct sh_mobile_sdhi_info {
+ 	int dma_slave_tx;
+ 	int dma_slave_rx;
+ 	unsigned long tmio_flags;
+ 	unsigned long tmio_caps;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
++	struct tmio_mmc_data *pdata;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	int (*get_cd)(struct platform_device *pdev);
+ };
+-- 
+1.7.2.5
 
