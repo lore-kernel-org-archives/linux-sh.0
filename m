@@ -1,312 +1,207 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Wed, 11 May 2011 07:26:41 +0000
-Subject: Re: [Update][RFC][PATCH 1/2] PM / Runtime: Support for generic I/O
-Message-Id: <1305098801.4642.6.camel@vence>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Wed, 11 May 2011 20:37:50 +0000
+Subject: Re: [Update][RFC][PATCH 1/2] PM / Runtime: Support for generic I/O power domains (v2)
+Message-Id: <201105112237.50625.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl>
-	<201104290154.56145.rjw@sisk.pl>  <201104300254.46973.rjw@sisk.pl>
-In-Reply-To: <201104300254.46973.rjw@sisk.pl>
+References: <201104290154.12966.rjw@sisk.pl> <201104300254.46973.rjw@sisk.pl> <1305098801.4642.6.camel@vence>
+In-Reply-To: <1305098801.4642.6.camel@vence>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: linux-sh@vger.kernel.org, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+To: Kevin Hilman <khilman@ti.com>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Rafael,
+On Wednesday, May 11, 2011, Kevin Hilman wrote:
+> Hi Rafael,
 
-On Sat, 2011-04-30 at 02:54 +0200, Rafael J. Wysocki wrote: 
-> From: Rafael J. Wysocki <rjw@sisk.pl>
+Hi Kevin,
+
+> On Sat, 2011-04-30 at 02:54 +0200, Rafael J. Wysocki wrote: 
+> > From: Rafael J. Wysocki <rjw@sisk.pl>
+> > 
+> > Introcude common headers, helper functions and callbacks allowing
+> > platforms to use simple generic power domains for runtime power
+> > management.
+> > 
+> > Introduce struct generic_power_domain to be used for representing
+> > power domains that each contain a number of devices and may be
+> > master domains or subdomains with respect to other power domains.
+> > Among other things, this structure includes callbacks to be
+> > provided by platforms for performing specific tasks related to
+> > power management (i.e. ->stop_device() may disable a device's
+> > clocks, while ->start_device() may enable them, ->power_on() is
+> > supposed to remove power from the entire power domain
+> > and ->power_off() is supposed to restore it).
+> >
+> > Introduce functions that can be used as power domain runtime PM
+> > callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
+> > as well as helper functions for the initialization of a power
+> > domain represented by a struct generic_power_domain object,
+> > adding a device to or removing a device from it and adding or
+> > removing subdomains.
+> > 
+> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+> > Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
 > 
-> Introcude common headers, helper functions and callbacks allowing
-> platforms to use simple generic power domains for runtime power
-> management.
+> Thanks for proposing this.  It looks like a good starting point.
+
+That's exactly the purpose of it.
+
+> I haven't had the time to experiment with it on OMAP yet due to
+> travel/conferences, but here's at least a few comments and questions
+> after a brief review.
 > 
-> Introduce struct generic_power_domain to be used for representing
-> power domains that each contain a number of devices and may be
-> master domains or subdomains with respect to other power domains.
-> Among other things, this structure includes callbacks to be
-> provided by platforms for performing specific tasks related to
-> power management (i.e. ->stop_device() may disable a device's
-> clocks, while ->start_device() may enable them, ->power_on() is
-> supposed to remove power from the entire power domain
-> and ->power_off() is supposed to restore it).
->
-> Introduce functions that can be used as power domain runtime PM
-> callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
-> as well as helper functions for the initialization of a power
-> domain represented by a struct generic_power_domain object,
-> adding a device to or removing a device from it and adding or
-> removing subdomains.
+> This looks like a good start for an abstraction, but I'm not sure if can
+> be broadly useful without some further complications.
+
+I wouldn't expect it to match every possible use case, of course, but it's
+simple enough as an initial step and something we may build upon in the
+future.
+
+> On many SoCs, a HW power domain has more than 2 states.  On OMAP for
+> example, a power domain can be on, inactive, retention or off.
+> Therefore, the 2-state approach in this patch doesn't really map well to
+> hardware power domains (and I'm pretty sure OMAP is not unique here.)
+
+Right, so we'd need to extend the approach for OMAP somehow.
+
+> It also means that the binary decision of the proposed governor doesn't
+> necessarily map well either (e.g., based on wake-up latency constraints,
+> or HW bugs, you might allow an idle device might be able to go to
+> retention, but not to off.)
 > 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
-
-Thanks for proposing this.  It looks like a good starting point.  I
-haven't had the time to experiment with it on OMAP yet due to
-travel/conferences, but here's at least a few comments and questions
-after a brief review.
-
-This looks like a good start for an abstraction, but I'm not sure if can
-be broadly useful without some further complications.
-
-On many SoCs, a HW power domain has more than 2 states.  On OMAP for
-example, a power domain can be on, inactive, retention or off.
-Therefore, the 2-state approach in this patch doesn't really map well to
-hardware power domains (and I'm pretty sure OMAP is not unique here.)
-It also means that the binary decision of the proposed governor doesn't
-necessarily map well either (e.g., based on wake-up latency constraints,
-or HW bugs, you might allow an idle device might be able to go to
-retention, but not to off.)
-
-I suppose one option would be to use "off" as defined here to handle all
-the !on states, and let the platform-specific code handle the details.
-However, that doesn't sound all that "generic" for a generic solution.
-
-Another possibility would be to allow a generic power domain to have
-multiple states (or levels), with a governor hook for each state.  
-
-> ---
+> I suppose one option would be to use "off" as defined here to handle all
+> the !on states, and let the platform-specific code handle the details.
+> However, that doesn't sound all that "generic" for a generic solution.
 > 
-> Hi,
+> Another possibility would be to allow a generic power domain to have
+> multiple states (or levels), with a governor hook for each state.  
+
+That's possible.  It all depends on how the various domain states affect
+devices.  For example, if device registers survive the inactive and retention
+domain states, they may be regarded as substates of a more general "on" state.
+
+Generally, my idea was to use a relatively simple hardware model, like the
+shmobile one, and develop some general code that works with it and may be
+extended in various ways, pretty much as we did with runtime PM.  I think the
+code in this patchset is suitable for that (even on shmobile there are
+more complicated power domains that will require some additional handling).
+
+In my opinion, if wanted to start with merging something that would match
+every possible hardware configuration out there, we'd end up with a 100 patches
+and 10000 lines of code, or something like this.  That wouldn't be easily
+mergeable, as experience shows all too well. :-)
+
+...
+> > +#ifdef CONFIG_PM_RUNTIME
+> > +
+> > +/**
+> > + * __pm_genpd_restore_device - Restore a pre-suspend state of a device.
+> > + * @dev: Device to restore the state of.
+> > + * @genpd: Power domain the device belongs to.
+> > + */
+> > +static void __pm_genpd_restore_device(struct device *dev,
+> > +				      struct generic_power_domain *genpd)
+> > +{
+> > +	struct device_driver *drv = dev->driver;
+> > +
+> > +	if (genpd->start_device)
+> > +		genpd->start_device(dev);
+> > +
+> > +	if (drv && drv->pm && drv->pm->runtime_resume)
+> > +		drv->pm->runtime_resume(dev);
+> > +
+> > +	if (genpd->stop_device)
+> > +		genpd->stop_device(dev);
 > 
-> This version of the patch fixes a bug that caused pm_runtime_suspend()
-> (and equivalent) to return -EBUSY erroneously when suspending the last
-> active device in a power domain.  It has been tested on an ARM shmobile
-> system.
+> Why the ->stop_device() here?
 > 
-> Greg, I hope your ACK is still valid. :-)
+> Based on the changelog, I'm imagining an implementation of
+> ->start_device() to be based on clock enable and a ->stop_device to be
+> based on clock disable.  Assuming that, after this runtime resume path,
+> the driver's device will still have its clocks cut.  Am I missing
+> something here?
+
+Please note that this code is executed in a loop for every device in
+the power domain by __pm_genpd_poweron() (including the device whose
+resume triggered powering up the domain).  At this point all the
+devices remain in the "suspended" state from the runtime PM viewpoint.
+
+> Maybe I don't understand what you mean by "pre-suspend" state.  In my
+> mind, the pre-suspend state of a device would be clocks enabled.
 > 
-> Thanks,
-> Rafael
+> Similar question below...
 > 
-> ---
->  drivers/base/power/Makefile |    2 
->  drivers/base/power/domain.c |  439 ++++++++++++++++++++++++++++++++++++++++++++
->  include/linux/pm.h          |    3 
->  include/linux/pm_domain.h   |   83 ++++++++
->  4 files changed, 525 insertions(+), 2 deletions(-)
+> > +}
+> > +
+> > +/**
+> > + * __pm_genpd_poweroff - Remove power from a given power domain.
+> > + * @genpd: Power domain to power down.
+> > + *
+> > + * If all of the @genpd's devices have been suspended and all of its subdomains
+> > + * have been powered down, run the runtime suspend callbacks provided by all of
+> > + * the @genpd's devices' drivers and remove power from @genpd.
+> > + */
+> > +static int __pm_genpd_poweroff(struct generic_power_domain *genpd)
+> > +{
+> > +	struct generic_power_domain *subdomain;
+> > +	struct dev_list_entry *dle;
+> > +	unsigned int not_suspended;
+> > +	int ret;
+> > +
+> > +	if (genpd->power_is_off)
+> > +		return 0;
+> > +
+> > +	not_suspended = 0;
+> > +	list_for_each_entry(dle, &genpd->device_list, node)
+> > +		if (!pm_runtime_suspended(dle->dev))
+> > +			not_suspended++;
+> > +
+> > +	if (not_suspended > genpd->in_progress)
+> > +		return -EBUSY;
+> > +
+> > +	list_for_each_entry_reverse(subdomain, &genpd->subdomain_list, node) {
+> > +		mutex_lock(&subdomain->lock);
+> > +		ret = __pm_genpd_poweroff(subdomain);
+> > +		mutex_unlock(&subdomain->lock);
+> > +		if (ret)
+> > +			return ret;
+> > +	}
+> > +
+> > +	if (genpd->gov && genpd->gov->power_down_ok) {
+> > +		if (!genpd->gov->power_down_ok(&genpd->domain))
+> > +			return -EAGAIN;
+> > +	}
+> > +
+> > +	list_for_each_entry_reverse(dle, &genpd->device_list, node) {
+> > +		struct device *dev = dle->dev;
+> > +		struct device_driver *drv = dev->driver;
+> > +
+> > +		if (genpd->start_device)
+> > +			genpd->start_device(dev);
 > 
-> Index: linux-2.6/include/linux/pm_domain.h
-> =================================> --- /dev/null
-> +++ linux-2.6/include/linux/pm_domain.h
-> @@ -0,0 +1,83 @@
-> +/*
-> + * pm_domain.h - Definitions and headers related to device power domains.
-> + *
-> + * Copyright (C) 2011 Rafael J. Wysocki <rjw@sisk.pl>, Renesas Electronics Corp.
-> + *
-> + * This file is released under the GPLv2.
-> + */
-> +
-> +#ifndef _LINUX_PM_DOMAIN_H
-> +#define _LINUX_PM_DOMAIN_H
-> +
-> +#include <linux/device.h>
-> +
-> +struct dev_power_governor {
-> +	bool (*power_down_ok)(struct dev_power_domain *domain);
-> +};
-> +
-> +struct generic_power_domain {
-> +	struct dev_power_domain domain;
-> +	struct list_head node;
-> +	struct generic_power_domain *master;
-> +	struct list_head subdomain_list;
-> +	struct list_head device_list;
-> +	struct mutex lock;
-> +	struct dev_power_governor *gov;
-> +	unsigned int in_progress;
-> +	bool power_is_off;
-> +	int (*power_off)(struct dev_power_domain *domain);
-> +	int (*power_on)(struct dev_power_domain *domain);
-> +	int (*start_device)(struct device *dev);
-> +	int (*stop_device)(struct device *dev);
-> +};
-> +
-> +struct dev_list_entry {
-> +	struct list_head node;
-> +	struct device *dev;
-> +};
-> +
-> +#ifdef CONFIG_PM_RUNTIME
-> +extern int pm_genpd_runtime_suspend(struct device *dev);
-> +extern int pm_genpd_runtime_resume(struct device *dev);
-> +#else
-> +#define pm_genpd_runtime_suspend	NULL;
-> +#define pm_genpd_runtime_resume	NULL;
-> +#endif
-> +
-> +#ifdef CONFIG_PM
-> +extern int pm_genpd_add_device(struct generic_power_domain *genpd,
-> +			       struct device *dev);
-> +extern int pm_genpd_remove_device(struct generic_power_domain *genpd,
-> +				  struct device *dev);
-> +extern int pm_genpd_add_subdomain(struct generic_power_domain *genpd,
-> +				  struct generic_power_domain *new_subdomain);
-> +extern int pm_genpd_remove_subdomain(struct generic_power_domain *genpd,
-> +				     struct generic_power_domain *target);
-> +extern void pm_genpd_init(struct generic_power_domain *genpd,
-> +			  struct dev_power_governor *gov, bool is_off);
-> +#else
-> +static inline int pm_genpd_add_device(struct generic_power_domain *genpd,
-> +				      struct device *dev)
-> +{
-> +	return -ENOSYS;
-> +}
-> +static inline int pm_genpd_remove_device(struct generic_power_domain *genpd,
-> +					 struct device *dev)
-> +{
-> +	return -ENOSYS;
-> +}
-> +static inline int pm_genpd_add_subdomain(struct generic_power_domain *genpd,
-> +					 struct generic_power_domain *new_sd)
-> +{
-> +	return -ENOSYS;
-> +}
-> +static inline int pm_genpd_remove_subdomain(struct generic_power_domain *genpd,
-> +					    struct generic_power_domain *target)
-> +{
-> +	return -ENOSYS;
-> +}
-> +static inline void pm_genpd_init(struct generic_power_domain *genpd,
-> +				 struct dev_power_governor *gov, bool is_off) {}
-> +#endif
-> +
-> +#endif /* _LINUX_PM_DOMAIN_H */
-> Index: linux-2.6/include/linux/pm.h
-> =================================> --- linux-2.6.orig/include/linux/pm.h
-> +++ linux-2.6/include/linux/pm.h
-> @@ -472,7 +472,8 @@ extern void update_pm_runtime_accounting
->   * subsystem-level and driver-level callbacks.
->   */
->  struct dev_power_domain {
-> -	struct dev_pm_ops	ops;
-> +	struct dev_pm_ops ops;
-> +	void *platform_data;
->  };
->  
->  /*
-> Index: linux-2.6/drivers/base/power/Makefile
-> =================================> --- linux-2.6.orig/drivers/base/power/Makefile
-> +++ linux-2.6/drivers/base/power/Makefile
-> @@ -1,4 +1,4 @@
-> -obj-$(CONFIG_PM)	+= sysfs.o generic_ops.o
-> +obj-$(CONFIG_PM)	+= sysfs.o generic_ops.o domain.o
->  obj-$(CONFIG_PM_SLEEP)	+= main.o wakeup.o
->  obj-$(CONFIG_PM_RUNTIME)	+= runtime.o
->  obj-$(CONFIG_PM_TRACE_RTC)	+= trace.o
-> Index: linux-2.6/drivers/base/power/domain.c
-> =================================> --- /dev/null
-> +++ linux-2.6/drivers/base/power/domain.c
-> @@ -0,0 +1,439 @@
-> +/*
-> + * drivers/base/power/domain.c - Common code related to device power domains.
-> + *
-> + * Copyright (C) 2011 Rafael J. Wysocki <rjw@sisk.pl>, Renesas Electronics Corp.
-> + *
-> + * This file is released under the GPLv2.
-> + */
-> +
-> +#include <linux/init.h>
-> +#include <linux/kernel.h>
-> +#include <linux/io.h>
-> +#include <linux/pm_runtime.h>
-> +#include <linux/pm_domain.h>
-> +#include <linux/slab.h>
-> +#include <linux/err.h>
-> +
-> +#ifdef CONFIG_PM_RUNTIME
-> +
-> +/**
-> + * __pm_genpd_restore_device - Restore a pre-suspend state of a device.
-> + * @dev: Device to restore the state of.
-> + * @genpd: Power domain the device belongs to.
-> + */
-> +static void __pm_genpd_restore_device(struct device *dev,
-> +				      struct generic_power_domain *genpd)
-> +{
-> +	struct device_driver *drv = dev->driver;
-> +
-> +	if (genpd->start_device)
-> +		genpd->start_device(dev);
-> +
-> +	if (drv && drv->pm && drv->pm->runtime_resume)
-> +		drv->pm->runtime_resume(dev);
-> +
-> +	if (genpd->stop_device)
-> +		genpd->stop_device(dev);
+> ... is the ->start_device() needed here?
+> 
+> Before the driver's ->runtime_suspend() method is called, I doubt it
+> expects its clocks to be cut.
 
-Why the ->stop_device() here?
+In fact, it does, because all of the devices must have been put into the
+runtime PM's "suspended" state before that code is executed.
 
-Based on the changelog, I'm imagining an implementation of
-->start_device() to be based on clock enable and a ->stop_device to be
-based on clock disable.  Assuming that, after this runtime resume path,
-the driver's device will still have its clocks cut.  Am I missing
-something here?
+> Of course, having the (what seem to be) extra stop/start calls here
+> doesn't harm anything.  But if the ->[start|stop]_device() calls are
+> expensive for a given platform, the extra overhead might be significant
+> for frequent runtime PM transitions.
 
-Maybe I don't understand what you mean by "pre-suspend" state.  In my
-mind, the pre-suspend state of a device would be clocks enabled.
+If the entire domain is frequently powered up and down, then I agree it will
+be expensive.  However, that's kind of to be expected, isn't it? ;-)
 
-Similar question below...
+The code could be optimized to avoid starting and stopping the device that
+triggers the domain poweroff, but that would make it more complicated, which
+I intentionally wanted to avoid at this stage.
 
-> +}
-> +
-> +/**
-> + * __pm_genpd_poweroff - Remove power from a given power domain.
-> + * @genpd: Power domain to power down.
-> + *
-> + * If all of the @genpd's devices have been suspended and all of its subdomains
-> + * have been powered down, run the runtime suspend callbacks provided by all of
-> + * the @genpd's devices' drivers and remove power from @genpd.
-> + */
-> +static int __pm_genpd_poweroff(struct generic_power_domain *genpd)
-> +{
-> +	struct generic_power_domain *subdomain;
-> +	struct dev_list_entry *dle;
-> +	unsigned int not_suspended;
-> +	int ret;
-> +
-> +	if (genpd->power_is_off)
-> +		return 0;
-> +
-> +	not_suspended = 0;
-> +	list_for_each_entry(dle, &genpd->device_list, node)
-> +		if (!pm_runtime_suspended(dle->dev))
-> +			not_suspended++;
-> +
-> +	if (not_suspended > genpd->in_progress)
-> +		return -EBUSY;
-> +
-> +	list_for_each_entry_reverse(subdomain, &genpd->subdomain_list, node) {
-> +		mutex_lock(&subdomain->lock);
-> +		ret = __pm_genpd_poweroff(subdomain);
-> +		mutex_unlock(&subdomain->lock);
-> +		if (ret)
-> +			return ret;
-> +	}
-> +
-> +	if (genpd->gov && genpd->gov->power_down_ok) {
-> +		if (!genpd->gov->power_down_ok(&genpd->domain))
-> +			return -EAGAIN;
-> +	}
-> +
-> +	list_for_each_entry_reverse(dle, &genpd->device_list, node) {
-> +		struct device *dev = dle->dev;
-> +		struct device_driver *drv = dev->driver;
-> +
-> +		if (genpd->start_device)
-> +			genpd->start_device(dev);
+Again, this code is meant as a starting point for more complicated things.
+How complicated they will turn out to be in the end, I can't tell right now. :-)
 
-... is the ->start_device() needed here?
-
-Before the driver's ->runtime_suspend() method is called, I doubt it
-expects its clocks to be cut.
-
-Of course, having the (what seem to be) extra stop/start calls here
-doesn't harm anything.  But if the ->[start|stop]_device() calls are
-expensive for a given platform, the extra overhead might be significant
-for frequent runtime PM transitions.
-
-Kevin
-
-
+Thanks,
+Rafael
