@@ -1,48 +1,175 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 06 May 2011 11:02:41 +0000
-Subject: [PATCH 3/4] mmc: sdhi: print out something useful
-Message-Id: <Pine.LNX.4.64.1105061300040.10445@axis700.grange>
+From: Richard Weinberger <richard@nod.at>
+Date: Thu, 12 May 2011 13:11:12 +0000
+Subject: [PATCH 2/2] x86: remove warning and warning_symbol from struct stacktrace_ops
+Message-Id: <1305205872-10321-2-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
+References: <1305205872-10321-1-git-send-email-richard@nod.at>
+In-Reply-To: <1305205872-10321-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: cjb@laptop.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, horms@verge.net.au, linux-mmc@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, oleg@redhat.com, akpm@linux-foundation.org, ying.huang@intel.com, ssp@redhat.com, namhyung@gmail.com, fweisbec@gmail.com, x86@kernel.org, hpa@zytor.com, tglx@linutronix.de, robert.richter@amd.com, lethal@linux-sh.org, Richard Weinberger <richard@nod.at>
 
-From: Magnus Damm <damm@opensource.se>
+Both warning and warning_symbol are nowhere used.
+Let's get rid of them.
 
-Instead of printing out useless information such
-as the virtual base address and one of 4 interrupts,
-convert the SDHI probe() to print out physical base
-address together with clock rate.
-
-We do have a struct device so make use of dev_info().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ arch/x86/include/asm/stacktrace.h |    3 ---
+ arch/x86/kernel/cpu/perf_event.c  |   13 -------------
+ arch/x86/kernel/dumpstack.c       |   16 ----------------
+ arch/x86/kernel/stacktrace.c      |   13 -------------
+ arch/x86/oprofile/backtrace.c     |   13 -------------
+ 5 files changed, 0 insertions(+), 58 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index c489547..2bd235b 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -126,8 +126,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (ret)
- 		goto eirq;
+diff --git a/arch/x86/include/asm/stacktrace.h b/arch/x86/include/asm/stacktrace.h
+index d7e89c8..70bbe39 100644
+--- a/arch/x86/include/asm/stacktrace.h
++++ b/arch/x86/include/asm/stacktrace.h
+@@ -37,9 +37,6 @@ print_context_stack_bp(struct thread_info *tinfo,
+ /* Generic stack tracer with callbacks */
  
--	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
--		(unsigned long)host->ctl, irq);
-+	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
-+		 mmc_hostname(host->mmc), (unsigned long)
-+		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
-+		 mmc_data->hclk / 1000000);
+ struct stacktrace_ops {
+-	void (*warning)(void *data, char *msg);
+-	/* msg must contain %s for the symbol */
+-	void (*warning_symbol)(void *data, char *msg, unsigned long symbol);
+ 	void (*address)(void *data, unsigned long address, int reliable);
+ 	/* On negative return stop dumping */
+ 	int (*stack)(void *data, char *name);
+diff --git a/arch/x86/kernel/cpu/perf_event.c b/arch/x86/kernel/cpu/perf_event.c
+index e638689..2828bca 100644
+--- a/arch/x86/kernel/cpu/perf_event.c
++++ b/arch/x86/kernel/cpu/perf_event.c
+@@ -1766,17 +1766,6 @@ static struct pmu pmu = {
+  * callchain support
+  */
  
- 	return ret;
+-static void
+-backtrace_warning_symbol(void *data, char *msg, unsigned long symbol)
+-{
+-	/* Ignore warnings */
+-}
+-
+-static void backtrace_warning(void *data, char *msg)
+-{
+-	/* Ignore warnings */
+-}
+-
+ static int backtrace_stack(void *data, char *name)
+ {
+ 	return 0;
+@@ -1790,8 +1779,6 @@ static void backtrace_address(void *data, unsigned long addr, int reliable)
+ }
  
+ static const struct stacktrace_ops backtrace_ops = {
+-	.warning		= backtrace_warning,
+-	.warning_symbol		= backtrace_warning_symbol,
+ 	.stack			= backtrace_stack,
+ 	.address		= backtrace_address,
+ 	.walk_stack		= print_context_stack_bp,
+diff --git a/arch/x86/kernel/dumpstack.c b/arch/x86/kernel/dumpstack.c
+index e2a3f06..f478ff6 100644
+--- a/arch/x86/kernel/dumpstack.c
++++ b/arch/x86/kernel/dumpstack.c
+@@ -135,20 +135,6 @@ print_context_stack_bp(struct thread_info *tinfo,
+ }
+ EXPORT_SYMBOL_GPL(print_context_stack_bp);
+ 
+-
+-static void
+-print_trace_warning_symbol(void *data, char *msg, unsigned long symbol)
+-{
+-	printk(data);
+-	print_symbol(msg, symbol);
+-	printk("\n");
+-}
+-
+-static void print_trace_warning(void *data, char *msg)
+-{
+-	printk("%s%s\n", (char *)data, msg);
+-}
+-
+ static int print_trace_stack(void *data, char *name)
+ {
+ 	printk("%s <%s> ", (char *)data, name);
+@@ -166,8 +152,6 @@ static void print_trace_address(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static const struct stacktrace_ops print_trace_ops = {
+-	.warning		= print_trace_warning,
+-	.warning_symbol		= print_trace_warning_symbol,
+ 	.stack			= print_trace_stack,
+ 	.address		= print_trace_address,
+ 	.walk_stack		= print_context_stack,
+diff --git a/arch/x86/kernel/stacktrace.c b/arch/x86/kernel/stacktrace.c
+index 6515733..55d9bc0 100644
+--- a/arch/x86/kernel/stacktrace.c
++++ b/arch/x86/kernel/stacktrace.c
+@@ -9,15 +9,6 @@
+ #include <linux/uaccess.h>
+ #include <asm/stacktrace.h>
+ 
+-static void save_stack_warning(void *data, char *msg)
+-{
+-}
+-
+-static void
+-save_stack_warning_symbol(void *data, char *msg, unsigned long symbol)
+-{
+-}
+-
+ static int save_stack_stack(void *data, char *name)
+ {
+ 	return 0;
+@@ -53,16 +44,12 @@ save_stack_address_nosched(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static const struct stacktrace_ops save_stack_ops = {
+-	.warning	= save_stack_warning,
+-	.warning_symbol	= save_stack_warning_symbol,
+ 	.stack		= save_stack_stack,
+ 	.address	= save_stack_address,
+ 	.walk_stack	= print_context_stack,
+ };
+ 
+ static const struct stacktrace_ops save_stack_ops_nosched = {
+-	.warning	= save_stack_warning,
+-	.warning_symbol	= save_stack_warning_symbol,
+ 	.stack		= save_stack_stack,
+ 	.address	= save_stack_address_nosched,
+ 	.walk_stack	= print_context_stack,
+diff --git a/arch/x86/oprofile/backtrace.c b/arch/x86/oprofile/backtrace.c
+index 2d49d4e..a5b64ab 100644
+--- a/arch/x86/oprofile/backtrace.c
++++ b/arch/x86/oprofile/backtrace.c
+@@ -16,17 +16,6 @@
+ #include <asm/stacktrace.h>
+ #include <linux/compat.h>
+ 
+-static void backtrace_warning_symbol(void *data, char *msg,
+-				     unsigned long symbol)
+-{
+-	/* Ignore warnings */
+-}
+-
+-static void backtrace_warning(void *data, char *msg)
+-{
+-	/* Ignore warnings */
+-}
+-
+ static int backtrace_stack(void *data, char *name)
+ {
+ 	/* Yes, we want all stacks */
+@@ -42,8 +31,6 @@ static void backtrace_address(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static struct stacktrace_ops backtrace_ops = {
+-	.warning	= backtrace_warning,
+-	.warning_symbol	= backtrace_warning_symbol,
+ 	.stack		= backtrace_stack,
+ 	.address	= backtrace_address,
+ 	.walk_stack	= print_context_stack,
 -- 
-1.7.2.5
+1.7.4.2
 
