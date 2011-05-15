@@ -1,16 +1,15 @@
-From: "R. J. Wysocki" <Rafal.Wysocki@fuw.edu.pl>
-Date: Sun, 15 May 2011 23:34:39 +0000
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 15 May 2011 23:38:10 +0000
 Subject: [PATCH 6/6][RFC] PM / Domains: Support for multiple generic power domain states
-Message-Id: <201105160134.39512.rwys@fuw.edu.pl>
+Message-Id: <201105160138.10431.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
-	<201105160117.46927.rjw@sisk.pl>
+References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl>
 In-Reply-To: <201105160117.46927.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
@@ -247,3 +246,4 @@ Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
  }
  
  void sh7372_add_device_to_domain(struct generic_power_domain *domain,
+
