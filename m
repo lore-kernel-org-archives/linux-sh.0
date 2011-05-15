@@ -1,29 +1,76 @@
-From: Federico Fuga <ml@studiofuga.com>
-Date: Thu, 19 May 2011 17:12:28 +0000
-Subject: ioremap_nocache on sh2a
-Message-Id: <D0A17CB4-DE84-47F9-A3A1-40D3F7A27C48@studiofuga.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 15 May 2011 23:33:28 +0000
+Subject: [PATCH 5/6] ARM / shmobile: Support for power domain A4MP on SH7372
+Message-Id: <201105160133.29294.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl>
+In-Reply-To: <201105160117.46927.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
 
-Hi everybody,
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-I was debugging a board with sh7203 that have a great flickering on the LCD panel when the kernel is configured with write-back cache option.
-As suggested by Magnus Damm on a previous mail, the framebuffer memory should be uncached (or writed-through). Paul Mundt responded that "we already get the cache management logic for free by virtue of the DMA mapping interface."
-So I tried allocating the fb memory with the dma_alloc_coherent() function, without solving the issue.
-So I traced the function calls until the ioremap_nocache inside the mm code, after that I have seen that in include/asm/io.h ioremap_nocache is #defined as ioremap() that is a no-op call in a nommu cpu.
-Could this be a problem? I think it could, where the noncached memory is not accessed by the DMAC, like the sh7203 case (the LCDC doesn't have a dedicated dma channel). I manually remapped my address by adding 0x20000000. It seems to work fine.
-I think that if the CPU provides both a cached and uncached alias, it is wrong that the ioremap_nocache returns a cached memory address, but it should "remap" the address in the uncached zone.
-Am I wrong? Could be this workaround be permanent by changing the ioremap_nocache implementation for sh2a at least?
+Use the power domains support code added by the previous
+patches to implement support for power domain A4MP on SH7372.
 
-Thank you 
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/board-mackerel.c      |    2 ++
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +++
+ arch/arm/mach-shmobile/pm-sh7372.c           |    7 +++++++
+ 3 files changed, 12 insertions(+)
 
-best regards
-
-
-Federico Fuga
-
-
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -89,9 +89,16 @@ static struct sh7372_domain_data sh7372_
+ 
+ struct generic_power_domain sh7372_a4lc_domain;
+ 
++static struct sh7372_domain_data sh7372_a4mp_domain_data = {
++	.bit_shift = 2,
++};
++
++struct generic_power_domain sh7372_a4mp_domain;
++
+ static int __init sh7372_power_domains_init(void)
+ {
+ 	sh7372_init_domain(&sh7372_a4lc_domain, &sh7372_a4lc_domain_data);
++	sh7372_init_domain(&sh7372_a4mp_domain, &sh7372_a4mp_domain_data);
+ 	return 0;
+ }
+ core_initcall(sh7372_power_domains_init);
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -475,11 +475,14 @@ struct platform_device;
+ #ifdef CONFIG_PM
+ extern struct generic_power_domain sh7372_a4lc_domain;
+ #define SH7372_A4LC	(&sh7372_a4lc_domain)
++extern struct generic_power_domain sh7372_a4mp_domain;
++#define SH7372_A4MP	(&sh7372_a4mp_domain)
+ 
+ extern void sh7372_add_device_to_domain(struct generic_power_domain *domain,
+ 					struct platform_device *pdev);
+ #else
+ #define SH7372_A4LC	NULL
++#define SH7372_A4PM	NULL
+ 
+ static inline void sh7372_add_device_to_domain(struct generic_power_domain *dom,
+ 					       struct platform_device *pd) {}
+Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1218,6 +1218,8 @@ static void __init mackerel_init(void)
+ 	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
+ 	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
+ 
++	sh7372_add_device_to_domain(SH7372_A4MP, &fsi_device);
++
+ 	hdmi_init_pm_clock();
+ }
+ 
 
