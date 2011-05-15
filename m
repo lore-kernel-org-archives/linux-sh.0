@@ -1,175 +1,62 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Thu, 12 May 2011 13:11:12 +0000
-Subject: [PATCH 2/2] x86: remove warning and warning_symbol from struct stacktrace_ops
-Message-Id: <1305205872-10321-2-git-send-email-richard@nod.at>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 15 May 2011 23:17:46 +0000
+Subject: [PATCH 0/6] PM: Support for generic I/O power domains (v3)
+Message-Id: <201105160117.46927.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1305205872-10321-1-git-send-email-richard@nod.at>
-In-Reply-To: <1305205872-10321-1-git-send-email-richard@nod.at>
+References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
+In-Reply-To: <201105082320.57185.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, oleg@redhat.com, akpm@linux-foundation.org, ying.huang@intel.com, ssp@redhat.com, namhyung@gmail.com, fweisbec@gmail.com, x86@kernel.org, hpa@zytor.com, tglx@linutronix.de, robert.richter@amd.com, lethal@linux-sh.org, Richard Weinberger <richard@nod.at>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
 
-Both warning and warning_symbol are nowhere used.
-Let's get rid of them.
+Hi,
 
-Signed-off-by: Richard Weinberger <richard@nod.at>
----
- arch/x86/include/asm/stacktrace.h |    3 ---
- arch/x86/kernel/cpu/perf_event.c  |   13 -------------
- arch/x86/kernel/dumpstack.c       |   16 ----------------
- arch/x86/kernel/stacktrace.c      |   13 -------------
- arch/x86/oprofile/backtrace.c     |   13 -------------
- 5 files changed, 0 insertions(+), 58 deletions(-)
+This is the second update of the patchset adding support for generic I/O power
+domains. Patches [1-5/6] have been posted and discussed already, although in
+a slightly different form.  The last patch is new.  The short description of
+all the patches and changes since the previous update follow.
 
-diff --git a/arch/x86/include/asm/stacktrace.h b/arch/x86/include/asm/stacktrace.h
-index d7e89c8..70bbe39 100644
---- a/arch/x86/include/asm/stacktrace.h
-+++ b/arch/x86/include/asm/stacktrace.h
-@@ -37,9 +37,6 @@ print_context_stack_bp(struct thread_info *tinfo,
- /* Generic stack tracer with callbacks */
- 
- struct stacktrace_ops {
--	void (*warning)(void *data, char *msg);
--	/* msg must contain %s for the symbol */
--	void (*warning_symbol)(void *data, char *msg, unsigned long symbol);
- 	void (*address)(void *data, unsigned long address, int reliable);
- 	/* On negative return stop dumping */
- 	int (*stack)(void *data, char *name);
-diff --git a/arch/x86/kernel/cpu/perf_event.c b/arch/x86/kernel/cpu/perf_event.c
-index e638689..2828bca 100644
---- a/arch/x86/kernel/cpu/perf_event.c
-+++ b/arch/x86/kernel/cpu/perf_event.c
-@@ -1766,17 +1766,6 @@ static struct pmu pmu = {
-  * callchain support
-  */
- 
--static void
--backtrace_warning_symbol(void *data, char *msg, unsigned long symbol)
--{
--	/* Ignore warnings */
--}
--
--static void backtrace_warning(void *data, char *msg)
--{
--	/* Ignore warnings */
--}
--
- static int backtrace_stack(void *data, char *name)
- {
- 	return 0;
-@@ -1790,8 +1779,6 @@ static void backtrace_address(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops backtrace_ops = {
--	.warning		= backtrace_warning,
--	.warning_symbol		= backtrace_warning_symbol,
- 	.stack			= backtrace_stack,
- 	.address		= backtrace_address,
- 	.walk_stack		= print_context_stack_bp,
-diff --git a/arch/x86/kernel/dumpstack.c b/arch/x86/kernel/dumpstack.c
-index e2a3f06..f478ff6 100644
---- a/arch/x86/kernel/dumpstack.c
-+++ b/arch/x86/kernel/dumpstack.c
-@@ -135,20 +135,6 @@ print_context_stack_bp(struct thread_info *tinfo,
- }
- EXPORT_SYMBOL_GPL(print_context_stack_bp);
- 
--
--static void
--print_trace_warning_symbol(void *data, char *msg, unsigned long symbol)
--{
--	printk(data);
--	print_symbol(msg, symbol);
--	printk("\n");
--}
--
--static void print_trace_warning(void *data, char *msg)
--{
--	printk("%s%s\n", (char *)data, msg);
--}
--
- static int print_trace_stack(void *data, char *name)
- {
- 	printk("%s <%s> ", (char *)data, name);
-@@ -166,8 +152,6 @@ static void print_trace_address(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops print_trace_ops = {
--	.warning		= print_trace_warning,
--	.warning_symbol		= print_trace_warning_symbol,
- 	.stack			= print_trace_stack,
- 	.address		= print_trace_address,
- 	.walk_stack		= print_context_stack,
-diff --git a/arch/x86/kernel/stacktrace.c b/arch/x86/kernel/stacktrace.c
-index 6515733..55d9bc0 100644
---- a/arch/x86/kernel/stacktrace.c
-+++ b/arch/x86/kernel/stacktrace.c
-@@ -9,15 +9,6 @@
- #include <linux/uaccess.h>
- #include <asm/stacktrace.h>
- 
--static void save_stack_warning(void *data, char *msg)
--{
--}
--
--static void
--save_stack_warning_symbol(void *data, char *msg, unsigned long symbol)
--{
--}
--
- static int save_stack_stack(void *data, char *name)
- {
- 	return 0;
-@@ -53,16 +44,12 @@ save_stack_address_nosched(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops save_stack_ops = {
--	.warning	= save_stack_warning,
--	.warning_symbol	= save_stack_warning_symbol,
- 	.stack		= save_stack_stack,
- 	.address	= save_stack_address,
- 	.walk_stack	= print_context_stack,
- };
- 
- static const struct stacktrace_ops save_stack_ops_nosched = {
--	.warning	= save_stack_warning,
--	.warning_symbol	= save_stack_warning_symbol,
- 	.stack		= save_stack_stack,
- 	.address	= save_stack_address_nosched,
- 	.walk_stack	= print_context_stack,
-diff --git a/arch/x86/oprofile/backtrace.c b/arch/x86/oprofile/backtrace.c
-index 2d49d4e..a5b64ab 100644
---- a/arch/x86/oprofile/backtrace.c
-+++ b/arch/x86/oprofile/backtrace.c
-@@ -16,17 +16,6 @@
- #include <asm/stacktrace.h>
- #include <linux/compat.h>
- 
--static void backtrace_warning_symbol(void *data, char *msg,
--				     unsigned long symbol)
--{
--	/* Ignore warnings */
--}
--
--static void backtrace_warning(void *data, char *msg)
--{
--	/* Ignore warnings */
--}
--
- static int backtrace_stack(void *data, char *name)
- {
- 	/* Yes, we want all stacks */
-@@ -42,8 +31,6 @@ static void backtrace_address(void *data, unsigned long addr, int reliable)
- }
- 
- static struct stacktrace_ops backtrace_ops = {
--	.warning	= backtrace_warning,
--	.warning_symbol	= backtrace_warning_symbol,
- 	.stack		= backtrace_stack,
- 	.address	= backtrace_address,
- 	.walk_stack	= print_context_stack,
--- 
-1.7.4.2
+The patches are on top of the branch at:
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git power-domains
+which is going to be pushed for 2.6.40.  I'd like to push patch [1/6] for
+2.6.40 too, since it's only slightly related to the rest of the patchset that
+depends on it.  Patches [2-5/6] are regarded as 2.6.41 material.  Patch [6/6]
+is an RFC and it may become 2.6.41 material depending on what you think.
 
+The entire patchset has been tested with an ARM shmobile Mackerel board.
+
+[1/6] - Introduction of generic prepare and complete callbacks for subsystems.
+        This patch hasn't changed since it was posted last time.
+
+[2/6] - Support for generic I/O power domains (runtime PM part).
+        There are a few changes relative to the previous version.  First,
+        I added CONFIG_PM_GENERIC_DOMAINS to be selected by platforms
+        wanting to use the new code (this allows, for example, x86 to avoid
+        compiling it unnecessarily).  Second, the loop over devices in
+        __pm_genpd_poweroff() doesn't increment "not_suspended" for devices
+        without drivers, so that they don't prevent the domain from being
+        powered down.  Finally, the kerneldoc comment for pm_genpd_init()
+        has been fixed.
+
+[3/6] - Support for generic I/O power domains (system sleep part).
+        pm_genpd_prepare() has been modified to execute pm_runtime_resume()
+        for the device is the domain's power_is_off flag is clear (the
+        device needs to be "active" from the runtime PM viewpoint, so that
+        we can save its registers before suspending the whole system).
+        Accordingly, pm_genpd_suspend() and pm_genpd_freeze() don't call
+        pm_runtime_resume() any more (they don't need to do that).
+
+[4/6] - Implementation of generic I/O power domains support for SH7372.
+
+[5/6] - Introduction of SH7372's A4MP power domain.
+
+[6/6] - [RFC] Support of multiple power domain states.
+        This shows how I think we can handle multiple power domain states
+        on top of the previous patches.
+
+Comments welcome.
+
+Thanks,
+Rafael
