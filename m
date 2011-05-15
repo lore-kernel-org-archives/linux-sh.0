@@ -1,60 +1,141 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 May 2011 16:35:11 +0000
-Subject: [PATCH] fbdev: sh_mobile_hdmi: runtime suspend HDMI on error and
-Message-Id: <Pine.LNX.4.64.1105051833570.29735@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 15 May 2011 23:30:27 +0000
+Subject: [PATCH 1/6] PM: Introduce generic prepare and complete callbacks for subsystems
+Message-Id: <201105160130.28322.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl>
+In-Reply-To: <201105160117.46927.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Rafael J. Wysocki <rjw@sisk.pl>
+
+Introduce generic .prepare() and .complete() power management
+callbacks, currently missing, that can be used by subsystems and
+power domains and export them.  Provide NULL definitions of all
+the generic system sleep callbacks for CONFIG_PM_SLEEP unset.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mobile_hdmi.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
+ drivers/base/power/generic_ops.c |   39 +++++++++++++++++++++++++++++++++++++++
+ include/linux/pm.h               |   26 +++++++++++++++++++-------
+ 2 files changed, 58 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 2b9e56a..6ae40b6 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -1131,15 +1131,19 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 		pm_runtime_get_sync(hdmi->dev);
+Index: linux-2.6/drivers/base/power/generic_ops.c
+=================================--- linux-2.6.orig/drivers/base/power/generic_ops.c
++++ linux-2.6/drivers/base/power/generic_ops.c
+@@ -74,6 +74,23 @@ EXPORT_SYMBOL_GPL(pm_generic_runtime_res
  
- 		ret = sh_hdmi_read_edid(hdmi, &hdmi_rate, &parent_rate);
--		if (ret < 0)
-+		if (ret < 0) {
-+			pm_runtime_put(hdmi->dev);
- 			goto out;
-+		}
+ #ifdef CONFIG_PM_SLEEP
+ /**
++ * pm_generic_prepare - Generic routine preparing a device for power transition.
++ * @dev: Device to prepare.
++ *
++ * Prepare a device for a system-wide power transition.
++ */
++int pm_generic_prepare(struct device *dev)
++{
++	struct device_driver *drv = dev->driver;
++	int ret = 0;
++
++	if (drv && drv->pm && drv->pm->prepare)
++		ret = drv->pm->prepare(dev);
++
++	return ret;
++}
++
++/**
+  * __pm_generic_call - Generic suspend/freeze/poweroff/thaw subsystem callback.
+  * @dev: Device to handle.
+  * @event: PM transition of the system under way.
+@@ -213,16 +230,38 @@ int pm_generic_restore(struct device *de
+ 	return __pm_generic_resume(dev, PM_EVENT_RESTORE);
+ }
+ EXPORT_SYMBOL_GPL(pm_generic_restore);
++
++/**
++ * pm_generic_complete - Generic routine competing a device power transition.
++ * @dev: Device to handle.
++ *
++ * Complete a device power transition during a system-wide power transition.
++ */
++void pm_generic_complete(struct device *dev)
++{
++	struct device_driver *drv = dev->driver;
++
++	if (drv && drv->pm && drv->pm->complete)
++		drv->pm->complete(dev);
++
++	/*
++	 * Let runtime PM try to suspend devices that haven't been in use before
++	 * going into the system-wide sleep state we're resuming from.
++	 */
++	pm_runtime_idle(dev);
++}
+ #endif /* CONFIG_PM_SLEEP */
  
- 		hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE;
+ struct dev_pm_ops generic_subsys_pm_ops = {
+ #ifdef CONFIG_PM_SLEEP
++	.prepare = pm_generic_prepare,
+ 	.suspend = pm_generic_suspend,
+ 	.resume = pm_generic_resume,
+ 	.freeze = pm_generic_freeze,
+ 	.thaw = pm_generic_thaw,
+ 	.poweroff = pm_generic_poweroff,
+ 	.restore = pm_generic_restore,
++	.complete = pm_generic_complete,
+ #endif
+ #ifdef CONFIG_PM_RUNTIME
+ 	.runtime_suspend = pm_generic_runtime_suspend,
+Index: linux-2.6/include/linux/pm.h
+=================================--- linux-2.6.orig/include/linux/pm.h
++++ linux-2.6/include/linux/pm.h
+@@ -550,6 +550,16 @@ extern void __suspend_report_result(cons
+ 	} while (0)
  
- 		/* Reconfigure the clock */
- 		ret = sh_hdmi_clk_configure(hdmi, hdmi_rate, parent_rate);
--		if (ret < 0)
-+		if (ret < 0) {
-+			pm_runtime_put(hdmi->dev);
- 			goto out;
-+		}
+ extern int device_pm_wait_for_dev(struct device *sub, struct device *dev);
++
++extern int pm_generic_prepare(struct device *dev);
++extern int pm_generic_suspend(struct device *dev);
++extern int pm_generic_resume(struct device *dev);
++extern int pm_generic_freeze(struct device *dev);
++extern int pm_generic_thaw(struct device *dev);
++extern int pm_generic_restore(struct device *dev);
++extern int pm_generic_poweroff(struct device *dev);
++extern void pm_generic_complete(struct device *dev);
++
+ #else /* !CONFIG_PM_SLEEP */
  
- 		msleep(10);
- 		sh_hdmi_configure(hdmi);
-@@ -1336,6 +1340,7 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- ecodec:
- 	free_irq(irq, hdmi);
- ereqirq:
-+	pm_runtime_suspend(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- 	iounmap(hdmi->base);
- emap:
-@@ -1372,6 +1377,7 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
- 	free_irq(irq, hdmi);
- 	/* Wait for already scheduled work */
- 	cancel_delayed_work_sync(&hdmi->edid_work);
-+	pm_runtime_suspend(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- 	clk_disable(hdmi->hdmi_clk);
- 	clk_put(hdmi->hdmi_clk);
--- 
-1.7.2.5
+ #define device_pm_lock() do {} while (0)
+@@ -566,6 +576,15 @@ static inline int device_pm_wait_for_dev
+ {
+ 	return 0;
+ }
++
++#define pm_generic_prepare	NULL
++#define pm_generic_suspend	NULL
++#define pm_generic_resume	NULL
++#define pm_generic_freeze	NULL
++#define pm_generic_thaw		NULL
++#define pm_generic_restore	NULL
++#define pm_generic_poweroff	NULL
++#define pm_generic_complete	NULL
+ #endif /* !CONFIG_PM_SLEEP */
+ 
+ /* How to reorder dpm_list after device_move() */
+@@ -576,11 +595,4 @@ enum dpm_order {
+ 	DPM_ORDER_DEV_LAST,
+ };
+ 
+-extern int pm_generic_suspend(struct device *dev);
+-extern int pm_generic_resume(struct device *dev);
+-extern int pm_generic_freeze(struct device *dev);
+-extern int pm_generic_thaw(struct device *dev);
+-extern int pm_generic_restore(struct device *dev);
+-extern int pm_generic_poweroff(struct device *dev);
+-
+ #endif /* _LINUX_PM_H */
 
