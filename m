@@ -1,97 +1,60 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 02 May 2011 07:59:02 +0000
-Subject: [PATCH/RFC] dmaengine: shdma: synchronize RCU before freeing, simplify
-Message-Id: <Pine.LNX.4.64.1105020950420.13244@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 May 2011 10:39:22 +0000
+Subject: [PATCH] ARM: mach-shmobile: Disable sh7372 RT side MSTP bits
+Message-Id: <20110517103922.4804.18418.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-List elements, deleted using list_del_rcu(), cannot be freed without
-synchronising RCU. Further, the spinlock, used to protect the RCU
-writer, is called in process context, so, we don't have to save flags.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Update the sh7372 clock code to set the RT side
+set of MSTP bits to a fixed disabled state.
+
+The sh7372 SoC contains two sets of MSTP bits,
+one for the ARM (SYS) side, and one for the
+SH4AL-DSP (RT) side. The actual clock associated
+with the MSTP bit will only be stopped when both
+sides have set the MSTP bit to disabled mode.
+
+Some MSTP bits are enabled by default after
+hardware reset, so this patch adjusts the code
+to disable all MSTP bits associated with the RT
+side to allow the SYS side to have full control.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-Paul, you added the NMI handler to shdma, using RCU and a global spinlock. 
-Please, have a look, whether this patch is correct.
+ arch/arm/mach-shmobile/clock-sh7372.c |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
- drivers/dma/shdma.c |   16 ++++++++--------
- 1 files changed, 8 insertions(+), 8 deletions(-)
-
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index d50da41..b7f27f5 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -1045,7 +1045,6 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
- 	unsigned long irqflags = IRQF_DISABLED,
- 		chan_flag[SH_DMAC_MAX_CHANNELS] = {};
--	unsigned long flags;
- 	int errirq, chan_irq[SH_DMAC_MAX_CHANNELS];
- 	int err, i, irq_cnt = 0, irqres = 0;
- 	struct sh_dmae_device *shdev;
-@@ -1111,9 +1110,9 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_get_sync(&pdev->dev);
- 
--	spin_lock_irqsave(&sh_dmae_lock, flags);
-+	spin_lock_irq(&sh_dmae_lock);
- 	list_add_tail_rcu(&shdev->node, &sh_dmae_devices);
--	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+	spin_unlock_irq(&sh_dmae_lock);
- 
- 	/* reset dma controller */
- 	err = sh_dmae_rst(shdev);
-@@ -1218,15 +1217,16 @@ eirqres:
- eirq_err:
- #endif
- rst_err:
--	spin_lock_irqsave(&sh_dmae_lock, flags);
-+	spin_lock_irq(&sh_dmae_lock);
- 	list_del_rcu(&shdev->node);
--	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+	spin_unlock_irq(&sh_dmae_lock);
- 
- 	pm_runtime_put(&pdev->dev);
- 	if (dmars)
- 		iounmap(shdev->dmars);
- emapdmars:
- 	iounmap(shdev->chan_reg);
-+	synchronize_rcu();
- emapchan:
- 	kfree(shdev);
- ealloc:
-@@ -1242,7 +1242,6 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+--- 0001/arch/arm/mach-shmobile/clock-sh7372.c
++++ work/arch/arm/mach-shmobile/clock-sh7372.c	2011-05-17 19:30:43.000000000 +0900
+@@ -44,6 +44,11 @@
+ #define DSI1PCKCR	0xe6150098
+ #define PLLC01CR	0xe6150028
+ #define PLLC2CR		0xe615002c
++#define RMSTPCR0	0xe6150110
++#define RMSTPCR1	0xe6150114
++#define RMSTPCR2	0xe6150118
++#define RMSTPCR3	0xe615011c
++#define RMSTPCR4	0xe6150120
+ #define SMSTPCR0	0xe6150130
+ #define SMSTPCR1	0xe6150134
+ #define SMSTPCR2	0xe6150138
+@@ -652,6 +657,13 @@ void __init sh7372_clock_init(void)
  {
- 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
- 	struct resource *res;
--	unsigned long flags;
- 	int errirq = platform_get_irq(pdev, 0);
+ 	int k, ret = 0;
  
- 	dma_async_device_unregister(&shdev->common);
-@@ -1250,9 +1249,9 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
- 	if (errirq > 0)
- 		free_irq(errirq, shdev);
++	/* make sure MSTP bits on the RT/SH4AL-DSP side are off */
++	__raw_writel(0xe4ef8087, RMSTPCR0);
++	__raw_writel(0xffffffff, RMSTPCR1);
++	__raw_writel(0x37c7f7ff, RMSTPCR2);
++	__raw_writel(0xffffffff, RMSTPCR3);
++	__raw_writel(0xffe0fffd, RMSTPCR4);
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
  
--	spin_lock_irqsave(&sh_dmae_lock, flags);
-+	spin_lock_irq(&sh_dmae_lock);
- 	list_del_rcu(&shdev->node);
--	spin_unlock_irqrestore(&sh_dmae_lock, flags);
-+	spin_unlock_irq(&sh_dmae_lock);
- 
- 	/* channel data remove */
- 	sh_dmae_chan_remove(shdev);
-@@ -1263,6 +1262,7 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
- 		iounmap(shdev->dmars);
- 	iounmap(shdev->chan_reg);
- 
-+	synchronize_rcu();
- 	kfree(shdev);
- 
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--- 
-1.7.2.5
-
