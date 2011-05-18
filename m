@@ -1,48 +1,143 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 09 May 2011 00:55:14 +0000
-Subject: [PATCH 4/6] mmc: sdhi: no need for special interrupt flags
-Message-Id: <1304902516-14150-5-git-send-email-horms@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 18 May 2011 11:10:08 +0000
+Subject: [PATCH 3/6] sh_mobile_meram: Add support for NV24 framebuffers
+Message-Id: <1305717011-20742-4-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1304902516-14150-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1304902516-14150-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Ian Molton <ian@mnementh.co.uk>, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Magnus Damm <damm@opensource.se>
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Since the NV24 framebuffer has a CbCr plane that is twice as wide
+as the Y plane, it needs to be handled as a special case.
 
-Modify the SDHI driver to get rid of unwanted irq flags.
-
-IRQF_DISABLED unused, see include/linux/interrupt.h
-IRQF_TRIGGER_FALLING only relevant on external IRQ pins,
-but since SDHI is internal in the SoC this can go away.
-
-Needed to support SDHI on sh73a0 that comes with a GIC
-that errors out with the IRQF_TRIGGER_FALLING setting.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Reviewed-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   10 +++++++---
+ drivers/video/sh_mobile_meram.c  |   24 +++++++++++++++++++-----
+ include/video/sh_mobile_meram.h  |    3 ++-
+ 3 files changed, 28 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 9ee51ac..c489547 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -122,8 +122,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eirq;
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 3a2cbd1..1c652da 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -627,10 +627,14 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 
+ 			ch->meram_enabled = 0;
+ 
+-			if (ch->info->var.nonstd)
+-				pf = SH_MOBILE_MERAM_PF_NV;
+-			else
++			if (ch->info->var.nonstd) {
++				if (ch->info->var.bits_per_pixel = 24)
++					pf = SH_MOBILE_MERAM_PF_NV24;
++				else
++					pf = SH_MOBILE_MERAM_PF_NV;
++			} else {
+ 				pf = SH_MOBILE_MERAM_PF_RGB;
++			}
+ 
+ 			ret = mdev->ops->meram_register(mdev, cfg, pitch,
+ 						ch->info->var.yres,
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index bd68f3d..9170c82 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -164,6 +164,16 @@ static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
+ 	}
+ }
+ 
++/*
++ * is this a YCbCr(NV12, NV16 or NV24) colorspace
++ */
++static inline int is_nvcolor(int cspace)
++{
++	if (cspace = SH_MOBILE_MERAM_PF_NV ||
++			cspace = SH_MOBILE_MERAM_PF_NV24)
++		return 1;
++	return 0;
++}
+ 
+ /*
+  * set the next address to fetch
+@@ -184,7 +194,7 @@ static inline void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
+ 	meram_write_icb(priv->base, cfg->icb[0].marker_icb, target,
+ 			base_addr_y + cfg->icb[0].cache_unit);
+ 
+-	if (cfg->pixelformat = SH_MOBILE_MERAM_PF_NV) {
++	if (is_nvcolor(cfg->pixelformat)) {
+ 		meram_write_icb(priv->base, cfg->icb[1].cache_icb,  target,
+ 				base_addr_c);
+ 		meram_write_icb(priv->base, cfg->icb[1].marker_icb, target,
+@@ -208,7 +218,7 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+ 		icb_offset = 0xc0000000 | (cfg->current_reg << 23);
+ 
+ 	*icb_addr_y = icb_offset | (cfg->icb[0].marker_icb << 24);
+-	if ((*icb_addr_c) && cfg->pixelformat = SH_MOBILE_MERAM_PF_NV)
++	if ((*icb_addr_c) && is_nvcolor(cfg->pixelformat))
+ 		*icb_addr_c = icb_offset | (cfg->icb[1].marker_icb << 24);
+ }
+ 
+@@ -316,6 +326,7 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		return -EINVAL;
+ 
+ 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
++	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
+ 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
+ 		return -EINVAL;
+ 
+@@ -366,7 +377,7 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		n = 2;
  	}
  
--	ret = request_irq(irq, tmio_mmc_irq, IRQF_DISABLED |
--			  IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), host);
-+	ret = request_irq(irq, tmio_mmc_irq, 0, dev_name(&pdev->dev), host);
- 	if (ret)
- 		goto eirq;
+-	if (pixelformat = SH_MOBILE_MERAM_PF_NV && n != 2) {
++	if (is_nvcolor(pixelformat) && n != 2) {
+ 		dev_err(&pdev->dev, "requires two ICB sets for planar Y/C.");
+ 		error =  -EINVAL;
+ 		goto err;
+@@ -375,7 +386,7 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 	/* we now register the ICB */
+ 	cfg->pixelformat = pixelformat;
+ 	meram_mark(priv, &cfg->icb[0]);
+-	if (pixelformat = SH_MOBILE_MERAM_PF_NV)
++	if (is_nvcolor(pixelformat))
+ 		meram_mark(priv, &cfg->icb[1]);
+ 
+ 	/* initialize MERAM */
+@@ -384,6 +395,9 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 	if (pixelformat = SH_MOBILE_MERAM_PF_NV)
+ 		meram_init(priv, &cfg->icb[1], xres, (yres + 1) / 2,
+ 			&out_pitch);
++	else if (pixelformat = SH_MOBILE_MERAM_PF_NV24)
++		meram_init(priv, &cfg->icb[1], 2 * xres, (yres + 1) / 2,
++			&out_pitch);
+ 
+ 	cfg->current_reg = 1;
+ 	meram_set_next_addr(priv, cfg, base_addr_y, base_addr_c);
+@@ -410,7 +424,7 @@ static int sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata,
+ 	mutex_lock(&priv->lock);
+ 
+ 	/* deinit & unmark */
+-	if (cfg->pixelformat = SH_MOBILE_MERAM_PF_NV) {
++	if (is_nvcolor(cfg->pixelformat)) {
+ 		meram_deinit(priv, &cfg->icb[1]);
+ 		meram_unmark(priv, &cfg->icb[1]);
+ 	}
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 15fbb3d..af602d6 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -9,7 +9,8 @@ enum {
+ 
+ enum {
+ 	SH_MOBILE_MERAM_PF_NV = 0,
+-	SH_MOBILE_MERAM_PF_RGB
++	SH_MOBILE_MERAM_PF_RGB,
++	SH_MOBILE_MERAM_PF_NV24
+ };
+ 
  
 -- 
-1.7.4.4
+1.7.1
 
