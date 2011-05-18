@@ -1,27 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 02 May 2011 22:39:39 +0000
-Subject: Re: [PATCH 1/2] mmc: tmio: Allow SDHI MMC to use multiple IRQ
-Message-Id: <20110502223935.GA8347@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 18 May 2011 11:10:05 +0000
+Subject: [PATCH 0/6 v2] MERAM support for LCDC
+Message-Id: <1305717011-20742-1-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1303890238-8372-2-git-send-email-horms@verge.net.au>
-In-Reply-To: <1303890238-8372-2-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, May 03, 2011 at 07:05:56AM +0900, Simon Horman wrote:
-> On Mon, May 02, 2011 at 09:21:37PM +0900, Magnus Damm wrote:
+This patch series adds support for read-ahead cache-access from the 
+LCDC to the main memory.  These patches enabled the LCDC to access
+the MERAM memory via ICB.  The specific ICBs to use are chip dependent
+and defined in the platform data.
 
-[ snip ]
+The MERAM clock will enable when the LCDC clocks do, and are allowed to 
+be disbled when the LCDC clocks are.
 
-> > If we break out the IRQ part of the code we can also easily modify the
-> > SDHI code to get rid of the IRQF_TRIGGER_FALLING flag that isn't
-> > working on GIC-enabled platforms like AG5. Such a break out would also
-> > remove the need for any array of interrupts and TMIO_MMC_MAX_IRQS.
-> 
-> I noticed that your original implementation didn't have an array of
-> interrupts.  Which seems to basically mean that free_irq() can't be called
-> in tmio_mmc_host_remove() (or anywhere else on removal). What am I missing?
+Changes from V1
+---------------
+* Specified meram info data (struct sh_mobile_meram_info *meram_dev) as
+  part of the LCDC device data, not the LCDC channel data, since the info
+  data corresponds to the whole device, not just one configuration.
 
-I see that you answered that witha  patch.
+* Added dynamic clock enable/disable via runtime_pm.
+
+* Changed .id from -1 to 0 in platform data
+
+Damian Hobson-Garcia (6):
+  sh_mobile: Add MSTP clock for MERAM
+  sh_mobile_meram: MERAM framework for LCDC
+  sh_mobile_meram: Add support for NV24 framebuffers
+  sh_mobile_meram: MERAM platform data for LCDC
+  fbdev: sh_mobile_meram: Add clock enable/disble via runtime PM
+  fbdev: sh_mobile_meram: Enable/disable MERAM clocks along with LCDC
+    clocks
+
+ arch/arm/mach-shmobile/board-ap4evb.c   |   73 ++++
+ arch/arm/mach-shmobile/board-mackerel.c |   74 ++++
+ arch/arm/mach-shmobile/clock-sh7372.c   |    4 +-
+ drivers/video/Kconfig                   |   12 +
+ drivers/video/Makefile                  |    1 +
+ drivers/video/sh_mobile_lcdcfb.c        |  117 ++++++-
+ drivers/video/sh_mobile_lcdcfb.h        |    1 +
+ drivers/video/sh_mobile_meram.c         |  594 +++++++++++++++++++++++++++++++
+ drivers/video/sh_mobile_meram.h         |   41 +++
+ include/video/sh_mobile_lcdc.h          |    3 +
+ include/video/sh_mobile_meram.h         |   74 ++++
+ 11 files changed, 984 insertions(+), 10 deletions(-)
+ create mode 100644 drivers/video/sh_mobile_meram.c
+ create mode 100644 drivers/video/sh_mobile_meram.h
+ create mode 100644 include/video/sh_mobile_meram.h
+
