@@ -1,141 +1,29 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 15 May 2011 23:30:27 +0000
-Subject: [PATCH 1/6] PM: Introduce generic prepare and complete callbacks for subsystems
-Message-Id: <201105160130.28322.rjw@sisk.pl>
+From: Federico Fuga <ml@studiofuga.com>
+Date: Thu, 19 May 2011 17:12:28 +0000
+Subject: ioremap_nocache on sh2a
+Message-Id: <D0A17CB4-DE84-47F9-A3A1-40D3F7A27C48@studiofuga.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl>
-In-Reply-To: <201105160117.46927.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Hi everybody,
 
-Introduce generic .prepare() and .complete() power management
-callbacks, currently missing, that can be used by subsystems and
-power domains and export them.  Provide NULL definitions of all
-the generic system sleep callbacks for CONFIG_PM_SLEEP unset.
+I was debugging a board with sh7203 that have a great flickering on the LCD panel when the kernel is configured with write-back cache option.
+As suggested by Magnus Damm on a previous mail, the framebuffer memory should be uncached (or writed-through). Paul Mundt responded that "we already get the cache management logic for free by virtue of the DMA mapping interface."
+So I tried allocating the fb memory with the dma_alloc_coherent() function, without solving the issue.
+So I traced the function calls until the ioremap_nocache inside the mm code, after that I have seen that in include/asm/io.h ioremap_nocache is #defined as ioremap() that is a no-op call in a nommu cpu.
+Could this be a problem? I think it could, where the noncached memory is not accessed by the DMAC, like the sh7203 case (the LCDC doesn't have a dedicated dma channel). I manually remapped my address by adding 0x20000000. It seems to work fine.
+I think that if the CPU provides both a cached and uncached alias, it is wrong that the ioremap_nocache returns a cached memory address, but it should "remap" the address in the uncached zone.
+Am I wrong? Could be this workaround be permanent by changing the ioremap_nocache implementation for sh2a at least?
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- drivers/base/power/generic_ops.c |   39 +++++++++++++++++++++++++++++++++++++++
- include/linux/pm.h               |   26 +++++++++++++++++++-------
- 2 files changed, 58 insertions(+), 7 deletions(-)
+Thank you 
 
-Index: linux-2.6/drivers/base/power/generic_ops.c
-=================================--- linux-2.6.orig/drivers/base/power/generic_ops.c
-+++ linux-2.6/drivers/base/power/generic_ops.c
-@@ -74,6 +74,23 @@ EXPORT_SYMBOL_GPL(pm_generic_runtime_res
- 
- #ifdef CONFIG_PM_SLEEP
- /**
-+ * pm_generic_prepare - Generic routine preparing a device for power transition.
-+ * @dev: Device to prepare.
-+ *
-+ * Prepare a device for a system-wide power transition.
-+ */
-+int pm_generic_prepare(struct device *dev)
-+{
-+	struct device_driver *drv = dev->driver;
-+	int ret = 0;
-+
-+	if (drv && drv->pm && drv->pm->prepare)
-+		ret = drv->pm->prepare(dev);
-+
-+	return ret;
-+}
-+
-+/**
-  * __pm_generic_call - Generic suspend/freeze/poweroff/thaw subsystem callback.
-  * @dev: Device to handle.
-  * @event: PM transition of the system under way.
-@@ -213,16 +230,38 @@ int pm_generic_restore(struct device *de
- 	return __pm_generic_resume(dev, PM_EVENT_RESTORE);
- }
- EXPORT_SYMBOL_GPL(pm_generic_restore);
-+
-+/**
-+ * pm_generic_complete - Generic routine competing a device power transition.
-+ * @dev: Device to handle.
-+ *
-+ * Complete a device power transition during a system-wide power transition.
-+ */
-+void pm_generic_complete(struct device *dev)
-+{
-+	struct device_driver *drv = dev->driver;
-+
-+	if (drv && drv->pm && drv->pm->complete)
-+		drv->pm->complete(dev);
-+
-+	/*
-+	 * Let runtime PM try to suspend devices that haven't been in use before
-+	 * going into the system-wide sleep state we're resuming from.
-+	 */
-+	pm_runtime_idle(dev);
-+}
- #endif /* CONFIG_PM_SLEEP */
- 
- struct dev_pm_ops generic_subsys_pm_ops = {
- #ifdef CONFIG_PM_SLEEP
-+	.prepare = pm_generic_prepare,
- 	.suspend = pm_generic_suspend,
- 	.resume = pm_generic_resume,
- 	.freeze = pm_generic_freeze,
- 	.thaw = pm_generic_thaw,
- 	.poweroff = pm_generic_poweroff,
- 	.restore = pm_generic_restore,
-+	.complete = pm_generic_complete,
- #endif
- #ifdef CONFIG_PM_RUNTIME
- 	.runtime_suspend = pm_generic_runtime_suspend,
-Index: linux-2.6/include/linux/pm.h
-=================================--- linux-2.6.orig/include/linux/pm.h
-+++ linux-2.6/include/linux/pm.h
-@@ -550,6 +550,16 @@ extern void __suspend_report_result(cons
- 	} while (0)
- 
- extern int device_pm_wait_for_dev(struct device *sub, struct device *dev);
-+
-+extern int pm_generic_prepare(struct device *dev);
-+extern int pm_generic_suspend(struct device *dev);
-+extern int pm_generic_resume(struct device *dev);
-+extern int pm_generic_freeze(struct device *dev);
-+extern int pm_generic_thaw(struct device *dev);
-+extern int pm_generic_restore(struct device *dev);
-+extern int pm_generic_poweroff(struct device *dev);
-+extern void pm_generic_complete(struct device *dev);
-+
- #else /* !CONFIG_PM_SLEEP */
- 
- #define device_pm_lock() do {} while (0)
-@@ -566,6 +576,15 @@ static inline int device_pm_wait_for_dev
- {
- 	return 0;
- }
-+
-+#define pm_generic_prepare	NULL
-+#define pm_generic_suspend	NULL
-+#define pm_generic_resume	NULL
-+#define pm_generic_freeze	NULL
-+#define pm_generic_thaw		NULL
-+#define pm_generic_restore	NULL
-+#define pm_generic_poweroff	NULL
-+#define pm_generic_complete	NULL
- #endif /* !CONFIG_PM_SLEEP */
- 
- /* How to reorder dpm_list after device_move() */
-@@ -576,11 +595,4 @@ enum dpm_order {
- 	DPM_ORDER_DEV_LAST,
- };
- 
--extern int pm_generic_suspend(struct device *dev);
--extern int pm_generic_resume(struct device *dev);
--extern int pm_generic_freeze(struct device *dev);
--extern int pm_generic_thaw(struct device *dev);
--extern int pm_generic_restore(struct device *dev);
--extern int pm_generic_poweroff(struct device *dev);
--
- #endif /* _LINUX_PM_H */
+best regards
+
+
+Federico Fuga
+
+
 
