@@ -1,186 +1,198 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 08 May 2011 21:25:01 +0000
-Subject: [PATCH 4/5] ARM / shmobile: Support for I/O power domains for SH7372 (v4)
-Message-Id: <201105082325.02212.rjw@sisk.pl>
+Date: Thu, 19 May 2011 21:48:49 +0000
+Subject: Power management updates for 2.6.40
+Message-Id: <201105192348.49412.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
-In-Reply-To: <201105082320.57185.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, ACPI Devel Mailing List <linux-acpi@vger.kernel.org>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Hi Linus,
 
-Use the generic power domains support introduced by the previous
-patch to implement support for power domains on SH7372.
+Please pull power management updates for 2.6.40 from:
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- arch/arm/mach-shmobile/Makefile              |    4 +
- arch/arm/mach-shmobile/board-mackerel.c      |    3 
- arch/arm/mach-shmobile/include/mach/sh7372.h |   16 ++++
- arch/arm/mach-shmobile/pm-sh7372.c           |   97 +++++++++++++++++++++++++++
- 4 files changed, 120 insertions(+)
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git for-linus
 
-Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
-+++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1215,6 +1215,9 @@ static void __init mackerel_init(void)
- 
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
- 
-+	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
-+	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
-+
- 	hdmi_init_pm_clock();
- }
- 
-Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- /dev/null
-+++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -0,0 +1,97 @@
-+/*
-+ * arch/arm/mach-shmobile/pm-sh7372.c
-+ *
-+ * Power domains support code for SH7372
-+ *
-+ * Copyright (C) 2011 Rafael J. Wysocki <rjw@sisk.pl>, Renesas Electronics Corp.
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License v2.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <linux/pm_runtime.h>
-+#include <linux/platform_device.h>
-+
-+#include <mach/sh7372.h>
-+
-+struct sh7372_domain_data {
-+	unsigned int bit_shift;
-+};
-+
-+#define SPDCR 0xe6180008
-+#define SWUCR 0xe6180014
-+#define PSTR 0xe6180080
-+
-+static int pd_power_down(struct dev_power_domain *domain)
-+{
-+	struct sh7372_domain_data *dd = domain->platform_data;
-+	unsigned int mask = 1 << dd->bit_shift;
-+
-+	if (__raw_readl(PSTR) & mask) {
-+		__raw_writel(mask, SPDCR);
-+
-+		while (__raw_readl(SPDCR) & mask) {}
-+
-+		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
-+	}
-+
-+	return 0;
-+}
-+
-+static int pd_power_up(struct dev_power_domain *domain)
-+{
-+	struct sh7372_domain_data *dd = domain->platform_data;
-+	unsigned int mask = 1 << dd->bit_shift;
-+
-+	if (!(__raw_readl(PSTR) & mask)) {
-+		__raw_writel(mask, SWUCR);
-+
-+		while (__raw_readl(SWUCR) & mask) {}
-+
-+		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
-+	}
-+
-+	return 0;
-+}
-+
-+static void sh7372_init_domain(struct generic_power_domain *domain,
-+			       struct sh7372_domain_data *pdata)
-+{
-+	pm_genpd_init(domain, NULL, false);
-+	domain->domain.platform_data = pdata;
-+	domain->stop_device = pm_runtime_clk_suspend;
-+	domain->start_device = pm_runtime_clk_resume;
-+	domain->power_off = pd_power_down;
-+	domain->power_on = pd_power_up;
-+}
-+
-+void sh7372_add_device_to_domain(struct generic_power_domain *domain,
-+				 struct platform_device *pdev)
-+{
-+	struct device *dev = &pdev->dev;
-+
-+	if (!dev->power.subsys_data) {
-+		pm_runtime_clk_init(dev);
-+		pm_runtime_clk_add(dev, NULL);
-+	}
-+	pm_genpd_add_device(domain, dev);
-+}
-+
-+static struct sh7372_domain_data sh7372_a4lc_domain_data = {
-+	.bit_shift = 1,
-+};
-+
-+struct generic_power_domain sh7372_a4lc_domain;
-+
-+static int __init sh7372_power_domains_init(void)
-+{
-+	sh7372_init_domain(&sh7372_a4lc_domain, &sh7372_a4lc_domain_data);
-+	return 0;
-+}
-+core_initcall(sh7372_power_domains_init);
-Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -12,6 +12,7 @@
- #define __ASM_SH7372_H__
- 
- #include <linux/sh_clk.h>
-+#include <linux/pm_domain.h>
- 
- /*
-  * Pin Function Controller:
-@@ -469,4 +470,19 @@ extern struct clk sh7372_fsibck_clk;
- extern struct clk sh7372_fsidiva_clk;
- extern struct clk sh7372_fsidivb_clk;
- 
-+struct platform_device;
-+
-+#ifdef CONFIG_PM
-+extern struct generic_power_domain sh7372_a4lc_domain;
-+#define SH7372_A4LC	(&sh7372_a4lc_domain)
-+
-+extern void sh7372_add_device_to_domain(struct generic_power_domain *domain,
-+					struct platform_device *pdev);
-+#else
-+#define SH7372_A4LC	NULL
-+
-+static inline void sh7372_add_device_to_domain(struct generic_power_domain *dom,
-+					       struct platform_device *pd) {}
-+#endif /* CONFIG_PM */
-+
- #endif /* __ASM_SH7372_H__ */
-Index: linux-2.6/arch/arm/mach-shmobile/Makefile
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/Makefile
-+++ linux-2.6/arch/arm/mach-shmobile/Makefile
-@@ -40,6 +40,10 @@ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4ev
- obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- 
-+# PM objects
-+pm-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
-+
- # Framework support
- obj-$(CONFIG_SMP)		+= $(smp-y)
- obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
-+obj-$(CONFIG_PM)		+= $(pm-y)
+They include:
+
+* Elimination of suspend/resume and shutdown callbacks from struct sysdev_class
+  and struct sysdev_driver.
+
+* Consolidation of ARM OMAP and shmobile runtime PM clock management and update
+  of the core PM code related to power domains.
+
+* Various PM fixes and extensions.
+
+
+ Documentation/ABI/testing/sysfs-power      |   14 +
+ Documentation/feature-removal-schedule.txt |    8 -
+ Documentation/kernel-parameters.txt        |    2 +-
+ Documentation/power/devices.txt            |   14 +-
+ Documentation/power/notifiers.txt          |   51 ++--
+ arch/arm/common/vic.c                      |   69 ++---
+ arch/arm/include/asm/mach/time.h           |    1 -
+ arch/arm/kernel/leds.c                     |   28 +-
+ arch/arm/kernel/time.c                     |   35 +--
+ arch/arm/mach-exynos4/pm.c                 |   45 ++--
+ arch/arm/mach-integrator/integrator_ap.c   |   26 +--
+ arch/arm/mach-omap1/pm_bus.c               |   69 ++---
+ arch/arm/mach-omap2/Makefile               |    6 +-
+ arch/arm/mach-omap2/pm_bus.c               |   85 ------
+ arch/arm/mach-pxa/balloon3.c               |    1 -
+ arch/arm/mach-pxa/clock-pxa2xx.c           |   18 +-
+ arch/arm/mach-pxa/clock-pxa3xx.c           |   17 +-
+ arch/arm/mach-pxa/clock.h                  |    7 +-
+ arch/arm/mach-pxa/cm-x270.c                |    1 -
+ arch/arm/mach-pxa/cm-x2xx.c                |   23 +-
+ arch/arm/mach-pxa/colibri-evalboard.c      |    1 -
+ arch/arm/mach-pxa/colibri-pxa270-income.c  |    1 -
+ arch/arm/mach-pxa/colibri-pxa270.c         |    1 -
+ arch/arm/mach-pxa/generic.h                |    8 +-
+ arch/arm/mach-pxa/irq.c                    |   17 +-
+ arch/arm/mach-pxa/lpd270.c                 |   20 +-
+ arch/arm/mach-pxa/lubbock.c                |   21 +-
+ arch/arm/mach-pxa/mainstone.c              |   22 +-
+ arch/arm/mach-pxa/mfp-pxa2xx.c             |   12 +-
+ arch/arm/mach-pxa/mfp-pxa3xx.c             |   21 +-
+ arch/arm/mach-pxa/mioa701.c                |   43 +---
+ arch/arm/mach-pxa/palmld.c                 |    1 -
+ arch/arm/mach-pxa/palmtreo.c               |    1 -
+ arch/arm/mach-pxa/palmz72.c                |   24 +-
+ arch/arm/mach-pxa/pxa25x.c                 |   25 +--
+ arch/arm/mach-pxa/pxa27x.c                 |   25 +--
+ arch/arm/mach-pxa/pxa3xx.c                 |   25 +--
+ arch/arm/mach-pxa/pxa95x.c                 |   20 +-
+ arch/arm/mach-pxa/raumfeld.c               |    1 -
+ arch/arm/mach-pxa/smemc.c                  |   29 +--
+ arch/arm/mach-pxa/trizeps4.c               |    1 -
+ arch/arm/mach-pxa/viper.c                  |   12 +-
+ arch/arm/mach-pxa/vpac270.c                |    1 -
+ arch/arm/mach-s3c2410/irq.c                |   30 +--
+ arch/arm/mach-s3c2410/mach-bast.c          |   17 +-
+ arch/arm/mach-s3c2410/pm.c                 |   13 +-
+ arch/arm/mach-s3c2410/s3c2410.c            |    5 +
+ arch/arm/mach-s3c2412/irq.c                |    2 -
+ arch/arm/mach-s3c2412/mach-jive.c          |   19 +-
+ arch/arm/mach-s3c2412/pm.c                 |   27 +-
+ arch/arm/mach-s3c2412/s3c2412.c            |    4 +
+ arch/arm/mach-s3c2416/irq.c                |    2 -
+ arch/arm/mach-s3c2416/pm.c                 |   27 +-
+ arch/arm/mach-s3c2416/s3c2416.c            |    5 +
+ arch/arm/mach-s3c2440/mach-osiris.c        |   18 +-
+ arch/arm/mach-s3c2440/s3c2440.c            |    8 +
+ arch/arm/mach-s3c2440/s3c2442.c            |    6 +
+ arch/arm/mach-s3c2440/s3c244x-irq.c        |    4 -
+ arch/arm/mach-s3c2440/s3c244x.c            |   62 ++--
+ arch/arm/mach-s3c64xx/irq-pm.c             |   18 +-
+ arch/arm/mach-s5pv210/pm.c                 |   25 ++-
+ arch/arm/mach-sa1100/irq.c                 |   19 +-
+ arch/arm/mach-shmobile/pm_runtime.c        |  145 ++--------
+ arch/arm/plat-omap/gpio.c                  |   35 +--
+ arch/arm/plat-omap/omap_device.c           |   23 ++
+ arch/arm/plat-pxa/gpio.c                   |   17 +-
+ arch/arm/plat-pxa/mfp.c                    |    1 -
+ arch/arm/plat-s3c24xx/dma.c                |   68 ++---
+ arch/arm/plat-s3c24xx/irq-pm.c             |    7 +-
+ arch/arm/plat-s5p/irq-pm.c                 |    7 +-
+ arch/arm/plat-samsung/include/plat/cpu.h   |    6 +
+ arch/arm/plat-samsung/include/plat/pm.h    |    6 +-
+ arch/arm/vfp/vfpmodule.c                   |   19 +-
+ arch/avr32/mach-at32ap/intc.c              |   38 +--
+ arch/blackfin/kernel/nmi.c                 |   30 +--
+ arch/powerpc/include/asm/mpic.h            |    3 -
+ arch/powerpc/platforms/cell/spu_base.c     |   28 ++-
+ arch/powerpc/platforms/powermac/pic.c      |   42 +--
+ arch/powerpc/sysdev/ipic.c                 |   36 +--
+ arch/powerpc/sysdev/mpic.c                 |   48 ++--
+ arch/sh/Kconfig                            |    1 -
+ arch/sh/configs/apsh4ad0a_defconfig        |    1 -
+ arch/sh/configs/sdk7786_defconfig          |    1 -
+ arch/sh/kernel/cpu/shmobile/pm_runtime.c   |   33 ++-
+ arch/unicore32/kernel/irq.c                |   23 +-
+ arch/x86/Kconfig                           |    1 -
+ arch/x86/kernel/acpi/sleep.c               |    5 -
+ arch/x86/kernel/apm_32.c                   |    4 -
+ drivers/base/Kconfig                       |    7 -
+ drivers/base/base.h                        |    2 -
+ drivers/base/dd.c                          |    6 +-
+ drivers/base/firmware_class.c              |    5 +
+ drivers/base/platform.c                    |  138 ++--------
+ drivers/base/power/Makefile                |    4 +-
+ drivers/base/power/clock_ops.c             |  431 ++++++++++++++++++++++++++++
+ drivers/base/power/generic_ops.c           |   39 +++
+ drivers/base/power/main.c                  |   82 +++---
+ drivers/base/power/runtime.c               |   29 +--
+ drivers/base/power/sysfs.c                 |    4 +-
+ drivers/base/power/wakeup.c                |    1 -
+ drivers/base/sys.c                         |  202 +-------------
+ drivers/xen/manage.c                       |    8 +-
+ include/linux/device.h                     |    7 -
+ include/linux/kmod.h                       |    1 +
+ include/linux/platform_device.h            |   63 ++++-
+ include/linux/pm.h                         |   39 ++-
+ include/linux/pm_runtime.h                 |   42 +++
+ include/linux/sysdev.h                     |   11 -
+ kernel/freezer.c                           |    4 +-
+ kernel/kexec.c                             |    9 +-
+ kernel/kmod.c                              |   16 +-
+ kernel/power/Kconfig                       |   10 +-
+ kernel/power/hibernate.c                   |   58 +++--
+ kernel/power/main.c                        |    1 +
+ kernel/power/power.h                       |    4 +
+ kernel/power/snapshot.c                    |   33 ++-
+ kernel/power/suspend.c                     |   10 +-
+ kernel/sys.c                               |    3 -
+ 118 files changed, 1393 insertions(+), 1667 deletions(-)
+
+---------------
+
+Amerigo Wang (1):
+      PM / ACPI: Remove acpi_sleep=s4_nonvs
+
+Eric Dumazet (1):
+      PM / Wakeup: Remove useless synchronize_rcu() call
+
+Kay Sievers (1):
+      kmod: always provide usermodehelper_disable()
+
+Kevin Hilman (2):
+      OMAP2+ / PM: move runtime PM implementation to use device power domains
+      PM: Revert "driver core: platform_bus: allow runtime override of dev_pm_ops"
+
+Mike Frysinger (1):
+      Freezer: Use SMP barriers
+
+MyungJoo Ham (1):
+      PM / Suspend: Do not ignore error codes returned by suspend_enter()
+
+Rafael J. Wysocki (27):
+      ARM: Use struct syscore_ops instead of sysdevs for PM in common code
+      ARM / OMAP: Use struct syscore_ops for "core" power management
+      ARM / Integrator: Use struct syscore_ops for core PM
+      ARM / SA1100: Use struct syscore_ops for "core" power management
+      ARM / PXA: Use struct syscore_ops for "core" power management
+      ARM / Samsung: Use struct syscore_ops for "core" power management
+      PM / Blackfin: Use struct syscore_ops instead of sysdevs for PM
+      PM: Make power domain callbacks take precedence over subsystem ones
+      PM: Export platform bus type's default PM callbacks
+      shmobile: Use power domains for platform runtime PM
+      PM / Platform: Use generic runtime PM callbacks directly
+      PM / Runtime: Add subsystem data field to struct dev_pm_info
+      PM / Runtime: Generic clock manipulation rountines for runtime PM (v6)
+      PM / AVR32: Use struct syscore_ops instead of sysdevs for PM
+      PM / UNICORE32: Use struct syscore_ops instead of sysdevs for PM
+      PM / PowerPC: Use struct syscore_ops instead of sysdevs for PM
+      PM: Remove sysdev suspend, resume and shutdown operations
+      OMAP1 / PM: Use generic clock manipulation routines for runtime PM
+      PM: Fix build issue in clock_ops.c for CONFIG_PM_RUNTIME unset
+      PM / Runtime: Rework runtime PM handling during driver removal
+      PM: Print a warning if firmware is requested when tasks are frozen
+      PM / Wakeup: Fix build warning related to the "wakeup" sysfs file
+      PM / Hibernate: Add sysfs knob to control size of memory for drivers
+      Revert "PM / Hibernate: Reduce autotuned default image size"
+      PM: Remove CONFIG_PM_VERBOSE
+      PM: Allow drivers to allocate memory from .prepare() callbacks safely
+      PM: Introduce generic prepare and complete callbacks for subsystems
 
