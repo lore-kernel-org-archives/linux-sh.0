@@ -1,62 +1,53 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 May 2011 18:29:18 +0000
-Subject: Re: [PATCH 6/6][RFC] PM / Domains: Support for multiple generic power domain states
-Message-Id: <201105162029.18615.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 May 2011 06:26:20 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh73a0 twd_base fix
+Message-Id: <20110519062620.27921.52669.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105160138.10431.rjw@sisk.pl> <87sjsfdklw.fsf@ti.com>
-In-Reply-To: <87sjsfdklw.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
+To: linux-arm-kernel@lists.infradead.org
 
-On Monday, May 16, 2011, Kevin Hilman wrote:
-> Hi Rafael,
-> 
-> "Rafael J. Wysocki" <rjw@sisk.pl> writes:
-> 
-> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> >
-> > Allow the generic power domains support code to handle power
-> > domains with multiple states.  
-> 
-> Thanks!
+From: Magnus Damm <damm@opensource.se>
 
-No problem. :-)
+Fix the case of too late twd_base initialization for SMP
+on sh73a0 which bas been broken because sh73a0 specific
+smp_prepare_cpu() and percpu_timer_setup() changed order
+in the commits:
 
-> Before I even had the time to respond to you about my previous request
-> for this kind of feature, you've already implmented it. :)  
+05c74a6cbcfb416286a947668ba32f63d99fe74a
+c413521eb4e2d7ffd5ce432a144708d479054bd3
 
-Well, I had the idea how to implement it right after I had replied to
-your previous message.  The only problem was to find the time to actually
-prepare a patch.
+Without this fix the sh73a0 SMP kernel panics on boot.
 
-> > Replace the .power_down_ok()
-> > callback in struct dev_power_governor with a new callback
-> > .choose_state() that will return the number of the state to put the
-> > power domain into.  Add new fields nr_states and current_state to
-> > struct generic_power_domain with the assumption that state 0 will be
-> > the full power state and states 1 through (nr_states - 1) will be low
-> > power.  
-> > Replace power domain callbacks .power_off() and .power_on()
-> > with a single .set_state() callback taking the number of the state
-> > to put the power domain into as its second argument.  Add a new
-> > generic power domain callback .power_off_state() (taking a state
-> > number as its second argument) allowing the core to check if
-> > device runtime PM callbacks need to be executed before putting the
-> > given power domain into the given state.  Modify the core power
-> > domains code and the ARM shmobile platform code to take all of the
-> > above changes into account.
-> >
-> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> Reviewed-by: Kevin Hilman <khilman@ti.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Thanks!
+ arch/arm/mach-shmobile/smp-sh73a0.c |    9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-> This looks like a better starting point for more complicated hardware.
-
-I agree.
-
-Rafael
+--- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2011-05-19 14:50:24.000000000 +0900
+@@ -59,6 +59,11 @@ unsigned int __init sh73a0_get_core_coun
+ {
+ 	void __iomem *scu_base = scu_base_addr();
+ 
++#ifdef CONFIG_HAVE_ARM_TWD
++	/* twd_base needs to be initialized before percpu_timer_setup() */
++	twd_base = (void __iomem *)0xf0000600;
++#endif
++
+ 	return scu_get_core_count(scu_base);
+ }
+ 
+@@ -82,10 +87,6 @@ int __cpuinit sh73a0_boot_secondary(unsi
+ 
+ void __init sh73a0_smp_prepare_cpus(void)
+ {
+-#ifdef CONFIG_HAVE_ARM_TWD
+-	twd_base = (void __iomem *)0xf0000600;
+-#endif
+-
+ 	scu_enable(scu_base_addr());
+ 
+ 	/* Map the reset vector (in headsmp.S) */
