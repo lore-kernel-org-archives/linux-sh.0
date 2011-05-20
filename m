@@ -1,33 +1,89 @@
-From: Sergei Shtylyov <sshtylyov@mvista.com>
-Date: Thu, 19 May 2011 11:50:08 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh73a0 twd_base fix
-Message-Id: <4DD503F0.4050201@ru.mvista.com>
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Fri, 20 May 2011 07:27:49 +0000
+Subject: [PATCH 3/4] clk: Add fixed-rate clock
+Message-Id: <1305876469.327290.592839707336.3.gpush@pororo>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110519062620.27921.52669.sendpatchset@t400s>
-In-Reply-To: <20110519062620.27921.52669.sendpatchset@t400s>
+In-Reply-To: <1305876469.325655.313573683829.0.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
 
-On 19-05-2011 10:26, Magnus Damm wrote:
+---
+ drivers/clk/Kconfig     |    4 ++++
+ drivers/clk/Makefile    |    1 +
+ drivers/clk/clk-fixed.c |   17 +++++++++++++++++
+ include/linux/clk.h     |   14 ++++++++++++++
+ 4 files changed, 36 insertions(+)
 
-> From: Magnus Damm<damm@opensource.se>
-
-> Fix the case of too late twd_base initialization for SMP
-> on sh73a0 which bas been broken because sh73a0 specific
-> smp_prepare_cpu() and percpu_timer_setup() changed order
-> in the commits:
-
-> 05c74a6cbcfb416286a947668ba32f63d99fe74a
-> c413521eb4e2d7ffd5ce432a144708d479054bd3
-
-    Please also specify those commits' summaries -- for the human readers.
-
-> Without this fix the sh73a0 SMP kernel panics on boot.
-
-> Signed-off-by: Magnus Damm<damm@opensource.se>
-
-WBR, Sergei
+diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
+index e611e34..0a27963 100644
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -5,3 +5,7 @@ config CLKDEV_LOOKUP
+ 
+ config GENERIC_CLK
+ 	bool
++
++config GENERIC_CLK_FIXED
++	bool
++	depends on GENERIC_CLK
+diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
+index 570d5b9..9a3325a 100644
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -1,3 +1,4 @@
+ 
+ obj-$(CONFIG_CLKDEV_LOOKUP)	+= clkdev.o
+ obj-$(CONFIG_GENERIC_CLK)	+= clk.o
++obj-$(CONFIG_GENERIC_CLK_FIXED)	+= clk-fixed.o
+diff --git a/drivers/clk/clk-fixed.c b/drivers/clk/clk-fixed.c
+new file mode 100644
+index 0000000..47a27f9
+--- /dev/null
++++ b/drivers/clk/clk-fixed.c
+@@ -0,0 +1,17 @@
++
++#include <linux/clk.h>
++#include <linux/module.h>
++
++#define to_clk_fixed(c) container_of(c, struct clk_hw_fixed, hw)
++
++static unsigned long clk_fixed_recalc_rate(struct clk_hw *hw)
++{
++	return to_clk_fixed(hw)->rate;
++}
++
++struct clk_hw_ops clk_fixed_ops = {
++	.recalc_rate = clk_fixed_recalc_rate,
++};
++EXPORT_SYMBOL_GPL(clk_fixed_ops);
++
++
+diff --git a/include/linux/clk.h b/include/linux/clk.h
+index e0969d2..fd62e86 100644
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
+@@ -110,6 +110,20 @@ int clk_prepare(struct clk *clk);
+  */
+ void clk_unprepare(struct clk *clk);
+ 
++/* Base clock implementations. Platform clock implementations can use these
++ * directly, or 'subclass' as approprate */
++
++#ifdef CONFIG_GENERIC_CLK_FIXED
++
++struct clk_hw_fixed {
++	struct clk_hw	hw;
++	unsigned long	rate;
++};
++
++extern struct clk_hw_ops clk_fixed_ops;
++
++#endif /* CONFIG_GENERIC_CLK_FIXED */
++
+ #else /* !CONFIG_GENERIC_CLK */
+ 
+ /*
