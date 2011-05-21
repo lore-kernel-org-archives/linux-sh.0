@@ -1,36 +1,83 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 31 May 2011 09:25:16 +0000
-Subject: [PATCH] dmaengine: shdma: fix a regression: initialise DMA channels
-Message-Id: <Pine.LNX.4.64.1105311123230.10863@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 21 May 2011 12:09:33 +0000
+Subject: [PATCH 1/3] PM / Hibernate: Update some comments in core hibernate code
+Message-Id: <201105211409.34012.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201105211408.28671.rjw@sisk.pl>
+In-Reply-To: <201105211408.28671.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Frank Hofmann <frank.hofmann@tomtom.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>
 
-A recent patch has introduced a regression, where repeating a memcpy
-DMA test with shdma module unloading between them skips the DMA channel
-configuration. Fix this regression by always configuring the channel
-during its allocation.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Some comments in the core hibernate code are outdated, some aren't
+necessary any more and at least one of them is plain wrong.  Remove
+those comments or update them.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/dma/shdma.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ kernel/power/hibernate.c |   21 +++++++--------------
+ 1 file changed, 7 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 636e409..6eb8454 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -343,7 +343,7 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
+Index: linux-2.6/kernel/power/hibernate.c
+=================================--- linux-2.6.orig/kernel/power/hibernate.c
++++ linux-2.6/kernel/power/hibernate.c
+@@ -248,12 +248,6 @@ static int create_image(int platform_mod
+ 	if (error)
+ 		return error;
  
- 		dmae_set_dmars(sh_chan, cfg->mid_rid);
- 		dmae_set_chcr(sh_chan, cfg->chcr);
--	} else if ((sh_dmae_readl(sh_chan, CHCR) & 0xf00) != 0x400) {
-+	} else {
- 		dmae_init(sh_chan);
+-	/* At this point, dpm_suspend_start() has been called, but *not*
+-	 * dpm_suspend_noirq(). We *must* call dpm_suspend_noirq() now.
+-	 * Otherwise, drivers for some devices (e.g. interrupt controllers)
+-	 * become desynchronized with the actual state of the hardware
+-	 * at resume time, and evil weirdness ensues.
+-	 */
+ 	error = dpm_suspend_noirq(PMSG_FREEZE);
+ 	if (error) {
+ 		printk(KERN_ERR "PM: Some devices failed to power down, "
+@@ -297,9 +291,6 @@ static int create_image(int platform_mod
+ 
+  Power_up:
+ 	syscore_resume();
+-	/* NOTE:  dpm_resume_noirq() is just a resume() for devices
+-	 * that suspended with irqs off ... no overall powerup.
+-	 */
+ 
+  Enable_irqs:
+ 	local_irq_enable();
+@@ -416,24 +407,26 @@ static int resume_target_kernel(bool pla
+ 	if (error)
+ 		goto Enable_irqs;
+ 
+-	/* We'll ignore saved state, but this gets preempt count (etc) right */
+ 	save_processor_state();
+ 	error = restore_highmem();
+ 	if (!error) {
+ 		error = swsusp_arch_resume();
+ 		/*
+ 		 * The code below is only ever reached in case of a failure.
+-		 * Otherwise execution continues at place where
+-		 * swsusp_arch_suspend() was called
++		 * Otherwise, execution continues at the place where
++		 * swsusp_arch_suspend() was called.
+ 		 */
+ 		BUG_ON(!error);
+-		/* This call to restore_highmem() undos the previous one */
++		/*
++		 * This call to restore_highmem() reverts the changes made by
++		 * the previous one.
++		 */
+ 		restore_highmem();
  	}
- 
--- 
-1.7.2.5
+ 	/*
+ 	 * The only reason why swsusp_arch_resume() can fail is memory being
+ 	 * very tight, so we have to free it as soon as we can to avoid
+-	 * subsequent failures
++	 * subsequent failures.
+ 	 */
+ 	swsusp_free();
+ 	restore_processor_state();
 
