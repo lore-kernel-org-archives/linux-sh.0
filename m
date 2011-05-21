@@ -1,207 +1,383 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 11 May 2011 20:37:50 +0000
-Subject: Re: [Update][RFC][PATCH 1/2] PM / Runtime: Support for generic I/O power domains (v2)
-Message-Id: <201105112237.50625.rjw@sisk.pl>
+Date: Sat, 21 May 2011 12:12:11 +0000
+Subject: [PATCH 3/3] PM / Hibernate: Update kerneldoc comments in hibernate.c
+Message-Id: <201105211412.11782.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201104300254.46973.rjw@sisk.pl> <1305098801.4642.6.camel@vence>
-In-Reply-To: <1305098801.4642.6.camel@vence>
+References: <201105211408.28671.rjw@sisk.pl>
+In-Reply-To: <201105211408.28671.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Frank Hofmann <frank.hofmann@tomtom.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Randy Dunlap <randy.dunlap@oracle.com>
 
-On Wednesday, May 11, 2011, Kevin Hilman wrote:
-> Hi Rafael,
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Hi Kevin,
+Some of the kerneldoc comments in kernel/power/hibernate.c are
+outdated and some of them don't adhere to the kernel's standards.
+Update them and make them look in a consistent way.
 
-> On Sat, 2011-04-30 at 02:54 +0200, Rafael J. Wysocki wrote: 
-> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> > 
-> > Introcude common headers, helper functions and callbacks allowing
-> > platforms to use simple generic power domains for runtime power
-> > management.
-> > 
-> > Introduce struct generic_power_domain to be used for representing
-> > power domains that each contain a number of devices and may be
-> > master domains or subdomains with respect to other power domains.
-> > Among other things, this structure includes callbacks to be
-> > provided by platforms for performing specific tasks related to
-> > power management (i.e. ->stop_device() may disable a device's
-> > clocks, while ->start_device() may enable them, ->power_on() is
-> > supposed to remove power from the entire power domain
-> > and ->power_off() is supposed to restore it).
-> >
-> > Introduce functions that can be used as power domain runtime PM
-> > callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
-> > as well as helper functions for the initialization of a power
-> > domain represented by a struct generic_power_domain object,
-> > adding a device to or removing a device from it and adding or
-> > removing subdomains.
-> > 
-> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> > Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
-> 
-> Thanks for proposing this.  It looks like a good starting point.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ kernel/power/hibernate.c |  184 ++++++++++++++++++++++++-----------------------
+ 1 file changed, 94 insertions(+), 90 deletions(-)
 
-That's exactly the purpose of it.
+Index: linux-2.6/kernel/power/hibernate.c
+=================================--- linux-2.6.orig/kernel/power/hibernate.c
++++ linux-2.6/kernel/power/hibernate.c
+@@ -55,10 +55,9 @@ static int hibernation_mode = HIBERNATIO
+ static const struct platform_hibernation_ops *hibernation_ops;
+ 
+ /**
+- * hibernation_set_ops - set the global hibernate operations
+- * @ops: the hibernation operations to use in subsequent hibernation transitions
++ * hibernation_set_ops - Set the global hibernate operations.
++ * @ops: Hibernation operations to use in subsequent hibernation transitions.
+  */
+-
+ void hibernation_set_ops(const struct platform_hibernation_ops *ops)
+ {
+ 	if (ops && !(ops->begin && ops->end &&  ops->pre_snapshot
+@@ -115,10 +114,8 @@ static int hibernation_test(int level) {
+ #endif /* !CONFIG_PM_DEBUG */
+ 
+ /**
+- *	platform_begin - tell the platform driver that we're starting
+- *	hibernation
++ * platform_begin - Use platform driver to start hibernation.
+  */
+-
+ static int platform_begin(int platform_mode)
+ {
+ 	return (platform_mode && hibernation_ops) ?
+@@ -126,10 +123,8 @@ static int platform_begin(int platform_m
+ }
+ 
+ /**
+- *	platform_end - tell the platform driver that we've entered the
+- *	working state
++ * platform_end - Use platform driver to finish transition to the working state.
+  */
+-
+ static void platform_end(int platform_mode)
+ {
+ 	if (platform_mode && hibernation_ops)
+@@ -137,8 +132,10 @@ static void platform_end(int platform_mo
+ }
+ 
+ /**
+- *	platform_pre_snapshot - prepare the machine for hibernation using the
+- *	platform driver if so configured and return an error code if it fails
++ * platform_pre_snapshot - Call platform to prepare the machine for hibernation.
++ *
++ * Use the platform driver to prepare the system for creating a hibernate image,
++ * if so configured, and return an error code if that fails.
+  */
+ 
+ static int platform_pre_snapshot(int platform_mode)
+@@ -148,10 +145,13 @@ static int platform_pre_snapshot(int pla
+ }
+ 
+ /**
+- *	platform_leave - prepare the machine for switching to the normal mode
+- *	of operation using the platform driver (called with interrupts disabled)
++ * platform_leave - Use platform to prepare a transition to the working state.
++ *
++ * Use the platform driver prepare to prepare the machine for switching to the
++ * normal mode of operation.
++ *
++ * This routine is called on one CPU with interrupts disabled.
+  */
+-
+ static void platform_leave(int platform_mode)
+ {
+ 	if (platform_mode && hibernation_ops)
+@@ -159,10 +159,13 @@ static void platform_leave(int platform_
+ }
+ 
+ /**
+- *	platform_finish - switch the machine to the normal mode of operation
+- *	using the platform driver (must be called after platform_prepare())
++ * platform_finish - Use platform to switch the system to the working state.
++ *
++ * Use the platform driver to switch the machine to the normal mode of
++ * operation.
++ *
++ * This routine must be called after platform_prepare().
+  */
+-
+ static void platform_finish(int platform_mode)
+ {
+ 	if (platform_mode && hibernation_ops)
+@@ -170,11 +173,14 @@ static void platform_finish(int platform
+ }
+ 
+ /**
+- *	platform_pre_restore - prepare the platform for the restoration from a
+- *	hibernation image.  If the restore fails after this function has been
+- *	called, platform_restore_cleanup() must be called.
++ * platform_pre_restore - Prepare for hibernate image restoration.
++ *
++ * Use the platform driver to prepare the system for resume from a hibernation
++ * image.
++ *
++ * If the restore fails after this function has been called,
++ * platform_restore_cleanup() must be called.
+  */
+-
+ static int platform_pre_restore(int platform_mode)
+ {
+ 	return (platform_mode && hibernation_ops) ?
+@@ -182,12 +188,15 @@ static int platform_pre_restore(int plat
+ }
+ 
+ /**
+- *	platform_restore_cleanup - switch the platform to the normal mode of
+- *	operation after a failing restore.  If platform_pre_restore() has been
+- *	called before the failing restore, this function must be called too,
+- *	regardless of the result of platform_pre_restore().
++ * platform_restore_cleanup - Switch to the working state after failing restore.
++ *
++ * Use the platform driver to switch the system to the normal mode of operation
++ * after a failing restore.
++ *
++ * If platform_pre_restore() has been called before the failing restore, this
++ * function must be called too, regardless of the result of
++ * platform_pre_restore().
+  */
+-
+ static void platform_restore_cleanup(int platform_mode)
+ {
+ 	if (platform_mode && hibernation_ops)
+@@ -195,10 +204,8 @@ static void platform_restore_cleanup(int
+ }
+ 
+ /**
+- *	platform_recover - recover the platform from a failure to suspend
+- *	devices.
++ * platform_recover - Recover the platform from a failure to suspend devices.
+  */
+-
+ static void platform_recover(int platform_mode)
+ {
+ 	if (platform_mode && hibernation_ops && hibernation_ops->recover)
+@@ -206,13 +213,12 @@ static void platform_recover(int platfor
+ }
+ 
+ /**
+- *	swsusp_show_speed - print the time elapsed between two events.
+- *	@start: Starting event.
+- *	@stop: Final event.
+- *	@nr_pages -	number of pages processed between @start and @stop
+- *	@msg -		introductory message to print
++ * swsusp_show_speed - Print time elapsed between two events during hibernation.
++ * @start: Starting event.
++ * @stop: Final event.
++ * @nr_pages: Number of memory pages processed between @start and @stop.
++ * @msg: Additional diagnostic message to print.
+  */
+-
+ void swsusp_show_speed(struct timeval *start, struct timeval *stop,
+ 			unsigned nr_pages, char *msg)
+ {
+@@ -235,11 +241,13 @@ void swsusp_show_speed(struct timeval *s
+ }
+ 
+ /**
+- *	create_image - freeze devices that need to be frozen with interrupts
+- *	off, create the hibernation image and thaw those devices.  Control
+- *	reappears in this routine after a restore.
++ * create_image - Create a hibernation image.
++ *
++ * Execute device drivers' .freeze_noirq() callbacks, create a hibernation image
++ * and execute the drivers' .thaw_noirq() callbacks.
++ *
++ * Control reappears in this routine after the subsequent restore.
+  */
+-
+ static int create_image(int platform_mode)
+ {
+ 	int error;
+@@ -304,14 +312,11 @@ static int create_image(int platform_mod
+ }
+ 
+ /**
+- *	hibernation_snapshot - quiesce devices and create the hibernation
+- *	snapshot image.
+- *	@platform_mode - if set, use the platform driver, if available, to
+- *			 prepare the platform firmware for the power transition.
++ * hibernation_snapshot - Quiesce devices and create a hibernation image.
++ * @platform_mode: If set, use platform driver to prepare for the transition.
+  *
+- *	Must be called with pm_mutex held
++ * This routine must be called with pm_mutex held.
+  */
+-
+ int hibernation_snapshot(int platform_mode)
+ {
+ 	pm_message_t msg = PMSG_RECOVER;
+@@ -371,13 +376,13 @@ int hibernation_snapshot(int platform_mo
+ }
+ 
+ /**
+- *	resume_target_kernel - prepare devices that need to be suspended with
+- *	interrupts off, restore the contents of highmem that have not been
+- *	restored yet from the image and run the low level code that will restore
+- *	the remaining contents of memory and switch to the just restored target
+- *	kernel.
++ * resume_target_kernel - Restore system state from a hibernation image.
++ *
++ * Execute device drivers' .freeze_noirq() callbacks, restore the contents of
++ * highmem that have not been restored yet from the image and run the low-level
++ * code that will restore the remaining contents of memory and switch to the
++ * just restored target kernel.
+  */
+-
+ static int resume_target_kernel(bool platform_mode)
+ {
+ 	int error;
+@@ -445,14 +450,12 @@ static int resume_target_kernel(bool pla
+ }
+ 
+ /**
+- *	hibernation_restore - quiesce devices and restore the hibernation
+- *	snapshot image.  If successful, control returns in hibernation_snaphot()
+- *	@platform_mode - if set, use the platform driver, if available, to
+- *			 prepare the platform firmware for the transition.
++ * hibernation_restore - Quiesce devices and restore from a hibernation image.
++ * @platform_mode: If set, use platform driver to prepare for the transition.
+  *
+- *	Must be called with pm_mutex held
++ * This routine must be called with pm_mutex held.  If it is successful, control
++ * reappears in the restored target kernel in hibernation_snaphot().
+  */
+-
+ int hibernation_restore(int platform_mode)
+ {
+ 	int error;
+@@ -472,10 +475,8 @@ int hibernation_restore(int platform_mod
+ }
+ 
+ /**
+- *	hibernation_platform_enter - enter the hibernation state using the
+- *	platform driver (if available)
++ * hibernation_platform_enter - Power off the system using the platform driver.
+  */
+-
+ int hibernation_platform_enter(void)
+ {
+ 	int error;
+@@ -546,12 +547,12 @@ int hibernation_platform_enter(void)
+ }
+ 
+ /**
+- *	power_down - Shut the machine down for hibernation.
++ * power_down - Shut the machine down for hibernation.
+  *
+- *	Use the platform driver, if configured so; otherwise try
+- *	to power off or reboot.
++ * Use the platform driver, if configured, to put the system into the sleep
++ * state corresponding to hibernation, or try to power it off or reboot,
++ * depending on the value of hibernation_mode.
+  */
+-
+ static void power_down(void)
+ {
+ 	switch (hibernation_mode) {
+@@ -588,9 +589,8 @@ static int prepare_processes(void)
+ }
+ 
+ /**
+- *	hibernate - The granpappy of the built-in hibernation management
++ * hibernate - Carry out system hibernation, including saving the image.
+  */
+-
+ int hibernate(void)
+ {
+ 	int error;
+@@ -668,17 +668,20 @@ int hibernate(void)
+ 
+ 
+ /**
+- *	software_resume - Resume from a saved image.
++ * software_resume - Resume from a saved hibernation image.
++ *
++ * This routine is called as a late initcall, when all devices have been
++ * discovered and initialized already.
+  *
+- *	Called as a late_initcall (so all devices are discovered and
+- *	initialized), we call swsusp to see if we have a saved image or not.
+- *	If so, we quiesce devices, the restore the saved image. We will
+- *	return above (in hibernate() ) if everything goes well.
+- *	Otherwise, we fail gracefully and return to the normally
+- *	scheduled program.
++ * The image reading code is called to see if there is a hibernation image
++ * available for reading.  If that is the case, devices are quiesced and the
++ * contents of memory is restored from the saved image.
+  *
++ * If this is successful, control reappears in the restored target kernel in
++ * hibernation_snaphot() which returns to hibernate().  Otherwise, the routine
++ * attempts to recover gracefully and make the kernel return to the normal mode
++ * of operation.
+  */
+-
+ static int software_resume(void)
+ {
+ 	int error;
+@@ -808,21 +811,17 @@ static const char * const hibernation_mo
+ 	[HIBERNATION_TESTPROC]	= "testproc",
+ };
+ 
+-/**
+- *	disk - Control hibernation mode
++/*
++ * /sys/power/disk - Control hibernation mode.
+  *
+- *	Suspend-to-disk can be handled in several ways. We have a few options
+- *	for putting the system to sleep - using the platform driver (e.g. ACPI
+- *	or other hibernation_ops), powering off the system or rebooting the
+- *	system (for testing) as well as the two test modes.
+- *
+- *	The system can support 'platform', and that is known a priori (and
+- *	encoded by the presence of hibernation_ops). However, the user may
+- *	choose 'shutdown' or 'reboot' as alternatives, as well as one fo the
+- *	test modes, 'test' or 'testproc'.
++ * Hibernation can be handled in several ways.  There are a few different ways
++ * to put the system into the sleep state: using the platform driver (e.g. ACPI
++ * or other hibernation_ops), powering it off or rebooting it (for testing
++ * mostly), or using one of the two available test modes.
+  *
+- *	show() will display what the mode is currently set to.
+- *	store() will accept one of
++ * The sysfs file /sys/power/disk provides an interface for selecting the
++ * hibernation mode to use.  Reading from this file causes the available modes
++ * to be printed.  There are 5 modes that can be supported:
+  *
+  *	'platform'
+  *	'shutdown'
+@@ -830,8 +829,14 @@ static const char * const hibernation_mo
+  *	'test'
+  *	'testproc'
+  *
+- *	It will only change to 'platform' if the system
+- *	supports it (as determined by having hibernation_ops).
++ * If a platform hibernation driver is in use, 'platform' will be supported
++ * and will be used by default.  Otherwise, 'shutdown' will be used by default.
++ * The selected option (i.e. the one corresponding to the current value of
++ * hibernation_mode) is enclosed by a square bracket.
++ *
++ * To select a given hibernation mode it is necessary to write the mode's
++ * string representation (as returned by reading from /sys/power/disk) back
++ * into /sys/power/disk.
+  */
+ 
+ static ssize_t disk_show(struct kobject *kobj, struct kobj_attribute *attr,
+@@ -864,7 +869,6 @@ static ssize_t disk_show(struct kobject
+ 	return buf-start;
+ }
+ 
+-
+ static ssize_t disk_store(struct kobject *kobj, struct kobj_attribute *attr,
+ 			  const char *buf, size_t n)
+ {
 
-> I haven't had the time to experiment with it on OMAP yet due to
-> travel/conferences, but here's at least a few comments and questions
-> after a brief review.
-> 
-> This looks like a good start for an abstraction, but I'm not sure if can
-> be broadly useful without some further complications.
-
-I wouldn't expect it to match every possible use case, of course, but it's
-simple enough as an initial step and something we may build upon in the
-future.
-
-> On many SoCs, a HW power domain has more than 2 states.  On OMAP for
-> example, a power domain can be on, inactive, retention or off.
-> Therefore, the 2-state approach in this patch doesn't really map well to
-> hardware power domains (and I'm pretty sure OMAP is not unique here.)
-
-Right, so we'd need to extend the approach for OMAP somehow.
-
-> It also means that the binary decision of the proposed governor doesn't
-> necessarily map well either (e.g., based on wake-up latency constraints,
-> or HW bugs, you might allow an idle device might be able to go to
-> retention, but not to off.)
-> 
-> I suppose one option would be to use "off" as defined here to handle all
-> the !on states, and let the platform-specific code handle the details.
-> However, that doesn't sound all that "generic" for a generic solution.
-> 
-> Another possibility would be to allow a generic power domain to have
-> multiple states (or levels), with a governor hook for each state.  
-
-That's possible.  It all depends on how the various domain states affect
-devices.  For example, if device registers survive the inactive and retention
-domain states, they may be regarded as substates of a more general "on" state.
-
-Generally, my idea was to use a relatively simple hardware model, like the
-shmobile one, and develop some general code that works with it and may be
-extended in various ways, pretty much as we did with runtime PM.  I think the
-code in this patchset is suitable for that (even on shmobile there are
-more complicated power domains that will require some additional handling).
-
-In my opinion, if wanted to start with merging something that would match
-every possible hardware configuration out there, we'd end up with a 100 patches
-and 10000 lines of code, or something like this.  That wouldn't be easily
-mergeable, as experience shows all too well. :-)
-
-...
-> > +#ifdef CONFIG_PM_RUNTIME
-> > +
-> > +/**
-> > + * __pm_genpd_restore_device - Restore a pre-suspend state of a device.
-> > + * @dev: Device to restore the state of.
-> > + * @genpd: Power domain the device belongs to.
-> > + */
-> > +static void __pm_genpd_restore_device(struct device *dev,
-> > +				      struct generic_power_domain *genpd)
-> > +{
-> > +	struct device_driver *drv = dev->driver;
-> > +
-> > +	if (genpd->start_device)
-> > +		genpd->start_device(dev);
-> > +
-> > +	if (drv && drv->pm && drv->pm->runtime_resume)
-> > +		drv->pm->runtime_resume(dev);
-> > +
-> > +	if (genpd->stop_device)
-> > +		genpd->stop_device(dev);
-> 
-> Why the ->stop_device() here?
-> 
-> Based on the changelog, I'm imagining an implementation of
-> ->start_device() to be based on clock enable and a ->stop_device to be
-> based on clock disable.  Assuming that, after this runtime resume path,
-> the driver's device will still have its clocks cut.  Am I missing
-> something here?
-
-Please note that this code is executed in a loop for every device in
-the power domain by __pm_genpd_poweron() (including the device whose
-resume triggered powering up the domain).  At this point all the
-devices remain in the "suspended" state from the runtime PM viewpoint.
-
-> Maybe I don't understand what you mean by "pre-suspend" state.  In my
-> mind, the pre-suspend state of a device would be clocks enabled.
-> 
-> Similar question below...
-> 
-> > +}
-> > +
-> > +/**
-> > + * __pm_genpd_poweroff - Remove power from a given power domain.
-> > + * @genpd: Power domain to power down.
-> > + *
-> > + * If all of the @genpd's devices have been suspended and all of its subdomains
-> > + * have been powered down, run the runtime suspend callbacks provided by all of
-> > + * the @genpd's devices' drivers and remove power from @genpd.
-> > + */
-> > +static int __pm_genpd_poweroff(struct generic_power_domain *genpd)
-> > +{
-> > +	struct generic_power_domain *subdomain;
-> > +	struct dev_list_entry *dle;
-> > +	unsigned int not_suspended;
-> > +	int ret;
-> > +
-> > +	if (genpd->power_is_off)
-> > +		return 0;
-> > +
-> > +	not_suspended = 0;
-> > +	list_for_each_entry(dle, &genpd->device_list, node)
-> > +		if (!pm_runtime_suspended(dle->dev))
-> > +			not_suspended++;
-> > +
-> > +	if (not_suspended > genpd->in_progress)
-> > +		return -EBUSY;
-> > +
-> > +	list_for_each_entry_reverse(subdomain, &genpd->subdomain_list, node) {
-> > +		mutex_lock(&subdomain->lock);
-> > +		ret = __pm_genpd_poweroff(subdomain);
-> > +		mutex_unlock(&subdomain->lock);
-> > +		if (ret)
-> > +			return ret;
-> > +	}
-> > +
-> > +	if (genpd->gov && genpd->gov->power_down_ok) {
-> > +		if (!genpd->gov->power_down_ok(&genpd->domain))
-> > +			return -EAGAIN;
-> > +	}
-> > +
-> > +	list_for_each_entry_reverse(dle, &genpd->device_list, node) {
-> > +		struct device *dev = dle->dev;
-> > +		struct device_driver *drv = dev->driver;
-> > +
-> > +		if (genpd->start_device)
-> > +			genpd->start_device(dev);
-> 
-> ... is the ->start_device() needed here?
-> 
-> Before the driver's ->runtime_suspend() method is called, I doubt it
-> expects its clocks to be cut.
-
-In fact, it does, because all of the devices must have been put into the
-runtime PM's "suspended" state before that code is executed.
-
-> Of course, having the (what seem to be) extra stop/start calls here
-> doesn't harm anything.  But if the ->[start|stop]_device() calls are
-> expensive for a given platform, the extra overhead might be significant
-> for frequent runtime PM transitions.
-
-If the entire domain is frequently powered up and down, then I agree it will
-be expensive.  However, that's kind of to be expected, isn't it? ;-)
-
-The code could be optimized to avoid starting and stopping the device that
-triggers the domain poweroff, but that would make it more complicated, which
-I intentionally wanted to avoid at this stage.
-
-Again, this code is meant as a starting point for more complicated things.
-How complicated they will turn out to be in the end, I can't tell right now. :-)
-
-Thanks,
-Rafael
