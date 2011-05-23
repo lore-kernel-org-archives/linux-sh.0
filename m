@@ -1,218 +1,214 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 06 May 2011 11:02:33 +0000
-Subject: [PATCH 1/4] mmc: tmio / sdhi: break out interrupt request/free
-Message-Id: <Pine.LNX.4.64.1105061256540.10445@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 23 May 2011 05:10:36 +0000
+Subject: [PATCH] ARM: mach-shmobile: Add SDHI support for AG5EVM and sh73a0
+Message-Id: <20110523051036.26281.36243.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: cjb@laptop.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, horms@verge.net.au, linux-mmc@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Move request_irq()/free_irq() from the shared code
-in tmio_mmc.c into the SDHI/tmio specific portion
-in sh_mobile_sdhi.c and tmio_mmc_pio.c.
-
-This is ground work to allow us to adjust the SDHI
-code with IRQ flags and number of interupt sources.
+Add SDHI0 and SDHI1 support to the AG5EVM board
+including platform data, pinmux configuration
+and clock bindings.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   18 ++++++++++++++++--
- drivers/mmc/host/tmio_mmc.c       |   21 ++++++++++++++++++---
- drivers/mmc/host/tmio_mmc.h       |    2 +-
- drivers/mmc/host/tmio_mmc_pio.c   |   17 ++---------------
- 4 files changed, 37 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f60e954..9ee51ac 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -62,7 +62,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
- 	char clk_name[8];
--	int ret;
-+	int irq, ret;
+ Has run-time dependencies on SDHI patches in -next
+ especially "mmc: sdhi: support up to 3 interrupt sources"
+
+ arch/arm/mach-shmobile/board-ag5evm.c |  103 +++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-sh73a0.c |   16 ++++-
+ 2 files changed, 118 insertions(+), 1 deletion(-)
+
+--- 0007/arch/arm/mach-shmobile/board-ag5evm.c
++++ work/arch/arm/mach-shmobile/board-ag5evm.c	2011-05-23 13:59:36.000000000 +0900
+@@ -34,6 +34,8 @@
+ #include <linux/input/sh_keysc.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/sh_clk.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mipi_dsi.h>
+@@ -327,6 +329,85 @@ static struct platform_device mipidsi0_d
+ 	},
+ };
  
- 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
-@@ -116,11 +116,24 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto eprobe;
- 
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0) {
-+		ret = irq;
-+		goto eirq;
-+	}
++static struct sh_mobile_sdhi_info sdhi0_info = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
++};
 +
-+	ret = request_irq(irq, tmio_mmc_irq, IRQF_DISABLED |
-+			  IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), host);
-+	if (ret)
-+		goto eirq;
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name	= "SDHI0",
++		.start	= 0xee100000,
++		.end	= 0xee1000ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(83),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start	= gic_spi(84),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= gic_spi(85),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
 +
- 	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
--		(unsigned long)host->ctl, host->irq);
-+		(unsigned long)host->ctl, irq);
- 
- 	return ret;
- 
-+eirq:
-+	tmio_mmc_host_remove(host);
- eprobe:
- 	clk_disable(priv->clk);
- 	clk_put(priv->clk);
-@@ -135,6 +148,7 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
- 
-+	free_irq(platform_get_irq(pdev, 0), host);
- 	tmio_mmc_host_remove(host);
- 	clk_disable(priv->clk);
- 	clk_put(priv->clk);
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index be739f7..14479f9 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -64,7 +64,7 @@ static int __devinit tmio_mmc_probe(struct platform_device *pdev)
- 	const struct mfd_cell *cell = mfd_get_cell(pdev);
- 	struct tmio_mmc_data *pdata;
- 	struct tmio_mmc_host *host;
--	int ret = -EINVAL;
-+	int ret = -EINVAL, irq;
- 
- 	if (pdev->num_resources != 2)
- 		goto out;
-@@ -73,6 +73,12 @@ static int __devinit tmio_mmc_probe(struct platform_device *pdev)
- 	if (!pdata || !pdata->hclk)
- 		goto out;
- 
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0) {
-+		ret = irq;
-+		goto out;
-+	}
++static struct platform_device sdhi0_device = {
++	.name		= "sh_mobile_sdhi",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(sdhi0_resources),
++	.resource	= sdhi0_resources,
++	.dev	= {
++		.platform_data	= &sdhi0_info,
++	},
++};
 +
- 	/* Tell the MFD core we are ready to be enabled */
- 	if (cell->enable) {
- 		ret = cell->enable(pdev);
-@@ -84,11 +90,18 @@ static int __devinit tmio_mmc_probe(struct platform_device *pdev)
- 	if (ret)
- 		goto cell_disable;
- 
-+	ret = request_irq(irq, tmio_mmc_irq, IRQF_DISABLED |
-+			  IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), host);
-+	if (ret)
-+		goto host_remove;
++void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
++{
++	gpio_set_value(GPIO_PORT114, state);
++}
 +
- 	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
--		(unsigned long)host->ctl, host->irq);
-+		(unsigned long)host->ctl, irq);
++static struct sh_mobile_sdhi_info sh_sdhi1_platdata = {
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_NONREMOVABLE,
++	.tmio_ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
++	.set_pwr	= ag5evm_sdhi1_set_pwr,
++};
++
++static struct resource sdhi1_resources[] = {
++	[0] = {
++		.name	= "SDHI1",
++		.start	= 0xee120000,
++		.end	= 0xee1200ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(87),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start	= gic_spi(88),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= gic_spi(89),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi1_device = {
++	.name		= "sh_mobile_sdhi",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &sh_sdhi1_platdata,
++	},
++	.num_resources	= ARRAY_SIZE(sdhi1_resources),
++	.resource	= sdhi1_resources,
++};
++
+ static struct platform_device *ag5evm_devices[] __initdata = {
+ 	&eth_device,
+ 	&keysc_device,
+@@ -335,6 +416,8 @@ static struct platform_device *ag5evm_de
+ 	&irda_device,
+ 	&lcdc0_device,
+ 	&mipidsi0_device,
++	&sdhi0_device,
++	&sdhi1_device,
+ };
  
- 	return 0;
+ static struct map_desc ag5evm_io_desc[] __initdata = {
+@@ -456,6 +539,26 @@ static void __init ag5evm_init(void)
+ 	/* MIPI-DSI clock setup */
+ 	__raw_writel(0x2a809010, DSI0PHYCR);
  
-+host_remove:
-+	tmio_mmc_host_remove(host);
- cell_disable:
- 	if (cell->disable)
- 		cell->disable(pdev);
-@@ -104,7 +117,9 @@ static int __devexit tmio_mmc_remove(struct platform_device *pdev)
- 	platform_set_drvdata(pdev, NULL);
++	/* enable SDHI0 on CN15 [SD I/F] */
++	gpio_request(GPIO_FN_SDHICD0, NULL);
++	gpio_request(GPIO_FN_SDHIWP0, NULL);
++	gpio_request(GPIO_FN_SDHICMD0, NULL);
++	gpio_request(GPIO_FN_SDHICLK0, NULL);
++	gpio_request(GPIO_FN_SDHID0_3, NULL);
++	gpio_request(GPIO_FN_SDHID0_2, NULL);
++	gpio_request(GPIO_FN_SDHID0_1, NULL);
++	gpio_request(GPIO_FN_SDHID0_0, NULL);
++
++	/* enable SDHI1 on CN4 [WLAN I/F] */
++	gpio_request(GPIO_FN_SDHICLK1, NULL);
++	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_3_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_2_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
++	gpio_request(GPIO_PORT114, "sdhi1_power");
++	gpio_direction_output(GPIO_PORT114, 0);
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Shared attribute override enable, 64K*8way */
+ 	l2x0_init(__io(0xf0100000), 0x00460000, 0xc2000fff);
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-05-23 13:58:58.000000000 +0900
+@@ -266,7 +266,7 @@ enum { MSTP001,
+ 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
+ 	MSTP219,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-	MSTP331, MSTP329, MSTP325, MSTP323, MSTP312,
++	MSTP331, MSTP329, MSTP325, MSTP323, MSTP314, MSTP313, MSTP312, MSTP311,
+ 	MSTP411, MSTP410, MSTP403,
+ 	MSTP_NR };
  
- 	if (mmc) {
--		tmio_mmc_host_remove(mmc_priv(mmc));
-+		struct tmio_mmc_host *host = mmc_priv(mmc);
-+		free_irq(platform_get_irq(pdev, 0), host);
-+		tmio_mmc_host_remove(host);
- 		if (cell->disable)
- 			cell->disable(pdev);
- 	}
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 58138a2..c6bf726 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -45,7 +45,6 @@ struct tmio_mmc_host {
- 	struct mmc_request      *mrq;
- 	struct mmc_data         *data;
- 	struct mmc_host         *mmc;
--	int                     irq;
- 	unsigned int		sdio_irq_enabled;
- 
- 	/* Callbacks for clock / power control */
-@@ -86,6 +85,7 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
- 
- void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
- void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
-+irqreturn_t tmio_mmc_irq(int irq, void *devid);
- 
- static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
- 					 unsigned long *flags)
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index ea6ade31..af5d4f6 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -564,7 +564,7 @@ out:
- 	spin_unlock(&host->lock);
- }
- 
--static irqreturn_t tmio_mmc_irq(int irq, void *devid)
-+irqreturn_t tmio_mmc_irq(int irq, void *devid)
+@@ -295,7 +295,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
+ 	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
+ 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
++	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
++	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
++	[MSTP311] = MSTP(&div6_clks[DIV6_SDHI2], SMSTPCR3, 11, 0), /* SDHI2 */
+ 	[MSTP411] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 11, 0), /* IIC3 */
+ 	[MSTP410] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 10, 0), /* IIC4 */
+ 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
+@@ -313,6 +316,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
+ 	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
+ 	CLKDEV_CON_ID("vck3_clk", &div6_clks[DIV6_VCK3]),
++	CLKDEV_CON_ID("sdhi0_clk", &div6_clks[DIV6_SDHI0]),
++	CLKDEV_CON_ID("sdhi1_clk", &div6_clks[DIV6_SDHI1]),
++	CLKDEV_CON_ID("sdhi2_clk", &div6_clks[DIV6_SDHI2]),
+ 	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+ 	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+ 	CLKDEV_ICK_ID("dsi0p_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+@@ -341,7 +347,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+@@ -351,6 +360,11 @@ void __init sh73a0_clock_init(void)
  {
- 	struct tmio_mmc_host *host = devid;
- 	struct tmio_mmc_data *pdata = host->pdata;
-@@ -659,6 +659,7 @@ static irqreturn_t tmio_mmc_irq(int irq, void *devid)
- out:
- 	return IRQ_HANDLED;
- }
-+EXPORT_SYMBOL(tmio_mmc_irq);
+ 	int k, ret = 0;
  
- static int tmio_mmc_start_data(struct tmio_mmc_host *host,
- 	struct mmc_data *data)
-@@ -893,21 +894,10 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	tmio_mmc_clk_stop(_host);
- 	tmio_mmc_reset(_host);
- 
--	ret = platform_get_irq(pdev, 0);
--	if (ret < 0)
--		goto pm_suspend;
--
--	_host->irq = ret;
--
- 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		tmio_mmc_enable_sdio_irq(mmc, 0);
- 
--	ret = request_irq(_host->irq, tmio_mmc_irq, IRQF_DISABLED |
--		IRQF_TRIGGER_FALLING, dev_name(&pdev->dev), _host);
--	if (ret)
--		goto pm_suspend;
--
- 	spin_lock_init(&_host->lock);
- 
- 	/* Init delayed work for request timeouts */
-@@ -933,8 +923,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	return 0;
- 
--pm_suspend:
--	pm_runtime_suspend(&pdev->dev);
- pm_disable:
- 	pm_runtime_disable(&pdev->dev);
- 	iounmap(_host->ctl);
-@@ -952,7 +940,6 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
- 	mmc_remove_host(host->mmc);
- 	cancel_delayed_work_sync(&host->delayed_reset_work);
- 	tmio_mmc_release_dma(host);
--	free_irq(host->irq, host);
- 	iounmap(host->ctl);
- 	mmc_free_host(host->mmc);
- 
--- 
-1.7.2.5
-
++	/* Set SDHI clocks to a known state */
++	__raw_writel(0x108, SD0CKCR);
++	__raw_writel(0x108, SD1CKCR);
++	__raw_writel(0x108, SD2CKCR);
++
+ 	/* detect main clock parent */
+ 	switch ((__raw_readl(CKSCR) >> 24) & 0x03) {
+ 	case 0:
