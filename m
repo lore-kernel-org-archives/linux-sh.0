@@ -1,29 +1,33 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 May 2011 18:26:26 +0000
-Subject: Re: [PATCH 8/9] OMAP1 / PM: Use generic clock manipulation routines for runtime PM
-Message-Id: <201105162026.27009.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 24 May 2011 10:31:04 +0000
+Subject: [PATCH 00/03] dmaengine: shdma: sh73a0 and SH_DMAC_MAX_CHANNELS
+Message-Id: <20110524103104.10334.42987.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104130205.26988.rjw@sisk.pl> <201104242343.41456.rjw@sisk.pl> <87mxindk7m.fsf@ti.com>
-In-Reply-To: <87mxindk7m.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Len Brown <lenb@kernel.org>, linux-sh@vger.kernel.org, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>, Greg KH <gregkh@suse.de>
+To: linux-sh@vger.kernel.org
 
-On Monday, May 16, 2011, Kevin Hilman wrote:
-> "Rafael J. Wysocki" <rjw@sisk.pl> writes:
-> 
-> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> >
-> > Convert OMAP1 to using the new generic clock manipulation routines
-> > and a device power domain for runtime PM instead of overriding the
-> > platform bus type's runtime PM callbacks.  This allows us to simplify
-> > OMAP1-specific code and to share some code with other platforms
-> > (shmobile in particular).
-> >
-> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> Acked-by: Kevin Hilman <khilman@ti.com>
+dmaengine: shdma: sh73a0 and SH_DMAC_MAX_CHANNELS
 
-Thanks!
+[PATCH 01/03] dmaengine: shdma: Make second memory window optional
+[PATCH 02/03] dmaengine: shdma: Fix SH_DMAC_MAX_CHANNELS handling
+[PATCH 03/03] dmaengine: shdma: Update SH_DMAC_MAX_CHANNELS to 20
+
+These patches update the shdma dmaengine driver to support DMA
+controllers with more than 6 slave-id capable channels mapped
+into a single I/O-memory window. While at it fix the handling
+of SH_DMAC_MAX_CHANNELS that without [PATCH 02/03] may overflow
+some arrays at probe() time depending on platform data.
+
+Needed to support the 20-channel SY-DMAC block included in sh73a0.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Since these patches are only touching the shdma driver perhaps
+ merging through the sh-2.6 tree is the easiest?
+
+ drivers/dma/shdma.c |   42 +++++++++++++++++++++++++++++++-----------
+ drivers/dma/shdma.h |    2 +-
+ 2 files changed, 32 insertions(+), 12 deletions(-)
