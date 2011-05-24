@@ -1,105 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 02 May 2011 22:19:22 +0000
-Subject: Re: [PATCH 04/04] mmc: sdhi: support up to 4 interrupt sources
-Message-Id: <20110502221918.GE538@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Tue, 24 May 2011 06:58:56 +0000
+Subject: [PATCH 2/3] sh_mobile_meram: Safely disable MERAM operation when not initialized
+Message-Id: <1306220482-29107-3-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110502151454.21337.94615.sendpatchset@t400s>
-In-Reply-To: <20110502151454.21337.94615.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, May 03, 2011 at 12:14:54AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Convert the SDHI code to support more than a single
-> interrupt source. Needed to support hardware that
-> uses GIC instead of INTC as interrupt controller.
-> 
-> Will also allow us to remove the irq forwarding
-> workaround from the INTC code in the future.
+If the MERAM platform data is defined, but the MERAM has not been
+properly initaliazed we need to safely fall back to non-MERAM operation.
 
-Hi Magnus,
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+---
+ drivers/video/sh_mobile_lcdcfb.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-this looks correct to me.
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 1c652da..edf0d32 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -610,7 +610,8 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		pitch = ch->info->fix.line_length;
+ 
+ 		/* test if we can enable meram */
+-		if (ch->cfg.meram_cfg && priv->meram_dev) {
++		if (ch->cfg.meram_cfg && priv->meram_dev &&
++				priv->meram_dev->ops) {
+ 			struct sh_mobile_meram_cfg *cfg;
+ 			struct sh_mobile_meram_info *mdev;
+ 			unsigned long icb_addr_y, icb_addr_c;
+-- 
+1.7.1
 
-Guennadi suggested not having arbitary '3's in the code
-and using a constant instead. I think that comment applies
-to this code as much as my previous patch.
-
-> 
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-
-I didn't sign this off.
-
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  This is based on this patch from Simon Horman:
->  "[PATCH 1/2] mmc: tmio: Allow SDHI MMC to use multiple IRQ vectors"
-> 
->  drivers/mmc/host/sh_mobile_sdhi.c |   36 +++++++++++++++++++++++++++---------
->  1 file changed, 27 insertions(+), 9 deletions(-)
-> 
-> --- 0004/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ work/drivers/mmc/host/sh_mobile_sdhi.c	2011-05-02 23:49:25.000000000 +0900
-> @@ -62,7 +62,7 @@ static int __devinit sh_mobile_sdhi_prob
->  	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
->  	struct tmio_mmc_host *host;
->  	char clk_name[8];
-> -	int irq, ret;
-> +	int i, irq, ret;
->  
->  	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
->  	if (priv = NULL) {
-> @@ -116,13 +116,25 @@ static int __devinit sh_mobile_sdhi_prob
->  	if (ret < 0)
->  		goto eprobe;
->  
-> -	irq = platform_get_irq(pdev, 0);
-> -	if (irq < 0)
-> -		goto eirq;
-> -
-> -	ret = request_irq(irq, tmio_mmc_irq, 0, dev_name(&pdev->dev), host);
-> -	if (ret)
-> -		goto eirq;
-> +	for (i = 0; i < 3; i++) {
-> +		irq = platform_get_irq(pdev, i);
-> +		if (irq < 0) {
-> +			if (i)
-> +				continue;
-> +			else
-> +				goto eirq;
-> +		}
-> +		ret = request_irq(irq, tmio_mmc_irq, 0,
-> +				  dev_name(&pdev->dev), host);
-> +		if (ret) {
-> +			while (--i > 0) {
-> +				irq = platform_get_irq(pdev, i);
-> +				if (irq >= 0)
-> +					free_irq(irq, host);
-> +			}
-> +			goto eirq;
-> +		}
-> +	}
->  
->  	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
->  		 mmc_hostname(host->mmc), (unsigned long)
-> @@ -147,8 +159,14 @@ static int sh_mobile_sdhi_remove(struct 
->  	struct mmc_host *mmc = platform_get_drvdata(pdev);
->  	struct tmio_mmc_host *host = mmc_priv(mmc);
->  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-> +	int i, irq;
-> +
-> +	for (i = 0; i < 3; i++) {
-> +		irq = platform_get_irq(pdev, i);
-> +		if (irq >= 0)
-> +			free_irq(irq, host);
-> +	}
->  
-> -	free_irq(platform_get_irq(pdev, 0), host);
->  	tmio_mmc_host_remove(host);
->  	clk_disable(priv->clk);
->  	clk_put(priv->clk);
-> 
