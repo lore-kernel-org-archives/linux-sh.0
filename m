@@ -1,155 +1,46 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 21 May 2011 12:10:34 +0000
-Subject: [PATCH 2/3] PM / Hibernate: Remove arch_prepare_suspend()
-Message-Id: <201105211410.34491.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 24 May 2011 10:40:33 +0000
+Subject: [PATCH] ARM: mach-shmobile: Enable DMAEngine for MMCIF on AG5EVM
+Message-Id: <20110524104033.10351.45149.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201105211408.28671.rjw@sisk.pl>
-In-Reply-To: <201105211408.28671.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Frank Hofmann <frank.hofmann@tomtom.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Magnus Damm <damm@opensource.se>
 
-All architectures supporting hibernation define
-arch_prepare_suspend() as an empty function, so remove it.
+Simply add MMCIF slave ids for RX and TX to enable
+DMA Engine support for the AG5EVM board.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/frv/include/asm/suspend.h       |   20 --------------------
- arch/mips/include/asm/suspend.h      |    2 --
- arch/powerpc/include/asm/suspend.h   |    6 ------
- arch/s390/include/asm/suspend.h      |   10 ----------
- arch/sh/include/asm/suspend.h        |    1 -
- arch/unicore32/include/asm/suspend.h |    1 -
- arch/x86/include/asm/suspend_32.h    |    2 --
- arch/x86/include/asm/suspend_64.h    |    5 -----
- kernel/power/hibernate.c             |    4 ----
- 9 files changed, 51 deletions(-)
 
-Index: linux-2.6/arch/frv/include/asm/suspend.h
-=================================--- linux-2.6.orig/arch/frv/include/asm/suspend.h
-+++ /dev/null
-@@ -1,20 +0,0 @@
--/* suspend.h: suspension stuff
-- *
-- * Copyright (C) 2004 Red Hat, Inc. All Rights Reserved.
-- * Written by David Howells (dhowells@redhat.com)
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public License
-- * as published by the Free Software Foundation; either version
-- * 2 of the License, or (at your option) any later version.
-- */
--
--#ifndef _ASM_SUSPEND_H
--#define _ASM_SUSPEND_H
--
--static inline int arch_prepare_suspend(void)
--{
--	return 0;
--}
--
--#endif /* _ASM_SUSPEND_H */
-Index: linux-2.6/arch/s390/include/asm/suspend.h
-=================================--- linux-2.6.orig/arch/s390/include/asm/suspend.h
-+++ /dev/null
-@@ -1,10 +0,0 @@
--#ifndef __ASM_S390_SUSPEND_H
--#define __ASM_S390_SUSPEND_H
--
--static inline int arch_prepare_suspend(void)
--{
--	return 0;
--}
--
--#endif
--
-Index: linux-2.6/arch/sh/include/asm/suspend.h
-=================================--- linux-2.6.orig/arch/sh/include/asm/suspend.h
-+++ linux-2.6/arch/sh/include/asm/suspend.h
-@@ -3,7 +3,6 @@
- 
- #ifndef __ASSEMBLY__
- #include <linux/notifier.h>
--static inline int arch_prepare_suspend(void) { return 0; }
- 
- #include <asm/ptrace.h>
- 
-Index: linux-2.6/arch/mips/include/asm/suspend.h
-=================================--- linux-2.6.orig/arch/mips/include/asm/suspend.h
-+++ linux-2.6/arch/mips/include/asm/suspend.h
-@@ -1,8 +1,6 @@
- #ifndef __ASM_SUSPEND_H
- #define __ASM_SUSPEND_H
- 
--static inline int arch_prepare_suspend(void) { return 0; }
--
- /* References to section boundaries */
- extern const void __nosave_begin, __nosave_end;
- 
-Index: linux-2.6/arch/powerpc/include/asm/suspend.h
-=================================--- linux-2.6.orig/arch/powerpc/include/asm/suspend.h
-+++ /dev/null
-@@ -1,6 +0,0 @@
--#ifndef __ASM_POWERPC_SUSPEND_H
--#define __ASM_POWERPC_SUSPEND_H
--
--static inline int arch_prepare_suspend(void) { return 0; }
--
--#endif /* __ASM_POWERPC_SUSPEND_H */
-Index: linux-2.6/arch/unicore32/include/asm/suspend.h
-=================================--- linux-2.6.orig/arch/unicore32/include/asm/suspend.h
-+++ linux-2.6/arch/unicore32/include/asm/suspend.h
-@@ -14,7 +14,6 @@
- #define __UNICORE_SUSPEND_H__
- 
- #ifndef __ASSEMBLY__
--static inline int arch_prepare_suspend(void) { return 0; }
- 
- #include <asm/ptrace.h>
- 
-Index: linux-2.6/arch/x86/include/asm/suspend_32.h
-=================================--- linux-2.6.orig/arch/x86/include/asm/suspend_32.h
-+++ linux-2.6/arch/x86/include/asm/suspend_32.h
-@@ -9,8 +9,6 @@
- #include <asm/desc.h>
- #include <asm/i387.h>
- 
--static inline int arch_prepare_suspend(void) { return 0; }
--
- /* image of the saved processor state */
- struct saved_context {
- 	u16 es, fs, gs, ss;
-Index: linux-2.6/arch/x86/include/asm/suspend_64.h
-=================================--- linux-2.6.orig/arch/x86/include/asm/suspend_64.h
-+++ linux-2.6/arch/x86/include/asm/suspend_64.h
-@@ -9,11 +9,6 @@
- #include <asm/desc.h>
- #include <asm/i387.h>
- 
--static inline int arch_prepare_suspend(void)
--{
--	return 0;
--}
--
- /*
-  * Image of the saved processor state, used by the low level ACPI suspend to
-  * RAM code and by the low level hibernation code.
-Index: linux-2.6/kernel/power/hibernate.c
-=================================--- linux-2.6.orig/kernel/power/hibernate.c
-+++ linux-2.6/kernel/power/hibernate.c
-@@ -244,10 +244,6 @@ static int create_image(int platform_mod
- {
- 	int error;
- 
--	error = arch_prepare_suspend();
--	if (error)
--		return error;
--
- 	error = dpm_suspend_noirq(PMSG_FREEZE);
- 	if (error) {
- 		printk(KERN_ERR "PM: Some devices failed to power down, "
+ Has a build time dependency on the patch:
+ "[PATCH] ARM: mach-shmobile: sh73a0 DMA Engine support for SY-DMAC"
 
+ arch/arm/mach-shmobile/board-ag5evm.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- 0009/arch/arm/mach-shmobile/board-ag5evm.c
++++ work/arch/arm/mach-shmobile/board-ag5evm.c	2011-05-24 17:48:42.000000000 +0900
+@@ -158,10 +158,19 @@ static struct resource sh_mmcif_resource
+ 	},
+ };
+ 
++static struct sh_mmcif_dma sh_mmcif_dma = {
++	.chan_priv_rx	= {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++	},
++	.chan_priv_tx	= {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++	},
++};
+ static struct sh_mmcif_plat_data sh_mmcif_platdata = {
+ 	.sup_pclk	= 0,
+ 	.ocr		= MMC_VDD_165_195,
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++	.dma		= &sh_mmcif_dma,
+ };
+ 
+ static struct platform_device mmc_device = {
