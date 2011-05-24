@@ -1,62 +1,147 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 May 2011 10:23:59 +0000
-Subject: [PATCH 1/3] sh: mark DMA slave ID 0 as invalid
-Message-Id: <Pine.LNX.4.64.1105241210000.31628@axis700.grange>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Tue, 24 May 2011 07:16:21 +0000
+Subject: [PATCH 3/3] sh_mobile_meram: Back up and restore device registers on suspend
+Message-Id: <1306221381-30083-4-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105241147010.31628@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105241147010.31628@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <damm@opensource.se>, Ian Molton <ian@mnementh.co.uk>, Dan Williams <dan.j.williams@intel.com>, Vinod Koul <vinod.koul@intel.com>
 
-This makes it possible to leave DMA slave IDs in the platform data
-at default 0 value without hitting DMA channel allocation error paths.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- arch/sh/include/cpu-sh4/cpu/sh7722.h |    1 +
- arch/sh/include/cpu-sh4/cpu/sh7724.h |    1 +
- arch/sh/include/cpu-sh4/cpu/sh7757.h |    1 +
- 3 files changed, 3 insertions(+), 0 deletions(-)
+ drivers/video/sh_mobile_meram.c |   85 +++++++++++++++++++++++++++++++++++++++
+ drivers/video/sh_mobile_meram.h |    8 ----
+ 2 files changed, 85 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7722.h b/arch/sh/include/cpu-sh4/cpu/sh7722.h
-index 7a5b8a3..bd06227 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7722.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7722.h
-@@ -236,6 +236,7 @@ enum {
- };
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 25b4a88..867a2ed 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -37,6 +37,39 @@
+ #define MEQSEL1 0x40
+ #define MEQSEL2 0x44
  
- enum {
-+	SHDMA_SLAVE_INVALID,
- 	SHDMA_SLAVE_SCIF0_TX,
- 	SHDMA_SLAVE_SCIF0_RX,
- 	SHDMA_SLAVE_SCIF1_TX,
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
-index 7eb4359..3daef8e 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
-@@ -285,6 +285,7 @@ enum {
- };
++#define WRITEBACK_DONE	0x40
++#define WRITE_DONE	0x20
++#define READ_DONE	0x10
++
++#define ALL_TRANS_DONE	(WRITEBACK_DONE | WRITE_DONE | READ_DONE)
++
++static unsigned long common_regs[] = {
++	MEVCR1,
++	MEQSEL1,
++	MEQSEL2,
++};
++#define CMN_REGS_SIZE ARRAY_SIZE(common_regs)
++
++static unsigned long icb_regs[] = {
++	MExxCTL,
++	MExxBSIZE,
++	MExxMNCF,
++	MExxSARA,
++	MExxSARB,
++	MExxSBSIZE,
++};
++#define ICB_REGS_SIZE ARRAY_SIZE(icb_regs)
++
++struct sh_mobile_meram_priv {
++	void __iomem	*base;
++	struct mutex	lock;
++	unsigned long	used_icb;
++	int		used_meram_cache_regions;
++	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
++	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
++	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
++};
++
+ /* settings */
+ #define MERAM_SEC_LINE 15
+ #define MERAM_LINE_WIDTH 2048
+@@ -481,6 +514,57 @@ int sh_mobile_meram_clk_off(struct sh_mobile_meram_info *pdata)
+ 	return 0;
+ }
  
- enum {
-+	SHDMA_SLAVE_INVALID,
- 	SHDMA_SLAVE_SCIF0_TX,
- 	SHDMA_SLAVE_SCIF0_RX,
- 	SHDMA_SLAVE_SCIF1_TX,
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7757.h b/arch/sh/include/cpu-sh4/cpu/sh7757.h
-index 05b8196..41f9f8b 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7757.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7757.h
-@@ -252,6 +252,7 @@ enum {
- };
++static int sh_mobile_meram_runtime_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
++	int k, j;
++
++	for (k = 0; k < CMN_REGS_SIZE; k++)
++		priv->cmn_saved_regs[k] = meram_read_reg(priv->base,
++			common_regs[k]);
++
++	for (j = 0; j < 32; j++) {
++		if (!test_bit(j, &priv->used_icb))
++			continue;
++		for (k = 0; k < ICB_REGS_SIZE; k++) {
++			priv->icb_saved_regs[j * ICB_REGS_SIZE + k] +				meram_read_icb(priv->base, j, icb_regs[k]);
++			/* Reset ICB on resume */
++			if (icb_regs[k] = MExxCTL)
++				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] |+					ALL_TRANS_DONE;
++		}
++	}
++	return 0;
++}
++
++static int sh_mobile_meram_runtime_resume(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
++	int k, j;
++
++	for (j = 0; j < 32; j++) {
++		if (!test_bit(j, &priv->used_icb))
++			continue;
++		for (k = 0; k < ICB_REGS_SIZE; k++) {
++			meram_write_icb(priv->base, j, icb_regs[k],
++			priv->icb_saved_regs[j * ICB_REGS_SIZE + k]);
++		}
++	}
++
++	for (k = 0; k < CMN_REGS_SIZE; k++)
++		meram_write_reg(priv->base, common_regs[k],
++			priv->cmn_saved_regs[k]);
++	return 0;
++}
++
++static const struct dev_pm_ops sh_mobile_meram_dev_pm_ops = {
++	.runtime_suspend = sh_mobile_meram_runtime_suspend,
++	.runtime_resume = sh_mobile_meram_runtime_resume,
++};
++
+ static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
+ 	.module			= THIS_MODULE,
+ 	.meram_register		= sh_mobile_meram_register,
+@@ -571,6 +655,7 @@ static struct platform_driver sh_mobile_meram_driver = {
+ 	.driver	= {
+ 		.name		= "sh_mobile_meram",
+ 		.owner		= THIS_MODULE,
++		.pm		= &sh_mobile_meram_dev_pm_ops,
+ 	},
+ 	.probe		= sh_mobile_meram_probe,
+ 	.remove		= sh_mobile_meram_remove,
+diff --git a/drivers/video/sh_mobile_meram.h b/drivers/video/sh_mobile_meram.h
+index 82c54fb..1615204 100644
+--- a/drivers/video/sh_mobile_meram.h
++++ b/drivers/video/sh_mobile_meram.h
+@@ -17,14 +17,6 @@
+ #define SH_MOBILE_MERAM_CACHE_OFFSET(p)	((p) >> 16)
+ #define SH_MOBILE_MERAM_CACHE_SIZE(p)	((p) & 0xffff)
  
- enum {
-+	SHDMA_SLAVE_INVALID,
- 	SHDMA_SLAVE_SDHI_TX,
- 	SHDMA_SLAVE_SDHI_RX,
- 	SHDMA_SLAVE_MMCIF_TX,
+-struct sh_mobile_meram_priv {
+-	void __iomem	*base;
+-	struct mutex	lock;
+-	unsigned long	used_icb;
+-	int		used_meram_cache_regions;
+-	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
+-};
+-
+ int sh_mobile_meram_alloc_icb(const struct sh_mobile_meram_cfg *cfg,
+ 		   int xres,
+ 		   int yres,
 -- 
-1.7.2.5
+1.7.1
 
