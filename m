@@ -1,98 +1,66 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 06 May 2011 11:02:45 +0000
-Subject: [PATCH 4/4] mmc: sdhi: support up to 3 interrupt sources
-Message-Id: <Pine.LNX.4.64.1105061301030.10445@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 24 May 2011 10:31:12 +0000
+Subject: [PATCH 01/03] dmaengine: shdma: Make second memory window optional
+Message-Id: <20110524103112.10334.53844.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105061244120.10445@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: cjb@laptop.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, horms@verge.net.au, linux-mmc@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Convert the SDHI code to support more than a single
-interrupt source. Needed to support hardware that
-uses GIC instead of INTC as interrupt controller.
+This patch makes the shdma.c driver allow slave operation
+on DMA hardware mapped with a single I/O-memory window.
 
-Will also allow us to remove the irq forwarding
-workaround from the INTC code in the future.
+The dmae_set_dmars() function is adjusted to use the
+first memory window in case of a missing DMARS window.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+At probe() time the code is updated to enable DMA_SLAVE
+only if slave information is passed with the platform data.
+
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   39 ++++++++++++++++++++++++++----------
- 1 files changed, 28 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 2bd235b..d264bbe 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -62,7 +62,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
- 	char clk_name[8];
--	int irq, ret;
-+	int i, irq, ret;
+ drivers/dma/shdma.c |   11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- 0001/drivers/dma/shdma.c
++++ work/drivers/dma/shdma.c	2011-05-24 18:52:25.000000000 +0900
+@@ -200,12 +200,17 @@ static int dmae_set_dmars(struct sh_dmae
+ 						struct sh_dmae_device, common);
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	const struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->id];
+-	u16 __iomem *addr = shdev->dmars + chan_pdata->dmars / sizeof(u16);
++	u16 __iomem *addr = shdev->dmars;
+ 	int shift = chan_pdata->dmars_bit;
  
- 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
-@@ -116,16 +116,27 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto eprobe;
+ 	if (dmae_is_busy(sh_chan))
+ 		return -EBUSY;
  
--	irq = platform_get_irq(pdev, 0);
--	if (irq < 0) {
--		ret = irq;
--		goto eirq;
-+	for (i = 0; i < 3; i++) {
-+		irq = platform_get_irq(pdev, i);
-+		if (irq < 0) {
-+			if (i) {
-+				continue;
-+			} else {
-+				ret = irq;
-+				goto eirq;
-+			}
-+		}
-+		ret = request_irq(irq, tmio_mmc_irq, 0,
-+				  dev_name(&pdev->dev), host);
-+		if (ret) {
-+			while (i--) {
-+				irq = platform_get_irq(pdev, i);
-+				if (irq >= 0)
-+					free_irq(irq, host);
-+			}
-+			goto eirq;
-+		}
- 	}
--
--	ret = request_irq(irq, tmio_mmc_irq, 0, dev_name(&pdev->dev), host);
--	if (ret)
--		goto eirq;
--
- 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
- 		 mmc_hostname(host->mmc), (unsigned long)
- 		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
-@@ -148,8 +159,14 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- 	struct mmc_host *mmc = platform_get_drvdata(pdev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+	int i, irq;
++	/* in the case of a missing DMARS resource use first memory window */
++	if (!addr)
++		addr = (u16 __iomem *)shdev->chan_reg;
++	addr += chan_pdata->dmars / sizeof(u16);
 +
-+	for (i = 0; i < 3; i++) {
-+		irq = platform_get_irq(pdev, i);
-+		if (irq >= 0)
-+			free_irq(irq, host);
-+	}
+ 	__raw_writew((__raw_readw(addr) & (0xff00 >> shift)) | (val << shift),
+ 		     addr);
  
--	free_irq(platform_get_irq(pdev, 0), host);
- 	tmio_mmc_host_remove(host);
- 	clk_disable(priv->clk);
- 	clk_put(priv->clk);
--- 
-1.7.2.5
-
+@@ -1056,7 +1061,7 @@ static int __init sh_dmae_probe(struct p
+ 		return -ENODEV;
+ 
+ 	chan = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	/* DMARS area is optional, if absent, this controller cannot do slave DMA */
++	/* DMARS area is optional */
+ 	dmars = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+ 	/*
+ 	 * IRQ resources:
+@@ -1123,7 +1128,7 @@ static int __init sh_dmae_probe(struct p
+ 	INIT_LIST_HEAD(&shdev->common.channels);
+ 
+ 	dma_cap_set(DMA_MEMCPY, shdev->common.cap_mask);
+-	if (dmars)
++	if (pdata->slave && pdata->slave_num)
+ 		dma_cap_set(DMA_SLAVE, shdev->common.cap_mask);
+ 
+ 	shdev->common.device_alloc_chan_resources
