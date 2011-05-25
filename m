@@ -1,468 +1,270 @@
 From: Richard Zhao <linuxzsc@gmail.com>
-Date: Wed, 25 May 2011 10:47:50 +0000
+Date: Wed, 25 May 2011 11:22:22 +0000
 Subject: Re: [PATCH 1/4] clk: Add a generic clock infrastructure
-Message-Id: <20110525104750.GA3959@richard-laptop>
+Message-Id: <20110525112222.GB3959@richard-laptop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1305876469.325655.313573683829.0.gpush@pororo>
 	<1305876469.326305.518470530485.1.gpush@pororo>
-In-Reply-To: <1305876469.326305.518470530485.1.gpush@pororo>
+	<BANLkTin2Ho-Ce-4RurtHfAST7hqTLDrJ+g@mail.gmail.com>
+	<20110524070236.GB22096@pengutronix.de>
+	<BANLkTinmRt_fv1oJwFuJQ34aAky_5SB4Rw@mail.gmail.com>
+	<20110524083804.GJ20715@pengutronix.de>
+In-Reply-To: <20110524083804.GJ20715@pengutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 20, 2011 at 03:27:49PM +0800, Jeremy Kerr wrote:
-> We currently have ~21 definitions of struct clk in the ARM architecture,
-> each defined on a per-platform basis. This makes it difficult to define
-> platform- (or architecture-) independent clock sources without making
-> assumptions about struct clk, and impossible to compile two
-> platforms with different struct clks into a single image.
-> 
-> This change is an effort to unify struct clk where possible, by defining
-> a common struct clk, and a set of clock operations. Different clock
-> implementations can set their own operations, and have a standard
-> interface for generic code. The callback interface is exposed to the
-> kernel proper, while the clock implementations only need to be seen by
-> the platform internals.
-> 
-> The interface is split into two halves:
-> 
->  * struct clk, which is the generic-device-driver interface. This
->    provides a set of functions which drivers may use to request
->    enable/disable, query or manipulate in a hardware-independent manner.
-> 
->  * struct clk_hw and struct clk_hw_ops, which is the hardware-specific
->    interface. Clock drivers implement the ops, which allow the core
->    clock code to implement the generic 'struct clk' API.
-> 
-> This allows us to share clock code among platforms, and makes it
-> possible to dynamically create clock devices in platform-independent
-> code.
-> 
-> Platforms can enable the generic struct clock through
-> CONFIG_GENERIC_CLK. In this case, the clock infrastructure consists of a
-> common, opaque struct clk, and a set of clock operations (defined per
-> type of clock):
-> 
->   struct clk_hw_ops {
->   	int		(*prepare)(struct clk_hw *);
->   	void		(*unprepare)(struct clk_hw *);
->   	int		(*enable)(struct clk_hw *);
->   	void		(*disable)(struct clk_hw *);
->   	unsigned long	(*recalc_rate)(struct clk_hw *);
-why not pass down parent rate?
->   	int		(*set_rate)(struct clk_hw *,
->   					unsigned long, unsigned long *);
->   	long		(*round_rate)(struct clk_hw *, unsigned long);
-ditto
->   	int		(*set_parent)(struct clk_hw *, struct clk *);
->   	struct clk *	(*get_parent)(struct clk_hw *);
->   };
-> 
-[...]
-
-> diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-> new file mode 100644
-> index 0000000..ad90a90
-> --- /dev/null
-> +++ b/drivers/clk/clk.c
-> @@ -0,0 +1,229 @@
-> +/*
-> + * Copyright (C) 2010-2011 Canonical Ltd <jeremy.kerr@canonical.com>
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License version 2 as
-> + * published by the Free Software Foundation.
-> + *
-> + * Standard functionality for the common clock API.
-> + */
-> +
-> +#include <linux/clk.h>
-> +#include <linux/module.h>
-> +#include <linux/mutex.h>
-> +#include <linux/slab.h>
-> +#include <linux/spinlock.h>
-> +
-> +struct clk {
-> +	const char		*name;
-> +	struct clk_hw_ops	*ops;
-> +	struct clk_hw		*hw;
-If we don't let it void *, why not put clk_hw_ops into clk_hw too? It'll be
-more easy to define static clocks.
-> +	unsigned int		enable_count;
-> +	unsigned int		prepare_count;
-> +	struct clk		*parent;
-> +	unsigned long		rate;
-> +};
-> +
-> +static DEFINE_SPINLOCK(enable_lock);
-> +static DEFINE_MUTEX(prepare_lock);
-> +
-> +static void __clk_unprepare(struct clk *clk)
-> +{
-> +	if (!clk)
-> +		return;
-> +
-> +	if (WARN_ON(clk->prepare_count = 0))
-> +		return;
-> +
-> +	if (--clk->prepare_count > 0)
-> +		return;
-> +
-> +	WARN_ON(clk->enable_count > 0);
-> +
-> +	if (clk->ops->unprepare)
-> +		clk->ops->unprepare(clk->hw);
-> +
-> +	__clk_unprepare(clk->parent);
-> +}
-> +
-> +void clk_unprepare(struct clk *clk)
-> +{
-> +	mutex_lock(&prepare_lock);
-> +	__clk_unprepare(clk);
-> +	mutex_unlock(&prepare_lock);
-> +}
-> +EXPORT_SYMBOL_GPL(clk_unprepare);
-> +
-> +static int __clk_prepare(struct clk *clk)
-> +{
-> +	int ret = 0;
-> +
-> +	if (!clk)
-> +		return 0;
-> +
-> +	if (clk->prepare_count = 0) {
-> +		ret = __clk_prepare(clk->parent);
-> +		if (ret)
-> +			return ret;
-> +
-> +		if (clk->ops->prepare) {
-> +			ret = clk->ops->prepare(clk->hw);
-> +			if (ret) {
-> +				__clk_unprepare(clk->parent);
-> +				return ret;
-> +			}
-> +		}
-> +	}
-> +
-> +	clk->prepare_count++;
-> +
-> +	return 0;
-> +}
-> +
-> +int clk_prepare(struct clk *clk)
-> +{
-> +	int ret;
-> +
-> +	mutex_lock(&prepare_lock);
-> +	ret = __clk_prepare(clk);
-> +	mutex_unlock(&prepare_lock);
-> +
-> +	return ret;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_prepare);
-> +
-> +static void __clk_disable(struct clk *clk)
-> +{
-> +	if (!clk)
-> +		return;
-> +
-> +	if (WARN_ON(clk->enable_count = 0))
-> +		return;
-> +
-> +	if (--clk->enable_count > 0)
-> +		return;
-> +
-> +	if (clk->ops->disable)
-> +		clk->ops->disable(clk->hw);
-> +	__clk_disable(clk->parent);
-> +}
-> +
-> +void clk_disable(struct clk *clk)
-> +{
-> +	unsigned long flags;
-> +
-> +	spin_lock_irqsave(&enable_lock, flags);
-> +	__clk_disable(clk);
-> +	spin_unlock_irqrestore(&enable_lock, flags);
-> +}
-> +EXPORT_SYMBOL_GPL(clk_disable);
-> +
-> +static int __clk_enable(struct clk *clk)
-> +{
-> +	int ret;
-> +
-> +	if (!clk)
-> +		return 0;
-> +
-> +	if (WARN_ON(clk->prepare_count = 0))
-> +		return -ESHUTDOWN;
-> +
-> +
-> +	if (clk->enable_count = 0) {
-> +		ret = __clk_enable(clk->parent);
-> +		if (ret)
-> +			return ret;
-> +
-> +		if (clk->ops->enable) {
-> +			ret = clk->ops->enable(clk->hw);
-> +			if (ret) {
-> +				__clk_disable(clk->parent);
-> +				return ret;
-> +			}
-> +		}
-> +	}
-> +
-> +	clk->enable_count++;
-> +	return 0;
-> +}
-> +
-> +int clk_enable(struct clk *clk)
-> +{
-> +	unsigned long flags;
-> +	int ret;
-> +
-> +	spin_lock_irqsave(&enable_lock, flags);
-> +	ret = __clk_enable(clk);
-> +	spin_unlock_irqrestore(&enable_lock, flags);
-> +
-> +	return ret;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_enable);
-> +
-> +unsigned long clk_get_rate(struct clk *clk)
-> +{
-> +	if (!clk)
-> +		return 0;
-> +	return clk->rate;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_get_rate);
-> +
-> +long clk_round_rate(struct clk *clk, unsigned long rate)
-> +{
-> +	if (clk && clk->ops->round_rate)
-> +		return clk->ops->round_rate(clk->hw, rate);
-pass parent rate? IMHO, common code can handle parent as much as possible.
-> +	return rate;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_round_rate);
-> +
-> +int clk_set_rate(struct clk *clk, unsigned long rate)
-> +{
-> +	/* not yet implemented */
-> +	return -ENOSYS;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_set_rate);
-> +
-> +struct clk *clk_get_parent(struct clk *clk)
-> +{
-> +	if (!clk)
-> +		return NULL;
-> +
-> +	return clk->parent;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_get_parent);
-> +
-> +int clk_set_parent(struct clk *clk, struct clk *parent)
-> +{
-> +	/* not yet implemented */
-> +	return -ENOSYS;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_set_parent);
-> +
-> +struct clk *clk_register(struct clk_hw_ops *ops, struct clk_hw *hw,
-> +		const char *name)
-> +{
-> +	struct clk *clk;
-> +
-> +	clk = kzalloc(sizeof(*clk), GFP_KERNEL);
-> +	if (!clk)
-> +		return NULL;
-> +
-> +	clk->name = name;
-> +	clk->ops = ops;
-> +	clk->hw = hw;
-> +	hw->clk = clk;
-> +
-> +	/* Query the hardware for parent and initial rate */
-> +
-> +	if (clk->ops->get_parent)
-> +		/* We don't to lock against prepare/enable here, as
-> +		 * the clock is not yet accessible from anywhere */
-> +		clk->parent = clk->ops->get_parent(clk->hw);
-> +
-> +	if (clk->ops->recalc_rate)
-> +		clk->rate = clk->ops->recalc_rate(clk->hw);
-ditto
+On Tue, May 24, 2011 at 10:38:04AM +0200, Sascha Hauer wrote:
+> On Tue, May 24, 2011 at 12:51:10AM -0700, Colin Cross wrote:
+> > On Tue, May 24, 2011 at 12:02 AM, Sascha Hauer <s.hauer@pengutronix.de>=
+ wrote:
+> > > On Mon, May 23, 2011 at 04:55:15PM -0700, Colin Cross wrote:
+> > >> On Fri, May 20, 2011 at 12:27 AM, Jeremy Kerr <jeremy.kerr@canonical=
+.com> wrote:
+> > >> >
+> > >> > =A0struct clk_hw_ops {
+> > >> > =A0 =A0 =A0 =A0int =A0 =A0 =A0 =A0 =A0 =A0 (*prepare)(struct clk_h=
+w *);
+> > >> > =A0 =A0 =A0 =A0void =A0 =A0 =A0 =A0 =A0 =A0(*unprepare)(struct clk=
+_hw *);
+> > >> > =A0 =A0 =A0 =A0int =A0 =A0 =A0 =A0 =A0 =A0 (*enable)(struct clk_hw=
+ *);
+> > >> > =A0 =A0 =A0 =A0void =A0 =A0 =A0 =A0 =A0 =A0(*disable)(struct clk_h=
+w *);
+> > >> > =A0 =A0 =A0 =A0unsigned long =A0 (*recalc_rate)(struct clk_hw *);
+> > >> > =A0 =A0 =A0 =A0int =A0 =A0 =A0 =A0 =A0 =A0 (*set_rate)(struct clk_=
+hw *,
+> > >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0unsigned long, unsigned long *);
+> > >> > =A0 =A0 =A0 =A0long =A0 =A0 =A0 =A0 =A0 =A0(*round_rate)(struct cl=
+k_hw *, unsigned long);
+> > >> > =A0 =A0 =A0 =A0int =A0 =A0 =A0 =A0 =A0 =A0 (*set_parent)(struct cl=
+k_hw *, struct clk *);
+> > >> > =A0 =A0 =A0 =A0struct clk * =A0 =A0(*get_parent)(struct clk_hw *);
+> > >> > =A0};
+> > >>
+> > >> You might want to split these into three separate structs, for mux
+> > >> ops, rate ops, and gate ops. =A0That way, multiple building blocks (a
+> > >> gate and a divider, for example), can be easily combined into a sing=
+le
+> > >> clock node. =A0Also, an init op that reads the clock tree state from=
+ the
+> > >> hardware has been very useful on Tegra - there are often clocks that
+> > >> you can't or won't change, and being able to view their state as
+> > >> configured by the bootloader, and base other clocks off of them, is
+> > >> helpful.
+> > >
+> > > The clock state is read initially from the hardware with the
+> > > recalc_rate/get_parent ops. What do we need an additional init op for?
+> >=20
+> > I see - I would rename them to make it clear they are for init, maybe
+> > init_rate and init_parent, and not call them later - reading clock
+> > state can be very expensive on some platforms, if not impossible -
+> > Qualcomm requires RPCs to the modem to get clock state.  If every
+> > clk_set_rate triggers state reads all the way through the descendants,
+> > that could be a huge performance hit.  If you separate init and
+> > recalculate, mux implementations can store their divider settings and
+> > very easily recalculate their rate.
+>=20
+> Even without additional hooks divider and muxes can decide to cache
+> the actual register values.
+>=20
+> >=20
+> > >> It also allows you to turn off clocks that are enabled by
+> > >> the bootloader, but never enabled by the kernel (enabled=3D1,
+> > >> enable_count=3D0).
+> > >
+> > > The enable count indeed is a problem. I don't think an init hook
+> > > would be the right solution for this though as this sounds platform
+> > > specific. struct clk_hw_ops should be specific to the type of clock
+> > > (mux, divider, gate) and should be present only once per type.
+> > >
+> > > For the enable count (and whether a clock should initially be enabled=
+ or
+> > > not) I can think of something like this:
+> > >
+> > > - A platform/SoC registers all clocks.
+> > > - It then calls clk_prepare/enable for all vital core clocks
+> > > =A0(SDRAM, CPU,...). At this time the enable counters are correct.
+> > > - Then some hook in the generic clock layer is called. This hook
+> > > =A0iterates over the tree and disables all clocks in hardware which
+> > > =A0have a enable count of 0.
+> >=20
+> > Is it always safe to disable a clock that is already disabled?
+>=20
+> I'm not aware of any clock where that's not the case, but your mileage
+> may vary. At least the implementation should be able to determine
+> whether a clock already is disabled and just skip another disable.
+Might be one possible case: arm AP and modem boot simultaneously, you can n=
+ot
+disable modem clock before modem driver increase the enable_count.
+But nice to have a helper function to disable zero enable_count clocks.
+>=20
+> >  An
+> > init_enable hook that set an enabled flag would let you only disable
+> > clocks that were actually left on by the bootloader, and report to the
+> > user which ones are actually being turned off (which has caught a lot
+> > of problems on Tegra).
+> >=20
+> > >> > +
+> > >> > +struct clk {
+> > >> > + =A0 =A0 =A0 const char =A0 =A0 =A0 =A0 =A0 =A0 =A0*name;
+> > >> > + =A0 =A0 =A0 struct clk_hw_ops =A0 =A0 =A0 *ops;
+> > >> > + =A0 =A0 =A0 struct clk_hw =A0 =A0 =A0 =A0 =A0 *hw;
+> > >> > + =A0 =A0 =A0 unsigned int =A0 =A0 =A0 =A0 =A0 =A0enable_count;
+> > >> > + =A0 =A0 =A0 unsigned int =A0 =A0 =A0 =A0 =A0 =A0prepare_count;
+> > >> > + =A0 =A0 =A0 struct clk =A0 =A0 =A0 =A0 =A0 =A0 =A0*parent;
+> > >>
+> > >> Storing the list of possible parents at this level can help abstract
+> > >> some common code from mux ops if you pass the index into the list of
+> > >> the new parent into the op - most mux ops only need to know which of
+> > >> their mux inputs needs to be enabled.
+> > >
+> > > Please don't. Only muxes have more than one possible parent, so this
+> > > should be handled there.
+> >=20
+> > The cost is one pointer per clock that is not actually a mux, and the
+> > benefit is that you can move a very common search loop out of every
+> > mux implementation into the framework.  It also lets you determine
+> > which clocks are connected, which becomes necessary if you try to do
+> > per-tree locking or sysfs controls for clocks.
+>=20
+> I agree that some sort of possible_parents iteration would be nice.
+>=20
+> >=20
+> > >>
+> > >> > +
+> > >> > + =A0 =A0 =A0 if (WARN_ON(clk->prepare_count =3D 0))
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
+> > >> > +
+> > >> > + =A0 =A0 =A0 if (--clk->prepare_count > 0)
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
+> > >> > +
+> > >> > + =A0 =A0 =A0 WARN_ON(clk->enable_count > 0);
+> > >> > +
+> > >> > + =A0 =A0 =A0 if (clk->ops->unprepare)
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 clk->ops->unprepare(clk->hw);
+> > >> > +
+> > >> > + =A0 =A0 =A0 __clk_unprepare(clk->parent);
+> > >> > +}
+> > >> Are there any cases where the unlocked versions of the clk calls need
+> > >> to be exposed to the ops implementations? =A0For example, a set_rate=
+ op
+> > >> may want to call clk_set_parent on itself to change its parent to a
+> > >> better source, and then set its rate. =A0It would need to call
+> > >> __clk_set_parent to avoid deadlocking on the prepare_lock.
+> > >
+> > > I hope we can avoid that. The decision of the best parent should be l=
+eft
+> > > up to the user. Doing this in the mux/divider implementation would
+> > > torpedo attempts to implement generic building blocks.
+I believe some day, when we have to call child clock consumers' on-rate-cha=
+nge
+hooks, we will need it.
 
 Thanks
 Richard
-> +
-> +
-> +	return clk;
-> +}
-> +EXPORT_SYMBOL_GPL(clk_register);
-> diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
-> index 6db161f..e2a9719 100644
-> --- a/drivers/clk/clkdev.c
-> +++ b/drivers/clk/clkdev.c
-> @@ -23,6 +23,13 @@
->  static LIST_HEAD(clocks);
->  static DEFINE_MUTEX(clocks_mutex);
->  
-> +/* For USE_COMMON_STRUCT_CLK, these are provided in clk.c, but not exported
-> + * through other headers; we don't want them used anywhere but here. */
-> +#ifdef CONFIG_USE_COMMON_STRUCT_CLK
-> +extern int __clk_get(struct clk *clk);
-> +extern void __clk_put(struct clk *clk);
-> +#endif
-> +
->  /*
->   * Find the correct struct clk for the device and connection ID.
->   * We do slightly fuzzy matching here:
-> diff --git a/include/linux/clk.h b/include/linux/clk.h
-> index 1d37f42..93ff870 100644
-> --- a/include/linux/clk.h
-> +++ b/include/linux/clk.h
-> @@ -3,6 +3,7 @@
->   *
->   *  Copyright (C) 2004 ARM Limited.
->   *  Written by Deep Blue Solutions Limited.
-> + *  Copyright (c) 2010-2011 Jeremy Kerr <jeremy.kerr@canonical.com>
->   *
->   * This program is free software; you can redistribute it and/or modify
->   * it under the terms of the GNU General Public License version 2 as
-> @@ -11,17 +12,103 @@
->  #ifndef __LINUX_CLK_H
->  #define __LINUX_CLK_H
->  
-> +#include <linux/err.h>
-> +#include <linux/spinlock.h>
-> +
->  struct device;
->  
-> -/*
-> - * The base API.
-> +struct clk;
-> +
-> +#ifdef CONFIG_GENERIC_CLK
-> +
-> +struct clk_hw {
-> +	struct clk *clk;
-> +};
-> +
-> +/**
-> + * struct clk_hw_ops -  Callback operations for hardware clocks; these are to
-> + * be provided by the clock implementation, and will be called by drivers
-> + * through the clk_* API.
-> + *
-> + * @prepare:	Prepare the clock for enabling. This must not return until
-> + *		the clock is fully prepared, and it's safe to call clk_enable.
-> + *		This callback is intended to allow clock implementations to
-> + *		do any initialisation that may sleep. Called with
-> + *		prepare_lock held.
-> + *
-> + * @unprepare:	Release the clock from its prepared state. This will typically
-> + *		undo any work done in the @prepare callback. Called with
-> + *		prepare_lock held.
-> + *
-> + * @enable:	Enable the clock atomically. This must not return until the
-> + *		clock is generating a valid clock signal, usable by consumer
-> + *		devices. Called with enable_lock held. This function must not
-> + *		sleep.
-> + *
-> + * @disable:	Disable the clock atomically. Called with enable_lock held.
-> + *		This function must not sleep.
-> + *
-> + * @recalc_rate	Recalculate the rate of this clock, by quering hardware
-> + *		and/or the clock's parent. Called with the global clock mutex
-> + *		held. Optional, but recommended - if this op is not set,
-> + *		clk_get_rate will return 0.
-> + *
-> + * @get_parent	Query the parent of this clock; for clocks with multiple
-> + *		possible parents, query the hardware for the current
-> + *		parent. Currently only called when the clock is first
-> + *		registered.
-> + *
-> + * The clk_enable/clk_disable and clk_prepare/clk_unprepare pairs allow
-> + * implementations to split any work between atomic (enable) and sleepable
-> + * (prepare) contexts.  If a clock requires sleeping code to be turned on, this
-> + * should be done in clk_prepare. Switching that will not sleep should be done
-> + * in clk_enable.
-> + *
-> + * Typically, drivers will call clk_prepare when a clock may be needed later
-> + * (eg. when a device is opened), and clk_enable when the clock is actually
-> + * required (eg. from an interrupt). Note that clk_prepare *must* have been
-> + * called before clk_enable.
-> + */
-> +struct clk_hw_ops {
-> +	int		(*prepare)(struct clk_hw *);
-> +	void		(*unprepare)(struct clk_hw *);
-> +	int		(*enable)(struct clk_hw *);
-> +	void		(*disable)(struct clk_hw *);
-> +	unsigned long	(*recalc_rate)(struct clk_hw *);
-> +	long		(*round_rate)(struct clk_hw *, unsigned long);
-> +	struct clk *	(*get_parent)(struct clk_hw *);
-> +};
-> +
-> +/**
-> + * clk_prepare - prepare clock for atomic enabling.
-> + *
-> + * @clk: The clock to prepare
-> + *
-> + * Do any possibly sleeping initialisation on @clk, allowing the clock to be
-> + * later enabled atomically (via clk_enable). This function may sleep.
->   */
-> +int clk_prepare(struct clk *clk);
->  
-> +/**
-> + * clk_unprepare - release clock from prepared state
-> + *
-> + * @clk: The clock to release
-> + *
-> + * Do any (possibly sleeping) cleanup on clk. This function may sleep.
-> + */
-> +void clk_unprepare(struct clk *clk);
-> +
-> +#else /* !CONFIG_GENERIC_CLK */
->  
->  /*
-> - * struct clk - an machine class defined object / cookie.
-> + * For !CONFIG_GENERIC_CLK, we don't enforce any atomicity
-> + * requirements for clk_enable/clk_disable, so the prepare and unprepare
-> + * functions are no-ops
->   */
-> -struct clk;
-> +static inline int clk_prepare(struct clk *clk) { return 0; }
-> +static inline void clk_unprepare(struct clk *clk) { }
-> +
-> +#endif /* !CONFIG_GENERIC_CLK */
->  
->  /**
->   * clk_get - lookup and obtain a reference to a clock producer.
-> @@ -67,6 +154,7 @@ void clk_disable(struct clk *clk);
->  /**
->   * clk_get_rate - obtain the current clock rate (in Hz) for a clock source.
->   *		  This is only valid once the clock source has been enabled.
-> + *		  Returns zero if the clock rate is unknown.
->   * @clk: clock source
->   */
->  unsigned long clk_get_rate(struct clk *clk);
-> @@ -83,12 +171,6 @@ unsigned long clk_get_rate(struct clk *clk);
->   */
->  void clk_put(struct clk *clk);
->  
-> -
-> -/*
-> - * The remaining APIs are optional for machine class support.
-> - */
-> -
-> -
->  /**
->   * clk_round_rate - adjust a rate to the exact rate a clock can provide
->   * @clk: clock source
-> 
+> >=20
+> > I agree it would be nice, but it does push some knowledge of the clock
+> > tree into device drivers.  For example, on Tegra the display driver
+> > may need to change the source pll of the display clock to get the
+> > required pclk, which requires passing all the possible parents of the
+> > display clock into the display driver.  If this is a common usage
+> > pattern, there needs to be a hook in the ops to allow the clock or
+> > clock chip to make a more global decision.
+>=20
+> I think this is a common pattern. Another solution to this would be that
+> the platform implements a clock whose only purpose is to build a bridge
+> between the driver and the clock tree. There may be more constrains, for
+> example in some cases you may need a clock which also runs in different
+> sleep states whereas sometimes you may need a clock which is turned of
+> when in sleep mode. I agree that this must be handled somewhere, but
+> the clock framework is not the place to implement this stuff.
+>=20
+> > >>
+> > >> I think you should hold the prepare mutex around calls to
+> > >> clk_round_rate, which will allow some code simplification similar to
+> > >> what Russell suggested in another thread. =A0If you hold the mutex h=
+ere,
+> > >> as well as in clk_set_rate, and you call the round_rate op before the
+> > >> set_rate op in clk_set_rate, op implementers can compute the rate in
+> > >> their round_rate op, and save the register values needed to get that
+> > >> rate in private temporary storage. =A0The set_rate op can then assume
+> > >> that those register values are correct, because the lock is still
+> > >> held, and just write them. =A0That moves all the computation to one
+> > >> place, and it only needs to run once.
+> > >
+> > > This won't work in the case of cascaded dividers. These have to call
+> > > clk_round_rate in their set_rate op for each possible divider value
+> > > to get the best result. They can't do this when both set_rate and
+> > > round_rate acquire the lock.
+> >=20
+> > Then they call __clk_round_rate if they already have the lock?
+>=20
+> I think this is an implementation detail. As our idea of how a clock
+> framework should work still is quite different we can discuss this later =
+;)
+>=20
+> >=20
+> > > [...]
+> > >
+> > >> > +struct clk *clk_register(struct clk_hw_ops *ops, struct clk_hw *h=
+w,
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 const char *name)
+> > >> > +{
+> > >> > + =A0 =A0 =A0 struct clk *clk;
+> > >> > +
+> > >> > + =A0 =A0 =A0 clk =3D kzalloc(sizeof(*clk), GFP_KERNEL);
+> > >> > + =A0 =A0 =A0 if (!clk)
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return NULL;
+> > >> > +
+> > >> > + =A0 =A0 =A0 clk->name =3D name;
+> > >> > + =A0 =A0 =A0 clk->ops =3D ops;
+> > >> > + =A0 =A0 =A0 clk->hw =3D hw;
+> > >> > + =A0 =A0 =A0 hw->clk =3D clk;
+> > >> > +
+> > >> > + =A0 =A0 =A0 /* Query the hardware for parent and initial rate */
+> > >> > +
+> > >> > + =A0 =A0 =A0 if (clk->ops->get_parent)
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* We don't to lock against prepare/=
+enable here, as
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* the clock is not yet accessible=
+ from anywhere */
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 clk->parent =3D clk->ops->get_parent=
+(clk->hw);
+> > >> > +
+> > >> > + =A0 =A0 =A0 if (clk->ops->recalc_rate)
+> > >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 clk->rate =3D clk->ops->recalc_rate(=
+clk->hw);
+> > >> > +
+> > >> > +
+> > >> > + =A0 =A0 =A0 return clk;
+> > >> > +}
+> > >> > +EXPORT_SYMBOL_GPL(clk_register);
+> > >>
+> > >> If you are requiring clk's parents (or possible parents?) to be
+> > >> registered before clk, you could put the clk_lookup struct inside the
+> > >> clk struct and call clkdev_add from clk_register, saving some
+> > >> boilerplate in the platforms.
+> > >
+> > > There can be multiple struct clk_lookup for each clock.
+> >=20
+> > Sure, and that could be handled by clk_register_alias.  Most of the
+> > clocks have a single clk_lookup.
+>=20
+> In my idea only few of the clocks have a clk_lookup (you mentioned a
+> clock between the i2c divider and i2c gate elsewhere, this would never
+> be passed to a device).
+>=20
+> Sascha
+>=20
+> --=20
+> Pengutronix e.K.                           |                             |
+> Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+> Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+> Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+>=20
 > _______________________________________________
 > linux-arm-kernel mailing list
 > linux-arm-kernel@lists.infradead.org
