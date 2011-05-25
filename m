@@ -1,130 +1,236 @@
-From: Colin Cross <ccross@google.com>
-Date: Tue, 24 May 2011 19:41:20 +0000
+From: Richard Zhao <linuxzsc@gmail.com>
+Date: Wed, 25 May 2011 02:08:51 +0000
 Subject: Re: [PATCH 0/4] Add a generic struct clk
-Message-Id: <BANLkTinVnFasvOmu0MWRDzv21P3vM8eM6g@mail.gmail.com>
+Message-Id: <20110525020850.GA2173@b20223-02.ap.freescale.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1305876469.325655.313573683829.0.gpush@pororo>
 	<BANLkTik=EFayZW61TgfOni-XML+tRLOcqw@mail.gmail.com>
-	<20110524062620.GA22096@pengutronix.de>
-	<BANLkTimEoCaKwJtpbQTDSEDydNkZ1BkKog@mail.gmail.com>
-	<20110524080936.GI20715@pengutronix.de>
-In-Reply-To: <20110524080936.GI20715@pengutronix.de>
+	<20110524172231.GA2764@b20223-02.ap.freescale.net>
+	<BANLkTimY1cxqaPG1T=_xKPustXR1GSmUKQ@mail.gmail.com>
+In-Reply-To: <BANLkTimY1cxqaPG1T=_xKPustXR1GSmUKQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 24, 2011 at 1:09 AM, Sascha Hauer <s.hauer@pengutronix.de> wrot=
-e:
-> On Tue, May 24, 2011 at 12:31:13AM -0700, Colin Cross wrote:
->> On Mon, May 23, 2011 at 11:26 PM, Sascha Hauer <s.hauer@pengutronix.de> =
-wrote:
->> > On Mon, May 23, 2011 at 04:12:24PM -0700, Colin Cross wrote:
->> >> >
->> >> > =A0 tglx's plan is to create a separate struct clk_hwdata, which co=
-ntains a
->> >> > =A0 union of base data structures for common clocks: div, mux, gate=
-, etc. The
->> >> > =A0 ops callbacks are passed a clk_hw, plus a clk_hwdata, and most =
-of the base
->> >> > =A0 hwdata fields are handled within the core clock code. This mean=
-s less
->> >> > =A0 encapsulation of clock implementation logic, but more coverage =
-of
->> >> > =A0 clock basics through the core code.
->> >>
->> >> I don't think they should be a union, I think there should be 3
->> >> separate private datas, and three sets of clock ops, for the three
->> >> different types of clock blocks: rate changers (dividers and plls),
->> >> muxes, and gates. =A0These blocks are very often combined - a device
->> >> clock often has a mux and a divider, and clk_set_parent and
->> >> clk_set_rate on the same struct clk both need to work.
->> >
->> > The idea is to being able to propagate functions to the parent. It's
->> > very convenient for the implementation of clocks when they only
->> > implement either a divider, a mux or a gate. Combining all of these
->> > into a single clock leads to complicated clock trees and many different
->> > clocks where you can't factor out the common stuff.
->>
->> That seems complicated. =A0You end up with lots of extra clocks (meaning
->> more boilerplate in the platform files) that have no meaning in the
->> system (what is the clock between the mux and the divider in Tegra's
->> i2c1 clock, it can never feed any devices), and you have to figure out
->> at the framework level when to propagate and when to error out. =A0I'm
->> not even sure you can always find the right place to stop propagating
->> - do you just keep going up until the set_parent callback succeeds, or
->> exists, or what?
->
-> For the set_parent there would be no propagating at all. For set_rate I
-> can imagine a flag in the generic clock which tells whether to propagate
-> set_rate or not.
->
->>
->> I think you can still factor out all the common code if you treat each
->> clock as a possible mux, divider, and gate combination. =A0Each part of
->> the clock is still just as abstractable as before - you can set the
->> rate_ops to be the generic single register divider implementation, and
->> the gate ops to be the generic single bit enable implementation. =A0The
->> idea of what a clock node is matches the HW design,
->
-> The hardware design consists of only discrete rate changers (plls,
-> dividers), muxes and gates. These are the only building blocks
-> *every* hardware design has. I believe that many of the problems
-> the current implementations have are due to the multiple building
-> blocks stuffed into one clock. If you haven't already take a look
-> at my i.MX5 clock patches:
->
-> http://thread.gmane.org/gmane.linux.ports.arm.kernel/113631
->
-> They need changes to fit onto the current patches and the rate
-> propagation problem is not solved there, but the resulting clock
-> data files are really short and nice to read. Furthermore it's easy
-> to implement. Just look at the diagrams in the datasheet and go through
-> them.
+On Tue, May 24, 2011 at 10:52:53AM -0700, Colin Cross wrote:
+> On Tue, May 24, 2011 at 10:22 AM, Richard Zhao <linuxzsc@gmail.com> wrote:
+> > On Mon, May 23, 2011 at 04:12:24PM -0700, Colin Cross wrote:
+> >> On Fri, May 20, 2011 at 12:27 AM, Jeremy Kerr <jeremy.kerr@canonical.c=
+om> wrote:
+> >> > [This series was originally titled 'Add a common struct clk', but
+> >> > the goals have changed since that first set of patches. We're now ai=
+ming
+> >> > for a more complete generic clock infrastructure, rather than just
+> >> > abstracting struct clk]
+> >> >
+> >> > [This series still needs work, see the TODO section below]
+> >> >
+> >> > [Totally RFC at the moment]
+> >> >
+> >> > Hi all,
+> >> >
+> >> > These patches are an attempt to allow platforms to share clock code.=
+ At
+> >> > present, the definitions of 'struct clk' are local to platform code,
+> >> > which makes allocating and initialising cross-platform clock sources
+> >> > difficult, and makes it impossible to compile a single image contain=
+ing
+> >> > support for two ARM platforms with different struct clks.
+> >> >
+> >> > The three patches are for the architecture-independent kernel code,
+> >> > introducing the common clk infrastructure. The changelog for the fir=
+st
+> >> > patch includes details about the new clock definitions.
+> >> >
+> >> > The second patch implements clk_set_rate, and in doing so adds
+> >> > functionality to walk the clock tree in both directions.
+> >> >
+> >> > clk_set_parent is left unimplemented, see TODO below for why.
+> >> >
+> >> > The third and fourth patches provide some basic clocks (fixed-rate a=
+nd
+> >> > gated), mostly to serve as an example of the hardware implementation.
+> >> > I'm intending to later provide similar base clocks for mux and divid=
+er
+> >> > hardware clocks.
+> >> >
+> >> > Many thanks to the following for their input:
+> >> > =A0* Benjamin Herrenschmidt <benh@kernel.crashing.org>
+> >> > =A0* Thomas Gleixner <tglx@linutronix.de>
+> >> > =A0* Ben Dooks <ben-linux@fluff.org>
+> >> > =A0* Baruch Siach <baruch@tkos.co.il>
+> >> > =A0* Russell King <linux@arm.linux.org.uk>
+> >> > =A0* Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
+> >> > =A0* Lorenzo Pieralisi <Lorenzo.Pieralisi@arm.com>
+> >> > =A0* Vincent Guittot <vincent.guittot@linaro.org>
+> >> > =A0* Sascha Hauer <s.hauer@pengutronix.de>
+> >> > =A0* Ryan Mallon <ryan@bluewatersys.com>
+> >> > =A0* Colin Cross <ccross@google.com>
+> >> > =A0* Jassi Brar <jassisinghbrar@gmail.com>
+> >> > =A0* Saravana Kannan <skannan@codeaurora.org>
+> >>
+> >> I have a similar set of patches I was working on that handles a little
+> >> more of the common code than these. =A0I can post them if you want, but
+> >> for now I'll just point out where I had different ideas, and not muddy
+> >> the waters with conflicting patches.
+> >>
+> >> > TODO:
+> >> >
+> >> > =A0* Need to figure out the locking around clk_set_parent. Changing =
+the in-kernel
+> >> > =A0 clock topology requires acquiring both the mutex (to prevent aga=
+inst races
+> >> > =A0 with clk_prepare, which may propagate to the parent clock) and t=
+he spinlock
+> >> > =A0 (to prevent the same race with clk_enable).
+> >> >
+> >> > =A0 However, we should also be changing the hardware clock topology =
+in sync with
+> >> > =A0 the in-kernel clock topology, which would imply that both locks =
+*also* need
+> >> > =A0 to be held while updating the parent in the hardware (ie, in
+> >> > =A0 clk_hw_ops->set_parent) too. =A0However, I believe some platform=
+ clock
+> >> > =A0 implementations may require this callback to be able to sleep. C=
+omments?
+> >>
+> >> This sequence is the best I could come up with without adding a
+> >> temporary 2nd parent:
+> >> 1. lock prepare mutex
+> > Maybe tell child clocks "I'm going to change clock rate, please stop wo=
+rk if needed"
+> >> 2. call prepare on the new parent if prepare_count > 0
+> >> 3. lock the enable spinlock
+> >> 4. call enable on the new parent if enable_count > 0
+> >> 5. change the parent pointer to the new parent
+> >> 6. unlock the spinlock
+> >> 7. call the set_parent callback
+> > Why do it need to sleep if it only set some hw registers?
+>=20
+> Most implementations don't, and I would be fine with saying
+> clk_set_parent sleeps, but the set_parent op does not, but that
+> prevents clock chips on sleeping busses like i2c.
+So it worth to involve a flag here, which says hw_ops may sleep. At least f=
+or
+on-SoC clocks, we don't need to take risk.
+>=20
+> >> 8. lock the enable spinlock
+> >> 9. call disable on the old parent iff you called enable on the new
+> >> parent (enable_count may have changed)
+> >> 10. unlock the enable spinlock
+> >> 11. call unprepare on the old parent if prepare_count
+> > propagate rate here and also tell child clocks "rate changed already, c=
+hange your
+> > parameters and go on to work".
+>=20
+> Yes, propagate rate is needed.
+>=20
+> >> 12. unlock prepare mutex
+> >>
+> >> The only possible problem I see is that if a clock starts disabled at
+> >> step 1., and clk_enable is called on it between steps 6 and 7,
+> >> clk_enable will return having enabled the new parent, but the clock is
+> >> still running off the old parent. =A0As soon as the clock gets switched
+> >> to the new parent, the clock will be properly enabled. =A0I don't see
+> >> this as a huge problem - calling clk_set_parent on a clock while it is
+> >> enabled may not even work without causing glitches on some platforms.
+> > some do be glitch free, especially for cpu clock parents.
+> >>
+> >> I guess the only way around it would be to store a temporary
+> >> "new_parent" pointer between steps 5 and 9, and have
+> >> clk_enable/disable operate on both the current parent and the new
+> >> parent. =A0They would also need to refcount the extra enables separate=
+ly
+> >> to undo on the old parent.
+> >>
+> >> > =A0* tglx and I have been discussing different ways of passing clock=
+ information
+> >> > =A0 to the clock hardware implementation. I'm proposing providing a =
+base 'struct
+> >> > =A0 clk_hw', which implementations subclass by wrapping in their own=
+ structure
+> >> > =A0 (or one of a set of simple 'library' structures, like clk_hw_mux=
+ or
+> >> > =A0 clk_hw_gate). =A0The clk_hw base is passed as the first argument=
+ to all
+> >> > =A0 clk_hw_ops callbacks.
+> >> >
+> >> > =A0 tglx's plan is to create a separate struct clk_hwdata, which con=
+tains a
+> >> > =A0 union of base data structures for common clocks: div, mux, gate,=
+ etc. The
+> >> > =A0 ops callbacks are passed a clk_hw, plus a clk_hwdata, and most o=
+f the base
+> >> > =A0 hwdata fields are handled within the core clock code. This means=
+ less
+> >> > =A0 encapsulation of clock implementation logic, but more coverage of
+> >> > =A0 clock basics through the core code.
+> >>
+> >> I don't think they should be a union, I think there should be 3
+> >> separate private datas, and three sets of clock ops, for the three
+> >> different types of clock blocks: rate changers (dividers and plls),
+> >> muxes, and gates. =A0These blocks are very often combined - a device
+> >> clock often has a mux and a divider, and clk_set_parent and
+> >> clk_set_rate on the same struct clk both need to work.
+> >>
+> >> > =A0 tglx, could you send some details about your approach? I'm aimin=
+g to refine
+> >> > =A0 this series with the good bits from each technique.
+> >> >
+> >> > =A0* The clock registration code probably needs work. This is the do=
+main
+> >> > =A0 of the platform/board maintainers, any wishes here?
+> > When clock init, data in struct clk may not be synced with hw registers=
+. After
+> > enabled minimal needed clk (cpu, core bus etc), we need sync the whole =
+tree,
+> > disable zero enable_count clocks, set correct .rate ... . The sync func=
+tion
+> > is also common code, right? but not have to be called all times I think.
+>=20
+> I believe each clock is synced with its hardware during clk_register
+> by calling the recalc_rate and get_parent callbacks.
+so how to sync gate bits? Let subarch to set registers directly or clk_enab=
+le and
+clk_disable to make sure clk is disabled? Neither way is good I think.
 
-Propagation is what I'm trying simplify, because it's impossible at
-the framework level to determine the right time to propagate, and the
-right time to return an error, and I don't like pushing it down to
-each clock implementation either, because then you need a "propagating
-clk gate" and a "non-propagating clk gate".
-
-Your building blocks implement every op - clk_gate_ops implements
-set_rate as clk_parent_set_rate (won't that cause a deadlock on
-prepare_lock when it calls clk_set_rate?).  I'm suggesting breaking
-out the clock gate ops into a struct that only contains:
-enable
-disable
-prepare
-unprepare
-And a rate ops struct that contains:
-round_rate
-set_rate
-And a mux ops struct that contains
-set_parent
-
-For a single HW clock that has a mux, a gate, and a divider, the
-existing implementation requires:
-INIT_CLK(..., clk_mux_ops)
-INIT_CLK(..., clk_div_ops)
-INIT_CLK(..., clk_gate_ops)
-which creates 3 clocks, and requires lots of propagation logic to
-figure out how to call clk_set_rate on the single clock that is
-exposed to the device, but not propagate it past the device clock if
-the device clock doesn't have a divider (propagating it up to an
-active pll feeding other devices results in disaster, at least on
-Tegra).  This combination doesn't seem to be common in your MX code,
-but _every_ Tegra device clock has these three parts.
-
-With multiple smaller building blocks that can fit inside a clock, all
-you need is:
-INIT_CLK(..., clk_mux_ops, clk_div_ops, clk_gate_ops)
-You have one struct clk, which is exposed to the device and matches
-the datasheet.  If the clock has rate ops, clk_set_rate works with no
-propagation.  If it doesn't have a rate, clk_rate_ops is NULL, and the
-framework deal with propagation only in the case where it is really
-propagation - a child clock that requires changing a parent clock.
-The block abstraction is still in place, there are just 3 slots for
-blocks within each clock.
-
-Using a flag to mark clocks as "non-propagatable" is also not correct
-- propagatability is a feature of the parent, not the child.
+Thanks
+Richard
+>=20
+> > Thanks
+> > Richard
+> >> >
+> >> > Cheers,
+> >> >
+> >> >
+> >> > Jeremy
+> >> >
+> >> > --
+> >> >
+> >> > ---
+> >> > Jeremy Kerr (4):
+> >> > =A0 =A0 =A0clk: Add a generic clock infrastructure
+> >> > =A0 =A0 =A0clk: Implement clk_set_rate
+> >> > =A0 =A0 =A0clk: Add fixed-rate clock
+> >> > =A0 =A0 =A0clk: Add simple gated clock
+> >> >
+> >> > --
+> >> > To unsubscribe from this list: send the line "unsubscribe linux-kern=
+el" in
+> >> > the body of a message to majordomo@vger.kernel.org
+> >> > More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> >> > Please read the FAQ at =A0http://www.tux.org/lkml/
+> >> >
+> >>
+> >> _______________________________________________
+> >> linux-arm-kernel mailing list
+> >> linux-arm-kernel@lists.infradead.org
+> >> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+> >
+>=20
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+>=20
