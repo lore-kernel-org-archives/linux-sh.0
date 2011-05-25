@@ -1,7 +1,7 @@
-From: Richard Zhao <linuxzsc@gmail.com>
-Date: Wed, 25 May 2011 02:32:09 +0000
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 25 May 2011 06:23:12 +0000
 Subject: Re: [PATCH 0/4] Add a generic struct clk
-Message-Id: <20110525023209.GA2535@b20223-02.ap.freescale.net>
+Message-Id: <20110525062312.GE22096@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1305876469.325655.313573683829.0.gpush@pororo>
 	<BANLkTik=EFayZW61TgfOni-XML+tRLOcqw@mail.gmail.com>
@@ -91,6 +91,9 @@ ng
 > right time to return an error, and I don't like pushing it down to
 > each clock implementation either, because then you need a "propagating
 > clk gate" and a "non-propagating clk gate".
+
+Or a single flag on either the gate/mux/div or in the clock framework.
+
 >=20
 > Your building blocks implement every op - clk_gate_ops implements
 > set_rate as clk_parent_set_rate (won't that cause a deadlock on
@@ -103,6 +106,9 @@ ng
 > And a rate ops struct that contains:
 > round_rate
 > set_rate
+
++ get_rate?
+
 > And a mux ops struct that contains
 > set_parent
 >=20
@@ -111,15 +117,6 @@ ng
 > INIT_CLK(..., clk_mux_ops)
 > INIT_CLK(..., clk_div_ops)
 > INIT_CLK(..., clk_gate_ops)
-Not all clocks are like:
-pll -> [mux] -> [gate] -> [divider] -> clk A
-Some imx233 clocks are like:
-pll -> [divider] -> -----------\
-                              [mux] -> clk B
-xtal -> [gate] -> [divider] -> /
-
-Thanks
-Richard
 > which creates 3 clocks, and requires lots of propagation logic to
 > figure out how to call clk_set_rate on the single clock that is
 > exposed to the device, but not propagate it past the device clock if
@@ -127,13 +124,44 @@ Richard
 > active pll feeding other devices results in disaster, at least on
 > Tegra).  This combination doesn't seem to be common in your MX code,
 > but _every_ Tegra device clock has these three parts.
+
+Lucky you. Maybe the Tegra hardware designers have better drugs or just
+take less of them...
+
 >=20
 > With multiple smaller building blocks that can fit inside a clock, all
 > you need is:
 > INIT_CLK(..., clk_mux_ops, clk_div_ops, clk_gate_ops)
 > You have one struct clk, which is exposed to the device and matches
 > the datasheet.  If the clock has rate ops, clk_set_rate works with no
-> propagation.  If it doesn't have a rate, clk_rate_ops is NULL, and the
+> propagation.
+
+No, we have cascaded dividers and thus still need rate propagation.
+Also we have the situation where a device is not allowed to adjust the
+divider because other clocks are derived from the same divider. Still
+the driver needs the rate. Here's an example from the i.MX51
+(simplified):
+
+-> PLL ----> divider -----> gate ---> MMC1
+                     \
+                      \
+                       ---> gate ---> MMC2
+
+Neither MMC1 nor MMC2 can be allowed to change the rate because it would
+change the rate of the other MMC. Both MMCs need the rate to adjust the
+card to the correct speed. In this case the platform code needs a
+possibility to adjust the rate initially to a value suitable for both
+MMC cores (50MHz). For this is needs access to the divider, preferably
+as a clock to be able to use standard clock functions.
+
+There are also many many dividers and muxes which are standalone
+somewhere in the clock tree, not directly associated with any device.
+With a clock which can be a mux and a divider together one is tempted
+to combine these into the least possible number of clocks leading to
+some random combination of clocks.
+
+
+> If it doesn't have a rate, clk_rate_ops is NULL, and the
 > framework deal with propagation only in the case where it is really
 > propagation - a child clock that requires changing a parent clock.
 > The block abstraction is still in place, there are just 3 slots for
@@ -141,9 +169,13 @@ Richard
 >=20
 > Using a flag to mark clocks as "non-propagatable" is also not correct
 > - propagatability is a feature of the parent, not the child.
->=20
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
->=20
+
+this flag could also be added to the parent if we wish to.
+
+Sascha
+
+--=20
+Pengutronix e.K.                           |                             |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
