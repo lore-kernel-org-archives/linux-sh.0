@@ -1,73 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 26 May 2011 04:10:32 +0000
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Thu, 26 May 2011 06:31:37 +0000
 Subject: Re: [PATCH 0/6 v2] MERAM support for LCDC
-Message-Id: <BANLkTikTkoGf=Jh7LDt+4mEHCPaRkFJJBw@mail.gmail.com>
+Message-Id: <alpine.DEB.2.00.1105261502320.31722@localhost6.localdomain6>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="269091478-1312783175-1306391508=:31722"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1305717011-20742-1-git-send-email-dhobsong@igel.co.jp>
 In-Reply-To: <1305717011-20742-1-git-send-email-dhobsong@igel.co.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi Damian,
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
 
-On Tue, May 24, 2011 at 11:53 AM, Damian Hobson-Garcia
-<dhobsong@igel.co.jp> wrote:
-> Hi Paul,
+--269091478-1312783175-1306391508=:31722
+Content-Type: TEXT/PLAIN; charset="iso-8859-1"; format="flowed"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Magnus,
+
+On Thu, 26 May 2011, Magnus Damm wrote:
+
+> Hi Damian,
 >
-> On 2011/05/23 15:51, Paul Mundt wrote:
->> On Wed, May 18, 2011 at 08:10:05PM +0900, Damian Hobson-Garcia wrote:
->>> This patch series adds support for read-ahead cache-access from the
->>> LCDC to the main memory. =A0These patches enabled the LCDC to access
->>> the MERAM memory via ICB. =A0The specific ICBs to use are chip dependent
->>> and defined in the platform data.
->>>
->>> The MERAM clock will enable when the LCDC clocks do, and are allowed to
->>> be disbled when the LCDC clocks are.
->>>
->>> Changes from V1
->>> ---------------
->>> * Specified meram info data (struct sh_mobile_meram_info *meram_dev) as
->>> =A0 part of the LCDC device data, not the LCDC channel data, since the =
-info
->>> =A0 data corresponds to the whole device, not just one configuration.
->>>
->>> * Added dynamic clock enable/disable via runtime_pm.
->>>
->>> * Changed .id from -1 to 0 in platform data
->>>
->>> Damian Hobson-Garcia (6):
->>> =A0 sh_mobile: Add MSTP clock for MERAM
->>> =A0 sh_mobile_meram: MERAM framework for LCDC
->>> =A0 sh_mobile_meram: Add support for NV24 framebuffers
+> On Tue, May 24, 2011 at 11:53 AM, Damian Hobson-Garcia
+> <dhobsong@igel.co.jp> wrote:
+>> Hi Paul,
 >>
->> These basically seem to be fine, and make up for the bulk of the new
->> code, so I'll take them as-is. I'll let you and Magnus hash out the
->> remaining bits after this.
+>> On 2011/05/23 15:51, Paul Mundt wrote:
+>>> On Wed, May 18, 2011 at 08:10:05PM +0900, Damian Hobson-Garcia wrote:
+>>>>
+>>>> Damian Hobson-Garcia (6):
+>>>> =A0 sh_mobile: Add MSTP clock for MERAM
+>>>> =A0 sh_mobile_meram: MERAM framework for LCDC
+>>>> =A0 sh_mobile_meram: Add support for NV24 framebuffers
+>>>
+>>> These basically seem to be fine, and make up for the bulk of the new
+>>> code, so I'll take them as-is. I'll let you and Magnus hash out the
+>>> remaining bits after this.
+>>
+>> Ok great, thanks a lot. I'll submit any further patches to apply on top
+>> of these three.
 >
-> Ok great, thanks a lot. I'll submit any further patches to apply on top
-> of these three.
+> The LCDC driver does no longer compile:
+>
+> linux-2.6 git 14d74e0cab7a7779a7ff0c3863c04c8a8e507106
+>
+>  CC      drivers/video/sh_mobile_meram.o
+>  CC      drivers/video/sh_mobile_lcdcfb.o
+> drivers/video/sh_mobile_lcdcfb.c: In function 'sh_mobile_lcdc_start':
+> drivers/video/sh_mobile_lcdcfb.c:640:4: error: 'ret' undeclared (first
+> use in this function)
+> drivers/video/sh_mobile_lcdcfb.c:640:4: note: each undeclared
+> identifier is reported only once for each function it appears in
+> make[2]: *** [drivers/video/sh_mobile_lcdcfb.o] Error 1
+> make[1]: *** [drivers/video] Error 2
+> make: *** [drivers] Error 2
+>
+> I suspect this change may be related to the MERAM patch, but I'm not sure.
+>
+> Can you please have a look?
 
-The LCDC driver does no longer compile:
+It seems that when this patch
 
-linux-2.6 git 14d74e0cab7a7779a7ff0c3863c04c8a8e507106
+69843ba7f24950f8ef5dadacfbfbd08f53e3455b
+fbdev: sh_mobile_lcdc: reduce scope of a variable
 
-  CC      drivers/video/sh_mobile_meram.o
-  CC      drivers/video/sh_mobile_lcdcfb.o
-drivers/video/sh_mobile_lcdcfb.c: In function 'sh_mobile_lcdc_start':
-drivers/video/sh_mobile_lcdcfb.c:640:4: error: 'ret' undeclared (first
-use in this function)
-drivers/video/sh_mobile_lcdcfb.c:640:4: note: each undeclared
-identifier is reported only once for each function it appears in
-make[2]: *** [drivers/video/sh_mobile_lcdcfb.o] Error 1
-make[1]: *** [drivers/video] Error 2
-make: *** [drivers] Error 2
+and the meram stuff was merged together there was a problem.
 
-I suspect this change may be related to the MERAM patch, but I'm not sure.
+The definition of ret got stashed away into an if-clause, making it
+unavaliable for the call on line 640 that the compiler complains about.
 
-Can you please have a look?
+I'll submit another pactch to the list that will resolve the conflict, but
+as it looks like a merge issue, I don't know how exactly that should be=20
+dealt with.
 
 Thanks,
-
-/ magnus
+Damian
+--269091478-1312783175-1306391508=:31722--
