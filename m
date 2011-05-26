@@ -1,18 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 May 2011 21:51:07 +0000
-Subject: Re: [PATCH 2/2] ARM: mach-shmobile: add DMA for MMCIF on mackerel
-Message-Id: <20110505215106.GB2294@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Thu, 26 May 2011 06:53:10 +0000
+Subject: [PATCH] fbdev: sh_mobile_lcdcfb: Reduce scope and rename result variable
+Message-Id: <1306392790-17462-1-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105051755100.29735@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105051755100.29735@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-On Thu, May 05, 2011 at 05:56:31PM +0200, Guennadi Liakhovetski wrote:
-> Add DMA mode support for the MMCIF controller on mackerel.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Commit 69843ba7f24950f8ef5dadacfbfbd08f53e3455b
+reduces the scope of the variable that was used to get the
+return value of ops->meram_register() in sh_mobile_lcdc_start.
 
-Reviewed-by: Simon Horman <horms@verge.net.au>
+In order to avoid conflicts with that patch, the variable has been renamed
+and scoped within the local if-clause.
+---
+ drivers/video/sh_mobile_lcdcfb.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 404c03b..596b662 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -617,6 +617,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 			unsigned long icb_addr_y, icb_addr_c;
+ 			int icb_pitch;
+ 			int pf;
++			int retval;
+ 
+ 			cfg = ch->cfg.meram_cfg;
+ 			mdev = priv->meram_dev;
+@@ -637,7 +638,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 				pf = SH_MOBILE_MERAM_PF_RGB;
+ 			}
+ 
+-			ret = mdev->ops->meram_register(mdev, cfg, pitch,
++			retval = mdev->ops->meram_register(mdev, cfg, pitch,
+ 						ch->info->var.yres,
+ 						pf,
+ 						base_addr_y,
+@@ -645,7 +646,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 						&icb_addr_y,
+ 						&icb_addr_c,
+ 						&icb_pitch);
+-			if (!ret)  {
++			if (!retval)  {
+ 				/* set LDSA1R value */
+ 				base_addr_y = icb_addr_y;
+ 				pitch = icb_pitch;
+-- 
+1.7.1
+
