@@ -1,15 +1,15 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 08 May 2011 21:25:47 +0000
+Date: Fri, 27 May 2011 23:19:27 +0000
 Subject: [PATCH 5/5] ARM / shmobile: Support for power domain A4MP on SH7372
-Message-Id: <201105082325.48229.rjw@sisk.pl>
+Message-Id: <201105280119.27410.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201104290154.12966.rjw@sisk.pl> <201105082320.57185.rjw@sisk.pl>
-In-Reply-To: <201105082320.57185.rjw@sisk.pl>
+References: <201104290154.12966.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl> <201105280115.14556.rjw@sisk.pl>
+In-Reply-To: <201105280115.14556.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Alan Stern <stern@rowland.harvard.edu>
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
@@ -26,7 +26,7 @@ Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
 =================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
 +++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -89,9 +89,16 @@ static struct sh7372_domain_data sh7372_
+@@ -104,9 +104,16 @@ static struct sh7372_domain_data sh7372_
  
  struct generic_power_domain sh7372_a4lc_domain;
  
@@ -46,7 +46,7 @@ Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
 Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
 =================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
 +++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -475,11 +475,14 @@ struct platform_device;
+@@ -476,11 +476,14 @@ struct platform_device;
  #ifdef CONFIG_PM
  extern struct generic_power_domain sh7372_a4lc_domain;
  #define SH7372_A4LC	(&sh7372_a4lc_domain)
@@ -64,13 +64,13 @@ Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
 Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
 =================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
 +++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1218,6 +1218,8 @@ static void __init mackerel_init(void)
+@@ -1421,6 +1421,8 @@ static void __init mackerel_init(void)
  	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
  	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
  
 +	sh7372_add_device_to_domain(SH7372_A4MP, &fsi_device);
 +
  	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
  }
- 
 
