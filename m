@@ -1,40 +1,77 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 02 May 2011 15:10:24 +0000
-Subject: [PATCH 03/04] mmc: sdhi: print out something useful
-Message-Id: <20110502151024.21327.66767.sendpatchset@t400s>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 27 May 2011 10:44:50 +0000
+Subject: [PATCH 1/3] mmc: tmio: fix for platforms, where CONFIG_ZONE_DMA is
+Message-Id: <Pine.LNX.4.64.1105271242300.25265@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1105271235230.25265@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1105271235230.25265@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+On platforms, not defining CONFIG_ZONE_DMA, GFP_DMA cannot be used,
+switch to using the dma_alloc_coherent() / dma_free_coherent() API.
 
-Instead of printing out useless information such
-as the virtual base address and one of 4 interrupts,
-convert the SDHI probe() to print out physical base
-address together with clock rate.
-
-We do have a struct device so make use of dev_info().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/tmio_mmc.h     |    2 ++
+ drivers/mmc/host/tmio_mmc_dma.c |    7 +++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 8260bc2..f105006 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -20,6 +20,7 @@
+ #include <linux/mmc/tmio.h>
+ #include <linux/pagemap.h>
+ #include <linux/spinlock.h>
++#include <linux/types.h>
+ 
+ /* Definitions for values the CTRL_SDIO_STATUS register can take. */
+ #define TMIO_SDIO_STAT_IOIRQ	0x0001
+@@ -70,6 +71,7 @@ struct tmio_mmc_host {
+ 	struct tasklet_struct	dma_issue;
+ 	struct scatterlist	bounce_sg;
+ 	u8			*bounce_buf;
++	dma_addr_t		bounce_dma;
+ 
+ 	/* Track lost interrupts */
+ 	struct delayed_work	delayed_reset_work;
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 25f1ad6..7fed4c3 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -11,6 +11,7 @@
+  */
+ 
+ #include <linux/device.h>
++#include <linux/dma-mapping.h>
+ #include <linux/dmaengine.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+@@ -281,7 +282,8 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_rx)
+ 			goto ereqrx;
+ 
+-		host->bounce_buf = (u8 *)__get_free_page(GFP_KERNEL | GFP_DMA);
++		host->bounce_buf = dma_alloc_coherent(&host->pdev->dev,
++					PAGE_SIZE, &host->bounce_dma, GFP_KERNEL);
+ 		if (!host->bounce_buf)
+ 			goto ebouncebuf;
+ 
+@@ -314,7 +316,8 @@ void tmio_mmc_release_dma(struct tmio_mmc_host *host)
+ 		dma_release_channel(chan);
+ 	}
+ 	if (host->bounce_buf) {
+-		free_pages((unsigned long)host->bounce_buf, 0);
++		dma_free_coherent(&host->pdev->dev, PAGE_SIZE,
++				  host->bounce_buf, host->bounce_dma);
+ 		host->bounce_buf = NULL;
+ 	}
+ }
+-- 
+1.7.2.5
 
---- 0003/drivers/mmc/host/sh_mobile_sdhi.c
-+++ work/drivers/mmc/host/sh_mobile_sdhi.c	2011-05-02 23:31:22.000000000 +0900
-@@ -124,8 +124,10 @@ static int __devinit sh_mobile_sdhi_prob
- 	if (ret)
- 		goto eirq;
- 
--	pr_info("%s at 0x%08lx irq %d\n", mmc_hostname(host->mmc),
--		(unsigned long)host->ctl, irq);
-+	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
-+		 mmc_hostname(host->mmc), (unsigned long)
-+		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
-+		 mmc_data->hclk / 1000000);
- 
- 	return ret;
- 
