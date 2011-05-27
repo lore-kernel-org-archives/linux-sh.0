@@ -1,46 +1,59 @@
-From: H Hartley Sweeten <hartleys@visionengravers.com>
-Date: Fri, 27 May 2011 16:27:28 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 27 May 2011 16:51:25 +0000
 Subject: RE: [PATCH 3/3] ARM: mach-shmobile: add coherent DMA mask for SDHI
-Message-Id: <0D753D10438DA54287A00B027084269764D331AB17@AUSP01VMBX24.collaborationhost.net>
+Message-Id: <Pine.LNX.4.64.1105271848190.30635@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1105271235230.25265@axis700.grange>
  <Pine.LNX.4.64.1105271243390.25265@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105271243390.25265@axis700.grange>
+ <0D753D10438DA54287A00B027084269764D331AB17@AUSP01VMBX24.collaborationhost.net>
+In-Reply-To: <0D753D10438DA54287A00B027084269764D331AB17@AUSP01VMBX24.collaborationhost.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
-Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: H Hartley Sweeten <hartleys@visionengravers.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, Ian Molton <ian@mnementh.co.uk>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-On Friday, May 27, 2011 3:45 AM, Guennadi Liakhovetski wrote:
->
-> It is now required, because the SDHI / TMIO driver is using
-> dma_alloc_coherent() to allocate the DMA bounce buffer.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  arch/arm/mach-shmobile/board-ag5evm.c   |    6 ++++--
->  arch/arm/mach-shmobile/board-ap4evb.c   |    6 ++++--
->  arch/arm/mach-shmobile/board-mackerel.c |    9 ++++++---
->  3 files changed, 14 insertions(+), 7 deletions(-)
->
-> diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-> index c95258c..a5a737c 100644
-> --- a/arch/arm/mach-shmobile/board-ag5evm.c
-> +++ b/arch/arm/mach-shmobile/board-ag5evm.c
-> @@ -372,7 +372,8 @@ static struct platform_device sdhi0_device = {
->  	.num_resources	= ARRAY_SIZE(sdhi0_resources),
->  	.resource	= sdhi0_resources,
->  	.dev	= {
-> -		.platform_data	= &sdhi0_info,
-> +		.platform_data		= &sdhi0_info,
-> +		.coherent_dma_mask	= 0xffffffff,
+On Fri, 27 May 2011, H Hartley Sweeten wrote:
 
-I think these should all be
+> On Friday, May 27, 2011 3:45 AM, Guennadi Liakhovetski wrote:
+> >
+> > It is now required, because the SDHI / TMIO driver is using
+> > dma_alloc_coherent() to allocate the DMA bounce buffer.
+> >
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > ---
+> >  arch/arm/mach-shmobile/board-ag5evm.c   |    6 ++++--
+> >  arch/arm/mach-shmobile/board-ap4evb.c   |    6 ++++--
+> >  arch/arm/mach-shmobile/board-mackerel.c |    9 ++++++---
+> >  3 files changed, 14 insertions(+), 7 deletions(-)
+> >
+> > diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+> > index c95258c..a5a737c 100644
+> > --- a/arch/arm/mach-shmobile/board-ag5evm.c
+> > +++ b/arch/arm/mach-shmobile/board-ag5evm.c
+> > @@ -372,7 +372,8 @@ static struct platform_device sdhi0_device = {
+> >  	.num_resources	= ARRAY_SIZE(sdhi0_resources),
+> >  	.resource	= sdhi0_resources,
+> >  	.dev	= {
+> > -		.platform_data	= &sdhi0_info,
+> > +		.platform_data		= &sdhi0_info,
+> > +		.coherent_dma_mask	= 0xffffffff,
+> 
+> I think these should all be
+> 
+> 		.coherent_dma_mask	= DMA_BIT_MASK(32),
 
-		.coherent_dma_mask	= DMA_BIT_MASK(32),
+Yes, you're right, I looked at a bad example:( Will post v2 next week. 
+Thanks for spotting.
 
-Also, don't you need the .dma_mask also?
+> Also, don't you need the .dma_mask also?
 
-Regards,
-Hartley
+It works without it:) Not sure, if it's needed for some kind of academic 
+correctness though.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
