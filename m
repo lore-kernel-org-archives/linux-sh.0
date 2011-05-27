@@ -1,49 +1,43 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 09 May 2011 18:26:09 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: Suspend-to-RAM support
-Message-Id: <201105092026.10125.rjw@sisk.pl>
+Date: Fri, 27 May 2011 23:23:06 +0000
+Subject: [PATCH] Subject: shmobile: Fix build of the LCDC driver
+Message-Id: <201105280123.06622.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110428172328.3626.92816.sendpatchset@t400s>
-In-Reply-To: <20110428172328.3626.92816.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: LKML <linux-kernel@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-On Monday, May 09, 2011, Magnus Damm wrote:
-> On Sun, May 8, 2011 at 3:38 AM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > On Sat, 7 May 2011, Rafael J. Wysocki wrote:
-> >
-> >> On Thursday, April 28, 2011, Magnus Damm wrote:
-> >> > From: Magnus Damm <damm@opensource.se>
-> >> >
-> >> > This patch adds a simple Suspend-to-RAM implementation
-> >> > for SH-Mobile ARM. The struct shmobile_suspend_ops are
-> >> > kept global to allow cpu-specific code to override
-> >> > the callbacks if needed.
-> >> >
-> >> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> > ---
-> >>
-> >> I'd like to test some of my patches on top of this one, but I'm not sure
-> >> how to wake up the system from sleep.
-> >
-> > On mackerel you press one of the buttons on the edge of the board between
-> > the power-supply and the USB console connectors. On ap4evb it might be
-> > possible to use "phone" buttons on the board for that too, but you
-> > probably have to allow wake up somewhere, last I checked it didn't work
-> > out of the box.
-> 
-> Yeah, thanks Guennadi!
-> 
-> On Mackerel you can of course use the Androidish keypad to wake up,
-> but the touch panel worked as well last time i tested. Basically any
-> driver that supports wake-up should work.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-The keypad didn't work for me (I guess I'm missing a patch or something),
-but I was able to wake the board up using the serial console (with one
-of your recent patches).
+The shmobile lcdcfb driver fails to build because of the undefined
+ret variable in sh_mobile_lcdc_start().  Fix this problem.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+
+Hi,
+
+I don't know whether this is known or not.  In case it isn't,
+here's a fix. :-)
 
 Thanks,
 Rafael
+
+---
+ drivers/video/sh_mobile_lcdcfb.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: linux-2.6/drivers/video/sh_mobile_lcdcfb.c
+=================================--- linux-2.6.orig/drivers/video/sh_mobile_lcdcfb.c
++++ linux-2.6/drivers/video/sh_mobile_lcdcfb.c
+@@ -616,7 +616,7 @@ static int sh_mobile_lcdc_start(struct s
+ 			struct sh_mobile_meram_info *mdev;
+ 			unsigned long icb_addr_y, icb_addr_c;
+ 			int icb_pitch;
+-			int pf;
++			int pf, ret;
+ 
+ 			cfg = ch->cfg.meram_cfg;
+ 			mdev = priv->meram_dev;
