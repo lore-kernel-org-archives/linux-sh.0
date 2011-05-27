@@ -1,7 +1,7 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Wed, 25 May 2011 07:51:54 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Fri, 27 May 2011 14:39:09 +0000
 Subject: Re: [PATCH 0/4] Add a generic struct clk
-Message-Id: <alpine.LFD.2.02.1105250911220.3078@ionos>
+Message-Id: <20110527143909.GA24011@sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1305876469.325655.313573683829.0.gpush@pororo>
 	<BANLkTik=EFayZW61TgfOni-XML+tRLOcqw@mail.gmail.com>
@@ -15,40 +15,19 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 24 May 2011, Colin Cross wrote:
-> With multiple smaller building blocks that can fit inside a clock, all
-> you need is:
-> INIT_CLK(..., clk_mux_ops, clk_div_ops, clk_gate_ops)
-> You have one struct clk, which is exposed to the device and matches
-> the datasheet.  If the clock has rate ops, clk_set_rate works with no
+On Tue, May 24, 2011 at 12:41:20PM -0700, Colin Cross wrote:
 
-It matches what the datasheet shows you, but it's still separate
-building blocks in silicon. Creating uberclocks will fall flat in no
-time.
+> figure out how to call clk_set_rate on the single clock that is
+> exposed to the device, but not propagate it past the device clock if
+> the device clock doesn't have a divider (propagating it up to an
+> active pll feeding other devices results in disaster, at least on
 
-Simply expand your example to:
+This is usually a function of how shared the thing being changed is
+rather than the specific implementation, though PLLs and FLLs are
+obviously problematic due to the lock time (if they don't have
+glitchless handover logic).
 
-    mux -> divider1 -> gate1
-    	|
-	---divider2--> gate2
+> Tegra).  This combination doesn't seem to be common in your MX code,
+> but _every_ Tegra device clock has these three parts.
 
-That's not doable with a combo clock and you end up with a mux and two
-combos of divider/gates.
-
-Having a straight simple building blocks view is way more easier to
-handle and allows arbitrary combinations and ordering at the tree
-level instead of moving the ordering decision into the hardware
-implementation level. We want the lowlevel ops implementation to be as
-simple and stupid as it gets and want to have as much complexity as
-necessary at the core code level.
-
-And it's not that complex. We can propagate set_rate from gateN down
-to the divider and it's not rocket science to make the divider consult
-the mux for a better suiting frequency, which implies that the mux
-decision checks and verifies the resulting damage for the other
-child. And this wants to be done at the core level not in the low
-level implementations.
-
-Thanks,
-
-	tglx
+That's Tegra.  Other devices will have other structures.
