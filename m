@@ -1,76 +1,55 @@
-From: Sascha Hauer <s.hauer@pengutronix.de>
-Date: Thu, 26 May 2011 06:54:29 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 30 May 2011 05:05:08 +0000
 Subject: Re: [PATCH 2/4] clk: Implement clk_set_rate
-Message-Id: <20110526065429.GL20715@pengutronix.de>
+Message-Id: <201105300105.10258.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart14360417.VdBLknXpXf"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1305876469.325655.313573683829.0.gpush@pororo>
-	<1305876469.326620.351525457111.2.gpush@pororo>
-	<20110525190347.GH22096@pengutronix.de>
-	<1306373867.2875.162.camel@pororo>
-In-Reply-To: <1306373867.2875.162.camel@pororo>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1305876469.326620.351525457111.2.gpush@pororo>
+In-Reply-To: <1305876469.326620.351525457111.2.gpush@pororo>
 To: linux-arm-kernel@lists.infradead.org
 
-[put the lists back on cc]
+--nextPart14360417.VdBLknXpXf
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-On Thu, May 26, 2011 at 09:37:47AM +0800, Jeremy Kerr wrote:
-> Hi Sascha,
-> 
-> > > +
-> > > +propagate:
-> > > +	ret = clk->ops->set_rate(clk->hw, new_rate, &parent_rate);
-> > > +
-> > > +	if (ret < 0)
-> > > +		return ret;
-> > > +
-> > > +	/* ops->set_rate may require the parent's rate to change (to
-> > > +	 * parent_rate), we need to propagate the set_rate call to the
-> > > +	 * parent.
-> > > +	 */
-> > > +	if (ret = CLK_SET_RATE_PROPAGATE) {
-> > > +		new_rate = parent_rate;
-> > > +		clk = clk->parent;
-> > > +		goto propagate;
-> > > +	}
-> > 
-> > I'm unsure about this one. Every clock should have the ability to stop
-> > or continue the rate propagation to the parent. This suggests to leave
-> > the decision whether or not to propagate to the core and not to the
-> > individual clocks.
-> 
-> Maybe I'm not understanding you correctly, but that's exactly what this
-> code does. The decision to propagate is left up to the
-> implementation-specific set_rate callback - if it returns
-> CLK_SET_RATE_PROPAGATE (and populate the parent_rate argument with the
-> requested parent rate), then we propagate the rate change to the parent.
+On Friday, May 20, 2011 03:27:49 Jeremy Kerr wrote:
+>  int clk_set_rate(struct clk *clk, unsigned long rate)
+>  {
+> -	/* not yet implemented */
+> -	return -ENOSYS;
+> +	unsigned long parent_rate, new_rate;
+> +	int ret;
+> +
+> +	if (!clk->ops->set_rate)
+> +		return -ENOSYS;
 
-I understood how the code is meant to work. It's just that IMO the place
-where the propagation flag is stored is the wrong one, given that it's a
-flag that all clocks (can) have.
+i thought ENOSYS is only for syscalls.  shouldnt this be ENODEV or perhaps=
+=20
+EOPNOTSUPP ?
+=2Dmike
 
-> 
-> > Right now each mux/div/gate needs an individual propagate flag. By
-> > adding the flag to the core the building block implementations could be
-> > simpler and the knowledge about propagatability might become handy for
-> > the core later.
-> 
-> We could do this with a flag too, yes. But then there's no way of
-> altering the rate (which we need to do with a divider) as we propagate
-> it upwards. The current set_rate code lets us do that.
+--nextPart14360417.VdBLknXpXf
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Hm, the core could pass a NULL pointer as the third argument to
-set_rate to indicate that the parent rate is not allowed to change.
-Then we could initialize &parent_rate to zero before calling set_rate.
-If the set_rate function does not change it, we don't have to propagate,
-otherwise yes. Or instead we could just use the CLK_SET_RATE_PROPAGATE
-return value like we do in the current version.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
 
-Sascha
+iQIcBAABAgAGBQJN4yWGAAoJEEFjO5/oN/WB+eMP/RxjSuK5Z+UozT0X95+vU2OV
+2LK//CmjY/FsGTn4Vdfi24LVMYIYB4wuIhUkMO6Ry+rb5bAtXE69rHEuroVcXV2V
+Gw8oxpZD5SCrD3QTtOiBJ25d7w5rBDbd+kNm6nex0we3PMN2Ubf45FnBh0IkkN4D
+dnV8z1EdAwHaxlQ8COoBO1zIDOQLYd6r86selmZdxhSHhooDw0CXx55WDIu6IddS
+G5eFWd/N8J3vDZmCFi8aX2irLXF2XR9/jUaMUfYghFr1GqtSnfHwbbbm16C6TUqa
+WDaG5aNvaFuoaeuq6dfWDXh82wDpi8xmHlyqppnZ6wah4+t0AzMKX70rcnF671Ll
+sOYzRAAbhkMKzYfc1pFbCRzlKdiG8EPJaPfqBGBxVZ6KrJw1/QP9Av290HeMI63M
+IWV++tjQ61U7B0zRlLBps6FrVtjzaD/PC8wE9FOHM+9V7uPYkTScITWUZUKAsjQR
+Wcgig3TJqaQ3LxX9Qc+5TjvL13sxNeFKPE7hPZp1RFXPYCcw+rLIrytN89tySmnx
+kxQXj40SHKQpYPmrx+wB7SZMlucr1yrI6FLsLBWAKXNQaX5v2Dxtr27z+YqJCkVI
+TmUIPZn61pwV5x2ju4r/ysytww1mu0ubSgWogQvRXQV4HEBCC7Rgw7gmxsCKoj3E
+pfccE4hA+3kMZ5xIaycd
+=sDAA
+-----END PGP SIGNATURE-----
 
--- 
-Pengutronix e.K.                           |                             |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+--nextPart14360417.VdBLknXpXf--
