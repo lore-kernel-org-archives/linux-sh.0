@@ -1,33 +1,70 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 27 May 2011 14:39:09 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 30 May 2011 05:20:11 +0000
 Subject: Re: [PATCH 0/4] Add a generic struct clk
-Message-Id: <20110527143909.GA24011@sirena.org.uk>
+Message-Id: <201105300120.12633.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart2411672.Iv62CYSMZC"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1305876469.325655.313573683829.0.gpush@pororo>
-	<BANLkTik=EFayZW61TgfOni-XML+tRLOcqw@mail.gmail.com>
-	<20110524062620.GA22096@pengutronix.de>
-	<BANLkTimEoCaKwJtpbQTDSEDydNkZ1BkKog@mail.gmail.com>
-	<20110524080936.GI20715@pengutronix.de>
-	<BANLkTinVnFasvOmu0MWRDzv21P3vM8eM6g@mail.gmail.com>
-In-Reply-To: <BANLkTinVnFasvOmu0MWRDzv21P3vM8eM6g@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <1305876469.325655.313573683829.0.gpush@pororo>
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 24, 2011 at 12:41:20PM -0700, Colin Cross wrote:
+--nextPart2411672.Iv62CYSMZC
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-> figure out how to call clk_set_rate on the single clock that is
-> exposed to the device, but not propagate it past the device clock if
-> the device clock doesn't have a divider (propagating it up to an
-> active pll feeding other devices results in disaster, at least on
+On Friday, May 20, 2011 03:27:49 Jeremy Kerr wrote:
+> [This series was originally titled 'Add a common struct clk', but
+> the goals have changed since that first set of patches. We're now aiming
+> for a more complete generic clock infrastructure, rather than just
+> abstracting struct clk]
+>=20
+> [This series still needs work, see the TODO section below]
 
-This is usually a function of how shared the thing being changed is
-rather than the specific implementation, though PLLs and FLLs are
-obviously problematic due to the lock time (if they don't have
-glitchless handover logic).
+for future series, could you cc uclinux-dist-devel@blackfin.uclinux.org ?  =
+we=20
+dont do clock management on Blackfin parts atm, but it's something we would=
+=20
+like to start doing.  our hardware can easily benefit from this.
 
-> Tegra).  This combination doesn't seem to be common in your MX code,
-> but _every_ Tegra device clock has these three parts.
+basically, we have:
+xtal -> pll -> divider -> core clock -> divider -> core timer
+		\-> divider -> system clock
+					|-> spi divider -> spi clock
+					|-> i2c divider -> i2c clock
+					|-> uart divider -> uart clock
+					...etc...
+and future parts are only going to get more complicated trees.
 
-That's Tegra.  Other devices will have other structures.
+atm we only support changing core clock on the fly since it requires=20
+reprogramming one device (the core timer).  we'd like to support changing t=
+he=20
+other clocks on the fly, but have no framework for doing so.  this obviousl=
+y=20
+would address that.
+=2Dmike
+
+--nextPart2411672.Iv62CYSMZC
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iQIcBAABAgAGBQJN4ykMAAoJEEFjO5/oN/WB7rgP+wWZfj1XCv6bRaNDLcepwkcJ
+6ExDOqYK7tcJ0+mBdACrfBt0VxOd3pip96OIjv5Bf6GjgFeOA8y2jLWAQhOPsq3P
+IRSHrIce5qM20jSP4UgDb0x0NnUcoiLY7MWEyJq/K1SiVctokW6gzE5EnVaKVv4K
+ufo3uSYB9bKERBGtN985Mnv1PkJeh7Uhj4CfcO0JHzTpSqjnkEe3k79C92Do1lTY
+Sd5qt1AW1fFMiyhQ4fM40IVDAVopNIUsWvRtOMzdrvboE2O+x/xgtYIRAHtut+Fw
+gdmwe1YcflsqNQqTsPhtCMLXC8V+Vvj3kTa1YxTc2QhZSLxbxybgOwOda25qA8i2
+5MXSUmJjqn69FDDKhHvcCsUULXQ1pdQ3MSJAoXxKL7T8Rt6CyTlH0HlAnKGeZMEy
+sdqCnCM1iYN58pesbYesUW+stbaQgaBYeW68ztOE3GqQd+1+M5bPRwf1lMs85Wbx
+FNmwoT8dPnOU+FkoRlmszCJhQLcl2ACNa/zqAqlyae0//a6hdvjzy0v8icIiG6wR
+CGlG0xUGolfRSU0X1aLplIlaFDSsO878KQiay4P16/IwGUJmwuI8DVI8ssKteJYU
+NWJPAIk3m07Qei/bu1h/ZxY/Kuoph3OhYlrlOnQA4flDhNEB0E7DDQD8eMTvOn8w
+Bt9QN48ltJImpFWqhLxb
+=Cpd/
+-----END PGP SIGNATURE-----
+
+--nextPart2411672.Iv62CYSMZC--
