@@ -1,89 +1,49 @@
-From: Jeremy Kerr <jeremy.kerr@canonical.com>
-Date: Fri, 20 May 2011 07:27:49 +0000
-Subject: [PATCH 3/4] clk: Add fixed-rate clock
-Message-Id: <1305876469.327290.592839707336.3.gpush@pororo>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 30 May 2011 05:01:23 +0000
+Subject: Re: [PATCH 3/4] clk: Add fixed-rate clock
+Message-Id: <201105300101.25264.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart1617968.9BoLahCQfk"
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <1305876469.325655.313573683829.0.gpush@pororo>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1305876469.327290.592839707336.3.gpush@pororo>
+In-Reply-To: <1305876469.327290.592839707336.3.gpush@pororo>
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+--nextPart1617968.9BoLahCQfk
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: 7bit
 
----
- drivers/clk/Kconfig     |    4 ++++
- drivers/clk/Makefile    |    1 +
- drivers/clk/clk-fixed.c |   17 +++++++++++++++++
- include/linux/clk.h     |   14 ++++++++++++++
- 4 files changed, 36 insertions(+)
+On Friday, May 20, 2011 03:27:49 Jeremy Kerr wrote:
+> --- /dev/null
+> +++ b/drivers/clk/clk-fixed.c
+> @@ -0,0 +1,17 @@
+> +
+> +#include <linux/clk.h>
 
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index e611e34..0a27963 100644
---- a/drivers/clk/Kconfig
-+++ b/drivers/clk/Kconfig
-@@ -5,3 +5,7 @@ config CLKDEV_LOOKUP
- 
- config GENERIC_CLK
- 	bool
-+
-+config GENERIC_CLK_FIXED
-+	bool
-+	depends on GENERIC_CLK
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index 570d5b9..9a3325a 100644
---- a/drivers/clk/Makefile
-+++ b/drivers/clk/Makefile
-@@ -1,3 +1,4 @@
- 
- obj-$(CONFIG_CLKDEV_LOOKUP)	+= clkdev.o
- obj-$(CONFIG_GENERIC_CLK)	+= clk.o
-+obj-$(CONFIG_GENERIC_CLK_FIXED)	+= clk-fixed.o
-diff --git a/drivers/clk/clk-fixed.c b/drivers/clk/clk-fixed.c
-new file mode 100644
-index 0000000..47a27f9
---- /dev/null
-+++ b/drivers/clk/clk-fixed.c
-@@ -0,0 +1,17 @@
-+
-+#include <linux/clk.h>
-+#include <linux/module.h>
-+
-+#define to_clk_fixed(c) container_of(c, struct clk_hw_fixed, hw)
-+
-+static unsigned long clk_fixed_recalc_rate(struct clk_hw *hw)
-+{
-+	return to_clk_fixed(hw)->rate;
-+}
-+
-+struct clk_hw_ops clk_fixed_ops = {
-+	.recalc_rate = clk_fixed_recalc_rate,
-+};
-+EXPORT_SYMBOL_GPL(clk_fixed_ops);
-+
-+
-diff --git a/include/linux/clk.h b/include/linux/clk.h
-index e0969d2..fd62e86 100644
---- a/include/linux/clk.h
-+++ b/include/linux/clk.h
-@@ -110,6 +110,20 @@ int clk_prepare(struct clk *clk);
-  */
- void clk_unprepare(struct clk *clk);
- 
-+/* Base clock implementations. Platform clock implementations can use these
-+ * directly, or 'subclass' as approprate */
-+
-+#ifdef CONFIG_GENERIC_CLK_FIXED
-+
-+struct clk_hw_fixed {
-+	struct clk_hw	hw;
-+	unsigned long	rate;
-+};
-+
-+extern struct clk_hw_ops clk_fixed_ops;
-+
-+#endif /* CONFIG_GENERIC_CLK_FIXED */
-+
- #else /* !CONFIG_GENERIC_CLK */
- 
- /*
+missing intro/copyright/license comment block at top of file
+-mike
+
+--nextPart1617968.9BoLahCQfk
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iQIcBAABAgAGBQJN4ySlAAoJEEFjO5/oN/WBBVgQAM0t3ePkNJygtGDX64xynYMl
++duC01Lwp6WOT4CY/52heu7IfCqJ83g68XFGEuz8LURRmIaO1vwTDZdx7c5Nly7i
+2QP2Wop/HXAkswkCFar84LCZEPGNcFMrN5WQ2fmdBsfFYrXVxMSCrVuAQSZi5fjF
+1cOSD4a2BMZzZVrzY2c4OmHEXmRgeP8p4/W/pUXRUbd8qV2ddMO8eSKpLof/DMxo
+GedCpu/SUQqkafYEPv+rzy3eW7WA6Am7oJofXSyNyp8NjFKkr2dycP/w18XtI7VG
+ONWnKQRTzWBrv1775BIDgMsc7zu9/fgfcGRUwX1/fYkbbW84r1r5FSzwDW7/ddLM
+N0SGQPGRV/TMxbql0UnLWo3/+Kh+OZxxyVJxj2Q4WgSB0LwmagK9hIDa1Bk0XhLL
+GZ6k4Szv7RtU1SJSrjDVKN420+5fQnR1b45JT8XZmpajLpXuu/rTO+QNaq4YMQ34
+IeIoq0bo1pNjwMgg5TEFJ0pQBL2v0MVuJQjgjYiUiyFrpbOLijJ7PDotN39v11rE
+CKz9DAfa7ZTPQA6CzYTsp+ZtfsBexbRFveHEbtEfJg9m0v2H/XMRGrjxdoAF0hVT
+5yYNH7otzVJfmQM1G0BJBByiOIbSnnrig0Nk4+g5YkScxQ4UYcbAYtLK2Dx97X8P
+Lv3MTgPd6wPNT97ADjUY
+=QWv3
+-----END PGP SIGNATURE-----
+
+--nextPart1617968.9BoLahCQfk--
