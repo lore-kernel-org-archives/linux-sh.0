@@ -1,44 +1,33 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Mon, 20 Jun 2011 19:25:09 +0000
-Subject: Re: [PATCH] mmc: tmio: fix regression: restore TMIO_MMC_WRPROTECT_DISABLE handling
-Message-Id: <m239j4z4oa.fsf@bob.laptop.org>
+From: Will Drewry <wad@chromium.org>
+Date: Wed, 01 Jun 2011 03:10:45 +0000
+Subject: [PATCH v3 13/13] sh: select HAVE_SECCOMP_FILTER
+Message-Id: <1306897845-9393-13-git-send-email-wad@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106201648480.11365@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1106201648480.11365@axis700.grange> (Guennadi
-	Liakhovetski's message of "Mon, 20 Jun 2011 16:51:10 +0200 (CEST)")
+References: <BANLkTimNcag-ZmVTXjUoTyiuJm6jtW0DgA@mail.gmail.com>
+In-Reply-To: <BANLkTimNcag-ZmVTXjUoTyiuJm6jtW0DgA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>
+To: linux-kernel@vger.kernel.org
+Cc: kees.cook@canonical.com, torvalds@linux-foundation.org, tglx@linutronix.de, mingo@elte.hu, rostedt@goodmis.org, jmorris@namei.org, Will Drewry <wad@chromium.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-Hi,
+Add support for CONFIG_SECCOMP_FILTER by selecting HAVE_SECCOMP_FILTER.
+---
+ arch/sh/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-On Mon, Jun 20 2011, Guennadi Liakhovetski wrote:
-> Commit b6147490e6aac82fa2f4b9d7fce925d9891ebe8f broke handling of the
-> TMIO_MMC_WRPROTECT_DISABLE flag by the tmio-mmc driver. This patch
-> restores the original behaviour.
-
-Changed to:
-
-Commit b6147490e6aac82 ("mmc: tmio: split core functionality, DMA and
-MFD glue") broke handling of the TMIO_MMC_WRPROTECT_DISABLE flag by 
-the tmio-mmc driver. This patch restores the original behaviour.
-
-Please use patch names as well as commit IDs for references.
-
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->
-> Chris, please push for 3.0
-
-And stable@, presumably, since the patch was in 2.6.39?
-
-Pushed to mmc-next for 3.0 and stable.
-
-Thanks,
-
-- Chris.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 4b89da2..41ea3a7 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -10,6 +10,7 @@ config SUPERH
+ 	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_ATTRS
+ 	select HAVE_IRQ_WORK
++	select HAVE_SECCOMP_FILTER
+ 	select HAVE_PERF_EVENTS
+ 	select PERF_USE_VMALLOC
+ 	select HAVE_KERNEL_GZIP
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.0.4
+
