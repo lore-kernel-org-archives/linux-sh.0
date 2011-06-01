@@ -1,19 +1,202 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 30 Jun 2011 05:39:09 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: make a struct in board-ap4evb.c static
-Message-Id: <20110630053909.GD22023@linux-sh.org>
+From: Wanlong Gao <wanlong.gao@gmail.com>
+Date: Wed, 01 Jun 2011 16:29:23 +0000
+Subject: [PATCH] Fix build warning of the defconfigs
+Message-Id: <1306945763-6583-1-git-send-email-wanlong.gao@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106291211530.12577@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1106291211530.12577@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 29, 2011 at 12:13:04PM +0200, Guennadi Liakhovetski wrote:
-> struct soc_camera_link imx074_link in board-ap4evb.c doesn't have
-> to be global.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+RTC_CLASS is changed to bool.
+So value 'm' is invalid.
 
-Applied, thanks.
+Signed-off-by: Wanlong Gao <wanlong.gao@gmail.com>
+---
+ arch/arm/configs/davinci_all_defconfig     |    2 +-
+ arch/arm/configs/mxs_defconfig             |    2 +-
+ arch/arm/configs/netx_defconfig            |    2 +-
+ arch/arm/configs/viper_defconfig           |    2 +-
+ arch/arm/configs/xcep_defconfig            |    2 +-
+ arch/arm/configs/zeus_defconfig            |    2 +-
+ arch/avr32/configs/atngw100_mrmt_defconfig |    2 +-
+ arch/blackfin/configs/CM-BF548_defconfig   |    2 +-
+ arch/mips/configs/mtx1_defconfig           |    2 +-
+ arch/powerpc/configs/52xx/pcm030_defconfig |    2 +-
+ arch/powerpc/configs/ps3_defconfig         |    2 +-
+ arch/sh/configs/titan_defconfig            |    2 +-
+ arch/unicore32/configs/debug_defconfig     |    2 +-
+ 13 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/configs/davinci_all_defconfig b/arch/arm/configs/davinci_all_defconfig
+index 889922a..67b5abb6 100644
+--- a/arch/arm/configs/davinci_all_defconfig
++++ b/arch/arm/configs/davinci_all_defconfig
+@@ -157,7 +157,7 @@ CONFIG_LEDS_GPIO=m
+ CONFIG_LEDS_TRIGGERS=y
+ CONFIG_LEDS_TRIGGER_TIMER=m
+ CONFIG_LEDS_TRIGGER_HEARTBEAT=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT3_FS=y
+ CONFIG_XFS_FS=m
+diff --git a/arch/arm/configs/mxs_defconfig b/arch/arm/configs/mxs_defconfig
+index 2bf2243..5a6ff7c 100644
+--- a/arch/arm/configs/mxs_defconfig
++++ b/arch/arm/configs/mxs_defconfig
+@@ -89,7 +89,7 @@ CONFIG_DISPLAY_SUPPORT=m
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_MXS=y
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_DS1307=m
+ CONFIG_DMADEVICES=y
+ CONFIG_MXS_DMA=y
+diff --git a/arch/arm/configs/netx_defconfig b/arch/arm/configs/netx_defconfig
+index 316af54..9c0ad79 100644
+--- a/arch/arm/configs/netx_defconfig
++++ b/arch/arm/configs/netx_defconfig
+@@ -60,7 +60,7 @@ CONFIG_FB_ARMCLCD=y
+ # CONFIG_VGA_CONSOLE is not set
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_LOGO=y
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_INOTIFY=y
+ CONFIG_TMPFS=y
+ CONFIG_JFFS2_FS=y
+diff --git a/arch/arm/configs/viper_defconfig b/arch/arm/configs/viper_defconfig
+index 8b0c717..1d01ddd 100644
+--- a/arch/arm/configs/viper_defconfig
++++ b/arch/arm/configs/viper_defconfig
+@@ -142,7 +142,7 @@ CONFIG_USB_GADGETFS=m
+ CONFIG_USB_FILE_STORAGE=m
+ CONFIG_USB_G_SERIAL=m
+ CONFIG_USB_G_PRINTER=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_DS1307=m
+ CONFIG_RTC_DRV_SA1100=m
+ CONFIG_EXT2_FS=m
+diff --git a/arch/arm/configs/xcep_defconfig b/arch/arm/configs/xcep_defconfig
+index 5b55041..721832f 100644
+--- a/arch/arm/configs/xcep_defconfig
++++ b/arch/arm/configs/xcep_defconfig
+@@ -73,7 +73,7 @@ CONFIG_SENSORS_MAX6650=m
+ # CONFIG_VGA_CONSOLE is not set
+ # CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_SA1100=m
+ CONFIG_DMADEVICES=y
+ # CONFIG_DNOTIFY is not set
+diff --git a/arch/arm/configs/zeus_defconfig b/arch/arm/configs/zeus_defconfig
+index 960f655..59577ad 100644
+--- a/arch/arm/configs/zeus_defconfig
++++ b/arch/arm/configs/zeus_defconfig
+@@ -158,7 +158,7 @@ CONFIG_LEDS_TRIGGER_HEARTBEAT=m
+ CONFIG_LEDS_TRIGGER_BACKLIGHT=m
+ CONFIG_LEDS_TRIGGER_GPIO=m
+ CONFIG_LEDS_TRIGGER_DEFAULT_ON=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_ISL1208=m
+ CONFIG_RTC_DRV_PXA=m
+ CONFIG_EXT2_FS=y
+diff --git a/arch/avr32/configs/atngw100_mrmt_defconfig b/arch/avr32/configs/atngw100_mrmt_defconfig
+index 19f6cee..fb6dab8 100644
+--- a/arch/avr32/configs/atngw100_mrmt_defconfig
++++ b/arch/avr32/configs/atngw100_mrmt_defconfig
+@@ -109,7 +109,7 @@ CONFIG_LEDS_GPIO=y
+ CONFIG_LEDS_TRIGGERS=y
+ CONFIG_LEDS_TRIGGER_TIMER=y
+ CONFIG_LEDS_TRIGGER_HEARTBEAT=y
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_S35390A=m
+ CONFIG_RTC_DRV_AT32AP700X=m
+ CONFIG_DMADEVICES=y
+diff --git a/arch/blackfin/configs/CM-BF548_defconfig b/arch/blackfin/configs/CM-BF548_defconfig
+index 31d9542..9f1d084 100644
+--- a/arch/blackfin/configs/CM-BF548_defconfig
++++ b/arch/blackfin/configs/CM-BF548_defconfig
+@@ -112,7 +112,7 @@ CONFIG_USB_G_SERIAL=m
+ CONFIG_USB_G_PRINTER=m
+ CONFIG_MMC=m
+ CONFIG_SDH_BFIN=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_BFIN=m
+ CONFIG_EXT2_FS=m
+ # CONFIG_DNOTIFY is not set
+diff --git a/arch/mips/configs/mtx1_defconfig b/arch/mips/configs/mtx1_defconfig
+index 37862b2..807c97e 100644
+--- a/arch/mips/configs/mtx1_defconfig
++++ b/arch/mips/configs/mtx1_defconfig
+@@ -678,7 +678,7 @@ CONFIG_LEDS_TRIGGERS=y
+ CONFIG_LEDS_TRIGGER_TIMER=y
+ CONFIG_LEDS_TRIGGER_HEARTBEAT=y
+ CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_INTF_DEV_UIE_EMUL=y
+ CONFIG_RTC_DRV_TEST=m
+ CONFIG_RTC_DRV_DS1307=m
+diff --git a/arch/powerpc/configs/52xx/pcm030_defconfig b/arch/powerpc/configs/52xx/pcm030_defconfig
+index 7f7e4a8..22e7195 100644
+--- a/arch/powerpc/configs/52xx/pcm030_defconfig
++++ b/arch/powerpc/configs/52xx/pcm030_defconfig
+@@ -85,7 +85,7 @@ CONFIG_USB_OHCI_HCD=m
+ CONFIG_USB_OHCI_HCD_PPC_OF_BE=y
+ # CONFIG_USB_OHCI_HCD_PCI is not set
+ CONFIG_USB_STORAGE=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_PCF8563=m
+ CONFIG_EXT2_FS=m
+ CONFIG_EXT3_FS=m
+diff --git a/arch/powerpc/configs/ps3_defconfig b/arch/powerpc/configs/ps3_defconfig
+index 6472322..185c292 100644
+--- a/arch/powerpc/configs/ps3_defconfig
++++ b/arch/powerpc/configs/ps3_defconfig
+@@ -141,7 +141,7 @@ CONFIG_USB_EHCI_TT_NEWSCHED=y
+ # CONFIG_USB_EHCI_HCD_PPC_OF is not set
+ CONFIG_USB_OHCI_HCD=m
+ CONFIG_USB_STORAGE=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_PS3=m
+ CONFIG_EXT2_FS=m
+ CONFIG_EXT3_FS=m
+diff --git a/arch/sh/configs/titan_defconfig b/arch/sh/configs/titan_defconfig
+index 0f55891..e2cbd92 100644
+--- a/arch/sh/configs/titan_defconfig
++++ b/arch/sh/configs/titan_defconfig
+@@ -227,7 +227,7 @@ CONFIG_USB_SERIAL=m
+ CONFIG_USB_SERIAL_GENERIC=y
+ CONFIG_USB_SERIAL_ARK3116=m
+ CONFIG_USB_SERIAL_PL2303=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_SH=m
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT3_FS=y
+diff --git a/arch/unicore32/configs/debug_defconfig b/arch/unicore32/configs/debug_defconfig
+index b5fbde9..1c367f0 100644
+--- a/arch/unicore32/configs/debug_defconfig
++++ b/arch/unicore32/configs/debug_defconfig
+@@ -168,7 +168,7 @@ CONFIG_LEDS_TRIGGER_HEARTBEAT=y
+ 
+ #	Real Time Clock
+ CONFIG_RTC_LIB=m
+-CONFIG_RTC_CLASS=m
++CONFIG_RTC_CLASS=y
+ 
+ ### File systems
+ CONFIG_EXT2_FS=m
+-- 
+1.7.4.1
+
