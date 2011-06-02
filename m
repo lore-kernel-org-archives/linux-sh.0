@@ -1,38 +1,45 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 21 Jun 2011 12:47:43 +0000
-Subject: Re: [Update][PATCH 8/8] ARM / shmobile: Support for I/O power domains for SH7372 (v6)
-Message-Id: <20110621124742.GK7920@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 02 Jun 2011 07:29:35 +0000
+Subject: Re: [PATCH 1/5] PM / Runtime: Support for generic I/O power domains
+Message-Id: <Pine.LNX.4.64.1106020920360.4067@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <20110620020125.GA26125@linux-sh.org> <201106210030.01922.rjw@sisk.pl> <201106211357.09202.rjw@sisk.pl>
-In-Reply-To: <201106211357.09202.rjw@sisk.pl>
+References: <201104290154.12966.rjw@sisk.pl> <201105160117.46927.rjw@sisk.pl>
+ <201105280115.14556.rjw@sisk.pl> <201105280117.17883.rjw@sisk.pl>
+In-Reply-To: <201105280117.17883.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg KH <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, MyungJoo Ham <myungjoo.ham@gmail.com>, Alan Stern <stern@rowland.harvard.edu>
 
-On Tue, Jun 21, 2011 at 01:57:08PM +0200, Rafael J. Wysocki wrote:
-> On Tuesday, June 21, 2011, Rafael J. Wysocki wrote:
-> > On Monday, June 20, 2011, Paul Mundt wrote:
-> > > Given that these functions can return errors, it's probably more prudent
-> > > to implement some timeout logic on top of the busy loop. Hardware does
-> > > get stuck, after all.
-> > 
-> > Yes, it does, but we don't really know what timeout value to use in there.
-> > 
-> > In fact, failures of pd_power_down() don't really matter (at worst the power
-> > domain won't be powered off really) and pd_power_up() should only return error
-> > code if the error is known to be unrecoverable.
-> > 
-> > So, what about this: repeat certain number of times (I verified that it took
-> > several iterations of the loop until the new value settled on my hardware)
-> > and then return from pd_power_down() or go to sleep for a short time and repeat
-> > in pd_power_up()?
-> 
-> Having discussed that with Magnus I changed pd_power_down() to use a timeout.
-> Specifically, it will bail out if the state doesn't change after approximately
-> 1 ms.
-> 
-Looks good to me, thanks for fixing it up.
+On Sat, 28 May 2011, Rafael J. Wysocki wrote:
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+> From: Rafael J. Wysocki <rjw@sisk.pl>
+> 
+> Introduce common headers, helper functions and callbacks allowing
+> platforms to use simple generic power domains for runtime power
+> management.
+> 
+> Introduce struct generic_power_domain to be used for representing
+> power domains that each contain a number of devices and may be
+> master domains or subdomains with respect to other power domains.
+> Among other things, this structure includes callbacks to be
+> provided by platforms for performing specific tasks related to
+> power management (i.e. ->stop_device() may disable a device's
+> clocks, while ->start_device() may enable them, ->power_off() is
+> supposed to remove power from the entire power domain
+> and ->power_on() is supposed to restore it).
+
+I've got a generic question to this: do we have any examples of 
+power-domain specific ->start_device() and ->stop_device() callbacks? A 
+common case is, when these callbacks start and stop clocks, associated 
+with the device, but this is not power-domain specific, right? Do we have 
+any examples of different power domains in a system, having different 
+these calbacks, but all devices in one power-domain, having the same ones?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
