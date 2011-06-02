@@ -1,74 +1,27 @@
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-Date: Thu, 23 Jun 2011 23:55:42 +0000
-Subject: Re: [PATCH] STAGING: Comedi: Build only on arches providing
-Message-Id: <20110624095542.e05698b4.sfr@canb.auug.org.au>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS"
+From: Pavel Machek <pavel@ucw.cz>
+Date: Thu, 02 Jun 2011 03:14:00 +0000
+Subject: Re: [PATCH 2/3] PM / Hibernate: Remove arch_prepare_suspend()
+Message-Id: <20110602031400.GA1565@ucw.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110623114536.GA14011@linux-mips.org>
-In-Reply-To: <20110623114536.GA14011@linux-mips.org>
-To: Ralf Baechle <ralf@linux-mips.org>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, devel@driverdev.osuosl.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-m32r@ml.linux-m32r.org, linux-m32r-ja@ml.linux-m32r.org, linux-am33-list@redhat.com, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Metcalf <cmetcalf@tilera.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, linux-arch@vger.kernel.org
+References: <201105211408.28671.rjw@sisk.pl>
+ <201105211410.34491.rjw@sisk.pl>
+In-Reply-To: <201105211410.34491.rjw@sisk.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Frank Hofmann <frank.hofmann@tomtom.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>
 
---Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS
-Content-Type: text/plain; charset=UTF-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Sat 2011-05-21 14:10:34, Rafael J. Wysocki wrote:
+> From: Rafael J. Wysocki <rjw@sisk.pl>
+> 
+> All architectures supporting hibernation define
+> arch_prepare_suspend() as an empty function, so remove it.
+> 
+> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 
-Hi Ralf,
+ACK.
 
-On Thu, 23 Jun 2011 12:45:37 +0100 Ralf Baechle <ralf@linux-mips.org> wrote:
->
-> On architectures that don't define PAGE_KERNEL_NOCACHE, the Comedi driver=
- turns
-> into tragedy:
->=20
->   CC [M]  drivers/staging/comedi/drivers.o
-> drivers/staging/comedi/drivers.c: In function =E2=80=98comedi_buf_alloc=
-=E2=80=99:
-> drivers/staging/comedi/drivers.c:505:41: error: =E2=80=98PAGE_KERNEL_NOCA=
-CHE=E2=80=99 undeclared (first use in this function)
-> drivers/staging/comedi/drivers.c:505:41: note: each undeclared identifier=
- is rep orted only once for each function it appears in
-> make[3]: *** [drivers/staging/comedi/drivers.o] Error 1
->=20
-> Restrict the driver to only those architectures that define PAGE_KERNEL_N=
-OCACHE.
->=20
-> PAGE_KERNEL_NOCACHE is a kludge - some system architectures such as SGI I=
-P27
-> are even uable to offer uncached operation - at least in the way an unwit=
-ting
-> driver might assume.  I haven't looked in details how the driver is using
-> the area vmaped with PAGE_KERNEL_NOCACHE but maybe doing it XFS-style usi=
-ng
-> cached memory and the flush_kernel_vmap_range / invalidate_kernel_vmap_ra=
-nge
-> APIs in conjunction with the DMA API is a practical alternative.
->=20
-> Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
-
-Since Greg is on vacation, I will add this patch to my fixes tree in
-linux-next until a better fix comes along (if there is one).
-
---=20
-Cheers,
-Stephen Rothwell                    sfr@canb.auug.org.au
-http://www.canb.auug.org.au/~sfr/
-
---Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEcBAEBAgAGBQJOA9J+AAoJEDMEi1NhKgbsFfkH/iXyBLKfo00uV5ym/QNH51Eb
-Xt8PeJ6xp1AevCgm94ei9jpIodgeyH7YVo1dJhyD6dI7Z8hPC6mTkcMytnM/ou5F
-+rAajf1T+qWBSJvft+1U1LZu4bae9zl054lkEnMx8Vwj5lhWALuI+NI92F8wNUwV
-M1aO1fyyOHiIDwNJZEn0iJ3XxCnwdm1MFNiujlqacapfoBSjpClBSS/S+RJLT7Wr
-SkmuMnI/6/RbknFR6gpyn3GnzjeTslUVUYBgS42rV9chaEWotT+spgpvpmYdyMEq
-rhucb+lutMAKr/kLpqONBoJS98zOCFH3PputZU13oB3TYGi8Iv9eeklFpqG9048=
-=OrXa
------END PGP SIGNATURE-----
-
---Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS--
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
