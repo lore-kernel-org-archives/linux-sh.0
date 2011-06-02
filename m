@@ -1,76 +1,51 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 25 Jun 2011 21:24:13 +0000
-Subject: [PATCH 0/10 v6] PM / Domains: Support for generic I/O PM domains
-Message-Id: <201106252324.13454.rjw@sisk.pl>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 02 Jun 2011 08:57:08 +0000
+Subject: [GIT PULL] sh fixes for 3.0-rc2
+Message-Id: <20110602085708.GA26101@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl>
-In-Reply-To: <201106112223.04972.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi,
+Please pull from:
 
-Well, one more update. :-)
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
 
-This is the 6th version of the patchset adding support for generic I/O PM
-domains.  The majority of patches have had some small fixes here and there
-to make things work when CONFIG_PM_RUNTIME is unset.  In addition to that,
-to make the shmobile code introduced by the last patch work for
-CONFIG_PM_RUNTIME unset I had to add patches [8-9/10].  Patch [7/10]
-adds wakeup support that was missing from the previous version and I
-decided not to push patch [1/10] for 3.0 after all.
+Which contains:
 
-On Saturday, June 11, 2011, Rafael J. Wysocki wrote:
-> 
-> The model here is that a bunch of devices share a common power resource
-> that can be turned on and off by software.  In addition to that, there
-> are means to start and stop the activity of each device, for example
-> by manipulating their clocks.  Moreover, there may be hierarchy of
-> such things, for example power resource A may be necessary for devices
-> a, b, c, which don't rely on any other power resources, and for devices
-> x, y, z that also rely on power resource X.  In that case there one PM
-> domain object representing devices a, b, c and power resource A, and 
-> another PM domain object will represent devices x, y, z with power
-> resource X, plus the first object will be the second one's parent.
-> 
-> Overall, I think I've taken all of the important dependencies into
-> consideration, but if you spot something suspicious, please let me know. :-)
+Guennadi Liakhovetski (4):
+      sh: switch ap325rxa to dynamically manage the platform camera
+      sh: add MMCIF runtime PM support on ecovec
+      sh: mark DMA slave ID 0 as invalid
+      dmaengine: shdma: fix a regression: initialise DMA channels for memcpy
 
-[ 1/10] - Rename struct dev_power_domain to struct dev_pm_domain to reflect the
-          fact that those objects need not correspond to hardware power domains
-          directly.
+Nobuhiro Iwamatsu (1):
+      sh: asm/tlb.h needs linux/swap.h
 
-[ 2/10] - Move subsys_data in struct dev_pm_info out of #ifdef CONFIG_PM_RUNTIME
+Paul Mundt (8):
+      sh: arch/sh/kernel/process_32.c needs linux/prefetch.h.
+      sh: Update shmin to reflect PIO dependency.
+      sh64: asm/pgtable.h needs asm/mmu.h
+      sh64: Move from P1SEG to CAC_ADDR for consistent sync.
+      sh: Fix up asm-generic/ptrace.h fallout.
+      Revert "clocksource: sh_tmu: Runtime PM support"
+      Revert "clocksource: sh_cmt: Runtime PM support"
+      dmaengine: shdma: Fix up fallout from runtime PM changes.
 
-[ 3/10] - Introduce runtime PM support for generic I/O PM domains.
-
-[ 4/10] - Introduce generic "noirq" callbacks for system suspend/hibernation
-          (that's necessary for the next patches).
- 
-[ 5/10] - Move some PM domains support code fro under #ifdef CONFIG_PM_RUNTIME
-
-[ 6/10] - Add system-wide PM support for generic I/O PM domains.
-
-[ 7/10] - Add support for wakeup from system sleep to the I/O PM domains code.
-
-[ 8/10] - Allow PM clocks management code to be used during system suspend.
-
-[ 9/10] - Rename PM clock management functions so that they names reflect the
-          fact that they can be used during system suspend too.
-
-[10/10] - Use the new code to represent the SH7372's A4MP power domain.
-
-All of these patches are regarded as 3.1 material and they are available
-from the git branch at:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git pm-domains  
-
-The patchset has been tested on SH7372 Mackerel board for both
-CONFIG_PM_RUNTIME set and unset.
-
-Thanks,
-Rafael
-
+ arch/sh/Kconfig                      |    2 +-
+ arch/sh/boards/mach-ap325rxa/setup.c |   32 +++++++++++++-------------------
+ arch/sh/boards/mach-ecovec24/setup.c |    3 +++
+ arch/sh/include/asm/pgtable.h        |    1 +
+ arch/sh/include/asm/ptrace.h         |    6 ++++--
+ arch/sh/include/asm/tlb.h            |    1 +
+ arch/sh/include/cpu-sh4/cpu/sh7722.h |    1 +
+ arch/sh/include/cpu-sh4/cpu/sh7724.h |    1 +
+ arch/sh/include/cpu-sh4/cpu/sh7757.h |    1 +
+ arch/sh/kernel/process_32.c          |    1 +
+ arch/sh/mm/consistent.c              |    2 +-
+ drivers/clocksource/sh_cmt.c         |   12 ++----------
+ drivers/clocksource/sh_tmu.c         |   12 ++----------
+ drivers/dma/shdma.c                  |    9 +++++++--
+ 14 files changed, 39 insertions(+), 45 deletions(-)
