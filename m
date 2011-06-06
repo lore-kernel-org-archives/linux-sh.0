@@ -1,32 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 20 Jun 2011 06:06:50 +0000
-Subject: [PATCH 0/5] mmc: sdhi: Allow waiting for idle
-Message-Id: <1308550015-15717-1-git-send-email-horms@verge.net.au>
+From: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
+Date: Mon, 06 Jun 2011 13:51:35 +0000
+Subject: [RFC PATCH V5 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and
+Message-Id: <20110606133934.5670.22382.stgit@tringupt.in.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110606133917.5670.54949.stgit@tringupt.in.ibm.com>
+In-Reply-To: <20110606133917.5670.54949.stgit@tringupt.in.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>
+To: arjan@linux.intel.com, peterz@infradead.org, lenb@kernel.org, venki@google.com, ak@linux.intel.com, len.brown@intel.com, santosh.shilimkar@ti.com, khilman@ti.com
+Cc: linux-kernel@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org, linux-acpi@vger.kernel.org
 
-Some SDHI controllers require waiting for the SD bus to become
-idle before writing to some registers. This series allows
-this to occur by:
-	* ensuring all relevant accesses are made via sd_ctrl_write16()
-	* Adding a hook to sd_ctrl_write16()
-	* Supplying a hook that implements waiting for idle
+The cpuidle_device->prepare() mechanism causes updates to the
+cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+to tell the governor not to chose a state on a per-cpu basis at
+run-time. State demotion is now handled by the driver and it returns
+the actual state entered. Hence, this mechanism is not required.
+Also this removes per-cpu flags from cpuidle_state enabling
+it to be made global.
 
-The series also includes some clean-ups of related code.
+Ref: https://lkml.org/lkml/2011/3/25/52
 
-The first three patches are intended for the mmc tree
-	* [PATCH 1/5] mmc: tmio: name 0xd8 as CTL_DMA_ENABLE
-	* [PATCH 2/5] mmc: tmio: Share register access functions
-	* [PATCH 3/5] mmc: sdhi: Add write16_hook
+Signed-off-by: Trinabh Gupta <trinabh@linux.vnet.ibm.com>
+---
 
-The remaining two patches are intended for the rmobile tree
-	* [PATCH 4/5] ARM: mach-shmobile: ag5evm: consistently name sdhi info
-	* [PATCH 5/5] ARM: mach-shmobile: ag5evm: SDHI requires waiting for
+ drivers/cpuidle/cpuidle.c        |   10 ----------
+ drivers/cpuidle/governors/menu.c |    2 --
+ include/linux/cpuidle.h          |    3 ---
+ 3 files changed, 0 insertions(+), 15 deletions(-)
 
-I am not aware of any dependencies on patches outside this series.
-Dependencies on patches within the series are noted inline.
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index 5d9757d..80a273f 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -75,16 +75,6 @@ static void cpuidle_idle_call(void)
+ 	hrtimer_peek_ahead_timers();
+ #endif
+ 
+-	/*
+-	 * Call the device's prepare function before calling the
+-	 * governor's select function.  ->prepare gives the device's
+-	 * cpuidle driver a chance to update any dynamic information
+-	 * of its cpuidle states for the current idle period, e.g.
+-	 * state availability, latencies, residencies, etc.
+-	 */
+-	if (dev->prepare)
+-		dev->prepare(dev);
+-
+ 	/* ask the governor for the next state */
+ 	next_state = cpuidle_curr_governor->select(dev);
+ 	if (need_resched()) {
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index e4b200c..af724e8 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
+ 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
+ 		struct cpuidle_state *s = &dev->states[i];
+ 
+-		if (s->flags & CPUIDLE_FLAG_IGNORE)
+-			continue;
+ 		if (s->target_residency > data->predicted_us)
+ 			continue;
+ 		if (s->exit_latency > latency_req)
+diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
+index 45eef60..a3306be 100644
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -47,7 +47,6 @@ struct cpuidle_state {
+ 
+ /* Idle State Flags */
+ #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
+-#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 
+ #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+ 
+@@ -93,8 +92,6 @@ struct cpuidle_device {
+ 	struct completion	kobj_unregister;
+ 	void			*governor_data;
+ 	int			safe_state_index;
+-
+-	int (*prepare)		(struct cpuidle_device *dev);
+ };
+ 
+ DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
 
