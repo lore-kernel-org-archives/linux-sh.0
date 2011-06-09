@@ -1,88 +1,98 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 09 Jun 2011 07:09:13 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 09 Jun 2011 08:44:21 +0000
 Subject: Re: [PATCH] ARM: mach-shmobile: Mackerel USB platform data update
-Message-Id: <w3pr5735vmu.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <BANLkTi=CGzRKe1N3QRt4b3b10V5e5kJ_Yg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110609070337.3122.1679.sendpatchset@t400s>
 In-Reply-To: <20110609070337.3122.1679.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
+Hi Morimoto-san,
 
-Hi Magnus
+On Thu, Jun 9, 2011 at 4:09 PM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+>
+> Hi Magnus
+>
+> Thank you for your patch.
+> small comment from me
+>
+>> +static u32 usbhs0_pipe_cfg[] =3D {
+>> + =A0 =A0 USB_ENDPOINT_XFER_CONTROL,
+>> + =A0 =A0 USB_ENDPOINT_XFER_ISOC,
+>> + =A0 =A0 USB_ENDPOINT_XFER_ISOC,
+>> + =A0 =A0 USB_ENDPOINT_XFER_BULK,
+>> + =A0 =A0 USB_ENDPOINT_XFER_BULK,
+>> + =A0 =A0 USB_ENDPOINT_XFER_BULK,
+>> + =A0 =A0 USB_ENDPOINT_XFER_INT,
+>> + =A0 =A0 USB_ENDPOINT_XFER_INT,
+>> + =A0 =A0 USB_ENDPOINT_XFER_INT,
+>> + =A0 =A0 USB_ENDPOINT_XFER_BULK,
+>> +};
+>
+> I think AP4 USB0 pipe9 is interrupt.
+> If so, this pipe config is not needed.
+> it is same as renesas_usbhs default pipe configs.
+> see
+> =A0renesas_usbhs/common.c :: usbhs_default_pipe_type
 
-Thank you for your patch.
-small comment from me
+Ok, thanks, can you please send an incremental patch to fix this?
 
-> +static u32 usbhs0_pipe_cfg[] = {
-> +	USB_ENDPOINT_XFER_CONTROL,
-> +	USB_ENDPOINT_XFER_ISOC,
-> +	USB_ENDPOINT_XFER_ISOC,
-> +	USB_ENDPOINT_XFER_BULK,
-> +	USB_ENDPOINT_XFER_BULK,
-> +	USB_ENDPOINT_XFER_BULK,
-> +	USB_ENDPOINT_XFER_INT,
-> +	USB_ENDPOINT_XFER_INT,
-> +	USB_ENDPOINT_XFER_INT,
-> +	USB_ENDPOINT_XFER_BULK,
-> +};
+>> =A0static struct resource usb1_host_resources[] =3D {
+>> =A0 =A0 =A0 [0] =3D {
+>> - =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "USBHS",
+>> - =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0xE68B0000,
+>> - =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0xE68B00E6 - 1,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "USBHS1",
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0xe68b0000,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0xe68b00e6 - 1,
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 .flags =A0=3D IORESOURCE_MEM,
+>> =A0 =A0 =A0 },
+>
+> Is this "big/small char change" (start/end) needed ?
+>
+>> =A0static struct usbhs_private usbhs1_private =3D {
+>> - =A0 =A0 .irq =A0 =A0 =A0 =A0 =A0 =A0=3D evt2irq(0x0300), =A0 =A0 =A0/*=
+ IRQ8 */
+>> - =A0 =A0 .usbphyaddr =A0 =A0 =3D 0xE60581E2, =A0 =A0 =A0 =A0 =A0 /* USB=
+PHY1INTAP */
+>> - =A0 =A0 .usbcrcaddr =A0 =A0 =3D 0xE6058130, =A0 =A0 =A0 =A0 =A0 /* USB=
+CR4 */
+>> + =A0 =A0 .usbphyaddr =A0 =A0 =3D 0xe60581e2, =A0 =A0 =A0 =A0 =A0 /* USB=
+PHY1INTAP */
+>> + =A0 =A0 .usbcrcaddr =A0 =A0 =3D 0xe6058130, =A0 =A0 =A0 =A0 =A0 /* USB=
+CR4 */
+>
+> here too.
+>
+>> =A0static struct resource usbhs1_resources[] =3D {
+>> =A0 =A0 =A0 [0] =3D {
+>> - =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "USBHS",
+>> - =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0xE68B0000,
+>> - =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0xE68B00E6 - 1,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =3D "USBHS1",
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .start =A0=3D 0xe68b0000,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .end =A0 =A0=3D 0xe68b00e6 - 1,
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 .flags =A0=3D IORESOURCE_MEM,
+>> =A0 =A0 =A0 },
+>
+> here too
+>
+>> =A0 =A0 =A0 [1] =3D {
+>> @@ -752,7 +846,6 @@ static struct platform_device usbhs1_dev
+>> =A0 =A0 =A0 .resource =A0 =A0 =A0 =3D usbhs1_resources,
+>> =A0};
+>>
+>> -
+>> =A0/* LED */
+>> =A0static struct gpio_led mackerel_leds[] =3D {
+>
+> this "just line erase" is not needed =3D)
 
-I think AP4 USB0 pipe9 is interrupt.
-If so, this pipe config is not needed.
-it is same as renesas_usbhs default pipe configs.
-see
-  renesas_usbhs/common.c :: usbhs_default_pipe_type
+Well, perhaps it's only me, but trying to make the code look less like
+shit may be a good idea. =3D)
 
->  static struct resource usb1_host_resources[] = {
->  	[0] = {
-> -		.name	= "USBHS",
-> -		.start	= 0xE68B0000,
-> -		.end	= 0xE68B00E6 - 1,
-> +		.name	= "USBHS1",
-> +		.start	= 0xe68b0000,
-> +		.end	= 0xe68b00e6 - 1,
->  		.flags	= IORESOURCE_MEM,
->  	},
-
-Is this "big/small char change" (start/end) needed ?
-
->  static struct usbhs_private usbhs1_private = {
-> -	.irq		= evt2irq(0x0300),	/* IRQ8 */
-> -	.usbphyaddr	= 0xE60581E2,		/* USBPHY1INTAP */
-> -	.usbcrcaddr	= 0xE6058130,		/* USBCR4 */
-> +	.usbphyaddr	= 0xe60581e2,		/* USBPHY1INTAP */
-> +	.usbcrcaddr	= 0xe6058130,		/* USBCR4 */
-
-here too.
-
->  static struct resource usbhs1_resources[] = {
->  	[0] = {
-> -		.name	= "USBHS",
-> -		.start	= 0xE68B0000,
-> -		.end	= 0xE68B00E6 - 1,
-> +		.name	= "USBHS1",
-> +		.start	= 0xe68b0000,
-> +		.end	= 0xe68b00e6 - 1,
->  		.flags	= IORESOURCE_MEM,
->  	},
-
-here too
-
->  	[1] = {
-> @@ -752,7 +846,6 @@ static struct platform_device usbhs1_dev
->  	.resource	= usbhs1_resources,
->  };
->  
-> -
->  /* LED */
->  static struct gpio_led mackerel_leds[] = {
-
-this "just line erase" is not needed =)
-
-Thanks
-
-Best regards
---
-Kuninori Morimoto
+/ magnus
