@@ -1,42 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 21 Jun 2011 10:57:35 +0000
-Subject: Re: Crash dumping on sh7372 Mackerel
-Message-Id: <20110621105729.GG2292@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 09 Jun 2011 09:13:39 +0000
+Subject: [PATCH][RFC] drivers: sh: late disabling of clocks
+Message-Id: <20110609091339.14510.31590.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <BANLkTi=DgEtZwiigMvm4XptoB3uKqpXvLA@mail.gmail.com>
-In-Reply-To: <BANLkTi=DgEtZwiigMvm4XptoB3uKqpXvLA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jun 21, 2011 at 07:28:39PM +0900, Magnus Damm wrote:
-> On Tue, Jun 21, 2011 at 2:46 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Jun 20, 2011 at 10:07:40PM +0900, Magnus Damm wrote:
-> >> Linux-3.0-rc or more exactly linux-2.6 git
-> >> 95d17b7168eacf1f97f2d1d087ebe7a648c30051 is known to be working, but
-> >> the attached prototype patch
-> >> "linux-3.0-arm-crash-copy-oldmem-page-ioremap-fix-20110618.patch" is
-> >> needed to properly access the /proc/vmcore file. Build the kernel as a
-> >> regular uImage. This image is referred to as uImage-crash.
-> >
-> > [snip]
-> >
-> > Hi Magnus,
-> >
-> > do you have any plans to submit this patch for inclusion upstream?
-> >
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >>
-> >>  arch/arm/kernel/crash_dump.c |   14 ++++++++++----
-> >>  1 file changed, 10 insertions(+), 4 deletions(-)
-> 
-> Hey Simon,
-> 
-> Yes, right now it's on my TODO list, but I intend to post it to the
-> ARM list and perhaps also to the friendly tracker.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks. Please consider CCing kexec@lists.infradead.org.
+This RFC patch kills two birds with one stone:
+
+1) Fix existing issue where in-use clocks without software
+   reference are disabled during boot. One example of this
+   is the handling of the Mackerel serial console output.
+
+2) Make sure so far unused clocks actually get turned off 
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/sh/clk/core.c |   26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+--- 0001/drivers/sh/clk/core.c
++++ work/drivers/sh/clk/core.c	2011-06-09 14:13:02.000000000 +0900
+@@ -34,6 +34,9 @@ static LIST_HEAD(clock_list);
+ static DEFINE_SPINLOCK(clock_lock);
+ static DEFINE_MUTEX(clock_list_sem);
+ 
++/* clock disable operations are not passed on to hardware during boot */
++static int allow_disable;
++
+ void clk_rate_table_build(struct clk *clk,
+ 			  struct cpufreq_frequency_table *freq_table,
+ 			  int nr_freqs,
+@@ -228,7 +231,7 @@ static void __clk_disable(struct clk *cl
+ 		return;
+ 
+ 	if (!(--clk->usecount)) {
+-		if (likely(clk->ops && clk->ops->disable))
++		if (likely(allow_disable && clk->ops && clk->ops->disable))
+ 			clk->ops->disable(clk);
+ 		if (likely(clk->parent))
+ 			__clk_disable(clk->parent);
+@@ -747,3 +750,24 @@ err_out:
+ 	return err;
+ }
+ late_initcall(clk_debugfs_init);
++
++static int __init clk_late_init(void)
++{
++	unsigned long flags;
++	struct clk *clk;
++
++	/* from now on allow clock disable operations */
++	allow_disable = 1;
++
++	/* disable all clocks with zero use count */
++	mutex_lock(&clock_list_sem);
++	list_for_each_entry(clk, &clock_list, node) {
++		spin_lock_irqsave(&clock_lock, flags);
++		if (!clk->usecount && clk->ops && clk->ops->disable)
++			clk->ops->disable(clk);
++		spin_unlock_irqrestore(&clock_lock, flags);
++	}
++	mutex_unlock(&clock_list_sem);
++	return 0;
++}
++late_initcall(clk_late_init);
