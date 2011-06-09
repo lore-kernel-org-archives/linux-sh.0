@@ -1,7 +1,7 @@
-From: Hans-Christian Egtvedt <hans-christian.egtvedt@atmel.com>
-Date: Mon, 06 Jun 2011 06:24:45 +0000
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Thu, 09 Jun 2011 05:06:28 +0000
 Subject: Re: [PATCH] Fix build warning of the defconfigs
-Message-Id: <1307341485.3104.0.camel@hcegtvedt.norway.atmel.com>
+Message-Id: <1307595988.2874.266.camel@pasglop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1306945763-6583-1-git-send-email-wanlong.gao@gmail.com>
 In-Reply-To: <1306945763-6583-1-git-send-email-wanlong.gao@gmail.com>
@@ -15,18 +15,14 @@ On Thu, 2011-06-02 at 00:29 +0800, Wanlong Gao wrote:
 > So value 'm' is invalid.
 > 
 > Signed-off-by: Wanlong Gao <wanlong.gao@gmail.com>
+> ---
 
-<snipp>
+For powerpc:
 
->  arch/avr32/configs/atngw100_mrmt_defconfig |    2 +-
->
+Acked-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
 
-For the AVR32 related changes.
+Thanks !
 
-Acked-by: Hans-Christian Egtvedt <hans-christian.egtvedt@atmel.com>
+Ben.
 
-<snipp>
-
--- 
-Hans-Christian Egtvedt
 
