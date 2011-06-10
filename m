@@ -1,33 +1,13 @@
-From: Will Drewry <wad@chromium.org>
-Date: Fri, 03 Jun 2011 20:34:12 +0000
-Subject: [PATCH v4 13/13] sh: select HAVE_SECCOMP_FILTER
-Message-Id: <1307133252-23259-13-git-send-email-wad@chromium.org>
+From: "BBC ONLINE PROMO" <info@bbc.com>
+Date: Fri, 10 Jun 2011 12:08:55 +0000
+Subject: Congratulation!!
+Message-Id: <98554e3414bdd681bcfc57f7b765e48f.squirrel@www.iic.edu.my>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1307133252-23259-1-git-send-email-wad@chromium.org>
-In-Reply-To: <1307133252-23259-1-git-send-email-wad@chromium.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: kees.cook@canonical.com, torvalds@linux-foundation.org, tglx@linutronix.de, mingo@elte.hu, rostedt@goodmis.org, jmorris@namei.org, paulmck@linux.vnet.ibm.com, Will Drewry <wad@chromium.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: @casper.infradead.org
 
-Add support for CONFIG_SECCOMP_FILTER by selecting HAVE_SECCOMP_FILTER.
----
- arch/sh/Kconfig |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 4b89da2..41ea3a7 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -10,6 +10,7 @@ config SUPERH
- 	select HAVE_DMA_API_DEBUG
- 	select HAVE_DMA_ATTRS
- 	select HAVE_IRQ_WORK
-+	select HAVE_SECCOMP_FILTER
- 	select HAVE_PERF_EVENTS
- 	select PERF_USE_VMALLOC
- 	select HAVE_KERNEL_GZIP
--- 
-1.7.0.4
-
+=A3500,000GBP has been awarded to you in the British Broadcasting>
+corporation (BBC) Online Promo Held on the 1st June 2011, send>
+Name/Tel/Country to our office now.
