@@ -1,26 +1,50 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 24 Jun 2011 07:41:05 +0000
-Subject: Re: [PATCH] fbdev: sh_mobile_meram: Correct pointer check for YCbCr chroma plane
-Message-Id: <20110624074105.GD26504@linux-sh.org>
+From: Mathias Krause <minipli@googlemail.com>
+Date: Fri, 10 Jun 2011 13:10:48 +0000
+Subject: [PATCH] sh, exec: remove redundant set_fs(USER_DS)
+Message-Id: <1307711448-16289-1-git-send-email-minipli@googlemail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1308728785-9588-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1308728785-9588-1-git-send-email-dhobsong@igel.co.jp>
+References: <BANLkTinv1teZEHMK0qymaVdcxPOErpqSyg@mail.gmail.com>
+In-Reply-To: <BANLkTinv1teZEHMK0qymaVdcxPOErpqSyg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Mathias Krause <minipli@googlemail.com>
 
-On Wed, Jun 22, 2011 at 04:46:25PM +0900, Damian Hobson-Garcia wrote:
-> The check was intended to test if we have a valid pointer to write into,
-> but it mistakenly checks the pointer contents instead.
-> 
-> Since a valid pointer is mandatory for the chroma data if a YCbCr format
-> is used, the pointer check has been removed.
-> 
-> Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-> ---
-> Sorry, forgot to sign off the previous version.  Resend
->  drivers/video/sh_mobile_meram.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-Applied, thanks.
+The address limit is already set in flush_old_exec() so those calls to
+set_fs(USER_DS) are redundant.
+
+Signed-off-by: Mathias Krause <minipli@googlemail.com>
+---
+ arch/sh/include/asm/processor_64.h |    1 -
+ arch/sh/kernel/process_32.c        |    2 --
+ 2 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/include/asm/processor_64.h b/arch/sh/include/asm/processor_64.h
+index 2a541dd..e25c4c7 100644
+--- a/arch/sh/include/asm/processor_64.h
++++ b/arch/sh/include/asm/processor_64.h
+@@ -150,7 +150,6 @@ struct thread_struct {
+ #define SR_USER (SR_MMU | SR_FD)
+ 
+ #define start_thread(_regs, new_pc, new_sp)			\
+-	set_fs(USER_DS);					\
+ 	_regs->sr = SR_USER;	/* User mode. */		\
+ 	_regs->pc = new_pc - 4;	/* Compensate syscall exit */	\
+ 	_regs->pc |= 1;		/* Set SHmedia ! */		\
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index b473f0c..aaf6d59 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -102,8 +102,6 @@ EXPORT_SYMBOL(kernel_thread);
+ void start_thread(struct pt_regs *regs, unsigned long new_pc,
+ 		  unsigned long new_sp)
+ {
+-	set_fs(USER_DS);
+-
+ 	regs->pr = 0;
+ 	regs->sr = SR_FD;
+ 	regs->pc = new_pc;
+-- 
+1.5.6.5
+
