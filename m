@@ -1,58 +1,178 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 16 Jun 2011 06:53:48 +0000
-Subject: [GIT PULL] sh fixes for 3.0-rc4
-Message-Id: <20110616065338.GE7252@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 11 Jun 2011 20:37:48 +0000
+Subject: [PATCH 6/8] PM / Domains: Move code from under #ifdef CONFIG_PM_RUNTIME
+Message-Id: <201106112237.48634.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201106112223.04972.rjw@sisk.pl>
+In-Reply-To: <201106112223.04972.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
-The only real thing of note here is the dropping of external libgcc
-linking in to the compressed kernel images. This has been a necessary
-move in order to get compressed kernels working for FDPIC systems (like
-SH-2A) that can't mix FDPIC and non-FDPIC objects (previously these would
-either fail to link or just crash on boot, depending on the toolchain).
-Instead we're now using the routines provided by arch/sh/lib/ for that
-stage, which were cribbed from libgcc in the first place, and also gets
-around mismatches between the compressed and uncompressed kernel's libgcc
-routines. This should hopefully sort out the remaining issues with
-compressed kernel utilization on the nommu parts, which has been plaguing
-us for some time.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Please pull from:
+There is some code in drivers/base/power/domain.c that will be useful
+for both runtime PM and system-wide power transitions, so make it
+depend on CONFIG_PM instead of CONFIG_PM_RUNTIME.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-3.x.git sh-fixes-for-linus
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/domain.c |  118 +++++++++++++++++++++++---------------------
+ 1 file changed, 64 insertions(+), 54 deletions(-)
 
-Which contains:
+Index: linux-2.6/drivers/base/power/domain.c
+=================================--- linux-2.6.orig/drivers/base/power/domain.c
++++ linux-2.6/drivers/base/power/domain.c
+@@ -14,6 +14,66 @@
+ #include <linux/slab.h>
+ #include <linux/err.h>
+ 
++#ifdef CONFIG_PM
++
++static struct generic_pm_domain *dev_to_genpd(struct device *dev)
++{
++	if (IS_ERR_OR_NULL(dev->pm_domain))
++		return ERR_PTR(-EINVAL);
++
++	return container_of(dev->pm_domain, struct generic_pm_domain, domain);
++}
++
++/**
++ * pm_genpd_poweron - Restore power to a given PM domain and its parents.
++ * @genpd: PM domain to power up.
++ *
++ * Restore power to @genpd and all of its parents so that it is possible to
++ * resume a device belonging to it.
++ */
++static int pm_genpd_poweron(struct generic_pm_domain *genpd)
++{
++	int ret = 0;
++
++ start:
++	if (genpd->parent)
++		mutex_lock(&genpd->parent->lock);
++	mutex_lock(&genpd->lock);
++
++	if (!genpd->power_is_off)
++		goto out;
++
++	if (genpd->parent && genpd->parent->power_is_off) {
++		mutex_unlock(&genpd->lock);
++		mutex_unlock(&genpd->parent->lock);
++
++		ret = pm_genpd_poweron(genpd->parent);
++		if (ret)
++			return ret;
++
++		goto start;
++	}
++
++	if (genpd->power_on) {
++		int ret = genpd->power_on(&genpd->domain);
++		if (ret)
++			goto out;
++	}
++
++	genpd->power_is_off = false;
++	if (genpd->parent)
++		genpd->parent->sd_count++;
++
++ out:
++	mutex_unlock(&genpd->lock);
++	if (genpd->parent)
++		mutex_unlock(&genpd->parent->lock);
++
++	return ret;
++}
++
++#endif /* CONFIG_PM */
++
+ #ifdef CONFIG_PM_RUNTIME
+ 
+ static void genpd_sd_counter_dec(struct generic_pm_domain *genpd)
+@@ -155,11 +215,10 @@ static int pm_genpd_runtime_suspend(stru
+ 
+ 	dev_dbg(dev, "%s()\n", __func__);
+ 
+-	if (IS_ERR_OR_NULL(dev->pm_domain))
++	genpd = dev_to_genpd(dev);
++	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	genpd = container_of(dev->pm_domain, struct generic_pm_domain, domain);
+-
+ 	if (genpd->parent)
+ 		mutex_lock(&genpd->parent->lock);
+ 	mutex_lock(&genpd->lock);
+@@ -182,54 +241,6 @@ static int pm_genpd_runtime_suspend(stru
+ }
+ 
+ /**
+- * pm_genpd_poweron - Restore power to a given PM domain and its parents.
+- * @genpd: PM domain to power up.
+- *
+- * Restore power to @genpd and all of its parents so that it is possible to
+- * resume a device belonging to it.
+- */
+-static int pm_genpd_poweron(struct generic_pm_domain *genpd)
+-{
+-	int ret = 0;
+-
+- start:
+-	if (genpd->parent)
+-		mutex_lock(&genpd->parent->lock);
+-	mutex_lock(&genpd->lock);
+-
+-	if (!genpd->power_is_off)
+-		goto out;
+-
+-	if (genpd->parent && genpd->parent->power_is_off) {
+-		mutex_unlock(&genpd->lock);
+-		mutex_unlock(&genpd->parent->lock);
+-
+-		ret = pm_genpd_poweron(genpd->parent);
+-		if (ret)
+-			return ret;
+-
+-		goto start;
+-	}
+-
+-	if (genpd->power_on) {
+-		int ret = genpd->power_on(&genpd->domain);
+-		if (ret)
+-			goto out;
+-	}
+-
+-	genpd->power_is_off = false;
+-	if (genpd->parent)
+-		genpd->parent->sd_count++;
+-
+- out:
+-	mutex_unlock(&genpd->lock);
+-	if (genpd->parent)
+-		mutex_unlock(&genpd->parent->lock);
+-
+-	return ret;
+-}
+-
+-/**
+  * pm_genpd_runtime_resume - Resume a device belonging to I/O PM domain.
+  * @dev: Device to resume.
+  *
+@@ -245,11 +256,10 @@ static int pm_genpd_runtime_resume(struc
+ 
+ 	dev_dbg(dev, "%s()\n", __func__);
+ 
+-	if (IS_ERR_OR_NULL(dev->pm_domain))
++	genpd = dev_to_genpd(dev);
++	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	genpd = container_of(dev->pm_domain, struct generic_pm_domain, domain);
+-
+ 	ret = pm_genpd_poweron(genpd);
+ 	if (ret)
+ 		return ret;
 
-Kuninori Morimoto (2):
-      sh: ecovec: Add renesas_usbhs support
-      sh: sh7724: Add USBHS DMAEngine support
-
-Magnus Damm (2):
-      dmaengine: shdma: SH_DMAC_MAX_CHANNELS message fix
-      drivers: sh: resume enabled clocks fix
-
-Mathias Krause (1):
-      sh, exec: remove redundant set_fs(USER_DS)
-
-Paul Mundt (1):
-      sh: Remove compressed kernel libgcc dependency.
-
-Srinivas KANDAGATLA (2):
-      sh: fix wrong icache/dcache address-array start addr in cache-debugfs.
-      sh: Fix up xchg/cmpxchg corruption with gUSA RB.
-
- arch/sh/boards/mach-ecovec24/setup.c   |   48 ++++++++++++++++++++++++++++++++
- arch/sh/boot/compressed/Makefile       |   22 ++++++++++++--
- arch/sh/include/asm/cmpxchg-grb.h      |   21 ++++++++------
- arch/sh/include/asm/processor_64.h     |    1 -
- arch/sh/include/cpu-sh4/cpu/sh7724.h   |    8 +++++
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   40 ++++++++++++++++++++++++++
- arch/sh/kernel/process_32.c            |    2 -
- arch/sh/mm/cache-debugfs.c             |   25 +++-------------
- drivers/dma/shdma.c                    |   13 ++++----
- drivers/sh/clk/core.c                  |    2 +-
- 10 files changed, 140 insertions(+), 42 deletions(-)
