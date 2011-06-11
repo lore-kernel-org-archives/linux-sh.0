@@ -1,36 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 28 Jun 2011 00:35:18 +0000
-Subject: [PATCH 00/05] ARM: mach-shmobile: sh7372 power domain update
-Message-Id: <20110628003518.11399.93646.sendpatchset@t400s>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 11 Jun 2011 20:27:11 +0000
+Subject: [PATCH 3/8] PM: subsys_data in struct dev_pm_info need not depend on RM_RUNTIME
+Message-Id: <201106112227.11933.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201106112223.04972.rjw@sisk.pl>
+In-Reply-To: <201106112223.04972.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
-ARM: mach-shmobile: sh7372 power domain update
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-[PATCH 01/05] ARM: mach-shmobile: sh7372 A4LC cleanups
-[PATCH 02/05] ARM: mach-shmobile: sh7372 A4LC support for AP4EVB
-[PATCH 03/05] ARM: mach-shmobile: sh7372 A3RV support
-[PATCH 04/05] ARM: mach-shmobile: sh7372 A3RI support
-[PATCH 05/05] ARM: mach-shmobile: sh7372 A3SG support
+The subsys_data field of struct dev_pm_info, introduced by commit
+1d2b71f61b6a10216274e27b717becf9ae101fc7 (PM / Runtime: Add subsystem
+data field to struct dev_pm_info), is going to be used even if
+CONFIG_PM_RUNTIME is not set, so move it from under the #ifdef.
 
-These patches add partial hardware power domain support for the
-sh7372 SoC. Trivial power domains such as A3RV, A3RI, and A3SG
-are added. A4LC power domain support is updated.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
+ include/linux/pm.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- Applies to the suspend-2.6 git pm-domains branch, locally updated
- with the reworked sh7372 patch from Rafael:
-  "ARM / shmobile: Support for I/O power domains for SH7372 (v9)"
-
- arch/arm/mach-shmobile/board-ap4evb.c        |    3 +++
- arch/arm/mach-shmobile/board-mackerel.c      |    7 +++----
- arch/arm/mach-shmobile/include/mach/sh7372.h |   11 +++++------
- arch/arm/mach-shmobile/pm-sh7372.c           |   12 ++++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c        |    7 +++++++
- 5 files changed, 30 insertions(+), 10 deletions(-)
+Index: linux-2.6/include/linux/pm.h
+=================================--- linux-2.6.orig/include/linux/pm.h
++++ linux-2.6/include/linux/pm.h
+@@ -460,8 +460,8 @@ struct dev_pm_info {
+ 	unsigned long		active_jiffies;
+ 	unsigned long		suspended_jiffies;
+ 	unsigned long		accounting_timestamp;
+-	void			*subsys_data;  /* Owned by the subsystem. */
+ #endif
++	void			*subsys_data;  /* Owned by the subsystem. */
+ };
+ 
+ extern void update_pm_runtime_accounting(struct device *dev);
 
