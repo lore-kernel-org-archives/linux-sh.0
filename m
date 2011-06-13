@@ -1,159 +1,78 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 30 Jun 2011 09:47:10 +0000
-Subject: [PATCH 02/03] ARM: mach-shmobile: sh7372 A3SP prototype support
-Message-Id: <20110630094710.10442.59532.sendpatchset@t400s>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 13 Jun 2011 06:22:52 +0000
+Subject: current DMAEngine seems unstable
+Message-Id: <w3paadm6yiw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-Prototype code to add support for A3SP on sh7372.
+Dear all
 
-Lightly tested on Mackerel, adding AP4EVB support is
-still on the TODO.
+I'm afraid that current shdma.c seems unstable.
+I'm using latest Paul's tree + usb tree.
+If I use DMAEngine, sometimes it say below.
 
-Also, please note that using the serial console for
-output from the power domain control callbacks is
-not supported due to the usage of Runtime PM in the
-SCIF serial console driver code.
+It didn't happen when v2.6.39
+Does it happen only to me ?
 
-Not suitable for merge until we have QoS support.
+my environment is
+ - Paul's tree + usb tree
+ - using renesas_usb + DMAEngine driver
+ - Ecovec board
 
-Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
----
+Call trace:
+ [<88287f56>] dump_stack+0xe/0x1c
+ [<8813eb0a>] spin_bug+0x76/0xa4
+ [<8813ec24>] do_raw_spin_lock+0x38/0x114
+ [<8828a918>] _raw_spin_lock+0x2c/0x48
+ [<8828a920>] _raw_spin_lock+0x34/0x48
+ [<881500ce>] sh_dmae_interrupt+0x1a/0x74
+ [<88045142>] handle_irq_event_percpu+0x2e/0x134
+ [<8804527a>] handle_irq_event+0x32/0x68
+ [<88046f5a>] handle_level_irq+0x76/0xc4
+ [<880450f8>] generic_handle_irq+0x1c/0x2c
+ [<8815019a>] sh_chan_xfer_ld_queue+0x72/0x90
+ [<880035a4>] do_IRQ+0x0/0x58
+ [<880035ce>] do_IRQ+0x2a/0x58
+ [<880070f4>] ret_from_irq+0x0/0x10
+ [<8815019a>] sh_chan_xfer_ld_queue+0x72/0x90
+ [<8815019a>] sh_chan_xfer_ld_queue+0x72/0x90
+ [<880036c0>] arch_local_irq_restore+0x20/0x2a
+ [<8803a526>] lock_release+0x126/0x16c
+ [<880036ca>] arch_local_save_flags+0x0/0xe
+ [<8828b0e0>] _raw_spin_unlock_bh+0x18/0x44
+ [<8815019a>] sh_chan_xfer_ld_queue+0x72/0x90
+ [<8815019a>] sh_chan_xfer_ld_queue+0x72/0x90
+ [<881501c4>] sh_dmae_memcpy_issue_pending+0xc/0x18
+ [<881aa718>] usbhsf_dma_prepare_tasklet+0xec/0x130
+ [<8801b01e>] tasklet_action+0x5a/0xa4
+ [<880036a0>] arch_local_irq_restore+0x0/0x2a
+ [<8801b454>] __do_softirq+0x60/0x108
+ [<8801b68e>] do_softirq+0x2e/0x54
+ [<8828855c>] schedule+0x0/0x480
+ [<880036ca>] arch_local_save_flags+0x0/0xe
+ [<88077e78>] quicklist_trim+0x0/0x11c
+ [<880035a4>] do_IRQ+0x0/0x58
+ [<8801b6e8>] irq_exit+0x34/0x5c
+ [<880035d4>] do_IRQ+0x30/0x58
+ [<880070f4>] ret_from_irq+0x0/0x10
+ [<880036a0>] arch_local_irq_restore+0x0/0x2a
+ [<88077e78>] quicklist_trim+0x0/0x11c
+ [<880036ca>] arch_local_save_flags+0x0/0xe
+ [<8828855c>] schedule+0x0/0x480
+ [<880033bc>] default_idle+0x3c/0x8c
+ [<880033ba>] default_idle+0x3a/0x8c
+ [<88003454>] cpu_idle+0x48/0x90
+ [<88284abe>] rest_init+0x8e/0xec
+ [<88133520>] strlen+0x0/0x58
+ [<883d58fc>] start_kernel+0x3d8/0x460
+ [<882880d8>] printk+0x0/0x30
+ [<8800202c>] _stext+0x2c/0x38
+ [<88002000>] _stext+0x0/0x38
 
- arch/arm/mach-shmobile/board-mackerel.c      |    8 ++++++++
- arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
- arch/arm/mach-shmobile/pm-sh7372.c           |   23 +++++++++++++++++------
- arch/arm/mach-shmobile/setup-sh7372.c        |   13 +++++++++++++
- 4 files changed, 39 insertions(+), 6 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-mackerel.c
-+++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-06-30 16:28:01.000000000 +0900
-@@ -1584,6 +1584,14 @@ static void __init mackerel_init(void)
- 
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
-+#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
-+#endif
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi2_device);
- 
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
---- 0001/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-06-30 16:28:01.000000000 +0900
-@@ -487,6 +487,7 @@ static inline struct sh7372_pm_domain *t
- extern struct sh7372_pm_domain sh7372_a4lc;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
-+extern struct sh7372_pm_domain sh7372_a3sp;
- extern struct sh7372_pm_domain sh7372_a3sg;
- 
- extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
---- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-06-30 16:32:45.000000000 +0900
-@@ -7,7 +7,7 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--
-+#define DEBUG
- #include <linux/pm.h>
- #include <linux/suspend.h>
- #include <linux/cpuidle.h>
-@@ -28,10 +28,10 @@
- #define SYSTBCR 0xe6150024
- #define SBAR 0xe6180020
- #define APARMBAREA 0xe6f10020
--
- #define SPDCR 0xe6180008
- #define SWUCR 0xe6180014
- #define PSTR 0xe6180080
-+#define PDNSEL 0xe6180254
- 
- #define PSTR_RETRIES 100
- #define PSTR_DELAY_US 10
-@@ -55,8 +55,10 @@ static int pd_power_down(struct generic_
- 		}
- 	}
- 
--	pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
--		 mask, __raw_readl(PSTR));
-+	/* we cannot output debug message for A3SP */
-+	if (genpd != &sh7372_a3sp.genpd)
-+		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
- 
- 	return 0;
- }
-@@ -85,8 +87,10 @@ static int pd_power_up(struct generic_pm
- 		ret = -EIO;
- 
-  out:
--	pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
--		 mask, __raw_readl(PSTR));
-+	/* we cannot output debug message for A3SP */
-+	if (genpd != &sh7372_a3sp.genpd)
-+		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
- 
- 	return ret;
- }
-@@ -127,6 +131,10 @@ struct sh7372_pm_domain sh7372_a3ri = {
- 	.bit_shift = 8,
- };
- 
-+struct sh7372_pm_domain sh7372_a3sp = {
-+	.bit_shift = 11,
-+};
-+
- struct sh7372_pm_domain sh7372_a3sg = {
- 	.bit_shift = 13,
- };
-@@ -211,6 +219,9 @@ void __init sh7372_pm_init(void)
- 	__raw_writel(0x0000a501, DBGREG9);
- 	__raw_writel(0x00000000, DBGREG1);
- 
-+	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
-+	__raw_writel(0, PDNSEL);
-+
- 	sh7372_suspend_init();
- 	sh7372_cpuidle_init();
- }
---- 0003/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-06-30 16:28:01.000000000 +0900
-@@ -845,6 +845,7 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
-+	sh7372_init_pm_domain(&sh7372_a3sp);
- 
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
-@@ -853,6 +854,18 @@ void __init sh7372_add_standard_devices(
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
- 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
-+
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif2_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif3_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif4_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif5_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif6_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &iic1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma2_device);
- }
- 
- void __init sh7372_add_early_devices(void)
+Best regards
+--
+Kuninori Morimoto
