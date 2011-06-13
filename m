@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 13 Jun 2011 06:22:52 +0000
+Date: Mon, 13 Jun 2011 06:23:09 +0000
 Subject: current DMAEngine seems unstable
-Message-Id: <w3paadm6yiw.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <w3p8vt66yia.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <w3paadm6yiw.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3paadm6yiw.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
