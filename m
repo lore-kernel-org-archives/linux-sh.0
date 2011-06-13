@@ -1,30 +1,38 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 21 Jun 2011 09:01:37 +0000
-Subject: Re: [RFC][PATCH 0/5 v3] dmaengine: Add USB-DMAC support
-Message-Id: <20110621090130.GI7920@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 13 Jun 2011 04:42:15 +0000
+Subject: [PATCH] drivers: sh: resume enabled clocks fix
+Message-Id: <20110613044215.13907.39264.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p8vt0q38g.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p8vt0q38g.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 17, 2011 at 05:19:43PM +0900, Kuninori Morimoto wrote:
-> These are v3 of USB-DMAC support prototype for SH7372
-> 
-> Kuninori Morimoto (6)
->          dmaengine: shdma: add chcr_write/read function
->          dmaengine: shdma: add chcr_ie_bit
->          dmaengine: shdma: add dmaor_is_32bit flag
->          dmaengine: shdma: add is_usbdmac flag
+From: Magnus Damm <damm@opensource.se>
 
-These I've applied to my common/dma topic branch.
+Extend the SH / SH-Mobile ARM clock framework to only
+resume clocks that has been enabled.
 
->          ARM: mach-shmobile: sh7372: Add USB-DMAC support
+Without this fix divide-by-zero is triggering on sh7372
+FSIDIV during system wide resume of Suspend-to-RAM.
 
-This is on rmobile/dma, which is branched off of common/dma.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
->          ARM: mach-shmobile: mackerel: Add USB-DMA ID
+ This is a rewrite of the patch recently posted as:
+ "[PATCH] ARM: mach-shmobile: sh7372 divide-by-zero FSIDIV fix"
 
-And this one is pending on the USB merge, so will be pending until then.
+ drivers/sh/clk/core.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/drivers/sh/clk/core.c
++++ work/drivers/sh/clk/core.c	2011-06-13 13:32:10.000000000 +0900
+@@ -635,7 +635,7 @@ static void clks_core_resume(void)
+ 	struct clk *clkp;
+ 
+ 	list_for_each_entry(clkp, &clock_list, node) {
+-		if (likely(clkp->ops)) {
++		if (likely(clkp->usecount && clkp->ops)) {
+ 			unsigned long rate = clkp->rate;
+ 
+ 			if (likely(clkp->ops->set_parent))
