@@ -1,57 +1,90 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 15 Jun 2011 07:30:33 +0000
-Subject: Re: [PATCH 4/5] dmaengine: shdma: tidyup parameter change method on
-Message-Id: <Pine.LNX.4.64.1106150912250.23363@axis700.grange>
+Date: Tue, 14 Jun 2011 14:27:22 +0000
+Subject: [PATCH] fbdev: sh_mobile_hdmi: fix regression: statically enable
+Message-Id: <Pine.LNX.4.64.1106141610430.19402@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pboxz62q4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pboxz62q4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-On Wed, 15 Jun 2011, Kuninori Morimoto wrote:
+A recent modification to the runtime PM code on mach-shmobile made a wrong 
+RTPM implementation in the sh_mobile_hdmi driver apparent, which broke 
+HDMI hotplug detection support on ap4evb. This patch does not implement a 
+proper dynamic RTPM support for sh_mobile_hdmi, instead it restores the 
+previous working state by statically enabling it. A more power-efficient 
+solution should be implemented for the next kernel version.
 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  drivers/dma/shdma.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-> index f7b3c06..19fd18d 100644
-> --- a/drivers/dma/shdma.c
-> +++ b/drivers/dma/shdma.c
-> @@ -169,8 +169,9 @@ static void dmae_start(struct sh_dmae_chan *sh_chan)
->  {
->  	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
->  
-> +	chcr &= ~CHCR_TE;
->  	chcr |= CHCR_DE | CHCR_IE;
-> -	sh_dmae_writel(sh_chan, chcr & ~CHCR_TE, CHCR);
-> +	sh_dmae_writel(sh_chan, chcr, CHCR);
->  }
-
-Sorry, don't see any improvement here. The compiler will probably do the 
-right thing for you and produce the same code, but strictly speaking 
-you're asking it to do one more memory access - to store the result of 
-your operation in the variable back on stack, instead of just keeping it 
-in a register. On the contrary, you could even do
-
- 	u32 chcr = sh_dmae_readl(sh_chan, CHCR) & ~CHCR_TE;
-
-	sh_dmae_writel(sh_chan, chcr | CHCR_DE | CHCR_IE, CHCR);
-
-to explicitly ask the compiler to avoid doing any unnecessary memory 
-writes (we don't want to go the exaggerated "register" path;)).
-
->  
->  static void dmae_halt(struct sh_dmae_chan *sh_chan)
-> -- 
-> 1.7.4.1
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/video/sh_mobile_hdmi.c |   18 +++++-------------
+ 1 files changed, 5 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 6ae40b6..7d54e2c 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -1127,23 +1127,16 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 		struct fb_info *info = hdmi->info;
+ 		unsigned long parent_rate = 0, hdmi_rate;
+ 
+-		/* A device has been plugged in */
+-		pm_runtime_get_sync(hdmi->dev);
+-
+ 		ret = sh_hdmi_read_edid(hdmi, &hdmi_rate, &parent_rate);
+-		if (ret < 0) {
+-			pm_runtime_put(hdmi->dev);
++		if (ret < 0)
+ 			goto out;
+-		}
+ 
+ 		hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE;
+ 
+ 		/* Reconfigure the clock */
+ 		ret = sh_hdmi_clk_configure(hdmi, hdmi_rate, parent_rate);
+-		if (ret < 0) {
+-			pm_runtime_put(hdmi->dev);
++		if (ret < 0)
+ 			goto out;
+-		}
+ 
+ 		msleep(10);
+ 		sh_hdmi_configure(hdmi);
+@@ -1191,7 +1184,6 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 		fb_set_suspend(hdmi->info, 1);
+ 
+ 		console_unlock();
+-		pm_runtime_put(hdmi->dev);
+ 	}
+ 
+ out:
+@@ -1312,7 +1304,7 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 	INIT_DELAYED_WORK(&hdmi->edid_work, sh_hdmi_edid_work_fn);
+ 
+ 	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_resume(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	/* Product and revision IDs are 0 in sh-mobile version */
+ 	dev_info(&pdev->dev, "Detected HDMI controller 0x%x:0x%x\n",
+@@ -1340,7 +1332,7 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ ecodec:
+ 	free_irq(irq, hdmi);
+ ereqirq:
+-	pm_runtime_suspend(&pdev->dev);
++	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	iounmap(hdmi->base);
+ emap:
+@@ -1377,7 +1369,7 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 	free_irq(irq, hdmi);
+ 	/* Wait for already scheduled work */
+ 	cancel_delayed_work_sync(&hdmi->edid_work);
+-	pm_runtime_suspend(&pdev->dev);
++	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(hdmi->hdmi_clk);
+ 	clk_put(hdmi->hdmi_clk);
+-- 
+1.7.2.5
+
