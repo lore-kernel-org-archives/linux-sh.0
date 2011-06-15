@@ -1,391 +1,338 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 25 Jun 2011 21:24:52 +0000
-Subject: [PATCH 1/10 v6] PM / Domains: Rename struct dev_power_domain to struct dev_pm_domain
-Message-Id: <201106252324.53164.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Jun 2011 13:26:40 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh7372 A3SM sleep prototype
+Message-Id: <20110615132640.8310.73352.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
-In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Magnus Damm <damm@opensource.se>
 
-The naming convention used by commit 7538e3db6e015e890825fbd9f86599b
-(PM: Add support for device power domains), which introduced the
-struct dev_power_domain type for representing device power domains,
-evidently confuses some developers who tend to think that objects
-of this type must correspond to "power domains" as defined by
-hardware, which is not the case.  Namely, at the kernel level, a
-struct dev_power_domain object can represent arbitrary set of devices
-that are mutually dependent power management-wise and need not belong
-to one hardware power domain.  To avoid that confusion, rename struct
-dev_power_domain to struct dev_pm_domain and rename the related
-pointers in struct device and struct pm_clk_notifier_block from
-pwr_domain to pm_domain.
+This prototype adds A3SM sleep mode support for Suspend-to-RAM
+on the sh7372 SoC and boards such as Mackerel and AP4EVB.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-Acked-by: Kevin Hilman <khilman@ti.com>
+A3SM sleep is similar to ARM Core Standby on sh7372, but instead
+of only powering down the ARM core including L1 cache A3SM also
+shuts down the L2 cache. PLLC0 can also be turned off. The down
+side is the limited amount of wakeup sources available for A3SM.
+
+In theory we can also add limited CPUIdle support, but it is not
+yet clear how to determine which wakeup sources that are active
+during normal operation on a running system. Creating a special
+case is easy, but to support something in a generic way requires
+more information from various parts of the kernel.
+
+The goal with this prototype is to highlight the need for this
+extra information. I suspect that we can get this from Runtime PM.
+
+One solution is export information from the SoC specific Runtime
+PM code so we can determine the current state of each device. We
+can then use the per-device state together with the interrupt status
+to determine potential wakeup sources and from that select the most
+suitable sleep mode.
+
+In other words, in the solution proposal above we assume that devices
+that are Runtime PM idle (clocked stopped and maybe powered down)
+will not generate wakeups. Since the device is idle can we treat
+the associated interrupt as disabled even though it happens to be
+enabled through request_irq().
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- Documentation/power/devices.txt          |    8 ++++----
- arch/arm/mach-omap1/pm_bus.c             |    8 ++++----
- arch/arm/mach-shmobile/pm_runtime.c      |    8 ++++----
- arch/arm/plat-omap/omap_device.c         |    4 ++--
- arch/sh/kernel/cpu/shmobile/pm_runtime.c |    6 +++---
- drivers/base/power/clock_ops.c           |   14 +++++++-------
- drivers/base/power/main.c                |   30 +++++++++++++++---------------
- drivers/base/power/runtime.c             |   12 ++++++------
- include/linux/device.h                   |    4 ++--
- include/linux/pm.h                       |    2 +-
- include/linux/pm_runtime.h               |    2 +-
- 11 files changed, 49 insertions(+), 49 deletions(-)
 
-Index: linux-2.6/arch/arm/mach-omap1/pm_bus.c
-=================================--- linux-2.6.orig/arch/arm/mach-omap1/pm_bus.c
-+++ linux-2.6/arch/arm/mach-omap1/pm_bus.c
-@@ -49,20 +49,20 @@ static int omap1_pm_runtime_resume(struc
- 	return pm_generic_runtime_resume(dev);
+ arch/arm/mach-shmobile/include/mach/common.h |    2=20
+ arch/arm/mach-shmobile/pm-sh7372.c           |  134 ++++++++++++++++++++++=
++++-
+ arch/arm/mach-shmobile/sleep-sh7372.S        |   84 ++++++++++++++++
+ 3 files changed, 218 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-06-15 21:54:42.0=
+00000000 +0900
+@@ -35,7 +35,7 @@ extern void sh7372_add_standard_devices(
+ extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
+ extern void sh7372_pm_init(void);
+-extern void sh7372_cpu_suspend(void);
++extern void sh7372_cpu_suspend(int do_a3sm);
+ extern void sh7372_cpu_resume(void);
+ extern struct clk sh7372_extal1_clk;
+ extern struct clk sh7372_extal2_clk;
+--- 0001/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-06-15 22:02:15.000000000 +=
+0900
+@@ -15,6 +15,7 @@
+ #include <linux/list.h>
+ #include <linux/err.h>
+ #include <linux/slab.h>
++#include <linux/irq.h>
+ #include <asm/system.h>
+ #include <asm/io.h>
+ #include <asm/tlbflush.h>
+@@ -22,7 +23,12 @@
+=20
+ #define SMFRAM 0xe6a70000
+ #define SYSTBCR 0xe6150024
++#define PLLC01STPCR 0xe61500c8
+ #define SBAR 0xe6180020
++#define WUPSMSK 0xe618002c
++#define WUPSMSK2 0xe6180048
++#define WUPSFAC 0xe6180098
++#define PDNSEL 0xe6180254
+ #define APARMBAREA 0xe6f10020
+=20
+ static void sh7372_enter_core_standby(void)
+@@ -35,7 +41,7 @@ static void sh7372_enter_core_standby(vo
+=20
+ 	__raw_writel(0, smfram + 0x3c); /* clear page table address */
+=20
+-	sh7372_cpu_suspend();
++	sh7372_cpu_suspend(0);
+ 	cpu_init();
+=20
+ 	/* if page table address is non-NULL then we have been powered down */
+@@ -51,6 +57,38 @@ static void sh7372_enter_core_standby(vo
+ 	__raw_writel(0, SBAR); /* disable reset vector translation */
  }
- 
--static struct dev_power_domain default_power_domain = {
-+static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = omap1_pm_runtime_suspend,
- 		.runtime_resume = omap1_pm_runtime_resume,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
--#define OMAP1_PWR_DOMAIN (&default_power_domain)
-+#define OMAP1_PM_DOMAIN (&default_pm_domain)
- #else
--#define OMAP1_PWR_DOMAIN NULL
-+#define OMAP1_PM_DOMAIN NULL
- #endif /* CONFIG_PM_RUNTIME */
- 
- static struct pm_clk_notifier_block platform_bus_notifier = {
--	.pwr_domain = OMAP1_PWR_DOMAIN,
-+	.pm_domain = OMAP1_PM_DOMAIN,
- 	.con_ids = { "ick", "fck", NULL, },
- };
- 
-Index: linux-2.6/arch/arm/mach-shmobile/pm_runtime.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm_runtime.c
-+++ linux-2.6/arch/arm/mach-shmobile/pm_runtime.c
-@@ -28,7 +28,7 @@ static int default_platform_runtime_idle
- 	return pm_runtime_suspend(dev);
- }
- 
--static struct dev_power_domain default_power_domain = {
-+static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = pm_runtime_clk_suspend,
- 		.runtime_resume = pm_runtime_clk_resume,
-@@ -37,16 +37,16 @@ static struct dev_power_domain default_p
- 	},
- };
- 
--#define DEFAULT_PWR_DOMAIN_PTR	(&default_power_domain)
-+#define DEFAULT_PM_DOMAIN_PTR	(&default_pm_domain)
- 
- #else
- 
--#define DEFAULT_PWR_DOMAIN_PTR	NULL
-+#define DEFAULT_PM_DOMAIN_PTR	NULL
- 
- #endif /* CONFIG_PM_RUNTIME */
- 
- static struct pm_clk_notifier_block platform_bus_notifier = {
--	.pwr_domain = DEFAULT_PWR_DOMAIN_PTR,
-+	.pm_domain = DEFAULT_PM_DOMAIN_PTR,
- 	.con_ids = { NULL, },
- };
- 
-Index: linux-2.6/arch/arm/plat-omap/omap_device.c
-=================================--- linux-2.6.orig/arch/arm/plat-omap/omap_device.c
-+++ linux-2.6/arch/arm/plat-omap/omap_device.c
-@@ -564,7 +564,7 @@ static int _od_runtime_resume(struct dev
- 	return pm_generic_runtime_resume(dev);
- }
- 
--static struct dev_power_domain omap_device_power_domain = {
-+static struct dev_pm_domain omap_device_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = _od_runtime_suspend,
- 		.runtime_idle = _od_runtime_idle,
-@@ -586,7 +586,7 @@ int omap_device_register(struct omap_dev
- 	pr_debug("omap_device: %s: registering\n", od->pdev.name);
- 
- 	od->pdev.dev.parent = &omap_device_parent;
--	od->pdev.dev.pwr_domain = &omap_device_power_domain;
-+	od->pdev.dev.pm_domain = &omap_device_pm_domain;
- 	return platform_device_register(&od->pdev);
- }
- 
-Index: linux-2.6/arch/sh/kernel/cpu/shmobile/pm_runtime.c
-=================================--- linux-2.6.orig/arch/sh/kernel/cpu/shmobile/pm_runtime.c
-+++ linux-2.6/arch/sh/kernel/cpu/shmobile/pm_runtime.c
-@@ -256,7 +256,7 @@ out:
- 	return ret;
- }
- 
--static struct dev_power_domain default_power_domain = {
-+static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = default_platform_runtime_suspend,
- 		.runtime_resume = default_platform_runtime_resume,
-@@ -285,7 +285,7 @@ static int platform_bus_notify(struct no
- 		hwblk_disable(hwblk_info, hwblk);
- 		/* make sure driver re-inits itself once */
- 		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
--		dev->pwr_domain = &default_power_domain;
-+		dev->pm_domain = &default_pm_domain;
- 		break;
- 	/* TODO: add BUS_NOTIFY_BIND_DRIVER and increase idle count */
- 	case BUS_NOTIFY_BOUND_DRIVER:
-@@ -299,7 +299,7 @@ static int platform_bus_notify(struct no
- 		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
- 		break;
- 	case BUS_NOTIFY_DEL_DEVICE:
--		dev->pwr_domain = NULL;
-+		dev->pm_domain = NULL;
- 		break;
- 	}
+=20
++static void sh7372_enter_a3sm(void)
++{
++	void __iomem *smfram =3D (void __iomem *)SMFRAM;
++
++	pr_info("entering a3sm sleep mode!\n");
++
++	__raw_writel(0, APARMBAREA); /* translate 4k */
++	__raw_writel(__pa(sh7372_cpu_resume), SBAR); /* set reset vector */
++
++	__raw_writel(0, smfram + 0x3c); /* clear page table address */
++
++	__raw_writel(0, PDNSEL); /* power-down A3SM only, not A4S */
++
++	__raw_readl(WUPSFAC); /* read wakeup int. factor before sleep */
++
++	sh7372_cpu_suspend(1);
++	cpu_init();
++
++	/* if page table address is non-NULL then we have been powered down */
++	if (__raw_readl(smfram + 0x3c)) {
++		__raw_writel(__raw_readl(smfram + 0x40),
++			     __va(__raw_readl(smfram + 0x3c)));
++
++		flush_tlb_all();
++		set_cr(__raw_readl(smfram + 0x38));
++
++		__raw_readl(WUPSFAC); /* read wakeup int. factor after wakeup */
++	}
++
++	__raw_writel(0, SBAR); /* disable reset vector translation */
++}
++
+ #ifdef CONFIG_CPU_IDLE
+ static void sh7372_cpuidle_setup(struct cpuidle_device *dev)
+ {
+@@ -79,8 +117,102 @@ static void sh7372_cpuidle_init(void) {}
+ #endif
+=20
+ #ifdef CONFIG_SUSPEND
++
++#define WUPSMSK_BIT(n) ((n) + 1)
++#define WUPSMSK2_BIT(n) ((n) + 1 + 32)
++
++static unsigned char irq2msk[NR_IRQS] =3D {
++	[evt2irq(0x1800)] =3D WUPSMSK_BIT(31), /* SPU2_SPU0 */
++	[evt2irq(0x1820)] =3D WUPSMSK_BIT(31), /* SPU2_SPU1 */
++	[intcs_evt2irq(0x5a0)] =3D WUPSMSK_BIT(30), /* LCRC */
++	[evt2irq(0x0900)] =3D WUPSMSK_BIT(21), /* MFI_MFIM */
++	[evt2irq(0x03e0)] =3D WUPSMSK_BIT(19), /* IRQ15A */
++	[evt2irq(0x03c0)] =3D WUPSMSK_BIT(18), /* IRQ14A */
++	[evt2irq(0x03a0)] =3D WUPSMSK_BIT(17), /* IRQ13A */
++	[evt2irq(0x0380)] =3D WUPSMSK_BIT(16), /* IRQ12A */
++	[evt2irq(0x0360)] =3D WUPSMSK_BIT(15), /* IRQ11A */
++	[evt2irq(0x0340)] =3D WUPSMSK_BIT(14), /* IRQ10A */
++	[evt2irq(0x0320)] =3D WUPSMSK_BIT(13), /* IRQ9A */
++	[evt2irq(0x0300)] =3D WUPSMSK_BIT(12), /* IRQ8A */
++	[evt2irq(0x02e0)] =3D WUPSMSK_BIT(11), /* IRQ7A */
++	[evt2irq(0x02c0)] =3D WUPSMSK_BIT(10), /* IRQ6A */
++	[evt2irq(0x02a0)] =3D WUPSMSK_BIT(9), /* IRQ5A */
++	[evt2irq(0x0280)] =3D WUPSMSK_BIT(8), /* IRQ4A */
++	[evt2irq(0x0260)] =3D WUPSMSK_BIT(7), /* IRQ3A */
++	[evt2irq(0x0240)] =3D WUPSMSK_BIT(6), /* IRQ2A */
++	[evt2irq(0x0220)] =3D WUPSMSK_BIT(5), /* IRQ1A */
++	[evt2irq(0x0200)] =3D WUPSMSK_BIT(4), /* IRQ0A */
++	[evt2irq(0x0be0)] =3D WUPSMSK_BIT(2), /* KEYSC_KEY */
++	[evt2irq(0x0b00)] =3D WUPSMSK_BIT(1), /* CMT1_CMT10 */
++	[evt2irq(0x0b20)] =3D WUPSMSK_BIT(1), /* CMT1_CMT11 */
++	[evt2irq(0x0b40)] =3D WUPSMSK_BIT(1), /* CMT1_CMT12 */
++	[evt2irq(0x0b60)] =3D WUPSMSK_BIT(1), /* CMT1_CMT13 */
++	[evt2irq(0x0b80)] =3D WUPSMSK_BIT(1), /* CMT2 */
++	[evt2irq(0x0ba0)] =3D WUPSMSK_BIT(1), /* CMT3 */
++	[evt2irq(0x0920)] =3D WUPSMSK2_BIT(17), /* MFI_MFIS */
++	[evt2irq(0x33e0)] =3D WUPSMSK2_BIT(15), /* IRQ31A */
++	[evt2irq(0x33c0)] =3D WUPSMSK2_BIT(14), /* IRQ30A */
++	[evt2irq(0x33a0)] =3D WUPSMSK2_BIT(13), /* IRQ29A */
++	[evt2irq(0x3380)] =3D WUPSMSK2_BIT(12), /* IRQ28A */
++	[evt2irq(0x3360)] =3D WUPSMSK2_BIT(11), /* IRQ27A */
++	[evt2irq(0x3340)] =3D WUPSMSK2_BIT(10), /* IRQ26A */
++	[evt2irq(0x3320)] =3D WUPSMSK2_BIT(9), /* IRQ25A */
++	[evt2irq(0x3300)] =3D WUPSMSK2_BIT(8), /* IRQ24A */
++	[evt2irq(0x32e0)] =3D WUPSMSK2_BIT(7), /* IRQ23A */
++	[evt2irq(0x32c0)] =3D WUPSMSK2_BIT(6), /* IRQ22A */
++	[evt2irq(0x32a0)] =3D WUPSMSK2_BIT(5), /* IRQ21A */
++	[evt2irq(0x3280)] =3D WUPSMSK2_BIT(4), /* IRQ20A */
++	[evt2irq(0x3260)] =3D WUPSMSK2_BIT(3), /* IRQ19A */
++	[evt2irq(0x3240)] =3D WUPSMSK2_BIT(2), /* IRQ18A */
++	[evt2irq(0x3220)] =3D WUPSMSK2_BIT(1), /* IRQ17A */
++	[evt2irq(0x3200)] =3D WUPSMSK2_BIT(0), /* IRQ16A */
++};
++
+ static int sh7372_enter_suspend(suspend_state_t suspend_state)
+ {
++	int irq;
++	unsigned long msk, msk2, tmp;
++	int a3sm_supported =3D 1;
++
++	msk =3D 0;
++	msk2 =3D 0;
++
++	/* check active wakeup sources to determine allowed sleep mode */
++	for_each_active_irq(irq) {
++		struct irq_data *data =3D irq_get_irq_data(irq);
++
++		if (!irqd_is_wakeup_set(data))
++			continue;
++
++		tmp =3D irq2msk[irq];
++		if (!tmp) {
++			a3sm_supported =3D 0;
++			break;
++		}
++
++		tmp--;
++		if (tmp >=3D 32)
++			msk2 |=3D 1 << (tmp - 32);
++		else
++			msk |=3D 1 << tmp;
++	}
++
++	if (a3sm_supported) {
++		/* setup wakeup sources in SYSC */
++		__raw_writel(~msk, WUPSMSK);
++		__raw_writel(~msk2, WUPSMSK2);
++
++		/* turn off PLLC0 when entering A3SM */
++		__raw_writel(1 << 28, PLLC01STPCR);
++
++		/* TODO: propagate edge/level trigger config to SYSC */
++
++		/* enter A3SM sleep */
++		sh7372_enter_a3sm();
++		return 0;
++	}
++
++	/* default to ARM Core Standby since it supports all wakeup sources */
+ 	sh7372_enter_core_standby();
  	return 0;
-Index: linux-2.6/Documentation/power/devices.txt
-=================================--- linux-2.6.orig/Documentation/power/devices.txt
-+++ linux-2.6/Documentation/power/devices.txt
-@@ -506,8 +506,8 @@ routines.  Nevertheless, different callb
- situation where it actually matters.
- 
- 
--Device Power Domains
----------------------
-+Device Power Management Domains
-+-------------------------------
- Sometimes devices share reference clocks or other power resources.  In those
- cases it generally is not possible to put devices into low-power states
- individually.  Instead, a set of devices sharing a power resource can be put
-@@ -516,8 +516,8 @@ power resource.  Of course, they also ne
- together, by turning the shared power resource on.  A set of devices with this
- property is often referred to as a power domain.
- 
--Support for power domains is provided through the pwr_domain field of struct
--device.  This field is a pointer to an object of type struct dev_power_domain,
-+Support for power domains is provided through the pm_domain field of struct
-+device.  This field is a pointer to an object of type struct dev_pm_domain,
- defined in include/linux/pm.h, providing a set of power management callbacks
- analogous to the subsystem-level and device driver callbacks that are executed
- for the given device during all power transitions, instead of the respective
-Index: linux-2.6/include/linux/device.h
-=================================--- linux-2.6.orig/include/linux/device.h
-+++ linux-2.6/include/linux/device.h
-@@ -516,7 +516,7 @@ struct device_dma_parameters {
-  * 		minimizes board-specific #ifdefs in drivers.
-  * @power:	For device power management.
-  * 		See Documentation/power/devices.txt for details.
-- * @pwr_domain:	Provide callbacks that are executed during system suspend,
-+ * @pm_domain:	Provide callbacks that are executed during system suspend,
-  * 		hibernation, system resume and during runtime PM transitions
-  * 		along with subsystem-level and driver-level callbacks.
-  * @numa_node:	NUMA node this device is close to.
-@@ -568,7 +568,7 @@ struct device {
- 	void		*platform_data;	/* Platform specific data, device
- 					   core doesn't touch it */
- 	struct dev_pm_info	power;
--	struct dev_power_domain	*pwr_domain;
-+	struct dev_pm_domain	*pm_domain;
- 
- #ifdef CONFIG_NUMA
- 	int		numa_node;	/* NUMA node this device is close to */
-Index: linux-2.6/include/linux/pm.h
-=================================--- linux-2.6.orig/include/linux/pm.h
-+++ linux-2.6/include/linux/pm.h
-@@ -472,7 +472,7 @@ extern void update_pm_runtime_accounting
-  * hibernation, system resume and during runtime PM transitions along with
-  * subsystem-level and driver-level callbacks.
-  */
--struct dev_power_domain {
-+struct dev_pm_domain {
- 	struct dev_pm_ops	ops;
- };
- 
-Index: linux-2.6/include/linux/pm_runtime.h
-=================================--- linux-2.6.orig/include/linux/pm_runtime.h
-+++ linux-2.6/include/linux/pm_runtime.h
-@@ -247,7 +247,7 @@ static inline void pm_runtime_dont_use_a
- 
- struct pm_clk_notifier_block {
- 	struct notifier_block nb;
--	struct dev_power_domain *pwr_domain;
-+	struct dev_pm_domain *pm_domain;
- 	char *con_ids[];
- };
- 
-Index: linux-2.6/drivers/base/power/clock_ops.c
-=================================--- linux-2.6.orig/drivers/base/power/clock_ops.c
-+++ linux-2.6/drivers/base/power/clock_ops.c
-@@ -278,11 +278,11 @@ int pm_runtime_clk_resume(struct device
-  *
-  * For this function to work, @nb must be a member of an object of type
-  * struct pm_clk_notifier_block containing all of the requisite data.
-- * Specifically, the pwr_domain member of that object is copied to the device's
-- * pwr_domain field and its con_ids member is used to populate the device's list
-+ * Specifically, the pm_domain member of that object is copied to the device's
-+ * pm_domain field and its con_ids member is used to populate the device's list
-  * of runtime PM clocks, depending on @action.
-  *
-- * If the device's pwr_domain field is already populated with a value different
-+ * If the device's pm_domain field is already populated with a value different
-  * from the one stored in the struct pm_clk_notifier_block object, the function
-  * does nothing.
-  */
-@@ -300,14 +300,14 @@ static int pm_runtime_clk_notify(struct
- 
- 	switch (action) {
- 	case BUS_NOTIFY_ADD_DEVICE:
--		if (dev->pwr_domain)
-+		if (dev->pm_domain)
- 			break;
- 
- 		error = pm_runtime_clk_init(dev);
- 		if (error)
- 			break;
- 
--		dev->pwr_domain = clknb->pwr_domain;
-+		dev->pm_domain = clknb->pm_domain;
- 		if (clknb->con_ids[0]) {
- 			for (con_id = clknb->con_ids; *con_id; con_id++)
- 				pm_runtime_clk_add(dev, *con_id);
-@@ -317,10 +317,10 @@ static int pm_runtime_clk_notify(struct
- 
- 		break;
- 	case BUS_NOTIFY_DEL_DEVICE:
--		if (dev->pwr_domain != clknb->pwr_domain)
-+		if (dev->pm_domain != clknb->pm_domain)
- 			break;
- 
--		dev->pwr_domain = NULL;
-+		dev->pm_domain = NULL;
- 		pm_runtime_clk_destroy(dev);
- 		break;
- 	}
-Index: linux-2.6/drivers/base/power/main.c
-=================================--- linux-2.6.orig/drivers/base/power/main.c
-+++ linux-2.6/drivers/base/power/main.c
-@@ -425,9 +425,9 @@ static int device_resume_noirq(struct de
- 	TRACE_DEVICE(dev);
- 	TRACE_RESUME(0);
- 
--	if (dev->pwr_domain) {
-+	if (dev->pm_domain) {
- 		pm_dev_dbg(dev, state, "EARLY power domain ");
--		error = pm_noirq_op(dev, &dev->pwr_domain->ops, state);
-+		error = pm_noirq_op(dev, &dev->pm_domain->ops, state);
- 	} else if (dev->type && dev->type->pm) {
- 		pm_dev_dbg(dev, state, "EARLY type ");
- 		error = pm_noirq_op(dev, dev->type->pm, state);
-@@ -521,9 +521,9 @@ static int device_resume(struct device *
- 	if (!dev->power.is_suspended)
- 		goto Unlock;
- 
--	if (dev->pwr_domain) {
-+	if (dev->pm_domain) {
- 		pm_dev_dbg(dev, state, "power domain ");
--		error = pm_op(dev, &dev->pwr_domain->ops, state);
-+		error = pm_op(dev, &dev->pm_domain->ops, state);
- 		goto End;
- 	}
- 
-@@ -641,10 +641,10 @@ static void device_complete(struct devic
- {
- 	device_lock(dev);
- 
--	if (dev->pwr_domain) {
-+	if (dev->pm_domain) {
- 		pm_dev_dbg(dev, state, "completing power domain ");
--		if (dev->pwr_domain->ops.complete)
--			dev->pwr_domain->ops.complete(dev);
-+		if (dev->pm_domain->ops.complete)
-+			dev->pm_domain->ops.complete(dev);
- 	} else if (dev->type && dev->type->pm) {
- 		pm_dev_dbg(dev, state, "completing type ");
- 		if (dev->type->pm->complete)
-@@ -744,9 +744,9 @@ static int device_suspend_noirq(struct d
- {
- 	int error;
- 
--	if (dev->pwr_domain) {
-+	if (dev->pm_domain) {
- 		pm_dev_dbg(dev, state, "LATE power domain ");
--		error = pm_noirq_op(dev, &dev->pwr_domain->ops, state);
-+		error = pm_noirq_op(dev, &dev->pm_domain->ops, state);
- 		if (error)
- 			return error;
- 	} else if (dev->type && dev->type->pm) {
-@@ -853,9 +853,9 @@ static int __device_suspend(struct devic
- 		goto Unlock;
- 	}
- 
--	if (dev->pwr_domain) {
-+	if (dev->pm_domain) {
- 		pm_dev_dbg(dev, state, "power domain ");
--		error = pm_op(dev, &dev->pwr_domain->ops, state);
-+		error = pm_op(dev, &dev->pm_domain->ops, state);
- 		goto End;
- 	}
- 
-@@ -982,11 +982,11 @@ static int device_prepare(struct device
- 
- 	device_lock(dev);
- 
--	if (dev->pwr_domain) {
-+	if (dev->pm_domain) {
- 		pm_dev_dbg(dev, state, "preparing power domain ");
--		if (dev->pwr_domain->ops.prepare)
--			error = dev->pwr_domain->ops.prepare(dev);
--		suspend_report_result(dev->pwr_domain->ops.prepare, error);
-+		if (dev->pm_domain->ops.prepare)
-+			error = dev->pm_domain->ops.prepare(dev);
-+		suspend_report_result(dev->pm_domain->ops.prepare, error);
- 		if (error)
- 			goto End;
- 	} else if (dev->type && dev->type->pm) {
-Index: linux-2.6/drivers/base/power/runtime.c
-=================================--- linux-2.6.orig/drivers/base/power/runtime.c
-+++ linux-2.6/drivers/base/power/runtime.c
-@@ -213,8 +213,8 @@ static int rpm_idle(struct device *dev,
- 
- 	dev->power.idle_notification = true;
- 
--	if (dev->pwr_domain)
--		callback = dev->pwr_domain->ops.runtime_idle;
-+	if (dev->pm_domain)
-+		callback = dev->pm_domain->ops.runtime_idle;
- 	else if (dev->type && dev->type->pm)
- 		callback = dev->type->pm->runtime_idle;
- 	else if (dev->class && dev->class->pm)
-@@ -374,8 +374,8 @@ static int rpm_suspend(struct device *de
- 
- 	__update_runtime_status(dev, RPM_SUSPENDING);
- 
--	if (dev->pwr_domain)
--		callback = dev->pwr_domain->ops.runtime_suspend;
-+	if (dev->pm_domain)
-+		callback = dev->pm_domain->ops.runtime_suspend;
- 	else if (dev->type && dev->type->pm)
- 		callback = dev->type->pm->runtime_suspend;
- 	else if (dev->class && dev->class->pm)
-@@ -573,8 +573,8 @@ static int rpm_resume(struct device *dev
- 
- 	__update_runtime_status(dev, RPM_RESUMING);
- 
--	if (dev->pwr_domain)
--		callback = dev->pwr_domain->ops.runtime_resume;
-+	if (dev->pm_domain)
-+		callback = dev->pm_domain->ops.runtime_resume;
- 	else if (dev->type && dev->type->pm)
- 		callback = dev->type->pm->runtime_resume;
- 	else if (dev->class && dev->class->pm)
-
+ }
+--- 0001/arch/arm/mach-shmobile/sleep-sh7372.S
++++ work/arch/arm/mach-shmobile/sleep-sh7372.S	2011-06-15 22:02:00.00000000=
+0 +0900
+@@ -42,6 +42,7 @@ kernel_flush:
+ ENTRY(sh7372_cpu_suspend)
+ 	stmfd	sp!, {r0-r12, lr}	@ save registers on stack
+=20
++	mov	r9, r0
+ 	ldr	r8, =3DSMFRAM
+=20
+ 	mov	r4, sp			@ Store sp
+@@ -69,6 +70,89 @@ ENTRY(sh7372_cpu_suspend)
+ 	mrc	p15, 0, r4, c1, c0, 0	@ save control register
+ 	stmia	r8!, {r4}
+=20
++	cmp	r9, #0x0
++	beq	core_standby
++
++	/*
++	 * jump out to kernel flush routine
++	 *  - reuse that code is better
++	 *  - it executes in a cached space so is faster than refetch per-block
++	 *  - should be faster and will change with kernel
++	 *  - 'might' have to copy address, load and jump to it
++	 * Flush all data from the L1 data cache before disabling
++	 * SCTLR.C bit.
++	 */
++	ldr	r1, kernel_flush
++	mov	lr, pc
++	bx	r1
++
++	/*
++	 * Clear the SCTLR.C bit to prevent further data cache
++	 * allocation. Clearing SCTLR.C would make all the data accesses
++	 * strongly ordered and would not hit the cache.
++	 */
++	mrc	p15, 0, r0, c1, c0, 0
++	bic	r0, r0, #(1 << 2)	@ Disable the C bit
++	mcr	p15, 0, r0, c1, c0, 0
++	isb
++
++	/*
++	 * Invalidate L1 data cache. Even though only invalidate is
++	 * necessary exported flush API is used here. Doing clean
++	 * on already clean cache would be almost NOP.
++	 */
++	ldr	r1, kernel_flush
++	blx	r1
++	/*
++	 * The kernel doesn't interwork: v7_flush_dcache_all in particluar will
++	 * always return in Thumb state when CONFIG_THUMB2_KERNEL is enabled.
++	 * This sequence switches back to ARM.  Note that .align may insert a
++	 * nop: bx pc needs to be word-aligned in order to work.
++	 */
++ THUMB(	.thumb		)
++ THUMB(	.align		)
++ THUMB(	bx	pc	)
++ THUMB(	nop		)
++	.arm
++
++	/* disable L2 cache in the aux control register */
++	mrc     p15, 0, r10, c1, c0, 1
++	bic     r10, r10, #2
++	mcr     p15, 0, r10, c1, c0, 1
++
++	/*
++	 * Invalidate data cache again.
++	 */
++	ldr	r1, kernel_flush
++	blx	r1
++	/*
++	 * The kernel doesn't interwork: v7_flush_dcache_all in particluar will
++	 * always return in Thumb state when CONFIG_THUMB2_KERNEL is enabled.
++	 * This sequence switches back to ARM.  Note that .align may insert a
++	 * nop: bx pc needs to be word-aligned in order to work.
++	 */
++ THUMB(	.thumb		)
++ THUMB(	.align		)
++ THUMB(	bx	pc	)
++ THUMB(	nop		)
++	.arm
++
++	/* Data memory barrier and Data sync barrier */
++	dsb
++	dmb
++
++#define SPDCR 0xe6180008
++#define A3SM (1 << 12)
++
++	/* A3SM power down */
++	ldr     r0, =3DSPDCR
++	ldr     r1, =A3SM
++	str     r1, [r0]
++
++busy_loop:
++	b       busy_loop
++
++core_standby:
+ 	/*
+ 	 * jump out to kernel flush routine
+ 	 *  - reuse that code is better
