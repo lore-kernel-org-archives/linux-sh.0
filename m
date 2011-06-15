@@ -1,147 +1,91 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 17 Jun 2011 08:20:40 +0000
-Subject: [RFC][PATCH 1/6 v3] dmaengine: shdma: add chcr_write/read function
-Message-Id: <w3p7h8kq36v.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 15 Jun 2011 06:08:18 +0000
+Subject: [PATCH 1/3] sh: ecovec: Add renesas_usbhs support
+Message-Id: <w3plix362zx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-CHCR register position is not same in all DMAC.
-This patch adds new "chcr_offset" to decide it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
-v2 -> v3
+ arch/sh/boards/mach-ecovec24/setup.c |   48 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 48 insertions(+), 0 deletions(-)
 
-- u32 -> unsigned int for chcr_offset
-
- drivers/dma/shdma.c    |   35 +++++++++++++++++++++++++++--------
- drivers/dma/shdma.h    |    1 +
- include/linux/sh_dma.h |    1 +
- 3 files changed, 29 insertions(+), 8 deletions(-)
-
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 41a21b3..40900c1 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -78,6 +78,20 @@ static void dmaor_write(struct sh_dmae_device *shdev, u16 data)
- 	__raw_writew(data, shdev->chan_reg + DMAOR / sizeof(u32));
- }
- 
-+static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
-+{
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-+
-+	__raw_writel(data, sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+}
-+
-+static u32 chcr_read(struct sh_dmae_chan *sh_dc)
-+{
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-+
-+	return __raw_readl(sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+}
-+
- /*
-  * Reset DMA controller
-  *
-@@ -120,7 +134,7 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
- 
- static bool dmae_is_busy(struct sh_dmae_chan *sh_chan)
- {
--	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
-+	u32 chcr = chcr_read(sh_chan);
- 
- 	if ((chcr & (CHCR_DE | CHCR_TE)) = CHCR_DE)
- 		return true; /* working */
-@@ -167,18 +181,18 @@ static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
- 
- static void dmae_start(struct sh_dmae_chan *sh_chan)
- {
--	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
-+	u32 chcr = chcr_read(sh_chan);
- 
- 	chcr |= CHCR_DE | CHCR_IE;
--	sh_dmae_writel(sh_chan, chcr & ~CHCR_TE, CHCR);
-+	chcr_write(sh_chan, chcr & ~CHCR_TE);
- }
- 
- static void dmae_halt(struct sh_dmae_chan *sh_chan)
- {
--	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
-+	u32 chcr = chcr_read(sh_chan);
- 
- 	chcr &= ~(CHCR_DE | CHCR_TE | CHCR_IE);
--	sh_dmae_writel(sh_chan, chcr, CHCR);
-+	chcr_write(sh_chan, chcr);
- }
- 
- static void dmae_init(struct sh_dmae_chan *sh_chan)
-@@ -190,7 +204,7 @@ static void dmae_init(struct sh_dmae_chan *sh_chan)
- 	u32 chcr = DM_INC | SM_INC | 0x400 | log2size_to_chcr(sh_chan,
- 						   LOG2_DEFAULT_XFER_SIZE);
- 	sh_chan->xmit_shift = calc_xmit_shift(sh_chan, chcr);
--	sh_dmae_writel(sh_chan, chcr, CHCR);
-+	chcr_write(sh_chan, chcr);
- }
- 
- static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
-@@ -200,7 +214,7 @@ static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
- 		return -EBUSY;
- 
- 	sh_chan->xmit_shift = calc_xmit_shift(sh_chan, val);
--	sh_dmae_writel(sh_chan, val, CHCR);
-+	chcr_write(sh_chan, val);
- 
- 	return 0;
- }
-@@ -840,7 +854,7 @@ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
- 
- 	spin_lock(&sh_chan->desc_lock);
- 
--	chcr = sh_dmae_readl(sh_chan, CHCR);
-+	chcr = chcr_read(sh_chan);
- 
- 	if (chcr & CHCR_TE) {
- 		/* DMA stop */
-@@ -1138,6 +1152,11 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
- 	/* platform data */
- 	shdev->pdata = pdata;
- 
-+	if (pdata->chcr_offset)
-+		shdev->chcr_offset = pdata->chcr_offset;
-+	else
-+		shdev->chcr_offset = CHCR;
-+
- 	platform_set_drvdata(pdev, shdev);
- 
- 	pm_runtime_enable(&pdev->dev);
-diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
-index 6c73b65..6f064ca 100644
---- a/drivers/dma/shdma.h
-+++ b/drivers/dma/shdma.h
-@@ -47,6 +47,7 @@ struct sh_dmae_device {
- 	struct list_head node;
- 	u32 __iomem *chan_reg;
- 	u16 __iomem *dmars;
-+	unsigned int chcr_offset;
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 3a32741..513cb1a 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -20,6 +20,7 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <linux/usb/r8a66597.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+ #include <linux/spi/spi.h>
+@@ -232,6 +233,52 @@ static struct platform_device usb1_common_device = {
+ 	.resource	= usb1_common_resources,
  };
  
- #define to_sh_chan(chan) container_of(chan, struct sh_dmae_chan, common)
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index b08cd4e..41fe4c2 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -62,6 +62,7 @@ struct sh_dmae_pdata {
- 	const unsigned int *ts_shift;
- 	int ts_shift_num;
- 	u16 dmaor_init;
-+	unsigned int chcr_offset;
- };
- 
- /* DMA register */
++/*
++ * USBHS
++ */
++static int usbhs_get_id(struct platform_device *pdev)
++{
++	return gpio_get_value(GPIO_PTB3);
++}
++
++static struct renesas_usbhs_platform_info usbhs_info = {
++	.platform_callback = {
++		.get_id		= usbhs_get_id,
++	},
++	.driver_param = {
++		.buswait_bwait		= 4,
++		.detection_delay	= 5,
++	},
++};
++
++static struct resource usbhs_resources[] = {
++	[0] = {
++		.start	= 0xa4d90000,
++		.end	= 0xa4d90124 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 66,
++		.end	= 66,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device usbhs_device = {
++	.name	= "renesas_usbhs",
++	.id	= 1,
++	.dev = {
++		.dma_mask		= NULL,         /*  not use dma */
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usbhs_info,
++	},
++	.num_resources	= ARRAY_SIZE(usbhs_resources),
++	.resource	= usbhs_resources,
++	.archdata = {
++		.hwblk_id = HWBLK_USB1,
++	},
++};
++
+ /* LCDC */
+ const static struct fb_videomode ecovec_lcd_modes[] = {
+ 	{
+@@ -897,6 +944,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&sh_eth_device,
+ 	&usb0_host_device,
+ 	&usb1_common_device,
++	&usbhs_device,
+ 	&lcdc_device,
+ 	&ceu0_device,
+ 	&ceu1_device,
 -- 
 1.7.4.1
 
