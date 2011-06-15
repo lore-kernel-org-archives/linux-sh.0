@@ -1,33 +1,33 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 22 Jun 2011 07:49:52 +0000
-Subject: [PATCH 5/5] fbdev: sh_mobile_meram: Assign meram to the SH7372_A4LC power domain
-Message-Id: <1308728992-9660-6-git-send-email-dhobsong@igel.co.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 15 Jun 2011 06:08:32 +0000
+Subject: [PATCH 3/3] sh: ecovec: add renesas_usbhs DMAEngine support
+Message-Id: <w3pips762zj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Register the MERAM device as a part of the A4LC power domain for
-power management.
-
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index f556b2a..53f2b93 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1585,6 +1585,7 @@ static void __init mackerel_init(void)
- 	sh7372_init_pm_domain(&sh7372_a4lc_domain);
- 	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
- 	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
-+	sh7372_add_device_to_domain(SH7372_A4LC, &meram_device);
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 513cb1a..2659567 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -248,6 +248,10 @@ static struct renesas_usbhs_platform_info usbhs_info = {
+ 	.driver_param = {
+ 		.buswait_bwait		= 4,
+ 		.detection_delay	= 5,
++		.d0_tx_id = SHDMA_SLAVE_USB1D0_TX,
++		.d0_rx_id = SHDMA_SLAVE_USB1D0_RX,
++		.d1_tx_id = SHDMA_SLAVE_USB1D1_TX,
++		.d1_rx_id = SHDMA_SLAVE_USB1D1_RX,
+ 	},
+ };
  
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
 -- 
-1.7.1
+1.7.4.1
 
