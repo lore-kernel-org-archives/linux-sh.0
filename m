@@ -1,56 +1,31 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 28 Jun 2011 00:35:58 +0000
-Subject: [PATCH 05/05] ARM: mach-shmobile: sh7372 A3SG support
-Message-Id: <20110628003558.11399.17610.sendpatchset@t400s>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 16 Jun 2011 15:07:32 +0000
+Subject: Re: [PATCH 5/5] kgdbts: unify/generalize gdb breakpoint adjustment
+Message-Id: <201106161707.32356.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1302760895-13459-1-git-send-email-vapier@gentoo.org> <1302760895-13459-6-git-send-email-vapier@gentoo.org> <20110418082900.GB32457@linux-sh.org>
+In-Reply-To: <20110418082900.GB32457@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Mike Frysinger <vapier@gentoo.org>, Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, Jason Wessel <jason.wessel@windriver.com>, x86@kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
 
-From: Magnus Damm <damm@opensource.se>
+On Monday 18 April 2011, Paul Mundt wrote:
+> On Thu, Apr 14, 2011 at 02:01:35AM -0400, Mike Frysinger wrote:
+> > The Blackfin arch, like the x86 arch, needs to adjust the PC manually
+> > after a breakpoint is hit as normally this is handled by the remote gdb.
+> > However, rather than starting another arch ifdef mess, create a common
+> > GDB_ADJUSTS_BREAK_OFFSET define for any arch to opt-in via their kgdb.h.
+> > 
+> > Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+> 
+> Acked-by: Paul Mundt <lethal@linux-sh.org>
 
-Add support for the sh7372 A3SG power domain. This domain contains
-the SGX hardware block, but there is no open source driver available.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+This patch is causing build problems now, because the instruction_pointer_set()
+that is used now is only defined in asm-generic/ptrace.h, which is only
+used on x86, blackfin and sparc. Every other architecture now fails to
+build.
 
- arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
- arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
- arch/arm/mach-shmobile/setup-sh7372.c        |    1 +
- 3 files changed, 6 insertions(+)
-
---- 0006/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-06-27 13:39:38.000000000 +0900
-@@ -487,6 +487,7 @@ static inline struct sh7372_pm_domain *t
- extern struct sh7372_pm_domain sh7372_a4lc;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
-+extern struct sh7372_pm_domain sh7372_a3sg;
- 
- extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
- extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
---- 0006/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-06-27 13:39:56.000000000 +0900
-@@ -127,6 +127,10 @@ struct sh7372_pm_domain sh7372_a3ri = {
- 	.bit_shift = 8,
- };
- 
-+struct sh7372_pm_domain sh7372_a3sg = {
-+	.bit_shift = 13,
-+};
-+
- #endif /* CONFIG_PM */
- 
- static void sh7372_enter_core_standby(void)
---- 0006/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-06-27 13:40:17.000000000 +0900
-@@ -844,6 +844,7 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a4lc);
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
-+	sh7372_init_pm_domain(&sh7372_a3sg);
- 
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
+	Arnd
