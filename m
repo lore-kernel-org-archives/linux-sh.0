@@ -1,91 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 15 Jun 2011 06:08:18 +0000
-Subject: [PATCH 1/3] sh: ecovec: Add renesas_usbhs support
-Message-Id: <w3plix362zx.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 16 Jun 2011 06:53:48 +0000
+Subject: [GIT PULL] sh fixes for 3.0-rc4
+Message-Id: <20110616065338.GE7252@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
----
- arch/sh/boards/mach-ecovec24/setup.c |   48 ++++++++++++++++++++++++++++++++++
- 1 files changed, 48 insertions(+), 0 deletions(-)
+The only real thing of note here is the dropping of external libgcc
+linking in to the compressed kernel images. This has been a necessary
+move in order to get compressed kernels working for FDPIC systems (like
+SH-2A) that can't mix FDPIC and non-FDPIC objects (previously these would
+either fail to link or just crash on boot, depending on the toolchain).
+Instead we're now using the routines provided by arch/sh/lib/ for that
+stage, which were cribbed from libgcc in the first place, and also gets
+around mismatches between the compressed and uncompressed kernel's libgcc
+routines. This should hopefully sort out the remaining issues with
+compressed kernel utilization on the nommu parts, which has been plaguing
+us for some time.
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 3a32741..513cb1a 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -20,6 +20,7 @@
- #include <linux/io.h>
- #include <linux/delay.h>
- #include <linux/usb/r8a66597.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <linux/i2c.h>
- #include <linux/i2c/tsc2007.h>
- #include <linux/spi/spi.h>
-@@ -232,6 +233,52 @@ static struct platform_device usb1_common_device = {
- 	.resource	= usb1_common_resources,
- };
- 
-+/*
-+ * USBHS
-+ */
-+static int usbhs_get_id(struct platform_device *pdev)
-+{
-+	return gpio_get_value(GPIO_PTB3);
-+}
-+
-+static struct renesas_usbhs_platform_info usbhs_info = {
-+	.platform_callback = {
-+		.get_id		= usbhs_get_id,
-+	},
-+	.driver_param = {
-+		.buswait_bwait		= 4,
-+		.detection_delay	= 5,
-+	},
-+};
-+
-+static struct resource usbhs_resources[] = {
-+	[0] = {
-+		.start	= 0xa4d90000,
-+		.end	= 0xa4d90124 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 66,
-+		.end	= 66,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device usbhs_device = {
-+	.name	= "renesas_usbhs",
-+	.id	= 1,
-+	.dev = {
-+		.dma_mask		= NULL,         /*  not use dma */
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usbhs_info,
-+	},
-+	.num_resources	= ARRAY_SIZE(usbhs_resources),
-+	.resource	= usbhs_resources,
-+	.archdata = {
-+		.hwblk_id = HWBLK_USB1,
-+	},
-+};
-+
- /* LCDC */
- const static struct fb_videomode ecovec_lcd_modes[] = {
- 	{
-@@ -897,6 +944,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&sh_eth_device,
- 	&usb0_host_device,
- 	&usb1_common_device,
-+	&usbhs_device,
- 	&lcdc_device,
- 	&ceu0_device,
- 	&ceu1_device,
--- 
-1.7.4.1
+Please pull from:
 
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-3.x.git sh-fixes-for-linus
+
+Which contains:
+
+Kuninori Morimoto (2):
+      sh: ecovec: Add renesas_usbhs support
+      sh: sh7724: Add USBHS DMAEngine support
+
+Magnus Damm (2):
+      dmaengine: shdma: SH_DMAC_MAX_CHANNELS message fix
+      drivers: sh: resume enabled clocks fix
+
+Mathias Krause (1):
+      sh, exec: remove redundant set_fs(USER_DS)
+
+Paul Mundt (1):
+      sh: Remove compressed kernel libgcc dependency.
+
+Srinivas KANDAGATLA (2):
+      sh: fix wrong icache/dcache address-array start addr in cache-debugfs.
+      sh: Fix up xchg/cmpxchg corruption with gUSA RB.
+
+ arch/sh/boards/mach-ecovec24/setup.c   |   48 ++++++++++++++++++++++++++++++++
+ arch/sh/boot/compressed/Makefile       |   22 ++++++++++++--
+ arch/sh/include/asm/cmpxchg-grb.h      |   21 ++++++++------
+ arch/sh/include/asm/processor_64.h     |    1 -
+ arch/sh/include/cpu-sh4/cpu/sh7724.h   |    8 +++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   40 ++++++++++++++++++++++++++
+ arch/sh/kernel/process_32.c            |    2 -
+ arch/sh/mm/cache-debugfs.c             |   25 +++-------------
+ drivers/dma/shdma.c                    |   13 ++++----
+ drivers/sh/clk/core.c                  |    2 +-
+ 10 files changed, 140 insertions(+), 42 deletions(-)
