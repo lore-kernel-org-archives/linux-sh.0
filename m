@@ -1,20 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 28 Jun 2011 23:10:07 +0000
-Subject: [PATCH 0/1 repost] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
-Message-Id: <1309302608-25750-1-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 Jun 2011 05:08:28 +0000
+Subject: [PATCH 3/3 v2] dmaengine: shdma: fixup parameter definition on
+Message-Id: <w3p8vt2ics3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Russell,
+chan_pdata->dmars_bit is unsigned int
 
-please consider the following patch.
-It has the relevant Acks and is present in your patch tracker.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/dma/shdma.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 3d22eb8..41a21b3 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -211,7 +211,7 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	const struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->id];
+ 	u16 __iomem *addr = shdev->dmars;
+-	int shift = chan_pdata->dmars_bit;
++	unsigned int shift = chan_pdata->dmars_bit;
+ 
+ 	if (dmae_is_busy(sh_chan))
+ 		return -EBUSY;
+-- 
+1.7.4.1
 
