@@ -1,30 +1,29 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 16 Jun 2011 06:40:02 +0000
-Subject: Re: [PATCH 0/3 v2] dmaengine: shdma: tidyup shdma
-Message-Id: <20110616063959.GD7252@linux-sh.org>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 16 Jun 2011 20:06:09 +0000
+Subject: Re: [PATCH 5/5] kgdbts: unify/generalize gdb breakpoint adjustment
+Message-Id: <BANLkTi=iKW+XsfSBoPJmZWZOvq4RKa_Yjg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pd3ieicu5.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pd3ieicu5.wl%kuninori.morimoto.gx@renesas.com>
+References: <1302760895-13459-1-git-send-email-vapier@gentoo.org>
+ <1302760895-13459-6-git-send-email-vapier@gentoo.org> <20110418082900.GB32457@linux-sh.org>
+ <201106161707.32356.arnd@arndb.de>
+In-Reply-To: <201106161707.32356.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: Paul Mundt <lethal@linux-sh.org>, Roland McGrath <roland@redhat.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, kgdb-bugreport@lists.sourceforge.net, Jason Wessel <jason.wessel@windriver.com>, x86@kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
 
-On Thu, Jun 16, 2011 at 02:07:14PM +0900, Kuninori Morimoto wrote:
-> These are v2 patches of tidyup shdma
-> 
-> Kuninori Morimoto (3)
->           dmaengine: shdma: add to_sh_dev define
->           dmaengine: shdma: tidyup spin_unlock_bh on sh_chan_xfer_ld_queue
->           dmaengine: shdma: fixup parameter definition on dmae_set_dmars
-> 
-> v1 -> v2
-> 
-> - drop below 2 patches
->           dmaengine: shdma: tidyup addr definition
->           dmaengine: shdma: tidyup parameter change method on dmae_start
-> 
-> - remake patches for non-conflict
-> - modify email address of From and Signed-off-by
+On Thu, Jun 16, 2011 at 11:07, Arnd Bergmann wrote:
+> This patch is causing build problems now, because the instruction_pointer_set()
+> that is used now is only defined in asm-generic/ptrace.h, which is only
+> used on x86, blackfin and sparc. Every other architecture now fails to
+> build.
 
-Looks fine to me. Applied, thanks.
+a fix was already merged over two weeks ago.  so either your tree is
+out of date,
+
+your tree is out of date.
+
+you also need a little qualification there ... every arch *which
+supports kgdb and enables it* now fails to build.
+-mike
