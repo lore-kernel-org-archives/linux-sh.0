@@ -1,56 +1,28 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 20 Jun 2011 23:00:08 +0000
-Subject: [PATCH 1/5] mmc: tmio: name 0xd8 as CTL_DMA_ENABLE
-Message-Id: <1308610812-3479-2-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 Jun 2011 05:07:14 +0000
+Subject: Re: [PATCH 0/3 v2] dmaengine: shdma: tidyup shdma
+Message-Id: <w3pd3ieicu5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1308610812-3479-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1308610812-3479-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>, Simon Horman <horms@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-This reflects at least the current usage of this register
-and I think it improves the readability of the code ever so slightly.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Dear Paul
 
----
+These are v2 patches of tidyup shdma
 
-Dependencies: none known
----
- drivers/mmc/host/tmio_mmc_dma.c |    2 +-
- include/linux/mmc/tmio.h        |    1 +
- 2 files changed, 2 insertions(+), 1 deletions(-)
+Kuninori Morimoto (3)
+          dmaengine: shdma: add to_sh_dev define
+          dmaengine: shdma: tidyup spin_unlock_bh on sh_chan_xfer_ld_queue
+          dmaengine: shdma: fixup parameter definition on dmae_set_dmars
 
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 25f1ad6..9c4da66 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -26,7 +26,7 @@ static void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- {
- #if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
- 	/* Switch DMA mode on or off - SuperH specific? */
--	writew(enable ? 2 : 0, host->ctl + (0xd8 << host->bus_shift));
-+	writew(enable ? 2 : 0, host->ctl + (CTL_DMA_ENABLE << host->bus_shift));
- #endif
- }
- 
-diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
-index 19490b9..0a6e40d 100644
---- a/include/linux/mmc/tmio.h
-+++ b/include/linux/mmc/tmio.h
-@@ -30,6 +30,7 @@
- #define CTL_TRANSACTION_CTL 0x34
- #define CTL_SDIO_STATUS 0x36
- #define CTL_SDIO_IRQ_MASK 0x38
-+#define CTL_DMA_ENABLE 0xd8
- #define CTL_RESET_SD 0xe0
- #define CTL_SDIO_REGS 0x100
- #define CTL_CLK_AND_WAIT_CTL 0x138
--- 
-1.7.4.4
+v1 -> v2
 
+- drop below 2 patches
+          dmaengine: shdma: tidyup addr definition
+          dmaengine: shdma: tidyup parameter change method on dmae_start
+
+- remake patches for non-conflict
+- modify email address of From and Signed-off-by
