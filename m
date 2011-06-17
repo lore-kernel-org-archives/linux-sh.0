@@ -1,588 +1,147 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 25 Jun 2011 21:30:47 +0000
-Subject: [PATCH 9/10 v6] PM: Rename clock management functions
-Message-Id: <201106252330.48129.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 17 Jun 2011 08:20:40 +0000
+Subject: [RFC][PATCH 1/6 v3] dmaengine: shdma: add chcr_write/read function
+Message-Id: <w3p7h8kq36v.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
-In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+CHCR register position is not same in all DMAC.
+This patch adds new "chcr_offset" to decide it.
 
-The common PM clock management functions may be used for system
-suspend/resume as well as for runtime PM, so rename them
-accordingly.  Modify kerneldoc comments describing these functions
-and kernel messages printed by them, so that they refer to power
-management in general rather that to runtime PM.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-omap1/pm_bus.c        |    6 -
- arch/arm/mach-shmobile/pm_runtime.c |    6 -
- drivers/base/power/clock_ops.c      |  188 ++++++++++++++++++------------------
- include/linux/pm_runtime.h          |   28 ++---
- 4 files changed, 114 insertions(+), 114 deletions(-)
+v2 -> v3
 
-Index: linux-2.6/drivers/base/power/clock_ops.c
-=================================--- linux-2.6.orig/drivers/base/power/clock_ops.c
-+++ linux-2.6/drivers/base/power/clock_ops.c
-@@ -17,7 +17,7 @@
- 
- #ifdef CONFIG_PM
- 
--struct pm_runtime_clk_data {
-+struct pm_clk_data {
- 	struct list_head clock_list;
- 	struct mutex lock;
- };
-@@ -36,25 +36,25 @@ struct pm_clock_entry {
- 	enum pce_status status;
- };
- 
--static struct pm_runtime_clk_data *__to_prd(struct device *dev)
-+static struct pm_clk_data *__to_pcd(struct device *dev)
- {
- 	return dev ? dev->power.subsys_data : NULL;
+- u32 -> unsigned int for chcr_offset
+
+ drivers/dma/shdma.c    |   35 +++++++++++++++++++++++++++--------
+ drivers/dma/shdma.h    |    1 +
+ include/linux/sh_dma.h |    1 +
+ 3 files changed, 29 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 41a21b3..40900c1 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -78,6 +78,20 @@ static void dmaor_write(struct sh_dmae_device *shdev, u16 data)
+ 	__raw_writew(data, shdev->chan_reg + DMAOR / sizeof(u32));
  }
  
- /**
-- * pm_runtime_clk_add - Start using a device clock for runtime PM.
-- * @dev: Device whose clock is going to be used for runtime PM.
-+ * pm_clk_add - Start using a device clock for power management.
-+ * @dev: Device whose clock is going to be used for power management.
-  * @con_id: Connection ID of the clock.
++static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
++{
++	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
++
++	__raw_writel(data, sh_dc->base + shdev->chcr_offset / sizeof(u32));
++}
++
++static u32 chcr_read(struct sh_dmae_chan *sh_dc)
++{
++	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
++
++	return __raw_readl(sh_dc->base + shdev->chcr_offset / sizeof(u32));
++}
++
+ /*
+  * Reset DMA controller
   *
-  * Add the clock represented by @con_id to the list of clocks used for
-- * the runtime PM of @dev.
-+ * the power management of @dev.
-  */
--int pm_runtime_clk_add(struct device *dev, const char *con_id)
-+int pm_clk_add(struct device *dev, const char *con_id)
+@@ -120,7 +134,7 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
+ 
+ static bool dmae_is_busy(struct sh_dmae_chan *sh_chan)
  {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce;
+-	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
++	u32 chcr = chcr_read(sh_chan);
  
--	if (!prd)
-+	if (!pcd)
- 		return -EINVAL;
+ 	if ((chcr & (CHCR_DE | CHCR_TE)) = CHCR_DE)
+ 		return true; /* working */
+@@ -167,18 +181,18 @@ static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
  
- 	ce = kzalloc(sizeof(*ce), GFP_KERNEL);
-@@ -73,20 +73,20 @@ int pm_runtime_clk_add(struct device *de
- 		}
- 	}
+ static void dmae_start(struct sh_dmae_chan *sh_chan)
+ {
+-	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
++	u32 chcr = chcr_read(sh_chan);
  
--	mutex_lock(&prd->lock);
--	list_add_tail(&ce->node, &prd->clock_list);
--	mutex_unlock(&prd->lock);
-+	mutex_lock(&pcd->lock);
-+	list_add_tail(&ce->node, &pcd->clock_list);
-+	mutex_unlock(&pcd->lock);
- 	return 0;
+ 	chcr |= CHCR_DE | CHCR_IE;
+-	sh_dmae_writel(sh_chan, chcr & ~CHCR_TE, CHCR);
++	chcr_write(sh_chan, chcr & ~CHCR_TE);
  }
  
- /**
-- * __pm_runtime_clk_remove - Destroy runtime PM clock entry.
-- * @ce: Runtime PM clock entry to destroy.
-+ * __pm_clk_remove - Destroy PM clock entry.
-+ * @ce: PM clock entry to destroy.
-  *
-- * This routine must be called under the mutex protecting the runtime PM list
-- * of clocks corresponding the the @ce's device.
-+ * This routine must be called under the mutex protecting the PM list of clocks
-+ * corresponding the the @ce's device.
-  */
--static void __pm_runtime_clk_remove(struct pm_clock_entry *ce)
-+static void __pm_clk_remove(struct pm_clock_entry *ce)
+ static void dmae_halt(struct sh_dmae_chan *sh_chan)
  {
- 	if (!ce)
- 		return;
-@@ -108,87 +108,87 @@ static void __pm_runtime_clk_remove(stru
+-	u32 chcr = sh_dmae_readl(sh_chan, CHCR);
++	u32 chcr = chcr_read(sh_chan);
+ 
+ 	chcr &= ~(CHCR_DE | CHCR_TE | CHCR_IE);
+-	sh_dmae_writel(sh_chan, chcr, CHCR);
++	chcr_write(sh_chan, chcr);
  }
  
- /**
-- * pm_runtime_clk_remove - Stop using a device clock for runtime PM.
-- * @dev: Device whose clock should not be used for runtime PM any more.
-+ * pm_clk_remove - Stop using a device clock for power management.
-+ * @dev: Device whose clock should not be used for PM any more.
-  * @con_id: Connection ID of the clock.
-  *
-  * Remove the clock represented by @con_id from the list of clocks used for
-- * the runtime PM of @dev.
-+ * the power management of @dev.
-  */
--void pm_runtime_clk_remove(struct device *dev, const char *con_id)
-+void pm_clk_remove(struct device *dev, const char *con_id)
- {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce;
- 
--	if (!prd)
-+	if (!pcd)
- 		return;
- 
--	mutex_lock(&prd->lock);
-+	mutex_lock(&pcd->lock);
- 
--	list_for_each_entry(ce, &prd->clock_list, node) {
-+	list_for_each_entry(ce, &pcd->clock_list, node) {
- 		if (!con_id && !ce->con_id) {
--			__pm_runtime_clk_remove(ce);
-+			__pm_clk_remove(ce);
- 			break;
- 		} else if (!con_id || !ce->con_id) {
- 			continue;
- 		} else if (!strcmp(con_id, ce->con_id)) {
--			__pm_runtime_clk_remove(ce);
-+			__pm_clk_remove(ce);
- 			break;
- 		}
- 	}
- 
--	mutex_unlock(&prd->lock);
-+	mutex_unlock(&pcd->lock);
+ static void dmae_init(struct sh_dmae_chan *sh_chan)
+@@ -190,7 +204,7 @@ static void dmae_init(struct sh_dmae_chan *sh_chan)
+ 	u32 chcr = DM_INC | SM_INC | 0x400 | log2size_to_chcr(sh_chan,
+ 						   LOG2_DEFAULT_XFER_SIZE);
+ 	sh_chan->xmit_shift = calc_xmit_shift(sh_chan, chcr);
+-	sh_dmae_writel(sh_chan, chcr, CHCR);
++	chcr_write(sh_chan, chcr);
  }
  
- /**
-- * pm_runtime_clk_init - Initialize a device's list of runtime PM clocks.
-- * @dev: Device to initialize the list of runtime PM clocks for.
-+ * pm_clk_init - Initialize a device's list of power management clocks.
-+ * @dev: Device to initialize the list of PM clocks for.
-  *
-- * Allocate a struct pm_runtime_clk_data object, initialize its lock member and
-+ * Allocate a struct pm_clk_data object, initialize its lock member and
-  * make the @dev's power.subsys_data field point to it.
-  */
--int pm_runtime_clk_init(struct device *dev)
-+int pm_clk_init(struct device *dev)
- {
--	struct pm_runtime_clk_data *prd;
-+	struct pm_clk_data *pcd;
+ static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
+@@ -200,7 +214,7 @@ static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
+ 		return -EBUSY;
  
--	prd = kzalloc(sizeof(*prd), GFP_KERNEL);
--	if (!prd) {
--		dev_err(dev, "Not enough memory fo runtime PM data.\n");
-+	pcd = kzalloc(sizeof(*pcd), GFP_KERNEL);
-+	if (!pcd) {
-+		dev_err(dev, "Not enough memory for PM clock data.\n");
- 		return -ENOMEM;
- 	}
- 
--	INIT_LIST_HEAD(&prd->clock_list);
--	mutex_init(&prd->lock);
--	dev->power.subsys_data = prd;
-+	INIT_LIST_HEAD(&pcd->clock_list);
-+	mutex_init(&pcd->lock);
-+	dev->power.subsys_data = pcd;
- 	return 0;
- }
- 
- /**
-- * pm_runtime_clk_destroy - Destroy a device's list of runtime PM clocks.
-- * @dev: Device to destroy the list of runtime PM clocks for.
-+ * pm_clk_destroy - Destroy a device's list of power management clocks.
-+ * @dev: Device to destroy the list of PM clocks for.
-  *
-  * Clear the @dev's power.subsys_data field, remove the list of clock entries
-- * from the struct pm_runtime_clk_data object pointed to by it before and free
-+ * from the struct pm_clk_data object pointed to by it before and free
-  * that object.
-  */
--void pm_runtime_clk_destroy(struct device *dev)
-+void pm_clk_destroy(struct device *dev)
- {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce, *c;
- 
--	if (!prd)
-+	if (!pcd)
- 		return;
- 
- 	dev->power.subsys_data = NULL;
- 
--	mutex_lock(&prd->lock);
-+	mutex_lock(&pcd->lock);
- 
--	list_for_each_entry_safe_reverse(ce, c, &prd->clock_list, node)
--		__pm_runtime_clk_remove(ce);
-+	list_for_each_entry_safe_reverse(ce, c, &pcd->clock_list, node)
-+		__pm_clk_remove(ce);
- 
--	mutex_unlock(&prd->lock);
-+	mutex_unlock(&pcd->lock);
- 
--	kfree(prd);
-+	kfree(pcd);
- }
- 
- #endif /* CONFIG_PM */
-@@ -196,11 +196,11 @@ void pm_runtime_clk_destroy(struct devic
- #ifdef CONFIG_PM_RUNTIME
- 
- /**
-- * pm_runtime_clk_acquire - Acquire a device clock.
-+ * pm_clk_acquire - Acquire a device clock.
-  * @dev: Device whose clock is to be acquired.
-  * @con_id: Connection ID of the clock.
-  */
--static void pm_runtime_clk_acquire(struct device *dev,
-+static void pm_clk_acquire(struct device *dev,
- 				    struct pm_clock_entry *ce)
- {
- 	ce->clk = clk_get(dev, ce->con_id);
-@@ -213,24 +213,24 @@ static void pm_runtime_clk_acquire(struc
- }
- 
- /**
-- * pm_runtime_clk_suspend - Disable clocks in a device's runtime PM clock list.
-+ * pm_clk_suspend - Disable clocks in a device's PM clock list.
-  * @dev: Device to disable the clocks for.
-  */
--int pm_runtime_clk_suspend(struct device *dev)
-+int pm_clk_suspend(struct device *dev)
- {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
--	if (!prd)
-+	if (!pcd)
- 		return 0;
- 
--	mutex_lock(&prd->lock);
-+	mutex_lock(&pcd->lock);
- 
--	list_for_each_entry_reverse(ce, &prd->clock_list, node) {
-+	list_for_each_entry_reverse(ce, &pcd->clock_list, node) {
- 		if (ce->status = PCE_STATUS_NONE)
--			pm_runtime_clk_acquire(dev, ce);
-+			pm_clk_acquire(dev, ce);
- 
- 		if (ce->status < PCE_STATUS_ERROR) {
- 			clk_disable(ce->clk);
-@@ -238,30 +238,30 @@ int pm_runtime_clk_suspend(struct device
- 		}
- 	}
- 
--	mutex_unlock(&prd->lock);
-+	mutex_unlock(&pcd->lock);
+ 	sh_chan->xmit_shift = calc_xmit_shift(sh_chan, val);
+-	sh_dmae_writel(sh_chan, val, CHCR);
++	chcr_write(sh_chan, val);
  
  	return 0;
  }
+@@ -840,7 +854,7 @@ static irqreturn_t sh_dmae_interrupt(int irq, void *data)
  
- /**
-- * pm_runtime_clk_resume - Enable clocks in a device's runtime PM clock list.
-+ * pm_clk_resume - Enable clocks in a device's PM clock list.
-  * @dev: Device to enable the clocks for.
-  */
--int pm_runtime_clk_resume(struct device *dev)
-+int pm_clk_resume(struct device *dev)
- {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce;
+ 	spin_lock(&sh_chan->desc_lock);
  
- 	dev_dbg(dev, "%s()\n", __func__);
+-	chcr = sh_dmae_readl(sh_chan, CHCR);
++	chcr = chcr_read(sh_chan);
  
--	if (!prd)
-+	if (!pcd)
- 		return 0;
+ 	if (chcr & CHCR_TE) {
+ 		/* DMA stop */
+@@ -1138,6 +1152,11 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	/* platform data */
+ 	shdev->pdata = pdata;
  
--	mutex_lock(&prd->lock);
-+	mutex_lock(&pcd->lock);
++	if (pdata->chcr_offset)
++		shdev->chcr_offset = pdata->chcr_offset;
++	else
++		shdev->chcr_offset = CHCR;
++
+ 	platform_set_drvdata(pdev, shdev);
  
--	list_for_each_entry(ce, &prd->clock_list, node) {
-+	list_for_each_entry(ce, &pcd->clock_list, node) {
- 		if (ce->status = PCE_STATUS_NONE)
--			pm_runtime_clk_acquire(dev, ce);
-+			pm_clk_acquire(dev, ce);
- 
- 		if (ce->status < PCE_STATUS_ERROR) {
- 			clk_enable(ce->clk);
-@@ -269,13 +269,13 @@ int pm_runtime_clk_resume(struct device
- 		}
- 	}
- 
--	mutex_unlock(&prd->lock);
-+	mutex_unlock(&pcd->lock);
- 
- 	return 0;
- }
- 
- /**
-- * pm_runtime_clk_notify - Notify routine for device addition and removal.
-+ * pm_clk_notify - Notify routine for device addition and removal.
-  * @nb: Notifier block object this function is a member of.
-  * @action: Operation being carried out by the caller.
-  * @data: Device the routine is being run for.
-@@ -284,13 +284,13 @@ int pm_runtime_clk_resume(struct device
-  * struct pm_clk_notifier_block containing all of the requisite data.
-  * Specifically, the pm_domain member of that object is copied to the device's
-  * pm_domain field and its con_ids member is used to populate the device's list
-- * of runtime PM clocks, depending on @action.
-+ * of PM clocks, depending on @action.
-  *
-  * If the device's pm_domain field is already populated with a value different
-  * from the one stored in the struct pm_clk_notifier_block object, the function
-  * does nothing.
-  */
--static int pm_runtime_clk_notify(struct notifier_block *nb,
-+static int pm_clk_notify(struct notifier_block *nb,
- 				 unsigned long action, void *data)
- {
- 	struct pm_clk_notifier_block *clknb;
-@@ -307,16 +307,16 @@ static int pm_runtime_clk_notify(struct
- 		if (dev->pm_domain)
- 			break;
- 
--		error = pm_runtime_clk_init(dev);
-+		error = pm_clk_init(dev);
- 		if (error)
- 			break;
- 
- 		dev->pm_domain = clknb->pm_domain;
- 		if (clknb->con_ids[0]) {
- 			for (con_id = clknb->con_ids; *con_id; con_id++)
--				pm_runtime_clk_add(dev, *con_id);
-+				pm_clk_add(dev, *con_id);
- 		} else {
--			pm_runtime_clk_add(dev, NULL);
-+			pm_clk_add(dev, NULL);
- 		}
- 
- 		break;
-@@ -325,7 +325,7 @@ static int pm_runtime_clk_notify(struct
- 			break;
- 
- 		dev->pm_domain = NULL;
--		pm_runtime_clk_destroy(dev);
-+		pm_clk_destroy(dev);
- 		break;
- 	}
- 
-@@ -337,51 +337,51 @@ static int pm_runtime_clk_notify(struct
- #ifdef CONFIG_PM
- 
- /**
-- * pm_runtime_clk_suspend - Disable clocks in a device's PM clock list.
-+ * pm_clk_suspend - Disable clocks in a device's PM clock list.
-  * @dev: Device to disable the clocks for.
-  */
--int pm_runtime_clk_suspend(struct device *dev)
-+int pm_clk_suspend(struct device *dev)
- {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
- 	/* If there is no driver, the clocks are already disabled. */
--	if (!prd || !dev->driver)
-+	if (!pcd || !dev->driver)
- 		return 0;
- 
--	mutex_lock(&prd->lock);
-+	mutex_lock(&pcd->lock);
- 
--	list_for_each_entry_reverse(ce, &prd->clock_list, node)
-+	list_for_each_entry_reverse(ce, &pcd->clock_list, node)
- 		clk_disable(ce->clk);
- 
--	mutex_unlock(&prd->lock);
-+	mutex_unlock(&pcd->lock);
- 
- 	return 0;
- }
- 
- /**
-- * pm_runtime_clk_resume - Enable clocks in a device's PM clock list.
-+ * pm_clk_resume - Enable clocks in a device's PM clock list.
-  * @dev: Device to enable the clocks for.
-  */
--int pm_runtime_clk_resume(struct device *dev)
-+int pm_clk_resume(struct device *dev)
- {
--	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clk_data *pcd = __to_pcd(dev);
- 	struct pm_clock_entry *ce;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
- 	/* If there is no driver, the clocks should remain disabled. */
--	if (!prd || !dev->driver)
-+	if (!pcd || !dev->driver)
- 		return 0;
- 
--	mutex_lock(&prd->lock);
-+	mutex_lock(&pcd->lock);
- 
--	list_for_each_entry(ce, &prd->clock_list, node)
-+	list_for_each_entry(ce, &pcd->clock_list, node)
- 		clk_enable(ce->clk);
- 
--	mutex_unlock(&prd->lock);
-+	mutex_unlock(&pcd->lock);
- 
- 	return 0;
- }
-@@ -423,7 +423,7 @@ static void disable_clock(struct device
- }
- 
- /**
-- * pm_runtime_clk_notify - Notify routine for device addition and removal.
-+ * pm_clk_notify - Notify routine for device addition and removal.
-  * @nb: Notifier block object this function is a member of.
-  * @action: Operation being carried out by the caller.
-  * @data: Device the routine is being run for.
-@@ -433,7 +433,7 @@ static void disable_clock(struct device
-  * Specifically, the con_ids member of that object is used to enable or disable
-  * the device's clocks, depending on @action.
-  */
--static int pm_runtime_clk_notify(struct notifier_block *nb,
-+static int pm_clk_notify(struct notifier_block *nb,
- 				 unsigned long action, void *data)
- {
- 	struct pm_clk_notifier_block *clknb;
-@@ -469,21 +469,21 @@ static int pm_runtime_clk_notify(struct
- #endif /* !CONFIG_PM_RUNTIME */
- 
- /**
-- * pm_runtime_clk_add_notifier - Add bus type notifier for runtime PM clocks.
-+ * pm_clk_add_notifier - Add bus type notifier for power management clocks.
-  * @bus: Bus type to add the notifier to.
-  * @clknb: Notifier to be added to the given bus type.
-  *
-  * The nb member of @clknb is not expected to be initialized and its
-- * notifier_call member will be replaced with pm_runtime_clk_notify().  However,
-+ * notifier_call member will be replaced with pm_clk_notify().  However,
-  * the remaining members of @clknb should be populated prior to calling this
-  * routine.
-  */
--void pm_runtime_clk_add_notifier(struct bus_type *bus,
-+void pm_clk_add_notifier(struct bus_type *bus,
- 				 struct pm_clk_notifier_block *clknb)
- {
- 	if (!bus || !clknb)
- 		return;
- 
--	clknb->nb.notifier_call = pm_runtime_clk_notify;
-+	clknb->nb.notifier_call = pm_clk_notify;
- 	bus_register_notifier(bus, &clknb->nb);
- }
-Index: linux-2.6/include/linux/pm_runtime.h
-=================================--- linux-2.6.orig/include/linux/pm_runtime.h
-+++ linux-2.6/include/linux/pm_runtime.h
-@@ -252,36 +252,36 @@ struct pm_clk_notifier_block {
+ 	pm_runtime_enable(&pdev->dev);
+diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
+index 6c73b65..6f064ca 100644
+--- a/drivers/dma/shdma.h
++++ b/drivers/dma/shdma.h
+@@ -47,6 +47,7 @@ struct sh_dmae_device {
+ 	struct list_head node;
+ 	u32 __iomem *chan_reg;
+ 	u16 __iomem *dmars;
++	unsigned int chcr_offset;
  };
  
- #ifdef CONFIG_PM_CLK
--extern int pm_runtime_clk_init(struct device *dev);
--extern void pm_runtime_clk_destroy(struct device *dev);
--extern int pm_runtime_clk_add(struct device *dev, const char *con_id);
--extern void pm_runtime_clk_remove(struct device *dev, const char *con_id);
--extern int pm_runtime_clk_suspend(struct device *dev);
--extern int pm_runtime_clk_resume(struct device *dev);
-+extern int pm_clk_init(struct device *dev);
-+extern void pm_clk_destroy(struct device *dev);
-+extern int pm_clk_add(struct device *dev, const char *con_id);
-+extern void pm_clk_remove(struct device *dev, const char *con_id);
-+extern int pm_clk_suspend(struct device *dev);
-+extern int pm_clk_resume(struct device *dev);
- #else
--static inline int pm_runtime_clk_init(struct device *dev)
-+static inline int pm_clk_init(struct device *dev)
- {
- 	return -EINVAL;
- }
--static inline void pm_runtime_clk_destroy(struct device *dev)
-+static inline void pm_clk_destroy(struct device *dev)
- {
- }
--static inline int pm_runtime_clk_add(struct device *dev, const char *con_id)
-+static inline int pm_clk_add(struct device *dev, const char *con_id)
- {
- 	return -EINVAL;
- }
--static inline void pm_runtime_clk_remove(struct device *dev, const char *con_id)
-+static inline void pm_clk_remove(struct device *dev, const char *con_id)
- {
- }
--#define pm_runtime_clock_suspend	NULL
--#define pm_runtime_clock_resume		NULL
-+#define pm_clk_suspend	NULL
-+#define pm_clk_resume	NULL
- #endif
+ #define to_sh_chan(chan) container_of(chan, struct sh_dmae_chan, common)
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index b08cd4e..41fe4c2 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -62,6 +62,7 @@ struct sh_dmae_pdata {
+ 	const unsigned int *ts_shift;
+ 	int ts_shift_num;
+ 	u16 dmaor_init;
++	unsigned int chcr_offset;
+ };
  
- #ifdef CONFIG_HAVE_CLK
--extern void pm_runtime_clk_add_notifier(struct bus_type *bus,
-+extern void pm_clk_add_notifier(struct bus_type *bus,
- 					struct pm_clk_notifier_block *clknb);
- #else
--static inline void pm_runtime_clk_add_notifier(struct bus_type *bus,
-+static inline void pm_clk_add_notifier(struct bus_type *bus,
- 					struct pm_clk_notifier_block *clknb)
- {
- }
-Index: linux-2.6/arch/arm/mach-omap1/pm_bus.c
-=================================--- linux-2.6.orig/arch/arm/mach-omap1/pm_bus.c
-+++ linux-2.6/arch/arm/mach-omap1/pm_bus.c
-@@ -32,7 +32,7 @@ static int omap1_pm_runtime_suspend(stru
- 	if (ret)
- 		return ret;
- 
--	ret = pm_runtime_clk_suspend(dev);
-+	ret = pm_clk_suspend(dev);
- 	if (ret) {
- 		pm_generic_runtime_resume(dev);
- 		return ret;
-@@ -45,7 +45,7 @@ static int omap1_pm_runtime_resume(struc
- {
- 	dev_dbg(dev, "%s\n", __func__);
- 
--	pm_runtime_clk_resume(dev);
-+	pm_clk_resume(dev);
- 	return pm_generic_runtime_resume(dev);
- }
- 
-@@ -71,7 +71,7 @@ static int __init omap1_pm_runtime_init(
- 	if (!cpu_class_is_omap1())
- 		return -ENODEV;
- 
--	pm_runtime_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
-+	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 
- 	return 0;
- }
-Index: linux-2.6/arch/arm/mach-shmobile/pm_runtime.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm_runtime.c
-+++ linux-2.6/arch/arm/mach-shmobile/pm_runtime.c
-@@ -30,8 +30,8 @@ static int default_platform_runtime_idle
- 
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
--		.runtime_suspend = pm_runtime_clk_suspend,
--		.runtime_resume = pm_runtime_clk_resume,
-+		.runtime_suspend = pm_clk_suspend,
-+		.runtime_resume = pm_clk_resume,
- 		.runtime_idle = default_platform_runtime_idle,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
-@@ -52,7 +52,7 @@ static struct pm_clk_notifier_block plat
- 
- static int __init sh_pm_runtime_init(void)
- {
--	pm_runtime_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
-+	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
- }
- core_initcall(sh_pm_runtime_init);
+ /* DMA register */
+-- 
+1.7.4.1
 
