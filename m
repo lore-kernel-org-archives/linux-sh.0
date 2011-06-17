@@ -1,85 +1,66 @@
-From: "Koul, Vinod" <vinod.koul@intel.com>
-Date: Fri, 24 Jun 2011 10:57:29 +0000
-Subject: Re: [PATCH] dmaengine: failure to get a specific DMA channel is
-Message-Id: <1308912329.1536.0.camel@vkoul-udesk3>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 17 Jun 2011 03:39:59 +0000
+Subject: [RFC][PATCH 4/6] dmaengine: shdma: add is_usbdmac flag
+Message-Id: <w3ppqmdp1m8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106201657280.11365@axis700.grange>
-	 <w3pzklcxchm.wl%kuninori.morimoto.gx@renesas.com>
-	 <BANLkTingHGRRCOsVZDs1W+FfdL1s1NCxhw@mail.gmail.com>
-In-Reply-To: <BANLkTingHGRRCOsVZDs1W+FfdL1s1NCxhw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>
+To: linux-sh@vger.kernel.org
 
-On Wed, 2011-06-22 at 10:49 +0900, Magnus Damm wrote:
-> On Tue, Jun 21, 2011 at 9:19 AM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> >
-> > Dear Guennadi, all
-> >
-> >> There exist systems with multiple DMA controllers with different
-> >> capabilities. For example, on some sh-mobile / rmobile systems there are
-> >> DMA controllers, whose channels can be configured to be used with
-> >> SD- and MMC-host controllers, serial ports etc. Besides there are also
-> >> DMA controllers, that can only be used for one special function, e.g.,
-> >> for USB. In such cases the DMA client filter function can just choose
-> >> to specify to the DMA driver, which channel it needs. Then the
-> >> .device_alloc_chan_resources() method of the DMA driver will check,
-> >> whether it can provide that dunction. If not, it will fail and the loop
-> >> in __dma_request_channel() will continue to the next DMA device, until
-> >> it finds a suitable one. This works fine with just one minor glitch:
-> >> the kernel logs error messages like
-> >>
-> >> dmaengine: failed to get <channel name>: (-<error code>)
-> >>
-> >> after each such non-critical failure. This patch lowers priority of
-> >> this message to the debug level.
-> >>
-> >> Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> >> ---
-> >>
-> >> Morimoto-san, I don't expect this patch to fail;), but if you like, you
-> >> could give it a short spin and send your "tested-by" in reply to this
-> >> mail.
-> >
-> > Thanks.
-> > I tested this patch.
-> >
-> > I don't know that the dmaengine design,
-> > but this patch remove non-critical error message from USB-DMAC for me.
-> > I tested it on mackerel board + renesas_usbhs + USB-DMAC
-> >
-> > Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> So I too gave the USBHS + USBHS-DMAC patches a go on top of
-> linux-3.0-rc and they seem to work as expected.
-> Without "[PATCH] dmaengine: failure to get a specific DMA channel is
-> not critical" applied I get the following log:
-> 
-> / # echo /dev/mtdblock4 > /sys/devices/platform/renesas_usbhs.1/gadget/lun0/file
-> 
-> [hook up laptop to the USB gadget port]
-> 
-> / # dmaengine: failed to get dma0chan4: (-22)
-> dmaengine: failed to get dma1chan0: (-22)
-> dmaengine: failed to get dma2chan0: (-22)
-> dmaengine: failed to get dma3chan0: (-22)
-> dmaengine: failed to get dma0chan4: (-22)
-> dmaengine: failed to get dma1chan0: (-22)
-> dmaengine: failed to get dma2chan0: (-22)
-> dmaengine: failed to get dma3chan0: (-22)
-> g_mass_storage gadget: high speed config #1: Linux File-Backed Storage
-> 
-> With this patch applied the "dmaengine: failed to get..." messages all go away.
-> 
-> Tested-by: Magnus Damm <damm@opensource.se>
-Applied Thanks.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/dma/shdma.c    |    8 ++++++++
+ include/linux/sh_dma.h |    3 +++
+ 2 files changed, 11 insertions(+), 0 deletions(-)
 
-
-
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index aa91309..3de661e 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -194,6 +194,10 @@ static void dmae_start(struct sh_dmae_chan *sh_chan)
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 	u32 chcr = chcr_read(sh_chan);
+ 
++	/* USB-DMAC needs TEND settings */
++	if (shdev->pdata->is_usbdmac)
++		sh_dmae_writel(sh_chan, 0xFFFFFFFF, TEND);
++
+ 	chcr |= CHCR_DE | shdev->chcr_ie_bit;
+ 	chcr_write(sh_chan, chcr & ~CHCR_TE);
+ }
+@@ -242,6 +246,10 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ 	if (dmae_is_busy(sh_chan))
+ 		return -EBUSY;
+ 
++	/* USB-DMAC doesn't need DMARS settings */
++	if (pdata->is_usbdmac)
++		return 0;
++
+ 	/* in the case of a missing DMARS resource use first memory window */
+ 	if (!addr)
+ 		addr = (u16 __iomem *)shdev->chan_reg;
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 6a98daf..8a5bffd 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -66,6 +66,7 @@ struct sh_dmae_pdata {
+ 	u32 chcr_ie_bit;
+ 
+ 	u32 dmaor_is_32bit:1;
++	u32 is_usbdmac:1;
+ };
+ 
+ /* DMA register */
+@@ -75,6 +76,8 @@ struct sh_dmae_pdata {
+ #define CHCR	0x0C
+ #define DMAOR	0x40
+ 
++#define TEND	0x18 /* USB-DMAC */
++
+ /* DMAOR definitions */
+ #define DMAOR_AE	0x00000004
+ #define DMAOR_NMIF	0x00000002
 -- 
-~Vinod
+1.7.4.1
 
