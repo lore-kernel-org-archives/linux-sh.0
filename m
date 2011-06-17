@@ -1,118 +1,29 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 09 Jun 2011 05:20:01 +0000
-Subject: Re: [PATCH] fbdev: sh_mobile_lcdc: reduce scope of a variable
-Message-Id: <w3pei33a8e6.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 17 Jun 2011 08:19:43 +0000
+Subject: [RFC][PATCH 0/5 v3] dmaengine: Add USB-DMAC support
+Message-Id: <w3p8vt0q38g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105051831270.29735@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105051831270.29735@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-fbdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
 
-Hi Magnus
+Dear Paul
 
-Thank you !!
+Cc Magnus, Guennadi, Simon
 
-> Hi Morimoto-san,
-> 
-> This is already fixed in linux-2.6 git by:
-> 
-> commit 554cc1028603587e28ae49e9594b1508df5f29aa
-> Author: Paul Mundt <lethal@linux-sh.org>
-> Date:   Thu May 26 15:01:22 2011 +0900
-> 
->     fbdev: sh_mobile_lcdcfb: Fix up fallout from MERAM changes.
-> 
-> / magnus
-> 
-> On Thu, Jun 9, 2011 at 1:28 PM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> >
-> > Dear Paul, Guennadi
-> >
-> > I cannot compile on current paul/master.
-> > below patch seems breaks compile.
-> > "ret" is still needed.
-> >
-> > Can you revert it or apply attached patch ?
-> >
-> > At Thu, 05 May 2011 18:32:36 +0200 (CEST),
-> > Guennadi wrote:
-> >>
-> >> The "ret" variable in sh_mobile_lcdc_start() is only used at one
-> >> location, move its definition to the inner-most scope.
-> >>
-> >> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> >> ---
-> >>  drivers/video/sh_mobile_lcdcfb.c |   12 ++++++------
-> >>  1 files changed, 6 insertions(+), 6 deletions(-)
-> >>
-> >> diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-> >> index 9bcc61b..466834c 100644
-> >> --- a/drivers/video/sh_mobile_lcdcfb.c
-> >> +++ b/drivers/video/sh_mobile_lcdcfb.c
-> >> @@ -469,7 +469,6 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
-> >>       int bpp = 0;
-> >>       unsigned long ldddsr;
-> >>       int k, m;
-> >> -     int ret = 0;
-> >>
-> >>       /* enable clocks before accessing the hardware */
-> >>       for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
-> >> @@ -538,11 +537,12 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
-> >>               lcdc_write_chan(ch, LDPMR, 0);
-> >>
-> >>               board_cfg = &ch->cfg.board_cfg;
-> >> -             if (board_cfg->setup_sys)
-> >> -                     ret = board_cfg->setup_sys(board_cfg->board_data, ch,
-> >> -                                                &sh_mobile_lcdc_sys_bus_ops);
-> >> -             if (ret)
-> >> -                     return ret;
-> >> +             if (board_cfg->setup_sys) {
-> >> +                     int ret = board_cfg->setup_sys(board_cfg->board_data,
-> >> +                                             ch, &sh_mobile_lcdc_sys_bus_ops);
-> >> +                     if (ret)
-> >> +                             return ret;
-> >> +             }
-> >>       }
-> >>
-> >>       /* word and long word swap */
-> >> --
-> >> 1.7.2.5
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> > ---
-> >  drivers/video/sh_mobile_lcdcfb.c |    1 +
-> >  1 files changed, 1 insertions(+), 0 deletions(-)
-> >
-> > diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-> > index 404c03b..d0a03ef 100644
-> > --- a/drivers/video/sh_mobile_lcdcfb.c
-> > +++ b/drivers/video/sh_mobile_lcdcfb.c
-> > @@ -617,6 +617,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
-> >                        unsigned long icb_addr_y, icb_addr_c;
-> >                        int icb_pitch;
-> >                        int pf;
-> > +                       int ret;
-> >
-> >                        cfg = ch->cfg.meram_cfg;
-> >                        mdev = priv->meram_dev;
-> > --
-> >
-> >
-> >
-> > Best regards
-> > --
-> > Kuninori Morimoto
-> >
-> >
+These are v3 of USB-DMAC support prototype for SH7372
+
+Kuninori Morimoto (6)
+         dmaengine: shdma: add chcr_write/read function
+         dmaengine: shdma: add chcr_ie_bit
+         dmaengine: shdma: add dmaor_is_32bit flag
+         dmaengine: shdma: add is_usbdmac flag
+         ARM: mach-shmobile: sh7372: Add USB-DMAC support
+         ARM: mach-shmobile: mackerel: Add USB-DMA ID
+
 
 Best regards
---
+---
 Kuninori Morimoto
