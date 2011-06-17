@@ -1,63 +1,69 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 22 Jun 2011 20:04:54 +0000
-Subject: [GIT PULL] More power management fixes for 3.0
-Message-Id: <201106222204.54532.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 17 Jun 2011 08:21:05 +0000
+Subject: [RFC][PATCH 4/6 v3] dmaengine: shdma: add .needs_tend_set / .no_dmars
+Message-Id: <w3p39j8q366.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-Please pull power management fixes for 3.0 from:
+- u32 -> unsigned int for tend_set / no_dmars
 
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git pm-fixes
+ drivers/dma/shdma.c    |    6 ++++++
+ include/linux/sh_dma.h |    4 ++++
+ 2 files changed, 10 insertions(+), 0 deletions(-)
 
-They include:
-
-* Power management documentation fixes updating information on things that have
-  changed.
-
-* Fix for potential PCI PM regression related to interactions between system
-  suspend/hibernation and the runtime PM framework.
-
-* Fix for smobile regression related to the management of device clocks when
-  CONFIG_PM_RUNTIME is unset.
-
-* Fix for a long-standing issue in the async suspend error code path (accompanied
-  by a field rename in struct dev_pm_info).
-
-* Fix for a long-standing hibernation bug related to its user space interface.
-
-
- Documentation/power/devices.txt    |   67 +++++++----------------------------
- Documentation/power/runtime_pm.txt |    5 ---
- drivers/base/power/clock_ops.c     |    4 +-
- drivers/base/power/main.c          |   28 +++++++++++----
- drivers/pci/pci-driver.c           |    4 ++-
- drivers/usb/core/driver.c          |    6 ++--
- include/linux/device.h             |    4 +-
- include/linux/pm.h                 |    3 +-
- kernel/power/user.c                |    4 ++-
- 9 files changed, 50 insertions(+), 75 deletions(-)
-
----------------
-
-Alan Stern (2):
-      PM: Rename dev_pm_info.in_suspend to is_prepared
-      PM: Fix async resume following suspend failure
-
-Kevin Hilman (1):
-      PM / Runtime: Update doc: usage count no longer incremented across system PM
-
-Michal Kubecek (1):
-      PM: Free memory bitmaps if opening /dev/snapshot fails
-
-Rafael J. Wysocki (4):
-      PM: Update documentation regarding sysdevs
-      PM / Runtime: Handle clocks correctly if CONFIG_PM_RUNTIME is unset
-      PM / Domains: Update documentation
-      PCI / PM: Block races between runtime PM and system sleep
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 6a21cd8..0f3ec8d 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -194,6 +194,9 @@ static void dmae_start(struct sh_dmae_chan *sh_chan)
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 	u32 chcr = chcr_read(sh_chan);
+ 
++	if (shdev->pdata->needs_tend_set)
++		sh_dmae_writel(sh_chan, 0xFFFFFFFF, TEND);
++
+ 	chcr |= CHCR_DE | shdev->chcr_ie_bit;
+ 	chcr_write(sh_chan, chcr & ~CHCR_TE);
+ }
+@@ -242,6 +245,9 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ 	if (dmae_is_busy(sh_chan))
+ 		return -EBUSY;
+ 
++	if (pdata->no_dmars)
++		return 0;
++
+ 	/* in the case of a missing DMARS resource use first memory window */
+ 	if (!addr)
+ 		addr = (u16 __iomem *)shdev->chan_reg;
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index f25afc6..cb2dd11 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -66,6 +66,8 @@ struct sh_dmae_pdata {
+ 	u32 chcr_ie_bit;
+ 
+ 	unsigned int dmaor_is_32bit:1;
++	unsigned int needs_tend_set:1;
++	unsigned int no_dmars:1;
+ };
+ 
+ /* DMA register */
+@@ -75,6 +77,8 @@ struct sh_dmae_pdata {
+ #define CHCR	0x0C
+ #define DMAOR	0x40
+ 
++#define TEND	0x18 /* USB-DMAC */
++
+ /* DMAOR definitions */
+ #define DMAOR_AE	0x00000004
+ #define DMAOR_NMIF	0x00000002
+-- 
+1.7.4.1
 
