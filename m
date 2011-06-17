@@ -1,187 +1,31 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 25 Jun 2011 21:27:49 +0000
-Subject: [PATCH 5/10 v6] PM / Domains: Move code from under #ifdef CONFIG_PM_RUNTIME (v2)
-Message-Id: <201106252327.49552.rjw@sisk.pl>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 17 Jun 2011 02:30:56 +0000
+Subject: [PATCH] sh: Fix build by forgetting comma
+Message-Id: <1308277856-16708-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
-In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@suse.de>, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
-
-There is some code in drivers/base/power/domain.c that will be useful
-for both runtime PM and system-wide power transitions, so make it
-depend on CONFIG_PM instead of CONFIG_PM_RUNTIME.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
- drivers/base/power/domain.c |  120 +++++++++++++++++++++++---------------------
- 1 file changed, 65 insertions(+), 55 deletions(-)
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -14,7 +14,15 @@
- #include <linux/slab.h>
- #include <linux/err.h>
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+index c10db5b..98cc0c7 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+@@ -38,7 +38,7 @@ static struct platform_device rtc_device = {
  
--#ifdef CONFIG_PM_RUNTIME
-+#ifdef CONFIG_PM
-+
-+static struct generic_pm_domain *dev_to_genpd(struct device *dev)
-+{
-+	if (IS_ERR_OR_NULL(dev->pm_domain))
-+		return ERR_PTR(-EINVAL);
-+
-+	return container_of(dev->pm_domain, struct generic_pm_domain, domain);
-+}
- 
- static void genpd_sd_counter_dec(struct generic_pm_domain *genpd)
- {
-@@ -23,6 +31,58 @@ static void genpd_sd_counter_dec(struct
- }
- 
- /**
-+ * pm_genpd_poweron - Restore power to a given PM domain and its parents.
-+ * @genpd: PM domain to power up.
-+ *
-+ * Restore power to @genpd and all of its parents so that it is possible to
-+ * resume a device belonging to it.
-+ */
-+static int pm_genpd_poweron(struct generic_pm_domain *genpd)
-+{
-+	int ret = 0;
-+
-+ start:
-+	if (genpd->parent)
-+		mutex_lock(&genpd->parent->lock);
-+	mutex_lock(&genpd->lock);
-+
-+	if (!genpd->power_is_off)
-+		goto out;
-+
-+	if (genpd->parent && genpd->parent->power_is_off) {
-+		mutex_unlock(&genpd->lock);
-+		mutex_unlock(&genpd->parent->lock);
-+
-+		ret = pm_genpd_poweron(genpd->parent);
-+		if (ret)
-+			return ret;
-+
-+		goto start;
-+	}
-+
-+	if (genpd->power_on) {
-+		int ret = genpd->power_on(genpd);
-+		if (ret)
-+			goto out;
-+	}
-+
-+	genpd->power_is_off = false;
-+	if (genpd->parent)
-+		genpd->parent->sd_count++;
-+
-+ out:
-+	mutex_unlock(&genpd->lock);
-+	if (genpd->parent)
-+		mutex_unlock(&genpd->parent->lock);
-+
-+	return ret;
-+}
-+
-+#endif /* CONFIG_PM */
-+
-+#ifdef CONFIG_PM_RUNTIME
-+
-+/**
-  * __pm_genpd_save_device - Save the pre-suspend state of a device.
-  * @dle: Device list entry of the device to save the state of.
-  * @genpd: PM domain the device belongs to.
-@@ -174,11 +234,10 @@ static int pm_genpd_runtime_suspend(stru
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
--	if (IS_ERR_OR_NULL(dev->pm_domain))
-+	genpd = dev_to_genpd(dev);
-+	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	genpd = container_of(dev->pm_domain, struct generic_pm_domain, domain);
--
- 	if (genpd->parent)
- 		mutex_lock(&genpd->parent->lock);
- 	mutex_lock(&genpd->lock);
-@@ -201,54 +260,6 @@ static int pm_genpd_runtime_suspend(stru
- }
- 
- /**
-- * pm_genpd_poweron - Restore power to a given PM domain and its parents.
-- * @genpd: PM domain to power up.
-- *
-- * Restore power to @genpd and all of its parents so that it is possible to
-- * resume a device belonging to it.
-- */
--static int pm_genpd_poweron(struct generic_pm_domain *genpd)
--{
--	int ret = 0;
--
-- start:
--	if (genpd->parent)
--		mutex_lock(&genpd->parent->lock);
--	mutex_lock(&genpd->lock);
--
--	if (!genpd->power_is_off)
--		goto out;
--
--	if (genpd->parent && genpd->parent->power_is_off) {
--		mutex_unlock(&genpd->lock);
--		mutex_unlock(&genpd->parent->lock);
--
--		ret = pm_genpd_poweron(genpd->parent);
--		if (ret)
--			return ret;
--
--		goto start;
--	}
--
--	if (genpd->power_on) {
--		int ret = genpd->power_on(genpd);
--		if (ret)
--			goto out;
--	}
--
--	genpd->power_is_off = false;
--	if (genpd->parent)
--		genpd->parent->sd_count++;
--
-- out:
--	mutex_unlock(&genpd->lock);
--	if (genpd->parent)
--		mutex_unlock(&genpd->parent->lock);
--
--	return ret;
--}
--
--/**
-  * pm_genpd_runtime_resume - Resume a device belonging to I/O PM domain.
-  * @dev: Device to resume.
-  *
-@@ -264,11 +275,10 @@ static int pm_genpd_runtime_resume(struc
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
--	if (IS_ERR_OR_NULL(dev->pm_domain))
-+	genpd = dev_to_genpd(dev);
-+	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	genpd = container_of(dev->pm_domain, struct generic_pm_domain, domain);
--
- 	ret = pm_genpd_poweron(genpd);
- 	if (ret)
- 		return ret;
+ static struct plat_sci_port sci_platform_data = {
+ 	.mapbase	= 0xffe00000,
+-	.port_reg	= 0xffe0001C
++	.port_reg	= 0xffe0001C,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_TE | SCSCR_RE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+-- 
+1.7.5.4
 
