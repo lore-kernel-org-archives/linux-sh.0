@@ -1,127 +1,210 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 24 Jun 2011 06:07:38 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 A3RV power domain prototype
-Message-Id: <BANLkTi=wNBoez+-cm_TePa_662Jb-TsPYg@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="0016e6d2723ac13d2b04a66f04b0"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 19 Jun 2011 22:07:47 +0000
+Subject: [Update][PATCH 8/8] ARM / shmobile: Support for I/O power domains for SH7372 (v6)
+Message-Id: <201106200007.47828.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110624060236.26758.41446.sendpatchset@t400s>
-In-Reply-To: <20110624060236.26758.41446.sendpatchset@t400s>
-To: linux-sh@vger.kernel.org
+References: <201106112223.04972.rjw@sisk.pl> <BANLkTi=u_eyGZt9e0CuVpyz9B08HarEyVw@mail.gmail.com> <201106160106.40553.rjw@sisk.pl>
+In-Reply-To: <201106160106.40553.rjw@sisk.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
---0016e6d2723ac13d2b04a66f04b0
-Content-Type: text/plain; charset=ISO-8859-1
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-On Fri, Jun 24, 2011 at 3:02 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm@opensource.se>
->
-> This somewhat messy prototype patch adds A3RV power domain
-> control support for sh7372. The A3RV power domain contains
-> the VPU video encoder/decoder which is exported through UIO.
->
-> The prototype serves as an example of a simple power domain
-> that needs to be turned off during boot. The default setting
-> after hardware reset is to keep A3RV powered on. The UIO driver
-> uio_pdrv_genirq.c does not access the VPU hardware at ->probe()
-> time but instead relies 100% on user space. So the VPU device
-> and A3RV will always be unused during boot.
+Use the generic power domains support introduced by the previous
+patch to implement support for power domains on SH7372.
 
-Also, people may want to use the attached test program to give this a go.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
 
-Without this patch, when "vpu-test" is executed twice then the second
-run will produce this message:
-"VPU5HG state kept since last open"
-The message above is outputted when the state of a certain VPU
-register is kept over UIO close->open.
+Hi,
 
-With this patch applied the state of the VPU is always lost between
-the UIO close->open, so the above message will never appear - at least
-until there is a governor in place that prevents the power from being
-turned off based on QoS information.
+I think that all of the previous comments have been addressed in this
+version of the patch.
 
-Cheers,
+Thanks,
+Rafael
 
-/ magnus
+---
+ arch/arm/Kconfig                             |    1 
+ arch/arm/mach-shmobile/Makefile              |    4 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    4 +
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   28 ++++++++++
+ arch/arm/mach-shmobile/pm-sh7372.c           |   71 +++++++++++++++++++++++++++
+ 5 files changed, 108 insertions(+)
 
---0016e6d2723ac13d2b04a66f04b0
-Content-Type: text/x-csrc; charset=US-ASCII; name="vpu-test-20110622.c"
-Content-Disposition: attachment; filename="vpu-test-20110622.c"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gpaqwfle0
-
-LyoKICogdnB1LXRlc3QgLSBBUDQgVlBVIHRlc3QgcHJvZ3JhbSwgMjAxMTA2MjIgTWFnbnVzIERh
-bW0KICoKICogVGhpcyBwcm9ncmFtIGlzIGZyZWUgc29mdHdhcmU7IHlvdSBjYW4gcmVkaXN0cmli
-dXRlIGl0IGFuZC9vciBtb2RpZnkKICogaXQgdW5kZXIgdGhlIHRlcm1zIG9mIHRoZSBHTlUgR2Vu
-ZXJhbCBQdWJsaWMgTGljZW5zZSBhcyBwdWJsaXNoZWQgYnkKICogdGhlIEZyZWUgU29mdHdhcmUg
-Rm91bmRhdGlvbjsgdmVyc2lvbiAyIG9mIHRoZSBMaWNlbnNlLgogKgogKiBUaGlzIHByb2dyYW0g
-aXMgZGlzdHJpYnV0ZWQgaW4gdGhlIGhvcGUgdGhhdCBpdCB3aWxsIGJlIHVzZWZ1bCwKICogYnV0
-IFdJVEhPVVQgQU5ZIFdBUlJBTlRZOyB3aXRob3V0IGV2ZW4gdGhlIGltcGxpZWQgd2FycmFudHkg
-b2YKICogTUVSQ0hBTlRBQklMSVRZIG9yIEZJVE5FU1MgRk9SIEEgUEFSVElDVUxBUiBQVVJQT1NF
-LiAgU2VlIHRoZQogKiBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSBmb3IgbW9yZSBkZXRhaWxz
-LgogKgogKiBZb3Ugc2hvdWxkIGhhdmUgcmVjZWl2ZWQgYSBjb3B5IG9mIHRoZSBHTlUgR2VuZXJh
-bCBQdWJsaWMgTGljZW5zZQogKiBhbG9uZyB3aXRoIHRoaXMgcHJvZ3JhbTsgaWYgbm90LCB3cml0
-ZSB0byB0aGUgRnJlZSBTb2Z0d2FyZQogKiBGb3VuZGF0aW9uLCBJbmMuLCA1MSBGcmFua2xpbiBT
-dCwgRmlmdGggRmxvb3IsIEJvc3RvbiwgTUEgIDAyMTEwLTEzMDEgIFVTQQogKi8KCiNpbmNsdWRl
-IDxzdGRpby5oPgojaW5jbHVkZSA8c3RkbGliLmg+CiNpbmNsdWRlIDxzdHJpbmcuaD4KI2luY2x1
-ZGUgPHN5cy9zdGF0Lmg+CiNpbmNsdWRlIDxzeXMvbW1hbi5oPgojaW5jbHVkZSA8ZmNudGwuaD4K
-I2luY2x1ZGUgPHN5cy90aW1lLmg+CiNpbmNsdWRlIDxzeXMvdHlwZXMuaD4KI2luY2x1ZGUgPHN5
-cy9pb2N0bC5oPgojaW5jbHVkZSA8dW5pc3RkLmg+CgpzdGF0aWMgaW50IGZnZXRzX3dpdGhfb3Bl
-bmNsb3NlKGNoYXIgKmZuYW1lLCBjaGFyICpidWYsIHNpemVfdCBtYXhsZW4pIHsKICAgICAgIEZJ
-TEUgKmZwOwoKICAgICAgIGlmICgoZnAgPSBmb3BlbihmbmFtZSwgInIiKSkgIT0gTlVMTCkgewog
-ICAgICAgICAgICAgICBmZ2V0cyhidWYsIG1heGxlbiwgZnApOwogICAgICAgICAgICAgICBmY2xv
-c2UoZnApOwogICAgICAgICAgICAgICByZXR1cm4gc3RybGVuKGJ1Zik7CiAgICAgICB9IGVsc2Ug
-ewogICAgICAgICAgICAgICByZXR1cm4gLTE7CiAgICAgICB9Cn0KCnN0cnVjdCB1aW9fZGV2aWNl
-IHsKICAgICAgIGNoYXIgKm5hbWU7CiAgICAgICBjaGFyICpwYXRoOwogICAgICAgaW50IGZkOwp9
-OwoKI2RlZmluZSBNQVhVSU9JRFMgIDEwMAojZGVmaW5lIE1BWE5BTUVMRU4gMjU2CgpzdGF0aWMg
-aW50IGxvY2F0ZV91aW9fZGV2aWNlKGNoYXIgKm5hbWUsIHN0cnVjdCB1aW9fZGV2aWNlICp1ZHAp
-CnsKICAgICAgIGNoYXIgZm5hbWVbTUFYTkFNRUxFTl0sIGJ1ZltNQVhOQU1FTEVOXTsKICAgICAg
-IGludCB1aW9faWQsIGk7CgogICAgICAgZm9yICh1aW9faWQgPSAwOyB1aW9faWQgPCBNQVhVSU9J
-RFM7IHVpb19pZCsrKSB7CiAgICAgICAgICAgICAgIHNwcmludGYoZm5hbWUsICIvc3lzL2NsYXNz
-L3Vpby91aW8lZC9uYW1lIiwgdWlvX2lkKTsKICAgICAgICAgICAgICAgaWYgKGZnZXRzX3dpdGhf
-b3BlbmNsb3NlKGZuYW1lLCBidWYsIE1BWE5BTUVMRU4pIDwgMCkKICAgICAgICAgICAgICAgICAg
-ICAgICBjb250aW51ZTsKICAgICAgICAgICAgICAgaWYgKHN0cm5jbXAobmFtZSwgYnVmLCBzdHJs
-ZW4obmFtZSkpID09IDApCiAgICAgICAgICAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICB9Cgog
-ICAgICAgaWYgKHVpb19pZCA+PSBNQVhVSU9JRFMpCiAgICAgICAgICAgICAgIHJldHVybiAtMTsK
-CiAgICAgICB1ZHAtPm5hbWUgPSBzdHJkdXAoYnVmKTsKICAgICAgIHVkcC0+cGF0aCA9IHN0cmR1
-cChmbmFtZSk7CiAgICAgICB1ZHAtPnBhdGhbc3RybGVuKHVkcC0+cGF0aCkgLSA0XSA9ICdcMCc7
-CgogICAgICAgc3ByaW50ZihidWYsICIvZGV2L3VpbyVkIiwgdWlvX2lkKTsKICAgICAgIHVkcC0+
-ZmQgPSBvcGVuKGJ1ZiwgT19SRFdSfE9fU1lOQyAvKnwgT19OT05CTE9DSyovKTsKCiAgICAgICBp
-ZiAodWRwLT5mZCA8IDApIHsKICAgICAgICAgICAgICAgcGVycm9yKCJvcGVuIik7CiAgICAgICAg
-ICAgICAgIHJldHVybiAtMTsKICAgICAgIH0KCiAgICAgICByZXR1cm4gMDsKfQoKc3RydWN0IHVp
-b19tYXAgewogICAgICAgdW5zaWduZWQgbG9uZyBhZGRyZXNzOwogICAgICAgdW5zaWduZWQgbG9u
-ZyBzaXplOwogICAgICAgdm9pZCAqaW9tZW07Cn07CgpzdGF0aWMgaW50IHNldHVwX3Vpb19tYXAo
-c3RydWN0IHVpb19kZXZpY2UgKnVkcCwgaW50IG5yLCBzdHJ1Y3QgdWlvX21hcCAqdW1wKQp7CiAg
-ICAgICBjaGFyIGZuYW1lW01BWE5BTUVMRU5dLCBidWZbTUFYTkFNRUxFTl07CiAKICAgICAgIHNw
-cmludGYoZm5hbWUsICIlcy9tYXBzL21hcCVkL2FkZHIiLCB1ZHAtPnBhdGgsIG5yKTsKICAgICAg
-IGlmIChmZ2V0c193aXRoX29wZW5jbG9zZShmbmFtZSwgYnVmLCBNQVhOQU1FTEVOKSA8PSAwKQog
-ICAgICAgICAgICAgICByZXR1cm4gLTE7CgogICAgICAgdW1wLT5hZGRyZXNzID0gc3RydG91bChi
-dWYsIE5VTEwsIDApOwoKICAgICAgIHNwcmludGYoZm5hbWUsICIlcy9tYXBzL21hcCVkL3NpemUi
-LCB1ZHAtPnBhdGgsIG5yKTsKICAgICAgIGlmIChmZ2V0c193aXRoX29wZW5jbG9zZShmbmFtZSwg
-YnVmLCBNQVhOQU1FTEVOKSA8PSAwKQogICAgICAgICAgICAgICByZXR1cm4gLTE7CgogICAgICAg
-dW1wLT5zaXplID0gc3RydG91bChidWYsIE5VTEwsIDApOwoKICAgICAgIHVtcC0+aW9tZW0gPSBt
-bWFwKDAsIHVtcC0+c2l6ZSwKICAgICAgICAgICAgICAgICAgICAgICAgIFBST1RfUkVBRHxQUk9U
-X1dSSVRFLCBNQVBfU0hBUkVELAogICAgICAgICAgICAgICAgICAgICAgICAgdWRwLT5mZCwgbnIg
-KiBnZXRwYWdlc2l6ZSgpKTsKCiAgICAgICBpZiAodW1wLT5pb21lbSA9PSBNQVBfRkFJTEVEKQog
-ICAgICAgICAgICAgICByZXR1cm4gLTE7CgogICAgICAgcmV0dXJuIDA7Cn0KCnN0cnVjdCB1aW9f
-ZGV2aWNlIHVpb19kZXY7CnN0cnVjdCB1aW9fbWFwIHVpb19tbWlvOwoKaW50IG1haW4oaW50IGFy
-Z2MsIGNoYXIgKmFyZ3ZbXSkKewoJaW50IHJldDsKCglyZXQgPSBsb2NhdGVfdWlvX2RldmljZSgi
-VlBVNUhHIiwgJnVpb19kZXYpOwoJaWYgKHJldCA8IDApIHsKCQlmcHJpbnRmKHN0ZGVyciwgInVu
-YWJsZSB0byBsb2NhdGUgVUlPIGRldmljZVxuIik7CgkJcmV0dXJuIDE7Cgl9CiAgICAgICAKCXJl
-dCA9IHNldHVwX3Vpb19tYXAoJnVpb19kZXYsIDAsICZ1aW9fbW1pbyk7CglpZiAocmV0IDwgMCkg
-ewoJCWZwcmludGYoc3RkZXJyLCAidW5hYmxlIHRvIHNldHVwIFVJTyBtZW1vcnkgbWFwXG4iKTsK
-CQlyZXR1cm4gMTsKCX0KCgl7CgkJdW5zaWduZWQgbG9uZyAqcGggPSAodWlvX21taW8uaW9tZW0g
-KyAweDAwKTsgLyogVkNSSCAqLwoJCXVuc2lnbmVkIGxvbmcgKnBsID0gKHVpb19tbWlvLmlvbWVt
-ICsgMHgwNCk7IC8qIFZDUkwgKi8KCQl1bnNpZ25lZCBsb25nICpwYyA9ICh1aW9fbW1pby5pb21l
-bSArIDB4MDgpOyAvKiBDTUQgKi8KCQl1bnNpZ25lZCBsb25nICpwbSA9ICh1aW9fbW1pby5pb21l
-bSArIDB4ODApOyAvKiBNQkEgKi8KCQlpbnQgazsKCgkJaWYgKCgqcGggJiAweGZmZmYpID09IDB4
-NTVmNCkgewoJCQlwcmludGYoImRldGVjdGVkIFZQVTVIRyB3aXRoIFZDUkg6VkNSTCAweCUwOGx4
-OiUwOGx4XG4iLAoJCQkgICAgICAgKnBoLCAqcGwpOwoKCQkJaWYgKCpwbSA9PSAweGRlYWRiZWVm
-KSB7CgkJCQlwcmludGYoIlZQVTVIRyBzdGF0ZSBrZXB0IHNpbmNlIGxhc3Qgb3BlblxuIik7CgkJ
-CX0KCgkJCSpwYyA9IDEgPDwgMTA7IC8qIHNldCBNUlNUIGJpdCB0byBmb3JjZSByZXNldCAqLwoJ
-CQlmb3IgKGsgPSAwOyBrIDwgNTsgaysrKSB7CgkJCQlpZiAoISgqcGMgJiAoMSA8PCAxMCkpKSB7
-CgkJCQkJcHJpbnRmKCJWUFU1SEcgcmVzZXQgY2hlY2sgT0tcbiIpOwoJCQkJCSpwbSA9IDB4ZGVh
-ZGJlZWY7CgkJCQkJcHJpbnRmKCJTbGVlcGluZyA1IHNlY29uZHMuLi5cbiIpOwoJCQkJCXNsZWVw
-KDUpOwoJCQkJCXJldHVybiAwOwoJCQkJfQoJCQkJc2xlZXAoMSk7CgkJCX0KCQl9Cgl9CgoJZnBy
-aW50ZihzdGRlcnIsICJ1bmFibGUgdG8gZGV0ZWN0L3Jlc2V0IFZQVTVIR1xuIik7CglyZXR1cm4g
-MTsKfQo=
---0016e6d2723ac13d2b04a66f04b0--
+Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1582,6 +1582,10 @@ static void __init mackerel_init(void)
+ 
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
++	sh7372_init_pm_domain(&sh7372_a4lc_domain);
++	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
++	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
++
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+ }
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -12,6 +12,7 @@
+ #define __ASM_SH7372_H__
+ 
+ #include <linux/sh_clk.h>
++#include <linux/pm_domain.h>
+ 
+ /*
+  * Pin Function Controller:
+@@ -470,4 +471,31 @@ extern struct clk sh7372_fsibck_clk;
+ extern struct clk sh7372_fsidiva_clk;
+ extern struct clk sh7372_fsidivb_clk;
+ 
++struct platform_device;
++
++struct sh7372_pm_domain {
++	struct generic_pm_domain genpd;
++	unsigned int bit_shift;
++};
++
++static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
++{
++	return container_of(d, struct sh7372_pm_domain, genpd);
++}
++
++#ifdef CONFIG_PM
++extern struct sh7372_pm_domain sh7372_a4lc_domain;
++#define SH7372_A4LC	(&sh7372_a4lc_domain)
++
++extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
++extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
++					struct platform_device *pdev);
++#else
++#define SH7372_A4LC	NULL
++
++static inline void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd) {}
++static inline void sh7372_add_device_to_domain(struct sh7372_pm_domain *pd,
++					       struct platform_device *pdev) {}
++#endif /* CONFIG_PM */
++
+ #endif /* __ASM_SH7372_H__ */
+Index: linux-2.6/arch/arm/mach-shmobile/Makefile
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/Makefile
++++ linux-2.6/arch/arm/mach-shmobile/Makefile
+@@ -42,6 +42,10 @@ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4ev
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ 
++# PM objects
++pm-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
++
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+ obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
++obj-$(CONFIG_PM)		+= $(pm-y)
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -15,16 +15,87 @@
+ #include <linux/list.h>
+ #include <linux/err.h>
+ #include <linux/slab.h>
++#include <linux/pm_runtime.h>
++#include <linux/platform_device.h>
+ #include <asm/system.h>
+ #include <asm/io.h>
+ #include <asm/tlbflush.h>
+ #include <mach/common.h>
++#include <mach/sh7372.h>
+ 
+ #define SMFRAM 0xe6a70000
+ #define SYSTBCR 0xe6150024
+ #define SBAR 0xe6180020
+ #define APARMBAREA 0xe6f10020
+ 
++#define SPDCR 0xe6180008
++#define SWUCR 0xe6180014
++#define PSTR 0xe6180080
++
++static int pd_power_down(struct generic_pm_domain *genpd)
++{
++	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
++	unsigned int mask = 1 << sh7372_pd->bit_shift;
++
++	if (__raw_readl(PSTR) & mask) {
++		__raw_writel(mask, SPDCR);
++
++		while (__raw_readl(SPDCR) & mask)
++			cpu_relax();
++
++		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
++	}
++
++	return 0;
++}
++
++static int pd_power_up(struct generic_pm_domain *genpd)
++{
++	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
++	unsigned int mask = 1 << sh7372_pd->bit_shift;
++
++	if (!(__raw_readl(PSTR) & mask)) {
++		__raw_writel(mask, SWUCR);
++
++		while (__raw_readl(SWUCR) & mask)
++			cpu_relax();
++
++		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
++	}
++
++	return 0;
++}
++
++void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
++{
++	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
++
++	pm_genpd_init(genpd, NULL, false);
++	genpd->stop_device = pm_runtime_clk_suspend;
++	genpd->start_device = pm_runtime_clk_resume;
++	genpd->power_off = pd_power_down;
++	genpd->power_on = pd_power_up;
++	pd_power_up(&sh7372_pd->genpd);
++}
++
++void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
++				 struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	if (!dev->power.subsys_data) {
++		pm_runtime_clk_init(dev);
++		pm_runtime_clk_add(dev, NULL);
++	}
++	pm_genpd_add_device(&sh7372_pd->genpd, dev);
++}
++
++struct sh7372_pm_domain sh7372_a4lc_domain = {
++	.bit_shift = 1,
++};
++
+ static void sh7372_enter_core_standby(void)
+ {
+ 	void __iomem *smfram = (void __iomem *)SMFRAM;
+Index: linux-2.6/arch/arm/Kconfig
+=================================--- linux-2.6.orig/arch/arm/Kconfig
++++ linux-2.6/arch/arm/Kconfig
+@@ -642,6 +642,7 @@ config ARCH_SHMOBILE
+ 	select NO_IOPORT
+ 	select SPARSE_IRQ
+ 	select MULTI_IRQ_HANDLER
++	select PM_GENERIC_DOMAINS
+ 	help
+ 	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms.
+ 
