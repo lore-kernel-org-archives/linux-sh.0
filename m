@@ -1,125 +1,56 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 15 Jun 2011 07:08:18 +0000
-Subject: Re: [PATCH 1/5] dmaengine: shdma: tidyup addr definition
-Message-Id: <Pine.LNX.4.64.1106150904280.23363@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 20 Jun 2011 06:06:51 +0000
+Subject: [PATCH 1/5] mmc: tmio: name 0xd8 as CTL_DMA_ENABLE
+Message-Id: <1308550015-15717-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pfwnb62qk.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pfwnb62qk.wl%kuninori.morimoto.gx@renesas.com>
+References: <1308550015-15717-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1308550015-15717-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>, Simon Horman <horms@verge.net.au>
 
-On Wed, 15 Jun 2011, Kuninori Morimoto wrote:
+This reflects at least the current usage of this register
+and I think it improves the readability of the code ever so slightly.
 
-> "void __iomem *" is useful
-> 
-> Signed-off-by: Kuninori Morimoto <morimoto.kuninori@renesas.com>
-> ---
->  drivers/dma/shdma.c |   16 ++++++++--------
->  drivers/dma/shdma.h |    6 +++---
->  2 files changed, 11 insertions(+), 11 deletions(-)
-> 
-> diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-> index 2a638f9..8bb77b5 100644
-> --- a/drivers/dma/shdma.c
-> +++ b/drivers/dma/shdma.c
-> @@ -60,22 +60,22 @@ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all);
->  
->  static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
->  {
-> -	__raw_writel(data, sh_dc->base + reg / sizeof(u32));
-> +	__raw_writel(data, sh_dc->base + reg);
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-Does the compiler produce any different code for the two versions? I 
-expect the code to be exactly the same. Agree, optically your version 
-looks prettier, but - see below
-
->  }
->  
->  static u32 sh_dmae_readl(struct sh_dmae_chan *sh_dc, u32 reg)
->  {
-> -	return __raw_readl(sh_dc->base + reg / sizeof(u32));
-> +	return __raw_readl(sh_dc->base + reg);
->  }
->  
->  static u16 dmaor_read(struct sh_dmae_device *shdev)
->  {
-> -	return __raw_readw(shdev->chan_reg + DMAOR / sizeof(u32));
-> +	return __raw_readw(shdev->chan_reg + DMAOR);
->  }
->  
->  static void dmaor_write(struct sh_dmae_device *shdev, u16 data)
->  {
-> -	__raw_writew(data, shdev->chan_reg + DMAOR / sizeof(u32));
-> +	__raw_writew(data, shdev->chan_reg + DMAOR);
->  }
->  
->  /*
-> @@ -213,7 +213,7 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
->  						struct sh_dmae_device, common);
->  	struct sh_dmae_pdata *pdata = shdev->pdata;
->  	const struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->id];
-> -	u16 __iomem *addr = shdev->dmars;
-> +	void __iomem *addr = shdev->dmars;
->  	int shift = chan_pdata->dmars_bit;
->  
->  	if (dmae_is_busy(sh_chan))
-> @@ -221,8 +221,8 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
->  
->  	/* in the case of a missing DMARS resource use first memory window */
->  	if (!addr)
-> -		addr = (u16 __iomem *)shdev->chan_reg;
-> -	addr += chan_pdata->dmars / sizeof(u16);
-> +		addr = (void __iomem *)shdev->chan_reg;
-> +	addr += chan_pdata->dmars;
->  
->  	__raw_writew((__raw_readw(addr) & (0xff00 >> shift)) | (val << shift),
->  		     addr);
-> @@ -1016,7 +1016,7 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
->  	new_sh_chan->dev = shdev->common.dev;
->  	new_sh_chan->id = id;
->  	new_sh_chan->irq = irq;
-> -	new_sh_chan->base = shdev->chan_reg + chan_pdata->offset / sizeof(u32);
-> +	new_sh_chan->base = shdev->chan_reg + chan_pdata->offset;
->  
->  	/* Init DMA tasklet */
->  	tasklet_init(&new_sh_chan->tasklet, dmae_do_tasklet,
-> diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
-> index 5ae9fc5..7f5c58f 100644
-> --- a/drivers/dma/shdma.h
-> +++ b/drivers/dma/shdma.h
-> @@ -35,7 +35,7 @@ struct sh_dmae_chan {
->  	int xmit_shift;			/* log_2(bytes_per_xfer) */
->  	int irq;
->  	int id;				/* Raw id of this channel */
-> -	u32 __iomem *base;
-> +	void __iomem *base;
->  	char dev_id[16];		/* unique name per DMAC of channel */
->  	int pm_error;
->  };
-> @@ -45,8 +45,8 @@ struct sh_dmae_device {
->  	struct sh_dmae_chan *chan[SH_DMAC_MAX_CHANNELS];
->  	struct sh_dmae_pdata *pdata;
->  	struct list_head node;
-> -	u32 __iomem *chan_reg;
-> -	u16 __iomem *dmars;
-> +	void __iomem *chan_reg;
-> +	void __iomem *dmars;
-
-The meaning of the above u32 and u16 addresses is exactly to emphasise, 
-that access to those areas should only be performed in 32-bit or 16-bit 
-words. Your "void" typing removes that hint.
-
->  };
->  
->  #define to_sh_chan(chan) container_of(chan, struct sh_dmae_chan, common)
-> -- 
-> 1.7.4.1
-
-Thanks
-Guennadi
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+Dependencies: none known
+---
+ drivers/mmc/host/tmio_mmc_dma.c |    2 +-
+ include/linux/mmc/tmio.h        |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 25f1ad6..9c4da66 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -26,7 +26,7 @@ static void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ {
+ #if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
+ 	/* Switch DMA mode on or off - SuperH specific? */
+-	writew(enable ? 2 : 0, host->ctl + (0xd8 << host->bus_shift));
++	writew(enable ? 2 : 0, host->ctl + (CTL_DMA_ENABLE << host->bus_shift));
+ #endif
+ }
+ 
+diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
+index 19490b9..0a6e40d 100644
+--- a/include/linux/mmc/tmio.h
++++ b/include/linux/mmc/tmio.h
+@@ -30,6 +30,7 @@
+ #define CTL_TRANSACTION_CTL 0x34
+ #define CTL_SDIO_STATUS 0x36
+ #define CTL_SDIO_IRQ_MASK 0x38
++#define CTL_DMA_ENABLE 0xd8
+ #define CTL_RESET_SD 0xe0
+ #define CTL_SDIO_REGS 0x100
+ #define CTL_CLK_AND_WAIT_CTL 0x138
+-- 
+1.7.4.4
+
