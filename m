@@ -1,174 +1,81 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 20 Jun 2011 06:29:18 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 20 Jun 2011 07:04:04 +0000
 Subject: Re: [PATCH 3/5] mmc: sdhi: Add write16_hook
-Message-Id: <Pine.LNX.4.64.1106200823560.9989@axis700.grange>
+Message-Id: <BANLkTikfMgR5AMZtq7wGKJ4LRP6yjtjhOA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1308550015-15717-1-git-send-email-horms@verge.net.au>
- <1308550015-15717-4-git-send-email-horms@verge.net.au>
+	<1308550015-15717-4-git-send-email-horms@verge.net.au>
 In-Reply-To: <1308550015-15717-4-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: Simon Horman <horms@verge.net.au>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>
 
-On Mon, 20 Jun 2011, Simon Horman wrote:
-
+On Mon, Jun 20, 2011 at 3:06 PM, Simon Horman <horms@verge.net.au> wrote:
 > Some controllers require waiting for the bus to become idle
 > before writing to some registers. I have implemented this
 > by adding a hook to sd_ctrl_write16() and implementing
 > a hook for SDHI which waits for the bus to become idle.
-> 
+>
 > Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > Cc: Magnus Damm <magnus.damm@gmail.com>
 > Signed-off-by: Simon Horman <horms@verge.net.au>
-> 
+>
 > ---
-> 
-> Dependenvies: "mmc: tmio: Share register access functions"
-> ---
->  drivers/mmc/host/sh_mobile_sdhi.c |   34 ++++++++++++++++++++++++++++++++++
->  drivers/mmc/host/tmio_mmc.h       |    2 ++
->  include/linux/mfd/tmio.h          |    8 ++++++++
->  include/linux/mmc/tmio.h          |    1 +
->  4 files changed, 45 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index b365429..6c56453 100644
+
+Hi Simon,
+
+Thanks for your work on this!
+
 > --- a/drivers/mmc/host/sh_mobile_sdhi.c
 > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -27,6 +27,8 @@
->  #include <linux/mfd/tmio.h>
->  #include <linux/sh_dma.h>
->  
-> +#include <asm/delay.h>
-
-linux/delay.h
-
-> +
->  #include "tmio_mmc.h"
->  
->  struct sh_mobile_sdhi {
-> @@ -55,6 +57,37 @@ static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
->  		return -ENOSYS;
->  }
->  
+> @@ -55,6 +57,37 @@ static int sh_mobile_sdhi_get_cd(struct platform_devic=
+e *pdev)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return -ENOSYS;
+> =A0}
+>
 > +static void sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
 > +{
-> +	int timeout = 1000;
+> + =A0 =A0 =A0 int timeout =3D 1000;
 > +
-> +	while (--timeout && !(sd_ctrl_read16(host, CTL_STATUS2) & (1 << 13)))
-> +		udelay(1);
+> + =A0 =A0 =A0 while (--timeout && !(sd_ctrl_read16(host, CTL_STATUS2) & (=
+1 << 13)))
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 udelay(1);
 > +
-> +	if (!timeout)
-> +		dev_warn(host->pdata->dev, "timeout waiting for SD bus idle\n");
+> + =A0 =A0 =A0 if (!timeout)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 dev_warn(host->pdata->dev, "timeout waiting=
+ for SD bus idle\n");
 > +
 > +}
 > +
-> +static void sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+> +static void sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int =
+addr)
 > +{
-> +	if (!(host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
-> +		return;
-> +
-> +	switch (addr)
-> +	{
-> +	case CTL_SD_CMD:
-> +	case CTL_STOP_INTERNAL_ACTION:
-> +	case CTL_XFER_BLK_COUNT:
-> +	case CTL_SD_CARD_CLK_CTL:
-> +	case CTL_SD_XFER_LEN:
-> +	case CTL_SD_MEM_CARD_OPT:
-> +	case CTL_TRANSACTION_CTL:
-> +	case CTL_DMA_ENABLE:
-> +		sh_mobile_sdhi_wait_idle(host);
-> +	}
-> +}
-> +
->  static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
->  {
->  	struct sh_mobile_sdhi *priv;
-> @@ -86,6 +119,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
->  	mmc_data->hclk = clk_get_rate(priv->clk);
->  	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
->  	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
-> +	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+> + =A0 =A0 =A0 if (!(host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
 
-Not sure I like the "write16_hook" name. You consider this callback as 
-something the host might need to do, when writing to a 16-bit register. In 
-this specific case it is actually waiting for the bus to become idle, 
-which might also be needed in other locations. So, maybe it is better to 
-call this callback "wait_idle" or something similar? Or you think, other 
-hosts might need a write16 hook doing something different?...
+and
 
-Thanks
-Guennadi
+> @@ -86,6 +119,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platf=
+orm_device *pdev)
+> =A0 =A0 =A0 =A0mmc_data->hclk =3D clk_get_rate(priv->clk);
+> =A0 =A0 =A0 =A0mmc_data->set_pwr =3D sh_mobile_sdhi_set_pwr;
+> =A0 =A0 =A0 =A0mmc_data->get_cd =3D sh_mobile_sdhi_get_cd;
+> + =A0 =A0 =A0 mmc_data->write16_hook =3D sh_mobile_sdhi_write16_hook;
+> =A0 =A0 =A0 =A0mmc_data->capabilities =3D MMC_CAP_MMC_HIGHSPEED;
+> =A0 =A0 =A0 =A0if (p) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mmc_data->flags =3D p->tmio_flags;
 
->  	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
->  	if (p) {
->  		mmc_data->flags = p->tmio_flags;
-> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> index 0c22df0..5912cf3 100644
-> --- a/drivers/mmc/host/tmio_mmc.h
-> +++ b/drivers/mmc/host/tmio_mmc.h
-> @@ -153,6 +153,8 @@ static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
->  
->  static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
->  {
-> +	if (host->pdata->write16_hook)
-> +		host->pdata->write16_hook(host, addr);
->  	writew(val, host->ctl + (addr << host->bus_shift));
->  }
->  
-> diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-> index 5a90266..dc5db86 100644
-> --- a/include/linux/mfd/tmio.h
-> +++ b/include/linux/mfd/tmio.h
-> @@ -68,6 +68,11 @@
->   * controller and report the event to the driver.
->   */
->  #define TMIO_MMC_HAS_COLD_CD		(1 << 3)
-> +/*
-> + * Some controllers require waiting for the SD bus to become
-> + * idle before writing to some registers.
-> + */
-> +#define TMIO_MMC_HAS_IDLE_WAIT		(1 << 4)
->  
->  int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
->  int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
-> @@ -80,6 +85,8 @@ struct tmio_mmc_dma {
->  	int alignment_shift;
->  };
->  
-> +struct tmio_mmc_host;
-> +
->  /*
->   * data for the MMC controller
->   */
-> @@ -94,6 +101,7 @@ struct tmio_mmc_data {
->  	void (*set_pwr)(struct platform_device *host, int state);
->  	void (*set_clk_div)(struct platform_device *host, int state);
->  	int (*get_cd)(struct platform_device *host);
-> +	void (*write16_hook)(struct tmio_mmc_host *host, int addr);
->  };
->  
->  static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
-> diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
-> index 0a6e40d..f235757 100644
-> --- a/include/linux/mmc/tmio.h
-> +++ b/include/linux/mmc/tmio.h
-> @@ -21,6 +21,7 @@
->  #define CTL_XFER_BLK_COUNT 0xa
->  #define CTL_RESPONSE 0x0c
->  #define CTL_STATUS 0x1c
-> +#define CTL_STATUS2 0x1e
->  #define CTL_IRQ_MASK 0x20
->  #define CTL_SD_CARD_CLK_CTL 0x24
->  #define CTL_SD_XFER_LEN 0x26
-> -- 
-> 1.7.4.4
-> 
+Doesn't it make more sense to do:
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+if (!(host->pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
+  mmc_data->write16_hook =3D sh_mobile_sdhi_write16_hook;
+
+and skip the check inside the sh_mobile_sdhi_write16_hook() function?
+
+No need to do that check on every register access unless really needed.
+
+Thanks,
+
+/ magnus
