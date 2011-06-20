@@ -1,60 +1,42 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 22 Jun 2011 07:49:50 +0000
-Subject: [PATCH 3/5] fbdev: sh_mobile_meram: Move private data from .h to .c
-Message-Id: <1308728992-9660-4-git-send-email-dhobsong@igel.co.jp>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 20 Jun 2011 23:00:07 +0000
+Subject: [PATCH 0/5 v2] mmc: sdhi: Allow waiting for idle
+Message-Id: <1308610812-3479-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>
 
-There is no reason for sh_mobile_meram_priv to be in the .h file
-since it should be private to sh_mobile_meram.c
+Some SDHI controllers require waiting for the SD bus to become
+idle before writing to some registers. This series allows
+this to occur by:
+	* ensuring all relevant accesses are made via sd_ctrl_write16()
+	* Adding a hook to sd_ctrl_write16()
+	* Supplying a hook that implements waiting for idle
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
----
- drivers/video/sh_mobile_meram.c |    8 ++++++++
- drivers/video/sh_mobile_meram.h |    8 --------
- 2 files changed, 8 insertions(+), 8 deletions(-)
+The series also includes some clean-ups of related code.
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 371f129..cc71cbf 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -37,6 +37,14 @@
- #define MEQSEL1 0x40
- #define MEQSEL2 0x44
- 
-+struct sh_mobile_meram_priv {
-+	void __iomem	*base;
-+	struct mutex	lock;
-+	unsigned long	used_icb;
-+	int		used_meram_cache_regions;
-+	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
-+};
-+
- /* settings */
- #define MERAM_SEC_LINE 15
- #define MERAM_LINE_WIDTH 2048
-diff --git a/drivers/video/sh_mobile_meram.h b/drivers/video/sh_mobile_meram.h
-index 82c54fb..1615204 100644
---- a/drivers/video/sh_mobile_meram.h
-+++ b/drivers/video/sh_mobile_meram.h
-@@ -17,14 +17,6 @@
- #define SH_MOBILE_MERAM_CACHE_OFFSET(p)	((p) >> 16)
- #define SH_MOBILE_MERAM_CACHE_SIZE(p)	((p) & 0xffff)
- 
--struct sh_mobile_meram_priv {
--	void __iomem	*base;
--	struct mutex	lock;
--	unsigned long	used_icb;
--	int		used_meram_cache_regions;
--	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
--};
--
- int sh_mobile_meram_alloc_icb(const struct sh_mobile_meram_cfg *cfg,
- 		   int xres,
- 		   int yres,
--- 
-1.7.1
+The first three patches are intended for the mmc tree
+	* [PATCH 1/5] mmc: tmio: name 0xd8 as CTL_DMA_ENABLE
+	* [PATCH 2/5] mmc: tmio: Share register access functions
+	* [PATCH 3/5] mmc: sdhi: Add write16_hook
+
+The remaining two patches are intended for the rmobile tree
+	* [PATCH 4/5] ARM: mach-shmobile: ag5evm: consistently name sdhi info
+	* [PATCH 5/5] ARM: mach-shmobile: ag5evm: SDHI requires waiting for
+
+I am not aware of any dependencies on patches outside this series.
+Dependencies on patches within the series are noted inline.
+
+This is v2 of this patch series, issues addressed since v1 are
+all in [PATCH 3/5] mmc: sdhi: Add write16_hook:
+	* Include linux/delay.h instead of asm/delay.h
+	* Skip write if sh_mobile_sdhi_wait_idle() times out
+	  - The bus will probably be in an inconsistent state and writing
+	    may lock up the bus
+	* Only set hook if TMIO_MMC_HAS_IDLE_WAIT is set in platform data
+	  rather than checking for TMIO_MMC_HAS_IDLE_WAIT each time the
+	  hook is called.
 
