@@ -1,21 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Jun 2011 10:51:35 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh73a0: add MMC data pin pull-up
-Message-Id: <20110630105134.GB15940@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 20 Jun 2011 14:51:10 +0000
+Subject: [PATCH] mmc: tmio: fix regression: restore TMIO_MMC_WRPROTECT_DISABLE
+Message-Id: <Pine.LNX.4.64.1106201648480.11365@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k4c34vzl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k4c34vzl.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Ian Molton <ian@mnementh.co.uk>, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <damm@opensource.se>
 
-On Thu, Jun 30, 2011 at 12:30:29AM -0700, Kuninori Morimoto wrote:
-> Add MMC data pin pull-up option and select it for ag5evm.
-> The MMC read/write will be error if without this patch
+Commit b6147490e6aac82fa2f4b9d7fce925d9891ebe8f broke handling of the
+TMIO_MMC_WRPROTECT_DISABLE flag by the tmio-mmc driver. This patch
+restores the original behaviour.
 
-Thanks Morimoto-san.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-In case anyone cares, I intend to test this patch next week
-when I should have access to the relevant hardware.
+Chris, please push for 3.0
+
+Thanks
+Guennadi
+
+ drivers/mmc/host/tmio_mmc_pio.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index ad6347b..0b09e82 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -824,8 +824,8 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct tmio_mmc_data *pdata = host->pdata;
+ 
+-	return ((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
+-		!(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
++	return !((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
++		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
+ }
+ 
+ static int tmio_mmc_get_cd(struct mmc_host *mmc)
+-- 
+1.7.2.5
 
