@@ -1,131 +1,53 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 15 Jun 2011 23:06:40 +0000
-Subject: Re: [PATCH 8/8] ARM / shmobile: Support for I/O PM domains for SH7372 (v5)
-Message-Id: <201106160106.40553.rjw@sisk.pl>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 20 Jun 2011 06:06:55 +0000
+Subject: [PATCH 5/5] ARM: mach-shmobile: ag5evm: SDHI requires waiting for idle
+Message-Id: <1308550015-15717-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106142316.02812.rjw@sisk.pl> <BANLkTi=u_eyGZt9e0CuVpyz9B08HarEyVw@mail.gmail.com>
-In-Reply-To: <BANLkTi=u_eyGZt9e0CuVpyz9B08HarEyVw@mail.gmail.com>
+References: <1308550015-15717-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1308550015-15717-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>, Simon Horman <horms@verge.net.au>
 
-On Wednesday, June 15, 2011, Magnus Damm wrote:
-> On Wed, Jun 15, 2011 at 6:16 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > On Tuesday, June 14, 2011, Magnus Damm wrote:
-> >> On Sun, Jun 12, 2011 at 5:40 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> >> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> >> >
-> >> > Use the generic power domains support introduced by the previous
-> >> > patch to implement support for power domains on SH7372.
-> >> >
-> >> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> >> > ---
-> >>
-> >> Thanks for your work on this. I just tried this on my Mackerel board,
-> >> but I can't seem to get the pd_power_up() and pd_power_down()
-> >> callbacks to be executed. It is probably a misconfiguration from my
-> >> side.
-> >
-> > They trigger for me e.g. after doing
-> >
-> > # echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
-> >
-> > Attached is the .config I've been using.
-> 
-> Thanks, I can trigger using sysfs and your kernel configuration.
+The SDHI block on the ag5evm requires waiting for idle
+before writing to some registers.
 
-Good.
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-> However, I assumed it also would work when the sceen saver kicked in.
-> I recall it being fbcon that controls the screen save, perhaps
-> something else. So just wait a bit and see if you also can reproduce
-> it. The console gets black but the power is still on...
+---
 
-I noticed that, but I think it simply means pm_runtime_put() isn't
-called in that code path.
+Dependencies:
+	"mmc: sdhi: Add write16_hook"
+	"ARM: mach-shmobile: ag5evm: consistently name sdhi info structures"
+---
+ arch/arm/mach-shmobile/board-ag5evm.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-> Also forcing to go back to powered-on state (see below) doesn't work that well:
-> # echo 0 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
-> 
-> It looks like we loose the panning information somehow. Most likely a
-> LCDC driver bug. Unless the driver callbacks are not being invoked as
-> expected.
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index ce5c251..cdfdd62 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -341,6 +341,7 @@ static struct platform_device mipidsi0_device = {
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ };
+@@ -382,7 +383,7 @@ void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
+ }
+ 
+ static struct sh_mobile_sdhi_info sh_sdhi1_info = {
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
+ 	.tmio_ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.set_pwr	= ag5evm_sdhi1_set_pwr,
+-- 
+1.7.4.4
 
-That should be easy to verify, I'll do that.
-
-> Also, there is garbage in on the screen if FB_SH_MOBILE_MERAM is
-> enabled. The MERAM hardware is a 1.5 MiB memory block that can be used
-> as a LCD cache. It sits in the same hardware power domain as the
-> LCDCs. I don't think the MERAM software supports power down
-> unfortunately. Disabling MERAM support removes the garbage on the
-> screen.
-
-Well, I can't really comment here.
-
-> >> Here's some feedback on the sh7372-specific code:
-> >>
-> >> > --- linux-2.6.orig/arch/arm/mach-shmobile/Kconfig
-> >> > +++ linux-2.6/arch/arm/mach-shmobile/Kconfig
-> >> > @@ -19,6 +19,7 @@ config ARCH_SH7372
-> >> >        select CPU_V7
-> >> >        select SH_CLK_CPG
-> >> >        select ARCH_WANT_OPTIONAL_GPIOLIB
-> >> > +       select PM_GENERIC_DOMAINS
-> >>
-> >> We want to support a single ARM binary for multiple boards,
-> >
-> > Surely CONFIG_ARCH_SH7372 will be set in that binary?
-> >
-> >> so this should be enabled for all SoCs in mach-shmobile as a whole.
-> >
-> > OK, where exactly do you want me to move it?
-> 
-> Ideally to ARCH_SHMOBILE in arch/arm/Kconfig.
-
-OK
-
-> >> > --- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
-> >> > +++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-> >> > @@ -15,16 +15,97 @@
-> >> >  #include <linux/list.h>
-> >> >  #include <linux/err.h>
-> >> >  #include <linux/slab.h>
-> >> > +#include <linux/pm_runtime.h>
-> >> > +#include <linux/platform_device.h>
-> >> >  #include <asm/system.h>
-> >> >  #include <asm/io.h>
-> >> >  #include <asm/tlbflush.h>
-> >> >  #include <mach/common.h>
-> >> > +#include <mach/sh7372.h>
-> >> >
-> >> >  #define SMFRAM 0xe6a70000
-> >> >  #define SYSTBCR 0xe6150024
-> >> >  #define SBAR 0xe6180020
-> >> >  #define APARMBAREA 0xe6f10020
-> >> >
-> >> > +#define SPDCR 0xe6180008
-> >> > +#define SWUCR 0xe6180014
-> >> > +#define PSTR 0xe6180080
-> >> > +
-> >> > +struct sh7372_domain_data {
-> >> > +       unsigned int bit_shift;
-> >> > +};
-> >>
-> >> Is it possible to make struct sh7372_domain_data include struct
-> >> generic_pm_domain?
-> >
-> > It should be possible to do that.
-> >
-> > Do I understand it correctly that you want one structure definition per
-> > power domain instead of the two?
-> 
-> Yes, at least that's what I would do to keep the data together. I
-> don't care that much though, so feel free to implement it however
-> you'd like.
-
-OK, I think I can merge them.
-
-Thanks,
-Rafael
