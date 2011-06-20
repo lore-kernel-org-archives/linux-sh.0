@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 20 Jun 2011 06:06:55 +0000
+Date: Mon, 20 Jun 2011 23:00:12 +0000
 Subject: [PATCH 5/5] ARM: mach-shmobile: ag5evm: SDHI requires waiting for idle
-Message-Id: <1308550015-15717-6-git-send-email-horms@verge.net.au>
+Message-Id: <1308610812-3479-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1308550015-15717-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1308550015-15717-1-git-send-email-horms@verge.net.au>
+References: <1308610812-3479-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1308610812-3479-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
