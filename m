@@ -1,29 +1,49 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 24 Jun 2011 07:11:25 +0000
-Subject: Re: [PATCH] usb: renesas_usbhs: use dma handler
-Message-Id: <20110624071125.GB26504@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 20 Jun 2011 06:06:54 +0000
+Subject: [PATCH 4/5] ARM: mach-shmobile: ag5evm: consistently name sdhi info structures
+Message-Id: <1308550015-15717-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3psjr3yauo.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3psjr3yauo.wl%kuninori.morimoto.gx@renesas.com>
+References: <1308550015-15717-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1308550015-15717-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>, Simon Horman <horms@verge.net.au>
 
-On Tue, Jun 21, 2011 at 07:34:17PM +0900, Kuninori Morimoto wrote:
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > ---
-> > >  drivers/usb/renesas_usbhs/mod_gadget.c |    4 ++--
-> > >  1 files changed, 2 insertions(+), 2 deletions(-)
-> > > 
-> > Does this have any dependencies? What about platforms that don't support
-> > dmaengine?
-> 
-> renesas_usbhs driver will use PIO mode if platforms doesn't have/support
-> dmaengine
-> 
-> more explain or rename needed ?
-> 
-No, that's fine. It wasn't immediately obvious that the PIO fallback and
-overriding of the handler was being done in the DMA routines. Looks good
-to me, I'll let Greg pick it up for usb-next.
+Name the SDHI1 instance sh_sdhi1_info to be consistent with sh_sdhi0_info.
+
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
+---
+
+Dependencies: None known
+---
+ arch/arm/mach-shmobile/board-ag5evm.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 1e2aba2..ce5c251 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -381,7 +381,7 @@ void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
+ 	gpio_set_value(GPIO_PORT114, state);
+ }
+ 
+-static struct sh_mobile_sdhi_info sh_sdhi1_platdata = {
++static struct sh_mobile_sdhi_info sh_sdhi1_info = {
+ 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+ 	.tmio_caps	= MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
+ 	.tmio_ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
+@@ -413,7 +413,7 @@ static struct platform_device sdhi1_device = {
+ 	.name		= "sh_mobile_sdhi",
+ 	.id		= 1,
+ 	.dev		= {
+-		.platform_data	= &sh_sdhi1_platdata,
++		.platform_data	= &sh_sdhi1_info,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(sdhi1_resources),
+ 	.resource	= sdhi1_resources,
+-- 
+1.7.4.4
+
