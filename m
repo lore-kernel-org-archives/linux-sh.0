@@ -1,39 +1,85 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 25 Jun 2011 21:25:33 +0000
-Subject: [PATCH 2/10 v6] PM: subsys_data in struct dev_pm_info need not depend on RM_RUNTIME
-Message-Id: <201106252325.34214.rjw@sisk.pl>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 21 Jun 2011 08:28:27 +0000
+Subject: [PATCH] sh: add platform_device of EHCI/OHCI to setup-sh7757
+Message-Id: <4E00562B.6050300@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
-In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
-
-The subsys_data field of struct dev_pm_info, introduced by commit
-1d2b71f61b6a10216274e27b717becf9ae101fc7 (PM / Runtime: Add subsystem
-data field to struct dev_pm_info), is going to be used even if
-CONFIG_PM_RUNTIME is not set, so move it from under the #ifdef.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- include/linux/pm.h |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   50 ++++++++++++++++++++++++++++++++
+ 1 files changed, 50 insertions(+), 0 deletions(-)
 
-Index: linux-2.6/include/linux/pm.h
-=================================--- linux-2.6.orig/include/linux/pm.h
-+++ linux-2.6/include/linux/pm.h
-@@ -461,8 +461,8 @@ struct dev_pm_info {
- 	unsigned long		active_jiffies;
- 	unsigned long		suspended_jiffies;
- 	unsigned long		accounting_timestamp;
--	void			*subsys_data;  /* Owned by the subsystem. */
- #endif
-+	void			*subsys_data;  /* Owned by the subsystem. */
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 423dabf..717a76b 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -659,6 +659,54 @@ static struct platform_device spi0_device = {
+ 	.resource	= spi0_resources,
  };
- 
- extern void update_pm_runtime_accounting(struct device *dev);
 
++static struct resource usb_ehci_resources[] = {
++	[0] = {
++		.start	= 0xfe4f1000,
++		.end	= 0xfe4f10ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 57,
++		.end	= 57,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device usb_ehci_device = {
++	.name		= "sh_ehci",
++	.id		= -1,
++	.dev = {
++		.dma_mask = &usb_ehci_device.dev.coherent_dma_mask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++	.num_resources	= ARRAY_SIZE(usb_ehci_resources),
++	.resource	= usb_ehci_resources,
++};
++
++static struct resource usb_ohci_resources[] = {
++	[0] = {
++		.start	= 0xfe4f1800,
++		.end	= 0xfe4f18ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 57,
++		.end	= 57,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device usb_ohci_device = {
++	.name		= "sh_ohci",
++	.id		= -1,
++	.dev = {
++		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
++	.resource	= usb_ohci_resources,
++};
++
+ static struct platform_device *sh7757_devices[] __initdata = {
+ 	&scif2_device,
+ 	&scif3_device,
+@@ -670,6 +718,8 @@ static struct platform_device *sh7757_devices[] __initdata = {
+ 	&dma2_device,
+ 	&dma3_device,
+ 	&spi0_device,
++	&usb_ehci_device,
++	&usb_ohci_device,
+ };
+
+ static int __init sh7757_devices_setup(void)
+-- 
+1.7.1
