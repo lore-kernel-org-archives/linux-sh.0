@@ -1,122 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 15 Jun 2011 16:50:46 +0000
-Subject: Re: [PATCH] mmc: tmio: fix recursive spinlock, don't schedule with
-Message-Id: <alpine.DEB.2.00.1106151849300.28243@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Jun 2011 06:09:19 +0000
+Subject: [PATCH] usb: renesas_usbhs: use dma handler
+Message-Id: <w3psjr3yauo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106151549050.23363@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1106151549050.23363@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Magnus Damm <damm@opensource.se>
+To: linux-sh@vger.kernel.org
 
-On Wed, 15 Jun 2011, Guennadi Liakhovetski wrote:
-
-> Calling mmc_request_done() under a spinlock with interrupts disabled
-> leads to a recursive spin-lock on request retry path and to
-> scheduling in atomic context. This patch fixes both these problems
-> by moving mmc_request_done() to the scheduler workqueue.
-
-Hm, sorry, please, wait with this one, I have to test it a bit more.
-
-Thanks
-Guennadi
-
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> Morimoto-san, this should fix the race in TMIO / SDHI driver, that you 
-> reported here:
-> 
-> http://article.gmane.org/gmane.linux.ports.sh.devel/11349
-> 
-> Please, verify.
-> 
->  drivers/mmc/host/tmio_mmc.h     |    2 ++
->  drivers/mmc/host/tmio_mmc_pio.c |   14 +++++++++++---
->  2 files changed, 13 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> index 8260bc2..b4dfc13 100644
-> --- a/drivers/mmc/host/tmio_mmc.h
-> +++ b/drivers/mmc/host/tmio_mmc.h
-> @@ -73,6 +73,8 @@ struct tmio_mmc_host {
->  
->  	/* Track lost interrupts */
->  	struct delayed_work	delayed_reset_work;
-> +	struct work_struct	done;
-> +	/* protect host private data */
->  	spinlock_t		lock;
->  	unsigned long		last_req_ts;
->  };
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-> index ad6347b..1b63045 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -297,10 +297,16 @@ static void tmio_mmc_finish_request(struct tmio_mmc_host *host)
->  
->  	host->mrq = NULL;
->  
-> -	/* FIXME: mmc_request_done() can schedule! */
->  	mmc_request_done(host->mmc, mrq);
->  }
->  
-> +static void tmio_mmc_done_work(struct work_struct *work)
-> +{
-> +	struct tmio_mmc_host *host = container_of(work, struct tmio_mmc_host,
-> +						  done);
-> +	tmio_mmc_finish_request(host);
-> +}
-> +
->  /* These are the bitmasks the tmio chip requires to implement the MMC response
->   * types. Note that R1 and R6 are the same in this scheme. */
->  #define APP_CMD        0x0040
-> @@ -467,7 +473,7 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
->  			BUG();
->  	}
->  
-> -	tmio_mmc_finish_request(host);
-> +	schedule_work(&host->done);
->  }
->  
->  static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
-> @@ -557,7 +563,7 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
->  				tasklet_schedule(&host->dma_issue);
->  		}
->  	} else {
-> -		tmio_mmc_finish_request(host);
-> +		schedule_work(&host->done);
->  	}
->  
->  out:
-> @@ -916,6 +922,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
->  
->  	/* Init delayed work for request timeouts */
->  	INIT_DELAYED_WORK(&_host->delayed_reset_work, tmio_mmc_reset_work);
-> +	INIT_WORK(&_host->done, tmio_mmc_done_work);
->  
->  	/* See if we also get DMA */
->  	tmio_mmc_request_dma(_host, pdata);
-> @@ -963,6 +970,7 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
->  		pm_runtime_get_sync(&pdev->dev);
->  
->  	mmc_remove_host(host->mmc);
-> +	cancel_work_sync(&host->done);
->  	cancel_delayed_work_sync(&host->delayed_reset_work);
->  	tmio_mmc_release_dma(host);
->  
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/usb/renesas_usbhs/mod_gadget.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index ce35319..da76634 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -485,9 +485,9 @@ static int usbhsg_ep_enable(struct usb_ep *ep,
+ 		pipe->mod_private	= uep;
+ 
+ 		if (usb_endpoint_dir_in(desc))
+-			uep->handler = &usbhs_fifo_pio_push_handler;
++			uep->handler = &usbhs_fifo_dma_push_handler;
+ 		else
+-			uep->handler = &usbhs_fifo_pio_pop_handler;
++			uep->handler = &usbhs_fifo_dma_pop_handler;
+ 
+ 		ret = 0;
+ 	}
+-- 
+1.7.4.1
+
