@@ -1,49 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 24 Jun 2011 08:43:26 +0000
-Subject: Re: [PATCH] drivers: sh: late disabling of clocks V2
-Message-Id: <20110624084322.GA20385@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 21 Jun 2011 10:26:05 +0000
+Subject: [PATCH 00/02][RESEND] virtio: Virtio platform driver
+Message-Id: <20110621102605.1382.90232.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110621075512.24672.78879.sendpatchset@t400s>
-In-Reply-To: <20110621075512.24672.78879.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: vapier@gentoo.org, linux-sh@vger.kernel.org, rusty@rustcorp.com.au, virtualization@lists.linux-foundation.org, horms@verge.net.au, mst@redhat.com, Magnus Damm <magnus.damm@gmail.com>, iws@ovro.caltech.edu
 
-On Fri, Jun 24, 2011 at 04:33:05PM +0900, Paul Mundt wrote:
-> On Tue, Jun 21, 2011 at 07:32:36PM +0900, Simon Horman wrote:
-> > On Tue, Jun 21, 2011 at 04:55:12PM +0900, Magnus Damm wrote:
-> > > From: Magnus Damm <damm@opensource.se>
-> > > 
-> > > This V2 patch changes the clock disabling behavior during boot.
-> > > Two different changes are made:
-> > > 
-> > > 1) Delay disabling of clocks until late in the boot process. 
-> > >    This fixes an existing issue where in-use clocks without
-> > >    software reference are disabled by mistake during boot.
-> > >    One example of this is the handling of the Mackerel serial
-> > >    console output that shares clock with the I2C controller.
-> > > 
-> > > 2) Write out the "disabled" state to the hardware for clocks
-> > >    that not have been used by the kernel. In other words, 
-> > >    make sure so far unused clocks actually get turned off.
-> > > 
-> > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > ---
-> > > 
-> > >  Changes since V1:
-> > >  - move out the spinlock and let it protect allow_disable
-> > > 
-> > >  Thanks to Simon Horman for code improvements.
-> > > 
-> > >  This would be useful to have in a topic branch so we can
-> > >  go through each platform and extend the clock framework
-> > >  to a more complete coverage.
-> > 
-> > Code improvement aspect
-> > Acked-by: Simon Horman <horms@verge.net.au>
-> > 
-> Applied to sh/clkfwk and subsequently rolled in to sh-latest. Lets see
-> what breaks..
+virtio: Virtio platform driver
 
-Friday Fun!
+[PATCH 01/02] virtio: Break out lguest virtio code to virtio_lguest.c
+[PATCH 02/02] virtio: Add virtio platform driver
+
+These patches add a virtio platform driver to the Linux kernel. This
+platform driver has the same role as the virtio_pci driver, but instead
+of building on top of emulated PCI this driver is making use of the
+platform bus together with driver specific callbacks.
+
+The virtio platform driver can be seen as a reusable implementation of
+the lguest virtio driver - in fact, most code is just taken directly
+from lguest_device.c and reworked to fit the platform device driver
+abstraction. The first patch breaks out code that can be shared between
+lguest and the virtio platform driver.
+
+This code has been used to implement a mailbox interface between the
+two processor cores included in the sh7372 SoC. The sh7372 contains
+one ARM Cortex-A8 and one SH4AL-DSP core, and in the prototype two
+Linux kernels are running in parallel on the same chip. Virtio serves
+as a communication link between the two cores.
+
+These patches have not been updated since last time they were posted
+20110310, but are known to apply and compile against linux-3.0-rc.
+
+For a full source release, have a look at SH Core Linux 20110317:
+http://www.spinics.net/lists/linux-sh/msg07188.html
+
+The SH kernel patch shows how to make use of the virtio platform driver.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/x86/lguest/Kconfig          |    1 
+ drivers/lguest/lguest_device.c   |  209 ----------------------------
+ drivers/virtio/Kconfig           |   13 +
+ drivers/virtio/Makefile          |    2 
+ drivers/virtio/virtio_lguest.c   |  205 ++++++++++++++++++++++++++++
+ drivers/virtio/virtio_platform.c |  282 +++++++++++++++++++++++++++++++++++++++
+ include/linux/lguest.h           |    1 
+ include/linux/lguest_device.h    |   46 ++++++
+ include/linux/virtio_platform.h  |   12 +
+ 9 files changed, 564 insertions(+), 207 deletions(-)
