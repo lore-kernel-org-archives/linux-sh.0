@@ -1,26 +1,41 @@
-From: David Miller <davem@davemloft.net>
-Date: Sat, 11 Jun 2011 23:01:19 +0000
-Subject: Re: [PATCH] PCI: Make the struct pci_dev * argument of
-Message-Id: <20110611.160119.176399204911265689.davem@davemloft.net>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Tue, 21 Jun 2011 18:27:33 +0000
+Subject: Re: [PATCH 02/02] virtio: Add virtio platform driver
+Message-Id: <BANLkTi=tut=Y4fc4tkT8wt_q1azJOYaDoQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110610143021.GA26043@linux-mips.org>
-In-Reply-To: <20110610143021.GA26043@linux-mips.org>
+References: <20110621102605.1382.90232.sendpatchset@t400s> <20110621102623.1382.71841.sendpatchset@t400s>
+In-Reply-To: <20110621102623.1382.71841.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, rusty@rustcorp.com.au, virtualization@lists.linux-foundation.org, horms@verge.net.au, mst@redhat.com, iws@ovro.caltech.edu
 
-From: Ralf Baechle <ralf@linux-mips.org>
-Date: Fri, 10 Jun 2011 15:30:21 +0100
+On Tue, Jun 21, 2011 at 06:26, Magnus Damm wrote:
+> +config VIRTIO_PLATFORM
+> +       tristate "Platform driver for virtio devices (EXPERIMENTAL)"
+> +       select VIRTIO
+> +       select VIRTIO_RING
+> +       select VIRTIO_LGUEST
+> +       ---help---
+> +        This drivers provides support for virtio based paravirtual device
+> +        drivers over a platform bus.
+> +
+> +        If unsure, say N.
 
-> Aside of the usual motivation for constification,  this function has a
-> history of being abused a hook for interrupt and other fixups so I turned
-> this function const ages ago in the MIPS code but it should be done
-> treewide.
-> 
-> Due to function pointer passing in varous places a few other functions
-> had to be constified as well.
-> 
-> Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+be nice to add a note as to the name of the module if the user selects "M"
 
-Acked-by: David S. Miller <davem@davemloft.net>
+> --- /dev/null
+> +++ work/drivers/virtio/virtio_platform.c       2011-03-03 16:07:31.000000000 +0900
+> --- /dev/null
+> +++ work/include/linux/virtio_platform.h        2011-03-03 15:56:54.000000000 +0900
+
+both files lack a comment block at the top
+/*
+ * one line desc of file
+ *
+ * copyright
+ *
+ * license blurb
+ */
+-mike
