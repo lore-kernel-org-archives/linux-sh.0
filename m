@@ -1,65 +1,26 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Tue, 21 Jun 2011 16:10:22 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 21 Jun 2011 16:27:36 +0000
 Subject: Re: [PATCH 5/5] ARM: mach-shmobile: ag5evm: SDHI requires waiting for idle
-Message-Id: <m2aadbtbbl.fsf@bob.laptop.org>
+Message-Id: <20110621162735.GL7920@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1308610812-3479-1-git-send-email-horms@verge.net.au>
-	<1308610812-3479-6-git-send-email-horms@verge.net.au>
-In-Reply-To: <1308610812-3479-6-git-send-email-horms@verge.net.au> (Simon
-	Horman's message of "Tue, 21 Jun 2011 08:00:12 +0900")
+References: <1308610812-3479-1-git-send-email-horms@verge.net.au> <1308610812-3479-6-git-send-email-horms@verge.net.au> <m2aadbtbbl.fsf@bob.laptop.org>
+In-Reply-To: <m2aadbtbbl.fsf@bob.laptop.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Paul Mundt <lethal@linux-sh.org>
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon Horman <horms@verge.net.au>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi Paul,
-
-On Mon, Jun 20 2011, Simon Horman wrote:
-> The SDHI block on the ag5evm requires waiting for idle
-> before writing to some registers.
->
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
->
-> ---
->
-> Dependencies:
-> 	"mmc: sdhi: Add write16_hook"
-> 	"ARM: mach-shmobile: ag5evm: consistently name sdhi info structures"
-> ---
->  arch/arm/mach-shmobile/board-ag5evm.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
->
-> diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-> index ce5c251..cdfdd62 100644
-> --- a/arch/arm/mach-shmobile/board-ag5evm.c
-> +++ b/arch/arm/mach-shmobile/board-ag5evm.c
-> @@ -341,6 +341,7 @@ static struct platform_device mipidsi0_device = {
->  static struct sh_mobile_sdhi_info sdhi0_info = {
->  	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
->  	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-> +	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
->  	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
->  	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
->  };
-> @@ -382,7 +383,7 @@ void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
->  }
->  
->  static struct sh_mobile_sdhi_info sh_sdhi1_info = {
-> -	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
-> +	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
->  	.tmio_caps	= MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
->  	.tmio_ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
->  	.set_pwr	= ag5evm_sdhi1_set_pwr,
-
-Could I get your ACK for this one, so that I can merge patches 1/2/3/5
-together via the MMC tree?
-
-Thanks,
-
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+On Tue, Jun 21, 2011 at 12:10:22PM -0400, Chris Ball wrote:
+> On Mon, Jun 20 2011, Simon Horman wrote:
+> > Dependencies:
+> > 	"mmc: sdhi: Add write16_hook"
+> > 	"ARM: mach-shmobile: ag5evm: consistently name sdhi info structures"
+> 
+> Could I get your ACK for this one, so that I can merge patches 1/2/3/5
+> together via the MMC tree?
+> 
+Well, this has a dependency on 4/5 which I've already applied. I was
+simply going to wait for 1-3 to be merged via your tree and then roll in
+this last one on top of that. If you want to take them all that's ok too,
+git should be able to deal with any merge conflicts fine.
