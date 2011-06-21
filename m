@@ -1,69 +1,77 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 20 Jun 2011 22:30:01 +0000
+Date: Tue, 21 Jun 2011 11:57:08 +0000
 Subject: Re: [Update][PATCH 8/8] ARM / shmobile: Support for I/O power domains for SH7372 (v6)
-Message-Id: <201106210030.01922.rjw@sisk.pl>
+Message-Id: <201106211357.09202.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106200007.47828.rjw@sisk.pl> <20110620020125.GA26125@linux-sh.org>
-In-Reply-To: <20110620020125.GA26125@linux-sh.org>
+References: <201106112223.04972.rjw@sisk.pl> <20110620020125.GA26125@linux-sh.org> <201106210030.01922.rjw@sisk.pl>
+In-Reply-To: <201106210030.01922.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Paul Mundt <lethal@linux-sh.org>
 Cc: Magnus Damm <magnus.damm@gmail.com>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
-On Monday, June 20, 2011, Paul Mundt wrote:
-> On Mon, Jun 20, 2011 at 12:07:47AM +0200, Rafael J. Wysocki wrote:
-> > +static int pd_power_down(struct generic_pm_domain *genpd)
-> > +{
-> > +	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
-> > +	unsigned int mask = 1 << sh7372_pd->bit_shift;
-> > +
-> > +	if (__raw_readl(PSTR) & mask) {
-> > +		__raw_writel(mask, SPDCR);
-> > +
-> > +		while (__raw_readl(SPDCR) & mask)
-> > +			cpu_relax();
-> > +
-> > +		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
-> > +			 mask, __raw_readl(PSTR));
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> > +static int pd_power_up(struct generic_pm_domain *genpd)
-> > +{
-> > +	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
-> > +	unsigned int mask = 1 << sh7372_pd->bit_shift;
-> > +
-> > +	if (!(__raw_readl(PSTR) & mask)) {
-> > +		__raw_writel(mask, SWUCR);
-> > +
-> > +		while (__raw_readl(SWUCR) & mask)
-> > +			cpu_relax();
-> > +
-> > +		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
-> > +			 mask, __raw_readl(PSTR));
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> Given that these functions can return errors, it's probably more prudent
-> to implement some timeout logic on top of the busy loop. Hardware does
-> get stuck, after all.
+On Tuesday, June 21, 2011, Rafael J. Wysocki wrote:
+> On Monday, June 20, 2011, Paul Mundt wrote:
+> > On Mon, Jun 20, 2011 at 12:07:47AM +0200, Rafael J. Wysocki wrote:
+> > > +static int pd_power_down(struct generic_pm_domain *genpd)
+> > > +{
+> > > +	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
+> > > +	unsigned int mask = 1 << sh7372_pd->bit_shift;
+> > > +
+> > > +	if (__raw_readl(PSTR) & mask) {
+> > > +		__raw_writel(mask, SPDCR);
+> > > +
+> > > +		while (__raw_readl(SPDCR) & mask)
+> > > +			cpu_relax();
+> > > +
+> > > +		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
+> > > +			 mask, __raw_readl(PSTR));
+> > > +	}
+> > > +
+> > > +	return 0;
+> > > +}
+> > > +
+> > > +static int pd_power_up(struct generic_pm_domain *genpd)
+> > > +{
+> > > +	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
+> > > +	unsigned int mask = 1 << sh7372_pd->bit_shift;
+> > > +
+> > > +	if (!(__raw_readl(PSTR) & mask)) {
+> > > +		__raw_writel(mask, SWUCR);
+> > > +
+> > > +		while (__raw_readl(SWUCR) & mask)
+> > > +			cpu_relax();
+> > > +
+> > > +		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
+> > > +			 mask, __raw_readl(PSTR));
+> > > +	}
+> > > +
+> > > +	return 0;
+> > > +}
+> > > +
+> > Given that these functions can return errors, it's probably more prudent
+> > to implement some timeout logic on top of the busy loop. Hardware does
+> > get stuck, after all.
+> 
+> Yes, it does, but we don't really know what timeout value to use in there.
+> 
+> In fact, failures of pd_power_down() don't really matter (at worst the power
+> domain won't be powered off really) and pd_power_up() should only return error
+> code if the error is known to be unrecoverable.
+> 
+> So, what about this: repeat certain number of times (I verified that it took
+> several iterations of the loop until the new value settled on my hardware)
+> and then return from pd_power_down() or go to sleep for a short time and repeat
+> in pd_power_up()?
 
-Yes, it does, but we don't really know what timeout value to use in there.
+Having discussed that with Magnus I changed pd_power_down() to use a timeout.
+Specifically, it will bail out if the state doesn't change after approximately
+1 ms.
 
-In fact, failures of pd_power_down() don't really matter (at worst the power
-domain won't be powered off really) and pd_power_up() should only return error
-code if the error is known to be unrecoverable.
+Updated patch is appended.
 
-So, what about this: repeat certain number of times (I verified that it took
-several iterations of the loop until the new value settled on my hardware)
-and then return from pd_power_down() or go to sleep for a short time and repeat
-in pd_power_up()?
-
+Thanks,
 Rafael
 
 ---
@@ -78,9 +86,9 @@ Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
  arch/arm/Kconfig                             |    1 
  arch/arm/mach-shmobile/Makefile              |    4 +
  arch/arm/mach-shmobile/board-mackerel.c      |    4 +
- arch/arm/mach-shmobile/include/mach/sh7372.h |   28 +++++++++
- arch/arm/mach-shmobile/pm-sh7372.c           |   84 +++++++++++++++++++++++++++
- 5 files changed, 121 insertions(+)
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   28 ++++++++
+ arch/arm/mach-shmobile/pm-sh7372.c           |   92 +++++++++++++++++++++++++++
+ 5 files changed, 129 insertions(+)
 
 Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
 =================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
@@ -156,7 +164,7 @@ Index: linux-2.6/arch/arm/mach-shmobile/Makefile
 Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
 =================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
 +++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -15,16 +15,100 @@
+@@ -15,16 +15,108 @@
  #include <linux/list.h>
  #include <linux/err.h>
  #include <linux/slab.h>
@@ -179,7 +187,7 @@ Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
 +#define PSTR 0xe6180080
 +
 +#define PSTR_RETRIES 100
-+#define PSTR_DELAY_MS 10
++#define PSTR_DELAY_US 10
 +
 +static int pd_power_down(struct generic_pm_domain *genpd)
 +{
@@ -187,11 +195,15 @@ Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
 +	unsigned int mask = 1 << sh7372_pd->bit_shift;
 +
 +	if (__raw_readl(PSTR) & mask) {
-+		unsigned int retry_count = PSTR_RETRIES;
++		unsigned int retry_count;
 +
 +		__raw_writel(mask, SPDCR);
-+		while ((__raw_readl(SPDCR) & mask) && retry_count--)
++
++		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
++			if (!(__raw_readl(SPDCR) & mask))
++				break;
 +			cpu_relax();
++		}
 +	}
 +
 +	pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
@@ -204,26 +216,30 @@ Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
 +{
 +	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
 +	unsigned int mask = 1 << sh7372_pd->bit_shift;
++	unsigned int retry_count;
++	int ret = 0;
 +
-+	if (!(__raw_readl(PSTR) & mask)) {
-+		do {
-+			unsigned int retry_count = PSTR_RETRIES;
++	if (__raw_readl(PSTR) & mask)
++		goto out;
 +
-+			__raw_writel(mask, SWUCR);
-+			while ((__raw_readl(SWUCR) & mask) && retry_count--)
-+				cpu_relax();
++	__raw_writel(mask, SWUCR);
 +
-+			if (!(__raw_readl(SWUCR) & mask))
-+				break;
-+
-+			msleep(PSTR_DELAY_MS);
-+		} while (true);
++	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
++		if (!(__raw_readl(SWUCR) & mask))
++			goto out;
++		if (retry_count > PSTR_RETRIES)
++			udelay(PSTR_DELAY_US);
++		else
++			cpu_relax();
 +	}
++	if (__raw_readl(SWUCR) & mask)
++		ret = -EIO;
 +
++ out:
 +	pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
 +		 mask, __raw_readl(PSTR));
 +
-+	return 0;
++	return ret;
 +}
 +
 +void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
