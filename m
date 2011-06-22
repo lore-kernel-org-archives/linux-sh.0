@@ -1,30 +1,35 @@
-From: Ralf Baechle <ralf@linux-mips.org>
-Date: Mon, 06 Jun 2011 13:49:41 +0000
-Subject: Re: [PATCH 2/3] PM / Hibernate: Remove arch_prepare_suspend()
-Message-Id: <20110606134941.GB15453@linux-mips.org>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 22 Jun 2011 07:43:09 +0000
+Subject: [PATCH] fbdev: sh_mobile_meram: Correct pointer check for YCbCr chroma plane
+Message-Id: <1308728589-9547-1-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201105211408.28671.rjw@sisk.pl>
- <201105211410.34491.rjw@sisk.pl>
-In-Reply-To: <201105211410.34491.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Frank Hofmann <frank.hofmann@tomtom.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>
+To: linux-sh@vger.kernel.org
 
-On Sat, May 21, 2011 at 02:10:34PM +0200, Rafael J. Wysocki wrote:
+The check was intended to test if we have a valid pointer to write into,
+but it mistakenly checks the pointer contents instead.
 
-> 
-> All architectures supporting hibernation define
-> arch_prepare_suspend() as an empty function, so remove it.
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> ---
->  arch/frv/include/asm/suspend.h       |   20 --------------------
->  arch/mips/include/asm/suspend.h      |    2 --
+Since a valid pointer is mandatory for the chroma data if a YCbCr format
+is used, the pointer check has been removed.
+---
+ drivers/video/sh_mobile_meram.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-I don't see what we'd possibly need that hook for so:
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 7afd77a..6700140 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -246,7 +246,7 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+ 		icb_offset = 0xc0000000 | (cfg->current_reg << 23);
+ 
+ 	*icb_addr_y = icb_offset | (cfg->icb[0].marker_icb << 24);
+-	if ((*icb_addr_c) && is_nvcolor(cfg->pixelformat))
++	if (is_nvcolor(cfg->pixelformat))
+ 		*icb_addr_c = icb_offset | (cfg->icb[1].marker_icb << 24);
+ }
+ 
+-- 
+1.7.1
 
-Acked-by: Ralf Baechle <ralf@linux-mips.org>
-
-  Ralf
