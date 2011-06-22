@@ -1,51 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 02 Jun 2011 08:57:08 +0000
-Subject: [GIT PULL] sh fixes for 3.0-rc2
-Message-Id: <20110602085708.GA26101@linux-sh.org>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 22 Jun 2011 07:49:47 +0000
+Subject: [PATCH 0/5 v3] LCDC MERAM runtime PM support
+Message-Id: <1308728992-9660-1-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Please pull from:
+This patch series is a provides PM runtime support for the LCDC MERAM.
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git sh-fixes-for-linus
+The runtime_pm_get/put calls are made at the same time as the LCDC calls, so
+that the LCDC MERAM is enabled with the first LCDC device and disabled 
+with the last LCDC device.
 
-Which contains:
+The first 4 patches will apply to rmobile-latest or common/fbdev-meram as-is,
+but the final patch needs to have the "PM / Domains: Support for generic I/O PM
+domains" patch series. 
 
-Guennadi Liakhovetski (4):
-      sh: switch ap325rxa to dynamically manage the platform camera
-      sh: add MMCIF runtime PM support on ecovec
-      sh: mark DMA slave ID 0 as invalid
-      dmaengine: shdma: fix a regression: initialise DMA channels for memcpy
+Changes from V2
 
-Nobuhiro Iwamatsu (1):
-      sh: asm/tlb.h needs linux/swap.h
+* Change the names of the clk_on/clk_off callbacks to pm_get_sync/pm_put_sync
+  to better reflect their actual functionality
 
-Paul Mundt (8):
-      sh: arch/sh/kernel/process_32.c needs linux/prefetch.h.
-      sh: Update shmin to reflect PIO dependency.
-      sh64: asm/pgtable.h needs asm/mmu.h
-      sh64: Move from P1SEG to CAC_ADDR for consistent sync.
-      sh: Fix up asm-generic/ptrace.h fallout.
-      Revert "clocksource: sh_tmu: Runtime PM support"
-      Revert "clocksource: sh_cmt: Runtime PM support"
-      dmaengine: shdma: Fix up fallout from runtime PM changes.
+* Make these callback functions static
 
- arch/sh/Kconfig                      |    2 +-
- arch/sh/boards/mach-ap325rxa/setup.c |   32 +++++++++++++-------------------
- arch/sh/boards/mach-ecovec24/setup.c |    3 +++
- arch/sh/include/asm/pgtable.h        |    1 +
- arch/sh/include/asm/ptrace.h         |    6 ++++--
- arch/sh/include/asm/tlb.h            |    1 +
- arch/sh/include/cpu-sh4/cpu/sh7722.h |    1 +
- arch/sh/include/cpu-sh4/cpu/sh7724.h |    1 +
- arch/sh/include/cpu-sh4/cpu/sh7757.h |    1 +
- arch/sh/kernel/process_32.c          |    1 +
- arch/sh/mm/consistent.c              |    2 +-
- drivers/clocksource/sh_cmt.c         |   12 ++----------
- drivers/clocksource/sh_tmu.c         |   12 ++----------
- drivers/dma/shdma.c                  |    9 +++++++--
- 14 files changed, 39 insertions(+), 45 deletions(-)
+* The private data structure definition was moved from sh_mobile_meram.h to
+  sh_mobile_meram.c.  This has been moved into a separate patch
+
+* Use the sh7372_add_device_to_domain() function to register the MERAM in
+  the SH7372_A4LC domain.
+
+Damian Hobson-Garcia (5):
+  fbdev: sh_mobile_meram: Add enable/disble hooks for LCDC
+  fbdev: sh_mobile_meram: Enable/disable MERAM along with LCDC
+  fbdev: sh_mobile_meram: Move private data from .h to .c
+  fbdev: sh_mobile_meram: Backup/restore device registers on
+    shutdown/resume
+  fbdev: sh_mobile_meram: Assign meram to the SH7372_A4LC power domain
+
+ arch/arm/mach-shmobile/board-mackerel.c |    1 +
+ drivers/video/sh_mobile_lcdcfb.c        |   10 +++
+ drivers/video/sh_mobile_meram.c         |  106 +++++++++++++++++++++++++++++++
+ drivers/video/sh_mobile_meram.h         |    8 ---
+ include/video/sh_mobile_meram.h         |    6 ++
+ 5 files changed, 123 insertions(+), 8 deletions(-)
+
