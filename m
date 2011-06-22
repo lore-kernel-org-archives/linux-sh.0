@@ -1,147 +1,126 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 25 Jun 2011 21:30:05 +0000
-Subject: [PATCH 8/10 v6] PM: Allow the clocks management code to be used during system suspend
-Message-Id: <201106252330.05596.rjw@sisk.pl>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 22 Jun 2011 07:49:51 +0000
+Subject: [PATCH 4/5 v3] fbdev: sh_mobile_meram: Backup/restore device registers on shutdown/resume
+Message-Id: <1308728992-9660-5-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
-In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Save and reconfigure the MERAM registers when the MERAM is powered down
+and restored
 
-The common clocks management code in drivers/base/power/clock_ops.c
-is going to be used during system-wide power transitions as well as
-for runtime PM, so it shouldn't depend on CONFIG_PM_RUNTIME.
-However, the suspend/resume functions provided by it for
-CONFIG_PM_RUNTIME unset, to be used during system-wide power
-transitions, should not behave in the same way as their counterparts
-defined for CONFIG_PM_RUNTIME set, because in that case the clocks
-are managed differently at run time.
-
-The names of the functions still contain the word "runtime" after
-this change, but that is going to be modified by a separate patch
-later.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- drivers/base/power/clock_ops.c |   60 ++++++++++++++++++++++++++++++++++++++++-
- include/linux/pm_runtime.h     |    2 -
- kernel/power/Kconfig           |    4 +-
- 3 files changed, 62 insertions(+), 4 deletions(-)
+Changes from V2
+=======
+* The private data structure definition was moved from sh_mobile_meram.h to
+  sh_mobile_meram.c.  This has been moved into a separate patch
 
-Index: linux-2.6/include/linux/pm_runtime.h
-=================================--- linux-2.6.orig/include/linux/pm_runtime.h
-+++ linux-2.6/include/linux/pm_runtime.h
-@@ -251,7 +251,7 @@ struct pm_clk_notifier_block {
- 	char *con_ids[];
+ drivers/video/sh_mobile_meram.c |   71 +++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 71 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index cc71cbf..7afd77a 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -37,12 +37,31 @@
+ #define MEQSEL1 0x40
+ #define MEQSEL2 0x44
+ 
++static unsigned long common_regs[] = {
++	MEVCR1,
++	MEQSEL1,
++	MEQSEL2,
++};
++#define CMN_REGS_SIZE ARRAY_SIZE(common_regs)
++
++static unsigned long icb_regs[] = {
++	MExxCTL,
++	MExxBSIZE,
++	MExxMNCF,
++	MExxSARA,
++	MExxSARB,
++	MExxSBSIZE,
++};
++#define ICB_REGS_SIZE ARRAY_SIZE(icb_regs)
++
+ struct sh_mobile_meram_priv {
+ 	void __iomem	*base;
+ 	struct mutex	lock;
+ 	unsigned long	used_icb;
+ 	int		used_meram_cache_regions;
+ 	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
++	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
++	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
  };
  
--#ifdef CONFIG_PM_RUNTIME_CLK
-+#ifdef CONFIG_PM_CLK
- extern int pm_runtime_clk_init(struct device *dev);
- extern void pm_runtime_clk_destroy(struct device *dev);
- extern int pm_runtime_clk_add(struct device *dev, const char *con_id);
-Index: linux-2.6/kernel/power/Kconfig
-=================================--- linux-2.6.orig/kernel/power/Kconfig
-+++ linux-2.6/kernel/power/Kconfig
-@@ -224,9 +224,9 @@ config PM_OPP
- 	  implementations a ready to use framework to manage OPPs.
- 	  For more information, read <file:Documentation/power/opp.txt>
- 
--config PM_RUNTIME_CLK
-+config PM_CLK
- 	def_bool y
--	depends on PM_RUNTIME && HAVE_CLK
-+	depends on PM && HAVE_CLK
- 
- config PM_GENERIC_DOMAINS
- 	bool
-Index: linux-2.6/drivers/base/power/clock_ops.c
-=================================--- linux-2.6.orig/drivers/base/power/clock_ops.c
-+++ linux-2.6/drivers/base/power/clock_ops.c
-@@ -15,7 +15,7 @@
- #include <linux/slab.h>
- #include <linux/err.h>
- 
--#ifdef CONFIG_PM_RUNTIME
-+#ifdef CONFIG_PM
- 
- struct pm_runtime_clk_data {
- 	struct list_head clock_list;
-@@ -191,6 +191,10 @@ void pm_runtime_clk_destroy(struct devic
- 	kfree(prd);
+ /* settings */
+@@ -489,6 +508,57 @@ int sh_mobile_meram_pm_put_sync(struct sh_mobile_meram_info *pdata)
+ 	return 0;
  }
  
-+#endif /* CONFIG_PM */
-+
-+#ifdef CONFIG_PM_RUNTIME
-+
- /**
-  * pm_runtime_clk_acquire - Acquire a device clock.
-  * @dev: Device whose clock is to be acquired.
-@@ -330,6 +334,60 @@ static int pm_runtime_clk_notify(struct
- 
- #else /* !CONFIG_PM_RUNTIME */
- 
-+#ifdef CONFIG_PM
-+
-+/**
-+ * pm_runtime_clk_suspend - Disable clocks in a device's PM clock list.
-+ * @dev: Device to disable the clocks for.
-+ */
-+int pm_runtime_clk_suspend(struct device *dev)
++static int sh_mobile_meram_runtime_suspend(struct device *dev)
 +{
-+	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clock_entry *ce;
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
++	int k, j;
 +
-+	dev_dbg(dev, "%s()\n", __func__);
++	for (k = 0; k < CMN_REGS_SIZE; k++)
++		priv->cmn_saved_regs[k] = meram_read_reg(priv->base,
++			common_regs[k]);
 +
-+	/* If there is no driver, the clocks are already disabled. */
-+	if (!prd || !dev->driver)
-+		return 0;
-+
-+	mutex_lock(&prd->lock);
-+
-+	list_for_each_entry_reverse(ce, &prd->clock_list, node)
-+		clk_disable(ce->clk);
-+
-+	mutex_unlock(&prd->lock);
-+
++	for (j = 0; j < 32; j++) {
++		if (!test_bit(j, &priv->used_icb))
++			continue;
++		for (k = 0; k < ICB_REGS_SIZE; k++) {
++			priv->icb_saved_regs[j * ICB_REGS_SIZE + k] +				meram_read_icb(priv->base, j, icb_regs[k]);
++			/* Reset ICB on resume */
++			if (icb_regs[k] = MExxCTL)
++				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] +					0x70;
++		}
++	}
 +	return 0;
 +}
 +
-+/**
-+ * pm_runtime_clk_resume - Enable clocks in a device's PM clock list.
-+ * @dev: Device to enable the clocks for.
-+ */
-+int pm_runtime_clk_resume(struct device *dev)
++static int sh_mobile_meram_runtime_resume(struct device *dev)
 +{
-+	struct pm_runtime_clk_data *prd = __to_prd(dev);
-+	struct pm_clock_entry *ce;
++	struct platform_device *pdev = to_platform_device(dev);
++	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
++	int k, j;
 +
-+	dev_dbg(dev, "%s()\n", __func__);
++	for (j = 0; j < 32; j++) {
++		if (!test_bit(j, &priv->used_icb))
++			continue;
++		for (k = 0; k < ICB_REGS_SIZE; k++) {
++			meram_write_icb(priv->base, j, icb_regs[k],
++			priv->icb_saved_regs[j * ICB_REGS_SIZE + k]);
++		}
++	}
 +
-+	/* If there is no driver, the clocks should remain disabled. */
-+	if (!prd || !dev->driver)
-+		return 0;
-+
-+	mutex_lock(&prd->lock);
-+
-+	list_for_each_entry(ce, &prd->clock_list, node)
-+		clk_enable(ce->clk);
-+
-+	mutex_unlock(&prd->lock);
-+
++	for (k = 0; k < CMN_REGS_SIZE; k++)
++		meram_write_reg(priv->base, common_regs[k],
++			priv->cmn_saved_regs[k]);
 +	return 0;
 +}
 +
-+#endif /* CONFIG_PM */
++static const struct dev_pm_ops sh_mobile_meram_dev_pm_ops = {
++	.runtime_suspend = sh_mobile_meram_runtime_suspend,
++	.runtime_resume = sh_mobile_meram_runtime_resume,
++};
 +
- /**
-  * enable_clock - Enable a device clock.
-  * @dev: Device whose clock is to be enabled.
+ static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
+ 	.module			= THIS_MODULE,
+ 	.meram_register		= sh_mobile_meram_register,
+@@ -579,6 +649,7 @@ static struct platform_driver sh_mobile_meram_driver = {
+ 	.driver	= {
+ 		.name		= "sh_mobile_meram",
+ 		.owner		= THIS_MODULE,
++		.pm		= &sh_mobile_meram_dev_pm_ops,
+ 	},
+ 	.probe		= sh_mobile_meram_probe,
+ 	.remove		= sh_mobile_meram_remove,
+-- 
+1.7.1
 
