@@ -1,28 +1,60 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 02 Jun 2011 08:57:10 +0000
-Subject: [GIT PULL] rmobile fixes for 3.0-rc2
-Message-Id: <20110602085710.GA28066@linux-sh.org>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Wed, 22 Jun 2011 07:49:50 +0000
+Subject: [PATCH 3/5] fbdev: sh_mobile_meram: Move private data from .h to .c
+Message-Id: <1308728992-9660-4-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Please pull from:
+There is no reason for sh_mobile_meram_priv to be in the .h file
+since it should be private to sh_mobile_meram.c
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-fixes-for-linus
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+---
+ drivers/video/sh_mobile_meram.c |    8 ++++++++
+ drivers/video/sh_mobile_meram.h |    8 --------
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-Which contains:
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 371f129..cc71cbf 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -37,6 +37,14 @@
+ #define MEQSEL1 0x40
+ #define MEQSEL2 0x44
+ 
++struct sh_mobile_meram_priv {
++	void __iomem	*base;
++	struct mutex	lock;
++	unsigned long	used_icb;
++	int		used_meram_cache_regions;
++	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
++};
++
+ /* settings */
+ #define MERAM_SEC_LINE 15
+ #define MERAM_LINE_WIDTH 2048
+diff --git a/drivers/video/sh_mobile_meram.h b/drivers/video/sh_mobile_meram.h
+index 82c54fb..1615204 100644
+--- a/drivers/video/sh_mobile_meram.h
++++ b/drivers/video/sh_mobile_meram.h
+@@ -17,14 +17,6 @@
+ #define SH_MOBILE_MERAM_CACHE_OFFSET(p)	((p) >> 16)
+ #define SH_MOBILE_MERAM_CACHE_SIZE(p)	((p) & 0xffff)
+ 
+-struct sh_mobile_meram_priv {
+-	void __iomem	*base;
+-	struct mutex	lock;
+-	unsigned long	used_icb;
+-	int		used_meram_cache_regions;
+-	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
+-};
+-
+ int sh_mobile_meram_alloc_icb(const struct sh_mobile_meram_cfg *cfg,
+ 		   int xres,
+ 		   int yres,
+-- 
+1.7.1
 
-Damian Hobson-Garcia (1):
-      sh_mobile_meram: MERAM platform data for LCDC
-
-Guennadi Liakhovetski (2):
-      ARM: arch-shmobile: support SDHI card detection on mackerel, using a GPIO
-      ARM: mach-shmobile: add DMAC clock definitions on SH7372
-
- arch/arm/mach-shmobile/board-ap4evb.c   |   56 ++++++++++++++++++++++
- arch/arm/mach-shmobile/board-mackerel.c |   78 +++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-sh7372.c   |    7 +++
- 3 files changed, 141 insertions(+), 0 deletions(-)
