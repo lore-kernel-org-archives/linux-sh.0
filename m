@@ -1,74 +1,74 @@
-From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Date: Thu, 23 Jun 2011 22:01:39 +0000
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Date: Thu, 23 Jun 2011 23:55:42 +0000
 Subject: Re: [PATCH] STAGING: Comedi: Build only on arches providing
-Message-Id: <1308866499.32158.216.camel@pasglop>
+Message-Id: <20110624095542.e05698b4.sfr@canb.auug.org.au>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110623114536.GA14011@linux-mips.org>
-	 <4E032940.5010205@ge.com>  <20110623120234.GA22524@linux-mips.org>
-In-Reply-To: <20110623120234.GA22524@linux-mips.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20110623114536.GA14011@linux-mips.org>
 To: Ralf Baechle <ralf@linux-mips.org>
-Cc: Martyn Welch <martyn.welch@ge.com>, Greg Kroah-Hartman <gregkh@suse.de>, devel@driverdev.osuosl.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-m32r@ml.linux-m32r.org, linux-m32r-ja@ml.linux-m32r.org, linux-am33-list@redhat.com, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Metcalf <cmetcalf@tilera.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, linux-arch@vger.kernel.org, Paul Mackerras <paulus@samba.org>, linuxppc-dev@lists.ozlabs.org
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, devel@driverdev.osuosl.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-m32r@ml.linux-m32r.org, linux-m32r-ja@ml.linux-m32r.org, linux-am33-list@redhat.com, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Metcalf <cmetcalf@tilera.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, linux-arch@vger.kernel.org
 
-On Thu, 2011-06-23 at 13:02 +0100, Ralf Baechle wrote:
-> On Thu, Jun 23, 2011 at 12:53:36PM +0100, Martyn Welch wrote:
-> 
-> > On 23/06/11 12:45, Ralf Baechle wrote:
-> > > On architectures that don't define PAGE_KERNEL_NOCACHE, the Comedi driver turns
-> > > into tragedy:
-> > > 
-> > >   CC [M]  drivers/staging/comedi/drivers.o
-> > > drivers/staging/comedi/drivers.c: In function ‘comedi_buf_alloc’:
-> > > drivers/staging/comedi/drivers.c:505:41: error: ‘PAGE_KERNEL_NOCACHE’ undeclared (first use in this function)
-> > > drivers/staging/comedi/drivers.c:505:41: note: each undeclared identifier is rep orted only once for each function it appears in
-> > > make[3]: *** [drivers/staging/comedi/drivers.o] Error 1
-> > > 
-> > > Restrict the driver to only those architectures that define PAGE_KERNEL_NOCACHE.
-> > > 
-> > > PAGE_KERNEL_NOCACHE is a kludge - some system architectures such as SGI IP27
-> > > are even uable to offer uncached operation - at least in the way an unwitting
-> > > driver might assume.  I haven't looked in details how the driver is using
-> > > the area vmaped with PAGE_KERNEL_NOCACHE but maybe doing it XFS-style using
-> > > cached memory and the flush_kernel_vmap_range / invalidate_kernel_vmap_range
-> > > APIs in conjunction with the DMA API is a practical alternative.
-> > > 
-> > > Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
-> > > 
-> > >  drivers/staging/comedi/Kconfig |    1 +
-> > >  1 files changed, 1 insertions(+), 0 deletions(-)
-> > > 
-> > > diff --git a/drivers/staging/comedi/Kconfig b/drivers/staging/comedi/Kconfig
-> > > index 1502d80..bccdc12 100644
-> > > --- a/drivers/staging/comedi/Kconfig
-> > > +++ b/drivers/staging/comedi/Kconfig
-> > > @@ -2,6 +2,7 @@ config COMEDI
-> > >  	tristate "Data acquisition support (comedi)"
-> > >  	default N
-> > >  	depends on m
-> > > +	depends on BROKEN || FRV || M32R || MN10300 || SUPERH || TILE || X86
-> > 
-> > I'm sure I got comedi to compile on a 32-bit PPC board not that long ago. Has
-> > something changed, or is this just not an exhaustive list?
+--Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS
+Content-Type: text/plain; charset=UTF-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-It went away. There's a proper API (pgprot_noncached), but it depends
-what this is used for and it's likely to be broken anyways... what is
-that driver trying to map non-cached ?
+Hi Ralf,
 
+On Thu, 23 Jun 2011 12:45:37 +0100 Ralf Baechle <ralf@linux-mips.org> wrote:
+>
+> On architectures that don't define PAGE_KERNEL_NOCACHE, the Comedi driver=
+ turns
+> into tragedy:
+>=20
+>   CC [M]  drivers/staging/comedi/drivers.o
+> drivers/staging/comedi/drivers.c: In function =E2=80=98comedi_buf_alloc=
+=E2=80=99:
+> drivers/staging/comedi/drivers.c:505:41: error: =E2=80=98PAGE_KERNEL_NOCA=
+CHE=E2=80=99 undeclared (first use in this function)
+> drivers/staging/comedi/drivers.c:505:41: note: each undeclared identifier=
+ is rep orted only once for each function it appears in
+> make[3]: *** [drivers/staging/comedi/drivers.o] Error 1
+>=20
+> Restrict the driver to only those architectures that define PAGE_KERNEL_N=
+OCACHE.
+>=20
+> PAGE_KERNEL_NOCACHE is a kludge - some system architectures such as SGI I=
+P27
+> are even uable to offer uncached operation - at least in the way an unwit=
+ting
+> driver might assume.  I haven't looked in details how the driver is using
+> the area vmaped with PAGE_KERNEL_NOCACHE but maybe doing it XFS-style usi=
+ng
+> cached memory and the flush_kernel_vmap_range / invalidate_kernel_vmap_ra=
+nge
+> APIs in conjunction with the DMA API is a practical alternative.
+>=20
+> Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
+Since Greg is on vacation, I will add this patch to my fixes tree in
+linux-next until a better fix comes along (if there is one).
+
+--=20
 Cheers,
-Ben.
+Stephen Rothwell                    sfr@canb.auug.org.au
+http://www.canb.auug.org.au/~sfr/
 
-> (Adding the PPC folks to cc.)
-> 
-> A "git grep -w PAGE_KERNEL_NOCACHE arch/powerpc/" doesn't find anything so
-> I don't think the driver will build there.  I don't have a PPC toolchain
-> to verify that.
-> 
->   Ralf
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-arch" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS
+Content-Type: application/pgp-signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
+iQEcBAEBAgAGBQJOA9J+AAoJEDMEi1NhKgbsFfkH/iXyBLKfo00uV5ym/QNH51Eb
+Xt8PeJ6xp1AevCgm94ei9jpIodgeyH7YVo1dJhyD6dI7Z8hPC6mTkcMytnM/ou5F
++rAajf1T+qWBSJvft+1U1LZu4bae9zl054lkEnMx8Vwj5lhWALuI+NI92F8wNUwV
+M1aO1fyyOHiIDwNJZEn0iJ3XxCnwdm1MFNiujlqacapfoBSjpClBSS/S+RJLT7Wr
+SkmuMnI/6/RbknFR6gpyn3GnzjeTslUVUYBgS42rV9chaEWotT+spgpvpmYdyMEq
+rhucb+lutMAKr/kLpqONBoJS98zOCFH3PputZU13oB3TYGi8Iv9eeklFpqG9048=
+=OrXa
+-----END PGP SIGNATURE-----
+
+--Signature=_Fri__24_Jun_2011_09_55_42_+1000_t.eUmnEAvhaT_nyS--
