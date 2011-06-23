@@ -1,84 +1,83 @@
-From: Kumar Gala <galak@kernel.crashing.org>
-Date: Thu, 23 Jun 2011 12:10:29 +0000
+From: Martyn Welch <martyn.welch@ge.com>
+Date: Thu, 23 Jun 2011 12:13:38 +0000
 Subject: Re: [PATCH] STAGING: Comedi: Build only on arches providing PAGE_KERNEL_NOCACHE
-Message-Id: <8B77EED3-D197-4AB9-9594-278DB7002D6D@kernel.crashing.org>
+Message-Id: <4E032DF2.20108@ge.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110623114536.GA14011@linux-mips.org> <4E032940.5010205@ge.com>
-	<20110623120234.GA22524@linux-mips.org>
+References: <20110623114536.GA14011@linux-mips.org> <4E032940.5010205@ge.com> <20110623120234.GA22524@linux-mips.org>
 In-Reply-To: <20110623120234.GA22524@linux-mips.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: Ralf Baechle <ralf@linux-mips.org>
-Cc: devel@driverdev.osuosl.org, David Howells <dhowells@redhat.com>, linux-m32r@ml.linux-m32r.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Greg Kroah-Hartman <gregkh@suse.de>, linux-kernel@vger.kernel.org, Chris Metcalf <cmetcalf@tilera.com>, Martyn Welch <martyn.welch@ge.com>, linux-am33-list@redhat.com, Paul Mackerras <paulus@samba.org>, linux-m32r-ja@ml.linux-m32r.org, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, Ingo Molnar <mingo@redhat.com>, x86@kernel.org
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, devel@driverdev.osuosl.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-m32r@ml.linux-m32r.org, linux-m32r-ja@ml.linux-m32r.org, linux-am33-list@redhat.com, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Metcalf <cmetcalf@tilera.com>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, linux-arch@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, linuxppc-dev@lists.ozlabs.org
 
-
-On Jun 23, 2011, at 7:02 AM, Ralf Baechle wrote:
-
+On 23/06/11 13:02, Ralf Baechle wrote:
 > On Thu, Jun 23, 2011 at 12:53:36PM +0100, Martyn Welch wrote:
->=20
+> 
 >> On 23/06/11 12:45, Ralf Baechle wrote:
->>> On architectures that don't define PAGE_KERNEL_NOCACHE, the Comedi driv=
-er turns
+>>> On architectures that don't define PAGE_KERNEL_NOCACHE, the Comedi driver turns
 >>> into tragedy:
->>>=20
->>>  CC [M]  drivers/staging/comedi/drivers.o
->>> drivers/staging/comedi/drivers.c: In function =91comedi_buf_alloc=92:
->>> drivers/staging/comedi/drivers.c:505:41: error: =91PAGE_KERNEL_NOCACHE=
-=92 undeclared (first use in this function)
->>> drivers/staging/comedi/drivers.c:505:41: note: each undeclared identifi=
-er is rep orted only once for each function it appears in
+>>>
+>>>   CC [M]  drivers/staging/comedi/drivers.o
+>>> drivers/staging/comedi/drivers.c: In function ‘comedi_buf_alloc’:
+>>> drivers/staging/comedi/drivers.c:505:41: error: ‘PAGE_KERNEL_NOCACHE’ undeclared (first use in this function)
+>>> drivers/staging/comedi/drivers.c:505:41: note: each undeclared identifier is rep orted only once for each function it appears in
 >>> make[3]: *** [drivers/staging/comedi/drivers.o] Error 1
->>>=20
->>> Restrict the driver to only those architectures that define PAGE_KERNEL=
-_NOCACHE.
->>>=20
->>> PAGE_KERNEL_NOCACHE is a kludge - some system architectures such as SGI=
- IP27
->>> are even uable to offer uncached operation - at least in the way an unw=
-itting
->>> driver might assume.  I haven't looked in details how the driver is usi=
-ng
->>> the area vmaped with PAGE_KERNEL_NOCACHE but maybe doing it XFS-style u=
-sing
->>> cached memory and the flush_kernel_vmap_range / invalidate_kernel_vmap_=
-range
+>>>
+>>> Restrict the driver to only those architectures that define PAGE_KERNEL_NOCACHE.
+>>>
+>>> PAGE_KERNEL_NOCACHE is a kludge - some system architectures such as SGI IP27
+>>> are even uable to offer uncached operation - at least in the way an unwitting
+>>> driver might assume.  I haven't looked in details how the driver is using
+>>> the area vmaped with PAGE_KERNEL_NOCACHE but maybe doing it XFS-style using
+>>> cached memory and the flush_kernel_vmap_range / invalidate_kernel_vmap_range
 >>> APIs in conjunction with the DMA API is a practical alternative.
->>>=20
+>>>
 >>> Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
->>>=20
->>> drivers/staging/comedi/Kconfig |    1 +
->>> 1 files changed, 1 insertions(+), 0 deletions(-)
->>>=20
->>> diff --git a/drivers/staging/comedi/Kconfig b/drivers/staging/comedi/Kc=
-onfig
+>>>
+>>>  drivers/staging/comedi/Kconfig |    1 +
+>>>  1 files changed, 1 insertions(+), 0 deletions(-)
+>>>
+>>> diff --git a/drivers/staging/comedi/Kconfig b/drivers/staging/comedi/Kconfig
 >>> index 1502d80..bccdc12 100644
 >>> --- a/drivers/staging/comedi/Kconfig
 >>> +++ b/drivers/staging/comedi/Kconfig
 >>> @@ -2,6 +2,7 @@ config COMEDI
->>> 	tristate "Data acquisition support (comedi)"
->>> 	default N
->>> 	depends on m
+>>>  	tristate "Data acquisition support (comedi)"
+>>>  	default N
+>>>  	depends on m
 >>> +	depends on BROKEN || FRV || M32R || MN10300 || SUPERH || TILE || X86
->>=20
->> I'm sure I got comedi to compile on a 32-bit PPC board not that long ago=
-. Has
+>>
+>> I'm sure I got comedi to compile on a 32-bit PPC board not that long ago. Has
 >> something changed, or is this just not an exhaustive list?
->=20
+> 
 > (Adding the PPC folks to cc.)
->=20
+> 
 > A "git grep -w PAGE_KERNEL_NOCACHE arch/powerpc/" doesn't find anything so
 > I don't think the driver will build there.  I don't have a PPC toolchain
 > to verify that.
 
-I can verify it fails on PPC as well:
+Ah, just found the tree looks like I had a little patch to make it seemingly
+work, though it will make it "not work" for most other archs at a guess (it
+may not even be right on PPC):
 
-drivers/staging/comedi/drivers.c: In function 'comedi_buf_alloc':
-drivers/staging/comedi/drivers.c:505:37: error: 'PAGE_KERNEL_NOCACHE' undec=
-lared (first use in this function)
-drivers/staging/comedi/drivers.c:505:37: note: each undeclared identifier i=
-s reported only once for each function it appears in
+diff --git a/drivers/staging/comedi/drivers.c b/drivers/staging/comedi/drivers.c
+index 44d6b62..263ad3d 100644
+--- a/drivers/staging/comedi/drivers.c
++++ b/drivers/staging/comedi/drivers.c
+@@ -505,7 +505,7 @@ int comedi_buf_alloc(struct comedi_device *dev, struct
+comedi_subdevice *s,
+                }
+                if (i = n_pages) {
+                        async->prealloc_buf -                           vmap(pages, n_pages, VM_MAP, PAGE_KERNEL_NOCACHE);
++                           vmap(pages, n_pages, VM_MAP, PAGE_KERNEL_NC);
+                }
+                vfree(pages);
 
-However, we do have a #define for PAGE_KERNEL_NC.
+(Sorry for the wrapping)
 
-- k
+-- 
+Martyn Welch (Principal Software Engineer) | Registered in England and
+GE Intelligent Platforms                   | Wales (3828642) at 100
+T +44(0)127322748                          | Barbirolli Square, Manchester,
+E martyn.welch@ge.com                      | M2 3AB  VAT:GB 927559189
