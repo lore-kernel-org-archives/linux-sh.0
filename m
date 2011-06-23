@@ -1,51 +1,46 @@
-From: Eric Paris <eparis@redhat.com>
-Date: Thu, 02 Jun 2011 23:07:56 +0000
-Subject: Re: [PATCH] Audit: push audit success and retcode into arch ptrace.h
-Message-Id: <4DE817CC.80404@redhat.com>
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Thu, 23 Jun 2011 11:45:37 +0000
+Subject: [PATCH] STAGING: Comedi: Build only on arches providing
+Message-Id: <20110623114536.GA14011@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110602210458.23613.24076.stgit@paris.rdu.redhat.com>     <201106030032.17398.richard@nod.at> <BANLkTik9kCs_06=7HKo44cWqpS0zB9fr+A@mail.gmail.com>
-In-Reply-To: <BANLkTik9kCs_06=7HKo44cWqpS0zB9fr+A@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Tony Luck <tony.luck@intel.com>
-Cc: Richard Weinberger <richard@nod.at>, linux-kernel@vger.kernel.org, fenghua.yu@intel.com, monstr@monstr.eu, ralf@linux-mips.org, benh@kernel.crashing.org, paulus@samba.org, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, linux390@de.ibm.com, lethal@linux-sh.org, davem@davemloft.net, jdike@addtoit.com, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, viro@zeniv.linux.org.uk, oleg@redhat.com, akpm@linux-foundation.org, linux-ia64@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Greg Kroah-Hartman <gregkh@suse.de>, devel@driverdev.osuosl.org, linux-kernel@vger.kernel.org, David Howells <dhowells@redhat.com>, linux-m32r@ml.linux-m32r.org, linux-m32r-ja@ml.linux
+Cc: linux-arch@vger.kernel.org
 
-On 06/02/2011 07:00 PM, Tony Luck wrote:
->> But there seems to be another problem.
->> Why is pt_regs of type void *?
->>
->> gcc complains:
->> In file included from include/linux/fsnotify.h:15:0,
->>                 from include/linux/security.h:26,
->>                 from init/main.c:32:
->> include/linux/audit.h: In function =91audit_syscall_exit=92:
->> include/linux/audit.h:440:17: warning: dereferencing =91void *=92 pointer
->> include/linux/audit.h:440:3: error: invalid use of void expression
->> include/linux/audit.h:441:21: warning: dereferencing =91void *=92 pointer
->> include/linux/audit.h:441:21: error: void value not ignored as it ought =
-to be
->=20
-> Perhaps same issue on ia64 - but symptoms are different:
->=20
->   CC      crypto/cipher.o
-> In file included from include/linux/fsnotify.h:15,
->                  from include/linux/security.h:26,
->                  from init/do_mounts.c:8:
-> include/linux/audit.h: In function =91audit_syscall_exit=92:
-> include/linux/audit.h:440: warning: dereferencing =91void *=92 pointer
-> include/linux/audit.h:440: error: request for member =91r10=92 in
-> something not a structure or union
-> include/linux/audit.h:441: error: request for member =91r10=92 in
-> something not a structure or union
-> include/linux/audit.h:441: error: request for member =91r8=92 in something
-> not a structure or union
-> include/linux/audit.h:441: error: request for member =91r8=92 in something
-> not a structure or union
-> include/linux/audit.h:441: error: expected =91;=92 before =91}=92 token
-> include/linux/audit.h:441: error: void value not ignored as it ought to be
+On architectures that don't define PAGE_KERNEL_NOCACHE, the Comedi driver turns
+into tragedy:
 
-I think it is the same problem.  I'll redo the patch with typed static
-inlines instead of #defines and all of this should hopefully work out.
+  CC [M]  drivers/staging/comedi/drivers.o
+drivers/staging/comedi/drivers.c: In function ‘comedi_buf_alloc’:
+drivers/staging/comedi/drivers.c:505:41: error: ‘PAGE_KERNEL_NOCACHE’ undeclared (first use in this function)
+drivers/staging/comedi/drivers.c:505:41: note: each undeclared identifier is rep orted only once for each function it appears in
+make[3]: *** [drivers/staging/comedi/drivers.o] Error 1
 
--Eric
+Restrict the driver to only those architectures that define PAGE_KERNEL_NOCACHE.
+
+PAGE_KERNEL_NOCACHE is a kludge - some system architectures such as SGI IP27
+are even uable to offer uncached operation - at least in the way an unwitting
+driver might assume.  I haven't looked in details how the driver is using
+the area vmaped with PAGE_KERNEL_NOCACHE but maybe doing it XFS-style using
+cached memory and the flush_kernel_vmap_range / invalidate_kernel_vmap_range
+APIs in conjunction with the DMA API is a practical alternative.
+
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
+ drivers/staging/comedi/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/staging/comedi/Kconfig b/drivers/staging/comedi/Kconfig
+index 1502d80..bccdc12 100644
+--- a/drivers/staging/comedi/Kconfig
++++ b/drivers/staging/comedi/Kconfig
+@@ -2,6 +2,7 @@ config COMEDI
+ 	tristate "Data acquisition support (comedi)"
+ 	default N
+ 	depends on m
++	depends on BROKEN || FRV || M32R || MN10300 || SUPERH || TILE || X86
+ 	---help---
+ 	  Enable support a wide range of data acquisition devices
+ 	  for Linux.
