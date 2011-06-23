@@ -1,59 +1,89 @@
-From: Oleg Nesterov <oleg@redhat.com>
-Date: Wed, 08 Jun 2011 19:19:10 +0000
-Subject: Re: [PATCH -v2] Audit: push audit success and retcode into arch
-Message-Id: <20110608191910.GA18698@redhat.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 23 Jun 2011 13:57:43 +0000
+Subject: [PATCH] PM / Runtime: Update documentation of interactions with system sleep
+Message-Id: <201106231557.43653.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110603220451.23134.47368.stgit@paris.rdu.redhat.com> <20110607171952.GA25729@redhat.com> <1307472796.2052.12.camel@localhost.localdomain> <20110608163653.GA9592@redhat.com> <1307556823.2577.5.camel@localhost.localdomain> <20110608183720.GA16883@redhat.com>
-In-Reply-To: <20110608183720.GA16883@redhat.com>
+References: <201106112223.04972.rjw@sisk.pl> <871uyljys6.fsf@ti.com> <201106230022.56462.rjw@sisk.pl>
+In-Reply-To: <201106230022.56462.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Eric Paris <eparis@redhat.com>
-Cc: linux-kernel@vger.kernel.org, tony.luck@intel.com, fenghua.yu@intel.com, monstr@monstr.eu, ralf@linux-mips.org, benh@kernel.crashing.org, paulus@samba.org, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, linux390@de.ibm.com, lethal@linux-sh.org, davem@davemloft.net, jdike@addtoit.com, richard@nod.at, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, viro@zeniv.linux.org.uk, akpm@linux-foundation.org, linux-ia64@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+To: Kevin Hilman <khilman@ti.com>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
-On 06/08, Oleg Nesterov wrote:
->
-> OK. Thanks a lot Eric for your explanations.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Yes. but may I ask another one?
+The documents describing the interactions between runtime PM and
+system sleep generally refer to the model in which the system sleep
+state is entered through a global firmware or hardware operation.
+As a result, some recommendations given in there are not entirely
+suitable for systems in which this is not the case.  Update the
+documentation take the existence of those systems into accout.
 
-Shouldn't copy_process()->audit_alloc(tsk) path do
-clear_tsk_thread_flag(tsk, TIF_SYSCALL_AUDIT) if it doesn't
-set tsk->audit_context?
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ Documentation/power/devices.txt    |    6 +++---
+ Documentation/power/runtime_pm.txt |   25 +++++++++++++++++--------
+ 2 files changed, 20 insertions(+), 11 deletions(-)
 
-I can be easily wrong, but afaics otherwise the child can run
-with TIF_SYSCALL_AUDIT bit copied from parent's thread_info by
-dup_task_struct()->setup_thread_stack() and without ->audit_context,
-right? For what?
-
-Any other reason why audit_syscall_entry() checks context != NULL?
-
-IOW. Any reason the patch below is wrong?
-
-I am just curious, thanks.
-
-Oleg.
-
---- x/kernel/auditsc.c
-+++ x/kernel/auditsc.c
-@@ -885,6 +885,8 @@ int audit_alloc(struct task_struct *tsk)
- 	if (likely(!audit_ever_enabled))
- 		return 0; /* Return if not auditing. */
+Index: linux-2.6/Documentation/power/runtime_pm.txt
+=================================--- linux-2.6.orig/Documentation/power/runtime_pm.txt
++++ linux-2.6/Documentation/power/runtime_pm.txt
+@@ -537,9 +537,9 @@ suspend routine).  It may be necessary t
+ in order to do so.  The same is true if the driver uses different power levels
+ or other settings for run-time suspend and system sleep.
  
-+	clear_tsk_thread_flag(tsk, TIF_SYSCALL_AUDIT);
-+
- 	state = audit_filter_task(tsk, &key);
- 	if (likely(state = AUDIT_DISABLED))
- 		return 0;
-@@ -1591,9 +1593,7 @@ void audit_syscall_entry(int arch, int m
- 	struct audit_context *context = tsk->audit_context;
- 	enum audit_state     state;
+-During system resume, devices generally should be brought back to full power,
+-even if they were suspended before the system sleep began.  There are several
+-reasons for this, including:
++During system resume, the simplest approach is to bring all devices back to full
++power, even if they were suspended before the system sleep began.  There are
++several reasons for this, including:
  
--	if (unlikely(!context))
--		return;
+   * The device might need to switch power levels, wake-up settings, etc.
+ 
+@@ -556,16 +556,25 @@ reasons for this, including:
+   * Even though the device was suspended, if its usage counter was > 0 then most
+     likely it would need a run-time resume in the near future anyway.
+ 
+-  * Always going back to full power is simplest.
 -
-+	BUG_ON(!context);
- 	/*
- 	 * This happens only on certain architectures that make system
- 	 * calls in kernel_thread via the entry.S interface, instead of
-
+-If the device was suspended before the sleep began, then its run-time PM status
+-will have to be updated to reflect the actual post-system sleep status.  The way
+-to do this is:
++If the device had been suspended before the sleep began and it's brought back to
++full power during resume, then its run-time PM status will have to be updated to
++reflect the actual post-system sleep status.  The way to do this is:
+ 
+ 	pm_runtime_disable(dev);
+ 	pm_runtime_set_active(dev);
+ 	pm_runtime_enable(dev);
+ 
++On some systems, however, system sleep is not entered through a global firmware
++or hardware operation.  Instead, all hardware components are put into low-power
++states directly by the kernel in a coordinated way.  Then, the system sleep
++state effectively follows from the states the hardware components end up in
++and the system is woken up from that state by a hardware interrupt or a similar
++mechanism entirely under the kernel's control.  As a result, the kernel never
++gives control away and the states of all devices during resume are precisely
++known to it.  If that is the case and none of the situations listed above takes
++place, it may be more efficient to leave the devices that had been suspended
++before the system sleep began in the suspended state.
++
+ 7. Generic subsystem callbacks
+ 
+ Subsystems may wish to conserve code space by using the set of generic power
+Index: linux-2.6/Documentation/power/devices.txt
+=================================--- linux-2.6.orig/Documentation/power/devices.txt
++++ linux-2.6/Documentation/power/devices.txt
+@@ -604,7 +604,7 @@ state temporarily, for example so that i
+ disabled.  This all depends on the hardware and the design of the subsystem and
+ device driver in question.
+ 
+-During system-wide resume from a sleep state it's best to put devices into the
+-full-power state, as explained in Documentation/power/runtime_pm.txt.  Refer to
+-that document for more information regarding this particular issue as well as
++During system-wide resume from a sleep state it's easiest to put devices into
++the full-power state, as explained in Documentation/power/runtime_pm.txt.  Refer
++to that document for more information regarding this particular issue as well as
+ for information on the device runtime power management framework in general.
