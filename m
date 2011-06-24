@@ -1,101 +1,127 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 24 Jun 2011 05:54:39 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372 A3RV power domain prototype
-Message-Id: <20110624060236.26758.41446.sendpatchset@t400s>
+Date: Fri, 24 Jun 2011 06:07:38 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 A3RV power domain prototype
+Message-Id: <BANLkTi=wNBoez+-cm_TePa_662Jb-TsPYg@mail.gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="0016e6d2723ac13d2b04a66f04b0"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <20110624060236.26758.41446.sendpatchset@t400s>
+In-Reply-To: <20110624060236.26758.41446.sendpatchset@t400s>
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+--0016e6d2723ac13d2b04a66f04b0
+Content-Type: text/plain; charset=ISO-8859-1
 
-This somewhat messy prototype patch adds A3RV power domain
-control support for sh7372. The A3RV power domain contains
-the VPU video encoder/decoder which is exported through UIO.
+On Fri, Jun 24, 2011 at 3:02 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm@opensource.se>
+>
+> This somewhat messy prototype patch adds A3RV power domain
+> control support for sh7372. The A3RV power domain contains
+> the VPU video encoder/decoder which is exported through UIO.
+>
+> The prototype serves as an example of a simple power domain
+> that needs to be turned off during boot. The default setting
+> after hardware reset is to keep A3RV powered on. The UIO driver
+> uio_pdrv_genirq.c does not access the VPU hardware at ->probe()
+> time but instead relies 100% on user space. So the VPU device
+> and A3RV will always be unused during boot.
 
-The prototype serves as an example of a simple power domain
-that needs to be turned off during boot. The default setting
-after hardware reset is to keep A3RV powered on. The UIO driver
-uio_pdrv_genirq.c does not access the VPU hardware at ->probe()
-time but instead relies 100% on user space. So the VPU device
-and A3RV will always be unused during boot.
+Also, people may want to use the attached test program to give this a go.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Without this patch, when "vpu-test" is executed twice then the second
+run will produce this message:
+"VPU5HG state kept since last open"
+The message above is outputted when the state of a certain VPU
+register is kept over UIO close->open.
 
- Applies to suspend-2.6.git pm-domains as of a few days ago:
+With this patch applied the state of the VPU is always lost between
+the UIO close->open, so the above message will never appear - at least
+until there is a governor in place that prevents the power from being
+turned off based on QoS information.
 
- commit 6232eb8f755b0eb1a47f6fd6277da879248aba5e
- Author: Rafael J. Wysocki <rjw@sisk.pl>
- Date:   Wed Jun 22 02:20:43 2011 +0200
+Cheers,
 
-    ARM / shmobile: Support for I/O power domains for SH7372 (v7)
+/ magnus
 
- arch/arm/mach-shmobile/board-mackerel.c      |    1 -
- arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +++
- arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
- arch/arm/mach-shmobile/setup-sh7372.c        |    5 +++++
- 4 files changed, 12 insertions(+), 1 deletion(-)
+--0016e6d2723ac13d2b04a66f04b0
+Content-Type: text/x-csrc; charset=US-ASCII; name="vpu-test-20110622.c"
+Content-Disposition: attachment; filename="vpu-test-20110622.c"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gpaqwfle0
 
---- 0001/arch/arm/mach-shmobile/board-mackerel.c
-+++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-06-22 21:19:13.000000000 +0900
-@@ -1582,7 +1582,6 @@ static void __init mackerel_init(void)
- 
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
- 
--	sh7372_init_pm_domain(&sh7372_a4lc_domain);
- 	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
- 	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
- 
---- 0001/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-06-22 21:18:26.000000000 +0900
-@@ -485,13 +485,16 @@ static inline struct sh7372_pm_domain *t
- 
- #ifdef CONFIG_PM
- extern struct sh7372_pm_domain sh7372_a4lc_domain;
-+extern struct sh7372_pm_domain sh7372_a3rv_domain;
- #define SH7372_A4LC	(&sh7372_a4lc_domain)
-+#define SH7372_A3RV	(&sh7372_a3rv_domain)
- 
- extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
- extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
- 					struct platform_device *pdev);
- #else
- #define SH7372_A4LC	NULL
-+#define SH7372_A3RV	NULL
- 
- static inline void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd) {}
- static inline void sh7372_add_device_to_domain(struct sh7372_pm_domain *pd,
---- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-06-22 21:30:44.000000000 +0900
-@@ -117,6 +117,10 @@ struct sh7372_pm_domain sh7372_a4lc_doma
- 	.bit_shift = 1,
- };
- 
-+struct sh7372_pm_domain sh7372_a3rv_domain = {
-+	.bit_shift = 6,
-+};
-+
- static void sh7372_enter_core_standby(void)
- {
- 	void __iomem *smfram = (void __iomem *)SMFRAM;
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-06-22 21:24:03.000000000 +0900
-@@ -841,11 +841,16 @@ static struct platform_device *sh7372_la
- 
- void __init sh7372_add_standard_devices(void)
- {
-+	sh7372_init_pm_domain(SH7372_A4LC);
-+	sh7372_init_pm_domain(SH7372_A3RV);
-+
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
- 
- 	platform_add_devices(sh7372_late_devices,
- 			    ARRAY_SIZE(sh7372_late_devices));
-+
-+	sh7372_add_device_to_domain(SH7372_A3RV, &vpu_device);
- }
- 
- void __init sh7372_add_early_devices(void)
+LyoKICogdnB1LXRlc3QgLSBBUDQgVlBVIHRlc3QgcHJvZ3JhbSwgMjAxMTA2MjIgTWFnbnVzIERh
+bW0KICoKICogVGhpcyBwcm9ncmFtIGlzIGZyZWUgc29mdHdhcmU7IHlvdSBjYW4gcmVkaXN0cmli
+dXRlIGl0IGFuZC9vciBtb2RpZnkKICogaXQgdW5kZXIgdGhlIHRlcm1zIG9mIHRoZSBHTlUgR2Vu
+ZXJhbCBQdWJsaWMgTGljZW5zZSBhcyBwdWJsaXNoZWQgYnkKICogdGhlIEZyZWUgU29mdHdhcmUg
+Rm91bmRhdGlvbjsgdmVyc2lvbiAyIG9mIHRoZSBMaWNlbnNlLgogKgogKiBUaGlzIHByb2dyYW0g
+aXMgZGlzdHJpYnV0ZWQgaW4gdGhlIGhvcGUgdGhhdCBpdCB3aWxsIGJlIHVzZWZ1bCwKICogYnV0
+IFdJVEhPVVQgQU5ZIFdBUlJBTlRZOyB3aXRob3V0IGV2ZW4gdGhlIGltcGxpZWQgd2FycmFudHkg
+b2YKICogTUVSQ0hBTlRBQklMSVRZIG9yIEZJVE5FU1MgRk9SIEEgUEFSVElDVUxBUiBQVVJQT1NF
+LiAgU2VlIHRoZQogKiBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSBmb3IgbW9yZSBkZXRhaWxz
+LgogKgogKiBZb3Ugc2hvdWxkIGhhdmUgcmVjZWl2ZWQgYSBjb3B5IG9mIHRoZSBHTlUgR2VuZXJh
+bCBQdWJsaWMgTGljZW5zZQogKiBhbG9uZyB3aXRoIHRoaXMgcHJvZ3JhbTsgaWYgbm90LCB3cml0
+ZSB0byB0aGUgRnJlZSBTb2Z0d2FyZQogKiBGb3VuZGF0aW9uLCBJbmMuLCA1MSBGcmFua2xpbiBT
+dCwgRmlmdGggRmxvb3IsIEJvc3RvbiwgTUEgIDAyMTEwLTEzMDEgIFVTQQogKi8KCiNpbmNsdWRl
+IDxzdGRpby5oPgojaW5jbHVkZSA8c3RkbGliLmg+CiNpbmNsdWRlIDxzdHJpbmcuaD4KI2luY2x1
+ZGUgPHN5cy9zdGF0Lmg+CiNpbmNsdWRlIDxzeXMvbW1hbi5oPgojaW5jbHVkZSA8ZmNudGwuaD4K
+I2luY2x1ZGUgPHN5cy90aW1lLmg+CiNpbmNsdWRlIDxzeXMvdHlwZXMuaD4KI2luY2x1ZGUgPHN5
+cy9pb2N0bC5oPgojaW5jbHVkZSA8dW5pc3RkLmg+CgpzdGF0aWMgaW50IGZnZXRzX3dpdGhfb3Bl
+bmNsb3NlKGNoYXIgKmZuYW1lLCBjaGFyICpidWYsIHNpemVfdCBtYXhsZW4pIHsKICAgICAgIEZJ
+TEUgKmZwOwoKICAgICAgIGlmICgoZnAgPSBmb3BlbihmbmFtZSwgInIiKSkgIT0gTlVMTCkgewog
+ICAgICAgICAgICAgICBmZ2V0cyhidWYsIG1heGxlbiwgZnApOwogICAgICAgICAgICAgICBmY2xv
+c2UoZnApOwogICAgICAgICAgICAgICByZXR1cm4gc3RybGVuKGJ1Zik7CiAgICAgICB9IGVsc2Ug
+ewogICAgICAgICAgICAgICByZXR1cm4gLTE7CiAgICAgICB9Cn0KCnN0cnVjdCB1aW9fZGV2aWNl
+IHsKICAgICAgIGNoYXIgKm5hbWU7CiAgICAgICBjaGFyICpwYXRoOwogICAgICAgaW50IGZkOwp9
+OwoKI2RlZmluZSBNQVhVSU9JRFMgIDEwMAojZGVmaW5lIE1BWE5BTUVMRU4gMjU2CgpzdGF0aWMg
+aW50IGxvY2F0ZV91aW9fZGV2aWNlKGNoYXIgKm5hbWUsIHN0cnVjdCB1aW9fZGV2aWNlICp1ZHAp
+CnsKICAgICAgIGNoYXIgZm5hbWVbTUFYTkFNRUxFTl0sIGJ1ZltNQVhOQU1FTEVOXTsKICAgICAg
+IGludCB1aW9faWQsIGk7CgogICAgICAgZm9yICh1aW9faWQgPSAwOyB1aW9faWQgPCBNQVhVSU9J
+RFM7IHVpb19pZCsrKSB7CiAgICAgICAgICAgICAgIHNwcmludGYoZm5hbWUsICIvc3lzL2NsYXNz
+L3Vpby91aW8lZC9uYW1lIiwgdWlvX2lkKTsKICAgICAgICAgICAgICAgaWYgKGZnZXRzX3dpdGhf
+b3BlbmNsb3NlKGZuYW1lLCBidWYsIE1BWE5BTUVMRU4pIDwgMCkKICAgICAgICAgICAgICAgICAg
+ICAgICBjb250aW51ZTsKICAgICAgICAgICAgICAgaWYgKHN0cm5jbXAobmFtZSwgYnVmLCBzdHJs
+ZW4obmFtZSkpID09IDApCiAgICAgICAgICAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICB9Cgog
+ICAgICAgaWYgKHVpb19pZCA+PSBNQVhVSU9JRFMpCiAgICAgICAgICAgICAgIHJldHVybiAtMTsK
+CiAgICAgICB1ZHAtPm5hbWUgPSBzdHJkdXAoYnVmKTsKICAgICAgIHVkcC0+cGF0aCA9IHN0cmR1
+cChmbmFtZSk7CiAgICAgICB1ZHAtPnBhdGhbc3RybGVuKHVkcC0+cGF0aCkgLSA0XSA9ICdcMCc7
+CgogICAgICAgc3ByaW50ZihidWYsICIvZGV2L3VpbyVkIiwgdWlvX2lkKTsKICAgICAgIHVkcC0+
+ZmQgPSBvcGVuKGJ1ZiwgT19SRFdSfE9fU1lOQyAvKnwgT19OT05CTE9DSyovKTsKCiAgICAgICBp
+ZiAodWRwLT5mZCA8IDApIHsKICAgICAgICAgICAgICAgcGVycm9yKCJvcGVuIik7CiAgICAgICAg
+ICAgICAgIHJldHVybiAtMTsKICAgICAgIH0KCiAgICAgICByZXR1cm4gMDsKfQoKc3RydWN0IHVp
+b19tYXAgewogICAgICAgdW5zaWduZWQgbG9uZyBhZGRyZXNzOwogICAgICAgdW5zaWduZWQgbG9u
+ZyBzaXplOwogICAgICAgdm9pZCAqaW9tZW07Cn07CgpzdGF0aWMgaW50IHNldHVwX3Vpb19tYXAo
+c3RydWN0IHVpb19kZXZpY2UgKnVkcCwgaW50IG5yLCBzdHJ1Y3QgdWlvX21hcCAqdW1wKQp7CiAg
+ICAgICBjaGFyIGZuYW1lW01BWE5BTUVMRU5dLCBidWZbTUFYTkFNRUxFTl07CiAKICAgICAgIHNw
+cmludGYoZm5hbWUsICIlcy9tYXBzL21hcCVkL2FkZHIiLCB1ZHAtPnBhdGgsIG5yKTsKICAgICAg
+IGlmIChmZ2V0c193aXRoX29wZW5jbG9zZShmbmFtZSwgYnVmLCBNQVhOQU1FTEVOKSA8PSAwKQog
+ICAgICAgICAgICAgICByZXR1cm4gLTE7CgogICAgICAgdW1wLT5hZGRyZXNzID0gc3RydG91bChi
+dWYsIE5VTEwsIDApOwoKICAgICAgIHNwcmludGYoZm5hbWUsICIlcy9tYXBzL21hcCVkL3NpemUi
+LCB1ZHAtPnBhdGgsIG5yKTsKICAgICAgIGlmIChmZ2V0c193aXRoX29wZW5jbG9zZShmbmFtZSwg
+YnVmLCBNQVhOQU1FTEVOKSA8PSAwKQogICAgICAgICAgICAgICByZXR1cm4gLTE7CgogICAgICAg
+dW1wLT5zaXplID0gc3RydG91bChidWYsIE5VTEwsIDApOwoKICAgICAgIHVtcC0+aW9tZW0gPSBt
+bWFwKDAsIHVtcC0+c2l6ZSwKICAgICAgICAgICAgICAgICAgICAgICAgIFBST1RfUkVBRHxQUk9U
+X1dSSVRFLCBNQVBfU0hBUkVELAogICAgICAgICAgICAgICAgICAgICAgICAgdWRwLT5mZCwgbnIg
+KiBnZXRwYWdlc2l6ZSgpKTsKCiAgICAgICBpZiAodW1wLT5pb21lbSA9PSBNQVBfRkFJTEVEKQog
+ICAgICAgICAgICAgICByZXR1cm4gLTE7CgogICAgICAgcmV0dXJuIDA7Cn0KCnN0cnVjdCB1aW9f
+ZGV2aWNlIHVpb19kZXY7CnN0cnVjdCB1aW9fbWFwIHVpb19tbWlvOwoKaW50IG1haW4oaW50IGFy
+Z2MsIGNoYXIgKmFyZ3ZbXSkKewoJaW50IHJldDsKCglyZXQgPSBsb2NhdGVfdWlvX2RldmljZSgi
+VlBVNUhHIiwgJnVpb19kZXYpOwoJaWYgKHJldCA8IDApIHsKCQlmcHJpbnRmKHN0ZGVyciwgInVu
+YWJsZSB0byBsb2NhdGUgVUlPIGRldmljZVxuIik7CgkJcmV0dXJuIDE7Cgl9CiAgICAgICAKCXJl
+dCA9IHNldHVwX3Vpb19tYXAoJnVpb19kZXYsIDAsICZ1aW9fbW1pbyk7CglpZiAocmV0IDwgMCkg
+ewoJCWZwcmludGYoc3RkZXJyLCAidW5hYmxlIHRvIHNldHVwIFVJTyBtZW1vcnkgbWFwXG4iKTsK
+CQlyZXR1cm4gMTsKCX0KCgl7CgkJdW5zaWduZWQgbG9uZyAqcGggPSAodWlvX21taW8uaW9tZW0g
+KyAweDAwKTsgLyogVkNSSCAqLwoJCXVuc2lnbmVkIGxvbmcgKnBsID0gKHVpb19tbWlvLmlvbWVt
+ICsgMHgwNCk7IC8qIFZDUkwgKi8KCQl1bnNpZ25lZCBsb25nICpwYyA9ICh1aW9fbW1pby5pb21l
+bSArIDB4MDgpOyAvKiBDTUQgKi8KCQl1bnNpZ25lZCBsb25nICpwbSA9ICh1aW9fbW1pby5pb21l
+bSArIDB4ODApOyAvKiBNQkEgKi8KCQlpbnQgazsKCgkJaWYgKCgqcGggJiAweGZmZmYpID09IDB4
+NTVmNCkgewoJCQlwcmludGYoImRldGVjdGVkIFZQVTVIRyB3aXRoIFZDUkg6VkNSTCAweCUwOGx4
+OiUwOGx4XG4iLAoJCQkgICAgICAgKnBoLCAqcGwpOwoKCQkJaWYgKCpwbSA9PSAweGRlYWRiZWVm
+KSB7CgkJCQlwcmludGYoIlZQVTVIRyBzdGF0ZSBrZXB0IHNpbmNlIGxhc3Qgb3BlblxuIik7CgkJ
+CX0KCgkJCSpwYyA9IDEgPDwgMTA7IC8qIHNldCBNUlNUIGJpdCB0byBmb3JjZSByZXNldCAqLwoJ
+CQlmb3IgKGsgPSAwOyBrIDwgNTsgaysrKSB7CgkJCQlpZiAoISgqcGMgJiAoMSA8PCAxMCkpKSB7
+CgkJCQkJcHJpbnRmKCJWUFU1SEcgcmVzZXQgY2hlY2sgT0tcbiIpOwoJCQkJCSpwbSA9IDB4ZGVh
+ZGJlZWY7CgkJCQkJcHJpbnRmKCJTbGVlcGluZyA1IHNlY29uZHMuLi5cbiIpOwoJCQkJCXNsZWVw
+KDUpOwoJCQkJCXJldHVybiAwOwoJCQkJfQoJCQkJc2xlZXAoMSk7CgkJCX0KCQl9Cgl9CgoJZnBy
+aW50ZihzdGRlcnIsICJ1bmFibGUgdG8gZGV0ZWN0L3Jlc2V0IFZQVTVIR1xuIik7CglyZXR1cm4g
+MTsKfQo=
+--0016e6d2723ac13d2b04a66f04b0--
