@@ -1,58 +1,227 @@
-From: Bhushan Bharat-R65777 <R65777@freescale.com>
-Date: Fri, 24 Jun 2011 04:08:50 +0000
-Subject: RE: [PATCH 02/02] virtio: Add virtio platform driver
-Message-Id: <B8D6CA50DACE9E4AAADE9A4D56FBAAE6166FD3@039-SN1MPN1-004.039d.mgd.msft.net>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 25 Jun 2011 21:31:43 +0000
+Subject: [PATCH 10/10 v6] ARM / shmobile: Support for I/O power domains for SH7372 (v8)
+Message-Id: <201106252331.43354.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110621102605.1382.90232.sendpatchset@t400s>
-	<20110621102623.1382.71841.sendpatchset@t400s>
-	<B8D6CA50DACE9E4AAADE9A4D56FBAAE6166661@039-SN1MPN1-004.039d.mgd.msft.net>
- <BANLkTi=QhwBAv5GtrTpitVhx+yDZPnRN+g@mail.gmail.com>
-In-Reply-To: <BANLkTi=QhwBAv5GtrTpitVhx+yDZPnRN+g@mail.gmail.com>
+References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
+In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "vapier@gentoo.org" <vapier@gentoo.org>, "mst@redhat.com" <mst@redhat.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "virtualization@lists.linux-foundation.org" <virtualization@lists.linux-foundation.org>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-Thanks for the explanation. I also thought of same purpose for this patch but I got confused by function names and data structure names in the patch. They still have lguest in it.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Thanks
--Bharat
+Use the generic power domains support introduced by the previous
+patch to implement support for power domains on SH7372.
 
-> -----Original Message-----
-> From: Magnus Damm [mailto:magnus.damm@gmail.com]
-> Sent: Friday, June 24, 2011 6:44 AM
-> To: Bhushan Bharat-R65777
-> Cc: linux-kernel@vger.kernel.org; vapier@gentoo.org; mst@redhat.com;
-> linux-sh@vger.kernel.org; virtualization@lists.linux-foundation.org
-> Subject: Re: [PATCH 02/02] virtio: Add virtio platform driver
-> 
-> Hi Bhushan Bharat,
-> 
-> On Thu, Jun 23, 2011 at 5:54 PM, Bhushan Bharat-R65777
-> <R65777@freescale.com> wrote:
-> > What purpose this virtio platform driver serves? Are you trying to make
-> driver layers here and each virtio device driver can hook up into this
-> platform driver. Is that correct ?
-> 
-> The idea behind the virto platform driver is to have a reusable layer
-> that handles common virtio and vring functionality. Regular virtio
-> drivers for console, network and disk and interfacing to the virtio
-> platform driver, so these paravirtualized drivers can with this virtio
-> platform driver easily be reused by embedded platforms.
-> 
-> Vendor specific code is abstracted away from the virtio platform driver
-> and interfaced to using regular interrupts and SoC-specific callbacks. So
-> with this patch virtio can be interfaced as any regular platform driver.
-> This version of the driver is simply reusing the configuration method
-> from lguest.
-> 
-> If you want to see all code involved (including extremely experimental
-> backing drivers) then have a look at:
-> http://www.spinics.net/lists/linux-sh/msg07188.html
-> 
-> Cheers,
-> 
-> / magnus
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+---
+ arch/arm/Kconfig                             |    1 
+ arch/arm/mach-shmobile/Makefile              |    4 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    4 +
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   28 +++++++
+ arch/arm/mach-shmobile/pm-sh7372.c           |   96 +++++++++++++++++++++++++++
+ 5 files changed, 133 insertions(+)
 
+Index: linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux-2.6/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1582,6 +1582,10 @@ static void __init mackerel_init(void)
+ 
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
++	sh7372_init_pm_domain(SH7372_A4LC);
++	sh7372_add_device_to_domain(SH7372_A4LC, &lcdc_device);
++	sh7372_add_device_to_domain(SH7372_A4LC, &hdmi_lcdc_device);
++
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+ }
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -12,6 +12,7 @@
+ #define __ASM_SH7372_H__
+ 
+ #include <linux/sh_clk.h>
++#include <linux/pm_domain.h>
+ 
+ /*
+  * Pin Function Controller:
+@@ -470,4 +471,31 @@ extern struct clk sh7372_fsibck_clk;
+ extern struct clk sh7372_fsidiva_clk;
+ extern struct clk sh7372_fsidivb_clk;
+ 
++struct platform_device;
++
++struct sh7372_pm_domain {
++	struct generic_pm_domain genpd;
++	unsigned int bit_shift;
++};
++
++static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
++{
++	return container_of(d, struct sh7372_pm_domain, genpd);
++}
++
++#ifdef CONFIG_PM
++extern struct sh7372_pm_domain sh7372_a4lc_domain;
++#define SH7372_A4LC	(&sh7372_a4lc_domain)
++
++extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
++extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
++					struct platform_device *pdev);
++#else
++#define SH7372_A4LC	NULL
++
++static inline void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd) {}
++static inline void sh7372_add_device_to_domain(struct sh7372_pm_domain *pd,
++					       struct platform_device *pdev) {}
++#endif /* CONFIG_PM */
++
+ #endif /* __ASM_SH7372_H__ */
+Index: linux-2.6/arch/arm/mach-shmobile/Makefile
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/Makefile
++++ linux-2.6/arch/arm/mach-shmobile/Makefile
+@@ -42,6 +42,10 @@ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4ev
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ 
++# PM objects
++pm-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
++
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+ obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
++obj-$(CONFIG_PM)		+= $(pm-y)
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -15,16 +15,112 @@
+ #include <linux/list.h>
+ #include <linux/err.h>
+ #include <linux/slab.h>
++#include <linux/pm_runtime.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
+ #include <asm/system.h>
+ #include <asm/io.h>
+ #include <asm/tlbflush.h>
+ #include <mach/common.h>
++#include <mach/sh7372.h>
+ 
+ #define SMFRAM 0xe6a70000
+ #define SYSTBCR 0xe6150024
+ #define SBAR 0xe6180020
+ #define APARMBAREA 0xe6f10020
+ 
++#define SPDCR 0xe6180008
++#define SWUCR 0xe6180014
++#define PSTR 0xe6180080
++
++#define PSTR_RETRIES 100
++#define PSTR_DELAY_US 10
++
++#ifdef CONFIG_PM
++
++static int pd_power_down(struct generic_pm_domain *genpd)
++{
++	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
++	unsigned int mask = 1 << sh7372_pd->bit_shift;
++
++	if (__raw_readl(PSTR) & mask) {
++		unsigned int retry_count;
++
++		__raw_writel(mask, SPDCR);
++
++		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
++			if (!(__raw_readl(SPDCR) & mask))
++				break;
++			cpu_relax();
++		}
++	}
++
++	pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
++		 mask, __raw_readl(PSTR));
++
++	return 0;
++}
++
++static int pd_power_up(struct generic_pm_domain *genpd)
++{
++	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
++	unsigned int mask = 1 << sh7372_pd->bit_shift;
++	unsigned int retry_count;
++	int ret = 0;
++
++	if (__raw_readl(PSTR) & mask)
++		goto out;
++
++	__raw_writel(mask, SWUCR);
++
++	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
++		if (!(__raw_readl(SWUCR) & mask))
++			goto out;
++		if (retry_count > PSTR_RETRIES)
++			udelay(PSTR_DELAY_US);
++		else
++			cpu_relax();
++	}
++	if (__raw_readl(SWUCR) & mask)
++		ret = -EIO;
++
++ out:
++	pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
++		 mask, __raw_readl(PSTR));
++
++	return ret;
++}
++
++void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
++{
++	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
++
++	pm_genpd_init(genpd, NULL, false);
++	genpd->stop_device = pm_clk_suspend;
++	genpd->start_device = pm_clk_resume;
++	genpd->power_off = pd_power_down;
++	genpd->power_on = pd_power_up;
++	pd_power_up(&sh7372_pd->genpd);
++}
++
++void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
++				 struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	if (!dev->power.subsys_data) {
++		pm_clk_init(dev);
++		pm_clk_add(dev, NULL);
++	}
++	pm_genpd_add_device(&sh7372_pd->genpd, dev);
++}
++
++struct sh7372_pm_domain sh7372_a4lc_domain = {
++	.bit_shift = 1,
++};
++
++#endif /* CONFIG_PM */
++
+ static void sh7372_enter_core_standby(void)
+ {
+ 	void __iomem *smfram = (void __iomem *)SMFRAM;
+Index: linux-2.6/arch/arm/Kconfig
+=================================--- linux-2.6.orig/arch/arm/Kconfig
++++ linux-2.6/arch/arm/Kconfig
+@@ -642,6 +642,7 @@ config ARCH_SHMOBILE
+ 	select NO_IOPORT
+ 	select SPARSE_IRQ
+ 	select MULTI_IRQ_HANDLER
++	select PM_GENERIC_DOMAINS if PM
+ 	help
+ 	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms.
+ 
 
