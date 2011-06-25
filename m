@@ -1,85 +1,76 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 21 Jun 2011 08:28:27 +0000
-Subject: [PATCH] sh: add platform_device of EHCI/OHCI to setup-sh7757
-Message-Id: <4E00562B.6050300@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 25 Jun 2011 21:24:13 +0000
+Subject: [PATCH 0/10 v6] PM / Domains: Support for generic I/O PM domains
+Message-Id: <201106252324.13454.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201106112223.04972.rjw@sisk.pl>
+In-Reply-To: <201106112223.04972.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   50 ++++++++++++++++++++++++++++++++
- 1 files changed, 50 insertions(+), 0 deletions(-)
+Hi,
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index 423dabf..717a76b 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -659,6 +659,54 @@ static struct platform_device spi0_device = {
- 	.resource	= spi0_resources,
- };
+Well, one more update. :-)
 
-+static struct resource usb_ehci_resources[] = {
-+	[0] = {
-+		.start	= 0xfe4f1000,
-+		.end	= 0xfe4f10ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 57,
-+		.end	= 57,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device usb_ehci_device = {
-+	.name		= "sh_ehci",
-+	.id		= -1,
-+	.dev = {
-+		.dma_mask = &usb_ehci_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+	},
-+	.num_resources	= ARRAY_SIZE(usb_ehci_resources),
-+	.resource	= usb_ehci_resources,
-+};
-+
-+static struct resource usb_ohci_resources[] = {
-+	[0] = {
-+		.start	= 0xfe4f1800,
-+		.end	= 0xfe4f18ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 57,
-+		.end	= 57,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device usb_ohci_device = {
-+	.name		= "sh_ohci",
-+	.id		= -1,
-+	.dev = {
-+		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+	},
-+	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
-+	.resource	= usb_ohci_resources,
-+};
-+
- static struct platform_device *sh7757_devices[] __initdata = {
- 	&scif2_device,
- 	&scif3_device,
-@@ -670,6 +718,8 @@ static struct platform_device *sh7757_devices[] __initdata = {
- 	&dma2_device,
- 	&dma3_device,
- 	&spi0_device,
-+	&usb_ehci_device,
-+	&usb_ohci_device,
- };
+This is the 6th version of the patchset adding support for generic I/O PM
+domains.  The majority of patches have had some small fixes here and there
+to make things work when CONFIG_PM_RUNTIME is unset.  In addition to that,
+to make the shmobile code introduced by the last patch work for
+CONFIG_PM_RUNTIME unset I had to add patches [8-9/10].  Patch [7/10]
+adds wakeup support that was missing from the previous version and I
+decided not to push patch [1/10] for 3.0 after all.
 
- static int __init sh7757_devices_setup(void)
--- 
-1.7.1
+On Saturday, June 11, 2011, Rafael J. Wysocki wrote:
+> 
+> The model here is that a bunch of devices share a common power resource
+> that can be turned on and off by software.  In addition to that, there
+> are means to start and stop the activity of each device, for example
+> by manipulating their clocks.  Moreover, there may be hierarchy of
+> such things, for example power resource A may be necessary for devices
+> a, b, c, which don't rely on any other power resources, and for devices
+> x, y, z that also rely on power resource X.  In that case there one PM
+> domain object representing devices a, b, c and power resource A, and 
+> another PM domain object will represent devices x, y, z with power
+> resource X, plus the first object will be the second one's parent.
+> 
+> Overall, I think I've taken all of the important dependencies into
+> consideration, but if you spot something suspicious, please let me know. :-)
+
+[ 1/10] - Rename struct dev_power_domain to struct dev_pm_domain to reflect the
+          fact that those objects need not correspond to hardware power domains
+          directly.
+
+[ 2/10] - Move subsys_data in struct dev_pm_info out of #ifdef CONFIG_PM_RUNTIME
+
+[ 3/10] - Introduce runtime PM support for generic I/O PM domains.
+
+[ 4/10] - Introduce generic "noirq" callbacks for system suspend/hibernation
+          (that's necessary for the next patches).
+ 
+[ 5/10] - Move some PM domains support code fro under #ifdef CONFIG_PM_RUNTIME
+
+[ 6/10] - Add system-wide PM support for generic I/O PM domains.
+
+[ 7/10] - Add support for wakeup from system sleep to the I/O PM domains code.
+
+[ 8/10] - Allow PM clocks management code to be used during system suspend.
+
+[ 9/10] - Rename PM clock management functions so that they names reflect the
+          fact that they can be used during system suspend too.
+
+[10/10] - Use the new code to represent the SH7372's A4MP power domain.
+
+All of these patches are regarded as 3.1 material and they are available
+from the git branch at:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git pm-domains  
+
+The patchset has been tested on SH7372 Mackerel board for both
+CONFIG_PM_RUNTIME set and unset.
+
+Thanks,
+Rafael
+
