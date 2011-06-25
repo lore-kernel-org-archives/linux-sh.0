@@ -1,86 +1,107 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 22 Jun 2011 09:55:32 +0000
-Subject: Re: [PATCH] ARM: conditional ioremap() fix for copy_oldmem_page()
-Message-Id: <20110622095525.GC9215@verge.net.au>
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Sat, 25 Jun 2011 18:00:50 +0000
+Subject: [PATCH] NET: AX88796: Tighten up Kconfig dependencies
+Message-Id: <20110625180050.GA9620@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110622034445.1936.16176.sendpatchset@t400s>
-In-Reply-To: <20110622034445.1936.16176.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 22, 2011 at 12:44:45PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Update the copy_oldmem_page() function to ioremap() only
-> when accessing memory that is outside the regular range
-> of system memory that is managed by the kernel.
-> 
-> Without this patch a warning is triggered in the ARM-specific
-> ioremap implementation, see WARN_ON(pfn_valid()) in ioremap.c
-> 
-> The copy_oldmem_page() function is used by the secondary crash
-> kernel to access memory using the /proc/vmcore code implemented
-> in fs/proc/vmcore.c. To pass information from the first kernel
-> to the secondary crash kernel a kernel command line option is
-> used to point out where the elf core hdr is located.
-> 
-> The crash kernel is loaded through kexec-tools which also contains
-> code that reserves memory for the elfcorehdr= option. This memory
-> block is reserved _inside_ the main system memory of the secondary
-> kernel. The /proc/vmcore code in the secondary kernel is however
-> using copy_oldmem_page() to access both this elfcorehdr area and
-> the rest of the memory used by the the first kernel.
-> 
-> So the copy_oldmem_page() function is used to access data that
-> may be located in system memory, or it may be outside. Always
-> using ioremap will not work, so this patch makes it conditional
-> based on pfn_valid().
-> 
-> For more details please look at the sh7372-based example here:
-> http://permalink.gmane.org/gmane.linux.ports.sh.devel/11502
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+In def47c5095d53814512bb0c62ec02dfdec769db1 the AX88796 driver got
+restricted to just be build for ARM and MIPS on the sole merrit that it
+was written for some ARM sytems and the driver had the missfortune to
+just build on MIPS, so MIPS was throw into the dependency for a good
+measure.  Later 8687991a734a67f1638782c968f46fff0f94bb1f added SH but
+only one in-tree SH system actually has an AX88796.
 
-Reviewed-by:  Simon Horman <horms@verge.net.au>
+Tighten up dependencies by using an auxilliary config sysmbol
+HAS_NET_AX88796 which is selected only by the platforms that actually
+have or may have an AX88796.  This also means the driver won't be built
+anymore for any MIPS platform.
 
-> ---
-> 
->  arch/arm/kernel/crash_dump.c |   14 ++++++++++----
->  1 file changed, 10 insertions(+), 4 deletions(-)
-> 
-> --- 0001/arch/arm/kernel/crash_dump.c
-> +++ work/arch/arm/kernel/crash_dump.c	2011-06-18 20:59:49.000000000 +0900
-> @@ -39,9 +39,13 @@ ssize_t copy_oldmem_page(unsigned long p
->  	if (!csize)
->  		return 0;
->  
-> -	vaddr = ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
-> -	if (!vaddr)
-> -		return -ENOMEM;
-> +	if (pfn_valid(pfn)) {
-> +		vaddr = phys_to_virt(pfn << PAGE_SHIFT);
-> +	} else {
-> +		vaddr = ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
-> +		if (!vaddr)
-> +			return -ENOMEM;
-> +	}
->  
->  	if (userbuf) {
->  		if (copy_to_user(buf, vaddr + offset, csize)) {
-> @@ -52,6 +56,8 @@ ssize_t copy_oldmem_page(unsigned long p
->  		memcpy(buf, vaddr + offset, csize);
->  	}
->  
-> -	iounmap(vaddr);
-> +	if (!pfn_valid(pfn))
-> +		iounmap(vaddr);
-> +
->  	return csize;
->  }
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/arm/mach-pxa/Kconfig     |    2 ++
+ arch/arm/mach-s3c2410/Kconfig |    1 +
+ arch/arm/mach-s3c2440/Kconfig |    1 +
+ arch/sh/boards/Kconfig        |    1 +
+ drivers/net/Kconfig           |    5 ++++-
+ 5 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-pxa/Kconfig b/arch/arm/mach-pxa/Kconfig
+index cd19309..37ce06f 100644
+--- a/arch/arm/mach-pxa/Kconfig
++++ b/arch/arm/mach-pxa/Kconfig
+@@ -247,11 +247,13 @@ config MACH_COLIBRI300
+ 	select PXA3xx
+ 	select CPU_PXA300
+ 	select CPU_PXA310
++	select HAS_NET_AX88796
+ 
+ config MACH_COLIBRI320
+ 	bool "Toradex Colibri PXA320"
+ 	select PXA3xx
+ 	select CPU_PXA320
++	select HAS_NET_AX88796
+ 
+ config MACH_COLIBRI_EVALBOARD
+ 	bool "Toradex Colibri Evaluation Carrier Board support"
+diff --git a/arch/arm/mach-s3c2410/Kconfig b/arch/arm/mach-s3c2410/Kconfig
+index 7245a55..d665f92 100644
+--- a/arch/arm/mach-s3c2410/Kconfig
++++ b/arch/arm/mach-s3c2410/Kconfig
+@@ -122,6 +122,7 @@ config ARCH_BAST
+ 	select S3C_DEV_HWMON
+ 	select S3C_DEV_USB_HOST
+ 	select S3C_DEV_NAND
++	select HAS_NET_AX88796
+ 	help
+ 	  Say Y here if you are using the Simtec Electronics EB2410ITX
+ 	  development board (also known as BAST)
+diff --git a/arch/arm/mach-s3c2440/Kconfig b/arch/arm/mach-s3c2440/Kconfig
+index 50825a3..7ddbd22 100644
+--- a/arch/arm/mach-s3c2440/Kconfig
++++ b/arch/arm/mach-s3c2440/Kconfig
+@@ -86,6 +86,7 @@ config MACH_ANUBIS
+ 	select S3C24XX_GPIO_EXTRA64
+ 	select S3C2440_XTAL_12000000
+ 	select S3C_DEV_USB_HOST
++	select HAS_NET_AX88796
+ 	help
+ 	  Say Y here if you are using the Simtec Electronics ANUBIS
+ 	  development system
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index d893411..f23f332 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -162,6 +162,7 @@ config SH_HIGHLANDER
+ 	depends on CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785
+ 	select SYS_SUPPORTS_PCI
+ 	select IO_TRAPPED if MMU
++	select HAS_NET_AX88796
+ 
+ config SH_SH7757LCR
+ 	bool "SH7757LCR"
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index be25e92..85d18c4 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -237,13 +237,16 @@ source "drivers/net/arm/Kconfig"
+ 
+ config AX88796
+ 	tristate "ASIX AX88796 NE2000 clone support"
+-	depends on ARM || MIPS || SUPERH
++	depends on HAS_NET_AX88796
+ 	select PHYLIB
+ 	select MDIO_BITBANG
+ 	help
+ 	  AX88796 driver, using platform bus to provide
+ 	  chip detection and resources
+ 
++config HAS_NET_AX88796
++	bool
++
+ config AX88796_93CX6
+ 	bool "ASIX AX88796 external 93CX6 eeprom support"
+ 	depends on AX88796
