@@ -1,37 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 09 Jun 2011 08:54:37 +0000
-Subject: [PATCH] ARM: mach-shmobile: AG5EVM SDHI1 platform data update
-Message-Id: <20110609090225.14384.8628.sendpatchset@t400s>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 25 Jun 2011 21:25:33 +0000
+Subject: [PATCH 2/10 v6] PM: subsys_data in struct dev_pm_info need not depend on RM_RUNTIME
+Message-Id: <201106252325.34214.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
+In-Reply-To: <201106252324.13454.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Add a flag for SDHI1 to enable SDIO IRQ, and remove DMA Engine
-slave id:s to disable DMA as a workaround.
+The subsys_data field of struct dev_pm_info, introduced by commit
+1d2b71f61b6a10216274e27b717becf9ae101fc7 (PM / Runtime: Add subsystem
+data field to struct dev_pm_info), is going to be used even if
+CONFIG_PM_RUNTIME is not set, so move it from under the #ifdef.
 
-Tested on sh73a0/AG5EVM with a BCM4318-based SDIO card.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
+ include/linux/pm.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/board-ag5evm.c |    4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-ag5evm.c
-+++ work/arch/arm/mach-shmobile/board-ag5evm.c	2011-06-09 17:58:37.000000000 +0900
-@@ -382,10 +382,8 @@ void ag5evm_sdhi1_set_pwr(struct platfor
- }
- 
- static struct sh_mobile_sdhi_info sh_sdhi1_platdata = {
--	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
--	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_NONREMOVABLE,
-+	.tmio_caps	= MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
- 	.tmio_ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.set_pwr	= ag5evm_sdhi1_set_pwr,
+Index: linux-2.6/include/linux/pm.h
+=================================--- linux-2.6.orig/include/linux/pm.h
++++ linux-2.6/include/linux/pm.h
+@@ -461,8 +461,8 @@ struct dev_pm_info {
+ 	unsigned long		active_jiffies;
+ 	unsigned long		suspended_jiffies;
+ 	unsigned long		accounting_timestamp;
+-	void			*subsys_data;  /* Owned by the subsystem. */
+ #endif
++	void			*subsys_data;  /* Owned by the subsystem. */
  };
+ 
+ extern void update_pm_runtime_accounting(struct device *dev);
+
