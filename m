@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 28 Jun 2011 00:35:34 +0000
-Subject: [PATCH 02/05] ARM: mach-shmobile: sh7372 A4LC support for AP4EVB
-Message-Id: <20110628003534.11399.76398.sendpatchset@t400s>
+Date: Tue, 28 Jun 2011 00:35:58 +0000
+Subject: [PATCH 05/05] ARM: mach-shmobile: sh7372 A3SG support
+Message-Id: <20110628003558.11399.17610.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,47 +10,47 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-The AP4EVB board is also using a sh7372 SoC, so tie in
-A4LC support on that board as well.
+Add support for the sh7372 A3SG power domain. This domain contains
+the SGX hardware block, but there is no open source driver available.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/board-ap4evb.c   |    3 +++
- arch/arm/mach-shmobile/board-mackerel.c |    1 -
- arch/arm/mach-shmobile/setup-sh7372.c   |    2 ++
- 3 files changed, 5 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
+ arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |    1 +
+ 3 files changed, 6 insertions(+)
 
---- 0001/arch/arm/mach-shmobile/board-ap4evb.c
-+++ work/arch/arm/mach-shmobile/board-ap4evb.c	2011-06-27 13:23:31.000000000 +0900
-@@ -1408,6 +1408,9 @@ static void __init ap4evb_init(void)
+--- 0006/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-06-27 13:39:38.000000000 +0900
+@@ -487,6 +487,7 @@ static inline struct sh7372_pm_domain *t
+ extern struct sh7372_pm_domain sh7372_a4lc;
+ extern struct sh7372_pm_domain sh7372_a3rv;
+ extern struct sh7372_pm_domain sh7372_a3ri;
++extern struct sh7372_pm_domain sh7372_a3sg;
  
- 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
+ extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
+ extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
+--- 0006/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-06-27 13:39:56.000000000 +0900
+@@ -127,6 +127,10 @@ struct sh7372_pm_domain sh7372_a3ri = {
+ 	.bit_shift = 8,
+ };
  
-+	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc1_device);
-+	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
++struct sh7372_pm_domain sh7372_a3sg = {
++	.bit_shift = 13,
++};
 +
- 	hdmi_init_pm_clock();
- 	fsi_init_pm_clock();
- 	sh7372_pm_init();
---- 0002/arch/arm/mach-shmobile/board-mackerel.c
-+++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-06-27 13:23:44.000000000 +0900
-@@ -1582,7 +1582,6 @@ static void __init mackerel_init(void)
+ #endif /* CONFIG_PM */
  
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ static void sh7372_enter_core_standby(void)
+--- 0006/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-06-27 13:40:17.000000000 +0900
+@@ -844,6 +844,7 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_init_pm_domain(&sh7372_a4lc);
+ 	sh7372_init_pm_domain(&sh7372_a3rv);
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
++	sh7372_init_pm_domain(&sh7372_a3sg);
  
--	sh7372_init_pm_domain(&sh7372_a4lc);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
- 
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-06-27 13:23:54.000000000 +0900
-@@ -841,6 +841,8 @@ static struct platform_device *sh7372_la
- 
- void __init sh7372_add_standard_devices(void)
- {
-+	sh7372_init_pm_domain(&sh7372_a4lc);
-+
  	platform_add_devices(sh7372_early_devices,
  			    ARRAY_SIZE(sh7372_early_devices));
- 
