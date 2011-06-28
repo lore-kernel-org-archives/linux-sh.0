@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 17 Jun 2011 00:30:23 +0000
+Date: Tue, 28 Jun 2011 23:10:08 +0000
 Subject: [PATCH] mmc, ARM: Add zboot from eSD support for SuperH Mobile ARM
-Message-Id: <1308270623-24978-2-git-send-email-horms@verge.net.au>
+Message-Id: <1309302608-25750-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1308270623-24978-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1308270623-24978-1-git-send-email-horms@verge.net.au>
+References: <1309302608-25750-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1309302608-25750-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -833,5 +833,5 @@ index 0000000..0ec9e69
 +
 +#endif /* SDHI_H */
 -- 
-1.7.4.4
+1.7.5.4
 
