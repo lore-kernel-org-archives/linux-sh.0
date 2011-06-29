@@ -1,126 +1,62 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 22 Jun 2011 07:49:51 +0000
-Subject: [PATCH 4/5 v3] fbdev: sh_mobile_meram: Backup/restore device registers on shutdown/resume
-Message-Id: <1308728992-9660-5-git-send-email-dhobsong@igel.co.jp>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 29 Jun 2011 04:23:47 +0000
+Subject: [PATCH] sh: fix the INTC vector for IRQ and IRL in setup-sh7757
+Message-Id: <4E0AA8D3.7040205@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Save and reconfigure the MERAM registers when the MERAM is powered down
-and restored
-
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-Changes from V2
-=======
-* The private data structure definition was moved from sh_mobile_meram.h to
-  sh_mobile_meram.c.  This has been moved into a separate patch
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   24 ++++++++++++------------
+ 1 files changed, 12 insertions(+), 12 deletions(-)
 
- drivers/video/sh_mobile_meram.c |   71 +++++++++++++++++++++++++++++++++++++++
- 1 files changed, 71 insertions(+), 0 deletions(-)
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 6eba96b..e915dea 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -1089,13 +1089,13 @@ static DECLARE_INTC_DESC(intc_desc, "sh7757", vectors, groups,
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index cc71cbf..7afd77a 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -37,12 +37,31 @@
- #define MEQSEL1 0x40
- #define MEQSEL2 0x44
- 
-+static unsigned long common_regs[] = {
-+	MEVCR1,
-+	MEQSEL1,
-+	MEQSEL2,
-+};
-+#define CMN_REGS_SIZE ARRAY_SIZE(common_regs)
-+
-+static unsigned long icb_regs[] = {
-+	MExxCTL,
-+	MExxBSIZE,
-+	MExxMNCF,
-+	MExxSARA,
-+	MExxSARB,
-+	MExxSBSIZE,
-+};
-+#define ICB_REGS_SIZE ARRAY_SIZE(icb_regs)
-+
- struct sh_mobile_meram_priv {
- 	void __iomem	*base;
- 	struct mutex	lock;
- 	unsigned long	used_icb;
- 	int		used_meram_cache_regions;
- 	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
-+	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
-+	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
+ /* Support for external interrupt pins in IRQ mode */
+ static struct intc_vect vectors_irq0123[] __initdata = {
+-	INTC_VECT(IRQ0, 0x240), INTC_VECT(IRQ1, 0x280),
+-	INTC_VECT(IRQ2, 0x2c0), INTC_VECT(IRQ3, 0x300),
++	INTC_VECT(IRQ0, 0x200), INTC_VECT(IRQ1, 0x240),
++	INTC_VECT(IRQ2, 0x280), INTC_VECT(IRQ3, 0x2c0),
  };
- 
- /* settings */
-@@ -489,6 +508,57 @@ int sh_mobile_meram_pm_put_sync(struct sh_mobile_meram_info *pdata)
- 	return 0;
- }
- 
-+static int sh_mobile_meram_runtime_suspend(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
-+	int k, j;
-+
-+	for (k = 0; k < CMN_REGS_SIZE; k++)
-+		priv->cmn_saved_regs[k] = meram_read_reg(priv->base,
-+			common_regs[k]);
-+
-+	for (j = 0; j < 32; j++) {
-+		if (!test_bit(j, &priv->used_icb))
-+			continue;
-+		for (k = 0; k < ICB_REGS_SIZE; k++) {
-+			priv->icb_saved_regs[j * ICB_REGS_SIZE + k] +				meram_read_icb(priv->base, j, icb_regs[k]);
-+			/* Reset ICB on resume */
-+			if (icb_regs[k] = MExxCTL)
-+				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] +					0x70;
-+		}
-+	}
-+	return 0;
-+}
-+
-+static int sh_mobile_meram_runtime_resume(struct device *dev)
-+{
-+	struct platform_device *pdev = to_platform_device(dev);
-+	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
-+	int k, j;
-+
-+	for (j = 0; j < 32; j++) {
-+		if (!test_bit(j, &priv->used_icb))
-+			continue;
-+		for (k = 0; k < ICB_REGS_SIZE; k++) {
-+			meram_write_icb(priv->base, j, icb_regs[k],
-+			priv->icb_saved_regs[j * ICB_REGS_SIZE + k]);
-+		}
-+	}
-+
-+	for (k = 0; k < CMN_REGS_SIZE; k++)
-+		meram_write_reg(priv->base, common_regs[k],
-+			priv->cmn_saved_regs[k]);
-+	return 0;
-+}
-+
-+static const struct dev_pm_ops sh_mobile_meram_dev_pm_ops = {
-+	.runtime_suspend = sh_mobile_meram_runtime_suspend,
-+	.runtime_resume = sh_mobile_meram_runtime_resume,
-+};
-+
- static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
- 	.module			= THIS_MODULE,
- 	.meram_register		= sh_mobile_meram_register,
-@@ -579,6 +649,7 @@ static struct platform_driver sh_mobile_meram_driver = {
- 	.driver	= {
- 		.name		= "sh_mobile_meram",
- 		.owner		= THIS_MODULE,
-+		.pm		= &sh_mobile_meram_dev_pm_ops,
- 	},
- 	.probe		= sh_mobile_meram_probe,
- 	.remove		= sh_mobile_meram_remove,
+
+ static struct intc_vect vectors_irq4567[] __initdata = {
+-	INTC_VECT(IRQ4, 0x340), INTC_VECT(IRQ5, 0x380),
+-	INTC_VECT(IRQ6, 0x3c0), INTC_VECT(IRQ7, 0x200),
++	INTC_VECT(IRQ4, 0x300), INTC_VECT(IRQ5, 0x340),
++	INTC_VECT(IRQ6, 0x380), INTC_VECT(IRQ7, 0x3c0),
+ };
+
+ static struct intc_sense_reg sense_registers[] __initdata = {
+@@ -1129,14 +1129,14 @@ static struct intc_vect vectors_irl0123[] __initdata = {
+ };
+
+ static struct intc_vect vectors_irl4567[] __initdata = {
+-	INTC_VECT(IRL4_LLLL, 0xb00), INTC_VECT(IRL4_LLLH, 0xb20),
+-	INTC_VECT(IRL4_LLHL, 0xb40), INTC_VECT(IRL4_LLHH, 0xb60),
+-	INTC_VECT(IRL4_LHLL, 0xb80), INTC_VECT(IRL4_LHLH, 0xba0),
+-	INTC_VECT(IRL4_LHHL, 0xbc0), INTC_VECT(IRL4_LHHH, 0xbe0),
+-	INTC_VECT(IRL4_HLLL, 0xc00), INTC_VECT(IRL4_HLLH, 0xc20),
+-	INTC_VECT(IRL4_HLHL, 0xc40), INTC_VECT(IRL4_HLHH, 0xc60),
+-	INTC_VECT(IRL4_HHLL, 0xc80), INTC_VECT(IRL4_HHLH, 0xca0),
+-	INTC_VECT(IRL4_HHHL, 0xcc0),
++	INTC_VECT(IRL4_LLLL, 0x200), INTC_VECT(IRL4_LLLH, 0x220),
++	INTC_VECT(IRL4_LLHL, 0x240), INTC_VECT(IRL4_LLHH, 0x260),
++	INTC_VECT(IRL4_LHLL, 0x280), INTC_VECT(IRL4_LHLH, 0x2a0),
++	INTC_VECT(IRL4_LHHL, 0x2c0), INTC_VECT(IRL4_LHHH, 0x2e0),
++	INTC_VECT(IRL4_HLLL, 0x300), INTC_VECT(IRL4_HLLH, 0x320),
++	INTC_VECT(IRL4_HLHL, 0x340), INTC_VECT(IRL4_HLHH, 0x360),
++	INTC_VECT(IRL4_HHLL, 0x380), INTC_VECT(IRL4_HHLH, 0x3a0),
++	INTC_VECT(IRL4_HHHL, 0x3c0),
+ };
+
+ static DECLARE_INTC_DESC(intc_desc_irl0123, "sh7757-irl0123", vectors_irl0123,
 -- 
 1.7.1
-
