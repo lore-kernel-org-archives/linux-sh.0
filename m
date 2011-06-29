@@ -1,81 +1,156 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 17 Jun 2011 07:23:23 +0000
-Subject: Re: [RFC][PATCH 4/6] dmaengine: shdma: add is_usbdmac flag
-Message-Id: <Pine.LNX.4.64.1106170922290.27141@axis700.grange>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 29 Jun 2011 04:23:42 +0000
+Subject: [PATCH] sh: fix the value of sh_dmae_slave_config in setup-sh7757
+Message-Id: <4E0AA8CE.1020205@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3ppqmdp1m8.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3ppqmdp1m8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, 17 Jun 2011, Kuninori Morimoto wrote:
+Fix the value of chcr for SCIF[2-4]_RX and RIIC[0-9]_RX and
+the value of mid_rid for some RIIC.
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  drivers/dma/shdma.c    |    8 ++++++++
->  include/linux/sh_dma.h |    3 +++
->  2 files changed, 11 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-> index aa91309..3de661e 100644
-> --- a/drivers/dma/shdma.c
-> +++ b/drivers/dma/shdma.c
-> @@ -194,6 +194,10 @@ static void dmae_start(struct sh_dmae_chan *sh_chan)
->  	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
->  	u32 chcr = chcr_read(sh_chan);
->  
-> +	/* USB-DMAC needs TEND settings */
-> +	if (shdev->pdata->is_usbdmac)
-> +		sh_dmae_writel(sh_chan, 0xFFFFFFFF, TEND);
-> +
->  	chcr |= CHCR_DE | shdev->chcr_ie_bit;
->  	chcr_write(sh_chan, chcr & ~CHCR_TE);
->  }
-> @@ -242,6 +246,10 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
->  	if (dmae_is_busy(sh_chan))
->  		return -EBUSY;
->  
-> +	/* USB-DMAC doesn't need DMARS settings */
-> +	if (pdata->is_usbdmac)
-> +		return 0;
-> +
->  	/* in the case of a missing DMARS resource use first memory window */
->  	if (!addr)
->  		addr = (u16 __iomem *)shdev->chan_reg;
-> diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-> index 6a98daf..8a5bffd 100644
-> --- a/include/linux/sh_dma.h
-> +++ b/include/linux/sh_dma.h
-> @@ -66,6 +66,7 @@ struct sh_dmae_pdata {
->  	u32 chcr_ie_bit;
->  
->  	u32 dmaor_is_32bit:1;
-> +	u32 is_usbdmac:1;
-
-"unsigned int"
-
-Thanks
-Guennadi
-
->  };
->  
->  /* DMA register */
-> @@ -75,6 +76,8 @@ struct sh_dmae_pdata {
->  #define CHCR	0x0C
->  #define DMAOR	0x40
->  
-> +#define TEND	0x18 /* USB-DMAC */
-> +
->  /* DMAOR definitions */
->  #define DMAOR_AE	0x00000004
->  #define DMAOR_NMIF	0x00000002
-> -- 
-> 1.7.4.1
-> 
-
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   32 ++++++++++++++++----------------
+ 1 files changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 717a76b..6eba96b 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -183,7 +183,7 @@ static const struct sh_dmae_slave_config sh7757_dmae1_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+ 		.addr		= 0x1f4b0014,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	},
+@@ -197,7 +197,7 @@ static const struct sh_dmae_slave_config sh7757_dmae1_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+ 		.addr		= 0x1f4c0014,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	},
+@@ -211,7 +211,7 @@ static const struct sh_dmae_slave_config sh7757_dmae1_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+ 		.addr		= 0x1f4d0014,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x42,
+ 	},
+@@ -228,7 +228,7 @@ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC0_RX,
+ 		.addr		= 0x1e500013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	},
+@@ -242,7 +242,7 @@ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC1_RX,
+ 		.addr		= 0x1e510013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	},
+@@ -256,7 +256,7 @@ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC2_RX,
+ 		.addr		= 0x1e520013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xa2,
+ 	},
+@@ -265,12 +265,12 @@ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+ 		.addr		= 0x1e530012,
+ 		.chcr		= SM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+-		.mid_rid	= 0xab,
++		.mid_rid	= 0xa9,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC3_RX,
+ 		.addr		= 0x1e530013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0xaf,
+ 	},
+@@ -279,14 +279,14 @@ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+ 		.addr		= 0x1e540012,
+ 		.chcr		= SM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+-		.mid_rid	= 0xc1,
++		.mid_rid	= 0xc5,
+ 	},
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC4_RX,
+ 		.addr		= 0x1e540013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+-		.mid_rid	= 0xc2,
++		.mid_rid	= 0xc6,
+ 	},
+ };
+
+@@ -301,7 +301,7 @@ static const struct sh_dmae_slave_config sh7757_dmae3_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC5_RX,
+ 		.addr		= 0x1e550013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	},
+@@ -315,7 +315,7 @@ static const struct sh_dmae_slave_config sh7757_dmae3_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC6_RX,
+ 		.addr		= 0x1e560013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	},
+@@ -329,7 +329,7 @@ static const struct sh_dmae_slave_config sh7757_dmae3_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC7_RX,
+ 		.addr		= 0x1e570013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x42,
+ 	},
+@@ -343,7 +343,7 @@ static const struct sh_dmae_slave_config sh7757_dmae3_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC8_RX,
+ 		.addr		= 0x1e580013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x46,
+ 	},
+@@ -357,7 +357,7 @@ static const struct sh_dmae_slave_config sh7757_dmae3_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_RIIC9_RX,
+ 		.addr		= 0x1e590013,
+-		.chcr		= SM_INC | 0x800 | 0x40000000 |
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x52,
+ 	},
+-- 
+1.7.1
