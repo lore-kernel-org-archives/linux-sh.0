@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 30 Jun 2011 09:22:50 +0000
-Subject: [PATCH] ARM: mach-shmobile: Use CMT2 for timer on sh7372
-Message-Id: <20110630092250.10279.25611.sendpatchset@t400s>
+Date: Thu, 30 Jun 2011 09:47:01 +0000
+Subject: [PATCH 01/03] serial: sh-sci: console Runtime PM prototype
+Message-Id: <20110630094701.10442.45978.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,125 +10,138 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Switch the sh7372 CPU support to use CMT2 instead
-of CMT1 for system timer.
+Prototype code to add Runtime PM context save/restore for
+the SCIF driver. Seems to work well, but needs to be reworked
+to fit together with other driver changes.
 
-CMT1 is located in the A3SP power domain while CMT2
-is located in the always-on power domain C5.
-
-This improves our PM situation - with CMT2 as timer
-we can power down A3SP and still access the timer.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/clock-sh7372.c |    8 ++++----
- arch/arm/mach-shmobile/setup-sh7372.c |   30 +++++++++++++++---------------
- 2 files changed, 19 insertions(+), 19 deletions(-)
+ drivers/tty/serial/sh-sci.c |   70 ++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 60 insertions(+), 10 deletions(-)
 
---- 0001/arch/arm/mach-shmobile/clock-sh7372.c
-+++ work/arch/arm/mach-shmobile/clock-sh7372.c	2011-06-29 19:04:32.000000000 +0900
-@@ -511,8 +511,8 @@ enum { MSTP001,
-        MSTP223,
-        MSTP218, MSTP217, MSTP216,
-        MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
--       MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
--       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403,
-+       MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
-+       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403, MSTP400,
-        MSTP_NR };
+--- 0001/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2011-06-30 16:25:04.000000000 +0900
+@@ -103,6 +103,12 @@ struct sci_port {
+ #endif
  
- #define MSTP(_parent, _reg, _bit, _flags) \
-@@ -545,7 +545,6 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP202] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 2, 0), /* SCIFA2 */
- 	[MSTP201] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 1, 0), /* SCIFA3 */
- 	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
--	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
- 	[MSTP328] = MSTP(&div6_clks[DIV6_SPU], SMSTPCR3, 28, 0), /* FSI2 */
- 	[MSTP323] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 23, 0), /* IIC1 */
- 	[MSTP322] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 22, 0), /* USB0 */
-@@ -559,6 +558,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP410] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 10, 0), /* IIC4 */
- 	[MSTP406] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 6, 0), /* USB1 */
- 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
-+	[MSTP400] = MSTP(&r_clk, SMSTPCR4, 0, 0), /* CMT2 */
+ 	struct notifier_block		freq_transition;
++
++#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
++	unsigned short saved_smr;
++	unsigned short saved_fcr;
++	unsigned char saved_brr;
++#endif
  };
  
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-@@ -640,7 +640,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP202]), /* SCIFA2 */
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
--	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI2 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* IIC1 */
- 	CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[MSTP322]), /* USB0 */
-@@ -658,6 +657,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("renesas_usbhs.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
-+	CLKDEV_DEV_ID("sh_cmt.2", &mstp_clks[MSTP400]), /* CMT2 */
+ /* Function prototypes */
+@@ -1491,11 +1497,25 @@ static unsigned int sci_scbrr_calc(unsig
+ 	return ((freq + 16 * bps) / (32 * bps) - 1);
+ }
  
- 	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
- 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-06-29 19:03:43.000000000 +0900
-@@ -169,35 +169,35 @@ static struct platform_device scif6_devi
- };
++static void sci_reset(struct uart_port *port)
++{
++	unsigned int status;
++
++	do {
++		status = sci_in(port, SCxSR);
++	} while (!(status & SCxSR_TEND(port)));
++
++	sci_out(port, SCSCR, 0x00);	/* TE=0, RE=0, CKE1=0 */
++
++	if (port->type != PORT_SCI)
++		sci_out(port, SCFCR, SCFCR_RFRST | SCFCR_TFRST);
++}
++
+ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			    struct ktermios *old)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+-	unsigned int status, baud, smr_val, max_baud;
++	unsigned int baud, smr_val, max_baud;
+ 	int t = -1;
+ 	u16 scfcr = 0;
  
- /* CMT */
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
-+static struct sh_timer_config cmt2_platform_data = {
-+	.name = "CMT2",
-+	.channel_offset = 0x40,
-+	.timer_bit = 5,
- 	.clockevent_rating = 125,
- 	.clocksource_rating = 125,
- };
+@@ -1516,14 +1536,7 @@ static void sci_set_termios(struct uart_
+ 	if (s->enable)
+ 		s->enable(port);
  
--static struct resource cmt10_resources[] = {
-+static struct resource cmt2_resources[] = {
- 	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
-+		.name	= "CMT2",
-+		.start	= 0xe6130040,
-+		.end	= 0xe613004b,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= evt2irq(0x0b00), /* CMT1_CMT10 */
-+		.start	= evt2irq(0x0b80), /* CMT2 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
+-	do {
+-		status = sci_in(port, SCxSR);
+-	} while (!(status & SCxSR_TEND(port)));
+-
+-	sci_out(port, SCSCR, 0x00);	/* TE=0, RE=0, CKE1=0 */
+-
+-	if (port->type != PORT_SCI)
+-		sci_out(port, SCFCR, scfcr | SCFCR_RFRST | SCFCR_TFRST);
++	sci_reset(port);
  
--static struct platform_device cmt10_device = {
-+static struct platform_device cmt2_device = {
- 	.name		= "sh_cmt",
--	.id		= 10,
-+	.id		= 2,
- 	.dev = {
--		.platform_data	= &cmt10_platform_data,
-+		.platform_data	= &cmt2_platform_data,
- 	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
-+	.resource	= cmt2_resources,
-+	.num_resources	= ARRAY_SIZE(cmt2_resources),
- };
+ 	smr_val = sci_in(port, SCSMR) & 3;
  
- /* TMU */
-@@ -818,7 +818,7 @@ static struct platform_device *sh7372_ea
- 	&scif4_device,
- 	&scif5_device,
- 	&scif6_device,
--	&cmt10_device,
-+	&cmt2_device,
- 	&tmu00_device,
- 	&tmu01_device,
+@@ -1869,7 +1882,10 @@ static int __devinit serial_console_setu
+ 	if (ret = 0)
+ 		sci_stop_rx(port);
+ #endif
+-	/* TODO: disable clock */
++
++	if (sci_port->disable)
++		sci_port->disable(port);
++
+ 	return ret;
+ }
+ 
+@@ -1912,6 +1928,36 @@ static int __devinit sci_probe_earlyprin
+ 	return 0;
+ }
+ 
++#define uart_console(port)	((port)->cons->index = (port)->line)
++
++static int sci_runtime_suspend(struct device *dev)
++{
++	struct sci_port *sci_port = dev_get_drvdata(dev);
++	struct uart_port *port = &sci_port->port;
++
++	if (uart_console(port)) {
++		sci_port->saved_smr = sci_in(port, SCSMR);
++		sci_port->saved_brr = sci_in(port, SCBRR);
++		sci_port->saved_fcr = sci_in(port, SCFCR);
++	}
++	return 0;
++}
++
++static int sci_runtime_resume(struct device *dev)
++{
++	struct sci_port *sci_port = dev_get_drvdata(dev);
++	struct uart_port *port = &sci_port->port;
++
++	if (uart_console(port)) {
++		sci_reset(port);
++		sci_out(port, SCSMR, sci_port->saved_smr);
++		sci_out(port, SCBRR, sci_port->saved_brr);
++		sci_out(port, SCFCR, sci_port->saved_fcr);
++		sci_out(port, SCSCR, sci_port->cfg->scscr);
++	}
++	return 0;
++}
++
+ #define SCI_CONSOLE	(&serial_console)
+ 
+ #else
+@@ -1921,6 +1967,8 @@ static inline int __devinit sci_probe_ea
+ }
+ 
+ #define SCI_CONSOLE	NULL
++#define sci_runtime_suspend	NULL
++#define sci_runtime_resume	NULL
+ 
+ #endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
+@@ -2036,6 +2084,8 @@ static int sci_resume(struct device *dev
+ }
+ 
+ static const struct dev_pm_ops sci_dev_pm_ops = {
++	.runtime_suspend = sci_runtime_suspend,
++	.runtime_resume = sci_runtime_resume,
+ 	.suspend	= sci_suspend,
+ 	.resume		= sci_resume,
  };
