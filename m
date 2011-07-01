@@ -1,40 +1,36 @@
-From: Jesper Juhl <jj@chaosbits.net>
-Date: Sat, 09 Jul 2011 21:11:14 +0000
-Subject: [PATCH 1/7] ARM: static should be at beginning of declaration
-Message-Id: <alpine.LNX.2.00.1107092309500.25516@swampdragon.chaosbits.net>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="8323328-1415239122-1310245874=:25516"
+From: Kevin Hilman <khilman@ti.com>
+Date: Fri, 01 Jul 2011 18:27:22 +0000
+Subject: Re: [PATCH 0/10 v6] PM / Domains: Support for generic I/O PM domains
+Message-Id: <87fwmpyhyt.fsf@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
-In-Reply-To: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
-To: linux-arm-kernel@lists.infradead.org
+References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
+In-Reply-To: <201106252324.13454.rjw@sisk.pl> (Rafael J. Wysocki's message of
+	"Sat, 25 Jun 2011 23:24:13 +0200")
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+"Rafael J. Wysocki" <rjw@sisk.pl> writes:
 
---8323328-1415239122-1310245874=:25516
-Content-Type: TEXT/PLAIN; charset="iso-8859-7"
-Content-Transfer-Encoding: base64
+> Hi,
+>
+> Well, one more update. :-)
+>
+> This is the 6th version of the patchset adding support for generic I/O PM
+> domains.  The majority of patches have had some small fixes here and there
+> to make things work when CONFIG_PM_RUNTIME is unset.  In addition to that,
+> to make the shmobile code introduced by the last patch work for
+> CONFIG_PM_RUNTIME unset I had to add patches [8-9/10].  Patch [7/10]
+> adds wakeup support that was missing from the previous version and I
+> decided not to push patch [1/10] for 3.0 after all.
 
-TWFrZSBzdXJlIHRoYXQgdGhlICdzdGF0aWMnIGtleXdvcmsgaXMgYXQgdGhlIGJlZ2lubmluZyBv
-ZiBkZWNsYXJhdGlvbgpmb3IgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYwoK
-VGhpcyBnZXRzIHJpZCBvZiB3YXJuaW5ncyBsaWtlCiAgd2FybmluZzogoXN0YXRpY6IgaXMgbm90
-IGF0IGJlZ2lubmluZyBvZiBkZWNsYXJhdGlvbgp3aGVuIGJ1aWxkaW5nIHdpdGggLVdvbGQtc3R5
-bGUtZGVjbGFyYXRpb24gKGFuZC9vciAtV2V4dHJhIHdoaWNoIGFsc28KZW5hYmxlcyBpdCkuCgpT
-aWduZWQtb2ZmLWJ5OiBKZXNwZXIgSnVobCA8ampAY2hhb3NiaXRzLm5ldD4KLS0tCiBhcmNoL2Fy
-bS9tYWNoLXNobW9iaWxlL2JvYXJkLWFwNGV2Yi5jIHwgICAgMiArLQogMSBmaWxlcyBjaGFuZ2Vk
-LCAxIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvYXJjaC9hcm0v
-bWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYyBiL2FyY2gvYXJtL21hY2gtc2htb2JpbGUvYm9h
-cmQtYXA0ZXZiLmMKaW5kZXggODAzYmM2ZS4uYmI0ZTA4NCAxMDA2NDQKLS0tIGEvYXJjaC9hcm0v
-bWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYworKysgYi9hcmNoL2FybS9tYWNoLXNobW9iaWxl
-L2JvYXJkLWFwNGV2Yi5jCkBAIC00NDMsNyArNDQzLDcgQEAgc3RhdGljIHN0cnVjdCBwbGF0Zm9y
-bV9kZXZpY2UgdXNiMV9ob3N0X2RldmljZSA9IHsKIAkucmVzb3VyY2UJPSB1c2IxX2hvc3RfcmVz
-b3VyY2VzLAogfTsKIAotY29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgYXA0ZXZiX2xj
-ZGNfbW9kZXNbXSA9IHsKK3N0YXRpYyBjb25zdCBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGFwNGV2Yl9s
-Y2RjX21vZGVzW10gPSB7CiAJewogI2lmZGVmIENPTkZJR19BUDRFVkJfUUhECiAJCS5uYW1lCQk9
-ICJSNjMzMDIoUUhEKSIsCi0tIAoxLjcuNgoKCi0tIApKZXNwZXIgSnVobCA8ampAY2hhb3NiaXRz
-Lm5ldD4gICAgICAgaHR0cDovL3d3dy5jaGFvc2JpdHMubmV0LwpEb24ndCB0b3AtcG9zdCBodHRw
-Oi8vd3d3LmNhdGIub3JnL2phcmdvbi9odG1sL1QvdG9wLXBvc3QuaHRtbApQbGFpbiB0ZXh0IG1h
-aWxzIG9ubHksIHBsZWFzZS4K
+For everything but the shmobile specifics, which I didn't look at too
+closely, and the changes for [7/10] that we agreed on:
 
---8323328-1415239122-1310245874=:25516--
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+
+Thanks!
+
+Kevin
