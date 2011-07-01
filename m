@@ -1,35 +1,57 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 13 Jul 2011 08:21:13 +0000
-Subject: Re: [PATCH] fbdev: sh_mobile_lcdc: Turn dot clock on before resuming from runtime PM
-Message-Id: <20110713082113.GH13701@linux-sh.org>
+From: Kevin Hilman <khilman@ti.com>
+Date: Fri, 01 Jul 2011 18:11:13 +0000
+Subject: Re: [PATCH 3/10 v6] PM / Domains: Support for generic I/O PM domains (v7)
+Message-Id: <87tyb5yipq.fsf@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1310387754-23033-1-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1310387754-23033-1-git-send-email-laurent.pinchart@ideasonboard.com>
+References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
+	<201106252326.23837.rjw@sisk.pl>
+In-Reply-To: <201106252326.23837.rjw@sisk.pl> (Rafael J. Wysocki's message of
+	"Sat, 25 Jun 2011 23:26:23 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Tue, Jul 12, 2011 at 11:37:57AM +0200, Laurent Pinchart wrote:
-> On Tuesday 12 July 2011 11:33:09 Guennadi Liakhovetski wrote:
-> > On Mon, 11 Jul 2011, Laurent Pinchart wrote:
-> > > Resuming from runtime PM restores all LCDC registers. If the dot clock
-> > > is off at that time display panning information will be corrupted.
-> > > 
-> > > Turn the dot clock on before resuming from runtime PM. Similarly,
-> > > turn the clock off after suspending the LCDC.
-> > > 
-> > > Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > > Cc: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-> > 
-> > (testing would have been a bit easier, if prerequisites had been specified
-> > in the patch;))
-> 
-> They're specified a couple of lines down ;-)
-> 
-> > Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> Thank you.
-> 
-Folded in on top of the rest of the MERAM changes, thanks.
+"Rafael J. Wysocki" <rjw@sisk.pl> writes:
+
+> From: Rafael J. Wysocki <rjw@sisk.pl>
+>
+> Introduce common headers, helper functions and callbacks allowing
+> platforms to use simple generic power domains for runtime power
+> management.
+>
+> Introduce struct generic_pm_domain to be used for representing
+> power domains that each contain a number of devices and may be
+> parent domains or subdomains with respect to other power domains.
+> Among other things, this structure includes callbacks to be
+> provided by platforms for performing specific tasks related to
+> power management (i.e. ->stop_device() may disable a device's
+> clocks, while ->start_device() may enable them, ->power_off() is
+> supposed to remove power from the entire power domain
+> and ->power_on() is supposed to restore it).
+>
+> Introduce functions that can be used as power domain runtime PM
+> callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
+> as well as helper functions for the initialization of a power
+> domain represented by a struct generic_power_domain object,
+> adding a device to or removing a device from it and adding or
+> removing subdomains.
+>
+> Introduce configuration option CONFIG_PM_GENERIC_DOMAINS to be
+> selected by the platforms that want to use the new code.
+>
+> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+> Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
+
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+
+While I still don't think this is generic enough for some more
+complicated SoCs, it most certainly a huge step in the right direction,
+and I think we can address the other complexities with additional
+patches as needed.
+
+Thanks Rafael for all your hard work on this and putting up with my
+nagging. ;)
+
+Kevin
