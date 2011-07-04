@@ -1,35 +1,43 @@
-From: "H. Peter Anvin" <hpa@zytor.com>
-Date: Tue, 05 Jul 2011 22:34:51 +0000
-Subject: Re: [PATCH 00/10] Enhance /dev/mem to allow read/write of arbitrary
-Message-Id: <4E13918B.3040208@zytor.com>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Mon, 04 Jul 2011 08:05:28 +0000
+Subject: [PATCH 0/5 v4] LCDC MERAM runtime PM support
+Message-Id: <1309766728-32419-1-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106171038.25988.ptesarik@suse.cz>
-	<201107012134.45881.ptesarik@suse.cz>
-	<20110701195629.GA19057@elte.hu>
-	<201107012244.57593.ptesarik@suse.cz>
-	<20110703194618.GB27022@elte.hu>
-	<20110705174901.GA30531@srcf.ucam.org>
-In-Reply-To: <20110705174901.GA30531@srcf.ucam.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On 07/05/2011 10:49 AM, Matthew Garrett wrote:
-> On Sun, Jul 03, 2011 at 09:46:18PM +0200, Ingo Molnar wrote:
-> 
->> But those tables wont be in regular RAM (they will be in ROM or in 
->> RAM marked non-RAM in a special way in the e820 tables).
->>
->> dmidecode certainly works on Fedora.
-> 
-> I've repeatedly wanted to dump EFI data that's flagged as E820_RESERVED 
-> above the top of RAM and had to hack the kernel every time. I'm entirely 
-> in favour of not having to hack the kernel every time.
-> 
+This patch series is a provides PM runtime support for the LCDC MERAM.
 
-Alright... I must admit I have lost track...
+The runtime_pm_get/put calls are made at the same time as the LCDC calls, so
+that the LCDC MERAM is enabled with the first LCDC device and disabled 
+with the last LCDC device.
 
-Where are we at with this patchset, and what path should it go through?
+The first 4 patches will apply to rmobile-latest or common/fbdev-meram as-is,
+but the final patch needs to have the "PM / Domains: Support for generic I/O PM
+domains" patch series. 
 
-	-hpa
+Only the first 2 patches of the series have been updated from v3 sent on
+2011/06/22
+
+Changes from V3
+
+* Remove the MERAM callbacks used to runtime_get/runtime_put the device from
+  the LCDC driver.  Instead, just call the functions on the MERAM device
+  directly
+
+Damian Hobson-Garcia (5):
+  fbdev: sh_mobile_meram: Enable runtime PM
+  fbdev: sh_mobile_meram: Enable/disable MERAM along with LCDC - v4
+  fbdev: sh_mobile_meram: Move private data from .h to .c 
+  fbdev: sh_mobile_meram: Backup/restore device registers on
+    shutdown/resume - v3
+  fbdev: sh_mobile_meram: Assign meram to the SH7372_A4LC power domain
+
+ arch/arm/mach-shmobile/board-mackerel.c |    1 +
+ drivers/video/sh_mobile_lcdcfb.c        |    6 ++
+ drivers/video/sh_mobile_meram.c         |   84 +++++++++++++++++++++++++++++++
+ drivers/video/sh_mobile_meram.h         |    8 ---
+ 4 files changed, 91 insertions(+), 8 deletions(-)
+
