@@ -1,52 +1,57 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 13 Jul 2011 12:34:32 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 generic suspend/resume
-Message-Id: <20110713123432.GJ23270@n2100.arm.linux.org.uk>
+From: kuninori.morimoto.gx@renesas.com
+Date: Tue, 05 Jul 2011 07:52:47 +0000
+Subject: Re: Ecovec (SH7724) board doesn't work on latest linus tree
+Message-Id: <871uy5f9kg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110707134813.22370.25948.sendpatchset@t400s>
-In-Reply-To: <20110707134813.22370.25948.sendpatchset@t400s>
+References: <w3pvcwf5xuu.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3pvcwf5xuu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jul 13, 2011 at 08:05:04PM +0900, Magnus Damm wrote:
-> On Thu, Jul 7, 2011 at 10:50 PM, Russell King - ARM Linux
-> <linux@arm.linux.org.uk> wrote:
-> > On Thu, Jul 07, 2011 at 10:48:13PM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> Convert the sh7372 Core Standby code to make use
-> >> of the new generic ARM cpu suspend/resume code.
-> >
-> > Thanks. =A0Only thing which stands out is:
-> >
-> >> + =A0 =A0 .global sh7372_resume_core_standby
-> >> +sh7372_resume_core_standby:
-> >> + =A0 =A0 ldr =A0 =A0 pc, 1f
-> >> +1: =A0 .long =A0 cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
-> >
-> > Is this because sh7372_resume_core_standby must be ARM stuff, but
-> > cpu_resume may be Thumb?
->=20
-> That may have something to do with it, but I suspect not. Perhaps you
-> wonder why I'm not pointing the reset vector directly to cpu_resume()
-> - that's because we need the reset vector to be aligned to 4k.
 
-Wouldn't a simple branch instruction do here?  Branches are relative
-(within 24-bit) so you wouldn't need any games with v:p stuff.  You
-may have to put that in .data so that it can reach cpu_resume if
-you're using a large initramfs image.
+Dear Paul
 
-> I simply nicked the PA->VA conversion code from the SMP entry code in hea=
-dsmp.S:
->=20
-> 	.align  12
-> ENTRY(shmobile_secondary_vector)
-> 	ldr     pc, 1f
-> 1:	.long   secondary_startup - PAGE_OFFSET + PLAT_PHYS_OFFSET
->=20
-> Any suggestions?
+Ecovec board still doesn't work on latest linus tree.
+Because of below commit.
 
-Again, a simple branch instruction should avoid the need to reference
-PLAT_PHYS_OFFSET or virtual addresses.
+----------------
+commit 3f9b8520b06013939ad247ba08b69529b5f14be1
+Author: Paul Mundt <lethal@linux-sh.org>
+Date:   Tue May 31 14:38:29 2011 +0900
+
+    sh64: Move from P1SEG to CAC_ADDR for consistent sync.
+    
+    sh64 doesn't define a P1SEGADDR, resulting in a build failure. The proper
+    mapping can be attained for both sh32 and 64 via the CAC_ADDR macro, so
+    switch to that instead.
+    
+    Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+----------------
+
+The output of below patch was 
+
+dma_cache_sync: vaddr 8e000000, CAC 6e000000, P1SEG 8e000000       
+
+------
+diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+index f251b5f..01bb4ee 100644
+--- a/arch/sh/mm/consistent.c
++++ b/arch/sh/mm/consistent.c
+@@ -84,6 +84,10 @@ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 	addr = __in_29bit_mode() ?
+ 	       (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
+ 
++	printk_once("%s: vaddr %p, CAC %08lx, P1SEG %08lx\n", __func__, vaddr,
++		CAC_ADDR((unsigned long)vaddr),
++		P1SEGADDR((unsigned long)vaddr));
++
+ 	switch (direction) {
+ 	case DMA_FROM_DEVICE:		/* invalidate only */
+ 		__flush_invalidate_region(addr, size);
+
+
+Best regards
+---
+Kuninori Morimoto
