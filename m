@@ -1,65 +1,41 @@
-From: Tejun Heo <tj@kernel.org>
-Date: Sun, 24 Jul 2011 10:51:19 +0000
-Subject: [PATCH tip:x86/memblock RFC] SuperH: Use HAVE_MEMBLOCK_NODE_MAP
-Message-Id: <20110724105119.GP2622@htj.dyndns.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Jul 2011 09:37:55 +0000
+Subject: [PATCH 3/5] sh: clock-sh7723: modify I2C clock settings
+Message-Id: <87oc19dq4v.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>
+To: linux-sh@vger.kernel.org
 
-sh doesn't access early_node_map[] directly and enabling
-HAVE_MEMBLOCK_NODE_MAP is trivial - replacing add_active_range() calls
-with memblock_set_node() and selecting HAVE_MEMBLOCK_NODE_MAP is
-enough.
+I2C doesn't work without this patch on SH7723
 
-Signed-off-by: Tejun Heo <tj@kernel.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Paul, memblock now can carry node information itself without relying
-on early_node_map[], which makes operations which make use of both
-information much saner and generally makes NUMA memory init simpler.
-For more details, please read the following thread.
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
- http://thread.gmane.org/gmane.linux.kernel.cross-arch/10354
-
-I couldn't get the cross-compiler from korg to build configuration
-with CPU w/ NUMA support but given the trivial nature of the change, I
-don't think it would cause build failures on different configs, but
-this definitely needs testing on actual NUMA configuration.
-
-The patches implementing HAVE_MEMBLOCK_NODE_MAP is currently in
-tip:x86/memblock branch on which this patch is based on.
-
-Thanks.
-
- arch/sh/Kconfig        |    1 +
- arch/sh/kernel/setup.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletion(-)
-
-Index: work/arch/sh/Kconfig
-=================================--- work.orig/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig
-@@ -4,6 +4,7 @@ config SUPERH
- 	select CLKDEV_LOOKUP
- 	select HAVE_IDE if HAS_IOPORT
- 	select HAVE_MEMBLOCK
-+	select HAVE_MEMBLOCK_NODE_MAP
- 	select HAVE_OPROFILE
- 	select HAVE_GENERIC_DMA_COHERENT
- 	select HAVE_ARCH_TRACEHOOK
-Index: work/arch/sh/kernel/setup.c
-=================================--- work.orig/arch/sh/kernel/setup.c
-+++ work/arch/sh/kernel/setup.c
-@@ -227,7 +227,8 @@ void __init __add_active_range(unsigned 
- 	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
- 			 PAGE_KERNEL);
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
+index 55493cd..7f70899 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
+@@ -201,6 +201,7 @@ static struct clk mstp_clks[] = {
+ };
  
--	add_active_range(nid, start_pfn, end_pfn);
-+	memblock_set_node(PFN_PHYS(start_pfn),
-+			  PFN_PHYS(end_pfn - start_pfn), nid);
- }
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++#define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
  
- void __init __weak plat_early_device_setup(void)
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+@@ -305,7 +306,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("msiof0", &mstp_clks[HWBLK_MSIOF0]),
+ 	CLKDEV_CON_ID("msiof1", &mstp_clks[HWBLK_MSIOF1]),
+ 	CLKDEV_CON_ID("meram0", &mstp_clks[HWBLK_MERAM]),
+-	CLKDEV_CON_ID("i2c0", &mstp_clks[HWBLK_IIC]),
++	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC]),
+ 	CLKDEV_CON_ID("rtc0", &mstp_clks[HWBLK_RTC]),
+ 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
+ 	CLKDEV_CON_ID("adc0", &mstp_clks[HWBLK_ADC]),
+-- 
+1.7.4.1
+
