@@ -1,131 +1,43 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:47:48 +0000
-Subject: [PATCH 2/9] PM / Domains: Implement subdomain counters as atomic fields
-Message-Id: <201107311947.48268.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Jul 2011 09:37:02 +0000
+Subject: [PATCH 1/5] sh: clock-sh7724: modify I2C clock settings
+Message-Id: <87r565dq6c.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107311946.06654.rjw@sisk.pl>
-In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+I2C doesn't work without this patch on SH7724
 
-Currently, pm_genpd_poweron() and pm_genpd_poweroff() need to take
-the parent PM domain's lock in order to modify the parent's counter
-of active subdomains in a nonracy way.  This causes the locking to be
-considerably complex and in fact is not necessary, because the
-subdomain counters may be implemented as atomic fields and they
-won't have to be modified under a lock.
-
-Replace the unsigned in sd_count field in struct generic_pm_domain
-by an atomic_t one and modify the code in drivers/base/power/domain.c
-to take this change into account.
-
-This patch doesn't change the locking yet, that is going to be done
-in a separate subsequent patch.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/base/power/domain.c |   30 ++++++++++++++++++++----------
- include/linux/pm_domain.h   |    2 +-
- 2 files changed, 21 insertions(+), 11 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -29,10 +29,20 @@ static struct generic_pm_domain *dev_to_
- 	return pd_to_genpd(dev->pm_domain);
- }
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index d08fa95..77bcef5 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -253,6 +253,7 @@ static struct clk mstp_clks[HWBLK_NR] = {
+ };
  
--static void genpd_sd_counter_dec(struct generic_pm_domain *genpd)
-+static bool genpd_sd_counter_dec(struct generic_pm_domain *genpd)
- {
--	if (!WARN_ON(genpd->sd_count = 0))
--			genpd->sd_count--;
-+	bool ret = false;
-+
-+	if (!WARN_ON(atomic_read(&genpd->sd_count) = 0))
-+		ret = !!atomic_dec_and_test(&genpd->sd_count);
-+
-+	return ret;
-+}
-+
-+static void genpd_sd_counter_inc(struct generic_pm_domain *genpd)
-+{
-+	atomic_inc(&genpd->sd_count);
-+	smp_mb__after_atomic_inc();
- }
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++#define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
  
- static void genpd_acquire_lock(struct generic_pm_domain *genpd)
-@@ -118,7 +128,7 @@ int pm_genpd_poweron(struct generic_pm_d
- 
- 	genpd_set_active(genpd);
- 	if (parent)
--		parent->sd_count++;
-+		genpd_sd_counter_inc(parent);
- 
-  out:
- 	mutex_unlock(&genpd->lock);
-@@ -254,7 +264,7 @@ static int pm_genpd_poweroff(struct gene
- 	    || genpd->resume_count > 0)
- 		return 0;
- 
--	if (genpd->sd_count > 0)
-+	if (atomic_read(&genpd->sd_count) > 0)
- 		return -EBUSY;
- 
- 	not_suspended = 0;
-@@ -325,8 +335,7 @@ static int pm_genpd_poweroff(struct gene
- 	genpd->status = GPD_STATE_POWER_OFF;
- 
- 	if (parent) {
--		genpd_sd_counter_dec(parent);
--		if (parent->sd_count = 0)
-+		if (genpd_sd_counter_dec(parent))
- 			genpd_queue_power_off_work(parent);
- 
- 		genpd_release_lock(parent);
-@@ -491,7 +500,8 @@ static void pm_genpd_sync_poweroff(struc
- 	if (genpd->status = GPD_STATE_POWER_OFF)
- 		return;
- 
--	if (genpd->suspended_count != genpd->device_count || genpd->sd_count > 0)
-+	if (genpd->suspended_count != genpd->device_count
-+	    || atomic_read(&genpd->sd_count) > 0)
- 		return;
- 
- 	if (genpd->power_off)
-@@ -1152,7 +1162,7 @@ int pm_genpd_add_subdomain(struct generi
- 	list_add_tail(&new_subdomain->sd_node, &genpd->sd_list);
- 	new_subdomain->parent = genpd;
- 	if (subdomain->status != GPD_STATE_POWER_OFF)
--		genpd->sd_count++;
-+		genpd_sd_counter_inc(genpd);
- 
-  out:
- 	mutex_unlock(&new_subdomain->lock);
-@@ -1227,7 +1237,7 @@ void pm_genpd_init(struct generic_pm_dom
- 	genpd->gov = gov;
- 	INIT_WORK(&genpd->power_off_work, genpd_power_off_work_fn);
- 	genpd->in_progress = 0;
--	genpd->sd_count = 0;
-+	atomic_set(&genpd->sd_count, 0);
- 	genpd->status = is_off ? GPD_STATE_POWER_OFF : GPD_STATE_ACTIVE;
- 	init_waitqueue_head(&genpd->status_wait_queue);
- 	genpd->poweroff_task = NULL;
-Index: linux-2.6/include/linux/pm_domain.h
-=================================--- linux-2.6.orig/include/linux/pm_domain.h
-+++ linux-2.6/include/linux/pm_domain.h
-@@ -33,7 +33,7 @@ struct generic_pm_domain {
- 	struct dev_power_governor *gov;
- 	struct work_struct power_off_work;
- 	unsigned int in_progress;	/* Number of devices being suspended now */
--	unsigned int sd_count;	/* Number of subdomains with power "on" */
-+	atomic_t sd_count;	/* Number of subdomains with power "on" */
- 	enum gpd_status status;	/* Current state of the domain */
- 	wait_queue_head_t status_wait_queue;
- 	struct task_struct *poweroff_task;	/* Powering off task */
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+@@ -358,8 +359,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("msiof1", &mstp_clks[HWBLK_MSIOF1]),
+ 	CLKDEV_CON_ID("keysc0", &mstp_clks[HWBLK_KEYSC]),
+ 	CLKDEV_CON_ID("rtc0", &mstp_clks[HWBLK_RTC]),
+-	CLKDEV_CON_ID("i2c0", &mstp_clks[HWBLK_IIC0]),
+-	CLKDEV_CON_ID("i2c1", &mstp_clks[HWBLK_IIC1]),
++	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC0]),
++	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[HWBLK_IIC1]),
+ 	CLKDEV_CON_ID("mmc0", &mstp_clks[HWBLK_MMC]),
+ 	CLKDEV_CON_ID("eth0", &mstp_clks[HWBLK_ETHER]),
+ 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
+-- 
+1.7.4.1
 
