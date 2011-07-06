@@ -1,98 +1,118 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 11 Jul 2011 19:39:50 +0000
-Subject: Re: [Update][PATCH 6/10] PM / Domains: System-wide transitions support for generic domains (v5)
-Message-Id: <201107112139.50503.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 06 Jul 2011 01:17:55 +0000
+Subject: [RFC][PATCH 1/8] sh: clock-sh7724: add CLKDEV_ICK_ID for cleanup
+Message-Id: <87tyb0jjge.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.44L0.1107081033000.2208-100000@iolanthe.rowland.org> <201107091615.38915.rjw@sisk.pl> <87oc10zv4g.fsf@ti.com>
-In-Reply-To: <87oc10zv4g.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: Alan Stern <stern@rowland.harvard.edu>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-On Monday, July 11, 2011, Kevin Hilman wrote:
-> "Rafael J. Wysocki" <rjw@sisk.pl> writes:
-> 
-> [...]
-> 
-> >
-> > There's one more case to consider, namely devices that are runtime
-> > suspended, set up to wake up the system from sleep states
-> > (ie. device_may_wakeup(dev) returns "true") and such that
-> > genpd->active_wakeup(dev) returns "true" for them, because they need
-> > to be resumed at this point too (arguably, it makes a little sense to
-> > runtime suspend such devices, but that's possible in principle).
-> >
-> > So, IMO, the patch should look like this:
-> >
-> > ---
-> >  drivers/base/power/domain.c |   19 +++++++++++++++++++
-> >  1 file changed, 19 insertions(+)
-> >
-> >> Index: linux-2.6/drivers/base/power/domain.c
-> > =================================> > --- linux-2.6.orig/drivers/base/power/domain.c
-> > +++ linux-2.6/drivers/base/power/domain.c
-> > @@ -486,6 +486,22 @@ static void pm_genpd_sync_poweroff(struc
-> >  }
-> >  
-> >  /**
-> > + * resume_needed - Check whether to resume a device before system suspend.
-> > + * @dev: Device to handle.
-> > + * @genpd: PM domain the device belongs to.
-> > + */
-> > +static bool resume_needed(struct device *dev, struct generic_pm_domain *genpd)
-> > +{
-> > +	bool active_wakeup;
-> > +
-> > +	if (!device_can_wakeup(dev))
-> > +		return false;
-> > +
-> > +	active_wakeup = genpd->active_wakeup && genpd->active_wakeup(dev);
-> > +	return device_may_wakeup(dev) ? active_wakeup : !active_wakeup;
-> 
-> This also returns true and causes a resume if active_wakeup = false and
-> device_may_wakeup() = false.  That doesn't seem right.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   79 +++++++-------------------------
+ 1 files changed, 17 insertions(+), 62 deletions(-)
 
-This is on purpose. :-)  If active_wakeup is false, the device may signal
-remote wakeup while suspended.  So, if active_wakeup is false and the device
-is suspended, we have to assume that the device has been set up to signal
-remote wakeup for runtime PM (if it is not suspended, attempting to resume it
-will not have any effect).  Now, if device_may_wakeup() returns false in
-addition to that, we may need to change the device's wakeup settings, so the
-driver's callbacks should be invoked during suspend, so we're resuming the
-device (we can't just leave it suspended and then invoke the driver's callbacks
-in the hope they'll do the right thing).
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index 77bcef5..0891876 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -254,6 +254,7 @@ static struct clk mstp_clks[HWBLK_NR] = {
+ 
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
+ #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
++#define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+@@ -290,71 +291,25 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("sh0", &mstp_clks[HWBLK_SHYWAY]),
+ 	CLKDEV_CON_ID("hudi0", &mstp_clks[HWBLK_HUDI]),
+ 	CLKDEV_CON_ID("ubc0", &mstp_clks[HWBLK_UBC]),
+-	{
+-		/* TMU0 */
+-		.dev_id		= "sh_tmu.0",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[HWBLK_TMU0],
+-	}, {
+-		/* TMU1 */
+-		.dev_id		= "sh_tmu.1",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[HWBLK_TMU0],
+-	}, {
+-		/* TMU2 */
+-		.dev_id		= "sh_tmu.2",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[HWBLK_TMU0],
+-	}, {
+-		/* TMU3 */
+-		.dev_id		= "sh_tmu.3",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[HWBLK_TMU1],
+-	},
++
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.0", &mstp_clks[HWBLK_TMU0]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.1", &mstp_clks[HWBLK_TMU0]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.2", &mstp_clks[HWBLK_TMU0]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.3", &mstp_clks[HWBLK_TMU1]),
++
+ 	CLKDEV_CON_ID("cmt_fck", &mstp_clks[HWBLK_CMT]),
+ 	CLKDEV_CON_ID("rwdt0", &mstp_clks[HWBLK_RWDT]),
+ 	CLKDEV_CON_ID("dmac1", &mstp_clks[HWBLK_DMAC1]),
+-	{
+-		/* TMU4 */
+-		.dev_id		= "sh_tmu.4",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[HWBLK_TMU1],
+-	}, {
+-		/* TMU5 */
+-		.dev_id		= "sh_tmu.5",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[HWBLK_TMU1],
+-	}, {
+-		/* SCIF0 */
+-		.dev_id		= "sh-sci.0",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[HWBLK_SCIF0],
+-	}, {
+-		/* SCIF1 */
+-		.dev_id		= "sh-sci.1",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[HWBLK_SCIF1],
+-	}, {
+-		/* SCIF2 */
+-		.dev_id		= "sh-sci.2",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[HWBLK_SCIF2],
+-	}, {
+-		/* SCIF3 */
+-		.dev_id		= "sh-sci.3",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[HWBLK_SCIF3],
+-	}, {
+-		/* SCIF4 */
+-		.dev_id		= "sh-sci.4",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[HWBLK_SCIF4],
+-	}, {
+-		/* SCIF5 */
+-		.dev_id		= "sh-sci.5",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[HWBLK_SCIF5],
+-	},
++
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.4", &mstp_clks[HWBLK_TMU1]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.5", &mstp_clks[HWBLK_TMU1]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[HWBLK_SCIF0]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[HWBLK_SCIF1]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[HWBLK_SCIF2]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.3", &mstp_clks[HWBLK_SCIF3]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.4", &mstp_clks[HWBLK_SCIF4]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[HWBLK_SCIF5]),
++
+ 	CLKDEV_CON_ID("msiof0", &mstp_clks[HWBLK_MSIOF0]),
+ 	CLKDEV_CON_ID("msiof1", &mstp_clks[HWBLK_MSIOF1]),
+ 	CLKDEV_CON_ID("keysc0", &mstp_clks[HWBLK_KEYSC]),
+-- 
+1.7.4.1
 
-I don't really think we can do anything else without using new device flags.
-
-> > +}
-> > +
-> > +/**
-> >   * pm_genpd_prepare - Start power transition of a device in a PM domain.
-> >   * @dev: Device to start the transition of.
-> >   *
-> > @@ -519,6 +535,9 @@ static int pm_genpd_prepare(struct devic
-> >  		return -EBUSY;
-> >  	}
-> >  
-> > +	if (resume_needed(dev, genpd))
-> > +		pm_runtime_resume(dev);
-> > +
-> >  	genpd_acquire_lock(genpd);
-> >  
-> >  	if (genpd->prepared_count++ = 0)
-> 
-> IIUC, if a device is runtime suspended when a system suspend happens,
-> the device will be runtime resumed, but never re-suspended.
-
-It will be resuspended by the pm_runtime_idle() in pm_genpd_complete()
-(added by one of the new patches I've been posting for the last few days).
-
-> Should resumes by the PM core be done with a get (and a corresponding
-> put in .complete())?
-
-Not necessarily. :-)
-
-Thanks,
-Rafael
