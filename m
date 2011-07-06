@@ -1,23 +1,37 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 04 Jul 2011 03:10:57 +0000
-Subject: Re: [PATCH] net: sh_eth: remove __flush_purge_region
-Message-Id: <20110703.201057.720436216770672101.davem@davemloft.net>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 06 Jul 2011 06:33:51 +0000
+Subject: [PATCH 1/2] net: sh_eth: fix cannot work half-duplex mode
+Message-Id: <4E1401CF.4080804@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4E0D8ABD.9030102@renesas.com>
-In-Reply-To: <4E0D8ABD.9030102@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro.shimoda.uh@renesas.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: davem@davemloft.net
+Cc: netdev@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 01 Jul 2011 17:52:13 +0900
+When link was down, the bit of DM in ECMR was always set.
+So, we could not use half-duplex mode on the controller.
 
-> It is a function of SuperH architecture. There is no good to use
-> the function on a driver generally. So, the driver uses
-> dma_map_single() instead of __flush_purge_region.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/net/sh_eth.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Applied.
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index 09b5aa8..c08d9e1 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -1185,8 +1185,8 @@ static void sh_eth_adjust_link(struct net_device *ndev)
+ 				mdp->cd->set_rate(ndev);
+ 		}
+ 		if (mdp->link = PHY_DOWN) {
+-			sh_eth_write(ndev, (sh_eth_read(ndev, ECMR) & ~ECMR_TXF)
+-					| ECMR_DM, ECMR);
++			sh_eth_write(ndev,
++				(sh_eth_read(ndev, ECMR) & ~ECMR_TXF), ECMR);
+ 			new_state = 1;
+ 			mdp->link = phydev->link;
+ 		}
+-- 
+1.7.1
+
