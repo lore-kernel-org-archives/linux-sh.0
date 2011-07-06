@@ -1,97 +1,120 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 07 Jul 2011 01:37:16 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: sh7372 A3MP support
-Message-Id: <87d3hmdg6t.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 06 Jul 2011 01:18:37 +0000
+Subject: [RFC][PATCH 6/8] sh: clock-sh7785: add CLKDEV_ICK_ID for cleanup
+Message-Id: <87mxgsjjf8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add support for the sh7372 A3MP power domain
-and hook up the FSI/SPU2 device.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c        |    1 +
- arch/arm/mach-shmobile/board-mackerel.c      |    1 +
- arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
- arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
- arch/arm/mach-shmobile/setup-sh7372.c        |    3 +++
- 5 files changed, 10 insertions(+), 0 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c |   78 +++++++-------------------------
+ 1 files changed, 16 insertions(+), 62 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 4226db6..b473b8e 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1410,6 +1410,7 @@ static void __init ap4evb_init(void)
- 
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc1_device);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
-+	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
- 
- 	hdmi_init_pm_clock();
- 	fsi_init_pm_clock();
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 362b883..5b36b6c 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1584,6 +1584,7 @@ static void __init mackerel_init(void)
- 
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
-+	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
- 
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index 1aed9da..f3ceced 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -485,6 +485,7 @@ static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
- 
- #ifdef CONFIG_PM
- extern struct sh7372_pm_domain sh7372_a4lc;
-+extern struct sh7372_pm_domain sh7372_a4mp;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
- extern struct sh7372_pm_domain sh7372_a3sg;
-diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index 474a15a..f3bd95f 100644
---- a/arch/arm/mach-shmobile/pm-sh7372.c
-+++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -125,6 +125,10 @@ struct sh7372_pm_domain sh7372_a4lc = {
- 	.bit_shift = 1,
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
+index 2d96024..16ad25c 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
+@@ -117,6 +117,7 @@ static struct clk mstp_clks[MSTP_NR] = {
  };
  
-+struct sh7372_pm_domain sh7372_a4mp = {
-+	.bit_shift = 2,
-+};
+ #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
++#define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+@@ -134,74 +135,27 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 
+ 	/* MSTP32 clocks */
+-	{
+-		/* SCIF5 */
+-		.dev_id		= "sh-sci.5",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[MSTP029],
+-	}, {
+-		/* SCIF4 */
+-		.dev_id		= "sh-sci.4",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[MSTP028],
+-	}, {
+-		/* SCIF3 */
+-		.dev_id		= "sh-sci.3",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[MSTP027],
+-	}, {
+-		/* SCIF2 */
+-		.dev_id		= "sh-sci.2",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[MSTP026],
+-	}, {
+-		/* SCIF1 */
+-		.dev_id		= "sh-sci.1",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[MSTP025],
+-	}, {
+-		/* SCIF0 */
+-		.dev_id		= "sh-sci.0",
+-		.con_id		= "sci_fck",
+-		.clk		= &mstp_clks[MSTP024],
+-	},
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP029]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.4", &mstp_clks[MSTP028]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.3", &mstp_clks[MSTP027]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP026]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP025]),
++	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP024]),
 +
- struct sh7372_pm_domain sh7372_a3rv = {
- 	.bit_shift = 6,
- };
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index b219cea..9b0cd43 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -842,6 +842,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
- void __init sh7372_add_standard_devices(void)
- {
- 	sh7372_init_pm_domain(&sh7372_a4lc);
-+	sh7372_init_pm_domain(&sh7372_a4mp);
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
-@@ -853,6 +854,8 @@ void __init sh7372_add_standard_devices(void)
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
- 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
-+	sh7372_add_device_to_domain(&sh7372_a4mp, &spu0_device);
-+	sh7372_add_device_to_domain(&sh7372_a4mp, &spu1_device);
- }
- 
- void __init sh7372_add_early_devices(void)
+ 	CLKDEV_CON_ID("ssi1_fck", &mstp_clks[MSTP021]),
+ 	CLKDEV_CON_ID("ssi0_fck", &mstp_clks[MSTP020]),
+ 	CLKDEV_CON_ID("hac1_fck", &mstp_clks[MSTP017]),
+ 	CLKDEV_CON_ID("hac0_fck", &mstp_clks[MSTP016]),
+ 	CLKDEV_CON_ID("mmcif_fck", &mstp_clks[MSTP013]),
+ 	CLKDEV_CON_ID("flctl_fck", &mstp_clks[MSTP012]),
+-	{
+-		/* TMU0 */
+-		.dev_id		= "sh_tmu.0",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[MSTP008],
+-	}, {
+-		/* TMU1 */
+-		.dev_id		= "sh_tmu.1",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[MSTP008],
+-	}, {
+-		/* TMU2 */
+-		.dev_id		= "sh_tmu.2",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[MSTP008],
+-	}, {
+-		/* TMU3 */
+-		.dev_id		= "sh_tmu.3",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[MSTP009],
+-	}, {
+-		/* TMU4 */
+-		.dev_id		= "sh_tmu.4",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[MSTP009],
+-	}, {
+-		/* TMU5 */
+-		.dev_id		= "sh_tmu.5",
+-		.con_id		= "tmu_fck",
+-		.clk		= &mstp_clks[MSTP009],
+-	},
++
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.0", &mstp_clks[MSTP008]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.1", &mstp_clks[MSTP008]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.2", &mstp_clks[MSTP008]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.3", &mstp_clks[MSTP009]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.4", &mstp_clks[MSTP009]),
++	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.5", &mstp_clks[MSTP009]),
++
+ 	CLKDEV_CON_ID("siof_fck", &mstp_clks[MSTP003]),
+ 	CLKDEV_CON_ID("hspi_fck", &mstp_clks[MSTP002]),
+ 	CLKDEV_CON_ID("hudi_fck", &mstp_clks[MSTP119]),
 -- 
 1.7.4.1
 
