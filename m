@@ -1,24 +1,34 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 21 Jul 2011 07:54:14 +0000
-Subject: Re: [PATCH] clocksource: sh_cmt: wait for CMCNT on init V2
-Message-Id: <20110721075413.GD27831@linux-sh.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 06 Jul 2011 06:33:57 +0000
+Subject: [PATCH 2/2] net: sh_eth: fix the parameter for the ETHER of SH7757
+Message-Id: <4E1401D5.60506@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110630091258.10263.21421.sendpatchset@t400s>
-In-Reply-To: <20110630091258.10263.21421.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: davem@davemloft.net
+Cc: netdev@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
 
-On Wed, Jul 13, 2011 at 04:59:48PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add code to the CMT driver to wait for CMCNT V2. This to let
-> the register value settle before starting the timer channel.
-> Makes the driver more robust.
-> 
-> Needed for CMT2 on sh7372 and certain CMT channels on sh73a0.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+If the driver didn't set this parameter on the ETHER, the CPU will
+encounter the "data address error" exception.
 
-Applied, thanks.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/net/sh_eth.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
+index c08d9e1..93b347a 100644
+--- a/drivers/net/sh_eth.c
++++ b/drivers/net/sh_eth.c
+@@ -139,6 +139,8 @@ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.tpauser	= 1,
+ 	.hw_swap	= 1,
+ 	.no_ade		= 1,
++	.rpadir		= 1,
++	.rpadir_value   = 2 << 16,
+ };
+
+ #define SH_GIGA_ETH_BASE	0xfee00000
+-- 
+1.7.1
