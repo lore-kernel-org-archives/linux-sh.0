@@ -1,44 +1,56 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Mon, 11 Jul 2011 05:01:56 +0000
-Subject: Re: [uclinux-dist-devel] [PATCH 0/6] clk: Initial feedback for
-Message-Id: <CAMjpGUc51mg1vnj2PDk-=u=s7b0j0Qqm4nXLbugM5QsbshOZpg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 07 Jul 2011 13:32:20 +0000
+Subject: [PATCH 01/05] ARM: mach-shmobile: sh7372 D4 support
+Message-Id: <20110707133220.22347.53762.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110711025344.GA27497@opensource.wolfsonmicro.com>
-	<20110711035732.GA5040@opensource.wolfsonmicro.com>
-	<201107110030.06399.vapier@gentoo.org>
-	<CAGsJ_4x_e0OR8dV=n-zodi8Sr4SZkU6o6gJK13UpZrgTzZQvbQ@mail.gmail.com>
-In-Reply-To: <CAGsJ_4x_e0OR8dV=n-zodi8Sr4SZkU6o6gJK13UpZrgTzZQvbQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Jul 11, 2011 at 00:56, Barry Song wrote:
-> 2011/7/11 Mike Frysinger:
->> On Sunday, July 10, 2011 23:57:40 Mark Brown wrote:
->>> On Mon, Jul 11, 2011 at 11:53:44AM +0900, Mark Brown wrote:
->>> Linus, CCing you in as apparently you're taking over the clock API work.
->>> Do you need me to forward all the patches to you?
->>
->> along these lines, i dont think the new people on the cc noticed my earlier e-
->> mail:
->> for future series, could you cc uclinux-dist-devel@blackfin.uclinux.org ?  we
->> dont do clock management on Blackfin parts atm, but it's something we would
->> like to start doing.  our hardware can easily benefit from this.
->
-> Except that, AFAIK, arch/blackfin/mach-xxx is much similar with
-> arch/arm/mach-xxx with a lot of platform, i2c, spi board information.
-> it is probably we can also benefit from device tree as what ARM is
-> doing.
+From: Magnus Damm <damm@opensource.se>
 
-i dont think device trees are a requirement for the clock api
+Add support for the sh7372 D4 power domain. This power domain
+contains the Coresight-ETM hardware block.
 
-> but not sure whether it is really worthwhile for the current situation
-> and long term plan of blackfin. Anyway, there are not so many blackfin
-> SoC and boards as ARM.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-there are not plans for device tree support.  no customers have asked
-for it, and we arent in the arm situation where we have a distro (like
-Ubuntu) riding us to have a single build boot on all the different
-platforms.
--mike
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
+ arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |    1 +
+ 3 files changed, 6 insertions(+)
+
+--- 0002/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-07-07 19:20:09.000000000 +0900
+@@ -486,6 +486,7 @@ static inline struct sh7372_pm_domain *t
+ #ifdef CONFIG_PM
+ extern struct sh7372_pm_domain sh7372_a4lc;
+ extern struct sh7372_pm_domain sh7372_a4mp;
++extern struct sh7372_pm_domain sh7372_d4;
+ extern struct sh7372_pm_domain sh7372_a3rv;
+ extern struct sh7372_pm_domain sh7372_a3ri;
+ extern struct sh7372_pm_domain sh7372_a3sg;
+--- 0002/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-07 19:24:26.000000000 +0900
+@@ -129,6 +129,10 @@ struct sh7372_pm_domain sh7372_a4mp = {
+ 	.bit_shift = 2,
+ };
+ 
++struct sh7372_pm_domain sh7372_d4 = {
++	.bit_shift = 3,
++};
++
+ struct sh7372_pm_domain sh7372_a3rv = {
+ 	.bit_shift = 6,
+ };
+--- 0002/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-07-07 19:20:33.000000000 +0900
+@@ -843,6 +843,7 @@ void __init sh7372_add_standard_devices(
+ {
+ 	sh7372_init_pm_domain(&sh7372_a4lc);
+ 	sh7372_init_pm_domain(&sh7372_a4mp);
++	sh7372_init_pm_domain(&sh7372_d4);
+ 	sh7372_init_pm_domain(&sh7372_a3rv);
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
+ 	sh7372_init_pm_domain(&sh7372_a3sg);
