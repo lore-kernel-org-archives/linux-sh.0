@@ -1,63 +1,66 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 01 Jul 2011 20:03:58 +0000
-Subject: Re: [PATCH 3/10 v6] PM / Domains: Support for generic I/O PM domains (v7)
-Message-Id: <201107012203.58283.rjw@sisk.pl>
+From: kuninori.morimoto.gx@renesas.com
+Date: Thu, 07 Jul 2011 01:35:38 +0000
+Subject: ARM: mach-shmobile: sh7372: A3MP domain support
+Message-Id: <87fwmidg9k.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252326.23837.rjw@sisk.pl> <87tyb5yipq.fsf@ti.com>
-In-Reply-To: <87tyb5yipq.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-On Friday, July 01, 2011, Kevin Hilman wrote:
-> "Rafael J. Wysocki" <rjw@sisk.pl> writes:
-> 
-> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> >
-> > Introduce common headers, helper functions and callbacks allowing
-> > platforms to use simple generic power domains for runtime power
-> > management.
-> >
-> > Introduce struct generic_pm_domain to be used for representing
-> > power domains that each contain a number of devices and may be
-> > parent domains or subdomains with respect to other power domains.
-> > Among other things, this structure includes callbacks to be
-> > provided by platforms for performing specific tasks related to
-> > power management (i.e. ->stop_device() may disable a device's
-> > clocks, while ->start_device() may enable them, ->power_off() is
-> > supposed to remove power from the entire power domain
-> > and ->power_on() is supposed to restore it).
-> >
-> > Introduce functions that can be used as power domain runtime PM
-> > callbacks, pm_genpd_runtime_suspend() and pm_genpd_runtime_resume(),
-> > as well as helper functions for the initialization of a power
-> > domain represented by a struct generic_power_domain object,
-> > adding a device to or removing a device from it and adding or
-> > removing subdomains.
-> >
-> > Introduce configuration option CONFIG_PM_GENERIC_DOMAINS to be
-> > selected by the platforms that want to use the new code.
-> >
-> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> > Acked-by: Greg Kroah-Hartman <gregkh@suse.de>
-> 
-> Reviewed-by: Kevin Hilman <khilman@ti.com>
 
-Thanks!
+Dear Paul, Magnus, Rafael
 
-> While I still don't think this is generic enough for some more
-> complicated SoCs, it most certainly a huge step in the right direction,
-> and I think we can address the other complexities with additional
-> patches as needed.
+These are A4MP power domain support for SH7372
 
-That's my intention.
+Kuninori Morimoto (2):
+      ARM: mach-shmobile: sh7372: make sure that fsi is peripheral of spu2
+      ARM: mach-shmobile: sh7372 A3MP support
 
-> Thanks Rafael for all your hard work on this and putting up with my
-> nagging. ;)
+Kuninori Morimoto :
+      spu-test-20110706.c
 
-I don't mind that at all, it kind of helps to focus on important stuff. ;-)
 
-Rafael
 
+I tested it by FSI + spu-test command.
+
+spu-test will show you below message if first power for A4MP
+you can watch it by spu-test only
+
+  # ./spu-test
+  detected SPU2DSP0 as 1
+  # ./spu-test
+  detected SPU2DSP0 as 1
+
+spu-test will show you below message if A4MP is already powerd
+you can watch it by fsi + spu-test
+
+  # aplay xxx.wav &
+  # ./spu-test
+  detected SPU2DSP0 as 1
+  # ./spu-test
+  detected SPU2DSP0 as 0
+  SPU2DSP0 state kept since last open
+
+These patches are based on "suspend/pm-domains" branch.
+
+But ALSA (which is framework of FSI) is not good on this branch.
+  1) it needs bugfix patch
+  2) FSI needs more advanced pm support
+
+	- apply bugfix patch for ALSA
+           merge git://git.kernel.org/pub/scm/linux/kernel/git/tiwai/sound-2.6.git : fix/asocy branch
+           or cherry-pick 873bd4cb4fbba6a3e99f750e17ef2ba6ef96e9d3 from it
+           (or http://article.gmane.org/gmane.linux.alsa.devel/86874)
+
+	- needs advanced pm support to FSI
+	   merge git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound-2.6.git : for-3.1 branch
+
+	/* if your board is mackerel */
+        - apply buffix patch for ak4642
+           http://article.gmane.org/gmane.linux.alsa.devel/86952
+
+
+Best regards
+---
+Kuninori Morimoto
