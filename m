@@ -1,77 +1,49 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:51:37 +0000
-Subject: [PATCH 7/9] PM / Domains: Rename GPD_STATE_WAIT_PARENT to GPD_STATE_WAIT_MASTER
-Message-Id: <201107311951.37713.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 07 Jul 2011 13:32:29 +0000
+Subject: [PATCH 02/05] ARM: mach-shmobile: Runtime PM late init callback
+Message-Id: <20110707133229.22347.51430.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107311946.06654.rjw@sisk.pl>
-In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Magnus Damm <damm@opensource.se>
 
-Since it is now possible for a PM domain to have multiple masters
-instead of one parent, rename the "wait for parent" status to reflect
-the new situation.
+Add a mach-shmobile specific callback for SoC-specific code
+to hook into. By having the late_initcall() in a common place
+we can have multi-SoC/board support in the same kernel binary.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/base/power/domain.c |   34 +++++++++++++++++-----------------
- include/linux/pm_domain.h   |    2 +-
- 2 files changed, 18 insertions(+), 18 deletions(-)
 
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -98,7 +98,7 @@ int __pm_genpd_poweron(struct generic_pm
- 	for (;;) {
- 		prepare_to_wait(&genpd->status_wait_queue, &wait,
- 				TASK_UNINTERRUPTIBLE);
--		if (genpd->status != GPD_STATE_WAIT_PARENT)
-+		if (genpd->status != GPD_STATE_WAIT_MASTER)
- 			break;
- 		mutex_unlock(&genpd->lock);
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/pm_runtime.c          |   10 ++++++++++
+ 2 files changed, 11 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-07-07 19:39:49.000000000 +0900
+@@ -12,6 +12,7 @@ extern struct platform_suspend_ops shmob
+ struct cpuidle_device;
+ extern void (*shmobile_cpuidle_modes[])(void);
+ extern void (*shmobile_cpuidle_setup)(struct cpuidle_device *dev);
++extern void (*shmobile_runtime_pm_late_init)(void);
  
-@@ -124,7 +124,7 @@ int __pm_genpd_poweron(struct generic_pm
- 	 */
- 	list_for_each_entry(link, &genpd->slave_links, slave_node) {
- 		genpd_sd_counter_inc(link->master);
--		genpd->status = GPD_STATE_WAIT_PARENT;
-+		genpd->status = GPD_STATE_WAIT_MASTER;
- 
- 		mutex_unlock(&genpd->lock);
- 
-@@ -258,7 +258,7 @@ static void __pm_genpd_restore_device(st
-  */
- static bool genpd_abort_poweroff(struct generic_pm_domain *genpd)
- {
--	return genpd->status = GPD_STATE_WAIT_PARENT
-+	return genpd->status = GPD_STATE_WAIT_MASTER
- 		|| genpd->status = GPD_STATE_ACTIVE || genpd->resume_count > 0;
+ extern void sh7367_init_irq(void);
+ extern void sh7367_add_early_devices(void);
+--- 0001/arch/arm/mach-shmobile/pm_runtime.c
++++ work/arch/arm/mach-shmobile/pm_runtime.c	2011-07-07 19:39:28.000000000 +0900
+@@ -56,3 +56,13 @@ static int __init sh_pm_runtime_init(voi
+ 	return 0;
  }
- 
-@@ -300,7 +300,7 @@ static int pm_genpd_poweroff(struct gene
- 	 * (4) System suspend is in progress.
- 	 */
- 	if (genpd->status = GPD_STATE_POWER_OFF
--	    || genpd->status = GPD_STATE_WAIT_PARENT
-+	    || genpd->status = GPD_STATE_WAIT_MASTER
- 	    || genpd->resume_count > 0 || genpd->prepared_count > 0)
- 		return 0;
- 
-Index: linux-2.6/include/linux/pm_domain.h
-=================================--- linux-2.6.orig/include/linux/pm_domain.h
-+++ linux-2.6/include/linux/pm_domain.h
-@@ -13,7 +13,7 @@
- 
- enum gpd_status {
- 	GPD_STATE_ACTIVE = 0,	/* PM domain is active */
--	GPD_STATE_WAIT_PARENT,	/* PM domain's parent is being waited for */
-+	GPD_STATE_WAIT_MASTER,	/* PM domain's master is being waited for */
- 	GPD_STATE_BUSY,		/* Something is happening to the PM domain */
- 	GPD_STATE_REPEAT,	/* Power off in progress, to be repeated */
- 	GPD_STATE_POWER_OFF,	/* PM domain is off */
-
+ core_initcall(sh_pm_runtime_init);
++
++void (*shmobile_runtime_pm_late_init)(void);
++
++static int __init sh_pm_runtime_late_init(void)
++{
++	if (shmobile_runtime_pm_late_init)
++		shmobile_runtime_pm_late_init();
++	return 0;
++}
++late_initcall(sh_pm_runtime_late_init);
