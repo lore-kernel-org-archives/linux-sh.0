@@ -1,111 +1,103 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 14 Jul 2011 02:17:41 +0000
-Subject: Re: [PATCH 2/2] i2c: i2c-riic: add dmaengine supporting
-Message-Id: <4E1E51C5.9050908@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 07 Jul 2011 02:30:19 +0000
+Subject: [PATCH 2/2 v2] ARM: mach-shmobile: sh7372 A4MP support
+Message-Id: <87aacqddqf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4E0D1C42.2080804@renesas.com>
- <20110713201018.GD3369@freya.fluff.org>
-In-Reply-To: <20110713201018.GD3369-RazCHl0VsYgkUSuvROHNpA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben-i2c-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org>
-Cc: ben-linux-elnMNo+KYs3YtjvyW6yDsg@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Ben,
+Add support for the sh7372 A4MP power domain
+and hook up the FSI/SPU2 device.
 
-2011/07/14 5:10, Ben Dooks wrote:
-> On Fri, Jul 01, 2011 at 10:00:50AM +0900, Yoshihiro Shimoda wrote:
->> diff --git a/drivers/i2c/busses/i2c-riic.c b/drivers/i2c/busses/i2c-riic.c
->> index dcc183b..22dd779 100644
->> --- a/drivers/i2c/busses/i2c-riic.c
->> +++ b/drivers/i2c/busses/i2c-riic.c
->> @@ -30,6 +30,7 @@
->>  #include <linux/timer.h>
->>  #include <linux/delay.h>
->>  #include <linux/slab.h>
->> +#include <linux/dmaengine.h>
->>
->>  #define RIIC_ICCR1	0x00
->>  #define RIIC_ICCR2	0x01
->> @@ -164,6 +165,14 @@ struct riic_data {
->>  	void __iomem *reg;
->>  	struct i2c_adapter adap;
->>  	struct i2c_msg *msg;
->> +	int index;
->> +	unsigned char icsr2;
->> +
->> +	/* for DMAENGINE */
->> +	struct dma_chan *chan_tx;
->> +	struct dma_chan *chan_rx;
->> +	int dma_callbacked;
->> +	wait_queue_head_t wait;
->>  };
-> 
-> What happens if the driver is compiled into a kernel
-> without dma engine support?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+Thanks Magnus
 
-I could compile the code without enabling "CONFIG_DMA_ENGINE".
-This is because The "struct dma_chan" is always defined in
-the "include/linux/dmaengine.h", I think.
+v1 -> v2
 
->> +static int riic_master_transmit_dma(struct riic_data *pd)
->> +{
->> +	struct scatterlist sg;
->> +	unsigned char *buf = pd->msg->buf;
->> +	struct dma_async_tx_descriptor *desc;
->> +	int ret;
->> +
->> +	sg_init_table(&sg, 1);
->> +	sg_set_buf(&sg, buf, pd->msg->len);
->> +	sg_dma_len(&sg) = pd->msg->len;
->> +	dma_map_sg(pd->chan_tx->device->dev, &sg, 1, DMA_TO_DEVICE);
->> +
->> +	desc = pd->chan_tx->device->device_prep_slave_sg(pd->chan_tx,
->> +				&sg, 1, DMA_TO_DEVICE,
->> +				DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-> 
-> surely there's a better way of calling this?
+- A3MP -> A4MP
 
-Umm, I checked other drivers in the "drivers/", but I didn't find
-a better way. Also other drivers was similar code...
+ arch/arm/mach-shmobile/board-ap4evb.c        |    1 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    1 +
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
+ arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |    3 +++
+ 5 files changed, 10 insertions(+), 0 deletions(-)
 
->> +	dmaengine_submit(desc);
->> +	dma_async_issue_pending(pd->chan_rx);
->> +
->> +	ret = wait_event_timeout(pd->wait, pd->dma_callbacked, HZ);
->> +	if (!pd->dma_callbacked && !ret) {
-> 
-> hmm, if you did not time out, then you should be able to
-> infer the pd->dma_callbacked?
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 4226db6..b473b8e 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1410,6 +1410,7 @@ static void __init ap4evb_init(void)
+ 
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc1_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	fsi_init_pm_clock();
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 362b883..5b36b6c 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1584,6 +1584,7 @@ static void __init mackerel_init(void)
+ 
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 1aed9da..f3ceced 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -485,6 +485,7 @@ static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
+ 
+ #ifdef CONFIG_PM
+ extern struct sh7372_pm_domain sh7372_a4lc;
++extern struct sh7372_pm_domain sh7372_a4mp;
+ extern struct sh7372_pm_domain sh7372_a3rv;
+ extern struct sh7372_pm_domain sh7372_a3ri;
+ extern struct sh7372_pm_domain sh7372_a3sg;
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index 474a15a..f3bd95f 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -125,6 +125,10 @@ struct sh7372_pm_domain sh7372_a4lc = {
+ 	.bit_shift = 1,
+ };
+ 
++struct sh7372_pm_domain sh7372_a4mp = {
++	.bit_shift = 2,
++};
++
+ struct sh7372_pm_domain sh7372_a3rv = {
+ 	.bit_shift = 6,
+ };
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index b219cea..9b0cd43 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -842,6 +842,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
+ void __init sh7372_add_standard_devices(void)
+ {
+ 	sh7372_init_pm_domain(&sh7372_a4lc);
++	sh7372_init_pm_domain(&sh7372_a4mp);
+ 	sh7372_init_pm_domain(&sh7372_a3rv);
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
+ 	sh7372_init_pm_domain(&sh7372_a3sg);
+@@ -853,6 +854,8 @@ void __init sh7372_add_standard_devices(void)
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
+ 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &spu0_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &spu1_device);
+ }
+ 
+ void __init sh7372_add_early_devices(void)
+-- 
+1.7.4.1
 
-If this did not time out, the pd->dma_callbacked is always set.
-So, I will fix the code to "if (!ret && !pd->dma_callbacked) {".
-
->> +static void riic_request_dma(struct riic_data *pd,
->> +			     struct riic_platform_data *riic_data)
->> +{
->> +	dma_cap_mask_t mask;
->> +
->> +	if (riic_data->dma_tx.slave_id) {
->> +		dma_cap_zero(mask);
->> +		dma_cap_set(DMA_SLAVE, mask);
->> +		pd->chan_tx = dma_request_channel(mask, riic_filter,
->> +						  &riic_data->dma_tx);
->> +	}
->> +	if (riic_data->dma_rx.slave_id) {
->> +		dma_cap_zero(mask);
->> +		dma_cap_set(DMA_SLAVE, mask);
->> +		pd->chan_rx = dma_request_channel(mask, riic_filter,
->> +						  &riic_data->dma_rx);
->> +	}
->> +}
-> 
-> should there be a warning if the slave_id is valid and
-> the dma channel cannot be requested?
-
-I will add a warning message.
-However, even if the driver doesn't use dma, it can use PIO mode.
-
-Best regards,
-Yoshihiro Shimoda
