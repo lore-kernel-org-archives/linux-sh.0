@@ -1,192 +1,95 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 14 Jul 2011 10:12:38 +0000
-Subject: [PATCH v3] mmc: tmio: fix recursive spinlock, don't schedule with
-Message-Id: <Pine.LNX.4.64.1107141209460.10688@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 07 Jul 2011 13:32:53 +0000
+Subject: [PATCH 05/05] ARM: mach-shmobile: sh7372 A3RV requires A4LC
+Message-Id: <20110707133253.22347.66361.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106151549050.23363@axis700.grange>
- <Pine.LNX.4.64.1106201803520.11365@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1106201803520.11365@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Chris Ball <cjb@laptop.org>, Magnus Damm <damm@opensource.se>
+To: linux-sh@vger.kernel.org
 
-Calling mmc_request_done() under a spinlock with interrupts disabled
-leads to a recursive spin-lock on request retry path and to
-scheduling in atomic context. This patch fixes both these problems
-by moving mmc_request_done() to the scheduler workqueue.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add a power domain workaround for the VPU and A3RV on sh7372.
+
+The sh7372 data sheet mentions that the VPU is located in the
+A3RV power domain. The A3RV power domain is not related to A4LC
+in any way, but testing shows that unless A3RV _and_ A4LC are
+powered on the VPU test program will bomb out.
+
+This issue may be caused by a more or less undocumented dependency
+on the MERAM block that happens to be located in A4LC. So now we
+know that the out-of-reset requirement of the VPU is that the MERAM
+is powered on.
+
+This patch adds a workaround for A3RV to make sure A4LC is powered
+on - this so we can use the VPU even though the LCDCs are in blanking
+state and A4LC is supposed to be off.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-This is a bug-fix: without it the system Oopses with LOCKDEP enabled, so, 
-it should really go in 3.0. OTOH it is pretty intrusine and non-trivial, 
-so, reviews and tests are highly appreciated! Also, unfortunately, I 
-wasn't able to test it well enough with SDIO, because the driver for the 
-only SDIO card, that I have, reproducibly crashes the kernel:
 
-http://www.spinics.net/lists/kernel/msg1203334.html
+ arch/arm/mach-shmobile/pm-sh7372.c |   45 +++++++++++++++++++++++++++++++++---
+ 1 file changed, 42 insertions(+), 3 deletions(-)
 
-So, mainly tested with SD-cards and only lightly with SDIO.
-
-v3: no functional changes, only updated on top of current mmc-next
-
-v2:
-
-1. added a mutex to properly complete each .set_ios() call instead of 
-returning an error, when racing with another one. 
-
-2. oritect data inside tmio_mmc_finish_request()
-
-3. don't reschedule card detection, if one is already pending
-
- drivers/mmc/host/tmio_mmc.h     |    6 +++++-
- drivers/mmc/host/tmio_mmc_pio.c |   35 +++++++++++++++++++++++++++++------
- 2 files changed, 34 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 0c22df0..a2d6f9f 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -18,6 +18,7 @@
- 
- #include <linux/highmem.h>
- #include <linux/mmc/tmio.h>
-+#include <linux/mutex.h>
- #include <linux/pagemap.h>
- #include <linux/spinlock.h>
- 
-@@ -73,8 +74,11 @@ struct tmio_mmc_host {
- 
- 	/* Track lost interrupts */
- 	struct delayed_work	delayed_reset_work;
--	spinlock_t		lock;
-+	struct work_struct	done;
-+
-+	spinlock_t		lock;		/* protect host private data */
- 	unsigned long		last_req_ts;
-+	struct mutex		ios_lock;	/* protect set_ios() context */
- };
- 
- int tmio_mmc_host_probe(struct tmio_mmc_host **host,
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index f7dd3b1..a2f76ad 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -250,10 +250,16 @@ static void tmio_mmc_reset_work(struct work_struct *work)
- /* called with host->lock held, interrupts disabled */
- static void tmio_mmc_finish_request(struct tmio_mmc_host *host)
- {
--	struct mmc_request *mrq = host->mrq;
-+	struct mmc_request *mrq;
-+	unsigned long flags;
- 
--	if (!mrq)
-+	spin_lock_irqsave(&host->lock, flags);
-+
-+	mrq = host->mrq;
-+	if (IS_ERR_OR_NULL(mrq)) {
-+		spin_unlock_irqrestore(&host->lock, flags);
- 		return;
-+	}
- 
- 	host->cmd = NULL;
- 	host->data = NULL;
-@@ -262,11 +268,18 @@ static void tmio_mmc_finish_request(struct tmio_mmc_host *host)
- 	cancel_delayed_work(&host->delayed_reset_work);
- 
- 	host->mrq = NULL;
-+	spin_unlock_irqrestore(&host->lock, flags);
- 
--	/* FIXME: mmc_request_done() can schedule! */
- 	mmc_request_done(host->mmc, mrq);
+--- 0006/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-07 21:57:14.000000000 +0900
+@@ -91,6 +91,36 @@ static int pd_power_up(struct generic_pm
+ 	return ret;
  }
  
-+static void tmio_mmc_done_work(struct work_struct *work)
++static int pd_power_up_a3rv(struct generic_pm_domain *genpd)
 +{
-+	struct tmio_mmc_host *host = container_of(work, struct tmio_mmc_host,
-+						  done);
-+	tmio_mmc_finish_request(host);
++	int ret = pd_power_up(genpd);
++
++	/* force A4LC on after A3RV has been requested on */
++	pm_genpd_poweron(&sh7372_a4lc.genpd);
++
++	return ret;
 +}
 +
- /* These are the bitmasks the tmio chip requires to implement the MMC response
-  * types. Note that R1 and R6 are the same in this scheme. */
- #define APP_CMD        0x0040
-@@ -433,7 +446,7 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
- 			BUG();
- 	}
++static int pd_power_down_a3rv(struct generic_pm_domain *genpd)
++{
++	int ret = pd_power_down(genpd);
++
++	/* try to power down A4LC after A3RV is requested off */
++	pm_genpd_poweron(&sh7372_a4lc.genpd);
++	queue_work(pm_wq, &sh7372_a4lc.genpd.power_off_work);
++
++	return ret;
++}
++
++static int pd_power_down_a4lc(struct generic_pm_domain *genpd)
++{
++	/* only power down A4LC if A3RV is off */
++	if (!(__raw_readl(PSTR) & (1 << sh7372_a3rv.bit_shift)))
++		return pd_power_down(genpd);
++
++	return 0;
++}
++
+ static bool pd_active_wakeup(struct device *dev)
+ {
+ 	return true;
+@@ -115,9 +145,18 @@ void sh7372_init_pm_domain(struct sh7372
+ 	genpd->stop_device = pm_clk_suspend;
+ 	genpd->start_device = pm_clk_resume;
+ 	genpd->active_wakeup = pd_active_wakeup;
+-	genpd->power_off = pd_power_down;
+-	genpd->power_on = pd_power_up;
+-	pd_power_up(&sh7372_pd->genpd);
++
++	if (sh7372_pd = &sh7372_a4lc) {
++		genpd->power_off = pd_power_down_a4lc;
++		genpd->power_on = pd_power_up;
++	} else if (sh7372_pd = &sh7372_a3rv) {
++		genpd->power_off = pd_power_down_a3rv;
++		genpd->power_on = pd_power_up_a3rv;
++	} else {
++		genpd->power_off = pd_power_down;
++		genpd->power_on = pd_power_up;
++	}
++	genpd->power_on(&sh7372_pd->genpd);
  
--	tmio_mmc_finish_request(host);
-+	schedule_work(&host->done);
+ 	shmobile_runtime_pm_late_init = sh7372_late_pm_domain_off;
  }
- 
- static void tmio_mmc_data_irq(struct tmio_mmc_host *host)
-@@ -523,7 +536,7 @@ static void tmio_mmc_cmd_irq(struct tmio_mmc_host *host,
- 				tasklet_schedule(&host->dma_issue);
- 		}
- 	} else {
--		tmio_mmc_finish_request(host);
-+		schedule_work(&host->done);
- 	}
- 
- out:
-@@ -573,7 +586,8 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
- 	if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
- 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_CARD_INSERT |
- 			TMIO_STAT_CARD_REMOVE);
--		mmc_detect_change(host->mmc, msecs_to_jiffies(100));
-+		if (!work_pending(&host->mmc->detect.work))
-+			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
- 		goto out;
- 	}
- 
-@@ -703,6 +717,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	struct tmio_mmc_data *pdata = host->pdata;
- 	unsigned long flags;
- 
-+	mutex_lock(&host->ios_lock);
-+
- 	spin_lock_irqsave(&host->lock, flags);
- 	if (host->mrq) {
- 		if (IS_ERR(host->mrq)) {
-@@ -718,6 +734,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 				host->mrq->cmd->opcode, host->last_req_ts, jiffies);
- 		}
- 		spin_unlock_irqrestore(&host->lock, flags);
-+
-+		mutex_unlock(&host->ios_lock);
- 		return;
- 	}
- 
-@@ -771,6 +789,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			current->comm, task_pid_nr(current),
- 			ios->clock, ios->power_mode);
- 	host->mrq = NULL;
-+
-+	mutex_unlock(&host->ios_lock);
- }
- 
- static int tmio_mmc_get_ro(struct mmc_host *mmc)
-@@ -867,9 +887,11 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 		tmio_mmc_enable_sdio_irq(mmc, 0);
- 
- 	spin_lock_init(&_host->lock);
-+	mutex_init(&_host->ios_lock);
- 
- 	/* Init delayed work for request timeouts */
- 	INIT_DELAYED_WORK(&_host->delayed_reset_work, tmio_mmc_reset_work);
-+	INIT_WORK(&_host->done, tmio_mmc_done_work);
- 
- 	/* See if we also get DMA */
- 	tmio_mmc_request_dma(_host, pdata);
-@@ -917,6 +939,7 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
- 		pm_runtime_get_sync(&pdev->dev);
- 
- 	mmc_remove_host(host->mmc);
-+	cancel_work_sync(&host->done);
- 	cancel_delayed_work_sync(&host->delayed_reset_work);
- 	tmio_mmc_release_dma(host);
- 
--- 
-1.7.2.5
-
