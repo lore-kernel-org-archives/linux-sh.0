@@ -1,106 +1,173 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:52:51 +0000
-Subject: [PATCH 9/9] ARM / shmobile: Make A3RV be a subdomain of A4LC on SH7372
-Message-Id: <201107311952.51969.rjw@sisk.pl>
+From: kuninori.morimoto.gx@renesas.com
+Date: Thu, 07 Jul 2011 01:38:12 +0000
+Subject: spu-test-20110706.c
+Message-Id: <87box6dg57.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107311946.06654.rjw@sisk.pl>
-In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+/*
+ * spu-test - AP4 SPU test program, 20110706 Kuninori Morimoto
+ *
+ * based on
+ * vpu-test - AP4 VPU test program, 20110622 Magnus Damm
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-Instead of coding the undocumented dependencies between power domains
-A3RV and A4LC on SH7372 directly into the low-level power up/down
-routines, make A3RV be a subdomain of A4LC, which will cause the
-same dependecies to hold.
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- arch/arm/mach-shmobile/pm-sh7372.c    |   42 +---------------------------------
- arch/arm/mach-shmobile/setup-sh7372.c |    3 ++
- 2 files changed, 5 insertions(+), 40 deletions(-)
+static int fgets_with_openclose(char *fname, char *buf, size_t maxlen) {
+       FILE *fp;
 
-Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -91,35 +91,6 @@ static int pd_power_up(struct generic_pm
- 	return ret;
- }
+       if ((fp = fopen(fname, "r")) != NULL) {
+               fgets(buf, maxlen, fp);
+               fclose(fp);
+               return strlen(buf);
+       } else {
+               return -1;
+       }
+}
+
+struct uio_device {
+       char *name;
+       char *path;
+       int fd;
+};
+
+#define MAXUIOIDS  100
+#define MAXNAMELEN 256
+
+static int locate_uio_device(char *name, struct uio_device *udp)
+{
+       char fname[MAXNAMELEN], buf[MAXNAMELEN];
+       int uio_id, i;
+
+       for (uio_id = 0; uio_id < MAXUIOIDS; uio_id++) {
+               sprintf(fname, "/sys/class/uio/uio%d/name", uio_id);
+               if (fgets_with_openclose(fname, buf, MAXNAMELEN) < 0)
+                       continue;
+
+               if (strncmp(name, buf, strlen(name)) = 0)
+                       break;
+       }
+
+       if (uio_id >= MAXUIOIDS)
+               return -1;
+
+       udp->name = strdup(buf);
+       udp->path = strdup(fname);
+       udp->path[strlen(udp->path) - 4] = '\0';
+
+       sprintf(buf, "/dev/uio%d", uio_id);
+
+       udp->fd = open(buf, O_RDWR | O_SYNC);
+       if (udp->fd < 0) {
+               perror("open");
+               return -1;
+       }
+
+       return 0;
+}
+
+struct uio_map {
+       unsigned long address;
+       unsigned long size;
+       void *iomem;
+};
+
+static int setup_uio_map(struct uio_device *udp, int nr, struct uio_map *ump)
+{
+       char fname[MAXNAMELEN], buf[MAXNAMELEN];
  
--static int pd_power_up_a3rv(struct generic_pm_domain *genpd)
--{
--	int ret = pd_power_up(genpd);
--
--	/* force A4LC on after A3RV has been requested on */
--	pm_genpd_poweron(&sh7372_a4lc.genpd);
--
--	return ret;
--}
--
--static int pd_power_down_a3rv(struct generic_pm_domain *genpd)
--{
--	int ret = pd_power_down(genpd);
--
--	/* try to power down A4LC after A3RV is requested off */
--	genpd_queue_power_off_work(&sh7372_a4lc.genpd);
--
--	return ret;
--}
--
--static int pd_power_down_a4lc(struct generic_pm_domain *genpd)
--{
--	/* only power down A4LC if A3RV is off */
--	if (!(__raw_readl(PSTR) & (1 << sh7372_a3rv.bit_shift)))
--		return pd_power_down(genpd);
--
--	return -EBUSY;
--}
--
- static bool pd_active_wakeup(struct device *dev)
- {
- 	return true;
-@@ -133,17 +104,8 @@ void sh7372_init_pm_domain(struct sh7372
- 	genpd->stop_device = pm_clk_suspend;
- 	genpd->start_device = pm_clk_resume;
- 	genpd->active_wakeup = pd_active_wakeup;
--
--	if (sh7372_pd = &sh7372_a4lc) {
--		genpd->power_off = pd_power_down_a4lc;
--		genpd->power_on = pd_power_up;
--	} else if (sh7372_pd = &sh7372_a3rv) {
--		genpd->power_off = pd_power_down_a3rv;
--		genpd->power_on = pd_power_up_a3rv;
--	} else {
--		genpd->power_off = pd_power_down;
--		genpd->power_on = pd_power_up;
--	}
-+	genpd->power_off = pd_power_down;
-+	genpd->power_on = pd_power_up;
- 	genpd->power_on(&sh7372_pd->genpd);
- }
- 
-Index: linux-2.6/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux-2.6/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/pm_domain.h>
- #include <mach/hardware.h>
- #include <mach/sh7372.h>
- #include <asm/mach-types.h>
-@@ -848,6 +849,8 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
- 
-+	pm_genpd_add_subdomain(&sh7372_a4lc.genpd, &sh7372_a3sg.genpd);
-+
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
- 
+       sprintf(fname, "%s/maps/map%d/addr", udp->path, nr);
+       if (fgets_with_openclose(fname, buf, MAXNAMELEN) <= 0)
+               return -1;
 
+       ump->address = strtoul(buf, NULL, 0);
+
+       sprintf(fname, "%s/maps/map%d/size", udp->path, nr);
+       if (fgets_with_openclose(fname, buf, MAXNAMELEN) <= 0)
+               return -1;
+
+       ump->size = strtoul(buf, NULL, 0);
+
+       ump->iomem = mmap(0, ump->size,
+                         PROT_READ|PROT_WRITE, MAP_SHARED,
+                         udp->fd, nr * getpagesize());
+
+       if (ump->iomem = MAP_FAILED)
+               return -1;
+
+       return 0;
+}
+
+struct uio_device uio_dev;
+struct uio_map uio_mmio;
+
+int main(int argc, char *argv[])
+{
+	int ret;
+
+	ret = locate_uio_device("SPU2DSP0", &uio_dev);
+	if (ret < 0) {
+		fprintf(stderr, "unable to locate UIO device\n");
+		return 1;
+	}
+       
+	ret = setup_uio_map(&uio_dev, 0, &uio_mmio);
+	if (ret < 0) {
+		fprintf(stderr, "unable to setup UIO memory map\n");
+		return 1;
+	}
+
+	{
+		unsigned long *pb0 = (uio_mmio.iomem + 0xFFC00); /* PBANKC0 */
+		unsigned long *pb1 = (uio_mmio.iomem + 0xFFC04); /* PBANKC1 */
+		unsigned long *cmd = (uio_mmio.iomem + 0xFFD00); /* DSPRST */
+
+		unsigned long *g0 = (uio_mmio.iomem + 0xFFC40); /* GCOM0 */
+
+		int k;
+
+		if ((*pb0 = 0x00ff &&
+		     *pb1 = 0xff00)) {
+			printf("detected SPU2DSP0 as %x\n", *cmd);
+
+			if (*g0 = 0xbeef) /* g0 is 24bit */
+				printf("SPU2DSP0 state kept since last open\n");
+
+                        /* clear reset */
+			if (*cmd)
+				*cmd = 0;
+
+			*g0 = 0xbeef;
+			return 0;
+		}
+	}
+
+	fprintf(stderr, "unable to detect/reset SPU2DSP0 \n");
+	return 1;
+}
