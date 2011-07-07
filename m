@@ -1,53 +1,97 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Mon, 11 Jul 2011 02:53:55 +0000
-Subject: [PATCH 4/6] clk: Add Kconfig option to build all generic clk drivers
-Message-Id: <1310352837-4277-4-git-send-email-broonie@opensource.wolfsonmicro.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 07 Jul 2011 01:37:16 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: sh7372 A3MP support
+Message-Id: <87d3hmdg6t.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110711025344.GA27497@opensource.wolfsonmicro.com>
-	<1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
-In-Reply-To: <1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Currently drivers for the generic clk subsystem must be selected by
-platforms using them in order to enable build. When doing development on
-the API or generic build time testing it is useful to be able to build
-unused drivers in order to improve coverage so supply a Kconfig option
-which allows this.
+Add support for the sh7372 A3MP power domain
+and hook up the FSI/SPU2 device.
 
-Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/clk/Kconfig |   11 ++++++++++-
- 1 files changed, 10 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c        |    1 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    1 +
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
+ arch/arm/mach-shmobile/pm-sh7372.c           |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |    3 +++
+ 5 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index 75d2902..1fd0070 100644
---- a/drivers/clk/Kconfig
-+++ b/drivers/clk/Kconfig
-@@ -1,4 +1,3 @@
--
- config CLKDEV_LOOKUP
- 	bool
- 	select HAVE_CLK
-@@ -6,6 +5,16 @@ config CLKDEV_LOOKUP
- config GENERIC_CLK
- 	bool
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 4226db6..b473b8e 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1410,6 +1410,7 @@ static void __init ap4evb_init(void)
  
-+config GENERIC_CLK_BUILD_TEST
-+	bool "Build all generic clock drivers"
-+	depends on EXPERIMENTAL && GENERIC_CLK
-+	select GENERIC_CLK_FIXED
-+	select GENERIC_CLK_GATE
-+	help
-+	   Enable all possible generic clock drivers.  This is only
-+	   useful for improving build coverage, it is not useful for
-+	   production kernel builds.
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc1_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	fsi_init_pm_clock();
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 362b883..5b36b6c 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1584,6 +1584,7 @@ static void __init mackerel_init(void)
+ 
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 1aed9da..f3ceced 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -485,6 +485,7 @@ static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
+ 
+ #ifdef CONFIG_PM
+ extern struct sh7372_pm_domain sh7372_a4lc;
++extern struct sh7372_pm_domain sh7372_a4mp;
+ extern struct sh7372_pm_domain sh7372_a3rv;
+ extern struct sh7372_pm_domain sh7372_a3ri;
+ extern struct sh7372_pm_domain sh7372_a3sg;
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index 474a15a..f3bd95f 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -125,6 +125,10 @@ struct sh7372_pm_domain sh7372_a4lc = {
+ 	.bit_shift = 1,
+ };
+ 
++struct sh7372_pm_domain sh7372_a4mp = {
++	.bit_shift = 2,
++};
 +
- config GENERIC_CLK_FIXED
- 	bool
- 	depends on GENERIC_CLK
+ struct sh7372_pm_domain sh7372_a3rv = {
+ 	.bit_shift = 6,
+ };
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index b219cea..9b0cd43 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -842,6 +842,7 @@ static struct platform_device *sh7372_late_devices[] __initdata = {
+ void __init sh7372_add_standard_devices(void)
+ {
+ 	sh7372_init_pm_domain(&sh7372_a4lc);
++	sh7372_init_pm_domain(&sh7372_a4mp);
+ 	sh7372_init_pm_domain(&sh7372_a3rv);
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
+ 	sh7372_init_pm_domain(&sh7372_a3sg);
+@@ -853,6 +854,8 @@ void __init sh7372_add_standard_devices(void)
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
+ 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &spu0_device);
++	sh7372_add_device_to_domain(&sh7372_a4mp, &spu1_device);
+ }
+ 
+ void __init sh7372_add_early_devices(void)
 -- 
-1.7.5.4
+1.7.4.1
 
