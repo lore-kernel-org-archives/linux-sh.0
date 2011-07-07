@@ -1,48 +1,53 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 11 Jul 2011 05:50:43 +0000
-Subject: Re: [PATCH 0/5 v4] LCDC MERAM runtime PM support
-Message-Id: <20110711055042.GI24169@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 07 Jul 2011 13:32:37 +0000
+Subject: [PATCH 03/05] ARM: mach-shmobile: sh7372 late pm domain off
+Message-Id: <20110707133237.22347.5463.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1309766728-32419-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1309766728-32419-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jul 11, 2011 at 02:36:42PM +0900, Paul Mundt wrote:
-> On Mon, Jul 04, 2011 at 05:05:28PM +0900, Damian Hobson-Garcia wrote:
-> > This patch series is a provides PM runtime support for the LCDC MERAM.
-> > 
-> > The runtime_pm_get/put calls are made at the same time as the LCDC calls, so
-> > that the LCDC MERAM is enabled with the first LCDC device and disabled 
-> > with the last LCDC device.
-> > 
-> > The first 4 patches will apply to rmobile-latest or common/fbdev-meram as-is,
-> > but the final patch needs to have the "PM / Domains: Support for generic I/O PM
-> > domains" patch series. 
-> > 
-> > Only the first 2 patches of the series have been updated from v3 sent on
-> > 2011/06/22
-> > 
-> > Changes from V3
-> > 
-> > * Remove the MERAM callbacks used to runtime_get/runtime_put the device from
-> >   the LCDC driver.  Instead, just call the functions on the MERAM device
-> >   directly
-> > 
-> > Damian Hobson-Garcia (5):
-> >   fbdev: sh_mobile_meram: Enable runtime PM
-> >   fbdev: sh_mobile_meram: Enable/disable MERAM along with LCDC - v4
-> >   fbdev: sh_mobile_meram: Move private data from .h to .c 
-> >   fbdev: sh_mobile_meram: Backup/restore device registers on
-> >     shutdown/resume - v3
-> >   fbdev: sh_mobile_meram: Assign meram to the SH7372_A4LC power domain
-> > 
-> I've applied 1-4, and will roll in the last one once the power domain
-> stuff hits mainline.
+From: Magnus Damm <damm@opensource.se>
 
-Magnus informs me that there is still some testing going on with this
-series and that there may be future updates. I've queued up the changes
-in the common/fbdev-meram topic branch but will hold off on pulling that
-in to the fbdev tree until everyone involved is happy with it.
+Add sh7372 specific code to power down unused pm domains.
+
+This should really be replaced by some generic PM core
+code IMO, but until that happens this patch makes sure
+we don't waste power by leaving unused power domains on.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/pm-sh7372.c |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- 0005/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-07 20:15:19.000000000 +0900
+@@ -96,6 +96,17 @@ static bool pd_active_wakeup(struct devi
+ 	return true;
+ }
+ 
++static void sh7372_late_pm_domain_off(void)
++{
++	/* request power down of unused pm domains */
++	queue_work(pm_wq, &sh7372_a4lc.genpd.power_off_work);
++	queue_work(pm_wq, &sh7372_a4mp.genpd.power_off_work);
++	queue_work(pm_wq, &sh7372_d4.genpd.power_off_work);
++	queue_work(pm_wq, &sh7372_a3rv.genpd.power_off_work);
++	queue_work(pm_wq, &sh7372_a3ri.genpd.power_off_work);
++	queue_work(pm_wq, &sh7372_a3sg.genpd.power_off_work);
++}
++
+ void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
+ {
+ 	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
+@@ -107,6 +118,8 @@ void sh7372_init_pm_domain(struct sh7372
+ 	genpd->power_off = pd_power_down;
+ 	genpd->power_on = pd_power_up;
+ 	pd_power_up(&sh7372_pd->genpd);
++
++	shmobile_runtime_pm_late_init = sh7372_late_pm_domain_off;
+ }
+ 
+ void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
