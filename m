@@ -1,44 +1,68 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Fri, 08 Jul 2011 00:29:35 +0000
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 08 Jul 2011 09:24:17 +0000
 Subject: Re: [Update][PATCH 6/10] PM / Domains: System-wide transitions support for generic domains (v5)
-Message-Id: <871uy1d380.fsf@ti.com>
+Message-Id: <201107081124.17463.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106112223.04972.rjw@sisk.pl> <201106252324.13454.rjw@sisk.pl>
-	<201106252328.31882.rjw@sisk.pl> <201106290144.01186.rjw@sisk.pl>
-In-Reply-To: <201106290144.01186.rjw@sisk.pl> (Rafael J. Wysocki's message of
-	"Wed, 29 Jun 2011 01:44:00 +0200")
+References: <201106112223.04972.rjw@sisk.pl> <201106290144.01186.rjw@sisk.pl> <871uy1d380.fsf@ti.com>
+In-Reply-To: <871uy1d380.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
+To: Kevin Hilman <khilman@ti.com>
 Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Walmsley <paul@pwsan.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-"Rafael J. Wysocki" <rjw@sisk.pl> writes:
+On Friday, July 08, 2011, Kevin Hilman wrote:
+> "Rafael J. Wysocki" <rjw@sisk.pl> writes:
+> 
+> > From: Rafael J. Wysocki <rjw@sisk.pl>
+> >
+> > Make generic PM domains support system-wide power transitions
+> > (system suspend and hibernation).  Add suspend, resume, freeze, thaw,
+> > poweroff and restore callbacks to be associated with struct
+> > generic_pm_domain objects and make pm_genpd_init() use them as
+> > appropriate.
+> >
+> > The new callbacks do nothing for devices belonging to power domains
+> > that were powered down at run time (before the transition).  
+> 
+> Thinking about this some more, how is a driver supposed to reconfigure
+> wakeups during suspend if it has already been runtime suspended?
 
-> From: Rafael J. Wysocki <rjw@sisk.pl>
+If the device belongs to a PM domain that has been powered off, it
+won't be notified.
+
+> For example, assume a device where device_may_wakeup() = false.  This
+> means wakeups during *suspend* are disabled, but wakeups wakeups are
+> assumed to enabled when it is runtime suspended.
+> 
+> So now, assume this device is RPM_SUSPENDED, it has wakeups *enabled*,
+> and then system suspend comes along.  
+> 
+> With this current patch, the driver will never receive any callbacks, so
+> it can never disable its wakeups.  
 >
-> Make generic PM domains support system-wide power transitions
-> (system suspend and hibernation).  Add suspend, resume, freeze, thaw,
-> poweroff and restore callbacks to be associated with struct
-> generic_pm_domain objects and make pm_genpd_init() use them as
-> appropriate.
->
-> The new callbacks do nothing for devices belonging to power domains
-> that were powered down at run time (before the transition).  
+> Am I missing something?
 
-Thinking about this some more, how is a driver supposed to reconfigure
-wakeups during suspend if it has already been runtime suspended?
+As I said above, this only happens with devices that belog to PM domains
+that were powered off before system suspend has started, so the problem
+is limited to devices that wakeup is signaled on behalf of even when they
+have no power.
 
-For example, assume a device where device_may_wakeup() = false.  This
-means wakeups during *suspend* are disabled, but wakeups wakeups are
-assumed to enabled when it is runtime suspended.
+So this is a limitation, but not affecting all platforms.
 
-So now, assume this device is RPM_SUSPENDED, it has wakeups *enabled*,
-and then system suspend comes along.  
+There are a few ways to avoid this limitation I can think of:
+(1) Add a "make me operational during system suspend" flag to struct dev_pm_info
+    and run pm_runtime_resume() on such devices from the core (either dpm_prepare()
+    core, or pm_genpd_prepare()).
+(2) Add a "my .prepare() is safe to run if device is not accessible" flag to
+    struct dev_pm_info and make pm_genpd_prepare() execute .prepare() for such
+    devices regardless of whether or not their PM domains are off.
+(3) Call .prepare() from all drivers unconditionally during system suspend
+    (and probably .complete() too) in the hope they won't access inaccessible
+    devices.
+Probably, there's more.
 
-With this current patch, the driver will never receive any callbacks, so
-it can never disable its wakeups.  
+In any case I think it's material for future work.
 
-Am I missing something?
-
-Kevin
+Thanks,
+Rafael
