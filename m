@@ -1,58 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 06 Jul 2011 01:18:19 +0000
-Subject: [RFC][PATCH 4/8] sh: clock-sh7366: add CLKDEV_ICK_ID for cleanup
-Message-Id: <87pqlojjfq.wl%kuninori.morimoto.gx@renesas.com>
+From: Jesper Juhl <jj@chaosbits.net>
+Date: Sat, 09 Jul 2011 21:11:14 +0000
+Subject: [PATCH 1/7] ARM: static should be at beginning of declaration
+Message-Id: <alpine.LNX.2.00.1107092309500.25516@swampdragon.chaosbits.net>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8323328-1415239122-1310245874=:25516"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
+In-Reply-To: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c |   22 ++++++----------------
- 1 files changed, 6 insertions(+), 16 deletions(-)
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7366.c b/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-index bddfe01..092abfe 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
-@@ -194,6 +194,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
- #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
-+#define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
- 
- static struct clk_lookup lookups[] = {
- 	/* main clocks */
-@@ -232,22 +233,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("rwdt0", &mstp_clks[MSTP013]),
- 	CLKDEV_CON_ID("mfi0", &mstp_clks[MSTP011]),
- 	CLKDEV_CON_ID("flctl0", &mstp_clks[MSTP010]),
--	{
--		/* SCIF0 */
--		.dev_id		= "sh-sci.0",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[MSTP007],
--	}, {
--		/* SCIF1 */
--		.dev_id		= "sh-sci.1",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[MSTP006],
--	}, {
--		/* SCIF2 */
--		.dev_id		= "sh-sci.2",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[MSTP005],
--	},
-+
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP007]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP006]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP005]),
-+
- 	CLKDEV_CON_ID("msiof0", &mstp_clks[MSTP002]),
- 	CLKDEV_CON_ID("sbr0", &mstp_clks[MSTP001]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP109]),
--- 
-1.7.4.1
+--8323328-1415239122-1310245874=:25516
+Content-Type: TEXT/PLAIN; charset="iso-8859-7"
+Content-Transfer-Encoding: base64
 
+TWFrZSBzdXJlIHRoYXQgdGhlICdzdGF0aWMnIGtleXdvcmsgaXMgYXQgdGhlIGJlZ2lubmluZyBv
+ZiBkZWNsYXJhdGlvbgpmb3IgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYwoK
+VGhpcyBnZXRzIHJpZCBvZiB3YXJuaW5ncyBsaWtlCiAgd2FybmluZzogoXN0YXRpY6IgaXMgbm90
+IGF0IGJlZ2lubmluZyBvZiBkZWNsYXJhdGlvbgp3aGVuIGJ1aWxkaW5nIHdpdGggLVdvbGQtc3R5
+bGUtZGVjbGFyYXRpb24gKGFuZC9vciAtV2V4dHJhIHdoaWNoIGFsc28KZW5hYmxlcyBpdCkuCgpT
+aWduZWQtb2ZmLWJ5OiBKZXNwZXIgSnVobCA8ampAY2hhb3NiaXRzLm5ldD4KLS0tCiBhcmNoL2Fy
+bS9tYWNoLXNobW9iaWxlL2JvYXJkLWFwNGV2Yi5jIHwgICAgMiArLQogMSBmaWxlcyBjaGFuZ2Vk
+LCAxIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvYXJjaC9hcm0v
+bWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYyBiL2FyY2gvYXJtL21hY2gtc2htb2JpbGUvYm9h
+cmQtYXA0ZXZiLmMKaW5kZXggODAzYmM2ZS4uYmI0ZTA4NCAxMDA2NDQKLS0tIGEvYXJjaC9hcm0v
+bWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYworKysgYi9hcmNoL2FybS9tYWNoLXNobW9iaWxl
+L2JvYXJkLWFwNGV2Yi5jCkBAIC00NDMsNyArNDQzLDcgQEAgc3RhdGljIHN0cnVjdCBwbGF0Zm9y
+bV9kZXZpY2UgdXNiMV9ob3N0X2RldmljZSA9IHsKIAkucmVzb3VyY2UJPSB1c2IxX2hvc3RfcmVz
+b3VyY2VzLAogfTsKIAotY29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgYXA0ZXZiX2xj
+ZGNfbW9kZXNbXSA9IHsKK3N0YXRpYyBjb25zdCBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGFwNGV2Yl9s
+Y2RjX21vZGVzW10gPSB7CiAJewogI2lmZGVmIENPTkZJR19BUDRFVkJfUUhECiAJCS5uYW1lCQk9
+ICJSNjMzMDIoUUhEKSIsCi0tIAoxLjcuNgoKCi0tIApKZXNwZXIgSnVobCA8ampAY2hhb3NiaXRz
+Lm5ldD4gICAgICAgaHR0cDovL3d3dy5jaGFvc2JpdHMubmV0LwpEb24ndCB0b3AtcG9zdCBodHRw
+Oi8vd3d3LmNhdGIub3JnL2phcmdvbi9odG1sL1QvdG9wLXBvc3QuaHRtbApQbGFpbiB0ZXh0IG1h
+aWxzIG9ubHksIHBsZWFzZS4K
+
+--8323328-1415239122-1310245874=:25516--
