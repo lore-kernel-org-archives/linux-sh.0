@@ -1,52 +1,85 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Mon, 11 Jul 2011 02:53:53 +0000
-Subject: [PATCH 2/6] clk: Provide a dummy clk_unregister()
-Message-Id: <1310352837-4277-2-git-send-email-broonie@opensource.wolfsonmicro.com>
+From: Jesper Juhl <jj@chaosbits.net>
+Date: Sat, 09 Jul 2011 21:16:22 +0000
+Subject: [PATCH 3/7] SH: static should be at beginning of declaration
+Message-Id: <alpine.LNX.2.00.1107092312390.25516@swampdragon.chaosbits.net>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8323328-2103632354-1310246182=:25516"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110711025344.GA27497@opensource.wolfsonmicro.com>
-	<1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
-In-Reply-To: <1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
+In-Reply-To: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
+To: linux-kernel@vger.kernel.org
+Cc: trivial@kernel.org, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, Yusuke Goda <goda.yuske@renesas.com>, Kuninori Morimoto <morimoto.kuninori@renesas.com>, Magnus Damm <damm@opensource.se>
 
-Even though unregistration is not actually supported by the clk API it is
-still useful to provide a clk_unregister() so that drivers can implement
-their unregistration code. This saves having to go back later and update
-them once unregistration is possible.
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
 
-Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
----
- include/linux/clk.h |   15 +++++++++++++++
- 1 files changed, 15 insertions(+), 0 deletions(-)
+--8323328-2103632354-1310246182=:25516
+Content-Type: TEXT/PLAIN; charset="iso-8859-7"
+Content-Transfer-Encoding: base64
 
-diff --git a/include/linux/clk.h b/include/linux/clk.h
-index 2ca4f66..df5c64f 100644
---- a/include/linux/clk.h
-+++ b/include/linux/clk.h
-@@ -149,6 +149,21 @@ extern struct clk_hw_ops clk_gate_ops;
- struct clk *clk_register(struct clk_hw_ops *ops, struct clk_hw *hw,
- 			 const char *name);
- 
-+/**
-+ * clk_unregister - remove a clock
-+ *
-+ * @clk: clock to unregister
-+ *
-+ * Remove a clock from the clk subsystem.  This is currently not
-+ * implemented but is provided to allow unregistration code to be
-+ * written in drivers ready for use when an implementation is
-+ * provided.
-+ */
-+static inline int clk_unregister(struct clk *clk)
-+{
-+	return -ENOTSUPP;
-+}
-+
- #else /* !CONFIG_GENERIC_CLK */
- 
- /*
--- 
-1.7.5.4
+TWFrZSBzdXJlIHRoYXQgdGhlICdzdGF0aWMnIGtleXdvcmsgaXMgYXQgdGhlIGJlZ2lubmluZyBv
+ZiBkZWNsYXJhdGlvbgpmb3IgYXJjaC9zaC8qCgpUaGlzIGdldHMgcmlkIG9mIHdhcm5pbmdzIGxp
+a2UKICB3YXJuaW5nOiChc3RhdGljoiBpcyBub3QgYXQgYmVnaW5uaW5nIG9mIGRlY2xhcmF0aW9u
+CndoZW4gYnVpbGRpbmcgd2l0aCAtV29sZC1zdHlsZS1kZWNsYXJhdGlvbiAoYW5kL29yIC1XZXh0
+cmEgd2hpY2ggYWxzbwplbmFibGVzIGl0KS4KClNpZ25lZC1vZmYtYnk6IEplc3BlciBKdWhsIDxq
+akBjaGFvc2JpdHMubmV0PgotLS0KIGFyY2gvc2gvYm9hcmRzL21hY2gtYXAzMjVyeGEvc2V0dXAu
+YyB8ICAgIDIgKy0KIGFyY2gvc2gvYm9hcmRzL21hY2gtZWNvdmVjMjQvc2V0dXAuYyB8ICAgIDQg
+KystLQogYXJjaC9zaC9ib2FyZHMvbWFjaC1rZnIycjA5L3NldHVwLmMgIHwgICAgMiArLQogYXJj
+aC9zaC9ib2FyZHMvbWFjaC1taWdvci9zZXR1cC5jICAgIHwgICAgMiArLQogYXJjaC9zaC9ib2Fy
+ZHMvbWFjaC1zZS83NzI0L3NldHVwLmMgIHwgICAgNCArKy0tCiA1IGZpbGVzIGNoYW5nZWQsIDcg
+aW5zZXJ0aW9ucygrKSwgNyBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJk
+cy9tYWNoLWFwMzI1cnhhL3NldHVwLmMgYi9hcmNoL3NoL2JvYXJkcy9tYWNoLWFwMzI1cnhhL3Nl
+dHVwLmMKaW5kZXggOTY5NDIxZi4uMWRjOTI0YiAxMDA2NDQKLS0tIGEvYXJjaC9zaC9ib2FyZHMv
+bWFjaC1hcDMyNXJ4YS9zZXR1cC5jCisrKyBiL2FyY2gvc2gvYm9hcmRzL21hY2gtYXAzMjVyeGEv
+c2V0dXAuYwpAQCAtMTg4LDcgKzE4OCw3IEBAIHN0YXRpYyB2b2lkIGFwMzIwX3d2Z2FfcG93ZXJf
+b2ZmKHZvaWQgKmJvYXJkX2RhdGEpCiAJX19yYXdfd3JpdGV3KDAsIEZQR0FfTENEUkVHKTsKIH0K
+IAotY29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgYXAzMjVyeGFfbGNkY19tb2Rlc1td
+ID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgYXAzMjVyeGFfbGNkY19tb2Rl
+c1tdID0gewogCXsKIAkJLm5hbWUgPSAiTEIwNzBXVjEiLAogCQkueHJlcyA9IDgwMCwKZGlmZiAt
+LWdpdCBhL2FyY2gvc2gvYm9hcmRzL21hY2gtZWNvdmVjMjQvc2V0dXAuYyBiL2FyY2gvc2gvYm9h
+cmRzL21hY2gtZWNvdmVjMjQvc2V0dXAuYwppbmRleCA1MTNjYjFhLi5iMjRkNjlkIDEwMDY0NAot
+LS0gYS9hcmNoL3NoL2JvYXJkcy9tYWNoLWVjb3ZlYzI0L3NldHVwLmMKKysrIGIvYXJjaC9zaC9i
+b2FyZHMvbWFjaC1lY292ZWMyNC9zZXR1cC5jCkBAIC0yODAsNyArMjgwLDcgQEAgc3RhdGljIHN0
+cnVjdCBwbGF0Zm9ybV9kZXZpY2UgdXNiaHNfZGV2aWNlID0gewogfTsKIAogLyogTENEQyAqLwot
+Y29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2xjZF9tb2Rlc1tdID0gewor
+c3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2xjZF9tb2Rlc1tdID0gewog
+CXsKIAkJLm5hbWUJCT0gIlBhbmVsIiwKIAkJLnhyZXMJCT0gODAwLApAQCAtMjk1LDcgKzI5NSw3
+IEBAIGNvbnN0IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGVjb3ZlY19sY2RfbW9kZXNbXSA9
+IHsKIAl9LAogfTsKIAotY29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2R2
+aV9tb2Rlc1tdID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2R2
+aV9tb2Rlc1tdID0gewogCXsKIAkJLm5hbWUJCT0gIkRWSSIsCiAJCS54cmVzCQk9IDEyODAsCmRp
+ZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJkcy9tYWNoLWtmcjJyMDkvc2V0dXAuYyBiL2FyY2gvc2gv
+Ym9hcmRzL21hY2gta2ZyMnIwOS9zZXR1cC5jCmluZGV4IDhiNGFiYmIuLmY2NTI3MWEgMTAwNjQ0
+Ci0tLSBhL2FyY2gvc2gvYm9hcmRzL21hY2gta2ZyMnIwOS9zZXR1cC5jCisrKyBiL2FyY2gvc2gv
+Ym9hcmRzL21hY2gta2ZyMnIwOS9zZXR1cC5jCkBAIC0xMjcsNyArMTI3LDcgQEAgc3RhdGljIHN0
+cnVjdCBwbGF0Zm9ybV9kZXZpY2Uga2ZyMnIwOV9zaF9rZXlzY19kZXZpY2UgPSB7CiAJfSwKIH07
+CiAKLWNvbnN0IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGtmcjJyMDlfbGNkY19tb2Rlc1td
+ID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUga2ZyMnIwOV9sY2RjX21vZGVz
+W10gPSB7CiAJewogCQkubmFtZSA9ICJUWDA3RDM0Vk0wQUFBIiwKIAkJLnhyZXMgPSAyNDAsCmRp
+ZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJkcy9tYWNoLW1pZ29yL3NldHVwLmMgYi9hcmNoL3NoL2Jv
+YXJkcy9tYWNoLW1pZ29yL3NldHVwLmMKaW5kZXggMTg0ZmRlMS4uMmQ0YzljOCAxMDA2NDQKLS0t
+IGEvYXJjaC9zaC9ib2FyZHMvbWFjaC1taWdvci9zZXR1cC5jCisrKyBiL2FyY2gvc2gvYm9hcmRz
+L21hY2gtbWlnb3Ivc2V0dXAuYwpAQCAtMjE0LDcgKzIxNCw3IEBAIHN0YXRpYyBzdHJ1Y3QgcGxh
+dGZvcm1fZGV2aWNlIG1pZ29yX25hbmRfZmxhc2hfZGV2aWNlID0gewogCX0KIH07CiAKLWNvbnN0
+IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIG1pZ29yX2xjZF9tb2Rlc1tdID0geworc3RhdGlj
+IGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgbWlnb3JfbGNkX21vZGVzW10gPSB7CiAJewogI2lm
+IGRlZmluZWQoQ09ORklHX1NIX01JR09SX1JUQV9XVkdBKQogCQkubmFtZSA9ICJMQjA3MFdWMSIs
+CmRpZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJkcy9tYWNoLXNlLzc3MjQvc2V0dXAuYyBiL2FyY2gv
+c2gvYm9hcmRzL21hY2gtc2UvNzcyNC9zZXR1cC5jCmluZGV4IDEyMzU3NjcuLmQwMDc1NjcgMTAw
+NjQ0Ci0tLSBhL2FyY2gvc2gvYm9hcmRzL21hY2gtc2UvNzcyNC9zZXR1cC5jCisrKyBiL2FyY2gv
+c2gvYm9hcmRzL21hY2gtc2UvNzcyNC9zZXR1cC5jCkBAIC0xNDUsNyArMTQ1LDcgQEAgc3RhdGlj
+IHN0cnVjdCBwbGF0Zm9ybV9kZXZpY2Ugbm9yX2ZsYXNoX2RldmljZSA9IHsKIH07CiAKIC8qIExD
+REMgKi8KLWNvbnN0IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGxjZGNfNzIwcF9tb2Rlc1td
+ID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgbGNkY183MjBwX21vZGVzW10g
+PSB7CiAJewogCQkubmFtZQkJPSAiTEIwNzBXVjEiLAogCQkuc3luYwkJPSAwLCAvKiBoc3luYyBh
+bmQgdnN5bmMgYXJlIGFjdGl2ZSBsb3cgKi8KQEAgLTE2MCw3ICsxNjAsNyBAQCBjb25zdCBzdGF0
+aWMgc3RydWN0IGZiX3ZpZGVvbW9kZSBsY2RjXzcyMHBfbW9kZXNbXSA9IHsKIAl9LAogfTsKIAot
+Y29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgbGNkY192Z2FfbW9kZXNbXSA9IHsKK3N0
+YXRpYyBjb25zdCBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGxjZGNfdmdhX21vZGVzW10gPSB7CiAJewog
+CQkubmFtZQkJPSAiTEIwNzBXVjEiLAogCQkuc3luYwkJPSAwLCAvKiBoc3luYyBhbmQgdnN5bmMg
+YXJlIGFjdGl2ZSBsb3cgKi8KLS0gCjEuNy42CgoKLS0gCkplc3BlciBKdWhsIDxqakBjaGFvc2Jp
+dHMubmV0PiAgICAgICBodHRwOi8vd3d3LmNoYW9zYml0cy5uZXQvCkRvbid0IHRvcC1wb3N0IGh0
+dHA6Ly93d3cuY2F0Yi5vcmcvamFyZ29uL2h0bWwvVC90b3AtcG9zdC5odG1sClBsYWluIHRleHQg
+bWFpbHMgb25seSwgcGxlYXNlLgo=
 
+--8323328-2103632354-1310246182=:25516--
