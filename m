@@ -1,31 +1,37 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Mon, 11 Jul 2011 11:43:06 +0000
-Subject: Re: [PATCH 0/6] clk: Initial feedback for off-SoC slow bus clocks
-Message-Id: <20110711114304.GJ5092@opensource.wolfsonmicro.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Sun, 10 Jul 2011 09:50:13 +0000
+Subject: Re: [PATCH 0/4] Add a generic struct clk
+Message-Id: <20110710095013.GZ4812@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110711025344.GA27497@opensource.wolfsonmicro.com>
-	<20110711093124.GA3239@n2100.arm.linux.org.uk>
-	<20110711100759.GG26347@pengutronix.de>
-	<20110711102856.GG3239@n2100.arm.linux.org.uk>
-	<20110711104625.GH26347@pengutronix.de>
-In-Reply-To: <20110711104625.GH26347@pengutronix.de>
+References: <1305876469.325655.313573683829.0.gpush@pororo>
+	<1305876469.325655.313573683829.0.gpush@pororo>
+	<20110710090927.GA23445@opensource.wolfsonmicro.com>
+In-Reply-To: <20110710090927.GA23445@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 11, 2011 at 12:46:25PM +0200, Sascha Hauer wrote:
-> On Mon, Jul 11, 2011 at 11:28:56AM +0100, Russell King - ARM Linux wrote:
+On Sun, Jul 10, 2011 at 06:09:30PM +0900, Mark Brown wrote:
+> On Fri, May 20, 2011 at 03:27:49PM +0800, Jeremy Kerr wrote:
+> > [This series was originally titled 'Add a common struct clk', but
+> > the goals have changed since that first set of patches. We're now aiming
+> > for a more complete generic clock infrastructure, rather than just
+> > abstracting struct clk]
 
-> > If that's all its for, then can't some other solution for debugfs names
-> > (lets stop calling them clock names to avoid confusion) be found -
-> > such as
+... which will mean the platforms at the simpler end of the spectrum
+will ignore it because it'll be far too heavy weight for them.
 
-> > 	sprintf(debugfsname, "%s@%p", clk->debugfsprefix, clk);
+If we're going to do something generic with it, then we need something
+that _can_ scale from damned simple right up to OMAP-type complex.  We
+don't want to start with something OMAP-type complex and have everyone
+use it even for just one or two (or even 30 simple enable/disable
+non-tree like) clocks.  And those platforms should not have to have
+several K of unused code in their kernel because of it.
 
-> Sounds good. During my tests on i.MX I found it very convenient to have
-> speaking debugfs names, so I vote for this suggestion instead the
-> following ones.
+Otherwise, we'll just end up going back to people trying to directly
+access clock mask registers from drivers.
 
-FWIW that's pretty much exactly what I added except I used a - instead
-of @.
+Note that because of the develtech.com fuckup, I don't have your patch
+series because I had to drop off the lists for about six hours to stop
+the deluge of emails.
