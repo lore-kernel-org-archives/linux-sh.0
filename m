@@ -1,89 +1,90 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 14 Jul 2011 16:39:10 +0000
-Subject: [PATCH 2/2] mmc: tmio: fix a deadlock
-Message-Id: <Pine.LNX.4.64.1107141838380.10688@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 10 Jul 2011 20:46:55 +0000
+Subject: [PATCH 1/2] PM / Domains: Introduce function to power off all unused PM domains
+Message-Id: <201107102246.56059.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1107141828470.10688@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1107141828470.10688@axis700.grange>
+References: <201107102246.05107.rjw@sisk.pl>
+In-Reply-To: <201107102246.05107.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>, "Rafael J. Wysocki" <rjw@sisk.pl>, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Simon Horman <horms@verge.net.au>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Linux-SH <linux-sh@vger.kernel.org>
 
-Currently the tmio-mmc driver contains a recursive runtime PM method
-invocation, which leads to a deadlock on a mutex. Avoid it by taking
-care not to request DMA too early.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add a new function pm_genpd_poweroff_unused() queuing up the
+execution of pm_genpd_poweroff() for every initialized generic PM
+domain.  Calling it will cause every generic PM domain without
+devices in use to be powered off.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/mmc/host/tmio_mmc.h     |    5 +++++
- drivers/mmc/host/tmio_mmc_dma.c |    5 ++++-
- drivers/mmc/host/tmio_mmc_pio.c |    4 ++--
- 3 files changed, 11 insertions(+), 3 deletions(-)
+ drivers/base/power/domain.c |   21 +++++++++++++++++++++
+ include/linux/pm_domain.h   |    3 +++
+ 2 files changed, 24 insertions(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 551d1ef..60ba335 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -109,6 +109,7 @@ static inline void tmio_mmc_kunmap_atomic(struct scatterlist *sg,
+Index: linux-2.6/include/linux/pm_domain.h
+=================================--- linux-2.6.orig/include/linux/pm_domain.h
++++ linux-2.6/include/linux/pm_domain.h
+@@ -24,6 +24,7 @@ struct dev_power_governor {
  
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
- void tmio_mmc_start_dma(struct tmio_mmc_host *host, struct mmc_data *data);
-+void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable);
- void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata);
- void tmio_mmc_release_dma(struct tmio_mmc_host *host);
+ struct generic_pm_domain {
+ 	struct dev_pm_domain domain;	/* PM domain operations */
++	struct list_head gpd_list_node;	/* Node in the global PM domains list */
+ 	struct list_head sd_node;	/* Node in the parent's subdomain list */
+ 	struct generic_pm_domain *parent;	/* Parent PM domain */
+ 	struct list_head sd_list;	/* List of dubdomains */
+@@ -71,6 +72,7 @@ extern int pm_genpd_remove_subdomain(str
+ extern void pm_genpd_init(struct generic_pm_domain *genpd,
+ 			  struct dev_power_governor *gov, bool is_off);
+ extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
++extern void pm_genpd_poweroff_unused(void);
  #else
-@@ -117,6 +118,10 @@ static inline void tmio_mmc_start_dma(struct tmio_mmc_host *host,
+ static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
+ 				      struct device *dev)
+@@ -98,6 +100,7 @@ static inline int pm_genpd_poweron(struc
  {
+ 	return -ENOSYS;
  }
++static inline void pm_genpd_poweroff_unused(void) {}
+ #endif
  
-+static inline void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
-+{
+ #endif /* _LINUX_PM_DOMAIN_H */
+Index: linux-2.6/drivers/base/power/domain.c
+=================================--- linux-2.6.orig/drivers/base/power/domain.c
++++ linux-2.6/drivers/base/power/domain.c
+@@ -16,6 +16,9 @@
+ #include <linux/sched.h>
+ #include <linux/suspend.h>
+ 
++static LIST_HEAD(gpd_list);
++static DEFINE_MUTEX(gpd_list_lock);
++
+ #ifdef CONFIG_PM
+ 
+ static struct generic_pm_domain *dev_to_genpd(struct device *dev)
+@@ -1241,4 +1244,22 @@ void pm_genpd_init(struct generic_pm_dom
+ 	genpd->domain.ops.restore_noirq = pm_genpd_restore_noirq;
+ 	genpd->domain.ops.restore = pm_genpd_restore;
+ 	genpd->domain.ops.complete = pm_genpd_complete;
++	mutex_lock(&gpd_list_lock);
++	list_add(&genpd->gpd_list_node, &gpd_list);
++	mutex_unlock(&gpd_list_lock);
 +}
 +
- static inline void tmio_mmc_request_dma(struct tmio_mmc_host *host,
- 				 struct tmio_mmc_data *pdata)
- {
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 7e86662..2aa616d 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -22,8 +22,11 @@
- 
- #define TMIO_MMC_MIN_DMA_LEN 8
- 
--static void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
-+void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
- {
-+	if (!host->chan_tx || !host->chan_rx)
-+		return;
++/**
++ * pm_genpd_poweroff_unused - Power off all PM domains with no devices in use.
++ */
++void pm_genpd_poweroff_unused(void)
++{
++	struct generic_pm_domain *genpd;
 +
- #if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
- 	/* Switch DMA mode on or off - SuperH specific? */
- 	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 221ffb7..1f16357 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -984,7 +984,7 @@ int tmio_mmc_host_resume(struct device *dev)
- 	if (host->pm_global) {
- 		/* Runtime PM resume callback didn't run */
- 		tmio_mmc_reset(host);
--		tmio_mmc_request_dma(host, host->pdata);
-+		tmio_mmc_enable_dma(host, true);
- 		host->pm_global = false;
- 	}
- 
-@@ -1007,7 +1007,7 @@ int tmio_mmc_host_runtime_resume(struct device *dev)
- 	struct tmio_mmc_data *pdata = host->pdata;
- 
- 	tmio_mmc_reset(host);
--	tmio_mmc_request_dma(host, host->pdata);
-+	tmio_mmc_enable_dma(host, true);
- 
- 	if (pdata->power) {
- 		/* Only entered after a card-insert interrupt */
--- 
-1.7.2.5
++	mutex_lock(&gpd_list_lock);
++
++	list_for_each_entry(genpd, &gpd_list, gpd_list_node)
++		genpd_queue_power_off_work(genpd);
++
++	mutex_unlock(&gpd_list_lock);
+ }
 
