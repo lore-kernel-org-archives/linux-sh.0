@@ -1,19 +1,23 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 26 Jul 2011 18:49:15 +0000
-Subject: [PATCH 0/2] Build fixes related to undefined struct scatterlist
-Message-Id: <201107262049.15333.rjw@sisk.pl>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Sun, 10 Jul 2011 09:09:30 +0000
+Subject: Re: [PATCH 0/4] Add a generic struct clk
+Message-Id: <20110710090927.GA23445@opensource.wolfsonmicro.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1305876469.325655.313573683829.0.gpush@pororo>
+	<1305876469.325655.313573683829.0.gpush@pororo>
+In-Reply-To: <1305876469.325655.313573683829.0.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@suse.de>, linux-usb@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+On Fri, May 20, 2011 at 03:27:49PM +0800, Jeremy Kerr wrote:
+> [This series was originally titled 'Add a common struct clk', but
+> the goals have changed since that first set of patches. We're now aiming
+> for a more complete generic clock infrastructure, rather than just
+> abstracting struct clk]
+> 
+> [This series still needs work, see the TODO section below]
 
-The following two patches fix build issues caused by undefined struct
-scatterlist.
-
-Thanks,
-Rafael
-
+Is there a git tree with the current state of this code in it somewhere?
+It's not mentioned here and my google skills are failing me.
