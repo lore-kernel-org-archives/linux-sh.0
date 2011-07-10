@@ -1,33 +1,92 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:46:06 +0000
-Subject: [PATCH 0/9] PM / Domains: Allow generic PM domains to have multiple parents
-Message-Id: <201107311946.06654.rjw@sisk.pl>
+Date: Sun, 10 Jul 2011 20:47:44 +0000
+Subject: [PATCH 2/2] ARM / shmobile: Use pm_genpd_poweroff_unused()
+Message-Id: <201107102247.45034.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201107102246.05107.rjw@sisk.pl>
+In-Reply-To: <201107102246.05107.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Linux-SH <linux-sh@vger.kernel.org>
 
-Hi,
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-This patchset modifies the generic PM domains code so that it's possible
-for a PM domain to have multiple parent domains (i.e. domains it depends on).
-This makes the framework applicable to more use cases and allows us to
-address one issue one a system already using it.
+Make shmobile use pm_genpd_poweroff_unused() instead of the
+open-coded powering off PM domains without devices in use.
 
-Patch [1/9] is for 3.1, patches [2-9/9] are 3.2 material, if there are no
-objections.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/include/mach/common.h |    1 -
+ arch/arm/mach-shmobile/pm-sh7372.c           |   13 -------------
+ arch/arm/mach-shmobile/pm_runtime.c          |    6 ++----
+ 3 files changed, 2 insertions(+), 18 deletions(-)
 
-[1/9] - Fix genpd_power_on().
-[2/9] - Make subdomain counts be atomic.
-[3/9] - Don't acquire parent locks in genpd_power_on() and genpd_power_off().
-[4/9] - Make genpd_power_on() always survive parent removal.
-[5/9] - Add PM domain status value GPD_STATE_WAIT_PARENT.
-[6/9] - Allow generic PM domains to have multiple parents.
-[7/9] - Rename GPD_STATE_WAIT_PARENT to GPD_STATE_WAIT_MASTER.
-[8/9] - Rename the second argument of pm_genpd_add_subdomain().
-[9/9] - Make A3RV be a subdomain of A4LC on SH7372.
+Index: linux-2.6/arch/arm/mach-shmobile/include/mach/common.h
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/include/mach/common.h
++++ linux-2.6/arch/arm/mach-shmobile/include/mach/common.h
+@@ -12,7 +12,6 @@ extern struct platform_suspend_ops shmob
+ struct cpuidle_device;
+ extern void (*shmobile_cpuidle_modes[])(void);
+ extern void (*shmobile_cpuidle_setup)(struct cpuidle_device *dev);
+-extern void (*shmobile_runtime_pm_late_init)(void);
+ 
+ extern void sh7367_init_irq(void);
+ extern void sh7367_add_early_devices(void);
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -126,17 +126,6 @@ static bool pd_active_wakeup(struct devi
+ 	return true;
+ }
+ 
+-static void sh7372_late_pm_domain_off(void)
+-{
+-	/* request power down of unused pm domains */
+-	queue_work(pm_wq, &sh7372_a4lc.genpd.power_off_work);
+-	queue_work(pm_wq, &sh7372_a4mp.genpd.power_off_work);
+-	queue_work(pm_wq, &sh7372_d4.genpd.power_off_work);
+-	queue_work(pm_wq, &sh7372_a3rv.genpd.power_off_work);
+-	queue_work(pm_wq, &sh7372_a3ri.genpd.power_off_work);
+-	queue_work(pm_wq, &sh7372_a3sg.genpd.power_off_work);
+-}
+-
+ void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
+ {
+ 	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
+@@ -157,8 +146,6 @@ void sh7372_init_pm_domain(struct sh7372
+ 		genpd->power_on = pd_power_up;
+ 	}
+ 	genpd->power_on(&sh7372_pd->genpd);
+-
+-	shmobile_runtime_pm_late_init = sh7372_late_pm_domain_off;
+ }
+ 
+ void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
+Index: linux-2.6/arch/arm/mach-shmobile/pm_runtime.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm_runtime.c
++++ linux-2.6/arch/arm/mach-shmobile/pm_runtime.c
+@@ -14,6 +14,7 @@
+ #include <linux/kernel.h>
+ #include <linux/io.h>
+ #include <linux/pm_runtime.h>
++#include <linux/pm_domain.h>
+ #include <linux/platform_device.h>
+ #include <linux/clk.h>
+ #include <linux/sh_clk.h>
+@@ -57,12 +58,9 @@ static int __init sh_pm_runtime_init(voi
+ }
+ core_initcall(sh_pm_runtime_init);
+ 
+-void (*shmobile_runtime_pm_late_init)(void);
+-
+ static int __init sh_pm_runtime_late_init(void)
+ {
+-	if (shmobile_runtime_pm_late_init)
+-		shmobile_runtime_pm_late_init();
++	pm_genpd_poweroff_unused();
+ 	return 0;
+ }
+ late_initcall(sh_pm_runtime_late_init);
 
-Thanks,
-Rafael
