@@ -1,84 +1,68 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 14 Jul 2011 10:26:16 +0000
-Subject: Re: [PATCH v2] mmc: tmio: fix recursive spinlock, don't schedule
-Message-Id: <Pine.LNX.4.64.1107141220310.10688@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 10 Jul 2011 11:45:35 +0000
+Subject: Re: [PATCH 8/8] ARM / shmobile: Support for I/O PM domains for SH7372 (v5)
+Message-Id: <201107101345.36135.laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106151549050.23363@axis700.grange>
- <Pine.LNX.4.64.1106201803520.11365@axis700.grange> <m2oc0y2pk6.fsf@bob.laptop.org>
-In-Reply-To: <m2oc0y2pk6.fsf@bob.laptop.org>
+References: <201106112223.04972.rjw@sisk.pl> <201106142316.02812.rjw@sisk.pl> <BANLkTi=u_eyGZt9e0CuVpyz9B08HarEyVw@mail.gmail.com>
+In-Reply-To: <BANLkTi=u_eyGZt9e0CuVpyz9B08HarEyVw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ian Molton <ian@mnementh.co.uk>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <damm@opensource.se>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rjw@sisk.pl>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Greg Kroah-Hartman <gregkh@suse.de>, Paul Walmsley <paul@pwsan.com>, Kevin Hilman <khilman@ti.com>, Alan Stern <stern@rowland.harvard.edu>, LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
-Hi Chris
+Hi Magnus,
 
-On Wed, 13 Jul 2011, Chris Ball wrote:
-
-> Hi Guennadi,
+On Wednesday 15 June 2011 16:17:15 Magnus Damm wrote:
+> On Wed, Jun 15, 2011 at 6:16 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> > On Tuesday, June 14, 2011, Magnus Damm wrote:
+> >> On Sun, Jun 12, 2011 at 5:40 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> >> > From: Rafael J. Wysocki <rjw@sisk.pl>
+> >> > 
+> >> > Use the generic power domains support introduced by the previous
+> >> > patch to implement support for power domains on SH7372.
+> >> > 
+> >> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+> >> > ---
+> >> 
+> >> Thanks for your work on this. I just tried this on my Mackerel board,
+> >> but I can't seem to get the pd_power_up() and pd_power_down()
+> >> callbacks to be executed. It is probably a misconfiguration from my
+> >> side.
+> > 
+> > They trigger for me e.g. after doing
+> > 
+> > # echo 3 > /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
+> > 
+> > Attached is the .config I've been using.
 > 
-> On Mon, Jun 20 2011, Guennadi Liakhovetski wrote:
-> > Calling mmc_request_done() under a spinlock with interrupts disabled
-> > leads to a recursive spin-lock on request retry path and to
-> > scheduling in atomic context. This patch fixes both these problems
-> > by moving mmc_request_done() to the scheduler workqueue.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >
-> > This is a bug-fix: without it the system Oopses with LOCKDEP enabled, so, 
-> > it should really go in 3.0. OTOH it is pretty intrusine and non-trivial, 
-> > so, reviews and tests are highly appreciated! Also, unfortunately, I 
-> > wasn't able to test it well enough with SDIO, because the driver for the 
-> > only SDIO card, that I have, reproducibly crashes the kernel:
+> Thanks, I can trigger using sysfs and your kernel configuration.
 > 
-> Having trouble working out how to apply this -- for example, in this hunk:
+> However, I assumed it also would work when the sceen saver kicked in.
+> I recall it being fbcon that controls the screen save, perhaps
+> something else. So just wait a bit and see if you also can reproduce
+> it. The console gets black but the power is still on...
 
-Right, I've been developing on top of other trees. As you probably have 
-seen, a couple of minutes ago I've updated my two patches and re-posted 
-them:
+That's because, by default, the VT layer will use FB_BLANK_NORMAL mode when 
+blanking the console. Switching that to FB_BLANK_VSYNC_SUSPEND, 
+FB_BLANK_HSYNC_SUSPEND or FB_BLANK_POWERDOWN with TIOCLINUX(TIOC_SETVESABLANK) 
+results in the device being runtime-suspended when the console is blanked.
 
-[PATCH v3] mmc: tmio: fix recursive spinlock, don't schedule with interrupts disabled
-[PATCH v3] mmc: tmio: maximize power saving
-
-That's it for this merge window for tmio from me so far;-) The outstanding 
-sh-mmcif patch
-
-[PATCH/RFC] mmc: sh_mmcif: maximize power saving
-
-is no longer an RFC, should have no conflicts and requires no updates.
-
-Thanks
-Guennadi
-
+> Also forcing to go back to powered-on state (see below) doesn't work that
+> well: # echo 0 >
+> /sys/devices/platform/sh_mobile_lcdc_fb.0/graphics/fb0/blank
 > 
-> > @@ -618,7 +631,8 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
-> >  		if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
-> >  			tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_CARD_INSERT |
-> >  				TMIO_STAT_CARD_REMOVE);
-> > -			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
-> > +			if (!work_pending(&host->mmc->detect.work))
-> > +				mmc_detect_change(host->mmc, msecs_to_jiffies(100));
-> >  		}
-> >  
-> >  		/* CRC and other errors */
-> 
-> In mmc-next there's a "goto out;" after the mmc_detect_change call, which
-> looks like it's always been there.  Am I missing a patch this depends on?
-> 
-> (It'd be a good time to get a full set of tmio patches for 3.1 pulled
-> together, if you can do that.)
-> 
-> Thanks!
-> 
-> - Chris.
-> -- 
-> Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-> One Laptop Per Child
-> 
+> It looks like we loose the panning information somehow. Most likely a LCDC
+> driver bug. Unless the driver callbacks are not being invoked as expected.
+>
+> Also, there is garbage in on the screen if FB_SH_MOBILE_MERAM is
+> enabled. The MERAM hardware is a 1.5 MiB memory block that can be used
+> as a LCD cache. It sits in the same hardware power domain as the
+> LCDCs. I don't think the MERAM software supports power down
+> unfortunately. Disabling MERAM support removes the garbage on the
+> screen.
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+-- 
+Regards,
+
+Laurent Pinchart
