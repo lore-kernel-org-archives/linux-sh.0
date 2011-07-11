@@ -1,51 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 15 Jul 2011 21:52:33 +0000
-Subject: [PATCH 3/3] fbdev: sh_mobile_lcdc: Compute clock pattern using divider denominator
-Message-Id: <1310766753-30314-4-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Mon, 11 Jul 2011 02:53:54 +0000
+Subject: [PATCH 3/6] clk: Constify struct clk_hw_ops
+Message-Id: <1310352837-4277-3-git-send-email-broonie@opensource.wolfsonmicro.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110711025344.GA27497@opensource.wolfsonmicro.com>
+	<1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
+In-Reply-To: <1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The clock divider pattern is computed based on the dot clock register
-value which stores the divider denumerator. However, when using a 1:1
-divider ratio, the register is programmed with a value that must not be
-interpreted as a denominator. This results in a shift left operation
-with a value of 32, which produces undefined behaviour.
-
-Compute the clock pattern using the divider denominator, not the dot
-clock register value.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   10 ++++++----
- 1 files changed, 6 insertions(+), 4 deletions(-)
+ drivers/clk/clk.c   |    4 ++--
+ include/linux/clk.h |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 32f884e..856f6a9 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -481,13 +481,15 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 		if (!m)
- 			continue;
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 3a4d70e..1df6e23 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -16,7 +16,7 @@
  
-+		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider
-+		 * denominator.
-+		 */
-+		lcdc_write_chan(ch, LDDCKPAT1R, 0);
-+		lcdc_write_chan(ch, LDDCKPAT2R, (1 << (m/2)) - 1);
-+
- 		if (m = 1)
- 			m = LDDCKR_MOSEL;
- 		tmp |= m << (lcdc_chan_is_sublcd(ch) ? 8 : 0);
--
--		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider denominator */
--		lcdc_write_chan(ch, LDDCKPAT1R, 0);
--		lcdc_write_chan(ch, LDDCKPAT2R, (1 << (m/2)) - 1);
- 	}
+ struct clk {
+ 	const char		*name;
+-	struct clk_hw_ops	*ops;
++	const struct clk_hw_ops	*ops;
+ 	struct clk_hw		*hw;
+ 	unsigned int		enable_count;
+ 	unsigned int		prepare_count;
+@@ -252,7 +252,7 @@ int clk_set_parent(struct clk *clk, struct clk *parent)
+ }
+ EXPORT_SYMBOL_GPL(clk_set_parent);
  
- 	lcdc_write(priv, _LDDCKR, tmp);
+-struct clk *clk_register(struct clk_hw_ops *ops, struct clk_hw *hw,
++struct clk *clk_register(const struct clk_hw_ops *ops, struct clk_hw *hw,
+ 		const char *name)
+ {
+ 	struct clk *clk;
+diff --git a/include/linux/clk.h b/include/linux/clk.h
+index df5c64f..fb5e435 100644
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
+@@ -146,7 +146,7 @@ extern struct clk_hw_ops clk_gate_ops;
+  * Register a new clock with the clk subsytem.  Returns either a
+  * struct clk for the new clock or a NULL pointer.
+  */
+-struct clk *clk_register(struct clk_hw_ops *ops, struct clk_hw *hw,
++struct clk *clk_register(const struct clk_hw_ops *ops, struct clk_hw *hw,
+ 			 const char *name);
+ 
+ /**
 -- 
-1.7.3.4
+1.7.5.4
 
