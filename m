@@ -1,51 +1,60 @@
-From: Petr Tesarik <ptesarik@suse.cz>
-Date: Fri, 17 Jun 2011 08:46:24 +0000
-Subject: [PATCH 06/10] sh: change valid_phys_addr_range's @addr param to phys_addr_t
-Message-Id: <201106171046.24949.ptesarik@suse.cz>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Mon, 11 Jul 2011 02:53:44 +0000
+Subject: [PATCH 0/6] clk: Initial feedback for off-SoC slow bus clocks
+Message-Id: <20110711025344.GA27497@opensource.wolfsonmicro.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201106171038.25988.ptesarik@suse.cz>
-In-Reply-To: <201106171038.25988.ptesarik@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-No other changes are needed, the function will work just fine with
-a potentially larger data type.
+I've just been having a go at implementing generic clk API support for
+an off-SoC device on a slow bus, the clocking module in the wm831x/2x
+series of PMICs.  Unfortunately as I don't currently have access to a
+platform that has been converted to use the API I've not actually been
+able to test the code but I'm reasonably optimistic that the code will
+Just Work(tm) as the API seems fairly straightforward.
 
+The biggest issue I ran into was that as the clocks are all registered
+by name with the API if you've got two instances of the same off-SoC
+device in the system you'll not be able to disambiguate between the
+clocks it provides.  I've added a simple solution for this in the form
+of a patch which takes a struct device as an argument and adds that to
+the name of the registered clock.  This isn't ideal but should give
+stable names which systems can use together with clkdev to match clocks
+up with their users.  I believe that when we have device tree bindings
+for clocks we should be able to use the device to access the bindings
+and avoid this mangling - Grant, is that correct?
 
-Signed-off-by: Petr Tesarik <ptesarik@suse.cz>
----
- arch/sh/include/asm/io.h |    2 +-
- arch/sh/mm/mmap.c        |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Otherwise everything seems to work pretty well from the driver side for
+these devices, I've added some minor updates which came up naturally
+while writing the driver code and seemed fairly obvious.  One of these
+was a change to provide a user visible Kconfig option for building the
+clock drivers, the idea being to make it easier to do build tests.  I
+did also wonder if it's worth adding a patch to enable the API on x86
+(which doesn't currently have a clock API) for coverage.
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 28c5aa5..e6d5add 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -383,7 +383,7 @@ static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
- #define xlate_dev_kmem_ptr(p)	p
- 
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
--int valid_phys_addr_range(unsigned long addr, size_t size);
-+int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
- 
- #endif /* __KERNEL__ */
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index afeb710..80bf494 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -238,7 +238,7 @@ bottomup:
-  * You really shouldn't be using read() or write() on /dev/mem.  This
-  * might go away in the future.
-  */
--int valid_phys_addr_range(unsigned long addr, size_t count)
-+int valid_phys_addr_range(phys_addr_t addr, size_t count)
- {
- 	if (addr < __MEMORY_START)
- 		return 0;
--- 
-1.7.3.4
+These patches (which include the two I posted yesterday) are against the
+series you posted in May with the exception of the wm831x patch which
+also has an additional dependency on "mfd: Add WM831x clock control
+register definitions" which is due for merge in the next merge window.
+If this stuff is all OK for you it would be good if you could include
+the wm831x driver in your tree for this, especially given that there's
+nothing in -next.
+
+Mark Brown (6):
+      clk: Prototype and document clk_register()
+      clk: Provide a dummy clk_unregister()
+      clk: Constify struct clk_hw_ops
+      clk: Add Kconfig option to build all generic clk drivers
+      clk: Support multiple instances of the same clock provider
+      clk: Add initial WM831x clock driver
+
+ MAINTAINERS              |    1 +
+ drivers/clk/Kconfig      |   16 ++-
+ drivers/clk/Makefile     |    1 +
+ drivers/clk/clk-wm831x.c |  389 ++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/clk/clk.c        |   38 ++++-
+ include/linux/clk.h      |   33 ++++
+ 6 files changed, 472 insertions(+), 6 deletions(-)
+ create mode 100644 drivers/clk/clk-wm831x.c
