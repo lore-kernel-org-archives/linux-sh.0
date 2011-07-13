@@ -1,117 +1,31 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 13 Jul 2011 23:23:01 +0000
-Subject: Re: [PATCH/RFC] mmc: sh_mmcif: maximize power saving
-Message-Id: <Pine.LNX.4.64.1107140116150.30737@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Wed, 13 Jul 2011 21:52:59 +0000
+Subject: [PATCH 0/3] PM / Domains / shmobile fixes
+Message-Id: <201107132352.59801.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1105261524120.9307@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1105261524120.9307@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>, Chris Ball <cjb@laptop.org>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Chris
+Hi,
 
-This patch has survived multiple runtime PM versions on sh-mobile without 
-changes, so, it should be good for the mainline. Please, queue for 3.1. We 
-might, however, eventually decide, that we don't want to be so aggressive 
-with our power savings;-) and want to add a flag to allow platforms to 
-sacrifice power and maximise performance. This would be an incremental 
-patch then.
+The following three patches fix a couple of issues in the code currently
+in my pm-domains branch at:
 
-Thanks
-Guennadi
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git pm-domains
 
-On Thu, 26 May 2011, Guennadi Liakhovetski wrote:
+[1/3] - Use genpd_queue_power_off_work() for queuing up the powering off
+        of A4LC (this avoids attempting to queue up a work item while it is
+        pending).
 
-> This patch uses runtime PM to allow the system to power down the MMC
-> controller, when the MMC closk is switched off.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> Patches have been submitted earlier for SDHCI to accomplish something 
-> similar, but they have complicated dependencies upon other different 
-> subsystems, especially on PCI. MMCIF is easier - it only exists in 
-> different SoCs, so, this change should also be easier to review, verify 
-> and test.
-> 
->  drivers/mmc/host/sh_mmcif.c |   27 ++++++++++++++++++---------
->  1 files changed, 18 insertions(+), 9 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 14f8edb..557886b 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -175,6 +175,7 @@ struct sh_mmcif_host {
->  	enum mmcif_state state;
->  	spinlock_t lock;
->  	bool power;
-> +	bool card_present;
->  
->  	/* DMA support */
->  	struct dma_chan		*chan_rx;
-> @@ -877,23 +878,23 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
->  	spin_unlock_irqrestore(&host->lock, flags);
->  
->  	if (ios->power_mode = MMC_POWER_UP) {
-> -		if (p->set_pwr)
-> -			p->set_pwr(host->pd, ios->power_mode);
-> -		if (!host->power) {
-> +		if (!host->card_present) {
->  			/* See if we also get DMA */
->  			sh_mmcif_request_dma(host, host->pd->dev.platform_data);
-> -			pm_runtime_get_sync(&host->pd->dev);
-> -			host->power = true;
-> +			host->card_present = true;
->  		}
->  	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
->  		/* clock stop */
->  		sh_mmcif_clock_control(host, 0);
->  		if (ios->power_mode = MMC_POWER_OFF) {
-> -			if (host->power) {
-> -				pm_runtime_put(&host->pd->dev);
-> +			if (host->card_present) {
->  				sh_mmcif_release_dma(host);
-> -				host->power = false;
-> +				host->card_present = false;
->  			}
-> +		}
-> +		if (host->power) {
-> +			pm_runtime_put(&host->pd->dev);
-> +			host->power = false;
->  			if (p->down_pwr)
->  				p->down_pwr(host->pd);
->  		}
-> @@ -901,8 +902,16 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
->  		return;
->  	}
->  
-> -	if (ios->clock)
-> +	if (ios->clock) {
-> +		if (!host->power) {
-> +			if (p->set_pwr)
-> +				p->set_pwr(host->pd, ios->power_mode);
-> +			pm_runtime_get_sync(&host->pd->dev);
-> +			host->power = true;
-> +			sh_mmcif_sync_reset(host);
-> +		}
->  		sh_mmcif_clock_control(host, ios->clock);
-> +	}
->  
->  	host->bus_width = ios->bus_width;
->  	host->state = STATE_IDLE;
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+[2/3] - Make the generic PM domains code react to -EBUSY returned from a
+        PM domain's .power_down() callback (needed for [3/3]).
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+[3/3] - Return -EBUSY from the A4LC's .power_down() callback to indicate that
+        the domain hasn't been powered down on purpose and remove the confusing
+        (and now redundant) pm_genpd_poweron(A4LC) from pd_power_down_a3rv().
+
+Thanks,
+Rafael
