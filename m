@@ -1,85 +1,48 @@
-From: Jesper Juhl <jj@chaosbits.net>
-Date: Sat, 09 Jul 2011 21:16:22 +0000
-Subject: [PATCH 3/7] SH: static should be at beginning of declaration
-Message-Id: <alpine.LNX.2.00.1107092312390.25516@swampdragon.chaosbits.net>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="8323328-2103632354-1310246182=:25516"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Wed, 13 Jul 2011 21:56:44 +0000
+Subject: [PATCH 3/3] ARM / shmobile: Return -EBUSY from A4LC power off if A3RV is active
+Message-Id: <201107132356.45037.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
-In-Reply-To: <alpine.LNX.2.00.1107092304160.25516@swampdragon.chaosbits.net>
-To: linux-kernel@vger.kernel.org
-Cc: trivial@kernel.org, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, Yusuke Goda <goda.yuske@renesas.com>, Kuninori Morimoto <morimoto.kuninori@renesas.com>, Magnus Damm <damm@opensource.se>
+References: <201107132352.59801.rjw@sisk.pl>
+In-Reply-To: <201107132352.59801.rjw@sisk.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
---8323328-2103632354-1310246182=:25516
-Content-Type: TEXT/PLAIN; charset="iso-8859-7"
-Content-Transfer-Encoding: base64
+Since the A4LC should only be powered off if the A3RV is off, make
+the A4LC's power down routine return -EBUSY if A3RV is not off to
+indicate to the core that it doesn't want to power off the domain in
+that case.  This will cause the core to regard A4LC as active, so
+the pm_genpd_poweron() in pd_power_down_a3rv() is not necessary any
+more.
 
-TWFrZSBzdXJlIHRoYXQgdGhlICdzdGF0aWMnIGtleXdvcmsgaXMgYXQgdGhlIGJlZ2lubmluZyBv
-ZiBkZWNsYXJhdGlvbgpmb3IgYXJjaC9zaC8qCgpUaGlzIGdldHMgcmlkIG9mIHdhcm5pbmdzIGxp
-a2UKICB3YXJuaW5nOiChc3RhdGljoiBpcyBub3QgYXQgYmVnaW5uaW5nIG9mIGRlY2xhcmF0aW9u
-CndoZW4gYnVpbGRpbmcgd2l0aCAtV29sZC1zdHlsZS1kZWNsYXJhdGlvbiAoYW5kL29yIC1XZXh0
-cmEgd2hpY2ggYWxzbwplbmFibGVzIGl0KS4KClNpZ25lZC1vZmYtYnk6IEplc3BlciBKdWhsIDxq
-akBjaGFvc2JpdHMubmV0PgotLS0KIGFyY2gvc2gvYm9hcmRzL21hY2gtYXAzMjVyeGEvc2V0dXAu
-YyB8ICAgIDIgKy0KIGFyY2gvc2gvYm9hcmRzL21hY2gtZWNvdmVjMjQvc2V0dXAuYyB8ICAgIDQg
-KystLQogYXJjaC9zaC9ib2FyZHMvbWFjaC1rZnIycjA5L3NldHVwLmMgIHwgICAgMiArLQogYXJj
-aC9zaC9ib2FyZHMvbWFjaC1taWdvci9zZXR1cC5jICAgIHwgICAgMiArLQogYXJjaC9zaC9ib2Fy
-ZHMvbWFjaC1zZS83NzI0L3NldHVwLmMgIHwgICAgNCArKy0tCiA1IGZpbGVzIGNoYW5nZWQsIDcg
-aW5zZXJ0aW9ucygrKSwgNyBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJk
-cy9tYWNoLWFwMzI1cnhhL3NldHVwLmMgYi9hcmNoL3NoL2JvYXJkcy9tYWNoLWFwMzI1cnhhL3Nl
-dHVwLmMKaW5kZXggOTY5NDIxZi4uMWRjOTI0YiAxMDA2NDQKLS0tIGEvYXJjaC9zaC9ib2FyZHMv
-bWFjaC1hcDMyNXJ4YS9zZXR1cC5jCisrKyBiL2FyY2gvc2gvYm9hcmRzL21hY2gtYXAzMjVyeGEv
-c2V0dXAuYwpAQCAtMTg4LDcgKzE4OCw3IEBAIHN0YXRpYyB2b2lkIGFwMzIwX3d2Z2FfcG93ZXJf
-b2ZmKHZvaWQgKmJvYXJkX2RhdGEpCiAJX19yYXdfd3JpdGV3KDAsIEZQR0FfTENEUkVHKTsKIH0K
-IAotY29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgYXAzMjVyeGFfbGNkY19tb2Rlc1td
-ID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgYXAzMjVyeGFfbGNkY19tb2Rl
-c1tdID0gewogCXsKIAkJLm5hbWUgPSAiTEIwNzBXVjEiLAogCQkueHJlcyA9IDgwMCwKZGlmZiAt
-LWdpdCBhL2FyY2gvc2gvYm9hcmRzL21hY2gtZWNvdmVjMjQvc2V0dXAuYyBiL2FyY2gvc2gvYm9h
-cmRzL21hY2gtZWNvdmVjMjQvc2V0dXAuYwppbmRleCA1MTNjYjFhLi5iMjRkNjlkIDEwMDY0NAot
-LS0gYS9hcmNoL3NoL2JvYXJkcy9tYWNoLWVjb3ZlYzI0L3NldHVwLmMKKysrIGIvYXJjaC9zaC9i
-b2FyZHMvbWFjaC1lY292ZWMyNC9zZXR1cC5jCkBAIC0yODAsNyArMjgwLDcgQEAgc3RhdGljIHN0
-cnVjdCBwbGF0Zm9ybV9kZXZpY2UgdXNiaHNfZGV2aWNlID0gewogfTsKIAogLyogTENEQyAqLwot
-Y29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2xjZF9tb2Rlc1tdID0gewor
-c3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2xjZF9tb2Rlc1tdID0gewog
-CXsKIAkJLm5hbWUJCT0gIlBhbmVsIiwKIAkJLnhyZXMJCT0gODAwLApAQCAtMjk1LDcgKzI5NSw3
-IEBAIGNvbnN0IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGVjb3ZlY19sY2RfbW9kZXNbXSA9
-IHsKIAl9LAogfTsKIAotY29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2R2
-aV9tb2Rlc1tdID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgZWNvdmVjX2R2
-aV9tb2Rlc1tdID0gewogCXsKIAkJLm5hbWUJCT0gIkRWSSIsCiAJCS54cmVzCQk9IDEyODAsCmRp
-ZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJkcy9tYWNoLWtmcjJyMDkvc2V0dXAuYyBiL2FyY2gvc2gv
-Ym9hcmRzL21hY2gta2ZyMnIwOS9zZXR1cC5jCmluZGV4IDhiNGFiYmIuLmY2NTI3MWEgMTAwNjQ0
-Ci0tLSBhL2FyY2gvc2gvYm9hcmRzL21hY2gta2ZyMnIwOS9zZXR1cC5jCisrKyBiL2FyY2gvc2gv
-Ym9hcmRzL21hY2gta2ZyMnIwOS9zZXR1cC5jCkBAIC0xMjcsNyArMTI3LDcgQEAgc3RhdGljIHN0
-cnVjdCBwbGF0Zm9ybV9kZXZpY2Uga2ZyMnIwOV9zaF9rZXlzY19kZXZpY2UgPSB7CiAJfSwKIH07
-CiAKLWNvbnN0IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGtmcjJyMDlfbGNkY19tb2Rlc1td
-ID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUga2ZyMnIwOV9sY2RjX21vZGVz
-W10gPSB7CiAJewogCQkubmFtZSA9ICJUWDA3RDM0Vk0wQUFBIiwKIAkJLnhyZXMgPSAyNDAsCmRp
-ZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJkcy9tYWNoLW1pZ29yL3NldHVwLmMgYi9hcmNoL3NoL2Jv
-YXJkcy9tYWNoLW1pZ29yL3NldHVwLmMKaW5kZXggMTg0ZmRlMS4uMmQ0YzljOCAxMDA2NDQKLS0t
-IGEvYXJjaC9zaC9ib2FyZHMvbWFjaC1taWdvci9zZXR1cC5jCisrKyBiL2FyY2gvc2gvYm9hcmRz
-L21hY2gtbWlnb3Ivc2V0dXAuYwpAQCAtMjE0LDcgKzIxNCw3IEBAIHN0YXRpYyBzdHJ1Y3QgcGxh
-dGZvcm1fZGV2aWNlIG1pZ29yX25hbmRfZmxhc2hfZGV2aWNlID0gewogCX0KIH07CiAKLWNvbnN0
-IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIG1pZ29yX2xjZF9tb2Rlc1tdID0geworc3RhdGlj
-IGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgbWlnb3JfbGNkX21vZGVzW10gPSB7CiAJewogI2lm
-IGRlZmluZWQoQ09ORklHX1NIX01JR09SX1JUQV9XVkdBKQogCQkubmFtZSA9ICJMQjA3MFdWMSIs
-CmRpZmYgLS1naXQgYS9hcmNoL3NoL2JvYXJkcy9tYWNoLXNlLzc3MjQvc2V0dXAuYyBiL2FyY2gv
-c2gvYm9hcmRzL21hY2gtc2UvNzcyNC9zZXR1cC5jCmluZGV4IDEyMzU3NjcuLmQwMDc1NjcgMTAw
-NjQ0Ci0tLSBhL2FyY2gvc2gvYm9hcmRzL21hY2gtc2UvNzcyNC9zZXR1cC5jCisrKyBiL2FyY2gv
-c2gvYm9hcmRzL21hY2gtc2UvNzcyNC9zZXR1cC5jCkBAIC0xNDUsNyArMTQ1LDcgQEAgc3RhdGlj
-IHN0cnVjdCBwbGF0Zm9ybV9kZXZpY2Ugbm9yX2ZsYXNoX2RldmljZSA9IHsKIH07CiAKIC8qIExD
-REMgKi8KLWNvbnN0IHN0YXRpYyBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGxjZGNfNzIwcF9tb2Rlc1td
-ID0geworc3RhdGljIGNvbnN0IHN0cnVjdCBmYl92aWRlb21vZGUgbGNkY183MjBwX21vZGVzW10g
-PSB7CiAJewogCQkubmFtZQkJPSAiTEIwNzBXVjEiLAogCQkuc3luYwkJPSAwLCAvKiBoc3luYyBh
-bmQgdnN5bmMgYXJlIGFjdGl2ZSBsb3cgKi8KQEAgLTE2MCw3ICsxNjAsNyBAQCBjb25zdCBzdGF0
-aWMgc3RydWN0IGZiX3ZpZGVvbW9kZSBsY2RjXzcyMHBfbW9kZXNbXSA9IHsKIAl9LAogfTsKIAot
-Y29uc3Qgc3RhdGljIHN0cnVjdCBmYl92aWRlb21vZGUgbGNkY192Z2FfbW9kZXNbXSA9IHsKK3N0
-YXRpYyBjb25zdCBzdHJ1Y3QgZmJfdmlkZW9tb2RlIGxjZGNfdmdhX21vZGVzW10gPSB7CiAJewog
-CQkubmFtZQkJPSAiTEIwNzBXVjEiLAogCQkuc3luYwkJPSAwLCAvKiBoc3luYyBhbmQgdnN5bmMg
-YXJlIGFjdGl2ZSBsb3cgKi8KLS0gCjEuNy42CgoKLS0gCkplc3BlciBKdWhsIDxqakBjaGFvc2Jp
-dHMubmV0PiAgICAgICBodHRwOi8vd3d3LmNoYW9zYml0cy5uZXQvCkRvbid0IHRvcC1wb3N0IGh0
-dHA6Ly93d3cuY2F0Yi5vcmcvamFyZ29uL2h0bWwvVC90b3AtcG9zdC5odG1sClBsYWluIHRleHQg
-bWFpbHMgb25seSwgcGxlYXNlLgo=
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/pm-sh7372.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
---8323328-2103632354-1310246182=:25516--
+Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -106,7 +106,6 @@ static int pd_power_down_a3rv(struct gen
+ 	int ret = pd_power_down(genpd);
+ 
+ 	/* try to power down A4LC after A3RV is requested off */
+-	pm_genpd_poweron(&sh7372_a4lc.genpd);
+ 	genpd_queue_power_off_work(&sh7372_a4lc.genpd);
+ 
+ 	return ret;
+@@ -118,7 +117,7 @@ static int pd_power_down_a4lc(struct gen
+ 	if (!(__raw_readl(PSTR) & (1 << sh7372_a3rv.bit_shift)))
+ 		return pd_power_down(genpd);
+ 
+-	return 0;
++	return -EBUSY;
+ }
+ 
+ static bool pd_active_wakeup(struct device *dev)
+
