@@ -1,43 +1,31 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Mon, 11 Jul 2011 11:41:30 +0000
-Subject: Re: [PATCH 5/6] clk: Support multiple instances of the same clock
-Message-Id: <20110711114127.GI5092@opensource.wolfsonmicro.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 14 Jul 2011 16:39:02 +0000
+Subject: [PATCH 0/2] mmc: tmio: two bug-fixes
+Message-Id: <Pine.LNX.4.64.1107141828470.10688@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110711025344.GA27497@opensource.wolfsonmicro.com>
-	<1310352837-4277-1-git-send-email-broonie@opensource.wolfsonmicro.com>
-	<1310352837-4277-5-git-send-email-broonie@opensource.wolfsonmicro.com>
-	<20110711093439.GB3239@n2100.arm.linux.org.uk>
-	<20110711105342.GE5092@opensource.wolfsonmicro.com>
-	<20110711111153.GH3239@n2100.arm.linux.org.uk>
-In-Reply-To: <20110711111153.GH3239@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>, "Rafael J. Wysocki" <rjw@sisk.pl>, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Simon Horman <horms@verge.net.au>
 
-On Mon, Jul 11, 2011 at 12:11:53PM +0100, Russell King - ARM Linux wrote:
-> On Mon, Jul 11, 2011 at 07:53:45PM +0900, Mark Brown wrote:
-> > We do need some way to have some idea which clocks we're talking about,
-> > and for off-SoC stuff passing around struct clk pointers is rather
-> > painful.  At some point some bit of code is going to have to get hold of
-> > the actual struct clk and then map it onto the devices using it.
+So, Chris, I lied:-)
 
-> As I haven't seen any of this "passing around struct clk pointers" crap
-> recently, I can only guess at what you're saying.  I thought all that
-> had been solved with _proper_ use of clkdev.
+There go two more bug-fixes for tmio on top of my earlier patches from 
+today, so, should still be easy enough to trace. So, to pull them 
+together, the previous ones were
 
-The problem is getting the data into clkdev in the first place for the
-off-SoC devices.
+[PATCH v3] mmc: tmio: fix recursive spinlock, don't schedule with interrupts disabled
+[PATCH v3] mmc: tmio: maximize power saving
 
-> clkdev can provide you with a struct clk for _any_ device in the system
-> where its name is known at build time.
+And now follow
 
-Right, on the consumer side it's all sorted and works really well.  The
-trick is on the provider side where you need to have the clock available
-to be able to add the mappings for it.
+[PATCH 1/2] mmc: tmio: fix a recently introduced bug in DMA code
+[PATCH 2/2] mmc: tmio: fix a deadlock
 
-Perhaps I'm just missing something about how this should all work -
-actually, the regulator solution probably works fine here.  Pass an
-array of mappings into either the driver or the clock subsystem and have
-them add the mappings when the provider registers.  Whichever way around
-should just be some hooks in the new subsystem.
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
