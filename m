@@ -1,575 +1,186 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 20 Jul 2011 11:24:24 +0000
-Subject: [PATCH v2 1/6] fbdev: sh_mobile_lcdc: Replace hardcoded register values with macros
-Message-Id: <1311161069-11918-2-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 14 Jul 2011 10:16:59 +0000
+Subject: [PATCH v3] mmc: tmio: maximize power saving
+Message-Id: <Pine.LNX.4.64.1107141212490.10688@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1107140125460.30737@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1107140125460.30737@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>, "Rafael J. Wysocki" <rjw@sisk.pl>, Chris Ball <cjb@laptop.org>, Ian Molton <ian@mnementh.co.uk>, Simon Horman <horms@verge.net.au>
 
-Instead of hardcoding register values through the driver, define macros
-for individual register bits using the register name and the bit name,
-and use the macros.
+This patch uses runtime PM to allow the system to power down the MMC
+controller, when the MMC closk is switched off.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_lcdcfb.c |  204 +++++++++++++++++---------------------
- include/video/sh_mobile_lcdc.h   |  135 +++++++++++++++++++++----
- 2 files changed, 209 insertions(+), 130 deletions(-)
+v3: updated on top of current mmc-next plus my earlier patch "mmc: tmio: 
+fix recursive spinlock, don't schedule with interrupts disabled"
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index e9b80bc..abc2a91 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -32,20 +32,6 @@
- #define SIDE_B_OFFSET 0x1000
- #define MIRROR_OFFSET 0x2000
+v2: Primarily tested on mackerel, with runtime PM and system-wide suspend, 
+updated to the current core and sh-mobile runtime PM code. To avoid 
+regression should go in after "ARM: mach-shmobile: use GPIO interrupt also 
+for card eject on SDHI0 on mackerel":
+
+http://article.gmane.org/gmane.linux.kernel.mmc/9230
+
+ drivers/mmc/host/tmio_mmc.h     |    2 +
+ drivers/mmc/host/tmio_mmc_pio.c |   64 ++++++++++++++++++++++----------------
+ 2 files changed, 39 insertions(+), 27 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index a2d6f9f..551d1ef 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -53,6 +53,8 @@ struct tmio_mmc_host {
+ 	void (*set_clk_div)(struct platform_device *host, int state);
  
--/* shared registers */
--#define _LDDCKR 0x410
--#define _LDDCKSTPR 0x414
--#define _LDINTR 0x468
--#define _LDSR 0x46c
--#define _LDCNT1R 0x470
--#define _LDCNT2R 0x474
--#define _LDRCNTR 0x478
--#define _LDDDSR 0x47c
--#define _LDDWD0R 0x800
--#define _LDDRDR 0x840
--#define _LDDWAR 0x900
--#define _LDDRAR 0x904
--
- /* shared registers and their order for context save/restore */
- static int lcdc_shared_regs[] = {
- 	_LDDCKR,
-@@ -98,22 +84,6 @@ static unsigned long lcdc_offs_sublcd[NR_CH_REGS] = {
- 	[LDPMR] = 0x63c,
- };
+ 	int			pm_error;
++	/* recognise system-wide suspend in runtime PM methods */
++	bool			pm_global;
  
--#define START_LCDC	0x00000001
--#define LCDC_RESET	0x00000100
--#define DISPLAY_BEU	0x00000008
--#define LCDC_ENABLE	0x00000001
--#define LDINTR_FE	0x00000400
--#define LDINTR_VSE	0x00000200
--#define LDINTR_VEE	0x00000100
--#define LDINTR_FS	0x00000004
--#define LDINTR_VSS	0x00000002
--#define LDINTR_VES	0x00000001
--#define LDRCNTR_SRS	0x00020000
--#define LDRCNTR_SRC	0x00010000
--#define LDRCNTR_MRS	0x00000002
--#define LDRCNTR_MRC	0x00000001
--#define LDSR_MRS	0x00000100
--
- static const struct fb_videomode default_720p = {
- 	.name = "HDMI 720p",
- 	.xres = 1280,
-@@ -218,33 +188,36 @@ static void lcdc_sys_write_index(void *handle, unsigned long data)
+ 	/* pio related stuff */
+ 	struct scatterlist      *sg_ptr;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index a2f76ad..221ffb7 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -546,6 +546,7 @@ out:
+ irqreturn_t tmio_mmc_irq(int irq, void *devid)
  {
- 	struct sh_mobile_lcdc_chan *ch = handle;
- 
--	lcdc_write(ch->lcdc, _LDDWD0R, data | 0x10000000);
--	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
--	lcdc_write(ch->lcdc, _LDDWAR, 1 | (lcdc_chan_is_sublcd(ch) ? 2 : 0));
--	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
-+	lcdc_write(ch->lcdc, _LDDWD0R, data | LDDWDxR_WDACT);
-+	lcdc_wait_bit(ch->lcdc, _LDSR, LDSR_AS, 0);
-+	lcdc_write(ch->lcdc, _LDDWAR, LDDWAR_WA |
-+		   (lcdc_chan_is_sublcd(ch) ? 2 : 0));
-+	lcdc_wait_bit(ch->lcdc, _LDSR, LDSR_AS, 0);
- }
- 
- static void lcdc_sys_write_data(void *handle, unsigned long data)
- {
- 	struct sh_mobile_lcdc_chan *ch = handle;
- 
--	lcdc_write(ch->lcdc, _LDDWD0R, data | 0x11000000);
--	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
--	lcdc_write(ch->lcdc, _LDDWAR, 1 | (lcdc_chan_is_sublcd(ch) ? 2 : 0));
--	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
-+	lcdc_write(ch->lcdc, _LDDWD0R, data | LDDWDxR_WDACT | LDDWDxR_RSW);
-+	lcdc_wait_bit(ch->lcdc, _LDSR, LDSR_AS, 0);
-+	lcdc_write(ch->lcdc, _LDDWAR, LDDWAR_WA |
-+		   (lcdc_chan_is_sublcd(ch) ? 2 : 0));
-+	lcdc_wait_bit(ch->lcdc, _LDSR, LDSR_AS, 0);
- }
- 
- static unsigned long lcdc_sys_read_data(void *handle)
- {
- 	struct sh_mobile_lcdc_chan *ch = handle;
- 
--	lcdc_write(ch->lcdc, _LDDRDR, 0x01000000);
--	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
--	lcdc_write(ch->lcdc, _LDDRAR, 1 | (lcdc_chan_is_sublcd(ch) ? 2 : 0));
-+	lcdc_write(ch->lcdc, _LDDRDR, LDDRDR_RSR);
-+	lcdc_wait_bit(ch->lcdc, _LDSR, LDSR_AS, 0);
-+	lcdc_write(ch->lcdc, _LDDRAR, LDDRAR_RA |
-+		   (lcdc_chan_is_sublcd(ch) ? 2 : 0));
- 	udelay(1);
--	lcdc_wait_bit(ch->lcdc, _LDSR, 2, 0);
-+	lcdc_wait_bit(ch->lcdc, _LDSR, LDSR_AS, 0);
- 
--	return lcdc_read(ch->lcdc, _LDDRDR) & 0x3ffff;
-+	return lcdc_read(ch->lcdc, _LDDRDR) & LDDRDR_DRD_MASK;
- }
- 
- struct sh_mobile_lcdc_sys_bus_ops sh_mobile_lcdc_sys_bus_ops = {
-@@ -323,13 +296,13 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
- 		if (bcfg->start_transfer)
- 			bcfg->start_transfer(bcfg->board_data, ch,
- 					     &sh_mobile_lcdc_sys_bus_ops);
--		lcdc_write_chan(ch, LDSM2R, 1);
-+		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
- 		dma_unmap_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
- 	} else {
- 		if (bcfg->start_transfer)
- 			bcfg->start_transfer(bcfg->board_data, ch,
- 					     &sh_mobile_lcdc_sys_bus_ops);
--		lcdc_write_chan(ch, LDSM2R, 1);
-+		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
- 	}
- }
- 
-@@ -356,11 +329,11 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
- 	 * disable further VSYNC End IRQs, preserve all other enabled IRQs,
- 	 * write 0 to bits 0-6 to ack all triggered IRQs.
- 	 */
--	tmp &= 0xffffff00 & ~LDINTR_VEE;
-+	tmp &= ~LDINTR_STATUS_MASK & ~LDINTR_VEE;
- 	lcdc_write(priv, _LDINTR, tmp);
- 
- 	/* figure out if this interrupt is for main or sub lcd */
--	is_sub = (lcdc_read(priv, _LDSR) & (1 << 10)) ? 1 : 0;
-+	is_sub = (lcdc_read(priv, _LDSR) & LDSR_MSS) ? 1 : 0;
- 
- 	/* wake up channel and disable clocks */
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
-@@ -395,16 +368,17 @@ static void sh_mobile_lcdc_start_stop(struct sh_mobile_lcdc_priv *priv,
- 
- 	/* start or stop the lcdc */
- 	if (start)
--		lcdc_write(priv, _LDCNT2R, tmp | START_LCDC);
-+		lcdc_write(priv, _LDCNT2R, tmp | LDCNT2R_DO);
- 	else
--		lcdc_write(priv, _LDCNT2R, tmp & ~START_LCDC);
-+		lcdc_write(priv, _LDCNT2R, tmp & ~LDCNT2R_DO);
- 
- 	/* wait until power is applied/stopped on all channels */
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++)
- 		if (lcdc_read(priv, _LDCNT2R) & priv->ch[k].enabled)
- 			while (1) {
--				tmp = lcdc_read_chan(&priv->ch[k], LDPMR) & 3;
--				if (start && tmp = 3)
-+				tmp = lcdc_read_chan(&priv->ch[k], LDPMR)
-+				    & LDPMR_LPS;
-+				if (start && tmp = LDPMR_LPS)
- 					break;
- 				if (!start && tmp = 0)
- 					break;
-@@ -422,13 +396,13 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
- 	u32 tmp;
- 
- 	tmp = ch->ldmt1r_value;
--	tmp |= (var->sync & FB_SYNC_VERT_HIGH_ACT) ? 0 : 1 << 28;
--	tmp |= (var->sync & FB_SYNC_HOR_HIGH_ACT) ? 0 : 1 << 27;
--	tmp |= (ch->cfg.flags & LCDC_FLAGS_DWPOL) ? 1 << 26 : 0;
--	tmp |= (ch->cfg.flags & LCDC_FLAGS_DIPOL) ? 1 << 25 : 0;
--	tmp |= (ch->cfg.flags & LCDC_FLAGS_DAPOL) ? 1 << 24 : 0;
--	tmp |= (ch->cfg.flags & LCDC_FLAGS_HSCNT) ? 1 << 17 : 0;
--	tmp |= (ch->cfg.flags & LCDC_FLAGS_DWCNT) ? 1 << 16 : 0;
-+	tmp |= (var->sync & FB_SYNC_VERT_HIGH_ACT) ? 0 : LDMT1R_VPOL;
-+	tmp |= (var->sync & FB_SYNC_HOR_HIGH_ACT) ? 0 : LDMT1R_HPOL;
-+	tmp |= (ch->cfg.flags & LCDC_FLAGS_DWPOL) ? LDMT1R_DWPOL : 0;
-+	tmp |= (ch->cfg.flags & LCDC_FLAGS_DIPOL) ? LDMT1R_DIPOL : 0;
-+	tmp |= (ch->cfg.flags & LCDC_FLAGS_DAPOL) ? LDMT1R_DAPOL : 0;
-+	tmp |= (ch->cfg.flags & LCDC_FLAGS_HSCNT) ? LDMT1R_HSCNT : 0;
-+	tmp |= (ch->cfg.flags & LCDC_FLAGS_DWCNT) ? LDMT1R_DWCNT : 0;
- 	lcdc_write_chan(ch, LDMT1R, tmp);
- 
- 	/* setup SYS bus */
-@@ -486,8 +460,8 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	}
- 
- 	/* reset */
--	lcdc_write(priv, _LDCNT2R, lcdc_read(priv, _LDCNT2R) | LCDC_RESET);
--	lcdc_wait_bit(priv, _LDCNT2R, LCDC_RESET, 0);
-+	lcdc_write(priv, _LDCNT2R, lcdc_read(priv, _LDCNT2R) | LDCNT2R_BR);
-+	lcdc_wait_bit(priv, _LDCNT2R, LDCNT2R_BR, 0);
- 
- 	/* enable LCDC channels */
- 	tmp = lcdc_read(priv, _LDCNT2R);
-@@ -496,7 +470,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	lcdc_write(priv, _LDCNT2R, tmp);
- 
- 	/* read data from external memory, avoid using the BEU for now */
--	lcdc_write(priv, _LDCNT2R, lcdc_read(priv, _LDCNT2R) & ~DISPLAY_BEU);
-+	lcdc_write(priv, _LDCNT2R, lcdc_read(priv, _LDCNT2R) & ~LDCNT2R_MD);
- 
- 	/* stop the lcdc first */
- 	sh_mobile_lcdc_start_stop(priv, 0);
-@@ -514,7 +488,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 			continue;
- 
- 		if (m = 1)
--			m = 1 << 6;
-+			m = LDDCKR_MOSEL;
- 		tmp |= m << (lcdc_chan_is_sublcd(ch) ? 8 : 0);
- 
- 		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider denominator */
-@@ -554,20 +528,21 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	/* word and long word swap */
- 	ldddsr = lcdc_read(priv, _LDDDSR);
- 	if  (priv->ch[0].info->var.nonstd)
--		lcdc_write(priv, _LDDDSR, ldddsr | 7);
-+		ldddsr |= LDDDSR_LS | LDDDSR_WS | LDDDSR_BS;
- 	else {
- 		switch (bpp) {
- 		case 16:
--			lcdc_write(priv, _LDDDSR, ldddsr | 6);
-+			ldddsr |= LDDDSR_LS | LDDDSR_WS;
- 			break;
- 		case 24:
--			lcdc_write(priv, _LDDDSR, ldddsr | 7);
-+			ldddsr |= LDDDSR_LS | LDDDSR_WS | LDDDSR_BS;
- 			break;
- 		case 32:
--			lcdc_write(priv, _LDDDSR, ldddsr | 4);
-+			ldddsr |= LDDDSR_LS;
- 			break;
+ 	struct tmio_mmc_host *host = devid;
++	struct mmc_host *mmc = host->mmc;
+ 	struct tmio_mmc_data *pdata = host->pdata;
+ 	unsigned int ireg, irq_mask, status;
+ 	unsigned int sdio_ireg, sdio_irq_mask, sdio_status;
+@@ -567,13 +568,13 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 		if (sdio_ireg && !host->sdio_irq_enabled) {
+ 			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
+ 				   sdio_status, sdio_irq_mask, sdio_ireg);
+-			tmio_mmc_enable_sdio_irq(host->mmc, 0);
++			tmio_mmc_enable_sdio_irq(mmc, 0);
+ 			goto out;
  		}
+ 
+-		if (host->mmc->caps & MMC_CAP_SDIO_IRQ &&
++		if (mmc->caps & MMC_CAP_SDIO_IRQ &&
+ 			sdio_ireg & TMIO_SDIO_STAT_IOIRQ)
+-			mmc_signal_sdio_irq(host->mmc);
++			mmc_signal_sdio_irq(mmc);
+ 
+ 		if (sdio_ireg)
+ 			goto out;
+@@ -586,7 +587,9 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 	if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
+ 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_CARD_INSERT |
+ 			TMIO_STAT_CARD_REMOVE);
+-		if (!work_pending(&host->mmc->detect.work))
++		if ((((ireg & TMIO_STAT_CARD_REMOVE) && mmc->card) ||
++		     ((ireg & TMIO_STAT_CARD_INSERT) && !mmc->card)) &&
++		    !work_pending(&mmc->detect.work))
+ 			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
+ 		goto out;
  	}
-+	lcdc_write(priv, _LDDDSR, ldddsr);
+@@ -743,33 +746,30 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
- 		unsigned long base_addr_y;
-@@ -580,28 +555,29 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 	spin_unlock_irqrestore(&host->lock, flags);
  
- 		/* set bpp format in PKF[4:0] */
- 		tmp = lcdc_read_chan(ch, LDDFR);
--		tmp &= ~0x0003031f;
-+		tmp &= ~(LDDFR_CF0 | LDDFR_CC | LDDFR_YF_MASK | LDDFR_PKF_MASK);
- 		if (ch->info->var.nonstd) {
- 			tmp |= (ch->info->var.nonstd << 16);
- 			switch (ch->info->var.bits_per_pixel) {
- 			case 12:
- 				break;
- 			case 16:
--				tmp |= (0x1 << 8);
-+				tmp |= LDDFR_YF_422;
- 				break;
- 			case 24:
--				tmp |= (0x2 << 8);
-+				tmp |= LDDFR_YF_444;
- 				break;
- 			}
- 		} else {
- 			switch (ch->info->var.bits_per_pixel) {
- 			case 16:
--				tmp |= 0x03;
-+				tmp |= LDDFR_PKF_RGB16;
- 				break;
- 			case 24:
--				tmp |= 0x0b;
-+				tmp |= LDDFR_PKF_RGB24;
- 				break;
- 			case 32:
-+				tmp |= LDDFR_PKF_ARGB32;
- 				break;
- 			}
- 		}
-@@ -672,14 +648,14 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 
- 		/* setup deferred io if SYS bus */
- 		tmp = ch->cfg.sys_bus_cfg.deferred_io_msec;
--		if (ch->ldmt1r_value & (1 << 12) && tmp) {
-+		if (ch->ldmt1r_value & LDMT1R_IFM && tmp) {
- 			ch->defio.deferred_io = sh_mobile_lcdc_deferred_io;
- 			ch->defio.delay = msecs_to_jiffies(tmp);
- 			ch->info->fbdefio = &ch->defio;
- 			fb_deferred_io_init(ch->info);
- 
- 			/* one-shot mode */
--			lcdc_write_chan(ch, LDSM1R, 1);
-+			lcdc_write_chan(ch, LDSM1R, LDSM1R_OS);
- 
- 			/* enable "Frame End Interrupt Enable" bit */
- 			lcdc_write(priv, _LDINTR, LDINTR_FE);
-@@ -691,7 +667,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	}
- 
- 	/* display output */
--	lcdc_write(priv, _LDCNT1R, LCDC_ENABLE);
-+	lcdc_write(priv, _LDCNT1R, LDCNT1R_DE);
- 
- 	/* start the lcdc */
- 	sh_mobile_lcdc_start_stop(priv, 1);
-@@ -780,42 +756,42 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- 
- static int sh_mobile_lcdc_check_interface(struct sh_mobile_lcdc_chan *ch)
- {
--	int ifm, miftyp;
+-	if (ios->clock)
+-		tmio_mmc_set_clock(host, ios->clock);
 -
--	switch (ch->cfg.interface_type) {
--	case RGB8: ifm = 0; miftyp = 0; break;
--	case RGB9: ifm = 0; miftyp = 4; break;
--	case RGB12A: ifm = 0; miftyp = 5; break;
--	case RGB12B: ifm = 0; miftyp = 6; break;
--	case RGB16: ifm = 0; miftyp = 7; break;
--	case RGB18: ifm = 0; miftyp = 10; break;
--	case RGB24: ifm = 0; miftyp = 11; break;
--	case SYS8A: ifm = 1; miftyp = 0; break;
--	case SYS8B: ifm = 1; miftyp = 1; break;
--	case SYS8C: ifm = 1; miftyp = 2; break;
--	case SYS8D: ifm = 1; miftyp = 3; break;
--	case SYS9: ifm = 1; miftyp = 4; break;
--	case SYS12: ifm = 1; miftyp = 5; break;
--	case SYS16A: ifm = 1; miftyp = 7; break;
--	case SYS16B: ifm = 1; miftyp = 8; break;
--	case SYS16C: ifm = 1; miftyp = 9; break;
--	case SYS18: ifm = 1; miftyp = 10; break;
--	case SYS24: ifm = 1; miftyp = 11; break;
--	default: goto bad;
-+	int interface_type = ch->cfg.interface_type;
-+
-+	switch (interface_type) {
-+	case RGB8:
-+	case RGB9:
-+	case RGB12A:
-+	case RGB12B:
-+	case RGB16:
-+	case RGB18:
-+	case RGB24:
-+	case SYS8A:
-+	case SYS8B:
-+	case SYS8C:
-+	case SYS8D:
-+	case SYS9:
-+	case SYS12:
-+	case SYS16A:
-+	case SYS16B:
-+	case SYS16C:
-+	case SYS18:
-+	case SYS24:
-+		break;
-+	default:
-+		return -EINVAL;
+-	/* Power sequence - OFF -> UP -> ON */
+-	if (ios->power_mode = MMC_POWER_UP) {
+-		if ((pdata->flags & TMIO_MMC_HAS_COLD_CD) && !pdata->power) {
++	/*
++	 * pdata->power = false only if COLD_CD is available, otherwise only
++	 * in short time intervals during probing or resuming
++	 */
++	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
++		if (!pdata->power) {
+ 			pm_runtime_get_sync(&host->pdev->dev);
+ 			pdata->power = true;
+ 		}
++		tmio_mmc_set_clock(host, ios->clock);
+ 		/* power up SD bus */
+ 		if (host->set_pwr)
+ 			host->set_pwr(host->pdev, 1);
+-	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
+-		/* power down SD bus */
+-		if (ios->power_mode = MMC_POWER_OFF) {
+-			if (host->set_pwr)
+-				host->set_pwr(host->pdev, 0);
+-			if ((pdata->flags & TMIO_MMC_HAS_COLD_CD) &&
+-			    pdata->power) {
+-				pdata->power = false;
+-				pm_runtime_put(&host->pdev->dev);
+-			}
+-		}
+-		tmio_mmc_clk_stop(host);
+-	} else {
+ 		/* start bus clock */
+ 		tmio_mmc_clk_start(host);
++	} else if (ios->power_mode != MMC_POWER_UP) {
++		if (host->set_pwr)
++			host->set_pwr(host->pdev, 0);
++		if ((pdata->flags & TMIO_MMC_HAS_COLD_CD) &&
++		    pdata->power) {
++			pdata->power = false;
++			pm_runtime_put(&host->pdev->dev);
++		}
++		tmio_mmc_clk_stop(host);
  	}
  
- 	/* SUBLCD only supports SYS interface */
- 	if (lcdc_chan_is_sublcd(ch)) {
--		if (ifm = 0)
--			goto bad;
--		else
--			ifm = 0;
-+		if (!(interface_type & LDMT1R_IFM))
-+			return -EINVAL;
-+
-+		interface_type &= ~LDMT1R_IFM;
- 	}
+ 	switch (ios->bus_width) {
+@@ -897,8 +897,10 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	tmio_mmc_request_dma(_host, pdata);
  
--	ch->ldmt1r_value = (ifm << 12) | miftyp;
-+	ch->ldmt1r_value = interface_type;
+ 	/* We have to keep the device powered for its card detection to work */
+-	if (!(pdata->flags & TMIO_MMC_HAS_COLD_CD))
++	if (!(pdata->flags & TMIO_MMC_HAS_COLD_CD)) {
++		pdata->power = true;
+ 		pm_runtime_get_noresume(&pdev->dev);
++	}
+ 
+ 	mmc_add_host(mmc);
+ 
+@@ -975,11 +977,16 @@ int tmio_mmc_host_resume(struct device *dev)
+ 	/* The MMC core will perform the complete set up */
+ 	host->pdata->power = false;
+ 
++	host->pm_global = true;
+ 	if (!host->pm_error)
+ 		pm_runtime_get_sync(dev);
+ 
+-	tmio_mmc_reset(mmc_priv(mmc));
+-	tmio_mmc_request_dma(host, host->pdata);
++	if (host->pm_global) {
++		/* Runtime PM resume callback didn't run */
++		tmio_mmc_reset(host);
++		tmio_mmc_request_dma(host, host->pdata);
++		host->pm_global = false;
++	}
+ 
+ 	return mmc_resume_host(mmc);
+ }
+@@ -1000,12 +1007,15 @@ int tmio_mmc_host_runtime_resume(struct device *dev)
+ 	struct tmio_mmc_data *pdata = host->pdata;
+ 
+ 	tmio_mmc_reset(host);
++	tmio_mmc_request_dma(host, host->pdata);
+ 
+ 	if (pdata->power) {
+ 		/* Only entered after a card-insert interrupt */
+-		tmio_mmc_set_ios(mmc, &mmc->ios);
++		if (!mmc->card)
++			tmio_mmc_set_ios(mmc, &mmc->ios);
+ 		mmc_detect_change(mmc, msecs_to_jiffies(100));
+ 	}
++	host->pm_global = false;
+ 
  	return 0;
-- bad:
--	return -EINVAL;
  }
- 
- static int sh_mobile_lcdc_setup_clocks(struct platform_device *pdev,
-@@ -823,18 +799,24 @@ static int sh_mobile_lcdc_setup_clocks(struct platform_device *pdev,
- 				       struct sh_mobile_lcdc_priv *priv)
- {
- 	char *str;
--	int icksel;
- 
- 	switch (clock_source) {
--	case LCDC_CLK_BUS: str = "bus_clk"; icksel = 0; break;
--	case LCDC_CLK_PERIPHERAL: str = "peripheral_clk"; icksel = 1; break;
--	case LCDC_CLK_EXTERNAL: str = NULL; icksel = 2; break;
-+	case LCDC_CLK_BUS:
-+		str = "bus_clk";
-+		priv->lddckr = LDDCKR_ICKSEL_BUS;
-+		break;
-+	case LCDC_CLK_PERIPHERAL:
-+		str = "peripheral_clk";
-+		priv->lddckr = LDDCKR_ICKSEL_MIPI;
-+		break;
-+	case LCDC_CLK_EXTERNAL:
-+		str = NULL;
-+		priv->lddckr = LDDCKR_ICKSEL_HDMI;
-+		break;
- 	default:
- 		return -EINVAL;
- 	}
- 
--	priv->lddckr = icksel << 16;
--
- 	if (str) {
- 		priv->dot_clk = clk_get(&pdev->dev, str);
- 		if (IS_ERR(priv->dot_clk)) {
-@@ -1476,12 +1458,12 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 
- 		switch (pdata->ch[i].chan) {
- 		case LCDC_CHAN_MAINLCD:
--			ch->enabled = 1 << 1;
-+			ch->enabled = LDCNT2R_ME;
- 			ch->reg_offs = lcdc_offs_mainlcd;
- 			j++;
- 			break;
- 		case LCDC_CHAN_SUBLCD:
--			ch->enabled = 1 << 2;
-+			ch->enabled = LDCNT2R_SE;
- 			ch->reg_offs = lcdc_offs_sublcd;
- 			j++;
- 			break;
-diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index d964e68..8101b72 100644
---- a/include/video/sh_mobile_lcdc.h
-+++ b/include/video/sh_mobile_lcdc.h
-@@ -4,26 +4,123 @@
- #include <linux/fb.h>
- #include <video/sh_mobile_meram.h>
- 
-+/* Register definitions */
-+#define _LDDCKR			0x410
-+#define LDDCKR_ICKSEL_BUS	(0 << 16)
-+#define LDDCKR_ICKSEL_MIPI	(1 << 16)
-+#define LDDCKR_ICKSEL_HDMI	(2 << 16)
-+#define LDDCKR_ICKSEL_EXT	(3 << 16)
-+#define LDDCKR_ICKSEL_MASK	(7 << 16)
-+#define LDDCKR_MOSEL		(1 << 6)
-+#define _LDDCKSTPR		0x414
-+#define _LDINTR			0x468
-+#define LDINTR_FE		(1 << 10)
-+#define LDINTR_VSE		(1 << 9)
-+#define LDINTR_VEE		(1 << 8)
-+#define LDINTR_FS		(1 << 2)
-+#define LDINTR_VSS		(1 << 1)
-+#define LDINTR_VES		(1 << 0)
-+#define LDINTR_STATUS_MASK	(0xff << 0)
-+#define _LDSR			0x46c
-+#define LDSR_MSS		(1 << 10)
-+#define LDSR_MRS		(1 << 8)
-+#define LDSR_AS			(1 << 1)
-+#define _LDCNT1R		0x470
-+#define LDCNT1R_DE		(1 << 0)
-+#define _LDCNT2R		0x474
-+#define LDCNT2R_BR		(1 << 8)
-+#define LDCNT2R_MD		(1 << 3)
-+#define LDCNT2R_SE		(1 << 2)
-+#define LDCNT2R_ME		(1 << 1)
-+#define LDCNT2R_DO		(1 << 0)
-+#define _LDRCNTR		0x478
-+#define LDRCNTR_SRS		(1 << 17)
-+#define LDRCNTR_SRC		(1 << 16)
-+#define LDRCNTR_MRS		(1 << 1)
-+#define LDRCNTR_MRC		(1 << 0)
-+#define _LDDDSR			0x47c
-+#define LDDDSR_LS		(1 << 2)
-+#define LDDDSR_WS		(1 << 1)
-+#define LDDDSR_BS		(1 << 0)
-+
-+#define LDMT1R_VPOL		(1 << 28)
-+#define LDMT1R_HPOL		(1 << 27)
-+#define LDMT1R_DWPOL		(1 << 26)
-+#define LDMT1R_DIPOL		(1 << 25)
-+#define LDMT1R_DAPOL		(1 << 24)
-+#define LDMT1R_HSCNT		(1 << 17)
-+#define LDMT1R_DWCNT		(1 << 16)
-+#define LDMT1R_IFM		(1 << 12)
-+#define LDMT1R_MIFTYP_RGB8	(0x0 << 0)
-+#define LDMT1R_MIFTYP_RGB9	(0x4 << 0)
-+#define LDMT1R_MIFTYP_RGB12A	(0x5 << 0)
-+#define LDMT1R_MIFTYP_RGB12B	(0x6 << 0)
-+#define LDMT1R_MIFTYP_RGB16	(0x7 << 0)
-+#define LDMT1R_MIFTYP_RGB18	(0xa << 0)
-+#define LDMT1R_MIFTYP_RGB24	(0xb << 0)
-+#define LDMT1R_MIFTYP_YCBCR	(0xf << 0)
-+#define LDMT1R_MIFTYP_SYS8A	(0x0 << 0)
-+#define LDMT1R_MIFTYP_SYS8B	(0x1 << 0)
-+#define LDMT1R_MIFTYP_SYS8C	(0x2 << 0)
-+#define LDMT1R_MIFTYP_SYS8D	(0x3 << 0)
-+#define LDMT1R_MIFTYP_SYS9	(0x4 << 0)
-+#define LDMT1R_MIFTYP_SYS12	(0x5 << 0)
-+#define LDMT1R_MIFTYP_SYS16A	(0x7 << 0)
-+#define LDMT1R_MIFTYP_SYS16B	(0x8 << 0)
-+#define LDMT1R_MIFTYP_SYS16C	(0x9 << 0)
-+#define LDMT1R_MIFTYP_SYS18	(0xa << 0)
-+#define LDMT1R_MIFTYP_SYS24	(0xb << 0)
-+#define LDMT1R_MIFTYP_MASK	(0xf << 0)
-+
-+#define LDDFR_CF1		(1 << 18)
-+#define LDDFR_CF0		(1 << 17)
-+#define LDDFR_CC		(1 << 16)
-+#define LDDFR_YF_420		(0 << 8)
-+#define LDDFR_YF_422		(1 << 8)
-+#define LDDFR_YF_444		(2 << 8)
-+#define LDDFR_YF_MASK		(3 << 8)
-+#define LDDFR_PKF_ARGB32	(0x00 << 0)
-+#define LDDFR_PKF_RGB16		(0x03 << 0)
-+#define LDDFR_PKF_RGB24		(0x0b << 0)
-+#define LDDFR_PKF_MASK		(0x1f << 0)
-+
-+#define LDSM1R_OS		(1 << 0)
-+
-+#define LDSM2R_OSTRG		(1 << 0)
-+
-+#define LDPMR_LPS		(3 << 0)
-+
-+#define _LDDWD0R		0x800
-+#define LDDWDxR_WDACT		(1 << 28)
-+#define LDDWDxR_RSW		(1 << 24)
-+#define _LDDRDR			0x840
-+#define LDDRDR_RSR		(1 << 24)
-+#define LDDRDR_DRD_MASK		(0x3ffff << 0)
-+#define _LDDWAR			0x900
-+#define LDDWAR_WA		(1 << 0)
-+#define _LDDRAR			0x904
-+#define LDDRAR_RA		(1 << 0)
-+
- enum {
--	RGB8,   /* 24bpp, 8:8:8 */
--	RGB9,   /* 18bpp, 9:9 */
--	RGB12A, /* 24bpp, 12:12 */
--	RGB12B, /* 12bpp */
--	RGB16,  /* 16bpp */
--	RGB18,  /* 18bpp */
--	RGB24,  /* 24bpp */
--	YUV422, /* 16bpp */
--	SYS8A,  /* 24bpp, 8:8:8 */
--	SYS8B,  /* 18bpp, 8:8:2 */
--	SYS8C,  /* 18bpp, 2:8:8 */
--	SYS8D,  /* 16bpp, 8:8 */
--	SYS9,   /* 18bpp, 9:9 */
--	SYS12,  /* 24bpp, 12:12 */
--	SYS16A, /* 16bpp */
--	SYS16B, /* 18bpp, 16:2 */
--	SYS16C, /* 18bpp, 2:16 */
--	SYS18,  /* 18bpp */
--	SYS24,  /* 24bpp */
-+	RGB8	= LDMT1R_MIFTYP_RGB8,	/* 24bpp, 8:8:8 */
-+	RGB9	= LDMT1R_MIFTYP_RGB9,	/* 18bpp, 9:9 */
-+	RGB12A	= LDMT1R_MIFTYP_RGB12A,	/* 24bpp, 12:12 */
-+	RGB12B	= LDMT1R_MIFTYP_RGB12B,	/* 12bpp */
-+	RGB16	= LDMT1R_MIFTYP_RGB16,	/* 16bpp */
-+	RGB18	= LDMT1R_MIFTYP_RGB18,	/* 18bpp */
-+	RGB24	= LDMT1R_MIFTYP_RGB24,	/* 24bpp */
-+	YUV422	= LDMT1R_MIFTYP_YCBCR,	/* 16bpp */
-+	SYS8A	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS8A,	/* 24bpp, 8:8:8 */
-+	SYS8B	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS8B,	/* 18bpp, 8:8:2 */
-+	SYS8C	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS8C,	/* 18bpp, 2:8:8 */
-+	SYS8D	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS8D,	/* 16bpp, 8:8 */
-+	SYS9	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS9,	/* 18bpp, 9:9 */
-+	SYS12	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS12,	/* 24bpp, 12:12 */
-+	SYS16A	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS16A,	/* 16bpp */
-+	SYS16B	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS16B,	/* 18bpp, 16:2 */
-+	SYS16C	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS16C,	/* 18bpp, 2:16 */
-+	SYS18	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS18,	/* 18bpp */
-+	SYS24	= LDMT1R_IFM | LDMT1R_MIFTYP_SYS24,	/* 24bpp */
- };
- 
- enum { LCDC_CHAN_DISABLED = 0,
 -- 
-1.7.3.4
+1.7.2.5
 
