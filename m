@@ -1,43 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 05 Jul 2011 09:38:09 +0000
-Subject: [PATCH 4/5] sh: clock-sh7343: modify I2C clock settings
-Message-Id: <87mxgtdq4h.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 15 Jul 2011 21:52:33 +0000
+Subject: [PATCH 3/3] fbdev: sh_mobile_lcdc: Compute clock pattern using divider denominator
+Message-Id: <1310766753-30314-4-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-I2C doesn't work without this patch on SH7343
+The clock divider pattern is computed based on the dot clock register
+value which stores the divider denumerator. However, when using a 1:1
+divider ratio, the register is programmed with a value that must not be
+interpreted as a denominator. This results in a shift left operation
+with a value of 32, which produces undefined behaviour.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Compute the clock pattern using the divider denominator, not the dot
+clock register value.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7343.c b/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-index 93c6460..a6d1348 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
-@@ -195,6 +195,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- };
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 32f884e..856f6a9 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -481,13 +481,15 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		if (!m)
+ 			continue;
  
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+#define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
++		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider
++		 * denominator.
++		 */
++		lcdc_write_chan(ch, LDDCKPAT1R, 0);
++		lcdc_write_chan(ch, LDDCKPAT2R, (1 << (m/2)) - 1);
++
+ 		if (m = 1)
+ 			m = LDDCKR_MOSEL;
+ 		tmp |= m << (lcdc_chan_is_sublcd(ch) ? 8 : 0);
+-
+-		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider denominator */
+-		lcdc_write_chan(ch, LDDCKPAT1R, 0);
+-		lcdc_write_chan(ch, LDDCKPAT2R, (1 << (m/2)) - 1);
+ 	}
  
- static struct clk_lookup lookups[] = {
- 	/* main clocks */
-@@ -257,8 +258,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("sio0", &mstp_clks[MSTP003]),
- 	CLKDEV_CON_ID("siof0", &mstp_clks[MSTP002]),
- 	CLKDEV_CON_ID("siof1", &mstp_clks[MSTP001]),
--	CLKDEV_CON_ID("i2c0", &mstp_clks[MSTP109]),
--	CLKDEV_CON_ID("i2c1", &mstp_clks[MSTP108]),
-+	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP109]),
-+	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP108]),
- 	CLKDEV_CON_ID("tpu0", &mstp_clks[MSTP225]),
- 	CLKDEV_CON_ID("irda0", &mstp_clks[MSTP224]),
- 	CLKDEV_CON_ID("sdhi0", &mstp_clks[MSTP218]),
+ 	lcdc_write(priv, _LDDCKR, tmp);
 -- 
-1.7.4.1
+1.7.3.4
 
