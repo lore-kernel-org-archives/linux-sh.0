@@ -1,30 +1,34 @@
-From: Wim Van Sebroeck <wim@iguana.be>
-Date: Fri, 22 Jul 2011 18:32:57 +0000
-Subject: Re: [PATCH] shwdt: fix usage of mod_timer
-Message-Id: <20110722183257.GF31767@infomag.iguana.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 15 Jul 2011 21:52:30 +0000
+Subject: [PATCH 0/3] sh_mobile_lcdc cleanup and fixes
+Message-Id: <1310766753-30314-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4E26D22B.1040702@sysgo.com> <20110721075353.GC27831@linux-sh.org>
-In-Reply-To: <20110721075353.GC27831@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: David Engraf <david.engraf@sysgo.com>, linux-watchdog@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Hi Paul,
+Hi everybody,
 
-> On Wed, Jul 20, 2011 at 03:03:39PM +0200, David Engraf wrote:
-> > This patch fixes the usage of mod_timer and makes the driver usable. 
-> > mod_timer must be called with an absolute timeout in jiffies, the old 
-> > implementation used a relative timeout thus the hardware watchdog was 
-> > never triggered.
-> > 
-> > Signed-off-by: David Engraf <david.engraf@sysgo.com>
-> > 
-> Applied, thanks.
+When trying to understand the sh_mobile_lcdc driver, I found it hard to read
+statements that include hardcoded register values. I thus wrote a patch that
+replace them with macros, making the code more readable.
 
-So this patch will go via your tree then.
+While doing so, I found two potential issues in the driver. See patches 2 and
+3 for detailed explanations and fixes.
 
-Kind regards,
-Wim.
+Laurent Pinchart (3):
+  fbdev: sh_mobile_lcdc: Replace hardcoded register values with macros
+  fbdev: sh_mobile_lcdc: Don't acknowlege interrupts unintentionally
+  fbdev: sh_mobile_lcdc: Compute clock pattern using divider
+    denominator
+
+ drivers/video/sh_mobile_lcdcfb.c |  232 +++++++++++++++++---------------------
+ include/video/sh_mobile_lcdc.h   |  135 +++++++++++++++++++---
+ 2 files changed, 222 insertions(+), 145 deletions(-)
+
+-- 
+Best regards,
+
+Laurent Pinchart
 
