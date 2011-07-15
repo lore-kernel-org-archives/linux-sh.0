@@ -1,23 +1,75 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Sun, 10 Jul 2011 09:09:30 +0000
-Subject: Re: [PATCH 0/4] Add a generic struct clk
-Message-Id: <20110710090927.GA23445@opensource.wolfsonmicro.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 15 Jul 2011 21:52:32 +0000
+Subject: [PATCH 2/3] fbdev: sh_mobile_lcdc: Don't acknowlege interrupts unintentionally
+Message-Id: <1310766753-30314-3-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1305876469.325655.313573683829.0.gpush@pororo>
-	<1305876469.325655.313573683829.0.gpush@pororo>
-In-Reply-To: <1305876469.325655.313573683829.0.gpush@pororo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Fri, May 20, 2011 at 03:27:49PM +0800, Jeremy Kerr wrote:
-> [This series was originally titled 'Add a common struct clk', but
-> the goals have changed since that first set of patches. We're now aiming
-> for a more complete generic clock infrastructure, rather than just
-> abstracting struct clk]
-> 
-> [This series still needs work, see the TODO section below]
+The LDINTR register caries both interrupt enable and interrupt status
+bits. When setting or clearing interrupt enable bits, write all status
+bits to 1 to avoid acknowledging interrupts by mistake.
 
-Is there a git tree with the current state of this code in it somewhere?
-It's not mentioned here and my google skills are failing me.
+When acknowledging interrupts, write 1 to all non-triggered interrupt
+bits to avoid losing interrupts.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_lcdcfb.c |   20 ++++++++------------
+ 1 files changed, 8 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 7d77651..32f884e 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -318,19 +318,13 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
+ {
+ 	struct sh_mobile_lcdc_priv *priv = data;
+ 	struct sh_mobile_lcdc_chan *ch;
+-	unsigned long tmp;
+ 	unsigned long ldintr;
+ 	int is_sub;
+ 	int k;
+ 
+-	/* acknowledge interrupt */
+-	ldintr = tmp = lcdc_read(priv, _LDINTR);
+-	/*
+-	 * disable further VSYNC End IRQs, preserve all other enabled IRQs,
+-	 * write 0 to bits 0-6 to ack all triggered IRQs.
+-	 */
+-	tmp &= ~LDINTR_STATUS_MASK & ~LDINTR_VEE;
+-	lcdc_write(priv, _LDINTR, tmp);
++	/* Acknowledge interrupts and disable further VSYNC End IRQs. */
++	ldintr = lcdc_read(priv, _LDINTR);
++	lcdc_write(priv, _LDINTR, (ldintr ^ LDINTR_STATUS_MASK) & ~LDINTR_VEE);
+ 
+ 	/* figure out if this interrupt is for main or sub lcd */
+ 	is_sub = (lcdc_read(priv, _LDSR) & LDSR_MSS) ? 1 : 0;
+@@ -342,7 +336,7 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
+ 		if (!ch->enabled)
+ 			continue;
+ 
+-		/* Frame Start */
++		/* Frame End */
+ 		if (ldintr & LDINTR_FS) {
+ 			if (is_sub = lcdc_chan_is_sublcd(ch)) {
+ 				ch->frame_end = 1;
+@@ -971,9 +965,11 @@ static int sh_mobile_wait_for_vsync(struct fb_info *info)
+ 	unsigned long ldintr;
+ 	int ret;
+ 
+-	/* Enable VSync End interrupt */
++	/* Enable VSync End interrupt and be careful not to acknowledge any
++	 * pending interrupt.
++	 */
+ 	ldintr = lcdc_read(ch->lcdc, _LDINTR);
+-	ldintr |= LDINTR_VEE;
++	ldintr |= LDINTR_VEE | LDINTR_STATUS_MASK;
+ 	lcdc_write(ch->lcdc, _LDINTR, ldintr);
+ 
+ 	ret = wait_for_completion_interruptible_timeout(&ch->vsync_completion,
+-- 
+1.7.3.4
+
