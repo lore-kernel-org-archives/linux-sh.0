@@ -1,40 +1,130 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 14 Jul 2011 19:34:40 +0000
-Subject: Re: [PATCH 0/3] PM / Domains / shmobile fixes
-Message-Id: <201107142134.40432.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Jul 2011 10:59:50 +0000
+Subject: [PATCH 2/2 v2] ARM: mach-shmobile: use GPIO interrupt also for card
+Message-Id: <Pine.LNX.4.64.1107151257220.22613@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107132352.59801.rjw@sisk.pl> <CANqRtoTLO=DqehwanGdE+rgxL_ofa5YCJjsx47doHzwZDP4Ocw@mail.gmail.com>
-In-Reply-To: <CANqRtoTLO=DqehwanGdE+rgxL_ofa5YCJjsx47doHzwZDP4Ocw@mail.gmail.com>
+References: <Pine.LNX.4.64.1107140123070.30737@axis700.grange>
+ <Pine.LNX.4.64.1107151254300.22613@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1107151254300.22613@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>
 
-On Thursday, July 14, 2011, Magnus Damm wrote:
-> On Thu, Jul 14, 2011 at 6:52 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > Hi,
-> >
-> > The following three patches fix a couple of issues in the code currently
-> > in my pm-domains branch at:
-> >
-> > git://git.kernel.org/pub/scm/linux/kernel/git/rafael/suspend-2.6.git pm-domains
-> >
-> > [1/3] - Use genpd_queue_power_off_work() for queuing up the powering off
-> >        of A4LC (this avoids attempting to queue up a work item while it is
-> >        pending).
-> >
-> > [2/3] - Make the generic PM domains code react to -EBUSY returned from a
-> >        PM domain's .power_down() callback (needed for [3/3]).
-> >
-> > [3/3] - Return -EBUSY from the A4LC's .power_down() callback to indicate that
-> >        the domain hasn't been powered down on purpose and remove the confusing
-> >        (and now redundant) pm_genpd_poweron(A4LC) from pd_power_down_a3rv().
-> 
-> All patches above look great, thanks a lot for your help!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+When we switch to transaction-based runtime PM on SDHI / TMIO MMC,
+also card eject events will have to be detected by the platform.
+This patch prepares mackerel to this switch.
 
-Thanks!
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Rafael
+v2: reconfiguring the pin for card insertion and ejection is no longer 
+needed.
+
+ arch/arm/mach-shmobile/board-mackerel.c |   48 +++++++++++++++++++++++++-----
+ 1 files changed, 40 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 1b30195..9addaae 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -45,6 +45,7 @@
+ #include <linux/tca6416_keypad.h>
+ #include <linux/usb/r8a66597.h>
+ #include <linux/usb/renesas_usbhs.h>
++#include <linux/workqueue.h>
+ 
+ #include <video/sh_mobile_hdmi.h>
+ #include <video/sh_mobile_lcdc.h>
+@@ -990,7 +991,7 @@ static struct platform_device fsi_ak4643_device = {
+ 
+ /*
+  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
++ * connected to GPIO A22 of SH7372 (GPIO_PORT41 / IRQ8).
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+@@ -998,12 +999,30 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
+ }
+ 
+ /* SDHI0 */
+-static irqreturn_t mackerel_sdhi0_gpio_cd(int irq, void *arg)
++struct sdhi_card_detect {
++	struct delayed_work work;
++	struct sh_mobile_sdhi_info *info;
++	int gpio_irq;
++};
++
++static void sdhi_cd_work(struct work_struct *work)
++{
++	struct sdhi_card_detect *cd = container_of(work, struct sdhi_card_detect, work.work);
++	irq_set_irq_type(cd->gpio_irq, IRQ_TYPE_EDGE_BOTH);
++}
++
++static irqreturn_t mackerel_sdhi_gpio_cd(int irq, void *arg)
+ {
+-	struct device *dev = arg;
+-	struct sh_mobile_sdhi_info *info = dev->platform_data;
++	struct sdhi_card_detect *cd = arg;
++	struct sh_mobile_sdhi_info *info = cd->info;
+ 	struct tmio_mmc_data *pdata = info->pdata;
+ 
++	if (irq != cd->gpio_irq)
++		return IRQ_NONE;
++
++	irq_set_irq_type(irq, IRQ_TYPE_NONE);
++
++	schedule_delayed_work(&cd->work, msecs_to_jiffies(200));
+ 	tmio_mmc_cd_wakeup(pdata);
+ 
+ 	return IRQ_HANDLED;
+@@ -1015,6 +1034,12 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
++static struct sdhi_card_detect sdhi0_cd = {
++	.work		= __DELAYED_WORK_INITIALIZER(sdhi0_cd.work, sdhi_cd_work),
++	.info		= &sdhi0_info,
++	.gpio_irq	= evt2irq(0x3340),
++};
++
+ static struct resource sdhi0_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+@@ -1092,7 +1117,7 @@ static struct platform_device sdhi1_device = {
+ 
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+- * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
++ * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162 / IRQ0).
+  */
+ static int slot_cn23_get_cd(struct platform_device *pdev)
+ {
+@@ -1500,12 +1525,19 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+ 
+-	ret = request_irq(evt2irq(0x3340), mackerel_sdhi0_gpio_cd,
+-			  IRQF_TRIGGER_FALLING, "sdhi0 cd", &sdhi0_device.dev);
++	/*
++	 * If the driver probes with a card plugged in, the native SDHICD0 IRQ
++	 * will trigger, when the runtime PM brings the interface up, and the
++	 * card will be detected. This interrupt is needed if there is no card
++	 * during probing and runtime PM turns the interface power off.
++	 */
++	ret = request_irq(sdhi0_cd.gpio_irq, mackerel_sdhi_gpio_cd,
++			  IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
++			  "sdhi0 cd", &sdhi0_cd);
+ 	if (!ret)
+ 		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
+ 	else
+-		pr_err("Cannot get IRQ #%d: %d\n", evt2irq(0x3340), ret);
++		pr_err("Cannot get IRQ #%d: %d\n", sdhi0_cd.gpio_irq, ret);
+ 
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ 	/* enable SDHI1 */
+-- 
+1.7.2.5
+
