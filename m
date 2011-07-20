@@ -1,97 +1,68 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:49:12 +0000
-Subject: [PATCH 4/9] PM / Domains: Make pm_genpd_poweron() always survive parent removal
-Message-Id: <201107311949.12503.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 20 Jul 2011 11:24:28 +0000
+Subject: [PATCH v2 5/6] fbdev: sh_mobile_lcdc: Store the frame buffer base address when panning
+Message-Id: <1311161069-11918-6-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107311946.06654.rjw@sisk.pl>
-In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+When the frame buffer base address is changed by a panning operation,
+store it in the channel structure. It will be reused when runtime PM
+code will use __sh_mobile_lcdc_start().
 
-If pm_genpd_remove_subdomain() is called to remove a PM domain's
-subdomain and pm_genpd_poweron() is called for that subdomain at
-the same time, and the pm_genpd_poweron() called by it recursively
-for the parent returns an error, the first pm_genpd_poweron()'s
-error code path will attempt to decrement the subdomain counter of
-a PM domain that it's not a subdomain of any more.
-
-Rearrange the code in pm_genpd_poweron() to prevent this from
-happening.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/base/power/domain.c |   33 ++++++++++++++++++++-------------
- 1 file changed, 20 insertions(+), 13 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   22 +++++++++-------------
+ 1 files changed, 9 insertions(+), 13 deletions(-)
 
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -89,12 +89,14 @@ static void genpd_set_active(struct gene
-  */
- int pm_genpd_poweron(struct generic_pm_domain *genpd)
- {
--	struct generic_pm_domain *parent = genpd->parent;
-+	struct generic_pm_domain *parent;
- 	int ret = 0;
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 785521e..f0a3d54 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -915,32 +915,28 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 			base_addr_c += 2 * var->xoffset;
+ 		else
+ 			base_addr_c += var->xoffset;
+-	} else
+-		base_addr_c = 0;
++	}
  
-- start:
- 	mutex_lock(&genpd->lock);
- 
-+	parent = genpd->parent;
-+
-+ start:
- 	if (genpd->status = GPD_STATE_ACTIVE
- 	    || (genpd->prepared_count > 0 && genpd->suspend_power_off))
- 		goto out;
-@@ -110,29 +112,34 @@ int pm_genpd_poweron(struct generic_pm_d
- 		mutex_unlock(&genpd->lock);
- 
- 		ret = pm_genpd_poweron(parent);
--		if (ret) {
--			genpd_sd_counter_dec(parent);
--			return ret;
--		}
-+
-+		mutex_lock(&genpd->lock);
-+
-+		if (ret)
-+			goto err;
- 
- 		parent = NULL;
- 		goto start;
- 	}
- 
--	if (genpd->power_on)
-+	if (genpd->power_on) {
- 		ret = genpd->power_on(genpd);
--
--	if (ret) {
--		if (genpd->parent)
--			genpd_sd_counter_dec(genpd->parent);
+-	if (!ch->meram_enabled) {
+-		lcdc_write_chan_mirror(ch, LDSA1R, base_addr_y);
+-		if (base_addr_c)
+-			lcdc_write_chan_mirror(ch, LDSA2R, base_addr_c);
 -	} else {
--		genpd_set_active(genpd);
-+		if (ret)
-+			goto err;
- 	}
++	if (ch->meram_enabled) {
+ 		struct sh_mobile_meram_cfg *cfg;
+ 		struct sh_mobile_meram_info *mdev;
+-		unsigned long icb_addr_y, icb_addr_c;
+ 		int ret;
  
-+	genpd_set_active(genpd);
-+
-  out:
- 	mutex_unlock(&genpd->lock);
+ 		cfg = ch->cfg.meram_cfg;
+ 		mdev = priv->meram_dev;
+ 		ret = mdev->ops->meram_update(mdev, cfg,
+ 					base_addr_y, base_addr_c,
+-					&icb_addr_y, &icb_addr_c);
++					&base_addr_y, &base_addr_c);
+ 		if (ret)
+ 			return ret;
++	}
  
- 	return ret;
-+
-+ err:
-+	if (genpd->parent)
-+		genpd_sd_counter_dec(genpd->parent);
-+
-+	goto out;
- }
+-		lcdc_write_chan_mirror(ch, LDSA1R, icb_addr_y);
+-		if (icb_addr_c)
+-			lcdc_write_chan_mirror(ch, LDSA2R, icb_addr_c);
++	ch->base_addr_y = base_addr_y;
++	ch->base_addr_c = base_addr_c;
  
- #endif /* CONFIG_PM */
+-	}
++	lcdc_write_chan_mirror(ch, LDSA1R, base_addr_y);
++	if (var->nonstd)
++		lcdc_write_chan_mirror(ch, LDSA2R, base_addr_c);
+ 
+ 	if (lcdc_chan_is_sublcd(ch))
+ 		lcdc_write(ch->lcdc, _LDRCNTR, ldrcntr ^ LDRCNTR_SRS);
+-- 
+1.7.3.4
 
