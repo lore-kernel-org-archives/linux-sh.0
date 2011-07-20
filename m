@@ -1,154 +1,122 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:48:26 +0000
-Subject: [PATCH 3/9] PM / Domains: Do not take parent locks to modify subdomain counters
-Message-Id: <201107311948.26609.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 20 Jul 2011 11:24:29 +0000
+Subject: [PATCH v2 6/6] fbdev: sh_mobile_lcdc: Restart LCDC in runtime PM resume handler
+Message-Id: <1311161069-11918-7-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107311946.06654.rjw@sisk.pl>
-In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Instead of restoring registers blindly, restart the LCDC by going
+through the startup sequence when resuming from runtime PM suspend. All
+registers are now correctly initialized in the right order.
 
-After the subdomain counter in struct generic_pm_domain has been
-changed into an atomic_t field, it is possible to modify
-pm_genpd_poweron() and pm_genpd_poweroff() so that they don't take
-the parents locks.  This requires pm_genpd_poweron() to increment
-the parent's subdomain counter before calling itself recursively
-for the parent and to decrement it if an error is to be returned.
+As a side effect, this also gets rid fo a possible panning restore issue
+caused by always saving the frame buffer base address registers from set
+A instead of the currently active set.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/base/power/domain.c |   70 +++++++++++++++++++-------------------------
- 1 file changed, 31 insertions(+), 39 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   49 ++++----------------------------------
+ drivers/video/sh_mobile_lcdcfb.h |    1 -
+ 2 files changed, 5 insertions(+), 45 deletions(-)
 
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -93,12 +93,7 @@ int pm_genpd_poweron(struct generic_pm_d
- 	int ret = 0;
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index f0a3d54..d0f768e 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -32,17 +32,6 @@
+ #define SIDE_B_OFFSET 0x1000
+ #define MIRROR_OFFSET 0x2000
  
-  start:
--	if (parent) {
--		genpd_acquire_lock(parent);
--		mutex_lock_nested(&genpd->lock, SINGLE_DEPTH_NESTING);
--	} else {
--		mutex_lock(&genpd->lock);
+-/* shared registers and their order for context save/restore */
+-static int lcdc_shared_regs[] = {
+-	_LDDCKR,
+-	_LDDCKSTPR,
+-	_LDINTR,
+-	_LDDDSR,
+-	_LDCNT1R,
+-	_LDCNT2R,
+-};
+-#define NR_SHARED_REGS ARRAY_SIZE(lcdc_shared_regs)
+-
+ #define MAX_XRES 1920
+ #define MAX_YRES 1080
+ 
+@@ -111,7 +100,6 @@ struct sh_mobile_lcdc_priv {
+ 	unsigned long lddckr;
+ 	struct sh_mobile_lcdc_chan ch[2];
+ 	struct notifier_block notifier;
+-	unsigned long saved_shared_regs[NR_SHARED_REGS];
+ 	int started;
+ 	int forced_bpp; /* 2 channel LCDC must share bpp setting */
+ 	struct sh_mobile_meram_info *meram_dev;
+@@ -1289,47 +1277,20 @@ static int sh_mobile_lcdc_resume(struct device *dev)
+ static int sh_mobile_lcdc_runtime_suspend(struct device *dev)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+-	struct sh_mobile_lcdc_priv *p = platform_get_drvdata(pdev);
+-	struct sh_mobile_lcdc_chan *ch;
+-	int k, n;
+-
+-	/* save per-channel registers */
+-	for (k = 0; k < ARRAY_SIZE(p->ch); k++) {
+-		ch = &p->ch[k];
+-		if (!ch->enabled)
+-			continue;
+-		for (n = 0; n < NR_CH_REGS; n++)
+-			ch->saved_ch_regs[n] = lcdc_read_chan(ch, n);
 -	}
-+	mutex_lock(&genpd->lock);
+-
+-	/* save shared registers */
+-	for (n = 0; n < NR_SHARED_REGS; n++)
+-		p->saved_shared_regs[n] = lcdc_read(p, lcdc_shared_regs[n]);
++	struct sh_mobile_lcdc_priv *priv = platform_get_drvdata(pdev);
  
- 	if (genpd->status = GPD_STATE_ACTIVE
- 	    || (genpd->prepared_count > 0 && genpd->suspend_power_off))
-@@ -109,31 +104,33 @@ int pm_genpd_poweron(struct generic_pm_d
- 		goto out;
- 	}
- 
--	if (parent && parent->status != GPD_STATE_ACTIVE) {
-+	if (parent) {
-+		genpd_sd_counter_inc(parent);
+ 	/* turn off LCDC hardware */
+-	lcdc_write(p, _LDCNT1R, 0);
++	lcdc_write(priv, _LDCNT1R, 0);
 +
- 		mutex_unlock(&genpd->lock);
--		genpd_release_lock(parent);
- 
- 		ret = pm_genpd_poweron(parent);
--		if (ret)
-+		if (ret) {
-+			genpd_sd_counter_dec(parent);
- 			return ret;
-+		}
- 
-+		parent = NULL;
- 		goto start;
- 	}
- 
--	if (genpd->power_on) {
-+	if (genpd->power_on)
- 		ret = genpd->power_on(genpd);
--		if (ret)
--			goto out;
--	}
- 
--	genpd_set_active(genpd);
--	if (parent)
--		genpd_sd_counter_inc(parent);
-+	if (ret) {
-+		if (genpd->parent)
-+			genpd_sd_counter_dec(genpd->parent);
-+	} else {
-+		genpd_set_active(genpd);
-+	}
- 
-  out:
- 	mutex_unlock(&genpd->lock);
--	if (parent)
--		genpd_release_lock(parent);
- 
- 	return ret;
+ 	return 0;
  }
-@@ -293,7 +290,8 @@ static int pm_genpd_poweroff(struct gene
- 	genpd->poweroff_task = current;
  
- 	list_for_each_entry_reverse(dle, &genpd->dev_list, node) {
--		ret = __pm_genpd_save_device(dle, genpd);
-+		ret = atomic_read(&genpd->sd_count) = 0 ?
-+			__pm_genpd_save_device(dle, genpd) : -EBUSY;
- 		if (ret) {
- 			genpd_set_active(genpd);
- 			goto out;
-@@ -308,38 +306,32 @@ static int pm_genpd_poweroff(struct gene
- 		}
- 	}
- 
--	parent = genpd->parent;
--	if (parent) {
--		mutex_unlock(&genpd->lock);
+ static int sh_mobile_lcdc_runtime_resume(struct device *dev)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+-	struct sh_mobile_lcdc_priv *p = platform_get_drvdata(pdev);
+-	struct sh_mobile_lcdc_chan *ch;
+-	int k, n;
 -
--		genpd_acquire_lock(parent);
--		mutex_lock_nested(&genpd->lock, SINGLE_DEPTH_NESTING);
--
--		if (genpd_abort_poweroff(genpd)) {
--			genpd_release_lock(parent);
-+	if (genpd->power_off) {
-+		if (atomic_read(&genpd->sd_count) > 0) {
-+			ret = -EBUSY;
- 			goto out;
- 		}
+-	/* restore per-channel registers */
+-	for (k = 0; k < ARRAY_SIZE(p->ch); k++) {
+-		ch = &p->ch[k];
+-		if (!ch->enabled)
+-			continue;
+-		for (n = 0; n < NR_CH_REGS; n++)
+-			lcdc_write_chan(ch, n, ch->saved_ch_regs[n]);
 -	}
++	struct sh_mobile_lcdc_priv *priv = platform_get_drvdata(pdev);
  
--	if (genpd->power_off) {
-+		/*
-+		 * If sd_count > 0 at this point, one of the children hasn't
-+		 * managed to call pm_genpd_poweron() for the parent yet after
-+		 * incrementing it.  In that case pm_genpd_poweron() will wait
-+		 * for us to drop the lock, so we can call .power_off() and let
-+		 * the pm_genpd_poweron() restore power for us (this shouldn't
-+		 * happen very often).
-+		 */
- 		ret = genpd->power_off(genpd);
- 		if (ret = -EBUSY) {
- 			genpd_set_active(genpd);
--			if (parent)
--				genpd_release_lock(parent);
--
- 			goto out;
- 		}
- 	}
+-	/* restore shared registers */
+-	for (n = 0; n < NR_SHARED_REGS; n++)
+-		lcdc_write(p, lcdc_shared_regs[n], p->saved_shared_regs[n]);
++	__sh_mobile_lcdc_start(priv);
  
- 	genpd->status = GPD_STATE_POWER_OFF;
- 
--	if (parent) {
--		if (genpd_sd_counter_dec(parent))
--			genpd_queue_power_off_work(parent);
--
--		genpd_release_lock(parent);
--	}
-+	parent = genpd->parent;
-+	if (parent && genpd_sd_counter_dec(parent))
-+		genpd_queue_power_off_work(parent);
- 
-  out:
- 	genpd->poweroff_task = NULL;
+ 	return 0;
+ }
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index a06219b..a58a0f3 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -32,7 +32,6 @@ struct sh_mobile_lcdc_chan {
+ 	unsigned long enabled; /* ME and SE in LDCNT2R */
+ 	struct sh_mobile_lcdc_chan_cfg cfg;
+ 	u32 pseudo_palette[PALETTE_NR];
+-	unsigned long saved_ch_regs[NR_CH_REGS];
+ 	struct fb_info *info;
+ 	struct backlight_device *bl;
+ 	dma_addr_t dma_handle;
+-- 
+1.7.3.4
 
