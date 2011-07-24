@@ -1,53 +1,65 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 07 Jul 2011 13:32:37 +0000
-Subject: [PATCH 03/05] ARM: mach-shmobile: sh7372 late pm domain off
-Message-Id: <20110707133237.22347.5463.sendpatchset@t400s>
+From: Tejun Heo <tj@kernel.org>
+Date: Sun, 24 Jul 2011 10:51:19 +0000
+Subject: [PATCH tip:x86/memblock RFC] SuperH: Use HAVE_MEMBLOCK_NODE_MAP
+Message-Id: <20110724105119.GP2622@htj.dyndns.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>
 
-From: Magnus Damm <damm@opensource.se>
+sh doesn't access early_node_map[] directly and enabling
+HAVE_MEMBLOCK_NODE_MAP is trivial - replacing add_active_range() calls
+with memblock_set_node() and selecting HAVE_MEMBLOCK_NODE_MAP is
+enough.
 
-Add sh7372 specific code to power down unused pm domains.
-
-This should really be replaced by some generic PM core
-code IMO, but until that happens this patch makes sure
-we don't waste power by leaving unused power domains on.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
 ---
+Paul, memblock now can carry node information itself without relying
+on early_node_map[], which makes operations which make use of both
+information much saner and generally makes NUMA memory init simpler.
+For more details, please read the following thread.
 
- arch/arm/mach-shmobile/pm-sh7372.c |   13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ http://thread.gmane.org/gmane.linux.kernel.cross-arch/10354
 
---- 0005/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-07 20:15:19.000000000 +0900
-@@ -96,6 +96,17 @@ static bool pd_active_wakeup(struct devi
- 	return true;
+I couldn't get the cross-compiler from korg to build configuration
+with CPU w/ NUMA support but given the trivial nature of the change, I
+don't think it would cause build failures on different configs, but
+this definitely needs testing on actual NUMA configuration.
+
+The patches implementing HAVE_MEMBLOCK_NODE_MAP is currently in
+tip:x86/memblock branch on which this patch is based on.
+
+Thanks.
+
+ arch/sh/Kconfig        |    1 +
+ arch/sh/kernel/setup.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+Index: work/arch/sh/Kconfig
+=================================--- work.orig/arch/sh/Kconfig
++++ work/arch/sh/Kconfig
+@@ -4,6 +4,7 @@ config SUPERH
+ 	select CLKDEV_LOOKUP
+ 	select HAVE_IDE if HAS_IOPORT
+ 	select HAVE_MEMBLOCK
++	select HAVE_MEMBLOCK_NODE_MAP
+ 	select HAVE_OPROFILE
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_ARCH_TRACEHOOK
+Index: work/arch/sh/kernel/setup.c
+=================================--- work.orig/arch/sh/kernel/setup.c
++++ work/arch/sh/kernel/setup.c
+@@ -227,7 +227,8 @@ void __init __add_active_range(unsigned 
+ 	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
+ 			 PAGE_KERNEL);
+ 
+-	add_active_range(nid, start_pfn, end_pfn);
++	memblock_set_node(PFN_PHYS(start_pfn),
++			  PFN_PHYS(end_pfn - start_pfn), nid);
  }
  
-+static void sh7372_late_pm_domain_off(void)
-+{
-+	/* request power down of unused pm domains */
-+	queue_work(pm_wq, &sh7372_a4lc.genpd.power_off_work);
-+	queue_work(pm_wq, &sh7372_a4mp.genpd.power_off_work);
-+	queue_work(pm_wq, &sh7372_d4.genpd.power_off_work);
-+	queue_work(pm_wq, &sh7372_a3rv.genpd.power_off_work);
-+	queue_work(pm_wq, &sh7372_a3ri.genpd.power_off_work);
-+	queue_work(pm_wq, &sh7372_a3sg.genpd.power_off_work);
-+}
-+
- void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
- {
- 	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
-@@ -107,6 +118,8 @@ void sh7372_init_pm_domain(struct sh7372
- 	genpd->power_off = pd_power_down;
- 	genpd->power_on = pd_power_up;
- 	pd_power_up(&sh7372_pd->genpd);
-+
-+	shmobile_runtime_pm_late_init = sh7372_late_pm_domain_off;
- }
- 
- void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
+ void __init __weak plat_early_device_setup(void)
