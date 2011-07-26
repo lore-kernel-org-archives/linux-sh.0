@@ -1,51 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 20 Jul 2011 11:24:26 +0000
-Subject: [PATCH v2 3/6] fbdev: sh_mobile_lcdc: Compute clock pattern using divider denominator
-Message-Id: <1311161069-11918-4-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 26 Jul 2011 18:51:01 +0000
+Subject: [PATCH 2/2] USB / Renesas: Fix build issue related to struct scatterlist
+Message-Id: <201107262051.02019.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201107262049.15333.rjw@sisk.pl>
+In-Reply-To: <201107262049.15333.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@suse.de>, linux-usb@vger.kernel.org
 
-The clock divider pattern is computed based on the dot clock register
-value which stores the divider denumerator. However, when using a 1:1
-divider ratio, the register is programmed with a value that must not be
-interpreted as a denominator. This results in a shift left operation
-with a value of 32, which produces undefined behaviour.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Compute the clock pattern using the divider denominator, not the dot
-clock register value.
+Fix build issue caused by undefined struct scatterlist in
+drivers/usb/renesas_usbhs/fifo.c.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   10 ++++++----
- 1 files changed, 6 insertions(+), 4 deletions(-)
+ drivers/usb/renesas_usbhs/fifo.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index ba946f4..31aef60 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -481,13 +481,15 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 		if (!m)
- 			continue;
+Index: linux-2.6/drivers/usb/renesas_usbhs/fifo.c
+=================================--- linux-2.6.orig/drivers/usb/renesas_usbhs/fifo.c
++++ linux-2.6/drivers/usb/renesas_usbhs/fifo.c
+@@ -16,6 +16,7 @@
+  */
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/scatterlist.h>
+ #include "./common.h"
+ #include "./pipe.h"
  
-+		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider
-+		 * denominator.
-+		 */
-+		lcdc_write_chan(ch, LDDCKPAT1R, 0);
-+		lcdc_write_chan(ch, LDDCKPAT2R, (1 << (m/2)) - 1);
-+
- 		if (m = 1)
- 			m = LDDCKR_MOSEL;
- 		tmp |= m << (lcdc_chan_is_sublcd(ch) ? 8 : 0);
--
--		/* FIXME: sh7724 can only use 42, 48, 54 and 60 for the divider denominator */
--		lcdc_write_chan(ch, LDDCKPAT1R, 0);
--		lcdc_write_chan(ch, LDDCKPAT2R, (1 << (m/2)) - 1);
- 	}
- 
- 	lcdc_write(priv, _LDDCKR, tmp);
--- 
-1.7.3.4
 
