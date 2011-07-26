@@ -1,55 +1,72 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 07 Jul 2011 13:32:45 +0000
-Subject: [PATCH 04/05] PM: export pm_genpd_poweron() in header
-Message-Id: <20110707133245.22347.42754.sendpatchset@t400s>
+From: Tejun Heo <tj@kernel.org>
+Date: Tue, 26 Jul 2011 15:35:28 +0000
+Subject: [PATCH 17/23] SuperH: Use HAVE_MEMBLOCK_NODE_MAP
+Message-Id: <1311694534-5161-18-git-send-email-tj@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1311694534-5161-1-git-send-email-tj@kernel.org>
+In-Reply-To: <1311694534-5161-1-git-send-email-tj@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: benh@kernel.crashing.org, yinghai@kernel.org, hpa@zytor.com, tony.luck@intel.com, ralf@linux-mips.org, schwidefsky@de.ibm.com, liqin.chen@sunplusct.com, lethal@linux-sh.org, davem@dave
+Cc: mingo@redhat.com, Tejun Heo <tj@kernel.org>, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+sh doesn't access early_node_map[] directly and enabling
+HAVE_MEMBLOCK_NODE_MAP is trivial - replacing add_active_range() calls
+with memblock_set_node() and selecting HAVE_MEMBLOCK_NODE_MAP is
+enough.
 
-Allow SoC-specific code to call pm_genpd_poweron().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
 ---
+Paul, memblock now can carry node information itself without relying
+on early_node_map[], which makes operations which make use of both
+information much saner and generally makes NUMA memory init simpler.
+For more details, please read the following thread.
 
- Perhaps there are better ways to deal with this?
+ http://thread.gmane.org/gmane.linux.kernel.cross-arch/10354
 
- drivers/base/power/domain.c |    2 +-
- include/linux/pm_domain.h   |    5 +++++
- 2 files changed, 6 insertions(+), 1 deletion(-)
+I couldn't get the cross-compiler from korg to build configuration
+with CPU w/ NUMA support but given the trivial nature of the change, I
+don't think it would cause build failures on different configs, but
+this definitely needs testing on actual NUMA configuration.
 
---- 0001/drivers/base/power/domain.c
-+++ work/drivers/base/power/domain.c	2011-07-07 21:37:49.000000000 +0900
-@@ -37,7 +37,7 @@ static void genpd_sd_counter_dec(struct
-  * Restore power to @genpd and all of its parents so that it is possible to
-  * resume a device belonging to it.
-  */
--static int pm_genpd_poweron(struct generic_pm_domain *genpd)
-+int pm_genpd_poweron(struct generic_pm_domain *genpd)
- {
- 	int ret = 0;
+The patches implementing HAVE_MEMBLOCK_NODE_MAP is currently in
+tip:x86/memblock branch on which this patch is based on.
+
+Thanks.
+
+ arch/sh/Kconfig        |    1 +
+ arch/sh/kernel/setup.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index bbdeb48..8c10d85 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -4,6 +4,7 @@ config SUPERH
+ 	select CLKDEV_LOOKUP
+ 	select HAVE_IDE if HAS_IOPORT
+ 	select HAVE_MEMBLOCK
++	select HAVE_MEMBLOCK_NODE_MAP
+ 	select HAVE_OPROFILE
+ 	select HAVE_GENERIC_DMA_COHERENT
+ 	select HAVE_ARCH_TRACEHOOK
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 58bff45..e3942ca 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -227,7 +227,8 @@ void __init __add_active_range(unsigned int nid, unsigned long start_pfn,
+ 	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
+ 			 PAGE_KERNEL);
  
---- 0001/include/linux/pm_domain.h
-+++ work/include/linux/pm_domain.h	2011-07-07 21:37:49.000000000 +0900
-@@ -63,6 +63,7 @@ extern int pm_genpd_remove_subdomain(str
- 				     struct generic_pm_domain *target);
- extern void pm_genpd_init(struct generic_pm_domain *genpd,
- 			  struct dev_power_governor *gov, bool is_off);
-+extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
- #else
- static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
- 				      struct device *dev)
-@@ -86,6 +87,10 @@ static inline int pm_genpd_remove_subdom
+-	add_active_range(nid, start_pfn, end_pfn);
++	memblock_set_node(PFN_PHYS(start_pfn),
++			  PFN_PHYS(end_pfn - start_pfn), nid);
  }
- static inline void pm_genpd_init(struct generic_pm_domain *genpd,
- 				 struct dev_power_governor *gov, bool is_off) {}
-+static inline int pm_genpd_poweron(struct generic_pm_domain *genpd)
-+{
-+	return -ENOSYS;
-+}
- #endif
  
- #endif /* _LINUX_PM_DOMAIN_H */
+ void __init __weak plat_early_device_setup(void)
+-- 
+1.7.6
+
