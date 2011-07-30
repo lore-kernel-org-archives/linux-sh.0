@@ -1,70 +1,167 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 13 Jul 2011 21:54:18 +0000
-Subject: [PATCH 1/3] ARM / shmobile: Use genpd_queue_power_off_work()
-Message-Id: <201107132354.18324.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 30 Jul 2011 20:26:52 +0000
+Subject: [PATCH 1/4] fbdev: sh_mobile_meram: Replace hardcoded register values with macros
+Message-Id: <1312057615-29123-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107132352.59801.rjw@sisk.pl>
-In-Reply-To: <201107132352.59801.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Instead of hardcoding register values through the driver, define macros
+for individual register bits using the register name and the bit name,
+and use the macros.
 
-Make pd_power_down_a3rv() use genpd_queue_power_off_work() to queue
-up the powering off of the A4LC domain to avoid queuing it up when
-it is pending.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/pm-sh7372.c |    2 +-
- drivers/base/power/domain.c        |    2 +-
- include/linux/pm_domain.h          |    2 ++
- 3 files changed, 4 insertions(+), 2 deletions(-)
+ drivers/video/sh_mobile_meram.c |   97 ++++++++++++++++++++++++++++-------=
+---
+ 1 files changed, 71 insertions(+), 26 deletions(-)
 
-Index: linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux-2.6.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux-2.6/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -107,7 +107,7 @@ static int pd_power_down_a3rv(struct gen
- 
- 	/* try to power down A4LC after A3RV is requested off */
- 	pm_genpd_poweron(&sh7372_a4lc.genpd);
--	queue_work(pm_wq, &sh7372_a4lc.genpd.power_off_work);
-+	genpd_queue_power_off_work(&sh7372_a4lc.genpd);
- 
- 	return ret;
- }
-Index: linux-2.6/drivers/base/power/domain.c
-=================================--- linux-2.6.orig/drivers/base/power/domain.c
-+++ linux-2.6/drivers/base/power/domain.c
-@@ -222,7 +222,7 @@ static bool genpd_abort_poweroff(struct
-  * Queue up the execution of pm_genpd_poweroff() unless it's already been done
-  * before.
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_mera=
+m.c
+index 39f28a1..85577cf 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -20,22 +20,67 @@
+ #include "sh_mobile_meram.h"
+=20
+ /* meram registers */
+-#define MExxCTL 0x0
+-#define MExxBSIZE 0x4
+-#define MExxMNCF 0x8
+-#define MExxSARA 0x10
+-#define MExxSARB 0x14
+-#define MExxSBSIZE 0x18
+-
+-#define MERAM_MExxCTL_VAL(ctl, next_icb, addr)	\
+-	((ctl) | (((next_icb) & 0x1f) << 11) | (((addr) & 0x7ff) << 16))
+-#define	MERAM_MExxBSIZE_VAL(a, b, c) \
+-	(((a) << 28) | ((b) << 16) | (c))
+-
+-#define MEVCR1 0x4
+-#define MEACTS 0x10
+-#define MEQSEL1 0x40
+-#define MEQSEL2 0x44
++#define MEVCR1			0x4
++#define MEVCR1_RST		(1 << 31)
++#define MEVCR1_WD		(1 << 30)
++#define MEVCR1_AMD1		(1 << 29)
++#define MEVCR1_AMD0		(1 << 28)
++#define MEQSEL1			0x40
++#define MEQSEL2			0x44
++
++#define MExxCTL			0x400
++#define MExxCTL_BV		(1 << 31)
++#define MExxCTL_BSZ_SHIFT	28
++#define MExxCTL_MSAR_MASK	(0x7ff << MExxCTL_MSAR_SHIFT)
++#define MExxCTL_MSAR_SHIFT	16
++#define MExxCTL_NXT_MASK	(0x1f << MExxCTL_NXT_SHIFT)
++#define MExxCTL_NXT_SHIFT	11
++#define MExxCTL_WD1		(1 << 10)
++#define MExxCTL_WD0		(1 << 9)
++#define MExxCTL_WS		(1 << 8)
++#define MExxCTL_CB		(1 << 7)
++#define MExxCTL_WBF		(1 << 6)
++#define MExxCTL_WF		(1 << 5)
++#define MExxCTL_RF		(1 << 4)
++#define MExxCTL_CM		(1 << 3)
++#define MExxCTL_MD_READ		(1 << 0)
++#define MExxCTL_MD_WRITE	(2 << 0)
++#define MExxCTL_MD_ICB_WB	(3 << 0)
++#define MExxCTL_MD_ICB		(4 << 0)
++#define MExxCTL_MD_FB		(7 << 0)
++#define MExxCTL_MD_MASK		(7 << 0)
++#define MExxBSIZE		0x404
++#define MExxBSIZE_RCNT_SHIFT	28
++#define MExxBSIZE_YSZM1_SHIFT	16
++#define MExxBSIZE_XSZM1_SHIFT	0
++#define MExxMNCF		0x408
++#define MExxMNCF_KWBNM_SHIFT	28
++#define MExxMNCF_KRBNM_SHIFT	24
++#define MExxMNCF_BNM_SHIFT	16
++#define MExxMNCF_XBV		(1 << 15)
++#define MExxMNCF_CPL_YCBCR444	(1 << 12)
++#define MExxMNCF_CPL_YCBCR420	(2 << 12)
++#define MExxMNCF_CPL_YCBCR422	(3 << 12)
++#define MExxMNCF_CPL_MSK	(3 << 12)
++#define MExxMNCF_BL		(1 << 2)
++#define MExxMNCF_LNM_SHIFT	0
++#define MExxSARA		0x410
++#define MExxSARB		0x414
++#define MExxSBSIZE		0x418
++#define MExxSBSIZE_HDV		(1 << 31)
++#define MExxSBSIZE_HSZ16	(0 << 28)
++#define MExxSBSIZE_HSZ32	(1 << 28)
++#define MExxSBSIZE_HSZ64	(2 << 28)
++#define MExxSBSIZE_HSZ128	(3 << 28)
++#define MExxSBSIZE_SBSIZZ_SHIFT	0
++
++#define MERAM_MExxCTL_VAL(next, addr)	\
++	((((next) << MExxCTL_NXT_SHIFT) & MExxCTL_NXT_MASK) | \
++	 (((addr) << MExxCTL_MSAR_SHIFT) & MExxCTL_MSAR_MASK))
++#define	MERAM_MExxBSIZE_VAL(rcnt, yszm1, xszm1) \
++	(((rcnt) << MExxBSIZE_RCNT_SHIFT) | \
++	 ((yszm1) << MExxBSIZE_YSZM1_SHIFT) | \
++	 ((xszm1) << MExxBSIZE_XSZM1_SHIFT))
+=20
+ static unsigned long common_regs[] =3D {
+ 	MEVCR1,
+@@ -72,8 +117,7 @@ struct sh_mobile_meram_priv {
+  * MERAM/ICB access functions
   */
--static void genpd_queue_power_off_work(struct generic_pm_domain *genpd)
-+void genpd_queue_power_off_work(struct generic_pm_domain *genpd)
- {
- 	if (!work_pending(&genpd->power_off_work))
- 		queue_work(pm_wq, &genpd->power_off_work);
-Index: linux-2.6/include/linux/pm_domain.h
-=================================--- linux-2.6.orig/include/linux/pm_domain.h
-+++ linux-2.6/include/linux/pm_domain.h
-@@ -73,6 +73,7 @@ extern void pm_genpd_init(struct generic
- 			  struct dev_power_governor *gov, bool is_off);
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
- extern void pm_genpd_poweroff_unused(void);
-+extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
- #else
- static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
- 				      struct device *dev)
-@@ -101,6 +102,7 @@ static inline int pm_genpd_poweron(struc
- 	return -ENOSYS;
+=20
+-#define MERAM_ICB_OFFSET(base, idx, off)	\
+-	((base) + (0x400 + ((idx) * 0x20) + (off)))
++#define MERAM_ICB_OFFSET(base, idx, off)	((base) + (off) + (idx) * 0x20)
+=20
+ static inline void meram_write_icb(void __iomem *base, int idx, int off,
+ 	unsigned long val)
+@@ -308,17 +352,18 @@ static int meram_init(struct sh_mobile_meram_priv *pr=
+iv,
+ 	/*
+ 	 * Set MERAM for framebuffer
+ 	 *
+-	 * 0x70f:  WD =3D 0x3, WS=3D0x1, CM=3D0x1, MD=FB mode
+ 	 * we also chain the cache_icb and the marker_icb.
+ 	 * we also split the allocated MERAM buffer between two ICBs.
+ 	 */
+ 	meram_write_icb(priv->base, icb->cache_icb, MExxCTL,
+-			MERAM_MExxCTL_VAL(0x70f, icb->marker_icb,
+-					  icb->meram_offset));
++			MERAM_MExxCTL_VAL(icb->marker_icb, icb->meram_offset) |
++			MExxCTL_WD1 | MExxCTL_WD0 | MExxCTL_WS | MExxCTL_CM |
++			MExxCTL_MD_FB);
+ 	meram_write_icb(priv->base, icb->marker_icb, MExxCTL,
+-			MERAM_MExxCTL_VAL(0x70f, icb->cache_icb,
+-					  icb->meram_offset +
+-					  icb->meram_size / 2));
++			MERAM_MExxCTL_VAL(icb->cache_icb, icb->meram_offset +
++					  icb->meram_size / 2) |
++			MExxCTL_WD1 | MExxCTL_WD0 | MExxCTL_WS | MExxCTL_CM |
++			MExxCTL_MD_FB);
+=20
+ 	return 0;
  }
- static inline void pm_genpd_poweroff_unused(void) {}
-+static inline void genpd_queue_power_off_work(struct generic_pm_domain *gpd) {}
- #endif
- 
- #endif /* _LINUX_PM_DOMAIN_H */
+@@ -507,7 +552,7 @@ static int sh_mobile_meram_runtime_suspend(struct devic=
+e *dev)
+ 			/* Reset ICB on resume */
+ 			if (icb_regs[k] =3D MExxCTL)
+ 				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] -					0x70;
++					MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF;
+ 		}
+ 	}
+ 	return 0;
+@@ -592,7 +637,7 @@ static int __devinit sh_mobile_meram_probe(struct platf=
+orm_device *pdev)
+=20
+ 	/* initialize ICB addressing mode */
+ 	if (pdata->addr_mode =3D SH_MOBILE_MERAM_MODE1)
+-		meram_write_reg(priv->base, MEVCR1, 1 << 29);
++		meram_write_reg(priv->base, MEVCR1, MEVCR1_AMD1);
+=20
+ 	pm_runtime_enable(&pdev->dev);
+=20
+--=20
+1.7.3.4
 
