@@ -1,7 +1,7 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 31 Jul 2011 17:49:58 +0000
-Subject: [PATCH 5/9] PM / Domains: Add "wait for parent" status for generic PM domains
-Message-Id: <201107311949.58790.rjw@sisk.pl>
+Date: Sun, 31 Jul 2011 17:47:48 +0000
+Subject: [PATCH 2/9] PM / Domains: Implement subdomain counters as atomic fields
+Message-Id: <201107311947.48268.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201107311946.06654.rjw@sisk.pl>
 In-Reply-To: <201107311946.06654.rjw@sisk.pl>
@@ -13,210 +13,119 @@ Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, li
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
-The next patch will make it possible for a generic PM domain to have
-multiple parents (i.e. multiple PM domains it depends on).  To
-prepare for that change it is necessary to change pm_genpd_poweron()
-so that it doesn't jump to the start label after running itself
-recursively for the parent domain.  For this purpose, introduce a new
-PM domain status value GPD_STATE_WAIT_PARENT that will be set by
-pm_genpd_poweron() before calling itself recursively for the parent
-domain and modify the code in drivers/base/power/domain.c so that
-the GPD_STATE_WAIT_PARENT status is guaranteed to be preserved during
-the execution of pm_genpd_poweron() for the parent.
+Currently, pm_genpd_poweron() and pm_genpd_poweroff() need to take
+the parent PM domain's lock in order to modify the parent's counter
+of active subdomains in a nonracy way.  This causes the locking to be
+considerably complex and in fact is not necessary, because the
+subdomain counters may be implemented as atomic fields and they
+won't have to be modified under a lock.
 
-This change also causes pm_genpd_add_subdomain() and
-pm_genpd_remove_subdomain() to wait for started pm_genpd_poweron() to
-complete and allows pm_genpd_runtime_resume() to avoid dropping the
-lock after powering on the PM domain.
+Replace the unsigned in sd_count field in struct generic_pm_domain
+by an atomic_t one and modify the code in drivers/base/power/domain.c
+to take this change into account.
+
+This patch doesn't change the locking yet, that is going to be done
+in a separate subsequent patch.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/power/domain.c |   90 +++++++++++++++++++++++++++++---------------
- include/linux/pm_domain.h   |    1 
- 2 files changed, 61 insertions(+), 30 deletions(-)
+ drivers/base/power/domain.c |   30 ++++++++++++++++++++----------
+ include/linux/pm_domain.h   |    2 +-
+ 2 files changed, 21 insertions(+), 11 deletions(-)
 
-Index: linux-2.6/include/linux/pm_domain.h
-=================================--- linux-2.6.orig/include/linux/pm_domain.h
-+++ linux-2.6/include/linux/pm_domain.h
-@@ -13,6 +13,7 @@
- 
- enum gpd_status {
- 	GPD_STATE_ACTIVE = 0,	/* PM domain is active */
-+	GPD_STATE_WAIT_PARENT,	/* PM domain's parent is being waited for */
- 	GPD_STATE_BUSY,		/* Something is happening to the PM domain */
- 	GPD_STATE_REPEAT,	/* Power off in progress, to be repeated */
- 	GPD_STATE_POWER_OFF,	/* PM domain is off */
 Index: linux-2.6/drivers/base/power/domain.c
 =================================--- linux-2.6.orig/drivers/base/power/domain.c
 +++ linux-2.6/drivers/base/power/domain.c
-@@ -81,45 +81,59 @@ static void genpd_set_active(struct gene
+@@ -29,10 +29,20 @@ static struct generic_pm_domain *dev_to_
+ 	return pd_to_genpd(dev->pm_domain);
  }
  
- /**
-- * pm_genpd_poweron - Restore power to a given PM domain and its parents.
-+ * __pm_genpd_poweron - Restore power to a given PM domain and its parents.
-  * @genpd: PM domain to power up.
-  *
-  * Restore power to @genpd and all of its parents so that it is possible to
-  * resume a device belonging to it.
-  */
--int pm_genpd_poweron(struct generic_pm_domain *genpd)
-+int __pm_genpd_poweron(struct generic_pm_domain *genpd)
-+	__releases(&genpd->lock) __acquires(&genpd->lock)
+-static void genpd_sd_counter_dec(struct generic_pm_domain *genpd)
++static bool genpd_sd_counter_dec(struct generic_pm_domain *genpd)
  {
--	struct generic_pm_domain *parent;
-+	DEFINE_WAIT(wait);
- 	int ret = 0;
- 
--	mutex_lock(&genpd->lock);
-+	/* If the domain's parent is being waited for, we have to wait too. */
-+	for (;;) {
-+		prepare_to_wait(&genpd->status_wait_queue, &wait,
-+				TASK_UNINTERRUPTIBLE);
-+		if (genpd->status != GPD_STATE_WAIT_PARENT)
-+			break;
-+		mutex_unlock(&genpd->lock);
- 
--	parent = genpd->parent;
-+		schedule();
+-	if (!WARN_ON(genpd->sd_count = 0))
+-			genpd->sd_count--;
++	bool ret = false;
 +
-+		mutex_lock(&genpd->lock);
-+	}
-+	finish_wait(&genpd->status_wait_queue, &wait);
- 
-- start:
- 	if (genpd->status = GPD_STATE_ACTIVE
- 	    || (genpd->prepared_count > 0 && genpd->suspend_power_off))
--		goto out;
-+		return 0;
- 
- 	if (genpd->status != GPD_STATE_POWER_OFF) {
- 		genpd_set_active(genpd);
--		goto out;
-+		return 0;
- 	}
- 
--	if (parent) {
--		genpd_sd_counter_inc(parent);
-+	if (genpd->parent) {
-+		genpd_sd_counter_inc(genpd->parent);
-+		genpd->status = GPD_STATE_WAIT_PARENT;
- 
- 		mutex_unlock(&genpd->lock);
- 
--		ret = pm_genpd_poweron(parent);
-+		ret = pm_genpd_poweron(genpd->parent);
- 
- 		mutex_lock(&genpd->lock);
- 
-+		/*
-+		 * The "wait for parent" status is guaranteed not to change
-+		 * while the parent is powering on.
-+		 */
-+		genpd->status = GPD_STATE_POWER_OFF;
-+		wake_up_all(&genpd->status_wait_queue);
- 		if (ret)
- 			goto err;
--
--		parent = NULL;
--		goto start;
- 	}
- 
- 	if (genpd->power_on) {
-@@ -130,16 +144,27 @@ int pm_genpd_poweron(struct generic_pm_d
- 
- 	genpd_set_active(genpd);
- 
-- out:
--	mutex_unlock(&genpd->lock);
--
--	return ret;
-+	return 0;
- 
-  err:
- 	if (genpd->parent)
- 		genpd_sd_counter_dec(genpd->parent);
- 
--	goto out;
++	if (!WARN_ON(atomic_read(&genpd->sd_count) = 0))
++		ret = !!atomic_dec_and_test(&genpd->sd_count);
++
 +	return ret;
 +}
 +
-+/**
-+ * pm_genpd_poweron - Restore power to a given PM domain and its parents.
-+ * @genpd: PM domain to power up.
-+ */
-+int pm_genpd_poweron(struct generic_pm_domain *genpd)
++static void genpd_sd_counter_inc(struct generic_pm_domain *genpd)
 +{
-+	int ret;
-+
-+	mutex_lock(&genpd->lock);
-+	ret = __pm_genpd_poweron(genpd);
-+	mutex_unlock(&genpd->lock);
-+	return ret;
++	atomic_inc(&genpd->sd_count);
++	smp_mb__after_atomic_inc();
  }
  
- #endif /* CONFIG_PM */
-@@ -225,7 +250,8 @@ static void __pm_genpd_restore_device(st
-  */
- static bool genpd_abort_poweroff(struct generic_pm_domain *genpd)
- {
--	return genpd->status = GPD_STATE_ACTIVE || genpd->resume_count > 0;
-+	return genpd->status = GPD_STATE_WAIT_PARENT
-+		|| genpd->status = GPD_STATE_ACTIVE || genpd->resume_count > 0;
- }
+ static void genpd_acquire_lock(struct generic_pm_domain *genpd)
+@@ -118,7 +128,7 @@ int pm_genpd_poweron(struct generic_pm_d
  
- /**
-@@ -261,11 +287,13 @@ static int pm_genpd_poweroff(struct gene
- 	/*
- 	 * Do not try to power off the domain in the following situations:
- 	 * (1) The domain is already in the "power off" state.
--	 * (2) System suspend is in progress.
-+	 * (2) The domain is waiting for its parent to power up.
- 	 * (3) One of the domain's devices is being resumed right now.
-+	 * (4) System suspend is in progress.
- 	 */
--	if (genpd->status = GPD_STATE_POWER_OFF || genpd->prepared_count > 0
--	    || genpd->resume_count > 0)
-+	if (genpd->status = GPD_STATE_POWER_OFF
-+	    || genpd->status = GPD_STATE_WAIT_PARENT
-+	    || genpd->resume_count > 0 || genpd->prepared_count > 0)
+ 	genpd_set_active(genpd);
+ 	if (parent)
+-		parent->sd_count++;
++		genpd_sd_counter_inc(parent);
+ 
+  out:
+ 	mutex_unlock(&genpd->lock);
+@@ -254,7 +264,7 @@ static int pm_genpd_poweroff(struct gene
+ 	    || genpd->resume_count > 0)
  		return 0;
  
- 	if (atomic_read(&genpd->sd_count) > 0)
-@@ -299,14 +327,15 @@ static int pm_genpd_poweroff(struct gene
- 	list_for_each_entry_reverse(dle, &genpd->dev_list, node) {
- 		ret = atomic_read(&genpd->sd_count) = 0 ?
- 			__pm_genpd_save_device(dle, genpd) : -EBUSY;
-+
-+		if (genpd_abort_poweroff(genpd))
-+			goto out;
-+
- 		if (ret) {
- 			genpd_set_active(genpd);
- 			goto out;
- 		}
+-	if (genpd->sd_count > 0)
++	if (atomic_read(&genpd->sd_count) > 0)
+ 		return -EBUSY;
  
--		if (genpd_abort_poweroff(genpd))
--			goto out;
--
- 		if (genpd->status = GPD_STATE_REPEAT) {
- 			genpd->poweroff_task = NULL;
- 			goto start;
-@@ -432,11 +461,12 @@ static int pm_genpd_runtime_resume(struc
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
+ 	not_suspended = 0;
+@@ -325,8 +335,7 @@ static int pm_genpd_poweroff(struct gene
+ 	genpd->status = GPD_STATE_POWER_OFF;
  
--	ret = pm_genpd_poweron(genpd);
--	if (ret)
--		return ret;
--
- 	mutex_lock(&genpd->lock);
-+	ret = __pm_genpd_poweron(genpd);
-+	if (ret) {
-+		mutex_unlock(&genpd->lock);
-+		return ret;
-+	}
- 	genpd->status = GPD_STATE_BUSY;
- 	genpd->resume_count++;
- 	for (;;) {
+ 	if (parent) {
+-		genpd_sd_counter_dec(parent);
+-		if (parent->sd_count = 0)
++		if (genpd_sd_counter_dec(parent))
+ 			genpd_queue_power_off_work(parent);
+ 
+ 		genpd_release_lock(parent);
+@@ -491,7 +500,8 @@ static void pm_genpd_sync_poweroff(struc
+ 	if (genpd->status = GPD_STATE_POWER_OFF)
+ 		return;
+ 
+-	if (genpd->suspended_count != genpd->device_count || genpd->sd_count > 0)
++	if (genpd->suspended_count != genpd->device_count
++	    || atomic_read(&genpd->sd_count) > 0)
+ 		return;
+ 
+ 	if (genpd->power_off)
+@@ -1152,7 +1162,7 @@ int pm_genpd_add_subdomain(struct generi
+ 	list_add_tail(&new_subdomain->sd_node, &genpd->sd_list);
+ 	new_subdomain->parent = genpd;
+ 	if (subdomain->status != GPD_STATE_POWER_OFF)
+-		genpd->sd_count++;
++		genpd_sd_counter_inc(genpd);
+ 
+  out:
+ 	mutex_unlock(&new_subdomain->lock);
+@@ -1227,7 +1237,7 @@ void pm_genpd_init(struct generic_pm_dom
+ 	genpd->gov = gov;
+ 	INIT_WORK(&genpd->power_off_work, genpd_power_off_work_fn);
+ 	genpd->in_progress = 0;
+-	genpd->sd_count = 0;
++	atomic_set(&genpd->sd_count, 0);
+ 	genpd->status = is_off ? GPD_STATE_POWER_OFF : GPD_STATE_ACTIVE;
+ 	init_waitqueue_head(&genpd->status_wait_queue);
+ 	genpd->poweroff_task = NULL;
+Index: linux-2.6/include/linux/pm_domain.h
+=================================--- linux-2.6.orig/include/linux/pm_domain.h
++++ linux-2.6/include/linux/pm_domain.h
+@@ -33,7 +33,7 @@ struct generic_pm_domain {
+ 	struct dev_power_governor *gov;
+ 	struct work_struct power_off_work;
+ 	unsigned int in_progress;	/* Number of devices being suspended now */
+-	unsigned int sd_count;	/* Number of subdomains with power "on" */
++	atomic_t sd_count;	/* Number of subdomains with power "on" */
+ 	enum gpd_status status;	/* Current state of the domain */
+ 	wait_queue_head_t status_wait_queue;
+ 	struct task_struct *poweroff_task;	/* Powering off task */
 
