@@ -1,41 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 05 Jul 2011 09:37:55 +0000
-Subject: [PATCH 3/5] sh: clock-sh7723: modify I2C clock settings
-Message-Id: <87oc19dq4v.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Sun, 31 Jul 2011 21:36:35 +0000
+Subject: [PATCH] sh: Fix conflicting definitions of ptrace_triggered
+Message-Id: <1312148195-32658-1-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-I2C doesn't work without this patch on SH7723
+The extra nmi argument is causing this compile fail:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+  CC      arch/sh/kernel/ptrace_32.o
+arch/sh/kernel/ptrace_32.c:66:6: error: conflicting types for 'ptrace_triggered'
+arch/sh/include/asm/ptrace.h:126:13: note: previous declaration of 'ptrace_triggered' was here
+make[3]: *** [arch/sh/kernel/ptrace_32.o] Error 1
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-index 55493cd..7f70899 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-@@ -201,6 +201,7 @@ static struct clk mstp_clks[] = {
- };
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+
+diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
+index b97baf8..2d3679b 100644
+--- a/arch/sh/include/asm/ptrace.h
++++ b/arch/sh/include/asm/ptrace.h
+@@ -123,7 +123,7 @@ static inline unsigned long regs_get_kernel_stack_nth(struct pt_regs *regs,
+ struct perf_event;
+ struct perf_sample_data;
  
- #define CLKDEV_CON_ID(_id, _clk) { .con_id = _id, .clk = _clk }
-+#define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
+-extern void ptrace_triggered(struct perf_event *bp, int nmi,
++extern void ptrace_triggered(struct perf_event *bp,
+ 		      struct perf_sample_data *data, struct pt_regs *regs);
  
- static struct clk_lookup lookups[] = {
- 	/* main clocks */
-@@ -305,7 +306,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("msiof0", &mstp_clks[HWBLK_MSIOF0]),
- 	CLKDEV_CON_ID("msiof1", &mstp_clks[HWBLK_MSIOF1]),
- 	CLKDEV_CON_ID("meram0", &mstp_clks[HWBLK_MERAM]),
--	CLKDEV_CON_ID("i2c0", &mstp_clks[HWBLK_IIC]),
-+	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC]),
- 	CLKDEV_CON_ID("rtc0", &mstp_clks[HWBLK_RTC]),
- 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
- 	CLKDEV_CON_ID("adc0", &mstp_clks[HWBLK_ADC]),
+ #define task_pt_regs(task) \
 -- 
-1.7.4.1
+1.7.6
 
