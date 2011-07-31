@@ -1,103 +1,154 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 30 Jul 2011 20:26:55 +0000
-Subject: [PATCH 4/4] fbdev: sh_mobile_meram: Remove unneeded sh_mobile_meram.h
-Message-Id: <1312057615-29123-5-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 31 Jul 2011 17:48:26 +0000
+Subject: [PATCH 3/9] PM / Domains: Do not take parent locks to modify subdomain counters
+Message-Id: <201107311948.26609.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201107311946.06654.rjw@sisk.pl>
+In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-The drivers/video/sh_mobile_meram.h header contains unused definitions
-and declarations. Move the only used macro to sh_mobile_meram.c, and
-remove the header.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+After the subdomain counter in struct generic_pm_domain has been
+changed into an atomic_t field, it is possible to modify
+pm_genpd_poweron() and pm_genpd_poweroff() so that they don't take
+the parents locks.  This requires pm_genpd_poweron() to increment
+the parent's subdomain counter before calling itself recursively
+for the parent and to decrement it if an error is to be returned.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    2 +-
- drivers/video/sh_mobile_meram.c  |    5 +++--
- drivers/video/sh_mobile_meram.h  |   33 ---------------------------------
- 3 files changed, 4 insertions(+), 36 deletions(-)
- delete mode 100644 drivers/video/sh_mobile_meram.h
+ drivers/base/power/domain.c |   70 +++++++++++++++++++-------------------------
+ 1 file changed, 31 insertions(+), 39 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index d0f768e..93e10ef 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -24,10 +24,10 @@
- #include <linux/backlight.h>
- #include <linux/gpio.h>
- #include <video/sh_mobile_lcdc.h>
-+#include <video/sh_mobile_meram.h>
- #include <asm/atomic.h>
+Index: linux-2.6/drivers/base/power/domain.c
+=================================--- linux-2.6.orig/drivers/base/power/domain.c
++++ linux-2.6/drivers/base/power/domain.c
+@@ -93,12 +93,7 @@ int pm_genpd_poweron(struct generic_pm_d
+ 	int ret = 0;
  
- #include "sh_mobile_lcdcfb.h"
--#include "sh_mobile_meram.h"
+  start:
+-	if (parent) {
+-		genpd_acquire_lock(parent);
+-		mutex_lock_nested(&genpd->lock, SINGLE_DEPTH_NESTING);
+-	} else {
+-		mutex_lock(&genpd->lock);
+-	}
++	mutex_lock(&genpd->lock);
  
- #define SIDE_B_OFFSET 0x1000
- #define MIRROR_OFFSET 0x2000
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 7ba6dce..f632970 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -16,8 +16,7 @@
- #include <linux/io.h>
- #include <linux/slab.h>
- #include <linux/platform_device.h>
--
--#include "sh_mobile_meram.h"
-+#include <video/sh_mobile_meram.h>
+ 	if (genpd->status = GPD_STATE_ACTIVE
+ 	    || (genpd->prepared_count > 0 && genpd->suspend_power_off))
+@@ -109,31 +104,33 @@ int pm_genpd_poweron(struct generic_pm_d
+ 		goto out;
+ 	}
  
- /* meram registers */
- #define MEVCR1			0x4
-@@ -82,6 +81,8 @@
- 	 ((yszm1) << MExxBSIZE_YSZM1_SHIFT) | \
- 	 ((xszm1) << MExxBSIZE_XSZM1_SHIFT))
- 
-+#define SH_MOBILE_MERAM_ICB_NUM		32
+-	if (parent && parent->status != GPD_STATE_ACTIVE) {
++	if (parent) {
++		genpd_sd_counter_inc(parent);
 +
- static unsigned long common_regs[] = {
- 	MEVCR1,
- 	MEQSEL1,
-diff --git a/drivers/video/sh_mobile_meram.h b/drivers/video/sh_mobile_meram.h
-deleted file mode 100644
-index 1615204..0000000
---- a/drivers/video/sh_mobile_meram.h
-+++ /dev/null
-@@ -1,33 +0,0 @@
--#ifndef __sh_mobile_meram_h__
--#define __sh_mobile_meram_h__
+ 		mutex_unlock(&genpd->lock);
+-		genpd_release_lock(parent);
+ 
+ 		ret = pm_genpd_poweron(parent);
+-		if (ret)
++		if (ret) {
++			genpd_sd_counter_dec(parent);
+ 			return ret;
++		}
+ 
++		parent = NULL;
+ 		goto start;
+ 	}
+ 
+-	if (genpd->power_on) {
++	if (genpd->power_on)
+ 		ret = genpd->power_on(genpd);
+-		if (ret)
+-			goto out;
+-	}
+ 
+-	genpd_set_active(genpd);
+-	if (parent)
+-		genpd_sd_counter_inc(parent);
++	if (ret) {
++		if (genpd->parent)
++			genpd_sd_counter_dec(genpd->parent);
++	} else {
++		genpd_set_active(genpd);
++	}
+ 
+  out:
+ 	mutex_unlock(&genpd->lock);
+-	if (parent)
+-		genpd_release_lock(parent);
+ 
+ 	return ret;
+ }
+@@ -293,7 +290,8 @@ static int pm_genpd_poweroff(struct gene
+ 	genpd->poweroff_task = current;
+ 
+ 	list_for_each_entry_reverse(dle, &genpd->dev_list, node) {
+-		ret = __pm_genpd_save_device(dle, genpd);
++		ret = atomic_read(&genpd->sd_count) = 0 ?
++			__pm_genpd_save_device(dle, genpd) : -EBUSY;
+ 		if (ret) {
+ 			genpd_set_active(genpd);
+ 			goto out;
+@@ -308,38 +306,32 @@ static int pm_genpd_poweroff(struct gene
+ 		}
+ 	}
+ 
+-	parent = genpd->parent;
+-	if (parent) {
+-		mutex_unlock(&genpd->lock);
 -
--#include <linux/mutex.h>
--#include <video/sh_mobile_meram.h>
+-		genpd_acquire_lock(parent);
+-		mutex_lock_nested(&genpd->lock, SINGLE_DEPTH_NESTING);
 -
--/*
-- * MERAM private
-- */
+-		if (genpd_abort_poweroff(genpd)) {
+-			genpd_release_lock(parent);
++	if (genpd->power_off) {
++		if (atomic_read(&genpd->sd_count) > 0) {
++			ret = -EBUSY;
+ 			goto out;
+ 		}
+-	}
+ 
+-	if (genpd->power_off) {
++		/*
++		 * If sd_count > 0 at this point, one of the children hasn't
++		 * managed to call pm_genpd_poweron() for the parent yet after
++		 * incrementing it.  In that case pm_genpd_poweron() will wait
++		 * for us to drop the lock, so we can call .power_off() and let
++		 * the pm_genpd_poweron() restore power for us (this shouldn't
++		 * happen very often).
++		 */
+ 		ret = genpd->power_off(genpd);
+ 		if (ret = -EBUSY) {
+ 			genpd_set_active(genpd);
+-			if (parent)
+-				genpd_release_lock(parent);
 -
--#define MERAM_ICB_Y 0x1
--#define MERAM_ICB_C 0x2
+ 			goto out;
+ 		}
+ 	}
+ 
+ 	genpd->status = GPD_STATE_POWER_OFF;
+ 
+-	if (parent) {
+-		if (genpd_sd_counter_dec(parent))
+-			genpd_queue_power_off_work(parent);
 -
--/* MERAM cache size */
--#define SH_MOBILE_MERAM_ICB_NUM		32
--
--#define SH_MOBILE_MERAM_CACHE_OFFSET(p)	((p) >> 16)
--#define SH_MOBILE_MERAM_CACHE_SIZE(p)	((p) & 0xffff)
--
--int sh_mobile_meram_alloc_icb(const struct sh_mobile_meram_cfg *cfg,
--		   int xres,
--		   int yres,
--		   unsigned int base_addr,
--		   int yuv_mode,
--		   int *marker_icb,
--		   int *out_pitch);
--
--void sh_mobile_meram_free_icb(int marker_icb);
--
--#define SH_MOBILE_MERAM_START(ind, ab) \
--	(0xC0000000 | ((ab & 0x1) << 23) | ((ind & 0x1F) << 24))
--
--#endif /* !__sh_mobile_meram_h__ */
--- 
-1.7.3.4
+-		genpd_release_lock(parent);
+-	}
++	parent = genpd->parent;
++	if (parent && genpd_sd_counter_dec(parent))
++		genpd_queue_power_off_work(parent);
+ 
+  out:
+ 	genpd->poweroff_task = NULL;
 
