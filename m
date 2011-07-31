@@ -1,48 +1,97 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Mon, 04 Jul 2011 08:06:47 +0000
-Subject: [PATCH 2/5 v4] fbdev: sh_mobile_meram: Enable/disable MERAM along with LCDC
-Message-Id: <1309766807-32484-1-git-send-email-dhobsong@igel.co.jp>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 31 Jul 2011 17:49:12 +0000
+Subject: [PATCH 4/9] PM / Domains: Make pm_genpd_poweron() always survive parent removal
+Message-Id: <201107311949.12503.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201107311946.06654.rjw@sisk.pl>
+In-Reply-To: <201107311946.06654.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
 
-The MERAM reference counts should be tied to the two LCDC devices (LCD/HDMI)
-so that when they are enable/disabled, the MERAM is as well.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+If pm_genpd_remove_subdomain() is called to remove a PM domain's
+subdomain and pm_genpd_poweron() is called for that subdomain at
+the same time, and the pm_genpd_poweron() called by it recursively
+for the parent returns an error, the first pm_genpd_poweron()'s
+error code path will attempt to decrement the subdomain counter of
+a PM domain that it's not a subdomain of any more.
+
+Rearrange the code in pm_genpd_poweron() to prevent this from
+happening.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
-Changes from V3
-=======* Remove the MERAM callbacks used to runtime_get/runtime_put the device from
-  the LCDC driver.  Instead, just call the functions on the MERAM device
-  directly
+ drivers/base/power/domain.c |   33 ++++++++++++++++++++-------------
+ 1 file changed, 20 insertions(+), 13 deletions(-)
 
- drivers/video/sh_mobile_lcdcfb.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 019dbd3..15e77f3 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -259,6 +259,8 @@ static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
- 		pm_runtime_get_sync(priv->dev);
- 		if (priv->dot_clk)
- 			clk_enable(priv->dot_clk);
-+		if (priv->meram_dev && priv->meram_dev->pdev)
-+			pm_runtime_get_sync(&priv->meram_dev->pdev->dev);
+Index: linux-2.6/drivers/base/power/domain.c
+=================================--- linux-2.6.orig/drivers/base/power/domain.c
++++ linux-2.6/drivers/base/power/domain.c
+@@ -89,12 +89,14 @@ static void genpd_set_active(struct gene
+  */
+ int pm_genpd_poweron(struct generic_pm_domain *genpd)
+ {
+-	struct generic_pm_domain *parent = genpd->parent;
++	struct generic_pm_domain *parent;
+ 	int ret = 0;
+ 
+- start:
+ 	mutex_lock(&genpd->lock);
+ 
++	parent = genpd->parent;
++
++ start:
+ 	if (genpd->status = GPD_STATE_ACTIVE
+ 	    || (genpd->prepared_count > 0 && genpd->suspend_power_off))
+ 		goto out;
+@@ -110,29 +112,34 @@ int pm_genpd_poweron(struct generic_pm_d
+ 		mutex_unlock(&genpd->lock);
+ 
+ 		ret = pm_genpd_poweron(parent);
+-		if (ret) {
+-			genpd_sd_counter_dec(parent);
+-			return ret;
+-		}
++
++		mutex_lock(&genpd->lock);
++
++		if (ret)
++			goto err;
+ 
+ 		parent = NULL;
+ 		goto start;
  	}
+ 
+-	if (genpd->power_on)
++	if (genpd->power_on) {
+ 		ret = genpd->power_on(genpd);
+-
+-	if (ret) {
+-		if (genpd->parent)
+-			genpd_sd_counter_dec(genpd->parent);
+-	} else {
+-		genpd_set_active(genpd);
++		if (ret)
++			goto err;
+ 	}
+ 
++	genpd_set_active(genpd);
++
+  out:
+ 	mutex_unlock(&genpd->lock);
+ 
+ 	return ret;
++
++ err:
++	if (genpd->parent)
++		genpd_sd_counter_dec(genpd->parent);
++
++	goto out;
  }
  
-@@ -267,6 +270,8 @@ static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
- 	if (atomic_sub_return(1, &priv->hw_usecnt) = -1) {
- 		if (priv->dot_clk)
- 			clk_disable(priv->dot_clk);
-+		if (priv->meram_dev && priv->meram_dev->pdev)
-+			pm_runtime_put_sync(&priv->meram_dev->pdev->dev);
- 		pm_runtime_put(priv->dev);
- 	}
- }
--- 
-1.7.1
+ #endif /* CONFIG_PM */
 
