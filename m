@@ -1,38 +1,80 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 29 Aug 2011 07:24:49 +0000
-Subject: Re: [PATCH 1/2] sh: Fix unaligned memory access for branches without delay slots
-Message-Id: <20110829072449.GE31809@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 02 Aug 2011 09:49:52 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh7372 SCIF platform data update
+Message-Id: <20110802094952.2785.67371.sendpatchset@t400s>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1314028568-7571-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1314028568-7571-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 22, 2011 at 04:56:08PM +0100, Phil Edworthy wrote:
-> This patch just clears the return code for those cases where an
-> unaligned memory access occurs on branch instructions without a
-> delay slot.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, Aug 24, 2011 at 11:43:59AM +0100, Phil Edworthy wrote:
-> This adds unaligned memory access support for the following instructions:
->   mov.w @(disp,PC),Rn
->   mov.l @(disp,PC),Rn
-> 
-> These instructions are often used on SH2A toolchains.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> ---
-> v3:
->   Fixed the PC relative address calculation
-> v2:
->   Fixed the mov.l case for big endian
->   Fixed typo in commit msg
-> 
->  arch/sh/kernel/traps_32.c |   35 +++++++++++++++++++++++++++++++++++
->  1 files changed, 35 insertions(+), 0 deletions(-)
-> 
-Both applied, thanks.
+Add .regtype members to the sh7372 SCIF platform data.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Tested on AP4EVB, fixes no-console-on-boot issue.
+
+ arch/arm/mach-shmobile/setup-sh7372.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-08-02 18:19:47.000000000 +0900
+@@ -44,6 +44,7 @@ static struct plat_sci_port scif0_platfo
+ 	.type		= PORT_SCIFA,
+ 	.irqs		= { evt2irq(0x0c00), evt2irq(0x0c00),
+ 			    evt2irq(0x0c00), evt2irq(0x0c00) },
++	.regtype	= SCIx_SCIFA_REGTYPE,
+ };
+ 
+ static struct platform_device scif0_device = {
+@@ -63,6 +64,7 @@ static struct plat_sci_port scif1_platfo
+ 	.type		= PORT_SCIFA,
+ 	.irqs		= { evt2irq(0x0c20), evt2irq(0x0c20),
+ 			    evt2irq(0x0c20), evt2irq(0x0c20) },
++	.regtype	= SCIx_SCIFA_REGTYPE,
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -82,6 +84,7 @@ static struct plat_sci_port scif2_platfo
+ 	.type		= PORT_SCIFA,
+ 	.irqs		= { evt2irq(0x0c40), evt2irq(0x0c40),
+ 			    evt2irq(0x0c40), evt2irq(0x0c40) },
++	.regtype	= SCIx_SCIFA_REGTYPE,
+ };
+ 
+ static struct platform_device scif2_device = {
+@@ -101,6 +104,7 @@ static struct plat_sci_port scif3_platfo
+ 	.type		= PORT_SCIFA,
+ 	.irqs		= { evt2irq(0x0c60), evt2irq(0x0c60),
+ 			    evt2irq(0x0c60), evt2irq(0x0c60) },
++	.regtype	= SCIx_SCIFA_REGTYPE,
+ };
+ 
+ static struct platform_device scif3_device = {
+@@ -120,6 +124,7 @@ static struct plat_sci_port scif4_platfo
+ 	.type		= PORT_SCIFA,
+ 	.irqs		= { evt2irq(0x0d20), evt2irq(0x0d20),
+ 			    evt2irq(0x0d20), evt2irq(0x0d20) },
++	.regtype	= SCIx_SCIFA_REGTYPE,
+ };
+ 
+ static struct platform_device scif4_device = {
+@@ -139,6 +144,7 @@ static struct plat_sci_port scif5_platfo
+ 	.type		= PORT_SCIFA,
+ 	.irqs		= { evt2irq(0x0d40), evt2irq(0x0d40),
+ 			    evt2irq(0x0d40), evt2irq(0x0d40) },
++	.regtype	= SCIx_SCIFA_REGTYPE,
+ };
+ 
+ static struct platform_device scif5_device = {
+@@ -158,6 +164,7 @@ static struct plat_sci_port scif6_platfo
+ 	.type		= PORT_SCIFB,
+ 	.irqs		= { evt2irq(0x0d60), evt2irq(0x0d60),
+ 			    evt2irq(0x0d60), evt2irq(0x0d60) },
++	.regtype	= SCIx_SCIFB_REGTYPE,
+ };
+ 
+ static struct platform_device scif6_device = {
