@@ -1,93 +1,51 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Aug 2011 11:45:22 +0000
-Subject: Re: [PATCH 2/5] mmc: tmio: Provide separate interrupt handlers
-Message-Id: <20110816114522.GD3110@verge.net.au>
+Date: Wed, 03 Aug 2011 06:08:54 +0000
+Subject: [PATCH] mmc: sdhi, mmcif: zboot: Correct clock disable logic
+Message-Id: <1312351734-4426-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313460499-3377-1-git-send-email-horms@verge.net.au>
- <1313460499-3377-3-git-send-email-horms@verge.net.au>
- <Pine.LNX.4.64.1108160924030.13154@axis700.grange>
- <20110816075919.GA12097@verge.net.au>
- <Pine.LNX.4.64.1108161250470.13913@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1108161250470.13913@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Aug 16, 2011 at 01:13:06PM +0200, Guennadi Liakhovetski wrote:
-> On Tue, 16 Aug 2011, Simon Horman wrote:
-> 
-> > On Tue, Aug 16, 2011 at 09:41:52AM +0200, Guennadi Liakhovetski wrote:
-> > > On Tue, 16 Aug 2011, Simon Horman wrote:
-> 
-> [snip]
-> 
-> > > > +irqreturn_t tmio_mmc_irq(int irq, void *devid)
-> > > > +{
-> > > > +	struct tmio_mmc_host *host = devid;
-> > > > +	unsigned int ireg, status;
-> > > > +
-> > > > +	pr_debug("MMC IRQ begin\n");
-> > > > +
-> > > > +	tmio_mmc_card_irq_status(host, &ireg, &status);
-> > > > +	__tmio_mmc_card_detect_irq(host, ireg, status);
-> > > 
-> > > Same here - I would return, if a card hot-plug event occurred.
-> > 
-> > Will do.
-> > 
-> > > > +	__tmio_mmc_sdcard_irq(host, ireg, status);
-> > > 
-> > > Ditto
-> > > 
-> > > > +
-> > > > +	tmio_mmc_sdio_irq(irq, devid);
-> > > 
-> > > Any specific reason, why you now process SDIO IRQs last?
-> > 
-> > I believe this is in keeping with the ordering implied by original code.
-> 
-> I believe it's not. The original version did SDIO first, then hotplug, 
-> then normal IO.
+This corrects a logic-error that I made in the original implementation.
 
-My reading of the original code is that SDIO was the lowest priority
-although its code appeared near the top of tmio_mmc_irq().
+An alternate patch would be to just remove these lines and
+leave the clock running as it is reconfigured later on during
+boot anyway.
 
-irqreturn_t tmio_mmc_irq(int irq, void *devid)
-{
-	...
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/boot/compressed/mmcif-sh7372.c |    2 +-
+ arch/arm/boot/compressed/sdhi-sh7372.c  |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-	status = sd_ctrl_read32(host, CTL_STATUS);
-	irq_mask = sd_ctrl_read32(host, CTL_IRQ_MASK);
-	ireg = status & TMIO_MASK_IRQ & ~irq_mask;
-
-	sdio_ireg = 0;
-	if (!ireg pdata->flags & TMIO_MMC_SDIO_IRQ) {
-		/* Handle SDIO Interrupt */
-		...
-		goto out;
-	}
-
-	/* Handle Card detect Interrupts */
-
-	/* Handle other Interrupts */
-
-	...
-}
-
-> I'm not necessarily saying, that the original code was 
-> correct or better, I'm just saying, it was different. As for which one we 
-> should prefer... I think, I'd check for hotplug first: if the card is 
-> removed, no reason to try to communicate with it. And we have to first 
-> report a new card, before reporting any IRQs from it. But then - IO or 
-> SDIO as second? Well, since SDIO IRQs are asynchronous, it shouldn't be a 
-> big problem for them to wait a bit, whereas normal IO IRQs are card's 
-> response to host's actions, so, the originator might want to know the 
-> result before processing any asynchronous events. So, I actually like your 
-> ordering better... But I'll give it a short spin with SDIO, unless you do 
-> it yourself.
-
-I intend to test my code with SDIO, however I don't have access to hardware
-at this exact moment. So if you could do so, that would be great.
+diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
+index b6f61d9..672ae95 100644
+--- a/arch/arm/boot/compressed/mmcif-sh7372.c
++++ b/arch/arm/boot/compressed/mmcif-sh7372.c
+@@ -82,7 +82,7 @@ asmlinkage void mmc_loader(unsigned char *buf, unsigned long len)
+ 
+ 
+ 	/* Disable clock to MMC hardware block */
+-	__raw_writel(__raw_readl(SMSTPCR3) & (1 << 12), SMSTPCR3);
++	__raw_writel(__raw_readl(SMSTPCR3) | (1 << 12), SMSTPCR3);
+ 
+ 	mmc_update_progress(MMC_PROGRESS_DONE);
+ }
+diff --git a/arch/arm/boot/compressed/sdhi-sh7372.c b/arch/arm/boot/compressed/sdhi-sh7372.c
+index d403a8b..d279294 100644
+--- a/arch/arm/boot/compressed/sdhi-sh7372.c
++++ b/arch/arm/boot/compressed/sdhi-sh7372.c
+@@ -85,7 +85,7 @@ asmlinkage void mmc_loader(unsigned short *buf, unsigned long len)
+ 		goto err;
+ 
+         /* Disable clock to SDHI1 hardware block */
+-        __raw_writel(__raw_readl(SMSTPCR3) & (1 << 13), SMSTPCR3);
++        __raw_writel(__raw_readl(SMSTPCR3) | (1 << 13), SMSTPCR3);
+ 
+ 	mmc_update_progress(MMC_PROGRESS_DONE);
+ 
+-- 
+1.7.5.4
 
