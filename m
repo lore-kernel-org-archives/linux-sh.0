@@ -1,57 +1,35 @@
-From: David Brown <davidb@codeaurora.org>
-Date: Thu, 04 Aug 2011 16:24:31 +0000
-Subject: [PATCH] cpuidle: Consistent spelling of cpuidle_idle_call()
-Message-Id: <1312475071-22973-1-git-send-email-davidb@codeaurora.org>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Thu, 04 Aug 2011 17:24:55 +0000
+Subject: Re: [PATCH] cpuidle: Consistent spelling of cpuidle_idle_call()
+Message-Id: <4E3AD5E7.6040105@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1312475071-22973-1-git-send-email-davidb@codeaurora.org>
+In-Reply-To: <1312475071-22973-1-git-send-email-davidb@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit a0bfa1373859e9d11dc92561a8667588803e42d8 mispells
-cpuidle_idle_call() on ARM and SH code.  Fix this to be consistent.
+On 08/04/2011 09:24 AM, David Brown wrote:
+> Commit a0bfa1373859e9d11dc92561a8667588803e42d8 mispells
+> cpuidle_idle_call() on ARM and SH code.  Fix this to be consistent.
+>
+> Cc: Kevin Hilman <khilman@deeprootsystems.com>
+> Cc: Paul Mundt <lethal@linux-sh.org>
+> Cc: x86@kernel.org
+> Cc: Len Brown <len.brown@intel.com>
+> Signed-off-by: David Brown <davidb@codeaurora.org>
+> ---
+> The referenced commit breaks compilation on ARM, and appears it would
+> do so on SH as well.
 
-Cc: Kevin Hilman <khilman@deeprootsystems.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: x86@kernel.org
-Cc: Len Brown <len.brown@intel.com>
-Signed-off-by: David Brown <davidb@codeaurora.org>
----
-The referenced commit breaks compilation on ARM, and appears it would
-do so on SH as well.
+Mark Brown sent this patch[1] months ago when this build breakage was
+noticed in linux-next. What happened to that patch? It looks like the
+patch that introduced the breakage was pulled from linux-next shortly
+after and then reintroduced today.
 
-David
+[1]https://lkml.org/lkml/2011/4/4/109
 
- arch/arm/kernel/process.c |    2 +-
- arch/sh/kernel/idle.c     |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/kernel/process.c b/arch/arm/kernel/process.c
-index d7ee0d4..1a347f4 100644
---- a/arch/arm/kernel/process.c
-+++ b/arch/arm/kernel/process.c
-@@ -197,7 +197,7 @@ void cpu_idle(void)
- 				cpu_relax();
- 			} else {
- 				stop_critical_timings();
--				if (cpuidle_call_idle())
-+				if (cpuidle_idle_call())
- 					pm_idle();
- 				start_critical_timings();
- 				/*
-diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
-index 3c45de1..32114e0 100644
---- a/arch/sh/kernel/idle.c
-+++ b/arch/sh/kernel/idle.c
-@@ -101,7 +101,7 @@ void cpu_idle(void)
- 			local_irq_disable();
- 			/* Don't trace irqs off for idle */
- 			stop_critical_timings();
--			if (cpuidle_call_idle())
-+			if (cpuidle_idle_call())
- 				pm_idle();
- 			/*
- 			 * Sanity check to ensure that pm_idle() returns
 -- 
 Sent by an employee of the Qualcomm Innovation Center, Inc.
 The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
