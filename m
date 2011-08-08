@@ -1,170 +1,205 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 26 Aug 2011 06:43:34 +0000
-Subject: [PATCH 02/03] ARM: mach-shmobile: sh7372 A3SP support
-Message-Id: <20110826064334.373.95447.sendpatchset@rxone.opensource.se>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 08 Aug 2011 22:31:42 +0000
+Subject: [PATCH 2/4] PM: Reference counting of power.subsys_data
+Message-Id: <201108090031.42691.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110630094710.10442.59532.sendpatchset@t400s>
-In-Reply-To: <20110630094710.10442.59532.sendpatchset@t400s>
+References: <201108090028.12698.rjw@sisk.pl>
+In-Reply-To: <201108090028.12698.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Greg KH <gregkh@suse.de>
 
-From: Magnus Damm <damm@opensource.se>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-This patch adds sh7372 A3SP power domain support.
+Since the power.subsys_data device field will be used by multiple
+filesystems, introduce a reference counting mechanism for it to avoid
+freeing it prematurely or changing its value at a wrong time.
 
-The sh7372 A3SP hardware power domain contains a
-wide range of I/O devices. The list of I/O devices
-include SCIF serial ports, DMA Engine hardware,
-SD and MMC controller hardware, USB controllers
-and I2C master controllers.
+Make the PM clocks management code that currently is the only user of
+power.subsys_data use the new reference counting.
 
-This patch adds the A3SP low level code which 
-powers the hardware power domain on and off. It
-also ties in platform devices to the pm domain
-support code.
-
-It is worth noting that the serial console is
-hooked up to SCIFA0 on most sh7372 boards, and
-the SCIFA0 port is included in the A3SP hardware
-power domain. For this reason we cannot output
-debug messages from the low level power control
-code in the case of A3SP.
-
-This patch seems to work quite fine except for
-Suspend-to-RAM that is broken with this patch
-applied. QoS support is needed in drivers before
-we can enable the A3SP power control on the fly.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
+ drivers/base/power/Makefile    |    2 
+ drivers/base/power/clock_ops.c |   24 ++---------
+ drivers/base/power/common.c    |   86 +++++++++++++++++++++++++++++++++++++++++
+ include/linux/pm.h             |    3 +
+ 4 files changed, 95 insertions(+), 20 deletions(-)
 
- Depends on USB-DMAC patches by Morimoto-san.
-
- arch/arm/mach-shmobile/board-ap4evb.c        |    4 ++++
- arch/arm/mach-shmobile/board-mackerel.c      |    8 ++++++++
- arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
- arch/arm/mach-shmobile/pm-sh7372.c           |   19 +++++++++++++++----
- arch/arm/mach-shmobile/setup-sh7372.c        |   14 ++++++++++++++
- 5 files changed, 42 insertions(+), 4 deletions(-)
-
---- 0006/arch/arm/mach-shmobile/board-ap4evb.c
-+++ work/arch/arm/mach-shmobile/board-ap4evb.c	2011-08-26 12:44:29.000000000 +0900
-@@ -1408,6 +1408,10 @@ static void __init ap4evb_init(void)
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
- 
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
+Index: linux-2.6/drivers/base/power/common.c
+=================================--- /dev/null
++++ linux-2.6/drivers/base/power/common.c
+@@ -0,0 +1,86 @@
++/*
++ * drivers/base/power/common.c - Common device power management code.
++ *
++ * Copyright (C) 2011 Rafael J. Wysocki <rjw@sisk.pl>, Renesas Electronics Corp.
++ *
++ * This file is released under the GPLv2.
++ */
 +
- 	hdmi_init_pm_clock();
- 	fsi_init_pm_clock();
- 	sh7372_pm_init();
---- 0006/arch/arm/mach-shmobile/board-mackerel.c
-+++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-08-26 12:44:29.000000000 +0900
-@@ -1588,6 +1588,14 @@ static void __init mackerel_init(void)
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
-+#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
-+#endif
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi2_device);
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/device.h>
++#include <linux/pm_runtime.h>
++
++/**
++ * dev_pm_get_subsys_data - Create or refcount power.subsys_data for device.
++ * @dev: Device to handle.
++ *
++ * If power.subsys_data is NULL, point it to a new object, otherwise increment
++ * its reference counter.  Return 1 if a new object has been created, otherwise
++ * return 0 or error code.
++ */
++int dev_pm_get_subsys_data(struct device *dev)
++{
++	struct pm_subsys_data *psd;
++	int ret = 0;
++
++	psd = kzalloc(sizeof(*psd), GFP_KERNEL);
++	if (!psd)
++		return -ENOMEM;
++
++	spin_lock_irq(&dev->power.lock);
++
++	if (dev->power.subsys_data) {
++		dev->power.subsys_data->refcount++;
++	} else {
++		mutex_init(&psd->lock);
++		psd->refcount = 1;
++		dev->power.subsys_data = psd;
++		pm_clk_init(dev);
++		psd = NULL;
++		ret = 1;
++	}
++
++	spin_unlock_irq(&dev->power.lock);
++
++	/* kfree() verifies that its argument is nonzero. */
++	kfree(psd);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(dev_pm_get_subsys_data);
++
++/**
++ * dev_pm_put_subsys_data - Drop reference to power.subsys_data.
++ * @dev: Device to handle.
++ *
++ * If the reference counter of power.subsys_data is zero after dropping the
++ * reference, power.subsys_data is removed.  Return 1 if that happens or 0
++ * otherwise.
++ */
++int dev_pm_put_subsys_data(struct device *dev)
++{
++	struct pm_subsys_data *psd;
++	int ret = 0;
++
++	spin_lock_irq(&dev->power.lock);
++
++	psd = dev_to_psd(dev);
++	if (!psd) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (--psd->refcount = 0) {
++		dev->power.subsys_data = NULL;
++		kfree(psd);
++		ret = 1;
++	}
++
++ out:
++	spin_unlock_irq(&dev->power.lock);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(dev_pm_put_subsys_data);
+Index: linux-2.6/include/linux/pm.h
+=================================--- linux-2.6.orig/include/linux/pm.h
++++ linux-2.6/include/linux/pm.h
+@@ -424,6 +424,7 @@ struct wakeup_source;
  
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
---- 0004/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-08-26 12:44:29.000000000 +0900
-@@ -493,6 +493,7 @@ extern struct sh7372_pm_domain sh7372_a4
- extern struct sh7372_pm_domain sh7372_d4;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
-+extern struct sh7372_pm_domain sh7372_a3sp;
- extern struct sh7372_pm_domain sh7372_a3sg;
- 
- extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
---- 0011/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-08-26 12:44:29.000000000 +0900
-@@ -92,8 +92,10 @@ static int pd_power_down(struct generic_
- 		}
- 	}
- 
--	pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
--		 mask, __raw_readl(PSTR));
-+	/* we cannot output debug message for A3SP */
-+	if (genpd != &sh7372_a3sp.genpd)
-+		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
- 
- 	return 0;
- }
-@@ -122,8 +124,10 @@ static int pd_power_up(struct generic_pm
- 		ret = -EIO;
- 
-  out:
--	pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
--		 mask, __raw_readl(PSTR));
-+	/* we cannot output debug message for A3SP */
-+	if (genpd != &sh7372_a3sp.genpd)
-+		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
- 
- 	return ret;
- }
-@@ -216,6 +220,10 @@ struct sh7372_pm_domain sh7372_a3ri = {
- 	.bit_shift = 8,
+ struct pm_subsys_data {
+ 	struct mutex lock;
++	unsigned int refcount;
+ #ifdef CONFIG_PM_CLK
+ 	struct list_head clock_list;
+ #endif
+@@ -474,6 +475,8 @@ struct dev_pm_info {
  };
  
-+struct sh7372_pm_domain sh7372_a3sp = {
-+	.bit_shift = 11,
-+};
-+
- struct sh7372_pm_domain sh7372_a3sg = {
- 	.bit_shift = 13,
- };
-@@ -450,6 +458,9 @@ void __init sh7372_pm_init(void)
- 	__raw_writel(0x0000a501, DBGREG9);
- 	__raw_writel(0x00000000, DBGREG1);
+ extern void update_pm_runtime_accounting(struct device *dev);
++extern int dev_pm_get_subsys_data(struct device *dev);
++extern int dev_pm_put_subsys_data(struct device *dev);
  
-+	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
-+	__raw_writel(0, PDNSEL);
-+
- 	sh7372_suspend_init();
- 	sh7372_cpuidle_init();
- }
---- 0004/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-08-26 12:44:29.000000000 +0900
-@@ -993,6 +993,7 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
-+	sh7372_init_pm_domain(&sh7372_a3sp);
- 
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
-@@ -1003,6 +1004,19 @@ void __init sh7372_add_standard_devices(
- 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &spu0_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &spu1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif2_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif3_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif4_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif5_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif6_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &iic1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma2_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma1_device);
+ /*
+  * Power domains provide callbacks that are executed during system suspend,
+Index: linux-2.6/drivers/base/power/Makefile
+=================================--- linux-2.6.orig/drivers/base/power/Makefile
++++ linux-2.6/drivers/base/power/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_PM)	+= sysfs.o generic_ops.o
++obj-$(CONFIG_PM)	+= sysfs.o generic_ops.o common.o
+ obj-$(CONFIG_PM_SLEEP)	+= main.o wakeup.o
+ obj-$(CONFIG_PM_RUNTIME)	+= runtime.o
+ obj-$(CONFIG_PM_TRACE_RTC)	+= trace.o
+Index: linux-2.6/drivers/base/power/clock_ops.c
+=================================--- linux-2.6.orig/drivers/base/power/clock_ops.c
++++ linux-2.6/drivers/base/power/clock_ops.c
+@@ -140,12 +140,8 @@ void pm_clk_remove(struct device *dev, c
+ void pm_clk_init(struct device *dev)
+ {
+ 	struct pm_subsys_data *psd = dev_to_psd(dev);
+-
+-	if (!psd)
+-		return;
+-
+-	INIT_LIST_HEAD(&psd->clock_list);
+-	mutex_init(&psd->lock);
++	if (psd)
++		INIT_LIST_HEAD(&psd->clock_list);
  }
  
- void __init sh7372_add_early_devices(void)
+ /**
+@@ -157,16 +153,8 @@ void pm_clk_init(struct device *dev)
+  */
+ int pm_clk_create(struct device *dev)
+ {
+-	struct pm_subsys_data *psd;
+-
+-	psd = kzalloc(sizeof(*psd), GFP_KERNEL);
+-	if (!psd) {
+-		dev_err(dev, "Not enough memory for PM clock data.\n");
+-		return -ENOMEM;
+-	}
+-	dev->power.subsys_data = psd;
+-	pm_clk_init(dev);
+-	return 0;
++	int ret = dev_pm_get_subsys_data(dev);
++	return ret < 0 ? ret : 0;
+ }
+ 
+ /**
+@@ -185,8 +173,6 @@ void pm_clk_destroy(struct device *dev)
+ 	if (!psd)
+ 		return;
+ 
+-	dev->power.subsys_data = NULL;
+-
+ 	mutex_lock(&psd->lock);
+ 
+ 	list_for_each_entry_safe_reverse(ce, c, &psd->clock_list, node)
+@@ -194,7 +180,7 @@ void pm_clk_destroy(struct device *dev)
+ 
+ 	mutex_unlock(&psd->lock);
+ 
+-	kfree(psd);
++	dev_pm_put_subsys_data(dev);
+ }
+ 
+ #endif /* CONFIG_PM */
+
