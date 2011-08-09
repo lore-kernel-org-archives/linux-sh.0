@@ -1,175 +1,103 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 30 Aug 2011 22:18:43 +0000
-Subject: [PATCH 1/5] PM / Domains: Split device PM domain data into base and need_restore
-Message-Id: <201108310018.43385.rjw@sisk.pl>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 09 Aug 2011 08:05:41 +0000
+Subject: [PATCH 04/13] ARM: gpio: at91: convert drivers to use asm/gpio.h
+Message-Id: <E1QqhJl-0003aC-13@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108310017.03103.rjw@sisk.pl>
-In-Reply-To: <201108310017.03103.rjw@sisk.pl>
+References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
+In-Reply-To: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
-
-The struct pm_domain_data data type is defined in such a way that
-adding new fields specific to the generic PM domains code will
-require include/linux/pm.h to be modified.  As a result, data types
-used only by the generic PM domains code will be defined in two
-headers, although they all should be defined in pm_domain.h and
-pm.h will need to include more headers, which won't be very nice.
-
-For this reason change the definition of struct pm_subsys_data
-so that its domain_data member is a pointer, which will allow
-struct pm_domain_data to be subclassed by various PM domains
-implementations.  Remove the need_restore member from
-struct pm_domain_data and make the generic PM domains code
-subclass it by adding the need_restore member to the new data type.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
- drivers/base/power/domain.c |   28 +++++++++++++++++++---------
- include/linux/pm.h          |    3 +--
- include/linux/pm_domain.h   |   10 ++++++++++
- 3 files changed, 30 insertions(+), 11 deletions(-)
+ drivers/ata/pata_at91.c           |    2 +-
+ drivers/ide/at91_ide.c            |    2 +-
+ drivers/net/arm/at91_ether.c      |    2 +-
+ drivers/spi/spi-atmel.c           |    2 +-
+ drivers/tty/serial/atmel_serial.c |    2 +-
+ drivers/video/atmel_lcdfb.c       |    2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
 
-Index: linux/include/linux/pm.h
-=================================--- linux.orig/include/linux/pm.h
-+++ linux/include/linux/pm.h
-@@ -433,7 +433,6 @@ struct wakeup_source;
- struct pm_domain_data {
- 	struct list_head list_node;
- 	struct device *dev;
--	bool need_restore;
- };
+diff --git a/drivers/ata/pata_at91.c b/drivers/ata/pata_at91.c
+index 960c725..3f4c261 100644
+--- a/drivers/ata/pata_at91.c
++++ b/drivers/ata/pata_at91.c
+@@ -30,7 +30,7 @@
  
- struct pm_subsys_data {
-@@ -443,7 +442,7 @@ struct pm_subsys_data {
- 	struct list_head clock_list;
+ #include <mach/at91sam9_smc.h>
+ #include <mach/board.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
+ 
+ #define DRV_NAME		"pata_at91"
+ #define DRV_VERSION		"0.3"
+diff --git a/drivers/ide/at91_ide.c b/drivers/ide/at91_ide.c
+index 000a78e..6dede8f 100644
+--- a/drivers/ide/at91_ide.c
++++ b/drivers/ide/at91_ide.c
+@@ -28,7 +28,7 @@
+ #include <linux/platform_device.h>
+ 
+ #include <mach/board.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
+ #include <mach/at91sam9_smc.h>
+ 
+ #define DRV_NAME "at91_ide"
+diff --git a/drivers/net/arm/at91_ether.c b/drivers/net/arm/at91_ether.c
+index 29dc435..48b4ec1 100644
+--- a/drivers/net/arm/at91_ether.c
++++ b/drivers/net/arm/at91_ether.c
+@@ -35,7 +35,7 @@
+ #include <asm/mach-types.h>
+ 
+ #include <mach/at91rm9200_emac.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
+ #include <mach/board.h>
+ 
+ #include "at91_ether.h"
+diff --git a/drivers/spi/spi-atmel.c b/drivers/spi/spi-atmel.c
+index 82dee9a..d3bff42 100644
+--- a/drivers/spi/spi-atmel.c
++++ b/drivers/spi/spi-atmel.c
+@@ -22,7 +22,7 @@
+ 
+ #include <asm/io.h>
+ #include <mach/board.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
+ #include <mach/cpu.h>
+ 
+ /* SPI register offsets */
+diff --git a/drivers/tty/serial/atmel_serial.c b/drivers/tty/serial/atmel_serial.c
+index af9b781..b8a00ae 100644
+--- a/drivers/tty/serial/atmel_serial.c
++++ b/drivers/tty/serial/atmel_serial.c
+@@ -46,7 +46,7 @@
+ 
+ #ifdef CONFIG_ARM
+ #include <mach/cpu.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
  #endif
- #ifdef CONFIG_PM_GENERIC_DOMAINS
--	struct pm_domain_data domain_data;
-+	struct pm_domain_data *domain_data;
- #endif
- };
  
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -62,6 +62,16 @@ struct gpd_link {
- 	struct list_head slave_node;
- };
+ #define PDC_BUFFER_SIZE		512
+diff --git a/drivers/video/atmel_lcdfb.c b/drivers/video/atmel_lcdfb.c
+index 817ab60..dda9206 100644
+--- a/drivers/video/atmel_lcdfb.c
++++ b/drivers/video/atmel_lcdfb.c
+@@ -21,7 +21,7 @@
  
-+struct generic_pm_domain_data {
-+	struct pm_domain_data base;
-+	bool need_restore;
-+};
-+
-+static inline struct generic_pm_domain_data *to_gpd_data(struct pm_domain_data *pdd)
-+{
-+	return container_of(pdd, struct generic_pm_domain_data, base);
-+}
-+
- #ifdef CONFIG_PM_GENERIC_DOMAINS
- extern int pm_genpd_add_device(struct generic_pm_domain *genpd,
- 			       struct device *dev);
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -188,11 +188,12 @@ static int __pm_genpd_save_device(struct
- 				  struct generic_pm_domain *genpd)
- 	__releases(&genpd->lock) __acquires(&genpd->lock)
- {
-+	struct generic_pm_domain_data *gpd_data = to_gpd_data(pdd);
- 	struct device *dev = pdd->dev;
- 	struct device_driver *drv = dev->driver;
- 	int ret = 0;
+ #include <mach/board.h>
+ #include <mach/cpu.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
  
--	if (pdd->need_restore)
-+	if (gpd_data->need_restore)
- 		return 0;
+ #include <video/atmel_lcdc.h>
  
- 	mutex_unlock(&genpd->lock);
-@@ -210,7 +211,7 @@ static int __pm_genpd_save_device(struct
- 	mutex_lock(&genpd->lock);
- 
- 	if (!ret)
--		pdd->need_restore = true;
-+		gpd_data->need_restore = true;
- 
- 	return ret;
- }
-@@ -224,10 +225,11 @@ static void __pm_genpd_restore_device(st
- 				      struct generic_pm_domain *genpd)
- 	__releases(&genpd->lock) __acquires(&genpd->lock)
- {
-+	struct generic_pm_domain_data *gpd_data = to_gpd_data(pdd);
- 	struct device *dev = pdd->dev;
- 	struct device_driver *drv = dev->driver;
- 
--	if (!pdd->need_restore)
-+	if (!gpd_data->need_restore)
- 		return;
- 
- 	mutex_unlock(&genpd->lock);
-@@ -244,7 +246,7 @@ static void __pm_genpd_restore_device(st
- 
- 	mutex_lock(&genpd->lock);
- 
--	pdd->need_restore = false;
-+	gpd_data->need_restore = false;
- }
- 
- /**
-@@ -493,7 +495,7 @@ static int pm_genpd_runtime_resume(struc
- 		mutex_lock(&genpd->lock);
- 	}
- 	finish_wait(&genpd->status_wait_queue, &wait);
--	__pm_genpd_restore_device(&dev->power.subsys_data->domain_data, genpd);
-+	__pm_genpd_restore_device(dev->power.subsys_data->domain_data, genpd);
- 	genpd->resume_count--;
- 	genpd_set_active(genpd);
- 	wake_up_all(&genpd->status_wait_queue);
-@@ -1080,6 +1082,7 @@ static void pm_genpd_complete(struct dev
-  */
- int pm_genpd_add_device(struct generic_pm_domain *genpd, struct device *dev)
- {
-+	struct generic_pm_domain_data *gpd_data;
- 	struct pm_domain_data *pdd;
- 	int ret = 0;
- 
-@@ -1106,14 +1109,20 @@ int pm_genpd_add_device(struct generic_p
- 			goto out;
- 		}
- 
-+	gpd_data = kzalloc(sizeof(*gpd_data), GFP_KERNEL);
-+	if (!gpd_data) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
- 	genpd->device_count++;
- 
- 	dev->pm_domain = &genpd->domain;
- 	dev_pm_get_subsys_data(dev);
--	pdd = &dev->power.subsys_data->domain_data;
--	pdd->dev = dev;
--	pdd->need_restore = false;
--	list_add_tail(&pdd->list_node, &genpd->dev_list);
-+	dev->power.subsys_data->domain_data = &gpd_data->base;
-+	gpd_data->base.dev = dev;
-+	gpd_data->need_restore = false;
-+	list_add_tail(&gpd_data->base.list_node, &genpd->dev_list);
- 
-  out:
- 	genpd_release_lock(genpd);
-@@ -1152,6 +1161,7 @@ int pm_genpd_remove_device(struct generi
- 		pdd->dev = NULL;
- 		dev_pm_put_subsys_data(dev);
- 		dev->pm_domain = NULL;
-+		kfree(to_gpd_data(pdd));
- 
- 		genpd->device_count--;
- 
+-- 
+1.7.4.4
 
