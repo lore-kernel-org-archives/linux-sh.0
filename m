@@ -1,72 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 19 Aug 2011 09:16:08 +0000
-Subject: [PATCH 3/7] fbdev: sh_mobile_lcdc: use display information in info for panning
-Message-Id: <1313745372-20856-4-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 09 Aug 2011 08:06:01 +0000
+Subject: [PATCH 05/13] ARM: gpio: nomadik: convert drivers to use asm/gpio.h
+Message-Id: <E1QqhK5-0003aG-5F@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
+In-Reply-To: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We must not use any information in the passed var besides xoffset,
-yoffset and vmode as otherwise applications might abuse it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   24 ++++++++++++------------
- 1 files changed, 12 insertions(+), 12 deletions(-)
+ drivers/gpio/gpio-nomadik.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index f9f420d..1ff215c 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -877,12 +877,12 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
- 	unsigned long base_addr_y, base_addr_c;
- 	unsigned long c_offset;
+diff --git a/drivers/gpio/gpio-nomadik.c b/drivers/gpio/gpio-nomadik.c
+index 2c212c7..f7f0406 100644
+--- a/drivers/gpio/gpio-nomadik.c
++++ b/drivers/gpio/gpio-nomadik.c
+@@ -28,7 +28,7 @@
  
--	if (!var->nonstd)
--		new_pan_offset = (var->yoffset * info->fix.line_length) +
--			(var->xoffset * (info->var.bits_per_pixel / 8));
-+	if (!info->var.nonstd)
-+		new_pan_offset = var->yoffset * info->fix.line_length
-+			       + var->xoffset * (info->var.bits_per_pixel / 8);
- 	else
--		new_pan_offset = (var->yoffset * info->fix.line_length) +
--			(var->xoffset);
-+		new_pan_offset = var->yoffset * info->fix.line_length
-+			       + var->xoffset;
+ #include <plat/pincfg.h>
+ #include <mach/hardware.h>
+-#include <mach/gpio.h>
++#include <asm/gpio.h>
  
- 	if (new_pan_offset = ch->pan_offset)
- 		return 0;	/* No change, do nothing */
-@@ -891,13 +891,13 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
- 
- 	/* Set the source address for the next refresh */
- 	base_addr_y = ch->dma_handle + new_pan_offset;
--	if (var->nonstd) {
-+	if (info->var.nonstd) {
- 		/* Set y offset */
--		c_offset = (var->yoffset *
--			info->fix.line_length *
--			(info->var.bits_per_pixel - 8)) / 8;
--		base_addr_c = ch->dma_handle + var->xres * var->yres_virtual +
--			c_offset;
-+		c_offset = var->yoffset * info->fix.line_length
-+			 * (info->var.bits_per_pixel - 8) / 8;
-+		base_addr_c = ch->dma_handle
-+			    + info->var.xres * info->var.yres_virtual
-+			    + c_offset;
- 		/* Set x offset */
- 		if (info->var.bits_per_pixel = 24)
- 			base_addr_c += 2 * var->xoffset;
-@@ -923,7 +923,7 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
- 	ch->base_addr_c = base_addr_c;
- 
- 	lcdc_write_chan_mirror(ch, LDSA1R, base_addr_y);
--	if (var->nonstd)
-+	if (info->var.nonstd)
- 		lcdc_write_chan_mirror(ch, LDSA2R, base_addr_c);
- 
- 	if (lcdc_chan_is_sublcd(ch))
+ /*
+  * The GPIO module in the Nomadik family of Systems-on-Chip is an
 -- 
-1.7.3.4
+1.7.4.4
 
