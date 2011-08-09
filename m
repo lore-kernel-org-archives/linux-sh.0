@@ -1,7 +1,7 @@
-From: Jamie Iles <jamie@jamieiles.com>
-Date: Tue, 09 Aug 2011 09:58:56 +0000
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Tue, 09 Aug 2011 21:00:55 +0000
 Subject: Re: [PATCH 00/13] Clean up mach/gpio.h headers
-Message-Id: <20110809095856.GF3210@pulham.picochip.com>
+Message-Id: <20110809210055.GF11568@ponder.secretlab.ca>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 In-Reply-To: <20110809080411.GA1831@n2100.arm.linux.org.uk>
@@ -9,8 +9,6 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
-
-Hi Russell,
 
 On Tue, Aug 09, 2011 at 09:04:12AM +0100, Russell King - ARM Linux wrote:
 > This is a preliminary posting of my gpio patch set.
@@ -28,9 +26,21 @@ On Tue, Aug 09, 2011 at 09:04:12AM +0100, Russell King - ARM Linux wrote:
 > 
 > As a result of this patch series, several mach/gpio.h end up being
 > empty.
+> 
+> Many others just contain platform private GPIO APIs and definitions.
+> 
+> The last thing which mach/gpio.h is used for is to provide a definition
+> for ARCH_GPIO_NR to asm-generic/gpio.h.  I've not attempted to solve
+> that issue yet.
+> 
+> A small number of platforms optimize the gpio accessors for on-SoC
+> GPIOs.  In the interests of consolidation, these will have to be killed
+> but this patch set does not do that yet.
+> 
+> Lastly, several {mach,plat}/gpio.h needs to be looked at with a view to
+> deleting the direct include of asm-generic/gpio.h.
 
-Nice series!  This gives me an empty gpio.h for picoxcell.
+Looks good to me, though I haven't looked closely.  I imagine this
+should get merged via a branch in the arm-soc tree?
 
-Tested-by: Jamie Iles <jamie@jamieiles.com>
-
-Jamie
+g.
