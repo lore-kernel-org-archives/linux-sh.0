@@ -1,31 +1,60 @@
-From: David Brown <davidb@codeaurora.org>
-Date: Tue, 09 Aug 2011 17:59:53 +0000
-Subject: Re: [PATCH 11/13] ARM: gpio: consolidate trivial gpiolib
-Message-Id: <20110809175953.GA22918@huya.qualcomm.com>
+From: Linus Walleij <linus.ml.walleij@gmail.com>
+Date: Wed, 10 Aug 2011 07:54:52 +0000
+Subject: Re: [PATCH 11/13] ARM: gpio: consolidate trivial gpiolib implementations
+Message-Id: <CAKnu2Mofp+f7Khu1d0j9Pz3Pr03EawBgkRPWEqDy7mf4DzoETA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 	<E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
 In-Reply-To: <E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 09, 2011 at 09:08:01AM +0100, Russell King - ARM Linux wrote:
+2011/8/9 Russell King - ARM Linux <linux@arm.linux.org.uk>:
+
 > Consolidate 24 trivial gpiolib implementions out of mach/gpio.h
-> into asm/gpio.h.  This is basically the include of asm-generic/gpio.h
+> into asm/gpio.h. =A0This is basically the include of asm-generic/gpio.h
 > and the definition of gpio_get_value, gpio_set_value, and gpio_cansleep
 > as described in Documentation/gpio.txt
-> 
+>
 > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> ---
->  arch/arm/mach-msm/include/mach/gpio.h       |    5 +----
 
-For msm (msm8660):
+reaks compile of plat-nomadik due to missing u32, feel free to fold in
+the below fix. With that it's
+Tested-by: Linus Walleij <linus.walleij@linaro.org>
+for Nomadik, U300 and Ux500.
 
-Tested-by: David Brown <davidb@codeaurora.org>
-Acked-by: David Brown <davidb@codeaurora.org>
+From 2e4496fc7643d804ccf50a8efe1a0304210176d1 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 10 Aug 2011 09:51:16 +0200
+Subject: [PATCH] plat-nomadik: small fixup for gpio.h
 
--- 
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+Removing the generic gpio.h broke compilation of the Nomadik
+GPIO driver since it implicitly got u32 from it. Explicitly
+include <linux/kernel.h> so we get u32 defined.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/plat-nomadik/include/plat/gpio.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/plat-nomadik/include/plat/gpio.h
+b/arch/arm/plat-nomadik/include/plat/gpio.h
+index cf0b78b..b894a53 100644
+--- a/arch/arm/plat-nomadik/include/plat/gpio.h
++++ b/arch/arm/plat-nomadik/include/plat/gpio.h
+@@ -12,6 +12,8 @@
+ #ifndef __ASM_PLAT_GPIO_H
+ #define __ASM_PLAT_GPIO_H
+
++#include <linux/kernel.h>
++
+ /*
+  * "nmk_gpio" and "NMK_GPIO" stand for "Nomadik GPIO", leaving
+  * the "gpio" namespace for generic and cross-machine functions
+--=20
+1.7.3.2
+
+Thanks,
+Linus Walleij
