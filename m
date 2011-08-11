@@ -1,100 +1,53 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Thu, 11 Aug 2011 14:15:31 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Thu, 11 Aug 2011 15:07:18 +0000
 Subject: Re: [PATCH 11/13] ARM: gpio: consolidate trivial gpiolib
-Message-Id: <20110811141528.GL28500@legolas.emea.dhcp.ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="oYAXToTM8kn9Ra/9"
+Message-Id: <20110811150718.GA4924@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 	<E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
-In-Reply-To: <E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
+	<20110811141528.GL28500@legolas.emea.dhcp.ti.com>
+In-Reply-To: <20110811141528.GL28500@legolas.emea.dhcp.ti.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Thu, Aug 11, 2011 at 05:15:31PM +0300, Felipe Balbi wrote:
+> On Tue, Aug 09, 2011 at 09:08:01AM +0100, Russell King - ARM Linux wrote:
+> > diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
+> > index 166a7a3..15e8970 100644
+> > --- a/arch/arm/include/asm/gpio.h
+> > +++ b/arch/arm/include/asm/gpio.h
+> > @@ -4,4 +4,14 @@
+> >  /* not all ARM platforms necessarily support this API ... */
+> >  #include <mach/gpio.h>
+> >  
+> > +#ifdef __ARM_GPIOLIB_TRIVIAL
+> > +/* Note: this may rely upon the value of ARCH_NR_GPIOS set in mach/gpio.h */
+> > +#include <asm-generic/gpio.h>
+> > +
+> > +/* The trivial gpiolib dispatchers */
+> > +#define gpio_get_value  __gpio_get_value
+> > +#define gpio_set_value  __gpio_set_value
+> > +#define gpio_cansleep   __gpio_cansleep
+> > +#endif
+> 
+> could that be a selectable symbol ? Something like:
+> 
+> CONFIG_HAS_ARM_TRIVIAL_GPIO
+> 
+> then on Kconfig you just:
+> 
+> select HAS_ARM_TIVIAL_GPIO or something ?
 
---oYAXToTM8kn9Ra/9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+That makes things more complicated, because that involves digging through
+a lot of platform code in a couple of places to work out exactly when we
+need this - and it crosses the boundary to arch/sh too.
 
-On Tue, Aug 09, 2011 at 09:08:01AM +0100, Russell King - ARM Linux wrote:
-> Consolidate 24 trivial gpiolib implementions out of mach/gpio.h
-> into asm/gpio.h.  This is basically the include of asm-generic/gpio.h
-> and the definition of gpio_get_value, gpio_set_value, and gpio_cansleep
-> as described in Documentation/gpio.txt
->=20
-> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> ---
->  arch/arm/include/asm/gpio.h                 |   10 ++++++++++
->  arch/arm/mach-at91/include/mach/gpio.h      |    5 +----
->  arch/arm/mach-ep93xx/include/mach/gpio.h    |    7 +------
->  arch/arm/mach-exynos4/include/mach/gpio.h   |    5 +----
->  arch/arm/mach-gemini/include/mach/gpio.h    |    5 +----
->  arch/arm/mach-ks8695/include/mach/gpio.h    |   11 ++---------
->  arch/arm/mach-lpc32xx/include/mach/gpio.h   |   17 +----------------
->  arch/arm/mach-msm/include/mach/gpio.h       |    5 +----
->  arch/arm/mach-mxs/include/mach/gpio.h       |    6 +-----
->  arch/arm/mach-realview/include/mach/gpio.h  |    6 +-----
->  arch/arm/mach-s3c2410/include/mach/gpio.h   |    5 +----
->  arch/arm/mach-s3c64xx/include/mach/gpio.h   |    6 +-----
->  arch/arm/mach-s5p64x0/include/mach/gpio.h   |    6 +-----
->  arch/arm/mach-s5pc100/include/mach/gpio.h   |    6 +-----
->  arch/arm/mach-s5pv210/include/mach/gpio.h   |    6 +-----
->  arch/arm/mach-shmobile/include/mach/gpio.h  |   15 +--------------
->  arch/arm/mach-tegra/include/mach/gpio.h     |    6 +-----
->  arch/arm/mach-versatile/include/mach/gpio.h |    6 +-----
->  arch/arm/mach-vt8500/include/mach/gpio.h    |    6 +-----
->  arch/arm/mach-w90x900/include/mach/gpio.h   |    5 +----
->  arch/arm/plat-mxc/include/mach/gpio.h       |    5 +----
->  arch/arm/plat-nomadik/include/plat/gpio.h   |   11 +----------
->  arch/arm/plat-omap/include/plat/gpio.h      |   15 +--------------
->  arch/arm/plat-orion/include/plat/gpio.h     |    6 ++----
->  arch/arm/plat-spear/include/plat/gpio.h     |    6 +-----
->  25 files changed, 36 insertions(+), 151 deletions(-)
->=20
-> diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
-> index 166a7a3..15e8970 100644
-> --- a/arch/arm/include/asm/gpio.h
-> +++ b/arch/arm/include/asm/gpio.h
-> @@ -4,4 +4,14 @@
->  /* not all ARM platforms necessarily support this API ... */
->  #include <mach/gpio.h>
-> =20
-> +#ifdef __ARM_GPIOLIB_TRIVIAL
-> +/* Note: this may rely upon the value of ARCH_NR_GPIOS set in mach/gpio.=
-h */
-> +#include <asm-generic/gpio.h>
-> +
-> +/* The trivial gpiolib dispatchers */
-> +#define gpio_get_value  __gpio_get_value
-> +#define gpio_set_value  __gpio_set_value
-> +#define gpio_cansleep   __gpio_cansleep
-> +#endif
+So I'd prefer to keep this simple.
 
-could that be a selectable symbol ? Something like:
-
-CONFIG_HAS_ARM_TRIVIAL_GPIO
-
-then on Kconfig you just:
-
-select HAS_ARM_TIVIAL_GPIO or something ?
-
---=20
-balbi
-
---oYAXToTM8kn9Ra/9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEcBAEBAgAGBQJOQ+QAAAoJEAv8Txj19kN1pnsH/jjIZ/l51eOlKP75j5KHaq/S
-GRTw4CVEa/c1kTf7oCmfV7gVqGb/NBM2/kI/zeVD/GfZobV29mq452AXuoLeDipd
-3g1suFowb0YSILWAdTXdzPoQbSvWDVdnsIcoJH4dJNcHE1w7MYLnp1brWV3G9g5/
-sAR3kah4pkPw9PO/XU4q2MPrgOW30i+bLST4RzTpL2Luai5dtJs+H+Bf5ORGLXFt
-g/yFIMLxXBDwtaQdxPFoeiheg+fX6d6YH32vjiKYOhnrq4vm7MeJpU0dDz+GinNJ
-gFlOU2imPOuA2tV1J+iVwNkc9G85yHSEe2pHl7CDqcwSRp9mB+HhNu3HqmIqJ9k=
-=GTxs
------END PGP SIGNATURE-----
-
---oYAXToTM8kn9Ra/9--
+The long-term goal is to remove that symbol entirely, but in order to do
+that we need to kill of the "optimized" on-board SoC stuff in those (few)
+gpio.h which don't have the symbol selected.  This is rather necessary to
+progress towards the consolidated kernel.  (Re-inventing gpiolib by moving
+them out of line isn't a good idea...)
