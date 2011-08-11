@@ -1,33 +1,30 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 11 Aug 2011 15:08:07 +0000
+From: David Brown <davidb@codeaurora.org>
+Date: Thu, 11 Aug 2011 16:24:08 +0000
 Subject: Re: [PATCH 11/13] ARM: gpio: consolidate trivial gpiolib
-Message-Id: <20110811150807.GB4924@n2100.arm.linux.org.uk>
+Message-Id: <20110811162408.GA8710@huya.qualcomm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 	<E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
 	<017101cc581c$6e277530$4a765f90$%kim@samsung.com>
-In-Reply-To: <017101cc581c$6e277530$4a765f90$%kim@samsung.com>
+	<20110811150807.GB4924@n2100.arm.linux.org.uk>
+In-Reply-To: <20110811150807.GB4924@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 11, 2011 at 08:47:18PM +0900, Kukjin Kim wrote:
-> Russell King - ARM Linux wrote:
-> > 
-> > Consolidate 24 trivial gpiolib implementions out of mach/gpio.h
-> > into asm/gpio.h.  This is basically the include of asm-generic/gpio.h
-> > and the definition of gpio_get_value, gpio_set_value, and gpio_cansleep
-> > as described in Documentation/gpio.txt
-> > 
-> > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+On Thu, Aug 11, 2011 at 04:08:07PM +0100, Russell King - ARM Linux wrote:
+
+> > As a note, there were duplicated e-mail address Grant and Nicolas in Cc ;)
+> > I just pushed 'reply all' :)
 > 
-> Acked-by: Kukjin Kim <kgene.kim@samsung.com>
-> on following Samsung stuff...
+> That's not in the original email, and isn't in any one elses replies....
 
-Thanks.
+The original patches have a doubled CC line.  I think most mailers
+eliminate the duplicates, though.
 
-> As a note, there were duplicated e-mail address Grant and Nicolas in Cc ;)
-> I just pushed 'reply all' :)
+David
 
-That's not in the original email, and isn't in any one elses replies....
+-- 
+Sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
