@@ -1,60 +1,211 @@
-From: Linus Walleij <linus.ml.walleij@gmail.com>
-Date: Wed, 10 Aug 2011 07:54:52 +0000
-Subject: Re: [PATCH 11/13] ARM: gpio: consolidate trivial gpiolib implementations
-Message-Id: <CAKnu2Mofp+f7Khu1d0j9Pz3Pr03EawBgkRPWEqDy7mf4DzoETA@mail.gmail.com>
+From: Kukjin Kim <kgene.kim@samsung.com>
+Date: Thu, 11 Aug 2011 11:47:18 +0000
+Subject: RE: [PATCH 11/13] ARM: gpio: consolidate trivial gpiolib
+Message-Id: <017101cc581c$6e277530$4a765f90$%kim@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 	<E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
 In-Reply-To: <E1QqhM1-0003af-U5@rmk-PC.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-2011/8/9 Russell King - ARM Linux <linux@arm.linux.org.uk>:
-
+Russell King - ARM Linux wrote:
+> 
 > Consolidate 24 trivial gpiolib implementions out of mach/gpio.h
-> into asm/gpio.h. =A0This is basically the include of asm-generic/gpio.h
+> into asm/gpio.h.  This is basically the include of asm-generic/gpio.h
 > and the definition of gpio_get_value, gpio_set_value, and gpio_cansleep
 > as described in Documentation/gpio.txt
->
+> 
 > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
-reaks compile of plat-nomadik due to missing u32, feel free to fold in
-the below fix. With that it's
-Tested-by: Linus Walleij <linus.walleij@linaro.org>
-for Nomadik, U300 and Ux500.
+Acked-by: Kukjin Kim <kgene.kim@samsung.com>
+on following Samsung stuff...
 
-From 2e4496fc7643d804ccf50a8efe1a0304210176d1 Mon Sep 17 00:00:00 2001
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 10 Aug 2011 09:51:16 +0200
-Subject: [PATCH] plat-nomadik: small fixup for gpio.h
+As a note, there were duplicated e-mail address Grant and Nicolas in Cc ;)
+I just pushed 'reply all' :)
 
-Removing the generic gpio.h broke compilation of the Nomadik
-GPIO driver since it implicitly got u32 from it. Explicitly
-include <linux/kernel.h> so we get u32 defined.
+Thanks.
 
-Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
----
- arch/arm/plat-nomadik/include/plat/gpio.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Best regards,
+Kgene.
+--
+Kukjin Kim <kgene.kim@samsung.com>, Senior Engineer,
+SW Solution Development Team, Samsung Electronics Co., Ltd.
 
-diff --git a/arch/arm/plat-nomadik/include/plat/gpio.h
-b/arch/arm/plat-nomadik/include/plat/gpio.h
-index cf0b78b..b894a53 100644
---- a/arch/arm/plat-nomadik/include/plat/gpio.h
-+++ b/arch/arm/plat-nomadik/include/plat/gpio.h
-@@ -12,6 +12,8 @@
- #ifndef __ASM_PLAT_GPIO_H
- #define __ASM_PLAT_GPIO_H
+> ---
+>  arch/arm/include/asm/gpio.h                 |   10 ++++++++++
+...
+>  arch/arm/mach-exynos4/include/mach/gpio.h   |    5 +----
+...
+>  arch/arm/mach-s3c2410/include/mach/gpio.h   |    5 +----
+>  arch/arm/mach-s3c64xx/include/mach/gpio.h   |    6 +-----
+>  arch/arm/mach-s5p64x0/include/mach/gpio.h   |    6 +-----
+>  arch/arm/mach-s5pc100/include/mach/gpio.h   |    6 +-----
+>  arch/arm/mach-s5pv210/include/mach/gpio.h   |    6 +-----
+> 
+> diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
+> index 166a7a3..15e8970 100644
+> --- a/arch/arm/include/asm/gpio.h
+> +++ b/arch/arm/include/asm/gpio.h
+> @@ -4,4 +4,14 @@
+>  /* not all ARM platforms necessarily support this API ... */
+>  #include <mach/gpio.h>
+> 
+> +#ifdef __ARM_GPIOLIB_TRIVIAL
+> +/* Note: this may rely upon the value of ARCH_NR_GPIOS set in mach/gpio.h
+*/
+> +#include <asm-generic/gpio.h>
+> +
+> +/* The trivial gpiolib dispatchers */
+> +#define gpio_get_value  __gpio_get_value
+> +#define gpio_set_value  __gpio_set_value
+> +#define gpio_cansleep   __gpio_cansleep
+> +#endif
+> +
+>  #endif /* _ARCH_ARM_GPIO_H */
+> diff --git a/arch/arm/mach-exynos4/include/mach/gpio.h b/arch/arm/mach-
+> exynos4/include/mach/gpio.h
+> index be9266b..b2e3595 100644
+> --- a/arch/arm/mach-exynos4/include/mach/gpio.h
+> +++ b/arch/arm/mach-exynos4/include/mach/gpio.h
+> @@ -13,9 +13,6 @@
+>  #ifndef __ASM_ARCH_GPIO_H
+>  #define __ASM_ARCH_GPIO_H __FILE__
+> 
+> -#define gpio_get_value	__gpio_get_value
+> -#define gpio_set_value	__gpio_set_value
+> -#define gpio_cansleep	__gpio_cansleep
+>  #define gpio_to_irq	__gpio_to_irq
+> 
+>  /* Practically, GPIO banks up to GPZ are the configurable gpio banks */
+> @@ -151,6 +148,6 @@ enum s5p_gpio_number {
+>  #define ARCH_NR_GPIOS
+> 	(EXYNOS4_GPZ(EXYNOS4_GPIO_Z_NR) +	\
+>  				 CONFIG_SAMSUNG_GPIO_EXTRA + 1)
+> 
+> -#include <asm-generic/gpio.h>
+> +#define __ARM_GPIOLIB_TRIVIAL
+> 
+>  #endif /* __ASM_ARCH_GPIO_H */
 
-+#include <linux/kernel.h>
-+
- /*
-  * "nmk_gpio" and "NMK_GPIO" stand for "Nomadik GPIO", leaving
-  * the "gpio" namespace for generic and cross-machine functions
---=20
-1.7.3.2
+> diff --git a/arch/arm/mach-s3c2410/include/mach/gpio.h b/arch/arm/mach-
+> s3c2410/include/mach/gpio.h
+> index f7f6b07..998ef4c 100644
+> --- a/arch/arm/mach-s3c2410/include/mach/gpio.h
+> +++ b/arch/arm/mach-s3c2410/include/mach/gpio.h
+> @@ -11,9 +11,7 @@
+>   * published by the Free Software Foundation.
+>  */
+> 
+> -#define gpio_get_value	__gpio_get_value
+> -#define gpio_set_value	__gpio_set_value
+> -#define gpio_cansleep	__gpio_cansleep
+> +#define __ARM_GPIOLIB_TRIVIAL
+>  #define gpio_to_irq	__gpio_to_irq
+> 
+>  /* some boards require extra gpio capacity to support external
+> @@ -28,7 +26,6 @@
+>  #define ARCH_NR_GPIOS	(256 + CONFIG_S3C24XX_GPIO_EXTRA)
+>  #endif
+> 
+> -#include <asm-generic/gpio.h>
+>  #include <mach/gpio-nrs.h>
+>  #include <mach/gpio-fns.h>
+> 
+> diff --git a/arch/arm/mach-s3c64xx/include/mach/gpio.h b/arch/arm/mach-
+> s3c64xx/include/mach/gpio.h
+> index 0d46e99..6958b3f 100644
+> --- a/arch/arm/mach-s3c64xx/include/mach/gpio.h
+> +++ b/arch/arm/mach-s3c64xx/include/mach/gpio.h
+> @@ -12,9 +12,7 @@
+>   * published by the Free Software Foundation.
+>  */
+> 
+> -#define gpio_get_value	__gpio_get_value
+> -#define gpio_set_value	__gpio_set_value
+> -#define gpio_cansleep	__gpio_cansleep
+> +#define __ARM_GPIOLIB_TRIVIAL
+>  #define gpio_to_irq	__gpio_to_irq
+> 
+>  /* GPIO bank sizes */
+> @@ -96,5 +94,3 @@ enum s3c_gpio_number {
+>  #define BOARD_NR_GPIOS 16
+> 
+>  #define ARCH_NR_GPIOS	(GPIO_BOARD_START + BOARD_NR_GPIOS)
+> -
+> -#include <asm-generic/gpio.h>
+> diff --git a/arch/arm/mach-s5p64x0/include/mach/gpio.h b/arch/arm/mach-
+> s5p64x0/include/mach/gpio.h
+> index adb5f29..a25160b 100644
+> --- a/arch/arm/mach-s5p64x0/include/mach/gpio.h
+> +++ b/arch/arm/mach-s5p64x0/include/mach/gpio.h
+> @@ -13,9 +13,7 @@
+>  #ifndef __ASM_ARCH_GPIO_H
+>  #define __ASM_ARCH_GPIO_H __FILE__
+> 
+> -#define gpio_get_value	__gpio_get_value
+> -#define gpio_set_value	__gpio_set_value
+> -#define gpio_cansleep	__gpio_cansleep
+> +#define __ARM_GPIOLIB_TRIVIAL
+>  #define gpio_to_irq	__gpio_to_irq
+> 
+>  /* GPIO bank sizes */
+> @@ -134,6 +132,4 @@ enum s5p6450_gpio_number {
+> 
+>  #define ARCH_NR_GPIOS		(S5P64X0_GPIO_END +
+> CONFIG_SAMSUNG_GPIO_EXTRA)
+> 
+> -#include <asm-generic/gpio.h>
+> -
+>  #endif /* __ASM_ARCH_GPIO_H */
+> diff --git a/arch/arm/mach-s5pc100/include/mach/gpio.h b/arch/arm/mach-
+> s5pc100/include/mach/gpio.h
+> index 29a8a12..f515bfb 100644
+> --- a/arch/arm/mach-s5pc100/include/mach/gpio.h
+> +++ b/arch/arm/mach-s5pc100/include/mach/gpio.h
+> @@ -15,9 +15,7 @@
+>  #ifndef __ASM_ARCH_GPIO_H
+>  #define __ASM_ARCH_GPIO_H __FILE__
+> 
+> -#define gpio_get_value	__gpio_get_value
+> -#define gpio_set_value	__gpio_set_value
+> -#define gpio_cansleep	__gpio_cansleep
+> +#define __ARM_GPIOLIB_TRIVIAL
+>  #define gpio_to_irq	__gpio_to_irq
+> 
+>  /* GPIO bank sizes */
+> @@ -146,6 +144,4 @@ enum s5p_gpio_number {
+>  /* define the number of gpios we need to the one after the MP04() range
+*/
+>  #define ARCH_NR_GPIOS		(S5PC100_GPIO_END + 1)
+> 
+> -#include <asm-generic/gpio.h>
+> -
+>  #endif /* __ASM_ARCH_GPIO_H */
+> diff --git a/arch/arm/mach-s5pv210/include/mach/gpio.h b/arch/arm/mach-
+> s5pv210/include/mach/gpio.h
+> index a5a1e33..27f2139 100644
+> --- a/arch/arm/mach-s5pv210/include/mach/gpio.h
+> +++ b/arch/arm/mach-s5pv210/include/mach/gpio.h
+> @@ -13,9 +13,7 @@
+>  #ifndef __ASM_ARCH_GPIO_H
+>  #define __ASM_ARCH_GPIO_H __FILE__
+> 
+> -#define gpio_get_value	__gpio_get_value
+> -#define gpio_set_value	__gpio_set_value
+> -#define gpio_cansleep	__gpio_cansleep
+> +#define __ARM_GPIOLIB_TRIVIAL
+>  #define gpio_to_irq	__gpio_to_irq
+> 
+>  /* Practically, GPIO banks up to MP03 are the configurable gpio banks */
+> @@ -142,6 +140,4 @@ enum s5p_gpio_number {
+>  #define ARCH_NR_GPIOS
+> 	(S5PV210_MP05(S5PV210_GPIO_MP05_NR) +	\
+>  				 CONFIG_SAMSUNG_GPIO_EXTRA + 1)
+> 
+> -#include <asm-generic/gpio.h>
+> -
+>  #endif /* __ASM_ARCH_GPIO_H */
 
-Thanks,
-Linus Walleij
