@@ -1,64 +1,21 @@
-From: Peter Huewe <peterhuewe@gmx.de>
-Date: Mon, 15 Aug 2011 15:40:10 +0000
-Subject: [PATCH v2] arm: footbridge: Netwinder: Add KConfig select CLKEVT_I8253 to fix build failure
-Message-Id: <1313422810-28916-1-git-send-email-peterhuewe@gmx.de>
+From: "Rose" <william_rose55@yahoo.com>
+Date: Fri, 12 Aug 2011 18:28:04 +0000
+Subject: =?UTF-8?Q?HELLO=20my=20=20=E4=BD=A0=E5=A5=BD=EF=BC=8C=E6=88=91?=
+Message-Id: <20110812202804.2E6C26AA@centrum.sk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110815153338.GA525@n2100.arm.linux.org.uk>
-In-Reply-To: <20110815153338.GA525@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-This patch fixes a build failure for the netwinder_defconfig by adding
-the necessary select CLKEVT_I8253 statement to the KCONFIG option.
 
-Without this patch the build fails with this linker error:
-isa-rtc.c:(.init.text+0x11d4): undefined reference to
-`clockevent_i8253_init'
-isa-rtc.c:(.init.text+0x11dc): undefined reference to `i8253_clockevent'
-arch/arm/mach-footbridge/built-in.o:(.data+0x18c): undefined reference
-to `i8253_clockevent'
-
-This is because the functions are guarded by a #ifdef
-CONFIG_CLKEVT_I8253
-
-KernelVersion: Linux-next 20110812
-but this is also present in Linus' current tree since July 1st.
-(since commit e6220bd "i8253: Create common clockevent implementation")
-
-v2:
-Added the option in the right alphabetical order.
-I also adjusted the alphabetical order for ARCH_CATS so both are
-similar
-
-Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
----
- arch/arm/mach-footbridge/Kconfig |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-footbridge/Kconfig b/arch/arm/mach-footbridge/Kconfig
-index dc26fff..f643ef8 100644
---- a/arch/arm/mach-footbridge/Kconfig
-+++ b/arch/arm/mach-footbridge/Kconfig
-@@ -4,8 +4,8 @@ menu "Footbridge Implementations"
- 
- config ARCH_CATS
- 	bool "CATS"
--	select CLKSRC_I8253
- 	select CLKEVT_I8253
-+	select CLKSRC_I8253
- 	select FOOTBRIDGE_HOST
- 	select ISA
- 	select ISA_DMA
-@@ -61,6 +61,7 @@ config ARCH_EBSA285_HOST
- 
- config ARCH_NETWINDER
- 	bool "NetWinder"
-+	select CLKEVT_I8253
- 	select CLKSRC_I8253
- 	select FOOTBRIDGE_HOST
- 	select ISA
--- 
-1.7.3.4
-
+HELLO
+My name is Rose,i and became intrested in you, i will also like to know you=
+ more,and i want you to send an email to my email address so i can give you=
+ my picture for you to know whom i am. Here is my email address(william_ros=
+e55@yahoo.com)I believe we can move from here!
+I am waiting for your mail to my email address above..
+(Remeber the distance or colour does not matter but love matters alot in li=
+fe)
+Thanks Rose=C2=A0 please contact me now through my email address
+(william_rose55@yahoo.com)
