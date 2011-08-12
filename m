@@ -1,7 +1,7 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 11 Aug 2011 19:37:04 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 12 Aug 2011 09:59:10 +0000
 Subject: Re: LCDC problem after commit 794d78fea51504bad3880d14f354a9847f318f25
-Message-Id: <201108112137.04394.rjw@sisk.pl>
+Message-Id: <201108121159.11081.laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201108080125.34329.rjw@sisk.pl>
 In-Reply-To: <201108080125.34329.rjw@sisk.pl>
@@ -10,48 +10,56 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday, August 11, 2011, Laurent Pinchart wrote:
-> Hi Magnus,
-> 
-> Sorry for the late reply.
-> 
-> On Tuesday 09 August 2011 12:48:44 Magnus Damm wrote:
-> > On Mon, Aug 8, 2011 at 10:46 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > > On Mon, Aug 8, 2011 at 8:25 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > >> Unfortunately, after commit 794d78fea51504bad3880d14f354a9847f318f25
-> > >> (drivers: sh: late disabling of clocks V2) the LCDC screen on my
-> > >> Mackerel board goes off (late) during boot and cannot be turned on
-> > >> by any way AFAICS (the backlight remains on, though).
-> > >> 
-> > >> It looks like the late disabling of clocks interacts badly with the
-> > >> clock management done by PM domains.
+Hi Rafael,
+
+On Thursday 11 August 2011 21:37:04 Rafael J. Wysocki wrote:
+> On Thursday, August 11, 2011, Laurent Pinchart wrote:
+> > On Tuesday 09 August 2011 12:48:44 Magnus Damm wrote:
+> > > On Mon, Aug 8, 2011 at 10:46 AM, Magnus Damm wrote:
+> > > > On Mon, Aug 8, 2011 at 8:25 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> > > >> Unfortunately, after commit 794d78fea51504bad3880d14f354a9847f318f25
+> > > >> (drivers: sh: late disabling of clocks V2) the LCDC screen on my
+> > > >> Mackerel board goes off (late) during boot and cannot be turned on
+> > > >> by any way AFAICS (the backlight remains on, though).
+> > > >> 
+> > > >> It looks like the late disabling of clocks interacts badly with the
+> > > >> clock management done by PM domains.
+> > > > 
+> > > > This is most likely showing a so-far-not-handled clock dependency for
+> > > > the LCDC hardware. I'll have a look.
 > > > 
-> > > This is most likely showing a so-far-not-handled clock dependency for
-> > > the LCDC hardware. I'll have a look.
+> > > Further investigation shows that this only triggers when the MERAM is
+> > > enabled in the kernel configuration using CONFIG_FB_SH_MOBILE_MERAM=y.
+> > > So this seems more related to MERAM power management than LCDC.
+> > > 
+> > > Digging a bit deeper makes it clear that the sh_mobile_meram.c driver
+> > > in upstream doesn't seem to include any Runtime PM code. I recall
+> > > seeing various versions posted to the mailing list.
+> > > 
+> > > Laurent [CC], can you please provide us with a list of outstanding
+> > > LCDC/MERAM patches to make this work as expected? I realize there are
+> > > quite a few outstanding LCDC patches, but if possible please provide a
+> > > list of the bare minimum to make this work with 3.1-rc.
 > > 
-> > Further investigation shows that this only triggers when the MERAM is
-> > enabled in the kernel configuration using CONFIG_FB_SH_MOBILE_MERAM=y.
-> > So this seems more related to MERAM power management than LCDC.
+> > I've pushed my pending patches to
+> > http://git.linuxtv.org/pinchartl/fbdev.git in the pm-domains branch. The
+> > first 19 patches have been picked from mailing lists. Hopefully they're
+> > the latest versions that have been posted. The next 11 patches shouldn't
+> > be required to enable runtime PM with the MERAM, but they provide code
+> > cleanup and bug fixes.
 > > 
-> > Digging a bit deeper makes it clear that the sh_mobile_meram.c driver
-> > in upstream doesn't seem to include any Runtime PM code. I recall
-> > seeing various versions posted to the mailing list.
-> > 
-> > Laurent [CC], can you please provide us with a list of outstanding
-> > LCDC/MERAM patches to make this work as expected? I realize there are
-> > quite a few outstanding LCDC patches, but if possible please provide a
-> > list of the bare minimum to make this work with 3.1-rc.
+> > Are Rafael' and Damian's patches ready for mainline ? If so, when will
+> > they be pulled ? They're more than one month old, I was expecting them
+> > to hit v3.1- rc1. The backlog is growing, which makes collaboration more
+> > difficult.
 > 
-> I've pushed my pending patches to http://git.linuxtv.org/pinchartl/fbdev.git 
-> in the pm-domains branch. The first 19 patches have been picked from mailing 
-> lists. Hopefully they're the latest versions that have been posted. The next 
-> 11 patches shouldn't be required to enable runtime PM with the MERAM, but they 
-> provide code cleanup and bug fixes.
-> 
-> Are Rafael' and Damian's patches ready for mainline ? If so, when will they be 
-> pulled ? They're more than one month old, I was expecting them to hit v3.1-
-> rc1. The backlog is growing, which makes collaboration more difficult.
+> Which of my patches are you referring to in particular?
 
-Which of my patches are you referring to in particular?
+My bad, your patches are in v3.1-rc1. I had rebased my branch on top of the 
+wrong tag. We still need to push Damian's MERAM runtime PM patches, as well as 
+mine.
 
-Rafael
+-- 
+Regards,
+
+Laurent Pinchart
