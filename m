@@ -1,51 +1,73 @@
-From: Peter Huewe <peterhuewe@gmx.de>
-Date: Sat, 13 Aug 2011 22:34:01 +0000
-Subject: [PATCH] shmobile/sh7372: Add missing CONFIG_PM guards to fix build failure
-Message-Id: <1313274841-8322-1-git-send-email-peterhuewe@gmx.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 13 Aug 2011 23:55:05 +0000
+Subject: Re: [PATCH] shmobile/sh7372: Add missing CONFIG_PM guards to fix build failure
+Message-Id: <201108140155.05625.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1313274841-8322-1-git-send-email-peterhuewe@gmx.de>
+In-Reply-To: <1313274841-8322-1-git-send-email-peterhuewe@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch fixes a build failure with the ap4evb_defconfig by adding the
-missing #ifdef CONFIG_PM.
+On Sunday, August 14, 2011, Peter Huewe wrote:
+> This patch fixes a build failure with the ap4evb_defconfig by adding the
+> missing #ifdef CONFIG_PM.
 
-The build failure was:
-arch/arm/mach-shmobile/setup-sh7372.c:852: error: 'sh7372_a4lc'
-undeclared (first use in this function)
-arch/arm/mach-shmobile/setup-sh7372.c:852: error: (Each undeclared
-identifier is reported only once
-arch/arm/mach-shmobile/setup-sh7372.c:852: error: for each function it
-appears in.)
+This is not the right fix.  Besides, you seem to be testing linux-next
+and the build problem is in the linux-pm tree.
 
-sh7372_a4lc is declared in arch/arm/mach-shmobile/pm-sh7372.c within a
- #ifdef CONFIG_PM block. Since the defconfig is missing CONFIG_PM this
-results in a build failure.
+Please check if the appended patch fixes the problem for you.
 
-KernelVersion: linux-next 20110812 (cab7d82)
+Rafael
 
-Signed-off-by: Peter Huewe <peterhuewe@gmx.de>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +++
+ arch/arm/mach-shmobile/pm-sh7372.c           |    6 ++++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |    2 +-
+ 3 files changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index df900bf..8455f0b 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -848,9 +848,9 @@ void __init sh7372_add_standard_devices(void)
- 	sh7372_init_pm_domain(&sh7372_a3rv);
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -494,9 +494,12 @@ extern struct sh7372_pm_domain sh7372_a3
+ extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
+ extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
+ 					struct platform_device *pdev);
++extern void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
++				    struct sh7372_pm_domain *sh7372_sd);
+ #else
+ #define sh7372_init_pm_domain(pd) do { } while(0)
+ #define sh7372_add_device_to_domain(pd, pdev) do { } while(0)
++#define sh7372_pm_add_subdomain(pd, sd) do { } while(0)
+ #endif /* CONFIG_PM */
+ 
+ #endif /* __ASM_SH7372_H__ */
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -849,7 +849,7 @@ void __init sh7372_add_standard_devices(
  	sh7372_init_pm_domain(&sh7372_a3ri);
  	sh7372_init_pm_domain(&sh7372_a3sg);
--
-+#ifdef CONFIG_PM
- 	pm_genpd_add_subdomain(&sh7372_a4lc.genpd, &sh7372_a3sg.genpd);
--
-+#endif
+ 
+-	pm_genpd_add_subdomain(&sh7372_a4lc.genpd, &sh7372_a3rv.genpd);
++	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
+ 
  	platform_add_devices(sh7372_early_devices,
  			    ARRAY_SIZE(sh7372_early_devices));
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -119,6 +119,12 @@ void sh7372_add_device_to_domain(struct
+ 		pm_clk_add(dev, NULL);
+ }
  
--- 
-1.7.3.4
-
++void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
++			     struct sh7372_pm_domain *sh7372_sd)
++{
++	pm_genpd_add_subdomain(&sh7372_pd->genpd, &sh7372_sd->genpd);
++}
++
+ struct sh7372_pm_domain sh7372_a4lc = {
+ 	.bit_shift = 1,
+ };
