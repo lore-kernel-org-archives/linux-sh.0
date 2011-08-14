@@ -1,215 +1,143 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 21 Aug 2011 19:10:45 +0000
-Subject: [PATCH 1/2 v2] PM: Change PM subsys_data lock type into spinlock
-Message-Id: <201108212110.45316.rjw@sisk.pl>
+Date: Sun, 14 Aug 2011 14:07:08 +0000
+Subject: [Update x2][PATCH 9/9] ARM / shmobile: Make A3RV be a subdomain of A4LC on SH7372
+Message-Id: <201108141607.08447.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108202131.19479.rjw@sisk.pl> <201108212109.30399.rjw@sisk.pl>
-In-Reply-To: <201108212109.30399.rjw@sisk.pl>
+References: <201107311946.06654.rjw@sisk.pl> <201107311952.51969.rjw@sisk.pl> <201108132143.47649.rjw@sisk.pl>
+In-Reply-To: <201108132143.47649.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
+Subject: ARM / shmobile: Make A3RV be a subdomain of A4LC on SH7372
 
-The lock member of struct pm_subsys_data is of type struct mutex,
-which is a problem, because the suspend and resume routines
-defined in drivers/base/power/clock_ops.c cannot be executed
-with interrupts disabled for this reason.  Modify
-struct pm_subsys_data so that its lock member is a spinlock.
+Instead of coding the undocumented dependencies between power domains
+A3RV and A4LC on SH7372 directly into the low-level power up/down
+routines, make A3RV be a subdomain of A4LC, which will cause the
+same dependecies to hold.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/power/clock_ops.c |   35 +++++++++++++++++++++--------------
- drivers/base/power/common.c    |    2 +-
- include/linux/pm.h             |    2 +-
- 3 files changed, 23 insertions(+), 16 deletions(-)
 
-Index: linux/include/linux/pm.h
-=================================--- linux.orig/include/linux/pm.h
-+++ linux/include/linux/pm.h
-@@ -438,7 +438,7 @@ struct pm_domain_data {
+It also needs to build for CONFIG_PM unset.
+
+Thanks,
+Rafael
+
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +
+ arch/arm/mach-shmobile/pm-sh7372.c           |   48 ++++-----------------------
+ arch/arm/mach-shmobile/setup-sh7372.c        |    3 +
+ 3 files changed, 14 insertions(+), 40 deletions(-)
+
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -91,35 +91,6 @@ static int pd_power_up(struct generic_pm
+ 	return ret;
+ }
+ 
+-static int pd_power_up_a3rv(struct generic_pm_domain *genpd)
+-{
+-	int ret = pd_power_up(genpd);
+-
+-	/* force A4LC on after A3RV has been requested on */
+-	pm_genpd_poweron(&sh7372_a4lc.genpd);
+-
+-	return ret;
+-}
+-
+-static int pd_power_down_a3rv(struct generic_pm_domain *genpd)
+-{
+-	int ret = pd_power_down(genpd);
+-
+-	/* try to power down A4LC after A3RV is requested off */
+-	genpd_queue_power_off_work(&sh7372_a4lc.genpd);
+-
+-	return ret;
+-}
+-
+-static int pd_power_down_a4lc(struct generic_pm_domain *genpd)
+-{
+-	/* only power down A4LC if A3RV is off */
+-	if (!(__raw_readl(PSTR) & (1 << sh7372_a3rv.bit_shift)))
+-		return pd_power_down(genpd);
+-
+-	return -EBUSY;
+-}
+-
+ static bool pd_active_wakeup(struct device *dev)
+ {
+ 	return true;
+@@ -133,17 +104,8 @@ void sh7372_init_pm_domain(struct sh7372
+ 	genpd->stop_device = pm_clk_suspend;
+ 	genpd->start_device = pm_clk_resume;
+ 	genpd->active_wakeup = pd_active_wakeup;
+-
+-	if (sh7372_pd = &sh7372_a4lc) {
+-		genpd->power_off = pd_power_down_a4lc;
+-		genpd->power_on = pd_power_up;
+-	} else if (sh7372_pd = &sh7372_a3rv) {
+-		genpd->power_off = pd_power_down_a3rv;
+-		genpd->power_on = pd_power_up_a3rv;
+-	} else {
+-		genpd->power_off = pd_power_down;
+-		genpd->power_on = pd_power_up;
+-	}
++	genpd->power_off = pd_power_down;
++	genpd->power_on = pd_power_up;
+ 	genpd->power_on(&sh7372_pd->genpd);
+ }
+ 
+@@ -159,6 +121,12 @@ void sh7372_add_device_to_domain(struct
+ 	pm_genpd_add_device(&sh7372_pd->genpd, dev);
+ }
+ 
++void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
++			     struct sh7372_pm_domain *sh7372_sd)
++{
++	pm_genpd_add_subdomain(&sh7372_pd->genpd, &sh7372_sd->genpd);
++}
++
+ struct sh7372_pm_domain sh7372_a4lc = {
+ 	.bit_shift = 1,
  };
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -30,6 +30,7 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
++#include <linux/pm_domain.h>
+ #include <mach/hardware.h>
+ #include <mach/sh7372.h>
+ #include <asm/mach-types.h>
+@@ -848,6 +849,8 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
+ 	sh7372_init_pm_domain(&sh7372_a3sg);
  
- struct pm_subsys_data {
--	struct mutex lock;
-+	spinlock_t lock;
- 	unsigned int refcount;
- #ifdef CONFIG_PM_CLK
- 	struct list_head clock_list;
-Index: linux/drivers/base/power/clock_ops.c
-=================================--- linux.orig/drivers/base/power/clock_ops.c
-+++ linux/drivers/base/power/clock_ops.c
-@@ -43,6 +43,7 @@ int pm_clk_add(struct device *dev, const
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce;
-+	unsigned long flags;
++	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
++
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
  
- 	if (!psd)
- 		return -EINVAL;
-@@ -63,9 +64,9 @@ int pm_clk_add(struct device *dev, const
- 		}
- 	}
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -494,9 +494,12 @@ extern struct sh7372_pm_domain sh7372_a3
+ extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
+ extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
+ 					struct platform_device *pdev);
++extern void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
++				    struct sh7372_pm_domain *sh7372_sd);
+ #else
+ #define sh7372_init_pm_domain(pd) do { } while(0)
+ #define sh7372_add_device_to_domain(pd, pdev) do { } while(0)
++#define sh7372_pm_add_subdomain(pd, sd) do { } while(0)
+ #endif /* CONFIG_PM */
  
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 	list_add_tail(&ce->node, &psd->clock_list);
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- 	return 0;
- }
- 
-@@ -109,11 +110,12 @@ void pm_clk_remove(struct device *dev, c
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce;
-+	unsigned long flags;
- 
- 	if (!psd)
- 		return;
- 
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 
- 	list_for_each_entry(ce, &psd->clock_list, node) {
- 		if (!con_id && !ce->con_id) {
-@@ -127,7 +129,7 @@ void pm_clk_remove(struct device *dev, c
- 		}
- 	}
- 
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- }
- 
- /**
-@@ -169,16 +171,17 @@ void pm_clk_destroy(struct device *dev)
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce, *c;
-+	unsigned long flags;
- 
- 	if (!psd)
- 		return;
- 
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 
- 	list_for_each_entry_safe_reverse(ce, c, &psd->clock_list, node)
- 		__pm_clk_remove(ce);
- 
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- 
- 	dev_pm_put_subsys_data(dev);
- }
-@@ -212,13 +215,14 @@ int pm_clk_suspend(struct device *dev)
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce;
-+	unsigned long flags;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
- 	if (!psd)
- 		return 0;
- 
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 
- 	list_for_each_entry_reverse(ce, &psd->clock_list, node) {
- 		if (ce->status = PCE_STATUS_NONE)
-@@ -230,7 +234,7 @@ int pm_clk_suspend(struct device *dev)
- 		}
- 	}
- 
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- 
- 	return 0;
- }
-@@ -243,13 +247,14 @@ int pm_clk_resume(struct device *dev)
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce;
-+	unsigned long flags;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
- 	if (!psd)
- 		return 0;
- 
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 
- 	list_for_each_entry(ce, &psd->clock_list, node) {
- 		if (ce->status = PCE_STATUS_NONE)
-@@ -261,7 +266,7 @@ int pm_clk_resume(struct device *dev)
- 		}
- 	}
- 
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- 
- 	return 0;
- }
-@@ -336,6 +341,7 @@ int pm_clk_suspend(struct device *dev)
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce;
-+	unsigned long flags;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
-@@ -343,12 +349,12 @@ int pm_clk_suspend(struct device *dev)
- 	if (!psd || !dev->driver)
- 		return 0;
- 
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 
- 	list_for_each_entry_reverse(ce, &psd->clock_list, node)
- 		clk_disable(ce->clk);
- 
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- 
- 	return 0;
- }
-@@ -361,6 +367,7 @@ int pm_clk_resume(struct device *dev)
- {
- 	struct pm_subsys_data *psd = dev_to_psd(dev);
- 	struct pm_clock_entry *ce;
-+	unsigned long flags;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
-@@ -368,12 +375,12 @@ int pm_clk_resume(struct device *dev)
- 	if (!psd || !dev->driver)
- 		return 0;
- 
--	mutex_lock(&psd->lock);
-+	spin_lock_irqsave(&psd->lock, flags);
- 
- 	list_for_each_entry(ce, &psd->clock_list, node)
- 		clk_enable(ce->clk);
- 
--	mutex_unlock(&psd->lock);
-+	spin_unlock_irqrestore(&psd->lock, flags);
- 
- 	return 0;
- }
-Index: linux/drivers/base/power/common.c
-=================================--- linux.orig/drivers/base/power/common.c
-+++ linux/drivers/base/power/common.c
-@@ -34,7 +34,7 @@ int dev_pm_get_subsys_data(struct device
- 	if (dev->power.subsys_data) {
- 		dev->power.subsys_data->refcount++;
- 	} else {
--		mutex_init(&psd->lock);
-+		spin_lock_init(&psd->lock);
- 		psd->refcount = 1;
- 		dev->power.subsys_data = psd;
- 		pm_clk_init(dev);
-
+ #endif /* __ASM_SH7372_H__ */
