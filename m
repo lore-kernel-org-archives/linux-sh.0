@@ -1,135 +1,90 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Aug 2011 02:08:19 +0000
-Subject: [PATCH 5/5] ARM: shmobile: ag5evm, ap4: Make use of irq index defines
-Message-Id: <1313460499-3377-6-git-send-email-horms@verge.net.au>
+Date: Mon, 15 Aug 2011 05:51:28 +0000
+Subject: [PATCH 4/4] mmc: sdhi: Make use of per-source irq handlers
+Message-Id: <1313387488-28175-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313460499-3377-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1313460499-3377-1-git-send-email-horms@verge.net.au>
+References: <1313387488-28175-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313387488-28175-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-This is intended to make it easier to correctly order IRQs.
-
-As suggested by Guennadi Liakhovetski.
+Make use of per-source irq handles if the
+platform (data) has multiple irq sources.
 
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
-
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |   24 ++++++++++++++++++++----
+ drivers/mmc/host/tmio_mmc_pio.c   |    2 +-
+ 2 files changed, 21 insertions(+), 5 deletions(-)
 
-Depends on "mmc: sdhi: Add defines for platform irq indexes"
----
- arch/arm/mach-shmobile/board-ag5evm.c   |   12 ++++++------
- arch/arm/mach-shmobile/board-mackerel.c |   18 +++++++++---------
- 2 files changed, 15 insertions(+), 15 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index ce5c251..c687f67 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -352,15 +352,15 @@ static struct resource sdhi0_resources[] = {
- 		.end	= 0xee1000ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
--	[1] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
- 		.start	= gic_spi(83),
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[2] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
- 		.start	= gic_spi(84),
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[3] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
- 		.start	= gic_spi(85),
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -395,15 +395,15 @@ static struct resource sdhi1_resources[] = {
- 		.end	= 0xee1200ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
--	[1] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
- 		.start	= gic_spi(87),
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[2] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
- 		.start	= gic_spi(88),
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[3] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
- 		.start	= gic_spi(89),
- 		.flags	= IORESOURCE_IRQ,
- 	},
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index d41c01f..bc575eb 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1022,15 +1022,15 @@ static struct resource sdhi0_resources[] = {
- 		.end	= 0xe68500ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
--	[1] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
- 		.start	= evt2irq(0x0e00) /* SDHI0_SDHI0I0 */,
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[2] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
- 		.start	= evt2irq(0x0e20) /* SDHI0_SDHI0I1 */,
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[3] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
- 		.start	= evt2irq(0x0e40) /* SDHI0_SDHI0I2 */,
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -1065,15 +1065,15 @@ static struct resource sdhi1_resources[] = {
- 		.end	= 0xe68600ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
--	[1] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
- 		.start	= evt2irq(0x0e80), /* SDHI1_SDHI1I0 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[2] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
- 		.start	= evt2irq(0x0ea0), /* SDHI1_SDHI1I1 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[3] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
- 		.start	= evt2irq(0x0ec0), /* SDHI1_SDHI1I2 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -1116,15 +1116,15 @@ static struct resource sdhi2_resources[] = {
- 		.end	= 0xe68700ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
--	[1] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
- 		.start	= evt2irq(0x1200), /* SDHI2_SDHI2I0 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[2] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
- 		.start	= evt2irq(0x1220), /* SDHI2_SDHI2I1 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
--	[3] = {
-+	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
- 		.start	= evt2irq(0x1240), /* SDHI2_SDHI2I2 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 774f643..08c1b3b 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -97,6 +97,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct tmio_mmc_host *host;
+ 	char clk_name[8];
+ 	int i, irq, ret;
++	bool multi_irq = false;
+ 
+ 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
+ 	if (priv = NULL) {
+@@ -153,7 +154,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto eprobe;
+ 
+-	for (i = 0; i < 3; i++) {
++	for (i = 2; i >= 0; i--) {
++		irqreturn_t (*f)(int irq, void *devid);
++
+ 		irq = platform_get_irq(pdev, i);
+ 		if (irq < 0) {
+ 			if (i) {
+@@ -163,10 +166,23 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 				goto eirq;
+ 			}
+ 		}
+-		ret = request_irq(irq, tmio_mmc_irq, 0,
+-				  dev_name(&pdev->dev), host);
++
++		switch(i) {
++		case 2:
++			multi_irq = true;
++			f = tmio_mmc_sdio_irq;
++			break;
++		case 1:
++			f = tmio_mmc_card_access_irq;
++			break;
++		case 0:
++			f = multi_irq ? tmio_mmc_card_detect_irq : tmio_mmc_irq;
++			break;
++		}
++
++		ret = request_irq(irq, f, 0, dev_name(&pdev->dev), host);
+ 		if (ret) {
+-			while (i--) {
++			while (i++ < 3) {
+ 				irq = platform_get_irq(pdev, i);
+ 				if (irq >= 0)
+ 					free_irq(irq, host);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 322aa1b..7e01d37 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -613,7 +613,7 @@ irqreturn_t tmio_mmc_card_access_irq(int irq, void *devid)
+ 
+ 	pr_debug("MMC Card Access IRQ begin\n");
+ 	tmio_mmc_card_irq_status(host, &ireg, &irq_mask, &status);
+-	__tmio_mmc_card_detect_irq(host, ireg, irq_mask, status);
++	__tmio_mmc_card_access_irq(host, ireg, irq_mask, status);
+ 
+ 	return IRQ_HANDLED;
+ }
 -- 
 1.7.5.4
 
