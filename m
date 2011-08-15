@@ -1,92 +1,106 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 29 Aug 2011 04:53:28 +0000
-Subject: [PATCH] leds: Update Renesas TPU LED driver to use workqueue
-Message-Id: <20110829045328.23173.92976.sendpatchset@rxone.opensource.se>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 15 Aug 2011 05:51:27 +0000
+Subject: [PATCH 3/4] mmc: tmio, sdhi: Provide separate interrupt hadnlers
+Message-Id: <1313387488-28175-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1313387488-28175-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313387488-28175-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, grant.likely@secretlab.ca, lethal@linux-sh.org, rpurdie@rpsys.net, Magnus Damm <magnus.damm@gmail.com>, akpm@linux-foundation.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+Provide separate interrupt handlers which may be used by platforms where
+SDHI has three interrupt sources.
 
-Use a workqueue in the Renesas TPU LED driver
-to allow the Runtime PM code to sleep.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
+ drivers/mmc/host/tmio_mmc.h     |    3 +++
+ drivers/mmc/host/tmio_mmc_pio.c |   35 ++++++++++++++++++++++++++++++++++-
+ 2 files changed, 37 insertions(+), 1 deletions(-)
 
- drivers/leds/leds-renesas-tpu.c |   21 +++++++++++++++++----
- 1 file changed, 17 insertions(+), 4 deletions(-)
-
---- 0017/drivers/leds/leds-renesas-tpu.c
-+++ work/drivers/leds/leds-renesas-tpu.c	2011-08-29 13:40:12.000000000 +0900
-@@ -31,6 +31,7 @@
- #include <linux/err.h>
- #include <linux/slab.h>
- #include <linux/pm_runtime.h>
-+#include <linux/workqueue.h>
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index eeaf643..647a24c 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -93,6 +93,9 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
+ void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
+ void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
+ irqreturn_t tmio_mmc_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_card_access_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid);
  
- enum r_tpu_pin { R_TPU_PIN_UNUSED, R_TPU_PIN_GPIO, R_TPU_PIN_GPIO_FN };
- enum r_tpu_timer { R_TPU_TIMER_UNUSED, R_TPU_TIMER_ON };
-@@ -44,6 +45,8 @@ struct r_tpu_priv {
- 	enum r_tpu_timer timer_state;
- 	unsigned long min_rate;
- 	unsigned int refresh_rate;
-+	struct work_struct work;
-+	enum led_brightness new_brightness;
- };
- 
- static DEFINE_SPINLOCK(r_tpu_lock);
-@@ -211,15 +214,15 @@ static void r_tpu_set_pin(struct r_tpu_p
- 	p->pin_state = new_state;
- }
- 
--static void r_tpu_set_brightness(struct led_classdev *ldev,
--				 enum led_brightness brightness)
-+static void r_tpu_work(struct work_struct *work)
- {
--	struct r_tpu_priv *p = container_of(ldev, struct r_tpu_priv, ldev);
-+	struct r_tpu_priv *p = container_of(work, struct r_tpu_priv, work);
-+	enum led_brightness brightness = p->new_brightness;
- 
- 	r_tpu_disable(p);
- 
- 	/* off and maximum are handled as GPIO pins, in between PWM */
--	if ((brightness = 0) || (brightness = ldev->max_brightness))
-+	if ((brightness = 0) || (brightness = p->ldev.max_brightness))
- 		r_tpu_set_pin(p, R_TPU_PIN_GPIO, brightness);
- 	else {
- 		r_tpu_set_pin(p, R_TPU_PIN_GPIO_FN, 0);
-@@ -227,6 +230,14 @@ static void r_tpu_set_brightness(struct 
+ static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
+ 					 unsigned long *flags)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 3880750..322aa1b 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -570,6 +570,18 @@ static void __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
  	}
  }
  
-+static void r_tpu_set_brightness(struct led_classdev *ldev,
-+				 enum led_brightness brightness)
++irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid)
 +{
-+	struct r_tpu_priv *p = container_of(ldev, struct r_tpu_priv, ldev);
-+	p->new_brightness = brightness;
-+	schedule_work(&p->work);
++	unsigned int ireg, irq_mask, status;
++	struct tmio_mmc_host *host = devid;
++
++	pr_debug("MMC Card Detect IRQ begin\n");
++	tmio_mmc_card_irq_status(host, &ireg, &irq_mask, &status);
++	__tmio_mmc_card_detect_irq(host, ireg, irq_mask, status);
++
++	return IRQ_HANDLED;
 +}
 +
- static int __devinit r_tpu_probe(struct platform_device *pdev)
+ void __tmio_mmc_card_access_irq(struct tmio_mmc_host *host,
+ 				int ireg, int irq_mask, int status)
  {
- 	struct led_renesas_tpu_config *cfg = pdev->dev.platform_data;
-@@ -274,6 +285,7 @@ static int __devinit r_tpu_probe(struct 
- 	r_tpu_set_pin(p, R_TPU_PIN_GPIO, LED_OFF);
- 	platform_set_drvdata(pdev, p);
+@@ -594,12 +606,23 @@ void __tmio_mmc_card_access_irq(struct tmio_mmc_host *host,
+ 	}
+ }
  
-+	INIT_WORK(&p->work, r_tpu_work);
+-static void __tmio_mmc_card_irq(struct tmio_mmc_host *host)
++irqreturn_t tmio_mmc_card_access_irq(int irq, void *devid)
+ {
+ 	unsigned int ireg, irq_mask, status;
++	struct tmio_mmc_host *host = devid;
  
- 	p->ldev.name = cfg->name;
- 	p->ldev.brightness = LED_OFF;
-@@ -307,6 +319,7 @@ static int __devexit r_tpu_remove(struct
++	pr_debug("MMC Card Access IRQ begin\n");
+ 	tmio_mmc_card_irq_status(host, &ireg, &irq_mask, &status);
++	__tmio_mmc_card_detect_irq(host, ireg, irq_mask, status);
  
- 	r_tpu_set_brightness(&p->ldev, LED_OFF);
- 	led_classdev_unregister(&p->ldev);
-+	cancel_work_sync(&p->work);
- 	r_tpu_disable(p);
- 	r_tpu_set_pin(p, R_TPU_PIN_UNUSED, LED_OFF);
++	return IRQ_HANDLED;
++}
++
++static void __tmio_mmc_card_irq(struct tmio_mmc_host *host)
++{
++	unsigned int ireg, irq_mask, status;
++
++	tmio_mmc_card_irq_status(host, &ireg, &irq_mask, &status);
+ 	__tmio_mmc_card_detect_irq(host, ireg, irq_mask, status);
+ 	__tmio_mmc_card_access_irq(host, ireg, irq_mask, status);
+ }
+@@ -623,6 +646,16 @@ static void __tmio_mmc_sdio_irq(struct tmio_mmc_host *host)
+ 		mmc_signal_sdio_irq(mmc);
+ }
  
++irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
++{
++	struct tmio_mmc_host *host = devid;
++
++	pr_debug("MMC SDIO IRQ begin\n");
++	__tmio_mmc_sdio_irq(host);
++
++	return IRQ_HANDLED;
++}
++
+ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ {
+ 	struct tmio_mmc_host *host = devid;
+-- 
+1.7.5.4
+
