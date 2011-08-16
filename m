@@ -1,50 +1,228 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 31 Aug 2011 11:00:51 +0000
-Subject: [PATCH v2 0/8] sh_mobile_lcdc: Support format changes at runtime
-Message-Id: <1314788459-31791-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 16 Aug 2011 02:08:16 +0000
+Subject: [PATCH 2/5] mmc: tmio: Provide separate interrupt handlers
+Message-Id: <1313460499-3377-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1313460499-3377-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313460499-3377-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-fbdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
 
-Hi everybody,
+Provide separate interrupt handlers which may be used by platforms where
+SDHI has three interrupt sources.
 
-Here's the second version of the .fb_set_par() support for the sh_mobile_lc=
-dc
-driver patch set. It allows userspace to change the frame buffer format and
-size at runtime. The patches apply on top of Florian's fbdev-next branch
-available at git://github.com/schandinat/linux-2.6.git.
+This involves two key changes to the logic:
+1. Do not assume that only one interrupt has occurred.
+   In particular because tmio_mmc_irq() handles interrupts
+   from three sources. Also, because this allows
+   the logic to be simplified.
+2. Just ignore spurious interrupts.
+   Its not clear to me that they can ever occur.
 
-Compared to v1, this version includes an additional MERAM fix.
+This patch also removes the commented-out handling of CRC and other errors.
 
-Frame buffer memory reallocation is currently not supported. You will need =
-to
-make sure platform data sets the maximum size and bpp to high enough values
-for all formats and sizes you want to support at runtime.
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-The patches have been tested with the fbdev-test utility
-(http://git.ideasonboard.org/?p=FBdev-test.git;a=3Dsummary) on a Mackerel b=
-oard.
+---
 
-Laurent Pinchart (8):
-  sh_mobile_meram: Reset ICBs at unregistration time
-  fbdev: sh_mobile_lcdc: Adjust requested parameters in .fb_check_var
-  fbdev: sh_mobile_lcdc: Add support for format changes at runtime
-  fbdev: sh_mobile_lcdc: use display information in info for panning
-  fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
-  fbdev: sh_mobile_lcdc: Avoid forward declarations
-  fbdev: sh_mobile_lcdc: Split channel initialization from probe
-    function
-  fbdev: sh_mobile_lcdc: Remove sh_mobile_lcdc_set_bpp()
+* SDCARD portion tested on AP4/Mackerel
+* SDIO portion untested
 
- drivers/video/sh_mobile_lcdcfb.c |  570 +++++++++++++++++++++-------------=
-----
- drivers/video/sh_mobile_meram.c  |    6 +-
- 2 files changed, 313 insertions(+), 263 deletions(-)
+v2
+As suggested by Guennadi Liakhovetski
+* Combine 3 patches into one
+* Reduce the number of __tmio_..._irq() functions
+* Rename "...card_access..." functions as "...sdcard..."
+---
+ drivers/mmc/host/tmio_mmc.h     |    3 +
+ drivers/mmc/host/tmio_mmc_pio.c |  121 +++++++++++++++++++++++----------------
+ 2 files changed, 75 insertions(+), 49 deletions(-)
 
---=20
-Regards,
-
-Laurent Pinchart
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 1cf8db5..3020f98 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -97,6 +97,9 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
+ void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
+ void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
+ irqreturn_t tmio_mmc_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid);
+ 
+ static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
+ 					 unsigned long *flags)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index c60b15f..e9640f2 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -547,45 +547,20 @@ out:
+ 	spin_unlock(&host->lock);
+ }
+ 
+-irqreturn_t tmio_mmc_irq(int irq, void *devid)
++static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
++				       int *ireg, int *status)
+ {
+-	struct tmio_mmc_host *host = devid;
+-	struct mmc_host *mmc = host->mmc;
+-	struct tmio_mmc_data *pdata = host->pdata;
+-	unsigned int ireg, status;
+-	unsigned int sdio_ireg, sdio_status;
+-
+-	pr_debug("MMC IRQ begin\n");
+-
+-	status = sd_ctrl_read32(host, CTL_STATUS);
+-	ireg = status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
++	*status = sd_ctrl_read32(host, CTL_STATUS);
++	*ireg = *status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
+ 
+-	sdio_ireg = 0;
+-	if (!ireg && pdata->flags & TMIO_MMC_SDIO_IRQ) {
+-		sdio_status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
+-		host->sdio_irq_mask = sd_ctrl_read16(host, CTL_SDIO_IRQ_MASK);
+-		sdio_ireg = sdio_status & TMIO_SDIO_MASK_ALL &
+-				~host->sdio_irq_mask;
+-
+-		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
+-
+-		if (sdio_ireg && !host->sdio_irq_enabled) {
+-			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
+-				   sdio_status, host->sdio_irq_mask, sdio_ireg);
+-			tmio_mmc_enable_sdio_irq(mmc, 0);
+-			goto out;
+-		}
+-
+-		if (mmc->caps & MMC_CAP_SDIO_IRQ &&
+-			sdio_ireg & TMIO_SDIO_STAT_IOIRQ)
+-			mmc_signal_sdio_irq(mmc);
+-
+-		if (sdio_ireg)
+-			goto out;
+-	}
++	pr_debug_status(*status);
++	pr_debug_status(*ireg);
++}
+ 
+-	pr_debug_status(status);
+-	pr_debug_status(ireg);
++static void __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
++				       int ireg, int status)
++{
++	struct mmc_host *mmc = host->mmc;
+ 
+ 	/* Card insert / remove attempts */
+ 	if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
+@@ -595,43 +570,91 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 		     ((ireg & TMIO_STAT_CARD_INSERT) && !mmc->card)) &&
+ 		    !work_pending(&mmc->detect.work))
+ 			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
+-		goto out;
+ 	}
++}
+ 
+-	/* CRC and other errors */
+-/*	if (ireg & TMIO_STAT_ERR_IRQ)
+- *		handled |= tmio_error_irq(host, irq, stat);
+- */
++irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid)
++{
++	unsigned int ireg, status;
++	struct tmio_mmc_host *host = devid;
++
++	tmio_mmc_card_irq_status(host, &ireg, &status);
++	__tmio_mmc_card_detect_irq(host, ireg, status);
+ 
++	return IRQ_HANDLED;
++}
++EXPORT_SYMBOL(tmio_mmc_card_detect_irq);
++
++void __tmio_mmc_sdcard_irq(struct tmio_mmc_host *host, int ireg, int status)
++{
+ 	/* Command completion */
+ 	if (ireg & (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT)) {
+ 		tmio_mmc_ack_mmc_irqs(host,
+ 			     TMIO_STAT_CMDRESPEND |
+ 			     TMIO_STAT_CMDTIMEOUT);
+ 		tmio_mmc_cmd_irq(host, status);
+-		goto out;
+ 	}
+ 
+ 	/* Data transfer */
+ 	if (ireg & (TMIO_STAT_RXRDY | TMIO_STAT_TXRQ)) {
+ 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_RXRDY | TMIO_STAT_TXRQ);
+ 		tmio_mmc_pio_irq(host);
+-		goto out;
+ 	}
+ 
+ 	/* Data transfer completion */
+ 	if (ireg & TMIO_STAT_DATAEND) {
+ 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_DATAEND);
+ 		tmio_mmc_data_irq(host);
+-		goto out;
+ 	}
++}
++
++irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid)
++{
++	unsigned int ireg, status;
++	struct tmio_mmc_host *host = devid;
+ 
+-	pr_warning("tmio_mmc: Spurious irq, disabling! "
+-		"0x%08x 0x%08x 0x%08x\n", status, host->sdcard_irq_mask, ireg);
+-	pr_debug_status(status);
+-	tmio_mmc_disable_mmc_irqs(host, status & ~host->sdcard_irq_mask);
++	tmio_mmc_card_irq_status(host, &ireg, &status);
++	__tmio_mmc_sdcard_irq(host, ireg, status);
++
++	return IRQ_HANDLED;
++}
++EXPORT_SYMBOL(tmio_mmc_sdcard_irq);
++
++irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
++{
++	struct tmio_mmc_host *host = devid;
++	struct mmc_host *mmc = host->mmc;
++	struct tmio_mmc_data *pdata = host->pdata;
++	unsigned int ireg, status;
++
++	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
++		return IRQ_HANDLED;
++
++	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
++	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
++
++	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
++
++	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
++		mmc_signal_sdio_irq(mmc);
++
++	return IRQ_HANDLED;
++}
++EXPORT_SYMBOL(tmio_mmc_sdio_irq);
++
++irqreturn_t tmio_mmc_irq(int irq, void *devid)
++{
++	struct tmio_mmc_host *host = devid;
++	unsigned int ireg, status;
++
++	pr_debug("MMC IRQ begin\n");
++
++	tmio_mmc_card_irq_status(host, &ireg, &status);
++	__tmio_mmc_card_detect_irq(host, ireg, status);
++	__tmio_mmc_sdcard_irq(host, ireg, status);
++
++	tmio_mmc_sdio_irq(irq, devid);
+ 
+-out:
+ 	return IRQ_HANDLED;
+ }
+ EXPORT_SYMBOL(tmio_mmc_irq);
+-- 
+1.7.5.4
 
