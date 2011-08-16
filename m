@@ -1,63 +1,111 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Aug 2011 09:20:26 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: clock-sh7372: fixup USB-DMAC1 settings
-Message-Id: <CANqRtoSx=8eTk-2Kxq=vnAVA7w4P0Eh_Kde7Te2+zZ36jsJOeA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 16 Aug 2011 02:08:18 +0000
+Subject: [PATCH 4/5] mmc: sdhi: Make use of per-source irq handlers
+Message-Id: <1313460499-3377-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
+References: <1313460499-3377-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313460499-3377-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
 
-Hi Morimoto-san,
+Make use of per-source irq handles if the
+platform (data) has multiple irq sources.
 
-On Wed, Aug 24, 2011 at 11:44 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> USB-DMAC1 needs SMSTPCR4/MSTP407 controls, not MSTP214
->
-> Reported-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   58 +++++++++++++++++++++++-------------
+ 1 files changed, 37 insertions(+), 21 deletions(-)
 
-Thanks for your work on this. Please make sure the code is well tested.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 774f643..29dd0c8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -96,7 +96,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	struct tmio_mmc_host *host;
+ 	char clk_name[8];
+-	int i, irq, ret;
++	int irq, ret;
++	irqreturn_t (*f)(int irq, void *devid);
++	bool multi_irq = false;
+ 
+ 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
+ 	if (priv = NULL) {
+@@ -153,27 +155,33 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto eprobe;
+ 
+-	for (i = 0; i < 3; i++) {
+-		irq = platform_get_irq(pdev, i);
+-		if (irq < 0) {
+-			if (i) {
+-				continue;
+-			} else {
+-				ret = irq;
+-				goto eirq;
+-			}
+-		}
+-		ret = request_irq(irq, tmio_mmc_irq, 0,
++	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
++	if (irq >= 0) {
++		multi_irq = true;
++		ret = request_irq(irq, tmio_mmc_sdio_irq, 0,
+ 				  dev_name(&pdev->dev), host);
+-		if (ret) {
+-			while (i--) {
+-				irq = platform_get_irq(pdev, i);
+-				if (irq >= 0)
+-					free_irq(irq, host);
+-			}
+-			goto eirq;
+-		}
++		if (ret)
++			goto eirq_sdio;
+ 	}
++
++	ret = irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
++	if (irq >= 0) {
++		multi_irq = true;
++		ret = request_irq(irq, tmio_mmc_sdcard_irq, 0,
++				  dev_name(&pdev->dev), host);
++		if (ret)
++			goto eirq_card_detect;
++	} else if (multi_irq)
++		goto eirq_card_detect;
++
++	ret = irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
++	if (irq < 0)
++		goto eirq_sdcard;
++	f = multi_irq ? tmio_mmc_card_detect_irq : tmio_mmc_irq;
++	ret = request_irq(irq, f, 0, dev_name(&pdev->dev), host);
++	if (ret)
++		goto eirq_sdcard;
++
+ 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
+ 		 mmc_hostname(host->mmc), (unsigned long)
+ 		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
+@@ -181,7 +189,15 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 
+ 	return ret;
+ 
+-eirq:
++eirq_sdcard:
++	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
++	if (irq >= 0)
++		free_irq(irq, host);
++eirq_card_detect:
++	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
++	if (irq >= 0)
++		free_irq(irq, host);
++eirq_sdio:
+ 	tmio_mmc_host_remove(host);
+ eprobe:
+ 	clk_disable(priv->clk);
+-- 
+1.7.5.4
 
-> @@ -558,6 +558,7 @@ static struct clk mstp_clks[MSTP_NR] =3D {
-> =A0 =A0 =A0 =A0[MSTP413] =3D MSTP(&pllc1_div2_clk, SMSTPCR4, 13, 0), /* H=
-DMI */
-> =A0 =A0 =A0 =A0[MSTP411] =3D MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 11, 0),=
- /* IIC3 */
-> =A0 =A0 =A0 =A0[MSTP410] =3D MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 10, 0),=
- /* IIC4 */
-> + =A0 =A0 =A0 [MSTP407] =3D MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 7, 0), /*=
- USBDMAC */
-> =A0 =A0 =A0 =A0[MSTP406] =3D MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 6, 0), =
-/* USB1 */
-> =A0 =A0 =A0 =A0[MSTP403] =3D MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
-> =A0};
-
-Nit: s/USBDMAC/USB-DMAC0/g
-
-> @@ -635,7 +636,7 @@ static struct clk_lookup lookups[] =3D {
-> =A0 =A0 =A0 =A0CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* =
-DMAC2 */
-> =A0 =A0 =A0 =A0CLKDEV_DEV_ID("sh-dma-engine.2", &mstp_clks[MSTP216]), /* =
-DMAC3 */
-> =A0 =A0 =A0 =A0CLKDEV_DEV_ID("sh-dma-engine.3", &mstp_clks[MSTP214]), /* =
-USB-DMAC0 */
-> - =A0 =A0 =A0 CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP214]), /* U=
-SB-DMAC1 */
-> + =A0 =A0 =A0 CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP407]), /* U=
-SB-DMAC1 */
-> =A0 =A0 =A0 =A0CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 =
-*/
-> =A0 =A0 =A0 =A0CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP206]), /* SCIFB */
-> =A0 =A0 =A0 =A0CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 =
-*/
-
-This should follow the same order as above. Please move down MSTP407
-next to the other MSTP4xx bits.
-
-Thanks,
-
-/ magnus
