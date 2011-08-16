@@ -1,70 +1,150 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 03 Aug 2011 04:45:42 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 generic suspend/resume support
-Message-Id: <CANqRtoR3C742triXtGbR=uTa6fdBJ_mJARrAG_COjujRPxhSvw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 16 Aug 2011 10:11:23 +0000
+Subject: [PATCH 1/4] mmc: tmio: Cache interrupt masks
+Message-Id: <1313489486-831-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110707134813.22370.25948.sendpatchset@t400s>
-In-Reply-To: <20110707134813.22370.25948.sendpatchset@t400s>
+References: <1313489486-831-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313489486-831-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-On Wed, Jul 13, 2011 at 9:34 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
-> On Wed, Jul 13, 2011 at 08:05:04PM +0900, Magnus Damm wrote:
->> On Thu, Jul 7, 2011 at 10:50 PM, Russell King - ARM Linux
->> <linux@arm.linux.org.uk> wrote:
->> > On Thu, Jul 07, 2011 at 10:48:13PM +0900, Magnus Damm wrote:
->> >> From: Magnus Damm <damm@opensource.se>
->> >>
->> >> Convert the sh7372 Core Standby code to make use
->> >> of the new generic ARM cpu suspend/resume code.
->> >
->> > Thanks. =A0Only thing which stands out is:
->> >
->> >> + =A0 =A0 .global sh7372_resume_core_standby
->> >> +sh7372_resume_core_standby:
->> >> + =A0 =A0 ldr =A0 =A0 pc, 1f
->> >> +1: =A0 .long =A0 cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
->> >
->> > Is this because sh7372_resume_core_standby must be ARM stuff, but
->> > cpu_resume may be Thumb?
->>
->> That may have something to do with it, but I suspect not. Perhaps you
->> wonder why I'm not pointing the reset vector directly to cpu_resume()
->> - that's because we need the reset vector to be aligned to 4k.
->
-> Wouldn't a simple branch instruction do here? =A0Branches are relative
-> (within 24-bit) so you wouldn't need any games with v:p stuff. =A0You
-> may have to put that in .data so that it can reach cpu_resume if
-> you're using a large initramfs image.
+This avoids the need to look up the masks each time an interrupt
+is handled.
 
-Thanks, your suggestion certainly makes sense. I vaguely recall that i
-actually tried a regular branch instruction before by myself, but
-giving up since I couldn't get it to work for some unknown reason.
+As suggested by Guennadi.
 
-So after spending a few more minutes digging deeper this time it seems
-that the PC value is not setup properly. Not what I expected - the CPU
-starts executing at the specified reset vector but if I read out the
-PC value with the first instruction i get this:
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-pc =3D 0x00000008
+---
 
-I expect it to be 0x404d2008 which is the reset vector 0x404d2000 plus 8.
+* SDCARD portion tested on AP4/Mackerel
+* SDIO portion untested
 
-No wonder the relative jump doesn't work.
+v3
+* As suggested by Guennadi Liakhovetski
+  - Only read sdcard_irq_mask once and never read sdio_irq_mask,
+    instead use the cached values as much as possible
 
-I know that there is some magic remapping hardware that implements the
-reset translation logic. Perhaps the CPU core itself still believes it
-executes starting from 0 but some bus logic converts that to whatever
-is specified in the reset vector register. That theory makes sense
-since the hardware also allows you to specify the size of the
-translated area.
+v2
+* Initial release
+---
+ drivers/mmc/host/tmio_mmc.h     |    4 ++++
+ drivers/mmc/host/tmio_mmc_pio.c |   34 ++++++++++++++++++----------------
+ 2 files changed, 22 insertions(+), 16 deletions(-)
 
-So with that in mind I'd prefer to keep the code as-is. Unless you
-have any suggestion how to deal with this in a better way... =3D)
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index eeaf643..1cf8db5 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -79,6 +79,10 @@ struct tmio_mmc_host {
+ 	struct delayed_work	delayed_reset_work;
+ 	struct work_struct	done;
+ 
++	/* Cache IRQ mask */
++	u32			sdcard_irq_mask;
++	u32			sdio_irq_mask;
++
+ 	spinlock_t		lock;		/* protect host private data */
+ 	unsigned long		last_req_ts;
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 1f16357..f0c7830 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -48,14 +48,14 @@
+ 
+ void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i)
+ {
+-	u32 mask = sd_ctrl_read32(host, CTL_IRQ_MASK) & ~(i & TMIO_MASK_IRQ);
+-	sd_ctrl_write32(host, CTL_IRQ_MASK, mask);
++	host->sdcard_irq_mask &= ~(i & TMIO_MASK_IRQ);
++	sd_ctrl_write32(host, CTL_IRQ_MASK, host->sdcard_irq_mask);
+ }
+ 
+ void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i)
+ {
+-	u32 mask = sd_ctrl_read32(host, CTL_IRQ_MASK) | (i & TMIO_MASK_IRQ);
+-	sd_ctrl_write32(host, CTL_IRQ_MASK, mask);
++	host->sdcard_irq_mask |= (i & TMIO_MASK_IRQ);
++	sd_ctrl_write32(host, CTL_IRQ_MASK, host->sdcard_irq_mask);
+ }
+ 
+ static void tmio_mmc_ack_mmc_irqs(struct tmio_mmc_host *host, u32 i)
+@@ -127,11 +127,13 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
+ 
+ 	if (enable) {
+ 		host->sdio_irq_enabled = 1;
++		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL &
++					~TMIO_SDIO_STAT_IOIRQ;
+ 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0001);
+-		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK,
+-			(TMIO_SDIO_MASK_ALL & ~TMIO_SDIO_STAT_IOIRQ));
++		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
+ 	} else {
+-		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, TMIO_SDIO_MASK_ALL);
++		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
++		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
+ 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0000);
+ 		host->sdio_irq_enabled = 0;
+ 	}
+@@ -548,26 +550,25 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 	struct tmio_mmc_host *host = devid;
+ 	struct mmc_host *mmc = host->mmc;
+ 	struct tmio_mmc_data *pdata = host->pdata;
+-	unsigned int ireg, irq_mask, status;
+-	unsigned int sdio_ireg, sdio_irq_mask, sdio_status;
++	unsigned int ireg, status;
++	unsigned int sdio_ireg, sdio_status;
+ 
+ 	pr_debug("MMC IRQ begin\n");
+ 
+ 	status = sd_ctrl_read32(host, CTL_STATUS);
+-	irq_mask = sd_ctrl_read32(host, CTL_IRQ_MASK);
+-	ireg = status & TMIO_MASK_IRQ & ~irq_mask;
++	ireg = status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
+ 
+ 	sdio_ireg = 0;
+ 	if (!ireg && pdata->flags & TMIO_MMC_SDIO_IRQ) {
+ 		sdio_status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
+-		sdio_irq_mask = sd_ctrl_read16(host, CTL_SDIO_IRQ_MASK);
+-		sdio_ireg = sdio_status & TMIO_SDIO_MASK_ALL & ~sdio_irq_mask;
++		sdio_ireg = sdio_status & TMIO_SDIO_MASK_ALL &
++				~host->sdio_irq_mask;
+ 
+ 		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
+ 
+ 		if (sdio_ireg && !host->sdio_irq_enabled) {
+ 			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
+-				   sdio_status, sdio_irq_mask, sdio_ireg);
++				   sdio_status, host->sdio_irq_mask, sdio_ireg);
+ 			tmio_mmc_enable_sdio_irq(mmc, 0);
+ 			goto out;
+ 		}
+@@ -623,9 +624,9 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 	}
+ 
+ 	pr_warning("tmio_mmc: Spurious irq, disabling! "
+-		"0x%08x 0x%08x 0x%08x\n", status, irq_mask, ireg);
++		"0x%08x 0x%08x 0x%08x\n", status, host->sdcard_irq_mask, ireg);
+ 	pr_debug_status(status);
+-	tmio_mmc_disable_mmc_irqs(host, status & ~irq_mask);
++	tmio_mmc_disable_mmc_irqs(host, status & ~host->sdcard_irq_mask);
+ 
+ out:
+ 	return IRQ_HANDLED;
+@@ -882,6 +883,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	tmio_mmc_clk_stop(_host);
+ 	tmio_mmc_reset(_host);
+ 
++	_host->sdcard_irq_mask = sd_ctrl_read32(_host, CTL_IRQ_MASK);
+ 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+ 		tmio_mmc_enable_sdio_irq(mmc, 0);
+-- 
+1.7.5.4
 
-Thanks,
-
-/ magnus
