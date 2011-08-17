@@ -1,69 +1,143 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Aug 2011 12:23:30 +0000
-Subject: Re: [PATCH 4/4] ARM: shmobile: ag5evm, ap4: Make use of irq index
-Message-Id: <20110816122330.GA14755@verge.net.au>
+Date: Wed, 17 Aug 2011 00:50:55 +0000
+Subject: [PATCH 4/4] ARM: shmobile: ag5evm, ap4: Make use of irq index enum
+Message-Id: <1313542255-31662-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313489486-831-1-git-send-email-horms@verge.net.au>
- <1313489486-831-5-git-send-email-horms@verge.net.au>
- <20110816111350.GC27653@trinity.fluff.org>
- <20110816113620.GC3110@verge.net.au>
-In-Reply-To: <20110816113620.GC3110@verge.net.au>
+References: <1313542255-31662-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313542255-31662-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben@trinity.fluff.org>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-On Tue, Aug 16, 2011 at 08:36:20PM +0900, Simon Horman wrote:
-> On Tue, Aug 16, 2011 at 12:13:50PM +0100, Ben Dooks wrote:
-> > On Tue, Aug 16, 2011 at 07:11:26PM +0900, Simon Horman wrote:
-> > > This is intended to make it easier to correctly order IRQs.
-> > > 
-> > > As suggested by Guennadi Liakhovetski.
-> > > 
-> > > Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > > 
-> > > ---
-> > > 
-> > > Depends on "mmc: sdhi: Make use of per-source irq handlers"
-> > > ---
-> > >  arch/arm/mach-shmobile/board-ag5evm.c   |   12 ++++++------
-> > >  arch/arm/mach-shmobile/board-mackerel.c |   18 +++++++++---------
-> > >  2 files changed, 15 insertions(+), 15 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-> > > index ce5c251..c687f67 100644
-> > > --- a/arch/arm/mach-shmobile/board-ag5evm.c
-> > > +++ b/arch/arm/mach-shmobile/board-ag5evm.c
-> > > @@ -352,15 +352,15 @@ static struct resource sdhi0_resources[] = {
-> > >  		.end	= 0xee1000ff,
-> > >  		.flags	= IORESOURCE_MEM,
-> > >  	},
-> > > -	[1] = {
-> > > +	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
-> > >  		.start	= gic_spi(83),
-> > >  		.flags	= IORESOURCE_IRQ,
-> > >  	},
-> > > -	[2] = {
-> > > +	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
-> > >  		.start	= gic_spi(84),
-> > >  		.flags	= IORESOURCE_IRQ,
-> > >  	},
-> > > -	[3] = {
-> > > +	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
-> > >  		.start	= gic_spi(85),
-> > >  		.flags	= IORESOURCE_IRQ,
-> > >  	},
-> > 
-> > how about naming the irqs?
-> 
-> Sorry, I'm not sure what you are asking for.
+This is intended to make it easier to correctly order IRQs.
 
-Sorry, I've turned my brain back on...
+As suggested by Guennadi Liakhovetski.
 
-I assume you are asking for #defines to give names to 83, 84 and 85.
-While I think that sounds reasonable it would not be in
-keeping with the rest contents of the platform files in question.
-So I am a little reluctant to open that can of worms.
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
+---
+
+Depends on "mmc: sdhi: Make use of per-source irq handlers"
+
+v4
+* Update for corrected ordering of SH_MOBILE_SDHI_IRQ_SDCARD and
+  SH_MOBILE_SDHI_IRQ_CARD_DETECT
+
+v2
+* Initial release
+---
+ arch/arm/mach-shmobile/board-ag5evm.c   |   12 ++++++------
+ arch/arm/mach-shmobile/board-mackerel.c |   18 +++++++++---------
+ 2 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index ce5c251..0d543bb 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -352,15 +352,15 @@ static struct resource sdhi0_resources[] = {
+ 		.end	= 0xee1000ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+-	[1] = {
++	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
+ 		.start	= gic_spi(83),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[2] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
+ 		.start	= gic_spi(84),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[3] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
+ 		.start	= gic_spi(85),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+@@ -395,15 +395,15 @@ static struct resource sdhi1_resources[] = {
+ 		.end	= 0xee1200ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+-	[1] = {
++	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
+ 		.start	= gic_spi(87),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[2] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
+ 		.start	= gic_spi(88),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[3] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
+ 		.start	= gic_spi(89),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index d41c01f..f9d3a93 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1022,15 +1022,15 @@ static struct resource sdhi0_resources[] = {
+ 		.end	= 0xe68500ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+-	[1] = {
++	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
+ 		.start	= evt2irq(0x0e00) /* SDHI0_SDHI0I0 */,
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[2] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
+ 		.start	= evt2irq(0x0e20) /* SDHI0_SDHI0I1 */,
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[3] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
+ 		.start	= evt2irq(0x0e40) /* SDHI0_SDHI0I2 */,
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+@@ -1065,15 +1065,15 @@ static struct resource sdhi1_resources[] = {
+ 		.end	= 0xe68600ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+-	[1] = {
++	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
+ 		.start	= evt2irq(0x0e80), /* SDHI1_SDHI1I0 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[2] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
+ 		.start	= evt2irq(0x0ea0), /* SDHI1_SDHI1I1 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[3] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
+ 		.start	= evt2irq(0x0ec0), /* SDHI1_SDHI1I2 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+@@ -1116,15 +1116,15 @@ static struct resource sdhi2_resources[] = {
+ 		.end	= 0xe68700ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+-	[1] = {
++	[1 + SH_MOBILE_SDHI_IRQ_CARD_DETECT] = {
+ 		.start	= evt2irq(0x1200), /* SDHI2_SDHI2I0 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[2] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDCARD] = {
+ 		.start	= evt2irq(0x1220), /* SDHI2_SDHI2I1 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-	[3] = {
++	[1 + SH_MOBILE_SDHI_IRQ_SDIO] = {
+ 		.start	= evt2irq(0x1240), /* SDHI2_SDHI2I2 */
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+-- 
+1.7.5.4
+
