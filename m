@@ -1,164 +1,156 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 17 Aug 2011 22:02:06 +0000
-Subject: [PATCH 3/4 v7] mmc: sdhi: Make use of per-source irq handlers
-Message-Id: <Pine.LNX.4.64.1108172359410.3566@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 18 Aug 2011 05:45:00 +0000
+Subject: [PATCH 07/07] ARM: mach-shmobile: Kota2 SDHI0 and SDHI1 support
+Message-Id: <20110818054500.23410.44730.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313578756-10413-1-git-send-email-horms@verge.net.au>
- <1313578756-10413-4-git-send-email-horms@verge.net.au>
- <Pine.LNX.4.64.1108171320310.18317@axis700.grange> <20110817114147.GA13086@verge.net.au>
- <20110817120748.GB13086@verge.net.au> <Pine.LNX.4.64.1108171416010.18317@axis700.grange>
- <20110817125728.GD13086@verge.net.au>
-In-Reply-To: <20110817125728.GD13086@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-From: Simon Horman <horms@verge.net.au>
+From: Magnus Damm <damm@opensource.se>
 
-Make use of per-source irq handles if the
-platform (data) has multiple irq sources.
+Add SDHI0 and SDHI1 support to the Kota2 board.
 
-Also, as suggested by Guennadi Liakhovetski,
-add and use defines the index or irqs in platform data.
+SDHI0 is hooked up to a microSD card slot and SDHI1
+to a wireless module that also connects to SCIFB.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
-[g.liakhovetski@gmx.de: fixed IRQ requesting logic]
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This depends on the recently merged code for
+TMIO_MMC_HAS_IDLE_WAIT together with PFC support
+for pull-ups on SDHI0 and SDHI1.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-No, your last version was wrong too. Please, give this a go and tell me if 
-it works as expected.
+ arch/arm/mach-shmobile/board-kota2.c |   93 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
-Thanks
-Guennadi
-
- drivers/mmc/host/sh_mobile_sdhi.c  |   67 ++++++++++++++++++++++++------------
- include/linux/mmc/sh_mobile_sdhi.h |    7 ++++
- 2 files changed, 52 insertions(+), 22 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 774f643..2e3ec8b 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -96,7 +96,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
- 	char clk_name[8];
--	int i, irq, ret;
-+	int irq, ret;
-+	irqreturn_t (*f)(int irq, void *devid);
-+	bool multi_irq = false;
+--- 0010/arch/arm/mach-shmobile/board-kota2.c
++++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-18 13:26:52.000000000 +0900
+@@ -35,6 +35,8 @@
+ #include <linux/leds.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <mach/hardware.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+@@ -205,12 +207,86 @@ static struct platform_device mmcif_devi
+ 	.resource       = mmcif_resources,
+ };
  
- 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
-@@ -153,27 +155,40 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto eprobe;
- 
--	for (i = 0; i < 3; i++) {
--		irq = platform_get_irq(pdev, i);
--		if (irq < 0) {
--			if (i) {
--				continue;
--			} else {
--				ret = irq;
--				goto eirq;
--			}
--		}
--		ret = request_irq(irq, tmio_mmc_irq, 0,
-+	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
-+	if (irq >= 0) {
-+		multi_irq = true;
-+		ret = request_irq(irq, tmio_mmc_sdio_irq, 0,
- 				  dev_name(&pdev->dev), host);
--		if (ret) {
--			while (i--) {
--				irq = platform_get_irq(pdev, i);
--				if (irq >= 0)
--					free_irq(irq, host);
--			}
--			goto eirq;
--		}
-+		if (ret)
-+			goto eirq_sdio;
- 	}
-+
-+	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
-+	if (irq >= 0) {
-+		multi_irq = true;
-+		ret = request_irq(irq, tmio_mmc_sdcard_irq, 0,
-+				  dev_name(&pdev->dev), host);
-+		if (ret)
-+			goto eirq_sdcard;
-+	} else if (multi_irq) {
-+		ret = irq;
-+		goto eirq_sdcard;
-+	}
-+
-+	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
-+	if (irq >= 0) {
-+		f = multi_irq ? tmio_mmc_card_detect_irq : tmio_mmc_irq;
-+		ret = request_irq(irq, f, 0, dev_name(&pdev->dev), host);
-+		if (ret)
-+			goto eirq_card_detect;
-+	} else if (!multi_irq) {
-+		ret = irq;
-+		goto eirq_card_detect;
-+	} else {
-+		ret = 0;
-+	}
-+
- 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
- 		 mmc_hostname(host->mmc), (unsigned long)
- 		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
-@@ -181,7 +196,15 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 
- 	return ret;
- 
--eirq:
-+eirq_card_detect:
-+	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
-+	if (irq >= 0)
-+		free_irq(irq, host);
-+eirq_sdcard:
-+	irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
-+	if (irq >= 0)
-+		free_irq(irq, host);
-+eirq_sdio:
- 	tmio_mmc_host_remove(host);
- eprobe:
- 	clk_disable(priv->clk);
-@@ -203,7 +226,7 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- 
- 	tmio_mmc_host_remove(host);
- 
--	for (i = 0; i < 3; i++) {
-+	for (i = 0; i < SH_MOBILE_SDHI_IRQ_MAX; i++) {
- 		irq = platform_get_irq(pdev, i);
- 		if (irq >= 0)
- 			free_irq(irq, host);
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index bd50b36..80d3629 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -3,6 +3,13 @@
- 
- #include <linux/types.h>
- 
-+enum {
-+	SH_MOBILE_SDHI_IRQ_CARD_DETECT = 0,
-+	SH_MOBILE_SDHI_IRQ_SDCARD,
-+	SH_MOBILE_SDHI_IRQ_SDIO,
-+	SH_MOBILE_SDHI_IRQ_MAX
++static struct sh_mobile_sdhi_info sdhi0_info = {
++	.tmio_caps      = MMC_CAP_SD_HIGHSPEED,
++	.tmio_flags     = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
 +};
 +
- struct platform_device;
- struct tmio_mmc_data;
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name   = "SDHI0",
++		.start  = 0xee100000,
++		.end    = 0xee1000ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = gic_spi(83),
++		.flags  = IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start  = gic_spi(84),
++		.flags  = IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= gic_spi(85),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi0_device = {
++	.name           = "sh_mobile_sdhi",
++	.id             = 0,
++	.num_resources  = ARRAY_SIZE(sdhi0_resources),
++	.resource       = sdhi0_resources,
++	.dev    = {
++		.platform_data  = &sdhi0_info,
++	},
++};
++
++static struct sh_mobile_sdhi_info sdhi1_info = {
++	.tmio_caps      = MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
++	.tmio_flags     = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
++};
++
++static struct resource sdhi1_resources[] = {
++	[0] = {
++		.name   = "SDHI1",
++		.start  = 0xee120000,
++		.end    = 0xee1200ff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = gic_spi(87),
++		.flags  = IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start  = gic_spi(88),
++		.flags  = IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= gic_spi(89),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi1_device = {
++	.name           = "sh_mobile_sdhi",
++	.id             = 1,
++	.num_resources  = ARRAY_SIZE(sdhi1_resources),
++	.resource       = sdhi1_resources,
++	.dev    = {
++		.platform_data  = &sdhi1_info,
++	},
++};
++
+ static struct platform_device *kota2_devices[] __initdata = {
+ 	&eth_device,
+ 	&keysc_device,
+ 	&gpio_keys_device,
+ 	&gpio_leds_device,
+ 	&mmcif_device,
++	&sdhi0_device,
++	&sdhi1_device,
+ };
  
--- 
-1.7.2.5
-
+ static struct map_desc kota2_io_desc[] __initdata = {
+@@ -319,6 +395,15 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_PORT208, NULL); /* Reset */
+ 	gpio_direction_output(GPIO_PORT208, 1);
+ 
++	/* SDHI0 (microSD) */
++	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
++	gpio_request(GPIO_FN_SDHICMD0_PU, NULL);
++	gpio_request(GPIO_FN_SDHICLK0, NULL);
++	gpio_request(GPIO_FN_SDHID0_3_PU, NULL);
++	gpio_request(GPIO_FN_SDHID0_2_PU, NULL);
++	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
++	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
++
+ 	/* SCIFB (BT) */
+ 	gpio_request(GPIO_FN_PORT159_SCIFB_SCK, NULL);
+ 	gpio_request(GPIO_FN_PORT160_SCIFB_TXD, NULL);
+@@ -326,6 +411,14 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_PORT162_SCIFB_RXD, NULL);
+ 	gpio_request(GPIO_FN_PORT163_SCIFB_RTS_, NULL);
+ 
++	/* SDHI1 (BCM4330) */
++	gpio_request(GPIO_FN_SDHICLK1, NULL);
++	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_3_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_2_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
++	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(__io(0xf0100000), 0x40460000, 0x82000fff);
