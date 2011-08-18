@@ -1,143 +1,74 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 14 Aug 2011 14:07:08 +0000
-Subject: [Update x2][PATCH 9/9] ARM / shmobile: Make A3RV be a subdomain of A4LC on SH7372
-Message-Id: <201108141607.08447.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 18 Aug 2011 05:44:25 +0000
+Subject: [PATCH 03/07] ARM: mach-shmobile: Kota2 GPIO Keys support
+Message-Id: <20110818054425.23410.51390.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201107311946.06654.rjw@sisk.pl> <201107311952.51969.rjw@sisk.pl> <201108132143.47649.rjw@sisk.pl>
-In-Reply-To: <201108132143.47649.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
-Subject: ARM / shmobile: Make A3RV be a subdomain of A4LC on SH7372
+From: Magnus Damm <damm@opensource.se>
 
-Instead of coding the undocumented dependencies between power domains
-A3RV and A4LC on SH7372 directly into the low-level power up/down
-routines, make A3RV be a subdomain of A4LC, which will cause the
-same dependecies to hold.
+This patch ties in GPIO Keys support on the Kota2
+board. For now the keys are used in polling mode,
+but after extending the sh73a0 PFC with IRQ support
+we should be able to switch to the IRQ driven driver.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-It also needs to build for CONFIG_PM unset.
+ arch/arm/mach-shmobile/board-kota2.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-Thanks,
-Rafael
-
----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +
- arch/arm/mach-shmobile/pm-sh7372.c           |   48 ++++-----------------------
- arch/arm/mach-shmobile/setup-sh7372.c        |    3 +
- 3 files changed, 14 insertions(+), 40 deletions(-)
-
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -91,35 +91,6 @@ static int pd_power_up(struct generic_pm
- 	return ret;
- }
- 
--static int pd_power_up_a3rv(struct generic_pm_domain *genpd)
--{
--	int ret = pd_power_up(genpd);
--
--	/* force A4LC on after A3RV has been requested on */
--	pm_genpd_poweron(&sh7372_a4lc.genpd);
--
--	return ret;
--}
--
--static int pd_power_down_a3rv(struct generic_pm_domain *genpd)
--{
--	int ret = pd_power_down(genpd);
--
--	/* try to power down A4LC after A3RV is requested off */
--	genpd_queue_power_off_work(&sh7372_a4lc.genpd);
--
--	return ret;
--}
--
--static int pd_power_down_a4lc(struct generic_pm_domain *genpd)
--{
--	/* only power down A4LC if A3RV is off */
--	if (!(__raw_readl(PSTR) & (1 << sh7372_a3rv.bit_shift)))
--		return pd_power_down(genpd);
--
--	return -EBUSY;
--}
--
- static bool pd_active_wakeup(struct device *dev)
- {
- 	return true;
-@@ -133,17 +104,8 @@ void sh7372_init_pm_domain(struct sh7372
- 	genpd->stop_device = pm_clk_suspend;
- 	genpd->start_device = pm_clk_resume;
- 	genpd->active_wakeup = pd_active_wakeup;
--
--	if (sh7372_pd = &sh7372_a4lc) {
--		genpd->power_off = pd_power_down_a4lc;
--		genpd->power_on = pd_power_up;
--	} else if (sh7372_pd = &sh7372_a3rv) {
--		genpd->power_off = pd_power_down_a3rv;
--		genpd->power_on = pd_power_up_a3rv;
--	} else {
--		genpd->power_off = pd_power_down;
--		genpd->power_on = pd_power_up;
--	}
-+	genpd->power_off = pd_power_down;
-+	genpd->power_on = pd_power_up;
- 	genpd->power_on(&sh7372_pd->genpd);
- }
- 
-@@ -159,6 +121,12 @@ void sh7372_add_device_to_domain(struct
- 	pm_genpd_add_device(&sh7372_pd->genpd, dev);
- }
- 
-+void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
-+			     struct sh7372_pm_domain *sh7372_sd)
-+{
-+	pm_genpd_add_subdomain(&sh7372_pd->genpd, &sh7372_sd->genpd);
-+}
-+
- struct sh7372_pm_domain sh7372_a4lc = {
- 	.bit_shift = 1,
- };
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/pm_domain.h>
+--- 0006/arch/arm/mach-shmobile/board-kota2.c
++++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-17 22:37:04.000000000 +0900
+@@ -31,6 +31,7 @@
+ #include <linux/gpio.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/gpio_keys.h>
  #include <mach/hardware.h>
- #include <mach/sh7372.h>
- #include <asm/mach-types.h>
-@@ -848,6 +849,8 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+@@ -114,9 +115,40 @@ static struct platform_device keysc_devi
+ 	},
+ };
  
-+	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
++#define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
 +
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
++static struct gpio_keys_button gpio_buttons[] = {
++	GPIO_KEY(KEY_VOLUMEUP, GPIO_PORT56, "+"), /* S2: VOL+ [IRQ9] */
++	GPIO_KEY(KEY_VOLUMEDOWN, GPIO_PORT54, "-"), /* S3: VOL- [IRQ10] */
++	GPIO_KEY(KEY_MENU, GPIO_PORT27, "Menu"), /* S4: MENU [IRQ30] */
++	GPIO_KEY(KEY_HOMEPAGE, GPIO_PORT26, "Home"), /* S5: HOME [IRQ31] */
++	GPIO_KEY(KEY_BACK, GPIO_PORT11, "Back"), /* S6: BACK [IRQ0] */
++	GPIO_KEY(KEY_PHONE, GPIO_PORT238, "Tel"), /* S7: TEL [IRQ11] */
++	GPIO_KEY(KEY_POWER, GPIO_PORT239, "C1"), /* S8: CAM [IRQ13] */
++	GPIO_KEY(KEY_MAIL, GPIO_PORT224, "Mail"), /* S9: MAIL [IRQ3] */
++	/* Omitted button "C3?": GPIO_PORT223 - S10: CUST [IRQ8] */
++	GPIO_KEY(KEY_CAMERA, GPIO_PORT164, "C2"), /* S11: CAM_HALF [IRQ25] */
++	/* Omitted button "?": GPIO_PORT152 - S12: CAM_FULL [No IRQ] */
++};
++
++static struct gpio_keys_platform_data gpio_key_info = {
++	.buttons        = gpio_buttons,
++	.nbuttons       = ARRAY_SIZE(gpio_buttons),
++	.poll_interval  = 250, /* polled for now */
++};
++
++static struct platform_device gpio_keys_device = {
++	.name   = "gpio-keys-polled", /* polled for now */
++	.id     = -1,
++	.dev    = {
++		.platform_data  = &gpio_key_info,
++	},
++};
++
+ static struct platform_device *kota2_devices[] __initdata = {
+ 	&eth_device,
+ 	&keysc_device,
++	&gpio_keys_device,
+ };
  
-Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -494,9 +494,12 @@ extern struct sh7372_pm_domain sh7372_a3
- extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
- extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
- 					struct platform_device *pdev);
-+extern void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
-+				    struct sh7372_pm_domain *sh7372_sd);
- #else
- #define sh7372_init_pm_domain(pd) do { } while(0)
- #define sh7372_add_device_to_domain(pd, pdev) do { } while(0)
-+#define sh7372_pm_add_subdomain(pd, sd) do { } while(0)
- #endif /* CONFIG_PM */
- 
- #endif /* __ASM_SH7372_H__ */
+ static struct map_desc kota2_io_desc[] __initdata = {
