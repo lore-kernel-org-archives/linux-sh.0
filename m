@@ -1,92 +1,271 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Aug 2011 07:05:20 +0000
-Subject: Re: [PATCH] leds: Renesas TPU LED driver V2
-Message-Id: <CANqRtoRKZf5kzs06JPA1uF+C4=hOu67E-ZeiVpjr9aKaGu6B0A@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 18 Aug 2011 14:55:27 +0000
+Subject: [PATCH] dma: shdma: transfer based runtime PM
+Message-Id: <Pine.LNX.4.64.1108181650530.5245@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110713105203.5481.94746.sendpatchset@t400s>
-	<20110727153414.80f810e7.akpm@linux-foundation.org>
-In-Reply-To: <20110727153414.80f810e7.akpm@linux-foundation.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, lethal@linux-sh.org, rpurdie@rpsys.net, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Paul Mundt <lethal@linux-sh.org>
 
-Hi Andrew,
+Currently the shdma dmaengine driver uses runtime PM to save power, when
+no channel on the specific controller is requested by a user. This patch
+switches the driver to count individual DMA transfers. That way the
+controller can be powered down between transfers, even if some of its
+channels are in use.
 
-On Thu, Jul 28, 2011 at 7:34 AM, Andrew Morton
-<akpm@linux-foundation.org> wrote:
-> On Wed, 13 Jul 2011 19:52:03 +0900
-> Magnus Damm <magnus.damm@gmail.com> wrote:
->
->> From: Magnus Damm <damm@opensource.se>
->>
->> This patch adds V2 of the LED driver for a single timer channel
->> for the TPU hardware block commonly found in Renesas SoCs.
->>
->> The driver has been written with optimal Power Management in
->> mind, so to save power the LED is driven as a regular GPIO pin
->> in case of maximum brightness and power off which allows the
->> TPU hardware to be idle and which in turn allows the clocks to
->> be stopped and the power domain to be turned off transparently.
->>
->> Any other brightness level requires use of the TPU hardware
->> in PWM mode. TPU hardware device clocks and power are managed
->> through Runtime PM. System suspend and resume is known to be
->> working - during suspend the LED is set to off by the generic
->> LED code.
->>
->> The TPU hardware timer is equipeed with a 16-bit counter together
->> with an up-to-divide-by-64 prescaler which makes the hardware
->> suitable for brightness control. Hardware blink is unsupported.
->>
->> The LED PWM waveform has been verified with a Fluke 123 Scope
->> meter on a sh7372 Mackerel board. Tested with experimental sh7372
->> A3SP power domain patches. Platform device bind/unbind tested ok.
->>
->> V2 has been tested on the DS2 LED of the sh73a0-based AG5EVM.
->>
->>
->> ...
->>
->> +static int r_tpu_enable(struct r_tpu_priv *p, enum led_brightness brigh=
-tness)
->> +{
->> + =A0 =A0 struct led_renesas_tpu_config *cfg =3D p->pdev->dev.platform_d=
-ata;
->> + =A0 =A0 int prescaler[] =3D { 1, 4, 16, 64 };
->> + =A0 =A0 int k, ret;
->> + =A0 =A0 unsigned long rate, tmp;
->> +
->> + =A0 =A0 if (p->timer_state =3D R_TPU_TIMER_ON)
->> + =A0 =A0 =A0 =A0 =A0 =A0 return 0;
->
-> Is timer_state actually needed? =A0It looks like it's covering up bugs:
-> callers enabling an already-enabled device or disabling an
-> already-diabled one.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-The driver needs to keep track of the state of the GPIO pin and the
-TPU timer channel. One reason for this is that without such house
-keeping information we don't know what needs to disabled in the
-->remove() callback for the platform driver. We cannot assume that the
-TPU timer is on in ->remove() because the state of the GPIO and the
-TPU will vary depending on brightness value. Another place where the
-old state is needed is in the ->brightness_set() callback.
+tested on mackerel (sh7372) with dmatest, sh_mobile_sdhi and sh_mmcif with 
+runtime PM and STR.
 
-> Also it might be a bit racy.
+ drivers/dma/shdma.c |   94 +++++++++++++++++++++++++++++++++++++--------------
+ drivers/dma/shdma.h |    7 ++++
+ 2 files changed, 75 insertions(+), 26 deletions(-)
 
-It seems like I incorrectly assumed that the ->brightness_set()
-callback is kept serialized for each LED device. Unless I
-misunderstand the LED core it seems like a sysfs brightness write
-which invokes led_brightness_store() may call led_set_brightness() in
-parallel with led_blink_set() when software blinking is enabled.
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index e7bb747..81809c2 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -259,15 +259,23 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ 	return 0;
+ }
+ 
++static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan);
++
+ static dma_cookie_t sh_dmae_tx_submit(struct dma_async_tx_descriptor *tx)
+ {
+ 	struct sh_desc *desc = tx_to_sh_desc(tx), *chunk, *last = desc, *c;
+ 	struct sh_dmae_chan *sh_chan = to_sh_chan(tx->chan);
++	struct sh_dmae_slave *param = tx->chan->private;
+ 	dma_async_tx_callback callback = tx->callback;
+ 	dma_cookie_t cookie;
+-	unsigned long flags;
++	bool power_up;
+ 
+-	spin_lock_irqsave(&sh_chan->desc_lock, flags);
++	spin_lock_irq(&sh_chan->desc_lock);
++
++	if (list_empty(&sh_chan->ld_queue))
++		power_up = true;
++	else
++		power_up = false;
+ 
+ 	cookie = sh_chan->common.cookie;
+ 	cookie++;
+@@ -303,7 +311,38 @@ static dma_cookie_t sh_dmae_tx_submit(struct dma_async_tx_descriptor *tx)
+ 		tx->cookie, &last->async_tx, sh_chan->id,
+ 		desc->hw.sar, desc->hw.tcr, desc->hw.dar);
+ 
+-	spin_unlock_irqrestore(&sh_chan->desc_lock, flags);
++	if (power_up) {
++		sh_chan->pm_state = DMAE_PM_BUSY;
++
++		pm_runtime_get(sh_chan->dev);
++
++		spin_unlock_irq(&sh_chan->desc_lock);
++
++		pm_runtime_barrier(sh_chan->dev);
++
++		spin_lock_irq(&sh_chan->desc_lock);
++
++		/* Have we been reset, while waiting? */
++		if (sh_chan->pm_state != DMAE_PM_ESTABLISHED) {
++			dev_dbg(sh_chan->dev, "Bring up channel %d\n",
++				sh_chan->id);
++			if (param) {
++				const struct sh_dmae_slave_config *cfg +					param->config;
++
++				dmae_set_dmars(sh_chan, cfg->mid_rid);
++				dmae_set_chcr(sh_chan, cfg->chcr);
++			} else {
++				dmae_init(sh_chan);
++			}
++
++			if (sh_chan->pm_state = DMAE_PM_PENDING)
++				sh_chan_xfer_ld_queue(sh_chan);
++			sh_chan->pm_state = DMAE_PM_ESTABLISHED;
++		}
++	}
++
++	spin_unlock_irq(&sh_chan->desc_lock);
+ 
+ 	return cookie;
+ }
+@@ -347,8 +386,6 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
+ 	struct sh_dmae_slave *param = chan->private;
+ 	int ret;
+ 
+-	pm_runtime_get_sync(sh_chan->dev);
+-
+ 	/*
+ 	 * This relies on the guarantee from dmaengine that alloc_chan_resources
+ 	 * never runs concurrently with itself or free_chan_resources.
+@@ -368,11 +405,6 @@ static int sh_dmae_alloc_chan_resources(struct dma_chan *chan)
+ 		}
+ 
+ 		param->config = cfg;
+-
+-		dmae_set_dmars(sh_chan, cfg->mid_rid);
+-		dmae_set_chcr(sh_chan, cfg->chcr);
+-	} else {
+-		dmae_init(sh_chan);
+ 	}
+ 
+ 	while (sh_chan->descs_allocated < NR_DESCS_PER_CHANNEL) {
+@@ -401,7 +433,6 @@ edescalloc:
+ etestused:
+ efindslave:
+ 	chan->private = NULL;
+-	pm_runtime_put(sh_chan->dev);
+ 	return ret;
+ }
+ 
+@@ -413,7 +444,6 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
+ 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
+ 	struct sh_desc *desc, *_desc;
+ 	LIST_HEAD(list);
+-	int descs = sh_chan->descs_allocated;
+ 
+ 	/* Protect against ISR */
+ 	spin_lock_irq(&sh_chan->desc_lock);
+@@ -440,9 +470,6 @@ static void sh_dmae_free_chan_resources(struct dma_chan *chan)
+ 
+ 	spin_unlock_irq(&sh_chan->desc_lock);
+ 
+-	if (descs > 0)
+-		pm_runtime_put(sh_chan->dev);
+-
+ 	list_for_each_entry_safe(desc, _desc, &list, node)
+ 		kfree(desc);
+ }
+@@ -676,7 +703,6 @@ static int sh_dmae_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ 						  struct sh_desc, node);
+ 		desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
+ 			sh_chan->xmit_shift;
+-
+ 	}
+ 	spin_unlock_irqrestore(&sh_chan->desc_lock, flags);
+ 
+@@ -761,7 +787,13 @@ static dma_async_tx_callback __ld_cleanup(struct sh_dmae_chan *sh_chan, bool all
+ 		     async_tx_test_ack(&desc->async_tx)) || all) {
+ 			/* Remove from ld_queue list */
+ 			desc->mark = DESC_IDLE;
++
+ 			list_move(&desc->node, &sh_chan->ld_free);
++
++			if (list_empty(&sh_chan->ld_queue)) {
++				dev_dbg(sh_chan->dev, "Bring down channel %d\n", sh_chan->id);
++				pm_runtime_put(sh_chan->dev);
++			}
+ 		}
+ 	}
+ 
+@@ -791,16 +823,14 @@ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all)
+ 		;
+ }
+ 
++/* Called under spin_lock_irq(&sh_chan->desc_lock) */
+ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
+ {
+ 	struct sh_desc *desc;
+ 
+-	spin_lock_irq(&sh_chan->desc_lock);
+ 	/* DMA work check */
+-	if (dmae_is_busy(sh_chan)) {
+-		spin_unlock_irq(&sh_chan->desc_lock);
++	if (dmae_is_busy(sh_chan))
+ 		return;
+-	}
+ 
+ 	/* Find the first not transferred descriptor */
+ 	list_for_each_entry(desc, &sh_chan->ld_queue, node)
+@@ -813,14 +843,18 @@ static void sh_chan_xfer_ld_queue(struct sh_dmae_chan *sh_chan)
+ 			dmae_start(sh_chan);
+ 			break;
+ 		}
+-
+-	spin_unlock_irq(&sh_chan->desc_lock);
+ }
+ 
+ static void sh_dmae_memcpy_issue_pending(struct dma_chan *chan)
+ {
+ 	struct sh_dmae_chan *sh_chan = to_sh_chan(chan);
+-	sh_chan_xfer_ld_queue(sh_chan);
++
++	spin_lock_irq(&sh_chan->desc_lock);
++	if (sh_chan->pm_state = DMAE_PM_ESTABLISHED)
++		sh_chan_xfer_ld_queue(sh_chan);
++	else
++		sh_chan->pm_state = DMAE_PM_PENDING;
++	spin_unlock_irq(&sh_chan->desc_lock);
+ }
+ 
+ static enum dma_status sh_dmae_tx_status(struct dma_chan *chan,
+@@ -913,6 +947,12 @@ static bool sh_dmae_reset(struct sh_dmae_device *shdev)
+ 
+ 		list_splice_init(&sh_chan->ld_queue, &dl);
+ 
++		if (!list_empty(&dl)) {
++			dev_dbg(sh_chan->dev, "Bring down channel %d\n", sh_chan->id);
++			pm_runtime_put(sh_chan->dev);
++		}
++		sh_chan->pm_state = DMAE_PM_ESTABLISHED;
++
+ 		spin_unlock(&sh_chan->desc_lock);
+ 
+ 		/* Complete all  */
+@@ -966,10 +1006,10 @@ static void dmae_do_tasklet(unsigned long data)
+ 			break;
+ 		}
+ 	}
+-	spin_unlock_irq(&sh_chan->desc_lock);
+-
+ 	/* Next desc */
+ 	sh_chan_xfer_ld_queue(sh_chan);
++	spin_unlock_irq(&sh_chan->desc_lock);
++
+ 	sh_dmae_chan_ld_cleanup(sh_chan, false);
+ }
+ 
+@@ -1037,7 +1077,9 @@ static int __devinit sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
+ 		return -ENOMEM;
+ 	}
+ 
+-	/* copy struct dma_device */
++	new_sh_chan->pm_state = DMAE_PM_ESTABLISHED;
++
++	/* reference struct dma_device */
+ 	new_sh_chan->common.device = &shdev->common;
+ 
+ 	new_sh_chan->dev = shdev->common.dev;
+diff --git a/drivers/dma/shdma.h b/drivers/dma/shdma.h
+index dc56576..2b55a27 100644
+--- a/drivers/dma/shdma.h
++++ b/drivers/dma/shdma.h
+@@ -23,6 +23,12 @@
+ 
+ struct device;
+ 
++enum dmae_pm_state {
++	DMAE_PM_ESTABLISHED,
++	DMAE_PM_BUSY,
++	DMAE_PM_PENDING,
++};
++
+ struct sh_dmae_chan {
+ 	dma_cookie_t completed_cookie;	/* The maximum cookie completed */
+ 	spinlock_t desc_lock;		/* Descriptor operation lock */
+@@ -38,6 +44,7 @@ struct sh_dmae_chan {
+ 	u32 __iomem *base;
+ 	char dev_id[16];		/* unique name per DMAC of channel */
+ 	int pm_error;
++	enum dmae_pm_state pm_state;
+ };
+ 
+ struct sh_dmae_device {
+-- 
+1.7.2.5
 
-I can easily add some locking to the ->brightness_set() callback in
-the TPU driver, but perhaps this should be fixed in the LED core
-instead? Perhaps the led_set_brightness() and led_blink_set() race
-should be fixed somehow, maybe the blink timer should be disabled when
-the sysfs brightness write happens?
-
-Thanks for your help!
-
-/ magnus
