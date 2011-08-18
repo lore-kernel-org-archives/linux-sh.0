@@ -1,49 +1,42 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 29 Aug 2011 08:20:14 +0000
-Subject: [GIT PULL] rmobile updates for 3.1-rc5
-Message-Id: <20110829082014.GA17767@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 18 Aug 2011 05:43:59 +0000
+Subject: [PATCH 00/07] ARM: mach-shmobile: Initial Kota2 board support
+Message-Id: <20110818054359.23410.4526.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Nothing particularly noteworthy here, mostly random fixes, stubbing in
-some clock definitions, and wiring up some platform data.
+ARM: mach-shmobile: Initial Kota2 board support
 
-Please pull from:
+[PATCH 01/07] ARM: mach-shmobile: Kota2 SCIFA2 and SMSC911X support
+[PATCH 02/07] ARM: mach-shmobile: Kota2 KEYSC support
+[PATCH 03/07] ARM: mach-shmobile: Kota2 GPIO Keys support
+[PATCH 04/07] ARM: mach-shmobile: Kota2 GPIO LEDs support
+[PATCH 05/07] ARM: mach-shmobile: Kota2 MMCIF support
+[PATCH 06/07] ARM: mach-shmobile: Kota2 SCIFA4 and SCIFB support
+[PATCH 07/07] ARM: mach-shmobile: Kota2 SDHI0 and SDHI1 support
 
-	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-3.x.git rmobile-fixes-for-linus
+These patches add initial Kota2 board support to mach-shmobile.
 
-Which contains:
+With these patches applied the Kota2 board has support for:
+SCIFA2, SMSC911X, KEYSC, GPIO-Keys, GPIO-LEDs, MMCIF, SCIFA4,
+SCIFB, SDHI0 and SDHI1.
 
-Jesper Juhl (1):
-      ARM: static should be at beginning of declaration
+Remaining device support includes LCDC, FSI and I2C.
 
-Kuninori Morimoto (4):
-      ARM: mach-shmobile: sh7372: Add USB-DMAC support
-      ARM: mach-shmobile: mackerel: Add USB-DMA ID
-      ARM: mach-shmobile: clock-sh73a0: tidyup CKSCR main clock selecter
-      ARM: mach-shmobile: clock-sh7372: fixup USB-DMAC1 settings
+On top of this support for Runtime PM and DMA Engine will be added.
 
-Magnus Damm (4):
-      ARM: mach-shmobile: Use CMT2 for timer on sh7372
-      ARM: mach-shmobile: Remove 3DG/SGX from sh7372 INTCS
-      ARM: mach-shmobile: sh7372 MSIOF clock support
-      ARM: mach-shmobile: sh7372 CMT3 and CMT4 clock support
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Simon Horman (2):
-      ARM: mach-shmobile: ag5evm: SDHI requires waiting for idle
-      mmc: sdhi, mmcif: zboot: Correct clock disable logic
+ Depends on the Kota2 mach-type entry to build together with
+ [PATCH] ARM: mach-shmobile: sh73a0 PFC pull-up support for SDHI0+2
 
- arch/arm/boot/compressed/mmcif-sh7372.c      |    2 +-
- arch/arm/boot/compressed/sdhi-sh7372.c       |    2 +-
- arch/arm/mach-shmobile/board-ag5evm.c        |    3 +-
- arch/arm/mach-shmobile/board-mackerel.c      |    4 +
- arch/arm/mach-shmobile/clock-sh7372.c        |   29 ++++-
- arch/arm/mach-shmobile/clock-sh73a0.c        |    2 +-
- arch/arm/mach-shmobile/include/mach/sh7372.h |    4 +
- arch/arm/mach-shmobile/intc-sh7372.c         |    7 +-
- arch/arm/mach-shmobile/setup-sh7372.c        |  176 +++++++++++++++++++++++---
- 9 files changed, 199 insertions(+), 30 deletions(-)
+ arch/arm/mach-shmobile/Kconfig       |    7 
+ arch/arm/mach-shmobile/Makefile      |    1 
+ arch/arm/mach-shmobile/board-kota2.c |  447 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/platsmp.c     |   10 
+ 4 files changed, 461 insertions(+), 4 deletions(-)
+  
