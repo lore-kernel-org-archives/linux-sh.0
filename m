@@ -1,241 +1,110 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 25 Aug 2011 01:27:26 +0000
-Subject: [PATCH v8 2/4] mmc: tmio: Provide separate interrupt handlers
-Message-Id: <1314235648-8959-3-git-send-email-horms@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 18 Aug 2011 05:44:16 +0000
+Subject: [PATCH 02/07] ARM: mach-shmobile: Kota2 KEYSC support
+Message-Id: <20110818054416.23410.50938.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1314235648-8959-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1314235648-8959-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-Provide separate interrupt handlers which may be used by platforms where
-SDHI has three interrupt sources.
+From: Magnus Damm <damm@opensource.se>
 
-This patch also removes the commented-out handling of CRC and other errors.
+This patch adds KEYSC support to the Kota2 board.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-* SDCARD portion tested on AP4/Mackerel
-* SDIO portion untested
+ arch/arm/mach-shmobile/board-kota2.c |   65 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
 
-v4
-* As suggested by Guennadi Liakhovetski
-  - Use bool as return type for __tmio_mmc_sdcard_irq() and
-    __tmio_mmc_card_detect_irq()
-
-v3
-* Rebase for updated "mmc: tmio: Cache interrupt masks"
-* As suggested by Guennadi Liakhovetski
-  - Do not alter logic to handle more than one interupt at once
-  - Add missing "static" to declartion of __tmio_mmc_sdcard_irq()
-
-v2
-* As suggested by Guennadi Liakhovetski
-  - Combine 3 patches into one
-  - Reduce the number of __tmio_..._irq() functions
-  - Rename "...card_access..." functions as "...sdcard..."
----
- drivers/mmc/host/tmio_mmc.h     |    3 +
- drivers/mmc/host/tmio_mmc_pio.c |  131 ++++++++++++++++++++++++--------------
- 2 files changed, 86 insertions(+), 48 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 1cf8db5..3020f98 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -97,6 +97,9 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
- void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
- void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
- irqreturn_t tmio_mmc_irq(int irq, void *devid);
-+irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid);
-+irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid);
-+irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid);
+--- 0005/arch/arm/mach-shmobile/board-kota2.c
++++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-15 10:33:09.000000000 +0900
+@@ -29,6 +29,8 @@
+ #include <linux/io.h>
+ #include <linux/smsc911x.h>
+ #include <linux/gpio.h>
++#include <linux/input.h>
++#include <linux/input/sh_keysc.h>
+ #include <mach/hardware.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+@@ -69,8 +71,52 @@ static struct platform_device eth_device
+ 	.num_resources	= ARRAY_SIZE(smsc9220_resources),
+ };
  
- static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
- 					 unsigned long *flags)
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index f0c7830..6275e3d 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -545,44 +545,20 @@ out:
- 	spin_unlock(&host->lock);
- }
++static struct sh_keysc_info keysc_platdata = {
++	.mode		= SH_KEYSC_MODE_6,
++	.scan_timing	= 3,
++	.delay		= 100,
++	.keycodes	= {
++		KEY_NUMERIC_STAR, KEY_NUMERIC_0, KEY_NUMERIC_POUND,
++		0, 0, 0, 0, 0,
++		KEY_NUMERIC_7, KEY_NUMERIC_8, KEY_NUMERIC_9,
++		0, KEY_DOWN, 0, 0, 0,
++		KEY_NUMERIC_4, KEY_NUMERIC_5, KEY_NUMERIC_6,
++		KEY_LEFT, KEY_ENTER, KEY_RIGHT, 0, 0,
++		KEY_NUMERIC_1, KEY_NUMERIC_2, KEY_NUMERIC_3,
++		0, KEY_UP, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0,
++	},
++};
++
++static struct resource keysc_resources[] = {
++	[0] = {
++		.name	= "KEYSC",
++		.start	= 0xe61b0000,
++		.end	= 0xe61b0098 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(71),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device keysc_device = {
++	.name		= "sh_keysc",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(keysc_resources),
++	.resource	= keysc_resources,
++	.dev		= {
++		.platform_data	= &keysc_platdata,
++	},
++};
++
+ static struct platform_device *kota2_devices[] __initdata = {
+ 	&eth_device,
++	&keysc_device,
+ };
  
--irqreturn_t tmio_mmc_irq(int irq, void *devid)
-+static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
-+				       int *ireg, int *status)
- {
--	struct tmio_mmc_host *host = devid;
--	struct mmc_host *mmc = host->mmc;
--	struct tmio_mmc_data *pdata = host->pdata;
--	unsigned int ireg, status;
--	unsigned int sdio_ireg, sdio_status;
--
--	pr_debug("MMC IRQ begin\n");
--
--	status = sd_ctrl_read32(host, CTL_STATUS);
--	ireg = status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
-+	*status = sd_ctrl_read32(host, CTL_STATUS);
-+	*ireg = *status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
+ static struct map_desc kota2_io_desc[] __initdata = {
+@@ -140,6 +186,25 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_PORT145, NULL); /* RESET */
+ 	gpio_direction_output(GPIO_PORT145, 1);
  
--	sdio_ireg = 0;
--	if (!ireg && pdata->flags & TMIO_MMC_SDIO_IRQ) {
--		sdio_status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
--		sdio_ireg = sdio_status & TMIO_SDIO_MASK_ALL &
--				~host->sdio_irq_mask;
--
--		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
--
--		if (sdio_ireg && !host->sdio_irq_enabled) {
--			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
--				   sdio_status, host->sdio_irq_mask, sdio_ireg);
--			tmio_mmc_enable_sdio_irq(mmc, 0);
--			goto out;
--		}
--
--		if (mmc->caps & MMC_CAP_SDIO_IRQ &&
--			sdio_ireg & TMIO_SDIO_STAT_IOIRQ)
--			mmc_signal_sdio_irq(mmc);
--
--		if (sdio_ireg)
--			goto out;
--	}
-+	pr_debug_status(*status);
-+	pr_debug_status(*ireg);
-+}
- 
--	pr_debug_status(status);
--	pr_debug_status(ireg);
-+static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
-+				      int ireg, int status)
-+{
-+	struct mmc_host *mmc = host->mmc;
- 
- 	/* Card insert / remove attempts */
- 	if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
-@@ -592,43 +568,102 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
- 		     ((ireg & TMIO_STAT_CARD_INSERT) && !mmc->card)) &&
- 		    !work_pending(&mmc->detect.work))
- 			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
--		goto out;
-+		return true;
- 	}
- 
--	/* CRC and other errors */
--/*	if (ireg & TMIO_STAT_ERR_IRQ)
-- *		handled |= tmio_error_irq(host, irq, stat);
-- */
-+	return false;
-+}
++	/* KEYSC */
++	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN2_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN3_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN4_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN5_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN6_PU, NULL);
++	gpio_request(GPIO_FN_KEYIN7_PU, NULL);
++	gpio_request(GPIO_FN_KEYOUT0, NULL);
++	gpio_request(GPIO_FN_KEYOUT1, NULL);
++	gpio_request(GPIO_FN_KEYOUT2, NULL);
++	gpio_request(GPIO_FN_KEYOUT3, NULL);
++	gpio_request(GPIO_FN_KEYOUT4, NULL);
++	gpio_request(GPIO_FN_KEYOUT5, NULL);
++	gpio_request(GPIO_FN_PORT59_KEYOUT6, NULL);
++	gpio_request(GPIO_FN_PORT58_KEYOUT7, NULL);
++	gpio_request(GPIO_FN_KEYOUT8, NULL);
 +
-+irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid)
-+{
-+	unsigned int ireg, status;
-+	struct tmio_mmc_host *host = devid;
- 
-+	tmio_mmc_card_irq_status(host, &ireg, &status);
-+	__tmio_mmc_card_detect_irq(host, ireg, status);
-+
-+	return IRQ_HANDLED;
-+}
-+EXPORT_SYMBOL(tmio_mmc_card_detect_irq);
-+
-+static bool __tmio_mmc_sdcard_irq(struct tmio_mmc_host *host,
-+				 int ireg, int status)
-+{
- 	/* Command completion */
- 	if (ireg & (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT)) {
- 		tmio_mmc_ack_mmc_irqs(host,
- 			     TMIO_STAT_CMDRESPEND |
- 			     TMIO_STAT_CMDTIMEOUT);
- 		tmio_mmc_cmd_irq(host, status);
--		goto out;
-+		return true;
- 	}
- 
- 	/* Data transfer */
- 	if (ireg & (TMIO_STAT_RXRDY | TMIO_STAT_TXRQ)) {
- 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_RXRDY | TMIO_STAT_TXRQ);
- 		tmio_mmc_pio_irq(host);
--		goto out;
-+		return true;
- 	}
- 
- 	/* Data transfer completion */
- 	if (ireg & TMIO_STAT_DATAEND) {
- 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_DATAEND);
- 		tmio_mmc_data_irq(host);
--		goto out;
-+		return true;
- 	}
- 
--	pr_warning("tmio_mmc: Spurious irq, disabling! "
--		"0x%08x 0x%08x 0x%08x\n", status, host->sdcard_irq_mask, ireg);
--	pr_debug_status(status);
--	tmio_mmc_disable_mmc_irqs(host, status & ~host->sdcard_irq_mask);
-+	return false;
-+}
-+
-+irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid)
-+{
-+	unsigned int ireg, status;
-+	struct tmio_mmc_host *host = devid;
-+
-+	tmio_mmc_card_irq_status(host, &ireg, &status);
-+	__tmio_mmc_sdcard_irq(host, ireg, status);
-+
-+	return IRQ_HANDLED;
-+}
-+EXPORT_SYMBOL(tmio_mmc_sdcard_irq);
-+
-+irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
-+{
-+	struct tmio_mmc_host *host = devid;
-+	struct mmc_host *mmc = host->mmc;
-+	struct tmio_mmc_data *pdata = host->pdata;
-+	unsigned int ireg, status;
-+
-+	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
-+		return IRQ_HANDLED;
-+
-+	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
-+	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
-+
-+	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
-+
-+	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
-+		mmc_signal_sdio_irq(mmc);
-+
-+	return IRQ_HANDLED;
-+}
-+EXPORT_SYMBOL(tmio_mmc_sdio_irq);
-+
-+irqreturn_t tmio_mmc_irq(int irq, void *devid)
-+{
-+	struct tmio_mmc_host *host = devid;
-+	unsigned int ireg, status;
-+
-+	pr_debug("MMC IRQ begin\n");
-+
-+	tmio_mmc_card_irq_status(host, &ireg, &status);
-+	if (__tmio_mmc_card_detect_irq(host, ireg, status))
-+		return IRQ_HANDLED;
-+	if (__tmio_mmc_sdcard_irq(host, ireg, status))
-+		return IRQ_HANDLED;
-+
-+	tmio_mmc_sdio_irq(irq, devid);
- 
--out:
- 	return IRQ_HANDLED;
- }
- EXPORT_SYMBOL(tmio_mmc_irq);
--- 
-1.7.5.4
-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(__io(0xf0100000), 0x40460000, 0x82000fff);
