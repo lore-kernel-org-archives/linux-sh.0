@@ -1,157 +1,143 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 15 Aug 2011 05:51:25 +0000
-Subject: [PATCH 1/4] mmc: tmio, sdhi: Split tmio_mmc_irq() based on registers
-Message-Id: <1313387488-28175-2-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 19 Aug 2011 09:16:06 +0000
+Subject: [PATCH 1/7] fbdev: sh_mobile_lcdc: Adjust requested parameters in .fb_check_var
+Message-Id: <1313745372-20856-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313387488-28175-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1313387488-28175-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: linux-fbdev@vger.kernel.org
 
-This splits tmio_mmc_irq() in two based on the registers
-used to handle the interrupts.
+Instead of failing when the requested fb_var_screeninfo parameters are
+not supported, adjust the parameters according to the hardware
+capabilities.
 
-This involves two key changes to the logic:
-1. Do not assume that only one interrupt has occurred.
-   In particular because tmio_mmc_irq() handles interrupts
-   from three sources. Also, because this allows
-   the logic to be simplified.
-2. Just ignore spurious interrupts.
-   Its not clear to me that they can ever occur.
-
-This patch also removes the commented-out handling of
-CRC and other errors.
-
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   71 +++++++++++++++-----------------------
- 1 files changed, 28 insertions(+), 43 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |  103 ++++++++++++++++++++++++++++++++------
+ 1 files changed, 88 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 1f16357..e658cb4 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -543,43 +543,15 @@ out:
- 	spin_unlock(&host->lock);
- }
- 
--irqreturn_t tmio_mmc_irq(int irq, void *devid)
-+static void __tmio_mmc_card_irq(struct tmio_mmc_host *host)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 088cb17..33b0ff8 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1055,28 +1055,101 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
  {
--	struct tmio_mmc_host *host = devid;
- 	struct mmc_host *mmc = host->mmc;
--	struct tmio_mmc_data *pdata = host->pdata;
- 	unsigned int ireg, irq_mask, status;
--	unsigned int sdio_ireg, sdio_irq_mask, sdio_status;
--
--	pr_debug("MMC IRQ begin\n");
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 	struct sh_mobile_lcdc_priv *p = ch->lcdc;
++	unsigned int best_dist = (unsigned int)-1;
++	unsigned int best_xres = 0;
++	unsigned int best_yres = 0;
++	unsigned int i;
  
- 	status = sd_ctrl_read32(host, CTL_STATUS);
- 	irq_mask = sd_ctrl_read32(host, CTL_IRQ_MASK);
- 	ireg = status & TMIO_MASK_IRQ & ~irq_mask;
+-	if (var->xres > MAX_XRES || var->yres > MAX_YRES ||
+-	    var->xres * var->yres * (ch->cfg.bpp / 8) * 2 > info->fix.smem_len) {
+-		dev_warn(info->dev, "Invalid info: %u-%u-%u-%u x %u-%u-%u-%u @ %lukHz!\n",
+-			 var->left_margin, var->xres, var->right_margin, var->hsync_len,
+-			 var->upper_margin, var->yres, var->lower_margin, var->vsync_len,
+-			 PICOS2KHZ(var->pixclock));
++	if (var->xres > MAX_XRES || var->yres > MAX_YRES)
+ 		return -EINVAL;
++
++	/* If board code provides us with a list of available modes, make sure
++	 * we use one of them. Find the mode closest to the requested one. The
++	 * distance between two modes is defined as the size of the
++	 * non-overlapping parts of the two rectangles.
++	 */
++	for (i = 0; i < ch->cfg.num_cfg; ++i) {
++		const struct fb_videomode *mode = &ch->cfg.lcd_cfg[i];
++		unsigned int dist;
++
++		/* We can only round up. */
++		if (var->xres > mode->xres || var->yres > mode->yres)
++			continue;
++
++		dist = var->xres * var->yres + mode->xres * mode->yres
++		     - 2 * min(var->xres, mode->xres)
++			 * min(var->yres, mode->yres);
++
++		if (dist < best_dist) {
++			best_xres = mode->xres;
++			best_yres = mode->yres;
++			best_dist = dist;
++		}
+ 	}
  
--	sdio_ireg = 0;
--	if (!ireg && pdata->flags & TMIO_MMC_SDIO_IRQ) {
--		sdio_status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
--		sdio_irq_mask = sd_ctrl_read16(host, CTL_SDIO_IRQ_MASK);
--		sdio_ireg = sdio_status & TMIO_SDIO_MASK_ALL & ~sdio_irq_mask;
--
--		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
--
--		if (sdio_ireg && !host->sdio_irq_enabled) {
--			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
--				   sdio_status, sdio_irq_mask, sdio_ireg);
--			tmio_mmc_enable_sdio_irq(mmc, 0);
--			goto out;
--		}
--
--		if (mmc->caps & MMC_CAP_SDIO_IRQ &&
--			sdio_ireg & TMIO_SDIO_STAT_IOIRQ)
--			mmc_signal_sdio_irq(mmc);
--
--		if (sdio_ireg)
--			goto out;
+-	/* only accept the forced_bpp for dual channel configurations */
+-	if (p->forced_bpp && p->forced_bpp != var->bits_per_pixel)
++	/* If no available mode can be used, return an error. */
++	if (ch->cfg.num_cfg != 0) {
++		if (best_dist = (unsigned int)-1)
++			return -EINVAL;
++
++		var->xres = best_xres;
++		var->yres = best_yres;
++	}
++
++	/* Make sure the virtual resolution is at least as big as the visible
++	 * resolution.
++	 */
++	if (var->xres_virtual < var->xres)
++		var->xres_virtual = var->xres;
++	if (var->yres_virtual < var->yres)
++		var->yres_virtual = var->yres;
++
++	if (var->bits_per_pixel <= 16) {		/* RGB 565 */
++		var->bits_per_pixel = 16;
++		var->red.offset = 11;
++		var->red.length = 5;
++		var->green.offset = 5;
++		var->green.length = 6;
++		var->blue.offset = 0;
++		var->blue.length = 5;
++		var->transp.offset = 0;
++		var->transp.length = 0;
++	} else if (var->bits_per_pixel <= 24) {		/* RGB 888 */
++		var->bits_per_pixel = 24;
++		var->red.offset = 16;
++		var->red.length = 8;
++		var->green.offset = 8;
++		var->green.length = 8;
++		var->blue.offset = 0;
++		var->blue.length = 8;
++		var->transp.offset = 0;
++		var->transp.length = 0;
++	} else if (var->bits_per_pixel <= 32) {		/* RGBA 888 */
++		var->bits_per_pixel = 32;
++		var->red.offset = 16;
++		var->red.length = 8;
++		var->green.offset = 8;
++		var->green.length = 8;
++		var->blue.offset = 0;
++		var->blue.length = 8;
++		var->transp.offset = 24;
++		var->transp.length = 8;
++	} else
+ 		return -EINVAL;
+ 
+-	switch (var->bits_per_pixel) {
+-	case 16: /* PKF[4:0] = 00011 - RGB 565 */
+-	case 24: /* PKF[4:0] = 01011 - RGB 888 */
+-	case 32: /* PKF[4:0] = 00000 - RGBA 888 */
+-		break;
+-	default:
++	var->red.msb_right = 0;
++	var->green.msb_right = 0;
++	var->blue.msb_right = 0;
++	var->transp.msb_right = 0;
++
++	/* Make sure we don't exceed our allocated memory. */
++	if (var->xres_virtual * var->yres_virtual * var->bits_per_pixel / 8 >
++	    info->fix.smem_len)
++		return -EINVAL;
++
++	/* only accept the forced_bpp for dual channel configurations */
++	if (p->forced_bpp && p->forced_bpp != var->bits_per_pixel)
+ 		return -EINVAL;
 -	}
--
- 	pr_debug_status(status);
- 	pr_debug_status(ireg);
  
-@@ -591,43 +563,56 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
- 		     ((ireg & TMIO_STAT_CARD_INSERT) && !mmc->card)) &&
- 		    !work_pending(&mmc->detect.work))
- 			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
--		goto out;
- 	}
- 
--	/* CRC and other errors */
--/*	if (ireg & TMIO_STAT_ERR_IRQ)
-- *		handled |= tmio_error_irq(host, irq, stat);
-- */
--
- 	/* Command completion */
- 	if (ireg & (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT)) {
- 		tmio_mmc_ack_mmc_irqs(host,
- 			     TMIO_STAT_CMDRESPEND |
- 			     TMIO_STAT_CMDTIMEOUT);
- 		tmio_mmc_cmd_irq(host, status);
--		goto out;
- 	}
- 
- 	/* Data transfer */
- 	if (ireg & (TMIO_STAT_RXRDY | TMIO_STAT_TXRQ)) {
- 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_RXRDY | TMIO_STAT_TXRQ);
- 		tmio_mmc_pio_irq(host);
--		goto out;
- 	}
- 
- 	/* Data transfer completion */
- 	if (ireg & TMIO_STAT_DATAEND) {
- 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_DATAEND);
- 		tmio_mmc_data_irq(host);
--		goto out;
- 	}
-+}
- 
--	pr_warning("tmio_mmc: Spurious irq, disabling! "
--		"0x%08x 0x%08x 0x%08x\n", status, irq_mask, ireg);
--	pr_debug_status(status);
--	tmio_mmc_disable_mmc_irqs(host, status & ~irq_mask);
-+static void __tmio_mmc_sdio_irq(struct tmio_mmc_host *host)
-+{
-+	struct mmc_host *mmc = host->mmc;
-+	struct tmio_mmc_data *pdata = host->pdata;
-+	unsigned int ireg, irq_mask, status;
-+
-+	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
-+		return;
-+
-+	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
-+	irq_mask = sd_ctrl_read16(host, CTL_SDIO_IRQ_MASK);
-+	ireg = status & TMIO_SDIO_MASK_ALL & ~irq_mask;
-+
-+	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
-+
-+	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
-+		mmc_signal_sdio_irq(mmc);
-+}
-+
-+irqreturn_t tmio_mmc_irq(int irq, void *devid)
-+{
-+	struct tmio_mmc_host *host = devid;
-+
-+	pr_debug("MMC IRQ begin\n");
-+	__tmio_mmc_card_irq(host);
-+	__tmio_mmc_sdio_irq(host);
- 
--out:
- 	return IRQ_HANDLED;
+ 	return 0;
  }
- EXPORT_SYMBOL(tmio_mmc_irq);
 -- 
-1.7.5.4
+1.7.3.4
 
