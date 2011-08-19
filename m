@@ -1,93 +1,62 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Aug 2011 16:26:39 +0000
-Subject: [PATCH 1/2] mmc: sh_mmcif: simplify platform data
-Message-Id: <Pine.LNX.4.64.1108301824380.19151@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 19 Aug 2011 09:16:09 +0000
+Subject: [PATCH 4/7] fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
+Message-Id: <1313745372-20856-5-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>
+To: linux-fbdev@vger.kernel.org
 
-Provide platforms with a simplified way to specify MMCIF DMA slave IDs in
-a way, similar to SDHI and other sh_dma clients.
+Instead of updating the fixed screen information line length manually
+after calling fb_set_var() in sh_mobile_fb_reconfig(), update the field
+in the .fb_set_par() operation handler.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mmcif.c  |   20 ++++++++++++++++----
- include/linux/mmc/sh_mmcif.h |    4 +++-
- 2 files changed, 19 insertions(+), 5 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   17 +++++++++++------
+ 1 files changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 557886b..bd91c94 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -165,6 +165,8 @@ struct sh_mmcif_host {
- 	struct mmc_host *mmc;
- 	struct mmc_data *data;
- 	struct platform_device *pd;
-+	struct sh_dmae_slave dma_slave_tx;
-+	struct sh_dmae_slave dma_slave_rx;
- 	struct clk *hclk;
- 	unsigned int clk;
- 	int bus_width;
-@@ -323,25 +325,35 @@ static bool sh_mmcif_filter(struct dma_chan *chan, void *arg)
- static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
- 				 struct sh_mmcif_plat_data *pdata)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 1ff215c..b6da1d6 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -998,11 +998,6 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
+ 		/* Couldn't reconfigure, hopefully, can continue as before */
+ 		return;
+ 
+-	if (info->var.nonstd)
+-		info->fix.line_length = mode1.xres;
+-	else
+-		info->fix.line_length = mode1.xres * (ch->cfg.bpp / 8);
+-
+ 	/*
+ 	 * fb_set_var() calls the notifier change internally, only if
+ 	 * FBINFO_MISC_USEREVENT flag is set. Since we do not want to fake a
+@@ -1157,12 +1152,22 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ static int sh_mobile_set_par(struct fb_info *info)
  {
-+	struct sh_dmae_slave *tx, *rx;
- 	host->dma_active = false;
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
++	u32 line_length = info->fix.line_length;
+ 	int ret;
  
- 	/* We can only either use DMA for both Tx and Rx or not use it at all */
- 	if (pdata->dma) {
-+		dev_warn(&host->pd->dev,
-+			 "Update your platform to use embedded DMA slave IDs\n");
-+		tx = &pdata->dma->chan_priv_tx;
-+		rx = &pdata->dma->chan_priv_rx;
-+	} else {
-+		tx = &host->dma_slave_tx;
-+		tx->slave_id = pdata->slave_id_tx;
-+		rx = &host->dma_slave_rx;
-+		rx->slave_id = pdata->slave_id_rx;
+ 	sh_mobile_lcdc_stop(ch->lcdc);
++
++	if (info->var.nonstd)
++		info->fix.line_length = info->var.xres;
++	else
++		info->fix.line_length = info->var.xres
++				      * info->var.bits_per_pixel / 8;
++
+ 	ret = sh_mobile_lcdc_start(ch->lcdc);
+-	if (ret < 0)
++	if (ret < 0) {
+ 		dev_err(info->dev, "%s: unable to restart LCDC\n", __func__);
++		info->fix.line_length = line_length;
 +	}
-+	if (tx->slave_id > 0 && rx->slave_id > 0) {
- 		dma_cap_mask_t mask;
  
- 		dma_cap_zero(mask);
- 		dma_cap_set(DMA_SLAVE, mask);
- 
--		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
--						    &pdata->dma->chan_priv_tx);
-+		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter, tx);
- 		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
- 			host->chan_tx);
- 
- 		if (!host->chan_tx)
- 			return;
- 
--		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
--						    &pdata->dma->chan_priv_rx);
-+		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter, rx);
- 		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
- 			host->chan_rx);
- 
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 0222cd8..04ff452 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -41,7 +41,9 @@ struct sh_mmcif_plat_data {
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- 	void (*down_pwr)(struct platform_device *pdev);
- 	int (*get_cd)(struct platform_device *pdef);
--	struct sh_mmcif_dma	*dma;
-+	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
-+	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
-+	unsigned int		slave_id_rx;
- 	u8			sup_pclk;	/* 1 :SH7757, 0: SH7724/SH7372 */
- 	unsigned long		caps;
- 	u32			ocr;
+ 	return ret;
+ }
 -- 
-1.7.2.5
+1.7.3.4
 
