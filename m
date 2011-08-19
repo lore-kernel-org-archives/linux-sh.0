@@ -1,37 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 26 Aug 2011 06:43:16 +0000
-Subject: [PATCH 00/03] ARM: mach-shmobile: sh7372 power domain update
-Message-Id: <20110826064316.373.79503.sendpatchset@rxone.opensource.se>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 19 Aug 2011 01:07:07 +0000
+Subject: [PATCH] mmc: sdhi: initialise mmc_data->flags before use
+Message-Id: <1313716027-19470-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110630094653.10442.68817.sendpatchset@t400s>
-In-Reply-To: <20110630094653.10442.68817.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-ARM: mach-shmobile: sh7372 power domain update
+This corrects a logic error that I introduced in
+"mmc: sdhi: Add write16_hook"
 
-[PATCH 01/03] ARM: mach-shmobile: sh7372 A3SM support
-[PATCH 02/03] ARM: mach-shmobile: sh7372 A3SP support
-[PATCH 03/03] ARM: mach-shmobile: sh7372 A4R support
-
-These patches add support for the A3SM, A3SP and A4R
-power domains included in the sh7372 SoC. More work
-in needed with QoS for I/O devices and CPUIdle with
-A3SM together with future A4S power domain support.
-
-Testing needed, especiall WRT to Suspend-to-RAM!
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Reported-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/board-ap4evb.c        |    5 
- arch/arm/mach-shmobile/board-mackerel.c      |    9 
- arch/arm/mach-shmobile/include/mach/common.h |    3 
- arch/arm/mach-shmobile/include/mach/sh7372.h |    5 
- arch/arm/mach-shmobile/intc-sh7372.c         |   52 ++++
- arch/arm/mach-shmobile/pm-sh7372.c           |  287 ++++++++++++++++++++++++--
- arch/arm/mach-shmobile/setup-sh7372.c        |   21 +
- arch/arm/mach-shmobile/sleep-sh7372.S        |   55 ++++
- 8 files changed, 416 insertions(+), 21 deletions(-)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 2fa7bbc..68702e4 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -121,11 +121,11 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->hclk = clk_get_rate(priv->clk);
+ 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+ 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
+-	if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
+-		mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
++		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
++			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+ 		mmc_data->capabilities |= p->tmio_caps;
+ 
+-- 
+1.7.5.4
+
