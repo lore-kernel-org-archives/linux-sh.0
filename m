@@ -1,105 +1,15 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Aug 2011 12:57:31 +0000
-Subject: Re: [PATCH 3/4] mmc: sdhi: Make use of per-source irq handlers
-Message-Id: <20110817125728.GD13086@verge.net.au>
+Date: Fri, 19 Aug 2011 01:10:20 +0000
+Subject: [PATCH 3/4] mmc: sdhi: Make use of per-source irq handlers
+Message-Id: <1313716221-20136-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313578756-10413-1-git-send-email-horms@verge.net.au>
- <1313578756-10413-4-git-send-email-horms@verge.net.au>
- <Pine.LNX.4.64.1108171320310.18317@axis700.grange>
- <20110817114147.GA13086@verge.net.au>
- <20110817120748.GB13086@verge.net.au>
- <Pine.LNX.4.64.1108171416010.18317@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1108171416010.18317@axis700.grange>
+References: <1313716221-20136-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313716221-20136-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
-
-On Wed, Aug 17, 2011 at 02:22:56PM +0200, Guennadi Liakhovetski wrote:
-> On Wed, 17 Aug 2011, Simon Horman wrote:
-> 
-> > On Wed, Aug 17, 2011 at 08:41:47PM +0900, Simon Horman wrote:
-> > > On Wed, Aug 17, 2011 at 01:24:58PM +0200, Guennadi Liakhovetski wrote:
-> > > > On Wed, 17 Aug 2011, Simon Horman wrote:
-> > > > 
-> > > > > Make use of per-source irq handles if the
-> > > > > platform (data) has multiple irq sources.
-> > > > > 
-> > > > > Also, as suggested by Guennadi Liakhovetski,
-> > > > > add and use defines the index or irqs in platform data.
-> > > > > 
-> > > > > Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > > > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > > > > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > > > > 
-> > > > > ---
-> > > > > 
-> > > > > v5
-> > > > > * As suggested by Guennadi Liakhovetski:
-> > > > >   - Allow only SH_MOBILE_SDHI_IRQ_SDCARD and
-> > > > >     SH_MOBILE_SDHI_IRQ_SDIO to be specified in platform data
-> > > > 
-> > > > This means, CARD_DETECT is optional in a multi-irq configuration, agree.
-> > > 
-> > > [snip]
-> > > 
-> > > > > +	ret = irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
-> > > > > +	if (irq >= 0) {
-> > > > > +		multi_irq = true;
-> > > > > +		ret = request_irq(irq, tmio_mmc_sdcard_irq, 0,
-> > > > > +				  dev_name(&pdev->dev), host);
-> > > > > +		if (ret)
-> > > > > +			goto eirq_sdcard;
-> > > > >  	}
-> > > > 
-> > > > This means SDCARD is optional in both single- and multi-irq 
-> > > > configurations.
-> > > > 
-> > > > > +
-> > > > > +	ret = irq = platform_get_irq(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
-> > > > > +	if (irq < 0)
-> > > > > +		goto eirq_card_detect;
-> > > > 
-> > > > This means, CARD_DETECT is compulsory in all configurations.
-> > > > 
-> > > > One of us must be speaking klingonish today.
-> > > 
-> > > Sorry, I messed that up a bit.
-> > > 
-> > > I will make CARD_DETECT optional in multi-irq configurations.
-> > > Likewise SDIO will be optional in multi-irq configurations.
-> > > 
-> > > But SDCARD will always be required.
-> > 
-> > Oops, that scheme won't work because in single-irq configuration
-> > the only IRQ will be #0, but SDCARD != 0.
-> > 
-> > So I have it in mind to allow the following combinations.
-> > 
-> > i) SDIO, SDCARD, CARD_DETECT
-> > ii) SDIO, SDCARD
-> > iii) SDCARD, CARD_DETECT
-> > iv) SDCARD only (sets multi_irq = true locally, but only one irq!)
-> > v) CARD_DETECT only (uses tmio_mmc_irq(), traditional single-irq setup)
-> 
-> I would make it simple:
-> 
-> (1) 1 IRQ: only resource #0 (CARD_DETECT, use tmio_mmc_irq())
-> (2) 2 or 3 IRQs: compulsory SDCARD and any further IRQs: use respective 
->     specialised ISRs.
-> 
-> > Do you think iii and iv are necessary?
-> 
-> Accordingly: iii - yes, iv - no.
-
-Ok, how about this?
-
-
-From 6514563c5637e65a397d0bf88cda95168a69dea1 Mon Sep 17 00:00:00 2001
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Aug 2011 10:42:35 +0900
-Subject: [PATCH] mmc: sdhi: Make use of per-source irq handlers
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
 Make use of per-source irq handles if the
 platform (data) has multiple irq sources.
