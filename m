@@ -1,15 +1,15 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Aug 2011 10:59:16 +0000
+Date: Fri, 19 Aug 2011 01:10:21 +0000
 Subject: [PATCH 4/4] ARM: shmobile: ag5evm, ap4: Make use of irq index enum
-Message-Id: <1313578756-10413-5-git-send-email-horms@verge.net.au>
+Message-Id: <1313716221-20136-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313578756-10413-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1313578756-10413-1-git-send-email-horms@verge.net.au>
+References: <1313716221-20136-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313716221-20136-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
 This is intended to make it easier to correctly order IRQs.
 
