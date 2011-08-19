@@ -1,56 +1,332 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 20 Aug 2011 19:33:09 +0000
-Subject: [PATCH 2/2] sh-sci / PM: Use power.irq_safe
-Message-Id: <201108202133.09222.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 19 Aug 2011 09:16:11 +0000
+Subject: [PATCH 6/7] fbdev: sh_mobile_lcdc: Split channel initialization from probe function
+Message-Id: <1313745372-20856-7-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108202131.19479.rjw@sisk.pl>
-In-Reply-To: <201108202131.19479.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Move channel initialization to sh_mobile_lcdc_channel_init() and call
+the function from sh_mobile_lcdc_probe(). This makes the code more
+readable and prepares it for fix/var initialization rework.
 
-Since sci_port_enable() and sci_port_disable() may be run with
-interrupts off and they execute pm_runtime_get_sync() and
-pm_runtime_put_sync(), respectively, the SCI device's
-power.irq_safe flags has to be used to indicate that it is safe
-to execute runtime PM callbacks for this device with interrupts off.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c |    8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ drivers/video/sh_mobile_lcdcfb.c |  247 ++++++++++++++++++++------------------
+ 1 files changed, 129 insertions(+), 118 deletions(-)
 
-Index: linux/drivers/tty/serial/sh-sci.c
-=================================--- linux.orig/drivers/tty/serial/sh-sci.c
-+++ linux/drivers/tty/serial/sh-sci.c
-@@ -1582,11 +1582,15 @@ static int sci_startup(struct uart_port
- 
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
- 
-+	pm_runtime_irq_safe(port->dev);
-+
- 	sci_port_enable(s);
- 
- 	ret = sci_request_irq(s);
--	if (unlikely(ret < 0))
-+	if (unlikely(ret < 0)) {
-+		pm_runtime_irq_unsafe(port->dev);
- 		return ret;
-+	}
- 
- 	sci_request_dma(port);
- 
-@@ -1609,6 +1613,8 @@ static void sci_shutdown(struct uart_por
- 	sci_free_irq(s);
- 
- 	sci_port_disable(s);
-+
-+	pm_runtime_irq_unsafe(port->dev);
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 366315b..d1576e2 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1485,15 +1485,129 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
+ 	return 0;
  }
  
- static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+-static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
++static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
++						 struct device *dev)
+ {
++	struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
++	const struct fb_videomode *max_mode;
++	const struct fb_videomode *mode;
++	struct fb_var_screeninfo *var;
+ 	struct fb_info *info;
+-	struct sh_mobile_lcdc_priv *priv;
++	unsigned int max_size;
++	int num_cfg;
++	void *buf;
++	int ret;
++	int i;
++
++	ch->info = framebuffer_alloc(0, dev);
++	if (!ch->info) {
++		dev_err(dev, "unable to allocate fb_info\n");
++		return -ENOMEM;
++	}
++
++	info = ch->info;
++	var = &info->var;
++	info->fbops = &sh_mobile_lcdc_ops;
++	info->par = ch;
++
++	mutex_init(&ch->open_lock);
++
++	/* Iterate through the modes to validate them and find the highest
++	 * resolution.
++	 */
++	max_mode = NULL;
++	max_size = 0;
++
++	for (i = 0, mode = cfg->lcd_cfg; i < cfg->num_cfg; i++, mode++) {
++		unsigned int size = mode->yres * mode->xres;
++
++		/* NV12 buffers must have even number of lines */
++		if ((cfg->nonstd) && cfg->bpp = 12 &&
++				(mode->yres & 0x1)) {
++			dev_err(dev, "yres must be multiple of 2 for YCbCr420 "
++				"mode.\n");
++			return -EINVAL;
++		}
++
++		if (size > max_size) {
++			max_mode = mode;
++			max_size = size;
++		}
++	}
++
++	if (!max_size)
++		max_size = MAX_XRES * MAX_YRES;
++	else
++		dev_dbg(dev, "Found largest videomode %ux%u\n",
++			max_mode->xres, max_mode->yres);
++
++	info->fix = sh_mobile_lcdc_fix;
++	info->fix.smem_len = max_size * 2 * cfg->bpp / 8;
++
++	 /* Only pan in 2 line steps for NV12 */
++	if (cfg->nonstd && cfg->bpp = 12)
++		info->fix.ypanstep = 2;
++
++	if (cfg->lcd_cfg = NULL) {
++		mode = &default_720p;
++		num_cfg = 1;
++	} else {
++		mode = cfg->lcd_cfg;
++		num_cfg = cfg->num_cfg;
++	}
++
++	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
++
++	fb_videomode_to_var(var, mode);
++	var->width = cfg->lcd_size_cfg.width;
++	var->height = cfg->lcd_size_cfg.height;
++	/* Default Y virtual resolution is 2x panel size */
++	var->yres_virtual = var->yres * 2;
++	var->activate = FB_ACTIVATE_NOW;
++
++	ret = sh_mobile_lcdc_set_bpp(var, cfg->bpp, cfg->nonstd);
++	if (ret)
++		return ret;
++
++	buf = dma_alloc_coherent(dev, info->fix.smem_len, &ch->dma_handle,
++				 GFP_KERNEL);
++	if (!buf) {
++		dev_err(dev, "unable to allocate buffer\n");
++		return -ENOMEM;
++	}
++
++	info->pseudo_palette = &ch->pseudo_palette;
++	info->flags = FBINFO_FLAG_DEFAULT;
++
++	ret = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
++	if (ret < 0) {
++		dev_err(dev, "unable to allocate cmap\n");
++		dma_free_coherent(dev, info->fix.smem_len,
++				  buf, ch->dma_handle);
++		return ret;
++	}
++
++	info->fix.smem_start = ch->dma_handle;
++	if (var->nonstd)
++		info->fix.line_length = var->xres;
++	else
++		info->fix.line_length = var->xres * (cfg->bpp / 8);
++
++	info->screen_base = buf;
++	info->device = dev;
++	ch->display_var = *var;
++
++	return 0;
++}
++
++static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
++{
+ 	struct sh_mobile_lcdc_info *pdata = pdev->dev.platform_data;
++	struct sh_mobile_lcdc_priv *priv;
+ 	struct resource *res;
++	int num_channels;
+ 	int error;
+-	void *buf;
+-	int i, j;
++	int i;
+ 
+ 	if (!pdata) {
+ 		dev_err(&pdev->dev, "no platform data defined\n");
+@@ -1525,9 +1639,8 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ 	priv->irq = i;
+ 	atomic_set(&priv->hw_usecnt, -1);
+ 
+-	j = 0;
+-	for (i = 0; i < ARRAY_SIZE(pdata->ch); i++) {
+-		struct sh_mobile_lcdc_chan *ch = priv->ch + j;
++	for (i = 0, num_channels = 0; i < ARRAY_SIZE(pdata->ch); i++) {
++		struct sh_mobile_lcdc_chan *ch = priv->ch + num_channels;
+ 
+ 		ch->lcdc = priv;
+ 		memcpy(&ch->cfg, &pdata->ch[i], sizeof(pdata->ch[i]));
+@@ -1549,24 +1662,24 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ 		case LCDC_CHAN_MAINLCD:
+ 			ch->enabled = LDCNT2R_ME;
+ 			ch->reg_offs = lcdc_offs_mainlcd;
+-			j++;
++			num_channels++;
+ 			break;
+ 		case LCDC_CHAN_SUBLCD:
+ 			ch->enabled = LDCNT2R_SE;
+ 			ch->reg_offs = lcdc_offs_sublcd;
+-			j++;
++			num_channels++;
+ 			break;
+ 		}
+ 	}
+ 
+-	if (!j) {
++	if (!num_channels) {
+ 		dev_err(&pdev->dev, "no channels defined\n");
+ 		error = -EINVAL;
+ 		goto err1;
+ 	}
+ 
+ 	/* for dual channel LCDC (MAIN + SUB) force shared bpp setting */
+-	if (j = 2)
++	if (num_channels = 2)
+ 		priv->forced_bpp = pdata->ch[0].bpp;
+ 
+ 	priv->base = ioremap_nocache(res->start, resource_size(res));
+@@ -1581,125 +1694,23 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ 
+ 	priv->meram_dev = pdata->meram_dev;
+ 
+-	for (i = 0; i < j; i++) {
+-		struct fb_var_screeninfo *var;
+-		const struct fb_videomode *lcd_cfg, *max_cfg = NULL;
++	for (i = 0; i < num_channels; i++) {
+ 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
+-		struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
+-		const struct fb_videomode *mode = cfg->lcd_cfg;
+-		unsigned long max_size = 0;
+-		int k;
+-		int num_cfg;
+-
+-		ch->info = framebuffer_alloc(0, &pdev->dev);
+-		if (!ch->info) {
+-			dev_err(&pdev->dev, "unable to allocate fb_info\n");
+-			error = -ENOMEM;
+-			break;
+-		}
+-
+-		info = ch->info;
+-		var = &info->var;
+-		info->fbops = &sh_mobile_lcdc_ops;
+-		info->par = ch;
+-
+-		mutex_init(&ch->open_lock);
+-
+-		for (k = 0, lcd_cfg = mode;
+-		     k < cfg->num_cfg && lcd_cfg;
+-		     k++, lcd_cfg++) {
+-			unsigned long size = lcd_cfg->yres * lcd_cfg->xres;
+-			/* NV12 buffers must have even number of lines */
+-			if ((cfg->nonstd) && cfg->bpp = 12 &&
+-					(lcd_cfg->yres & 0x1)) {
+-				dev_err(&pdev->dev, "yres must be multiple of 2"
+-						" for YCbCr420 mode.\n");
+-				error = -EINVAL;
+-				goto err1;
+-			}
+-
+-			if (size > max_size) {
+-				max_cfg = lcd_cfg;
+-				max_size = size;
+-			}
+-		}
+-
+-		if (!mode)
+-			max_size = MAX_XRES * MAX_YRES;
+-		else if (max_cfg)
+-			dev_dbg(&pdev->dev, "Found largest videomode %ux%u\n",
+-				max_cfg->xres, max_cfg->yres);
+-
+-		info->fix = sh_mobile_lcdc_fix;
+-		info->fix.smem_len = max_size * 2 * cfg->bpp / 8;
+-
+-		 /* Only pan in 2 line steps for NV12 */
+-		if (cfg->nonstd && cfg->bpp = 12)
+-			info->fix.ypanstep = 2;
+-
+-		if (!mode) {
+-			mode = &default_720p;
+-			num_cfg = 1;
+-		} else {
+-			num_cfg = cfg->num_cfg;
+-		}
+-
+-		fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
+ 
+-		fb_videomode_to_var(var, mode);
+-		var->width = cfg->lcd_size_cfg.width;
+-		var->height = cfg->lcd_size_cfg.height;
+-		/* Default Y virtual resolution is 2x panel size */
+-		var->yres_virtual = var->yres * 2;
+-		var->activate = FB_ACTIVATE_NOW;
+-
+-		error = sh_mobile_lcdc_set_bpp(var, cfg->bpp, cfg->nonstd);
++		error = sh_mobile_lcdc_channel_init(ch, &pdev->dev);
+ 		if (error)
+-			break;
+-
+-		buf = dma_alloc_coherent(&pdev->dev, info->fix.smem_len,
+-					 &ch->dma_handle, GFP_KERNEL);
+-		if (!buf) {
+-			dev_err(&pdev->dev, "unable to allocate buffer\n");
+-			error = -ENOMEM;
+-			break;
+-		}
+-
+-		info->pseudo_palette = &ch->pseudo_palette;
+-		info->flags = FBINFO_FLAG_DEFAULT;
+-
+-		error = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
+-		if (error < 0) {
+-			dev_err(&pdev->dev, "unable to allocate cmap\n");
+-			dma_free_coherent(&pdev->dev, info->fix.smem_len,
+-					  buf, ch->dma_handle);
+-			break;
+-		}
+-
+-		info->fix.smem_start = ch->dma_handle;
+-		if (var->nonstd)
+-			info->fix.line_length = var->xres;
+-		else
+-			info->fix.line_length = var->xres * (cfg->bpp / 8);
+-
+-		info->screen_base = buf;
+-		info->device = &pdev->dev;
+-		ch->display_var = *var;
++			goto err1;
+ 	}
+ 
+-	if (error)
+-		goto err1;
+-
+ 	error = sh_mobile_lcdc_start(priv);
+ 	if (error) {
+ 		dev_err(&pdev->dev, "unable to start hardware\n");
+ 		goto err1;
+ 	}
+ 
+-	for (i = 0; i < j; i++) {
++	for (i = 0; i < num_channels; i++) {
+ 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
+-
+-		info = ch->info;
++		struct fb_info *info = ch->info;
+ 
+ 		if (info->fbdefio) {
+ 			ch->sglist = vmalloc(sizeof(struct scatterlist) *
+-- 
+1.7.3.4
 
