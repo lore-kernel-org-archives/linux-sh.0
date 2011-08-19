@@ -1,42 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 18 Aug 2011 05:43:59 +0000
-Subject: [PATCH 00/07] ARM: mach-shmobile: Initial Kota2 board support
-Message-Id: <20110818054359.23410.4526.sendpatchset@rxone.opensource.se>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 19 Aug 2011 09:16:05 +0000
+Subject: [PATCH 0/7] sh_mobile_lcdc: Support format changes at runtime
+Message-Id: <1313745372-20856-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-fbdev@vger.kernel.org
 
-ARM: mach-shmobile: Initial Kota2 board support
+Hi everybody,
 
-[PATCH 01/07] ARM: mach-shmobile: Kota2 SCIFA2 and SMSC911X support
-[PATCH 02/07] ARM: mach-shmobile: Kota2 KEYSC support
-[PATCH 03/07] ARM: mach-shmobile: Kota2 GPIO Keys support
-[PATCH 04/07] ARM: mach-shmobile: Kota2 GPIO LEDs support
-[PATCH 05/07] ARM: mach-shmobile: Kota2 MMCIF support
-[PATCH 06/07] ARM: mach-shmobile: Kota2 SCIFA4 and SCIFB support
-[PATCH 07/07] ARM: mach-shmobile: Kota2 SDHI0 and SDHI1 support
+This patch set add supports for the .fb_set_par() operation in the
+sh_mobile_lcdc driver, allowing userspace to change the frame buffer format
+and size at runtime. It applies on top of the latest SH mobile LCDC cleanups
+and fixes patches posted to the linux-fbdev list and available at
+http://git.linuxtv.org/pinchartl/fbdev.git/shortlog/refs/heads/sh-mobile-lc=
+dc.
 
-These patches add initial Kota2 board support to mach-shmobile.
+Frame buffer memory reallocation is currently not supported. You will need =
+to
+make sure platform data sets the maximum size and bpp to high enough values
+for all formats and sizes you want to support at runtime.
 
-With these patches applied the Kota2 board has support for:
-SCIFA2, SMSC911X, KEYSC, GPIO-Keys, GPIO-LEDs, MMCIF, SCIFA4,
-SCIFB, SDHI0 and SDHI1.
+The patches have been tested with the fbdev-test utility
+(http://git.ideasonboard.org/?p=FBdev-test.git;a=3Dsummary) on a Mackerel b=
+oard.
 
-Remaining device support includes LCDC, FSI and I2C.
+Laurent Pinchart (7):
+  fbdev: sh_mobile_lcdc: Adjust requested parameters in .fb_check_var
+  fbdev: sh_mobile_lcdc: Add support for format changes at runtime
+  fbdev: sh_mobile_lcdc: use display information in info for panning
+  fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
+  fbdev: sh_mobile_lcdc: Avoid forward declarations
+  fbdev: sh_mobile_lcdc: Split channel initialization from probe function
+  fbdev: sh_mobile_lcdc: Remove sh_mobile_lcdc_set_bpp()
 
-On top of this support for Runtime PM and DMA Engine will be added.
+ drivers/video/sh_mobile_lcdcfb.c |  570 +++++++++++++++++++++-------------=
+----
+ 1 files changed, 309 insertions(+), 261 deletions(-)
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+--=20
+Regards,
 
- Depends on the Kota2 mach-type entry to build together with
- [PATCH] ARM: mach-shmobile: sh73a0 PFC pull-up support for SDHI0+2
+Laurent Pinchart
 
- arch/arm/mach-shmobile/Kconfig       |    7 
- arch/arm/mach-shmobile/Makefile      |    1 
- arch/arm/mach-shmobile/board-kota2.c |  447 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/platsmp.c     |   10 
- 4 files changed, 461 insertions(+), 4 deletions(-)
-  
