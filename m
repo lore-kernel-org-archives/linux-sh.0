@@ -1,115 +1,226 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 14 Aug 2011 14:04:44 +0000
-Subject: [PATCH] PM / Domains: Fix build for CONFIG_PM_RUNTIME unset
-Message-Id: <201108141604.44304.rjw@sisk.pl>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 19 Aug 2011 07:57:21 +0000
+Subject: [PATCH 3/4] mmc: sdhi: Allow name IRQs to use specific handlers
+Message-Id: <1313740642-18307-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1313740642-18307-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1313740642-18307-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Allow named IRQs to use corresponding specific  handlers.
+Allow one or more such IRQ source;
+Or allow one or more multiplexed (un-named) IRQ source.
 
-Function genpd_queue_power_off_work() is not defined for
-CONFIG_PM_RUNTIME, so pm_genpd_poweroff_unused() causes a build
-error to happen in that case.  Fix the problem by making
-pm_genpd_poweroff_unused() depend on CONFIG_PM_RUNTIME too.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
-
-This is 3.1 material if no one objects.
-
-Thanks,
-Rafael
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
 ---
- drivers/base/power/domain.c |   30 +++++++++++++++---------------
- include/linux/pm_domain.h   |   10 +++++++---
- kernel/power/Kconfig        |    4 ++++
- 3 files changed, 26 insertions(+), 18 deletions(-)
 
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -72,8 +72,6 @@ extern int pm_genpd_remove_subdomain(str
- extern void pm_genpd_init(struct generic_pm_domain *genpd,
- 			  struct dev_power_governor *gov, bool is_off);
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
--extern void pm_genpd_poweroff_unused(void);
--extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
- #else
- static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
- 				      struct device *dev)
-@@ -101,8 +99,14 @@ static inline int pm_genpd_poweron(struc
- {
- 	return -ENOSYS;
- }
--static inline void pm_genpd_poweroff_unused(void) {}
-+#endif
-+
-+#ifdef CONFIG_PM_GENERIC_DOMAINS_RUNTIME
-+extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
-+extern void pm_genpd_poweroff_unused(void);
-+#else
- static inline void genpd_queue_power_off_work(struct generic_pm_domain *gpd) {}
-+static inline void pm_genpd_poweroff_unused(void) {}
- #endif
+v7
+* As discussed with Magnus Damm
+  - The logic implemented to handle specific IRQ sources assumes
+    that platform_get_irq() takes into account the index of resource
+    entries. However, it does not.
+
+    Instead implement a scheme of named IRQs for specific IRQ sources.
+    And assume that un-named IRQs are (legacy) multiplexed IRQs.
+
+    As part of this change alter the logic for allowed IRQ sources as
+    follows:
+        Allow one or more specific (named) IRRs or;
+        One or more multiplexed (un-named) ISRs.
+
+v6
+* As discussed with Guennadi Liakhovetski:
+  - The SDCARD/SDIO change in v5 was not implemented as described.
+    And the logic wasn't fully described in any case. This
+    version (hope to!) implement the following logic:
+    1) 1 IRQ: only resource #0 (CARD_DETECT, use tmio_mmc_irq())
+    2) 2 or 3 IRQs: compulsory SDCARD and any further IRQs: use respective
+       specialised ISRs.
+
+v5
+* As suggested by Guennadi Liakhovetski:
+  - Allow only SH_MOBILE_SDHI_IRQ_SDCARD and
+    SH_MOBILE_SDHI_IRQ_SDIO to be specified in platform data
+
+v4
+* As suggested by Guennadi Liakhovetski:
+  - Correct inverted values of SH_MOBILE_SDHI_IRQ_SDCARD and
+    SH_MOBILE_SDHI_IRQ_CARD_DETECT
+
+v3
+* Update for changes to "mmc: tmio: Provide separate interrupt handlers"
+* As suggested by Guennadi Liakhovetski:
+  - Merge in patch "mmc: sdhi: Add defines for platform irq indexes"
+  - Use an enum instead of defines for irq indexes
+
+v2
+* Update for changes to "mmc: tmio: Provide separate interrupt handlers"
+* Make use of defines provided by
+  "mmc: sdhi: Add defines for platform irq indexes"
+* As suggested by Guennadi Liakhovetski:
+  - Don't use a loop to initialise irq handlers, the unrolled version
+    is easier on the eyes (and exactly the same number of lines of code!)
+
+wip: driver
+---
+ drivers/mmc/host/sh_mobile_sdhi.c  |   92 ++++++++++++++++++++++++++----------
+ include/linux/mmc/sh_mobile_sdhi.h |    4 ++
+ 2 files changed, 71 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 774f643..c3e9ec7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -96,7 +96,8 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	struct tmio_mmc_host *host;
+ 	char clk_name[8];
+-	int i, irq, ret;
++	int irq, ret, i = 0;
++	bool multiplexed_isr = true;
  
- #endif /* _LINUX_PM_DOMAIN_H */
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -460,6 +460,21 @@ static int pm_genpd_runtime_resume(struc
- 	return 0;
- }
+ 	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
+ 	if (priv = NULL) {
+@@ -153,27 +154,54 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto eprobe;
  
-+/**
-+ * pm_genpd_poweroff_unused - Power off all PM domains with no devices in use.
-+ */
-+void pm_genpd_poweroff_unused(void)
-+{
-+	struct generic_pm_domain *genpd;
+-	for (i = 0; i < 3; i++) {
+-		irq = platform_get_irq(pdev, i);
+-		if (irq < 0) {
+-			if (i) {
+-				continue;
+-			} else {
+-				ret = irq;
+-				goto eirq;
+-			}
+-		}
+-		ret = request_irq(irq, tmio_mmc_irq, 0,
++	/* Allow one or more specific (named) IRRs or;
++	 * One or more multiplexed (un-named) ISRs.
++	 */
 +
-+	mutex_lock(&gpd_list_lock);
++	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
++	if (irq >= 0) {
++		multiplexed_isr = false;
++		ret = request_irq(irq, tmio_mmc_card_detect_irq, 0,
+ 				  dev_name(&pdev->dev), host);
+-		if (ret) {
+-			while (i--) {
+-				irq = platform_get_irq(pdev, i);
+-				if (irq >= 0)
+-					free_irq(irq, host);
+-			}
+-			goto eirq;
++		if (ret)
++			goto eirq_card_detect;
++	}
 +
-+	list_for_each_entry(genpd, &gpd_list, gpd_list_node)
-+		genpd_queue_power_off_work(genpd);
++	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
++	if (irq >= 0) {
++		multiplexed_isr = false;
++		ret = request_irq(irq, tmio_mmc_sdcard_irq, 0,
++				  dev_name(&pdev->dev), host);
++		if (ret)
++			goto eirq_sdcard;
++	}
 +
-+	mutex_unlock(&gpd_list_lock);
-+}
++	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
++	if (irq >= 0) {
++		multiplexed_isr = false;
++		ret = request_irq(irq, tmio_mmc_sdio_irq, 0,
++				  dev_name(&pdev->dev), host);
++		if (ret)
++			goto eirq_sdio;
++	}
 +
- #else
++	if (multiplexed_isr) {
++		while (1) {
++			irq = platform_get_irq(pdev, i);
++			if (irq < 0)
++				break;
++			i++;
++			ret = request_irq(irq, tmio_mmc_irq, 0,
++				          dev_name(&pdev->dev), host);
++			if (ret)
++				goto eirq_multiplexed;
+ 		}
++
++		/* There must be at least one IRQ source */
++		if (!i)
++			goto eirq_multiplexed;
+ 	}
++
+ 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
+ 		 mmc_hostname(host->mmc), (unsigned long)
+ 		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
+@@ -181,7 +209,20 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
  
- static inline void genpd_power_off_work_fn(struct work_struct *work) {}
-@@ -1255,18 +1270,3 @@ void pm_genpd_init(struct generic_pm_dom
- 	list_add(&genpd->gpd_list_node, &gpd_list);
- 	mutex_unlock(&gpd_list_lock);
- }
--
--/**
-- * pm_genpd_poweroff_unused - Power off all PM domains with no devices in use.
-- */
--void pm_genpd_poweroff_unused(void)
--{
--	struct generic_pm_domain *genpd;
--
--	mutex_lock(&gpd_list_lock);
--
--	list_for_each_entry(genpd, &gpd_list, gpd_list_node)
--		genpd_queue_power_off_work(genpd);
--
--	mutex_unlock(&gpd_list_lock);
--}
-Index: linux/kernel/power/Kconfig
-=================================--- linux.orig/kernel/power/Kconfig
-+++ linux/kernel/power/Kconfig
-@@ -231,3 +231,7 @@ config PM_CLK
- config PM_GENERIC_DOMAINS
- 	bool
- 	depends on PM
+ 	return ret;
+ 
+-eirq:
++eirq_multiplexed:
++	while (i--) {
++		irq = platform_get_irq(pdev, i);
++		free_irq(irq, host);
++	}
++eirq_sdio:
++	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
++	if (irq >= 0)
++		free_irq(irq, host);
++eirq_sdcard:
++	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
++	if (irq >= 0)
++		free_irq(irq, host);
++eirq_card_detect:
+ 	tmio_mmc_host_remove(host);
+ eprobe:
+ 	clk_disable(priv->clk);
+@@ -197,16 +238,17 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+-	int i, irq;
++	int i = 0, irq;
+ 
+ 	p->pdata = NULL;
+ 
+ 	tmio_mmc_host_remove(host);
+ 
+-	for (i = 0; i < 3; i++) {
+-		irq = platform_get_irq(pdev, i);
+-		if (irq >= 0)
+-			free_irq(irq, host);
++	while (0) {
++		irq = platform_get_irq(pdev, i++);
++		if (irq < 0)
++			break;
++		free_irq(irq, host);
+ 	}
+ 
+ 	clk_disable(priv->clk);
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index bd50b36..71b8054 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -6,6 +6,10 @@
+ struct platform_device;
+ struct tmio_mmc_data;
+ 
++#define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
++#define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
++#define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
 +
-+config PM_GENERIC_DOMAINS_RUNTIME
-+	def_bool y
-+	depends on PM_RUNTIME && PM_GENERIC_DOMAINS
+ struct sh_mobile_sdhi_info {
+ 	int dma_slave_tx;
+ 	int dma_slave_rx;
+-- 
+1.7.5.4
+
