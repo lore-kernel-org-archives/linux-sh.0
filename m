@@ -1,332 +1,118 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 19 Aug 2011 09:16:11 +0000
-Subject: [PATCH 6/7] fbdev: sh_mobile_lcdc: Split channel initialization from probe function
-Message-Id: <1313745372-20856-7-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 20 Aug 2011 19:24:58 +0000
+Subject: [PATCH] PM / Domains: Preliminary support for devices with power.irq_safe set
+Message-Id: <201108202124.58851.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Move channel initialization to sh_mobile_lcdc_channel_init() and call
-the function from sh_mobile_lcdc_probe(). This makes the code more
-readable and prepares it for fix/var initialization rework.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The generic PM domains framework currently doesn't work with devices
+whose power.irq_safe flag is set, because runtime PM callbacks for
+such devices are run with interrupts disabled and the callbacks
+provided by the generic PM domains framework use domain mutexes
+and may sleep.  However, such devices very well may belong to
+power domains on some systems, so the generic PM domains framework
+should take them into account.
+
+For this reason, make modify the generic PM domains framework so
+that the domain .power_off() and .power_on() callbacks are never
+executed for a domain containing devices with power.irq_safe set,
+although the .stop_device() and .start_device() callbacks are
+still run for them.
+
+Additionally, introduce a flag allowing the creator of a
+struct generic_pm_domain object to indicate that its .stop_device()
+and .start_device() callbacks may be run in interrupt context
+(might_sleep_if() triggers if that flag is not set and one of those
+callbacks is run in interrupt context).
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mobile_lcdcfb.c |  247 ++++++++++++++++++++------------------
- 1 files changed, 129 insertions(+), 118 deletions(-)
+ arch/arm/mach-shmobile/pm-sh7372.c |    1 +
+ drivers/base/power/domain.c        |   19 ++++++++++++++++++-
+ include/linux/pm_domain.h          |    1 +
+ 3 files changed, 20 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 366315b..d1576e2 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1485,15 +1485,129 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- 	return 0;
- }
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -309,7 +309,8 @@ static int pm_genpd_poweroff(struct gene
  
--static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
-+static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
-+						 struct device *dev)
- {
-+	struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
-+	const struct fb_videomode *max_mode;
-+	const struct fb_videomode *mode;
-+	struct fb_var_screeninfo *var;
- 	struct fb_info *info;
--	struct sh_mobile_lcdc_priv *priv;
-+	unsigned int max_size;
-+	int num_cfg;
-+	void *buf;
-+	int ret;
-+	int i;
+ 	not_suspended = 0;
+ 	list_for_each_entry(pdd, &genpd->dev_list, list_node)
+-		if (pdd->dev->driver && !pm_runtime_suspended(pdd->dev))
++		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
++		    || pdd->dev->power.irq_safe))
+ 			not_suspended++;
+ 
+ 	if (not_suspended > genpd->in_progress)
+@@ -417,12 +418,21 @@ static int pm_genpd_runtime_suspend(stru
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
++	might_sleep_if(!genpd->dev_irq_safe);
 +
-+	ch->info = framebuffer_alloc(0, dev);
-+	if (!ch->info) {
-+		dev_err(dev, "unable to allocate fb_info\n");
-+		return -ENOMEM;
-+	}
-+
-+	info = ch->info;
-+	var = &info->var;
-+	info->fbops = &sh_mobile_lcdc_ops;
-+	info->par = ch;
-+
-+	mutex_init(&ch->open_lock);
-+
-+	/* Iterate through the modes to validate them and find the highest
-+	 * resolution.
+ 	if (genpd->stop_device) {
+ 		int ret = genpd->stop_device(dev);
+ 		if (ret)
+ 			return ret;
+ 	}
+ 
++	/*
++	 * If power.irq_safe is set, this routine will be run with interrupts
++	 * off, so it can't use mutexes.
 +	 */
-+	max_mode = NULL;
-+	max_size = 0;
++	if (dev->power.irq_safe)
++		return 0;
 +
-+	for (i = 0, mode = cfg->lcd_cfg; i < cfg->num_cfg; i++, mode++) {
-+		unsigned int size = mode->yres * mode->xres;
-+
-+		/* NV12 buffers must have even number of lines */
-+		if ((cfg->nonstd) && cfg->bpp = 12 &&
-+				(mode->yres & 0x1)) {
-+			dev_err(dev, "yres must be multiple of 2 for YCbCr420 "
-+				"mode.\n");
-+			return -EINVAL;
-+		}
-+
-+		if (size > max_size) {
-+			max_mode = mode;
-+			max_size = size;
-+		}
-+	}
-+
-+	if (!max_size)
-+		max_size = MAX_XRES * MAX_YRES;
-+	else
-+		dev_dbg(dev, "Found largest videomode %ux%u\n",
-+			max_mode->xres, max_mode->yres);
-+
-+	info->fix = sh_mobile_lcdc_fix;
-+	info->fix.smem_len = max_size * 2 * cfg->bpp / 8;
-+
-+	 /* Only pan in 2 line steps for NV12 */
-+	if (cfg->nonstd && cfg->bpp = 12)
-+		info->fix.ypanstep = 2;
-+
-+	if (cfg->lcd_cfg = NULL) {
-+		mode = &default_720p;
-+		num_cfg = 1;
-+	} else {
-+		mode = cfg->lcd_cfg;
-+		num_cfg = cfg->num_cfg;
-+	}
-+
-+	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
-+
-+	fb_videomode_to_var(var, mode);
-+	var->width = cfg->lcd_size_cfg.width;
-+	var->height = cfg->lcd_size_cfg.height;
-+	/* Default Y virtual resolution is 2x panel size */
-+	var->yres_virtual = var->yres * 2;
-+	var->activate = FB_ACTIVATE_NOW;
-+
-+	ret = sh_mobile_lcdc_set_bpp(var, cfg->bpp, cfg->nonstd);
-+	if (ret)
-+		return ret;
-+
-+	buf = dma_alloc_coherent(dev, info->fix.smem_len, &ch->dma_handle,
-+				 GFP_KERNEL);
-+	if (!buf) {
-+		dev_err(dev, "unable to allocate buffer\n");
-+		return -ENOMEM;
-+	}
-+
-+	info->pseudo_palette = &ch->pseudo_palette;
-+	info->flags = FBINFO_FLAG_DEFAULT;
-+
-+	ret = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
-+	if (ret < 0) {
-+		dev_err(dev, "unable to allocate cmap\n");
-+		dma_free_coherent(dev, info->fix.smem_len,
-+				  buf, ch->dma_handle);
-+		return ret;
-+	}
-+
-+	info->fix.smem_start = ch->dma_handle;
-+	if (var->nonstd)
-+		info->fix.line_length = var->xres;
-+	else
-+		info->fix.line_length = var->xres * (cfg->bpp / 8);
-+
-+	info->screen_base = buf;
-+	info->device = dev;
-+	ch->display_var = *var;
-+
-+	return 0;
-+}
-+
-+static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
-+{
- 	struct sh_mobile_lcdc_info *pdata = pdev->dev.platform_data;
-+	struct sh_mobile_lcdc_priv *priv;
- 	struct resource *res;
-+	int num_channels;
- 	int error;
--	void *buf;
--	int i, j;
-+	int i;
+ 	mutex_lock(&genpd->lock);
+ 	genpd->in_progress++;
+ 	pm_genpd_poweroff(genpd);
+@@ -452,6 +462,12 @@ static int pm_genpd_runtime_resume(struc
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
  
- 	if (!pdata) {
- 		dev_err(&pdev->dev, "no platform data defined\n");
-@@ -1525,9 +1639,8 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 	priv->irq = i;
- 	atomic_set(&priv->hw_usecnt, -1);
++	might_sleep_if(!genpd->dev_irq_safe);
++
++	/* If power.irq_safe, the PM domain is never powered off. */
++	if (dev->power.irq_safe)
++		goto out;
++
+ 	mutex_lock(&genpd->lock);
+ 	ret = __pm_genpd_poweron(genpd);
+ 	if (ret) {
+@@ -483,6 +499,7 @@ static int pm_genpd_runtime_resume(struc
+ 	wake_up_all(&genpd->status_wait_queue);
+ 	mutex_unlock(&genpd->lock);
  
--	j = 0;
--	for (i = 0; i < ARRAY_SIZE(pdata->ch); i++) {
--		struct sh_mobile_lcdc_chan *ch = priv->ch + j;
-+	for (i = 0, num_channels = 0; i < ARRAY_SIZE(pdata->ch); i++) {
-+		struct sh_mobile_lcdc_chan *ch = priv->ch + num_channels;
++ out:
+ 	if (genpd->start_device)
+ 		genpd->start_device(dev);
  
- 		ch->lcdc = priv;
- 		memcpy(&ch->cfg, &pdata->ch[i], sizeof(pdata->ch[i]));
-@@ -1549,24 +1662,24 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		case LCDC_CHAN_MAINLCD:
- 			ch->enabled = LDCNT2R_ME;
- 			ch->reg_offs = lcdc_offs_mainlcd;
--			j++;
-+			num_channels++;
- 			break;
- 		case LCDC_CHAN_SUBLCD:
- 			ch->enabled = LDCNT2R_SE;
- 			ch->reg_offs = lcdc_offs_sublcd;
--			j++;
-+			num_channels++;
- 			break;
- 		}
- 	}
- 
--	if (!j) {
-+	if (!num_channels) {
- 		dev_err(&pdev->dev, "no channels defined\n");
- 		error = -EINVAL;
- 		goto err1;
- 	}
- 
- 	/* for dual channel LCDC (MAIN + SUB) force shared bpp setting */
--	if (j = 2)
-+	if (num_channels = 2)
- 		priv->forced_bpp = pdata->ch[0].bpp;
- 
- 	priv->base = ioremap_nocache(res->start, resource_size(res));
-@@ -1581,125 +1694,23 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 
- 	priv->meram_dev = pdata->meram_dev;
- 
--	for (i = 0; i < j; i++) {
--		struct fb_var_screeninfo *var;
--		const struct fb_videomode *lcd_cfg, *max_cfg = NULL;
-+	for (i = 0; i < num_channels; i++) {
- 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
--		struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
--		const struct fb_videomode *mode = cfg->lcd_cfg;
--		unsigned long max_size = 0;
--		int k;
--		int num_cfg;
--
--		ch->info = framebuffer_alloc(0, &pdev->dev);
--		if (!ch->info) {
--			dev_err(&pdev->dev, "unable to allocate fb_info\n");
--			error = -ENOMEM;
--			break;
--		}
--
--		info = ch->info;
--		var = &info->var;
--		info->fbops = &sh_mobile_lcdc_ops;
--		info->par = ch;
--
--		mutex_init(&ch->open_lock);
--
--		for (k = 0, lcd_cfg = mode;
--		     k < cfg->num_cfg && lcd_cfg;
--		     k++, lcd_cfg++) {
--			unsigned long size = lcd_cfg->yres * lcd_cfg->xres;
--			/* NV12 buffers must have even number of lines */
--			if ((cfg->nonstd) && cfg->bpp = 12 &&
--					(lcd_cfg->yres & 0x1)) {
--				dev_err(&pdev->dev, "yres must be multiple of 2"
--						" for YCbCr420 mode.\n");
--				error = -EINVAL;
--				goto err1;
--			}
--
--			if (size > max_size) {
--				max_cfg = lcd_cfg;
--				max_size = size;
--			}
--		}
--
--		if (!mode)
--			max_size = MAX_XRES * MAX_YRES;
--		else if (max_cfg)
--			dev_dbg(&pdev->dev, "Found largest videomode %ux%u\n",
--				max_cfg->xres, max_cfg->yres);
--
--		info->fix = sh_mobile_lcdc_fix;
--		info->fix.smem_len = max_size * 2 * cfg->bpp / 8;
--
--		 /* Only pan in 2 line steps for NV12 */
--		if (cfg->nonstd && cfg->bpp = 12)
--			info->fix.ypanstep = 2;
--
--		if (!mode) {
--			mode = &default_720p;
--			num_cfg = 1;
--		} else {
--			num_cfg = cfg->num_cfg;
--		}
--
--		fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
- 
--		fb_videomode_to_var(var, mode);
--		var->width = cfg->lcd_size_cfg.width;
--		var->height = cfg->lcd_size_cfg.height;
--		/* Default Y virtual resolution is 2x panel size */
--		var->yres_virtual = var->yres * 2;
--		var->activate = FB_ACTIVATE_NOW;
--
--		error = sh_mobile_lcdc_set_bpp(var, cfg->bpp, cfg->nonstd);
-+		error = sh_mobile_lcdc_channel_init(ch, &pdev->dev);
- 		if (error)
--			break;
--
--		buf = dma_alloc_coherent(&pdev->dev, info->fix.smem_len,
--					 &ch->dma_handle, GFP_KERNEL);
--		if (!buf) {
--			dev_err(&pdev->dev, "unable to allocate buffer\n");
--			error = -ENOMEM;
--			break;
--		}
--
--		info->pseudo_palette = &ch->pseudo_palette;
--		info->flags = FBINFO_FLAG_DEFAULT;
--
--		error = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
--		if (error < 0) {
--			dev_err(&pdev->dev, "unable to allocate cmap\n");
--			dma_free_coherent(&pdev->dev, info->fix.smem_len,
--					  buf, ch->dma_handle);
--			break;
--		}
--
--		info->fix.smem_start = ch->dma_handle;
--		if (var->nonstd)
--			info->fix.line_length = var->xres;
--		else
--			info->fix.line_length = var->xres * (cfg->bpp / 8);
--
--		info->screen_base = buf;
--		info->device = &pdev->dev;
--		ch->display_var = *var;
-+			goto err1;
- 	}
- 
--	if (error)
--		goto err1;
--
- 	error = sh_mobile_lcdc_start(priv);
- 	if (error) {
- 		dev_err(&pdev->dev, "unable to start hardware\n");
- 		goto err1;
- 	}
- 
--	for (i = 0; i < j; i++) {
-+	for (i = 0; i < num_channels; i++) {
- 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
--
--		info = ch->info;
-+		struct fb_info *info = ch->info;
- 
- 		if (info->fbdefio) {
- 			ch->sglist = vmalloc(sizeof(struct scatterlist) *
--- 
-1.7.3.4
-
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -42,6 +42,7 @@ struct generic_pm_domain {
+ 	unsigned int suspended_count;	/* System suspend device counter */
+ 	unsigned int prepared_count;	/* Suspend counter of prepared devices */
+ 	bool suspend_power_off;	/* Power status before system suspend */
++	bool dev_irq_safe;	/* Device callbacks are IRQ-safe */
+ 	int (*power_off)(struct generic_pm_domain *domain);
+ 	int (*power_on)(struct generic_pm_domain *domain);
+ 	int (*start_device)(struct device *dev);
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -103,6 +103,7 @@ void sh7372_init_pm_domain(struct sh7372
+ 	pm_genpd_init(genpd, NULL, false);
+ 	genpd->stop_device = pm_clk_suspend;
+ 	genpd->start_device = pm_clk_resume;
++	genpd->dev_irq_safe = true;
+ 	genpd->active_wakeup = pd_active_wakeup;
+ 	genpd->power_off = pd_power_down;
+ 	genpd->power_on = pd_power_up;
