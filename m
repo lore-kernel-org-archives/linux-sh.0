@@ -1,38 +1,38 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 15 Aug 2011 17:45:41 +0000
-Subject: Re: [PATCH] shmobile/sh7372: Add missing CONFIG_PM guards to fix build failure
-Message-Id: <201108151945.42155.rjw@sisk.pl>
+Date: Sun, 21 Aug 2011 19:11:44 +0000
+Subject: [PATCH 2/2 v2] sh-sci / PM: Use power.irq_safe
+Message-Id: <201108212111.45012.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313274841-8322-1-git-send-email-peterhuewe@gmx.de>
-	<201108140155.05625.rjw@sisk.pl>
-	<201108151630.12120.PeterHuewe@gmx.de>
-In-Reply-To: <201108151630.12120.PeterHuewe@gmx.de>
+References: <201108202131.19479.rjw@sisk.pl> <201108212109.30399.rjw@sisk.pl>
+In-Reply-To: <201108212109.30399.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Alan Stern <stern@rowland.harvard.edu>
 
-On Monday, August 15, 2011, Peter H=FCwe wrote:
-> Am Sonntag 14 August 2011, 01:55:05 schrieb Rafael J. Wysocki:
-> > On Sunday, August 14, 2011, Peter Huewe wrote:
-> > > This patch fixes a build failure with the ap4evb_defconfig by adding =
-the
-> > > missing #ifdef CONFIG_PM.
-> >=20
-> > This is not the right fix.  Besides, you seem to be testing linux-next
-> > and the build problem is in the linux-pm tree.
-> >=20
-> > Please check if the appended patch fixes the problem for you.
-> >=20
-> > Rafael
-> Works for me - compiles ;)
->=20
-> Reviewed-by: Peter Huewe <peterhuewe@gmx.de>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Good, thanks for testing!
+Since sci_port_enable() and sci_port_disable() may be run with
+interrupts off and they execute pm_runtime_get_sync() and
+pm_runtime_put_sync(), respectively, the SCI device's
+power.irq_safe flags has to be used to indicate that it is safe
+to execute runtime PM callbacks for this device with interrupts off.
 
-I have folded the fix into the patch that caused the problem, so this
-should be fixed in linux-next now.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/tty/serial/sh-sci.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks,
-Rafael
+Index: linux/drivers/tty/serial/sh-sci.c
+=================================--- linux.orig/drivers/tty/serial/sh-sci.c
++++ linux/drivers/tty/serial/sh-sci.c
+@@ -1913,6 +1913,7 @@ static int __devinit sci_init_single(str
+ 
+ 		port->dev = &dev->dev;
+ 
++		pm_runtime_irq_safe(&dev->dev);
+ 		pm_runtime_enable(&dev->dev);
+ 	}
+ 
+
