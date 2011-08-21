@@ -1,122 +1,52 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 19 Aug 2011 07:57:22 +0000
-Subject: [PATCH 4/4] ARM: shmobile: ag5evm, ap4: Name SDHI IRQ sources
-Message-Id: <1313740642-18307-5-git-send-email-horms@verge.net.au>
+Date: Sun, 21 Aug 2011 00:03:11 +0000
+Subject: Re: [PATCH 4/4] ARM: shmobile: ag5evm, ap4: Make use of irq index
+Message-Id: <20110821000308.GA27615@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1313740642-18307-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1313740642-18307-1-git-send-email-horms@verge.net.au>
+References: <1313716221-20136-1-git-send-email-horms@verge.net.au>
+ <1313716221-20136-5-git-send-email-horms@verge.net.au>
+ <CANqRtoQL4cw2+71P5+1hU-2TUyV=gQJ9X2NN+_e_S3dgKeWWJA@mail.gmail.com>
+ <20110819052004.GB17548@verge.net.au>
+ <20110819063857.GC16419@verge.net.au>
+ <CANqRtoTu6G=Dut8eQb+aZPrQ9pF383tGHnQ6JNbH=R2wcuuNiA@mail.gmail.com>
+ <20110819071720.GD16419@verge.net.au>
+ <Pine.LNX.4.64.1108190945270.11363@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1108190945270.11363@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>
 
-This allows specific (non-multiplexed) IRQ handlers to be used.
+On Fri, Aug 19, 2011 at 09:52:17AM +0200, Guennadi Liakhovetski wrote:
+> On Fri, 19 Aug 2011, Simon Horman wrote:
+> 
+> > On Fri, Aug 19, 2011 at 03:51:49PM +0900, Magnus Damm wrote:
+> > > On Fri, Aug 19, 2011 at 3:39 PM, Simon Horman <horms@verge.net.au> wrote:
+> 
+> [snip]
+> 
+> > > > As we are already on the slippery slope of allowing combinations
+> > > > other than 1 (legacy) or 3 (specific) IRQ sources I plan to implement
+> > > > a variant of your flag idea. The variation being to use names instead
+> > > > because a) that allows the use of platform_get_irq_byname() and b)
+> > > > the flags bits seem to be full and not driver-specific.
+> > > 
+> > > Great, platform_get_irq_byname() seems like a perfect match.
+> > > 
+> > > May I suggest "hotplug", "data" and "sdio" as names? I don't care very
+> > > much about names except keeping them short and precise to prevent
+> > > errors that can only be caught during runtime.
+> > 
+> > Earlier on in the life of this series Guennadi suggested
+> > the names "card_detect", "sdcard" and "sdio". While I am
+> > not particularly attached to those names the do seem
+> > reasonable and are already used consistently by this series.
+> > So I would prefer to use those names.
+> 
+> Just one more thing I forgot to mention in the previous mail: using names 
+> also makes the transition simple: first patch all platforms with names (at 
+> least those with multiple IRQs, if your legacy fallback implementation 
+> will accept unnamed IRQs), and then patch sh_mobile_sdhi.c
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Signed-off-by: Simon Horman <horms@verge.net.au>
-
----
-
-Requires
-"mmc: sdhi: Allow specific IRQ sources to use corresponding handlers."
-
-v7
-* Rework to use named IRQs
-
-v4
-* Update for corrected ordering of SH_MOBILE_SDHI_IRQ_SDCARD and
-  SH_MOBILE_SDHI_IRQ_CARD_DETECT
-
-v2
-* Initial release
----
- arch/arm/mach-shmobile/board-ag5evm.c   |    6 ++++++
- arch/arm/mach-shmobile/board-mackerel.c |    6 ++++++
- 2 files changed, 12 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index ce5c251..e100cad 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -353,14 +353,17 @@ static struct resource sdhi0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
- 		.start	= gic_spi(83),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[2] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= gic_spi(84),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[3] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= gic_spi(85),
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -396,14 +399,17 @@ static struct resource sdhi1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
- 		.start	= gic_spi(87),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[2] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= gic_spi(88),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[3] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= gic_spi(89),
- 		.flags	= IORESOURCE_IRQ,
- 	},
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index d41c01f..492274f 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1066,14 +1066,17 @@ static struct resource sdhi1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
- 		.start	= evt2irq(0x0e80), /* SDHI1_SDHI1I0 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[2] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= evt2irq(0x0ea0), /* SDHI1_SDHI1I1 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[3] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= evt2irq(0x0ec0), /* SDHI1_SDHI1I2 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -1117,14 +1120,17 @@ static struct resource sdhi2_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
- 		.start	= evt2irq(0x1200), /* SDHI2_SDHI2I0 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[2] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= evt2irq(0x1220), /* SDHI2_SDHI2I1 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[3] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= evt2irq(0x1240), /* SDHI2_SDHI2I2 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
--- 
-1.7.5.4
-
+Yes, I agree that is a nice feature of using names.
