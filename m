@@ -1,35 +1,42 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 03 Aug 2011 03:37:59 +0000
-Subject: Re: [PATCH] serial: sh-sci: fix DMA build by including dma-mapping.h
-Message-Id: <20110803033759.GE32513@linux-sh.org>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 22 Aug 2011 15:56:08 +0000
+Subject: [PATCH 1/2] sh: Fix unaligned memory access for branches without delay
+Message-Id: <1314028568-7571-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110802094254.2352.12648.sendpatchset@t400s>
-In-Reply-To: <20110802094254.2352.12648.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Aug 03, 2011 at 12:28:09PM +0900, Simon Horman wrote:
-> On Tue, Aug 02, 2011 at 06:42:54PM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > Include dma-mapping.h to fix build of the sh-sci driver on
-> > SH-Mobile ARM (sh73a0) when CONFIG_SERIAL_SH_SCI_DMA=y:
-> > 
-> > drivers/tty/serial/sh-sci.c: In function 'sci_rx_dma_release':
-> > drivers/tty/serial/sh-sci.c:1182:3: error: implicit declaration of function 'dma_free_coherent'
-> > drivers/tty/serial/sh-sci.c: In function 'work_fn_tx':
-> > drivers/tty/serial/sh-sci.c:1333:2: error: implicit declaration of function 'dma_sync_sg_for_device'
-> > drivers/tty/serial/sh-sci.c: In function 'sci_request_dma':
-> > drivers/tty/serial/sh-sci.c:1498:3: error: implicit declaration of function 'dma_map_sg'
-> > drivers/tty/serial/sh-sci.c:1527:3: error: implicit declaration of function 'dma_alloc_coherent'
-> > drivers/tty/serial/sh-sci.c:1527:10: warning: assignment makes pointer from integer without a cast
-> > make[3]: *** [drivers/tty/serial/sh-sci.o] Error 1
-> > make[2]: *** [drivers/tty/serial] Error 2
-> > make[1]: *** [drivers/tty] Error 2
-> > make: *** [drivers] Error 2
-> 
-> Tested-by: Simon Horman <horms@verge.net.au>
+This patch just clears the return code for those cases where an
+unaligned memory access occurs on branch instructions without a
+delay slot.
 
-Applied, thanks.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/sh/kernel/traps_32.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
+index d9006f8..61fa4a5 100644
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -466,6 +466,7 @@ int handle_unaligned_access(insn_size_t instruction, struct pt_regs *regs,
+ 		case 0x0500: /* mov.w @(disp,Rm),R0 */
+ 			goto simple;
+ 		case 0x0B00: /* bf   lab - no delayslot*/
++			ret = 0;
+ 			break;
+ 		case 0x0F00: /* bf/s lab */
+ 			ret = handle_delayslot(regs, instruction, ma);
+@@ -479,6 +480,7 @@ int handle_unaligned_access(insn_size_t instruction, struct pt_regs *regs,
+ 			}
+ 			break;
+ 		case 0x0900: /* bt   lab - no delayslot */
++			ret = 0;
+ 			break;
+ 		case 0x0D00: /* bt/s lab */
+ 			ret = handle_delayslot(regs, instruction, ma);
+-- 
+1.7.0.4
+
