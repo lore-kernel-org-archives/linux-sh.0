@@ -1,27 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 03 Aug 2011 04:00:46 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 SCIF platform data update
-Message-Id: <20110803040045.GA21057@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 22 Aug 2011 15:56:37 +0000
+Subject: [PATCH 2/2] sh: Add unaligned memory access for PC relative intructions
+Message-Id: <1314028597-7612-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110802094952.2785.67371.sendpatchset@t400s>
-In-Reply-To: <20110802094952.2785.67371.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Aug 03, 2011 at 12:38:45PM +0900, Paul Mundt wrote:
-> On Wed, Aug 03, 2011 at 12:27:40PM +0900, Simon Horman wrote:
-> > On Tue, Aug 02, 2011 at 06:49:52PM +0900, Magnus Damm wrote:
-> > > From: Magnus Damm <damm@opensource.se>
-> > > 
-> > > Add .regtype members to the sh7372 SCIF platform data.
-> > > 
-> > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > 
-> > Tested-by: Simon Horman <horms@verge.net.au>
-> 
-> This has since been fixed elsewhere. It turns out I fumbled the error
-> checking from the default probe path.
+This add unaligned memory access support for the following instructions:
+  mov.w @(disp,PC),Rn
+  mov.l @(disp,PC),Rn
 
-Ok, let me know if there is an alternate patch/tree you would like me to test.
+These instructions are often used on SH2A toolchains.
+
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/sh/kernel/traps_32.c |   37 +++++++++++++++++++++++++++++++++++++
+ 1 files changed, 37 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
+index 61fa4a5..957c506 100644
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -316,6 +316,37 @@ static int handle_unaligned_ins(insn_size_t instruction, struct pt_regs *regs,
+ 			break;
+ 		}
+ 		break;
++
++	case 9: /* mov.w @(disp,PC),Rn */
++		srcu = (unsigned char __user *)regs->pc;
++		srcu += (instruction & 0x00FF) << 1;
++		dst = (unsigned char *)rn;
++		*(unsigned long *)dst = 0;
++
++#if !defined(__LITTLE_ENDIAN__)
++		dst += 2;
++#endif
++
++		if (ma->from(dst, srcu, 2))
++			goto fetch_fault;
++		sign_extend(2, dst);
++		ret = 0;
++		break;
++
++	case 0xd: /* mov.l @(disp,PC),Rn */
++		srcu = (unsigned char __user *)regs->pc;
++		srcu += (instruction & 0x00FF) << 2;
++		dst = (unsigned char *)rn;
++		*(unsigned long *)dst = 0;
++
++#if !defined(__LITTLE_ENDIAN__)
++		dst += 2;
++#endif
++
++		if (ma->from(dst, srcu, 4))
++			goto fetch_fault;
++		ret = 0;
++		break;
+ 	}
+ 	return ret;
+ 
+@@ -496,6 +527,9 @@ int handle_unaligned_access(insn_size_t instruction, struct pt_regs *regs,
+ 		}
+ 		break;
+ 
++	case 0x9000: /* mov.w @(disp,Rm),Rn */
++		goto simple;
++
+ 	case 0xA000: /* bra label */
+ 		ret = handle_delayslot(regs, instruction, ma);
+ 		if (ret=0)
+@@ -509,6 +543,9 @@ int handle_unaligned_access(insn_size_t instruction, struct pt_regs *regs,
+ 			regs->pc += SH_PC_12BIT_OFFSET(instruction);
+ 		}
+ 		break;
++
++	case 0xD000: /* mov.l @(disp,Rm),Rn */
++		goto simple;
+ 	}
+ 	return ret;
+ 
+-- 
+1.7.0.4
+
