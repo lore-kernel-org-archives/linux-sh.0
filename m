@@ -1,95 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 07 Jul 2011 13:32:53 +0000
-Subject: [PATCH 05/05] ARM: mach-shmobile: sh7372 A3RV requires A4LC
-Message-Id: <20110707133253.22347.66361.sendpatchset@t400s>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 23 Aug 2011 09:15:46 +0000
+Subject: [PATCH] sh: fix the compile error in setup-sh7757.c
+Message-Id: <4E536FC2.7090306@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Fix the following build errors:
 
-Add a power domain workaround for the VPU and A3RV on sh7372.
+  CC      arch/sh/kernel/cpu/sh4a/setup-sh7757.o
+arch/sh/kernel/cpu/sh4a/setup-sh7757.c:681: error: implicit declaration of =
+function =91DMA_BIT_MASK=92
+arch/sh/kernel/cpu/sh4a/setup-sh7757.c:681: error: initializer element is n=
+ot constant
+arch/sh/kernel/cpu/sh4a/setup-sh7757.c:681: error: (near initialization for=
+ =91usb_ehci_device.dev.coherent_dma_mask=92)
+arch/sh/kernel/cpu/sh4a/setup-sh7757.c:705: error: initializer element is n=
+ot constant
+arch/sh/kernel/cpu/sh4a/setup-sh7757.c:705: error: (near initialization for=
+ =91usb_ohci_device.dev.coherent_dma_mask=92)
+make[3]: *** [arch/sh/kernel/cpu/sh4a/setup-sh7757.o] Error 1
 
-The sh7372 data sheet mentions that the VPU is located in the
-A3RV power domain. The A3RV power domain is not related to A4LC
-in any way, but testing shows that unless A3RV _and_ A4LC are
-powered on the VPU test program will bomb out.
-
-This issue may be caused by a more or less undocumented dependency
-on the MERAM block that happens to be located in A4LC. So now we
-know that the out-of-reset requirement of the VPU is that the MERAM
-is powered on.
-
-This patch adds a workaround for A3RV to make sure A4LC is powered
-on - this so we can use the VPU even though the LCDCs are in blanking
-state and A4LC is supposed to be off.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
- arch/arm/mach-shmobile/pm-sh7372.c |   45 +++++++++++++++++++++++++++++++++---
- 1 file changed, 42 insertions(+), 3 deletions(-)
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh=
+4a/setup-sh7757.c
+index e915dea..0555929 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -15,6 +15,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/io.h>
+ #include <linux/mm.h>
++#include <linux/dma-mapping.h>
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
 
---- 0006/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-07 21:57:14.000000000 +0900
-@@ -91,6 +91,36 @@ static int pd_power_up(struct generic_pm
- 	return ret;
- }
- 
-+static int pd_power_up_a3rv(struct generic_pm_domain *genpd)
-+{
-+	int ret = pd_power_up(genpd);
-+
-+	/* force A4LC on after A3RV has been requested on */
-+	pm_genpd_poweron(&sh7372_a4lc.genpd);
-+
-+	return ret;
-+}
-+
-+static int pd_power_down_a3rv(struct generic_pm_domain *genpd)
-+{
-+	int ret = pd_power_down(genpd);
-+
-+	/* try to power down A4LC after A3RV is requested off */
-+	pm_genpd_poweron(&sh7372_a4lc.genpd);
-+	queue_work(pm_wq, &sh7372_a4lc.genpd.power_off_work);
-+
-+	return ret;
-+}
-+
-+static int pd_power_down_a4lc(struct generic_pm_domain *genpd)
-+{
-+	/* only power down A4LC if A3RV is off */
-+	if (!(__raw_readl(PSTR) & (1 << sh7372_a3rv.bit_shift)))
-+		return pd_power_down(genpd);
-+
-+	return 0;
-+}
-+
- static bool pd_active_wakeup(struct device *dev)
- {
- 	return true;
-@@ -115,9 +145,18 @@ void sh7372_init_pm_domain(struct sh7372
- 	genpd->stop_device = pm_clk_suspend;
- 	genpd->start_device = pm_clk_resume;
- 	genpd->active_wakeup = pd_active_wakeup;
--	genpd->power_off = pd_power_down;
--	genpd->power_on = pd_power_up;
--	pd_power_up(&sh7372_pd->genpd);
-+
-+	if (sh7372_pd = &sh7372_a4lc) {
-+		genpd->power_off = pd_power_down_a4lc;
-+		genpd->power_on = pd_power_up;
-+	} else if (sh7372_pd = &sh7372_a3rv) {
-+		genpd->power_off = pd_power_down_a3rv;
-+		genpd->power_on = pd_power_up_a3rv;
-+	} else {
-+		genpd->power_off = pd_power_down;
-+		genpd->power_on = pd_power_up;
-+	}
-+	genpd->power_on(&sh7372_pd->genpd);
- 
- 	shmobile_runtime_pm_late_init = sh7372_late_pm_domain_off;
- }
+--=20
+1.7.1
