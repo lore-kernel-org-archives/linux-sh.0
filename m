@@ -1,112 +1,57 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 30 Aug 2011 22:20:25 +0000
-Subject: [PATCH 2/5] PM / Runtime: Do not run callbacks under lock for power.irq_safe set
-Message-Id: <201108310020.26104.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 24 Aug 2011 02:44:02 +0000
+Subject: [PATCH] ARM: mach-shmobile: clock-sh7372: fixup USB-DMAC1 settings
+Message-Id: <87fwkrh6kx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108310017.03103.rjw@sisk.pl>
-In-Reply-To: <201108310017.03103.rjw@sisk.pl>
+References: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3p1vcreaqm.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+USB-DMAC1 needs SMSTPCR4/MSTP407 controls, not MSTP214
 
-The rpm_suspend() and rpm_resume() routines execute subsystem or PM
-domain callbacks under power.lock if power.irq_safe is set for the
-given device.  This is inconsistent with that rpm_idle() does after
-commit 02b2677 (PM / Runtime: Allow _put_sync() from
-interrupts-disabled context) and is problematic for subsystems and PM
-domains wanting to use power.lock for synchronization in their
-runtime PM callbacks.  For this reason, make runtime PM core functions
-always release power.lock before invoking subsystem or PM domain
-callbacks.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Reported-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/base/power/runtime.c |   50 ++++++++++++++++++++++++-------------------
- 1 file changed, 28 insertions(+), 22 deletions(-)
+Paul
 
-Index: linux/drivers/base/power/runtime.c
-=================================--- linux.orig/drivers/base/power/runtime.c
-+++ linux/drivers/base/power/runtime.c
-@@ -155,6 +155,31 @@ static int rpm_check_suspend_allowed(str
- }
+It is based on paul/rmobile/dma branch
+
+ arch/arm/mach-shmobile/clock-sh7372.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index c239ab1..3f8de2c 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -512,7 +512,7 @@ enum { MSTP001,
+        MSTP214, MSTP218, MSTP217, MSTP216,
+        MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+        MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
+-       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP406, MSTP403,
++       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP407, MSTP406, MSTP403,
+        MSTP_NR };
  
- /**
-+ * __rpm_callback - Run a given runtime PM callback for a given device.
-+ * @cb: Runtime PM callback to run.
-+ * @dev: Device to run the callback for.
-+ */
-+static int __rpm_callback(int (*cb)(struct device *), struct device *dev)
-+	__releases(&dev->power.lock) __acquires(&dev->power.lock)
-+{
-+	int retval;
-+
-+	if (dev->power.irq_safe)
-+		spin_unlock(&dev->power.lock);
-+	else
-+		spin_unlock_irq(&dev->power.lock);
-+
-+	retval = cb(dev);
-+
-+	if (dev->power.irq_safe)
-+		spin_lock(&dev->power.lock);
-+	else
-+		spin_lock_irq(&dev->power.lock);
-+
-+	return retval;
-+}
-+
-+/**
-  * rpm_idle - Notify device bus type if the device can be suspended.
-  * @dev: Device to notify the bus type about.
-  * @rpmflags: Flag bits.
-@@ -225,19 +250,8 @@ static int rpm_idle(struct device *dev,
- 	else
- 		callback = NULL;
- 
--	if (callback) {
--		if (dev->power.irq_safe)
--			spin_unlock(&dev->power.lock);
--		else
--			spin_unlock_irq(&dev->power.lock);
--
--		callback(dev);
--
--		if (dev->power.irq_safe)
--			spin_lock(&dev->power.lock);
--		else
--			spin_lock_irq(&dev->power.lock);
--	}
-+	if (callback)
-+		__rpm_callback(callback, dev);
- 
- 	dev->power.idle_notification = false;
- 	wake_up_all(&dev->power.wait_queue);
-@@ -252,22 +266,14 @@ static int rpm_idle(struct device *dev,
-  * @dev: Device to run the callback for.
-  */
- static int rpm_callback(int (*cb)(struct device *), struct device *dev)
--	__releases(&dev->power.lock) __acquires(&dev->power.lock)
- {
- 	int retval;
- 
- 	if (!cb)
- 		return -ENOSYS;
- 
--	if (dev->power.irq_safe) {
--		retval = cb(dev);
--	} else {
--		spin_unlock_irq(&dev->power.lock);
--
--		retval = cb(dev);
-+	retval = __rpm_callback(cb, dev);
- 
--		spin_lock_irq(&dev->power.lock);
--	}
- 	dev->power.runtime_error = retval;
- 	return retval != -EACCES ? retval : -EIO;
- }
+ #define MSTP(_parent, _reg, _bit, _flags) \
+@@ -558,6 +558,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP413] = MSTP(&pllc1_div2_clk, SMSTPCR4, 13, 0), /* HDMI */
+ 	[MSTP411] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 11, 0), /* IIC3 */
+ 	[MSTP410] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 10, 0), /* IIC4 */
++	[MSTP407] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 7, 0), /* USBDMAC */
+ 	[MSTP406] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 6, 0), /* USB1 */
+ 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
+ };
+@@ -635,7 +636,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* DMAC2 */
+ 	CLKDEV_DEV_ID("sh-dma-engine.2", &mstp_clks[MSTP216]), /* DMAC3 */
+ 	CLKDEV_DEV_ID("sh-dma-engine.3", &mstp_clks[MSTP214]), /* USB-DMAC0 */
+-	CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP214]), /* USB-DMAC1 */
++	CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP407]), /* USB-DMAC1 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP206]), /* SCIFB */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+-- 
+1.7.4.1
 
