@@ -1,170 +1,185 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 19 Aug 2011 09:16:12 +0000
-Subject: [PATCH 7/7] fbdev: sh_mobile_lcdc: Remove sh_mobile_lcdc_set_bpp()
-Message-Id: <1313745372-20856-8-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 25 Aug 2011 04:06:17 +0000
+Subject: [PATCH 7/7] ARM: mach-shmobile: kota2: add mipi display support
+Message-Id: <87sjoqt9s9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The function duplicates code found in sh_mobile_check_var(). Remove
-sh_mobile_lcdc_set_bpp() and call sh_mobile_check_var() instead.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   87 +++++++------------------------------
- 1 files changed, 17 insertions(+), 70 deletions(-)
+ arch/arm/mach-shmobile/Kconfig       |    1 +
+ arch/arm/mach-shmobile/board-kota2.c |  115 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 116 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index d1576e2..97ab8ba 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1291,66 +1291,6 @@ static void sh_mobile_lcdc_bl_remove(struct backlight_device *bdev)
- 	backlight_device_unregister(bdev);
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index c1b4534..8739930 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -73,6 +73,7 @@ config MACH_KOTA2
+ 	bool "KOTA2 board"
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	depends on ARCH_SH73A0
++	select SH_LCD_MIPI_DSI
+ 
+ comment "SH-Mobile System Configuration"
+ 
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index bd9a784..913176e 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -47,6 +47,8 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/traps.h>
++#include <video/sh_mobile_lcdc.h>
++#include <video/sh_mipi_dsi.h>
+ 
+ /* SMSC 9220 */
+ static struct resource smsc9220_resources[] = {
+@@ -286,6 +288,106 @@ static struct platform_device sdhi1_device = {
+ 	},
+ };
+ 
++/* LCDC0 */
++static struct fb_videomode lcdc0_modes[] = {
++	{
++		.name		= "FWVGA",
++		.xres		= 480,
++		.yres		= 864,
++		.left_margin	= 16,
++		.right_margin	= 1000,
++		.hsync_len	= 16,
++		.upper_margin	= 1,
++		.lower_margin	= 4,
++		.vsync_len	= 2,
++		.sync		= FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++	},
++};
++
++static struct sh_mobile_lcdc_info lcdc0_info = {
++	.clock_source	= LCDC_CLK_PERIPHERAL,
++	.ch[0] = {
++		.chan = LCDC_CHAN_MAINLCD,
++		.bpp = 32,
++		.lcd_cfg = lcdc0_modes,
++		.num_cfg = ARRAY_SIZE(lcdc0_modes),
++		.interface_type		= RGB24,
++		.clock_divider		= 1,
++		.flags			= LCDC_FLAGS_DWPOL,
++		.lcd_size_cfg = {
++			.width	= 44,
++			.height	= 79,
++		},
++	},
++};
++
++static struct resource lcdc0_resources[] = {
++	[0] = {
++		.name	= "LCDC",
++		.start	= 0xfe940000,
++		.end	= 0xfe943fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x580),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc0_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc0_resources),
++	.resource	= lcdc0_resources,
++	.id	= 0,
++	.dev	= {
++		.platform_data  = &lcdc0_info,
++		.coherent_dma_mask = ~0,
++	},
++};
++
++/* MIPI DSI 0 */
++static struct resource mipidsi0_resources[] = {
++	[0] = {
++		.start  = 0xfeab0000,
++		.end    = 0xfeab3fff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = 0xfeab4000,
++		.end    = 0xfeab7fff,
++		.flags  = IORESOURCE_MEM,
++	},
++};
++
++static u32 sh_mipi_extra_dcs[] = {
++	SH_MIPI_DCS_PARAM(0x53, 0x75),	/* turn on backlight */
++	SH_MIPI_DCS_PARAM(0x51, 0xff),	/* turn on backlight */
++	SH_MIPI_DCS(0x2c),		/* memory write on */
++};
++
++static struct sh_mipi_dsi_info mipidsi0_info = {
++	.data_format	= MIPI_RGB888,
++	.lcd_chan	= &lcdc0_info.ch[0],
++	.vsynw_offset	= 20,
++	.clksrc		= 1,
++	.flags		= SH_MIPI_DSI_HSABM |
++			  SH_MIPI_DSI_HBPBM |
++			  SH_MIPI_DSI_HFPBM |
++			  SH_MIPI_DSI_BL2E,
++	.extra_array	= sh_mipi_extra_dcs,
++	.extra_array_len= ARRAY_SIZE(sh_mipi_extra_dcs),
++};
++
++static struct platform_device mipidsi0_device = {
++	.name           = "sh-mipi-dsi",
++	.num_resources  = ARRAY_SIZE(mipidsi0_resources),
++	.resource       = mipidsi0_resources,
++	.id             = 0,
++	.dev	= {
++		.platform_data	= &mipidsi0_info,
++	},
++};
++
+ static struct platform_device *kota2_devices[] __initdata = {
+ 	&eth_device,
+ 	&keysc_device,
+@@ -294,6 +396,8 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&mmcif_device,
+ 	&sdhi0_device,
+ 	&sdhi1_device,
++	&lcdc0_device,
++	&mipidsi0_device,
+ };
+ 
+ static struct map_desc kota2_io_desc[] __initdata = {
+@@ -329,6 +433,9 @@ void __init kota2_init_irq(void)
+ 	__raw_writew(2 << 10, PINTCR0A);
  }
  
--static int sh_mobile_lcdc_set_bpp(struct fb_var_screeninfo *var, int bpp,
--				   int nonstd)
--{
--	if (nonstd) {
--		switch (bpp) {
--		case 12:
--		case 16:
--		case 24:
--			var->bits_per_pixel = bpp;
--			var->nonstd = nonstd;
--			return 0;
--		default:
--			return -EINVAL;
--		}
--	}
--
--	switch (bpp) {
--	case 16: /* PKF[4:0] = 00011 - RGB 565 */
--		var->red.offset = 11;
--		var->red.length = 5;
--		var->green.offset = 5;
--		var->green.length = 6;
--		var->blue.offset = 0;
--		var->blue.length = 5;
--		var->transp.offset = 0;
--		var->transp.length = 0;
--		break;
--
--	case 24: /* PKF[4:0] = 01011 - RGB 888 */
--		var->red.offset = 16;
--		var->red.length = 8;
--		var->green.offset = 8;
--		var->green.length = 8;
--		var->blue.offset = 0;
--		var->blue.length = 8;
--		var->transp.offset = 0;
--		var->transp.length = 0;
--		break;
--
--	case 32: /* PKF[4:0] = 00000 - RGBA 888 */
--		var->red.offset = 16;
--		var->red.length = 8;
--		var->green.offset = 8;
--		var->green.length = 8;
--		var->blue.offset = 0;
--		var->blue.length = 8;
--		var->transp.offset = 24;
--		var->transp.length = 8;
--		break;
--	default:
--		return -EINVAL;
--	}
--	var->bits_per_pixel = bpp;
--	var->red.msb_right = 0;
--	var->green.msb_right = 0;
--	var->blue.msb_right = 0;
--	var->transp.msb_right = 0;
--	return 0;
--}
--
- static int sh_mobile_lcdc_suspend(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
-@@ -1499,6 +1439,9 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 	int ret;
- 	int i;
- 
-+	mutex_init(&ch->open_lock);
++#define DSI0PCKCR	0xe6150064
++#define DSI0PHYCR	0xe615006c
 +
-+	/* Allocate the frame buffer device. */
- 	ch->info = framebuffer_alloc(0, dev);
- 	if (!ch->info) {
- 		dev_err(dev, "unable to allocate fb_info\n");
-@@ -1506,11 +1449,10 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 	}
+ static void __init kota2_init(void)
+ {
+ 	sh73a0_pinmux_init();
+@@ -426,6 +533,14 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
  
- 	info = ch->info;
--	var = &info->var;
- 	info->fbops = &sh_mobile_lcdc_ops;
- 	info->par = ch;
--
--	mutex_init(&ch->open_lock);
-+	info->pseudo_palette = &ch->pseudo_palette;
-+	info->flags = FBINFO_FLAG_DEFAULT;
- 
- 	/* Iterate through the modes to validate them and find the highest
- 	 * resolution.
-@@ -1541,13 +1483,15 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 		dev_dbg(dev, "Found largest videomode %ux%u\n",
- 			max_mode->xres, max_mode->yres);
- 
-+	/* Initialize fixed screen information. Restrict pan to 2 lines steps
-+	 * for NV12.
-+	 */
- 	info->fix = sh_mobile_lcdc_fix;
- 	info->fix.smem_len = max_size * 2 * cfg->bpp / 8;
--
--	 /* Only pan in 2 line steps for NV12 */
- 	if (cfg->nonstd && cfg->bpp = 12)
- 		info->fix.ypanstep = 2;
- 
-+	/* Create the mode list. */
- 	if (cfg->lcd_cfg = NULL) {
- 		mode = &default_720p;
- 		num_cfg = 1;
-@@ -1558,17 +1502,23 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 
- 	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
- 
-+	/* Initialize variable screen information using the first mode as
-+	 * default. The default Y virtual resolution is twice the panel size to
-+	 * allow for double-buffering.
-+	 */
-+	var = &info->var;
- 	fb_videomode_to_var(var, mode);
-+	var->bits_per_pixel = cfg->bpp;
- 	var->width = cfg->lcd_size_cfg.width;
- 	var->height = cfg->lcd_size_cfg.height;
--	/* Default Y virtual resolution is 2x panel size */
- 	var->yres_virtual = var->yres * 2;
- 	var->activate = FB_ACTIVATE_NOW;
- 
--	ret = sh_mobile_lcdc_set_bpp(var, cfg->bpp, cfg->nonstd);
-+	ret = sh_mobile_check_var(var, info);
- 	if (ret)
- 		return ret;
- 
-+	/* Allocate frame buffer memory and color map. */
- 	buf = dma_alloc_coherent(dev, info->fix.smem_len, &ch->dma_handle,
- 				 GFP_KERNEL);
- 	if (!buf) {
-@@ -1576,9 +1526,6 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 		return -ENOMEM;
- 	}
- 
--	info->pseudo_palette = &ch->pseudo_palette;
--	info->flags = FBINFO_FLAG_DEFAULT;
--
- 	ret = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
- 	if (ret < 0) {
- 		dev_err(dev, "unable to allocate cmap\n");
++	/* MIPI-DSI clock setup */
++	__raw_writel(0x00000119, DSI0PCKCR);
++	__raw_writel(0x2a8b9111, DSI0PHYCR);
++
++	/* Unreset LCD Panel */
++	gpio_request(GPIO_PORT217, NULL);
++	gpio_direction_output(GPIO_PORT217, 1);
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(__io(0xf0100000), 0x40460000, 0x82000fff);
 -- 
-1.7.3.4
+1.7.4.1
 
