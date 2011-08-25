@@ -1,60 +1,102 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 31 Aug 2011 11:01:32 +0000
-Subject: Re: [PULL] SH mobile LCDC cleanups and fixes
-Message-Id: <201108311301.32869.laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 25 Aug 2011 04:05:50 +0000
+Subject: [PATCH 5/7] fbdev: sh_mipi_dsi: add extra dcs settings for platform
+Message-Id: <87vctmt9t1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108191044.52130.laurent.pinchart@ideasonboard.com>
-In-Reply-To: <201108191044.52130.laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Florian,
+some platform needs extra MIPI dcs to use.
+this patch add support it.
 
-On Tuesday 30 August 2011 22:41:39 Florian Tobias Schandinat wrote:
-> On 08/19/2011 08:44 AM, Laurent Pinchart wrote:
-> > Hi Florian,
-> > 
-> > Here are the latest SH mobile LCDC and MERAM cleanups and fixes based on
-> > top of v3.1-rc2. All the patches have been posted to the list. I've
-> > incorporated acked-by and tested-by lines when available, but most of
-> > the patches received no comment.
-> > 
-> > The following changes since commit 
-93ee7a9340d64f20295aacc3fb6a22b759323280:
-> >   Linux 3.1-rc2 (2011-08-14 15:09:08 -0700)
-> > 
-> > are available in the git repository at:
-> >   git://linuxtv.org/pinchartl/fbdev.git sh-mobile-lcdc
-> 
-> Pulled, thanks.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/video/sh_mipi_dsi.c |   24 +++++++++++++++++++++++-
+ include/video/sh_mipi_dsi.h |   13 +++++++++++++
+ 2 files changed, 36 insertions(+), 1 deletions(-)
 
-Thanks you.
-
-Do you plan to pull the "sh_mobile_lcdc: Support format changes at runtime" 
-patch set as well ? I've just submitted a v2 that includes an additional patch 
-to fix a MERAM issue.
-
-> It looks good to me, as far as I can tell.
-> Just the first commits that were not your own ones should have had more
-> verbose commit messages and I think they should have had your Signed-off
-> as you received them via e-mail?
-
-I've just picked them from the list, as I needed them to build the other 
-patches.
-
-> And on another note:
-> Would you mind adding yourself as maintainer of drivers/video/sh_mobile_*
-> in MAINTAINERS? I can't find any entry for it yet and having me as primary
-> source for review for a driver I don't know is a bad idea, at least if
-> there are people that know it better.
-
-I don't know the driver *that* well :-) I'm not sure how long I will work on 
-that driver, so maybe it would be a better idea to list Magnus as the 
-maintainer. Magnus, what's your opinion ?
-
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 096c76a..bdf687d 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -46,6 +46,13 @@
+ /* E.g., sh7372 has 2 MIPI-DSIs - one for each LCDC */
+ #define MAX_SH_MIPI_DSI 2
+ 
++/*
++ * for extra array
++ * see sh_mipi_dsi.h
++ */
++#define GET_EXCMD(p)	((p >> 8) & 0xFF)
++#define GET_EXPARAM(p)	(p & 0xFF)
++
+ struct sh_mipi {
+ 	void __iomem	*base;
+ 	void __iomem	*linkbase;
+@@ -150,8 +157,9 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ {
+ 	void __iomem *base = mipi->base;
+ 	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
+-	u32 pctype, datatype, pixfmt, linelength, vmctr2 = 0x00e00000;
++	u32 pctype, datatype, pixfmt, linelength, vmctr2 = 0x00e00000, excmd;
+ 	bool yuv;
++	int i;
+ 
+ 	/*
+ 	 * Select data format. MIPI DSI is not hot-pluggable, so, we just use
+@@ -355,6 +363,20 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 			  pixfmt << 4);
+ 	sh_mipi_dcs(ch->chan, MIPI_DCS_SET_DISPLAY_ON);
+ 
++	/*
++	 * FIXME
++	 *
++	 * extra dcs settings for platform
++	 */
++	for (i = 0; i < pdata->extra_array_len; i++) {
++		excmd = pdata->extra_array[i];
++		if (0x10000000 & excmd)
++			sh_mipi_dcs(ch->chan, GET_EXCMD(excmd));
++		else
++			sh_mipi_dcs_param(ch->chan, GET_EXCMD(excmd),
++						    GET_EXPARAM(excmd));
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
+index 58b78f8..e52097a 100644
+--- a/include/video/sh_mipi_dsi.h
++++ b/include/video/sh_mipi_dsi.h
+@@ -32,12 +32,25 @@ struct sh_mobile_lcdc_chan_cfg;
+ #define SH_MIPI_DSI_HFPBM	(1 << 2)
+ #define SH_MIPI_DSI_BL2E	(1 << 3)
+ 
++/*
++ * x000ccpp
++ *
++ * x : 1 use sh_mipi_dcs()
++ *     0 use sh_mipi_dcs_param()
++ * cc : cmd
++ * pp : param
++ */
++#define SH_MIPI_DCS(cmd)		(0x10000000 | (cmd & 0xFF) << 8)
++#define SH_MIPI_DCS_PARAM(cmd, param)	((cmd & 0xFF) << 8 | (param & 0xFF))
++
+ struct sh_mipi_dsi_info {
+ 	enum sh_mipi_dsi_data_fmt	data_format;
+ 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
+ 	unsigned long			flags;
+ 	u32				clksrc;
+ 	unsigned int			vsynw_offset;
++	u32				*extra_array;
++	int				extra_array_len;
+ };
+ 
+ #endif
 -- 
-Regards,
+1.7.4.1
 
-Laurent Pinchart
