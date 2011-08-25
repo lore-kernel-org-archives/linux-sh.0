@@ -1,145 +1,27 @@
-From: Kukjin Kim <kgene.kim@samsung.com>
-Date: Thu, 11 Aug 2011 11:58:26 +0000
-Subject: RE: [PATCH 12/13] ARM: gpio: consolidate gpio_to_irq
-Message-Id: <000101cc581d$fd45d5d0$f7d18170$%kim@samsung.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 25 Aug 2011 01:27:24 +0000
+Subject: [PATCH 0/4 v8] mmc: tmio, sdhi: provide multiple irq handlers
+Message-Id: <1314235648-8959-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
-	<E1QqhMM-0003aj-C7@rmk-PC.arm.linux.org.uk>
-In-Reply-To: <E1QqhMM-0003aj-C7@rmk-PC.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-Russell King - ARM Linux wrote:
-> 
-> Many of the gpio_to_irq implementations use the gpiolib version of this
-> function.  Provide the standard gpiolib gpio_to_irq() for everyone, but
-> allow platforms to override it if they wish.  Add the neccessary
-> overrides for those platforms which do not use the standard definition.
-> 
-> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+The SDHI driver already supports making use of up to three interrupt
+sources.
 
-Acked-by: Kukjin Kim <kgene.kim@samsung.com>
+This series breaks up the existing interrupt handler into three handlers,
+one for sdcard access, one for card detect and one for SDIO interrupts.
+A cover-all handler, which makes use of these new broken-out handlers
+is provided for for the case where there is a multiplexed interrupt source.
 
-on following Samsung stuff :)
+This series also wires up the new IRQ handlers for the mackerel and ag4evm.
 
-Thanks.
+This series contains the following patches:
 
-Best regards,
-Kgene.
---
-Kukjin Kim <kgene.kim@samsung.com>, Senior Engineer,
-SW Solution Development Team, Samsung Electronics Co., Ltd.
-
-> ---
->  arch/arm/include/asm/gpio.h                 |    9 +++++++++
-
->  arch/arm/mach-exynos4/include/mach/gpio.h   |    2 --
-
->  arch/arm/mach-s3c2410/include/mach/gpio.h   |    1 -
->  arch/arm/mach-s3c64xx/include/mach/gpio.h   |    1 -
->  arch/arm/mach-s5p64x0/include/mach/gpio.h   |    1 -
->  arch/arm/mach-s5pc100/include/mach/gpio.h   |    1 -
->  arch/arm/mach-s5pv210/include/mach/gpio.h   |    1 -
-> 
-> diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
-> index 15e8970..5032224 100644
-> --- a/arch/arm/include/asm/gpio.h
-> +++ b/arch/arm/include/asm/gpio.h
-> @@ -14,4 +14,13 @@
->  #define gpio_cansleep   __gpio_cansleep
->  #endif
-> 
-> +/*
-> + * Provide a default gpio_to_irq() which should satisfy every case.
-> + * However, some platforms want to do this differently, so allow them
-> + * to override it.
-> + */
-> +#ifndef gpio_to_irq
-> +#define gpio_to_irq	__gpio_to_irq
-> +#endif
-> +
->  #endif /* _ARCH_ARM_GPIO_H */
-
-> diff --git a/arch/arm/mach-exynos4/include/mach/gpio.h b/arch/arm/mach-
-> exynos4/include/mach/gpio.h
-> index b2e3595..b91e8b2 100644
-> --- a/arch/arm/mach-exynos4/include/mach/gpio.h
-> +++ b/arch/arm/mach-exynos4/include/mach/gpio.h
-> @@ -13,8 +13,6 @@
->  #ifndef __ASM_ARCH_GPIO_H
->  #define __ASM_ARCH_GPIO_H __FILE__
-> 
-> -#define gpio_to_irq	__gpio_to_irq
-> -
->  /* Practically, GPIO banks up to GPZ are the configurable gpio banks */
-> 
->  /* GPIO bank sizes */
-
-> diff --git a/arch/arm/mach-s3c2410/include/mach/gpio.h b/arch/arm/mach-
-> s3c2410/include/mach/gpio.h
-> index 998ef4c..d502d17 100644
-> --- a/arch/arm/mach-s3c2410/include/mach/gpio.h
-> +++ b/arch/arm/mach-s3c2410/include/mach/gpio.h
-> @@ -12,7 +12,6 @@
->  */
-> 
->  #define __ARM_GPIOLIB_TRIVIAL
-> -#define gpio_to_irq	__gpio_to_irq
-> 
->  /* some boards require extra gpio capacity to support external
->   * devices that need GPIO.
-> diff --git a/arch/arm/mach-s3c64xx/include/mach/gpio.h b/arch/arm/mach-
-> s3c64xx/include/mach/gpio.h
-> index 6958b3f..3a8857c 100644
-> --- a/arch/arm/mach-s3c64xx/include/mach/gpio.h
-> +++ b/arch/arm/mach-s3c64xx/include/mach/gpio.h
-> @@ -13,7 +13,6 @@
->  */
-> 
->  #define __ARM_GPIOLIB_TRIVIAL
-> -#define gpio_to_irq	__gpio_to_irq
-> 
->  /* GPIO bank sizes */
->  #define S3C64XX_GPIO_A_NR	(8)
-> diff --git a/arch/arm/mach-s5p64x0/include/mach/gpio.h b/arch/arm/mach-
-> s5p64x0/include/mach/gpio.h
-> index a25160b..c3a6aa0 100644
-> --- a/arch/arm/mach-s5p64x0/include/mach/gpio.h
-> +++ b/arch/arm/mach-s5p64x0/include/mach/gpio.h
-> @@ -14,7 +14,6 @@
->  #define __ASM_ARCH_GPIO_H __FILE__
-> 
->  #define __ARM_GPIOLIB_TRIVIAL
-> -#define gpio_to_irq	__gpio_to_irq
-> 
->  /* GPIO bank sizes */
-> 
-> diff --git a/arch/arm/mach-s5pc100/include/mach/gpio.h b/arch/arm/mach-
-> s5pc100/include/mach/gpio.h
-> index f515bfb..0e75641 100644
-> --- a/arch/arm/mach-s5pc100/include/mach/gpio.h
-> +++ b/arch/arm/mach-s5pc100/include/mach/gpio.h
-> @@ -16,7 +16,6 @@
->  #define __ASM_ARCH_GPIO_H __FILE__
-> 
->  #define __ARM_GPIOLIB_TRIVIAL
-> -#define gpio_to_irq	__gpio_to_irq
-> 
->  /* GPIO bank sizes */
->  #define S5PC100_GPIO_A0_NR	(8)
-> diff --git a/arch/arm/mach-s5pv210/include/mach/gpio.h b/arch/arm/mach-
-> s5pv210/include/mach/gpio.h
-> index 27f2139..d348ee2 100644
-> --- a/arch/arm/mach-s5pv210/include/mach/gpio.h
-> +++ b/arch/arm/mach-s5pv210/include/mach/gpio.h
-> @@ -14,7 +14,6 @@
->  #define __ASM_ARCH_GPIO_H __FILE__
-> 
->  #define __ARM_GPIOLIB_TRIVIAL
-> -#define gpio_to_irq	__gpio_to_irq
-> 
->  /* Practically, GPIO banks up to MP03 are the configurable gpio banks */
->
-
+[PATCH v8 1/4] mmc: tmio: Cache interrupt masks
+[PATCH v8 2/4] mmc: tmio: Provide separate interrupt handlers
+[PATCH v8 3/4] mmc: sdhi: Allow name IRQs to use specific handlers
+[PATCH v8 4/4] ARM: shmobile: ag5evm, ap4: Named SDHI IRQ sources
