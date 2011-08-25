@@ -1,96 +1,241 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Aug 2011 09:51:40 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh73a0 SCIF platform data update
-Message-Id: <20110802095140.2794.58795.sendpatchset@t400s>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 25 Aug 2011 01:27:26 +0000
+Subject: [PATCH v8 2/4] mmc: tmio: Provide separate interrupt handlers
+Message-Id: <1314235648-8959-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1314235648-8959-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1314235648-8959-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+Provide separate interrupt handlers which may be used by platforms where
+SDHI has three interrupt sources.
 
-Add .regtype members to the sh73a0 SCIF platform data.
+This patch also removes the commented-out handling of CRC and other errors.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
 ---
 
- Tested on AG5EVM, fixes no-console-on-boot issue.
+* SDCARD portion tested on AP4/Mackerel
+* SDIO portion untested
 
- arch/arm/mach-shmobile/setup-sh73a0.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+v4
+* As suggested by Guennadi Liakhovetski
+  - Use bool as return type for __tmio_mmc_sdcard_irq() and
+    __tmio_mmc_card_detect_irq()
 
---- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2011-08-02 18:24:08.000000000 +0900
-@@ -43,6 +43,7 @@ static struct plat_sci_port scif0_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(72), gic_spi(72),
- 			    gic_spi(72), gic_spi(72) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+v3
+* Rebase for updated "mmc: tmio: Cache interrupt masks"
+* As suggested by Guennadi Liakhovetski
+  - Do not alter logic to handle more than one interupt at once
+  - Add missing "static" to declartion of __tmio_mmc_sdcard_irq()
+
+v2
+* As suggested by Guennadi Liakhovetski
+  - Combine 3 patches into one
+  - Reduce the number of __tmio_..._irq() functions
+  - Rename "...card_access..." functions as "...sdcard..."
+---
+ drivers/mmc/host/tmio_mmc.h     |    3 +
+ drivers/mmc/host/tmio_mmc_pio.c |  131 ++++++++++++++++++++++++--------------
+ 2 files changed, 86 insertions(+), 48 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 1cf8db5..3020f98 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -97,6 +97,9 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host);
+ void tmio_mmc_enable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
+ void tmio_mmc_disable_mmc_irqs(struct tmio_mmc_host *host, u32 i);
+ irqreturn_t tmio_mmc_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid);
++irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid);
  
- static struct platform_device scif0_device = {
-@@ -61,6 +62,7 @@ static struct plat_sci_port scif1_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(73), gic_spi(73),
- 			    gic_spi(73), gic_spi(73) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+ static inline char *tmio_mmc_kmap_atomic(struct scatterlist *sg,
+ 					 unsigned long *flags)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index f0c7830..6275e3d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -545,44 +545,20 @@ out:
+ 	spin_unlock(&host->lock);
+ }
  
- static struct platform_device scif1_device = {
-@@ -79,6 +81,7 @@ static struct plat_sci_port scif2_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(74), gic_spi(74),
- 			    gic_spi(74), gic_spi(74) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+-irqreturn_t tmio_mmc_irq(int irq, void *devid)
++static void tmio_mmc_card_irq_status(struct tmio_mmc_host *host,
++				       int *ireg, int *status)
+ {
+-	struct tmio_mmc_host *host = devid;
+-	struct mmc_host *mmc = host->mmc;
+-	struct tmio_mmc_data *pdata = host->pdata;
+-	unsigned int ireg, status;
+-	unsigned int sdio_ireg, sdio_status;
+-
+-	pr_debug("MMC IRQ begin\n");
+-
+-	status = sd_ctrl_read32(host, CTL_STATUS);
+-	ireg = status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
++	*status = sd_ctrl_read32(host, CTL_STATUS);
++	*ireg = *status & TMIO_MASK_IRQ & ~host->sdcard_irq_mask;
  
- static struct platform_device scif2_device = {
-@@ -97,6 +100,7 @@ static struct plat_sci_port scif3_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(75), gic_spi(75),
- 			    gic_spi(75), gic_spi(75) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+-	sdio_ireg = 0;
+-	if (!ireg && pdata->flags & TMIO_MMC_SDIO_IRQ) {
+-		sdio_status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
+-		sdio_ireg = sdio_status & TMIO_SDIO_MASK_ALL &
+-				~host->sdio_irq_mask;
+-
+-		sd_ctrl_write16(host, CTL_SDIO_STATUS, sdio_status & ~TMIO_SDIO_MASK_ALL);
+-
+-		if (sdio_ireg && !host->sdio_irq_enabled) {
+-			pr_warning("tmio_mmc: Spurious SDIO IRQ, disabling! 0x%04x 0x%04x 0x%04x\n",
+-				   sdio_status, host->sdio_irq_mask, sdio_ireg);
+-			tmio_mmc_enable_sdio_irq(mmc, 0);
+-			goto out;
+-		}
+-
+-		if (mmc->caps & MMC_CAP_SDIO_IRQ &&
+-			sdio_ireg & TMIO_SDIO_STAT_IOIRQ)
+-			mmc_signal_sdio_irq(mmc);
+-
+-		if (sdio_ireg)
+-			goto out;
+-	}
++	pr_debug_status(*status);
++	pr_debug_status(*ireg);
++}
  
- static struct platform_device scif3_device = {
-@@ -115,6 +119,7 @@ static struct plat_sci_port scif4_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(78), gic_spi(78),
- 			    gic_spi(78), gic_spi(78) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+-	pr_debug_status(status);
+-	pr_debug_status(ireg);
++static bool __tmio_mmc_card_detect_irq(struct tmio_mmc_host *host,
++				      int ireg, int status)
++{
++	struct mmc_host *mmc = host->mmc;
  
- static struct platform_device scif4_device = {
-@@ -133,6 +138,7 @@ static struct plat_sci_port scif5_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(79), gic_spi(79),
- 			    gic_spi(79), gic_spi(79) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+ 	/* Card insert / remove attempts */
+ 	if (ireg & (TMIO_STAT_CARD_INSERT | TMIO_STAT_CARD_REMOVE)) {
+@@ -592,43 +568,102 @@ irqreturn_t tmio_mmc_irq(int irq, void *devid)
+ 		     ((ireg & TMIO_STAT_CARD_INSERT) && !mmc->card)) &&
+ 		    !work_pending(&mmc->detect.work))
+ 			mmc_detect_change(host->mmc, msecs_to_jiffies(100));
+-		goto out;
++		return true;
+ 	}
  
- static struct platform_device scif5_device = {
-@@ -151,6 +157,7 @@ static struct plat_sci_port scif6_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(156), gic_spi(156),
- 			    gic_spi(156), gic_spi(156) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
+-	/* CRC and other errors */
+-/*	if (ireg & TMIO_STAT_ERR_IRQ)
+- *		handled |= tmio_error_irq(host, irq, stat);
+- */
++	return false;
++}
++
++irqreturn_t tmio_mmc_card_detect_irq(int irq, void *devid)
++{
++	unsigned int ireg, status;
++	struct tmio_mmc_host *host = devid;
  
- static struct platform_device scif6_device = {
-@@ -169,6 +176,7 @@ static struct plat_sci_port scif7_platfo
- 	.type		= PORT_SCIFA,
- 	.irqs		= { gic_spi(143), gic_spi(143),
- 			    gic_spi(143), gic_spi(143) },
-+	.regtype	= SCIx_SCIFA_REGTYPE,
- };
++	tmio_mmc_card_irq_status(host, &ireg, &status);
++	__tmio_mmc_card_detect_irq(host, ireg, status);
++
++	return IRQ_HANDLED;
++}
++EXPORT_SYMBOL(tmio_mmc_card_detect_irq);
++
++static bool __tmio_mmc_sdcard_irq(struct tmio_mmc_host *host,
++				 int ireg, int status)
++{
+ 	/* Command completion */
+ 	if (ireg & (TMIO_STAT_CMDRESPEND | TMIO_STAT_CMDTIMEOUT)) {
+ 		tmio_mmc_ack_mmc_irqs(host,
+ 			     TMIO_STAT_CMDRESPEND |
+ 			     TMIO_STAT_CMDTIMEOUT);
+ 		tmio_mmc_cmd_irq(host, status);
+-		goto out;
++		return true;
+ 	}
  
- static struct platform_device scif7_device = {
-@@ -187,6 +195,7 @@ static struct plat_sci_port scif8_platfo
- 	.type		= PORT_SCIFB,
- 	.irqs		= { gic_spi(80), gic_spi(80),
- 			    gic_spi(80), gic_spi(80) },
-+	.regtype	= SCIx_SCIFB_REGTYPE,
- };
+ 	/* Data transfer */
+ 	if (ireg & (TMIO_STAT_RXRDY | TMIO_STAT_TXRQ)) {
+ 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_RXRDY | TMIO_STAT_TXRQ);
+ 		tmio_mmc_pio_irq(host);
+-		goto out;
++		return true;
+ 	}
  
- static struct platform_device scif8_device = {
+ 	/* Data transfer completion */
+ 	if (ireg & TMIO_STAT_DATAEND) {
+ 		tmio_mmc_ack_mmc_irqs(host, TMIO_STAT_DATAEND);
+ 		tmio_mmc_data_irq(host);
+-		goto out;
++		return true;
+ 	}
+ 
+-	pr_warning("tmio_mmc: Spurious irq, disabling! "
+-		"0x%08x 0x%08x 0x%08x\n", status, host->sdcard_irq_mask, ireg);
+-	pr_debug_status(status);
+-	tmio_mmc_disable_mmc_irqs(host, status & ~host->sdcard_irq_mask);
++	return false;
++}
++
++irqreturn_t tmio_mmc_sdcard_irq(int irq, void *devid)
++{
++	unsigned int ireg, status;
++	struct tmio_mmc_host *host = devid;
++
++	tmio_mmc_card_irq_status(host, &ireg, &status);
++	__tmio_mmc_sdcard_irq(host, ireg, status);
++
++	return IRQ_HANDLED;
++}
++EXPORT_SYMBOL(tmio_mmc_sdcard_irq);
++
++irqreturn_t tmio_mmc_sdio_irq(int irq, void *devid)
++{
++	struct tmio_mmc_host *host = devid;
++	struct mmc_host *mmc = host->mmc;
++	struct tmio_mmc_data *pdata = host->pdata;
++	unsigned int ireg, status;
++
++	if (!(pdata->flags & TMIO_MMC_SDIO_IRQ))
++		return IRQ_HANDLED;
++
++	status = sd_ctrl_read16(host, CTL_SDIO_STATUS);
++	ireg = status & TMIO_SDIO_MASK_ALL & ~host->sdcard_irq_mask;
++
++	sd_ctrl_write16(host, CTL_SDIO_STATUS, status & ~TMIO_SDIO_MASK_ALL);
++
++	if (mmc->caps & MMC_CAP_SDIO_IRQ && ireg & TMIO_SDIO_STAT_IOIRQ)
++		mmc_signal_sdio_irq(mmc);
++
++	return IRQ_HANDLED;
++}
++EXPORT_SYMBOL(tmio_mmc_sdio_irq);
++
++irqreturn_t tmio_mmc_irq(int irq, void *devid)
++{
++	struct tmio_mmc_host *host = devid;
++	unsigned int ireg, status;
++
++	pr_debug("MMC IRQ begin\n");
++
++	tmio_mmc_card_irq_status(host, &ireg, &status);
++	if (__tmio_mmc_card_detect_irq(host, ireg, status))
++		return IRQ_HANDLED;
++	if (__tmio_mmc_sdcard_irq(host, ireg, status))
++		return IRQ_HANDLED;
++
++	tmio_mmc_sdio_irq(irq, devid);
+ 
+-out:
+ 	return IRQ_HANDLED;
+ }
+ EXPORT_SYMBOL(tmio_mmc_irq);
+-- 
+1.7.5.4
+
