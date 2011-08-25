@@ -1,62 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 31 Aug 2011 11:00:56 +0000
-Subject: [PATCH v2 5/8] fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
-Message-Id: <1314788459-31791-6-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 25 Aug 2011 04:05:16 +0000
+Subject: [PATCH 3/7] fbdev: sh_mipi_dsi: add SH_MIPI_DSI_HFPBM flag
+Message-Id: <87y5yit9tz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Instead of updating the fixed screen information line length manually
-after calling fb_set_var() in sh_mobile_fb_reconfig(), update the field
-in the .fb_set_par() operation handler.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   17 +++++++++++------
- 1 files changed, 11 insertions(+), 6 deletions(-)
+ drivers/video/sh_mipi_dsi.c |    2 ++
+ include/video/sh_mipi_dsi.h |    1 +
+ 2 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 1ff215c..b6da1d6 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -998,11 +998,6 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
- 		/* Couldn't reconfigure, hopefully, can continue as before */
- 		return;
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 3b408b7..b35454e 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -319,6 +319,8 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		vmctr2 |= 1 << 5;
+ 	if (pdata->flags & SH_MIPI_DSI_HBPBM)
+ 		vmctr2 |= 1 << 4;
++	if (pdata->flags & SH_MIPI_DSI_HFPBM)
++		vmctr2 |= 1 << 3;
+ 	iowrite32(vmctr2, mipi->linkbase + VMCTR2);
  
--	if (info->var.nonstd)
--		info->fix.line_length = mode1.xres;
--	else
--		info->fix.line_length = mode1.xres * (ch->cfg.bpp / 8);
--
  	/*
- 	 * fb_set_var() calls the notifier change internally, only if
- 	 * FBINFO_MISC_USEREVENT flag is set. Since we do not want to fake a
-@@ -1157,12 +1152,22 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
- static int sh_mobile_set_par(struct fb_info *info)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
-+	u32 line_length = info->fix.line_length;
- 	int ret;
+diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
+index 4e2bcb5..86a72c0 100644
+--- a/include/video/sh_mipi_dsi.h
++++ b/include/video/sh_mipi_dsi.h
+@@ -29,6 +29,7 @@ struct sh_mobile_lcdc_chan_cfg;
  
- 	sh_mobile_lcdc_stop(ch->lcdc);
-+
-+	if (info->var.nonstd)
-+		info->fix.line_length = info->var.xres;
-+	else
-+		info->fix.line_length = info->var.xres
-+				      * info->var.bits_per_pixel / 8;
-+
- 	ret = sh_mobile_lcdc_start(ch->lcdc);
--	if (ret < 0)
-+	if (ret < 0) {
- 		dev_err(info->dev, "%s: unable to restart LCDC\n", __func__);
-+		info->fix.line_length = line_length;
-+	}
+ #define SH_MIPI_DSI_HSABM	(1 << 0)
+ #define SH_MIPI_DSI_HBPBM	(1 << 1)
++#define SH_MIPI_DSI_HFPBM	(1 << 2)
  
- 	return ret;
- }
+ struct sh_mipi_dsi_info {
+ 	enum sh_mipi_dsi_data_fmt	data_format;
 -- 
-1.7.3.4
+1.7.4.1
 
