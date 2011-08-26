@@ -1,30 +1,42 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 20 Aug 2011 19:31:19 +0000
-Subject: [PATCH 0/2] sh-sci / PM: Fix problem with runtime PM callbacks run with interrupts off
-Message-Id: <201108202131.19479.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 26 Aug 2011 04:49:30 +0000
+Subject: [PATCH][RESEND] ARM: mach-shmobile: AG5EVM/Kota2 external Ethernet fix
+Message-Id: <20110826044930.26281.66390.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Hi,
+From: Magnus Damm <damm@opensource.se>
 
-The sh-sci driver uses pm_runtime_get/put_sync() in such a way
-that they may be run with interrupts off and cause the (recently
-added) might_sleep_if() to trigger in rpm_suspend/resume().
+Keep the ZB clock enabled on sh73a0 to allow the BSC
+to access external peripherals hooked up to CS signals.
 
-To avoid that, it's necessary to set the SCI device's power.irq_safe
-flag to indicate that it's runtime PM callbacks may be executed with
-interrupts off safely.  However, the sh-sci driver needs to be able to
-clear that flag sometimes, so a new runtime PM helper for doing that
-is needed.
+This is needed to unbreak Ethernet support on sh73a0 boards
+such as AG5EVM and Kota2 together with the following patch:
 
-[1/2] - Add pm_runtime_irq_unsafe() for clearing the power.irq_safe device flag.
-[2/2] - Make sh-sci use power.irq_safe to indicate that runtime PM callbacks
-        may be run with interrupts off.
+ 794d78f drivers: sh: late disabling of clocks V2
 
-Thanks,
-Rafael
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ Rafael, since this patch is Runtime PM clock related, can you
+ please merge this with your other 3.1-rc fixes?
+
+ Without this patch sh73a0-based boards cannot use Ethernet.
+
+ arch/arm/mach-shmobile/clock-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-08-22 14:31:42.000000000 +0900
+@@ -243,7 +243,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 	[DIV6_VCK1] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR1, 0),
+ 	[DIV6_VCK2] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR2, 0),
+ 	[DIV6_VCK3] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR3, 0),
+-	[DIV6_ZB1] = SH_CLK_DIV6(&pll1_div2_clk, ZBCKCR, 0),
++	[DIV6_ZB1] = SH_CLK_DIV6(&pll1_div2_clk, ZBCKCR, CLK_ENABLE_ON_INIT),
+ 	[DIV6_FLCTL] = SH_CLK_DIV6(&pll1_div2_clk, FLCKCR, 0),
+ 	[DIV6_SDHI0] = SH_CLK_DIV6(&pll1_div2_clk, SD0CKCR, 0),
+ 	[DIV6_SDHI1] = SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
