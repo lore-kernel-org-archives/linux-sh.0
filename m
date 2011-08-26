@@ -1,49 +1,33 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 23 Aug 2011 09:26:33 +0000
-Subject: [PATCH] net: sh_eth: fix the compile error
-Message-Id: <4E537249.8050806@renesas.com>
+From: David Miller <davem@davemloft.net>
+Date: Fri, 26 Aug 2011 16:50:56 +0000
+Subject: Re: [PATCH] net: sh_eth: fix the compile error
+Message-Id: <20110826.125056.466857806833058211.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4E537249.8050806@renesas.com>
+In-Reply-To: <4E537249.8050806@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: netdev@vger.kernel.org
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: yoshihiro.shimoda.uh@renesas.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-Fix the following build error:
-
-  CC      drivers/net/sh_eth.o
-drivers/net/sh_eth.c:1115: error: expected =91=3D=92, =91,=92, =91;=92, =91=
-asm=92 or =91__attribute__=92 before =91sh_eth_interrupt=92
-drivers/net/sh_eth.c: In function =91sh_eth_open=92:
-drivers/net/sh_eth.c:1387: error: implicit declaration of function =91reque=
-st_irq=92
-drivers/net/sh_eth.c:1387: error: =91sh_eth_interrupt=92 undeclared (first =
-use in this function)
-drivers/net/sh_eth.c:1387: error: (Each undeclared identifier is reported o=
-nly once
-drivers/net/sh_eth.c:1387: error: for each function it appears in.)
-drivers/net/sh_eth.c:1391: error: =91IRQF_SHARED=92 undeclared (first use i=
-n this function)
-drivers/net/sh_eth.c:1424: error: implicit declaration of function =91free_=
-irq=92
-make[2]: *** [drivers/net/sh_eth.o] Error 1
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/net/sh_eth.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/net/sh_eth.c b/drivers/net/sh_eth.c
-index ad35c21..f6de45b 100644
---- a/drivers/net/sh_eth.c
-+++ b/drivers/net/sh_eth.c
-@@ -30,6 +30,7 @@
- #include <linux/phy.h>
- #include <linux/cache.h>
- #include <linux/io.h>
-+#include <linux/interrupt.h>
- #include <linux/pm_runtime.h>
- #include <linux/slab.h>
- #include <linux/ethtool.h>
---=20
-1.7.1
+RnJvbTogWW9zaGloaXJvIFNoaW1vZGEgPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29t
+PgpEYXRlOiBUdWUsIDIzIEF1ZyAyMDExIDE4OjI2OjMzICswOTAwCgo+IEZpeCB0aGUgZm9sbG93
+aW5nIGJ1aWxkIGVycm9yOgo+IAo+ICAgQ0MgICAgICBkcml2ZXJzL25ldC9zaF9ldGgubwo+IGRy
+aXZlcnMvbmV0L3NoX2V0aC5jOjExMTU6IGVycm9yOiBleHBlY3RlZCChPaIsIKEsoiwgoTuiLCCh
+YXNtoiBvciChX19hdHRyaWJ1dGVfX6IgYmVmb3JlIKFzaF9ldGhfaW50ZXJydXB0ogo+IGRyaXZl
+cnMvbmV0L3NoX2V0aC5jOiBJbiBmdW5jdGlvbiChc2hfZXRoX29wZW6iOgo+IGRyaXZlcnMvbmV0
+L3NoX2V0aC5jOjEzODc6IGVycm9yOiBpbXBsaWNpdCBkZWNsYXJhdGlvbiBvZiBmdW5jdGlvbiCh
+cmVxdWVzdF9pcnGiCj4gZHJpdmVycy9uZXQvc2hfZXRoLmM6MTM4NzogZXJyb3I6IKFzaF9ldGhf
+aW50ZXJydXB0oiB1bmRlY2xhcmVkIChmaXJzdCB1c2UgaW4gdGhpcyBmdW5jdGlvbikKPiBkcml2
+ZXJzL25ldC9zaF9ldGguYzoxMzg3OiBlcnJvcjogKEVhY2ggdW5kZWNsYXJlZCBpZGVudGlmaWVy
+IGlzIHJlcG9ydGVkIG9ubHkgb25jZQo+IGRyaXZlcnMvbmV0L3NoX2V0aC5jOjEzODc6IGVycm9y
+OiBmb3IgZWFjaCBmdW5jdGlvbiBpdCBhcHBlYXJzIGluLikKPiBkcml2ZXJzL25ldC9zaF9ldGgu
+YzoxMzkxOiBlcnJvcjogoUlSUUZfU0hBUkVEoiB1bmRlY2xhcmVkIChmaXJzdCB1c2UgaW4gdGhp
+cyBmdW5jdGlvbikKPiBkcml2ZXJzL25ldC9zaF9ldGguYzoxNDI0OiBlcnJvcjogaW1wbGljaXQg
+ZGVjbGFyYXRpb24gb2YgZnVuY3Rpb24goWZyZWVfaXJxogo+IG1ha2VbMl06ICoqKiBbZHJpdmVy
+cy9uZXQvc2hfZXRoLm9dIEVycm9yIDEKPiAKPiBTaWduZWQtb2ZmLWJ5OiBZb3NoaWhpcm8gU2hp
+bW9kYSA8eW9zaGloaXJvLnNoaW1vZGEudWhAcmVuZXNhcy5jb20+CgpBcHBsaWVkLgr/9Oi6ey5u
+xyuJt5+uia2GKyWKy/+x6d22F6WKd/+6ey5uxyuJt6WKe7H+yP+Ke2F5uh3Kh9qZ6yxqB62iZqOi
+t2iaj++B6v+R6ud6X+iuAyit6ZqOit2iaiKd+hq2G22n//++B6v+R6ud6f+iuD+ZqOit2iaj+Kd+
+j+EK
