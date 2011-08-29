@@ -1,33 +1,57 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 17 Aug 2011 18:41:48 +0000
-Subject: [GIT PULL] Power management build fix for 3.1
-Message-Id: <201108172041.48394.rjw@sisk.pl>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 29 Aug 2011 08:20:13 +0000
+Subject: [GIT PULL] sh updates for 3.1-rc5
+Message-Id: <20110829082013.GK31809@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Linus,
+This fixes up some unaligned access instruction pairs for SH-2A
+toolchains, and other misc fixes. The only thing particularly noteworthy
+are the serial runtime PM bits which properly enable context restore on
+parts that make effective use of deep sleep states (mostly the R-Mobile
+parts at this point), fixing up loss of console issues.
 
-Please pull a power management build fix for 3.1 from:
+Please pull from:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git pm-fixes
+	master.kernel.org:/pub/scm/linux/kernel/git/lethal/sh-3.x.git sh-fixes-for-linus
 
-This makes the new generic PM domains code build correctly
-if CONFIG_PM_RUNTIME is unset.
+Which contains:
 
-Thanks!
+David Engraf (1):
+      shwdt: fix usage of mod_timer
 
+Magnus Damm (4):
+      clocksource: sh_cmt: wait for CMCNT on init V2
+      sh: intc: enable both edges GPIO interrupts on sh7372
+      serial: sh-sci: fix DMA build by including dma-mapping.h
+      serial: sh-sci: console Runtime PM support
 
- drivers/base/power/domain.c |   30 +++++++++++++++---------------
- include/linux/pm_domain.h   |   10 +++++++---
- kernel/power/Kconfig        |    4 ++++
- 3 files changed, 26 insertions(+), 18 deletions(-)
+Paul Gortmaker (1):
+      sh: Fix conflicting definitions of ptrace_triggered
 
----------------
+Paul Mundt (2):
+      serial: sh-sci: Fix up default regtype probing.
+      sh: Fix up fallout from cpuidle changes.
 
-Rafael J. Wysocki (1):
-      PM / Domains: Fix build for CONFIG_PM_RUNTIME unset
+Phil Edworthy (2):
+      sh: Fix unaligned memory access for branches without delay slots
+      sh: Add unaligned memory access for PC relative intructions
 
+Takashi YOSHII (1):
+      serial: sh-sci: report CTS as active for get_mctrl
+
+Yoshihiro Shimoda (1):
+      sh: fix the compile error in setup-sh7757.c
+
+ arch/sh/include/asm/ptrace.h           |    2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    1 +
+ arch/sh/kernel/idle.c                  |    2 +-
+ arch/sh/kernel/traps_32.c              |   37 ++++++++++++++++
+ drivers/clocksource/sh_cmt.c           |   34 ++++++++++++++-
+ drivers/sh/intc/chip.c                 |    3 +
+ drivers/tty/serial/sh-sci.c            |   71 +++++++++++++++++++++++++++-----
+ 7 files changed, 135 insertions(+), 15 deletions(-)
