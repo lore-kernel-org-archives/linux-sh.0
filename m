@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 29 Aug 2011 03:50:11 +0000
-Subject: [PATCH] ARM: mach-shmobile: Kota2 TPU LED support
-Message-Id: <20110829035011.28202.37748.sendpatchset@rxone.opensource.se>
+Date: Mon, 29 Aug 2011 04:59:33 +0000
+Subject: [PATCH] ARM: mach-shmobile: Kota2 TPU LED support V2
+Message-Id: <20110829050104.30834.15409.sendpatchset@rxone.opensource.se>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110829035011.28202.37748.sendpatchset@rxone.opensource.se>
+In-Reply-To: <20110829035011.28202.37748.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -34,17 +36,21 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  OK but we do not know for sure since the actual LED is
  not mounted on the prototype board.
 
+ Changes V1 -> V2:
+ - Use "platform_data" directory for the TPU driver.
+ - Include more people in the CC list
+
  arch/arm/mach-shmobile/board-kota2.c  |  122 +++++++++++++++++++++++++++++++--
  arch/arm/mach-shmobile/clock-sh73a0.c |   17 ++++
  2 files changed, 135 insertions(+), 4 deletions(-)
 
 --- 0012/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-29 12:30:02.000000000 +0900
++++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-29 13:40:54.000000000 +0900
 @@ -33,6 +33,7 @@
  #include <linux/input/sh_keysc.h>
  #include <linux/gpio_keys.h>
  #include <linux/leds.h>
-+#include <linux/leds-renesas-tpu.h>
++#include <linux/platform_data/leds-renesas-tpu.h>
  #include <linux/mmc/host.h>
  #include <linux/mmc/sh_mmcif.h>
  #include <linux/mfd/tmio.h>
@@ -191,7 +197,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  	&sdhi0_device,
  	&sdhi1_device,
 --- 0004/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-08-29 12:30:32.000000000 +0900
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-08-29 13:40:38.000000000 +0900
 @@ -113,6 +113,12 @@ static struct clk main_clk = {
  	.ops		= &main_clk_ops,
  };
