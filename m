@@ -1,65 +1,93 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 26 Aug 2011 05:28:42 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372 CMT3 and CMT4 clock support
-Message-Id: <20110826052842.25747.73363.sendpatchset@rxone.opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 30 Aug 2011 16:26:39 +0000
+Subject: [PATCH 1/2] mmc: sh_mmcif: simplify platform data
+Message-Id: <Pine.LNX.4.64.1108301824380.19151@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Chris Ball <cjb@laptop.org>
 
-From: Magnus Damm <damm@opensource.se>
+Provide platforms with a simplified way to specify MMCIF DMA slave IDs in
+a way, similar to SDHI and other sh_dma clients.
 
-Add clock control support for sh7372 CMT hardware blocks.
-
-No upstream sh7372 boards are making use of CMT3 + CMT4,
-but the sh7372 hardware happens to come out of reset with
-all CMT MSTP clocks _enabled_, so to save power we need
-to implement a fix in software to shut down unused clocks.
-
-This patch relies on the recently merged
-
- 794d78f drivers: sh: late disabling of clocks V2
-
-to make sure the unused clocks get disabled as expected.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/sh_mmcif.c  |   20 ++++++++++++++++----
+ include/linux/mmc/sh_mmcif.h |    4 +++-
+ 2 files changed, 19 insertions(+), 5 deletions(-)
 
- This patch is needed by upcoming A3SM sleep mode support
- code that can only enter deep sleep in case most clocks
- are disabled - including these CMT clocks.
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 557886b..bd91c94 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -165,6 +165,8 @@ struct sh_mmcif_host {
+ 	struct mmc_host *mmc;
+ 	struct mmc_data *data;
+ 	struct platform_device *pd;
++	struct sh_dmae_slave dma_slave_tx;
++	struct sh_dmae_slave dma_slave_rx;
+ 	struct clk *hclk;
+ 	unsigned int clk;
+ 	int bus_width;
+@@ -323,25 +325,35 @@ static bool sh_mmcif_filter(struct dma_chan *chan, void *arg)
+ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+ 				 struct sh_mmcif_plat_data *pdata)
+ {
++	struct sh_dmae_slave *tx, *rx;
+ 	host->dma_active = false;
+ 
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+ 	if (pdata->dma) {
++		dev_warn(&host->pd->dev,
++			 "Update your platform to use embedded DMA slave IDs\n");
++		tx = &pdata->dma->chan_priv_tx;
++		rx = &pdata->dma->chan_priv_rx;
++	} else {
++		tx = &host->dma_slave_tx;
++		tx->slave_id = pdata->slave_id_tx;
++		rx = &host->dma_slave_rx;
++		rx->slave_id = pdata->slave_id_rx;
++	}
++	if (tx->slave_id > 0 && rx->slave_id > 0) {
+ 		dma_cap_mask_t mask;
+ 
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+ 
+-		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
+-						    &pdata->dma->chan_priv_tx);
++		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter, tx);
+ 		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
+ 
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
+-						    &pdata->dma->chan_priv_rx);
++		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter, rx);
+ 		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
+ 
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index 0222cd8..04ff452 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -41,7 +41,9 @@ struct sh_mmcif_plat_data {
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	void (*down_pwr)(struct platform_device *pdev);
+ 	int (*get_cd)(struct platform_device *pdef);
+-	struct sh_mmcif_dma	*dma;
++	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
++	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
++	unsigned int		slave_id_rx;
+ 	u8			sup_pclk;	/* 1 :SH7757, 0: SH7724/SH7372 */
+ 	unsigned long		caps;
+ 	u32			ocr;
+-- 
+1.7.2.5
 
- arch/arm/mach-shmobile/clock-sh7372.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
---- 0008/arch/arm/mach-shmobile/clock-sh7372.c
-+++ work/arch/arm/mach-shmobile/clock-sh7372.c	2011-08-26 13:50:55.000000000 +0900
-@@ -512,7 +512,8 @@ enum { MSTP001, MSTP000,
-        MSTP218, MSTP217, MSTP216, MSTP214, MSTP208,
-        MSTP207, MSTP206, MSTP205, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-        MSTP329, MSTP328, MSTP323, MSTP322, MSTP314, MSTP313, MSTP312,
--       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP407, MSTP406, MSTP403,
-+       MSTP423, MSTP415, MSTP413, MSTP411, MSTP410, MSTP407, MSTP406,
-+       MSTP405, MSTP404, MSTP403,
-        MSTP_NR };
- 
- #define MSTP(_parent, _reg, _bit, _flags) \
-@@ -563,6 +564,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP410] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 10, 0), /* IIC4 */
- 	[MSTP407] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 7, 0), /* USB-DMAC1 */
- 	[MSTP406] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR4, 6, 0), /* USB1 */
-+	[MSTP405] = MSTP(&r_clk, SMSTPCR4, 5, 0), /* CMT4 */
-+	[MSTP404] = MSTP(&r_clk, SMSTPCR4, 4, 0), /* CMT3 */
- 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
- };
- 
-@@ -663,6 +666,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("renesas_usbhs.1", &mstp_clks[MSTP406]), /* USB1 */
-+	CLKDEV_DEV_ID("sh_cmt.4", &mstp_clks[MSTP405]), /* CMT4 */
-+	CLKDEV_DEV_ID("sh_cmt.3", &mstp_clks[MSTP404]), /* CMT3 */
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
- 
- 	CLKDEV_ICK_ID("hdmi", "sh_mobile_lcdc_fb.1",
