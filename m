@@ -1,33 +1,52 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 09 Aug 2011 08:07:41 +0000
-Subject: [PATCH 10/13] ARM: gpio: pxa: convert drivers to use asm/gpio.h
-Message-Id: <E1QqhLh-0003ab-Pq@rmk-PC.arm.linux.org.uk>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 31 Aug 2011 11:00:54 +0000
+Subject: [PATCH v2 3/8] fbdev: sh_mobile_lcdc: Add support for format changes at runtime
+Message-Id: <1314788459-31791-4-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
-In-Reply-To: <20110809080411.GA1831@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Implement .fb_set_par to support frame buffer format changes at runtime.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/pcmcia/pxa2xx_vpac270.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/pcmcia/pxa2xx_vpac270.c b/drivers/pcmcia/pxa2xx_vpac270.c
-index e956f65..66ab92c 100644
---- a/drivers/pcmcia/pxa2xx_vpac270.c
-+++ b/drivers/pcmcia/pxa2xx_vpac270.c
-@@ -17,7 +17,7 @@
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 33b0ff8..f9f420d 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1154,6 +1154,19 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	return 0;
+ }
  
- #include <asm/mach-types.h>
++static int sh_mobile_set_par(struct fb_info *info)
++{
++	struct sh_mobile_lcdc_chan *ch = info->par;
++	int ret;
++
++	sh_mobile_lcdc_stop(ch->lcdc);
++	ret = sh_mobile_lcdc_start(ch->lcdc);
++	if (ret < 0)
++		dev_err(info->dev, "%s: unable to restart LCDC\n", __func__);
++
++	return ret;
++}
++
+ /*
+  * Screen blanking. Behavior is as follows:
+  * FB_BLANK_UNBLANK: screen unblanked, clocks enabled
+@@ -1211,6 +1224,7 @@ static struct fb_ops sh_mobile_lcdc_ops = {
+ 	.fb_open	= sh_mobile_open,
+ 	.fb_release	= sh_mobile_release,
+ 	.fb_check_var	= sh_mobile_check_var,
++	.fb_set_par	= sh_mobile_set_par,
+ };
  
--#include <mach/gpio.h>
-+#include <asm/gpio.h>
- #include <mach/vpac270.h>
- 
- #include "soc_common.h"
+ static int sh_mobile_lcdc_update_bl(struct backlight_device *bdev)
 -- 
-1.7.4.4
+1.7.3.4
 
