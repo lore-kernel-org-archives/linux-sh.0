@@ -1,48 +1,91 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 09 Aug 2011 19:45:53 +0000
-Subject: Re: [PATCH 06/13] ARM: gpio: davinci: convert drivers to use
-Message-Id: <20110809194553.GA14281@n2100.arm.linux.org.uk>
+From: Yutaro Ebihara <ebiharaml@si-linux.co.jp>
+Date: Wed, 31 Aug 2011 15:07:18 +0000
+Subject: Re: Ecovec (SH7724) board doesn't work on latest linus tree
+Message-Id: <2ECC67EFACD13Cebiharaml@si-linux.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110809080411.GA1831@n2100.arm.linux.org.uk>
-	<E1QqhKP-0003aK-9R@rmk-PC.arm.linux.org.uk>
-	<4E4122B6.2070706@ru.mvista.com>
-In-Reply-To: <4E4122B6.2070706@ru.mvista.com>
+References: <w3pvcwf5xuu.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3pvcwf5xuu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Aug 09, 2011 at 04:06:14PM +0400, Sergei Shtylyov wrote:
-> Hello.
->
-> On 09-08-2011 12:06, Russell King - ARM Linux wrote:
->
->    CCing linux-usb and Felipe...
->
->> Signed-off-by: Russell King<rmk+kernel@arm.linux.org.uk>
->> ---
->>   drivers/usb/musb/davinci.c |    2 +-
->>   1 files changed, 1 insertions(+), 1 deletions(-)
->
->> diff --git a/drivers/usb/musb/davinci.c b/drivers/usb/musb/davinci.c
->> index 8bdf25a..f9a3f62 100644
->> --- a/drivers/usb/musb/davinci.c
->> +++ b/drivers/usb/musb/davinci.c
->> @@ -35,7 +35,7 @@
->>
->>   #include<mach/hardware.h>
->>   #include<mach/memory.h>
->> -#include<mach/gpio.h>
->> +#include<asm/gpio.h>
->
->    Shouldn't this now be moved to the below #include group?
+hello.
 
-When doing this kind of work with sed -i, that doesn't happen.  There's
-too much of this crap (and I've been telling people about this for at
-least a year) that I don't think there's that luxury anymore.
+i think you can run linux-3.0.4 kernel on your Ecovec (SH7724) board 
+in this debug-code.
 
-If maintainers would have paid more attention, then most of these changes
-would not be necessary.  My view is that if maintainers do care about this
-stuff _they_ should have been the ones to pick up on it long ago.  In
-other words, they've lost the right to complain about petty crap like
-the ordering of includes through their own inaction on this point.
+
+ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+                     enum dma_data_direction direction)
+ {
+         void *addr;
+ 
+         addr = __in_29bit_mode() ?
+-               (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
++               (void *)P1SEGADDR((unsigned long)vaddr) : vaddr;
+
+
+
+CAC_ADDR((unsigned long)vaddr) : vaddr; 
+must be fail.
+
+
+
+>@@ -84,6 +84,10 @@ void dma_cache_sync(struct device *dev, void *vaddr, 
+>size_t size,
+> 	addr = __in_29bit_mode() ?
+> 	       (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
+
+
+
+>
+>Dear Paul
+>
+>Ecovec board still doesn't work on latest linus tree.
+>Because of below commit.
+>
+>----------------
+>commit 3f9b8520b06013939ad247ba08b69529b5f14be1
+>Author: Paul Mundt <lethal@linux-sh.org>
+>Date:   Tue May 31 14:38:29 2011 +0900
+>
+>    sh64: Move from P1SEG to CAC_ADDR for consistent sync.
+>    
+>    sh64 doesn't define a P1SEGADDR, resulting in a build failure. The proper
+>    mapping can be attained for both sh32 and 64 via the CAC_ADDR macro, so
+>    switch to that instead.
+>    
+>    Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+>----------------
+>
+>The output of below patch was 
+>
+>dma_cache_sync: vaddr 8e000000, CAC 6e000000, P1SEG 8e000000       
+>
+>------
+>diff --git a/arch/sh/mm/consistent.c b/arch/sh/mm/consistent.c
+>index f251b5f..01bb4ee 100644
+>--- a/arch/sh/mm/consistent.c
+>+++ b/arch/sh/mm/consistent.c
+>@@ -84,6 +84,10 @@ void dma_cache_sync(struct device *dev, void *vaddr, 
+>size_t size,
+> 	addr = __in_29bit_mode() ?
+> 	       (void *)CAC_ADDR((unsigned long)vaddr) : vaddr;
+> 
+>+	printk_once("%s: vaddr %p, CAC %08lx, P1SEG %08lx\n", __func__, vaddr,
+>+		CAC_ADDR((unsigned long)vaddr),
+>+		P1SEGADDR((unsigned long)vaddr));
+>+
+> 	switch (direction) {
+> 	case DMA_FROM_DEVICE:		/* invalidate only */
+> 		__flush_invalidate_region(addr, size);
+>
+>
+>Best regards
+>---
+>Kuninori Morimoto
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
