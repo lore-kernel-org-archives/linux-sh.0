@@ -1,99 +1,72 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 18 Aug 2011 05:44:42 +0000
-Subject: [PATCH 05/07] ARM: mach-shmobile: Kota2 MMCIF support
-Message-Id: <20110818054442.23410.20182.sendpatchset@rxone.opensource.se>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 31 Aug 2011 11:00:55 +0000
+Subject: [PATCH v2 4/8] fbdev: sh_mobile_lcdc: use display information in info for panning
+Message-Id: <1314788459-31791-5-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+We must not use any information in the passed var besides xoffset,
+yoffset and vmode as otherwise applications might abuse it.
 
-Add support for sh73a0 MMCIF hardware block on the
-Kota2 board. A non-removable eMMC chip is used with
-8 data bits on the MMC bus.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/video/sh_mobile_lcdcfb.c |   24 ++++++++++++------------
+ 1 files changed, 12 insertions(+), 12 deletions(-)
 
- arch/arm/mach-shmobile/board-kota2.c |   49 ++++++++++++++++++++++++++++++++++
- 1 file changed, 49 insertions(+)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index f9f420d..1ff215c 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -877,12 +877,12 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 	unsigned long base_addr_y, base_addr_c;
+ 	unsigned long c_offset;
+ 
+-	if (!var->nonstd)
+-		new_pan_offset = (var->yoffset * info->fix.line_length) +
+-			(var->xoffset * (info->var.bits_per_pixel / 8));
++	if (!info->var.nonstd)
++		new_pan_offset = var->yoffset * info->fix.line_length
++			       + var->xoffset * (info->var.bits_per_pixel / 8);
+ 	else
+-		new_pan_offset = (var->yoffset * info->fix.line_length) +
+-			(var->xoffset);
++		new_pan_offset = var->yoffset * info->fix.line_length
++			       + var->xoffset;
+ 
+ 	if (new_pan_offset = ch->pan_offset)
+ 		return 0;	/* No change, do nothing */
+@@ -891,13 +891,13 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 
+ 	/* Set the source address for the next refresh */
+ 	base_addr_y = ch->dma_handle + new_pan_offset;
+-	if (var->nonstd) {
++	if (info->var.nonstd) {
+ 		/* Set y offset */
+-		c_offset = (var->yoffset *
+-			info->fix.line_length *
+-			(info->var.bits_per_pixel - 8)) / 8;
+-		base_addr_c = ch->dma_handle + var->xres * var->yres_virtual +
+-			c_offset;
++		c_offset = var->yoffset * info->fix.line_length
++			 * (info->var.bits_per_pixel - 8) / 8;
++		base_addr_c = ch->dma_handle
++			    + info->var.xres * info->var.yres_virtual
++			    + c_offset;
+ 		/* Set x offset */
+ 		if (info->var.bits_per_pixel = 24)
+ 			base_addr_c += 2 * var->xoffset;
+@@ -923,7 +923,7 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 	ch->base_addr_c = base_addr_c;
+ 
+ 	lcdc_write_chan_mirror(ch, LDSA1R, base_addr_y);
+-	if (var->nonstd)
++	if (info->var.nonstd)
+ 		lcdc_write_chan_mirror(ch, LDSA2R, base_addr_c);
+ 
+ 	if (lcdc_chan_is_sublcd(ch))
+-- 
+1.7.3.4
 
---- 0008/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-18 13:34:11.000000000 +0900
-@@ -33,6 +33,8 @@
- #include <linux/input/sh_keysc.h>
- #include <linux/gpio_keys.h>
- #include <linux/leds.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
- #include <mach/hardware.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
-@@ -171,11 +173,44 @@ static struct platform_device gpio_leds_
- 	},
- };
- 
-+static struct resource mmcif_resources[] = {
-+	[0] = {
-+		.name   = "MMCIF",
-+		.start  = 0xe6bd0000,
-+		.end    = 0xe6bd00ff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = gic_spi(140),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		.start  = gic_spi(141),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct sh_mmcif_plat_data mmcif_info = {
-+	.ocr            = MMC_VDD_165_195,
-+	.caps           = MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-+};
-+
-+static struct platform_device mmcif_device = {
-+	.name           = "sh_mmcif",
-+	.id             = 0,
-+	.dev            = {
-+		.platform_data          = &mmcif_info,
-+	},
-+	.num_resources  = ARRAY_SIZE(mmcif_resources),
-+	.resource       = mmcif_resources,
-+};
-+
- static struct platform_device *kota2_devices[] __initdata = {
- 	&eth_device,
- 	&keysc_device,
- 	&gpio_keys_device,
- 	&gpio_leds_device,
-+	&mmcif_device,
- };
- 
- static struct map_desc kota2_io_desc[] __initdata = {
-@@ -264,6 +299,20 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_PORT58_KEYOUT7, NULL);
- 	gpio_request(GPIO_FN_KEYOUT8, NULL);
- 
-+	/* MMCIF */
-+	gpio_request(GPIO_FN_MMCCLK0, NULL);
-+	gpio_request(GPIO_FN_MMCD0_0, NULL);
-+	gpio_request(GPIO_FN_MMCD0_1, NULL);
-+	gpio_request(GPIO_FN_MMCD0_2, NULL);
-+	gpio_request(GPIO_FN_MMCD0_3, NULL);
-+	gpio_request(GPIO_FN_MMCD0_4, NULL);
-+	gpio_request(GPIO_FN_MMCD0_5, NULL);
-+	gpio_request(GPIO_FN_MMCD0_6, NULL);
-+	gpio_request(GPIO_FN_MMCD0_7, NULL);
-+	gpio_request(GPIO_FN_MMCCMD0, NULL);
-+	gpio_request(GPIO_PORT208, NULL); /* Reset */
-+	gpio_direction_output(GPIO_PORT208, 1);
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(__io(0xf0100000), 0x40460000, 0x82000fff);
