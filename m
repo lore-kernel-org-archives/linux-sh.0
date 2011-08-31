@@ -1,22 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Aug 2011 00:50:51 +0000
-Subject: [PATCH 0/4 v4] mmc: tmio, sdhi: provide multiple irq handlers
-Message-Id: <1313542255-31662-1-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 31 Aug 2011 11:00:56 +0000
+Subject: [PATCH v2 5/8] fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
+Message-Id: <1314788459-31791-6-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: linux-fbdev@vger.kernel.org
 
-The SDHI driver already supports making use of up to three interrupt
-sources.
+Instead of updating the fixed screen information line length manually
+after calling fb_set_var() in sh_mobile_fb_reconfig(), update the field
+in the .fb_set_par() operation handler.
 
-This series breaks up the existing interrupt handler into three handlers,
-one for card access, one for card detect interrupts, and one for SDIO
-interrupts.  A cover-all handler, which makes use of these new broken-out
-handlers is provided for for the case where there is only one interrupt
-source.
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_lcdcfb.c |   17 +++++++++++------
+ 1 files changed, 11 insertions(+), 6 deletions(-)
 
-This series also wires up the broken-out irq handlers in the SDHI driver
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 1ff215c..b6da1d6 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -998,11 +998,6 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
+ 		/* Couldn't reconfigure, hopefully, can continue as before */
+ 		return;
+ 
+-	if (info->var.nonstd)
+-		info->fix.line_length = mode1.xres;
+-	else
+-		info->fix.line_length = mode1.xres * (ch->cfg.bpp / 8);
+-
+ 	/*
+ 	 * fb_set_var() calls the notifier change internally, only if
+ 	 * FBINFO_MISC_USEREVENT flag is set. Since we do not want to fake a
+@@ -1157,12 +1152,22 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ static int sh_mobile_set_par(struct fb_info *info)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
++	u32 line_length = info->fix.line_length;
+ 	int ret;
+ 
+ 	sh_mobile_lcdc_stop(ch->lcdc);
++
++	if (info->var.nonstd)
++		info->fix.line_length = info->var.xres;
++	else
++		info->fix.line_length = info->var.xres
++				      * info->var.bits_per_pixel / 8;
++
+ 	ret = sh_mobile_lcdc_start(ch->lcdc);
+-	if (ret < 0)
++	if (ret < 0) {
+ 		dev_err(info->dev, "%s: unable to restart LCDC\n", __func__);
++		info->fix.line_length = line_length;
++	}
+ 
+ 	return ret;
+ }
+-- 
+1.7.3.4
 
