@@ -1,74 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 18 Aug 2011 05:44:25 +0000
-Subject: [PATCH 03/07] ARM: mach-shmobile: Kota2 GPIO Keys support
-Message-Id: <20110818054425.23410.51390.sendpatchset@rxone.opensource.se>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 31 Aug 2011 11:00:52 +0000
+Subject: [PATCH v2 1/8] sh_mobile_meram: Reset ICBs at unregistration time
+Message-Id: <1314788459-31791-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+When ICBs are unregistered and later reused they need to be reset to
+avoid data corruption. Set the WBF, WF and RF bits to make sure ICBs get
+reset properly.
 
-This patch ties in GPIO Keys support on the Kota2
-board. For now the keys are used in polling mode,
-but after extending the sh73a0 PFC with IRQ support
-we should be able to switch to the IRQ driven driver.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/video/sh_mobile_meram.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/board-kota2.c |   32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index f632970..4d63490 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -373,8 +373,10 @@ static void meram_deinit(struct sh_mobile_meram_priv *priv,
+ 			struct sh_mobile_meram_icb *icb)
+ {
+ 	/* disable ICB */
+-	meram_write_icb(priv->base, icb->cache_icb,  MExxCTL, 0);
+-	meram_write_icb(priv->base, icb->marker_icb, MExxCTL, 0);
++	meram_write_icb(priv->base, icb->cache_icb,  MExxCTL,
++			MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF);
++	meram_write_icb(priv->base, icb->marker_icb, MExxCTL,
++			MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF);
+ 	icb->cache_unit = 0;
+ }
+ 
+-- 
+1.7.3.4
 
---- 0006/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2011-08-17 22:37:04.000000000 +0900
-@@ -31,6 +31,7 @@
- #include <linux/gpio.h>
- #include <linux/input.h>
- #include <linux/input/sh_keysc.h>
-+#include <linux/gpio_keys.h>
- #include <mach/hardware.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
-@@ -114,9 +115,40 @@ static struct platform_device keysc_devi
- 	},
- };
- 
-+#define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
-+
-+static struct gpio_keys_button gpio_buttons[] = {
-+	GPIO_KEY(KEY_VOLUMEUP, GPIO_PORT56, "+"), /* S2: VOL+ [IRQ9] */
-+	GPIO_KEY(KEY_VOLUMEDOWN, GPIO_PORT54, "-"), /* S3: VOL- [IRQ10] */
-+	GPIO_KEY(KEY_MENU, GPIO_PORT27, "Menu"), /* S4: MENU [IRQ30] */
-+	GPIO_KEY(KEY_HOMEPAGE, GPIO_PORT26, "Home"), /* S5: HOME [IRQ31] */
-+	GPIO_KEY(KEY_BACK, GPIO_PORT11, "Back"), /* S6: BACK [IRQ0] */
-+	GPIO_KEY(KEY_PHONE, GPIO_PORT238, "Tel"), /* S7: TEL [IRQ11] */
-+	GPIO_KEY(KEY_POWER, GPIO_PORT239, "C1"), /* S8: CAM [IRQ13] */
-+	GPIO_KEY(KEY_MAIL, GPIO_PORT224, "Mail"), /* S9: MAIL [IRQ3] */
-+	/* Omitted button "C3?": GPIO_PORT223 - S10: CUST [IRQ8] */
-+	GPIO_KEY(KEY_CAMERA, GPIO_PORT164, "C2"), /* S11: CAM_HALF [IRQ25] */
-+	/* Omitted button "?": GPIO_PORT152 - S12: CAM_FULL [No IRQ] */
-+};
-+
-+static struct gpio_keys_platform_data gpio_key_info = {
-+	.buttons        = gpio_buttons,
-+	.nbuttons       = ARRAY_SIZE(gpio_buttons),
-+	.poll_interval  = 250, /* polled for now */
-+};
-+
-+static struct platform_device gpio_keys_device = {
-+	.name   = "gpio-keys-polled", /* polled for now */
-+	.id     = -1,
-+	.dev    = {
-+		.platform_data  = &gpio_key_info,
-+	},
-+};
-+
- static struct platform_device *kota2_devices[] __initdata = {
- 	&eth_device,
- 	&keysc_device,
-+	&gpio_keys_device,
- };
- 
- static struct map_desc kota2_io_desc[] __initdata = {
