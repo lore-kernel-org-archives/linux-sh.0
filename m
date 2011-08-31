@@ -1,30 +1,50 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 29 Aug 2011 07:25:53 +0000
-Subject: Re: [PATCH] serial: sh-sci: report CTS as active for get_mctrl
-Message-Id: <20110829072553.GF31809@linux-sh.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 31 Aug 2011 11:00:51 +0000
+Subject: [PATCH v2 0/8] sh_mobile_lcdc: Support format changes at runtime
+Message-Id: <1314788459-31791-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4E536466.6020604@renesas.com>
-In-Reply-To: <4E536466.6020604@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-fbdev@vger.kernel.org
 
-On Wed, Aug 24, 2011 at 08:04:00PM +0900, takashi.yoshii.zj@renesas.com wrote:
-> Hi,
-> 
-> > This looks reasonable, but what application specifically was hitting
-> > this? ...
-> 
-> Well, it was detected by pure test. So, actually, nobody is in trouble :)
-> But I think it occurs on anything that use hardware flow control and write(TX).
-> Even shell terminal session does. Try invoke "stty crtscts" on your shell.
-> It will freeze your terminal session whatever its flow control setting is.
-> Or, do like as followings on ssh session, is safer.
->  $ stty -F /dev/ttySC1 clocal crtscts -echo
->  $ echo x > /dev/ttySC1
-> Output 'x' on serial expected, but it stops and no output.
-> 
-Ok, I've applied it as-is without a stable@ reference, as it's unlikely
-to be terribly critical going back. I'll let Greg decided whether to pick
-it up for stable or not.
+Hi everybody,
+
+Here's the second version of the .fb_set_par() support for the sh_mobile_lc=
+dc
+driver patch set. It allows userspace to change the frame buffer format and
+size at runtime. The patches apply on top of Florian's fbdev-next branch
+available at git://github.com/schandinat/linux-2.6.git.
+
+Compared to v1, this version includes an additional MERAM fix.
+
+Frame buffer memory reallocation is currently not supported. You will need =
+to
+make sure platform data sets the maximum size and bpp to high enough values
+for all formats and sizes you want to support at runtime.
+
+The patches have been tested with the fbdev-test utility
+(http://git.ideasonboard.org/?p=FBdev-test.git;a=3Dsummary) on a Mackerel b=
+oard.
+
+Laurent Pinchart (8):
+  sh_mobile_meram: Reset ICBs at unregistration time
+  fbdev: sh_mobile_lcdc: Adjust requested parameters in .fb_check_var
+  fbdev: sh_mobile_lcdc: Add support for format changes at runtime
+  fbdev: sh_mobile_lcdc: use display information in info for panning
+  fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
+  fbdev: sh_mobile_lcdc: Avoid forward declarations
+  fbdev: sh_mobile_lcdc: Split channel initialization from probe
+    function
+  fbdev: sh_mobile_lcdc: Remove sh_mobile_lcdc_set_bpp()
+
+ drivers/video/sh_mobile_lcdcfb.c |  570 +++++++++++++++++++++-------------=
+----
+ drivers/video/sh_mobile_meram.c  |    6 +-
+ 2 files changed, 313 insertions(+), 263 deletions(-)
+
+--=20
+Regards,
+
+Laurent Pinchart
+
