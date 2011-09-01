@@ -1,69 +1,59 @@
-From: Jean Pihet <jean.pihet@newoldbits.com>
-Date: Thu, 01 Sep 2011 15:28:20 +0000
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 01 Sep 2011 22:14:38 +0000
 Subject: Re: [PATCH 0/5] PM: Generic PM domains and device PM QoS
-Message-Id: <CAORVsuVJEbLRXLuQFUh3_rDf+DfNFpOhEuBr33SRKqxBos=6Bw@mail.gmail.com>
+Message-Id: <201109020014.39027.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108310017.03103.rjw@sisk.pl>
-In-Reply-To: <201108310017.03103.rjw@sisk.pl>
+References: <201108310017.03103.rjw@sisk.pl> <CAORVsuVJEbLRXLuQFUh3_rDf+DfNFpOhEuBr33SRKqxBos=6Bw@mail.gmail.com>
+In-Reply-To: <CAORVsuVJEbLRXLuQFUh3_rDf+DfNFpOhEuBr33SRKqxBos=6Bw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Jean Pihet <jean.pihet@newoldbits.com>
 Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>
 
-Rafael,
+Hi,
 
-On Wed, Aug 31, 2011 at 12:17 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> Hi,
->
-> This patchset illustrates how device PM QoS may be used along with
-> PM domains in my view.
->
-> Actually, it consists of two parts. =A0Namely, patches [1-3/5] seem to be
-> suitable for 3.2, unless somebody hates them,
-The patches [1-3/5] are ok (reviewed only) excepted some remarks I have.
+On Thursday, September 01, 2011, Jean Pihet wrote:
+> Rafael,
+> 
+> On Wed, Aug 31, 2011 at 12:17 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> > Hi,
+> >
+> > This patchset illustrates how device PM QoS may be used along with
+> > PM domains in my view.
+> >
+> > Actually, it consists of two parts.  Namely, patches [1-3/5] seem to be
+> > suitable for 3.2, unless somebody hates them,
+> The patches [1-3/5] are ok (reviewed only) excepted some remarks I have.
 
-> but patches [4-5/5] are
-> total RFC. =A0They haven't been tested, only compiled, so the use of them
-> is not encouraged (they may kill your dog or make your cat go wild, or
-> do something equally nasty, so beware).
-That looks like a disclaimer ;p
+OK, thanks for the comments.
 
-> Their purpose is to illustrate
-> an idea that I'd like to discuss at the PM miniconference during the
-> LPC.
-There is some code for OMAP that dynamically updates the worst case
-values for devices activation and de-activation;
-cf._omap_device_activate and _omap_device_deactivate in
-arch/arm/plat-omap/omap_device.c. The idea is to start with reference
-figures (worst case measured on board) at boot and then update the
-worst case values at runtime.
-Based on the PM QoS values and the worst case latency values the next
-power domains states can be determined. Unfortunately this is not
-(yet) implemented.
+> > but patches [4-5/5] are
+> > total RFC.  They haven't been tested, only compiled, so the use of them
+> > is not encouraged (they may kill your dog or make your cat go wild, or
+> > do something equally nasty, so beware).
+> That looks like a disclaimer ;p
+> 
+> > Their purpose is to illustrate
+> > an idea that I'd like to discuss at the PM miniconference during the
+> > LPC.
+> There is some code for OMAP that dynamically updates the worst case
+> values for devices activation and de-activation;
+> cf._omap_device_activate and _omap_device_deactivate in
+> arch/arm/plat-omap/omap_device.c. The idea is to start with reference
+> figures (worst case measured on board) at boot and then update the
+> worst case values at runtime.
+> Based on the PM QoS values and the worst case latency values the next
+> power domains states can be determined. Unfortunately this is not
+> (yet) implemented.
 
-I am wondering if the patches [4-5/5] are meant to replace the OMAP
-code, which would be really nice.
+I thought about that too, but I'd like to discuss the basic idea first.
 
->
-> [1/5] - Split device PM domain data into a "base" and additional fields
-> =A0 =A0 =A0 =A0(one need_restore field at the moment, but the subsequent =
-patches
-> =A0 =A0 =A0 =A0add more fields).
->
-> [2/5] - Make runtime PM always release power.lock if power.irq_safe is se=
-t.
->
-> [3/5] - Add function for reading device PM QoS values safely.
->
-> [4/5] - Add governor function for stopping devices.
->
-> [5/5] - Add generic PM domain power off governor function.
->
-> Thanks,
-> Rafael
->
->
+> I am wondering if the patches [4-5/5] are meant to replace the OMAP
+> code, which would be really nice.
 
-Regards,
-Jean
+I certainly hope they will be useful for multiple platforms.  Whether
+or not OMAP turns out to be one of them I can't tell at the moment.
+
+Thanks,
+Rafael
