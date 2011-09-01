@@ -1,46 +1,69 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Fri, 30 Sep 2011 19:29:44 +0000
-Subject: Re: [PATCH 4/5] ARM: mach-shmobile: r8a7740: Add i2c support
-Message-Id: <CABMQnVJv-xCLKGpee6PWvS8ecmqYy++u5KtbqL-JknfJLk2F0Q@mail.gmail.com>
+From: Jean Pihet <jean.pihet@newoldbits.com>
+Date: Thu, 01 Sep 2011 15:28:20 +0000
+Subject: Re: [PATCH 0/5] PM: Generic PM domains and device PM QoS
+Message-Id: <CAORVsuVJEbLRXLuQFUh3_rDf+DfNFpOhEuBr33SRKqxBos=6Bw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8762kcqglg.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8762kcqglg.wl%kuninori.morimoto.gx@renesas.com>
+References: <201108310017.03103.rjw@sisk.pl>
+In-Reply-To: <201108310017.03103.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>
 
-2011/9/30 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>:
+Rafael,
+
+On Wed, Aug 31, 2011 at 12:17 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> Hi,
 >
-> Hi Iwamatsu-san
+> This patchset illustrates how device PM QoS may be used along with
+> PM domains in my view.
 >
-> Thank you for your check
+> Actually, it consists of two parts. =A0Namely, patches [1-3/5] seem to be
+> suitable for 3.2, unless somebody hates them,
+The patches [1-3/5] are ok (reviewed only) excepted some remarks I have.
+
+> but patches [4-5/5] are
+> total RFC. =A0They haven't been tested, only compiled, so the use of them
+> is not encouraged (they may kill your dog or make your cat go wild, or
+> do something equally nasty, so beware).
+That looks like a disclaimer ;p
+
+> Their purpose is to illustrate
+> an idea that I'd like to discuss at the PM miniconference during the
+> LPC.
+There is some code for OMAP that dynamically updates the worst case
+values for devices activation and de-activation;
+cf._omap_device_activate and _omap_device_deactivate in
+arch/arm/plat-omap/omap_device.c. The idea is to start with reference
+figures (worst case measured on board) at boot and then update the
+worst case values at runtime.
+Based on the PM QoS values and the worst case latency values the next
+power domains states can be determined. Unfortunately this is not
+(yet) implemented.
+
+I am wondering if the patches [4-5/5] are meant to replace the OMAP
+code, which would be really nice.
+
 >
->> > +static void r8a7740_i2c_workaround(struct platform_device *pdev)
->> > +{
->> > + =A0 =A0 =A0 struct resource *res;
->> > + =A0 =A0 =A0 void __iomem *reg;
->> > +
->> > + =A0 =A0 =A0 res =3D platform_get_resource(pdev, IORESOURCE_MEM, 0);
->> > + =A0 =A0 =A0 if (!res) {
->>
->> if (unlikely(res =3D NULL)) { =A0?
->> Please check NULL.
+> [1/5] - Split device PM domain data into a "base" and additional fields
+> =A0 =A0 =A0 =A0(one need_restore field at the moment, but the subsequent =
+patches
+> =A0 =A0 =A0 =A0add more fields).
 >
-> Sorry. what is your opinion ?
+> [2/5] - Make runtime PM always release power.lock if power.irq_safe is se=
+t.
 >
-> if (!res) checks NULL I think.
-> or do you mean add "unlikely()" ?
+> [3/5] - Add function for reading device PM QoS values safely.
+>
+> [4/5] - Add governor function for stopping devices.
+>
+> [5/5] - Add generic PM domain power off governor function.
+>
+> Thanks,
+> Rafael
+>
+>
 
-Both.
-This function was return pointer or NULL.
-
-Best regards,
-  Nobuhiro
-
-
-
---=20
-Nobuhiro Iwamatsu
-=A0=A0 iwamatsu at {nigauri.org / debian.org}
-=A0=A0 GPG ID: 40AD1FA6
+Regards,
+Jean
