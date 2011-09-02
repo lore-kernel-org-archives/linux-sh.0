@@ -1,84 +1,109 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 26 Sep 2011 08:43:35 +0000
-Subject: [PATCH 2/2] sh: add platform_device for USB function in board-sh7757lcr
-Message-Id: <4E803B37.5040909@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 02 Sep 2011 15:13:35 +0000
+Subject: [PATCH 2/2] sh: use DMA with MSIOF SPI on the sh7724 ecovec board
+Message-Id: <Pine.LNX.4.64.1109021712470.4731@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1109021706480.4731@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1109021706480.4731@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: spi-devel-general@lists.sourceforge.net
+Cc: linux-sh@vger.kernel.org, Grant Likely <grant.likely@secretlab.ca>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+On ecovec MSIOF0 is connected to an SD/MMC slot, this patch adds DMA
+support on it.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- This patch depends on the following patch:
-  - usb: r8a66597-udc: add support for SUDMAC
+ arch/sh/boards/mach-ecovec24/setup.c   |    8 +++++++-
+ arch/sh/include/cpu-sh4/cpu/sh7724.h   |    4 ++++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   20 ++++++++++++++++++++
+ 3 files changed, 31 insertions(+), 1 deletions(-)
 
- arch/sh/boards/board-sh7757lcr.c |   39 ++++++++++++++++++++++++++++++++++++++
- 1 files changed, 39 insertions(+), 0 deletions(-)
-
-diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-index 8e6f9d7..dd2c8c6 100644
---- a/arch/sh/boards/board-sh7757lcr.c
-+++ b/arch/sh/boards/board-sh7757lcr.c
-@@ -18,6 +18,7 @@
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 22faf2a..16747a8 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -10,6 +10,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/device.h>
++#include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
  #include <linux/mmc/host.h>
  #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/usb/r8a66597.h>
- #include <cpu/sh7757.h>
- #include <asm/sh_eth.h>
- #include <asm/heartbeat.h>
-@@ -317,6 +318,43 @@ static struct platform_device riic3_device = {
+@@ -653,6 +654,8 @@ static struct spi_board_info spi_bus[] = {
+ /* MSIOF0 */
+ static struct sh_msiof_spi_info msiof0_data = {
+ 	.num_chipselect = 1,
++	.slave_id_tx = SHDMA_SLAVE_MSIOF0_TX,
++	.slave_id_rx = SHDMA_SLAVE_MSIOF0_RX,
+ };
+ 
+ static struct resource msiof0_resources[] = {
+@@ -668,11 +671,14 @@ static struct resource msiof0_resources[] = {
  	},
  };
-
-+static struct r8a66597_platdata usb0_data = {
-+	.on_chip = 1,
-+	.buswait = 5,
-+	.sudmac = 1,
-+};
+ 
++u64 msiof0_dmamask = DMA_BIT_MASK(32);
 +
-+static struct resource usb0_resources[] = {
-+	[0] = {
-+		.start	= 0xfe450000,
-+		.end	= 0xfe4501ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 50,
-+		.end	= 50,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		.name	= "sudmac",
-+		.start	= 0xfe451000,
-+		.end	= 0xfe4517ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device usb0_device = {
-+	.name		= "r8a66597_udc",
-+	.id		= 0,
-+	.dev = {
-+		.dma_mask		= NULL,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb0_data,
-+	},
-+	.num_resources	= ARRAY_SIZE(usb0_resources),
-+	.resource	= usb0_resources,
-+};
-+
- static struct platform_device *sh7757lcr_devices[] __initdata = {
- 	&heartbeat_device,
- 	&sh7757_eth0_device,
-@@ -327,6 +365,7 @@ static struct platform_device *sh7757lcr_devices[] __initdata = {
- 	&sdhi_device,
- 	&riic2_device,
- 	&riic3_device,
-+	&usb0_device,
+ static struct platform_device msiof0_device = {
+ 	.name		= "spi_sh_msiof",
+ 	.id		= 0, /* MSIOF0 */
+ 	.dev = {
+-		.platform_data = &msiof0_data,
++		.platform_data	= &msiof0_data,
++		.dma_mask	= &msiof0_dmamask,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(msiof0_resources),
+ 	.resource	= msiof0_resources,
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+index cbc47e6..10f9292 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+@@ -310,6 +310,10 @@ enum {
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI1_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
++	SHDMA_SLAVE_MSIOF0_TX,
++	SHDMA_SLAVE_MSIOF0_RX,
++	SHDMA_SLAVE_MSIOF1_TX,
++	SHDMA_SLAVE_MSIOF1_RX,
  };
-
- static struct flash_platform_data spi_flash_data = {
+ 
+ extern struct clk sh7724_fsimcka_clk;
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index a37dd72..d6626fe 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -152,6 +152,26 @@ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
+ 		.addr		= 0x04cf0030,
+ 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xca,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MSIOF0_TX,
++		.addr		= 0xa4c40050,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x51,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MSIOF0_RX,
++		.addr		= 0xa4c40060,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x52,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MSIOF1_TX,
++		.addr		= 0xa4c50050,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x55,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MSIOF1_RX,
++		.addr		= 0xa4c50060,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.mid_rid	= 0x56,
+ 	},
+ };
+ 
 -- 
-1.7.1
+1.7.2.5
+
