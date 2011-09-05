@@ -1,36 +1,31 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 15 Sep 2011 07:47:45 +0000
-Subject: Re: [PATCH 09/10] fbdev: sh_mipi_dsi: add set_dot_clock() for each platform
-Message-Id: <87d3f21c2q.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 05 Sep 2011 05:46:10 +0000
+Subject: Re: [PATCH 00/03] ARM: mach-shmobile: sh7372 power domain update
+Message-Id: <20110905054610.GH22142@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehzqqabh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehzqqabh.wl%kuninori.morimoto.gx@renesas.com>
+References: <20110630094653.10442.68817.sendpatchset@t400s>
+In-Reply-To: <20110630094653.10442.68817.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Paul
-
-Thank you for checking my patch
-
-> I'm not sure why you're using this convention of clobbering the return
-> value. There are a number of reasons why clk_get() could fail, and you're
-> simply discarding that information outright and unconditionally kicking
-> up -EIO. You should simply do this as:
+On Fri, Aug 26, 2011 at 03:43:16PM +0900, Magnus Damm wrote:
+> ARM: mach-shmobile: sh7372 power domain update
 > 
-> 	if (IS_ERR(...)) {
-> 		ret = PTR_ERR(...);
-> 		...
-> 	}
+> [PATCH 01/03] ARM: mach-shmobile: sh7372 A3SM support
+> [PATCH 02/03] ARM: mach-shmobile: sh7372 A3SP support
+> [PATCH 03/03] ARM: mach-shmobile: sh7372 A4R support
 > 
-> in order to propagate the error value all the way down the chain. This
-> seems to apply to some of the other patches in this series, too.
+> These patches add support for the A3SM, A3SP and A4R
+> power domains included in the sh7372 SoC. More work
+> in needed with QoS for I/O devices and CPUIdle with
+> A3SM together with future A4S power domain support.
+> 
+> Testing needed, especiall WRT to Suspend-to-RAM!
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-OK. I understand.
-I send v2 of [PATCH 9/10], [PATCH 10/10]
-
-Best regards
----
-Kuninori Morimoto
+As these don't apply against anything I have I'll assume that Rafael will
+be taking them through the pm tree with the rest of the power domains
+code.
