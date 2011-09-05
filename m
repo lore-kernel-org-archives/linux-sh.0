@@ -1,109 +1,67 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 30 Sep 2011 06:18:21 +0000
-Subject: Re: [PATCH] sh: modify the asm/sh_eth.h to linux/sh_eth.h in some boards
-Message-Id: <CABMQnVKBbNHgTVNZc=KV76_KttyG2bMQ56YoaBc3MuAXj=syqQ@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 05 Sep 2011 05:33:26 +0000
+Subject: Re: [PATCH 5/7] fbdev: sh_mipi_dsi: add extra dcs settings for platform
+Message-Id: <20110905053326.GG22142@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4E82D17A.7050108@renesas.com>
-In-Reply-To: <4E82D17A.7050108@renesas.com>
+References: <87vctmt9t1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vctmt9t1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Tested-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+On Mon, Aug 29, 2011 at 10:45:37AM +0200, Guennadi Liakhovetski wrote:
+> On Mon, 29 Aug 2011, Magnus Damm wrote:
+> > I do however wonder if this array is the best approach to adding board
+> > specific code. My personal take would be to use something like the SYS
+> > bus support for the LCDC, see callbacks in struct
+> > sh_mobile_lcdc_sys_bus_ops located in
+> > include/video/sh_mobile_lcdc.h and board/panel code like
+> > arch/sh/boards/mach-migor/lcd_qvga.c.
+> 
+> I don't like that array either, but if we want to do this _right_, 
+> callbacks wouldn't be my preference either. I'm not familiar with the set 
+> up: are those values wpecific to the LCD panel or to the board? If it's 
+> the LCD panel, then ideally one would want a display driver for them. 
+> Backlight controlling would want a proper driver too.
+> 
+> > Also, if your board/panel specific code is dealing with backlight on
+> > MIPI-DSI, perhaps there is a chance this is generic enough to be
+> > broken out and reused somehow.
+> 
+> Exactly, however, lately I'me coming to an unfortunate conclusion, that 
+> due to a vast variety of embedded systems and their components, many 
+> hardware blocks will ever be only used on a single embedded platform, 
+> running Linux, and only be exposed to a handful of users. So, creating and 
+> maintaining a proper driver for each such block has a good chance to be 
+> considered an overkill...
+> 
+That's true, but I'm not sure I see how that matters for the case at
+hand. MIPI is hardly SH-Mobile specific, it just happens to be the place
+where a lot of the work is being done for the moment (OMAP DSS being
+another). There is already a lot of duplication between the different
+MIPI users in-tree today, and it's reasonable to expect that sooner or
+later there will be some consolidation effort.
 
-2011/9/28 Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
-> =A0- This patch depends on the following patch:
-> =A0- net: sh_eth: move the asm/sh_eth.h to include/linux/
-> =A0- This patch doesn't contain board-sh7757lcr.c, because
-> =A0 it needs more modification.
->
-> =A0arch/sh/boards/board-espt.c =A0 =A0 =A0 =A0 =A0 | =A0 =A02 +-
-> =A0arch/sh/boards/mach-ecovec24/setup.c =A0| =A0 =A02 +-
-> =A0arch/sh/boards/mach-se/7724/setup.c =A0 | =A0 =A02 +-
-> =A0arch/sh/boards/mach-sh7763rdp/setup.c | =A0 =A02 +-
-> =A04 files changed, 4 insertions(+), 4 deletions(-)
->
-> diff --git a/arch/sh/boards/board-espt.c b/arch/sh/boards/board-espt.c
-> index 9da92ac..b3ae9d3 100644
-> --- a/arch/sh/boards/board-espt.c
-> +++ b/arch/sh/boards/board-espt.c
-> @@ -13,9 +13,9 @@
-> =A0#include <linux/interrupt.h>
-> =A0#include <linux/mtd/physmap.h>
-> =A0#include <linux/io.h>
-> +#include <linux/sh_eth.h>
-> =A0#include <asm/machvec.h>
-> =A0#include <asm/sizes.h>
-> -#include <asm/sh_eth.h>
->
-> =A0/* NOR Flash */
-> =A0static struct mtd_partition espt_nor_flash_partitions[] =3D {
-> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-e=
-covec24/setup.c
-> index b24d69d..7f74985 100644
-> --- a/arch/sh/boards/mach-ecovec24/setup.c
-> +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> @@ -28,13 +28,13 @@
-> =A0#include <linux/spi/mmc_spi.h>
-> =A0#include <linux/input.h>
-> =A0#include <linux/input/sh_keysc.h>
-> +#include <linux/sh_eth.h>
-> =A0#include <video/sh_mobile_lcdc.h>
-> =A0#include <sound/sh_fsi.h>
-> =A0#include <media/sh_mobile_ceu.h>
-> =A0#include <media/tw9910.h>
-> =A0#include <media/mt9t112.h>
-> =A0#include <asm/heartbeat.h>
-> -#include <asm/sh_eth.h>
-> =A0#include <asm/clock.h>
-> =A0#include <asm/suspend.h>
-> =A0#include <cpu/sh7724.h>
-> diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se=
-/7724/setup.c
-> index d007567..b747c0a 100644
-> --- a/arch/sh/boards/mach-se/7724/setup.c
-> +++ b/arch/sh/boards/mach-se/7724/setup.c
-> @@ -23,12 +23,12 @@
-> =A0#include <linux/input.h>
-> =A0#include <linux/input/sh_keysc.h>
-> =A0#include <linux/usb/r8a66597.h>
-> +#include <linux/sh_eth.h>
-> =A0#include <video/sh_mobile_lcdc.h>
-> =A0#include <media/sh_mobile_ceu.h>
-> =A0#include <sound/sh_fsi.h>
-> =A0#include <asm/io.h>
-> =A0#include <asm/heartbeat.h>
-> -#include <asm/sh_eth.h>
-> =A0#include <asm/clock.h>
-> =A0#include <asm/suspend.h>
-> =A0#include <cpu/sh7724.h>
-> diff --git a/arch/sh/boards/mach-sh7763rdp/setup.c b/arch/sh/boards/mach-=
-sh7763rdp/setup.c
-> index f3d828f..dd036f1 100644
-> --- a/arch/sh/boards/mach-sh7763rdp/setup.c
-> +++ b/arch/sh/boards/mach-sh7763rdp/setup.c
-> @@ -17,8 +17,8 @@
-> =A0#include <linux/mtd/physmap.h>
-> =A0#include <linux/fb.h>
-> =A0#include <linux/io.h>
-> +#include <linux/sh_eth.h>
-> =A0#include <mach/sh7763rdp.h>
-> -#include <asm/sh_eth.h>
-> =A0#include <asm/sh7760fb.h>
->
-> =A0/* NOR Flash */
-> --
-> 1.7.1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+Given that all of the SH-Mobile parts are also using it going forward (at
+least for the moment) it's certainly worth trying to get right. Throwing
+on some opaque "extras" pointer at the end of the structure is just
+asking for abuse, particularly if the only purpose it's serving is more
+or less common functionality we can expect to see on upcoming platforms.
 
+While the SYS bus bits were pretty much stillborn, this wasn't so much a
+problem of the abstraction (or lack thereof -- and I'm certainly not
+endorsing the SYS bus abstraction, either) as general timing. At the time
+most of that work happened it was still playing catch up to support a
+platform that would be obsolete by the time support was sufficiently far
+enough for anyone to make use of it. The present line of SH-Mobile CPUs
+don't really suffer from the same sort of knee-jerk IP block scizophrenia
+usually associated with the device team (even if it seems like we're
+sometimes suffering from CPU or board of the week syndrome), so I would
+certainly lean towards doing it right, even if it's going to take a bit
+longer to hash out the abstraction.
 
-
---=20
-Nobuhiro Iwamatsu
+Your comments about a proper backlight driver and so on are accurate as
+well, and this is something we were also discussing with the SYS bus
+bits, it simply wasn't bothered with since the platform was basically
+abandoned before anyone really cared.
