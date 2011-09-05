@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 05 Sep 2011 04:36:27 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 05 Sep 2011 05:30:52 +0000
 Subject: Re: [PATCH] [RFC] sh: kexec: Register crashk_res
-Message-Id: <20110905043627.GD22142@linux-sh.org>
+Message-Id: <20110905053051.GA13098@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1314935232-1545-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1314935232-1545-1-git-send-email-horms@verge.net.au>
@@ -10,37 +10,40 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Sep 05, 2011 at 01:25:50PM +0900, Simon Horman wrote:
-> On Mon, Sep 05, 2011 at 12:23:53PM +0900, Paul Mundt wrote:
-> > On Fri, Sep 02, 2011 at 12:47:12PM +0900, Simon Horman wrote:
-> > > Register crashk_res so that it can be used by kexec-tools
-> > > via /proc/iomem.
+On Mon, Sep 05, 2011 at 01:36:27PM +0900, Paul Mundt wrote:
+> On Mon, Sep 05, 2011 at 01:25:50PM +0900, Simon Horman wrote:
+> > On Mon, Sep 05, 2011 at 12:23:53PM +0900, Paul Mundt wrote:
+> > > On Fri, Sep 02, 2011 at 12:47:12PM +0900, Simon Horman wrote:
+> > > > Register crashk_res so that it can be used by kexec-tools
+> > > > via /proc/iomem.
+> > > > 
+> > > > On x86 the registration occurs using
+> > > > insert_resource(&iomem_resource, &crashk_res).
+> > > > However that approach seems to result in the boot hanging on SH.
+> > > > 
+> > > > Signed-off-by: Simon Horman <horms@verge.net.au>
 > > > 
-> > > On x86 the registration occurs using
-> > > insert_resource(&iomem_resource, &crashk_res).
-> > > However that approach seems to result in the boot hanging on SH.
+> > > x86 has a slightly more straightforward registration method. We end up
+> > > going through the same path for all memory ranges, which also
+> > > encapsulates the NUMA case. As such, we don't necessarily know which
+> > > range will contain the resource in question, so it's attempted on each
+> > > range addition, expecting the resource manager to work things out for us.
 > > > 
-> > > Signed-off-by: Simon Horman <horms@verge.net.au>
+> > > With the request_resource() in place you presumably see the crash kernel
+> > > resource where you expect it to in /proc/iomem?
 > > 
-> > x86 has a slightly more straightforward registration method. We end up
-> > going through the same path for all memory ranges, which also
-> > encapsulates the NUMA case. As such, we don't necessarily know which
-> > range will contain the resource in question, so it's attempted on each
-> > range addition, expecting the resource manager to work things out for us.
+> > Yes. With this patch in place the crash kernel resource
+> > shows up in /proc/iomem in a sensible way.
 > > 
-> > With the request_resource() in place you presumably see the crash kernel
-> > resource where you expect it to in /proc/iomem?
+> > # cat /proc/iomem 
+> > 40000000-4effffff : System RAM
+> >  40001000-402dbfc7 : Kernel code
+> >  402dbfc8-403cd51f : Kernel data
+> >  40553000-40568c5b : Kernel bss
+> >  4d000000-4effffff : Crash kernel
+> > ...
 > 
-> Yes. With this patch in place the crash kernel resource
-> shows up in /proc/iomem in a sensible way.
-> 
-> # cat /proc/iomem 
-> 40000000-4effffff : System RAM
->  40001000-402dbfc7 : Kernel code
->  402dbfc8-403cd51f : Kernel data
->  40553000-40568c5b : Kernel bss
->  4d000000-4effffff : Crash kernel
-> ...
+> Ok, I've queued it up with a slightly more verbose changelog. I'll send
+> it along for 3.1 so kexec-tools doesn't remain blocked.
 
-Ok, I've queued it up with a slightly more verbose changelog. I'll send
-it along for 3.1 so kexec-tools doesn't remain blocked.
+Thanks.
