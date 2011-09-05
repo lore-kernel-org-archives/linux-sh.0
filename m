@@ -1,224 +1,86 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 26 Sep 2011 17:25:17 +0000
-Subject: Re: [BUG] on sh7372 (mackerel) with today's Linus' (github) master
-Message-Id: <Pine.LNX.4.64.1109261924460.27067@axis700.grange>
+Date: Mon, 05 Sep 2011 08:04:18 +0000
+Subject: Re: [PATCH] serial: sh-sci: don't filter on DMA device, use only
+Message-Id: <Pine.LNX.4.64.1109051002400.1112@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1109231012490.25166@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1109231012490.25166@axis700.grange>
+References: <Pine.LNX.4.64.1106241354060.6014@axis700.grange> 
+ <1308916071.1536.4.camel@vkoul-udesk3>  <20110829080047.GJ31809@linux-sh.org>
+  <CANqRtoRn-Csu+Rns6dn6=cJmRqbZfLKXA9brs8Ug9rFvGRn78w@mail.gmail.com> 
+ <1314618931.1606.114.camel@vkoul-udesk3>  <Pine.LNX.4.64.1108300931220.19151@axis700.grange>
+  <1314698522.1606.164.camel@vkoul-udesk3>  <Pine.LNX.4.64.1108301317280.19151@axis700.grange>
+ <1314703426.1606.167.camel@vkoul-udesk3> <Pine.LNX.4.64.1108301332190.19151@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1108301332190.19151@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@linux.intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Magnus Damm <damm@opensource.se>
 
-On Sat, 24 Sep 2011, Rafael J. Wysocki wrote:
+Hi Vinod
 
-> On Saturday, September 24, 2011, Russell King - ARM Linux wrote:
-> > On Sat, Sep 24, 2011 at 12:58:37AM +0200, Rafael J. Wysocki wrote:
-> > > Well, since nobody seems to execute anything that may sleep under
-> > > clocks_mutex, perhaps we can do something like this:
-> > 
-> > No - a spinlock prevents preemption, a mutex does not.
-> > 
-> > It's runtime PM which is doing stuff wrong here.  You're not supposed to
-> > give up the clk struct with it enabled.
+On Tue, 30 Aug 2011, Guennadi Liakhovetski wrote:
+
+> On Tue, 30 Aug 2011, Vinod Koul wrote:
 > 
-> OK, so below is a fix confined to clock_ops.c.
+> > On Tue, 2011-08-30 at 13:20 +0200, Guennadi Liakhovetski wrote:
+> > > On Tue, 30 Aug 2011, Vinod Koul wrote:
+> > > 
+> > > > On Tue, 2011-08-30 at 09:54 +0200, Guennadi Liakhovetski wrote:
+> > > > > On Mon, 29 Aug 2011, Vinod Koul wrote:
+> > > > > > > >> You should not assign chan->private.
+> > > > > > > >> Please move this  to dma_slave_control API
+> > > > > > > >
+> > > > > > > > I haven't seen any reply to this comment and this patch seems to still be
+> > > > > > > > outstanding, is there an updated version of this patch that I've missed?
+> > > > > > I don't recall seeing any updated version fixing this 
+> > > > > 
+> > > > > As a matter of fact, when you say "use dma_slave_control API," you 
+> > > > > actually mean the dma_slave_config, right? Then, how is one supposed to 
+> > > > > use it in this case? Shall we be issuing a DMA_SLAVE_CONFIG call inside of 
+> > > > > the filter and check the return code? The problem is, that not all DMA 
+> > > > > controllers on sh-mobile SoCs can service the same slave devices. So, if 
+> > > > > we don't check in the filter we might well get an unsuitable DMA channel.
+> > > > Here you are assigning to chan->private your specific values, which
+> > > > should be moved to the dma_slave_config. 
+> > > > But here you are removing the checks, and accepting the first channel
+> > > > you got, so how do you find channel is suitable or not.
+> > > 
+> > > That's done in the driver's .device_alloc_chan_resources() method. It 
+> > > checkx the .private pointer, tries to find a suitable channel, if it fails 
+> > > - it returns -EINVAL. See 
+> > > drivers/dma/shdma.c::sh_dmae_alloc_chan_resources():
+> > > 
+> > > 	if (param) {
+> > > 		const struct sh_dmae_slave_config *cfg;
+> > > 
+> > > 		cfg = sh_dmae_find_slave(sh_chan, param);
+> > > 		if (!cfg) {
+> > > 			ret = -EINVAL;
+> > > 			goto efindslave;
+> > > 		}
+> > Now am doubly confused. Are you saying that you are using
+> > alloc_chan_resources for doing filtering??
+> 
+> Let's look at __dma_request_channel(). It iterates over DMA devices and 
+> calls private_candidate() for each of them, which in turn calls the filter 
+> function for each free channel on the current device. As soon as the 
+> filter returns "true" for one of channels, a private candidate is found. 
+> And in my filter I do exactly this - assign the .private pointer and 
+> return "true." Next dma_chan_get() is called, which in turn calls driver's 
+> .device_alloc_chan_resources() method. There we check the previously set 
+> .private pointer to see, if this slave can be served by this DMA device. 
+> On sh-mobile you can freely configure single DMA channels for different 
+> slaves, as long as this slave is at all supported by the current DMA 
+> controller device. If this slave can be supported - all is good, we use 
+> the private data to configure the channel. If not - we return an error and 
+> __dma_request_channel() iterates to the next DMA controller device, which 
+> is exactly what we need.
 
-Yes, works for me:
-
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Haven't heard back from you after this my reply. Does this mean, that 
+you're now satisfied with my explanation and are going to apply my patch?
 
 Thanks
 Guennadi
-
-> 
-> Thanks,
-> Rafael
-> 
-> 
-> ---
-> From: Rafael J. Wysocki <rjw@sisk.pl>
-> Subject: PM / Clocks: Do not acquire a mutex under a spinlock
-> 
-> Commit b7ab83e (PM: Use spinlock instead of mutex in clock
-> management functions) introduced a regression causing clocks_mutex
-> to be acquired under a spinlock.  This happens because
-> pm_clk_suspend() and pm_clk_resume() call pm_clk_acquire() under
-> pcd->lock, but pm_clk_acquire() executes clk_get() which causes
-> clocks_mutex to be acquired.  Similarly, __pm_clk_remove(),
-> executed under pcd->lock, calls clk_put(), which also causes
-> clocks_mutex to be acquired.
-> 
-> To fix those problems make pm_clk_add() call pm_clk_acquire(), so
-> that pm_clk_suspend() and pm_clk_resume() don't have to do that.
-> Change pm_clk_remove() and pm_clk_destroy() to separate
-> modifications of the pcd->clock_list list from the actual removal of
-> PM clock entry objects done by __pm_clk_remove().
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> ---
->  drivers/base/power/clock_ops.c |   75 ++++++++++++++++++++---------------------
->  1 file changed, 38 insertions(+), 37 deletions(-)
-> 
-> Index: linux/drivers/base/power/clock_ops.c
-> =================================> --- linux.orig/drivers/base/power/clock_ops.c
-> +++ linux/drivers/base/power/clock_ops.c
-> @@ -42,6 +42,22 @@ static struct pm_clk_data *__to_pcd(stru
->  }
->  
->  /**
-> + * pm_clk_acquire - Acquire a device clock.
-> + * @dev: Device whose clock is to be acquired.
-> + * @ce: PM clock entry corresponding to the clock.
-> + */
-> +static void pm_clk_acquire(struct device *dev, struct pm_clock_entry *ce)
-> +{
-> +	ce->clk = clk_get(dev, ce->con_id);
-> +	if (IS_ERR(ce->clk)) {
-> +		ce->status = PCE_STATUS_ERROR;
-> +	} else {
-> +		ce->status = PCE_STATUS_ACQUIRED;
-> +		dev_dbg(dev, "Clock %s managed by runtime PM.\n", ce->con_id);
-> +	}
-> +}
-> +
-> +/**
->   * pm_clk_add - Start using a device clock for power management.
->   * @dev: Device whose clock is going to be used for power management.
->   * @con_id: Connection ID of the clock.
-> @@ -73,6 +89,8 @@ int pm_clk_add(struct device *dev, const
->  		}
->  	}
->  
-> +	pm_clk_acquire(dev, ce);
-> +
->  	spin_lock_irq(&pcd->lock);
->  	list_add_tail(&ce->node, &pcd->clock_list);
->  	spin_unlock_irq(&pcd->lock);
-> @@ -82,17 +100,12 @@ int pm_clk_add(struct device *dev, const
->  /**
->   * __pm_clk_remove - Destroy PM clock entry.
->   * @ce: PM clock entry to destroy.
-> - *
-> - * This routine must be called under the spinlock protecting the PM list of
-> - * clocks corresponding the the @ce's device.
->   */
->  static void __pm_clk_remove(struct pm_clock_entry *ce)
->  {
->  	if (!ce)
->  		return;
->  
-> -	list_del(&ce->node);
-> -
->  	if (ce->status < PCE_STATUS_ERROR) {
->  		if (ce->status = PCE_STATUS_ENABLED)
->  			clk_disable(ce->clk);
-> @@ -126,18 +139,22 @@ void pm_clk_remove(struct device *dev, c
->  	spin_lock_irq(&pcd->lock);
->  
->  	list_for_each_entry(ce, &pcd->clock_list, node) {
-> -		if (!con_id && !ce->con_id) {
-> -			__pm_clk_remove(ce);
-> -			break;
-> -		} else if (!con_id || !ce->con_id) {
-> +		if (!con_id && !ce->con_id)
-> +			goto remove;
-> +		else if (!con_id || !ce->con_id)
->  			continue;
-> -		} else if (!strcmp(con_id, ce->con_id)) {
-> -			__pm_clk_remove(ce);
-> -			break;
-> -		}
-> +		else if (!strcmp(con_id, ce->con_id))
-> +			goto remove;
->  	}
->  
->  	spin_unlock_irq(&pcd->lock);
-> +	return;
-> +
-> + remove:
-> +	list_del(&ce->node);
-> +	spin_unlock_irq(&pcd->lock);
-> +
-> +	__pm_clk_remove(ce);
->  }
->  
->  /**
-> @@ -175,20 +192,27 @@ void pm_clk_destroy(struct device *dev)
->  {
->  	struct pm_clk_data *pcd = __to_pcd(dev);
->  	struct pm_clock_entry *ce, *c;
-> +	struct list_head list;
->  
->  	if (!pcd)
->  		return;
->  
->  	dev->power.subsys_data = NULL;
-> +	INIT_LIST_HEAD(&list);
->  
->  	spin_lock_irq(&pcd->lock);
->  
->  	list_for_each_entry_safe_reverse(ce, c, &pcd->clock_list, node)
-> -		__pm_clk_remove(ce);
-> +		list_move(&ce->node, &list);
->  
->  	spin_unlock_irq(&pcd->lock);
->  
->  	kfree(pcd);
-> +
-> +	list_for_each_entry_safe_reverse(ce, c, &list, node) {
-> +		list_del(&ce->node);
-> +		__pm_clk_remove(ce);
-> +	}
->  }
->  
->  #endif /* CONFIG_PM */
-> @@ -196,23 +220,6 @@ void pm_clk_destroy(struct device *dev)
->  #ifdef CONFIG_PM_RUNTIME
->  
->  /**
-> - * pm_clk_acquire - Acquire a device clock.
-> - * @dev: Device whose clock is to be acquired.
-> - * @con_id: Connection ID of the clock.
-> - */
-> -static void pm_clk_acquire(struct device *dev,
-> -				    struct pm_clock_entry *ce)
-> -{
-> -	ce->clk = clk_get(dev, ce->con_id);
-> -	if (IS_ERR(ce->clk)) {
-> -		ce->status = PCE_STATUS_ERROR;
-> -	} else {
-> -		ce->status = PCE_STATUS_ACQUIRED;
-> -		dev_dbg(dev, "Clock %s managed by runtime PM.\n", ce->con_id);
-> -	}
-> -}
-> -
-> -/**
->   * pm_clk_suspend - Disable clocks in a device's PM clock list.
->   * @dev: Device to disable the clocks for.
->   */
-> @@ -230,9 +237,6 @@ int pm_clk_suspend(struct device *dev)
->  	spin_lock_irqsave(&pcd->lock, flags);
->  
->  	list_for_each_entry_reverse(ce, &pcd->clock_list, node) {
-> -		if (ce->status = PCE_STATUS_NONE)
-> -			pm_clk_acquire(dev, ce);
-> -
->  		if (ce->status < PCE_STATUS_ERROR) {
->  			clk_disable(ce->clk);
->  			ce->status = PCE_STATUS_ACQUIRED;
-> @@ -262,9 +266,6 @@ int pm_clk_resume(struct device *dev)
->  	spin_lock_irqsave(&pcd->lock, flags);
->  
->  	list_for_each_entry(ce, &pcd->clock_list, node) {
-> -		if (ce->status = PCE_STATUS_NONE)
-> -			pm_clk_acquire(dev, ce);
-> -
->  		if (ce->status < PCE_STATUS_ERROR) {
->  			clk_enable(ce->clk);
->  			ce->status = PCE_STATUS_ENABLED;
-> 
-
 ---
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
