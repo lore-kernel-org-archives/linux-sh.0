@@ -1,62 +1,63 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 05 Sep 2011 07:38:35 +0000
-Subject: Re: Ecovec in current sh-latest
-Message-Id: <Pine.LNX.4.64.1109050927150.13066@axis700.grange>
+From: Florian Tobias Schandinat <FlorianSchandinat@gmx.de>
+Date: Mon, 05 Sep 2011 17:19:08 +0000
+Subject: Re: [PATCH v2 0/8] sh_mobile_lcdc: Support format changes at runtime
+Message-Id: <4E65048C.4080908@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1109020025350.15166@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1109020025350.15166@axis700.grange>
+References: <1314788459-31791-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1314788459-31791-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-fbdev@vger.kernel.org
 
-On Mon, 5 Sep 2011, Paul Mundt wrote:
+Hi Laurent,
 
-> On Fri, Sep 02, 2011 at 10:17:54AM +0200, Guennadi Liakhovetski wrote:
-> > To get ecovec to run with today's sh-latest (pretty much the same with 
-> > Linux' tree) the following patches have to be reverted:
-> > 
-> > commit 794d78fea51504bad3880d14f354a9847f318f25
-> > Author: Magnus Damm <damm@opensource.se>
-> > Date:   Tue Jun 21 07:55:12 2011 +0000
-> > 
-> >     drivers: sh: late disabling of clocks V2
-> > 
-> Do we know which driver that's the problem for the ecovec case?
+On 08/31/2011 11:00 AM, Laurent Pinchart wrote:
+> Hi everybody,
+>=20
+> Here's the second version of the .fb_set_par() support for the sh_mobile_=
+lcdc
+> driver patch set. It allows userspace to change the frame buffer format a=
+nd
+> size at runtime. The patches apply on top of Florian's fbdev-next branch
+> available at git://github.com/schandinat/linux-2.6.git.
+>=20
+> Compared to v1, this version includes an additional MERAM fix.
+>=20
+> Frame buffer memory reallocation is currently not supported. You will nee=
+d to
+> make sure platform data sets the maximum size and bpp to high enough valu=
+es
+> for all formats and sizes you want to support at runtime.
 
-I see at least two drivers misbehaving: ethernet is failing to perform 
-dhcp for nfs root-mount, and LCD gets an image at boot and then slowly 
-fade out.
+As you've asked me in
+	"[PULL] SH mobile LCDC cleanups and fixes"
+I've applied this series as it looks okay to me.
 
-> We can of course pile on another CLK_ENABLE_ON_INIT workaround for 3.1,
-> so long as there's a plan to get the driver properly fixed for 3.2.
-> 
-> > commit 3f9b8520b06013939ad247ba08b69529b5f14be1
-> > Author: Paul Mundt <lethal@linux-sh.org>
-> > Date:   Tue May 31 14:38:29 2011 +0900
-> > 
-> >     sh64: Move from P1SEG to CAC_ADDR for consistent sync.
-> > 
-> I'll queue a revert for this for 3.1. There's quite a bit of bogosity
-> going on in some of the drivers that this exposed, but we're not going to
-> get it all fixed in one shot, either.
-> 
-> > commit cb3da5b837a410a1fb90019549b18178f3c87258
-> > Author: Magnus Damm <damm@opensource.se>
-> > Date:   Wed Aug 3 12:47:36 2011 +0900
-> > 
-> >     serial: sh-sci: console Runtime PM support
-> > 
-> What's the issue with this one? I'm assuming this and the clock disabling
-> revert are related.
 
-IIRC, the boot process stops after
+Thanks,
 
-console [ttySC0] enabled
+Florian Tobias Schandinat
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+>=20
+> The patches have been tested with the fbdev-test utility
+> (http://git.ideasonboard.org/?p=FBdev-test.git;a=3Dsummary) on a Mackerel=
+ board.
+>=20
+> Laurent Pinchart (8):
+>   sh_mobile_meram: Reset ICBs at unregistration time
+>   fbdev: sh_mobile_lcdc: Adjust requested parameters in .fb_check_var
+>   fbdev: sh_mobile_lcdc: Add support for format changes at runtime
+>   fbdev: sh_mobile_lcdc: use display information in info for panning
+>   fbdev: sh_mobile_lcdc: Update fix.line_length in .fb_set_par()
+>   fbdev: sh_mobile_lcdc: Avoid forward declarations
+>   fbdev: sh_mobile_lcdc: Split channel initialization from probe
+>     function
+>   fbdev: sh_mobile_lcdc: Remove sh_mobile_lcdc_set_bpp()
+>=20
+>  drivers/video/sh_mobile_lcdcfb.c |  570 +++++++++++++++++++++-----------=
+------
+>  drivers/video/sh_mobile_meram.c  |    6 +-
+>  2 files changed, 313 insertions(+), 263 deletions(-)
+>=20
+
