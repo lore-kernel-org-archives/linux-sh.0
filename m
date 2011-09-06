@@ -1,65 +1,49 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 05 Sep 2011 07:26:45 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Sep 2011 22:16:46 +0000
 Subject: Re: [PATCH 1/2] SPI: spi_sh_msiof: implement DMA support
-Message-Id: <Pine.LNX.4.64.1109050925170.13066@axis700.grange>
+Message-Id: <CANqRtoTKxuRzOTcuL9vknNrn_k7HPZCJh3A4iGr9vczrqhfcqA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1109021706480.4731@axis700.grange>
- <Pine.LNX.4.64.1109021712180.4731@axis700.grange> <20110905045911.GE22142@linux-sh.org>
-In-Reply-To: <20110905045911.GE22142@linux-sh.org>
+	<Pine.LNX.4.64.1109021712180.4731@axis700.grange>
+	<20110905045911.GE22142@linux-sh.org>
+	<Pine.LNX.4.64.1109050925170.13066@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1109050925170.13066@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: spi-devel-general@lists.sourceforge.net, linux-sh@vger.kernel.org, Grant Likely <grant.likely@secretlab.ca>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Paul Mundt <lethal@linux-sh.org>, spi-devel-general@lists.sourceforge.net, linux-sh@vger.kernel.org
 
-Hi Paul
+On Mon, Sep 5, 2011 at 4:26 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> On Mon, 5 Sep 2011, Paul Mundt wrote:
+>> On Fri, Sep 02, 2011 at 05:13:31PM +0200, Guennadi Liakhovetski wrote:
+>> > Use the sh_dma dmaengine driver to support DMA on MSIOF.
+>> >
+>> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Mon, 5 Sep 2011, Paul Mundt wrote:
+>> > @@ -695,11 +1030,11 @@ static int sh_msiof_spi_remove(struct platform_=
+device *pdev)
+>> >
+>> > =A0 =A0 ret =3D spi_bitbang_stop(&p->bitbang);
+>> > =A0 =A0 if (!ret) {
+>> > + =A0 =A0 =A0 =A0 =A0 sh_msiof_release_dma(p);
+>> > =A0 =A0 =A0 =A0 =A0 =A0 pm_runtime_disable(&pdev->dev);
+>> > =A0 =A0 =A0 =A0 =A0 =A0 free_irq(platform_get_irq(pdev, 0), p);
+>> > =A0 =A0 =A0 =A0 =A0 =A0 iounmap(p->mapbase);
+>> > =A0 =A0 =A0 =A0 =A0 =A0 clk_put(p->clk);
+>> > - =A0 =A0 =A0 =A0 =A0 spi_master_put(p->bitbang.master);
+>> > =A0 =A0 }
+>> > =A0 =A0 return ret;
+>> > =A0}
+>>
+>> You've also killed off the spi_master_put() here.
+>
+> Yes, spi_bitbang_stop() does it all already.
 
-> On Fri, Sep 02, 2011 at 05:13:31PM +0200, Guennadi Liakhovetski wrote:
-> > Use the sh_dma dmaengine driver to support DMA on MSIOF.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> No real opinion one way or the other, just a couple observations.
-> 
-> > +static void sh_msiof_request_dma(struct sh_msiof_spi_priv *p)
-> > +{
-> ..
-> > +	p->dummypage = alloc_page(GFP_KERNEL);
-> > +	if (!p->dummypage)
-> > +		return;
-> > +
-> ..
-> > +echantx:
-> > +	__free_pages(p->dummypage, 0);
-> > +}
-> > +
-> alloc_page() can be balanced out with __free_page().
+So it's a bug fix built-in to a feature patch? If so, please break out
+and submit as a fix.
 
-Hm, indeed, wondering, how I missed it.
+Thanks,
 
-> > @@ -695,11 +1030,11 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
-> >  
-> >  	ret = spi_bitbang_stop(&p->bitbang);
-> >  	if (!ret) {
-> > +		sh_msiof_release_dma(p);
-> >  		pm_runtime_disable(&pdev->dev);
-> >  		free_irq(platform_get_irq(pdev, 0), p);
-> >  		iounmap(p->mapbase);
-> >  		clk_put(p->clk);
-> > -		spi_master_put(p->bitbang.master);
-> >  	}
-> >  	return ret;
-> >  }
-> 
-> You've also killed off the spi_master_put() here.
-
-Yes, spi_bitbang_stop() does it all already.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+/ magnus
