@@ -1,106 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 07 Sep 2011 20:01:19 +0000
+From: "Koul, Vinod" <vinod.koul@intel.com>
+Date: Wed, 07 Sep 2011 21:49:53 +0000
 Subject: Re: [PATCH] serial: sh-sci: don't filter on DMA device, use only
-Message-Id: <alpine.DEB.2.00.1109072048310.30407@axis700.grange>
+Message-Id: <438BB0150E931F4B9CE701519A4463010871804A4F@bgsmsx502.gar.corp.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1106241354060.6014@axis700.grange>
  <1308916071.1536.4.camel@vkoul-udesk3> <20110829080047.GJ31809@linux-sh.org>
  <CANqRtoRn-Csu+Rns6dn6=cJmRqbZfLKXA9brs8Ug9rFvGRn78w@mail.gmail.com>
- <1314618931.1606.114.camel@vkoul-udesk3> <Pine.LNX.4.64.1108300931220.19151@axis700.grange>
- <1314698522.1606.164.camel@vkoul-udesk3> <Pine.LNX.4.64.1108301317280.19151@axis700.grange>
- <1314703426.1606.167.camel@vkoul-udesk3> <Pine.LNX.4.64.1108301332190.19151@axis700.grange>
- <Pine.LNX.4.64.1109051002400.1112@axis700.grange> <1315228408.26251.75.camel@vkoul-udesk3>
- <Pine.LNX.4.64.1109051532220.1112@axis700.grange> <1315233788.26251.163.camel@vkoul-udesk3>
- <Pine.LNX.4.64.1109051700030.1112@axis700.grange> <1315235335.26251.194.camel@vkoul-udesk3>
+ <1314618931.1606.114.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1108300931220.19151@axis700.grange>
+ <1314698522.1606.164.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1108301317280.19151@axis700.grange>
+ <1314703426.1606.167.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1108301332190.19151@axis700.grange>
+ <Pine.LNX.4.64.1109051002400.1112@axis700.grange>
+ <1315228408.26251.75.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1109051532220.1112@axis700.grange>
+ <1315233788.26251.163.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1109051700030.1112@axis700.grange>
+ <1315235335.26251.194.camel@vkoul-udesk3>
  <Pine.LNX.4.64.1109051716530.1112@axis700.grange>
  <438BB0150E931F4B9CE701519A4463010871804A4B@bgsmsx502.gar.corp.intel.com>
-In-Reply-To: <438BB0150E931F4B9CE701519A4463010871804A4B@bgsmsx502.gar.corp.intel.com>
+ <alpine.DEB.2.00.1109072048310.30407@axis700.grange>
+In-Reply-To: <alpine.DEB.2.00.1109072048310.30407@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "Koul, Vinod" <vinod.koul@intel.com>
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: "g.liakhovetski@gmx.de" <g.liakhovetski@gmx.de>
 Cc: "Williams, Dan J" <dan.j.williams@intel.com>, "magnus.damm@gmail.com" <magnus.damm@gmail.com>, "lethal@linux-sh.org" <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "damm@opensource.se" <damm@opensource.se>
 
-On Thu, 8 Sep 2011, Koul, Vinod wrote:
-
-> On Mon, 2011-09-05 at 17:21 +0200, Guennadi Liakhovetski wrote:
-> > On Mon, 5 Sep 2011, Vinod Koul wrote:
-> > 
-> > > On Mon, 2011-09-05 at 17:01 +0200, Guennadi Liakhovetski wrote:
-> > > > On Mon, 5 Sep 2011, Vinod Koul wrote:
-> > > > 
-> > > > > On Mon, 2011-09-05 at 15:48 +0200, Guennadi Liakhovetski wrote:
-> > > > > > 
-> > > > > > Let me try again. DMA channels on these DMA controllers are not dedicated. 
-> > > > > > On one such SoC there can be several such DMA controllers of different 
-> > > > > > kinds. One kind is "generic" - it can do memcpy(), besides channels can be 
-> > > > > > freely configured for one of onboard peripherals: serial, mmc, etc. Some 
-> > > > > > of them can also serve external DMA-capable devices. Another kind of DMA 
-> > > > > > controllers, served by the same driver, can only be used with USB 
-> > > > > > controllers. Now, if the MMC driver requests a DMA channel, let's say, the 
-> > > > > > dmaengine core first finds the USB DMA controller. The MMC driver cannot 
-> > > > > > know this. It assigns its MMC DMA configuration to the.private pointer and 
-> > > > > > returns true. Next the DMA driver is entered, it checks the private 
-> > > > > > pointer, sees an MMC channel request, looks at the DMA controller and 
-> > > > > > sees, that it doesn't support MMC. So, .device_alloc_chan_resources() 
-> > > > > > fails. When the same is attempted with a suitable DMA controller, the 
-> > > > > > shdma driver recognises, that the controller can service MMC and uses the 
-> > > > > > data, provided the MMC driver, to configure the DMA channel for MMC.
-> > > > > Hmmm, Can't you know in filter function if the respective channel can do
-> > > > > the dma for you or not? Maybe export a dma function or use platform data
-> > > > > for this (wont you soc have these caps fixed), i prefer latter.
-> > > > > That maybe a better approach. 
-> > > > 
-> > > > How? On a system you can have 3 suitable DMA controllers and 2 unsuitable. 
-> > > > Do you want to pass a list of 3 suitable DMA controllers to each 
-> > > > peripheral driver?...
-> > > The peripheral driver (client driver in slave-dma terminology) should
-> > > already know which dmac it wants. (base on information in platform data
-> > > etc) That is why the filter function is provided. Please use it properly
-> > > Other soc have similar capabilities and they can filter properly so why
-> > > cant you..?
-> > 
-> > Sorry, I have been thinking about these possibilities, but I really didn't 
-> > find any similar case in existing drivers. Normally either channels are 
-> > fixed - only one channel can be used for a specific peripheral, or any at 
-> > all, or there is only one suitable controller. I only see two 
-> > possibilities here, and they both look ugly to me:
-> > 
-> > (1) pass a list of suitable DMA controllers to slave-dma drivers, there in 
-> > the filter you'd have to scan that list.
-> > (2) select only one out of several suitable DMA controllers in the 
-> > platform configuration - that needlessly reduces flexibility.
-> > 
-> > Whereas on the contrary, the DMA controller itself can perfectly look 
-> > through the list of supported peripherals on the current controller and 
-> > decide, whether the requested one is among them or not.
-> Then why not have shdma_filter_func() exported and then used by all your
-> clients for proper filtering.
-
-You're seriously suggesting to export and use an additional shdma private 
-function, bypassing the dmaengine API?... That really doesn't sound like a 
-good idea to me, sorry. How about using .device_control(DMA_SLAVE_CONFIG) 
-from the filter function directly to verify channel suitability?
-
-> I cant agree to the whole point of filtering in alloc
-> 
-> One channel is allocated, we should _not_ do any further filtering
-
-Sorry, I do not understand this argumentation. Filtering and resource 
-allocation are parts of the channel-acquisition process, either of them 
-can fail, in which case the channel remains free for future requests.
-
-Thanks
-Guennadi
-
-> > > PS: This might well be my last post before Tue EOD PST, traveling to
-> > > LPC, if you are there feel free to chat with me on this.
-> > 
-> > No, unfortunately, I won#t be there. Are you coming to the KS in Prague in 
-> > October?
-> Not decided yet...
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+T24gV2VkLCAyMDExLTA5LTA3IGF0IDIyOjAxICswMjAwLCBHdWVubmFkaSBMaWFraG92ZXRza2kg
+d3JvdGU6Cj4gT24gVGh1LCA4IFNlcCAyMDExLCBLb3VsLCBWaW5vZCB3cm90ZToKPiBZb3UncmUg
+c2VyaW91c2x5IHN1Z2dlc3RpbmcgdG8gZXhwb3J0IGFuZCB1c2UgYW4gYWRkaXRpb25hbCBzaGRt
+YSBwcml2YXRlIAo+IGZ1bmN0aW9uLCBieXBhc3NpbmcgdGhlIGRtYWVuZ2luZSBBUEk/Li4uIFRo
+YXQgcmVhbGx5IGRvZXNuJ3Qgc291bmQgbGlrZSBhIAo+IGdvb2QgaWRlYSB0byBtZSwgc29ycnku
+IEhvdyBhYm91dCB1c2luZyAuZGV2aWNlX2NvbnRyb2woRE1BX1NMQVZFX0NPTkZJRykgCj4gZnJv
+bSB0aGUgZmlsdGVyIGZ1bmN0aW9uIGRpcmVjdGx5IHRvIHZlcmlmeSBjaGFubmVsIHN1aXRhYmls
+aXR5PwpZZXMgc2VlIHN0ZWRtYTQwLCBjb2g5MDEzOCBkcml2ZXJzCi5kZXZpY2VfY29udHJvbCBp
+cyBub3QgcmlnaHQgcGxhY2UgYXMgY2hhbm5lbCBpcyBhbHJlYWR5IGFsbG9jYXRlZC4KCllvdSBh
+cmUgYmFzaWNhbGx5IG1vdmluZyBmaWx0ZXIgZm4gZnJvbSBhbGwgY2xpZW50cyB0byBkbWFjIGRy
+aXZlci4KCj4gCj4gPiBJIGNhbnQgYWdyZWUgdG8gdGhlIHdob2xlIHBvaW50IG9mIGZpbHRlcmlu
+ZyBpbiBhbGxvYwo+ID4gCj4gPiBPbmUgY2hhbm5lbCBpcyBhbGxvY2F0ZWQsIHdlIHNob3VsZCBf
+bm90XyBkbyBhbnkgZnVydGhlciBmaWx0ZXJpbmcKPiAKPiBTb3JyeSwgSSBkbyBub3QgdW5kZXJz
+dGFuZCB0aGlzIGFyZ3VtZW50YXRpb24uIEZpbHRlcmluZyBhbmQgcmVzb3VyY2UgCj4gYWxsb2Nh
+dGlvbiBhcmUgcGFydHMgb2YgdGhlIGNoYW5uZWwtYWNxdWlzaXRpb24gcHJvY2VzcywgZWl0aGVy
+IG9mIHRoZW0gCj4gY2FuIGZhaWwsIGluIHdoaWNoIGNhc2UgdGhlIGNoYW5uZWwgcmVtYWlucyBm
+cmVlIGZvciBmdXR1cmUgcmVxdWVzdHMuCkRNQSBkcml2ZXJzIHNldCBjYXBzIGZvciBlYWNoIGNo
+YW5uZWwKQ2xpZW50IHJlcXVlc3RzIGEgY2hhbm5lbCBhbmQgZG1hZW5naW5lIG1hdGNoZXMgY2hh
+bm5lbCBiYXNlZCBvbiBjYXBzCmFuZCBmaWxlciBmdW5jdGlvbiBpcyBjYWxsZWQgc28gdGhhdCBh
+ZGRpdGlvbmFsIGZpbHRlcmluZyBjYW4gdGFrZQpwbGFjZS4KQW5kIC5hbGxvY19jaGFuX3Jlc291
+cmNlcyBpcyBzdXBwb3NlZCB0byBhbGxvY2F0ZSB0aGUgY2hhbm5lbCByZXNvdXJjZQphbmQgbm90
+IGRvIGFueXRoaW5nIGVsc2UuCgotLQp+Vmlub2QKCv/06Lp7Lm7HK4m3n66JrYYrJYrL/7Hp3bYX
+pYp3/7p7Lm7HK4m3pYp7sf7I/4p7YXm6HcqH2pnrLGoHraJmo6K3aJqP74Hq/5Hq53pf6K4DKK3p
+mo6K3aJqIp36GrYbbaf//74Hq/5Hq53p/6K4P5mo6K3aJqP4p36P4Qo=
