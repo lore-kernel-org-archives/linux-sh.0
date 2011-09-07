@@ -1,84 +1,94 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 05 Sep 2011 15:21:57 +0000
+From: "Koul, Vinod" <vinod.koul@intel.com>
+Date: Wed, 07 Sep 2011 18:54:34 +0000
 Subject: Re: [PATCH] serial: sh-sci: don't filter on DMA device, use only
-Message-Id: <Pine.LNX.4.64.1109051716530.1112@axis700.grange>
+Message-Id: <438BB0150E931F4B9CE701519A4463010871804A4B@bgsmsx502.gar.corp.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1106241354060.6014@axis700.grange> 
- <1308916071.1536.4.camel@vkoul-udesk3>  <20110829080047.GJ31809@linux-sh.org>
-  <CANqRtoRn-Csu+Rns6dn6=cJmRqbZfLKXA9brs8Ug9rFvGRn78w@mail.gmail.com> 
- <1314618931.1606.114.camel@vkoul-udesk3>  <Pine.LNX.4.64.1108300931220.19151@axis700.grange>
-  <1314698522.1606.164.camel@vkoul-udesk3>  <Pine.LNX.4.64.1108301317280.19151@axis700.grange>
-  <1314703426.1606.167.camel@vkoul-udesk3>  <Pine.LNX.4.64.1108301332190.19151@axis700.grange>
-  <Pine.LNX.4.64.1109051002400.1112@axis700.grange>  <1315228408.26251.75.camel@vkoul-udesk3>
-  <Pine.LNX.4.64.1109051532220.1112@axis700.grange>  <1315233788.26251.163.camel@vkoul-udesk3>
-  <Pine.LNX.4.64.1109051700030.1112@axis700.grange> <1315235335.26251.194.camel@vkoul-udesk3>
-In-Reply-To: <1315235335.26251.194.camel@vkoul-udesk3>
+References: <Pine.LNX.4.64.1106241354060.6014@axis700.grange>
+ <1308916071.1536.4.camel@vkoul-udesk3> <20110829080047.GJ31809@linux-sh.org>
+ <CANqRtoRn-Csu+Rns6dn6=cJmRqbZfLKXA9brs8Ug9rFvGRn78w@mail.gmail.com>
+ <1314618931.1606.114.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1108300931220.19151@axis700.grange>
+ <1314698522.1606.164.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1108301317280.19151@axis700.grange>
+ <1314703426.1606.167.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1108301332190.19151@axis700.grange>
+ <Pine.LNX.4.64.1109051002400.1112@axis700.grange>
+ <1315228408.26251.75.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1109051532220.1112@axis700.grange>
+ <1315233788.26251.163.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1109051700030.1112@axis700.grange>
+ <1315235335.26251.194.camel@vkoul-udesk3>
+ <Pine.LNX.4.64.1109051716530.1112@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1109051716530.1112@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@linux.intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Magnus Damm <damm@opensource.se>
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: "g.liakhovetski@gmx.de" <g.liakhovetski@gmx.de>
+Cc: "Williams, Dan J" <dan.j.williams@intel.com>, "magnus.damm@gmail.com" <magnus.damm@gmail.com>, "lethal@linux-sh.org" <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "damm@opensource.se" <damm@opensource.se>
 
-On Mon, 5 Sep 2011, Vinod Koul wrote:
-
-> On Mon, 2011-09-05 at 17:01 +0200, Guennadi Liakhovetski wrote:
-> > On Mon, 5 Sep 2011, Vinod Koul wrote:
-> > 
-> > > On Mon, 2011-09-05 at 15:48 +0200, Guennadi Liakhovetski wrote:
-> > > > 
-> > > > Let me try again. DMA channels on these DMA controllers are not dedicated. 
-> > > > On one such SoC there can be several such DMA controllers of different 
-> > > > kinds. One kind is "generic" - it can do memcpy(), besides channels can be 
-> > > > freely configured for one of onboard peripherals: serial, mmc, etc. Some 
-> > > > of them can also serve external DMA-capable devices. Another kind of DMA 
-> > > > controllers, served by the same driver, can only be used with USB 
-> > > > controllers. Now, if the MMC driver requests a DMA channel, let's say, the 
-> > > > dmaengine core first finds the USB DMA controller. The MMC driver cannot 
-> > > > know this. It assigns its MMC DMA configuration to the.private pointer and 
-> > > > returns true. Next the DMA driver is entered, it checks the private 
-> > > > pointer, sees an MMC channel request, looks at the DMA controller and 
-> > > > sees, that it doesn't support MMC. So, .device_alloc_chan_resources() 
-> > > > fails. When the same is attempted with a suitable DMA controller, the 
-> > > > shdma driver recognises, that the controller can service MMC and uses the 
-> > > > data, provided the MMC driver, to configure the DMA channel for MMC.
-> > > Hmmm, Can't you know in filter function if the respective channel can do
-> > > the dma for you or not? Maybe export a dma function or use platform data
-> > > for this (wont you soc have these caps fixed), i prefer latter.
-> > > That maybe a better approach. 
-> > 
-> > How? On a system you can have 3 suitable DMA controllers and 2 unsuitable. 
-> > Do you want to pass a list of 3 suitable DMA controllers to each 
-> > peripheral driver?...
-> The peripheral driver (client driver in slave-dma terminology) should
-> already know which dmac it wants. (base on information in platform data
-> etc) That is why the filter function is provided. Please use it properly
-> Other soc have similar capabilities and they can filter properly so why
-> cant you..?
-
-Sorry, I have been thinking about these possibilities, but I really didn't 
-find any similar case in existing drivers. Normally either channels are 
-fixed - only one channel can be used for a specific peripheral, or any at 
-all, or there is only one suitable controller. I only see two 
-possibilities here, and they both look ugly to me:
-
-(1) pass a list of suitable DMA controllers to slave-dma drivers, there in 
-the filter you'd have to scan that list.
-(2) select only one out of several suitable DMA controllers in the 
-platform configuration - that needlessly reduces flexibility.
-
-Whereas on the contrary, the DMA controller itself can perfectly look 
-through the list of supported peripherals on the current controller and 
-decide, whether the requested one is among them or not.
-
-> PS: This might well be my last post before Tue EOD PST, traveling to
-> LPC, if you are there feel free to chat with me on this.
-
-No, unfortunately, I won#t be there. Are you coming to the KS in Prague in 
-October?
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+T24gTW9uLCAyMDExLTA5LTA1IGF0IDE3OjIxICswMjAwLCBHdWVubmFkaSBMaWFraG92ZXRza2kg
+d3JvdGU6Cj4gT24gTW9uLCA1IFNlcCAyMDExLCBWaW5vZCBLb3VsIHdyb3RlOgo+IAo+ID4gT24g
+TW9uLCAyMDExLTA5LTA1IGF0IDE3OjAxICswMjAwLCBHdWVubmFkaSBMaWFraG92ZXRza2kgd3Jv
+dGU6Cj4gPiA+IE9uIE1vbiwgNSBTZXAgMjAxMSwgVmlub2QgS291bCB3cm90ZToKPiA+ID4gCj4g
+PiA+ID4gT24gTW9uLCAyMDExLTA5LTA1IGF0IDE1OjQ4ICswMjAwLCBHdWVubmFkaSBMaWFraG92
+ZXRza2kgd3JvdGU6Cj4gPiA+ID4gPiAKPiA+ID4gPiA+IExldCBtZSB0cnkgYWdhaW4uIERNQSBj
+aGFubmVscyBvbiB0aGVzZSBETUEgY29udHJvbGxlcnMgYXJlIG5vdCBkZWRpY2F0ZWQuIAo+ID4g
+PiA+ID4gT24gb25lIHN1Y2ggU29DIHRoZXJlIGNhbiBiZSBzZXZlcmFsIHN1Y2ggRE1BIGNvbnRy
+b2xsZXJzIG9mIGRpZmZlcmVudCAKPiA+ID4gPiA+IGtpbmRzLiBPbmUga2luZCBpcyAiZ2VuZXJp
+YyIgLSBpdCBjYW4gZG8gbWVtY3B5KCksIGJlc2lkZXMgY2hhbm5lbHMgY2FuIGJlIAo+ID4gPiA+
+ID4gZnJlZWx5IGNvbmZpZ3VyZWQgZm9yIG9uZSBvZiBvbmJvYXJkIHBlcmlwaGVyYWxzOiBzZXJp
+YWwsIG1tYywgZXRjLiBTb21lIAo+ID4gPiA+ID4gb2YgdGhlbSBjYW4gYWxzbyBzZXJ2ZSBleHRl
+cm5hbCBETUEtY2FwYWJsZSBkZXZpY2VzLiBBbm90aGVyIGtpbmQgb2YgRE1BIAo+ID4gPiA+ID4g
+Y29udHJvbGxlcnMsIHNlcnZlZCBieSB0aGUgc2FtZSBkcml2ZXIsIGNhbiBvbmx5IGJlIHVzZWQg
+d2l0aCBVU0IgCj4gPiA+ID4gPiBjb250cm9sbGVycy4gTm93LCBpZiB0aGUgTU1DIGRyaXZlciBy
+ZXF1ZXN0cyBhIERNQSBjaGFubmVsLCBsZXQncyBzYXksIHRoZSAKPiA+ID4gPiA+IGRtYWVuZ2lu
+ZSBjb3JlIGZpcnN0IGZpbmRzIHRoZSBVU0IgRE1BIGNvbnRyb2xsZXIuIFRoZSBNTUMgZHJpdmVy
+IGNhbm5vdCAKPiA+ID4gPiA+IGtub3cgdGhpcy4gSXQgYXNzaWducyBpdHMgTU1DIERNQSBjb25m
+aWd1cmF0aW9uIHRvIHRoZS5wcml2YXRlIHBvaW50ZXIgYW5kIAo+ID4gPiA+ID4gcmV0dXJucyB0
+cnVlLiBOZXh0IHRoZSBETUEgZHJpdmVyIGlzIGVudGVyZWQsIGl0IGNoZWNrcyB0aGUgcHJpdmF0
+ZSAKPiA+ID4gPiA+IHBvaW50ZXIsIHNlZXMgYW4gTU1DIGNoYW5uZWwgcmVxdWVzdCwgbG9va3Mg
+YXQgdGhlIERNQSBjb250cm9sbGVyIGFuZCAKPiA+ID4gPiA+IHNlZXMsIHRoYXQgaXQgZG9lc24n
+dCBzdXBwb3J0IE1NQy4gU28sIC5kZXZpY2VfYWxsb2NfY2hhbl9yZXNvdXJjZXMoKSAKPiA+ID4g
+PiA+IGZhaWxzLiBXaGVuIHRoZSBzYW1lIGlzIGF0dGVtcHRlZCB3aXRoIGEgc3VpdGFibGUgRE1B
+IGNvbnRyb2xsZXIsIHRoZSAKPiA+ID4gPiA+IHNoZG1hIGRyaXZlciByZWNvZ25pc2VzLCB0aGF0
+IHRoZSBjb250cm9sbGVyIGNhbiBzZXJ2aWNlIE1NQyBhbmQgdXNlcyB0aGUgCj4gPiA+ID4gPiBk
+YXRhLCBwcm92aWRlZCB0aGUgTU1DIGRyaXZlciwgdG8gY29uZmlndXJlIHRoZSBETUEgY2hhbm5l
+bCBmb3IgTU1DLgo+ID4gPiA+IEhtbW0sIENhbid0IHlvdSBrbm93IGluIGZpbHRlciBmdW5jdGlv
+biBpZiB0aGUgcmVzcGVjdGl2ZSBjaGFubmVsIGNhbiBkbwo+ID4gPiA+IHRoZSBkbWEgZm9yIHlv
+dSBvciBub3Q/IE1heWJlIGV4cG9ydCBhIGRtYSBmdW5jdGlvbiBvciB1c2UgcGxhdGZvcm0gZGF0
+YQo+ID4gPiA+IGZvciB0aGlzICh3b250IHlvdSBzb2MgaGF2ZSB0aGVzZSBjYXBzIGZpeGVkKSwg
+aSBwcmVmZXIgbGF0dGVyLgo+ID4gPiA+IFRoYXQgbWF5YmUgYSBiZXR0ZXIgYXBwcm9hY2guIAo+
+ID4gPiAKPiA+ID4gSG93PyBPbiBhIHN5c3RlbSB5b3UgY2FuIGhhdmUgMyBzdWl0YWJsZSBETUEg
+Y29udHJvbGxlcnMgYW5kIDIgdW5zdWl0YWJsZS4gCj4gPiA+IERvIHlvdSB3YW50IHRvIHBhc3Mg
+YSBsaXN0IG9mIDMgc3VpdGFibGUgRE1BIGNvbnRyb2xsZXJzIHRvIGVhY2ggCj4gPiA+IHBlcmlw
+aGVyYWwgZHJpdmVyPy4uLgo+ID4gVGhlIHBlcmlwaGVyYWwgZHJpdmVyIChjbGllbnQgZHJpdmVy
+IGluIHNsYXZlLWRtYSB0ZXJtaW5vbG9neSkgc2hvdWxkCj4gPiBhbHJlYWR5IGtub3cgd2hpY2gg
+ZG1hYyBpdCB3YW50cy4gKGJhc2Ugb24gaW5mb3JtYXRpb24gaW4gcGxhdGZvcm0gZGF0YQo+ID4g
+ZXRjKSBUaGF0IGlzIHdoeSB0aGUgZmlsdGVyIGZ1bmN0aW9uIGlzIHByb3ZpZGVkLiBQbGVhc2Ug
+dXNlIGl0IHByb3Blcmx5Cj4gPiBPdGhlciBzb2MgaGF2ZSBzaW1pbGFyIGNhcGFiaWxpdGllcyBh
+bmQgdGhleSBjYW4gZmlsdGVyIHByb3Blcmx5IHNvIHdoeQo+ID4gY2FudCB5b3UuLj8KPiAKPiBT
+b3JyeSwgSSBoYXZlIGJlZW4gdGhpbmtpbmcgYWJvdXQgdGhlc2UgcG9zc2liaWxpdGllcywgYnV0
+IEkgcmVhbGx5IGRpZG4ndCAKPiBmaW5kIGFueSBzaW1pbGFyIGNhc2UgaW4gZXhpc3RpbmcgZHJp
+dmVycy4gTm9ybWFsbHkgZWl0aGVyIGNoYW5uZWxzIGFyZSAKPiBmaXhlZCAtIG9ubHkgb25lIGNo
+YW5uZWwgY2FuIGJlIHVzZWQgZm9yIGEgc3BlY2lmaWMgcGVyaXBoZXJhbCwgb3IgYW55IGF0IAo+
+IGFsbCwgb3IgdGhlcmUgaXMgb25seSBvbmUgc3VpdGFibGUgY29udHJvbGxlci4gSSBvbmx5IHNl
+ZSB0d28gCj4gcG9zc2liaWxpdGllcyBoZXJlLCBhbmQgdGhleSBib3RoIGxvb2sgdWdseSB0byBt
+ZToKPiAKPiAoMSkgcGFzcyBhIGxpc3Qgb2Ygc3VpdGFibGUgRE1BIGNvbnRyb2xsZXJzIHRvIHNs
+YXZlLWRtYSBkcml2ZXJzLCB0aGVyZSBpbiAKPiB0aGUgZmlsdGVyIHlvdSdkIGhhdmUgdG8gc2Nh
+biB0aGF0IGxpc3QuCj4gKDIpIHNlbGVjdCBvbmx5IG9uZSBvdXQgb2Ygc2V2ZXJhbCBzdWl0YWJs
+ZSBETUEgY29udHJvbGxlcnMgaW4gdGhlIAo+IHBsYXRmb3JtIGNvbmZpZ3VyYXRpb24gLSB0aGF0
+IG5lZWRsZXNzbHkgcmVkdWNlcyBmbGV4aWJpbGl0eS4KPiAKPiBXaGVyZWFzIG9uIHRoZSBjb250
+cmFyeSwgdGhlIERNQSBjb250cm9sbGVyIGl0c2VsZiBjYW4gcGVyZmVjdGx5IGxvb2sgCj4gdGhy
+b3VnaCB0aGUgbGlzdCBvZiBzdXBwb3J0ZWQgcGVyaXBoZXJhbHMgb24gdGhlIGN1cnJlbnQgY29u
+dHJvbGxlciBhbmQgCj4gZGVjaWRlLCB3aGV0aGVyIHRoZSByZXF1ZXN0ZWQgb25lIGlzIGFtb25n
+IHRoZW0gb3Igbm90LgpUaGVuIHdoeSBub3QgaGF2ZSBzaGRtYV9maWx0ZXJfZnVuYygpIGV4cG9y
+dGVkIGFuZCB0aGVuIHVzZWQgYnkgYWxsIHlvdXIKY2xpZW50cyBmb3IgcHJvcGVyIGZpbHRlcmlu
+Zy4KCkkgY2FudCBhZ3JlZSB0byB0aGUgd2hvbGUgcG9pbnQgb2YgZmlsdGVyaW5nIGluIGFsbG9j
+CgpPbmUgY2hhbm5lbCBpcyBhbGxvY2F0ZWQsIHdlIHNob3VsZCBfbm90XyBkbyBhbnkgZnVydGhl
+ciBmaWx0ZXJpbmcKCj4gCj4gPiBQUzogVGhpcyBtaWdodCB3ZWxsIGJlIG15IGxhc3QgcG9zdCBi
+ZWZvcmUgVHVlIEVPRCBQU1QsIHRyYXZlbGluZyB0bwo+ID4gTFBDLCBpZiB5b3UgYXJlIHRoZXJl
+IGZlZWwgZnJlZSB0byBjaGF0IHdpdGggbWUgb24gdGhpcy4KPiAKPiBObywgdW5mb3J0dW5hdGVs
+eSwgSSB3b24jdCBiZSB0aGVyZS4gQXJlIHlvdSBjb21pbmcgdG8gdGhlIEtTIGluIFByYWd1ZSBp
+biAKPiBPY3RvYmVyPwpOb3QgZGVjaWRlZCB5ZXQuLi4KCv/06Lp7Lm7HK4m3n66JrYYrJYrL/7Hp
+3bYXpYp3/7p7Lm7HK4m3pYp7sf7I/4p7YXm6HcqH2pnrLGoHraJmo6K3aJqP74Hq/5Hq53pf6K4D
+KK3pmo6K3aJqIp36GrYbbaf//74Hq/5Hq53p/6K4P5mo6K3aJqP4p36P4Qo=
