@@ -1,66 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 23 Sep 2011 05:53:00 +0000
-Subject: [PATCH 03/03] ARM: mach-shmobile: sh7372 sleep warning fixes
-Message-Id: <20110923055300.4013.94354.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 09 Sep 2011 10:28:05 +0000
+Subject: [PATCH 08/10] ARM: mach-shmobile: clock-sh7372: remove un-necessary index
+Message-Id: <87fwk6qaby.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+it is not necessary to have sh7372_xxxx index on static variable
 
-Update the sh7372 sleep code to build parts of the
-code only when SUSPEND and/or CPU_IDLE are set.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/clock-sh7372.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/pm-sh7372.c    |    5 ++++-
- arch/arm/mach-shmobile/sleep-sh7372.S |    2 ++
- 2 files changed, 6 insertions(+), 1 deletion(-)
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index c2702b5..bb36af4 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -476,7 +476,7 @@ static struct clk_ops fsidiv_clk_ops = {
+ 	.disable	= fsidiv_disable,
+ };
+ 
+-static struct clk_mapping sh7372_fsidiva_clk_mapping = {
++static struct clk_mapping fsidiva_clk_mapping = {
+ 	.phys	= FSIDIVA,
+ 	.len	= 8,
+ };
+@@ -484,10 +484,10 @@ static struct clk_mapping sh7372_fsidiva_clk_mapping = {
+ struct clk sh7372_fsidiva_clk = {
+ 	.ops		= &fsidiv_clk_ops,
+ 	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
+-	.mapping	= &sh7372_fsidiva_clk_mapping,
++	.mapping	= &fsidiva_clk_mapping,
+ };
+ 
+-static struct clk_mapping sh7372_fsidivb_clk_mapping = {
++static struct clk_mapping fsidivb_clk_mapping = {
+ 	.phys	= FSIDIVB,
+ 	.len	= 8,
+ };
+@@ -495,7 +495,7 @@ static struct clk_mapping sh7372_fsidivb_clk_mapping = {
+ struct clk sh7372_fsidivb_clk = {
+ 	.ops		= &fsidiv_clk_ops,
+ 	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
+-	.mapping	= &sh7372_fsidivb_clk_mapping,
++	.mapping	= &fsidivb_clk_mapping,
+ };
+ 
+ static struct clk *late_main_clks[] = {
+-- 
+1.7.4.1
 
---- 0003/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-09-23 14:23:29.000000000 +0900
-@@ -189,6 +189,7 @@ struct sh7372_pm_domain sh7372_a3sg = {
- 
- #endif /* CONFIG_PM */
- 
-+#if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
- static int sh7372_do_idle_core_standby(unsigned long unused)
- {
- 	cpu_do_idle(); /* WFI when SYSTBCR = 0x10 -> Core Standby */
-@@ -209,7 +210,9 @@ static void sh7372_enter_core_standby(vo
- 	 /* disable reset vector translation */
- 	__raw_writel(0, SBAR);
- }
-+#endif
- 
-+#ifdef CONFIG_SUSPEND
- static void sh7372_enter_a3sm_common(int pllc0_on)
- {
- 	/* set reset vector, translate 4k */
-@@ -351,7 +354,7 @@ static void sh7372_setup_a3sm(unsigned l
- 	__raw_writel((irqcrx_high << 16) | irqcrx_low, IRQCR3);
- 	__raw_writel((irqcry_high << 16) | irqcry_low, IRQCR4);
- }
--
-+#endif
- 
- #ifdef CONFIG_CPU_IDLE
- 
---- 0003/arch/arm/mach-shmobile/sleep-sh7372.S
-+++ work/arch/arm/mach-shmobile/sleep-sh7372.S	2011-09-23 14:23:38.000000000 +0900
-@@ -34,6 +34,7 @@
- #include <asm/memory.h>
- #include <asm/assembler.h>
- 
-+#if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
- 	.align	12
- 	.text
- 	.global sh7372_resume_core_standby_a3sm
-@@ -91,3 +92,4 @@ sh7372_do_idle_a3sm:
- 
- kernel_flush:
- 	.word v7_flush_dcache_all
-+#endif
