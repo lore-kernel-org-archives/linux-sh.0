@@ -1,33 +1,36 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 05 Sep 2011 07:15:08 +0000
-Subject: Re: [PATCH 0/2] mmc: sh_mmcif: simplify platform DMA configuration
-Message-Id: <Pine.LNX.4.64.1109050914520.13066@axis700.grange>
+From: Nick Bowler <nbowler@elliptictech.com>
+Date: Fri, 09 Sep 2011 15:26:47 +0000
+Subject: [PATCH 0/5] Convert ARM subarchitectures to generic wfi macro.
+Message-Id: <1315582012-23507-1-git-send-email-nbowler@elliptictech.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 5 Sep 2011, Paul Mundt wrote:
+This series cleans up all remaining ARM subarchitectures that I could
+find to use the generic wfi macro.  As I don't have any of the boards in
+question, I've only compile-tested these patches to the extent that I
+was able.
 
-> On Tue, Aug 30, 2011 at 06:26:34PM +0200, Guennadi Liakhovetski wrote:
-> > A simple cosmetic clean-up, no functional changes. Patch 2/2 depends on 
-> > patch 1/2 and can wait until 3.3. Paul, would you be able to put it under 
-> > the carpet somewhere until then or shall I resend it after 3.2-rc1 is out? 
-> > After both these patches have been applied, we can remove struct 
-> > sh_mmcif_plat_data::dma around 3.4 or 4.0 or whatever;-)
-> > 
-> It's not a problem, I'll just flag it as awaiting upstream in the
-> tracker. Anything flagged as such I generally give a once over after each
-> merge window to see if their dependencies have been worked out.
+See the previous discussion in https://lkml.org/lkml/2011/8/19/433 for
+more background.
 
-Good, thanks!
+Nick Bowler (5):
+  ARM: realview: Use wfi macro in platform_do_lowpower.
+  ARM: exynos4: Use wfi macro in platform_do_lowpower.
+  ARM: shmobile: Use wfi macro in platform_cpu_die.
+  ARM: tegra: Use wfi macro in platform_do_lowpower.
+  ARM: omap4: Kill private do_wfi macro.
 
-Regards
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-exynos4/hotplug.c                 |    9 ++-------
+ arch/arm/mach-omap2/include/mach/omap4-common.h |   11 -----------
+ arch/arm/mach-omap2/omap-hotplug.c              |    7 +++----
+ arch/arm/mach-omap2/pm44xx.c                    |    4 +++-
+ arch/arm/mach-realview/hotplug.c                |    9 ++-------
+ arch/arm/mach-shmobile/hotplug.c                |   10 +++-------
+ arch/arm/mach-tegra/hotplug.c                   |    9 ++-------
+ 7 files changed, 15 insertions(+), 44 deletions(-)
+
+-- 
+1.7.3.4
