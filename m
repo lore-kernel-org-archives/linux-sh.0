@@ -1,170 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 31 Aug 2011 11:00:59 +0000
-Subject: [PATCH v2 8/8] fbdev: sh_mobile_lcdc: Remove sh_mobile_lcdc_set_bpp()
-Message-Id: <1314788459-31791-9-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 09 Sep 2011 10:27:43 +0000
+Subject: [PATCH 07/10] sh: clkfwk: add clk_rate_multi_range_round()
+Message-Id: <87hb4mqack.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The function duplicates code found in sh_mobile_check_var(). Remove
-sh_mobile_lcdc_set_bpp() and call sh_mobile_check_var() instead.
+Some Clock Pulse Generator has PLL multiplication.
+clk_rate_multi_range_round() will be good helper for it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   87 +++++++------------------------------
- 1 files changed, 17 insertions(+), 70 deletions(-)
+ drivers/sh/clk/core.c  |   20 ++++++++++++++++++++
+ include/linux/sh_clk.h |    3 +++
+ 2 files changed, 23 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index d1576e2..97ab8ba 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1291,66 +1291,6 @@ static void sh_mobile_lcdc_bl_remove(struct backlight_device *bdev)
- 	backlight_device_unregister(bdev);
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index dc8d022..f4323a3 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -173,6 +173,26 @@ long clk_rate_div_range_round(struct clk *clk, unsigned int div_min,
+ 	return clk_rate_round_helper(&div_range_round);
  }
  
--static int sh_mobile_lcdc_set_bpp(struct fb_var_screeninfo *var, int bpp,
--				   int nonstd)
--{
--	if (nonstd) {
--		switch (bpp) {
--		case 12:
--		case 16:
--		case 24:
--			var->bits_per_pixel = bpp;
--			var->nonstd = nonstd;
--			return 0;
--		default:
--			return -EINVAL;
--		}
--	}
--
--	switch (bpp) {
--	case 16: /* PKF[4:0] = 00011 - RGB 565 */
--		var->red.offset = 11;
--		var->red.length = 5;
--		var->green.offset = 5;
--		var->green.length = 6;
--		var->blue.offset = 0;
--		var->blue.length = 5;
--		var->transp.offset = 0;
--		var->transp.length = 0;
--		break;
--
--	case 24: /* PKF[4:0] = 01011 - RGB 888 */
--		var->red.offset = 16;
--		var->red.length = 8;
--		var->green.offset = 8;
--		var->green.length = 8;
--		var->blue.offset = 0;
--		var->blue.length = 8;
--		var->transp.offset = 0;
--		var->transp.length = 0;
--		break;
--
--	case 32: /* PKF[4:0] = 00000 - RGBA 888 */
--		var->red.offset = 16;
--		var->red.length = 8;
--		var->green.offset = 8;
--		var->green.length = 8;
--		var->blue.offset = 0;
--		var->blue.length = 8;
--		var->transp.offset = 24;
--		var->transp.length = 8;
--		break;
--	default:
--		return -EINVAL;
--	}
--	var->bits_per_pixel = bpp;
--	var->red.msb_right = 0;
--	var->green.msb_right = 0;
--	var->blue.msb_right = 0;
--	var->transp.msb_right = 0;
--	return 0;
--}
--
- static int sh_mobile_lcdc_suspend(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
-@@ -1499,6 +1439,9 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 	int ret;
- 	int i;
- 
-+	mutex_init(&ch->open_lock);
++static long clk_rate_multi_range_iter(unsigned int pos,
++				      struct clk_rate_round_data *rounder)
++{
++	return clk_get_rate(rounder->arg) * pos;
++}
 +
-+	/* Allocate the frame buffer device. */
- 	ch->info = framebuffer_alloc(0, dev);
- 	if (!ch->info) {
- 		dev_err(dev, "unable to allocate fb_info\n");
-@@ -1506,11 +1449,10 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 	}
++long clk_rate_multi_range_round(struct clk *clk, unsigned int div_min,
++				unsigned int div_max, unsigned long rate)
++{
++	struct clk_rate_round_data div_range_round = {
++		.min	= div_min,
++		.max	= div_max,
++		.func	= clk_rate_multi_range_iter,
++		.arg	= clk_get_parent(clk),
++		.rate	= rate,
++	};
++
++	return clk_rate_round_helper(&div_range_round);
++}
++
+ int clk_rate_table_find(struct clk *clk,
+ 			struct cpufreq_frequency_table *freq_table,
+ 			unsigned long rate)
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 3ccf186..1fc9f28 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -94,6 +94,9 @@ int clk_rate_table_find(struct clk *clk,
+ long clk_rate_div_range_round(struct clk *clk, unsigned int div_min,
+ 			      unsigned int div_max, unsigned long rate);
  
- 	info = ch->info;
--	var = &info->var;
- 	info->fbops = &sh_mobile_lcdc_ops;
- 	info->par = ch;
--
--	mutex_init(&ch->open_lock);
-+	info->pseudo_palette = &ch->pseudo_palette;
-+	info->flags = FBINFO_FLAG_DEFAULT;
- 
- 	/* Iterate through the modes to validate them and find the highest
- 	 * resolution.
-@@ -1541,13 +1483,15 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 		dev_dbg(dev, "Found largest videomode %ux%u\n",
- 			max_mode->xres, max_mode->yres);
- 
-+	/* Initialize fixed screen information. Restrict pan to 2 lines steps
-+	 * for NV12.
-+	 */
- 	info->fix = sh_mobile_lcdc_fix;
- 	info->fix.smem_len = max_size * 2 * cfg->bpp / 8;
--
--	 /* Only pan in 2 line steps for NV12 */
- 	if (cfg->nonstd && cfg->bpp = 12)
- 		info->fix.ypanstep = 2;
- 
-+	/* Create the mode list. */
- 	if (cfg->lcd_cfg = NULL) {
- 		mode = &default_720p;
- 		num_cfg = 1;
-@@ -1558,17 +1502,23 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 
- 	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
- 
-+	/* Initialize variable screen information using the first mode as
-+	 * default. The default Y virtual resolution is twice the panel size to
-+	 * allow for double-buffering.
-+	 */
-+	var = &info->var;
- 	fb_videomode_to_var(var, mode);
-+	var->bits_per_pixel = cfg->bpp;
- 	var->width = cfg->lcd_size_cfg.width;
- 	var->height = cfg->lcd_size_cfg.height;
--	/* Default Y virtual resolution is 2x panel size */
- 	var->yres_virtual = var->yres * 2;
- 	var->activate = FB_ACTIVATE_NOW;
- 
--	ret = sh_mobile_lcdc_set_bpp(var, cfg->bpp, cfg->nonstd);
-+	ret = sh_mobile_check_var(var, info);
- 	if (ret)
- 		return ret;
- 
-+	/* Allocate frame buffer memory and color map. */
- 	buf = dma_alloc_coherent(dev, info->fix.smem_len, &ch->dma_handle,
- 				 GFP_KERNEL);
- 	if (!buf) {
-@@ -1576,9 +1526,6 @@ static int __devinit sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch,
- 		return -ENOMEM;
- 	}
- 
--	info->pseudo_palette = &ch->pseudo_palette;
--	info->flags = FBINFO_FLAG_DEFAULT;
--
- 	ret = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
- 	if (ret < 0) {
- 		dev_err(dev, "unable to allocate cmap\n");
++long clk_rate_multi_range_round(struct clk *clk, unsigned int div_min,
++				unsigned int div_max, unsigned long rate);
++
+ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		      unsigned long *best_freq, unsigned long *parent_freq,
+ 		      unsigned int div_min, unsigned int div_max);
 -- 
-1.7.3.4
+1.7.4.1
 
