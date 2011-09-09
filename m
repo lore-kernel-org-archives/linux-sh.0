@@ -1,55 +1,47 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 24 Sep 2011 21:23:03 +0000
-Subject: [PATCH 0/3] PM: Runtime PM and device PM QoS refinements
-Message-Id: <201109242323.03474.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 09 Sep 2011 10:25:11 +0000
+Subject: [PATCH 01/10] ARM: mach-shmobile: clock-sh73a0: add LCDC1 clock support
+Message-Id: <87pqjaqags.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108310017.03103.rjw@sisk.pl>
-In-Reply-To: <201108310017.03103.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com, Ming Lei <tom.leiming@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-On Wednesday, August 31, 2011, Rafael J. Wysocki wrote:
-> Hi,
-> 
-> This patchset illustrates how device PM QoS may be used along with
-> PM domains in my view.
-> 
-> Actually, it consists of two parts.  Namely, patches [1-3/5] seem to be
-> suitable for 3.2, unless somebody hates them, but patches [4-5/5] are
-> total RFC.  They haven't been tested, only compiled, so the use of them
-> is not encouraged (they may kill your dog or make your cat go wild, or
-> do something equally nasty, so beware).  Their purpose is to illustrate
-> an idea that I'd like to discuss at the PM miniconference during the
-> LPC.
-> 
-> [1/5] - Split device PM domain data into a "base" and additional fields
->         (one need_restore field at the moment, but the subsequent patches
->         add more fields).
-> 
-> [2/5] - Make runtime PM always release power.lock if power.irq_safe is set.
-> 
-> [3/5] - Add function for reading device PM QoS values safely.
-> 
-> [4/5] - Add governor function for stopping devices.
-> 
-> [5/5] - Add generic PM domain power off governor function.
-
-I have updated patches [1-3] after receiving some feedback and the result
-follows.  These patches are regarded as 3.2 material, if no one has
-objections.
-
-[1/3] - Split device PM domain data into a "base" and additional fields
-        (one need_restore field at the moment).
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 84fd33c..a2c572e 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -263,7 +263,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ };
  
-[2/3] - Make runtime PM always release power.lock if power.irq_safe is set.
- 
-[3/3] - Add function for reading device PM QoS values safely.
-
-Thanks,
-Rafael
+ enum { MSTP001,
+-	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
++	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP117, MSTP116, MSTP100,
+ 	MSTP219,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+ 	MSTP331, MSTP329, MSTP325, MSTP323, MSTP318,
+@@ -282,6 +282,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP126] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 26, 0), /* CSI2-RX0 */
+ 	[MSTP125] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 25, 0), /* TMU0 */
+ 	[MSTP118] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 18, 0), /* DSITX0 */
++	[MSTP117] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 17, 0), /* LCDC1 */
+ 	[MSTP116] = MSTP(&div4_clks[DIV4_HP], SMSTPCR1, 16, 0), /* IIC0 */
+ 	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, 0), /* LCDC0 */
+ 	[MSTP219] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 19, 0), /* SCIFA7 */
+@@ -331,6 +332,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
++	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
+-- 
+1.7.4.1
 
