@@ -1,45 +1,145 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 25 Sep 2011 21:29:50 +0000
-Subject: Re: [PATCH 00/03] ARM: mach-shmobile: sh7372 CPU sleep patches
-Message-Id: <201109252329.50206.rjw@sisk.pl>
+From: Ming Lei <tom.leiming@gmail.com>
+Date: Mon, 12 Sep 2011 08:26:49 +0000
+Subject: Re: [PATCH 2/5] PM / Runtime: Do not run callbacks under lock for
+Message-Id: <CACVXFVPshpc-aVHGMYWkthffMRYLFh4BadnEAhf+eQ47CwWLZw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110630094653.10442.68817.sendpatchset@t400s>
-In-Reply-To: <20110630094653.10442.68817.sendpatchset@t400s>
+References: <201108310017.03103.rjw@sisk.pl>
+	<201108310020.26104.rjw@sisk.pl>
+In-Reply-To: <201108310020.26104.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
 
-On Friday, September 23, 2011, Magnus Damm wrote:
-> ARM: mach-shmobile: sh7372 CPU sleep patches
-> 
-> Subject: [PATCH 01/03] ARM: mach-shmobile: sh7372 generic suspend/resume support
-> Subject: [PATCH 02/03] ARM: mach-shmobile: sh7372 A3SM support
-> Subject: [PATCH 03/03] ARM: mach-shmobile: sh7372 sleep warning fixes
-> 
-> These patches update the sh7372 sleep code to make use
-> of the generic ARM suspend/resume code and to add A3SM
-> sleep mode support for Suspend-to-RAM. The first two
-> patches have been posted earlier, and the last contain
-> a few warning fixes.
-> 
-> Fits the pm-test branch of the linux-pm git repository.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Hi,
 
-All patches applied to linux-pm/pm-domains (and merged into pm-test
-and linux-next).
+On Wed, Aug 31, 2011 at 6:20 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> From: Rafael J. Wysocki <rjw@sisk.pl>
+>
+> The rpm_suspend() and rpm_resume() routines execute subsystem or PM
+> domain callbacks under power.lock if power.irq_safe is set for the
+> given device. =A0This is inconsistent with that rpm_idle() does after
+> commit 02b2677 (PM / Runtime: Allow _put_sync() from
+> interrupts-disabled context) and is problematic for subsystems and PM
+> domains wanting to use power.lock for synchronization in their
+> runtime PM callbacks. =A0For this reason, make runtime PM core functions
+> always release power.lock before invoking subsystem or PM domain
 
-Thanks,
-Rafael
+If power.lock is released, the transition states(resuming or suspending)
+may be observed in rpm_suspend or rpm_resume, then tasks schedule
+will be produced in these two functions, so the functions below can't be
 
+      pm_runtime_suspend()
+      pm_runtime_autosuspend()
+      pm_runtime_resume()
+      pm_runtime_put_sync_suspend()
+      pm_runtime_put_sync_autosuspend()
 
+called in irq-off contexts safely even though irq_safe flag is set.
+
+> callbacks.
+>
+> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 > ---
-> 
->  arch/arm/mach-shmobile/include/mach/common.h |    6 
->  arch/arm/mach-shmobile/pm-sh7372.c           |  252 ++++++++++++++++++++--
->  arch/arm/mach-shmobile/sleep-sh7372.S        |  287 +++++---------------------
->  3 files changed, 286 insertions(+), 259 deletions(-)
-> 
-> 
+> =A0drivers/base/power/runtime.c | =A0 50 ++++++++++++++++++++++++--------=
+-----------
+> =A01 file changed, 28 insertions(+), 22 deletions(-)
+>
+> Index: linux/drivers/base/power/runtime.c
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D> --- linux.orig/drivers/base/power/runtime.c
+> +++ linux/drivers/base/power/runtime.c
+> @@ -155,6 +155,31 @@ static int rpm_check_suspend_allowed(str
+> =A0}
+>
+> =A0/**
+> + * __rpm_callback - Run a given runtime PM callback for a given device.
+> + * @cb: Runtime PM callback to run.
+> + * @dev: Device to run the callback for.
+> + */
+> +static int __rpm_callback(int (*cb)(struct device *), struct device *dev)
+> + =A0 =A0 =A0 __releases(&dev->power.lock) __acquires(&dev->power.lock)
+> +{
+> + =A0 =A0 =A0 int retval;
+> +
+> + =A0 =A0 =A0 if (dev->power.irq_safe)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_unlock(&dev->power.lock);
+> + =A0 =A0 =A0 else
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_unlock_irq(&dev->power.lock);
+> +
+> + =A0 =A0 =A0 retval =3D cb(dev);
+> +
+> + =A0 =A0 =A0 if (dev->power.irq_safe)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_lock(&dev->power.lock);
+> + =A0 =A0 =A0 else
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_lock_irq(&dev->power.lock);
+> +
+> + =A0 =A0 =A0 return retval;
+> +}
+> +
+> +/**
+> =A0* rpm_idle - Notify device bus type if the device can be suspended.
+> =A0* @dev: Device to notify the bus type about.
+> =A0* @rpmflags: Flag bits.
+> @@ -225,19 +250,8 @@ static int rpm_idle(struct device *dev,
+> =A0 =A0 =A0 =A0else
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0callback =3D NULL;
+>
+> - =A0 =A0 =A0 if (callback) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (dev->power.irq_safe)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_unlock(&dev->power.loc=
+k);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 else
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_unlock_irq(&dev->power=
+.lock);
+> -
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 callback(dev);
+> -
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (dev->power.irq_safe)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_lock(&dev->power.lock);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 else
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_lock_irq(&dev->power.l=
+ock);
+> - =A0 =A0 =A0 }
+> + =A0 =A0 =A0 if (callback)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 __rpm_callback(callback, dev);
+>
+> =A0 =A0 =A0 =A0dev->power.idle_notification =3D false;
+> =A0 =A0 =A0 =A0wake_up_all(&dev->power.wait_queue);
+> @@ -252,22 +266,14 @@ static int rpm_idle(struct device *dev,
+> =A0* @dev: Device to run the callback for.
+> =A0*/
+> =A0static int rpm_callback(int (*cb)(struct device *), struct device *dev)
+> - =A0 =A0 =A0 __releases(&dev->power.lock) __acquires(&dev->power.lock)
+> =A0{
+> =A0 =A0 =A0 =A0int retval;
+>
+> =A0 =A0 =A0 =A0if (!cb)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return -ENOSYS;
+>
+> - =A0 =A0 =A0 if (dev->power.irq_safe) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 retval =3D cb(dev);
+> - =A0 =A0 =A0 } else {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_unlock_irq(&dev->power.lock);
+> -
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 retval =3D cb(dev);
+> + =A0 =A0 =A0 retval =3D __rpm_callback(cb, dev);
+>
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 spin_lock_irq(&dev->power.lock);
+> - =A0 =A0 =A0 }
+> =A0 =A0 =A0 =A0dev->power.runtime_error =3D retval;
+> =A0 =A0 =A0 =A0return retval !=3D -EACCES ? retval : -EIO;
+> =A0}
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at =A0http://www.tux.org/lkml/
+>
 
+
+thanks,
+--=20
+Ming Lei
