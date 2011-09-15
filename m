@@ -1,138 +1,154 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Sep 2011 08:34:02 +0000
-Subject: [PATCH 4/6] fbdev: sh_mipi_dsi: fixup setup timing of sh_mipi_setup()
-Message-Id: <87ipoactu1.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 15 Sep 2011 11:13:00 +0000
+Subject: [PATCH] sh: kexec: Add PHYSICAL_START
+Message-Id: <1316085180-4215-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sh_mipi_setup() should be called after setting of CPG
+Add PHYSICAL_START kernel configuration parameter to set the address at
+which the kernel should be loaded.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+It has been observed on an sh7757lcr that simply modifying MEMORY_START
+does not achieve this goal for 32bit sh. This is due to MEMORY_OFFSET in
+arch/sh/kernel/vmlinux.lds.S bot being based on MEMORY_START on such
+systems.
+
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/video/sh_mipi_dsi.c |   79 ++++++++++++++++++++++++-------------------
- 1 files changed, 44 insertions(+), 35 deletions(-)
+ arch/sh/Kconfig              |   13 ++++++++++++-
+ arch/sh/boot/Makefile        |    6 ++++--
+ arch/sh/include/asm/page.h   |   10 ++++++++++
+ arch/sh/kernel/vmlinux.lds.S |    2 +-
+ arch/sh/mm/init.c            |    8 ++++----
+ 5 files changed, 31 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index e7a87de0..005c9fd 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -131,28 +131,6 @@ static void sh_mipi_shutdown(struct platform_device *pdev)
- 	sh_mipi_dsi_enable(mipi, false);
- }
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index ff9177c..bd8922c 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -649,7 +649,7 @@ config CRASH_DUMP
+ 	  a specially reserved region and then later executed after
+ 	  a crash by kdump/kexec. The crash dump kernel must be compiled
+ 	  to a memory address not used by the main kernel using
+-	  MEMORY_START.
++	  PHYSICAL_START.
  
--static void mipi_display_on(void *arg, struct fb_info *info)
--{
--	struct sh_mipi *mipi = arg;
--
--	pm_runtime_get_sync(&mipi->pdev->dev);
--	sh_mipi_dsi_enable(mipi, true);
--
--	if (mipi->next_display_on)
--		mipi->next_display_on(mipi->next_board_data, info);
--}
--
--static void mipi_display_off(void *arg)
--{
--	struct sh_mipi *mipi = arg;
--
--	if (mipi->next_display_off)
--		mipi->next_display_off(mipi->next_board_data);
--
--	sh_mipi_dsi_enable(mipi, false);
--	pm_runtime_put(&mipi->pdev->dev);
--}
--
- static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 				struct sh_mipi_dsi_info *pdata)
+ 	  For more details see Documentation/kdump/kdump.txt
+ 
+@@ -660,6 +660,17 @@ config KEXEC_JUMP
+ 	  Jump between original kernel and kexeced kernel and invoke
+ 	  code via KEXEC
+ 
++config PHYSICAL_START
++	hex "Physical address where the kernel is loaded" if (EXPERT || CRASH_DUMP)
++	default MEMORY_START
++	---help---
++	  This gives the physical address where the kernel is loaded
++	  and is ordinarily the same as MEMORY_START.
++
++	  Different values are primarily used in the case of kexec on panic
++	  where the fail safe kernel needs to run at a different address
++	  than the panic-ed kernel.
++
+ config SECCOMP
+ 	bool "Enable seccomp to safely compute untrusted bytecode"
+ 	depends on PROC_FS
+diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
+index ba515d8..e4ea31a 100644
+--- a/arch/sh/boot/Makefile
++++ b/arch/sh/boot/Makefile
+@@ -19,6 +19,7 @@ CONFIG_MEMORY_START	?= 0x0c000000
+ CONFIG_BOOT_LINK_OFFSET	?= 0x00800000
+ CONFIG_ZERO_PAGE_OFFSET	?= 0x00001000
+ CONFIG_ENTRY_OFFSET	?= 0x00001000
++CONFIG_PHYSICAL_START	?= $(CONFIG_MEMORY_START)
+ 
+ suffix-y := bin
+ suffix-$(CONFIG_KERNEL_GZIP)	:= gz
+@@ -48,7 +49,7 @@ $(obj)/romimage/vmlinux: $(obj)/zImage FORCE
+ 	$(Q)$(MAKE) $(build)=$(obj)/romimage $@
+ 
+ KERNEL_MEMORY	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_MEMORY_START) & 0x1fffffff]')
++		     $$[$(CONFIG_PHYSICAL_START) & 0x1fffffff]')
+ 
+ KERNEL_LOAD	:= $(shell /bin/bash -c 'printf "0x%08x" \
+ 		     $$[$(CONFIG_PAGE_OFFSET)  + \
+@@ -114,4 +115,5 @@ $(obj)/uImage: $(obj)/uImage.$(suffix-y)
+ 	@echo '  Image $@ is ready'
+ 
+ export CONFIG_PAGE_OFFSET CONFIG_MEMORY_START CONFIG_BOOT_LINK_OFFSET \
+-       CONFIG_ZERO_PAGE_OFFSET CONFIG_ENTRY_OFFSET KERNEL_MEMORY suffix-y
++       CONFIG_PHYSICAL_START CONFIG_ZERO_PAGE_OFFSET CONFIG_ENTRY_OFFSET \
++       KERNEL_MEMORY suffix-y
+diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
+index 822d608..0dca9a5 100644
+--- a/arch/sh/include/asm/page.h
++++ b/arch/sh/include/asm/page.h
+@@ -113,6 +113,16 @@ typedef struct page *pgtable_t;
+ #define __MEMORY_SIZE		CONFIG_MEMORY_SIZE
+ 
+ /*
++ * PHYSICAL_OFFSET is the offset in physical memory where the base
++ * of the kernel is loaded.
++ */
++#ifdef CONFIG_PHYSICAL_START
++#define PHYSICAL_OFFSET (CONFIG_PHYSICAL_START - __MEMORY_START)
++#else
++#define PHYSICAL_OFFSET 0
++#endif
++
++/*
+  * PAGE_OFFSET is the virtual address of the start of kernel address
+  * space.
+  */
+diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
+index 731c10c..c98905f 100644
+--- a/arch/sh/kernel/vmlinux.lds.S
++++ b/arch/sh/kernel/vmlinux.lds.S
+@@ -23,7 +23,7 @@ OUTPUT_ARCH(sh)
+ ENTRY(_start)
+ SECTIONS
  {
-@@ -434,6 +412,50 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	return 0;
- }
+-	. = PAGE_OFFSET + MEMORY_OFFSET + CONFIG_ZERO_PAGE_OFFSET;
++	. = PAGE_OFFSET + MEMORY_OFFSET + PHYSICAL_OFFSET + CONFIG_ZERO_PAGE_OFFSET;
  
-+static void mipi_display_on(void *arg, struct fb_info *info)
-+{
-+	struct sh_mipi *mipi = arg;
-+	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
-+	int ret;
-+
-+	pm_runtime_get_sync(&mipi->pdev->dev);
-+
-+	ret = pdata->set_dot_clock(mipi->pdev, mipi->base, 1);
-+	if (ret < 0)
-+		goto mipi_display_on_fail1;
-+
-+	ret = sh_mipi_setup(mipi, pdata);
-+	if (ret < 0)
-+		goto mipi_display_on_fail2;
-+
-+	sh_mipi_dsi_enable(mipi, true);
-+
-+	if (mipi->next_display_on)
-+		mipi->next_display_on(mipi->next_board_data, info);
-+
-+	return;
-+
-+mipi_display_on_fail1:
-+	pm_runtime_put_sync(&mipi->pdev->dev);
-+mipi_display_on_fail2:
-+	pdata->set_dot_clock(mipi->pdev, mipi->base, 0);
-+}
-+
-+static void mipi_display_off(void *arg)
-+{
-+	struct sh_mipi *mipi = arg;
-+	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
-+
-+	if (mipi->next_display_off)
-+		mipi->next_display_off(mipi->next_board_data);
-+
-+	sh_mipi_dsi_enable(mipi, false);
-+
-+	pdata->set_dot_clock(mipi->pdev, mipi->base, 0);
-+
-+	pm_runtime_put_sync(&mipi->pdev->dev);
-+}
-+
- static int __init sh_mipi_probe(struct platform_device *pdev)
+ 	_text = .;		/* Text and read-only data */
+ 
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 58a93fb3..c9dbace 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -287,6 +287,8 @@ static void __init do_init_bootmem(void)
+ static void __init early_reserve_mem(void)
  {
- 	struct sh_mipi *mipi;
-@@ -518,14 +540,6 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_resume(&pdev->dev);
+ 	unsigned long start_pfn;
++	u32 zero_base = (u32)__MEMORY_START + (u32)PHYSICAL_OFFSET;
++	u32 start = zero_base + (u32)CONFIG_ZERO_PAGE_OFFSET;
  
--	ret = sh_mipi_setup(mipi, pdata);
--	if (ret < 0)
--		goto emipisetup;
--
--	ret = pdata->set_dot_clock(pdev, mipi->base, 1);
--	if (ret < 0)
--		goto emipisetup;
--
- 	mutex_unlock(&array_lock);
- 	platform_set_drvdata(pdev, mipi);
+ 	/*
+ 	 * Partially used pages are not usable - thus
+@@ -300,15 +302,13 @@ static void __init early_reserve_mem(void)
+ 	 * this catches the (definitely buggy) case of us accidentally
+ 	 * initializing the bootmem allocator with an invalid RAM area.
+ 	 */
+-	memblock_reserve(__MEMORY_START + CONFIG_ZERO_PAGE_OFFSET,
+-		    (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) -
+-		    (__MEMORY_START + CONFIG_ZERO_PAGE_OFFSET));
++	memblock_reserve(start, (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) - start);
  
-@@ -542,10 +556,6 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
+ 	/*
+ 	 * Reserve physical pages below CONFIG_ZERO_PAGE_OFFSET.
+ 	 */
+ 	if (CONFIG_ZERO_PAGE_OFFSET != 0)
+-		memblock_reserve(__MEMORY_START, CONFIG_ZERO_PAGE_OFFSET);
++		memblock_reserve(zero_base, CONFIG_ZERO_PAGE_OFFSET);
  
- 	return 0;
- 
--emipisetup:
--	mipi_dsi[idx] = NULL;
--	pm_runtime_disable(&pdev->dev);
--	clk_disable(mipi->dsit_clk);
- eclkton:
- esettrate:
- 	clk_put(mipi->dsit_clk);
-@@ -599,7 +609,6 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
- 	pm_runtime_disable(&pdev->dev);
- 	clk_disable(mipi->dsit_clk);
- 	clk_put(mipi->dsit_clk);
--	pdata->set_dot_clock(pdev, mipi->base, 0);
- 
- 	iounmap(mipi->linkbase);
- 	if (res2)
+ 	/*
+ 	 * Handle additional early reservations
 -- 
-1.7.4.1
+1.7.5.4
 
