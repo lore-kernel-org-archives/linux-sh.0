@@ -1,49 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Sep 2011 22:16:46 +0000
-Subject: Re: [PATCH 1/2] SPI: spi_sh_msiof: implement DMA support
-Message-Id: <CANqRtoTKxuRzOTcuL9vknNrn_k7HPZCJh3A4iGr9vczrqhfcqA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 15 Sep 2011 11:12:59 +0000
+Subject: [RFC] sh: Take into account the base of physical memory in virt_to_phys()
+Message-Id: <1316085179-4207-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1109021706480.4731@axis700.grange>
-	<Pine.LNX.4.64.1109021712180.4731@axis700.grange>
-	<20110905045911.GE22142@linux-sh.org>
-	<Pine.LNX.4.64.1109050925170.13066@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1109050925170.13066@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Paul Mundt <lethal@linux-sh.org>, spi-devel-general@lists.sourceforge.net, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 5, 2011 at 4:26 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Mon, 5 Sep 2011, Paul Mundt wrote:
->> On Fri, Sep 02, 2011 at 05:13:31PM +0200, Guennadi Liakhovetski wrote:
->> > Use the sh_dma dmaengine driver to support DMA on MSIOF.
->> >
->> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Previously virt_to_phys() assumed that physical memory always started
+at address 0. This is not always the case.
 
->> > @@ -695,11 +1030,11 @@ static int sh_msiof_spi_remove(struct platform_=
-device *pdev)
->> >
->> > =A0 =A0 ret =3D spi_bitbang_stop(&p->bitbang);
->> > =A0 =A0 if (!ret) {
->> > + =A0 =A0 =A0 =A0 =A0 sh_msiof_release_dma(p);
->> > =A0 =A0 =A0 =A0 =A0 =A0 pm_runtime_disable(&pdev->dev);
->> > =A0 =A0 =A0 =A0 =A0 =A0 free_irq(platform_get_irq(pdev, 0), p);
->> > =A0 =A0 =A0 =A0 =A0 =A0 iounmap(p->mapbase);
->> > =A0 =A0 =A0 =A0 =A0 =A0 clk_put(p->clk);
->> > - =A0 =A0 =A0 =A0 =A0 spi_master_put(p->bitbang.master);
->> > =A0 =A0 }
->> > =A0 =A0 return ret;
->> > =A0}
->>
->> You've also killed off the spi_master_put() here.
->
-> Yes, spi_bitbang_stop() does it all already.
+Tested on an sh7757lcr (32bit system) whose only System RAM region is
+40000000-4effffff
 
-So it's a bug fix built-in to a feature patch? If so, please break out
-and submit as a fix.
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ kexec/arch/sh/kexec-sh.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
 
-Thanks,
+diff --git a/kexec/arch/sh/kexec-sh.c b/kexec/arch/sh/kexec-sh.c
+index 4b21ee8..b0381bb 100644
+--- a/kexec/arch/sh/kexec-sh.c
++++ b/kexec/arch/sh/kexec-sh.c
+@@ -188,10 +188,18 @@ void kexec_sh_setup_zero_page(char *zero_page_buf, size_t zero_page_size,
+ unsigned long virt_to_phys(unsigned long addr)
+ {
+ 	unsigned long seg = addr & 0xe0000000;
++	unsigned long long start, end;
++	int ret;
++
++	/* Assume there is only one "System RAM" region */
++	ret = parse_iomem_single("System RAM\n", &start, &end);
++	if (ret)
++		die("Could not parse System RAM region in /proc/iomem\n");
++
+ 	if (seg != 0x80000000 && seg != 0xc0000000)
+ 		die("Virtual address %p is not in P1 or P2\n", (void *)addr);
+ 
+-	return addr - seg;
++	return addr - seg + start;
+ }
+ 
+ /*
+-- 
+1.7.5.4
 
-/ magnus
