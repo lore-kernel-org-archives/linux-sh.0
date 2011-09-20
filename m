@@ -1,61 +1,170 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 30 Sep 2011 11:07:08 +0000
-Subject: [PATCH v2 1/4] usb: r8a66597-udc: change prototype of
-Message-Id: <4E85A2DC.9030209@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 20 Sep 2011 19:21:27 +0000
+Subject: [PATCH v2 1/4] fbdev: sh_mobile_meram: Replace hardcoded register values with macros
+Message-Id: <1316546490-4639-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-fbdev@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Instead of hardcoding register values through the driver, define macros
+for individual register bits using the register name and the bit name,
+and use the macros.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- about v2:
-  - divide a patch for changing prototype only
+ drivers/video/sh_mobile_meram.c |  100 +++++++++++++++++++++++++++++------=
+----
+ 1 files changed, 74 insertions(+), 26 deletions(-)
 
- drivers/usb/gadget/r8a66597-udc.c |    4 ++--
- drivers/usb/gadget/r8a66597-udc.h |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index 50991e5..cd2cd16 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -733,7 +733,7 @@ static void irq_ep0_write(struct r8a66597_ep *ep, struct r8a66597_request *req)
- 	/* write fifo */
- 	if (req->req.buf) {
- 		if (size > 0)
--			r8a66597_write_fifo(r8a66597, ep->fifoaddr, buf, size);
-+			r8a66597_write_fifo(r8a66597, ep, buf, size);
- 		if ((size = 0) || ((size % ep->ep.maxpacket) != 0))
- 			r8a66597_bset(r8a66597, BVAL, ep->fifoctr);
- 	}
-@@ -780,7 +780,7 @@ static void irq_packet_write(struct r8a66597_ep *ep,
-
- 	/* write fifo */
- 	if (req->req.buf) {
--		r8a66597_write_fifo(r8a66597, ep->fifoaddr, buf, size);
-+		r8a66597_write_fifo(r8a66597, ep, buf, size);
- 		if ((size = 0)
- 				|| ((size % ep->ep.maxpacket) != 0)
- 				|| ((bufsize != ep->ep.maxpacket)
-diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66597-udc.h
-index 503f766..c6193fb 100644
---- a/drivers/usb/gadget/r8a66597-udc.h
-+++ b/drivers/usb/gadget/r8a66597-udc.h
-@@ -183,11 +183,11 @@ static inline void r8a66597_write(struct r8a66597 *r8a66597, u16 val,
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_mera=
+m.c
+index 39f28a1..569888c 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -20,22 +20,69 @@
+ #include "sh_mobile_meram.h"
+=20
+ /* meram registers */
+-#define MExxCTL 0x0
+-#define MExxBSIZE 0x4
+-#define MExxMNCF 0x8
+-#define MExxSARA 0x10
+-#define MExxSARB 0x14
+-#define MExxSBSIZE 0x18
+-
+-#define MERAM_MExxCTL_VAL(ctl, next_icb, addr)	\
+-	((ctl) | (((next_icb) & 0x1f) << 11) | (((addr) & 0x7ff) << 16))
+-#define	MERAM_MExxBSIZE_VAL(a, b, c) \
+-	(((a) << 28) | ((b) << 16) | (c))
+-
+-#define MEVCR1 0x4
+-#define MEACTS 0x10
+-#define MEQSEL1 0x40
+-#define MEQSEL2 0x44
++#define MEVCR1			0x0004
++#define MEVCR1_RST		(1 << 31)
++#define MEVCR1_WD		(1 << 30)
++#define MEVCR1_AMD1		(1 << 29)
++#define MEVCR1_AMD0		(1 << 28)
++#define MEQSEL1			0x0040
++#define MEQSEL2			0x0044
++
++#define MExx_BASE		0x0400
++
++#define MExxCTL			0x0000
++#define MExxCTL_BV		(1 << 31)
++#define MExxCTL_BSZ_SHIFT	28
++#define MExxCTL_MSAR_MASK	(0x7ff << MExxCTL_MSAR_SHIFT)
++#define MExxCTL_MSAR_SHIFT	16
++#define MExxCTL_NXT_MASK	(0x1f << MExxCTL_NXT_SHIFT)
++#define MExxCTL_NXT_SHIFT	11
++#define MExxCTL_WD1		(1 << 10)
++#define MExxCTL_WD0		(1 << 9)
++#define MExxCTL_WS		(1 << 8)
++#define MExxCTL_CB		(1 << 7)
++#define MExxCTL_WBF		(1 << 6)
++#define MExxCTL_WF		(1 << 5)
++#define MExxCTL_RF		(1 << 4)
++#define MExxCTL_CM		(1 << 3)
++#define MExxCTL_MD_READ		(1 << 0)
++#define MExxCTL_MD_WRITE	(2 << 0)
++#define MExxCTL_MD_ICB_WB	(3 << 0)
++#define MExxCTL_MD_ICB		(4 << 0)
++#define MExxCTL_MD_FB		(7 << 0)
++#define MExxCTL_MD_MASK		(7 << 0)
++#define MExxBSIZE		0x0004
++#define MExxBSIZE_RCNT_SHIFT	28
++#define MExxBSIZE_YSZM1_SHIFT	16
++#define MExxBSIZE_XSZM1_SHIFT	0
++#define MExxMNCF		0x0008
++#define MExxMNCF_KWBNM_SHIFT	28
++#define MExxMNCF_KRBNM_SHIFT	24
++#define MExxMNCF_BNM_SHIFT	16
++#define MExxMNCF_XBV		(1 << 15)
++#define MExxMNCF_CPL_YCBCR444	(1 << 12)
++#define MExxMNCF_CPL_YCBCR420	(2 << 12)
++#define MExxMNCF_CPL_YCBCR422	(3 << 12)
++#define MExxMNCF_CPL_MSK	(3 << 12)
++#define MExxMNCF_BL		(1 << 2)
++#define MExxMNCF_LNM_SHIFT	0
++#define MExxSARA		0x0010
++#define MExxSARB		0x0014
++#define MExxSBSIZE		0x0018
++#define MExxSBSIZE_HDV		(1 << 31)
++#define MExxSBSIZE_HSZ16	(0 << 28)
++#define MExxSBSIZE_HSZ32	(1 << 28)
++#define MExxSBSIZE_HSZ64	(2 << 28)
++#define MExxSBSIZE_HSZ128	(3 << 28)
++#define MExxSBSIZE_SBSIZZ_SHIFT	0
++
++#define MERAM_MExxCTL_VAL(next, addr)	\
++	((((next) << MExxCTL_NXT_SHIFT) & MExxCTL_NXT_MASK) | \
++	 (((addr) << MExxCTL_MSAR_SHIFT) & MExxCTL_MSAR_MASK))
++#define	MERAM_MExxBSIZE_VAL(rcnt, yszm1, xszm1) \
++	(((rcnt) << MExxBSIZE_RCNT_SHIFT) | \
++	 ((yszm1) << MExxBSIZE_YSZM1_SHIFT) | \
++	 ((xszm1) << MExxBSIZE_XSZM1_SHIFT))
+=20
+ static unsigned long common_regs[] =3D {
+ 	MEVCR1,
+@@ -72,8 +119,8 @@ struct sh_mobile_meram_priv {
+  * MERAM/ICB access functions
+  */
+=20
+-#define MERAM_ICB_OFFSET(base, idx, off)	\
+-	((base) + (0x400 + ((idx) * 0x20) + (off)))
++#define MERAM_ICB_OFFSET(base, idx, off) \
++	(MExx_BASE + (base) + (off) + (idx) * 0x20)
+=20
+ static inline void meram_write_icb(void __iomem *base, int idx, int off,
+ 	unsigned long val)
+@@ -308,17 +355,18 @@ static int meram_init(struct sh_mobile_meram_priv *pr=
+iv,
+ 	/*
+ 	 * Set MERAM for framebuffer
+ 	 *
+-	 * 0x70f:  WD =3D 0x3, WS=3D0x1, CM=3D0x1, MD=FB mode
+ 	 * we also chain the cache_icb and the marker_icb.
+ 	 * we also split the allocated MERAM buffer between two ICBs.
+ 	 */
+ 	meram_write_icb(priv->base, icb->cache_icb, MExxCTL,
+-			MERAM_MExxCTL_VAL(0x70f, icb->marker_icb,
+-					  icb->meram_offset));
++			MERAM_MExxCTL_VAL(icb->marker_icb, icb->meram_offset) |
++			MExxCTL_WD1 | MExxCTL_WD0 | MExxCTL_WS | MExxCTL_CM |
++			MExxCTL_MD_FB);
+ 	meram_write_icb(priv->base, icb->marker_icb, MExxCTL,
+-			MERAM_MExxCTL_VAL(0x70f, icb->cache_icb,
+-					  icb->meram_offset +
+-					  icb->meram_size / 2));
++			MERAM_MExxCTL_VAL(icb->cache_icb, icb->meram_offset +
++					  icb->meram_size / 2) |
++			MExxCTL_WD1 | MExxCTL_WD0 | MExxCTL_WS | MExxCTL_CM |
++			MExxCTL_MD_FB);
+=20
+ 	return 0;
  }
+@@ -507,7 +555,7 @@ static int sh_mobile_meram_runtime_suspend(struct devic=
+e *dev)
+ 			/* Reset ICB on resume */
+ 			if (icb_regs[k] =3D MExxCTL)
+ 				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] -					0x70;
++					MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF;
+ 		}
+ 	}
+ 	return 0;
+@@ -592,7 +640,7 @@ static int __devinit sh_mobile_meram_probe(struct platf=
+orm_device *pdev)
+=20
+ 	/* initialize ICB addressing mode */
+ 	if (pdata->addr_mode =3D SH_MOBILE_MERAM_MODE1)
+-		meram_write_reg(priv->base, MEVCR1, 1 << 29);
++		meram_write_reg(priv->base, MEVCR1, MEVCR1_AMD1);
+=20
+ 	pm_runtime_enable(&pdev->dev);
+=20
+--=20
+1.7.3.4
 
- static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
--				       unsigned long offset,
-+				       struct r8a66597_ep *ep,
- 				       unsigned char *buf,
- 				       int len)
- {
--	void __iomem *fifoaddr = r8a66597->reg + offset;
-+	void __iomem *fifoaddr = r8a66597->reg + ep->fifoaddr;
- 	int adj = 0;
- 	int i;
-
--- 
-1.7.1
