@@ -1,74 +1,58 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 02 Sep 2011 12:54:04 +0000
-Subject: [BUG] Bad page state on ecovec
-Message-Id: <Pine.LNX.4.64.1109021452030.4731@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 20 Sep 2011 19:21:28 +0000
+Subject: [PATCH v2 2/4] fbdev: sh_mobile_meram: Validate ICB configuration outside mutex
+Message-Id: <1316546490-4639-3-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Hi
+Validate as much of the requested ICB configuration as possible outside
+of the mutex-protected region when registering ICBs.
 
-After reverting the commits, mentioned in my previous mail, ecovec still 
-seems unstable with the current kernel, getting BUGs, similar to this one:
-
-[  782.108000] BUG: Bad page state in process modprobe  pfn:0d274
-[  782.112000] page:8844ce80 count:-1 mapcount:0 mapping:  (null) index:0x0
-[  782.120000] page flags: 0x0()
-[  782.124000] Stack: (0x8d389d2c to 0x8d38a000)
-[  782.128000] 9d20:                            88255572 8d389d3c 00000000 8844ce80 8805686e 
-[  782.140000] 9d40: 8d389d44 88057d18 8d389d54 00000000 00000001 00000000 8d269494 00000000 
-[  782.156000] 9d60: 00000000 0000000c 00000000 8d389d70 88076d18 00000000 8836f61c ffffffff 
-[  782.168000] 9d80: 00000000 00000000 8836f2d4 00000010 8844ce94 00000000 00000000 8836f28c 
-[  782.184000] 9da0: 000202d2 8836f018 88057f12 8d389dd8 00000000 000000d2 8836f618 00000000 
-[  782.196000] 9dc0: 00000000 000002d2 00000000 00000041 8836f018 00000000 00001fff ffffffff 
-[  782.208000] 9de0: 8d389dec 00000000 8d389dfc 8d389df0 8806fc62 8d389e18 000000d2 00000010 
-[  782.220000] 9e00: 8836f61c 00000002 8d389e0c 8806fcba 000202d2 8d389e18 00000000 8d389e30 
-[  782.232000] 9e20: 8d389e24 88077054 8836f018 880707c4 8d389e4c ffffffff 000000d2 88057e48 
-[  782.244000] 9e40: 000002d2 00000000 8d45aca0 00003810 0000050e 8d45a1e0 8807089a 8d389e8c 
-[  782.256000] 9e60: 00000001 880407ac c0294000 c0290a44 c0290988 00003810 000000d2 0000050e 
-[  782.268000] 9e80: 00003810 ffffffff 8804079e 8807096c 8d389ea4 0000050e 00003810 ffffffff 
-[  782.280000] 9ea0: 8804079e 8804079e 8d389eb0 00000e73 880407bc 8d389eb8 88040ee6 8d389ec8 
-[  782.292000] 9ec0: c0290988 8d389f28 0000004e c0290b0c 00000003 00000003 c0290988 c0290a50 
-[  782.304000] 9ee0: 88041710 8d389f00 7bebbea7 0041c6f8 000035c7 c028f000 8d389f28 fffffff8 
-[  782.316000] 9f00: 8e957eb8 00004000 00000004 00000000 00000000 8806c7f0 8d389f3c 0041b5a8 
-[  782.332000] 9f20: 00000000 00004000 c028f000 000035c7 c0290be0 c0290b0c c0291e90 8d3b7380 
-[  782.348000] 9f40: 000019b8 00001c58 00000000 00000000 00000015 00000016 0000000f 00000000 
-[  782.360000] 9f60: 0000000b 00000000 000035c7 00000003 8d389f74 8800f580 8d389f90 29583004 
-[  782.372000] 9f80: 29582e10 8800725a 7bebb9c8 7bebbea7 0041c6f8 00000000 00000071 00000100 
-[  782.384000] 9fa0: 8804165c 00000000 00000000 0041c888 00000080 29576000 000035c7 0041b5a8 
-[  782.396000] 9fc0: 7bebb9a8 0041b5c8 00401218 00402b20 00000000 0041c6f8 7bebbea7 7bebb9c8 
-[  782.408000] 9fe0: 7bebb9c8 296613a6 004039ca 00008100 296e2678 00000000 0000002c 00000054 
-[  782.424000] 
-[  782.424000] Call trace:
-[  782.428000]  [<88255572>] dump_stack+0xe/0x1c
-[  782.432000]  [<8805686e>] bad_page+0x8a/0xd4
-[  782.436000]  [<88057d18>] get_page_from_freelist+0x304/0x434
-[  782.440000]  [<88076d18>] cache_alloc_refill+0x164/0x444
-[  782.444000]  [<88057f12>] __alloc_pages_nodemask+0xca/0x4dc
-[  782.448000]  [<8806fc62>] __get_vm_area_node+0xc2/0x18c
-[  782.452000]  [<8806fcba>] __get_vm_area_node+0x11a/0x18c
-[  782.456000]  [<88077054>] __kmalloc+0x5c/0xe8
-[  782.460000]  [<880707c4>] __vmalloc_node_range+0xd4/0x184
-[  782.464000]  [<88057e48>] __alloc_pages_nodemask+0x0/0x4dc
-[  782.468000]  [<8807089a>] __vmalloc_node+0x26/0x3c
-[  782.472000]  [<880407ac>] module_alloc_update_bounds+0x0/0x64
-[  782.476000]  [<8804079e>] module_alloc+0x12/0x20
-[  782.480000]  [<8807096c>] vmalloc_exec+0x20/0x34
-[  782.484000]  [<8804079e>] module_alloc+0x12/0x20
-[  782.488000]  [<8804079e>] module_alloc+0x12/0x20
-[  782.492000]  [<880407bc>] module_alloc_update_bounds+0x10/0x64
-[  782.496000]  [<88040ee6>] layout_and_allocate+0x6d6/0x7dc
-[  782.500000]  [<88041710>] sys_init_module+0xb4/0xeb0
-[  782.504000]  [<8806c7f0>] do_mmap_pgoff+0x230/0x284
-[  782.512000]  [<8800f580>] handle_tlbmiss+0xd4/0x164
-[  782.520000]  [<8800725a>] syscall_call+0xc/0x10
-[  782.528000]  [<8804165c>] sys_init_module+0x0/0xeb0
-
-Thanks
-Guennadi
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/video/sh_mobile_meram.c |   18 ++++++++----------
+ 1 files changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 569888c..f7e77f6 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -413,24 +413,22 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		xres, yres, (!pixelformat) ? "yuv" : "rgb",
+ 		base_addr_y, base_addr_c);
+ 
+-	mutex_lock(&priv->lock);
+-
+ 	/* we can't handle wider than 8192px */
+ 	if (xres > 8192) {
+ 		dev_err(&pdev->dev, "width exceeding the limit (> 8192).");
+-		error = -EINVAL;
+-		goto err;
+-	}
+-
+-	if (priv->used_meram_cache_regions + 2 > SH_MOBILE_MERAM_ICB_NUM) {
+-		dev_err(&pdev->dev, "no more ICB available.");
+-		error = -EINVAL;
+-		goto err;
++		return -EINVAL;
+ 	}
+ 
+ 	/* do we have at least one ICB config? */
+ 	if (cfg->icb[0].marker_icb < 0 || cfg->icb[0].cache_icb < 0) {
+ 		dev_err(&pdev->dev, "at least one ICB is required.");
++		return -EINVAL;
++	}
++
++	mutex_lock(&priv->lock);
++
++	if (priv->used_meram_cache_regions + 2 > SH_MOBILE_MERAM_ICB_NUM) {
++		dev_err(&pdev->dev, "no more ICB available.");
+ 		error = -EINVAL;
+ 		goto err;
+ 	}
+-- 
+1.7.3.4
+
