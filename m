@@ -1,109 +1,72 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 02 Sep 2011 15:13:35 +0000
-Subject: [PATCH 2/2] sh: use DMA with MSIOF SPI on the sh7724 ecovec board
-Message-Id: <Pine.LNX.4.64.1109021712470.4731@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Sep 2011 01:51:13 +0000
+Subject: [PATCH 07/10 v2] sh: clkfwk: add clk_rate_mult_range_round()
+Message-Id: <874o08nfqq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1109021706480.4731@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1109021706480.4731@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: spi-devel-general@lists.sourceforge.net
-Cc: linux-sh@vger.kernel.org, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org
 
-On ecovec MSIOF0 is connected to an SD/MMC slot, this patch adds DMA
-support on it.
+Some llock pulse generator has PLL multiplication.
+clk_rate_mult_range_round() will be good helper for it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c   |    8 +++++++-
- arch/sh/include/cpu-sh4/cpu/sh7724.h   |    4 ++++
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   20 ++++++++++++++++++++
- 3 files changed, 31 insertions(+), 1 deletions(-)
+v1 -> v2
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 22faf2a..16747a8 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -10,6 +10,7 @@
+o xx_multi_xx -> xx_mult_xx
+o div_xxx -> mult_xxx
+
+ drivers/sh/clk/core.c  |   20 ++++++++++++++++++++
+ include/linux/sh_clk.h |    3 +++
+ 2 files changed, 23 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index dc8d022..352036b 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -173,6 +173,26 @@ long clk_rate_div_range_round(struct clk *clk, unsigned int div_min,
+ 	return clk_rate_round_helper(&div_range_round);
+ }
  
- #include <linux/init.h>
- #include <linux/device.h>
-+#include <linux/dma-mapping.h>
- #include <linux/platform_device.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
-@@ -653,6 +654,8 @@ static struct spi_board_info spi_bus[] = {
- /* MSIOF0 */
- static struct sh_msiof_spi_info msiof0_data = {
- 	.num_chipselect = 1,
-+	.slave_id_tx = SHDMA_SLAVE_MSIOF0_TX,
-+	.slave_id_rx = SHDMA_SLAVE_MSIOF0_RX,
- };
- 
- static struct resource msiof0_resources[] = {
-@@ -668,11 +671,14 @@ static struct resource msiof0_resources[] = {
- 	},
- };
- 
-+u64 msiof0_dmamask = DMA_BIT_MASK(32);
++static long clk_rate_mult_range_iter(unsigned int pos,
++				      struct clk_rate_round_data *rounder)
++{
++	return clk_get_rate(rounder->arg) * pos;
++}
 +
- static struct platform_device msiof0_device = {
- 	.name		= "spi_sh_msiof",
- 	.id		= 0, /* MSIOF0 */
- 	.dev = {
--		.platform_data = &msiof0_data,
-+		.platform_data	= &msiof0_data,
-+		.dma_mask	= &msiof0_dmamask,
- 	},
- 	.num_resources	= ARRAY_SIZE(msiof0_resources),
- 	.resource	= msiof0_resources,
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
-index cbc47e6..10f9292 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
-@@ -310,6 +310,10 @@ enum {
- 	SHDMA_SLAVE_SDHI0_RX,
- 	SHDMA_SLAVE_SDHI1_TX,
- 	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_MSIOF0_TX,
-+	SHDMA_SLAVE_MSIOF0_RX,
-+	SHDMA_SLAVE_MSIOF1_TX,
-+	SHDMA_SLAVE_MSIOF1_RX,
- };
++long clk_rate_mult_range_round(struct clk *clk, unsigned int mult_min,
++			       unsigned int mult_max, unsigned long rate)
++{
++	struct clk_rate_round_data mult_range_round = {
++		.min	= mult_min,
++		.max	= mult_max,
++		.func	= clk_rate_mult_range_iter,
++		.arg	= clk_get_parent(clk),
++		.rate	= rate,
++	};
++
++	return clk_rate_round_helper(&mult_range_round);
++}
++
+ int clk_rate_table_find(struct clk *clk,
+ 			struct cpufreq_frequency_table *freq_table,
+ 			unsigned long rate)
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 3ccf186..9237c29 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -94,6 +94,9 @@ int clk_rate_table_find(struct clk *clk,
+ long clk_rate_div_range_round(struct clk *clk, unsigned int div_min,
+ 			      unsigned int div_max, unsigned long rate);
  
- extern struct clk sh7724_fsimcka_clk;
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index a37dd72..d6626fe 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -152,6 +152,26 @@ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
- 		.addr		= 0x04cf0030,
- 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MSIOF0_TX,
-+		.addr		= 0xa4c40050,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.mid_rid	= 0x51,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MSIOF0_RX,
-+		.addr		= 0xa4c40060,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.mid_rid	= 0x52,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MSIOF1_TX,
-+		.addr		= 0xa4c50050,
-+		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.mid_rid	= 0x55,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MSIOF1_RX,
-+		.addr		= 0xa4c50060,
-+		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.mid_rid	= 0x56,
- 	},
- };
- 
++long clk_rate_mult_range_round(struct clk *clk, unsigned int mult_min,
++			       unsigned int mult_max, unsigned long rate);
++
+ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		      unsigned long *best_freq, unsigned long *parent_freq,
+ 		      unsigned int div_min, unsigned int div_max);
 -- 
-1.7.2.5
+1.7.4.1
 
