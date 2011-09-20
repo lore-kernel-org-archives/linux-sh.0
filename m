@@ -1,215 +1,258 @@
-From: Yong Zhang <yong.zhang0@gmail.com>
-Date: Wed, 21 Sep 2011 09:28:18 +0000
-Subject: [PATCH 17/57] SH: irq: Remove IRQF_DISABLED
-Message-Id: <1316597339-29861-18-git-send-email-yong.zhang0@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Sep 2011 01:51:30 +0000
+Subject: [PATCH 10/10 v3] ARM: mach-shmobile: clock-sh73a0: add DSIxPHY clock support
+Message-Id: <8739fsnfq8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1316597339-29861-1-git-send-email-yong.zhang0@gmail.com>
-In-Reply-To: <1316597339-29861-1-git-send-email-yong.zhang0@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: tglx@linutronix.de, yong.zhang0@gmail.com, Paul Mundt <lethal@linux-sh.org>, Tejun Heo <tj@kernel.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Since commit [c58543c8: genirq: Run irq handlers with interrupts disabled],
-We run all interrupt handlers with interrupts disabled
-and we even check and yell when an interrupt handler
-returns with interrupts enabled (see commit [b738a50a:
-genirq: Warn when handler enables interrupts]).
-
-So now this flag is a NOOP and can be removed.
-
-Signed-off-by: Yong Zhang <yong.zhang0@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/board-secureedge5410.c |    3 +--
- arch/sh/boards/mach-cayman/irq.c      |    2 --
- arch/sh/boards/mach-hp6xx/hp6xx_apm.c |    2 +-
- arch/sh/drivers/dma/dma-g2.c          |    2 +-
- arch/sh/drivers/dma/dma-pvr2.c        |    1 -
- arch/sh/drivers/dma/dma-sh.c          |    4 ++--
- arch/sh/drivers/dma/dmabrg.c          |    6 +++---
- arch/sh/drivers/pci/pci-sh5.c         |    4 ++--
- arch/sh/drivers/pci/pci-sh7780.c      |    2 +-
- arch/sh/drivers/push-switch.c         |    2 +-
- arch/sh/kernel/cpu/sh4a/smp-shx3.c    |    2 +-
- 11 files changed, 13 insertions(+), 17 deletions(-)
+v2 -> v3
 
-diff --git a/arch/sh/boards/board-secureedge5410.c b/arch/sh/boards/board-secureedge5410.c
-index f968f17..03820c3 100644
---- a/arch/sh/boards/board-secureedge5410.c
-+++ b/arch/sh/boards/board-secureedge5410.c
-@@ -41,8 +41,7 @@ static int __init eraseconfig_init(void)
- 	printk("SnapGear: EraseConfig init\n");
- 
- 	/* Setup "EraseConfig" switch on external IRQ 0 */
--	if (request_irq(irq, eraseconfig_interrupt, IRQF_DISABLED,
--				"Erase Config", NULL))
-+	if (request_irq(irq, eraseconfig_interrupt, 0, "Erase Config", NULL))
- 		printk("SnapGear: failed to register IRQ%d for Reset witch\n",
- 				irq);
- 	else
-diff --git a/arch/sh/boards/mach-cayman/irq.c b/arch/sh/boards/mach-cayman/irq.c
-index 311bceb..724e8b7 100644
---- a/arch/sh/boards/mach-cayman/irq.c
-+++ b/arch/sh/boards/mach-cayman/irq.c
-@@ -46,13 +46,11 @@ static irqreturn_t cayman_interrupt_pci2(int irq, void *dev_id)
- static struct irqaction cayman_action_smsc = {
- 	.name		= "Cayman SMSC Mux",
- 	.handler	= cayman_interrupt_smsc,
--	.flags		= IRQF_DISABLED,
+o clk_rate_multi_range_round() -> clk_rate_mult_range_round()
+
+ arch/arm/mach-shmobile/board-ag5evm.c |   16 ++++-
+ arch/arm/mach-shmobile/board-kota2.c  |   17 ++++-
+ arch/arm/mach-shmobile/clock-sh73a0.c |  113 +++++++++++++++++++++++++++++++++
+ 3 files changed, 139 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 75c334d..b36dc61 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -320,12 +320,11 @@ static struct resource mipidsi0_resources[] = {
+ 	},
  };
  
- static struct irqaction cayman_action_pci2 = {
- 	.name		= "Cayman PCI2 Mux",
- 	.handler	= cayman_interrupt_pci2,
--	.flags		= IRQF_DISABLED,
- };
- 
- static void enable_cayman_irq(struct irq_data *data)
-diff --git a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
-index b49535c..865d8d6 100644
---- a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
-+++ b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
-@@ -86,7 +86,7 @@ static int __init hp6x0_apm_init(void)
- 	int ret;
- 
- 	ret = request_irq(HP680_BTN_IRQ, hp6x0_apm_interrupt,
--			  IRQF_DISABLED, MODNAME, NULL);
-+			  0, MODNAME, NULL);
- 	if (unlikely(ret < 0)) {
- 		printk(KERN_ERR MODNAME ": IRQ %d request failed\n",
- 		       HP680_BTN_IRQ);
-diff --git a/arch/sh/drivers/dma/dma-g2.c b/arch/sh/drivers/dma/dma-g2.c
-index af7bb58..be9ca7c 100644
---- a/arch/sh/drivers/dma/dma-g2.c
-+++ b/arch/sh/drivers/dma/dma-g2.c
-@@ -170,7 +170,7 @@ static int __init g2_dma_init(void)
+-#define DSI0PHYCR	0xe615006c
+ static int sh_mipi_set_dot_clock(struct platform_device *pdev,
+ 				 void __iomem *base,
+ 				 int enable)
  {
+-	struct clk *pck;
++	struct clk *pck, *phy;
  	int ret;
  
--	ret = request_irq(HW_EVENT_G2_DMA, g2_dma_interrupt, IRQF_DISABLED,
-+	ret = request_irq(HW_EVENT_G2_DMA, g2_dma_interrupt, 0,
- 			  "g2 DMA handler", &g2_dma_info);
- 	if (unlikely(ret))
- 		return -EINVAL;
-diff --git a/arch/sh/drivers/dma/dma-pvr2.c b/arch/sh/drivers/dma/dma-pvr2.c
-index 3cee58e..706a343 100644
---- a/arch/sh/drivers/dma/dma-pvr2.c
-+++ b/arch/sh/drivers/dma/dma-pvr2.c
-@@ -70,7 +70,6 @@ static int pvr2_xfer_dma(struct dma_channel *chan)
- static struct irqaction pvr2_dma_irq = {
- 	.name		= "pvr2 DMA handler",
- 	.handler	= pvr2_dma_interrupt,
--	.flags		= IRQF_DISABLED,
+ 	pck = clk_get(&pdev->dev, "dsip_clk");
+@@ -334,18 +333,27 @@ static int sh_mipi_set_dot_clock(struct platform_device *pdev,
+ 		goto sh_mipi_set_dot_clock_pck_err;
+ 	}
+ 
++	phy = clk_get(&pdev->dev, "dsiphy_clk");
++	if (IS_ERR(phy)) {
++		ret = PTR_ERR(phy);
++		goto sh_mipi_set_dot_clock_phy_err;
++	}
++
+ 	if (enable) {
+ 		clk_set_rate(pck, clk_round_rate(pck,  24000000));
+-		__raw_writel(0x2a809010, DSI0PHYCR);
++		clk_set_rate(phy, clk_round_rate(pck, 510000000));
+ 		clk_enable(pck);
++		clk_enable(phy);
+ 	} else {
+ 		clk_disable(pck);
++		clk_disable(phy);
+ 	}
+ 
+ 	ret = 0;
+ 
++	clk_put(phy);
++sh_mipi_set_dot_clock_phy_err:
+ 	clk_put(pck);
+-
+ sh_mipi_set_dot_clock_pck_err:
+ 	return ret;
+ }
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index 6c3866b..5b76d5d 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -367,12 +367,11 @@ static u32 sh_mipi_extra_dcs[] = {
  };
  
- static struct dma_ops pvr2_dma_ops = {
-diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
-index 8272087..a60da6d 100644
---- a/arch/sh/drivers/dma/dma-sh.c
-+++ b/arch/sh/drivers/dma/dma-sh.c
-@@ -95,7 +95,7 @@ static int sh_dmac_request_dma(struct dma_channel *chan)
- #if defined(CONFIG_SH_DMA_IRQ_MULTI)
- 				IRQF_SHARED,
- #else
--				IRQF_DISABLED,
-+				0,
- #endif
- 				chan->dev_id, chan);
- }
-@@ -305,7 +305,7 @@ static int __init sh_dmac_init(void)
- #if defined(CONFIG_SH_DMA_IRQ_MULTI)
- 				IRQF_SHARED,
- #else
--				IRQF_DISABLED,
-+				0,
- #endif
- 				dmae_name[n], (void *)dmae_name[n]);
- 		if (unlikely(i < 0)) {
-diff --git a/arch/sh/drivers/dma/dmabrg.c b/arch/sh/drivers/dma/dmabrg.c
-index 6ab9c4a..3d66a32 100644
---- a/arch/sh/drivers/dma/dmabrg.c
-+++ b/arch/sh/drivers/dma/dmabrg.c
-@@ -174,17 +174,17 @@ static int __init dmabrg_init(void)
- 	or = __raw_readl(DMAOR);
- 	__raw_writel(or | DMAOR_BRG | DMAOR_DMEN, DMAOR);
+ #define DSI0PCKCR	0xe6150064
+-#define DSI0PHYCR	0xe615006c
+ static int sh_mipi_set_dot_clock(struct platform_device *pdev,
+ 				 void __iomem *base,
+ 				 int enable)
+ {
+-	struct clk *pck;
++	struct clk *pck, *phy;
+ 	int ret;
  
--	ret = request_irq(DMABRGI0, dmabrg_irq, IRQF_DISABLED,
-+	ret = request_irq(DMABRGI0, dmabrg_irq, 0,
- 			"DMABRG USB address error", NULL);
- 	if (ret)
- 		goto out0;
+ 	pck = clk_get(&pdev->dev, "dsip_clk");
+@@ -381,16 +380,28 @@ static int sh_mipi_set_dot_clock(struct platform_device *pdev,
+ 		goto sh_mipi_set_dot_clock_pck_err;
+ 	}
  
--	ret = request_irq(DMABRGI1, dmabrg_irq, IRQF_DISABLED,
-+	ret = request_irq(DMABRGI1, dmabrg_irq, 0,
- 			"DMABRG Transfer End", NULL);
- 	if (ret)
- 		goto out1;
++	phy = clk_get(&pdev->dev, "dsiphy_clk");
++	if (IS_ERR(phy)) {
++		ret = PTR_ERR(phy);
++		goto sh_mipi_set_dot_clock_phy_err;
++	}
++
++
+ 	if (enable) {
++		/* 268.8MHz (33.6MHz x8) */
+ 		clk_set_rate(pck, clk_round_rate(pck,  19200000));
+-		__raw_writel(0x2a8b9a0d, DSI0PHYCR); /* 268.8MHz (33.6MHz x8) */
++		clk_set_rate(phy, clk_round_rate(phy, 268800000));
+ 		clk_enable(pck);
++		clk_enable(phy);
+ 	} else {
+ 		clk_disable(pck);
++		clk_disable(phy);
+ 	}
  
--	ret = request_irq(DMABRGI2, dmabrg_irq, IRQF_DISABLED,
-+	ret = request_irq(DMABRGI2, dmabrg_irq, 0,
- 			"DMABRG Transfer Half", NULL);
- 	if (ret = 0)
- 		return ret;
-diff --git a/arch/sh/drivers/pci/pci-sh5.c b/arch/sh/drivers/pci/pci-sh5.c
-index 0bf296c..16c1e72 100644
---- a/arch/sh/drivers/pci/pci-sh5.c
-+++ b/arch/sh/drivers/pci/pci-sh5.c
-@@ -107,13 +107,13 @@ static int __init sh5pci_init(void)
- 	u32 uval;
+ 	ret = 0;
  
-         if (request_irq(IRQ_ERR, pcish5_err_irq,
--                        IRQF_DISABLED, "PCI Error",NULL) < 0) {
-+                        0, "PCI Error",NULL) < 0) {
-                 printk(KERN_ERR "PCISH5: Cannot hook PCI_PERR interrupt\n");
-                 return -EINVAL;
-         }
++	clk_put(phy);
++sh_mipi_set_dot_clock_phy_err:
+ 	clk_put(pck);
+ sh_mipi_set_dot_clock_pck_err:
+ 	return ret;
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 80cb438..130600d 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -262,6 +262,114 @@ static struct clk div6_clks[DIV6_NR] = {
+ 	[DIV6_DSI1P] = SH_CLK_DIV6(&pll1_div2_clk, DSI1PCKCR, 0),
+ };
  
-         if (request_irq(IRQ_SERR, pcish5_serr_irq,
--                        IRQF_DISABLED, "PCI SERR interrupt", NULL) < 0) {
-+                        0, "PCI SERR interrupt", NULL) < 0) {
-                 printk(KERN_ERR "PCISH5: Cannot hook PCI_SERR interrupt\n");
-                 return -EINVAL;
-         }
-diff --git a/arch/sh/drivers/pci/pci-sh7780.c b/arch/sh/drivers/pci/pci-sh7780.c
-index edb7cca..fa7b978 100644
---- a/arch/sh/drivers/pci/pci-sh7780.c
-+++ b/arch/sh/drivers/pci/pci-sh7780.c
-@@ -172,7 +172,7 @@ static int __init sh7780_pci_setup_irqs(struct pci_channel *hose)
- 		     PCI_STATUS_SIG_TARGET_ABORT | \
- 		     PCI_STATUS_PARITY, hose->reg_base + PCI_STATUS);
++/* DSI DIV */
++static unsigned long dsiphy_recalc(struct clk *clk)
++{
++	u32 value;
++
++	value = __raw_readl(clk->mapping->base);
++
++	/* FIXME */
++	if (!(value & 0x000B8000))
++		return clk->parent->rate;
++
++	value &= 0x3f;
++	value += 1;
++
++	if ((value < 12) ||
++	    (value > 33)) {
++		pr_err("DSIPHY has wrong value (%d)", value);
++		return 0;
++	}
++
++	return clk->parent->rate / value;
++}
++
++static long dsiphy_round_rate(struct clk *clk, unsigned long rate)
++{
++	return clk_rate_mult_range_round(clk, 12, 33, rate);
++}
++
++static void dsiphy_disable(struct clk *clk)
++{
++	u32 value;
++
++	value = __raw_readl(clk->mapping->base);
++	value &= ~0x000B8000;
++
++	__raw_writel(value , clk->mapping->base);
++}
++
++static int dsiphy_enable(struct clk *clk)
++{
++	u32 value;
++	int multi;
++
++	value = __raw_readl(clk->mapping->base);
++	multi = (value & 0x3f) + 1;
++
++	if ((multi < 12) || (multi > 33))
++		return -EIO;
++
++	__raw_writel(value | 0x000B8000, clk->mapping->base);
++
++	return 0;
++}
++
++static int dsiphy_set_rate(struct clk *clk, unsigned long rate)
++{
++	u32 value;
++	int idx;
++
++	idx = rate / clk->parent->rate;
++	if ((idx < 12) || (idx > 33))
++		return -EINVAL;
++
++	idx += -1;
++
++	value = __raw_readl(clk->mapping->base);
++	value = (value & ~0x3f) + idx;
++
++	__raw_writel(value, clk->mapping->base);
++
++	return 0;
++}
++
++static struct clk_ops dsiphy_clk_ops = {
++	.recalc		= dsiphy_recalc,
++	.round_rate	= dsiphy_round_rate,
++	.set_rate	= dsiphy_set_rate,
++	.enable		= dsiphy_enable,
++	.disable	= dsiphy_disable,
++};
++
++static struct clk_mapping dsi0phy_clk_mapping = {
++	.phys	= DSI0PHYCR,
++	.len	= 4,
++};
++
++static struct clk_mapping dsi1phy_clk_mapping = {
++	.phys	= DSI1PHYCR,
++	.len	= 4,
++};
++
++static struct clk dsi0phy_clk = {
++	.ops		= &dsiphy_clk_ops,
++	.parent		= &div6_clks[DIV6_DSI0P], /* late install */
++	.mapping	= &dsi0phy_clk_mapping,
++};
++
++static struct clk dsi1phy_clk = {
++	.ops		= &dsiphy_clk_ops,
++	.parent		= &div6_clks[DIV6_DSI1P], /* late install */
++	.mapping	= &dsi1phy_clk_mapping,
++};
++
++static struct clk *late_main_clks[] = {
++	&dsi0phy_clk,
++	&dsi1phy_clk,
++};
++
+ enum { MSTP001,
+ 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP117, MSTP116, MSTP100,
+ 	MSTP219,
+@@ -322,6 +430,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+ 	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+ 	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
++	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
++	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
  
--	ret = request_irq(hose->serr_irq, sh7780_pci_serr_irq, IRQF_DISABLED,
-+	ret = request_irq(hose->serr_irq, sh7780_pci_serr_irq, 0,
- 			  "PCI SERR interrupt", hose);
- 	if (unlikely(ret)) {
- 		printk(KERN_ERR "PCI: Failed hooking SERR IRQ\n");
-diff --git a/arch/sh/drivers/push-switch.c b/arch/sh/drivers/push-switch.c
-index afc2455..637b79b 100644
---- a/arch/sh/drivers/push-switch.c
-+++ b/arch/sh/drivers/push-switch.c
-@@ -63,7 +63,7 @@ static int switch_drv_probe(struct platform_device *pdev)
- 	BUG_ON(!psw_info);
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* I2C2 */
+@@ -394,6 +504,9 @@ void __init sh73a0_clock_init(void)
+ 	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
  
- 	ret = request_irq(irq, psw_info->irq_handler,
--			  IRQF_DISABLED | psw_info->irq_flags,
-+			  psw_info->irq_flags,
- 			  psw_info->name ? psw_info->name : DRV_NAME, pdev);
- 	if (unlikely(ret < 0))
- 		goto err;
-diff --git a/arch/sh/kernel/cpu/sh4a/smp-shx3.c b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-index de865ca..03f2b55 100644
---- a/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-@@ -79,7 +79,7 @@ static void shx3_prepare_cpus(unsigned int max_cpus)
++	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
++		ret = clk_register(late_main_clks[k]);
++
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
  
- 	for (i = 0; i < SMP_MSG_NR; i++)
- 		request_irq(104 + i, ipi_interrupt_handler,
--			    IRQF_DISABLED | IRQF_PERCPU, "IPI", (void *)(long)i);
-+			    IRQF_PERCPU, "IPI", (void *)(long)i);
- 
- 	for (i = 0; i < max_cpus; i++)
- 		set_cpu_present(i, true);
+ 	if (!ret)
 -- 
 1.7.4.1
 
