@@ -1,7 +1,7 @@
-From: =?utf-8?B?5LuFMTDlhYPmr4/lpKk=?= <admin@biotherm.co.kr>
-Date: Mon, 19 Sep 2011 03:49:48 +0000
+From: =?utf-8?B?5LuFMTDlhYPmr4/lpKk=?= <admin@mail.china-tax.org>
+Date: Tue, 20 Sep 2011 09:37:49 +0000
 Subject: =?utf-8?B?576k5Y+R6L2v5Lu2K+S5sOWutuaQnOe0ouacuisxMDnlsYrlub/kuqTkvJrkubDlrrY=?=
-Message-Id: <20120919114239772811@biotherm.co.kr>
+Message-Id: <20120920173131462187@mail.china-tax.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20111213084743353137@amidress.com>
 In-Reply-To: <20111213084743353137@amidress.com>
