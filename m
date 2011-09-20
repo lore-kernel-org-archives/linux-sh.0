@@ -1,47 +1,36 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 30 Sep 2011 16:46:41 +0000
-Subject: Re: [PATCH 3/3] PM / QoS: Add function dev_pm_qos_read_value() (v2)
-Message-Id: <201109301846.41364.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 20 Sep 2011 19:30:15 +0000
+Subject: Re: [PATCH 0/3] sh_mobile_lcdc cleanup and fixes
+Message-Id: <201109202130.17398.laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108310017.03103.rjw@sisk.pl> <201109292233.52378.rjw@sisk.pl> <CAORVsuV4ccJvJg-zCrhVXJKmHkEYLLQh032=BMh7qH27bTK5uQ@mail.gmail.com>
-In-Reply-To: <CAORVsuV4ccJvJg-zCrhVXJKmHkEYLLQh032=BMh7qH27bTK5uQ@mail.gmail.com>
+References: <1310766753-30314-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1310766753-30314-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jean Pihet <jean.pihet@newoldbits.com>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, Ming Lei <tom.leiming@gmail.com>
+To: linux-fbdev@vger.kernel.org
 
-On Friday, September 30, 2011, Jean Pihet wrote:
-> Hi Rafael,
+Hi Florian,
+
+On Friday 15 July 2011 23:52:30 Laurent Pinchart wrote:
+> Hi everybody,
 > 
-> On Thu, Sep 29, 2011 at 10:33 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > Hi,
-> >
-> > On Thursday, September 29, 2011, Jean Pihet wrote:
-> >> Hi Rafael,
-> >>
-> >> I have a few minor remarks, inlined below.
-> >
-> > In the meantime it turned out that the patch caused a build failure
-> > for CONFIG_PM_SLEEP unset (your original patches won't really work
-> > in this case too), so I posted a patch to fix it.  However, since
-> > you had remarks anyway, I've simply folded the fix into the next
-> > version of the $subject patch, which is appended.
-> OK to me.
+> When trying to understand the sh_mobile_lcdc driver, I found it hard to
+> read statements that include hardcoded register values. I thus wrote a
+> patch that replace them with macros, making the code more readable.
 > 
-> I have 2 remarks though:
-> - some drivers are using the power_state field in the suspend/resume
-> operation, IIUC without conflict. Can you confirm?
+> While doing so, I found two potential issues in the driver. See patches 2
+> and 3 for detailed explanations and fixes.
+> 
+> Laurent Pinchart (3):
+>   fbdev: sh_mobile_lcdc: Replace hardcoded register values with macros
+>   fbdev: sh_mobile_lcdc: Don't acknowlege interrupts unintentionally
+>   fbdev: sh_mobile_lcdc: Compute clock pattern using divider
+>     denominator
 
-Yes, I can.  There are no conflicts.
+Could you please pick these patches for v3.2 ?
 
-> - the power_state field is scheduled for removal, cf.
-> Documentation/feature-removal-schedule.txt. That does not look
-> correct.
+-- 
+Regards,
 
-It still is schediled for removal, but we can't remove it right now
-anyway because of the users mentioned above.  I'll replace this field
-with a one-bit flag when we're ready to drop it (some time in future).
-
-Thanks,
-Rafael
+Laurent Pinchart
