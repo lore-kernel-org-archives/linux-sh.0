@@ -1,10 +1,10 @@
 From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Tue, 27 Sep 2011 10:14:56 +0000
-Subject: [PATCH V7 1/4] cpuidle: Move dev->last_residency update to driver
-Message-Id: <20110927100247.16043.65132.stgit@localhost6.localdomain6>
+Date: Thu, 22 Sep 2011 08:42:17 +0000
+Subject: [RFC PATCH V6 1/4] cpuidle: Move dev->last_residency update to driver
+Message-Id: <20110922082951.10520.20570.stgit@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
-In-Reply-To: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
+References: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
+In-Reply-To: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -28,12 +28,19 @@ the counters live in the sysfs namespace, not updating the counters.
 Reference:
 https://lkml.org/lkml/2011/3/25/52
 
+To Do :
+===
+Russell King pointed out that in (V5) of this patch in
+arch/arm/mach-at91/cpuidle.c, AT91 pieces may be broken.
+In at91_enter_idle() routine, folks need to fix the two
+consecutive asm() statements by combining
+it to one as per the GCC reference manual.
+
+Reference:
+https://lkml.org/lkml/2011/6/6/273
+
 Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
 Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
-Signed-off-by: Jean Pihet <j-pihet@ti.com>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Acked-by: Arjan van de Ven <arjan@linux.intel.com>
-Acked-by: Kevin Hilman <khilman@ti.com>
 ---
  arch/arm/mach-at91/cpuidle.c          |   10 +++-
  arch/arm/mach-davinci/cpuidle.c       |    9 +++-
