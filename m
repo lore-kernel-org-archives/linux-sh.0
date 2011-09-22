@@ -1,41 +1,104 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Sep 2011 19:33:52 +0000
-Subject: Re: [PATCH 0/3] sh_mobile_lcdc cleanup and fixes
-Message-Id: <201109202133.53301.laurent.pinchart@ideasonboard.com>
+From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Date: Thu, 22 Sep 2011 08:40:52 +0000
+Subject: [RFC PATCH V6 0/4] cpuidle: Global registration of idle states with
+Message-Id: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1310766753-30314-1-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1310766753-30314-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-On Tuesday 20 September 2011 21:30:15 Laurent Pinchart wrote:
-> Hi Florian,
-> 
-> On Friday 15 July 2011 23:52:30 Laurent Pinchart wrote:
-> > Hi everybody,
-> > 
-> > When trying to understand the sh_mobile_lcdc driver, I found it hard to
-> > read statements that include hardcoded register values. I thus wrote a
-> > patch that replace them with macros, making the code more readable.
-> > 
-> > While doing so, I found two potential issues in the driver. See patches 2
-> > and 3 for detailed explanations and fixes.
-> > 
-> > Laurent Pinchart (3):
-> >   fbdev: sh_mobile_lcdc: Replace hardcoded register values with macros
-> >   fbdev: sh_mobile_lcdc: Don't acknowlege interrupts unintentionally
-> >   fbdev: sh_mobile_lcdc: Compute clock pattern using divider
-> >   
-> >     denominator
-> 
-> Could you please pick these patches for v3.2 ?
+The following patch series implements global registration of cpuidle
+states, and also has the necessary data structure changes to
+accommodate the per-cpu writable members of the cpuidle_states
+structure.
 
-Sorry, I meant to answer the next version of this patch set. Please pick v2 
-instead.
+This patch series had been in discussion earlier and
+following are the links to the previous discussions.
+
+v1 --> https://lkml.org/lkml/2011/3/22/161
+v2 --> https://lkml.org/lkml/2011/1/13/98
+v3 --> https://lkml.org/lkml/2011/2/8/73
+v4 --> https://lkml.org/lkml/2011/4/28/312
+v5 --> https://lkml.org/lkml/2011/6/6/259
+
+Changes from previous version (V5):
+
+    Rebased the series to 3.1-rc7
+    
+Tests done:
+
+    1. Compile tested for ARM using the following configs: da8xx_omapl_defconfig,
+    exynos4_defconfig, kirkwood_defconfig, omap2plus_defconfig, 
+    at91rm9200_defconfig
+      
+    2. Boot tested on x86 nehalem with multiple C-states for both intel_idle
+    and acpi_idle drivers.
+
+    3. Boot tested on T60p thinkpad that has T2600 cpu with multiple C-states. 
+    Also tested the case when there is dynamic changes in C-states 
+    AC <-> Battery Power switch.
+
+Brief description of the patches:
+
+Core change in this series is to split the cpuidle_device structure 
+into two parts, i.e  global and per-cpu basis. 
+
+The per-cpu pieces are mostly generic statistics that can be independent 
+of current running driver. As a result of these changes, there is single 
+copy of cpuidle_states structure and single registration done by one 
+cpu. The low level driver is free to set per-cpu driver data on
+each cpu if needed using the cpuidle_set_statedata() as the case
+today. Only in very rare cases asymmetric C-states exist which can be 
+handled within the cpuidle driver. Most architectures do not have 
+asymmetric C-states.
+
+First two patches in the series facilitate splitting of cpuidle_states
+and cpuidle_device structure and next two patches do the actual split,
+change the API's and make existing code follow the changed API.
+
+[1/4] - Move the idle residency accounting part from cpuidle.c to
+the respective low level drivers, so that the accounting can
+be accurately maintained if the driver decides to demote the
+chosen (suggested) by the governor.
+
+[2/4] - removes the cpuidle_device()->prepare API since is is not
+widely used and the only use case was to allow software
+demotion using CPUIDLE_FLAG_IGNORE flag.  Both these
+functions can be absorbed within the cpuidle back-end
+driver ad hence deprecating the prepare routine and the
+CPUIDLE_FLAG_IGNORE flag.
+
+    - Ref: https://lkml.org/lkml/2011/3/25/52
+
+[3/4] - Splits the usage statistics (read/write) part out of
+cpuidle_state structure, so that the states can become read
+only and hence made global.
+
+[4/4] - Most APIs will now need to pass pointer to both global
+cpuidle_driver and per-cpu cpuidle_device structure.
+
+ arch/arm/mach-at91/cpuidle.c          |   41 +++--
+ arch/arm/mach-davinci/cpuidle.c       |   51 ++++---
+ arch/arm/mach-exynos4/cpuidle.c       |   30 ++--
+ arch/arm/mach-kirkwood/cpuidle.c      |   42 +++---
+ arch/arm/mach-omap2/cpuidle34xx.c     |  133 +++++++++++------
+ arch/sh/kernel/cpu/shmobile/cpuidle.c |   28 ++--
+ drivers/acpi/processor_driver.c       |   20 ---
+ drivers/acpi/processor_idle.c         |  251 +++++++++++++++++++++++++++------
+ drivers/cpuidle/cpuidle.c             |   86 ++++-------
+ drivers/cpuidle/driver.c              |   25 +++
+ drivers/cpuidle/governors/ladder.c    |   41 ++++-
+ drivers/cpuidle/governors/menu.c      |   29 ++--
+ drivers/cpuidle/sysfs.c               |   22 ++-
+ drivers/idle/intel_idle.c             |  130 +++++++++++++----
+ include/acpi/processor.h              |    1 
+ include/linux/cpuidle.h               |   52 ++++---
+ 16 files changed, 650 insertions(+), 332 deletions(-)
+
 
 -- 
-Regards,
 
-Laurent Pinchart
+Thanks
+ -Deepthi
