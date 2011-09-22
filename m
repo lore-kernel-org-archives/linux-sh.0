@@ -1,27 +1,132 @@
-From: Arjan van de Ven <arjan@linux.intel.com>
-Date: Thu, 22 Sep 2011 17:35:22 +0000
+From: Jean Pihet <jean.pihet@newoldbits.com>
+Date: Thu, 22 Sep 2011 19:37:27 +0000
 Subject: Re: [RFC PATCH V6 0/4] cpuidle: Global registration of idle states
-Message-Id: <4E7B71DA.90909@linux.intel.com>
+Message-Id: <CAORVsuWX6hQ9Zo_V8GFzzyOYziLmCtVz+DEpv+nqpF1WRPTWCg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
 In-Reply-To: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Cc: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, lenb@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+Cc: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-On 9/22/2011 1:28 AM, Deepthi Dharwar wrote:
+Hi,
+
+On Thu, Sep 22, 2011 at 10:28 AM, Deepthi Dharwar
+<deepthi@linux.vnet.ibm.com> wrote:
 > The following patch series implements global registration of cpuidle
 > states, and also has the necessary data structure changes to
 > accommodate the per-cpu writable members of the cpuidle_states
 > structure.
 >
+> This patch series had been in discussion earlier and
+> following are the links to the previous discussions.
+>
+> v1 --> https://lkml.org/lkml/2011/3/22/161
+> v2 --> https://lkml.org/lkml/2011/1/13/98
+> v3 --> https://lkml.org/lkml/2011/2/8/73
+> v4 --> https://lkml.org/lkml/2011/4/28/312
+> v5 --> https://lkml.org/lkml/2011/6/6/259
+>
+> Changes from previous version (V5):
+>
+> =A0 =A0Rebased the series to 3.1-rc7
+>
+> Tests done:
+>
+> =A0 =A01. Compile tested for ARM using the following configs: da8xx_omapl=
+_defconfig,
+> =A0 =A0exynos4_defconfig, kirkwood_defconfig, omap2plus_defconfig,
+> =A0 =A0at91rm9200_defconfig
 
+Tested OK on OMAP3:
+Signed-off-by: Jean Pihet <j-pihet@ti.com>
 
-you can consider this series Acked-by: Arjan van de Ven 
-<arjan@linux.intel.com>
-it's a good simplification of the code, and unlike frequencies, idle 
-states are really shared between all cpus for
-very practical reasons.
+>
+> =A0 =A02. Boot tested on x86 nehalem with multiple C-states for both inte=
+l_idle
+> =A0 =A0and acpi_idle drivers.
+>
+> =A0 =A03. Boot tested on T60p thinkpad that has T2600 cpu with multiple C=
+-states.
+> =A0 =A0Also tested the case when there is dynamic changes in C-states
+> =A0 =A0AC <-> Battery Power switch.
+>
+> Brief description of the patches:
+>
+> Core change in this series is to split the cpuidle_device structure
+> into two parts, i.e =A0global and per-cpu basis.
+>
+> The per-cpu pieces are mostly generic statistics that can be independent
+> of current running driver. As a result of these changes, there is single
+> copy of cpuidle_states structure and single registration done by one
+> cpu. The low level driver is free to set per-cpu driver data on
+> each cpu if needed using the cpuidle_set_statedata() as the case
+> today. Only in very rare cases asymmetric C-states exist which can be
+> handled within the cpuidle driver. Most architectures do not have
+> asymmetric C-states.
+>
+> First two patches in the series facilitate splitting of cpuidle_states
+> and cpuidle_device structure and next two patches do the actual split,
+> change the API's and make existing code follow the changed API.
+>
+> [1/4] - Move the idle residency accounting part from cpuidle.c to
+> the respective low level drivers, so that the accounting can
+> be accurately maintained if the driver decides to demote the
+> chosen (suggested) by the governor.
+This is a nice improvement since OMAP heavily uses the state demotion
+in the cpuidle driver, and will use it even more with the per-device
+PM QoS support added.
 
+Thanks & regards,
+Jean
+
+>
+> [2/4] - removes the cpuidle_device()->prepare API since is is not
+> widely used and the only use case was to allow software
+> demotion using CPUIDLE_FLAG_IGNORE flag. =A0Both these
+> functions can be absorbed within the cpuidle back-end
+> driver ad hence deprecating the prepare routine and the
+> CPUIDLE_FLAG_IGNORE flag.
+>
+> =A0 =A0- Ref: https://lkml.org/lkml/2011/3/25/52
+>
+> [3/4] - Splits the usage statistics (read/write) part out of
+> cpuidle_state structure, so that the states can become read
+> only and hence made global.
+>
+> [4/4] - Most APIs will now need to pass pointer to both global
+> cpuidle_driver and per-cpu cpuidle_device structure.
+>
+> =A0arch/arm/mach-at91/cpuidle.c =A0 =A0 =A0 =A0 =A0| =A0 41 +++--
+> =A0arch/arm/mach-davinci/cpuidle.c =A0 =A0 =A0 | =A0 51 ++++---
+> =A0arch/arm/mach-exynos4/cpuidle.c =A0 =A0 =A0 | =A0 30 ++--
+> =A0arch/arm/mach-kirkwood/cpuidle.c =A0 =A0 =A0| =A0 42 +++---
+> =A0arch/arm/mach-omap2/cpuidle34xx.c =A0 =A0 | =A0133 +++++++++++------
+> =A0arch/sh/kernel/cpu/shmobile/cpuidle.c | =A0 28 ++--
+> =A0drivers/acpi/processor_driver.c =A0 =A0 =A0 | =A0 20 ---
+> =A0drivers/acpi/processor_idle.c =A0 =A0 =A0 =A0 | =A0251 +++++++++++++++=
+++++++++++++------
+> =A0drivers/cpuidle/cpuidle.c =A0 =A0 =A0 =A0 =A0 =A0 | =A0 86 ++++-------
+> =A0drivers/cpuidle/driver.c =A0 =A0 =A0 =A0 =A0 =A0 =A0| =A0 25 +++
+> =A0drivers/cpuidle/governors/ladder.c =A0 =A0| =A0 41 ++++-
+> =A0drivers/cpuidle/governors/menu.c =A0 =A0 =A0| =A0 29 ++--
+> =A0drivers/cpuidle/sysfs.c =A0 =A0 =A0 =A0 =A0 =A0 =A0 | =A0 22 ++-
+> =A0drivers/idle/intel_idle.c =A0 =A0 =A0 =A0 =A0 =A0 | =A0130 +++++++++++=
+++----
+> =A0include/acpi/processor.h =A0 =A0 =A0 =A0 =A0 =A0 =A0| =A0 =A01
+> =A0include/linux/cpuidle.h =A0 =A0 =A0 =A0 =A0 =A0 =A0 | =A0 52 ++++---
+> =A016 files changed, 650 insertions(+), 332 deletions(-)
+>
+>
+> --
+>
+> Thanks
+> =A0-Deepthi
+>
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+>
