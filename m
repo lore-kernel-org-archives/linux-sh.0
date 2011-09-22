@@ -1,43 +1,87 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 29 Sep 2011 01:30:42 +0000
-Subject: [PATCH 1/5] serial: sh-sci: clean up white space
-Message-Id: <87aa9oqgn5.wl%kuninori.morimoto.gx@renesas.com>
+From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Date: Thu, 22 Sep 2011 08:43:20 +0000
+Subject: [RFC PATCH V6 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and
+Message-Id: <20110922083110.10520.37389.stgit@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
+In-Reply-To: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The cpuidle_device->prepare() mechanism causes updates to the
+cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+to tell the governor not to chose a state on a per-cpu basis at
+run-time. State demotion is now handled by the driver and it returns
+the actual state entered. Hence, this mechanism is not required.
+Also this removes per-cpu flags from cpuidle_state enabling
+it to be made global.
+
+Ref: https://lkml.org/lkml/2011/3/25/52
+
+Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
+Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
 ---
- drivers/tty/serial/sh-sci.h |   14 +++++++-------
- 1 files changed, 7 insertions(+), 7 deletions(-)
+ drivers/cpuidle/cpuidle.c        |   10 ----------
+ drivers/cpuidle/governors/menu.c |    2 --
+ include/linux/cpuidle.h          |    3 ---
+ 3 files changed, 0 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index e9bed03..ab6be55 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -11,13 +11,13 @@
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index 88bd121..f66bcf9 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
+ 	hrtimer_peek_ahead_timers();
+ #endif
  
- #define SCxSR_ERRORS(port)	(to_sci_port(port)->cfg->error_mask)
+-	/*
+-	 * Call the device's prepare function before calling the
+-	 * governor's select function.  ->prepare gives the device's
+-	 * cpuidle driver a chance to update any dynamic information
+-	 * of its cpuidle states for the current idle period, e.g.
+-	 * state availability, latencies, residencies, etc.
+-	 */
+-	if (dev->prepare)
+-		dev->prepare(dev);
+-
+ 	/* ask the governor for the next state */
+ 	next_state = cpuidle_curr_governor->select(dev);
+ 	if (need_resched()) {
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index e4b200c..af724e8 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
+ 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
+ 		struct cpuidle_state *s = &dev->states[i];
  
--#if defined(CONFIG_CPU_SUBTYPE_SH7705) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7720) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7721) || \
--    defined(CONFIG_ARCH_SH73A0) || \
--    defined(CONFIG_ARCH_SH7367) || \
--    defined(CONFIG_ARCH_SH7377) || \
--    defined(CONFIG_ARCH_SH7372)
-+#if	defined(CONFIG_CPU_SUBTYPE_SH7705) ||\
-+	defined(CONFIG_CPU_SUBTYPE_SH7720) ||\
-+	defined(CONFIG_CPU_SUBTYPE_SH7721) ||\
-+	defined(CONFIG_ARCH_SH73A0) ||\
-+	defined(CONFIG_ARCH_SH7367) ||\
-+	defined(CONFIG_ARCH_SH7377) ||\
-+	defined(CONFIG_ARCH_SH7372)
- # define SCxSR_RDxF_CLEAR(port)	 (sci_in(port, SCxSR) & 0xfffc)
- # define SCxSR_ERROR_CLEAR(port) (sci_in(port, SCxSR) & 0xfd73)
- # define SCxSR_TDxE_CLEAR(port)	 (sci_in(port, SCxSR) & 0xffdf)
--- 
-1.7.4.1
+-		if (s->flags & CPUIDLE_FLAG_IGNORE)
+-			continue;
+ 		if (s->target_residency > data->predicted_us)
+ 			continue;
+ 		if (s->exit_latency > latency_req)
+diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
+index 8da811b..c6d85cf 100644
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -47,7 +47,6 @@ struct cpuidle_state {
+ 
+ /* Idle State Flags */
+ #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
+-#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 
+ #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+ 
+@@ -93,8 +92,6 @@ struct cpuidle_device {
+ 	struct completion	kobj_unregister;
+ 	void			*governor_data;
+ 	int			safe_state_index;
+-
+-	int (*prepare)		(struct cpuidle_device *dev);
+ };
+ 
+ DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
 
