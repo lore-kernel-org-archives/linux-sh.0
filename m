@@ -1,338 +1,326 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 15 Sep 2011 07:55:09 +0000
-Subject: [PATCH 9/10 v2] fbdev: sh_mipi_dsi: add set_dot_clock() for each platform
-Message-Id: <87aaa61bqe.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 23 Sep 2011 05:52:43 +0000
+Subject: [PATCH 01/03] ARM: mach-shmobile: sh7372 generic suspend/resume support
+Message-Id: <20110923055243.4013.4422.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Dot clock of SH MIPI are depends on each platform board.
-This patch adds set_dot_clock() function for it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Convert the sh7372 Core Standby code to make use
+of the new generic ARM cpu suspend/resume code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-v1 -> v2
 
-o use PTR_ERR(xx) for return value
+ arch/arm/mach-shmobile/include/mach/common.h |    3 
+ arch/arm/mach-shmobile/pm-sh7372.c           |   38 +---
+ arch/arm/mach-shmobile/sleep-sh7372.S        |  230 --------------------------
+ 3 files changed, 24 insertions(+), 247 deletions(-)
 
- arch/arm/mach-shmobile/board-ag5evm.c |   36 ++++++++++++++++++++++---
- arch/arm/mach-shmobile/board-ap4evb.c |   25 ++++++++++++++++++
- arch/arm/mach-shmobile/board-kota2.c  |   40 +++++++++++++++++++++++++----
- drivers/video/sh_mipi_dsi.c           |   45 ++++++++-------------------------
- include/video/sh_mipi_dsi.h           |    3 ++
- 5 files changed, 104 insertions(+), 45 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 87e9091..75c334d 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -320,6 +320,36 @@ static struct resource mipidsi0_resources[] = {
- 	},
- };
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-07-06 18:11:38.000000000 +0900
+@@ -35,8 +35,7 @@ extern void sh7372_add_standard_devices(
+ extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
+ extern void sh7372_pm_init(void);
+-extern void sh7372_cpu_suspend(void);
+-extern void sh7372_cpu_resume(void);
++extern void sh7372_resume_core_standby(void);
+ extern struct clk sh7372_extal1_clk;
+ extern struct clk sh7372_extal2_clk;
  
-+#define DSI0PHYCR	0xe615006c
-+static int sh_mipi_set_dot_clock(struct platform_device *pdev,
-+				 void __iomem *base,
-+				 int enable)
-+{
-+	struct clk *pck;
-+	int ret;
-+
-+	pck = clk_get(&pdev->dev, "dsip_clk");
-+	if (IS_ERR(pck)) {
-+		ret = PTR_ERR(pck);
-+		goto sh_mipi_set_dot_clock_pck_err;
-+	}
-+
-+	if (enable) {
-+		clk_set_rate(pck, clk_round_rate(pck,  24000000));
-+		__raw_writel(0x2a809010, DSI0PHYCR);
-+		clk_enable(pck);
-+	} else {
-+		clk_disable(pck);
-+	}
-+
-+	ret = 0;
-+
-+	clk_put(pck);
-+
-+sh_mipi_set_dot_clock_pck_err:
-+	return ret;
-+}
-+
- static struct sh_mipi_dsi_info mipidsi0_info = {
- 	.data_format	= MIPI_RGB888,
- 	.lcd_chan	= &lcdc0_info.ch[0],
-@@ -328,6 +358,7 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
- 	.clksrc		= 1,
- 	.flags		= SH_MIPI_DSI_HSABM |
- 			  SH_MIPI_DSI_SYNC_PULSES_MODE,
-+	.set_dot_clock	= sh_mipi_set_dot_clock,
- };
+--- 0001/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-06 18:34:40.000000000 +0900
+@@ -18,6 +18,7 @@
+ #include <asm/system.h>
+ #include <asm/io.h>
+ #include <asm/tlbflush.h>
++#include <asm/suspend.h>
+ #include <mach/common.h>
  
- static struct platform_device mipidsi0_device = {
-@@ -467,8 +498,6 @@ void __init ag5evm_init_irq(void)
- 	__raw_writew(__raw_readw(PINTCR0A) | (2<<10), PINTCR0A);
- }
+ #define SMFRAM 0xe6a70000
+@@ -25,30 +26,25 @@
+ #define SBAR 0xe6180020
+ #define APARMBAREA 0xe6f10020
  
--#define DSI0PHYCR	0xe615006c
--
- static void __init ag5evm_init(void)
+-static void sh7372_enter_core_standby(void)
++static int sh7372_do_idle_core_standby(unsigned long unused)
  {
- 	sh73a0_pinmux_init();
-@@ -549,9 +578,6 @@ static void __init ag5evm_init(void)
- 	gpio_direction_output(GPIO_PORT235, 0);
- 	lcd_backlight_reset();
- 
--	/* MIPI-DSI clock setup */
--	__raw_writel(0x2a809010, DSI0PHYCR);
+-	void __iomem *smfram = (void __iomem *)SMFRAM;
 -
- 	/* enable SDHI0 on CN15 [SD I/F] */
- 	gpio_request(GPIO_FN_SDHICD0, NULL);
- 	gpio_request(GPIO_FN_SDHIWP0, NULL);
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 114fd8a..5aa5ddd 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -575,12 +575,37 @@ static struct resource mipidsi0_resources[] = {
- 	},
- };
- 
-+#define PHYCTRL		0x0070
-+static int sh_mipi_set_dot_clock(struct platform_device *pdev,
-+				 void __iomem *base,
-+				 int enable)
-+{
-+	struct clk *pck = clk_get(&pdev->dev, "dsip_clk");
-+	void __iomem *phy =  base + PHYCTRL;
-+
-+	if (IS_ERR(pck))
-+		return PTR_ERR(pck);
-+
-+	if (enable) {
-+		clk_set_rate(pck, clk_round_rate(pck, 24000000));
-+		iowrite32(ioread32(phy) | (0xb << 8), phy);
-+		clk_enable(pck);
-+	} else {
-+		clk_disable(pck);
-+	}
-+
-+	clk_put(pck);
-+
+-	__raw_writel(0, APARMBAREA); /* translate 4k */
+-	__raw_writel(__pa(sh7372_cpu_resume), SBAR); /* set reset vector */
+-	__raw_writel(0x10, SYSTBCR); /* enable core standby */
+-
+-	__raw_writel(0, smfram + 0x3c); /* clear page table address */
+-
+-	sh7372_cpu_suspend();
+-	cpu_init();
+-
+-	/* if page table address is non-NULL then we have been powered down */
+-	if (__raw_readl(smfram + 0x3c)) {
+-		__raw_writel(__raw_readl(smfram + 0x40),
+-			     __va(__raw_readl(smfram + 0x3c)));
++	cpu_do_idle(); /* WFI when SYSTBCR = 0x10 -> Core Standby */
 +	return 0;
 +}
-+
- static struct sh_mipi_dsi_info mipidsi0_info = {
- 	.data_format	= MIPI_RGB888,
- 	.lcd_chan	= &lcdc_info.ch[0],
- 	.lane		= 2,
- 	.vsynw_offset	= 17,
- 	.flags		= SH_MIPI_DSI_SYNC_PULSES_MODE,
-+	.set_dot_clock	= sh_mipi_set_dot_clock,
- };
  
- static struct platform_device mipidsi0_device = {
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index a2be703..6c3866b 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -20,6 +20,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -365,6 +366,36 @@ static u32 sh_mipi_extra_dcs[] = {
- 	SH_MIPI_DCS(0x2c),		/* memory write on */
- };
- 
-+#define DSI0PCKCR	0xe6150064
-+#define DSI0PHYCR	0xe615006c
-+static int sh_mipi_set_dot_clock(struct platform_device *pdev,
-+				 void __iomem *base,
-+				 int enable)
+-		flush_tlb_all();
+-		set_cr(__raw_readl(smfram + 0x38));
+-	}
++static void sh7372_enter_core_standby(void)
 +{
-+	struct clk *pck;
-+	int ret;
++	/* set reset vector, translate 4k */
++	__raw_writel(__pa(sh7372_resume_core_standby), SBAR);
++	__raw_writel(0, APARMBAREA);
 +
-+	pck = clk_get(&pdev->dev, "dsip_clk");
-+	if (IS_ERR(pck)) {
-+		ret = PTR_ERR(pck);
-+		goto sh_mipi_set_dot_clock_pck_err;
-+	}
-+
-+	if (enable) {
-+		clk_set_rate(pck, clk_round_rate(pck,  19200000));
-+		__raw_writel(0x2a8b9a0d, DSI0PHYCR); /* 268.8MHz (33.6MHz x8) */
-+		clk_enable(pck);
-+	} else {
-+		clk_disable(pck);
-+	}
-+
-+	ret = 0;
-+
-+	clk_put(pck);
-+sh_mipi_set_dot_clock_pck_err:
-+	return ret;
-+}
-+
- static struct sh_mipi_dsi_info mipidsi0_info = {
- 	.data_format	= MIPI_RGB888,
- 	.lcd_chan	= &lcdc0_info.ch[0],
-@@ -377,6 +408,7 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
- 			  SH_MIPI_DSI_SYNC_BURST_MODE,
- 	.extra_array	= sh_mipi_extra_dcs,
- 	.extra_array_len= ARRAY_SIZE(sh_mipi_extra_dcs),
-+	.set_dot_clock	= sh_mipi_set_dot_clock,
- };
++	/* enter sleep mode with SYSTBCR to 0x10 */
++	__raw_writel(0x10, SYSTBCR);
++	cpu_suspend(0, sh7372_do_idle_core_standby);
++	__raw_writel(0, SYSTBCR);
  
- static struct platform_device mipidsi0_device = {
-@@ -434,9 +466,6 @@ void __init kota2_init_irq(void)
- 	__raw_writew(2 << 10, PINTCR0A);
+-	__raw_writel(0, SYSTBCR); /* disable core standby */
+-	__raw_writel(0, SBAR); /* disable reset vector translation */
++	 /* disable reset vector translation */
++	__raw_writel(0, SBAR);
  }
  
--#define DSI0PCKCR	0xe6150064
--#define DSI0PHYCR	0xe615006c
+ #ifdef CONFIG_CPU_IDLE
+--- 0001/arch/arm/mach-shmobile/sleep-sh7372.S
++++ work/arch/arm/mach-shmobile/sleep-sh7372.S	2011-07-06 18:32:44.000000000 +0900
+@@ -30,231 +30,13 @@
+  */
+ 
+ #include <linux/linkage.h>
++#include <linux/init.h>
++#include <asm/memory.h>
+ #include <asm/assembler.h>
+ 
+-#define SMFRAM 0xe6a70000
 -
- static void __init kota2_init(void)
- {
- 	sh73a0_pinmux_init();
-@@ -534,9 +563,8 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
- 	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
- 
--	/* MIPI-DSI clock setup */
--	__raw_writel(0x00000119, DSI0PCKCR);
--	__raw_writel(0x2a8b9111, DSI0PHYCR);
-+	/* MIPI-DSI clock clean up */
-+	__raw_writel(0x00000000, DSI0PCKCR);
- 
- 	/* Unreset LCD Panel */
- 	gpio_request(GPIO_PORT217, NULL);
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index 166b468..e42cd81 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -59,7 +59,6 @@ struct sh_mipi {
- 	void __iomem	*base;
- 	void __iomem	*linkbase;
- 	struct clk	*dsit_clk;
--	struct clk	*dsip_clk;
- 	struct device	*dev;
- 
- 	void	*next_board_data;
-@@ -313,8 +312,8 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	/* DSI-Tx bias on */
- 	iowrite32(0x00000001, base + PHYCTRL);
- 	udelay(200);
--	/* Deassert resets, power on, set multiplier */
--	iowrite32(0x03070b01, base + PHYCTRL);
-+	/* Deassert resets, power on */
-+	iowrite32(0x03070001, base + PHYCTRL);
- 
- 	/* setup l-bridge */
- 
-@@ -441,6 +440,9 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	if (!res || !res2 || idx >= ARRAY_SIZE(mipi_dsi) || !pdata)
- 		return -ENODEV;
- 
-+	if (!pdata->set_dot_clock)
-+		return -EINVAL;
-+
- 	mutex_lock(&array_lock);
- 	if (idx < 0)
- 		for (idx = 0; idx < ARRAY_SIZE(mipi_dsi) && mipi_dsi[idx]; idx++)
-@@ -501,34 +503,10 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 
- 	dev_dbg(&pdev->dev, "DSI-T clk %lu -> %lu\n", f_current, rate);
- 
--	mipi->dsip_clk = clk_get(&pdev->dev, "dsip_clk");
--	if (IS_ERR(mipi->dsip_clk)) {
--		ret = PTR_ERR(mipi->dsip_clk);
--		goto eclkpget;
--	}
+-	.align
+-kernel_flush:
+-	.word	v7_flush_dcache_all
 -
--	f_current = clk_get_rate(mipi->dsip_clk);
--	/* Between 10 and 50MHz */
--	rate = clk_round_rate(mipi->dsip_clk, 24000000);
--	if (rate > 0 && rate != f_current)
--		ret = clk_set_rate(mipi->dsip_clk, rate);
--	else
--		ret = rate;
--	if (ret < 0)
--		goto esetprate;
+-	.align	3
+-ENTRY(sh7372_cpu_suspend)
+-	stmfd	sp!, {r0-r12, lr}	@ save registers on stack
 -
--	dev_dbg(&pdev->dev, "DSI-P clk %lu -> %lu\n", f_current, rate);
+-	ldr	r8, =SMFRAM
 -
--	msleep(10);
+-	mov	r4, sp			@ Store sp
+-	mrs	r5, spsr		@ Store spsr
+-	mov	r6, lr			@ Store lr
+-	stmia	r8!, {r4-r6}
 -
- 	ret = clk_enable(mipi->dsit_clk);
- 	if (ret < 0)
- 		goto eclkton;
- 
--	ret = clk_enable(mipi->dsip_clk);
--	if (ret < 0)
--		goto eclkpon;
+-	mrc	p15, 0, r4, c1, c0, 2	@ Coprocessor access control register
+-	mrc	p15, 0, r5, c2, c0, 0	@ TTBR0
+-	mrc	p15, 0, r6, c2, c0, 1	@ TTBR1
+-	mrc	p15, 0, r7, c2, c0, 2	@ TTBCR
+-	stmia	r8!, {r4-r7}
 -
- 	mipi_dsi[idx] = mipi;
- 
- 	pm_runtime_enable(&pdev->dev);
-@@ -538,6 +516,10 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto emipisetup;
- 
-+	ret = pdata->set_dot_clock(pdev, mipi->base, 1);
-+	if (ret < 0)
-+		goto emipisetup;
-+
- 	mutex_unlock(&array_lock);
- 	platform_set_drvdata(pdev, mipi);
- 
-@@ -557,13 +539,8 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- emipisetup:
- 	mipi_dsi[idx] = NULL;
- 	pm_runtime_disable(&pdev->dev);
--	clk_disable(mipi->dsip_clk);
--eclkpon:
- 	clk_disable(mipi->dsit_clk);
- eclkton:
--esetprate:
--	clk_put(mipi->dsip_clk);
--eclkpget:
- esettrate:
- 	clk_put(mipi->dsit_clk);
- eclktget:
-@@ -614,10 +591,10 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
- 	pdata->lcd_chan->board_cfg.board_data = NULL;
- 
- 	pm_runtime_disable(&pdev->dev);
--	clk_disable(mipi->dsip_clk);
- 	clk_disable(mipi->dsit_clk);
- 	clk_put(mipi->dsit_clk);
--	clk_put(mipi->dsip_clk);
-+	pdata->set_dot_clock(pdev, mipi->base, 0);
-+
- 	iounmap(mipi->linkbase);
- 	if (res2)
- 		release_mem_region(res2->start, resource_size(res2));
-diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
-index fb3950e..5ded705 100644
---- a/include/video/sh_mipi_dsi.h
-+++ b/include/video/sh_mipi_dsi.h
-@@ -61,6 +61,9 @@ struct sh_mipi_dsi_info {
- 	unsigned int			vsynw_offset;
- 	u32				*extra_array;
- 	int				extra_array_len;
-+	int	(*set_dot_clock)(struct platform_device *pdev,
-+				 void __iomem *base,
-+				 int enable);
- };
- 
- #endif
--- 
-1.7.4.1
-
+-	mrc	p15, 0, r4, c3, c0, 0	@ Domain access Control Register
+-	mrc	p15, 0, r5, c10, c2, 0	@ PRRR
+-	mrc	p15, 0, r6, c10, c2, 1	@ NMRR
+-	stmia	r8!,{r4-r6}
+-
+-	mrc	p15, 0, r4, c13, c0, 1	@ Context ID
+-	mrc	p15, 0, r5, c13, c0, 2	@ User r/w thread and process ID
+-	mrc	p15, 0, r6, c12, c0, 0	@ Secure or NS vector base address
+-	mrs	r7, cpsr		@ Store current cpsr
+-	stmia	r8!, {r4-r7}
+-
+-	mrc	p15, 0, r4, c1, c0, 0	@ save control register
+-	stmia	r8!, {r4}
+-
+-	/*
+-	 * jump out to kernel flush routine
+-	 *  - reuse that code is better
+-	 *  - it executes in a cached space so is faster than refetch per-block
+-	 *  - should be faster and will change with kernel
+-	 *  - 'might' have to copy address, load and jump to it
+-	 * Flush all data from the L1 data cache before disabling
+-	 * SCTLR.C bit.
+-	 */
+-	ldr	r1, kernel_flush
+-	mov	lr, pc
+-	bx	r1
+-
+-	/*
+-	 * Clear the SCTLR.C bit to prevent further data cache
+-	 * allocation. Clearing SCTLR.C would make all the data accesses
+-	 * strongly ordered and would not hit the cache.
+-	 */
+-	mrc	p15, 0, r0, c1, c0, 0
+-	bic	r0, r0, #(1 << 2)	@ Disable the C bit
+-	mcr	p15, 0, r0, c1, c0, 0
+-	isb
+-
+-	/*
+-	 * Invalidate L1 data cache. Even though only invalidate is
+-	 * necessary exported flush API is used here. Doing clean
+-	 * on already clean cache would be almost NOP.
+-	 */
+-	ldr	r1, kernel_flush
+-	blx	r1
+-	/*
+-	 * The kernel doesn't interwork: v7_flush_dcache_all in particluar will
+-	 * always return in Thumb state when CONFIG_THUMB2_KERNEL is enabled.
+-	 * This sequence switches back to ARM.  Note that .align may insert a
+-	 * nop: bx pc needs to be word-aligned in order to work.
+-	 */
+- THUMB(	.thumb		)
+- THUMB(	.align		)
+- THUMB(	bx	pc	)
+- THUMB(	nop		)
+-	.arm
+-
+-	/* Data memory barrier and Data sync barrier */
+-	dsb
+-	dmb
+-
+-/*
+- * =================- * = WFI instruction => Enter idle =
+- * =================- */
+-	wfi				@ wait for interrupt
+-
+-/*
+- * =================- * = Resume path for non-OFF modes =
+- * =================- */
+-	mrc	p15, 0, r0, c1, c0, 0
+-	tst	r0, #(1 << 2)		@ Check C bit enabled?
+-	orreq	r0, r0, #(1 << 2)	@ Enable the C bit if cleared
+-	mcreq	p15, 0, r0, c1, c0, 0
+-	isb
+-
+-/*
+- * =================- * = Exit point from non-OFF modes =
+- * =================- */
+-	ldmfd	sp!, {r0-r12, pc}	@ restore regs and return
+-
+-	.pool
+-
+ 	.align	12
+ 	.text
+-	.global	sh7372_cpu_resume
+-sh7372_cpu_resume:
+-
+-	mov	r1, #0
+-	/*
+-	 * Invalidate all instruction caches to PoU
+-	 * and flush branch target cache
+-	 */
+-	mcr	p15, 0, r1, c7, c5, 0
+-
+-	ldr	r3, =SMFRAM
+-
+-	ldmia	r3!, {r4-r6}
+-	mov	sp, r4			@ Restore sp
+-	msr	spsr_cxsf, r5		@ Restore spsr
+-	mov	lr, r6			@ Restore lr
+-
+-	ldmia	r3!, {r4-r7}
+-	mcr	p15, 0, r4, c1, c0, 2	@ Coprocessor access Control Register
+-	mcr	p15, 0, r5, c2, c0, 0	@ TTBR0
+-	mcr	p15, 0, r6, c2, c0, 1	@ TTBR1
+-	mcr	p15, 0, r7, c2, c0, 2	@ TTBCR
+-
+-	ldmia	r3!,{r4-r6}
+-	mcr	p15, 0, r4, c3, c0, 0	@ Domain access Control Register
+-	mcr	p15, 0, r5, c10, c2, 0	@ PRRR
+-	mcr	p15, 0, r6, c10, c2, 1	@ NMRR
+-
+-	ldmia	r3!,{r4-r7}
+-	mcr	p15, 0, r4, c13, c0, 1	@ Context ID
+-	mcr	p15, 0, r5, c13, c0, 2	@ User r/w thread and process ID
+-	mrc	p15, 0, r6, c12, c0, 0	@ Secure or NS vector base address
+-	msr	cpsr, r7		@ store cpsr
+-
+-	/* Starting to enable MMU here */
+-	mrc	p15, 0, r7, c2, c0, 2 	@ Read TTBRControl
+-	/* Extract N (0:2) bits and decide whether to use TTBR0 or TTBR1 */
+-	and	r7, #0x7
+-	cmp	r7, #0x0
+-	beq	usettbr0
+-ttbr_error:
+-	/*
+-	 * More work needs to be done to support N[0:2] value other than 0
+-	 * So looping here so that the error can be detected
+-	 */
+-	b	ttbr_error
+-
+-	.align
+-cache_pred_disable_mask:
+-	.word	0xFFFFE7FB
+-ttbrbit_mask:
+-	.word	0xFFFFC000
+-table_index_mask:
+-	.word	0xFFF00000
+-table_entry:
+-	.word	0x00000C02
+-usettbr0:
+-
+-	mrc	p15, 0, r2, c2, c0, 0
+-	ldr	r5, ttbrbit_mask
+-	and	r2, r5
+-	mov	r4, pc
+-	ldr	r5, table_index_mask
+-	and	r4, r5			@ r4 = 31 to 20 bits of pc
+-	/* Extract the value to be written to table entry */
+-	ldr	r6, table_entry
+-	/* r6 has the value to be written to table entry */
+-	add	r6, r6, r4
+-	/* Getting the address of table entry to modify */
+-	lsr	r4, #18
+-	/* r2 has the location which needs to be modified */
+-	add	r2, r4
+-	ldr	r4, [r2]
+-	str	r6, [r2] /* modify the table entry */
+-
+-	mov	r7, r6
+-	mov	r5, r2
+-	mov	r6, r4
+-	/* r5 = original page table address */
+-	/* r6 = original page table data */
+-
+-	mov	r0, #0
+-	mcr	p15, 0, r0, c7, c5, 4	@ Flush prefetch buffer
+-	mcr	p15, 0, r0, c7, c5, 6	@ Invalidate branch predictor array
+-	mcr	p15, 0, r0, c8, c5, 0	@ Invalidate instruction TLB
+-	mcr	p15, 0, r0, c8, c6, 0	@ Invalidate data TLB
+-
+-	/*
+-	 * Restore control register. This enables the MMU.
+-	 * The caches and prediction are not enabled here, they
+-	 * will be enabled after restoring the MMU table entry.
+-	 */
+-	ldmia	r3!, {r4}
+-	stmia	r3!, {r5} /* save original page table address */
+-	stmia	r3!, {r6} /* save original page table data */
+-	stmia	r3!, {r7} /* save modified page table data */
+-
+-	ldr	r2, cache_pred_disable_mask
+-	and	r4, r2
+-	mcr	p15, 0, r4, c1, c0, 0
+-	dsb
+-	isb
+-
+-	ldr     r0, =restoremmu_on
+-	bx      r0
+-
+-/*
+- * ===============
+- * = Exit point from OFF mode =
+- * ===============
+- */
+-restoremmu_on:
+-
+-	ldmfd	sp!, {r0-r12, pc}	@ restore regs and return
++	.global sh7372_resume_core_standby
++sh7372_resume_core_standby:
++	ldr     pc, 1f
++1:	.long   cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
