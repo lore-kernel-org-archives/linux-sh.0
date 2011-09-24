@@ -1,87 +1,55 @@
-From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Thu, 22 Sep 2011 08:43:20 +0000
-Subject: [RFC PATCH V6 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and
-Message-Id: <20110922083110.10520.37389.stgit@localhost6.localdomain6>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 24 Sep 2011 21:23:03 +0000
+Subject: [PATCH 0/3] PM: Runtime PM and device PM QoS refinements
+Message-Id: <201109242323.03474.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
-In-Reply-To: <20110922082840.10520.85895.stgit@localhost6.localdomain6>
+References: <201108310017.03103.rjw@sisk.pl>
+In-Reply-To: <201108310017.03103.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com, Ming Lei <tom.leiming@gmail.com>
 
-The cpuidle_device->prepare() mechanism causes updates to the
-cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
-to tell the governor not to chose a state on a per-cpu basis at
-run-time. State demotion is now handled by the driver and it returns
-the actual state entered. Hence, this mechanism is not required.
-Also this removes per-cpu flags from cpuidle_state enabling
-it to be made global.
+Hi,
 
-Ref: https://lkml.org/lkml/2011/3/25/52
+On Wednesday, August 31, 2011, Rafael J. Wysocki wrote:
+> Hi,
+> 
+> This patchset illustrates how device PM QoS may be used along with
+> PM domains in my view.
+> 
+> Actually, it consists of two parts.  Namely, patches [1-3/5] seem to be
+> suitable for 3.2, unless somebody hates them, but patches [4-5/5] are
+> total RFC.  They haven't been tested, only compiled, so the use of them
+> is not encouraged (they may kill your dog or make your cat go wild, or
+> do something equally nasty, so beware).  Their purpose is to illustrate
+> an idea that I'd like to discuss at the PM miniconference during the
+> LPC.
+> 
+> [1/5] - Split device PM domain data into a "base" and additional fields
+>         (one need_restore field at the moment, but the subsequent patches
+>         add more fields).
+> 
+> [2/5] - Make runtime PM always release power.lock if power.irq_safe is set.
+> 
+> [3/5] - Add function for reading device PM QoS values safely.
+> 
+> [4/5] - Add governor function for stopping devices.
+> 
+> [5/5] - Add generic PM domain power off governor function.
 
-Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
-Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
----
- drivers/cpuidle/cpuidle.c        |   10 ----------
- drivers/cpuidle/governors/menu.c |    2 --
- include/linux/cpuidle.h          |    3 ---
- 3 files changed, 0 insertions(+), 15 deletions(-)
+I have updated patches [1-3] after receiving some feedback and the result
+follows.  These patches are regarded as 3.2 material, if no one has
+objections.
 
-diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
-index 88bd121..f66bcf9 100644
---- a/drivers/cpuidle/cpuidle.c
-+++ b/drivers/cpuidle/cpuidle.c
-@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
- 	hrtimer_peek_ahead_timers();
- #endif
+[1/3] - Split device PM domain data into a "base" and additional fields
+        (one need_restore field at the moment).
  
--	/*
--	 * Call the device's prepare function before calling the
--	 * governor's select function.  ->prepare gives the device's
--	 * cpuidle driver a chance to update any dynamic information
--	 * of its cpuidle states for the current idle period, e.g.
--	 * state availability, latencies, residencies, etc.
--	 */
--	if (dev->prepare)
--		dev->prepare(dev);
--
- 	/* ask the governor for the next state */
- 	next_state = cpuidle_curr_governor->select(dev);
- 	if (need_resched()) {
-diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index e4b200c..af724e8 100644
---- a/drivers/cpuidle/governors/menu.c
-+++ b/drivers/cpuidle/governors/menu.c
-@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
- 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
- 		struct cpuidle_state *s = &dev->states[i];
+[2/3] - Make runtime PM always release power.lock if power.irq_safe is set.
  
--		if (s->flags & CPUIDLE_FLAG_IGNORE)
--			continue;
- 		if (s->target_residency > data->predicted_us)
- 			continue;
- 		if (s->exit_latency > latency_req)
-diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
-index 8da811b..c6d85cf 100644
---- a/include/linux/cpuidle.h
-+++ b/include/linux/cpuidle.h
-@@ -47,7 +47,6 @@ struct cpuidle_state {
- 
- /* Idle State Flags */
- #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
--#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
- 
- #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
- 
-@@ -93,8 +92,6 @@ struct cpuidle_device {
- 	struct completion	kobj_unregister;
- 	void			*governor_data;
- 	int			safe_state_index;
--
--	int (*prepare)		(struct cpuidle_device *dev);
- };
- 
- DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
+[3/3] - Add function for reading device PM QoS values safely.
+
+Thanks,
+Rafael
 
