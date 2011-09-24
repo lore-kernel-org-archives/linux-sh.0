@@ -1,25 +1,142 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Sep 2011 07:56:18 +0000
-Subject: Re: R-Mobile A1 support
-Message-Id: <87sjnecvkx.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 24 Sep 2011 21:25:53 +0000
+Subject: [PATCH 2/3] PM / Runtime: Don't run callbacks under lock for power.irq_safe set
+Message-Id: <201109242325.53563.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bou4qgof.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bou4qgof.wl%kuninori.morimoto.gx@renesas.com>
+References: <201108310017.03103.rjw@sisk.pl> <201109242323.03474.rjw@sisk.pl>
+In-Reply-To: <201109242323.03474.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com, Ming Lei <tom.leiming@gmail.com>
 
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Hi Iwamatsu-san
+The rpm_suspend() and rpm_resume() routines execute subsystem or PM
+domain callbacks under power.lock if power.irq_safe is set for the
+given device.  This is inconsistent with that rpm_idle() does after
+commit 02b2677 (PM / Runtime: Allow _put_sync() from
+interrupts-disabled context) and is problematic for subsystems and PM
+domains wanting to use power.lock for synchronization in their
+runtime PM callbacks.
 
-> Do you forget to send an email of 2/5?
-
-Hmm.. strange..
-
-I sent 2/5 email, but linux-sh ML didn't get it ?
-OK. I will re-send it
-
-Best regards
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
-Kuninori Morimoto
+ drivers/base/power/runtime.c |   68 +++++++++++++++++++++++++++++--------------
+ 1 file changed, 46 insertions(+), 22 deletions(-)
+
+Index: linux/drivers/base/power/runtime.c
+=================================--- linux.orig/drivers/base/power/runtime.c
++++ linux/drivers/base/power/runtime.c
+@@ -155,6 +155,31 @@ static int rpm_check_suspend_allowed(str
+ }
+ 
+ /**
++ * __rpm_callback - Run a given runtime PM callback for a given device.
++ * @cb: Runtime PM callback to run.
++ * @dev: Device to run the callback for.
++ */
++static int __rpm_callback(int (*cb)(struct device *), struct device *dev)
++	__releases(&dev->power.lock) __acquires(&dev->power.lock)
++{
++	int retval;
++
++	if (dev->power.irq_safe)
++		spin_unlock(&dev->power.lock);
++	else
++		spin_unlock_irq(&dev->power.lock);
++
++	retval = cb(dev);
++
++	if (dev->power.irq_safe)
++		spin_lock(&dev->power.lock);
++	else
++		spin_lock_irq(&dev->power.lock);
++
++	return retval;
++}
++
++/**
+  * rpm_idle - Notify device bus type if the device can be suspended.
+  * @dev: Device to notify the bus type about.
+  * @rpmflags: Flag bits.
+@@ -225,19 +250,8 @@ static int rpm_idle(struct device *dev,
+ 	else
+ 		callback = NULL;
+ 
+-	if (callback) {
+-		if (dev->power.irq_safe)
+-			spin_unlock(&dev->power.lock);
+-		else
+-			spin_unlock_irq(&dev->power.lock);
+-
+-		callback(dev);
+-
+-		if (dev->power.irq_safe)
+-			spin_lock(&dev->power.lock);
+-		else
+-			spin_lock_irq(&dev->power.lock);
+-	}
++	if (callback)
++		__rpm_callback(callback, dev);
+ 
+ 	dev->power.idle_notification = false;
+ 	wake_up_all(&dev->power.wait_queue);
+@@ -252,22 +266,14 @@ static int rpm_idle(struct device *dev,
+  * @dev: Device to run the callback for.
+  */
+ static int rpm_callback(int (*cb)(struct device *), struct device *dev)
+-	__releases(&dev->power.lock) __acquires(&dev->power.lock)
+ {
+ 	int retval;
+ 
+ 	if (!cb)
+ 		return -ENOSYS;
+ 
+-	if (dev->power.irq_safe) {
+-		retval = cb(dev);
+-	} else {
+-		spin_unlock_irq(&dev->power.lock);
+-
+-		retval = cb(dev);
++	retval = __rpm_callback(cb, dev);
+ 
+-		spin_lock_irq(&dev->power.lock);
+-	}
+ 	dev->power.runtime_error = retval;
+ 	return retval != -EACCES ? retval : -EIO;
+ }
+@@ -347,6 +353,15 @@ static int rpm_suspend(struct device *de
+ 			goto out;
+ 		}
+ 
++		if (dev->power.irq_safe) {
++			spin_unlock(&dev->power.lock);
++
++			cpu_relax();
++
++			spin_lock(&dev->power.lock);
++			goto repeat;
++		}
++
+ 		/* Wait for the other suspend running in parallel with us. */
+ 		for (;;) {
+ 			prepare_to_wait(&dev->power.wait_queue, &wait,
+@@ -496,6 +511,15 @@ static int rpm_resume(struct device *dev
+ 			goto out;
+ 		}
+ 
++		if (dev->power.irq_safe) {
++			spin_unlock(&dev->power.lock);
++
++			cpu_relax();
++
++			spin_lock(&dev->power.lock);
++			goto repeat;
++		}
++
+ 		/* Wait for the operation carried out in parallel with us. */
+ 		for (;;) {
+ 			prepare_to_wait(&dev->power.wait_queue, &wait,
+
