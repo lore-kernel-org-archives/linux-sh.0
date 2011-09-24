@@ -1,154 +1,175 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 15 Sep 2011 11:13:00 +0000
-Subject: [PATCH] sh: kexec: Add PHYSICAL_START
-Message-Id: <1316085180-4215-1-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 24 Sep 2011 21:24:09 +0000
+Subject: [PATCH 1/3] PM / Domains: Split device PM domain data into base and need_restore
+Message-Id: <201109242324.09657.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201108310017.03103.rjw@sisk.pl> <201109242323.03474.rjw@sisk.pl>
+In-Reply-To: <201109242323.03474.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM mailing list <linux-pm@lists.linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com, Ming Lei <tom.leiming@gmail.com>
 
-Add PHYSICAL_START kernel configuration parameter to set the address at
-which the kernel should be loaded.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-It has been observed on an sh7757lcr that simply modifying MEMORY_START
-does not achieve this goal for 32bit sh. This is due to MEMORY_OFFSET in
-arch/sh/kernel/vmlinux.lds.S bot being based on MEMORY_START on such
-systems.
+The struct pm_domain_data data type is defined in such a way that
+adding new fields specific to the generic PM domains code will
+require include/linux/pm.h to be modified.  As a result, data types
+used only by the generic PM domains code will be defined in two
+headers, although they all should be defined in pm_domain.h and
+pm.h will need to include more headers, which won't be very nice.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+For this reason change the definition of struct pm_subsys_data
+so that its domain_data member is a pointer, which will allow
+struct pm_domain_data to be subclassed by various PM domains
+implementations.  Remove the need_restore member from
+struct pm_domain_data and make the generic PM domains code
+subclass it by adding the need_restore member to the new data type.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/sh/Kconfig              |   13 ++++++++++++-
- arch/sh/boot/Makefile        |    6 ++++--
- arch/sh/include/asm/page.h   |   10 ++++++++++
- arch/sh/kernel/vmlinux.lds.S |    2 +-
- arch/sh/mm/init.c            |    8 ++++----
- 5 files changed, 31 insertions(+), 8 deletions(-)
+ drivers/base/power/domain.c |   28 +++++++++++++++++++---------
+ include/linux/pm.h          |    3 +--
+ include/linux/pm_domain.h   |   10 ++++++++++
+ 3 files changed, 30 insertions(+), 11 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index ff9177c..bd8922c 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -649,7 +649,7 @@ config CRASH_DUMP
- 	  a specially reserved region and then later executed after
- 	  a crash by kdump/kexec. The crash dump kernel must be compiled
- 	  to a memory address not used by the main kernel using
--	  MEMORY_START.
-+	  PHYSICAL_START.
+Index: linux/include/linux/pm.h
+=================================--- linux.orig/include/linux/pm.h
++++ linux/include/linux/pm.h
+@@ -433,7 +433,6 @@ struct wakeup_source;
+ struct pm_domain_data {
+ 	struct list_head list_node;
+ 	struct device *dev;
+-	bool need_restore;
+ };
  
- 	  For more details see Documentation/kdump/kdump.txt
+ struct pm_subsys_data {
+@@ -443,7 +442,7 @@ struct pm_subsys_data {
+ 	struct list_head clock_list;
+ #endif
+ #ifdef CONFIG_PM_GENERIC_DOMAINS
+-	struct pm_domain_data domain_data;
++	struct pm_domain_data *domain_data;
+ #endif
+ };
  
-@@ -660,6 +660,17 @@ config KEXEC_JUMP
- 	  Jump between original kernel and kexeced kernel and invoke
- 	  code via KEXEC
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -62,6 +62,16 @@ struct gpd_link {
+ 	struct list_head slave_node;
+ };
  
-+config PHYSICAL_START
-+	hex "Physical address where the kernel is loaded" if (EXPERT || CRASH_DUMP)
-+	default MEMORY_START
-+	---help---
-+	  This gives the physical address where the kernel is loaded
-+	  and is ordinarily the same as MEMORY_START.
++struct generic_pm_domain_data {
++	struct pm_domain_data base;
++	bool need_restore;
++};
 +
-+	  Different values are primarily used in the case of kexec on panic
-+	  where the fail safe kernel needs to run at a different address
-+	  than the panic-ed kernel.
++static inline struct generic_pm_domain_data *to_gpd_data(struct pm_domain_data *pdd)
++{
++	return container_of(pdd, struct generic_pm_domain_data, base);
++}
 +
- config SECCOMP
- 	bool "Enable seccomp to safely compute untrusted bytecode"
- 	depends on PROC_FS
-diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
-index ba515d8..e4ea31a 100644
---- a/arch/sh/boot/Makefile
-+++ b/arch/sh/boot/Makefile
-@@ -19,6 +19,7 @@ CONFIG_MEMORY_START	?= 0x0c000000
- CONFIG_BOOT_LINK_OFFSET	?= 0x00800000
- CONFIG_ZERO_PAGE_OFFSET	?= 0x00001000
- CONFIG_ENTRY_OFFSET	?= 0x00001000
-+CONFIG_PHYSICAL_START	?= $(CONFIG_MEMORY_START)
+ #ifdef CONFIG_PM_GENERIC_DOMAINS
+ extern int pm_genpd_add_device(struct generic_pm_domain *genpd,
+ 			       struct device *dev);
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -188,11 +188,12 @@ static int __pm_genpd_save_device(struct
+ 				  struct generic_pm_domain *genpd)
+ 	__releases(&genpd->lock) __acquires(&genpd->lock)
+ {
++	struct generic_pm_domain_data *gpd_data = to_gpd_data(pdd);
+ 	struct device *dev = pdd->dev;
+ 	struct device_driver *drv = dev->driver;
+ 	int ret = 0;
  
- suffix-y := bin
- suffix-$(CONFIG_KERNEL_GZIP)	:= gz
-@@ -48,7 +49,7 @@ $(obj)/romimage/vmlinux: $(obj)/zImage FORCE
- 	$(Q)$(MAKE) $(build)=$(obj)/romimage $@
+-	if (pdd->need_restore)
++	if (gpd_data->need_restore)
+ 		return 0;
  
- KERNEL_MEMORY	:= $(shell /bin/bash -c 'printf "0x%08x" \
--		     $$[$(CONFIG_MEMORY_START) & 0x1fffffff]')
-+		     $$[$(CONFIG_PHYSICAL_START) & 0x1fffffff]')
+ 	mutex_unlock(&genpd->lock);
+@@ -210,7 +211,7 @@ static int __pm_genpd_save_device(struct
+ 	mutex_lock(&genpd->lock);
  
- KERNEL_LOAD	:= $(shell /bin/bash -c 'printf "0x%08x" \
- 		     $$[$(CONFIG_PAGE_OFFSET)  + \
-@@ -114,4 +115,5 @@ $(obj)/uImage: $(obj)/uImage.$(suffix-y)
- 	@echo '  Image $@ is ready'
+ 	if (!ret)
+-		pdd->need_restore = true;
++		gpd_data->need_restore = true;
  
- export CONFIG_PAGE_OFFSET CONFIG_MEMORY_START CONFIG_BOOT_LINK_OFFSET \
--       CONFIG_ZERO_PAGE_OFFSET CONFIG_ENTRY_OFFSET KERNEL_MEMORY suffix-y
-+       CONFIG_PHYSICAL_START CONFIG_ZERO_PAGE_OFFSET CONFIG_ENTRY_OFFSET \
-+       KERNEL_MEMORY suffix-y
-diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
-index 822d608..0dca9a5 100644
---- a/arch/sh/include/asm/page.h
-+++ b/arch/sh/include/asm/page.h
-@@ -113,6 +113,16 @@ typedef struct page *pgtable_t;
- #define __MEMORY_SIZE		CONFIG_MEMORY_SIZE
+ 	return ret;
+ }
+@@ -224,10 +225,11 @@ static void __pm_genpd_restore_device(st
+ 				      struct generic_pm_domain *genpd)
+ 	__releases(&genpd->lock) __acquires(&genpd->lock)
+ {
++	struct generic_pm_domain_data *gpd_data = to_gpd_data(pdd);
+ 	struct device *dev = pdd->dev;
+ 	struct device_driver *drv = dev->driver;
  
- /*
-+ * PHYSICAL_OFFSET is the offset in physical memory where the base
-+ * of the kernel is loaded.
-+ */
-+#ifdef CONFIG_PHYSICAL_START
-+#define PHYSICAL_OFFSET (CONFIG_PHYSICAL_START - __MEMORY_START)
-+#else
-+#define PHYSICAL_OFFSET 0
-+#endif
-+
-+/*
-  * PAGE_OFFSET is the virtual address of the start of kernel address
-  * space.
+-	if (!pdd->need_restore)
++	if (!gpd_data->need_restore)
+ 		return;
+ 
+ 	mutex_unlock(&genpd->lock);
+@@ -244,7 +246,7 @@ static void __pm_genpd_restore_device(st
+ 
+ 	mutex_lock(&genpd->lock);
+ 
+-	pdd->need_restore = false;
++	gpd_data->need_restore = false;
+ }
+ 
+ /**
+@@ -493,7 +495,7 @@ static int pm_genpd_runtime_resume(struc
+ 		mutex_lock(&genpd->lock);
+ 	}
+ 	finish_wait(&genpd->status_wait_queue, &wait);
+-	__pm_genpd_restore_device(&dev->power.subsys_data->domain_data, genpd);
++	__pm_genpd_restore_device(dev->power.subsys_data->domain_data, genpd);
+ 	genpd->resume_count--;
+ 	genpd_set_active(genpd);
+ 	wake_up_all(&genpd->status_wait_queue);
+@@ -1080,6 +1082,7 @@ static void pm_genpd_complete(struct dev
   */
-diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
-index 731c10c..c98905f 100644
---- a/arch/sh/kernel/vmlinux.lds.S
-+++ b/arch/sh/kernel/vmlinux.lds.S
-@@ -23,7 +23,7 @@ OUTPUT_ARCH(sh)
- ENTRY(_start)
- SECTIONS
+ int pm_genpd_add_device(struct generic_pm_domain *genpd, struct device *dev)
  {
--	. = PAGE_OFFSET + MEMORY_OFFSET + CONFIG_ZERO_PAGE_OFFSET;
-+	. = PAGE_OFFSET + MEMORY_OFFSET + PHYSICAL_OFFSET + CONFIG_ZERO_PAGE_OFFSET;
++	struct generic_pm_domain_data *gpd_data;
+ 	struct pm_domain_data *pdd;
+ 	int ret = 0;
  
- 	_text = .;		/* Text and read-only data */
+@@ -1106,14 +1109,20 @@ int pm_genpd_add_device(struct generic_p
+ 			goto out;
+ 		}
  
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 58a93fb3..c9dbace 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -287,6 +287,8 @@ static void __init do_init_bootmem(void)
- static void __init early_reserve_mem(void)
- {
- 	unsigned long start_pfn;
-+	u32 zero_base = (u32)__MEMORY_START + (u32)PHYSICAL_OFFSET;
-+	u32 start = zero_base + (u32)CONFIG_ZERO_PAGE_OFFSET;
++	gpd_data = kzalloc(sizeof(*gpd_data), GFP_KERNEL);
++	if (!gpd_data) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
+ 	genpd->device_count++;
  
- 	/*
- 	 * Partially used pages are not usable - thus
-@@ -300,15 +302,13 @@ static void __init early_reserve_mem(void)
- 	 * this catches the (definitely buggy) case of us accidentally
- 	 * initializing the bootmem allocator with an invalid RAM area.
- 	 */
--	memblock_reserve(__MEMORY_START + CONFIG_ZERO_PAGE_OFFSET,
--		    (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) -
--		    (__MEMORY_START + CONFIG_ZERO_PAGE_OFFSET));
-+	memblock_reserve(start, (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) - start);
+ 	dev->pm_domain = &genpd->domain;
+ 	dev_pm_get_subsys_data(dev);
+-	pdd = &dev->power.subsys_data->domain_data;
+-	pdd->dev = dev;
+-	pdd->need_restore = false;
+-	list_add_tail(&pdd->list_node, &genpd->dev_list);
++	dev->power.subsys_data->domain_data = &gpd_data->base;
++	gpd_data->base.dev = dev;
++	gpd_data->need_restore = false;
++	list_add_tail(&gpd_data->base.list_node, &genpd->dev_list);
  
- 	/*
- 	 * Reserve physical pages below CONFIG_ZERO_PAGE_OFFSET.
- 	 */
- 	if (CONFIG_ZERO_PAGE_OFFSET != 0)
--		memblock_reserve(__MEMORY_START, CONFIG_ZERO_PAGE_OFFSET);
-+		memblock_reserve(zero_base, CONFIG_ZERO_PAGE_OFFSET);
+  out:
+ 	genpd_release_lock(genpd);
+@@ -1152,6 +1161,7 @@ int pm_genpd_remove_device(struct generi
+ 		pdd->dev = NULL;
+ 		dev_pm_put_subsys_data(dev);
+ 		dev->pm_domain = NULL;
++		kfree(to_gpd_data(pdd));
  
- 	/*
- 	 * Handle additional early reservations
--- 
-1.7.5.4
+ 		genpd->device_count--;
+ 
 
