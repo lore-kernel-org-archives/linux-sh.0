@@ -1,26 +1,153 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Tue, 27 Sep 2011 17:12:58 +0000
-Subject: Re: [PATCH V7 0/4] cpuidle: Global registration of idle states with per-cpu statistics
-Message-Id: <8739fh29k5.fsf@ti.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 26 Sep 2011 08:43:13 +0000
+Subject: [PATCH 1/2] sh: add platform_device for i2c-riic driver in
+Message-Id: <4E803B21.1030701@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
-In-Reply-To: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
-	(Deepthi Dharwar's message of "Tue, 27 Sep 2011 15:32:38 +0530")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Cc: venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Deepthi Dharwar <deepthi@linux.vnet.ibm.com> writes:
+This patch adds the platform_device of i2c-riic driver and
+the i2c_board_info for the board.
+This patch also adds the enabling the DMAC for RIIC (DMAER2).
+This register is contained in the SH7757 only. the dmaengine
+doesn't handle it. So, it is enabled on the board initialize.
 
-> Version 6 of this patch series dated 22nd Sept 2011 was 
-> Acked-by: Arjan van de Ven <arjan@linux.intel.com>
-> Acked-by: Kevin Hilman <khilman@ti.com> for OMAP specific parts.
-> Reviewed-by: Kevin Hilman <khilman@ti.com>
-> Signed-off-by: Jean Pihet <j-pihet@ti.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch depends on the following patches:
+  - i2c: i2c-riic: add support for Renesas RIIC
+  - i2c: i2c-riic: add dmaengine supporting
 
-minor: I think this should be a Tested-by from Jean.  Since he was not on
-the delivery path, it should not be a sign-off.
+ arch/sh/boards/board-sh7757lcr.c |   87 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 87 insertions(+), 0 deletions(-)
 
-Kevin
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index fa2a208..8e6f9d7 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -21,6 +21,9 @@
+ #include <cpu/sh7757.h>
+ #include <asm/sh_eth.h>
+ #include <asm/heartbeat.h>
++#include <linux/i2c.h>
++#include <linux/i2c/riic.h>
++#include <linux/i2c/at24.h>
+
+ static struct resource heartbeat_resource = {
+ 	.start	= 0xffec005c,	/* PUDR */
+@@ -260,6 +263,60 @@ static struct platform_device sdhi_device = {
+ 	},
+ };
+
++struct riic_platform_data riic2_pdata = {
++	.clock = 400,
++	.dma_tx = {
++		.slave_id = SHDMA_SLAVE_RIIC2_TX,
++	},
++	.dma_rx = {
++		.slave_id = SHDMA_SLAVE_RIIC2_RX,
++	},
++};
++
++static struct resource riic2_resources[] = {
++	{
++		.start  = 0xfe520000,
++		.end    = 0xfe5200ff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = 160,
++		.flags  = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device riic2_device = {
++	.name		= "i2c-riic",
++	.id		= 2,
++	.num_resources	= ARRAY_SIZE(riic2_resources),
++	.resource	= riic2_resources,
++	.dev		= {
++		.platform_data = &riic2_pdata,
++	},
++};
++
++/* We don't use DMA on the channel because LM75 donen't use large data. */
++struct riic_platform_data riic3_pdata = {
++	.clock = 400,
++};
++
++static struct resource riic3_resources[] = {
++	{
++		.start  = 0xfe530000,
++		.end    = 0xfe5300ff,
++		.flags  = IORESOURCE_MEM,
++	}
++};
++
++static struct platform_device riic3_device = {
++	.name		= "i2c-riic",
++	.id		= 3,
++	.num_resources	= ARRAY_SIZE(riic3_resources),
++	.resource	= riic3_resources,
++	.dev		= {
++		.platform_data = &riic3_pdata,
++	},
++};
++
+ static struct platform_device *sh7757lcr_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&sh7757_eth0_device,
+@@ -268,6 +325,8 @@ static struct platform_device *sh7757lcr_devices[] __initdata = {
+ 	&sh7757_eth_giga1_device,
+ 	&sh_mmcif_device,
+ 	&sdhi_device,
++	&riic2_device,
++	&riic3_device,
+ };
+
+ static struct flash_platform_data spi_flash_data = {
+@@ -285,6 +344,26 @@ static struct spi_board_info spi_board_info[] = {
+ 	},
+ };
+
++static struct at24_platform_data sh7757_at24_platdata = {
++	.byte_len	= 8192,
++	.page_size	= 64,
++	.flags		= AT24_FLAG_ADDR16,
++};
++
++static struct i2c_board_info __initdata riic2_board_devices[] = {
++	{
++		I2C_BOARD_INFO("24c64", 0x50),
++		.platform_data = &sh7757_at24_platdata,
++	},
++};
++
++static struct i2c_board_info __initdata riic3_board_devices[] = {
++	{
++		I2C_BOARD_INFO("lm75", 0x4f),
++	},
++};
++
++#define DMAER2	0xfffa0000
+ static int __init sh7757lcr_devices_setup(void)
+ {
+ 	/* RGMII (PTA) */
+@@ -517,6 +596,14 @@ static int __init sh7757lcr_devices_setup(void)
+ 	spi_register_board_info(spi_board_info,
+ 				ARRAY_SIZE(spi_board_info));
+
++	i2c_register_board_info(2, riic2_board_devices,
++				ARRAY_SIZE(riic2_board_devices));
++	i2c_register_board_info(3, riic3_board_devices,
++				ARRAY_SIZE(riic3_board_devices));
++
++	/* Enable RIIC's DMA */
++	__raw_writel(0x000003ff, DMAER2);
++
+ 	/* General platform */
+ 	return platform_add_devices(sh7757lcr_devices,
+ 				    ARRAY_SIZE(sh7757lcr_devices));
+-- 
+1.7.1
