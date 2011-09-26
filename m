@@ -1,107 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 09 Sep 2011 10:27:21 +0000
-Subject: [PATCH 06/10] fbdev: sh_mipi_dsi: add VMLEN1/VMLEN2 calculation
-Message-Id: <87ipp2qad6.wl%kuninori.morimoto.gx@renesas.com>
+From: Federico Fuga <ml@studiofuga.com>
+Date: Mon, 26 Sep 2011 11:50:53 +0000
+Subject: sh-sci blocked for sh7203
+Message-Id: <FC11CF24-702F-485C-9B97-464C8746E4B0@studiofuga.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-VMLEN1/VMLEN2 needs blanking length which is calculated from
-video image size.
+Hi, 
 
-The calculation methods are explained on
-[SH MIPI] - [Video Mode] - [Blanking Packet setting]
-But HFPLEN (= VMLEN2) is un-understandable.
+I am working on a sh7203 platform, running linux 2.6.37.
+It worked just fine, except some other problem do not worth mention here.
+Now I wanted to update the kernel - I once tried with 2.6.38 but faced problems while booting, and I kept my working version.
+Now tried again with 3.0.x but the same problem occurred.
+While using the e10a emulator I found that the boot process blocks while setting up the kernel.
+It locks up here:
 
-For example, if SH-MIPI input was RGB888 (3byte),
-output was RGB888 (3byte)
-and 3lane connection, the date goes straight.
+static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+                            struct ktermios *old)
+{
 
-But if SH-MIPI input was RGB888 (3byte),
-output was RGB565 (2byte)
-and 4lane connection, it needs delay in HFPLEN.
-Then (input cycle - output cycle) * lane is necessary the delay
+// ....
+        do {
+                status = sci_in(port, SCxSR);
+        } while (!(status & SCxSR_TEND(port)));
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/video/sh_mipi_dsi.c |   46 +++++++++++++++++++++++++++++++++++++-----
- 1 files changed, 40 insertions(+), 6 deletions(-)
+// ....
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index 3f8da95..166b468 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -41,6 +41,7 @@
- #define VMCTR1		0x0020
- #define VMCTR2		0x0024
- #define VMLEN1		0x0028
-+#define VMLEN2		0x002c
- #define CMTSRTREQ	0x0070
- #define CMTSRTCTR	0x00d0
- 
-@@ -159,9 +160,9 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	void __iomem *base = mipi->base;
- 	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
- 	u32 pctype, datatype, pixfmt, linelength, vmctr2, excmd;
--	u32 tmp;
-+	u32 tmp, top, bottom, delay;
- 	bool yuv;
--	int i;
-+	int i, bpp;
- 
- 	/*
- 	 * Select data format. MIPI DSI is not hot-pluggable, so, we just use
-@@ -349,11 +350,44 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	iowrite32(vmctr2, mipi->linkbase + VMCTR2);
- 
- 	/*
--	 * 0x660 = 1632 bytes per line (RGB24, 544 pixels: see
--	 * sh_mobile_lcdc_info.ch[0].lcd_cfg[0].xres), HSALEN = 1 - default
--	 * (unused if VMCTR2[HSABM] = 0)
-+	 * VMLEN1 = RGBLEN | HSALEN
-+	 *
-+	 * see
-+	 *  Video mode - Blanking Packet setting
-+	 */
-+	top = linelength << 16; /* RGBLEN */
-+	bottom = 0x00000001;
-+	if (pdata->flags & SH_MIPI_DSI_HSABM) /* HSALEN */
-+		bottom = (pdata->lane * ch->lcd_cfg[0].hsync_len) - 10;
-+	iowrite32(top | bottom , mipi->linkbase + VMLEN1);
-+
-+	/*
-+	 * VMLEN2 = HBPLEN | HFPLEN
-+	 *
-+	 * see
-+	 *  Video mode - Blanking Packet setting
- 	 */
--	iowrite32(1 | (linelength << 16), mipi->linkbase + VMLEN1);
-+	top	= 0x00010000;
-+	bottom	= 0x00000001;
-+	delay	= 0;
-+
-+	if (pdata->flags & SH_MIPI_DSI_HFPBM) {	/* HBPLEN */
-+		top = ch->lcd_cfg[0].hsync_len + ch->lcd_cfg[0].left_margin;
-+		top = ((pdata->lane * top) - 10) << 16;
-+	}
-+	if (pdata->flags & SH_MIPI_DSI_HBPBM) { /* HFPLEN */
-+		bottom = ch->lcd_cfg[0].right_margin;
-+		bottom = (pdata->lane * bottom) - 12;
-+	}
-+
-+	bpp = linelength / ch->lcd_cfg[0].xres; /* byte / pixel */
-+	if (pdata->lane > bpp) {
-+		tmp = ch->lcd_cfg[0].xres / bpp; /* output cycle */
-+		tmp = ch->lcd_cfg[0].xres - tmp; /* (input - output) cycle */
-+		delay = (pdata->lane * tmp);
-+	}
-+
-+	iowrite32(top | (bottom + delay) , mipi->linkbase + VMLEN2);
- 
- 	msleep(5);
- 
--- 
-1.7.4.1
+
+Here the sci0 registers dump :
+
+SCSMR: 0000
+SCBRR: 0008
+SCSCR: 0038
+SCFSR: 0060
+SCFCR: 0000
+SCFDR: 0000
+SCSPTR: 0051
+SCLSR: 0000
+SCEMR: 0000
+
+It seems that the SCSCR register disables the TX and RX, so the flags can't pass the loop.
+Did anyone find similar issue? Where can I check if these registers are correctly setup?
+
+thank you in advance
+
+best regards
+
+ing. Federico Fuga
+
+
 
