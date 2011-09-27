@@ -1,86 +1,91 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 30 Sep 2011 11:07:21 +0000
-Subject: [PATCH v2 2/4] usb: r8a66597-udc: add function for external controller
-Message-Id: <4E85A2E9.6070506@renesas.com>
+From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Date: Tue, 27 Sep 2011 10:15:27 +0000
+Subject: [PATCH V7 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and dev->prepare()
+Message-Id: <20110927100305.16043.31142.stgit@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
+In-Reply-To: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-R8A66597 has the pin of WR0 and WR1. So, if one write-pin of CPU
-connects to the pins, we have to change the setting of FIFOSEL
-register in the controller. If we don't change the setting,
-the controller cannot send the data of odd length.
+The cpuidle_device->prepare() mechanism causes updates to the
+cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+to tell the governor not to chose a state on a per-cpu basis at
+run-time. State demotion is now handled by the driver and it returns
+the actual state entered. Hence, this mechanism is not required.
+Also this removes per-cpu flags from cpuidle_state enabling
+it to be made global.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Reference:
+https://lkml.org/lkml/2011/3/25/52
+
+Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
+Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
+Signed-off-by: Jean Pihet <j-pihet@ti.com>
+Acked-by: Arjan van de Ven <arjan@linux.intel.com>
+Reviewed-by: Kevin Hilman <khilman@ti.com>
 ---
- about v2:
-  - divide a patch to only improve function.
+ drivers/cpuidle/cpuidle.c        |   10 ----------
+ drivers/cpuidle/governors/menu.c |    2 --
+ include/linux/cpuidle.h          |    3 ---
+ 3 files changed, 0 insertions(+), 15 deletions(-)
 
- drivers/usb/gadget/r8a66597-udc.h |   34 +++++++++++++++++++---------------
- 1 files changed, 19 insertions(+), 15 deletions(-)
-
-diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66597-udc.h
-index c6193fb..37d0dd5 100644
---- a/drivers/usb/gadget/r8a66597-udc.h
-+++ b/drivers/usb/gadget/r8a66597-udc.h
-@@ -182,6 +182,21 @@ static inline void r8a66597_write(struct r8a66597 *r8a66597, u16 val,
- 	iowrite16(val, r8a66597->reg + offset);
- }
-
-+static inline void r8a66597_mdfy(struct r8a66597 *r8a66597,
-+				 u16 val, u16 pat, unsigned long offset)
-+{
-+	u16 tmp;
-+	tmp = r8a66597_read(r8a66597, offset);
-+	tmp = tmp & (~pat);
-+	tmp = tmp | val;
-+	r8a66597_write(r8a66597, tmp, offset);
-+}
-+
-+#define r8a66597_bclr(r8a66597, val, offset)	\
-+			r8a66597_mdfy(r8a66597, 0, val, offset)
-+#define r8a66597_bset(r8a66597, val, offset)	\
-+			r8a66597_mdfy(r8a66597, val, 0, offset)
-+
- static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
- 				       struct r8a66597_ep *ep,
- 				       unsigned char *buf,
-@@ -215,18 +230,12 @@ static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
- 			adj = 0x01; /* 16-bit wide */
- 	}
-
-+	if (r8a66597->pdata->wr0_shorted_to_wr1)
-+		r8a66597_bclr(r8a66597, MBW_16, ep->fifosel);
- 	for (i = 0; i < len; i++)
- 		iowrite8(buf[i], fifoaddr + adj - (i & adj));
--}
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index 88bd121..f66bcf9 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
+ 	hrtimer_peek_ahead_timers();
+ #endif
+ 
+-	/*
+-	 * Call the device's prepare function before calling the
+-	 * governor's select function.  ->prepare gives the device's
+-	 * cpuidle driver a chance to update any dynamic information
+-	 * of its cpuidle states for the current idle period, e.g.
+-	 * state availability, latencies, residencies, etc.
+-	 */
+-	if (dev->prepare)
+-		dev->prepare(dev);
 -
--static inline void r8a66597_mdfy(struct r8a66597 *r8a66597,
--				 u16 val, u16 pat, unsigned long offset)
--{
--	u16 tmp;
--	tmp = r8a66597_read(r8a66597, offset);
--	tmp = tmp & (~pat);
--	tmp = tmp | val;
--	r8a66597_write(r8a66597, tmp, offset);
-+	if (r8a66597->pdata->wr0_shorted_to_wr1)
-+		r8a66597_bclr(r8a66597, MBW_16, ep->fifosel);
- }
-
- static inline u16 get_xtal_from_pdata(struct r8a66597_platdata *pdata)
-@@ -251,11 +260,6 @@ static inline u16 get_xtal_from_pdata(struct r8a66597_platdata *pdata)
- 	return clock;
- }
-
--#define r8a66597_bclr(r8a66597, val, offset)	\
--			r8a66597_mdfy(r8a66597, 0, val, offset)
--#define r8a66597_bset(r8a66597, val, offset)	\
--			r8a66597_mdfy(r8a66597, val, 0, offset)
+ 	/* ask the governor for the next state */
+ 	next_state = cpuidle_curr_governor->select(dev);
+ 	if (need_resched()) {
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index e4b200c..af724e8 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
+ 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
+ 		struct cpuidle_state *s = &dev->states[i];
+ 
+-		if (s->flags & CPUIDLE_FLAG_IGNORE)
+-			continue;
+ 		if (s->target_residency > data->predicted_us)
+ 			continue;
+ 		if (s->exit_latency > latency_req)
+diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
+index 8da811b..c6d85cf 100644
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -47,7 +47,6 @@ struct cpuidle_state {
+ 
+ /* Idle State Flags */
+ #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
+-#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 
+ #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+ 
+@@ -93,8 +92,6 @@ struct cpuidle_device {
+ 	struct completion	kobj_unregister;
+ 	void			*governor_data;
+ 	int			safe_state_index;
 -
- #define get_pipectr_addr(pipenum)	(PIPE1CTR + (pipenum - 1) * 2)
+-	int (*prepare)		(struct cpuidle_device *dev);
+ };
+ 
+ DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
 
- #define enable_irq_ready(r8a66597, pipenum)	\
--- 
-1.7.1
