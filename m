@@ -1,120 +1,26 @@
-From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Tue, 27 Sep 2011 10:14:38 +0000
-Subject: [PATCH V7 0/4] cpuidle: Global registration of idle states with
-Message-Id: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
+From: Kevin Hilman <khilman@ti.com>
+Date: Tue, 27 Sep 2011 17:12:58 +0000
+Subject: Re: [PATCH V7 0/4] cpuidle: Global registration of idle states with per-cpu statistics
+Message-Id: <8739fh29k5.fsf@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
+In-Reply-To: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
+	(Deepthi Dharwar's message of "Tue, 27 Sep 2011 15:32:38 +0530")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Cc: venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-Version 6 of this patch series dated 22nd Sept 2011 was 
-Acked-by: Arjan van de Ven <arjan@linux.intel.com>
-Acked-by: Kevin Hilman <khilman@ti.com> for OMAP specific parts.
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Signed-off-by: Jean Pihet <j-pihet@ti.com>
+Deepthi Dharwar <deepthi@linux.vnet.ibm.com> writes:
 
-Hi Len, 
-Can you please queue this series for the next mainline merge window by merging
-it into your development tree and also linux-next for further testing.
+> Version 6 of this patch series dated 22nd Sept 2011 was 
+> Acked-by: Arjan van de Ven <arjan@linux.intel.com>
+> Acked-by: Kevin Hilman <khilman@ti.com> for OMAP specific parts.
+> Reviewed-by: Kevin Hilman <khilman@ti.com>
+> Signed-off-by: Jean Pihet <j-pihet@ti.com>
 
-I also tested it, by applying these patches on your ACPI tree hosted @github.
+minor: I think this should be a Tested-by from Jean.  Since he was not on
+the delivery path, it should not be a sign-off.
 
-Thanks
--Deepthi
-
-
-The following patch series implements global registration of cpuidle
-states, and also has the necessary data structure changes to
-accommodate the per-cpu writable members of the cpuidle_states
-structure.
-
-This patch series had been in discussion earlier and
-following are the links to the previous discussions.
-
-v1 --> https://lkml.org/lkml/2011/3/22/161
-v2 --> https://lkml.org/lkml/2011/1/13/98
-v3 --> https://lkml.org/lkml/2011/2/8/73
-v4 --> https://lkml.org/lkml/2011/4/28/312
-v5 --> https://lkml.org/lkml/2011/6/6/259
-v6 --> https://lkml.org/lkml/2011/9/22/58
-
-Changes from previous version (V6):
-
-   Removed the RFC tag.
-    
-Tests done:
-
-    1. Compile tested for ARM using the following configs: da8xx_omapl_defconfig,
-    exynos4_defconfig, kirkwood_defconfig, omap2plus_defconfig, 
-    at91rm9200_defconfig
-      
-    2. Boot tested on x86 nehalem with multiple C-states for both intel_idle
-    and acpi_idle drivers.
-
-    3. Boot tested on T60p thinkpad that has T2600 cpu with multiple C-states. 
-    Also tested the case when there is dynamic changes in C-states 
-    AC <-> Battery Power switch.
-
-Brief description of the patches:
-
-Core change in this series is to split the cpuidle_device structure 
-into two parts, i.e  global and per-cpu basis. 
-
-The per-cpu pieces are mostly generic statistics that can be independent 
-of current running driver. As a result of these changes, there is single 
-copy of cpuidle_states structure and single registration done by one 
-cpu. The low level driver is free to set per-cpu driver data on
-each cpu if needed using the cpuidle_set_statedata() as the case
-today. Only in very rare cases asymmetric C-states exist which can be 
-handled within the cpuidle driver. Most architectures do not have 
-asymmetric C-states.
-
-First two patches in the series facilitate splitting of cpuidle_states
-and cpuidle_device structure and next two patches do the actual split,
-change the API's and make existing code follow the changed API.
-
-[1/4] - Move the idle residency accounting part from cpuidle.c to
-the respective low level drivers, so that the accounting can
-be accurately maintained if the driver decides to demote the
-chosen (suggested) by the governor.
-
-[2/4] - removes the cpuidle_device()->prepare API since is is not
-widely used and the only use case was to allow software
-demotion using CPUIDLE_FLAG_IGNORE flag.  Both these
-functions can be absorbed within the cpuidle back-end
-driver ad hence deprecating the prepare routine and the
-CPUIDLE_FLAG_IGNORE flag.
-
-    - Ref: https://lkml.org/lkml/2011/3/25/52
-
-[3/4] - Splits the usage statistics (read/write) part out of
-cpuidle_state structure, so that the states can become read
-only and hence made global.
-
-[4/4] - Most APIs will now need to pass pointer to both global
-cpuidle_driver and per-cpu cpuidle_device structure.
-
- arch/arm/mach-at91/cpuidle.c          |   41 +++--
- arch/arm/mach-davinci/cpuidle.c       |   51 ++++---
- arch/arm/mach-exynos4/cpuidle.c       |   30 ++--
- arch/arm/mach-kirkwood/cpuidle.c      |   42 +++---
- arch/arm/mach-omap2/cpuidle34xx.c     |  133 +++++++++++------
- arch/sh/kernel/cpu/shmobile/cpuidle.c |   28 ++--
- drivers/acpi/processor_driver.c       |   20 ---
- drivers/acpi/processor_idle.c         |  251 +++++++++++++++++++++++++++------
- drivers/cpuidle/cpuidle.c             |   86 ++++-------
- drivers/cpuidle/driver.c              |   25 +++
- drivers/cpuidle/governors/ladder.c    |   41 ++++-
- drivers/cpuidle/governors/menu.c      |   29 ++--
- drivers/cpuidle/sysfs.c               |   22 ++-
- drivers/idle/intel_idle.c             |  130 +++++++++++++----
- include/acpi/processor.h              |    1 
- include/linux/cpuidle.h               |   52 ++++---
- 16 files changed, 650 insertions(+), 332 deletions(-)
-
-
--- 
-
--Deepthi
+Kevin
