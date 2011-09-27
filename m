@@ -1,225 +1,249 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Thu, 29 Sep 2011 00:17:39 +0000
-Subject: Re: [PATCH 2/3] PM / Runtime: Don't run callbacks under lock for power.irq_safe set
-Message-Id: <87wrcstd5o.fsf@ti.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 27 Sep 2011 08:54:08 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh7372 A4R support V2
+Message-Id: <20110927085408.27727.59395.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201108310017.03103.rjw@sisk.pl> <87oby66ejr.fsf@ti.com>
-	<201109271916.33616.rjw@sisk.pl> <201109272150.42732.rjw@sisk.pl>
-In-Reply-To: <201109272150.42732.rjw@sisk.pl> (Rafael J. Wysocki's message of
-	"Tue, 27 Sep 2011 21:50:42 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux PM mailing list <linux-pm@lists.linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, jean.pihet@newoldbits.com, Ming Lei <tom.leiming@gmail.com>
+To: linux-sh@vger.kernel.org
 
-"Rafael J. Wysocki" <rjw@sisk.pl> writes:
+From: Magnus Damm <damm@opensource.se>
 
-> On Tuesday, September 27, 2011, Rafael J. Wysocki wrote:
->> On Tuesday, September 27, 2011, Kevin Hilman wrote:
->> > "Rafael J. Wysocki" <rjw@sisk.pl> writes:
->> > 
->> > > From: Rafael J. Wysocki <rjw@sisk.pl>
->> > >
->> > > The rpm_suspend() and rpm_resume() routines execute subsystem or PM
->> > > domain callbacks under power.lock if power.irq_safe is set for the
->> > > given device.  This is inconsistent with that rpm_idle() does after
->> > > commit 02b2677 (PM / Runtime: Allow _put_sync() from
->> > > interrupts-disabled context) and is problematic for subsystems and PM
->> > > domains wanting to use power.lock for synchronization in their
->> > > runtime PM callbacks.
->> > >
->> > > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
->> > 
->> > The part described here looks right, and is much better for consistency.
->> > 
->> > Reviewed-by: Kevin Hilman <khilman@ti.com>
->> > 
->> > but...
->> > 
->> > [...]
->> > 
->> > > @@ -347,6 +353,15 @@ static int rpm_suspend(struct device *de
->> > >  			goto out;
->> > >  		}
->> > >  
->> > > +		if (dev->power.irq_safe) {
->> > > +			spin_unlock(&dev->power.lock);
->> > > +
->> > > +			cpu_relax();
->> > > +
->> > > +			spin_lock(&dev->power.lock);
->> > > +			goto repeat;
->> > > +		}
->> > > +
->> > 
->> > 
->> > ... AFAICT, this isn't directly related to the problem described in the
->> > changelog (or at least I didn't find it obvious),
->> 
->> It is related.  Whether or not it's obvious, I'm not sure. :-)
->> 
->> The problem is that after the changes in __rpm_callback() another CPU may start
->> executing the same routine for the same device if dev->power.irq_safe is set
->> (previously, it would block on the dev's power.lock) and it may see
->> dev->power.runtime_status = RPM_RESUMING or
->> dev->power.runtime_status = RPM_SUSPENDING, while previously, it wouldn't
->> reach the relevant code.  Thus we have to modify that code to take
->> the dev->power.irq_safe case into account.
->> 
->> > and probably deserves a comment in the code as well.
->> 
->> Well, the comment in the code would explain why the commit did what it did,
->> but it wouldn't be very useful afterwards IMHO.
->> 
->> Perhaps I'll simply add some explanation to the changelog.
->
-> Below is the patch with the new changelog, for completness.
+This patch is V2 of sh7372 A4R power domain support.
 
-Thanks, it's much clearer now.
+The sh7372 A4R hardware power domain contains the
+SH CPU Core and a set of I/O devices including
+multimedia accelerators and I2C controllers.
 
-Kevin
+One special case about A4R is the INTCS interrupt
+controller that needs to be saved and restored to
+keep working as expected. Also the LCDC hardware
+blocks are in a different hardware power domain
+but have their IRQs routed only through INTCS. So
+as long as LCDCs are active we cannot power down
+INTCS because that would risk losing interrupts.
 
-> ---
-> From: Rafael J. Wysocki <rjw@sisk.pl>
-> Subject: PM / Runtime: Don't run callbacks under lock for power.irq_safe set
->
-> The rpm_suspend() and rpm_resume() routines execute subsystem or PM
-> domain callbacks under power.lock if power.irq_safe is set for the
-> given device.  This is inconsistent with that rpm_idle() does after
-> commit 02b2677 (PM / Runtime: Allow _put_sync() from
-> interrupts-disabled context) and is problematic for subsystems and PM
-> domains wanting to use power.lock for synchronization in their
-> runtime PM callbacks.
->
-> This change requires the code checking if the device's runtime PM
-> status is RPM_SUSPENDING or RPM_RESUMING to be modified too, to take
-> the power.irq_safe set case into account (that code wasn't reachable
-> before with power.irq_safe set, because it's executed with the
-> device's power.lock held).
->
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> Reviewed-by: Ming Lei <tom.leiming@gmail.com>
-> Reviewed-by: Kevin Hilman <khilman@ti.com>
-> ---
->  drivers/base/power/runtime.c |   68 +++++++++++++++++++++++++++++--------------
->  1 file changed, 46 insertions(+), 22 deletions(-)
->
-> Index: linux/drivers/base/power/runtime.c
-> =================================> --- linux.orig/drivers/base/power/runtime.c
-> +++ linux/drivers/base/power/runtime.c
-> @@ -155,6 +155,31 @@ static int rpm_check_suspend_allowed(str
->  }
->  
->  /**
-> + * __rpm_callback - Run a given runtime PM callback for a given device.
-> + * @cb: Runtime PM callback to run.
-> + * @dev: Device to run the callback for.
-> + */
-> +static int __rpm_callback(int (*cb)(struct device *), struct device *dev)
-> +	__releases(&dev->power.lock) __acquires(&dev->power.lock)
-> +{
-> +	int retval;
-> +
-> +	if (dev->power.irq_safe)
-> +		spin_unlock(&dev->power.lock);
-> +	else
-> +		spin_unlock_irq(&dev->power.lock);
-> +
-> +	retval = cb(dev);
-> +
-> +	if (dev->power.irq_safe)
-> +		spin_lock(&dev->power.lock);
-> +	else
-> +		spin_lock_irq(&dev->power.lock);
-> +
-> +	return retval;
-> +}
-> +
-> +/**
->   * rpm_idle - Notify device bus type if the device can be suspended.
->   * @dev: Device to notify the bus type about.
->   * @rpmflags: Flag bits.
-> @@ -225,19 +250,8 @@ static int rpm_idle(struct device *dev,
->  	else
->  		callback = NULL;
->  
-> -	if (callback) {
-> -		if (dev->power.irq_safe)
-> -			spin_unlock(&dev->power.lock);
-> -		else
-> -			spin_unlock_irq(&dev->power.lock);
-> -
-> -		callback(dev);
-> -
-> -		if (dev->power.irq_safe)
-> -			spin_lock(&dev->power.lock);
-> -		else
-> -			spin_lock_irq(&dev->power.lock);
-> -	}
-> +	if (callback)
-> +		__rpm_callback(callback, dev);
->  
->  	dev->power.idle_notification = false;
->  	wake_up_all(&dev->power.wait_queue);
-> @@ -252,22 +266,14 @@ static int rpm_idle(struct device *dev,
->   * @dev: Device to run the callback for.
->   */
->  static int rpm_callback(int (*cb)(struct device *), struct device *dev)
-> -	__releases(&dev->power.lock) __acquires(&dev->power.lock)
->  {
->  	int retval;
->  
->  	if (!cb)
->  		return -ENOSYS;
->  
-> -	if (dev->power.irq_safe) {
-> -		retval = cb(dev);
-> -	} else {
-> -		spin_unlock_irq(&dev->power.lock);
-> -
-> -		retval = cb(dev);
-> +	retval = __rpm_callback(cb, dev);
->  
-> -		spin_lock_irq(&dev->power.lock);
-> -	}
->  	dev->power.runtime_error = retval;
->  	return retval != -EACCES ? retval : -EIO;
->  }
-> @@ -347,6 +353,15 @@ static int rpm_suspend(struct device *de
->  			goto out;
->  		}
->  
-> +		if (dev->power.irq_safe) {
-> +			spin_unlock(&dev->power.lock);
-> +
-> +			cpu_relax();
-> +
-> +			spin_lock(&dev->power.lock);
-> +			goto repeat;
-> +		}
-> +
->  		/* Wait for the other suspend running in parallel with us. */
->  		for (;;) {
->  			prepare_to_wait(&dev->power.wait_queue, &wait,
-> @@ -496,6 +511,15 @@ static int rpm_resume(struct device *dev
->  			goto out;
->  		}
->  
-> +		if (dev->power.irq_safe) {
-> +			spin_unlock(&dev->power.lock);
-> +
-> +			cpu_relax();
-> +
-> +			spin_lock(&dev->power.lock);
-> +			goto repeat;
-> +		}
-> +
->  		/* Wait for the operation carried out in parallel with us. */
->  		for (;;) {
->  			prepare_to_wait(&dev->power.wait_queue, &wait,
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Changes since V1:
+ - rebased to fit on pm-test branch of linux-pm github repo
+ - use simple power_down_ok() governor
+ - let A4LC depend on A4R to support INTCS
+
+ arch/arm/mach-shmobile/board-ap4evb.c        |    1 
+ arch/arm/mach-shmobile/board-mackerel.c      |    1 
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++
+ arch/arm/mach-shmobile/intc-sh7372.c         |   52 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/pm-sh7372.c           |   35 ++++++++++++++++-
+ arch/arm/mach-shmobile/setup-sh7372.c        |    8 ++++
+ 6 files changed, 98 insertions(+), 3 deletions(-)
+
+--- 0002/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2011-09-27 16:37:56.000000000 +0900
+@@ -1412,6 +1412,7 @@ static void __init ap4evb_init(void)
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &ceu_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	fsi_init_pm_clock();
+--- 0002/arch/arm/mach-shmobile/board-mackerel.c
++++ work/arch/arm/mach-shmobile/board-mackerel.c	2011-09-27 16:37:56.000000000 +0900
+@@ -1596,6 +1596,7 @@ static void __init mackerel_init(void)
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
+ #endif
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi2_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &ceu_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+--- 0002/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-09-27 16:37:56.000000000 +0900
+@@ -491,6 +491,7 @@ static inline struct sh7372_pm_domain *t
+ extern struct sh7372_pm_domain sh7372_a4lc;
+ extern struct sh7372_pm_domain sh7372_a4mp;
+ extern struct sh7372_pm_domain sh7372_d4;
++extern struct sh7372_pm_domain sh7372_a4r;
+ extern struct sh7372_pm_domain sh7372_a3rv;
+ extern struct sh7372_pm_domain sh7372_a3ri;
+ extern struct sh7372_pm_domain sh7372_a3sp;
+@@ -507,4 +508,7 @@ extern void sh7372_pm_add_subdomain(stru
+ #define sh7372_pm_add_subdomain(pd, sd) do { } while(0)
+ #endif /* CONFIG_PM */
+ 
++extern void sh7372_intcs_suspend(void);
++extern void sh7372_intcs_resume(void);
++
+ #endif /* __ASM_SH7372_H__ */
+--- 0001/arch/arm/mach-shmobile/intc-sh7372.c
++++ work/arch/arm/mach-shmobile/intc-sh7372.c	2011-09-27 16:37:56.000000000 +0900
+@@ -606,9 +606,16 @@ static void intcs_demux(unsigned int irq
+ 	generic_handle_irq(intcs_evt2irq(evtcodeas));
+ }
+ 
++static void __iomem *intcs_ffd2;
++static void __iomem *intcs_ffd5;
++
+ void __init sh7372_init_irq(void)
+ {
+-	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
++	void __iomem *intevtsa;
++
++	intcs_ffd2 = ioremap_nocache(0xffd20000, PAGE_SIZE);
++	intevtsa = intcs_ffd2 + 0x100;
++	intcs_ffd5 = ioremap_nocache(0xffd50000, PAGE_SIZE);
+ 
+ 	register_intc_controller(&intca_desc);
+ 	register_intc_controller(&intcs_desc);
+@@ -617,3 +624,46 @@ void __init sh7372_init_irq(void)
+ 	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
+ 	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
+ }
++
++static unsigned short ffd2[0x200];
++static unsigned short ffd5[0x100];
++
++void sh7372_intcs_suspend(void)
++{
++	int k;
++
++	for (k = 0x00; k <= 0x30; k += 4)
++		ffd2[k] = __raw_readw(intcs_ffd2 + k);
++
++	for (k = 0x80; k <= 0xb0; k += 4)
++		ffd2[k] = __raw_readb(intcs_ffd2 + k);
++
++	for (k = 0x180; k <= 0x188; k += 4)
++		ffd2[k] = __raw_readb(intcs_ffd2 + k);
++
++	for (k = 0x00; k <= 0x3c; k += 4)
++		ffd5[k] = __raw_readw(intcs_ffd5 + k);
++
++	for (k = 0x80; k <= 0x9c; k += 4)
++		ffd5[k] = __raw_readb(intcs_ffd5 + k);
++}
++
++void sh7372_intcs_resume(void)
++{
++	int k;
++
++	for (k = 0x00; k <= 0x30; k += 4)
++		__raw_writew(ffd2[k], intcs_ffd2 + k);
++
++	for (k = 0x80; k <= 0xb0; k += 4)
++		__raw_writeb(ffd2[k], intcs_ffd2 + k);
++
++	for (k = 0x180; k <= 0x188; k += 4)
++		__raw_writeb(ffd2[k], intcs_ffd2 + k);
++
++	for (k = 0x00; k <= 0x3c; k += 4)
++		__raw_writew(ffd5[k], intcs_ffd5 + k);
++
++	for (k = 0x80; k <= 0x9c; k += 4)
++		__raw_writeb(ffd5[k], intcs_ffd5 + k);
++}
+--- 0002/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-09-27 16:59:26.000000000 +0900
+@@ -44,6 +44,7 @@
+ #define SPDCR 0xe6180008
+ #define SWUCR 0xe6180014
+ #define SBAR 0xe6180020
++#define WUPRMSK 0xe6180028
+ #define WUPSMSK 0xe618002c
+ #define WUPSMSK2 0xe6180048
+ #define PSTR 0xe6180080
+@@ -132,6 +133,24 @@ static int pd_power_up(struct generic_pm
+ 	return ret;
+ }
+ 
++static int pd_power_up_a4r(struct generic_pm_domain *genpd)
++{
++	int ret = pd_power_up(genpd);
++
++	if (ret = 0)
++		sh7372_intcs_resume();
++
++	return ret;
++}
++
++static int pd_power_down_a4r(struct generic_pm_domain *genpd)
++{
++	sh7372_intcs_suspend();
++	__raw_writel(0x300fffff, WUPRMSK); /* avoid wakeup */
++
++	return pd_power_down(genpd);
++}
++
+ static bool pd_active_wakeup(struct device *dev)
+ {
+ 	return true;
+@@ -150,6 +169,9 @@ static bool sh7372_power_down_ok(struct
+ 	if (genpd = &sh7372_a3sp.genpd)
+ 		return false;
+ 
++	if (genpd = &sh7372_a4r.genpd)
++		return false;
++
+ 	return true;
+ }
+ 
+@@ -166,8 +188,13 @@ void sh7372_init_pm_domain(struct sh7372
+ 	genpd->start_device = pm_clk_resume;
+ 	genpd->dev_irq_safe = true;
+ 	genpd->active_wakeup = pd_active_wakeup;
+-	genpd->power_off = pd_power_down;
+-	genpd->power_on = pd_power_up;
++	if (genpd = &sh7372_a4r.genpd) {
++		genpd->power_off = pd_power_down_a4r;
++		genpd->power_on = pd_power_up_a4r;
++	} else {
++		genpd->power_off = pd_power_down;
++		genpd->power_on = pd_power_up;
++	}
+ 	genpd->power_on(&sh7372_pd->genpd);
+ }
+ 
+@@ -199,6 +226,10 @@ struct sh7372_pm_domain sh7372_d4 = {
+ 	.bit_shift = 3,
+ };
+ 
++struct sh7372_pm_domain sh7372_a4r = {
++	.bit_shift = 5,
++};
++
+ struct sh7372_pm_domain sh7372_a3rv = {
+ 	.bit_shift = 6,
+ };
+--- 0002/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-09-27 16:45:56.000000000 +0900
+@@ -991,12 +991,14 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_init_pm_domain(&sh7372_a4lc);
+ 	sh7372_init_pm_domain(&sh7372_a4mp);
+ 	sh7372_init_pm_domain(&sh7372_d4);
++	sh7372_init_pm_domain(&sh7372_a4r);
+ 	sh7372_init_pm_domain(&sh7372_a3rv);
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
+ 	sh7372_init_pm_domain(&sh7372_a3sg);
+ 	sh7372_init_pm_domain(&sh7372_a3sp);
+ 
+ 	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
++	sh7372_pm_add_subdomain(&sh7372_a4r, &sh7372_a4lc);
+ 
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
+@@ -1020,6 +1022,12 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &dma2_device);
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma0_device);
+ 	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma1_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &iic0_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &veu0_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &veu1_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &veu2_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &veu3_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
+ }
+ 
+ void __init sh7372_add_early_devices(void)
