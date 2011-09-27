@@ -1,78 +1,33 @@
-From: Nick Bowler <nbowler@elliptictech.com>
-Date: Fri, 09 Sep 2011 15:26:50 +0000
-Subject: [PATCH 3/5] ARM: shmobile: Use wfi macro in platform_cpu_die.
-Message-Id: <1315582012-23507-4-git-send-email-nbowler@elliptictech.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 27 Sep 2011 21:42:38 +0000
+Subject: [GIT PULL] Power management regression fix for 3.1
+Message-Id: <201109272342.38454.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1315582012-23507-1-git-send-email-nbowler@elliptictech.com>
-In-Reply-To: <1315582012-23507-1-git-send-email-nbowler@elliptictech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM mailing list <linux-pm@lists.linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Russell King - ARM Linux <linux@arm.linux.org.uk>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Current Shmobile CPU hotplug code includes a hardcoded WFI instruction,
-in ARM encoding.  The hardcoded instruction is both hard to understand
-and doomed to failure when building the kernel in Thumb-2 mode.
+Hi Linus,
 
-Signed-off-by: Nick Bowler <nbowler@elliptictech.com>
----
-Compile tested in both ARM and Thumb-2 mode, and the resulting hotplug.o
-contains the correct instruction sequence, but the final kernel failed
-to link for apparently unrelated reasons:
+Please pull one power management regression fix for 3.1 on top of commit
+f9d81f61c84aca693bc353dfef4b8c36c2e5e1b5 (ptrace: PTRACE_LISTEN forgets to
+unlock ->siglock) from
 
-In ARM mode:
+git://github.com/rjwysocki/linux-pm.git pm-fixes
 
-    LD      .tmp_vmlinux1
-  arch/arm/kernel/built-in.o: In function `twd_timer_setup':
-  io.c:(.cpuinit.text+0x600): undefined reference to `gic_enable_ppi'
-  arch/arm/mach-shmobile/built-in.o: In function `smp_init_cpus':
-  pfc-sh7372.c:(.init.text+0xbb0): undefined reference to `gic_raise_softirq'
+It fixes a locking bug introduced by one of the previous PM commits,
+as described in the changelog.
 
-In Thumb-2 mode:
+Thanks!
 
-    LD      .tmp_vmlinux1
-  arch/arm/kernel/built-in.o: In function `get_wchan':
-  io.c:(.text+0x1542): undefined reference to `unwind_frame'
-  arch/arm/kernel/built-in.o: In function `walk_stackframe':
-  io.c:(.text+0x27f0): undefined reference to `unwind_frame'
-  arch/arm/kernel/built-in.o: In function `profile_pc':
-  io.c:(.text+0x2828): undefined reference to `unwind_frame'
-  arch/arm/kernel/built-in.o: In function `twd_timer_setup':
-  io.c:(.cpuinit.text+0x42e): undefined reference to `gic_enable_ppi'
-  arch/arm/mach-shmobile/built-in.o: In function `smp_init_cpus':
-  pfc-sh7372.c:(.init.text+0x8e8): undefined reference to `gic_raise_softirq'
----
- arch/arm/mach-shmobile/hotplug.c |   10 +++-------
- 1 files changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/hotplug.c b/arch/arm/mach-shmobile/hotplug.c
-index 238a0d9..1e83087 100644
---- a/arch/arm/mach-shmobile/hotplug.c
-+++ b/arch/arm/mach-shmobile/hotplug.c
-@@ -13,6 +13,8 @@
- #include <linux/errno.h>
- #include <linux/smp.h>
- 
-+#include <asm/system.h>
-+
- int platform_cpu_kill(unsigned int cpu)
- {
- 	return 1;
-@@ -21,13 +23,7 @@ int platform_cpu_kill(unsigned int cpu)
- void platform_cpu_die(unsigned int cpu)
- {
- 	while (1) {
--		/*
--		 * here's the WFI
--		 */
--		asm(".word	0xe320f003\n"
--		    :
--		    :
--		    : "memory", "cc");
-+		wfi();
- 	}
- }
- 
--- 
-1.7.3.4
+ drivers/base/power/clock_ops.c |   75 ++++++++++++++++++++-------------------
+ 1 files changed, 38 insertions(+), 37 deletions(-)
+
+---------------
+
+Rafael J. Wysocki (1):
+      PM / Clocks: Do not acquire a mutex under a spinlock
 
