@@ -1,32 +1,19 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 28 Sep 2011 07:49:05 +0000
-Subject: [PATCH 2/3] sh: modify prototype in sh_eth.h
-Message-Id: <4E82D171.6060200@renesas.com>
+From: David Miller <davem@redhat.com>
+Date: Wed, 28 Sep 2011 17:43:36 +0000
+Subject: Re: [PATCH 2/3] sh: modify prototype in sh_eth.h
+Message-Id: <20110928.134336.668073191575735777.davem@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4E82D171.6060200@renesas.com>
+In-Reply-To: <4E82D171.6060200@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, netdev@vger.kernel.org
+To: yoshihiro.shimoda.uh@renesas.com
+Cc: lethal@linux-sh.org, linux-sh@vger.kernel.org, netdev@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/sh/include/asm/sh_eth.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 28 Sep 2011 16:49:05 +0900
 
-diff --git a/arch/sh/include/asm/sh_eth.h b/arch/sh/include/asm/sh_eth.h
-index 0f325da..2076acf 100644
---- a/arch/sh/include/asm/sh_eth.h
-+++ b/arch/sh/include/asm/sh_eth.h
-@@ -15,7 +15,7 @@ struct sh_eth_plat_data {
- 	int edmac_endian;
- 	int register_type;
- 	phy_interface_t phy_interface;
--	void (*set_mdio_gate)(unsigned long addr);
-+	void (*set_mdio_gate)(void *addr);
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
- 	unsigned char mac_addr[6];
- 	unsigned no_ether_link:1;
--- 
-1.7.1
-
+Applied.
