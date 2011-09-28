@@ -1,36 +1,30 @@
-From: kuninori.morimoto.gx@renesas.com
-Date: Fri, 30 Sep 2011 08:32:34 +0000
-Subject: sh_mipi_dsi:
-Message-Id: <87oby2ctwh.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 28 Sep 2011 07:47:06 +0000
+Subject: [PATCH] sh: pfc: Remove unused gpio_in_use member
+Message-Id: <20110928074706.17605.82736.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Dear Paul, Magnus, and SH-ML members
+Remove unused member gpio_in_use from struct pinmux_info.
 
-These are sh_mipi_dsi update patches.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Kuninori Morimoto (6):
-      fbdev: sh_mobile_lcdcfb: add struct sh_mobile_lcdc_clock_source
-      fbdev: sh_mipi_dsi: Add HSxxCLK support
-      fbdev: sh_mipi_dsi: sh_mipi has pdata instead of dev
-      fbdev: sh_mipi_dsi: fixup setup timing of sh_mipi_setup()
-      fbdev: sh_mipi_dsi: fixup setup timing of SYSCONF
-      fbdev: sh_mipi_dsi: fixup setup timing DSICTRL
+ include/linux/sh_pfc.h |    1 -
+ 1 file changed, 1 deletion(-)
 
-current LCDC driver has LCDC_CLK_xxx flags to select clock source.
-But SH-Mobile / R-Mobile LCDC clock source is not same as SH LCDC.
-ex) current AP4 board select LCDC_CLK_EXTERNAL to select HDMI clocks
-
-1st patch modify lcdc clock source select method.
-But it has compatibility for old LCDC (I hope =).
-
-#2 - #6 patches are update patches for sh mipi driver.
-
-It care HS4divCLK which needs 1920x1080p 60Hz output.
-But you can NOT find HS4divCLK explain and calculation method
-on AP5R manual.
-
+--- 0001/include/linux/sh_pfc.h
++++ work/include/linux/sh_pfc.h	2011-09-28 14:01:29.000000000 +0900
+@@ -87,7 +87,6 @@ struct pinmux_info {
+ 	pinmux_enum_t *gpio_data;
+ 	unsigned int gpio_data_size;
+ 
+-	unsigned long *gpio_in_use;
+ 	struct gpio_chip chip;
+ };
+ 
