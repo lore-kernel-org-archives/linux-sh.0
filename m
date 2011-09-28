@@ -1,41 +1,91 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 30 Sep 2011 19:22:39 +0000
-Subject: Re: [PATCH] mailmap: Fix up renesas member's attribution
-Message-Id: <CABMQnV+VREo-_cHt4TgSXG4+P-7FcPPWgspeMtWjxL2zARx7kg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 28 Sep 2011 07:49:14 +0000
+Subject: [PATCH] sh: modify the asm/sh_eth.h to linux/sh_eth.h in some boards
+Message-Id: <4E82D17A.7050108@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871uv0qg68.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871uv0qg68.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Sorry, I misread it.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ - This patch depends on the following patch:
+  - net: sh_eth: move the asm/sh_eth.h to include/linux/
+ - This patch doesn't contain board-sh7757lcr.c, because
+   it needs more modification.
 
-Nobuhiro
+ arch/sh/boards/board-espt.c           |    2 +-
+ arch/sh/boards/mach-ecovec24/setup.c  |    2 +-
+ arch/sh/boards/mach-se/7724/setup.c   |    2 +-
+ arch/sh/boards/mach-sh7763rdp/setup.c |    2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
 
-2011/9/30 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>:
->
-> Hi Iwamatsu-san
->
-> Thank you for your check
->
->> An e-mail address of Goda is wrong.
->> It is yusuke.goda.sx@renesas.com.
->
-> No. it is not wrong.
-> This patch solved his "old" email address/name
->
-> Best regards
-> ---
-> Kuninori Morimoto
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+diff --git a/arch/sh/boards/board-espt.c b/arch/sh/boards/board-espt.c
+index 9da92ac..b3ae9d3 100644
+--- a/arch/sh/boards/board-espt.c
++++ b/arch/sh/boards/board-espt.c
+@@ -13,9 +13,9 @@
+ #include <linux/interrupt.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/io.h>
++#include <linux/sh_eth.h>
+ #include <asm/machvec.h>
+ #include <asm/sizes.h>
+-#include <asm/sh_eth.h>
 
+ /* NOR Flash */
+ static struct mtd_partition espt_nor_flash_partitions[] = {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index b24d69d..7f74985 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -28,13 +28,13 @@
+ #include <linux/spi/mmc_spi.h>
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
++#include <linux/sh_eth.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <sound/sh_fsi.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <media/tw9910.h>
+ #include <media/mt9t112.h>
+ #include <asm/heartbeat.h>
+-#include <asm/sh_eth.h>
+ #include <asm/clock.h>
+ #include <asm/suspend.h>
+ #include <cpu/sh7724.h>
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index d007567..b747c0a 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -23,12 +23,12 @@
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/usb/r8a66597.h>
++#include <linux/sh_eth.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <sound/sh_fsi.h>
+ #include <asm/io.h>
+ #include <asm/heartbeat.h>
+-#include <asm/sh_eth.h>
+ #include <asm/clock.h>
+ #include <asm/suspend.h>
+ #include <cpu/sh7724.h>
+diff --git a/arch/sh/boards/mach-sh7763rdp/setup.c b/arch/sh/boards/mach-sh7763rdp/setup.c
+index f3d828f..dd036f1 100644
+--- a/arch/sh/boards/mach-sh7763rdp/setup.c
++++ b/arch/sh/boards/mach-sh7763rdp/setup.c
+@@ -17,8 +17,8 @@
+ #include <linux/mtd/physmap.h>
+ #include <linux/fb.h>
+ #include <linux/io.h>
++#include <linux/sh_eth.h>
+ #include <mach/sh7763rdp.h>
+-#include <asm/sh_eth.h>
+ #include <asm/sh7760fb.h>
 
-
---=20
-Nobuhiro Iwamatsu
+ /* NOR Flash */
+-- 
+1.7.1
