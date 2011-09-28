@@ -1,66 +1,32 @@
-From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Fri, 23 Sep 2011 11:19:27 +0000
-Subject: Re: [RFC PATCH V6 0/4] cpuidle: Global registration of idle states
-Message-Id: <4E7C686F.30608@linux.vnet.ibm.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 28 Sep 2011 07:49:05 +0000
+Subject: [PATCH 2/3] sh: modify prototype in sh_eth.h
+Message-Id: <4E82D171.6060200@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110922082840.10520.85895.stgit@localhost6.localdomain6> <87ty84tl7n.fsf@ti.com>
-In-Reply-To: <87ty84tl7n.fsf@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Hilman <khilman@ti.com>
-Cc: venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org, rmk@arm.linux.org.uk
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, netdev@vger.kernel.org
 
-On Friday 23 September 2011 01:15 AM, Kevin Hilman wrote:
-> Deepthi Dharwar <deepthi@linux.vnet.ibm.com> writes:
-> 
->> The following patch series implements global registration of cpuidle
->> states, and also has the necessary data structure changes to
->> accommodate the per-cpu writable members of the cpuidle_states
->> structure.
-> 
-> I reviewed earlier versions of the series, and this version still looks
-> good to me.  Any reason it is still RFC?
-> 
-> Reviewed-by: Kevin Hilman <khilman@ti.com>
-> 
-> and for the OMAP-specific parts,
-> 
-> Acked-by: Kevin Hilman <khilman@ti.com>
-> 
-> Kevin
-> 
-Hi Kevin,
-Thanks for reviewing the patch.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/include/asm/sh_eth.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-This was posted as an RFC, as there were
-a couple of ToDos listed in this patch series
-which I thought needed additional review before 
-I could ask for inclusion. 
+diff --git a/arch/sh/include/asm/sh_eth.h b/arch/sh/include/asm/sh_eth.h
+index 0f325da..2076acf 100644
+--- a/arch/sh/include/asm/sh_eth.h
++++ b/arch/sh/include/asm/sh_eth.h
+@@ -15,7 +15,7 @@ struct sh_eth_plat_data {
+ 	int edmac_endian;
+ 	int register_type;
+ 	phy_interface_t phy_interface;
+-	void (*set_mdio_gate)(unsigned long addr);
++	void (*set_mdio_gate)(void *addr);
 
-To Do :
-===
+ 	unsigned char mac_addr[6];
+ 	unsigned no_ether_link:1;
+-- 
+1.7.1
 
-1. Russell King pointed out that in (V5 1/4) of this patch in
-arch/arm/mach-at91/cpuidle.c, AT91 pieces may be broken.
-In at91_enter_idle() routine, folks need to fix the two
-consecutive asm() statements by combining
-it to one as per the GCC reference manual.
-
-Reference:
-https://lkml.org/lkml/2011/6/6/273
-
-2. In (V6 4/4), handle the case when idle states may change at run time
-and acpi_processor_cst_has_changed() routine is called in a
-better way than the current solution in this patch.
-
-In this current solution where global registration is implemented,
-the boot cpu on x86 would disable all the devices, repopulate the
-states and later enable all the devices, irrespective of the cpu
-that would receive the notification first.
-
-Reference:
-https://lkml.org/lkml/2011/4/25/83
-
-Thanks & Regards,
- -Deepthi
