@@ -1,21 +1,39 @@
-From: David Miller <davem@redhat.com>
-Date: Wed, 28 Sep 2011 17:43:29 +0000
-Subject: Re: [PATCH 1/3] net: sh_eth: use ioremap()
-Message-Id: <20110928.134329.208201561913485912.davem@redhat.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 Sep 2011 01:40:53 +0000
+Subject: [PATCH] mailmap: Fix up renesas member's attribution
+Message-Id: <871uv0qg68.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4E82D16A.8090105@renesas.com>
-In-Reply-To: <4E82D16A.8090105@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro.shimoda.uh@renesas.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 28 Sep 2011 16:48:58 +0900
+Some renesas member had used multi name on same email address.
+This patch will cleanup git shortlog for renesas member.
 
-> This patch also changes writel/readl to iowrite32/ioread32.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ .mailmap |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-Applied.
+diff --git a/.mailmap b/.mailmap
+index a4806f0..9b0d026 100644
+--- a/.mailmap
++++ b/.mailmap
+@@ -68,6 +68,7 @@ Juha Yrjola <juha.yrjola@solidboot.com>
+ Kay Sievers <kay.sievers@vrfy.org>
+ Kenneth W Chen <kenneth.w.chen@intel.com>
+ Koushik <raghavendra.koushik@neterion.com>
++Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ Leonid I Ananiev <leonid.i.ananiev@intel.com>
+ Linas Vepstas <linas@austin.ibm.com>
+ Mark Brown <broonie@sirena.org.uk>
+@@ -111,3 +112,4 @@ Uwe Kleine-König <ukl@pengutronix.de>
+ Uwe Kleine-König <Uwe.Kleine-Koenig@digi.com>
+ Valdis Kletnieks <Valdis.Kletnieks@vt.edu>
+ Takashi YOSHII <takashi.yoshii.zj@renesas.com>
++Yusuke Goda <goda.yusuke@renesas.com>
+-- 
+1.7.4.1
+
