@@ -1,91 +1,100 @@
-From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Tue, 27 Sep 2011 10:15:27 +0000
-Subject: [PATCH V7 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and dev->prepare()
-Message-Id: <20110927100305.16043.31142.stgit@localhost6.localdomain6>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 Sep 2011 01:31:53 +0000
+Subject: [PATCH 5/5] ARM: mach-shmobile: bonito: add PMIC settings
+Message-Id: <874nzwqgl5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
-In-Reply-To: <20110927100202.16043.58669.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The cpuidle_device->prepare() mechanism causes updates to the
-cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
-to tell the governor not to chose a state on a per-cpu basis at
-run-time. State demotion is now handled by the driver and it returns
-the actual state entered. Hence, this mechanism is not required.
-Also this removes per-cpu flags from cpuidle_state enabling
-it to be made global.
+bonito board needs some settings by pmic which use i2c access.
+It is dependent on the device to be used.
+This patch adds standard settings.
 
-Reference:
-https://lkml.org/lkml/2011/3/25/52
-
-Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
-Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
-Signed-off-by: Jean Pihet <j-pihet@ti.com>
-Acked-by: Arjan van de Ven <arjan@linux.intel.com>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/cpuidle/cpuidle.c        |   10 ----------
- drivers/cpuidle/governors/menu.c |    2 --
- include/linux/cpuidle.h          |    3 ---
- 3 files changed, 0 insertions(+), 15 deletions(-)
+ arch/arm/mach-shmobile/board-bonito.c |   53 +++++++++++++++++++++++++++++++++
+ 1 files changed, 53 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
-index 88bd121..f66bcf9 100644
---- a/drivers/cpuidle/cpuidle.c
-+++ b/drivers/cpuidle/cpuidle.c
-@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
- 	hrtimer_peek_ahead_timers();
- #endif
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index 0e9dac6..4b8f7ef 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -20,6 +20,7 @@
+  */
  
--	/*
--	 * Call the device's prepare function before calling the
--	 * governor's select function.  ->prepare gives the device's
--	 * cpuidle driver a chance to update any dynamic information
--	 * of its cpuidle states for the current idle period, e.g.
--	 * state availability, latencies, residencies, etc.
--	 */
--	if (dev->prepare)
--		dev->prepare(dev);
--
- 	/* ask the governor for the next state */
- 	next_state = cpuidle_curr_governor->select(dev);
- 	if (need_resched()) {
-diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index e4b200c..af724e8 100644
---- a/drivers/cpuidle/governors/menu.c
-+++ b/drivers/cpuidle/governors/menu.c
-@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
- 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
- 		struct cpuidle_state *s = &dev->states[i];
+ #include <linux/kernel.h>
++#include <linux/i2c.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+@@ -88,6 +89,56 @@ void fpga_write(u32 offset, u16 val, u16 mask)
+ }
  
--		if (s->flags & CPUIDLE_FLAG_IGNORE)
--			continue;
- 		if (s->target_residency > data->predicted_us)
- 			continue;
- 		if (s->exit_latency > latency_req)
-diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
-index 8da811b..c6d85cf 100644
---- a/include/linux/cpuidle.h
-+++ b/include/linux/cpuidle.h
-@@ -47,7 +47,6 @@ struct cpuidle_state {
+ /*
++* PMIC settings
++*
++* FIXME
++*
++* bonito board needs some settings by pmic which use i2c access.
++* pmic settings use device_initcall() here for use it.
++*/
++static __u8 *pmic_settings = NULL;
++static __u8 pmic_do_2A[] = {
++	0x1C, 0x09,
++	0x1A, 0x80,
++	0xff, 0xff,
++};
++
++static int __init pmic_init(void)
++{
++	struct i2c_adapter *a = i2c_get_adapter(0);
++	struct i2c_msg msg;
++	__u8 buf[2];
++	int i, ret;
++
++	if (!pmic_settings)
++		return 0;
++	if (!a)
++		return 0;
++
++	msg.addr	= 0x46;
++	msg.buf		= buf;
++	msg.len		= 2;
++	msg.flags	= 0;
++
++	for (i = 0; ; i += 2) {
++		buf[0] = pmic_settings[i + 0];
++		buf[1] = pmic_settings[i + 1];
++
++		if ((0xff = buf[0]) && (0xff = buf[1]))
++			break;
++
++		ret = i2c_transfer(a, &msg, 1);
++		if (ret < 0) {
++			pr_err("i2c transfer fail\n");
++			break;
++		}
++	}
++
++	return 0;
++}
++device_initcall(pmic_init);
++
++/*
+  * core board devices
+  */
+ static struct platform_device *bonito_core_devices[] __initdata = {
+@@ -175,6 +226,8 @@ static void __init bonito_init(void)
  
- /* Idle State Flags */
- #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
--#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 	r8a7740_pinmux_init();
  
- #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
- 
-@@ -93,8 +92,6 @@ struct cpuidle_device {
- 	struct completion	kobj_unregister;
- 	void			*governor_data;
- 	int			safe_state_index;
--
--	int (*prepare)		(struct cpuidle_device *dev);
- };
- 
- DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
++	pmic_settings = pmic_do_2A;
++
+ 	/*
+ 	 * core board settings
+ 	 */
+-- 
+1.7.4.1
 
