@@ -1,57 +1,146 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Sep 2011 23:03:26 +0000
-Subject: Re: [PATCH] fbdev: sh_mobile_lcdc: Turn dot clock on before resuming from runtime PM
-Message-Id: <201109210103.26639.laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 Sep 2011 01:31:42 +0000
+Subject: [PATCH 4/5] ARM: mach-shmobile: r8a7740: Add i2c support
+Message-Id: <8762kcqglg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1310387754-23033-1-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1310387754-23033-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Florian,
+r8a7740 I2C needs work around
 
-On Wednesday 21 September 2011 00:44:10 Laurent Pinchart wrote:
-> On Tuesday 20 September 2011 22:19:25 Florian Tobias Schandinat wrote:
-> > On 09/20/2011 07:56 PM, Laurent Pinchart wrote:
-> > > On Tuesday 20 September 2011 21:52:36 Florian Tobias Schandinat wrote:
-> > >> On 09/20/2011 07:30 PM, Laurent Pinchart wrote:
-> > >>> On Monday 11 July 2011 14:35:54 Laurent Pinchart wrote:
-> > >>>> Resuming from runtime PM restores all LCDC registers. If the dot
-> > >>>> clock is off at that time display panning information will be
-> > >>>> corrupted.
-> > >>>> 
-> > >>>> Turn the dot clock on before resuming from runtime PM. Similarly,
-> > >>>> turn the clock off after suspending the LCDC.
-> > >>> 
-> > >>> Could you please pick this patch for v3.2 ?
-> > >> 
-> > >> I assume you meant the currently developed 3.1? (as 3.2 is the next
-> > >> one for which the patch is lying in my fbdev-next anyway)
-> > > 
-> > > No, I meant v3.2. As I haven't received any pull notification in
-> > > response to the patch, and as I had no way to check your fbdev-next
-> > > tree on kernel.org, I just wanted to make sure the patch would be
-> > > queued for v3.2.
-> > 
-> > Just for your info, my tree [1] never was on kernel.org, you can see the
-> > patch in it here [2] (webfrontend). Looks like the patch I got come from
-> > your pull request "SH mobile LCDC cleanups and fixes", hope that's the
-> > right version.
-> 
-> Oops, my bad.
-> 
-> I'm rebasing my pending patches on top of your fbdev/fbdev-next tree. There
-> are a couple of conflicts, I'll resent the rebased patches to the list.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c |  102 ++++++++++++++++++++++++++++++++
+ 1 files changed, 102 insertions(+), 0 deletions(-)
 
-Conflicts are only in the WIP/RFC patches. Those are not meant for upstream 
-inclusion now, I'll resend them later after getting feedback.
-
-The only pending patches are about the new YUV API. They don't conflict with 
-your fbdev-next branch.
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index b067383..ab43651 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -17,8 +17,10 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/delay.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++#include <linux/io.h>
+ #include <linux/platform_device.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+@@ -242,10 +244,110 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&cmt10_device,
+ };
+ 
++/* I2C */
++static struct resource i2c0_resources[] = {
++	[0] = {
++		.name	= "IIC0",
++		.start	= 0xfff20000,
++		.end	= 0xfff20425 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(201),
++		.end	= gic_spi(204),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct resource i2c1_resources[] = {
++	[0] = {
++		.name	= "IIC1",
++		.start	= 0xe6c20000,
++		.end	= 0xe6c20425 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(70),
++		.end	= gic_spi(73),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c0_device = {
++	.name		= "i2c-sh_mobile",
++	.id		= 0,
++	.resource	= i2c0_resources,
++	.num_resources	= ARRAY_SIZE(i2c0_resources),
++};
++
++static struct platform_device i2c1_device = {
++	.name		= "i2c-sh_mobile",
++	.id		= 1,
++	.resource	= i2c1_resources,
++	.num_resources	= ARRAY_SIZE(i2c1_resources),
++};
++
++static struct platform_device *r8a7740_late_devices[] __initdata = {
++	&i2c0_device,
++	&i2c1_device,
++};
++
++#define ICCR	0x0004
++#define ICSTART	0x0070
++
++#define i2c_read(offset)	ioread8(reg + offset)
++#define i2c_write(offset, data)	iowrite8(data, reg + offset)
++
++static void r8a7740_i2c_workaround(struct platform_device *pdev)
++{
++	struct resource *res;
++	void __iomem *reg;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		pr_err("r8a7740 i2c workaround fail (cannot find resource)\n");
++		return;
++	}
++
++	reg = ioremap(res->start, resource_size(res));
++	if (!reg) {
++		pr_err("r8a7740 i2c workaround fail (cannot map IO)\n");
++		return;
++	}
++
++	i2c_write(ICCR, i2c_read(ICCR) | 0x80);
++	i2c_read(ICCR); /* dummy read */
++
++	i2c_write(ICSTART, i2c_read(ICSTART) | 0x10);
++	i2c_read(ICSTART); /* dummy read */
++
++	mdelay(100);
++
++	i2c_write(ICCR, 0x01);
++	i2c_read(ICCR);
++	i2c_write(ICSTART, 0x00);
++	i2c_read(ICSTART);
++
++	i2c_write(ICCR, 0x10);
++	mdelay(100);
++	i2c_write(ICCR, 0x00);
++	mdelay(100);
++	i2c_write(ICCR, 0x10);
++	mdelay(100);
++
++	iounmap(reg);
++}
++
+ void __init r8a7740_add_standard_devices(void)
+ {
++	/* I2C work-around */
++	r8a7740_i2c_workaround(&i2c0_device);
++	r8a7740_i2c_workaround(&i2c1_device);
++
+ 	platform_add_devices(r8a7740_early_devices,
+ 			    ARRAY_SIZE(r8a7740_early_devices));
++	platform_add_devices(r8a7740_late_devices,
++			     ARRAY_SIZE(r8a7740_late_devices));
+ }
+ 
+ void __init r8a7740_add_early_devices(void)
 -- 
-Regards,
+1.7.4.1
 
-Laurent Pinchart
