@@ -1,46 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Sep 2011 21:25:47 +0000
-Subject: Re: [PATCH 1/4] fbdev: sh_mobile_meram: Replace hardcoded register values with macros
-Message-Id: <201109202325.47612.laurent.pinchart@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 30 Sep 2011 11:07:08 +0000
+Subject: [PATCH v2 1/4] usb: r8a66597-udc: change prototype of
+Message-Id: <4E85A2DC.9030209@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Damien,
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v2:
+  - divide a patch for changing prototype only
 
-On Tuesday 02 August 2011 10:43:51 Damian Hobson-Garcia wrote:
+ drivers/usb/gadget/r8a66597-udc.c |    4 ++--
+ drivers/usb/gadget/r8a66597-udc.h |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-Oops, late reply :-/
+diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
+index 50991e5..cd2cd16 100644
+--- a/drivers/usb/gadget/r8a66597-udc.c
++++ b/drivers/usb/gadget/r8a66597-udc.c
+@@ -733,7 +733,7 @@ static void irq_ep0_write(struct r8a66597_ep *ep, struct r8a66597_request *req)
+ 	/* write fifo */
+ 	if (req->req.buf) {
+ 		if (size > 0)
+-			r8a66597_write_fifo(r8a66597, ep->fifoaddr, buf, size);
++			r8a66597_write_fifo(r8a66597, ep, buf, size);
+ 		if ((size = 0) || ((size % ep->ep.maxpacket) != 0))
+ 			r8a66597_bset(r8a66597, BVAL, ep->fifoctr);
+ 	}
+@@ -780,7 +780,7 @@ static void irq_packet_write(struct r8a66597_ep *ep,
 
-> > -#define MExxCTL 0x0
-> > -#define MExxBSIZE 0x4
-> > -#define MExxMNCF 0x8
-> > -#define MExxSARA 0x10
-> > -#define MExxSARB 0x14
-> > -#define MExxSBSIZE 0x18
-> 
-> [snip]
-> 
-> > +#define MExxCTL			0x400
-> > +#define MExxBSIZE		0x404
-> > +#define MExxMNCF		0x408
-> > +#define MExxSARA		0x410
-> > +#define MExxSARB		0x414
-> > +#define MExxSBSIZE		0x418
-> 
-> One small comment on the definition of these register offsets and
-> explanation of what I was originally thinking.  Since each of these
-> actually reprents a series of registers, one per ICB, (i.e. ME00CTL,
-> ME01CTL, etc.) it makes sense to me to represent them as an offset from
-> the base address (0x400) + the start of each ICB address (0x20 * index).
-> 
-> Other than that, looks great.
+ 	/* write fifo */
+ 	if (req->req.buf) {
+-		r8a66597_write_fifo(r8a66597, ep->fifoaddr, buf, size);
++		r8a66597_write_fifo(r8a66597, ep, buf, size);
+ 		if ((size = 0)
+ 				|| ((size % ep->ep.maxpacket) != 0)
+ 				|| ((bufsize != ep->ep.maxpacket)
+diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66597-udc.h
+index 503f766..c6193fb 100644
+--- a/drivers/usb/gadget/r8a66597-udc.h
++++ b/drivers/usb/gadget/r8a66597-udc.h
+@@ -183,11 +183,11 @@ static inline void r8a66597_write(struct r8a66597 *r8a66597, u16 val,
+ }
 
-Thanks. I've sent a v2.
+ static inline void r8a66597_write_fifo(struct r8a66597 *r8a66597,
+-				       unsigned long offset,
++				       struct r8a66597_ep *ep,
+ 				       unsigned char *buf,
+ 				       int len)
+ {
+-	void __iomem *fifoaddr = r8a66597->reg + offset;
++	void __iomem *fifoaddr = r8a66597->reg + ep->fifoaddr;
+ 	int adj = 0;
+ 	int i;
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.1
