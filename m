@@ -1,162 +1,124 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Sep 2011 08:33:13 +0000
-Subject: [PATCH 1/6] fbdev: sh_mobile_lcdcfb: add struct sh_mobile_lcdc_clock_source
-Message-Id: <87mxdmctve.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 30 Sep 2011 08:33:28 +0000
+Subject: [PATCH 2/6] fbdev: sh_mipi_dsi: Add HSxxCLK support
+Message-Id: <87lit6ctuz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-LCDC clock sorce on SH-Mobile/R-Mobile chip is
-not same as SH chip.
-This patch adds struct sh_mobile_lcdc_clock_source so that
-clock source will be selected more flexibly.
-
-This patch has LCDC_CLK_xxx for compatibility.
+SH MIPI manual explains the calculation method of HBP/HFP.
+it is based on HSbyteCLK settings.
+SH73a0 chip can use HS6divCLK/HS4divCLK for it.
+This patch has compatibility to SH7372 mipi
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c   |    2 +-
- arch/arm/mach-shmobile/board-ap4evb.c   |    4 ++--
- arch/arm/mach-shmobile/board-kota2.c    |    2 +-
- arch/arm/mach-shmobile/board-mackerel.c |    2 +-
- drivers/video/sh_mobile_lcdcfb.c        |   17 ++++-------------
- include/video/sh_mobile_lcdc.h          |   14 +++++++++++---
- 6 files changed, 20 insertions(+), 21 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |    3 ++-
+ arch/arm/mach-shmobile/board-ap4evb.c |    3 ++-
+ arch/arm/mach-shmobile/board-kota2.c  |    3 ++-
+ drivers/video/sh_mipi_dsi.c           |   14 ++++++++++----
+ include/video/sh_mipi_dsi.h           |    4 ++++
+ 5 files changed, 20 insertions(+), 7 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index b36dc61..2cbf158 100644
+index 2cbf158..4222837 100644
 --- a/arch/arm/mach-shmobile/board-ag5evm.c
 +++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -262,7 +262,7 @@ static const struct fb_videomode lcdc0_modes[] = {
+@@ -365,7 +365,8 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.vsynw_offset	= 20,
+ 	.clksrc		= 1,
+ 	.flags		= SH_MIPI_DSI_HSABM |
+-			  SH_MIPI_DSI_SYNC_PULSES_MODE,
++			  SH_MIPI_DSI_SYNC_PULSES_MODE |,
++			  SH_MIPI_DSI_HSbyteCLK,
+ 	.set_dot_clock	= sh_mipi_set_dot_clock,
  };
  
- static struct sh_mobile_lcdc_info lcdc0_info = {
--	.clock_source = LCDC_CLK_PERIPHERAL,
-+	.clock_source = LCDC_CLK_SRC(1, NULL), /* HSbyteCLK */
- 	.ch[0] = {
- 		.chan = LCDC_CHAN_MAINLCD,
- 		.interface_type = RGB24,
 diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 5aa5ddd..1c997b8 100644
+index 1c997b8..44c86f6 100644
 --- a/arch/arm/mach-shmobile/board-ap4evb.c
 +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -806,7 +806,7 @@ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+@@ -604,7 +604,8 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.lcd_chan	= &lcdc_info.ch[0],
+ 	.lane		= 2,
+ 	.vsynw_offset	= 17,
+-	.flags		= SH_MIPI_DSI_SYNC_PULSES_MODE,
++	.flags		= SH_MIPI_DSI_SYNC_PULSES_MODE |,
++			  SH_MIPI_DSI_HSbyteCLK,
+ 	.set_dot_clock	= sh_mipi_set_dot_clock,
  };
  
- static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
--	.clock_source = LCDC_CLK_EXTERNAL,
-+	.clock_source = LCDC_CLK_SRC(2, NULL), /* HDMI */
- 	.meram_dev = &meram_info,
- 	.ch[0] = {
- 		.chan = LCDC_CHAN_MAINLCD,
-@@ -1343,7 +1343,7 @@ static void __init ap4evb_init(void)
- 	i2c_register_board_info(1, &tsc_device, 1);
- 
- 	/* LCDC0 */
--	lcdc_info.clock_source			= LCDC_CLK_PERIPHERAL;
-+	lcdc_info.clock_source			= LCDC_CLK_SRC(1, NULL);
- 	lcdc_info.ch[0].interface_type		= RGB24;
- 	lcdc_info.ch[0].clock_divider		= 1;
- 	lcdc_info.ch[0].flags			= LCDC_FLAGS_DWPOL;
 diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 5b76d5d..b7a1d23 100644
+index b7a1d23..9a2d77d 100644
 --- a/arch/arm/mach-shmobile/board-kota2.c
 +++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -306,7 +306,7 @@ static struct fb_videomode lcdc0_modes[] = {
- };
+@@ -416,7 +416,8 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.flags		= SH_MIPI_DSI_HSABM |
+ 			  SH_MIPI_DSI_HBPBM |
+ 			  SH_MIPI_DSI_HFPBM |
+-			  SH_MIPI_DSI_SYNC_BURST_MODE,
++			  SH_MIPI_DSI_SYNC_BURST_MODE |
++			  SH_MIPI_DSI_HSbyteCLK,
+ 	.extra_array	= sh_mipi_extra_dcs,
+ 	.extra_array_len= ARRAY_SIZE(sh_mipi_extra_dcs),
+ 	.set_dot_clock	= sh_mipi_set_dot_clock,
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index e42cd81..a87dcfe 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -159,7 +159,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	void __iomem *base = mipi->base;
+ 	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
+ 	u32 pctype, datatype, pixfmt, linelength, vmctr2, excmd;
+-	u32 tmp, top, bottom, delay;
++	u32 tmp, top, bottom, delay, div;
+ 	bool yuv;
+ 	int i, bpp;
  
- static struct sh_mobile_lcdc_info lcdc0_info = {
--	.clock_source	= LCDC_CLK_PERIPHERAL,
-+	.clock_source	= LCDC_CLK_SRC(1, NULL), /* HSbyteCLK */
- 	.ch[0] = {
- 		.chan = LCDC_CHAN_MAINLCD,
- 		.bpp = 32,
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index d41c01f..b7efd26 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -447,7 +447,7 @@ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
- /* HDMI */
- static struct sh_mobile_lcdc_info hdmi_lcdc_info = {
- 	.meram_dev = &mackerel_meram_info,
--	.clock_source = LCDC_CLK_EXTERNAL,
-+	.clock_source = LCDC_CLK_SRC(2, NULL), /* HDMI */
- 	.ch[0] = {
- 		.chan = LCDC_CHAN_MAINLCD,
- 		.bpp = 16,
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 8cda40c..38dd2d0 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -815,21 +815,12 @@ static int sh_mobile_lcdc_check_interface(struct sh_mobile_lcdc_chan *ch)
- }
+@@ -370,17 +370,23 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	bottom	= 0x00000001;
+ 	delay	= 0;
  
- static int sh_mobile_lcdc_setup_clocks(struct platform_device *pdev,
--				       int clock_source,
-+				       struct sh_mobile_lcdc_clk_src *clk_src,
- 				       struct sh_mobile_lcdc_priv *priv)
- {
--	char *str;
--	int icksel;
-+	char *str = clk_src->str;
- 
--	switch (clock_source) {
--	case LCDC_CLK_BUS: str = "bus_clk"; icksel = 0; break;
--	case LCDC_CLK_PERIPHERAL: str = "peripheral_clk"; icksel = 1; break;
--	case LCDC_CLK_EXTERNAL: str = NULL; icksel = 2; break;
--	default:
--		return -EINVAL;
--	}
--
--	priv->lddckr = icksel << 16;
-+	priv->lddckr = clk_src->icksel << 16;
- 
- 	if (str) {
- 		priv->dot_clk = clk_get(&pdev->dev, str);
-@@ -1498,7 +1489,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 	if (!priv->base)
- 		goto err1;
- 
--	error = sh_mobile_lcdc_setup_clocks(pdev, pdata->clock_source, priv);
-+	error = sh_mobile_lcdc_setup_clocks(pdev, &pdata->clock_source, priv);
- 	if (error) {
- 		dev_err(&pdev->dev, "unable to setup clocks\n");
- 		goto err1;
-diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index d964e68..602286c 100644
---- a/include/video/sh_mobile_lcdc.h
-+++ b/include/video/sh_mobile_lcdc.h
-@@ -30,8 +30,6 @@ enum { LCDC_CHAN_DISABLED = 0,
-        LCDC_CHAN_MAINLCD,
-        LCDC_CHAN_SUBLCD };
- 
--enum { LCDC_CLK_BUS, LCDC_CLK_PERIPHERAL, LCDC_CLK_EXTERNAL };
--
- #define LCDC_FLAGS_DWPOL (1 << 0) /* Rising edge dot clock data latch */
- #define LCDC_FLAGS_DIPOL (1 << 1) /* Active low display enable polarity */
- #define LCDC_FLAGS_DAPOL (1 << 2) /* Active low display data polarity */
-@@ -91,8 +89,18 @@ struct sh_mobile_lcdc_chan_cfg {
- 	struct sh_mobile_meram_cfg *meram_cfg;
- };
- 
-+struct sh_mobile_lcdc_clk_src {
-+	char *str;
-+	int icksel;
-+};
++	div = 1;	/* HSbyteCLK is calculation base
++			 * HS4divCLK = HSbyteCLK/2
++			 * HS6divCLK is not supported for now */
++	if (pdata->flags & SH_MIPI_DSI_HS4divCLK)
++		div = 2;
 +
-+#define LCDC_CLK_SRC(i, s)	{ .icksel = i, .str = s }
-+#define LCDC_CLK_BUS		LCDC_CLK_SRC(0, "bus_clk")
-+#define LCDC_CLK_PERIPHERAL	LCDC_CLK_SRC(1, "peripheral_clk")
-+#define LCDC_CLK_EXTERNAL	LCDC_CLK_SRC(2, NULL)
+ 	if (pdata->flags & SH_MIPI_DSI_HFPBM) {	/* HBPLEN */
+ 		top = ch->lcd_cfg[0].hsync_len + ch->lcd_cfg[0].left_margin;
+-		top = ((pdata->lane * top) - 10) << 16;
++		top = ((pdata->lane * top / div) - 10) << 16;
+ 	}
+ 	if (pdata->flags & SH_MIPI_DSI_HBPBM) { /* HFPLEN */
+ 		bottom = ch->lcd_cfg[0].right_margin;
+-		bottom = (pdata->lane * bottom) - 12;
++		bottom = (pdata->lane * bottom / div) - 12;
+ 	}
+ 
+ 	bpp = linelength / ch->lcd_cfg[0].xres; /* byte / pixel */
+-	if (pdata->lane > bpp) {
++	if ((pdata->lane / div) > bpp) {
+ 		tmp = ch->lcd_cfg[0].xres / bpp; /* output cycle */
+ 		tmp = ch->lcd_cfg[0].xres - tmp; /* (input - output) cycle */
+ 		delay = (pdata->lane * tmp);
+diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
+index 5ded705..f745f02 100644
+--- a/include/video/sh_mipi_dsi.h
++++ b/include/video/sh_mipi_dsi.h
+@@ -35,6 +35,10 @@ struct sh_mobile_lcdc_chan_cfg;
+ #define SH_MIPI_DSI_HSEE	(1 << 5)
+ #define SH_MIPI_DSI_HSAE	(1 << 6)
+ 
++#define SH_MIPI_DSI_HSbyteCLK	(1 << 24)
++#define SH_MIPI_DSI_HS6divCLK	(1 << 25)
++#define SH_MIPI_DSI_HS4divCLK	(1 << 26)
 +
- struct sh_mobile_lcdc_info {
--	int clock_source;
-+	struct sh_mobile_lcdc_clk_src clock_source;
- 	struct sh_mobile_lcdc_chan_cfg ch[2];
- 	struct sh_mobile_meram_info *meram_dev;
- };
+ #define SH_MIPI_DSI_SYNC_PULSES_MODE	(SH_MIPI_DSI_VSEE | \
+ 					 SH_MIPI_DSI_HSEE | \
+ 					 SH_MIPI_DSI_HSAE)
 -- 
 1.7.4.1
 
