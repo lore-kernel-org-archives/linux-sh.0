@@ -1,326 +1,313 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 23 Sep 2011 05:52:43 +0000
-Subject: [PATCH 01/03] ARM: mach-shmobile: sh7372 generic suspend/resume support
-Message-Id: <20110923055243.4013.4422.sendpatchset@w520>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 30 Sep 2011 11:07:30 +0000
+Subject: [PATCH v2 3/4] usb: r8a66597-udc: use dev_*() instead of printk()
+Message-Id: <4E85A2F2.4010408@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch also fix the balance of braces.
 
-Convert the sh7372 Core Standby code to make use
-of the new generic ARM cpu suspend/resume code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ about v2:
+  - before adding a new function, convert the printk() to dev_*().
 
- arch/arm/mach-shmobile/include/mach/common.h |    3 
- arch/arm/mach-shmobile/pm-sh7372.c           |   38 +---
- arch/arm/mach-shmobile/sleep-sh7372.S        |  230 --------------------------
- 3 files changed, 24 insertions(+), 247 deletions(-)
+ drivers/usb/gadget/r8a66597-udc.c |   99 ++++++++++++++++++++++---------------
+ drivers/usb/gadget/r8a66597-udc.h |    1 +
+ 2 files changed, 60 insertions(+), 40 deletions(-)
 
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-07-06 18:11:38.000000000 +0900
-@@ -35,8 +35,7 @@ extern void sh7372_add_standard_devices(
- extern void sh7372_clock_init(void);
- extern void sh7372_pinmux_init(void);
- extern void sh7372_pm_init(void);
--extern void sh7372_cpu_suspend(void);
--extern void sh7372_cpu_resume(void);
-+extern void sh7372_resume_core_standby(void);
- extern struct clk sh7372_extal1_clk;
- extern struct clk sh7372_extal2_clk;
- 
---- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-07-06 18:34:40.000000000 +0900
-@@ -18,6 +18,7 @@
- #include <asm/system.h>
- #include <asm/io.h>
- #include <asm/tlbflush.h>
-+#include <asm/suspend.h>
- #include <mach/common.h>
- 
- #define SMFRAM 0xe6a70000
-@@ -25,30 +26,25 @@
- #define SBAR 0xe6180020
- #define APARMBAREA 0xe6f10020
- 
--static void sh7372_enter_core_standby(void)
-+static int sh7372_do_idle_core_standby(unsigned long unused)
- {
--	void __iomem *smfram = (void __iomem *)SMFRAM;
--
--	__raw_writel(0, APARMBAREA); /* translate 4k */
--	__raw_writel(__pa(sh7372_cpu_resume), SBAR); /* set reset vector */
--	__raw_writel(0x10, SYSTBCR); /* enable core standby */
--
--	__raw_writel(0, smfram + 0x3c); /* clear page table address */
--
--	sh7372_cpu_suspend();
--	cpu_init();
--
--	/* if page table address is non-NULL then we have been powered down */
--	if (__raw_readl(smfram + 0x3c)) {
--		__raw_writel(__raw_readl(smfram + 0x40),
--			     __va(__raw_readl(smfram + 0x3c)));
-+	cpu_do_idle(); /* WFI when SYSTBCR = 0x10 -> Core Standby */
-+	return 0;
-+}
- 
--		flush_tlb_all();
--		set_cr(__raw_readl(smfram + 0x38));
--	}
-+static void sh7372_enter_core_standby(void)
-+{
-+	/* set reset vector, translate 4k */
-+	__raw_writel(__pa(sh7372_resume_core_standby), SBAR);
-+	__raw_writel(0, APARMBAREA);
-+
-+	/* enter sleep mode with SYSTBCR to 0x10 */
-+	__raw_writel(0x10, SYSTBCR);
-+	cpu_suspend(0, sh7372_do_idle_core_standby);
-+	__raw_writel(0, SYSTBCR);
- 
--	__raw_writel(0, SYSTBCR); /* disable core standby */
--	__raw_writel(0, SBAR); /* disable reset vector translation */
-+	 /* disable reset vector translation */
-+	__raw_writel(0, SBAR);
+diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
+index cd2cd16..fdc49f0 100644
+--- a/drivers/usb/gadget/r8a66597-udc.c
++++ b/drivers/usb/gadget/r8a66597-udc.c
+@@ -115,13 +115,15 @@ static inline u16 control_reg_get_pid(struct r8a66597 *r8a66597, u16 pipenum)
+ 	u16 pid = 0;
+ 	unsigned long offset;
+
+-	if (pipenum = 0)
++	if (pipenum = 0) {
+ 		pid = r8a66597_read(r8a66597, DCPCTR) & PID;
+-	else if (pipenum < R8A66597_MAX_NUM_PIPE) {
++	} else if (pipenum < R8A66597_MAX_NUM_PIPE) {
+ 		offset = get_pipectr_addr(pipenum);
+ 		pid = r8a66597_read(r8a66597, offset) & PID;
+-	} else
+-		printk(KERN_ERR "unexpect pipe num (%d)\n", pipenum);
++	} else {
++		dev_err(r8a66597_to_dev(r8a66597), "unexpect pipe num (%d)\n",
++			pipenum);
++	}
+
+ 	return pid;
  }
- 
- #ifdef CONFIG_CPU_IDLE
---- 0001/arch/arm/mach-shmobile/sleep-sh7372.S
-+++ work/arch/arm/mach-shmobile/sleep-sh7372.S	2011-07-06 18:32:44.000000000 +0900
-@@ -30,231 +30,13 @@
-  */
- 
- #include <linux/linkage.h>
-+#include <linux/init.h>
-+#include <asm/memory.h>
- #include <asm/assembler.h>
- 
--#define SMFRAM 0xe6a70000
--
--	.align
--kernel_flush:
--	.word	v7_flush_dcache_all
--
--	.align	3
--ENTRY(sh7372_cpu_suspend)
--	stmfd	sp!, {r0-r12, lr}	@ save registers on stack
--
--	ldr	r8, =SMFRAM
--
--	mov	r4, sp			@ Store sp
--	mrs	r5, spsr		@ Store spsr
--	mov	r6, lr			@ Store lr
--	stmia	r8!, {r4-r6}
--
--	mrc	p15, 0, r4, c1, c0, 2	@ Coprocessor access control register
--	mrc	p15, 0, r5, c2, c0, 0	@ TTBR0
--	mrc	p15, 0, r6, c2, c0, 1	@ TTBR1
--	mrc	p15, 0, r7, c2, c0, 2	@ TTBCR
--	stmia	r8!, {r4-r7}
--
--	mrc	p15, 0, r4, c3, c0, 0	@ Domain access Control Register
--	mrc	p15, 0, r5, c10, c2, 0	@ PRRR
--	mrc	p15, 0, r6, c10, c2, 1	@ NMRR
--	stmia	r8!,{r4-r6}
--
--	mrc	p15, 0, r4, c13, c0, 1	@ Context ID
--	mrc	p15, 0, r5, c13, c0, 2	@ User r/w thread and process ID
--	mrc	p15, 0, r6, c12, c0, 0	@ Secure or NS vector base address
--	mrs	r7, cpsr		@ Store current cpsr
--	stmia	r8!, {r4-r7}
--
--	mrc	p15, 0, r4, c1, c0, 0	@ save control register
--	stmia	r8!, {r4}
--
--	/*
--	 * jump out to kernel flush routine
--	 *  - reuse that code is better
--	 *  - it executes in a cached space so is faster than refetch per-block
--	 *  - should be faster and will change with kernel
--	 *  - 'might' have to copy address, load and jump to it
--	 * Flush all data from the L1 data cache before disabling
--	 * SCTLR.C bit.
--	 */
--	ldr	r1, kernel_flush
--	mov	lr, pc
--	bx	r1
--
--	/*
--	 * Clear the SCTLR.C bit to prevent further data cache
--	 * allocation. Clearing SCTLR.C would make all the data accesses
--	 * strongly ordered and would not hit the cache.
--	 */
--	mrc	p15, 0, r0, c1, c0, 0
--	bic	r0, r0, #(1 << 2)	@ Disable the C bit
--	mcr	p15, 0, r0, c1, c0, 0
--	isb
--
--	/*
--	 * Invalidate L1 data cache. Even though only invalidate is
--	 * necessary exported flush API is used here. Doing clean
--	 * on already clean cache would be almost NOP.
--	 */
--	ldr	r1, kernel_flush
--	blx	r1
--	/*
--	 * The kernel doesn't interwork: v7_flush_dcache_all in particluar will
--	 * always return in Thumb state when CONFIG_THUMB2_KERNEL is enabled.
--	 * This sequence switches back to ARM.  Note that .align may insert a
--	 * nop: bx pc needs to be word-aligned in order to work.
--	 */
-- THUMB(	.thumb		)
-- THUMB(	.align		)
-- THUMB(	bx	pc	)
-- THUMB(	nop		)
--	.arm
--
--	/* Data memory barrier and Data sync barrier */
--	dsb
--	dmb
--
--/*
-- * =================- * = WFI instruction => Enter idle =
-- * =================- */
--	wfi				@ wait for interrupt
--
--/*
-- * =================- * = Resume path for non-OFF modes =
-- * =================- */
--	mrc	p15, 0, r0, c1, c0, 0
--	tst	r0, #(1 << 2)		@ Check C bit enabled?
--	orreq	r0, r0, #(1 << 2)	@ Enable the C bit if cleared
--	mcreq	p15, 0, r0, c1, c0, 0
--	isb
--
--/*
-- * =================- * = Exit point from non-OFF modes =
-- * =================- */
--	ldmfd	sp!, {r0-r12, pc}	@ restore regs and return
--
--	.pool
--
- 	.align	12
- 	.text
--	.global	sh7372_cpu_resume
--sh7372_cpu_resume:
--
--	mov	r1, #0
--	/*
--	 * Invalidate all instruction caches to PoU
--	 * and flush branch target cache
--	 */
--	mcr	p15, 0, r1, c7, c5, 0
--
--	ldr	r3, =SMFRAM
--
--	ldmia	r3!, {r4-r6}
--	mov	sp, r4			@ Restore sp
--	msr	spsr_cxsf, r5		@ Restore spsr
--	mov	lr, r6			@ Restore lr
--
--	ldmia	r3!, {r4-r7}
--	mcr	p15, 0, r4, c1, c0, 2	@ Coprocessor access Control Register
--	mcr	p15, 0, r5, c2, c0, 0	@ TTBR0
--	mcr	p15, 0, r6, c2, c0, 1	@ TTBR1
--	mcr	p15, 0, r7, c2, c0, 2	@ TTBCR
--
--	ldmia	r3!,{r4-r6}
--	mcr	p15, 0, r4, c3, c0, 0	@ Domain access Control Register
--	mcr	p15, 0, r5, c10, c2, 0	@ PRRR
--	mcr	p15, 0, r6, c10, c2, 1	@ NMRR
--
--	ldmia	r3!,{r4-r7}
--	mcr	p15, 0, r4, c13, c0, 1	@ Context ID
--	mcr	p15, 0, r5, c13, c0, 2	@ User r/w thread and process ID
--	mrc	p15, 0, r6, c12, c0, 0	@ Secure or NS vector base address
--	msr	cpsr, r7		@ store cpsr
--
--	/* Starting to enable MMU here */
--	mrc	p15, 0, r7, c2, c0, 2 	@ Read TTBRControl
--	/* Extract N (0:2) bits and decide whether to use TTBR0 or TTBR1 */
--	and	r7, #0x7
--	cmp	r7, #0x0
--	beq	usettbr0
--ttbr_error:
--	/*
--	 * More work needs to be done to support N[0:2] value other than 0
--	 * So looping here so that the error can be detected
--	 */
--	b	ttbr_error
--
--	.align
--cache_pred_disable_mask:
--	.word	0xFFFFE7FB
--ttbrbit_mask:
--	.word	0xFFFFC000
--table_index_mask:
--	.word	0xFFF00000
--table_entry:
--	.word	0x00000C02
--usettbr0:
--
--	mrc	p15, 0, r2, c2, c0, 0
--	ldr	r5, ttbrbit_mask
--	and	r2, r5
--	mov	r4, pc
--	ldr	r5, table_index_mask
--	and	r4, r5			@ r4 = 31 to 20 bits of pc
--	/* Extract the value to be written to table entry */
--	ldr	r6, table_entry
--	/* r6 has the value to be written to table entry */
--	add	r6, r6, r4
--	/* Getting the address of table entry to modify */
--	lsr	r4, #18
--	/* r2 has the location which needs to be modified */
--	add	r2, r4
--	ldr	r4, [r2]
--	str	r6, [r2] /* modify the table entry */
--
--	mov	r7, r6
--	mov	r5, r2
--	mov	r6, r4
--	/* r5 = original page table address */
--	/* r6 = original page table data */
--
--	mov	r0, #0
--	mcr	p15, 0, r0, c7, c5, 4	@ Flush prefetch buffer
--	mcr	p15, 0, r0, c7, c5, 6	@ Invalidate branch predictor array
--	mcr	p15, 0, r0, c8, c5, 0	@ Invalidate instruction TLB
--	mcr	p15, 0, r0, c8, c6, 0	@ Invalidate data TLB
--
--	/*
--	 * Restore control register. This enables the MMU.
--	 * The caches and prediction are not enabled here, they
--	 * will be enabled after restoring the MMU table entry.
--	 */
--	ldmia	r3!, {r4}
--	stmia	r3!, {r5} /* save original page table address */
--	stmia	r3!, {r6} /* save original page table data */
--	stmia	r3!, {r7} /* save modified page table data */
--
--	ldr	r2, cache_pred_disable_mask
--	and	r4, r2
--	mcr	p15, 0, r4, c1, c0, 0
--	dsb
--	isb
--
--	ldr     r0, =restoremmu_on
--	bx      r0
--
--/*
-- * ===============
-- * = Exit point from OFF mode =
-- * ===============
-- */
--restoremmu_on:
--
--	ldmfd	sp!, {r0-r12, pc}	@ restore regs and return
-+	.global sh7372_resume_core_standby
-+sh7372_resume_core_standby:
-+	ldr     pc, 1f
-+1:	.long   cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
+@@ -131,13 +133,15 @@ static inline void control_reg_set_pid(struct r8a66597 *r8a66597, u16 pipenum,
+ {
+ 	unsigned long offset;
+
+-	if (pipenum = 0)
++	if (pipenum = 0) {
+ 		r8a66597_mdfy(r8a66597, pid, PID, DCPCTR);
+-	else if (pipenum < R8A66597_MAX_NUM_PIPE) {
++	} else if (pipenum < R8A66597_MAX_NUM_PIPE) {
+ 		offset = get_pipectr_addr(pipenum);
+ 		r8a66597_mdfy(r8a66597, pid, PID, offset);
+-	} else
+-		printk(KERN_ERR "unexpect pipe num (%d)\n", pipenum);
++	} else {
++		dev_err(r8a66597_to_dev(r8a66597), "unexpect pipe num (%d)\n",
++			pipenum);
++	}
+ }
+
+ static inline void pipe_start(struct r8a66597 *r8a66597, u16 pipenum)
+@@ -160,13 +164,15 @@ static inline u16 control_reg_get(struct r8a66597 *r8a66597, u16 pipenum)
+ 	u16 ret = 0;
+ 	unsigned long offset;
+
+-	if (pipenum = 0)
++	if (pipenum = 0) {
+ 		ret = r8a66597_read(r8a66597, DCPCTR);
+-	else if (pipenum < R8A66597_MAX_NUM_PIPE) {
++	} else if (pipenum < R8A66597_MAX_NUM_PIPE) {
+ 		offset = get_pipectr_addr(pipenum);
+ 		ret = r8a66597_read(r8a66597, offset);
+-	} else
+-		printk(KERN_ERR "unexpect pipe num (%d)\n", pipenum);
++	} else {
++		dev_err(r8a66597_to_dev(r8a66597), "unexpect pipe num (%d)\n",
++			pipenum);
++	}
+
+ 	return ret;
+ }
+@@ -177,13 +183,15 @@ static inline void control_reg_sqclr(struct r8a66597 *r8a66597, u16 pipenum)
+
+ 	pipe_stop(r8a66597, pipenum);
+
+-	if (pipenum = 0)
++	if (pipenum = 0) {
+ 		r8a66597_bset(r8a66597, SQCLR, DCPCTR);
+-	else if (pipenum < R8A66597_MAX_NUM_PIPE) {
++	} else if (pipenum < R8A66597_MAX_NUM_PIPE) {
+ 		offset = get_pipectr_addr(pipenum);
+ 		r8a66597_bset(r8a66597, SQCLR, offset);
+-	} else
+-		printk(KERN_ERR "unexpect pipe num(%d)\n", pipenum);
++	} else {
++		dev_err(r8a66597_to_dev(r8a66597), "unexpect pipe num (%d)\n",
++			pipenum);
++	}
+ }
+
+ static inline int get_buffer_size(struct r8a66597 *r8a66597, u16 pipenum)
+@@ -297,17 +305,18 @@ static void pipe_buffer_release(struct r8a66597 *r8a66597,
+ 	if (info->pipe = 0)
+ 		return;
+
+-	if (is_bulk_pipe(info->pipe))
++	if (is_bulk_pipe(info->pipe)) {
+ 		r8a66597->bulk--;
+-	else if (is_interrupt_pipe(info->pipe))
++	} else if (is_interrupt_pipe(info->pipe)) {
+ 		r8a66597->interrupt--;
+-	else if (is_isoc_pipe(info->pipe)) {
++	} else if (is_isoc_pipe(info->pipe)) {
+ 		r8a66597->isochronous--;
+ 		if (info->type = R8A66597_BULK)
+ 			r8a66597->bulk--;
+-	} else
+-		printk(KERN_ERR "ep_release: unexpect pipenum (%d)\n",
+-				info->pipe);
++	} else {
++		dev_err(r8a66597_to_dev(r8a66597),
++			"ep_release: unexpect pipenum (%d)\n", info->pipe);
++	}
+ }
+
+ static void pipe_initialize(struct r8a66597_ep *ep)
+@@ -381,7 +390,8 @@ static int alloc_pipe_config(struct r8a66597_ep *ep,
+ 	case USB_ENDPOINT_XFER_BULK:
+ 		if (r8a66597->bulk >= R8A66597_MAX_NUM_BULK) {
+ 			if (r8a66597->isochronous >= R8A66597_MAX_NUM_ISOC) {
+-				printk(KERN_ERR "bulk pipe is insufficient\n");
++				dev_err(r8a66597_to_dev(r8a66597),
++					"bulk pipe is insufficient\n");
+ 				return -ENODEV;
+ 			} else {
+ 				info.pipe = R8A66597_BASE_PIPENUM_ISOC
+@@ -397,7 +407,8 @@ static int alloc_pipe_config(struct r8a66597_ep *ep,
+ 		break;
+ 	case USB_ENDPOINT_XFER_INT:
+ 		if (r8a66597->interrupt >= R8A66597_MAX_NUM_INT) {
+-			printk(KERN_ERR "interrupt pipe is insufficient\n");
++			dev_err(r8a66597_to_dev(r8a66597),
++				"interrupt pipe is insufficient\n");
+ 			return -ENODEV;
+ 		}
+ 		info.pipe = R8A66597_BASE_PIPENUM_INT + r8a66597->interrupt;
+@@ -406,7 +417,8 @@ static int alloc_pipe_config(struct r8a66597_ep *ep,
+ 		break;
+ 	case USB_ENDPOINT_XFER_ISOC:
+ 		if (r8a66597->isochronous >= R8A66597_MAX_NUM_ISOC) {
+-			printk(KERN_ERR "isochronous pipe is insufficient\n");
++			dev_err(r8a66597_to_dev(r8a66597),
++				"isochronous pipe is insufficient\n");
+ 			return -ENODEV;
+ 		}
+ 		info.pipe = R8A66597_BASE_PIPENUM_ISOC + r8a66597->isochronous;
+@@ -414,7 +426,7 @@ static int alloc_pipe_config(struct r8a66597_ep *ep,
+ 		counter = &r8a66597->isochronous;
+ 		break;
+ 	default:
+-		printk(KERN_ERR "unexpect xfer type\n");
++		dev_err(r8a66597_to_dev(r8a66597), "unexpect xfer type\n");
+ 		return -EINVAL;
+ 	}
+ 	ep->type = info.type;
+@@ -429,7 +441,8 @@ static int alloc_pipe_config(struct r8a66597_ep *ep,
+
+ 	ret = pipe_buffer_setting(r8a66597, &info);
+ 	if (ret < 0) {
+-		printk(KERN_ERR "pipe_buffer_setting fail\n");
++		dev_err(r8a66597_to_dev(r8a66597),
++			"pipe_buffer_setting fail\n");
+ 		return ret;
+ 	}
+
+@@ -564,7 +577,8 @@ static void start_ep0(struct r8a66597_ep *ep, struct r8a66597_request *req)
+ 		control_end(ep->r8a66597, 0);
+ 		break;
+ 	default:
+-		printk(KERN_ERR "start_ep0: unexpect ctsq(%x)\n", ctsq);
++		dev_err(r8a66597_to_dev(ep->r8a66597),
++			"start_ep0: unexpect ctsq(%x)\n", ctsq);
+ 		break;
+ 	}
+ }
+@@ -718,7 +732,8 @@ static void irq_ep0_write(struct r8a66597_ep *ep, struct r8a66597_request *req)
+ 	do {
+ 		tmp = r8a66597_read(r8a66597, ep->fifoctr);
+ 		if (i++ > 100000) {
+-			printk(KERN_ERR "pipe0 is busy. maybe cpu i/o bus"
++			dev_err(r8a66597_to_dev(r8a66597),
++				"pipe0 is busy. maybe cpu i/o bus "
+ 				"conflict. please power off this controller.");
+ 			return;
+ 		}
+@@ -769,7 +784,8 @@ static void irq_packet_write(struct r8a66597_ep *ep,
+ 	if (unlikely((tmp & FRDY) = 0)) {
+ 		pipe_stop(r8a66597, pipenum);
+ 		pipe_irq_disable(r8a66597, pipenum);
+-		printk(KERN_ERR "write fifo not ready. pipnum=%d\n", pipenum);
++		dev_err(r8a66597_to_dev(r8a66597),
++			"write fifo not ready. pipnum=%d\n", pipenum);
+ 		return;
+ 	}
+
+@@ -819,7 +835,7 @@ static void irq_packet_read(struct r8a66597_ep *ep,
+ 		req->req.status = -EPIPE;
+ 		pipe_stop(r8a66597, pipenum);
+ 		pipe_irq_disable(r8a66597, pipenum);
+-		printk(KERN_ERR "read fifo not ready");
++		dev_err(r8a66597_to_dev(r8a66597), "read fifo not ready");
+ 		return;
+ 	}
+
+@@ -1095,7 +1111,7 @@ static void r8a66597_update_usb_speed(struct r8a66597 *r8a66597)
+ 		break;
+ 	default:
+ 		r8a66597->gadget.speed = USB_SPEED_UNKNOWN;
+-		printk(KERN_ERR "USB speed unknown\n");
++		dev_err(r8a66597_to_dev(r8a66597), "USB speed unknown\n");
+ 	}
+ }
+
+@@ -1158,7 +1174,8 @@ __acquires(r8a66597->lock)
+ 		control_end(r8a66597, 0);
+ 		break;
+ 	default:
+-		printk(KERN_ERR "ctrl_stage: unexpect ctsq(%x)\n", ctsq);
++		dev_err(r8a66597_to_dev(r8a66597),
++			"ctrl_stage: unexpect ctsq(%x)\n", ctsq);
+ 		break;
+ 	}
+ }
+@@ -1458,13 +1475,15 @@ static int r8a66597_start(struct usb_gadget_driver *driver,
+
+ 	retval = device_add(&r8a66597->gadget.dev);
+ 	if (retval) {
+-		printk(KERN_ERR "device_add error (%d)\n", retval);
++		dev_err(r8a66597_to_dev(r8a66597), "device_add error (%d)\n",
++			retval);
+ 		goto error;
+ 	}
+
+ 	retval = bind(&r8a66597->gadget);
+ 	if (retval) {
+-		printk(KERN_ERR "bind to driver error (%d)\n", retval);
++		dev_err(r8a66597_to_dev(r8a66597),
++			"bind to driver error (%d)\n", retval);
+ 		device_del(&r8a66597->gadget.dev);
+ 		goto error;
+ 	}
+@@ -1579,7 +1598,7 @@ static int __init r8a66597_probe(struct platform_device *pdev)
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+ 		ret = -ENODEV;
+-		printk(KERN_ERR "platform_get_resource error.\n");
++		dev_err(&pdev->dev, "platform_get_resource error.\n");
+ 		goto clean_up;
+ 	}
+
+@@ -1589,14 +1608,14 @@ static int __init r8a66597_probe(struct platform_device *pdev)
+
+ 	if (irq < 0) {
+ 		ret = -ENODEV;
+-		printk(KERN_ERR "platform_get_irq error.\n");
++		dev_err(&pdev->dev, "platform_get_irq error.\n");
+ 		goto clean_up;
+ 	}
+
+ 	reg = ioremap(res->start, resource_size(res));
+ 	if (reg = NULL) {
+ 		ret = -ENOMEM;
+-		printk(KERN_ERR "ioremap error.\n");
++		dev_err(&pdev->dev, "ioremap error.\n");
+ 		goto clean_up;
+ 	}
+
+@@ -1604,7 +1623,7 @@ static int __init r8a66597_probe(struct platform_device *pdev)
+ 	r8a66597 = kzalloc(sizeof(struct r8a66597), GFP_KERNEL);
+ 	if (r8a66597 = NULL) {
+ 		ret = -ENOMEM;
+-		printk(KERN_ERR "kzalloc error\n");
++		dev_err(&pdev->dev, "kzalloc error\n");
+ 		goto clean_up;
+ 	}
+
+@@ -1646,7 +1665,7 @@ static int __init r8a66597_probe(struct platform_device *pdev)
+ 	ret = request_irq(irq, r8a66597_irq, IRQF_DISABLED | IRQF_SHARED,
+ 			udc_name, r8a66597);
+ 	if (ret < 0) {
+-		printk(KERN_ERR "request_irq error (%d)\n", ret);
++		dev_err(&pdev->dev, "request_irq error (%d)\n", ret);
+ 		goto clean_up2;
+ 	}
+
+diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66597-udc.h
+index 37d0dd5..99681c7 100644
+--- a/drivers/usb/gadget/r8a66597-udc.h
++++ b/drivers/usb/gadget/r8a66597-udc.h
+@@ -124,6 +124,7 @@ struct r8a66597 {
+ #define gadget_to_r8a66597(_gadget)	\
+ 		container_of(_gadget, struct r8a66597, gadget)
+ #define r8a66597_to_gadget(r8a66597) (&r8a66597->gadget)
++#define r8a66597_to_dev(r8a66597)	(r8a66597->gadget.dev.parent)
+
+ static inline u16 r8a66597_read(struct r8a66597 *r8a66597, unsigned long offset)
+ {
+-- 
+1.7.1
