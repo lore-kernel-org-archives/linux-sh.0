@@ -1,34 +1,43 @@
-From: kuninori.morimoto.gx@renesas.com
-Date: Fri, 09 Sep 2011 10:18:59 +0000
-Subject: [PATCH 0/10] ARM: mach-shmobile: sh_mipi_dsi: update patches
-Message-Id: <87r53qqar7.wl%kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 30 Sep 2011 08:34:24 +0000
+Subject: [PATCH 6/6] fbdev: sh_mipi_dsi: fixup setup timing DSICTRL
+Message-Id: <87fwjecttf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Dear Paul, Magnus, and SH-ML members
+DSICTRL should be called after all mipi settings
 
-These are sh_mipi_dsi update patches.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/video/sh_mipi_dsi.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-Kuninori Morimoto (10):
-      ARM: mach-shmobile: clock-sh73a0: add LCDC1 clock support
-      fbdev: sh_mipi_dsi: tidyup dsip_clk
-      fbdev: sh_mobile_lcdcfb: bugfix LDHAJR :: HSYNPAJ needs mask
-      fbdev: sh_mipi_dsi: add lane control support
-      fbdev: sh_mipi_dsi: add sync_pulses/sync_events/burst mode
-      fbdev: sh_mipi_dsi: add VMLEN1/VMLEN2 calculation
-      sh: clkfwk: add clk_rate_multi_range_round()
-      ARM: mach-shmobile: clock-sh7372: remove un-necessary index
-      fbdev: sh_mipi_dsi: add set_dot_clock() for each platform
-      ARM: mach-shmobile: clock-sh73a0: add DSIxPHY clock support
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index b3cdcd5..050070e 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -271,8 +271,6 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	iowrite32(0x0fffffff, base + TATOVSET);
+ 	/* Peripheral reset timeout, default 0xffffffff */
+ 	iowrite32(0x0fffffff, base + PRTOVSET);
+-	/* Enable timeout counters */
+-	iowrite32(0x00000f00, base + DSICTRL);
+ 	/* Interrupts not used, disable all */
+ 	iowrite32(0, base + DSIINTE);
+ 	/* DSI-Tx bias on */
+@@ -408,6 +406,9 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 						    GET_EXPARAM(excmd));
+ 	}
+ 
++	/* Enable timeout counters */
++	iowrite32(0x00000f00, base + DSICTRL);
++
+ 	return 0;
+ }
+ 
+-- 
+1.7.4.1
 
-Some register are not explained for detail in SH manual.
-This time, I asked it to Renesas MIPI guys.
-These patches include it.
-
-I added new clock support for sh73a0.
-
-These are tested on kota2, ag5evm panel.
-It needs test on AP4-QHD panel. (I don't have it)
