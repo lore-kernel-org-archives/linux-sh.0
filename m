@@ -1,56 +1,29 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Mon, 31 Oct 2011 18:21:15 +0000
-Subject: Re: [PATCH 2/2 v4] net/smsc911x: Add regulator support
-Message-Id: <201110311421.18653.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2026611.Zm7YYLeAMb"
+From: David Miller <davem@davemloft.net>
+Date: Mon, 03 Oct 2011 18:00:02 +0000
+Subject: Re: [PATCH] net: sh_eth: fix build failure
+Message-Id: <20111003.140002.2213436684657121394.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com>
-In-Reply-To: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com>
-To: Robert Marklund <robert.marklund@stericsson.com>
-Cc: netdev@vger.kernel.org, Steve Glendinning <steve.glendinning@smsc.com>, Mathieu Poirier <mathieu.poirier@linaro.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, uclinux-dist-devel@blackfin.uclinux.org, Linus Walleij <linus.walleij@linaro.org>
+References: <4E8534A9.3050002@renesas.com>
+In-Reply-To: <4E8534A9.3050002@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: yoshihiro.shimoda.uh@renesas.com
+Cc: sfr@canb.auug.org.au, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
---nextPart2026611.Zm7YYLeAMb
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 30 Sep 2011 12:16:57 +0900
 
-On Monday 31 October 2011 08:38:39 Robert Marklund wrote:
-> ChangeLog v3->v4:
-> - Remove dual prints and old comment on Mike's request.
-> - Split the request_free fucntion on Mike and Sascha request.
+> The following commit removed some including headers:
+>  "net: sh_eth: move the asm/sh_eth.h to include/linux/"
+>  (commit id: d4fa0e35fdbd54acf791fa3793d6d17f7795f7ae)
+> 
+> Then, the build failure happened on the linux-next:
+ ...
+> This patch fixes the issue. This patch also get back include/kernel.h
+> and linux/spinlock.h.
+> 
+> Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-would be nice if the enable/disable were split as well ...
-
->  	iounmap(pdata->ioaddr);
->=20
-> +	(void)smsc911x_enable_disable_resources(pdev, false);
-
-i don't think the (void) cast is necessary
-
-otherwise looks fine
-=2Dmike
-
---nextPart2026611.Zm7YYLeAMb
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iQIcBAABAgAGBQJOruceAAoJEEFjO5/oN/WBcEAP/37XHSiSXFvf1xdbFmVmVH20
-I9kwyxsxV/A7v3czWCf88uAXhOeDGVC7gWesSDt1qgighu3HK+Idyjegg1T2lsG+
-m0v98wG1b/RQDJJ0NJq+0xoqY9va0qLw27Y6S0Bkzg9fYfElFoRQr9p68cFnY9rO
-25oT6Ebd8ha7LyrN8pQXv8Ghy3ZN2Lhr/zvasbfE8wFTRddoqBmWSHWtlslZXxcx
-fjMEVMr1L5PoBiCD1v4ZM77k3BXPBL2kLFmW2PxI5S3gCCfj7UKXBKtozbsw6VpX
-6/AyWnRSK08kziBnmEcisNitjElBrk4hS/5j4zkHlvQ8PnTRfWBlSeqKw3NW0Euu
-51usSjczj22TepHaELzpkvAHNPG5IC336ZXGvlI7JUUYM4qfN1d+FDj2V5izgOpM
-mZBs+PfYSRRCrwv5h7bXkAov4RUdNEWWo34y9U58ulbWFF50L0FrwCdp3Hn7ywSI
-cLng/BSg726VMrVDZuk4UvFUzx+1YlaJw6E4HTdUDWyw4y+dEMXH8pUQcIF4tWoA
-nK/CxWeyB1GMMwNrKDyWiwi1H5MzkCQ3VDKJK0MSuN4GA3WRMMg1nUH2xpNxNAmy
-sOiOIUPFpLzc/GvKxVZNVKAxYm7aXb8kP9J/wsjsj3XLnhYkCOf9WMIpPDG9XcRR
-TtXLTcJxl/QS/hLcqRj+
-=zKGV
------END PGP SIGNATURE-----
-
---nextPart2026611.Zm7YYLeAMb--
+Applied, thanks.
