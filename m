@@ -1,28 +1,43 @@
-From: Federico Fuga <ml@studiofuga.com>
-Date: Mon, 10 Oct 2011 13:21:08 +0000
-Subject: Re: [SpamAssassin] [PATCH/RFC] sh: Use big endian ioread/write for SH2A platforms
-Message-Id: <13232B37-913A-457A-9DE8-6723570A2EAB@studiofuga.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Thu, 06 Oct 2011 11:47:08 +0000
+Subject: Re: [PATCH v2 3/4] usb: r8a66597-udc: use dev_*() instead of printk()
+Message-Id: <20111006114706.GJ1714@legolas.emea.dhcp.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="LG0Ll82vYr46+VA1"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Il giorno 03/ott/2011, alle ore 16.16, Phil Edworthy ha scritto:
+--LG0Ll82vYr46+VA1
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> Commit 37b7a97884ba64bf7d403351ac2a9476ab4f1bba makes all ioread/iowrite
-> functions treat registers as little endian. For SH2A this is not the case,
-> they are big endian.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+On Fri, Sep 30, 2011 at 08:07:30PM +0900, Yoshihiro Shimoda wrote:
+> This patch also fix the balance of braces.
+>=20
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
 
+applied, thanks
 
+--=20
+balbi
 
-This makes my system (based on sh7203) bootable again.
-Thanks
+--LG0Ll82vYr46+VA1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-Tested-by: Federico Fuga <fuga@studiofuga.com>
+iQEcBAEBAgAGBQJOjZU6AAoJEAv8Txj19kN17f4H/jQmes/+AP9grW12OZ2zf++/
+Z6OoZEwz7I9aZylSQjYYCH4evYfafwMZhs4KUA05RS/avTSYuhFGs9g8L/Y5l8rW
+e4GvhoNirhB36HFSMJNH7Q+oqUbUsgMEDGR6wXyImugoH0ckdW2ASIouoFxyVh8c
+iXNiwi57t+aIvjQ424IBbUGKQqn8xP0MC7F+QKVzWsXLM5fxXfMBnInnQZWuGDsr
+PIiZMMDfD/HVmpWBCv5ELB/oyzYvURLkI6ckOwfNwE+MhzEAGJ9hxZTWglqNSx1S
+v51xjMPrJ31VdetxrdRV8k0lCH/+scYyGgdr8FniaRdwqaUevF6EQfGu5kkIlXQ=
+=lNq2
+-----END PGP SIGNATURE-----
 
-
+--LG0Ll82vYr46+VA1--
