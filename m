@@ -1,91 +1,220 @@
-From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Mon, 03 Oct 2011 07:57:06 +0000
-Subject: [PATCH V8 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and dev->prepare()
-Message-Id: <20111003074457.21968.78858.stgit@localhost6.localdomain6>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Oct 2011 07:21:00 +0000
+Subject: [PATCH 01/07] ARM: mach-shmobile: Break out INTC IRQ code
+Message-Id: <20111012072100.25511.2857.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111003074147.21968.86106.stgit@localhost6.localdomain6>
-In-Reply-To: <20111003074147.21968.86106.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The cpuidle_device->prepare() mechanism causes updates to the
-cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
-to tell the governor not to chose a state on a per-cpu basis at
-run-time. State demotion is now handled by the driver and it returns
-the actual state entered. Hence, this mechanism is not required.
-Also this removes per-cpu flags from cpuidle_state enabling
-it to be made global.
+From: Magnus Damm <damm@opensource.se>
 
-Reference:
-https://lkml.org/lkml/2011/3/25/52
+Add INTC_IRQ_PINS_16() and INTC_IRQ_PINS_32() to mach/intc.h.
+These macros define 16 or 32 external IRQ pins on a certain
+memory base address. Can be used with INTCA or INTCS.
 
-Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
-Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
-Tested-by: Jean Pihet <j-pihet@ti.com>
-Acked-by: Arjan van de Ven <arjan@linux.intel.com>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/cpuidle/cpuidle.c        |   10 ----------
- drivers/cpuidle/governors/menu.c |    2 --
- include/linux/cpuidle.h          |    3 ---
- 3 files changed, 0 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
-index 88bd121..f66bcf9 100644
---- a/drivers/cpuidle/cpuidle.c
-+++ b/drivers/cpuidle/cpuidle.c
-@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
- 	hrtimer_peek_ahead_timers();
- #endif
- 
--	/*
--	 * Call the device's prepare function before calling the
--	 * governor's select function.  ->prepare gives the device's
--	 * cpuidle driver a chance to update any dynamic information
--	 * of its cpuidle states for the current idle period, e.g.
--	 * state availability, latencies, residencies, etc.
--	 */
--	if (dev->prepare)
--		dev->prepare(dev);
--
- 	/* ask the governor for the next state */
- 	next_state = cpuidle_curr_governor->select(dev);
- 	if (need_resched()) {
-diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index e4b200c..af724e8 100644
---- a/drivers/cpuidle/governors/menu.c
-+++ b/drivers/cpuidle/governors/menu.c
-@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
- 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
- 		struct cpuidle_state *s = &dev->states[i];
- 
--		if (s->flags & CPUIDLE_FLAG_IGNORE)
--			continue;
- 		if (s->target_residency > data->predicted_us)
- 			continue;
- 		if (s->exit_latency > latency_req)
-diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
-index 8da811b..c6d85cf 100644
---- a/include/linux/cpuidle.h
-+++ b/include/linux/cpuidle.h
-@@ -47,7 +47,6 @@ struct cpuidle_state {
- 
- /* Idle State Flags */
- #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
--#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
- 
- #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
- 
-@@ -93,8 +92,6 @@ struct cpuidle_device {
- 	struct completion	kobj_unregister;
- 	void			*governor_data;
- 	int			safe_state_index;
--
--	int (*prepare)		(struct cpuidle_device *dev);
- };
- 
- DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
+ arch/arm/mach-shmobile/include/mach/intc.h |  195 ++++++++++++++++++++++++++++
+ 1 file changed, 195 insertions(+)
 
+--- /dev/null
++++ work/arch/arm/mach-shmobile/include/mach/intc.h	2011-10-12 14:58:03.000000000 +0900
+@@ -0,0 +1,195 @@
++#ifndef __ASM_MACH_INTC_H
++#define __ASM_MACH_INTC_H
++#include <linux/sh_intc.h>
++
++#define INTC_IRQ_PINS_ENUM_16L(p)				\
++	p ## _IRQ0, p ## _IRQ1, p ## _IRQ2, p ## _IRQ3,		\
++	p ## _IRQ4, p ## _IRQ5, p ## _IRQ6, p ## _IRQ7,		\
++	p ## _IRQ8, p ## _IRQ9, p ## _IRQ10, p ## _IRQ11,	\
++	p ## _IRQ12, p ## _IRQ13, p ## _IRQ14, p ## _IRQ15
++
++#define INTC_IRQ_PINS_ENUM_16H(p)				\
++	p ## _IRQ16, p ## _IRQ17, p ## _IRQ18, p ## _IRQ19,	\
++	p ## _IRQ20, p ## _IRQ21, p ## _IRQ22, p ## _IRQ23,	\
++	p ## _IRQ24, p ## _IRQ25, p ## _IRQ26, p ## _IRQ27,	\
++	p ## _IRQ28, p ## _IRQ29, p ## _IRQ30, p ## _IRQ31
++
++#define INTC_IRQ_PINS_VECT_16L(p, vect)				\
++	vect(p ## _IRQ0, 0x0200), vect(p ## _IRQ1, 0x0220),	\
++	vect(p ## _IRQ2, 0x0240), vect(p ## _IRQ3, 0x0260),	\
++	vect(p ## _IRQ4, 0x0280), vect(p ## _IRQ5, 0x02a0),	\
++	vect(p ## _IRQ6, 0x02c0), vect(p ## _IRQ7, 0x02e0),	\
++	vect(p ## _IRQ8, 0x0300), vect(p ## _IRQ9, 0x0320),	\
++	vect(p ## _IRQ10, 0x0340), vect(p ## _IRQ11, 0x0360),	\
++	vect(p ## _IRQ12, 0x0380), vect(p ## _IRQ13, 0x03a0),	\
++	vect(p ## _IRQ14, 0x03c0), vect(p ## _IRQ15, 0x03e0)
++
++#define INTC_IRQ_PINS_VECT_16H(p, vect)				\
++	vect(p ## _IRQ16, 0x3200), vect(p ## _IRQ17, 0x3220),	\
++	vect(p ## _IRQ18, 0x3240), vect(p ## _IRQ19, 0x3260),	\
++	vect(p ## _IRQ20, 0x3280), vect(p ## _IRQ21, 0x32a0),	\
++	vect(p ## _IRQ22, 0x32c0), vect(p ## _IRQ23, 0x32e0),	\
++	vect(p ## _IRQ24, 0x3300), vect(p ## _IRQ25, 0x3320),	\
++	vect(p ## _IRQ26, 0x3340), vect(p ## _IRQ27, 0x3360),	\
++	vect(p ## _IRQ28, 0x3380), vect(p ## _IRQ29, 0x33a0),	\
++	vect(p ## _IRQ30, 0x33c0), vect(p ## _IRQ31, 0x33e0)
++
++#define INTC_IRQ_PINS_MASK_16L(p, base)					\
++	{ base + 0x40, base + 0x60, 8, /* INTMSK00A / INTMSKCLR00A */	\
++	  { p ## _IRQ0, p ## _IRQ1, p ## _IRQ2, p ## _IRQ3,		\
++	    p ## _IRQ4, p ## _IRQ5, p ## _IRQ6, p ## _IRQ7 } },		\
++	{ base + 0x44, base + 0x64, 8, /* INTMSK10A / INTMSKCLR10A */	\
++	  { p ## _IRQ8, p ## _IRQ9, p ## _IRQ10, p ## _IRQ11,		\
++	    p ## _IRQ12, p ## _IRQ13, p ## _IRQ14, p ## _IRQ15 } }
++
++#define INTC_IRQ_PINS_MASK_16H(p, base)					\
++	{ base + 0x48, base + 0x68, 8, /* INTMSK20A / INTMSKCLR20A */	\
++	  { p ## _IRQ16, p ## _IRQ17, p ## _IRQ18, p ## _IRQ19,		\
++	    p ## _IRQ20, p ## _IRQ21, p ## _IRQ22, p ## _IRQ23 } },	\
++	{ base + 0x4c, base + 0x6c, 8, /* INTMSK30A / INTMSKCLR30A */	\
++	  { p ## _IRQ24, p ## _IRQ25, p ## _IRQ26, p ## _IRQ27,		\
++	    p ## _IRQ28, p ## _IRQ29, p ## _IRQ30, p ## _IRQ31 } }
++
++#define INTC_IRQ_PINS_PRIO_16L(p, base)					\
++	{ base + 0x10, 0, 32, 4, /* INTPRI00A */			\
++	  { p ## _IRQ0, p ## _IRQ1, p ## _IRQ2, p ## _IRQ3,		\
++	    p ## _IRQ4, p ## _IRQ5, p ## _IRQ6, p ## _IRQ7 } },		\
++	{ base + 0x14, 0, 32, 4, /* INTPRI10A */			\
++	  { p ## _IRQ8, p ## _IRQ9, p ## _IRQ10, p ## _IRQ11,		\
++	    p ## _IRQ12, p ## _IRQ13, p ## _IRQ14, p ## _IRQ15 } }
++
++#define INTC_IRQ_PINS_PRIO_16H(p, base)					\
++	{ base + 0x18, 0, 32, 4, /* INTPRI20A */			\
++	  { p ## _IRQ16, p ## _IRQ17, p ## _IRQ18, p ## _IRQ19,		\
++	    p ## _IRQ20, p ## _IRQ21, p ## _IRQ22, p ## _IRQ23 } },	\
++	{ base + 0x1c, 0, 32, 4, /* INTPRI30A */			\
++	  { p ## _IRQ24, p ## _IRQ25, p ## _IRQ26, p ## _IRQ27,		\
++	    p ## _IRQ28, p ## _IRQ29, p ## _IRQ30, p ## _IRQ31 } }
++
++#define INTC_IRQ_PINS_SENSE_16L(p, base)				\
++	{ base + 0x00, 32, 4, /* ICR1A */				\
++	  { p ## _IRQ0, p ## _IRQ1, p ## _IRQ2, p ## _IRQ3,		\
++	    p ## _IRQ4, p ## _IRQ5, p ## _IRQ6, p ## _IRQ7 } },		\
++	{ base + 0x04, 32, 4, /* ICR2A */				\
++	  { p ## _IRQ8, p ## _IRQ9, p ## _IRQ10, p ## _IRQ11,		\
++	    p ## _IRQ12, p ## _IRQ13, p ## _IRQ14, p ## _IRQ15 } }
++
++#define INTC_IRQ_PINS_SENSE_16H(p, base)				\
++	{ base + 0x08, 32, 4, /* ICR3A */				\
++	  { p ## _IRQ16, p ## _IRQ17, p ## _IRQ18, p ## _IRQ19,		\
++	    p ## _IRQ20, p ## _IRQ21, p ## _IRQ22, p ## _IRQ23 } },	\
++	{ base + 0x0c, 32, 4, /* ICR4A */				\
++	  { p ## _IRQ24, p ## _IRQ25, p ## _IRQ26, p ## _IRQ27,		\
++	    p ## _IRQ28, p ## _IRQ29, p ## _IRQ30, p ## _IRQ31 } }
++
++#define INTC_IRQ_PINS_ACK_16L(p, base)					\
++	{ base + 0x20, 0, 8, /* INTREQ00A */				\
++	  { p ## _IRQ0, p ## _IRQ1, p ## _IRQ2, p ## _IRQ3,		\
++	    p ## _IRQ4, p ## _IRQ5, p ## _IRQ6, p ## _IRQ7 } },		\
++	{ base + 0x24, 0, 8, /* INTREQ10A */				\
++	  { p ## _IRQ8, p ## _IRQ9, p ## _IRQ10, p ## _IRQ11,		\
++	    p ## _IRQ12, p ## _IRQ13, p ## _IRQ14, p ## _IRQ15 } }
++
++#define INTC_IRQ_PINS_ACK_16H(p, base)					\
++	{ base + 0x28, 0, 8, /* INTREQ20A */				\
++	  { p ## _IRQ16, p ## _IRQ17, p ## _IRQ18, p ## _IRQ19,		\
++	    p ## _IRQ20, p ## _IRQ21, p ## _IRQ22, p ## _IRQ23 } },	\
++	{ base + 0x2c, 0, 8, /* INTREQ30A */				\
++	  { p ## _IRQ24, p ## _IRQ25, p ## _IRQ26, p ## _IRQ27,		\
++	    p ## _IRQ28, p ## _IRQ29, p ## _IRQ30, p ## _IRQ31 } }
++
++#define INTC_IRQ_PINS_16(p, base, vect, str)				\
++									\
++static struct resource p ## _resources[] __initdata = {			\
++	[0] = {								\
++		.start	= base,						\
++		.end	= base + 0x64,					\
++		.flags	= IORESOURCE_MEM,				\
++	},								\
++};									\
++									\
++enum {									\
++	p ## _UNUSED = 0,						\
++	INTC_IRQ_PINS_ENUM_16L(p),					\
++};									\
++									\
++static struct intc_vect p ## _vectors[] __initdata = {			\
++	INTC_IRQ_PINS_VECT_16L(p, vect),				\
++};									\
++									\
++static struct intc_mask_reg p ## _mask_registers[] __initdata = {	\
++	INTC_IRQ_PINS_MASK_16L(p, base),				\
++};									\
++									\
++static struct intc_prio_reg p ## _prio_registers[] __initdata = {	\
++	INTC_IRQ_PINS_PRIO_16L(p, base),				\
++};									\
++									\
++static struct intc_sense_reg p ## _sense_registers[] __initdata = {	\
++	INTC_IRQ_PINS_SENSE_16L(p, base),				\
++};									\
++									\
++static struct intc_mask_reg p ## _ack_registers[] __initdata = {	\
++	INTC_IRQ_PINS_ACK_16L(p, base),					\
++};									\
++									\
++static struct intc_desc p ## _desc __initdata = {			\
++	.name = str,							\
++	.resource = p ## _resources,					\
++	.num_resources = ARRAY_SIZE(p ## _resources),			\
++	.hw = INTC_HW_DESC(p ## _vectors, NULL,				\
++			     p ## _mask_registers, p ## _prio_registers, \
++			     p ## _sense_registers, p ## _ack_registers) \
++}
++
++#define INTC_IRQ_PINS_32(p, base, vect, str)				\
++									\
++static struct resource p ## _resources[] __initdata = {			\
++	[0] = {								\
++		.start	= base,						\
++		.end	= base + 0x6c,					\
++		.flags	= IORESOURCE_MEM,				\
++	},								\
++};									\
++									\
++enum {									\
++	p ## _UNUSED = 0,						\
++	INTC_IRQ_PINS_ENUM_16L(p),					\
++	INTC_IRQ_PINS_ENUM_16H(p),					\
++};									\
++									\
++static struct intc_vect p ## _vectors[] __initdata = {			\
++	INTC_IRQ_PINS_VECT_16L(p, vect),				\
++	INTC_IRQ_PINS_VECT_16H(p, vect),				\
++};									\
++									\
++static struct intc_mask_reg p ## _mask_registers[] __initdata = {	\
++	INTC_IRQ_PINS_MASK_16L(p, base),				\
++	INTC_IRQ_PINS_MASK_16H(p, base),				\
++};									\
++									\
++static struct intc_prio_reg p ## _prio_registers[] __initdata = {	\
++	INTC_IRQ_PINS_PRIO_16L(p, base),				\
++	INTC_IRQ_PINS_PRIO_16H(p, base),				\
++};									\
++									\
++static struct intc_sense_reg p ## _sense_registers[] __initdata = {	\
++	INTC_IRQ_PINS_SENSE_16L(p, base),				\
++	INTC_IRQ_PINS_SENSE_16H(p, base),				\
++};									\
++									\
++static struct intc_mask_reg p ## _ack_registers[] __initdata = {	\
++	INTC_IRQ_PINS_ACK_16L(p, base),					\
++	INTC_IRQ_PINS_ACK_16H(p, base),					\
++};									\
++									\
++static struct intc_desc p ## _desc __initdata = {			\
++	.name = str,							\
++	.resource = p ## _resources,					\
++	.num_resources = ARRAY_SIZE(p ## _resources),			\
++	.hw = INTC_HW_DESC(p ## _vectors, NULL,				\
++			     p ## _mask_registers, p ## _prio_registers, \
++			     p ## _sense_registers, p ## _ack_registers) \
++}
++
++#endif  /* __ASM_MACH_INTC_H */
