@@ -1,126 +1,309 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 03 Oct 2011 14:16:47 +0000
-Subject: [PATCH] sh: Fix serial for SH7203
-Message-Id: <1317651407-6155-1-git-send-email-phil.edworthy@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 16 Oct 2011 20:05:04 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 A3SP support V2
+Message-Id: <201110162205.04454.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20110712082459.18930.51005.sendpatchset@t400s>
+In-Reply-To: <20110712082459.18930.51005.sendpatchset@t400s>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hi,
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+On Tuesday, September 27, 2011, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> This patch is V2 of sh7372 A3SP power domain support.
+> 
+> The sh7372 A3SP hardware power domain contains a
+> wide range of I/O devices. The list of I/O devices
+> include SCIF serial ports, DMA Engine hardware,
+> SD and MMC controller hardware, USB controllers
+> and I2C master controllers.
+> 
+> This patch adds the A3SP low level code which 
+> powers the hardware power domain on and off. It
+> also ties in platform devices to the pm domain
+> support code.
+> 
+> It is worth noting that the serial console is
+> hooked up to SCIFA0 on most sh7372 boards, and
+> the SCIFA0 port is included in the A3SP hardware
+> power domain. For this reason we cannot output
+> debug messages from the low level power control
+> code in the case of A3SP.
+> 
+> QoS support is needed in drivers before we can
+> enable the A3SP power control on the fly.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+
+The original patch unfortunately broke system suspend, because
+attempting to turn of clocks for some devices in the A3SP domain
+(DMA engines and usbh1_device) appears to lock up hard.  I made
+some changes to it and was able to make it work with system
+suspend too.  My version of the patch is appended.
+
+Thanks,
+Rafael
+
+
 ---
-Note: Not tested on SH2703 as I don't have a board. However I have tested
-this on an SH7264 board which uses the same serial hardware.
+From: Magnus Damm <damm@opensource.se>
+Subject: ARM: mach-shmobile: sh7372 A3SP support V2
 
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c |   16 ++++++++++++----
- drivers/tty/serial/sh-sci.c            |   19 +++++++++++++++++++
- include/linux/serial_sci.h             |    1 +
- 3 files changed, 32 insertions(+), 4 deletions(-)
+This change adds support for the sh7372 A3SP power domain.
 
-diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-index a43124e..0bd744f 100644
---- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
-@@ -176,10 +176,12 @@ static DECLARE_INTC_DESC(intc_desc, "sh7203", vectors, groups,
- static struct plat_sci_port scif0_platform_data = {
- 	.mapbase	= 0xfffe8000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |
-+			  SCSCR_REIE,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
- 	.irqs		=  { 192, 192, 192, 192 },
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
+The sh7372 A3SP hardware power domain contains a
+wide range of I/O devices. The list of I/O devices
+include SCIF serial ports, DMA Engine hardware,
+SD and MMC controller hardware, USB controllers
+and I2C master controllers.
+
+This patch adds the A3SP low level code which 
+powers the hardware power domain on and off. It
+also ties in platform devices to the pm domain
+support code.
+
+It is worth noting that the serial console is
+hooked up to SCIFA0 on most sh7372 boards, and
+the SCIFA0 port is included in the A3SP hardware
+power domain. For this reason we cannot output
+debug messages from the low level power control
+code in the case of A3SP.
+
+QoS support is needed in drivers before we can
+enable the A3SP power control on the fly.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c        |    4 +
+ arch/arm/mach-shmobile/board-mackerel.c      |    8 +++
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    6 ++
+ arch/arm/mach-shmobile/pm-sh7372.c           |   62 +++++++++++++++++++++++----
+ arch/arm/mach-shmobile/setup-sh7372.c        |   14 ++++++
+ include/linux/pm.h                           |    1 
+ 6 files changed, 88 insertions(+), 7 deletions(-)
+
+Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
++++ linux/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1409,6 +1409,10 @@ static void __init ap4evb_init(void)
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
  
- static struct platform_device scif0_device = {
-@@ -193,10 +195,12 @@ static struct platform_device scif0_device = {
- static struct plat_sci_port scif1_platform_data = {
- 	.mapbase	= 0xfffe8800,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |
-+			  SCSCR_REIE,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
- 	.irqs		=  { 196, 196, 196, 196 },
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
- 
- static struct platform_device scif1_device = {
-@@ -210,10 +214,12 @@ static struct platform_device scif1_device = {
- static struct plat_sci_port scif2_platform_data = {
- 	.mapbase	= 0xfffe9000,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |
-+			  SCSCR_REIE,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
- 	.irqs		=  { 200, 200, 200, 200 },
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
- 
- static struct platform_device scif2_device = {
-@@ -227,10 +233,12 @@ static struct platform_device scif2_device = {
- static struct plat_sci_port scif3_platform_data = {
- 	.mapbase	= 0xfffe9800,
- 	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |
-+			  SCSCR_REIE,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
- 	.irqs		=  { 204, 204, 204, 204 },
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- };
- 
- static struct platform_device scif3_device = {
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 18e6342..ca21052 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -207,6 +207,25 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 	},
- 
- 	/*
-+	 * Common SH-2(A) SCIF definitions for ports with FIFO data
-+	 * count registers.
-+	 */
-+	[SCIx_SH2_SCIF_FIFODATA_REGTYPE] = {
-+		[SCSMR]		= { 0x00, 16 },
-+		[SCBRR]		= { 0x04,  8 },
-+		[SCSCR]		= { 0x08, 16 },
-+		[SCxTDR]	= { 0x0c,  8 },
-+		[SCxSR]		= { 0x10, 16 },
-+		[SCxRDR]	= { 0x14,  8 },
-+		[SCFCR]		= { 0x18, 16 },
-+		[SCFDR]		= { 0x1c, 16 },
-+		[SCTFDR]	= sci_reg_invalid,
-+		[SCRFDR]	= sci_reg_invalid,
-+		[SCSPTR]	= { 0x20, 16 },
-+		[SCLSR]		= { 0x24, 16 },
-+	},
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
 +
-+	/*
- 	 * Common SH-3 SCIF definitions.
- 	 */
- 	[SCIx_SH3_SCIF_REGTYPE] = {
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 8bffe9a..5f3939c 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -67,6 +67,7 @@ enum {
- 	SCIx_IRDA_REGTYPE,
- 	SCIx_SCIFA_REGTYPE,
- 	SCIx_SCIFB_REGTYPE,
-+	SCIx_SH2_SCIF_FIFODATA_REGTYPE,
- 	SCIx_SH3_SCIF_REGTYPE,
- 	SCIx_SH4_SCIF_REGTYPE,
- 	SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
--- 
-1.7.0.4
-
+ 	hdmi_init_pm_clock();
+ 	fsi_init_pm_clock();
+ 	sh7372_pm_init();
+Index: linux/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1588,6 +1588,14 @@ static void __init mackerel_init(void)
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs0_device);
++	sh7372_add_special_dev_to_domain(&sh7372_a3sp, &usbhs1_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
++#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
++#endif
++	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi2_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -479,7 +479,9 @@ struct platform_device;
+ 
+ struct sh7372_pm_domain {
+ 	struct generic_pm_domain genpd;
++	struct dev_power_governor *gov;
+ 	unsigned int bit_shift;
++	bool no_debug;
+ };
+ 
+ static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
+@@ -493,16 +495,20 @@ extern struct sh7372_pm_domain sh7372_a4
+ extern struct sh7372_pm_domain sh7372_d4;
+ extern struct sh7372_pm_domain sh7372_a3rv;
+ extern struct sh7372_pm_domain sh7372_a3ri;
++extern struct sh7372_pm_domain sh7372_a3sp;
+ extern struct sh7372_pm_domain sh7372_a3sg;
+ 
+ extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
+ extern void sh7372_add_device_to_domain(struct sh7372_pm_domain *sh7372_pd,
+ 					struct platform_device *pdev);
++extern void sh7372_add_special_dev_to_domain(struct sh7372_pm_domain *sh7372_pd,
++					    struct platform_device *pdev);
+ extern void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
+ 				    struct sh7372_pm_domain *sh7372_sd);
+ #else
+ #define sh7372_init_pm_domain(pd) do { } while(0)
+ #define sh7372_add_device_to_domain(pd, pdev) do { } while(0)
++#define sh7372_add_special_dev_to_domain(pd, pdev) do { } while(0)
+ #define sh7372_pm_add_subdomain(pd, sd) do { } while(0)
+ #endif /* CONFIG_PM */
+ 
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -92,8 +92,9 @@ static int pd_power_down(struct generic_
+ 		}
+ 	}
+ 
+-	pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
+-		 mask, __raw_readl(PSTR));
++	if (!sh7372_pd->no_debug)
++		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
+ 
+ 	return 0;
+ }
+@@ -122,8 +123,9 @@ static int pd_power_up(struct generic_pm
+ 		ret = -EIO;
+ 
+  out:
+-	pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
+-		 mask, __raw_readl(PSTR));
++	if (!sh7372_pd->no_debug)
++		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
++			 mask, __raw_readl(PSTR));
+ 
+ 	return ret;
+ }
+@@ -133,13 +135,40 @@ static bool pd_active_wakeup(struct devi
+ 	return true;
+ }
+ 
++static bool sh7372_power_down_forbidden(struct dev_pm_domain *domain)
++{
++	return false;
++}
++
++struct dev_power_governor sh7372_always_on_gov = {
++	.power_down_ok = sh7372_power_down_forbidden,
++};
++
++int sh7372_stop_device(struct device *dev)
++{
++	if (dev->power.subsys_data && dev->power.subsys_data->domain_data
++	    && dev->power.subsys_data->domain_data->private_data)
++		return 0;
++
++	return pm_clk_suspend(dev);
++}
++
++int sh7372_start_device(struct device *dev)
++{
++	if (dev->power.subsys_data && dev->power.subsys_data->domain_data
++	    && dev->power.subsys_data->domain_data->private_data)
++		return 0;
++
++	return pm_clk_resume(dev);
++}
++
+ void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
+ {
+ 	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
+ 
+-	pm_genpd_init(genpd, NULL, false);
+-	genpd->stop_device = pm_clk_suspend;
+-	genpd->start_device = pm_clk_resume;
++	pm_genpd_init(genpd, sh7372_pd->gov, false);
++	genpd->stop_device = sh7372_stop_device;
++	genpd->start_device = sh7372_start_device;
+ 	genpd->dev_irq_safe = true;
+ 	genpd->active_wakeup = pd_active_wakeup;
+ 	genpd->power_off = pd_power_down;
+@@ -157,6 +186,16 @@ void sh7372_add_device_to_domain(struct
+ 		pm_clk_add(dev, NULL);
+ }
+ 
++void sh7372_add_special_dev_to_domain(struct sh7372_pm_domain *sh7372_pd,
++				     struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	sh7372_add_device_to_domain(sh7372_pd, pdev);
++	if (dev->power.subsys_data && dev->power.subsys_data->domain_data)
++		dev->power.subsys_data->domain_data->private_data = (void *)1;
++}
++
+ void sh7372_pm_add_subdomain(struct sh7372_pm_domain *sh7372_pd,
+ 			     struct sh7372_pm_domain *sh7372_sd)
+ {
+@@ -183,6 +222,12 @@ struct sh7372_pm_domain sh7372_a3ri = {
+ 	.bit_shift = 8,
+ };
+ 
++struct sh7372_pm_domain sh7372_a3sp = {
++	.bit_shift = 11,
++	.gov = &sh7372_always_on_gov,
++	.no_debug = true,
++};
++
+ struct sh7372_pm_domain sh7372_a3sg = {
+ 	.bit_shift = 13,
+ };
+@@ -422,6 +467,9 @@ void __init sh7372_pm_init(void)
+ 	__raw_writel(0x0000a501, DBGREG9);
+ 	__raw_writel(0x00000000, DBGREG1);
+ 
++	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
++	__raw_writel(0, PDNSEL);
++
+ 	sh7372_suspend_init();
+ 	sh7372_cpuidle_init();
+ }
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -994,6 +994,7 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_init_pm_domain(&sh7372_a3rv);
+ 	sh7372_init_pm_domain(&sh7372_a3ri);
+ 	sh7372_init_pm_domain(&sh7372_a3sg);
++	sh7372_init_pm_domain(&sh7372_a3sp);
+ 
+ 	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
+ 
+@@ -1006,6 +1007,19 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4mp, &spu0_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4mp, &spu1_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif0_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif1_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif2_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif3_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif4_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif5_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &scif6_device);
++	sh7372_add_device_to_domain(&sh7372_a3sp, &iic1_device);
++	sh7372_add_special_dev_to_domain(&sh7372_a3sp, &dma0_device);
++	sh7372_add_special_dev_to_domain(&sh7372_a3sp, &dma1_device);
++	sh7372_add_special_dev_to_domain(&sh7372_a3sp, &dma2_device);
++	sh7372_add_special_dev_to_domain(&sh7372_a3sp, &usb_dma0_device);
++	sh7372_add_special_dev_to_domain(&sh7372_a3sp, &usb_dma1_device);
+ }
+ 
+ void __init sh7372_add_early_devices(void)
+Index: linux/include/linux/pm.h
+=================================--- linux.orig/include/linux/pm.h
++++ linux/include/linux/pm.h
+@@ -428,6 +428,7 @@ struct wakeup_source;
+ struct pm_domain_data {
+ 	struct list_head list_node;
+ 	struct device *dev;
++	void *private_data;
+ };
+ 
+ struct pm_subsys_data {
