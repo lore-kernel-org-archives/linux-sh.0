@@ -1,38 +1,94 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Fri, 28 Oct 2011 23:33:16 +0000
-Subject: Re: [PATCH 2/2 v3] net/smsc911x: Add regulator support
-Message-Id: <CAJaTeTqerTxTnxB9jkeYGUkCRoaeOuzQPaQ0jyE7yjw7jO6rFQ@mail.gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 16 Oct 2011 14:45:06 +0000
+Subject: [PATCH] PM / Sleep: Mark devices involved in wakeup signaling during suspend
+Message-Id: <201110161645.06250.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1319719691-15799-1-git-send-email-linus.walleij@stericsson.com> <20111028203353.GE23421@pengutronix.de>
-In-Reply-To: <20111028203353.GE23421@pengutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Sascha Hauer <s.hauer@pengutronix.de>
-Cc: Linus Walleij <linus.walleij@stericsson.com>, netdev@vger.kernel.org, Steve Glendinning <steve.glendinning@smsc.com>, Mathieu Poirer <mathieu.poirier@linaro.org>, Robert Marklund <robert.marklund@stericsson.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, uclinux-dist-devel@blackfin.uclinux.org, Linus Walleij <linus.walleij@linaro.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-On Fri, Oct 28, 2011 at 22:33, Sascha Hauer wrote:
-> On Thu, Oct 27, 2011 at 02:48:11PM +0200, Linus Walleij wrote:
->> +/*
->> + * Request or free resources, currently just regulators.
->> + *
->> + * The SMSC911x has two power pins: vddvario and vdd33a, in designs whe=
-re
->> + * these are not always-on we need to request regulators to be turned on
->> + * before we can try to access the device registers.
->> + */
->> +static int smsc911x_request_free_resources(struct platform_device *pdev,
->> + =A0 =A0 =A0 =A0 =A0 =A0 bool request)
->
-> I had to look twice at this function name. First I thought "request the
-> free resources?", which other resources would you request if not the
-> free ones? I think it would be nicer to have two functions instead.
-> Just my 2 cents.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-i'll add my 2 cents and we'll almost have a nickle.  maybe i'm dense,
-but i had to look (more than) twice at both funcs before i could get
-my head around what was happening.  no, it's not complicated, but it
-is unusual in the kernel world.  either that or i haven't read enough
-kernel code to consider this a common paradigm.  hopefully it's the
-former ;).
--mike
+The generic PM domains code in drivers/base/power/domain.c has
+to avoid powering off domains that provide power to wakeup devices
+during system suspend.  Currently, however, this only works for
+wakeup devices directly belonging to the given domain and not for
+their children (or the children of their children and so on).
+Thus, if there's a wakeup device whose parent belongs to a power
+domain handled by the generic PM domains code, the domain will be
+powered off during system suspend preventing the device from
+signaling wakeup.
+
+To address this problem introduce a device flag, power.wakeup_path,
+that will be set during system suspend for all wakeup devices,
+their parents, the parents of their parents and so on.  This way,
+all wakeup paths in the device hierarchy will be marked and the
+generic PM domains code will only need to avoid powering off
+domains containing devices whose power.wakeup_path is set.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/domain.c |    4 ++--
+ drivers/base/power/main.c   |    8 +++++++-
+ include/linux/pm.h          |    1 +
+ 3 files changed, 10 insertions(+), 3 deletions(-)
+
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -714,7 +714,7 @@ static int pm_genpd_suspend_noirq(struct
+ 	if (ret)
+ 		return ret;
+ 
+-	if (device_may_wakeup(dev)
++	if (dev->power.wakeup_path
+ 	    && genpd->active_wakeup && genpd->active_wakeup(dev))
+ 		return 0;
+ 
+@@ -938,7 +938,7 @@ static int pm_genpd_dev_poweroff_noirq(s
+ 	if (ret)
+ 		return ret;
+ 
+-	if (device_may_wakeup(dev)
++	if (dev->power.wakeup_path
+ 	    && genpd->active_wakeup && genpd->active_wakeup(dev))
+ 		return 0;
+ 
+Index: linux/drivers/base/power/main.c
+=================================--- linux.orig/drivers/base/power/main.c
++++ linux/drivers/base/power/main.c
+@@ -917,7 +917,11 @@ static int __device_suspend(struct devic
+ 	}
+ 
+  End:
+-	dev->power.is_suspended = !error;
++	if (!error) {
++		dev->power.is_suspended = true;
++		if (dev->power.wakeup_path && dev->parent)
++			dev->parent->power.wakeup_path = true;
++	}
+ 
+ 	device_unlock(dev);
+ 	complete_all(&dev->power.completion);
+@@ -1020,6 +1024,8 @@ static int device_prepare(struct device
+ 
+ 	device_lock(dev);
+ 
++	dev->power.wakeup_path = device_may_wakeup(dev);
++
+ 	if (dev->pm_domain) {
+ 		pm_dev_dbg(dev, state, "preparing power domain ");
+ 		if (dev->pm_domain->ops.prepare)
+Index: linux/include/linux/pm.h
+=================================--- linux.orig/include/linux/pm.h
++++ linux/include/linux/pm.h
+@@ -452,6 +452,7 @@ struct dev_pm_info {
+ 	struct list_head	entry;
+ 	struct completion	completion;
+ 	struct wakeup_source	*wakeup;
++	unsigned int		wakeup_path:1;
+ #else
+ 	unsigned int		should_wakeup:1;
+ #endif
