@@ -1,205 +1,172 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 19 Oct 2011 22:14:33 +0000
-Subject: [PATCH 2/3] ARM: mach-shmobile: sh7372 A3SP support (v4)
-Message-Id: <201110200014.33248.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Oct 2011 09:00:52 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh73a0 and AG5EVM PINT support
+Message-Id: <20111017090052.21996.49291.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201110200012.43840.rjw@sisk.pl>
-In-Reply-To: <201110200012.43840.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-This change adds support for the sh7372 A3SP power domain.
+Support PINT on sh73a0 and AG5EVM using INTC PINT macros.
 
-The sh7372 A3SP hardware power domain contains a
-wide range of I/O devices. The list of I/O devices
-include SCIF serial ports, DMA Engine hardware,
-SD and MMC controller hardware, USB controllers
-and I2C master controllers.
-
-This patch adds the A3SP low level code which 
-powers the hardware power domain on and off. It
-also ties in platform devices to the pm domain
-support code.
-
-It is worth noting that the serial console is
-hooked up to SCIFA0 on most sh7372 boards, and
-the SCIFA0 port is included in the A3SP hardware
-power domain. For this reason we cannot output
-debug messages from the low level power control
-code in the case of A3SP.
-
-QoS support is needed in drivers before we can
-enable the A3SP power control on the fly.
+With this patch applied the AG5EVM ethernet is handled
+through one of the chained sh73a0 PINT interrupt controllers.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c        |    4 +++
- arch/arm/mach-shmobile/board-mackerel.c      |    8 +++++++
- arch/arm/mach-shmobile/include/mach/sh7372.h |    3 ++
- arch/arm/mach-shmobile/pm-sh7372.c           |   30 ++++++++++++++++++++++-----
- arch/arm/mach-shmobile/setup-sh7372.c        |   14 ++++++++++++
- 5 files changed, 54 insertions(+), 5 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
-+++ linux/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1409,6 +1409,10 @@ static void __init ap4evb_init(void)
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
+ Depends on "[PATCH] ARM: mach-shmobile: Add support for PINT though macros"
+ and on "[PATCH 00/07] ARM: mach-shmobile: External IRQ pin update"
+
+ arch/arm/mach-shmobile/board-ag5evm.c        |   17 ------
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |    4 +
+ arch/arm/mach-shmobile/intc-sh73a0.c         |   65 ++++++++++++++++++++++++++
+ 3 files changed, 71 insertions(+), 15 deletions(-)
+
+--- 0014/arch/arm/mach-shmobile/board-ag5evm.c
++++ work/arch/arm/mach-shmobile/board-ag5evm.c	2011-10-14 18:50:07.000000000 +0900
+@@ -58,7 +58,7 @@ static struct resource smsc9220_resource
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_spi(33), /* PINT1 */
++		.start		= SH73A0_PINT0_IRQ(2), /* PINTA2 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -465,19 +465,6 @@ static void __init ag5evm_map_io(void)
+ 	shmobile_setup_console();
+ }
  
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
-+
- 	hdmi_init_pm_clock();
- 	fsi_init_pm_clock();
- 	sh7372_pm_init();
-Index: linux/arch/arm/mach-shmobile/board-mackerel.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
-+++ linux/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1588,6 +1588,14 @@ static void __init mackerel_init(void)
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4lc, &hdmi_lcdc_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &fsi_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usbhs1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
-+#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
-+#endif
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi2_device);
+-#define PINTC_ADDR	0xe6900000
+-#define PINTER0A	(PINTC_ADDR + 0xa0)
+-#define PINTCR0A	(PINTC_ADDR + 0xb0)
+-
+-void __init ag5evm_init_irq(void)
+-{
+-	sh73a0_init_irq();
+-
+-	/* setup PINT: enable PINTA2 as active low */
+-	__raw_writel(__raw_readl(PINTER0A) | (1<<29), PINTER0A);
+-	__raw_writew(__raw_readw(PINTCR0A) | (2<<10), PINTCR0A);
+-}
+-
+ #define DSI0PHYCR	0xe615006c
  
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
-Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -479,7 +479,9 @@ struct platform_device;
+ static void __init ag5evm_init(void)
+@@ -611,7 +598,7 @@ struct sys_timer ag5evm_timer = {
  
- struct sh7372_pm_domain {
- 	struct generic_pm_domain genpd;
-+	struct dev_power_governor *gov;
- 	unsigned int bit_shift;
-+	bool no_debug;
+ MACHINE_START(AG5EVM, "ag5evm")
+ 	.map_io		= ag5evm_map_io,
+-	.init_irq	= ag5evm_init_irq,
++	.init_irq	= sh73a0_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_gic,
+ 	.init_machine	= ag5evm_init,
+ 	.timer		= &ag5evm_timer,
+--- 0002/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ work/arch/arm/mach-shmobile/include/mach/sh73a0.h	2011-10-14 18:50:07.000000000 +0900
+@@ -507,4 +507,8 @@ enum {
+ 	SHDMA_SLAVE_MMCIF_RX,
  };
  
- static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
-@@ -493,6 +495,7 @@ extern struct sh7372_pm_domain sh7372_a4
- extern struct sh7372_pm_domain sh7372_d4;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
-+extern struct sh7372_pm_domain sh7372_a3sp;
- extern struct sh7372_pm_domain sh7372_a3sg;
++/* PINT interrupts are located at Linux IRQ 768 and up */
++#define SH73A0_PINT0_IRQ(irq) ((irq) + 768)
++#define SH73A0_PINT1_IRQ(irq) ((irq) + 800)
++
+ #endif /* __ASM_SH73A0_H__ */
+--- 0013/arch/arm/mach-shmobile/intc-sh73a0.c
++++ work/arch/arm/mach-shmobile/intc-sh73a0.c	2011-10-17 16:52:48.000000000 +0900
+@@ -23,6 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
+ #include <mach/intc.h>
++#include <mach/sh73a0.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -363,6 +364,59 @@ static irqreturn_t sh73a0_irq_pin_demux(
  
- extern void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd);
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -92,8 +92,9 @@ static int pd_power_down(struct generic_
- 		}
- 	}
+ static struct irqaction sh73a0_irq_pin_cascade[32];
  
--	pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
--		 mask, __raw_readl(PSTR));
-+	if (!sh7372_pd->no_debug)
-+		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
- 
- 	return 0;
- }
-@@ -122,8 +123,9 @@ static int pd_power_up(struct generic_pm
- 		ret = -EIO;
- 
-  out:
--	pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
--		 mask, __raw_readl(PSTR));
-+	if (!sh7372_pd->no_debug)
-+		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
-+			 mask, __raw_readl(PSTR));
- 
- 	return ret;
- }
-@@ -133,11 +135,20 @@ static bool pd_active_wakeup(struct devi
- 	return true;
- }
- 
-+static bool sh7372_power_down_forbidden(struct dev_pm_domain *domain)
++#define PINTER0 0xe69000a0
++#define PINTER1 0xe69000a4
++#define PINTRR0 0xe69000d0
++#define PINTRR1 0xe69000d4
++
++#define PINT0A_IRQ(n, irq) INTC_IRQ((n), SH73A0_PINT0_IRQ(irq))
++#define PINT0B_IRQ(n, irq) INTC_IRQ((n), SH73A0_PINT0_IRQ(irq + 8))
++#define PINT0C_IRQ(n, irq) INTC_IRQ((n), SH73A0_PINT0_IRQ(irq + 16))
++#define PINT0D_IRQ(n, irq) INTC_IRQ((n), SH73A0_PINT0_IRQ(irq + 24))
++#define PINT1E_IRQ(n, irq) INTC_IRQ((n), SH73A0_PINT1_IRQ(irq))
++
++INTC_PINT(intc_pint0, PINTER0, 0xe69000b0, "sh73a0-pint0",		\
++  INTC_PINT_E(A), INTC_PINT_E(B), INTC_PINT_E(C), INTC_PINT_E(D),	\
++  INTC_PINT_V(A, PINT0A_IRQ), INTC_PINT_V(B, PINT0B_IRQ),		\
++  INTC_PINT_V(C, PINT0C_IRQ), INTC_PINT_V(D, PINT0D_IRQ),		\
++  INTC_PINT_E(A), INTC_PINT_E(B), INTC_PINT_E(C), INTC_PINT_E(D),	\
++  INTC_PINT_E(A), INTC_PINT_E(B), INTC_PINT_E(C), INTC_PINT_E(D));
++
++INTC_PINT(intc_pint1, PINTER1, 0xe69000c0, "sh73a0-pint1",		\
++  INTC_PINT_E(E), INTC_PINT_E_EMPTY, INTC_PINT_E_EMPTY, INTC_PINT_E_EMPTY, \
++  INTC_PINT_V(E, PINT1E_IRQ), INTC_PINT_V_NONE,				\
++  INTC_PINT_V_NONE, INTC_PINT_V_NONE,					\
++  INTC_PINT_E_NONE, INTC_PINT_E_NONE, INTC_PINT_E_NONE, INTC_PINT_E(E), \
++  INTC_PINT_E(E), INTC_PINT_E_NONE, INTC_PINT_E_NONE, INTC_PINT_E_NONE);
++
++static struct irqaction sh73a0_pint0_cascade;
++static struct irqaction sh73a0_pint1_cascade;
++
++static void pint_demux(unsigned long rr, unsigned long er, int base_irq)
 +{
-+	return false;
++	unsigned long value =  ioread32(rr) & ioread32(er);
++	int k;
++
++	for (k = 0; k < 32; k++) {
++		if (value & (1 << (31 - k))) {
++			generic_handle_irq(base_irq + k);
++			iowrite32(~(1 << (31 - k)), rr);
++		}
++	}
 +}
 +
-+struct dev_power_governor sh7372_always_on_gov = {
-+	.power_down_ok = sh7372_power_down_forbidden,
-+};
++static irqreturn_t sh73a0_pint0_demux(int irq, void *dev_id)
++{
++	pint_demux(PINTRR0, PINTER0, SH73A0_PINT0_IRQ(0));
++	return IRQ_HANDLED;
++}
 +
- void sh7372_init_pm_domain(struct sh7372_pm_domain *sh7372_pd)
++static irqreturn_t sh73a0_pint1_demux(int irq, void *dev_id)
++{
++	pint_demux(PINTRR1, PINTER1, SH73A0_PINT1_IRQ(0));
++	return IRQ_HANDLED;
++}
++
+ void __init sh73a0_init_irq(void)
  {
- 	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
+ 	void __iomem *gic_dist_base = __io(0xf0001000);
+@@ -375,6 +429,8 @@ void __init sh73a0_init_irq(void)
  
--	pm_genpd_init(genpd, NULL, false);
-+	pm_genpd_init(genpd, sh7372_pd->gov, false);
- 	genpd->stop_device = pm_clk_suspend;
- 	genpd->start_device = pm_clk_resume;
- 	genpd->dev_irq_safe = true;
-@@ -183,6 +194,12 @@ struct sh7372_pm_domain sh7372_a3ri = {
- 	.bit_shift = 8,
- };
+ 	register_intc_controller(&intcs_desc);
+ 	register_intc_controller(&intca_irq_pins_desc);
++	register_intc_controller(&intc_pint0_desc);
++	register_intc_controller(&intc_pint1_desc);
  
-+struct sh7372_pm_domain sh7372_a3sp = {
-+	.bit_shift = 11,
-+	.gov = &sh7372_always_on_gov,
-+	.no_debug = true,
-+};
+ 	/* demux using INTEVTSA */
+ 	sh73a0_intcs_cascade.name = "INTCS cascade";
+@@ -393,4 +449,13 @@ void __init sh73a0_init_irq(void)
+ 					      handle_level_irq, "level");
+ 		set_irq_flags(n, IRQF_VALID); /* yuck */
+ 	}
 +
- struct sh7372_pm_domain sh7372_a3sg = {
- 	.bit_shift = 13,
- };
-@@ -422,6 +439,9 @@ void __init sh7372_pm_init(void)
- 	__raw_writel(0x0000a501, DBGREG9);
- 	__raw_writel(0x00000000, DBGREG1);
- 
-+	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
-+	__raw_writel(0, PDNSEL);
++	/* PINT pins are sanely tied to the GIC as SPI */
++	sh73a0_pint0_cascade.name = "PINT0 cascade";
++	sh73a0_pint0_cascade.handler = sh73a0_pint0_demux;
++	setup_irq(gic_spi(33), &sh73a0_pint0_cascade);
 +
- 	sh7372_suspend_init();
- 	sh7372_cpuidle_init();
++	sh73a0_pint1_cascade.name = "PINT1 cascade";
++	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
++	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
  }
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -994,6 +994,7 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
-+	sh7372_init_pm_domain(&sh7372_a3sp);
- 
- 	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
- 
-@@ -1006,6 +1007,19 @@ void __init sh7372_add_standard_devices(
- 	sh7372_add_device_to_domain(&sh7372_a3rv, &vpu_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &spu0_device);
- 	sh7372_add_device_to_domain(&sh7372_a4mp, &spu1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif2_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif3_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif4_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif5_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &scif6_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &iic1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma1_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &dma2_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma0_device);
-+	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma1_device);
- }
- 
- void __init sh7372_add_early_devices(void)
-
