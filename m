@@ -1,43 +1,47 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 20 Oct 2011 08:08:24 +0000
+Date: Fri, 21 Oct 2011 08:34:26 +0000
 Subject: Re: Possible regression in kexec on ARM ARMv6 and ARMv7 cores
-Message-Id: <20111020080823.GA2716@verge.net.au>
+Message-Id: <20111021083426.GA16088@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20111020042444.GA20260@verge.net.au>
 	<20111020070105.GA28548@mudshark.cambridge.arm.com>
-In-Reply-To: <20111020070105.GA28548@mudshark.cambridge.arm.com>
+	<20111020080823.GA2716@verge.net.au>
+In-Reply-To: <20111020080823.GA2716@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 20, 2011 at 08:01:06AM +0100, Will Deacon wrote:
-> On Thu, Oct 20, 2011 at 05:24:45AM +0100, Simon Horman wrote:
-> > Hi Will, Hi All,
+On Thu, Oct 20, 2011 at 05:08:24PM +0900, Simon Horman wrote:
+> On Thu, Oct 20, 2011 at 08:01:06AM +0100, Will Deacon wrote:
+> > On Thu, Oct 20, 2011 at 05:24:45AM +0100, Simon Horman wrote:
+> > > Hi Will, Hi All,
+> > 
+> > Hi Simon,
 > 
-> Hi Simon,
-
-Hi Will,
-
-> > it appears that "ARM: proc: add definition of cpu_reset for
-> >  ARMv6 and ARMv7 cores" (f4daf06fc23b99df5ca5b3e892428b91e148cc52),
-> > which was introduced for 3.1-rc1, causes a regression and that
-> > kexec no longer works on ARM. The board that I am testing
-> > on is a Renesas Mackerel which has an SH7372 (ARMv7) processor.
+> Hi Will,
 > 
-> Wow, I'm surprised the old code worked at all on an ARMv7 CPU! It's certainly
-> highly unlikely to work by the letter of the architecture, so I guess the
-> planets aligned in just the right way for your particular implementation.
+> > > it appears that "ARM: proc: add definition of cpu_reset for
+> > >  ARMv6 and ARMv7 cores" (f4daf06fc23b99df5ca5b3e892428b91e148cc52),
+> > > which was introduced for 3.1-rc1, causes a regression and that
+> > > kexec no longer works on ARM. The board that I am testing
+> > > on is a Renesas Mackerel which has an SH7372 (ARMv7) processor.
+> > 
+> > Wow, I'm surprised the old code worked at all on an ARMv7 CPU! It's certainly
+> > highly unlikely to work by the letter of the architecture, so I guess the
+> > planets aligned in just the right way for your particular implementation.
+> > 
+> > Please can you try my kexec/mmu-off patches? They should add the bits and
+> > pieces you need for kexec to work reliably on a UP system. I plan to finish
+> > these off next week in Prague so hopefully they'll hit mainline in the near
+> > future.
+> > 
+> > https://github.com/wdeacon/linux-wd/commits/kexec/mmu-off
 > 
-> Please can you try my kexec/mmu-off patches? They should add the bits and
-> pieces you need for kexec to work reliably on a UP system. I plan to finish
-> these off next week in Prague so hopefully they'll hit mainline in the near
-> future.
-> 
-> https://github.com/wdeacon/linux-wd/commits/kexec/mmu-off
+> Thanks, I will try your patches and let you know how I go.
 
-Thanks, I will try your patches and let you know how I go.
+I have tested the kexec/mmu-off branch of your tree on the UP board
+I mentioned above and kexec works :)
 
-You mention UP in particular, which I will test.
-Do you have any thoughts on SMP?
-
+> You mention UP in particular, which I will test.
+> Do you have any thoughts on SMP?
