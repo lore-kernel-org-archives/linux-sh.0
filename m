@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 21 Oct 2011 01:53:33 +0000
+Date: Fri, 21 Oct 2011 01:57:09 +0000
 Subject: Re: Ecovec in current sh-latest
-Message-Id: <87fwin3yat.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87ehy73y4t.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1109020025350.15166@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1109020025350.15166@axis700.grange>
