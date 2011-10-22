@@ -1,241 +1,215 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 28 Oct 2011 10:53:19 +0000
-Subject: Re: Question about clk->usecount
-Message-Id: <87r51x9yli.wl%kuninori.morimoto.gx@renesas.com>
+From: Yong Zhang <yong.zhang0@gmail.com>
+Date: Sat, 22 Oct 2011 09:56:28 +0000
+Subject: [PATCH 16/49] SH: irq: Remove IRQF_DISABLED
+Message-Id: <1319277421-9203-17-git-send-email-yong.zhang0@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fwihj3x8.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fwihj3x8.wl%kuninori.morimoto.gx@renesas.com>
+References: <1319277421-9203-1-git-send-email-yong.zhang0@gmail.com>
+In-Reply-To: <1319277421-9203-1-git-send-email-yong.zhang0@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: tglx@linutronix.de, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
+Since commit [e58aa3d2: genirq: Run irq handlers with interrupts disabled],
+We run all interrupt handlers with interrupts disabled
+and we even check and yell when an interrupt handler
+returns with interrupts enabled (see commit [b738a50a:
+genirq: Warn when handler enables interrupts]).
 
-Hi Paul
-Cc Magnus, Rafael
+So now this flag is a NOOP and can be removed.
 
-Thank you for your reply
-
-> > Does hwblk/pm_runtime (?) not care clk->usecount ?
-> 
-> I suspect this is a result of hwblk bitrot with regards to the rest of
-> the runtime PM changes. We can of course simply inhibit the late clock
-> disabling, but the proper solution would be to fix up (or simply kill
-> off) the hwblk bits completely.
-> 
-> We can also just add a kernel command line option for inhibiting the late
-> disable for testing/development cases, but this is not something we'd
-> want to rely on in general.
-
-I investigated hwblk, and I noticed that arch/sh pm_runtime seems
-enable/disable hwblk by direct access (out of clk framework).
-I guess this is the reason why clk->usecount is 0.
-
-Below is very x10 rough patch which try to use clk framework on hwblk/pm_runtime.
-But DON'T believe it, because I'm not good at hwblk/pm_runtime you know.
-
-it seems rescue sh_eth on Ecovec board for me.
-But NOT be well tested ;P
-
-Magnus, Rafael
-
-Does this patch become hint to fix this issue ?
-
+Signed-off-by: Yong Zhang <yong.zhang0@gmail.com>
 ---
- arch/sh/include/asm/hwblk.h              |    5 ++-
- arch/sh/kernel/cpu/hwblk.c               |   18 ++++++++++++--
- arch/sh/kernel/cpu/shmobile/pm_runtime.c |   36 ++++++++++++++++++++++++-----
- 3 files changed, 47 insertions(+), 12 deletions(-)
+ arch/sh/boards/board-secureedge5410.c |    3 +--
+ arch/sh/boards/mach-cayman/irq.c      |    2 --
+ arch/sh/boards/mach-hp6xx/hp6xx_apm.c |    2 +-
+ arch/sh/drivers/dma/dma-g2.c          |    2 +-
+ arch/sh/drivers/dma/dma-pvr2.c        |    1 -
+ arch/sh/drivers/dma/dma-sh.c          |    4 ++--
+ arch/sh/drivers/dma/dmabrg.c          |    6 +++---
+ arch/sh/drivers/pci/pci-sh5.c         |    4 ++--
+ arch/sh/drivers/pci/pci-sh7780.c      |    2 +-
+ arch/sh/drivers/push-switch.c         |    2 +-
+ arch/sh/kernel/cpu/sh4a/smp-shx3.c    |    2 +-
+ 11 files changed, 13 insertions(+), 17 deletions(-)
 
-diff --git a/arch/sh/include/asm/hwblk.h b/arch/sh/include/asm/hwblk.h
-index 855e945..85515ef 100644
---- a/arch/sh/include/asm/hwblk.h
-+++ b/arch/sh/include/asm/hwblk.h
-@@ -1,6 +1,7 @@
- #ifndef __ASM_SH_HWBLK_H
- #define __ASM_SH_HWBLK_H
+diff --git a/arch/sh/boards/board-secureedge5410.c b/arch/sh/boards/board-secureedge5410.c
+index f968f17..03820c3 100644
+--- a/arch/sh/boards/board-secureedge5410.c
++++ b/arch/sh/boards/board-secureedge5410.c
+@@ -41,8 +41,7 @@ static int __init eraseconfig_init(void)
+ 	printk("SnapGear: EraseConfig init\n");
  
-+#include <linux/clk.h>
- #include <asm/clock.h>
- #include <asm/io.h>
- 
-@@ -35,6 +36,7 @@ struct hwblk {
- 	unsigned char bit;
- 	unsigned char area;
- 	int cnt[HWBLK_CNT_NR];
-+	struct clk *clk;
+ 	/* Setup "EraseConfig" switch on external IRQ 0 */
+-	if (request_irq(irq, eraseconfig_interrupt, IRQF_DISABLED,
+-				"Erase Config", NULL))
++	if (request_irq(irq, eraseconfig_interrupt, 0, "Erase Config", NULL))
+ 		printk("SnapGear: failed to register IRQ%d for Reset witch\n",
+ 				irq);
+ 	else
+diff --git a/arch/sh/boards/mach-cayman/irq.c b/arch/sh/boards/mach-cayman/irq.c
+index 311bceb..724e8b7 100644
+--- a/arch/sh/boards/mach-cayman/irq.c
++++ b/arch/sh/boards/mach-cayman/irq.c
+@@ -46,13 +46,11 @@ static irqreturn_t cayman_interrupt_pci2(int irq, void *dev_id)
+ static struct irqaction cayman_action_smsc = {
+ 	.name		= "Cayman SMSC Mux",
+ 	.handler	= cayman_interrupt_smsc,
+-	.flags		= IRQF_DISABLED,
  };
  
- struct hwblk_info {
-@@ -51,8 +53,7 @@ int arch_hwblk_sleep_mode(void);
- int hwblk_register(struct hwblk_info *info);
- int hwblk_init(void);
+ static struct irqaction cayman_action_pci2 = {
+ 	.name		= "Cayman PCI2 Mux",
+ 	.handler	= cayman_interrupt_pci2,
+-	.flags		= IRQF_DISABLED,
+ };
  
--void hwblk_enable(struct hwblk_info *info, int hwblk);
--void hwblk_disable(struct hwblk_info *info, int hwblk);
-+struct clk* hwblk_get_clk(struct hwblk_info *info, int hwblk);
+ static void enable_cayman_irq(struct irq_data *data)
+diff --git a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
+index b49535c..865d8d6 100644
+--- a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
++++ b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
+@@ -86,7 +86,7 @@ static int __init hp6x0_apm_init(void)
+ 	int ret;
  
- void hwblk_cnt_inc(struct hwblk_info *info, int hwblk, int cnt);
- void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int cnt);
-diff --git a/arch/sh/kernel/cpu/hwblk.c b/arch/sh/kernel/cpu/hwblk.c
-index 3e985aa..b982bad 100644
---- a/arch/sh/kernel/cpu/hwblk.c
-+++ b/arch/sh/kernel/cpu/hwblk.c
-@@ -55,7 +55,14 @@ void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int counter)
- 	hwblk_mod_cnt(info, hwblk, counter, -1, 0);
+ 	ret = request_irq(HP680_BTN_IRQ, hp6x0_apm_interrupt,
+-			  IRQF_DISABLED, MODNAME, NULL);
++			  0, MODNAME, NULL);
+ 	if (unlikely(ret < 0)) {
+ 		printk(KERN_ERR MODNAME ": IRQ %d request failed\n",
+ 		       HP680_BTN_IRQ);
+diff --git a/arch/sh/drivers/dma/dma-g2.c b/arch/sh/drivers/dma/dma-g2.c
+index af7bb58..be9ca7c 100644
+--- a/arch/sh/drivers/dma/dma-g2.c
++++ b/arch/sh/drivers/dma/dma-g2.c
+@@ -170,7 +170,7 @@ static int __init g2_dma_init(void)
+ {
+ 	int ret;
+ 
+-	ret = request_irq(HW_EVENT_G2_DMA, g2_dma_interrupt, IRQF_DISABLED,
++	ret = request_irq(HW_EVENT_G2_DMA, g2_dma_interrupt, 0,
+ 			  "g2 DMA handler", &g2_dma_info);
+ 	if (unlikely(ret))
+ 		return -EINVAL;
+diff --git a/arch/sh/drivers/dma/dma-pvr2.c b/arch/sh/drivers/dma/dma-pvr2.c
+index 3cee58e..706a343 100644
+--- a/arch/sh/drivers/dma/dma-pvr2.c
++++ b/arch/sh/drivers/dma/dma-pvr2.c
+@@ -70,7 +70,6 @@ static int pvr2_xfer_dma(struct dma_channel *chan)
+ static struct irqaction pvr2_dma_irq = {
+ 	.name		= "pvr2 DMA handler",
+ 	.handler	= pvr2_dma_interrupt,
+-	.flags		= IRQF_DISABLED,
+ };
+ 
+ static struct dma_ops pvr2_dma_ops = {
+diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
+index 8272087..a60da6d 100644
+--- a/arch/sh/drivers/dma/dma-sh.c
++++ b/arch/sh/drivers/dma/dma-sh.c
+@@ -95,7 +95,7 @@ static int sh_dmac_request_dma(struct dma_channel *chan)
+ #if defined(CONFIG_SH_DMA_IRQ_MULTI)
+ 				IRQF_SHARED,
+ #else
+-				IRQF_DISABLED,
++				0,
+ #endif
+ 				chan->dev_id, chan);
  }
+@@ -305,7 +305,7 @@ static int __init sh_dmac_init(void)
+ #if defined(CONFIG_SH_DMA_IRQ_MULTI)
+ 				IRQF_SHARED,
+ #else
+-				IRQF_DISABLED,
++				0,
+ #endif
+ 				dmae_name[n], (void *)dmae_name[n]);
+ 		if (unlikely(i < 0)) {
+diff --git a/arch/sh/drivers/dma/dmabrg.c b/arch/sh/drivers/dma/dmabrg.c
+index 6ab9c4a..3d66a32 100644
+--- a/arch/sh/drivers/dma/dmabrg.c
++++ b/arch/sh/drivers/dma/dmabrg.c
+@@ -174,17 +174,17 @@ static int __init dmabrg_init(void)
+ 	or = __raw_readl(DMAOR);
+ 	__raw_writel(or | DMAOR_BRG | DMAOR_DMEN, DMAOR);
  
--void hwblk_enable(struct hwblk_info *info, int hwblk)
-+struct clk* hwblk_get_clk(struct hwblk_info *info, int hwblk)
-+{
-+	struct hwblk *hp = info->hwblks + hwblk;
-+
-+	return hp->clk;
-+}
-+
-+static void hwblk_enable(struct hwblk_info *info, int hwblk)
- {
- 	struct hwblk *hp = info->hwblks + hwblk;
- 	unsigned long tmp;
-@@ -74,7 +81,7 @@ void hwblk_enable(struct hwblk_info *info, int hwblk)
- 	spin_unlock_irqrestore(&hwblk_lock, flags);
- }
+-	ret = request_irq(DMABRGI0, dmabrg_irq, IRQF_DISABLED,
++	ret = request_irq(DMABRGI0, dmabrg_irq, 0,
+ 			"DMABRG USB address error", NULL);
+ 	if (ret)
+ 		goto out0;
  
--void hwblk_disable(struct hwblk_info *info, int hwblk)
-+static void hwblk_disable(struct hwblk_info *info, int hwblk)
- {
- 	struct hwblk *hp = info->hwblks + hwblk;
- 	unsigned long tmp;
-@@ -152,7 +159,12 @@ int __init sh_hwblk_clk_register(struct clk *clks, int nr)
- 			continue;
+-	ret = request_irq(DMABRGI1, dmabrg_irq, IRQF_DISABLED,
++	ret = request_irq(DMABRGI1, dmabrg_irq, 0,
+ 			"DMABRG Transfer End", NULL);
+ 	if (ret)
+ 		goto out1;
  
- 		clkp->ops = &sh_hwblk_clk_ops;
--		ret |= clk_register(clkp);
-+		ret = clk_register(clkp);
-+		if (ret < 0)
-+			return ret;
-+
-+		if (hwblk_info)
-+			hwblk_info->hwblks[k].clk = clkp;
- 	}
+-	ret = request_irq(DMABRGI2, dmabrg_irq, IRQF_DISABLED,
++	ret = request_irq(DMABRGI2, dmabrg_irq, 0,
+ 			"DMABRG Transfer Half", NULL);
+ 	if (ret = 0)
+ 		return ret;
+diff --git a/arch/sh/drivers/pci/pci-sh5.c b/arch/sh/drivers/pci/pci-sh5.c
+index 0bf296c..16c1e72 100644
+--- a/arch/sh/drivers/pci/pci-sh5.c
++++ b/arch/sh/drivers/pci/pci-sh5.c
+@@ -107,13 +107,13 @@ static int __init sh5pci_init(void)
+ 	u32 uval;
  
- 	return ret;
-diff --git a/arch/sh/kernel/cpu/shmobile/pm_runtime.c b/arch/sh/kernel/cpu/shmobile/pm_runtime.c
-index bf280c8..aa20456 100644
---- a/arch/sh/kernel/cpu/shmobile/pm_runtime.c
-+++ b/arch/sh/kernel/cpu/shmobile/pm_runtime.c
-@@ -40,13 +40,18 @@ static int __platform_pm_runtime_resume(struct platform_device *pdev)
- {
- 	struct device *d = &pdev->dev;
- 	struct pdev_archdata *ad = &pdev->archdata;
-+	struct clk *clk;
- 	int hwblk = ad->hwblk_id;
- 	int ret = -ENOSYS;
+         if (request_irq(IRQ_ERR, pcish5_err_irq,
+-                        IRQF_DISABLED, "PCI Error",NULL) < 0) {
++                        0, "PCI Error",NULL) < 0) {
+                 printk(KERN_ERR "PCISH5: Cannot hook PCI_PERR interrupt\n");
+                 return -EINVAL;
+         }
  
- 	dev_dbg(d, "__platform_pm_runtime_resume() [%d]\n", hwblk);
+         if (request_irq(IRQ_SERR, pcish5_serr_irq,
+-                        IRQF_DISABLED, "PCI SERR interrupt", NULL) < 0) {
++                        0, "PCI SERR interrupt", NULL) < 0) {
+                 printk(KERN_ERR "PCISH5: Cannot hook PCI_SERR interrupt\n");
+                 return -EINVAL;
+         }
+diff --git a/arch/sh/drivers/pci/pci-sh7780.c b/arch/sh/drivers/pci/pci-sh7780.c
+index edb7cca..fa7b978 100644
+--- a/arch/sh/drivers/pci/pci-sh7780.c
++++ b/arch/sh/drivers/pci/pci-sh7780.c
+@@ -172,7 +172,7 @@ static int __init sh7780_pci_setup_irqs(struct pci_channel *hose)
+ 		     PCI_STATUS_SIG_TARGET_ABORT | \
+ 		     PCI_STATUS_PARITY, hose->reg_base + PCI_STATUS);
  
-+	clk = hwblk_get_clk(hwblk_info, hwblk);
-+	if (!clk)
-+		return -EIO;
-+
- 	if (d->driver) {
--		hwblk_enable(hwblk_info, hwblk);
-+		clk_enable(clk);
- 		ret = 0;
+-	ret = request_irq(hose->serr_irq, sh7780_pci_serr_irq, IRQF_DISABLED,
++	ret = request_irq(hose->serr_irq, sh7780_pci_serr_irq, 0,
+ 			  "PCI SERR interrupt", hose);
+ 	if (unlikely(ret)) {
+ 		printk(KERN_ERR "PCI: Failed hooking SERR IRQ\n");
+diff --git a/arch/sh/drivers/push-switch.c b/arch/sh/drivers/push-switch.c
+index afc2455..637b79b 100644
+--- a/arch/sh/drivers/push-switch.c
++++ b/arch/sh/drivers/push-switch.c
+@@ -63,7 +63,7 @@ static int switch_drv_probe(struct platform_device *pdev)
+ 	BUG_ON(!psw_info);
  
- 		if (test_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags)) {
-@@ -56,7 +61,7 @@ static int __platform_pm_runtime_resume(struct platform_device *pdev)
- 			if (!ret)
- 				clear_bit(PDEV_ARCHDATA_FLAG_SUSP, &ad->flags);
- 			else
--				hwblk_disable(hwblk_info, hwblk);
-+				clk_disable(clk);
- 		}
- 	}
+ 	ret = request_irq(irq, psw_info->irq_handler,
+-			  IRQF_DISABLED | psw_info->irq_flags,
++			  psw_info->irq_flags,
+ 			  psw_info->name ? psw_info->name : DRV_NAME, pdev);
+ 	if (unlikely(ret < 0))
+ 		goto err;
+diff --git a/arch/sh/kernel/cpu/sh4a/smp-shx3.c b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
+index de865ca..03f2b55 100644
+--- a/arch/sh/kernel/cpu/sh4a/smp-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
+@@ -79,7 +79,7 @@ static void shx3_prepare_cpus(unsigned int max_cpus)
  
-@@ -70,9 +75,14 @@ static int __platform_pm_runtime_suspend(struct platform_device *pdev)
- {
- 	struct device *d = &pdev->dev;
- 	struct pdev_archdata *ad = &pdev->archdata;
-+	struct clk *clk;
- 	int hwblk = ad->hwblk_id;
- 	int ret = -ENOSYS;
+ 	for (i = 0; i < SMP_MSG_NR; i++)
+ 		request_irq(104 + i, ipi_interrupt_handler,
+-			    IRQF_DISABLED | IRQF_PERCPU, "IPI", (void *)(long)i);
++			    IRQF_PERCPU, "IPI", (void *)(long)i);
  
-+	clk = hwblk_get_clk(hwblk_info, hwblk);
-+	if (!clk)
-+		return -EIO;
-+
- 	dev_dbg(d, "__platform_pm_runtime_suspend() [%d]\n", hwblk);
- 
- 	if (d->driver) {
-@@ -80,9 +90,9 @@ static int __platform_pm_runtime_suspend(struct platform_device *pdev)
- 		ret = 0;
- 
- 		if (d->driver->pm && d->driver->pm->runtime_suspend) {
--			hwblk_enable(hwblk_info, hwblk);
-+			clk_enable(clk);
- 			ret = d->driver->pm->runtime_suspend(d);
--			hwblk_disable(hwblk_info, hwblk);
-+			clk_disable(clk);
- 		}
- 
- 		if (!ret) {
-@@ -143,6 +153,7 @@ static int default_platform_runtime_suspend(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
- 	struct pdev_archdata *ad = &pdev->archdata;
-+	struct clk *clk;
- 	unsigned long flags;
- 	int hwblk = ad->hwblk_id;
- 	int ret = 0;
-@@ -153,6 +164,12 @@ static int default_platform_runtime_suspend(struct device *dev)
- 	if (!hwblk)
- 		goto out;
- 
-+	clk = hwblk_get_clk(hwblk_info, hwblk);
-+	if (!clk) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+
- 	/* interrupt context not allowed */
- 	might_sleep();
- 
-@@ -166,7 +183,7 @@ static int default_platform_runtime_suspend(struct device *dev)
- 	mutex_lock(&ad->mutex);
- 
- 	/* disable clock */
--	hwblk_disable(hwblk_info, hwblk);
-+	clk_disable(clk);
- 
- 	/* put device on idle list */
- 	spin_lock_irqsave(&hwblk_lock, flags);
-@@ -271,18 +288,23 @@ static int platform_bus_notify(struct notifier_block *nb,
- 	struct device *dev = data;
- 	struct platform_device *pdev = to_platform_device(dev);
- 	int hwblk = pdev->archdata.hwblk_id;
-+	struct clk *clk;
- 
- 	/* ignore off-chip platform devices */
- 	if (!hwblk)
- 		return 0;
- 
-+	clk = hwblk_get_clk(hwblk_info, hwblk);
-+	if (!clk)
-+		return -EIO;
-+
- 	switch (action) {
- 	case BUS_NOTIFY_ADD_DEVICE:
- 		INIT_LIST_HEAD(&pdev->archdata.entry);
- 		mutex_init(&pdev->archdata.mutex);
- 		/* platform devices without drivers should be disabled */
--		hwblk_enable(hwblk_info, hwblk);
--		hwblk_disable(hwblk_info, hwblk);
-+		clk_enable(clk);
-+		clk_disable(clk);
- 		/* make sure driver re-inits itself once */
- 		__set_bit(PDEV_ARCHDATA_FLAG_INIT, &pdev->archdata.flags);
- 		dev->pm_domain = &default_pm_domain;
+ 	for (i = 0; i < max_cpus; i++)
+ 		set_cpu_present(i, true);
 -- 
-1.7.5.4
+1.7.1
 
