@@ -1,25 +1,41 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Tue, 25 Oct 2011 08:39:28 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Tue, 25 Oct 2011 23:44:14 +0000
 Subject: Re: [PATCH] gpiolib/arches: Centralise bolierplate asm/gpio.h
-Message-Id: <20111025083928.GC31508@opensource.wolfsonmicro.com>
+Message-Id: <CAJaTeTp2w85UHnmH-PPMZsQGQMNa-93kw-tjmDxA_wjJXkYQcQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1319528012-19006-1-git-send-email-broonie@opensource.wolfsonmicro.com>
- <20111025083301.GD4605@ponder.secretlab.ca>
-In-Reply-To: <20111025083301.GD4605@ponder.secretlab.ca>
+In-Reply-To: <1319528012-19006-1-git-send-email-broonie@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Grant Likely <grant.likely@secretlab.ca>
-Cc: Russell King <linux@arm.linux.org.uk>, Haavard Skinnemoen <hskinnemoen@gmail.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Mike Frysinger <vapier@gentoo.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, uclinux-dist-devel@blackfin.uclinux.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Cc: Russell King <linux@arm.linux.org.uk>, Haavard Skinnemoen <hskinnemoen@gmail.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Geert Uytterhoeven <geert@linux-m68k.org>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Grant Likely <grant.likely@secretlab.ca>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, uclinux-dist-devel@blackfin.uclinux.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 
-On Tue, Oct 25, 2011 at 10:33:01AM +0200, Grant Likely wrote:
+On Tue, Oct 25, 2011 at 03:33, Mark Brown wrote:
+> Rather than requiring architectures that use gpiolib but don't have any
+> need to define anything custom to copy an asm/gpio.h provide a Kconfig
+> symbol which architectures must select in order to include gpio.h and
+> for other architectures just provide the trivial implementation directly.
 
-> (not that I've actually tested this much yet; it should probably go
-> into a separate branch to marinate in linux-next for a bit without
-> impacting the other GPIO patches I've got queued.
+i don't think this is generally how asm-generic is handled.  instead, how about:
+ - move the duplicate code to asm-generic/gpio.h
+ - have the arches which merely need asm-generic/gpio.h add "generic-y
++= gpio.h" to their include/asm/Kbuild
+ - for arches which need to override these common funcs in some way,
+add #ifdef protection to the asm-generic/gpio.h
 
-Yes, it should.  I've test built a few configurations covering both
-asm/gpio.h and default implementations and it seems to be doing the
-right thing but I might well have missed something.  I'm hoping to also
-have a further patch to go on top of this which makes _OPTIONAL_GPOILIB
-on by default.
+and it seems like with slightly more work, this path allow you to
+merge most of arch/sh/include/asm/gpio.h.  and it has the advantage of
+not needing new Kconfig symbols.
+
+for example, with asm-generic/atomic.h, it does:
+#ifndef atomic_sub_return
+static inline int atomic_sub_return(int i, atomic_t *v)
+{ ... common implementation ... }
+#endif
+
+and then any arch that wants to override it does:
+#define atomic_sub_return atomic_sub_return
+static inline int atomic_sub_return(int i, atomic_t *v) { weirdness }
+#include <asm-generic/atomic.h>
+-mike
