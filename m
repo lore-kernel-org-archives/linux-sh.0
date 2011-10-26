@@ -1,41 +1,37 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Tue, 25 Oct 2011 23:44:14 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Wed, 26 Oct 2011 07:33:50 +0000
 Subject: Re: [PATCH] gpiolib/arches: Centralise bolierplate asm/gpio.h
-Message-Id: <CAJaTeTp2w85UHnmH-PPMZsQGQMNa-93kw-tjmDxA_wjJXkYQcQ@mail.gmail.com>
+Message-Id: <20111026073348.GB2915@opensource.wolfsonmicro.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1319528012-19006-1-git-send-email-broonie@opensource.wolfsonmicro.com>
-In-Reply-To: <1319528012-19006-1-git-send-email-broonie@opensource.wolfsonmicro.com>
+ <CAJaTeTp2w85UHnmH-PPMZsQGQMNa-93kw-tjmDxA_wjJXkYQcQ@mail.gmail.com>
+In-Reply-To: <CAJaTeTp2w85UHnmH-PPMZsQGQMNa-93kw-tjmDxA_wjJXkYQcQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: Mike Frysinger <vapier@gentoo.org>
 Cc: Russell King <linux@arm.linux.org.uk>, Haavard Skinnemoen <hskinnemoen@gmail.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Geert Uytterhoeven <geert@linux-m68k.org>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Grant Likely <grant.likely@secretlab.ca>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, uclinux-dist-devel@blackfin.uclinux.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 
-On Tue, Oct 25, 2011 at 03:33, Mark Brown wrote:
-> Rather than requiring architectures that use gpiolib but don't have any
-> need to define anything custom to copy an asm/gpio.h provide a Kconfig
-> symbol which architectures must select in order to include gpio.h and
-> for other architectures just provide the trivial implementation directly.
+On Tue, Oct 25, 2011 at 07:44:14PM -0400, Mike Frysinger wrote:
 
-i don't think this is generally how asm-generic is handled.  instead, how about:
- - move the duplicate code to asm-generic/gpio.h
- - have the arches which merely need asm-generic/gpio.h add "generic-y
-+= gpio.h" to their include/asm/Kbuild
- - for arches which need to override these common funcs in some way,
-add #ifdef protection to the asm-generic/gpio.h
+> i don't think this is generally how asm-generic is handled.  instead, how about:
+>  - move the duplicate code to asm-generic/gpio.h
+>  - have the arches which merely need asm-generic/gpio.h add "generic-y
+> += gpio.h" to their include/asm/Kbuild
+>  - for arches which need to override these common funcs in some way,
+> add #ifdef protection to the asm-generic/gpio.h
 
-and it seems like with slightly more work, this path allow you to
-merge most of arch/sh/include/asm/gpio.h.  and it has the advantage of
-not needing new Kconfig symbols.
+> and it seems like with slightly more work, this path allow you to
+> merge most of arch/sh/include/asm/gpio.h.  and it has the advantage of
+> not needing new Kconfig symbols.
 
-for example, with asm-generic/atomic.h, it does:
-#ifndef atomic_sub_return
-static inline int atomic_sub_return(int i, atomic_t *v)
-{ ... common implementation ... }
-#endif
+That's really not how gpiolib is currently handled, unfortunately -
+trying to transition over to that model in one patch would be way too
+much.  
 
-and then any arch that wants to override it does:
-#define atomic_sub_return atomic_sub_return
-static inline int atomic_sub_return(int i, atomic_t *v) { weirdness }
-#include <asm-generic/atomic.h>
--mike
+The goal here from that point of view is to make transitioning to
+something more sensible easier by getting rid of the boilerplate code,
+it makes doing the more invasive changes like you're suggesting much
+easier as we're only dealing with the architectures that are actually
+doing something.  It also means that we're able to immediately work on
+turning on gpiolib on random architectures which is a definite win.
