@@ -1,43 +1,25 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Thu, 06 Oct 2011 11:47:08 +0000
-Subject: Re: [PATCH v2 3/4] usb: r8a66597-udc: use dev_*() instead of printk()
-Message-Id: <20111006114706.GJ1714@legolas.emea.dhcp.ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="LG0Ll82vYr46+VA1"
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 28 Oct 2011 06:06:56 +0000
+Subject: Re: [PATCH] sh: pfc: Remove unused gpio_in_use member
+Message-Id: <20111028060656.GC32187@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Wed, Sep 28, 2011 at 04:47:06PM +0900, Magnus Damm wrote:
+> Remove unused member gpio_in_use from struct pinmux_info.
+> 
 
---LG0Ll82vYr46+VA1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Wed, Sep 28, 2011 at 04:50:58PM +0900, Magnus Damm wrote:
+> Add GPIO IRQ support to the shared PFC code in drivers/sh/pfc.c
+> 
+> The enums pointed out by a certain GPIO will be matched against
+> a table for IRQ to enum mappings.
+> 
+> Only the shared PFC code is updated by this patch. SoC specific
+> changes are also needed to allow platforms to make use of this
+> feature.
 
-On Fri, Sep 30, 2011 at 08:07:30PM +0900, Yoshihiro Shimoda wrote:
-> This patch also fix the balance of braces.
->=20
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
-
-applied, thanks
-
---=20
-balbi
-
---LG0Ll82vYr46+VA1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEcBAEBAgAGBQJOjZU6AAoJEAv8Txj19kN17f4H/jQmes/+AP9grW12OZ2zf++/
-Z6OoZEwz7I9aZylSQjYYCH4evYfafwMZhs4KUA05RS/avTSYuhFGs9g8L/Y5l8rW
-e4GvhoNirhB36HFSMJNH7Q+oqUbUsgMEDGR6wXyImugoH0ckdW2ASIouoFxyVh8c
-iXNiwi57t+aIvjQ424IBbUGKQqn8xP0MC7F+QKVzWsXLM5fxXfMBnInnQZWuGDsr
-PIiZMMDfD/HVmpWBCv5ELB/oyzYvURLkI6ckOwfNwE+MhzEAGJ9hxZTWglqNSx1S
-v51xjMPrJ31VdetxrdRV8k0lCH/+scYyGgdr8FniaRdwqaUevF6EQfGu5kkIlXQ=
-=lNq2
------END PGP SIGNATURE-----
-
---LG0Ll82vYr46+VA1--
+Both applied, thanks.
