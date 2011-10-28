@@ -1,119 +1,122 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 Oct 2011 07:21:16 +0000
-Subject: [PATCH 03/07] ARM: mach-shmobile: Use common INTC IRQ code on sh7367
-Message-Id: <20111012072116.25511.15458.sendpatchset@w520>
+From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Date: Fri, 28 Oct 2011 10:54:42 +0000
+Subject: [PATCH v9 0/4] cpuidle: Global registration of idle states with
+Message-Id: <20111028104945.7520.83828.stgit@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, rjw@sisk.pl, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Version 6 of this patch series dated 22nd Sept 2011 was 
+Acked-by: Arjan van de Ven <arjan@linux.intel.com>
+Acked-by: Kevin Hilman <khilman@ti.com> for OMAP specific parts.
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+Tested-by: Jean Pihet <j-pihet@ti.com>
 
-Make use of INTC_IRQ_PINS_16() for INTCA on sh7367.
+Hi Len, 
+Can you please queue this series for the next mainline merge window by merging
+it into your development tree and also linux-next for further testing.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+I have also tested it by applying these patches on your ACPI tree hosted @github.
 
- arch/arm/mach-shmobile/intc-sh7367.c |   40 +++++-----------------------------
- 1 file changed, 6 insertions(+), 34 deletions(-)
+Thanks
+-Deepthi
 
---- 0001/arch/arm/mach-shmobile/intc-sh7367.c
-+++ work/arch/arm/mach-shmobile/intc-sh7367.c	2011-10-12 15:07:52.000000000 +0900
-@@ -22,6 +22,7 @@
- #include <linux/irq.h>
- #include <linux/io.h>
- #include <linux/sh_intc.h>
-+#include <mach/intc.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-@@ -31,8 +32,6 @@ enum {
- 	DISABLED,
- 
- 	/* interrupt sources INTCA */
--	IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A,
--	IRQ8A, IRQ9A, IRQ10A, IRQ11A, IRQ12A, IRQ13A, IRQ14A, IRQ15A,
- 	DIRC,
- 	CRYPT1_ERR, CRYPT2_STD,
- 	IIC1_ALI1, IIC1_TACKI1, IIC1_WAITI1, IIC1_DTEI1,
-@@ -76,14 +75,6 @@ enum {
- };
- 
- static struct intc_vect intca_vectors[] __initdata = {
--	INTC_VECT(IRQ0A, 0x0200), INTC_VECT(IRQ1A, 0x0220),
--	INTC_VECT(IRQ2A, 0x0240), INTC_VECT(IRQ3A, 0x0260),
--	INTC_VECT(IRQ4A, 0x0280), INTC_VECT(IRQ5A, 0x02a0),
--	INTC_VECT(IRQ6A, 0x02c0), INTC_VECT(IRQ7A, 0x02e0),
--	INTC_VECT(IRQ8A, 0x0300), INTC_VECT(IRQ9A, 0x0320),
--	INTC_VECT(IRQ10A, 0x0340), INTC_VECT(IRQ11A, 0x0360),
--	INTC_VECT(IRQ12A, 0x0380), INTC_VECT(IRQ13A, 0x03a0),
--	INTC_VECT(IRQ14A, 0x03c0), INTC_VECT(IRQ15A, 0x03e0),
- 	INTC_VECT(DIRC, 0x0560),
- 	INTC_VECT(CRYPT1_ERR, 0x05e0),
- 	INTC_VECT(CRYPT2_STD, 0x0700),
-@@ -163,10 +154,6 @@ static struct intc_group intca_groups[]
- };
- 
- static struct intc_mask_reg intca_mask_registers[] __initdata = {
--	{ 0xe6900040, 0xe6900060, 8, /* INTMSK00A / INTMSKCLR00A */
--	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
--	{ 0xe6900044, 0xe6900064, 8, /* INTMSK10A / INTMSKCLR10A */
--	  { IRQ8A, IRQ9A, IRQ10A, IRQ11A, IRQ12A, IRQ13A, IRQ14A, IRQ15A } },
- 	{ 0xe6940080, 0xe69400c0, 8, /* IMR0A / IMCR0A */
- 	  { DMAC2_1_DEI3, DMAC2_1_DEI2, DMAC2_1_DEI1, DMAC2_1_DEI0,
- 	    ARM11_IRQPMU, 0, ARM11_COMMTX, ARM11_COMMRX } },
-@@ -212,11 +199,6 @@ static struct intc_mask_reg intca_mask_r
- };
- 
- static struct intc_prio_reg intca_prio_registers[] __initdata = {
--	{ 0xe6900010, 0, 32, 4, /* INTPRI00A */
--	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
--	{ 0xe6900014, 0, 32, 4, /* INTPRI10A */
--	  { IRQ8A, IRQ9A, IRQ10A, IRQ11A, IRQ12A, IRQ13A, IRQ14A, IRQ15A } },
--
- 	{ 0xe6940000, 0, 16, 4, /* IPRAA */ { DMAC3_1, DMAC3_2, CMT2, LCRC } },
- 	{ 0xe6940004, 0, 16, 4, /* IPRBA */ { IRDA, ETM11, BBIF1, BBIF2 } },
- 	{ 0xe6940008, 0, 16, 4, /* IPRCA */ { CRYPT1_ERR, CRYPT2_STD,
-@@ -240,29 +222,18 @@ static struct intc_prio_reg intca_prio_r
- 	{ 0xe6940038, 0, 16, 4, /* IPROA */ { 0, 0, DIRC, SDHI2 } },
- };
- 
--static struct intc_sense_reg intca_sense_registers[] __initdata = {
--	{ 0xe6900000, 16, 2, /* ICR1A */
--	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
--	{ 0xe6900004, 16, 2, /* ICR2A */
--	  { IRQ8A, IRQ9A, IRQ10A, IRQ11A, IRQ12A, IRQ13A, IRQ14A, IRQ15A } },
--};
--
--static struct intc_mask_reg intca_ack_registers[] __initdata = {
--	{ 0xe6900020, 0, 8, /* INTREQ00A */
--	  { IRQ0A, IRQ1A, IRQ2A, IRQ3A, IRQ4A, IRQ5A, IRQ6A, IRQ7A } },
--	{ 0xe6900024, 0, 8, /* INTREQ10A */
--	  { IRQ8A, IRQ9A, IRQ10A, IRQ11A, IRQ12A, IRQ13A, IRQ14A, IRQ15A } },
--};
--
- static struct intc_desc intca_desc __initdata = {
- 	.name = "sh7367-intca",
- 	.force_enable = ENABLED,
- 	.force_disable = DISABLED,
- 	.hw = INTC_HW_DESC(intca_vectors, intca_groups,
- 			   intca_mask_registers, intca_prio_registers,
--			   intca_sense_registers, intca_ack_registers),
-+			   NULL, NULL),
- };
- 
-+INTC_IRQ_PINS_16(intca_irq_pins, 0xe6900000,
-+		 INTC_VECT, "sh7367-intca-irq-pins");
-+
- enum {
- 	UNUSED_INTCS = 0,
- 
-@@ -432,6 +403,7 @@ void __init sh7367_init_irq(void)
- 	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
- 
- 	register_intc_controller(&intca_desc);
-+	register_intc_controller(&intca_irq_pins_desc);
- 	register_intc_controller(&intcs_desc);
- 
- 	/* demux using INTEVTSA */
+--
+
+The following patch series implements global registration of cpuidle
+states, and also has the necessary data structure changes to
+accommodate the per-cpu writable members of the cpuidle_states
+structure.
+
+This patch series had been in discussion earlier and
+following are the links to the previous discussions.
+
+v8 --> https://lkml.org/lkml/2011/10/3/52
+v7 --> https://lkml.org/lkml/2011/9/27/74 
+v6 --> https://lkml.org/lkml/2011/9/22/58
+v5 --> https://lkml.org/lkml/2011/6/6/259
+v4 --> https://lkml.org/lkml/2011/4/28/312
+v3 --> https://lkml.org/lkml/2011/2/8/73
+v2 --> https://lkml.org/lkml/2011/1/13/98
+v1 --> https://lkml.org/lkml/2011/3/22/161
+
+Changes from previous version (v8):
+
+   1. Rebased and tested on 3.1
+
+Tests done:
+
+    1. Compile tested for ARM using the following configs: da8xx_omapl_defconfig,
+    kirkwood_defconfig, omap2plus_defconfig, at91rm9200_defconfig
+      
+    2. Boot tested on x86 nehalem with multiple C-states for both intel_idle
+    and acpi_idle drivers.
+
+    3. Boot tested on T60p thinkpad that has T2600 cpu with multiple C-states. 
+    Also tested the case when there is dynamic changes in C-states 
+    AC <-> Battery Power switch.
+
+Brief description of the patches:
+
+Core change in this series is to split the cpuidle_device structure 
+into two parts, i.e  global and per-cpu basis. 
+
+The per-cpu pieces are mostly generic statistics that can be independent 
+of current running driver. As a result of these changes, there is single 
+copy of cpuidle_states structure and single registration done by one 
+cpu. The low level driver is free to set per-cpu driver data on
+each cpu if needed using the cpuidle_set_statedata() as the case
+today. Only in very rare cases asymmetric C-states exist which can be 
+handled within the cpuidle driver. Most architectures do not have 
+asymmetric C-states.
+
+First two patches in the series facilitate splitting of cpuidle_states
+and cpuidle_device structure and next two patches do the actual split,
+change the API's and make existing code follow the changed API.
+
+[1/4] - Move the idle residency accounting part from cpuidle.c to
+the respective low level drivers, so that the accounting can
+be accurately maintained if the driver decides to demote the
+chosen (suggested) by the governor.
+
+[2/4] - removes the cpuidle_device()->prepare API since is is not
+widely used and the only use case was to allow software
+demotion using CPUIDLE_FLAG_IGNORE flag.  Both these
+functions can be absorbed within the cpuidle back-end
+driver ad hence deprecating the prepare routine and the
+CPUIDLE_FLAG_IGNORE flag.
+
+    - Ref: https://lkml.org/lkml/2011/3/25/52
+
+[3/4] - Splits the usage statistics (read/write) part out of
+cpuidle_state structure, so that the states can become read
+only and hence made global.
+
+[4/4] - Most APIs will now need to pass pointer to both global
+cpuidle_driver and per-cpu cpuidle_device structure.
+
+ arch/arm/mach-at91/cpuidle.c          |   41 +++--
+ arch/arm/mach-davinci/cpuidle.c       |   51 ++++---
+ arch/arm/mach-exynos4/cpuidle.c       |   30 ++--
+ arch/arm/mach-kirkwood/cpuidle.c      |   42 +++---
+ arch/arm/mach-omap2/cpuidle34xx.c     |  133 +++++++++++------
+ arch/sh/kernel/cpu/shmobile/cpuidle.c |   28 ++--
+ drivers/acpi/processor_driver.c       |   20 ---
+ drivers/acpi/processor_idle.c         |  251 +++++++++++++++++++++++++++------
+ drivers/cpuidle/cpuidle.c             |   86 ++++-------
+ drivers/cpuidle/driver.c              |   25 +++
+ drivers/cpuidle/governors/ladder.c    |   41 ++++-
+ drivers/cpuidle/governors/menu.c      |   29 ++--
+ drivers/cpuidle/sysfs.c               |   22 ++-
+ drivers/idle/intel_idle.c             |  130 +++++++++++++----
+ include/acpi/processor.h              |    1 
+ include/linux/cpuidle.h               |   52 ++++---
+ 16 files changed, 650 insertions(+), 332 deletions(-)
+
+
+-- 
+
+-Deepthi
