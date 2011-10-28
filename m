@@ -1,91 +1,50 @@
-From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
-Date: Fri, 28 Oct 2011 10:54:29 +0000
-Subject: [PATCH v9 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and dev->prepare()
-Message-Id: <20111028105020.7520.68014.stgit@localhost6.localdomain6>
+From: Arjan van de Ven <arjan@linux.intel.com>
+Date: Fri, 28 Oct 2011 14:24:07 +0000
+Subject: Re: [PATCH v9 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and dev->prepare()
+Message-Id: <4EAABB07.3000305@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20111028104945.7520.83828.stgit@localhost6.localdomain6>
-In-Reply-To: <20111028104945.7520.83828.stgit@localhost6.localdomain6>
+	<20111028105020.7520.68014.stgit@localhost6.localdomain6>
+In-Reply-To: <20111028105020.7520.68014.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, rjw@sisk.pl, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Cc: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-The cpuidle_device->prepare() mechanism causes updates to the
-cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
-to tell the governor not to chose a state on a per-cpu basis at
-run-time. State demotion is now handled by the driver and it returns
-the actual state entered. Hence, this mechanism is not required.
-Also this removes per-cpu flags from cpuidle_state enabling
-it to be made global.
 
-Reference:
-https://lkml.org/lkml/2011/3/25/52
-
-Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
-Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
-Tested-by: Jean Pihet <j-pihet@ti.com>
-Acked-by: Arjan van de Ven <arjan@linux.intel.com>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
----
- drivers/cpuidle/cpuidle.c        |   10 ----------
- drivers/cpuidle/governors/menu.c |    2 --
- include/linux/cpuidle.h          |    3 ---
- 3 files changed, 0 insertions(+), 15 deletions(-)
-
-diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
-index 8faf3a6..984d178 100644
---- a/drivers/cpuidle/cpuidle.c
-+++ b/drivers/cpuidle/cpuidle.c
-@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
- 	hrtimer_peek_ahead_timers();
- #endif
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
  
--	/*
--	 * Call the device's prepare function before calling the
--	 * governor's select function.  ->prepare gives the device's
--	 * cpuidle driver a chance to update any dynamic information
--	 * of its cpuidle states for the current idle period, e.g.
--	 * state availability, latencies, residencies, etc.
--	 */
--	if (dev->prepare)
--		dev->prepare(dev);
--
- 	/* ask the governor for the next state */
- 	next_state = cpuidle_curr_governor->select(dev);
- 	if (need_resched()) {
-diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index 3c44c53..31dd287 100644
---- a/drivers/cpuidle/governors/menu.c
-+++ b/drivers/cpuidle/governors/menu.c
-@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
- 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
- 		struct cpuidle_state *s = &dev->states[i];
+On 10/28/2011 3:50 AM, Deepthi Dharwar wrote:
+> The cpuidle_device->prepare() mechanism causes updates to the
+> cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+> to tell the governor not to chose a state on a per-cpu basis at
+> run-time. State demotion is now handled by the driver and it returns
+> the actual state entered. Hence, this mechanism is not required.
+> Also this removes per-cpu flags from cpuidle_state enabling
+> it to be made global.
+>
  
--		if (s->flags & CPUIDLE_FLAG_IGNORE)
--			continue;
- 		if (s->target_residency > data->predicted_us)
- 			continue;
- 		if (s->exit_latency > latency_req)
-diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
-index 8da811b..c6d85cf 100644
---- a/include/linux/cpuidle.h
-+++ b/include/linux/cpuidle.h
-@@ -47,7 +47,6 @@ struct cpuidle_state {
+having worked on some newer platforms....
+this one is really still needed. doing this inside the actual states
+does not work,
+because if the deepest 3 states are invalid, the same (somewhat
+expensive) test would have to be done 3 times,
+and each of the states would have to fail before the 4th one gets chosen.
+that's just not going to work
  
- /* Idle State Flags */
- #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
--#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+(in the state handler you can't know what other state to fall back to,
+and especially not how to enter such a fallback state)
  
- #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
  
-@@ -93,8 +92,6 @@ struct cpuidle_device {
- 	struct completion	kobj_unregister;
- 	void			*governor_data;
- 	int			safe_state_index;
--
--	int (*prepare)		(struct cpuidle_device *dev);
- };
- 
- DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
+iQEcBAEBAgAGBQJOqrsGAAoJEEHdSxh4DVnEu7EH/i5lEJctBAIubJOcZz/tvBFp
+XYmAe/HqNtSXeHOVsJkTf8y4ppE8487exF7xxMik4GRN0CZNCtkyMezqDVu+eDim
+O/UUbScsAc5cSY6mkjOFXLFup+mi1nkRUnAbxXEyTMhWwcbfr2OvcuO7l7TmATML
+hu87P3PVEafEop3q2+uWMc57fFxnNFfEDqRx6N9V+OJKV5dHrRYL4G4E01fYGFLo
+xTR0IW7nB15L0C29zk9uk/Dqow8SoJZA83c7p7AieP5zdntb6p7noIf03qmdp19f
+fulwMwembCHivo+pLO+jAMhKD1T6VYoCyiYW0LHrQ2E07fayBhFJCxlazgKFcl0=FL6o
+-----END PGP SIGNATURE-----
 
