@@ -1,72 +1,91 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Fri, 14 Oct 2011 03:33:13 +0000
-Subject: Re: [PATCH/RFC v2] sh: Use big endian ioread/write for SH2 platforms
-Message-Id: <87fwiwdz7q.wl%ysato@users.sourceforge.jp>
+From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Date: Fri, 28 Oct 2011 10:54:29 +0000
+Subject: [PATCH v9 2/4] cpuidle: Remove CPUIDLE_FLAG_IGNORE and dev->prepare()
+Message-Id: <20111028105020.7520.68014.stgit@localhost6.localdomain6>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1318406604-16537-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1318406604-16537-1-git-send-email-phil.edworthy@renesas.com>
+References: <20111028104945.7520.83828.stgit@localhost6.localdomain6>
+In-Reply-To: <20111028104945.7520.83828.stgit@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: khilman@ti.com, venki@google.com, ak@linux.intel.com, len.brown@intel.com, peterz@infradead.org, rjw@sisk.pl, santosh.shilimkar@ti.com, arjan@linux.intel.com, lenb@kernel.org
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, linux-pm@lists.linux-foundation.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-At Wed, 12 Oct 2011 09:03:24 +0100,
-Phil Edworthy wrote:
-> 
-> Commit 37b7a97884ba64bf7d403351ac2a9476ab4f1bba makes all ioread/iowrite
-> functions treat registers as little endian. For SH2 this is not the case,
-> they are big endian.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Looks good.
-Thanks.
+The cpuidle_device->prepare() mechanism causes updates to the
+cpuidle_state[].flags, setting and clearing CPUIDLE_FLAG_IGNORE
+to tell the governor not to chose a state on a per-cpu basis at
+run-time. State demotion is now handled by the driver and it returns
+the actual state entered. Hence, this mechanism is not required.
+Also this removes per-cpu flags from cpuidle_state enabling
+it to be made global.
 
-> ---
-> v2: Modified so that it's used on all SH2 devices
-> 
->  arch/sh/include/asm/io.h |   18 ++++++++++++++++++
->  1 files changed, 18 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index 28c5aa5..65f2d5a 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -35,6 +35,7 @@
->  #define __raw_readl(a)		(__chk_io_ptr(a), *(volatile u32 __force *)(a))
->  #define __raw_readq(a)		(__chk_io_ptr(a), *(volatile u64 __force *)(a))
->  
-> +#ifndef CONFIG_CPU_SH2
->  #define readb_relaxed(c)	({ u8  __v = __raw_readb(c); __v; })
->  #define readw_relaxed(c)	({ u16 __v = le16_to_cpu((__force __le16) \
->  					__raw_readw(c)); __v; })
-> @@ -50,6 +51,23 @@
->  					cpu_to_le32(v),c))
->  #define writeq_relaxed(v,c)	((void)__raw_writeq((__force u64) \
->  					cpu_to_le64(v),c))
-> +#else
-> +#define readb_relaxed(c)	({ u8  __v = __raw_readb(c); __v; })
-> +#define readw_relaxed(c)	({ u16 __v = be16_to_cpu((__force __be16) \
-> +					__raw_readw(c)); __v; })
-> +#define readl_relaxed(c)	({ u32 __v = be32_to_cpu((__force __be32) \
-> +					__raw_readl(c)); __v; })
-> +#define readq_relaxed(c)	({ u64 __v = be64_to_cpu((__force __be64) \
-> +					__raw_readq(c)); __v; })
-> +
-> +#define writeb_relaxed(v,c)	((void)__raw_writeb(v,c))
-> +#define writew_relaxed(v,c)	((void)__raw_writew((__force u16) \
-> +					cpu_to_be16(v),c))
-> +#define writel_relaxed(v,c)	((void)__raw_writel((__force u32) \
-> +					cpu_to_be32(v),c))
-> +#define writeq_relaxed(v,c)	((void)__raw_writeq((__force u64) \
-> +					cpu_to_be64(v),c))
-> +#endif
->  
->  #define readb(a)		({ u8  r_ = readb_relaxed(a); rmb(); r_; })
->  #define readw(a)		({ u16 r_ = readw_relaxed(a); rmb(); r_; })
-> -- 
-> 1.7.0.4
-> 
+Reference:
+https://lkml.org/lkml/2011/3/25/52
 
--- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+Signed-off-by: Deepthi Dharwar <deepthi@linux.vnet.ibm>
+Signed-off-by: Trinabh Gupta <g.trinabh@gmail.com>
+Tested-by: Jean Pihet <j-pihet@ti.com>
+Acked-by: Arjan van de Ven <arjan@linux.intel.com>
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+---
+ drivers/cpuidle/cpuidle.c        |   10 ----------
+ drivers/cpuidle/governors/menu.c |    2 --
+ include/linux/cpuidle.h          |    3 ---
+ 3 files changed, 0 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index 8faf3a6..984d178 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -83,16 +83,6 @@ int cpuidle_idle_call(void)
+ 	hrtimer_peek_ahead_timers();
+ #endif
+ 
+-	/*
+-	 * Call the device's prepare function before calling the
+-	 * governor's select function.  ->prepare gives the device's
+-	 * cpuidle driver a chance to update any dynamic information
+-	 * of its cpuidle states for the current idle period, e.g.
+-	 * state availability, latencies, residencies, etc.
+-	 */
+-	if (dev->prepare)
+-		dev->prepare(dev);
+-
+ 	/* ask the governor for the next state */
+ 	next_state = cpuidle_curr_governor->select(dev);
+ 	if (need_resched()) {
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index 3c44c53..31dd287 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -288,8 +288,6 @@ static int menu_select(struct cpuidle_device *dev)
+ 	for (i = CPUIDLE_DRIVER_STATE_START; i < dev->state_count; i++) {
+ 		struct cpuidle_state *s = &dev->states[i];
+ 
+-		if (s->flags & CPUIDLE_FLAG_IGNORE)
+-			continue;
+ 		if (s->target_residency > data->predicted_us)
+ 			continue;
+ 		if (s->exit_latency > latency_req)
+diff --git a/include/linux/cpuidle.h b/include/linux/cpuidle.h
+index 8da811b..c6d85cf 100644
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -47,7 +47,6 @@ struct cpuidle_state {
+ 
+ /* Idle State Flags */
+ #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
+-#define CPUIDLE_FLAG_IGNORE	(0x100) /* ignore during this idle period */
+ 
+ #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+ 
+@@ -93,8 +92,6 @@ struct cpuidle_device {
+ 	struct completion	kobj_unregister;
+ 	void			*governor_data;
+ 	int			safe_state_index;
+-
+-	int (*prepare)		(struct cpuidle_device *dev);
+ };
+ 
+ DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
+
