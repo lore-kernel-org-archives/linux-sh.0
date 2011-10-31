@@ -1,267 +1,243 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 19 Oct 2011 22:15:06 +0000
-Subject: [PATCH 3/3] ARM: mach-shmobile: sh7372 A4R support (v4)
-Message-Id: <201110200015.06277.rjw@sisk.pl>
+From: Robert Marklund <robert.marklund@stericsson.com>
+Date: Mon, 31 Oct 2011 12:38:39 +0000
+Subject: [PATCH 2/2 v4] net/smsc911x: Add regulator support
+Message-Id: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201110200012.43840.rjw@sisk.pl>
-In-Reply-To: <201110200012.43840.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: netdev@vger.kernel.org, Steve Glendinning <steve.glendinning@smsc.com>
+Cc: Mathieu Poirier <mathieu.poirier@linaro.org>, Robert Marklund <robert.marklund@stericsson.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Mike Frysinger <vapier@gentoo.org>, uclinux-dist-devel@blackfin.uclinux.org, Linus Walleij <linus.walleij@linaro.org>
 
-From: Magnus Damm <damm@opensource.se>
+Add some basic regulator support for the power pins, as needed
+by the ST-Ericsson Snowball platform that powers up the SMSC911
+chip using an external regulator.
 
-This change adds support for the sh7372 A4R power domain.
+Platforms that use regulators and the smsc911x and have no defined
+regulator for the smsc911x and claim complete regulator
+constraints with no dummy regulators will need to provide it, for
+example using a fixed voltage regulator. It appears that this may
+affect (apart from Ux500 Snowball) possibly these archs/machines
+that from some grep:s appear to define both CONFIG_SMSC911X and
+CONFIG_REGULATOR:
 
-The sh7372 A4R hardware power domain contains the
-SH CPU Core and a set of I/O devices including
-multimedia accelerators and I2C controllers.
+- ARM Freescale mx3 and OMAP 2 plus, Raumfeld machines
+- Blackfin
+- Super-H
 
-One special case about A4R is the INTCS interrupt
-controller that needs to be saved and restored to
-keep working as expected. Also the LCDC hardware
-blocks are in a different hardware power domain
-but have their IRQs routed only through INTCS. So
-as long as LCDCs are active we cannot power down
-INTCS because that would risk losing interrupts.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Sascha Hauer <s.hauer@pengutronix.de>
+Cc: Tony Lindgren <tony@atomide.com>
+Cc: linux-omap@vger.kernel.org
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: uclinux-dist-devel@blackfin.uclinux.org
+Reviewed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Signed-off-by: Robert Marklund <robert.marklund@stericsson.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c        |    1 
- arch/arm/mach-shmobile/board-mackerel.c      |    1 
- arch/arm/mach-shmobile/include/mach/sh7372.h |    7 +++
- arch/arm/mach-shmobile/intc-sh7372.c         |   52 ++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/pm-sh7372.c           |   29 ++++++++++++++-
- arch/arm/mach-shmobile/setup-sh7372.c        |    8 ++++
- 6 files changed, 96 insertions(+), 2 deletions(-)
+ChangeLog v3->v4:
+- Remove dual prints and old comment on Mike's request.
+- Split the request_free fucntion on Mike and Sascha request.
+ChangeLog v2->v3:
+- Use bulk regulators on Mark's request.
+- Add Cc-fileds to some possibly affected platforms.
+ChangeLog v1->v2:
+- Don't check for NULL regulators and error out properly if the
+  regulators can't be found. All platforms using the smsc911x
+  and the regulator framework simultaneously need to provide some
+  kind of regulator for it.
+---
+ drivers/net/ethernet/smsc/smsc911x.c |  103 ++++++++++++++++++++++++++++++----
+ 1 files changed, 92 insertions(+), 11 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
-+++ linux/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1412,6 +1412,7 @@ static void __init ap4evb_init(void)
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &sh_mmcif_device);
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi0_device);
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &ceu_device);
- 
- 	hdmi_init_pm_clock();
- 	fsi_init_pm_clock();
-Index: linux/arch/arm/mach-shmobile/board-mackerel.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
-+++ linux/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1596,6 +1596,7 @@ static void __init mackerel_init(void)
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi1_device);
- #endif
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &sdhi2_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &ceu_device);
- 
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
-Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -480,8 +480,11 @@ struct platform_device;
- struct sh7372_pm_domain {
- 	struct generic_pm_domain genpd;
- 	struct dev_power_governor *gov;
-+	void (*suspend)(void);
-+	void (*resume)(void);
- 	unsigned int bit_shift;
- 	bool no_debug;
-+	bool stay_on;
- };
- 
- static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
-@@ -493,6 +496,7 @@ static inline struct sh7372_pm_domain *t
- extern struct sh7372_pm_domain sh7372_a4lc;
- extern struct sh7372_pm_domain sh7372_a4mp;
- extern struct sh7372_pm_domain sh7372_d4;
-+extern struct sh7372_pm_domain sh7372_a4r;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
- extern struct sh7372_pm_domain sh7372_a3sp;
-@@ -509,4 +513,7 @@ extern void sh7372_pm_add_subdomain(stru
- #define sh7372_pm_add_subdomain(pd, sd) do { } while(0)
- #endif /* CONFIG_PM */
- 
-+extern void sh7372_intcs_suspend(void);
-+extern void sh7372_intcs_resume(void);
-+
- #endif /* __ASM_SH7372_H__ */
-Index: linux/arch/arm/mach-shmobile/intc-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/intc-sh7372.c
-+++ linux/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -606,9 +606,16 @@ static void intcs_demux(unsigned int irq
- 	generic_handle_irq(intcs_evt2irq(evtcodeas));
- }
- 
-+static void __iomem *intcs_ffd2;
-+static void __iomem *intcs_ffd5;
-+
- void __init sh7372_init_irq(void)
- {
--	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
-+	void __iomem *intevtsa;
-+
-+	intcs_ffd2 = ioremap_nocache(0xffd20000, PAGE_SIZE);
-+	intevtsa = intcs_ffd2 + 0x100;
-+	intcs_ffd5 = ioremap_nocache(0xffd50000, PAGE_SIZE);
- 
- 	register_intc_controller(&intca_desc);
- 	register_intc_controller(&intcs_desc);
-@@ -617,3 +624,46 @@ void __init sh7372_init_irq(void)
- 	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
- 	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
- }
-+
-+static unsigned short ffd2[0x200];
-+static unsigned short ffd5[0x100];
-+
-+void sh7372_intcs_suspend(void)
-+{
-+	int k;
-+
-+	for (k = 0x00; k <= 0x30; k += 4)
-+		ffd2[k] = __raw_readw(intcs_ffd2 + k);
-+
-+	for (k = 0x80; k <= 0xb0; k += 4)
-+		ffd2[k] = __raw_readb(intcs_ffd2 + k);
-+
-+	for (k = 0x180; k <= 0x188; k += 4)
-+		ffd2[k] = __raw_readb(intcs_ffd2 + k);
-+
-+	for (k = 0x00; k <= 0x3c; k += 4)
-+		ffd5[k] = __raw_readw(intcs_ffd5 + k);
-+
-+	for (k = 0x80; k <= 0x9c; k += 4)
-+		ffd5[k] = __raw_readb(intcs_ffd5 + k);
-+}
-+
-+void sh7372_intcs_resume(void)
-+{
-+	int k;
-+
-+	for (k = 0x00; k <= 0x30; k += 4)
-+		__raw_writew(ffd2[k], intcs_ffd2 + k);
-+
-+	for (k = 0x80; k <= 0xb0; k += 4)
-+		__raw_writeb(ffd2[k], intcs_ffd2 + k);
-+
-+	for (k = 0x180; k <= 0x188; k += 4)
-+		__raw_writeb(ffd2[k], intcs_ffd2 + k);
-+
-+	for (k = 0x00; k <= 0x3c; k += 4)
-+		__raw_writew(ffd5[k], intcs_ffd5 + k);
-+
-+	for (k = 0x80; k <= 0x9c; k += 4)
-+		__raw_writeb(ffd5[k], intcs_ffd5 + k);
-+}
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+diff --git a/drivers/net/ethernet/smsc/smsc911x.c b/drivers/net/ethernet/smsc/smsc911x.c
+index 8843071..9a2e792 100644
+--- a/drivers/net/ethernet/smsc/smsc911x.c
++++ b/drivers/net/ethernet/smsc/smsc911x.c
 @@ -44,6 +44,7 @@
- #define SPDCR 0xe6180008
- #define SWUCR 0xe6180014
- #define SBAR 0xe6180020
-+#define WUPRMSK 0xe6180028
- #define WUPSMSK 0xe618002c
- #define WUPSMSK2 0xe6180048
- #define PSTR 0xe6180080
-@@ -80,6 +81,12 @@ static int pd_power_down(struct generic_
- 	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
- 	unsigned int mask = 1 << sh7372_pd->bit_shift;
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/sched.h>
+ #include <linux/timer.h>
+ #include <linux/bug.h>
+@@ -88,6 +89,8 @@ struct smsc911x_ops {
+ 				unsigned int *buf, unsigned int wordcount);
+ };
  
-+	if (sh7372_pd->suspend)
-+		sh7372_pd->suspend();
++#define SMSC911X_NUM_SUPPLIES 2
 +
-+	if (sh7372_pd->stay_on)
-+		return 0;
+ struct smsc911x_data {
+ 	void __iomem *ioaddr;
+ 
+@@ -138,6 +141,9 @@ struct smsc911x_data {
+ 
+ 	/* register access functions */
+ 	const struct smsc911x_ops *ops;
 +
- 	if (__raw_readl(PSTR) & mask) {
- 		unsigned int retry_count;
++	/* regulators */
++	struct regulator_bulk_data supplies[SMSC911X_NUM_SUPPLIES];
+ };
  
-@@ -106,6 +113,9 @@ static int pd_power_up(struct generic_pm
- 	unsigned int retry_count;
- 	int ret = 0;
- 
-+	if (sh7372_pd->stay_on)
-+		goto out;
-+
- 	if (__raw_readl(PSTR) & mask)
- 		goto out;
- 
-@@ -122,14 +132,23 @@ static int pd_power_up(struct generic_pm
- 	if (__raw_readl(SWUCR) & mask)
- 		ret = -EIO;
- 
-- out:
- 	if (!sh7372_pd->no_debug)
- 		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
- 			 mask, __raw_readl(PSTR));
- 
-+ out:
-+	if (ret = 0 && sh7372_pd->resume)
-+		sh7372_pd->resume();
-+
- 	return ret;
+ /* Easy access to information */
+@@ -362,6 +368,68 @@ out:
+ 	spin_unlock_irqrestore(&pdata->dev_lock, flags);
  }
  
-+static void sh7372_a4r_suspend(void)
++/*
++ * Enable or disable resources, currently just regulators.
++ */
++static int smsc911x_enable_disable_resources(struct platform_device *pdev,
++					     bool enable)
 +{
-+	sh7372_intcs_suspend();
-+	__raw_writel(0x300fffff, WUPRMSK); /* avoid wakeup */
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++	int ret = 0;
++
++	/* enable/disable regulators */
++	if (enable) {
++		ret = regulator_bulk_enable(ARRAY_SIZE(pdata->supplies),
++				pdata->supplies);
++		if (ret)
++			netdev_err(ndev, "failed to enable regulators %d\n",
++					ret);
++	} else
++		ret = regulator_bulk_disable(ARRAY_SIZE(pdata->supplies),
++				pdata->supplies);
++	return ret;
 +}
 +
- static bool pd_active_wakeup(struct device *dev)
- {
- 	return true;
-@@ -186,6 +205,14 @@ struct sh7372_pm_domain sh7372_d4 = {
- 	.bit_shift = 3,
- };
- 
-+struct sh7372_pm_domain sh7372_a4r = {
-+	.bit_shift = 5,
-+	.gov = &sh7372_always_on_gov,
-+	.suspend = sh7372_a4r_suspend,
-+	.resume = sh7372_intcs_resume,
-+	.stay_on = true,
-+};
++/*
++ * Request resources, currently just regulators.
++ *
++ * The SMSC911x has two power pins: vddvario and vdd33a, in designs where
++ * these are not always-on we need to request regulators to be turned on
++ * before we can try to access the device registers.
++ */
++static int smsc911x_request_resources(struct platform_device *pdev)
++{
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++	int ret = 0;
 +
- struct sh7372_pm_domain sh7372_a3rv = {
- 	.bit_shift = 6,
- };
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -991,12 +991,14 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a4lc);
- 	sh7372_init_pm_domain(&sh7372_a4mp);
- 	sh7372_init_pm_domain(&sh7372_d4);
-+	sh7372_init_pm_domain(&sh7372_a4r);
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
- 	sh7372_init_pm_domain(&sh7372_a3sg);
- 	sh7372_init_pm_domain(&sh7372_a3sp);
++	/* Request regulators */
++	pdata->supplies[0].supply = "vdd33a";
++	pdata->supplies[1].supply = "vddvario";
++	ret = regulator_bulk_get(&pdev->dev,
++			ARRAY_SIZE(pdata->supplies),
++			pdata->supplies);
++	if (ret)
++		netdev_err(ndev, "couldn't get regulators %d\n",
++				ret);
++	return ret;
++}
++
++/*
++ * Free resources, currently just regulators.
++ *
++ */
++static void smsc911x_free_resources(struct platform_device *pdev)
++{
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++
++	/* Free regulators */
++	regulator_bulk_free(ARRAY_SIZE(pdata->supplies),
++			pdata->supplies);
++}
++
+ /* waits for MAC not busy, with timeout.  Only called by smsc911x_mac_read
+  * and smsc911x_mac_write, so assumes mac_lock is held */
+ static int smsc911x_mac_complete(struct smsc911x_data *pdata)
+@@ -2092,6 +2160,9 @@ static int __devexit smsc911x_drv_remove(struct platform_device *pdev)
  
- 	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
-+	sh7372_pm_add_subdomain(&sh7372_a4r, &sh7372_a4lc);
+ 	iounmap(pdata->ioaddr);
  
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
-@@ -1020,6 +1022,12 @@ void __init sh7372_add_standard_devices(
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &dma2_device);
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma0_device);
- 	sh7372_add_device_to_domain(&sh7372_a3sp, &usb_dma1_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &iic0_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &veu0_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &veu1_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &veu2_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &veu3_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
- }
++	(void)smsc911x_enable_disable_resources(pdev, false);
++	smsc911x_free_resources(pdev);
++
+ 	free_netdev(dev);
  
- void __init sh7372_add_early_devices(void)
+ 	return 0;
+@@ -2218,10 +2289,20 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 	pdata->dev = dev;
+ 	pdata->msg_enable = ((1 << debug) - 1);
+ 
++	platform_set_drvdata(pdev, dev);
++
++	retval = smsc911x_request_resources(pdev);
++	if (retval)
++		goto out_return_resources;
++
++	retval = smsc911x_enable_disable_resources(pdev, true);
++	if (retval)
++		goto out_disable_resources;
++
+ 	if (pdata->ioaddr = NULL) {
+ 		SMSC_WARN(pdata, probe, "Error smsc911x base address invalid");
+ 		retval = -ENOMEM;
+-		goto out_free_netdev_2;
++		goto out_disable_resources;
+ 	}
+ 
+ 	retval = smsc911x_probe_config_dt(&pdata->config, np);
+@@ -2233,7 +2314,7 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 
+ 	if (retval) {
+ 		SMSC_WARN(pdata, probe, "Error smsc911x config not found");
+-		goto out_unmap_io_3;
++		goto out_disable_resources;
+ 	}
+ 
+ 	/* assume standard, non-shifted, access to HW registers */
+@@ -2244,7 +2325,7 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 
+ 	retval = smsc911x_init(dev);
+ 	if (retval < 0)
+-		goto out_unmap_io_3;
++		goto out_disable_resources;
+ 
+ 	/* configure irq polarity and type before connecting isr */
+ 	if (pdata->config.irq_polarity = SMSC911X_IRQ_POLARITY_ACTIVE_HIGH)
+@@ -2264,15 +2345,13 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 	if (retval) {
+ 		SMSC_WARN(pdata, probe,
+ 			  "Unable to claim requested irq: %d", dev->irq);
+-		goto out_unmap_io_3;
++		goto out_free_irq;
+ 	}
+ 
+-	platform_set_drvdata(pdev, dev);
+-
+ 	retval = register_netdev(dev);
+ 	if (retval) {
+ 		SMSC_WARN(pdata, probe, "Error %i registering device", retval);
+-		goto out_unset_drvdata_4;
++		goto out_free_irq;
+ 	} else {
+ 		SMSC_TRACE(pdata, probe,
+ 			   "Network interface: \"%s\"", dev->name);
+@@ -2321,12 +2400,14 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 
+ out_unregister_netdev_5:
+ 	unregister_netdev(dev);
+-out_unset_drvdata_4:
+-	platform_set_drvdata(pdev, NULL);
++out_free_irq:
+ 	free_irq(dev->irq, dev);
+-out_unmap_io_3:
++out_disable_resources:
++	(void)smsc911x_enable_disable_resources(pdev, false);
++out_return_resources:
++	smsc911x_free_resources(pdev);
++	platform_set_drvdata(pdev, NULL);
+ 	iounmap(pdata->ioaddr);
+-out_free_netdev_2:
+ 	free_netdev(dev);
+ out_release_io_1:
+ 	release_mem_region(res->start, resource_size(res));
+-- 
+1.7.1
 
