@@ -1,76 +1,24 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 02 Nov 2011 14:22:34 +0000
-Subject: [GIT PULL] sh updates for 3.2
-Message-Id: <20111102142233.GC5972@linux-sh.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 02 Nov 2011 16:52:39 +0000
+Subject: Re: [GIT PULL] sh updates for 3.2
+Message-Id: <CA+55aFzE9aFuPmXGm8u64rWXD8WhLhuz+-c7rBgoiUosaru7jg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20111102142233.GC5972@linux-sh.org>
+In-Reply-To: <20111102142233.GC5972@linux-sh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Paul Mundt <lethal@linux-sh.org>
 Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Please pull from:
+On Wed, Nov 2, 2011 at 7:22 AM, Paul Mundt <lethal@linux-sh.org> wrote:
+> Please pull from:
+>
+> =A0 =A0 =A0 =A0git://github.com/pmundt/linux-sh.git sh-latest
 
-	git://github.com/pmundt/linux-sh.git sh-latest
+Paul, please verify this for me somehow. You used to have a kernel.org
+account, and this is a repo I haven't seen before. Admittedly all the
+changes are to sh-specific files, so I don't think anybody *really*
+cares, but still..
 
-Which contains:
-
-Kuninori Morimoto (1):
-      sh: ecovec: add renesas_usbhs DMAEngine support
-
-Magnus Damm (4):
-      sh: intc: Add IRQ trigger bit field check
-      sh: pfc: get_config_reg() shift clean up
-      sh: pfc: Remove unused gpio_in_use member
-      sh: pfc: Add GPIO IRQ support
-
-Nobuhiro Iwamatsu (4):
-      sh: Fix implicit declaration of function numa_node_id
-      sh: userimask.c needs linux/stat.h
-      sh: modify the asm/sh_eth.h to linux/sh_eth.h in sh7757lcr
-      sh: Add default uImage rule for sh7757lcr
-
-Paul Bolle (1):
-      sh: drop unused Kconfig symbol
-
-Simon Horman (2):
-      sh: kexec: Register crashk_res
-      sh: kexec: Add PHYSICAL_START
-
-Yong Zhang (1):
-      SH: irq: Remove IRQF_DISABLED
-
-Yoshihiro Shimoda (2):
-      sh: add parameters for EHCI and RIIC in clock-sh7757.c
-      sh: modify the asm/sh_eth.h to linux/sh_eth.h in some boards
-
- arch/sh/Kconfig                        |   17 ++++++++++++-----
- arch/sh/Makefile                       |    1 +
- arch/sh/boards/board-espt.c            |    2 +-
- arch/sh/boards/board-secureedge5410.c  |    3 +--
- arch/sh/boards/board-sh7757lcr.c       |    2 +-
- arch/sh/boards/mach-cayman/irq.c       |    2 --
- arch/sh/boards/mach-ecovec24/setup.c   |    6 +++++-
- arch/sh/boards/mach-hp6xx/hp6xx_apm.c  |    2 +-
- arch/sh/boards/mach-se/7724/setup.c    |    2 +-
- arch/sh/boards/mach-sh7763rdp/setup.c  |    2 +-
- arch/sh/boot/Makefile                  |    6 ++++--
- arch/sh/drivers/dma/dma-g2.c           |    2 +-
- arch/sh/drivers/dma/dma-pvr2.c         |    1 -
- arch/sh/drivers/dma/dma-sh.c           |    4 ++--
- arch/sh/drivers/dma/dmabrg.c           |    6 +++---
- arch/sh/drivers/pci/pci-sh5.c          |    4 ++--
- arch/sh/drivers/pci/pci-sh7780.c       |    2 +-
- arch/sh/drivers/push-switch.c          |    2 +-
- arch/sh/include/asm/page.h             |   10 ++++++++++
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c |   10 +++++++++-
- arch/sh/kernel/cpu/sh4a/smp-shx3.c     |    2 +-
- arch/sh/kernel/setup.c                 |    9 ++++++---
- arch/sh/kernel/topology.c              |    1 +
- arch/sh/kernel/vmlinux.lds.S           |    2 +-
- arch/sh/mm/init.c                      |    8 ++++----
- drivers/sh/intc/chip.c                 |    9 +++++++--
- drivers/sh/intc/userimask.c            |    1 +
- drivers/sh/pfc.c                       |   29 ++++++++++++++++++++++++++++-
- include/linux/sh_pfc.h                 |   12 +++++++++++-
- 29 files changed, 117 insertions(+), 42 deletions(-)
+                       Linus
