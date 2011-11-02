@@ -1,50 +1,76 @@
-From: phil.edworthy@renesas.com
-Date: Wed, 30 Nov 2011 09:56:35 +0000
-Subject: Re: [PATCH] sh: sh2a: Optimise cache flush for writethrough mode.
-Message-Id: <OFFAFC5D77.02F438E3-ON80257958.0033B1B4-80257958.00366CBB@eu.necel.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 02 Nov 2011 14:22:34 +0000
+Subject: [GIT PULL] sh updates for 3.2
+Message-Id: <20111102142233.GC5972@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1322637713-15227-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1322637713-15227-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Paul,
+Please pull from:
 
-> Subject: Re: [PATCH] sh: sh2a: Optimise cache flush for writethrough 
-mode.
-> 
-> On Wed, Nov 30, 2011 at 07:21:53AM +0000, Phil Edworthy wrote:
-> > When the operand cache is set to writethough mode, there is no
-> > need to flush data.
-> > 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> 
-> What about the other routines?
-> 
-> You are presumably stipulating that any access to the OC address array
-> outside of cacheline invalidation should be omitted for write-through
-> cache mode, which suggests that quite a lot of the file in question can
-> simply be nopped out.
-> 
-> At the very least sh2a__flush_wback_region() could deal with the same
-> treatment. For the invalidation routines you presumably still need the
-> V-bit clearing, though.
-> 
-> sh2a__flush_invalidate_region() also bears closer inspection.
+	git://github.com/pmundt/linux-sh.git sh-latest
 
-It's worth mentioning that this patch is essentially a work around for an 
-issue with write-back mode. sh2a_flush_icache_range is passed a large 
-address range which takes ages to flush/invalidate. For write-back mode, 
-instead of indexing on the address, perhaps we can walk through all the 
-cache entries and check for an address match. That's for another day...
+Which contains:
 
-I agree that the other functions can be improved. I ignored them as the 
-main performance issue is with sh2a_flush_icache_range. I wasn't entirely 
-sure when some of the other functions are used. Are 
-sh2a__flush_wback_region and sh2a__flush_purge_region purely OC related? 
-And sh2a__flush_invalidate_region and sh2a_flush_icache_range work on both 
-the IC and OC?
+Kuninori Morimoto (1):
+      sh: ecovec: add renesas_usbhs DMAEngine support
 
-Phil
+Magnus Damm (4):
+      sh: intc: Add IRQ trigger bit field check
+      sh: pfc: get_config_reg() shift clean up
+      sh: pfc: Remove unused gpio_in_use member
+      sh: pfc: Add GPIO IRQ support
+
+Nobuhiro Iwamatsu (4):
+      sh: Fix implicit declaration of function numa_node_id
+      sh: userimask.c needs linux/stat.h
+      sh: modify the asm/sh_eth.h to linux/sh_eth.h in sh7757lcr
+      sh: Add default uImage rule for sh7757lcr
+
+Paul Bolle (1):
+      sh: drop unused Kconfig symbol
+
+Simon Horman (2):
+      sh: kexec: Register crashk_res
+      sh: kexec: Add PHYSICAL_START
+
+Yong Zhang (1):
+      SH: irq: Remove IRQF_DISABLED
+
+Yoshihiro Shimoda (2):
+      sh: add parameters for EHCI and RIIC in clock-sh7757.c
+      sh: modify the asm/sh_eth.h to linux/sh_eth.h in some boards
+
+ arch/sh/Kconfig                        |   17 ++++++++++++-----
+ arch/sh/Makefile                       |    1 +
+ arch/sh/boards/board-espt.c            |    2 +-
+ arch/sh/boards/board-secureedge5410.c  |    3 +--
+ arch/sh/boards/board-sh7757lcr.c       |    2 +-
+ arch/sh/boards/mach-cayman/irq.c       |    2 --
+ arch/sh/boards/mach-ecovec24/setup.c   |    6 +++++-
+ arch/sh/boards/mach-hp6xx/hp6xx_apm.c  |    2 +-
+ arch/sh/boards/mach-se/7724/setup.c    |    2 +-
+ arch/sh/boards/mach-sh7763rdp/setup.c  |    2 +-
+ arch/sh/boot/Makefile                  |    6 ++++--
+ arch/sh/drivers/dma/dma-g2.c           |    2 +-
+ arch/sh/drivers/dma/dma-pvr2.c         |    1 -
+ arch/sh/drivers/dma/dma-sh.c           |    4 ++--
+ arch/sh/drivers/dma/dmabrg.c           |    6 +++---
+ arch/sh/drivers/pci/pci-sh5.c          |    4 ++--
+ arch/sh/drivers/pci/pci-sh7780.c       |    2 +-
+ arch/sh/drivers/push-switch.c          |    2 +-
+ arch/sh/include/asm/page.h             |   10 ++++++++++
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c |   10 +++++++++-
+ arch/sh/kernel/cpu/sh4a/smp-shx3.c     |    2 +-
+ arch/sh/kernel/setup.c                 |    9 ++++++---
+ arch/sh/kernel/topology.c              |    1 +
+ arch/sh/kernel/vmlinux.lds.S           |    2 +-
+ arch/sh/mm/init.c                      |    8 ++++----
+ drivers/sh/intc/chip.c                 |    9 +++++++--
+ drivers/sh/intc/userimask.c            |    1 +
+ drivers/sh/pfc.c                       |   29 ++++++++++++++++++++++++++++-
+ include/linux/sh_pfc.h                 |   12 +++++++++++-
+ 29 files changed, 117 insertions(+), 42 deletions(-)
