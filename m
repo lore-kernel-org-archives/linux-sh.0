@@ -1,63 +1,64 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Thu, 03 Nov 2011 22:16:33 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Thu, 03 Nov 2011 22:44:52 +0000
 Subject: Re: [PATCH 0/3] Change ARCH_NR_GPIO into a Kconfig variable
-Message-Id: <201111031816.37427.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1352260.e85GnhUaYO"
+Message-Id: <20111103224452.GS12913@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
-In-Reply-To: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
+	<201111031816.37427.vapier@gentoo.org>
+In-Reply-To: <201111031816.37427.vapier@gentoo.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
---nextPart1352260.e85GnhUaYO
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+On Thu, Nov 03, 2011 at 06:16:33PM -0400, Mike Frysinger wrote:
+> On Thursday 03 November 2011 13:00:44 Peter De Schrijver wrote:
+> > This patchset converts ARCH_NR_GPIO to a Kconfig variable as suggested by
+> > Russel King. It also converts some platforms to the new model.
+> > 
+> > Peter De Schrijver (3):
+> >   ARM: ARCH_NR_GPIO: Make ARCH_NR_GPIO a Kconfig variable
+> >   ARM: mach-shmobile: Use CONFIG_ARCH_NR_GPIO
+> >   ARM: mach-ux500 Use CONFIG_ARCH_NR_GPIO
+> > 
+> >  arch/arm/Kconfig                           |   10 ++++++++++
+> >  arch/arm/include/asm/gpio.h                |    4 ++++
+> >  arch/arm/mach-shmobile/include/mach/gpio.h |    2 --
+> >  arch/arm/mach-ux500/include/mach/gpio.h    |    5 -----
+> >  4 files changed, 14 insertions(+), 7 deletions(-)
+> 
+> i'm not sure how this is an improvement.  we go from declaring the define in 
+> the right mach-specific subdir (arch/arm/mach-xxx/include/mach/gpio.h) to an 
+> arm-global file (arm/Kconfig).  i'd think the ideal would be to keep all the 
+> mach cruft in the mach-xxx/ subdir.
 
-On Thursday 03 November 2011 13:00:44 Peter De Schrijver wrote:
-> This patchset converts ARCH_NR_GPIO to a Kconfig variable as suggested by
-> Russel King. It also converts some platforms to the new model.
->=20
-> Peter De Schrijver (3):
->   ARM: ARCH_NR_GPIO: Make ARCH_NR_GPIO a Kconfig variable
->   ARM: mach-shmobile: Use CONFIG_ARCH_NR_GPIO
->   ARM: mach-ux500 Use CONFIG_ARCH_NR_GPIO
->=20
->  arch/arm/Kconfig                           |   10 ++++++++++
->  arch/arm/include/asm/gpio.h                |    4 ++++
->  arch/arm/mach-shmobile/include/mach/gpio.h |    2 --
->  arch/arm/mach-ux500/include/mach/gpio.h    |    5 -----
->  4 files changed, 14 insertions(+), 7 deletions(-)
+It most certainly is an improvement.
 
-i'm not sure how this is an improvement.  we go from declaring the define i=
-n=20
-the right mach-specific subdir (arch/arm/mach-xxx/include/mach/gpio.h) to a=
-n=20
-arm-global file (arm/Kconfig).  i'd think the ideal would be to keep all th=
-e=20
-mach cruft in the mach-xxx/ subdir.
-=2Dmike
+One of the things that we (the ARM community as a whole) is focused on to
+is to reduce the amount of code in arch/arm through consolidation, removing
+as much duplication as practical between the various SoCs.
 
---nextPart1352260.e85GnhUaYO
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+One of the other factors that we're also focused on is:
+(a) reducing the number of configurations which have to be built to properly
+    build-test ARM
+(b) reducing the number of kernels which have to be built to support a
+    range of ARM platforms
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
+Those two things together dictate that we remove the mach/ header files
+which are included outside of the individual mach-* directories, so that
+the entire kernel does not depend on anything in those mach/ header files.
+That includes mach/gpio.h.
 
-iQIcBAABAgAGBQJOsxLFAAoJEEFjO5/oN/WB2zwP/3uuVpB9LiRaJ9gITTAeERDf
-jIDMGt5Lrfpqt9hUJbVSP5/kDUAUbisT/eUxi8Tg/Cs9utsi4GvkCbgQoXNWR3Cb
-F5QWtSXu7KNoUlfPJck/kh/iqa7bGgiuiA3DDeXAsVQjRESlQSKj4JsZ2LXvq8/B
-M9qnOAUdHRHkEhaM6rx/ZG07EtbJjd0NaYcSEB81pAiYmdVHxSIneCouVqRklg/9
-mXX4pviian23NN5k/tK7iehwVWhjcuXgOb0teWXi9+C+IYlOxFlwWEnURx8SxY4F
-aTGcD5geb/TaWWJI0m1rKkwK0P5SpoZonp+C0Yd+DE/xlLJCeh34r3z9l+aGAAQD
-zaML2wGuUiBBUev57S93uUUQtLhZQAoyc7/mYmfu0vzS2xCHN0P7s1vgx/pfW/RX
-WZOYBMc+pToxIyKg1nGmSoVgchwMQJFSSXXA6g4kykvFWxCnyAz2cc+SYBMZ0WKk
-wtD4rOt313lEwQPcFyuf5N6rGLcx49Pt9c3OK5UQ7k9eQ+7pFEfcSKxnAow8xkky
-a4pK7QHZJ2PA+qF6u6Vv1Atge1zlP5hQ+9SPFqi6WUoR7JeUmAmRSkABn78nrfip
-iLXiRVgsD7Gk2QIWUBAZRZTZPtvMe6BeiEQpw2iHmiYuq6nwuUlWfKK3NMGfmAkQ
-xJnqYYRWNnl45gH+DlbT
-=4so7
------END PGP SIGNATURE-----
+It is the long term goal of Linaro to move the ARM kernel forward to such
+a point.
 
---nextPart1352260.e85GnhUaYO--
+Having ARCH_NR_GPIO definitions in mach/gpio.h is a blocker to both these
+efforts and, therefore, must be removed.  Therefore, before we have a
+better solution (such as sparse gpios in the same way as we have sparse
+irqs) we're going to stop the problem escalating still further by removing
+the need for new definitions of this constant in yet more new mach/gpio.h
+headers - which could otherwise be empty.
+
+It's one reason why I won't be acking your patch which pushes new stuff
+into the mach/gpio.h headers at a time when we're trying to get rid of
+them.
