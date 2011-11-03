@@ -1,55 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Nov 2011 02:45:02 +0000
-Subject: [PATCH 06/20] ARM: mach-shmobile: clock-sh7372: remove un-necessary index
-Message-Id: <87sjlv9y39.wl%kuninori.morimoto.gx@renesas.com>
+From: Peter De Schrijver <pdeschrijver@nvidia.com>
+Date: Thu, 03 Nov 2011 17:00:45 +0000
+Subject: [PATCH 1/3] ARM: ARCH_NR_GPIO: Make ARCH_NR_GPIO a Kconfig variable
+Message-Id: <1320339647-30255-2-git-send-email-pdeschrijver@nvidia.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
+In-Reply-To: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-it is not necessary to have sh7372_xxxx index on static variable
+Change ARCH_NR_GPIO into a Kconfig variable as suggested by Russel King. This
+makes ARCH_NR_GPIO single zImage friendly. The default value for tegra is
+defined as well.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Peter De Schrijver <pdeschrijver@nvidia.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/Kconfig            |    9 +++++++++
+ arch/arm/include/asm/gpio.h |    4 ++++
+ 2 files changed, 13 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 6697592..995a9c3 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -476,7 +476,7 @@ static struct clk_ops fsidiv_clk_ops = {
- 	.disable	= fsidiv_disable,
- };
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 7e8ffe7..924f685 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1507,6 +1507,15 @@ config LOCAL_TIMERS
+ 	  accounting to be spread across the timer interval, preventing a
+ 	  "thundering herd" at every timer tick.
  
--static struct clk_mapping sh7372_fsidiva_clk_mapping = {
-+static struct clk_mapping fsidiva_clk_mapping = {
- 	.phys	= FSIDIVA,
- 	.len	= 8,
- };
-@@ -484,10 +484,10 @@ static struct clk_mapping sh7372_fsidiva_clk_mapping = {
- struct clk sh7372_fsidiva_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
--	.mapping	= &sh7372_fsidiva_clk_mapping,
-+	.mapping	= &fsidiva_clk_mapping,
- };
++config ARCH_NR_GPIO
++	int
++	default 1024 if ARCH_TEGRA
++	default 0
++	help
++	  Maximum number of GPIOs in the system.
++
++	  If unsure, leave the default value.
++
+ source kernel/Kconfig.preempt
  
--static struct clk_mapping sh7372_fsidivb_clk_mapping = {
-+static struct clk_mapping fsidivb_clk_mapping = {
- 	.phys	= FSIDIVB,
- 	.len	= 8,
- };
-@@ -495,7 +495,7 @@ static struct clk_mapping sh7372_fsidivb_clk_mapping = {
- struct clk sh7372_fsidivb_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
--	.mapping	= &sh7372_fsidivb_clk_mapping,
-+	.mapping	= &fsidivb_clk_mapping,
- };
+ config HZ
+diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
+index 11ad0bf..7151753 100644
+--- a/arch/arm/include/asm/gpio.h
++++ b/arch/arm/include/asm/gpio.h
+@@ -1,6 +1,10 @@
+ #ifndef _ARCH_ARM_GPIO_H
+ #define _ARCH_ARM_GPIO_H
  
- static struct clk *late_main_clks[] = {
++#if CONFIG_ARCH_NR_GPIO > 0
++#define ARCH_NR_GPIO CONFIG_ARCH_NR_GPIO
++#endif
++
+ /* not all ARM platforms necessarily support this API ... */
+ #include <mach/gpio.h>
+ 
 -- 
-1.7.5.4
+1.7.7.rc0.72.g4b5ea.dirty
 
