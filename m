@@ -1,34 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 18 Nov 2011 09:10:29 +0000
-Subject: Re: [PATCH 0/3 v2] Switch sh7722, sh7723, and sh7724 to a generic
-Message-Id: <CANqRtoR7HoEF3cObfT66SS19k2XWBibZUjYqwWhzgY=5tD=ikQ@mail.gmail.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 04 Nov 2011 14:14:39 +0000
+Subject: Re: [PATCH 01/07] ARM: mach-shmobile: Kota2 SCIFA2 and SMSC911X support
+Message-Id: <20111104141439.GB17594@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1111171446150.2650@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1111171446150.2650@axis700.grange>
+References: <20110818054407.23410.98641.sendpatchset@rxone.opensource.se>
+In-Reply-To: <20110818054407.23410.98641.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Nov 18, 2011 at 4:34 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Thu, Nov 17, 2011 at 02:55:42PM +0100, Guennadi Liakhovetski wrote:
->> The sh/pm-runtime branch of https://github.com/pmundt/linux-sh begins the
->> migration of SuperH platforms from their hwblk runtime PM implementation
->> to the common with ARM-based sh-mobile platforms code. These patches
->> actually migrate sh7722, sh7723, and sh7724 architectures over.
->>
->> v2 is functionally identical to v1, it only removes the MSTP() wrapper, as
->> requested by Paul.
->>
-> I've layered hwblk removal on top of this, in the sh/hwblk topic branch.
+On Mon, Aug 22, 2011 at 12:43:29PM +0900, Paul Mundt wrote:
+> On Thu, Aug 18, 2011 at 02:44:07PM +0900, Magnus Damm wrote:
+> > +static void __init kota2_timer_init(void)
+> > +{
+> > +	sh73a0_clock_init();
+> > +	shmobile_timer.init();
+> > +	return;
+> > +}
+> > +
+> Pointless return.
+> 
+> > --- 0001/arch/arm/mach-shmobile/platsmp.c
+> > +++ work/arch/arm/mach-shmobile/platsmp.c	2011-08-18 13:38:02.000000000 +0900
+> > @@ -21,9 +21,11 @@
+> >  #include <asm/mach-types.h>
+> >  #include <mach/common.h>
+> >  
+> > +#define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2())
+> > +
+> >  static unsigned int __init shmobile_smp_get_core_count(void)
+> >  {
+> > -	if (machine_is_ag5evm())
+> > +	if (is_sh73a0())
+> >  		return sh73a0_get_core_count();
+> >  
+> >  	return 1;
+> 
+> No. If you want to do this then simply do what the other platforms are
+> doing and construct a cpu.h, then you can centrally define things and use
+> cpu_is_xxx() outright. Making CPU inferences from mach type is just
+> asking for trouble.
 
-Thanks for your help, Paul!
+I don't see any updates to this series that address any of these issues,
+even after I went to all of the trouble of setting them up in a topic
+branch for incremental fixing.
 
-> I expect cpuidle is probably going to be broken until it gets some clue
-> about powerdomains, though.
-
-On SH there is no power domain control via cpuidle, so it should be OK as-is.
-
-Cheers,
-
-/ magnus
+I'll merge the topic branch for now, but don't expect this to happen
+again if I don't see cleanup patches or the same lazy-ass approach is
+taken for any additional boards.
