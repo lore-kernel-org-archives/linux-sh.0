@@ -1,34 +1,35 @@
-From: Lennert Buytenhek <buytenh@wantstofly.org>
-Date: Thu, 24 Nov 2011 06:47:14 +0000
-Subject: Re: [PATCH 6/7] ARM: restart: only perform setup for restart when
-Message-Id: <20111124064714.GI795@wantstofly.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 04 Nov 2011 03:30:49 +0000
+Subject: Re: Question about clk->usecount
+Message-Id: <20111104033048.GB29825@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111106173113.GI12913@n2100.arm.linux.org.uk>
- <E1RN6b9-0001NG-NS@rmk-PC.arm.linux.org.uk>
- <20111117174247.GF9581@n2100.arm.linux.org.uk>
-In-Reply-To: <20111117174247.GF9581@n2100.arm.linux.org.uk>
+References: <87fwihj3x8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fwihj3x8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Nov 17, 2011 at 05:42:47PM +0000, Russell King - ARM Linux wrote:
+On Fri, Oct 28, 2011 at 03:53:19AM -0700, Kuninori Morimoto wrote:
+> @@ -152,7 +159,12 @@ int __init sh_hwblk_clk_register(struct clk *clks, int nr)
+>  			continue;
+>  
+>  		clkp->ops = &sh_hwblk_clk_ops;
+> -		ret |= clk_register(clkp);
+> +		ret = clk_register(clkp);
+> +		if (ret < 0)
+> +			return ret;
+> +
+> +		if (hwblk_info)
+> +			hwblk_info->hwblks[k].clk = clkp;
+>  	}
+>  
+>  	return ret;
 
-> Ack?
-> 
-> (If you're in the To: list I'm expecting a reply because this patch is
-> touching something you're responsible for.  Thanks.)
-> 
-> On Sun, Nov 06, 2011 at 05:33:35PM +0000, Russell King - ARM Linux wrote:
-> > We only need to set the system up for a soft-restart if we're going to
-> > be doing a soft-restart.  Provide a new function (soft_restart()) which
-> > does the setup and final call for this, and make platforms use it.
-> > Eliminate the call to setup_restart() from the default handler.
-> > 
-> > This means that platforms arch_reset() function is no longer called with
-> > the page tables prepared for a soft-restart, and caches will still be
-> > enabled.
-> > 
-> > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+The error path handling here is a bit of an unusual case. clk_register()
+failing on one clock is not necessarily an indicator that other clocks
+can't be succesfully registered, so we're better off simply checking if
+clk_register() succeeds and then stashing the clock pointer, rather than
+bailing on the loop entirely.
 
-Acked-by: Lennert Buytenhek <buytenh@wantstofly.org>
+The general idea seems to be heading in the right direction though.
