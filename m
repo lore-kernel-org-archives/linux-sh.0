@@ -1,74 +1,50 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 03 Nov 2011 23:17:07 +0000
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 04 Nov 2011 02:05:52 +0000
 Subject: Re: [PATCH 0/3] Change ARCH_NR_GPIO into a Kconfig variable
-Message-Id: <20111103231707.GU12913@n2100.arm.linux.org.uk>
+Message-Id: <201111032205.56557.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart1345463.Wp6H3ntS3T"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
-	<201111031816.37427.vapier@gentoo.org>
-	<20111103224452.GS12913@n2100.arm.linux.org.uk>
 	<201111031907.46434.vapier@gentoo.org>
-In-Reply-To: <201111031907.46434.vapier@gentoo.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+	<20111103231707.GU12913@n2100.arm.linux.org.uk>
+In-Reply-To: <20111103231707.GU12913@n2100.arm.linux.org.uk>
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 03, 2011 at 07:07:42PM -0400, Mike Frysinger wrote:
-> On Thursday 03 November 2011 18:44:52 Russell King - ARM Linux wrote:
-> > It most certainly is an improvement.
-> > 
-> > One of the things that we (the ARM community as a whole) is focused on to
-> > is to reduce the amount of code in arch/arm through consolidation, removing
-> > as much duplication as practical between the various SoCs.
-> > 
-> > One of the other factors that we're also focused on is:
-> > (a) reducing the number of configurations which have to be built to
-> > properly build-test ARM
-> > (b) reducing the number of kernels which have to be built to support a
-> >     range of ARM platforms
-> 
-> i'm aware of these efforts, but i don't see how this Kconfig solution gets you 
-> there.  it's still a single define depending on arch-specific knobs.  now, if 
-> this were treated as a max value that was based on all the arch needs, it's 
-> now useful across SoCs.
+--nextPart1345463.Wp6H3ntS3T
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-(a) you need to read other discussions on this subject which have already
-been had on linux-arm-kernel.  Essentially I've had it in the neck for
-less than 128 bytes of needless bloat.  So when I'm faced with 8K of
-bloat, what do you think my reaction will be?  Roll over and capitulate
-only to get it in the neck again?  Or come up with an easy solution?
+On Thursday 03 November 2011 19:17:07 Russell King - ARM Linux wrote:
+> (b) that's effectively what it is - if you understand what's going on with
+> the 'default' statements.
+>=20
+> For any option, there can be multiple 'default' statements:
 
-(b) that's effectively what it is - if you understand what's going on with
-the 'default' statements.
+thanks, i wasn't aware of the cascading nature of the default keyword
+=2Dmike
 
-For any option, there can be multiple 'default' statements:
+--nextPart1345463.Wp6H3ntS3T
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-- default value: "default" <expr> ["if" <expr>]
-  A config option can have any number of default values. If multiple
-  default values are visible, only the first defined one is active.
-...
-  Optionally, dependencies only for this default value can be added with
-  "if".
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
 
-Now, because of that well defined order, if we do this:
+iQIcBAABAgAGBQJOs0iEAAoJEEFjO5/oN/WBIeEP/1Wyyp9+aPLPgLMKLoG3XYdj
+VYI6vVKkcrki9XzC2iKlnvm6cDuXAvDX8aQ2qSC2bgcxjtmv8NgkMpWUiZS842zb
+xfq830kzib9Dz/HW3p4BsszAsrO5/Mvub92ZdS+ykiehRL/QhxuC0G4CaClNMYpK
+5qjBy20wVUBc509dHEz44agckcnptRjygnhZaYLJ3bpmeOEGhlehnhEHPfOK1KKr
+wt+deV+lUyqjBqavSLOhN2IF0dkZsXqYmCTqlHKuvNE+DYm/POTGnf0MPerS6+lX
+RKG3E8yjBRPsiodNlVJy9UosQ8LCFc8bYzHAfn9a53GetYKHS0cc7t6unYqJ8/6v
+yyVRFkdF5fIgkmWuqIfLejQGV5hmJTH95/szoA8faCwefRmQwl8CGgw+4ZlSAHuz
+RgiVPoSCv5lo+QOOHlkD9aJyfsKTVcJ+DCvoD/uZQhsCO8CHtINxNQ3TVi8Q2BRA
+bOw7xRpvyVVe7TFOjdOmu0lz6OX9Al1ocTuo7SH2Raz09crrS9J8Zbvk6EK66BuT
+Hz6H2wEpGaslLW83+Iy5oRs6HXgUhDKhPTBUVUwnar8CnOvWEhc4MuAfohDU1OvE
+42uauV7WX91OSADw0JSH9sMF6z3xjlXH/Wu+d01q8mdxbHHWEVy12BEtp/vUvDIT
+n1ZxN98qSeeQinnlbtnw
+=YQiM
+-----END PGP SIGNATURE-----
 
-config FOO
-	int
-	default 1024 if A
-	default 512 if B
-	default 256
-
-Then we end up with this truth table:
-
-A B FOO
-n n 256
-n y 512
-y n 1024
-y y 1024
-
-Which - provided the order is highest value first - gets us the highest
-value for this variable dependent on which platforms have been selected.
-
-And - given that we don't have many which require this treatment, this
-is a sane solution to the problem.  Not only that but it's one which can
-be trivially deleted from one file if and when we have sparse gpio.
+--nextPart1345463.Wp6H3ntS3T--
