@@ -1,241 +1,207 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 22 Nov 2011 06:44:58 +0000
-Subject: [PATCH] ARM: mach-shmobile: Kota2 TPU LED platform data
-Message-Id: <20111122064458.14516.21331.sendpatchset@w520>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 07 Nov 2011 00:06:52 +0000
+Subject: [PATCH 2/7] PM / Domains: Make it possible to use per-device .active_wakeup()
+Message-Id: <201111070106.52411.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110829035011.28202.37748.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20110829035011.28202.37748.sendpatchset@rxone.opensource.se>
+References: <201111070101.33960.rjw@sisk.pl>
+In-Reply-To: <201111070101.33960.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
 
-From: Magnus Damm <damm@opensource.se>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-This patch updates the Kota2 board support code to
-use the recently merged TPU LED driver whenever
-possible.
+The current generic PM domains code requires that the same
+.active_wakeup() device callback routine be used for all devices in
+the given domain, which is inflexible and may not cover some specific
+use cases.  For this reason, make it possible to use device specific
+.active_wakeup() callback routines by adding a corresponding callback
+pointer to struct generic_pm_domain_data.  To reduce code duplication
+use struct gpd_dev_ops to represent PM domain device callbacks as
+well as device-specific ones and add a macro for defining routines
+that will execute those callbacks.
 
-The sh73a0 SoC has 5 TPU hardware blocks each with
-4 timer channels which in theory allows a total of
-20 LEDs to be controlled by "leds-renesas-tpu"
-driver instances. The Kota2 board has 4 LEDs connected
-to GPIO pins that also come with TPU pin functions, so
-this patch ties up these 4 LEDS and leaves the remaining
-3 LEDS for the GPIO based LED driver.
+Modify the shmobile's power domains code to allow drivers to use
+their own .active_wakeup() callback routines.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
+ arch/arm/mach-shmobile/pm-sh7372.c |   11 ++++---
+ drivers/base/power/domain.c        |   54 ++++++++++++++++++-------------------
+ include/linux/pm_domain.h          |   15 ++++------
+ 3 files changed, 41 insertions(+), 39 deletions(-)
 
- Based on earlier submitted patch
- "[PATCH] ARM: mach-shmobile: Kota2 TPU LED support V2"
-
- arch/arm/mach-shmobile/board-kota2.c  |  122 +++++++++++++++++++++++++++++++--
- arch/arm/mach-shmobile/clock-sh73a0.c |   16 ++++
- 2 files changed, 134 insertions(+), 4 deletions(-)
-
---- 0005/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2011-11-22 15:42:09.000000000 +0900
-@@ -33,6 +33,7 @@
- #include <linux/input/sh_keysc.h>
- #include <linux/gpio_keys.h>
- #include <linux/leds.h>
-+#include <linux/platform_data/leds-renesas-tpu.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mfd/tmio.h>
-@@ -157,10 +158,6 @@ static struct platform_device gpio_keys_
- #define GPIO_LED(n, g) { .name = n, .gpio = g }
- 
- static struct gpio_led gpio_leds[] = {
--	GPIO_LED("V2513", GPIO_PORT153), /* PORT153 [TPU1T02] -> V2513 */
--	GPIO_LED("V2514", GPIO_PORT199), /* PORT199 [TPU4TO1] -> V2514 */
--	GPIO_LED("V2515", GPIO_PORT197), /* PORT197 [TPU2TO1] -> V2515 */
--	GPIO_LED("KEYLED", GPIO_PORT163), /* PORT163 [TPU3TO0] -> KEYLED */
- 	GPIO_LED("G", GPIO_PORT20), /* PORT20 [GPO0] -> LED7 -> "G" */
- 	GPIO_LED("H", GPIO_PORT21), /* PORT21 [GPO1] -> LED8 -> "H" */
- 	GPIO_LED("J", GPIO_PORT22), /* PORT22 [GPO2] -> LED9 -> "J" */
-@@ -179,6 +176,119 @@ static struct platform_device gpio_leds_
- 	},
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -23,6 +23,12 @@ struct dev_power_governor {
+ 	bool (*power_down_ok)(struct dev_pm_domain *domain);
  };
  
-+/* TPU LED */
-+static struct led_renesas_tpu_config led_renesas_tpu12_pdata = {
-+	.name		= "V2513",
-+	.pin_gpio_fn	= GPIO_FN_TPU1TO2,
-+	.pin_gpio	= GPIO_PORT153,
-+	.channel_offset = 0x90,
-+	.timer_bit = 2,
-+	.max_brightness = 1000,
++struct gpd_dev_ops {
++	int (*start)(struct device *dev);
++	int (*stop)(struct device *dev);
++	bool (*active_wakeup)(struct device *dev);
 +};
 +
-+static struct resource tpu12_resources[] = {
-+	[0] = {
-+		.name	= "TPU12",
-+		.start	= 0xe6610090,
-+		.end	= 0xe66100b5,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device leds_tpu12_device = {
-+	.name = "leds-renesas-tpu",
-+	.id = 12,
-+	.dev = {
-+		.platform_data  = &led_renesas_tpu12_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(tpu12_resources),
-+	.resource	= tpu12_resources,
-+};
-+
-+static struct led_renesas_tpu_config led_renesas_tpu41_pdata = {
-+	.name		= "V2514",
-+	.pin_gpio_fn	= GPIO_FN_TPU4TO1,
-+	.pin_gpio	= GPIO_PORT199,
-+	.channel_offset = 0x50,
-+	.timer_bit = 1,
-+	.max_brightness = 1000,
-+};
-+
-+static struct resource tpu41_resources[] = {
-+	[0] = {
-+		.name	= "TPU41",
-+		.start	= 0xe6640050,
-+		.end	= 0xe6640075,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device leds_tpu41_device = {
-+	.name = "leds-renesas-tpu",
-+	.id = 41,
-+	.dev = {
-+		.platform_data  = &led_renesas_tpu41_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(tpu41_resources),
-+	.resource	= tpu41_resources,
-+};
-+
-+static struct led_renesas_tpu_config led_renesas_tpu21_pdata = {
-+	.name		= "V2515",
-+	.pin_gpio_fn	= GPIO_FN_TPU2TO1,
-+	.pin_gpio	= GPIO_PORT197,
-+	.channel_offset = 0x50,
-+	.timer_bit = 1,
-+	.max_brightness = 1000,
-+};
-+
-+static struct resource tpu21_resources[] = {
-+	[0] = {
-+		.name	= "TPU21",
-+		.start	= 0xe6620050,
-+		.end	= 0xe6620075,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device leds_tpu21_device = {
-+	.name = "leds-renesas-tpu",
-+	.id = 21,
-+	.dev = {
-+		.platform_data  = &led_renesas_tpu21_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(tpu21_resources),
-+	.resource	= tpu21_resources,
-+};
-+
-+static struct led_renesas_tpu_config led_renesas_tpu30_pdata = {
-+	.name		= "KEYLED",
-+	.pin_gpio_fn	= GPIO_FN_TPU3TO0,
-+	.pin_gpio	= GPIO_PORT163,
-+	.channel_offset = 0x10,
-+	.timer_bit = 0,
-+	.max_brightness = 1000,
-+};
-+
-+static struct resource tpu30_resources[] = {
-+	[0] = {
-+		.name	= "TPU30",
-+		.start	= 0xe6630010,
-+		.end	= 0xe6630035,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device leds_tpu30_device = {
-+	.name = "leds-renesas-tpu",
-+	.id = 30,
-+	.dev = {
-+		.platform_data  = &led_renesas_tpu30_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(tpu30_resources),
-+	.resource	= tpu30_resources,
-+};
-+
- /* MMCIF */
- static struct resource mmcif_resources[] = {
- 	[0] = {
-@@ -291,6 +401,10 @@ static struct platform_device *kota2_dev
- 	&keysc_device,
- 	&gpio_keys_device,
- 	&gpio_leds_device,
-+	&leds_tpu12_device,
-+	&leds_tpu41_device,
-+	&leds_tpu21_device,
-+	&leds_tpu30_device,
- 	&mmcif_device,
- 	&sdhi0_device,
- 	&sdhi1_device,
---- 0004/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-11-22 15:38:14.000000000 +0900
-@@ -113,6 +113,12 @@ static struct clk main_clk = {
- 	.ops		= &main_clk_ops,
+ struct generic_pm_domain {
+ 	struct dev_pm_domain domain;	/* PM domain operations */
+ 	struct list_head gpd_list_node;	/* Node in the global PM domains list */
+@@ -45,9 +51,7 @@ struct generic_pm_domain {
+ 	bool dev_irq_safe;	/* Device callbacks are IRQ-safe */
+ 	int (*power_off)(struct generic_pm_domain *domain);
+ 	int (*power_on)(struct generic_pm_domain *domain);
+-	int (*start_device)(struct device *dev);
+-	int (*stop_device)(struct device *dev);
+-	bool (*active_wakeup)(struct device *dev);
++	struct gpd_dev_ops dev_ops;
  };
  
-+/* Divide Main clock by two */
-+static struct clk main_div2_clk = {
-+	.ops		= &div2_clk_ops,
-+	.parent		= &main_clk,
-+};
+ static inline struct generic_pm_domain *pd_to_genpd(struct dev_pm_domain *pd)
+@@ -62,11 +66,6 @@ struct gpd_link {
+ 	struct list_head slave_node;
+ };
+ 
+-struct gpd_dev_ops {
+-	int (*start)(struct device *dev);
+-	int (*stop)(struct device *dev);
+-};
+-
+ struct generic_pm_domain_data {
+ 	struct pm_domain_data base;
+ 	struct gpd_dev_ops ops;
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -16,6 +16,22 @@
+ #include <linux/sched.h>
+ #include <linux/suspend.h>
+ 
++#define GENPD_DEV_CALLBACK(genpd, type, callback, dev)		\
++({								\
++	type (*__routine)(struct device *__d); 			\
++	type __ret = (type)0;					\
++								\
++	__routine = genpd->dev_ops.callback; 			\
++	if (__routine) {					\
++		__ret = __routine(dev); 			\
++	} else {						\
++		__routine = dev_gpd_data(dev)->ops.callback;	\
++		if (__routine) 					\
++			__ret = __routine(dev);			\
++	}							\
++	__ret;							\
++})
 +
- /* PLL0, PLL1, PLL2, PLL3 */
- static unsigned long pll_recalc(struct clk *clk)
+ static LIST_HEAD(gpd_list);
+ static DEFINE_MUTEX(gpd_list_lock);
+ 
+@@ -31,32 +47,12 @@ static struct generic_pm_domain *dev_to_
+ 
+ static int genpd_stop_dev(struct generic_pm_domain *genpd, struct device *dev)
  {
-@@ -181,6 +187,7 @@ static struct clk *main_clks[] = {
- 	&extal1_div2_clk,
- 	&extal2_div2_clk,
- 	&main_clk,
-+	&main_div2_clk,
- 	&pll0_clk,
- 	&pll1_clk,
- 	&pll2_clk,
-@@ -268,6 +275,7 @@ enum { MSTP001,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
- 	MSTP331, MSTP329, MSTP325, MSTP323, MSTP318,
- 	MSTP314, MSTP313, MSTP312, MSTP311,
-+	MSTP303, MSTP302, MSTP301, MSTP300,
- 	MSTP411, MSTP410, MSTP403,
- 	MSTP_NR };
+-	int (*stop)(struct device *dev);
+-
+-	stop = genpd->stop_device;
+-	if (stop)
+-		return stop(dev);
+-
+-	stop = dev_gpd_data(dev)->ops.stop;
+-	if (stop)
+-		return stop(dev);
+-
+-	return 0;
++	return GENPD_DEV_CALLBACK(genpd, int, stop, dev);
+ }
  
-@@ -301,6 +309,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
- 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
- 	[MSTP311] = MSTP(&div6_clks[DIV6_SDHI2], SMSTPCR3, 11, 0), /* SDHI2 */
-+	[MSTP303] = MSTP(&main_div2_clk, SMSTPCR3, 3, 0), /* TPU1 */
-+	[MSTP302] = MSTP(&main_div2_clk, SMSTPCR3, 2, 0), /* TPU2 */
-+	[MSTP301] = MSTP(&main_div2_clk, SMSTPCR3, 1, 0), /* TPU3 */
-+	[MSTP300] = MSTP(&main_div2_clk, SMSTPCR3, 0, 0), /* TPU4 */
- 	[MSTP411] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 11, 0), /* IIC3 */
- 	[MSTP410] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 10, 0), /* IIC4 */
- 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
-@@ -350,6 +362,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
-+	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
-+	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
-+	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
-+	CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+ static int genpd_start_dev(struct generic_pm_domain *genpd, struct device *dev)
+ {
+-	int (*start)(struct device *dev);
+-
+-	start = genpd->start_device;
+-	if (start)
+-		return start(dev);
+-
+-	start = dev_gpd_data(dev)->ops.start;
+-	if (start)
+-		return start(dev);
+-
+-	return 0;
++	return GENPD_DEV_CALLBACK(genpd, int, start, dev);
+ }
+ 
+ static bool genpd_sd_counter_dec(struct generic_pm_domain *genpd)
+@@ -554,6 +550,12 @@ static inline void genpd_power_off_work_
+ 
+ #ifdef CONFIG_PM_SLEEP
+ 
++static bool genpd_dev_active_wakeup(struct generic_pm_domain *genpd,
++				    struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, bool, active_wakeup, dev);
++}
++
+ /**
+  * pm_genpd_sync_poweroff - Synchronously power off a PM domain and its masters.
+  * @genpd: PM domain to power off, if possible.
+@@ -610,7 +612,7 @@ static bool resume_needed(struct device
+ 	if (!device_can_wakeup(dev))
+ 		return false;
+ 
+-	active_wakeup = genpd->active_wakeup && genpd->active_wakeup(dev);
++	active_wakeup = genpd_dev_active_wakeup(genpd, dev);
+ 	return device_may_wakeup(dev) ? active_wakeup : !active_wakeup;
+ }
+ 
+@@ -734,8 +736,7 @@ static int pm_genpd_suspend_noirq(struct
+ 	if (ret)
+ 		return ret;
+ 
+-	if (dev->power.wakeup_path
+-	    && genpd->active_wakeup && genpd->active_wakeup(dev))
++	if (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev))
+ 		return 0;
+ 
+ 	genpd_stop_dev(genpd, dev);
+@@ -954,8 +955,7 @@ static int pm_genpd_dev_poweroff_noirq(s
+ 	if (ret)
+ 		return ret;
+ 
+-	if (dev->power.wakeup_path
+-	    && genpd->active_wakeup && genpd->active_wakeup(dev))
++	if (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev))
+ 		return 0;
+ 
+ 	genpd_stop_dev(genpd, dev);
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -151,7 +151,10 @@ static void sh7372_a4r_suspend(void)
+ 
+ static bool pd_active_wakeup(struct device *dev)
+ {
+-	return true;
++	bool (*active_wakeup)(struct device *dev);
++
++	active_wakeup = dev_gpd_data(dev)->ops.active_wakeup;
++	return active_wakeup ? active_wakeup(dev) : true;
+ }
+ 
+ static bool sh7372_power_down_forbidden(struct dev_pm_domain *domain)
+@@ -197,10 +200,10 @@ void sh7372_init_pm_domain(struct sh7372
+ 	struct generic_pm_domain *genpd = &sh7372_pd->genpd;
+ 
+ 	pm_genpd_init(genpd, sh7372_pd->gov, false);
+-	genpd->stop_device = sh7372_stop_dev;
+-	genpd->start_device = sh7372_start_dev;
++	genpd->dev_ops.stop = sh7372_stop_dev;
++	genpd->dev_ops.start = sh7372_start_dev;
++	genpd->dev_ops.active_wakeup = pd_active_wakeup;
+ 	genpd->dev_irq_safe = true;
+-	genpd->active_wakeup = pd_active_wakeup;
+ 	genpd->power_off = pd_power_down;
+ 	genpd->power_on = pd_power_up;
+ 	genpd->power_on(&sh7372_pd->genpd);
+
