@@ -1,450 +1,156 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 17 Nov 2011 13:55:47 +0000
-Subject: [PATCH 1/3 v2] sh: sh7724: use runtime PM implementation, common
-Message-Id: <Pine.LNX.4.64.1111171452180.2650@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Nov 2011 09:53:43 +0000
+Subject: [PATCH 3/5 v2] ARM: mach-shmobile: bonito: Add dip-switch selector
+Message-Id: <87fwi0qmvv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Switch sh7724 to a runtime PM implementation, common with ARM-based
-sh-mobile platforms.
+devices enable/disable are controled by dip-switch on bonito board.
+If bonito core board is connected to base board,
+you can check the settings from FPGA.
+This patch adds basic code and controls SCIFA5 settings
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v1 -> v2
 
-v2: remove the MSTP() wrapper
+- based on bonito_fpga_xxxx() functions
 
- arch/sh/include/asm/hwblk.h            |    5 +-
- arch/sh/kernel/cpu/Makefile            |    5 +-
- arch/sh/kernel/cpu/sh4a/Makefile       |    2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |  157 ++++++++++++++++----------------
- arch/sh/kernel/cpu/sh4a/hwblk-sh7724.c |  121 ------------------------
- arch/sh/kernel/cpu/shmobile/Makefile   |    2 +
- drivers/sh/Makefile                    |    1 +
- 7 files changed, 92 insertions(+), 201 deletions(-)
- delete mode 100644 arch/sh/kernel/cpu/sh4a/hwblk-sh7724.c
+ arch/arm/mach-shmobile/board-bonito.c |   88 ++++++++++++++++++++++++++------
+ 1 files changed, 71 insertions(+), 17 deletions(-)
 
-diff --git a/arch/sh/include/asm/hwblk.h b/arch/sh/include/asm/hwblk.h
-index 855e945..567c9aa 100644
---- a/arch/sh/include/asm/hwblk.h
-+++ b/arch/sh/include/asm/hwblk.h
-@@ -44,6 +44,7 @@ struct hwblk_info {
- 	int nr_hwblks;
- };
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index 5536ead..aa5c9a7 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -56,8 +56,21 @@
+  */
  
-+#if !defined(CONFIG_CPU_SUBTYPE_SH7724)
- /* Should be defined by processor-specific code */
- int arch_hwblk_init(void);
- int arch_hwblk_sleep_mode(void);
-@@ -66,5 +67,7 @@ void hwblk_cnt_dec(struct hwblk_info *info, int hwblk, int cnt);
+ /*
++ * SCIFA5 (CN42)
++ *
++ * S38.3 = ON
++ * S39.6 = ON
++ * S43.1 = ON
++ */
++
++/*
+  * FPGA
+  */
++#define BUSSWMR1	0x0070
++#define BUSSWMR2	0x0072
++#define BUSSWMR3	0x0074
++#define BUSSWMR4	0x0076
++
+ #define A1MDSR		0x10E0
+ #define BVERR		0x1100
+ static u16 bonito_fpga_read(u32 offset)
+@@ -75,9 +88,15 @@ static void bonito_fpga_write(u32 offset, u16 val, u16 mask)
  }
  
- int sh_hwblk_clk_register(struct clk *clks, int nr);
--
-+#else
-+#define hwblk_init() 0
-+#endif
- #endif /* __ASM_SH_HWBLK_H */
-diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
-index ae95935..b937f1a 100644
---- a/arch/sh/kernel/cpu/Makefile
-+++ b/arch/sh/kernel/cpu/Makefile
-@@ -18,4 +18,7 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
- obj-$(CONFIG_SH_ADC)		+= adc.o
- obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
- 
--obj-y	+= irq/ init.o clock.o fpu.o hwblk.o proc.o
-+obj-y	+= irq/ init.o clock.o fpu.o proc.o
-+ifneq ($(CONFIG_CPU_SUBTYPE_SH7724),y)
-+obj-y	+= hwblk.o
-+endif
-diff --git a/arch/sh/kernel/cpu/sh4a/Makefile b/arch/sh/kernel/cpu/sh4a/Makefile
-index c57fb28..cb93287 100644
---- a/arch/sh/kernel/cpu/sh4a/Makefile
-+++ b/arch/sh/kernel/cpu/sh4a/Makefile
-@@ -29,7 +29,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SH7786)	:= clock-sh7786.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= clock-sh7343.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7722)	:= clock-sh7722.o hwblk-sh7722.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7723.o hwblk-sh7723.o
--clock-$(CONFIG_CPU_SUBTYPE_SH7724)	:= clock-sh7724.o hwblk-sh7724.o
-+clock-$(CONFIG_CPU_SUBTYPE_SH7724)	:= clock-sh7724.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7366)	:= clock-sh7366.o
- clock-$(CONFIG_CPU_SUBTYPE_SHX3)	:= clock-shx3.o
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-index 8668f55..8df1e4a 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-@@ -23,8 +23,8 @@
- #include <linux/io.h>
- #include <linux/clk.h>
- #include <linux/clkdev.h>
-+#include <linux/sh_clk.h>
- #include <asm/clock.h>
--#include <asm/hwblk.h>
- #include <cpu/sh7724.h>
- 
- /* SH7724 registers */
-@@ -35,6 +35,9 @@
- #define FCLKBCR		0xa415000c
- #define IRDACLKCR	0xa4150018
- #define PLLCR		0xa4150024
-+#define MSTPCR0		0xa4150030
-+#define MSTPCR1		0xa4150034
-+#define MSTPCR2		0xa4150038
- #define SPUCLKCR	0xa415003c
- #define FLLFRQ		0xa4150050
- #define LSTATS		0xa4150060
-@@ -196,60 +199,60 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ /*
+- * devices
++ * core board devices
++ */
++static struct platform_device *bonito_core_devices[] __initdata = {
++};
++
++/*
++ * base board devices
+  */
+-static struct platform_device *bonito_devices[] __initdata = {
++static struct platform_device *bonito_base_devices[] __initdata = {
  };
  
- static struct clk mstp_clks[HWBLK_NR] = {
--	SH_HWBLK_CLK(HWBLK_TLB, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_IC, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_OC, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_RSMEM, &div4_clks[DIV4_B], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_ILMEM, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_L2C, &div4_clks[DIV4_SH], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_FPU, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_INTC, &div4_clks[DIV4_P], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_DMAC0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SHYWAY, &div4_clks[DIV4_SH], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_HUDI, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_UBC, &div4_clks[DIV4_I], 0),
--	SH_HWBLK_CLK(HWBLK_TMU0, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_CMT, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_RWDT, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_DMAC1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_TMU1, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF0, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF1, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF2, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF3, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF4, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF5, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_MSIOF0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_MSIOF1, &div4_clks[DIV4_B], 0),
--
--	SH_HWBLK_CLK(HWBLK_KEYSC, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_RTC, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_IIC0, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_IIC1, &div4_clks[DIV4_P], 0),
--
--	SH_HWBLK_CLK(HWBLK_MMC, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_ETHER, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_ATAPI, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_TPU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_IRDA, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_TSIF, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_USB1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_USB0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_2DG, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SDHI0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SDHI1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VEU1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_CEU1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_BEU1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_2DDMAC, &div4_clks[DIV4_SH], 0),
--	SH_HWBLK_CLK(HWBLK_SPU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_JPU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VOU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_BEU0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_CEU0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VEU0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VPU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_LCDC, &div4_clks[DIV4_B], 0),
-+	[HWBLK_TLB] = SH_CLK_MSTP32(&div4_clks[DIV4_I],	    MSTPCR0, 31, CLK_ENABLE_ON_INIT),
-+	[HWBLK_IC] = SH_CLK_MSTP32(&div4_clks[DIV4_I],	    MSTPCR0, 30, CLK_ENABLE_ON_INIT),
-+	[HWBLK_OC] = SH_CLK_MSTP32(&div4_clks[DIV4_I],	    MSTPCR0, 29, CLK_ENABLE_ON_INIT),
-+	[HWBLK_RSMEM] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR0, 28, CLK_ENABLE_ON_INIT),
-+	[HWBLK_ILMEM] = SH_CLK_MSTP32(&div4_clks[DIV4_I],   MSTPCR0, 27, CLK_ENABLE_ON_INIT),
-+	[HWBLK_L2C] = SH_CLK_MSTP32(&div4_clks[DIV4_SH],    MSTPCR0, 26, CLK_ENABLE_ON_INIT),
-+	[HWBLK_FPU] = SH_CLK_MSTP32(&div4_clks[DIV4_I],	    MSTPCR0, 24, CLK_ENABLE_ON_INIT),
-+	[HWBLK_INTC] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR0, 22, CLK_ENABLE_ON_INIT),
-+	[HWBLK_DMAC0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR0, 21, 0),
-+	[HWBLK_SHYWAY] = SH_CLK_MSTP32(&div4_clks[DIV4_SH], MSTPCR0, 20, CLK_ENABLE_ON_INIT),
-+	[HWBLK_HUDI] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR0, 19, 0),
-+	[HWBLK_UBC] = SH_CLK_MSTP32(&div4_clks[DIV4_I],     MSTPCR0, 17, 0),
-+	[HWBLK_TMU0] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR0, 15, 0),
-+	[HWBLK_CMT] = SH_CLK_MSTP32(&r_clk,		    MSTPCR0, 14, 0),
-+	[HWBLK_RWDT] = SH_CLK_MSTP32(&r_clk,		    MSTPCR0, 13, 0),
-+	[HWBLK_DMAC1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR0, 12, 0),
-+	[HWBLK_TMU1] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR0, 10, 0),
-+	[HWBLK_SCIF0] = SH_CLK_MSTP32(&div4_clks[DIV4_P],   MSTPCR0, 9, 0),
-+	[HWBLK_SCIF1] = SH_CLK_MSTP32(&div4_clks[DIV4_P],   MSTPCR0, 8, 0),
-+	[HWBLK_SCIF2] = SH_CLK_MSTP32(&div4_clks[DIV4_P],   MSTPCR0, 7, 0),
-+	[HWBLK_SCIF3] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR0, 6, 0),
-+	[HWBLK_SCIF4] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR0, 5, 0),
-+	[HWBLK_SCIF5] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR0, 4, 0),
-+	[HWBLK_MSIOF0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 2, 0),
-+	[HWBLK_MSIOF1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 1, 0),
+ /*
+@@ -147,26 +166,18 @@ static void __init bonito_map_io(void)
+ /*
+  * board init
+  */
++#define BIT_ON(sw, bit)		(sw & (1 << bit))
++#define BIT_OFF(sw, bit)	(!(sw & (1 << bit)))
 +
-+	[HWBLK_KEYSC] = SH_CLK_MSTP32(&r_clk,		    MSTPCR1, 12, 0),
-+	[HWBLK_RTC] = SH_CLK_MSTP32(&r_clk,		    MSTPCR1, 11, 0),
-+	[HWBLK_IIC0] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR1, 9, 0),
-+	[HWBLK_IIC1] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR1, 8, 0),
-+
-+	[HWBLK_MMC] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 29, 0),
-+	[HWBLK_ETHER] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR2, 28, 0),
-+	[HWBLK_ATAPI] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR2, 26, 0),
-+	[HWBLK_TPU] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 25, 0),
-+	[HWBLK_IRDA] = SH_CLK_MSTP32(&div4_clks[DIV4_P],    MSTPCR2, 24, 0),
-+	[HWBLK_TSIF] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 22, 0),
-+	[HWBLK_USB1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 21, 0),
-+	[HWBLK_USB0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 20, 0),
-+	[HWBLK_2DG] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 19, 0),
-+	[HWBLK_SDHI0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR2, 18, 0),
-+	[HWBLK_SDHI1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],   MSTPCR2, 17, 0),
-+	[HWBLK_VEU1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 15, 0),
-+	[HWBLK_CEU1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 13, 0),
-+	[HWBLK_BEU1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 12, 0),
-+	[HWBLK_2DDMAC] = SH_CLK_MSTP32(&div4_clks[DIV4_SH], MSTPCR2, 10, 0),
-+	[HWBLK_SPU] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 9, 0),
-+	[HWBLK_JPU] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 6, 0),
-+	[HWBLK_VOU] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 5, 0),
-+	[HWBLK_BEU0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 4, 0),
-+	[HWBLK_CEU0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 3, 0),
-+	[HWBLK_VEU0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 2, 0),
-+	[HWBLK_VPU] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	    MSTPCR2, 1, 0),
-+	[HWBLK_LCDC] = SH_CLK_MSTP32(&div4_clks[DIV4_B],    MSTPCR2, 0, 0),
- };
+ static void __init bonito_init(void)
+ {
+ 	u16 val;
  
- static struct clk_lookup lookups[] = {
-@@ -283,7 +286,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("l2c0", &mstp_clks[HWBLK_L2C]),
- 	CLKDEV_CON_ID("fpu0", &mstp_clks[HWBLK_FPU]),
- 	CLKDEV_CON_ID("intc0", &mstp_clks[HWBLK_INTC]),
--	CLKDEV_CON_ID("dmac0", &mstp_clks[HWBLK_DMAC0]),
-+	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[HWBLK_DMAC0]),
- 	CLKDEV_CON_ID("sh0", &mstp_clks[HWBLK_SHYWAY]),
- 	CLKDEV_CON_ID("hudi0", &mstp_clks[HWBLK_HUDI]),
- 	CLKDEV_CON_ID("ubc0", &mstp_clks[HWBLK_UBC]),
-@@ -294,26 +297,26 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.3", &mstp_clks[HWBLK_TMU1]),
+ 	r8a7740_pinmux_init();
  
- 	CLKDEV_CON_ID("cmt_fck", &mstp_clks[HWBLK_CMT]),
--	CLKDEV_CON_ID("rwdt0", &mstp_clks[HWBLK_RWDT]),
--	CLKDEV_CON_ID("dmac1", &mstp_clks[HWBLK_DMAC1]),
-+	CLKDEV_DEV_ID("sh-wdt.0", &mstp_clks[HWBLK_RWDT]),
-+	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[HWBLK_DMAC1]),
- 
- 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.4", &mstp_clks[HWBLK_TMU1]),
- 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.5", &mstp_clks[HWBLK_TMU1]),
--	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[HWBLK_SCIF0]),
--	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[HWBLK_SCIF1]),
--	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[HWBLK_SCIF2]),
--	CLKDEV_ICK_ID("sci_fck", "sh-sci.3", &mstp_clks[HWBLK_SCIF3]),
--	CLKDEV_ICK_ID("sci_fck", "sh-sci.4", &mstp_clks[HWBLK_SCIF4]),
--	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[HWBLK_SCIF5]),
+-	/* FPGA */
+-	gpio_request(GPIO_FN_CS5B, NULL);
+-	gpio_request(GPIO_FN_CS6A, NULL);
+-	gpio_request(GPIO_FN_CS5A_PORT105,  NULL);
+-	gpio_request(GPIO_FN_IRQ10, NULL);
 -
--	CLKDEV_CON_ID("msiof0", &mstp_clks[HWBLK_MSIOF0]),
--	CLKDEV_CON_ID("msiof1", &mstp_clks[HWBLK_MSIOF1]),
--	CLKDEV_CON_ID("keysc0", &mstp_clks[HWBLK_KEYSC]),
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[HWBLK_SCIF0]),
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[HWBLK_SCIF1]),
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[HWBLK_SCIF2]),
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[HWBLK_SCIF3]),
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[HWBLK_SCIF4]),
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[HWBLK_SCIF5]),
+-	val = bonito_fpga_read(BVERR);
+-	pr_info("bonito version: cpu %02x, base %02x\n",
+-		((val >> 8) & 0xFF),
+-		((val >> 0) & 0xFF));
+-
+-	/* SCIFA5 */
+-	gpio_request(GPIO_FN_SCIFA5_TXD_PORT91, NULL);
+-	gpio_request(GPIO_FN_SCIFA5_RXD_PORT92, NULL);
++	/*
++	 * core board settings
++	 */
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+@@ -174,7 +185,50 @@ static void __init bonito_init(void)
+ #endif
+ 
+ 	r8a7740_add_standard_devices();
+-	platform_add_devices(bonito_devices, ARRAY_SIZE(bonito_devices));
 +
-+	CLKDEV_DEV_ID("spi_sh_msiof.0", &mstp_clks[HWBLK_MSIOF0]),
-+	CLKDEV_DEV_ID("spi_sh_msiof.1", &mstp_clks[HWBLK_MSIOF1]),
-+	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[HWBLK_KEYSC]),
- 	CLKDEV_CON_ID("rtc0", &mstp_clks[HWBLK_RTC]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC0]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[HWBLK_IIC1]),
--	CLKDEV_CON_ID("mmc0", &mstp_clks[HWBLK_MMC]),
--	CLKDEV_CON_ID("eth0", &mstp_clks[HWBLK_ETHER]),
-+	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[HWBLK_MMC]),
-+	CLKDEV_DEV_ID("sh-eth.0", &mstp_clks[HWBLK_ETHER]),
- 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
- 	CLKDEV_CON_ID("tpu0", &mstp_clks[HWBLK_TPU]),
- 	CLKDEV_CON_ID("irda0", &mstp_clks[HWBLK_IRDA]),
-@@ -321,20 +324,20 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("usb1", &mstp_clks[HWBLK_USB1]),
- 	CLKDEV_CON_ID("usb0", &mstp_clks[HWBLK_USB0]),
- 	CLKDEV_CON_ID("2dg0", &mstp_clks[HWBLK_2DG]),
--	CLKDEV_CON_ID("sdhi0", &mstp_clks[HWBLK_SDHI0]),
--	CLKDEV_CON_ID("sdhi1", &mstp_clks[HWBLK_SDHI1]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[HWBLK_SDHI0]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[HWBLK_SDHI1]),
- 	CLKDEV_CON_ID("veu1", &mstp_clks[HWBLK_VEU1]),
--	CLKDEV_CON_ID("ceu1", &mstp_clks[HWBLK_CEU1]),
-+	CLKDEV_DEV_ID("sh_mobile_ceu.1", &mstp_clks[HWBLK_CEU1]),
- 	CLKDEV_CON_ID("beu1", &mstp_clks[HWBLK_BEU1]),
- 	CLKDEV_CON_ID("2ddmac0", &mstp_clks[HWBLK_2DDMAC]),
- 	CLKDEV_CON_ID("spu0", &mstp_clks[HWBLK_SPU]),
- 	CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
--	CLKDEV_CON_ID("vou0", &mstp_clks[HWBLK_VOU]),
-+	CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
- 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU0]),
--	CLKDEV_CON_ID("ceu0", &mstp_clks[HWBLK_CEU0]),
-+	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU0]),
- 	CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU0]),
- 	CLKDEV_CON_ID("vpu0", &mstp_clks[HWBLK_VPU]),
--	CLKDEV_CON_ID("lcdc0", &mstp_clks[HWBLK_LCDC]),
-+	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[HWBLK_LCDC]),
- };
- 
- int __init arch_clk_init(void)
-@@ -362,7 +365,7 @@ int __init arch_clk_init(void)
- 		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
- 
- 	if (!ret)
--		ret = sh_hwblk_clk_register(mstp_clks, HWBLK_NR);
-+		ret = sh_clk_mstp32_register(mstp_clks, HWBLK_NR);
- 
- 	return ret;
++	platform_add_devices(bonito_core_devices,
++			     ARRAY_SIZE(bonito_core_devices));
++
++	/*
++	 * base board settings
++	 */
++	gpio_request(GPIO_PORT176, NULL);
++	gpio_direction_input(GPIO_PORT176);
++	if (!gpio_get_value(GPIO_PORT176)) {
++		u16 bsw2;
++		u16 bsw3;
++		u16 bsw4;
++
++		/*
++		 * FPGA
++		 */
++		gpio_request(GPIO_FN_CS5B,		NULL);
++		gpio_request(GPIO_FN_CS6A,		NULL);
++		gpio_request(GPIO_FN_CS5A_PORT105,	NULL);
++		gpio_request(GPIO_FN_IRQ10,		NULL);
++
++		val = bonito_fpga_read(BVERR);
++		pr_info("bonito version: cpu %02x, base %02x\n",
++			((val >> 8) & 0xFF),
++			((val >> 0) & 0xFF));
++
++		bsw2 = bonito_fpga_read(BUSSWMR2);
++		bsw3 = bonito_fpga_read(BUSSWMR3);
++		bsw4 = bonito_fpga_read(BUSSWMR4);
++
++		/*
++		 * SCIFA5 (CN42)
++		 */
++		if (BIT_OFF(bsw2, 1) &&	/* S38.3 = ON */
++		    BIT_OFF(bsw3, 9) &&	/* S39.6 = ON */
++		    BIT_OFF(bsw4, 4)) {	/* S43.1 = ON */
++			gpio_request(GPIO_FN_SCIFA5_TXD_PORT91,	NULL);
++			gpio_request(GPIO_FN_SCIFA5_RXD_PORT92,	NULL);
++		}
++
++		platform_add_devices(bonito_base_devices,
++				     ARRAY_SIZE(bonito_base_devices));
++	}
  }
-diff --git a/arch/sh/kernel/cpu/sh4a/hwblk-sh7724.c b/arch/sh/kernel/cpu/sh4a/hwblk-sh7724.c
-deleted file mode 100644
-index 1613ad6..0000000
---- a/arch/sh/kernel/cpu/sh4a/hwblk-sh7724.c
-+++ /dev/null
-@@ -1,121 +0,0 @@
--/*
-- * arch/sh/kernel/cpu/sh4a/hwblk-sh7724.c
-- *
-- * SH7724 hardware block support
-- *
-- * Copyright (C) 2009 Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-- */
--#include <linux/init.h>
--#include <linux/kernel.h>
--#include <linux/io.h>
--#include <asm/suspend.h>
--#include <asm/hwblk.h>
--#include <cpu/sh7724.h>
--
--/* SH7724 registers */
--#define MSTPCR0		0xa4150030
--#define MSTPCR1		0xa4150034
--#define MSTPCR2		0xa4150038
--
--/* SH7724 Power Domains */
--enum { CORE_AREA, SUB_AREA, CORE_AREA_BM };
--static struct hwblk_area sh7724_hwblk_area[] = {
--	[CORE_AREA] = HWBLK_AREA(0, 0),
--	[CORE_AREA_BM] = HWBLK_AREA(HWBLK_AREA_FLAG_PARENT, CORE_AREA),
--	[SUB_AREA] = HWBLK_AREA(0, 0),
--};
--
--/* Table mapping HWBLK to Module Stop Bit and Power Domain */
--static struct hwblk sh7724_hwblk[HWBLK_NR] = {
--	[HWBLK_TLB] = HWBLK(MSTPCR0, 31, CORE_AREA),
--	[HWBLK_IC] = HWBLK(MSTPCR0, 30, CORE_AREA),
--	[HWBLK_OC] = HWBLK(MSTPCR0, 29, CORE_AREA),
--	[HWBLK_RSMEM] = HWBLK(MSTPCR0, 28, CORE_AREA),
--	[HWBLK_ILMEM] = HWBLK(MSTPCR0, 27, CORE_AREA),
--	[HWBLK_L2C] = HWBLK(MSTPCR0, 26, CORE_AREA),
--	[HWBLK_FPU] = HWBLK(MSTPCR0, 24, CORE_AREA),
--	[HWBLK_INTC] = HWBLK(MSTPCR0, 22, CORE_AREA),
--	[HWBLK_DMAC0] = HWBLK(MSTPCR0, 21, CORE_AREA_BM),
--	[HWBLK_SHYWAY] = HWBLK(MSTPCR0, 20, CORE_AREA),
--	[HWBLK_HUDI] = HWBLK(MSTPCR0, 19, CORE_AREA),
--	[HWBLK_DBG] = HWBLK(MSTPCR0, 18, CORE_AREA),
--	[HWBLK_UBC] = HWBLK(MSTPCR0, 17, CORE_AREA),
--	[HWBLK_TMU0] = HWBLK(MSTPCR0, 15, CORE_AREA),
--	[HWBLK_CMT] = HWBLK(MSTPCR0, 14, SUB_AREA),
--	[HWBLK_RWDT] = HWBLK(MSTPCR0, 13, SUB_AREA),
--	[HWBLK_DMAC1] = HWBLK(MSTPCR0, 12, CORE_AREA_BM),
--	[HWBLK_TMU1] = HWBLK(MSTPCR0, 10, CORE_AREA),
--	[HWBLK_SCIF0] = HWBLK(MSTPCR0, 9, CORE_AREA),
--	[HWBLK_SCIF1] = HWBLK(MSTPCR0, 8, CORE_AREA),
--	[HWBLK_SCIF2] = HWBLK(MSTPCR0, 7, CORE_AREA),
--	[HWBLK_SCIF3] = HWBLK(MSTPCR0, 6, CORE_AREA),
--	[HWBLK_SCIF4] = HWBLK(MSTPCR0, 5, CORE_AREA),
--	[HWBLK_SCIF5] = HWBLK(MSTPCR0, 4, CORE_AREA),
--	[HWBLK_MSIOF0] = HWBLK(MSTPCR0, 2, CORE_AREA),
--	[HWBLK_MSIOF1] = HWBLK(MSTPCR0, 1, CORE_AREA),
--
--	[HWBLK_KEYSC] = HWBLK(MSTPCR1, 12, SUB_AREA),
--	[HWBLK_RTC] = HWBLK(MSTPCR1, 11, SUB_AREA),
--	[HWBLK_IIC0] = HWBLK(MSTPCR1, 9, CORE_AREA),
--	[HWBLK_IIC1] = HWBLK(MSTPCR1, 8, CORE_AREA),
--
--	[HWBLK_MMC] = HWBLK(MSTPCR2, 29, CORE_AREA),
--	[HWBLK_ETHER] = HWBLK(MSTPCR2, 28, CORE_AREA_BM),
--	[HWBLK_ATAPI] = HWBLK(MSTPCR2, 26, CORE_AREA_BM),
--	[HWBLK_TPU] = HWBLK(MSTPCR2, 25, CORE_AREA),
--	[HWBLK_IRDA] = HWBLK(MSTPCR2, 24, CORE_AREA),
--	[HWBLK_TSIF] = HWBLK(MSTPCR2, 22, CORE_AREA),
--	[HWBLK_USB1] = HWBLK(MSTPCR2, 21, CORE_AREA),
--	[HWBLK_USB0] = HWBLK(MSTPCR2, 20, CORE_AREA),
--	[HWBLK_2DG] = HWBLK(MSTPCR2, 19, CORE_AREA_BM),
--	[HWBLK_SDHI0] = HWBLK(MSTPCR2, 18, CORE_AREA),
--	[HWBLK_SDHI1] = HWBLK(MSTPCR2, 17, CORE_AREA),
--	[HWBLK_VEU1] = HWBLK(MSTPCR2, 15, CORE_AREA_BM),
--	[HWBLK_CEU1] = HWBLK(MSTPCR2, 13, CORE_AREA_BM),
--	[HWBLK_BEU1] = HWBLK(MSTPCR2, 12, CORE_AREA_BM),
--	[HWBLK_2DDMAC] = HWBLK(MSTPCR2, 10, CORE_AREA_BM),
--	[HWBLK_SPU] = HWBLK(MSTPCR2, 9, CORE_AREA_BM),
--	[HWBLK_JPU] = HWBLK(MSTPCR2, 6, CORE_AREA_BM),
--	[HWBLK_VOU] = HWBLK(MSTPCR2, 5, CORE_AREA_BM),
--	[HWBLK_BEU0] = HWBLK(MSTPCR2, 4, CORE_AREA_BM),
--	[HWBLK_CEU0] = HWBLK(MSTPCR2, 3, CORE_AREA_BM),
--	[HWBLK_VEU0] = HWBLK(MSTPCR2, 2, CORE_AREA_BM),
--	[HWBLK_VPU] = HWBLK(MSTPCR2, 1, CORE_AREA_BM),
--	[HWBLK_LCDC] = HWBLK(MSTPCR2, 0, CORE_AREA_BM),
--};
--
--static struct hwblk_info sh7724_hwblk_info = {
--	.areas = sh7724_hwblk_area,
--	.nr_areas = ARRAY_SIZE(sh7724_hwblk_area),
--	.hwblks = sh7724_hwblk,
--	.nr_hwblks = ARRAY_SIZE(sh7724_hwblk),
--};
--
--int arch_hwblk_sleep_mode(void)
--{
--	if (!sh7724_hwblk_area[CORE_AREA].cnt[HWBLK_CNT_USAGE])
--		return SUSP_SH_STANDBY | SUSP_SH_SF;
--
--	if (!sh7724_hwblk_area[CORE_AREA_BM].cnt[HWBLK_CNT_USAGE])
--		return SUSP_SH_SLEEP | SUSP_SH_SF;
--
--	return SUSP_SH_SLEEP;
--}
--
--int __init arch_hwblk_init(void)
--{
--	return hwblk_register(&sh7724_hwblk_info);
--}
-diff --git a/arch/sh/kernel/cpu/shmobile/Makefile b/arch/sh/kernel/cpu/shmobile/Makefile
-index a39f88e..2f32a03 100644
---- a/arch/sh/kernel/cpu/shmobile/Makefile
-+++ b/arch/sh/kernel/cpu/shmobile/Makefile
-@@ -5,4 +5,6 @@
- # Power Management & Sleep mode
- obj-$(CONFIG_PM)	+= pm.o sleep.o
- obj-$(CONFIG_CPU_IDLE)	+= cpuidle.o
-+ifneq ($(CONFIG_CPU_SUBTYPE_SH7724),y)
- obj-$(CONFIG_PM_RUNTIME)	+= pm_runtime.o
-+endif
-diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
-index 67e272ab..30c2594 100644
---- a/drivers/sh/Makefile
-+++ b/drivers/sh/Makefile
-@@ -15,3 +15,4 @@ obj-$(CONFIG_GENERIC_GPIO)	+= pfc.o
- # special casing can go away.
- #
- obj-$(CONFIG_SUPERH)$(CONFIG_ARCH_SHMOBILE)	+= pm_runtime.o
-+obj-$(CONFIG_CPU_SUBTYPE_SH7724)		+= pm_runtime.o
+ 
+ static void __init bonito_timer_init(void)
 -- 
-1.7.2.5
+1.7.5.4
 
