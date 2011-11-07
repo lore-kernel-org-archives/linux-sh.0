@@ -1,289 +1,511 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 19 Nov 2011 14:00:34 +0000
-Subject: [Update 2x][PATCH 4/7] PM / Runtime: Use device PM QoS constraints
-Message-Id: <201111191500.34517.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Nov 2011 09:35:27 +0000
+Subject: [PATCH 2/3] ARM: mach-shmobile: move PORT_xx helper macro to sh_pfc.h
+Message-Id: <87mxc8qnqc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201111070101.33960.rjw@sisk.pl> <201111140122.27328.rjw@sisk.pl> <201111191456.40453.rjw@sisk.pl>
-In-Reply-To: <201111191456.40453.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+This patch moves PORT_xx helper macro to sh_pfc.h,
+and it expects CPU_ALL_PORT() macro for each CPU
+This patch is tesed on mackerel, kota2
 
-Make the runtime PM core use device PM QoS constraints to check if
-it is allowed to suspend a given device, so that an error code is
-returned if the device's own PM QoS constraint is negative or one of
-its children has already been suspended for too long.  If this is
-not the case, the maximum estimated time the device is allowed to be
-suspended, computed as the minimum of the device's PM QoS constraint
-and the PM QoS constraints of its children (reduced by the difference
-between the current time and their suspend times) is stored in a new
-device's PM field power.max_time_suspended_ns that can be used by
-the device's subsystem or PM domain to decide whether or not to put
-the device into lower-power (and presumably higher-latency) states
-later (if the constraint is 0, which means "no constraint", the
-power.max_time_suspended_ns is set to -1).
-
-Additionally, the time of execution of the subsystem-level
-.runtime_suspend() callback for the device is recorded in the new
-power.suspend_time field for later use by the device's subsystem or
-PM domain along with power.max_time_suspended_ns (it also is used
-by the core code when the device's parent is suspended).
-
-Introduce a new helper function,
-pm_runtime_update_max_time_suspended(), allowing subsystems and PM
-domains (or device drivers) to update the power.max_time_suspended_ns
-field, for example after changing the power state of a suspended
-device.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/base/power/qos.c     |   24 +++++++---
- drivers/base/power/runtime.c |   94 +++++++++++++++++++++++++++++++++++++++++++
- include/linux/pm.h           |    2 
- include/linux/pm_qos.h       |    3 +
- include/linux/pm_runtime.h   |    5 ++
- 5 files changed, 120 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/pfc-sh7367.c |   71 ++++++++---------------
+ arch/arm/mach-shmobile/pfc-sh7372.c |   32 ++--------
+ arch/arm/mach-shmobile/pfc-sh7377.c |  103 +++++++++++++--------------------
+ arch/arm/mach-shmobile/pfc-sh73a0.c |  108 +++++++++++++++--------------------
+ include/linux/sh_pfc.h              |   23 +++++++
+ 5 files changed, 140 insertions(+), 197 deletions(-)
 
-Index: linux/include/linux/pm.h
-=================================--- linux.orig/include/linux/pm.h
-+++ linux/include/linux/pm.h
-@@ -482,6 +482,8 @@ struct dev_pm_info {
- 	unsigned long		active_jiffies;
- 	unsigned long		suspended_jiffies;
- 	unsigned long		accounting_timestamp;
-+	ktime_t			suspend_time;
-+	s64			max_time_suspended_ns;
- #endif
- 	struct pm_subsys_data	*subsys_data;  /* Owned by the subsystem. */
- 	struct pm_qos_constraints *constraints;
-Index: linux/drivers/base/power/runtime.c
-=================================--- linux.orig/drivers/base/power/runtime.c
-+++ linux/drivers/base/power/runtime.c
-@@ -279,6 +279,47 @@ static int rpm_callback(int (*cb)(struct
- 	return retval != -EACCES ? retval : -EIO;
- }
+diff --git a/arch/arm/mach-shmobile/pfc-sh7367.c b/arch/arm/mach-shmobile/pfc-sh7367.c
+index 2518116..32fbf02 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7367.c
++++ b/arch/arm/mach-shmobile/pfc-sh7367.c
+@@ -21,68 +21,49 @@
+ #include <linux/gpio.h>
+ #include <mach/sh7367.h>
  
-+struct rpm_qos_data {
-+	ktime_t time_now;
-+	s64 constraint_ns;
-+};
-+
-+/**
-+ * rpm_update_qos_constraint - Update a given PM QoS constraint data.
-+ * @dev: Device whose timing data to use.
-+ * @data: PM QoS constraint data to update.
-+ *
-+ * Use the suspend timing data of @dev to update PM QoS constraint data pointed
-+ * to by @data.
-+ */
-+static int rpm_update_qos_constraint(struct device *dev, void *data)
-+{
-+	struct rpm_qos_data *qos = data;
-+	unsigned long flags;
-+	s64 delta_ns;
-+	int ret = 0;
-+
-+	spin_lock_irqsave_nested(&dev->power.lock, flags, SINGLE_DEPTH_NESTING);
-+
-+	if (dev->power.max_time_suspended_ns < 0)
-+		goto out;
-+
-+	delta_ns = dev->power.max_time_suspended_ns -
-+		ktime_to_ns(ktime_sub(qos->time_now, dev->power.suspend_time));
-+	if (delta_ns <= 0) {
-+		ret = -EBUSY;
-+		goto out;
-+	}
-+
-+	if (qos->constraint_ns > delta_ns || qos->constraint_ns = 0)
-+		qos->constraint_ns = delta_ns;
-+
-+ out:
-+	spin_unlock_irqrestore(&dev->power.lock, flags);
-+
-+	return ret;
-+}
-+
- /**
-  * rpm_suspend - Carry out runtime suspend of given device.
-  * @dev: Device to suspend.
-@@ -305,6 +346,7 @@ static int rpm_suspend(struct device *de
- {
- 	int (*callback)(struct device *);
- 	struct device *parent = NULL;
-+	struct rpm_qos_data qos;
- 	int retval;
- 
- 	trace_rpm_suspend(dev, rpmflags);
-@@ -400,6 +442,25 @@ static int rpm_suspend(struct device *de
- 		goto out;
- 	}
- 
-+	qos.constraint_ns = __dev_pm_qos_read_value(dev);
-+	if (qos.constraint_ns < 0) {
-+		/* Negative constraint means "never suspend". */
-+		retval = -EPERM;
-+		goto out;
-+	}
-+	qos.constraint_ns *= NSEC_PER_USEC;
-+	qos.time_now = ktime_get();
-+
-+	if (!dev->power.ignore_children) {
-+		retval = device_for_each_child(dev, &qos,
-+					       rpm_update_qos_constraint);
-+		if (retval)
-+			goto out;
-+	}
-+
-+	dev->power.suspend_time = qos.time_now;
-+	dev->power.max_time_suspended_ns = qos.constraint_ns ? : -1;
-+
- 	__update_runtime_status(dev, RPM_SUSPENDING);
- 
- 	if (dev->pm_domain)
-@@ -416,6 +477,8 @@ static int rpm_suspend(struct device *de
- 	retval = rpm_callback(callback, dev);
- 	if (retval) {
- 		__update_runtime_status(dev, RPM_ACTIVE);
-+		dev->power.suspend_time = ktime_set(0, 0);
-+		dev->power.max_time_suspended_ns = -1;
- 		dev->power.deferred_resume = false;
- 		if (retval = -EAGAIN || retval = -EBUSY) {
- 			dev->power.runtime_error = 0;
-@@ -620,6 +683,9 @@ static int rpm_resume(struct device *dev
- 	if (dev->power.no_callbacks)
- 		goto no_callback;	/* Assume success. */
- 
-+	dev->power.suspend_time = ktime_set(0, 0);
-+	dev->power.max_time_suspended_ns = -1;
-+
- 	__update_runtime_status(dev, RPM_RESUMING);
- 
- 	if (dev->pm_domain)
-@@ -1279,6 +1345,9 @@ void pm_runtime_init(struct device *dev)
- 	setup_timer(&dev->power.suspend_timer, pm_suspend_timer_fn,
- 			(unsigned long)dev);
- 
-+	dev->power.suspend_time = ktime_set(0, 0);
-+	dev->power.max_time_suspended_ns = -1;
-+
- 	init_waitqueue_head(&dev->power.wait_queue);
- }
- 
-@@ -1296,3 +1365,28 @@ void pm_runtime_remove(struct device *de
- 	if (dev->power.irq_safe && dev->parent)
- 		pm_runtime_put_sync(dev->parent);
- }
-+
-+/**
-+ * pm_runtime_update_max_time_suspended - Update device's suspend time data.
-+ * @dev: Device to handle.
-+ * @delta_ns: Value to subtract from the device's max_time_suspended_ns field.
-+ *
-+ * Update the device's power.max_time_suspended_ns field by subtracting
-+ * @delta_ns from it.  The resulting value of power.max_time_suspended_ns is
-+ * never negative.
-+ */
-+void pm_runtime_update_max_time_suspended(struct device *dev, s64 delta_ns)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&dev->power.lock, flags);
-+
-+	if (delta_ns > 0 && dev->power.max_time_suspended_ns > 0) {
-+		if (dev->power.max_time_suspended_ns > delta_ns)
-+			dev->power.max_time_suspended_ns -= delta_ns;
-+		else
-+			dev->power.max_time_suspended_ns = 0;
-+	}
-+
-+	spin_unlock_irqrestore(&dev->power.lock, flags);
-+}
-Index: linux/include/linux/pm_runtime.h
-=================================--- linux.orig/include/linux/pm_runtime.h
-+++ linux/include/linux/pm_runtime.h
-@@ -45,6 +45,8 @@ extern void pm_runtime_irq_safe(struct d
- extern void __pm_runtime_use_autosuspend(struct device *dev, bool use);
- extern void pm_runtime_set_autosuspend_delay(struct device *dev, int delay);
- extern unsigned long pm_runtime_autosuspend_expiration(struct device *dev);
-+extern void pm_runtime_update_max_time_suspended(struct device *dev,
-+						 s64 delta_ns);
- 
- static inline bool pm_children_suspended(struct device *dev)
- {
-@@ -148,6 +150,9 @@ static inline void pm_runtime_set_autosu
- static inline unsigned long pm_runtime_autosuspend_expiration(
- 				struct device *dev) { return 0; }
- 
-+static inline void pm_runtime_update_max_time_suspended(struct device *dev,
-+							s64 delta_ns) {}
-+
- #endif /* !CONFIG_PM_RUNTIME */
- 
- static inline int pm_runtime_idle(struct device *dev)
-Index: linux/drivers/base/power/qos.c
-=================================--- linux.orig/drivers/base/power/qos.c
-+++ linux/drivers/base/power/qos.c
-@@ -47,21 +47,29 @@ static DEFINE_MUTEX(dev_pm_qos_mtx);
- static BLOCKING_NOTIFIER_HEAD(dev_pm_notifiers);
- 
- /**
-- * dev_pm_qos_read_value - Get PM QoS constraint for a given device.
-+ * __dev_pm_qos_read_value - Get PM QoS constraint for a given device.
-+ * @dev: Device to get the PM QoS constraint value for.
-+ *
-+ * This routine must be called with dev->power.lock held.
-+ */
-+s32 __dev_pm_qos_read_value(struct device *dev)
-+{
-+	struct pm_qos_constraints *c = dev->power.constraints;
-+
-+	return c ? pm_qos_read_value(c) : 0;
-+}
-+
-+/**
-+ * dev_pm_qos_read_value - Get PM QoS constraint for a given device (locked).
-  * @dev: Device to get the PM QoS constraint value for.
-  */
- s32 dev_pm_qos_read_value(struct device *dev)
- {
--	struct pm_qos_constraints *c;
- 	unsigned long flags;
--	s32 ret = 0;
-+	s32 ret;
- 
- 	spin_lock_irqsave(&dev->power.lock, flags);
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
 -
--	c = dev->power.constraints;
--	if (c)
--		ret = pm_qos_read_value(c);
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
 -
-+	ret = __dev_pm_qos_read_value(dev);
- 	spin_unlock_irqrestore(&dev->power.lock, flags);
+-#define _90(fn, pfx, sfx)				\
+-	_10(fn, pfx##1, sfx), _10(fn, pfx##2, sfx),	\
+-	_10(fn, pfx##3, sfx), _10(fn, pfx##4, sfx),	\
+-	_10(fn, pfx##5, sfx), _10(fn, pfx##6, sfx),	\
+-	_10(fn, pfx##7, sfx), _10(fn, pfx##8, sfx),	\
+-	_10(fn, pfx##9, sfx)
+-
+-#define _273(fn, pfx, sfx)		\
+-	_10(fn, pfx, sfx), _90(fn, pfx, sfx),		\
+-	_10(fn, pfx##10, sfx), _90(fn, pfx##1, sfx),	\
+-	_10(fn, pfx##20, sfx), _10(fn, pfx##21, sfx),	\
+-	_10(fn, pfx##22, sfx), _10(fn, pfx##23, sfx),	\
+-	_10(fn, pfx##24, sfx), _10(fn, pfx##25, sfx),	\
+-	_10(fn, pfx##26, sfx), _1(fn, pfx##270, sfx),	\
+-	_1(fn, pfx##271, sfx), _1(fn, pfx##272, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_273(str) _273(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
++	PORT_10(fn, pfx##10, sfx), PORT_90(fn, pfx##1, sfx),	\
++	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
++	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
++	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
++	PORT_10(fn, pfx##26, sfx), PORT_1(fn, pfx##270, sfx),	\
++	PORT_1(fn, pfx##271, sfx), PORT_1(fn, pfx##272, sfx)
  
- 	return ret;
-Index: linux/include/linux/pm_qos.h
-=================================--- linux.orig/include/linux/pm_qos.h
-+++ linux/include/linux/pm_qos.h
-@@ -78,6 +78,7 @@ int pm_qos_remove_notifier(int pm_qos_cl
- int pm_qos_request_active(struct pm_qos_request *req);
- s32 pm_qos_read_value(struct pm_qos_constraints *c);
+ enum {
+ 	PINMUX_RESERVED = 0,
  
-+s32 __dev_pm_qos_read_value(struct device *dev);
- s32 dev_pm_qos_read_value(struct device *dev);
- int dev_pm_qos_add_request(struct device *dev, struct dev_pm_qos_request *req,
- 			   s32 value);
-@@ -119,6 +120,8 @@ static inline int pm_qos_request_active(
- static inline s32 pm_qos_read_value(struct pm_qos_constraints *c)
- 			{ return 0; }
+ 	PINMUX_DATA_BEGIN,
+-	PORT_273(DATA), /* PORT0_DATA -> PORT272_DATA */
++	PORT_ALL(DATA), /* PORT0_DATA -> PORT272_DATA */
+ 	PINMUX_DATA_END,
  
-+static inline s32 __dev_pm_qos_read_value(struct device *dev)
-+			{ return 0; }
- static inline s32 dev_pm_qos_read_value(struct device *dev)
- 			{ return 0; }
- static inline int dev_pm_qos_add_request(struct device *dev,
+ 	PINMUX_INPUT_BEGIN,
+-	PORT_273(IN), /* PORT0_IN -> PORT272_IN */
++	PORT_ALL(IN), /* PORT0_IN -> PORT272_IN */
+ 	PINMUX_INPUT_END,
+ 
+ 	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_273(IN_PU), /* PORT0_IN_PU -> PORT272_IN_PU */
++	PORT_ALL(IN_PU), /* PORT0_IN_PU -> PORT272_IN_PU */
+ 	PINMUX_INPUT_PULLUP_END,
+ 
+ 	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_273(IN_PD), /* PORT0_IN_PD -> PORT272_IN_PD */
++	PORT_ALL(IN_PD), /* PORT0_IN_PD -> PORT272_IN_PD */
+ 	PINMUX_INPUT_PULLDOWN_END,
+ 
+ 	PINMUX_OUTPUT_BEGIN,
+-	PORT_273(OUT), /* PORT0_OUT -> PORT272_OUT */
++	PORT_ALL(OUT), /* PORT0_OUT -> PORT272_OUT */
+ 	PINMUX_OUTPUT_END,
+ 
+ 	PINMUX_FUNCTION_BEGIN,
+-	PORT_273(FN_IN), /* PORT0_FN_IN -> PORT272_FN_IN */
+-	PORT_273(FN_OUT), /* PORT0_FN_OUT -> PORT272_FN_OUT */
+-	PORT_273(FN0), /* PORT0_FN0 -> PORT272_FN0 */
+-	PORT_273(FN1), /* PORT0_FN1 -> PORT272_FN1 */
+-	PORT_273(FN2), /* PORT0_FN2 -> PORT272_FN2 */
+-	PORT_273(FN3), /* PORT0_FN3 -> PORT272_FN3 */
+-	PORT_273(FN4), /* PORT0_FN4 -> PORT272_FN4 */
+-	PORT_273(FN5), /* PORT0_FN5 -> PORT272_FN5 */
+-	PORT_273(FN6), /* PORT0_FN6 -> PORT272_FN6 */
+-	PORT_273(FN7), /* PORT0_FN7 -> PORT272_FN7 */
++	PORT_ALL(FN_IN), /* PORT0_FN_IN -> PORT272_FN_IN */
++	PORT_ALL(FN_OUT), /* PORT0_FN_OUT -> PORT272_FN_OUT */
++	PORT_ALL(FN0), /* PORT0_FN0 -> PORT272_FN0 */
++	PORT_ALL(FN1), /* PORT0_FN1 -> PORT272_FN1 */
++	PORT_ALL(FN2), /* PORT0_FN2 -> PORT272_FN2 */
++	PORT_ALL(FN3), /* PORT0_FN3 -> PORT272_FN3 */
++	PORT_ALL(FN4), /* PORT0_FN4 -> PORT272_FN4 */
++	PORT_ALL(FN5), /* PORT0_FN5 -> PORT272_FN5 */
++	PORT_ALL(FN6), /* PORT0_FN6 -> PORT272_FN6 */
++	PORT_ALL(FN7), /* PORT0_FN7 -> PORT272_FN7 */
+ 
+ 	MSELBCR_MSEL2_1, MSELBCR_MSEL2_0,
+ 	PINMUX_FUNCTION_END,
+@@ -1063,13 +1044,9 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(DIVLOCK_MARK, PORT272_FN1),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_273() _273(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+ 	/* 49-1 -> 49-6 (GPIO) */
+-	GPIO_PORT_273(),
++	GPIO_PORT_ALL(),
+ 
+ 	/* Special Pull-up / Pull-down Functions */
+ 	GPIO_FN(PORT48_KEYIN0_PU), GPIO_FN(PORT49_KEYIN1_PU),
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index 34d6d76..4b43626 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -25,27 +25,13 @@
+ #include <linux/gpio.h>
+ #include <mach/sh7372.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _80(fn, pfx, sfx)				\
+-	_10(fn, pfx##1, sfx),	_10(fn, pfx##2, sfx),	\
+-	_10(fn, pfx##3, sfx),	_10(fn, pfx##4, sfx),	\
+-	_10(fn, pfx##5, sfx),	_10(fn, pfx##6, sfx),	\
+-	_10(fn, pfx##7, sfx),	_10(fn, pfx##8, sfx)
+-
+-#define _190(fn, pfx, sfx) \
+-	_10(fn, pfx, sfx), _80(fn, pfx, sfx), _10(fn, pfx##9, sfx), \
+-	_10(fn, pfx##10, sfx), _80(fn, pfx##1, sfx), _1(fn, pfx##190, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_ALL(str) _190(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx) \
++	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
++	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
++	PORT_10(fn, pfx##12, sfx),	PORT_10(fn, pfx##13, sfx), \
++	PORT_10(fn, pfx##14, sfx),	PORT_10(fn, pfx##15, sfx), \
++	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
++	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+@@ -942,10 +928,6 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(MFIv4_MARK,		MSEL4CR_6_1),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_ALL() _190(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+ 
+ 	/* PORT */
+diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
+index e4c7018..fb3cfd3 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7377.c
++++ b/arch/arm/mach-shmobile/pfc-sh7377.c
+@@ -22,84 +22,65 @@
+ #include <linux/gpio.h>
+ #include <mach/sh7377.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _90(fn, pfx, sfx)				\
+-	_10(fn, pfx##1, sfx), _10(fn, pfx##2, sfx),	\
+-	_10(fn, pfx##3, sfx), _10(fn, pfx##4, sfx),	\
+-	_10(fn, pfx##5, sfx), _10(fn, pfx##6, sfx),	\
+-	_10(fn, pfx##7, sfx), _10(fn, pfx##8, sfx),	\
+-	_10(fn, pfx##9, sfx)
+-
+-#define _265(fn, pfx, sfx)				\
+-	_10(fn, pfx, sfx), _90(fn, pfx, sfx),		\
+-	_10(fn, pfx##10, sfx),				\
+-	_1(fn, pfx##110, sfx), _1(fn, pfx##111, sfx),	\
+-	_1(fn, pfx##112, sfx), _1(fn, pfx##113, sfx),	\
+-	_1(fn, pfx##114, sfx), _1(fn, pfx##115, sfx),	\
+-	_1(fn, pfx##116, sfx), _1(fn, pfx##117, sfx),	\
+-	_1(fn, pfx##118, sfx),				\
+-	_1(fn, pfx##128, sfx), _1(fn, pfx##129, sfx),	\
+-	_10(fn, pfx##13, sfx), _10(fn, pfx##14, sfx),	\
+-	_10(fn, pfx##15, sfx),				\
+-	_1(fn, pfx##160, sfx), _1(fn, pfx##161, sfx),	\
+-	_1(fn, pfx##162, sfx), _1(fn, pfx##163, sfx),	\
+-	_1(fn, pfx##164, sfx),				\
+-	_1(fn, pfx##192, sfx), _1(fn, pfx##193, sfx),	\
+-	_1(fn, pfx##194, sfx), _1(fn, pfx##195, sfx),	\
+-	_1(fn, pfx##196, sfx), _1(fn, pfx##197, sfx),	\
+-	_1(fn, pfx##198, sfx), _1(fn, pfx##199, sfx),	\
+-	_10(fn, pfx##20, sfx), _10(fn, pfx##21, sfx),	\
+-	_10(fn, pfx##22, sfx), _10(fn, pfx##23, sfx),	\
+-	_10(fn, pfx##24, sfx), _10(fn, pfx##25, sfx),	\
+-	_1(fn, pfx##260, sfx), _1(fn, pfx##261, sfx),	\
+-	_1(fn, pfx##262, sfx), _1(fn, pfx##263, sfx),	\
+-	_1(fn, pfx##264, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_265(str) _265(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
++	PORT_10(fn, pfx##10, sfx),				\
++	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
++	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
++	PORT_1(fn, pfx##114, sfx), PORT_1(fn, pfx##115, sfx),	\
++	PORT_1(fn, pfx##116, sfx), PORT_1(fn, pfx##117, sfx),	\
++	PORT_1(fn, pfx##118, sfx),				\
++	PORT_1(fn, pfx##128, sfx), PORT_1(fn, pfx##129, sfx),	\
++	PORT_10(fn, pfx##13, sfx), PORT_10(fn, pfx##14, sfx),	\
++	PORT_10(fn, pfx##15, sfx),				\
++	PORT_1(fn, pfx##160, sfx), PORT_1(fn, pfx##161, sfx),	\
++	PORT_1(fn, pfx##162, sfx), PORT_1(fn, pfx##163, sfx),	\
++	PORT_1(fn, pfx##164, sfx),				\
++	PORT_1(fn, pfx##192, sfx), PORT_1(fn, pfx##193, sfx),	\
++	PORT_1(fn, pfx##194, sfx), PORT_1(fn, pfx##195, sfx),	\
++	PORT_1(fn, pfx##196, sfx), PORT_1(fn, pfx##197, sfx),	\
++	PORT_1(fn, pfx##198, sfx), PORT_1(fn, pfx##199, sfx),	\
++	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
++	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
++	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
++	PORT_1(fn, pfx##260, sfx), PORT_1(fn, pfx##261, sfx),	\
++	PORT_1(fn, pfx##262, sfx), PORT_1(fn, pfx##263, sfx),	\
++	PORT_1(fn, pfx##264, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+ 	PINMUX_DATA_BEGIN,
+-	PORT_265(DATA), /* PORT0_DATA -> PORT264_DATA */
++	PORT_ALL(DATA), /* PORT0_DATA -> PORT264_DATA */
+ 	PINMUX_DATA_END,
+ 
+ 	PINMUX_INPUT_BEGIN,
+-	PORT_265(IN), /* PORT0_IN -> PORT264_IN */
++	PORT_ALL(IN), /* PORT0_IN -> PORT264_IN */
+ 	PINMUX_INPUT_END,
+ 
+ 	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_265(IN_PU), /* PORT0_IN_PU -> PORT264_IN_PU */
++	PORT_ALL(IN_PU), /* PORT0_IN_PU -> PORT264_IN_PU */
+ 	PINMUX_INPUT_PULLUP_END,
+ 
+ 	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_265(IN_PD), /* PORT0_IN_PD -> PORT264_IN_PD */
++	PORT_ALL(IN_PD), /* PORT0_IN_PD -> PORT264_IN_PD */
+ 	PINMUX_INPUT_PULLDOWN_END,
+ 
+ 	PINMUX_OUTPUT_BEGIN,
+-	PORT_265(OUT), /* PORT0_OUT -> PORT264_OUT */
++	PORT_ALL(OUT), /* PORT0_OUT -> PORT264_OUT */
+ 	PINMUX_OUTPUT_END,
+ 
+ 	PINMUX_FUNCTION_BEGIN,
+-	PORT_265(FN_IN), /* PORT0_FN_IN -> PORT264_FN_IN */
+-	PORT_265(FN_OUT), /* PORT0_FN_OUT -> PORT264_FN_OUT */
+-	PORT_265(FN0), /* PORT0_FN0 -> PORT264_FN0 */
+-	PORT_265(FN1), /* PORT0_FN1 -> PORT264_FN1 */
+-	PORT_265(FN2), /* PORT0_FN2 -> PORT264_FN2 */
+-	PORT_265(FN3), /* PORT0_FN3 -> PORT264_FN3 */
+-	PORT_265(FN4), /* PORT0_FN4 -> PORT264_FN4 */
+-	PORT_265(FN5), /* PORT0_FN5 -> PORT264_FN5 */
+-	PORT_265(FN6), /* PORT0_FN6 -> PORT264_FN6 */
+-	PORT_265(FN7), /* PORT0_FN7 -> PORT264_FN7 */
++	PORT_ALL(FN_IN), /* PORT0_FN_IN -> PORT264_FN_IN */
++	PORT_ALL(FN_OUT), /* PORT0_FN_OUT -> PORT264_FN_OUT */
++	PORT_ALL(FN0), /* PORT0_FN0 -> PORT264_FN0 */
++	PORT_ALL(FN1), /* PORT0_FN1 -> PORT264_FN1 */
++	PORT_ALL(FN2), /* PORT0_FN2 -> PORT264_FN2 */
++	PORT_ALL(FN3), /* PORT0_FN3 -> PORT264_FN3 */
++	PORT_ALL(FN4), /* PORT0_FN4 -> PORT264_FN4 */
++	PORT_ALL(FN5), /* PORT0_FN5 -> PORT264_FN5 */
++	PORT_ALL(FN6), /* PORT0_FN6 -> PORT264_FN6 */
++	PORT_ALL(FN7), /* PORT0_FN7 -> PORT264_FN7 */
+ 
+ 	MSELBCR_MSEL17_1, MSELBCR_MSEL17_0,
+ 	MSELBCR_MSEL16_1, MSELBCR_MSEL16_0,
+@@ -1039,13 +1020,9 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(RESETOUTS_MARK, PORT264_FN1),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_265() _265(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+ 	/* 55-1 -> 55-5 (GPIO) */
+-	GPIO_PORT_265(),
++	GPIO_PORT_ALL(),
+ 
+ 	/* Special Pull-up / Pull-down Functions */
+ 	GPIO_FN(PORT66_KEYIN0_PU), GPIO_FN(PORT67_KEYIN1_PU),
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index 8c5f8b59..3eb0071 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -23,83 +23,71 @@
+ #include <linux/gpio.h>
+ #include <mach/sh73a0.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _310(fn, pfx, sfx)				\
+-	_10(fn, pfx,    sfx), _10(fn, pfx##1, sfx),	\
+-	_10(fn, pfx##2, sfx), _10(fn, pfx##3, sfx),	\
+-	_10(fn, pfx##4, sfx), _10(fn, pfx##5, sfx),	\
+-	_10(fn, pfx##6, sfx), _10(fn, pfx##7, sfx),	\
+-	_10(fn, pfx##8, sfx), _10(fn, pfx##9, sfx),	\
+-	_10(fn, pfx##10, sfx),				\
+-	_1(fn, pfx##110, sfx), _1(fn, pfx##111, sfx),	\
+-	_1(fn, pfx##112, sfx), _1(fn, pfx##113, sfx),	\
+-	_1(fn, pfx##114, sfx), _1(fn, pfx##115, sfx),	\
+-	_1(fn, pfx##116, sfx), _1(fn, pfx##117, sfx),	\
+-	_1(fn, pfx##118, sfx),				\
+-	_1(fn, pfx##128, sfx), _1(fn, pfx##129, sfx),	\
+-	_10(fn, pfx##13, sfx), _10(fn, pfx##14, sfx),	\
+-	_10(fn, pfx##15, sfx),				\
+-	_1(fn, pfx##160, sfx), _1(fn, pfx##161, sfx),	\
+-	_1(fn, pfx##162, sfx), _1(fn, pfx##163, sfx),	\
+-	_1(fn, pfx##164, sfx),				\
+-	_1(fn, pfx##192, sfx), _1(fn, pfx##193, sfx),	\
+-	_1(fn, pfx##194, sfx), _1(fn, pfx##195, sfx),	\
+-	_1(fn, pfx##196, sfx), _1(fn, pfx##197, sfx),	\
+-	_1(fn, pfx##198, sfx), _1(fn, pfx##199, sfx),	\
+-	_10(fn, pfx##20, sfx), _10(fn, pfx##21, sfx),	\
+-	_10(fn, pfx##22, sfx), _10(fn, pfx##23, sfx),	\
+-	_10(fn, pfx##24, sfx), _10(fn, pfx##25, sfx),	\
+-	_10(fn, pfx##26, sfx), _10(fn, pfx##27, sfx),	\
+-	_1(fn, pfx##280, sfx), _1(fn, pfx##281, sfx),	\
+-	_1(fn, pfx##282, sfx),				\
+-	_1(fn, pfx##288, sfx), _1(fn, pfx##289, sfx),	\
+-	_10(fn, pfx##29, sfx), _10(fn, pfx##30, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_310(str) _310(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
++	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
++	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
++	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
++	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
++	PORT_10(fn, pfx##10, sfx),				\
++	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
++	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
++	PORT_1(fn, pfx##114, sfx), PORT_1(fn, pfx##115, sfx),	\
++	PORT_1(fn, pfx##116, sfx), PORT_1(fn, pfx##117, sfx),	\
++	PORT_1(fn, pfx##118, sfx),				\
++	PORT_1(fn, pfx##128, sfx), PORT_1(fn, pfx##129, sfx),	\
++	PORT_10(fn, pfx##13, sfx), PORT_10(fn, pfx##14, sfx),	\
++	PORT_10(fn, pfx##15, sfx),				\
++	PORT_1(fn, pfx##160, sfx), PORT_1(fn, pfx##161, sfx),	\
++	PORT_1(fn, pfx##162, sfx), PORT_1(fn, pfx##163, sfx),	\
++	PORT_1(fn, pfx##164, sfx),				\
++	PORT_1(fn, pfx##192, sfx), PORT_1(fn, pfx##193, sfx),	\
++	PORT_1(fn, pfx##194, sfx), PORT_1(fn, pfx##195, sfx),	\
++	PORT_1(fn, pfx##196, sfx), PORT_1(fn, pfx##197, sfx),	\
++	PORT_1(fn, pfx##198, sfx), PORT_1(fn, pfx##199, sfx),	\
++	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
++	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
++	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
++	PORT_10(fn, pfx##26, sfx), PORT_10(fn, pfx##27, sfx),	\
++	PORT_1(fn, pfx##280, sfx), PORT_1(fn, pfx##281, sfx),	\
++	PORT_1(fn, pfx##282, sfx),				\
++	PORT_1(fn, pfx##288, sfx), PORT_1(fn, pfx##289, sfx),	\
++	PORT_10(fn, pfx##29, sfx), PORT_10(fn, pfx##30, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+ 	PINMUX_DATA_BEGIN,
+-	PORT_310(DATA),			/* PORT0_DATA -> PORT309_DATA */
++	PORT_ALL(DATA),			/* PORT0_DATA -> PORT309_DATA */
+ 	PINMUX_DATA_END,
+ 
+ 	PINMUX_INPUT_BEGIN,
+-	PORT_310(IN),			/* PORT0_IN -> PORT309_IN */
++	PORT_ALL(IN),			/* PORT0_IN -> PORT309_IN */
+ 	PINMUX_INPUT_END,
+ 
+ 	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_310(IN_PU),		/* PORT0_IN_PU -> PORT309_IN_PU */
++	PORT_ALL(IN_PU),		/* PORT0_IN_PU -> PORT309_IN_PU */
+ 	PINMUX_INPUT_PULLUP_END,
+ 
+ 	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_310(IN_PD),		/* PORT0_IN_PD -> PORT309_IN_PD */
++	PORT_ALL(IN_PD),		/* PORT0_IN_PD -> PORT309_IN_PD */
+ 	PINMUX_INPUT_PULLDOWN_END,
+ 
+ 	PINMUX_OUTPUT_BEGIN,
+-	PORT_310(OUT),			/* PORT0_OUT -> PORT309_OUT */
++	PORT_ALL(OUT),			/* PORT0_OUT -> PORT309_OUT */
+ 	PINMUX_OUTPUT_END,
+ 
+ 	PINMUX_FUNCTION_BEGIN,
+-	PORT_310(FN_IN),		/* PORT0_FN_IN -> PORT309_FN_IN */
+-	PORT_310(FN_OUT),		/* PORT0_FN_OUT -> PORT309_FN_OUT */
+-	PORT_310(FN0),			/* PORT0_FN0 -> PORT309_FN0 */
+-	PORT_310(FN1),			/* PORT0_FN1 -> PORT309_FN1 */
+-	PORT_310(FN2),			/* PORT0_FN2 -> PORT309_FN2 */
+-	PORT_310(FN3),			/* PORT0_FN3 -> PORT309_FN3 */
+-	PORT_310(FN4),			/* PORT0_FN4 -> PORT309_FN4 */
+-	PORT_310(FN5),			/* PORT0_FN5 -> PORT309_FN5 */
+-	PORT_310(FN6),			/* PORT0_FN6 -> PORT309_FN6 */
+-	PORT_310(FN7),			/* PORT0_FN7 -> PORT309_FN7 */
++	PORT_ALL(FN_IN),		/* PORT0_FN_IN -> PORT309_FN_IN */
++	PORT_ALL(FN_OUT),		/* PORT0_FN_OUT -> PORT309_FN_OUT */
++	PORT_ALL(FN0),			/* PORT0_FN0 -> PORT309_FN0 */
++	PORT_ALL(FN1),			/* PORT0_FN1 -> PORT309_FN1 */
++	PORT_ALL(FN2),			/* PORT0_FN2 -> PORT309_FN2 */
++	PORT_ALL(FN3),			/* PORT0_FN3 -> PORT309_FN3 */
++	PORT_ALL(FN4),			/* PORT0_FN4 -> PORT309_FN4 */
++	PORT_ALL(FN5),			/* PORT0_FN5 -> PORT309_FN5 */
++	PORT_ALL(FN6),			/* PORT0_FN6 -> PORT309_FN6 */
++	PORT_ALL(FN7),			/* PORT0_FN7 -> PORT309_FN7 */
+ 
+ 	MSEL2CR_MSEL19_0, MSEL2CR_MSEL19_1,
+ 	MSEL2CR_MSEL18_0, MSEL2CR_MSEL18_1,
+@@ -1528,12 +1516,8 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_310() _310(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+-	GPIO_PORT_310(),
++	GPIO_PORT_ALL(),
+ 
+ 	/* Table 25-1 (Functions 0-7) */
+ 	GPIO_FN(VBUS_0),
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index 9031976..f53fc06 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -94,6 +94,29 @@ struct pinmux_info {
+ int register_pinmux(struct pinmux_info *pip);
+ int unregister_pinmux(struct pinmux_info *pip);
+ 
++/* helper macro for port */
++#define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
++
++#define PORT_10(fn, pfx, sfx) \
++	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
++	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
++	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
++	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
++	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
++
++#define PORT_90(fn, pfx, sfx) \
++	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
++	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
++	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),	\
++	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),	\
++	PORT_10(fn, pfx##9, sfx)
++
++#define _PORT_ALL(pfx, sfx) pfx##_##sfx
++#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
++#define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
++#define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
++#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
++
+ /* helper macro for pinmux_enum_t */
+ #define PORT_DATA_I(nr)	\
+ 	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_IN)
+-- 
+1.7.5.4
 
