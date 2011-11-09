@@ -1,57 +1,64 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 24 Nov 2011 08:36:41 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: Kota2 PINT fix
-Message-Id: <20111124083640.GE32112@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 Nov 2011 18:23:23 +0000
+Subject: [PATCH v2] ARM: mach-shmobile: sh7372 A4R suspend/resume order fix
+Message-Id: <Pine.LNX.4.64.1111091914120.4188@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111122061557.30983.75780.sendpatchset@w520>
-In-Reply-To: <20111122061557.30983.75780.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Nov 22, 2011 at 03:15:57PM +0900, Magnus Damm wrote:
-> Support PINT on sh73a0 and Kota2 using INTC PINT macros.
-> 
-> With this patch applied the Kota2 ethernet is handled
-> through one of the chained sh73a0 PINT interrupt controllers.
-> 
-> sh73a0 PINT support is included in 3.2-rc but the Kota2 board
-> code does not make use of this shared code base without this
-> patch. Without this patch kota2 on-board ethernet is broken.
+Update the sh7372 A4R code to make sure the suspend
+callback gets to be called before the resume callback.
 
-On Tue, Nov 22, 2011 at 03:23:17PM +0900, Magnus Damm wrote:
-> Keep the ZB clock enabled on sh73a0 to allow the BSC
-> to access external peripherals hooked up to CS signals.
-> 
-> This is needed to unbreak Ethernet support on sh73a0 boards
-> such as AG5EVM and Kota2 together with the following patch:
-> 
->  794d78f drivers: sh: late disabling of clocks V2
+Without this fix the A4R resume callback is called before
+suspend. The resume callback restores the INTCS hardware
+registers with incorrect data which results in interrupts
+being masked when they shouldn't be. The user will notice
+this issue as IIC0 timing out during boot.
 
-On Tue, Nov 22, 2011 at 03:29:54PM +0900, Magnus Damm wrote:
-> Fix IRQ support on the Kota2 board. The sh73a0 and the Kota2
-> board make use of the ARM GIC hardware block as main interrupt
-> controller. The following commit changed the default behaviour
-> for non-device tree platforms and broke Kota2 irq support:
+Thanks to Magnus Damm for tracking this problem down and providing the 
+initial fix and the commit description text.
 
-On Tue, Nov 22, 2011 at 03:31:40PM +0900, Magnus Damm wrote:
-> Fix IRQ support on the AG5EVM board. The sh73a0 and the AG5EVM
-> board make use of the ARM GIC hardware block as main interrupt
-> controller. The following commit changed the default behaviour
-> for non-device tree platforms and broke AG5EVM irq support:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-On Tue, Nov 22, 2011 at 03:44:58PM +0900, Magnus Damm wrote:
-> This patch updates the Kota2 board support code to
-> use the recently merged TPU LED driver whenever
-> possible.
-> 
-> The sh73a0 SoC has 5 TPU hardware blocks each with
-> 4 timer channels which in theory allows a total of
-> 20 LEDs to be controlled by "leds-renesas-tpu"
-> driver instances. The Kota2 board has 4 LEDs connected
-> to GPIO pins that also come with TPU pin functions, so
-> this patch ties up these 4 LEDS and leaves the remaining
-> 3 LEDS for the GPIO based LED driver.
+I took the liberty to reimplement the original fix by Magnus in a 
+different way. I didn't quite like the idea of rewriting platform data, 
+which could and, probably, should actually be const, on each 
+domain-suspend. Instead, checking in resume, whether a valid state 
+snapshot is available seemed a bit prettier to me:-) The maintainer is, of 
+course, free to choose whichever version he prefers, they both
 
-All applied, thanks.
+"Fix issue in v3.2-rc1 on the sh7372 Mackerel board."
+
+diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
+index 29cdc05..eeeb16b 100644
+--- a/arch/arm/mach-shmobile/intc-sh7372.c
++++ b/arch/arm/mach-shmobile/intc-sh7372.c
+@@ -627,6 +627,7 @@ void __init sh7372_init_irq(void)
+ 
+ static unsigned short ffd2[0x200];
+ static unsigned short ffd5[0x100];
++static bool intcs_state_saved = false;
+ 
+ void sh7372_intcs_suspend(void)
+ {
+@@ -646,12 +647,17 @@ void sh7372_intcs_suspend(void)
+ 
+ 	for (k = 0x80; k <= 0x9c; k += 4)
+ 		ffd5[k] = __raw_readb(intcs_ffd5 + k);
++
++	intcs_state_saved = true;
+ }
+ 
+ void sh7372_intcs_resume(void)
+ {
+ 	int k;
+ 
++	if (!intcs_state_saved)
++		return;
++
+ 	for (k = 0x00; k <= 0x30; k += 4)
+ 		__raw_writew(ffd2[k], intcs_ffd2 + k);
+ 
