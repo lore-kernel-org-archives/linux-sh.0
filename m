@@ -1,51 +1,52 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 04 Nov 2011 14:14:39 +0000
-Subject: Re: [PATCH 01/07] ARM: mach-shmobile: Kota2 SCIFA2 and SMSC911X support
-Message-Id: <20111104141439.GB17594@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 09 Nov 2011 10:39:26 +0000
+Subject: Re: [PATCH] don't skip debugging output upon earlier loop termination
+Message-Id: <CANqRtoQ6YPdQ=z7B8tSnLdf1qn8HbLhQiNc=VTDU7=8CkuBLyw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110818054407.23410.98641.sendpatchset@rxone.opensource.se>
-In-Reply-To: <20110818054407.23410.98641.sendpatchset@rxone.opensource.se>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 22, 2011 at 12:43:29PM +0900, Paul Mundt wrote:
-> On Thu, Aug 18, 2011 at 02:44:07PM +0900, Magnus Damm wrote:
-> > +static void __init kota2_timer_init(void)
-> > +{
-> > +	sh73a0_clock_init();
-> > +	shmobile_timer.init();
-> > +	return;
-> > +}
-> > +
-> Pointless return.
-> 
-> > --- 0001/arch/arm/mach-shmobile/platsmp.c
-> > +++ work/arch/arm/mach-shmobile/platsmp.c	2011-08-18 13:38:02.000000000 +0900
-> > @@ -21,9 +21,11 @@
-> >  #include <asm/mach-types.h>
-> >  #include <mach/common.h>
-> >  
-> > +#define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2())
-> > +
-> >  static unsigned int __init shmobile_smp_get_core_count(void)
-> >  {
-> > -	if (machine_is_ag5evm())
-> > +	if (is_sh73a0())
-> >  		return sh73a0_get_core_count();
-> >  
-> >  	return 1;
-> 
-> No. If you want to do this then simply do what the other platforms are
-> doing and construct a cpu.h, then you can centrally define things and use
-> cpu_is_xxx() outright. Making CPU inferences from mach type is just
-> asking for trouble.
+On Wed, Nov 9, 2011 at 3:44 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> This is against the sh7372-test branch of the linux-pm tree. Feel free to
+> roll this patch into the respective original commit.
+>
+> diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/=
+pm-sh7372.c
+> index 46ee116..a81d8a9 100644
+> --- a/arch/arm/mach-shmobile/pm-sh7372.c
+> +++ b/arch/arm/mach-shmobile/pm-sh7372.c
+> @@ -123,13 +123,13 @@ static int pd_power_up(struct generic_pm_domain *ge=
+npd)
+>
+> =A0 =A0 =A0 =A0for (retry_count =3D 2 * PSTR_RETRIES; retry_count; retry_=
+count--) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (!(__raw_readl(SWUCR) & mask))
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (retry_count > PSTR_RETRIES)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0udelay(PSTR_DELAY_US);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0else
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0cpu_relax();
+> =A0 =A0 =A0 =A0}
+> - =A0 =A0 =A0 if (__raw_readl(SWUCR) & mask)
+> + =A0 =A0 =A0 if (!retry_count)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D -EIO;
+>
+> =A0 =A0 =A0 =A0if (!sh7372_pd->no_debug)
+>
 
-I don't see any updates to this series that address any of these issues,
-even after I went to all of the trouble of setting them up in a topic
-branch for incremental fixing.
+Hi Guennadi,
 
-I'll merge the topic branch for now, but don't expect this to happen
-again if I don't see cleanup patches or the same lazy-ass approach is
-taken for any additional boards.
+This looks fine to me. In the future, please remember to CC the
+linux-sh list for SoC-specific patches.
+
+Acked-by: Magnus Damm <damm@opensource.se>
+
+Thanks,
+
+/ magnus
