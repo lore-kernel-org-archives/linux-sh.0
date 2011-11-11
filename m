@@ -1,51 +1,78 @@
-From: Peter De Schrijver <pdeschrijver@nvidia.com>
-Date: Thu, 03 Nov 2011 17:00:47 +0000
-Subject: [PATCH 3/3] ARM: mach-ux500 Use CONFIG_ARCH_NR_GPIO
-Message-Id: <1320339647-30255-4-git-send-email-pdeschrijver@nvidia.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Nov 2011 02:44:43 +0000
+Subject: [PATCH 05/20] ARM: mach-shmobile: kota2: add comment out separator
+Message-Id: <87ty6b9y3r.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
-In-Reply-To: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add default value for CONFIG_ARCH_NR_GPIO to Kconfig and remove the definition
-in gpio.h. We can't remove gpio.h yet as asm/gpio.h still includes it.
-
-Signed-off-by: Peter De Schrijver <pdeschrijver@nvidia.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/Kconfig                        |    1 +
- arch/arm/mach-ux500/include/mach/gpio.h |    5 -----
- 2 files changed, 1 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index b9cfa99..8da1f5f 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1510,6 +1510,7 @@ config LOCAL_TIMERS
- config ARCH_NR_GPIO
- 	int
- 	default 1024 if ARCH_SHMOBILE || ARCH_TEGRA
-+	default 350 if ARCH_U8500
- 	default 0
- 	help
- 	  Maximum number of GPIOs in the system.
-diff --git a/arch/arm/mach-ux500/include/mach/gpio.h b/arch/arm/mach-ux500/include/mach/gpio.h
-index 7389df9..c01ef66 100644
---- a/arch/arm/mach-ux500/include/mach/gpio.h
-+++ b/arch/arm/mach-ux500/include/mach/gpio.h
-@@ -1,10 +1,5 @@
- #ifndef __ASM_ARCH_GPIO_H
- #define __ASM_ARCH_GPIO_H
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index adc7312..bd9a784 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -48,6 +48,7 @@
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/traps.h>
  
--/*
-- * 288 (#267 is the highest one actually hooked up) onchip GPIOs, plus enough
-- * room for a couple of GPIO expanders.
-- */
--#define ARCH_NR_GPIOS	350
++/* SMSC 9220 */
+ static struct resource smsc9220_resources[] = {
+ 	[0] = {
+ 		.start		= 0x14000000, /* CS5A */
+@@ -77,6 +78,7 @@ static struct platform_device eth_device = {
+ 	.num_resources	= ARRAY_SIZE(smsc9220_resources),
+ };
  
- #endif /* __ASM_ARCH_GPIO_H */
++/* KEYSC */
+ static struct sh_keysc_info keysc_platdata = {
+ 	.mode		= SH_KEYSC_MODE_6,
+ 	.scan_timing	= 3,
+@@ -120,6 +122,7 @@ static struct platform_device keysc_device = {
+ 	},
+ };
+ 
++/* GPIO KEY */
+ #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
+ 
+ static struct gpio_keys_button gpio_buttons[] = {
+@@ -150,6 +153,7 @@ static struct platform_device gpio_keys_device = {
+ 	},
+ };
+ 
++/* GPIO LED */
+ #define GPIO_LED(n, g) { .name = n, .gpio = g }
+ 
+ static struct gpio_led gpio_leds[] = {
+@@ -175,6 +179,7 @@ static struct platform_device gpio_leds_device = {
+ 	},
+ };
+ 
++/* MMCIF */
+ static struct resource mmcif_resources[] = {
+ 	[0] = {
+ 		.name   = "MMCIF",
+@@ -207,6 +212,7 @@ static struct platform_device mmcif_device = {
+ 	.resource       = mmcif_resources,
+ };
+ 
++/* SDHI0 */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_caps      = MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_flags     = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+@@ -243,6 +249,7 @@ static struct platform_device sdhi0_device = {
+ 	},
+ };
+ 
++/* SDHI1 */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.tmio_caps      = MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
+ 	.tmio_flags     = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
 -- 
-1.7.7.rc0.72.g4b5ea.dirty
+1.7.5.4
 
