@@ -1,394 +1,510 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 19 Nov 2011 13:59:46 +0000
-Subject: [Update 2x][PATCH 3/7] PM / Domains: Rework system suspend callback routines
-Message-Id: <201111191459.46620.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Nov 2011 02:45:33 +0000
+Subject: [PATCH 09/20] ARM: mach-shmobile: move helper macro PORT_xx to sh_pfc.h
+Message-Id: <87obwj9y2d.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201111070101.33960.rjw@sisk.pl> <201111140122.27328.rjw@sisk.pl> <201111191456.40453.rjw@sisk.pl>
-In-Reply-To: <201111191456.40453.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+This patch moves PORT_xx helper macro to sh_pfc.h,
+and it expects CPU_ALL_PORT() macro for each CPU
 
-The current generic PM domains code attempts to use the generic
-system suspend operations along with the domains' device stop/start
-routines, which requires device drivers to assume that their
-system suspend/resume (and hibernation/restore) callbacks will always
-be used with generic PM domains.  However, in theory, the same
-hardware may be used in devices that don't belong to any PM domain,
-in which case it would be necessary to add "fake" PM domains to
-satisfy the above assumption.  Also, the domain the hardware belongs
-to may not be handled with the help of the generic code.
-
-To allow device drivers that may be used along with the generic PM
-domains code of more flexibility, add new device callbacks, .freeze(),
-.freeze_late(), .thaw_early() and .thaw(), that can be supplied by
-the drivers in addition to their "standard" system suspend and
-hibernation callbacks.  These new callbacks, if defined, will be used
-by the generic PM domains code for the handling of system suspend and
-hibernation instead of the "standard" ones.  This will allow drivers
-to be designed to work with generic PM domains as well as without
-them.
-
-For backwards compatibility, introduce default .freeze(), .thaw(),
-.freeze_late() and .thaw_early() callback routines for PM domains that
-will execute pm_generic_suspend(), pm_generic_resume(),
-pm_generic_suspend_noirq() and pm_generic_resume_noirq(),
-respectively, for the given device if its driver doesn't provide its
-own implementations of .freeze(), .thaw(), .freeze_late() and
-.thaw_early() (this works slightly differently from the current code,
-but its existing users don't care anyway).
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/base/power/domain.c |  189 +++++++++++++++++++-------------------------
- include/linux/pm_domain.h   |    4 
- 2 files changed, 87 insertions(+), 106 deletions(-)
+ arch/arm/mach-shmobile/pfc-sh7367.c |   71 ++++++++---------------
+ arch/arm/mach-shmobile/pfc-sh7372.c |   32 ++--------
+ arch/arm/mach-shmobile/pfc-sh7377.c |  103 +++++++++++++--------------------
+ arch/arm/mach-shmobile/pfc-sh73a0.c |  108 +++++++++++++++--------------------
+ include/linux/sh_pfc.h              |   23 +++++++
+ 5 files changed, 140 insertions(+), 197 deletions(-)
 
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -28,6 +28,10 @@ struct gpd_dev_ops {
- 	int (*stop)(struct device *dev);
- 	int (*save_state)(struct device *dev);
- 	int (*restore_state)(struct device *dev);
-+	int (*freeze)(struct device *dev);
-+	int (*freeze_late)(struct device *dev);
-+	int (*thaw_early)(struct device *dev);
-+	int (*thaw)(struct device *dev);
- 	bool (*active_wakeup)(struct device *dev);
+diff --git a/arch/arm/mach-shmobile/pfc-sh7367.c b/arch/arm/mach-shmobile/pfc-sh7367.c
+index 2518116..32fbf02 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7367.c
++++ b/arch/arm/mach-shmobile/pfc-sh7367.c
+@@ -21,68 +21,49 @@
+ #include <linux/gpio.h>
+ #include <mach/sh7367.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _90(fn, pfx, sfx)				\
+-	_10(fn, pfx##1, sfx), _10(fn, pfx##2, sfx),	\
+-	_10(fn, pfx##3, sfx), _10(fn, pfx##4, sfx),	\
+-	_10(fn, pfx##5, sfx), _10(fn, pfx##6, sfx),	\
+-	_10(fn, pfx##7, sfx), _10(fn, pfx##8, sfx),	\
+-	_10(fn, pfx##9, sfx)
+-
+-#define _273(fn, pfx, sfx)		\
+-	_10(fn, pfx, sfx), _90(fn, pfx, sfx),		\
+-	_10(fn, pfx##10, sfx), _90(fn, pfx##1, sfx),	\
+-	_10(fn, pfx##20, sfx), _10(fn, pfx##21, sfx),	\
+-	_10(fn, pfx##22, sfx), _10(fn, pfx##23, sfx),	\
+-	_10(fn, pfx##24, sfx), _10(fn, pfx##25, sfx),	\
+-	_10(fn, pfx##26, sfx), _1(fn, pfx##270, sfx),	\
+-	_1(fn, pfx##271, sfx), _1(fn, pfx##272, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_273(str) _273(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
++	PORT_10(fn, pfx##10, sfx), PORT_90(fn, pfx##1, sfx),	\
++	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
++	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
++	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
++	PORT_10(fn, pfx##26, sfx), PORT_1(fn, pfx##270, sfx),	\
++	PORT_1(fn, pfx##271, sfx), PORT_1(fn, pfx##272, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+ 	PINMUX_DATA_BEGIN,
+-	PORT_273(DATA), /* PORT0_DATA -> PORT272_DATA */
++	PORT_ALL(DATA), /* PORT0_DATA -> PORT272_DATA */
+ 	PINMUX_DATA_END,
+ 
+ 	PINMUX_INPUT_BEGIN,
+-	PORT_273(IN), /* PORT0_IN -> PORT272_IN */
++	PORT_ALL(IN), /* PORT0_IN -> PORT272_IN */
+ 	PINMUX_INPUT_END,
+ 
+ 	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_273(IN_PU), /* PORT0_IN_PU -> PORT272_IN_PU */
++	PORT_ALL(IN_PU), /* PORT0_IN_PU -> PORT272_IN_PU */
+ 	PINMUX_INPUT_PULLUP_END,
+ 
+ 	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_273(IN_PD), /* PORT0_IN_PD -> PORT272_IN_PD */
++	PORT_ALL(IN_PD), /* PORT0_IN_PD -> PORT272_IN_PD */
+ 	PINMUX_INPUT_PULLDOWN_END,
+ 
+ 	PINMUX_OUTPUT_BEGIN,
+-	PORT_273(OUT), /* PORT0_OUT -> PORT272_OUT */
++	PORT_ALL(OUT), /* PORT0_OUT -> PORT272_OUT */
+ 	PINMUX_OUTPUT_END,
+ 
+ 	PINMUX_FUNCTION_BEGIN,
+-	PORT_273(FN_IN), /* PORT0_FN_IN -> PORT272_FN_IN */
+-	PORT_273(FN_OUT), /* PORT0_FN_OUT -> PORT272_FN_OUT */
+-	PORT_273(FN0), /* PORT0_FN0 -> PORT272_FN0 */
+-	PORT_273(FN1), /* PORT0_FN1 -> PORT272_FN1 */
+-	PORT_273(FN2), /* PORT0_FN2 -> PORT272_FN2 */
+-	PORT_273(FN3), /* PORT0_FN3 -> PORT272_FN3 */
+-	PORT_273(FN4), /* PORT0_FN4 -> PORT272_FN4 */
+-	PORT_273(FN5), /* PORT0_FN5 -> PORT272_FN5 */
+-	PORT_273(FN6), /* PORT0_FN6 -> PORT272_FN6 */
+-	PORT_273(FN7), /* PORT0_FN7 -> PORT272_FN7 */
++	PORT_ALL(FN_IN), /* PORT0_FN_IN -> PORT272_FN_IN */
++	PORT_ALL(FN_OUT), /* PORT0_FN_OUT -> PORT272_FN_OUT */
++	PORT_ALL(FN0), /* PORT0_FN0 -> PORT272_FN0 */
++	PORT_ALL(FN1), /* PORT0_FN1 -> PORT272_FN1 */
++	PORT_ALL(FN2), /* PORT0_FN2 -> PORT272_FN2 */
++	PORT_ALL(FN3), /* PORT0_FN3 -> PORT272_FN3 */
++	PORT_ALL(FN4), /* PORT0_FN4 -> PORT272_FN4 */
++	PORT_ALL(FN5), /* PORT0_FN5 -> PORT272_FN5 */
++	PORT_ALL(FN6), /* PORT0_FN6 -> PORT272_FN6 */
++	PORT_ALL(FN7), /* PORT0_FN7 -> PORT272_FN7 */
+ 
+ 	MSELBCR_MSEL2_1, MSELBCR_MSEL2_0,
+ 	PINMUX_FUNCTION_END,
+@@ -1063,13 +1044,9 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(DIVLOCK_MARK, PORT272_FN1),
  };
  
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -561,6 +561,26 @@ static bool genpd_dev_active_wakeup(stru
- 	return GENPD_DEV_CALLBACK(genpd, bool, active_wakeup, dev);
- }
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_273() _273(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+ 	/* 49-1 -> 49-6 (GPIO) */
+-	GPIO_PORT_273(),
++	GPIO_PORT_ALL(),
  
-+static int genpd_freeze_dev(struct generic_pm_domain *genpd, struct device *dev)
-+{
-+	return GENPD_DEV_CALLBACK(genpd, int, freeze, dev);
-+}
+ 	/* Special Pull-up / Pull-down Functions */
+ 	GPIO_FN(PORT48_KEYIN0_PU), GPIO_FN(PORT49_KEYIN1_PU),
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index 34d6d76..4b43626 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -25,27 +25,13 @@
+ #include <linux/gpio.h>
+ #include <mach/sh7372.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _80(fn, pfx, sfx)				\
+-	_10(fn, pfx##1, sfx),	_10(fn, pfx##2, sfx),	\
+-	_10(fn, pfx##3, sfx),	_10(fn, pfx##4, sfx),	\
+-	_10(fn, pfx##5, sfx),	_10(fn, pfx##6, sfx),	\
+-	_10(fn, pfx##7, sfx),	_10(fn, pfx##8, sfx)
+-
+-#define _190(fn, pfx, sfx) \
+-	_10(fn, pfx, sfx), _80(fn, pfx, sfx), _10(fn, pfx##9, sfx), \
+-	_10(fn, pfx##10, sfx), _80(fn, pfx##1, sfx), _1(fn, pfx##190, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_ALL(str) _190(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx) \
++	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
++	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
++	PORT_10(fn, pfx##12, sfx),	PORT_10(fn, pfx##13, sfx), \
++	PORT_10(fn, pfx##14, sfx),	PORT_10(fn, pfx##15, sfx), \
++	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
++	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+@@ -942,10 +928,6 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(MFIv4_MARK,		MSEL4CR_6_1),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_ALL() _190(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+ 
+ 	/* PORT */
+diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
+index e4c7018..fb3cfd3 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7377.c
++++ b/arch/arm/mach-shmobile/pfc-sh7377.c
+@@ -22,84 +22,65 @@
+ #include <linux/gpio.h>
+ #include <mach/sh7377.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _90(fn, pfx, sfx)				\
+-	_10(fn, pfx##1, sfx), _10(fn, pfx##2, sfx),	\
+-	_10(fn, pfx##3, sfx), _10(fn, pfx##4, sfx),	\
+-	_10(fn, pfx##5, sfx), _10(fn, pfx##6, sfx),	\
+-	_10(fn, pfx##7, sfx), _10(fn, pfx##8, sfx),	\
+-	_10(fn, pfx##9, sfx)
+-
+-#define _265(fn, pfx, sfx)				\
+-	_10(fn, pfx, sfx), _90(fn, pfx, sfx),		\
+-	_10(fn, pfx##10, sfx),				\
+-	_1(fn, pfx##110, sfx), _1(fn, pfx##111, sfx),	\
+-	_1(fn, pfx##112, sfx), _1(fn, pfx##113, sfx),	\
+-	_1(fn, pfx##114, sfx), _1(fn, pfx##115, sfx),	\
+-	_1(fn, pfx##116, sfx), _1(fn, pfx##117, sfx),	\
+-	_1(fn, pfx##118, sfx),				\
+-	_1(fn, pfx##128, sfx), _1(fn, pfx##129, sfx),	\
+-	_10(fn, pfx##13, sfx), _10(fn, pfx##14, sfx),	\
+-	_10(fn, pfx##15, sfx),				\
+-	_1(fn, pfx##160, sfx), _1(fn, pfx##161, sfx),	\
+-	_1(fn, pfx##162, sfx), _1(fn, pfx##163, sfx),	\
+-	_1(fn, pfx##164, sfx),				\
+-	_1(fn, pfx##192, sfx), _1(fn, pfx##193, sfx),	\
+-	_1(fn, pfx##194, sfx), _1(fn, pfx##195, sfx),	\
+-	_1(fn, pfx##196, sfx), _1(fn, pfx##197, sfx),	\
+-	_1(fn, pfx##198, sfx), _1(fn, pfx##199, sfx),	\
+-	_10(fn, pfx##20, sfx), _10(fn, pfx##21, sfx),	\
+-	_10(fn, pfx##22, sfx), _10(fn, pfx##23, sfx),	\
+-	_10(fn, pfx##24, sfx), _10(fn, pfx##25, sfx),	\
+-	_1(fn, pfx##260, sfx), _1(fn, pfx##261, sfx),	\
+-	_1(fn, pfx##262, sfx), _1(fn, pfx##263, sfx),	\
+-	_1(fn, pfx##264, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_265(str) _265(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
++	PORT_10(fn, pfx##10, sfx),				\
++	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
++	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
++	PORT_1(fn, pfx##114, sfx), PORT_1(fn, pfx##115, sfx),	\
++	PORT_1(fn, pfx##116, sfx), PORT_1(fn, pfx##117, sfx),	\
++	PORT_1(fn, pfx##118, sfx),				\
++	PORT_1(fn, pfx##128, sfx), PORT_1(fn, pfx##129, sfx),	\
++	PORT_10(fn, pfx##13, sfx), PORT_10(fn, pfx##14, sfx),	\
++	PORT_10(fn, pfx##15, sfx),				\
++	PORT_1(fn, pfx##160, sfx), PORT_1(fn, pfx##161, sfx),	\
++	PORT_1(fn, pfx##162, sfx), PORT_1(fn, pfx##163, sfx),	\
++	PORT_1(fn, pfx##164, sfx),				\
++	PORT_1(fn, pfx##192, sfx), PORT_1(fn, pfx##193, sfx),	\
++	PORT_1(fn, pfx##194, sfx), PORT_1(fn, pfx##195, sfx),	\
++	PORT_1(fn, pfx##196, sfx), PORT_1(fn, pfx##197, sfx),	\
++	PORT_1(fn, pfx##198, sfx), PORT_1(fn, pfx##199, sfx),	\
++	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
++	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
++	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
++	PORT_1(fn, pfx##260, sfx), PORT_1(fn, pfx##261, sfx),	\
++	PORT_1(fn, pfx##262, sfx), PORT_1(fn, pfx##263, sfx),	\
++	PORT_1(fn, pfx##264, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+ 	PINMUX_DATA_BEGIN,
+-	PORT_265(DATA), /* PORT0_DATA -> PORT264_DATA */
++	PORT_ALL(DATA), /* PORT0_DATA -> PORT264_DATA */
+ 	PINMUX_DATA_END,
+ 
+ 	PINMUX_INPUT_BEGIN,
+-	PORT_265(IN), /* PORT0_IN -> PORT264_IN */
++	PORT_ALL(IN), /* PORT0_IN -> PORT264_IN */
+ 	PINMUX_INPUT_END,
+ 
+ 	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_265(IN_PU), /* PORT0_IN_PU -> PORT264_IN_PU */
++	PORT_ALL(IN_PU), /* PORT0_IN_PU -> PORT264_IN_PU */
+ 	PINMUX_INPUT_PULLUP_END,
+ 
+ 	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_265(IN_PD), /* PORT0_IN_PD -> PORT264_IN_PD */
++	PORT_ALL(IN_PD), /* PORT0_IN_PD -> PORT264_IN_PD */
+ 	PINMUX_INPUT_PULLDOWN_END,
+ 
+ 	PINMUX_OUTPUT_BEGIN,
+-	PORT_265(OUT), /* PORT0_OUT -> PORT264_OUT */
++	PORT_ALL(OUT), /* PORT0_OUT -> PORT264_OUT */
+ 	PINMUX_OUTPUT_END,
+ 
+ 	PINMUX_FUNCTION_BEGIN,
+-	PORT_265(FN_IN), /* PORT0_FN_IN -> PORT264_FN_IN */
+-	PORT_265(FN_OUT), /* PORT0_FN_OUT -> PORT264_FN_OUT */
+-	PORT_265(FN0), /* PORT0_FN0 -> PORT264_FN0 */
+-	PORT_265(FN1), /* PORT0_FN1 -> PORT264_FN1 */
+-	PORT_265(FN2), /* PORT0_FN2 -> PORT264_FN2 */
+-	PORT_265(FN3), /* PORT0_FN3 -> PORT264_FN3 */
+-	PORT_265(FN4), /* PORT0_FN4 -> PORT264_FN4 */
+-	PORT_265(FN5), /* PORT0_FN5 -> PORT264_FN5 */
+-	PORT_265(FN6), /* PORT0_FN6 -> PORT264_FN6 */
+-	PORT_265(FN7), /* PORT0_FN7 -> PORT264_FN7 */
++	PORT_ALL(FN_IN), /* PORT0_FN_IN -> PORT264_FN_IN */
++	PORT_ALL(FN_OUT), /* PORT0_FN_OUT -> PORT264_FN_OUT */
++	PORT_ALL(FN0), /* PORT0_FN0 -> PORT264_FN0 */
++	PORT_ALL(FN1), /* PORT0_FN1 -> PORT264_FN1 */
++	PORT_ALL(FN2), /* PORT0_FN2 -> PORT264_FN2 */
++	PORT_ALL(FN3), /* PORT0_FN3 -> PORT264_FN3 */
++	PORT_ALL(FN4), /* PORT0_FN4 -> PORT264_FN4 */
++	PORT_ALL(FN5), /* PORT0_FN5 -> PORT264_FN5 */
++	PORT_ALL(FN6), /* PORT0_FN6 -> PORT264_FN6 */
++	PORT_ALL(FN7), /* PORT0_FN7 -> PORT264_FN7 */
+ 
+ 	MSELBCR_MSEL17_1, MSELBCR_MSEL17_0,
+ 	MSELBCR_MSEL16_1, MSELBCR_MSEL16_0,
+@@ -1039,13 +1020,9 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(RESETOUTS_MARK, PORT264_FN1),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_265() _265(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+ 	/* 55-1 -> 55-5 (GPIO) */
+-	GPIO_PORT_265(),
++	GPIO_PORT_ALL(),
+ 
+ 	/* Special Pull-up / Pull-down Functions */
+ 	GPIO_FN(PORT66_KEYIN0_PU), GPIO_FN(PORT67_KEYIN1_PU),
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index f860caa..a1ea119 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -24,83 +24,71 @@
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+ 
+-#define _1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define _10(fn, pfx, sfx)				\
+-	_1(fn, pfx##0, sfx), _1(fn, pfx##1, sfx),	\
+-	_1(fn, pfx##2, sfx), _1(fn, pfx##3, sfx),	\
+-	_1(fn, pfx##4, sfx), _1(fn, pfx##5, sfx),	\
+-	_1(fn, pfx##6, sfx), _1(fn, pfx##7, sfx),	\
+-	_1(fn, pfx##8, sfx), _1(fn, pfx##9, sfx)
+-
+-#define _310(fn, pfx, sfx)				\
+-	_10(fn, pfx,    sfx), _10(fn, pfx##1, sfx),	\
+-	_10(fn, pfx##2, sfx), _10(fn, pfx##3, sfx),	\
+-	_10(fn, pfx##4, sfx), _10(fn, pfx##5, sfx),	\
+-	_10(fn, pfx##6, sfx), _10(fn, pfx##7, sfx),	\
+-	_10(fn, pfx##8, sfx), _10(fn, pfx##9, sfx),	\
+-	_10(fn, pfx##10, sfx),				\
+-	_1(fn, pfx##110, sfx), _1(fn, pfx##111, sfx),	\
+-	_1(fn, pfx##112, sfx), _1(fn, pfx##113, sfx),	\
+-	_1(fn, pfx##114, sfx), _1(fn, pfx##115, sfx),	\
+-	_1(fn, pfx##116, sfx), _1(fn, pfx##117, sfx),	\
+-	_1(fn, pfx##118, sfx),				\
+-	_1(fn, pfx##128, sfx), _1(fn, pfx##129, sfx),	\
+-	_10(fn, pfx##13, sfx), _10(fn, pfx##14, sfx),	\
+-	_10(fn, pfx##15, sfx),				\
+-	_1(fn, pfx##160, sfx), _1(fn, pfx##161, sfx),	\
+-	_1(fn, pfx##162, sfx), _1(fn, pfx##163, sfx),	\
+-	_1(fn, pfx##164, sfx),				\
+-	_1(fn, pfx##192, sfx), _1(fn, pfx##193, sfx),	\
+-	_1(fn, pfx##194, sfx), _1(fn, pfx##195, sfx),	\
+-	_1(fn, pfx##196, sfx), _1(fn, pfx##197, sfx),	\
+-	_1(fn, pfx##198, sfx), _1(fn, pfx##199, sfx),	\
+-	_10(fn, pfx##20, sfx), _10(fn, pfx##21, sfx),	\
+-	_10(fn, pfx##22, sfx), _10(fn, pfx##23, sfx),	\
+-	_10(fn, pfx##24, sfx), _10(fn, pfx##25, sfx),	\
+-	_10(fn, pfx##26, sfx), _10(fn, pfx##27, sfx),	\
+-	_1(fn, pfx##280, sfx), _1(fn, pfx##281, sfx),	\
+-	_1(fn, pfx##282, sfx),				\
+-	_1(fn, pfx##288, sfx), _1(fn, pfx##289, sfx),	\
+-	_10(fn, pfx##29, sfx), _10(fn, pfx##30, sfx)
+-
+-#define _PORT(pfx, sfx) pfx##_##sfx
+-#define PORT_310(str) _310(_PORT, PORT, str)
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
++	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
++	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
++	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
++	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
++	PORT_10(fn, pfx##10, sfx),				\
++	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
++	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
++	PORT_1(fn, pfx##114, sfx), PORT_1(fn, pfx##115, sfx),	\
++	PORT_1(fn, pfx##116, sfx), PORT_1(fn, pfx##117, sfx),	\
++	PORT_1(fn, pfx##118, sfx),				\
++	PORT_1(fn, pfx##128, sfx), PORT_1(fn, pfx##129, sfx),	\
++	PORT_10(fn, pfx##13, sfx), PORT_10(fn, pfx##14, sfx),	\
++	PORT_10(fn, pfx##15, sfx),				\
++	PORT_1(fn, pfx##160, sfx), PORT_1(fn, pfx##161, sfx),	\
++	PORT_1(fn, pfx##162, sfx), PORT_1(fn, pfx##163, sfx),	\
++	PORT_1(fn, pfx##164, sfx),				\
++	PORT_1(fn, pfx##192, sfx), PORT_1(fn, pfx##193, sfx),	\
++	PORT_1(fn, pfx##194, sfx), PORT_1(fn, pfx##195, sfx),	\
++	PORT_1(fn, pfx##196, sfx), PORT_1(fn, pfx##197, sfx),	\
++	PORT_1(fn, pfx##198, sfx), PORT_1(fn, pfx##199, sfx),	\
++	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
++	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
++	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
++	PORT_10(fn, pfx##26, sfx), PORT_10(fn, pfx##27, sfx),	\
++	PORT_1(fn, pfx##280, sfx), PORT_1(fn, pfx##281, sfx),	\
++	PORT_1(fn, pfx##282, sfx),				\
++	PORT_1(fn, pfx##288, sfx), PORT_1(fn, pfx##289, sfx),	\
++	PORT_10(fn, pfx##29, sfx), PORT_10(fn, pfx##30, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+ 	PINMUX_DATA_BEGIN,
+-	PORT_310(DATA),			/* PORT0_DATA -> PORT309_DATA */
++	PORT_ALL(DATA),			/* PORT0_DATA -> PORT309_DATA */
+ 	PINMUX_DATA_END,
+ 
+ 	PINMUX_INPUT_BEGIN,
+-	PORT_310(IN),			/* PORT0_IN -> PORT309_IN */
++	PORT_ALL(IN),			/* PORT0_IN -> PORT309_IN */
+ 	PINMUX_INPUT_END,
+ 
+ 	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_310(IN_PU),		/* PORT0_IN_PU -> PORT309_IN_PU */
++	PORT_ALL(IN_PU),		/* PORT0_IN_PU -> PORT309_IN_PU */
+ 	PINMUX_INPUT_PULLUP_END,
+ 
+ 	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_310(IN_PD),		/* PORT0_IN_PD -> PORT309_IN_PD */
++	PORT_ALL(IN_PD),		/* PORT0_IN_PD -> PORT309_IN_PD */
+ 	PINMUX_INPUT_PULLDOWN_END,
+ 
+ 	PINMUX_OUTPUT_BEGIN,
+-	PORT_310(OUT),			/* PORT0_OUT -> PORT309_OUT */
++	PORT_ALL(OUT),			/* PORT0_OUT -> PORT309_OUT */
+ 	PINMUX_OUTPUT_END,
+ 
+ 	PINMUX_FUNCTION_BEGIN,
+-	PORT_310(FN_IN),		/* PORT0_FN_IN -> PORT309_FN_IN */
+-	PORT_310(FN_OUT),		/* PORT0_FN_OUT -> PORT309_FN_OUT */
+-	PORT_310(FN0),			/* PORT0_FN0 -> PORT309_FN0 */
+-	PORT_310(FN1),			/* PORT0_FN1 -> PORT309_FN1 */
+-	PORT_310(FN2),			/* PORT0_FN2 -> PORT309_FN2 */
+-	PORT_310(FN3),			/* PORT0_FN3 -> PORT309_FN3 */
+-	PORT_310(FN4),			/* PORT0_FN4 -> PORT309_FN4 */
+-	PORT_310(FN5),			/* PORT0_FN5 -> PORT309_FN5 */
+-	PORT_310(FN6),			/* PORT0_FN6 -> PORT309_FN6 */
+-	PORT_310(FN7),			/* PORT0_FN7 -> PORT309_FN7 */
++	PORT_ALL(FN_IN),		/* PORT0_FN_IN -> PORT309_FN_IN */
++	PORT_ALL(FN_OUT),		/* PORT0_FN_OUT -> PORT309_FN_OUT */
++	PORT_ALL(FN0),			/* PORT0_FN0 -> PORT309_FN0 */
++	PORT_ALL(FN1),			/* PORT0_FN1 -> PORT309_FN1 */
++	PORT_ALL(FN2),			/* PORT0_FN2 -> PORT309_FN2 */
++	PORT_ALL(FN3),			/* PORT0_FN3 -> PORT309_FN3 */
++	PORT_ALL(FN4),			/* PORT0_FN4 -> PORT309_FN4 */
++	PORT_ALL(FN5),			/* PORT0_FN5 -> PORT309_FN5 */
++	PORT_ALL(FN6),			/* PORT0_FN6 -> PORT309_FN6 */
++	PORT_ALL(FN7),			/* PORT0_FN7 -> PORT309_FN7 */
+ 
+ 	MSEL2CR_MSEL19_0, MSEL2CR_MSEL19_1,
+ 	MSEL2CR_MSEL18_0, MSEL2CR_MSEL18_1,
+@@ -1555,12 +1543,8 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
+ };
+ 
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define GPIO_PORT_310() _310(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+ static struct pinmux_gpio pinmux_gpios[] = {
+-	GPIO_PORT_310(),
++	GPIO_PORT_ALL(),
+ 
+ 	/* Table 25-1 (Functions 0-7) */
+ 	GPIO_FN(VBUS_0),
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index 5585f28..5f6322a 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -104,6 +104,29 @@ struct pinmux_info {
+ int register_pinmux(struct pinmux_info *pip);
+ int unregister_pinmux(struct pinmux_info *pip);
+ 
++/* helper macro for port */
++#define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
 +
-+static int genpd_freeze_late(struct generic_pm_domain *genpd, struct device *dev)
-+{
-+	return GENPD_DEV_CALLBACK(genpd, int, freeze_late, dev);
-+}
++#define PORT_10(fn, pfx, sfx) \
++	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
++	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
++	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
++	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
++	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
 +
-+static int genpd_thaw_early(struct generic_pm_domain *genpd, struct device *dev)
-+{
-+	return GENPD_DEV_CALLBACK(genpd, int, thaw_early, dev);
-+}
++#define PORT_90(fn, pfx, sfx) \
++	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
++	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
++	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),	\
++	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),	\
++	PORT_10(fn, pfx##9, sfx)
 +
-+static int genpd_thaw_dev(struct generic_pm_domain *genpd, struct device *dev)
-+{
-+	return GENPD_DEV_CALLBACK(genpd, int, thaw, dev);
-+}
++#define _PORT_ALL(pfx, sfx) pfx##_##sfx
++#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
++#define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
++#define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
++#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
 +
- /**
-  * pm_genpd_sync_poweroff - Synchronously power off a PM domain and its masters.
-  * @genpd: PM domain to power off, if possible.
-@@ -695,27 +715,6 @@ static int pm_genpd_prepare(struct devic
- }
- 
- /**
-- * pm_genpd_suspend - Suspend a device belonging to an I/O PM domain.
-- * @dev: Device to suspend.
-- *
-- * Suspend a device under the assumption that its pm_domain field points to the
-- * domain member of an object of type struct generic_pm_domain representing
-- * a PM domain consisting of I/O devices.
-- */
--static int pm_genpd_suspend(struct device *dev)
--{
--	struct generic_pm_domain *genpd;
--
--	dev_dbg(dev, "%s()\n", __func__);
--
--	genpd = dev_to_genpd(dev);
--	if (IS_ERR(genpd))
--		return -EINVAL;
--
--	return genpd->suspend_power_off ? 0 : pm_generic_suspend(dev);
--}
--
--/**
-  * pm_genpd_suspend_noirq - Late suspend of a device from an I/O PM domain.
-  * @dev: Device to suspend.
-  *
-@@ -737,7 +736,7 @@ static int pm_genpd_suspend_noirq(struct
- 	if (genpd->suspend_power_off)
- 		return 0;
- 
--	ret = pm_generic_suspend_noirq(dev);
-+	ret = genpd_freeze_late(genpd, dev);
- 	if (ret)
- 		return ret;
- 
-@@ -788,28 +787,7 @@ static int pm_genpd_resume_noirq(struct
- 	genpd->suspended_count--;
- 	genpd_start_dev(genpd, dev);
- 
--	return pm_generic_resume_noirq(dev);
--}
--
--/**
-- * pm_genpd_resume - Resume a device belonging to an I/O power domain.
-- * @dev: Device to resume.
-- *
-- * Resume a device under the assumption that its pm_domain field points to the
-- * domain member of an object of type struct generic_pm_domain representing
-- * a power domain consisting of I/O devices.
-- */
--static int pm_genpd_resume(struct device *dev)
--{
--	struct generic_pm_domain *genpd;
--
--	dev_dbg(dev, "%s()\n", __func__);
--
--	genpd = dev_to_genpd(dev);
--	if (IS_ERR(genpd))
--		return -EINVAL;
--
--	return genpd->suspend_power_off ? 0 : pm_generic_resume(dev);
-+	return genpd_thaw_early(genpd, dev);
- }
- 
- /**
-@@ -830,14 +808,14 @@ static int pm_genpd_freeze(struct device
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	return genpd->suspend_power_off ? 0 : pm_generic_freeze(dev);
-+	return genpd->suspend_power_off ? 0 : genpd_freeze_dev(genpd, dev);
- }
- 
- /**
-  * pm_genpd_freeze_noirq - Late freeze of a device from an I/O power domain.
-  * @dev: Device to freeze.
-  *
-- * Carry out a late freeze of a device under the assumption that its
-+ * Carry out a late "freeze" of a device under the assumption that its
-  * pm_domain field points to the domain member of an object of type
-  * struct generic_pm_domain representing a power domain consisting of I/O
-  * devices.
-@@ -856,7 +834,7 @@ static int pm_genpd_freeze_noirq(struct
- 	if (genpd->suspend_power_off)
- 		return 0;
- 
--	ret = pm_generic_freeze_noirq(dev);
-+	ret = genpd_freeze_late(genpd, dev);
- 	if (ret)
- 		return ret;
- 
-@@ -869,7 +847,7 @@ static int pm_genpd_freeze_noirq(struct
-  * pm_genpd_thaw_noirq - Early thaw of a device from an I/O power domain.
-  * @dev: Device to thaw.
-  *
-- * Carry out an early thaw of a device under the assumption that its
-+ * Carry out an early "thaw" of a device under the assumption that its
-  * pm_domain field points to the domain member of an object of type
-  * struct generic_pm_domain representing a power domain consisting of I/O
-  * devices.
-@@ -889,7 +867,7 @@ static int pm_genpd_thaw_noirq(struct de
- 
- 	genpd_start_dev(genpd, dev);
- 
--	return pm_generic_thaw_noirq(dev);
-+	return genpd_thaw_early(genpd, dev);
- }
- 
- /**
-@@ -910,28 +888,7 @@ static int pm_genpd_thaw(struct device *
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	return genpd->suspend_power_off ? 0 : pm_generic_thaw(dev);
--}
--
--/**
-- * pm_genpd_dev_poweroff - Power off a device belonging to an I/O PM domain.
-- * @dev: Device to suspend.
-- *
-- * Power off a device under the assumption that its pm_domain field points to
-- * the domain member of an object of type struct generic_pm_domain representing
-- * a PM domain consisting of I/O devices.
-- */
--static int pm_genpd_dev_poweroff(struct device *dev)
--{
--	struct generic_pm_domain *genpd;
--
--	dev_dbg(dev, "%s()\n", __func__);
--
--	genpd = dev_to_genpd(dev);
--	if (IS_ERR(genpd))
--		return -EINVAL;
--
--	return genpd->suspend_power_off ? 0 : pm_generic_poweroff(dev);
-+	return genpd->suspend_power_off ? 0 : genpd_thaw_dev(genpd, dev);
- }
- 
- /**
-@@ -945,7 +902,6 @@ static int pm_genpd_dev_poweroff(struct
- static int pm_genpd_dev_poweroff_noirq(struct device *dev)
- {
- 	struct generic_pm_domain *genpd;
--	int ret;
- 
- 	dev_dbg(dev, "%s()\n", __func__);
- 
-@@ -956,10 +912,6 @@ static int pm_genpd_dev_poweroff_noirq(s
- 	if (genpd->suspend_power_off)
- 		return 0;
- 
--	ret = pm_generic_poweroff_noirq(dev);
--	if (ret)
--		return ret;
--
- 	if (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev))
- 		return 0;
- 
-@@ -1015,28 +967,7 @@ static int pm_genpd_restore_noirq(struct
- 	genpd->suspended_count--;
- 	genpd_start_dev(genpd, dev);
- 
--	return pm_generic_restore_noirq(dev);
--}
--
--/**
-- * pm_genpd_restore - Restore a device belonging to an I/O power domain.
-- * @dev: Device to resume.
-- *
-- * Restore a device under the assumption that its pm_domain field points to the
-- * domain member of an object of type struct generic_pm_domain representing
-- * a power domain consisting of I/O devices.
-- */
--static int pm_genpd_restore(struct device *dev)
--{
--	struct generic_pm_domain *genpd;
--
--	dev_dbg(dev, "%s()\n", __func__);
--
--	genpd = dev_to_genpd(dev);
--	if (IS_ERR(genpd))
--		return -EINVAL;
--
--	return genpd->suspend_power_off ? 0 : pm_generic_restore(dev);
-+	return genpd_thaw_early(genpd, dev);
- }
- 
- /**
-@@ -1078,18 +1009,14 @@ static void pm_genpd_complete(struct dev
- #else
- 
- #define pm_genpd_prepare		NULL
--#define pm_genpd_suspend		NULL
- #define pm_genpd_suspend_noirq		NULL
- #define pm_genpd_resume_noirq		NULL
--#define pm_genpd_resume			NULL
- #define pm_genpd_freeze			NULL
- #define pm_genpd_freeze_noirq		NULL
- #define pm_genpd_thaw_noirq		NULL
- #define pm_genpd_thaw			NULL
- #define pm_genpd_dev_poweroff_noirq	NULL
--#define pm_genpd_dev_poweroff		NULL
- #define pm_genpd_restore_noirq		NULL
--#define pm_genpd_restore		NULL
- #define pm_genpd_complete		NULL
- 
- #endif /* CONFIG_PM_SLEEP */
-@@ -1361,6 +1288,8 @@ int pm_genpd_remove_callbacks(struct dev
- }
- EXPORT_SYMBOL_GPL(pm_genpd_remove_callbacks);
- 
-+/* Default device callbacks for generic PM domains. */
-+
- /**
-  * pm_genpd_default_save_state - Default "save device state" for PM domians.
-  * @dev: Device to handle.
-@@ -1400,6 +1329,50 @@ static int pm_genpd_default_restore_stat
- }
- 
- /**
-+ * pm_genpd_default_freeze - Default "device freeze" for PM domians.
-+ * @dev: Device to handle.
-+ */
-+static int pm_genpd_default_freeze(struct device *dev)
-+{
-+	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze;
-+
-+	return cb ? cb(dev) : pm_generic_suspend(dev);
-+}
-+
-+/**
-+ * pm_genpd_default_freeze_late - Default "late device freeze" for PM domians.
-+ * @dev: Device to handle.
-+ */
-+static int pm_genpd_default_freeze_late(struct device *dev)
-+{
-+	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze_late;
-+
-+	return cb ? cb(dev) : pm_generic_suspend_noirq(dev);
-+}
-+
-+/**
-+ * pm_genpd_default_thaw_early - Default "early device thaw" for PM domians.
-+ * @dev: Device to handle.
-+ */
-+static int pm_genpd_default_thaw_early(struct device *dev)
-+{
-+	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw_early;
-+
-+	return cb ? cb(dev) : pm_generic_resume_noirq(dev);
-+}
-+
-+/**
-+ * pm_genpd_default_thaw - Default "device thaw" for PM domians.
-+ * @dev: Device to handle.
-+ */
-+static int pm_genpd_default_thaw(struct device *dev)
-+{
-+	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw;
-+
-+	return cb ? cb(dev) : pm_generic_resume(dev);
-+}
-+
-+/**
-  * pm_genpd_init - Initialize a generic I/O PM domain object.
-  * @genpd: PM domain object to initialize.
-  * @gov: PM domain governor to associate with the domain (may be NULL).
-@@ -1429,21 +1402,25 @@ void pm_genpd_init(struct generic_pm_dom
- 	genpd->domain.ops.runtime_resume = pm_genpd_runtime_resume;
- 	genpd->domain.ops.runtime_idle = pm_generic_runtime_idle;
- 	genpd->domain.ops.prepare = pm_genpd_prepare;
--	genpd->domain.ops.suspend = pm_genpd_suspend;
-+	genpd->domain.ops.suspend = pm_genpd_freeze;
- 	genpd->domain.ops.suspend_noirq = pm_genpd_suspend_noirq;
- 	genpd->domain.ops.resume_noirq = pm_genpd_resume_noirq;
--	genpd->domain.ops.resume = pm_genpd_resume;
-+	genpd->domain.ops.resume = pm_genpd_thaw;
- 	genpd->domain.ops.freeze = pm_genpd_freeze;
- 	genpd->domain.ops.freeze_noirq = pm_genpd_freeze_noirq;
- 	genpd->domain.ops.thaw_noirq = pm_genpd_thaw_noirq;
- 	genpd->domain.ops.thaw = pm_genpd_thaw;
--	genpd->domain.ops.poweroff = pm_genpd_dev_poweroff;
-+	genpd->domain.ops.poweroff = pm_genpd_freeze;
- 	genpd->domain.ops.poweroff_noirq = pm_genpd_dev_poweroff_noirq;
- 	genpd->domain.ops.restore_noirq = pm_genpd_restore_noirq;
--	genpd->domain.ops.restore = pm_genpd_restore;
-+	genpd->domain.ops.restore = pm_genpd_thaw;
- 	genpd->domain.ops.complete = pm_genpd_complete;
- 	genpd->dev_ops.save_state = pm_genpd_default_save_state;
- 	genpd->dev_ops.restore_state = pm_genpd_default_restore_state;
-+	genpd->dev_ops.freeze = pm_genpd_default_freeze;
-+	genpd->dev_ops.freeze_late = pm_genpd_default_freeze_late;
-+	genpd->dev_ops.thaw_early = pm_genpd_default_thaw_early;
-+	genpd->dev_ops.thaw = pm_genpd_default_thaw;
- 	mutex_lock(&gpd_list_lock);
- 	list_add(&genpd->gpd_list_node, &gpd_list);
- 	mutex_unlock(&gpd_list_lock);
+ /* helper macro for pinmux_enum_t */
+ #define PORT_DATA_I(nr)	\
+ 	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_IN)
+-- 
+1.7.5.4
 
