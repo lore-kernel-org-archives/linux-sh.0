@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Nov 2011 02:47:26 +0000
-Subject: [PATCH 19/20] ARM: mach-shmobile: bonito: add FPGA irq demux
-Message-Id: <87aa839xz8.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Nov 2011 02:45:43 +0000
+Subject: [PATCH 10/20] ARM: mach-shmobile: move helper macro PORTCR to sh_pfc.h
+Message-Id: <87mxc39y23.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,127 +10,145 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-bonito.c |   78 +++++++++++++++++++++++++++++++++
- 1 files changed, 78 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/pfc-sh7367.c |   16 ----------------
+ arch/arm/mach-shmobile/pfc-sh7372.c |   16 ----------------
+ arch/arm/mach-shmobile/pfc-sh7377.c |   17 -----------------
+ arch/arm/mach-shmobile/pfc-sh73a0.c |   12 ------------
+ include/linux/sh_pfc.h              |   17 +++++++++++++++++
+ 5 files changed, 17 insertions(+), 61 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index 5b01476..fe749e3 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -26,6 +26,7 @@
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
-+#include <linux/smsc911x.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -75,14 +76,25 @@
- /*
-  * FPGA
-  */
-+#define IRQSR0		0x0020
-+#define IRQSR1		0x0022
-+#define IRQMR0		0x0030
-+#define IRQMR1		0x0032
- #define BUSSWMR1	0x0070
- #define BUSSWMR2	0x0072
- #define BUSSWMR3	0x0074
- #define BUSSWMR4	0x0076
+diff --git a/arch/arm/mach-shmobile/pfc-sh7367.c b/arch/arm/mach-shmobile/pfc-sh7367.c
+index 32fbf02..e6e5246 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7367.c
++++ b/arch/arm/mach-shmobile/pfc-sh7367.c
+@@ -1287,22 +1287,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(DIVLOCK),
+ };
  
- #define LCDCR		0x10B4
-+#define DEVRSTCR1	0x10D0
-+#define DEVRSTCR2	0x10D2
- #define A1MDSR		0x10E0
- #define BVERR		0x1100
-+
-+/* FPGA IRQ */
-+#define FPGA_IRQ_BASE		(512)
-+#define FPGA_IRQ0		(FPGA_IRQ_BASE)
-+#define FPGA_IRQ1		(FPGA_IRQ_BASE + 16)
- static u16 bonito_fpga_read(u32 offset)
- {
- 	return __raw_readw(0xf0003000 + offset);
-@@ -93,6 +105,71 @@ static void bonito_fpga_write(u32 offset, u16 val)
- 	__raw_writew(val, 0xf0003000 + offset);
- }
+-/* helper for top 4 bits in PORTnCR */
+-#define PCRH(in, in_pd, in_pu, out)		\
+-	0, (out), (in), 0,			\
+-	0, 0, 0, 0,				\
+-	0, 0, (in_pd), 0,			\
+-	0, 0, (in_pu), 0
+-
+-#define PORTCR(nr, reg)						\
+-	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
+-		PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
+-		     PORT##nr##_IN_PU, PORT##nr##_OUT),		\
+-		PORT##nr##_FN0, PORT##nr##_FN1, PORT##nr##_FN2,	\
+-		PORT##nr##_FN3,	PORT##nr##_FN4, PORT##nr##_FN5,	\
+-		PORT##nr##_FN6, PORT##nr##_FN7 }		\
+-	}
+-
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	PORTCR(0, 0xe6050000), /* PORT0CR */
+ 	PORTCR(1, 0xe6050001), /* PORT1CR */
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index 4b43626..1bd6585 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -1199,22 +1199,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(SDENC_DV_CLKI),
+ };
  
-+static void bonito_fpga_irq_disable(struct irq_data *data)
-+{
-+	unsigned int irq = data->irq;
-+	u32 addr = (irq < 1016) ? IRQMR0 : IRQMR1;
-+	int shift = irq % 16;
+-/* helper for top 4 bits in PORTnCR */
+-#define PCRH(in, in_pd, in_pu, out)		\
+-	0, (out), (in), 0,			\
+-	0, 0, 0, 0,				\
+-	0, 0, (in_pd), 0,			\
+-	0, 0, (in_pu), 0
+-
+-#define PORTCR(nr, reg)						\
+-	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
+-		PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
+-		     PORT##nr##_IN_PU, PORT##nr##_OUT),		\
+-		PORT##nr##_FN0, PORT##nr##_FN1, PORT##nr##_FN2,	\
+-		PORT##nr##_FN3,	PORT##nr##_FN4, PORT##nr##_FN5,	\
+-		PORT##nr##_FN6, PORT##nr##_FN7 }		\
+-	}
+-
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	PORTCR(0,	0xE6051000), /* PORT0CR */
+ 	PORTCR(1,	0xE6051001), /* PORT1CR */
+diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
+index fb3cfd3..2f10511 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7377.c
++++ b/arch/arm/mach-shmobile/pfc-sh7377.c
+@@ -1300,23 +1300,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(RESETOUTS),
+ };
+ 
+-/* helper for top 4 bits in PORTnCR */
+-#define PCRH(in, in_pd, in_pu, out)	\
+-	0, (out), (in), 0,	\
+-		0, 0, 0, 0,	\
+-		0, 0, (in_pd), 0,	\
+-		0, 0, (in_pu), 0
+-
+-#define PORTCR(nr, reg)	\
+-	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {	\
+-			PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,	\
+-				 PORT##nr##_IN_PU, PORT##nr##_OUT),	\
+-				PORT##nr##_FN0, PORT##nr##_FN1,	\
+-				PORT##nr##_FN2, PORT##nr##_FN3,	\
+-				PORT##nr##_FN4, PORT##nr##_FN5,	\
+-				PORT##nr##_FN6, PORT##nr##_FN7 }	\
+-	}
+-
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	PORTCR(0, 0xe6050000), /* PORT0CR */
+ 	PORTCR(1, 0xe6050001), /* PORT1CR */
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index a1ea119..e05634c 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -2221,18 +2221,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(FSIAISLD_PU),
+ };
+ 
+-#define PORTCR(nr, reg)	\
+-	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) { \
+-		0, \
+-		/*0001*/ PORT##nr##_OUT , \
+-		/*0010*/ PORT##nr##_IN , 0, 0, 0, 0, 0, 0, 0, \
+-		/*1010*/ PORT##nr##_IN_PD, 0, 0, 0, \
+-		/*1110*/ PORT##nr##_IN_PU, 0, \
+-		PORT##nr##_FN0, PORT##nr##_FN1,	PORT##nr##_FN2, \
+-		PORT##nr##_FN3,	PORT##nr##_FN4, PORT##nr##_FN5, \
+-		PORT##nr##_FN6, PORT##nr##_FN7, 0, 0, 0, 0, 0, 0, 0, 0 } \
+-	}
+-
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	PORTCR(0, 0xe6050000), /* PORT0CR */
+ 	PORTCR(1, 0xe6050001), /* PORT1CR */
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index 5f6322a..8446789 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -162,5 +162,22 @@ int unregister_pinmux(struct pinmux_info *pip);
+ 	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+ 		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
+ 
++/* helper macro for top 4 bits in PORTnCR */
++#define _PCRH(in, in_pd, in_pu, out)	\
++	0, (out), (in), 0,		\
++	0, 0, 0, 0,			\
++	0, 0, (in_pd), 0,		\
++	0, 0, (in_pu), 0
 +
-+	bonito_fpga_write(addr, bonito_fpga_read(addr) | (1 << shift));
-+}
-+
-+static void bonito_fpga_irq_enable(struct irq_data *data)
-+{
-+	unsigned int irq = data->irq;
-+	u32 addr = (irq < 1016) ? IRQMR0 : IRQMR1;
-+	int shift = irq % 16;
-+
-+	bonito_fpga_write(addr, bonito_fpga_read(addr) & ~(1 << shift));
-+}
-+
-+static struct irq_chip bonito_fpga_irq_chip __read_mostly = {
-+	.name		= "bonito FPGA",
-+	.irq_mask	= bonito_fpga_irq_disable,
-+	.irq_unmask	= bonito_fpga_irq_enable,
-+};
-+
-+static void bonito_fpga_irq_demux(unsigned int irq, struct irq_desc *desc)
-+{
-+	u32 val =  bonito_fpga_read(IRQSR1) << 16 |
-+		   bonito_fpga_read(IRQSR0);
-+	u32 mask = bonito_fpga_read(IRQMR1) << 16 |
-+		   bonito_fpga_read(IRQMR0);
-+
-+	int i;
-+
-+	val &= ~mask;
-+
-+	for (i = 0; i < 32; i++) {
-+		if (!(val & (1 << i)))
-+			continue;
-+
-+		generic_handle_irq(FPGA_IRQ_BASE + i);
++#define PORTCR(nr, reg)							\
++	{								\
++		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
++			_PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
++			      PORT##nr##_IN_PU, PORT##nr##_OUT),	\
++				PORT##nr##_FN0, PORT##nr##_FN1,		\
++				PORT##nr##_FN2, PORT##nr##_FN3,		\
++				PORT##nr##_FN4, PORT##nr##_FN5,		\
++				PORT##nr##_FN6, PORT##nr##_FN7 }	\
 +	}
-+}
-+
-+static void bonito_fpga_init(void)
-+{
-+	int i;
-+
-+	bonito_fpga_write(IRQMR0, 0xffff); /* mask all */
-+	bonito_fpga_write(IRQMR1, 0xffff); /* mask all */
-+
-+	/* Device reset */
-+	bonito_fpga_write(DEVRSTCR1,
-+		   (1 << 2));	/* Eth */
-+
-+	/* FPGA irq require special handling */
-+	for (i = FPGA_IRQ_BASE; i < FPGA_IRQ_BASE + 32; i++) {
-+		irq_set_chip_and_handler_name(i, &bonito_fpga_irq_chip,
-+					      handle_level_irq, "level");
-+		set_irq_flags(i, IRQF_VALID); /* yuck */
-+	}
-+
-+	irq_set_chained_handler(evt2irq(0x0340), bonito_fpga_irq_demux);
-+	irq_set_irq_type(evt2irq(0x0340), IRQ_TYPE_LEVEL_LOW);
-+}
-+
- /*
- * PMIC settings
- *
-@@ -274,6 +351,7 @@ static void __init bonito_init(void)
- 	u16 val;
  
- 	r8a7740_pinmux_init();
-+	bonito_fpga_init();
- 
- 	pmic_settings = pmic_do_2A;
- 
+ #endif /* __SH_PFC_H */
 -- 
 1.7.5.4
 
