@@ -1,67 +1,24 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Nov 2011 02:43:44 +0000
-Subject: [PATCH 03/20] sh: clkfwk: add clk_rate_mult_range_round()
-Message-Id: <87wrb79y5e.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 11 Nov 2011 03:05:34 +0000
+Subject: Re: [PATCH 03/20] sh: clkfwk: add clk_rate_mult_range_round()
+Message-Id: <20111111030534.GD29807@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87wrb79y5e.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wrb79y5e.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Some clock pulse generator has PLL multiplication.
-clk_rate_mult_range_round() will be good helper for it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/sh/clk/core.c  |   20 ++++++++++++++++++++
- include/linux/sh_clk.h |    3 +++
- 2 files changed, 23 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
-index dc8d022..352036b 100644
---- a/drivers/sh/clk/core.c
-+++ b/drivers/sh/clk/core.c
-@@ -173,6 +173,26 @@ long clk_rate_div_range_round(struct clk *clk, unsigned int div_min,
- 	return clk_rate_round_helper(&div_range_round);
- }
- 
-+static long clk_rate_mult_range_iter(unsigned int pos,
-+				      struct clk_rate_round_data *rounder)
-+{
-+	return clk_get_rate(rounder->arg) * pos;
-+}
-+
-+long clk_rate_mult_range_round(struct clk *clk, unsigned int mult_min,
-+			       unsigned int mult_max, unsigned long rate)
-+{
-+	struct clk_rate_round_data mult_range_round = {
-+		.min	= mult_min,
-+		.max	= mult_max,
-+		.func	= clk_rate_mult_range_iter,
-+		.arg	= clk_get_parent(clk),
-+		.rate	= rate,
-+	};
-+
-+	return clk_rate_round_helper(&mult_range_round);
-+}
-+
- int clk_rate_table_find(struct clk *clk,
- 			struct cpufreq_frequency_table *freq_table,
- 			unsigned long rate)
-diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
-index 3ccf186..9237c29 100644
---- a/include/linux/sh_clk.h
-+++ b/include/linux/sh_clk.h
-@@ -94,6 +94,9 @@ int clk_rate_table_find(struct clk *clk,
- long clk_rate_div_range_round(struct clk *clk, unsigned int div_min,
- 			      unsigned int div_max, unsigned long rate);
- 
-+long clk_rate_mult_range_round(struct clk *clk, unsigned int mult_min,
-+			       unsigned int mult_max, unsigned long rate);
-+
- long clk_round_parent(struct clk *clk, unsigned long target,
- 		      unsigned long *best_freq, unsigned long *parent_freq,
- 		      unsigned int div_min, unsigned int div_max);
--- 
-1.7.5.4
-
+On Thu, Nov 10, 2011 at 06:43:44PM -0800, Kuninori Morimoto wrote:
+> Some clock pulse generator has PLL multiplication.
+> clk_rate_mult_range_round() will be good helper for it.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>  drivers/sh/clk/core.c  |   20 ++++++++++++++++++++
+>  include/linux/sh_clk.h |    3 +++
+>  2 files changed, 23 insertions(+), 0 deletions(-)
+> 
+This is already applied to my common/clkfwk branch. I'll be sending it
+out with the -rc2 updates.
