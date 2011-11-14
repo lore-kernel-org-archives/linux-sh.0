@@ -1,453 +1,394 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 17 Nov 2011 13:55:56 +0000
-Subject: [PATCH 3/3 v2] sh: sh7723: use runtime PM implementation, common
-Message-Id: <Pine.LNX.4.64.1111171454280.2650@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 14 Nov 2011 00:25:38 +0000
+Subject: [update][PATCH 3/7] PM / Domains: Rework system suspend callback routines
+Message-Id: <201111140125.38919.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201111070101.33960.rjw@sisk.pl> <201111140122.27328.rjw@sisk.pl>
+In-Reply-To: <201111140122.27328.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
 
-Switch sh7723 to a runtime PM implementation, common with ARM-based
-sh-mobile platforms.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The current generic PM domains code attempts to use the generic
+system suspend operations along with the domains' device stop/start
+routines, which requires device drivers to assume that their
+system suspend/resume (and hibernation/restore) callbacks will always
+be used with generic PM domains.  However, in theory, the same
+hardware may be used in devices that don't belong to any PM domain,
+in which case it would be necessary to add "fake" PM domains to
+satisfy the above assumption.  Also, the domain the hardware belongs
+to may not be handled with the help of the generic code.
+
+To allow device drivers that may be used along with the generic PM
+domains code of more flexibility, add new device callbacks, .freeze(),
+.freeze_late(), .thaw_early() and .thaw(), that can be supplied by
+the drivers in addition to their "standard" system suspend and
+hibernation callbacks.  These new callbacks, if defined, will be used
+by the generic PM domains code for the handling of system suspend and
+hibernation instead of the "standard" ones.  This will allow drivers
+to be designed to work with generic PM domains as well as without
+them.
+
+For backwards compatibility, introduce default .freeze(), .thaw(),
+.freeze_late() and .thaw_early() callback routines for PM domains that
+will execute pm_generic_suspend(), pm_generic_resume(),
+pm_generic_suspend_noirq() and pm_generic_resume_noirq(),
+respectively, for the given device if its driver doesn't provide its
+own implementations of .freeze(), .thaw(), .freeze_late() and
+.thaw_early() (this works slightly differently from the current code,
+but its existing users don't care anyway).
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
+ drivers/base/power/domain.c |  189 +++++++++++++++++++-------------------------
+ include/linux/pm_domain.h   |    4 
+ 2 files changed, 87 insertions(+), 106 deletions(-)
 
-v2: remove the MSTP() wrapper
-
- arch/sh/include/asm/hwblk.h            |    4 +-
- arch/sh/kernel/cpu/Makefile            |    2 +-
- arch/sh/kernel/cpu/sh4a/Makefile       |    2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c |  168 ++++++++++++++------------------
- arch/sh/kernel/cpu/sh4a/hwblk-sh7723.c |  117 ----------------------
- arch/sh/kernel/cpu/shmobile/Makefile   |    2 +-
- drivers/sh/Makefile                    |    3 +-
- 7 files changed, 81 insertions(+), 217 deletions(-)
- delete mode 100644 arch/sh/kernel/cpu/sh4a/hwblk-sh7723.c
-
-diff --git a/arch/sh/include/asm/hwblk.h b/arch/sh/include/asm/hwblk.h
-index d6b7dea..e29461b 100644
---- a/arch/sh/include/asm/hwblk.h
-+++ b/arch/sh/include/asm/hwblk.h
-@@ -44,7 +44,9 @@ struct hwblk_info {
- 	int nr_hwblks;
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -28,6 +28,10 @@ struct gpd_dev_ops {
+ 	int (*stop)(struct device *dev);
+ 	int (*save_state)(struct device *dev);
+ 	int (*restore_state)(struct device *dev);
++	int (*freeze)(struct device *dev);
++	int (*freeze_late)(struct device *dev);
++	int (*thaw_early)(struct device *dev);
++	int (*thaw)(struct device *dev);
+ 	bool (*active_wakeup)(struct device *dev);
  };
  
--#if !defined(CONFIG_CPU_SUBTYPE_SH7724) && !defined(CONFIG_CPU_SUBTYPE_SH7722)
-+#if !defined(CONFIG_CPU_SUBTYPE_SH7722) && \
-+    !defined(CONFIG_CPU_SUBTYPE_SH7723) && \
-+    !defined(CONFIG_CPU_SUBTYPE_SH7724)
- /* Should be defined by processor-specific code */
- int arch_hwblk_init(void);
- int arch_hwblk_sleep_mode(void);
-diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
-index b1f515c..5366fdf 100644
---- a/arch/sh/kernel/cpu/Makefile
-+++ b/arch/sh/kernel/cpu/Makefile
-@@ -19,6 +19,6 @@ obj-$(CONFIG_SH_ADC)		+= adc.o
- obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
- 
- obj-y	+= irq/ init.o clock.o fpu.o proc.o
--ifneq ($(CONFIG_CPU_SUBTYPE_SH7724)$(CONFIG_CPU_SUBTYPE_SH7722),y)
-+ifneq ($(CONFIG_CPU_SUBTYPE_SH7722)$(CONFIG_CPU_SUBTYPE_SH7723)$(CONFIG_CPU_SUBTYPE_SH7724),y)
- obj-y	+= hwblk.o
- endif
-diff --git a/arch/sh/kernel/cpu/sh4a/Makefile b/arch/sh/kernel/cpu/sh4a/Makefile
-index 9f28773..0b22d10 100644
---- a/arch/sh/kernel/cpu/sh4a/Makefile
-+++ b/arch/sh/kernel/cpu/sh4a/Makefile
-@@ -28,7 +28,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SH7785)	:= clock-sh7785.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7786)	:= clock-sh7786.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7343)	:= clock-sh7343.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7722)	:= clock-sh7722.o
--clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7723.o hwblk-sh7723.o
-+clock-$(CONFIG_CPU_SUBTYPE_SH7723)	:= clock-sh7723.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7724)	:= clock-sh7724.o
- clock-$(CONFIG_CPU_SUBTYPE_SH7366)	:= clock-sh7366.o
- clock-$(CONFIG_CPU_SUBTYPE_SHX3)	:= clock-shx3.o
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-index 3cc3827..041c415 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
-@@ -23,8 +23,8 @@
- #include <linux/io.h>
- #include <linux/clk.h>
- #include <linux/clkdev.h>
-+#include <linux/sh_clk.h>
- #include <asm/clock.h>
--#include <asm/hwblk.h>
- #include <cpu/sh7723.h>
- 
- /* SH7723 registers */
-@@ -34,6 +34,9 @@
- #define SCLKBCR		0xa415000c
- #define IRDACLKCR	0xa4150018
- #define PLLCR		0xa4150024
-+#define MSTPCR0		0xa4150030
-+#define MSTPCR1		0xa4150034
-+#define MSTPCR2		0xa4150038
- #define DLLFRQ		0xa4150050
- 
- /* Fixed 32 KHz root clock for RTC and Power Management purposes */
-@@ -149,55 +152,55 @@ struct clk div6_clks[DIV6_NR] = {
- 
- static struct clk mstp_clks[] = {
- 	/* See page 60 of Datasheet V1.0: Overview -> Block Diagram */
--	SH_HWBLK_CLK(HWBLK_TLB, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_IC, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_OC, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_L2C, &div4_clks[DIV4_SH], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_ILMEM, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_FPU, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_INTC, &div4_clks[DIV4_I], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_DMAC0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SHYWAY, &div4_clks[DIV4_SH], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_HUDI, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_UBC, &div4_clks[DIV4_I], 0),
--	SH_HWBLK_CLK(HWBLK_TMU0, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_CMT, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_RWDT, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_DMAC1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_TMU1, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_FLCTL, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF0, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF1, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF2, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF3, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF4, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SCIF5, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_MSIOF0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_MSIOF1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_MERAM, &div4_clks[DIV4_SH], 0),
--
--	SH_HWBLK_CLK(HWBLK_IIC, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_RTC, &r_clk, 0),
--
--	SH_HWBLK_CLK(HWBLK_ATAPI, &div4_clks[DIV4_SH], 0),
--	SH_HWBLK_CLK(HWBLK_ADC, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_TPU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_IRDA, &div4_clks[DIV4_P], 0),
--	SH_HWBLK_CLK(HWBLK_TSIF, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_ICB, &div4_clks[DIV4_B], CLK_ENABLE_ON_INIT),
--	SH_HWBLK_CLK(HWBLK_SDHI0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SDHI1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_KEYSC, &r_clk, 0),
--	SH_HWBLK_CLK(HWBLK_USB, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_2DG, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_SIU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VEU2H1, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VOU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_BEU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_CEU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VEU2H0, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_VPU, &div4_clks[DIV4_B], 0),
--	SH_HWBLK_CLK(HWBLK_LCDC, &div4_clks[DIV4_B], 0),
-+	[HWBLK_TLB]    = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 31, CLK_ENABLE_ON_INIT),
-+	[HWBLK_IC]     = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 30, CLK_ENABLE_ON_INIT),
-+	[HWBLK_OC]     = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 29, CLK_ENABLE_ON_INIT),
-+	[HWBLK_L2C]    = SH_CLK_MSTP32(&div4_clks[DIV4_SH], MSTPCR0, 28, CLK_ENABLE_ON_INIT),
-+	[HWBLK_ILMEM]  = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 27, CLK_ENABLE_ON_INIT),
-+	[HWBLK_FPU]    = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 24, CLK_ENABLE_ON_INIT),
-+	[HWBLK_INTC]   = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 22, CLK_ENABLE_ON_INIT),
-+	[HWBLK_DMAC0]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 21, 0),
-+	[HWBLK_SHYWAY] = SH_CLK_MSTP32(&div4_clks[DIV4_SH], MSTPCR0, 20, CLK_ENABLE_ON_INIT),
-+	[HWBLK_HUDI]   = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 19, 0),
-+	[HWBLK_UBC]    = SH_CLK_MSTP32(&div4_clks[DIV4_I],  MSTPCR0, 17, 0),
-+	[HWBLK_TMU0]   = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 15, 0),
-+	[HWBLK_CMT]    = SH_CLK_MSTP32(&r_clk,		    MSTPCR0, 14, 0),
-+	[HWBLK_RWDT]   = SH_CLK_MSTP32(&r_clk,		    MSTPCR0, 13, 0),
-+	[HWBLK_DMAC1]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 12, 0),
-+	[HWBLK_TMU1]   = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 11, 0),
-+	[HWBLK_FLCTL]  = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 10, 0),
-+	[HWBLK_SCIF0]  = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 9, 0),
-+	[HWBLK_SCIF1]  = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 8, 0),
-+	[HWBLK_SCIF2]  = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR0, 7, 0),
-+	[HWBLK_SCIF3]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 6, 0),
-+	[HWBLK_SCIF4]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 5, 0),
-+	[HWBLK_SCIF5]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 4, 0),
-+	[HWBLK_MSIOF0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 2, 0),
-+	[HWBLK_MSIOF1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR0, 1, 0),
-+	[HWBLK_MERAM]  = SH_CLK_MSTP32(&div4_clks[DIV4_SH], MSTPCR0, 0, 0),
-+
-+	[HWBLK_IIC]    = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR1, 9, 0),
-+	[HWBLK_RTC]    = SH_CLK_MSTP32(&r_clk,		    MSTPCR1, 8, 0),
-+
-+	[HWBLK_ATAPI]  = SH_CLK_MSTP32(&div4_clks[DIV4_SH], MSTPCR2, 28, 0),
-+	[HWBLK_ADC]    = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR2, 27, 0),
-+	[HWBLK_TPU]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 25, 0),
-+	[HWBLK_IRDA]   = SH_CLK_MSTP32(&div4_clks[DIV4_P],  MSTPCR2, 24, 0),
-+	[HWBLK_TSIF]   = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 22, 0),
-+	[HWBLK_ICB]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 21, CLK_ENABLE_ON_INIT),
-+	[HWBLK_SDHI0]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 18, 0),
-+	[HWBLK_SDHI1]  = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 17, 0),
-+	[HWBLK_KEYSC]  = SH_CLK_MSTP32(&r_clk,		    MSTPCR2, 14, 0),
-+	[HWBLK_USB]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 11, 0),
-+	[HWBLK_2DG]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 10, 0),
-+	[HWBLK_SIU]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 8, 0),
-+	[HWBLK_VEU2H1] = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 6, 0),
-+	[HWBLK_VOU]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 5, 0),
-+	[HWBLK_BEU]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 4, 0),
-+	[HWBLK_CEU]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 3, 0),
-+	[HWBLK_VEU2H0] = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 2, 0),
-+	[HWBLK_VPU]    = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 1, 0),
-+	[HWBLK_LCDC]   = SH_CLK_MSTP32(&div4_clks[DIV4_B],  MSTPCR2, 0, 0),
- };
- 
- static struct clk_lookup lookups[] = {
-@@ -229,7 +232,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("ilmem0", &mstp_clks[HWBLK_ILMEM]),
- 	CLKDEV_CON_ID("fpu0", &mstp_clks[HWBLK_FPU]),
- 	CLKDEV_CON_ID("intc0", &mstp_clks[HWBLK_INTC]),
--	CLKDEV_CON_ID("dmac0", &mstp_clks[HWBLK_DMAC0]),
-+	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[HWBLK_DMAC0]),
- 	CLKDEV_CON_ID("sh0", &mstp_clks[HWBLK_SHYWAY]),
- 	CLKDEV_CON_ID("hudi0", &mstp_clks[HWBLK_HUDI]),
- 	CLKDEV_CON_ID("ubc0", &mstp_clks[HWBLK_UBC]),
-@@ -250,8 +253,8 @@ static struct clk_lookup lookups[] = {
- 		.clk		= &mstp_clks[HWBLK_TMU0],
- 	},
- 	CLKDEV_CON_ID("cmt_fck", &mstp_clks[HWBLK_CMT]),
--	CLKDEV_CON_ID("rwdt0", &mstp_clks[HWBLK_RWDT]),
--	CLKDEV_CON_ID("dmac1", &mstp_clks[HWBLK_DMAC1]),
-+	CLKDEV_DEV_ID("sh-wdt.0", &mstp_clks[HWBLK_RWDT]),
-+	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[HWBLK_DMAC1]),
- 	{
- 		/* TMU3 */
- 		.dev_id		= "sh_tmu.3",
-@@ -269,40 +272,15 @@ static struct clk_lookup lookups[] = {
- 		.clk		= &mstp_clks[HWBLK_TMU1],
- 	},
- 	CLKDEV_CON_ID("flctl0", &mstp_clks[HWBLK_FLCTL]),
--	{
--		/* SCIF0 */
--		.dev_id		= "sh-sci.0",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[HWBLK_SCIF0],
--	}, {
--		/* SCIF1 */
--		.dev_id		= "sh-sci.1",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[HWBLK_SCIF1],
--	}, {
--		/* SCIF2 */
--		.dev_id		= "sh-sci.2",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[HWBLK_SCIF2],
--	}, {
--		/* SCIF3 */
--		.dev_id		= "sh-sci.3",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[HWBLK_SCIF3],
--	}, {
--		/* SCIF4 */
--		.dev_id		= "sh-sci.4",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[HWBLK_SCIF4],
--	}, {
--		/* SCIF5 */
--		.dev_id		= "sh-sci.5",
--		.con_id		= "sci_fck",
--		.clk		= &mstp_clks[HWBLK_SCIF5],
--	},
--	CLKDEV_CON_ID("msiof0", &mstp_clks[HWBLK_MSIOF0]),
--	CLKDEV_CON_ID("msiof1", &mstp_clks[HWBLK_MSIOF1]),
--	CLKDEV_CON_ID("meram0", &mstp_clks[HWBLK_MERAM]),
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[HWBLK_SCIF0]),
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[HWBLK_SCIF1]),
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[HWBLK_SCIF2]),
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[HWBLK_SCIF3]),
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[HWBLK_SCIF4]),
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[HWBLK_SCIF5]),
-+	CLKDEV_DEV_ID("spi_sh_msiof.0", &mstp_clks[HWBLK_MSIOF0]),
-+	CLKDEV_DEV_ID("spi_sh_msiof.1", &mstp_clks[HWBLK_MSIOF1]),
-+	CLKDEV_DEV_ID("sh_mobile_meram.0", &mstp_clks[HWBLK_MERAM]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC]),
- 	CLKDEV_CON_ID("rtc0", &mstp_clks[HWBLK_RTC]),
- 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
-@@ -311,19 +289,19 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("irda0", &mstp_clks[HWBLK_IRDA]),
- 	CLKDEV_CON_ID("tsif0", &mstp_clks[HWBLK_TSIF]),
- 	CLKDEV_CON_ID("icb0", &mstp_clks[HWBLK_ICB]),
--	CLKDEV_CON_ID("sdhi0", &mstp_clks[HWBLK_SDHI0]),
--	CLKDEV_CON_ID("sdhi1", &mstp_clks[HWBLK_SDHI1]),
--	CLKDEV_CON_ID("keysc0", &mstp_clks[HWBLK_KEYSC]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[HWBLK_SDHI0]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[HWBLK_SDHI1]),
-+	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[HWBLK_KEYSC]),
- 	CLKDEV_CON_ID("usb0", &mstp_clks[HWBLK_USB]),
- 	CLKDEV_CON_ID("2dg0", &mstp_clks[HWBLK_2DG]),
--	CLKDEV_CON_ID("siu0", &mstp_clks[HWBLK_SIU]),
-+	CLKDEV_DEV_ID("siu-pcm-audio", &mstp_clks[HWBLK_SIU]),
- 	CLKDEV_CON_ID("veu1", &mstp_clks[HWBLK_VEU2H1]),
--	CLKDEV_CON_ID("vou0", &mstp_clks[HWBLK_VOU]),
-+	CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
- 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU]),
--	CLKDEV_CON_ID("ceu0", &mstp_clks[HWBLK_CEU]),
-+	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU]),
- 	CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU2H0]),
- 	CLKDEV_CON_ID("vpu0", &mstp_clks[HWBLK_VPU]),
--	CLKDEV_CON_ID("lcdc0", &mstp_clks[HWBLK_LCDC]),
-+	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[HWBLK_LCDC]),
- };
- 
- int __init arch_clk_init(void)
-@@ -356,7 +334,7 @@ int __init arch_clk_init(void)
- 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
--		ret = sh_hwblk_clk_register(mstp_clks, HWBLK_NR);
-+		ret = sh_clk_mstp32_register(mstp_clks, HWBLK_NR);
- 
- 	return ret;
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -561,6 +561,26 @@ static bool genpd_dev_active_wakeup(stru
+ 	return GENPD_DEV_CALLBACK(genpd, bool, active_wakeup, dev);
  }
-diff --git a/arch/sh/kernel/cpu/sh4a/hwblk-sh7723.c b/arch/sh/kernel/cpu/sh4a/hwblk-sh7723.c
-deleted file mode 100644
-index a7f4684..0000000
---- a/arch/sh/kernel/cpu/sh4a/hwblk-sh7723.c
-+++ /dev/null
-@@ -1,117 +0,0 @@
--/*
-- * arch/sh/kernel/cpu/sh4a/hwblk-sh7723.c
+ 
++static int genpd_freeze_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, freeze, dev);
++}
++
++static int genpd_freeze_late(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, freeze_late, dev);
++}
++
++static int genpd_thaw_early(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, thaw_early, dev);
++}
++
++static int genpd_thaw_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, thaw, dev);
++}
++
+ /**
+  * pm_genpd_sync_poweroff - Synchronously power off a PM domain and its masters.
+  * @genpd: PM domain to power off, if possible.
+@@ -695,27 +715,6 @@ static int pm_genpd_prepare(struct devic
+ }
+ 
+ /**
+- * pm_genpd_suspend - Suspend a device belonging to an I/O PM domain.
+- * @dev: Device to suspend.
 - *
-- * SH7723 hardware block support
-- *
-- * Copyright (C) 2009 Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- * Suspend a device under the assumption that its pm_domain field points to the
+- * domain member of an object of type struct generic_pm_domain representing
+- * a PM domain consisting of I/O devices.
 - */
--#include <linux/init.h>
--#include <linux/kernel.h>
--#include <linux/io.h>
--#include <asm/suspend.h>
--#include <asm/hwblk.h>
--#include <cpu/sh7723.h>
--
--/* SH7723 registers */
--#define MSTPCR0		0xa4150030
--#define MSTPCR1		0xa4150034
--#define MSTPCR2		0xa4150038
--
--/* SH7723 Power Domains */
--enum { CORE_AREA, SUB_AREA, CORE_AREA_BM };
--static struct hwblk_area sh7723_hwblk_area[] = {
--	[CORE_AREA] = HWBLK_AREA(0, 0),
--	[CORE_AREA_BM] = HWBLK_AREA(HWBLK_AREA_FLAG_PARENT, CORE_AREA),
--	[SUB_AREA] = HWBLK_AREA(0, 0),
--};
--
--/* Table mapping HWBLK to Module Stop Bit and Power Domain */
--static struct hwblk sh7723_hwblk[HWBLK_NR] = {
--	[HWBLK_TLB] = HWBLK(MSTPCR0, 31, CORE_AREA),
--	[HWBLK_IC] = HWBLK(MSTPCR0, 30, CORE_AREA),
--	[HWBLK_OC] = HWBLK(MSTPCR0, 29, CORE_AREA),
--	[HWBLK_L2C] = HWBLK(MSTPCR0, 28, CORE_AREA),
--	[HWBLK_ILMEM] = HWBLK(MSTPCR0, 27, CORE_AREA),
--	[HWBLK_FPU] = HWBLK(MSTPCR0, 24, CORE_AREA),
--	[HWBLK_INTC] = HWBLK(MSTPCR0, 22, CORE_AREA),
--	[HWBLK_DMAC0] = HWBLK(MSTPCR0, 21, CORE_AREA_BM),
--	[HWBLK_SHYWAY] = HWBLK(MSTPCR0, 20, CORE_AREA),
--	[HWBLK_HUDI] = HWBLK(MSTPCR0, 19, CORE_AREA),
--	[HWBLK_DBG] = HWBLK(MSTPCR0, 18, CORE_AREA),
--	[HWBLK_UBC] = HWBLK(MSTPCR0, 17, CORE_AREA),
--	[HWBLK_SUBC] = HWBLK(MSTPCR0, 16, CORE_AREA),
--	[HWBLK_TMU0] = HWBLK(MSTPCR0, 15, CORE_AREA),
--	[HWBLK_CMT] = HWBLK(MSTPCR0, 14, SUB_AREA),
--	[HWBLK_RWDT] = HWBLK(MSTPCR0, 13, SUB_AREA),
--	[HWBLK_DMAC1] = HWBLK(MSTPCR0, 12, CORE_AREA_BM),
--	[HWBLK_TMU1] = HWBLK(MSTPCR0, 11, CORE_AREA),
--	[HWBLK_FLCTL] = HWBLK(MSTPCR0, 10, CORE_AREA),
--	[HWBLK_SCIF0] = HWBLK(MSTPCR0, 9, CORE_AREA),
--	[HWBLK_SCIF1] = HWBLK(MSTPCR0, 8, CORE_AREA),
--	[HWBLK_SCIF2] = HWBLK(MSTPCR0, 7, CORE_AREA),
--	[HWBLK_SCIF3] = HWBLK(MSTPCR0, 6, CORE_AREA),
--	[HWBLK_SCIF4] = HWBLK(MSTPCR0, 5, CORE_AREA),
--	[HWBLK_SCIF5] = HWBLK(MSTPCR0, 4, CORE_AREA),
--	[HWBLK_MSIOF0] = HWBLK(MSTPCR0, 2, CORE_AREA),
--	[HWBLK_MSIOF1] = HWBLK(MSTPCR0, 1, CORE_AREA),
--	[HWBLK_MERAM] = HWBLK(MSTPCR0, 0, CORE_AREA),
--
--	[HWBLK_IIC] = HWBLK(MSTPCR1, 9, CORE_AREA),
--	[HWBLK_RTC] = HWBLK(MSTPCR1, 8, SUB_AREA),
--
--	[HWBLK_ATAPI] = HWBLK(MSTPCR2, 28, CORE_AREA_BM),
--	[HWBLK_ADC] = HWBLK(MSTPCR2, 27, CORE_AREA),
--	[HWBLK_TPU] = HWBLK(MSTPCR2, 25, CORE_AREA),
--	[HWBLK_IRDA] = HWBLK(MSTPCR2, 24, CORE_AREA),
--	[HWBLK_TSIF] = HWBLK(MSTPCR2, 22, CORE_AREA),
--	[HWBLK_ICB] = HWBLK(MSTPCR2, 21, CORE_AREA_BM),
--	[HWBLK_SDHI0] = HWBLK(MSTPCR2, 18, CORE_AREA),
--	[HWBLK_SDHI1] = HWBLK(MSTPCR2, 17, CORE_AREA),
--	[HWBLK_KEYSC] = HWBLK(MSTPCR2, 14, SUB_AREA),
--	[HWBLK_USB] = HWBLK(MSTPCR2, 11, CORE_AREA),
--	[HWBLK_2DG] = HWBLK(MSTPCR2, 10, CORE_AREA_BM),
--	[HWBLK_SIU] = HWBLK(MSTPCR2, 8, CORE_AREA),
--	[HWBLK_VEU2H1] = HWBLK(MSTPCR2, 6, CORE_AREA_BM),
--	[HWBLK_VOU] = HWBLK(MSTPCR2, 5, CORE_AREA_BM),
--	[HWBLK_BEU] = HWBLK(MSTPCR2, 4, CORE_AREA_BM),
--	[HWBLK_CEU] = HWBLK(MSTPCR2, 3, CORE_AREA_BM),
--	[HWBLK_VEU2H0] = HWBLK(MSTPCR2, 2, CORE_AREA_BM),
--	[HWBLK_VPU] = HWBLK(MSTPCR2, 1, CORE_AREA_BM),
--	[HWBLK_LCDC] = HWBLK(MSTPCR2, 0, CORE_AREA_BM),
--};
--
--static struct hwblk_info sh7723_hwblk_info = {
--	.areas = sh7723_hwblk_area,
--	.nr_areas = ARRAY_SIZE(sh7723_hwblk_area),
--	.hwblks = sh7723_hwblk,
--	.nr_hwblks = ARRAY_SIZE(sh7723_hwblk),
--};
--
--int arch_hwblk_sleep_mode(void)
+-static int pm_genpd_suspend(struct device *dev)
 -{
--	if (!sh7723_hwblk_area[CORE_AREA].cnt[HWBLK_CNT_USAGE])
--		return SUSP_SH_STANDBY | SUSP_SH_SF;
+-	struct generic_pm_domain *genpd;
 -
--	if (!sh7723_hwblk_area[CORE_AREA_BM].cnt[HWBLK_CNT_USAGE])
--		return SUSP_SH_SLEEP | SUSP_SH_SF;
+-	dev_dbg(dev, "%s()\n", __func__);
 -
--	return SUSP_SH_SLEEP;
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	return genpd->suspend_power_off ? 0 : pm_generic_suspend(dev);
 -}
 -
--int __init arch_hwblk_init(void)
--{
--	return hwblk_register(&sh7723_hwblk_info);
+-/**
+  * pm_genpd_suspend_noirq - Late suspend of a device from an I/O PM domain.
+  * @dev: Device to suspend.
+  *
+@@ -737,7 +736,7 @@ static int pm_genpd_suspend_noirq(struct
+ 	if (genpd->suspend_power_off)
+ 		return 0;
+ 
+-	ret = pm_generic_suspend_noirq(dev);
++	ret = genpd_freeze_late(genpd, dev);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -788,28 +787,7 @@ static int pm_genpd_resume_noirq(struct
+ 	genpd->suspended_count--;
+ 	genpd_start_dev(genpd, dev);
+ 
+-	return pm_generic_resume_noirq(dev);
 -}
-diff --git a/arch/sh/kernel/cpu/shmobile/Makefile b/arch/sh/kernel/cpu/shmobile/Makefile
-index e83c9d5..7eb4502 100644
---- a/arch/sh/kernel/cpu/shmobile/Makefile
-+++ b/arch/sh/kernel/cpu/shmobile/Makefile
-@@ -5,6 +5,6 @@
- # Power Management & Sleep mode
- obj-$(CONFIG_PM)	+= pm.o sleep.o
- obj-$(CONFIG_CPU_IDLE)	+= cpuidle.o
--ifneq ($(CONFIG_CPU_SUBTYPE_SH7724)$(CONFIG_CPU_SUBTYPE_SH7722),y)
-+ifneq ($(CONFIG_CPU_SUBTYPE_SH7722)$(CONFIG_CPU_SUBTYPE_SH7723)$(CONFIG_CPU_SUBTYPE_SH7724),y)
- obj-$(CONFIG_PM_RUNTIME)	+= pm_runtime.o
- endif
-diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
-index ffca2b4..51f171b 100644
---- a/drivers/sh/Makefile
-+++ b/drivers/sh/Makefile
-@@ -15,5 +15,6 @@ obj-$(CONFIG_GENERIC_GPIO)	+= pfc.o
- # special casing can go away.
- #
- obj-$(CONFIG_SUPERH)$(CONFIG_ARCH_SHMOBILE)	+= pm_runtime.o
--obj-$(CONFIG_CPU_SUBTYPE_SH7724)		+= pm_runtime.o
- obj-$(CONFIG_CPU_SUBTYPE_SH7722)		+= pm_runtime.o
-+obj-$(CONFIG_CPU_SUBTYPE_SH7723)		+= pm_runtime.o
-+obj-$(CONFIG_CPU_SUBTYPE_SH7724)		+= pm_runtime.o
--- 
-1.7.2.5
+-
+-/**
+- * pm_genpd_resume - Resume a device belonging to an I/O power domain.
+- * @dev: Device to resume.
+- *
+- * Resume a device under the assumption that its pm_domain field points to the
+- * domain member of an object of type struct generic_pm_domain representing
+- * a power domain consisting of I/O devices.
+- */
+-static int pm_genpd_resume(struct device *dev)
+-{
+-	struct generic_pm_domain *genpd;
+-
+-	dev_dbg(dev, "%s()\n", __func__);
+-
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	return genpd->suspend_power_off ? 0 : pm_generic_resume(dev);
++	return genpd_thaw_early(genpd, dev);
+ }
+ 
+ /**
+@@ -830,14 +808,14 @@ static int pm_genpd_freeze(struct device
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : pm_generic_freeze(dev);
++	return genpd->suspend_power_off ? 0 : genpd_freeze_dev(genpd, dev);
+ }
+ 
+ /**
+  * pm_genpd_freeze_noirq - Late freeze of a device from an I/O power domain.
+  * @dev: Device to freeze.
+  *
+- * Carry out a late freeze of a device under the assumption that its
++ * Carry out a late "freeze" of a device under the assumption that its
+  * pm_domain field points to the domain member of an object of type
+  * struct generic_pm_domain representing a power domain consisting of I/O
+  * devices.
+@@ -856,7 +834,7 @@ static int pm_genpd_freeze_noirq(struct
+ 	if (genpd->suspend_power_off)
+ 		return 0;
+ 
+-	ret = pm_generic_freeze_noirq(dev);
++	ret = genpd_freeze_late(genpd, dev);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -869,7 +847,7 @@ static int pm_genpd_freeze_noirq(struct
+  * pm_genpd_thaw_noirq - Early thaw of a device from an I/O power domain.
+  * @dev: Device to thaw.
+  *
+- * Carry out an early thaw of a device under the assumption that its
++ * Carry out an early "thaw" of a device under the assumption that its
+  * pm_domain field points to the domain member of an object of type
+  * struct generic_pm_domain representing a power domain consisting of I/O
+  * devices.
+@@ -889,7 +867,7 @@ static int pm_genpd_thaw_noirq(struct de
+ 
+ 	genpd_start_dev(genpd, dev);
+ 
+-	return pm_generic_thaw_noirq(dev);
++	return genpd_thaw_early(genpd, dev);
+ }
+ 
+ /**
+@@ -910,28 +888,7 @@ static int pm_genpd_thaw(struct device *
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : pm_generic_thaw(dev);
+-}
+-
+-/**
+- * pm_genpd_dev_poweroff - Power off a device belonging to an I/O PM domain.
+- * @dev: Device to suspend.
+- *
+- * Power off a device under the assumption that its pm_domain field points to
+- * the domain member of an object of type struct generic_pm_domain representing
+- * a PM domain consisting of I/O devices.
+- */
+-static int pm_genpd_dev_poweroff(struct device *dev)
+-{
+-	struct generic_pm_domain *genpd;
+-
+-	dev_dbg(dev, "%s()\n", __func__);
+-
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	return genpd->suspend_power_off ? 0 : pm_generic_poweroff(dev);
++	return genpd->suspend_power_off ? 0 : genpd_thaw_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -945,7 +902,6 @@ static int pm_genpd_dev_poweroff(struct
+ static int pm_genpd_dev_poweroff_noirq(struct device *dev)
+ {
+ 	struct generic_pm_domain *genpd;
+-	int ret;
+ 
+ 	dev_dbg(dev, "%s()\n", __func__);
+ 
+@@ -956,10 +912,6 @@ static int pm_genpd_dev_poweroff_noirq(s
+ 	if (genpd->suspend_power_off)
+ 		return 0;
+ 
+-	ret = pm_generic_poweroff_noirq(dev);
+-	if (ret)
+-		return ret;
+-
+ 	if (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev))
+ 		return 0;
+ 
+@@ -1015,28 +967,7 @@ static int pm_genpd_restore_noirq(struct
+ 	genpd->suspended_count--;
+ 	genpd_start_dev(genpd, dev);
+ 
+-	return pm_generic_restore_noirq(dev);
+-}
+-
+-/**
+- * pm_genpd_restore - Restore a device belonging to an I/O power domain.
+- * @dev: Device to resume.
+- *
+- * Restore a device under the assumption that its pm_domain field points to the
+- * domain member of an object of type struct generic_pm_domain representing
+- * a power domain consisting of I/O devices.
+- */
+-static int pm_genpd_restore(struct device *dev)
+-{
+-	struct generic_pm_domain *genpd;
+-
+-	dev_dbg(dev, "%s()\n", __func__);
+-
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	return genpd->suspend_power_off ? 0 : pm_generic_restore(dev);
++	return genpd_thaw_early(genpd, dev);
+ }
+ 
+ /**
+@@ -1078,18 +1009,14 @@ static void pm_genpd_complete(struct dev
+ #else
+ 
+ #define pm_genpd_prepare		NULL
+-#define pm_genpd_suspend		NULL
+ #define pm_genpd_suspend_noirq		NULL
+ #define pm_genpd_resume_noirq		NULL
+-#define pm_genpd_resume			NULL
+ #define pm_genpd_freeze			NULL
+ #define pm_genpd_freeze_noirq		NULL
+ #define pm_genpd_thaw_noirq		NULL
+ #define pm_genpd_thaw			NULL
+ #define pm_genpd_dev_poweroff_noirq	NULL
+-#define pm_genpd_dev_poweroff		NULL
+ #define pm_genpd_restore_noirq		NULL
+-#define pm_genpd_restore		NULL
+ #define pm_genpd_complete		NULL
+ 
+ #endif /* CONFIG_PM_SLEEP */
+@@ -1361,6 +1288,8 @@ int pm_genpd_remove_callbacks(struct dev
+ }
+ EXPORT_SYMBOL_GPL(pm_genpd_remove_callbacks);
+ 
++/* Default device callbacks for generic PM domains. */
++
+ /**
+  * pm_genpd_default_save_state - Default "save device state" for PM domians.
+  * @dev: Device to handle.
+@@ -1400,6 +1329,50 @@ static int pm_genpd_default_restore_stat
+ }
+ 
+ /**
++ * pm_genpd_default_freeze - Default "device freeze" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_freeze(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze;
++
++	return cb ? cb(dev) : pm_generic_suspend(dev);
++}
++
++/**
++ * pm_genpd_default_freeze_late - Default "late device freeze" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_freeze_late(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze_late;
++
++	return cb ? cb(dev) : pm_generic_suspend_noirq(dev);
++}
++
++/**
++ * pm_genpd_default_thaw_early - Default "early device thaw" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_thaw_early(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw_early;
++
++	return cb ? cb(dev) : pm_generic_resume_noirq(dev);
++}
++
++/**
++ * pm_genpd_default_thaw - Default "device thaw" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_thaw(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw;
++
++	return cb ? cb(dev) : pm_generic_resume(dev);
++}
++
++/**
+  * pm_genpd_init - Initialize a generic I/O PM domain object.
+  * @genpd: PM domain object to initialize.
+  * @gov: PM domain governor to associate with the domain (may be NULL).
+@@ -1429,21 +1402,25 @@ void pm_genpd_init(struct generic_pm_dom
+ 	genpd->domain.ops.runtime_resume = pm_genpd_runtime_resume;
+ 	genpd->domain.ops.runtime_idle = pm_generic_runtime_idle;
+ 	genpd->domain.ops.prepare = pm_genpd_prepare;
+-	genpd->domain.ops.suspend = pm_genpd_suspend;
++	genpd->domain.ops.suspend = pm_genpd_freeze;
+ 	genpd->domain.ops.suspend_noirq = pm_genpd_suspend_noirq;
+ 	genpd->domain.ops.resume_noirq = pm_genpd_resume_noirq;
+-	genpd->domain.ops.resume = pm_genpd_resume;
++	genpd->domain.ops.resume = pm_genpd_thaw;
+ 	genpd->domain.ops.freeze = pm_genpd_freeze;
+ 	genpd->domain.ops.freeze_noirq = pm_genpd_freeze_noirq;
+ 	genpd->domain.ops.thaw_noirq = pm_genpd_thaw_noirq;
+ 	genpd->domain.ops.thaw = pm_genpd_thaw;
+-	genpd->domain.ops.poweroff = pm_genpd_dev_poweroff;
++	genpd->domain.ops.poweroff = pm_genpd_freeze;
+ 	genpd->domain.ops.poweroff_noirq = pm_genpd_dev_poweroff_noirq;
+ 	genpd->domain.ops.restore_noirq = pm_genpd_restore_noirq;
+-	genpd->domain.ops.restore = pm_genpd_restore;
++	genpd->domain.ops.restore = pm_genpd_thaw;
+ 	genpd->domain.ops.complete = pm_genpd_complete;
+ 	genpd->dev_ops.save_state = pm_genpd_default_save_state;
+ 	genpd->dev_ops.restore_state = pm_genpd_default_restore_state;
++	genpd->dev_ops.freeze = pm_genpd_default_freeze;
++	genpd->dev_ops.freeze_late = pm_genpd_default_freeze_late;
++	genpd->dev_ops.thaw_early = pm_genpd_default_thaw_early;
++	genpd->dev_ops.thaw = pm_genpd_default_thaw;
+ 	mutex_lock(&gpd_list_lock);
+ 	list_add(&genpd->gpd_list_node, &gpd_list);
+ 	mutex_unlock(&gpd_list_lock);
 
