@@ -1,56 +1,57 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Nov 2011 21:53:46 +0000
-Subject: [PATCH] sh: sh7722: fix Oops: remove empty clock entries
-Message-Id: <Pine.LNX.4.64.1111232248500.5635@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 14 Nov 2011 08:15:56 +0000
+Subject: [GIT PULL] sh fixes for 3.2-rc2
+Message-Id: <20111114081555.GN29807@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Unused indices produce empty entries in the clock array, which then lead to
-Oopses at boot-time.
+There is mostly odd fixes and the addition of a couple helpers that
+some stuff aimed at the next merge window wants. There's the shuffling
+over of the runtime PM platform stub that was in use by the ARM
+SH/R-Mobile code and using it generically for the rest of the SH
+platforms, too (this fixes up some regressions with the runtime PM code
+on SH platforms that tie their MSTP bits in to the clock framework but
+don't otherwise have their own private runtime PM implementations).
 
-Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+Please pull from:
 
-This is against sh-latest with hwblk patches from sh/hwblk applied on top.
+        git://github.com/pmundt/linux-sh.git sh-fixes-for-linus
 
-Morimoto-san, you were right, I was able to reproduce a hang on ecovec, 
-and your patch fixes it - thanks! Here goes a similar one for sh7722 - 
-tested on migor.
+Which contains:
 
-Thanks
-Guennadi
+Kuninori Morimoto (2):
+      sh: clkfwk: add clk_rate_mult_range_round()
+      mailmap: Fix up some renesas attributions
 
- arch/sh/include/cpu-sh4/cpu/sh7722.h |   13 +++++--------
- 1 files changed, 5 insertions(+), 8 deletions(-)
+Nobuhiro Iwamatsu (1):
+      sh: Fix cached/uncaced address calculation in 29bit mode
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7722.h b/arch/sh/include/cpu-sh4/cpu/sh7722.h
-index bd06227..3bb74e5 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7722.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7722.h
-@@ -222,14 +222,11 @@ enum {
- };
- 
- enum {
--	HWBLK_UNKNOWN = 0,
--	HWBLK_TLB, HWBLK_IC, HWBLK_OC, HWBLK_URAM, HWBLK_XYMEM,
--	HWBLK_INTC, HWBLK_DMAC, HWBLK_SHYWAY, HWBLK_HUDI,
--	HWBLK_UBC, HWBLK_TMU, HWBLK_CMT, HWBLK_RWDT, HWBLK_FLCTL,
--	HWBLK_SCIF0, HWBLK_SCIF1, HWBLK_SCIF2, HWBLK_SIO,
--	HWBLK_SIOF0, HWBLK_SIOF1, HWBLK_IIC, HWBLK_RTC,
--	HWBLK_TPU, HWBLK_IRDA, HWBLK_SDHI, HWBLK_SIM, HWBLK_KEYSC,
--	HWBLK_TSIF, HWBLK_USBF, HWBLK_2DG, HWBLK_SIU, HWBLK_VOU,
-+	HWBLK_URAM, HWBLK_XYMEM,
-+	HWBLK_TMU, HWBLK_CMT, HWBLK_RWDT, HWBLK_FLCTL,
-+	HWBLK_SCIF0, HWBLK_SCIF1, HWBLK_SCIF2, HWBLK_IIC, HWBLK_RTC,
-+	HWBLK_SDHI, HWBLK_KEYSC,
-+	HWBLK_USBF, HWBLK_2DG, HWBLK_SIU, HWBLK_VOU,
- 	HWBLK_JPU, HWBLK_BEU, HWBLK_CEU, HWBLK_VEU, HWBLK_VPU,
- 	HWBLK_LCDC,
- 	HWBLK_NR,
--- 
-1.7.2.5
+Paul Mundt (4):
+      sh: Wire up process_vm syscalls.
+      drivers: sh: Generalize runtime PM platform stub.
+      drivers: sh: Kill off dead pathname for runtime PM stub.
+      sh: clkfwk: Kill off remaining debugfs cruft.
 
+Phil Edworthy (1):
+      serial: sh-sci: Fix up SH-2A SCIF support.
+
+ .mailmap                                           |    2 +
+ arch/arm/mach-shmobile/Makefile                    |    2 +-
+ arch/sh/include/asm/page.h                         |    5 +
+ arch/sh/include/asm/unistd_32.h                    |    4 +-
+ arch/sh/include/asm/unistd_64.h                    |    4 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |   16 ++-
+ arch/sh/kernel/syscalls_32.S                       |    2 +
+ arch/sh/kernel/syscalls_64.S                       |    2 +
+ drivers/sh/Makefile                                |    8 ++
+ drivers/sh/clk/core.c                              |  107 ++++----------------
+ .../arm/mach-shmobile => drivers/sh}/pm_runtime.c  |    4 +-
+ drivers/tty/serial/sh-sci.c                        |   19 ++++
+ include/linux/serial_sci.h                         |    1 +
+ include/linux/sh_clk.h                             |    4 +-
+ 14 files changed, 82 insertions(+), 98 deletions(-)
+ rename {arch/arm/mach-shmobile => drivers/sh}/pm_runtime.c (94%)
