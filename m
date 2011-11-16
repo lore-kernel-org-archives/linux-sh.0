@@ -1,85 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Nov 2011 21:05:27 +0000
-Subject: Re: [PATCH 3/3] ARM: mach-shmobile: sh7372 A4R support (v4)
-Message-Id: <Pine.LNX.4.64.1111162201330.7421@axis700.grange>
+From: Robert MARKLUND <robert.marklund@stericsson.com>
+Date: Wed, 16 Nov 2011 12:59:41 +0000
+Subject: RE: [PATCH 2/2 v4] net/smsc911x: Add regulator support
+Message-Id: <2B1D156D95AE9B4EAD379CB9E465FE7324AECE3650@EXDCVYMBSTM005.EQ1STM.local>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201110200012.43840.rjw@sisk.pl> <Pine.LNX.4.64.1111021132240.19054@axis700.grange>
- <CANqRtoS5KTws7rDoHkxrq8DP+js5xq=YF3zQG4MYmmjHEtv5NA@mail.gmail.com>
- <201111030017.00780.rjw@sisk.pl>
-In-Reply-To: <201111030017.00780.rjw@sisk.pl>
+References: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com>
+ <201110311421.18653.vapier@gentoo.org>
+In-Reply-To: <201110311421.18653.vapier@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux Kernel <linux-kernel@vger.kernel.org>
+To: Mike Frysinger <vapier@gentoo.org>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Steve Glendinning <steve.glendinning@smsc.com>, Mathieu Poirier <mathieu.poirier@linaro.org>, Paul Mundt <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Sascha Hauer <s.hauer@pengutronix.de>, Tony Lindgren <tony@atomide.com>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "uclinux-dist-devel@blackfin.uclinux.org" <uclinux-dist-devel@blackfin.uclinux.org>, Linus Walleij <linus.walleij@linaro.org>
 
-Hi all
-
-3.2-rc2 halts on ap4evb after
-
-[    0.085937] NetWinder Floating Point Emulator V0.97 (double precision)
-[    0.085937] msgmni has been set to 246
-[    0.085937] io scheduler noop registered (default)
-
-(normally the following would be printed out afterwards:
-
-[    0.398437] sh-mobile-hdmi sh-mobile-hdmi: Detected HDMI controller 0x0:0x0
-[    0.406250] sh_mobile_meram sh_mobile_meram.0: sh_mobile_meram initialized.
-[    0.421875] Console: switching to colour frame buffer device 160x45
-[    0.429687] graphics fb0: registered sh_mobile_lcdc_fb/mainlcd as 1280x720 16bpp.
-[    0.437500] graphics fb1: registered sh_mobile_lcdc_fb/mainlcd as 544x961 16bpp.
-
-) and git bisect pointed out at this commit as a culprit. Indeed, 
-reverting it fixes the hanger. I'll send my .config off-list.
-
-Thanks
-Guennadi
-
-On Thu, 3 Nov 2011, Rafael J. Wysocki wrote:
-
-> On Wednesday, November 02, 2011, Magnus Damm wrote:
-> > On Wed, Nov 2, 2011 at 11:38 AM, Guennadi Liakhovetski
-> > <g.liakhovetski@gmx.de> wrote:
-> > > On Thu, 20 Oct 2011, Rafael J. Wysocki wrote:
-> > >
-> > >> From: Magnus Damm <damm@opensource.se>
-> > >>
-> > >> This change adds support for the sh7372 A4R power domain.
-> > >
-> > > This version still breaks I2C (#0) on mackerel. Tested with your
-> > > sh7372-test branch of Oct 18th plus these four patches:
-> > >
-> > > 6b29305a PM / Domains: Add default power off governor function (v2)
-> > > 3d578ae PM / Domains: Add device stop governor function (v2)
-> > > 6c2cd02 ARM: mach-shmobile: sh7372 A4R support (v4)
-> > > 9da11f4 ARM: mach-shmobile: sh7372 A3SP support (v4)
-> > 
-> > Exactly how does it break IIC0?
-> 
-> It causes some initialization issues to happen.  I get the following
-> messages on every boot:
-> 
-> i2c-sh_mobile i2c-sh_mobile.0: Transfer request timed out
-> i2c-sh_mobile i2c-sh_mobile.0: Polling timed out
-> 
-> three times in a row (there's a delay too).
-> 
-> The A4R patch is the source of that.
-> 
-> > Does the same happen with the code base for upcoming 3.2-rc1 from
-> > latest linux git?
-> 
-> Yes, it does, AFAICT.
-> 
-> Thanks,
-> Rafael
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+DQo+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+IEZyb206IE1pa2UgRnJ5c2luZ2VyIFtt
+YWlsdG86dmFwaWVyQGdlbnRvby5vcmddDQo+IFNlbnQ6IGRlbiAzMSBva3RvYmVyIDIwMTEgMTk6
+MjENCj4gVG86IFJvYmVydCBNQVJLTFVORA0KPiBDYzogbmV0ZGV2QHZnZXIua2VybmVsLm9yZzsg
+U3RldmUgR2xlbmRpbm5pbmc7IE1hdGhpZXUgUG9pcmllcjsgUGF1bCBNdW5kdDsgbGludXgtc2hA
+dmdlci5rZXJuZWwub3JnOw0KPiBTYXNjaGEgSGF1ZXI7IFRvbnkgTGluZGdyZW47IGxpbnV4LW9t
+YXBAdmdlci5rZXJuZWwub3JnOyB1Y2xpbnV4LWRpc3QtZGV2ZWxAYmxhY2tmaW4udWNsaW51eC5v
+cmc7DQo+IExpbnVzIFdhbGxlaWoNCj4gU3ViamVjdDogUmU6IFtQQVRDSCAyLzIgdjRdIG5ldC9z
+bXNjOTExeDogQWRkIHJlZ3VsYXRvciBzdXBwb3J0DQo+IA0KPiBPbiBNb25kYXkgMzEgT2N0b2Jl
+ciAyMDExIDA4OjM4OjM5IFJvYmVydCBNYXJrbHVuZCB3cm90ZToNCj4gPiBDaGFuZ2VMb2cgdjMt
+PnY0Og0KPiA+IC0gUmVtb3ZlIGR1YWwgcHJpbnRzIGFuZCBvbGQgY29tbWVudCBvbiBNaWtlJ3Mg
+cmVxdWVzdC4NCj4gPiAtIFNwbGl0IHRoZSByZXF1ZXN0X2ZyZWUgZnVjbnRpb24gb24gTWlrZSBh
+bmQgU2FzY2hhIHJlcXVlc3QuDQo+IA0KPiB3b3VsZCBiZSBuaWNlIGlmIHRoZSBlbmFibGUvZGlz
+YWJsZSB3ZXJlIHNwbGl0IGFzIHdlbGwgLi4uDQoNCkkgaW50ZXJwcmV0IHRoaXMgYXMgIm5pY2Ug
+aWYiLCBpZiBpdCdzIGEgIm11c3QgYmUiIHRoZW4gaWxsIGNoYW5nZSBpdC4NCg0KPiANCj4gPiAg
+CWlvdW5tYXAocGRhdGEtPmlvYWRkcik7DQo+ID4NCj4gPiArCSh2b2lkKXNtc2M5MTF4X2VuYWJs
+ZV9kaXNhYmxlX3Jlc291cmNlcyhwZGV2LCBmYWxzZSk7DQo+IA0KPiBpIGRvbid0IHRoaW5rIHRo
+ZSAodm9pZCkgY2FzdCBpcyBuZWNlc3NhcnkNCg0KSSBsaWtlIHRlbGxpbmcgdGhlIHJlYWRlciBv
+ZiB0aGUgY29kZSB0aGF0IEkgaWdub3JlIHRoZSByZXR1cm4gdmFsdWUsIA0KSSBkaWQgbm90IGp1
+c3QgZm9yZ2V0IGl0Lg0KDQovUg0KDQo+IA0KPiBvdGhlcndpc2UgbG9va3MgZmluZQ0KPiAtbWlr
+ZQ0K
