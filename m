@@ -1,54 +1,111 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Thu, 17 Nov 2011 05:07:21 +0000
-Subject: Re: [PATCH 2/2 v4] net/smsc911x: Add regulator support
-Message-Id: <201111170007.25084.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart3064225.1jW3foyFWa"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Wed, 16 Nov 2011 22:21:58 +0000
+Subject: [PATCH] PM Sleep: Don't extend wakeup paths to devices with ignore_children set
+Message-Id: <201111162321.58572.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com> <201110311421.18653.vapier@gentoo.org> <2B1D156D95AE9B4EAD379CB9E465FE7324AECE3650@EXDCVYMBSTM005.EQ1STM.local>
-In-Reply-To: <2B1D156D95AE9B4EAD379CB9E465FE7324AECE3650@EXDCVYMBSTM005.EQ1STM.local>
-To: Robert MARKLUND <robert.marklund@stericsson.com>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Steve Glendinning <steve.glendinning@smsc.com>, Mathieu Poirier <mathieu.poirier@linaro.org>, Paul Mundt <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Sascha Hauer <s.hauer@pengutronix.de>, Tony Lindgren <tony@atomide.com>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "uclinux-dist-devel@blackfin.uclinux.org" <uclinux-dist-devel@blackfin.uclinux.org>, Linus Walleij <linus.walleij@linaro.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Greg Kroah-Hartman <gregkh@suse.de>
 
---nextPart3064225.1jW3foyFWa
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-On Wednesday 16 November 2011 07:59:41 Robert MARKLUND wrote:
-> From: Mike Frysinger [mailto:vapier@gentoo.org]
-> > On Monday 31 October 2011 08:38:39 Robert Marklund wrote:
-> > > ChangeLog v3->v4:
-> > > - Remove dual prints and old comment on Mike's request.
-> > > - Split the request_free fucntion on Mike and Sascha request.
-> >=20
-> > would be nice if the enable/disable were split as well ...
->=20
-> I interpret this as "nice if", if it's a "must be" then ill change it.
+Commit 4ca46ff3e0d8c234cb40ebb6457653b59584426c (PM / Sleep: Mark
+devices involved in wakeup signaling during suspend) introduced
+the power.wakeup_path field in struct dev_pm_info to mark devices
+whose children are enabled to wake up the system from sleep states,
+so that power domains containing the parents that provide their
+children with wakeup power and/or relay their wakeup signals are not
+turned off.  Unfortunately, that introduced a PM regression on SH7372
+whose power consumption in the system "memory sleep" state increased
+as a result of it, because it prevented the power domain containing
+the I2C controller from being turned off when some children of that
+controller were enabled to wake up the system, although the
+controller was not necessary for them to signal wakeup.
 
-i would prefer it were split
-=2Dmike
+To fix this issue use the observation that devices whose
+power.ignore_children flag is set for runtime PM should be treated
+analogously during system suspend.  Namely, they shouldn't be
+included in wakeup paths going through their children.  Since the
+SH7372 I2C controller's power.ignore_children flag is set, doing so
+will restore the previous behavior of that SOC.
 
---nextPart3064225.1jW3foyFWa
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/main.c  |    3 ++-
+ include/linux/device.h     |    5 +++++
+ include/linux/pm.h         |    2 +-
+ include/linux/pm_runtime.h |    6 ------
+ 4 files changed, 8 insertions(+), 8 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iQIcBAABAgAGBQJOxJaMAAoJEEFjO5/oN/WBw7wP/R6BpgExQZxYQkgI1W7f8gkX
-Eop/e4ZhE4PQsKdCsVaB2Dse5FqCGGdHUAkNUxtCIjQF6ilRpidgXOAVJ1Cpec6t
-qjthktolSuCTLtbdHpIBQh7wYCIQYARNtCvHFpKDcqLQM+AwSB5AS+AH58nl9Ms5
-i7w4tcSEhHzj6tMPIG8fFAcKgjIt6G9xVgKCRgjhPFSautxYxWjOWKlCleXcxcAr
-u7AkAbZpJMsmuY2H6mgrcE76IMw8LVO9RVcs1rqAm+4C+dFXZnX26XdCFQ5yNgUu
-C73+75y4HSoeQSVAe80OUV5huG3kwjHE++2LxAq3c4b7cHzGya1yDYCpO7wavqdC
-pw8Nxm2MACEwh58hxi9YMc2MYOiZ7F//8Fh4JUanWC9rksAEIvsPNMAPuAqg9mxX
-lKWdS6C9h6tmCzCheyUcsVBLeh3BYL+CmJ5No0RhWPHnGPJeKVD1Pp2bMG1OWiiV
-C+xI7yk7d1SKCi9XOeWJ3fzsUUynqtA62GVMHRhWb9cpwokuswhnLQONH12emgAr
-24iwHHROGLq3PRIfcz/jZDv2P/vaPucBvaDSaTnTq293eCPy/zF64MAItSNA7lf2
-qCHpn7zR2ORUY+71KkpK1gr3XqgKZPwoD95lgxIThTSpDYvk334XIJTc/F9OBx+N
-1PFwQVVu9DnR7OXdgwnw
-=dBok
------END PGP SIGNATURE-----
-
---nextPart3064225.1jW3foyFWa--
+Index: linux/include/linux/pm.h
+=================================--- linux.orig/include/linux/pm.h
++++ linux/include/linux/pm.h
+@@ -447,6 +447,7 @@ struct dev_pm_info {
+ 	unsigned int		async_suspend:1;
+ 	bool			is_prepared:1;	/* Owned by the PM core */
+ 	bool			is_suspended:1;	/* Ditto */
++	bool			ignore_children:1;
+ 	spinlock_t		lock;
+ #ifdef CONFIG_PM_SLEEP
+ 	struct list_head	entry;
+@@ -464,7 +465,6 @@ struct dev_pm_info {
+ 	atomic_t		usage_count;
+ 	atomic_t		child_count;
+ 	unsigned int		disable_depth:3;
+-	unsigned int		ignore_children:1;
+ 	unsigned int		idle_notification:1;
+ 	unsigned int		request_pending:1;
+ 	unsigned int		deferred_resume:1;
+Index: linux/drivers/base/power/main.c
+=================================--- linux.orig/drivers/base/power/main.c
++++ linux/drivers/base/power/main.c
+@@ -920,7 +920,8 @@ static int __device_suspend(struct devic
+  End:
+ 	if (!error) {
+ 		dev->power.is_suspended = true;
+-		if (dev->power.wakeup_path && dev->parent)
++		if (dev->power.wakeup_path
++		    && dev->parent && !dev->parent->power.ignore_children)
+ 			dev->parent->power.wakeup_path = true;
+ 	}
+ 
+Index: linux/include/linux/pm_runtime.h
+=================================--- linux.orig/include/linux/pm_runtime.h
++++ linux/include/linux/pm_runtime.h
+@@ -54,11 +54,6 @@ static inline bool pm_children_suspended
+ 		|| !atomic_read(&dev->power.child_count);
+ }
+ 
+-static inline void pm_suspend_ignore_children(struct device *dev, bool enable)
+-{
+-	dev->power.ignore_children = enable;
+-}
+-
+ static inline void pm_runtime_get_noresume(struct device *dev)
+ {
+ 	atomic_inc(&dev->power.usage_count);
+@@ -132,7 +127,6 @@ static inline void pm_runtime_allow(stru
+ static inline void pm_runtime_forbid(struct device *dev) {}
+ 
+ static inline bool pm_children_suspended(struct device *dev) { return false; }
+-static inline void pm_suspend_ignore_children(struct device *dev, bool en) {}
+ static inline void pm_runtime_get_noresume(struct device *dev) {}
+ static inline void pm_runtime_put_noidle(struct device *dev) {}
+ static inline bool device_run_wake(struct device *dev) { return false; }
+Index: linux/include/linux/device.h
+=================================--- linux.orig/include/linux/device.h
++++ linux/include/linux/device.h
+@@ -682,6 +682,11 @@ static inline bool device_async_suspend_
+ 	return !!dev->power.async_suspend;
+ }
+ 
++static inline void pm_suspend_ignore_children(struct device *dev, bool enable)
++{
++	dev->power.ignore_children = enable;
++}
++
+ static inline void device_lock(struct device *dev)
+ {
+ 	mutex_lock(&dev->mutex);
