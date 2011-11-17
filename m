@@ -1,34 +1,54 @@
-From: Robert MARKLUND <robert.marklund@stericsson.com>
-Date: Wed, 16 Nov 2011 12:59:41 +0000
-Subject: RE: [PATCH 2/2 v4] net/smsc911x: Add regulator support
-Message-Id: <2B1D156D95AE9B4EAD379CB9E465FE7324AECE3650@EXDCVYMBSTM005.EQ1STM.local>
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 17 Nov 2011 05:07:21 +0000
+Subject: Re: [PATCH 2/2 v4] net/smsc911x: Add regulator support
+Message-Id: <201111170007.25084.vapier@gentoo.org>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart3064225.1jW3foyFWa"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com>
- <201110311421.18653.vapier@gentoo.org>
-In-Reply-To: <201110311421.18653.vapier@gentoo.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mike Frysinger <vapier@gentoo.org>
+References: <1320064719-14449-1-git-send-email-robert.marklund@stericsson.com> <201110311421.18653.vapier@gentoo.org> <2B1D156D95AE9B4EAD379CB9E465FE7324AECE3650@EXDCVYMBSTM005.EQ1STM.local>
+In-Reply-To: <2B1D156D95AE9B4EAD379CB9E465FE7324AECE3650@EXDCVYMBSTM005.EQ1STM.local>
+To: Robert MARKLUND <robert.marklund@stericsson.com>
 Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Steve Glendinning <steve.glendinning@smsc.com>, Mathieu Poirier <mathieu.poirier@linaro.org>, Paul Mundt <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Sascha Hauer <s.hauer@pengutronix.de>, Tony Lindgren <tony@atomide.com>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "uclinux-dist-devel@blackfin.uclinux.org" <uclinux-dist-devel@blackfin.uclinux.org>, Linus Walleij <linus.walleij@linaro.org>
 
-DQo+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+IEZyb206IE1pa2UgRnJ5c2luZ2VyIFtt
-YWlsdG86dmFwaWVyQGdlbnRvby5vcmddDQo+IFNlbnQ6IGRlbiAzMSBva3RvYmVyIDIwMTEgMTk6
-MjENCj4gVG86IFJvYmVydCBNQVJLTFVORA0KPiBDYzogbmV0ZGV2QHZnZXIua2VybmVsLm9yZzsg
-U3RldmUgR2xlbmRpbm5pbmc7IE1hdGhpZXUgUG9pcmllcjsgUGF1bCBNdW5kdDsgbGludXgtc2hA
-dmdlci5rZXJuZWwub3JnOw0KPiBTYXNjaGEgSGF1ZXI7IFRvbnkgTGluZGdyZW47IGxpbnV4LW9t
-YXBAdmdlci5rZXJuZWwub3JnOyB1Y2xpbnV4LWRpc3QtZGV2ZWxAYmxhY2tmaW4udWNsaW51eC5v
-cmc7DQo+IExpbnVzIFdhbGxlaWoNCj4gU3ViamVjdDogUmU6IFtQQVRDSCAyLzIgdjRdIG5ldC9z
-bXNjOTExeDogQWRkIHJlZ3VsYXRvciBzdXBwb3J0DQo+IA0KPiBPbiBNb25kYXkgMzEgT2N0b2Jl
-ciAyMDExIDA4OjM4OjM5IFJvYmVydCBNYXJrbHVuZCB3cm90ZToNCj4gPiBDaGFuZ2VMb2cgdjMt
-PnY0Og0KPiA+IC0gUmVtb3ZlIGR1YWwgcHJpbnRzIGFuZCBvbGQgY29tbWVudCBvbiBNaWtlJ3Mg
-cmVxdWVzdC4NCj4gPiAtIFNwbGl0IHRoZSByZXF1ZXN0X2ZyZWUgZnVjbnRpb24gb24gTWlrZSBh
-bmQgU2FzY2hhIHJlcXVlc3QuDQo+IA0KPiB3b3VsZCBiZSBuaWNlIGlmIHRoZSBlbmFibGUvZGlz
-YWJsZSB3ZXJlIHNwbGl0IGFzIHdlbGwgLi4uDQoNCkkgaW50ZXJwcmV0IHRoaXMgYXMgIm5pY2Ug
-aWYiLCBpZiBpdCdzIGEgIm11c3QgYmUiIHRoZW4gaWxsIGNoYW5nZSBpdC4NCg0KPiANCj4gPiAg
-CWlvdW5tYXAocGRhdGEtPmlvYWRkcik7DQo+ID4NCj4gPiArCSh2b2lkKXNtc2M5MTF4X2VuYWJs
-ZV9kaXNhYmxlX3Jlc291cmNlcyhwZGV2LCBmYWxzZSk7DQo+IA0KPiBpIGRvbid0IHRoaW5rIHRo
-ZSAodm9pZCkgY2FzdCBpcyBuZWNlc3NhcnkNCg0KSSBsaWtlIHRlbGxpbmcgdGhlIHJlYWRlciBv
-ZiB0aGUgY29kZSB0aGF0IEkgaWdub3JlIHRoZSByZXR1cm4gdmFsdWUsIA0KSSBkaWQgbm90IGp1
-c3QgZm9yZ2V0IGl0Lg0KDQovUg0KDQo+IA0KPiBvdGhlcndpc2UgbG9va3MgZmluZQ0KPiAtbWlr
-ZQ0K
+--nextPart3064225.1jW3foyFWa
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Wednesday 16 November 2011 07:59:41 Robert MARKLUND wrote:
+> From: Mike Frysinger [mailto:vapier@gentoo.org]
+> > On Monday 31 October 2011 08:38:39 Robert Marklund wrote:
+> > > ChangeLog v3->v4:
+> > > - Remove dual prints and old comment on Mike's request.
+> > > - Split the request_free fucntion on Mike and Sascha request.
+> >=20
+> > would be nice if the enable/disable were split as well ...
+>=20
+> I interpret this as "nice if", if it's a "must be" then ill change it.
+
+i would prefer it were split
+=2Dmike
+
+--nextPart3064225.1jW3foyFWa
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iQIcBAABAgAGBQJOxJaMAAoJEEFjO5/oN/WBw7wP/R6BpgExQZxYQkgI1W7f8gkX
+Eop/e4ZhE4PQsKdCsVaB2Dse5FqCGGdHUAkNUxtCIjQF6ilRpidgXOAVJ1Cpec6t
+qjthktolSuCTLtbdHpIBQh7wYCIQYARNtCvHFpKDcqLQM+AwSB5AS+AH58nl9Ms5
+i7w4tcSEhHzj6tMPIG8fFAcKgjIt6G9xVgKCRgjhPFSautxYxWjOWKlCleXcxcAr
+u7AkAbZpJMsmuY2H6mgrcE76IMw8LVO9RVcs1rqAm+4C+dFXZnX26XdCFQ5yNgUu
+C73+75y4HSoeQSVAe80OUV5huG3kwjHE++2LxAq3c4b7cHzGya1yDYCpO7wavqdC
+pw8Nxm2MACEwh58hxi9YMc2MYOiZ7F//8Fh4JUanWC9rksAEIvsPNMAPuAqg9mxX
+lKWdS6C9h6tmCzCheyUcsVBLeh3BYL+CmJ5No0RhWPHnGPJeKVD1Pp2bMG1OWiiV
+C+xI7yk7d1SKCi9XOeWJ3fzsUUynqtA62GVMHRhWb9cpwokuswhnLQONH12emgAr
+24iwHHROGLq3PRIfcz/jZDv2P/vaPucBvaDSaTnTq293eCPy/zF64MAItSNA7lf2
+qCHpn7zR2ORUY+71KkpK1gr3XqgKZPwoD95lgxIThTSpDYvk334XIJTc/F9OBx+N
+1PFwQVVu9DnR7OXdgwnw
+=dBok
+-----END PGP SIGNATURE-----
+
+--nextPart3064225.1jW3foyFWa--
