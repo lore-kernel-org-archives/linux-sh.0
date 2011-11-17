@@ -1,30 +1,24 @@
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Date: Fri, 25 Nov 2011 05:07:47 +0000
-Subject: Re: sh-sci CTS problem
-Message-Id: <4ECF22A3.2000803@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 17 Nov 2011 13:55:42 +0000
+Subject: [PATCH 0/3 v2] Switch sh7722, sh7723, and sh7724 to a generic
+Message-Id: <Pine.LNX.4.64.1111171446150.2650@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <OFB48B001D.3AA44CAE-ON80257950.0037E14A-80257950.0039B579@eu.necel.com>
-In-Reply-To: <OFB48B001D.3AA44CAE-ON80257950.0037E14A-80257950.0039B579@eu.necel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+The sh/pm-runtime branch of https://github.com/pmundt/linux-sh begins the 
+migration of SuperH platforms from their hwblk runtime PM implementation 
+to the common with ARM-based sh-mobile platforms code. These patches 
+actually migrate sh7722, sh7723, and sh7724 architectures over.
 
-> I guess the right thing to do is add an extra field to struct 
-> plat_sci_port to indicate support for RTS/CTS?
+v2 is functionally identical to v1, it only removes the MSTP() wrapper, as 
+requested by Paul.
 
-Right. I guess each real pin manipulation will be handled like sci_init_pins().
-On the other hand, I don't think there is much things to do here for channels
-that does *not* support control lines. get_mctrl() does not provide the function
-to tell "not supported" condition anyway.
-
-I think that should be implemented in sci_set_termios().
-Currently, it sets SCFCR.MCE regardless of the HW function, and does not
-fix any bits in c_flags. We can negate CRTSCTS in termios->c_cflag there,
-unless (s->cfg->flags & UPF_xx) or something.
-Does anyone know good flags or constant definitions?
-/yoshii
-
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
