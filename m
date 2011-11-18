@@ -1,53 +1,70 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 07 Nov 2011 04:48:11 +0000
-Subject: Re: [PATCH 2.3/5 v2] ARM: mach-shmobile: add bonito board support.
-Message-Id: <20111107044811.GC3927@linux-sh.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 18 Nov 2011 07:32:34 +0000
+Subject: [PATCH] sh: fix build warning in board-sh7757lcr
+Message-Id: <4EC60A12.9000504@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zkg8rcxs.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zkg8rcxs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Nov 06, 2011 at 04:30:59PM -0800, Kuninori Morimoto wrote:
-> diff --git a/arch/arm/configs/bonito_defconfig b/arch/arm/configs/bonito_defconfig
-> new file mode 100644
-> index 0000000..adb4fc3
-> --- /dev/null
-> +++ b/arch/arm/configs/bonito_defconfig
-> @@ -0,0 +1,978 @@
-> +#
-> +# Automatically generated file; DO NOT EDIT.
-> +# Linux/arm 3.1.0-rc3 Kernel Configuration
-> +#
-We're only interested in defconfig fragments.
+This patch fixed the following build warnings:
 
-See c2330e286f68f1c408b4aa6515ba49d57f05beae for a script you can use to
-trim this down.
+  CC      arch/sh/boards/board-sh7757lcr.o
+arch/sh/boards/board-sh7757lcr.c:77: warning: initialization from incompatible pointer type
+arch/sh/boards/board-sh7757lcr.c:106: warning: initialization from incompatible pointer type
+arch/sh/boards/board-sh7757lcr.c:151: warning: initialization from incompatible pointer type
+arch/sh/boards/board-sh7757lcr.c:181: warning: initialization from incompatible pointer type
+arch/sh/boards/board-sh7757lcr.c:213: warning: missing braces around initializer
+arch/sh/boards/board-sh7757lcr.c:213: warning: (near initialization for ‘sh7757lcr_mmcif_dma.chan_priv_tx’)
 
-> +/*
-> + * FPGA
-> + */
-> +#define A1MDSR		0x10E0
-> +#define BVERR		0x1100
-> +u16 fpga_read(u32 offset)
-> +{
-> +	return __raw_readw(0xf0003000 + offset);
-> +}
-> +
-> +void fpga_write(u32 offset, u16 val, u16 mask)
-> +{
-> +	u16 tmp;
-> +
-> +	tmp = fpga_read(offset);
-> +	tmp = (tmp & ~mask) | (val & mask);
-> +	__raw_writew(tmp, 0xf0003000 + offset);
-> +}
-> +
-You may want a more descriptive name, like bonito_fpga_read/write() or
-so. This also seems like something you are going to want in a header and
-inlined, rather than part of the global namespace (especially with such
-generic naming).
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/boards/board-sh7757lcr.c |   16 ++++++++++------
+ 1 files changed, 10 insertions(+), 6 deletions(-)
 
-The rest looks fine to me.
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index ec8c84c..895e337 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -50,9 +50,9 @@ static struct platform_device heartbeat_device = {
+ #define GBECONT		0xffc10100
+ #define GBECONT_RMII1	BIT(17)
+ #define GBECONT_RMII0	BIT(16)
+-static void sh7757_eth_set_mdio_gate(unsigned long addr)
++static void sh7757_eth_set_mdio_gate(void *addr)
+ {
+-	if ((addr & 0x00000fff) < 0x0800)
++	if (((unsigned long)addr & 0x00000fff) < 0x0800)
+ 		writel(readl(GBECONT) | GBECONT_RMII0, GBECONT);
+ 	else
+ 		writel(readl(GBECONT) | GBECONT_RMII1, GBECONT);
+@@ -116,9 +116,9 @@ static struct platform_device sh7757_eth1_device = {
+ 	},
+ };
+
+-static void sh7757_eth_giga_set_mdio_gate(unsigned long addr)
++static void sh7757_eth_giga_set_mdio_gate(void *addr)
+ {
+-	if ((addr & 0x00000fff) < 0x0800) {
++	if (((unsigned long)addr & 0x00000fff) < 0x0800) {
+ 		gpio_set_value(GPIO_PTT4, 1);
+ 		writel(readl(GBECONT) & ~GBECONT_RMII0, GBECONT);
+ 	} else {
+@@ -210,8 +210,12 @@ static struct resource sh_mmcif_resources[] = {
+ };
+
+ static struct sh_mmcif_dma sh7757lcr_mmcif_dma = {
+-	.chan_priv_tx	= SHDMA_SLAVE_MMCIF_TX,
+-	.chan_priv_rx	= SHDMA_SLAVE_MMCIF_RX,
++	.chan_priv_tx	= {
++		.slave_id = SHDMA_SLAVE_MMCIF_TX,
++	},
++	.chan_priv_rx	= {
++		.slave_id = SHDMA_SLAVE_MMCIF_RX,
++	}
+ };
+
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+-- 
+1.7.1
