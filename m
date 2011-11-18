@@ -1,7 +1,7 @@
 From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 17 Nov 2011 18:54:46 +0000
+Date: Fri, 18 Nov 2011 07:34:55 +0000
 Subject: Re: [PATCH 0/3 v2] Switch sh7722, sh7723, and sh7724 to a generic sh-mobile runtime PM
-Message-Id: <20111117185445.GB30555@linux-sh.org>
+Message-Id: <20111118073454.GE30555@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1111171446150.2650@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1111171446150.2650@axis700.grange>
@@ -19,4 +19,7 @@ On Thu, Nov 17, 2011 at 02:55:42PM +0100, Guennadi Liakhovetski wrote:
 > v2 is functionally identical to v1, it only removes the MSTP() wrapper, as 
 > requested by Paul.
 > 
-Looks better, thanks. I'll queue them up in sh/pm-runtime.
+I've layered hwblk removal on top of this, in the sh/hwblk topic branch.
+
+I expect cpuidle is probably going to be broken until it gets some clue
+about powerdomains, though.
