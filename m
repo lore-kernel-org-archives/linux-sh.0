@@ -1,156 +1,176 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 07 Nov 2011 09:35:38 +0000
-Subject: [PATCH 3/3] ARM: mach-shmobile: move PORTCR helper macro to sh_pfc.h
-Message-Id: <87lirsqnq1.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 19 Nov 2011 13:59:00 +0000
+Subject: [Update 2x][PATCH 2/7] PM / Domains: Introduce "save/restore state" device callbacks
+Message-Id: <201111191459.00982.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201111070101.33960.rjw@sisk.pl> <201111140122.27328.rjw@sisk.pl> <201111191456.40453.rjw@sisk.pl>
+In-Reply-To: <201111191456.40453.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
 
-This patch is tesed on mackerel, kota2
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The current PM domains code uses device drivers' .runtime_suspend()
+and .runtime_resume() callbacks as the "save device state" and
+"restore device state" operations, which may not be appropriate in
+general, because it forces drivers to assume that they always will
+be used with generic PM domains.  However, in theory, the same
+hardware may be used in devices that don't belong to any PM
+domain, in which case it would be necessary to add "fake" PM
+domains to satisfy the above assumption.  It also may be located in
+a PM domain that's not handled with the help of the generic code.
+
+To allow device drivers that may be used along with the generic PM
+domains code of more flexibility, introduce new device callbacks,
+.save_state() and .restore_state(), that can be supplied by the
+drivers in addition to their "standard" runtime PM callbacks.  This
+will allow the drivers to be designed to work with generic PM domains
+as well as without them.
+
+For backwards compatibility, introduce default .save_state() and
+.restore_state() callback routines for PM domains that will execute
+a device driver's .runtime_suspend() and .runtime_resume() callbacks,
+respectively, for the given device if the driver doesn't provide its
+own implementations of .save_state() and .restore_state().
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/pfc-sh7367.c |   16 ----------------
- arch/arm/mach-shmobile/pfc-sh7372.c |   16 ----------------
- arch/arm/mach-shmobile/pfc-sh7377.c |   17 -----------------
- arch/arm/mach-shmobile/pfc-sh73a0.c |   12 ------------
- include/linux/sh_pfc.h              |   17 +++++++++++++++++
- 5 files changed, 17 insertions(+), 61 deletions(-)
+ drivers/base/power/domain.c |   68 ++++++++++++++++++++++++++++++++++++--------
+ include/linux/pm_domain.h   |    2 +
+ 2 files changed, 58 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-sh7367.c b/arch/arm/mach-shmobile/pfc-sh7367.c
-index 32fbf02..e6e5246 100644
---- a/arch/arm/mach-shmobile/pfc-sh7367.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7367.c
-@@ -1287,22 +1287,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(DIVLOCK),
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -26,6 +26,8 @@ struct dev_power_governor {
+ struct gpd_dev_ops {
+ 	int (*start)(struct device *dev);
+ 	int (*stop)(struct device *dev);
++	int (*save_state)(struct device *dev);
++	int (*restore_state)(struct device *dev);
+ 	bool (*active_wakeup)(struct device *dev);
  };
  
--/* helper for top 4 bits in PORTnCR */
--#define PCRH(in, in_pd, in_pu, out)		\
--	0, (out), (in), 0,			\
--	0, 0, 0, 0,				\
--	0, 0, (in_pd), 0,			\
--	0, 0, (in_pu), 0
--
--#define PORTCR(nr, reg)						\
--	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
--		PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
--		     PORT##nr##_IN_PU, PORT##nr##_OUT),		\
--		PORT##nr##_FN0, PORT##nr##_FN1, PORT##nr##_FN2,	\
--		PORT##nr##_FN3,	PORT##nr##_FN4, PORT##nr##_FN5,	\
--		PORT##nr##_FN6, PORT##nr##_FN7 }		\
--	}
--
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0, 0xe6050000), /* PORT0CR */
- 	PORTCR(1, 0xe6050001), /* PORT1CR */
-diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
-index 4b43626..1bd6585 100644
---- a/arch/arm/mach-shmobile/pfc-sh7372.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7372.c
-@@ -1199,22 +1199,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(SDENC_DV_CLKI),
- };
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -56,6 +56,16 @@ static int genpd_start_dev(struct generi
+ 	return GENPD_DEV_CALLBACK(genpd, int, start, dev);
+ }
  
--/* helper for top 4 bits in PORTnCR */
--#define PCRH(in, in_pd, in_pu, out)		\
--	0, (out), (in), 0,			\
--	0, 0, 0, 0,				\
--	0, 0, (in_pd), 0,			\
--	0, 0, (in_pu), 0
--
--#define PORTCR(nr, reg)						\
--	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
--		PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
--		     PORT##nr##_IN_PU, PORT##nr##_OUT),		\
--		PORT##nr##_FN0, PORT##nr##_FN1, PORT##nr##_FN2,	\
--		PORT##nr##_FN3,	PORT##nr##_FN4, PORT##nr##_FN5,	\
--		PORT##nr##_FN6, PORT##nr##_FN7 }		\
--	}
--
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0,	0xE6051000), /* PORT0CR */
- 	PORTCR(1,	0xE6051001), /* PORT1CR */
-diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
-index fb3cfd3..2f10511 100644
---- a/arch/arm/mach-shmobile/pfc-sh7377.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7377.c
-@@ -1300,23 +1300,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(RESETOUTS),
- };
- 
--/* helper for top 4 bits in PORTnCR */
--#define PCRH(in, in_pd, in_pu, out)	\
--	0, (out), (in), 0,	\
--		0, 0, 0, 0,	\
--		0, 0, (in_pd), 0,	\
--		0, 0, (in_pu), 0
--
--#define PORTCR(nr, reg)	\
--	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {	\
--			PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,	\
--				 PORT##nr##_IN_PU, PORT##nr##_OUT),	\
--				PORT##nr##_FN0, PORT##nr##_FN1,	\
--				PORT##nr##_FN2, PORT##nr##_FN3,	\
--				PORT##nr##_FN4, PORT##nr##_FN5,	\
--				PORT##nr##_FN6, PORT##nr##_FN7 }	\
--	}
--
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0, 0xe6050000), /* PORT0CR */
- 	PORTCR(1, 0xe6050001), /* PORT1CR */
-diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
-index 3eb0071..599016e 100644
---- a/arch/arm/mach-shmobile/pfc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
-@@ -2186,18 +2186,6 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(FSIAISLD_PU),
- };
- 
--#define PORTCR(nr, reg)	\
--	{ PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) { \
--		0, \
--		/*0001*/ PORT##nr##_OUT , \
--		/*0010*/ PORT##nr##_IN , 0, 0, 0, 0, 0, 0, 0, \
--		/*1010*/ PORT##nr##_IN_PD, 0, 0, 0, \
--		/*1110*/ PORT##nr##_IN_PU, 0, \
--		PORT##nr##_FN0, PORT##nr##_FN1,	PORT##nr##_FN2, \
--		PORT##nr##_FN3,	PORT##nr##_FN4, PORT##nr##_FN5, \
--		PORT##nr##_FN6, PORT##nr##_FN7, 0, 0, 0, 0, 0, 0, 0, 0 } \
--	}
--
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0, 0xe6050000), /* PORT0CR */
- 	PORTCR(1, 0xe6050001), /* PORT1CR */
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index f53fc06..fb10874 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -152,5 +152,22 @@ int unregister_pinmux(struct pinmux_info *pip);
- 	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
- 		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
- 
-+/* helper macro for top 4 bits in PORTnCR */
-+#define _PCRH(in, in_pd, in_pu, out)	\
-+	0, (out), (in), 0,		\
-+	0, 0, 0, 0,			\
-+	0, 0, (in_pd), 0,		\
-+	0, 0, (in_pu), 0
++static int genpd_save_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, save_state, dev);
++}
 +
-+#define PORTCR(nr, reg)							\
-+	{								\
-+		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
-+			_PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
-+			      PORT##nr##_IN_PU, PORT##nr##_OUT),	\
-+				PORT##nr##_FN0, PORT##nr##_FN1,		\
-+				PORT##nr##_FN2, PORT##nr##_FN3,		\
-+				PORT##nr##_FN4, PORT##nr##_FN5,		\
-+				PORT##nr##_FN6, PORT##nr##_FN7 }	\
-+	}
++static int genpd_restore_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, restore_state, dev);
++}
++
+ static bool genpd_sd_counter_dec(struct generic_pm_domain *genpd)
+ {
+ 	bool ret = false;
+@@ -217,7 +227,6 @@ static int __pm_genpd_save_device(struct
+ {
+ 	struct generic_pm_domain_data *gpd_data = to_gpd_data(pdd);
+ 	struct device *dev = pdd->dev;
+-	struct device_driver *drv = dev->driver;
+ 	int ret = 0;
  
- #endif /* __SH_PFC_H */
--- 
-1.7.5.4
+ 	if (gpd_data->need_restore)
+@@ -225,11 +234,9 @@ static int __pm_genpd_save_device(struct
+ 
+ 	mutex_unlock(&genpd->lock);
+ 
+-	if (drv && drv->pm && drv->pm->runtime_suspend) {
+-		genpd_start_dev(genpd, dev);
+-		ret = drv->pm->runtime_suspend(dev);
+-		genpd_stop_dev(genpd, dev);
+-	}
++	genpd_start_dev(genpd, dev);
++	ret = genpd_save_dev(genpd, dev);
++	genpd_stop_dev(genpd, dev);
+ 
+ 	mutex_lock(&genpd->lock);
+ 
+@@ -250,18 +257,15 @@ static void __pm_genpd_restore_device(st
+ {
+ 	struct generic_pm_domain_data *gpd_data = to_gpd_data(pdd);
+ 	struct device *dev = pdd->dev;
+-	struct device_driver *drv = dev->driver;
+ 
+ 	if (!gpd_data->need_restore)
+ 		return;
+ 
+ 	mutex_unlock(&genpd->lock);
+ 
+-	if (drv && drv->pm && drv->pm->runtime_resume) {
+-		genpd_start_dev(genpd, dev);
+-		drv->pm->runtime_resume(dev);
+-		genpd_stop_dev(genpd, dev);
+-	}
++	genpd_start_dev(genpd, dev);
++	genpd_restore_dev(genpd, dev);
++	genpd_stop_dev(genpd, dev);
+ 
+ 	mutex_lock(&genpd->lock);
+ 
+@@ -1358,6 +1362,44 @@ int pm_genpd_remove_callbacks(struct dev
+ EXPORT_SYMBOL_GPL(pm_genpd_remove_callbacks);
+ 
+ /**
++ * pm_genpd_default_save_state - Default "save device state" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_save_state(struct device *dev)
++{
++	int (*cb)(struct device *__dev);
++	struct device_driver *drv = dev->driver;
++
++	cb = dev_gpd_data(dev)->ops.save_state;
++	if (cb)
++		return cb(dev);
++
++	if (drv && drv->pm && drv->pm->runtime_suspend)
++		return drv->pm->runtime_suspend(dev);
++
++	return 0;
++}
++
++/**
++ * pm_genpd_default_restore_state - Default PM domians "restore device state".
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_restore_state(struct device *dev)
++{
++	int (*cb)(struct device *__dev);
++	struct device_driver *drv = dev->driver;
++
++	cb = dev_gpd_data(dev)->ops.restore_state;
++	if (cb)
++		return cb(dev);
++
++	if (drv && drv->pm && drv->pm->runtime_resume)
++		return drv->pm->runtime_resume(dev);
++
++	return 0;
++}
++
++/**
+  * pm_genpd_init - Initialize a generic I/O PM domain object.
+  * @genpd: PM domain object to initialize.
+  * @gov: PM domain governor to associate with the domain (may be NULL).
+@@ -1400,6 +1442,8 @@ void pm_genpd_init(struct generic_pm_dom
+ 	genpd->domain.ops.restore_noirq = pm_genpd_restore_noirq;
+ 	genpd->domain.ops.restore = pm_genpd_restore;
+ 	genpd->domain.ops.complete = pm_genpd_complete;
++	genpd->dev_ops.save_state = pm_genpd_default_save_state;
++	genpd->dev_ops.restore_state = pm_genpd_default_restore_state;
+ 	mutex_lock(&gpd_list_lock);
+ 	list_add(&genpd->gpd_list_node, &gpd_list);
+ 	mutex_unlock(&gpd_list_lock);
 
