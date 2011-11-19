@@ -1,10 +1,10 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 14 Nov 2011 00:22:27 +0000
-Subject: [update][PATCH 0/7] PM / Domains: Per-device callbacks and PM QoS
-Message-Id: <201111140122.27328.rjw@sisk.pl>
+Date: Sat, 19 Nov 2011 13:56:40 +0000
+Subject: [Update 2x][PATCH 0/7] PM / Domains: Per-device callbacks and PM QoS
+Message-Id: <201111191456.40453.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201111070101.33960.rjw@sisk.pl>
-In-Reply-To: <201111070101.33960.rjw@sisk.pl>
+References: <201111070101.33960.rjw@sisk.pl> <201111140122.27328.rjw@sisk.pl>
+In-Reply-To: <201111140122.27328.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,30 +13,35 @@ Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org
 
 Hi,
 
-This is the second iteration of the patchset introducing per-device callbacks
+This is the third iteration of the patchset introducing per-device callbacks
 and PM QoS support to PM domains.
 
-All patches have been updated, the second one have been folded into the
-first one and there's one more patch in  the series.  Please look into the
-changelogs for more details.
+All patches have been updated due to minor problems found since the previous
+iteration.  Patch [7/7] now prints diagnostic messages when updating the
+latency values.
 
-[1/7] - Make it possible to define per-device start/stop and .active_wakeup()
-        routines.
+On Monday, November 14, 2011, Rafael J. Wysocki wrote:
+[...] 
+> [1/7] - Make it possible to define per-device start/stop and .active_wakeup()
+>         routines.
+> 
+> [2/7] - Introduce "save/restore state" device callbacks.
+> 
+> [3/7] - Introduce per-device PM domain callbacks for system suspend.
+> 
+> [4/7] - Make runtime PM core take device PM QoS constraints into account.
+> 
+> [5/7] - Add device "stop governor".
+> 
+> [6/7] - Add domain "power off governor".
+> 
+> [7/7] - Automatically update overoptimistic latency information.
+> 
+> The patchset have been tested for backwards compatibility, but it still needs
+> some testing for the new features it adds.
 
-[2/7] - Introduce "save/restore state" device callbacks.
-
-[3/7] - Introduce per-device PM domain callbacks for system suspend.
-
-[4/7] - Make runtime PM core take device PM QoS constraints into account.
-
-[5/7] - Add device "stop governor".
-
-[6/7] - Add domain "power off governor".
-
-[7/7] - Automatically update overoptimistic latency information.
-
-The patchset have been tested for backwards compatibility, but it still needs
-some testing for the new features it adds.
+If there are no objections, I'm going to queue up this patchset in linux-next
+for the 3.3 merge window.
 
 Thanks,
 Rafael
