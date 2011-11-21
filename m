@@ -1,64 +1,37 @@
-From: Andrea Baldini <andrea.baldini@spesonline.com>
-Date: Thu, 24 Nov 2011 09:43:41 +0000
-Subject: Re: SH2a Write-back cache issue
-Message-Id: <201111241043.41988.andrea.baldini@spesonline.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 21 Nov 2011 15:56:06 +0000
+Subject: [PATCH] PM: fix compile breakage on sh #ifndef CONFIG_PM_RUNTIME
+Message-Id: <Pine.LNX.4.64.1111211642200.10414@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201111221415.22367.andrea.baldini@spesonline.com>
-In-Reply-To: <201111221415.22367.andrea.baldini@spesonline.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-> In our setup, the problem seems related to an LCD flickering, when the
-> cache is setup in read-back mode we had an heavy flickering on the LCD,
-> when in write-through it seems much less present, even though not
-> completely absent. We tried many different setup for cache and DRAM, but
-> found no solutions for it. Of course the problem is present in 2.6.17,
-> 2.6.37-38, 3.0 and 3.1 kernels. We found just one situation where the
-> flickering is nearly invisible, while reserving 2Mb of frame buffer - so
-> placing the fb and the other kernel/code memory far each other. What is
-> your problem and setup?
-> 
-> Federico
+Fix the following compalitaion breakage:
 
-Hi Federico,
+In file included from linux/drivers/sh/pm_runtime.c:15:
+linux/include/linux/pm_domain.h: In function 'dev_to_genpd':
+linux/include/linux/pm_domain.h:142: error: implicit declaration of function 'ERR_PTR'
+linux/include/linux/pm_domain.h:142: warning: return makes pointer from integer without a cast
+In file included from linux/include/linux/sh_clk.h:10,
+                 from linux/drivers/sh/pm_runtime.c:19:
+linux/include/linux/err.h: At top level:
+linux/include/linux/err.h:22: error: conflicting types for 'ERR_PTR'
+linux/include/linux/pm_domain.h:142: note: previous implicit declaration of 'ERR_PTR' was here
+make[3]: *** [drivers/sh/pm_runtime.o] Error 1
 
-Currently I'm working with a framebuffer on my custom board but the problem I 
-described occurs in a basic setup too (without frambuffer support and other not  
-essential stuff).
-
-I found this problem when I was working with the Renesas demo board rsk7203.
-I tried some kernels compiled with the board defconfig and a busybox built with 
-a basic configuration (using a toolchain which creates flat binaries).
-
-With this setup I found that the timer interrupts were missed when executing 
-the busybox applets and it was very clear especially in shell loop scripts.
-With some debug work I saw that the problem was located in the function i 
-mentioned in the first mail, that is flush_icache_range (you can find it in 
-cache-sh2a.c) which caused interrupts to be missed during its execution.
-
-The flush_icache_range is called in some points of the kernel and one of them 
-is in the load_flat_file() which, in my case, is heavy used (having a flat 
-busybox).
-
-Hope this helps to better understand the issue.
-
-Andrea
-
--- 
-Andrea Baldini
-
-Elettronica di Processo
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index 765083ad..b931682 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -10,6 +10,7 @@
+ #define _LINUX_PM_DOMAIN_H
  
-
-SPES. S.c.p.a
-Via  Lamberto Corsi, 43
-60044 Fabriano (AN)
-tel. +39 0732 25291
-fax +39 0732 2529441
-
- <mailto:andrea.baldini@spesonline.com> andrea.baldini@spesonline.com
-
- <http://www.spesonline.com> www.spesonline.com
+ #include <linux/device.h>
++#include <linux/err.h>
+ 
+ enum gpd_status {
+ 	GPD_STATE_ACTIVE = 0,	/* PM domain is active */
