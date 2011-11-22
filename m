@@ -1,56 +1,41 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 24 Nov 2011 10:35:02 +0000
-Subject: Re: [PATCH] ARM: Kota2 mach-type update fix
-Message-Id: <20111124103502.GP9581@n2100.arm.linux.org.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Nov 2011 02:59:54 +0000
+Subject: [PATCH 1/2] sh: sh7724.h: bugfix: remove unused clock index
+Message-Id: <87y5v8yi8p.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111122060857.23951.50598.sendpatchset@w520>
- <20111122092615.GA26411@linux-sh.org>
- <CANqRtoTvMpivHN0tZVTEY6SfkBrNLpu=rkRXUXKJG4J0UNCzhg@mail.gmail.com>
- <20111124082342.GD32112@linux-sh.org>
- <87zkflg999.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zkflg999.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Nov 24, 2011 at 01:28:06AM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Paul
-> 
-> > > >> From: Magnus Damm <damm@opensource.se>
-> > > >>
-> > > >> This patch adds kota2 to the in-kernel ARM mach-type file.
-> > > >>
-> > > >> Basic board support is included in 3.2-rc and the mach-type
-> > > >> has been registered in the ARM machine repository as
-> > > >>
-> > > >> 3616 Renesas SH-Mobile kota2.x Board kota2 Yusuke Goda mainlined
-> > > >>
-> > > >> The file arch/arm/tools/mach-types is however missing Kota2
-> > > >> which makes build of sh73a0 based boards fail with:
-> > > >>
-> > > >> arch/arm/mach-shmobile/platsmp.c: In function 'shmobile_smp_get_core_count':
-> > > >> arch/arm/mach-shmobile/platsmp.c:28:2: error: implicit declaration of function 'machine_is_kota2'
-> > > >> make[1]: *** [arch/arm/mach-shmobile/platsmp.o] Error 1
-> > > >>
-> > > >> arch/arm/mach-shmobile/board-kota2.c:448:136: error: 'MACH_TYPE_KOTA2' undeclared here (not in a function)
-> > > >> make[1]: *** [arch/arm/mach-shmobile/board-kota2.o] Error 1
-> > > >> make: *** [arch/arm/mach-shmobile] Error 2
-> > > >>
-> > > >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > >> ---
-> (snip)
-> > > Russell, do you mind if we update the mach-type file to include Kota2?
-> > > It's already registered via the web interface.
-> > > 
-> > I'll add it with Russell's Acked-by, otherwise we'll simply have to wait
-> > for the next batch of mach-types updates.
-> 
-> Can I add A1 bonito mach-type too?
-> I can not find it either
-> 
-> 
-> 3623 	Renesas R-Mobile A1 EVB 	bonito 	Kuninori Morimoto
+Current sh clocks are using pm_runtime frame work instead of old hwblk.
+So, HWBLK_UNKNOWN and HWBLK_DBG are not needed for now.
 
-No, because it's not in the kernel source.
+Now mstp32 clocks are registered by sh_clk_mstp32_register(),
+but the clock which isn't defined by SH_CLK_MSTP32() macro
+will be crash. because it doesn't have enable_reg.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/sh/include/cpu-sh4/cpu/sh7724.h |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+index cbc47e6..ea9ada3 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+@@ -268,10 +268,9 @@ enum {
+ };
+ 
+ enum {
+-	HWBLK_UNKNOWN = 0,
+ 	HWBLK_TLB, HWBLK_IC, HWBLK_OC, HWBLK_RSMEM, HWBLK_ILMEM, HWBLK_L2C,
+ 	HWBLK_FPU, HWBLK_INTC, HWBLK_DMAC0, HWBLK_SHYWAY,
+-	HWBLK_HUDI, HWBLK_DBG, HWBLK_UBC,
++	HWBLK_HUDI, HWBLK_UBC,
+ 	HWBLK_TMU0, HWBLK_CMT, HWBLK_RWDT, HWBLK_DMAC1, HWBLK_TMU1,
+ 	HWBLK_SCIF0, HWBLK_SCIF1, HWBLK_SCIF2, HWBLK_SCIF3,
+ 	HWBLK_SCIF4, HWBLK_SCIF5, HWBLK_MSIOF0, HWBLK_MSIOF1,
+-- 
+1.7.5.4
+
