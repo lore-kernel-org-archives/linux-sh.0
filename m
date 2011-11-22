@@ -1,55 +1,66 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 11 Nov 2011 07:47:51 +0000
-Subject: Re: [PATCH 04/20] ARM: mach-shmobile: sh73a0: add MMC data pin pull-up
-Message-Id: <20111111074751.GH29807@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 22 Nov 2011 06:15:57 +0000
+Subject: [PATCH] ARM: mach-shmobile: Kota2 PINT fix
+Message-Id: <20111122061557.30983.75780.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vcqr9y4b.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vcqr9y4b.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Nov 10, 2011 at 06:44:24PM -0800, Kuninori Morimoto wrote:
-> This patch adds MMC data pin pull-up option for pfc-sh73a0.c,
-> and select it on ag5evm board.
-> The MMC read/write will be error without this patch.
-> 
-> Cc: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
-> Tested-by: Simon Horman <horms@verge.net.au>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-On Thu, Nov 10, 2011 at 06:44:43PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/board-kota2.c |    7 +++++++
->  1 files changed, 7 insertions(+), 0 deletions(-)
+Support PINT on sh73a0 and Kota2 using INTC PINT macros.
 
-On Thu, Nov 10, 2011 at 06:45:02PM -0800, Kuninori Morimoto wrote:
-> it is not necessary to have sh7372_xxxx index on static variable
+With this patch applied the Kota2 ethernet is handled
+through one of the chained sh73a0 PINT interrupt controllers.
 
-On Thu, Nov 10, 2011 at 06:45:12PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/board-ap4evb.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
+sh73a0 PINT support is included in 3.2-rc but the Kota2 board
+code does not make use of this shared code base without this
+patch. Without this patch kota2 on-board ethernet is broken.
 
-On Thu, Nov 10, 2011 at 06:45:23PM -0800, Kuninori Morimoto wrote:
-> This patch move PORT_DATA_xx helper macro to sh_pfc.h.
-> and pfc-sh7372.c used it
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-On Thu, Nov 10, 2011 at 06:45:33PM -0800, Kuninori Morimoto wrote:
-> This patch moves PORT_xx helper macro to sh_pfc.h,
-> and it expects CPU_ALL_PORT() macro for each CPU
+ arch/arm/mach-shmobile/board-kota2.c |   16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
 
-On Thu, Nov 10, 2011 at 06:45:43PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/pfc-sh7367.c |   16 ----------------
->  arch/arm/mach-shmobile/pfc-sh7372.c |   16 ----------------
->  arch/arm/mach-shmobile/pfc-sh7377.c |   17 -----------------
->  arch/arm/mach-shmobile/pfc-sh73a0.c |   12 ------------
->  include/linux/sh_pfc.h              |   17 +++++++++++++++++
->  5 files changed, 17 insertions(+), 61 deletions(-)
-
-All applied, thanks.
+--- 0001/arch/arm/mach-shmobile/board-kota2.c
++++ work/arch/arm/mach-shmobile/board-kota2.c	2011-11-14 17:08:42.000000000 +0900
+@@ -55,7 +55,7 @@ static struct resource smsc9220_resource
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_spi(33), /* PINTA2 @ PORT144 */
++		.start		= SH73A0_PINT0_IRQ(2), /* PINTA2 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -310,18 +310,6 @@ static void __init kota2_map_io(void)
+ 	shmobile_setup_console();
+ }
+ 
+-#define PINTER0A	0xe69000a0
+-#define PINTCR0A	0xe69000b0
+-
+-void __init kota2_init_irq(void)
+-{
+-	sh73a0_init_irq();
+-
+-	/* setup PINT: enable PINTA2 as active low */
+-	__raw_writel(1 << 29, PINTER0A);
+-	__raw_writew(2 << 10, PINTCR0A);
+-}
+-
+ static void __init kota2_init(void)
+ {
+ 	sh73a0_pinmux_init();
+@@ -440,7 +428,7 @@ struct sys_timer kota2_timer = {
+ 
+ MACHINE_START(KOTA2, "kota2")
+ 	.map_io		= kota2_map_io,
+-	.init_irq	= kota2_init_irq,
++	.init_irq	= sh73a0_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_gic,
+ 	.init_machine	= kota2_init,
+ 	.timer		= &kota2_timer,
