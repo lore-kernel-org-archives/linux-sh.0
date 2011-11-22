@@ -1,866 +1,144 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 30 Nov 2011 15:07:43 +0000
-Subject: [PATCH] mmc: sh_mmcif: process requests asynchronously
-Message-Id: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Nov 2011 05:33:18 +0000
+Subject: [RFC][PATCH] sh: setup clock parent from current register value
+Message-Id: <87ty5wyb51.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-This patch converts the sh_mmcif MMC host driver to process requests 
-asynchronously instead of waiting in its .request() method for completion. 
-This is achieved by using threaded IRQs.
+Some clocks can select its parent clock by CPG register.
+But it might have been modified by boot-loader or something.
+This patch removed fixed initial parent clock,
+and setup it from their current register settings.
+It works on div6 reparent clocks for now.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 824fee5..d077da4 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -123,6 +124,11 @@
- #define MASK_MRBSYTO		(1 << 1)
- #define MASK_MRSPTO		(1 << 0)
- 
-+#define START_CMD_MASK		(MASK_MCMDVIO | MASK_MBUFVIO | MASK_MWDATERR | \
-+				 MASK_MRDATERR | MASK_MRIDXERR | MASK_MRSPERR | \
-+				 MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO | \
-+				 MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO)
-+
- /* CE_HOST_STS1 */
- #define STS1_CMDSEQ		(1 << 31)
- 
-@@ -162,19 +169,38 @@ enum mmcif_state {
- 	STATE_IOS,
+ arch/arm/mach-shmobile/clock-sh7372.c  |    6 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    4 +-
+ drivers/sh/clk/cpg.c                   |   35 ++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h                 |    9 +++++--
+ 4 files changed, 46 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 6697592..6bdfabf 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -411,11 +411,11 @@ static struct clk *fsibckcr_parent[] = {
  };
  
-+enum mmcif_wait_for {
-+	MMCIF_WAIT_FOR_REQUEST,
-+	MMCIF_WAIT_FOR_CMD,
-+	MMCIF_WAIT_FOR_MREAD,
-+	MMCIF_WAIT_FOR_MWRITE,
-+	MMCIF_WAIT_FOR_READ,
-+	MMCIF_WAIT_FOR_WRITE,
-+	MMCIF_WAIT_FOR_READ_END,
-+	MMCIF_WAIT_FOR_WRITE_END,
-+	MMCIF_WAIT_FOR_STOP,
-+};
-+
- struct sh_mmcif_host {
- 	struct mmc_host *mmc;
- 	struct mmc_data *data;
-+	struct mmc_request *mrq;
- 	struct platform_device *pd;
- 	struct clk *hclk;
- 	unsigned int clk;
- 	int bus_width;
- 	bool sd_error;
-+	bool dying;
- 	long timeout;
- 	void __iomem *addr;
--	struct completion intr_wait;
-+	u32 *pio_ptr;
-+	spinlock_t lock;		/* protect host->state */
- 	enum mmcif_state state;
--	spinlock_t lock;
-+	enum mmcif_wait_for wait_for;
-+	struct delayed_work timeout_work;
-+	size_t blocksize;
-+	int sg_idx;
-+	int sg_blkidx;
- 	bool power;
- 	bool card_present;
- 
-@@ -409,7 +435,7 @@ static void sh_mmcif_sync_reset(struct sh_mmcif_host *host)
- static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
- {
- 	u32 state1, state2;
--	int ret, timeout = 10000000;
-+	int ret, timeout;
- 
- 	host->sd_error = false;
- 
-@@ -421,155 +447,97 @@ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
- 	if (state1 & STS1_CMDSEQ) {
- 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, CMD_CTRL_BREAK);
- 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, ~CMD_CTRL_BREAK);
--		while (1) {
--			timeout--;
--			if (timeout < 0) {
--				dev_err(&host->pd->dev,
--					"Forceed end of command sequence timeout err\n");
--				return -EIO;
--			}
-+		for (timeout = 10000000; timeout; timeout--) {
- 			if (!(sh_mmcif_readl(host->addr, MMCIF_CE_HOST_STS1)
--								& STS1_CMDSEQ))
-+			      & STS1_CMDSEQ))
- 				break;
- 			mdelay(1);
- 		}
-+		if (!timeout) {
-+			dev_err(&host->pd->dev,
-+				"Forceed end of command sequence timeout err\n");
-+			return -EIO;
-+		}
- 		sh_mmcif_sync_reset(host);
- 		dev_dbg(&host->pd->dev, "Forced end of command sequence\n");
- 		return -EIO;
- 	}
- 
- 	if (state2 & STS2_CRC_ERR) {
--		dev_dbg(&host->pd->dev, ": Happened CRC error\n");
-+		dev_dbg(&host->pd->dev, ": CRC error\n");
- 		ret = -EIO;
- 	} else if (state2 & STS2_TIMEOUT_ERR) {
--		dev_dbg(&host->pd->dev, ": Happened Timeout error\n");
-+		dev_dbg(&host->pd->dev, ": Timeout\n");
- 		ret = -ETIMEDOUT;
- 	} else {
--		dev_dbg(&host->pd->dev, ": Happened End/Index error\n");
-+		dev_dbg(&host->pd->dev, ": End/Index error\n");
- 		ret = -EIO;
- 	}
- 	return ret;
- }
- 
--static int sh_mmcif_single_read(struct sh_mmcif_host *host,
--					struct mmc_request *mrq)
-+static void sh_mmcif_single_read(struct sh_mmcif_host *host,
-+				 struct mmc_request *mrq)
- {
--	struct mmc_data *data = mrq->data;
--	long time;
--	u32 blocksize, i, *p = sg_virt(data->sg);
-+	host->blocksize = (sh_mmcif_readl(host->addr, MMCIF_CE_BLOCK_SET) &
-+			   BLOCK_SIZE_MASK) + 3;
-+
-+	host->wait_for = MMCIF_WAIT_FOR_READ;
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
- 
- 	/* buf read enable */
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
--	time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--			host->timeout);
--	if (time <= 0 || host->sd_error)
--		return sh_mmcif_error_manage(host);
--
--	blocksize = (BLOCK_SIZE_MASK &
--			sh_mmcif_readl(host->addr, MMCIF_CE_BLOCK_SET)) + 3;
--	for (i = 0; i < blocksize / 4; i++)
--		*p++ = sh_mmcif_readl(host->addr, MMCIF_CE_DATA);
--
--	/* buffer read end */
--	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFRE);
--	time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--			host->timeout);
--	if (time <= 0 || host->sd_error)
--		return sh_mmcif_error_manage(host);
--
--	return 0;
- }
- 
--static int sh_mmcif_multi_read(struct sh_mmcif_host *host,
--					struct mmc_request *mrq)
-+static void sh_mmcif_multi_read(struct sh_mmcif_host *host,
-+				struct mmc_request *mrq)
- {
- 	struct mmc_data *data = mrq->data;
--	long time;
--	u32 blocksize, i, j, sec, *p;
--
--	blocksize = BLOCK_SIZE_MASK & sh_mmcif_readl(host->addr,
--						     MMCIF_CE_BLOCK_SET);
--	for (j = 0; j < data->sg_len; j++) {
--		p = sg_virt(data->sg);
--		for (sec = 0; sec < data->sg->length / blocksize; sec++) {
--			sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
--			/* buf read enable */
--			time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--				host->timeout);
--
--			if (time <= 0 || host->sd_error)
--				return sh_mmcif_error_manage(host);
--
--			for (i = 0; i < blocksize / 4; i++)
--				*p++ = sh_mmcif_readl(host->addr,
--						      MMCIF_CE_DATA);
--		}
--		if (j < data->sg_len - 1)
--			data->sg++;
--	}
--	return 0;
-+
-+	if (!data->sg_len || !data->sg->length)
-+		return;
-+
-+	host->blocksize = sh_mmcif_readl(host->addr, MMCIF_CE_BLOCK_SET) &
-+		BLOCK_SIZE_MASK;
-+
-+	host->wait_for = MMCIF_WAIT_FOR_MREAD;
-+	host->sg_idx = 0;
-+	host->sg_blkidx = 0;
-+	host->pio_ptr = sg_virt(data->sg);
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
- }
- 
--static int sh_mmcif_single_write(struct sh_mmcif_host *host,
-+static void sh_mmcif_single_write(struct sh_mmcif_host *host,
- 					struct mmc_request *mrq)
- {
--	struct mmc_data *data = mrq->data;
--	long time;
--	u32 blocksize, i, *p = sg_virt(data->sg);
-+	host->blocksize = (sh_mmcif_readl(host->addr, MMCIF_CE_BLOCK_SET) &
-+			   BLOCK_SIZE_MASK) + 3;
- 
--	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
-+	host->wait_for = MMCIF_WAIT_FOR_WRITE;
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
- 
- 	/* buf write enable */
--	time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--			host->timeout);
--	if (time <= 0 || host->sd_error)
--		return sh_mmcif_error_manage(host);
--
--	blocksize = (BLOCK_SIZE_MASK &
--			sh_mmcif_readl(host->addr, MMCIF_CE_BLOCK_SET)) + 3;
--	for (i = 0; i < blocksize / 4; i++)
--		sh_mmcif_writel(host->addr, MMCIF_CE_DATA, *p++);
--
--	/* buffer write end */
--	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MDTRANE);
--
--	time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--			host->timeout);
--	if (time <= 0 || host->sd_error)
--		return sh_mmcif_error_manage(host);
--
--	return 0;
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
- }
- 
--static int sh_mmcif_multi_write(struct sh_mmcif_host *host,
--						struct mmc_request *mrq)
-+static void sh_mmcif_multi_write(struct sh_mmcif_host *host,
-+				struct mmc_request *mrq)
- {
- 	struct mmc_data *data = mrq->data;
--	long time;
--	u32 i, sec, j, blocksize, *p;
- 
--	blocksize = BLOCK_SIZE_MASK & sh_mmcif_readl(host->addr,
--						     MMCIF_CE_BLOCK_SET);
--
--	for (j = 0; j < data->sg_len; j++) {
--		p = sg_virt(data->sg);
--		for (sec = 0; sec < data->sg->length / blocksize; sec++) {
--			sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
--			/* buf write enable*/
--			time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--				host->timeout);
-+	if (!data->sg_len || !data->sg->length)
-+		return;
- 
--			if (time <= 0 || host->sd_error)
--				return sh_mmcif_error_manage(host);
-+	host->blocksize = sh_mmcif_readl(host->addr, MMCIF_CE_BLOCK_SET) &
-+		BLOCK_SIZE_MASK;
- 
--			for (i = 0; i < blocksize / 4; i++)
--				sh_mmcif_writel(host->addr,
--						MMCIF_CE_DATA, *p++);
--		}
--		if (j < data->sg_len - 1)
--			data->sg++;
--	}
--	return 0;
-+	host->wait_for = MMCIF_WAIT_FOR_MWRITE;
-+	host->sg_idx = 0;
-+	host->sg_blkidx = 0;
-+	host->pio_ptr = sg_virt(data->sg);
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
- }
- 
- static void sh_mmcif_get_response(struct sh_mmcif_host *host,
-@@ -666,57 +634,48 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
- }
- 
- static int sh_mmcif_data_trans(struct sh_mmcif_host *host,
--				struct mmc_request *mrq, u32 opc)
-+			       struct mmc_request *mrq, u32 opc)
- {
--	int ret;
--
- 	switch (opc) {
- 	case MMC_READ_MULTIPLE_BLOCK:
--		ret = sh_mmcif_multi_read(host, mrq);
--		break;
-+		sh_mmcif_multi_read(host, mrq);
-+		return 0;
- 	case MMC_WRITE_MULTIPLE_BLOCK:
--		ret = sh_mmcif_multi_write(host, mrq);
--		break;
-+		sh_mmcif_multi_write(host, mrq);
-+		return 0;
- 	case MMC_WRITE_BLOCK:
--		ret = sh_mmcif_single_write(host, mrq);
--		break;
-+		sh_mmcif_single_write(host, mrq);
-+		return 0;
- 	case MMC_READ_SINGLE_BLOCK:
- 	case MMC_SEND_EXT_CSD:
--		ret = sh_mmcif_single_read(host, mrq);
--		break;
--	default:
--		dev_err(&host->pd->dev, "UNSUPPORTED CMD = d'%08d\n", opc);
--		ret = -EINVAL;
--		break;
-+		sh_mmcif_single_read(host, mrq);
-+		return 0;
- 	}
--	return ret;
-+	dev_err(&host->pd->dev, "UNSUPPORTED CMD = d'%08d\n", opc);
-+	return -EINVAL;
- }
- 
- static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
--			struct mmc_request *mrq, struct mmc_command *cmd)
-+			       struct mmc_request *mrq)
- {
--	long time;
--	int ret = 0, mask = 0;
-+	struct mmc_command *cmd = mrq->cmd;
- 	u32 opc = cmd->opcode;
-+	u32 mask;
- 
- 	switch (opc) {
--	/* respons busy check */
-+	/* response busy check */
- 	case MMC_SWITCH:
- 	case MMC_STOP_TRANSMISSION:
- 	case MMC_SET_WRITE_PROT:
- 	case MMC_CLR_WRITE_PROT:
- 	case MMC_ERASE:
- 	case MMC_GEN_CMD:
--		mask = MASK_MRBSYE;
-+		mask = START_CMD_MASK | MASK_MRBSYE;
- 		break;
- 	default:
--		mask = MASK_MCRSPE;
-+		mask = START_CMD_MASK | MASK_MCRSPE;
- 		break;
- 	}
--	mask |=	MASK_MCMDVIO | MASK_MBUFVIO | MASK_MWDATERR |
--		MASK_MRDATERR | MASK_MRIDXERR | MASK_MRSPERR |
--		MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO |
--		MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO;
- 
- 	if (host->data) {
- 		sh_mmcif_writel(host->addr, MMCIF_CE_BLOCK_SET, 0);
-@@ -732,61 +691,14 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
- 	/* set cmd */
- 	sh_mmcif_writel(host->addr, MMCIF_CE_CMD_SET, opc);
- 
--	time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--		host->timeout);
--	if (time <= 0) {
--		cmd->error = sh_mmcif_error_manage(host);
--		return;
--	}
--	if (host->sd_error) {
--		switch (cmd->opcode) {
--		case MMC_ALL_SEND_CID:
--		case MMC_SELECT_CARD:
--		case MMC_APP_CMD:
--			cmd->error = -ETIMEDOUT;
--			break;
--		default:
--			dev_dbg(&host->pd->dev, "Cmd(d'%d) err\n",
--					cmd->opcode);
--			cmd->error = sh_mmcif_error_manage(host);
--			break;
--		}
--		host->sd_error = false;
--		return;
--	}
--	if (!(cmd->flags & MMC_RSP_PRESENT)) {
--		cmd->error = 0;
--		return;
--	}
--	sh_mmcif_get_response(host, cmd);
--	if (host->data) {
--		if (!host->dma_active) {
--			ret = sh_mmcif_data_trans(host, mrq, cmd->opcode);
--		} else {
--			long time -				wait_for_completion_interruptible_timeout(&host->dma_complete,
--									  host->timeout);
--			if (!time)
--				ret = -ETIMEDOUT;
--			else if (time < 0)
--				ret = time;
--			sh_mmcif_bitclr(host, MMCIF_CE_BUF_ACC,
--					BUF_ACC_DMAREN | BUF_ACC_DMAWEN);
--			host->dma_active = false;
--		}
--		if (ret < 0)
--			mrq->data->bytes_xfered = 0;
--		else
--			mrq->data->bytes_xfered -				mrq->data->blocks * mrq->data->blksz;
--	}
--	cmd->error = ret;
-+	host->wait_for = MMCIF_WAIT_FOR_CMD;
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
- }
- 
- static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
--		struct mmc_request *mrq, struct mmc_command *cmd)
-+			      struct mmc_request *mrq)
- {
--	long time;
-+	struct mmc_command *cmd = mrq->stop;
- 
- 	if (mrq->cmd->opcode = MMC_READ_MULTIPLE_BLOCK)
- 		sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MCMD12DRE);
-@@ -798,14 +710,8 @@ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
- 		return;
- 	}
- 
--	time = wait_for_completion_interruptible_timeout(&host->intr_wait,
--			host->timeout);
--	if (time <= 0 || host->sd_error) {
--		cmd->error = sh_mmcif_error_manage(host);
--		return;
--	}
--	sh_mmcif_get_cmd12response(host, cmd);
--	cmd->error = 0;
-+	host->wait_for = MMCIF_WAIT_FOR_STOP;
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
- }
- 
- static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
-@@ -813,6 +719,8 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 	struct sh_mmcif_host *host = mmc_priv(mmc);
- 	unsigned long flags;
- 
-+	dev_info(mmc->parent, "%s(%u), data %p\n", __func__, mrq->cmd->opcode, mrq->data);
-+
- 	spin_lock_irqsave(&host->lock, flags);
- 	if (host->state != STATE_IDLE) {
- 		spin_unlock_irqrestore(&host->lock, flags);
-@@ -844,23 +752,11 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 	default:
- 		break;
- 	}
-+
-+	host->mrq = mrq;
- 	host->data = mrq->data;
--	if (mrq->data) {
--		if (mrq->data->flags & MMC_DATA_READ) {
--			if (host->chan_rx)
--				sh_mmcif_start_dma_rx(host);
--		} else {
--			if (host->chan_tx)
--				sh_mmcif_start_dma_tx(host);
--		}
--	}
--	sh_mmcif_start_cmd(host, mrq, mrq->cmd);
--	host->data = NULL;
- 
--	if (!mrq->cmd->error && mrq->stop)
--		sh_mmcif_stop_cmd(host, mrq, mrq->stop);
--	host->state = STATE_IDLE;
--	mmc_request_done(mmc, mrq);
-+	sh_mmcif_start_cmd(host, mrq);
- }
- 
- static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
-@@ -935,9 +831,268 @@ static struct mmc_host_ops sh_mmcif_ops = {
- 	.get_cd		= sh_mmcif_get_cd,
+ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+-	[DIV6_HDMI] = SH_CLK_DIV6_EXT(&pllc1_div2_clk, HDMICKCR, 0,
++	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
+ 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
+-	[DIV6_FSIA] = SH_CLK_DIV6_EXT(&pllc1_div2_clk, FSIACKCR, 0,
++	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
+ 				      fsiackcr_parent, ARRAY_SIZE(fsiackcr_parent), 6, 2),
+-	[DIV6_FSIB] = SH_CLK_DIV6_EXT(&pllc1_div2_clk, FSIBCKCR, 0,
++	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
+ 				      fsibckcr_parent, ARRAY_SIZE(fsibckcr_parent), 6, 2),
  };
  
--static void sh_mmcif_detect(struct mmc_host *mmc)
-+static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index 8668f55..7711838 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -189,9 +189,9 @@ static struct clk *fclkbcr_parent[] = {
+ };
+ 
+ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+-	[DIV6_FA] = SH_CLK_DIV6_EXT(&div3_clk, FCLKACR, 0,
++	[DIV6_FA] = SH_CLK_DIV6_EXT(FCLKACR, 0,
+ 				      fclkacr_parent, ARRAY_SIZE(fclkacr_parent), 6, 2),
+-	[DIV6_FB] = SH_CLK_DIV6_EXT(&div3_clk, FCLKBCR, 0,
++	[DIV6_FB] = SH_CLK_DIV6_EXT(FCLKBCR, 0,
+ 				      fclkbcr_parent, ARRAY_SIZE(fclkbcr_parent), 6, 2),
+ };
+ 
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 82dd6fb..5e4301b 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -167,6 +167,38 @@ static struct clk_ops sh_clk_div6_reparent_clk_ops = {
+ 	.set_parent	= sh_clk_div6_set_parent,
+ };
+ 
++static int __init sh_clk_init_parent(struct clk *clk)
 +{
-+	struct mmc_command *cmd = host->mrq->cmd;
-+	long time;
++	u32 val;
 +
-+	if (host->sd_error) {
-+		switch (cmd->opcode) {
-+		case MMC_ALL_SEND_CID:
-+		case MMC_SELECT_CARD:
-+		case MMC_APP_CMD:
-+			cmd->error = -ETIMEDOUT;
-+			host->sd_error = false;
-+			break;
-+		default:
-+			cmd->error = sh_mmcif_error_manage(host);
-+			dev_dbg(&host->pd->dev, "Cmd(d'%d) error %d\n",
-+				cmd->opcode, cmd->error);
-+			break;
-+		}
-+		return false;
-+	}
-+	if (!(cmd->flags & MMC_RSP_PRESENT)) {
-+		cmd->error = 0;
-+		return false;
++	if (clk->parent)
++		return 0;
++
++	if (!clk->parent_table || !clk->parent_num)
++		return 0;
++
++	if (!clk->src_width) {
++		pr_err("sh_clk_init_parent: cannot select parent clock\n");
++		return -EINVAL;
 +	}
 +
-+	sh_mmcif_get_response(host, cmd);
++	val  = (__raw_readl(clk->enable_reg) >> clk->src_shift);
++	val &= (1 << clk->src_width) - 1;
 +
-+	if (!host->data)
-+		return false;
-+
-+	if (host->mrq->data->flags & MMC_DATA_READ) {
-+		if (host->chan_rx)
-+			sh_mmcif_start_dma_rx(host);
-+	} else {
-+		if (host->chan_tx)
-+			sh_mmcif_start_dma_tx(host);
++	if (val >= clk->parent_num) {
++		pr_err("sh_clk_init_parent: parent table size failed\n");
++		return -EINVAL;
 +	}
 +
-+	if (!host->dma_active) {
-+		host->data->error = sh_mmcif_data_trans(host, host->mrq, cmd->opcode);
-+		if (!host->data->error)
-+			return true;
-+		return false;
++	clk->parent = clk->parent_table[val];
++	if (!clk->parent) {
++		pr_err("sh_clk_init_parent: unable to set parent");
++		return -EINVAL;
 +	}
 +
-+	/* Running in the IRQ thread, can sleep */
-+	time = wait_for_completion_interruptible_timeout(&host->dma_complete,
-+							 host->timeout);
-+	if (host->sd_error) {
-+		/* Woken up by an error IRQ: abort DMA */
-+		if (host->data->flags & MMC_DATA_READ)
-+			dmaengine_terminate_all(host->chan_rx);
-+		else
-+			dmaengine_terminate_all(host->chan_tx);
-+		host->data->error = sh_mmcif_error_manage(host);
-+	} else if (!time) {
-+		host->data->error = -ETIMEDOUT;
-+	} else if (time < 0) {
-+		host->data->error = time;
-+	}
-+	sh_mmcif_bitclr(host, MMCIF_CE_BUF_ACC,
-+			BUF_ACC_DMAREN | BUF_ACC_DMAWEN);
-+	host->dma_active = false;
-+
-+	if (host->data->error)
-+		host->data->bytes_xfered = 0;
-+
-+	return false;
++	return 0;
 +}
 +
-+static bool sh_mmcif_next_block(struct sh_mmcif_host *host, u32 *p)
+ static int __init sh_clk_div6_register_ops(struct clk *clks, int nr,
+ 					   struct clk_ops *ops)
  {
--	mmc_detect_change(mmc, 0);
-+	struct mmc_data *data = host->mrq->data;
-+
-+	host->sg_blkidx += host->blocksize;
-+
-+	/* data->sg->length must be a multiple of host->blocksize? */
-+	BUG_ON(host->sg_blkidx > data->sg->length);
-+
-+	if (host->sg_blkidx = data->sg->length) {
-+		host->sg_blkidx = 0;
-+		if (++host->sg_idx < data->sg_len)
-+			host->pio_ptr = sg_virt(++data->sg);
-+	} else {
-+		host->pio_ptr = p;
-+	}
-+
-+	if (host->sg_idx = data->sg_len)
-+		return false;
-+
-+	return true;
-+}
-+
-+static bool sh_mmcif_mread_block(struct sh_mmcif_host *host)
-+{
-+	struct mmc_data *data = host->mrq->data;
-+	u32 *p = host->pio_ptr;
-+	int i;
-+
-+	if (host->sd_error) {
-+		data->error = sh_mmcif_error_manage(host);
-+		return false;
-+	}
-+
-+	BUG_ON(!data->sg->length);
-+
-+	for (i = 0; i < host->blocksize / 4; i++)
-+		*p++ = sh_mmcif_readl(host->addr, MMCIF_CE_DATA);
-+
-+	if (!sh_mmcif_next_block(host, p))
-+		return false;
-+
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
-+
-+	return true;
-+}
-+
-+static bool sh_mmcif_mwrite_block(struct sh_mmcif_host *host)
-+{
-+	struct mmc_data *data = host->mrq->data;
-+	u32 *p = host->pio_ptr;
-+	int i;
-+
-+	if (host->sd_error) {
-+		data->error = sh_mmcif_error_manage(host);
-+		return false;
-+	}
-+
-+	BUG_ON(!data->sg->length);
-+
-+	for (i = 0; i < host->blocksize / 4; i++)
-+		sh_mmcif_writel(host->addr, MMCIF_CE_DATA, *p++);
-+
-+	if (!sh_mmcif_next_block(host, p))
-+		return false;
-+
-+	schedule_delayed_work(&host->timeout_work, host->timeout);
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
-+
-+	return true;
-+}
-+
-+static bool sh_mmcif_read_block(struct sh_mmcif_host *host)
-+{
-+	struct mmc_data *data = host->mrq->data;
-+	u32 *p = sg_virt(data->sg);
-+	int i;
-+
-+	if (host->sd_error) {
-+		data->error = sh_mmcif_error_manage(host);
-+		return false;
-+	}
-+
-+	for (i = 0; i < host->blocksize / 4; i++)
-+		*p++ = sh_mmcif_readl(host->addr, MMCIF_CE_DATA);
-+
-+	/* buffer read end */
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFRE);
-+	host->wait_for = MMCIF_WAIT_FOR_READ_END;
-+
-+	return true;
-+}
-+
-+static bool sh_mmcif_write_block(struct sh_mmcif_host *host)
-+{
-+	struct mmc_data *data = host->mrq->data;
-+	u32 *p = sg_virt(data->sg);
-+	int i;
-+
-+	if (host->sd_error) {
-+		data->error = sh_mmcif_error_manage(host);
-+		return false;
-+	}
-+
-+	for (i = 0; i < host->blocksize / 4; i++)
-+		sh_mmcif_writel(host->addr, MMCIF_CE_DATA, *p++);
-+
-+	/* buffer write end */
-+	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MDTRANE);
-+	host->wait_for = MMCIF_WAIT_FOR_WRITE_END;
-+
-+	return true;
-+}
-+
-+static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
-+{
-+	struct sh_mmcif_host *host = dev_id;
-+	struct mmc_request *mrq = host->mrq;
-+
-+	cancel_delayed_work_sync(&host->timeout_work);
-+
-+	/*
-+	 * All handlers return true, if processing continues, and false, if the
-+	 * request has to be completed - successfully or not
-+	 */
-+	switch (host->wait_for) {
-+	case MMCIF_WAIT_FOR_REQUEST:
-+		/* We're too late, the timeout has already kicked in */
-+		return IRQ_HANDLED;
-+	case MMCIF_WAIT_FOR_CMD:
-+		if (sh_mmcif_end_cmd(host))
-+			/* Wait for data */
-+			return IRQ_HANDLED;
-+		break;
-+	case MMCIF_WAIT_FOR_MREAD:
-+		if (sh_mmcif_mread_block(host))
-+			/* Wait for more data */
-+			return IRQ_HANDLED;
-+		break;
-+	case MMCIF_WAIT_FOR_READ:
-+		if (sh_mmcif_read_block(host))
-+			/* Wait for data end */
-+			return IRQ_HANDLED;
-+		break;
-+	case MMCIF_WAIT_FOR_MWRITE:
-+		if (sh_mmcif_mwrite_block(host))
-+			/* Wait data to write */
-+			return IRQ_HANDLED;
-+		break;
-+	case MMCIF_WAIT_FOR_WRITE:
-+		if (sh_mmcif_write_block(host))
-+			/* Wait for data end */
-+			return IRQ_HANDLED;
-+		break;
-+	case MMCIF_WAIT_FOR_STOP:
-+		if (host->sd_error) {
-+			mrq->stop->error = sh_mmcif_error_manage(host);
+@@ -190,6 +222,9 @@ static int __init sh_clk_div6_register_ops(struct clk *clks, int nr,
+ 		clkp->ops = ops;
+ 		clkp->freq_table = freq_table + (k * freq_table_size);
+ 		clkp->freq_table[nr_divs].frequency = CPUFREQ_TABLE_END;
++		ret = sh_clk_init_parent(clkp);
++		if (ret < 0)
 +			break;
-+		}
-+		sh_mmcif_get_cmd12response(host, mrq->stop);
-+		mrq->stop->error = 0;
-+		break;
-+	case MMCIF_WAIT_FOR_READ_END:
-+	case MMCIF_WAIT_FOR_WRITE_END:
-+		if (host->sd_error)
-+			mrq->data->error = sh_mmcif_error_manage(host);
-+		break;
-+	default:
-+		BUG();
-+	}
-+
-+	if (host->wait_for != MMCIF_WAIT_FOR_STOP) {
-+		host->data = NULL;
-+
-+		if (!mrq->cmd->error && mrq->data && !mrq->data->error)
-+			mrq->data->bytes_xfered +				mrq->data->blocks * mrq->data->blksz;
-+
-+		if (mrq->stop && !mrq->cmd->error && (!mrq->data || !mrq->data->error)) {
-+			sh_mmcif_stop_cmd(host, mrq);
-+			if (!mrq->stop->error)
-+				return IRQ_HANDLED;
-+		}
-+	}
-+
-+	host->wait_for = MMCIF_WAIT_FOR_REQUEST;
-+	host->state = STATE_IDLE;
-+	mmc_request_done(host->mmc, mrq);
-+
-+	return IRQ_HANDLED;
+ 
+ 		ret = clk_register(clkp);
+ 	}
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 3ccf186..7ea10fd 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -129,10 +129,9 @@ int sh_clk_div4_enable_register(struct clk *clks, int nr,
+ int sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ 			 struct clk_div4_table *table);
+ 
+-#define SH_CLK_DIV6_EXT(_parent, _reg, _flags, _parents,	\
++#define SH_CLK_DIV6_EXT(_reg, _flags, _parents,			\
+ 			_num_parents, _src_shift, _src_width)	\
+ {								\
+-	.parent = _parent,					\
+ 	.enable_reg = (void __iomem *)_reg,			\
+ 	.flags = _flags,					\
+ 	.parent_table = _parents,				\
+@@ -142,7 +141,11 @@ int sh_clk_div4_reparent_register(struct clk *clks, int nr,
  }
  
- static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
-@@ -991,14 +1146,58 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- 		host->sd_error = true;
- 		dev_dbg(&host->pd->dev, "int err state = %08x\n", state);
- 	}
--	if (state & ~(INT_CMD12RBE | INT_CMD12CRE))
--		complete(&host->intr_wait);
--	else
-+	if (state & ~(INT_CMD12RBE | INT_CMD12CRE)) {
-+		if (host->dma_active)
-+			mmcif_dma_complete(host);
-+		else
-+			return IRQ_WAKE_THREAD;
-+	} else {
- 		dev_dbg(&host->pd->dev, "Unexpected IRQ 0x%x\n", state);
-+	}
- 
- 	return IRQ_HANDLED;
- }
- 
-+static void mmcif_timeout_work(struct work_struct *work)
-+{
-+	struct delayed_work *d = container_of(work, struct delayed_work, work);
-+	struct sh_mmcif_host *host = container_of(d, struct sh_mmcif_host, timeout_work);
-+	struct mmc_request *mrq = host->mrq;
-+
-+	if (host->dying)
-+		/* Don't run after mmc_remove_host() */
-+		return;
-+
-+	/*
-+	 * Handle races with cancel_delayed_work(), unless
-+	 * cancel_delayed_work_sync() is used
-+	 */
-+	switch (host->wait_for) {
-+	case MMCIF_WAIT_FOR_CMD:
-+		mrq->cmd->error = sh_mmcif_error_manage(host);
-+		break;
-+	case MMCIF_WAIT_FOR_STOP:
-+		mrq->stop->error = sh_mmcif_error_manage(host);
-+		break;
-+	case MMCIF_WAIT_FOR_MREAD:
-+	case MMCIF_WAIT_FOR_MWRITE:
-+	case MMCIF_WAIT_FOR_READ:
-+	case MMCIF_WAIT_FOR_WRITE:
-+	case MMCIF_WAIT_FOR_READ_END:
-+	case MMCIF_WAIT_FOR_WRITE_END:
-+		host->data->error = sh_mmcif_error_manage(host);
-+		break;
-+	default:
-+		BUG();
-+	}
-+
-+	host->state = STATE_IDLE;
-+	host->wait_for = MMCIF_WAIT_FOR_REQUEST;
-+	host->data = NULL;
-+	host->mrq = NULL;
-+	mmc_request_done(host->mmc, mrq);
+ #define SH_CLK_DIV6(_parent, _reg, _flags)			\
+-	SH_CLK_DIV6_EXT(_parent, _reg, _flags, NULL, 0, 0, 0)
++{								\
++	.parent		= _parent,				\
++	.enable_reg	= (void __iomem *)_reg,			\
++	.flags		= _flags,				\
 +}
-+
- static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- {
- 	int ret = 0, irq[2];
-@@ -1052,7 +1251,6 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	host->clk = clk_get_rate(host->hclk);
- 	host->pd = pdev;
  
--	init_completion(&host->intr_wait);
- 	spin_lock_init(&host->lock);
- 
- 	mmc->ops = &sh_mmcif_ops;
-@@ -1089,19 +1287,21 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
- 
--	ret = request_irq(irq[0], sh_mmcif_intr, 0, "sh_mmc:error", host);
-+	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
- 	if (ret) {
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
- 		goto clean_up3;
- 	}
--	ret = request_irq(irq[1], sh_mmcif_intr, 0, "sh_mmc:int", host);
-+	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
- 	if (ret) {
- 		free_irq(irq[0], host);
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
- 		goto clean_up3;
- 	}
- 
--	sh_mmcif_detect(host->mmc);
-+	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
-+
-+	mmc_detect_change(host->mmc, 0);
- 
- 	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
- 	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
-@@ -1127,11 +1327,19 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
- 	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
- 	int irq[2];
- 
-+	host->dying = true;
- 	pm_runtime_get_sync(&pdev->dev);
- 
- 	mmc_remove_host(host->mmc);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
- 
-+	/*
-+	 * FIXME: cancel_delayed_work(_sync)() and free_irq() race with the
-+	 * mmc_remove_host() call above. But swapping order doesn't help either
-+	 * (a query on the linux-mmc mailing list didn't bring any replies).
-+	 */
-+	cancel_delayed_work_sync(&host->timeout_work);
-+
- 	if (host->addr)
- 		iounmap(host->addr);
- 
+ int sh_clk_div6_register(struct clk *clks, int nr);
+ int sh_clk_div6_reparent_register(struct clk *clks, int nr);
+-- 
+1.7.5.4
+
