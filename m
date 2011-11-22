@@ -1,34 +1,48 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 29 Nov 2011 09:15:52 +0000
-Subject: Re: [PATCH 0/3] Change ARCH_NR_GPIO into a Kconfig variable
-Message-Id: <20111129091552.GI9581@n2100.arm.linux.org.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 22 Nov 2011 06:08:57 +0000
+Subject: [PATCH] ARM: Kota2 mach-type update fix
+Message-Id: <20111122060857.23951.50598.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
- <20111129064630.GW19069@tbergstrom-lnx.Nvidia.com>
- <CACRpkdY-YL0RSY4+nL36sM9WwX+VbMkJP54djrCwYCQmw9AFEw@mail.gmail.com>
-In-Reply-To: <CACRpkdY-YL0RSY4+nL36sM9WwX+VbMkJP54djrCwYCQmw9AFEw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 29, 2011 at 09:40:27AM +0100, Linus Walleij wrote:
-> On Tue, Nov 29, 2011 at 7:46 AM, Peter De Schrijver
-> <pdeschrijver@nvidia.com> wrote:
-> > On Thu, Nov 03, 2011 at 06:00:44PM +0100, Peter De Schrijver wrote:
-> >> This patchset converts ARCH_NR_GPIO to a Kconfig variable as suggested=
- by
-> >> Russel King. It also converts some platforms to the new model.
-> >>
-> >> Peter De Schrijver (3):
-> >> =A0 ARM: ARCH_NR_GPIO: Make ARCH_NR_GPIO a Kconfig variable
-> >> =A0 ARM: mach-shmobile: Use CONFIG_ARCH_NR_GPIO
-> >> =A0 ARM: mach-ux500 Use CONFIG_ARCH_NR_GPIO
-> >
-> > Ping? What should we do with this?
->=20
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
->=20
-> Put it into Russell's patch tracker.
+From: Magnus Damm <damm@opensource.se>
 
-Or we could wait for Grant to reappear and take it.
+This patch adds kota2 to the in-kernel ARM mach-type file.
+
+Basic board support is included in 3.2-rc and the mach-type
+has been registered in the ARM machine repository as
+
+3616 Renesas SH-Mobile kota2.x Board kota2 Yusuke Goda mainlined
+
+The file arch/arm/tools/mach-types is however missing Kota2
+which makes build of sh73a0 based boards fail with:
+
+arch/arm/mach-shmobile/platsmp.c: In function 'shmobile_smp_get_core_count':
+arch/arm/mach-shmobile/platsmp.c:28:2: error: implicit declaration of function 'machine_is_kota2'
+make[1]: *** [arch/arm/mach-shmobile/platsmp.o] Error 1
+
+arch/arm/mach-shmobile/board-kota2.c:448:136: error: 'MACH_TYPE_KOTA2' undeclared here (not in a function)
+make[1]: *** [arch/arm/mach-shmobile/board-kota2.o] Error 1
+make: *** [arch/arm/mach-shmobile] Error 2
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ I propose that Paul Mundt merges this patch together with other
+ SH-Mobile ARM related fixes.
+
+ arch/arm/tools/mach-types |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0001/arch/arm/tools/mach-types
++++ work/arch/arm/tools/mach-types	2011-11-14 16:55:38.000000000 +0900
+@@ -1123,5 +1123,6 @@ blissc			MACH_BLISSC		BLISSC			3491
+ thales_adc		MACH_THALES_ADC		THALES_ADC		3492
+ ubisys_p9d_evp		MACH_UBISYS_P9D_EVP	UBISYS_P9D_EVP		3493
+ atdgp318		MACH_ATDGP318		ATDGP318		3494
++kota2			MACH_KOTA2		KOTA2			3616
+ smdk4212		MACH_SMDK4212		SMDK4212		3638
+ smdk4412		MACH_SMDK4412		SMDK4412		3765
