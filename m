@@ -1,37 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 22 Nov 2011 06:23:17 +0000
-Subject: [PATCH] ARM: mach-shmobile: AG5EVM/Kota2 external Ethernet fix
-Message-Id: <20111122062317.31018.3672.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Nov 2011 21:53:46 +0000
+Subject: [PATCH] sh: sh7722: fix Oops: remove empty clock entries
+Message-Id: <Pine.LNX.4.64.1111232248500.5635@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Unused indices produce empty entries in the clock array, which then lead to
+Oopses at boot-time.
 
-Keep the ZB clock enabled on sh73a0 to allow the BSC
-to access external peripherals hooked up to CS signals.
-
-This is needed to unbreak Ethernet support on sh73a0 boards
-such as AG5EVM and Kota2 together with the following patch:
-
- 794d78f drivers: sh: late disabling of clocks V2
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- arch/arm/mach-shmobile/clock-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This is against sh-latest with hwblk patches from sh/hwblk applied on top.
 
---- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2011-08-22 14:31:42.000000000 +0900
-@@ -243,7 +243,7 @@ static struct clk div6_clks[DIV6_NR] = {
- 	[DIV6_VCK1] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR1, 0),
- 	[DIV6_VCK2] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR2, 0),
- 	[DIV6_VCK3] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR3, 0),
--	[DIV6_ZB1] = SH_CLK_DIV6(&pll1_div2_clk, ZBCKCR, 0),
-+	[DIV6_ZB1] = SH_CLK_DIV6(&pll1_div2_clk, ZBCKCR, CLK_ENABLE_ON_INIT),
- 	[DIV6_FLCTL] = SH_CLK_DIV6(&pll1_div2_clk, FLCKCR, 0),
- 	[DIV6_SDHI0] = SH_CLK_DIV6(&pll1_div2_clk, SD0CKCR, 0),
- 	[DIV6_SDHI1] = SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
+Morimoto-san, you were right, I was able to reproduce a hang on ecovec, 
+and your patch fixes it - thanks! Here goes a similar one for sh7722 - 
+tested on migor.
+
+Thanks
+Guennadi
+
+ arch/sh/include/cpu-sh4/cpu/sh7722.h |   13 +++++--------
+ 1 files changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7722.h b/arch/sh/include/cpu-sh4/cpu/sh7722.h
+index bd06227..3bb74e5 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7722.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7722.h
+@@ -222,14 +222,11 @@ enum {
+ };
+ 
+ enum {
+-	HWBLK_UNKNOWN = 0,
+-	HWBLK_TLB, HWBLK_IC, HWBLK_OC, HWBLK_URAM, HWBLK_XYMEM,
+-	HWBLK_INTC, HWBLK_DMAC, HWBLK_SHYWAY, HWBLK_HUDI,
+-	HWBLK_UBC, HWBLK_TMU, HWBLK_CMT, HWBLK_RWDT, HWBLK_FLCTL,
+-	HWBLK_SCIF0, HWBLK_SCIF1, HWBLK_SCIF2, HWBLK_SIO,
+-	HWBLK_SIOF0, HWBLK_SIOF1, HWBLK_IIC, HWBLK_RTC,
+-	HWBLK_TPU, HWBLK_IRDA, HWBLK_SDHI, HWBLK_SIM, HWBLK_KEYSC,
+-	HWBLK_TSIF, HWBLK_USBF, HWBLK_2DG, HWBLK_SIU, HWBLK_VOU,
++	HWBLK_URAM, HWBLK_XYMEM,
++	HWBLK_TMU, HWBLK_CMT, HWBLK_RWDT, HWBLK_FLCTL,
++	HWBLK_SCIF0, HWBLK_SCIF1, HWBLK_SCIF2, HWBLK_IIC, HWBLK_RTC,
++	HWBLK_SDHI, HWBLK_KEYSC,
++	HWBLK_USBF, HWBLK_2DG, HWBLK_SIU, HWBLK_VOU,
+ 	HWBLK_JPU, HWBLK_BEU, HWBLK_CEU, HWBLK_VEU, HWBLK_VPU,
+ 	HWBLK_LCDC,
+ 	HWBLK_NR,
+-- 
+1.7.2.5
+
