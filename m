@@ -1,66 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 22 Nov 2011 06:15:57 +0000
-Subject: [PATCH] ARM: mach-shmobile: Kota2 PINT fix
-Message-Id: <20111122061557.30983.75780.sendpatchset@w520>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 24 Nov 2011 08:36:41 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: Kota2 PINT fix
+Message-Id: <20111124083640.GE32112@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20111122061557.30983.75780.sendpatchset@w520>
+In-Reply-To: <20111122061557.30983.75780.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Nov 22, 2011 at 03:15:57PM +0900, Magnus Damm wrote:
+> Support PINT on sh73a0 and Kota2 using INTC PINT macros.
+> 
+> With this patch applied the Kota2 ethernet is handled
+> through one of the chained sh73a0 PINT interrupt controllers.
+> 
+> sh73a0 PINT support is included in 3.2-rc but the Kota2 board
+> code does not make use of this shared code base without this
+> patch. Without this patch kota2 on-board ethernet is broken.
 
-Support PINT on sh73a0 and Kota2 using INTC PINT macros.
+On Tue, Nov 22, 2011 at 03:23:17PM +0900, Magnus Damm wrote:
+> Keep the ZB clock enabled on sh73a0 to allow the BSC
+> to access external peripherals hooked up to CS signals.
+> 
+> This is needed to unbreak Ethernet support on sh73a0 boards
+> such as AG5EVM and Kota2 together with the following patch:
+> 
+>  794d78f drivers: sh: late disabling of clocks V2
 
-With this patch applied the Kota2 ethernet is handled
-through one of the chained sh73a0 PINT interrupt controllers.
+On Tue, Nov 22, 2011 at 03:29:54PM +0900, Magnus Damm wrote:
+> Fix IRQ support on the Kota2 board. The sh73a0 and the Kota2
+> board make use of the ARM GIC hardware block as main interrupt
+> controller. The following commit changed the default behaviour
+> for non-device tree platforms and broke Kota2 irq support:
 
-sh73a0 PINT support is included in 3.2-rc but the Kota2 board
-code does not make use of this shared code base without this
-patch. Without this patch kota2 on-board ethernet is broken.
+On Tue, Nov 22, 2011 at 03:31:40PM +0900, Magnus Damm wrote:
+> Fix IRQ support on the AG5EVM board. The sh73a0 and the AG5EVM
+> board make use of the ARM GIC hardware block as main interrupt
+> controller. The following commit changed the default behaviour
+> for non-device tree platforms and broke AG5EVM irq support:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+On Tue, Nov 22, 2011 at 03:44:58PM +0900, Magnus Damm wrote:
+> This patch updates the Kota2 board support code to
+> use the recently merged TPU LED driver whenever
+> possible.
+> 
+> The sh73a0 SoC has 5 TPU hardware blocks each with
+> 4 timer channels which in theory allows a total of
+> 20 LEDs to be controlled by "leds-renesas-tpu"
+> driver instances. The Kota2 board has 4 LEDs connected
+> to GPIO pins that also come with TPU pin functions, so
+> this patch ties up these 4 LEDS and leaves the remaining
+> 3 LEDS for the GPIO based LED driver.
 
- arch/arm/mach-shmobile/board-kota2.c |   16 ++--------------
- 1 file changed, 2 insertions(+), 14 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2011-11-14 17:08:42.000000000 +0900
-@@ -55,7 +55,7 @@ static struct resource smsc9220_resource
- 		.flags		= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start		= gic_spi(33), /* PINTA2 @ PORT144 */
-+		.start		= SH73A0_PINT0_IRQ(2), /* PINTA2 */
- 		.flags		= IORESOURCE_IRQ,
- 	},
- };
-@@ -310,18 +310,6 @@ static void __init kota2_map_io(void)
- 	shmobile_setup_console();
- }
- 
--#define PINTER0A	0xe69000a0
--#define PINTCR0A	0xe69000b0
--
--void __init kota2_init_irq(void)
--{
--	sh73a0_init_irq();
--
--	/* setup PINT: enable PINTA2 as active low */
--	__raw_writel(1 << 29, PINTER0A);
--	__raw_writew(2 << 10, PINTCR0A);
--}
--
- static void __init kota2_init(void)
- {
- 	sh73a0_pinmux_init();
-@@ -440,7 +428,7 @@ struct sys_timer kota2_timer = {
- 
- MACHINE_START(KOTA2, "kota2")
- 	.map_io		= kota2_map_io,
--	.init_irq	= kota2_init_irq,
-+	.init_irq	= sh73a0_init_irq,
- 	.handle_irq	= shmobile_handle_irq_gic,
- 	.init_machine	= kota2_init,
- 	.timer		= &kota2_timer,
+All applied, thanks.
