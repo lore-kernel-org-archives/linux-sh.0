@@ -1,47 +1,253 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Wed, 30 Nov 2011 20:56:31 +0000
-Subject: Re: [PATCH (sh-2.6)] sh: do not export syscalls that are actually not implemented
-Message-Id: <201111301556.32503.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2057648.aLMa4NoyZt"
+From: Robert Marklund <robert.marklund@stericsson.com>
+Date: Thu, 24 Nov 2011 11:03:07 +0000
+Subject: [PATCH 2/2 v5] net/smsc911x: Add regulator support
+Message-Id: <1322132587-2049-1-git-send-email-robert.marklund@stericsson.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1322685809-15587-1-git-send-email-carmelo.amoroso@st.com>
-In-Reply-To: <1322685809-15587-1-git-send-email-carmelo.amoroso@st.com>
-To: linux-sh@vger.kernel.org
-
---nextPart2057648.aLMa4NoyZt
-Content-Type: Text/Plain;
-  charset="utf-8"
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org, Steve Glendinning <steve.glendinning@smsc.com>
+Cc: Mathieu Poirier <mathieu.poirier@linaro.org>, Robert Marklund <robert.marklund@stericsson.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>, Tony Lindgren <tony@atomide.com>, linux-omap@vger.kernel.org, Mike Frysinger <vapier@gentoo.org>, uclinux-dist-devel@blackfin.uclinux.org, Linus Walleij <linus.walleij@linaro.org>
 
-On Wednesday 30 November 2011 15:43:29 Carmelo AMOROSO wrote:
-> Avoid user space to erroneously assume that a syscall is implemented
-> by picking __NR_xxx from kernel headers that are actually mapped
-> to sys_ni_syscall.
+Add some basic regulator support for the power pins, as needed
+by the ST-Ericsson Snowball platform that powers up the SMSC911
+chip using an external regulator.
 
-Acked-by: Mike Frysinger <vapier@gentoo.org>
--mike
+Platforms that use regulators and the smsc911x and have no defined
+regulator for the smsc911x and claim complete regulator
+constraints with no dummy regulators will need to provide it, for
+example using a fixed voltage regulator. It appears that this may
+affect (apart from Ux500 Snowball) possibly these archs/machines
+that from some grep:s appear to define both CONFIG_SMSC911X and
+CONFIG_REGULATOR:
 
---nextPart2057648.aLMa4NoyZt
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+- ARM Freescale mx3 and OMAP 2 plus, Raumfeld machines
+- Blackfin
+- Super-H
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Sascha Hauer <s.hauer@pengutronix.de>
+Cc: Tony Lindgren <tony@atomide.com>
+Cc: linux-omap@vger.kernel.org
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: uclinux-dist-devel@blackfin.uclinux.org
+Reviewed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Signed-off-by: Robert Marklund <robert.marklund@stericsson.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ChangeLog v4->v5:
+- Split the enable_disable method on Mikes request.
+ChangeLog v3->v4:
+- Remove dual prints and old comment on Mike's request.
+- Split the request_free fucntion on Mike and Sascha request.
+ChangeLog v2->v3:
+- Use bulk regulators on Mark's request.
+- Add Cc-fileds to some possibly affected platforms.
+ChangeLog v1->v2:
+- Don't check for NULL regulators and error out properly if the
+  regulators can't be found. All platforms using the smsc911x
+  and the regulator framework simultaneously need to provide some
+  kind of regulator for it.
+---
+ drivers/net/ethernet/smsc/smsc911x.c |  111 ++++++++++++++++++++++++++++++----
+ 1 files changed, 100 insertions(+), 11 deletions(-)
 
-iQIcBAABAgAGBQJO1piAAAoJEEFjO5/oN/WBT+0P/R3HcaRjs8kbTMHzpeL+5fYS
-xQJVmgjLkLrs59m5PMnFB+mPIFLeruuMZbTv7M4VznQdatl3UTaz5DZQiZza8iY8
-qlcacvOJOS4tVtNjQRa3GeeW+wpUlOruIISlLBIESBELwZpSPDqjs6QLoYVyiHwu
-Z+aF589ha5L4cROhX6crnMOxdSXlORCjf/CrC2Y06OnDeMRF+siChbbYDfALh3kc
-8S9WeqqLjesgyC8xO4IqSbMvOwSF9OTWXIC6XIYqTwMDJnRxzbbz0lYVIiyP5tgk
-YboKPn54pYDOIb/uuPBZDvV2fBp0wuAbb2Ad4U4WoH48sGr5w6jnnTb7uAEjwlKJ
-/ge7leVuw8iB6ivQC/A9zgLD4Lk4M3pYu+/W4sFMzefHWmr72dGWh99kTBtE2fnV
-uAx3o9HSwInfWJjK1O7yVrjtOCg0QWvZ/JJo1FJr5Bula0tvQNEMm0PifIU7zw6g
-cY9h6RUN+tl2RRHMWpoGfQQ0La9+DMYEELOB69WLmy8VYbxMcVe8ULBr15aWXT31
-8YQZWjAMPG2mRyyQlf8ZJT22YIefA+an4N9Z11+ghCabzFWVvq087/wFg5ZjvFMX
-JhrAyWB759kCK1P9I+/7+sSYeBcmNM8IjiQHn8cLDYMf0mOLCP9iraeK3/bMOGjk
-OsWmH3he9QlHTsaH21V9
-=i8zd
------END PGP SIGNATURE-----
+diff --git a/drivers/net/ethernet/smsc/smsc911x.c b/drivers/net/ethernet/smsc/smsc911x.c
+index 8843071..06d0df6 100644
+--- a/drivers/net/ethernet/smsc/smsc911x.c
++++ b/drivers/net/ethernet/smsc/smsc911x.c
+@@ -44,6 +44,7 @@
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/sched.h>
+ #include <linux/timer.h>
+ #include <linux/bug.h>
+@@ -88,6 +89,8 @@ struct smsc911x_ops {
+ 				unsigned int *buf, unsigned int wordcount);
+ };
+ 
++#define SMSC911X_NUM_SUPPLIES 2
++
+ struct smsc911x_data {
+ 	void __iomem *ioaddr;
+ 
+@@ -138,6 +141,9 @@ struct smsc911x_data {
+ 
+ 	/* register access functions */
+ 	const struct smsc911x_ops *ops;
++
++	/* regulators */
++	struct regulator_bulk_data supplies[SMSC911X_NUM_SUPPLIES];
+ };
+ 
+ /* Easy access to information */
+@@ -362,6 +368,76 @@ out:
+ 	spin_unlock_irqrestore(&pdata->dev_lock, flags);
+ }
+ 
++/*
++ * enable resources, currently just regulators.
++ */
++static int smsc911x_enable_resources(struct platform_device *pdev)
++{
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++	int ret = 0;
++
++	ret = regulator_bulk_enable(ARRAY_SIZE(pdata->supplies),
++			pdata->supplies);
++	if (ret)
++		netdev_err(ndev, "failed to enable regulators %d\n",
++				ret);
++	return ret;
++}
++
++/*
++ * disable resources, currently just regulators.
++ */
++static int smsc911x_disable_resources(struct platform_device *pdev)
++{
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++	int ret = 0;
++
++	ret = regulator_bulk_disable(ARRAY_SIZE(pdata->supplies),
++			pdata->supplies);
++	return ret;
++}
++
++/*
++ * Request resources, currently just regulators.
++ *
++ * The SMSC911x has two power pins: vddvario and vdd33a, in designs where
++ * these are not always-on we need to request regulators to be turned on
++ * before we can try to access the device registers.
++ */
++static int smsc911x_request_resources(struct platform_device *pdev)
++{
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++	int ret = 0;
++
++	/* Request regulators */
++	pdata->supplies[0].supply = "vdd33a";
++	pdata->supplies[1].supply = "vddvario";
++	ret = regulator_bulk_get(&pdev->dev,
++			ARRAY_SIZE(pdata->supplies),
++			pdata->supplies);
++	if (ret)
++		netdev_err(ndev, "couldn't get regulators %d\n",
++				ret);
++	return ret;
++}
++
++/*
++ * Free resources, currently just regulators.
++ *
++ */
++static void smsc911x_free_resources(struct platform_device *pdev)
++{
++	struct net_device *ndev = platform_get_drvdata(pdev);
++	struct smsc911x_data *pdata = netdev_priv(ndev);
++
++	/* Free regulators */
++	regulator_bulk_free(ARRAY_SIZE(pdata->supplies),
++			pdata->supplies);
++}
++
+ /* waits for MAC not busy, with timeout.  Only called by smsc911x_mac_read
+  * and smsc911x_mac_write, so assumes mac_lock is held */
+ static int smsc911x_mac_complete(struct smsc911x_data *pdata)
+@@ -2092,6 +2168,9 @@ static int __devexit smsc911x_drv_remove(struct platform_device *pdev)
+ 
+ 	iounmap(pdata->ioaddr);
+ 
++	(void)smsc911x_disable_resources(pdev);
++	smsc911x_free_resources(pdev);
++
+ 	free_netdev(dev);
+ 
+ 	return 0;
+@@ -2218,10 +2297,20 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 	pdata->dev = dev;
+ 	pdata->msg_enable = ((1 << debug) - 1);
+ 
++	platform_set_drvdata(pdev, dev);
++
++	retval = smsc911x_request_resources(pdev);
++	if (retval)
++		goto out_return_resources;
++
++	retval = smsc911x_enable_resources(pdev);
++	if (retval)
++		goto out_disable_resources;
++
+ 	if (pdata->ioaddr = NULL) {
+ 		SMSC_WARN(pdata, probe, "Error smsc911x base address invalid");
+ 		retval = -ENOMEM;
+-		goto out_free_netdev_2;
++		goto out_disable_resources;
+ 	}
+ 
+ 	retval = smsc911x_probe_config_dt(&pdata->config, np);
+@@ -2233,7 +2322,7 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 
+ 	if (retval) {
+ 		SMSC_WARN(pdata, probe, "Error smsc911x config not found");
+-		goto out_unmap_io_3;
++		goto out_disable_resources;
+ 	}
+ 
+ 	/* assume standard, non-shifted, access to HW registers */
+@@ -2244,7 +2333,7 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 
+ 	retval = smsc911x_init(dev);
+ 	if (retval < 0)
+-		goto out_unmap_io_3;
++		goto out_disable_resources;
+ 
+ 	/* configure irq polarity and type before connecting isr */
+ 	if (pdata->config.irq_polarity = SMSC911X_IRQ_POLARITY_ACTIVE_HIGH)
+@@ -2264,15 +2353,13 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 	if (retval) {
+ 		SMSC_WARN(pdata, probe,
+ 			  "Unable to claim requested irq: %d", dev->irq);
+-		goto out_unmap_io_3;
++		goto out_free_irq;
+ 	}
+ 
+-	platform_set_drvdata(pdev, dev);
+-
+ 	retval = register_netdev(dev);
+ 	if (retval) {
+ 		SMSC_WARN(pdata, probe, "Error %i registering device", retval);
+-		goto out_unset_drvdata_4;
++		goto out_free_irq;
+ 	} else {
+ 		SMSC_TRACE(pdata, probe,
+ 			   "Network interface: \"%s\"", dev->name);
+@@ -2321,12 +2408,14 @@ static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
+ 
+ out_unregister_netdev_5:
+ 	unregister_netdev(dev);
+-out_unset_drvdata_4:
+-	platform_set_drvdata(pdev, NULL);
++out_free_irq:
+ 	free_irq(dev->irq, dev);
+-out_unmap_io_3:
++out_disable_resources:
++	(void)smsc911x_disable_resources(pdev);
++out_return_resources:
++	smsc911x_free_resources(pdev);
++	platform_set_drvdata(pdev, NULL);
+ 	iounmap(pdata->ioaddr);
+-out_free_netdev_2:
+ 	free_netdev(dev);
+ out_release_io_1:
+ 	release_mem_region(res->start, resource_size(res));
+-- 
+1.7.1
 
---nextPart2057648.aLMa4NoyZt--
