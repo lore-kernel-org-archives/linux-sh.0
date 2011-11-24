@@ -1,7 +1,7 @@
-From: Richard Purdie <rpurdie@rpsys.net>
-Date: Fri, 18 Nov 2011 10:13:03 +0000
+From: Lennert Buytenhek <buytenh@wantstofly.org>
+Date: Thu, 24 Nov 2011 06:47:14 +0000
 Subject: Re: [PATCH 6/7] ARM: restart: only perform setup for restart when
-Message-Id: <1321611183.27449.59.camel@ted>
+Message-Id: <20111124064714.GI795@wantstofly.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20111106173113.GI12913@n2100.arm.linux.org.uk>
  <E1RN6b9-0001NG-NS@rmk-PC.arm.linux.org.uk>
@@ -12,7 +12,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, 2011-11-17 at 17:42 +0000, Russell King - ARM Linux wrote:
+On Thu, Nov 17, 2011 at 05:42:47PM +0000, Russell King - ARM Linux wrote:
+
 > Ack?
 > 
 > (If you're in the To: list I'm expecting a reply because this patch is
@@ -29,30 +30,5 @@ On Thu, 2011-11-17 at 17:42 +0000, Russell King - ARM Linux wrote:
 > > enabled.
 > > 
 > > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-Acked-by: Richard Purdie <richard.purdie@linuxfoundation.org>
-> > ---
-> >  arch/arm/include/asm/system.h                     |    1 +
-> >  arch/arm/kernel/process.c                         |   13 +++++++++++--
-> >  arch/arm/mach-clps711x/include/mach/system.h      |    2 +-
-> >  arch/arm/mach-ebsa110/include/mach/system.h       |    2 +-
-> >  arch/arm/mach-footbridge/include/mach/system.h    |    2 +-
-> >  arch/arm/mach-iop32x/include/mach/system.h        |    2 +-
-> >  arch/arm/mach-iop33x/include/mach/system.h        |    2 +-
-> >  arch/arm/mach-ixp4xx/include/mach/system.h        |    2 +-
-> >  arch/arm/mach-ks8695/include/mach/system.h        |    2 +-
-> >  arch/arm/mach-mmp/include/mach/system.h           |    4 ++--
-> >  arch/arm/mach-mxs/system.c                        |    2 +-
-> >  arch/arm/mach-pnx4008/include/mach/system.h       |    2 +-
-> >  arch/arm/mach-pxa/reset.c                         |    2 +-
-> >  arch/arm/mach-rpc/include/mach/system.h           |    2 +-
-> >  arch/arm/mach-s3c2410/include/mach/system-reset.h |    4 ++--
-> >  arch/arm/mach-s3c64xx/include/mach/system.h       |    2 +-
-> >  arch/arm/mach-sa1100/include/mach/system.h        |    2 +-
-> >  arch/arm/mach-shmobile/include/mach/system.h      |    2 +-
-> >  arch/arm/mach-w90x900/include/mach/system.h       |    2 +-
-> >  arch/arm/plat-mxc/system.c                        |    2 +-
-> >  arch/arm/plat-spear/include/plat/system.h         |    2 +-
-> >  21 files changed, 33 insertions(+), 23 deletions(-)
-> > 
 
-
+Acked-by: Lennert Buytenhek <buytenh@wantstofly.org>
