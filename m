@@ -1,7 +1,7 @@
-From: Paul Cercueil <pcercuei@gmail.com>
-Date: Tue, 22 Nov 2011 12:02:56 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 24 Nov 2011 07:29:06 +0000
 Subject: Re: Dreamcast build broken
-Message-Id: <4ECB8F70.2000500@gmail.com>
+Message-Id: <20111124072906.GB32112@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4EC81660.3010109@gmail.com>
 In-Reply-To: <4EC81660.3010109@gmail.com>
@@ -10,11 +10,12 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
-
-The commit which breaks the dreamcast build is the commit 
-37b7a97884ba64bf7d403351ac2a9476ab4f1bba :
-sh: machvec IO death.
-
-Regards,
-Paul
+On Tue, Nov 22, 2011 at 01:02:56PM +0100, Paul Cercueil wrote:
+> Hi,
+> 
+> The commit which breaks the dreamcast build is the commit 
+> 37b7a97884ba64bf7d403351ac2a9476ab4f1bba :
+> sh: machvec IO death.
+> 
+It builds fine for me. You will actually have to supply the build error
+you are experiencing if you expect any further assistance, however.
