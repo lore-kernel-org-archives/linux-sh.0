@@ -1,805 +1,438 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Nov 2011 02:46:35 +0000
-Subject: [PATCH 14/20] ARM: mach-shmobile: r8a7740: add INTC support
-Message-Id: <87hb2b9y0n.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 24 Nov 2011 00:20:47 +0000
+Subject: [Update 3x][PATCH 3/7] PM / Domains: Rework system suspend callback routines (v2)
+Message-Id: <201111240120.47716.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201111070101.33960.rjw@sisk.pl> <201111191456.40453.rjw@sisk.pl> <201111191459.46620.rjw@sisk.pl>
+In-Reply-To: <201111191459.46620.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kevin Hilman <khilman@ti.com>, jean.pihet@newoldbits.com
 
-R8A7740 GIC can not get external IRQx interrupt directly
-without GIC - INTC demux support.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Current AG5 is using GIC - INTCS demux with
-special irq relocation. but GIC - INTCA demux
-is still not supported and it needs irq number re-mapping.
+The current generic PM domains code attempts to use the generic
+system suspend operations along with the domains' device stop/start
+routines, which requires device drivers to assume that their
+system suspend/resume (and hibernation/restore) callbacks will always
+be used with generic PM domains.  However, in theory, the same
+hardware may be used in devices that don't belong to any PM domain,
+in which case it would be necessary to add "fake" PM domains to
+satisfy the above assumption.  Also, the domain the hardware belongs
+to may not be handled with the help of the generic code.
 
-OTOH, normal INTC support as before is very enough for R8A7740,
-because it is not SMP CPU.
-This patch adds INTCA/INTCS support instead of GIC.
+To allow device drivers that may be used along with the generic PM
+domains code of more flexibility, add new device callbacks,
+.suspend(), .suspend_late(), .resume_early(), .resume(), .freeze(),
+.freeze_late(), .thaw_early(), and .thaw(), that can be supplied by
+the drivers in addition to their "standard" system suspend and
+hibernation callbacks.  These new callbacks, if defined, will be used
+by the generic PM domains code for the handling of system suspend and
+hibernation instead of the "standard" ones.  This will allow drivers
+to be designed to work with generic PM domains as well as without
+them.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+For backwards compatibility, introduce default implementations of the
+new callbacks for PM domains that will execute pm_generic_suspend(),
+pm_generic_suspend_noirq(), pm_generic_resume_noirq(),
+pm_generic_resume(), pm_generic_freeze(), pm_generic_freeze_noirq(),
+pm_generic_thaw_noirq(), and pm_generic_thaw(), respectively, for the
+given device if its driver doesn't define those callbacks.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/Kconfig         |    1 -
- arch/arm/mach-shmobile/Makefile        |    2 +-
- arch/arm/mach-shmobile/intc-r8a7740.c  |  612 +++++++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7740.c |   28 +-
- 4 files changed, 614 insertions(+), 29 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 329a3cb..aa63c96 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -33,7 +33,6 @@ config ARCH_R8A7740
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
--	select ARM_GIC
+When I started to work on documentation updates, I realized that
+.freeze()/.thaw() callbacks (and their late/early versions) couldn't
+be used as .suspend()/.resume() for two reasons.  First, for some
+devices .suspend() has to make wakeup preparations, while .freeze()
+need not (and even shouldn't) do that.  Second, .resume() ususally
+has to restore the device's state from memory, while .thaw() need
+not (and even shouldn't) do that.  Therefore, a complete set of
+suspend/resume _and_ freeze/thaw device callbacks for PM domains
+is needed.
+
+Thanks,
+Rafael
+
+---
+ drivers/base/power/domain.c |  249 ++++++++++++++++++++++++++------------------
+ include/linux/pm_domain.h   |    8 +
+ 2 files changed, 158 insertions(+), 99 deletions(-)
+
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -28,6 +28,14 @@ struct gpd_dev_ops {
+ 	int (*stop)(struct device *dev);
+ 	int (*save_state)(struct device *dev);
+ 	int (*restore_state)(struct device *dev);
++	int (*suspend)(struct device *dev);
++	int (*suspend_late)(struct device *dev);
++	int (*resume_early)(struct device *dev);
++	int (*resume)(struct device *dev);
++	int (*freeze)(struct device *dev);
++	int (*freeze_late)(struct device *dev);
++	int (*thaw_early)(struct device *dev);
++	int (*thaw)(struct device *dev);
+ 	bool (*active_wakeup)(struct device *dev);
+ };
  
- comment "SH-Mobile Board Type"
- 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 2bd2d3b..971f703 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -31,7 +31,7 @@ obj-$(CONFIG_ARCH_SH7367)	+= entry-intc.o
- obj-$(CONFIG_ARCH_SH7377)	+= entry-intc.o
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
- obj-$(CONFIG_ARCH_SH73A0)	+= entry-gic.o
--obj-$(CONFIG_ARCH_R8A7740)	+= entry-gic.o
-+obj-$(CONFIG_ARCH_R8A7740)	+= entry-intc.o
- 
- # PM objects
- obj-$(CONFIG_SUSPEND)		+= suspend.o
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index c62a205..272c84c 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -18,28 +18,614 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/io.h>
--#include <asm/hardware/gic.h>
-+#include <linux/sh_intc.h>
-+#include <mach/intc.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
- 
--#define INTA_CTRL	0xe605807c
-+/*
-+ *		INTCA
-+ */
-+enum {
-+	UNUSED_INTCA = 0,
-+
-+	/* interrupt sources INTCA */
-+	DIRC,
-+	ATAPI,
-+	IIC1_ALI, IIC1_TACKI, IIC1_WAITI, IIC1_DTEI,
-+	AP_ARM_COMMTX, AP_ARM_COMMRX,
-+	MFI, MFIS,
-+	BBIF1, BBIF2,
-+	USBHSDMAC,
-+	USBF_OUL_SOF, USBF_IXL_INT,
-+	SGX540,
-+	CMT1_0, CMT1_1, CMT1_2, CMT1_3,
-+	CMT2,
-+	CMT3,
-+	KEYSC,
-+	SCIFA0, SCIFA1, SCIFA2, SCIFA3,
-+	MSIOF2, MSIOF1,
-+	SCIFA4, SCIFA5, SCIFB,
-+	FLCTL_FLSTEI, FLCTL_FLTENDI, FLCTL_FLTREQ0I, FLCTL_FLTREQ1I,
-+	SDHI0_0, SDHI0_1, SDHI0_2, SDHI0_3,
-+	SDHI1_0, SDHI1_1, SDHI1_2, SDHI1_3,
-+	AP_ARM_L2CINT,
-+	IRDA,
-+	TPU0,
-+	SCIFA6, SCIFA7,
-+	GbEther,
-+	ICBS0,
-+	DDM,
-+	SDHI2_0, SDHI2_1, SDHI2_2, SDHI2_3,
-+	RWDT0,
-+	DMAC1_1_DEI0, DMAC1_1_DEI1, DMAC1_1_DEI2, DMAC1_1_DEI3,
-+	DMAC1_2_DEI4, DMAC1_2_DEI5, DMAC1_2_DADERR,
-+	DMAC2_1_DEI0, DMAC2_1_DEI1, DMAC2_1_DEI2, DMAC2_1_DEI3,
-+	DMAC2_2_DEI4, DMAC2_2_DEI5, DMAC2_2_DADERR,
-+	DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3,
-+	DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR,
-+	SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM,
-+	USBH_INT, USBH_OHCI, USBH_EHCI, USBH_PME, USBH_BIND,
-+	RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF,
-+	SPU2_0, SPU2_1,
-+	FSI, FMSI,
-+	IPMMU,
-+	AP_ARM_CTIIRQ, AP_ARM_PMURQ,
-+	MFIS2,
-+	CPORTR2S,
-+	CMT14, CMT15,
-+	MMCIF_0, MMCIF_1, MMCIF_2,
-+	SIM_ERI, SIM_RXI, SIM_TXI, SIM_TEI,
-+	STPRO_0, STPRO_1, STPRO_2, STPRO_3, STPRO_4,
-+
-+	/* interrupt groups INTCA */
-+	DMAC1_1, DMAC1_2,
-+	DMAC2_1, DMAC2_2,
-+	DMAC3_1, DMAC3_2,
-+	AP_ARM1, AP_ARM2,
-+	SDHI0, SDHI1, SDHI2,
-+	SHWYSTAT,
-+	USBF, USBH1, USBH2,
-+	RSPI, SPU2, FLCTL, IIC1,
-+};
-+
-+static struct intc_vect intca_vectors[] __initdata = {
-+	INTC_VECT(DIRC,			0x0560),
-+	INTC_VECT(ATAPI,		0x05E0),
-+	INTC_VECT(IIC1_ALI,		0x0780),
-+	INTC_VECT(IIC1_TACKI,		0x07A0),
-+	INTC_VECT(IIC1_WAITI,		0x07C0),
-+	INTC_VECT(IIC1_DTEI,		0x07E0),
-+	INTC_VECT(AP_ARM_COMMTX,	0x0840),
-+	INTC_VECT(AP_ARM_COMMRX,	0x0860),
-+	INTC_VECT(MFI,			0x0900),
-+	INTC_VECT(MFIS,			0x0920),
-+	INTC_VECT(BBIF1,		0x0940),
-+	INTC_VECT(BBIF2,		0x0960),
-+	INTC_VECT(USBHSDMAC,		0x0A00),
-+	INTC_VECT(USBF_OUL_SOF,		0x0A20),
-+	INTC_VECT(USBF_IXL_INT,		0x0A40),
-+	INTC_VECT(SGX540,		0x0A60),
-+	INTC_VECT(CMT1_0,		0x0B00),
-+	INTC_VECT(CMT1_1,		0x0B20),
-+	INTC_VECT(CMT1_2,		0x0B40),
-+	INTC_VECT(CMT1_3,		0x0B60),
-+	INTC_VECT(CMT2,			0x0B80),
-+	INTC_VECT(CMT3,			0x0BA0),
-+	INTC_VECT(KEYSC,		0x0BE0),
-+	INTC_VECT(SCIFA0,		0x0C00),
-+	INTC_VECT(SCIFA1,		0x0C20),
-+	INTC_VECT(SCIFA2,		0x0C40),
-+	INTC_VECT(SCIFA3,		0x0C60),
-+	INTC_VECT(MSIOF2,		0x0C80),
-+	INTC_VECT(MSIOF1,		0x0D00),
-+	INTC_VECT(SCIFA4,		0x0D20),
-+	INTC_VECT(SCIFA5,		0x0D40),
-+	INTC_VECT(SCIFB,		0x0D60),
-+	INTC_VECT(FLCTL_FLSTEI,		0x0D80),
-+	INTC_VECT(FLCTL_FLTENDI,	0x0DA0),
-+	INTC_VECT(FLCTL_FLTREQ0I,	0x0DC0),
-+	INTC_VECT(FLCTL_FLTREQ1I,	0x0DE0),
-+	INTC_VECT(SDHI0_0,		0x0E00),
-+	INTC_VECT(SDHI0_1,		0x0E20),
-+	INTC_VECT(SDHI0_2,		0x0E40),
-+	INTC_VECT(SDHI0_3,		0x0E60),
-+	INTC_VECT(SDHI1_0,		0x0E80),
-+	INTC_VECT(SDHI1_1,		0x0EA0),
-+	INTC_VECT(SDHI1_2,		0x0EC0),
-+	INTC_VECT(SDHI1_3,		0x0EE0),
-+	INTC_VECT(AP_ARM_L2CINT,	0x0FA0),
-+	INTC_VECT(IRDA,			0x0480),
-+	INTC_VECT(TPU0,			0x04A0),
-+	INTC_VECT(SCIFA6,		0x04C0),
-+	INTC_VECT(SCIFA7,		0x04E0),
-+	INTC_VECT(GbEther,		0x0500),
-+	INTC_VECT(ICBS0,		0x0540),
-+	INTC_VECT(DDM,			0x1140),
-+	INTC_VECT(SDHI2_0,		0x1200),
-+	INTC_VECT(SDHI2_1,		0x1220),
-+	INTC_VECT(SDHI2_2,		0x1240),
-+	INTC_VECT(SDHI2_3,		0x1260),
-+	INTC_VECT(RWDT0,		0x1280),
-+	INTC_VECT(DMAC1_1_DEI0,		0x2000),
-+	INTC_VECT(DMAC1_1_DEI1,		0x2020),
-+	INTC_VECT(DMAC1_1_DEI2,		0x2040),
-+	INTC_VECT(DMAC1_1_DEI3,		0x2060),
-+	INTC_VECT(DMAC1_2_DEI4,		0x2080),
-+	INTC_VECT(DMAC1_2_DEI5,		0x20A0),
-+	INTC_VECT(DMAC1_2_DADERR,	0x20C0),
-+	INTC_VECT(DMAC2_1_DEI0,		0x2100),
-+	INTC_VECT(DMAC2_1_DEI1,		0x2120),
-+	INTC_VECT(DMAC2_1_DEI2,		0x2140),
-+	INTC_VECT(DMAC2_1_DEI3,		0x2160),
-+	INTC_VECT(DMAC2_2_DEI4,		0x2180),
-+	INTC_VECT(DMAC2_2_DEI5,		0x21A0),
-+	INTC_VECT(DMAC2_2_DADERR,	0x21C0),
-+	INTC_VECT(DMAC3_1_DEI0,		0x2200),
-+	INTC_VECT(DMAC3_1_DEI1,		0x2220),
-+	INTC_VECT(DMAC3_1_DEI2,		0x2240),
-+	INTC_VECT(DMAC3_1_DEI3,		0x2260),
-+	INTC_VECT(DMAC3_2_DEI4,		0x2280),
-+	INTC_VECT(DMAC3_2_DEI5,		0x22A0),
-+	INTC_VECT(DMAC3_2_DADERR,	0x22C0),
-+	INTC_VECT(SHWYSTAT_RT,		0x1300),
-+	INTC_VECT(SHWYSTAT_HS,		0x1320),
-+	INTC_VECT(SHWYSTAT_COM,		0x1340),
-+	INTC_VECT(USBH_INT,		0x1540),
-+	INTC_VECT(USBH_OHCI,		0x1560),
-+	INTC_VECT(USBH_EHCI,		0x1580),
-+	INTC_VECT(USBH_PME,		0x15A0),
-+	INTC_VECT(USBH_BIND,		0x15C0),
-+	INTC_VECT(RSPI_OVRF,		0x1780),
-+	INTC_VECT(RSPI_SPTEF,		0x17A0),
-+	INTC_VECT(RSPI_SPRF,		0x17C0),
-+	INTC_VECT(SPU2_0,		0x1800),
-+	INTC_VECT(SPU2_1,		0x1820),
-+	INTC_VECT(FSI,			0x1840),
-+	INTC_VECT(FMSI,			0x1860),
-+	INTC_VECT(IPMMU,		0x1920),
-+	INTC_VECT(AP_ARM_CTIIRQ,	0x1980),
-+	INTC_VECT(AP_ARM_PMURQ,		0x19A0),
-+	INTC_VECT(MFIS2,		0x1A00),
-+	INTC_VECT(CPORTR2S,		0x1A20),
-+	INTC_VECT(CMT14,		0x1A40),
-+	INTC_VECT(CMT15,		0x1A60),
-+	INTC_VECT(MMCIF_0,		0x1AA0),
-+	INTC_VECT(MMCIF_1,		0x1AC0),
-+	INTC_VECT(MMCIF_2,		0x1AE0),
-+	INTC_VECT(SIM_ERI,		0x1C00),
-+	INTC_VECT(SIM_RXI,		0x1C20),
-+	INTC_VECT(SIM_TXI,		0x1C40),
-+	INTC_VECT(SIM_TEI,		0x1C60),
-+	INTC_VECT(STPRO_0,		0x1C80),
-+	INTC_VECT(STPRO_1,		0x1CA0),
-+	INTC_VECT(STPRO_2,		0x1CC0),
-+	INTC_VECT(STPRO_3,		0x1CE0),
-+	INTC_VECT(STPRO_4,		0x1D00),
-+};
-+
-+static struct intc_group intca_groups[] __initdata = {
-+	INTC_GROUP(DMAC1_1,
-+		   DMAC1_1_DEI0, DMAC1_1_DEI1, DMAC1_1_DEI2, DMAC1_1_DEI3),
-+	INTC_GROUP(DMAC1_2,
-+		   DMAC1_2_DEI4, DMAC1_2_DEI5, DMAC1_2_DADERR),
-+	INTC_GROUP(DMAC2_1,
-+		   DMAC2_1_DEI0, DMAC2_1_DEI1, DMAC2_1_DEI2, DMAC2_1_DEI3),
-+	INTC_GROUP(DMAC2_2,
-+		   DMAC2_2_DEI4, DMAC2_2_DEI5, DMAC2_2_DADERR),
-+	INTC_GROUP(DMAC3_1,
-+		   DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3),
-+	INTC_GROUP(DMAC3_2,
-+		   DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR),
-+	INTC_GROUP(AP_ARM1,
-+		   AP_ARM_COMMTX, AP_ARM_COMMRX),
-+	INTC_GROUP(AP_ARM2,
-+		   AP_ARM_CTIIRQ, AP_ARM_PMURQ),
-+	INTC_GROUP(USBF,
-+		   USBF_OUL_SOF, USBF_IXL_INT),
-+	INTC_GROUP(SDHI0,
-+		   SDHI0_0, SDHI0_1, SDHI0_2, SDHI0_3),
-+	INTC_GROUP(SDHI1,
-+		   SDHI1_0, SDHI1_1, SDHI1_2, SDHI1_3),
-+	INTC_GROUP(SDHI2,
-+		   SDHI2_0, SDHI2_1, SDHI2_2, SDHI2_3),
-+	INTC_GROUP(SHWYSTAT,
-+		   SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM),
-+	INTC_GROUP(USBH1, /* FIXME */
-+		   USBH_INT, USBH_OHCI),
-+	INTC_GROUP(USBH2, /* FIXME */
-+		   USBH_EHCI,
-+		   USBH_PME, USBH_BIND),
-+	INTC_GROUP(RSPI,
-+		   RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF),
-+	INTC_GROUP(SPU2,
-+		   SPU2_0, SPU2_1),
-+	INTC_GROUP(FLCTL,
-+		   FLCTL_FLSTEI, FLCTL_FLTENDI, FLCTL_FLTREQ0I, FLCTL_FLTREQ1I),
-+	INTC_GROUP(IIC1,
-+		   IIC1_ALI, IIC1_TACKI, IIC1_WAITI, IIC1_DTEI),
-+};
-+
-+static struct intc_mask_reg intca_mask_registers[] __initdata = {
-+	{ /* IMR0A / IMCR0A */ 0xe6940080, 0xe69400c0, 8,
-+	  { DMAC2_1_DEI3, DMAC2_1_DEI2, DMAC2_1_DEI1, DMAC2_1_DEI0,
-+	    0, 0, AP_ARM_COMMTX, AP_ARM_COMMRX } },
-+	{ /* IMR1A / IMCR1A */ 0xe6940084, 0xe69400c4, 8,
-+	  { ATAPI, 0, DIRC, 0,
-+	    DMAC1_1_DEI3, DMAC1_1_DEI2, DMAC1_1_DEI1, DMAC1_1_DEI0 } },
-+	{ /* IMR2A / IMCR2A */ 0xe6940088, 0xe69400c8, 8,
-+	  { 0, 0, 0, 0,
-+	    BBIF1, BBIF2, MFIS, MFI } },
-+	{ /* IMR3A / IMCR3A */ 0xe694008c, 0xe69400cc, 8,
-+	  { DMAC3_1_DEI3, DMAC3_1_DEI2, DMAC3_1_DEI1, DMAC3_1_DEI0,
-+	    DMAC3_2_DADERR, DMAC3_2_DEI5, DMAC3_2_DEI4, IRDA } },
-+	{ /* IMR4A / IMCR4A */ 0xe6940090, 0xe69400d0, 8,
-+	  { DDM, 0, 0, 0,
-+	    0, 0, 0, 0 } },
-+	{ /* IMR5A / IMCR5A */ 0xe6940094, 0xe69400d4, 8,
-+	  { KEYSC, DMAC1_2_DADERR, DMAC1_2_DEI5, DMAC1_2_DEI4,
-+	    SCIFA3, SCIFA2, SCIFA1, SCIFA0 } },
-+	{ /* IMR6A / IMCR6A */ 0xe6940098, 0xe69400d8, 8,
-+	  { SCIFB, SCIFA5, SCIFA4, MSIOF1,
-+	    0, 0, MSIOF2, 0 } },
-+	{ /* IMR7A / IMCR7A */ 0xe694009c, 0xe69400dc, 8,
-+	  { SDHI0_3, SDHI0_2, SDHI0_1, SDHI0_0,
-+	    FLCTL_FLTREQ1I, FLCTL_FLTREQ0I, FLCTL_FLTENDI, FLCTL_FLSTEI } },
-+	{ /* IMR8A / IMCR8A */ 0xe69400a0, 0xe69400e0, 8,
-+	  { SDHI1_3, SDHI1_2, SDHI1_1, SDHI1_0,
-+	    0, USBHSDMAC, 0, AP_ARM_L2CINT } },
-+	{ /* IMR9A / IMCR9A */ 0xe69400a4, 0xe69400e4, 8,
-+	  { CMT1_3, CMT1_2, CMT1_1, CMT1_0,
-+	    CMT2, USBF_IXL_INT, USBF_OUL_SOF, SGX540 } },
-+	{ /* IMR10A / IMCR10A */ 0xe69400a8, 0xe69400e8, 8,
-+	  { 0, DMAC2_2_DADERR, DMAC2_2_DEI5, DMAC2_2_DEI4,
-+	    0, 0, 0, 0 } },
-+	{ /* IMR11A / IMCR11A */ 0xe69400ac, 0xe69400ec, 8,
-+	  { IIC1_DTEI, IIC1_WAITI, IIC1_TACKI, IIC1_ALI,
-+	    ICBS0, 0, 0, 0 } },
-+	{ /* IMR12A / IMCR12A */ 0xe69400b0, 0xe69400f0, 8,
-+	  { 0, 0, TPU0, SCIFA6,
-+	    SCIFA7, GbEther, 0, 0 } },
-+	{ /* IMR13A / IMCR13A */ 0xe69400b4, 0xe69400f4, 8,
-+	  { SDHI2_3, SDHI2_2, SDHI2_1, SDHI2_0,
-+	    0, CMT3, 0, RWDT0 } },
-+	{ /* IMR0A3 / IMCR0A3 */ 0xe6950080, 0xe69500c0, 8,
-+	  { SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM, 0,
-+	    0, 0, 0, 0 } },
-+	  /* IMR1A3 / IMCR1A3 */
-+	{ /* IMR2A3 / IMCR2A3 */ 0xe6950088, 0xe69500c8, 8,
-+	  { 0, 0, USBH_INT, USBH_OHCI,
-+	    USBH_EHCI, USBH_PME, USBH_BIND, 0 } },
-+	  /* IMR3A3 / IMCR3A3 */
-+	{ /* IMR4A3 / IMCR4A3 */ 0xe6950090, 0xe69500d0, 8,
-+	  { 0, 0, 0, 0,
-+	    RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF, 0 } },
-+	{ /* IMR5A3 / IMCR5A3 */ 0xe6950094, 0xe69500d4, 8,
-+	  { SPU2_0, SPU2_1, FSI, FMSI,
-+	    0, 0, 0, 0 } },
-+	{ /* IMR6A3 / IMCR6A3 */ 0xe6950098, 0xe69500d8, 8,
-+	  { 0, IPMMU, 0, 0,
-+	    AP_ARM_CTIIRQ, AP_ARM_PMURQ, 0, 0 } },
-+	{ /* IMR7A3 / IMCR7A3 */ 0xe695009c, 0xe69500dc, 8,
-+	  { MFIS2, CPORTR2S, CMT14, CMT15,
-+	    0, MMCIF_0, MMCIF_1, MMCIF_2 } },
-+	  /* IMR8A3 / IMCR8A3 */
-+	{ /* IMR9A3 / IMCR9A3 */ 0xe69500a4, 0xe69500e4, 8,
-+	  { SIM_ERI, SIM_RXI, SIM_TXI, SIM_TEI,
-+	    STPRO_0, STPRO_1, STPRO_2, STPRO_3 } },
-+	{ /* IMR10A3 / IMCR10A3 */ 0xe69500a8, 0xe69500e8, 8,
-+	  { STPRO_4, 0, 0, 0,
-+	    0, 0, 0, 0 } },
-+};
-+
-+static struct intc_prio_reg intca_prio_registers[] __initdata = {
-+	{ 0xe6940000, 0, 16, 4, /* IPRAA */ { DMAC3_1, DMAC3_2, CMT2, ICBS0 } },
-+	{ 0xe6940004, 0, 16, 4, /* IPRBA */ { IRDA, 0, BBIF1, BBIF2 } },
-+	{ 0xe6940008, 0, 16, 4, /* IPRCA */ { ATAPI, 0, CMT1_1, AP_ARM1 } },
-+	{ 0xe694000c, 0, 16, 4, /* IPRDA */ { 0, 0, CMT1_2, 0 } },
-+	{ 0xe6940010, 0, 16, 4, /* IPREA */ { DMAC1_1, MFIS, MFI, USBF } },
-+	{ 0xe6940014, 0, 16, 4, /* IPRFA */ { KEYSC, DMAC1_2,
-+					      SGX540, CMT1_0 } },
-+	{ 0xe6940018, 0, 16, 4, /* IPRGA */ { SCIFA0, SCIFA1,
-+					      SCIFA2, SCIFA3 } },
-+	{ 0xe694001c, 0, 16, 4, /* IPRGH */ { MSIOF2, USBHSDMAC,
-+					      FLCTL, SDHI0 } },
-+	{ 0xe6940020, 0, 16, 4, /* IPRIA */ { MSIOF1, SCIFA4, 0, IIC1 } },
-+	{ 0xe6940024, 0, 16, 4, /* IPRJA */ { DMAC2_1, DMAC2_2,
-+					      AP_ARM_L2CINT, 0 } },
-+	{ 0xe6940028, 0, 16, 4, /* IPRKA */ { 0, CMT1_3, 0, SDHI1 } },
-+	{ 0xe694002c, 0, 16, 4, /* IPRLA */ { TPU0, SCIFA6,
-+					      SCIFA7, GbEther } },
-+	{ 0xe6940030, 0, 16, 4, /* IPRMA */ { 0, CMT3, 0, RWDT0 } },
-+	{ 0xe6940034, 0, 16, 4, /* IPRNA */ { SCIFB, SCIFA5, 0, DDM } },
-+	{ 0xe6940038, 0, 16, 4, /* IPROA */ { 0, 0, DIRC, SDHI2 } },
-+	{ 0xe6950000, 0, 16, 4, /* IPRAA3 */ { SHWYSTAT, 0, 0, 0 } },
-+				/* IPRBA3 */
-+				/* IPRCA3 */
-+				/* IPRDA3 */
-+	{ 0xe6950010, 0, 16, 4, /* IPREA3 */ { USBH1, 0, 0, 0 } },
-+	{ 0xe6950014, 0, 16, 4, /* IPRFA3 */ { USBH2, 0, 0, 0 } },
-+				/* IPRGA3 */
-+				/* IPRHA3 */
-+				/* IPRIA3 */
-+	{ 0xe6950024, 0, 16, 4, /* IPRJA3 */ { RSPI, 0, 0, 0 } },
-+	{ 0xe6950028, 0, 16, 4, /* IPRKA3 */ { SPU2, 0, FSI, FMSI } },
-+				/* IPRLA3 */
-+	{ 0xe6950030, 0, 16, 4, /* IPRMA3 */ { IPMMU, 0, 0, 0 } },
-+	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
-+	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
-+					       CMT14, CMT15 } },
-+	{ 0xe695003c, 0, 16, 4, /* IPRPA3 */ { 0, MMCIF_0, MMCIF_1, MMCIF_2 } },
-+				/* IPRQA3 */
-+				/* IPRRA3 */
-+	{ 0xe6950048, 0, 16, 4, /* IPRSA3 */ { SIM_ERI, SIM_RXI,
-+					       SIM_TXI, SIM_TEI } },
-+	{ 0xe695004c, 0, 16, 4, /* IPRTA3 */ { STPRO_0, STPRO_1,
-+					       STPRO_2, STPRO_3 } },
-+	{ 0xe6950050, 0, 16, 4, /* IPRUA3 */ { STPRO_4, 0, 0, 0 } },
-+};
-+
-+static DECLARE_INTC_DESC(intca_desc, "r8a7740-intca",
-+			 intca_vectors, intca_groups,
-+			 intca_mask_registers, intca_prio_registers,
-+			 NULL);
-+
-+INTC_IRQ_PINS_32(intca_irq_pins, 0xe6900000,
-+		 INTC_VECT, "r8a7740-intca-irq-pins");
-+
-+
-+/*
-+ *		INTCS
-+ */
-+enum {
-+	UNUSED_INTCS = 0,
-+
-+	INTCS,
-+
-+	/* interrupt sources INTCS */
-+
-+	/* HUDI */
-+	/* STPRO */
-+	/* RTDMAC(1) */
-+	VPU5HA2,
-+	_2DG_TRAP, _2DG_GPM_INT, _2DG_CER_INT,
-+	/* MFI */
-+	/* BBIF2 */
-+	VPU5F,
-+	_2DG_BRK_INT,
-+	/* SGX540 */
-+	/* 2DDMAC */
-+	/* IPMMU */
-+	/* RTDMAC 2 */
-+	/* KEYSC */
-+	/* MSIOF */
-+	IIC0_ALI, IIC0_TACKI, IIC0_WAITI, IIC0_DTEI,
-+	TMU0_0, TMU0_1, TMU0_2,
-+	CMT0,
-+	/* CMT2 */
-+	LMB,
-+	CTI,
-+	VOU,
-+	/* RWDT0 */
-+	ICB,
-+	VIO6C,
-+	CEU20, CEU21,
-+	JPU,
-+	LCDC0,
-+	LCRC,
-+	/* RTDMAC2(1) */
-+	/* RTDMAC2(2) */
-+	LCDC1,
-+	/* SPU2 */
-+	/* FSI */
-+	/* FMSI */
-+	TMU1_0, TMU1_1, TMU1_2,
-+	CMT4,
-+	DISP,
-+	DSRV,
-+	/* MFIS2 */
-+	CPORTS2R,
-+
-+	/* interrupt groups INTCS */
-+	_2DG1,
-+	IIC0, TMU1,
-+};
-+
-+static struct intc_vect intcs_vectors[] = {
-+	/* HUDI */
-+	/* STPRO */
-+	/* RTDMAC(1) */
-+	INTCS_VECT(VPU5HA2,		0x0880),
-+	INTCS_VECT(_2DG_TRAP,		0x08A0),
-+	INTCS_VECT(_2DG_GPM_INT,	0x08C0),
-+	INTCS_VECT(_2DG_CER_INT,	0x08E0),
-+	/* MFI */
-+	/* BBIF2 */
-+	INTCS_VECT(VPU5F,		0x0980),
-+	INTCS_VECT(_2DG_BRK_INT,	0x09A0),
-+	/* SGX540 */
-+	/* 2DDMAC */
-+	/* IPMMU */
-+	/* RTDMAC(2) */
-+	/* KEYSC */
-+	/* MSIOF */
-+	INTCS_VECT(IIC0_ALI,		0x0E00),
-+	INTCS_VECT(IIC0_TACKI,		0x0E20),
-+	INTCS_VECT(IIC0_WAITI,		0x0E40),
-+	INTCS_VECT(IIC0_DTEI,		0x0E60),
-+	INTCS_VECT(TMU0_0,		0x0E80),
-+	INTCS_VECT(TMU0_1,		0x0EA0),
-+	INTCS_VECT(TMU0_2,		0x0EC0),
-+	INTCS_VECT(CMT0,		0x0F00),
-+	/* CMT2 */
-+	INTCS_VECT(LMB,			0x0F60),
-+	INTCS_VECT(CTI,			0x0400),
-+	INTCS_VECT(VOU,			0x0420),
-+	/* RWDT0 */
-+	INTCS_VECT(ICB,			0x0480),
-+	INTCS_VECT(VIO6C,		0x04E0),
-+	INTCS_VECT(CEU20,		0x0500),
-+	INTCS_VECT(CEU21,		0x0520),
-+	INTCS_VECT(JPU,			0x0560),
-+	INTCS_VECT(LCDC0,		0x0580),
-+	INTCS_VECT(LCRC,		0x05A0),
-+	/* RTDMAC2(1) */
-+	/* RTDMAC2(2) */
-+	INTCS_VECT(LCDC1,		0x1780),
-+	/* SPU2 */
-+	/* FSI */
-+	/* FMSI */
-+	INTCS_VECT(TMU1_0,		0x1900),
-+	INTCS_VECT(TMU1_1,		0x1920),
-+	INTCS_VECT(TMU1_2,		0x1940),
-+	INTCS_VECT(CMT4,		0x1980),
-+	INTCS_VECT(DISP,		0x19A0),
-+	INTCS_VECT(DSRV,		0x19C0),
-+	/* MFIS2 */
-+	INTCS_VECT(CPORTS2R,		0x1A20),
-+
-+	INTC_VECT(INTCS,		0xf80),
-+};
- 
--static int r8a7740_set_wake(struct irq_data *data, unsigned int on)
-+static struct intc_group intcs_groups[] __initdata = {
-+	INTC_GROUP(_2DG1, /*FIXME*/
-+		   _2DG_CER_INT, _2DG_GPM_INT, _2DG_TRAP),
-+	INTC_GROUP(IIC0,
-+		   IIC0_DTEI, IIC0_WAITI, IIC0_TACKI, IIC0_ALI),
-+	INTC_GROUP(TMU1,
-+		   TMU1_0, TMU1_1, TMU1_2),
-+};
-+
-+static struct intc_mask_reg intcs_mask_registers[] = {
-+	  /* IMR0SA / IMCR0SA */ /* all 0 */
-+	{ /* IMR1SA / IMCR1SA */ 0xffd20184, 0xffd201c4, 8,
-+	  { _2DG_CER_INT, _2DG_GPM_INT, _2DG_TRAP, VPU5HA2,
-+	    0, 0, 0, 0 /*STPRO*/ } },
-+	{ /* IMR2SA / IMCR2SA */ 0xffd20188, 0xffd201c8, 8,
-+	  { 0/*STPRO*/, 0, CEU21, VPU5F,
-+	    0/*BBIF2*/, 0, 0, 0/*MFI*/ } },
-+	{ /* IMR3SA / IMCR3SA */ 0xffd2018c, 0xffd201cc, 8,
-+	  { 0, 0, 0, 0, /*2DDMAC*/
-+	    VIO6C, 0, 0, ICB } },
-+	{ /* IMR4SA / IMCR4SA */ 0xffd20190, 0xffd201d0, 8,
-+	  { 0, 0, VOU, CTI,
-+	    JPU, 0, LCRC, LCDC0 } },
-+	  /* IMR5SA / IMCR5SA */ /*KEYSC/RTDMAC2/RTDMAC1*/
-+	  /* IMR6SA / IMCR6SA */ /*MSIOF/SGX540*/
-+	{ /* IMR7SA / IMCR7SA */ 0xffd2019c, 0xffd201dc, 8,
-+	  { 0, TMU0_2, TMU0_1, TMU0_0,
-+	    0, 0, 0, 0 } },
-+	{ /* IMR8SA / IMCR8SA */ 0xffd201a0, 0xffd201e0, 8,
-+	  { 0, 0, 0, 0,
-+	    CEU20, 0, 0, 0 } },
-+	{ /* IMR9SA / IMCR9SA */ 0xffd201a4, 0xffd201e4, 8,
-+	  { 0, 0/*RWDT0*/, 0/*CMT2*/, CMT0,
-+	    0, 0, 0, 0 } },
-+	  /* IMR10SA / IMCR10SA */ /*IPMMU*/
-+	{ /* IMR11SA / IMCR11SA */ 0xffd201ac, 0xffd201ec, 8,
-+	  { IIC0_DTEI, IIC0_WAITI, IIC0_TACKI, IIC0_ALI,
-+	    0, _2DG_BRK_INT, LMB, 0 } },
-+	  /* IMR12SA / IMCR12SA */
-+	  /* IMR13SA / IMCR13SA */
-+	  /* IMR0SA3 / IMCR0SA3 */ /*RTDMAC2(1)/RTDMAC2(2)*/
-+	  /* IMR1SA3 / IMCR1SA3 */
-+	  /* IMR2SA3 / IMCR2SA3 */
-+	  /* IMR3SA3 / IMCR3SA3 */
-+	{ /* IMR4SA3 / IMCR4SA3 */ 0xffd50190, 0xffd501d0, 8,
-+	  { 0, 0, 0, 0,
-+	    LCDC1, 0, 0, 0 } },
-+	  /* IMR5SA3 / IMCR5SA3 */ /* SPU2/FSI/FMSI */
-+	{ /* IMR6SA3 / IMCR6SA3 */ 0xffd50198, 0xffd501d8, 8,
-+	  { TMU1_0, TMU1_1, TMU1_2, 0,
-+	    CMT4, DISP, DSRV, 0 } },
-+	{ /* IMR7SA3 / IMCR7SA3 */ 0xffd5019c, 0xffd501dc, 8,
-+	  { 0/*MFIS2*/, CPORTS2R, 0, 0,
-+	    0, 0, 0, 0 } },
-+	{ /* INTAMASK */ 0xffd20104, 0, 16,
-+	  { 0, 0, 0, 0, 0, 0, 0, 0,
-+	    0, 0, 0, 0, 0, 0, 0, INTCS } },
-+};
-+
-+/* Priority is needed for INTCA to receive the INTCS interrupt */
-+static struct intc_prio_reg intcs_prio_registers[] = {
-+	{ 0xffd20000, 0, 16, 4, /* IPRAS */ { CTI, VOU, 0/*2DDMAC*/, ICB } },
-+	{ 0xffd20004, 0, 16, 4, /* IPRBS */ { JPU, LCDC0, 0, LCRC } },
-+				/* IPRCS */ /*BBIF2*/
-+				/* IPRDS */
-+	{ 0xffd20010, 0, 16, 4, /* IPRES */ { 0/*RTDMAC(1)*/, VPU5HA2,
-+					      0/*MFI*/, VPU5F } },
-+	{ 0xffd20014, 0, 16, 4, /* IPRFS */ { 0/*KEYSC*/, 0/*RTDMAC(2)*/,
-+					      0/*CMT2*/, CMT0 } },
-+	{ 0xffd20018, 0, 16, 4, /* IPRGS */ { TMU0_0, TMU0_1,
-+					      TMU0_2, _2DG1 } },
-+	{ 0xffd2001c, 0, 16, 4, /* IPRHS */ { 0, 0/*STPRO*/, 0/*STPRO*/,
-+					      _2DG_BRK_INT/*FIXME*/ } },
-+	{ 0xffd20020, 0, 16, 4, /* IPRIS */ { 0, 0/*MSIOF*/, 0, IIC0 } },
-+	{ 0xffd20024, 0, 16, 4, /* IPRJS */ { CEU20, 0/*SGX540*/, 0, 0 } },
-+	{ 0xffd20028, 0, 16, 4, /* IPRKS */ { VIO6C, 0, LMB, 0 } },
-+	{ 0xffd2002c, 0, 16, 4, /* IPRLS */ { 0/*IPMMU*/, 0, CEU21, 0 } },
-+				/* IPRMS */ /*RWDT0*/
-+				/* IPRAS3 */ /*RTDMAC2(1)*/
-+				/* IPRBS3 */ /*RTDMAC2(2)*/
-+				/* IPRCS3 */
-+				/* IPRDS3 */
-+				/* IPRES3 */
-+				/* IPRFS3 */
-+				/* IPRGS3 */
-+				/* IPRHS3 */
-+				/* IPRIS3 */
-+	{ 0xffd50024, 0, 16, 4, /* IPRJS3 */ { LCDC1, 0, 0, 0 } },
-+				/* IPRKS3 */ /*SPU2/FSI/FMSi*/
-+				/* IPRLS3 */
-+	{ 0xffd50030, 0, 16, 4, /* IPRMS3 */ { TMU1, 0, 0, 0 } },
-+	{ 0xffd50034, 0, 16, 4, /* IPRNS3 */ { CMT4, DISP, DSRV, 0 } },
-+	{ 0xffd50038, 0, 16, 4, /* IPROS3 */ { 0/*MFIS2*/, CPORTS2R, 0, 0 } },
-+				/* IPRPS3 */
-+};
-+
-+static struct resource intcs_resources[] __initdata = {
-+	[0] = {
-+		.start	= 0xffd20000,
-+		.end	= 0xffd201ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 0xffd50000,
-+		.end	= 0xffd501ff,
-+		.flags	= IORESOURCE_MEM,
-+	}
-+};
-+
-+static struct intc_desc intcs_desc __initdata = {
-+	.name = "r8a7740-intcs",
-+	.resource = intcs_resources,
-+	.num_resources = ARRAY_SIZE(intcs_resources),
-+	.hw = INTC_HW_DESC(intcs_vectors, intcs_groups, intcs_mask_registers,
-+			   intcs_prio_registers, NULL, NULL),
-+};
-+
-+static void intcs_demux(unsigned int irq, struct irq_desc *desc)
- {
--	return 0; /* always allow wakeup */
-+	void __iomem *reg = (void *)irq_get_handler_data(irq);
-+	unsigned int evtcodeas = ioread32(reg);
-+
-+	generic_handle_irq(intcs_evt2irq(evtcodeas));
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -561,6 +561,46 @@ static bool genpd_dev_active_wakeup(stru
+ 	return GENPD_DEV_CALLBACK(genpd, bool, active_wakeup, dev);
  }
  
- void __init r8a7740_init_irq(void)
- {
--	void __iomem *gic_dist_base = __io(0xf0001000);
--	void __iomem *gic_cpu_base = __io(0xf0000000);
-+	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
++static int genpd_suspend_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, suspend, dev);
++}
++
++static int genpd_suspend_late(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, suspend_late, dev);
++}
++
++static int genpd_resume_early(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, resume_early, dev);
++}
++
++static int genpd_resume_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, resume, dev);
++}
++
++static int genpd_freeze_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, freeze, dev);
++}
++
++static int genpd_freeze_late(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, freeze_late, dev);
++}
++
++static int genpd_thaw_early(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, thaw_early, dev);
++}
++
++static int genpd_thaw_dev(struct generic_pm_domain *genpd, struct device *dev)
++{
++	return GENPD_DEV_CALLBACK(genpd, int, thaw, dev);
++}
++
+ /**
+  * pm_genpd_sync_poweroff - Synchronously power off a PM domain and its masters.
+  * @genpd: PM domain to power off, if possible.
+@@ -712,7 +752,7 @@ static int pm_genpd_suspend(struct devic
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
  
+-	return genpd->suspend_power_off ? 0 : pm_generic_suspend(dev);
++	return genpd->suspend_power_off ? 0 : genpd_suspend_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -737,7 +777,7 @@ static int pm_genpd_suspend_noirq(struct
+ 	if (genpd->suspend_power_off)
+ 		return 0;
+ 
+-	ret = pm_generic_suspend_noirq(dev);
++	ret = genpd_suspend_late(genpd, dev);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -788,7 +828,7 @@ static int pm_genpd_resume_noirq(struct
+ 	genpd->suspended_count--;
+ 	genpd_start_dev(genpd, dev);
+ 
+-	return pm_generic_resume_noirq(dev);
++	return genpd_resume_early(genpd, dev);
+ }
+ 
+ /**
+@@ -809,7 +849,7 @@ static int pm_genpd_resume(struct device
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : pm_generic_resume(dev);
++	return genpd->suspend_power_off ? 0 : genpd_resume_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -830,7 +870,7 @@ static int pm_genpd_freeze(struct device
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : pm_generic_freeze(dev);
++	return genpd->suspend_power_off ? 0 : genpd_freeze_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -856,7 +896,7 @@ static int pm_genpd_freeze_noirq(struct
+ 	if (genpd->suspend_power_off)
+ 		return 0;
+ 
+-	ret = pm_generic_freeze_noirq(dev);
++	ret = genpd_freeze_late(genpd, dev);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -889,7 +929,7 @@ static int pm_genpd_thaw_noirq(struct de
+ 
+ 	genpd_start_dev(genpd, dev);
+ 
+-	return pm_generic_thaw_noirq(dev);
++	return genpd_thaw_early(genpd, dev);
+ }
+ 
+ /**
+@@ -910,70 +950,7 @@ static int pm_genpd_thaw(struct device *
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : pm_generic_thaw(dev);
+-}
+-
+-/**
+- * pm_genpd_dev_poweroff - Power off a device belonging to an I/O PM domain.
+- * @dev: Device to suspend.
+- *
+- * Power off a device under the assumption that its pm_domain field points to
+- * the domain member of an object of type struct generic_pm_domain representing
+- * a PM domain consisting of I/O devices.
+- */
+-static int pm_genpd_dev_poweroff(struct device *dev)
+-{
+-	struct generic_pm_domain *genpd;
+-
+-	dev_dbg(dev, "%s()\n", __func__);
+-
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	return genpd->suspend_power_off ? 0 : pm_generic_poweroff(dev);
+-}
+-
+-/**
+- * pm_genpd_dev_poweroff_noirq - Late power off of a device from a PM domain.
+- * @dev: Device to suspend.
+- *
+- * Carry out a late powering off of a device under the assumption that its
+- * pm_domain field points to the domain member of an object of type
+- * struct generic_pm_domain representing a PM domain consisting of I/O devices.
+- */
+-static int pm_genpd_dev_poweroff_noirq(struct device *dev)
+-{
+-	struct generic_pm_domain *genpd;
+-	int ret;
+-
+-	dev_dbg(dev, "%s()\n", __func__);
+-
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	if (genpd->suspend_power_off)
+-		return 0;
+-
+-	ret = pm_generic_poweroff_noirq(dev);
+-	if (ret)
+-		return ret;
+-
+-	if (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev))
+-		return 0;
+-
+-	genpd_stop_dev(genpd, dev);
+-
 -	/*
--	 * Change INT_SEL INTCA->GIC
--	 * (on GPIO)
+-	 * Since all of the "noirq" callbacks are executed sequentially, it is
+-	 * guaranteed that this function will never run twice in parallel for
+-	 * the same PM domain, so it is not necessary to use locking here.
 -	 */
--	__raw_writel(__raw_readl(INTA_CTRL) & ~(1 << 1), INTA_CTRL);
-+	register_intc_controller(&intca_desc);
-+	register_intc_controller(&intca_irq_pins_desc);
-+	register_intc_controller(&intcs_desc);
- 
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--	gic_arch_extn.irq_set_wake = r8a7740_set_wake;
-+	/* demux using INTEVTSA */
-+	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
-+	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
+-	genpd->suspended_count++;
+-	pm_genpd_sync_poweroff(genpd);
+-
+-	return 0;
++	return genpd->suspend_power_off ? 0 : genpd_thaw_dev(genpd, dev);
  }
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index e16860f..986dca6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -35,7 +35,7 @@ static struct plat_sci_port scif0_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(100)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c00)),
- };
  
- static struct platform_device scif0_device = {
-@@ -53,7 +53,7 @@ static struct plat_sci_port scif1_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(101)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c20)),
- };
+ /**
+@@ -1015,28 +992,7 @@ static int pm_genpd_restore_noirq(struct
+ 	genpd->suspended_count--;
+ 	genpd_start_dev(genpd, dev);
  
- static struct platform_device scif1_device = {
-@@ -71,7 +71,7 @@ static struct plat_sci_port scif2_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(102)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c40)),
- };
+-	return pm_generic_restore_noirq(dev);
+-}
+-
+-/**
+- * pm_genpd_restore - Restore a device belonging to an I/O power domain.
+- * @dev: Device to resume.
+- *
+- * Restore a device under the assumption that its pm_domain field points to the
+- * domain member of an object of type struct generic_pm_domain representing
+- * a power domain consisting of I/O devices.
+- */
+-static int pm_genpd_restore(struct device *dev)
+-{
+-	struct generic_pm_domain *genpd;
+-
+-	dev_dbg(dev, "%s()\n", __func__);
+-
+-	genpd = dev_to_genpd(dev);
+-	if (IS_ERR(genpd))
+-		return -EINVAL;
+-
+-	return genpd->suspend_power_off ? 0 : pm_generic_restore(dev);
++	return genpd_resume_early(genpd, dev);
+ }
  
- static struct platform_device scif2_device = {
-@@ -89,7 +89,7 @@ static struct plat_sci_port scif3_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(103)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c60)),
- };
+ /**
+@@ -1086,10 +1042,7 @@ static void pm_genpd_complete(struct dev
+ #define pm_genpd_freeze_noirq		NULL
+ #define pm_genpd_thaw_noirq		NULL
+ #define pm_genpd_thaw			NULL
+-#define pm_genpd_dev_poweroff_noirq	NULL
+-#define pm_genpd_dev_poweroff		NULL
+ #define pm_genpd_restore_noirq		NULL
+-#define pm_genpd_restore		NULL
+ #define pm_genpd_complete		NULL
  
- static struct platform_device scif3_device = {
-@@ -107,7 +107,7 @@ static struct plat_sci_port scif4_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(104)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0d20)),
- };
+ #endif /* CONFIG_PM_SLEEP */
+@@ -1361,6 +1314,8 @@ int pm_genpd_remove_callbacks(struct dev
+ }
+ EXPORT_SYMBOL_GPL(pm_genpd_remove_callbacks);
  
- static struct platform_device scif4_device = {
-@@ -125,7 +125,7 @@ static struct plat_sci_port scif5_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(105)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0d40)),
- };
++/* Default device callbacks for generic PM domains. */
++
+ /**
+  * pm_genpd_default_save_state - Default "save device state" for PM domians.
+  * @dev: Device to handle.
+@@ -1400,6 +1355,94 @@ static int pm_genpd_default_restore_stat
+ }
  
- static struct platform_device scif5_device = {
-@@ -143,7 +143,7 @@ static struct plat_sci_port scif6_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(106)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x04c0)),
- };
- 
- static struct platform_device scif6_device = {
-@@ -161,7 +161,7 @@ static struct plat_sci_port scif7_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(107)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x04e0)),
- };
- 
- static struct platform_device scif7_device = {
-@@ -179,7 +179,7 @@ static struct plat_sci_port scifb_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE,
- 	.scbrr_algo_id	= SCBRR_ALGO_4,
- 	.type		= PORT_SCIFB,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(108)),
-+	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0d60)),
- };
- 
- static struct platform_device scifb_device = {
-@@ -207,7 +207,7 @@ static struct resource cmt10_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(58),
-+		.start	= evt2irq(0x0b00),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -244,8 +244,8 @@ static struct resource i2c0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(201),
--		.end	= gic_spi(204),
-+		.start	= intcs_evt2irq(0xe00),
-+		.end	= intcs_evt2irq(0xe60),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -258,8 +258,8 @@ static struct resource i2c1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(70),
--		.end	= gic_spi(73),
-+		.start  = evt2irq(0x780), /* IIC1_ALI1 */
-+		.end    = evt2irq(0x7e0), /* IIC1_DTEI1 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
--- 
-1.7.5.4
+ /**
++ * pm_genpd_default_suspend - Default "device suspend" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_suspend(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze;
++
++	return cb ? cb(dev) : pm_generic_suspend(dev);
++}
++
++/**
++ * pm_genpd_default_suspend_late - Default "late device suspend" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_suspend_late(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze_late;
++
++	return cb ? cb(dev) : pm_generic_suspend_noirq(dev);
++}
++
++/**
++ * pm_genpd_default_resume_early - Default "early device resume" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_resume_early(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw_early;
++
++	return cb ? cb(dev) : pm_generic_resume_noirq(dev);
++}
++
++/**
++ * pm_genpd_default_resume - Default "device resume" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_resume(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw;
++
++	return cb ? cb(dev) : pm_generic_resume(dev);
++}
++
++/**
++ * pm_genpd_default_freeze - Default "device freeze" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_freeze(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze;
++
++	return cb ? cb(dev) : pm_generic_freeze(dev);
++}
++
++/**
++ * pm_genpd_default_freeze_late - Default "late device freeze" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_freeze_late(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.freeze_late;
++
++	return cb ? cb(dev) : pm_generic_freeze_noirq(dev);
++}
++
++/**
++ * pm_genpd_default_thaw_early - Default "early device thaw" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_thaw_early(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw_early;
++
++	return cb ? cb(dev) : pm_generic_thaw_noirq(dev);
++}
++
++/**
++ * pm_genpd_default_thaw - Default "device thaw" for PM domians.
++ * @dev: Device to handle.
++ */
++static int pm_genpd_default_thaw(struct device *dev)
++{
++	int (*cb)(struct device *__dev) = dev_gpd_data(dev)->ops.thaw;
++
++	return cb ? cb(dev) : pm_generic_thaw(dev);
++}
++
++/**
+  * pm_genpd_init - Initialize a generic I/O PM domain object.
+  * @genpd: PM domain object to initialize.
+  * @gov: PM domain governor to associate with the domain (may be NULL).
+@@ -1437,13 +1480,21 @@ void pm_genpd_init(struct generic_pm_dom
+ 	genpd->domain.ops.freeze_noirq = pm_genpd_freeze_noirq;
+ 	genpd->domain.ops.thaw_noirq = pm_genpd_thaw_noirq;
+ 	genpd->domain.ops.thaw = pm_genpd_thaw;
+-	genpd->domain.ops.poweroff = pm_genpd_dev_poweroff;
+-	genpd->domain.ops.poweroff_noirq = pm_genpd_dev_poweroff_noirq;
++	genpd->domain.ops.poweroff = pm_genpd_suspend;
++	genpd->domain.ops.poweroff_noirq = pm_genpd_suspend_noirq;
+ 	genpd->domain.ops.restore_noirq = pm_genpd_restore_noirq;
+-	genpd->domain.ops.restore = pm_genpd_restore;
++	genpd->domain.ops.restore = pm_genpd_resume;
+ 	genpd->domain.ops.complete = pm_genpd_complete;
+ 	genpd->dev_ops.save_state = pm_genpd_default_save_state;
+ 	genpd->dev_ops.restore_state = pm_genpd_default_restore_state;
++	genpd->dev_ops.freeze = pm_genpd_default_suspend;
++	genpd->dev_ops.freeze_late = pm_genpd_default_suspend_late;
++	genpd->dev_ops.thaw_early = pm_genpd_default_resume_early;
++	genpd->dev_ops.thaw = pm_genpd_default_resume;
++	genpd->dev_ops.freeze = pm_genpd_default_freeze;
++	genpd->dev_ops.freeze_late = pm_genpd_default_freeze_late;
++	genpd->dev_ops.thaw_early = pm_genpd_default_thaw_early;
++	genpd->dev_ops.thaw = pm_genpd_default_thaw;
+ 	mutex_lock(&gpd_list_lock);
+ 	list_add(&genpd->gpd_list_node, &gpd_list);
+ 	mutex_unlock(&gpd_list_lock);
 
