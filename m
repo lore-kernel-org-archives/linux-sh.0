@@ -1,45 +1,172 @@
-From: Joe Perches <joe@perches.com>
-Date: Thu, 10 Nov 2011 09:41:41 +0000
-Subject: [PATCH 0/5] treewide: __attribute__ neatening
-Message-Id: <cover.1320917551.git.joe@perches.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 27 Nov 2011 20:53:52 +0000
+Subject: [PATCH] PM / Domains: Make it possible to assign names to generic PM domains
+Message-Id: <201111272153.53008.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@google.com>
-Cc: linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Use the more current __<foo> styles for compiler attributes.
-NORET_TYPE is #defined to a null comment, so just remove it.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Joe Perches (5):
-  kernel.h: Neaten panic prototype
-  linkage: Remove unused NORET_AND macro
-  treewide: Remove useless NORET_TYPE macro and uses
-  treewide: Convert uses of ATTRIB_NORETURN to __noreturn
-  linkage: Remove unused ATTRIB_NORET macro
+Add a name member pointer to struct generic_pm_domain and use it in
+diagnostic messages regarding the domain power-off and power-on
+latencies.  Update the ARM shmobile SH7372 code to assign names to
+the PM domains used by it.
 
- arch/avr32/include/asm/system.h        |    2 +-
- arch/avr32/kernel/traps.c              |    2 +-
- arch/ia64/kernel/machine_kexec.c       |    4 ++--
- arch/m68k/amiga/config.c               |    4 ++--
- arch/mips/include/asm/ptrace.h         |    2 +-
- arch/mips/kernel/traps.c               |    2 +-
- arch/mn10300/include/asm/exceptions.h  |    2 +-
- arch/powerpc/kernel/machine_kexec_32.c |    4 ++--
- arch/powerpc/kernel/machine_kexec_64.c |    6 +++---
- arch/s390/include/asm/processor.h      |    2 +-
- arch/s390/kernel/nmi.c                 |    2 +-
- arch/sh/kernel/process_32.c            |    2 +-
- arch/sh/kernel/process_64.c            |    2 +-
- arch/tile/kernel/machine_kexec.c       |    6 +++---
- include/linux/kernel.h                 |   13 +++++++------
- include/linux/linkage.h                |    4 ----
- include/linux/sched.h                  |    2 +-
- kernel/exit.c                          |    6 +++---
- kernel/panic.c                         |    2 +-
- 19 files changed, 33 insertions(+), 36 deletions(-)
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
 
--- 
-1.7.6.405.gc1be0
+Hi,
 
+This patch is on top of linux-pm/linux-next.
+
+Thanks,
+Rafael
+
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    1 +
+ arch/arm/mach-shmobile/pm-sh7372.c           |   17 +++++++++++++----
+ drivers/base/power/domain.c                  |   14 ++++++++++++--
+ include/linux/pm_domain.h                    |    1 +
+ 4 files changed, 27 insertions(+), 6 deletions(-)
+
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -209,8 +209,13 @@ int __pm_genpd_poweron(struct generic_pm
+ 			goto err;
+ 
+ 		elapsed_ns = ktime_to_ns(ktime_sub(ktime_get(), time_start));
+-		if (elapsed_ns > genpd->power_on_latency_ns)
++		if (elapsed_ns > genpd->power_on_latency_ns) {
+ 			genpd->power_on_latency_ns = elapsed_ns;
++			if (genpd->name)
++				pr_warning("%s: Power-on latency exceeded, "
++					"new value %lld ns\n", genpd->name,
++					elapsed_ns);
++		}
+ 	}
+ 
+ 	genpd_set_active(genpd);
+@@ -428,8 +433,13 @@ static int pm_genpd_poweroff(struct gene
+ 		}
+ 
+ 		elapsed_ns = ktime_to_ns(ktime_sub(ktime_get(), time_start));
+-		if (elapsed_ns > genpd->power_off_latency_ns)
++		if (elapsed_ns > genpd->power_off_latency_ns) {
+ 			genpd->power_off_latency_ns = elapsed_ns;
++			if (genpd->name)
++				pr_warning("%s: Power-off latency exceeded, "
++					"new value %lld ns\n", genpd->name,
++					elapsed_ns);
++		}
+ 	}
+ 
+ 	genpd->status = GPD_STATE_POWER_OFF;
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -49,6 +49,7 @@ struct generic_pm_domain {
+ 	struct mutex lock;
+ 	struct dev_power_governor *gov;
+ 	struct work_struct power_off_work;
++	char *name;
+ 	unsigned int in_progress;	/* Number of devices being suspended now */
+ 	atomic_t sd_count;	/* Number of subdomains with power "on" */
+ 	enum gpd_status status;	/* Current state of the domain */
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -101,8 +101,8 @@ static int pd_power_down(struct generic_
+ 	}
+ 
+ 	if (!sh7372_pd->no_debug)
+-		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
+-			 mask, __raw_readl(PSTR));
++		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
++			 sh7372_pd->name, mask, __raw_readl(PSTR));
+ 
+ 	return 0;
+ }
+@@ -133,8 +133,8 @@ static int __pd_power_up(struct sh7372_p
+ 		ret = -EIO;
+ 
+ 	if (!sh7372_pd->no_debug)
+-		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
+-			 mask, __raw_readl(PSTR));
++		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
++			 sh7372_pd->name, mask, __raw_readl(PSTR));
+ 
+  out:
+ 	if (ret = 0 && sh7372_pd->resume && do_resume)
+@@ -207,6 +207,7 @@ void sh7372_init_pm_domain(struct sh7372
+ 	struct dev_power_governor *gov = sh7372_pd->gov;
+ 
+ 	pm_genpd_init(genpd, gov ? : &simple_qos_governor, false);
++	genpd->name = sh7372_pd->name;
+ 	genpd->dev_ops.stop = sh7372_stop_dev;
+ 	genpd->dev_ops.start = sh7372_start_dev;
+ 	genpd->dev_ops.active_wakeup = pd_active_wakeup;
+@@ -233,18 +234,22 @@ void sh7372_pm_add_subdomain(struct sh73
+ }
+ 
+ struct sh7372_pm_domain sh7372_a4lc = {
++	.name = "A4LC",
+ 	.bit_shift = 1,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a4mp = {
++	.name = "A4MP",
+ 	.bit_shift = 2,
+ };
+ 
+ struct sh7372_pm_domain sh7372_d4 = {
++	.name = "D4",
+ 	.bit_shift = 3,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a4r = {
++	.name = "A4R",
+ 	.bit_shift = 5,
+ 	.gov = &sh7372_always_on_gov,
+ 	.suspend = sh7372_a4r_suspend,
+@@ -253,14 +258,17 @@ struct sh7372_pm_domain sh7372_a4r = {
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3rv = {
++	.name = "A3RV",
+ 	.bit_shift = 6,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3ri = {
++	.name = "A3RI",
+ 	.bit_shift = 8,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3sp = {
++	.name = "A3SP",
+ 	.bit_shift = 11,
+ 	.gov = &sh7372_always_on_gov,
+ 	.no_debug = true,
+@@ -275,6 +283,7 @@ static void sh7372_a3sp_init(void)
+ }
+ 
+ struct sh7372_pm_domain sh7372_a3sg = {
++	.name = "A3SG",
+ 	.bit_shift = 13,
+ };
+ 
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -480,6 +480,7 @@ struct platform_device;
+ struct sh7372_pm_domain {
+ 	struct generic_pm_domain genpd;
+ 	struct dev_power_governor *gov;
++	char *name;
+ 	void (*suspend)(void);
+ 	void (*resume)(void);
+ 	unsigned int bit_shift;
