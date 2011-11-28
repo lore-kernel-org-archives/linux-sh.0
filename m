@@ -1,60 +1,156 @@
-From: Peter De Schrijver <pdeschrijver@nvidia.com>
-Date: Thu, 03 Nov 2011 17:00:45 +0000
-Subject: [PATCH 1/3] ARM: ARCH_NR_GPIO: Make ARCH_NR_GPIO a Kconfig variable
-Message-Id: <1320339647-30255-2-git-send-email-pdeschrijver@nvidia.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 28 Nov 2011 21:38:18 +0000
+Subject: [Update][PATCH] PM / Domains: Make it possible to assign names to generic PM domains
+Message-Id: <201111282238.18953.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
-In-Reply-To: <1320339647-30255-1-git-send-email-pdeschrijver@nvidia.com>
+References: <201111272153.53008.rjw@sisk.pl>
+In-Reply-To: <201111272153.53008.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Change ARCH_NR_GPIO into a Kconfig variable as suggested by Russel King. This
-makes ARCH_NR_GPIO single zImage friendly. The default value for tegra is
-defined as well.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Peter De Schrijver <pdeschrijver@nvidia.com>
+Add a name member pointer to struct generic_pm_domain and use it in
+diagnostic messages regarding the domain power-off and power-on
+latencies.  Update the ARM shmobile SH7372 code to assign names to
+the PM domains used by it.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/Kconfig            |    9 +++++++++
- arch/arm/include/asm/gpio.h |    4 ++++
- 2 files changed, 13 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 7e8ffe7..924f685 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1507,6 +1507,15 @@ config LOCAL_TIMERS
- 	  accounting to be spread across the timer interval, preventing a
- 	  "thundering herd" at every timer tick.
+Hi,
+
+This version of the patch avoids adding a new member to
+struct generic_pm_domain.
+
+Thanks,
+Rafael
+
+---
+ arch/arm/mach-shmobile/pm-sh7372.c |   16 ++++++++++++----
+ drivers/base/power/domain.c        |   14 ++++++++++++--
+ include/linux/pm_domain.h          |    1 +
+ 3 files changed, 25 insertions(+), 6 deletions(-)
+
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -209,8 +209,13 @@ int __pm_genpd_poweron(struct generic_pm
+ 			goto err;
  
-+config ARCH_NR_GPIO
-+	int
-+	default 1024 if ARCH_TEGRA
-+	default 0
-+	help
-+	  Maximum number of GPIOs in the system.
-+
-+	  If unsure, leave the default value.
-+
- source kernel/Kconfig.preempt
+ 		elapsed_ns = ktime_to_ns(ktime_sub(ktime_get(), time_start));
+-		if (elapsed_ns > genpd->power_on_latency_ns)
++		if (elapsed_ns > genpd->power_on_latency_ns) {
+ 			genpd->power_on_latency_ns = elapsed_ns;
++			if (genpd->name)
++				pr_warning("%s: Power-on latency exceeded, "
++					"new value %lld ns\n", genpd->name,
++					elapsed_ns);
++		}
+ 	}
  
- config HZ
-diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
-index 11ad0bf..7151753 100644
---- a/arch/arm/include/asm/gpio.h
-+++ b/arch/arm/include/asm/gpio.h
-@@ -1,6 +1,10 @@
- #ifndef _ARCH_ARM_GPIO_H
- #define _ARCH_ARM_GPIO_H
+ 	genpd_set_active(genpd);
+@@ -428,8 +433,13 @@ static int pm_genpd_poweroff(struct gene
+ 		}
  
-+#if CONFIG_ARCH_NR_GPIO > 0
-+#define ARCH_NR_GPIO CONFIG_ARCH_NR_GPIO
-+#endif
-+
- /* not all ARM platforms necessarily support this API ... */
- #include <mach/gpio.h>
+ 		elapsed_ns = ktime_to_ns(ktime_sub(ktime_get(), time_start));
+-		if (elapsed_ns > genpd->power_off_latency_ns)
++		if (elapsed_ns > genpd->power_off_latency_ns) {
+ 			genpd->power_off_latency_ns = elapsed_ns;
++			if (genpd->name)
++				pr_warning("%s: Power-off latency exceeded, "
++					"new value %lld ns\n", genpd->name,
++					elapsed_ns);
++		}
+ 	}
  
--- 
-1.7.7.rc0.72.g4b5ea.dirty
+ 	genpd->status = GPD_STATE_POWER_OFF;
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -49,6 +49,7 @@ struct generic_pm_domain {
+ 	struct mutex lock;
+ 	struct dev_power_governor *gov;
+ 	struct work_struct power_off_work;
++	char *name;
+ 	unsigned int in_progress;	/* Number of devices being suspended now */
+ 	atomic_t sd_count;	/* Number of subdomains with power "on" */
+ 	enum gpd_status status;	/* Current state of the domain */
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -101,8 +101,8 @@ static int pd_power_down(struct generic_
+ 	}
+ 
+ 	if (!sh7372_pd->no_debug)
+-		pr_debug("sh7372 power domain down 0x%08x -> PSTR = 0x%08x\n",
+-			 mask, __raw_readl(PSTR));
++		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
++			 genpd->name, mask, __raw_readl(PSTR));
+ 
+ 	return 0;
+ }
+@@ -133,8 +133,8 @@ static int __pd_power_up(struct sh7372_p
+ 		ret = -EIO;
+ 
+ 	if (!sh7372_pd->no_debug)
+-		pr_debug("sh7372 power domain up 0x%08x -> PSTR = 0x%08x\n",
+-			 mask, __raw_readl(PSTR));
++		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
++			 sh7372_pd->genpd.name, mask, __raw_readl(PSTR));
+ 
+  out:
+ 	if (ret = 0 && sh7372_pd->resume && do_resume)
+@@ -233,18 +233,22 @@ void sh7372_pm_add_subdomain(struct sh73
+ }
+ 
+ struct sh7372_pm_domain sh7372_a4lc = {
++	.genpd.name = "A4LC",
+ 	.bit_shift = 1,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a4mp = {
++	.genpd.name = "A4MP",
+ 	.bit_shift = 2,
+ };
+ 
+ struct sh7372_pm_domain sh7372_d4 = {
++	.genpd.name = "D4",
+ 	.bit_shift = 3,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a4r = {
++	.genpd.name = "A4R",
+ 	.bit_shift = 5,
+ 	.gov = &sh7372_always_on_gov,
+ 	.suspend = sh7372_a4r_suspend,
+@@ -253,14 +257,17 @@ struct sh7372_pm_domain sh7372_a4r = {
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3rv = {
++	.genpd.name = "A3RV",
+ 	.bit_shift = 6,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3ri = {
++	.genpd.name = "A3RI",
+ 	.bit_shift = 8,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3sp = {
++	.genpd.name = "A3SP",
+ 	.bit_shift = 11,
+ 	.gov = &sh7372_always_on_gov,
+ 	.no_debug = true,
+@@ -275,6 +282,7 @@ static void sh7372_a3sp_init(void)
+ }
+ 
+ struct sh7372_pm_domain sh7372_a3sg = {
++	.genpd.name = "A3SG",
+ 	.bit_shift = 13,
+ };
+ 
 
