@@ -1,51 +1,41 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 22 Nov 2011 23:42:11 +0000
-Subject: Re: [PATCH] PM: fix compile breakage on sh #ifndef CONFIG_PM_RUNTIME
-Message-Id: <201111230042.11704.rjw@sisk.pl>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 30 Nov 2011 07:21:53 +0000
+Subject: [PATCH] sh: sh2a: Optimise cache flush for writethrough mode.
+Message-Id: <1322637713-15227-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1111211642200.10414@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1111211642200.10414@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tuesday, November 22, 2011, Guennadi Liakhovetski wrote:
-> On Tue, 22 Nov 2011, Rafael J. Wysocki wrote:
-> 
-> > On Monday, November 21, 2011, Guennadi Liakhovetski wrote:
-> > > Fix the following compalitaion breakage:
-> > > 
-> > > In file included from linux/drivers/sh/pm_runtime.c:15:
-> > > linux/include/linux/pm_domain.h: In function 'dev_to_genpd':
-> > > linux/include/linux/pm_domain.h:142: error: implicit declaration of function 'ERR_PTR'
-> > > linux/include/linux/pm_domain.h:142: warning: return makes pointer from integer without a cast
-> > > In file included from linux/include/linux/sh_clk.h:10,
-> > >                  from linux/drivers/sh/pm_runtime.c:19:
-> > > linux/include/linux/err.h: At top level:
-> > > linux/include/linux/err.h:22: error: conflicting types for 'ERR_PTR'
-> > > linux/include/linux/pm_domain.h:142: note: previous implicit declaration of 'ERR_PTR' was here
-> > > make[3]: *** [drivers/sh/pm_runtime.o] Error 1
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > ---
-> > > diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
-> > > index 765083ad..b931682 100644
-> > > --- a/include/linux/pm_domain.h
-> > > +++ b/include/linux/pm_domain.h
-> > > @@ -10,6 +10,7 @@
-> > >  #define _LINUX_PM_DOMAIN_H
-> > >  
-> > >  #include <linux/device.h>
-> > > +#include <linux/err.h>
-> > >  
-> > >  enum gpd_status {
-> > >  	GPD_STATE_ACTIVE = 0,	/* PM domain is active */
-> > 
-> > That new #include is only necessary if CONFIG_PM_GENERIC_DOMAINS is unset, right?
-> 
-> Yes, I think so.
+When the operand cache is set to writethough mode, there is no
+need to flush data.
 
-Can you respin the patch with that in mind, please?
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/sh/mm/cache-sh2a.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-Rafael
+diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
+index 1f51225..56bb5f2 100644
+--- a/arch/sh/mm/cache-sh2a.c
++++ b/arch/sh/mm/cache-sh2a.c
+@@ -112,6 +112,7 @@ static void sh2a_flush_icache_range(void *args)
+ 
+ 	for (v = start; v < end; v+=L1_CACHE_BYTES) {
+ 		unsigned long addr = (v & 0x000007f0);
++#ifdef CONFIG_CACHE_WRITEBACK
+ 		int way;
+ 		/* O-Cache writeback */
+ 		for (way = 0; way < 4; way++) {
+@@ -121,6 +122,7 @@ static void sh2a_flush_icache_range(void *args)
+ 				__raw_writel(data, CACHE_OC_ADDRESS_ARRAY | addr | (way << 11));
+ 			}
+ 		}
++#endif
+ 		/* I-Cache invalidate */
+ 		__raw_writel(addr,
+ 			  CACHE_IC_ADDRESS_ARRAY | addr | 0x00000008);
+-- 
+1.7.0.4
+
