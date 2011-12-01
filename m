@@ -1,145 +1,56 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 16 Dec 2011 00:12:06 +0000
-Subject: [Update][PATCH 2/5] PM / shmobile: Remove the stay_on flag from SH7372's PM domains
-Message-Id: <201112160112.06951.rjw@sisk.pl>
+From: Chris Ball <cjb@laptop.org>
+Date: Thu, 01 Dec 2011 18:24:20 +0000
+Subject: Re: [PATCH] mmc: sh_mmcif: simplify clock divisor calculation
+Message-Id: <87ehwokv57.fsf@laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112100042.45168.rjw@sisk.pl> <201112160110.09124.rjw@sisk.pl>
-In-Reply-To: <201112160110.09124.rjw@sisk.pl>
+References: <1321473366-31053-1-git-send-email-andreiw@vmware.com>
+	<20111117150549.15528e81.akpm@linux-foundation.org>
+	<Pine.LNX.4.64.1111231551100.5635@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1111231551100.5635@axis700.grange> (Guennadi
+	Liakhovetski's message of "Wed, 23 Nov 2011 15:52:30 +0100 (CET)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Andrei Warkentin <andreiw@vmware.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Hi,
 
-SH7372 uses two independent mechanisms for ensuring that power
-domains will never be turned off: the stay_on flag and the "always
-on" domain governor.  Moreover, the "always on" governor is only taken
-into accout by runtime PM code paths, while the stay_on flag affects
-all attempts to turn the given domain off.  Thus setting the stay_on
-flag causes the "always on" governor to be unnecessary, which is
-quite confusing.
+On Wed, Nov 23 2011, Guennadi Liakhovetski wrote:
+> Replace ilog2(__rounddown_pow_of_two(x)) with the equivalent but much
+> simpler fls(x) - 1.
+>
+> Reported-by: Andrew Morton <akpm@linux-foundation.org>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+>  drivers/mmc/host/sh_mmcif.c |    3 ++-
+>  1 files changed, 2 insertions(+), 1 deletions(-)
+>
+> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> index c021482..824fee5 100644
+> --- a/drivers/mmc/host/sh_mmcif.c
+> +++ b/drivers/mmc/host/sh_mmcif.c
+> @@ -16,6 +16,7 @@
+>   *
+>   */
+>  
+> +#include <linux/bitops.h>
+>  #include <linux/clk.h>
+>  #include <linux/completion.h>
+>  #include <linux/delay.h>
+> @@ -386,7 +387,7 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+>  		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
+>  	else
+>  		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
+> -			(ilog2(__rounddown_pow_of_two(host->clk / clk)) << 16));
+> +				((fls(host->clk / clk) - 1) << 16));
+>  
+>  	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+>  }
 
-However, the stay_on flag is currently only set for the A3SP PM
-domain and only if console_suspend_enabled, so it may be replaced
-by checking console_suspend_enabled directly in the A3SP's
-.suspend() routine.  [This requires domain .suspend() to return
-a result, but that is a minor modification.]
+Thanks, pushed to mmc-next for 3.3.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-Acked-by: Magnus Damm <damm@opensource.se>
----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    3 --
- arch/arm/mach-shmobile/pm-sh7372.c           |   36 ++++++++++++---------------
- 2 files changed, 18 insertions(+), 21 deletions(-)
-
-Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -480,11 +480,10 @@ struct platform_device;
- struct sh7372_pm_domain {
- 	struct generic_pm_domain genpd;
- 	struct dev_power_governor *gov;
--	void (*suspend)(void);
-+	int (*suspend)(void);
- 	void (*resume)(void);
- 	unsigned int bit_shift;
- 	bool no_debug;
--	bool stay_on;
- };
- 
- static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -82,11 +82,12 @@ static int pd_power_down(struct generic_
- 	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
- 	unsigned int mask = 1 << sh7372_pd->bit_shift;
- 
--	if (sh7372_pd->suspend)
--		sh7372_pd->suspend();
-+	if (sh7372_pd->suspend) {
-+		int ret = sh7372_pd->suspend();
- 
--	if (sh7372_pd->stay_on)
--		return 0;
-+		if (ret)
-+			return ret;
-+	}
- 
- 	if (__raw_readl(PSTR) & mask) {
- 		unsigned int retry_count;
-@@ -113,9 +114,6 @@ static int __pd_power_up(struct sh7372_p
- 	unsigned int retry_count;
- 	int ret = 0;
- 
--	if (sh7372_pd->stay_on)
--		goto out;
--
- 	if (__raw_readl(PSTR) & mask)
- 		goto out;
- 
-@@ -148,10 +146,11 @@ static int pd_power_up(struct generic_pm
- 	 return __pd_power_up(to_sh7372_pd(genpd), true);
- }
- 
--static void sh7372_a4r_suspend(void)
-+static int sh7372_a4r_suspend(void)
- {
- 	sh7372_intcs_suspend();
- 	__raw_writel(0x300fffff, WUPRMSK); /* avoid wakeup */
-+	return 0;
- }
- 
- static bool pd_active_wakeup(struct device *dev)
-@@ -243,7 +242,6 @@ struct sh7372_pm_domain sh7372_a4r = {
- 	.gov = &pm_domain_always_on_gov,
- 	.suspend = sh7372_a4r_suspend,
- 	.resume = sh7372_intcs_resume,
--	.stay_on = true,
- };
- 
- struct sh7372_pm_domain sh7372_a3rv = {
-@@ -256,21 +254,23 @@ struct sh7372_pm_domain sh7372_a3ri = {
- 	.bit_shift = 8,
- };
- 
-+static int sh7372_a3sp_suspend(void)
-+{
-+	/*
-+	 * Serial consoles make use of SCIF hardware located in A3SP,
-+	 * keep such power domain on if "no_console_suspend" is set.
-+	 */
-+	return console_suspend_enabled ? -EBUSY : 0;
-+}
-+
- struct sh7372_pm_domain sh7372_a3sp = {
- 	.genpd.name = "A3SP",
- 	.bit_shift = 11,
- 	.gov = &pm_domain_always_on_gov,
- 	.no_debug = true,
-+	.suspend = sh7372_a3sp_suspend,
- };
- 
--static void sh7372_a3sp_init(void)
--{
--	/* serial consoles make use of SCIF hardware located in A3SP,
--	 * keep such power domain on if "no_console_suspend" is set.
--	 */
--	sh7372_a3sp.stay_on = !console_suspend_enabled;
--}
--
- struct sh7372_pm_domain sh7372_a3sg = {
- 	.genpd.name = "A3SG",
- 	.bit_shift = 13,
-@@ -514,8 +514,6 @@ void __init sh7372_pm_init(void)
- 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
- 	__raw_writel(0, PDNSEL);
- 
--	sh7372_a3sp_init();
--
- 	sh7372_suspend_init();
- 	sh7372_cpuidle_init();
- }
-
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
