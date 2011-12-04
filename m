@@ -1,92 +1,74 @@
-From: Dave Martin <dave.martin@linaro.org>
-Date: Thu, 15 Dec 2011 15:14:28 +0000
-Subject: Re: [PATCH v4 REPOST 5/5] imx6q: Remove unconditional dependency on
-Message-Id: <20111215151427.GB2081@linaro.org>
+From: "Michael S. Tsirkin" <mst@redhat.com>
+Date: Sun, 04 Dec 2011 10:48:59 +0000
+Subject: Re: [PATCH-RFC 09/10] sh: switch to GENERIC_PCI_IOMAP
+Message-Id: <20111204104858.GK15464@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
- <1323862781-3465-6-git-send-email-dave.martin@linaro.org>
- <20111214132622.GA1520@S2100-06.ap.freescale.net>
- <20111214140500.GA1700@richard-laptop>
- <20111214150119.GD2568@linaro.org>
- <20111215010219.GP28768@b20223-02.ap.freescale.net>
- <20111215014619.GB3259@S2101-09.ap.freescale.net>
- <20111215015414.GQ28768@b20223-02.ap.freescale.net>
-In-Reply-To: <20111215015414.GQ28768@b20223-02.ap.freescale.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Dec 15, 2011 at 09:54:15AM +0800, Richard Zhao wrote:
-> On Thu, Dec 15, 2011 at 09:46:20AM +0800, Shawn Guo wrote:
-> > On Thu, Dec 15, 2011 at 09:02:20AM +0800, Richard Zhao wrote:
-> > > On Wed, Dec 14, 2011 at 03:01:19PM +0000, Dave Martin wrote:
-> > > > On Wed, Dec 14, 2011 at 10:05:04PM +0800, Richard Zhao wrote:
-> > > > > On Wed, Dec 14, 2011 at 09:26:24PM +0800, Shawn Guo wrote:
-> > > > > > Hi Dave,
-> > > > > > 
-> > > > > > Sorry for that I did not look into previous post to point it out.
-> > > > > > 
-> > > > > > On Wed, Dec 14, 2011 at 11:39:41AM +0000, Dave Martin wrote:
-> > > > > > > The i.MX6 Quad SoC will work without the l2x0 L2 cache controller
-> > > > > > > support built into the kernel, so this patch removes the dependency
-> > > > > > > on CACHE_L2X0 and selects MIGHT_HAVE_CACHE_L2X0 instead.
-> > > > > > > 
-> > > > > > > This makes the l2x0 support optional, so that it can be turned off
-> > > > > > > when desired for debugging purposes etc.
-> > > > > > > 
-> > > > > > > Thanks to Shawn Guo for this suggestion. [1]
-> > > > > > > 
-> > > > > > > Signed-off-by: Dave Martin <dave.martin@linaro.org>
-> > > > > > > 
-> > > > > > > [1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074602.html
-> > > > > > > ---
-> > > > > > >  arch/arm/mach-imx/Kconfig |    2 +-
-> > > > > > >  1 files changed, 1 insertions(+), 1 deletions(-)
-> > > > > > > 
-> > > > > > > diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-> > > > > > > index 29a3d61..1fb93f2 100644
-> > > > > > > --- a/arch/arm/mach-imx/Kconfig
-> > > > > > > +++ b/arch/arm/mach-imx/Kconfig
-> > > > > > > @@ -609,13 +609,13 @@ comment "i.MX6 family:"
-> > > > > > >  config SOC_IMX6Q
-> > > > > > >  	bool "i.MX6 Quad support"
-> > > > > > >  	select ARM_GIC
-> > > > > > > -	select CACHE_L2X0
-> > > > > > >  	select CPU_V7
-> > > > > > >  	select HAVE_ARM_SCU
-> > > > > > >  	select HAVE_IMX_GPC
-> > > > > > >  	select HAVE_IMX_MMDC
-> > > > > > >  	select HAVE_IMX_SRC
-> > > > > > >  	select HAVE_SMP
-> > > > > > > +	select MIGHT_HAVE_CACHE_L2X0
-> > > > > > 
-> > > > > > The option SOC_IMX6Q is only available when ARCH_IMX_V6_V7 is selected.
-> > > > > > Since MIGHT_HAVE_CACHE_L2X0 has been selected by ARCH_IMX_V6_V7 in
-> > > > > > patch #1, this line seems redundant here.
-> > > > > Would it be better keep this one and remove patch #1 one? imx5 doesn't have
-> > > > > l2x0.
-> > > > 
-> > > > Do you mean to remove MIGHT_HAVE_CACHE_L2X0 from ARCH_IMX_V6_V7, and select
-> > > > it only from SOC_IMX6Q?
-> > > Yes, I think it's more precise. Shawn?
-> > > 
-> > No.
-> > 
-> > * imx5 hardware does have L2, and it's just not set up in the kernel
-> >   (I do not know why).
-> > * Currently, ARCH_IMX_V6_V7 only covers imx3 and imx6, and both are
-> >   calling l2x0 init function to set L2 up.
-> > * When we merge mach-mx5 into mach-imx to have ARCH_IMX_V6_V7 cover
-> >   imx3, imx5 and imx6, there is no reason for us to not set L2 up for
-> >   imx5 too.
-> > 
-> > So MIGHT_HAVE_CACHE_L2X0 really should be selected by ARCH_IMX_V6_V7.
-> mx5/cortex-a8 don't use L2X0. But that's ok. MIGHT_HAVE_CACHE_L2X0 is just a hint.
-> Please Shawn's suggestion.
+On Thu, Nov 24, 2011 at 10:20:37PM +0200, Michael S. Tsirkin wrote:
+> sh copied pci_iomap from generic code, probably to avoid
+> pulling the rest of iomap.c in.  Since that's in
+> a separate file now, we can reuse the common implementation.
+> 
+> Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 
-OK, my local series has what I believe to be the correct change;
-I will repost based on that.
+Sorry to nag, any ACKs/NACKs on the sh changes?
+I intend to send this to Linus if there are no
+objections. Thanks!
 
-Cheers
----Dave
+> ---
+>  arch/sh/Kconfig           |    1 +
+>  arch/sh/drivers/pci/pci.c |   23 -----------------------
+>  2 files changed, 1 insertions(+), 23 deletions(-)
+> 
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index 5aeab58..ead1640 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+> @@ -857,6 +857,7 @@ config PCI
+>  	bool "PCI support"
+>  	depends on SYS_SUPPORTS_PCI
+>  	select PCI_DOMAINS
+> +	select GENERIC_PCI_IOMAP
+>  	help
+>  	  Find out whether you have a PCI motherboard. PCI is the name of a
+>  	  bus system, i.e. the way the CPU talks to the other stuff inside
+> diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+> index c2691af..11aaf2f 100644
+> --- a/arch/sh/drivers/pci/pci.c
+> +++ b/arch/sh/drivers/pci/pci.c
+> @@ -393,29 +393,6 @@ static void __iomem *ioport_map_pci(struct pci_dev *dev,
+>  	return (void __iomem *)(chan->io_map_base + port);
+>  }
+>  
+> -void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
+> -{
+> -	resource_size_t start = pci_resource_start(dev, bar);
+> -	resource_size_t len = pci_resource_len(dev, bar);
+> -	unsigned long flags = pci_resource_flags(dev, bar);
+> -
+> -	if (unlikely(!len || !start))
+> -		return NULL;
+> -	if (maxlen && len > maxlen)
+> -		len = maxlen;
+> -
+> -	if (flags & IORESOURCE_IO)
+> -		return ioport_map_pci(dev, start, len);
+> -	if (flags & IORESOURCE_MEM) {
+> -		if (flags & IORESOURCE_CACHEABLE)
+> -			return ioremap(start, len);
+> -		return ioremap_nocache(start, len);
+> -	}
+> -
+> -	return NULL;
+> -}
+> -EXPORT_SYMBOL(pci_iomap);
+> -
+>  void pci_iounmap(struct pci_dev *dev, void __iomem *addr)
+>  {
+>  	iounmap(addr);
+> -- 
+> 1.7.5.53.gc233e
