@@ -1,60 +1,226 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 16 Dec 2011 10:17:47 +0000
-Subject: Re: [PATCH 34/57] fbdev: sh_mobile_lcdc: Store the format in struct sh_mobile_lcdc_chan
-Message-Id: <201112161117.47924.laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Dec 2011 06:32:16 +0000
+Subject: [PATCH 4/4] sh: clock-sh73a0: all div6_clks use SH_CLK_DIV6_EXT()
+Message-Id: <871usj8r6b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323784972-24205-35-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1323784972-24205-35-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+Current div6 clocks can specify their current parent clocks
+from its register value if it is registered
+by sh_clk_div6_reparent_register().
+This patch modifies all div6 clocks into SH_CLK_DIV6_EXT().
 
-On Thursday 15 December 2011 23:29:29 Guennadi Liakhovetski wrote:
-> On Tue, 13 Dec 2011, Laurent Pinchart wrote:
-> > Store the active format in the channel structure, and use it instead of
-> > parsing info->var all over the place when the format is needed.
-> 
-> Right, this is what I was wondering about, while looking at the previous
-> patch:-)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c        |  132 +++++++++++++++++++++-----
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +
+ 2 files changed, 112 insertions(+), 22 deletions(-)
 
-So I'll consider your comment to patch 33/57 to be addressed :-)
-
-> But:
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/video/sh_mobile_lcdcfb.c |   21 ++++++++++-----------
-> >  drivers/video/sh_mobile_lcdcfb.h |    4 +++-
-> >  2 files changed, 13 insertions(+), 12 deletions(-)
-> > 
-> > diff --git a/drivers/video/sh_mobile_lcdcfb.c
-> > b/drivers/video/sh_mobile_lcdcfb.c index c6b6b9d..9829e01 100644
-> > --- a/drivers/video/sh_mobile_lcdcfb.c
-> > +++ b/drivers/video/sh_mobile_lcdcfb.c
-> 
-> [snip]
-> 
-> > @@ -1350,6 +1345,8 @@ static int sh_mobile_set_par(struct fb_info *info)
-> > 
-> >  		info->fix.line_length = info->var.xres
-> >  		
-> >  				      * info->var.bits_per_pixel / 8;
-> > 
-> > +	ch->format > > sh_mobile_format_info(sh_mobile_format_fourcc(&info->var));
-> 
-> Cannot this be NULL? As far as I could trace it back, I'm not sure with
-> hotplug bits_per_pixel would be initialised correctly along the lines of
-> sh_mobile_fb_reconfig().
-
-You're right, sh_mobile_fb_reconfig() doesn't set the bits_per_pixel (and 
-other format-related) field. I'll fix this by initializing those fields from 
-the current var in sh_mobile_fb_reconfig() in patch 30/57, as that's the one 
-that introduces the problem.
-
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 61a846b..8daf21a 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -92,6 +92,24 @@ static struct clk_ops div2_clk_ops = {
+ 	.recalc		= div2_recalc,
+ };
+ 
++static unsigned long div7_recalc(struct clk *clk)
++{
++	return clk->parent->rate / 7;
++}
++
++static struct clk_ops div7_clk_ops = {
++	.recalc		= div7_recalc,
++};
++
++static unsigned long div13_recalc(struct clk *clk)
++{
++	return clk->parent->rate / 13;
++}
++
++static struct clk_ops div13_clk_ops = {
++	.recalc		= div13_recalc,
++};
++
+ /* Divide extal1 by two */
+ static struct clk extal1_div2_clk = {
+ 	.ops		= &div2_clk_ops,
+@@ -113,6 +131,11 @@ static struct clk main_clk = {
+ 	.ops		= &main_clk_ops,
+ };
+ 
++static struct clk main_div2_clk = {
++	.ops		= &div2_clk_ops,
++	.parent		= &main_clk,
++};
++
+ /* PLL0, PLL1, PLL2, PLL3 */
+ static unsigned long pll_recalc(struct clk *clk)
+ {
+@@ -168,12 +191,29 @@ static struct clk pll3_clk = {
+ 	.enable_bit	= 3,
+ };
+ 
+-/* Divide PLL1 by two */
++/* Divide PLL */
+ static struct clk pll1_div2_clk = {
+ 	.ops		= &div2_clk_ops,
+ 	.parent		= &pll1_clk,
+ };
+ 
++static struct clk pll1_div7_clk = {
++	.ops		= &div7_clk_ops,
++	.parent		= &pll1_clk,
++};
++
++static struct clk pll1_div13_clk = {
++	.ops		= &div13_clk_ops,
++	.parent		= &pll1_clk,
++};
++
++/* External input clock */
++struct clk sh73a0_extcki_clk = {
++};
++
++struct clk sh73a0_extalr_clk = {
++};
++
+ static struct clk *main_clks[] = {
+ 	&r_clk,
+ 	&sh73a0_extal1_clk,
+@@ -181,11 +221,16 @@ static struct clk *main_clks[] = {
+ 	&extal1_div2_clk,
+ 	&extal2_div2_clk,
+ 	&main_clk,
++	&main_div2_clk,
+ 	&pll0_clk,
+ 	&pll1_clk,
+ 	&pll2_clk,
+ 	&pll3_clk,
+ 	&pll1_div2_clk,
++	&pll1_div7_clk,
++	&pll1_div13_clk,
++	&sh73a0_extcki_clk,
++	&sh73a0_extalr_clk,
+ };
+ 
+ static void div4_kick(struct clk *clk)
+@@ -239,27 +284,70 @@ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+ 	DIV6_DSIT, DIV6_DSI0P, DIV6_DSI1P,
+ 	DIV6_NR };
+ 
++static struct clk *vck_parent[] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &sh73a0_extcki_clk,
++	[3] = &sh73a0_extal2_clk,
++	[4] = &main_div2_clk,
++	[5] = &sh73a0_extalr_clk,
++	[6] = &main_clk,
++	[7] = NULL,
++};
++
++static struct clk *pll_parent[] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &pll1_div13_clk,
++	[3] = NULL,
++};
++
++static struct clk *hsi_parent[] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &pll1_div7_clk,
++	[3] = NULL,
++};
++
++static struct clk *pll_extal2_parent[] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &sh73a0_extal2_clk,
++	[3] = &sh73a0_extal2_clk,
++};
++
++static struct clk *dsi_parent[] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &main_clk,
++	[3] = &sh73a0_extal2_clk,
++	[4] = &sh73a0_extcki_clk,
++	[5] = NULL,
++	[6] = NULL,
++	[7] = NULL,
++};
++
+ static struct clk div6_clks[DIV6_NR] = {
+-	[DIV6_VCK1] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR1, 0),
+-	[DIV6_VCK2] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR2, 0),
+-	[DIV6_VCK3] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR3, 0),
+-	[DIV6_ZB1] = SH_CLK_DIV6(&pll1_div2_clk, ZBCKCR, 0),
+-	[DIV6_FLCTL] = SH_CLK_DIV6(&pll1_div2_clk, FLCKCR, 0),
+-	[DIV6_SDHI0] = SH_CLK_DIV6(&pll1_div2_clk, SD0CKCR, 0),
+-	[DIV6_SDHI1] = SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
+-	[DIV6_SDHI2] = SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
+-	[DIV6_FSIA] = SH_CLK_DIV6(&pll1_div2_clk, FSIACKCR, 0),
+-	[DIV6_FSIB] = SH_CLK_DIV6(&pll1_div2_clk, FSIBCKCR, 0),
+-	[DIV6_SUB] = SH_CLK_DIV6(&sh73a0_extal2_clk, SUBCKCR, 0),
+-	[DIV6_SPUA] = SH_CLK_DIV6(&pll1_div2_clk, SPUACKCR, 0),
+-	[DIV6_SPUV] = SH_CLK_DIV6(&pll1_div2_clk, SPUVCKCR, 0),
+-	[DIV6_MSU] = SH_CLK_DIV6(&pll1_div2_clk, MSUCKCR, 0),
+-	[DIV6_HSI] = SH_CLK_DIV6(&pll1_div2_clk, HSICKCR, 0),
+-	[DIV6_MFG1] = SH_CLK_DIV6(&pll1_div2_clk, MFCK1CR, 0),
+-	[DIV6_MFG2] = SH_CLK_DIV6(&pll1_div2_clk, MFCK2CR, 0),
+-	[DIV6_DSIT] = SH_CLK_DIV6(&pll1_div2_clk, DSITCKCR, 0),
+-	[DIV6_DSI0P] = SH_CLK_DIV6(&pll1_div2_clk, DSI0PCKCR, 0),
+-	[DIV6_DSI1P] = SH_CLK_DIV6(&pll1_div2_clk, DSI1PCKCR, 0),
++	[DIV6_VCK1]	= SH_CLK_DIV6_EXT(VCLKCR1, vck_parent, 12, 3, 0),
++	[DIV6_VCK2]	= SH_CLK_DIV6_EXT(VCLKCR2, vck_parent, 12, 3, 0),
++	[DIV6_VCK3]	= SH_CLK_DIV6_EXT(VCLKCR3, vck_parent, 12, 3, 0),
++	[DIV6_ZB1]	= SH_CLK_DIV6_EXT(ZBCKCR,  pll_parent, 7, 1, 0),
++	[DIV6_FLCTL]	= SH_CLK_DIV6_EXT(FLCKCR,  pll_parent, 7, 1, 0),
++	[DIV6_SDHI0]	= SH_CLK_DIV6_EXT(SD0CKCR, pll_parent, 6, 2, 0),
++	[DIV6_SDHI1]	= SH_CLK_DIV6_EXT(SD1CKCR, pll_parent, 6, 2, 0),
++	[DIV6_SDHI2]	= SH_CLK_DIV6_EXT(SD2CKCR, pll_parent, 6, 2, 0),
++	[DIV6_FSIA]	= SH_CLK_DIV6_EXT(FSIACKCR, pll_parent, 6, 1, 0),
++	[DIV6_FSIB]	= SH_CLK_DIV6_EXT(FSIBCKCR, pll_parent, 6, 1, 0),
++	[DIV6_SUB]	= SH_CLK_DIV6_EXT(SUBCKCR,  pll_extal2_parent, 6, 2, 0),
++	[DIV6_SPUA]	= SH_CLK_DIV6_EXT(SPUACKCR, pll_extal2_parent, 6, 2, 0),
++	[DIV6_SPUV]	= SH_CLK_DIV6_EXT(SPUVCKCR, pll_extal2_parent, 6, 2, 0),
++	[DIV6_MSU]	= SH_CLK_DIV6_EXT(MSUCKCR, pll_parent, 7, 1, 0),
++	[DIV6_HSI]	= SH_CLK_DIV6_EXT(HSICKCR, hsi_parent, 6, 2, 0),
++	[DIV6_MFG1]	= SH_CLK_DIV6_EXT(MFCK1CR, pll_parent, 7, 1, 0),
++	[DIV6_MFG2]	= SH_CLK_DIV6_EXT(MFCK2CR, pll_parent, 7, 1, 0),
++	[DIV6_DSIT]	= SH_CLK_DIV6_EXT(DSITCKCR, pll_parent, 7, 1, 0),
++	[DIV6_DSI0P]	= SH_CLK_DIV6_EXT(DSI0PCKCR, dsi_parent, 12, 3, 0),
++	[DIV6_DSI1P]	= SH_CLK_DIV6_EXT(DSI1PCKCR, dsi_parent, 12, 3, 0),
+ };
+ 
+ enum { MSTP001,
+@@ -387,7 +475,7 @@ void __init sh73a0_clock_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+ 	if (!ret)
+-		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
++		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 834bd6c..d055d05 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -47,6 +47,8 @@ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
+ extern struct clk sh73a0_extal1_clk;
+ extern struct clk sh73a0_extal2_clk;
++extern struct clk sh73a0_extcki_clk;
++extern struct clk sh73a0_extalr_clk;
+ 
+ extern unsigned int sh73a0_get_core_count(void);
+ extern void sh73a0_secondary_init(unsigned int cpu);
 -- 
-Regards,
+1.7.5.4
 
-Laurent Pinchart
