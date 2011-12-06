@@ -1,103 +1,136 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 16 Dec 2011 00:11:13 +0000
-Subject: [Update][PATCH 1/5] PM / shmobile: Don't include SH7372's INTCS in syscore suspend/resume
-Message-Id: <201112160111.14170.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 06 Dec 2011 06:28:18 +0000
+Subject: [PATCH v2 2/3] sh: clkfwk: clock-sh7724: all div6_clks use SH_CLK_DIV6_EXT()
+Message-Id: <87ehwimcxt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112100042.45168.rjw@sisk.pl> <201112160110.09124.rjw@sisk.pl>
-In-Reply-To: <201112160110.09124.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Current div6 clocks can specify their current parent clocks
+from its register value if it is registered
+by sh_clk_div6_reparent_register().
+This patch modifies all div6 clocks into SH_CLK_DIV6_EXT().
 
-Since the SH7372's INTCS in included into syscore suspend/resume,
-which causes the chip to be accessed when PM domains have been
-turned off during system suspend, the A4R domain containing the
-INTCS has to stay on during system sleep, which is suboptimal
-from the power consumption point of view.
-
-For this reason, add a new INTC flag, skip_syscore_suspend, to mark
-the INTCS for intc_suspend() and intc_resume(), so that they don't
-touch it.  This allows the A4R domain to be turned off during
-system suspend and the INTCS state is resrored during system
-resume by the A4R's "power on" code.
-
-Suggested-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/intc-sh7372.c |    1 +
- drivers/sh/intc/core.c               |    8 ++++++++
- drivers/sh/intc/internals.h          |    1 +
- include/linux/sh_intc.h              |    1 +
- 4 files changed, 11 insertions(+)
+v1 -> v2
 
-Index: linux/include/linux/sh_intc.h
-=================================--- linux.orig/include/linux/sh_intc.h
-+++ linux/include/linux/sh_intc.h
-@@ -95,6 +95,7 @@ struct intc_desc {
- 	unsigned int num_resources;
- 	intc_enum force_enable;
- 	intc_enum force_disable;
-+	bool skip_syscore_suspend;
- 	struct intc_hw_desc hw;
+- normal SH_CLK_DIV6_EXT() macro
+- drop un-needed NULL from clock parent table, and add array size in table
+
+ arch/sh/include/cpu-sh4/cpu/sh7724.h   |    1 +
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   40 ++++++++++++++++++++------------
+ 2 files changed, 26 insertions(+), 15 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+index cbc47e6..36ce466 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+@@ -314,5 +314,6 @@ enum {
+ 
+ extern struct clk sh7724_fsimcka_clk;
+ extern struct clk sh7724_fsimckb_clk;
++extern struct clk sh7724_dv_clki;
+ 
+ #endif /* __ASM_SH7724_H__ */
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index 7711838..9ee4b36 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -111,13 +111,16 @@ static struct clk div3_clk = {
+ 	.parent		= &pll_clk,
  };
  
-Index: linux/arch/arm/mach-shmobile/intc-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/intc-sh7372.c
-+++ linux/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -535,6 +535,7 @@ static struct resource intcs_resources[]
- static struct intc_desc intcs_desc __initdata = {
- 	.name = "sh7372-intcs",
- 	.force_enable = ENABLED_INTCS,
-+	.skip_syscore_suspend = true,
- 	.resource = intcs_resources,
- 	.num_resources = ARRAY_SIZE(intcs_resources),
- 	.hw = INTC_HW_DESC(intcs_vectors, intcs_groups, intcs_mask_registers,
-Index: linux/drivers/sh/intc/core.c
-=================================--- linux.orig/drivers/sh/intc/core.c
-+++ linux/drivers/sh/intc/core.c
-@@ -354,6 +354,8 @@ int __init register_intc_controller(stru
- 	if (desc->force_enable)
- 		intc_enable_disable_enum(desc, d, desc->force_enable, 1);
- 
-+	d->skip_suspend = desc->skip_syscore_suspend;
-+
- 	nr_intc_controllers++;
- 
- 	return 0;
-@@ -386,6 +388,9 @@ static int intc_suspend(void)
- 	list_for_each_entry(d, &intc_list, list) {
- 		int irq;
- 
-+		if (d->skip_suspend)
-+			continue;
-+
- 		/* enable wakeup irqs belonging to this intc controller */
- 		for_each_active_irq(irq) {
- 			struct irq_data *data;
-@@ -409,6 +414,9 @@ static void intc_resume(void)
- 	list_for_each_entry(d, &intc_list, list) {
- 		int irq;
- 
-+		if (d->skip_suspend)
-+			continue;
-+
- 		for_each_active_irq(irq) {
- 			struct irq_data *data;
- 			struct irq_chip *chip;
-Index: linux/drivers/sh/intc/internals.h
-=================================--- linux.orig/drivers/sh/intc/internals.h
-+++ linux/drivers/sh/intc/internals.h
-@@ -67,6 +67,7 @@ struct intc_desc_int {
- 	struct intc_window *window;
- 	unsigned int nr_windows;
- 	struct irq_chip chip;
-+	bool skip_suspend;
+-/* External input clock (pin name: FSIMCKA/FSIMCKB ) */
++/* External input clock (pin name: FSIMCKA/FSIMCKB/DV_CLKI ) */
+ struct clk sh7724_fsimcka_clk = {
  };
  
+ struct clk sh7724_fsimckb_clk = {
+ };
  
++struct clk sh7724_dv_clki = {
++};
++
+ static struct clk *main_clks[] = {
+ 	&r_clk,
+ 	&extal_clk,
+@@ -126,6 +129,7 @@ static struct clk *main_clks[] = {
+ 	&div3_clk,
+ 	&sh7724_fsimcka_clk,
+ 	&sh7724_fsimckb_clk,
++	&sh7724_dv_clki,
+ };
+ 
+ static void div4_kick(struct clk *clk)
+@@ -163,17 +167,20 @@ struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_M1] = DIV4(FRQCRB, 4, 0x2f7c, CLK_ENABLE_ON_INIT),
+ };
+ 
+-enum { DIV6_V, DIV6_I, DIV6_S, DIV6_NR };
++enum { DIV6_V, DIV6_I, DIV6_S, DIV6_FA, DIV6_FB, DIV6_NR };
+ 
+-static struct clk div6_clks[DIV6_NR] = {
+-	[DIV6_V] = SH_CLK_DIV6(&div3_clk, VCLKCR, 0),
+-	[DIV6_I] = SH_CLK_DIV6(&div3_clk, IRDACLKCR, 0),
+-	[DIV6_S] = SH_CLK_DIV6(&div3_clk, SPUCLKCR, CLK_ENABLE_ON_INIT),
++/* Indices are important - they are the actual src selecting values */
++static struct clk *common_parent[] = {
++	[0] = &div3_clk,
++	[1] = NULL,
+ };
+ 
+-enum { DIV6_FA, DIV6_FB, DIV6_REPARENT_NR };
++static struct clk *vclkcr_parent[8] = {
++	[0] = &div3_clk,
++	[2] = &sh7724_dv_clki,
++	[4] = &extal_clk,
++};
+ 
+-/* Indices are important - they are the actual src selecting values */
+ static struct clk *fclkacr_parent[] = {
+ 	[0] = &div3_clk,
+ 	[1] = NULL,
+@@ -188,7 +195,13 @@ static struct clk *fclkbcr_parent[] = {
+ 	[3] = NULL,
+ };
+ 
+-static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
++static struct clk div6_clks[DIV6_NR] = {
++	[DIV6_V] = SH_CLK_DIV6_EXT(VCLKCR, 0,
++			vclkcr_parent, ARRAY_SIZE(vclkcr_parent), 12, 3),
++	[DIV6_I] = SH_CLK_DIV6_EXT(IRDACLKCR, 0,
++			common_parent, ARRAY_SIZE(common_parent), 6, 1),
++	[DIV6_S] = SH_CLK_DIV6_EXT(SPUCLKCR, CLK_ENABLE_ON_INIT,
++			common_parent, ARRAY_SIZE(common_parent), 6, 1),
+ 	[DIV6_FA] = SH_CLK_DIV6_EXT(FCLKACR, 0,
+ 				      fclkacr_parent, ARRAY_SIZE(fclkacr_parent), 6, 2),
+ 	[DIV6_FB] = SH_CLK_DIV6_EXT(FCLKBCR, 0,
+@@ -269,8 +282,8 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* DIV6 clocks */
+ 	CLKDEV_CON_ID("video_clk", &div6_clks[DIV6_V]),
+-	CLKDEV_CON_ID("fsia_clk", &div6_reparent_clks[DIV6_FA]),
+-	CLKDEV_CON_ID("fsib_clk", &div6_reparent_clks[DIV6_FB]),
++	CLKDEV_CON_ID("fsia_clk", &div6_clks[DIV6_FA]),
++	CLKDEV_CON_ID("fsib_clk", &div6_clks[DIV6_FB]),
+ 	CLKDEV_CON_ID("irda_clk", &div6_clks[DIV6_I]),
+ 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_S]),
+ 
+@@ -356,10 +369,7 @@ int __init arch_clk_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+ 	if (!ret)
+-		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+-
+-	if (!ret)
+-		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
++		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+ 		ret = sh_hwblk_clk_register(mstp_clks, HWBLK_NR);
+-- 
+1.7.5.4
 
