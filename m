@@ -1,217 +1,245 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:37 +0000
-Subject: [PATCH 42/57] fbdev: sh_mobile_meram: Make variables unsigned where applicable
-Message-Id: <1323784972-24205-43-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 06 Dec 2011 06:29:15 +0000
+Subject: [PATCH v2 3/3] sh: clkfwk: clock-sh73a0: all div6_clks use SH_CLK_DIV6_EXT()
+Message-Id: <87d3c2mcw8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Many variables, such as loop counters, sizes and offsets, should be
-unsigned integers. Make them so.
+Current div6 clocks can specify their current parent clocks
+from its register value if it is registered
+by sh_clk_div6_reparent_register().
+This patch modifies all div6 clocks into SH_CLK_DIV6_EXT().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/video/sh_mobile_meram.c |   80 +++++++++++++++++++++------------------
- include/video/sh_mobile_meram.h |    6 ++-
- 2 files changed, 47 insertions(+), 39 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 2ad5a45..548f700 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -104,7 +104,7 @@ struct sh_mobile_meram_priv {
- 	void __iomem	*base;
- 	struct mutex	lock;
- 	unsigned long	used_icb;
--	int		used_meram_cache_regions;
-+	unsigned int	used_meram_cache_regions;
- 	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
- 	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
- 	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
-@@ -120,24 +120,25 @@ struct sh_mobile_meram_priv {
+- normal SH_CLK_DIV6_EXT()
+- drop un-needed NULL from clock parent table, and add array size for table
+
+ arch/arm/mach-shmobile/clock-sh73a0.c        |  146 ++++++++++++++++++++++----
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +
+ 2 files changed, 126 insertions(+), 22 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 61a846b..8ea8c81 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -92,6 +92,24 @@ static struct clk_ops div2_clk_ops = {
+ 	.recalc		= div2_recalc,
+ };
  
- #define MERAM_ICB_OFFSET(base, idx, off)	((base) + (off) + (idx) * 0x20)
++static unsigned long div7_recalc(struct clk *clk)
++{
++	return clk->parent->rate / 7;
++}
++
++static struct clk_ops div7_clk_ops = {
++	.recalc		= div7_recalc,
++};
++
++static unsigned long div13_recalc(struct clk *clk)
++{
++	return clk->parent->rate / 13;
++}
++
++static struct clk_ops div13_clk_ops = {
++	.recalc		= div13_recalc,
++};
++
+ /* Divide extal1 by two */
+ static struct clk extal1_div2_clk = {
+ 	.ops		= &div2_clk_ops,
+@@ -113,6 +131,11 @@ static struct clk main_clk = {
+ 	.ops		= &main_clk_ops,
+ };
  
--static inline void meram_write_icb(void __iomem *base, int idx, int off,
--	unsigned long val)
-+static inline void meram_write_icb(void __iomem *base, unsigned int idx,
-+				   unsigned int off, unsigned long val)
++static struct clk main_div2_clk = {
++	.ops		= &div2_clk_ops,
++	.parent		= &main_clk,
++};
++
+ /* PLL0, PLL1, PLL2, PLL3 */
+ static unsigned long pll_recalc(struct clk *clk)
  {
- 	iowrite32(val, MERAM_ICB_OFFSET(base, idx, off));
- }
+@@ -168,12 +191,29 @@ static struct clk pll3_clk = {
+ 	.enable_bit	= 3,
+ };
  
--static inline unsigned long meram_read_icb(void __iomem *base, int idx, int off)
-+static inline unsigned long meram_read_icb(void __iomem *base, unsigned int idx,
-+					   unsigned int off)
- {
- 	return ioread32(MERAM_ICB_OFFSET(base, idx, off));
- }
+-/* Divide PLL1 by two */
++/* Divide PLL */
+ static struct clk pll1_div2_clk = {
+ 	.ops		= &div2_clk_ops,
+ 	.parent		= &pll1_clk,
+ };
  
--static inline void meram_write_reg(void __iomem *base, int off,
--		unsigned long val)
-+static inline void meram_write_reg(void __iomem *base, unsigned int off,
-+				   unsigned long val)
- {
- 	iowrite32(val, base + off);
- }
++static struct clk pll1_div7_clk = {
++	.ops		= &div7_clk_ops,
++	.parent		= &pll1_clk,
++};
++
++static struct clk pll1_div13_clk = {
++	.ops		= &div13_clk_ops,
++	.parent		= &pll1_clk,
++};
++
++/* External input clock */
++struct clk sh73a0_extcki_clk = {
++};
++
++struct clk sh73a0_extalr_clk = {
++};
++
+ static struct clk *main_clks[] = {
+ 	&r_clk,
+ 	&sh73a0_extal1_clk,
+@@ -181,11 +221,16 @@ static struct clk *main_clks[] = {
+ 	&extal1_div2_clk,
+ 	&extal2_div2_clk,
+ 	&main_clk,
++	&main_div2_clk,
+ 	&pll0_clk,
+ 	&pll1_clk,
+ 	&pll2_clk,
+ 	&pll3_clk,
+ 	&pll1_div2_clk,
++	&pll1_div7_clk,
++	&pll1_div13_clk,
++	&sh73a0_extcki_clk,
++	&sh73a0_extalr_clk,
+ };
  
--static inline unsigned long meram_read_reg(void __iomem *base, int off)
-+static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
- {
- 	return ioread32(base + off);
- }
-@@ -158,8 +159,8 @@ static inline unsigned long meram_read_reg(void __iomem *base, int off)
- static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
- 				      struct sh_mobile_meram_icb_cfg *new)
- {
--	int i;
--	int used_start, used_end, meram_start, meram_end;
-+	unsigned int used_start, used_end, meram_start, meram_end;
-+	unsigned int i;
+ static void div4_kick(struct clk *clk)
+@@ -239,27 +284,84 @@ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+ 	DIV6_DSIT, DIV6_DSI0P, DIV6_DSI1P,
+ 	DIV6_NR };
  
- 	/* valid ICB? */
- 	if (new->marker_icb & ~0x1f || new->cache_icb & ~0x1f)
-@@ -190,7 +191,7 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
- static inline void meram_mark(struct sh_mobile_meram_priv *priv,
- 			      struct sh_mobile_meram_icb_cfg *new)
- {
--	int n;
-+	unsigned int n;
++static struct clk *vck_parent[8] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &sh73a0_extcki_clk,
++	[3] = &sh73a0_extal2_clk,
++	[4] = &main_div2_clk,
++	[5] = &sh73a0_extalr_clk,
++	[6] = &main_clk,
++};
++
++static struct clk *pll_parent[4] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &pll1_div13_clk,
++};
++
++static struct clk *hsi_parent[4] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &pll1_div7_clk,
++};
++
++static struct clk *pll_extal2_parent[] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &sh73a0_extal2_clk,
++	[3] = &sh73a0_extal2_clk,
++};
++
++static struct clk *dsi_parent[8] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2_clk,
++	[2] = &main_clk,
++	[3] = &sh73a0_extal2_clk,
++	[4] = &sh73a0_extcki_clk,
++};
++
+ static struct clk div6_clks[DIV6_NR] = {
+-	[DIV6_VCK1] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR1, 0),
+-	[DIV6_VCK2] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR2, 0),
+-	[DIV6_VCK3] = SH_CLK_DIV6(&pll1_div2_clk, VCLKCR3, 0),
+-	[DIV6_ZB1] = SH_CLK_DIV6(&pll1_div2_clk, ZBCKCR, 0),
+-	[DIV6_FLCTL] = SH_CLK_DIV6(&pll1_div2_clk, FLCKCR, 0),
+-	[DIV6_SDHI0] = SH_CLK_DIV6(&pll1_div2_clk, SD0CKCR, 0),
+-	[DIV6_SDHI1] = SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
+-	[DIV6_SDHI2] = SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
+-	[DIV6_FSIA] = SH_CLK_DIV6(&pll1_div2_clk, FSIACKCR, 0),
+-	[DIV6_FSIB] = SH_CLK_DIV6(&pll1_div2_clk, FSIBCKCR, 0),
+-	[DIV6_SUB] = SH_CLK_DIV6(&sh73a0_extal2_clk, SUBCKCR, 0),
+-	[DIV6_SPUA] = SH_CLK_DIV6(&pll1_div2_clk, SPUACKCR, 0),
+-	[DIV6_SPUV] = SH_CLK_DIV6(&pll1_div2_clk, SPUVCKCR, 0),
+-	[DIV6_MSU] = SH_CLK_DIV6(&pll1_div2_clk, MSUCKCR, 0),
+-	[DIV6_HSI] = SH_CLK_DIV6(&pll1_div2_clk, HSICKCR, 0),
+-	[DIV6_MFG1] = SH_CLK_DIV6(&pll1_div2_clk, MFCK1CR, 0),
+-	[DIV6_MFG2] = SH_CLK_DIV6(&pll1_div2_clk, MFCK2CR, 0),
+-	[DIV6_DSIT] = SH_CLK_DIV6(&pll1_div2_clk, DSITCKCR, 0),
+-	[DIV6_DSI0P] = SH_CLK_DIV6(&pll1_div2_clk, DSI0PCKCR, 0),
+-	[DIV6_DSI1P] = SH_CLK_DIV6(&pll1_div2_clk, DSI1PCKCR, 0),
++	[DIV6_VCK1] = SH_CLK_DIV6_EXT(VCLKCR1, 0,
++			vck_parent, ARRAY_SIZE(vck_parent), 12, 3),
++	[DIV6_VCK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
++			vck_parent, ARRAY_SIZE(vck_parent), 12, 3),
++	[DIV6_VCK3] = SH_CLK_DIV6_EXT(VCLKCR3, 0,
++			vck_parent, ARRAY_SIZE(vck_parent), 12, 3),
++	[DIV6_ZB1] = SH_CLK_DIV6_EXT(ZBCKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
++	[DIV6_FLCTL] = SH_CLK_DIV6_EXT(FLCKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
++	[DIV6_SDHI0] = SH_CLK_DIV6_EXT(SD0CKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 6, 2),
++	[DIV6_SDHI1] = SH_CLK_DIV6_EXT(SD1CKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 6, 2),
++	[DIV6_SDHI2] = SH_CLK_DIV6_EXT(SD2CKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 6, 2),
++	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 6, 1),
++	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 6, 1),
++	[DIV6_SUB] = SH_CLK_DIV6_EXT(SUBCKCR, 0,
++			pll_extal2_parent, ARRAY_SIZE(pll_extal2_parent), 6, 2),
++	[DIV6_SPUA] = SH_CLK_DIV6_EXT(SPUACKCR, 0,
++			pll_extal2_parent, ARRAY_SIZE(pll_extal2_parent), 6, 2),
++	[DIV6_SPUV] = SH_CLK_DIV6_EXT(SPUVCKCR, 0,
++			pll_extal2_parent, ARRAY_SIZE(pll_extal2_parent), 6, 2),
++	[DIV6_MSU] = SH_CLK_DIV6_EXT(MSUCKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
++	[DIV6_HSI] = SH_CLK_DIV6_EXT(HSICKCR, 0,
++			hsi_parent, ARRAY_SIZE(hsi_parent), 6, 2),
++	[DIV6_MFG1] = SH_CLK_DIV6_EXT(MFCK1CR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
++	[DIV6_MFG2] = SH_CLK_DIV6_EXT(MFCK2CR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
++	[DIV6_DSIT] = SH_CLK_DIV6_EXT(DSITCKCR, 0,
++			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
++	[DIV6_DSI0P] = SH_CLK_DIV6_EXT(DSI0PCKCR, 0,
++			dsi_parent, ARRAY_SIZE(dsi_parent), 12, 3),
++	[DIV6_DSI1P] = SH_CLK_DIV6_EXT(DSI1PCKCR, 0,
++			dsi_parent, ARRAY_SIZE(dsi_parent), 12, 3),
+ };
  
- 	if (new->marker_icb < 0 || new->cache_icb < 0)
- 		return;
-@@ -213,8 +214,8 @@ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
- static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
- 				struct sh_mobile_meram_icb_cfg *icb)
- {
--	int i;
- 	unsigned long pattern;
-+	unsigned int i;
+ enum { MSTP001,
+@@ -387,7 +489,7 @@ void __init sh73a0_clock_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
  
- 	if (icb->marker_icb < 0 || icb->cache_icb < 0)
- 		return;
-@@ -304,12 +305,15 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+ 	if (!ret)
+-		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
++		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
  
- static int meram_init(struct sh_mobile_meram_priv *priv,
- 		      struct sh_mobile_meram_icb_cfg *icb,
--		      int xres, int yres, int *out_pitch)
-+		      unsigned int xres, unsigned int yres,
-+		      unsigned int *out_pitch)
- {
- 	unsigned long total_byte_count = MERAM_CALC_BYTECOUNT(xres, yres);
- 	unsigned long bnm;
--	int lcdc_pitch, xpitch, line_cnt;
--	int save_lines;
-+	unsigned int lcdc_pitch;
-+	unsigned int xpitch;
-+	unsigned int line_cnt;
-+	unsigned int save_lines;
+ 	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 834bd6c..d055d05 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -47,6 +47,8 @@ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
+ extern struct clk sh73a0_extal1_clk;
+ extern struct clk sh73a0_extal2_clk;
++extern struct clk sh73a0_extcki_clk;
++extern struct clk sh73a0_extalr_clk;
  
- 	/* adjust pitch to 1024, 2048, 4096 or 8192 */
- 	lcdc_pitch = (xres - 1) | 1023;
-@@ -386,16 +390,18 @@ static void meram_deinit(struct sh_mobile_meram_priv *priv,
- 
- static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 				    struct sh_mobile_meram_cfg *cfg,
--				    int xres, int yres, int pixelformat,
-+				    unsigned int xres, unsigned int yres,
-+				    unsigned int pixelformat,
- 				    unsigned long base_addr_y,
- 				    unsigned long base_addr_c,
- 				    unsigned long *icb_addr_y,
- 				    unsigned long *icb_addr_c,
--				    int *pitch)
-+				    unsigned int *pitch)
- {
- 	struct platform_device *pdev;
- 	struct sh_mobile_meram_priv *priv;
--	int n, out_pitch;
-+	unsigned int out_pitch;
-+	unsigned int n;
- 	int error = 0;
- 
- 	if (!pdata || !pdata->priv || !pdata->pdev || !cfg)
-@@ -538,21 +544,21 @@ static int sh_mobile_meram_runtime_suspend(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
- 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
--	int k, j;
-+	unsigned int i, j;
- 
--	for (k = 0; k < CMN_REGS_SIZE; k++)
--		priv->cmn_saved_regs[k] = meram_read_reg(priv->base,
--			common_regs[k]);
-+	for (i = 0; i < CMN_REGS_SIZE; i++)
-+		priv->cmn_saved_regs[i] = meram_read_reg(priv->base,
-+			common_regs[i]);
- 
--	for (j = 0; j < 32; j++) {
--		if (!test_bit(j, &priv->used_icb))
-+	for (i = 0; i < 32; i++) {
-+		if (!test_bit(i, &priv->used_icb))
- 			continue;
--		for (k = 0; k < ICB_REGS_SIZE; k++) {
--			priv->icb_saved_regs[j * ICB_REGS_SIZE + k] -				meram_read_icb(priv->base, j, icb_regs[k]);
-+		for (j = 0; j < ICB_REGS_SIZE; j++) {
-+			priv->icb_saved_regs[i * ICB_REGS_SIZE + j] +				meram_read_icb(priv->base, i, icb_regs[j]);
- 			/* Reset ICB on resume */
--			if (icb_regs[k] = MExxCTL)
--				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] |+			if (icb_regs[j] = MExxCTL)
-+				priv->icb_saved_regs[i * ICB_REGS_SIZE + j] | 					MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF;
- 		}
- 	}
-@@ -563,20 +569,20 @@ static int sh_mobile_meram_runtime_resume(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
- 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
--	int k, j;
-+	unsigned int i, j;
- 
--	for (j = 0; j < 32; j++) {
--		if (!test_bit(j, &priv->used_icb))
-+	for (i = 0; i < 32; i++) {
-+		if (!test_bit(i, &priv->used_icb))
- 			continue;
--		for (k = 0; k < ICB_REGS_SIZE; k++) {
--			meram_write_icb(priv->base, j, icb_regs[k],
--			priv->icb_saved_regs[j * ICB_REGS_SIZE + k]);
-+		for (j = 0; j < ICB_REGS_SIZE; j++) {
-+			meram_write_icb(priv->base, i, icb_regs[j],
-+			priv->icb_saved_regs[i * ICB_REGS_SIZE + j]);
- 		}
- 	}
- 
--	for (k = 0; k < CMN_REGS_SIZE; k++)
--		meram_write_reg(priv->base, common_regs[k],
--			priv->cmn_saved_regs[k]);
-+	for (i = 0; i < CMN_REGS_SIZE; i++)
-+		meram_write_reg(priv->base, common_regs[i],
-+				priv->cmn_saved_regs[i]);
- 	return 0;
- }
- 
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index caae558..6755e3f 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -46,11 +46,13 @@ struct sh_mobile_meram_ops {
- 	/* register usage of meram */
- 	int (*meram_register)(struct sh_mobile_meram_info *meram_dev,
- 			      struct sh_mobile_meram_cfg *cfg,
--			      int xres, int yres, int pixelformat,
-+			      unsigned int xres, unsigned int yres,
-+			      unsigned int pixelformat,
- 			      unsigned long base_addr_y,
- 			      unsigned long base_addr_c,
- 			      unsigned long *icb_addr_y,
--			      unsigned long *icb_addr_c, int *pitch);
-+			      unsigned long *icb_addr_c,
-+			      unsigned int *pitch);
- 
- 	/* unregister usage of meram */
- 	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
+ extern unsigned int sh73a0_get_core_count(void);
+ extern void sh73a0_secondary_init(unsigned int cpu);
 -- 
-1.7.3.4
+1.7.5.4
 
