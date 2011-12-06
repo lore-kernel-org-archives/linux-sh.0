@@ -1,42 +1,63 @@
-From: Dave Martin <dave.martin@linaro.org>
-Date: Wed, 14 Dec 2011 13:55:13 +0000
-Subject: Re: [PATCH v4 REPOST 4/5] highbank: Unconditionally require l2x0 L2
-Message-Id: <20111214135513.GC2568@linaro.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Dec 2011 16:52:31 +0000
+Subject: [PATCH 04/07] ARM: mach-shmobile: Marzen early console hack
+Message-Id: <20111206165231.19348.35940.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
- <1323862781-3465-5-git-send-email-dave.martin@linaro.org>
- <4EE8A69C.40304@gmail.com>
-In-Reply-To: <4EE8A69C.40304@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Dec 14, 2011 at 07:37:32AM -0600, Rob Herring wrote:
-> 
-> On 12/14/2011 05:39 AM, Dave Martin wrote:
-> > If running in the Normal World on a TrustZone-enabled SoC, Linux
-> > does not have complete control over the L2 cache controller
-> > configuration.  The kernel cannot work reliably on such platforms
-> > without the l2x0 cache support code built in.
-> > 
-> > This patch unconditionally enables l2x0 support for the Highbank
-> > SoC.
-> > 
-> > Thanks to Rob Herring for this suggestion. [1]
-> > 
-> > Signed-off-by: Dave Martin <dave.martin@linaro.org>
-> > 
-> > [1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
-> 
-> Doesn't this need to be above the SOB? Otherwise:
+From: Magnus Damm <damm@opensource.se>
 
-You may be right ... certainly I see no reason _not_ to change it.
-So I'll change it.
+Hack the Marzen board code to get early debug print outs.
+Use with "earlyprint=sh-sci.2,11520" on the kernel command line.
 
-> 
-> Acked-by: Rob Herring <rob.herring@calxeda.com>
+Good to have when tracking down early timer or PFC issues.
 
-Thanks
+Needed by the r8a7779 PFC map hack further in the series.
 
----Dave
+Never-signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-marzen.c  |    8 ++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c |    4 ++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+--- 0008/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2011-12-06 23:57:23.000000000 +0900
+@@ -54,6 +54,13 @@ static struct map_desc marzen_io_desc[]
+ 		.length		= SZ_16M,
+ 		.type		= MT_DEVICE_NONSHARED
+ 	},
++	/* 16M debug map between 0xfdxxxxxx and 0xffxxxxxx */
++	{
++		.virtual	= 0xfd000000,
++		.pfn		= __phys_to_pfn(0xff000000),
++		.length		= SZ_16M,
++		.type		= MT_DEVICE_NONSHARED
++	},
+ };
+ 
+ static void __init marzen_map_io(void)
+@@ -80,6 +87,7 @@ static void __init marzen_init_early(voi
+ 	 * As a final step pass earlyprint=sh-sci.2,115200 on the kernel
+ 	 * command line.
+ 	 */
++	shmobile_setup_console();
+ }
+ 
+ static void __init marzen_init(void)
+--- 0008/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2011-12-06 23:56:32.000000000 +0900
+@@ -70,8 +70,8 @@ static struct platform_device scif1_devi
+ };
+ 
+ static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xffe42000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.mapbase	= 0xfde42000,
++	.flags		= UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
