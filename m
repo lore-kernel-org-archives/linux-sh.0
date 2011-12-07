@@ -1,36 +1,50 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 05 Dec 2011 00:17:05 +0000
-Subject: Re: [PATCH] PM / sh7372: Make domain stay_on bit only affect system suspend
-Message-Id: <201112050117.05214.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 07 Dec 2011 08:38:13 +0000
+Subject: [PATCH] sh: fix cpuidle on sh7724, possibly others
+Message-Id: <Pine.LNX.4.64.1112061704300.10715@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112042308.14255.rjw@sisk.pl>
-In-Reply-To: <201112042308.14255.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-On Sunday, December 04, 2011, Rafael J. Wysocki wrote:
-> From: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> SH7372 uses two independent mechanisms for ensuring that power
-> domains will never be turned off: the stay_on flag and the "always
-> on" domain governor.  However, the "always on" governor is only taken
-> into accout by runtime PM code paths, while the stay_on flag affects
-> all attempts to turn the given domain off.  This is a problem for
-> domains that only need to stay in the "power on" state during system
-> sleep, but may be turned off by runtime PM if specific conditions are
-> satisfied.  For this reason, make SH7372 register a PM notifier that
-> will enable the checking of the domain stay_on flag on during system
-> suspend and disable it during system resume.  This way, the stay_on
-> flag will only affect system sleep states, while the "always on"
-> governor will only affect runtime PM.
+cpuidle has been broken on sh7724 and, possibly, other SuperH SoCs since 
 
-Well, it's not that simple, because we need to make the domains that
-should stay "on" during system suspend be powered on beforehand.
+commit f533c3d340536198a4889a42a68d6c0d79a504e7
+Author: Paul Mundt <lethal@linux-sh.org>
+Date:   Fri Oct 16 17:20:58 2009 +0900
 
-I'll send an updated patch in a while.
+    sh: Idle loop chainsawing for SMP-based light sleep.
 
-Thanks,
-Rafael
+i.e., since 2.6.33-rc1. The reason is a missing local_irq_enable() on the 
+path, actually entering a sleep mode. This patch adds the missing call.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+
+This fixes one of the problem with cpuidle on sh. When applied (suitably 
+adjusted) directly after f533c3d340536198a4889a42a68d6c0d79a504e7, it does 
+fix the problem. However, since that commit cpuidle has been broken (at 
+least for my configuration) at least once more. This time bisection points 
+out at
+
+commit 03625e7107cde46e2851557ec06426799e6ae7f2
+Author: Magnus Damm <damm@opensource.se>
+Date:   Fri Oct 30 04:24:32 2009 +0000
+
+    sh: Use RSMEM for sleep code on sh7724
+
+Still investigating.
+
+diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+index 1cc257c..e58640a 100644
+--- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
++++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+@@ -48,6 +48,7 @@ static int cpuidle_sleep_enter(struct cpuidle_device *dev,
+ 	 */
+ 	k = min_t(int, allowed_state, requested_state);
+ 
++	local_irq_enable();
+ 	before = ktime_get();
+ 	sh_mobile_call_standby(cpuidle_mode[k]);
+ 	after = ktime_get();
