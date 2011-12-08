@@ -1,40 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:31 +0000
-Subject: [PATCH 36/57] fbdev: sh_mobile_lcdc: Pass physical device pointer to DMA functions
-Message-Id: <1323784972-24205-37-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 08 Dec 2011 13:59:03 +0000
+Subject: [PATCH 02/04] sh: use ioread32/iowrite32 and mapped_reg for mstp32
+Message-Id: <20111208135903.18394.48027.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The dma_map_sg() and dma_unmap_sg() functions need a pointer to the
-physical device.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Convert the CPG MSTP32 helper code to use the new mapped_reg
+together with ioread32() and iowrite32().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index f6bc18e..d00774b 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -313,11 +313,12 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
- 		unsigned int nr_pages = sh_mobile_lcdc_sginit(info, pagelist);
+ drivers/sh/clk/cpg.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- 0001/drivers/sh/clk/cpg.c
++++ work/drivers/sh/clk/cpg.c	2011-12-08 13:31:24.000000000 +0900
+@@ -15,15 +15,15 @@
  
- 		/* trigger panel update */
--		dma_map_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
-+		dma_map_sg(ch->lcdc->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
- 		if (panel->start_transfer)
- 			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
- 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
--		dma_unmap_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
-+		dma_unmap_sg(ch->lcdc->dev, ch->sglist, nr_pages,
-+			     DMA_TO_DEVICE);
- 	} else {
- 		if (panel->start_transfer)
- 			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
--- 
-1.7.3.4
-
+ static int sh_clk_mstp32_enable(struct clk *clk)
+ {
+-	__raw_writel(__raw_readl(clk->enable_reg) & ~(1 << clk->enable_bit),
+-		     clk->enable_reg);
++	iowrite32(ioread32(clk->mapped_reg) & ~(1 << clk->enable_bit),
++		  clk->mapped_reg);
+ 	return 0;
+ }
+ 
+ static void sh_clk_mstp32_disable(struct clk *clk)
+ {
+-	__raw_writel(__raw_readl(clk->enable_reg) | (1 << clk->enable_bit),
+-		     clk->enable_reg);
++	iowrite32(ioread32(clk->mapped_reg) | (1 << clk->enable_bit),
++		  clk->mapped_reg);
+ }
+ 
+ static struct clk_ops sh_clk_mstp32_clk_ops = {
