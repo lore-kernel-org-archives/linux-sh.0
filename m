@@ -1,38 +1,80 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 14 Dec 2011 18:31:50 +0000
-Subject: [PATCH 0/4 v2] mmc_ sh_mmcif: process requests asynchronously
-Message-Id: <1323887514-12650-1-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 08 Dec 2011 13:59:13 +0000
+Subject: [PATCH 03/04] sh: use ioread32/iowrite32 and mapped_reg for div4
+Message-Id: <20111208135913.18394.31847.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-This used to be a single patch, which now has been split into 2, plus, two more 
-not directly related patches for the same driver have been included. Patch 1/4 
-is actually a fix and could be considered for 3.2, but I personally haven't 
-heard any bug-reports, that could be attributed to it, so, it doesn't seem to 
-be very critical. Also, on request from Magnus, a state machine description has 
-been added to the file header.
+From: Magnus Damm <damm@opensource.se>
 
-Guennadi Liakhovetski (4):
-  mmc: sh_mmcif: process error interrupts first
-  mmc: sh_mmcif: cosmetic clean up
-  mmc: sh_mmcif: process requests asynchronously
-  mmc: sh_mmcif: remove now superfluous sh_mmcif_host::data member
+Convert the CPG DIV4 helper code to use the new mapped_reg
+together with ioread32() and iowrite32().
 
- drivers/mmc/host/sh_mmcif.c |  709 +++++++++++++++++++++++++++++--------------
- 1 files changed, 474 insertions(+), 235 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ drivers/sh/clk/cpg.c |   16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- 0010/drivers/sh/clk/cpg.c
++++ work/drivers/sh/clk/cpg.c	2011-12-08 22:20:29.000000000 +0900
+@@ -217,7 +217,7 @@ static unsigned long sh_clk_div4_recalc(
+ 	clk_rate_table_build(clk, clk->freq_table, table->nr_divisors,
+ 			     table, &clk->arch_flags);
+ 
+-	idx = (__raw_readl(clk->enable_reg) >> clk->enable_bit) & 0x000f;
++	idx = (ioread32(clk->mapped_reg) >> clk->enable_bit) & 0x000f;
+ 
+ 	return clk->freq_table[idx].frequency;
+ }
+@@ -235,15 +235,15 @@ static int sh_clk_div4_set_parent(struct
+ 	 */
+ 
+ 	if (parent->flags & CLK_ENABLE_ON_INIT)
+-		value = __raw_readl(clk->enable_reg) & ~(1 << 7);
++		value = ioread32(clk->mapped_reg) & ~(1 << 7);
+ 	else
+-		value = __raw_readl(clk->enable_reg) | (1 << 7);
++		value = ioread32(clk->mapped_reg) | (1 << 7);
+ 
+ 	ret = clk_reparent(clk, parent);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	__raw_writel(value, clk->enable_reg);
++	iowrite32(value, clk->mapped_reg);
+ 
+ 	/* Rebiuld the frequency table */
+ 	clk_rate_table_build(clk, clk->freq_table, table->nr_divisors,
+@@ -260,10 +260,10 @@ static int sh_clk_div4_set_rate(struct c
+ 	if (idx < 0)
+ 		return idx;
+ 
+-	value = __raw_readl(clk->enable_reg);
++	value = ioread32(clk->mapped_reg);
+ 	value &= ~(0xf << clk->enable_bit);
+ 	value |= (idx << clk->enable_bit);
+-	__raw_writel(value, clk->enable_reg);
++	iowrite32(value, clk->mapped_reg);
+ 
+ 	if (d4t->kick)
+ 		d4t->kick(clk);
+@@ -273,13 +273,13 @@ static int sh_clk_div4_set_rate(struct c
+ 
+ static int sh_clk_div4_enable(struct clk *clk)
+ {
+-	__raw_writel(__raw_readl(clk->enable_reg) & ~(1 << 8), clk->enable_reg);
++	iowrite32(ioread32(clk->mapped_reg) & ~(1 << 8), clk->mapped_reg);
+ 	return 0;
+ }
+ 
+ static void sh_clk_div4_disable(struct clk *clk)
+ {
+-	__raw_writel(__raw_readl(clk->enable_reg) | (1 << 8), clk->enable_reg);
++	iowrite32(ioread32(clk->mapped_reg) | (1 << 8), clk->mapped_reg);
+ }
+ 
+ static struct clk_ops sh_clk_div4_clk_ops = {
