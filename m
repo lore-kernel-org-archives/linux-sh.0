@@ -1,27 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 08 Dec 2011 13:58:44 +0000
-Subject: [PATCH 00/04] sh: clock / CPG ioremap() update
-Message-Id: <20111208135844.18394.44204.sendpatchset@w520>
+From: "=?UTF-8?B?IlNJTUtJTlMgTFREIg==?=" <simkinsltd@gmail.com>
+Date: Fri, 09 Dec 2011 13:04:55 +0000
+Subject: =?UTF-8?B?UHJvZHVjdCBPcmRlcg==?=
+Message-Id: <20111209124655.D2DE5343EF6@ns1.info.com.np>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: simkinsltd@gmail.com
 
-sh: clock / CPG ioremap() update
 
-[PATCH 01/04] sh: extend clock struct with mapped_reg member
-[PATCH 02/04] sh: use ioread32/iowrite32 and mapped_reg for mstp32
-[PATCH 03/04] sh: use ioread32/iowrite32 and mapped_reg for div4
-[PATCH 04/04] sh: use ioread32/iowrite32 and mapped_reg for div6
 
-These patches extend the drivers/sh/clk/ code to use ioremap().
-Needed for the soc / board support code for r8a7779. Other SoCs
-should just keep on working as before.
+Hello,
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
- drivers/sh/clk/core.c  |    9 +++++++--
- drivers/sh/clk/cpg.c   |   42 +++++++++++++++++++++---------------------
- include/linux/sh_clk.h |    1 +
- 3 files changed, 29 insertions(+), 23 deletions(-)
+I am Manager of SIMKINS LTD. USA, My company is interested in the
+purchase of your products.
+
+Kindly send me an email with details of:
+
+*Minimum Order Quantity
+*Your delivery time
+*Payment terms
+*And your products warranty
+
+I await to hear from you urgently
+Mr Stefan Al Simkins.
+Purchasing Manager.
+SIMKINS LTD
+
+___________________________________
+NOCC, http://nocc.sourceforge.net
+
+
+
+
+
