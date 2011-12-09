@@ -1,133 +1,144 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:01:55 +0000
-Subject: [PATCH 00/57] SH Mobile LCDC: rework DSI/HDMI interface and add overlays support
-Message-Id: <1323784972-24205-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 09 Dec 2011 23:44:35 +0000
+Subject: [RFC][PATCH 2/4] PM / shmobile: Remove the stay_on flag from SH7372's PM domains
+Message-Id: <201112100044.35717.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201112100042.45168.rjw@sisk.pl>
+In-Reply-To: <201112100042.45168.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
 
-Hi everybody,
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-First of all, sorry for the patch bomb. I usually try to send smaller patch
-sets by splitting them into coherent subsets, but getting the code in a proper
-shape took time and required several iterations of the whole set.
+SH7372 uses two independent mechanisms for ensuring that power
+domains will never be turned off: the stay_on flag and the "always
+on" domain governor.  Moreover, the "always on" governor is only taken
+into accout by runtime PM code paths, while the stay_on flag affects
+all attempts to turn the given domain off.  Thus setting the stay_on
+flag causes the "always on" governor to be unnecessary, which is
+quite confusing.
 
-These patches can be divided in 4 groups.
+However, the stay_on flag is currently only set for the A3SP PM
+domain and only if console_suspend_enabled, so it may be replaced
+by checking console_suspend_enabled directly in the A3SP's
+.suspend() routine.  [This requires domain .suspend() to return
+a result, but that is a minor modification.]
 
-- Patches 01 to 29 rework the interface between the LCDC and MIPI/DSI and HDMI
-  drivers. The MIPI/DSI and HDMI drivers are now FB-agnostic, except for the
-  usage of the fb_videomode structure used to pass video mode information to
-  the LCDC driver.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    3 --
+ arch/arm/mach-shmobile/pm-sh7372.c           |   36 ++++++++++++---------------
+ 2 files changed, 18 insertions(+), 21 deletions(-)
 
-- Patches 30 to 38 perform additional cleanup to the LCDC driver made possible
-  by the previous patches.
-
-- Patches 39 to 54 rework the MERAM driver to allocate ICBs and MERAM regions
-  automatically instead of relying on manually allocated regions specified in
-  platform data. They're a first step in the longer term goal of making MERAM
-  usable for other purpose than LCDC cache.
-
-- Patches 55 to 57 add overlays support to the LCDC driver. They should be
-  considered as a prototype implementation for now. I plan to rework them, but
-  early feedback is always appreciated.
-
-I would like to push patches 01 to 54 (after review of course) to v3.4 (or
-v3.3 if time and review permits).
-
-Laurent Pinchart (57):
-  fbdev: sh_mobile_lcdc: Reorder code into sections
-  fbdev: sh_mobile_lcdc: Mark init-only symbols with __devinit(const)
-  fbdev: sh_mobile_lcdc: Move pm runtime enable to probe()
-  fbdev: sh_mobile_lcdc: Don't pass struct device around
-  fbdev: sh_mobile_lcdc: Create functions to turn the display on/off
-  fbdev: sh_mobile_hdmi: Don't access LCDC channel in notifier callback
-  sh_mobile_hdmi: Remove platform data lcd_dev field
-  fbdev: sh_mobile_lcdc: Add sh_mobile_lcdc_entity definition
-  fbdev: sh_mobile_hdmi: Implement sh_mobile_lcdc_entity interface
-  fbdev: sh_mipi_dsi: Implement sh_mobile_lcdc_entity interface
-  fbdev: sh_mobile_lcdc: Handle HDMI/MIPI transmitter device directly
-  arm: mach-shmobile: Add LCDC tx_dev field to platform data
-  fbdev: sh_mipi_dsi: Don't hook up into board_cfg display operations
-  fbdev: sh_mobile_hdmi: Don't hook up into board_cfg display
-    operations
-  arm: mach-shmobile: Don't initialize the hdmi_info lcd_chan field
-  fbdev: sh_mobile_hdmi: Remove sh_mobile_hdmi_info lcd_chan field
-  fbdev: sh_mobile_lcdc: Remove board configuration owner field
-  fbdev: sh_mobile_lcdc: Remove board configuration board_data field
-  fbdev: sh_mobile_lcdc: Move brightness ops to sh_mobile_lcdc_bl_info
-  fbdev: sh_mobile_lcdc: Merge board_cfg and lcd_size_cfg into
-    panel_cfg
-  sh_mobile_lcdc: Add an lcdc channel pointer to sh_mobile_lcdc_entity
-  sh_mobile_hdmi: Use sh_mobile_lcdc_entity::channel to access fb_info
-  fbdev: sh_mobile_lcdc: Remove fb_info parameter to display_on
-    operation
-  fbdev: sh_mobile_lcdc: Return display connection state in display_on
-  sh_mobile_lcdc: Add display notify callback to sh_mobile_lcdc_chan
-  sh_mobile_hdmi: Use LCDC notification callback
-  fbdev: sh_mobile_lcdc: Pass a video mode to the notify callback
-  fbdev: sh_mobile_hdmi: Don't set sh_hdmi::mode in the display on
-    handler
-  fbdev: sh_mobile_hdmi: Don't access LCDC fb_info
-  fbdev: sh_mobile_lcdc: Store display mode in a struct fb_videomode
-  fbdev: sh_mobile_lcdc: Rename (lcd|num)_cfg (lcd|num)_modes
-  fbdev: sh_mobile_lcdc: Reorganize the sh_mobile_lcdc_chan structure
-  fbdev: sh_mobile_lcdc: Add sh_mobile_format_info() function
-  fbdev: sh_mobile_lcdc: Store the format in struct sh_mobile_lcdc_chan
-  fbdev: sh_mobile_lcdc: Split fb init/cleanup from channel
-    init/cleanup
-  fbdev: sh_mobile_lcdc: Pass physical device pointer to DMA functions
-  fbdev: sh_mobile_lcdc: Store configuration in channel structure
-  fbdev: sh_mobile_lcdc: Pass channel pointer to
-    sh_mobile_wait_for_vsync
-  arm: mach-shmobile: Split MERAM resources into regs and meram
-  fbdev: sh_mobile_meram: Request memory regions for memory resources
-  fbdev: sh_mobile_meram: Add _cfg suffix to struct sh_mobile_meram_icb
-  fbdev: sh_mobile_meram: Make variables unsigned where applicable
-  fbdev: sh_mobile_meram: Make current_reg field store the current reg
-    set
-  fbdev: sh_mobile_meram: Add struct sh_mobile_meram_icb
-  fbdev: sh_mobile_meram: Don't inline everything
-  fbdev: sh_mobile_meram: Divide the code into sections
-  fbdev: sh_mobile_meram: Use genalloc to manage MERAM allocation
-  fbdev: sh_mobile_meram: Allocate ICBs automatically
-  arm: mach-shmobile: Don't set MERAM ICB numbers in platform data
-  fbdev: sh_mobile_meram: Remove unused sh_mobile_meram_icb_cfg fields
-  fbdev: sh_mobile_lcdc: Don't store copy of platform data
-  arm: mach-shmobile: Constify sh_mobile_meram_cfg structures
-  fbdev: sh_mobile_meram: Don't perform update in register operation
-  fbdev: sh_mobile_meram: Remove unneeded sanity checks
-  fbdev: sh_mobile_lcdc: Constify sh_mobile_lcdc_fix structure
-  fbdev: sh_mobile_lcdc: Rename fb operation handlers with a common
-    prefix
-  fbdev: sh_mobile_lcdc: Implement overlays support
-
- arch/arm/mach-shmobile/board-ag5evm.c       |   24 +-
- arch/arm/mach-shmobile/board-ap4evb.c       |  289 ++--
- arch/arm/mach-shmobile/board-mackerel.c     |  106 +-
- arch/sh/boards/mach-ap325rxa/setup.c        |   22 +-
- arch/sh/boards/mach-ecovec24/setup.c        |   20 +-
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   10 +-
- arch/sh/boards/mach-kfr2r09/setup.c         |    8 +-
- arch/sh/boards/mach-migor/lcd_qvga.c        |    3 +-
- arch/sh/boards/mach-migor/setup.c           |   16 +-
- arch/sh/boards/mach-se/7724/setup.c         |   12 +-
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |   16 +-
- arch/sh/include/mach-migor/mach/migor.h     |    2 +-
- drivers/video/Kconfig                       |    1 +
- drivers/video/sh_mipi_dsi.c                 |   97 +-
- drivers/video/sh_mobile_hdmi.c              |  297 +---
- drivers/video/sh_mobile_lcdcfb.c            | 2357 +++++++++++++++++++--------
- drivers/video/sh_mobile_lcdcfb.h            |   84 +-
- drivers/video/sh_mobile_meram.c             |  673 ++++----
- include/video/sh_mobile_hdmi.h              |    2 -
- include/video/sh_mobile_lcdc.h              |   42 +-
- include/video/sh_mobile_meram.h             |   40 +-
- 21 files changed, 2518 insertions(+), 1603 deletions(-)
-
--- 
-Regards,
-
-Laurent Pinchart
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -480,11 +480,10 @@ struct platform_device;
+ struct sh7372_pm_domain {
+ 	struct generic_pm_domain genpd;
+ 	struct dev_power_governor *gov;
+-	void (*suspend)(void);
++	int (*suspend)(void);
+ 	void (*resume)(void);
+ 	unsigned int bit_shift;
+ 	bool no_debug;
+-	bool stay_on;
+ };
+ 
+ static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -82,11 +82,12 @@ static int pd_power_down(struct generic_
+ 	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
+ 	unsigned int mask = 1 << sh7372_pd->bit_shift;
+ 
+-	if (sh7372_pd->suspend)
+-		sh7372_pd->suspend();
++	if (sh7372_pd->suspend) {
++		int ret = sh7372_pd->suspend();
+ 
+-	if (sh7372_pd->stay_on)
+-		return 0;
++		if (ret)
++			return ret;
++	}
+ 
+ 	if (__raw_readl(PSTR) & mask) {
+ 		unsigned int retry_count;
+@@ -113,9 +114,6 @@ static int __pd_power_up(struct sh7372_p
+ 	unsigned int retry_count;
+ 	int ret = 0;
+ 
+-	if (sh7372_pd->stay_on)
+-		goto out;
+-
+ 	if (__raw_readl(PSTR) & mask)
+ 		goto out;
+ 
+@@ -148,10 +146,11 @@ static int pd_power_up(struct generic_pm
+ 	 return __pd_power_up(to_sh7372_pd(genpd), true);
+ }
+ 
+-static void sh7372_a4r_suspend(void)
++static int sh7372_a4r_suspend(void)
+ {
+ 	sh7372_intcs_suspend();
+ 	__raw_writel(0x300fffff, WUPRMSK); /* avoid wakeup */
++	return 0;
+ }
+ 
+ static bool pd_active_wakeup(struct device *dev)
+@@ -243,7 +242,6 @@ struct sh7372_pm_domain sh7372_a4r = {
+ 	.gov = &pm_domain_always_on_gov,
+ 	.suspend = sh7372_a4r_suspend,
+ 	.resume = sh7372_intcs_resume,
+-	.stay_on = true,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3rv = {
+@@ -256,21 +254,23 @@ struct sh7372_pm_domain sh7372_a3ri = {
+ 	.bit_shift = 8,
+ };
+ 
++static int sh7372_a3sp_suspend(void)
++{
++	/*
++	 * Serial consoles make use of SCIF hardware located in A3SP,
++	 * keep such power domain on if "no_console_suspend" is set.
++	 */
++	return console_suspend_enabled ? -EBUSY : 0;
++}
++
+ struct sh7372_pm_domain sh7372_a3sp = {
+ 	.genpd.name = "A3SP",
+ 	.bit_shift = 11,
+ 	.gov = &pm_domain_always_on_gov,
+ 	.no_debug = true,
++	.suspend = sh7372_a3sp_suspend,
+ };
+ 
+-static void sh7372_a3sp_init(void)
+-{
+-	/* serial consoles make use of SCIF hardware located in A3SP,
+-	 * keep such power domain on if "no_console_suspend" is set.
+-	 */
+-	sh7372_a3sp.stay_on = !console_suspend_enabled;
+-}
+-
+ struct sh7372_pm_domain sh7372_a3sg = {
+ 	.genpd.name = "A3SG",
+ 	.bit_shift = 13,
+@@ -514,8 +514,6 @@ void __init sh7372_pm_init(void)
+ 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+ 	__raw_writel(0, PDNSEL);
+ 
+-	sh7372_a3sp_init();
+-
+ 	sh7372_suspend_init();
+ 	sh7372_cpuidle_init();
+ }
 
