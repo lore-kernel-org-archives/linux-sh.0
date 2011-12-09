@@ -1,63 +1,117 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 02 Dec 2011 06:03:08 +0000
-Subject: Re: [PATCH] sh: sh2a: Optimise cache flush for writethrough mode.
-Message-Id: <20111202060308.GA5704@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 09 Dec 2011 23:46:31 +0000
+Subject: [RFC][PATCH 4/4] PM / input / touchscreen: Make st1232 use device PM QoS constraints
+Message-Id: <201112100046.32206.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1322637713-15227-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1322637713-15227-1-git-send-email-phil.edworthy@renesas.com>
+References: <201112100042.45168.rjw@sisk.pl>
+In-Reply-To: <201112100042.45168.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
 
-On Wed, Nov 30, 2011 at 09:56:35AM +0000, phil.edworthy@renesas.com wrote:
-> It's worth mentioning that this patch is essentially a work around for an 
-> issue with write-back mode. sh2a_flush_icache_range is passed a large 
-> address range which takes ages to flush/invalidate. For write-back mode, 
-> instead of indexing on the address, perhaps we can walk through all the 
-> cache entries and check for an address match. That's for another day...
-> 
-That's a common pitfall for anything using the address array for clearing
-the entries. We have some simple heuristics in the cache-sh4.c code:
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-..
-        /* If there are too many pages then just blow away the caches */
-        if (((end - start) >> PAGE_SHIFT) >= MAX_ICACHE_PAGES) {
-                local_flush_cache_all(NULL);
-                return;
-        }
-..
+Make the st1232 driver use dev_pm_qos_add_ancestor_request() to
+add a device PM QoS latency constraint for the I2C controller it
+depends on, so that the controller won't go into an overly deep
+low-power state when the touchscreen has to be particularly
+responsive (e.g. when the user moves his or her finger on it)
+and allow the A4R domain to be turned off if that doesn't violate
+the PM QoS latency constraints.
 
-A similar thing should probably be done for the SH-2/2A cases simply utilizing
-CCR-based global invalidation.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/pm-sh7372.c |   28 +++++++++++++++++++++++++++-
+ drivers/input/touchscreen/st1232.c |   14 +++++++++++++-
+ 2 files changed, 40 insertions(+), 2 deletions(-)
 
-> I agree that the other functions can be improved. I ignored them as the 
-> main performance issue is with sh2a_flush_icache_range. I wasn't entirely 
-> sure when some of the other functions are used. Are 
-> sh2a__flush_wback_region and sh2a__flush_purge_region purely OC related? 
-> And sh2a__flush_invalidate_region and sh2a_flush_icache_range work on both 
-> the IC and OC?
-> 
-All of __flush_wback/purge/invalidate_region() are region based routines for OC
-management. You get an idea of the abstraction from arch/sh/mm/flush-sh4.c. In general:
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -239,7 +239,6 @@ struct sh7372_pm_domain sh7372_d4 = {
+ struct sh7372_pm_domain sh7372_a4r = {
+ 	.genpd.name = "A4R",
+ 	.bit_shift = 5,
+-	.gov = &pm_domain_always_on_gov,
+ 	.suspend = sh7372_a4r_suspend,
+ 	.resume = sh7372_intcs_resume,
+ };
+@@ -496,9 +495,36 @@ static int sh7372_enter_suspend(suspend_
+ 	return 0;
+ }
+ 
++/**
++ * sh7372_pm_notifier_fn - SH7372 PM notifier routine.
++ * @notifier: Unused.
++ * @pm_event: Event being handled.
++ * @unused: Unused.
++ *
++ * This is necessary, because the A4R domain has to be "on" when
++ * suspend_device_irqs() and resume_device_irqs() are executed during system
++ * suspend and resume, respectively, so that those functions don't crash
++ * while accessing the INTCS.
++ */
++static int sh7372_pm_notifier_fn(struct notifier_block *notifier,
++				 unsigned long pm_event, void *unused)
++{
++	switch (pm_event) {
++	case PM_SUSPEND_PREPARE:
++		pm_genpd_poweron(&sh7372_a4r.genpd);
++		break;
++	case PM_POST_SUSPEND:
++		pm_genpd_poweroff_unused();
++		break;
++	}
++
++	return NOTIFY_DONE;
++}
++
+ static void sh7372_suspend_init(void)
+ {
+ 	shmobile_suspend_ops.enter = sh7372_enter_suspend;
++	pm_notifier(sh7372_pm_notifier_fn, 0);
+ }
+ #else
+ static void sh7372_suspend_init(void) {}
+Index: linux/drivers/input/touchscreen/st1232.c
+=================================--- linux.orig/drivers/input/touchscreen/st1232.c
++++ linux/drivers/input/touchscreen/st1232.c
+@@ -25,6 +25,7 @@
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <linux/types.h>
++#include <linux/pm_qos.h>
+ 
+ #define ST1232_TS_NAME	"st1232-ts"
+ 
+@@ -46,6 +47,8 @@ struct st1232_ts_data {
+ 	struct i2c_client *client;
+ 	struct input_dev *input_dev;
+ 	struct st1232_ts_finger finger[MAX_FINGERS];
++	struct dev_pm_qos_request low_latency_req;
++	bool pen_down;
+ };
+ 
+ static int st1232_ts_read_data(struct st1232_ts_data *ts)
+@@ -118,8 +121,17 @@ static irqreturn_t st1232_ts_irq_handler
+ 	}
+ 
+ 	/* SYN_MT_REPORT only if no contact */
+-	if (!count)
++	if (!count) {
+ 		input_mt_sync(input_dev);
++		if (ts->pen_down) {
++			dev_pm_qos_remove_request(&ts->low_latency_req);
++			ts->pen_down = false;
++		}
++	} else if (!ts->pen_down) {
++		/* First contact, request 100 mcs latency. */
++		dev_pm_qos_add_ancestor_request(&ts->client->dev,
++						&ts->low_latency_req, 100);
++	}
+ 
+ 	/* SYN_REPORT */
+ 	input_sync(input_dev);
 
-	__flush_wback_region - OC writeback
-	__flush_invalidate_region - OC invalidate
-	__flush_purge_region - OC writeback & invalidate
-
-You can see a trivial usage example through the consistent DMA's
-dma_cache_sync() and so on, relative to DMA direction.
-
-flush_icache_range() handles I-cache invalidation for non-snoopable stores, and also
-contends with things like I-cache aliases and the like. While semantically it's
-not terribly complex, it's a bit of a sledgehammer given the different cases in
-which it gets used. Whether the D-cache handling needs to be implemented or not
-is likewise CPU dependent. In cases where the I-cache is not able to snoop
-D-cache accesses we also need to deal with the D-cache explicitly. On the SMP
-parts it's also further complicated by the fact that the bulk of the parts do
-not broadcast I-cache block invalidates, and the snoop controller only handles
-the D-cache (though the same I/D race exists given that the I-cache doesn't
-have any connection to the snoop controller).
-
-You can get a bit of an overview in Documentation/cachetlb.txt if you're
-interested in some of the requirements.
