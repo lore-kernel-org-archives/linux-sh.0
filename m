@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Dec 2011 16:52:31 +0000
-Subject: [PATCH 04/07] ARM: mach-shmobile: Marzen early console hack
-Message-Id: <20111206165231.19348.35940.sendpatchset@w520>
+Date: Fri, 09 Dec 2011 03:14:27 +0000
+Subject: [PATCH] sh: pfc: ioremap() support
+Message-Id: <20111209031427.5076.27468.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,54 +10,338 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Hack the Marzen board code to get early debug print outs.
-Use with "earlyprint=sh-sci.2,11520" on the kernel command line.
+Add support for non-entity mapped PFC registers through
+the use of struct resource and ioremap()/iounmap().
 
-Good to have when tracking down early timer or PFC issues.
+The PFC main data structure gets updated with a pointer
+to a struct resources array that point out all register
+windows used by the PFC instance. The register definitions
+are kept as physical addresses but the PFC code will do
+transparent conversion into virtual addresses whenever
+register windows are specified using with struct resource.
 
-Needed by the r8a7779 PFC map hack further in the series.
+To introduce as little performance penalty as possible the
+virtual address of each data register is cached in memory.
+The virtual address of each configuration register is however
+calculated during run time. This because the configuration
+is considered slow path so focus is instead put on keeping
+memory foot print as small as possible.
 
-Never-signed-off-by: Magnus Damm <damm@opensource.se>
+The PFC register access  code is in this patch updated from
+__raw_readN() / __raw_writeN() into ioreadN() / iowriteN().
+
+This patch is needed to support the PFC block in r8a7779.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/board-marzen.c  |    8 ++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c |    4 ++--
- 2 files changed, 10 insertions(+), 2 deletions(-)
+ drivers/sh/pfc.c       |  137 +++++++++++++++++++++++++++++++++++++++---------
+ include/linux/sh_pfc.h |   11 +++
+ 2 files changed, 124 insertions(+), 24 deletions(-)
 
---- 0008/arch/arm/mach-shmobile/board-marzen.c
-+++ work/arch/arm/mach-shmobile/board-marzen.c	2011-12-06 23:57:23.000000000 +0900
-@@ -54,6 +54,13 @@ static struct map_desc marzen_io_desc[]
- 		.length		= SZ_16M,
- 		.type		= MT_DEVICE_NONSHARED
- 	},
-+	/* 16M debug map between 0xfdxxxxxx and 0xffxxxxxx */
-+	{
-+		.virtual	= 0xfd000000,
-+		.pfn		= __phys_to_pfn(0xff000000),
-+		.length		= SZ_16M,
-+		.type		= MT_DEVICE_NONSHARED
-+	},
- };
+--- 0001/drivers/sh/pfc.c
++++ work/drivers/sh/pfc.c	2011-12-09 12:04:01.000000000 +0900
+@@ -19,6 +19,75 @@
+ #include <linux/irq.h>
+ #include <linux/bitops.h>
+ #include <linux/gpio.h>
++#include <linux/slab.h>
++#include <linux/ioport.h>
++
++static void pfc_iounmap(struct pinmux_info *pip)
++{
++	int k;
++
++	for (k = 0; k < pip->num_resources; k++)
++		if (pip->window[k].virt)
++			iounmap(pip->window[k].virt);
++
++	kfree(pip->window);
++	pip->window = NULL;
++}
++
++static int pfc_ioremap(struct pinmux_info *pip)
++{
++	struct resource *res;
++	int k;
++
++	if (!pip->num_resources)
++		return 0;
++
++	pip->window = kzalloc(pip->num_resources * sizeof(*pip->window),
++			      GFP_NOWAIT);
++	if (!pip->window)
++		goto err1;
++
++	for (k = 0; k < pip->num_resources; k++) {
++		res = pip->resource + k;
++		WARN_ON(resource_type(res) != IORESOURCE_MEM);
++		pip->window[k].phys = res->start;
++		pip->window[k].size = resource_size(res);
++		pip->window[k].virt = ioremap_nocache(res->start,
++							 resource_size(res));
++		if (!pip->window[k].virt)
++			goto err2;
++	}
++
++	return 0;
++
++err2:
++	pfc_iounmap(pip);
++err1:
++	return -1;
++}
++
++static void __iomem *pfc_phys_to_virt(struct pinmux_info *pip,
++				      unsigned long address)
++{
++	struct pfc_window *window;
++	int k;
++
++	/* scan through physical windows and convert address */
++	for (k = 0; k < pip->num_resources; k++) {
++		window = pip->window + k;
++
++		if (address < window->phys)
++			continue;
++
++		if (address >= (window->phys + window->size))
++			continue;
++
++		return window->virt + (address - window->phys);
++	}
++
++	/* no windows defined, register must be 1:1 mapped virt:phys */
++	return (void __iomem *)address;
++}
  
- static void __init marzen_map_io(void)
-@@ -80,6 +87,7 @@ static void __init marzen_init_early(voi
- 	 * As a final step pass earlyprint=sh-sci.2,115200 on the kernel
- 	 * command line.
- 	 */
-+	shmobile_setup_console();
+ static int enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
+ {
+@@ -31,35 +100,35 @@ static int enum_in_range(pinmux_enum_t e
+ 	return 1;
  }
  
- static void __init marzen_init(void)
---- 0008/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2011-12-06 23:56:32.000000000 +0900
-@@ -70,8 +70,8 @@ static struct platform_device scif1_devi
+-static unsigned long gpio_read_raw_reg(unsigned long reg,
++static unsigned long gpio_read_raw_reg(void __iomem *mapped_reg,
+ 				       unsigned long reg_width)
+ {
+ 	switch (reg_width) {
+ 	case 8:
+-		return __raw_readb(reg);
++		return ioread8(mapped_reg);
+ 	case 16:
+-		return __raw_readw(reg);
++		return ioread16(mapped_reg);
+ 	case 32:
+-		return __raw_readl(reg);
++		return ioread32(mapped_reg);
+ 	}
+ 
+ 	BUG();
+ 	return 0;
+ }
+ 
+-static void gpio_write_raw_reg(unsigned long reg,
++static void gpio_write_raw_reg(void __iomem *mapped_reg,
+ 			       unsigned long reg_width,
+ 			       unsigned long data)
+ {
+ 	switch (reg_width) {
+ 	case 8:
+-		__raw_writeb(data, reg);
++		iowrite8(data, mapped_reg);
+ 		return;
+ 	case 16:
+-		__raw_writew(data, reg);
++		iowrite16(data, mapped_reg);
+ 		return;
+ 	case 32:
+-		__raw_writel(data, reg);
++		iowrite32(data, mapped_reg);
+ 		return;
+ 	}
+ 
+@@ -82,11 +151,12 @@ static void gpio_write_bit(struct pinmux
+ 	else
+ 		clear_bit(pos, &dr->reg_shadow);
+ 
+-	gpio_write_raw_reg(dr->reg, dr->reg_width, dr->reg_shadow);
++	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
+ }
+ 
+-static int gpio_read_reg(unsigned long reg, unsigned long reg_width,
+-			 unsigned long field_width, unsigned long in_pos)
++static int gpio_read_reg(void __iomem *mapped_reg, unsigned long reg_width,
++			 unsigned long field_width, unsigned long in_pos,
++			 unsigned long reg)
+ {
+ 	unsigned long data, mask, pos;
+ 
+@@ -98,13 +168,13 @@ static int gpio_read_reg(unsigned long r
+ 		 "r_width = %ld, f_width = %ld\n",
+ 		 reg, pos, reg_width, field_width);
+ 
+-	data = gpio_read_raw_reg(reg, reg_width);
++	data = gpio_read_raw_reg(mapped_reg, reg_width);
+ 	return (data >> pos) & mask;
+ }
+ 
+-static void gpio_write_reg(unsigned long reg, unsigned long reg_width,
++static void gpio_write_reg(void __iomem *mapped_reg, unsigned long reg_width,
+ 			   unsigned long field_width, unsigned long in_pos,
+-			   unsigned long value)
++			   unsigned long value, unsigned long reg)
+ {
+ 	unsigned long mask, pos;
+ 
+@@ -120,13 +190,13 @@ static void gpio_write_reg(unsigned long
+ 
+ 	switch (reg_width) {
+ 	case 8:
+-		__raw_writeb((__raw_readb(reg) & mask) | value, reg);
++		iowrite8((ioread8(mapped_reg) & mask) | value, mapped_reg);
+ 		break;
+ 	case 16:
+-		__raw_writew((__raw_readw(reg) & mask) | value, reg);
++		iowrite16((ioread16(mapped_reg) & mask) | value, mapped_reg);
+ 		break;
+ 	case 32:
+-		__raw_writel((__raw_readl(reg) & mask) | value, reg);
++		iowrite32((ioread32(mapped_reg) & mask) | value, mapped_reg);
+ 		break;
+ 	}
+ }
+@@ -147,6 +217,8 @@ static int setup_data_reg(struct pinmux_
+ 		if (!data_reg->reg_width)
+ 			break;
+ 
++		data_reg->mapped_reg = pfc_phys_to_virt(gpioc, data_reg->reg);
++
+ 		for (n = 0; n < data_reg->reg_width; n++) {
+ 			if (data_reg->enum_ids[n] = gpiop->enum_id) {
+ 				gpiop->flags &= ~PINMUX_FLAG_DREG;
+@@ -179,7 +251,8 @@ static void setup_data_regs(struct pinmu
+ 		if (!drp->reg_width)
+ 			break;
+ 
+-		drp->reg_shadow = gpio_read_raw_reg(drp->reg, drp->reg_width);
++		drp->reg_shadow = gpio_read_raw_reg(drp->mapped_reg,
++						    drp->reg_width);
+ 		k++;
+ 	}
+ }
+@@ -266,12 +339,16 @@ static void write_config_reg(struct pinm
+ 			     int index)
+ {
+ 	unsigned long ncomb, pos, value;
++	void __iomem *mapped_reg;
+ 
+ 	ncomb = 1 << crp->field_width;
+ 	pos = index / ncomb;
+ 	value = index % ncomb;
+ 
+-	gpio_write_reg(crp->reg, crp->reg_width, crp->field_width, pos, value);
++	mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
++
++	gpio_write_reg(mapped_reg, crp->reg_width, crp->field_width,
++		       pos, value, crp->reg);
+ }
+ 
+ static int check_config_reg(struct pinmux_info *gpioc,
+@@ -279,13 +356,16 @@ static int check_config_reg(struct pinmu
+ 			    int index)
+ {
+ 	unsigned long ncomb, pos, value;
++	void __iomem *mapped_reg;
+ 
+ 	ncomb = 1 << crp->field_width;
+ 	pos = index / ncomb;
+ 	value = index % ncomb;
+ 
+-	if (gpio_read_reg(crp->reg, crp->reg_width,
+-			  crp->field_width, pos) = value)
++	mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
++
++	if (gpio_read_reg(mapped_reg, crp->reg_width,
++			  crp->field_width, pos, crp->reg) = value)
+ 		return 0;
+ 
+ 	return -1;
+@@ -564,7 +644,7 @@ static int sh_gpio_get_value(struct pinm
+ 	if (!gpioc || get_data_reg(gpioc, gpio, &dr, &bit) != 0)
+ 		return -EINVAL;
+ 
+-	return gpio_read_reg(dr->reg, dr->reg_width, 1, bit);
++	return gpio_read_reg(dr->mapped_reg, dr->reg_width, 1, bit, dr->reg);
+ }
+ 
+ static int sh_gpio_get(struct gpio_chip *chip, unsigned offset)
+@@ -606,10 +686,15 @@ static int sh_gpio_to_irq(struct gpio_ch
+ int register_pinmux(struct pinmux_info *pip)
+ {
+ 	struct gpio_chip *chip = &pip->chip;
++	int ret;
+ 
+ 	pr_info("%s handling gpio %d -> %d\n",
+ 		pip->name, pip->first_gpio, pip->last_gpio);
+ 
++	ret = pfc_ioremap(pip);
++	if (ret < 0)
++		return ret;
++
+ 	setup_data_regs(pip);
+ 
+ 	chip->request = sh_gpio_request;
+@@ -627,12 +712,16 @@ int register_pinmux(struct pinmux_info *
+ 	chip->base = pip->first_gpio;
+ 	chip->ngpio = (pip->last_gpio - pip->first_gpio) + 1;
+ 
+-	return gpiochip_add(chip);
++	ret = gpiochip_add(chip);
++	if (ret < 0)
++		pfc_iounmap(pip);
++
++	return ret;
+ }
+ 
+ int unregister_pinmux(struct pinmux_info *pip)
+ {
+ 	pr_info("%s deregistering\n", pip->name);
+-
++	pfc_iounmap(pip);
+ 	return gpiochip_remove(&pip->chip);
+ }
+--- 0001/include/linux/sh_pfc.h
++++ work/include/linux/sh_pfc.h	2011-12-09 12:02:56.000000000 +0900
+@@ -55,6 +55,7 @@ struct pinmux_cfg_reg {
+ struct pinmux_data_reg {
+ 	unsigned long reg, reg_width, reg_shadow;
+ 	pinmux_enum_t *enum_ids;
++	void __iomem *mapped_reg;
  };
  
- static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xffe42000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.mapbase	= 0xfde42000,
-+	.flags		= UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
+ #define PINMUX_DATA_REG(name, r, r_width) \
+@@ -75,6 +76,12 @@ struct pinmux_range {
+ 	pinmux_enum_t force;
+ };
+ 
++struct pfc_window {
++	phys_addr_t phys;
++	void __iomem *virt;
++	unsigned long size;
++};
++
+ struct pinmux_info {
+ 	char *name;
+ 	pinmux_enum_t reserved_id;
+@@ -98,6 +105,10 @@ struct pinmux_info {
+ 	struct pinmux_irq *gpio_irq;
+ 	unsigned int gpio_irq_size;
+ 
++	struct resource *resource;
++	unsigned int num_resources;
++	struct pfc_window *window;
++
+ 	struct gpio_chip chip;
+ };
+ 
