@@ -1,30 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 19 Dec 2011 00:21:17 +0000
-Subject: Re: [PATCH 24/57] fbdev: sh_mobile_lcdc: Return display connection state in display_on
-Message-Id: <201112190121.18444.laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 12 Dec 2011 03:02:09 +0000
+Subject: [PATCH] sh: clkfwk: sh_clk_init_parent() should be called after clk_register()
+Message-Id: <877h22h4r5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323784972-24205-25-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1323784972-24205-25-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+sh_clk_init_parent() are using clk->mapped_reg
+which is mapped in clk_register()
 
-On Thursday 15 December 2011 18:11:03 Guennadi Liakhovetski wrote:
-> On Tue, 13 Dec 2011, Laurent Pinchart wrote:
-> > Return true if the display is connected and false otherwise. Set the fb
-> > info state to FBINFO_STATE_SUSPENDED in the sh_mobile_lcdc driver when
-> > the display is not connected.
-> 
-> Hmm... I'm not sure I like functions, that return either a negative error,
-> or _several_ non-negative success values. How about returning -ENODEV?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+This is for latest paul/common/clkfwk
 
-That would be returning a negative error on success. Is that better ? :-)
+ drivers/sh/clk/cpg.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index a0d8faa..45fee36 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -222,11 +222,11 @@ static int __init sh_clk_div6_register_ops(struct clk *clks, int nr,
+ 		clkp->ops = ops;
+ 		clkp->freq_table = freq_table + (k * freq_table_size);
+ 		clkp->freq_table[nr_divs].frequency = CPUFREQ_TABLE_END;
+-		ret = sh_clk_init_parent(clkp);
++		ret = clk_register(clkp);
+ 		if (ret < 0)
+ 			break;
+ 
+-		ret = clk_register(clkp);
++		ret = sh_clk_init_parent(clkp);
+ 	}
+ 
+ 	return ret;
 -- 
-Regards,
+1.7.5.4
 
-Laurent Pinchart
