@@ -1,68 +1,110 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 20 Dec 2011 08:53:52 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: clock-r8a7779: clkz/clkzs support
-Message-Id: <87zken62ub.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:40 +0000
+Subject: [PATCH 45/57] fbdev: sh_mobile_meram: Don't inline everything
+Message-Id: <1323784972-24205-46-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Let the compiler decide which complex functions to inline, and constify
+constant static arrays.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |   29 +++++++++++++++++++++++++++++
- 1 files changed, 29 insertions(+), 0 deletions(-)
+ drivers/video/sh_mobile_meram.c |   30 +++++++++++++++---------------
+ 1 files changed, 15 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 29c3306..b4b0e8c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -102,9 +102,35 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP014] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 14, 0), /* TMU2 */
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index cddb180..0c5b301 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -83,14 +83,14 @@
+ 
+ #define SH_MOBILE_MERAM_ICB_NUM		32
+ 
+-static unsigned long common_regs[] = {
++static const unsigned long common_regs[] = {
+ 	MEVCR1,
+ 	MEQSEL1,
+ 	MEQSEL2,
  };
+ #define CMN_REGS_SIZE ARRAY_SIZE(common_regs)
  
-+static unsigned long mul4_recalc(struct clk *clk)
-+{
-+	return clk->parent->rate * 4;
-+}
-+
-+static struct clk_ops mul4_clk_ops = {
-+	.recalc		= mul4_recalc,
-+};
-+
-+struct clk clkz_clk = {
-+	.ops		= &mul4_clk_ops,
-+	.parent		= &div4_clks[DIV4_S],
-+};
-+
-+struct clk clkzs_clk = {
-+	/* clks x 4 / 4 = clks */
-+	.parent		= &div4_clks[DIV4_S],
-+};
-+
-+static struct clk *late_main_clks[] = {
-+	&clkz_clk,
-+	&clkzs_clk,
-+};
-+
- static struct clk_lookup lookups[] = {
- 	/* main clocks */
- 	CLKDEV_CON_ID("plla_clk", &plla_clk),
-+	CLKDEV_CON_ID("clkz_clk", &clkz_clk),
-+	CLKDEV_CON_ID("clkzs_clk", &clkzs_clk),
+-static unsigned long icb_regs[] = {
++static const unsigned long icb_regs[] = {
+ 	MExxCTL,
+ 	MExxBSIZE,
+ 	MExxMNCF,
+@@ -180,8 +180,8 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+  * check if there's no overlaps in MERAM allocation.
+  */
  
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("shyway_clk",	&div4_clks[DIV4_S]),
-@@ -138,6 +164,9 @@ void __init r8a7779_clock_init(void)
- 	if (!ret)
- 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+-static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+-				      const struct sh_mobile_meram_icb_cfg *new)
++static int meram_check_overlap(struct sh_mobile_meram_priv *priv,
++			       const struct sh_mobile_meram_icb_cfg *new)
+ {
+ 	unsigned int used_start, used_end, meram_start, meram_end;
+ 	unsigned int i;
+@@ -215,9 +215,9 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+  * mark the specified ICB as used
+  */
  
-+	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
-+		ret = clk_register(late_main_clks[k]);
-+
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-static inline void meram_mark(struct sh_mobile_meram_priv *priv,
+-			      const struct sh_mobile_meram_icb_cfg *new,
+-			      int pixelformat)
++static void meram_mark(struct sh_mobile_meram_priv *priv,
++		       const struct sh_mobile_meram_icb_cfg *new,
++		       int pixelformat)
+ {
+ 	__set_bit(new->marker_icb, &priv->used_icb);
+ 	__set_bit(new->cache_icb, &priv->used_icb);
+@@ -234,8 +234,8 @@ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
+  * unmark the specified ICB as used
+  */
  
- 	if (!ret)
+-static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
+-				const struct sh_mobile_meram_icb_cfg *icb)
++static void meram_unmark(struct sh_mobile_meram_priv *priv,
++			 const struct sh_mobile_meram_icb_cfg *icb)
+ {
+ 	__clear_bit(icb->marker_icb, &priv->used_icb);
+ 	__clear_bit(icb->cache_icb, &priv->used_icb);
+@@ -244,7 +244,7 @@ static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
+ /*
+  * is this a YCbCr(NV12, NV16 or NV24) colorspace
+  */
+-static inline int is_nvcolor(int cspace)
++static int is_nvcolor(int cspace)
+ {
+ 	if (cspace = SH_MOBILE_MERAM_PF_NV ||
+ 	    cspace = SH_MOBILE_MERAM_PF_NV24)
+@@ -255,10 +255,10 @@ static inline int is_nvcolor(int cspace)
+ /*
+  * set the next address to fetch
+  */
+-static inline void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
+-				       const struct sh_mobile_meram_cfg *cfg,
+-				       unsigned long base_addr_y,
+-				       unsigned long base_addr_c)
++static void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
++				const struct sh_mobile_meram_cfg *cfg,
++				unsigned long base_addr_y,
++				unsigned long base_addr_c)
+ {
+ 	struct sh_mobile_meram_icb *icb = &priv->icbs[cfg->icb[0].marker_icb];
+ 	unsigned long target;
+@@ -285,7 +285,7 @@ static inline void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
+ /*
+  * get the next ICB address
+  */
+-static inline void
++static void
+ meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+ 			const struct sh_mobile_meram_cfg *cfg,
+ 			unsigned long *icb_addr_y, unsigned long *icb_addr_c)
 -- 
-1.7.5.4
+1.7.3.4
 
