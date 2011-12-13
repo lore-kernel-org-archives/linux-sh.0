@@ -1,121 +1,311 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:09 +0000
-Subject: [PATCH 14/57] fbdev: sh_mobile_hdmi: Don't hook up into board_cfg display operations
-Message-Id: <1323784972-24205-15-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:15 +0000
+Subject: [PATCH 20/57] fbdev: sh_mobile_lcdc: Merge board_cfg and lcd_size_cfg into panel_cfg
+Message-Id: <1323784972-24205-21-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The display_on/off operations are now accessed through the
-sh_mobile_lcdc_entity operations.
+Update board code accordingly.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_hdmi.c |   37 ++++++-------------------------------
- 1 files changed, 6 insertions(+), 31 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c   |    6 ++--
+ arch/arm/mach-shmobile/board-ap4evb.c   |    8 +++---
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++-
+ arch/sh/boards/mach-ap325rxa/setup.c    |    6 +---
+ arch/sh/boards/mach-ecovec24/setup.c    |    2 +-
+ arch/sh/boards/mach-kfr2r09/setup.c     |    4 +--
+ arch/sh/boards/mach-migor/setup.c       |    8 ++----
+ arch/sh/boards/mach-se/7724/setup.c     |    2 +-
+ drivers/video/sh_mobile_lcdcfb.c        |   35 +++++++++++++++----------------
+ include/video/sh_mobile_lcdc.h          |   12 +++-------
+ 10 files changed, 40 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index f961fa2..1e78100 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -1004,8 +1004,8 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- }
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 490cb78..cdf45db 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -259,12 +259,12 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 		.interface_type = RGB24,
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
+-		.lcd_size_cfg.width = 44,
+-		.lcd_size_cfg.height = 79,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.lcd_cfg = lcdc0_modes,
+ 		.num_cfg = ARRAY_SIZE(lcdc0_modes),
+-		.board_cfg = {
++		.panel_cfg = {
++			.width = 44,
++			.height = 79,
+ 			.display_on = lcd_backlight_on,
+ 			.display_off = lcd_backlight_reset,
+ 		},
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 92bb59e..26f30c8 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1358,8 +1358,8 @@ static void __init ap4evb_init(void)
+ 	lcdc_info.ch[0].interface_type		= RGB24;
+ 	lcdc_info.ch[0].clock_divider		= 1;
+ 	lcdc_info.ch[0].flags			= LCDC_FLAGS_DWPOL;
+-	lcdc_info.ch[0].lcd_size_cfg.width	= 44;
+-	lcdc_info.ch[0].lcd_size_cfg.height	= 79;
++	lcdc_info.ch[0].panel_cfg.width		= 44;
++	lcdc_info.ch[0].panel_cfg.height	= 79;
  
- /* locking:	called with info->lock held, or before register_framebuffer() */
--static int __sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
--				struct fb_info *info)
-+static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
-+			      struct fb_info *info)
+ 	platform_add_devices(qhd_devices, ARRAY_SIZE(qhd_devices));
+ 
+@@ -1400,8 +1400,8 @@ static void __init ap4evb_init(void)
+ 	lcdc_info.ch[0].interface_type		= RGB18;
+ 	lcdc_info.ch[0].clock_divider		= 3;
+ 	lcdc_info.ch[0].flags			= 0;
+-	lcdc_info.ch[0].lcd_size_cfg.width	= 152;
+-	lcdc_info.ch[0].lcd_size_cfg.height	= 91;
++	lcdc_info.ch[0].panel_cfg.width		= 152;
++	lcdc_info.ch[0].panel_cfg.height	= 91;
+ 
+ 	/* enable TouchScreen */
+ 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 3460f54..c0e95e5 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -394,8 +394,10 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.interface_type		= RGB24,
+ 		.clock_divider		= 3,
+ 		.flags			= 0,
+-		.lcd_size_cfg.width	= 152,
+-		.lcd_size_cfg.height	= 91,
++		.panel_cfg = {
++			.width		= 152,
++			.height		= 91,
++		},
+ 		.bl_info = {
+ 			.name = "sh_mobile_lcdc_bl",
+ 			.max_brightness = 1,
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 1413c65..bdcc291 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -212,11 +212,9 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.clock_divider = 1,
+ 		.lcd_cfg = ap325rxa_lcdc_modes,
+ 		.num_cfg = ARRAY_SIZE(ap325rxa_lcdc_modes),
+-		.lcd_size_cfg = { /* 7.0 inch */
+-			.width = 152,
++		.panel_cfg = {
++			.width = 152,	/* 7.0 inch */
+ 			.height = 91,
+-		},
+-		.board_cfg = {
+ 			.display_on = ap320_wvga_power_on,
+ 			.display_off = ap320_wvga_power_off,
+ 		},
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 2adc78e..881d2f0 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -331,7 +331,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.interface_type = RGB18,
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_size_cfg = { /* 7.0 inch */
++		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 208c9b0..615cb4b 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -152,11 +152,9 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 		.flags = LCDC_FLAGS_DWPOL,
+ 		.lcd_cfg = kfr2r09_lcdc_modes,
+ 		.num_cfg = ARRAY_SIZE(kfr2r09_lcdc_modes),
+-		.lcd_size_cfg = {
++		.panel_cfg = {
+ 			.width = 35,
+ 			.height = 58,
+-		},
+-		.board_cfg = {
+ 			.setup_sys = kfr2r09_lcd_setup,
+ 			.start_transfer = kfr2r09_lcd_start,
+ 			.display_on = kfr2r09_lcd_on,
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index ccf61fb..d42da46 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -249,7 +249,7 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.clock_divider = 2,
+ 		.lcd_cfg = migor_lcd_modes,
+ 		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
+-		.lcd_size_cfg = { /* 7.0 inch */
++		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+@@ -263,11 +263,9 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.clock_divider = 10,
+ 		.lcd_cfg = migor_lcd_modes,
+ 		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
+-		.lcd_size_cfg = { /* 2.4 inch */
+-			.width = 49,
++		.panel_cfg = {
++			.width = 49,	/* 2.4 inch */
+ 			.height = 37,
+-		},
+-		.board_cfg = {
+ 			.setup_sys = migor_lcd_qvga_setup,
+ 		},
+ 		.sys_bus_cfg = {
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 933d252..7251ebb 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -181,7 +181,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.clock_divider = 1,
+-		.lcd_size_cfg = { /* 7.0 inch */
++		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 0c358b0..cb5ea3c 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -289,7 +289,7 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
+ 				       struct list_head *pagelist)
  {
- 	/*
- 	 * info is guaranteed to be valid, when we are called, because our
-@@ -1040,13 +1040,8 @@ static int __sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
- 	return 0;
- }
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+-	struct sh_mobile_lcdc_board_cfg	*bcfg = &ch->cfg.board_cfg;
++	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
  
--static void sh_hdmi_display_on(void *arg, struct fb_info *info)
--{
--	__sh_hdmi_display_on(arg, info);
--}
--
- /* locking: called with info->lock held */
--static void __sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
-+static void sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
+ 	/* enable clocks before accessing hardware */
+ 	sh_mobile_lcdc_clk_on(ch->lcdc);
+@@ -314,13 +314,13 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
+ 
+ 		/* trigger panel update */
+ 		dma_map_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
+-		if (bcfg->start_transfer)
+-			bcfg->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
++		if (panel->start_transfer)
++			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
+ 		dma_unmap_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
+ 	} else {
+-		if (bcfg->start_transfer)
+-			bcfg->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
++		if (panel->start_transfer)
++			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
+ 	}
+ }
+@@ -335,7 +335,7 @@ static void sh_mobile_lcdc_deferred_io_touch(struct fb_info *info)
+ 
+ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
  {
- 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+-	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
++	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
+ 	int ret;
  
-@@ -1055,14 +1050,9 @@ static void __sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
- 	hdmi_write(hdmi, 0x10, HDMI_SYSTEM_CTRL);
+ 	if (ch->tx_dev) {
+@@ -345,16 +345,16 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ 	}
+ 
+ 	/* HDMI must be enabled before LCDC configuration */
+-	if (board_cfg->display_on)
+-		board_cfg->display_on();
++	if (panel->display_on)
++		panel->display_on();
  }
  
--static void sh_hdmi_display_off(void *arg)
--{
--	__sh_hdmi_display_off(arg);
--}
--
- static const struct sh_mobile_lcdc_entity_ops sh_hdmi_ops = {
--	.display_on = __sh_hdmi_display_on,
--	.display_off = __sh_hdmi_display_off,
-+	.display_on = sh_hdmi_display_on,
-+	.display_off = sh_hdmi_display_off,
+ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
+ {
+-	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
++	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
+ 
+-	if (board_cfg->display_off)
+-		board_cfg->display_off();
++	if (panel->display_off)
++		panel->display_off();
+ 
+ 	if (ch->tx_dev)
+ 		ch->tx_dev->ops->display_off(ch->tx_dev);
+@@ -689,16 +689,15 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 	lcdc_wait_bit(priv, _LDCNT2R, LDCNT2R_BR, 0);
+ 
+ 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
+-		struct sh_mobile_lcdc_board_cfg	*board_cfg;
++		struct sh_mobile_lcdc_panel_cfg *panel;
+ 
+ 		ch = &priv->ch[k];
+ 		if (!ch->enabled)
+ 			continue;
+ 
+-		board_cfg = &ch->cfg.board_cfg;
+-		if (board_cfg->setup_sys) {
+-			ret = board_cfg->setup_sys(ch,
+-						   &sh_mobile_lcdc_sys_bus_ops);
++		panel = &ch->cfg.panel_cfg;
++		if (panel->setup_sys) {
++			ret = panel->setup_sys(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 			if (ret)
+ 				return ret;
+ 		}
+@@ -1657,8 +1656,8 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	 */
+ 	var = &info->var;
+ 	fb_videomode_to_var(var, mode);
+-	var->width = cfg->lcd_size_cfg.width;
+-	var->height = cfg->lcd_size_cfg.height;
++	var->width = cfg->panel_cfg.width;
++	var->height = cfg->panel_cfg.height;
+ 	var->yres_virtual = var->yres * 2;
+ 	var->activate = FB_ACTIVATE_NOW;
+ 
+diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
+index 541b2b3..84163e4 100644
+--- a/include/video/sh_mobile_lcdc.h
++++ b/include/video/sh_mobile_lcdc.h
+@@ -147,7 +147,9 @@ struct sh_mobile_lcdc_sys_bus_ops {
+ 	unsigned long (*read_data)(void *handle);
  };
  
- static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
-@@ -1178,7 +1168,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 				 */
- 				info->var.width = hdmi->var.width;
- 				info->var.height = hdmi->var.height;
--				__sh_hdmi_display_on(&hdmi->entity, info);
-+				sh_hdmi_display_on(&hdmi->entity, info);
- 			} else {
- 				/* New monitor or have to wake up */
- 				fb_set_suspend(info, 0);
-@@ -1255,7 +1245,6 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- {
- 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	struct sh_mobile_lcdc_board_cfg	*board_cfg;
- 	int irq = platform_get_irq(pdev, 0), ret;
- 	struct sh_hdmi *hdmi;
- 	long rate;
-@@ -1315,13 +1304,6 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+-struct sh_mobile_lcdc_board_cfg {
++struct sh_mobile_lcdc_panel_cfg {
++	unsigned long width;		/* Panel width in mm */
++	unsigned long height;		/* Panel height in mm */
+ 	int (*setup_sys)(void *sys_ops_handle,
+ 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ 	void (*start_transfer)(void *sys_ops_handle,
+@@ -156,11 +158,6 @@ struct sh_mobile_lcdc_board_cfg {
+ 	void (*display_off)(void);
+ };
  
- 	platform_set_drvdata(pdev, &hdmi->entity);
- 
--	/* Set up LCDC callbacks */
--	board_cfg = &pdata->lcd_chan->board_cfg;
--	board_cfg->owner = THIS_MODULE;
--	board_cfg->board_data = &hdmi->entity;
--	board_cfg->display_on = sh_hdmi_display_on;
--	board_cfg->display_off = sh_hdmi_display_off;
+-struct sh_mobile_lcdc_lcd_size_cfg { /* width and height of panel in mm */
+-	unsigned long width;
+-	unsigned long height;
+-};
 -
- 	INIT_DELAYED_WORK(&hdmi->edid_work, sh_hdmi_edid_work_fn);
- 
- 	pm_runtime_enable(&pdev->dev);
-@@ -1371,21 +1353,14 @@ egetclk:
- 
- static int __exit sh_hdmi_remove(struct platform_device *pdev)
- {
--	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
- 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(platform_get_drvdata(pdev));
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	struct sh_mobile_lcdc_board_cfg	*board_cfg = &pdata->lcd_chan->board_cfg;
- 	int irq = platform_get_irq(pdev, 0);
- 
- 	snd_soc_unregister_codec(&pdev->dev);
- 
- 	fb_unregister_client(&hdmi->notifier);
- 
--	board_cfg->display_on = NULL;
--	board_cfg->display_off = NULL;
--	board_cfg->board_data = NULL;
--	board_cfg->owner = NULL;
--
- 	/* No new work will be scheduled, wait for running ISR */
- 	free_irq(irq, hdmi);
- 	/* Wait for already scheduled work */
+ /* backlight info */
+ struct sh_mobile_lcdc_bl_info {
+ 	const char *name;
+@@ -178,8 +175,7 @@ struct sh_mobile_lcdc_chan_cfg {
+ 	unsigned long flags; /* LCDC_FLAGS_... */
+ 	const struct fb_videomode *lcd_cfg;
+ 	int num_cfg;
+-	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
+-	struct sh_mobile_lcdc_board_cfg board_cfg;
++	struct sh_mobile_lcdc_panel_cfg panel_cfg;
+ 	struct sh_mobile_lcdc_bl_info bl_info;
+ 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
+ 	struct sh_mobile_meram_cfg *meram_cfg;
 -- 
 1.7.3.4
 
