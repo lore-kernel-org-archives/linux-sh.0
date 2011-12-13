@@ -1,214 +1,362 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 14 Dec 2011 11:10:18 +0000
-Subject: Re: [PATCH 11/57] fbdev: sh_mobile_lcdc: Handle HDMI/MIPI transmitter device directly
-Message-Id: <201112141210.20579.laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:42 +0000
+Subject: [PATCH 47/57] fbdev: sh_mobile_meram: Use genalloc to manage MERAM allocation
+Message-Id: <1323784972-24205-48-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323784972-24205-12-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1323784972-24205-12-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Hi Guennadi,
+Instead of requiring the users to hardcode MERAM allocation in platform
+data, allocate blocks at runtime using genalloc.
 
-On Wednesday 14 December 2011 01:03:06 Guennadi Liakhovetski wrote:
-> On Tue, 13 Dec 2011, Laurent Pinchart wrote:
-> > Pass a pointer to the transmitter device through platform data, retrieve
-> > the corresponding sh_mobile_lcdc_entity structure in the probe method
-> > and call the transmitter display_on/off methods directly.
-> > 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/video/sh_mobile_lcdcfb.c |   33
-> >  ++++++++++++++++++++++++++++----- drivers/video/sh_mobile_lcdcfb.h |   
-> >  2 ++
-> >  include/video/sh_mobile_lcdc.h   |    2 ++
-> >  3 files changed, 32 insertions(+), 5 deletions(-)
-> > 
-> > diff --git a/drivers/video/sh_mobile_lcdcfb.c
-> > b/drivers/video/sh_mobile_lcdcfb.c index afa1fac..f1bbae6 100644
-> > --- a/drivers/video/sh_mobile_lcdcfb.c
-> > +++ b/drivers/video/sh_mobile_lcdcfb.c
-> > @@ -338,6 +338,13 @@ static void sh_mobile_lcdc_deferred_io_touch(struct
-> > fb_info *info)
-> > 
-> >  static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
-> >  {
-> >  
-> >  	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
-> > 
-> > +	int ret;
-> > +
-> > +	if (ch->tx_dev) {
-> > +		ret = ch->tx_dev->ops->display_on(ch->tx_dev, ch->info);
-> 
-> ->ops or ->display_o{n,ff}() cannot be NULL?
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c   |    4 -
+ arch/arm/mach-shmobile/board-mackerel.c |    4 -
+ drivers/video/Kconfig                   |    1 +
+ drivers/video/sh_mobile_meram.c         |  110 +++++++++++++++++++------------
+ include/video/sh_mobile_meram.h         |    1 -
+ 5 files changed, 69 insertions(+), 51 deletions(-)
 
-They must be provided, at least with the transmitters we currently have. This 
-code will likely get reworked to support things like HDMI-on-DSI, so I don't 
-think adding a pre
-
-> also
-> 
-> +		int ret = ch->tx_dev->ops->display_on(ch->tx_dev, ch->info);
-> 
-> would suffice;-)
-
-Or even if (ch->tx_dev->ops->display_on(ch->tx_dev, ch->info) < 0)
-
-I'll fix that.
-
-> > +		if (ret < 0)
-> > +			return;
-> > +	}
-> > 
-> >  	/* HDMI must be enabled before LCDC configuration */
-> >  	if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
-> > 
-> > @@ -354,6 +361,9 @@ static void sh_mobile_lcdc_display_off(struct
-> > sh_mobile_lcdc_chan *ch)
-> > 
-> >  		board_cfg->display_off(board_cfg->board_data);
-> >  		module_put(board_cfg->owner);
-> >  	
-> >  	}
-> > 
-> > +
-> > +	if (ch->tx_dev)
-> > +		ch->tx_dev->ops->display_off(ch->tx_dev);
-> > 
-> >  }
-> >  
-> >  /*
-> >  -----------------------------------------------------------------------
-> >  ------
-> > 
-> > @@ -1490,18 +1500,21 @@ static int sh_mobile_lcdc_remove(struct
-> > platform_device *pdev)
-> > 
-> >  	sh_mobile_lcdc_stop(priv);
-> >  	
-> >  	for (i = 0; i < ARRAY_SIZE(priv->ch); i++) {
-> > 
-> > -		info = priv->ch[i].info;
-> > +		struct sh_mobile_lcdc_chan *ch = &priv->ch[i];
-> > 
-> > +		info = ch->info;
-> > 
-> >  		if (!info || !info->device)
-> >  		
-> >  			continue;
-> > 
-> > -		if (priv->ch[i].sglist)
-> > -			vfree(priv->ch[i].sglist);
-> > +		if (ch->tx_dev)
-> > +			module_put(ch->cfg.tx_dev->dev.driver->owner);
-> 
-> This is now the same ->owner, as the one taken in your
-> sh_mobile_lcdc_display_o{n,ff}() functions? IIUC, you're now adding this
-> new ->owner field to later (17/57) remove the original one?
-
-It's the same owner, yes. The idea is to get a reference to the transmitter 
-device module at probe() time and release it at remove() time instead of doing 
-so in display_on() and display_off(), and to remove the owner field hack from 
-platform data.
-
-> > +
-> > +		if (ch->sglist)
-> > +			vfree(ch->sglist);
-> > 
-> >  		if (info->screen_base)
-> >  		
-> >  			dma_free_coherent(&pdev->dev, info->fix.smem_len,
-> > 
-> > -					  info->screen_base,
-> > -					  priv->ch[i].dma_handle);
-> > +					  info->screen_base, ch->dma_handle);
-> > 
-> >  		fb_dealloc_cmap(&info->cmap);
-> >  		framebuffer_release(info);
-> >  	
-> >  	}
-> > 
-> > @@ -1596,6 +1609,16 @@ sh_mobile_lcdc_channel_init(struct
-> > sh_mobile_lcdc_priv *priv,
-> > 
-> >  	info->pseudo_palette = &ch->pseudo_palette;
-> >  	info->flags = FBINFO_FLAG_DEFAULT;
-> > 
-> > +	if (cfg->tx_dev) {
-> > +		if (!cfg->tx_dev->dev.driver ||
-> > +		    !try_module_get(cfg->tx_dev->dev.driver->owner)) {
-> > +			dev_warn(priv->dev, "unable to get transmitter "
-> > +				 "device\n");
-> 
-> Grrr... Pleeeease, don't split strings. If you really have to program on
-> vt220;-) at least do
-> 
-> +			dev_warn(priv->dev,
-> +				 "unable to get transmitter device\n");
-
-Sorry about that. Will fix.
-
-> > +			return -EINVAL;
-> > +		}
-> > +		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
-> > +	}
-> > +
-> > 
-> >  	/* Iterate through the modes to validate them and find the highest
-> >  	
-> >  	 * resolution.
-> >  	 */
-> > 
-> > diff --git a/drivers/video/sh_mobile_lcdcfb.h
-> > b/drivers/video/sh_mobile_lcdcfb.h index d79e5aa..9601b92 100644
-> > --- a/drivers/video/sh_mobile_lcdcfb.h
-> > +++ b/drivers/video/sh_mobile_lcdcfb.h
-> > @@ -41,6 +41,8 @@ struct sh_mobile_lcdc_entity {
-> > 
-> >   */
-> >  
-> >  struct sh_mobile_lcdc_chan {
-> >  
-> >  	struct sh_mobile_lcdc_priv *lcdc;
-> > 
-> > +	struct sh_mobile_lcdc_entity *tx_dev;
-> > +
-> > 
-> >  	unsigned long *reg_offs;
-> >  	unsigned long ldmt1r_value;
-> >  	unsigned long enabled; /* ME and SE in LDCNT2R */
-> > 
-> > diff --git a/include/video/sh_mobile_lcdc.h
-> > b/include/video/sh_mobile_lcdc.h index fe30b75..0ec59e1 100644
-> > --- a/include/video/sh_mobile_lcdc.h
-> > +++ b/include/video/sh_mobile_lcdc.h
-> > @@ -186,6 +186,8 @@ struct sh_mobile_lcdc_chan_cfg {
-> > 
-> >  	struct sh_mobile_lcdc_bl_info bl_info;
-> >  	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
-> >  	struct sh_mobile_meram_cfg *meram_cfg;
-> > 
-> > +
-> > +	struct platform_device *tx_dev;	/* HDMI/MIPI transmitter device */
-> 
-> "MIPI" is too generic, IMHO
-
-Will HDMI/DSI do ?
-
-> Hm, could we, maybe, have different names for sh_mobile_lcdc_chan::tx_dev
-> and sh_mobile_lcdc_chan_cfg::tx_dev?;-)
-
-Sure. Do you have any suggestion ? :-)
-
-> >  };
-> >  
-> >  struct sh_mobile_lcdc_info {
-
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index a980645..d3896dc 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -591,13 +591,11 @@ static struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+ 		.marker_icb     = 28,
+ 		.cache_icb      = 24,
+-		.meram_offset   = 0x0,
+ 		.meram_size     = 0x40,
+ 	},
+ 	.icb[1] = {
+ 		.marker_icb     = 29,
+ 		.cache_icb      = 25,
+-		.meram_offset   = 0x40,
+ 		.meram_size     = 0x40,
+ 	},
+ };
+@@ -862,13 +860,11 @@ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+ 		.marker_icb     = 30,
+ 		.cache_icb      = 26,
+-		.meram_offset   = 0x80,
+ 		.meram_size     = 0x100,
+ 	},
+ 	.icb[1] = {
+ 		.marker_icb     = 31,
+ 		.cache_icb      = 27,
+-		.meram_offset   = 0x180,
+ 		.meram_size     = 0x100,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 0021994..d555d9e 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -378,13 +378,11 @@ static struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+ 		.marker_icb     = 28,
+ 		.cache_icb      = 24,
+-		.meram_offset   = 0x0,
+ 		.meram_size     = 0x40,
+ 	},
+ 	.icb[1] = {
+ 		.marker_icb     = 29,
+ 		.cache_icb      = 25,
+-		.meram_offset   = 0x40,
+ 		.meram_size     = 0x40,
+ 	},
+ };
+@@ -470,13 +468,11 @@ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+ 		.marker_icb     = 30,
+ 		.cache_icb      = 26,
+-		.meram_offset   = 0x80,
+ 		.meram_size     = 0x100,
+ 	},
+ 	.icb[1] = {
+ 		.marker_icb     = 31,
+ 		.cache_icb      = 27,
+-		.meram_offset   = 0x180,
+ 		.meram_size     = 0x100,
+ 	},
+ };
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index dcf0a82..e4c5a76 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -2004,6 +2004,7 @@ config FB_SH_MOBILE_HDMI
+ config FB_SH_MOBILE_MERAM
+ 	tristate "SuperH Mobile MERAM read ahead support for LCDC"
+ 	depends on FB_SH_MOBILE_LCDC
++	select GENERIC_ALLOCATOR
+ 	default y
+ 	---help---
+ 	  Enable MERAM support for the SH-Mobile LCD controller.
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 30a3305..7cd706d 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include <linux/device.h>
++#include <linux/genalloc.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -105,15 +106,17 @@ static const unsigned long icb_regs[] = {
+ /*
+  * sh_mobile_meram_icb - MERAM ICB information
+  * @regs: Registers cache
+- * @region: Start and end addresses of the MERAM region
++ * @offset: MERAM block offset
++ * @size: MERAM block size in bytes
+  * @cache_unit: Bytes to cache per ICB
+  * @pixelformat: Video pixel format of the data stored in the ICB
+  * @current_reg: Which of Start Address Register A (0) or B (1) is in use
+  */
+ struct sh_mobile_meram_icb {
+ 	unsigned long regs[ICB_REGS_SIZE];
++	unsigned long offset;
++	unsigned int size;
+ 
+-	unsigned long region;
+ 	unsigned int cache_unit;
+ 	unsigned int pixelformat;
+ 	unsigned int current_reg;
+@@ -124,21 +127,27 @@ struct sh_mobile_meram_icb {
+ /*
+  * sh_mobile_meram_priv - MERAM device
+  * @base: Registers base address
++ * @meram: MERAM physical address
+  * @regs: Registers cache
+  * @lock: Protects used_icb and icbs
+  * @used_icb: Bitmask of used ICBs
+  * @icbs: ICBs
++ * @pool: Allocation pool to manage the MERAM
+  */
+ struct sh_mobile_meram_priv {
+ 	void __iomem *base;
++	unsigned long meram;
+ 	unsigned long regs[MERAM_REGS_SIZE];
+ 
+ 	struct mutex lock;
+ 	unsigned long used_icb;
+ 	struct sh_mobile_meram_icb icbs[MERAM_ICB_NUM];
++
++	struct gen_pool *pool;
+ };
+ 
+ /* settings */
++#define MERAM_GRANULARITY		1024
+ #define MERAM_SEC_LINE			15
+ #define MERAM_LINE_WIDTH		2048
+ 
+@@ -175,18 +184,10 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+  * Allocation
+  */
+ 
+-#define MERAM_CACHE_START(p)	 ((p) >> 16)
+-#define MERAM_CACHE_END(p)	 ((p) & 0xffff)
+-#define MERAM_CACHE_SET(o, s)	 ((((o) & 0xffff) << 16) | \
+-				  (((o) + (s) - 1) & 0xffff))
+-
+ /* Check if there's no overlaps in MERAM allocation. */
+ static int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+ 			       const struct sh_mobile_meram_icb_cfg *new)
+ {
+-	unsigned int used_start, used_end, meram_start, meram_end;
+-	unsigned int i;
+-
+ 	/* valid ICB? */
+ 	if (new->marker_icb & ~0x1f || new->cache_icb & ~0x1f)
+ 		return 1;
+@@ -195,43 +196,40 @@ static int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+ 	    test_bit(new->cache_icb,  &priv->used_icb))
+ 		return  1;
+ 
+-	for (i = 0; i < MERAM_ICB_NUM; i++) {
+-		if (!test_bit(i, &priv->used_icb))
+-			continue;
+-
+-		used_start = MERAM_CACHE_START(priv->icbs[i].region);
+-		used_end   = MERAM_CACHE_END(priv->icbs[i].region);
+-		meram_start = new->meram_offset;
+-		meram_end   = new->meram_offset + new->meram_size;
+-
+-		if ((meram_start >= used_start && meram_start < used_end) ||
+-		    (meram_end > used_start && meram_end < used_end))
+-			return 1;
+-	}
+-
+ 	return 0;
+ }
+ 
+-/* Mark the specified ICB as used. */
+-static void meram_mark(struct sh_mobile_meram_priv *priv,
++/* Allocate memory for the ICBs and mark them as used. */
++static int meram_alloc(struct sh_mobile_meram_priv *priv,
+ 		       const struct sh_mobile_meram_icb_cfg *new,
+ 		       int pixelformat)
+ {
++	struct sh_mobile_meram_icb *marker = &priv->icbs[new->marker_icb];
++	unsigned long mem;
++
++	mem = gen_pool_alloc(priv->pool, new->meram_size * 1024);
++	if (mem = 0)
++		return -ENOMEM;
++
+ 	__set_bit(new->marker_icb, &priv->used_icb);
+ 	__set_bit(new->cache_icb, &priv->used_icb);
+ 
+-	priv->icbs[new->marker_icb].region = MERAM_CACHE_SET(new->meram_offset,
+-							     new->meram_size);
+-	priv->icbs[new->cache_icb].region = MERAM_CACHE_SET(new->meram_offset,
+-							    new->meram_size);
+-	priv->icbs[new->marker_icb].current_reg = 1;
+-	priv->icbs[new->marker_icb].pixelformat = pixelformat;
++	marker->offset = mem - priv->meram;
++	marker->size = new->meram_size * 1024;
++	marker->current_reg = 1;
++	marker->pixelformat = pixelformat;
++
++	return 0;
+ }
+ 
+ /* Unmark the specified ICB as used. */
+-static void meram_unmark(struct sh_mobile_meram_priv *priv,
+-			 const struct sh_mobile_meram_icb_cfg *icb)
++static void meram_free(struct sh_mobile_meram_priv *priv,
++		       const struct sh_mobile_meram_icb_cfg *icb)
+ {
++	struct sh_mobile_meram_icb *marker = &priv->icbs[icb->marker_icb];
++
++	gen_pool_free(priv->pool, priv->meram + marker->offset, marker->size);
++
+ 	__clear_bit(icb->marker_icb, &priv->used_icb);
+ 	__clear_bit(icb->cache_icb, &priv->used_icb);
+ }
+@@ -302,6 +300,7 @@ static int meram_init(struct sh_mobile_meram_priv *priv,
+ 		      unsigned int xres, unsigned int yres,
+ 		      unsigned int *out_pitch)
+ {
++	struct sh_mobile_meram_icb *marker = &priv->icbs[icb->marker_icb];
+ 	unsigned long total_byte_count = MERAM_CALC_BYTECOUNT(xres, yres);
+ 	unsigned long bnm;
+ 	unsigned int lcdc_pitch;
+@@ -356,11 +355,11 @@ static int meram_init(struct sh_mobile_meram_priv *priv,
+ 	 * we also split the allocated MERAM buffer between two ICBs.
+ 	 */
+ 	meram_write_icb(priv->base, icb->cache_icb, MExxCTL,
+-			MERAM_MExxCTL_VAL(icb->marker_icb, icb->meram_offset) |
++			MERAM_MExxCTL_VAL(icb->marker_icb, marker->offset) |
+ 			MExxCTL_WD1 | MExxCTL_WD0 | MExxCTL_WS | MExxCTL_CM |
+ 			MExxCTL_MD_FB);
+ 	meram_write_icb(priv->base, icb->marker_icb, MExxCTL,
+-			MERAM_MExxCTL_VAL(icb->cache_icb, icb->meram_offset +
++			MERAM_MExxCTL_VAL(icb->cache_icb, marker->offset +
+ 					  icb->meram_size / 2) |
+ 			MExxCTL_WD1 | MExxCTL_WD0 | MExxCTL_WS | MExxCTL_CM |
+ 			MExxCTL_MD_FB);
+@@ -454,10 +453,18 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		goto err;
+ 	}
+ 
+-	/* we now register the ICB */
+-	meram_mark(priv, &cfg->icb[0], pixelformat);
+-	if (is_nvcolor(pixelformat))
+-		meram_mark(priv, &cfg->icb[1], pixelformat);
++	/* We now register the ICBs and allocate the MERAM regions. */
++	error = meram_alloc(priv, &cfg->icb[0], pixelformat);
++	if (error < 0)
++		goto err;
++
++	if (is_nvcolor(pixelformat)) {
++		error = meram_alloc(priv, &cfg->icb[1], pixelformat);
++		if (error < 0) {
++			meram_free(priv, &cfg->icb[0]);
++			goto err;
++		}
++	}
+ 
+ 	/* initialize MERAM */
+ 	meram_init(priv, &cfg->icb[0], xres, yres, &out_pitch);
+@@ -497,10 +504,10 @@ static int sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata,
+ 	/* deinit & unmark */
+ 	if (is_nvcolor(icb->pixelformat)) {
+ 		meram_deinit(priv, &cfg->icb[1]);
+-		meram_unmark(priv, &cfg->icb[1]);
++		meram_free(priv, &cfg->icb[1]);
+ 	}
+ 	meram_deinit(priv, &cfg->icb[0]);
+-	meram_unmark(priv, &cfg->icb[0]);
++	meram_free(priv, &cfg->icb[0]);
+ 
+ 	mutex_unlock(&priv->lock);
+ 
+@@ -626,6 +633,7 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ 	pdata->priv = priv;
+ 	pdata->pdev = pdev;
+ 
++	/* Request memory regions and remap the registers. */
+ 	if (!request_mem_region(regs->start, resource_size(regs), pdev->name)) {
+ 		dev_err(&pdev->dev, "MERAM registers region already claimed\n");
+ 		error = -EBUSY;
+@@ -646,6 +654,18 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ 		goto err_ioremap;
+ 	}
+ 
++	/* Create and initialize the MERAM memory pool. */
++	priv->pool = gen_pool_create(ilog2(MERAM_GRANULARITY), -1);
++	if (priv->pool = NULL) {
++		error = -ENOMEM;
++		goto err_genpool;
++	}
++
++	error = gen_pool_add(priv->pool, meram->start, resource_size(meram),
++			     -1);
++	if (error < 0)
++		goto err_genpool;
++
+ 	/* initialize ICB addressing mode */
+ 	if (pdata->addr_mode = SH_MOBILE_MERAM_MODE1)
+ 		meram_write_reg(priv->base, MEVCR1, MEVCR1_AMD1);
+@@ -657,6 +677,10 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ 
+ 	return 0;
+ 
++err_genpool:
++	if (priv->pool)
++		gen_pool_destroy(priv->pool);
++	iounmap(priv->base);
+ err_ioremap:
+ 	release_mem_region(meram->start, resource_size(meram));
+ err_req_meram:
+@@ -677,6 +701,8 @@ static int sh_mobile_meram_remove(struct platform_device *pdev)
+ 
+ 	pm_runtime_disable(&pdev->dev);
+ 
++	gen_pool_destroy(priv->pool);
++
+ 	iounmap(priv->base);
+ 	release_mem_region(meram->start, resource_size(meram));
+ 	release_mem_region(regs->start, resource_size(regs));
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 05ca3f9..f7700fc 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -28,7 +28,6 @@ struct sh_mobile_meram_info {
+ struct sh_mobile_meram_icb_cfg {
+ 	unsigned int marker_icb;	/* ICB # for Marker ICB */
+ 	unsigned int cache_icb;		/* ICB # for Cache ICB */
+-	unsigned int meram_offset;	/* MERAM Buffer Offset to use */
+ 	unsigned int meram_size;	/* MERAM Buffer Size to use */
+ };
+ 
 -- 
-Regards,
+1.7.3.4
 
-Laurent Pinchart
