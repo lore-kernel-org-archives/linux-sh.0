@@ -1,51 +1,99 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:23 +0000
-Subject: [PATCH 28/57] fbdev: sh_mobile_hdmi: Don't set sh_hdmi::mode in the display on handler
-Message-Id: <1323784972-24205-29-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:48 +0000
+Subject: [PATCH 53/57] fbdev: sh_mobile_meram: Don't perform update in register operation
+Message-Id: <1323784972-24205-54-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The struct sh_hdmi mode field is only used after being assigned by the
-EDID read code. There is thus no need to initialize it from the LCDC
-display var in the display on handler.
+Remove the RGB or Y/C base address update from the meram_register()
+operation, as this belongs to the meram_update() operation.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_hdmi.c |    8 +-------
- 1 files changed, 1 insertions(+), 7 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    8 +++++---
+ drivers/video/sh_mobile_meram.c  |   15 ++-------------
+ include/video/sh_mobile_meram.h  |    4 ----
+ 3 files changed, 7 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 2617609..37f935f 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -995,7 +995,6 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
- {
- 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
--	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 4e9572c..e10a78a 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -880,11 +880,13 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
  
- 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi,
- 		hdmi->hp_state);
-@@ -1006,15 +1005,10 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
- 	 * HDMI_HOTPLUG_CONNECTED:	on monitor plug-in
- 	 * HDMI_HOTPLUG_EDID_DONE:	on EDID read completion
- 	 */
--	switch (hdmi->hp_state) {
--	case HDMI_HOTPLUG_EDID_DONE:
-+	if (hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE) {
- 		/* PS mode d->e. All functions are active */
- 		hdmi_write(hdmi, 0x80, HDMI_SYSTEM_CTRL);
- 		dev_dbg(hdmi->dev, "HDMI running\n");
--		break;
--	default:
--		fb_var_to_videomode(&hdmi->mode, &ch->display_var);
--		break;
+ 		meram = mdev->ops->meram_register(mdev, ch->cfg->meram_cfg,
+ 					ch->pitch, ch->yres, pixelformat,
+-					ch->base_addr_y, ch->base_addr_c,
+-					&ch->base_addr_y, &ch->base_addr_c,
+ 					&ch->pitch);
+-		if (!IS_ERR(meram))
++		if (!IS_ERR(meram)) {
++			mdev->ops->meram_update(mdev, meram,
++					ch->base_addr_y, ch->base_addr_c,
++					&ch->base_addr_y, &ch->base_addr_c);
+ 			ch->meram = meram;
++		}
  	}
  
- 	return hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED
+ 	/* Start the LCDC. */
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 01ae5b6..aad8b0b 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -447,10 +447,6 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 				      const struct sh_mobile_meram_cfg *cfg,
+ 				      unsigned int xres, unsigned int yres,
+ 				      unsigned int pixelformat,
+-				      unsigned long base_addr_y,
+-				      unsigned long base_addr_c,
+-				      unsigned long *icb_addr_y,
+-				      unsigned long *icb_addr_c,
+ 				      unsigned int *pitch)
+ {
+ 	struct sh_mobile_meram_fb_cache *cache;
+@@ -469,9 +465,8 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 	priv = pdata->priv;
+ 	pdev = pdata->pdev;
+ 
+-	dev_dbg(&pdev->dev, "registering %dx%d (%s) (y=%08lx, c=%08lx)",
+-		xres, yres, (!pixelformat) ? "yuv" : "rgb",
+-		base_addr_y, base_addr_c);
++	dev_dbg(&pdev->dev, "registering %dx%d (%s)", xres, yres,
++		!pixelformat ? "yuv" : "rgb");
+ 
+ 	/* we can't handle wider than 8192px */
+ 	if (xres > 8192) {
+@@ -499,12 +494,6 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		meram_init(priv, &cache->planes[1], 2 * xres, (yres + 1) / 2,
+ 			&out_pitch);
+ 
+-	meram_set_next_addr(priv, cache, base_addr_y, base_addr_c);
+-	meram_get_next_icb_addr(pdata, cache, icb_addr_y, icb_addr_c);
+-
+-	dev_dbg(&pdev->dev, "registered - can access via y=%08lx, c=%08lx",
+-		*icb_addr_y, *icb_addr_c);
+-
+ err:
+ 	mutex_unlock(&priv->lock);
+ 	return cache;
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 8ff98eb..51c98ca 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -41,10 +41,6 @@ struct sh_mobile_meram_ops {
+ 				const struct sh_mobile_meram_cfg *cfg,
+ 				unsigned int xres, unsigned int yres,
+ 				unsigned int pixelformat,
+-				unsigned long base_addr_y,
+-				unsigned long base_addr_c,
+-				unsigned long *icb_addr_y,
+-				unsigned long *icb_addr_c,
+ 				unsigned int *pitch);
+ 
+ 	/* unregister usage of meram */
 -- 
 1.7.3.4
 
