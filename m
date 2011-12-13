@@ -1,28 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Dec 2011 16:52:03 +0000
-Subject: [PATCH 01/07] ARM: mach-shmobile: Marzen mach-type entry
-Message-Id: <20111206165203.19348.80705.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:11 +0000
+Subject: [PATCH 16/57] fbdev: sh_mobile_hdmi: Remove sh_mobile_hdmi_info lcd_chan field
+Message-Id: <1323784972-24205-17-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The field is unused, remove it.
 
-The marzen board has already been registered through the web interface,
-but upstream does not include the mach-type entry yet.
-
-Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ include/video/sh_mobile_hdmi.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
- arch/arm/tools/mach-types |    1 +
- 1 file changed, 1 insertion(+)
+diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
+index 0b8d2cf..728f9de 100644
+--- a/include/video/sh_mobile_hdmi.h
++++ b/include/video/sh_mobile_hdmi.h
+@@ -31,7 +31,6 @@ struct clk;
+ #define HDMI_SND_SRC_HBR	(3 << 0)
+ 
+ struct sh_mobile_hdmi_info {
+-	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
+ 	unsigned int			 flags;
+ 	long (*clk_optimize_parent)(unsigned long target, unsigned long *best_freq,
+ 				    unsigned long *parent_freq);
+-- 
+1.7.3.4
 
---- 0002/arch/arm/tools/mach-types
-+++ work/arch/arm/tools/mach-types	2011-12-07 00:30:13.000000000 +0900
-@@ -1127,3 +1127,4 @@ m28evk			MACH_M28EVK		M28EVK			3613
- kota2			MACH_KOTA2		KOTA2			3616
- smdk4212		MACH_SMDK4212		SMDK4212		3638
- smdk4412		MACH_SMDK4412		SMDK4412		3765
-+marzen			MACH_MARZEN		MARZEN			3790
