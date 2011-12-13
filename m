@@ -1,35 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 12 Dec 2011 08:18:27 +0000
-Subject: [NEXT] mach-shmobile and sh compilation broken
-Message-Id: <Pine.LNX.4.64.1112120912380.10378@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 13 Dec 2011 16:36:42 +0000
+Subject: [PATCH 04/05] ARM: mach-shmobile: Marzen SCIF2/SCIF4 support
+Message-Id: <20111213163642.4096.59993.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi all
+From: Magnus Damm <damm@opensource.se>
 
-Current next fails to compile for mach-shmobile:
+Add SCIF2 and SCIF4 pin configuration code to
+the r8a7779 Marzen board.
 
-arch/arm/include/asm/pgtable.h:47: warning: #warning "SH-Mobile's consistent DMA size conflicts with VMALLOC_END by 144MB"
-In file included from /opt/src/linux-2.6/arch/arm/kernel/process.c:64:
-arch/arm/mach-shmobile/include/mach/system.h:9: error: #error Fix me up
-make[2]: *** [arch/arm/kernel/process.o] Error 1
-
-(the first line is an unrelated warning, it's actually repeated multiple 
-times throughout compilation), and arch/sh:
-
-mm/pgtable-generic.c: In function 'pmdp_clear_flush_young':
-mm/pgtable-generic.c:76: error: call to '__build_bug_failed' declared with attribute error: BUILD_BUG failed
-make[2]: *** [mm/pgtable-generic.o] Error 1
-
-The latter has been there since a few days already, possibly longer than 
-a week.
-
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ arch/arm/mach-shmobile/board-marzen.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- 0020/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2011-12-14 00:06:37.000000000 +0900
+@@ -25,6 +25,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/gpio.h>
+ #include <linux/dma-mapping.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+@@ -86,6 +87,14 @@ static void __init marzen_init(void)
+ {
+ 	r8a7779_pinmux_init();
+ 
++	/* SCIF2 (CN18: DEBUG0) */
++	gpio_request(GPIO_FN_TX2_C, NULL);
++	gpio_request(GPIO_FN_RX2_C, NULL);
++
++	/* SCIF4 (CN19: DEBUG1) */
++	gpio_request(GPIO_FN_TX4, NULL);
++	gpio_request(GPIO_FN_RX4, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
