@@ -1,156 +1,302 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 07 Nov 2011 09:53:43 +0000
-Subject: [PATCH 3/5 v2] ARM: mach-shmobile: bonito: Add dip-switch selector
-Message-Id: <87fwi0qmvv.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:22 +0000
+Subject: [PATCH 27/57] fbdev: sh_mobile_lcdc: Pass a video mode to the notify callback
+Message-Id: <1323784972-24205-28-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-devices enable/disable are controled by dip-switch on bonito board.
-If bonito core board is connected to base board,
-you can check the settings from FPGA.
-This patch adds basic code and controls SCIFA5 settings
+Pass pointers to struct fb_videomode and struct fb_monspecs instead of
+struct fb_var_screeninfo to the notify callback.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-v1 -> v2
+ drivers/video/sh_mobile_hdmi.c   |   59 +++++++++++++++++--------------------
+ drivers/video/sh_mobile_lcdcfb.c |   40 ++++++++++++++-----------
+ drivers/video/sh_mobile_lcdcfb.h |    3 +-
+ 3 files changed, 51 insertions(+), 51 deletions(-)
 
-- based on bonito_fpga_xxxx() functions
-
- arch/arm/mach-shmobile/board-bonito.c |   88 ++++++++++++++++++++++++++------
- 1 files changed, 71 insertions(+), 17 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index 5536ead..aa5c9a7 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -56,8 +56,21 @@
-  */
- 
- /*
-+ * SCIFA5 (CN42)
-+ *
-+ * S38.3 = ON
-+ * S39.6 = ON
-+ * S43.1 = ON
-+ */
-+
-+/*
-  * FPGA
-  */
-+#define BUSSWMR1	0x0070
-+#define BUSSWMR2	0x0072
-+#define BUSSWMR3	0x0074
-+#define BUSSWMR4	0x0076
-+
- #define A1MDSR		0x10E0
- #define BVERR		0x1100
- static u16 bonito_fpga_read(u32 offset)
-@@ -75,9 +88,15 @@ static void bonito_fpga_write(u32 offset, u16 val, u16 mask)
- }
- 
- /*
-- * devices
-+ * core board devices
-+ */
-+static struct platform_device *bonito_core_devices[] __initdata = {
-+};
-+
-+/*
-+ * base board devices
-  */
--static struct platform_device *bonito_devices[] __initdata = {
-+static struct platform_device *bonito_base_devices[] __initdata = {
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 055cd92..2617609 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -220,7 +220,7 @@ struct sh_hdmi {
+ 	struct clk *hdmi_clk;
+ 	struct device *dev;
+ 	struct delayed_work edid_work;
+-	struct fb_var_screeninfo var;
++	struct fb_videomode mode;
+ 	struct fb_monspecs monspec;
  };
  
- /*
-@@ -147,26 +166,18 @@ static void __init bonito_map_io(void)
- /*
-  * board init
-  */
-+#define BIT_ON(sw, bit)		(sw & (1 << bit))
-+#define BIT_OFF(sw, bit)	(!(sw & (1 << bit)))
-+
- static void __init bonito_init(void)
+@@ -291,24 +291,24 @@ static struct snd_soc_codec_driver soc_codec_dev_sh_hdmi = {
+ /* External video parameter settings */
+ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
  {
- 	u16 val;
+-	struct fb_var_screeninfo *var = &hdmi->var;
++	struct fb_videomode *mode = &hdmi->mode;
+ 	u16 htotal, hblank, hdelay, vtotal, vblank, vdelay, voffset;
+ 	u8 sync = 0;
  
- 	r8a7740_pinmux_init();
- 
--	/* FPGA */
--	gpio_request(GPIO_FN_CS5B, NULL);
--	gpio_request(GPIO_FN_CS6A, NULL);
--	gpio_request(GPIO_FN_CS5A_PORT105,  NULL);
--	gpio_request(GPIO_FN_IRQ10, NULL);
+-	htotal = var->xres + var->right_margin + var->left_margin + var->hsync_len;
 -
--	val = bonito_fpga_read(BVERR);
--	pr_info("bonito version: cpu %02x, base %02x\n",
--		((val >> 8) & 0xFF),
--		((val >> 0) & 0xFF));
+-	hdelay = var->hsync_len + var->left_margin;
+-	hblank = var->right_margin + hdelay;
++	htotal = mode->xres + mode->right_margin + mode->left_margin
++	       + mode->hsync_len;
++	hdelay = mode->hsync_len + mode->left_margin;
++	hblank = mode->right_margin + hdelay;
+ 
+ 	/*
+ 	 * Vertical timing looks a bit different in Figure 18,
+ 	 * but let's try the same first by setting offset = 0
+ 	 */
+-	vtotal = var->yres + var->upper_margin + var->lower_margin + var->vsync_len;
 -
--	/* SCIFA5 */
--	gpio_request(GPIO_FN_SCIFA5_TXD_PORT91, NULL);
--	gpio_request(GPIO_FN_SCIFA5_RXD_PORT92, NULL);
-+	/*
-+	 * core board settings
-+	 */
+-	vdelay = var->vsync_len + var->upper_margin;
+-	vblank = var->lower_margin + vdelay;
+-	voffset = min(var->upper_margin / 2, 6U);
++	vtotal = mode->yres + mode->upper_margin + mode->lower_margin
++	       + mode->vsync_len;
++	vdelay = mode->vsync_len + mode->upper_margin;
++	vblank = mode->lower_margin + vdelay;
++	voffset = min(mode->upper_margin / 2, 6U);
  
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
-@@ -174,7 +185,50 @@ static void __init bonito_init(void)
- #endif
+ 	/*
+ 	 * [3]: VSYNC polarity: Positive
+@@ -316,14 +316,14 @@ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
+ 	 * [1]: Interlace/Progressive: Progressive
+ 	 * [0]: External video settings enable: used.
+ 	 */
+-	if (var->sync & FB_SYNC_HOR_HIGH_ACT)
++	if (mode->sync & FB_SYNC_HOR_HIGH_ACT)
+ 		sync |= 4;
+-	if (var->sync & FB_SYNC_VERT_HIGH_ACT)
++	if (mode->sync & FB_SYNC_VERT_HIGH_ACT)
+ 		sync |= 8;
  
- 	r8a7740_add_standard_devices();
--	platform_add_devices(bonito_devices, ARRAY_SIZE(bonito_devices));
-+
-+	platform_add_devices(bonito_core_devices,
-+			     ARRAY_SIZE(bonito_core_devices));
-+
-+	/*
-+	 * base board settings
-+	 */
-+	gpio_request(GPIO_PORT176, NULL);
-+	gpio_direction_input(GPIO_PORT176);
-+	if (!gpio_get_value(GPIO_PORT176)) {
-+		u16 bsw2;
-+		u16 bsw3;
-+		u16 bsw4;
-+
-+		/*
-+		 * FPGA
-+		 */
-+		gpio_request(GPIO_FN_CS5B,		NULL);
-+		gpio_request(GPIO_FN_CS6A,		NULL);
-+		gpio_request(GPIO_FN_CS5A_PORT105,	NULL);
-+		gpio_request(GPIO_FN_IRQ10,		NULL);
-+
-+		val = bonito_fpga_read(BVERR);
-+		pr_info("bonito version: cpu %02x, base %02x\n",
-+			((val >> 8) & 0xFF),
-+			((val >> 0) & 0xFF));
-+
-+		bsw2 = bonito_fpga_read(BUSSWMR2);
-+		bsw3 = bonito_fpga_read(BUSSWMR3);
-+		bsw4 = bonito_fpga_read(BUSSWMR4);
-+
-+		/*
-+		 * SCIFA5 (CN42)
-+		 */
-+		if (BIT_OFF(bsw2, 1) &&	/* S38.3 = ON */
-+		    BIT_OFF(bsw3, 9) &&	/* S39.6 = ON */
-+		    BIT_OFF(bsw4, 4)) {	/* S43.1 = ON */
-+			gpio_request(GPIO_FN_SCIFA5_TXD_PORT91,	NULL);
-+			gpio_request(GPIO_FN_SCIFA5_RXD_PORT92,	NULL);
-+		}
-+
-+		platform_add_devices(bonito_base_devices,
-+				     ARRAY_SIZE(bonito_base_devices));
-+	}
+ 	dev_dbg(hdmi->dev, "H: %u, %u, %u, %u; V: %u, %u, %u, %u; sync 0x%x\n",
+-		htotal, hblank, hdelay, var->hsync_len,
+-		vtotal, vblank, vdelay, var->vsync_len, sync);
++		htotal, hblank, hdelay, mode->hsync_len,
++		vtotal, vblank, vdelay, mode->vsync_len, sync);
+ 
+ 	hdmi_write(hdmi, sync | (voffset << 4), HDMI_EXTERNAL_VIDEO_PARAM_SETTINGS);
+ 
+@@ -336,8 +336,8 @@ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
+ 	hdmi_write(hdmi, hdelay, HDMI_EXTERNAL_H_DELAY_7_0);
+ 	hdmi_write(hdmi, hdelay >> 8, HDMI_EXTERNAL_H_DELAY_9_8);
+ 
+-	hdmi_write(hdmi, var->hsync_len, HDMI_EXTERNAL_H_DURATION_7_0);
+-	hdmi_write(hdmi, var->hsync_len >> 8, HDMI_EXTERNAL_H_DURATION_9_8);
++	hdmi_write(hdmi, mode->hsync_len, HDMI_EXTERNAL_H_DURATION_7_0);
++	hdmi_write(hdmi, mode->hsync_len >> 8, HDMI_EXTERNAL_H_DURATION_9_8);
+ 
+ 	hdmi_write(hdmi, vtotal, HDMI_EXTERNAL_V_TOTAL_7_0);
+ 	hdmi_write(hdmi, vtotal >> 8, HDMI_EXTERNAL_V_TOTAL_9_8);
+@@ -346,7 +346,7 @@ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
+ 
+ 	hdmi_write(hdmi, vdelay, HDMI_EXTERNAL_V_DELAY);
+ 
+-	hdmi_write(hdmi, var->vsync_len, HDMI_EXTERNAL_V_DURATION);
++	hdmi_write(hdmi, mode->vsync_len, HDMI_EXTERNAL_V_DURATION);
+ 
+ 	/* Set bit 0 of HDMI_EXTERNAL_VIDEO_PARAM_SETTINGS here for external mode */
+ 	if (!hdmi->preprogrammed_vic)
+@@ -473,7 +473,7 @@ static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
+  */
+ static void sh_hdmi_phy_config(struct sh_hdmi *hdmi)
+ {
+-	if (hdmi->var.pixclock < 10000) {
++	if (hdmi->mode.pixclock < 10000) {
+ 		/* for 1080p8bit 148MHz */
+ 		hdmi_write(hdmi, 0x1d, HDMI_SLIPHDMIT_PARAM_SETTINGS_1);
+ 		hdmi_write(hdmi, 0x00, HDMI_SLIPHDMIT_PARAM_SETTINGS_2);
+@@ -484,7 +484,7 @@ static void sh_hdmi_phy_config(struct sh_hdmi *hdmi)
+ 		hdmi_write(hdmi, 0x0e, HDMI_SLIPHDMIT_PARAM_SETTINGS_8);
+ 		hdmi_write(hdmi, 0x25, HDMI_SLIPHDMIT_PARAM_SETTINGS_9);
+ 		hdmi_write(hdmi, 0x04, HDMI_SLIPHDMIT_PARAM_SETTINGS_10);
+-	} else if (hdmi->var.pixclock < 30000) {
++	} else if (hdmi->mode.pixclock < 30000) {
+ 		/* 720p, 8bit, 74.25MHz. Might need to be adjusted for other formats */
+ 		/*
+ 		 * [1:0]	Speed_A
+@@ -735,7 +735,6 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ {
+ 	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
+ 	struct fb_info *info = ch ? ch->info : NULL;
+-	struct fb_var_screeninfo var;
+ 	const struct fb_videomode *mode, *found = NULL;
+ 	const struct fb_modelist *modelist = NULL;
+ 	unsigned int f_width = 0, f_height = 0, f_refresh = 0;
+@@ -855,10 +854,9 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 		}
+ 
+ 		/* Check if supported: sufficient fb memory, supported clock-rate */
+-		fb_videomode_to_var(&var, mode);
+-
+ 		if (ch && ch->notify &&
+-		    ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_MODE, &var)) {
++		    ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_MODE, mode,
++			       NULL)) {
+ 			scanning = true;
+ 			preferred_bad = true;
+ 			continue;
+@@ -868,9 +866,6 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 		found_rate_error = rate_error;
+ 	}
+ 
+-	hdmi->var.width = hdmi->monspec.max_x * 10;
+-	hdmi->var.height = hdmi->monspec.max_y * 10;
+-
+ 	/*
+ 	 * TODO 1: if no ->info is present, postpone running the config until
+ 	 * after ->info first gets registered.
+@@ -916,7 +911,7 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 		found->xres, found->yres, found->refresh,
+ 		PICOS2KHZ(found->pixclock) * 1000, found_rate_error);
+ 
+-	fb_videomode_to_var(&hdmi->var, found);
++	hdmi->mode = *found;
+ 	sh_hdmi_external_video_param(hdmi);
+ 
+ 	return 0;
+@@ -1017,9 +1012,9 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
+ 		hdmi_write(hdmi, 0x80, HDMI_SYSTEM_CTRL);
+ 		dev_dbg(hdmi->dev, "HDMI running\n");
+ 		break;
+-	case HDMI_HOTPLUG_DISCONNECTED:
+ 	default:
+-		hdmi->var = ch->display_var;
++		fb_var_to_videomode(&hdmi->mode, &ch->display_var);
++		break;
+ 	}
+ 
+ 	return hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED
+@@ -1107,7 +1102,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 
+ 		if (ch && ch->notify)
+ 			ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_CONNECT,
+-				   &hdmi->var);
++				   &hdmi->mode, &hdmi->monspec);
+ 	} else {
+ 		hdmi->monspec.modedb_len = 0;
+ 		fb_destroy_modedb(hdmi->monspec.modedb);
+@@ -1115,7 +1110,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 
+ 		if (ch && ch->notify)
+ 			ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_DISCONNECT,
+-				   NULL);
++				   NULL, NULL);
+ 
+ 		ret = 0;
+ 	}
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 21e5f10..4ec216e 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -365,35 +365,31 @@ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
+ 
+ static bool
+ sh_mobile_lcdc_must_reconfigure(struct sh_mobile_lcdc_chan *ch,
+-				const struct fb_var_screeninfo *new_var)
++				const struct fb_videomode *new_mode)
+ {
+ 	struct fb_var_screeninfo *old_var = &ch->display_var;
+ 	struct fb_videomode old_mode;
+-	struct fb_videomode new_mode;
+ 
+ 	fb_var_to_videomode(&old_mode, old_var);
+-	fb_var_to_videomode(&new_mode, new_var);
+ 
+ 	dev_dbg(ch->info->dev, "Old %ux%u, new %ux%u\n",
+-		old_mode.xres, old_mode.yres, new_mode.xres, new_mode.yres);
++		old_mode.xres, old_mode.yres, new_mode->xres, new_mode->yres);
+ 
+-	if (fb_mode_is_equal(&old_mode, &new_mode)) {
+-		/* It can be a different monitor with an equal video-mode */
+-		old_var->width = new_var->width;
+-		old_var->height = new_var->height;
++	/* It can be a different monitor with an equal video-mode */
++	if (fb_mode_is_equal(&old_mode, new_mode))
+ 		return false;
+-	}
+ 
+ 	dev_dbg(ch->info->dev, "Switching %u -> %u lines\n",
+-		old_mode.yres, new_mode.yres);
+-	*old_var = *new_var;
++		old_mode.yres, new_mode->yres);
++	fb_videomode_to_var(old_var, new_mode);
+ 
+ 	return true;
  }
  
- static void __init bonito_timer_init(void)
+ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+ 					 enum sh_mobile_lcdc_entity_event event,
+-					 struct fb_var_screeninfo *var)
++					 const struct fb_videomode *mode,
++					 const struct fb_monspecs *monspec)
+ {
+ 	struct fb_info *info = ch->info;
+ 	int ret = 0;
+@@ -404,14 +400,17 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+ 		if (lock_fb_info(info)) {
+ 			console_lock();
+ 
+-			if (!sh_mobile_lcdc_must_reconfigure(ch, var) &&
++			ch->display_var.width = monspec->max_x * 10;
++			ch->display_var.height = monspec->max_y * 10;
++
++			if (!sh_mobile_lcdc_must_reconfigure(ch, mode) &&
+ 			    info->state = FBINFO_STATE_RUNNING) {
+ 				/* First activation with the default monitor.
+ 				 * Just turn on, if we run a resume here, the
+ 				 * logo disappears.
+ 				 */
+-				info->var.width = var->width;
+-				info->var.height = var->height;
++				info->var.width = monspec->max_x * 10;
++				info->var.height = monspec->max_y * 10;
+ 				sh_mobile_lcdc_display_on(ch);
+ 			} else {
+ 				/* New monitor or have to wake up */
+@@ -433,12 +432,17 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+ 		}
+ 		break;
+ 
+-	case SH_MOBILE_LCDC_EVENT_DISPLAY_MODE:
++	case SH_MOBILE_LCDC_EVENT_DISPLAY_MODE: {
++		struct fb_var_screeninfo var;
++
+ 		/* Validate a proposed new mode */
+-		var->bits_per_pixel = info->var.bits_per_pixel;
+-		ret = info->fbops->fb_check_var(var, info);
++		fb_videomode_to_var(&var, mode);
++		var.bits_per_pixel = info->var.bits_per_pixel;
++		var.grayscale = info->var.grayscale;
++		ret = info->fbops->fb_check_var(&var, info);
+ 		break;
+ 	}
++	}
+ 
+ 	return ret;
+ }
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index e2eb7af..10086ae 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -79,7 +79,8 @@ struct sh_mobile_lcdc_chan {
+ 
+ 	int (*notify)(struct sh_mobile_lcdc_chan *ch,
+ 		      enum sh_mobile_lcdc_entity_event event,
+-		      struct fb_var_screeninfo *var);
++		      const struct fb_videomode *mode,
++		      const struct fb_monspecs *monspec);
+ };
+ 
+ #endif
 -- 
-1.7.5.4
+1.7.3.4
 
