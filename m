@@ -1,121 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 19 Dec 2011 01:29:55 +0000
-Subject: Re: [PATCH 27/57] fbdev: sh_mobile_lcdc: Pass a video mode to the notify callback
-Message-Id: <201112190229.57229.laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 13 Dec 2011 16:36:03 +0000
+Subject: [PATCH 00/05] ARM: mach-shmobile: r8a7779 and Marzen V2
+Message-Id: <20111213163603.4096.10169.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323784972-24205-28-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1323784972-24205-28-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+ARM: mach-shmobile: r8a7779 and Marzen V2
 
-On Friday 16 December 2011 11:33:55 Guennadi Liakhovetski wrote:
-> On Fri, 16 Dec 2011, Laurent Pinchart wrote:
-> > On Thursday 15 December 2011 20:01:54 Guennadi Liakhovetski wrote:
-> > > On Tue, 13 Dec 2011, Laurent Pinchart wrote:
-> > > > Pass pointers to struct fb_videomode and struct fb_monspecs instead
-> > > > of struct fb_var_screeninfo to the notify callback.
-> > > > 
-> > > > Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > > > ---
-> > > > 
-> > > >  drivers/video/sh_mobile_hdmi.c   |   59
-> > > >  +++++++++++++++++--------------------
-> > > >  drivers/video/sh_mobile_lcdcfb.c
-> > > >  
-> > > >  |   40 ++++++++++++++----------- drivers/video/sh_mobile_lcdcfb.h |
-> > > >  
-> > > >  3 +-
-> > > >  3 files changed, 51 insertions(+), 51 deletions(-)
-> > > 
-> > > [snip]
-> > > 
-> > > > diff --git a/drivers/video/sh_mobile_lcdcfb.c
-> > > > b/drivers/video/sh_mobile_lcdcfb.c index 21e5f10..4ec216e 100644
-> > > > --- a/drivers/video/sh_mobile_lcdcfb.c
-> > > > +++ b/drivers/video/sh_mobile_lcdcfb.c
-> > > 
-> > > [ditto]
-> > > 
-> > > > @@ -433,12 +432,17 @@ static int sh_mobile_lcdc_display_notify(struct
-> > > > sh_mobile_lcdc_chan *ch,
-> > > > 
-> > > >  		}
-> > > >  		break;
-> > > > 
-> > > > -	case SH_MOBILE_LCDC_EVENT_DISPLAY_MODE:
-> > > > +	case SH_MOBILE_LCDC_EVENT_DISPLAY_MODE: {
-> > > > +		struct fb_var_screeninfo var;
-> > > > +
-> > > > 
-> > > >  		/* Validate a proposed new mode */
-> > > > 
-> > > > -		var->bits_per_pixel = info->var.bits_per_pixel;
-> > > > -		ret = info->fbops->fb_check_var(var, info);
-> > > > +		fb_videomode_to_var(&var, mode);
-> > > > +		var.bits_per_pixel = info->var.bits_per_pixel;
-> > > > +		var.grayscale = info->var.grayscale;
-> > > > +		ret = info->fbops->fb_check_var(&var, info);
-> > > > 
-> > > >  		break;
-> > > >  	
-> > > >  	}
-> > > > 
-> > > > +	}
-> > > 
-> > > nitpick - please, realign:-)
-> > 
-> > It's common in driver code not to increase the identation level twice in
-> > a case statement if braces are needed. However, those "braced"
-> > statements are usually not the last ones in the switch. In this
-> > particular case this creates an alignment issue at the end, as your
-> > correctly pointed out. However, I'd like to avoid increasing the
-> > indentation of the whole block. Increasing the indentation of the
-> > closing brace only also causes an alignment issue. I can add a default
-> > case that returns an error to fix this, but that's adding code to fix a
-> > cosmetic problem :-) What's your preference.
-> 
-> Personally, I don't like just using braces without a related statement
-> like "if," "do," etc. In such "case" cases I usually avoid adding own
-> braces and just put any declarations, that are needed there in the
-> enclosing block, e.g., the function.
+[PATCH 01/05] ARM: mach-shmobile: r8a7779 and Marzen base support V2
+[PATCH 02/05] ARM: mach-shmobile: r8a7779 PFC GPIO-only support V2
+[PATCH 03/05] ARM: mach-shmobile: r8a7779 PFC function support
+[PATCH 04/05] ARM: mach-shmobile: Marzen SCIF2/SCIF4 support
+[PATCH 05/05] ARM: mach-shmobile: Marzen LAN89218 support
 
-Using braces with case statements is a common practice in the kernel, without 
-adding an extra indentation level.
+On the SoC-level simple things like the SCIF console, the TMU timer,
+the GIC interrupt controller, initial CPG clock framework code and
+now full PFC support are implemented. On the Marzen board the only
+code for now is support for SCIF2/SCIF4 and the LAN89218 ethernet
+chip.
 
-In this particular case I can move the variable declaration at the top of the 
-function, as the generated code on ARM (at least with gcc ('cs2009q3-67-hard-
-sb4') 4.4.1) doesn't differ.
+Changes since V1:
+- Various CPG and PFC changes have now been submitted separately
+- Local CPG and PFC workarounds have been dropped
+- The r8a7779 PFC code has been updated to fix incorrect register base address
+- PMMR support has been added to the PFC code
+- r8a7779 PFC function support has been added
+- The PFC function code is now used to configure SCIF2/SCIF4 pins
+- LAN89218 platform data and pin configuration via PFC function code
 
-> If you really don't want either, I would probably prefer a style like
-> 
-> 	switch (x) {
-> 	case X:
-> 		{
-> 			int y;
-> 			my_statement(y);
-> 			break;
-> 		}
-> 	}
-> 
-> You could also do
-> 
-> 	switch (x) {
-> 	case X:
-> 		do {
-> 			int y;
-> 			my_statement(y);
-> 			break;
-> 		} while (0);
-> 	}
-> 
-> So, choose your poison:-)
+People interested in mach-type entry and serial debug code can look at:
+[PATCH 00/07] ARM: mach-shmobile: r8a7779 and Marzen prototype V1
 
+Feel free to contact me privately for the following patch that may
+be rejected by mailing lists due to size issues:
+[PATCH 03/05] ARM: mach-shmobile: r8a7779 PFC function support
 
--- 
-Regards,
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Laurent Pinchart
+ Again, will most likely clash with A1 support written by Morimoto-san.
+ Built on top of linus rc- git with Kota2 patches destined for -rc.
+
+ Depends on the following patches for CPG and PFC:
+  [PATCH 00/04] sh: clock / CPG ioremap() update
+  [PATCH 01/04] sh: extend clock struct with mapped_reg member
+  [PATCH 02/04] sh: use ioread32/iowrite32 and mapped_reg for mstp32
+  [PATCH 03/04] sh: use ioread32/iowrite32 and mapped_reg for div4
+  [PATCH 04/04] sh: use ioread32/iowrite32 and mapped_reg for div6
+  [PATCH] sh: pfc: ioremap() support
+  [PATCH 00/05] sh: pfc: Variable bitfield width and unlock reg patches
+  [PATCH 01/05] sh: pfc: Add gpio_read_bit() for data register access
+  [PATCH 02/05] sh: pfc: Convert index to field and value pair
+  [PATCH 03/05] sh: pfc: Add config_reg_helper() function
+  [PATCH 04/05] sh: pfc: Variable bitfield width config register support
+  [PATCH 05/05] sh: pfc: Unlock register support
+
+ arch/arm/mach-shmobile/Kconfig                |   12 
+ arch/arm/mach-shmobile/Makefile               |    4 
+ arch/arm/mach-shmobile/board-marzen.c         |  157 +
+ arch/arm/mach-shmobile/clock-r8a7779.c        |  105 
+ arch/arm/mach-shmobile/include/mach/common.h  |    6 
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  327 +++
+ arch/arm/mach-shmobile/intc-r8a7779.c         |   58 
+ arch/arm/mach-shmobile/pfc-r8a7779.c          | 2647 ++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/setup-r8a7779.c        |  231 ++
+ 9 files changed, 3545 insertions(+), 2 deletions(-)
+
