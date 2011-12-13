@@ -1,114 +1,96 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 09 Dec 2011 23:45:31 +0000
-Subject: [RFC][PATCH 3/4] PM / QoS: Introduce dev_pm_qos_add_ancestor_request()
-Message-Id: <201112100045.31677.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:18 +0000
+Subject: [PATCH 23/57] fbdev: sh_mobile_lcdc: Remove fb_info parameter to display_on operation
+Message-Id: <1323784972-24205-24-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112100042.45168.rjw@sisk.pl>
-In-Reply-To: <201112100042.45168.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+The parameter is unused, remove it.
 
-Some devices, like the I2C controller on SH7372, are not
-necessary for providing power to their children or forwarding
-wakeup signals (and generally interrupts) from them.  They are
-only needed by their children when there's some data to transfer,
-so they may be suspended for the majority of time and resumed
-on demand, when the children have data to send or receive.  For this
-purpose, however, their power.ignore_children flags have to be set,
-or the PM core wouldn't allow them to be suspended while their
-children were active.
-
-Unfortunately, in some situations it may take too much time to
-resume such devices so that they can assist their children in
-transferring data.  For example, if such a device belongs to a PM
-domain which goes to the "power off" state when that device is
-suspended, it may take too much time to restore power to the
-domain in response to the request from one of the device's
-children.  In that case, if the parent's resume time is critical,
-the domain should stay in the "power on" state, although it still may
-be desirable to power manage the parent itself (e.g. by manipulating
-its clock).
-
-In general, device PM QoS may be used to address this problem.
-Namely, if the device's children added PM QoS latency constraints
-for it, they would be able to prevent it from being put into an
-overly deep low-power state.  However, in some cases the devices
-needing to be serviced are not the immediate children of a
-"children-ignoring" device, but its grandchildren or even less
-direct descendants.  In those cases, the entity wanting to add a
-PM QoS request for a given device's ancestor that ignores its
-children will have to find it in the first place, so introduce a new
-helper function that may be used to achieve that.  This function,
-dev_pm_qos_add_ancestor_request(), will search for the first
-ancestor of the given device whose power.ignore_children flag is
-set and will add a device PM QoS latency request for that ancestor
-on behalf of the caller.  The request added this way may be removed
-with the help of dev_pm_qos_remove_request() in the future, like
-any other device PM QoS latency request.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/base/power/qos.c |   25 +++++++++++++++++++++++++
- include/linux/pm_qos.h   |    5 +++++
- 2 files changed, 30 insertions(+)
+ drivers/video/sh_mipi_dsi.c      |    3 +--
+ drivers/video/sh_mobile_hdmi.c   |   11 +++--------
+ drivers/video/sh_mobile_lcdcfb.c |    2 +-
+ drivers/video/sh_mobile_lcdcfb.h |    3 +--
+ 4 files changed, 6 insertions(+), 13 deletions(-)
 
-Index: linux/drivers/base/power/qos.c
-=================================--- linux.orig/drivers/base/power/qos.c
-+++ linux/drivers/base/power/qos.c
-@@ -420,3 +420,28 @@ int dev_pm_qos_remove_global_notifier(st
- 	return blocking_notifier_chain_unregister(&dev_pm_notifiers, notifier);
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index ad09a05..1ede247 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -394,8 +394,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	return 0;
  }
- EXPORT_SYMBOL_GPL(dev_pm_qos_remove_global_notifier);
-+
-+/**
-+ * dev_pm_qos_add_ancestor_request - Add PM QoS request for device's ancestor.
-+ * @dev: Device whose ancestor to add the request for.
-+ * @req: Pointer to the preallocated handle.
-+ * @value: Constraint latency value.
-+ */
-+int dev_pm_qos_add_ancestor_request(struct device *dev,
-+				    struct dev_pm_qos_request *req, s32 value)
-+{
-+	struct device *ancestor = dev->parent;
-+	int error = -ENODEV;
-+
-+	while (ancestor && !ancestor->power.ignore_children)
-+		ancestor = ancestor->parent;
-+
-+	if (ancestor)
-+		error = dev_pm_qos_add_request(ancestor, req, value);
-+
-+	if (error)
-+		req->dev = NULL;
-+
-+	return error;
-+}
-+EXPORT_SYMBOL_GPL(dev_pm_qos_add_ancestor_request);
-Index: linux/include/linux/pm_qos.h
-=================================--- linux.orig/include/linux/pm_qos.h
-+++ linux/include/linux/pm_qos.h
-@@ -92,6 +92,8 @@ int dev_pm_qos_add_global_notifier(struc
- int dev_pm_qos_remove_global_notifier(struct notifier_block *notifier);
- void dev_pm_qos_constraints_init(struct device *dev);
- void dev_pm_qos_constraints_destroy(struct device *dev);
-+int dev_pm_qos_add_ancestor_request(struct device *dev,
-+				    struct dev_pm_qos_request *req, s32 value);
- #else
- static inline int pm_qos_update_target(struct pm_qos_constraints *c,
- 				       struct plist_node *node,
-@@ -153,6 +155,9 @@ static inline void dev_pm_qos_constraint
- {
- 	dev->power.power_state = PMSG_INVALID;
- }
-+int dev_pm_qos_add_ancestor_request(struct device *dev,
-+				    struct dev_pm_qos_request *req, s32 value)
-+			{ return 0; }
- #endif
  
- #endif
+-static int mipi_display_on(struct sh_mobile_lcdc_entity *entity,
+-			   struct fb_info *info)
++static int mipi_display_on(struct sh_mobile_lcdc_entity *entity)
+ {
+ 	struct sh_mipi *mipi = to_sh_mipi(entity);
+ 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index bd885ee..c22e123 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -1000,16 +1000,11 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
+-/* locking:	called with info->lock held, or before register_framebuffer() */
+-static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
+-			      struct fb_info *info)
++static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
+ {
+-	/*
+-	 * info is guaranteed to be valid, when we are called, because our
+-	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
+-	 */
+ 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+ 	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
++	struct fb_info *info = ch->info;
+ 
+ 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
+ 
+@@ -1156,7 +1151,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 				 */
+ 				info->var.width = hdmi->var.width;
+ 				info->var.height = hdmi->var.height;
+-				sh_hdmi_display_on(&hdmi->entity, info);
++				sh_hdmi_display_on(&hdmi->entity);
+ 			} else {
+ 				/* New monitor or have to wake up */
+ 				fb_set_suspend(info, 0);
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 2dccfde..47108aa 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -339,7 +339,7 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ 	int ret;
+ 
+ 	if (ch->tx_dev) {
+-		ret = ch->tx_dev->ops->display_on(ch->tx_dev, ch->info);
++		ret = ch->tx_dev->ops->display_on(ch->tx_dev);
+ 		if (ret < 0)
+ 			return;
+ 	}
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index 36cd564..b2cb8e6 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -23,8 +23,7 @@ struct sh_mobile_lcdc_chan;
+ 
+ struct sh_mobile_lcdc_entity_ops {
+ 	/* Display */
+-	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
+-			  struct fb_info *info);
++	int (*display_on)(struct sh_mobile_lcdc_entity *entity);
+ 	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
+ };
+ 
+-- 
+1.7.3.4
 
