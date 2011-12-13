@@ -1,126 +1,66 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 12 Dec 2011 14:34:29 +0000
-Subject: Re: [RFC][PATCH 4/4] PM / input / touchscreen: Make st1232 use device
-Message-Id: <Pine.LNX.4.64.1112121508410.10378@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:16 +0000
+Subject: [PATCH 21/57] sh_mobile_lcdc: Add an lcdc channel pointer to sh_mobile_lcdc_entity
+Message-Id: <1323784972-24205-22-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112100042.45168.rjw@sisk.pl> <201112100046.32206.rjw@sisk.pl>
-In-Reply-To: <201112100046.32206.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
+To: linux-fbdev@vger.kernel.org
 
-Hi Rafael
+The field will be used by the transmitter drivers to access
+sh_mobile_lcdc_chan fields such as fb_info.
 
-On Sat, 10 Dec 2011, Rafael J. Wysocki wrote:
-
-> From: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> Make the st1232 driver use dev_pm_qos_add_ancestor_request() to
-> add a device PM QoS latency constraint for the I2C controller it
-> depends on, so that the controller won't go into an overly deep
-> low-power state when the touchscreen has to be particularly
-> responsive (e.g. when the user moves his or her finger on it)
-> and allow the A4R domain to be turned off if that doesn't violate
-> the PM QoS latency constraints.
-> 
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> ---
->  arch/arm/mach-shmobile/pm-sh7372.c |   28 +++++++++++++++++++++++++++-
->  drivers/input/touchscreen/st1232.c |   14 +++++++++++++-
-
-I don't think you wanted to put these two files in one patch.
-
->  2 files changed, 40 insertions(+), 2 deletions(-)
-> 
-> Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-> =================================> --- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-> +++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-
-[snip]
-
-> Index: linux/drivers/input/touchscreen/st1232.c
-> =================================> --- linux.orig/drivers/input/touchscreen/st1232.c
-> +++ linux/drivers/input/touchscreen/st1232.c
-
-After you have separated this file, you might as well notice, that it is 
-almost identical to my version, that we discussed privately previously. 
-Your changes include:
-
-> @@ -25,6 +25,7 @@
->  #include <linux/module.h>
->  #include <linux/slab.h>
->  #include <linux/types.h>
-> +#include <linux/pm_qos.h>
-
-in my version I preserved the alphabetic order of include files, you break 
-it
-
->  
->  #define ST1232_TS_NAME	"st1232-ts"
->  
-> @@ -46,6 +47,8 @@ struct st1232_ts_data {
->  	struct i2c_client *client;
->  	struct input_dev *input_dev;
->  	struct st1232_ts_finger finger[MAX_FINGERS];
-> +	struct dev_pm_qos_request low_latency_req;
-> +	bool pen_down;
->  };
->  
->  static int st1232_ts_read_data(struct st1232_ts_data *ts)
-> @@ -118,8 +121,17 @@ static irqreturn_t st1232_ts_irq_handler
->  	}
->  
->  	/* SYN_MT_REPORT only if no contact */
-> -	if (!count)
-> +	if (!count) {
->  		input_mt_sync(input_dev);
-> +		if (ts->pen_down) {
-> +			dev_pm_qos_remove_request(&ts->low_latency_req);
-> +			ts->pen_down = false;
-> +		}
-> +	} else if (!ts->pen_down) {
-> +		/* First contact, request 100 mcs latency. */
-> +		dev_pm_qos_add_ancestor_request(&ts->client->dev,
-> +						&ts->low_latency_req, 100);
-
-in my version I also was actually setting pen_down to true, which you seem 
-to have dropped, so, your version just wouldn't work. Of course, I wasn't 
-using the "ancestor" version of the above call, because it didn't exist 
-back then.
-
-You also removed my debugging, which is, of course, correct - thanks for 
-doing that.
-
-Given the above, I would appreciate it, if you split this patch into two 
-and make the st1232 part of it
-
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-after which you can add your
-
-[rjw@sisk.pl: use dev_pm_qos_add_ancestor_request() to reach the correct ancestor]
-
-and your Sob.
-
-Thanks
-Guennadi
-
-> +	}
->  
->  	/* SYN_REPORT */
->  	input_sync(input_dev);
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/video/sh_mobile_lcdcfb.c |    5 ++++-
+ drivers/video/sh_mobile_lcdcfb.h |    2 ++
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index cb5ea3c..2dccfde 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1497,8 +1497,10 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
+ 		if (!info || !info->device)
+ 			continue;
+ 
+-		if (ch->tx_dev)
++		if (ch->tx_dev) {
++			ch->tx_dev->lcdc = NULL;
+ 			module_put(ch->cfg.tx_dev->dev.driver->owner);
++		}
+ 
+ 		if (ch->sglist)
+ 			vfree(ch->sglist);
+@@ -1608,6 +1610,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 			return -EINVAL;
+ 		}
+ 		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
++		ch->tx_dev->lcdc = ch;
+ 	}
+ 
+ 	/* Iterate through the modes to validate them and find the highest
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index 9601b92..36cd564 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -19,6 +19,7 @@ struct fb_info;
+ struct module;
+ struct sh_mobile_lcdc_entity;
+ struct sh_mobile_lcdc_priv;
++struct sh_mobile_lcdc_chan;
+ 
+ struct sh_mobile_lcdc_entity_ops {
+ 	/* Display */
+@@ -30,6 +31,7 @@ struct sh_mobile_lcdc_entity_ops {
+ struct sh_mobile_lcdc_entity {
+ 	struct module *owner;
+ 	const struct sh_mobile_lcdc_entity_ops *ops;
++	struct sh_mobile_lcdc_chan *lcdc;
+ };
+ 
+ /*
+-- 
+1.7.3.4
+
