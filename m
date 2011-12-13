@@ -1,32 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:11 +0000
-Subject: [PATCH 16/57] fbdev: sh_mobile_hdmi: Remove sh_mobile_hdmi_info lcd_chan field
-Message-Id: <1323784972-24205-17-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 13 Dec 2011 16:00:37 +0000
+Subject: [PATCH 01/05] sh: pfc: Add gpio_read_bit() for data register access
+Message-Id: <20111213160037.4021.88360.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The field is unused, remove it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Introduce gpio_read_bit() for data register read access
+and modify sh_gpio_get_value() to make use of the new
+function instead of gpio_read_reg(). The purpose of
+this change is to update the code to only use the
+gpio_read_reg() function for config register access.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- include/video/sh_mobile_hdmi.h |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
-index 0b8d2cf..728f9de 100644
---- a/include/video/sh_mobile_hdmi.h
-+++ b/include/video/sh_mobile_hdmi.h
-@@ -31,7 +31,6 @@ struct clk;
- #define HDMI_SND_SRC_HBR	(3 << 0)
+ drivers/sh/pfc.c |   15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+--- 0013/drivers/sh/pfc.c
++++ work/drivers/sh/pfc.c	2011-12-12 18:33:48.000000000 +0900
+@@ -135,6 +135,19 @@ static void gpio_write_raw_reg(void __io
+ 	BUG();
+ }
  
- struct sh_mobile_hdmi_info {
--	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
- 	unsigned int			 flags;
- 	long (*clk_optimize_parent)(unsigned long target, unsigned long *best_freq,
- 				    unsigned long *parent_freq);
--- 
-1.7.3.4
-
++static int gpio_read_bit(struct pinmux_data_reg *dr,
++			 unsigned long in_pos)
++{
++	unsigned long pos;
++
++	pos = dr->reg_width - (in_pos + 1);
++
++	pr_debug("read_bit: addr = %lx, pos = %ld, "
++		 "r_width = %ld\n", dr->reg, pos, dr->reg_width);
++
++	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
++}
++
+ static void gpio_write_bit(struct pinmux_data_reg *dr,
+ 			   unsigned long in_pos, unsigned long value)
+ {
+@@ -644,7 +657,7 @@ static int sh_gpio_get_value(struct pinm
+ 	if (!gpioc || get_data_reg(gpioc, gpio, &dr, &bit) != 0)
+ 		return -EINVAL;
+ 
+-	return gpio_read_reg(dr->mapped_reg, dr->reg_width, 1, bit, dr->reg);
++	return gpio_read_bit(dr, bit);
+ }
+ 
+ static int sh_gpio_get(struct gpio_chip *chip, unsigned offset)
