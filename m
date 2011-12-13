@@ -1,104 +1,139 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Fri, 23 Dec 2011 12:27:22 +0000
-Subject: [PATCH 03/14] MIPS: adapt for dma_map_ops changes
-Message-Id: <1324643253-3024-4-git-send-email-m.szyprowski@samsung.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 13 Dec 2011 16:00:55 +0000
+Subject: [PATCH 03/05] sh: pfc: Add config_reg_helper() function
+Message-Id: <20111213160055.4021.37352.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: linux-sh@vger.kernel.org
 
-From: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+From: Magnus Damm <damm@opensource.se>
 
-Adapt core MIPS architecture code for dma_map_ops changes: replace
-alloc/free_coherent with generic alloc/free methods.
+Add a helper function for shared config reg access
+calculations. This allows us to reduce the amount
+of duplicated code, and at the same time prepare
+for a common place for future variable bitwidth
+config reg support.
 
-Signed-off-by: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
-Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/mips/include/asm/dma-mapping.h |   18 ++++++++++++------
- arch/mips/mm/dma-default.c          |    8 ++++----
- 2 files changed, 16 insertions(+), 10 deletions(-)
 
-diff --git a/arch/mips/include/asm/dma-mapping.h b/arch/mips/include/asm/dma-mapping.h
-index 7aa37dd..cbd41f5 100644
---- a/arch/mips/include/asm/dma-mapping.h
-+++ b/arch/mips/include/asm/dma-mapping.h
-@@ -57,25 +57,31 @@ dma_set_mask(struct device *dev, u64 mask)
- extern void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- 	       enum dma_data_direction direction);
- 
--static inline void *dma_alloc_coherent(struct device *dev, size_t size,
--				       dma_addr_t *dma_handle, gfp_t gfp)
-+#define dma_alloc_coherent(d,s,h,f)	dma_alloc_attrs(d,s,h,f,NULL)
-+
-+static inline void *dma_alloc_attrs(struct device *dev, size_t size,
-+				    dma_addr_t *dma_handle, gfp_t gfp,
-+				    struct dma_attrs *attrs)
- {
- 	void *ret;
- 	struct dma_map_ops *ops = get_dma_ops(dev);
- 
--	ret = ops->alloc_coherent(dev, size, dma_handle, gfp);
-+	ret = ops->alloc(dev, size, dma_handle, gfp, NULL);
- 
- 	debug_dma_alloc_coherent(dev, size, *dma_handle, ret);
- 
- 	return ret;
+ drivers/sh/pfc.c |   76 ++++++++++++++++++++++--------------------------------
+ 1 file changed, 32 insertions(+), 44 deletions(-)
+
+--- 0019/drivers/sh/pfc.c
++++ work/drivers/sh/pfc.c	2011-12-12 21:02:51.000000000 +0900
+@@ -167,41 +167,52 @@ static void gpio_write_bit(struct pinmux
+ 	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
  }
  
--static inline void dma_free_coherent(struct device *dev, size_t size,
--				     void *vaddr, dma_addr_t dma_handle)
-+#define dma_free_coherent(d,s,c,h) dma_free_attrs(d,s,c,h,NULL)
+-static int gpio_read_reg(void __iomem *mapped_reg, unsigned long reg_width,
+-			 unsigned long field_width, unsigned long in_pos,
+-			 unsigned long reg)
++static void config_reg_helper(struct pinmux_info *gpioc,
++			      struct pinmux_cfg_reg *crp,
++			      unsigned long in_pos,
++			      void __iomem **mapped_regp,
++			      unsigned long *maskp,
++			      unsigned long *posp)
+ {
+-	unsigned long data, mask, pos;
++	*mapped_regp = pfc_phys_to_virt(gpioc, crp->reg);
+ 
+-	data = 0;
+-	mask = (1 << field_width) - 1;
+-	pos = reg_width - ((in_pos + 1) * field_width);
++	*maskp = (1 << crp->field_width) - 1;
++	*posp = crp->reg_width - ((in_pos + 1) * crp->field_width);
++}
 +
-+static inline void dma_free_attrs(struct device *dev, size_t size,
-+				  void *vaddr, dma_addr_t dma_handle,
-+				  struct dma_attrs *attrs)
- {
- 	struct dma_map_ops *ops = get_dma_ops(dev);
++static int read_config_reg(struct pinmux_info *gpioc,
++			   struct pinmux_cfg_reg *crp,
++			   unsigned long field)
++{
++	void __iomem *mapped_reg;
++	unsigned long mask, pos;
++
++	config_reg_helper(gpioc, crp, field, &mapped_reg, &mask, &pos);
  
--	ops->free_coherent(dev, size, vaddr, dma_handle);
-+	ops->free(dev, size, vaddr, dma_handle, NULL);
+-	pr_debug("read_reg: addr = %lx, pos = %ld, "
++	pr_debug("read_reg: addr = %lx, field = %ld, "
+ 		 "r_width = %ld, f_width = %ld\n",
+-		 reg, pos, reg_width, field_width);
++		 crp->reg, field, crp->reg_width, crp->field_width);
  
- 	debug_dma_free_coherent(dev, size, vaddr, dma_handle);
+-	data = gpio_read_raw_reg(mapped_reg, reg_width);
+-	return (data >> pos) & mask;
++	return (gpio_read_raw_reg(mapped_reg, crp->reg_width) >> pos) & mask;
  }
-diff --git a/arch/mips/mm/dma-default.c b/arch/mips/mm/dma-default.c
-index 4608491..3fab204 100644
---- a/arch/mips/mm/dma-default.c
-+++ b/arch/mips/mm/dma-default.c
-@@ -98,7 +98,7 @@ void *dma_alloc_noncoherent(struct device *dev, size_t size,
- EXPORT_SYMBOL(dma_alloc_noncoherent);
  
- static void *mips_dma_alloc_coherent(struct device *dev, size_t size,
--	dma_addr_t * dma_handle, gfp_t gfp)
-+	dma_addr_t * dma_handle, gfp_t gfp, struct dma_attrs *attrs)
+-static void gpio_write_reg(void __iomem *mapped_reg, unsigned long reg_width,
+-			   unsigned long field_width, unsigned long in_pos,
+-			   unsigned long value, unsigned long reg)
++static void write_config_reg(struct pinmux_info *gpioc,
++			     struct pinmux_cfg_reg *crp,
++			     unsigned long field, unsigned long value)
  {
- 	void *ret;
++	void __iomem *mapped_reg;
+ 	unsigned long mask, pos;
  
-@@ -132,7 +132,7 @@ void dma_free_noncoherent(struct device *dev, size_t size, void *vaddr,
- EXPORT_SYMBOL(dma_free_noncoherent);
+-	mask = (1 << field_width) - 1;
+-	pos = reg_width - ((in_pos + 1) * field_width);
++	config_reg_helper(gpioc, crp, field, &mapped_reg, &mask, &pos);
  
- static void mips_dma_free_coherent(struct device *dev, size_t size, void *vaddr,
--	dma_addr_t dma_handle)
-+	dma_addr_t dma_handle, struct dma_attrs *attrs)
- {
- 	unsigned long addr = (unsigned long) vaddr;
- 	int order = get_order(size);
-@@ -323,8 +323,8 @@ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- EXPORT_SYMBOL(dma_cache_sync);
+-	pr_debug("write_reg addr = %lx, value = %ld, pos = %ld, "
++	pr_debug("write_reg addr = %lx, value = %ld, field = %ld, "
+ 		 "r_width = %ld, f_width = %ld\n",
+-		 reg, value, pos, reg_width, field_width);
++		 crp->reg, value, field, crp->reg_width, crp->field_width);
  
- static struct dma_map_ops mips_default_dma_map_ops = {
--	.alloc_coherent = mips_dma_alloc_coherent,
--	.free_coherent = mips_dma_free_coherent,
-+	.alloc = mips_dma_alloc_coherent,
-+	.free = mips_dma_free_coherent,
- 	.map_page = mips_dma_map_page,
- 	.unmap_page = mips_dma_unmap_page,
- 	.map_sg = mips_dma_map_sg,
--- 
-1.7.1.569.g6f426
-
+ 	mask = ~(mask << pos);
+ 	value = value << pos;
+ 
+-	switch (reg_width) {
++	switch (crp->reg_width) {
+ 	case 8:
+ 		iowrite8((ioread8(mapped_reg) & mask) | value, mapped_reg);
+ 		break;
+@@ -349,29 +360,6 @@ static int get_gpio_enum_id(struct pinmu
+ 	return -1;
+ }
+ 
+-static void write_config_reg(struct pinmux_info *gpioc,
+-			     struct pinmux_cfg_reg *crp,
+-			     int field, int value)
+-{
+-	void __iomem *mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
+-
+-	gpio_write_reg(mapped_reg, crp->reg_width, crp->field_width,
+-		       field, value, crp->reg);
+-}
+-
+-static int check_config_reg(struct pinmux_info *gpioc,
+-			    struct pinmux_cfg_reg *crp,
+-			    int field, int value)
+-{
+-	void __iomem *mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
+-
+-	if (gpio_read_reg(mapped_reg, crp->reg_width,
+-			  crp->field_width, field, crp->reg) = value)
+-		return 0;
+-
+-	return -1;
+-}
+-
+ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+ 
+ static int pinmux_config_gpio(struct pinmux_info *gpioc, unsigned gpio,
+@@ -465,8 +453,8 @@ static int pinmux_config_gpio(struct pin
+ 
+ 		switch (cfg_mode) {
+ 		case GPIO_CFG_DRYRUN:
+-			if (!*cntp || !check_config_reg(gpioc, cr,
+-							field, value))
++			if (!*cntp ||
++			    (read_config_reg(gpioc, cr, field) != value))
+ 				continue;
+ 			break;
+ 
