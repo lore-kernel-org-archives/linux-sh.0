@@ -1,49 +1,51 @@
-From: Dave Martin <dave.martin@linaro.org>
-Date: Thu, 15 Dec 2011 15:53:52 +0000
-Subject: [PATCH v5 3/5] omap4: Unconditionally require l2x0 L2 cache controller support
-Message-Id: <1323964434-6764-4-git-send-email-dave.martin@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:03 +0000
+Subject: [PATCH 08/57] fbdev: sh_mobile_lcdc: Add sh_mobile_lcdc_entity definition
+Message-Id: <1323784972-24205-9-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
-In-Reply-To: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-If running in the Normal World on a TrustZone-enabled SoC, Linux
-does not have complete control over the L2 cache controller
-configuration.  The kernel cannot work reliably on such platforms
-without the l2x0 cache support code built in.
+The sh_mobile_lcdc_entity structure will be used to abstract operations
+performed by transceivers (such as MIPI/DSI and HDMI).
 
-This patch unconditionally enables l2x0 support for the OMAP4 SoCs.
-
-Thanks to Rob Herring for this suggestion.  [1]
-
-[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
-
-Signed-off-by: Dave Martin <dave.martin@linaro.org>
-Acked-by: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-omap2/Kconfig |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.h |   18 ++++++++++++++++--
+ 1 files changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
-index bb1b670..94e568a 100644
---- a/arch/arm/mach-omap2/Kconfig
-+++ b/arch/arm/mach-omap2/Kconfig
-@@ -41,11 +41,11 @@ config ARCH_OMAP4
- 	bool "TI OMAP4"
- 	default y
- 	depends on ARCH_OMAP2PLUS
-+	select CACHE_L2X0
- 	select CPU_V7
- 	select ARM_GIC
- 	select HAVE_SMP
- 	select LOCAL_TIMERS if SMP
--	select MIGHT_HAVE_CACHE_L2X0
- 	select PL310_ERRATA_588369
- 	select PL310_ERRATA_727915
- 	select ARM_ERRATA_720789
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index a58a0f3..d79e5aa 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -14,9 +14,23 @@ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+ 
+ #define PALETTE_NR 16
+ 
+-struct sh_mobile_lcdc_priv;
+-struct fb_info;
+ struct backlight_device;
++struct fb_info;
++struct module;
++struct sh_mobile_lcdc_entity;
++struct sh_mobile_lcdc_priv;
++
++struct sh_mobile_lcdc_entity_ops {
++	/* Display */
++	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
++			  struct fb_info *info);
++	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
++};
++
++struct sh_mobile_lcdc_entity {
++	struct module *owner;
++	const struct sh_mobile_lcdc_entity_ops *ops;
++};
+ 
+ /*
+  * struct sh_mobile_lcdc_chan - LCDC display channel
 -- 
-1.7.4.1
+1.7.3.4
 
