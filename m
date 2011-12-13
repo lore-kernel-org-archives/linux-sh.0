@@ -1,136 +1,51 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:04 +0000
-Subject: [PATCH 09/57] fbdev: sh_mobile_hdmi: Implement sh_mobile_lcdc_entity interface
-Message-Id: <1323784972-24205-10-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:23 +0000
+Subject: [PATCH 28/57] fbdev: sh_mobile_hdmi: Don't set sh_hdmi::mode in the display on handler
+Message-Id: <1323784972-24205-29-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
+The struct sh_hdmi mode field is only used after being assigned by the
+EDID read code. There is thus no need to initialize it from the LCDC
+display var in the display on handler.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_hdmi.c |   39 +++++++++++++++++++++++++++++++--------
- 1 files changed, 31 insertions(+), 8 deletions(-)
+ drivers/video/sh_mobile_hdmi.c |    8 +-------
+ 1 files changed, 1 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 1ff3baf..f961fa2 100644
+index 2617609..37f935f 100644
 --- a/drivers/video/sh_mobile_hdmi.c
 +++ b/drivers/video/sh_mobile_hdmi.c
-@@ -208,6 +208,8 @@ enum hotplug_state {
- };
- 
- struct sh_hdmi {
-+	struct sh_mobile_lcdc_entity entity;
-+
- 	void __iomem *base;
- 	enum hotplug_state hp_state;	/* hot-plug status */
- 	u8 preprogrammed_vic;		/* use a pre-programmed VIC or
-@@ -225,6 +227,7 @@ struct sh_hdmi {
- 	struct notifier_block notifier;
- };
- 
-+#define entity_to_sh_hdmi(e)	container_of(e, struct sh_hdmi, entity)
- #define notifier_to_hdmi(n)	container_of(n, struct sh_hdmi, notifier)
- 
- static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
-@@ -1001,13 +1004,14 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- }
- 
- /* locking:	called with info->lock held, or before register_framebuffer() */
--static void sh_hdmi_display_on(void *arg, struct fb_info *info)
-+static int __sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
-+				struct fb_info *info)
+@@ -995,7 +995,6 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
+ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
  {
- 	/*
- 	 * info is guaranteed to be valid, when we are called, because our
- 	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
+ 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+-	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
+ 
+ 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi,
+ 		hdmi->hp_state);
+@@ -1006,15 +1005,10 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
+ 	 * HDMI_HOTPLUG_CONNECTED:	on monitor plug-in
+ 	 * HDMI_HOTPLUG_EDID_DONE:	on EDID read completion
  	 */
--	struct sh_hdmi *hdmi = arg;
-+	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 
- 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
-@@ -1032,18 +1036,35 @@ static void sh_hdmi_display_on(void *arg, struct fb_info *info)
- 	default:
- 		hdmi->var = ch->display_var;
- 	}
-+
-+	return 0;
-+}
-+
-+static void sh_hdmi_display_on(void *arg, struct fb_info *info)
-+{
-+	__sh_hdmi_display_on(arg, info);
- }
- 
- /* locking: called with info->lock held */
--static void sh_hdmi_display_off(void *arg)
-+static void __sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
- {
--	struct sh_hdmi *hdmi = arg;
-+	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
- 
- 	dev_dbg(hdmi->dev, "%s(%p)\n", __func__, hdmi);
- 	/* PS mode e->a */
- 	hdmi_write(hdmi, 0x10, HDMI_SYSTEM_CTRL);
- }
- 
-+static void sh_hdmi_display_off(void *arg)
-+{
-+	__sh_hdmi_display_off(arg);
-+}
-+
-+static const struct sh_mobile_lcdc_entity_ops sh_hdmi_ops = {
-+	.display_on = __sh_hdmi_display_on,
-+	.display_off = __sh_hdmi_display_off,
-+};
-+
- static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
- {
- 	struct fb_info *info = hdmi->info;
-@@ -1157,7 +1178,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 				 */
- 				info->var.width = hdmi->var.width;
- 				info->var.height = hdmi->var.height;
--				sh_hdmi_display_on(hdmi, info);
-+				__sh_hdmi_display_on(&hdmi->entity, info);
- 			} else {
- 				/* New monitor or have to wake up */
- 				fb_set_suspend(info, 0);
-@@ -1251,6 +1272,8 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- 	mutex_init(&hdmi->mutex);
- 
- 	hdmi->dev = &pdev->dev;
-+	hdmi->entity.owner = THIS_MODULE;
-+	hdmi->entity.ops = &sh_hdmi_ops;
- 
- 	hdmi->hdmi_clk = clk_get(&pdev->dev, "ick");
- 	if (IS_ERR(hdmi->hdmi_clk)) {
-@@ -1290,12 +1313,12 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
- 		goto emap;
+-	switch (hdmi->hp_state) {
+-	case HDMI_HOTPLUG_EDID_DONE:
++	if (hdmi->hp_state = HDMI_HOTPLUG_EDID_DONE) {
+ 		/* PS mode d->e. All functions are active */
+ 		hdmi_write(hdmi, 0x80, HDMI_SYSTEM_CTRL);
+ 		dev_dbg(hdmi->dev, "HDMI running\n");
+-		break;
+-	default:
+-		fb_var_to_videomode(&hdmi->mode, &ch->display_var);
+-		break;
  	}
  
--	platform_set_drvdata(pdev, hdmi);
-+	platform_set_drvdata(pdev, &hdmi->entity);
- 
- 	/* Set up LCDC callbacks */
- 	board_cfg = &pdata->lcd_chan->board_cfg;
- 	board_cfg->owner = THIS_MODULE;
--	board_cfg->board_data = hdmi;
-+	board_cfg->board_data = &hdmi->entity;
- 	board_cfg->display_on = sh_hdmi_display_on;
- 	board_cfg->display_off = sh_hdmi_display_off;
- 
-@@ -1349,7 +1372,7 @@ egetclk:
- static int __exit sh_hdmi_remove(struct platform_device *pdev)
- {
- 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
--	struct sh_hdmi *hdmi = platform_get_drvdata(pdev);
-+	struct sh_hdmi *hdmi = entity_to_sh_hdmi(platform_get_drvdata(pdev));
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &pdata->lcd_chan->board_cfg;
- 	int irq = platform_get_irq(pdev, 0);
+ 	return hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED
 -- 
 1.7.3.4
 
