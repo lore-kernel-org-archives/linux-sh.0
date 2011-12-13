@@ -1,136 +1,242 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 Dec 2011 08:21:45 +0000
-Subject: [PATCH] ARM: mach-shmobile: r8a7779 SGX-over-UIO test code
-Message-Id: <20111222082145.12151.31074.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:17 +0000
+Subject: [PATCH 22/57] sh_mobile_hdmi: Use sh_mobile_lcdc_entity::channel to access fb_info
+Message-Id: <1323784972-24205-23-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The fb_info parameter passed to the display_on operation will be
+removed, don't use it.
 
-This prototype code exports the SGX hardware block in r8a7779
-to user space via UIO. Clocks are associated with the device
-as well as a power domain. By adding a #define DEBUG in the
-pm-r8a7779.c file it is possible to watch the power domain
-going on and off when starting a user space UIO driver.
-
-Submitted to the mailing list as a test bench.
-Not for upstream merge.
-
-Never-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/video/sh_mobile_hdmi.c |   80 ++++++----------------------------------
+ 1 files changed, 12 insertions(+), 68 deletions(-)
 
- Depends on the r8a7779 base plus the power domain code:
- [PATCH] ARM: mach-shmobile: r8a7779 power domain support
-
- Should be rebased on top of Morimoto-san's clock patches.
-
- arch/arm/mach-shmobile/clock-r8a7779.c |    6 +++++
- arch/arm/mach-shmobile/setup-r8a7779.c |   38 ++++++++++++++++++++++++++++++++
- 2 files changed, 44 insertions(+)
-
---- 0014/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2011-12-21 15:39:59.000000000 +0900
-@@ -57,6 +57,7 @@ static struct clk *main_clks[] = {
- 
- enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
-+       MSTP105, MSTP319,
- 	MSTP_NR };
- 
- #define MSTP(_parent, _reg, _bit, _flags) \
-@@ -72,6 +73,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP016] = MSTP(&clkp, MSTPCR0, 16, 0), /* TMU0 */
- 	[MSTP015] = MSTP(&clkp, MSTPCR0, 15, 0), /* TMU1 */
- 	[MSTP014] = MSTP(&clkp, MSTPCR0, 14, 0), /* TMU2 */
-+	[MSTP105] = MSTP(&clkp, MSTPCR1, 5, 0), /* SGX */
-+	[MSTP319] = MSTP(&clkp, MSTPCR3, 19, 0), /* SGX */
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 1e78100..bd885ee 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -219,16 +219,12 @@ struct sh_hdmi {
+ 	u8 edid_blocks;
+ 	struct clk *hdmi_clk;
+ 	struct device *dev;
+-	struct fb_info *info;
+-	struct mutex mutex;		/* Protect the info pointer */
+ 	struct delayed_work edid_work;
+ 	struct fb_var_screeninfo var;
+ 	struct fb_monspecs monspec;
+-	struct notifier_block notifier;
  };
  
- static struct clk_lookup lookups[] = {
-@@ -84,6 +87,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+
-+	CLKDEV_DEV_ID("uio_pdrv_genirq.0", &mstp_clks[MSTP105]), /* SGX */
-+	CLKDEV_ICK_ID("scr", "uio_pdrv_genirq.0", &mstp_clks[MSTP319]),
- };
+ #define entity_to_sh_hdmi(e)	container_of(e, struct sh_hdmi, entity)
+-#define notifier_to_hdmi(n)	container_of(n, struct sh_hdmi, notifier)
  
- void __init r8a7779_clock_init(void)
---- 0022/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2011-12-21 15:41:31.000000000 +0900
-@@ -22,12 +22,14 @@
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/platform_device.h>
-+#include <linux/uio_driver.h>
- #include <linux/delay.h>
- #include <linux/input.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/pm_clock.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -203,6 +205,38 @@ static struct platform_device tmu01_devi
- 	.num_resources	= ARRAY_SIZE(tmu01_resources),
- };
+ static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
+ {
+@@ -737,10 +733,11 @@ static unsigned long sh_hdmi_rate_error(struct sh_hdmi *hdmi,
+ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 			     unsigned long *parent_rate)
+ {
++	struct fb_info *info = hdmi->entity.lcdc
++			     ? hdmi->entity.lcdc->info : NULL;
+ 	struct fb_var_screeninfo tmpvar;
+ 	struct fb_var_screeninfo *var = &tmpvar;
+ 	const struct fb_videomode *mode, *found = NULL;
+-	struct fb_info *info = hdmi->info;
+ 	struct fb_modelist *modelist = NULL;
+ 	unsigned int f_width = 0, f_height = 0, f_refresh = 0;
+ 	unsigned long found_rate_error = ULONG_MAX; /* silly compiler... */
+@@ -1012,13 +1009,10 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
+ 	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
+ 	 */
+ 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+-	struct sh_mobile_lcdc_chan *ch = info->par;
++	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
  
-+/* SGX */
-+static struct uio_info sgx_platform_data = {
-+	.name = "SGX",
-+	.version = "0",
-+	.irq = UIO_IRQ_NONE,
-+};
-+
-+static struct resource sgx_resources[] = {
-+	[0] = {
-+		.name	= "SGX",
-+		.start	= 0xfff12000,
-+		.end	= 0xfff12fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.name	= "SGX",
-+		.start	= 0xfce00000,
-+		.end	= 0xfcffffff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device sgx_device = {
-+	.name		= "uio_pdrv_genirq",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &sgx_platform_data,
-+	},
-+	.resource	= sgx_resources,
-+	.num_resources	= ARRAY_SIZE(sgx_resources),
-+};
-+
- static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -215,6 +249,7 @@ static struct platform_device *r8a7779_e
- };
+ 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
  
- static struct platform_device *r8a7779_late_devices[] __initdata = {
-+	&sgx_device,
- };
- 
- void __init r8a7779_add_standard_devices(void)
-@@ -230,6 +265,9 @@ void __init r8a7779_add_standard_devices
- 			    ARRAY_SIZE(r8a7779_early_devices));
- 	platform_add_devices(r8a7779_late_devices,
- 			    ARRAY_SIZE(r8a7779_late_devices));
-+
-+	r8a7779_add_device_to_domain(&r8a7779_sgx, &sgx_device);
-+	pm_clk_add(&sgx_device.dev, "scr");
+-	/* No need to lock */
+-	hdmi->info = info;
+-
+ 	/*
+ 	 * hp_state can be set to
+ 	 * HDMI_HOTPLUG_DISCONNECTED:	on monitor unplug
+@@ -1040,7 +1034,6 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
+ 	return 0;
  }
  
- void __init r8a7779_add_early_devices(void)
+-/* locking: called with info->lock held */
+ static void sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
+ {
+ 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+@@ -1057,15 +1050,14 @@ static const struct sh_mobile_lcdc_entity_ops sh_hdmi_ops = {
+ 
+ static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
+ {
+-	struct fb_info *info = hdmi->info;
+-	struct sh_mobile_lcdc_chan *ch = info->par;
++	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
+ 	struct fb_var_screeninfo *new_var = &hdmi->var, *old_var = &ch->display_var;
+ 	struct fb_videomode mode1, mode2;
+ 
+ 	fb_var_to_videomode(&mode1, old_var);
+ 	fb_var_to_videomode(&mode2, new_var);
+ 
+-	dev_dbg(info->dev, "Old %ux%u, new %ux%u\n",
++	dev_dbg(hdmi->dev, "Old %ux%u, new %ux%u\n",
+ 		mode1.xres, mode1.yres, mode2.xres, mode2.yres);
+ 
+ 	if (fb_mode_is_equal(&mode1, &mode2)) {
+@@ -1075,7 +1067,7 @@ static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
+ 		return false;
+ 	}
+ 
+-	dev_dbg(info->dev, "Switching %u -> %u lines\n",
++	dev_dbg(hdmi->dev, "Switching %u -> %u lines\n",
+ 		mode1.yres, mode2.yres);
+ 	*old_var = *new_var;
+ 
+@@ -1121,17 +1113,13 @@ static long sh_hdmi_clk_configure(struct sh_hdmi *hdmi, unsigned long hdmi_rate,
+ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ {
+ 	struct sh_hdmi *hdmi = container_of(work, struct sh_hdmi, edid_work.work);
++	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
+ 	struct fb_info *info;
+-	struct sh_mobile_lcdc_chan *ch;
+ 	int ret;
+ 
+ 	dev_dbg(hdmi->dev, "%s(%p): begin, hotplug status %d\n", __func__, hdmi,
+ 		hdmi->hp_state);
+ 
+-	mutex_lock(&hdmi->mutex);
+-
+-	info = hdmi->info;
+-
+ 	if (hdmi->hp_state = HDMI_HOTPLUG_CONNECTED) {
+ 		unsigned long parent_rate = 0, hdmi_rate;
+ 
+@@ -1151,10 +1139,10 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 		/* Switched to another (d) power-save mode */
+ 		msleep(10);
+ 
+-		if (!info)
++		if (ch = NULL)
+ 			goto out;
+ 
+-		ch = info->par;
++		info = ch->info;
+ 
+ 		if (lock_fb_info(info)) {
+ 			console_lock();
+@@ -1179,9 +1167,11 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 		}
+ 	} else {
+ 		ret = 0;
+-		if (!info)
++		if (ch = NULL)
+ 			goto out;
+ 
++		info = ch->info;
++
+ 		hdmi->monspec.modedb_len = 0;
+ 		fb_destroy_modedb(hdmi->monspec.modedb);
+ 		hdmi->monspec.modedb = NULL;
+@@ -1200,47 +1190,10 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ out:
+ 	if (ret < 0 && ret != -EAGAIN)
+ 		hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED;
+-	mutex_unlock(&hdmi->mutex);
+ 
+ 	dev_dbg(hdmi->dev, "%s(%p): end\n", __func__, hdmi);
+ }
+ 
+-static int sh_hdmi_notify(struct notifier_block *nb,
+-			  unsigned long action, void *data)
+-{
+-	struct fb_event *event = data;
+-	struct fb_info *info = event->info;
+-	struct sh_hdmi *hdmi = notifier_to_hdmi(nb);
+-
+-	if (!hdmi || nb != &hdmi->notifier || hdmi->info != info)
+-		return NOTIFY_DONE;
+-
+-	switch(action) {
+-	case FB_EVENT_FB_REGISTERED:
+-		/* Unneeded, activation taken care by sh_hdmi_display_on() */
+-		break;
+-	case FB_EVENT_FB_UNREGISTERED:
+-		/*
+-		 * We are called from unregister_framebuffer() with the
+-		 * info->lock held. This is bad for us, because we can race with
+-		 * the scheduled work, which has to call fb_set_suspend(), which
+-		 * takes info->lock internally, so, sh_hdmi_edid_work_fn()
+-		 * cannot take and hold info->lock for the whole function
+-		 * duration. Using an additional lock creates a classical AB-BA
+-		 * lock up. Therefore, we have to release the info->lock
+-		 * temporarily, synchronise with the work queue and re-acquire
+-		 * the info->lock.
+-		 */
+-		unlock_fb_info(info);
+-		mutex_lock(&hdmi->mutex);
+-		hdmi->info = NULL;
+-		mutex_unlock(&hdmi->mutex);
+-		lock_fb_info(info);
+-		return NOTIFY_OK;
+-	}
+-	return NOTIFY_DONE;
+-}
+-
+ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
+@@ -1258,8 +1211,6 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	mutex_init(&hdmi->mutex);
+-
+ 	hdmi->dev = &pdev->dev;
+ 	hdmi->entity.owner = THIS_MODULE;
+ 	hdmi->entity.ops = &sh_hdmi_ops;
+@@ -1327,9 +1278,6 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		goto ecodec;
+ 	}
+ 
+-	hdmi->notifier.notifier_call = sh_hdmi_notify;
+-	fb_register_client(&hdmi->notifier);
+-
+ 	return 0;
+ 
+ ecodec:
+@@ -1345,7 +1293,6 @@ ereqreg:
+ erate:
+ 	clk_put(hdmi->hdmi_clk);
+ egetclk:
+-	mutex_destroy(&hdmi->mutex);
+ 	kfree(hdmi);
+ 
+ 	return ret;
+@@ -1359,8 +1306,6 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 
+ 	snd_soc_unregister_codec(&pdev->dev);
+ 
+-	fb_unregister_client(&hdmi->notifier);
+-
+ 	/* No new work will be scheduled, wait for running ISR */
+ 	free_irq(irq, hdmi);
+ 	/* Wait for already scheduled work */
+@@ -1371,7 +1316,6 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 	clk_put(hdmi->hdmi_clk);
+ 	iounmap(hdmi->base);
+ 	release_mem_region(res->start, resource_size(res));
+-	mutex_destroy(&hdmi->mutex);
+ 	kfree(hdmi);
+ 
+ 	return 0;
+-- 
+1.7.3.4
+
