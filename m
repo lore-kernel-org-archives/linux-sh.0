@@ -1,313 +1,132 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 18 Dec 2011 16:59:20 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372 A4S support
-Message-Id: <20111218165920.20402.41644.sendpatchset@w520>
+Date: Tue, 13 Dec 2011 16:00:46 +0000
+Subject: [PATCH 02/05] sh: pfc: Convert index to field and value pair
+Message-Id: <20111213160046.4021.598.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add support for the sh7372 A4S power domain / sleep mode.
+Update the way the PFC code is passing bitfield
+selection between configure register functions.
 
-The sh7372 contains a power domain named A4S which in turn
-contains power domains for both I/O Devices and CPU cores.
-
-At this point only System wide Suspend-to-RAM is supported,
-but the the hardware can also support CPUIdle. With more
-efforts in the future CPUIdle can work with bot A4S and A3SM.
-
-Tested on the sh7372 Mackerel board.
+Convert the code from using index only to bitfield
+number and selected value. First step towards future
+variable bitfield width support.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/include/mach/common.h |    4 -
- arch/arm/mach-shmobile/include/mach/sh7372.h |    3 +
- arch/arm/mach-shmobile/intc-sh7372.c         |   49 ++++++++++++++++++++
- arch/arm/mach-shmobile/pm-sh7372.c           |   63 ++++++++++++++++++----=
-----
- arch/arm/mach-shmobile/setup-sh7372.c        |    6 ++
- arch/arm/mach-shmobile/sleep-sh7372.S        |   21 ++++----
- 6 files changed, 116 insertions(+), 30 deletions(-)
+ drivers/sh/pfc.c |   45 ++++++++++++++++++---------------------------
+ 1 file changed, 18 insertions(+), 27 deletions(-)
 
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-12-19 01:35:31.0=
-00000000 +0900
-@@ -35,8 +35,8 @@ extern void sh7372_add_standard_devices(
- extern void sh7372_clock_init(void);
- extern void sh7372_pinmux_init(void);
- extern void sh7372_pm_init(void);
--extern void sh7372_resume_core_standby_a3sm(void);
--extern int sh7372_do_idle_a3sm(unsigned long unused);
-+extern void sh7372_resume_core_standby_sysc(void);
-+extern int sh7372_do_idle_sysc(unsigned long sleep_mode);
- extern struct clk sh7372_extal1_clk;
- extern struct clk sh7372_extal2_clk;
-=20
---- 0001/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2011-12-19 01:35:31.0=
-00000000 +0900
-@@ -499,6 +499,7 @@ extern struct sh7372_pm_domain sh7372_d4
- extern struct sh7372_pm_domain sh7372_a4r;
- extern struct sh7372_pm_domain sh7372_a3rv;
- extern struct sh7372_pm_domain sh7372_a3ri;
-+extern struct sh7372_pm_domain sh7372_a4s;
- extern struct sh7372_pm_domain sh7372_a3sp;
- extern struct sh7372_pm_domain sh7372_a3sg;
-=20
-@@ -515,5 +516,7 @@ extern void sh7372_pm_add_subdomain(stru
-=20
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
-+extern void sh7372_intca_suspend(void);
-+extern void sh7372_intca_resume(void);
-=20
- #endif /* __ASM_SH7372_H__ */
---- 0001/arch/arm/mach-shmobile/intc-sh7372.c
-+++ work/arch/arm/mach-shmobile/intc-sh7372.c	2011-12-19 01:35:31.000000000=
- +0900
-@@ -611,3 +611,52 @@ void sh7372_intcs_resume(void)
- 	for (k =3D 0x80; k <=3D 0x9c; k +=3D 4)
- 		__raw_writeb(ffd5[k], intcs_ffd5 + k);
+--- 0017/drivers/sh/pfc.c
++++ work/drivers/sh/pfc.c	2011-12-12 18:43:53.000000000 +0900
+@@ -287,7 +287,8 @@ static int get_data_reg(struct pinmux_in
  }
-+
-+static unsigned short e694[0x200];
-+static unsigned short e695[0x200];
-+
-+void sh7372_intca_suspend(void)
-+{
-+	int k;
-+
-+	for (k =3D 0x00; k <=3D 0x38; k +=3D 4)
-+		e694[k] =3D __raw_readw(0xe6940000 + k);
-+
-+	for (k =3D 0x80; k <=3D 0xb4; k +=3D 4)
-+		e694[k] =3D __raw_readb(0xe6940000 + k);
-+
-+	for (k =3D 0x180; k <=3D 0x1b4; k +=3D 4)
-+		e694[k] =3D __raw_readb(0xe6940000 + k);
-+
-+	for (k =3D 0x00; k <=3D 0x50; k +=3D 4)
-+		e695[k] =3D __raw_readw(0xe6950000 + k);
-+
-+	for (k =3D 0x80; k <=3D 0xa8; k +=3D 4)
-+		e695[k] =3D __raw_readb(0xe6950000 + k);
-+
-+	for (k =3D 0x180; k <=3D 0x1a8; k +=3D 4)
-+		e695[k] =3D __raw_readb(0xe6950000 + k);
-+}
-+
-+void sh7372_intca_resume(void)
-+{
-+	int k;
-+
-+	for (k =3D 0x00; k <=3D 0x38; k +=3D 4)
-+		__raw_writew(e694[k], 0xe6940000 + k);
-+
-+	for (k =3D 0x80; k <=3D 0xb4; k +=3D 4)
-+		__raw_writeb(e694[k], 0xe6940000 + k);
-+
-+	for (k =3D 0x180; k <=3D 0x1b4; k +=3D 4)
-+		__raw_writeb(e694[k], 0xe6940000 + k);
-+
-+	for (k =3D 0x00; k <=3D 0x50; k +=3D 4)
-+		__raw_writew(e695[k], 0xe6950000 + k);
-+
-+	for (k =3D 0x80; k <=3D 0xa8; k +=3D 4)
-+		__raw_writeb(e695[k], 0xe6950000 + k);
-+
-+	for (k =3D 0x180; k <=3D 0x1a8; k +=3D 4)
-+		__raw_writeb(e695[k], 0xe6950000 + k);
-+}
---- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-12-19 01:48:09.000000000 +=
-0900
-@@ -226,6 +226,13 @@ struct sh7372_pm_domain sh7372_a3ri =3D {
- 	.bit_shift =3D 8,
- };
-=20
-+struct sh7372_pm_domain sh7372_a4s =3D {
-+	.bit_shift =3D 10,
-+	.gov =3D &sh7372_always_on_gov,
-+	.no_debug =3D true,
-+	.stay_on =3D true,
-+};
-+
- struct sh7372_pm_domain sh7372_a3sp =3D {
- 	.bit_shift =3D 11,
- 	.gov =3D &sh7372_always_on_gov,
-@@ -257,11 +264,16 @@ static int sh7372_do_idle_core_standby(u
- 	return 0;
- }
-=20
--static void sh7372_enter_core_standby(void)
-+static void sh7372_set_reset_vector(unsigned long address)
+ 
+ static int get_config_reg(struct pinmux_info *gpioc, pinmux_enum_t enum_id,
+-			  struct pinmux_cfg_reg **crp, int *indexp,
++			  struct pinmux_cfg_reg **crp,
++			  int *fieldp, int *valuep,
+ 			  unsigned long **cntp)
  {
- 	/* set reset vector, translate 4k */
--	__raw_writel(__pa(sh7372_resume_core_standby_a3sm), SBAR);
-+	__raw_writel(address, SBAR);
- 	__raw_writel(0, APARMBAREA);
-+}
-+
-+static void sh7372_enter_core_standby(void)
-+{
-+	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
-=20
- 	/* enter sleep mode with SYSTBCR to 0x10 */
- 	__raw_writel(0x10, SYSTBCR);
-@@ -274,27 +286,22 @@ static void sh7372_enter_core_standby(vo
- #endif
-=20
- #ifdef CONFIG_SUSPEND
--static void sh7372_enter_a3sm_common(int pllc0_on)
-+static void sh7372_enter_sysc(int pllc0_on, unsigned long sleep_mode)
+ 	struct pinmux_cfg_reg *config_reg;
+@@ -306,7 +307,8 @@ static int get_config_reg(struct pinmux_
+ 		for (n = 0; n < (r_width / f_width) * (1 << f_width); n++) {
+ 			if (config_reg->enum_ids[n] = enum_id) {
+ 				*crp = config_reg;
+-				*indexp = n;
++				*fieldp = n / (1 << f_width);
++				*valuep = n % (1 << f_width);
+ 				*cntp = &config_reg->cnt[n / (1 << f_width)];
+ 				return 0;
+ 			}
+@@ -349,36 +351,22 @@ static int get_gpio_enum_id(struct pinmu
+ 
+ static void write_config_reg(struct pinmux_info *gpioc,
+ 			     struct pinmux_cfg_reg *crp,
+-			     int index)
++			     int field, int value)
  {
--	/* set reset vector, translate 4k */
--	__raw_writel(__pa(sh7372_resume_core_standby_a3sm), SBAR);
--	__raw_writel(0, APARMBAREA);
+-	unsigned long ncomb, pos, value;
+-	void __iomem *mapped_reg;
 -
- 	if (pllc0_on)
- 		__raw_writel(0, PLLC01STPCR);
- 	else
- 		__raw_writel(1 << 28, PLLC01STPCR);
-=20
--	__raw_writel(0, PDNSEL); /* power-down A3SM only, not A4S */
- 	__raw_readl(WUPSFAC); /* read wakeup int. factor before sleep */
--	cpu_suspend(0, sh7372_do_idle_a3sm);
-+	cpu_suspend(sleep_mode, sh7372_do_idle_sysc);
- 	__raw_readl(WUPSFAC); /* read wakeup int. factor after wakeup */
-=20
- 	 /* disable reset vector translation */
- 	__raw_writel(0, SBAR);
- }
-=20
--static int sh7372_a3sm_valid(unsigned long *mskp, unsigned long *msk2p)
-+static int sh7372_sysc_valid(unsigned long *mskp, unsigned long *msk2p)
- {
- 	unsigned long mstpsr0, mstpsr1, mstpsr2, mstpsr3, mstpsr4;
- 	unsigned long msk, msk2;
-@@ -382,7 +389,7 @@ static void sh7372_icr_to_irqcr(unsigned
- 	*irqcr2p =3D irqcr2;
- }
-=20
--static void sh7372_setup_a3sm(unsigned long msk, unsigned long msk2)
-+static void sh7372_setup_sysc(unsigned long msk, unsigned long msk2)
- {
- 	u16 irqcrx_low, irqcrx_high, irqcry_low, irqcry_high;
- 	unsigned long tmp;
-@@ -415,6 +422,22 @@ static void sh7372_setup_a3sm(unsigned l
- 	__raw_writel((irqcrx_high << 16) | irqcrx_low, IRQCR3);
- 	__raw_writel((irqcry_high << 16) | irqcry_low, IRQCR4);
- }
-+
-+static void sh7372_enter_a3sm_common(int pllc0_on)
-+{
-+	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
-+	sh7372_enter_sysc(pllc0_on, 1 << 12);
-+}
-+
-+static void sh7372_enter_a4s_common(int pllc0_on)
-+{
-+	sh7372_intca_suspend();
-+	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
-+	sh7372_set_reset_vector(SMFRAM);
-+	sh7372_enter_sysc(pllc0_on, 1 << 10);
-+	sh7372_intca_resume();
-+}
-+
- #endif
-=20
- #ifdef CONFIG_CPU_IDLE
-@@ -448,14 +471,20 @@ static int sh7372_enter_suspend(suspend_
- 	unsigned long msk, msk2;
-=20
- 	/* check active clocks to determine potential wakeup sources */
--	if (sh7372_a3sm_valid(&msk, &msk2)) {
+-	ncomb = 1 << crp->field_width;
+-	pos = index / ncomb;
+-	value = index % ncomb;
 -
-+	if (sh7372_sysc_valid(&msk, &msk2)) {
- 		/* convert INTC mask and sense to SYSC mask and sense */
--		sh7372_setup_a3sm(msk, msk2);
-+		sh7372_setup_sysc(msk, msk2);
-=20
--		/* enter A3SM sleep with PLLC0 off */
--		pr_debug("entering A3SM\n");
--		sh7372_enter_a3sm_common(0);
-+		if (!sh7372_a3sp.stay_on &&
-+		    sh7372_a4s.genpd.status =3D GPD_STATE_POWER_OFF) {
-+			/* enter A4S sleep with PLLC0 off */
-+			pr_debug("entering A4S\n");
-+			sh7372_enter_a4s_common(0);
-+		} else {
-+			/* enter A3SM sleep with PLLC0 off */
-+			pr_debug("entering A3SM\n");
-+			sh7372_enter_a3sm_common(0);
-+		}
- 	} else {
- 		/* default to Core Standby that supports all wakeup sources */
- 		pr_debug("entering Core Standby\n");
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2011-12-19 01:35:31.00000000=
-0 +0900
-@@ -994,12 +994,16 @@ void __init sh7372_add_standard_devices(
- 	sh7372_init_pm_domain(&sh7372_a4r);
- 	sh7372_init_pm_domain(&sh7372_a3rv);
- 	sh7372_init_pm_domain(&sh7372_a3ri);
--	sh7372_init_pm_domain(&sh7372_a3sg);
-+	sh7372_init_pm_domain(&sh7372_a4s);
- 	sh7372_init_pm_domain(&sh7372_a3sp);
-+	sh7372_init_pm_domain(&sh7372_a3sg);
-=20
- 	sh7372_pm_add_subdomain(&sh7372_a4lc, &sh7372_a3rv);
- 	sh7372_pm_add_subdomain(&sh7372_a4r, &sh7372_a4lc);
-=20
-+	sh7372_pm_add_subdomain(&sh7372_a4s, &sh7372_a3sg);
-+	sh7372_pm_add_subdomain(&sh7372_a4s, &sh7372_a3sp);
-+
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
-=20
---- 0001/arch/arm/mach-shmobile/sleep-sh7372.S
-+++ work/arch/arm/mach-shmobile/sleep-sh7372.S	2011-12-19 01:47:37.00000000=
-0 +0900
-@@ -37,13 +37,18 @@
- #if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
- 	.align	12
- 	.text
--	.global sh7372_resume_core_standby_a3sm
--sh7372_resume_core_standby_a3sm:
-+	.global sh7372_resume_core_standby_sysc
-+sh7372_resume_core_standby_sysc:
- 	ldr     pc, 1f
- 1:	.long   cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
-=20
--	.global	sh7372_do_idle_a3sm
--sh7372_do_idle_a3sm:
-+#define SPDCR 0xe6180008
-+
-+	/* A3SM & A4S power down */
-+	.global	sh7372_do_idle_sysc
-+sh7372_do_idle_sysc:
-+	mov	r8, r0 /* sleep mode passed in r0 */
-+
- 	/*
- 	 * Clear the SCTLR.C bit to prevent further data cache
- 	 * allocation. Clearing SCTLR.C would make all the data accesses
-@@ -80,13 +85,9 @@ sh7372_do_idle_a3sm:
- 	dsb
- 	dmb
-=20
--#define SPDCR 0xe6180008
--#define A3SM (1 << 12)
+-	mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
++	void __iomem *mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
+ 
+ 	gpio_write_reg(mapped_reg, crp->reg_width, crp->field_width,
+-		       pos, value, crp->reg);
++		       field, value, crp->reg);
+ }
+ 
+ static int check_config_reg(struct pinmux_info *gpioc,
+ 			    struct pinmux_cfg_reg *crp,
+-			    int index)
++			    int field, int value)
+ {
+-	unsigned long ncomb, pos, value;
+-	void __iomem *mapped_reg;
 -
--	/* A3SM power down */
-+	/* SYSC power down */
- 	ldr     r0, =3DSPDCR
--	ldr     r1, =A3SM
--	str     r1, [r0]
-+	str     r8, [r0]
- 1:
- 	b      1b
-=20
+-	ncomb = 1 << crp->field_width;
+-	pos = index / ncomb;
+-	value = index % ncomb;
+-
+-	mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
++	void __iomem *mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
+ 
+ 	if (gpio_read_reg(mapped_reg, crp->reg_width,
+-			  crp->field_width, pos, crp->reg) = value)
++			  crp->field_width, field, crp->reg) = value)
+ 		return 0;
+ 
+ 	return -1;
+@@ -392,7 +380,7 @@ static int pinmux_config_gpio(struct pin
+ 	struct pinmux_cfg_reg *cr = NULL;
+ 	pinmux_enum_t enum_id;
+ 	struct pinmux_range *range;
+-	int in_range, pos, index;
++	int in_range, pos, field, value;
+ 	unsigned long *cntp;
+ 
+ 	switch (pinmux_type) {
+@@ -423,7 +411,8 @@ static int pinmux_config_gpio(struct pin
+ 
+ 	pos = 0;
+ 	enum_id = 0;
+-	index = 0;
++	field = 0;
++	value = 0;
+ 	while (1) {
+ 		pos = get_gpio_enum_id(gpioc, gpio, pos, &enum_id);
+ 		if (pos <= 0)
+@@ -470,17 +459,19 @@ static int pinmux_config_gpio(struct pin
+ 		if (!in_range)
+ 			continue;
+ 
+-		if (get_config_reg(gpioc, enum_id, &cr, &index, &cntp) != 0)
++		if (get_config_reg(gpioc, enum_id, &cr,
++				   &field, &value, &cntp) != 0)
+ 			goto out_err;
+ 
+ 		switch (cfg_mode) {
+ 		case GPIO_CFG_DRYRUN:
+-			if (!*cntp || !check_config_reg(gpioc, cr, index))
++			if (!*cntp || !check_config_reg(gpioc, cr,
++							field, value))
+ 				continue;
+ 			break;
+ 
+ 		case GPIO_CFG_REQ:
+-			write_config_reg(gpioc, cr, index);
++			write_config_reg(gpioc, cr, field, value);
+ 			*cntp = *cntp + 1;
+ 			break;
+ 
