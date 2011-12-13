@@ -1,129 +1,157 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:35 +0000
-Subject: [PATCH 40/57] fbdev: sh_mobile_meram: Request memory regions for memory resources
-Message-Id: <1323784972-24205-41-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:49 +0000
+Subject: [PATCH 54/57] fbdev: sh_mobile_meram: Remove unneeded sanity checks
+Message-Id: <1323784972-24205-55-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Make sure the registers and MERAM spaces are reserved before using them.
+The meram_register(), meram_unregister() and meram_update() operations
+check that the pointers they get from the caller are not NULL. Those
+checks can be remove, as the caller already ensures that the pointers
+are valid.
+
+The platform sanity checks can also be removed, as the operations can't
+be accessed without valid platform data anyway.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_meram.c |   53 +++++++++++++++++++++++++++-----------
- 1 files changed, 37 insertions(+), 16 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    5 +----
+ drivers/video/sh_mobile_meram.c  |   32 ++++++--------------------------
+ include/video/sh_mobile_meram.h  |   15 +++++++--------
+ 3 files changed, 14 insertions(+), 38 deletions(-)
 
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index e10a78a..edd195a 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1070,14 +1070,11 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 
+ 	if (ch->meram) {
+ 		struct sh_mobile_meram_info *mdev;
+-		int ret;
+ 
+ 		mdev = priv->meram_dev;
+-		ret = mdev->ops->meram_update(mdev, ch->meram,
++		mdev->ops->meram_update(mdev, ch->meram,
+ 					base_addr_y, base_addr_c,
+ 					&base_addr_y, &base_addr_c);
+-		if (ret)
+-			return ret;
+ 	}
+ 
+ 	ch->base_addr_y = base_addr_y;
 diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index f45d83e..dbf5c43 100644
+index aad8b0b..f0ae342 100644
 --- a/drivers/video/sh_mobile_meram.c
 +++ b/drivers/video/sh_mobile_meram.c
-@@ -596,13 +596,12 @@ static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
-  * initialize MERAM
-  */
- 
--static int sh_mobile_meram_remove(struct platform_device *pdev);
--
- static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+@@ -450,21 +450,15 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 				      unsigned int *pitch)
  {
- 	struct sh_mobile_meram_priv *priv;
- 	struct sh_mobile_meram_info *pdata = pdev->dev.platform_data;
--	struct resource *res;
-+	struct resource *regs;
-+	struct resource *meram;
- 	int error;
+ 	struct sh_mobile_meram_fb_cache *cache;
+-	struct sh_mobile_meram_priv *priv;
+-	struct platform_device *pdev;
++	struct sh_mobile_meram_priv *priv = pdata->priv;
++	struct platform_device *pdev = pdata->pdev;
+ 	unsigned int out_pitch;
  
- 	if (!pdata) {
-@@ -610,8 +609,9 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
- 		return -EINVAL;
- 	}
- 
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!res) {
-+	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	meram = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-+	if (regs = NULL || meram = NULL) {
- 		dev_err(&pdev->dev, "cannot get platform resources\n");
- 		return -ENOENT;
- 	}
-@@ -622,32 +622,50 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
- 
--	platform_set_drvdata(pdev, priv);
+-	if (!pdata || !pdata->priv || !pdata->pdev || !cfg)
+-		return ERR_PTR(-EINVAL);
 -
- 	/* initialize private data */
- 	mutex_init(&priv->lock);
--	priv->base = ioremap_nocache(res->start, resource_size(res));
-+	pdata->ops = &sh_mobile_meram_ops;
-+	pdata->priv = priv;
-+	pdata->pdev = pdev;
-+
-+	if (!request_mem_region(regs->start, resource_size(regs), pdev->name)) {
-+		dev_err(&pdev->dev, "MERAM registers region already claimed\n");
-+		error = -EBUSY;
-+		goto err_req_regs;
-+	}
-+
-+	if (!request_mem_region(meram->start, resource_size(meram),
-+				pdev->name)) {
-+		dev_err(&pdev->dev, "MERAM memory region already claimed\n");
-+		error = -EBUSY;
-+		goto err_req_meram;
-+	}
-+
-+	priv->base = ioremap_nocache(regs->start, resource_size(regs));
- 	if (!priv->base) {
- 		dev_err(&pdev->dev, "ioremap failed\n");
- 		error = -EFAULT;
--		goto err;
-+		goto err_ioremap;
- 	}
--	pdata->ops = &sh_mobile_meram_ops;
--	pdata->priv = priv;
--	pdata->pdev = pdev;
+ 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
+ 	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
+ 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
+ 		return ERR_PTR(-EINVAL);
  
- 	/* initialize ICB addressing mode */
- 	if (pdata->addr_mode = SH_MOBILE_MERAM_MODE1)
- 		meram_write_reg(priv->base, MEVCR1, MEVCR1_AMD1);
+-	priv = pdata->priv;
+-	pdev = pdata->pdev;
+-
+ 	dev_dbg(&pdev->dev, "registering %dx%d (%s)", xres, yres,
+ 		!pixelformat ? "yuv" : "rgb");
  
-+	platform_set_drvdata(pdev, priv);
- 	pm_runtime_enable(&pdev->dev);
- 
- 	dev_info(&pdev->dev, "sh_mobile_meram initialized.");
- 
- 	return 0;
- 
--err:
--	sh_mobile_meram_remove(pdev);
-+err_ioremap:
-+	release_mem_region(meram->start, resource_size(meram));
-+err_req_meram:
-+	release_mem_region(regs->start, resource_size(regs));
-+err_req_regs:
-+	mutex_destroy(&priv->lock);
-+	kfree(priv);
- 
- 	return error;
+@@ -499,16 +493,11 @@ err:
+ 	return cache;
  }
-@@ -656,11 +674,14 @@ err:
- static int sh_mobile_meram_remove(struct platform_device *pdev)
+ 
+-static int
++static void
+ sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata, void *data)
  {
- 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
-+	struct resource *regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	struct resource *meram = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+ 	struct sh_mobile_meram_fb_cache *cache = data;
+-	struct sh_mobile_meram_priv *priv;
+-
+-	if (!pdata || !pdata->priv || !data)
+-		return -EINVAL;
+-
+-	priv = pdata->priv;
++	struct sh_mobile_meram_priv *priv = pdata->priv;
  
- 	pm_runtime_disable(&pdev->dev);
+ 	mutex_lock(&priv->lock);
  
--	if (priv->base)
--		iounmap(priv->base);
-+	iounmap(priv->base);
-+	release_mem_region(meram->start, resource_size(meram));
-+	release_mem_region(regs->start, resource_size(regs));
+@@ -520,22 +509,15 @@ sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata, void *data)
+ 	meram_free(priv, cache);
  
- 	mutex_destroy(&priv->lock);
+ 	mutex_unlock(&priv->lock);
+-
+-	return 0;
+ }
  
+-static int
++static void
+ sh_mobile_meram_update(struct sh_mobile_meram_info *pdata, void *data,
+ 		       unsigned long base_addr_y, unsigned long base_addr_c,
+ 		       unsigned long *icb_addr_y, unsigned long *icb_addr_c)
+ {
+ 	struct sh_mobile_meram_fb_cache *cache = data;
+-	struct sh_mobile_meram_priv *priv;
+-
+-	if (!pdata || !pdata->priv || !data)
+-		return -EINVAL;
+-
+-	priv = pdata->priv;
++	struct sh_mobile_meram_priv *priv = pdata->priv;
+ 
+ 	mutex_lock(&priv->lock);
+ 
+@@ -543,8 +525,6 @@ sh_mobile_meram_update(struct sh_mobile_meram_info *pdata, void *data,
+ 	meram_get_next_icb_addr(pdata, cache, icb_addr_y, icb_addr_c);
+ 
+ 	mutex_unlock(&priv->lock);
+-
+-	return 0;
+ }
+ 
+ static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 51c98ca..089e6d3 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -44,16 +44,15 @@ struct sh_mobile_meram_ops {
+ 				unsigned int *pitch);
+ 
+ 	/* unregister usage of meram */
+-	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
+-				void *data);
++	void (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
++				 void *data);
+ 
+ 	/* update meram settings */
+-	int (*meram_update)(struct sh_mobile_meram_info *meram_dev,
+-			    void *data,
+-			    unsigned long base_addr_y,
+-			    unsigned long base_addr_c,
+-			    unsigned long *icb_addr_y,
+-			    unsigned long *icb_addr_c);
++	void (*meram_update)(struct sh_mobile_meram_info *meram_dev, void *data,
++			     unsigned long base_addr_y,
++			     unsigned long base_addr_c,
++			     unsigned long *icb_addr_y,
++			     unsigned long *icb_addr_c);
+ };
+ 
+ #endif /* __VIDEO_SH_MOBILE_MERAM_H__  */
 -- 
 1.7.3.4
 
