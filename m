@@ -1,311 +1,402 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:15 +0000
-Subject: [PATCH 20/57] fbdev: sh_mobile_lcdc: Merge board_cfg and lcd_size_cfg into panel_cfg
-Message-Id: <1323784972-24205-21-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:26 +0000
+Subject: [PATCH 31/57] fbdev: sh_mobile_lcdc: Rename (lcd|num)_cfg (lcd|num)_modes
+Message-Id: <1323784972-24205-32-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Update board code accordingly.
+The struct sh_mobile_lcdc_chan_cfg platform data contains a list of
+video modes. Name the lcd_cfg and num_cfg fields to reflect that they
+describe video modes.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c   |    6 ++--
- arch/arm/mach-shmobile/board-ap4evb.c   |    8 +++---
- arch/arm/mach-shmobile/board-mackerel.c |    6 +++-
- arch/sh/boards/mach-ap325rxa/setup.c    |    6 +---
- arch/sh/boards/mach-ecovec24/setup.c    |    2 +-
- arch/sh/boards/mach-kfr2r09/setup.c     |    4 +--
- arch/sh/boards/mach-migor/setup.c       |    8 ++----
- arch/sh/boards/mach-se/7724/setup.c     |    2 +-
- drivers/video/sh_mobile_lcdcfb.c        |   35 +++++++++++++++----------------
- include/video/sh_mobile_lcdc.h          |   12 +++-------
- 10 files changed, 40 insertions(+), 49 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c   |    4 +-
+ arch/arm/mach-shmobile/board-ap4evb.c   |    4 +-
+ arch/arm/mach-shmobile/board-mackerel.c |    4 +-
+ arch/sh/boards/mach-ap325rxa/setup.c    |    4 +-
+ arch/sh/boards/mach-ecovec24/setup.c    |    8 +++---
+ arch/sh/boards/mach-kfr2r09/setup.c     |    4 +-
+ arch/sh/boards/mach-migor/setup.c       |    8 +++---
+ arch/sh/boards/mach-se/7724/setup.c     |    8 +++---
+ drivers/video/sh_mipi_dsi.c             |   38 +++++++++++++++---------------
+ drivers/video/sh_mobile_lcdcfb.c        |   20 ++++++++--------
+ include/video/sh_mobile_lcdc.h          |    4 +-
+ 11 files changed, 53 insertions(+), 53 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 490cb78..cdf45db 100644
+index cdf45db..5a12444 100644
 --- a/arch/arm/mach-shmobile/board-ag5evm.c
 +++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -259,12 +259,12 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
- 		.interface_type = RGB24,
+@@ -260,8 +260,8 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
  		.clock_divider = 1,
  		.flags = LCDC_FLAGS_DWPOL,
--		.lcd_size_cfg.width = 44,
--		.lcd_size_cfg.height = 79,
  		.fourcc = V4L2_PIX_FMT_RGB565,
- 		.lcd_cfg = lcdc0_modes,
- 		.num_cfg = ARRAY_SIZE(lcdc0_modes),
--		.board_cfg = {
-+		.panel_cfg = {
-+			.width = 44,
-+			.height = 79,
- 			.display_on = lcd_backlight_on,
- 			.display_off = lcd_backlight_reset,
- 		},
+-		.lcd_cfg = lcdc0_modes,
+-		.num_cfg = ARRAY_SIZE(lcdc0_modes),
++		.lcd_modes = lcdc0_modes,
++		.num_modes = ARRAY_SIZE(lcdc0_modes),
+ 		.panel_cfg = {
+ 			.width = 44,
+ 			.height = 79,
 diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 92bb59e..26f30c8 100644
+index 26f30c8..5e876c7 100644
 --- a/arch/arm/mach-shmobile/board-ap4evb.c
 +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1358,8 +1358,8 @@ static void __init ap4evb_init(void)
- 	lcdc_info.ch[0].interface_type		= RGB24;
- 	lcdc_info.ch[0].clock_divider		= 1;
- 	lcdc_info.ch[0].flags			= LCDC_FLAGS_DWPOL;
--	lcdc_info.ch[0].lcd_size_cfg.width	= 44;
--	lcdc_info.ch[0].lcd_size_cfg.height	= 79;
-+	lcdc_info.ch[0].panel_cfg.width		= 44;
-+	lcdc_info.ch[0].panel_cfg.height	= 79;
- 
- 	platform_add_devices(qhd_devices, ARRAY_SIZE(qhd_devices));
- 
-@@ -1400,8 +1400,8 @@ static void __init ap4evb_init(void)
- 	lcdc_info.ch[0].interface_type		= RGB18;
- 	lcdc_info.ch[0].clock_divider		= 3;
- 	lcdc_info.ch[0].flags			= 0;
--	lcdc_info.ch[0].lcd_size_cfg.width	= 152;
--	lcdc_info.ch[0].lcd_size_cfg.height	= 91;
-+	lcdc_info.ch[0].panel_cfg.width		= 152;
-+	lcdc_info.ch[0].panel_cfg.height	= 91;
- 
- 	/* enable TouchScreen */
- 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
+@@ -601,8 +601,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_cfg = ap4evb_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
++		.lcd_modes = ap4evb_lcdc_modes,
++		.num_modes = ARRAY_SIZE(ap4evb_lcdc_modes),
+ 		.meram_cfg = &lcd_meram_cfg,
+ #ifdef CONFIG_AP4EVB_QHD
+ 		.tx_dev = &mipidsi0_device,
 diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 3460f54..c0e95e5 100644
+index c0e95e5..b0f19fd 100644
 --- a/arch/arm/mach-shmobile/board-mackerel.c
 +++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -394,8 +394,10 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+@@ -389,8 +389,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_cfg = mackerel_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(mackerel_lcdc_modes),
++		.lcd_modes = mackerel_lcdc_modes,
++		.num_modes = ARRAY_SIZE(mackerel_lcdc_modes),
  		.interface_type		= RGB24,
  		.clock_divider		= 3,
  		.flags			= 0,
--		.lcd_size_cfg.width	= 152,
--		.lcd_size_cfg.height	= 91,
-+		.panel_cfg = {
-+			.width		= 152,
-+			.height		= 91,
-+		},
- 		.bl_info = {
- 			.name = "sh_mobile_lcdc_bl",
- 			.max_brightness = 1,
 diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
-index 1413c65..bdcc291 100644
+index bdcc291..79f2c7c 100644
 --- a/arch/sh/boards/mach-ap325rxa/setup.c
 +++ b/arch/sh/boards/mach-ap325rxa/setup.c
-@@ -212,11 +212,9 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+@@ -210,8 +210,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type = RGB18,
  		.clock_divider = 1,
- 		.lcd_cfg = ap325rxa_lcdc_modes,
- 		.num_cfg = ARRAY_SIZE(ap325rxa_lcdc_modes),
--		.lcd_size_cfg = { /* 7.0 inch */
--			.width = 152,
-+		.panel_cfg = {
-+			.width = 152,	/* 7.0 inch */
+-		.lcd_cfg = ap325rxa_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(ap325rxa_lcdc_modes),
++		.lcd_modes = ap325rxa_lcdc_modes,
++		.num_modes = ARRAY_SIZE(ap325rxa_lcdc_modes),
+ 		.panel_cfg = {
+ 			.width = 152,	/* 7.0 inch */
  			.height = 91,
--		},
--		.board_cfg = {
- 			.display_on = ap320_wvga_power_on,
- 			.display_off = ap320_wvga_power_off,
- 		},
 diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 2adc78e..881d2f0 100644
+index 881d2f0..aa2ac50 100644
 --- a/arch/sh/boards/mach-ecovec24/setup.c
 +++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -331,7 +331,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 		.interface_type = RGB18,
- 		.chan = LCDC_CHAN_MAINLCD,
- 		.fourcc = V4L2_PIX_FMT_RGB565,
--		.lcd_size_cfg = { /* 7.0 inch */
-+		.panel_cfg = { /* 7.0 inch */
- 			.width = 152,
- 			.height = 91,
- 		},
+@@ -1148,8 +1148,8 @@ static int __init arch_setup(void)
+ 		/* DVI */
+ 		lcdc_info.clock_source			= LCDC_CLK_EXTERNAL;
+ 		lcdc_info.ch[0].clock_divider		= 1;
+-		lcdc_info.ch[0].lcd_cfg			= ecovec_dvi_modes;
+-		lcdc_info.ch[0].num_cfg			= ARRAY_SIZE(ecovec_dvi_modes);
++		lcdc_info.ch[0].lcd_modes		= ecovec_dvi_modes;
++		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_dvi_modes);
+ 
+ 		gpio_set_value(GPIO_PTA2, 1);
+ 		gpio_set_value(GPIO_PTU1, 1);
+@@ -1157,8 +1157,8 @@ static int __init arch_setup(void)
+ 		/* Panel */
+ 		lcdc_info.clock_source			= LCDC_CLK_PERIPHERAL;
+ 		lcdc_info.ch[0].clock_divider		= 2;
+-		lcdc_info.ch[0].lcd_cfg			= ecovec_lcd_modes;
+-		lcdc_info.ch[0].num_cfg			= ARRAY_SIZE(ecovec_lcd_modes);
++		lcdc_info.ch[0].lcd_modes		= ecovec_lcd_modes;
++		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_lcd_modes);
+ 
+ 		gpio_set_value(GPIO_PTR1, 1);
+ 
 diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 208c9b0..615cb4b 100644
+index 615cb4b..cb453af 100644
 --- a/arch/sh/boards/mach-kfr2r09/setup.c
 +++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -152,11 +152,9 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+@@ -150,8 +150,8 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 		.interface_type = SYS18,
+ 		.clock_divider = 6,
  		.flags = LCDC_FLAGS_DWPOL,
- 		.lcd_cfg = kfr2r09_lcdc_modes,
- 		.num_cfg = ARRAY_SIZE(kfr2r09_lcdc_modes),
--		.lcd_size_cfg = {
-+		.panel_cfg = {
+-		.lcd_cfg = kfr2r09_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(kfr2r09_lcdc_modes),
++		.lcd_modes = kfr2r09_lcdc_modes,
++		.num_modes = ARRAY_SIZE(kfr2r09_lcdc_modes),
+ 		.panel_cfg = {
  			.width = 35,
  			.height = 58,
--		},
--		.board_cfg = {
- 			.setup_sys = kfr2r09_lcd_setup,
- 			.start_transfer = kfr2r09_lcd_start,
- 			.display_on = kfr2r09_lcd_on,
 diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
-index ccf61fb..d42da46 100644
+index d42da46..2ad619c 100644
 --- a/arch/sh/boards/mach-migor/setup.c
 +++ b/arch/sh/boards/mach-migor/setup.c
-@@ -249,7 +249,7 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+@@ -247,8 +247,8 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type = RGB16,
  		.clock_divider = 2,
- 		.lcd_cfg = migor_lcd_modes,
- 		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
--		.lcd_size_cfg = { /* 7.0 inch */
-+		.panel_cfg = { /* 7.0 inch */
+-		.lcd_cfg = migor_lcd_modes,
+-		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
++		.lcd_modes = migor_lcd_modes,
++		.num_modes = ARRAY_SIZE(migor_lcd_modes),
+ 		.panel_cfg = { /* 7.0 inch */
  			.width = 152,
  			.height = 91,
- 		},
-@@ -263,11 +263,9 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+@@ -261,8 +261,8 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type = SYS16A,
  		.clock_divider = 10,
- 		.lcd_cfg = migor_lcd_modes,
- 		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
--		.lcd_size_cfg = { /* 2.4 inch */
--			.width = 49,
-+		.panel_cfg = {
-+			.width = 49,	/* 2.4 inch */
+-		.lcd_cfg = migor_lcd_modes,
+-		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
++		.lcd_modes = migor_lcd_modes,
++		.num_modes = ARRAY_SIZE(migor_lcd_modes),
+ 		.panel_cfg = {
+ 			.width = 49,	/* 2.4 inch */
  			.height = 37,
--		},
--		.board_cfg = {
- 			.setup_sys = migor_lcd_qvga_setup,
- 		},
- 		.sys_bus_cfg = {
 diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index 933d252..7251ebb 100644
+index 7251ebb..3d61810 100644
 --- a/arch/sh/boards/mach-se/7724/setup.c
 +++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -181,7 +181,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 		.chan = LCDC_CHAN_MAINLCD,
- 		.fourcc = V4L2_PIX_FMT_RGB565,
- 		.clock_divider = 1,
--		.lcd_size_cfg = { /* 7.0 inch */
-+		.panel_cfg = { /* 7.0 inch */
- 			.width = 152,
- 			.height = 91,
- 		},
+@@ -903,12 +903,12 @@ static int __init devices_setup(void)
+ 
+ 	if (sw & SW41_B) {
+ 		/* 720p */
+-		lcdc_info.ch[0].lcd_cfg	= lcdc_720p_modes;
+-		lcdc_info.ch[0].num_cfg	= ARRAY_SIZE(lcdc_720p_modes);
++		lcdc_info.ch[0].lcd_modes = lcdc_720p_modes;
++		lcdc_info.ch[0].num_modes = ARRAY_SIZE(lcdc_720p_modes);
+ 	} else {
+ 		/* VGA */
+-		lcdc_info.ch[0].lcd_cfg	= lcdc_vga_modes;
+-		lcdc_info.ch[0].num_cfg	= ARRAY_SIZE(lcdc_vga_modes);
++		lcdc_info.ch[0].lcd_modes = lcdc_vga_modes;
++		lcdc_info.ch[0].num_modes = ARRAY_SIZE(lcdc_vga_modes);
+ 	}
+ 
+ 	if (sw & SW41_A) {
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 5ff3742..42ad0f7 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -147,77 +147,77 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		pctype = 0;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB565:
+ 		pctype = 1;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666_LP:
+ 		pctype = 2;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666:
+ 		pctype = 3;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_cfg[0].xres * 18 + 7) / 8;
++		linelength = (ch->lcd_modes[0].xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR888:
+ 		pctype = 8;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR565:
+ 		pctype = 9;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666_LP:
+ 		pctype = 0xa;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666:
+ 		pctype = 0xb;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_cfg[0].xres * 18 + 7) / 8;
++		linelength = (ch->lcd_modes[0].xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_YUYV:
+ 		pctype = 4;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_UYVY:
+ 		pctype = 5;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420_L:
+ 		pctype = 6;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+-		linelength = (ch->lcd_cfg[0].xres * 12 + 7) / 8;
++		linelength = (ch->lcd_modes[0].xres * 12 + 7) / 8;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420:
+@@ -225,7 +225,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+ 		/* Length of U/V line */
+-		linelength = (ch->lcd_cfg[0].xres + 1) / 2;
++		linelength = (ch->lcd_modes[0].xres + 1) / 2;
+ 		yuv = true;
+ 		break;
+ 	default:
+@@ -294,7 +294,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	 */
+ 	iowrite32(0x00000006, mipi->linkbase + DTCTR);
+ 	/* VSYNC width = 2 (<< 17) */
+-	iowrite32((ch->lcd_cfg[0].vsync_len << pdata->vsynw_offset) |
++	iowrite32((ch->lcd_modes[0].vsync_len << pdata->vsynw_offset) |
+ 		  (pdata->clksrc << 16) | (pctype << 12) | datatype,
+ 		  mipi->linkbase + VMCTR1);
+ 
+@@ -328,7 +328,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	top = linelength << 16; /* RGBLEN */
+ 	bottom = 0x00000001;
+ 	if (pdata->flags & SH_MIPI_DSI_HSABM) /* HSALEN */
+-		bottom = (pdata->lane * ch->lcd_cfg[0].hsync_len) - 10;
++		bottom = (pdata->lane * ch->lcd_modes[0].hsync_len) - 10;
+ 	iowrite32(top | bottom , mipi->linkbase + VMLEN1);
+ 
+ 	/*
+@@ -348,18 +348,18 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		div = 2;
+ 
+ 	if (pdata->flags & SH_MIPI_DSI_HFPBM) {	/* HBPLEN */
+-		top = ch->lcd_cfg[0].hsync_len + ch->lcd_cfg[0].left_margin;
++		top = ch->lcd_modes[0].hsync_len + ch->lcd_modes[0].left_margin;
+ 		top = ((pdata->lane * top / div) - 10) << 16;
+ 	}
+ 	if (pdata->flags & SH_MIPI_DSI_HBPBM) { /* HFPLEN */
+-		bottom = ch->lcd_cfg[0].right_margin;
++		bottom = ch->lcd_modes[0].right_margin;
+ 		bottom = (pdata->lane * bottom / div) - 12;
+ 	}
+ 
+-	bpp = linelength / ch->lcd_cfg[0].xres; /* byte / pixel */
++	bpp = linelength / ch->lcd_modes[0].xres; /* byte / pixel */
+ 	if ((pdata->lane / div) > bpp) {
+-		tmp = ch->lcd_cfg[0].xres / bpp; /* output cycle */
+-		tmp = ch->lcd_cfg[0].xres - tmp; /* (input - output) cycle */
++		tmp = ch->lcd_modes[0].xres / bpp; /* output cycle */
++		tmp = ch->lcd_modes[0].xres - tmp; /* (input - output) cycle */
+ 		delay = (pdata->lane * tmp);
+ 	}
+ 
 diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 0c358b0..cb5ea3c 100644
+index d672a3f..3bc82ae 100644
 --- a/drivers/video/sh_mobile_lcdcfb.c
 +++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -289,7 +289,7 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
- 				       struct list_head *pagelist)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
--	struct sh_mobile_lcdc_board_cfg	*bcfg = &ch->cfg.board_cfg;
-+	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
- 
- 	/* enable clocks before accessing hardware */
- 	sh_mobile_lcdc_clk_on(ch->lcdc);
-@@ -314,13 +314,13 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
- 
- 		/* trigger panel update */
- 		dma_map_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
--		if (bcfg->start_transfer)
--			bcfg->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
-+		if (panel->start_transfer)
-+			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
- 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
- 		dma_unmap_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
- 	} else {
--		if (bcfg->start_transfer)
--			bcfg->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
-+		if (panel->start_transfer)
-+			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
- 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
- 	}
- }
-@@ -335,7 +335,7 @@ static void sh_mobile_lcdc_deferred_io_touch(struct fb_info *info)
- 
- static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
- {
--	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
-+	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
- 	int ret;
- 
- 	if (ch->tx_dev) {
-@@ -345,16 +345,16 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
- 	}
- 
- 	/* HDMI must be enabled before LCDC configuration */
--	if (board_cfg->display_on)
--		board_cfg->display_on();
-+	if (panel->display_on)
-+		panel->display_on();
- }
- 
- static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
- {
--	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
-+	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
- 
--	if (board_cfg->display_off)
--		board_cfg->display_off();
-+	if (panel->display_off)
-+		panel->display_off();
- 
- 	if (ch->tx_dev)
- 		ch->tx_dev->ops->display_off(ch->tx_dev);
-@@ -689,16 +689,15 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	lcdc_wait_bit(priv, _LDCNT2R, LDCNT2R_BR, 0);
- 
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
--		struct sh_mobile_lcdc_board_cfg	*board_cfg;
-+		struct sh_mobile_lcdc_panel_cfg *panel;
- 
- 		ch = &priv->ch[k];
- 		if (!ch->enabled)
- 			continue;
- 
--		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->setup_sys) {
--			ret = board_cfg->setup_sys(ch,
--						   &sh_mobile_lcdc_sys_bus_ops);
-+		panel = &ch->cfg.panel_cfg;
-+		if (panel->setup_sys) {
-+			ret = panel->setup_sys(ch, &sh_mobile_lcdc_sys_bus_ops);
- 			if (ret)
- 				return ret;
- 		}
-@@ -1657,8 +1656,8 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+@@ -1188,8 +1188,8 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	 * distance between two modes is defined as the size of the
+ 	 * non-overlapping parts of the two rectangles.
  	 */
- 	var = &info->var;
- 	fb_videomode_to_var(var, mode);
--	var->width = cfg->lcd_size_cfg.width;
--	var->height = cfg->lcd_size_cfg.height;
-+	var->width = cfg->panel_cfg.width;
-+	var->height = cfg->panel_cfg.height;
- 	var->yres_virtual = var->yres * 2;
- 	var->activate = FB_ACTIVATE_NOW;
+-	for (i = 0; i < ch->cfg.num_cfg; ++i) {
+-		const struct fb_videomode *mode = &ch->cfg.lcd_cfg[i];
++	for (i = 0; i < ch->cfg.num_modes; ++i) {
++		const struct fb_videomode *mode = &ch->cfg.lcd_modes[i];
+ 		unsigned int dist;
  
+ 		/* We can only round up. */
+@@ -1208,7 +1208,7 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	}
+ 
+ 	/* If no available mode can be used, return an error. */
+-	if (ch->cfg.num_cfg != 0) {
++	if (ch->cfg.num_modes != 0) {
+ 		if (best_dist = (unsigned int)-1)
+ 			return -EINVAL;
+ 
+@@ -1669,7 +1669,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	struct fb_var_screeninfo *var;
+ 	struct fb_info *info;
+ 	unsigned int max_size;
+-	int num_cfg;
++	int num_modes;
+ 	void *buf;
+ 	int ret;
+ 	int i;
+@@ -1696,7 +1696,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	max_mode = NULL;
+ 	max_size = 0;
+ 
+-	for (i = 0, mode = cfg->lcd_cfg; i < cfg->num_cfg; i++, mode++) {
++	for (i = 0, mode = cfg->lcd_modes; i < cfg->num_modes; i++, mode++) {
+ 		unsigned int size = mode->yres * mode->xres;
+ 
+ 		/* NV12/NV21 buffers must have even number of lines */
+@@ -1720,15 +1720,15 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 			max_mode->xres, max_mode->yres);
+ 
+ 	/* Create the mode list. */
+-	if (cfg->lcd_cfg = NULL) {
++	if (cfg->lcd_modes = NULL) {
+ 		mode = &default_720p;
+-		num_cfg = 1;
++		num_modes = 1;
+ 	} else {
+-		mode = cfg->lcd_cfg;
+-		num_cfg = cfg->num_cfg;
++		mode = cfg->lcd_modes;
++		num_modes = cfg->num_modes;
+ 	}
+ 
+-	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
++	fb_videomode_to_modelist(mode, num_modes, &info->modelist);
+ 
+ 	/* Initialize the transmitter device if present. */
+ 	if (cfg->tx_dev) {
 diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index 541b2b3..84163e4 100644
+index 84163e4..5a6991d 100644
 --- a/include/video/sh_mobile_lcdc.h
 +++ b/include/video/sh_mobile_lcdc.h
-@@ -147,7 +147,9 @@ struct sh_mobile_lcdc_sys_bus_ops {
- 	unsigned long (*read_data)(void *handle);
- };
- 
--struct sh_mobile_lcdc_board_cfg {
-+struct sh_mobile_lcdc_panel_cfg {
-+	unsigned long width;		/* Panel width in mm */
-+	unsigned long height;		/* Panel height in mm */
- 	int (*setup_sys)(void *sys_ops_handle,
- 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
- 	void (*start_transfer)(void *sys_ops_handle,
-@@ -156,11 +158,6 @@ struct sh_mobile_lcdc_board_cfg {
- 	void (*display_off)(void);
- };
- 
--struct sh_mobile_lcdc_lcd_size_cfg { /* width and height of panel in mm */
--	unsigned long width;
--	unsigned long height;
--};
--
- /* backlight info */
- struct sh_mobile_lcdc_bl_info {
- 	const char *name;
-@@ -178,8 +175,7 @@ struct sh_mobile_lcdc_chan_cfg {
+@@ -173,8 +173,8 @@ struct sh_mobile_lcdc_chan_cfg {
+ 	int interface_type; /* selects RGBn or SYSn I/F, see above */
+ 	int clock_divider;
  	unsigned long flags; /* LCDC_FLAGS_... */
- 	const struct fb_videomode *lcd_cfg;
- 	int num_cfg;
--	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
--	struct sh_mobile_lcdc_board_cfg board_cfg;
-+	struct sh_mobile_lcdc_panel_cfg panel_cfg;
+-	const struct fb_videomode *lcd_cfg;
+-	int num_cfg;
++	const struct fb_videomode *lcd_modes;
++	int num_modes;
+ 	struct sh_mobile_lcdc_panel_cfg panel_cfg;
  	struct sh_mobile_lcdc_bl_info bl_info;
  	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
- 	struct sh_mobile_meram_cfg *meram_cfg;
 -- 
 1.7.3.4
 
