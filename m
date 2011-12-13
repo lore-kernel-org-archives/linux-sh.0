@@ -1,51 +1,51 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:03 +0000
-Subject: [PATCH 08/57] fbdev: sh_mobile_lcdc: Add sh_mobile_lcdc_entity definition
-Message-Id: <1323784972-24205-9-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:10 +0000
+Subject: [PATCH 15/57] arm: mach-shmobile: Don't initialize the hdmi_info lcd_chan field
+Message-Id: <1323784972-24205-16-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The sh_mobile_lcdc_entity structure will be used to abstract operations
-performed by transceivers (such as MIPI/DSI and HDMI).
+The field is unused and will be removed. Don't initialize it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.h |   18 ++++++++++++++++--
- 1 files changed, 16 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    3 ---
+ arch/arm/mach-shmobile/board-mackerel.c |    3 ---
+ 2 files changed, 0 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index a58a0f3..d79e5aa 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -14,9 +14,23 @@ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index e0a6b3d..92bb59e 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -804,10 +804,7 @@ static struct platform_device fsi_ak4643_device = {
+ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+ 				unsigned long *parent_freq);
  
- #define PALETTE_NR 16
+-static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info;
+-
+ static struct sh_mobile_hdmi_info hdmi_info = {
+-	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
+ 	.flags = HDMI_SND_SRC_SPDIF,
+ 	.clk_optimize_parent = ap4evb_clk_optimize,
+ };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index ccdd9fc..5d3be90 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -432,10 +432,7 @@ static struct platform_device lcdc_device = {
+ };
  
--struct sh_mobile_lcdc_priv;
--struct fb_info;
- struct backlight_device;
-+struct fb_info;
-+struct module;
-+struct sh_mobile_lcdc_entity;
-+struct sh_mobile_lcdc_priv;
-+
-+struct sh_mobile_lcdc_entity_ops {
-+	/* Display */
-+	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
-+			  struct fb_info *info);
-+	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
-+};
-+
-+struct sh_mobile_lcdc_entity {
-+	struct module *owner;
-+	const struct sh_mobile_lcdc_entity_ops *ops;
-+};
+ /* HDMI */
+-static struct sh_mobile_lcdc_info hdmi_lcdc_info;
+-
+ static struct sh_mobile_hdmi_info hdmi_info = {
+-	.lcd_chan	= &hdmi_lcdc_info.ch[0],
+ 	.flags		= HDMI_SND_SRC_SPDIF,
+ };
  
- /*
-  * struct sh_mobile_lcdc_chan - LCDC display channel
 -- 
 1.7.3.4
 
