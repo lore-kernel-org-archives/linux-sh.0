@@ -1,51 +1,35 @@
-From: Dave Martin <dave.martin@linaro.org>
-Date: Thu, 15 Dec 2011 15:53:53 +0000
-Subject: [PATCH v5 4/5] highbank: Unconditionally require l2x0 L2 cache controller support
-Message-Id: <1323964434-6764-5-git-send-email-dave.martin@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:38 +0000
+Subject: [PATCH 43/57] fbdev: sh_mobile_meram: Make current_reg field store the current reg set
+Message-Id: <1323784972-24205-44-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
-In-Reply-To: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-If running in the Normal World on a TrustZone-enabled SoC, Linux
-does not have complete control over the L2 cache controller
-configuration.  The kernel cannot work reliably on such platforms
-without the l2x0 cache support code built in.
+Make sure current_reg = 0/1 always mean register set A/B through all
+the code.
 
-This patch unconditionally enables l2x0 support for the Highbank
-SoC.
-
-Thanks to Rob Herring for this suggestion.  [1]
-
-[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
-
-Signed-off-by: Dave Martin <dave.martin@linaro.org>
-Acked-by: Rob Herring <rob.herring@calxeda.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/Kconfig |    2 +-
+ drivers/video/sh_mobile_meram.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index eca82f9..1792146 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -340,12 +340,12 @@ config ARCH_HIGHBANK
- 	select ARM_AMBA
- 	select ARM_GIC
- 	select ARM_TIMER_SP804
-+	select CACHE_L2X0
- 	select CLKDEV_LOOKUP
- 	select CPU_V7
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU
- 	select HAVE_SMP
--	select MIGHT_HAVE_CACHE_L2X0
- 	select USE_OF
- 	help
- 	  Support for the Calxeda Highbank SoC based boards.
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 548f700..7af2ffe 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -259,8 +259,8 @@ static inline void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
+ {
+ 	unsigned long target;
+ 
+-	target = (cfg->current_reg) ? MExxSARA : MExxSARB;
+ 	cfg->current_reg ^= 1;
++	target = cfg->current_reg ? MExxSARB : MExxSARA;
+ 
+ 	/* set the next address to fetch */
+ 	meram_write_icb(priv->base, cfg->icb[0].cache_icb,  target,
 -- 
-1.7.4.1
+1.7.3.4
 
