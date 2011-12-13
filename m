@@ -1,176 +1,86 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 05 Dec 2011 00:21:31 +0000
-Subject: [Update][PATCH] PM / sh7372: Make domain stay_on bit only affect system suspend
-Message-Id: <201112050121.31492.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:44 +0000
+Subject: [PATCH 49/57] arm: mach-shmobile: Don't set MERAM ICB numbers in platform data
+Message-Id: <1323784972-24205-50-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112042308.14255.rjw@sisk.pl> <201112050117.05214.rjw@sisk.pl>
-In-Reply-To: <201112050117.05214.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-fbdev@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+The marker and cache ICBs are now allocated automatically, there's no
+need to specify them manually anymore.
 
-SH7372 uses two independent mechanisms for ensuring that power
-domains will never be turned off: the stay_on flag and the "always
-on" domain governor.  However, the "always on" governor is only taken
-into accout by runtime PM code paths, while the stay_on flag affects
-all attempts to turn the given domain off.  This is a problem for
-domains that only need to stay in the "power on" state during system
-sleep, but may be turned off by runtime PM if specific conditions are
-satisfied.
-
-For this reason, make SH7372 register a PM notifier that will enable
-the checking of the domain stay_on flag on during system suspend and
-disable it during system resume.  This way, the stay_on flag will
-only affect system sleep states, while the "always on" governor will
-only affect runtime PM.
-
-In addition to that, make sure that all domains which should be in
-the "power on" state during system sleep are turned on beforehand, by
-executing pm_genpd_poweron() for all of them.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/pm-sh7372.c |   34 +++++++++++++++++++++++++++++++---
- drivers/base/power/domain.c        |   28 ++++++++++++++++++++--------
- include/linux/pm_domain.h          |    4 ++++
- 3 files changed, 55 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    8 --------
+ arch/arm/mach-shmobile/board-mackerel.c |    8 --------
+ 2 files changed, 0 insertions(+), 16 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -77,6 +77,8 @@
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index d3896dc..d6d9e0f 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -589,13 +589,9 @@ static const struct fb_videomode ap4evb_lcdc_modes[] = {
+ };
+ static struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+-		.marker_icb     = 28,
+-		.cache_icb      = 24,
+ 		.meram_size     = 0x40,
+ 	},
+ 	.icb[1] = {
+-		.marker_icb     = 29,
+-		.cache_icb      = 25,
+ 		.meram_size     = 0x40,
+ 	},
+ };
+@@ -858,13 +854,9 @@ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
  
- #ifdef CONFIG_PM
+ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+-		.marker_icb     = 30,
+-		.cache_icb      = 26,
+ 		.meram_size     = 0x100,
+ 	},
+ 	.icb[1] = {
+-		.marker_icb     = 31,
+-		.cache_icb      = 27,
+ 		.meram_size     = 0x100,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index d555d9e..6e0db88 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -376,13 +376,9 @@ static int mackerel_get_brightness(void)
  
-+static bool system_pm_transition;
-+
- static int pd_power_down(struct generic_pm_domain *genpd)
- {
- 	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
-@@ -85,8 +87,8 @@ static int pd_power_down(struct generic_
- 	if (sh7372_pd->suspend)
- 		sh7372_pd->suspend();
+ static struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+-		.marker_icb     = 28,
+-		.cache_icb      = 24,
+ 		.meram_size     = 0x40,
+ 	},
+ 	.icb[1] = {
+-		.marker_icb     = 29,
+-		.cache_icb      = 25,
+ 		.meram_size     = 0x40,
+ 	},
+ };
+@@ -466,13 +462,9 @@ static struct platform_device hdmi_device = {
  
--	if (sh7372_pd->stay_on)
--		return 0;
-+	if (system_pm_transition && sh7372_pd->stay_on)
-+		return -EBUSY;
- 
- 	if (__raw_readl(PSTR) & mask) {
- 		unsigned int retry_count;
-@@ -113,7 +115,7 @@ static int __pd_power_up(struct sh7372_p
- 	unsigned int retry_count;
- 	int ret = 0;
- 
--	if (sh7372_pd->stay_on)
-+	if (sh7372_pd->genpd.status != GPD_STATE_POWER_OFF)
- 		goto out;
- 
- 	if (__raw_readl(PSTR) & mask)
-@@ -506,9 +508,35 @@ static int sh7372_enter_suspend(suspend_
- 	return 0;
- }
- 
-+static void sh7372_pm_power_on_for_suspend(struct generic_pm_domain *genpd)
-+{
-+	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
-+
-+	if (sh7372_pd->stay_on)
-+		pm_genpd_poweron(genpd);
-+}
-+
-+static int sh7372_pm_notifier_fn(struct notifier_block *notifier,
-+				 unsigned long pm_event, void *unused)
-+{
-+	switch (pm_event) {
-+	case PM_SUSPEND_PREPARE:
-+		system_pm_transition = true;
-+		pm_genpd_for_each_domain(sh7372_pm_power_on_for_suspend);
-+		break;
-+	case PM_POST_SUSPEND:
-+		system_pm_transition = false;
-+		pm_genpd_poweroff_unused();
-+		break;
-+	}
-+
-+	return NOTIFY_DONE;
-+}
-+
- static void sh7372_suspend_init(void)
- {
- 	shmobile_suspend_ops.enter = sh7372_enter_suspend;
-+	pm_notifier(sh7372_pm_notifier_fn, 0);
- }
- #else
- static void sh7372_suspend_init(void) {}
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -243,6 +243,25 @@ int pm_genpd_poweron(struct generic_pm_d
- 	return ret;
- }
- 
-+/**
-+ * pm_genpd_for_each_domain - Execute function for each generic PM domain.
-+ * @fun: Function to execute.
-+ */
-+void pm_genpd_for_each_domain(void (*fun)(struct generic_pm_domain *))
-+{
-+	struct generic_pm_domain *genpd;
-+
-+	if (!fun)
-+		return;
-+
-+	mutex_lock(&gpd_list_lock);
-+
-+	list_for_each_entry(genpd, &gpd_list, gpd_list_node)
-+		fun(genpd);
-+
-+	mutex_unlock(&gpd_list_lock);
-+}
-+
- #endif /* CONFIG_PM */
- 
- #ifdef CONFIG_PM_RUNTIME
-@@ -598,14 +617,7 @@ static int pm_genpd_runtime_resume(struc
-  */
- void pm_genpd_poweroff_unused(void)
- {
--	struct generic_pm_domain *genpd;
--
--	mutex_lock(&gpd_list_lock);
--
--	list_for_each_entry(genpd, &gpd_list, gpd_list_node)
--		genpd_queue_power_off_work(genpd);
--
--	mutex_unlock(&gpd_list_lock);
-+	pm_genpd_for_each_domain(genpd_queue_power_off_work);
- }
- 
- #else
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -137,6 +137,7 @@ extern void pm_genpd_init(struct generic
- 			  struct dev_power_governor *gov, bool is_off);
- 
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
-+extern void pm_genpd_for_each_domain(void (*fun)(struct generic_pm_domain *));
- 
- extern bool default_stop_ok(struct device *dev);
- 
-@@ -189,6 +190,9 @@ static inline int pm_genpd_poweron(struc
- {
- 	return -ENOSYS;
- }
-+static inline void pm_genpd_for_each_domain(void (*fun)(struct generic_pm_domain *))
-+{
-+}
- static inline bool default_stop_ok(struct device *dev)
- {
- 	return false;
+ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+-		.marker_icb     = 30,
+-		.cache_icb      = 26,
+ 		.meram_size     = 0x100,
+ 	},
+ 	.icb[1] = {
+-		.marker_icb     = 31,
+-		.cache_icb      = 27,
+ 		.meram_size     = 0x100,
+ 	},
+ };
+-- 
+1.7.3.4
 
