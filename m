@@ -1,70 +1,45 @@
-From: Shawn Guo <shawn.guo@freescale.com>
-Date: Fri, 16 Dec 2011 09:56:26 +0000
-Subject: Re: [PATCH v5 5/5] imx6q: Remove unconditional dependency on l2x0 L2
-Message-Id: <20111216095625.GE3519@S2100-06.ap.freescale.net>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:01 +0000
+Subject: [PATCH 06/57] fbdev: sh_mobile_hdmi: Don't access LCDC channel in notifier callback
+Message-Id: <1323784972-24205-7-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
- <1323964434-6764-6-git-send-email-dave.martin@linaro.org>
-In-Reply-To: <1323964434-6764-6-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Thu, Dec 15, 2011 at 03:53:54PM +0000, Dave Martin wrote:
-> The i.MX6 Quad SoC will work without the l2x0 L2 cache controller
-> support built into the kernel, so this patch removes the dependency
-> on CACHE_L2X0.
-> 
-> This makes the l2x0 support optional, so that it can be turned off
-> when desired for debugging purposes etc.
-> 
-> Since SOC_IMX6Q already depends on ARCH_IMX_V6_V7 and
-> ARCH_IMX_V6_V7 selects MIGHT_HAVE_CACHE_L2X0, there is no need to
-> select that option explicitly from SOC_IMX6Q.
-> 
-> Thanks to Shawn Guo for this suggestion.  [1]
-> 
-> [1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074602.html
-> 
-> Signed-off-by: Dave Martin <dave.martin@linaro.org>
+Instead of relying on info->par being a pointer to an LCDC channel, cast
+the notifier block pointer to an sh_hdmi pointer.
 
-Acked-and-Tested-by: Shawn Guo <shawn.guo@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_hdmi.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-Regards,
-Shawn
-
-> ---
-> Changes:
-> 
-> v5: Don't select MIGHT_HAVE_CACHE_L2X0 directly from SOC_IMX6Q, but
->     instead select implicitly via ARCH_IMX_V6_V7 (which we expect
->     to be selected by other relevant SoCs).  Thanks to Shawn for
->     this suggestion.
-> 
-> 
->  arch/arm/mach-imx/Kconfig |    1 -
->  1 files changed, 0 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-> index 29a3d61..1530678 100644
-> --- a/arch/arm/mach-imx/Kconfig
-> +++ b/arch/arm/mach-imx/Kconfig
-> @@ -609,7 +609,6 @@ comment "i.MX6 family:"
->  config SOC_IMX6Q
->  	bool "i.MX6 Quad support"
->  	select ARM_GIC
-> -	select CACHE_L2X0
->  	select CPU_V7
->  	select HAVE_ARM_SCU
->  	select HAVE_IMX_GPC
-> -- 
-> 1.7.4.1
-> 
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 647ba98..b1e90f5 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -225,6 +225,8 @@ struct sh_hdmi {
+ 	struct notifier_block notifier;
+ };
+ 
++#define notifier_to_hdmi(n)	container_of(n, struct sh_hdmi, notifier)
++
+ static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
+ {
+ 	iowrite8(data, hdmi->base + reg);
+@@ -1204,9 +1206,7 @@ static int sh_hdmi_notify(struct notifier_block *nb,
+ {
+ 	struct fb_event *event = data;
+ 	struct fb_info *info = event->info;
+-	struct sh_mobile_lcdc_chan *ch = info->par;
+-	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+-	struct sh_hdmi *hdmi = board_cfg->board_data;
++	struct sh_hdmi *hdmi = notifier_to_hdmi(nb);
+ 
+ 	if (!hdmi || nb != &hdmi->notifier || hdmi->info != info)
+ 		return NOTIFY_DONE;
+-- 
+1.7.3.4
 
