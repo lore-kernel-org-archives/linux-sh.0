@@ -1,364 +1,279 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 Dec 2011 08:12:04 +0000
-Subject: [PATCH] ARM: mach-shmobile: r8a7779 power domain support
-Message-Id: <20111222081204.12120.92511.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:28 +0000
+Subject: [PATCH 33/57] fbdev: sh_mobile_lcdc: Add sh_mobile_format_info() function
+Message-Id: <1323784972-24205-34-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The function returns a pointer to a structure describing a format based
+on its fourcc. Use the function where applicable instead of hardcoded
+switch-case statements.
 
-Add power domain control support for the r8a7779 SoC.
-
-This adds support for 4 power domains for I/O Devices
-together with code that can be used for CPU cores as well.
-
-The only out of the ordinary experience is the need for
-ioremap() of SYSC registers. Because of that we need to
-execute some init function before setting up the domains.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/video/sh_mobile_lcdcfb.c |  174 ++++++++++++++++++++++----------------
+ 1 files changed, 102 insertions(+), 72 deletions(-)
 
- Built on top of linux-3.2-rc + r8a7779 patches for now.
- Needs to be reworked to fit on top of the linux-pm tree.
-
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/include/mach/common.h  |    1 
- arch/arm/mach-shmobile/include/mach/r8a7779.h |   35 +++
- arch/arm/mach-shmobile/pm-r8a7779.c           |  235 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c        |    8 
- 5 files changed, 280 insertions(+)
-
---- 0015/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2011-12-22 16:21:03.000000000 +0900
-@@ -37,6 +37,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= entry-gic.
- obj-$(CONFIG_SUSPEND)		+= suspend.o
- obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
- obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
-+obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 3bc82ae..c6b6b9d 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -447,6 +447,75 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+  * Format helpers
+  */
  
- # Board objects
- obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
---- 0015/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-12-22 16:21:03.000000000 +0900
-@@ -58,5 +58,6 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-+extern void r8a7779_pm_init(void);
- 
- #endif /* __ARCH_MACH_COMMON_H */
---- 0016/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2011-12-22 16:22:01.000000000 +0900
-@@ -1,6 +1,9 @@
- #ifndef __ASM_R8A7779_H__
- #define __ASM_R8A7779_H__
- 
-+#include <linux/sh_clk.h>
-+#include <linux/pm_domain.h>
-+
- /* Pin Function Controller:
-  * GPIO_FN_xx - GPIO used to select pin function
-  * GPIO_GP_x_x - GPIO mapped to real I/O pin on CPU
-@@ -322,4 +325,36 @@ enum {
- 	GPIO_FN_GPS_MAG, GPIO_FN_FCE, GPIO_FN_SCK4_B,
- };
- 
-+struct platform_device;
-+
-+struct r8a7779_pm_ch {
-+	unsigned long chan_offs;
-+	unsigned int chan_bit;
-+	unsigned int isr_bit;
++struct sh_mobile_lcdc_format_info {
++	u32 fourcc;
++	unsigned int bpp;
++	bool yuv;
++	u32 lddfr;
 +};
 +
-+struct r8a7779_pm_domain {
-+	struct generic_pm_domain genpd;
-+	struct r8a7779_pm_ch ch;
++static const struct sh_mobile_lcdc_format_info sh_mobile_format_infos[] = {
++	{
++		.fourcc = V4L2_PIX_FMT_RGB565,
++		.bpp = 12,
++		.yuv = false,
++		.lddfr = LDDFR_PKF_RGB16,
++	}, {
++		.fourcc = V4L2_PIX_FMT_BGR24,
++		.bpp = 24,
++		.yuv = false,
++		.lddfr = LDDFR_PKF_RGB24,
++	}, {
++		.fourcc = V4L2_PIX_FMT_BGR32,
++		.bpp = 32,
++		.yuv = false,
++		.lddfr = LDDFR_PKF_ARGB32,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV12,
++		.bpp = 12,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_420,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV21,
++		.bpp = 12,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_420,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV16,
++		.bpp = 16,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_422,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV61,
++		.bpp = 16,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_422,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV24,
++		.bpp = 24,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_444,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV42,
++		.bpp = 24,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_444,
++	},
 +};
 +
-+static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
++static const struct sh_mobile_lcdc_format_info *
++sh_mobile_format_info(u32 fourcc)
 +{
-+	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
-+}
++	unsigned int i;
 +
-+#ifdef CONFIG_PM
-+extern struct r8a7779_pm_domain r8a7779_sh4a;
-+extern struct r8a7779_pm_domain r8a7779_sgx;
-+extern struct r8a7779_pm_domain r8a7779_vdp1;
-+extern struct r8a7779_pm_domain r8a7779_impx3;
-+
-+extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
-+extern void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
-+					struct platform_device *pdev);
-+#else
-+#define r8a7779_init_pm_domain(pd) do { } while (0)
-+#define r8a7779_add_device_to_domain(pd, pdev) do { } while (0)
-+#endif /* CONFIG_PM */
-+
- #endif /* __ASM_R8A7779_H__ */
---- /dev/null
-+++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2011-12-22 16:21:44.000000000 +0900
-@@ -0,0 +1,235 @@
-+/*
-+ * r8a7779 Power management support
-+ *
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/pm.h>
-+#include <linux/suspend.h>
-+#include <linux/err.h>
-+#include <linux/pm_clock.h>
-+#include <linux/platform_device.h>
-+#include <linux/delay.h>
-+#include <linux/irq.h>
-+#include <linux/interrupt.h>
-+#include <linux/console.h>
-+#include <asm/system.h>
-+#include <asm/io.h>
-+#include <mach/common.h>
-+#include <mach/r8a7779.h>
-+
-+static void __iomem *r8a7779_sysc_base;
-+
-+/* SYSC */
-+#define SYSCSR 0x00
-+#define SYSCISR 0x04
-+#define SYSCISCR 0x08
-+#define SYSCIER 0x0c
-+#define SYSCIMR 0x10
-+#define PWRSR0 0x40
-+#define PWRSR1 0x80
-+#define PWRSR2 0xc0
-+#define PWRSR3 0x100
-+#define PWRSR4 0x140
-+
-+#define PWRSR_OFFS 0x00
-+#define PWROFFCR_OFFS 0x04
-+#define PWRONCR_OFFS 0x0c
-+#define PWRER_OFFS 0x14
-+
-+#define SYSCSR_RETRIES 100
-+#define SYSCSR_DELAY_US 1
-+
-+#define SYSCISR_RETRIES 1000
-+#define SYSCISR_DELAY_US 1
-+
-+#ifdef CONFIG_PM
-+
-+static int r8a7779_sysc_pwr_on_off(struct r8a7779_pm_ch *r8a7779_ch,
-+				   int sr_bit, int reg_offs)
-+{
-+	int k;
-+
-+	for (k = 0; k < SYSCSR_RETRIES; k++) {
-+		if (ioread32(r8a7779_sysc_base + SYSCSR) & (1 << sr_bit))
-+			break;
-+		udelay(SYSCSR_DELAY_US);
++	for (i = 0; i < ARRAY_SIZE(sh_mobile_format_infos); ++i) {
++		if (sh_mobile_format_infos[i].fourcc = fourcc)
++			return &sh_mobile_format_infos[i];
 +	}
 +
-+	if (k = SYSCSR_RETRIES)
-+		return -EAGAIN;
-+
-+	iowrite32(1 << r8a7779_ch->chan_bit,
-+		  r8a7779_sysc_base + r8a7779_ch->chan_offs + reg_offs);
-+
-+	return 0;
++	return NULL;
 +}
 +
-+static int r8a7779_sysc_pwr_off(struct r8a7779_pm_ch *r8a7779_ch)
-+{
-+	return r8a7779_sysc_pwr_on_off(r8a7779_ch, 0, PWROFFCR_OFFS);
-+}
-+
-+static int r8a7779_sysc_pwr_on(struct r8a7779_pm_ch *r8a7779_ch)
-+{
-+	return r8a7779_sysc_pwr_on_off(r8a7779_ch, 1, PWRONCR_OFFS);
-+}
-+
-+static int r8a7779_sysc_update(struct r8a7779_pm_ch *r8a7779_ch,
-+			       int (*on_off_fn)(struct r8a7779_pm_ch *))
-+{
-+	unsigned int isr_mask = 1 << r8a7779_ch->isr_bit;
-+	unsigned int chan_mask = 1 << r8a7779_ch->chan_bit;
-+	unsigned int status;
-+	int ret = 0;
-+	int k;
-+
-+	iowrite32(isr_mask, r8a7779_sysc_base + SYSCISCR);
-+
-+	do {
-+		ret = on_off_fn(r8a7779_ch);
-+		if (ret)
-+			goto out;
-+
-+		status = ioread32(r8a7779_sysc_base +
-+				  r8a7779_ch->chan_offs + PWRER_OFFS);
-+	} while (status & chan_mask);
-+
-+	for (k = 0; k < SYSCISR_RETRIES; k++) {
-+		if (ioread32(r8a7779_sysc_base + SYSCISR) & isr_mask)
-+			break;
-+		udelay(SYSCISR_DELAY_US);
-+	}
-+
-+	if (k = SYSCISR_RETRIES)
-+		ret = -EIO;
-+
-+	iowrite32(isr_mask, r8a7779_sysc_base + SYSCISCR);
-+
-+ out:
-+	pr_debug("r8a7779 power domain %d: %02x %02x %02x %02x %02x -> %d\n",
-+		 r8a7779_ch->isr_bit, ioread32(r8a7779_sysc_base + PWRSR0),
-+		 ioread32(r8a7779_sysc_base + PWRSR1),
-+		 ioread32(r8a7779_sysc_base + PWRSR2),
-+		 ioread32(r8a7779_sysc_base + PWRSR3),
-+		 ioread32(r8a7779_sysc_base + PWRSR4), ret);
-+	return ret;
-+}
-+
-+static int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch)
-+{
-+	return r8a7779_sysc_update(r8a7779_ch, r8a7779_sysc_pwr_off);
-+}
-+
-+static int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch)
-+{
-+	return r8a7779_sysc_update(r8a7779_ch, r8a7779_sysc_pwr_on);
-+}
-+
-+static void __init r8a7779_sysc_init(void)
-+{
-+	r8a7779_sysc_base = ioremap_nocache(0xffd85000, PAGE_SIZE);
-+	if (!r8a7779_sysc_base)
-+		panic("unable to ioremap r8a7779 SYSC hardware block\n");
-+
-+	/* enable all interrupt sources, but do not use interrupt handler */
-+	iowrite32(0x0131000e, r8a7779_sysc_base + SYSCIER);
-+	iowrite32(0, r8a7779_sysc_base + SYSCIMR);
-+}
-+
-+static int pd_power_down(struct generic_pm_domain *genpd)
-+{
-+	return r8a7779_sysc_power_down(to_r8a7779_ch(genpd));
-+}
-+
-+static int pd_power_up(struct generic_pm_domain *genpd)
-+{
-+	return r8a7779_sysc_power_up(to_r8a7779_ch(genpd));
-+}
-+
-+static bool pd_is_off(struct generic_pm_domain *genpd)
-+{
-+	struct r8a7779_pm_ch *r8a7779_ch = to_r8a7779_ch(genpd);
-+	unsigned int st;
-+
-+	st = ioread32(r8a7779_sysc_base + r8a7779_ch->chan_offs + PWRSR_OFFS);
-+	if (st & (1 << r8a7779_ch->chan_bit))
-+		return true;
-+
-+	return false;
-+}
-+
-+static bool pd_active_wakeup(struct device *dev)
-+{
-+	return true;
-+}
-+
-+void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
-+{
-+	struct generic_pm_domain *genpd = &r8a7779_pd->genpd;
-+
-+	pm_genpd_init(genpd, NULL, false);
-+	genpd->stop_device = pm_clk_suspend;
-+	genpd->start_device = pm_clk_resume;
-+	genpd->dev_irq_safe = true;
-+	genpd->active_wakeup = pd_active_wakeup;
-+	genpd->power_off = pd_power_down;
-+	genpd->power_on = pd_power_up;
-+
-+	if (pd_is_off(&r8a7779_pd->genpd))
-+		pd_power_up(&r8a7779_pd->genpd);
-+}
-+
-+void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
-+				 struct platform_device *pdev)
-+{
-+	struct device *dev = &pdev->dev;
-+
-+	pm_genpd_add_device(&r8a7779_pd->genpd, dev);
-+	if (pm_clk_no_clocks(dev))
-+		pm_clk_add(dev, NULL);
-+}
-+
-+struct r8a7779_pm_domain r8a7779_sh4a = {
-+	.ch = {
-+		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
-+		.isr_bit = 16, /* SH4A */
-+	}
-+};
-+
-+struct r8a7779_pm_domain r8a7779_sgx = {
-+	.ch = {
-+		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
-+		.isr_bit = 20, /* SGX */
-+	}
-+};
-+
-+struct r8a7779_pm_domain r8a7779_vdp1 = {
-+	.ch = {
-+		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
-+		.isr_bit = 21, /* VDP */
-+	}
-+};
-+
-+struct r8a7779_pm_domain r8a7779_impx3 = {
-+	.ch = {
-+		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
-+		.isr_bit = 24, /* IMP */
-+	}
-+};
-+
-+#else /* CONFIG_PM */
-+
-+static inline void r8a7779_sysc_init(void) {}
-+
-+#endif /* CONFIG_PM */
-+
-+void __init r8a7779_pm_init(void)
-+{
-+	r8a7779_sysc_init();
-+}
---- 0021/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2011-12-22 16:21:03.000000000 +0900
-@@ -30,6 +30,7 @@
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
-+#include <mach/common.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-@@ -218,6 +219,13 @@ static struct platform_device *r8a7779_l
- 
- void __init r8a7779_add_standard_devices(void)
+ static int sh_mobile_format_fourcc(const struct fb_var_screeninfo *var)
  {
-+	r8a7779_pm_init();
+ 	if (var->grayscale > 1)
+@@ -471,21 +540,13 @@ static int sh_mobile_format_is_fourcc(const struct fb_var_screeninfo *var)
+ 
+ static bool sh_mobile_format_is_yuv(const struct fb_var_screeninfo *var)
+ {
++	const struct sh_mobile_lcdc_format_info *format;
 +
-+	r8a7779_init_pm_domain(&r8a7779_sh4a);
-+	r8a7779_init_pm_domain(&r8a7779_sgx);
-+	r8a7779_init_pm_domain(&r8a7779_vdp1);
-+	r8a7779_init_pm_domain(&r8a7779_impx3);
+ 	if (var->grayscale <= 1)
+ 		return false;
+ 
+-	switch (var->grayscale) {
+-	case V4L2_PIX_FMT_NV12:
+-	case V4L2_PIX_FMT_NV21:
+-	case V4L2_PIX_FMT_NV16:
+-	case V4L2_PIX_FMT_NV61:
+-	case V4L2_PIX_FMT_NV24:
+-	case V4L2_PIX_FMT_NV42:
+-		return true;
+-
+-	default:
+-		return false;
+-	}
++	format = sh_mobile_format_info(var->grayscale);
++	return format ? format->yuv : false;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -665,37 +726,20 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 
+ 	/* Setup geometry, format, frame buffer memory and operation mode. */
+ 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
++		const struct sh_mobile_lcdc_format_info *format;
++		u32 fourcc;
 +
- 	platform_add_devices(r8a7779_early_devices,
- 			    ARRAY_SIZE(r8a7779_early_devices));
- 	platform_add_devices(r8a7779_late_devices,
+ 		ch = &priv->ch[k];
+ 		if (!ch->enabled)
+ 			continue;
+ 
+ 		sh_mobile_lcdc_geometry(ch);
+ 
+-		switch (sh_mobile_format_fourcc(&ch->info->var)) {
+-		case V4L2_PIX_FMT_RGB565:
+-			tmp = LDDFR_PKF_RGB16;
+-			break;
+-		case V4L2_PIX_FMT_BGR24:
+-			tmp = LDDFR_PKF_RGB24;
+-			break;
+-		case V4L2_PIX_FMT_BGR32:
+-			tmp = LDDFR_PKF_ARGB32;
+-			break;
+-		case V4L2_PIX_FMT_NV12:
+-		case V4L2_PIX_FMT_NV21:
+-			tmp = LDDFR_CC | LDDFR_YF_420;
+-			break;
+-		case V4L2_PIX_FMT_NV16:
+-		case V4L2_PIX_FMT_NV61:
+-			tmp = LDDFR_CC | LDDFR_YF_422;
+-			break;
+-		case V4L2_PIX_FMT_NV24:
+-		case V4L2_PIX_FMT_NV42:
+-			tmp = LDDFR_CC | LDDFR_YF_444;
+-			break;
+-		}
++		fourcc = sh_mobile_format_fourcc(&ch->info->var);
++		format = sh_mobile_format_info(fourcc);
++		tmp = format->lddfr;
+ 
+-		if (sh_mobile_format_is_yuv(&ch->info->var)) {
++		if (format->yuv) {
+ 			switch (ch->info->var.colorspace) {
+ 			case V4L2_COLORSPACE_REC709:
+ 				tmp |= LDDFR_CF1;
+@@ -709,7 +753,7 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		lcdc_write_chan(ch, LDDFR, tmp);
+ 		lcdc_write_chan(ch, LDMLSR, ch->pitch);
+ 		lcdc_write_chan(ch, LDSA1R, ch->base_addr_y);
+-		if (sh_mobile_format_is_yuv(&ch->info->var))
++		if (format->yuv)
+ 			lcdc_write_chan(ch, LDSA2R, ch->base_addr_c);
+ 
+ 		/* When using deferred I/O mode, configure the LCDC for one-shot
+@@ -1225,32 +1269,17 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 		var->yres_virtual = var->yres;
+ 
+ 	if (sh_mobile_format_is_fourcc(var)) {
+-		switch (var->grayscale) {
+-		case V4L2_PIX_FMT_NV12:
+-		case V4L2_PIX_FMT_NV21:
+-			var->bits_per_pixel = 12;
+-			break;
+-		case V4L2_PIX_FMT_RGB565:
+-		case V4L2_PIX_FMT_NV16:
+-		case V4L2_PIX_FMT_NV61:
+-			var->bits_per_pixel = 16;
+-			break;
+-		case V4L2_PIX_FMT_BGR24:
+-		case V4L2_PIX_FMT_NV24:
+-		case V4L2_PIX_FMT_NV42:
+-			var->bits_per_pixel = 24;
+-			break;
+-		case V4L2_PIX_FMT_BGR32:
+-			var->bits_per_pixel = 32;
+-			break;
+-		default:
++		const struct sh_mobile_lcdc_format_info *format;
++
++		format = sh_mobile_format_info(var->grayscale);
++		if (format = NULL)
+ 			return -EINVAL;
+-		}
++		var->bits_per_pixel = format->bpp;
+ 
+ 		/* Default to RGB and JPEG color-spaces for RGB and YUV formats
+ 		 * respectively.
+ 		 */
+-		if (!sh_mobile_format_is_yuv(var))
++		if (!format->yuv)
+ 			var->colorspace = V4L2_COLORSPACE_SRGB;
+ 		else if (var->colorspace != V4L2_COLORSPACE_REC709)
+ 			var->colorspace = V4L2_COLORSPACE_JPEG;
+@@ -1663,6 +1692,7 @@ static int __devinit
+ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 			    struct sh_mobile_lcdc_chan *ch)
+ {
++	const struct sh_mobile_lcdc_format_info *format;
+ 	struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
+ 	const struct fb_videomode *max_mode;
+ 	const struct fb_videomode *mode;
+@@ -1677,6 +1707,13 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	mutex_init(&ch->open_lock);
+ 	ch->notify = sh_mobile_lcdc_display_notify;
+ 
++	/* Validate the format. */
++	format = sh_mobile_format_info(cfg->fourcc);
++	if (format = NULL) {
++		dev_err(priv->dev, "Invalid FOURCC %08x.\n", cfg->fourcc);
++		return -EINVAL;
++	}
++
+ 	/* Allocate the frame buffer device. */
+ 	ch->info = framebuffer_alloc(0, priv->dev);
+ 	if (!ch->info) {
+@@ -1754,20 +1791,13 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	var->yres_virtual = var->yres * 2;
+ 	var->activate = FB_ACTIVATE_NOW;
+ 
+-	switch (cfg->fourcc) {
+-	case V4L2_PIX_FMT_RGB565:
+-		var->bits_per_pixel = 16;
+-		break;
+-	case V4L2_PIX_FMT_BGR24:
+-		var->bits_per_pixel = 24;
+-		break;
+-	case V4L2_PIX_FMT_BGR32:
+-		var->bits_per_pixel = 32;
+-		break;
+-	default:
++	/* Use the legacy API by default for RGB formats, and the FOURCC API
++	 * for YUV formats.
++	 */
++	if (!format->yuv)
++		var->bits_per_pixel = format->bpp;
++	else
+ 		var->grayscale = cfg->fourcc;
+-		break;
+-	}
+ 
+ 	/* Make sure the memory size check won't fail. smem_len is initialized
+ 	 * later based on var.
+@@ -1804,7 +1834,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	    cfg->fourcc = V4L2_PIX_FMT_NV21)
+ 		info->fix.ypanstep = 2;
+ 
+-	if (sh_mobile_format_is_yuv(var)) {
++	if (format->yuv) {
+ 		info->fix.line_length = var->xres;
+ 		info->fix.visual = FB_VISUAL_FOURCC;
+ 	} else {
+-- 
+1.7.3.4
+
