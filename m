@@ -1,96 +1,147 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:18 +0000
-Subject: [PATCH 23/57] fbdev: sh_mobile_lcdc: Remove fb_info parameter to display_on operation
-Message-Id: <1323784972-24205-24-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:24 +0000
+Subject: [PATCH 29/57] fbdev: sh_mobile_hdmi: Don't access LCDC fb_info
+Message-Id: <1323784972-24205-30-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The parameter is unused, remove it.
+The LCDC fb_info structure is only used to retrieve the default video
+mode in case none of the modes advertised by EDID information is
+acceptable. Pass a pointer to the default mode through the
+sh_mobile_lcdc_entity structure instead.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mipi_dsi.c      |    3 +--
- drivers/video/sh_mobile_hdmi.c   |   11 +++--------
- drivers/video/sh_mobile_lcdcfb.c |    2 +-
- drivers/video/sh_mobile_lcdcfb.h |    3 +--
- 4 files changed, 6 insertions(+), 13 deletions(-)
+ drivers/video/sh_mobile_hdmi.c   |   34 ++++++++++++++--------------------
+ drivers/video/sh_mobile_lcdcfb.c |   24 +++++++++++++-----------
+ drivers/video/sh_mobile_lcdcfb.h |    1 +
+ 3 files changed, 28 insertions(+), 31 deletions(-)
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index ad09a05..1ede247 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -394,8 +394,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	return 0;
- }
- 
--static int mipi_display_on(struct sh_mobile_lcdc_entity *entity,
--			   struct fb_info *info)
-+static int mipi_display_on(struct sh_mobile_lcdc_entity *entity)
- {
- 	struct sh_mipi *mipi = to_sh_mipi(entity);
- 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
 diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index bd885ee..c22e123 100644
+index 37f935f..eafb19d 100644
 --- a/drivers/video/sh_mobile_hdmi.c
 +++ b/drivers/video/sh_mobile_hdmi.c
-@@ -1000,16 +1000,11 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
- 
--/* locking:	called with info->lock held, or before register_framebuffer() */
--static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
--			      struct fb_info *info)
-+static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
+@@ -734,12 +734,11 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 			     unsigned long *parent_rate)
  {
--	/*
--	 * info is guaranteed to be valid, when we are called, because our
--	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
--	 */
- 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
- 	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
-+	struct fb_info *info = ch->info;
+ 	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
+-	struct fb_info *info = ch ? ch->info : NULL;
+ 	const struct fb_videomode *mode, *found = NULL;
+-	const struct fb_modelist *modelist = NULL;
+ 	unsigned int f_width = 0, f_height = 0, f_refresh = 0;
+ 	unsigned long found_rate_error = ULONG_MAX; /* silly compiler... */
+ 	bool scanning = false, preferred_bad = false;
++	bool use_edid_mode = false;
+ 	u8 edid[128];
+ 	char *forced;
+ 	int i;
+@@ -864,25 +863,19 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
  
- 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
+ 		found = mode;
+ 		found_rate_error = rate_error;
++		use_edid_mode = true;
+ 	}
  
-@@ -1156,7 +1151,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 				 */
- 				info->var.width = hdmi->var.width;
- 				info->var.height = hdmi->var.height;
--				sh_hdmi_display_on(&hdmi->entity, info);
-+				sh_hdmi_display_on(&hdmi->entity);
- 			} else {
- 				/* New monitor or have to wake up */
- 				fb_set_suspend(info, 0);
+ 	/*
+-	 * TODO 1: if no ->info is present, postpone running the config until
+-	 * after ->info first gets registered.
++	 * TODO 1: if no default mode is present, postpone running the config
++	 * until after the LCDC channel is initialized.
+ 	 * TODO 2: consider registering the HDMI platform device from the LCDC
+-	 * driver, and passing ->info with HDMI platform data.
++	 * driver.
+ 	 */
+-	if (info && !found) {
+-		modelist = info->modelist.next &&
+-			!list_empty(&info->modelist) ?
+-			list_entry(info->modelist.next,
+-				   struct fb_modelist, list) :
+-			NULL;
+-
+-		if (modelist) {
+-			found = &modelist->mode;
+-			found_rate_error = sh_hdmi_rate_error(hdmi, found, hdmi_rate, parent_rate);
+-		}
++	if (!found && hdmi->entity.def_mode.xres != 0) {
++		found = &hdmi->entity.def_mode;
++		found_rate_error = sh_hdmi_rate_error(hdmi, found, hdmi_rate,
++						      parent_rate);
+ 	}
+ 
+ 	/* No cookie today */
+@@ -906,10 +899,11 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 	else
+ 		hdmi->preprogrammed_vic = 0;
+ 
+-	dev_dbg(hdmi->dev, "Using %s %s mode %ux%u@%uHz (%luHz), clock error %luHz\n",
+-		modelist ? "default" : "EDID", hdmi->preprogrammed_vic ? "VIC" : "external",
+-		found->xres, found->yres, found->refresh,
+-		PICOS2KHZ(found->pixclock) * 1000, found_rate_error);
++	dev_dbg(hdmi->dev, "Using %s %s mode %ux%u@%uHz (%luHz), "
++		"clock error %luHz\n", use_edid_mode ? "EDID" : "default",
++		hdmi->preprogrammed_vic ? "VIC" : "external", found->xres,
++		found->yres, found->refresh, PICOS2KHZ(found->pixclock) * 1000,
++		found_rate_error);
+ 
+ 	hdmi->mode = *found;
+ 	sh_hdmi_external_video_param(hdmi);
 diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 2dccfde..47108aa 100644
+index 4ec216e..c5acae7 100644
 --- a/drivers/video/sh_mobile_lcdcfb.c
 +++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -339,7 +339,7 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
- 	int ret;
+@@ -1690,17 +1690,6 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	info->pseudo_palette = &ch->pseudo_palette;
+ 	info->flags = FBINFO_FLAG_DEFAULT;
  
- 	if (ch->tx_dev) {
--		ret = ch->tx_dev->ops->display_on(ch->tx_dev, ch->info);
-+		ret = ch->tx_dev->ops->display_on(ch->tx_dev);
- 		if (ret < 0)
- 			return;
- 	}
+-	if (cfg->tx_dev) {
+-		if (!cfg->tx_dev->dev.driver ||
+-		    !try_module_get(cfg->tx_dev->dev.driver->owner)) {
+-			dev_warn(priv->dev, "unable to get transmitter "
+-				 "device\n");
+-			return -EINVAL;
+-		}
+-		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
+-		ch->tx_dev->lcdc = ch;
+-	}
+-
+ 	/* Iterate through the modes to validate them and find the highest
+ 	 * resolution.
+ 	 */
+@@ -1741,6 +1730,19 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 
+ 	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
+ 
++	/* Initialize the transmitter device if present. */
++	if (cfg->tx_dev) {
++		if (!cfg->tx_dev->dev.driver ||
++		    !try_module_get(cfg->tx_dev->dev.driver->owner)) {
++			dev_warn(priv->dev, "unable to get transmitter "
++				 "device\n");
++			return -EINVAL;
++		}
++		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
++		ch->tx_dev->lcdc = ch;
++		ch->tx_dev->def_mode = *mode;
++	}
++
+ 	/* Initialize variable screen information using the first mode as
+ 	 * default. The default Y virtual resolution is twice the panel size to
+ 	 * allow for double-buffering.
 diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 36cd564..b2cb8e6 100644
+index 10086ae..9c91fae 100644
 --- a/drivers/video/sh_mobile_lcdcfb.h
 +++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -23,8 +23,7 @@ struct sh_mobile_lcdc_chan;
- 
- struct sh_mobile_lcdc_entity_ops {
- 	/* Display */
--	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
--			  struct fb_info *info);
-+	int (*display_on)(struct sh_mobile_lcdc_entity *entity);
- 	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
+@@ -40,6 +40,7 @@ struct sh_mobile_lcdc_entity {
+ 	struct module *owner;
+ 	const struct sh_mobile_lcdc_entity_ops *ops;
+ 	struct sh_mobile_lcdc_chan *lcdc;
++	struct fb_videomode def_mode;
  };
  
+ /*
 -- 
 1.7.3.4
 
