@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:30 +0000
-Subject: [PATCH 35/57] fbdev: sh_mobile_lcdc: Split fb init/cleanup from channel init/cleanup
-Message-Id: <1323784972-24205-36-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:04 +0000
+Subject: [PATCH 09/57] fbdev: sh_mobile_hdmi: Implement sh_mobile_lcdc_entity interface
+Message-Id: <1323784972-24205-10-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,388 +10,127 @@ To: linux-fbdev@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |  285 +++++++++++++++++++++-----------------
- drivers/video/sh_mobile_lcdcfb.h |    2 +
- 2 files changed, 159 insertions(+), 128 deletions(-)
+ drivers/video/sh_mobile_hdmi.c |   39 +++++++++++++++++++++++++++++++--------
+ 1 files changed, 31 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 9829e01..f6bc18e 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1424,6 +1424,141 @@ static struct fb_ops sh_mobile_lcdc_ops = {
- 	.fb_set_par	= sh_mobile_set_par,
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 1ff3baf..f961fa2 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -208,6 +208,8 @@ enum hotplug_state {
  };
  
-+static void
-+sh_mobile_lcdc_channel_fb_unregister(struct sh_mobile_lcdc_chan *ch)
-+{
-+	if (ch->info && ch->info->dev)
-+		unregister_framebuffer(ch->info);
-+}
+ struct sh_hdmi {
++	struct sh_mobile_lcdc_entity entity;
 +
-+static int __devinit
-+sh_mobile_lcdc_channel_fb_register(struct sh_mobile_lcdc_chan *ch)
-+{
-+	struct fb_info *info = ch->info;
-+	int ret;
-+
-+	if (info->fbdefio) {
-+		ch->sglist = vmalloc(sizeof(struct scatterlist) *
-+				     ch->fb_size >> PAGE_SHIFT);
-+		if (!ch->sglist) {
-+			dev_err(ch->lcdc->dev, "cannot allocate sglist\n");
-+			return -ENOMEM;
-+		}
-+	}
-+
-+	info->bl_dev = ch->bl;
-+
-+	ret = register_framebuffer(info);
-+	if (ret < 0)
-+		return ret;
-+
-+	dev_info(ch->lcdc->dev, "registered %s/%s as %dx%d %dbpp.\n",
-+		 dev_name(ch->lcdc->dev), (ch->cfg.chan = LCDC_CHAN_MAINLCD) ?
-+		 "mainlcd" : "sublcd", info->var.xres, info->var.yres,
-+		 info->var.bits_per_pixel);
-+
-+	/* deferred io mode: disable clock to save power */
-+	if (info->fbdefio || info->state = FBINFO_STATE_SUSPENDED)
-+		sh_mobile_lcdc_clk_off(ch->lcdc);
-+
-+	return ret;
-+}
-+
-+static void
-+sh_mobile_lcdc_channel_fb_cleanup(struct sh_mobile_lcdc_chan *ch)
-+{
-+	struct fb_info *info = ch->info;
-+
-+	if (!info || !info->device)
-+		return;
-+
-+	if (ch->sglist)
-+		vfree(ch->sglist);
-+
-+	fb_dealloc_cmap(&info->cmap);
-+	framebuffer_release(info);
-+}
-+
-+static int __devinit
-+sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
-+			       const struct fb_videomode *mode,
-+			       unsigned int num_modes)
-+{
-+	struct sh_mobile_lcdc_priv *priv = ch->lcdc;
-+	struct fb_var_screeninfo *var;
-+	struct fb_info *info;
-+	int ret;
-+
-+	/* Allocate and initialize the frame buffer device. Create the modes
-+	 * list and allocate the color map.
-+	 */
-+	info = framebuffer_alloc(0, priv->dev);
-+	if (info = NULL) {
-+		dev_err(priv->dev, "unable to allocate fb_info\n");
-+		return -ENOMEM;
-+	}
-+
-+	ch->info = info;
-+
-+	info->flags = FBINFO_FLAG_DEFAULT;
-+	info->fbops = &sh_mobile_lcdc_ops;
-+	info->device = priv->dev;
-+	info->screen_base = ch->fb_mem;
-+	info->pseudo_palette = &ch->pseudo_palette;
-+	info->par = ch;
-+
-+	fb_videomode_to_modelist(mode, num_modes, &info->modelist);
-+
-+	ret = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
-+	if (ret < 0) {
-+		dev_err(priv->dev, "unable to allocate cmap\n");
-+		return ret;
-+	}
-+
-+	/* Initialize fixed screen information. Restrict pan to 2 lines steps
-+	 * for NV12 and NV21.
-+	 */
-+	info->fix = sh_mobile_lcdc_fix;
-+	info->fix.smem_start = ch->dma_handle;
-+	info->fix.smem_len = ch->fb_size;
-+	if (ch->format->fourcc = V4L2_PIX_FMT_NV12 ||
-+	    ch->format->fourcc = V4L2_PIX_FMT_NV21)
-+		info->fix.ypanstep = 2;
-+
-+	/* Initialize variable screen information using the first mode as
-+	 * default. The default Y virtual resolution is twice the panel size to
-+	 * allow for double-buffering.
-+	 */
-+	var = &info->var;
-+	fb_videomode_to_var(var, mode);
-+	var->width = ch->cfg.panel_cfg.width;
-+	var->height = ch->cfg.panel_cfg.height;
-+	var->yres_virtual = var->yres * 2;
-+	var->activate = FB_ACTIVATE_NOW;
-+
-+	/* Use the legacy API by default for RGB formats, and the FOURCC API
-+	 * for YUV formats.
-+	 */
-+	if (!ch->format->yuv)
-+		var->bits_per_pixel = ch->format->bpp;
-+	else
-+		var->grayscale = ch->format->fourcc;
-+
-+	ret = sh_mobile_check_var(var, info);
-+	if (ret)
-+		return ret;
-+
-+	if (ch->format->yuv) {
-+		info->fix.line_length = var->xres;
-+		info->fix.visual = FB_VISUAL_FOURCC;
-+	} else {
-+		info->fix.line_length = var->xres * ch->format->bpp / 8;
-+		info->fix.visual = FB_VISUAL_TRUECOLOR;
-+	}
+ 	void __iomem *base;
+ 	enum hotplug_state hp_state;	/* hot-plug status */
+ 	u8 preprogrammed_vic;		/* use a pre-programmed VIC or
+@@ -225,6 +227,7 @@ struct sh_hdmi {
+ 	struct notifier_block notifier;
+ };
+ 
++#define entity_to_sh_hdmi(e)	container_of(e, struct sh_hdmi, entity)
+ #define notifier_to_hdmi(n)	container_of(n, struct sh_hdmi, notifier)
+ 
+ static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
+@@ -1001,13 +1004,14 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
+ }
+ 
+ /* locking:	called with info->lock held, or before register_framebuffer() */
+-static void sh_hdmi_display_on(void *arg, struct fb_info *info)
++static int __sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
++				struct fb_info *info)
+ {
+ 	/*
+ 	 * info is guaranteed to be valid, when we are called, because our
+ 	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
+ 	 */
+-	struct sh_hdmi *hdmi = arg;
++	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 
+ 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
+@@ -1032,18 +1036,35 @@ static void sh_hdmi_display_on(void *arg, struct fb_info *info)
+ 	default:
+ 		hdmi->var = ch->display_var;
+ 	}
 +
 +	return 0;
 +}
 +
- /* -----------------------------------------------------------------------------
-  * Backlight
-  */
-@@ -1592,37 +1727,28 @@ static const struct fb_videomode default_720p __devinitconst = {
- static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- {
- 	struct sh_mobile_lcdc_priv *priv = platform_get_drvdata(pdev);
--	struct fb_info *info;
- 	int i;
- 
- 	fb_unregister_client(&priv->notifier);
- 
- 	for (i = 0; i < ARRAY_SIZE(priv->ch); i++)
--		if (priv->ch[i].info && priv->ch[i].info->dev)
--			unregister_framebuffer(priv->ch[i].info);
-+		sh_mobile_lcdc_channel_fb_unregister(&priv->ch[i]);
- 
- 	sh_mobile_lcdc_stop(priv);
- 
- 	for (i = 0; i < ARRAY_SIZE(priv->ch); i++) {
- 		struct sh_mobile_lcdc_chan *ch = &priv->ch[i];
- 
--		info = ch->info;
--		if (!info || !info->device)
--			continue;
--
- 		if (ch->tx_dev) {
- 			ch->tx_dev->lcdc = NULL;
- 			module_put(ch->cfg.tx_dev->dev.driver->owner);
- 		}
- 
--		if (ch->sglist)
--			vfree(ch->sglist);
-+		sh_mobile_lcdc_channel_fb_cleanup(ch);
- 
--		if (info->screen_base)
--			dma_free_coherent(&pdev->dev, info->fix.smem_len,
--					  info->screen_base, ch->dma_handle);
--		fb_dealloc_cmap(&info->cmap);
--		framebuffer_release(info);
-+		if (ch->fb_mem)
-+			dma_free_coherent(&pdev->dev, ch->fb_size,
-+					  ch->fb_mem, ch->dma_handle);
- 	}
- 
- 	for (i = 0; i < ARRAY_SIZE(priv->ch); i++) {
-@@ -1693,13 +1819,9 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 	struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
- 	const struct fb_videomode *max_mode;
- 	const struct fb_videomode *mode;
--	struct fb_var_screeninfo *var;
--	struct fb_info *info;
-+	unsigned int num_modes;
- 	unsigned int max_size;
--	int num_modes;
--	void *buf;
--	int ret;
--	int i;
-+	unsigned int i;
- 
- 	mutex_init(&ch->open_lock);
- 	ch->notify = sh_mobile_lcdc_display_notify;
-@@ -1713,19 +1835,6 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 
- 	ch->format = format;
- 
--	/* Allocate the frame buffer device. */
--	ch->info = framebuffer_alloc(0, priv->dev);
--	if (!ch->info) {
--		dev_err(priv->dev, "unable to allocate fb_info\n");
--		return -ENOMEM;
--	}
--
--	info = ch->info;
--	info->fbops = &sh_mobile_lcdc_ops;
--	info->par = ch;
--	info->pseudo_palette = &ch->pseudo_palette;
--	info->flags = FBINFO_FLAG_DEFAULT;
--
- 	/* Iterate through the modes to validate them and find the highest
- 	 * resolution.
- 	 */
-@@ -1755,7 +1864,6 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 		dev_dbg(priv->dev, "Found largest videomode %ux%u\n",
- 			max_mode->xres, max_mode->yres);
- 
--	/* Create the mode list. */
- 	if (cfg->lcd_modes = NULL) {
- 		mode = &default_720p;
- 		num_modes = 1;
-@@ -1764,7 +1872,18 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 		num_modes = cfg->num_modes;
- 	}
- 
--	fb_videomode_to_modelist(mode, num_modes, &info->modelist);
-+	ch->display.width = cfg->panel_cfg.width;
-+	ch->display.height = cfg->panel_cfg.height;
-+	ch->display.mode = *mode;
-+
-+	/* Allocate frame buffer memory. */
-+	ch->fb_size = max_size * format->bpp / 8 * 2;
-+	ch->fb_mem = dma_alloc_coherent(priv->dev, ch->fb_size, &ch->dma_handle,
-+					GFP_KERNEL);
-+	if (ch->fb_mem = NULL) {
-+		dev_err(priv->dev, "unable to allocate buffer\n");
-+		return -ENOMEM;
-+	}
- 
- 	/* Initialize the transmitter device if present. */
- 	if (cfg->tx_dev) {
-@@ -1779,76 +1898,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 		ch->tx_dev->def_mode = *mode;
- 	}
- 
--	/* Initialize variable screen information using the first mode as
--	 * default. The default Y virtual resolution is twice the panel size to
--	 * allow for double-buffering.
--	 */
--	var = &info->var;
--	fb_videomode_to_var(var, mode);
--	var->width = cfg->panel_cfg.width;
--	var->height = cfg->panel_cfg.height;
--	var->yres_virtual = var->yres * 2;
--	var->activate = FB_ACTIVATE_NOW;
--
--	/* Use the legacy API by default for RGB formats, and the FOURCC API
--	 * for YUV formats.
--	 */
--	if (!format->yuv)
--		var->bits_per_pixel = format->bpp;
--	else
--		var->grayscale = cfg->fourcc;
--
--	/* Make sure the memory size check won't fail. smem_len is initialized
--	 * later based on var.
--	 */
--	info->fix.smem_len = UINT_MAX;
--	ret = sh_mobile_check_var(var, info);
--	if (ret)
--		return ret;
--
--	max_size = max_size * var->bits_per_pixel / 8 * 2;
--
--	/* Allocate frame buffer memory and color map. */
--	buf = dma_alloc_coherent(priv->dev, max_size, &ch->dma_handle,
--				 GFP_KERNEL);
--	if (!buf) {
--		dev_err(priv->dev, "unable to allocate buffer\n");
--		return -ENOMEM;
--	}
--
--	ret = fb_alloc_cmap(&info->cmap, PALETTE_NR, 0);
--	if (ret < 0) {
--		dev_err(priv->dev, "unable to allocate cmap\n");
--		dma_free_coherent(priv->dev, max_size, buf, ch->dma_handle);
--		return ret;
--	}
--
--	/* Initialize fixed screen information. Restrict pan to 2 lines steps
--	 * for NV12 and NV21.
--	 */
--	info->fix = sh_mobile_lcdc_fix;
--	info->fix.smem_start = ch->dma_handle;
--	info->fix.smem_len = max_size;
--	if (cfg->fourcc = V4L2_PIX_FMT_NV12 ||
--	    cfg->fourcc = V4L2_PIX_FMT_NV21)
--		info->fix.ypanstep = 2;
--
--	if (format->yuv) {
--		info->fix.line_length = var->xres;
--		info->fix.visual = FB_VISUAL_FOURCC;
--	} else {
--		info->fix.line_length = var->xres * var->bits_per_pixel / 8;
--		info->fix.visual = FB_VISUAL_TRUECOLOR;
--	}
--
--	info->screen_base = buf;
--	info->device = priv->dev;
--
--	ch->display.width = cfg->panel_cfg.width;
--	ch->display.height = cfg->panel_cfg.height;
--	ch->display.mode = *mode;
--
--	return 0;
-+	return sh_mobile_lcdc_channel_fb_init(ch, mode, num_modes);
++static void sh_hdmi_display_on(void *arg, struct fb_info *info)
++{
++	__sh_hdmi_display_on(arg, info);
  }
  
- static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
-@@ -1964,31 +2014,10 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
+ /* locking: called with info->lock held */
+-static void sh_hdmi_display_off(void *arg)
++static void __sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
+ {
+-	struct sh_hdmi *hdmi = arg;
++	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
  
- 	for (i = 0; i < num_channels; i++) {
- 		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
--		struct fb_info *info = ch->info;
--
--		if (info->fbdefio) {
--			ch->sglist = vmalloc(sizeof(struct scatterlist) *
--					info->fix.smem_len >> PAGE_SHIFT);
--			if (!ch->sglist) {
--				dev_err(&pdev->dev, "cannot allocate sglist\n");
--				goto err1;
--			}
--		}
+ 	dev_dbg(hdmi->dev, "%s(%p)\n", __func__, hdmi);
+ 	/* PS mode e->a */
+ 	hdmi_write(hdmi, 0x10, HDMI_SYSTEM_CTRL);
+ }
  
--		info->bl_dev = ch->bl;
--
--		error = register_framebuffer(info);
--		if (error < 0)
-+		error = sh_mobile_lcdc_channel_fb_register(ch);
-+		if (error)
- 			goto err1;
--
--		dev_info(&pdev->dev, "registered %s/%s as %dx%d %dbpp.\n",
--			 pdev->name, (ch->cfg.chan = LCDC_CHAN_MAINLCD) ?
--			 "mainlcd" : "sublcd", info->var.xres, info->var.yres,
--			 info->var.bits_per_pixel);
--
--		/* deferred io mode: disable clock to save power */
--		if (info->fbdefio || info->state = FBINFO_STATE_SUSPENDED)
--			sh_mobile_lcdc_clk_off(priv);
++static void sh_hdmi_display_off(void *arg)
++{
++	__sh_hdmi_display_off(arg);
++}
++
++static const struct sh_mobile_lcdc_entity_ops sh_hdmi_ops = {
++	.display_on = __sh_hdmi_display_on,
++	.display_off = __sh_hdmi_display_off,
++};
++
+ static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
+ {
+ 	struct fb_info *info = hdmi->info;
+@@ -1157,7 +1178,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 				 */
+ 				info->var.width = hdmi->var.width;
+ 				info->var.height = hdmi->var.height;
+-				sh_hdmi_display_on(hdmi, info);
++				__sh_hdmi_display_on(&hdmi->entity, info);
+ 			} else {
+ 				/* New monitor or have to wake up */
+ 				fb_set_suspend(info, 0);
+@@ -1251,6 +1272,8 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 	mutex_init(&hdmi->mutex);
+ 
+ 	hdmi->dev = &pdev->dev;
++	hdmi->entity.owner = THIS_MODULE;
++	hdmi->entity.ops = &sh_hdmi_ops;
+ 
+ 	hdmi->hdmi_clk = clk_get(&pdev->dev, "ick");
+ 	if (IS_ERR(hdmi->hdmi_clk)) {
+@@ -1290,12 +1313,12 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		goto emap;
  	}
  
- 	/* Failure ignored */
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 5ef7559..cc22b9e 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -64,6 +64,8 @@ struct sh_mobile_lcdc_chan {
- 	struct mutex open_lock;		/* protects the use counter */
- 	int use_count;
+-	platform_set_drvdata(pdev, hdmi);
++	platform_set_drvdata(pdev, &hdmi->entity);
  
-+	void *fb_mem;
-+	unsigned long fb_size;
- 	dma_addr_t dma_handle;
- 	unsigned long pan_offset;
+ 	/* Set up LCDC callbacks */
+ 	board_cfg = &pdata->lcd_chan->board_cfg;
+ 	board_cfg->owner = THIS_MODULE;
+-	board_cfg->board_data = hdmi;
++	board_cfg->board_data = &hdmi->entity;
+ 	board_cfg->display_on = sh_hdmi_display_on;
+ 	board_cfg->display_off = sh_hdmi_display_off;
  
+@@ -1349,7 +1372,7 @@ egetclk:
+ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_hdmi_info *pdata = pdev->dev.platform_data;
+-	struct sh_hdmi *hdmi = platform_get_drvdata(pdev);
++	struct sh_hdmi *hdmi = entity_to_sh_hdmi(platform_get_drvdata(pdev));
+ 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &pdata->lcd_chan->board_cfg;
+ 	int irq = platform_get_irq(pdev, 0);
 -- 
 1.7.3.4
 
