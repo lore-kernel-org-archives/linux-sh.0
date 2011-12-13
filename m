@@ -1,167 +1,160 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Fri, 23 Dec 2011 12:27:24 +0000
-Subject: [PATCH 05/14] IA64: adapt for dma_map_ops changes
-Message-Id: <1324643253-3024-6-git-send-email-m.szyprowski@samsung.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 Dec 2011 14:02:21 +0000
+Subject: [PATCH 26/57] sh_mobile_hdmi: Use LCDC notification callback
+Message-Id: <1323784972-24205-27-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: linux-fbdev@vger.kernel.org
 
-From: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+Instead of accessing the LCDC channel and fb_info structures directly,
+use the LCDC notification callback to inform the LCDC driver about
+display-related events.
 
-Adapt core IA64 architecture code for dma_map_ops changes: replace
-alloc/free_coherent with generic alloc/free methods.
-
-Signed-off-by: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
-Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/ia64/hp/common/sba_iommu.c     |   11 ++++++-----
- arch/ia64/include/asm/dma-mapping.h |   18 ++++++++++++------
- arch/ia64/kernel/pci-swiotlb.c      |    9 +++++----
- arch/ia64/sn/pci/pci_dma.c          |    9 +++++----
- 4 files changed, 28 insertions(+), 19 deletions(-)
+ drivers/video/sh_mobile_hdmi.c |   91 ++++++---------------------------------
+ 1 files changed, 14 insertions(+), 77 deletions(-)
 
-diff --git a/arch/ia64/hp/common/sba_iommu.c b/arch/ia64/hp/common/sba_iommu.c
-index f5f4ef1..e5eb9c4 100644
---- a/arch/ia64/hp/common/sba_iommu.c
-+++ b/arch/ia64/hp/common/sba_iommu.c
-@@ -1130,7 +1130,8 @@ void sba_unmap_single_attrs(struct device *dev, dma_addr_t iova, size_t size,
-  * See Documentation/DMA-API-HOWTO.txt
-  */
- static void *
--sba_alloc_coherent (struct device *dev, size_t size, dma_addr_t *dma_handle, gfp_t flags)
-+sba_alloc_coherent(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		   gfp_t flags, struct dma_attrs *attrs)
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 1464abf..055cd92 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -733,12 +733,11 @@ static unsigned long sh_hdmi_rate_error(struct sh_hdmi *hdmi,
+ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 			     unsigned long *parent_rate)
  {
- 	struct ioc *ioc;
- 	void *addr;
-@@ -1192,8 +1193,8 @@ sba_alloc_coherent (struct device *dev, size_t size, dma_addr_t *dma_handle, gfp
-  *
-  * See Documentation/DMA-API-HOWTO.txt
-  */
--static void sba_free_coherent (struct device *dev, size_t size, void *vaddr,
--			       dma_addr_t dma_handle)
-+static void sba_free_coherent(struct device *dev, size_t size, void *vaddr,
-+			      dma_addr_t dma_handle, struct dma_attrs *attrs)
+-	struct fb_info *info = hdmi->entity.lcdc
+-			     ? hdmi->entity.lcdc->info : NULL;
+-	struct fb_var_screeninfo tmpvar;
+-	struct fb_var_screeninfo *var = &tmpvar;
++	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
++	struct fb_info *info = ch ? ch->info : NULL;
++	struct fb_var_screeninfo var;
+ 	const struct fb_videomode *mode, *found = NULL;
+-	struct fb_modelist *modelist = NULL;
++	const struct fb_modelist *modelist = NULL;
+ 	unsigned int f_width = 0, f_height = 0, f_refresh = 0;
+ 	unsigned long found_rate_error = ULONG_MAX; /* silly compiler... */
+ 	bool scanning = false, preferred_bad = false;
+@@ -856,12 +855,10 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
+ 		}
+ 
+ 		/* Check if supported: sufficient fb memory, supported clock-rate */
+-		fb_videomode_to_var(var, mode);
++		fb_videomode_to_var(&var, mode);
+ 
+-		var->bits_per_pixel = info->var.bits_per_pixel;
+-
+-		if (info && info->fbops->fb_check_var &&
+-		    info->fbops->fb_check_var(var, info)) {
++		if (ch && ch->notify &&
++		    ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_MODE, &var)) {
+ 			scanning = true;
+ 			preferred_bad = true;
+ 			continue;
+@@ -1044,32 +1041,6 @@ static const struct sh_mobile_lcdc_entity_ops sh_hdmi_ops = {
+ 	.display_off = sh_hdmi_display_off,
+ };
+ 
+-static bool sh_hdmi_must_reconfigure(struct sh_hdmi *hdmi)
+-{
+-	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
+-	struct fb_var_screeninfo *new_var = &hdmi->var, *old_var = &ch->display_var;
+-	struct fb_videomode mode1, mode2;
+-
+-	fb_var_to_videomode(&mode1, old_var);
+-	fb_var_to_videomode(&mode2, new_var);
+-
+-	dev_dbg(hdmi->dev, "Old %ux%u, new %ux%u\n",
+-		mode1.xres, mode1.yres, mode2.xres, mode2.yres);
+-
+-	if (fb_mode_is_equal(&mode1, &mode2)) {
+-		/* It can be a different monitor with an equal video-mode */
+-		old_var->width = new_var->width;
+-		old_var->height = new_var->height;
+-		return false;
+-	}
+-
+-	dev_dbg(hdmi->dev, "Switching %u -> %u lines\n",
+-		mode1.yres, mode2.yres);
+-	*old_var = *new_var;
+-
+-	return true;
+-}
+-
+ /**
+  * sh_hdmi_clk_configure() - set HDMI clock frequency and enable the clock
+  * @hdmi:		driver context
+@@ -1110,7 +1081,6 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
  {
- 	sba_unmap_single_attrs(dev, dma_handle, size, 0, NULL);
- 	free_pages((unsigned long) vaddr, get_order(size));
-@@ -2213,8 +2214,8 @@ sba_page_override(char *str)
- __setup("sbapagesize=",sba_page_override);
+ 	struct sh_hdmi *hdmi = container_of(work, struct sh_hdmi, edid_work.work);
+ 	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
+-	struct fb_info *info;
+ 	int ret;
  
- struct dma_map_ops sba_dma_ops = {
--	.alloc_coherent		= sba_alloc_coherent,
--	.free_coherent		= sba_free_coherent,
-+	.alloc			= sba_alloc_coherent,
-+	.free			= sba_free_coherent,
- 	.map_page		= sba_map_page,
- 	.unmap_page		= sba_unmap_page,
- 	.map_sg			= sba_map_sg_attrs,
-diff --git a/arch/ia64/include/asm/dma-mapping.h b/arch/ia64/include/asm/dma-mapping.h
-index 4336d08..4f5e814 100644
---- a/arch/ia64/include/asm/dma-mapping.h
-+++ b/arch/ia64/include/asm/dma-mapping.h
-@@ -23,23 +23,29 @@ extern void machvec_dma_sync_single(struct device *, dma_addr_t, size_t,
- extern void machvec_dma_sync_sg(struct device *, struct scatterlist *, int,
- 				enum dma_data_direction);
+ 	dev_dbg(hdmi->dev, "%s(%p): begin, hotplug status %d\n", __func__, hdmi,
+@@ -1135,52 +1105,19 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 		/* Switched to another (d) power-save mode */
+ 		msleep(10);
  
--static inline void *dma_alloc_coherent(struct device *dev, size_t size,
--				       dma_addr_t *daddr, gfp_t gfp)
-+#define dma_alloc_coherent(d,s,h,f)	dma_alloc_attrs(d,s,h,f,NULL)
-+
-+static inline void *dma_alloc_attrs(struct device *dev, size_t size,
-+				    dma_addr_t *daddr, gfp_t gfp,
-+				    struct dma_attrs *attrs)
- {
- 	struct dma_map_ops *ops = platform_dma_get_ops(dev);
- 	void *caddr;
+-		if (ch = NULL)
+-			goto out;
+-
+-		info = ch->info;
+-
+-		if (lock_fb_info(info)) {
+-			console_lock();
+-
+-			/* HDMI plug in */
+-			if (!sh_hdmi_must_reconfigure(hdmi) &&
+-			    info->state = FBINFO_STATE_RUNNING) {
+-				/*
+-				 * First activation with the default monitor - just turn
+-				 * on, if we run a resume here, the logo disappears
+-				 */
+-				info->var.width = hdmi->var.width;
+-				info->var.height = hdmi->var.height;
+-				sh_hdmi_display_on(&hdmi->entity);
+-			} else {
+-				/* New monitor or have to wake up */
+-				fb_set_suspend(info, 0);
+-			}
+-
+-			console_unlock();
+-			unlock_fb_info(info);
+-		}
++		if (ch && ch->notify)
++			ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_CONNECT,
++				   &hdmi->var);
+ 	} else {
+-		ret = 0;
+-		if (ch = NULL)
+-			goto out;
+-
+-		info = ch->info;
+-
+ 		hdmi->monspec.modedb_len = 0;
+ 		fb_destroy_modedb(hdmi->monspec.modedb);
+ 		hdmi->monspec.modedb = NULL;
  
--	caddr = ops->alloc_coherent(dev, size, daddr, gfp);
-+	caddr = ops->alloc(dev, size, daddr, gfp, attrs);
- 	debug_dma_alloc_coherent(dev, size, *daddr, caddr);
- 	return caddr;
- }
+-		if (lock_fb_info(info)) {
+-			console_lock();
++		if (ch && ch->notify)
++			ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_DISCONNECT,
++				   NULL);
  
--static inline void dma_free_coherent(struct device *dev, size_t size,
--				     void *caddr, dma_addr_t daddr)
-+#define dma_free_coherent(d,s,c,h) dma_free_attrs(d,s,c,h,NULL)
-+
-+static inline void dma_free_attrs(struct device *dev, size_t size,
-+				  void *caddr, dma_addr_t daddr,
-+				  struct dma_attrs *attrs)
- {
- 	struct dma_map_ops *ops = platform_dma_get_ops(dev);
- 	debug_dma_free_coherent(dev, size, caddr, daddr);
--	ops->free_coherent(dev, size, caddr, daddr);
-+	ops->free(dev, size, caddr, daddr, attrs);
- }
+-			/* HDMI disconnect */
+-			fb_set_suspend(info, 1);
+-
+-			console_unlock();
+-			unlock_fb_info(info);
+-		}
++		ret = 0;
+ 	}
  
- #define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
-diff --git a/arch/ia64/kernel/pci-swiotlb.c b/arch/ia64/kernel/pci-swiotlb.c
-index d9485d9..cc034c2 100644
---- a/arch/ia64/kernel/pci-swiotlb.c
-+++ b/arch/ia64/kernel/pci-swiotlb.c
-@@ -15,16 +15,17 @@ int swiotlb __read_mostly;
- EXPORT_SYMBOL(swiotlb);
- 
- static void *ia64_swiotlb_alloc_coherent(struct device *dev, size_t size,
--					 dma_addr_t *dma_handle, gfp_t gfp)
-+					 dma_addr_t *dma_handle, gfp_t gfp,
-+					 struct dma_attrs *attrs)
- {
- 	if (dev->coherent_dma_mask != DMA_BIT_MASK(64))
- 		gfp |= GFP_DMA;
--	return swiotlb_alloc_coherent(dev, size, dma_handle, gfp);
-+	return swiotlb_alloc_coherent(dev, size, dma_handle, gfp, attrs);
- }
- 
- struct dma_map_ops swiotlb_dma_ops = {
--	.alloc_coherent = ia64_swiotlb_alloc_coherent,
--	.free_coherent = swiotlb_free_coherent,
-+	.alloc = ia64_swiotlb_alloc_coherent,
-+	.free = swiotlb_free_coherent,
- 	.map_page = swiotlb_map_page,
- 	.unmap_page = swiotlb_unmap_page,
- 	.map_sg = swiotlb_map_sg_attrs,
-diff --git a/arch/ia64/sn/pci/pci_dma.c b/arch/ia64/sn/pci/pci_dma.c
-index a9d310d..3290d6e 100644
---- a/arch/ia64/sn/pci/pci_dma.c
-+++ b/arch/ia64/sn/pci/pci_dma.c
-@@ -76,7 +76,8 @@ EXPORT_SYMBOL(sn_dma_set_mask);
-  * more information.
-  */
- static void *sn_dma_alloc_coherent(struct device *dev, size_t size,
--				   dma_addr_t * dma_handle, gfp_t flags)
-+				   dma_addr_t * dma_handle, gfp_t flags,
-+				   struct dma_attrs *attrs)
- {
- 	void *cpuaddr;
- 	unsigned long phys_addr;
-@@ -137,7 +138,7 @@ static void *sn_dma_alloc_coherent(struct device *dev, size_t size,
-  * any associated IOMMU mappings.
-  */
- static void sn_dma_free_coherent(struct device *dev, size_t size, void *cpu_addr,
--				 dma_addr_t dma_handle)
-+				 dma_addr_t dma_handle, struct dma_attrs *attrs)
- {
- 	struct pci_dev *pdev = to_pci_dev(dev);
- 	struct sn_pcibus_provider *provider = SN_PCIDEV_BUSPROVIDER(pdev);
-@@ -466,8 +467,8 @@ int sn_pci_legacy_write(struct pci_bus *bus, u16 port, u32 val, u8 size)
- }
- 
- static struct dma_map_ops sn_dma_ops = {
--	.alloc_coherent		= sn_dma_alloc_coherent,
--	.free_coherent		= sn_dma_free_coherent,
-+	.alloc			= sn_dma_alloc_coherent,
-+	.free			= sn_dma_free_coherent,
- 	.map_page		= sn_dma_map_page,
- 	.unmap_page		= sn_dma_unmap_page,
- 	.map_sg			= sn_dma_map_sg,
+ out:
 -- 
-1.7.1.569.g6f426
+1.7.3.4
 
