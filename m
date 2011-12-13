@@ -1,157 +1,118 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:49 +0000
-Subject: [PATCH 54/57] fbdev: sh_mobile_meram: Remove unneeded sanity checks
-Message-Id: <1323784972-24205-55-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 13 Dec 2011 16:01:05 +0000
+Subject: [PATCH 04/05] sh: pfc: Variable bitfield width config register support
+Message-Id: <20111213160105.4021.41308.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The meram_register(), meram_unregister() and meram_update() operations
-check that the pointers they get from the caller are not NULL. Those
-checks can be remove, as the caller already ensures that the pointers
-are valid.
+From: Magnus Damm <damm@opensource.se>
 
-The platform sanity checks can also be removed, as the operations can't
-be accessed without valid platform data anyway.
+Add support for variable config reg hardware by adding
+the macro PINMUX_CFG_REG_VAR(). The width of each bitfield
+needs to be passed to the macro, and the correct space must
+be consumed by each bitfield in the enum table following the
+macro. Data registers still need to have fixed bitfields.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    5 +----
- drivers/video/sh_mobile_meram.c  |   32 ++++++--------------------------
- include/video/sh_mobile_meram.h  |   15 +++++++--------
- 3 files changed, 14 insertions(+), 38 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index e10a78a..edd195a 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1070,14 +1070,11 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ drivers/sh/pfc.c       |   44 +++++++++++++++++++++++++++++++++-----------
+ include/linux/sh_pfc.h |    9 ++++++++-
+ 2 files changed, 41 insertions(+), 12 deletions(-)
+
+--- 0019/drivers/sh/pfc.c
++++ work/drivers/sh/pfc.c	2011-12-12 20:29:56.000000000 +0900
+@@ -174,10 +174,19 @@ static void config_reg_helper(struct pin
+ 			      unsigned long *maskp,
+ 			      unsigned long *posp)
+ {
++	int k;
++
+ 	*mapped_regp = pfc_phys_to_virt(gpioc, crp->reg);
  
- 	if (ch->meram) {
- 		struct sh_mobile_meram_info *mdev;
--		int ret;
+-	*maskp = (1 << crp->field_width) - 1;
+-	*posp = crp->reg_width - ((in_pos + 1) * crp->field_width);
++	if (crp->field_width) {
++		*maskp = (1 << crp->field_width) - 1;
++		*posp = crp->reg_width - ((in_pos + 1) * crp->field_width);
++	} else {
++		*maskp = (1 << crp->var_field_width[in_pos]) - 1;
++		*posp = crp->reg_width;
++		for (k = 0; k <= in_pos; k++)
++			*posp -= crp->var_field_width[k];
++	}
+ }
  
- 		mdev = priv->meram_dev;
--		ret = mdev->ops->meram_update(mdev, ch->meram,
-+		mdev->ops->meram_update(mdev, ch->meram,
- 					base_addr_y, base_addr_c,
- 					&base_addr_y, &base_addr_c);
--		if (ret)
--			return ret;
+ static int read_config_reg(struct pinmux_info *gpioc,
+@@ -300,8 +309,8 @@ static int get_config_reg(struct pinmux_
+ 			  unsigned long **cntp)
+ {
+ 	struct pinmux_cfg_reg *config_reg;
+-	unsigned long r_width, f_width;
+-	int k, n;
++	unsigned long r_width, f_width, curr_width, ncomb;
++	int k, m, n, pos, bit_pos;
+ 
+ 	k = 0;
+ 	while (1) {
+@@ -312,14 +321,27 @@ static int get_config_reg(struct pinmux_
+ 
+ 		if (!r_width)
+ 			break;
+-		for (n = 0; n < (r_width / f_width) * (1 << f_width); n++) {
+-			if (config_reg->enum_ids[n] = enum_id) {
+-				*crp = config_reg;
+-				*fieldp = n / (1 << f_width);
+-				*valuep = n % (1 << f_width);
+-				*cntp = &config_reg->cnt[n / (1 << f_width)];
+-				return 0;
++
++		pos = 0;
++		m = 0;
++		for (bit_pos = 0; bit_pos < r_width; bit_pos += curr_width) {
++			if (f_width)
++				curr_width = f_width;
++			else
++				curr_width = config_reg->var_field_width[m];
++
++			ncomb = 1 << curr_width;
++			for (n = 0; n < ncomb; n++) {
++				if (config_reg->enum_ids[pos + n] = enum_id) {
++					*crp = config_reg;
++					*fieldp = m;
++					*valuep = n;
++					*cntp = &config_reg->cnt[m];
++					return 0;
++				}
+ 			}
++			pos += ncomb;
++			m++;
+ 		}
+ 		k++;
  	}
- 
- 	ch->base_addr_y = base_addr_y;
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index aad8b0b..f0ae342 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -450,21 +450,15 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 				      unsigned int *pitch)
- {
- 	struct sh_mobile_meram_fb_cache *cache;
--	struct sh_mobile_meram_priv *priv;
--	struct platform_device *pdev;
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
-+	struct platform_device *pdev = pdata->pdev;
- 	unsigned int out_pitch;
- 
--	if (!pdata || !pdata->priv || !pdata->pdev || !cfg)
--		return ERR_PTR(-EINVAL);
--
- 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
- 		return ERR_PTR(-EINVAL);
- 
--	priv = pdata->priv;
--	pdev = pdata->pdev;
--
- 	dev_dbg(&pdev->dev, "registering %dx%d (%s)", xres, yres,
- 		!pixelformat ? "yuv" : "rgb");
- 
-@@ -499,16 +493,11 @@ err:
- 	return cache;
- }
- 
--static int
-+static void
- sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata, void *data)
- {
- 	struct sh_mobile_meram_fb_cache *cache = data;
--	struct sh_mobile_meram_priv *priv;
--
--	if (!pdata || !pdata->priv || !data)
--		return -EINVAL;
--
--	priv = pdata->priv;
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
- 
- 	mutex_lock(&priv->lock);
- 
-@@ -520,22 +509,15 @@ sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata, void *data)
- 	meram_free(priv, cache);
- 
- 	mutex_unlock(&priv->lock);
--
--	return 0;
- }
- 
--static int
-+static void
- sh_mobile_meram_update(struct sh_mobile_meram_info *pdata, void *data,
- 		       unsigned long base_addr_y, unsigned long base_addr_c,
- 		       unsigned long *icb_addr_y, unsigned long *icb_addr_c)
- {
- 	struct sh_mobile_meram_fb_cache *cache = data;
--	struct sh_mobile_meram_priv *priv;
--
--	if (!pdata || !pdata->priv || !data)
--		return -EINVAL;
--
--	priv = pdata->priv;
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
- 
- 	mutex_lock(&priv->lock);
- 
-@@ -543,8 +525,6 @@ sh_mobile_meram_update(struct sh_mobile_meram_info *pdata, void *data,
- 	meram_get_next_icb_addr(pdata, cache, icb_addr_y, icb_addr_c);
- 
- 	mutex_unlock(&priv->lock);
--
--	return 0;
- }
- 
- static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index 51c98ca..089e6d3 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -44,16 +44,15 @@ struct sh_mobile_meram_ops {
- 				unsigned int *pitch);
- 
- 	/* unregister usage of meram */
--	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
--				void *data);
-+	void (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
-+				 void *data);
- 
- 	/* update meram settings */
--	int (*meram_update)(struct sh_mobile_meram_info *meram_dev,
--			    void *data,
--			    unsigned long base_addr_y,
--			    unsigned long base_addr_c,
--			    unsigned long *icb_addr_y,
--			    unsigned long *icb_addr_c);
-+	void (*meram_update)(struct sh_mobile_meram_info *meram_dev, void *data,
-+			     unsigned long base_addr_y,
-+			     unsigned long base_addr_c,
-+			     unsigned long *icb_addr_y,
-+			     unsigned long *icb_addr_c);
+--- 0013/include/linux/sh_pfc.h
++++ work/include/linux/sh_pfc.h	2011-12-12 19:40:30.000000000 +0900
+@@ -45,12 +45,19 @@ struct pinmux_cfg_reg {
+ 	unsigned long reg, reg_width, field_width;
+ 	unsigned long *cnt;
+ 	pinmux_enum_t *enum_ids;
++	unsigned long *var_field_width;
  };
  
- #endif /* __VIDEO_SH_MOBILE_MERAM_H__  */
--- 
-1.7.3.4
-
+ #define PINMUX_CFG_REG(name, r, r_width, f_width) \
+ 	.reg = r, .reg_width = r_width, .field_width = f_width,		\
+ 	.cnt = (unsigned long [r_width / f_width]) {}, \
+-	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)]) \
++	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)])
++
++#define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
++	.reg = r, .reg_width = r_width,	\
++	.cnt = (unsigned long [r_width]) {}, \
++	.var_field_width = (unsigned long [r_width]) { var_fw0, var_fwn, 0 }, \
++	.enum_ids = (pinmux_enum_t [])
+ 
+ struct pinmux_data_reg {
+ 	unsigned long reg, reg_width, reg_shadow;
