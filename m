@@ -1,35 +1,38 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Dec 2011 16:52:11 +0000
-Subject: [PATCH 02/07] sh: CPG MSTP ioremap() prototype hack
-Message-Id: <20111206165211.19348.25335.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 14 Dec 2011 18:31:50 +0000
+Subject: [PATCH 0/4 v2] mmc_ sh_mmcif: process requests asynchronously
+Message-Id: <1323887514-12650-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+This used to be a single patch, which now has been split into 2, plus, two more 
+not directly related patches for the same driver have been included. Patch 1/4 
+is actually a fix and could be considered for 3.2, but I personally haven't 
+heard any bug-reports, that could be attributed to it, so, it doesn't seem to 
+be very critical. Also, on request from Magnus, a state machine description has 
+been added to the file header.
 
-Hack to use the cookie returned from ioremap(). Will be rewritten
-and submitted separately in the near future. Needed by the r8a7779
-clock code since entity mapping is out of the question.
+Guennadi Liakhovetski (4):
+  mmc: sh_mmcif: process error interrupts first
+  mmc: sh_mmcif: cosmetic clean up
+  mmc: sh_mmcif: process requests asynchronously
+  mmc: sh_mmcif: remove now superfluous sh_mmcif_host::data member
 
-Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
+ drivers/mmc/host/sh_mmcif.c |  709 +++++++++++++++++++++++++++++--------------
+ 1 files changed, 474 insertions(+), 235 deletions(-)
+
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
 ---
-
- drivers/sh/clk/cpg.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
---- 0001/drivers/sh/clk/cpg.c
-+++ work/drivers/sh/clk/cpg.c	2011-12-07 00:32:11.000000000 +0900
-@@ -42,6 +42,10 @@ int __init sh_clk_mstp32_register(struct
- 		clkp = clks + k;
- 		clkp->ops = &sh_clk_mstp32_clk_ops;
- 		ret |= clk_register(clkp);
-+		if (!ret && clkp->mapping->base) {
-+			clkp->enable_reg -= clkp->mapping->phys;
-+			clkp->enable_reg += (unsigned long)clkp->mapping->base;
-+		}
- 	}
- 
- 	return ret;
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
