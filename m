@@ -1,35 +1,39 @@
-From: Anton Vorontsov <cbouatmailru@gmail.com>
-Date: Wed, 14 Dec 2011 12:03:14 +0000
+From: Tony Lindgren <tony@atomide.com>
+Date: Wed, 14 Dec 2011 18:15:00 +0000
 Subject: Re: [PATCH v4 REPOST 1/5] ARM: l2x0/pl310: Refactor Kconfig to be
-Message-Id: <20111214120314.GA9841@oksana.dev.rtsoft.ru>
+Message-Id: <20111214181500.GC32251@atomide.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
  <1323862781-3465-2-git-send-email-dave.martin@linaro.org>
-In-Reply-To: <1323862781-3465-2-git-send-email-dave.martin@linaro.org>
+ <20111214120314.GA9841@oksana.dev.rtsoft.ru>
+In-Reply-To: <20111214120314.GA9841@oksana.dev.rtsoft.ru>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 14, 2011 at 11:39:37AM +0000, Dave Martin wrote:
-> Making CACHE_L2X0 depend on (huge list of MACH_ and ARCH_ configs)
-> is bothersome to maintain and likely to lead to merge conflicts.
+* Anton Vorontsov <cbouatmailru@gmail.com> [111214 03:31]:
+> On Wed, Dec 14, 2011 at 11:39:37AM +0000, Dave Martin wrote:
+> > Making CACHE_L2X0 depend on (huge list of MACH_ and ARCH_ configs)
+> > is bothersome to maintain and likely to lead to merge conflicts.
+> > 
+> > This patch moves the knowledge of which platforms have a L2x0 or
+> > PL310 cache controller to the individual machines.  To enable this,
+> > a new MIGHT_HAVE_CACHE_L2X0 config option is introduced to allow
+> > machines to indicate that they may have such a cache controller
+> > independently of each other.
+> > 
+> > Boards/SoCs which cannot reliably operate without the L2 cache
+> > controller support will need to select CACHE_L2X0 directly from
+> > their own Kconfigs instead.  This applies to some TrustZone-enabled
+> > boards where Linux runs in the Normal World, for example.
+> > 
+> > Signed-off-by: Dave Martin <dave.martin@linaro.org>
 > 
-> This patch moves the knowledge of which platforms have a L2x0 or
-> PL310 cache controller to the individual machines.  To enable this,
-> a new MIGHT_HAVE_CACHE_L2X0 config option is introduced to allow
-> machines to indicate that they may have such a cache controller
-> independently of each other.
+> For CNS3xxx bits:
 > 
-> Boards/SoCs which cannot reliably operate without the L2 cache
-> controller support will need to select CACHE_L2X0 directly from
-> their own Kconfigs instead.  This applies to some TrustZone-enabled
-> boards where Linux runs in the Normal World, for example.
-> 
-> Signed-off-by: Dave Martin <dave.martin@linaro.org>
+> Acked-by: Anton Vorontsov <cbouatmailru@gmail.com>
 
-For CNS3xxx bits:
+For omap:
 
-Acked-by: Anton Vorontsov <cbouatmailru@gmail.com>
-
-Thanks!
+Acked-by: Tony Lindgren <tony@atomide.com>
