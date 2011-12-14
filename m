@@ -1,24 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 09 Dec 2011 08:56:17 +0000
-Subject: Re: [PATCH 04/04] sh: use ioread32/iowrite32 and mapped_reg for div6
-Message-Id: <20111209085617.GB19960@linux-sh.org>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Wed, 14 Dec 2011 11:39:39 +0000
+Subject: [PATCH v4 REPOST 3/5] omap4: Unconditionally require l2x0 L2 cache controller support
+Message-Id: <1323862781-3465-4-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111208135922.18394.95163.sendpatchset@w520>
-In-Reply-To: <20111208135922.18394.95163.sendpatchset@w520>
+References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 08, 2011 at 09:49:46PM -0800, Kuninori Morimoto wrote:
-> I tested these patch set on mackerel board with linus/master.
-> it works well.
-> 
-> But I'm afraid that this div6 patch didn't care
-> paul/common/clkfwk which has below commit.
-> it is still using clk->enable_reg.
-> 
-> Of course I can modify it after merge ;)
-> 
-That's ok, it's trivial to fix, I'll just tidy it up by hand when
-merging. I'll add your Tested-by.
+If running in the Normal World on a TrustZone-enabled SoC, Linux
+does not have complete control over the L2 cache controller
+configuration.  The kernel cannot work reliably on such platforms
+without the l2x0 cache support code built in.
+
+This patch unconditionally enables l2x0 support for the OMAP4 SoCs.
+
+Thanks to Rob Herring for this suggestion. [1]
+
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
+
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
+---
+ arch/arm/mach-omap2/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
+index bb1b670..94e568a 100644
+--- a/arch/arm/mach-omap2/Kconfig
++++ b/arch/arm/mach-omap2/Kconfig
+@@ -41,11 +41,11 @@ config ARCH_OMAP4
+ 	bool "TI OMAP4"
+ 	default y
+ 	depends on ARCH_OMAP2PLUS
++	select CACHE_L2X0
+ 	select CPU_V7
+ 	select ARM_GIC
+ 	select HAVE_SMP
+ 	select LOCAL_TIMERS if SMP
+-	select MIGHT_HAVE_CACHE_L2X0
+ 	select PL310_ERRATA_588369
+ 	select PL310_ERRATA_727915
+ 	select ARM_ERRATA_720789
+-- 
+1.7.4.1
+
