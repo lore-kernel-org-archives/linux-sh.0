@@ -1,37 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 06 Dec 2011 05:38:58 +0000
-Subject: Re: [PATCH 2/4] sh: modify SH_CLK_DIV6_EXT macro parameter
-Message-Id: <87k46amf8e.wl%kuninori.morimoto.gx@renesas.com>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Wed, 14 Dec 2011 11:39:40 +0000
+Subject: [PATCH v4 REPOST 4/5] highbank: Unconditionally require l2x0 L2 cache controller support
+Message-Id: <1323862781-3465-5-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874nxf8rgh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874nxf8rgh.wl%kuninori.morimoto.gx@renesas.com>
+References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+If running in the Normal World on a TrustZone-enabled SoC, Linux
+does not have complete control over the L2 cache controller
+configuration.  The kernel cannot work reliably on such platforms
+without the l2x0 cache support code built in.
 
-Hi Paul
+This patch unconditionally enables l2x0 support for the Highbank
+SoC.
 
-Thank you for checking patch
+Thanks to Rob Herring for this suggestion. [1]
 
-> On Sun, Dec 04, 2011 at 10:26:09PM -0800, Kuninori Morimoto wrote:
-> > array size which can be calculated from specific table was removed,
-> > and the "flags" which can use CLK_ENABLE_ON_INIT became last parameter.
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> It can, but no, I don't really like these sorts of changes. From a usage
-> point of view it might look more straightforward but in reality it's just
-> pushing down complexity in to the macro that's non-obvious without
-> manually going and looking at the macro definition.
-> 
-> Saving a bit of screen real-estate isn't worth the hassle of having to
-> track down macro definitions to find out what exactly they're doing.
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
 
-OK. I understand.
-I re-send v2 patch.
-
-Best regards
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
 ---
-Kuninori Morimoto
+ arch/arm/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index d33eb39..744296d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -340,12 +340,12 @@ config ARCH_HIGHBANK
+ 	select ARM_AMBA
+ 	select ARM_GIC
+ 	select ARM_TIMER_SP804
++	select CACHE_L2X0
+ 	select CLKDEV_LOOKUP
+ 	select CPU_V7
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU
+ 	select HAVE_SMP
+-	select MIGHT_HAVE_CACHE_L2X0
+ 	select USE_OF
+ 	help
+ 	  Support for the Calxeda Highbank SoC based boards.
+-- 
+1.7.4.1
+
