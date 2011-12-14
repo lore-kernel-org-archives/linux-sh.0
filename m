@@ -1,205 +1,215 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Fri, 23 Dec 2011 12:27:25 +0000
-Subject: [PATCH 06/14] SPARC: adapt for dma_map_ops changes
-Message-Id: <1324643253-3024-7-git-send-email-m.szyprowski@samsung.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 14 Dec 2011 18:31:52 +0000
+Subject: [PATCH 2/4 v2] mmc: sh_mmcif: cosmetic clean up
+Message-Id: <1323887514-12650-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+References: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+This patch doesn't introduce any functional changes, it only simplifies
+some code fragments, removes superfluous parameters, fixes typos.
 
-Adapt core SPARC architecture code for dma_map_ops changes: replace
-alloc/free_coherent with generic alloc/free methods.
-
-Signed-off-by: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
-Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sparc/include/asm/dma-mapping.h |   18 ++++++++++++------
- arch/sparc/kernel/iommu.c            |   10 ++++++----
- arch/sparc/kernel/ioport.c           |   18 ++++++++++--------
- arch/sparc/kernel/pci_sun4v.c        |    9 +++++----
- 4 files changed, 33 insertions(+), 22 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   79 ++++++++++++++++++------------------------
+ 1 files changed, 34 insertions(+), 45 deletions(-)
 
-diff --git a/arch/sparc/include/asm/dma-mapping.h b/arch/sparc/include/asm/dma-mapping.h
-index 8c0e4f7..48a7c65 100644
---- a/arch/sparc/include/asm/dma-mapping.h
-+++ b/arch/sparc/include/asm/dma-mapping.h
-@@ -26,24 +26,30 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 63559d6..d6a534c 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -123,6 +123,11 @@
+ #define MASK_MRBSYTO		(1 << 1)
+ #define MASK_MRSPTO		(1 << 0)
  
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline void *dma_alloc_coherent(struct device *dev, size_t size,
--				       dma_addr_t *dma_handle, gfp_t flag)
-+#define dma_alloc_coherent(d,s,h,f)	dma_alloc_attrs(d,s,h,f,NULL)
++#define MASK_START_CMD		(MASK_MCMDVIO | MASK_MBUFVIO | MASK_MWDATERR | \
++				 MASK_MRDATERR | MASK_MRIDXERR | MASK_MRSPERR | \
++				 MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO | \
++				 MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO)
 +
-+static inline void *dma_alloc_attrs(struct device *dev, size_t size,
-+				    dma_addr_t *dma_handle, gfp_t flag,
-+				    struct dma_attrs *attrs)
+ /* CE_HOST_STS1 */
+ #define STS1_CMDSEQ		(1 << 31)
+ 
+@@ -173,8 +178,8 @@ struct sh_mmcif_host {
+ 	long timeout;
+ 	void __iomem *addr;
+ 	struct completion intr_wait;
++	spinlock_t lock;		/* protect sh_mmcif_host::state */
+ 	enum mmcif_state state;
+-	spinlock_t lock;
+ 	bool power;
+ 	bool card_present;
+ 
+@@ -409,7 +414,7 @@ static void sh_mmcif_sync_reset(struct sh_mmcif_host *host)
+ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
  {
- 	struct dma_map_ops *ops = get_dma_ops(dev);
- 	void *cpu_addr;
+ 	u32 state1, state2;
+-	int ret, timeout = 10000000;
++	int ret, timeout;
  
--	cpu_addr = ops->alloc_coherent(dev, size, dma_handle, flag);
-+	cpu_addr = ops->alloc(dev, size, dma_handle, flag, attrs);
- 	debug_dma_alloc_coherent(dev, size, *dma_handle, cpu_addr);
- 	return cpu_addr;
- }
+ 	host->sd_error = false;
  
--static inline void dma_free_coherent(struct device *dev, size_t size,
--				     void *cpu_addr, dma_addr_t dma_handle)
-+#define dma_free_coherent(d,s,c,h) dma_free_attrs(d,s,c,h,NULL)
-+
-+static inline void dma_free_attrs(struct device *dev, size_t size,
-+				  void *cpu_addr, dma_addr_t dma_handle,
-+				  struct dma_attrs *attrs)
+@@ -421,31 +426,30 @@ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
+ 	if (state1 & STS1_CMDSEQ) {
+ 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, CMD_CTRL_BREAK);
+ 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, ~CMD_CTRL_BREAK);
+-		while (1) {
+-			timeout--;
+-			if (timeout < 0) {
+-				dev_err(&host->pd->dev,
+-					"Forceed end of command sequence timeout err\n");
+-				return -EIO;
+-			}
++		for (timeout = 10000000; timeout; timeout--) {
+ 			if (!(sh_mmcif_readl(host->addr, MMCIF_CE_HOST_STS1)
+-								& STS1_CMDSEQ))
++			      & STS1_CMDSEQ))
+ 				break;
+ 			mdelay(1);
+ 		}
++		if (!timeout) {
++			dev_err(&host->pd->dev,
++				"Forced end of command sequence timeout err\n");
++			return -EIO;
++		}
+ 		sh_mmcif_sync_reset(host);
+ 		dev_dbg(&host->pd->dev, "Forced end of command sequence\n");
+ 		return -EIO;
+ 	}
+ 
+ 	if (state2 & STS2_CRC_ERR) {
+-		dev_dbg(&host->pd->dev, ": Happened CRC error\n");
++		dev_dbg(&host->pd->dev, ": CRC error\n");
+ 		ret = -EIO;
+ 	} else if (state2 & STS2_TIMEOUT_ERR) {
+-		dev_dbg(&host->pd->dev, ": Happened Timeout error\n");
++		dev_dbg(&host->pd->dev, ": Timeout\n");
+ 		ret = -ETIMEDOUT;
+ 	} else {
+-		dev_dbg(&host->pd->dev, ": Happened End/Index error\n");
++		dev_dbg(&host->pd->dev, ": End/Index error\n");
+ 		ret = -EIO;
+ 	}
+ 	return ret;
+@@ -668,55 +672,44 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ static int sh_mmcif_data_trans(struct sh_mmcif_host *host,
+ 				struct mmc_request *mrq, u32 opc)
  {
- 	struct dma_map_ops *ops = get_dma_ops(dev);
- 
- 	debug_dma_free_coherent(dev, size, cpu_addr, dma_handle);
--	ops->free_coherent(dev, size, cpu_addr, dma_handle);
-+	ops->free(dev, size, cpu_addr, dma_handle, attrs);
+-	int ret;
+-
+ 	switch (opc) {
+ 	case MMC_READ_MULTIPLE_BLOCK:
+-		ret = sh_mmcif_multi_read(host, mrq);
+-		break;
++		return sh_mmcif_multi_read(host, mrq);
+ 	case MMC_WRITE_MULTIPLE_BLOCK:
+-		ret = sh_mmcif_multi_write(host, mrq);
+-		break;
++		return sh_mmcif_multi_write(host, mrq);
+ 	case MMC_WRITE_BLOCK:
+-		ret = sh_mmcif_single_write(host, mrq);
+-		break;
++		return sh_mmcif_single_write(host, mrq);
+ 	case MMC_READ_SINGLE_BLOCK:
+ 	case MMC_SEND_EXT_CSD:
+-		ret = sh_mmcif_single_read(host, mrq);
+-		break;
++		return sh_mmcif_single_read(host, mrq);
+ 	default:
+ 		dev_err(&host->pd->dev, "UNSUPPORTED CMD = d'%08d\n", opc);
+-		ret = -EINVAL;
+-		break;
++		return -EINVAL;
+ 	}
+-	return ret;
  }
  
- static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
-diff --git a/arch/sparc/kernel/iommu.c b/arch/sparc/kernel/iommu.c
-index 4643d68..070ed14 100644
---- a/arch/sparc/kernel/iommu.c
-+++ b/arch/sparc/kernel/iommu.c
-@@ -280,7 +280,8 @@ static inline void iommu_free_ctx(struct iommu *iommu, int ctx)
- }
- 
- static void *dma_4u_alloc_coherent(struct device *dev, size_t size,
--				   dma_addr_t *dma_addrp, gfp_t gfp)
-+				   dma_addr_t *dma_addrp, gfp_t gfp,
-+				   struct dma_attrs *attrs)
+ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
+-			struct mmc_request *mrq, struct mmc_command *cmd)
++			       struct mmc_request *mrq)
  {
- 	unsigned long flags, order, first_page;
- 	struct iommu *iommu;
-@@ -330,7 +331,8 @@ static void *dma_4u_alloc_coherent(struct device *dev, size_t size,
++	struct mmc_command *cmd = mrq->cmd;
+ 	long time;
+-	int ret = 0, mask = 0;
+-	u32 opc = cmd->opcode;
++	int ret = 0;
++	u32 mask, opc = cmd->opcode;
+ 
+ 	switch (opc) {
+-	/* respons busy check */
++	/* response busy check */
+ 	case MMC_SWITCH:
+ 	case MMC_STOP_TRANSMISSION:
+ 	case MMC_SET_WRITE_PROT:
+ 	case MMC_CLR_WRITE_PROT:
+ 	case MMC_ERASE:
+ 	case MMC_GEN_CMD:
+-		mask = MASK_MRBSYE;
++		mask = MASK_START_CMD | MASK_MRBSYE;
+ 		break;
+ 	default:
+-		mask = MASK_MCRSPE;
++		mask = MASK_START_CMD | MASK_MCRSPE;
+ 		break;
+ 	}
+-	mask |=	MASK_MCMDVIO | MASK_MBUFVIO | MASK_MWDATERR |
+-		MASK_MRDATERR | MASK_MRIDXERR | MASK_MRSPERR |
+-		MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO |
+-		MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO;
+ 
+ 	if (host->data) {
+ 		sh_mmcif_writel(host->addr, MMCIF_CE_BLOCK_SET, 0);
+@@ -784,8 +777,9 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
  }
  
- static void dma_4u_free_coherent(struct device *dev, size_t size,
--				 void *cpu, dma_addr_t dvma)
-+				 void *cpu, dma_addr_t dvma,
-+				 struct dma_attrs *attrs)
+ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
+-		struct mmc_request *mrq, struct mmc_command *cmd)
++			      struct mmc_request *mrq)
  {
- 	struct iommu *iommu;
- 	unsigned long flags, order, npages;
-@@ -825,8 +827,8 @@ static void dma_4u_sync_sg_for_cpu(struct device *dev,
- }
++	struct mmc_command *cmd = mrq->stop;
+ 	long time;
  
- static struct dma_map_ops sun4u_dma_ops = {
--	.alloc_coherent		= dma_4u_alloc_coherent,
--	.free_coherent		= dma_4u_free_coherent,
-+	.alloc			= dma_4u_alloc_coherent,
-+	.free			= dma_4u_free_coherent,
- 	.map_page		= dma_4u_map_page,
- 	.unmap_page		= dma_4u_unmap_page,
- 	.map_sg			= dma_4u_map_sg,
-diff --git a/arch/sparc/kernel/ioport.c b/arch/sparc/kernel/ioport.c
-index d0479e2..21bd739 100644
---- a/arch/sparc/kernel/ioport.c
-+++ b/arch/sparc/kernel/ioport.c
-@@ -261,7 +261,8 @@ EXPORT_SYMBOL(sbus_set_sbus64);
-  * CPU may access them without any explicit flushing.
-  */
- static void *sbus_alloc_coherent(struct device *dev, size_t len,
--				 dma_addr_t *dma_addrp, gfp_t gfp)
-+				 dma_addr_t *dma_addrp, gfp_t gfp,
-+				 struct dma_attrs *attrs)
+ 	if (mrq->cmd->opcode = MMC_READ_MULTIPLE_BLOCK)
+@@ -854,11 +848,11 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 				sh_mmcif_start_dma_tx(host);
+ 		}
+ 	}
+-	sh_mmcif_start_cmd(host, mrq, mrq->cmd);
++	sh_mmcif_start_cmd(host, mrq);
+ 	host->data = NULL;
+ 
+ 	if (!mrq->cmd->error && mrq->stop)
+-		sh_mmcif_stop_cmd(host, mrq, mrq->stop);
++		sh_mmcif_stop_cmd(host, mrq);
+ 	host->state = STATE_IDLE;
+ 	mmc_request_done(mmc, mrq);
+ }
+@@ -935,11 +929,6 @@ static struct mmc_host_ops sh_mmcif_ops = {
+ 	.get_cd		= sh_mmcif_get_cd,
+ };
+ 
+-static void sh_mmcif_detect(struct mmc_host *mmc)
+-{
+-	mmc_detect_change(mmc, 0);
+-}
+-
+ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
  {
- 	struct platform_device *op = to_platform_device(dev);
- 	unsigned long len_total = PAGE_ALIGN(len);
-@@ -315,7 +316,7 @@ err_nopages:
- }
+ 	struct sh_mmcif_host *host = dev_id;
+@@ -1101,7 +1090,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 		goto clean_up3;
+ 	}
  
- static void sbus_free_coherent(struct device *dev, size_t n, void *p,
--			       dma_addr_t ba)
-+			       dma_addr_t ba, struct dma_attrs *attrs)
- {
- 	struct resource *res;
- 	struct page *pgv;
-@@ -407,8 +408,8 @@ static void sbus_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
- }
+-	sh_mmcif_detect(host->mmc);
++	mmc_detect_change(host->mmc, 0);
  
- struct dma_map_ops sbus_dma_ops = {
--	.alloc_coherent		= sbus_alloc_coherent,
--	.free_coherent		= sbus_free_coherent,
-+	.alloc			= sbus_alloc_coherent,
-+	.free			= sbus_free_coherent,
- 	.map_page		= sbus_map_page,
- 	.unmap_page		= sbus_unmap_page,
- 	.map_sg			= sbus_map_sg,
-@@ -436,7 +437,8 @@ arch_initcall(sparc_register_ioport);
-  * hwdev should be valid struct pci_dev pointer for PCI devices.
-  */
- static void *pci32_alloc_coherent(struct device *dev, size_t len,
--				  dma_addr_t *pba, gfp_t gfp)
-+				  dma_addr_t *pba, gfp_t gfp,
-+				  struct dma_attrs *attrs)
- {
- 	unsigned long len_total = PAGE_ALIGN(len);
- 	void *va;
-@@ -489,7 +491,7 @@ err_nopages:
-  * past this call are illegal.
-  */
- static void pci32_free_coherent(struct device *dev, size_t n, void *p,
--				dma_addr_t ba)
-+				dma_addr_t ba, struct dma_attrs *attrs)
- {
- 	struct resource *res;
- 
-@@ -645,8 +647,8 @@ static void pci32_sync_sg_for_device(struct device *device, struct scatterlist *
- }
- 
- struct dma_map_ops pci32_dma_ops = {
--	.alloc_coherent		= pci32_alloc_coherent,
--	.free_coherent		= pci32_free_coherent,
-+	.alloc			= pci32_alloc_coherent,
-+	.free			= pci32_free_coherent,
- 	.map_page		= pci32_map_page,
- 	.unmap_page		= pci32_unmap_page,
- 	.map_sg			= pci32_map_sg,
-diff --git a/arch/sparc/kernel/pci_sun4v.c b/arch/sparc/kernel/pci_sun4v.c
-index b272cda..a8756e3 100644
---- a/arch/sparc/kernel/pci_sun4v.c
-+++ b/arch/sparc/kernel/pci_sun4v.c
-@@ -128,7 +128,8 @@ static inline long iommu_batch_end(void)
- }
- 
- static void *dma_4v_alloc_coherent(struct device *dev, size_t size,
--				   dma_addr_t *dma_addrp, gfp_t gfp)
-+				   dma_addr_t *dma_addrp, gfp_t gfp,
-+				   struct dma_attrs *attrs)
- {
- 	unsigned long flags, order, first_page, npages, n;
- 	struct iommu *iommu;
-@@ -198,7 +199,7 @@ range_alloc_fail:
- }
- 
- static void dma_4v_free_coherent(struct device *dev, size_t size, void *cpu,
--				 dma_addr_t dvma)
-+				 dma_addr_t dvma, struct dma_attrs *attrs)
- {
- 	struct pci_pbm_info *pbm;
- 	struct iommu *iommu;
-@@ -527,8 +528,8 @@ static void dma_4v_unmap_sg(struct device *dev, struct scatterlist *sglist,
- }
- 
- static struct dma_map_ops sun4v_dma_ops = {
--	.alloc_coherent			= dma_4v_alloc_coherent,
--	.free_coherent			= dma_4v_free_coherent,
-+	.alloc				= dma_4v_alloc_coherent,
-+	.free				= dma_4v_free_coherent,
- 	.map_page			= dma_4v_map_page,
- 	.unmap_page			= dma_4v_unmap_page,
- 	.map_sg				= dma_4v_map_sg,
+ 	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
+ 	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
 -- 
-1.7.1.569.g6f426
+1.7.2.5
 
