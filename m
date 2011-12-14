@@ -1,68 +1,188 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 01 Dec 2011 09:50:02 +0000
-Subject: Re: [PATCH] ARM: Kota2 mach-type update fix
-Message-Id: <201112011050.02877.rjw@sisk.pl>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Wed, 14 Dec 2011 11:39:38 +0000
+Subject: [PATCH v4 REPOST 2/5] ARM: SMP: Refactor Kconfig to be more maintainable
+Message-Id: <1323862781-3465-3-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111122060857.23951.50598.sendpatchset@w520>
-In-Reply-To: <20111122060857.23951.50598.sendpatchset@w520>
+References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday, November 22, 2011, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> This patch adds kota2 to the in-kernel ARM mach-type file.
-> 
-> Basic board support is included in 3.2-rc and the mach-type
-> has been registered in the ARM machine repository as
-> 
-> 3616 Renesas SH-Mobile kota2.x Board kota2 Yusuke Goda mainlined
-> 
-> The file arch/arm/tools/mach-types is however missing Kota2
-> which makes build of sh73a0 based boards fail with:
-> 
-> arch/arm/mach-shmobile/platsmp.c: In function 'shmobile_smp_get_core_count':
-> arch/arm/mach-shmobile/platsmp.c:28:2: error: implicit declaration of function 'machine_is_kota2'
-> make[1]: *** [arch/arm/mach-shmobile/platsmp.o] Error 1
-> 
-> arch/arm/mach-shmobile/board-kota2.c:448:136: error: 'MACH_TYPE_KOTA2' undeclared here (not in a function)
-> make[1]: *** [arch/arm/mach-shmobile/board-kota2.o] Error 1
-> make: *** [arch/arm/mach-shmobile] Error 2
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Making SMP depend on (huge list of MACH_ and ARCH_ configs) is
+bothersome to maintain and likely to lead to merge conflicts.
 
-This patch is necessary to fix build of the Linus' tree for me with both
-CONFIG_ARCH_SH73A0 and CONFIG_SMP set.
+This patch moves the knowledge of which platforms are SMP-capable
+to the individual machines.  To enable this, a new HAVE_SMP config
+option is introduced to allow machines to indicate that they can
+run in a SMP configuration.
 
-Tested-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
+---
+ arch/arm/Kconfig               |   15 +++++++++++----
+ arch/arm/mach-exynos/Kconfig   |    1 +
+ arch/arm/mach-imx/Kconfig      |    1 +
+ arch/arm/mach-msm/Kconfig      |    1 +
+ arch/arm/mach-omap2/Kconfig    |    1 +
+ arch/arm/mach-realview/Kconfig |    4 ++++
+ arch/arm/mach-vexpress/Kconfig |    1 +
+ 7 files changed, 20 insertions(+), 4 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
-> 
->  I propose that Paul Mundt merges this patch together with other
->  SH-Mobile ARM related fixes.
-> 
->  arch/arm/tools/mach-types |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> --- 0001/arch/arm/tools/mach-types
-> +++ work/arch/arm/tools/mach-types	2011-11-14 16:55:38.000000000 +0900
-> @@ -1123,5 +1123,6 @@ blissc			MACH_BLISSC		BLISSC			3491
->  thales_adc		MACH_THALES_ADC		THALES_ADC		3492
->  ubisys_p9d_evp		MACH_UBISYS_P9D_EVP	UBISYS_P9D_EVP		3493
->  atdgp318		MACH_ATDGP318		ATDGP318		3494
-> +kota2			MACH_KOTA2		KOTA2			3616
->  smdk4212		MACH_SMDK4212		SMDK4212		3638
->  smdk4412		MACH_SMDK4412		SMDK4412		3765
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 16a4b9e..d33eb39 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -344,6 +344,7 @@ config ARCH_HIGHBANK
+ 	select CPU_V7
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select USE_OF
+ 	help
+@@ -636,6 +637,7 @@ config ARCH_TEGRA
+ 	select GENERIC_GPIO
+ 	select HAVE_CLK
+ 	select HAVE_SCHED_CLOCK
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select ARCH_HAS_CPUFREQ
+ 	help
+@@ -706,6 +708,7 @@ config ARCH_SHMOBILE
+ 	select HAVE_CLK
+ 	select CLKDEV_LOOKUP
+ 	select HAVE_MACH_CLKDEV
++	select HAVE_SMP
+ 	select GENERIC_CLOCKEVENTS
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select NO_IOPORT
+@@ -909,6 +912,7 @@ config ARCH_U8500
+ 	select CLKDEV_LOOKUP
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select ARCH_HAS_CPUFREQ
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	help
+ 	  Support for ST-Ericsson's Ux500 architecture
+@@ -1430,14 +1434,17 @@ menu "Kernel Features"
+ 
+ source "kernel/time/Kconfig"
+ 
++config HAVE_SMP
++	bool
++	help
++	  This option should be selected by machines which have an SMP-
++	  capable CPU.
++
+ config SMP
+ 	bool "Symmetric Multi-Processing"
+ 	depends on CPU_V6K || CPU_V7
+ 	depends on GENERIC_CLOCKEVENTS
+-	depends on REALVIEW_EB_ARM11MP || REALVIEW_EB_A9MP || \
+-		 MACH_REALVIEW_PB11MP || MACH_REALVIEW_PBX || ARCH_OMAP4 || \
+-		 ARCH_EXYNOS4 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || \
+-		 ARCH_MSM_SCORPIONMP || ARCH_SHMOBILE || ARCH_HIGHBANK || SOC_IMX6Q
++	depends on HAVE_SMP
+ 	depends on MMU
+ 	select USE_GENERIC_SMP_HELPERS
+ 	select HAVE_ARM_SCU if !ARCH_MSM_SCORPIONMP
+diff --git a/arch/arm/mach-exynos/Kconfig b/arch/arm/mach-exynos/Kconfig
+index 7f2347b..e1efbca 100644
+--- a/arch/arm/mach-exynos/Kconfig
++++ b/arch/arm/mach-exynos/Kconfig
+@@ -17,6 +17,7 @@ choice
+ 
+ config ARCH_EXYNOS4
+ 	bool "SAMSUNG EXYNOS4"
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	help
+ 	  Samsung EXYNOS4 SoCs based systems
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 5f7f9c2..29a3d61 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -615,6 +615,7 @@ config SOC_IMX6Q
+ 	select HAVE_IMX_GPC
+ 	select HAVE_IMX_MMDC
+ 	select HAVE_IMX_SRC
++	select HAVE_SMP
+ 	select USE_OF
+ 
+ 	help
+diff --git a/arch/arm/mach-msm/Kconfig b/arch/arm/mach-msm/Kconfig
+index ebde97f..e6beaff 100644
+--- a/arch/arm/mach-msm/Kconfig
++++ b/arch/arm/mach-msm/Kconfig
+@@ -67,6 +67,7 @@ config MSM_SOC_REV_A
+ 	bool
+ config  ARCH_MSM_SCORPIONMP
+ 	bool
++	select HAVE_SMP
+ 
+ config  ARCH_MSM_ARM11
+ 	bool
+diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
+index c841578..bb1b670 100644
+--- a/arch/arm/mach-omap2/Kconfig
++++ b/arch/arm/mach-omap2/Kconfig
+@@ -43,6 +43,7 @@ config ARCH_OMAP4
+ 	depends on ARCH_OMAP2PLUS
+ 	select CPU_V7
+ 	select ARM_GIC
++	select HAVE_SMP
+ 	select LOCAL_TIMERS if SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select PL310_ERRATA_588369
+diff --git a/arch/arm/mach-realview/Kconfig b/arch/arm/mach-realview/Kconfig
+index 3dd620f..c593be4 100644
+--- a/arch/arm/mach-realview/Kconfig
++++ b/arch/arm/mach-realview/Kconfig
+@@ -12,6 +12,7 @@ config REALVIEW_EB_A9MP
+ 	bool "Support Multicore Cortex-A9 Tile"
+ 	depends on MACH_REALVIEW_EB
+ 	select CPU_V7
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	help
+ 	  Enable support for the Cortex-A9MPCore tile fitted to the
+@@ -22,6 +23,7 @@ config REALVIEW_EB_ARM11MP
+ 	depends on MACH_REALVIEW_EB
+ 	select CPU_V6K
+ 	select ARCH_HAS_BARRIERS if SMP
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	help
+ 	  Enable support for the ARM11MPCore tile fitted to the Realview(R)
+@@ -41,6 +43,7 @@ config MACH_REALVIEW_PB11MP
+ 	select CPU_V6K
+ 	select ARM_GIC
+ 	select HAVE_PATA_PLATFORM
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select ARCH_HAS_BARRIERS if SMP
+ 	help
+@@ -82,6 +85,7 @@ config MACH_REALVIEW_PBX
+ 	bool "Support RealView(R) Platform Baseboard Explore"
+ 	select ARM_GIC
+ 	select HAVE_PATA_PLATFORM
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select ARCH_SPARSEMEM_ENABLE if CPU_V7 && !REALVIEW_HIGH_PHYS_OFFSET
+ 	select ZONE_DMA if SPARSEMEM
+diff --git a/arch/arm/mach-vexpress/Kconfig b/arch/arm/mach-vexpress/Kconfig
+index a8aefc8..9b3d0fb 100644
+--- a/arch/arm/mach-vexpress/Kconfig
++++ b/arch/arm/mach-vexpress/Kconfig
+@@ -8,6 +8,7 @@ config ARCH_VEXPRESS_CA9X4
+ 	select ARM_ERRATA_720789
+ 	select ARM_ERRATA_751472
+ 	select ARM_ERRATA_753970
++	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 
+ endmenu
+-- 
+1.7.4.1
 
