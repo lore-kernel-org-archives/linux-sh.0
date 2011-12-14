@@ -1,194 +1,321 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:25 +0000
-Subject: [PATCH 30/57] fbdev: sh_mobile_lcdc: Store display mode in a struct fb_videomode
-Message-Id: <1323784972-24205-31-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 14 Dec 2011 18:31:54 +0000
+Subject: [PATCH 4/4] mmc: sh_mmcif: remove now superfluous sh_mmcif_host::data member
+Message-Id: <1323887514-12650-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Embed struct fb_videomode instead of struct fb_var_screeninfo in struct
-sh_mobile_lcdc_chan to store the display mode.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   73 ++++++++++++++++++++------------------
- drivers/video/sh_mobile_lcdcfb.h |    6 +++-
- 2 files changed, 43 insertions(+), 36 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   94 +++++++++++++++++++++++--------------------
+ 1 files changed, 50 insertions(+), 44 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index c5acae7..d672a3f 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -367,21 +367,17 @@ static bool
- sh_mobile_lcdc_must_reconfigure(struct sh_mobile_lcdc_chan *ch,
- 				const struct fb_videomode *new_mode)
- {
--	struct fb_var_screeninfo *old_var = &ch->display_var;
--	struct fb_videomode old_mode;
--
--	fb_var_to_videomode(&old_mode, old_var);
--
- 	dev_dbg(ch->info->dev, "Old %ux%u, new %ux%u\n",
--		old_mode.xres, old_mode.yres, new_mode->xres, new_mode->yres);
-+		ch->display.mode.xres, ch->display.mode.yres,
-+		new_mode->xres, new_mode->yres);
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index ec6805c..29bcb75 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -207,7 +207,6 @@ enum mmcif_wait_for {
  
- 	/* It can be a different monitor with an equal video-mode */
--	if (fb_mode_is_equal(&old_mode, new_mode))
-+	if (fb_mode_is_equal(&ch->display.mode, new_mode))
+ struct sh_mmcif_host {
+ 	struct mmc_host *mmc;
+-	struct mmc_data *data;
+ 	struct mmc_request *mrq;
+ 	struct platform_device *pd;
+ 	struct clk *hclk;
+@@ -250,19 +249,21 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
+ static void mmcif_dma_complete(void *arg)
+ {
+ 	struct sh_mmcif_host *host = arg;
++	struct mmc_data *data = host->mrq->data;
++
+ 	dev_dbg(&host->pd->dev, "Command completed\n");
+ 
+-	if (WARN(!host->data, "%s: NULL data in DMA completion!\n",
++	if (WARN(!data, "%s: NULL data in DMA completion!\n",
+ 		 dev_name(&host->pd->dev)))
+ 		return;
+ 
+-	if (host->data->flags & MMC_DATA_READ)
++	if (data->flags & MMC_DATA_READ)
+ 		dma_unmap_sg(host->chan_rx->device->dev,
+-			     host->data->sg, host->data->sg_len,
++			     data->sg, data->sg_len,
+ 			     DMA_FROM_DEVICE);
+ 	else
+ 		dma_unmap_sg(host->chan_tx->device->dev,
+-			     host->data->sg, host->data->sg_len,
++			     data->sg, data->sg_len,
+ 			     DMA_TO_DEVICE);
+ 
+ 	complete(&host->dma_complete);
+@@ -270,13 +271,14 @@ static void mmcif_dma_complete(void *arg)
+ 
+ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ {
+-	struct scatterlist *sg = host->data->sg;
++	struct mmc_data *data = host->mrq->data;
++	struct scatterlist *sg = data->sg;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_rx;
+ 	dma_cookie_t cookie = -EINVAL;
+ 	int ret;
+ 
+-	ret = dma_map_sg(chan->device->dev, sg, host->data->sg_len,
++	ret = dma_map_sg(chan->device->dev, sg, data->sg_len,
+ 			 DMA_FROM_DEVICE);
+ 	if (ret > 0) {
+ 		host->dma_active = true;
+@@ -292,7 +294,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 		dma_async_issue_pending(chan);
+ 	}
+ 	dev_dbg(&host->pd->dev, "%s(): mapped %d -> %d, cookie %d\n",
+-		__func__, host->data->sg_len, ret, cookie);
++		__func__, data->sg_len, ret, cookie);
+ 
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
+@@ -313,18 +315,19 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 	}
+ 
+ 	dev_dbg(&host->pd->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
+-		desc, cookie, host->data->sg_len);
++		desc, cookie, data->sg_len);
+ }
+ 
+ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ {
+-	struct scatterlist *sg = host->data->sg;
++	struct mmc_data *data = host->mrq->data;
++	struct scatterlist *sg = data->sg;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_tx;
+ 	dma_cookie_t cookie = -EINVAL;
+ 	int ret;
+ 
+-	ret = dma_map_sg(chan->device->dev, sg, host->data->sg_len,
++	ret = dma_map_sg(chan->device->dev, sg, data->sg_len,
+ 			 DMA_TO_DEVICE);
+ 	if (ret > 0) {
+ 		host->dma_active = true;
+@@ -340,7 +343,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 		dma_async_issue_pending(chan);
+ 	}
+ 	dev_dbg(&host->pd->dev, "%s(): mapped %d -> %d, cookie %d\n",
+-		__func__, host->data->sg_len, ret, cookie);
++		__func__, data->sg_len, ret, cookie);
+ 
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
+@@ -698,8 +701,11 @@ static void sh_mmcif_get_cmd12response(struct sh_mmcif_host *host,
+ }
+ 
+ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+-		struct mmc_request *mrq, struct mmc_command *cmd, u32 opc)
++			    struct mmc_request *mrq)
+ {
++	struct mmc_data *data = mrq->data;
++	struct mmc_command *cmd = mrq->cmd;
++	u32 opc = cmd->opcode;
+ 	u32 tmp = 0;
+ 
+ 	/* Response Type check */
+@@ -731,7 +737,7 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ 		break;
+ 	}
+ 	/* WDAT / DATW */
+-	if (host->data) {
++	if (data) {
+ 		tmp |= CMD_SET_WDAT;
+ 		switch (host->bus_width) {
+ 		case MMC_BUS_WIDTH_1:
+@@ -755,7 +761,7 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ 	if (opc = MMC_READ_MULTIPLE_BLOCK || opc = MMC_WRITE_MULTIPLE_BLOCK) {
+ 		tmp |= CMD_SET_CMLTE | CMD_SET_CMD12EN;
+ 		sh_mmcif_bitset(host, MMCIF_CE_BLOCK_SET,
+-					mrq->data->blocks << 16);
++				data->blocks << 16);
+ 	}
+ 	/* RIDXC[1:0] check bits */
+ 	if (opc = MMC_SEND_OP_COND || opc = MMC_ALL_SEND_CID ||
+@@ -769,7 +775,7 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ 		opc = MMC_SEND_CSD || opc = MMC_SEND_CID)
+ 		tmp |= CMD_SET_CRC7C_INTERNAL;
+ 
+-	return opc = ((opc << 24) | tmp);
++	return (opc << 24) | tmp;
+ }
+ 
+ static int sh_mmcif_data_trans(struct sh_mmcif_host *host,
+@@ -817,12 +823,12 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
+ 		break;
+ 	}
+ 
+-	if (host->data) {
++	if (mrq->data) {
+ 		sh_mmcif_writel(host->addr, MMCIF_CE_BLOCK_SET, 0);
+ 		sh_mmcif_writel(host->addr, MMCIF_CE_BLOCK_SET,
+ 				mrq->data->blksz);
+ 	}
+-	opc = sh_mmcif_set_cmd(host, mrq, cmd, opc);
++	opc = sh_mmcif_set_cmd(host, mrq);
+ 
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT, 0xD80430C0);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, mask);
+@@ -838,15 +844,16 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
+ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
+ 			      struct mmc_request *mrq)
+ {
+-	struct mmc_command *cmd = mrq->stop;
+-
+-	if (mrq->cmd->opcode = MMC_READ_MULTIPLE_BLOCK)
++	switch (mrq->cmd->opcode) {
++	case MMC_READ_MULTIPLE_BLOCK:
+ 		sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MCMD12DRE);
+-	else if (mrq->cmd->opcode = MMC_WRITE_MULTIPLE_BLOCK)
++		break;
++	case MMC_WRITE_MULTIPLE_BLOCK:
+ 		sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MCMD12RBE);
+-	else {
++		break;
++	default:
+ 		dev_err(&host->pd->dev, "unsupported stop cmd\n");
+-		cmd->error = sh_mmcif_error_manage(host);
++		mrq->stop->error = sh_mmcif_error_manage(host);
+ 		return;
+ 	}
+ 
+@@ -892,7 +899,6 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	}
+ 
+ 	host->mrq = mrq;
+-	host->data = mrq->data;
+ 
+ 	sh_mmcif_start_cmd(host, mrq);
+ }
+@@ -972,6 +978,7 @@ static struct mmc_host_ops sh_mmcif_ops = {
+ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ {
+ 	struct mmc_command *cmd = host->mrq->cmd;
++	struct mmc_data *data = host->mrq->data;
+ 	long time;
+ 
+ 	if (host->sd_error) {
+@@ -997,10 +1004,10 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 
+ 	sh_mmcif_get_response(host, cmd);
+ 
+-	if (!host->data)
++	if (!data)
  		return false;
  
- 	dev_dbg(ch->info->dev, "Switching %u -> %u lines\n",
--		old_mode.yres, new_mode->yres);
--	fb_videomode_to_var(old_var, new_mode);
-+		ch->display.mode.yres, new_mode->yres);
-+	ch->display.mode = *new_mode;
+-	if (host->mrq->data->flags & MMC_DATA_READ) {
++	if (data->flags & MMC_DATA_READ) {
+ 		if (host->chan_rx)
+ 			sh_mmcif_start_dma_rx(host);
+ 	} else {
+@@ -1009,8 +1016,8 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 	}
  
- 	return true;
+ 	if (!host->dma_active) {
+-		host->data->error = sh_mmcif_data_trans(host, host->mrq, cmd->opcode);
+-		if (!host->data->error)
++		data->error = sh_mmcif_data_trans(host, host->mrq, cmd->opcode);
++		if (!data->error)
+ 			return true;
+ 		return false;
+ 	}
+@@ -1022,22 +1029,22 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 		dev_err(host->mmc->parent,
+ 			"Error IRQ while waiting for DMA completion!\n");
+ 		/* Woken up by an error IRQ: abort DMA */
+-		if (host->data->flags & MMC_DATA_READ)
++		if (data->flags & MMC_DATA_READ)
+ 			dmaengine_terminate_all(host->chan_rx);
+ 		else
+ 			dmaengine_terminate_all(host->chan_tx);
+-		host->data->error = sh_mmcif_error_manage(host);
++		data->error = sh_mmcif_error_manage(host);
+ 	} else if (!time) {
+-		host->data->error = -ETIMEDOUT;
++		data->error = -ETIMEDOUT;
+ 	} else if (time < 0) {
+-		host->data->error = time;
++		data->error = time;
+ 	}
+ 	sh_mmcif_bitclr(host, MMCIF_CE_BUF_ACC,
+ 			BUF_ACC_DMAREN | BUF_ACC_DMAWEN);
+ 	host->dma_active = false;
+ 
+-	if (host->data->error)
+-		host->data->bytes_xfered = 0;
++	if (data->error)
++		data->bytes_xfered = 0;
+ 
+ 	return false;
  }
-@@ -400,8 +396,8 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
- 		if (lock_fb_info(info)) {
- 			console_lock();
- 
--			ch->display_var.width = monspec->max_x * 10;
--			ch->display_var.height = monspec->max_y * 10;
-+			ch->display.width = monspec->max_x * 10;
-+			ch->display.height = monspec->max_y * 10;
- 
- 			if (!sh_mobile_lcdc_must_reconfigure(ch, mode) &&
- 			    info->state = FBINFO_STATE_RUNNING) {
-@@ -567,7 +563,8 @@ static void sh_mobile_lcdc_start_stop(struct sh_mobile_lcdc_priv *priv,
- 
- static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
+@@ -1046,6 +1053,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
  {
--	struct fb_var_screeninfo *var = &ch->info->var, *display_var = &ch->display_var;
-+	const struct fb_var_screeninfo *var = &ch->info->var;
-+	const struct fb_videomode *mode = &ch->display.mode;
- 	unsigned long h_total, hsync_pos, display_h_total;
- 	u32 tmp;
+ 	struct sh_mmcif_host *host = dev_id;
+ 	struct mmc_request *mrq = host->mrq;
++	struct mmc_data *data = mrq->data;
  
-@@ -586,34 +583,32 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
- 	lcdc_write_chan(ch, LDMT3R, ch->cfg.sys_bus_cfg.ldmt3r);
+ 	cancel_delayed_work_sync(&host->timeout_work);
  
- 	/* horizontal configuration */
--	h_total = display_var->xres + display_var->hsync_len +
--		display_var->left_margin + display_var->right_margin;
-+	h_total = mode->xres + mode->hsync_len + mode->left_margin
-+		+ mode->right_margin;
- 	tmp = h_total / 8; /* HTCN */
--	tmp |= (min(display_var->xres, var->xres) / 8) << 16; /* HDCN */
-+	tmp |= (min(mode->xres, var->xres) / 8) << 16; /* HDCN */
- 	lcdc_write_chan(ch, LDHCNR, tmp);
+@@ -1093,20 +1101,18 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
+ 	case MMCIF_WAIT_FOR_READ_END:
+ 	case MMCIF_WAIT_FOR_WRITE_END:
+ 		if (host->sd_error)
+-			mrq->data->error = sh_mmcif_error_manage(host);
++			data->error = sh_mmcif_error_manage(host);
+ 		break;
+ 	default:
+ 		BUG();
+ 	}
  
--	hsync_pos = display_var->xres + display_var->right_margin;
-+	hsync_pos = mode->xres + mode->right_margin;
- 	tmp = hsync_pos / 8; /* HSYNP */
--	tmp |= (display_var->hsync_len / 8) << 16; /* HSYNW */
-+	tmp |= (mode->hsync_len / 8) << 16; /* HSYNW */
- 	lcdc_write_chan(ch, LDHSYNR, tmp);
+ 	if (host->wait_for != MMCIF_WAIT_FOR_STOP) {
+-		host->data = NULL;
++		if (!mrq->cmd->error && data && !data->error)
++			data->bytes_xfered +				data->blocks * data->blksz;
  
- 	/* vertical configuration */
--	tmp = display_var->yres + display_var->vsync_len +
--		display_var->upper_margin + display_var->lower_margin; /* VTLN */
--	tmp |= min(display_var->yres, var->yres) << 16; /* VDLN */
-+	tmp = mode->yres + mode->vsync_len + mode->upper_margin
-+	    + mode->lower_margin; /* VTLN */
-+	tmp |= min(mode->yres, var->yres) << 16; /* VDLN */
- 	lcdc_write_chan(ch, LDVLNR, tmp);
+-		if (!mrq->cmd->error && mrq->data && !mrq->data->error)
+-			mrq->data->bytes_xfered -				mrq->data->blocks * mrq->data->blksz;
+-
+-		if (mrq->stop && !mrq->cmd->error && (!mrq->data || !mrq->data->error)) {
++		if (mrq->stop && !mrq->cmd->error && (!data || !data->error)) {
+ 			sh_mmcif_stop_cmd(host, mrq);
+ 			if (!mrq->stop->error)
+ 				return IRQ_HANDLED;
+@@ -1115,6 +1121,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
  
--	tmp = display_var->yres + display_var->lower_margin; /* VSYNP */
--	tmp |= display_var->vsync_len << 16; /* VSYNW */
-+	tmp = mode->yres + mode->lower_margin; /* VSYNP */
-+	tmp |= mode->vsync_len << 16; /* VSYNW */
- 	lcdc_write_chan(ch, LDVSYNR, tmp);
+ 	host->wait_for = MMCIF_WAIT_FOR_REQUEST;
+ 	host->state = STATE_IDLE;
++	host->mrq = NULL;
+ 	mmc_request_done(host->mmc, mrq);
  
- 	/* Adjust horizontal synchronisation for HDMI */
--	display_h_total = display_var->xres + display_var->hsync_len +
--		display_var->left_margin + display_var->right_margin;
--	tmp = ((display_var->xres & 7) << 24) |
--		((display_h_total & 7) << 16) |
--		((display_var->hsync_len & 7) << 8) |
--		(hsync_pos & 7);
-+	display_h_total = mode->xres + mode->hsync_len + mode->left_margin
-+			+ mode->right_margin;
-+	tmp = ((mode->xres & 7) << 24) | ((display_h_total & 7) << 16)
-+	    | ((mode->hsync_len & 7) << 8) | (hsync_pos & 7);
- 	lcdc_write_chan(ch, LDHAJR, tmp);
+ 	return IRQ_HANDLED;
+@@ -1210,7 +1217,7 @@ static void mmcif_timeout_work(struct work_struct *work)
+ 	case MMCIF_WAIT_FOR_WRITE:
+ 	case MMCIF_WAIT_FOR_READ_END:
+ 	case MMCIF_WAIT_FOR_WRITE_END:
+-		host->data->error = sh_mmcif_error_manage(host);
++		mrq->data->error = sh_mmcif_error_manage(host);
+ 		break;
+ 	default:
+ 		BUG();
+@@ -1218,7 +1225,6 @@ static void mmcif_timeout_work(struct work_struct *work)
+ 
+ 	host->state = STATE_IDLE;
+ 	host->wait_for = MMCIF_WAIT_FOR_REQUEST;
+-	host->data = NULL;
+ 	host->mrq = NULL;
+ 	mmc_request_done(host->mmc, mrq);
  }
- 
-@@ -1104,7 +1099,8 @@ static int sh_mobile_ioctl(struct fb_info *info, unsigned int cmd,
- static void sh_mobile_fb_reconfig(struct fb_info *info)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
--	struct fb_videomode mode1, mode2;
-+	struct fb_var_screeninfo var;
-+	struct fb_videomode mode;
- 	struct fb_event event;
- 	int evnt = FB_EVENT_MODE_CHANGE_ALL;
- 
-@@ -1112,14 +1108,18 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
- 		/* More framebuffer users are active */
- 		return;
- 
--	fb_var_to_videomode(&mode1, &ch->display_var);
--	fb_var_to_videomode(&mode2, &info->var);
-+	fb_var_to_videomode(&mode, &info->var);
- 
--	if (fb_mode_is_equal(&mode1, &mode2))
-+	if (fb_mode_is_equal(&ch->display.mode, &mode))
- 		return;
- 
- 	/* Display has been re-plugged, framebuffer is free now, reconfigure */
--	if (fb_set_var(info, &ch->display_var) < 0)
-+	fb_videomode_to_var(&var, &ch->display.mode);
-+	var.width = ch->display.width;
-+	var.height = ch->display.height;
-+	var.activate = FB_ACTIVATE_NOW;
-+
-+	if (fb_set_var(info, &var) < 0)
- 		/* Couldn't reconfigure, hopefully, can continue as before */
- 		return;
- 
-@@ -1129,7 +1129,7 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
- 	 * user event, we have to call the chain ourselves.
- 	 */
- 	event.info = info;
--	event.data = &mode1;
-+	event.data = &ch->display.mode;
- 	fb_notifier_call_chain(evnt, &event);
- }
- 
-@@ -1814,7 +1814,10 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 
- 	info->screen_base = buf;
- 	info->device = priv->dev;
--	ch->display_var = *var;
-+
-+	ch->display.width = cfg->panel_cfg.width;
-+	ch->display.height = cfg->panel_cfg.height;
-+	ch->display.mode = *mode;
- 
- 	return 0;
- }
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 9c91fae..c175387 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -68,7 +68,11 @@ struct sh_mobile_lcdc_chan {
- 	unsigned long pan_offset;
- 	wait_queue_head_t frame_end_wait;
- 	struct completion vsync_completion;
--	struct fb_var_screeninfo display_var;
-+	struct {
-+		unsigned int width;
-+		unsigned int height;
-+		struct fb_videomode mode;
-+	} display;
- 	int use_count;
- 	int blank_status;
- 	struct mutex open_lock;		/* protects the use counter */
 -- 
-1.7.3.4
+1.7.2.5
 
