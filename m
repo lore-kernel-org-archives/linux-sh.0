@@ -1,41 +1,107 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 14 Dec 2011 15:50:53 +0000
-Subject: Re: [PATCH/RFC] mmc: add a device PM QoS constraint when a host is
-Message-Id: <CACRpkdavEN4Ht425a5P9JfLttCqZ94-yH11GbxgV+mhvwHzGLA@mail.gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Wed, 14 Dec 2011 21:36:26 +0000
+Subject: Re: [PATCH/RFC] mmc: add a device PM QoS constraint when a host is first claimed
+Message-Id: <201112142236.26739.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1112121642080.10378@axis700.grange>
-	<4EE865CA.8000407@stericsson.com>
-	<CACRpkdZnmCUfk0h+wK=KUvrv5oCudEAdEc_TY6=yZg_3uTqkgw@mail.gmail.com>
-	<201112141128.56029.rjw@sisk.pl>
-In-Reply-To: <201112141128.56029.rjw@sisk.pl>
+References: <Pine.LNX.4.64.1112121642080.10378@axis700.grange> <201112141115.00945.rjw@sisk.pl> <4EE8849D.1010401@stericsson.com>
+In-Reply-To: <4EE8849D.1010401@stericsson.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Ulf Hansson <ulf.hansson@stericsson.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Chris Ball <cjb@laptop.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ulf Hansson <ulf.hansson@stericsson.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Chris Ball <cjb@laptop.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Wed, Dec 14, 2011 at 11:28 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> On Wednesday, December 14, 2011, Linus Walleij wrote:
+On Wednesday, December 14, 2011, Ulf Hansson wrote:
+> 
+> >> You have a point. But I am not convinced. :-)
+> >>
+> >> Some host drivers already make use of autosuspend. I think this is most 
+> >> straightforward solution to this problem right now.
+> > 
+> > The problem is not about _when_ to suspend (which autosuspend is about),
+> > but _what_ _state_ to go when suspended.  That's quite a different issue.
+> 
+> I was kind of taking a more simple approach, I were considering 
+> runtime_suspend as _one_ state. Right now there is no host driver having 
+> different levels of runtime_suspend state, if I am correct. But ofcourse 
+> that could be the future.
 
->> But this delta is dependent on a lot of stuff that only the platform
->> knows, like nominal CPU frequency, bus speed etc, so certainly the
->> platform must be able to modify that number.
->
-> You seem to be confusing things. =A0The exact meaning of this number is:
-> "I may want to use the device 100 us from now (but not earlier), so please
-> make it possible to do that". =A0[It roughly means "don't put the device =
-into
-> a low-power state that takes more than 100 us to resume from", but it's a=
- bit
-> more complicated than that.] =A0It doesn't mean "don't suspend the device=
- for
-> the next 100 us".
+Yes, there is, or more precisely there's going to be shortly.  We have
+PM domains on SH7372 and when we enable all of them to be powered off
+at run time, there will be many power states for the controller which
+is located in one of them.  Hence the $subject patch. :-)
 
-Yes you're right, I get it now!
+> Moreover, I definitely do not think that a fixed timeout of 100us is 
+> applicable for all use cases, this must at least be configurable.
 
-Thanks for the explanation Rafael.
+Well, this isn't a timeout.  Have you read my reply to Linus?
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+I agree that it should be configurable _eventually_, but no one seems to
+know how to implement that configurability.  Ideally, that value should
+result from some user space input, possibly after a conversion by the
+driver to a useful number, but we don't seem to have any agreement as to
+what the interface for passing that user space input to the driver should
+look like.
+
+> >> However, we could also do pm_runtime_get_sync of the host device in 
+> >> claim host and vice verse in release host, thus preventing the host 
+> >> driver from triggering runtime_suspend|resume for every request. Though, 
+> >> I am not 100% sure this is really what you want either.
+> > 
+> > No, I don't want that.  I want the device to be suspended when possible,
+> > but I don't want that to cause the system to go into an overly deep power
+> > state as a result.
+> 
+> Before just skipping my proposal, I think you should know some more 
+> background to why I suggested this:
+> 
+> 1.
+> mmc_claim_host is using mmc_host_enable, which kind of mean the same 
+> thing for a host driver as doing get_sync. Vice verse for mmc_release_host.
+> 
+> 2.
+> When executing mmc/sd commands/requests the host must always be claimed 
+> (and thus the host is always enabled). But more important some mmc/sd 
+> commands must be executed as a sequence, without the host being disabled 
+> in between the commands (since a disable might mean that the clock to 
+> card gets disabled). To solve this, the mmc_claim_host is used, to make 
+> sure the host is enabled during the complete command sequence.
+> 
+> I happily continue this discussion, to see if someone more can break the 
+> idea about having get_sync in mmc_host_enable. :-)
+
+I'll leave this one to Guennadi, if you don't mind. :-)
+
+> >> Using PM QoS as you propose, might prevent some hosts from doing 
+> >> runtime_suspend|resume completely and thus those might not fulfill power 
+> >> consumption requirements instead.
+> > 
+> > I'm not sure what scenario you have in mind.  Care to elaborate?
+> 
+> Well, suppose a the host drivers start considering the PM QoS 
+> requirement, but never can fulfill the requirement of 100us for it's 
+> runtime_suspend callback function...
+
+OK, that's a valid concern.  This means there should be a way for user space
+to specify the constraint somehow, because it's a user space's role to define
+policies.
+
+> >> I do not think we can take this decision at this level. Is performance more
+> >> important than power save, that is kind of the question.
+> > 
+> > Yes, it is.  Also, the number used here is somewhat arbitrary.
+> 
+> For you maybe power management is less important, but I doubt everybody 
+> else agree to that. It is a more complex balance I believe.
+
+You're right.
+
+> > However, since no one except for SH7372 is now using device PM QoS, no one
+> > else will be affected by this change at the moment.
+> 
+> True, but that is not a good reason for adding more stuff to the mmc core.
+
+Good point.
 
 Thanks,
-Linus Walleij
+Rafael
