@@ -1,71 +1,50 @@
-From: Kukjin Kim <kgene.kim@samsung.com>
-Date: Sat, 03 Dec 2011 09:45:39 +0000
-Subject: RE: [PATCH 6/7] ARM: restart: only perform setup for restart when
-Message-Id: <000401ccb1a0$50acfe20$f206fa60$%kim@samsung.com>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Wed, 14 Dec 2011 11:39:41 +0000
+Subject: [PATCH v4 REPOST 5/5] imx6q: Remove unconditional dependency on l2x0 L2 cache support
+Message-Id: <1323862781-3465-6-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111106173113.GI12913@n2100.arm.linux.org.uk>
- <E1RN6b9-0001NG-NS@rmk-PC.arm.linux.org.uk>
- <20111117174247.GF9581@n2100.arm.linux.org.uk>
- <000001ccb19d$2f9c5c60$8ed51520$%kim@samsung.com>
- <20111203093012.GM9581@n2100.arm.linux.org.uk>
-In-Reply-To: <20111203093012.GM9581@n2100.arm.linux.org.uk>
+References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Russell King - ARM Linux wrote:
-> 
-> On Sat, Dec 03, 2011 at 06:23:09PM +0900, Kukjin Kim wrote:
-> > Russell King - ARM Linux wrote:
-> > >
-> > > Ack?
-> > >
-> > > (If you're in the To: list I'm expecting a reply because this patch is
-> > > touching something you're responsible for.  Thanks.)
-> > >
-> > > On Sun, Nov 06, 2011 at 05:33:35PM +0000, Russell King - ARM Linux
-> wrote:
-> > > > We only need to set the system up for a soft-restart if we're going
-> to
-> > > > be doing a soft-restart.  Provide a new function (soft_restart())
-> which
-> > > > does the setup and final call for this, and make platforms use it.
-> > > > Eliminate the call to setup_restart() from the default handler.
-> > > >
-> > > > This means that platforms arch_reset() function is no longer called
-> with
-> > > > the page tables prepared for a soft-restart, and caches will still
-> be
-> > > > enabled.
-> > > >
-> > > > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> >
-> > Sorry for late response...
-> >
-> > For Samsung stuff:
-> > Acked-by: Kukjin Kim <kgene.kim@samsung.com>
-> 
-> Too late, it's now part of devel-stable so I can't accept any more acks
-> for this.  Sorry.
+The i.MX6 Quad SoC will work without the l2x0 L2 cache controller
+support built into the kernel, so this patch removes the dependency
+on CACHE_L2X0 and selects MIGHT_HAVE_CACHE_L2X0 instead.
 
-OK, I see.
+This makes the l2x0 support optional, so that it can be turned off
+when desired for debugging purposes etc.
 
-But I did send my ack in the beginning of Nov on cover [0/7] like
-following...
-http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/071800.h
-tml
+Thanks to Shawn Guo for this suggestion. [1]
 
-So I didn't send my ack on this...
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
 
-As a note, I'm sorting out header files, local headers in Samsung stuff as
-per your suggestion and you can see them in the next week.
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074602.html
+---
+ arch/arm/mach-imx/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Anyway, thanks.
-
-Best regards,
-Kgene.
---
-Kukjin Kim <kgene.kim@samsung.com>, Senior Engineer,
-SW Solution Development Team, Samsung Electronics Co., Ltd.
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 29a3d61..1fb93f2 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -609,13 +609,13 @@ comment "i.MX6 family:"
+ config SOC_IMX6Q
+ 	bool "i.MX6 Quad support"
+ 	select ARM_GIC
+-	select CACHE_L2X0
+ 	select CPU_V7
+ 	select HAVE_ARM_SCU
+ 	select HAVE_IMX_GPC
+ 	select HAVE_IMX_MMDC
+ 	select HAVE_IMX_SRC
+ 	select HAVE_SMP
++	select MIGHT_HAVE_CACHE_L2X0
+ 	select USE_OF
+ 
+ 	help
+-- 
+1.7.4.1
 
