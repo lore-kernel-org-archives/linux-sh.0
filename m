@@ -1,88 +1,55 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 15 Dec 2011 22:17:28 +0000
-Subject: Re: [PATCH 33/57] fbdev: sh_mobile_lcdc: Add sh_mobile_format_info()
-Message-Id: <Pine.LNX.4.64.1112152246040.32653@axis700.grange>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Thu, 15 Dec 2011 15:53:54 +0000
+Subject: [PATCH v5 5/5] imx6q: Remove unconditional dependency on l2x0 L2 cache support
+Message-Id: <1323964434-6764-6-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1323784972-24205-34-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1323784972-24205-34-git-send-email-laurent.pinchart@ideasonboard.com>
+References: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 13 Dec 2011, Laurent Pinchart wrote:
+The i.MX6 Quad SoC will work without the l2x0 L2 cache controller
+support built into the kernel, so this patch removes the dependency
+on CACHE_L2X0.
 
-> The function returns a pointer to a structure describing a format based
-> on its fourcc. Use the function where applicable instead of hardcoded
-> switch-case statements.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
->  drivers/video/sh_mobile_lcdcfb.c |  174 ++++++++++++++++++++++----------------
->  1 files changed, 102 insertions(+), 72 deletions(-)
-> 
-> diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-> index 3bc82ae..c6b6b9d 100644
-> --- a/drivers/video/sh_mobile_lcdcfb.c
-> +++ b/drivers/video/sh_mobile_lcdcfb.c
+This makes the l2x0 support optional, so that it can be turned off
+when desired for debugging purposes etc.
 
-[snip]
+Since SOC_IMX6Q already depends on ARCH_IMX_V6_V7 and
+ARCH_IMX_V6_V7 selects MIGHT_HAVE_CACHE_L2X0, there is no need to
+select that option explicitly from SOC_IMX6Q.
 
-> @@ -665,37 +726,20 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
->  
->  	/* Setup geometry, format, frame buffer memory and operation mode. */
->  	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
-> +		const struct sh_mobile_lcdc_format_info *format;
-> +		u32 fourcc;
-> +
->  		ch = &priv->ch[k];
->  		if (!ch->enabled)
->  			continue;
->  
->  		sh_mobile_lcdc_geometry(ch);
->  
-> -		switch (sh_mobile_format_fourcc(&ch->info->var)) {
-> -		case V4L2_PIX_FMT_RGB565:
-> -			tmp = LDDFR_PKF_RGB16;
-> -			break;
-> -		case V4L2_PIX_FMT_BGR24:
-> -			tmp = LDDFR_PKF_RGB24;
-> -			break;
-> -		case V4L2_PIX_FMT_BGR32:
-> -			tmp = LDDFR_PKF_ARGB32;
-> -			break;
-> -		case V4L2_PIX_FMT_NV12:
-> -		case V4L2_PIX_FMT_NV21:
-> -			tmp = LDDFR_CC | LDDFR_YF_420;
-> -			break;
-> -		case V4L2_PIX_FMT_NV16:
-> -		case V4L2_PIX_FMT_NV61:
-> -			tmp = LDDFR_CC | LDDFR_YF_422;
-> -			break;
-> -		case V4L2_PIX_FMT_NV24:
-> -		case V4L2_PIX_FMT_NV42:
-> -			tmp = LDDFR_CC | LDDFR_YF_444;
-> -			break;
-> -		}
-> +		fourcc = sh_mobile_format_fourcc(&ch->info->var);
-> +		format = sh_mobile_format_info(fourcc);
-> +		tmp = format->lddfr;
+Thanks to Shawn Guo for this suggestion.  [1]
 
-Why don't you just store a pointer to the selected format struct per 
-channel in sh_mobile_lcdc_channel_init() to avoid recalculation here? If 
-OTOH this can be a new info here from a hotplug event, the above risks an 
-Oops?
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074602.html
 
->  
-> -		if (sh_mobile_format_is_yuv(&ch->info->var)) {
-> +		if (format->yuv) {
->  			switch (ch->info->var.colorspace) {
->  			case V4L2_COLORSPACE_REC709:
->  				tmp |= LDDFR_CF1;
-
-Thanks
-Guennadi
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Changes:
+
+v5: Don't select MIGHT_HAVE_CACHE_L2X0 directly from SOC_IMX6Q, but
+    instead select implicitly via ARCH_IMX_V6_V7 (which we expect
+    to be selected by other relevant SoCs).  Thanks to Shawn for
+    this suggestion.
+
+
+ arch/arm/mach-imx/Kconfig |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 29a3d61..1530678 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -609,7 +609,6 @@ comment "i.MX6 family:"
+ config SOC_IMX6Q
+ 	bool "i.MX6 Quad support"
+ 	select ARM_GIC
+-	select CACHE_L2X0
+ 	select CPU_V7
+ 	select HAVE_ARM_SCU
+ 	select HAVE_IMX_GPC
+-- 
+1.7.4.1
+
