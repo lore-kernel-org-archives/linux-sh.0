@@ -1,62 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Dec 2011 07:47:16 +0000
-Subject: [PATCH] ARM: mach-shmobile: Allow SoC specific CPU kill code
-Message-Id: <20111228074716.14231.48713.sendpatchset@w520>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Thu, 15 Dec 2011 15:53:53 +0000
+Subject: [PATCH v5 4/5] highbank: Unconditionally require l2x0 L2 cache controller support
+Message-Id: <1323964434-6764-5-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+If running in the Normal World on a TrustZone-enabled SoC, Linux
+does not have complete control over the L2 cache controller
+configuration.  The kernel cannot work reliably on such platforms
+without the l2x0 cache support code built in.
 
-Add the function shmobile_platform_kill_cpu() to allow
-SoC specific code to tie in their CPU shutdown code.
+This patch unconditionally enables l2x0 support for the Highbank
+SoC.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Thanks to Rob Herring for this suggestion.  [1]
+
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
+
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
+Acked-by: Rob Herring <rob.herring@calxeda.com>
 ---
+ arch/arm/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
- arch/arm/mach-shmobile/hotplug.c             |    3 ++-
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/platsmp.c             |    5 +++++
- 3 files changed, 8 insertions(+), 1 deletion(-)
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index eca82f9..1792146 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -340,12 +340,12 @@ config ARCH_HIGHBANK
+ 	select ARM_AMBA
+ 	select ARM_GIC
+ 	select ARM_TIMER_SP804
++	select CACHE_L2X0
+ 	select CLKDEV_LOOKUP
+ 	select CPU_V7
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU
+ 	select HAVE_SMP
+-	select MIGHT_HAVE_CACHE_L2X0
+ 	select USE_OF
+ 	help
+ 	  Support for the Calxeda Highbank SoC based boards.
+-- 
+1.7.4.1
 
---- 0001/arch/arm/mach-shmobile/hotplug.c
-+++ work/arch/arm/mach-shmobile/hotplug.c	2011-12-28 14:50:29.000000000 +0900
-@@ -12,10 +12,11 @@
- #include <linux/kernel.h>
- #include <linux/errno.h>
- #include <linux/smp.h>
-+#include <mach/common.h>
- 
- int platform_cpu_kill(unsigned int cpu)
- {
--	return 1;
-+	return shmobile_platform_cpu_kill(cpu);
- }
- 
- void platform_cpu_die(unsigned int cpu)
---- 0023/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-12-28 14:50:06.000000000 +0900
-@@ -4,6 +4,7 @@
- extern struct sys_timer shmobile_timer;
- extern void shmobile_setup_console(void);
- extern void shmobile_secondary_vector(void);
-+extern int shmobile_platform_cpu_kill(unsigned int cpu);
- struct clk;
- extern int clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
---- 0023/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2011-12-28 14:48:58.000000000 +0900
-@@ -44,6 +44,11 @@ static void __init shmobile_smp_prepare_
- 		r8a7779_smp_prepare_cpus();
- }
- 
-+int shmobile_platform_cpu_kill(unsigned int cpu)
-+{
-+	return 1;
-+}
-+
- void __cpuinit platform_secondary_init(unsigned int cpu)
- {
- 	trace_hardirqs_off();
