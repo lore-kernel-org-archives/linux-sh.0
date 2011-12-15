@@ -1,57 +1,49 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Fri, 23 Dec 2011 12:27:32 +0000
-Subject: [PATCH 13/14] common: DMA-mapping: add WRITE_COMBINE attribute
-Message-Id: <1324643253-3024-14-git-send-email-m.szyprowski@samsung.com>
+From: Dave Martin <dave.martin@linaro.org>
+Date: Thu, 15 Dec 2011 15:53:52 +0000
+Subject: [PATCH v5 3/5] omap4: Unconditionally require l2x0 L2 cache controller support
+Message-Id: <1323964434-6764-4-git-send-email-dave.martin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+References: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
+In-Reply-To: <1323964434-6764-1-git-send-email-dave.martin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: linux-arm-kernel@lists.infradead.org
 
-DMA_ATTR_WRITE_COMBINE specifies that writes to the mapping may be
-buffered to improve performance. It will be used by the replacement for
-ARM/ARV32 specific dma_alloc_writecombine() function.
+If running in the Normal World on a TrustZone-enabled SoC, Linux
+does not have complete control over the L2 cache controller
+configuration.  The kernel cannot work reliably on such platforms
+without the l2x0 cache support code built in.
 
-Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+This patch unconditionally enables l2x0 support for the OMAP4 SoCs.
+
+Thanks to Rob Herring for this suggestion.  [1]
+
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2011-November/074495.html
+
+Signed-off-by: Dave Martin <dave.martin@linaro.org>
+Acked-by: Tony Lindgren <tony@atomide.com>
 ---
- Documentation/DMA-attributes.txt |   10 ++++++++++
- include/linux/dma-attrs.h        |    1 +
- 2 files changed, 11 insertions(+), 0 deletions(-)
+ arch/arm/mach-omap2/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/Documentation/DMA-attributes.txt b/Documentation/DMA-attributes.txt
-index b768cc0..811a5d4 100644
---- a/Documentation/DMA-attributes.txt
-+++ b/Documentation/DMA-attributes.txt
-@@ -31,3 +31,13 @@ may be weakly ordered, that is that reads and writes may pass each other.
- Since it is optional for platforms to implement DMA_ATTR_WEAK_ORDERING,
- those that do not will simply ignore the attribute and exhibit default
- behavior.
-+
-+DMA_ATTR_WRITE_COMBINE
-+----------------------
-+
-+DMA_ATTR_WRITE_COMBINE specifies that writes to the mapping may be
-+buffered to improve performance.
-+
-+Since it is optional for platforms to implement DMA_ATTR_WRITE_COMBINE,
-+those that do not will simply ignore the attribute and exhibit default
-+behavior.
-diff --git a/include/linux/dma-attrs.h b/include/linux/dma-attrs.h
-index 71ad34e..ada61e1 100644
---- a/include/linux/dma-attrs.h
-+++ b/include/linux/dma-attrs.h
-@@ -13,6 +13,7 @@
- enum dma_attr {
- 	DMA_ATTR_WRITE_BARRIER,
- 	DMA_ATTR_WEAK_ORDERING,
-+	DMA_ATTR_WRITE_COMBINE,
- 	DMA_ATTR_MAX,
- };
- 
+diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
+index bb1b670..94e568a 100644
+--- a/arch/arm/mach-omap2/Kconfig
++++ b/arch/arm/mach-omap2/Kconfig
+@@ -41,11 +41,11 @@ config ARCH_OMAP4
+ 	bool "TI OMAP4"
+ 	default y
+ 	depends on ARCH_OMAP2PLUS
++	select CACHE_L2X0
+ 	select CPU_V7
+ 	select ARM_GIC
+ 	select HAVE_SMP
+ 	select LOCAL_TIMERS if SMP
+-	select MIGHT_HAVE_CACHE_L2X0
+ 	select PL310_ERRATA_588369
+ 	select PL310_ERRATA_727915
+ 	select ARM_ERRATA_720789
 -- 
-1.7.1.569.g6f426
+1.7.4.1
 
