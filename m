@@ -1,71 +1,112 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 13 Dec 2011 16:36:03 +0000
-Subject: [PATCH 00/05] ARM: mach-shmobile: r8a7779 and Marzen V2
-Message-Id: <20111213163603.4096.10169.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 16 Dec 2011 01:55:04 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel: use renesas_usbhs instead of r8a66597_hcd
+Message-Id: <87hb11e0wa.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ARM: mach-shmobile: r8a7779 and Marzen V2
+Current renesas_usbhs driver can use both USB host/gadget.
+This patch removes current r8a66597_hcd driver settings,
+and adds renesas_usbhs host driver settings for mackerel USB1 port.
+You can still use this port as "gadget" with small modify.
 
-[PATCH 01/05] ARM: mach-shmobile: r8a7779 and Marzen base support V2
-[PATCH 02/05] ARM: mach-shmobile: r8a7779 PFC GPIO-only support V2
-[PATCH 03/05] ARM: mach-shmobile: r8a7779 PFC function support
-[PATCH 04/05] ARM: mach-shmobile: Marzen SCIF2/SCIF4 support
-[PATCH 05/05] ARM: mach-shmobile: Marzen LAN89218 support
-
-On the SoC-level simple things like the SCIF console, the TMU timer,
-the GIC interrupt controller, initial CPG clock framework code and
-now full PFC support are implemented. On the Marzen board the only
-code for now is support for SCIF2/SCIF4 and the LAN89218 ethernet
-chip.
-
-Changes since V1:
-- Various CPG and PFC changes have now been submitted separately
-- Local CPG and PFC workarounds have been dropped
-- The r8a7779 PFC code has been updated to fix incorrect register base address
-- PMMR support has been added to the PFC code
-- r8a7779 PFC function support has been added
-- The PFC function code is now used to configure SCIF2/SCIF4 pins
-- LAN89218 platform data and pin configuration via PFC function code
-
-People interested in mach-type entry and serial debug code can look at:
-[PATCH 00/07] ARM: mach-shmobile: r8a7779 and Marzen prototype V1
-
-Feel free to contact me privately for the following patch that may
-be rejected by mailing lists due to size issues:
-[PATCH 03/05] ARM: mach-shmobile: r8a7779 PFC function support
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/board-mackerel.c |   55 +++++--------------------------
+ 1 files changed, 9 insertions(+), 46 deletions(-)
 
- Again, will most likely clash with A1 support written by Morimoto-san.
- Built on top of linus rc- git with Kota2 patches destined for -rc.
-
- Depends on the following patches for CPG and PFC:
-  [PATCH 00/04] sh: clock / CPG ioremap() update
-  [PATCH 01/04] sh: extend clock struct with mapped_reg member
-  [PATCH 02/04] sh: use ioread32/iowrite32 and mapped_reg for mstp32
-  [PATCH 03/04] sh: use ioread32/iowrite32 and mapped_reg for div4
-  [PATCH 04/04] sh: use ioread32/iowrite32 and mapped_reg for div6
-  [PATCH] sh: pfc: ioremap() support
-  [PATCH 00/05] sh: pfc: Variable bitfield width and unlock reg patches
-  [PATCH 01/05] sh: pfc: Add gpio_read_bit() for data register access
-  [PATCH 02/05] sh: pfc: Convert index to field and value pair
-  [PATCH 03/05] sh: pfc: Add config_reg_helper() function
-  [PATCH 04/05] sh: pfc: Variable bitfield width config register support
-  [PATCH 05/05] sh: pfc: Unlock register support
-
- arch/arm/mach-shmobile/Kconfig                |   12 
- arch/arm/mach-shmobile/Makefile               |    4 
- arch/arm/mach-shmobile/board-marzen.c         |  157 +
- arch/arm/mach-shmobile/clock-r8a7779.c        |  105 
- arch/arm/mach-shmobile/include/mach/common.h  |    6 
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  327 +++
- arch/arm/mach-shmobile/intc-r8a7779.c         |   58 
- arch/arm/mach-shmobile/pfc-r8a7779.c          | 2647 ++++++++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7779.c        |  231 ++
- 9 files changed, 3545 insertions(+), 2 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 9c5e598..07f8886 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -676,51 +676,16 @@ static struct platform_device usbhs0_device = {
+  * Use J30 to select between Host and Function. This setting
+  * can however not be detected by software. Hotplug of USBHS1
+  * is provided via IRQ8.
++ *
++ * Current USB1 works as "USB Host".
++ *  - set J30 "short"
++ *
++ * If you want to use it as "USB gadget",
++ *  - J30 "open"
++ *  - modify usbhs1_get_id() USBHS_HOST -> USBHS_GADGET
++ *  - add .get_vbus = usbhs_get_vbus in usbhs1_private
+  */
+ #define IRQ8 evt2irq(0x0300)
+-
+-/* USBHS1 USB Host support via r8a66597_hcd */
+-static void usb1_host_port_power(int port, int power)
+-{
+-	if (!power) /* only power-on is supported for now */
+-		return;
+-
+-	/* set VBOUT/PWEN and EXTLP1 in DVSTCTR */
+-	__raw_writew(__raw_readw(0xE68B0008) | 0x600, 0xE68B0008);
+-}
+-
+-static struct r8a66597_platdata usb1_host_data = {
+-	.on_chip	= 1,
+-	.port_power	= usb1_host_port_power,
+-};
+-
+-static struct resource usb1_host_resources[] = {
+-	[0] = {
+-		.name	= "USBHS1",
+-		.start	= 0xe68b0000,
+-		.end	= 0xe68b00e6 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0x1ce0) /* USB1_USB1I0 */,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device usb1_host_device = {
+-	.name	= "r8a66597_hcd",
+-	.id	= 1,
+-	.dev = {
+-		.dma_mask		= NULL,         /*  not use dma */
+-		.coherent_dma_mask	= 0xffffffff,
+-		.platform_data		= &usb1_host_data,
+-	},
+-	.num_resources	= ARRAY_SIZE(usb1_host_resources),
+-	.resource	= usb1_host_resources,
+-};
+-
+-/* USBHS1 USB Function support via renesas_usbhs */
+-
+ #define USB_PHY_MODE		(1 << 4)
+ #define USB_PHY_INT_EN		((1 << 3) | (1 << 2))
+ #define USB_PHY_ON		(1 << 1)
+@@ -776,7 +741,7 @@ static void usbhs1_hardware_exit(struct platform_device *pdev)
+ 
+ static int usbhs1_get_id(struct platform_device *pdev)
+ {
+-	return USBHS_GADGET;
++	return USBHS_HOST;
+ }
+ 
+ static u32 usbhs1_pipe_cfg[] = {
+@@ -807,7 +772,6 @@ static struct usbhs_private usbhs1_private = {
+ 			.hardware_exit	= usbhs1_hardware_exit,
+ 			.get_id		= usbhs1_get_id,
+ 			.phy_reset	= usbhs_phy_reset,
+-			.get_vbus	= usbhs_get_vbus,
+ 		},
+ 		.driver_param = {
+ 			.buswait_bwait	= 4,
+@@ -1299,7 +1263,6 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&lcdc_device,
+-	&usb1_host_device,
+ 	&usbhs1_device,
+ 	&usbhs0_device,
+ 	&leds_device,
+-- 
+1.7.5.4
 
