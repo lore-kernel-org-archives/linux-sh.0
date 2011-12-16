@@ -1,215 +1,103 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 14 Dec 2011 18:31:52 +0000
-Subject: [PATCH 2/4 v2] mmc: sh_mmcif: cosmetic clean up
-Message-Id: <1323887514-12650-3-git-send-email-g.liakhovetski@gmx.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 16 Dec 2011 00:11:13 +0000
+Subject: [Update][PATCH 1/5] PM / shmobile: Don't include SH7372's INTCS in syscore suspend/resume
+Message-Id: <201112160111.14170.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1111301553330.22197@axis700.grange>
+References: <201112100042.45168.rjw@sisk.pl> <201112160110.09124.rjw@sisk.pl>
+In-Reply-To: <201112160110.09124.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
 
-This patch doesn't introduce any functional changes, it only simplifies
-some code fragments, removes superfluous parameters, fixes typos.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Since the SH7372's INTCS in included into syscore suspend/resume,
+which causes the chip to be accessed when PM domains have been
+turned off during system suspend, the A4R domain containing the
+INTCS has to stay on during system sleep, which is suboptimal
+from the power consumption point of view.
+
+For this reason, add a new INTC flag, skip_syscore_suspend, to mark
+the INTCS for intc_suspend() and intc_resume(), so that they don't
+touch it.  This allows the A4R domain to be turned off during
+system suspend and the INTCS state is resrored during system
+resume by the A4R's "power on" code.
+
+Suggested-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mmcif.c |   79 ++++++++++++++++++------------------------
- 1 files changed, 34 insertions(+), 45 deletions(-)
+ arch/arm/mach-shmobile/intc-sh7372.c |    1 +
+ drivers/sh/intc/core.c               |    8 ++++++++
+ drivers/sh/intc/internals.h          |    1 +
+ include/linux/sh_intc.h              |    1 +
+ 4 files changed, 11 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 63559d6..d6a534c 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -123,6 +123,11 @@
- #define MASK_MRBSYTO		(1 << 1)
- #define MASK_MRSPTO		(1 << 0)
- 
-+#define MASK_START_CMD		(MASK_MCMDVIO | MASK_MBUFVIO | MASK_MWDATERR | \
-+				 MASK_MRDATERR | MASK_MRIDXERR | MASK_MRSPERR | \
-+				 MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO | \
-+				 MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO)
-+
- /* CE_HOST_STS1 */
- #define STS1_CMDSEQ		(1 << 31)
- 
-@@ -173,8 +178,8 @@ struct sh_mmcif_host {
- 	long timeout;
- 	void __iomem *addr;
- 	struct completion intr_wait;
-+	spinlock_t lock;		/* protect sh_mmcif_host::state */
- 	enum mmcif_state state;
--	spinlock_t lock;
- 	bool power;
- 	bool card_present;
- 
-@@ -409,7 +414,7 @@ static void sh_mmcif_sync_reset(struct sh_mmcif_host *host)
- static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
- {
- 	u32 state1, state2;
--	int ret, timeout = 10000000;
-+	int ret, timeout;
- 
- 	host->sd_error = false;
- 
-@@ -421,31 +426,30 @@ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
- 	if (state1 & STS1_CMDSEQ) {
- 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, CMD_CTRL_BREAK);
- 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, ~CMD_CTRL_BREAK);
--		while (1) {
--			timeout--;
--			if (timeout < 0) {
--				dev_err(&host->pd->dev,
--					"Forceed end of command sequence timeout err\n");
--				return -EIO;
--			}
-+		for (timeout = 10000000; timeout; timeout--) {
- 			if (!(sh_mmcif_readl(host->addr, MMCIF_CE_HOST_STS1)
--								& STS1_CMDSEQ))
-+			      & STS1_CMDSEQ))
- 				break;
- 			mdelay(1);
- 		}
-+		if (!timeout) {
-+			dev_err(&host->pd->dev,
-+				"Forced end of command sequence timeout err\n");
-+			return -EIO;
-+		}
- 		sh_mmcif_sync_reset(host);
- 		dev_dbg(&host->pd->dev, "Forced end of command sequence\n");
- 		return -EIO;
- 	}
- 
- 	if (state2 & STS2_CRC_ERR) {
--		dev_dbg(&host->pd->dev, ": Happened CRC error\n");
-+		dev_dbg(&host->pd->dev, ": CRC error\n");
- 		ret = -EIO;
- 	} else if (state2 & STS2_TIMEOUT_ERR) {
--		dev_dbg(&host->pd->dev, ": Happened Timeout error\n");
-+		dev_dbg(&host->pd->dev, ": Timeout\n");
- 		ret = -ETIMEDOUT;
- 	} else {
--		dev_dbg(&host->pd->dev, ": Happened End/Index error\n");
-+		dev_dbg(&host->pd->dev, ": End/Index error\n");
- 		ret = -EIO;
- 	}
- 	return ret;
-@@ -668,55 +672,44 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
- static int sh_mmcif_data_trans(struct sh_mmcif_host *host,
- 				struct mmc_request *mrq, u32 opc)
- {
--	int ret;
--
- 	switch (opc) {
- 	case MMC_READ_MULTIPLE_BLOCK:
--		ret = sh_mmcif_multi_read(host, mrq);
--		break;
-+		return sh_mmcif_multi_read(host, mrq);
- 	case MMC_WRITE_MULTIPLE_BLOCK:
--		ret = sh_mmcif_multi_write(host, mrq);
--		break;
-+		return sh_mmcif_multi_write(host, mrq);
- 	case MMC_WRITE_BLOCK:
--		ret = sh_mmcif_single_write(host, mrq);
--		break;
-+		return sh_mmcif_single_write(host, mrq);
- 	case MMC_READ_SINGLE_BLOCK:
- 	case MMC_SEND_EXT_CSD:
--		ret = sh_mmcif_single_read(host, mrq);
--		break;
-+		return sh_mmcif_single_read(host, mrq);
- 	default:
- 		dev_err(&host->pd->dev, "UNSUPPORTED CMD = d'%08d\n", opc);
--		ret = -EINVAL;
--		break;
-+		return -EINVAL;
- 	}
--	return ret;
- }
- 
- static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
--			struct mmc_request *mrq, struct mmc_command *cmd)
-+			       struct mmc_request *mrq)
- {
-+	struct mmc_command *cmd = mrq->cmd;
- 	long time;
--	int ret = 0, mask = 0;
--	u32 opc = cmd->opcode;
-+	int ret = 0;
-+	u32 mask, opc = cmd->opcode;
- 
- 	switch (opc) {
--	/* respons busy check */
-+	/* response busy check */
- 	case MMC_SWITCH:
- 	case MMC_STOP_TRANSMISSION:
- 	case MMC_SET_WRITE_PROT:
- 	case MMC_CLR_WRITE_PROT:
- 	case MMC_ERASE:
- 	case MMC_GEN_CMD:
--		mask = MASK_MRBSYE;
-+		mask = MASK_START_CMD | MASK_MRBSYE;
- 		break;
- 	default:
--		mask = MASK_MCRSPE;
-+		mask = MASK_START_CMD | MASK_MCRSPE;
- 		break;
- 	}
--	mask |=	MASK_MCMDVIO | MASK_MBUFVIO | MASK_MWDATERR |
--		MASK_MRDATERR | MASK_MRIDXERR | MASK_MRSPERR |
--		MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO |
--		MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO;
- 
- 	if (host->data) {
- 		sh_mmcif_writel(host->addr, MMCIF_CE_BLOCK_SET, 0);
-@@ -784,8 +777,9 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
- }
- 
- static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
--		struct mmc_request *mrq, struct mmc_command *cmd)
-+			      struct mmc_request *mrq)
- {
-+	struct mmc_command *cmd = mrq->stop;
- 	long time;
- 
- 	if (mrq->cmd->opcode = MMC_READ_MULTIPLE_BLOCK)
-@@ -854,11 +848,11 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 				sh_mmcif_start_dma_tx(host);
- 		}
- 	}
--	sh_mmcif_start_cmd(host, mrq, mrq->cmd);
-+	sh_mmcif_start_cmd(host, mrq);
- 	host->data = NULL;
- 
- 	if (!mrq->cmd->error && mrq->stop)
--		sh_mmcif_stop_cmd(host, mrq, mrq->stop);
-+		sh_mmcif_stop_cmd(host, mrq);
- 	host->state = STATE_IDLE;
- 	mmc_request_done(mmc, mrq);
- }
-@@ -935,11 +929,6 @@ static struct mmc_host_ops sh_mmcif_ops = {
- 	.get_cd		= sh_mmcif_get_cd,
+Index: linux/include/linux/sh_intc.h
+=================================--- linux.orig/include/linux/sh_intc.h
++++ linux/include/linux/sh_intc.h
+@@ -95,6 +95,7 @@ struct intc_desc {
+ 	unsigned int num_resources;
+ 	intc_enum force_enable;
+ 	intc_enum force_disable;
++	bool skip_syscore_suspend;
+ 	struct intc_hw_desc hw;
  };
  
--static void sh_mmcif_detect(struct mmc_host *mmc)
--{
--	mmc_detect_change(mmc, 0);
--}
--
- static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- {
- 	struct sh_mmcif_host *host = dev_id;
-@@ -1101,7 +1090,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 		goto clean_up3;
- 	}
+Index: linux/arch/arm/mach-shmobile/intc-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/intc-sh7372.c
++++ linux/arch/arm/mach-shmobile/intc-sh7372.c
+@@ -535,6 +535,7 @@ static struct resource intcs_resources[]
+ static struct intc_desc intcs_desc __initdata = {
+ 	.name = "sh7372-intcs",
+ 	.force_enable = ENABLED_INTCS,
++	.skip_syscore_suspend = true,
+ 	.resource = intcs_resources,
+ 	.num_resources = ARRAY_SIZE(intcs_resources),
+ 	.hw = INTC_HW_DESC(intcs_vectors, intcs_groups, intcs_mask_registers,
+Index: linux/drivers/sh/intc/core.c
+=================================--- linux.orig/drivers/sh/intc/core.c
++++ linux/drivers/sh/intc/core.c
+@@ -354,6 +354,8 @@ int __init register_intc_controller(stru
+ 	if (desc->force_enable)
+ 		intc_enable_disable_enum(desc, d, desc->force_enable, 1);
  
--	sh_mmcif_detect(host->mmc);
-+	mmc_detect_change(host->mmc, 0);
++	d->skip_suspend = desc->skip_syscore_suspend;
++
+ 	nr_intc_controllers++;
  
- 	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
- 	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
--- 
-1.7.2.5
+ 	return 0;
+@@ -386,6 +388,9 @@ static int intc_suspend(void)
+ 	list_for_each_entry(d, &intc_list, list) {
+ 		int irq;
+ 
++		if (d->skip_suspend)
++			continue;
++
+ 		/* enable wakeup irqs belonging to this intc controller */
+ 		for_each_active_irq(irq) {
+ 			struct irq_data *data;
+@@ -409,6 +414,9 @@ static void intc_resume(void)
+ 	list_for_each_entry(d, &intc_list, list) {
+ 		int irq;
+ 
++		if (d->skip_suspend)
++			continue;
++
+ 		for_each_active_irq(irq) {
+ 			struct irq_data *data;
+ 			struct irq_chip *chip;
+Index: linux/drivers/sh/intc/internals.h
+=================================--- linux.orig/drivers/sh/intc/internals.h
++++ linux/drivers/sh/intc/internals.h
+@@ -67,6 +67,7 @@ struct intc_desc_int {
+ 	struct intc_window *window;
+ 	unsigned int nr_windows;
+ 	struct irq_chip chip;
++	bool skip_suspend;
+ };
+ 
+ 
 
