@@ -1,97 +1,145 @@
-From: "J. Zakia" <downsyl4@aol.com>
-Date: Tue, 13 Dec 2011 15:46:28 +0000
-Subject: Confirmation from Libyan embassy
-Message-Id: <201112131549.pBDFn2i9016264@imr-db02.mx.aol.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="----=_NextPart_000_002D_01C2AA85.4ED9BAB2"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 16 Dec 2011 00:12:06 +0000
+Subject: [Update][PATCH 2/5] PM / shmobile: Remove the stay_on flag from SH7372's PM domains
+Message-Id: <201112160112.06951.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sctp@vger.kernel.org
+References: <201112100042.45168.rjw@sisk.pl> <201112160110.09124.rjw@sisk.pl>
+In-Reply-To: <201112160110.09124.rjw@sisk.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
 
-This is a multi-part message in MIME format.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-------=_NextPart_000_002D_01C2AA85.4ED9BAB2
-Content-Type: text/plain; charset="windows-1251"
-Content-Transfer-Encoding: base64
+SH7372 uses two independent mechanisms for ensuring that power
+domains will never be turned off: the stay_on flag and the "always
+on" domain governor.  Moreover, the "always on" governor is only taken
+into accout by runtime PM code paths, while the stay_on flag affects
+all attempts to turn the given domain off.  Thus setting the stay_on
+flag causes the "always on" governor to be unnecessary, which is
+quite confusing.
 
-SW4gYSBicmllZiBpbnRyb2R1Y3Rpb24sIEkgYW0gYW4gZW1iYXNzeSBhdHRhY2jpIHdpdGggdGhl
-IExpYnlhbiBHb3Zlcm5tZW50IGluIHRoZSBIYWd1ZSwgTmV0aGVybGFuZHMuClBsZWFzZSBraW5k
-bHkgc2VlIHRoZSBhdHRhY2htZW50IGZvciBtb3JlIGRldGFpbHMgYW5kIHJlc3BvbmQgaW1tZWRp
-YXRlbHkK
+However, the stay_on flag is currently only set for the A3SP PM
+domain and only if console_suspend_enabled, so it may be replaced
+by checking console_suspend_enabled directly in the A3SP's
+.suspend() routine.  [This requires domain .suspend() to return
+a result, but that is a minor modification.]
 
-------=_NextPart_000_002D_01C2AA85.4ED9BAB2
-Content-Type: application/octet-stream;
-	name="attachment.rtf"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
-	filename="attachment.rtf"
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Magnus Damm <damm@opensource.se>
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    3 --
+ arch/arm/mach-shmobile/pm-sh7372.c           |   36 ++++++++++++---------------
+ 2 files changed, 18 insertions(+), 21 deletions(-)
 
-e1xydGYxXGFuc2lcYW5zaWNwZzEyNTJcZGVmZjBcZGVmbGFuZzEwMzN7XGZv
-bnR0Ymx7XGYwXGZzd2lzc1xmY2hhcnNldDAgQXJpYWw7fX0NCntcKlxnZW5l
-cmF0b3IgTXNmdGVkaXQgNS40MS4yMS4yNTAwO31cdmlld2tpbmQ0XHVjMVxw
-YXJkXGYwXGZzMjAgSmltbXkgWmFraWEgU2FobGlccGFyDQpFbWJhc3N5IG9m
-IExpYnlhXHBhcg0KUGFya3dlZyAxNSwgMjU4NUpIXHBhcg0KVGhlIEhhZ3Vl
-LCBUaGUgTmV0aGVybGFuZHMgIFxwYXINClxwYXINCjEzdGggRGVjLiAyMDEx
-XHBhcg0KIFxwYXINCkVtYmFzc3kgb2YgTGlieWEsIFRoZSBIYWd1ZSwgTmV0
-aGVybGFuZHM7IEZ1bmQgVHJhbnNmZXIgQXNzaXN0YW5jZVxwYXINCiBccGFy
-DQpEZWFyIFNpcixccGFyDQogXHBhcg0KSSBoYXZlIGRlY2lkZWQgdG8gY29u
-dGFjdCB5b3UgdG8gYXNzaXN0IHVzIHRyYW5zZmVyIGFuZCBkZXBvc2l0IHRo
-aXMgc3VtIG9mIG1vbmV5IG1lbnRpb25lZCBiZWxvdyBpbnRvIHlvdXIgcGVy
-c29uYWwgYWNjb3VudCBvciBhbnkgb3RoZXIgYWNjb3VudCB5b3UgZGVjaWRl
-IHNhZmUuXHBhcg0KIFxwYXINCkluIGEgYnJpZWYgaW50cm9kdWN0aW9uLCBJ
-IGFtIGFuIGVtYmFzc3kgYXR0YWNoXCdlOSB3aXRoIHRoZSBMaWJ5YW4gR292
-ZXJubWVudCBpbiBUaGUgSGFndWUsIE5ldGhlcmxhbmRzLiBXZSBhcmUgY3Vy
-cmVudGx5IGF1ZGl0aW5nIGFuZCByZWN0aWZ5aW5nIHRoZSBhY2NvdW50IG9m
-IG91ciBGb3JlaWduIE1pc3Npb25zIGFuZCBFbWJhc3NpZXMgYWJyb2FkIGFu
-ZCBpbiBwYXJ0aWN1bGFyIGluIEV1cm9wZS4gVGhpcyBleGNpc2UgaXMgbmVj
-ZXNzaXRhdGVkIGJ5IHRoZSBvbi1nb2luZyBwb2xpdGljYWwgY2hhbmdlIGlu
-IG15IGNvdW50cnkgdW5kZXIgdGhlIE5hdGlvbmFsIFRyYW5zaXRpb25hbCBD
-b3VuY2lsIChOVEMpLiBJdCBpcyBleHBlY3RlZCB0aGF0IHRoZXJlIHdpbGwg
-YmUgbmV3IEFtYmFzc2Fkb3JpYWwgcG9zdGluZyBpbiB0aGUgY29taW5nIG1v
-bnRocyB3aGljaCB3aWxsIGRlZmluaXRlbHkgYWZmZWN0IHRoZSBwcmVzZW50
-IEFtYmFzc2Fkb3IgYW5kIGFsbCBzdGFmZiBvZiBMaWJ5YSBFbWJhc3N5IGlu
-IFRoZSBOZXRoZXJsYW5kcy5ccGFyDQogXHBhcg0KSG93ZXZlciwgaW4gdGhl
-IGNvdXJzZSBvZiBvdXIgYXVkaXRpbmcsIHdlIGhhdmUgaHVnZSBzdW0gb2Yg
-ZXhjZXNzIG1vbmV5IGluIHRoZSB0dW5lIG9mIFVTJDgsNTAwLDAwMC4wMCAo
-RWlnaHQgTWlsbGlvbiwgRml2ZSBIdW5kcmVkIFRob3VzYW5kIFUuUyBEb2xs
-YXJzKSB3aGljaCBpcyBseWluZyBsb29zZSBhbmQgdW5jbGFpbWVkIGluIG9u
-ZSBvZiB0aGUgbG9jYWwgYmFua3MgaGVyZSBpbiBUaGUgTmV0aGVybGFuZHMu
-IFdlIGhhdmUgcXVpY2tseSBhbmQgc21hcnRseSBpbiBjb2xsYWJvcmF0aW9u
-IHdpdGggdGhlIEFtYmFzc2Fkb3IgYW5kIHNvbWUgYXV0aG9yaXRpZXMgaW4g
-dGhlIE5hdGlvbmFsIFRyYW5zaXRpb25hbCBDb3VuY2lsIChOVEMpIGRlY2lk
-ZWQgdG8ga2VlcCB0aGlzIG1vbmV5IHRvIG91cnNlbHZlcy4gV2UgYXJlIHRh
-a2luZyBhZHZhbnRhZ2Ugb2Ygb3VyIHBvc2l0aW9uIGFuZCB0aGF0IG9mIHRo
-ZSBwb2xpdGljYWwgaW5zdGFiaWxpdHkgaW4gbXkgY291bnRyeSB0byBkbyB0
-aGlzIGtub3dpbmcgdGhhdCBub2JvZHkgd2lsbCBmaW5kIG91dC4gSG93ZXZl
-ciwgd2Ugd291bGQgbGlrZSB0byBtb3ZlIHRoaXMgbW9uZXkgZnVydGhlciB0
-byBhbm90aGVyIGZvcmVpZ24gYWNjb3VudCwgcHJlZmVyYWJseSBvdXRzaWRl
-IFRoZSBOZXRoZXJsYW5kcy5ccGFyDQogXHBhcg0KVG8gdGhpcyBlZmZlY3Qs
-IGFuZCBmb3IgcmVhc29uIG9mIGFub255bWl0eSwgd2UgaGF2ZSBjaG9zZW4g
-eW91IHRocm91Z2ggdGhlIGludGVybmF0aW9uYWwgc2VhcmNoIGRpcmVjdG9y
-eSB0byBhc3Npc3QgdXMgaW4gdHJhbnNmZXJyaW5nIGFuZCBkZXBvc2l0aW5n
-IHRoaXMgbW9uZXkgaW4geW91ciBwZXJzb25hbCBiYW5rIGFjY291bnQgb3Ig
-YW55IG90aGVyIGFjY291bnQgeW91IGRlZW1lZCBzYWZlci4gVGhpcyByZWNv
-bW1lbmRhdGlvbiBpcyBiYXNlZCBvbiB0aGUgZmFjdCB0aGF0IHlvdSB3aWxs
-IG5vdCBiZXRyYXkgdGhlIHRydXN0IGFuZCBjb25maWRlbmNlIHdlIGFyZSBy
-ZXBvc2luZyBvbiB5b3UuIFdlIGhhdmUgZGVjaWRlZCB0aGVyZWFmdGVyLCB0
-byBnaXZlIHlvdSAzMCUgb2YgdGhlIFVTJDgsNTAwLDAwMC4wMCBmb3IgeW91
-ciBhc3Npc3RhbmNlIGFuZCBjb3Jyb2JvcmF0aW9uIHdoaWxlIHRoZSByZXN0
-IDcwJSB3aWxsIGJlIHNhZmVseSBrZXB0IGZvciB1cy5ccGFyDQogXHBhcg0K
-UGxlYXNlIGtpbmRseSBpbmRpY2F0ZSB5b3VyIGludGVyZXN0IHRvIGFzc2lz
-dCB1cyBrZWVwIHRoaXMgbW9uZXkgaW4geW91ciBhY2NvdW50IGFzIHNvb24g
-YXMgcG9zc2libGUuIEl0IGlzIGFsc28gbXkgcGxlYXN1cmUgdG8gaW5mb3Jt
-IHlvdSB0aGF0IGV2ZXJ5IGFycmFuZ2VtZW50IHRvIHJlbGVhc2UgdGhlIG1v
-bmV5IGZyb20gdGhlIGJhbmsgaGVyZSBoYXMgYmVlbiBjb25jbHVkZWQuIFRo
-aXMgYnVzaW5lc3MgaXMgdG90YWxseSByaXNrIGZyZWUuXHBhcg0KIFxwYXIN
-CkZpbmFsbHksIHdlIGV4cGVjdCB5b3UgaW4gY29uZmlkZW5jZSBhbmQgdHJ1
-c3QgdG8ga2VlcCBldmVyeSBhc3BlY3Qgb2YgdGhpcyB0cmFuc2FjdGlvbiBz
-ZWNyZXQgYW5kIGNvbmZpZGVudGlhbCBhcyBhbnkgbWlzdGFrZSB3aWxsIHB1
-dCBteSBmdXR1cmUgY2FyZWVyIGluIGplb3BhcmR5LiBJIG1heSBpbnZpdGUg
-eW91IG9yIHZpc2l0IHlvdSBmb3Igb25lIG9uIG9uZSBkaXNjdXNzaW9uIGFu
-ZCBwZXJmZWN0aW9uIG9mIHRoZSBkZWFsIGFzIHNvb24gSSBjb25maXJtIHRo
-YXQgeW91IGNhbiBoYW5kbGUgdGhlIHRyYW5zYWN0aW9uLlxwYXINCiBccGFy
-DQpUaGFua3MgZm9yIHlvdXIgYW50aWNpcGF0ZWQgY28tb3BlcmF0aW9uLCB3
-aGlsZSB3YWl0aW5nIGZvciB5b3VyIGFjY2VwdGFuY2UgdG8gYXNzaXN0IHVz
-LiBccGFyDQogXHBhcg0KWW91cnMgc2luY2VyZWx5LFxwYXINCiAgXHBhcg0K
-SmltbXkgWmFraWEgU2FobGlccGFyDQp9DQoA
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -480,11 +480,10 @@ struct platform_device;
+ struct sh7372_pm_domain {
+ 	struct generic_pm_domain genpd;
+ 	struct dev_power_governor *gov;
+-	void (*suspend)(void);
++	int (*suspend)(void);
+ 	void (*resume)(void);
+ 	unsigned int bit_shift;
+ 	bool no_debug;
+-	bool stay_on;
+ };
+ 
+ static inline struct sh7372_pm_domain *to_sh7372_pd(struct generic_pm_domain *d)
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -82,11 +82,12 @@ static int pd_power_down(struct generic_
+ 	struct sh7372_pm_domain *sh7372_pd = to_sh7372_pd(genpd);
+ 	unsigned int mask = 1 << sh7372_pd->bit_shift;
+ 
+-	if (sh7372_pd->suspend)
+-		sh7372_pd->suspend();
++	if (sh7372_pd->suspend) {
++		int ret = sh7372_pd->suspend();
+ 
+-	if (sh7372_pd->stay_on)
+-		return 0;
++		if (ret)
++			return ret;
++	}
+ 
+ 	if (__raw_readl(PSTR) & mask) {
+ 		unsigned int retry_count;
+@@ -113,9 +114,6 @@ static int __pd_power_up(struct sh7372_p
+ 	unsigned int retry_count;
+ 	int ret = 0;
+ 
+-	if (sh7372_pd->stay_on)
+-		goto out;
+-
+ 	if (__raw_readl(PSTR) & mask)
+ 		goto out;
+ 
+@@ -148,10 +146,11 @@ static int pd_power_up(struct generic_pm
+ 	 return __pd_power_up(to_sh7372_pd(genpd), true);
+ }
+ 
+-static void sh7372_a4r_suspend(void)
++static int sh7372_a4r_suspend(void)
+ {
+ 	sh7372_intcs_suspend();
+ 	__raw_writel(0x300fffff, WUPRMSK); /* avoid wakeup */
++	return 0;
+ }
+ 
+ static bool pd_active_wakeup(struct device *dev)
+@@ -243,7 +242,6 @@ struct sh7372_pm_domain sh7372_a4r = {
+ 	.gov = &pm_domain_always_on_gov,
+ 	.suspend = sh7372_a4r_suspend,
+ 	.resume = sh7372_intcs_resume,
+-	.stay_on = true,
+ };
+ 
+ struct sh7372_pm_domain sh7372_a3rv = {
+@@ -256,21 +254,23 @@ struct sh7372_pm_domain sh7372_a3ri = {
+ 	.bit_shift = 8,
+ };
+ 
++static int sh7372_a3sp_suspend(void)
++{
++	/*
++	 * Serial consoles make use of SCIF hardware located in A3SP,
++	 * keep such power domain on if "no_console_suspend" is set.
++	 */
++	return console_suspend_enabled ? -EBUSY : 0;
++}
++
+ struct sh7372_pm_domain sh7372_a3sp = {
+ 	.genpd.name = "A3SP",
+ 	.bit_shift = 11,
+ 	.gov = &pm_domain_always_on_gov,
+ 	.no_debug = true,
++	.suspend = sh7372_a3sp_suspend,
+ };
+ 
+-static void sh7372_a3sp_init(void)
+-{
+-	/* serial consoles make use of SCIF hardware located in A3SP,
+-	 * keep such power domain on if "no_console_suspend" is set.
+-	 */
+-	sh7372_a3sp.stay_on = !console_suspend_enabled;
+-}
+-
+ struct sh7372_pm_domain sh7372_a3sg = {
+ 	.genpd.name = "A3SG",
+ 	.bit_shift = 13,
+@@ -514,8 +514,6 @@ void __init sh7372_pm_init(void)
+ 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+ 	__raw_writel(0, PDNSEL);
+ 
+-	sh7372_a3sp_init();
+-
+ 	sh7372_suspend_init();
+ 	sh7372_cpuidle_init();
+ }
 
-------=_NextPart_000_002D_01C2AA85.4ED9BAB2--
