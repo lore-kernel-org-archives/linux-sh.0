@@ -1,40 +1,67 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Fri, 23 Dec 2011 12:27:30 +0000
-Subject: [PATCH 11/14] common: dma-mapping: remove old alloc_coherent and
-Message-Id: <1324643253-3024-12-git-send-email-m.szyprowski@samsung.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 16 Dec 2011 00:13:35 +0000
+Subject: [Update][PATCH 4/5] PM / input / touchscreen: Make st1232 use device PM QoS constraints
+Message-Id: <201112160113.36166.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+References: <201112100042.45168.rjw@sisk.pl> <201112160110.09124.rjw@sisk.pl>
+In-Reply-To: <201112160110.09124.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
 
-Remove old, unused alloc_coherent and free_coherent methods from
-dma_map_ops structure.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Make the st1232 driver use dev_pm_qos_add_ancestor_request() to
+add a device PM QoS latency constraint for the controller it
+depends on, so that the controller won't go into an overly deep
+low-power state when the touchscreen has to be particularly
+responsive (e.g. when the user moves his or her finger on it).
+
+This change is based on a prototype patch from Guennadi Liakhovetski.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- include/linux/dma-mapping.h |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
+ drivers/input/touchscreen/st1232.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
-index 8cc7f95..2fc413a 100644
---- a/include/linux/dma-mapping.h
-+++ b/include/linux/dma-mapping.h
-@@ -9,10 +9,6 @@
- #include <linux/scatterlist.h>
+Index: linux/drivers/input/touchscreen/st1232.c
+=================================--- linux.orig/drivers/input/touchscreen/st1232.c
++++ linux/drivers/input/touchscreen/st1232.c
+@@ -23,6 +23,7 @@
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
++#include <linux/pm_qos.h>
+ #include <linux/slab.h>
+ #include <linux/types.h>
  
- struct dma_map_ops {
--	void* (*alloc_coherent)(struct device *dev, size_t size,
--				dma_addr_t *dma_handle, gfp_t gfp);
--	void (*free_coherent)(struct device *dev, size_t size,
--			      void *vaddr, dma_addr_t dma_handle);
- 	void* (*alloc)(struct device *dev, size_t size,
- 				dma_addr_t *dma_handle, gfp_t gfp,
- 				struct dma_attrs *attrs);
--- 
-1.7.1.569.g6f426
+@@ -46,6 +47,7 @@ struct st1232_ts_data {
+ 	struct i2c_client *client;
+ 	struct input_dev *input_dev;
+ 	struct st1232_ts_finger finger[MAX_FINGERS];
++	struct dev_pm_qos_request low_latency_req;
+ };
+ 
+ static int st1232_ts_read_data(struct st1232_ts_data *ts)
+@@ -118,8 +120,17 @@ static irqreturn_t st1232_ts_irq_handler
+ 	}
+ 
+ 	/* SYN_MT_REPORT only if no contact */
+-	if (!count)
++	if (!count) {
+ 		input_mt_sync(input_dev);
++		if (ts->low_latency_req.dev) {
++			dev_pm_qos_remove_request(&ts->low_latency_req);
++			ts->low_latency_req.dev = NULL;
++		}
++	} else if (!ts->low_latency_req.dev) {
++		/* First contact, request 100 us latency. */
++		dev_pm_qos_add_ancestor_request(&ts->client->dev,
++						&ts->low_latency_req, 100);
++	}
+ 
+ 	/* SYN_REPORT */
+ 	input_sync(input_dev);
 
