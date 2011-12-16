@@ -1,7 +1,7 @@
 From: David Brown <davidb@codeaurora.org>
-Date: Thu, 15 Dec 2011 18:14:50 +0000
+Date: Fri, 16 Dec 2011 00:31:11 +0000
 Subject: Re: [PATCH v4 REPOST 2/5] ARM: SMP: Refactor Kconfig to be more
-Message-Id: <20111215181450.GA22330@codeaurora.org>
+Message-Id: <20111216003111.GA8811@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1323862781-3465-1-git-send-email-dave.martin@linaro.org>
  <1323862781-3465-3-git-send-email-dave.martin@linaro.org>
@@ -19,12 +19,10 @@ On Wed, Dec 14, 2011 at 11:39:38AM +0000, Dave Martin wrote:
 > to the individual machines.  To enable this, a new HAVE_SMP config
 > option is introduced to allow machines to indicate that they can
 > run in a SMP configuration.
+> 
+>  arch/arm/mach-msm/Kconfig      |    1 +
 
-There still seem to be several people and lists from the
-get_maintainer.pl output that are missing.  Russell should be
-included, as well as the MSM maintainers and that list.
-
-David
+Acked-by: David Brown <davidb@codeaurora.org>
 
 -- 
 Sent by an employee of the Qualcomm Innovation Center, Inc.
