@@ -1,86 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:44 +0000
-Subject: [PATCH 49/57] arm: mach-shmobile: Don't set MERAM ICB numbers in platform data
-Message-Id: <1323784972-24205-50-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 20 Dec 2011 08:53:52 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: clock-r8a7779: clkz/clkzs support
+Message-Id: <87zken62ub.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The marker and cache ICBs are now allocated automatically, there's no
-need to specify them manually anymore.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    8 --------
- arch/arm/mach-shmobile/board-mackerel.c |    8 --------
- 2 files changed, 0 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index d3896dc..d6d9e0f 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -589,13 +589,9 @@ static const struct fb_videomode ap4evb_lcdc_modes[] = {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 29c3306..b4b0e8c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -102,9 +102,35 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP014] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 14, 0), /* TMU2 */
  };
- static struct sh_mobile_meram_cfg lcd_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 28,
--		.cache_icb      = 24,
- 		.meram_size     = 0x40,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 29,
--		.cache_icb      = 25,
- 		.meram_size     = 0x40,
- 	},
- };
-@@ -858,13 +854,9 @@ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
  
- static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 30,
--		.cache_icb      = 26,
- 		.meram_size     = 0x100,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 31,
--		.cache_icb      = 27,
- 		.meram_size     = 0x100,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index d555d9e..6e0db88 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -376,13 +376,9 @@ static int mackerel_get_brightness(void)
++static unsigned long mul4_recalc(struct clk *clk)
++{
++	return clk->parent->rate * 4;
++}
++
++static struct clk_ops mul4_clk_ops = {
++	.recalc		= mul4_recalc,
++};
++
++struct clk clkz_clk = {
++	.ops		= &mul4_clk_ops,
++	.parent		= &div4_clks[DIV4_S],
++};
++
++struct clk clkzs_clk = {
++	/* clks x 4 / 4 = clks */
++	.parent		= &div4_clks[DIV4_S],
++};
++
++static struct clk *late_main_clks[] = {
++	&clkz_clk,
++	&clkzs_clk,
++};
++
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+ 	CLKDEV_CON_ID("plla_clk", &plla_clk),
++	CLKDEV_CON_ID("clkz_clk", &clkz_clk),
++	CLKDEV_CON_ID("clkzs_clk", &clkzs_clk),
  
- static struct sh_mobile_meram_cfg lcd_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 28,
--		.cache_icb      = 24,
- 		.meram_size     = 0x40,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 29,
--		.cache_icb      = 25,
- 		.meram_size     = 0x40,
- 	},
- };
-@@ -466,13 +462,9 @@ static struct platform_device hdmi_device = {
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("shyway_clk",	&div4_clks[DIV4_S]),
+@@ -138,6 +164,9 @@ void __init r8a7779_clock_init(void)
+ 	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
  
- static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 30,
--		.cache_icb      = 26,
- 		.meram_size     = 0x100,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 31,
--		.cache_icb      = 27,
- 		.meram_size     = 0x100,
- 	},
- };
++	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
++		ret = clk_register(late_main_clks[k]);
++
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
 -- 
-1.7.3.4
+1.7.5.4
 
