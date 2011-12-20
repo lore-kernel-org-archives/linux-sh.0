@@ -1,132 +1,157 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 13 Dec 2011 16:00:46 +0000
-Subject: [PATCH 02/05] sh: pfc: Convert index to field and value pair
-Message-Id: <20111213160046.4021.598.sendpatchset@w520>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 20 Dec 2011 08:40:47 +0000
+Subject: [PATCH v2] sh: sh2a: Optimise cache functions.
+Message-Id: <1324370447-29832-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+When invalidating a large address range, it's better to invalidate
+the entire cache rather than individual addresses.
 
-Update the way the PFC code is passing bitfield
-selection between configure register functions.
+Also, when the operand cache is set to write-though mode, there is
+no need to flush data.
 
-Convert the code from using index only to bitfield
-number and selected value. First step towards future
-variable bitfield width support.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
+ arch/sh/mm/cache-sh2a.c |   74 +++++++++++++++++++++++++++++------------------
+ 1 files changed, 46 insertions(+), 28 deletions(-)
 
- drivers/sh/pfc.c |   45 ++++++++++++++++++---------------------------
- 1 file changed, 18 insertions(+), 27 deletions(-)
-
---- 0017/drivers/sh/pfc.c
-+++ work/drivers/sh/pfc.c	2011-12-12 18:43:53.000000000 +0900
-@@ -287,7 +287,8 @@ static int get_data_reg(struct pinmux_in
+diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
+index 1f51225..b1bdef1 100644
+--- a/arch/sh/mm/cache-sh2a.c
++++ b/arch/sh/mm/cache-sh2a.c
+@@ -15,8 +15,20 @@
+ #include <asm/cacheflush.h>
+ #include <asm/io.h>
+ 
++/*
++ * The maximum number of pages we support up to when doing ranged cache
++ * flushing. Anything exceeding this will simply flush the cache in its
++ * entirety.
++ */
++#define MAX_OCACHE_PAGES	32
++#define MAX_ICACHE_PAGES	32
++
++/*
++ * Write back the dirty D-caches, but not invalidate them.
++ */
+ static void sh2a__flush_wback_region(void *start, int size)
+ {
++#ifdef CONFIG_CACHE_WRITEBACK
+ 	unsigned long v;
+ 	unsigned long begin, end;
+ 	unsigned long flags;
+@@ -42,8 +54,12 @@ static void sh2a__flush_wback_region(void *start, int size)
+ 
+ 	back_to_cached();
+ 	local_irq_restore(flags);
++#endif
  }
  
- static int get_config_reg(struct pinmux_info *gpioc, pinmux_enum_t enum_id,
--			  struct pinmux_cfg_reg **crp, int *indexp,
-+			  struct pinmux_cfg_reg **crp,
-+			  int *fieldp, int *valuep,
- 			  unsigned long **cntp)
++/*
++ * Write back the dirty D-caches and invalidate them.
++ */
+ static void sh2a__flush_purge_region(void *start, int size)
  {
- 	struct pinmux_cfg_reg *config_reg;
-@@ -306,7 +307,8 @@ static int get_config_reg(struct pinmux_
- 		for (n = 0; n < (r_width / f_width) * (1 << f_width); n++) {
- 			if (config_reg->enum_ids[n] = enum_id) {
- 				*crp = config_reg;
--				*indexp = n;
-+				*fieldp = n / (1 << f_width);
-+				*valuep = n % (1 << f_width);
- 				*cntp = &config_reg->cnt[n / (1 << f_width)];
- 				return 0;
- 			}
-@@ -349,36 +351,22 @@ static int get_gpio_enum_id(struct pinmu
- 
- static void write_config_reg(struct pinmux_info *gpioc,
- 			     struct pinmux_cfg_reg *crp,
--			     int index)
-+			     int field, int value)
- {
--	unsigned long ncomb, pos, value;
--	void __iomem *mapped_reg;
--
--	ncomb = 1 << crp->field_width;
--	pos = index / ncomb;
--	value = index % ncomb;
--
--	mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
-+	void __iomem *mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
- 
- 	gpio_write_reg(mapped_reg, crp->reg_width, crp->field_width,
--		       pos, value, crp->reg);
-+		       field, value, crp->reg);
+ 	unsigned long v;
+@@ -61,10 +77,14 @@ static void sh2a__flush_purge_region(void *start, int size)
+ 		__raw_writel((v & CACHE_PHYSADDR_MASK),
+ 			  CACHE_OC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+ 	}
++
+ 	back_to_cached();
+ 	local_irq_restore(flags);
  }
  
- static int check_config_reg(struct pinmux_info *gpioc,
- 			    struct pinmux_cfg_reg *crp,
--			    int index)
-+			    int field, int value)
++/*
++ * Invalidate the D-caches, but no write back please
++ */
+ static void sh2a__flush_invalidate_region(void *start, int size)
  {
--	unsigned long ncomb, pos, value;
--	void __iomem *mapped_reg;
--
--	ncomb = 1 << crp->field_width;
--	pos = index / ncomb;
--	value = index % ncomb;
--
--	mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
-+	void __iomem *mapped_reg = pfc_phys_to_virt(gpioc, crp->reg);
+ 	unsigned long v;
+@@ -74,29 +94,27 @@ static void sh2a__flush_invalidate_region(void *start, int size)
+ 	begin = (unsigned long)start & ~(L1_CACHE_BYTES-1);
+ 	end = ((unsigned long)start + size + L1_CACHE_BYTES-1)
+ 		& ~(L1_CACHE_BYTES-1);
++
+ 	local_irq_save(flags);
+ 	jump_to_uncached();
  
- 	if (gpio_read_reg(mapped_reg, crp->reg_width,
--			  crp->field_width, pos, crp->reg) = value)
-+			  crp->field_width, field, crp->reg) = value)
- 		return 0;
+-#ifdef CONFIG_CACHE_WRITEBACK
+-	__raw_writel(__raw_readl(CCR) | CCR_OCACHE_INVALIDATE, CCR);
+-	/* I-cache invalidate */
+-	for (v = begin; v < end; v+=L1_CACHE_BYTES) {
+-		__raw_writel((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_IC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+-	}
+-#else
+-	for (v = begin; v < end; v+=L1_CACHE_BYTES) {
+-		__raw_writel((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_IC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
+-		__raw_writel((v & CACHE_PHYSADDR_MASK),
+-			  CACHE_OC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
++	/* If there are too many pages then just blow the cache */
++	if (((end - begin) >> PAGE_SHIFT) >= MAX_OCACHE_PAGES) {
++		__raw_writel(__raw_readl(CCR) | CCR_OCACHE_INVALIDATE, CCR);
++	} else {
++		for (v = begin; v < end; v+=L1_CACHE_BYTES) {
++			__raw_writel((v & CACHE_PHYSADDR_MASK),
++				  CACHE_OC_ADDRESS_ARRAY | (v & 0x000007f0) | 0x00000008);
++		}
+ 	}
+-#endif
++
+ 	back_to_cached();
+ 	local_irq_restore(flags);
+ }
  
- 	return -1;
-@@ -392,7 +380,7 @@ static int pinmux_config_gpio(struct pin
- 	struct pinmux_cfg_reg *cr = NULL;
- 	pinmux_enum_t enum_id;
- 	struct pinmux_range *range;
--	int in_range, pos, index;
-+	int in_range, pos, field, value;
- 	unsigned long *cntp;
+-/* WBack O-Cache and flush I-Cache */
++/*
++ * Write back the range of D-cache, and purge the I-cache.
++ */
+ static void sh2a_flush_icache_range(void *args)
+ {
+ 	struct flusher_data *data = args;
+@@ -107,23 +125,23 @@ static void sh2a_flush_icache_range(void *args)
+ 	start = data->addr1 & ~(L1_CACHE_BYTES-1);
+ 	end = (data->addr2 + L1_CACHE_BYTES-1) & ~(L1_CACHE_BYTES-1);
  
- 	switch (pinmux_type) {
-@@ -423,7 +411,8 @@ static int pinmux_config_gpio(struct pin
++#ifdef CONFIG_CACHE_WRITEBACK
++	sh2a__flush_wback_region((void *)start, end-start);
++#endif
++
+ 	local_irq_save(flags);
+ 	jump_to_uncached();
  
- 	pos = 0;
- 	enum_id = 0;
--	index = 0;
-+	field = 0;
-+	value = 0;
- 	while (1) {
- 		pos = get_gpio_enum_id(gpioc, gpio, pos, &enum_id);
- 		if (pos <= 0)
-@@ -470,17 +459,19 @@ static int pinmux_config_gpio(struct pin
- 		if (!in_range)
- 			continue;
+-	for (v = start; v < end; v+=L1_CACHE_BYTES) {
+-		unsigned long addr = (v & 0x000007f0);
+-		int way;
+-		/* O-Cache writeback */
+-		for (way = 0; way < 4; way++) {
+-			unsigned long data =  __raw_readl(CACHE_OC_ADDRESS_ARRAY | addr | (way << 11));
+-			if ((data & CACHE_PHYSADDR_MASK) = (v & CACHE_PHYSADDR_MASK)) {
+-				data &= ~SH_CACHE_UPDATED;
+-				__raw_writel(data, CACHE_OC_ADDRESS_ARRAY | addr | (way << 11));
+-			}
++	/* I-Cache invalidate */
++	/* If there are too many pages then just blow the cache */
++	if (((end - start) >> PAGE_SHIFT) >= MAX_ICACHE_PAGES) {
++		__raw_writel(__raw_readl(CCR) | CCR_ICACHE_INVALIDATE, CCR);
++	} else {
++		for (v = start; v < end; v+=L1_CACHE_BYTES) {
++			unsigned long addr = (v & 0x000007f0);
++			__raw_writel(addr,
++				  CACHE_IC_ADDRESS_ARRAY | addr | 0x00000008);
+ 		}
+-		/* I-Cache invalidate */
+-		__raw_writel(addr,
+-			  CACHE_IC_ADDRESS_ARRAY | addr | 0x00000008);
+ 	}
  
--		if (get_config_reg(gpioc, enum_id, &cr, &index, &cntp) != 0)
-+		if (get_config_reg(gpioc, enum_id, &cr,
-+				   &field, &value, &cntp) != 0)
- 			goto out_err;
- 
- 		switch (cfg_mode) {
- 		case GPIO_CFG_DRYRUN:
--			if (!*cntp || !check_config_reg(gpioc, cr, index))
-+			if (!*cntp || !check_config_reg(gpioc, cr,
-+							field, value))
- 				continue;
- 			break;
- 
- 		case GPIO_CFG_REQ:
--			write_config_reg(gpioc, cr, index);
-+			write_config_reg(gpioc, cr, field, value);
- 			*cntp = *cntp + 1;
- 			break;
- 
+ 	back_to_cached();
+-- 
+1.7.0.4
+
