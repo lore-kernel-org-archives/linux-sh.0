@@ -1,56 +1,58 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Thu, 01 Dec 2011 18:24:20 +0000
-Subject: Re: [PATCH] mmc: sh_mmcif: simplify clock divisor calculation
-Message-Id: <87ehwokv57.fsf@laptop.org>
+From: Marek Szyprowski <m.szyprowski@samsung.com>
+Date: Fri, 23 Dec 2011 12:27:33 +0000
+Subject: [PATCH 14/14] common: DMA-mapping: add NON-CONSISTENT attribute
+Message-Id: <1324643253-3024-15-git-send-email-m.szyprowski@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1321473366-31053-1-git-send-email-andreiw@vmware.com>
-	<20111117150549.15528e81.akpm@linux-foundation.org>
-	<Pine.LNX.4.64.1111231551100.5635@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1111231551100.5635@axis700.grange> (Guennadi
-	Liakhovetski's message of "Wed, 23 Nov 2011 15:52:30 +0100 (CET)")
+References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Andrei Warkentin <andreiw@vmware.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
-Hi,
+DMA_ATTR_NON_CONSISTENT lets the platform to choose to return either
+consistent or non-consistent memory as it sees fit.  By using this API,
+you are guaranteeing to the platform that you have all the correct and
+necessary sync points for this memory in the driver should it choose to
+return non-consistent memory.
 
-On Wed, Nov 23 2011, Guennadi Liakhovetski wrote:
-> Replace ilog2(__rounddown_pow_of_two(x)) with the equivalent but much
-> simpler fls(x) - 1.
->
-> Reported-by: Andrew Morton <akpm@linux-foundation.org>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  drivers/mmc/host/sh_mmcif.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index c021482..824fee5 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -16,6 +16,7 @@
->   *
->   */
->  
-> +#include <linux/bitops.h>
->  #include <linux/clk.h>
->  #include <linux/completion.h>
->  #include <linux/delay.h>
-> @@ -386,7 +387,7 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
->  		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
->  	else
->  		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
-> -			(ilog2(__rounddown_pow_of_two(host->clk / clk)) << 16));
-> +				((fls(host->clk / clk) - 1) << 16));
->  
->  	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
->  }
+Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+---
+ Documentation/DMA-attributes.txt |    9 +++++++++
+ include/linux/dma-attrs.h        |    1 +
+ 2 files changed, 10 insertions(+), 0 deletions(-)
 
-Thanks, pushed to mmc-next for 3.3.
-
-- Chris.
+diff --git a/Documentation/DMA-attributes.txt b/Documentation/DMA-attributes.txt
+index 811a5d4..9120de2 100644
+--- a/Documentation/DMA-attributes.txt
++++ b/Documentation/DMA-attributes.txt
+@@ -41,3 +41,12 @@ buffered to improve performance.
+ Since it is optional for platforms to implement DMA_ATTR_WRITE_COMBINE,
+ those that do not will simply ignore the attribute and exhibit default
+ behavior.
++
++DMA_ATTR_NON_CONSISTENT
++-----------------------
++
++DMA_ATTR_NON_CONSISTENT lets the platform to choose to return either
++consistent or non-consistent memory as it sees fit.  By using this API,
++you are guaranteeing to the platform that you have all the correct and
++necessary sync points for this memory in the driver should it choose to
++return non-consistent memory.
+diff --git a/include/linux/dma-attrs.h b/include/linux/dma-attrs.h
+index ada61e1..547ab56 100644
+--- a/include/linux/dma-attrs.h
++++ b/include/linux/dma-attrs.h
+@@ -14,6 +14,7 @@ enum dma_attr {
+ 	DMA_ATTR_WRITE_BARRIER,
+ 	DMA_ATTR_WEAK_ORDERING,
+ 	DMA_ATTR_WRITE_COMBINE,
++	DMA_ATTR_NON_CONSISTENT,
+ 	DMA_ATTR_MAX,
+ };
+ 
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.1.569.g6f426
+
