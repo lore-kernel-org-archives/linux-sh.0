@@ -1,69 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 18 Dec 2011 17:03:06 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh7372 A4S Mackerel debug hack
-Message-Id: <20111218170306.20423.23533.sendpatchset@w520>
+From: Marek Szyprowski <m.szyprowski@samsung.com>
+Date: Fri, 23 Dec 2011 12:27:31 +0000
+Subject: [PATCH 12/14] common: dma-mapping: introduce mmap method
+Message-Id: <1324643253-3024-13-git-send-email-m.szyprowski@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
-From: Magnus Damm <damm@opensource.se>
+Introduce new generic mmap method with attributes argument.
 
-Add some quick debugging code on top of the A4S power domain
-patch to allow serial printouts before and soon after the power
-has been cut/restored. Duplicates the context restore code
-located in the SCIF driver in a board specific fashion. Will
-only work on Mackerel. Not for upstream inclusion.
+This method lets drivers to create a userspace mapping for a DMA buffer
+in generic, architecture independent way.
 
-Not-signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
+ include/linux/dma-mapping.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
- arch/arm/mach-shmobile/pm-sh7372.c |   17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
-
---- 0004/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2011-12-19 01:50:11.000000000 +0900
-@@ -7,7 +7,7 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--
-+#define DEBUG
- #include <linux/pm.h>
- #include <linux/suspend.h>
- #include <linux/cpuidle.h>
-@@ -323,7 +323,9 @@ static int sh7372_sysc_valid(unsigned lo
- 	mstpsr2 = __raw_readl(MSTPSR2);
- 	if ((mstpsr2 & 0x000741ff) != 0x000741ff) {
- 		pr_debug("sh7372 mstpsr2 0x%08lx\n", mstpsr2);
-+#if 0 /* SCIF console clock will be on, ignore to debug low level A4S code */
- 		return 0;
-+#endif
- 	}
- 
- 	mstpsr3 = __raw_readl(MSTPSR3);
-@@ -475,11 +477,22 @@ static int sh7372_enter_suspend(suspend_
- 		/* convert INTC mask and sense to SYSC mask and sense */
- 		sh7372_setup_sysc(msk, msk2);
- 
--		if (!sh7372_a3sp.stay_on &&
-+		if (/*!sh7372_a3sp.stay_on && */
- 		    sh7372_a4s.genpd.status = GPD_STATE_POWER_OFF) {
- 			/* enter A4S sleep with PLLC0 off */
- 			pr_debug("entering A4S\n");
- 			sh7372_enter_a4s_common(0);
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 2fc413a..b903a20 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -15,6 +15,9 @@ struct dma_map_ops {
+ 	void (*free)(struct device *dev, size_t size,
+ 			      void *vaddr, dma_addr_t dma_handle,
+ 			      struct dma_attrs *attrs);
++	int (*mmap)(struct device *, struct vm_area_struct *,
++			  void *, dma_addr_t, size_t, struct dma_attrs *attrs);
 +
-+			/* power up A3SP and setup SCIF console */
-+			if (sh7372_a3sp.stay_on) {
-+				sh7372_a3sp.stay_on = 0;
-+				pd_power_up(&sh7372_a3sp.genpd);
-+				sh7372_a3sp.stay_on = 1;
-+				__raw_writew(0, 0xE6C40000); /* setup SCIF */
-+				__raw_writeb(0x19, 0xE6C40004);
-+				__raw_writew(0x0030, 0xE6C40008);
-+				pr_debug("SCIF alive and kicking!\n");
-+			}
- 		} else {
- 			/* enter A3SM sleep with PLLC0 off */
- 			pr_debug("entering A3SM\n");
+ 	dma_addr_t (*map_page)(struct device *dev, struct page *page,
+ 			       unsigned long offset, size_t size,
+ 			       enum dma_data_direction dir,
+-- 
+1.7.1.569.g6f426
+
