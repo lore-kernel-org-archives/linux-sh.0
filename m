@@ -1,149 +1,81 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 Dec 2011 14:02:51 +0000
-Subject: [PATCH 56/57] fbdev: sh_mobile_lcdc: Rename fb operation handlers with a common prefix
-Message-Id: <1323784972-24205-57-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Marek Szyprowski <m.szyprowski@samsung.com>
+Date: Fri, 23 Dec 2011 12:27:29 +0000
+Subject: [PATCH 10/14] Unicore32: adapt for dma_map_ops changes
+Message-Id: <1324643253-3024-11-git-send-email-m.szyprowski@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
-Make all fb operation handlers start with sh_mobile_lcdc_ in preparation
-for the multi-plane support.
+From: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Adapt core Unicore32 architecture code for dma_map_ops changes: replace
+alloc/free_coherent with generic alloc/free methods.
+
+Signed-off-by: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   42 +++++++++++++++++++------------------
- 1 files changed, 22 insertions(+), 20 deletions(-)
+ arch/unicore32/include/asm/dma-mapping.h |   18 ++++++++++++------
+ arch/unicore32/mm/dma-swiotlb.c          |    4 ++--
+ 2 files changed, 14 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 357cdc1..4b4e81e 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -583,7 +583,7 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
- 	return IRQ_HANDLED;
- }
- 
--static int sh_mobile_wait_for_vsync(struct sh_mobile_lcdc_chan *ch)
-+static int sh_mobile_lcdc_wait_for_vsync(struct sh_mobile_lcdc_chan *ch)
- {
- 	unsigned long ldintr;
- 	int ret;
-@@ -684,7 +684,7 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
- }
- 
- /*
-- * __sh_mobile_lcdc_start - Configure and tart the LCDC
-+ * __sh_mobile_lcdc_start - Configure and start the LCDC
-  * @priv: LCDC device
-  *
-  * Configure all enabled channels and start the LCDC device. All external
-@@ -1032,8 +1032,8 @@ static void sh_mobile_lcdc_imageblit(struct fb_info *info,
- 	sh_mobile_lcdc_deferred_io_touch(info);
- }
- 
--static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
--				     struct fb_info *info)
-+static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
-+			      struct fb_info *info)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 	struct sh_mobile_lcdc_priv *priv = ch->lcdc;
-@@ -1096,14 +1096,15 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+diff --git a/arch/unicore32/include/asm/dma-mapping.h b/arch/unicore32/include/asm/dma-mapping.h
+index 9258e59..366460a 100644
+--- a/arch/unicore32/include/asm/dma-mapping.h
++++ b/arch/unicore32/include/asm/dma-mapping.h
+@@ -82,20 +82,26 @@ static inline int dma_set_mask(struct device *dev, u64 dma_mask)
  	return 0;
  }
  
--static int sh_mobile_ioctl(struct fb_info *info, unsigned int cmd,
--		       unsigned long arg)
-+static int sh_mobile_lcdc_ioctl(struct fb_info *info, unsigned int cmd,
-+				unsigned long arg)
+-static inline void *dma_alloc_coherent(struct device *dev, size_t size,
+-				       dma_addr_t *dma_handle, gfp_t flag)
++#define dma_alloc_coherent(d,s,h,f)	dma_alloc_attrs(d,s,h,f,NULL)
++
++static inline void *dma_alloc_attrs(struct device *dev, size_t size,
++				    dma_addr_t *dma_handle, gfp_t flag,
++				    struct dma_attrs *attrs)
  {
-+	struct sh_mobile_lcdc_chan *ch = info->par;
- 	int retval;
+ 	struct dma_map_ops *dma_ops = get_dma_ops(dev);
  
- 	switch (cmd) {
- 	case FBIO_WAITFORVSYNC:
--		retval = sh_mobile_wait_for_vsync(info->par);
-+		retval = sh_mobile_lcdc_wait_for_vsync(ch);
- 		break;
- 
- 	default:
-@@ -1154,7 +1155,7 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
-  * Locking: both .fb_release() and .fb_open() are called with info->lock held if
-  * user = 1, or with console sem held, if user = 0.
-  */
--static int sh_mobile_release(struct fb_info *info, int user)
-+static int sh_mobile_lcdc_release(struct fb_info *info, int user)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 
-@@ -1175,7 +1176,7 @@ static int sh_mobile_release(struct fb_info *info, int user)
- 	return 0;
+-	return dma_ops->alloc_coherent(dev, size, dma_handle, flag);
++	return dma_ops->alloc(dev, size, dma_handle, flag, attrs);
  }
  
--static int sh_mobile_open(struct fb_info *info, int user)
-+static int sh_mobile_lcdc_open(struct fb_info *info, int user)
+-static inline void dma_free_coherent(struct device *dev, size_t size,
+-				     void *cpu_addr, dma_addr_t dma_handle)
++#define dma_free_coherent(d,s,c,h) dma_free_attrs(d,s,c,h,NULL)
++
++static inline void dma_free_attrs(struct device *dev, size_t size,
++				  void *cpu_addr, dma_addr_t dma_handle,
++				  struct dma_attrs *attrs)
  {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 	struct dma_map_ops *dma_ops = get_dma_ops(dev);
  
-@@ -1188,7 +1189,8 @@ static int sh_mobile_open(struct fb_info *info, int user)
- 	return 0;
+-	dma_ops->free_coherent(dev, size, cpu_addr, dma_handle);
++	dma_ops->free(dev, size, cpu_addr, dma_handle, attrs);
  }
  
--static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
-+static int sh_mobile_lcdc_check_var(struct fb_var_screeninfo *var,
-+				    struct fb_info *info)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 	struct sh_mobile_lcdc_priv *p = ch->lcdc;
-@@ -1309,7 +1311,7 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
- 	return 0;
- }
+ #define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+diff --git a/arch/unicore32/mm/dma-swiotlb.c b/arch/unicore32/mm/dma-swiotlb.c
+index bfa9fbb..ff70c2d 100644
+--- a/arch/unicore32/mm/dma-swiotlb.c
++++ b/arch/unicore32/mm/dma-swiotlb.c
+@@ -18,8 +18,8 @@
+ #include <asm/dma.h>
  
--static int sh_mobile_set_par(struct fb_info *info)
-+static int sh_mobile_lcdc_set_par(struct fb_info *info)
- {
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 	int ret;
-@@ -1379,8 +1381,8 @@ static int sh_mobile_lcdc_blank(int blank, struct fb_info *info)
- 		 * mode will reenable the clocks and update the screen in time,
- 		 * so it does not need this. */
- 		if (!info->fbdefio) {
--			sh_mobile_wait_for_vsync(ch);
--			sh_mobile_wait_for_vsync(ch);
-+			sh_mobile_lcdc_wait_for_vsync(ch);
-+			sh_mobile_lcdc_wait_for_vsync(ch);
- 		}
- 		sh_mobile_lcdc_clk_off(p);
- 	}
-@@ -1398,12 +1400,12 @@ static struct fb_ops sh_mobile_lcdc_ops = {
- 	.fb_copyarea	= sh_mobile_lcdc_copyarea,
- 	.fb_imageblit	= sh_mobile_lcdc_imageblit,
- 	.fb_blank	= sh_mobile_lcdc_blank,
--	.fb_pan_display = sh_mobile_fb_pan_display,
--	.fb_ioctl       = sh_mobile_ioctl,
--	.fb_open	= sh_mobile_open,
--	.fb_release	= sh_mobile_release,
--	.fb_check_var	= sh_mobile_check_var,
--	.fb_set_par	= sh_mobile_set_par,
-+	.fb_pan_display = sh_mobile_lcdc_pan,
-+	.fb_ioctl       = sh_mobile_lcdc_ioctl,
-+	.fb_open	= sh_mobile_lcdc_open,
-+	.fb_release	= sh_mobile_lcdc_release,
-+	.fb_check_var	= sh_mobile_lcdc_check_var,
-+	.fb_set_par	= sh_mobile_lcdc_set_par,
- };
- 
- static void
-@@ -1533,7 +1535,7 @@ sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
- 	else
- 		var->grayscale = ch->format->fourcc;
- 
--	ret = sh_mobile_check_var(var, info);
-+	ret = sh_mobile_lcdc_check_var(var, info);
- 	if (ret)
- 		return ret;
- 
+ struct dma_map_ops swiotlb_dma_map_ops = {
+-	.alloc_coherent = swiotlb_alloc_coherent,
+-	.free_coherent = swiotlb_free_coherent,
++	.alloc = swiotlb_alloc_coherent,
++	.free = swiotlb_free_coherent,
+ 	.map_sg = swiotlb_map_sg_attrs,
+ 	.unmap_sg = swiotlb_unmap_sg_attrs,
+ 	.dma_supported = swiotlb_dma_supported,
 -- 
-1.7.3.4
+1.7.1.569.g6f426
 
