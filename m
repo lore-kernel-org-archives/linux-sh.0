@@ -1,114 +1,57 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 16 Dec 2011 00:12:53 +0000
-Subject: [Update][PATCH 3/5] PM / QoS: Introduce dev_pm_qos_add_ancestor_request()
-Message-Id: <201112160112.53689.rjw@sisk.pl>
+From: Marek Szyprowski <m.szyprowski@samsung.com>
+Date: Fri, 23 Dec 2011 12:27:32 +0000
+Subject: [PATCH 13/14] common: DMA-mapping: add WRITE_COMBINE attribute
+Message-Id: <1324643253-3024-14-git-send-email-m.szyprowski@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201112100042.45168.rjw@sisk.pl> <201112160110.09124.rjw@sisk.pl>
-In-Reply-To: <201112160110.09124.rjw@sisk.pl>
+References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+DMA_ATTR_WRITE_COMBINE specifies that writes to the mapping may be
+buffered to improve performance. It will be used by the replacement for
+ARM/ARV32 specific dma_alloc_writecombine() function.
 
-Some devices, like the I2C controller on SH7372, are not
-necessary for providing power to their children or forwarding
-wakeup signals (and generally interrupts) from them.  They are
-only needed by their children when there's some data to transfer,
-so they may be suspended for the majority of time and resumed
-on demand, when the children have data to send or receive.  For this
-purpose, however, their power.ignore_children flags have to be set,
-or the PM core wouldn't allow them to be suspended while their
-children were active.
-
-Unfortunately, in some situations it may take too much time to
-resume such devices so that they can assist their children in
-transferring data.  For example, if such a device belongs to a PM
-domain which goes to the "power off" state when that device is
-suspended, it may take too much time to restore power to the
-domain in response to the request from one of the device's
-children.  In that case, if the parent's resume time is critical,
-the domain should stay in the "power on" state, although it still may
-be desirable to power manage the parent itself (e.g. by manipulating
-its clock).
-
-In general, device PM QoS may be used to address this problem.
-Namely, if the device's children added PM QoS latency constraints
-for it, they would be able to prevent it from being put into an
-overly deep low-power state.  However, in some cases the devices
-needing to be serviced are not the immediate children of a
-"children-ignoring" device, but its grandchildren or even less
-direct descendants.  In those cases, the entity wanting to add a
-PM QoS request for a given device's ancestor that ignores its
-children will have to find it in the first place, so introduce a new
-helper function that may be used to achieve that.  This function,
-dev_pm_qos_add_ancestor_request(), will search for the first
-ancestor of the given device whose power.ignore_children flag is
-set and will add a device PM QoS latency request for that ancestor
-on behalf of the caller.  The request added this way may be removed
-with the help of dev_pm_qos_remove_request() in the future, like
-any other device PM QoS latency request.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
- drivers/base/power/qos.c |   25 +++++++++++++++++++++++++
- include/linux/pm_qos.h   |    5 +++++
- 2 files changed, 30 insertions(+)
+ Documentation/DMA-attributes.txt |   10 ++++++++++
+ include/linux/dma-attrs.h        |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
 
-Index: linux/drivers/base/power/qos.c
-=================================--- linux.orig/drivers/base/power/qos.c
-+++ linux/drivers/base/power/qos.c
-@@ -420,3 +420,28 @@ int dev_pm_qos_remove_global_notifier(st
- 	return blocking_notifier_chain_unregister(&dev_pm_notifiers, notifier);
- }
- EXPORT_SYMBOL_GPL(dev_pm_qos_remove_global_notifier);
+diff --git a/Documentation/DMA-attributes.txt b/Documentation/DMA-attributes.txt
+index b768cc0..811a5d4 100644
+--- a/Documentation/DMA-attributes.txt
++++ b/Documentation/DMA-attributes.txt
+@@ -31,3 +31,13 @@ may be weakly ordered, that is that reads and writes may pass each other.
+ Since it is optional for platforms to implement DMA_ATTR_WEAK_ORDERING,
+ those that do not will simply ignore the attribute and exhibit default
+ behavior.
 +
-+/**
-+ * dev_pm_qos_add_ancestor_request - Add PM QoS request for device's ancestor.
-+ * @dev: Device whose ancestor to add the request for.
-+ * @req: Pointer to the preallocated handle.
-+ * @value: Constraint latency value.
-+ */
-+int dev_pm_qos_add_ancestor_request(struct device *dev,
-+				    struct dev_pm_qos_request *req, s32 value)
-+{
-+	struct device *ancestor = dev->parent;
-+	int error = -ENODEV;
++DMA_ATTR_WRITE_COMBINE
++----------------------
 +
-+	while (ancestor && !ancestor->power.ignore_children)
-+		ancestor = ancestor->parent;
++DMA_ATTR_WRITE_COMBINE specifies that writes to the mapping may be
++buffered to improve performance.
 +
-+	if (ancestor)
-+		error = dev_pm_qos_add_request(ancestor, req, value);
-+
-+	if (error)
-+		req->dev = NULL;
-+
-+	return error;
-+}
-+EXPORT_SYMBOL_GPL(dev_pm_qos_add_ancestor_request);
-Index: linux/include/linux/pm_qos.h
-=================================--- linux.orig/include/linux/pm_qos.h
-+++ linux/include/linux/pm_qos.h
-@@ -92,6 +92,8 @@ int dev_pm_qos_add_global_notifier(struc
- int dev_pm_qos_remove_global_notifier(struct notifier_block *notifier);
- void dev_pm_qos_constraints_init(struct device *dev);
- void dev_pm_qos_constraints_destroy(struct device *dev);
-+int dev_pm_qos_add_ancestor_request(struct device *dev,
-+				    struct dev_pm_qos_request *req, s32 value);
- #else
- static inline int pm_qos_update_target(struct pm_qos_constraints *c,
- 				       struct plist_node *node,
-@@ -153,6 +155,9 @@ static inline void dev_pm_qos_constraint
- {
- 	dev->power.power_state = PMSG_INVALID;
- }
-+int dev_pm_qos_add_ancestor_request(struct device *dev,
-+				    struct dev_pm_qos_request *req, s32 value)
-+			{ return 0; }
- #endif
++Since it is optional for platforms to implement DMA_ATTR_WRITE_COMBINE,
++those that do not will simply ignore the attribute and exhibit default
++behavior.
+diff --git a/include/linux/dma-attrs.h b/include/linux/dma-attrs.h
+index 71ad34e..ada61e1 100644
+--- a/include/linux/dma-attrs.h
++++ b/include/linux/dma-attrs.h
+@@ -13,6 +13,7 @@
+ enum dma_attr {
+ 	DMA_ATTR_WRITE_BARRIER,
+ 	DMA_ATTR_WEAK_ORDERING,
++	DMA_ATTR_WRITE_COMBINE,
+ 	DMA_ATTR_MAX,
+ };
  
- #endif
+-- 
+1.7.1.569.g6f426
 
