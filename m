@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 Dec 2011 08:17:30 +0000
-Subject: [PATCH] ARM: mach-shmobile: r8a7779 SMP support
-Message-Id: <20111222081730.12133.61045.sendpatchset@w520>
+Date: Wed, 28 Dec 2011 08:00:48 +0000
+Subject: [PATCH] ARM: mach-shmobile: r8a7779 SMP support V2
+Message-Id: <20111228080048.14276.91770.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20111222081730.12133.61045.sendpatchset@w520>
+In-Reply-To: <20111222081730.12133.61045.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,11 +12,13 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-This patch ties in the r8a7779 power domain code together with
-SMP glue code to add SMP support. The SMP code allows us to
-control the power domains via CPU hotplug, but this feature
-is not fully implemented yet. At this point the kernel boots
-with the 4 Cortex-A9 cores in SMP mode.
+This patch contains r8a7779 SMP support V2 - now including
+CPU hotplug offine and online support. The r8a7779 power
+domain code is tied together with SMP glue code which allows
+us to control the power domains via CPU hotplug.
+
+At this point the kernel boots with the 4 Cortex-A9 cores in
+SMP mode and all CPU cores except CPU0 can be hotplugged.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
@@ -22,16 +26,21 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  Depends on the r8a7779 base plus the power domain code:
  [PATCH] ARM: mach-shmobile: r8a7779 power domain support
 
+ Also needs the following SH-Mobile SMP / CPU hotplug changes:
+ [PATCH] ARM: mach-shmobile: Fix headsmp.S code to use CPUINIT
+ [PATCH] ARM: mach-shmobile: Allow SoC specific CPU kill code
+ [PATCH] ARM: mach-shmobile: Flush caches in platform_cpu_die() 
+
  arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/include/mach/common.h  |    5 
+ arch/arm/mach-shmobile/include/mach/common.h  |    6 
  arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 
- arch/arm/mach-shmobile/platsmp.c              |   13 ++
- arch/arm/mach-shmobile/pm-r8a7779.c           |   30 ++++-
- arch/arm/mach-shmobile/smp-r8a7779.c          |  131 +++++++++++++++++++++++++
- 6 files changed, 175 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/platsmp.c              |   16 ++
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   30 +++-
+ arch/arm/mach-shmobile/smp-r8a7779.c          |  153 +++++++++++++++++++++++++
+ 6 files changed, 201 insertions(+), 8 deletions(-)
 
 --- 0022/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2011-12-22 16:49:45.000000000 +0900
++++ work/arch/arm/mach-shmobile/Makefile	2011-12-28 14:52:24.000000000 +0900
 @@ -17,6 +17,7 @@ smp-y				:= platsmp.o headsmp.o
  smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
  smp-$(CONFIG_LOCAL_TIMERS)	+= localtimer.o
@@ -39,20 +48,21 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o
  
  # Pinmux setup
- pfc-y				:--- 0022/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-12-22 16:49:45.000000000 +0900
-@@ -60,4 +60,9 @@ extern void r8a7779_clock_init(void);
+ pfc-y				:--- 0024/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-12-28 14:54:31.000000000 +0900
+@@ -61,4 +61,10 @@ extern void r8a7779_clock_init(void);
  extern void r8a7779_pinmux_init(void);
  extern void r8a7779_pm_init(void);
  
 +extern unsigned int r8a7779_get_core_count(void);
++extern int r8a7779_platform_cpu_kill(unsigned int cpu);
 +extern void r8a7779_secondary_init(unsigned int cpu);
 +extern int r8a7779_boot_secondary(unsigned int cpu);
 +extern void r8a7779_smp_prepare_cpus(void);
 +
  #endif /* __ARCH_MACH_COMMON_H */
 --- 0022/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2011-12-22 16:49:45.000000000 +0900
++++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2011-12-28 14:52:24.000000000 +0900
 @@ -343,6 +343,9 @@ static inline struct r8a7779_pm_ch *to_r
  	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
  }
@@ -63,8 +73,8 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  #ifdef CONFIG_PM
  extern struct r8a7779_pm_domain r8a7779_sh4a;
  extern struct r8a7779_pm_domain r8a7779_sgx;
---- 0001/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2011-12-22 16:49:45.000000000 +0900
+--- 0024/arch/arm/mach-shmobile/platsmp.c
++++ work/arch/arm/mach-shmobile/platsmp.c	2011-12-28 14:53:23.000000000 +0900
 @@ -22,12 +22,16 @@
  #include <mach/common.h>
  
@@ -82,7 +92,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  	return 1;
  }
  
-@@ -35,6 +39,9 @@ static void __init shmobile_smp_prepare_
+@@ -35,10 +39,16 @@ static void __init shmobile_smp_prepare_
  {
  	if (is_sh73a0())
  		sh73a0_smp_prepare_cpus();
@@ -91,8 +101,15 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +		r8a7779_smp_prepare_cpus();
  }
  
- void __cpuinit platform_secondary_init(unsigned int cpu)
-@@ -43,6 +50,9 @@ void __cpuinit platform_secondary_init(u
+ int shmobile_platform_cpu_kill(unsigned int cpu)
+ {
++	if (is_r8a7779())
++		return r8a7779_platform_cpu_kill(cpu);
++
+ 	return 1;
+ }
+ 
+@@ -48,6 +58,9 @@ void __cpuinit platform_secondary_init(u
  
  	if (is_sh73a0())
  		sh73a0_secondary_init(cpu);
@@ -102,7 +119,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  }
  
  int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
-@@ -50,6 +60,9 @@ int __cpuinit boot_secondary(unsigned in
+@@ -55,6 +68,9 @@ int __cpuinit boot_secondary(unsigned in
  	if (is_sh73a0())
  		return sh73a0_boot_secondary(cpu);
  
@@ -113,7 +130,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  }
  
 --- 0022/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2011-12-22 16:55:47.000000000 +0900
++++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2011-12-28 15:06:42.000000000 +0900
 @@ -48,7 +48,9 @@ static void __iomem *r8a7779_sysc_base;
  #define SYSCISR_RETRIES 1000
  #define SYSCISR_DELAY_US 1
@@ -195,8 +212,8 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +		r8a7779_sysc_init();
  }
 --- /dev/null
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2011-12-22 16:49:46.000000000 +0900
-@@ -0,0 +1,131 @@
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2011-12-28 15:01:40.000000000 +0900
+@@ -0,0 +1,153 @@
 +/*
 + * SMP support for R-Mobile / SH-Mobile - r8a7779 portion
 + *
@@ -288,6 +305,25 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	return scu_get_core_count(scu_base);
 +}
 +
++int r8a7779_platform_cpu_kill(unsigned int cpu)
++{
++	struct r8a7779_pm_ch *ch = NULL;
++	int ret = -EIO;
++
++	cpu = cpu_logical_map(cpu);
++
++	/* disable cache coherency */
++	modify_scu_cpu_psr(3 << (cpu * 8), 0);
++
++	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
++		ch = r8a7779_ch_cpu[cpu];
++
++	if (ch)
++		ret = r8a7779_sysc_power_down(ch);
++
++	return ret ? ret : 1;
++}
++
 +void __cpuinit r8a7779_secondary_init(unsigned int cpu)
 +{
 +	gic_secondary_init(0);
@@ -306,10 +342,8 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
 +		ch = r8a7779_ch_cpu[cpu];
 +
-+	if (ch) {
-+		r8a7779_sysc_power_down(ch);
++	if (ch)
 +		ret = r8a7779_sysc_power_up(ch);
-+	}
 +
 +	return ret;
 +}
@@ -327,4 +361,9 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	modify_scu_cpu_psr(0, 3 << (cpu * 8));
 +
 +	r8a7779_pm_init();
++
++	/* power off secondary CPUs */
++	r8a7779_platform_cpu_kill(1);
++	r8a7779_platform_cpu_kill(2);
++	r8a7779_platform_cpu_kill(3);
 +}
