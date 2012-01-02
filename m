@@ -1,138 +1,38 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 31 Jan 2012 11:03:25 +0000
-Subject: Re: [PATCH 1/7 v2] dmaengine: add a simple dma library
-Message-Id: <4F27CA7D.601@renesas.com>
+From: Paul Cercueil <pcercuei@gmail.com>
+Date: Mon, 02 Jan 2012 21:57:09 +0000
+Subject: Re: Dreamcast build broken
+Message-Id: <4F022835.3030503@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
- <1327589784-4287-2-git-send-email-g.liakhovetski@gmx.de>
- <4F22624E.2090201@renesas.com>
- <Pine.LNX.4.64.1201270946150.32661@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201270946150.32661@axis700.grange>
+References: <4EC81660.3010109@gmail.com>
+In-Reply-To: <4EC81660.3010109@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi-san,
-
-2012/01/27 17:48, Guennadi Liakhovetski wrote:
-> Hi Shimoda-san
-> 
-> On Fri, 27 Jan 2012, Shimoda, Yoshihiro wrote:
-[ snip ]
+Le 17/12/2011 11:24, Adrian McMenamin a =E9crit :
+> On 25 November 2011 16:24, Paul Cercueil<pcercuei@gmail.com>  wrote:
+>> Le 24/11/2011 08:29, Paul Mundt a =E9crit :
 >>>
->>> 1. switch from using a tasklet to threaded IRQ, which allowed to
+>
+>> However, starting from commit 37b7a97884ba64bf7d403351ac2a9476ab4f1bba a=
+nd
+>> up to the latest vanilla Linux 3.1,
+>> the vmlinux binary won't start on my dreamcast or on the lxdream emulato=
+r.
 >>
->> I tested this driver on 2 environment, but it could not work correctly.
->>  - renesas_usbhs driver with shdma driver on the mackerel board
->>  - renesas_usbhs driver with experimental SUDMAC driver
->>
->> In this case, should we modify the renesas_usbhs driver?
-> 
-> Yes, you do. Please, see the respective version of the shdma patch. It 
-> doesn't request channel IRQs any more directly, instead, it uses a 
-> dma-simple wrapper function. Also operations change a bit.
+> No output at all?
 
-Thank you for your comment.
+Hi,
+Sorry for the late reply.
 
-I investigaed the issue. I found out the renesas_usbhs driver may
-call tx_submit() in the callback() of the dma-simple finally.
-In this case, the value of power_up in the simple_tx_submit is 0,
-the start_xfer() is not called. And then, even if the ld_queue is
-not empty, the DMA doesn't start.
+That's right, there is no output at all. Perhaps the binary starts=20
+correctly but then it crashes before the activation of the framebuffer.
 
+I am facing another issue about the dreamcast build: the entry point of=20
+the kernel is set to 0x8c002000, which does not appear to be correct.=20
+When booting a CD, the bootloader (contained inside the IP.bin file)=20
+loads the main executable at 0x8c010000.
 
-So, if I add codes like the following in the dma-simple.c,
-the renesas_usbhs driver can work correctly without the driver changes.
-If you think the code is good, would you merge it to your code?
-==== chan_irqt() ===	simple_chan_ld_cleanup(schan, false);
-
-+	spin_lock_irq(&schan->chan_lock);
-+	/* Next desc */
-+	simple_chan_xfer_ld_queue(schan);
-+	spin_unlock_irq(&schan->chan_lock);
-
-	return IRQ_HANDLED;
-=======
-
-Best regards,
-Yoshihiro Shimoda
-
-> Thanks
-> Guennadi
-> 
->> For reference, if I changed the threaded IRQ to tasklet,
->> the 2 environment worked correctly:
->> =======
->> diff --git a/drivers/dma/dma-simple.c b/drivers/dma/dma-simple.c
->> index 49d8f7d..65a5170 100644
->> --- a/drivers/dma/dma-simple.c
->> +++ b/drivers/dma/dma-simple.c
->> @@ -715,16 +715,18 @@ static irqreturn_t chan_irq(int irq, void *dev)
->>
->>  	spin_lock(&schan->chan_lock);
->>
->> -	ret = ops->chan_irq(schan, irq) ? IRQ_WAKE_THREAD : IRQ_NONE;
->> +	ret = ops->chan_irq(schan, irq) ? IRQ_HANDLED : IRQ_NONE;
->> +	if (ret = IRQ_HANDLED)
->> +		tasklet_schedule(&schan->tasklet);
->>
->>  	spin_unlock(&schan->chan_lock);
->>
->>  	return ret;
->>  }
->>
->> -static irqreturn_t chan_irqt(int irq, void *dev)
->> +static void chan_irqt(unsigned long dev)
->>  {
->> -	struct dma_simple_chan *schan = dev;
->> +	struct dma_simple_chan *schan = (struct dma_simple_chan *)dev;
->>  	const struct dma_simple_ops *ops >>  		to_simple_dev(schan->dma_chan.device)->ops;
->>  	struct dma_simple_desc *sdesc;
->> @@ -744,15 +746,13 @@ static irqreturn_t chan_irqt(int irq, void *dev)
->>  	spin_unlock_irq(&schan->chan_lock);
->>
->>  	simple_chan_ld_cleanup(schan, false);
->> -
->> -	return IRQ_HANDLED;
->>  }
->>
->>  int dma_simple_request_irq(struct dma_simple_chan *schan, int irq,
->>  			   unsigned long flags, const char *name)
->>  {
->> -	int ret = request_threaded_irq(irq, chan_irq, chan_irqt,
->> -				       flags, name, schan);
->> +	int ret = request_irq(irq, chan_irq, flags, name, schan);
->> +	tasklet_init(&schan->tasklet, chan_irqt, (unsigned long)schan);
->>
->>  	schan->irq = ret < 0 ? ret : irq;
->>
->> diff --git a/include/linux/dma-simple.h b/include/linux/dma-simple.h
->> index 5336674..beb1489 100644
->> --- a/include/linux/dma-simple.h
->> +++ b/include/linux/dma-simple.h
->> @@ -68,6 +68,7 @@ struct dma_simple_chan {
->>  	int id;				/* Raw id of this channel */
->>  	int irq;			/* Channel IRQ */
->>  	enum dma_simple_pm_state pm_state;
->> +	struct tasklet_struct tasklet;
->>  };
->>
->>  /**
->> =======
->>
->> Best regards,
->> Yoshihiro Shimoda
->>
-> 
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> 
-
-
--- 
-Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-EC No.
+On a side note, the kernel inside the old DCLinux (based on Linux 2.4)=20
+has an entry point set to 0x8c012000.
