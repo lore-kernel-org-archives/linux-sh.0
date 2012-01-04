@@ -1,38 +1,52 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 20 Jan 2012 20:32:59 +0000
-Subject: [PATCH v2 01/13] sound: pxa2xx-ac97: include mach/irqs.h directly
-Message-Id: <1327091591-27125-2-git-send-email-robherring2@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:17:05 +0000
+Subject: [PATCH 00/11] mmc: tmio/sdhi: hotplug & PM
+Message-Id: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
-From: Rob Herring <rob.herring@calxeda.com>
+This patch series uses a previously proposed generic GPIO card hotplug 
+handler, fixes multiple PM issues, adds some cosmetic clean up. Not all of 
+these patches really depend on each other, but it's easier to preserve the 
+original order. Some patches, e.g., #9, are an RFC so far and might have to 
+be reworked a bit.
 
-In preparation of removing mach/irqs.h include from asm/irq.h, include
-mach/irqs.h directly.
+Guennadi Liakhovetski (11):
+  mmc: tmio: calculate the native hotplug condition only once
+  mmc: tmio_mmc: support the generic MMC GPIO card hotplug helper
+  mmc: sh_mobile_sdhi: pass card hotplug GPIO number and flags to TMIO
+    MMC
+  ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO
+    hotplug helper
+  ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO
+    hotplug helper
+  mfd: tmio: remove now unneeded tmio_mmc_cd_wakeup()
+  mmc: tmio_mmc: power status flag doesn't have to be exposed in
+    platform data
+  mmc: tmio_mmc: remove unused sdio_irq_enabled flag
+  mmc: sh_mobile_sdhi: do not manage PM clocks manually on ARM
+  mmc: tmio: reconfigure the controller on runtime resume
+  mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
 
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
----
- sound/arm/pxa2xx-ac97-lib.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c   |   24 +------
+ arch/arm/mach-shmobile/board-mackerel.c |   24 +------
+ drivers/mmc/host/sh_mobile_sdhi.c       |   11 +++-
+ drivers/mmc/host/tmio_mmc.h             |    9 +--
+ drivers/mmc/host/tmio_mmc_pio.c         |  104 ++++++++++++++-----------------
+ include/linux/mfd/tmio.h                |   17 ++---
+ include/linux/mmc/sh_mobile_sdhi.h      |    3 +
+ 7 files changed, 79 insertions(+), 113 deletions(-)
 
-diff --git a/sound/arm/pxa2xx-ac97-lib.c b/sound/arm/pxa2xx-ac97-lib.c
-index d1aa421..0e9e822 100644
---- a/sound/arm/pxa2xx-ac97-lib.c
-+++ b/sound/arm/pxa2xx-ac97-lib.c
-@@ -21,7 +21,7 @@
- #include <sound/ac97_codec.h>
- #include <sound/pxa2xx-lib.h>
- 
--#include <asm/irq.h>
-+#include <mach/irqs.h>
- #include <mach/regs-ac97.h>
- #include <mach/audio.h>
- 
 -- 
-1.7.5.4
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
