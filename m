@@ -1,36 +1,63 @@
-From: David Gibson <david@gibson.dropbear.id.au>
-Date: Mon, 16 Jan 2012 01:57:10 +0000
-Subject: Re: [PATCH 01/14] common: dma-mapping: introduce alloc_attrs and free_attrs methods
-Message-Id: <20120116015710.GD4512@truffala.fritz.box>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:17:08 +0000
+Subject: [PATCH 03/11] mmc: sh_mobile_sdhi: pass card hotplug GPIO number and flags to TMIO MMC
+Message-Id: <1325686636-23905-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
- <1324643253-3024-2-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-2-git-send-email-m.szyprowski@samsung.com>
+References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
-On Fri, Dec 23, 2011 at 01:27:20PM +0100, Marek Szyprowski wrote:
-> Introduce new generic alloc and free methods with attributes argument.
-> 
-> Existing alloc_coherent and free_coherent can be implemented on top of the
-> new calls with NULL attributes argument. Later also dma_alloc_non_coherent
-> can be implemented using DMA_ATTR_NONCOHERENT attribute as well as
-> dma_alloc_writecombine with separate DMA_ATTR_WRITECOMBINE attribute.
-> 
-> This way the drivers will get more generic, platform independent way of
-> allocating dma buffers with specific parameters.
-> 
-> Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+To use TMIO MMC driver ability to interface to the generic MMC GPIO card
+hotplug detection helper, the SDHI driver has to pass the GPIO number and
+IRQ flags down from its own platform data.
 
-Looks sensible to me.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c  |    5 ++++-
+ include/linux/mmc/sh_mobile_sdhi.h |    3 +++
+ 2 files changed, 7 insertions(+), 1 deletions(-)
 
-Reviewed-by: David Gibson <david@gibson.dropbear.ud.au>
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 58da3c4..a8d353e 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -129,6 +129,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+ 		mmc_data->capabilities |= p->tmio_caps;
++		mmc_data->cd_gpio = p->cd_gpio;
++		mmc_data->cd_irq = p->cd_irq;
++		mmc_data->cd_flags = p->cd_flags;
+ 
+ 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
+ 			priv->param_tx.slave_id = p->dma_slave_tx;
+@@ -211,7 +214,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 
+ 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
+ 		 mmc_hostname(host->mmc), (unsigned long)
+-		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
++		 (platform_get_resource(pdev, IORESOURCE_MEM, 0)->start),
+ 		 mmc_data->hclk / 1000000);
+ 
+ 	return ret;
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index 71b8054..86347f6 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -16,6 +16,9 @@ struct sh_mobile_sdhi_info {
+ 	unsigned long tmio_flags;
+ 	unsigned long tmio_caps;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
++	unsigned int cd_gpio;
++	unsigned int cd_irq;
++	unsigned long cd_flags;
+ 	struct tmio_mmc_data *pdata;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	int (*get_cd)(struct platform_device *pdev);
 -- 
-David Gibson			| I'll have my music baroque, and my code
-david AT gibson.dropbear.id.au	| minimalist, thank you.  NOT _the_ _other_
-				| _way_ _around_!
-http://www.ozlabs.org/~dgibson
+1.7.2.5
+
