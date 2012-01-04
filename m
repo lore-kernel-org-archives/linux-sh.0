@@ -1,36 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 09 Jan 2012 01:38:36 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: Fix headsmp.S code to use CPUINIT
-Message-Id: <20120109013836.GG25648@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:22:44 +0000
+Subject: [PATCH] ARM: mach-shmobile: fix SDHI0 hotplug sense
+Message-Id: <Pine.LNX.4.64.1201041521400.30506@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Dec 28, 2011 at 04:44:06PM +0900, Magnus Damm wrote:
-> Convert the low level SMP assembly code for SH-Mobile ARM
-> from using the INIT to the CPUINIT section. This unbreaks
-> onlining of CPUs using the CPU hotplug interface:
-> 
-> echo 1 > /sys/devices/system/cpu/cpu1/online
-> 
-> Without this fix the reset vector code used by CPU hotplug
-> will be freed as init section data and CPU cores cannot
-> be brought online.
+In most cases it suffices to only trigger SD-card interrupts on one edge
+due to GPIO level bouncing, but sometimes it does indeed happen, that only
+one interrupt is produced on a card insertion or removal, which is then
+missed, if the wrong trigger sense is configured. To avoid this configure
+the GPIO to produce interrupts on both edges.
 
-On Wed, Dec 28, 2011 at 04:47:16PM +0900, Magnus Damm wrote:
-> Add the function shmobile_platform_kill_cpu() to allow
-> SoC specific code to tie in their CPU shutdown code.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-On Wed, Dec 28, 2011 at 04:53:16PM +0900, Magnus Damm wrote:
-> Add cache flushing code to the SH-Mobile specific CPU hotplug
-> implementation. While at it, add a cpu mask to make sure the
-> cache flushing code is finished in platform_cpu_die() before
-> letting the SoC-specific code in shmobile_platform_cpu_kill()
-> proceed with turning off power.
-> 
-> Without this code CPU hotplug offline fails when cache is
-> enabled on Cortex-A9 based SoCs.
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index b35343a..3139ced 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1011,7 +1011,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.cd_gpio	= GPIO_PORT172,
+ 	.cd_irq		= evt2irq(0x3340),
+-	.cd_flags	= IRQF_TRIGGER_FALLING,
++	.cd_flags	= IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+-- 
+1.7.2.5
 
-All applied, thanks.
