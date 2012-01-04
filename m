@@ -1,75 +1,100 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Jan 2012 12:01:30 +0000
-Subject: [PATCH 01/11] mmc: simplify mmc_cd_gpio_request() by removing two parameters
-Message-Id: <1327406500-7233-2-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:34:21 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: specify CHCLR registers on SH7372
+Message-Id: <Pine.LNX.4.64.1201041533370.30506@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
+References: <Pine.LNX.4.64.1201041528570.30506@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1201041528570.30506@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
-
-Calculate the IRQ number, using gpio_to_irq() and use fixed flags: trigger
-on both edges. This makes two out of four arguments of the
-mmc_cd_gpio_request() function redundant.
+To: linux-kernel@vger.kernel.org
+Cc: Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Magnus Damm <magnus.damm@gmail.com>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/core/cd-gpio.c  |   13 +++++++++----
- include/linux/mmc/cd-gpio.h |    3 +--
- 2 files changed, 10 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/setup-sh7372.c |   15 ++++++++++++---
+ 1 files changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/core/cd-gpio.c b/drivers/mmc/core/cd-gpio.c
-index 082202ae..29de31e 100644
---- a/drivers/mmc/core/cd-gpio.c
-+++ b/drivers/mmc/core/cd-gpio.c
-@@ -28,13 +28,17 @@ static irqreturn_t mmc_cd_gpio_irqt(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 2380389..83dc940 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -445,31 +445,39 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 	},
+ };
  
--int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio,
--			unsigned int irq, unsigned long flags)
-+int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio)
- {
- 	size_t len = strlen(dev_name(host->parent)) + 4;
--	struct mmc_cd_gpio *cd = kmalloc(sizeof(*cd) + len, GFP_KERNEL);
-+	struct mmc_cd_gpio *cd;
-+	int irq = gpio_to_irq(gpio);
- 	int ret;
- 
-+	if (irq < 0)
-+		return irq;
++#define SH7372_CHCLR 0x220
 +
-+	cd = kmalloc(sizeof(*cd) + len, GFP_KERNEL);
- 	if (!cd)
- 		return -ENOMEM;
+ static const struct sh_dmae_channel sh7372_dmae_channels[] = {
+ 	{
+ 		.offset = 0,
+ 		.dmars = 0,
+ 		.dmars_bit = 0,
++		.chclr_offset = SH7372_CHCLR + 0,
+ 	}, {
+ 		.offset = 0x10,
+ 		.dmars = 0,
+ 		.dmars_bit = 8,
++		.chclr_offset = SH7372_CHCLR + 0x10,
+ 	}, {
+ 		.offset = 0x20,
+ 		.dmars = 4,
+ 		.dmars_bit = 0,
++		.chclr_offset = SH7372_CHCLR + 0x20,
+ 	}, {
+ 		.offset = 0x30,
+ 		.dmars = 4,
+ 		.dmars_bit = 8,
++		.chclr_offset = SH7372_CHCLR + 0x30,
+ 	}, {
+ 		.offset = 0x50,
+ 		.dmars = 8,
+ 		.dmars_bit = 0,
++		.chclr_offset = SH7372_CHCLR + 0x50,
+ 	}, {
+ 		.offset = 0x60,
+ 		.dmars = 8,
+ 		.dmars_bit = 8,
++		.chclr_offset = SH7372_CHCLR + 0x60,
+ 	}
+ };
  
-@@ -45,7 +49,8 @@ int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio,
- 		goto egpioreq;
+@@ -487,6 +495,7 @@ static struct sh_dmae_pdata dma_platform_data = {
+ 	.ts_shift	= ts_shift,
+ 	.ts_shift_num	= ARRAY_SIZE(ts_shift),
+ 	.dmaor_init	= DMAOR_DME,
++	.chclr_present	= 1,
+ };
  
- 	ret = request_threaded_irq(irq, NULL, mmc_cd_gpio_irqt,
--				   flags, cd->label, host);
-+				   IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
-+				   cd->label, host);
- 	if (ret < 0)
- 		goto eirqreq;
- 
-diff --git a/include/linux/mmc/cd-gpio.h b/include/linux/mmc/cd-gpio.h
-index a8e4697..cefaba0 100644
---- a/include/linux/mmc/cd-gpio.h
-+++ b/include/linux/mmc/cd-gpio.h
-@@ -12,8 +12,7 @@
- #define MMC_CD_GPIO_H
- 
- struct mmc_host;
--int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio,
--			unsigned int irq, unsigned long flags);
-+int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio);
- void mmc_cd_gpio_free(struct mmc_host *host);
- 
- #endif
+ /* Resource order important! */
+@@ -494,7 +503,7 @@ static struct resource sh7372_dmae0_resources[] = {
+ 	{
+ 		/* Channel registers and DMAOR */
+ 		.start	= 0xfe008020,
+-		.end	= 0xfe00808f,
++		.end	= 0xfe00828f,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
+@@ -522,7 +531,7 @@ static struct resource sh7372_dmae1_resources[] = {
+ 	{
+ 		/* Channel registers and DMAOR */
+ 		.start	= 0xfe018020,
+-		.end	= 0xfe01808f,
++		.end	= 0xfe01828f,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
+@@ -550,7 +559,7 @@ static struct resource sh7372_dmae2_resources[] = {
+ 	{
+ 		/* Channel registers and DMAOR */
+ 		.start	= 0xfe028020,
+-		.end	= 0xfe02808f,
++		.end	= 0xfe02828f,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
 -- 
 1.7.2.5
 
