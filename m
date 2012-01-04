@@ -1,51 +1,78 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Tue, 24 Jan 2012 09:36:15 +0000
-Subject: Re: [PATCH v2 1/2] usb: renesas_usbhs: add IRQ resource decoding for IRQF_SHARED
-Message-Id: <20120124093614.GP27414@legolas.emea.dhcp.ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Bd2KlmcTHfsQFEJ+"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:17:10 +0000
+Subject: [PATCH 05/11] ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
+Message-Id: <1325686636-23905-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F05451E.7080601@renesas.com>
-In-Reply-To: <4F05451E.7080601@renesas.com>
-To: linux-sh@vger.kernel.org
+References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
---Bd2KlmcTHfsQFEJ+
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Only compile-tested.
 
-On Thu, Jan 05, 2012 at 03:37:18PM +0900, Shimoda, Yoshihiro wrote:
-> In case of the SH7757, the irq number of USB module and SUDMAC
-> are the same. So, we have to set the IRQF_SHARED in such a case.
->=20
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+ arch/arm/mach-shmobile/board-ag5evm.c |   24 ++++--------------------
+ 1 files changed, 4 insertions(+), 20 deletions(-)
 
-applied, thanks
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index b862e9f..b1db188 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -340,23 +340,15 @@ static struct platform_device mipidsi0_device = {
+ };
+ 
+ /* SDHI0 */
+-static irqreturn_t ag5evm_sdhi0_gpio_cd(int irq, void *arg)
+-{
+-	struct device *dev = arg;
+-	struct sh_mobile_sdhi_info *info = dev->platform_data;
+-	struct tmio_mmc_data *pdata = info->pdata;
+-
+-	tmio_mmc_cd_wakeup(pdata);
+-
+-	return IRQ_HANDLED;
+-}
+-
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_HAS_COLD_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
++	.cd_gpio	= GPIO_PORT251,
++	.cd_irq		= intcs_evt2irq(0x3c0),
++	.cd_flags	= IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -560,7 +552,6 @@ static void __init ag5evm_init(void)
+ 	__raw_writel(0x2a809010, DSI0PHYCR);
+ 
+ 	/* enable SDHI0 on CN15 [SD I/F] */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+ 	gpio_request(GPIO_FN_SDHIWP0, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD0, NULL);
+ 	gpio_request(GPIO_FN_SDHICLK0, NULL);
+@@ -569,13 +560,6 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+ 
+-	if (!request_irq(intcs_evt2irq(0x3c0), ag5evm_sdhi0_gpio_cd,
+-			 IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+-			 "sdhi0 cd", &sdhi0_device.dev))
+-		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
+-	else
+-		pr_warn("Unable to setup SDHI0 GPIO IRQ\n");
+-
+ 	/* enable SDHI1 on CN4 [WLAN I/F] */
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
+-- 
+1.7.2.5
 
---=20
-balbi
-
---Bd2KlmcTHfsQFEJ+
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPHnuOAAoJEIaOsuA1yqREOfYQAJfDLi4LYk3OZ9cXZ4EZWtZd
-FZb7lzRBOL27nNabF+UNEy9GThT1k7Rnw0f7cHe/FjtZq8rkKFyfgh8vXm+rlatF
-6p3wOlu1ArYXFba8V6uGcn7lsbrEYEqpfsnnYZ49zjvOioIwGkQdeGtXLvV5RQ8B
-2tKNNfIdgPAWeeePcQFpX2eRVVqx1mldzvpYa52Y39SReVeBZRgfLTWcpTzFPnQv
-coj8IjvAnlmlhxA/h1hvrI7F48ZqRuJq911PA4rm6Y0RrMC0CvF+ORHGXclnirG9
-lyA32el+bycoXzCRETyMXfpHtJjIerlsnr+qn3wy3khfJ1XxIrQsjVCTQTh5Xctd
-4/xl1OS+V5L58Pc3AtB8TFd899yojkdcSDJ0vqP8hvE/KC0t2gwBxPsa48PrysFa
-0j/3FhjK8xSfIeQbEFN1AKnQQBo7fjf0AKRsQpn1xKbDXnoD8S0JBdiScLL4TVCi
-InH6qwtt4EocNsPjt6stFLri2KkZOyprLJ+tVDuso27qOzWUIEE06pMMW4Zsw+lv
-mY/mQve//sjT0W0mbf+RUjM/qnxKEjafG+8At3XxyHsh4mBzsWOEgYu4lvwbiY4Z
-os+foDyoM4jtT4dXMf1O46f5NXO2ljtXJl+G5UNrdcEJw61x8Jcqns4BeSItSSr5
-L6nZFapaViGnjh/CG9mB
-=B0rT
------END PGP SIGNATURE-----
-
---Bd2KlmcTHfsQFEJ+--
