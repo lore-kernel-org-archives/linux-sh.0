@@ -1,41 +1,74 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 10 Jan 2012 05:20:28 +0000
-Subject: [PATCH v2 2/3] dmaengine: shdma: use sh_dmae_writel/readl in
-Message-Id: <4F0BCA9C.2010004@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:17:06 +0000
+Subject: [PATCH 01/11] mmc: tmio: calculate the native hotplug condition only once
+Message-Id: <1325686636-23905-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+The condition, whether we have to use the native TMIO card hotplug
+detection interrupt, is rather complex, it is better to only calculate it
+once and store in the private data.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- about v2
-  - No change
+ drivers/mmc/host/tmio_mmc.h     |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c |   11 +++++------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
- drivers/dma/shdma.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 4fff02b..ccc3028 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -92,14 +92,14 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-
--	__raw_writel(data, sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+	sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
- }
-
- static u32 chcr_read(struct sh_dmae_chan *sh_dc)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-
--	return __raw_readl(sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+	return sh_dmae_readl(sh_dc, shdev->chcr_offset);
- }
-
- /*
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index a95e6d9..9aa6a18 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -86,6 +86,7 @@ struct tmio_mmc_host {
+ 	spinlock_t		lock;		/* protect host private data */
+ 	unsigned long		last_req_ts;
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
++	bool			native_hotplug;
+ };
+ 
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index abad01b..1a9e975 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -908,6 +908,9 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	else
+ 		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
+ 
++	_host->native_hotplug = !(pdata->flags & TMIO_MMC_HAS_COLD_CD ||
++				  mmc->caps & MMC_CAP_NEEDS_POLL ||
++				  mmc->caps & MMC_CAP_NONREMOVABLE);
+ 	pdata->power = false;
+ 	pm_runtime_enable(&pdev->dev);
+ 	ret = pm_runtime_resume(&pdev->dev);
+@@ -926,9 +929,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	 *  additionally ensure that in case 2) the tmio mmc hardware stays
+ 	 *  powered on during runtime for the card detection to work.
+ 	 */
+-	if (!(pdata->flags & TMIO_MMC_HAS_COLD_CD
+-		|| mmc->caps & MMC_CAP_NEEDS_POLL
+-		|| mmc->caps & MMC_CAP_NONREMOVABLE))
++	if (_host->native_hotplug)
+ 		pm_runtime_get_noresume(&pdev->dev);
+ 
+ 	tmio_mmc_clk_stop(_host);
+@@ -984,9 +985,7 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
+ 	 * the controller, the runtime PM is suspended and pdata->power = false,
+ 	 * so, our .runtime_resume() will not try to detect a card in the slot.
+ 	 */
+-	if (host->pdata->flags & TMIO_MMC_HAS_COLD_CD
+-		|| host->mmc->caps & MMC_CAP_NEEDS_POLL
+-		|| host->mmc->caps & MMC_CAP_NONREMOVABLE)
++	if (!host->native_hotplug)
+ 		pm_runtime_get_sync(&pdev->dev);
+ 
+ 	mmc_remove_host(host->mmc);
 -- 
-1.7.1
+1.7.2.5
+
