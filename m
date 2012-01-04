@@ -1,41 +1,67 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 10 Jan 2012 08:53:22 +0000
-Subject: Re: [PATCH] arm: mach-shmobile: add a resource name for shdma
-Message-Id: <4F0BFC82.9020201@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:17:16 +0000
+Subject: [PATCH 11/11] mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
+Message-Id: <1325686636-23905-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F0BCADB.8010709@renesas.com>
-In-Reply-To: <4F0BCADB.8010709@renesas.com>
+References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
-2012/01/10 17:25, Paul Mundt wrote:
-> On Tue, Jan 10, 2012 at 05:22:49PM +0900, Shimoda, Yoshihiro wrote:
->> 2012/01/10 16:43, Paul Mundt wrote:
->>> On Tue, Jan 10, 2012 at 02:21:31PM +0900, Shimoda, Yoshihiro wrote:
->>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>>> ---
->>>>  This patch depends on the following patch:
->>>>    - dmaengine: shdma: modify the DMAC Address Error registration
->>>>
->>> What exactly does it depend on? If it's just wiring up the string, we can
->>> merge that at any time, and the earlier the better. Setting the string
->>> doesn't introduce any different behaviour in the driver as it is now
->>> without the change in registration.
->>>
->>
->> I'm sorry for my wrong comment. Your point is correct.
->> This patch doesn't depend on the shdma's patch.
->>
->> Should I submit the patch which removed the comment again?
->>
-> No, it's fine, just wanted to make sure there wasn't something sinister
-> going on that I wasn't aware of with regards to the driver model. I'll
-> apply them to sh/rmobile-latest respectively.
-> 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
 
-Thank you very much. I understood it.
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 9106b3d..f68e6f3 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -752,6 +752,7 @@ fail:
+ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct device *dev = &host->pdev->dev;
+ 	unsigned long flags;
+ 
+ 	mutex_lock(&host->ios_lock);
+@@ -759,13 +760,13 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	spin_lock_irqsave(&host->lock, flags);
+ 	if (host->mrq) {
+ 		if (IS_ERR(host->mrq)) {
+-			dev_dbg(&host->pdev->dev,
++			dev_dbg(dev,
+ 				"%s.%d: concurrent .set_ios(), clk %u, mode %u\n",
+ 				current->comm, task_pid_nr(current),
+ 				ios->clock, ios->power_mode);
+ 			host->mrq = ERR_PTR(-EINTR);
+ 		} else {
+-			dev_dbg(&host->pdev->dev,
++			dev_dbg(dev,
+ 				"%s.%d: CMD%u active since %lu, now %lu!\n",
+ 				current->comm, task_pid_nr(current),
+ 				host->mrq->cmd->opcode, host->last_req_ts, jiffies);
+@@ -788,7 +789,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	 */
+ 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
+ 		if (!host->power) {
+-			pm_runtime_get_sync(&host->pdev->dev);
++			pm_runtime_get_sync(dev);
+ 			host->power = true;
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+@@ -802,7 +803,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			host->set_pwr(host->pdev, 0);
+ 		if (host->power) {
+ 			host->power = false;
+-			pm_runtime_put(&host->pdev->dev);
++			pm_runtime_put(dev);
+ 		}
+ 		tmio_mmc_clk_stop(host);
+ 	}
+-- 
+1.7.2.5
 
-Best regards,
-Yoshihiro Shimoda
