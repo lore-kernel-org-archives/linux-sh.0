@@ -1,49 +1,60 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 27 Jan 2012 03:01:11 +0000
-Subject: Re: [PATCH] spi: spi-sh: add IORESOURCE_MEM_TYPE_MASK decoding for access size
-Message-Id: <20120127030111.GF26283@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jan 2012 14:17:14 +0000
+Subject: [PATCH 09/11] mmc: sh_mobile_sdhi: do not manage PM clocks manually on ARM
+Message-Id: <1325686636-23905-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F21124D.6030601@renesas.com>
-	<20120126102220.GE26283@linux-sh.org>
-	<4F21FA89.4060709@renesas.com>
-In-Reply-To: <4F21FA89.4060709-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
-On Fri, Jan 27, 2012 at 10:14:49AM +0900, Shimoda, Yoshihiro wrote:
-> 2012/01/26 19:22, Paul Mundt wrote:
-> > On Thu, Jan 26, 2012 at 05:43:57PM +0900, Shimoda, Yoshihiro wrote:
-> [ snip ]
-> >>  static void spi_sh_set_bit(struct spi_sh_data *ss, unsigned long val,
-> >> @@ -464,6 +473,18 @@ static int __devinit spi_sh_probe(struct platform_device *pdev)
-> >>  	ss = spi_master_get_devdata(master);
-> >>  	dev_set_drvdata(&pdev->dev, ss);
-> >>
-> >> +	switch (res->flags & IORESOURCE_MEM_TYPE_MASK) {
-> >> +	case IORESOURCE_MEM_8BIT:
-> >> +		ss->width = 8;
-> >> +		break;
-> >> +	case IORESOURCE_MEM_32BIT:
-> >> +		ss->width = 32;
-> >> +		break;
-> >> +	default:
-> >> +		dev_err(&pdev->dev, "No support width\n");
-> >> +		ret = -ENODEV;
-> >> +		goto error1;
-> > 
-> > If the default up to this point has been 32-bit only then it makes sense
-> > for 32 to still remain the default. The 8-bit user is presumably a new
-> > one and therefore has no existing platform data configuration to worry
-> > about, while this change would require existing users to be updated for
-> > the new 32-bit flag to behave the same way they have up until now. 
-> 
-> Thank you for your comment.
-> Unfortunately, the value of IORESOURCE_MEM_8BIT is (0<<3), so existing users
-> will not enter to the default.
-> 
-Ah, ok, I missed that. In that case I suppose your original patch makes
-the most sense. We should be able to roll in the platform update patch
-early anyways.
+On ARM the same clock is used by the PM subsystem and by the driver
+directly. This leads to the clock staying permanently on, independent of
+the runtime PM state. This patch makes clock enable and disable calls in
+the driver SuperH-specific.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index a8d353e..0df69ab 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -117,7 +117,9 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 
++#if defined(CONFIG_SUPERH)
+ 	clk_enable(priv->clk);
++#endif
+ 
+ 	mmc_data->hclk = clk_get_rate(priv->clk);
+ 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+@@ -235,7 +237,9 @@ eirq_sdio:
+ eirq_card_detect:
+ 	tmio_mmc_host_remove(host);
+ eprobe:
++#if defined(CONFIG_SUPERH)
+ 	clk_disable(priv->clk);
++#endif
+ 	clk_put(priv->clk);
+ eclkget:
+ 	kfree(priv);
+@@ -261,7 +265,9 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ 		free_irq(irq, host);
+ 	}
+ 
++#if defined(CONFIG_SUPERH)
+ 	clk_disable(priv->clk);
++#endif
+ 	clk_put(priv->clk);
+ 	kfree(priv);
+ 
+-- 
+1.7.2.5
+
