@@ -1,80 +1,81 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 20 Jan 2012 23:41:28 +0000
-Subject: [PATCH] mmc: sh_mmcif: fix late delayed work initialisation
-Message-Id: <Pine.LNX.4.64.1201210038550.28312@axis700.grange>
+Date: Wed, 04 Jan 2012 14:17:09 +0000
+Subject: [PATCH 04/11] ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
+Message-Id: <1325686636-23905-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
-
-If the driver is loaded with a card in the slot, mmc_add_host() will
-schedule an immediate card-detection work, which will start IO and wait
-for command completion. Usually the kernel first returns to the sh_mmcif
-probe function, lets it finish and only then schedules the rescan work.
-But sometimes, expecially under heavy system load, the work will be
-scheduled immediately before returning to the probe method. In this case
-it is important for the driver to be fully prepared for IO. For sh_mmcif
-this means, that also the timeout work has to be initialised before
-calling mmc_add_host(). It is also better to prepare interrupts
-beforehand. Besides, since mmc_add_host() does card-detection itself,
-there is no need to do it again immediately afterwards.
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/arm/mach-shmobile/board-mackerel.c |   24 ++++--------------------
+ 1 files changed, 4 insertions(+), 20 deletions(-)
 
-Tested to work on top of my other recently posted patches, that probably 
-will only go into 3.4, but this one actually fixes a bug in 3.3-rc1 and 
-should apply and work there too.
-
- drivers/mmc/host/sh_mmcif.c |   16 +++++++++-------
- 1 files changed, 9 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index fa6592f..8532bf1 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1342,7 +1342,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto clean_up2;
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 9c5e598..b35343a 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1004,21 +1004,14 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
+ }
  
--	mmc_add_host(mmc);
-+	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
- 
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
- 
-@@ -1353,22 +1353,24 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	}
- 	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
- 	if (ret) {
--		free_irq(irq[0], host);
- 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
--		goto clean_up3;
-+		goto clean_up4;
- 	}
- 
--	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+ /* SDHI0 */
+-static irqreturn_t mackerel_sdhi0_gpio_cd(int irq, void *arg)
+-{
+-	struct device *dev = arg;
+-	struct sh_mobile_sdhi_info *info = dev->platform_data;
+-	struct tmio_mmc_data *pdata = info->pdata;
 -
--	mmc_detect_change(host->mmc, 0);
-+	ret = mmc_add_host(mmc);
-+	if (ret < 0)
-+		goto clean_up5;
+-	tmio_mmc_cd_wakeup(pdata);
+-
+-	return IRQ_HANDLED;
+-}
+-
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
++	.tmio_flags	= TMIO_MMC_HAS_COLD_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.cd_gpio	= GPIO_PORT172,
++	.cd_irq		= evt2irq(0x3340),
++	.cd_flags	= IRQF_TRIGGER_FALLING,
+ };
  
- 	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
- 	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
- 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
- 	return ret;
+ static struct resource sdhi0_resources[] = {
+@@ -1408,7 +1401,6 @@ static void __init mackerel_init(void)
+ {
+ 	u32 srcr4;
+ 	struct clk *clk;
+-	int ret;
  
-+clean_up5:
-+	free_irq(irq[1], host);
-+clean_up4:
-+	free_irq(irq[0], host);
- clean_up3:
--	mmc_remove_host(mmc);
- 	pm_runtime_suspend(&pdev->dev);
- clean_up2:
- 	pm_runtime_disable(&pdev->dev);
+ 	sh7372_pinmux_init();
+ 
+@@ -1505,7 +1497,6 @@ static void __init mackerel_init(void)
+ 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
+ 
+ 	/* enable SDHI0 */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+ 	gpio_request(GPIO_FN_SDHIWP0, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD0, NULL);
+ 	gpio_request(GPIO_FN_SDHICLK0, NULL);
+@@ -1514,13 +1505,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+ 
+-	ret = request_irq(evt2irq(0x3340), mackerel_sdhi0_gpio_cd,
+-			  IRQF_TRIGGER_FALLING, "sdhi0 cd", &sdhi0_device.dev);
+-	if (!ret)
+-		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
+-	else
+-		pr_err("Cannot get IRQ #%d: %d\n", evt2irq(0x3340), ret);
+-
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ 	/* enable SDHI1 */
+ 	gpio_request(GPIO_FN_SDHICMD1, NULL);
 -- 
 1.7.2.5
 
