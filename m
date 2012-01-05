@@ -1,78 +1,60 @@
-From: Jamie Iles <jamie@jamieiles.com>
-Date: Fri, 13 Jan 2012 17:42:45 +0000
-Subject: Re: [RFC PATCH 00/10] Make mach/irqs.h optional
-Message-Id: <20120113174245.GA30497@page>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 05 Jan 2012 06:37:22 +0000
+Subject: [PATCH v2 2/2] usb: renesas_usbhs: add support for SUDMAC
+Message-Id: <4F054522.7000806@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jan 13, 2012 at 10:34:01AM -0600, Rob Herring wrote:
-> From: Rob Herring <rob.herring@calxeda.com>
-> 
-> This series removes the include of mach/irqs.h from asm/irq.h when
-> SPARSE_IRQ is selected. Platforms which select SPARSE_IRQ have been
-> updated.
-> 
-> This breaks platforms where SPARSE_IRQ is user selectable. This is on
-> purpose so that SPARSE_IRQ gets properly supported. We could push
-> HAVE_SPARSE_IRQ option down to the platforms that select it if that is
-> preferred. But as recent experience has shown, perhaps breaking platforms
-> is the only way to get some platforms updated.
+The SUDMAC uses 8-bit width only. So, when the driver uses SUDMAC,
+we have to clear the MBW_32.
 
-Nice one Rob!  Patch below to remove irqs.h for picoxcell too if you 
-could add that one to your series.
-
-Tested-by: Jamie Iles <jamie@jamieiles.com>
-
-Jamie
-
-8<---
-
-From 2d07b017bb06be86bd01686f98c699f1eff0ac10 Mon Sep 17 00:00:00 2001
-From: Jamie Iles <jamie@jamieiles.com>
-Date: Fri, 13 Jan 2012 17:40:05 +0000
-Subject: [PATCH] ARM: picoxcell: remove mach/irqs.h
-
-picoxcell uses SPARSE_IRQ which means we don't need a mach/irqs.h
-anymore so kill it off.
-
-Cc: Rob Herring <robherring2@gmail.com>
-Signed-off-by: Jamie Iles <jamie@jamieiles.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-picoxcell/include/mach/irqs.h |   20 --------------------
- 1 files changed, 0 insertions(+), 20 deletions(-)
- delete mode 100644 arch/arm/mach-picoxcell/include/mach/irqs.h
+ about v2:
+  - No change
 
-diff --git a/arch/arm/mach-picoxcell/include/mach/irqs.h b/arch/arm/mach-picoxcell/include/mach/irqs.h
-deleted file mode 100644
-index 59eac1e..0000000
---- a/arch/arm/mach-picoxcell/include/mach/irqs.h
-+++ /dev/null
-@@ -1,20 +0,0 @@
--/*
-- * Copyright (c) 2011 Picochip Ltd., Jamie Iles
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--#ifndef __MACH_IRQS_H
--#define __MACH_IRQS_H
--
--/* We dynamically allocate our irq_desc's. */
--#define NR_IRQS				0
--
--#endif /* __MACH_IRQS_H */
+ drivers/usb/renesas_usbhs/fifo.c  |    6 +++++-
+ include/linux/usb/renesas_usbhs.h |    1 +
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index ffdf5d1..918a1da 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -23,6 +23,7 @@
+ #define usbhsf_get_cfifo(p)	(&((p)->fifo_info.cfifo))
+ #define usbhsf_get_d0fifo(p)	(&((p)->fifo_info.d0fifo))
+ #define usbhsf_get_d1fifo(p)	(&((p)->fifo_info.d1fifo))
++#define usbhsf_is_cfifo(p, f)	(usbhsf_get_cfifo(p) = f)
+
+ #define usbhsf_fifo_is_busy(f)	((f)->pipe) /* see usbhs_pipe_select_fifo */
+
+@@ -304,7 +305,10 @@ static int usbhsf_fifo_select(struct usbhs_pipe *pipe,
+ 	}
+
+ 	/* "base" will be used below  */
+-	usbhs_write(priv, fifo->sel, base | MBW_32);
++	if (usbhs_get_dparam(priv, has_sudmac) && !usbhsf_is_cfifo(priv, fifo))
++		usbhs_write(priv, fifo->sel, base);
++	else
++		usbhs_write(priv, fifo->sel, base | MBW_32);
+
+ 	/* check ISEL and CURPIPE value */
+ 	while (timeout--) {
+diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
+index e5a40c3..f60db75 100644
+--- a/include/linux/usb/renesas_usbhs.h
++++ b/include/linux/usb/renesas_usbhs.h
+@@ -141,6 +141,7 @@ struct renesas_usbhs_driver_param {
+ 	 * option:
+ 	 */
+ 	u32 has_otg:1; /* for controlling PWEN/EXTLP */
++	u32 has_sudmac:1; /* for SUDMAC */
+ };
+
+ /*
 -- 
-1.7.5.4
-
+1.7.1
