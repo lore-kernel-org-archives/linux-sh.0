@@ -1,273 +1,81 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 20 Jan 2012 20:33:08 +0000
-Subject: [PATCH v2 10/13] ARM: shmobile: remove NR_IRQS
-Message-Id: <1327091591-27125-11-git-send-email-robherring2@gmail.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 05 Jan 2012 05:08:12 +0000
+Subject: [PATCH] sh: add platform_device for renesas_usbhs in board-sh7757lcr
+Message-Id: <4F05303C.9070505@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Rob Herring <rob.herring@calxeda.com>
-
-Remove NR_IRQS and explicitly include mach/irqs.h as needed. shmobile
-properly allocates irq_descs for each irqchip, so setting .nr_irqs for
-each machine is not needed.
-
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c      |    1 +
- arch/arm/mach-shmobile/board-bonito.c      |    1 +
- arch/arm/mach-shmobile/board-g3evm.c       |    1 +
- arch/arm/mach-shmobile/board-g4evm.c       |    1 +
- arch/arm/mach-shmobile/board-kota2.c       |    1 +
- arch/arm/mach-shmobile/board-mackerel.c    |    1 +
- arch/arm/mach-shmobile/board-marzen.c      |    1 +
- arch/arm/mach-shmobile/include/mach/irqs.h |    2 --
- arch/arm/mach-shmobile/intc-r8a7740.c      |    1 +
- arch/arm/mach-shmobile/intc-sh7367.c       |    1 +
- arch/arm/mach-shmobile/intc-sh7372.c       |    1 +
- arch/arm/mach-shmobile/intc-sh7377.c       |    1 +
- arch/arm/mach-shmobile/intc-sh73a0.c       |    1 +
- arch/arm/mach-shmobile/setup-r8a7740.c     |    1 +
- arch/arm/mach-shmobile/setup-r8a7779.c     |    1 +
- arch/arm/mach-shmobile/setup-sh7367.c      |    1 +
- arch/arm/mach-shmobile/setup-sh7372.c      |    1 +
- arch/arm/mach-shmobile/setup-sh7377.c      |    1 +
- arch/arm/mach-shmobile/setup-sh73a0.c      |    1 +
- 19 files changed, 18 insertions(+), 2 deletions(-)
+ arch/sh/boards/board-sh7757lcr.c |   39 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 39 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index eff8a96..e922e92 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -42,6 +42,7 @@
- #include <video/sh_mipi_dsi.h>
- #include <sound/sh_fsi.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index 4d22016..df9a653 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -34,6 +34,7 @@
- #include <asm/mach/time.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <mach/r8a7740.h>
-+#include <mach/irqs.h>
- #include <video/sh_mobile_lcdc.h>
- 
- /*
-diff --git a/arch/arm/mach-shmobile/board-g3evm.c b/arch/arm/mach-shmobile/board-g3evm.c
-index 72d5572..6dbdc42 100644
---- a/arch/arm/mach-shmobile/board-g3evm.c
-+++ b/arch/arm/mach-shmobile/board-g3evm.c
-@@ -33,6 +33,7 @@
- #include <linux/input.h>
- #include <linux/input/sh_keysc.h>
- #include <linux/dma-mapping.h>
-+#include <mach/irqs.h>
- #include <mach/sh7367.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
-index 2220b88..2936ccc 100644
---- a/arch/arm/mach-shmobile/board-g4evm.c
-+++ b/arch/arm/mach-shmobile/board-g4evm.c
-@@ -34,6 +34,7 @@
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index 895e337..0838154 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -19,6 +19,7 @@
+ #include <linux/mmc/sh_mmcif.h>
  #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/gpio.h>
- #include <linux/dma-mapping.h>
-+#include <mach/irqs.h>
- #include <mach/sh7377.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 857ceee..c71780b 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -39,6 +39,7 @@
- #include <linux/mfd/tmio.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 9b42fbd..73f0097 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -55,6 +55,7 @@
- #include <sound/sh_fsi.h>
- 
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/sh7372.h>
- 
- #include <asm/mach/arch.h>
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index f0e02c0..3b2e88a 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -31,6 +31,7 @@
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
-diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
-index 828807d..4e686cc2 100644
---- a/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ b/arch/arm/mach-shmobile/include/mach/irqs.h
-@@ -3,8 +3,6 @@
- 
- #include <linux/sh_intc.h>
- 
--#define NR_IRQS         1024
--
- /* GIC */
- #define gic_spi(nr)		((nr) + 32)
- 
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 272c84c..09c42af 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -25,6 +25,7 @@
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/intc-sh7367.c b/arch/arm/mach-shmobile/intc-sh7367.c
-index cfde9bf..5bf7764 100644
---- a/arch/arm/mach-shmobile/intc-sh7367.c
-+++ b/arch/arm/mach-shmobile/intc-sh7367.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
-index 89afcab..6447e0a 100644
---- a/arch/arm/mach-shmobile/intc-sh7372.c
-+++ b/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/intc-sh7377.c b/arch/arm/mach-shmobile/intc-sh7377.c
-index 2af4e6e..b84a460 100644
---- a/arch/arm/mach-shmobile/intc-sh7377.c
-+++ b/arch/arm/mach-shmobile/intc-sh7377.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index 1eda6b0..9a8207c 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-+#include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <asm/hardware/gic.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 986dca6..fa15d81 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -25,6 +25,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/r8a7740.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 4725663..55df21a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -29,6 +29,7 @@
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/setup-sh7367.c b/arch/arm/mach-shmobile/setup-sh7367.c
-index e546017..8e848198 100644
---- a/arch/arm/mach-shmobile/setup-sh7367.c
-+++ b/arch/arm/mach-shmobile/setup-sh7367.c
-@@ -29,6 +29,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 6fcf304..420d25c 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -32,6 +32,7 @@
- #include <linux/sh_timer.h>
- #include <linux/pm_domain.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-diff --git a/arch/arm/mach-shmobile/setup-sh7377.c b/arch/arm/mach-shmobile/setup-sh7377.c
-index bb405b8..747ed8e 100644
---- a/arch/arm/mach-shmobile/setup-sh7377.c
-+++ b/arch/arm/mach-shmobile/setup-sh7377.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 20e71e5..7bf740e 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -31,6 +31,7 @@
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <mach/hardware.h>
-+#include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+ #include <linux/sh_eth.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <cpu/sh7757.h>
+ #include <asm/heartbeat.h>
+
+@@ -264,6 +265,43 @@ static struct platform_device sdhi_device = {
+ 	},
+ };
+
++static int usbhs0_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++static struct renesas_usbhs_platform_info usb0_data = {
++	.platform_callback = {
++		.get_id = usbhs0_get_id,
++	},
++	.driver_param = {
++		.buswait_bwait = 5,
++	}
++};
++
++static struct resource usb0_resources[] = {
++	[0] = {
++		.start	= 0xfe450000,
++		.end	= 0xfe4501ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 50,
++		.end	= 50,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device usb0_device = {
++	.name		= "renesas_usbhs",
++	.id		= 0,
++	.dev = {
++		.platform_data		= &usb0_data,
++	},
++	.num_resources	= ARRAY_SIZE(usb0_resources),
++	.resource	= usb0_resources,
++};
++
+ static struct platform_device *sh7757lcr_devices[] __initdata = {
+ 	&heartbeat_device,
+ 	&sh7757_eth0_device,
+@@ -272,6 +310,7 @@ static struct platform_device *sh7757lcr_devices[] __initdata = {
+ 	&sh7757_eth_giga1_device,
+ 	&sh_mmcif_device,
+ 	&sdhi_device,
++	&usb0_device,
+ };
+
+ static struct flash_platform_data spi_flash_data = {
 -- 
-1.7.5.4
-
+1.7.1
