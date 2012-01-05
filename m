@@ -1,39 +1,86 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Jan 2012 12:01:39 +0000
-Subject: [PATCH 10/11] mmc: tmio: reconfigure the controller on runtime resume
-Message-Id: <1327406500-7233-11-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 05 Jan 2012 06:37:18 +0000
+Subject: [PATCH v2 1/2] usb: renesas_usbhs: add IRQ resource decoding for
+Message-Id: <4F05451E.7080601@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-After the controller has been runtime suspended it has to be reset and DMA
-has to be re-enabled, if it is used.
+In case of the SH7757, the irq number of USB module and SUDMAC
+are the same. So, we have to set the IRQF_SHARED in such a case.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ about v2:
+  - add a comment in git log
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index d7955c6..64f6c99 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1033,6 +1033,10 @@ EXPORT_SYMBOL(tmio_mmc_host_suspend);
- int tmio_mmc_host_resume(struct device *dev)
- {
- 	struct mmc_host *mmc = dev_get_drvdata(dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+
-+	tmio_mmc_reset(host);
-+	tmio_mmc_enable_dma(host, true);
- 
- 	/* The MMC core will perform the complete set up */
- 	return mmc_resume_host(mmc);
+ drivers/usb/renesas_usbhs/common.c |   11 ++++++-----
+ drivers/usb/renesas_usbhs/common.h |    1 +
+ drivers/usb/renesas_usbhs/mod.c    |    2 +-
+ 3 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 08c679c..75f7d08 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -410,8 +410,7 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	struct renesas_usbhs_platform_info *info = pdev->dev.platform_data;
+ 	struct renesas_usbhs_driver_callback *dfunc;
+ 	struct usbhs_priv *priv;
+-	struct resource *res;
+-	unsigned int irq;
++	struct resource *res, *irq_res;
+ 	int ret;
+
+ 	/* check platform information */
+@@ -423,8 +422,8 @@ static int usbhs_probe(struct platform_device *pdev)
+
+ 	/* platform data */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	irq = platform_get_irq(pdev, 0);
+-	if (!res || (int)irq <= 0) {
++	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (!res || !irq_res) {
+ 		dev_err(&pdev->dev, "Not enough Renesas USB platform resources.\n");
+ 		return -ENODEV;
+ 	}
+@@ -473,7 +472,9 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	/*
+ 	 * priv settings
+ 	 */
+-	priv->irq	= irq;
++	priv->irq	= irq_res->start;
++	if (irq_res->flags & IORESOURCE_IRQ_SHAREABLE)
++		priv->irqflags = IRQF_SHARED;
+ 	priv->pdev	= pdev;
+ 	INIT_DELAYED_WORK(&priv->notify_hotplug_work, usbhsc_notify_hotplug);
+ 	spin_lock_init(usbhs_priv_to_lock(priv));
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index 8729da5..353ab51 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -241,6 +241,7 @@ struct usbhs_priv {
+
+ 	void __iomem *base;
+ 	unsigned int irq;
++	unsigned long irqflags;
+
+ 	struct renesas_usbhs_platform_callback	pfunc;
+ 	struct renesas_usbhs_driver_param	dparam;
+diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
+index ad96a38..9499fae 100644
+--- a/drivers/usb/renesas_usbhs/mod.c
++++ b/drivers/usb/renesas_usbhs/mod.c
+@@ -150,7 +150,7 @@ int usbhs_mod_probe(struct usbhs_priv *priv)
+
+ 	/* irq settings */
+ 	ret = request_irq(priv->irq, usbhs_interrupt,
+-			  0, dev_name(dev), priv);
++			  priv->irqflags, dev_name(dev), priv);
+ 	if (ret) {
+ 		dev_err(dev, "irq request err\n");
+ 		goto mod_init_gadget_err;
 -- 
-1.7.2.5
-
+1.7.1
