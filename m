@@ -1,32 +1,80 @@
-From: Nicolas Pitre <nico@fluxnic.net>
-Date: Fri, 13 Jan 2012 23:51:21 +0000
-Subject: Re: [RFC PATCH 01/10] rtc: sa1100: include mach/irqs.h instead of asm/irq.h
-Message-Id: <alpine.LFD.2.02.1201131847560.2722@xanadu.home>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 05 Jan 2012 05:13:49 +0000
+Subject: [PATCH 1/2] usb: renesas_usbhs: add IRQ resource decoding for
+Message-Id: <4F05318D.6070505@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
- <1326472451-9002-2-git-send-email-robherring2@gmail.com>
- <20120113164336.GA1068@n2100.arm.linux.org.uk> <4F106299.8050306@gmail.com>
- <alpine.LFD.2.02.1201131536040.2722@xanadu.home> <4F10BC7B.4040405@gmail.com>
-In-Reply-To: <4F10BC7B.4040405@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, 13 Jan 2012, Rob Herring wrote:
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/common.c |   11 ++++++-----
+ drivers/usb/renesas_usbhs/common.h |    1 +
+ drivers/usb/renesas_usbhs/mod.c    |    2 +-
+ 3 files changed, 8 insertions(+), 6 deletions(-)
 
-> On 01/13/2012 02:46 PM, Nicolas Pitre wrote:
-> > Another problem that resources solve (and your original patch didn't 
-> > make it any better nor worse) has to do with include file search paths.  
-> > Once we start building more than one SOC in the kernel, we won't be able 
-> > to support the inclusion of <mach/whatever.h> from driver code anymore 
-> > since this could refer to more than one instances of 
-> > arch/arm/mach-*/include/mach/whatever.h.
-> 
-> I'm fully aware of this issue and was not trying to solve that here.
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 08c679c..75f7d08 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -410,8 +410,7 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	struct renesas_usbhs_platform_info *info = pdev->dev.platform_data;
+ 	struct renesas_usbhs_driver_callback *dfunc;
+ 	struct usbhs_priv *priv;
+-	struct resource *res;
+-	unsigned int irq;
++	struct resource *res, *irq_res;
+ 	int ret;
 
-I know you are aware (maybe I should have mentioned it explicitly).
-This comment was more for the wider audience.
+ 	/* check platform information */
+@@ -423,8 +422,8 @@ static int usbhs_probe(struct platform_device *pdev)
 
+ 	/* platform data */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	irq = platform_get_irq(pdev, 0);
+-	if (!res || (int)irq <= 0) {
++	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (!res || !irq_res) {
+ 		dev_err(&pdev->dev, "Not enough Renesas USB platform resources.\n");
+ 		return -ENODEV;
+ 	}
+@@ -473,7 +472,9 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	/*
+ 	 * priv settings
+ 	 */
+-	priv->irq	= irq;
++	priv->irq	= irq_res->start;
++	if (irq_res->flags & IORESOURCE_IRQ_SHAREABLE)
++		priv->irqflags = IRQF_SHARED;
+ 	priv->pdev	= pdev;
+ 	INIT_DELAYED_WORK(&priv->notify_hotplug_work, usbhsc_notify_hotplug);
+ 	spin_lock_init(usbhs_priv_to_lock(priv));
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index 8729da5..353ab51 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -241,6 +241,7 @@ struct usbhs_priv {
 
-Nicolas
+ 	void __iomem *base;
+ 	unsigned int irq;
++	unsigned long irqflags;
+
+ 	struct renesas_usbhs_platform_callback	pfunc;
+ 	struct renesas_usbhs_driver_param	dparam;
+diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
+index ad96a38..9499fae 100644
+--- a/drivers/usb/renesas_usbhs/mod.c
++++ b/drivers/usb/renesas_usbhs/mod.c
+@@ -150,7 +150,7 @@ int usbhs_mod_probe(struct usbhs_priv *priv)
+
+ 	/* irq settings */
+ 	ret = request_irq(priv->irq, usbhs_interrupt,
+-			  0, dev_name(dev), priv);
++			  priv->irqflags, dev_name(dev), priv);
+ 	if (ret) {
+ 		dev_err(dev, "irq request err\n");
+ 		goto mod_init_gadget_err;
+-- 
+1.7.1
