@@ -1,55 +1,38 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 26 Jan 2012 14:56:22 +0000
-Subject: [PATCH 5/7 v2] serial: sh-sci: prepare for conversion to simple DMA
-Message-Id: <1327589784-4287-6-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 05 Jan 2012 05:41:12 +0000
+Subject: [RFC][PATCH 2/3] dmaengine: shdma: use sh_dmae_writel/readl in
+Message-Id: <4F0537F8.1000302@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/tty/serial/sh-sci.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ drivers/dma/shdma.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 7508579..8b99aac 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1574,9 +1574,9 @@ static bool filter(struct dma_chan *chan, void *slave)
- 	struct sh_dmae_slave *param = slave;
- 
- 	dev_dbg(chan->device->dev, "%s: slave ID %d\n", __func__,
--		param->slave_id);
-+		param->simple_slave.slave_id);
- 
--	chan->private = param;
-+	chan->private = &param->simple_slave;
- 	return true;
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 97f7d24..24ef218 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -92,14 +92,14 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+
+-	__raw_writel(data, sh_dc->base + shdev->chcr_offset / sizeof(u32));
++	sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
  }
- 
-@@ -1615,7 +1615,7 @@ static void sci_request_dma(struct uart_port *port)
- 	param = &s->param_tx;
- 
- 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
--	param->slave_id = s->cfg->dma_slave_tx;
-+	param->simple_slave.slave_id = s->cfg->dma_slave_tx;
- 
- 	s->cookie_tx = -EINVAL;
- 	chan = dma_request_channel(mask, filter, param);
-@@ -1643,7 +1643,7 @@ static void sci_request_dma(struct uart_port *port)
- 	param = &s->param_rx;
- 
- 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
--	param->slave_id = s->cfg->dma_slave_rx;
-+	param->simple_slave.slave_id = s->cfg->dma_slave_rx;
- 
- 	chan = dma_request_channel(mask, filter, param);
- 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
--- 
-1.7.2.5
 
+ static u32 chcr_read(struct sh_dmae_chan *sh_dc)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+
+-	return __raw_readl(sh_dc->base + shdev->chcr_offset / sizeof(u32));
++	return sh_dmae_readl(sh_dc, shdev->chcr_offset);
+ }
+
+ /*
+-- 
+1.7.1
