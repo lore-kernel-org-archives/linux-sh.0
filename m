@@ -1,58 +1,35 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 28 Jan 2012 12:35:35 +0000
-Subject: Re: [PATCH 0/2] mmc: use PM QoS instead of delayed clock gating
-Message-Id: <201201281335.35397.rjw@sisk.pl>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 05 Jan 2012 05:08:03 +0000
+Subject: [PATCH] sh: modify clock-sh7757 for renesas_usbhs
+Message-Id: <4F053033.5050805@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201191631210.12537@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201191631210.12537@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+The renesas_usbhs driver doesn't use the clk functions. So, even if we
+adds "CLKDEV_DEV_ID("renesas_usbhs.0", ...)" only, we cannot use the USB
+controller because clk_late_init() will disable the clock by "usb0".
+So, the patch also removes the "CLKDEV_CON_ID("usb0", ...)".
 
-On Thursday, January 19, 2012, Guennadi Liakhovetski wrote:
-> Hi all
-> 
-> I've already sent one of these two patches yesterday, but I forgot to 
-> include Rafael on the CC list and forgot to mention, that the patch should 
-> be treated as a regression fix and should go into 3.3. The reason why the 
-> commit
-> 
-> commit 7e09bedba1b87f9c7b34ba895b57baf0c36ccdc8
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-I think that should be 597dd9d79cfbbb1636d00a7fd0880355d9b20c41, right?
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+index 19222da..0fbff14 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+@@ -129,7 +129,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP110]),
 
-> Author: Sujit Reddy Thumma <sthumma@codeaurora.org>
-> Date:   Mon Nov 14 13:53:29 2011 +0530
-> 
->     mmc: core: Use delayed work in clock gating framework
-> 
-> can be considered a regression is, that it extends the powered-on time of 
-> the controller(s) and, possibly, of respective power domains by 200ms (by 
-> default), which is an essential change in behaviour in the negative 
-> direction.
-> 
-> However, if this is indeed the desired change, maybe the better approach 
-> now would be to modify this behaviour in individual drivers, which is 
-> exactly what the two patches in this series are doing.
+ 	CLKDEV_CON_ID("usb_fck", &mstp_clks[MSTP103]),
+-	CLKDEV_CON_ID("usb0", &mstp_clks[MSTP102]),
++	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP102]),
+ 	CLKDEV_CON_ID("mmc0", &mstp_clks[MSTP220]),
+ };
 
-I agree that doing such things at the framework level is not a good idea,
-which this example clearly shows.
-
-The commit above had made the assumption that every platform would
-regard performance as more important than power saving and made a wholesale
-change that affected everyone.  In some cases, however, the change is not
-welcome and is not too easy to work around (because of the user space interface
-file added in the process).
-
-Quite frankly, I think it would be better to simply revert that commit (along
-with the later one fixing it) at this point, because there may be more cases
-where it actually makes things worse.
-
-As for the patches, I'll reply to each of them separately.
-
-Thanks,
-Rafael
+-- 
+1.7.1
