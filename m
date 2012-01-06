@@ -1,40 +1,118 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 26 Jan 2012 14:56:21 +0000
-Subject: [PATCH 4/7 v2] mmc: sh_mobile_sdhi: prepare for conversion to simple DMA
-Message-Id: <1327589784-4287-5-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 06 Jan 2012 12:06:51 +0000
+Subject: [PATCH] mmc: tmio_mmc: fix card eject during IO with DMA
+Message-Id: <Pine.LNX.4.64.1201061302430.16279@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+
+When DMA is in use and the card is ejected during IO, DMA transfers have to
+be terminated, otherwise the dmaengine driver fails to operate properly,
+when the card is re-inserted.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f91c3aa..2c3a9d3 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -130,10 +130,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->cd_gpio = p->cd_gpio;
+This goes on top of all my recent tmio_mmc patches. Even if some of them 
+will require some minor changes, this one, probably, will still have a 
+good chance to apply:-)
+
+ drivers/mmc/host/tmio_mmc.h     |    7 ++++++-
+ drivers/mmc/host/tmio_mmc_dma.c |   12 ++++++++++++
+ drivers/mmc/host/tmio_mmc_pio.c |    6 +++++-
+ 3 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 62d0d14..d857f5c 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -20,8 +20,8 @@
+ #include <linux/mmc/tmio.h>
+ #include <linux/mutex.h>
+ #include <linux/pagemap.h>
+-#include <linux/spinlock.h>
+ #include <linux/scatterlist.h>
++#include <linux/spinlock.h>
  
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
--			priv->param_tx.slave_id = p->dma_slave_tx;
--			priv->param_rx.slave_id = p->dma_slave_rx;
--			priv->dma_priv.chan_priv_tx = &priv->param_tx;
--			priv->dma_priv.chan_priv_rx = &priv->param_rx;
-+			priv->param_tx.simple_slave.slave_id = p->dma_slave_tx;
-+			priv->param_rx.simple_slave.slave_id = p->dma_slave_rx;
-+			priv->dma_priv.chan_priv_tx = &priv->param_tx.simple_slave;
-+			priv->dma_priv.chan_priv_rx = &priv->param_rx.simple_slave;
- 			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
- 			mmc_data->dma = &priv->dma_priv;
- 		}
+ /* Definitions for values the CTRL_SDIO_STATUS register can take. */
+ #define TMIO_SDIO_STAT_IOIRQ	0x0001
+@@ -119,6 +119,7 @@ void tmio_mmc_start_dma(struct tmio_mmc_host *host, struct mmc_data *data);
+ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable);
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata);
+ void tmio_mmc_release_dma(struct tmio_mmc_host *host);
++void tmio_mmc_abort_dma(struct tmio_mmc_host *host);
+ #else
+ static inline void tmio_mmc_start_dma(struct tmio_mmc_host *host,
+ 			       struct mmc_data *data)
+@@ -139,6 +140,10 @@ static inline void tmio_mmc_request_dma(struct tmio_mmc_host *host,
+ static inline void tmio_mmc_release_dma(struct tmio_mmc_host *host)
+ {
+ }
++
++static inline void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
++{
++}
+ #endif
+ 
+ #ifdef CONFIG_PM
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 86f259c..756759b 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -34,6 +34,18 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ #endif
+ }
+ 
++void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
++{
++	tmio_mmc_enable_dma(host, false);
++
++	if (host->chan_rx)
++		dmaengine_terminate_all(host->chan_rx);
++	if (host->chan_tx)
++		dmaengine_terminate_all(host->chan_tx);
++
++	tmio_mmc_enable_dma(host, true);
++}
++
+ static void tmio_mmc_start_dma_rx(struct tmio_mmc_host *host)
+ {
+ 	struct scatterlist *sg = host->sg_ptr, *sg_tmp;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index f68e6f3..7c4378f 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -42,8 +42,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/scatterlist.h>
+-#include <linux/workqueue.h>
+ #include <linux/spinlock.h>
++#include <linux/workqueue.h>
+ 
+ #include "tmio_mmc.h"
+ 
+@@ -245,6 +245,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+ 	/* Ready for new calls */
+ 	host->mrq = NULL;
+ 
++	tmio_mmc_abort_dma(host);
+ 	mmc_request_done(host->mmc, mrq);
+ }
+ 
+@@ -271,6 +272,9 @@ static void tmio_mmc_finish_request(struct tmio_mmc_host *host)
+ 	host->mrq = NULL;
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
++	if (mrq->cmd->error || (mrq->data && mrq->data->error))
++		tmio_mmc_abort_dma(host);
++
+ 	mmc_request_done(host->mmc, mrq);
+ }
+ 
 -- 
 1.7.2.5
 
