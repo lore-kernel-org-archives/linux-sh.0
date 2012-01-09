@@ -1,128 +1,32 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 10 Jan 2012 15:06:04 +0000
-Subject: [PATCH] mmc: tmio_mmc, sdhi: update input clock frequency after
-Message-Id: <Pine.LNX.4.64.1201101604130.530@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 09 Jan 2012 00:34:13 +0000
+Subject: Re: [PATCH 00/05] sh: pfc: Variable bitfield width and unlock reg patches
+Message-Id: <20120109003413.GC25648@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: linux-sh@vger.kernel.org
 
-After a runtime or system-wide suspend the clock frequency can change,
-therefore it must be re-read.
+On Wed, Dec 14, 2011 at 01:00:27AM +0900, Magnus Damm wrote:
+> sh: pfc: Variable bitfield width and unlock reg patches
+> 
+> [PATCH 01/05] sh: pfc: Add gpio_read_bit() for data register access
+> [PATCH 02/05] sh: pfc: Convert index to field and value pair
+> [PATCH 03/05] sh: pfc: Add config_reg_helper() function
+> [PATCH 04/05] sh: pfc: Variable bitfield width config register support
+> [PATCH 05/05] sh: pfc: Unlock register support
+> 
+> Update the common PFC code to support r8a7779 by adding:
+> - Variable bitfield width config register support (Patch 4)
+> - Unlock register support (Patch 5)
+> 
+> Patch 1-3 contain incremental changes needed for 4.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Depends on "[PATCH] sh: pfc: ioremap() support"
+> 
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/sh_mobile_sdhi.c |   10 ++++++++++
- drivers/mmc/host/tmio_mmc_pio.c   |   31 +++++++++++++++++++++----------
- include/linux/mfd/tmio.h          |    1 +
- 3 files changed, 32 insertions(+), 10 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 95a2405..c0db970 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -47,6 +47,15 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- 		p->set_pwr(pdev, state);
- }
- 
-+static unsigned int sh_mobile_sdhi_get_clk_rate(struct platform_device *pdev)
-+{
-+	struct mmc_host *mmc = platform_get_drvdata(pdev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+
-+	return clk_get_rate(priv->clk);
-+}
-+
- static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
- {
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-@@ -120,6 +129,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->hclk = clk_get_rate(priv->clk);
- 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
-+	mmc_data->get_clk_rate = sh_mobile_sdhi_get_clk_rate;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 7c4378f..0e72f1a 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -900,7 +900,10 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	mmc->ops = &tmio_mmc_ops;
- 	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
--	mmc->f_max = pdata->hclk;
-+	if (pdata->get_clk_rate)
-+		mmc->f_max = pdata->get_clk_rate(pdev);
-+	else
-+		mmc->f_max = pdata->hclk;
- 	mmc->f_min = mmc->f_max / 512;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
-@@ -1019,6 +1022,21 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
- }
- EXPORT_SYMBOL(tmio_mmc_host_remove);
- 
-+static void tmio_mmc_resume(struct device *dev)
-+{
-+	struct mmc_host *mmc = dev_get_drvdata(dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct tmio_mmc_data *pdata = host->pdata;
-+
-+	if (pdata->get_clk_rate) {
-+		mmc->f_max = pdata->get_clk_rate(host->pdev);
-+		mmc->f_min = mmc->f_max / 512;
-+	}
-+
-+	tmio_mmc_reset(host);
-+	tmio_mmc_enable_dma(host, true);
-+}
-+
- #ifdef CONFIG_PM
- int tmio_mmc_host_suspend(struct device *dev)
- {
-@@ -1036,10 +1054,8 @@ EXPORT_SYMBOL(tmio_mmc_host_suspend);
- int tmio_mmc_host_resume(struct device *dev)
- {
- 	struct mmc_host *mmc = dev_get_drvdata(dev);
--	struct tmio_mmc_host *host = mmc_priv(mmc);
- 
--	tmio_mmc_reset(host);
--	tmio_mmc_enable_dma(host, true);
-+	tmio_mmc_resume(dev);
- 
- 	/* The MMC core will perform the complete set up */
- 	return mmc_resume_host(mmc);
-@@ -1056,12 +1072,7 @@ EXPORT_SYMBOL(tmio_mmc_host_runtime_suspend);
- 
- int tmio_mmc_host_runtime_resume(struct device *dev)
- {
--	struct mmc_host *mmc = dev_get_drvdata(dev);
--	struct tmio_mmc_host *host = mmc_priv(mmc);
--
--	tmio_mmc_reset(host);
--	tmio_mmc_enable_dma(host, true);
--
-+	tmio_mmc_resume(dev);
- 	return 0;
- }
- EXPORT_SYMBOL(tmio_mmc_host_runtime_resume);
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 367c65c6..018eb45 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -103,6 +103,7 @@ struct tmio_mmc_data {
- 	unsigned long			cd_flags;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
-+	unsigned int (*get_clk_rate)(struct platform_device *host);
- 	int (*get_cd)(struct platform_device *host);
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- };
--- 
-1.7.2.5
-
+Applied to common/pfc, thanks.
