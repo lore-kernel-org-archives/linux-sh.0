@@ -1,22 +1,34 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 18 Jan 2012 12:40:33 +0000
-Subject: Re: [PATCH 1/2] dma: sh_dma: not all SH DMAC implementations support MEMCPY
-Message-Id: <20120118124033.GI8182@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 10 Jan 2012 15:55:36 +0000
+Subject: MMCIF support on sh7757lcr
+Message-Id: <Pine.LNX.4.64.1201101646050.530@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 18, 2012 at 10:14:25AM +0100, Guennadi Liakhovetski wrote:
-> Add a flag to allow platforms to specify, whether a DMAC instance supports
-> the MEMCPY operation. To avoid regressions, preserve the current default.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hello Shimoda-san
 
-This series looks fine to me.
+While reviewing MMCIF platform bindings, I came across your commit
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+commit 65f63eab38626a79f8a54d13686680a1ea898f72
+Author: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date:   Fri Feb 25 07:40:27 2011 +0000
+
+    sh: add platform_device of tmio_mmc and sh_mmcif to sh7757lcr
+
+There you only specify MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA 
+capabilities for MMCIF. The MMCIF controller does not have any native 
+support for card hotplug detection, therefore it must either be polled, or 
+the card has to be marked non-removable. For polling it is also desired to 
+provide a .get_cd() method. Neither of these is done for sh7757lcr. Is the 
+MMC card on it removable? If so, is there any way to detect card presence 
+in the slot?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
