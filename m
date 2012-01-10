@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 06 Jan 2012 08:21:09 +0000
+Date: Tue, 10 Jan 2012 15:10:33 +0000
 Subject: Re: [PATCH 09/11] mmc: sh_mobile_sdhi: do not manage PM clocks
-Message-Id: <Pine.LNX.4.64.1201060917130.16279@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1201101607310.530@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
  <1325686636-23905-10-git-send-email-g.liakhovetski@gmx.de>
@@ -12,6 +12,8 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: Magnus Damm <magnus.damm@gmail.com>
 Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+
+Hi Magnus
 
 On Fri, 6 Jan 2012, Magnus Damm wrote:
 
@@ -34,14 +36,7 @@ On Fri, 6 Jan 2012, Magnus Damm wrote:
 > >From my point of view there is very little difference between SH and
 > SH-Mobile ARM, so I don't understand the special treatment. Also, is
 > this change really needed for SH with your recent Runtime PM patches?
-
-I didn't try SuperH. I seem to remember, there were 2 clocks per SDHI=20
-controller on some platforms, of which one was handled by runtime PM and=20
-the other one directly. However, a quick look through SDHI users didn't=20
-reveal any such cases, so, maybe I'm confusing SDHI with some other=20
-hardware block. In that case - yes, I'd gladly remove that handling=20
-completely!
-
+>=20
 > I believe we need to make use of the clock framework to get the clock
 > rate configuration in the SDHI driver. At the same time we want to
 > stop the clock as frequently as possible. I believe we should disable
@@ -49,10 +44,14 @@ completely!
 > pretty much exactly like our I2C master driver does. The only problem
 > is, while the clock is disabled the clock rate may be changed. So we
 > need to be able to notify the MMC subsystem about the new clock rate.
->=20
-> Any ideas on how to make this happen?
 
-Huh, if that's really possible... I'll have a look at that.
+It sounds a bit strange to me, that the clock frequency can change - I=20
+don't think we take it into account in other drivers? But if this is=20
+really the case, would something like this help in this case:
+
+http://thread.gmane.org/gmane.linux.kernel.mmc/12110
+
+> Any ideas on how to make this happen?
 
 Thanks
 Guennadi
