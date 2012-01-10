@@ -1,47 +1,99 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 26 Jan 2012 14:56:19 +0000
-Subject: [PATCH 2/7 v2] dma: shdma: prepare for simple DMA conversion
-Message-Id: <1327589784-4287-3-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 10 Jan 2012 05:21:15 +0000
+Subject: [PATCH v2 2/3] sh: add platform_device for SUDMAC in setup-sh7757
+Message-Id: <4F0BCACB.20203@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-By placing an anonymous union at the top of struct sh_dmae_slave we can
-transparently prepare all drivers for the upcoming simple DMA conversion.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- include/linux/sh_dma.h |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+ about v2:
+  - No need the .no_error_irq flag.
 
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index 425450b..ed2aa1e 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -10,12 +10,16 @@
- #ifndef SH_DMA_H
- #define SH_DMA_H
- 
--#include <linux/list.h>
-+#include <linux/dma-simple.h>
- #include <linux/dmaengine.h>
-+#include <linux/list.h>
- 
- /* Used by slave DMA clients to request DMA to/from a specific peripheral */
- struct sh_dmae_slave {
--	unsigned int			slave_id; /* Set by the platform */
-+	union {
-+		unsigned int		slave_id; /* Set by the platform */
-+		struct dma_simple_slave	simple_slave;
-+	};
- 	struct device			*dma_dev; /* Set by the platform */
- 	const struct sh_dmae_slave_config	*config;  /* Set by the driver */
+ arch/sh/include/cpu-sh4/cpu/sh7757.h   |    1 +
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   49 ++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7757.h b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+index 41f9f8b..f9be40a 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7757.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+@@ -283,5 +283,6 @@ enum {
+ 	SHDMA_SLAVE_RIIC8_RX,
+ 	SHDMA_SLAVE_RIIC9_TX,
+ 	SHDMA_SLAVE_RIIC9_RX,
++	SHDMA_SLAVE_SUDMAC00,
  };
--- 
-1.7.2.5
+ #endif /* __ASM_SH7757_H__ */
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index a7b2da6..bb9324a 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -650,6 +650,54 @@ static struct platform_device dma3_device = {
+ 	},
+ };
 
++/* SUDMAC */
++static const struct sh_dmae_channel sh7757_sudmac_channel[] = {
++	{
++		.offset = 0,
++		.dmars = 0,
++		.dmars_bit = 0,
++	}
++};
++
++static const struct sh_dmae_slave_config sh7757_sudmac00_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_SUDMAC00,
++		.addr		= 0xfe451000,
++	},
++};
++
++static struct sh_dmae_pdata sudmac00_platform_data = {
++	.slave		= sh7757_sudmac00_slaves,
++	.slave_num	= ARRAY_SIZE(sh7757_sudmac00_slaves),
++	.channel	= sh7757_sudmac_channel,
++	.channel_num	= 1,
++	.no_dmars	= 1,
++	.sudmac		= 1,
++};
++
++static struct resource sh7757_sudmac00_resources[] = {
++	[0] = {
++		.start	= 0xfe451000,
++		.end	= 0xfe451000,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		.start	= 50,
++		.end	= 50,
++		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_SHAREABLE,
++	},
++};
++
++static struct platform_device sudmac00_device = {
++	.name		= "sh-dma-engine",
++	.id		= 4,
++	.resource	= sh7757_sudmac00_resources,
++	.num_resources	= ARRAY_SIZE(sh7757_sudmac00_resources),
++	.dev		= {
++		.platform_data	= &sudmac00_platform_data,
++	},
++};
++
+ static struct platform_device spi0_device = {
+ 	.name	= "sh_spi",
+ 	.id	= 0,
+@@ -719,6 +767,7 @@ static struct platform_device *sh7757_devices[] __initdata = {
+ 	&dma1_device,
+ 	&dma2_device,
+ 	&dma3_device,
++	&sudmac00_device,
+ 	&spi0_device,
+ 	&usb_ehci_device,
+ 	&usb_ohci_device,
+-- 
+1.7.1
