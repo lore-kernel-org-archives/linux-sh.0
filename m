@@ -1,58 +1,65 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Jan 2012 12:01:37 +0000
-Subject: [PATCH 08/11] mmc: tmio_mmc: remove unused sdio_irq_enabled flag
-Message-Id: <1327406500-7233-9-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 10 Jan 2012 05:21:31 +0000
+Subject: [PATCH] arm: mach-shmobile: add a resource name for shdma
+Message-Id: <4F0BCADB.8010709@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-The sdio_irq_enabled member of struct tmio_mmc_host is a left-over from the
-previously removed SDIO IRQ workaround. It is no longer needed and can now
-be removed too.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc.h     |    1 -
- drivers/mmc/host/tmio_mmc_pio.c |    2 --
- 2 files changed, 0 insertions(+), 3 deletions(-)
+ This patch depends on the following patch:
+   - dmaengine: shdma: modify the DMAC Address Error registration
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index edfcfd7..d857f5c 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -47,7 +47,6 @@ struct tmio_mmc_host {
- 	struct mmc_request      *mrq;
- 	struct mmc_data         *data;
- 	struct mmc_host         *mmc;
--	unsigned int		sdio_irq_enabled;
- 
- 	/* Controller power state */
- 	bool			power;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index eee9f4f..d7955c6 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -127,7 +127,6 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 
- 	if (enable) {
--		host->sdio_irq_enabled = 1;
- 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL &
- 					~TMIO_SDIO_STAT_IOIRQ;
- 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0001);
-@@ -136,7 +135,6 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
- 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
- 		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
- 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0000);
--		host->sdio_irq_enabled = 0;
- 	}
- }
- 
+ arch/arm/mach-shmobile/setup-sh7372.c |    6 +++---
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 2380389..dad4d09 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -504,7 +504,7 @@ static struct resource sh7372_dmae0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
+-		/* DMA error IRQ */
++		.name	= "error_irq",
+ 		.start	= evt2irq(0x20c0),
+ 		.end	= evt2irq(0x20c0),
+ 		.flags	= IORESOURCE_IRQ,
+@@ -532,7 +532,7 @@ static struct resource sh7372_dmae1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
+-		/* DMA error IRQ */
++		.name	= "error_irq",
+ 		.start	= evt2irq(0x21c0),
+ 		.end	= evt2irq(0x21c0),
+ 		.flags	= IORESOURCE_IRQ,
+@@ -560,7 +560,7 @@ static struct resource sh7372_dmae2_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
+-		/* DMA error IRQ */
++		.name	= "error_irq",
+ 		.start	= evt2irq(0x22c0),
+ 		.end	= evt2irq(0x22c0),
+ 		.flags	= IORESOURCE_IRQ,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index e46821c..20e71e5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -607,7 +607,7 @@ static struct resource sh73a0_dmae_resources[] = {
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	{
+-		/* DMA error IRQ */
++		.name	= "error_irq",
+ 		.start  = gic_spi(129),
+ 		.end    = gic_spi(129),
+ 		.flags  = IORESOURCE_IRQ,
 -- 
-1.7.2.5
-
+1.7.1
