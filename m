@@ -1,87 +1,165 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jan 2012 02:53:37 +0000
-Subject: Re: [PATCH 06/11] mfd: tmio: remove now unneeded tmio_mmc_cd_wakeup()
-Message-Id: <CANqRtoTTRWGoBoEOs2BkgKYU_W2gNZPghJj=9KsTTQMbwS3oqQ@mail.gmail.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 10 Jan 2012 06:38:13 +0000
+Subject: [PATCH v3 1/3] dmaengine: shdma: modify the DMAC Address Error
+Message-Id: <4F0BDCD5.9020603@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
-	<1325686636-23905-7-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1325686636-23905-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 4, 2012 at 11:17 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Now, that all users of tmio_mmc_cd_wakeup() have been converted over to
-> drivers/mmc/core/cd-gpio.c, that function can be removed.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> =A0include/linux/mfd/tmio.h | =A0 11 -----------
-> =A01 files changed, 0 insertions(+), 11 deletions(-)
->
-> diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-> index 4ef9307..08fb7d2 100644
-> --- a/include/linux/mfd/tmio.h
-> +++ b/include/linux/mfd/tmio.h
-> @@ -4,7 +4,6 @@
-> =A0#include <linux/device.h>
-> =A0#include <linux/fb.h>
-> =A0#include <linux/io.h>
-> -#include <linux/jiffies.h>
-> =A0#include <linux/platform_device.h>
-> =A0#include <linux/pm_runtime.h>
->
-> @@ -110,16 +109,6 @@ struct tmio_mmc_data {
-> =A0};
->
-> =A0/*
-> - * This function is deprecated and will be removed soon. Please, convert=
- your
-> - * platform to use drivers/mmc/core/cd-gpio.c
-> - */
-> -static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
-> -{
-> - =A0 =A0 =A0 if (pdata)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 mmc_detect_change(dev_get_drvdata(dev), mse=
-cs_to_jiffies(100));
-> -}
-> -
-> -/*
+The USB-DMAC/SUDMAC don't have the interrupt of DMAC Address Error.
+So, only when the resource has a name and it is "error_irq", the driver
+calls request_irq() for DMAC Address Error.
 
-Ok, I can clearly see the merit of removing unused code. And I do
-appreciate that you clean up the code. Thank you!
+This patch is also useful for the generic DMAC which doesn't have
+DMAC Address Error. So, we can get rid of the "CPU_SH4 || ARCH_SHMOBILE"
+ifdefs.
+This patch also changes the IRQF_DISABLED to 0.
 
-The only issue is that we do however have tons of users of the SDHI
-driver (just grep in arch/arm/mach-shmobile and in arch/sh) and many
-of them can use other pins than the SDHI CD function for hotplug
-detection. To support such configurations we need to have some way to
-notify the driver instance about the hotplug change. This patch is
-removing just that.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v3:
+  - changes the IRQF_DISABLED to 0.
 
-I do realize that you recently posted some generic MMC GPIO hotplug
-patches, and I am happy that you agreed with me that it is better to
-put it in the generic MMC core than pushing it in the SDHI or MMCIF
-driver. So this development seems like a perfect fit for both the SDHI
-driver and the MMCIF driver.
+ drivers/dma/shdma.c |   78 ++++++++++++++++++++++++++-------------------------
+ 1 files changed, 40 insertions(+), 38 deletions(-)
 
-I'd like to see platforms move over to your MMC GPIO hotplug helpers,
-but at the same time I want to keep the existing notification method
-to make a smooth transition. I personally added GPIO IRQ support
-rather recently to SH Mobile ARM, but it is still rather early and we
-do not have many users yet. I have seen customer-specific hardware
-designs using non-GPIO pins for CD handling too, and to support such
-hardware we want to keep flexible notification methods. So with that
-in mind I'd like to keep the options open and allow fully developed
-platforms to use your MMC GPIO hotplug code, but also allow custom
-platforms and boards/SoCs with more limited software support handle
-hotplug notification the old way.
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 81809c2..55149ed 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -1149,12 +1149,12 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
+ static int __init sh_dmae_probe(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
+-	unsigned long irqflags = IRQF_DISABLED,
++	unsigned long irqflags = 0,
+ 		chan_flag[SH_DMAC_MAX_CHANNELS] = {};
+-	int errirq, chan_irq[SH_DMAC_MAX_CHANNELS];
++	int errirq = 0, chan_irq[SH_DMAC_MAX_CHANNELS];
+ 	int err, i, irq_cnt = 0, irqres = 0, irq_cap = 0;
+ 	struct sh_dmae_device *shdev;
+-	struct resource *chan, *dmars, *errirq_res, *chanirq_res;
++	struct resource *chan, *dmars, *errirq_res, *irq_res, *chanirq_res;
 
-So please don't remove this function at this point. Give us time to move ov=
-er.
+ 	/* get platform data */
+ 	if (!pdata || !pdata->channel_num)
+@@ -1179,8 +1179,8 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	 *    specify IORESOURCE_IRQ_SHAREABLE in their resources, they will be
+ 	 *    requested with the IRQF_SHARED flag
+ 	 */
+-	errirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+-	if (!chan || !errirq_res)
++	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (!chan || !irq_res)
+ 		return -ENODEV;
 
-Thanks,
+ 	if (!request_mem_region(chan->start, resource_size(chan), pdev->name)) {
+@@ -1258,33 +1258,35 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	/* Default transfer size of 32 bytes requires 32-byte alignment */
+ 	shdev->common.copy_align = LOG2_DEFAULT_XFER_SIZE;
 
-/ magnus
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+-	chanirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+-
+-	if (!chanirq_res)
+-		chanirq_res = errirq_res;
+-	else
+-		irqres++;
+-
+-	if (chanirq_res = errirq_res ||
+-	    (errirq_res->flags & IORESOURCE_BITS) = IORESOURCE_IRQ_SHAREABLE)
+-		irqflags = IRQF_SHARED;
+-
+-	errirq = errirq_res->start;
+-
+-	err = request_irq(errirq, sh_dmae_err, irqflags,
+-			  "DMAC Address Error", shdev);
+-	if (err) {
+-		dev_err(&pdev->dev,
+-			"DMA failed requesting irq #%d, error %d\n",
+-			errirq, err);
+-		goto eirq_err;
++	errirq_res = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
++						  "error_irq");
++	if (errirq_res) {
++		chanirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
++
++		if (!chanirq_res)
++			chanirq_res = errirq_res;
++		else
++			irqres++;
++
++		if (chanirq_res = errirq_res ||
++		    (errirq_res->flags & IORESOURCE_BITS) =
++		    IORESOURCE_IRQ_SHAREABLE)
++			irqflags = IRQF_SHARED;
++
++		errirq = errirq_res->start;
++
++		err = request_irq(errirq, sh_dmae_err, irqflags,
++				  "DMAC Address Error", shdev);
++		if (err) {
++			dev_err(&pdev->dev,
++				"DMA failed requesting irq #%d, error %d\n",
++				errirq, err);
++			goto eirq_err;
++		}
++	} else {
++		chanirq_res = irq_res;
+ 	}
+
+-#else
+-	chanirq_res = errirq_res;
+-#endif /* CONFIG_CPU_SH4 || CONFIG_ARCH_SHMOBILE */
+-
+ 	if (chanirq_res->start = chanirq_res->end &&
+ 	    !platform_get_resource(pdev, IORESOURCE_IRQ, 1)) {
+ 		/* Special case - all multiplexed */
+@@ -1305,11 +1307,11 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 					break;
+ 				}
+
+-				if ((errirq_res->flags & IORESOURCE_BITS) =
++				if ((irq_res->flags & IORESOURCE_BITS) =
+ 				    IORESOURCE_IRQ_SHAREABLE)
+ 					chan_flag[irq_cnt] = IRQF_SHARED;
+ 				else
+-					chan_flag[irq_cnt] = IRQF_DISABLED;
++					chan_flag[irq_cnt] = 0;
+ 				dev_dbg(&pdev->dev,
+ 					"Found IRQ %d for channel %d\n",
+ 					i, irq_cnt);
+@@ -1345,10 +1347,9 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ chan_probe_err:
+ 	sh_dmae_chan_remove(shdev);
+
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+-	free_irq(errirq, shdev);
++	if (errirq_res)
++		free_irq(errirq, shdev);
+ eirq_err:
+-#endif
+ rst_err:
+ 	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
+@@ -1379,12 +1380,13 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
+ 	struct resource *res;
+-	int errirq = platform_get_irq(pdev, 0);
++	struct resource *errirq_res = platform_get_resource_byname(pdev,
++						IORESOURCE_IRQ, "error_irq");
+
+ 	dma_async_device_unregister(&shdev->common);
+
+-	if (errirq > 0)
+-		free_irq(errirq, shdev);
++	if (errirq_res)
++		free_irq(errirq_res->start, shdev);
+
+ 	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
+-- 
+1.7.1
