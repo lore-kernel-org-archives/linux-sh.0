@@ -1,37 +1,56 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jan 2012 14:22:44 +0000
-Subject: [PATCH] ARM: mach-shmobile: fix SDHI0 hotplug sense
-Message-Id: <Pine.LNX.4.64.1201041521400.30506@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 10 Jan 2012 21:13:59 +0000
+Subject: [PATCH] PM / Domains: Fix build for CONFIG_PM_SLEEP unset
+Message-Id: <201201102213.59555.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-In most cases it suffices to only trigger SD-card interrupts on one edge
-due to GPIO level bouncing, but sometimes it does indeed happen, that only
-one interrupt is produced on a card insertion or removal, which is then
-missed, if the wrong trigger sense is configured. To avoid this configure
-the GPIO to produce interrupts on both edges.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Some callback functions defined in drivers/base/power/domain.c are
+only necessary if CONFIG_PM_SLEEP and they call some other functions
+that are only available in that case.  For this reason, they should
+not be compiled at all when CONFIG_PM_SLEEP is not set.
+
+Reported-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ drivers/base/power/domain.c |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index b35343a..3139ced 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1011,7 +1011,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.cd_gpio	= GPIO_PORT172,
- 	.cd_irq		= evt2irq(0x3340),
--	.cd_flags	= IRQF_TRIGGER_FALLING,
-+	.cd_flags	= IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
- };
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -1429,6 +1429,8 @@ static int pm_genpd_default_restore_stat
+ 	return 0;
+ }
  
- static struct resource sdhi0_resources[] = {
--- 
-1.7.2.5
-
++#ifdef CONFIG_PM_SLEEP
++
+ /**
+  * pm_genpd_default_suspend - Default "device suspend" for PM domians.
+  * @dev: Device to handle.
+@@ -1517,6 +1519,19 @@ static int pm_genpd_default_thaw(struct
+ 	return cb ? cb(dev) : pm_generic_thaw(dev);
+ }
+ 
++#else /* !CONFIG_PM_SLEEP */
++
++#define pm_genpd_default_suspend	NULL
++#define pm_genpd_default_suspend_late	NULL
++#define pm_genpd_default_resume_early	NULL
++#define pm_genpd_default_resume		NULL
++#define pm_genpd_default_freeze		NULL
++#define pm_genpd_default_freeze_late	NULL
++#define pm_genpd_default_thaw_early	NULL
++#define pm_genpd_default_thaw		NULL
++
++#endif /* !CONFIG_PM_SLEEP */
++
+ /**
+  * pm_genpd_init - Initialize a generic I/O PM domain object.
+  * @genpd: PM domain object to initialize.
