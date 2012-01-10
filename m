@@ -1,19 +1,31 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 09 Jan 2012 01:24:34 +0000
-Subject: Re: [PATCH 0/2] ARM: mach-shmobile: clock-r8a7779: patches
-Message-Id: <20120109012434.GF25648@linux-sh.org>
+From: Alexander Lukichev <alexander.lukichev@gmail.com>
+Date: Tue, 10 Jan 2012 10:53:41 +0000
+Subject: mach/debug-macro.S for sh-mobile
+Message-Id: <CAAHaz6Fn6oFMppysdfFtmbhEc8raSVD3375FusCj06A-sV=k8A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 20, 2011 at 12:46:56AM -0800, Kuninori Morimoto wrote:
-> These are r8a7779 clock update patches which depends on Magnus's
-> [ARM: mach-shmobile: r8a7779 and Marzen V2] patches
-> 
-> Kuninori Morimoto (2):
->       ARM: mach-shmobile: clock-r8a7779: add DIV4 clock support
->       ARM: mach-shmobile: clock-r8a7779: clkz/clkzs support
-> 
-Applied to rmobile/marzen, thanks.
+Hi, all!
+
+  I'm new to kernel development but would like to port it to a new SoC
+which is strikingly like other SHmobile chips (e.g., sh7372). I am
+sorry in advance if I ask too dummy and/or inappropriate questions. If
+you feel like I did just that, please refer me to some mailing list
+where they could be answered, or explicitly to /dev/null.
+
+  I'm trying to compile v3.1 from Linus for a Mackerel board (sh7372)
+but with DEBUG_LL and EARLY_PRINTK enabled, and DEBUG_ICEDCC disabled.
+And I get missing mach/debug-macro.S error. I have not been able to
+loate that file anywhere for SHmobile. Is it not intended to exist for
+SHmobile? Id est, if DEBUG_LL is on than UART is not used on any of
+those chips inn SHmobile? Where could I get me debugging macros
+besides writing them myself?
+
+  Thanks!
+
+--
+Best regards,
+=C2=A0 Alexander Lukichev
