@@ -1,7 +1,7 @@
 From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 10 Jan 2012 06:38:18 +0000
-Subject: [PATCH v3 2/3] dmaengine: shdma: use sh_dmae_writel/readl in
-Message-Id: <4F0BDCDA.7080804@renesas.com>
+Date: Wed, 11 Jan 2012 07:28:09 +0000
+Subject: [PATCH v4 5/6] dmaengine: shdma: use sh_dmae_writel/readl in chcr_write/read
+Message-Id: <4F0D3A09.4010506@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,14 +10,14 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- about v3:
+ about v4:
   - No change
 
  drivers/dma/shdma.c |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 55149ed..4e0ddd6 100644
+index 5260dac..0f9d5f2 100644
 --- a/drivers/dma/shdma.c
 +++ b/drivers/dma/shdma.c
 @@ -92,14 +92,14 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
