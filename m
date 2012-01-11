@@ -1,376 +1,284 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 10 Jan 2012 08:44:39 +0000
-Subject: [PATCH] ARM: mach-shmobile: r8a7779 SMP support V3
-Message-Id: <20120110084439.12982.79331.sendpatchset@w520>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 11 Jan 2012 07:28:16 +0000
+Subject: [PATCH v4 6/6] dmaengine: shdma: add support for SUDMAC
+Message-Id: <4F0D3A10.7000708@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111222081730.12133.61045.sendpatchset@w520>
-In-Reply-To: <20111222081730.12133.61045.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The SH7757's USB module has SUDMAC. The SUDMAC's registers are imcompatible
+with SH DMAC. However, since the SUDMAC is a very simple module, we can
+reuse the shdma driver for SUDMAC by a few modification.
 
-This patch contains r8a7779 SMP support V3 - now including
-CPU hotplug offine and online support. The r8a7779 power
-domain code is tied together with SMP glue code which allows
-us to control the power domains via CPU hotplug.
-
-At this point the kernel boots with the 4 Cortex-A9 cores in
-SMP mode and all CPU cores except CPU0 can be hotplugged.
-
-The code in platsmp.c is quite far from pretty, but it is
-kept like that intentionally to avoid creating layers of
-code that will go away in the near future anyway. The code
-needs to be updated when some per-SoC handling code will be
-added to the ARM architecture, see the following patch for
-more information:
- "[RFC PATCH 0/3] Per SoC descriptor"
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ about v4:
+  - No change
 
- Built on top of linux-sh git rmobile/marzen branch with the
- latest r8a7779 power domain code applied:
- "ARM: mach-shmobile: r8a7779 power domain support V2"
+ drivers/dma/shdma.c    |  102 +++++++++++++++++++++++++++++++++++++++++++-----
+ include/linux/sh_dma.h |   46 +++++++++++++++++++++
+ 2 files changed, 138 insertions(+), 10 deletions(-)
 
- Changes since V2:
- -  updated commit message
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 0f9d5f2..eb5ca48 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -58,6 +58,11 @@ static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SH_DMA_SLAVE_NUMBER)];
 
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/include/mach/common.h  |    6 
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 
- arch/arm/mach-shmobile/platsmp.c              |   16 ++
- arch/arm/mach-shmobile/pm-r8a7779.c           |   30 +++-
- arch/arm/mach-shmobile/smp-r8a7779.c          |  153 +++++++++++++++++++++++++
- 6 files changed, 201 insertions(+), 8 deletions(-)
+ static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all);
 
---- 0022/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2011-12-28 14:52:24.000000000 +0900
-@@ -17,6 +17,7 @@ smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
- smp-$(CONFIG_LOCAL_TIMERS)	+= localtimer.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o
-+smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o
- 
- # Pinmux setup
- pfc-y				:--- 0024/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2011-12-28 14:54:31.000000000 +0900
-@@ -61,4 +61,10 @@ extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
- 
-+extern unsigned int r8a7779_get_core_count(void);
-+extern int r8a7779_platform_cpu_kill(unsigned int cpu);
-+extern void r8a7779_secondary_init(unsigned int cpu);
-+extern int r8a7779_boot_secondary(unsigned int cpu);
-+extern void r8a7779_smp_prepare_cpus(void);
++static int sh_dmae_is_sudmac(struct sh_dmae_device *shdev)
++{
++	return shdev->pdata->sudmac;
++}
 +
- #endif /* __ARCH_MACH_COMMON_H */
---- 0022/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2011-12-28 14:52:24.000000000 +0900
-@@ -343,6 +343,9 @@ static inline struct r8a7779_pm_ch *to_r
- 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
- }
- 
-+extern int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch);
-+extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
-+
- #ifdef CONFIG_PM
- extern struct r8a7779_pm_domain r8a7779_sh4a;
- extern struct r8a7779_pm_domain r8a7779_sgx;
---- 0024/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2011-12-28 14:53:23.000000000 +0900
-@@ -22,12 +22,16 @@
- #include <mach/common.h>
- 
- #define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2())
-+#define is_r8a7779() machine_is_marzen()
- 
- static unsigned int __init shmobile_smp_get_core_count(void)
+ static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
  {
- 	if (is_sh73a0())
- 		return sh73a0_get_core_count();
- 
-+	if (is_r8a7779())
-+		return r8a7779_get_core_count();
-+
- 	return 1;
+ 	__raw_writel(data, sh_dc->base + reg / sizeof(u32));
+@@ -68,6 +73,39 @@ static u32 sh_dmae_readl(struct sh_dmae_chan *sh_dc, u32 reg)
+ 	return __raw_readl(sh_dc->base + reg / sizeof(u32));
  }
- 
-@@ -35,10 +39,16 @@ static void __init shmobile_smp_prepare_
+
++static void sh_dmae_sudmac_chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
++{
++	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
++
++	if (!(data & CHCR_TE))	/* clear interrupt status only */
++		sh_dmae_writel(sh_dc, CH0ENDC, DINTSTSCLR);
++
++	if (data & shdev->chcr_ie_bit)
++		sh_dmae_writel(sh_dc, CH0ENDE, DINTCTRL);
++	else
++		sh_dmae_writel(sh_dc, 0, DINTCTRL);
++
++	if (data & CHCR_DE)
++		sh_dmae_writel(sh_dc, DEN, CH0DEN);
++	else
++		sh_dmae_writel(sh_dc, 0, CH0DEN);
++}
++
++static u32 sh_dmae_sudmac_chcr_read(struct sh_dmae_chan *sh_dc)
++{
++	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
++	u32 chcr = 0;
++
++	if (sh_dmae_readl(sh_dc, DINTSTS) & CH0ENDS)
++		chcr |= CHCR_TE;
++	if (sh_dmae_readl(sh_dc, DINTCTRL) & CH0ENDE)
++		chcr |= shdev->chcr_ie_bit;
++	if (sh_dmae_readl(sh_dc, CH0DEN) & DEN)
++		chcr |= CHCR_DE;
++
++	return chcr;
++}
++
+ static u16 dmaor_read(struct sh_dmae_device *shdev)
  {
- 	if (is_sh73a0())
- 		sh73a0_smp_prepare_cpus();
-+
-+	if (is_r8a7779())
-+		r8a7779_smp_prepare_cpus();
- }
- 
- int shmobile_platform_cpu_kill(unsigned int cpu)
+ 	u32 __iomem *addr = shdev->chan_reg + DMAOR / sizeof(u32);
+@@ -92,14 +130,20 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
  {
-+	if (is_r8a7779())
-+		return r8a7779_platform_cpu_kill(cpu);
-+
- 	return 1;
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+
+-	sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
++	if (sh_dmae_is_sudmac(shdev))
++		sh_dmae_sudmac_chcr_write(sh_dc, data);
++	else
++		sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
  }
- 
-@@ -48,6 +58,9 @@ void __cpuinit platform_secondary_init(u
- 
- 	if (is_sh73a0())
- 		sh73a0_secondary_init(cpu);
-+
-+	if (is_r8a7779())
-+		r8a7779_secondary_init(cpu);
- }
- 
- int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
-@@ -55,6 +68,9 @@ int __cpuinit boot_secondary(unsigned in
- 	if (is_sh73a0())
- 		return sh73a0_boot_secondary(cpu);
- 
-+	if (is_r8a7779())
-+		return r8a7779_boot_secondary(cpu);
-+
- 	return -ENOSYS;
- }
- 
---- 0022/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2011-12-28 15:06:42.000000000 +0900
-@@ -48,7 +48,9 @@ static void __iomem *r8a7779_sysc_base;
- #define SYSCISR_RETRIES 1000
- #define SYSCISR_DELAY_US 1
- 
--#ifdef CONFIG_PM
-+#if defined(CONFIG_PM) || defined(CONFIG_SMP)
-+
-+static DEFINE_SPINLOCK(r8a7779_sysc_lock); /* SMP CPUs + I/O devices */
- 
- static int r8a7779_sysc_pwr_on_off(struct r8a7779_pm_ch *r8a7779_ch,
- 				   int sr_bit, int reg_offs)
-@@ -86,9 +88,12 @@ static int r8a7779_sysc_update(struct r8
- 	unsigned int isr_mask = 1 << r8a7779_ch->isr_bit;
- 	unsigned int chan_mask = 1 << r8a7779_ch->chan_bit;
- 	unsigned int status;
-+	unsigned long flags;
- 	int ret = 0;
- 	int k;
- 
-+	spin_lock_irqsave(&r8a7779_sysc_lock, flags);
-+
- 	iowrite32(isr_mask, r8a7779_sysc_base + SYSCISCR);
- 
- 	do {
-@@ -112,6 +117,8 @@ static int r8a7779_sysc_update(struct r8
- 	iowrite32(isr_mask, r8a7779_sysc_base + SYSCISCR);
- 
-  out:
-+	spin_unlock_irqrestore(&r8a7779_sysc_lock, flags);
-+
- 	pr_debug("r8a7779 power domain %d: %02x %02x %02x %02x %02x -> %d\n",
- 		 r8a7779_ch->isr_bit, ioread32(r8a7779_sysc_base + PWRSR0),
- 		 ioread32(r8a7779_sysc_base + PWRSR1),
-@@ -121,12 +128,12 @@ static int r8a7779_sysc_update(struct r8
- 	return ret;
- }
- 
--static int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch)
-+int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch)
+
+ static u32 chcr_read(struct sh_dmae_chan *sh_dc)
  {
- 	return r8a7779_sysc_update(r8a7779_ch, r8a7779_sysc_pwr_off);
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+
+-	return sh_dmae_readl(sh_dc, shdev->chcr_offset);
++	if (sh_dmae_is_sudmac(shdev))
++		return sh_dmae_sudmac_chcr_read(sh_dc);
++	else
++		return sh_dmae_readl(sh_dc, shdev->chcr_offset);
  }
- 
--static int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch)
-+int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch)
+
+ /*
+@@ -112,6 +156,9 @@ static void sh_dmae_ctl_stop(struct sh_dmae_device *shdev)
+ 	unsigned short dmaor;
+ 	unsigned long flags;
+
++	if (sh_dmae_is_sudmac(shdev))
++		return;
++
+ 	spin_lock_irqsave(&sh_dmae_lock, flags);
+
+ 	dmaor = dmaor_read(shdev);
+@@ -125,6 +172,9 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
+ 	unsigned short dmaor;
+ 	unsigned long flags;
+
++	if (sh_dmae_is_sudmac(shdev))
++		return 0;
++
+ 	spin_lock_irqsave(&sh_dmae_lock, flags);
+
+ 	dmaor = dmaor_read(shdev) & ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME);
+@@ -159,6 +209,9 @@ static unsigned int calc_xmit_shift(struct sh_dmae_chan *sh_chan, u32 chcr)
+ 	int cnt = ((chcr & pdata->ts_low_mask) >> pdata->ts_low_shift) |
+ 		((chcr & pdata->ts_high_mask) >> pdata->ts_high_shift);
+
++	if (sh_dmae_is_sudmac(shdev))
++		return 0;
++
+ 	if (cnt >= pdata->ts_shift_num)
+ 		cnt = 0;
+
+@@ -171,6 +224,9 @@ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	int i;
+
++	if (sh_dmae_is_sudmac(shdev))
++		return 0;
++
+ 	for (i = 0; i < pdata->ts_shift_num; i++)
+ 		if (pdata->ts_shift[i] = l2size)
+ 			break;
+@@ -184,9 +240,17 @@ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
+
+ static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
  {
- 	return r8a7779_sysc_update(r8a7779_ch, r8a7779_sysc_pwr_on);
+-	sh_dmae_writel(sh_chan, hw->sar, SAR);
+-	sh_dmae_writel(sh_chan, hw->dar, DAR);
+-	sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
++	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
++
++	if (sh_dmae_is_sudmac(shdev)) {
++		sh_dmae_writel(sh_chan, LBA_WAIT | RCVENDM, CH0CFG);
++		sh_dmae_writel(sh_chan, hw->sar, CH0BA);
++		sh_dmae_writel(sh_chan, hw->tcr, CH0BBC);
++	} else {
++		sh_dmae_writel(sh_chan, hw->sar, SAR);
++		sh_dmae_writel(sh_chan, hw->dar, DAR);
++		sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
++	}
  }
-@@ -142,6 +149,14 @@ static void __init r8a7779_sysc_init(voi
- 	iowrite32(0, r8a7779_sysc_base + SYSCIMR);
- }
- 
-+#else /* CONFIG_PM || CONFIG_SMP */
-+
-+static inline void r8a7779_sysc_init(void) {}
-+
-+#endif /* CONFIG_PM || CONFIG_SMP */
-+
-+#ifdef CONFIG_PM
-+
- static int pd_power_down(struct generic_pm_domain *genpd)
+
+ static void dmae_start(struct sh_dmae_chan *sh_chan)
+@@ -493,6 +557,7 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
+ 	unsigned long flags, dma_addr_t *dest, dma_addr_t *src, size_t *len,
+ 	struct sh_desc **first, enum dma_data_direction direction)
  {
- 	return r8a7779_sysc_power_down(to_r8a7779_ch(genpd));
-@@ -223,13 +238,12 @@ struct r8a7779_pm_domain r8a7779_impx3  	}
++	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 	struct sh_desc *new;
+ 	size_t copy_size;
+
+@@ -508,7 +573,14 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
+
+ 	copy_size = min(*len, (size_t)SH_DMA_TCR_MAX + 1);
+
+-	new->hw.sar = *src;
++	/*
++	 * SUDMAC has a CHnBA register only. So, the driver uses "hw.sar"
++	 * even if transfer direction is DMA_FROM_DEVICE.
++	 */
++	if (sh_dmae_is_sudmac(shdev) && direction = DMA_FROM_DEVICE)
++		new->hw.sar = *dest;
++	else
++		new->hw.sar = *src;
+ 	new->hw.dar = *dest;
+ 	new->hw.tcr = copy_size;
+
+@@ -701,8 +773,10 @@ static int sh_dmae_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ 		/* Record partial transfer */
+ 		struct sh_desc *desc = list_entry(sh_chan->ld_queue.next,
+ 						  struct sh_desc, node);
+-		desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
+-			sh_chan->xmit_shift;
++		struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
++		if (!sh_dmae_is_sudmac(shdev))
++			desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan,
++						TCR)) << sh_chan->xmit_shift;
+ 	}
+ 	spin_unlock_irqrestore(&sh_chan->desc_lock, flags);
+
+@@ -989,9 +1063,17 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
+ static void dmae_do_tasklet(unsigned long data)
+ {
+ 	struct sh_dmae_chan *sh_chan = (struct sh_dmae_chan *)data;
++	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 	struct sh_desc *desc;
+-	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
+-	u32 dar_buf = sh_dmae_readl(sh_chan, DAR);
++	u32 sar_buf, dar_buf;
++
++	if (sh_dmae_is_sudmac(shdev)) {
++		sar_buf = sh_dmae_readl(sh_chan, CH0CA);
++		dar_buf = sh_dmae_readl(sh_chan, CH0CA);
++	} else {
++		sar_buf = sh_dmae_readl(sh_chan, SAR);
++		dar_buf = sh_dmae_readl(sh_chan, DAR);
++	}
+
+ 	spin_lock_irq(&sh_chan->desc_lock);
+ 	list_for_each_entry(desc, &sh_chan->ld_queue, node) {
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index a6c82cc..46be54f 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -72,6 +72,7 @@ struct sh_dmae_pdata {
+ 	unsigned int dmaor_is_32bit:1;
+ 	unsigned int needs_tend_set:1;
+ 	unsigned int no_dmars:1;
++	unsigned int sudmac:1;
  };
- 
--#else /* CONFIG_PM */
--
--static inline void r8a7779_sysc_init(void) {}
--
- #endif /* CONFIG_PM */
- 
- void __init r8a7779_pm_init(void)
- {
--	r8a7779_sysc_init();
-+	static int once;
+
+ /* DMA register */
+@@ -111,4 +112,49 @@ struct sh_dmae_pdata {
+ #define CHCR_TE	0x00000002
+ #define CHCR_IE	0x00000004
+
++/* SUDMAC register */
++#define CH0CFG		0x00
++#define CH1CFG		0x04
++#define CH0BA		0x10
++#define CH1BA		0x14
++#define CH0BBC		0x18
++#define CH1BBC		0x1C
++#define CH0CA		0x20
++#define CH1CA		0x24
++#define CH0CBC		0x28
++#define CH1CBC		0x2C
++#define CH0DEN		0x30
++#define CH1DEN		0x34
++#define DSTSCLR		0x38
++#define DBUFCTRL	0x3C
++#define DINTCTRL	0x40
++#define DINTSTS		0x44
++#define DINTSTSCLR	0x48
++#define CH0SHCTRL	0x50
++#define CH1SHCTRL	0x54
 +
-+	if (!once++)
-+		r8a7779_sysc_init();
- }
---- /dev/null
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2011-12-28 15:01:40.000000000 +0900
-@@ -0,0 +1,153 @@
-+/*
-+ * SMP support for R-Mobile / SH-Mobile - r8a7779 portion
-+ *
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/smp.h>
-+#include <linux/spinlock.h>
-+#include <linux/io.h>
-+#include <linux/delay.h>
-+#include <mach/common.h>
-+#include <mach/r8a7779.h>
-+#include <asm/smp_scu.h>
-+#include <asm/smp_twd.h>
-+#include <asm/hardware/gic.h>
++/* Definitions for the SUDMAC */
++#define SENDBUFM	0x1000 /* b12: Transmit Buffer Mode */
++#define RCVENDM		0x0100 /* b8: Receive Data Transfer End Mode */
++#define LBA_WAIT	0x0030 /* b5-4: Local Bus Access Wait */
++#define DEN		0x0001 /* b0: DMA Transfer Enable */
++#define CH1STCLR	0x0002 /* b1: Ch1 DMA Status Clear */
++#define CH0STCLR	0x0001 /* b0: Ch0 DMA Status Clear */
++#define CH1BUFW		0x0200 /* b9: Ch1 DMA Buffer Data Transfer Enable */
++#define CH0BUFW		0x0100 /* b8: Ch0 DMA Buffer Data Transfer Enable */
++#define CH1BUFS		0x0002 /* b1: Ch1 DMA Buffer Data Status */
++#define CH0BUFS		0x0001 /* b0: Ch0 DMA Buffer Data Status */
++#define CH1ERRE		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Enable */
++#define CH0ERRE		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Enable */
++#define CH1ENDE		0x0002 /* b1: Ch1 DMA Transfer End Int Enable */
++#define CH0ENDE		0x0001 /* b0: Ch0 DMA Transfer End Int Enable */
++#define CH1ERRS		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Status */
++#define CH0ERRS		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Status */
++#define CH1ENDS		0x0002 /* b1: Ch1 DMA Transfer End Int Status */
++#define CH0ENDS		0x0001 /* b0: Ch0 DMA Transfer End Int Status */
++#define CH1ERRC		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Stat Clear */
++#define CH0ERRC		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Stat Clear */
++#define CH1ENDC		0x0002 /* b1: Ch1 DMA Transfer End Int Stat Clear */
++#define CH0ENDC		0x0001 /* b0: Ch0 DMA Transfer End Int Stat Clear */
 +
-+#define AVECR 0xfe700040
-+
-+static struct r8a7779_pm_ch r8a7779_ch_cpu1 = {
-+	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
-+	.chan_bit = 1, /* ARM1 */
-+	.isr_bit = 1, /* ARM1 */
-+};
-+
-+static struct r8a7779_pm_ch r8a7779_ch_cpu2 = {
-+	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
-+	.chan_bit = 2, /* ARM2 */
-+	.isr_bit = 2, /* ARM2 */
-+};
-+
-+static struct r8a7779_pm_ch r8a7779_ch_cpu3 = {
-+	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
-+	.chan_bit = 3, /* ARM3 */
-+	.isr_bit = 3, /* ARM3 */
-+};
-+
-+static struct r8a7779_pm_ch *r8a7779_ch_cpu[4] = {
-+	[1] = &r8a7779_ch_cpu1,
-+	[2] = &r8a7779_ch_cpu2,
-+	[3] = &r8a7779_ch_cpu3,
-+};
-+
-+static void __iomem *scu_base_addr(void)
-+{
-+	return (void __iomem *)0xf0000000;
-+}
-+
-+static DEFINE_SPINLOCK(scu_lock);
-+static unsigned long tmp;
-+
-+static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
-+{
-+	void __iomem *scu_base = scu_base_addr();
-+
-+	spin_lock(&scu_lock);
-+	tmp = __raw_readl(scu_base + 8);
-+	tmp &= ~clr;
-+	tmp |= set;
-+	spin_unlock(&scu_lock);
-+
-+	/* disable cache coherency after releasing the lock */
-+	__raw_writel(tmp, scu_base + 8);
-+}
-+
-+unsigned int __init r8a7779_get_core_count(void)
-+{
-+	void __iomem *scu_base = scu_base_addr();
-+
-+#ifdef CONFIG_HAVE_ARM_TWD
-+	/* twd_base needs to be initialized before percpu_timer_setup() */
-+	twd_base = (void __iomem *)0xf0000600;
-+#endif
-+
-+	return scu_get_core_count(scu_base);
-+}
-+
-+int r8a7779_platform_cpu_kill(unsigned int cpu)
-+{
-+	struct r8a7779_pm_ch *ch = NULL;
-+	int ret = -EIO;
-+
-+	cpu = cpu_logical_map(cpu);
-+
-+	/* disable cache coherency */
-+	modify_scu_cpu_psr(3 << (cpu * 8), 0);
-+
-+	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
-+		ch = r8a7779_ch_cpu[cpu];
-+
-+	if (ch)
-+		ret = r8a7779_sysc_power_down(ch);
-+
-+	return ret ? ret : 1;
-+}
-+
-+void __cpuinit r8a7779_secondary_init(unsigned int cpu)
-+{
-+	gic_secondary_init(0);
-+}
-+
-+int __cpuinit r8a7779_boot_secondary(unsigned int cpu)
-+{
-+	struct r8a7779_pm_ch *ch = NULL;
-+	int ret = -EIO;
-+
-+	cpu = cpu_logical_map(cpu);
-+
-+	/* enable cache coherency */
-+	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+
-+	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
-+		ch = r8a7779_ch_cpu[cpu];
-+
-+	if (ch)
-+		ret = r8a7779_sysc_power_up(ch);
-+
-+	return ret;
-+}
-+
-+void __init r8a7779_smp_prepare_cpus(void)
-+{
-+	int cpu = cpu_logical_map(0);
-+
-+	scu_enable(scu_base_addr());
-+
-+	/* Map the reset vector (in headsmp.S) */
-+	__raw_writel(__pa(shmobile_secondary_vector), __io(AVECR));
-+
-+	/* enable cache coherency on CPU0 */
-+	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+
-+	r8a7779_pm_init();
-+
-+	/* power off secondary CPUs */
-+	r8a7779_platform_cpu_kill(1);
-+	r8a7779_platform_cpu_kill(2);
-+	r8a7779_platform_cpu_kill(3);
-+}
+ #endif
+-- 
+1.7.1
