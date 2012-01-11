@@ -1,54 +1,158 @@
 From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 12 Jan 2012 01:09:11 +0000
-Subject: Re: [PATCH v4 2/6] sh: add a resource name for shdma
-Message-Id: <4F0E32B7.7060902@renesas.com>
+Date: Wed, 11 Jan 2012 07:28:04 +0000
+Subject: [PATCH v4 4/6] dmaengine: shdma: modify the DMAC Address Error registration
+Message-Id: <4F0D3A04.4030209@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F0D39F5.90208@renesas.com>
-In-Reply-To: <4F0D39F5.90208@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2012/01/11 18:05, Guennadi Liakhovetski wrote:
-> Unrelated to your patch, just something that caught my eye:
-> 
-[ snip ]
-> 
-> The above two platforms seem incorrect. Back then, as I switched sh_dma.c 
-> to use resources for interrupts [1], I just reproduced the behaviour of 
-> the original driver, but a verification with the header or the datasheet 
-> shows, that sh7780 and sh7785 have separate interrupts per channel, so, if 
-> anyone cares about those platforms, they might need a fix.
+The USB-DMAC/SUDMAC don't have the interrupt of DMAC Address Error.
+So, only if the IRQ resource has a name of SH_DMA_IRQ_ERROR, the driver
+calls request_irq() for DMAC Address Error.
 
-The interrupts of SH7780 DMAC and Sh7785 DMAC are strange.
-Would you check the commit bdaa6e8062 "sh: multiple vectors per irq - base"?
+This patch is also useful for the generic DMAC which doesn't have
+DMAC Address Error. So, we can get rid of the "CPU_SH4 || ARCH_SHMOBILE"
+ifdefs.
+This patch also changes the IRQF_DISABLED to 0.
 
- - The SH7780 and SH7785 have separate INTEVT per channel, but the INT2MSKR
-   for the DMAC has one bit.
- -- In this case, the commit log says:
-    "If multiple vectors shar the same enum then only the
-     first vector will be avilable as a linux irq."
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v4:
+  - use defination macros for IRQ resource
 
- - I think that the DMTE4_IRQ of SH7780 and SH7785 in
-   the "arch/sh/include/cpu-sh4/cpu/dma-sh4a.h" is breaking.
-   But, the old DMA API driver doesn't use this actually because the get_dmte_irq()
-   in dma-sh.c will change the IRQ number...
+ drivers/dma/shdma.c |   73 +++++++++++++++++++++++++--------------------------
+ 1 files changed, 36 insertions(+), 37 deletions(-)
 
-Best regards,
-Yoshihiro Shimoda
+diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+index 81809c2..5260dac 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/shdma.c
+@@ -1149,9 +1149,9 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
+ static int __init sh_dmae_probe(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
+-	unsigned long irqflags = IRQF_DISABLED,
++	unsigned long irqflags = 0,
+ 		chan_flag[SH_DMAC_MAX_CHANNELS] = {};
+-	int errirq, chan_irq[SH_DMAC_MAX_CHANNELS];
++	int errirq = 0, chan_irq[SH_DMAC_MAX_CHANNELS];
+ 	int err, i, irq_cnt = 0, irqres = 0, irq_cap = 0;
+ 	struct sh_dmae_device *shdev;
+ 	struct resource *chan, *dmars, *errirq_res, *chanirq_res;
+@@ -1179,8 +1179,11 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	 *    specify IORESOURCE_IRQ_SHAREABLE in their resources, they will be
+ 	 *    requested with the IRQF_SHARED flag
+ 	 */
+-	errirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+-	if (!chan || !errirq_res)
++	errirq_res = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
++						  SH_DMA_IRQ_ERROR);
++	chanirq_res = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
++						   SH_DMA_IRQ_CHANNEL);
++	if (!chan || (!errirq_res && !chanirq_res))
+ 		return -ENODEV;
 
-> Thanks
-> Guennadi
-> 
-> [1] http://thread.gmane.org/gmane.linux.ports.sh.devel/7269/focusr70
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> 
+ 	if (!request_mem_region(chan->start, resource_size(chan), pdev->name)) {
+@@ -1258,33 +1261,29 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 	/* Default transfer size of 32 bytes requires 32-byte alignment */
+ 	shdev->common.copy_align = LOG2_DEFAULT_XFER_SIZE;
 
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+-	chanirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+-
+-	if (!chanirq_res)
+-		chanirq_res = errirq_res;
+-	else
+-		irqres++;
+-
+-	if (chanirq_res = errirq_res ||
+-	    (errirq_res->flags & IORESOURCE_BITS) = IORESOURCE_IRQ_SHAREABLE)
+-		irqflags = IRQF_SHARED;
+-
+-	errirq = errirq_res->start;
+-
+-	err = request_irq(errirq, sh_dmae_err, irqflags,
+-			  "DMAC Address Error", shdev);
+-	if (err) {
+-		dev_err(&pdev->dev,
+-			"DMA failed requesting irq #%d, error %d\n",
+-			errirq, err);
+-		goto eirq_err;
++	if (errirq_res) {
++		if (!chanirq_res)
++			chanirq_res = errirq_res;
++		else
++			irqres++;
++
++		if (chanirq_res = errirq_res ||
++		    (errirq_res->flags & IORESOURCE_BITS) =
++		    IORESOURCE_IRQ_SHAREABLE)
++			irqflags = IRQF_SHARED;
++
++		errirq = errirq_res->start;
++
++		err = request_irq(errirq, sh_dmae_err, irqflags,
++				  "DMAC Address Error", shdev);
++		if (err) {
++			dev_err(&pdev->dev,
++				"DMA failed requesting irq #%d, error %d\n",
++				errirq, err);
++			goto eirq_err;
++		}
+ 	}
 
+-#else
+-	chanirq_res = errirq_res;
+-#endif /* CONFIG_CPU_SH4 || CONFIG_ARCH_SHMOBILE */
+-
+ 	if (chanirq_res->start = chanirq_res->end &&
+ 	    !platform_get_resource(pdev, IORESOURCE_IRQ, 1)) {
+ 		/* Special case - all multiplexed */
+@@ -1305,11 +1304,11 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ 					break;
+ 				}
+
+-				if ((errirq_res->flags & IORESOURCE_BITS) =
++				if ((chanirq_res->flags & IORESOURCE_BITS) =
+ 				    IORESOURCE_IRQ_SHAREABLE)
+ 					chan_flag[irq_cnt] = IRQF_SHARED;
+ 				else
+-					chan_flag[irq_cnt] = IRQF_DISABLED;
++					chan_flag[irq_cnt] = 0;
+ 				dev_dbg(&pdev->dev,
+ 					"Found IRQ %d for channel %d\n",
+ 					i, irq_cnt);
+@@ -1345,10 +1344,9 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+ chan_probe_err:
+ 	sh_dmae_chan_remove(shdev);
+
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+-	free_irq(errirq, shdev);
++	if (errirq_res)
++		free_irq(errirq, shdev);
+ eirq_err:
+-#endif
+ rst_err:
+ 	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
+@@ -1379,12 +1377,13 @@ static int __exit sh_dmae_remove(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
+ 	struct resource *res;
+-	int errirq = platform_get_irq(pdev, 0);
++	struct resource *errirq_res = platform_get_resource_byname(pdev,
++					IORESOURCE_IRQ, SH_DMA_IRQ_ERROR);
+
+ 	dma_async_device_unregister(&shdev->common);
+
+-	if (errirq > 0)
+-		free_irq(errirq, shdev);
++	if (errirq_res)
++		free_irq(errirq_res->start, shdev);
+
+ 	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
 -- 
-Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-EC No.
+1.7.1
