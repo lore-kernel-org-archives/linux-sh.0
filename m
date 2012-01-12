@@ -1,284 +1,338 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 11 Jan 2012 07:28:16 +0000
-Subject: [PATCH v4 6/6] dmaengine: shdma: add support for SUDMAC
-Message-Id: <4F0D3A10.7000708@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 12 Jan 2012 16:29:06 +0000
+Subject: Re: [PATCH v4 6/6] dmaengine: shdma: add support for SUDMAC
+Message-Id: <Pine.LNX.4.64.1201121647440.1646@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4F0D3A10.7000708@renesas.com>
+In-Reply-To: <4F0D3A10.7000708@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The SH7757's USB module has SUDMAC. The SUDMAC's registers are imcompatible
-with SH DMAC. However, since the SUDMAC is a very simple module, we can
-reuse the shdma driver for SUDMAC by a few modification.
+Hello Shimoda-san
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+On Wed, 11 Jan 2012, Shimoda, Yoshihiro wrote:
+
+> The SH7757's USB module has SUDMAC. The SUDMAC's registers are imcompatible
+> with SH DMAC. However, since the SUDMAC is a very simple module, we can
+> reuse the shdma driver for SUDMAC by a few modification.
+> 
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+I'm quite happy with patches 1-5 of this series! So, if you wanted, you 
+could add my ack for them, but Paul prefers v3. Well, I agree, that having 
+strings in the header is not crucial. As long as we make sure to update 
+platforms before the driver - nothing will break. That said, I would find 
+it nicer to see those patches in this series - just for completeness.
+
+As for either converting both error and channel IRQs to named resources in 
+one or separate patches - I don't have a strong preference there either, 
+so, I can live with v3 too:-) Actually, there's a slight problem with 
+using named IRQs for channels: since we can have several resources with 
+channel IRQ ranges or with single IRQs per device, we cannot use 
+platform_get_resource_byname() for all of them - only for the first one, 
+which kind of makes this effort of converting all channel IRQ resources to 
+named ones - pointless...
+
+Now, what concerns this patch. It is hard for me to judge, since I don't 
+have an sh7757 datasheet, but from the patch and from your comment "The 
+SUDMAC's registers are imcompatible with SH DMAC" I really begin to doubt, 
+whether it makes sense to combine them in one driver. AFAICS, the hardware 
+handling is indeed completely different. The only things, that you reuse 
+in the driver, are the dmaengine API implementation, which is pretty 
+standard, and the transfer descriptor list management, which is indeed a 
+bit tricky. My suggestion would be to split the current shdma.c driver 
+into two parts - hardware specific and the logic, and reuse the latter for 
+your new sudmac driver, which would then become a separate file. I'd have 
+to think a bit, what's the best way to do this: either
+
+1. keep the main part of the driver with the logic as now, extracting 
+hardware-specific parts in a separate file and linking respective 
+functions to the main module via function pointers in an operations 
+struct, or
+
+2. extract only the most essential and complicated logic functions into a 
+helper library and use it for both shdma and sudmac drivers.
+
+What do you think? I'd need some time to think about this and come up with 
+a patch.
+
+Thanks
+Guennadi
+
+> ---
+>  about v4:
+>   - No change
+> 
+>  drivers/dma/shdma.c    |  102 +++++++++++++++++++++++++++++++++++++++++++-----
+>  include/linux/sh_dma.h |   46 +++++++++++++++++++++
+>  2 files changed, 138 insertions(+), 10 deletions(-)
+> 
+> diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+> index 0f9d5f2..eb5ca48 100644
+> --- a/drivers/dma/shdma.c
+> +++ b/drivers/dma/shdma.c
+> @@ -58,6 +58,11 @@ static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SH_DMA_SLAVE_NUMBER)];
+> 
+>  static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all);
+> 
+> +static int sh_dmae_is_sudmac(struct sh_dmae_device *shdev)
+> +{
+> +	return shdev->pdata->sudmac;
+> +}
+> +
+>  static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
+>  {
+>  	__raw_writel(data, sh_dc->base + reg / sizeof(u32));
+> @@ -68,6 +73,39 @@ static u32 sh_dmae_readl(struct sh_dmae_chan *sh_dc, u32 reg)
+>  	return __raw_readl(sh_dc->base + reg / sizeof(u32));
+>  }
+> 
+> +static void sh_dmae_sudmac_chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
+> +{
+> +	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+> +
+> +	if (!(data & CHCR_TE))	/* clear interrupt status only */
+> +		sh_dmae_writel(sh_dc, CH0ENDC, DINTSTSCLR);
+> +
+> +	if (data & shdev->chcr_ie_bit)
+> +		sh_dmae_writel(sh_dc, CH0ENDE, DINTCTRL);
+> +	else
+> +		sh_dmae_writel(sh_dc, 0, DINTCTRL);
+> +
+> +	if (data & CHCR_DE)
+> +		sh_dmae_writel(sh_dc, DEN, CH0DEN);
+> +	else
+> +		sh_dmae_writel(sh_dc, 0, CH0DEN);
+> +}
+> +
+> +static u32 sh_dmae_sudmac_chcr_read(struct sh_dmae_chan *sh_dc)
+> +{
+> +	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+> +	u32 chcr = 0;
+> +
+> +	if (sh_dmae_readl(sh_dc, DINTSTS) & CH0ENDS)
+> +		chcr |= CHCR_TE;
+> +	if (sh_dmae_readl(sh_dc, DINTCTRL) & CH0ENDE)
+> +		chcr |= shdev->chcr_ie_bit;
+> +	if (sh_dmae_readl(sh_dc, CH0DEN) & DEN)
+> +		chcr |= CHCR_DE;
+> +
+> +	return chcr;
+> +}
+> +
+>  static u16 dmaor_read(struct sh_dmae_device *shdev)
+>  {
+>  	u32 __iomem *addr = shdev->chan_reg + DMAOR / sizeof(u32);
+> @@ -92,14 +130,20 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
+>  {
+>  	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+> 
+> -	sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
+> +	if (sh_dmae_is_sudmac(shdev))
+> +		sh_dmae_sudmac_chcr_write(sh_dc, data);
+> +	else
+> +		sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
+>  }
+> 
+>  static u32 chcr_read(struct sh_dmae_chan *sh_dc)
+>  {
+>  	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+> 
+> -	return sh_dmae_readl(sh_dc, shdev->chcr_offset);
+> +	if (sh_dmae_is_sudmac(shdev))
+> +		return sh_dmae_sudmac_chcr_read(sh_dc);
+> +	else
+> +		return sh_dmae_readl(sh_dc, shdev->chcr_offset);
+>  }
+> 
+>  /*
+> @@ -112,6 +156,9 @@ static void sh_dmae_ctl_stop(struct sh_dmae_device *shdev)
+>  	unsigned short dmaor;
+>  	unsigned long flags;
+> 
+> +	if (sh_dmae_is_sudmac(shdev))
+> +		return;
+> +
+>  	spin_lock_irqsave(&sh_dmae_lock, flags);
+> 
+>  	dmaor = dmaor_read(shdev);
+> @@ -125,6 +172,9 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
+>  	unsigned short dmaor;
+>  	unsigned long flags;
+> 
+> +	if (sh_dmae_is_sudmac(shdev))
+> +		return 0;
+> +
+>  	spin_lock_irqsave(&sh_dmae_lock, flags);
+> 
+>  	dmaor = dmaor_read(shdev) & ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME);
+> @@ -159,6 +209,9 @@ static unsigned int calc_xmit_shift(struct sh_dmae_chan *sh_chan, u32 chcr)
+>  	int cnt = ((chcr & pdata->ts_low_mask) >> pdata->ts_low_shift) |
+>  		((chcr & pdata->ts_high_mask) >> pdata->ts_high_shift);
+> 
+> +	if (sh_dmae_is_sudmac(shdev))
+> +		return 0;
+> +
+>  	if (cnt >= pdata->ts_shift_num)
+>  		cnt = 0;
+> 
+> @@ -171,6 +224,9 @@ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
+>  	struct sh_dmae_pdata *pdata = shdev->pdata;
+>  	int i;
+> 
+> +	if (sh_dmae_is_sudmac(shdev))
+> +		return 0;
+> +
+>  	for (i = 0; i < pdata->ts_shift_num; i++)
+>  		if (pdata->ts_shift[i] = l2size)
+>  			break;
+> @@ -184,9 +240,17 @@ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
+> 
+>  static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
+>  {
+> -	sh_dmae_writel(sh_chan, hw->sar, SAR);
+> -	sh_dmae_writel(sh_chan, hw->dar, DAR);
+> -	sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
+> +	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+> +
+> +	if (sh_dmae_is_sudmac(shdev)) {
+> +		sh_dmae_writel(sh_chan, LBA_WAIT | RCVENDM, CH0CFG);
+> +		sh_dmae_writel(sh_chan, hw->sar, CH0BA);
+> +		sh_dmae_writel(sh_chan, hw->tcr, CH0BBC);
+> +	} else {
+> +		sh_dmae_writel(sh_chan, hw->sar, SAR);
+> +		sh_dmae_writel(sh_chan, hw->dar, DAR);
+> +		sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
+> +	}
+>  }
+> 
+>  static void dmae_start(struct sh_dmae_chan *sh_chan)
+> @@ -493,6 +557,7 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
+>  	unsigned long flags, dma_addr_t *dest, dma_addr_t *src, size_t *len,
+>  	struct sh_desc **first, enum dma_data_direction direction)
+>  {
+> +	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+>  	struct sh_desc *new;
+>  	size_t copy_size;
+> 
+> @@ -508,7 +573,14 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
+> 
+>  	copy_size = min(*len, (size_t)SH_DMA_TCR_MAX + 1);
+> 
+> -	new->hw.sar = *src;
+> +	/*
+> +	 * SUDMAC has a CHnBA register only. So, the driver uses "hw.sar"
+> +	 * even if transfer direction is DMA_FROM_DEVICE.
+> +	 */
+> +	if (sh_dmae_is_sudmac(shdev) && direction = DMA_FROM_DEVICE)
+> +		new->hw.sar = *dest;
+> +	else
+> +		new->hw.sar = *src;
+>  	new->hw.dar = *dest;
+>  	new->hw.tcr = copy_size;
+> 
+> @@ -701,8 +773,10 @@ static int sh_dmae_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+>  		/* Record partial transfer */
+>  		struct sh_desc *desc = list_entry(sh_chan->ld_queue.next,
+>  						  struct sh_desc, node);
+> -		desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
+> -			sh_chan->xmit_shift;
+> +		struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+> +		if (!sh_dmae_is_sudmac(shdev))
+> +			desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan,
+> +						TCR)) << sh_chan->xmit_shift;
+>  	}
+>  	spin_unlock_irqrestore(&sh_chan->desc_lock, flags);
+> 
+> @@ -989,9 +1063,17 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
+>  static void dmae_do_tasklet(unsigned long data)
+>  {
+>  	struct sh_dmae_chan *sh_chan = (struct sh_dmae_chan *)data;
+> +	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+>  	struct sh_desc *desc;
+> -	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
+> -	u32 dar_buf = sh_dmae_readl(sh_chan, DAR);
+> +	u32 sar_buf, dar_buf;
+> +
+> +	if (sh_dmae_is_sudmac(shdev)) {
+> +		sar_buf = sh_dmae_readl(sh_chan, CH0CA);
+> +		dar_buf = sh_dmae_readl(sh_chan, CH0CA);
+> +	} else {
+> +		sar_buf = sh_dmae_readl(sh_chan, SAR);
+> +		dar_buf = sh_dmae_readl(sh_chan, DAR);
+> +	}
+> 
+>  	spin_lock_irq(&sh_chan->desc_lock);
+>  	list_for_each_entry(desc, &sh_chan->ld_queue, node) {
+> diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+> index a6c82cc..46be54f 100644
+> --- a/include/linux/sh_dma.h
+> +++ b/include/linux/sh_dma.h
+> @@ -72,6 +72,7 @@ struct sh_dmae_pdata {
+>  	unsigned int dmaor_is_32bit:1;
+>  	unsigned int needs_tend_set:1;
+>  	unsigned int no_dmars:1;
+> +	unsigned int sudmac:1;
+>  };
+> 
+>  /* DMA register */
+> @@ -111,4 +112,49 @@ struct sh_dmae_pdata {
+>  #define CHCR_TE	0x00000002
+>  #define CHCR_IE	0x00000004
+> 
+> +/* SUDMAC register */
+> +#define CH0CFG		0x00
+> +#define CH1CFG		0x04
+> +#define CH0BA		0x10
+> +#define CH1BA		0x14
+> +#define CH0BBC		0x18
+> +#define CH1BBC		0x1C
+> +#define CH0CA		0x20
+> +#define CH1CA		0x24
+> +#define CH0CBC		0x28
+> +#define CH1CBC		0x2C
+> +#define CH0DEN		0x30
+> +#define CH1DEN		0x34
+> +#define DSTSCLR		0x38
+> +#define DBUFCTRL	0x3C
+> +#define DINTCTRL	0x40
+> +#define DINTSTS		0x44
+> +#define DINTSTSCLR	0x48
+> +#define CH0SHCTRL	0x50
+> +#define CH1SHCTRL	0x54
+> +
+> +/* Definitions for the SUDMAC */
+> +#define SENDBUFM	0x1000 /* b12: Transmit Buffer Mode */
+> +#define RCVENDM		0x0100 /* b8: Receive Data Transfer End Mode */
+> +#define LBA_WAIT	0x0030 /* b5-4: Local Bus Access Wait */
+> +#define DEN		0x0001 /* b0: DMA Transfer Enable */
+> +#define CH1STCLR	0x0002 /* b1: Ch1 DMA Status Clear */
+> +#define CH0STCLR	0x0001 /* b0: Ch0 DMA Status Clear */
+> +#define CH1BUFW		0x0200 /* b9: Ch1 DMA Buffer Data Transfer Enable */
+> +#define CH0BUFW		0x0100 /* b8: Ch0 DMA Buffer Data Transfer Enable */
+> +#define CH1BUFS		0x0002 /* b1: Ch1 DMA Buffer Data Status */
+> +#define CH0BUFS		0x0001 /* b0: Ch0 DMA Buffer Data Status */
+> +#define CH1ERRE		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Enable */
+> +#define CH0ERRE		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Enable */
+> +#define CH1ENDE		0x0002 /* b1: Ch1 DMA Transfer End Int Enable */
+> +#define CH0ENDE		0x0001 /* b0: Ch0 DMA Transfer End Int Enable */
+> +#define CH1ERRS		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Status */
+> +#define CH0ERRS		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Status */
+> +#define CH1ENDS		0x0002 /* b1: Ch1 DMA Transfer End Int Status */
+> +#define CH0ENDS		0x0001 /* b0: Ch0 DMA Transfer End Int Status */
+> +#define CH1ERRC		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Stat Clear */
+> +#define CH0ERRC		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Stat Clear */
+> +#define CH1ENDC		0x0002 /* b1: Ch1 DMA Transfer End Int Stat Clear */
+> +#define CH0ENDC		0x0001 /* b0: Ch0 DMA Transfer End Int Stat Clear */
+> +
+>  #endif
+> -- 
+> 1.7.1
+> 
+
 ---
- about v4:
-  - No change
-
- drivers/dma/shdma.c    |  102 +++++++++++++++++++++++++++++++++++++++++++-----
- include/linux/sh_dma.h |   46 +++++++++++++++++++++
- 2 files changed, 138 insertions(+), 10 deletions(-)
-
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 0f9d5f2..eb5ca48 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -58,6 +58,11 @@ static unsigned long sh_dmae_slave_used[BITS_TO_LONGS(SH_DMA_SLAVE_NUMBER)];
-
- static void sh_dmae_chan_ld_cleanup(struct sh_dmae_chan *sh_chan, bool all);
-
-+static int sh_dmae_is_sudmac(struct sh_dmae_device *shdev)
-+{
-+	return shdev->pdata->sudmac;
-+}
-+
- static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
- {
- 	__raw_writel(data, sh_dc->base + reg / sizeof(u32));
-@@ -68,6 +73,39 @@ static u32 sh_dmae_readl(struct sh_dmae_chan *sh_dc, u32 reg)
- 	return __raw_readl(sh_dc->base + reg / sizeof(u32));
- }
-
-+static void sh_dmae_sudmac_chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
-+{
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-+
-+	if (!(data & CHCR_TE))	/* clear interrupt status only */
-+		sh_dmae_writel(sh_dc, CH0ENDC, DINTSTSCLR);
-+
-+	if (data & shdev->chcr_ie_bit)
-+		sh_dmae_writel(sh_dc, CH0ENDE, DINTCTRL);
-+	else
-+		sh_dmae_writel(sh_dc, 0, DINTCTRL);
-+
-+	if (data & CHCR_DE)
-+		sh_dmae_writel(sh_dc, DEN, CH0DEN);
-+	else
-+		sh_dmae_writel(sh_dc, 0, CH0DEN);
-+}
-+
-+static u32 sh_dmae_sudmac_chcr_read(struct sh_dmae_chan *sh_dc)
-+{
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-+	u32 chcr = 0;
-+
-+	if (sh_dmae_readl(sh_dc, DINTSTS) & CH0ENDS)
-+		chcr |= CHCR_TE;
-+	if (sh_dmae_readl(sh_dc, DINTCTRL) & CH0ENDE)
-+		chcr |= shdev->chcr_ie_bit;
-+	if (sh_dmae_readl(sh_dc, CH0DEN) & DEN)
-+		chcr |= CHCR_DE;
-+
-+	return chcr;
-+}
-+
- static u16 dmaor_read(struct sh_dmae_device *shdev)
- {
- 	u32 __iomem *addr = shdev->chan_reg + DMAOR / sizeof(u32);
-@@ -92,14 +130,20 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-
--	sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
-+	if (sh_dmae_is_sudmac(shdev))
-+		sh_dmae_sudmac_chcr_write(sh_dc, data);
-+	else
-+		sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
- }
-
- static u32 chcr_read(struct sh_dmae_chan *sh_dc)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-
--	return sh_dmae_readl(sh_dc, shdev->chcr_offset);
-+	if (sh_dmae_is_sudmac(shdev))
-+		return sh_dmae_sudmac_chcr_read(sh_dc);
-+	else
-+		return sh_dmae_readl(sh_dc, shdev->chcr_offset);
- }
-
- /*
-@@ -112,6 +156,9 @@ static void sh_dmae_ctl_stop(struct sh_dmae_device *shdev)
- 	unsigned short dmaor;
- 	unsigned long flags;
-
-+	if (sh_dmae_is_sudmac(shdev))
-+		return;
-+
- 	spin_lock_irqsave(&sh_dmae_lock, flags);
-
- 	dmaor = dmaor_read(shdev);
-@@ -125,6 +172,9 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
- 	unsigned short dmaor;
- 	unsigned long flags;
-
-+	if (sh_dmae_is_sudmac(shdev))
-+		return 0;
-+
- 	spin_lock_irqsave(&sh_dmae_lock, flags);
-
- 	dmaor = dmaor_read(shdev) & ~(DMAOR_NMIF | DMAOR_AE | DMAOR_DME);
-@@ -159,6 +209,9 @@ static unsigned int calc_xmit_shift(struct sh_dmae_chan *sh_chan, u32 chcr)
- 	int cnt = ((chcr & pdata->ts_low_mask) >> pdata->ts_low_shift) |
- 		((chcr & pdata->ts_high_mask) >> pdata->ts_high_shift);
-
-+	if (sh_dmae_is_sudmac(shdev))
-+		return 0;
-+
- 	if (cnt >= pdata->ts_shift_num)
- 		cnt = 0;
-
-@@ -171,6 +224,9 @@ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
- 	struct sh_dmae_pdata *pdata = shdev->pdata;
- 	int i;
-
-+	if (sh_dmae_is_sudmac(shdev))
-+		return 0;
-+
- 	for (i = 0; i < pdata->ts_shift_num; i++)
- 		if (pdata->ts_shift[i] = l2size)
- 			break;
-@@ -184,9 +240,17 @@ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
-
- static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
- {
--	sh_dmae_writel(sh_chan, hw->sar, SAR);
--	sh_dmae_writel(sh_chan, hw->dar, DAR);
--	sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
-+
-+	if (sh_dmae_is_sudmac(shdev)) {
-+		sh_dmae_writel(sh_chan, LBA_WAIT | RCVENDM, CH0CFG);
-+		sh_dmae_writel(sh_chan, hw->sar, CH0BA);
-+		sh_dmae_writel(sh_chan, hw->tcr, CH0BBC);
-+	} else {
-+		sh_dmae_writel(sh_chan, hw->sar, SAR);
-+		sh_dmae_writel(sh_chan, hw->dar, DAR);
-+		sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
-+	}
- }
-
- static void dmae_start(struct sh_dmae_chan *sh_chan)
-@@ -493,6 +557,7 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
- 	unsigned long flags, dma_addr_t *dest, dma_addr_t *src, size_t *len,
- 	struct sh_desc **first, enum dma_data_direction direction)
- {
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
- 	struct sh_desc *new;
- 	size_t copy_size;
-
-@@ -508,7 +573,14 @@ static struct sh_desc *sh_dmae_add_desc(struct sh_dmae_chan *sh_chan,
-
- 	copy_size = min(*len, (size_t)SH_DMA_TCR_MAX + 1);
-
--	new->hw.sar = *src;
-+	/*
-+	 * SUDMAC has a CHnBA register only. So, the driver uses "hw.sar"
-+	 * even if transfer direction is DMA_FROM_DEVICE.
-+	 */
-+	if (sh_dmae_is_sudmac(shdev) && direction = DMA_FROM_DEVICE)
-+		new->hw.sar = *dest;
-+	else
-+		new->hw.sar = *src;
- 	new->hw.dar = *dest;
- 	new->hw.tcr = copy_size;
-
-@@ -701,8 +773,10 @@ static int sh_dmae_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
- 		/* Record partial transfer */
- 		struct sh_desc *desc = list_entry(sh_chan->ld_queue.next,
- 						  struct sh_desc, node);
--		desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
--			sh_chan->xmit_shift;
-+		struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
-+		if (!sh_dmae_is_sudmac(shdev))
-+			desc->partial = (desc->hw.tcr - sh_dmae_readl(sh_chan,
-+						TCR)) << sh_chan->xmit_shift;
- 	}
- 	spin_unlock_irqrestore(&sh_chan->desc_lock, flags);
-
-@@ -989,9 +1063,17 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
- static void dmae_do_tasklet(unsigned long data)
- {
- 	struct sh_dmae_chan *sh_chan = (struct sh_dmae_chan *)data;
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
- 	struct sh_desc *desc;
--	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
--	u32 dar_buf = sh_dmae_readl(sh_chan, DAR);
-+	u32 sar_buf, dar_buf;
-+
-+	if (sh_dmae_is_sudmac(shdev)) {
-+		sar_buf = sh_dmae_readl(sh_chan, CH0CA);
-+		dar_buf = sh_dmae_readl(sh_chan, CH0CA);
-+	} else {
-+		sar_buf = sh_dmae_readl(sh_chan, SAR);
-+		dar_buf = sh_dmae_readl(sh_chan, DAR);
-+	}
-
- 	spin_lock_irq(&sh_chan->desc_lock);
- 	list_for_each_entry(desc, &sh_chan->ld_queue, node) {
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index a6c82cc..46be54f 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -72,6 +72,7 @@ struct sh_dmae_pdata {
- 	unsigned int dmaor_is_32bit:1;
- 	unsigned int needs_tend_set:1;
- 	unsigned int no_dmars:1;
-+	unsigned int sudmac:1;
- };
-
- /* DMA register */
-@@ -111,4 +112,49 @@ struct sh_dmae_pdata {
- #define CHCR_TE	0x00000002
- #define CHCR_IE	0x00000004
-
-+/* SUDMAC register */
-+#define CH0CFG		0x00
-+#define CH1CFG		0x04
-+#define CH0BA		0x10
-+#define CH1BA		0x14
-+#define CH0BBC		0x18
-+#define CH1BBC		0x1C
-+#define CH0CA		0x20
-+#define CH1CA		0x24
-+#define CH0CBC		0x28
-+#define CH1CBC		0x2C
-+#define CH0DEN		0x30
-+#define CH1DEN		0x34
-+#define DSTSCLR		0x38
-+#define DBUFCTRL	0x3C
-+#define DINTCTRL	0x40
-+#define DINTSTS		0x44
-+#define DINTSTSCLR	0x48
-+#define CH0SHCTRL	0x50
-+#define CH1SHCTRL	0x54
-+
-+/* Definitions for the SUDMAC */
-+#define SENDBUFM	0x1000 /* b12: Transmit Buffer Mode */
-+#define RCVENDM		0x0100 /* b8: Receive Data Transfer End Mode */
-+#define LBA_WAIT	0x0030 /* b5-4: Local Bus Access Wait */
-+#define DEN		0x0001 /* b0: DMA Transfer Enable */
-+#define CH1STCLR	0x0002 /* b1: Ch1 DMA Status Clear */
-+#define CH0STCLR	0x0001 /* b0: Ch0 DMA Status Clear */
-+#define CH1BUFW		0x0200 /* b9: Ch1 DMA Buffer Data Transfer Enable */
-+#define CH0BUFW		0x0100 /* b8: Ch0 DMA Buffer Data Transfer Enable */
-+#define CH1BUFS		0x0002 /* b1: Ch1 DMA Buffer Data Status */
-+#define CH0BUFS		0x0001 /* b0: Ch0 DMA Buffer Data Status */
-+#define CH1ERRE		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Enable */
-+#define CH0ERRE		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Enable */
-+#define CH1ENDE		0x0002 /* b1: Ch1 DMA Transfer End Int Enable */
-+#define CH0ENDE		0x0001 /* b0: Ch0 DMA Transfer End Int Enable */
-+#define CH1ERRS		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Status */
-+#define CH0ERRS		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Status */
-+#define CH1ENDS		0x0002 /* b1: Ch1 DMA Transfer End Int Status */
-+#define CH0ENDS		0x0001 /* b0: Ch0 DMA Transfer End Int Status */
-+#define CH1ERRC		0x0200 /* b9: Ch1 SHwy Res Err Detect Int Stat Clear */
-+#define CH0ERRC		0x0100 /* b8: Ch0 SHwy Res Err Detect Int Stat Clear */
-+#define CH1ENDC		0x0002 /* b1: Ch1 DMA Transfer End Int Stat Clear */
-+#define CH0ENDC		0x0001 /* b0: Ch0 DMA Transfer End Int Stat Clear */
-+
- #endif
--- 
-1.7.1
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
