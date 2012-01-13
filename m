@@ -1,36 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 30 Jan 2012 02:25:07 +0000
-Subject: [PATCH] ARM: mach-shmobile: r8a7779 PFC IPSR4 fix
-Message-Id: <20120130022507.14954.36776.sendpatchset@w520>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 13 Jan 2012 16:34:02 +0000
+Subject: [RFC PATCH 01/10] rtc: sa1100: include mach/irqs.h instead of asm/irq.h
+Message-Id: <1326472451-9002-2-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Rob Herring <rob.herring@calxeda.com>
 
-Fix the bit field width information for the IPSR4 register
-in the r8a7779 pin function controller (PFC).
+Since asm/irq.h may not include mach/irqs.h, include mach/irqs.h directly.
 
-Without this fix the Marzen board fails to receive data
-over the serial console due to misconfigured pin function
-for the RX pin.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
 ---
+ drivers/rtc/rtc-sa1100.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
- arch/arm/mach-shmobile/pfc-r8a7779.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+diff --git a/drivers/rtc/rtc-sa1100.c b/drivers/rtc/rtc-sa1100.c
+index 4595d3e..144fa06 100644
+--- a/drivers/rtc/rtc-sa1100.c
++++ b/drivers/rtc/rtc-sa1100.c
+@@ -33,7 +33,7 @@
+ #include <linux/io.h>
+ 
+ #include <mach/hardware.h>
+-#include <asm/irq.h>
++#include <mach/irqs.h>
+ 
+ #define RTC_DEF_DIVIDER		(32768 - 1)
+ #define RTC_DEF_TRIM		0
+-- 
+1.7.5.4
 
---- 0001/arch/arm/mach-shmobile/pfc-r8a7779.c
-+++ work/arch/arm/mach-shmobile/pfc-r8a7779.c	2012-01-27 16:04:07.000000000 +0900
-@@ -2120,7 +2120,7 @@ static struct pinmux_cfg_reg pinmux_conf
- 	    FN_AUDATA3, 0, 0, 0 }
- 	},
- 	{ PINMUX_CFG_REG_VAR("IPSR4", 0xfffc0030, 32,
--			     3, 1, 1, 1, 1, 1, 1, 3, 3, 1,
-+			     3, 1, 1, 1, 1, 1, 1, 3, 3,
- 			     1, 1, 1, 1, 1, 1, 3, 3, 3, 2) {
- 	    /* IP4_31_29 [3] */
- 	    FN_DU1_DB0, FN_VI2_DATA4_VI2_B4, FN_SCL2_B, FN_SD3_DAT0,
