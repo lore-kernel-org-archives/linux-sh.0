@@ -1,7 +1,7 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 13 Jan 2012 08:03:29 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 13 Jan 2012 08:14:21 +0000
 Subject: Re: [PATCH v4 6/6] dmaengine: shdma: add support for SUDMAC
-Message-Id: <4F0FE551.8070209@renesas.com>
+Message-Id: <20120113081421.GA8182@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4F0D3A10.7000708@renesas.com>
 In-Reply-To: <4F0D3A10.7000708@renesas.com>
@@ -10,27 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Guennadi-san,
-
-Thank you very much for your comment!
-
-2012/01/13 1:29, Guennadi Liakhovetski wrote:
-> Hello Shimoda-san
-> 
-> On Wed, 11 Jan 2012, Shimoda, Yoshihiro wrote:
-> 
->> The SH7757's USB module has SUDMAC. The SUDMAC's registers are imcompatible
->> with SH DMAC. However, since the SUDMAC is a very simple module, we can
->> reuse the shdma driver for SUDMAC by a few modification.
->>
->> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> 
-> I'm quite happy with patches 1-5 of this series! So, if you wanted, you 
-> could add my ack for them, but Paul prefers v3. Well, I agree, that having 
-> strings in the header is not crucial. As long as we make sure to update 
-> platforms before the driver - nothing will break. That said, I would find 
-> it nicer to see those patches in this series - just for completeness.
-> 
+On Thu, Jan 12, 2012 at 05:29:06PM +0100, Guennadi Liakhovetski wrote:
 > As for either converting both error and channel IRQs to named resources in 
 > one or separate patches - I don't have a strong preference there either, 
 > so, I can live with v3 too:-) Actually, there's a slight problem with 
@@ -39,9 +19,12 @@ Thank you very much for your comment!
 > platform_get_resource_byname() for all of them - only for the first one, 
 > which kind of makes this effort of converting all channel IRQ resources to 
 > named ones - pointless...
-
-I think so. The v4 patches use platform_get_resource_byname() for the channels,
-but it also use platform_get_resource() later...
+> 
+Can you point to an example on the platform data side that you're
+thinking about? The IRQ range thing doesn't strike me as being inherently
+unsupportable by way of _byname(), but you are correct that _byname()
+assumes one matching resource and doesn't support iterating (although we
+could presumably extend the API for this if necessary).
 
 > Now, what concerns this patch. It is hard for me to judge, since I don't 
 > have an sh7757 datasheet, but from the patch and from your comment "The 
@@ -65,11 +48,19 @@ but it also use platform_get_resource() later...
 > 
 > What do you think? I'd need some time to think about this and come up with 
 > a patch.
+> 
+Yes, I agree that this is probably the best way to go. The SUDMAC
+layering on top of the shdma driver is pretty nasty, as it's largely
+bypassing all of the hardware-specific bits anyways, suggesting that it
+is really better off being split out.
 
-Umm, at the moment, I cannot judge which is good. I also need more time...
+My initial concern was whether breaking it out would make sense or not
+given that we don't know what other DMACs will end up looking like, but
+it looks like the SUDMAC case already does a good enough job of bypassing
+all of the SH DMAC hardware bits that we more or less need a full
+abstraction for the hardware side already, making the point moot.
 
-Best regards,
-Yoshihiro Shimoda
-
-> Thanks
-> Guennadi
+Splitting out the logic functions in to a helper library looks to be the
+cleanest way forward. The SUDMAC bits aren't going to make it in for 3.3
+anyways, so we do have some time/wiggle room to get this done
+cleanly/properly for 3.4.
