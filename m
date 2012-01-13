@@ -1,20 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 24 Jan 2012 01:41:17 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: clock-sh73a0: add DSIxPHY clock support
-Message-Id: <20120124014116.GD32319@linux-sh.org>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 13 Jan 2012 16:34:04 +0000
+Subject: [RFC PATCH 03/10] ARM: mc146818rtc: remove unnecessary include of mach/irqs.h
+Message-Id: <1326472451-9002-4-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pmxozyxra.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pmxozyxra.wl%kuninori.morimoto.gx@renesas.com>
+References: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1326472451-9002-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Jan 22, 2012 at 09:10:02PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/board-ag5evm.c |   16 ++++-
->  arch/arm/mach-shmobile/clock-sh73a0.c |  113 +++++++++++++++++++++++++++++++++
->  2 files changed, 125 insertions(+), 4 deletions(-)
+From: Rob Herring <rob.herring@calxeda.com>
 
-Applied, thanks.
+The include of mach/irqs.h isn't needed, so remove it. Compiled CMOS rtc
+driver.
+
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+---
+ arch/arm/include/asm/mc146818rtc.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/include/asm/mc146818rtc.h b/arch/arm/include/asm/mc146818rtc.h
+index 6b884d2..d535470 100644
+--- a/arch/arm/include/asm/mc146818rtc.h
++++ b/arch/arm/include/asm/mc146818rtc.h
+@@ -5,7 +5,6 @@
+ #define _ASM_MC146818RTC_H
+ 
+ #include <linux/io.h>
+-#include <mach/irqs.h>
+ 
+ #ifndef RTC_PORT
+ #define RTC_PORT(x)	(0x70 + (x))
+-- 
+1.7.5.4
+
