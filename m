@@ -1,57 +1,37 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 05 Jan 2012 05:13:51 +0000
-Subject: [PATCH 2/2] usb: renesas_usbhs: add support for SUDMAC
-Message-Id: <4F05318F.9060209@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 14 Jan 2012 23:33:25 +0000
+Subject: [PATCH] ARM: Fix regression caused by ARCH_NR_GPIOS removal
+Message-Id: <201201150033.25885.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The SUDMAC uses 8-bit width only. So, when the driver uses SUDMAC,
-we have to clear the MBW_32.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Commit 3dea19e826da3dd43b3dc308aca299c0b7263c6b (ARM: 7244/1:
+mach-shmobile: Use CONFIG_ARCH_NR_GPIO) removed ARCH_NR_GPIOS
+and introduced ARCH_NR_GPIO instead without changing the users
+of that symbol.  As a result, the kernels including that commit
+don't boot on my test-bed Mackerel board.
+
+Fix the problem by defining ARCH_NR_GPIOS again.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/usb/renesas_usbhs/fifo.c  |    6 +++++-
- include/linux/usb/renesas_usbhs.h |    1 +
- 2 files changed, 6 insertions(+), 1 deletions(-)
+ arch/arm/include/asm/gpio.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index ffdf5d1..918a1da 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -23,6 +23,7 @@
- #define usbhsf_get_cfifo(p)	(&((p)->fifo_info.cfifo))
- #define usbhsf_get_d0fifo(p)	(&((p)->fifo_info.d0fifo))
- #define usbhsf_get_d1fifo(p)	(&((p)->fifo_info.d1fifo))
-+#define usbhsf_is_cfifo(p, f)	(usbhsf_get_cfifo(p) = f)
-
- #define usbhsf_fifo_is_busy(f)	((f)->pipe) /* see usbhs_pipe_select_fifo */
-
-@@ -304,7 +305,10 @@ static int usbhsf_fifo_select(struct usbhs_pipe *pipe,
- 	}
-
- 	/* "base" will be used below  */
--	usbhs_write(priv, fifo->sel, base | MBW_32);
-+	if (usbhs_get_dparam(priv, has_sudmac) && !usbhsf_is_cfifo(priv, fifo))
-+		usbhs_write(priv, fifo->sel, base);
-+	else
-+		usbhs_write(priv, fifo->sel, base | MBW_32);
-
- 	/* check ISEL and CURPIPE value */
- 	while (timeout--) {
-diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
-index e5a40c3..f60db75 100644
---- a/include/linux/usb/renesas_usbhs.h
-+++ b/include/linux/usb/renesas_usbhs.h
-@@ -141,6 +141,7 @@ struct renesas_usbhs_driver_param {
- 	 * option:
- 	 */
- 	u32 has_otg:1; /* for controlling PWEN/EXTLP */
-+	u32 has_sudmac:1; /* for SUDMAC */
- };
-
- /*
--- 
-1.7.1
+Index: linux/arch/arm/include/asm/gpio.h
+=================================--- linux.orig/arch/arm/include/asm/gpio.h
++++ linux/arch/arm/include/asm/gpio.h
+@@ -2,7 +2,7 @@
+ #define _ARCH_ARM_GPIO_H
+ 
+ #if CONFIG_ARCH_NR_GPIO > 0
+-#define ARCH_NR_GPIO CONFIG_ARCH_NR_GPIO
++#define ARCH_NR_GPIOS CONFIG_ARCH_NR_GPIO
+ #endif
+ 
+ /* not all ARM platforms necessarily support this API ... */
