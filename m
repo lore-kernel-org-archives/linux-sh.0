@@ -1,239 +1,36 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 20 Jan 2012 20:33:06 +0000
-Subject: [PATCH v2 08/13] ARM: mmp: remove NR_IRQS
-Message-Id: <1327091591-27125-9-git-send-email-robherring2@gmail.com>
+From: David Gibson <david@gibson.dropbear.id.au>
+Date: Mon, 16 Jan 2012 01:57:10 +0000
+Subject: Re: [PATCH 01/14] common: dma-mapping: introduce alloc_attrs and free_attrs methods
+Message-Id: <20120116015710.GD4512@truffala.fritz.box>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+ <1324643253-3024-2-git-send-email-m.szyprowski@samsung.com>
+In-Reply-To: <1324643253-3024-2-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
-From: Rob Herring <rob.herring@calxeda.com>
+On Fri, Dec 23, 2011 at 01:27:20PM +0100, Marek Szyprowski wrote:
+> Introduce new generic alloc and free methods with attributes argument.
+> 
+> Existing alloc_coherent and free_coherent can be implemented on top of the
+> new calls with NULL attributes argument. Later also dma_alloc_non_coherent
+> can be implemented using DMA_ATTR_NONCOHERENT attribute as well as
+> dma_alloc_writecombine with separate DMA_ATTR_WRITECOMBINE attribute.
+> 
+> This way the drivers will get more generic, platform independent way of
+> allocating dma buffers with specific parameters.
+> 
+> Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
+> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 
-Remove NR_IRQS and add a per machine .nr_irqs setting. Clean-up namespace
-replacing usage of IRQ_BOARD_START with MMP_NR_IRQS.
+Looks sensible to me.
 
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
----
- arch/arm/mach-mmp/aspenite.c          |    5 +++--
- arch/arm/mach-mmp/avengers_lite.c     |    1 +
- arch/arm/mach-mmp/brownstone.c        |    4 ++--
- arch/arm/mach-mmp/flint.c             |    3 ++-
- arch/arm/mach-mmp/gplugd.c            |    2 +-
- arch/arm/mach-mmp/include/mach/irqs.h |    3 +--
- arch/arm/mach-mmp/irq-mmp2.c          |    1 +
- arch/arm/mach-mmp/jasper.c            |    5 +++--
- arch/arm/mach-mmp/tavorevb.c          |    1 +
- arch/arm/mach-mmp/teton_bga.c         |    3 ++-
- arch/arm/mach-mmp/ttc_dkb.c           |    4 ++--
- 11 files changed, 19 insertions(+), 13 deletions(-)
-
-diff --git a/arch/arm/mach-mmp/aspenite.c b/arch/arm/mach-mmp/aspenite.c
-index 17cb760..5483d6f 100644
---- a/arch/arm/mach-mmp/aspenite.c
-+++ b/arch/arm/mach-mmp/aspenite.c
-@@ -24,6 +24,7 @@
- #include <mach/addr-map.h>
- #include <mach/mfp-pxa168.h>
- #include <mach/pxa168.h>
-+#include <mach/irqs.h>
- #include <video/pxa168fb.h>
- #include <linux/input.h>
- #include <plat/pxa27x_keypad.h>
-@@ -240,7 +241,7 @@ static void __init common_init(void)
- 
- MACHINE_START(ASPENITE, "PXA168-based Aspenite Development Platform")
- 	.map_io		= mmp_map_io,
--	.nr_irqs	= IRQ_BOARD_START,
-+	.nr_irqs	= MMP_NR_IRQS,
- 	.init_irq       = pxa168_init_irq,
- 	.timer          = &pxa168_timer,
- 	.init_machine   = common_init,
-@@ -249,7 +250,7 @@ MACHINE_END
- 
- MACHINE_START(ZYLONITE2, "PXA168-based Zylonite2 Development Platform")
- 	.map_io		= mmp_map_io,
--	.nr_irqs	= IRQ_BOARD_START,
-+	.nr_irqs	= MMP_NR_IRQS,
- 	.init_irq       = pxa168_init_irq,
- 	.timer          = &pxa168_timer,
- 	.init_machine   = common_init,
-diff --git a/arch/arm/mach-mmp/avengers_lite.c b/arch/arm/mach-mmp/avengers_lite.c
-index b148a9d..603542a 100644
---- a/arch/arm/mach-mmp/avengers_lite.c
-+++ b/arch/arm/mach-mmp/avengers_lite.c
-@@ -43,6 +43,7 @@ static void __init avengers_lite_init(void)
- 
- MACHINE_START(AVENGERS_LITE, "PXA168 Avengers lite Development Platform")
- 	.map_io		= mmp_map_io,
-+	.nr_irqs	= MMP_NR_IRQS,
- 	.init_irq       = pxa168_init_irq,
- 	.timer          = &pxa168_timer,
- 	.init_machine   = avengers_lite_init,
-diff --git a/arch/arm/mach-mmp/brownstone.c b/arch/arm/mach-mmp/brownstone.c
-index d839fe6..5cb769c 100644
---- a/arch/arm/mach-mmp/brownstone.c
-+++ b/arch/arm/mach-mmp/brownstone.c
-@@ -28,7 +28,7 @@
- 
- #include "common.h"
- 
--#define BROWNSTONE_NR_IRQS	(IRQ_BOARD_START + 40)
-+#define BROWNSTONE_NR_IRQS	(MMP_NR_IRQS + 40)
- 
- #define GPIO_5V_ENABLE		(89)
- 
-@@ -158,7 +158,7 @@ static struct platform_device brownstone_v_5vp_device = {
- };
- 
- static struct max8925_platform_data brownstone_max8925_info = {
--	.irq_base		= IRQ_BOARD_START,
-+	.irq_base		= MMP_NR_IRQS,
- };
- 
- static struct i2c_board_info brownstone_twsi1_info[] = {
-diff --git a/arch/arm/mach-mmp/flint.c b/arch/arm/mach-mmp/flint.c
-index 2ee8cd7..8059cc0 100644
---- a/arch/arm/mach-mmp/flint.c
-+++ b/arch/arm/mach-mmp/flint.c
-@@ -23,10 +23,11 @@
- #include <mach/addr-map.h>
- #include <mach/mfp-mmp2.h>
- #include <mach/mmp2.h>
-+#include <mach/irqs.h>
- 
- #include "common.h"
- 
--#define FLINT_NR_IRQS	(IRQ_BOARD_START + 48)
-+#define FLINT_NR_IRQS	(MMP_NR_IRQS + 48)
- 
- static unsigned long flint_pin_config[] __initdata = {
- 	/* UART1 */
-diff --git a/arch/arm/mach-mmp/gplugd.c b/arch/arm/mach-mmp/gplugd.c
-index 8776546..f516e74 100644
---- a/arch/arm/mach-mmp/gplugd.c
-+++ b/arch/arm/mach-mmp/gplugd.c
-@@ -191,7 +191,7 @@ static void __init gplugd_init(void)
- 
- MACHINE_START(GPLUGD, "PXA168-based GuruPlug Display (gplugD) Platform")
- 	.map_io		= mmp_map_io,
--	.nr_irqs	= IRQ_BOARD_START,
-+	.nr_irqs	= MMP_NR_IRQS,
- 	.init_irq       = pxa168_init_irq,
- 	.timer          = &pxa168_timer,
- 	.init_machine   = gplugd_init,
-diff --git a/arch/arm/mach-mmp/include/mach/irqs.h b/arch/arm/mach-mmp/include/mach/irqs.h
-index 34635a0..d0e7466 100644
---- a/arch/arm/mach-mmp/include/mach/irqs.h
-+++ b/arch/arm/mach-mmp/include/mach/irqs.h
-@@ -223,7 +223,6 @@
- #define MMP_GPIO_TO_IRQ(gpio)		(IRQ_GPIO_START + (gpio))
- 
- #define IRQ_BOARD_START			(IRQ_GPIO_START + MMP_NR_BUILTIN_GPIO)
--
--#define NR_IRQS				(IRQ_BOARD_START)
-+#define MMP_NR_IRQS			IRQ_BOARD_START
- 
- #endif /* __ASM_MACH_IRQS_H */
-diff --git a/arch/arm/mach-mmp/irq-mmp2.c b/arch/arm/mach-mmp/irq-mmp2.c
-index d21c544..7895d27 100644
---- a/arch/arm/mach-mmp/irq-mmp2.c
-+++ b/arch/arm/mach-mmp/irq-mmp2.c
-@@ -15,6 +15,7 @@
- #include <linux/irq.h>
- #include <linux/io.h>
- 
-+#include <mach/irqs.h>
- #include <mach/regs-icu.h>
- #include <mach/mmp2.h>
- 
-diff --git a/arch/arm/mach-mmp/jasper.c b/arch/arm/mach-mmp/jasper.c
-index 96cf5c8..ff73249 100644
---- a/arch/arm/mach-mmp/jasper.c
-+++ b/arch/arm/mach-mmp/jasper.c
-@@ -19,6 +19,7 @@
- #include <linux/mfd/max8925.h>
- #include <linux/interrupt.h>
- 
-+#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <mach/addr-map.h>
-@@ -27,7 +28,7 @@
- 
- #include "common.h"
- 
--#define JASPER_NR_IRQS		(IRQ_BOARD_START + 48)
-+#define JASPER_NR_IRQS		(MMP_NR_IRQS + 48)
- 
- static unsigned long jasper_pin_config[] __initdata = {
- 	/* UART1 */
-@@ -135,7 +136,7 @@ static struct max8925_power_pdata jasper_power_data = {
- static struct max8925_platform_data jasper_max8925_info = {
- 	.backlight		= &jasper_backlight_data,
- 	.power			= &jasper_power_data,
--	.irq_base		= IRQ_BOARD_START,
-+	.irq_base		= MMP_NR_IRQS,
- };
- 
- static struct i2c_board_info jasper_twsi1_info[] = {
-diff --git a/arch/arm/mach-mmp/tavorevb.c b/arch/arm/mach-mmp/tavorevb.c
-index 8e3b5af0..507e6c0 100644
---- a/arch/arm/mach-mmp/tavorevb.c
-+++ b/arch/arm/mach-mmp/tavorevb.c
-@@ -102,6 +102,7 @@ static void __init tavorevb_init(void)
- 
- MACHINE_START(TAVOREVB, "PXA910 Evaluation Board (aka TavorEVB)")
- 	.map_io		= mmp_map_io,
-+	.nr_irqs	= MMP_NR_IRQS,
- 	.init_irq       = pxa910_init_irq,
- 	.timer          = &pxa910_timer,
- 	.init_machine   = tavorevb_init,
-diff --git a/arch/arm/mach-mmp/teton_bga.c b/arch/arm/mach-mmp/teton_bga.c
-index 0523e42..42bef66 100644
---- a/arch/arm/mach-mmp/teton_bga.c
-+++ b/arch/arm/mach-mmp/teton_bga.c
-@@ -26,6 +26,7 @@
- #include <mach/mfp-pxa168.h>
- #include <mach/pxa168.h>
- #include <mach/teton_bga.h>
-+#include <mach/irqs.h>
- 
- #include "common.h"
- 
-@@ -83,7 +84,7 @@ static void __init teton_bga_init(void)
- 
- MACHINE_START(TETON_BGA, "PXA168-based Teton BGA Development Platform")
- 	.map_io		= mmp_map_io,
--	.nr_irqs	= IRQ_BOARD_START,
-+	.nr_irqs	= MMP_NR_IRQS,
- 	.init_irq       = pxa168_init_irq,
- 	.timer          = &pxa168_timer,
- 	.init_machine   = teton_bga_init,
-diff --git a/arch/arm/mach-mmp/ttc_dkb.c b/arch/arm/mach-mmp/ttc_dkb.c
-index 5ac5d58..4c5fd5b 100644
---- a/arch/arm/mach-mmp/ttc_dkb.c
-+++ b/arch/arm/mach-mmp/ttc_dkb.c
-@@ -38,7 +38,7 @@
-  * 16 board interrupts -- PCA9575 GPIO expander
-  * 24 board interrupts -- 88PM860x PMIC
-  */
--#define TTCDKB_NR_IRQS		(IRQ_BOARD_START + 16 + 16 + 24)
-+#define TTCDKB_NR_IRQS		(MMP_NR_IRQS + 16 + 16 + 24)
- 
- static unsigned long ttc_dkb_pin_config[] __initdata = {
- 	/* UART2 */
-@@ -130,7 +130,7 @@ static struct platform_device *ttc_dkb_devices[] = {
- static struct pca953x_platform_data max7312_data[] = {
- 	{
- 		.gpio_base	= TTCDKB_GPIO_EXT0(0),
--		.irq_base	= IRQ_BOARD_START,
-+		.irq_base	= MMP_NR_IRQS,
- 	},
- };
- 
+Reviewed-by: David Gibson <david@gibson.dropbear.ud.au>
 -- 
-1.7.5.4
-
+David Gibson			| I'll have my music baroque, and my code
+david AT gibson.dropbear.id.au	| minimalist, thank you.  NOT _the_ _other_
+				| _way_ _around_!
+http://www.ozlabs.org/~dgibson
