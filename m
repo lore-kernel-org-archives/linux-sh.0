@@ -1,49 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 26 Jan 2012 14:56:17 +0000
-Subject: [PATCH 0/7 v2] extract a simple dmaengine library from shdma.c
-Message-Id: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jan 2012 19:28:52 +0000
+Subject: [GIT PULL] Power management fixes and additional updates for 3.3
+Message-Id: <201201162028.52945.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-This is v2 of the simple DMA dmaengine library. It addresses Paul's 
-comments to v1 - thanks, adds some comments.
+Hi Linus,
 
-Guennadi Liakhovetski (7):
-  dmaengine: add a simple dma library
-  dma: shdma: prepare for simple DMA conversion
-  mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare for
-    simple DMA
-  mmc: sh_mobile_sdhi: prepare for conversion to simple DMA
-  serial: sh-sci: prepare for conversion to simple DMA
-  ASoC: SIU: prepare for conversion to simple DMA
-  dma: shdma: convert to the simple DMA library
+Please pull power management fixes and additional updates (on top of commit
+96e80a7851b44f3decaac0625665cd64e550b71d) for 3.3 from:
 
- drivers/dma/Kconfig               |    4 +
- drivers/dma/Makefile              |    1 +
- drivers/dma/dma-simple.c          |  873 ++++++++++++++++++++++++++++
- drivers/dma/shdma.c               | 1138 +++++++++----------------------------
- drivers/dma/shdma.h               |   45 +-
- drivers/mmc/host/sh_mmcif.c       |   24 +-
- drivers/mmc/host/sh_mobile_sdhi.c |    8 +-
- drivers/tty/serial/sh-sci.c       |    8 +-
- include/linux/dma-simple.h        |  124 ++++
- include/linux/mmc/sh_mmcif.h      |    8 +-
- include/linux/sh_dma.h            |   39 +-
- sound/soc/sh/siu_pcm.c            |    8 +-
- 12 files changed, 1334 insertions(+), 946 deletions(-)
- create mode 100644 drivers/dma/dma-simple.c
- create mode 100644 include/linux/dma-simple.h
+git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git pm-for-linus
 
--- 
-1.7.2.5
+with top-most commit ee34a37049114303011e154478c63b977bcff24c
+(PM / Hibernate: Drop the check of swap space size for compressed image).
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+They include:
+
+* Build fixes for generic PM domains.
+
+* A3SP power domain suspend fix from Guennadi Liakhovetski.
+
+* Fix for a regression that made sysrq-o unavailable for CONFIG_PM unset.
+
+* Hibernate modification dropping swap size check for compressed images.
+
+Thanks!
+
+
+ arch/arm/mach-shmobile/pm-sh7372.c   |    2 +-
+ drivers/base/power/domain.c          |   15 +++++++++++++++
+ drivers/base/power/domain_governor.c |   24 +++++++++++++++++++-----
+ kernel/Makefile                      |    3 +--
+ kernel/power/swap.c                  |   13 +++++++------
+ 5 files changed, 43 insertions(+), 14 deletions(-)
+
+---------------
+
+Barry Song (1):
+      PM / Hibernate: Drop the check of swap space size for compressed image
+
+Guennadi Liakhovetski (1):
+      PM / shmobile: fix A3SP suspend method
+
+Rafael J. Wysocki (3):
+      PM: Make sysrq-o be available for CONFIG_PM unset
+      PM / Domains: Fix build for CONFIG_PM_SLEEP unset
+      PM / Domains: Skip governor functions for CONFIG_PM_RUNTIME unset
+
