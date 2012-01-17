@@ -1,46 +1,33 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 25 Jan 2012 10:05:03 +0000
-Subject: Re: [PATCH] sh: se7724: fix compile breakage
-Message-Id: <Pine.LNX.4.64.1201251102510.18778@axis700.grange>
+Date: Tue, 17 Jan 2012 16:39:55 +0000
+Subject: Re: [PATCH 0/2] mmc: sh_mmcif: simplify platform DMA configuration
+Message-Id: <Pine.LNX.4.64.1201171738390.21882@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201250909220.18778@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201250909220.18778@axis700.grange>
+References: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1108301819150.19151@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, 25 Jan 2012, Paul Mundt wrote:
+Hi Paul
 
-> On Wed, Jan 25, 2012 at 10:31:26AM +0100, Laurent Pinchart wrote:
-> > Hi Guennadi,
-> > 
-> > Thanks for the patch.
-> > 
-> > On Wednesday 25 January 2012 09:10:29 Guennadi Liakhovetski wrote:
-> > > Fix compilation breakage
-> > > 
-> > > arch/sh/boards/mach-se/7724/setup.c:182: error: 'V4L2_PIX_FMT_RGB565'
-> > > undeclared here (not in a function) make[3]: ***
-> > > [arch/sh/boards/mach-se/7724/setup.o] Error 1
-> > > 
-> > > caused by commit "fbdev: sh_mobile_lcdc: Support FOURCC-based format API"
-> > 
-> > My bad. The following files also need to include linux/videovdev2.h. Should I 
-> > send a separate patch, or do you want to include them in your patch ?
-> > 
-> > arch/sh/boards/mach-kfr2r09/setup.c
-> > arch/sh/boards/mach-ap325rxa/setup.c
-> > arch/sh/boards/mach-migor/setup.c
-> > arch/sh/boards/mach-ecovec24/setup.c
-> > 
-> All at once would be nice.
+On Mon, 5 Sep 2011, Paul Mundt wrote:
 
-All the above boards include - directly or indirectly - soc_camera.h, 
-which then includes videodev2.h, so, they compile fine. Of course, they 
-still should include headers explicitly instead, so, they should be fixed 
-too, it's just less critical. Anyway, I'll resumbit with all those boards 
-included.
+> On Tue, Aug 30, 2011 at 06:26:34PM +0200, Guennadi Liakhovetski wrote:
+> > A simple cosmetic clean-up, no functional changes. Patch 2/2 depends on 
+> > patch 1/2 and can wait until 3.3. Paul, would you be able to put it under 
+> > the carpet somewhere until then or shall I resend it after 3.2-rc1 is out? 
+> > After both these patches have been applied, we can remove struct 
+> > sh_mmcif_plat_data::dma around 3.4 or 4.0 or whatever;-)
+> > 
+> It's not a problem, I'll just flag it as awaiting upstream in the
+> tracker. Anything flagged as such I generally give a once over after each
+> merge window to see if their dependencies have been worked out.
+
+You certainly haven't forgotten about this patch;-), in which case it's 
+just me, unable to find it in your git branches. Could you give me a hint 
+where it can be?
 
 Thanks
 Guennadi
