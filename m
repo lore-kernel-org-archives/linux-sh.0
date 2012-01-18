@@ -1,38 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Jan 2012 11:05:40 +0000
-Subject: [PATCH] ARM: mach-shmobile: sh73a0 PINT IRQ base fix
-Message-Id: <20120117110540.5414.77262.sendpatchset@w520>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 18 Jan 2012 00:22:24 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: sh73a0 PINT IRQ base fix
+Message-Id: <20120118002223.GE8182@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120117110540.5414.77262.sendpatchset@w520>
+In-Reply-To: <20120117110540.5414.77262.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Jan 17, 2012 at 08:05:40PM +0900, Magnus Damm wrote:
+> Bump up the sh73a0 PINT IRQ base from 768 to 800 to avoid
+> collision with INTCS vectors for IRQ16->IRQ32 at 0x3xxx.
+> 
+> Without this fix the sh73a0 IRQ pin handling code collides
+> with the PINT code which results in hangs on Kota2 during boot.
 
-Bump up the sh73a0 PINT IRQ base from 768 to 800 to avoid
-collision with INTCS vectors for IRQ16->IRQ32 at 0x3xxx.
+On Tue, Jan 17, 2012 at 08:10:49PM +0900, Magnus Damm wrote:
+> Fix the sh73a0 external IRQ pin code to properly support
+> CONFIG_SPARSE_IRQ=y by allocating IRQ descriptors for the
+> cascaded IRQs associated with external IRQ pins.
+> 
+> Without this fix it is impossible to request IRQ0->IRQ31
+> on the Kota2 board when sparse IRQs are enabled. 
 
-Without this fix the sh73a0 IRQ pin handling code collides
-with the PINT code which results in hangs on Kota2 during boot.
+On Tue, Jan 17, 2012 at 08:14:07PM +0900, Magnus Damm wrote:
+> Now when GPIO IRQs are supported on sh73a0 modify the Kota2
+> board code to switch from the polled "gpio-keys-polled" driver
+> to the IRQ driven "gpio-keys" driver.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/include/mach/sh73a0.h |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ work/arch/arm/mach-shmobile/include/mach/sh73a0.h	2012-01-17 19:34:48.000000000 +0900
-@@ -515,8 +515,8 @@ enum {
- 	SHDMA_SLAVE_MMCIF_RX,
- };
- 
--/* PINT interrupts are located at Linux IRQ 768 and up */
--#define SH73A0_PINT0_IRQ(irq) ((irq) + 768)
--#define SH73A0_PINT1_IRQ(irq) ((irq) + 800)
-+/* PINT interrupts are located at Linux IRQ 800 and up */
-+#define SH73A0_PINT0_IRQ(irq) ((irq) + 800)
-+#define SH73A0_PINT1_IRQ(irq) ((irq) + 832)
- 
- #endif /* __ASM_SH73A0_H__ */
+All applied, thanks.
