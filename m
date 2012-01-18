@@ -1,23 +1,33 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 27 Jan 2012 06:11:01 +0000
-Subject: Re: [PATCH 1/2] sh: modify resource for SPI0 in setup-sh7757
-Message-Id: <20120127061101.GA3174@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 18 Jan 2012 09:44:22 +0000
+Subject: [PATCH][RFC] sh: clock-sh7724: fixup sh_fsi clock settings
+Message-Id: <87vco99wgg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F211255.9090300@renesas.com>
-In-Reply-To: <4F211255.9090300@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Jan 26, 2012 at 05:44:05PM +0900, Shimoda, Yoshihiro wrote:
-> The new spi-sh driver decodes the IORESOURCE_MEM_TYPE_MASK. So, the
-> resource needs the IORESOURCE_MEM_32BIT.
+sh_fsi needs HWBLK_SPU clock on sh7724
 
-On Thu, Jan 26, 2012 at 05:44:07PM +0900, Shimoda, Yoshihiro wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   20 ++++++++++++++++++++
->  1 files changed, 20 insertions(+), 0 deletions(-)
-> 
-Applied, thanks.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index b3c039a..70bd966 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -343,7 +343,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.1", &mstp_clks[HWBLK_CEU1]),
+ 	CLKDEV_CON_ID("beu1", &mstp_clks[HWBLK_BEU1]),
+ 	CLKDEV_CON_ID("2ddmac0", &mstp_clks[HWBLK_2DDMAC]),
+-	CLKDEV_CON_ID("spu0", &mstp_clks[HWBLK_SPU]),
++	CLKDEV_DEV_ID("sh_fsi.0", &mstp_clks[HWBLK_SPU]),
+ 	CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
+ 	CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
+ 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU0]),
+-- 
+1.7.5.4
+
