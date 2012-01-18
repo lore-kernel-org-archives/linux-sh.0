@@ -1,150 +1,55 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 12 Jan 2012 06:51:48 +0000
-Subject: [GIT PULL] rmobile updates for 3.3-rc1
-Message-Id: <20120112065147.GA1876@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 18 Jan 2012 10:22:37 +0000
+Subject: [PATCH 6/7] ASoC: SIU: prepare for conversion to simple DMA
+Message-Id: <Pine.LNX.4.64.1201181117590.28782@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, alsa-devel@alsa-project.org
 
-The diffstat here is a bit misleading since it also includes some changes
-that were pulled in from one of the sh topic branches which will have
-already made their way upstream via the sh merge. This mostly applies to
-clock framework and pfc changes that were needed in both trees. Thus,
-most of the arch/sh and drivers/sh stuff can just be factored out when
-looking at the net impact.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ sound/soc/sh/siu_pcm.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-I could have simply made the pull request based on top of the last change
-from the sh topic branch in question, but that seemed to be misleading
-too, so I've just done it this way instead.
+diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
+index f8f6816..6390fec 100644
+--- a/sound/soc/sh/siu_pcm.c
++++ b/sound/soc/sh/siu_pcm.c
+@@ -330,12 +330,12 @@ static bool filter(struct dma_chan *chan, void *slave)
+ {
+ 	struct sh_dmae_slave *param = slave;
+ 
+-	pr_debug("%s: slave ID %d\n", __func__, param->slave_id);
++	pr_debug("%s: slave ID %d\n", __func__, param->simple_slave.slave_id);
+ 
+ 	if (unlikely(param->dma_dev != chan->device->dev))
+ 		return false;
+ 
+-	chan->private = param;
++	chan->private = &param->simple_slave;
+ 	return true;
+ }
+ 
+@@ -360,12 +360,12 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
+ 	if (ss->stream = SNDRV_PCM_STREAM_PLAYBACK) {
+ 		siu_stream = &port_info->playback;
+ 		param = &siu_stream->param;
+-		param->slave_id = port ? pdata->dma_slave_tx_b :
++		param->simple_slave.slave_id = port ? pdata->dma_slave_tx_b :
+ 			pdata->dma_slave_tx_a;
+ 	} else {
+ 		siu_stream = &port_info->capture;
+ 		param = &siu_stream->param;
+-		param->slave_id = port ? pdata->dma_slave_rx_b :
++		param->simple_slave.slave_id = port ? pdata->dma_slave_rx_b :
+ 			pdata->dma_slave_rx_a;
+ 	}
+ 
+-- 
+1.7.2.5
 
-The following changes since commit a0e86bd4252519321b0d102dc4ed90557aa7bee9:
-
-  audit: always follow va_copy() with va_end() (2012-01-08 14:15:21 -0800)
-
-are available in the git repository at:
-
-  git://github.com/pmundt/linux-sh rmobile-for-linus
-
-for you to fetch changes up to e64e1b11b14d363ac70fd13ab809969a6d7e42a8:
-
-  Merge branch 'rmobile/smp' into rmobile-latest (2012-01-12 12:20:18 +0900)
-
-----------------------------------------------------------------
-
-SH/R-Mobile updates for 3.3 merge window.
-
-----------------------------------------------------------------
-Kuninori Morimoto (16):
-      ARM: mach-shmobile: R-Mobile A1 support.
-      ARM: mach-shmobile: r8a7740: add PFC support.
-      ARM: mach-shmobile: r8a7740: add i2c support
-      ARM: mach-shmobile: r8a7740: add INTC support
-      ARM: mach-shmobile: add bonito board support.
-      ARM: mach-shmobile: bonito: Add dip-switch selector
-      ARM: mach-shmobile: bonito: add PMIC settings
-      ARM: mach-shmobile: bonito: Add LCDC0 support
-      ARM: mach-shmobile: bonito: add FPGA irq demux
-      ARM: mach-shmobile: bonito: add SMSC9221 support
-      sh: clkfwk: setup clock parent from current register value
-      sh: clock-sh7723: add CLKDEV_ICK_ID for cleanup
-      sh: clkfwk: clock-sh7724: all div6_clks use SH_CLK_DIV6_EXT()
-      sh: clkfwk: clock-sh73a0: all div6_clks use SH_CLK_DIV6_EXT()
-      ARM: mach-shmobile: clock-r8a7779: add DIV4 clock support
-      ARM: mach-shmobile: clock-r8a7779: clkz/clkzs support
-
-Magnus Damm (20):
-      sh: extend clock struct with mapped_reg member
-      sh: use ioread32/iowrite32 and mapped_reg for mstp32
-      sh: use ioread32/iowrite32 and mapped_reg for div4
-      sh: use ioread32/iowrite32 and mapped_reg for div6
-      sh: pfc: ioremap() support
-      sh: pfc: Add gpio_read_bit() for data register access
-      sh: pfc: Convert index to field and value pair
-      sh: pfc: Add config_reg_helper() function
-      sh: pfc: Variable bitfield width config register support
-      sh: pfc: Unlock register support
-      ARM: mach-shmobile: r8a7779 and Marzen base support V2
-      ARM: mach-shmobile: r8a7779 PFC GPIO-only support V2
-      ARM: mach-shmobile: Marzen SCIF2/SCIF4 support
-      ARM: mach-shmobile: Marzen LAN89218 support
-      ARM: mach-shmobile: Fix headsmp.S code to use CPUINIT
-      ARM: mach-shmobile: Allow SoC specific CPU kill code
-      ARM: mach-shmobile: Flush caches in platform_cpu_die()
-      ARM: mach-shmobile: r8a7779 PFC function support
-      ARM: mach-shmobile: r8a7779 power domain support V2
-      ARM: mach-shmobile: r8a7779 SMP support V3
-
-Paul Mundt (12):
-      ARM: mach-shmobile: Unset initramfs source in bonito defconfig.
-      Merge branch 'rmobile/a1' into rmobile-latest
-      Merge branch 'rmobile-fixes-for-linus' into rmobile-latest
-      Merge branch 'master' of git://git.kernel.org/.../torvalds/linux into rmobile-latest
-      Merge branches 'common/pfc' and 'common/clkfwk' into rmobile/marzen
-      Merge branch 'rmobile/core' into rmobile/marzen
-      ARM: mach-shmobile: Fix up marzen build for recent GIC changes.
-      Merge branch 'rmobile/bonito' into rmobile-latest
-      ARM: mach-shmobile: Add marzen defconfig.
-      ARM: mach-shmobile: Add kota2 defconfig.
-      Merge branches 'rmobile/kota2' and 'rmobile/marzen' into rmobile-latest
-      Merge branch 'rmobile/smp' into rmobile-latest
-
-Shimoda, Yoshihiro (1):
-      arm: mach-shmobile: add a resource name for shdma
-
- arch/arm/configs/bonito_defconfig             |   72 +
- arch/arm/configs/kota2_defconfig              |  122 ++
- arch/arm/configs/marzen_defconfig             |   87 +
- arch/arm/mach-shmobile/Kconfig                |   27 +-
- arch/arm/mach-shmobile/Makefile               |    9 +
- arch/arm/mach-shmobile/board-bonito.c         |  522 +++++
- arch/arm/mach-shmobile/board-marzen.c         |  157 ++
- arch/arm/mach-shmobile/clock-r8a7740.c        |  382 ++++
- arch/arm/mach-shmobile/clock-r8a7779.c        |  176 ++
- arch/arm/mach-shmobile/clock-sh7372.c         |    6 +-
- arch/arm/mach-shmobile/clock-sh73a0.c         |  140 ++-
- arch/arm/mach-shmobile/headsmp.S              |    2 +-
- arch/arm/mach-shmobile/hotplug.c              |   32 +-
- arch/arm/mach-shmobile/include/mach/common.h  |   22 +
- arch/arm/mach-shmobile/include/mach/r8a7740.h |  584 ++++++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  363 ++++
- arch/arm/mach-shmobile/intc-r8a7740.c         |  631 ++++++
- arch/arm/mach-shmobile/intc-r8a7779.c         |   58 +
- arch/arm/mach-shmobile/pfc-r8a7740.c          | 2562 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/pfc-r8a7779.c          | 2645 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/platsmp.c              |   21 +
- arch/arm/mach-shmobile/pm-r8a7779.c           |  249 +++
- arch/arm/mach-shmobile/setup-r8a7740.c        |  352 ++++
- arch/arm/mach-shmobile/setup-r8a7779.c        |  239 +++
- arch/arm/mach-shmobile/setup-sh7372.c         |    6 +-
- arch/arm/mach-shmobile/setup-sh73a0.c         |    2 +-
- arch/arm/mach-shmobile/smp-r8a7779.c          |  153 ++
- arch/sh/include/cpu-sh4/cpu/sh7724.h          |    1 +
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c        |   76 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c        |   44 +-
- drivers/sh/clk/core.c                         |    9 +-
- drivers/sh/clk/cpg.c                          |   77 +-
- drivers/sh/pfc.c                              |  273 ++-
- drivers/tty/serial/sh-sci.h                   |    4 +-
- include/linux/sh_clk.h                        |   10 +-
- include/linux/sh_pfc.h                        |   22 +-
- 36 files changed, 9910 insertions(+), 227 deletions(-)
- create mode 100644 arch/arm/configs/bonito_defconfig
- create mode 100644 arch/arm/configs/kota2_defconfig
- create mode 100644 arch/arm/configs/marzen_defconfig
- create mode 100644 arch/arm/mach-shmobile/board-bonito.c
- create mode 100644 arch/arm/mach-shmobile/board-marzen.c
- create mode 100644 arch/arm/mach-shmobile/clock-r8a7740.c
- create mode 100644 arch/arm/mach-shmobile/clock-r8a7779.c
- create mode 100644 arch/arm/mach-shmobile/include/mach/r8a7740.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/r8a7779.h
- create mode 100644 arch/arm/mach-shmobile/intc-r8a7740.c
- create mode 100644 arch/arm/mach-shmobile/intc-r8a7779.c
- create mode 100644 arch/arm/mach-shmobile/pfc-r8a7740.c
- create mode 100644 arch/arm/mach-shmobile/pfc-r8a7779.c
- create mode 100644 arch/arm/mach-shmobile/pm-r8a7779.c
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7740.c
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7779.c
- create mode 100644 arch/arm/mach-shmobile/smp-r8a7779.c
