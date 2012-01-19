@@ -1,195 +1,165 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Jan 2012 14:07:20 +0000
-Subject: Re: [PATCH 1/7] dma: add a simple dma library
-Message-Id: <Pine.LNX.4.64.1201181440400.28782@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Jan 2012 01:32:05 +0000
+Subject: [PATCH v2] ARM: mach-shmobile: mackerel: use renesas_usbhs instead of r8a66597_hcd
+Message-Id: <87d3ag7a0e.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
- <Pine.LNX.4.64.1201181111340.28782@axis700.grange> <20120118123431.GH8182@linux-sh.org>
-In-Reply-To: <20120118123431.GH8182@linux-sh.org>
+References: <4D087CC8.6020803@renesas.com>
+In-Reply-To: <4D087CC8.6020803@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Hi Paul
+Current renesas_usbhs driver can use both USB host/gadget.
+This patch removes current r8a66597_hcd driver settings,
+and adds renesas_usbhs host driver settings for mackerel USB1 port.
+You can still use this port as "gadget" with small modify.
 
-Thanks for the review!
-
-On Wed, 18 Jan 2012, Paul Mundt wrote:
-
-> On Wed, Jan 18, 2012 at 11:22:18AM +0100, Guennadi Liakhovetski wrote:
-> > This patch adds a library of functions, helping to implement dmaengine
-> > drivers for hardware, unable to handle scatter-gather lists natively.
-> > The first version of this driver only supports memcpy and slave DMA
-> > operation.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> While I like the direction this is going there are just a few minor
-> things that have popped up.
-> 
-> > +/*
-> > + * For slave DMA we assume, that there is a finate number of DMA slaves in the
-> > + * system, and that each such slave can only use a finate number of channels.
-> > + * We use slave channel IDs to make sure, that no such slave channel ID is
-> > + * allocated more than once.
-> > + */
-> Presumably you meant finite.
-
-I think so too:)
-
-> > +static unsigned int slave_num = 256;
-> > +module_param(slave_num, uint, 0444);
-> > +
-> > +/* A bitmask with slave_num bits */
-> > +static unsigned long *simple_slave_used;
-> > +
-> The shdma code explicitly used BITS_TO_LONGS here which explicitly
-> requires a defined (or max) size, but this could all presumably be buried
-> under DECLARE_BITMAP().
-
-I didn't want to put any fixed limit on the bitmap size. Do you really 
-think we should use one?
-
-> > +		BUG_ON(tx->cookie > 0 && tx->cookie != desc->cookie);
-> > +		BUG_ON(desc->mark != DESC_SUBMITTED &&
-> > +		       desc->mark != DESC_COMPLETED &&
-> > +		       desc->mark != DESC_WAITING);
-> > +
-> ..
-> > +			BUG_ON(desc->chunks != 1);
-> ..
-> > +				BUG_ON(tx->cookie < 0);
-> 
-> This seems to depend on BUG_ON() as its primary assert/sanity check path,
-> which seems a bit excessive. Drivers get fed garbage all the time,
-> some effort to provide meaningful debug output or less fatal error
-> handling would be nice. As it is, one misbehaving user can pretty much
-> grind everything else to a halt for things that aren't really that big of
-> a deal.
-
-These have been certainly brought over from the shdma.c driver, their 
-purpose is to catch really bad _internal_ _algorithmic_ errors, not API 
-abuses. If any of these triggers this means, that the driver has hit an 
-internal bug. But ok, I'll revisit them and see whether all of them are 
-really reasonable.
-
-> > +/*
-> > + * simple_chan_ld_cleanup - Clean up link descriptors
-> > + *
-> > + * Clean up the ld_queue of DMA channel.
-> > + */
-> > +static void simple_chan_ld_cleanup(struct dma_simple_chan *schan, bool all)
-> > +{
-> > +	while (__ld_cleanup(schan, all))
-> > +		;
-> > +}
-> > +
-> cpu_relax()
-
-Well, I thought, there was enough relaxing going on in __ld_cleanup(), why 
-do we need cpu_relax() here?
-
-> > +/*
-> > + * simple_free_chan_resources - Free all resources of the channel.
-> > + */
-> > +static void simple_free_chan_resources(struct dma_chan *chan)
-> > +{
-> > +	struct dma_simple_chan *schan = to_simple_chan(chan);
-> > +	struct dma_simple_dev *sdev = to_simple_dev(chan->device);
-> > +	const struct dma_simple_ops *ops = sdev->ops;
-> > +	LIST_HEAD(list);
-> > +
-> > +	/* Protect against ISR */
-> > +	spin_lock_irq(&schan->chan_lock);
-> > +	ops->halt_channel(schan);
-> > +	spin_unlock_irq(&schan->chan_lock);
-> > +
-> > +	/* Now no new interrupts will occur */
-> > +
-> > +	/* Prepared and not submitted descriptors can still be on the queue */
-> > +	if (!list_empty(&schan->ld_queue))
-> > +		simple_chan_ld_cleanup(schan, true);
-> > +
-> Why doesn't simple_chan_ld_cleanup() do a list_empty test instead?
-
-because it removes entries from it.
-
-> > +int __devinit dma_simple_init(struct device *dev, struct dma_simple_dev *sdev,
-> > +			      int chan_num)
-> > +{
-> ..
-> > +}
-> > +EXPORT_SYMBOL(dma_simple_init);
-> > +
-> > +void __devexit dma_simple_cleanup(struct dma_simple_dev *sdev)
-> > +{
-> ..
-> > +}
-> > +EXPORT_SYMBOL(dma_simple_cleanup);
-> > +
-> __devinit/exit on exported symbols? You could try __init_or_module, but I
-> think it's more trouble than it is worth.
-
-Well, these routines are supposed to be called from client driver .probe() 
-and .remove() methods... But probably you're right, better drop them.
-
-> > +static int __init dma_simple_enter(void)
-> > +{
-> > +	simple_slave_used = kzalloc(DIV_ROUND_UP(slave_num, BITS_PER_BYTE),
-> > +				    GFP_KERNEL);
-> > +	if (!simple_slave_used)
-> > +		return -ENOMEM;
-> 
-> Pretty weird way to do BITS_PER_LONGS, and as noted above can just be
-> handled by DECLARE_BITMAP() if the max case isn't too outlandish.
-
-I don't think it's weird - for dynamic allocation you need bytes anyway, 
-or you'll have to use BITS_TO_LONGS (or DECLARE_BITMAP()) and sizeof(long) 
-somewhere. But the above is actually buggy - it only rounds up to the next 
-byte, whereas it should round up to the next long. Will fix.
-
-> > +module_init(dma_simple_enter);
-> > +
-> > +static void __exit dma_simple_exit(void)
-> > +{
-> > +	kfree(simple_slave_used);
-> > +}
-> > +module_exit(dma_simple_exit);
-> > +
-> At which point these can probably just go away completely.
-
-You really think we should use a fixed-size bitmask?
-
-> > +static inline void dma_simple_lock(struct dma_simple_chan *schan)
-> > +{
-> > +	spin_lock(&schan->chan_lock);
-> > +}
-> > +
-> > +static inline void dma_simple_unlock(struct dma_simple_chan *schan)
-> > +{
-> > +	spin_unlock(&schan->chan_lock);
-> > +}
-> > +
-> These deserve to die a violent death, it's ok for driver writers to
-> handle a spinlock on their own, or so one hopes.
-
-Well, it's the same spinlock, as the one, used internally by the 
-dma-simple driver... I'll see if I come up with a better idea.
-
-> > +void dma_simple_chan_remove(struct dma_simple_chan *schan);
-> > +int dma_simple_init(struct device *dev, struct dma_simple_dev *sdev,
-> > +		    int chan_num) __devinit;
-> > +void dma_simple_cleanup(struct dma_simple_dev *sdev) __devexit;
-> > +
-> Not really convinced about the section annotations here, either.
-
-These are the same functions, as above.
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+v1 -> v2
+
+- remove r8a66597 comment
+- remove r8a66597 header
+
+ arch/arm/mach-shmobile/board-mackerel.c |   73 ++++---------------------------
+ 1 files changed, 9 insertions(+), 64 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 95ba9b8..c4a6a9b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -43,7 +43,6 @@
+ #include <linux/smsc911x.h>
+ #include <linux/sh_intc.h>
+ #include <linux/tca6416_keypad.h>
+-#include <linux/usb/r8a66597.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/dma-mapping.h>
+ 
+@@ -145,11 +144,6 @@
+  * 1-2 short | VBUS 5V       | Host
+  * open      | external VBUS | Function
+  *
+- * *1
+- * CN31 is used as
+- * CONFIG_USB_R8A66597_HCD	Host
+- * CONFIG_USB_RENESAS_USBHS	Function
+- *
+  * CAUTION
+  *
+  * renesas_usbhs driver can use external interrupt mode
+@@ -161,15 +155,6 @@
+  * mackerel can not use external interrupt (IRQ7-PORT167) mode on "USB0",
+  * because Touchscreen is using IRQ7-PORT40.
+  * It is impossible to use IRQ7 demux on this board.
+- *
+- * We can use external interrupt mode USB-Function on "USB1".
+- * USB1 can become Host by r8a66597, and become Function by renesas_usbhs.
+- * But don't select both drivers in same time.
+- * These uses same IRQ number for request_irq(), and aren't supporting
+- * IRQF_SHARED / IORESOURCE_IRQ_SHAREABLE.
+- *
+- * Actually these are old/new version of USB driver.
+- * This mean its register will be broken if it supports shared IRQ,
+  */
+ 
+ /*
+@@ -686,51 +671,16 @@ static struct platform_device usbhs0_device = {
+  * Use J30 to select between Host and Function. This setting
+  * can however not be detected by software. Hotplug of USBHS1
+  * is provided via IRQ8.
++ *
++ * Current USB1 works as "USB Host".
++ *  - set J30 "short"
++ *
++ * If you want to use it as "USB gadget",
++ *  - J30 "open"
++ *  - modify usbhs1_get_id() USBHS_HOST -> USBHS_GADGET
++ *  - add .get_vbus = usbhs_get_vbus in usbhs1_private
+  */
+ #define IRQ8 evt2irq(0x0300)
+-
+-/* USBHS1 USB Host support via r8a66597_hcd */
+-static void usb1_host_port_power(int port, int power)
+-{
+-	if (!power) /* only power-on is supported for now */
+-		return;
+-
+-	/* set VBOUT/PWEN and EXTLP1 in DVSTCTR */
+-	__raw_writew(__raw_readw(0xE68B0008) | 0x600, 0xE68B0008);
+-}
+-
+-static struct r8a66597_platdata usb1_host_data = {
+-	.on_chip	= 1,
+-	.port_power	= usb1_host_port_power,
+-};
+-
+-static struct resource usb1_host_resources[] = {
+-	[0] = {
+-		.name	= "USBHS1",
+-		.start	= 0xe68b0000,
+-		.end	= 0xe68b00e6 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0x1ce0) /* USB1_USB1I0 */,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device usb1_host_device = {
+-	.name	= "r8a66597_hcd",
+-	.id	= 1,
+-	.dev = {
+-		.dma_mask		= NULL,         /*  not use dma */
+-		.coherent_dma_mask	= 0xffffffff,
+-		.platform_data		= &usb1_host_data,
+-	},
+-	.num_resources	= ARRAY_SIZE(usb1_host_resources),
+-	.resource	= usb1_host_resources,
+-};
+-
+-/* USBHS1 USB Function support via renesas_usbhs */
+-
+ #define USB_PHY_MODE		(1 << 4)
+ #define USB_PHY_INT_EN		((1 << 3) | (1 << 2))
+ #define USB_PHY_ON		(1 << 1)
+@@ -786,7 +736,7 @@ static void usbhs1_hardware_exit(struct platform_device *pdev)
+ 
+ static int usbhs1_get_id(struct platform_device *pdev)
+ {
+-	return USBHS_GADGET;
++	return USBHS_HOST;
+ }
+ 
+ static u32 usbhs1_pipe_cfg[] = {
+@@ -817,7 +767,6 @@ static struct usbhs_private usbhs1_private = {
+ 			.hardware_exit	= usbhs1_hardware_exit,
+ 			.get_id		= usbhs1_get_id,
+ 			.phy_reset	= usbhs_phy_reset,
+-			.get_vbus	= usbhs_get_vbus,
+ 		},
+ 		.driver_param = {
+ 			.buswait_bwait	= 4,
+@@ -1321,7 +1270,6 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&lcdc_device,
+-	&usb1_host_device,
+ 	&usbhs1_device,
+ 	&usbhs0_device,
+ 	&leds_device,
+@@ -1483,9 +1431,6 @@ static void __init mackerel_init(void)
+ 	gpio_pull_down(GPIO_PORT167CR); /* VBUS0_1 pull down */
+ 	gpio_request(GPIO_FN_IDIN_1_113, NULL);
+ 
+-	/* USB phy tweak to make the r8a66597_hcd host driver work */
+-	__raw_writew(0x8a0a, 0xe6058130);       /* USBCR4 */
+-
+ 	/* enable FSI2 port A (ak4643) */
+ 	gpio_request(GPIO_FN_FSIAIBT,	NULL);
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+-- 
+1.7.5.4
+
