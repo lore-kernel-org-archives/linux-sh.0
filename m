@@ -1,99 +1,80 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 10 Jan 2012 05:21:15 +0000
-Subject: [PATCH v2 2/3] sh: add platform_device for SUDMAC in setup-sh7757
-Message-Id: <4F0BCACB.20203@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 20 Jan 2012 23:41:28 +0000
+Subject: [PATCH] mmc: sh_mmcif: fix late delayed work initialisation
+Message-Id: <Pine.LNX.4.64.1201210038550.28312@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+If the driver is loaded with a card in the slot, mmc_add_host() will
+schedule an immediate card-detection work, which will start IO and wait
+for command completion. Usually the kernel first returns to the sh_mmcif
+probe function, lets it finish and only then schedules the rescan work.
+But sometimes, expecially under heavy system load, the work will be
+scheduled immediately before returning to the probe method. In this case
+it is important for the driver to be fully prepared for IO. For sh_mmcif
+this means, that also the timeout work has to be initialised before
+calling mmc_add_host(). It is also better to prepare interrupts
+beforehand. Besides, since mmc_add_host() does card-detection itself,
+there is no need to do it again immediately afterwards.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- about v2:
-  - No need the .no_error_irq flag.
 
- arch/sh/include/cpu-sh4/cpu/sh7757.h   |    1 +
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   49 ++++++++++++++++++++++++++++++++
- 2 files changed, 50 insertions(+), 0 deletions(-)
+Tested to work on top of my other recently posted patches, that probably 
+will only go into 3.4, but this one actually fixes a bug in 3.3-rc1 and 
+should apply and work there too.
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7757.h b/arch/sh/include/cpu-sh4/cpu/sh7757.h
-index 41f9f8b..f9be40a 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7757.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7757.h
-@@ -283,5 +283,6 @@ enum {
- 	SHDMA_SLAVE_RIIC8_RX,
- 	SHDMA_SLAVE_RIIC9_TX,
- 	SHDMA_SLAVE_RIIC9_RX,
-+	SHDMA_SLAVE_SUDMAC00,
- };
- #endif /* __ASM_SH7757_H__ */
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index a7b2da6..bb9324a 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -650,6 +650,54 @@ static struct platform_device dma3_device = {
- 	},
- };
+ drivers/mmc/host/sh_mmcif.c |   16 +++++++++-------
+ 1 files changed, 9 insertions(+), 7 deletions(-)
 
-+/* SUDMAC */
-+static const struct sh_dmae_channel sh7757_sudmac_channel[] = {
-+	{
-+		.offset = 0,
-+		.dmars = 0,
-+		.dmars_bit = 0,
-+	}
-+};
-+
-+static const struct sh_dmae_slave_config sh7757_sudmac00_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_SUDMAC00,
-+		.addr		= 0xfe451000,
-+	},
-+};
-+
-+static struct sh_dmae_pdata sudmac00_platform_data = {
-+	.slave		= sh7757_sudmac00_slaves,
-+	.slave_num	= ARRAY_SIZE(sh7757_sudmac00_slaves),
-+	.channel	= sh7757_sudmac_channel,
-+	.channel_num	= 1,
-+	.no_dmars	= 1,
-+	.sudmac		= 1,
-+};
-+
-+static struct resource sh7757_sudmac00_resources[] = {
-+	[0] = {
-+		.start	= 0xfe451000,
-+		.end	= 0xfe451000,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		.start	= 50,
-+		.end	= 50,
-+		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_SHAREABLE,
-+	},
-+};
-+
-+static struct platform_device sudmac00_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 4,
-+	.resource	= sh7757_sudmac00_resources,
-+	.num_resources	= ARRAY_SIZE(sh7757_sudmac00_resources),
-+	.dev		= {
-+		.platform_data	= &sudmac00_platform_data,
-+	},
-+};
-+
- static struct platform_device spi0_device = {
- 	.name	= "sh_spi",
- 	.id	= 0,
-@@ -719,6 +767,7 @@ static struct platform_device *sh7757_devices[] __initdata = {
- 	&dma1_device,
- 	&dma2_device,
- 	&dma3_device,
-+	&sudmac00_device,
- 	&spi0_device,
- 	&usb_ehci_device,
- 	&usb_ohci_device,
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index fa6592f..8532bf1 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1342,7 +1342,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto clean_up2;
+ 
+-	mmc_add_host(mmc);
++	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+ 
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+ 
+@@ -1353,22 +1353,24 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	}
+ 	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
+ 	if (ret) {
+-		free_irq(irq[0], host);
+ 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
+-		goto clean_up3;
++		goto clean_up4;
+ 	}
+ 
+-	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+-
+-	mmc_detect_change(host->mmc, 0);
++	ret = mmc_add_host(mmc);
++	if (ret < 0)
++		goto clean_up5;
+ 
+ 	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
+ 	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
+ 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
+ 	return ret;
+ 
++clean_up5:
++	free_irq(irq[1], host);
++clean_up4:
++	free_irq(irq[0], host);
+ clean_up3:
+-	mmc_remove_host(mmc);
+ 	pm_runtime_suspend(&pdev->dev);
+ clean_up2:
+ 	pm_runtime_disable(&pdev->dev);
 -- 
-1.7.1
+1.7.2.5
+
