@@ -1,57 +1,52 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 11 Jan 2012 00:43:58 +0000
-Subject: Re: [PATCH v3 1/3] dmaengine: shdma: modify the DMAC Address Error
-Message-Id: <4F0CDB4E.30809@renesas.com>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 20 Jan 2012 20:33:09 +0000
+Subject: [PATCH v2 11/13] ARM: only include mach/irqs.h for !SPARSE_IRQ
+Message-Id: <1327091591-27125-12-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F0BDCD5.9020603@renesas.com>
-In-Reply-To: <4F0BDCD5.9020603@renesas.com>
+References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Guennadi-san,
+From: Rob Herring <rob.herring@calxeda.com>
 
-Thank you very much for your review!
+Make mach/irqs.h optional for SPARSE_IRQ. With this change irqs.h can be
+removed by converting platforms over to sparse irq.
 
-2012/01/10 18:48, Guennadi Liakhovetski wrote:
-> Hello Shimoda-san
-> 
-> Thanks for your work on this! Nice to see patches improving!
-> 
-> On Tue, 10 Jan 2012, Shimoda, Yoshihiro wrote:
-> 
->> +	errirq_res = platform_get_resource_byname(pdev, IORESOURCE_IRQ,
->> +						  "error_irq");
-> 
-> Wouldn't this break all platforms, providing error IRQ, because they don't 
-> yet have any IRQ resources with that name? Also, I think, it would be good 
-> to define macros for DMAC IRQ names, similar to SH_MOBILE_SDHI_IRQ_* 
-> macros in include/linux/mmc/sh_mobile_sdhi.h. To avoid breakages you, 
-> probably, want to
-> 
-> 1. add IRQ resource name definition macros to the header
-> 2. add IRQ resource names to platforms. This shouldn't break anything, you 
-> still can request those IRQs without name.
-> 3. convert the driver. Here I would try to think of a scheme, where we 
-> wouldn't have to mix named and unnamed IRQ resources. So, maybe use all of 
-> them as named. So, how about
-> 
-> 3.1. Request both "error irq" and "channel irq" IRQ resources
-> 3.2. If none is supplied - error out
-> 3.3. If an error IRQ is provided - request it
-> 3.4. If no separate channel IRQs are provided - request error IRQ 
-> additional times, according to the channel count
-> 3.5. If separate channel IRQs are provided - request them just like now
-> 
-> Would this make sense?
+This intentionally breaks platforms that enable SPARSE_IRQ.
 
-I think that it is very nice.
-I will write such a code.
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+---
+ arch/arm/include/asm/irq.h |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-Best regards,
-Yoshihiro Shimoda
+diff --git a/arch/arm/include/asm/irq.h b/arch/arm/include/asm/irq.h
+index 5a526af..35c21c3 100644
+--- a/arch/arm/include/asm/irq.h
++++ b/arch/arm/include/asm/irq.h
+@@ -1,14 +1,18 @@
+ #ifndef __ASM_ARM_IRQ_H
+ #define __ASM_ARM_IRQ_H
+ 
++#define NR_IRQS_LEGACY	16
++
++#ifndef CONFIG_SPARSE_IRQ
+ #include <mach/irqs.h>
++#else
++#define NR_IRQS NR_IRQS_LEGACY
++#endif
+ 
+ #ifndef irq_canonicalize
+ #define irq_canonicalize(i)	(i)
+ #endif
+ 
+-#define NR_IRQS_LEGACY	16
+-
+ /*
+  * Use this value to indicate lack of interrupt
+  * capability
+-- 
+1.7.5.4
 
-> 
-> Thanks
-> Guennadi
