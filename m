@@ -1,55 +1,40 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Jan 2012 10:22:34 +0000
-Subject: [PATCH 5/7] serial: sh-sci: prepare for conversion to simple DMA
-Message-Id: <Pine.LNX.4.64.1201181118550.28782@axis700.grange>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 20 Jan 2012 20:33:02 +0000
+Subject: [PATCH v2 04/13] ARM: mc146818rtc: remove unnecessary include of mach/irqs.h
+Message-Id: <1327091591-27125-5-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
+References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Rob Herring <rob.herring@calxeda.com>
+
+The include of mach/irqs.h isn't needed, so remove it. Compiled CMOS rtc
+driver. Add a check to make sure nothing depends on RTC_IRQ.
+
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
 ---
- drivers/tty/serial/sh-sci.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/include/asm/mc146818rtc.h |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index aff9d61..2a8ffda 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1463,9 +1463,9 @@ static bool filter(struct dma_chan *chan, void *slave)
- 	struct sh_dmae_slave *param = slave;
+diff --git a/arch/arm/include/asm/mc146818rtc.h b/arch/arm/include/asm/mc146818rtc.h
+index 6b884d2..e8567bb 100644
+--- a/arch/arm/include/asm/mc146818rtc.h
++++ b/arch/arm/include/asm/mc146818rtc.h
+@@ -5,7 +5,9 @@
+ #define _ASM_MC146818RTC_H
  
- 	dev_dbg(chan->device->dev, "%s: slave ID %d\n", __func__,
--		param->slave_id);
-+		param->simple_slave.slave_id);
+ #include <linux/io.h>
+-#include <mach/irqs.h>
++#include <linux/kernel.h>
++
++#define RTC_IRQ BUILD_BUG_ON(1)
  
--	chan->private = param;
-+	chan->private = &param->simple_slave;
- 	return true;
- }
- 
-@@ -1504,7 +1504,7 @@ static void sci_request_dma(struct uart_port *port)
- 	param = &s->param_tx;
- 
- 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
--	param->slave_id = s->cfg->dma_slave_tx;
-+	param->simple_slave.slave_id = s->cfg->dma_slave_tx;
- 
- 	s->cookie_tx = -EINVAL;
- 	chan = dma_request_channel(mask, filter, param);
-@@ -1532,7 +1532,7 @@ static void sci_request_dma(struct uart_port *port)
- 	param = &s->param_rx;
- 
- 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
--	param->slave_id = s->cfg->dma_slave_rx;
-+	param->simple_slave.slave_id = s->cfg->dma_slave_rx;
- 
- 	chan = dma_request_channel(mask, filter, param);
- 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
+ #ifndef RTC_PORT
+ #define RTC_PORT(x)	(0x70 + (x))
 -- 
-1.7.2.5
+1.7.5.4
 
