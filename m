@@ -1,32 +1,99 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 09 Jan 2012 00:34:13 +0000
-Subject: Re: [PATCH 00/05] sh: pfc: Variable bitfield width and unlock reg patches
-Message-Id: <20120109003413.GC25648@linux-sh.org>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 20 Jan 2012 20:33:05 +0000
+Subject: [PATCH v2 07/13] sh: intc: remove dependency on NR_IRQS
+Message-Id: <1327091591-27125-8-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 14, 2011 at 01:00:27AM +0900, Magnus Damm wrote:
-> sh: pfc: Variable bitfield width and unlock reg patches
-> 
-> [PATCH 01/05] sh: pfc: Add gpio_read_bit() for data register access
-> [PATCH 02/05] sh: pfc: Convert index to field and value pair
-> [PATCH 03/05] sh: pfc: Add config_reg_helper() function
-> [PATCH 04/05] sh: pfc: Variable bitfield width config register support
-> [PATCH 05/05] sh: pfc: Unlock register support
-> 
-> Update the common PFC code to support r8a7779 by adding:
-> - Variable bitfield width config register support (Patch 4)
-> - Unlock register support (Patch 5)
-> 
-> Patch 1-3 contain incremental changes needed for 4.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Depends on "[PATCH] sh: pfc: ioremap() support"
-> 
+From: Rob Herring <rob.herring@calxeda.com>
 
-Applied to common/pfc, thanks.
+SH intc has a compile time dependency on NR_IRQS. Make this dependency a
+local define so that shmobile (and ARM in general) can have run-time
+NR_IRQS setting.
+
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+---
+ drivers/sh/intc/balancing.c |    2 +-
+ drivers/sh/intc/core.c      |    2 +-
+ drivers/sh/intc/handle.c    |    2 +-
+ drivers/sh/intc/virq.c      |    2 +-
+ include/linux/sh_intc.h     |    6 ++++++
+ 5 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/sh/intc/balancing.c b/drivers/sh/intc/balancing.c
+index cec7a96..bc78080 100644
+--- a/drivers/sh/intc/balancing.c
++++ b/drivers/sh/intc/balancing.c
+@@ -9,7 +9,7 @@
+  */
+ #include "internals.h"
+ 
+-static unsigned long dist_handle[NR_IRQS];
++static unsigned long dist_handle[INTC_NR_IRQS];
+ 
+ void intc_balancing_enable(unsigned int irq)
+ {
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index e53e449..2fde897 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -42,7 +42,7 @@ unsigned int nr_intc_controllers;
+  * - this needs to be at least 2 for 5-bit priorities on 7780
+  */
+ static unsigned int default_prio_level = 2;	/* 2 - 16 */
+-static unsigned int intc_prio_level[NR_IRQS];	/* for now */
++static unsigned int intc_prio_level[INTC_NR_IRQS];	/* for now */
+ 
+ unsigned int intc_get_dfl_prio_level(void)
+ {
+diff --git a/drivers/sh/intc/handle.c b/drivers/sh/intc/handle.c
+index 057ce56..f461d53 100644
+--- a/drivers/sh/intc/handle.c
++++ b/drivers/sh/intc/handle.c
+@@ -13,7 +13,7 @@
+ #include <linux/spinlock.h>
+ #include "internals.h"
+ 
+-static unsigned long ack_handle[NR_IRQS];
++static unsigned long ack_handle[INTC_NR_IRQS];
+ 
+ static intc_enum __init intc_grp_id(struct intc_desc *desc,
+ 				    intc_enum enum_id)
+diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
+index c7ec49f..93cec21 100644
+--- a/drivers/sh/intc/virq.c
++++ b/drivers/sh/intc/virq.c
+@@ -17,7 +17,7 @@
+ #include <linux/export.h>
+ #include "internals.h"
+ 
+-static struct intc_map_entry intc_irq_xlate[NR_IRQS];
++static struct intc_map_entry intc_irq_xlate[INTC_NR_IRQS];
+ 
+ struct intc_virq_list {
+ 	unsigned int irq;
+diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+index e1a2ac5..6aed080 100644
+--- a/include/linux/sh_intc.h
++++ b/include/linux/sh_intc.h
+@@ -3,6 +3,12 @@
+ 
+ #include <linux/ioport.h>
+ 
++#ifdef CONFIG_SUPERH
++#define INTC_NR_IRQS	512
++#else
++#define INTC_NR_IRQS	1024
++#endif
++
+ /*
+  * Convert back and forth between INTEVT and IRQ values.
+  */
+-- 
+1.7.5.4
+
