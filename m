@@ -1,41 +1,64 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Jan 2012 09:14:29 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: both USB DMAC instances on sh7372 are slave-only
-Message-Id: <Pine.LNX.4.64.1201181013540.28782@axis700.grange>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 20 Jan 2012 20:33:10 +0000
+Subject: [PATCH v2 12/13] ARM: highbank: select SPARSE_IRQ and remove irqs.h
+Message-Id: <1327091591-27125-13-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
+References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Rob Herring <rob.herring@calxeda.com>
+
+irqs.h is optional now for SPARSE_IRQ, so select it and remove mach/irqs.h
+from highbank.
+
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ arch/arm/Kconfig                           |    1 +
+ arch/arm/mach-highbank/highbank.c          |    1 -
+ arch/arm/mach-highbank/include/mach/irqs.h |    6 ------
+ 3 files changed, 1 insertions(+), 7 deletions(-)
+ delete mode 100644 arch/arm/mach-highbank/include/mach/irqs.h
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 45a3418..9aa22395 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -662,6 +662,7 @@ static struct sh_dmae_pdata usb_dma0_platform_data = {
- 	.dmaor_is_32bit	= 1,
- 	.needs_tend_set	= 1,
- 	.no_dmars	= 1,
-+	.slave_only	= 1,
- };
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 24626b0..a3c19cb 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -350,6 +350,7 @@ config ARCH_HIGHBANK
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU
+ 	select HAVE_SMP
++	select SPARSE_IRQ
+ 	select USE_OF
+ 	help
+ 	  Support for the Calxeda Highbank SoC based boards.
+diff --git a/arch/arm/mach-highbank/highbank.c b/arch/arm/mach-highbank/highbank.c
+index 7afbe1e..ee228ef 100644
+--- a/arch/arm/mach-highbank/highbank.c
++++ b/arch/arm/mach-highbank/highbank.c
+@@ -33,7 +33,6 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+-#include <mach/irqs.h>
  
- static struct resource sh7372_usb_dmae0_resources[] = {
-@@ -723,6 +724,7 @@ static struct sh_dmae_pdata usb_dma1_platform_data = {
- 	.dmaor_is_32bit	= 1,
- 	.needs_tend_set	= 1,
- 	.no_dmars	= 1,
-+	.slave_only	= 1,
- };
- 
- static struct resource sh7372_usb_dmae1_resources[] = {
+ #include "core.h"
+ #include "sysregs.h"
+diff --git a/arch/arm/mach-highbank/include/mach/irqs.h b/arch/arm/mach-highbank/include/mach/irqs.h
+deleted file mode 100644
+index 9746aab..0000000
+--- a/arch/arm/mach-highbank/include/mach/irqs.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#ifndef __MACH_IRQS_H
+-#define __MACH_IRQS_H
+-
+-#define NR_IRQS			192
+-
+-#endif
 -- 
-1.7.2.5
+1.7.5.4
 
