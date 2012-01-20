@@ -1,54 +1,53 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jan 2012 19:28:52 +0000
-Subject: [GIT PULL] Power management fixes and additional updates for 3.3
-Message-Id: <201201162028.52945.rjw@sisk.pl>
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 20 Jan 2012 20:33:11 +0000
+Subject: [PATCH v2 13/13] ARM: picoxcell: remove mach/irqs.h
+Message-Id: <1327091591-27125-14-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+From: Jamie Iles <jamie@jamieiles.com>
 
-Please pull power management fixes and additional updates (on top of commit
-96e80a7851b44f3decaac0625665cd64e550b71d) for 3.3 from:
+picoxcell uses SPARSE_IRQ which means we don't need a mach/irqs.h
+anymore so kill it off.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git pm-for-linus
+Signed-off-by: Jamie Iles <jamie@jamieiles.com>
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+---
+ arch/arm/mach-picoxcell/include/mach/irqs.h |   20 --------------------
+ 1 files changed, 0 insertions(+), 20 deletions(-)
+ delete mode 100644 arch/arm/mach-picoxcell/include/mach/irqs.h
 
-with top-most commit ee34a37049114303011e154478c63b977bcff24c
-(PM / Hibernate: Drop the check of swap space size for compressed image).
-
-They include:
-
-* Build fixes for generic PM domains.
-
-* A3SP power domain suspend fix from Guennadi Liakhovetski.
-
-* Fix for a regression that made sysrq-o unavailable for CONFIG_PM unset.
-
-* Hibernate modification dropping swap size check for compressed images.
-
-Thanks!
-
-
- arch/arm/mach-shmobile/pm-sh7372.c   |    2 +-
- drivers/base/power/domain.c          |   15 +++++++++++++++
- drivers/base/power/domain_governor.c |   24 +++++++++++++++++++-----
- kernel/Makefile                      |    3 +--
- kernel/power/swap.c                  |   13 +++++++------
- 5 files changed, 43 insertions(+), 14 deletions(-)
-
----------------
-
-Barry Song (1):
-      PM / Hibernate: Drop the check of swap space size for compressed image
-
-Guennadi Liakhovetski (1):
-      PM / shmobile: fix A3SP suspend method
-
-Rafael J. Wysocki (3):
-      PM: Make sysrq-o be available for CONFIG_PM unset
-      PM / Domains: Fix build for CONFIG_PM_SLEEP unset
-      PM / Domains: Skip governor functions for CONFIG_PM_RUNTIME unset
+diff --git a/arch/arm/mach-picoxcell/include/mach/irqs.h b/arch/arm/mach-picoxcell/include/mach/irqs.h
+deleted file mode 100644
+index 59eac1e..0000000
+--- a/arch/arm/mach-picoxcell/include/mach/irqs.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-/*
+- * Copyright (c) 2011 Picochip Ltd., Jamie Iles
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#ifndef __MACH_IRQS_H
+-#define __MACH_IRQS_H
+-
+-/* We dynamically allocate our irq_desc's. */
+-#define NR_IRQS				0
+-
+-#endif /* __MACH_IRQS_H */
+-- 
+1.7.5.4
 
