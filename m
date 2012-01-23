@@ -1,33 +1,37 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 18 Jan 2012 00:22:24 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh73a0 PINT IRQ base fix
-Message-Id: <20120118002223.GE8182@linux-sh.org>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Mon, 23 Jan 2012 11:49:02 +0000
+Subject: ARM/ARM-SoC plans for v3.4 merge window
+Message-Id: <20120123114902.GY1068@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120117110540.5414.77262.sendpatchset@w520>
-In-Reply-To: <20120117110540.5414.77262.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 17, 2012 at 08:05:40PM +0900, Magnus Damm wrote:
-> Bump up the sh73a0 PINT IRQ base from 768 to 800 to avoid
-> collision with INTCS vectors for IRQ16->IRQ32 at 0x3xxx.
-> 
-> Without this fix the sh73a0 IRQ pin handling code collides
-> with the PINT code which results in hangs on Kota2 during boot.
+This is an outline of the plan for this cycle, up to the next merge
+window, agreed between Olof and myself.
 
-On Tue, Jan 17, 2012 at 08:10:49PM +0900, Magnus Damm wrote:
-> Fix the sh73a0 external IRQ pin code to properly support
-> CONFIG_SPARSE_IRQ=y by allocating IRQ descriptors for the
-> cascaded IRQs associated with external IRQ pins.
-> 
-> Without this fix it is impossible to request IRQ0->IRQ31
-> on the Kota2 board when sparse IRQs are enabled. 
+As Nicolas' idle changes weren't merged before the last merge window
+opened, we have decided that Nicolas will resubmit his changes after
+-rc1 (in other words, now) and they will be merged into both the
+arm-soc and my trees.
 
-On Tue, Jan 17, 2012 at 08:14:07PM +0900, Magnus Damm wrote:
-> Now when GPIO IRQs are supported on sh73a0 modify the Kota2
-> board code to switch from the polled "gpio-keys-polled" driver
-> to the IRQ driven "gpio-keys" driver.
+I have at least one other patch which has a high 'will cause horrible
+conficts' rating (the debug option rearrangement patch), so I'll be
+including that for the arm-soc tree as well.
 
-All applied, thanks.
+However, what this does mean is that Arnd, Olof, and myself will be
+in for up to three months of merge hell unless people take account of
+these changes.
+
+Therefore, our plan is to publish this as a baseline, and we'd really
+appreciate any development submitted after that baseline has been
+established is based upon those changes and does not conflict with
+them.  That may mean you have to pull these changes into your tree
+and merge them into your development work (and fix up any conflicts
+there yourself.)
+
+Once you've taken these changes into your tree, you must not rebase or
+modify them.  Changing those commits will cause all hell to break loose,
+and we'll have to refuse merging your tree (otherwise we'll be in Linus'
+sights for a roasting at gas mark 2 million.)
