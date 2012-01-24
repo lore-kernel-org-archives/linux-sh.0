@@ -1,33 +1,30 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jan 2012 14:17:10 +0000
-Subject: [PATCH 05/11] ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
-Message-Id: <1325686636-23905-6-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 24 Jan 2012 12:01:34 +0000
+Subject: [PATCH 05/11] ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
+Message-Id: <1327406500-7233-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/arm/mach-shmobile/board-mackerel.c |   22 ++--------------------
+ 1 files changed, 2 insertions(+), 20 deletions(-)
 
-Only compile-tested.
-
- arch/arm/mach-shmobile/board-ag5evm.c |   24 ++++--------------------
- 1 files changed, 4 insertions(+), 20 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index b862e9f..b1db188 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -340,23 +340,15 @@ static struct platform_device mipidsi0_device = {
- };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 1a955e2..0af2e9b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1016,21 +1016,12 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
+ }
  
  /* SDHI0 */
--static irqreturn_t ag5evm_sdhi0_gpio_cd(int irq, void *arg)
+-static irqreturn_t mackerel_sdhi0_gpio_cd(int irq, void *arg)
 -{
 -	struct device *dev = arg;
 -	struct sh_mobile_sdhi_info *info = dev->platform_data;
@@ -41,38 +38,42 @@ index b862e9f..b1db188 100644
  static struct sh_mobile_sdhi_info sdhi0_info = {
  	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
  	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_HAS_COLD_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
-+	.cd_gpio	= GPIO_PORT251,
-+	.cd_irq		= intcs_evt2irq(0x3c0),
-+	.cd_flags	= IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
++	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.cd_gpio	= GPIO_PORT172,
  };
  
  static struct resource sdhi0_resources[] = {
-@@ -560,7 +552,6 @@ static void __init ag5evm_init(void)
- 	__raw_writel(0x2a809010, DSI0PHYCR);
+@@ -1410,7 +1401,6 @@ static void __init mackerel_init(void)
+ {
+ 	u32 srcr4;
+ 	struct clk *clk;
+-	int ret;
  
- 	/* enable SDHI0 on CN15 [SD I/F] */
+ 	sh7372_pinmux_init();
+ 
+@@ -1507,7 +1497,6 @@ static void __init mackerel_init(void)
+ 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
+ 
+ 	/* enable SDHI0 */
 -	gpio_request(GPIO_FN_SDHICD0, NULL);
  	gpio_request(GPIO_FN_SDHIWP0, NULL);
  	gpio_request(GPIO_FN_SDHICMD0, NULL);
  	gpio_request(GPIO_FN_SDHICLK0, NULL);
-@@ -569,13 +560,6 @@ static void __init ag5evm_init(void)
+@@ -1516,13 +1505,6 @@ static void __init mackerel_init(void)
  	gpio_request(GPIO_FN_SDHID0_1, NULL);
  	gpio_request(GPIO_FN_SDHID0_0, NULL);
  
--	if (!request_irq(intcs_evt2irq(0x3c0), ag5evm_sdhi0_gpio_cd,
--			 IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
--			 "sdhi0 cd", &sdhi0_device.dev))
+-	ret = request_irq(evt2irq(0x3340), mackerel_sdhi0_gpio_cd,
+-			  IRQF_TRIGGER_FALLING, "sdhi0 cd", &sdhi0_device.dev);
+-	if (!ret)
 -		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
 -	else
--		pr_warn("Unable to setup SDHI0 GPIO IRQ\n");
+-		pr_err("Cannot get IRQ #%d: %d\n", evt2irq(0x3340), ret);
 -
- 	/* enable SDHI1 on CN4 [WLAN I/F] */
- 	gpio_request(GPIO_FN_SDHICLK1, NULL);
- 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ 	/* enable SDHI1 */
+ 	gpio_request(GPIO_FN_SDHICMD1, NULL);
 -- 
 1.7.2.5
 
