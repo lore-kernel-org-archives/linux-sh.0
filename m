@@ -1,101 +1,75 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Jan 2012 10:22:26 +0000
-Subject: [PATCH 3/7] mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare for simple DMA
-Message-Id: <Pine.LNX.4.64.1201181115420.28782@axis700.grange>
+Date: Tue, 24 Jan 2012 12:01:30 +0000
+Subject: [PATCH 01/11] mmc: simplify mmc_cd_gpio_request() by removing two parameters
+Message-Id: <1327406500-7233-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
+References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Now that all users have been updated to use the embedded in struct
-sh_mmcif_plat_data DMA slave IDs, struct sh_mmcif_dma is no longer needed
-and can be removed. This also makes preparation for simple DMA conversion
-easier.
+Calculate the IRQ number, using gpio_to_irq() and use fixed flags: trigger
+on both edges. This makes two out of four arguments of the
+mmc_cd_gpio_request() function redundant.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/core/cd-gpio.c  |   13 +++++++++----
+ include/linux/mmc/cd-gpio.h |    3 +--
+ 2 files changed, 10 insertions(+), 6 deletions(-)
 
-Notice, that this patch also requires the recent
-http://article.gmane.org/gmane.linux.ports.sh.devel/13337
-to be applied first to avoid breakage
-
- drivers/mmc/host/sh_mmcif.c  |   24 ++++++++++--------------
- include/linux/mmc/sh_mmcif.h |    8 +-------
- 2 files changed, 11 insertions(+), 21 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index c4bfbb0..497e6f4 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -383,31 +383,27 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
- 	host->dma_active = false;
+diff --git a/drivers/mmc/core/cd-gpio.c b/drivers/mmc/core/cd-gpio.c
+index 082202ae..29de31e 100644
+--- a/drivers/mmc/core/cd-gpio.c
++++ b/drivers/mmc/core/cd-gpio.c
+@@ -28,13 +28,17 @@ static irqreturn_t mmc_cd_gpio_irqt(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
  
- 	/* We can only either use DMA for both Tx and Rx or not use it at all */
--	if (pdata->dma) {
--		dev_warn(&host->pd->dev,
--			 "Update your platform to use embedded DMA slave IDs\n");
--		tx = &pdata->dma->chan_priv_tx;
--		rx = &pdata->dma->chan_priv_rx;
--	} else {
--		tx = &host->dma_slave_tx;
--		tx->slave_id = pdata->slave_id_tx;
--		rx = &host->dma_slave_rx;
--		rx->slave_id = pdata->slave_id_rx;
--	}
--	if (tx->slave_id > 0 && rx->slave_id > 0) {
-+	tx = &host->dma_slave_tx;
-+	tx->simple_slave.slave_id = pdata->slave_id_tx;
-+	rx = &host->dma_slave_rx;
-+	rx->simple_slave.slave_id = pdata->slave_id_rx;
+-int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio,
+-			unsigned int irq, unsigned long flags)
++int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio)
+ {
+ 	size_t len = strlen(dev_name(host->parent)) + 4;
+-	struct mmc_cd_gpio *cd = kmalloc(sizeof(*cd) + len, GFP_KERNEL);
++	struct mmc_cd_gpio *cd;
++	int irq = gpio_to_irq(gpio);
+ 	int ret;
+ 
++	if (irq < 0)
++		return irq;
 +
-+	if (tx->simple_slave.slave_id > 0 && rx->simple_slave.slave_id > 0) {
- 		dma_cap_mask_t mask;
++	cd = kmalloc(sizeof(*cd) + len, GFP_KERNEL);
+ 	if (!cd)
+ 		return -ENOMEM;
  
- 		dma_cap_zero(mask);
- 		dma_cap_set(DMA_SLAVE, mask);
+@@ -45,7 +49,8 @@ int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio,
+ 		goto egpioreq;
  
--		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter, tx);
-+		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
-+						    &tx->simple_slave);
- 		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
- 			host->chan_tx);
+ 	ret = request_threaded_irq(irq, NULL, mmc_cd_gpio_irqt,
+-				   flags, cd->label, host);
++				   IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
++				   cd->label, host);
+ 	if (ret < 0)
+ 		goto eirqreq;
  
- 		if (!host->chan_tx)
- 			return;
+diff --git a/include/linux/mmc/cd-gpio.h b/include/linux/mmc/cd-gpio.h
+index a8e4697..cefaba0 100644
+--- a/include/linux/mmc/cd-gpio.h
++++ b/include/linux/mmc/cd-gpio.h
+@@ -12,8 +12,7 @@
+ #define MMC_CD_GPIO_H
  
--		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter, rx);
-+		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
-+						    &rx->simple_slave);
- 		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
- 			host->chan_rx);
+ struct mmc_host;
+-int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio,
+-			unsigned int irq, unsigned long flags);
++int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio);
+ void mmc_cd_gpio_free(struct mmc_host *host);
  
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 04ff452..b36caa9 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -32,17 +32,11 @@
-  * 1111 : Peripheral clock (sup_pclk set '1')
-  */
- 
--struct sh_mmcif_dma {
--	struct sh_dmae_slave chan_priv_tx;
--	struct sh_dmae_slave chan_priv_rx;
--};
--
- struct sh_mmcif_plat_data {
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- 	void (*down_pwr)(struct platform_device *pdev);
- 	int (*get_cd)(struct platform_device *pdef);
--	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
--	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
-+	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
- 	unsigned int		slave_id_rx;
- 	u8			sup_pclk;	/* 1 :SH7757, 0: SH7724/SH7372 */
- 	unsigned long		caps;
+ #endif
 -- 
 1.7.2.5
 
