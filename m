@@ -1,15 +1,15 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jan 2012 14:17:16 +0000
+Date: Tue, 24 Jan 2012 12:01:40 +0000
 Subject: [PATCH 11/11] mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
-Message-Id: <1325686636-23905-12-git-send-email-g.liakhovetski@gmx.de>
+Message-Id: <1327406500-7233-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
@@ -17,10 +17,10 @@ Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
  1 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 9106b3d..f68e6f3 100644
+index 64f6c99..08f3e67 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -752,6 +752,7 @@ fail:
+@@ -756,6 +756,7 @@ fail:
  static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  {
  	struct tmio_mmc_host *host = mmc_priv(mmc);
@@ -28,7 +28,7 @@ index 9106b3d..f68e6f3 100644
  	unsigned long flags;
  
  	mutex_lock(&host->ios_lock);
-@@ -759,13 +760,13 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -763,13 +764,13 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  	spin_lock_irqsave(&host->lock, flags);
  	if (host->mrq) {
  		if (IS_ERR(host->mrq)) {
@@ -44,7 +44,7 @@ index 9106b3d..f68e6f3 100644
  				"%s.%d: CMD%u active since %lu, now %lu!\n",
  				current->comm, task_pid_nr(current),
  				host->mrq->cmd->opcode, host->last_req_ts, jiffies);
-@@ -788,7 +789,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -792,7 +793,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  	 */
  	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
  		if (!host->power) {
@@ -53,7 +53,7 @@ index 9106b3d..f68e6f3 100644
  			host->power = true;
  		}
  		tmio_mmc_set_clock(host, ios->clock);
-@@ -802,7 +803,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -806,7 +807,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  			host->set_pwr(host->pdev, 0);
  		if (host->power) {
  			host->power = false;
