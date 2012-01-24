@@ -1,86 +1,51 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 05 Jan 2012 06:37:18 +0000
-Subject: [PATCH v2 1/2] usb: renesas_usbhs: add IRQ resource decoding for
-Message-Id: <4F05451E.7080601@renesas.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 24 Jan 2012 09:36:15 +0000
+Subject: Re: [PATCH v2 1/2] usb: renesas_usbhs: add IRQ resource decoding for IRQF_SHARED
+Message-Id: <20120124093614.GP27414@legolas.emea.dhcp.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Bd2KlmcTHfsQFEJ+"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <4F05451E.7080601@renesas.com>
+In-Reply-To: <4F05451E.7080601@renesas.com>
 To: linux-sh@vger.kernel.org
 
-In case of the SH7757, the irq number of USB module and SUDMAC
-are the same. So, we have to set the IRQF_SHARED in such a case.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- about v2:
-  - add a comment in git log
+--Bd2KlmcTHfsQFEJ+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
- drivers/usb/renesas_usbhs/common.c |   11 ++++++-----
- drivers/usb/renesas_usbhs/common.h |    1 +
- drivers/usb/renesas_usbhs/mod.c    |    2 +-
- 3 files changed, 8 insertions(+), 6 deletions(-)
+On Thu, Jan 05, 2012 at 03:37:18PM +0900, Shimoda, Yoshihiro wrote:
+> In case of the SH7757, the irq number of USB module and SUDMAC
+> are the same. So, we have to set the IRQF_SHARED in such a case.
+>=20
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
-index 08c679c..75f7d08 100644
---- a/drivers/usb/renesas_usbhs/common.c
-+++ b/drivers/usb/renesas_usbhs/common.c
-@@ -410,8 +410,7 @@ static int usbhs_probe(struct platform_device *pdev)
- 	struct renesas_usbhs_platform_info *info = pdev->dev.platform_data;
- 	struct renesas_usbhs_driver_callback *dfunc;
- 	struct usbhs_priv *priv;
--	struct resource *res;
--	unsigned int irq;
-+	struct resource *res, *irq_res;
- 	int ret;
+applied, thanks
 
- 	/* check platform information */
-@@ -423,8 +422,8 @@ static int usbhs_probe(struct platform_device *pdev)
+--=20
+balbi
 
- 	/* platform data */
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	irq = platform_get_irq(pdev, 0);
--	if (!res || (int)irq <= 0) {
-+	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-+	if (!res || !irq_res) {
- 		dev_err(&pdev->dev, "Not enough Renesas USB platform resources.\n");
- 		return -ENODEV;
- 	}
-@@ -473,7 +472,9 @@ static int usbhs_probe(struct platform_device *pdev)
- 	/*
- 	 * priv settings
- 	 */
--	priv->irq	= irq;
-+	priv->irq	= irq_res->start;
-+	if (irq_res->flags & IORESOURCE_IRQ_SHAREABLE)
-+		priv->irqflags = IRQF_SHARED;
- 	priv->pdev	= pdev;
- 	INIT_DELAYED_WORK(&priv->notify_hotplug_work, usbhsc_notify_hotplug);
- 	spin_lock_init(usbhs_priv_to_lock(priv));
-diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
-index 8729da5..353ab51 100644
---- a/drivers/usb/renesas_usbhs/common.h
-+++ b/drivers/usb/renesas_usbhs/common.h
-@@ -241,6 +241,7 @@ struct usbhs_priv {
+--Bd2KlmcTHfsQFEJ+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
- 	void __iomem *base;
- 	unsigned int irq;
-+	unsigned long irqflags;
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
- 	struct renesas_usbhs_platform_callback	pfunc;
- 	struct renesas_usbhs_driver_param	dparam;
-diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
-index ad96a38..9499fae 100644
---- a/drivers/usb/renesas_usbhs/mod.c
-+++ b/drivers/usb/renesas_usbhs/mod.c
-@@ -150,7 +150,7 @@ int usbhs_mod_probe(struct usbhs_priv *priv)
+iQIcBAEBAgAGBQJPHnuOAAoJEIaOsuA1yqREOfYQAJfDLi4LYk3OZ9cXZ4EZWtZd
+FZb7lzRBOL27nNabF+UNEy9GThT1k7Rnw0f7cHe/FjtZq8rkKFyfgh8vXm+rlatF
+6p3wOlu1ArYXFba8V6uGcn7lsbrEYEqpfsnnYZ49zjvOioIwGkQdeGtXLvV5RQ8B
+2tKNNfIdgPAWeeePcQFpX2eRVVqx1mldzvpYa52Y39SReVeBZRgfLTWcpTzFPnQv
+coj8IjvAnlmlhxA/h1hvrI7F48ZqRuJq911PA4rm6Y0RrMC0CvF+ORHGXclnirG9
+lyA32el+bycoXzCRETyMXfpHtJjIerlsnr+qn3wy3khfJ1XxIrQsjVCTQTh5Xctd
+4/xl1OS+V5L58Pc3AtB8TFd899yojkdcSDJ0vqP8hvE/KC0t2gwBxPsa48PrysFa
+0j/3FhjK8xSfIeQbEFN1AKnQQBo7fjf0AKRsQpn1xKbDXnoD8S0JBdiScLL4TVCi
+InH6qwtt4EocNsPjt6stFLri2KkZOyprLJ+tVDuso27qOzWUIEE06pMMW4Zsw+lv
+mY/mQve//sjT0W0mbf+RUjM/qnxKEjafG+8At3XxyHsh4mBzsWOEgYu4lvwbiY4Z
+os+foDyoM4jtT4dXMf1O46f5NXO2ljtXJl+G5UNrdcEJw61x8Jcqns4BeSItSSr5
+L6nZFapaViGnjh/CG9mB
+=B0rT
+-----END PGP SIGNATURE-----
 
- 	/* irq settings */
- 	ret = request_irq(priv->irq, usbhs_interrupt,
--			  0, dev_name(dev), priv);
-+			  priv->irqflags, dev_name(dev), priv);
- 	if (ret) {
- 		dev_err(dev, "irq request err\n");
- 		goto mod_init_gadget_err;
--- 
-1.7.1
+--Bd2KlmcTHfsQFEJ+--
