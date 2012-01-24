@@ -1,15 +1,15 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jan 2012 14:17:12 +0000
+Date: Tue, 24 Jan 2012 12:01:36 +0000
 Subject: [PATCH 07/11] mmc: tmio_mmc: power status flag doesn't have to be exposed in platform data
-Message-Id: <1325686636-23905-8-git-send-email-g.liakhovetski@gmx.de>
+Message-Id: <1327406500-7233-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
 The controller power status flag does not have to be accessed from the
 hot-plug detection code any more, it can now be removed from the platform
@@ -23,7 +23,7 @@ Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
  3 files changed, 9 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 9fb6e6b..0c39002 100644
+index ede2f4e5..edfcfd7 100644
 --- a/drivers/mmc/host/tmio_mmc.h
 +++ b/drivers/mmc/host/tmio_mmc.h
 @@ -49,6 +49,9 @@ struct tmio_mmc_host {
@@ -37,10 +37,10 @@ index 9fb6e6b..0c39002 100644
  	void (*set_pwr)(struct platform_device *host, int state);
  	void (*set_clk_div)(struct platform_device *host, int state);
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 41b7eff..478e57b 100644
+index 4a1e89e..eee9f4f 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -754,7 +754,6 @@ fail:
+@@ -758,7 +758,6 @@ fail:
  static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  {
  	struct tmio_mmc_host *host = mmc_priv(mmc);
@@ -48,7 +48,7 @@ index 41b7eff..478e57b 100644
  	unsigned long flags;
  
  	mutex_lock(&host->ios_lock);
-@@ -784,15 +783,15 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -788,15 +787,15 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  	spin_unlock_irqrestore(&host->lock, flags);
  
  	/*
@@ -67,7 +67,7 @@ index 41b7eff..478e57b 100644
  		}
  		tmio_mmc_set_clock(host, ios->clock);
  		/* power up SD bus */
-@@ -803,8 +802,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -807,8 +806,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  	} else if (ios->power_mode != MMC_POWER_UP) {
  		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
  			host->set_pwr(host->pdev, 0);
@@ -78,8 +78,8 @@ index 41b7eff..478e57b 100644
  			pm_runtime_put(&host->pdev->dev);
  		}
  		tmio_mmc_clk_stop(host);
-@@ -914,7 +913,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_HAS_COLD_CD ||
+@@ -919,7 +918,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  pdata->flags & TMIO_MMC_USE_GPIO_CD ||
  				  mmc->caps & MMC_CAP_NEEDS_POLL ||
  				  mmc->caps & MMC_CAP_NONREMOVABLE);
 -	pdata->power = false;
@@ -88,17 +88,17 @@ index 41b7eff..478e57b 100644
  	ret = pm_runtime_resume(&pdev->dev);
  	if (ret < 0)
 diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 08fb7d2..367c65c6 100644
+index 5a197de..f5171db 100644
 --- a/include/linux/mfd/tmio.h
 +++ b/include/linux/mfd/tmio.h
-@@ -98,7 +98,6 @@ struct tmio_mmc_data {
+@@ -105,7 +105,6 @@ struct tmio_mmc_data {
  	u32				ocr_mask;	/* available voltages */
  	struct tmio_mmc_dma		*dma;
  	struct device			*dev;
 -	bool				power;
  	unsigned int			cd_gpio;
- 	unsigned int			cd_irq;
- 	unsigned long			cd_flags;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
 -- 
 1.7.2.5
 
