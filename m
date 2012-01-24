@@ -1,60 +1,51 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 05 Jan 2012 06:37:22 +0000
-Subject: [PATCH v2 2/2] usb: renesas_usbhs: add support for SUDMAC
-Message-Id: <4F054522.7000806@renesas.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 24 Jan 2012 09:36:28 +0000
+Subject: Re: [PATCH v2 2/2] usb: renesas_usbhs: add support for SUDMAC
+Message-Id: <20120124093627.GQ27414@legolas.emea.dhcp.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8HhMLSHvAouSipEr"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <4F054522.7000806@renesas.com>
+In-Reply-To: <4F054522.7000806@renesas.com>
 To: linux-sh@vger.kernel.org
 
-The SUDMAC uses 8-bit width only. So, when the driver uses SUDMAC,
-we have to clear the MBW_32.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- about v2:
-  - No change
+--8HhMLSHvAouSipEr
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
- drivers/usb/renesas_usbhs/fifo.c  |    6 +++++-
- include/linux/usb/renesas_usbhs.h |    1 +
- 2 files changed, 6 insertions(+), 1 deletions(-)
+On Thu, Jan 05, 2012 at 03:37:22PM +0900, Shimoda, Yoshihiro wrote:
+> The SUDMAC uses 8-bit width only. So, when the driver uses SUDMAC,
+> we have to clear the MBW_32.
+>=20
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index ffdf5d1..918a1da 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -23,6 +23,7 @@
- #define usbhsf_get_cfifo(p)	(&((p)->fifo_info.cfifo))
- #define usbhsf_get_d0fifo(p)	(&((p)->fifo_info.d0fifo))
- #define usbhsf_get_d1fifo(p)	(&((p)->fifo_info.d1fifo))
-+#define usbhsf_is_cfifo(p, f)	(usbhsf_get_cfifo(p) = f)
+applied, thanks
 
- #define usbhsf_fifo_is_busy(f)	((f)->pipe) /* see usbhs_pipe_select_fifo */
+--=20
+balbi
 
-@@ -304,7 +305,10 @@ static int usbhsf_fifo_select(struct usbhs_pipe *pipe,
- 	}
+--8HhMLSHvAouSipEr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
- 	/* "base" will be used below  */
--	usbhs_write(priv, fifo->sel, base | MBW_32);
-+	if (usbhs_get_dparam(priv, has_sudmac) && !usbhsf_is_cfifo(priv, fifo))
-+		usbhs_write(priv, fifo->sel, base);
-+	else
-+		usbhs_write(priv, fifo->sel, base | MBW_32);
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
- 	/* check ISEL and CURPIPE value */
- 	while (timeout--) {
-diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
-index e5a40c3..f60db75 100644
---- a/include/linux/usb/renesas_usbhs.h
-+++ b/include/linux/usb/renesas_usbhs.h
-@@ -141,6 +141,7 @@ struct renesas_usbhs_driver_param {
- 	 * option:
- 	 */
- 	u32 has_otg:1; /* for controlling PWEN/EXTLP */
-+	u32 has_sudmac:1; /* for SUDMAC */
- };
+iQIcBAEBAgAGBQJPHnubAAoJEIaOsuA1yqRE+O4P+QHSGuFht0mxfoz1USGEDo2H
+bal2KkfS9WPoCTeXFYaltHeY9+xyHyEvbkDYZnPuc5t6BDvbgxynjNJ373QvOxZZ
+T+jYYKOfox+b/PfqK1B/gQXnOH/PoFi9PX+QQSIaExF1nJrgA1EaRf/A178QS7zP
+QV4g55gGsG27T8kmNz8hXErAFlbbGWaYbhkaELzJSdLwvrPsz1x/4xMu2qZvhXj9
+MRsoSFRf8AG3xjgD8HhjQnpbeSvjS89IUjSMSHxqm4NIL/1mJn/MbvjFL42aOGQE
+2N7TpYwJoXOJp8SG9aYFMwQUTWz6oJRYtIj2ll9/zNnxhzcQEX9NfQo+x72mCF9y
+lyxDECYcEWLEKm4v2T1OHGrASQMwpcecVMstLGodaWxCUNTOJ6sTIJj7KDyzXT97
+gwdYx4o6knhzMi0qddG+RecENjPVexl70Iv/1TvvNdBUX8tbS4wP5tYyWgcBjvIp
+UabMgs9Kx2hPQEF+4vGYN0Yz7xj5b4VALSQcaSidXasvT542P+blKIWsMAZlRKij
+Z6B+eqtTFSiwMF/E+Pim9szTR6vmR0Ensfe5NhApu2djFT9mEtwv3ZSuWGBPD0HI
+Aq5a8zCoi2zOyJ3+1KTcqWkPZ73svOwM4e3kpXgvbSDdWUFq9OIHYmr0XAd9OPIF
+5tRnWKcPYX9t3wnmlm/G
+=vQrG
+-----END PGP SIGNATURE-----
 
- /*
--- 
-1.7.1
+--8HhMLSHvAouSipEr--
