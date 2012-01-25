@@ -1,72 +1,85 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Wed, 25 Jan 2012 19:23:00 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Wed, 25 Jan 2012 21:32:06 +0000
 Subject: Re: [PATCH v2 11/13] ARM: only include mach/irqs.h for !SPARSE_IRQ
-Message-Id: <4F205694.7090906@gmail.com>
+Message-Id: <20120125213206.GJ1068@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
  <1327091591-27125-12-git-send-email-robherring2@gmail.com>
  <alpine.LFD.2.02.1201201608400.19587@xanadu.home>
  <4F19DB35.9060707@gmail.com>
- <alpine.LFD.2.02.1201201744130.19587@xanadu.home>
-In-Reply-To: <alpine.LFD.2.02.1201201744130.19587@xanadu.home>
+In-Reply-To: <4F19DB35.9060707@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 01/20/2012 04:48 PM, Nicolas Pitre wrote:
-> On Fri, 20 Jan 2012, Rob Herring wrote:
+On Fri, Jan 20, 2012 at 03:23:01PM -0600, Rob Herring wrote:
+> On 01/20/2012 03:11 PM, Nicolas Pitre wrote:
+> > On Fri, 20 Jan 2012, Rob Herring wrote:
+> > 
+> >> From: Rob Herring <rob.herring@calxeda.com>
+> >>
+> >> Make mach/irqs.h optional for SPARSE_IRQ. With this change irqs.h can be
+> >> removed by converting platforms over to sparse irq.
+> >>
+> >> This intentionally breaks platforms that enable SPARSE_IRQ.
+> > 
+> > I don't get what you mean here.  The above seems contradictory.
+> > 
 > 
->> On 01/20/2012 03:11 PM, Nicolas Pitre wrote:
->>> On Fri, 20 Jan 2012, Rob Herring wrote:
->>>
->>>> From: Rob Herring <rob.herring@calxeda.com>
->>>>
->>>> Make mach/irqs.h optional for SPARSE_IRQ. With this change irqs.h can be
->>>> removed by converting platforms over to sparse irq.
->>>>
->>>> This intentionally breaks platforms that enable SPARSE_IRQ.
->>>
->>> I don't get what you mean here.  The above seems contradictory.
->>>
->>
->> You're right. The intro explains things more clearly.
-> 
-> The intro won't be part of the git history, so please make sure 
-> individual commit logs are sensible on their own.
+> You're right. The intro explains things more clearly. This breaks
+> platforms (at boot time) that don't select SPARSE_IRQ, but let users
+> enable it in their config. I don't understand why sparse irq is a user
+> visible config option. We could move HAVE_SPARSE_IRQ down to each
+> platform that selects SPARSE_IRQ and prevent enabling, but I think
+> allowing it to break is good encouragement for others to fix those
+> platforms. I'm open to other ideas.
 
-Updated the commit message to this (w/o the email word wrapping):
+config SPARSE_IRQ
+	bool "Support sparse irq numbering" if MAY_HAVE_SPARSE_IRQ
 
-ARM: only include mach/irqs.h for !SPARSE_IRQ
+and change all the existing 'HAVE_SPARSE_IRQ' to MAY_HAVE_SPARSE_IRQ
+except those where SPARSE_IRQ gets selected.
 
-Make mach/irqs.h optional for SPARSE_IRQ. With this change irqs.h can be
-removed by converting platforms over to sparse irq.
+In other words, on ARM get rid of HAVE_SPARSE_IRQ=y, don't select
+MAY_HAVE_SPARSE_IRQ instead, but have each converted machine select
+SPARSE_IRQ directly.  Then, people who want sparse irq to be a
+question can have their cake.  While we can eat our cake too.
 
-This may break platforms where SPARSE_IRQ is user selectable and is enabled.
-This is on purpose so that SPARSE_IRQ gets properly supported. SPARSE_IRQ
-should not really be a user visible option.
+As a side-note, you may be pleased to know that I have SA11x0 stuff
+converted to (and tested) with sparse IRQ.  That's with SA1111, the
+UCB1x00 and Neponset expansion board for the Assabet all dynamically
+allocating their IRQs.  The only fixed-numbered IRQs in SA11x0 in my
+tree at the time of writing are the on-SoC IRQs, and the LoCoMo IRQs
+(which I don't have the hardware to test for, so I'm not touching.)
 
-Platforms either need to set nr_irqs in their machine desc or all irqchips
-used by a platform need to allocate their irq_descs. There cannot be a
-mixture. Once this is done, the platforms can select SPARSE_IRQ. shmobile
-does the latter, and mmp and pxa do the former.
+Note that SA1111 support is fairly broken in current mainline because
+of a half-completed (but still merged) patch which results in SA1111
+overwriting IRQ0-55 with its own handlers.  Ouch.
 
->> This breaks platforms (at boot time) that don't select SPARSE_IRQ, but 
->> let users enable it in their config. I don't understand why sparse irq 
->> is a user visible config option. We could move HAVE_SPARSE_IRQ down to 
->> each platform that selects SPARSE_IRQ and prevent enabling, but I 
->> think allowing it to break is good encouragement for others to fix 
->> those platforms. I'm open to other ideas.
-> 
-> SPARSE_IRQ shouldn't be a user configurable option.  There is just no 
-> point for a user configuring a kernel to be able to change this.
+This is /proc/interrupts for the Assabet+Neponset, with 49 SA11x0,
+3 Neponset, 55 SA1111, and 16 UCB1300 IRQs:
 
-I agree, but I'm inclined to leave this alone for now. PPC doesn't ever
-select SPARSE_IRQ, but enables it via many defconfigs. So I think
-changing it may cause some problems.
-
-Any other comments on this series? I guess all the maintainers copied
-are happy with it as there have been no other comments. I like to get
-this into next now and send pull request to Russell or arm-soc.
-
-Rob
+           CPU0
+ 12:          1        SC  LCD
+ 15:       8238        SC  sa11x0-uart
+ 20:          0        SC  sa11x0-dma
+ 21:          0        SC  sa11x0-dma
+ 22:          0        SC  sa11x0-dma
+ 23:          0        SC  sa11x0-dma
+ 24:          0        SC  sa11x0-dma
+ 25:          0        SC  sa11x0-dma
+ 26:     599387        SC  ost0
+ 49:       3095         -  eth0
+ 73:          3  SA1111-l
+103:          0  SA1111-h  SA1111 PCMCIA card detect
+104:          0  SA1111-h  SA1111 CF card detect
+105:          2  SA1111-h  SA1111 PCMCIA BVD1
+106:          1  SA1111-h  SA1111 CF BVD1
+107:          0   ucb1x00  gpio_keys
+108:          0   ucb1x00  gpio_keys
+109:          0   ucb1x00  gpio_keys
+110:          0   ucb1x00  gpio_keys
+111:          0   ucb1x00  gpio_keys
+112:          0   ucb1x00  gpio_keys
+Err:          0
