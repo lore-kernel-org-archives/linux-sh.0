@@ -1,53 +1,55 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 20 Jan 2012 20:33:11 +0000
-Subject: [PATCH v2 13/13] ARM: picoxcell: remove mach/irqs.h
-Message-Id: <1327091591-27125-14-git-send-email-robherring2@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 26 Jan 2012 14:56:22 +0000
+Subject: [PATCH 5/7 v2] serial: sh-sci: prepare for conversion to simple DMA
+Message-Id: <1327589784-4287-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-From: Jamie Iles <jamie@jamieiles.com>
-
-picoxcell uses SPARSE_IRQ which means we don't need a mach/irqs.h
-anymore so kill it off.
-
-Signed-off-by: Jamie Iles <jamie@jamieiles.com>
-Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-picoxcell/include/mach/irqs.h |   20 --------------------
- 1 files changed, 0 insertions(+), 20 deletions(-)
- delete mode 100644 arch/arm/mach-picoxcell/include/mach/irqs.h
+ drivers/tty/serial/sh-sci.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-picoxcell/include/mach/irqs.h b/arch/arm/mach-picoxcell/include/mach/irqs.h
-deleted file mode 100644
-index 59eac1e..0000000
---- a/arch/arm/mach-picoxcell/include/mach/irqs.h
-+++ /dev/null
-@@ -1,20 +0,0 @@
--/*
-- * Copyright (c) 2011 Picochip Ltd., Jamie Iles
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--#ifndef __MACH_IRQS_H
--#define __MACH_IRQS_H
--
--/* We dynamically allocate our irq_desc's. */
--#define NR_IRQS				0
--
--#endif /* __MACH_IRQS_H */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 7508579..8b99aac 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1574,9 +1574,9 @@ static bool filter(struct dma_chan *chan, void *slave)
+ 	struct sh_dmae_slave *param = slave;
+ 
+ 	dev_dbg(chan->device->dev, "%s: slave ID %d\n", __func__,
+-		param->slave_id);
++		param->simple_slave.slave_id);
+ 
+-	chan->private = param;
++	chan->private = &param->simple_slave;
+ 	return true;
+ }
+ 
+@@ -1615,7 +1615,7 @@ static void sci_request_dma(struct uart_port *port)
+ 	param = &s->param_tx;
+ 
+ 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
+-	param->slave_id = s->cfg->dma_slave_tx;
++	param->simple_slave.slave_id = s->cfg->dma_slave_tx;
+ 
+ 	s->cookie_tx = -EINVAL;
+ 	chan = dma_request_channel(mask, filter, param);
+@@ -1643,7 +1643,7 @@ static void sci_request_dma(struct uart_port *port)
+ 	param = &s->param_rx;
+ 
+ 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
+-	param->slave_id = s->cfg->dma_slave_rx;
++	param->simple_slave.slave_id = s->cfg->dma_slave_rx;
+ 
+ 	chan = dma_request_channel(mask, filter, param);
+ 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
 -- 
-1.7.5.4
+1.7.2.5
 
