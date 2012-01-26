@@ -1,52 +1,47 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jan 2012 14:17:05 +0000
-Subject: [PATCH 00/11] mmc: tmio/sdhi: hotplug & PM
-Message-Id: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Thu, 26 Jan 2012 14:56:19 +0000
+Subject: [PATCH 2/7 v2] dma: shdma: prepare for simple DMA conversion
+Message-Id: <1327589784-4287-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-This patch series uses a previously proposed generic GPIO card hotplug 
-handler, fixes multiple PM issues, adds some cosmetic clean up. Not all of 
-these patches really depend on each other, but it's easier to preserve the 
-original order. Some patches, e.g., #9, are an RFC so far and might have to 
-be reworked a bit.
+By placing an anonymous union at the top of struct sh_dmae_slave we can
+transparently prepare all drivers for the upcoming simple DMA conversion.
 
-Guennadi Liakhovetski (11):
-  mmc: tmio: calculate the native hotplug condition only once
-  mmc: tmio_mmc: support the generic MMC GPIO card hotplug helper
-  mmc: sh_mobile_sdhi: pass card hotplug GPIO number and flags to TMIO
-    MMC
-  ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO
-    hotplug helper
-  ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO
-    hotplug helper
-  mfd: tmio: remove now unneeded tmio_mmc_cd_wakeup()
-  mmc: tmio_mmc: power status flag doesn't have to be exposed in
-    platform data
-  mmc: tmio_mmc: remove unused sdio_irq_enabled flag
-  mmc: sh_mobile_sdhi: do not manage PM clocks manually on ARM
-  mmc: tmio: reconfigure the controller on runtime resume
-  mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ include/linux/sh_dma.h |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/board-ag5evm.c   |   24 +------
- arch/arm/mach-shmobile/board-mackerel.c |   24 +------
- drivers/mmc/host/sh_mobile_sdhi.c       |   11 +++-
- drivers/mmc/host/tmio_mmc.h             |    9 +--
- drivers/mmc/host/tmio_mmc_pio.c         |  104 ++++++++++++++-----------------
- include/linux/mfd/tmio.h                |   17 ++---
- include/linux/mmc/sh_mobile_sdhi.h      |    3 +
- 7 files changed, 79 insertions(+), 113 deletions(-)
-
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 425450b..ed2aa1e 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -10,12 +10,16 @@
+ #ifndef SH_DMA_H
+ #define SH_DMA_H
+ 
+-#include <linux/list.h>
++#include <linux/dma-simple.h>
+ #include <linux/dmaengine.h>
++#include <linux/list.h>
+ 
+ /* Used by slave DMA clients to request DMA to/from a specific peripheral */
+ struct sh_dmae_slave {
+-	unsigned int			slave_id; /* Set by the platform */
++	union {
++		unsigned int		slave_id; /* Set by the platform */
++		struct dma_simple_slave	simple_slave;
++	};
+ 	struct device			*dma_dev; /* Set by the platform */
+ 	const struct sh_dmae_slave_config	*config;  /* Set by the driver */
+ };
 -- 
 1.7.2.5
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
