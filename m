@@ -1,81 +1,138 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jan 2012 14:17:09 +0000
-Subject: [PATCH 04/11] ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
-Message-Id: <1325686636-23905-5-git-send-email-g.liakhovetski@gmx.de>
+From: Rob Herring <robherring2@gmail.com>
+Date: Thu, 26 Jan 2012 02:58:47 +0000
+Subject: [PATCH] irq: make SPARSE_IRQ an optionally hidden option
+Message-Id: <1327546727-31681-1-git-send-email-robherring2@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1325686636-23905-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Samuel Ortiz <sameo@linux.intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Rob Herring <rob.herring@calxeda.com>
+
+On ARM, we don't want SPARSE_IRQ to be a user visible option. Make
+SPARSE_IRQ visible based on MAY_HAVE_SPARSE_IRQ instead of depending
+on HAVE_SPARSE_IRQ.
+
+With this, SPARSE_IRQ is not visible on C6X and ARM.
+
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+Cc: Russell King <linux@arm.linux.org.uk>
+Cc: Mark Salter <msalter@redhat.com>
+Cc: Aurelien Jacquiot <a-jacquiot@ti.com>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-c6x-dev@linux-c6x.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   24 ++++--------------------
- 1 files changed, 4 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 9c5e598..b35343a 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1004,21 +1004,14 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
- }
+This is part of an irq include consolidation series for ARM:
+
+http://www.spinics.net/lists/arm-kernel/msg156492.html
+
+Rob
+
+ arch/arm/Kconfig     |    1 -
+ arch/c6x/Kconfig     |    2 +-
+ arch/powerpc/Kconfig |    2 +-
+ arch/sh/Kconfig      |    2 +-
+ arch/x86/Kconfig     |    1 -
+ kernel/irq/Kconfig   |    5 ++---
+ 6 files changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 24626b0..30e7840 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -28,7 +28,6 @@ config ARM
+ 	select HAVE_HW_BREAKPOINT if (PERF_EVENTS && (CPU_V6 || CPU_V6K || CPU_V7))
+ 	select HAVE_C_RECORDMCOUNT
+ 	select HAVE_GENERIC_HARDIRQS
+-	select HAVE_SPARSE_IRQ
+ 	select GENERIC_IRQ_SHOW
+ 	select CPU_PM if (SUSPEND || CPU_IDLE)
+ 	select GENERIC_PCI_IOMAP
+diff --git a/arch/c6x/Kconfig b/arch/c6x/Kconfig
+index 26e67f0..2f58c61 100644
+--- a/arch/c6x/Kconfig
++++ b/arch/c6x/Kconfig
+@@ -11,7 +11,7 @@ config TMS320C6X
+ 	select HAVE_DMA_API_DEBUG
+ 	select HAVE_GENERIC_HARDIRQS
+ 	select HAVE_MEMBLOCK
+-	select HAVE_SPARSE_IRQ
++	select SPARSE_IRQ
+ 	select OF
+ 	select OF_EARLY_FLATTREE
  
- /* SDHI0 */
--static irqreturn_t mackerel_sdhi0_gpio_cd(int irq, void *arg)
--{
--	struct device *dev = arg;
--	struct sh_mobile_sdhi_info *info = dev->platform_data;
--	struct tmio_mmc_data *pdata = info->pdata;
--
--	tmio_mmc_cd_wakeup(pdata);
--
--	return IRQ_HANDLED;
--}
--
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+	.tmio_flags	= TMIO_MMC_HAS_COLD_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.cd_gpio	= GPIO_PORT172,
-+	.cd_irq		= evt2irq(0x3340),
-+	.cd_flags	= IRQF_TRIGGER_FALLING,
- };
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 1919634..06c1cf0 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -133,7 +133,7 @@ config PPC
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+ 	select HAVE_HW_BREAKPOINT if PERF_EVENTS && PPC_BOOK3S_64
+ 	select HAVE_GENERIC_HARDIRQS
+-	select HAVE_SPARSE_IRQ
++	select MAY_HAVE_SPARSE_IRQ
+ 	select IRQ_PER_CPU
+ 	select GENERIC_IRQ_SHOW
+ 	select GENERIC_IRQ_SHOW_LEVEL
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 3c8db65..21b82a8 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -22,7 +22,7 @@ config SUPERH
+ 	select HAVE_SYSCALL_TRACEPOINTS
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+ 	select HAVE_GENERIC_HARDIRQS
+-	select HAVE_SPARSE_IRQ
++	select MAY_HAVE_SPARSE_IRQ
+ 	select IRQ_FORCED_THREADING
+ 	select RTC_LIB
+ 	select GENERIC_ATOMIC64
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 864cc6e..fb2da44 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -69,7 +69,6 @@ config X86
+ 	select HAVE_ARCH_JUMP_LABEL
+ 	select HAVE_TEXT_POKE_SMP
+ 	select HAVE_GENERIC_HARDIRQS
+-	select HAVE_SPARSE_IRQ
+ 	select SPARSE_IRQ
+ 	select GENERIC_FIND_FIRST_BIT
+ 	select GENERIC_IRQ_PROBE
+diff --git a/kernel/irq/Kconfig b/kernel/irq/Kconfig
+index 5a38bf4..1f2dece 100644
+--- a/kernel/irq/Kconfig
++++ b/kernel/irq/Kconfig
+@@ -13,7 +13,7 @@ config GENERIC_HARDIRQS
+ # Options selectable by the architecture code
  
- static struct resource sdhi0_resources[] = {
-@@ -1408,7 +1401,6 @@ static void __init mackerel_init(void)
- {
- 	u32 srcr4;
- 	struct clk *clk;
--	int ret;
+ # Make sparse irq Kconfig switch below available
+-config HAVE_SPARSE_IRQ
++config MAY_HAVE_SPARSE_IRQ
+        bool
  
- 	sh7372_pinmux_init();
+ # Enable the generic irq autoprobe mechanism
+@@ -61,8 +61,7 @@ config IRQ_FORCED_THREADING
+        bool
  
-@@ -1505,7 +1497,6 @@ static void __init mackerel_init(void)
- 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
+ config SPARSE_IRQ
+-	bool "Support sparse irq numbering"
+-	depends on HAVE_SPARSE_IRQ
++	bool "Support sparse irq numbering" if MAY_HAVE_SPARSE_IRQ
+ 	---help---
  
- 	/* enable SDHI0 */
--	gpio_request(GPIO_FN_SDHICD0, NULL);
- 	gpio_request(GPIO_FN_SDHIWP0, NULL);
- 	gpio_request(GPIO_FN_SDHICMD0, NULL);
- 	gpio_request(GPIO_FN_SDHICLK0, NULL);
-@@ -1514,13 +1505,6 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1, NULL);
- 	gpio_request(GPIO_FN_SDHID0_0, NULL);
- 
--	ret = request_irq(evt2irq(0x3340), mackerel_sdhi0_gpio_cd,
--			  IRQF_TRIGGER_FALLING, "sdhi0 cd", &sdhi0_device.dev);
--	if (!ret)
--		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
--	else
--		pr_err("Cannot get IRQ #%d: %d\n", evt2irq(0x3340), ret);
--
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 	/* enable SDHI1 */
- 	gpio_request(GPIO_FN_SDHICMD1, NULL);
+ 	  Sparse irq numbering is useful for distro kernels that want
 -- 
-1.7.2.5
+1.7.5.4
 
