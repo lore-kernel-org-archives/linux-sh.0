@@ -1,41 +1,96 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 11 Jan 2012 07:28:09 +0000
-Subject: [PATCH v4 5/6] dmaengine: shdma: use sh_dmae_writel/readl in chcr_write/read
-Message-Id: <4F0D3A09.4010506@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 26 Jan 2012 14:56:20 +0000
+Subject: [PATCH 3/7 v2] mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare for simple DMA
+Message-Id: <1327589784-4287-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Now that all users have been updated to use the embedded in struct
+sh_mmcif_plat_data DMA slave IDs, struct sh_mmcif_dma is no longer needed
+and can be removed. This also makes preparation for simple DMA conversion
+easier.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- about v4:
-  - No change
+ drivers/mmc/host/sh_mmcif.c  |   24 ++++++++++--------------
+ include/linux/mmc/sh_mmcif.h |    8 +-------
+ 2 files changed, 11 insertions(+), 21 deletions(-)
 
- drivers/dma/shdma.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-index 5260dac..0f9d5f2 100644
---- a/drivers/dma/shdma.c
-+++ b/drivers/dma/shdma.c
-@@ -92,14 +92,14 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-
--	__raw_writel(data, sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+	sh_dmae_writel(sh_dc, data, shdev->chcr_offset);
- }
-
- static u32 chcr_read(struct sh_dmae_chan *sh_dc)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
-
--	return __raw_readl(sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+	return sh_dmae_readl(sh_dc, shdev->chcr_offset);
- }
-
- /*
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 2ad6c81..06a7cdc 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -384,31 +384,27 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+ 	host->dma_active = false;
+ 
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	if (pdata->dma) {
+-		dev_warn(&host->pd->dev,
+-			 "Update your platform to use embedded DMA slave IDs\n");
+-		tx = &pdata->dma->chan_priv_tx;
+-		rx = &pdata->dma->chan_priv_rx;
+-	} else {
+-		tx = &host->dma_slave_tx;
+-		tx->slave_id = pdata->slave_id_tx;
+-		rx = &host->dma_slave_rx;
+-		rx->slave_id = pdata->slave_id_rx;
+-	}
+-	if (tx->slave_id > 0 && rx->slave_id > 0) {
++	tx = &host->dma_slave_tx;
++	tx->simple_slave.slave_id = pdata->slave_id_tx;
++	rx = &host->dma_slave_rx;
++	rx->simple_slave.slave_id = pdata->slave_id_rx;
++
++	if (tx->simple_slave.slave_id > 0 && rx->simple_slave.slave_id > 0) {
+ 		dma_cap_mask_t mask;
+ 
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+ 
+-		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter, tx);
++		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
++						    &tx->simple_slave);
+ 		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
+ 
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter, rx);
++		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
++						    &rx->simple_slave);
+ 		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
+ 
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index 04ff452..b36caa9 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -32,17 +32,11 @@
+  * 1111 : Peripheral clock (sup_pclk set '1')
+  */
+ 
+-struct sh_mmcif_dma {
+-	struct sh_dmae_slave chan_priv_tx;
+-	struct sh_dmae_slave chan_priv_rx;
+-};
+-
+ struct sh_mmcif_plat_data {
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	void (*down_pwr)(struct platform_device *pdev);
+ 	int (*get_cd)(struct platform_device *pdef);
+-	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
+-	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
++	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
+ 	unsigned int		slave_id_rx;
+ 	u8			sup_pclk;	/* 1 :SH7757, 0: SH7724/SH7372 */
+ 	unsigned long		caps;
 -- 
-1.7.1
+1.7.2.5
+
