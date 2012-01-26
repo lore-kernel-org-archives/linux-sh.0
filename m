@@ -1,47 +1,49 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Jan 2012 10:22:22 +0000
-Subject: [PATCH 2/7] dma: shdma: prepare for simple DMA conversion
-Message-Id: <Pine.LNX.4.64.1201181112170.28782@axis700.grange>
+Date: Thu, 26 Jan 2012 14:56:17 +0000
+Subject: [PATCH 0/7 v2] extract a simple dmaengine library from shdma.c
+Message-Id: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201181025280.28782@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
 
-By placing an anonymous union at the top of struct sh_dmae_slave we can
-transparently prepare all drivers for the upcoming simple DMA conversion.
+This is v2 of the simple DMA dmaengine library. It addresses Paul's 
+comments to v1 - thanks, adds some comments.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- include/linux/sh_dma.h |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+Guennadi Liakhovetski (7):
+  dmaengine: add a simple dma library
+  dma: shdma: prepare for simple DMA conversion
+  mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare for
+    simple DMA
+  mmc: sh_mobile_sdhi: prepare for conversion to simple DMA
+  serial: sh-sci: prepare for conversion to simple DMA
+  ASoC: SIU: prepare for conversion to simple DMA
+  dma: shdma: convert to the simple DMA library
 
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index db637b9..1b14cf4 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -10,12 +10,16 @@
- #ifndef SH_DMA_H
- #define SH_DMA_H
- 
--#include <linux/list.h>
-+#include <linux/dma-simple.h>
- #include <linux/dmaengine.h>
-+#include <linux/list.h>
- 
- /* Used by slave DMA clients to request DMA to/from a specific peripheral */
- struct sh_dmae_slave {
--	unsigned int			slave_id; /* Set by the platform */
-+	union {
-+		unsigned int		slave_id; /* Set by the platform */
-+		struct dma_simple_slave	simple_slave;
-+	};
- 	struct device			*dma_dev; /* Set by the platform */
- 	const struct sh_dmae_slave_config	*config;  /* Set by the driver */
- };
+ drivers/dma/Kconfig               |    4 +
+ drivers/dma/Makefile              |    1 +
+ drivers/dma/dma-simple.c          |  873 ++++++++++++++++++++++++++++
+ drivers/dma/shdma.c               | 1138 +++++++++----------------------------
+ drivers/dma/shdma.h               |   45 +-
+ drivers/mmc/host/sh_mmcif.c       |   24 +-
+ drivers/mmc/host/sh_mobile_sdhi.c |    8 +-
+ drivers/tty/serial/sh-sci.c       |    8 +-
+ include/linux/dma-simple.h        |  124 ++++
+ include/linux/mmc/sh_mmcif.h      |    8 +-
+ include/linux/sh_dma.h            |   39 +-
+ sound/soc/sh/siu_pcm.c            |    8 +-
+ 12 files changed, 1334 insertions(+), 946 deletions(-)
+ create mode 100644 drivers/dma/dma-simple.c
+ create mode 100644 include/linux/dma-simple.h
+
 -- 
 1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
