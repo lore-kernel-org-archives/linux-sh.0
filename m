@@ -1,59 +1,200 @@
-From: Nicolas Ferre <nicolas.ferre@atmel.com>
-Date: Mon, 30 Jan 2012 10:08:19 +0000
-Subject: Re: ARM/ARM-SoC plans for v3.4 merge window
-Message-Id: <4F266C13.5080302@atmel.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sat, 28 Jan 2012 18:36:24 +0000
+Subject: [PATCH] sh: ecovec: switch SDHI controllers to card polling
+Message-Id: <Pine.LNX.4.64.1201281929450.27970@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120123114902.GY1068@n2100.arm.linux.org.uk>
- <20120124095009.GS16726@n2100.arm.linux.org.uk>
- <20120126212319.GE11941@n2100.arm.linux.org.uk>
- <CAOesGMh45HSb4mRMc7q53xhmj_kMFvdVJhNnY7cY6gHi=_KynQ@mail.gmail.com>
-In-Reply-To: <CAOesGMh45HSb4mRMc7q53xhmj_kMFvdVJhNnY7cY6gHi=_KynQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org
 
-On 01/29/2012 12:57 AM, Olof Johansson :
-> Hi,
-> 
-> 
-> On Thu, Jan 26, 2012 at 1:23 PM, Russell King - ARM Linux
-> <linux@arm.linux.org.uk> wrote:
-> 
-> 
->> And we're now there.  So...
->>
->> Arnd, Olaf,
->>
->> Please incorporate the latest ARM (for-armsoc branch) changes, which can be found at:
->>
->>        git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git for-armsoc
->>
->> with SHA1 dcf81c1af839b77b44404453ecae6e5ac5a75f05.
-> 
-> Thanks. I have added this as depends/rmk/for-armsoc in the arm-soc repo.
-> 
-> Any next/ branch we start will have this as the base of said branch,
-> so any vendor branches must either already be developed against this
-> stable branch, or merge on top of this with minimal conflicts.
+Polling for card hotplug events is a better option than using SDHI native
+hotplug interrupt, because the latter option forces the controller to stay
+permanently powered up and enabled.
 
-Ok, great.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-I just let you know that there is a conflict between the current Linus'
-tree (with recently updated at91 fixes) and this rmk/for-armsoc branch.
+It is a kind of an RFC. We do in general prefer SDHI polling to SDHI 
+native hotplug detection for the above reason, but there might well be 
+other reasons, why this is not a good idea in this specific case. If there 
+are such, I'd love to hear about them.
 
-I can give you the resolution of this conflict easily but I would like
-to know which way I execute the merge:
+ arch/sh/boards/mach-ecovec24/setup.c |  104 ++++++++++++++++++++-------------
+ 1 files changed, 63 insertions(+), 41 deletions(-)
 
-I use this rmk/for-armsoc as a baseline and merge the fixes already in
-Linus' tree on top of it or the other way around?
-
-Maybe it is preferable that I wait for 3.3-rc2 and merge rmk/for-armsoc
-on top of it. This result can be the base of our AT91 work for 3.4
-preparation.
-
-Your thought?
-
-Best regards,
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 033ef2b..c8d1bbd 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -522,11 +522,18 @@ static void sdhi0_set_pwr(struct platform_device *pdev, int state)
+ 	gpio_set_value(GPIO_PTB6, state);
+ }
+ 
++static int sdhi0_get_cd(struct platform_device *pdev)
++{
++	return !gpio_get_value(GPIO_PTY7);
++}
++
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.set_pwr	= sdhi0_set_pwr,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
++			  MMC_CAP_NEEDS_POLL,
++	.get_cd		= sdhi0_get_cd,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -559,11 +566,18 @@ static void sdhi1_set_pwr(struct platform_device *pdev, int state)
+ 	gpio_set_value(GPIO_PTB7, state);
+ }
+ 
++static int sdhi1_get_cd(struct platform_device *pdev)
++{
++	return !gpio_get_value(GPIO_PTW7);
++}
++
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
++			  MMC_CAP_NEEDS_POLL,
+ 	.set_pwr	= sdhi1_set_pwr,
++	.get_cd		= sdhi1_get_cd,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+@@ -999,6 +1013,7 @@ extern char ecovec24_sdram_leave_end;
+ static int __init arch_setup(void)
+ {
+ 	struct clk *clk;
++	bool cn12_enabled = false;
+ 
+ 	/* register board specific self-refresh code */
+ 	sh_mobile_register_self_refresh(SUSP_SH_STANDBY | SUSP_SH_SF |
+@@ -1199,9 +1214,13 @@ static int __init arch_setup(void)
+ 	gpio_direction_input(GPIO_PTR5);
+ 	gpio_direction_input(GPIO_PTR6);
+ 
++	/* SD-card slot CN11 */
++	/* Card-detect, used on CN11, either with SDHI0 or with SPI */
++	gpio_request(GPIO_PTY7, NULL);
++	gpio_direction_input(GPIO_PTY7);
++
+ #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
+ 	/* enable SDHI0 on CN11 (needs DS2.4 set to ON) */
+-	gpio_request(GPIO_FN_SDHI0CD,  NULL);
+ 	gpio_request(GPIO_FN_SDHI0WP,  NULL);
+ 	gpio_request(GPIO_FN_SDHI0CMD, NULL);
+ 	gpio_request(GPIO_FN_SDHI0CLK, NULL);
+@@ -1211,23 +1230,6 @@ static int __init arch_setup(void)
+ 	gpio_request(GPIO_FN_SDHI0D0,  NULL);
+ 	gpio_request(GPIO_PTB6, NULL);
+ 	gpio_direction_output(GPIO_PTB6, 0);
+-
+-#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+-	/* enable SDHI1 on CN12 (needs DS2.6,7 set to ON,OFF) */
+-	gpio_request(GPIO_FN_SDHI1CD,  NULL);
+-	gpio_request(GPIO_FN_SDHI1WP,  NULL);
+-	gpio_request(GPIO_FN_SDHI1CMD, NULL);
+-	gpio_request(GPIO_FN_SDHI1CLK, NULL);
+-	gpio_request(GPIO_FN_SDHI1D3,  NULL);
+-	gpio_request(GPIO_FN_SDHI1D2,  NULL);
+-	gpio_request(GPIO_FN_SDHI1D1,  NULL);
+-	gpio_request(GPIO_FN_SDHI1D0,  NULL);
+-	gpio_request(GPIO_PTB7, NULL);
+-	gpio_direction_output(GPIO_PTB7, 0);
+-
+-	/* I/O buffer drive ability is high for SDHI1 */
+-	__raw_writew((__raw_readw(IODRIVEA) & ~0x3000) | 0x2000 , IODRIVEA);
+-#endif /* CONFIG_MMC_SH_MMCIF */
+ #else
+ 	/* enable MSIOF0 on CN11 (needs DS2.4 set to OFF) */
+ 	gpio_request(GPIO_FN_MSIOF0_TXD, NULL);
+@@ -1239,12 +1241,51 @@ static int __init arch_setup(void)
+ 	gpio_direction_output(GPIO_PTB6, 0); /* disable power by default */
+ 	gpio_request(GPIO_PTY6, NULL); /* write protect */
+ 	gpio_direction_input(GPIO_PTY6);
+-	gpio_request(GPIO_PTY7, NULL); /* card detect */
+-	gpio_direction_input(GPIO_PTY7);
+ 
+ 	spi_register_board_info(spi_bus, ARRAY_SIZE(spi_bus));
+ #endif
+ 
++	/* MMC/SD-card slot CN12 */
++#if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
++	/* enable MMCIF (needs DS2.6,7 set to OFF,ON) */
++	gpio_request(GPIO_FN_MMC_D7, NULL);
++	gpio_request(GPIO_FN_MMC_D6, NULL);
++	gpio_request(GPIO_FN_MMC_D5, NULL);
++	gpio_request(GPIO_FN_MMC_D4, NULL);
++	gpio_request(GPIO_FN_MMC_D3, NULL);
++	gpio_request(GPIO_FN_MMC_D2, NULL);
++	gpio_request(GPIO_FN_MMC_D1, NULL);
++	gpio_request(GPIO_FN_MMC_D0, NULL);
++	gpio_request(GPIO_FN_MMC_CLK, NULL);
++	gpio_request(GPIO_FN_MMC_CMD, NULL);
++	gpio_request(GPIO_PTB7, NULL);
++	gpio_direction_output(GPIO_PTB7, 0);
++
++	cn12_enabled = true;
++#elif defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
++	/* enable SDHI1 on CN12 (needs DS2.6,7 set to ON,OFF) */
++	gpio_request(GPIO_FN_SDHI1WP,  NULL);
++	gpio_request(GPIO_FN_SDHI1CMD, NULL);
++	gpio_request(GPIO_FN_SDHI1CLK, NULL);
++	gpio_request(GPIO_FN_SDHI1D3,  NULL);
++	gpio_request(GPIO_FN_SDHI1D2,  NULL);
++	gpio_request(GPIO_FN_SDHI1D1,  NULL);
++	gpio_request(GPIO_FN_SDHI1D0,  NULL);
++	gpio_request(GPIO_PTB7, NULL);
++	gpio_direction_output(GPIO_PTB7, 0);
++
++	/* Card-detect, used on CN12 with SDHI1 */
++	gpio_request(GPIO_PTW7, NULL);
++	gpio_direction_input(GPIO_PTW7);
++
++	cn12_enabled = true;
++#endif
++
++	if (cn12_enabled)
++		/* I/O buffer drive ability is high for CN12 */
++		__raw_writew((__raw_readw(IODRIVEA) & ~0x3000) | 0x2000,
++			     IODRIVEA);
++
+ 	/* enable Video */
+ 	gpio_request(GPIO_PTU2, NULL);
+ 	gpio_direction_output(GPIO_PTU2, 1);
+@@ -1303,25 +1344,6 @@ static int __init arch_setup(void)
+ 	gpio_request(GPIO_PTU5, NULL);
+ 	gpio_direction_output(GPIO_PTU5, 0);
+ 
+-#if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
+-	/* enable MMCIF (needs DS2.6,7 set to OFF,ON) */
+-	gpio_request(GPIO_FN_MMC_D7, NULL);
+-	gpio_request(GPIO_FN_MMC_D6, NULL);
+-	gpio_request(GPIO_FN_MMC_D5, NULL);
+-	gpio_request(GPIO_FN_MMC_D4, NULL);
+-	gpio_request(GPIO_FN_MMC_D3, NULL);
+-	gpio_request(GPIO_FN_MMC_D2, NULL);
+-	gpio_request(GPIO_FN_MMC_D1, NULL);
+-	gpio_request(GPIO_FN_MMC_D0, NULL);
+-	gpio_request(GPIO_FN_MMC_CLK, NULL);
+-	gpio_request(GPIO_FN_MMC_CMD, NULL);
+-	gpio_request(GPIO_PTB7, NULL);
+-	gpio_direction_output(GPIO_PTB7, 0);
+-
+-	/* I/O buffer drive ability is high for MMCIF */
+-	__raw_writew((__raw_readw(IODRIVEA) & ~0x3000) | 0x2000 , IODRIVEA);
+-#endif
+-
+ 	/* enable I2C device */
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
 -- 
-Nicolas Ferre
+1.7.2.5
+
