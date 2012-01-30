@@ -1,44 +1,56 @@
-From: "Michael S. Tsirkin" <mst@redhat.com>
-Date: Mon, 30 Jan 2012 12:18:25 +0000
-Subject: [PATCH 0/3] arch: fix ioport mapping on mips,sh
-Message-Id: <cover.1327877053.git.mst@redhat.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 30 Jan 2012 16:09:55 +0000
+Subject: Re: [PATCH 0/3] arch: fix ioport mapping on mips,sh
+Message-Id: <201201301609.56105.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1327877053.git.mst@redhat.com>
+In-Reply-To: <cover.1327877053.git.mst@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kevin Cernekee <cernekee@gmail.com>
-Cc: Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Arnd Bergmann <arnd@arndb.de>, "Michael S. Tsirkin" <mst@redhat.com>, Jesse Barnes <jbarnes@virtuousgeek.org>, Myron Stowe <myron.stowe@redhat.com>, Paul Gortmaker <paul.gortmaker@windriver.com>, Lucas De Marchi <lucas.demarchi@profusion.mobi>, Dmitry Kasatkin <dmitry.kasatkin@intel.com>, James Morris <jmorris@namei.org>, "John W. Linville" <linville@tuxdriver.com>, Michael Witten <mfwitten@gmail.com>, linux-mips@linux-mips.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
+To: "Michael S. Tsirkin" <mst@redhat.com>
+Cc: Kevin Cernekee <cernekee@gmail.com>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Jesse Barnes <jbarnes@virtuousgeek.org>, Myron Stowe <myron.stowe@redhat.com>, Paul Gortmaker <paul.gortmaker@windriver.com>, Lucas De Marchi <lucas.demarchi@profusion.mobi>, Dmitry Kasatkin <dmitry.kasatkin@intel.com>, James Morris <jmorris@namei.org>, "John W. Linville" <linville@tuxdriver.com>, Michael Witten <mfwitten@gmail.com>, linux-mips@linux-mips.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 
-Kevin Cernekee reported that recent cleanup
-that replaced pci_iomap with a generic function
-failed to take into account the differences
-in io port handling on mips and sh architectures.
+On Monday 30 January 2012, Michael S. Tsirkin wrote:
+> Kevin Cernekee reported that recent cleanup
+> that replaced pci_iomap with a generic function
+> failed to take into account the differences
+> in io port handling on mips and sh architectures.
+> 
+> Rather than revert the changes reintroducing the
+> code duplication, this patchset fixes this
+> by adding ability for architectures to override
+> ioport mapping for pci devices.
+> 
+> I put this in my tree that feeds into linux-next
+> and intend to ask Linus to pull this fix if this
+> doesn't cause any issues and there are no objections.
+> 
+> The patches were tested on x86 and compiled on mips and sh.
+> Would appreciate reviews/acks/testing reports.
 
-Rather than revert the changes reintroducing the
-code duplication, this patchset fixes this
-by adding ability for architectures to override
-ioport mapping for pci devices.
+Looks good to me, except for the one detail I've commented
+on in the third patch.
 
-I put this in my tree that feeds into linux-next
-and intend to ask Linus to pull this fix if this
-doesn't cause any issues and there are no objections.
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 
-The patches were tested on x86 and compiled on mips and sh.
-Would appreciate reviews/acks/testing reports.
+I do wonder if the sh and mips implementations are robust enough however
+(independent of your work): It seems that an ioport number is treated
+differently in pci_iomap than it is using ioport_map and inb/outb,
+the assumption being that the port number is a local index per PCI domain.
+This would mean that any port access other than pci_iomap would only
+work on the primary PCI domain. There are two IMHO better solutions that
+I've seen on other architectures:
 
-Michael S. Tsirkin (3):
-  lib: add NO_GENERIC_PCI_IOPORT_MAP
-  mips: use the the PCI controller's io_map_base
-  sh: use the the PCI channels's io_map_base
+1. create a larger (e.g. 1MB) io port mapping range in virtual memory
+that is split into 64kb per domain, and use the domain number to
+find the per domain range when setting the resources. Port numbers will
+be larger than 65535 this way, but PCI will ignore the upper address
+bits for any access so it works fine.
 
- arch/mips/Kconfig               |    1 +
- arch/mips/lib/iomap-pci.c       |    4 ++--
- arch/sh/Kconfig                 |    1 +
- arch/sh/drivers/pci/pci.c       |    4 ++--
- include/asm-generic/pci_iomap.h |    5 +++++
- lib/Kconfig                     |    3 +++
- lib/pci_iomap.c                 |   12 +++++++++++-
- 7 files changed, 25 insertions(+), 5 deletions(-)
+2. split the 64kb io port range into subsections per domain (on page
+granularity, e.g. 2 domains with 32kb or at most 16 domains with 4kb)
+and map them virtually contiguous, then reassign all io port resources
+so that only the correct region for each domain is used.
 
--- 
-1.7.8.2.325.g247f9
+	Arnd
