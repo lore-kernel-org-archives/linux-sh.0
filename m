@@ -1,28 +1,36 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 10 Jan 2012 08:12:09 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: r8a7779 power domain support V2
-Message-Id: <20120110081208.GC24305@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 30 Jan 2012 02:25:07 +0000
+Subject: [PATCH] ARM: mach-shmobile: r8a7779 PFC IPSR4 fix
+Message-Id: <20120130022507.14954.36776.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20111222081204.12120.92511.sendpatchset@w520>
-In-Reply-To: <20111222081204.12120.92511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 10, 2012 at 03:50:01PM +0900, Magnus Damm wrote:
-> Add power domain control support for the r8a7779 SoC V2.
-> 
-> This adds support for 4 power domains for I/O Devices
-> together with code that can be used for CPU cores as well.
-> 
-> The only out of the ordinary experience is the need for
-> ioremap() of SYSC registers. Because of that we need to
-> execute some init function before setting up the domains.
+From: Magnus Damm <damm@opensource.se>
 
-Applied, thanks.
+Fix the bit field width information for the IPSR4 register
+in the r8a7779 pin function controller (PFC).
 
->  Built on top of linux-sh git rmobile/marzen branch.
-> 
-I've now merged rmobile/marzen in to rmobile-latest, so hopefully that
-will be it for the merge window.
+Without this fix the Marzen board fails to receive data
+over the serial console due to misconfigured pin function
+for the RX pin.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/pfc-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/pfc-r8a7779.c
++++ work/arch/arm/mach-shmobile/pfc-r8a7779.c	2012-01-27 16:04:07.000000000 +0900
+@@ -2120,7 +2120,7 @@ static struct pinmux_cfg_reg pinmux_conf
+ 	    FN_AUDATA3, 0, 0, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR4", 0xfffc0030, 32,
+-			     3, 1, 1, 1, 1, 1, 1, 3, 3, 1,
++			     3, 1, 1, 1, 1, 1, 1, 3, 3,
+ 			     1, 1, 1, 1, 1, 1, 3, 3, 3, 2) {
+ 	    /* IP4_31_29 [3] */
+ 	    FN_DU1_DB0, FN_VI2_DATA4_VI2_B4, FN_SCL2_B, FN_SD3_DAT0,
