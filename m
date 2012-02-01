@@ -1,74 +1,86 @@
-From: Sergei Shtylyov <sshtylyov@mvista.com>
-Date: Mon, 13 Feb 2012 10:41:37 +0000
-Subject: Re: [PATCH 03/14 v2] MIPS: adapt for dma_map_ops changes
-Message-Id: <4F38E8E1.3070004@mvista.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 01 Feb 2012 13:15:14 +0000
+Subject: Re: [PATCH 0/2] mmc: use PM QoS instead of delayed clock gating
+Message-Id: <Pine.LNX.4.64.1202011401370.24739@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-4-git-send-email-m.szyprowski@samsung.com> <1329129329-25205-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1329129329-25205-1-git-send-email-m.szyprowski@samsung.com>
+References: <Pine.LNX.4.64.1201191631210.12537@axis700.grange>
+ <201201281335.35397.rjw@sisk.pl>
+In-Reply-To: <201201281335.35397.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, FUJITA Tomonori <fujita.tomonori@lab.ntt.co.jp>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, linux-sh@vger.kernel.org
 
-Hello.
+On Sat, 28 Jan 2012, Rafael J. Wysocki wrote:
 
-On 13-02-2012 14:35, Marek Szyprowski wrote:
+> Hi,
+> 
+> On Thursday, January 19, 2012, Guennadi Liakhovetski wrote:
+> > Hi all
+> > 
+> > I've already sent one of these two patches yesterday, but I forgot to 
+> > include Rafael on the CC list and forgot to mention, that the patch should 
+> > be treated as a regression fix and should go into 3.3. The reason why the 
+> > commit
+> > 
+> > commit 7e09bedba1b87f9c7b34ba895b57baf0c36ccdc8
+> 
+> I think that should be 597dd9d79cfbbb1636d00a7fd0880355d9b20c41, right?
+> 
+> > Author: Sujit Reddy Thumma <sthumma@codeaurora.org>
+> > Date:   Mon Nov 14 13:53:29 2011 +0530
+> > 
+> >     mmc: core: Use delayed work in clock gating framework
+> > 
+> > can be considered a regression is, that it extends the powered-on time of 
+> > the controller(s) and, possibly, of respective power domains by 200ms (by 
+> > default), which is an essential change in behaviour in the negative 
+> > direction.
+> > 
+> > However, if this is indeed the desired change, maybe the better approach 
+> > now would be to modify this behaviour in individual drivers, which is 
+> > exactly what the two patches in this series are doing.
+> 
+> I agree that doing such things at the framework level is not a good idea,
+> which this example clearly shows.
+> 
+> The commit above had made the assumption that every platform would
+> regard performance as more important than power saving and made a wholesale
+> change that affected everyone.  In some cases, however, the change is not
+> welcome and is not too easy to work around (because of the user space interface
+> file added in the process).
+> 
+> Quite frankly, I think it would be better to simply revert that commit (along
+> with the later one fixing it) at this point, because there may be more cases
+> where it actually makes things worse.
 
-> From: Andrzej Pietrasiewicz<andrzej.p@samsung.com>
+Well, it's not my call to decide upon this, I don't know what the global 
+MMC preference is, Chris?
 
-> Adapt core MIPS architecture code for dma_map_ops changes: replace
-> alloc/free_coherent with generic alloc/free methods.
+> As for the patches, I'll reply to each of them separately.
 
-> Signed-off-by: Andrzej Pietrasiewicz<andrzej.p@samsung.com>
-> [added missing changes to arch/mips/cavium-octeon/dma-octeon.c]
-> Signed-off-by: Marek Szyprowski<m.szyprowski@samsung.com>
-> Signed-off-by: Kyungmin Park<kyungmin.park@samsung.com>
-[...]
+Right, thanks for the review. Basically your comments are the same for 
+both:
 
-> diff --git a/arch/mips/include/asm/dma-mapping.h b/arch/mips/include/asm/dma-mapping.h
-> index 7aa37dd..cbd41f5 100644
-> --- a/arch/mips/include/asm/dma-mapping.h
-> +++ b/arch/mips/include/asm/dma-mapping.h
-> @@ -57,25 +57,31 @@ dma_set_mask(struct device *dev, u64 mask)
->   extern void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
->   	       enum dma_data_direction direction);
->
-> -static inline void *dma_alloc_coherent(struct device *dev, size_t size,
-> -				       dma_addr_t *dma_handle, gfp_t gfp)
-> +#define dma_alloc_coherent(d,s,h,f)	dma_alloc_attrs(d,s,h,f,NULL)
-> +
-> +static inline void *dma_alloc_attrs(struct device *dev, size_t size,
-> +				    dma_addr_t *dma_handle, gfp_t gfp,
-> +				    struct dma_attrs *attrs)
->   {
->   	void *ret;
->   	struct dma_map_ops *ops = get_dma_ops(dev);
->
-> -	ret = ops->alloc_coherent(dev, size, dma_handle, gfp);
-> +	ret = ops->alloc(dev, size, dma_handle, gfp, NULL);
+1. you'd like not just to change the default initial delay to 0, but to 
+prohibit changing it from the userspace completely. For that we need 
+Chris' opinion and that cannot be done in MMC host drivers so far, AFAICS. 
+Actually, I'm not even sure I agree on this: if the user knows about that 
+possibility and consciously adjusts the timeout - why should we prevent 
+them from doing so? So far we don't have any user-space interface to 
+change device PM QoS parameters, right? So, this gives at least some 
+control to the user.
 
-    Not 'attrs' instead of NULL?
+2. you suggest to separate delay=0 and PM QoS. Can do that of course, but 
+I thought they were related and that gave us a chance to push PM QoS up 
+sooner, rather than later, as a fix. Without it we'd potentially cause the 
+controller and the domain to runtime suspend and resume between all 
+transactions?
 
->
->   	debug_dma_alloc_coherent(dev, size, *dma_handle, ret);
->
->   	return ret;
->   }
->
-> -static inline void dma_free_coherent(struct device *dev, size_t size,
-> -				     void *vaddr, dma_addr_t dma_handle)
-> +#define dma_free_coherent(d,s,c,h) dma_free_attrs(d,s,c,h,NULL)
-> +
-> +static inline void dma_free_attrs(struct device *dev, size_t size,
-> +				  void *vaddr, dma_addr_t dma_handle,
-> +				  struct dma_attrs *attrs)
->   {
->   	struct dma_map_ops *ops = get_dma_ops(dev);
->
-> -	ops->free_coherent(dev, size, vaddr, dma_handle);
-> +	ops->free(dev, size, vaddr, dma_handle, NULL);
-
-    Same here...
-
-WBR, Sergei
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
