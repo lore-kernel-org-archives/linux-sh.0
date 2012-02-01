@@ -1,31 +1,49 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 24 Feb 2012 04:17:06 +0000
-Subject: Re: [PATCH 00/05] ARM: mach-shmobile: Resending 3.3-rc patches
-Message-Id: <20120224041706.GC9994@linux-sh.org>
+From: Pavel Machek <pavel@ucw.cz>
+Date: Wed, 01 Feb 2012 10:03:56 +0000
+Subject: Re: [PATCH v2 11/13] ARM: only include mach/irqs.h for !SPARSE_IRQ
+Message-Id: <20120201100356.GA31865@elf.ucw.cz>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120223053223.2040.38757.sendpatchset@w520>
-In-Reply-To: <20120223053223.2040.38757.sendpatchset@w520>
+References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
+ <20120125213206.GJ1068@n2100.arm.linux.org.uk>
+ <alpine.LFD.2.02.1201251727510.2759@xanadu.home>
+ <201201252358.17825.marek.vasut@gmail.com>
+ <20120130104428.GA16841@atrey.karlin.mff.cuni.cz>
+In-Reply-To: <20120130104428.GA16841@atrey.karlin.mff.cuni.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 24, 2012 at 01:11:46PM +0900, Paul Mundt wrote:
-> On Thu, Feb 23, 2012 at 02:32:23PM +0900, Magnus Damm wrote:
-> > ARM: mach-shmobile: Resending 3.3-rc patches
+On Mon 2012-01-30 11:44:28, Cyril Hrubis wrote:
+> Hi!
+> > > > As a side-note, you may be pleased to know that I have SA11x0 stuff
+> > > > converted to (and tested) with sparse IRQ.  That's with SA1111, the
+> > > > UCB1x00 and Neponset expansion board for the Assabet all dynamically
+> > > > allocating their IRQs.  The only fixed-numbered IRQs in SA11x0 in my
+> > > > tree at the time of writing are the on-SoC IRQs, and the LoCoMo IRQs
+> > > > (which I don't have the hardware to test for, so I'm not touching.)
+> > > 
+> > > That's really cool.
+> > > 
+> > > Not that there are many people who might still benefit from running that
+> > > code, but like I said this should serve as a real and relatively simple
+> > > example that might benefit more complex platforms.
+> > > 
+> > > 
+> > > Nicolas
 > > 
-> > [PATCH 01/05] ARM: mach-shmobile: r8a7779 PFC IPSR4 fix
-> > [PATCH 02/05] ARM: mach-shmobile: sh73a0 PSTR 32-bit access fix
-> > [PATCH 03/05] ARM: mach-shmobile: sh73a0 PINT IRQ base fix
-> > [PATCH 04/05] ARM: mach-shmobile: sh73a0 IRQ sparse alloc fix
-> > [PATCH 05/05] ARM: mach-shmobile: IRQ driven GPIO key support for Kota2
-> > 
-> > The above patches were submitted for inclusion in 3.3-rc last month,
-> > but since I cannot find them in Linus tree I'm now resending.
-> > 
-> They're sitting in my fixes branch, as you would be aware if you had
-> bothered checking. If you were curious about why I hadn't pushed the
-> changes out yet you could have simply pinged me about it.
+> > Indeed, that's good going. I'm CCing a guy who might have a SA11xx board with 
+> > LoCoMo chip (that's old zaurus sl55xx, right?).
+> 
+> I think I still do have old zaurus in some box somewhere (I stopped playing
+> with it once I got the newer one). And I think that Pavel Machek (CC) has one
+> too (I think that he wanted to give away to anybody who is wishing to maintain
+> the particular kernel parts and I think that in the end nobody took it).
 
-Actually, I spoke too soon. I had 3 of them, and didn't see the other 2.
-They're applied now, too.
+Yep, I still have old collie (sl5500) machine. I don't really use
+it...
+
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
