@@ -1,99 +1,55 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 03 Feb 2012 19:25:27 +0000
-Subject: Re: [PATCH 0/2] mmc: use PM QoS instead of delayed clock gating
-Message-Id: <201202032025.27814.rjw@sisk.pl>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 01 Feb 2012 17:14:28 +0000
+Subject: Re: [PATCH 1/2] dma: sh_dma: not all SH DMAC implementations support MEMCPY
+Message-Id: <1328115748.1610.34.camel@vkoul-udesk3>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201191631210.12537@axis700.grange> <201202012214.19531.rjw@sisk.pl> <Pine.LNX.4.64.1202031200300.6211@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1202031200300.6211@axis700.grange>
+References: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Friday, February 03, 2012, Guennadi Liakhovetski wrote:
-> On Wed, 1 Feb 2012, Rafael J. Wysocki wrote:
-[...]
-> > > > As for the patches, I'll reply to each of them separately.
-> > > 
-> > > Right, thanks for the review. Basically your comments are the same for 
-> > > both:
-> > > 
-> > > 1. you'd like not just to change the default initial delay to 0, but to 
-> > > prohibit changing it from the userspace completely.
-> > 
-> > No, I haven't said that. :-)
-> > 
-> > I said that setting the delay to 0 initially in the driver wasn't sufficient
-> > to prevent the delay from being used.
+On Wed, 2012-01-18 at 10:14 +0100, Guennadi Liakhovetski wrote:
+> Add a flag to allow platforms to specify, whether a DMAC instance supports
+> the MEMCPY operation. To avoid regressions, preserve the current default.
 > 
-> Yes, sure, I realise that.
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Applied both, Thanks
+> ---
+>  drivers/dma/shdma.c    |    3 ++-
+>  include/linux/sh_dma.h |    1 +
+>  2 files changed, 3 insertions(+), 1 deletions(-)
 > 
-> > If your intention was to use the PM QoS
-> > _along_ with the delay, then you shouldn't advertise that as a regression fix
-> > and I don't see a point setting the delay to 0 initially in the driver in that
-> > case.
-> 
-> Hmm, I'm not sure to follow here. Firstly, I'm not sure why using both 
-> cannot classify as a fix, secondly, do you mean, that when using QoS we 
-> don't have to set the delay to 0? But with the delay left at 200ms PM QoS 
-> doesn't have much left to say?
-> 
-> > > For that we need Chris' opinion and that cannot be done in MMC host drivers
-> > > so far, AFAICS. 
-> > > Actually, I'm not even sure I agree on this: if the user knows about that 
-> > > possibility and consciously adjusts the timeout - why should we prevent 
-> > > them from doing so?
-> > 
-> > Well, if you want to keep the delay pretty much as is, then there are two
-> > choices that make sense to me: either you change the delay _globally_ to 0,
-> > which kind of reverts the problematic commit, or you keep the default as is
-> > and don't touch it from the driver.  Changing it initially to 0 in the
-> > driver doesn't really help, because it'll requires user space to act
-> > differently depending on what driver is used at the low level (the default will
-> > differ from one driver to another).
-> 
-> Well, following this logic, we should not change the default in the 
-> driver, and just either ask to revert that commit or rely on user-space to 
-> set the delay to 0.
+> diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
+> index cabcfe8..e4ed4da 100644
+> --- a/drivers/dma/shdma.c
+> +++ b/drivers/dma/shdma.c
+> @@ -1267,7 +1267,8 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
+>  
+>  	INIT_LIST_HEAD(&shdev->common.channels);
+>  
+> -	dma_cap_set(DMA_MEMCPY, shdev->common.cap_mask);
+> +	if (!pdata->slave_only)
+> +		dma_cap_set(DMA_MEMCPY, shdev->common.cap_mask);
+>  	if (pdata->slave && pdata->slave_num)
+>  		dma_cap_set(DMA_SLAVE, shdev->common.cap_mask);
+>  
+> diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+> index e11e171..db637b9 100644
+> --- a/include/linux/sh_dma.h
+> +++ b/include/linux/sh_dma.h
+> @@ -70,6 +70,7 @@ struct sh_dmae_pdata {
+>  	unsigned int needs_tend_set:1;
+>  	unsigned int no_dmars:1;
+>  	unsigned int chclr_present:1;
+> +	unsigned int slave_only:1;
+>  };
+>  
+>  /* DMA register */
 
-Yes, I meant that.  There's one more option, actually, which is to set the
-default to 0 globally, at least for 3.3.  That would make us keep the current
-behavior with the possibility to switch to a different delay for whoever wants
-that.
 
-> > > So far we don't have any user-space interface to 
-> > > change device PM QoS parameters, right?
-> > 
-> > That's because people have been opposing interfeces at the struct device
-> > level and the argument has always been "frameworks will add proper interfaces
-> > for PM QoS", while what's happening here is frameworks adding their own power
-> > management features with questionable interfaces _instead_ _of_ PM QoS.
-> > 
-> > I thought you wanted to reverse that trend, but apparently I was wrong. :-)
-> > 
-> > > So, this gives at least some control to the user.
-> > 
-> > How useful it is is rather unknown at the moment, though.
-> > 
-> > > 2. you suggest to separate delay=0 and PM QoS. Can do that of course, but 
-> > > I thought they were related and that gave us a chance to push PM QoS up 
-> > > sooner, rather than later, as a fix. Without it we'd potentially cause the 
-> > > controller and the domain to runtime suspend and resume between all 
-> > > transactions?
-> > 
-> > The problem is that using PM QoS here doesn't fix anything.  Changing the
-> > default delay to 0 kind of does, although I don't like it (for reasons given
-> > above).
-> > 
-> > I also asked why the PM QoS request was added for the parent of the devices
-> > being handled rather than for the device itself.
-> 
-> Do you think we should apply constraints to the mmc host class-device?... 
-> .parent is just a pointer to the actual underlying hardware device, the 
-> platform device in our case.
+-- 
+~Vinod
 
-OK
-
-Thanks,
-Rafael
