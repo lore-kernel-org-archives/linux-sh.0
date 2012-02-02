@@ -1,57 +1,87 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 08 Feb 2012 12:16:45 +0000
-Subject: [PATCH 1/7] mtd: sh_flctl: Update FLCMNCR register bit field
-Message-Id: <1328703411-3452-1-git-send-email-hechtb@gmail.com>
+From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Date: Thu, 02 Feb 2012 00:43:24 +0000
+Subject: [PATCH RFC idle 3/3] sh: Avoid invoking RCU when CPU is idle
+Message-Id: <1328143404-11038-3-git-send-email-paulmck@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120202004253.GA10946@linux.vnet.ibm.com>
+ <1328143404-11038-1-git-send-email-paulmck@linux.vnet.ibm.com>
+In-Reply-To: <1328143404-11038-1-git-send-email-paulmck@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Bastian Hecht <hechtb@gmail.com>, magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com
+To: linux-kernel@vger.kernel.org
+Cc: mingo@elte.hu, laijs@cn.fujitsu.com, dipankar@in.ibm.com, akpm@linux-foundation.org, mathieu.desnoyers@polymtl.ca, josh@joshtriplett.org, niv@us.ibm.com, tglx@linutronix.de, peterz@infradead.org, rostedt@goodmis.org, Valdis.Kletnieks@vt.edu, dhowells@redhat.com, eric.dumazet@gmail.com, darren@dvhart.com, fweisbec@gmail.com, patches@linaro.org, "Paul E. McKenney" <paul.mckenney@linaro.org>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, Paul Mundt <lethal@linux-sh.org>, Mike Frysinger <vapier@gentoo.org>, linux-sh@vger.kernel.org
 
-Updates the FLCMNCR bit field to match the newest hardware generation.
-Some defines are added to select an appropriate clocking scheme.
+From: "Paul E. McKenney" <paul.mckenney@linaro.org>
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+The idle loop is a quiscent state for RCU, which means that RCU ignores
+CPUs that have told RCU that they are idle via rcu_idle_enter().
+There are nevertheless quite a few places where idle CPUs use RCU, most
+commonly indirectly via tracing.  This patch fixes these problems for SH.
+
+Many of these bugs have been in the kernel for quite some time, but
+Frederic's recent change now gives warnings.
+
+This patch takes the straightforward approach of pushing the
+rcu_idle_enter()/rcu_idle_exit() pair further down into the core of the
+idle loop.
+
+Signed-off-by: Paul E. McKenney <paul.mckenney@linaro.org>
+Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: linux-sh@vger.kernel.org
 ---
- include/linux/mtd/sh_flctl.h |   24 ++++++++++++++++++++++++
- 1 files changed, 24 insertions(+), 0 deletions(-)
+ arch/sh/kernel/idle.c |   11 ++++++++---
+ 1 files changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 9cf4c4c..ecbf3e6 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -67,6 +67,30 @@
- #define	CE0_ENABLE	(0x1 << 3)	/* Chip Enable 0 */
- #define	TYPESEL_SET	(0x1 << 0)
+diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
+index 406508d..d125668 100644
+--- a/arch/sh/kernel/idle.c
++++ b/arch/sh/kernel/idle.c
+@@ -53,8 +53,10 @@ static inline int hlt_works(void)
+ static void poll_idle(void)
+ {
+ 	local_irq_enable();
++	rcu_idle_enter();
+ 	while (!need_resched())
+ 		cpu_relax();
++	rcu_idle_exit();
+ }
  
-+/*
-+ * Clock settings using the PULSEx registers from FLCMNCR
-+ *
-+ * Some hardware uses registers called PULSEx instead of FCKSEL_E and QTSEL_E
-+ * to control the clock divider used between the High-Speed Peripheral Clock
-+ * and the FLCTL internal clock. If so, use CLK_8_BIT_xxx for connecting 8 bit
-+ * and CLK_16_BIT_xxx for connecting 16 bit bus bandwith NAND chips. For the 16
-+ * bit version the divider is seperate for the pulse width of high and low
-+ * signals.
-+ */
-+#define PULSE3	(0x1 << 27)
-+#define PULSE2	(0x1 << 17)
-+#define PULSE1	(0x1 << 15)
-+#define PULSE0	(0x1 << 9)
-+#define CLK_8_BIT_0_5HP			PULSE1
-+#define CLK_8_BIT_1HP			0x0
-+#define CLK_8_BIT_1_5HP			(PULSE1 | PULSE2)
-+#define CLK_8_BIT_2HP			PULSE0
-+#define CLK_8_BIT_3HP			(PULSE0 | PULSE1 | PULSE2)
-+#define CLK_8_BIT_4HP			(PULSE0 | PULSE2)
-+#define CLK_16_BIT_6HP_LOW_2HP_HIGH	PULSE0
-+#define CLK_16_BIT_9HP_LOW_3HP_HIGH	(PULSE0 | PULSE1 | PULSE2)
-+#define CLK_16_BIT_12HP_LOW_4HP_HIGH	(PULSE0 | PULSE2)
-+
- /* FLCMDCR control bits */
- #define ADRCNT2_E	(0x1 << 31)	/* 5byte address enable */
- #define ADRMD_E		(0x1 << 26)	/* Sector address access */
+ void default_idle(void)
+@@ -66,9 +68,14 @@ void default_idle(void)
+ 		set_bl_bit();
+ 		if (!need_resched()) {
+ 			local_irq_enable();
++			rcu_idle_enter();
+ 			cpu_sleep();
+-		} else
++			rcu_idle_exit();
++		} else {
+ 			local_irq_enable();
++			rcu_idle_enter();
++			rcu_idle_exit();
++		}
+ 
+ 		set_thread_flag(TIF_POLLING_NRFLAG);
+ 		clear_bl_bit();
+@@ -90,7 +97,6 @@ void cpu_idle(void)
+ 	/* endless idle loop with no priority at all */
+ 	while (1) {
+ 		tick_nohz_idle_enter();
+-		rcu_idle_enter();
+ 
+ 		while (!need_resched()) {
+ 			check_pgt_cache();
+@@ -112,7 +118,6 @@ void cpu_idle(void)
+ 			start_critical_timings();
+ 		}
+ 
+-		rcu_idle_exit();
+ 		tick_nohz_idle_exit();
+ 		preempt_enable_no_resched();
+ 		schedule();
 -- 
-1.7.5.4
+1.7.8
 
