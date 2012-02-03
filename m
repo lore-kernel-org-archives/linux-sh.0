@@ -1,63 +1,52 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 03 Feb 2012 10:21:46 +0000
+Date: Fri, 03 Feb 2012 16:38:07 +0000
 Subject: Re: [PATCH 1/7 v2] dmaengine: add a simple dma library
-Message-Id: <Pine.LNX.4.64.1202031114560.6211@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1202031736090.6211@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
- <1327589784-4287-2-git-send-email-g.liakhovetski@gmx.de> <4F22624E.2090201@renesas.com>
- <Pine.LNX.4.64.1201270946150.32661@axis700.grange> <4F27CA7D.601@renesas.com>
- <Pine.LNX.4.64.1202022317560.13860@axis700.grange> <4F2B9F34.60308@renesas.com>
-In-Reply-To: <4F2B9F34.60308@renesas.com>
+ <1327589784-4287-2-git-send-email-g.liakhovetski@gmx.de>
+ <1327912346.1527.13.camel@vkoul-udesk3>  <Pine.LNX.4.64.1201300944360.7932@axis700.grange>
+  <1327992090.1527.116.camel@vkoul-udesk3>  <Pine.LNX.4.64.1201310746470.31226@axis700.grange>
+ <1328074726.1610.1.camel@vkoul-udesk3>
+In-Reply-To: <1328074726.1610.1.camel@vkoul-udesk3>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Fri, 3 Feb 2012, Shimoda, Yoshihiro wrote:
+Hi Vinod
 
-> Hi Guennadi-san,
-> 
-> 2012/02/03 7:19, Guennadi Liakhovetski wrote:
-> [ snip ]
-> >>
-> >> Thank you for your comment.
-> >>
-> >> I investigaed the issue. I found out the renesas_usbhs driver may
-> >> call tx_submit() in the callback() of the dma-simple finally.
+On Wed, 1 Feb 2012, Vinod Koul wrote:
+
+> On Tue, 2012-01-31 at 09:59 +0100, Guennadi Liakhovetski wrote:
+> > Hi Vinod
 > > 
-> > Sorry, in my first reply to this your email I misread the renesas_usbhs 
-> > for an issue with your new SUDMAC driver. Since this is not the case and 
-> > my patch seems to be causing a regression, I'll look at it.
-> 
-> Thank you for the comment.
-> 
-> I found out that if the "power_up" is 0 in the sample_tx_submit(),
-> the pm_state will be changed to "PENDING".
-> And then, even if the renesas_usbhs calls dma_async_issue_pending(),
-> the dma-simple driver doesn't call the simple_chan_xfer_ld_queue().
-> This is because the driver will call the simple_chan_xfer_ld_queue()
-> when the pm_state is "ESTABLISHED" only.
-> 
-> So I guess that we have to modify the simple_issue_pending().
+> > Thanks for your reply.
+> > 
+> > On Tue, 31 Jan 2012, Vinod Koul wrote:
+> > 
+> > > On Mon, 2012-01-30 at 10:34 +0100, Guennadi Liakhovetski wrote:
 
-Ok, I looked at this code, there's now a comment in simple_tx_submit():
+[snip]
 
-	if (power_up) {
-		...
-	} else {
-		/*
-		 * Tell .device_issue_pending() not to run the queue, interrupts
-		 * will do it anyway
-		 */
-		schan->pm_state = DMA_SIMPLE_PM_PENDING;
-	}
+> > > > How would you like to do this? Don't you think, it would be good to allow 
+> > > > both: either implement a dmaengine driver directly, exactly as all drivers 
+> > > > are doing now, or use the additional helper library for suitable (simple) 
+> > > > hardware types? I see it similar to I2C, where you either implement an I2C 
+> > > > driver directly, or you use the bitbanging abstraction for simpler 
+> > > > hardware.
+> > > I think it would be good to have both, this can be used by folks who
+> > > don't have sg support available.
+> > 
+> > Ok, so, should I just rename the driver to sgsoft? Is this the only 
+> > change, that you'd like to see?
+> That would be one :)
+> Also, I would review the other patch patches by today/tomorrow, you can
+> add any changes in next version as well
 
-And that's exactly what should be happening: an interrupt should trigger 
-the IRQ thread should call simple_chan_xfer_ld_queue(), so, looks like the 
-interrupt is not coming? It's also strange, why and how it worked without 
-dma-simple? I don't think I changed that with the transition... 
-Investigating.
+Do I understand it right, that I'm waiting for your review before 
+submitting the next version?
 
 Thanks
 Guennadi
