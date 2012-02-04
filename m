@@ -1,31 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 13:16:13 +0000
-Subject: [PATCH 01/17] sh: introduce sh_clk_ops in parallel with clk_ops
-Message-Id: <20120229131613.29154.26316.sendpatchset@w520>
+From: Masanari Iida <standby24x7@gmail.com>
+Date: Sat, 04 Feb 2012 12:40:24 +0000
+Subject: [PATCH] [trivial] sh: Fix typo in pci-sh7780.c
+Message-Id: <1328359224-1724-1-git-send-email-standby24x7@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org
+Cc: trivial@kernel.org, linux-kernel@vger.kernel.org, standby24x7@gmail.com
 
-From: Magnus Damm <damm@opensource.se>
+Correct spelling "erorr" to "error" in
+arch/sh/drivers/pci/pci-sh7780.c
 
-Introduce sh_clk_ops in parallel with clk_ops.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Masanari Iida <standby24x7@gmail.com>
 ---
+ arch/sh/drivers/pci/pci-sh7780.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
- include/linux/sh_clk.h |    2 ++
- 1 file changed, 2 insertions(+)
+diff --git a/arch/sh/drivers/pci/pci-sh7780.c b/arch/sh/drivers/pci/pci-sh7780.c
+index fa7b978..fb8f1499 100644
+--- a/arch/sh/drivers/pci/pci-sh7780.c
++++ b/arch/sh/drivers/pci/pci-sh7780.c
+@@ -74,7 +74,7 @@ struct pci_errors {
+ 	{ SH4_PCIINT_MLCK,	"master lock error" },
+ 	{ SH4_PCIINT_TABT,	"target-target abort" },
+ 	{ SH4_PCIINT_TRET,	"target retry time out" },
+-	{ SH4_PCIINT_MFDE,	"master function disable erorr" },
++	{ SH4_PCIINT_MFDE,	"master function disable error" },
+ 	{ SH4_PCIINT_PRTY,	"address parity error" },
+ 	{ SH4_PCIINT_SERR,	"SERR" },
+ 	{ SH4_PCIINT_TWDP,	"data parity error for target write" },
+-- 
+1.7.6.5
 
---- 0014/include/linux/sh_clk.h
-+++ work/include/linux/sh_clk.h	2012-02-28 21:38:55.000000000 +0900
-@@ -31,6 +31,8 @@ struct clk_mapping {
- 	struct kref		ref;
- };
- 
-+#define sh_clk_ops clk_ops
-+
- struct clk_ops {
- #ifdef CONFIG_SH_CLK_CPG_LEGACY
- 	void (*init)(struct clk *clk);
