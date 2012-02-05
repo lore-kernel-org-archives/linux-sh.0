@@ -1,132 +1,119 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 03 Feb 2012 15:43:20 +0000
-Subject: [PATCH/RFC] usb: fix renesas_usbhs to not schedule in atomic context
-Message-Id: <Pine.LNX.4.64.1202031623000.6211@axis700.grange>
+From: Felipe Balbi <balbi@ti.com>
+Date: Sun, 05 Feb 2012 14:54:00 +0000
+Subject: Re: [PATCH/RFC] usb: fix renesas_usbhs to not schedule in atomic context
+Message-Id: <20120205145358.GA13762@legolas.emea.dhcp.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="LZvS9be/3tNcYl/X"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
- <1327589784-4287-2-git-send-email-g.liakhovetski@gmx.de> <4F22624E.2090201@renesas.com>
- <Pine.LNX.4.64.1201270946150.32661@axis700.grange> <4F27CA7D.601@renesas.com>
- <Pine.LNX.4.64.1202022317560.13860@axis700.grange> <4F2B9F34.60308@renesas.com>
-In-Reply-To: <4F2B9F34.60308@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-usb@vger.kernel.org
+ <1327589784-4287-2-git-send-email-g.liakhovetski@gmx.de>
+ <4F22624E.2090201@renesas.com>
+ <Pine.LNX.4.64.1201270946150.32661@axis700.grange>
+ <4F27CA7D.601@renesas.com>
+ <Pine.LNX.4.64.1202022317560.13860@axis700.grange>
+ <4F2B9F34.60308@renesas.com>
+ <Pine.LNX.4.64.1202031623000.6211@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1202031623000.6211@axis700.grange>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-usb@vger.kernel.org
 
-The current renesas_usbhs driver triggers
 
-BUG: scheduling while atomic: ksoftirqd/0/3/0x00000102
+--LZvS9be/3tNcYl/X
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-with enabled CONFIG_DEBUG_ATOMIC_SLEEP, by submitting DMA transfers from 
-an atomic (tasklet) context, which is not supported by the shdma dmaengine 
-driver. Fix it by switching to a work. Also simplify some list 
-manipulations.
+Hi,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+On Fri, Feb 03, 2012 at 04:43:20PM +0100, Guennadi Liakhovetski wrote:
+> The current renesas_usbhs driver triggers
+>=20
+> BUG: scheduling while atomic: ksoftirqd/0/3/0x00000102
+>=20
+> with enabled CONFIG_DEBUG_ATOMIC_SLEEP, by submitting DMA transfers from=
+=20
+> an atomic (tasklet) context, which is not supported by the shdma dmaengin=
+e=20
+> driver. Fix it by switching to a work. Also simplify some list=20
+> manipulations.
 
-Shimoda-san, this is the problem, that you were observing. However, it 
-exists with the present version of shdma just as well as with the new one 
-- on top of the simple DMA library. I marked it an RFC because (1) I only 
-lightly tested it with the gadget device on mackerel with the mass storage 
-gadget, and (2) I am somewhat concerned about races. Currently the work 
-function runs with no locking and there are no usual cancel_work_sync() 
-points in the patch. However, it has also been like this before with the 
-tasklet implementation, which is not much better, and it looks like there 
-are no asynchronous operations on the same packets like timeouts. Only 
-asynchronous events, that I can think about are things like unloading the 
-driver or unplugging the cable, but these have been there before too. It 
-would become worse on SMP, I think. Comments welcome.
+you are doing much more than what you say. Also, instead of using a
+workqueue, have you considered using threaded_irqs ?
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 72339bd..4d739ec 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -75,8 +75,7 @@ void usbhs_pkt_push(struct usbhs_pipe *pipe, struct usbhs_pkt *pkt,
- 		pipe->handler = &usbhsf_null_handler;
- 	}
- 
--	list_del_init(&pkt->node);
--	list_add_tail(&pkt->node, &pipe->list);
-+	list_move_tail(&pkt->node, &pipe->list);
- 
- 	/*
- 	 * each pkt must hold own handler.
-@@ -106,7 +105,7 @@ static struct usbhs_pkt *__usbhsf_pkt_get(struct usbhs_pipe *pipe)
- 	if (list_empty(&pipe->list))
- 		return NULL;
- 
--	return list_entry(pipe->list.next, struct usbhs_pkt, node);
-+	return list_first_entry(&pipe->list, struct usbhs_pkt, node);
- }
- 
- struct usbhs_pkt *usbhs_pkt_pop(struct usbhs_pipe *pipe, struct usbhs_pkt *pkt)
-@@ -762,9 +761,9 @@ static int __usbhsf_dma_map_ctrl(struct usbhs_pkt *pkt, int map)
- }
- 
- static void usbhsf_dma_complete(void *arg);
--static void usbhsf_dma_prepare_tasklet(unsigned long data)
-+static void xfer_work(struct work_struct *work)
- {
--	struct usbhs_pkt *pkt = (struct usbhs_pkt *)data;
-+	struct usbhs_pkt *pkt = container_of(work, struct usbhs_pkt, work);
- 	struct usbhs_pipe *pipe = pkt->pipe;
- 	struct usbhs_fifo *fifo = usbhs_pipe_to_fifo(pipe);
- 	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
-@@ -844,11 +843,8 @@ static int usbhsf_dma_prepare_push(struct usbhs_pkt *pkt, int *is_done)
- 
- 	pkt->trans = len;
- 
--	tasklet_init(&fifo->tasklet,
--		     usbhsf_dma_prepare_tasklet,
--		     (unsigned long)pkt);
--
--	tasklet_schedule(&fifo->tasklet);
-+	INIT_WORK(&pkt->work, xfer_work);
-+	schedule_work(&pkt->work);
- 
- 	return 0;
- 
-@@ -938,11 +934,8 @@ static int usbhsf_dma_try_pop(struct usbhs_pkt *pkt, int *is_done)
- 
- 	pkt->trans = len;
- 
--	tasklet_init(&fifo->tasklet,
--		     usbhsf_dma_prepare_tasklet,
--		     (unsigned long)pkt);
--
--	tasklet_schedule(&fifo->tasklet);
-+	INIT_WORK(&pkt->work, xfer_work);
-+	schedule_work(&pkt->work);
- 
- 	return 0;
- 
-diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
-index f68609c..c31731a 100644
---- a/drivers/usb/renesas_usbhs/fifo.h
-+++ b/drivers/usb/renesas_usbhs/fifo.h
-@@ -19,6 +19,7 @@
- 
- #include <linux/interrupt.h>
- #include <linux/sh_dma.h>
-+#include <linux/workqueue.h>
- #include <asm/dma.h>
- #include "pipe.h"
- 
-@@ -31,7 +32,6 @@ struct usbhs_fifo {
- 	u32 ctr;	/* xFIFOCTR */
- 
- 	struct usbhs_pipe	*pipe;
--	struct tasklet_struct	tasklet;
- 
- 	struct dma_chan		*tx_chan;
- 	struct dma_chan		*rx_chan;
-@@ -53,6 +53,7 @@ struct usbhs_pkt {
- 	struct usbhs_pkt_handle *handler;
- 	void (*done)(struct usbhs_priv *priv,
- 		     struct usbhs_pkt *pkt);
-+	struct work_struct work;
- 	dma_addr_t dma;
- 	void *buf;
- 	int length;
+(I didn't go over the driver again to see if it makes sense to use
+threaded_irqs in this case, but doesn't hurt asking)
+
+> Shimoda-san, this is the problem, that you were observing. However, it=20
+> exists with the present version of shdma just as well as with the new one=
+=20
+> - on top of the simple DMA library. I marked it an RFC because (1) I only=
+=20
+> lightly tested it with the gadget device on mackerel with the mass storag=
+e=20
+> gadget, and (2) I am somewhat concerned about races. Currently the work=
+=20
+> function runs with no locking and there are no usual cancel_work_sync()=
+=20
+> points in the patch. However, it has also been like this before with the=
+=20
+> tasklet implementation, which is not much better, and it looks like there=
+=20
+> are no asynchronous operations on the same packets like timeouts. Only=20
+> asynchronous events, that I can think about are things like unloading the=
+=20
+> driver or unplugging the cable, but these have been there before too. It=
+=20
+> would become worse on SMP, I think. Comments welcome.
+>=20
+> diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs=
+/fifo.c
+> index 72339bd..4d739ec 100644
+> --- a/drivers/usb/renesas_usbhs/fifo.c
+> +++ b/drivers/usb/renesas_usbhs/fifo.c
+> @@ -75,8 +75,7 @@ void usbhs_pkt_push(struct usbhs_pipe *pipe, struct usb=
+hs_pkt *pkt,
+>  		pipe->handler =3D &usbhsf_null_handler;
+>  	}
+> =20
+> -	list_del_init(&pkt->node);
+> -	list_add_tail(&pkt->node, &pipe->list);
+> +	list_move_tail(&pkt->node, &pipe->list);
+> =20
+>  	/*
+>  	 * each pkt must hold own handler.
+> @@ -106,7 +105,7 @@ static struct usbhs_pkt *__usbhsf_pkt_get(struct usbh=
+s_pipe *pipe)
+>  	if (list_empty(&pipe->list))
+>  		return NULL;
+> =20
+> -	return list_entry(pipe->list.next, struct usbhs_pkt, node);
+> +	return list_first_entry(&pipe->list, struct usbhs_pkt, node);
+
+these two hunks are not part of $SUBJECT
+
+--=20
+balbi
+
+--LZvS9be/3tNcYl/X
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPLpgGAAoJEIaOsuA1yqREgUsQAKftHUUHLtmaN3Da2aZaMfKh
+q38adVUYSnu0K0Ubr8MfGtBpJW+Z9lnDPiIES+YLPpZY7AMvdXEgTwj0R3wsMCul
+Z5IcpiVyoMnQGVoRGMCH99w4gxRNj9iLiFJFtts5v6jqplrnWzMxHVyEocOc3blW
+t3hZrj2ABEkgyKQ80nDiZJ2sXJ7b5F4wvotuC4Ip0W77rVUffBrN6IdDr38ZcR20
+IO2lj8uLhKIuf5B05Z5wAM2lGLw+HXcJpMJNUSud4NIAhuUdqAQkEU+CUpHzZ4DZ
+FoN8DfWMcoyUu/iqeOZ8OojZzVa3GgwoyG+sxnF+GvUfyDvCoqLhdLoIm0kzeuO8
+kHRYxtNdFRDindDrTLyjfhaW1epT7HwY4LNmfOFfQb0GjaE00jPQ9Qva3XOzm/Wy
++ILnmgmpPFczBKfItGD9ySqt8lvICl6rWCDtze3DEw9NYI4Apl+nz0oWq6u6Ro0O
+nWKvIKJTIhjtx07VF/XKGXQfxt84r8VRfz/dVZz+OmmHJV347RTKZ1XI+bTHATVO
+jMBMJ+Dbu4PcPAncff4ntalKfMjpUiBm3JUsbgBtWxAowDQ42KalXhYI7ef1Kod8
+khissC3+sq4xE5Hd0o6muy8IVm80DBongcP4Yl6wXo+WJNll19SGu+0aaEjY8quk
+yMQD9C88flraWq+1vB6p
+=f+lE
+-----END PGP SIGNATURE-----
+
+--LZvS9be/3tNcYl/X--
