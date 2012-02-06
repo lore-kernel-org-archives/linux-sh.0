@@ -1,60 +1,79 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 06 Feb 2012 02:45:45 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 06 Feb 2012 09:11:25 +0000
 Subject: Re: [PATCH 6/7 v2] ASoC: SIU: prepare for conversion to simple DMA
-Message-Id: <1328495625.26182.55.camel@vkoul-udesk3>
+Message-Id: <Pine.LNX.4.64.1202061010300.10363@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
-	 <1327589784-4287-7-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1327589784-4287-7-git-send-email-g.liakhovetski@gmx.de>
+ <1327589784-4287-7-git-send-email-g.liakhovetski@gmx.de>
+ <1328495625.26182.55.camel@vkoul-udesk3>
+In-Reply-To: <1328495625.26182.55.camel@vkoul-udesk3>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Vinod Koul <vinod.koul@intel.com>
 Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Thu, 2012-01-26 at 15:56 +0100, Guennadi Liakhovetski wrote:
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  sound/soc/sh/siu_pcm.c |    8 ++++----
->  1 files changed, 4 insertions(+), 4 deletions(-)
+Hi Vinod
+
+On Mon, 6 Feb 2012, Vinod Koul wrote:
+
+> On Thu, 2012-01-26 at 15:56 +0100, Guennadi Liakhovetski wrote:
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > ---
+> >  sound/soc/sh/siu_pcm.c |    8 ++++----
+> >  1 files changed, 4 insertions(+), 4 deletions(-)
+> > 
+> > diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
+> > index 0193e59..414bb35 100644
+> > --- a/sound/soc/sh/siu_pcm.c
+> > +++ b/sound/soc/sh/siu_pcm.c
+> > @@ -330,12 +330,12 @@ static bool filter(struct dma_chan *chan, void *slave)
+> >  {
+> >  	struct sh_dmae_slave *param = slave;
+> >  
+> > -	pr_debug("%s: slave ID %d\n", __func__, param->slave_id);
+> > +	pr_debug("%s: slave ID %d\n", __func__, param->simple_slave.slave_id);
+> >  
+> >  	if (unlikely(param->dma_dev != chan->device->dev))
+> >  		return false;
+> >  
+> > -	chan->private = param;
+> > +	chan->private = &param->simple_slave;
+> While at it, Can you fix the sh-mobile driver to NOT use chan->private?
+
+This is an independent change and for it I need my recent RFC PATCH 
+"[PATCH/RFC] dmaengine: add a slave parameter to __dma_request_channel()"
+
+http://marc.info/?l=linux-kernel&m2811019930675&w=2
+
+Thanks
+Guennadi
+
+> >  	return true;
+> >  }
+> >  
+> > @@ -360,12 +360,12 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
+> >  	if (ss->stream = SNDRV_PCM_STREAM_PLAYBACK) {
+> >  		siu_stream = &port_info->playback;
+> >  		param = &siu_stream->param;
+> > -		param->slave_id = port ? pdata->dma_slave_tx_b :
+> > +		param->simple_slave.slave_id = port ? pdata->dma_slave_tx_b :
+> >  			pdata->dma_slave_tx_a;
+> >  	} else {
+> >  		siu_stream = &port_info->capture;
+> >  		param = &siu_stream->param;
+> > -		param->slave_id = port ? pdata->dma_slave_rx_b :
+> > +		param->simple_slave.slave_id = port ? pdata->dma_slave_rx_b :
+> >  			pdata->dma_slave_rx_a;
+> >  	}
+> >  
 > 
-> diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
-> index 0193e59..414bb35 100644
-> --- a/sound/soc/sh/siu_pcm.c
-> +++ b/sound/soc/sh/siu_pcm.c
-> @@ -330,12 +330,12 @@ static bool filter(struct dma_chan *chan, void *slave)
->  {
->  	struct sh_dmae_slave *param = slave;
->  
-> -	pr_debug("%s: slave ID %d\n", __func__, param->slave_id);
-> +	pr_debug("%s: slave ID %d\n", __func__, param->simple_slave.slave_id);
->  
->  	if (unlikely(param->dma_dev != chan->device->dev))
->  		return false;
->  
-> -	chan->private = param;
-> +	chan->private = &param->simple_slave;
-While at it, Can you fix the sh-mobile driver to NOT use chan->private?
->  	return true;
->  }
->  
-> @@ -360,12 +360,12 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
->  	if (ss->stream = SNDRV_PCM_STREAM_PLAYBACK) {
->  		siu_stream = &port_info->playback;
->  		param = &siu_stream->param;
-> -		param->slave_id = port ? pdata->dma_slave_tx_b :
-> +		param->simple_slave.slave_id = port ? pdata->dma_slave_tx_b :
->  			pdata->dma_slave_tx_a;
->  	} else {
->  		siu_stream = &port_info->capture;
->  		param = &siu_stream->param;
-> -		param->slave_id = port ? pdata->dma_slave_rx_b :
-> +		param->simple_slave.slave_id = port ? pdata->dma_slave_rx_b :
->  			pdata->dma_slave_rx_a;
->  	}
->  
+> 
+> -- 
+> ~Vinod
+> 
 
-
--- 
-~Vinod
-
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
