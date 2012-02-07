@@ -1,42 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 12:36:56 +0000
-Subject: [PATCH 00/06] ARM: mach-shmobile: map_io and init_early update
-Message-Id: <20120229123656.28584.90874.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 07 Feb 2012 02:49:01 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: r8a7779 PFC IPSR4 fix
+Message-Id: <87ehu7uzmt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120130022507.14954.36776.sendpatchset@w520>
+In-Reply-To: <20120130022507.14954.36776.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
- ARM: mach-shmobile: map_io and init_early update
 
-[PATCH 01/06] ARM: mach-shmobile: sh7367 map_io and init_early update
-[PATCH 02/06] ARM: mach-shmobile: sh7377 map_io and init_early update
-[PATCH 03/06] ARM: mach-shmobile: sh7372 map_io and init_early update
-[PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
-[PATCH 05/06] ARM: mach-shmobile: r8a7740 map_io and init_early update
-[PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
+Hi
 
-This patch series converts the mach-shmobile subarch to properly
-make use of a per-soc map_io and a separate init_early callback for
-early serial console support on platforms where that is possible.
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Fix the bit field width information for the IPSR4 register
+> in the r8a7779 pin function controller (PFC).
+> 
+> Without this fix the Marzen board fails to receive data
+> over the serial console due to misconfigured pin function
+> for the RX pin.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+This patch solved marzen board SCIF issue.
+
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Best regards
 ---
-
- arch/arm/mach-shmobile/board-ag5evm.c        |   25 +------------
- arch/arm/mach-shmobile/board-ap4evb.c        |   25 +------------
- arch/arm/mach-shmobile/board-bonito.c        |   28 +--------------
- arch/arm/mach-shmobile/board-g3evm.c         |   25 +------------
- arch/arm/mach-shmobile/board-g4evm.c         |   25 +------------
- arch/arm/mach-shmobile/board-kota2.c         |   25 +------------
- arch/arm/mach-shmobile/board-mackerel.c      |   25 +------------
- arch/arm/mach-shmobile/board-marzen.c        |   48 +-------------------------
- arch/arm/mach-shmobile/include/mach/common.h |    6 +++
- arch/arm/mach-shmobile/setup-r8a7740.c       |   35 ++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c       |   39 +++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh7367.c        |   22 +++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c        |   22 +++++++++++
- arch/arm/mach-shmobile/setup-sh7377.c        |   22 +++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c        |   22 +++++++++++
- 15 files changed, 184 insertions(+), 210 deletions(-)
+Kuninori Morimoto
