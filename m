@@ -1,43 +1,73 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 13:18:11 +0000
-Subject: [PATCH 16/17] sh: board sh_clk_ops rename
-Message-Id: <20120229131811.29154.80958.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 09 Feb 2012 21:57:12 +0000
+Subject: [PATCH 06/10 v3] ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
+Message-Id: <1328824636-10553-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
-
-Convert remaining sh board code to use sh_clk_ops.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/arm/mach-shmobile/board-ag5evm.c |   22 ++--------------------
+ 1 files changed, 2 insertions(+), 20 deletions(-)
 
- arch/sh/boards/mach-highlander/setup.c |    2 +-
- arch/sh/boards/mach-sdk7786/setup.c    |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 7119b87..eb6975c 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -340,23 +340,13 @@ static struct platform_device mipidsi0_device = {
+ };
+ 
+ /* SDHI0 */
+-static irqreturn_t ag5evm_sdhi0_gpio_cd(int irq, void *arg)
+-{
+-	struct device *dev = arg;
+-	struct sh_mobile_sdhi_info *info = dev->platform_data;
+-	struct tmio_mmc_data *pdata = info->pdata;
+-
+-	tmio_mmc_cd_wakeup(pdata);
+-
+-	return IRQ_HANDLED;
+-}
+-
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
++	.cd_gpio	= GPIO_PORT251,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -560,7 +550,6 @@ static void __init ag5evm_init(void)
+ 	__raw_writel(0x2a809010, DSI0PHYCR);
+ 
+ 	/* enable SDHI0 on CN15 [SD I/F] */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+ 	gpio_request(GPIO_FN_SDHIWP0, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD0, NULL);
+ 	gpio_request(GPIO_FN_SDHICLK0, NULL);
+@@ -569,13 +558,6 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+ 
+-	if (!request_irq(intcs_evt2irq(0x3c0), ag5evm_sdhi0_gpio_cd,
+-			 IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+-			 "sdhi0 cd", &sdhi0_device.dev))
+-		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
+-	else
+-		pr_warn("Unable to setup SDHI0 GPIO IRQ\n");
+-
+ 	/* enable SDHI1 on CN4 [WLAN I/F] */
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
+-- 
+1.7.2.5
 
---- 0001/arch/sh/boards/mach-highlander/setup.c
-+++ work/arch/sh/boards/mach-highlander/setup.c	2012-02-29 20:53:33.000000000 +0900
-@@ -322,7 +322,7 @@ static void ivdr_clk_disable(struct clk
- 	__raw_writew(__raw_readw(PA_IVDRCTL) & ~(1 << IVDR_CK_ON), PA_IVDRCTL);
- }
- 
--static struct clk_ops ivdr_clk_ops = {
-+static struct sh_clk_ops ivdr_clk_ops = {
- 	.enable		= ivdr_clk_enable,
- 	.disable	= ivdr_clk_disable,
- };
---- 0001/arch/sh/boards/mach-sdk7786/setup.c
-+++ work/arch/sh/boards/mach-sdk7786/setup.c	2012-02-29 20:53:23.000000000 +0900
-@@ -167,7 +167,7 @@ static void sdk7786_pcie_clk_disable(str
- 	fpga_write_reg(fpga_read_reg(PCIECR) & ~PCIECR_CLKEN, PCIECR);
- }
- 
--static struct clk_ops sdk7786_pcie_clk_ops = {
-+static struct sh_clk_ops sdk7786_pcie_clk_ops = {
- 	.enable		= sdk7786_pcie_clk_enable,
- 	.disable	= sdk7786_pcie_clk_disable,
- };
