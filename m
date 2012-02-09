@@ -1,171 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 13:17:32 +0000
-Subject: [PATCH 11/17] sh: sh2a sh_clk_ops rename
-Message-Id: <20120229131732.29154.85086.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 09 Feb 2012 21:57:10 +0000
+Subject: [PATCH 04/10 v3] mmc: sh_mobile_sdhi: pass card hotplug GPIO number to TMIO MMC
+Message-Id: <1328824636-10553-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+To use TMIO MMC driver ability to interface to the generic MMC GPIO card
+hotplug detection helper, the SDHI driver has to pass the GPIO number
+from its own platform data.
 
-Convert sh2a SoCs to use sh_clk_ops.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c  |    3 ++-
+ include/linux/mmc/sh_mobile_sdhi.h |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
- arch/sh/kernel/cpu/sh2a/clock-sh7201.c |   12 ++++++------
- arch/sh/kernel/cpu/sh2a/clock-sh7203.c |   12 ++++++------
- arch/sh/kernel/cpu/sh2a/clock-sh7206.c |   12 ++++++------
- 3 files changed, 18 insertions(+), 18 deletions(-)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 58da3c4..cb279b4 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -129,6 +129,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+ 		mmc_data->capabilities |= p->tmio_caps;
++		mmc_data->cd_gpio = p->cd_gpio;
+ 
+ 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
+ 			priv->param_tx.slave_id = p->dma_slave_tx;
+@@ -211,7 +212,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 
+ 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
+ 		 mmc_hostname(host->mmc), (unsigned long)
+-		 (platform_get_resource(pdev,IORESOURCE_MEM, 0)->start),
++		 (platform_get_resource(pdev, IORESOURCE_MEM, 0)->start),
+ 		 mmc_data->hclk / 1000000);
+ 
+ 	return ret;
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index 71b8054..082a736 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -16,6 +16,7 @@ struct sh_mobile_sdhi_info {
+ 	unsigned long tmio_flags;
+ 	unsigned long tmio_caps;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
++	unsigned int cd_gpio;
+ 	struct tmio_mmc_data *pdata;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	int (*get_cd)(struct platform_device *pdev);
+-- 
+1.7.2.5
 
---- 0001/arch/sh/kernel/cpu/sh2a/clock-sh7201.c
-+++ work/arch/sh/kernel/cpu/sh2a/clock-sh7201.c	2012-02-29 20:49:02.000000000 +0900
-@@ -30,7 +30,7 @@ static void master_clk_init(struct clk *
- 	       pll1rate[(__raw_readw(FREQCR) >> 8) & 0x0007];
- }
- 
--static struct clk_ops sh7201_master_clk_ops = {
-+static struct sh_clk_ops sh7201_master_clk_ops = {
- 	.init		= master_clk_init,
- };
- 
-@@ -40,7 +40,7 @@ static unsigned long module_clk_recalc(s
- 	return clk->parent->rate / pfc_divisors[idx];
- }
- 
--static struct clk_ops sh7201_module_clk_ops = {
-+static struct sh_clk_ops sh7201_module_clk_ops = {
- 	.recalc		= module_clk_recalc,
- };
- 
-@@ -50,7 +50,7 @@ static unsigned long bus_clk_recalc(stru
- 	return clk->parent->rate / pfc_divisors[idx];
- }
- 
--static struct clk_ops sh7201_bus_clk_ops = {
-+static struct sh_clk_ops sh7201_bus_clk_ops = {
- 	.recalc		= bus_clk_recalc,
- };
- 
-@@ -60,18 +60,18 @@ static unsigned long cpu_clk_recalc(stru
- 	return clk->parent->rate / ifc_divisors[idx];
- }
- 
--static struct clk_ops sh7201_cpu_clk_ops = {
-+static struct sh_clk_ops sh7201_cpu_clk_ops = {
- 	.recalc		= cpu_clk_recalc,
- };
- 
--static struct clk_ops *sh7201_clk_ops[] = {
-+static struct sh_clk_ops *sh7201_clk_ops[] = {
- 	&sh7201_master_clk_ops,
- 	&sh7201_module_clk_ops,
- 	&sh7201_bus_clk_ops,
- 	&sh7201_cpu_clk_ops,
- };
- 
--void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
-+void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
- {
- 	if (test_mode_pin(MODE_PIN1 | MODE_PIN0))
- 		pll2_mult = 1;
---- 0001/arch/sh/kernel/cpu/sh2a/clock-sh7203.c
-+++ work/arch/sh/kernel/cpu/sh2a/clock-sh7203.c	2012-02-29 20:50:04.000000000 +0900
-@@ -32,7 +32,7 @@ static void master_clk_init(struct clk *
- 	clk->rate *= pll1rate[(__raw_readw(FREQCR) >> 8) & 0x0003] * pll2_mult;
- }
- 
--static struct clk_ops sh7203_master_clk_ops = {
-+static struct sh_clk_ops sh7203_master_clk_ops = {
- 	.init		= master_clk_init,
- };
- 
-@@ -42,7 +42,7 @@ static unsigned long module_clk_recalc(s
- 	return clk->parent->rate / pfc_divisors[idx];
- }
- 
--static struct clk_ops sh7203_module_clk_ops = {
-+static struct sh_clk_ops sh7203_module_clk_ops = {
- 	.recalc		= module_clk_recalc,
- };
- 
-@@ -52,22 +52,22 @@ static unsigned long bus_clk_recalc(stru
- 	return clk->parent->rate / pfc_divisors[idx-2];
- }
- 
--static struct clk_ops sh7203_bus_clk_ops = {
-+static struct sh_clk_ops sh7203_bus_clk_ops = {
- 	.recalc		= bus_clk_recalc,
- };
- 
--static struct clk_ops sh7203_cpu_clk_ops = {
-+static struct sh_clk_ops sh7203_cpu_clk_ops = {
- 	.recalc		= followparent_recalc,
- };
- 
--static struct clk_ops *sh7203_clk_ops[] = {
-+static struct sh_clk_ops *sh7203_clk_ops[] = {
- 	&sh7203_master_clk_ops,
- 	&sh7203_module_clk_ops,
- 	&sh7203_bus_clk_ops,
- 	&sh7203_cpu_clk_ops,
- };
- 
--void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
-+void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
- {
- 	if (test_mode_pin(MODE_PIN1))
- 		pll2_mult = 4;
---- 0001/arch/sh/kernel/cpu/sh2a/clock-sh7206.c
-+++ work/arch/sh/kernel/cpu/sh2a/clock-sh7206.c	2012-02-29 20:50:37.000000000 +0900
-@@ -29,7 +29,7 @@ static void master_clk_init(struct clk *
- 	clk->rate *= pll2_mult * pll1rate[(__raw_readw(FREQCR) >> 8) & 0x0007];
- }
- 
--static struct clk_ops sh7206_master_clk_ops = {
-+static struct sh_clk_ops sh7206_master_clk_ops = {
- 	.init		= master_clk_init,
- };
- 
-@@ -39,7 +39,7 @@ static unsigned long module_clk_recalc(s
- 	return clk->parent->rate / pfc_divisors[idx];
- }
- 
--static struct clk_ops sh7206_module_clk_ops = {
-+static struct sh_clk_ops sh7206_module_clk_ops = {
- 	.recalc		= module_clk_recalc,
- };
- 
-@@ -48,7 +48,7 @@ static unsigned long bus_clk_recalc(stru
- 	return clk->parent->rate / pll1rate[(__raw_readw(FREQCR) >> 8) & 0x0007];
- }
- 
--static struct clk_ops sh7206_bus_clk_ops = {
-+static struct sh_clk_ops sh7206_bus_clk_ops = {
- 	.recalc		= bus_clk_recalc,
- };
- 
-@@ -58,18 +58,18 @@ static unsigned long cpu_clk_recalc(stru
- 	return clk->parent->rate / ifc_divisors[idx];
- }
- 
--static struct clk_ops sh7206_cpu_clk_ops = {
-+static struct sh_clk_ops sh7206_cpu_clk_ops = {
- 	.recalc		= cpu_clk_recalc,
- };
- 
--static struct clk_ops *sh7206_clk_ops[] = {
-+static struct sh_clk_ops *sh7206_clk_ops[] = {
- 	&sh7206_master_clk_ops,
- 	&sh7206_module_clk_ops,
- 	&sh7206_bus_clk_ops,
- 	&sh7206_cpu_clk_ops,
- };
- 
--void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
-+void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
- {
- 	if (test_mode_pin(MODE_PIN2 | MODE_PIN1 | MODE_PIN0))
- 		pll2_mult = 1;
