@@ -1,58 +1,50 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Thu, 16 Feb 2012 13:29:49 +0000
-Subject: Re: [PATCH v2 00/13] Make mach/irqs.h optional
-Message-Id: <4F3D04CD.80504@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 09 Feb 2012 21:57:06 +0000
+Subject: [PATCH 00/10 v3] mmc: tmio/sdhi: hotplug & PM
+Message-Id: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327091591-27125-1-git-send-email-robherring2@gmail.com>
- <20120216084536.GH13673@n2100.arm.linux.org.uk>
- <20120216090542.GA23641@n2100.arm.linux.org.uk>
-In-Reply-To: <20120216090542.GA23641@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Russell,
+This is v3 of a patch series, that uses the recently committed generic 
+GPIO card hotplug handler, fixes minor PM issues, adds some cosmetic 
+clean up. The series applies on top of mmc-next of 09 Feb. 2012.
 
-On 02/16/2012 03:05 AM, Russell King - ARM Linux wrote:
-> On Thu, Feb 16, 2012 at 08:45:36AM +0000, Russell King - ARM Linux wrote:
->> On Fri, Jan 20, 2012 at 02:32:58PM -0600, Rob Herring wrote:
->>> From: Rob Herring <rob.herring@calxeda.com>
->>>
->>> This series removes the include of mach/irqs.h from asm/irq.h when
->>> SPARSE_IRQ is selected. Platforms which select SPARSE_IRQ have been
->>> updated.
->>
->> Rob,
->>
->> Last night, I merged devel-stable into the stuff which gets built, and it
->> seems your IRQ changes are breaking PXA:
->>
->> Before merge:
->> http://www.arm.linux.org.uk/developer/build/result.php?type=build&idx9
->>
->> After merge:
->> http://www.arm.linux.org.uk/developer/build/result.php?type=build&idx7
-> 
-> Also see SA11x0 breakage - before:
-> http://www.arm.linux.org.uk/developer/build/result.php?type=build&idx7
-> after:
-> http://www.arm.linux.org.uk/developer/build/result.php?type=build&idx5
+Guennadi Liakhovetski (10):
+  mmc: simplify mmc_cd_gpio_request() by removing two parameters
+  mmc: tmio: calculate the native hotplug condition only once
+  mmc: tmio_mmc: support the generic MMC GPIO card hotplug helper
+  mmc: sh_mobile_sdhi: pass card hotplug GPIO number to TMIO MMC
+  ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO
+    hotplug helper
+  ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO
+    hotplug helper
+  mmc: tmio_mmc: power status flag doesn't have to be exposed in
+    platform data
+  mmc: tmio_mmc: remove unused sdio_irq_enabled flag
+  mmc: sh_mobile_sdhi: do not manage PM clocks manually
+  mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
 
-For SA1100, it's due to this change being done before my changes and
-also possibly reverting of rtc driver changes. I'm working on fixes.
+ arch/arm/mach-shmobile/board-ag5evm.c   |   22 +------
+ arch/arm/mach-shmobile/board-mackerel.c |   22 +------
+ drivers/mmc/core/cd-gpio.c              |   13 +++-
+ drivers/mmc/host/sh_mobile_sdhi.c       |    7 +--
+ drivers/mmc/host/tmio_mmc.h             |    9 +--
+ drivers/mmc/host/tmio_mmc_pio.c         |  102 ++++++++++++++-----------------
+ include/linux/mfd/tmio.h                |   26 ++++++--
+ include/linux/mmc/cd-gpio.h             |    3 +-
+ include/linux/mmc/sh_mobile_sdhi.h      |    1 +
+ 9 files changed, 86 insertions(+), 119 deletions(-)
 
-commit 7b7c67bc4284d07285985d487b4ee1a7cc8456e2
-Author: Russell King <rmk+kernel@arm.linux.org.uk>
-Date:   Sun Jan 29 11:40:08 2012 +0000
+-- 
+1.7.2.5
 
-    ARM: sa11x0: convert to sparse IRQ
-
-    Now that Neponset, UCB1x00 and SA1111 are all converted to use the IRQ
-    allocation interfaces, we can enable sparse IRQ support for SA11x0
-    platforms.
-
-    Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-
-
-Rob
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
