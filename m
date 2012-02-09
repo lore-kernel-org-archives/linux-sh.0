@@ -1,43 +1,104 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 13:18:19 +0000
-Subject: [PATCH 17/17] sh: remove clk_ops
-Message-Id: <20120229131819.29154.63445.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 09 Feb 2012 21:57:13 +0000
+Subject: [PATCH 07/10 v3] mmc: tmio_mmc: power status flag doesn't have to be exposed in platform data
+Message-Id: <1328824636-10553-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+The controller power status flag does not have to be accessed from the
+hot-plug detection code any more, it can now be removed from the platform
+data and put in the controller private struct.
 
-Now when all clk_ops have been renamed it is 
-safe to rename clk_ops to sh_clk_ops.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/tmio_mmc.h     |    3 +++
+ drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++-------
+ include/linux/mfd/tmio.h        |    1 -
+ 3 files changed, 9 insertions(+), 8 deletions(-)
 
- include/linux/sh_clk.h |    5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index ede2f4e5..edfcfd7 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -49,6 +49,9 @@ struct tmio_mmc_host {
+ 	struct mmc_host         *mmc;
+ 	unsigned int		sdio_irq_enabled;
+ 
++	/* Controller power state */
++	bool			power;
++
+ 	/* Callbacks for clock / power control */
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 3a28c62..2deb676 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -758,7 +758,6 @@ fail:
+ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct tmio_mmc_data *pdata = host->pdata;
+ 	unsigned long flags;
+ 
+ 	mutex_lock(&host->ios_lock);
+@@ -788,15 +787,15 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	/*
+-	 * pdata->power toggles between false and true in both cases - either
++	 * host->power toggles between false and true in both cases - either
+ 	 * or not the controller can be runtime-suspended during inactivity. But
+ 	 * if the controller has to be kept on, the runtime-pm usage_count is
+ 	 * kept positive, so no suspending actually takes place.
+ 	 */
+ 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
+-		if (!pdata->power) {
++		if (!host->power) {
+ 			pm_runtime_get_sync(&host->pdev->dev);
+-			pdata->power = true;
++			host->power = true;
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		/* power up SD bus */
+@@ -807,8 +806,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	} else if (ios->power_mode != MMC_POWER_UP) {
+ 		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
+ 			host->set_pwr(host->pdev, 0);
+-		if (pdata->power) {
+-			pdata->power = false;
++		if (host->power) {
++			host->power = false;
+ 			pm_runtime_put(&host->pdev->dev);
+ 		}
+ 		tmio_mmc_clk_stop(host);
+@@ -919,7 +918,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+ 				  mmc->caps & MMC_CAP_NONREMOVABLE);
+-	pdata->power = false;
++	_host->power = false;
+ 	pm_runtime_enable(&pdev->dev);
+ 	ret = pm_runtime_resume(&pdev->dev);
+ 	if (ret < 0)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 5a197de..f5171db 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -105,7 +105,6 @@ struct tmio_mmc_data {
+ 	u32				ocr_mask;	/* available voltages */
+ 	struct tmio_mmc_dma		*dma;
+ 	struct device			*dev;
+-	bool				power;
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-- 
+1.7.2.5
 
---- 0015/include/linux/sh_clk.h
-+++ work/include/linux/sh_clk.h	2012-02-28 21:46:18.000000000 +0900
-@@ -31,9 +31,8 @@ struct clk_mapping {
- 	struct kref		ref;
- };
- 
--#define sh_clk_ops clk_ops
- 
--struct clk_ops {
-+struct sh_clk_ops {
- #ifdef CONFIG_SH_CLK_CPG_LEGACY
- 	void (*init)(struct clk *clk);
- #endif
-@@ -52,7 +51,7 @@ struct clk {
- 	unsigned short		parent_num;	/* choose between */
- 	unsigned char		src_shift;	/* source clock field in the */
- 	unsigned char		src_width;	/* configuration register */
--	struct clk_ops		*ops;
-+	struct sh_clk_ops	*ops;
- 
- 	struct list_head	children;
- 	struct list_head	sibling;	/* node for children */
