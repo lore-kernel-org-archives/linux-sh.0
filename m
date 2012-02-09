@@ -1,96 +1,67 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Wed, 29 Feb 2012 03:11:46 +0000
-Subject: [PATCH v6 6/9] ARM: omap: Consolidate OMAP3 time keeping and irq enable
-Message-Id: <1330485109-7327-7-git-send-email-rob.lee@linaro.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 09 Feb 2012 21:57:16 +0000
+Subject: [PATCH 10/10 v3] mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
+Message-Id: <1328824636-10553-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Use core cpuidle timekeeping and irqen wrapper and remove that
-handling from this code.
-
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-omap2/cpuidle34xx.c |   42 +++++++++++++++----------------------
- 1 files changed, 17 insertions(+), 25 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/cpuidle34xx.c b/arch/arm/mach-omap2/cpuidle34xx.c
-index 464cffd..5358664 100644
---- a/arch/arm/mach-omap2/cpuidle34xx.c
-+++ b/arch/arm/mach-omap2/cpuidle34xx.c
-@@ -87,29 +87,14 @@ static int _cpuidle_deny_idle(struct powerdomain *pwrdm,
- 	return 0;
- }
- 
--/**
-- * omap3_enter_idle - Programs OMAP3 to enter the specified state
-- * @dev: cpuidle device
-- * @drv: cpuidle driver
-- * @index: the index of state to be entered
-- *
-- * Called from the CPUidle framework to program the device to the
-- * specified target state selected by the governor.
-- */
--static int omap3_enter_idle(struct cpuidle_device *dev,
-+static int __omap3_enter_idle(struct cpuidle_device *dev,
- 				struct cpuidle_driver *drv,
- 				int index)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 64f6c99..08f3e67 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -756,6 +756,7 @@ fail:
+ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
  {
- 	struct omap3_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
--	struct timespec ts_preidle, ts_postidle, ts_idle;
- 	u32 mpu_state = cx->mpu_state, core_state = cx->core_state;
--	int idle_time;
--
--	/* Used to keep track of the total time in idle */
--	getnstimeofday(&ts_preidle);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct device *dev = &host->pdev->dev;
+ 	unsigned long flags;
  
--	local_irq_disable();
- 	local_fiq_disable();
- 
- 	pwrdm_set_next_pwrst(mpu_pd, mpu_state);
-@@ -148,22 +133,29 @@ static int omap3_enter_idle(struct cpuidle_device *dev,
+ 	mutex_lock(&host->ios_lock);
+@@ -763,13 +764,13 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	spin_lock_irqsave(&host->lock, flags);
+ 	if (host->mrq) {
+ 		if (IS_ERR(host->mrq)) {
+-			dev_dbg(&host->pdev->dev,
++			dev_dbg(dev,
+ 				"%s.%d: concurrent .set_ios(), clk %u, mode %u\n",
+ 				current->comm, task_pid_nr(current),
+ 				ios->clock, ios->power_mode);
+ 			host->mrq = ERR_PTR(-EINTR);
+ 		} else {
+-			dev_dbg(&host->pdev->dev,
++			dev_dbg(dev,
+ 				"%s.%d: CMD%u active since %lu, now %lu!\n",
+ 				current->comm, task_pid_nr(current),
+ 				host->mrq->cmd->opcode, host->last_req_ts, jiffies);
+@@ -792,7 +793,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	 */
+ 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
+ 		if (!host->power) {
+-			pm_runtime_get_sync(&host->pdev->dev);
++			pm_runtime_get_sync(dev);
+ 			host->power = true;
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+@@ -806,7 +807,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			host->set_pwr(host->pdev, 0);
+ 		if (host->power) {
+ 			host->power = false;
+-			pm_runtime_put(&host->pdev->dev);
++			pm_runtime_put(dev);
+ 		}
+ 		tmio_mmc_clk_stop(host);
  	}
- 
- return_sleep_time:
--	getnstimeofday(&ts_postidle);
--	ts_idle = timespec_sub(ts_postidle, ts_preidle);
- 
--	local_irq_enable();
- 	local_fiq_enable();
- 
--	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
--								USEC_PER_SEC;
--
--	/* Update cpuidle counters */
--	dev->last_residency = idle_time;
--
- 	return index;
- }
- 
- /**
-+ * omap3_enter_idle - Programs OMAP3 to enter the specified state
-+ * @dev: cpuidle device
-+ * @drv: cpuidle driver
-+ * @index: the index of state to be entered
-+ *
-+ * Called from the CPUidle framework to program the device to the
-+ * specified target state selected by the governor.
-+ */
-+static inline int omap3_enter_idle(struct cpuidle_device *dev,
-+				struct cpuidle_driver *drv,
-+				int index)
-+{
-+	return cpuidle_wrap_enter(dev, drv, index, __omap3_enter_idle);
-+}
-+
-+/**
-  * next_valid_state - Find next valid C-state
-  * @dev: cpuidle device
-  * @drv: cpuidle driver
 -- 
-1.7.1
+1.7.2.5
 
