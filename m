@@ -1,67 +1,74 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 24 Feb 2012 04:48:53 +0000
-Subject: [GIT PULL] rmobile fixes for 3.3-rc5
-Message-Id: <20120224044853.GA3112@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 09 Feb 2012 21:57:08 +0000
+Subject: [PATCH 02/10 v3] mmc: tmio: calculate the native hotplug condition only once
+Message-Id: <1328824636-10553-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-The following changes since commit bb4c7e9a9908548b458f34afb2fee74dc0d49f90:
+The condition, whether we have to use the native TMIO card hotplug
+detection interrupt, is rather complex, it is better to only calculate it
+once and store in the private data.
 
-  Merge branch 'for-linus' of git://oss.sgi.com/xfs/xfs (2012-02-23 15:38:57 -0800)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc.h     |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c |   11 +++++------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-are available in the git repository at:
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index f96c536..8531d8d 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -86,6 +86,7 @@ struct tmio_mmc_host {
+ 	spinlock_t		lock;		/* protect host private data */
+ 	unsigned long		last_req_ts;
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
++	bool			native_hotplug;
+ };
+ 
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 5f9ad74..a5d1052 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -912,6 +912,9 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	else
+ 		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
+ 
++	_host->native_hotplug = !(pdata->flags & TMIO_MMC_HAS_COLD_CD ||
++				  mmc->caps & MMC_CAP_NEEDS_POLL ||
++				  mmc->caps & MMC_CAP_NONREMOVABLE);
+ 	pdata->power = false;
+ 	pm_runtime_enable(&pdev->dev);
+ 	ret = pm_runtime_resume(&pdev->dev);
+@@ -930,9 +933,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	 *  additionally ensure that in case 2) the tmio mmc hardware stays
+ 	 *  powered on during runtime for the card detection to work.
+ 	 */
+-	if (!(pdata->flags & TMIO_MMC_HAS_COLD_CD
+-		|| mmc->caps & MMC_CAP_NEEDS_POLL
+-		|| mmc->caps & MMC_CAP_NONREMOVABLE))
++	if (_host->native_hotplug)
+ 		pm_runtime_get_noresume(&pdev->dev);
+ 
+ 	tmio_mmc_clk_stop(_host);
+@@ -988,9 +989,7 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
+ 	 * the controller, the runtime PM is suspended and pdata->power = false,
+ 	 * so, our .runtime_resume() will not try to detect a card in the slot.
+ 	 */
+-	if (host->pdata->flags & TMIO_MMC_HAS_COLD_CD
+-		|| host->mmc->caps & MMC_CAP_NEEDS_POLL
+-		|| host->mmc->caps & MMC_CAP_NONREMOVABLE)
++	if (!host->native_hotplug)
+ 		pm_runtime_get_sync(&pdev->dev);
+ 
+ 	mmc_remove_host(host->mmc);
+-- 
+1.7.2.5
 
-
-  git://github.com/pmundt/linux-sh.git rmobile-for-linus
-
-for you to fetch changes up to 7372a4cd6c6fe07ae9d7d0340717736fba863580:
-
-  arch/arm/mach-shmobile/board-ag5evm.c: included linux/dma-mapping.h twice (2012-02-24 13:32:17 +0900)
-
-----------------------------------------------------------------
-SH/R-Mobile fixes for 3.3-rc5
-
-----------------------------------------------------------------
-Danny Kukawka (1):
-      arch/arm/mach-shmobile/board-ag5evm.c: included linux/dma-mapping.h twice
-
-Guennadi Liakhovetski (2):
-      ARM: mach-shmobile: simplify MMCIF DMA configuration
-      ARM: mach-shmobile: add GPIO-to-IRQ translation to sh7372
-
-Kuninori Morimoto (3):
-      ARM: mach-shmobile: mackerel: use renesas_usbhs instead of r8a66597_hcd
-      ARM: mach-shmobile: mackerel: add ak4642 amixer settings on comment
-      ARM: mach-shmobile: clock-sh73a0: add DSIxPHY clock support
-
-Magnus Damm (5):
-      ARM: mach-shmobile: sh73a0 PINT IRQ base fix
-      ARM: mach-shmobile: sh73a0 IRQ sparse alloc fix
-      ARM: mach-shmobile: IRQ driven GPIO key support for Kota2
-      ARM: mach-shmobile: sh73a0 PSTR 32-bit access fix
-      ARM: mach-shmobile: r8a7779 PFC IPSR4 fix
-
-Paul Gortmaker (1):
-      arm: fix compile failure in mach-shmobile/board-ag5evm.c
-
-Paul Mundt (4):
-      Merge branch 'rmobile/kota2' into rmobile-fixes-for-linus
-      Merge branch 'rmobile/mackerel' into rmobile-fixes-for-linus
-      Merge branch 'rmobile/urgent' into rmobile-fixes-for-linus
-      Merge git://git.kernel.org/.../torvalds/linux into rmobile-fixes-for-linus
-
- arch/arm/mach-shmobile/board-ag5evm.c        |   29 ++++---
- arch/arm/mach-shmobile/board-ap4evb.c        |   12 +---
- arch/arm/mach-shmobile/board-kota2.c         |    3 +-
- arch/arm/mach-shmobile/board-mackerel.c      |   95 +++++-----------------
- arch/arm/mach-shmobile/clock-sh73a0.c        |  113 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/sh73a0.h |    6 +-
- arch/arm/mach-shmobile/intc-sh73a0.c         |    2 +
- arch/arm/mach-shmobile/pfc-r8a7779.c         |    2 +-
- arch/arm/mach-shmobile/pfc-sh7372.c          |   41 +++++++++
- arch/arm/mach-shmobile/smp-sh73a0.c          |    2 +-
- 10 files changed, 200 insertions(+), 105 deletions(-)
