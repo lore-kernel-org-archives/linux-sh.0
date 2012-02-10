@@ -1,67 +1,94 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 09 Feb 2012 21:57:16 +0000
-Subject: [PATCH 10/10 v3] mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
-Message-Id: <1328824636-10553-11-git-send-email-g.liakhovetski@gmx.de>
+From: Cong Wang <amwang@redhat.com>
+Date: Fri, 10 Feb 2012 05:39:27 +0000
+Subject: [PATCH 06/60] sh: remove the second argument of k[un]map_atomic()
+Message-Id: <1328852421-19678-7-git-send-email-amwang@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1328852421-19678-1-git-send-email-amwang@redhat.com>
+In-Reply-To: <1328852421-19678-1-git-send-email-amwang@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>, Cong Wang <amwang@redhat.com>, Paul Mundt <lethal@linux-sh.org>, Stuart Menefy <stuart.menefy@st.com>, linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Cong Wang <amwang@redhat.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
+ arch/sh/mm/cache-sh4.c |    4 ++--
+ arch/sh/mm/cache.c     |   12 ++++++------
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 64f6c99..08f3e67 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -756,6 +756,7 @@ fail:
- static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- {
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct device *dev = &host->pdev->dev;
- 	unsigned long flags;
+diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
+index 92eb986..112fea1 100644
+--- a/arch/sh/mm/cache-sh4.c
++++ b/arch/sh/mm/cache-sh4.c
+@@ -244,7 +244,7 @@ static void sh4_flush_cache_page(void *args)
+ 		if (map_coherent)
+ 			vaddr = kmap_coherent(page, address);
+ 		else
+-			vaddr = kmap_atomic(page, KM_USER0);
++			vaddr = kmap_atomic(page);
  
- 	mutex_lock(&host->ios_lock);
-@@ -763,13 +764,13 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	spin_lock_irqsave(&host->lock, flags);
- 	if (host->mrq) {
- 		if (IS_ERR(host->mrq)) {
--			dev_dbg(&host->pdev->dev,
-+			dev_dbg(dev,
- 				"%s.%d: concurrent .set_ios(), clk %u, mode %u\n",
- 				current->comm, task_pid_nr(current),
- 				ios->clock, ios->power_mode);
- 			host->mrq = ERR_PTR(-EINTR);
- 		} else {
--			dev_dbg(&host->pdev->dev,
-+			dev_dbg(dev,
- 				"%s.%d: CMD%u active since %lu, now %lu!\n",
- 				current->comm, task_pid_nr(current),
- 				host->mrq->cmd->opcode, host->last_req_ts, jiffies);
-@@ -792,7 +793,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	 */
- 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
- 		if (!host->power) {
--			pm_runtime_get_sync(&host->pdev->dev);
-+			pm_runtime_get_sync(dev);
- 			host->power = true;
- 		}
- 		tmio_mmc_set_clock(host, ios->clock);
-@@ -806,7 +807,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			host->set_pwr(host->pdev, 0);
- 		if (host->power) {
- 			host->power = false;
--			pm_runtime_put(&host->pdev->dev);
-+			pm_runtime_put(dev);
- 		}
- 		tmio_mmc_clk_stop(host);
+ 		address = (unsigned long)vaddr;
  	}
+@@ -259,7 +259,7 @@ static void sh4_flush_cache_page(void *args)
+ 		if (map_coherent)
+ 			kunmap_coherent(vaddr);
+ 		else
+-			kunmap_atomic(vaddr, KM_USER0);
++			kunmap_atomic(vaddr);
+ 	}
+ }
+ 
+diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
+index 5a580ea..616966a 100644
+--- a/arch/sh/mm/cache.c
++++ b/arch/sh/mm/cache.c
+@@ -95,7 +95,7 @@ void copy_user_highpage(struct page *to, struct page *from,
+ {
+ 	void *vfrom, *vto;
+ 
+-	vto = kmap_atomic(to, KM_USER1);
++	vto = kmap_atomic(to);
+ 
+ 	if (boot_cpu_data.dcache.n_aliases && page_mapped(from) &&
+ 	    test_bit(PG_dcache_clean, &from->flags)) {
+@@ -103,16 +103,16 @@ void copy_user_highpage(struct page *to, struct page *from,
+ 		copy_page(vto, vfrom);
+ 		kunmap_coherent(vfrom);
+ 	} else {
+-		vfrom = kmap_atomic(from, KM_USER0);
++		vfrom = kmap_atomic(from);
+ 		copy_page(vto, vfrom);
+-		kunmap_atomic(vfrom, KM_USER0);
++		kunmap_atomic(vfrom);
+ 	}
+ 
+ 	if (pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK) ||
+ 	    (vma->vm_flags & VM_EXEC))
+ 		__flush_purge_region(vto, PAGE_SIZE);
+ 
+-	kunmap_atomic(vto, KM_USER1);
++	kunmap_atomic(vto);
+ 	/* Make sure this page is cleared on other CPU's too before using it */
+ 	smp_wmb();
+ }
+@@ -120,14 +120,14 @@ EXPORT_SYMBOL(copy_user_highpage);
+ 
+ void clear_user_highpage(struct page *page, unsigned long vaddr)
+ {
+-	void *kaddr = kmap_atomic(page, KM_USER0);
++	void *kaddr = kmap_atomic(page);
+ 
+ 	clear_page(kaddr);
+ 
+ 	if (pages_do_alias((unsigned long)kaddr, vaddr & PAGE_MASK))
+ 		__flush_purge_region(kaddr, PAGE_SIZE);
+ 
+-	kunmap_atomic(kaddr, KM_USER0);
++	kunmap_atomic(kaddr);
+ }
+ EXPORT_SYMBOL(clear_user_highpage);
+ 
 -- 
-1.7.2.5
+1.7.7.6
 
