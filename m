@@ -1,73 +1,64 @@
-From: Rob Lee <rob.lee@linaro.org>
-Date: Wed, 29 Feb 2012 13:36:35 +0000
-Subject: Re: [PATCH v6 5/9] ARM: davinci: Consolidate time keeping and irq enable
-Message-Id: <CAMXH7KF2gBM7_b6gF6hNt94rhRHcxr2+RAdvZfdvq2K0bC9o-w@mail.gmail.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Sat, 11 Feb 2012 11:44:59 +0000
+Subject: [PATCH v2 1/7] mtd: sh_flctl: Expand FLCMNCR register bit field
+Message-Id: <1328960705-18699-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
- <1330485109-7327-6-git-send-email-rob.lee@linaro.org>
- <CAORVsuUyOz3ZDr7iR50Qi-TiT+Ng_fUBJGJU19JpQsfe6ZpwHw@mail.gmail.com>
-In-Reply-To: <CAORVsuUyOz3ZDr7iR50Qi-TiT+Ng_fUBJGJU19JpQsfe6ZpwHw@mail.gmail.com>
+References: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-On Wed, Feb 29, 2012 at 2:36 AM, Jean Pihet <jean.pihet@newoldbits.com> wro=
-te:
-> Rob,
->
-> On Wed, Feb 29, 2012 at 4:11 AM, Robert Lee <rob.lee@linaro.org> wrote:
->> Enable core cpuidle timekeeping and irq enabling and remove that
->> handling from this code.
->>
->> Signed-off-by: Robert Lee <rob.lee@linaro.org>
->> ---
->> =A0arch/arm/mach-davinci/cpuidle.c | =A0 78 +++++++++++++++-------------=
-----------
->> =A01 files changed, 31 insertions(+), 47 deletions(-)
->>
->> diff --git a/arch/arm/mach-davinci/cpuidle.c b/arch/arm/mach-davinci/cpu=
-idle.c
->> index a30c7c5..6f457f1 100644
->> --- a/arch/arm/mach-davinci/cpuidle.c
->> +++ b/arch/arm/mach-davinci/cpuidle.c
-> ...
->
->> @@ -30,12 +31,42 @@ struct davinci_ops {
->> =A0 =A0 =A0 =A0u32 flags;
->> =A0};
->>
->> +/* Actual code that puts the SoC in different idle states */
->> +static int davinci_enter_idle(struct cpuidle_device *dev,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cpu=
-idle_driver *drv,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0 =A0 =A0 int index)
->> +{
->> + =A0 =A0 =A0 struct cpuidle_state_usage *state_usage =3D &dev->states_u=
-sage[index];
->> + =A0 =A0 =A0 struct davinci_ops *ops =3D cpuidle_get_statedata(state_us=
-age);
->> +
->> + =A0 =A0 =A0 if (ops && ops->enter)
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->enter(ops->flags);
->> +
->> + =A0 =A0 =A0 return cpuidle_wrap_enter(dev, =A0drv, index,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 cpuidle_si=
-mple_enter);
-> This does not look right since ops->exit will never be called.
->
+Add support for a new hardware generation. The meaning of some bits
+of the FLCMNCR register changed, so some new defines are added
+parallel to the existing ones to keep backward compatibility.
 
-Yes, thanks.  The 'return' should be 'index =3D'
+The defines allow to choose an appropriate clocking scheme.
 
->> +
->> + =A0 =A0 =A0 if (ops && ops->exit)
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->exit(ops->flags);
->> +
->> + =A0 =A0 =A0 return index;
->> +}
->> +
-> ...
->
-> Regards,
-> Jean
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+changelog: code stays the same, just the description is slightly corrected.
+
+ include/linux/mtd/sh_flctl.h |   24 ++++++++++++++++++++++++
+ 1 files changed, 24 insertions(+), 0 deletions(-)
+
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index 9cf4c4c..e66c393 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -67,6 +67,30 @@
+ #define	CE0_ENABLE	(0x1 << 3)	/* Chip Enable 0 */
+ #define	TYPESEL_SET	(0x1 << 0)
+ 
++/*
++ * Clock settings using the PULSEx registers from FLCMNCR
++ *
++ * Some hardware uses bits called PULSEx instead of FCKSEL_E and QTSEL_E
++ * to control the clock divider used between the High-Speed Peripheral Clock
++ * and the FLCTL internal clock. If so, use CLK_8_BIT_xxx for connecting 8 bit
++ * and CLK_16_BIT_xxx for connecting 16 bit bus bandwith NAND chips. For the 16
++ * bit version the divider is seperate for the pulse width of high and low
++ * signals.
++ */
++#define PULSE3	(0x1 << 27)
++#define PULSE2	(0x1 << 17)
++#define PULSE1	(0x1 << 15)
++#define PULSE0	(0x1 << 9)
++#define CLK_8_BIT_0_5HP			PULSE1
++#define CLK_8_BIT_1HP			0x0
++#define CLK_8_BIT_1_5HP			(PULSE1 | PULSE2)
++#define CLK_8_BIT_2HP			PULSE0
++#define CLK_8_BIT_3HP			(PULSE0 | PULSE1 | PULSE2)
++#define CLK_8_BIT_4HP			(PULSE0 | PULSE2)
++#define CLK_16_BIT_6HP_LOW_2HP_HIGH	PULSE0
++#define CLK_16_BIT_9HP_LOW_3HP_HIGH	(PULSE0 | PULSE1 | PULSE2)
++#define CLK_16_BIT_12HP_LOW_4HP_HIGH	(PULSE0 | PULSE2)
++
+ /* FLCMDCR control bits */
+ #define ADRCNT2_E	(0x1 << 31)	/* 5byte address enable */
+ #define ADRMD_E		(0x1 << 26)	/* Sector address access */
+-- 
+1.7.5.4
+
