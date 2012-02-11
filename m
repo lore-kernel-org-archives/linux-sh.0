@@ -1,100 +1,91 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Mon, 06 Feb 2012 10:31:59 +0000
-Subject: Re: [PATCH/RFC] usb: fix renesas_usbhs to not schedule in atomic context
-Message-Id: <20120206103158.GK15652@legolas.emea.dhcp.ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="73fGQZLCrFzENemP"
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Sat, 11 Feb 2012 11:45:04 +0000
+Subject: [PATCH v2 6/7] mtd: sh_flctl: Add FLHOLDCR register
+Message-Id: <1328960705-18699-7-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
-	<1327589784-4287-2-git-send-email-g.liakhovetski@gmx.de>
-	<4F22624E.2090201@renesas.com>
-	<Pine.LNX.4.64.1201270946150.32661@axis700.grange>
-	<4F27CA7D.601@renesas.com>
-	<Pine.LNX.4.64.1202022317560.13860@axis700.grange>
-	<4F2B9F34.60308@renesas.com>
-	<Pine.LNX.4.64.1202031623000.6211@axis700.grange>
-	<20120205145358.GA13762@legolas.emea.dhcp.ti.com>
-	<Pine.LNX.4.64.1202061058430.10363@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1202061058430.10363@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, linux-mmc@vger.kernel.org, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, linux-usb@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Felipe Balbi <balbi@ti.com>, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
+References: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
+Add a register used in new FLCTL hardware and a feature flag for it.
 
---73fGQZLCrFzENemP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+changelog: the write to the register has been moved due to patch 5.
 
-Hi,
+ drivers/mtd/nand/sh_flctl.c  |    3 +++
+ include/linux/mtd/sh_flctl.h |   12 ++++++++++++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
 
-On Mon, Feb 06, 2012 at 11:11:45AM +0100, Guennadi Liakhovetski wrote:
-> Hi Felipe
->=20
-> On Sun, 5 Feb 2012, Felipe Balbi wrote:
->=20
-> > Hi,
-> >=20
-> > On Fri, Feb 03, 2012 at 04:43:20PM +0100, Guennadi Liakhovetski wrote:
-> > > The current renesas_usbhs driver triggers
-> > >=20
-> > > BUG: scheduling while atomic: ksoftirqd/0/3/0x00000102
-> > >=20
-> > > with enabled CONFIG_DEBUG_ATOMIC_SLEEP, by submitting DMA transfers f=
-rom=20
-> > > an atomic (tasklet) context, which is not supported by the shdma dmae=
-ngine=20
-> > > driver. Fix it by switching to a work. Also simplify some list=20
-> > > manipulations.
-> >=20
-> > you are doing much more than what you say.
->=20
-> Are those two list macro changes what you refer to as "a lot?" ;-) You're=
-=20
-> right in principle, they are not directly related to the purpose of this=
-=20
-> patch, they are just something that occurred to me, while tracking down=
-=20
-> DMA packets. But yes, it can be extracted to a separate cosmetic patch...
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 1af41fd..40dda26 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -688,6 +688,8 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
+ 		break;
+ 	case 0:
+ 		writel(flctl->flcmncr_val | CE0_ENABLE, FLCMNCR(flctl));
++		if (flctl->holden)
++			writel(HOLDEN, FLHOLDCR(flctl));
+ 		break;
+ 	default:
+ 		BUG();
+@@ -845,6 +847,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 	flctl->pdev = pdev;
+ 	flctl->flcmncr_val = pdata->flcmncr_val;
+ 	flctl->hwecc = pdata->has_hwecc;
++	flctl->holden = pdata->use_holden;
+ 
+ 	nand->options = NAND_NO_AUTOINCR;
+ 
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index 107fd8a..6046443 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -38,6 +38,7 @@
+ #define FLDTFIFO(f)		(f->reg + 0x24)
+ #define FLECFIFO(f)		(f->reg + 0x28)
+ #define FLTRCR(f)		(f->reg + 0x2C)
++#define FLHOLDCR(f)		(f->reg + 0x38)
+ #define	FL4ECCRESULT0(f)	(f->reg + 0x80)
+ #define	FL4ECCRESULT1(f)	(f->reg + 0x84)
+ #define	FL4ECCRESULT2(f)	(f->reg + 0x88)
+@@ -109,6 +110,15 @@
+ #define TRSTRT		(0x1 << 0)	/* translation start */
+ #define TREND		(0x1 << 1)	/* translation end */
+ 
++/*
++ * FLHOLDCR control bits
++ *
++ * HOLDEN: Bus Occupancy Enable (inverted)
++ * Enable this bit when the external bus might be used in between transfers.
++ * If not set and the bus gets used by other modules, a deadlock occurs.
++ */
++#define HOLDEN		(0x1 << 0)
++
+ /* FL4ECCCR control bits */
+ #define	_4ECCFA		(0x1 << 2)	/* 4 symbols correct fault */
+ #define	_4ECCEND	(0x1 << 1)	/* 4 symbols end */
+@@ -138,6 +148,7 @@ struct sh_flctl {
+ 
+ 	unsigned page_size:1;	/* NAND page size (0 = 512, 1 = 2048) */
+ 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
++	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
+ };
+ 
+ struct sh_flctl_platform_data {
+@@ -146,6 +157,7 @@ struct sh_flctl_platform_data {
+ 	unsigned long		flcmncr_val;
+ 
+ 	unsigned has_hwecc:1;
++	unsigned use_holden:1;
+ };
+ 
+ static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
+-- 
+1.7.5.4
 
-please do so ;-)
-
-> > Also, instead of using a
-> > workqueue, have you considered using threaded_irqs ?
-> >=20
-> > (I didn't go over the driver again to see if it makes sense to use
-> > threaded_irqs in this case, but doesn't hurt asking)
->=20
-> From a first glance these tasklets are not directly enough related to=20
-> IRQs, so, doing that is either impossible, or would require a _much_=20
-> deeper change to the driver and _this_ would indeed be a much bigger=20
-> change than just fixing the Oops.
-
-I see.. so please just split the list changes to separate patch and
-resend.
-
---=20
-balbi
-
---73fGQZLCrFzENemP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPL6weAAoJEIaOsuA1yqRE+ZIP/RXcXb6Ngvg56+KXRbkDSjz+
-JC4osfRUhv70f8rIJNeKKoX/ZgAJ1DkBu/bGimR+j8h6cNzsRe/NCRUc0rwbiEAk
-/OYU5C2j9r8zyJD6x/1J3+ipClh6t5EPmrZPOJJOol4UnPdmBFjMBEQ1urON9ZVV
-c28/lL16973n966Rn+nzEHJEVPlhCx7UN02YxY6OJILP9+jXdLvJZ1PQhRO3ydwp
-2GGNtYKguMXpk4fEI32NvyhT7Bh2eYE8SejooJpTcHEUHLDSHc8gV/OGnUsdfEld
-5Kj5HNKrMzaMl8JlisM+q/yD1tjYqwAyAH9dh5svRGpPQwhbtSmwoU4xuU09XWi0
-vPig5ceSnDZWQKFCSMfz2Srmw+c8isz+bQ/GffEO0zT3C7icMLqo2iY+2DmF6UTV
-a6DQkr2KG4+Ng5A01HelIDLs6iYcuHItATT08l3rZnMWOcUxYupPr6rF7c8QHq6v
-1g64HapmsmKKplFNI6U3PdqHKHO8OU9QXAYq0goem12vLf43pTr+H+StQxO08YLp
-Q6QBVpY8zKF9ZjQ+jAxutvFk2H7OO+2ufSrKTwB+QcWhlw/aUrv0apuUOlXXdSO7
-WGTev0cxEKCJrR5cNM7aLDE3pFFkQf+n+EleUiq2XzJ5IphKXLQo3iFh53WjfnQt
-mXUhc3tmrRXvKj+GmoF4
-=gLHG
------END PGP SIGNATURE-----
-
---73fGQZLCrFzENemP--
