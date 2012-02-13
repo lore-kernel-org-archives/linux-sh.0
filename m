@@ -1,79 +1,47 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 06 Feb 2012 09:11:25 +0000
-Subject: Re: [PATCH 6/7 v2] ASoC: SIU: prepare for conversion to simple DMA
-Message-Id: <Pine.LNX.4.64.1202061010300.10363@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 13 Feb 2012 05:36:17 +0000
+Subject: [PATCH] mackerel: Do not enable TMU timer in default config
+Message-Id: <1329111377-15676-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327589784-4287-1-git-send-email-g.liakhovetski@gmx.de>
- <1327589784-4287-7-git-send-email-g.liakhovetski@gmx.de>
- <1328495625.26182.55.camel@vkoul-udesk3>
-In-Reply-To: <1328495625.26182.55.camel@vkoul-udesk3>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-mmc@vger.kernel.org, alsa-devel@alsa-project.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-Hi Vinod
+This allows the mackerel to boot using a kernel compiled
+using the mackerel default config. Without this change
+the kernel boot hangs during or immediately after SCIF
+initialisation.
 
-On Mon, 6 Feb 2012, Vinod Koul wrote:
+SuperH SCI(F) driver initialized
+sh-sci.0: ttySC0 at MMIO 0xe6c40000 (irq = 80) is a scifa
+sh-sci sh-sci.0: start latency exceeded, new value 5416 ns
+console [ttySC0] enabled, bootconsole disabled
+console [ttySC0] enabled, bootconsole disabled
 
-> On Thu, 2012-01-26 at 15:56 +0100, Guennadi Liakhovetski wrote:
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >  sound/soc/sh/siu_pcm.c |    8 ++++----
-> >  1 files changed, 4 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
-> > index 0193e59..414bb35 100644
-> > --- a/sound/soc/sh/siu_pcm.c
-> > +++ b/sound/soc/sh/siu_pcm.c
-> > @@ -330,12 +330,12 @@ static bool filter(struct dma_chan *chan, void *slave)
-> >  {
-> >  	struct sh_dmae_slave *param = slave;
-> >  
-> > -	pr_debug("%s: slave ID %d\n", __func__, param->slave_id);
-> > +	pr_debug("%s: slave ID %d\n", __func__, param->simple_slave.slave_id);
-> >  
-> >  	if (unlikely(param->dma_dev != chan->device->dev))
-> >  		return false;
-> >  
-> > -	chan->private = param;
-> > +	chan->private = &param->simple_slave;
-> While at it, Can you fix the sh-mobile driver to NOT use chan->private?
-
-This is an independent change and for it I need my recent RFC PATCH 
-"[PATCH/RFC] dmaengine: add a slave parameter to __dma_request_channel()"
-
-http://marc.info/?l=linux-kernel&m2811019930675&w=2
-
-Thanks
-Guennadi
-
-> >  	return true;
-> >  }
-> >  
-> > @@ -360,12 +360,12 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
-> >  	if (ss->stream = SNDRV_PCM_STREAM_PLAYBACK) {
-> >  		siu_stream = &port_info->playback;
-> >  		param = &siu_stream->param;
-> > -		param->slave_id = port ? pdata->dma_slave_tx_b :
-> > +		param->simple_slave.slave_id = port ? pdata->dma_slave_tx_b :
-> >  			pdata->dma_slave_tx_a;
-> >  	} else {
-> >  		siu_stream = &port_info->capture;
-> >  		param = &siu_stream->param;
-> > -		param->slave_id = port ? pdata->dma_slave_rx_b :
-> > +		param->simple_slave.slave_id = port ? pdata->dma_slave_rx_b :
-> >  			pdata->dma_slave_rx_a;
-> >  	}
-> >  
-> 
-> 
-> -- 
-> ~Vinod
-> 
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+This resolves a regression since 3.2.
+I am unsure if there is a cleaner way to resolve this problem
+nor if other boards are affected.
+---
+ arch/arm/configs/mackerel_defconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 306a2e2..41d014e 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -18,6 +18,7 @@ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_ARCH_SH7372=y
+ CONFIG_MACH_MACKEREL=y
+ CONFIG_MEMORY_SIZE=0x10000000
++# CONFIG_SH_TIMER_TMU is not set
+ CONFIG_AEABI=y
+ # CONFIG_OABI_COMPAT is not set
+ CONFIG_FORCE_MAX_ZONEORDER
+-- 
+1.7.2.3
+
