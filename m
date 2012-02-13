@@ -1,41 +1,51 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 09 Feb 2012 22:17:47 +0000
-Subject: [PATCH 1/2] usb: renesas_usbhs: (cosmetic) simplify list operations
-Message-Id: <Pine.LNX.4.64.1202092313560.18719@axis700.grange>
+From: Felipe Balbi <balbi@ti.com>
+Date: Mon, 13 Feb 2012 12:09:57 +0000
+Subject: Re: [PATCH 1/2] usb: renesas_usbhs: (cosmetic) simplify list operations
+Message-Id: <20120213120953.GQ6614@legolas.emea.dhcp.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="WTbgq2twYBxfsYA6"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <Pine.LNX.4.64.1202092313560.18719@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1202092313560.18719@axis700.grange>
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/usb/renesas_usbhs/fifo.c |    5 ++---
- 1 files changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 72339bd..5d543e3 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -75,8 +75,7 @@ void usbhs_pkt_push(struct usbhs_pipe *pipe, struct usbhs_pkt *pkt,
- 		pipe->handler = &usbhsf_null_handler;
- 	}
- 
--	list_del_init(&pkt->node);
--	list_add_tail(&pkt->node, &pipe->list);
-+	list_move_tail(&pkt->node, &pipe->list);
- 
- 	/*
- 	 * each pkt must hold own handler.
-@@ -106,7 +105,7 @@ static struct usbhs_pkt *__usbhsf_pkt_get(struct usbhs_pipe *pipe)
- 	if (list_empty(&pipe->list))
- 		return NULL;
- 
--	return list_entry(pipe->list.next, struct usbhs_pkt, node);
-+	return list_first_entry(&pipe->list, struct usbhs_pkt, node);
- }
- 
- struct usbhs_pkt *usbhs_pkt_pop(struct usbhs_pipe *pipe, struct usbhs_pkt *pkt)
--- 
-1.7.2.5
+--WTbgq2twYBxfsYA6
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
+On Thu, Feb 09, 2012 at 11:17:47PM +0100, Guennadi Liakhovetski wrote:
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+if (patch_has_no_commit_log(path)) {
+	kfree(patch);
+	continue;
+}
+
+--=20
+balbi
+
+--WTbgq2twYBxfsYA6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPOP2RAAoJEIaOsuA1yqREAY4QAJ2ktiIpzIy+FxS+5AlpGk6q
+lYA4oPy+rtVocMwyZFlyQU+hhbG5vZZP4RaNyYrj6/GaAT4IL0RJvP6DlJ/0Q43t
++u6tgWzzcTDsLPIC9MudC9RpLVpjbAoi/9lbNLapDnb7jtQaHBB0pAcT7Tri6Oxg
+A8ZB93B8VMZITffIEd5bhW9oCKIBjWmaXkZFAsREK8DlakPzJgWGA6F9TahDbw4k
+ulhbsRleeo9FkFYl7IMqtolnWrvmyr+P7hcS4iagRW2gHeJID9zOnX2VqiXmmZik
+FN9fShTopA/m0YuBmbK1QvLH9moew/cR4miakfw8Hji0IbuvaWLPBfALIaBNTtzB
+2HQR4S3x/cXVEv1YXNibQxh6n9nyosPRvLaTQekAVUu4dl3NcTNIOeRDHBFH28eR
+nX4YyJwPUA8rRu1Knmsg9mtcToT7aflyPj44Q9VtZlCiXX0HayPmK2K6Sp22Glh6
+wBYtpBo9CUlWxdy2hY+wL/ZV19RzSCPn+fxYygRmgmuzZwkfkJSWduMx4F/Il2yj
+ZNV+6dtIfA7qNNEjrc7Q88Cp6u9d1g6T9wvLd1JOWxADHW7Tr4wS1dIni5mfTrUR
+eeRW6U+vwCIrFVbkK7frJwJt/yfGDwna8V8Zb4f7ASEC6Nnjxojtkw+eTpyyv2G6
+UYAO11ogwSTwu/Nmt9DC
+=smfD
+-----END PGP SIGNATURE-----
+
+--WTbgq2twYBxfsYA6--
