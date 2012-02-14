@@ -1,102 +1,56 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 14 Feb 2012 10:37:21 +0000
-Subject: [PATCH 2/2 v3] usb: fix renesas_usbhs to not schedule in atomic context
-Message-Id: <Pine.LNX.4.64.1202141134580.443@axis700.grange>
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 14 Feb 2012 11:46:03 +0000
+Subject: Re: [PATCH 2/2 v3] usb: fix renesas_usbhs to not schedule in atomic context
+Message-Id: <20120214114602.GE24201@legolas.emea.dhcp.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="XIT9+HGZgTFaGwcE"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <Pine.LNX.4.64.1202141134580.443@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1202141134580.443@axis700.grange>
 To: linux-sh@vger.kernel.org
 
-The current renesas_usbhs driver triggers
 
-BUG: scheduling while atomic: ksoftirqd/0/3/0x00000102
+--XIT9+HGZgTFaGwcE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-with enabled CONFIG_DEBUG_ATOMIC_SLEEP, by submitting DMA transfers from
-an atomic (tasklet) context, which is not supported by the shdma dmaengine
-driver. Fix it by switching to a work.
+On Tue, Feb 14, 2012 at 11:37:21AM +0100, Guennadi Liakhovetski wrote:
+> The current renesas_usbhs driver triggers
+>=20
+> BUG: scheduling while atomic: ksoftirqd/0/3/0x00000102
+>=20
+> with enabled CONFIG_DEBUG_ATOMIC_SLEEP, by submitting DMA transfers from
+> an atomic (tasklet) context, which is not supported by the shdma dmaengine
+> driver. Fix it by switching to a work.
+>=20
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+applied, thanks
 
-v3: remove unrelated code, thanks to Felipe for reporting
+--=20
+balbi
 
- drivers/usb/renesas_usbhs/fifo.c |   18 ++++++------------
- drivers/usb/renesas_usbhs/fifo.h |    3 ++-
- 2 files changed, 8 insertions(+), 13 deletions(-)
+--XIT9+HGZgTFaGwcE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index 5d543e3..c0d2a5b 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -761,9 +761,9 @@ static int __usbhsf_dma_map_ctrl(struct usbhs_pkt *pkt, int map)
- }
- 
- static void usbhsf_dma_complete(void *arg);
--static void usbhsf_dma_prepare_tasklet(unsigned long data)
-+static void xfer_work(struct work_struct *work)
- {
--	struct usbhs_pkt *pkt = (struct usbhs_pkt *)data;
-+	struct usbhs_pkt *pkt = container_of(work, struct usbhs_pkt, work);
- 	struct usbhs_pipe *pipe = pkt->pipe;
- 	struct usbhs_fifo *fifo = usbhs_pipe_to_fifo(pipe);
- 	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
-@@ -843,11 +843,8 @@ static int usbhsf_dma_prepare_push(struct usbhs_pkt *pkt, int *is_done)
- 
- 	pkt->trans = len;
- 
--	tasklet_init(&fifo->tasklet,
--		     usbhsf_dma_prepare_tasklet,
--		     (unsigned long)pkt);
--
--	tasklet_schedule(&fifo->tasklet);
-+	INIT_WORK(&pkt->work, xfer_work);
-+	schedule_work(&pkt->work);
- 
- 	return 0;
- 
-@@ -937,11 +934,8 @@ static int usbhsf_dma_try_pop(struct usbhs_pkt *pkt, int *is_done)
- 
- 	pkt->trans = len;
- 
--	tasklet_init(&fifo->tasklet,
--		     usbhsf_dma_prepare_tasklet,
--		     (unsigned long)pkt);
--
--	tasklet_schedule(&fifo->tasklet);
-+	INIT_WORK(&pkt->work, xfer_work);
-+	schedule_work(&pkt->work);
- 
- 	return 0;
- 
-diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
-index f68609c..c31731a 100644
---- a/drivers/usb/renesas_usbhs/fifo.h
-+++ b/drivers/usb/renesas_usbhs/fifo.h
-@@ -19,6 +19,7 @@
- 
- #include <linux/interrupt.h>
- #include <linux/sh_dma.h>
-+#include <linux/workqueue.h>
- #include <asm/dma.h>
- #include "pipe.h"
- 
-@@ -31,7 +32,6 @@ struct usbhs_fifo {
- 	u32 ctr;	/* xFIFOCTR */
- 
- 	struct usbhs_pipe	*pipe;
--	struct tasklet_struct	tasklet;
- 
- 	struct dma_chan		*tx_chan;
- 	struct dma_chan		*rx_chan;
-@@ -53,6 +53,7 @@ struct usbhs_pkt {
- 	struct usbhs_pkt_handle *handler;
- 	void (*done)(struct usbhs_priv *priv,
- 		     struct usbhs_pkt *pkt);
-+	struct work_struct work;
- 	dma_addr_t dma;
- 	void *buf;
- 	int length;
--- 
-1.7.2.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
+iQIcBAEBAgAGBQJPOkl6AAoJEIaOsuA1yqREiasP/2PUr8YD4l57IZa50Mw+Jfk3
+YWykW///oztjpeSCJao9MJviWrSAC571TWBdqPONyiFpzWpGP67D/hbR/KKu4YG1
+WUYa8aJ3uLTT6eeNq+P1PUPVL8EArMKDuo28tV+fOwbNQEwf92U3g3pkGE/01oMf
+btJh4YmM9Q3fG1DG9zLtE1TftsUy7rQw94YvDUlwmjIi/ISmxJyJODtx8XGi4vYk
+wqwKG1XXSv+jpbzY+4B3n+lGQHlghxkLpykmoCFXOCVHiDdRhgBsemkt5TIqYjrJ
+lIZ1w/SrwD2uNyEVBxt1oneulVCbtmOaGynSlGnEGEmXENIWO3ORoMyrXzYdHud/
+EtT3fLWIe16cYZ/YQNj9tku8+zhKZcWVMbfxZk1Azf35xSZCcjHwwQWVxAS491g/
+atH/ydBcLrtfra4uOGKrfr7wvPwszmr1KpUTVOtI1p+Xi4NTCJIdyXgfRTQUGfdv
+jnPVFGxwMVUdizm973jFh1B/7pGZkBkY/ZT4Z9bL2OnHJu23Uv5CPsSCElfxLG8B
+025zwzSYgT+RpUJTmSAHS6qZeH0wI9AUq7fFgfXyw/V3UHgMtrZGE9g0QCBl9ohh
+vsdkbI/l1SdS2ijA14VM9Xilw6Kru6inwU41rQt2gJ4hUZvDqXcl1chpSS56TEDw
+QjmL0akW3E9P3M2pZz/J
+=wC/0
+-----END PGP SIGNATURE-----
+
+--XIT9+HGZgTFaGwcE--
