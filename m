@@ -1,49 +1,61 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 13:16:36 +0000
-Subject: [PATCH 04/17] ARM: mach-shmobile: sh7377 sh_clk_ops rename
-Message-Id: <20120229131636.29154.57458.sendpatchset@w520>
+From: Matt Fleming <matt@console-pimps.org>
+Date: Tue, 14 Feb 2012 11:41:03 +0000
+Subject: [PATCH 30/40] sh: No need to reset handler if SA_ONESHOT
+Message-Id: <1329219673-28711-31-git-send-email-matt@console-pimps.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1329219673-28711-1-git-send-email-matt@console-pimps.org>
+In-Reply-To: <1329219673-28711-1-git-send-email-matt@console-pimps.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arch@vger.kernel.org
+Cc: Oleg Nesterov <oleg@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Matt Fleming <matt.fleming@intel.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Matt Fleming <matt.fleming@intel.com>
 
-Convert sh7377 to use sh_clk_ops.
+get_signal_to_deliver() already resets the signal handler if
+SA_ONESHOT is set in ka->sa.sa_flags, there's no need to do it again
+in handle_signal(). Furthermore, because we were modifying
+ka->sa.sa_handler (which is a copy of sighand->action[]) instead of
+sighand->action[] the original code had no effect on signal delivery.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Oleg Nesterov <oleg@redhat.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
 ---
+ arch/sh/kernel/signal_32.c |    3 ---
+ arch/sh/kernel/signal_64.c |    3 ---
+ 2 files changed, 0 insertions(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/clock-sh7377.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
+index a7a55ed..1055146 100644
+--- a/arch/sh/kernel/signal_32.c
++++ b/arch/sh/kernel/signal_32.c
+@@ -548,9 +548,6 @@ handle_signal(unsigned long sig, struct k_sigaction *ka, siginfo_t *info,
+ 	else
+ 		ret = setup_frame(sig, ka, oldset, regs);
+ 
+-	if (ka->sa.sa_flags & SA_ONESHOT)
+-		ka->sa.sa_handler = SIG_DFL;
+-
+ 	if (ret = 0) {
+ 		spin_lock_irq(&current->sighand->siglock);
+ 		sigorsets(&current->blocked,&current->blocked,&ka->sa.sa_mask);
+diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
+index 6b5603f..7b9278d 100644
+--- a/arch/sh/kernel/signal_64.c
++++ b/arch/sh/kernel/signal_64.c
+@@ -734,9 +734,6 @@ handle_signal(unsigned long sig, siginfo_t *info, struct k_sigaction *ka,
+ 	else
+ 		ret = setup_frame(sig, ka, oldset, regs);
+ 
+-	if (ka->sa.sa_flags & SA_ONESHOT)
+-		ka->sa.sa_handler = SIG_DFL;
+-
+ 	if (ret = 0) {
+ 		spin_lock_irq(&current->sighand->siglock);
+ 		sigorsets(&current->blocked,&current->blocked,&ka->sa.sa_mask);
+-- 
+1.7.4.4
 
---- 0001/arch/arm/mach-shmobile/clock-sh7377.c
-+++ work/arch/arm/mach-shmobile/clock-sh7377.c	2012-02-28 22:07:34.000000000 +0900
-@@ -77,7 +77,7 @@ static unsigned long div2_recalc(struct
- 	return clk->parent->rate / 2;
- }
- 
--static struct clk_ops div2_clk_ops = {
-+static struct sh_clk_ops div2_clk_ops = {
- 	.recalc		= div2_recalc,
- };
- 
-@@ -110,7 +110,7 @@ static unsigned long pllc1_recalc(struct
- 	return clk->parent->rate * mult;
- }
- 
--static struct clk_ops pllc1_clk_ops = {
-+static struct sh_clk_ops pllc1_clk_ops = {
- 	.recalc		= pllc1_recalc,
- };
- 
-@@ -137,7 +137,7 @@ static unsigned long pllc2_recalc(struct
- 	return clk->parent->rate * mult;
- }
- 
--static struct clk_ops pllc2_clk_ops = {
-+static struct sh_clk_ops pllc2_clk_ops = {
- 	.recalc		= pllc2_recalc,
- };
- 
