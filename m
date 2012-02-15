@@ -1,116 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 12:41:30 +0000
-Subject: [PATCH] ARM: mach-shmobile: rename clk_init() to shmobile_clk_init()
-Message-Id: <20120229124130.29066.74120.sendpatchset@w520>
+From: Rusty Russell <rusty@rustcorp.com.au>
+Date: Wed, 15 Feb 2012 05:10:04 +0000
+Subject: [PATCH 7/12] arch/sh: remove references to cpu_*_map.
+Message-Id: <1329281884.17297.rusty@rustcorp.com.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Rusty Russell <rusty@rustcorp.com.au>
 
-Rename clk_init() to shmobile_clk_init() to avoid a potential
-future name space collision with the common clock framework.
+This has been obsolescent for a while; time for the final push.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
 ---
+ arch/sh/kernel/smp.c      |    2 +-
+ arch/sh/kernel/topology.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7740.c       |    2 +-
- arch/arm/mach-shmobile/clock-r8a7779.c       |    2 +-
- arch/arm/mach-shmobile/clock-sh7367.c        |    2 +-
- arch/arm/mach-shmobile/clock-sh7372.c        |    2 +-
- arch/arm/mach-shmobile/clock-sh7377.c        |    2 +-
- arch/arm/mach-shmobile/clock-sh73a0.c        |    2 +-
- arch/arm/mach-shmobile/clock.c               |    2 +-
- arch/arm/mach-shmobile/include/mach/common.h |    2 +-
- 8 files changed, 8 insertions(+), 8 deletions(-)
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -63,7 +63,7 @@ void __init smp_prepare_cpus(unsigned in
+ 	mp_ops->prepare_cpus(max_cpus);
+ 
+ #ifndef CONFIG_HOTPLUG_CPU
+-	init_cpu_present(&cpu_possible_map);
++	init_cpu_present(cpu_possible_mask);
+ #endif
+ }
+ 
+diff --git a/arch/sh/kernel/topology.c b/arch/sh/kernel/topology.c
+--- a/arch/sh/kernel/topology.c
++++ b/arch/sh/kernel/topology.c
+@@ -27,7 +27,7 @@ static cpumask_t cpu_coregroup_map(unsig
+ 	 * Presently all SH-X3 SMP cores are multi-cores, so just keep it
+ 	 * simple until we have a method for determining topology..
+ 	 */
+-	return cpu_possible_map;
++	return *cpu_possible_mask;
+ }
+ 
+ const struct cpumask *cpu_coregroup_mask(unsigned int cpu)
 
---- 0015/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7740.c	2012-02-29 20:59:39.000000000 +0900
-@@ -376,7 +376,7 @@ void __init r8a7740_clock_init(u8 md_ck)
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
--		clk_init();
-+		shmobile_clk_init();
- 	else
- 		panic("failed to setup r8a7740 clocks\n");
- }
---- 0016/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2012-02-29 20:59:53.000000000 +0900
-@@ -170,7 +170,7 @@ void __init r8a7779_clock_init(void)
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
--		clk_init();
-+		shmobile_clk_init();
- 	else
- 		panic("failed to setup r8a7779 clocks\n");
- }
---- 0014/arch/arm/mach-shmobile/clock-sh7367.c
-+++ work/arch/arm/mach-shmobile/clock-sh7367.c	2012-02-29 21:00:12.000000000 +0900
-@@ -349,7 +349,7 @@ void __init sh7367_clock_init(void)
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
--		clk_init();
-+		shmobile_clk_init();
- 	else
- 		panic("failed to setup sh7367 clocks\n");
- }
---- 0012/arch/arm/mach-shmobile/clock-sh7372.c
-+++ work/arch/arm/mach-shmobile/clock-sh7372.c	2012-02-29 21:00:34.000000000 +0900
-@@ -710,7 +710,7 @@ void __init sh7372_clock_init(void)
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
--		clk_init();
-+		shmobile_clk_init();
- 	else
- 		panic("failed to setup sh7372 clocks\n");
- 
---- 0013/arch/arm/mach-shmobile/clock-sh7377.c
-+++ work/arch/arm/mach-shmobile/clock-sh7377.c	2012-02-29 21:00:25.000000000 +0900
-@@ -360,7 +360,7 @@ void __init sh7377_clock_init(void)
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
--		clk_init();
-+		shmobile_clk_init();
- 	else
- 		panic("failed to setup sh7377 clocks\n");
- }
---- 0011/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2012-02-29 21:00:48.000000000 +0900
-@@ -620,7 +620,7 @@ void __init sh73a0_clock_init(void)
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
--		clk_init();
-+		shmobile_clk_init();
- 	else
- 		panic("failed to setup sh73a0 clocks\n");
- }
---- 0001/arch/arm/mach-shmobile/clock.c
-+++ work/arch/arm/mach-shmobile/clock.c	2012-02-29 20:58:43.000000000 +0900
-@@ -24,7 +24,7 @@
- #include <linux/sh_clk.h>
- #include <linux/export.h>
- 
--int __init clk_init(void)
-+int __init shmobile_clk_init(void)
- {
- 	/* Kick the child clocks.. */
- 	recalculate_root_clocks();
---- 0008/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-02-29 20:59:15.000000000 +0900
-@@ -6,7 +6,7 @@ extern void shmobile_setup_console(void)
- extern void shmobile_secondary_vector(void);
- extern int shmobile_platform_cpu_kill(unsigned int cpu);
- struct clk;
--extern int clk_init(void);
-+extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
- extern struct platform_suspend_ops shmobile_suspend_ops;
- struct cpuidle_driver;
