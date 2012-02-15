@@ -1,48 +1,29 @@
-From: Rusty Russell <rusty@rustcorp.com.au>
-Date: Wed, 15 Feb 2012 05:10:04 +0000
-Subject: [PATCH 7/12] arch/sh: remove references to cpu_*_map.
-Message-Id: <1329281884.17297.rusty@rustcorp.com.au>
+From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
+Date: Wed, 15 Feb 2012 09:34:09 +0000
+Subject: Re: [PATCH 7/12] arch/sh: remove references to cpu_*_map.
+Message-Id: <4F3B7941.4030804@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1329281884.17297.rusty@rustcorp.com.au>
+In-Reply-To: <1329281884.17297.rusty@rustcorp.com.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+To: Rusty Russell <rusty@rustcorp.com.au>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, "venki >> Venkatesh Pallipadi" <venki@google.com>, "akpm@linux-foundation.org" <akpm@linux-foundation.org>
 
-From: Rusty Russell <rusty@rustcorp.com.au>
+On 02/15/2012 10:28 AM, Rusty Russell wrote:
 
-This has been obsolescent for a while; time for the final push.
+> From: Rusty Russell <rusty@rustcorp.com.au>
+> 
+> This has been obsolescent for a while; time for the final push.
+> 
+> Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
+> Cc: Paul Mundt <lethal@linux-sh.org>
+> Cc: linux-sh@vger.kernel.org
+> ---
 
-Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
----
- arch/sh/kernel/smp.c      |    2 +-
- arch/sh/kernel/topology.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Reviewed-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
 
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -63,7 +63,7 @@ void __init smp_prepare_cpus(unsigned in
- 	mp_ops->prepare_cpus(max_cpus);
- 
- #ifndef CONFIG_HOTPLUG_CPU
--	init_cpu_present(&cpu_possible_map);
-+	init_cpu_present(cpu_possible_mask);
- #endif
- }
- 
-diff --git a/arch/sh/kernel/topology.c b/arch/sh/kernel/topology.c
---- a/arch/sh/kernel/topology.c
-+++ b/arch/sh/kernel/topology.c
-@@ -27,7 +27,7 @@ static cpumask_t cpu_coregroup_map(unsig
- 	 * Presently all SH-X3 SMP cores are multi-cores, so just keep it
- 	 * simple until we have a method for determining topology..
- 	 */
--	return cpu_possible_map;
-+	return *cpu_possible_mask;
- }
- 
- const struct cpumask *cpu_coregroup_mask(unsigned int cpu)
+Regards,
+Srivatsa S. Bhat
 
