@@ -1,46 +1,36 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 08 Feb 2012 04:04:58 +0000
-Subject: [PATCH] sh: add parameter for RSPI in clock-sh7757
-Message-Id: <4F31F46A.1060008@renesas.com>
+From: "Western Union Outlet" <westernunion@wu.com>
+Date: Sun, 19 Feb 2012 22:31:53 +0000
+Subject: Transfer Notice!!
+Message-Id: <20120219223228.7F6995CA3E18@mail.kpoly.edu.gh>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+Dear Beneficiary.
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-index 0fbff14..0bd21c8 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-@@ -79,7 +79,7 @@ struct clk div4_clks[DIV4_NR] = {
- #define MSTPCR1		0xffc80034
- #define MSTPCR2		0xffc10028
+We write to inform you that we have transferred USD$400,000.00 dollars, I could have called you via phone to give you the MTCN information but we lost your contact phone number. So, I decided to email you the information so that you can start cashing your money in USD5000.00 daily installment with the same MTCN and sender's name which will be valid for 20 days until you cash the full $400,000.00usd as it automatically activates for use for 20 days after the first reactivation.
 
--enum { MSTP004, MSTP000, MSTP114, MSTP113, MSTP112,
-+enum { MSTP004, MSTP000, MSTP127, MSTP114, MSTP113, MSTP112,
-        MSTP111, MSTP110, MSTP103, MSTP102, MSTP220,
-        MSTP_NR };
+The money is available for pick up which was deposited for transfer to you by MR Bernard Harry from United Nation Trust Funds.  The money is available for pick up by receiver (you) but when you track it, it will display PICKED UP due to the fact that it has been deactivated from our head office for security reason because it has stayed too long in the air as we have been trying to reach you on the phone for some days now but it was not reachable,so it was blocked.
 
-@@ -89,6 +89,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP000] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 0, 0),
+Therefore you can not cash it out in any western union office due to its restriction from our head office,which was a security measure because the money has been in the air for three days now and maybe in danger, hence the mtcn has to be reactivated to enable you cash out the money in any western union office in your area, the reactivation of the MTCN will cost you a token of $155, once this is paid, our head office will release the fund on hold to enable you cash it.To be sure of this please log on to www.westernunion.com and click on track to and enter the sender's info and mtcn below.
 
- 	/* MSTPCR1 */
-+	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 27, 0),
- 	[MSTP114] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 14, 0),
- 	[MSTP113] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 13, 0),
- 	[MSTP112] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 12, 0),
-@@ -131,6 +132,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("usb_fck", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP102]),
- 	CLKDEV_CON_ID("mmc0", &mstp_clks[MSTP220]),
-+	CLKDEV_CON_ID("rspi2", &mstp_clks[MSTP127]),
- };
+Sender's Fist name: Abraham
+Sender's Last Name: Elizabeth
+MTCN: 5801913322
+Question: Who Is Great
+Answer: God
+Amount: $5000.00USD
+Total Amount To be Cashed: $400,000.00Usd
 
- int __init arch_clk_init(void)
--- 
-1.7.1
+Please also send to us the following details..
+1,Re-Comfirm Your Contact Phone Number.................
+
+With due respect please get back to me urgently after tracking the money on-line so i can instruct you on how to send the $155 to us for the reactivation of the MTCN.
+
+
+Best Regards
+Mr.Smith Mcferrin.
+Outlet Manager,
+Western Union Money Transfer.
