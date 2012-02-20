@@ -1,93 +1,36 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 09 Feb 2012 01:19:21 +0000
-Subject: Re: ARM/ARM-SoC plans for v3.4 merge window
-Message-Id: <CAOesGMjm+irNw-kHStLf_H3QyJHa04ProG6i0Zyum1iy7TJxpA@mail.gmail.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 20 Feb 2012 08:26:50 +0000
+Subject: [PATCH] sh: modify a resource of sh_eth_giga1_resources in board-sh7757lcr
+Message-Id: <4F4203CA.3040303@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120123114902.GY1068@n2100.arm.linux.org.uk>
- <20120124095009.GS16726@n2100.arm.linux.org.uk>
- <20120126212319.GE11941@n2100.arm.linux.org.uk>
- <CAOesGMh45HSb4mRMc7q53xhmj_kMFvdVJhNnY7cY6gHi=_KynQ@mail.gmail.com>
- <4F266C13.5080302@atmel.com>
- <CAOesGMh1wHpaDmYY6_oCu_u0s4fmTfKMLiPaa9bHh9YaiDJozw@mail.gmail.com>
- <4F326213.3030500@atmel.com>
-In-Reply-To: <4F326213.3030500@atmel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Wed, Feb 8, 2012 at 3:52 AM, Nicolas Ferre <nicolas.ferre@atmel.com> wro=
-te:
-> On 02/08/2012 02:18 AM, Olof Johansson :
->> Hi,
->>
->> On Mon, Jan 30, 2012 at 2:08 AM, Nicolas Ferre <nicolas.ferre@atmel.com>=
- wrote:
->>> On 01/29/2012 12:57 AM, Olof Johansson :
->>>> Hi,
->>>>
->>>>
->>>> On Thu, Jan 26, 2012 at 1:23 PM, Russell King - ARM Linux
->>>> <linux@arm.linux.org.uk> wrote:
->>>>
->>>>
->>>>> And we're now there. =A0So...
->>>>>
->>>>> Arnd, Olaf,
->>>>>
->>>>> Please incorporate the latest ARM (for-armsoc branch) changes, which =
-can be found at:
->>>>>
->>>>> =A0 =A0 =A0 =A0git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cu=
-r/linux-arm.git for-armsoc
->>>>>
->>>>> with SHA1 dcf81c1af839b77b44404453ecae6e5ac5a75f05.
->>>>
->>>> Thanks. I have added this as depends/rmk/for-armsoc in the arm-soc rep=
-o.
->>>>
->>>> Any next/ branch we start will have this as the base of said branch,
->>>> so any vendor branches must either already be developed against this
->>>> stable branch, or merge on top of this with minimal conflicts.
->>>
->>> Ok, great.
->>>
->>> I just let you know that there is a conflict between the current Linus'
->>> tree (with recently updated at91 fixes) and this rmk/for-armsoc branch.
->>>
->>> I can give you the resolution of this conflict easily but I would like
->>> to know which way I execute the merge:
->>>
->>> I use this rmk/for-armsoc as a baseline and merge the fixes already in
->>> Linus' tree on top of it or the other way around?
->>>
->>> Maybe it is preferable that I wait for 3.3-rc2 and merge rmk/for-armsoc
->>> on top of it. This result can be the base of our AT91 work for 3.4
->>> preparation.
->>>
->>> Your thought?
->>
->> I missed replying to this email until now when I started looking at
->> picking up branches for the 3.4 staging, sorry for the delay.
->>
->> Russell, would you prefer merging in v3.3-rc2 into your branch so I
->> can pull the exact same resolution from there, or should we do it
->> locally in arm-soc? It probably makes sense for you to do it so
->> there's no more conflicts from there on out for dependent branches.
->
-> Olof,
->
-> For your information the conflict resolution is already present in
-> linux-next (and in my 3.4 preparation branches actually).
+The latest sh_eth driver needs a resource of TSU in the channel 1,
+if the controller has TSU registers. So, this patch adds the resource.
 
-Yeah, it's just convenient if it's resolved once in the base branch
-instead of every time we pull in something based on it.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/boards/board-sh7757lcr.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-I've pulled in and resolved the conflict with v3.3-rc2 into
-depends/rmk/for-armsoc now so it should be covered for anyone basing
-new branches off of it.
-
-
-Thanks,
-
--Olof
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index 0838154..dd8ced3 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -169,6 +169,11 @@ static struct resource sh_eth_giga1_resources[] = {
+ 		.end    = 0xfee00fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
++		/* TSU */
++		.start  = 0xfee01800,
++		.end    = 0xfee01fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
+ 		.start  = 316,
+ 		.end    = 316,
+ 		.flags  = IORESOURCE_IRQ,
+-- 
+1.7.1
