@@ -1,59 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 Feb 2012 20:29:33 +0000
-Subject: Re: [PATCH] sh: bonito: Fix compile breakage
-Message-Id: <2227428.A4iueEQo4g@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 21 Feb 2012 08:29:57 +0000
+Subject: [PATCH] sh: Fix sh2a build error for CONFIG_CACHE_WRITETHROUGH
+Message-Id: <1329812997-9774-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330523184-8540-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1330523184-8540-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Phil,
 
-Thanks for the patch.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/sh/mm/cache-sh2a.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-On Wednesday 29 February 2012 13:46:24 Phil Edworthy wrote:
-> arch/arm/mach-shmobile/board-bonito.c:244:3: error: unknown field 'bpp'
-> specified in initializer make[2]: ***
-> [arch/arm/mach-shmobile/board-bonito.o] Error 1
-> 
-> caused by commit "fbdev: sh_mobile_lcdc: Support FOURCC-based format API"
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-
-You were faster than me :-)
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/mach-shmobile/board-bonito.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-bonito.c
-> b/arch/arm/mach-shmobile/board-bonito.c index 4d22016..4bd1162 100644
-> --- a/arch/arm/mach-shmobile/board-bonito.c
-> +++ b/arch/arm/mach-shmobile/board-bonito.c
-> @@ -27,6 +27,7 @@
->  #include <linux/platform_device.h>
->  #include <linux/gpio.h>
->  #include <linux/smsc911x.h>
-> +#include <linux/videodev2.h>
->  #include <mach/common.h>
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
-> @@ -241,7 +242,7 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
->  	.clock_source	= LCDC_CLK_BUS,
->  	.ch[0] = {
->  		.chan			= LCDC_CHAN_MAINLCD,
-> -		.bpp			= 16,
-> +		.fourcc = V4L2_PIX_FMT_RGB565,
->  		.interface_type		= RGB24,
->  		.clock_divider		= 5,
->  		.flags			= 0,
-
+diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
+index ae08cbb..949e2d3 100644
+--- a/arch/sh/mm/cache-sh2a.c
++++ b/arch/sh/mm/cache-sh2a.c
+@@ -23,6 +23,7 @@
+ #define MAX_OCACHE_PAGES	32
+ #define MAX_ICACHE_PAGES	32
+ 
++#ifdef CONFIG_CACHE_WRITEBACK
+ static void sh2a_flush_oc_line(unsigned long v, int way)
+ {
+ 	unsigned long addr = (v & 0x000007f0) | (way << 11);
+@@ -34,6 +35,7 @@ static void sh2a_flush_oc_line(unsigned long v, int way)
+ 		__raw_writel(data, CACHE_OC_ADDRESS_ARRAY | addr);
+ 	}
+ }
++#endif
+ 
+ static void sh2a_invalidate_line(unsigned long cache_addr, unsigned long v)
+ {
 -- 
-Regards,
+1.7.0.4
 
-Laurent Pinchart
