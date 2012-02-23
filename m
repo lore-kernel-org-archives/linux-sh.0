@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Feb 2012 13:17:16 +0000
-Subject: [PATCH 09/17] sh: sh header sh_clk_ops rename
-Message-Id: <20120229131716.29154.57997.sendpatchset@w520>
+Date: Thu, 23 Feb 2012 05:32:55 +0000
+Subject: [PATCH 04/05] ARM: mach-shmobile: sh73a0 IRQ sparse alloc fix
+Message-Id: <20120223053255.2040.65883.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,22 +10,34 @@ To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Convert the sh include asm/clock.h to use sh_clk_ops.
+Fix the sh73a0 external IRQ pin code to properly support
+CONFIG_SPARSE_IRQ=y by allocating IRQ descriptors for the
+cascaded IRQs associated with external IRQ pins.
+
+Without this fix it is impossible to request IRQ0->IRQ31
+on the Kota2 board when sparse IRQs are enabled. 
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/sh/include/asm/clock.h |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/intc-sh73a0.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
---- 0001/arch/sh/include/asm/clock.h
-+++ work/arch/sh/include/asm/clock.h	2012-02-29 20:05:00.000000000 +0900
-@@ -4,7 +4,7 @@
- #include <linux/sh_clk.h>
+--- 0001/arch/arm/mach-shmobile/intc-sh73a0.c
++++ work/arch/arm/mach-shmobile/intc-sh73a0.c	2012-01-17 19:59:22.000000000 +0900
+@@ -19,6 +19,7 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
++#include <linux/module.h>
+ #include <linux/irq.h>
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
+@@ -445,6 +446,7 @@ void __init sh73a0_init_irq(void)
+ 		setup_irq(gic_spi(1 + k), &sh73a0_irq_pin_cascade[k]);
  
- /* Should be defined by processor-specific code */
--void __deprecated arch_init_clk_ops(struct clk_ops **, int type);
-+void __deprecated arch_init_clk_ops(struct sh_clk_ops **, int type);
- int __init arch_clk_init(void);
- 
- /* arch/sh/kernel/cpu/clock-cpg.c */
+ 		n = intcs_evt2irq(to_intc_vect(gic_spi(1 + k)));
++		WARN_ON(irq_alloc_desc_at(n, numa_node_id()) != n);
+ 		irq_set_chip_and_handler_name(n, &intca_gic_irq_chip,
+ 					      handle_level_irq, "level");
+ 		set_irq_flags(n, IRQF_VALID); /* yuck */
