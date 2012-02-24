@@ -1,52 +1,27 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Tue, 14 Feb 2012 11:45:21 +0000
-Subject: Re: [PATCH 1/2 v3] usb: renesas_usbhs: (cosmetic) simplify list operations
-Message-Id: <20120214114520.GD24201@legolas.emea.dhcp.ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="AAi0U5uflHqV1n1C"
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 24 Feb 2012 15:48:59 +0000
+Subject: Re: [PATCH 00/14] DMA-mapping framework redesign preparation
+Message-Id: <201202241548.59791.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1202141133170.443@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1202141133170.443@axis700.grange>
-To: linux-sh@vger.kernel.org
+References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
 
+On Friday 23 December 2011, Marek Szyprowski wrote:
+> The solution we found is to introduce a new public dma mapping functions
+> with additional attributes argument: dma_alloc_attrs and
+> dma_free_attrs(). This way all different kinds of architecture specific
+> buffer mappings can be hidden behind the attributes without the need of
+> creating several versions of dma_alloc_ function.
 
---AAi0U5uflHqV1n1C
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Since the patches are now in linux-next, we should make sure that they
+can actually get merged into 3.4.
 
-On Tue, Feb 14, 2012 at 11:37:17AM +0100, Guennadi Liakhovetski wrote:
-> list.h already provide helpers to find the first entry and to move list
-> nodes to the tail of another list. This patch simply uses those helpers,
-> no functional changes.
->=20
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+I've looked at all the patches again and found them to be straightforward
+and helpful, I hope we can get them merged next time. Please add my
 
-applied, thanks
-
---=20
-balbi
-
---AAi0U5uflHqV1n1C
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPOklPAAoJEIaOsuA1yqREGm0P/3znk2QWQ96qu0JM9JLkc72e
-FmKetRGZ/dWXUJ7q+/nSFqwaAarj+lnanqZihkC/ti9+OCRtkfhYPpeJ1xWEm7Tr
-1x941tJ9POACYZ6pPsnhUKLVC97MPp6OGJRdlvqLANN6t4NkHNqyhRx5L/2c1WUv
-8/cLSyYggKQYBcpBCo4TlB/A0cIOSf8TlUU7ogluFp4pf8nYRQzkLJ6UY9X0y3QY
-fRFhPQQYT0dd6jNRCJbc8jgOrDzm34s5VhfxUhjFZfGuGmGHq+KMUi70t/jHKTfG
-joJUWUV3zBXT04is9h7lMULAvVtEaKyJvI4Ds23hBl11kbxNWmKRUb0f0KwGO8yu
-wpqEzTOsHBxqPxfguzDBPcWKvrz16fa+6CE1U1lvSnn4NerD86oG4TyrzSG2WM05
-FWLk6km5R08CMLZsERGpql1pc8NyTsD8NcoDCVRqhCaj+26BikOjBBrjYmel+fuQ
-ewlpBBK+Ii7FNq8qu5quxJZuNjGC5c2TRWrHklO2AVvdJEom0GF9o5TU3C07AJPX
-dBGJSdeYD4tInjuugvHL4GRyIW3MAo67mRY1so1dDSkDw3LeJq3/ro7CYhSDAJns
-MRaUKWx+S8bkDSe4PpGZvyt4M9Nym2PloY+GzAybUjpy9iCTdJxSJz4OZmQX48z6
-i7Ldg+plZYHnDf19U4gh
-=BQiG
------END PGP SIGNATURE-----
-
---AAi0U5uflHqV1n1C--
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
