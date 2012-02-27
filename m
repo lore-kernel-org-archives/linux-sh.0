@@ -1,56 +1,82 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Sat, 11 Feb 2012 11:45:02 +0000
-Subject: [PATCH v2 4/7] mtd: sh_flctl: Implement NAND_CMD_RNDOUT command
-Message-Id: <1328960705-18699-5-git-send-email-hechtb@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 27 Feb 2012 14:12:10 +0000
+Subject: [PATCH] mmc: sh_mobile_sdhi: support modular mmc-core with non-standard hotplug
+Message-Id: <Pine.LNX.4.64.1202271454270.32434@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Implements the command to seek and read in pages.
+Currently if a platform wants to implement a non-standard card-detection
+method, it would need to call tmio_mmc_cd_wakeup(), which is an inline
+function, calling mmc_detect_change(). For this the platform would have
+to link mmc_core statically into the kernel, losing the ability to build
+it as a module. This patch adds a callback to the sh_mobile_sdhi driver,
+which eliminates this dependency.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-changelog: exactly same as patch v1.
+ drivers/mmc/host/sh_mobile_sdhi.c  |   12 +++++++++++-
+ include/linux/mmc/sh_mobile_sdhi.h |    7 ++++++-
+ 2 files changed, 17 insertions(+), 2 deletions(-)
 
- drivers/mtd/nand/sh_flctl.c |   13 +++++++++++++
- 1 files changed, 13 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 407acb5..5c3e71f 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -303,6 +303,7 @@ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_va
- 		break;
- 	case NAND_CMD_READ0:
- 	case NAND_CMD_READOOB:
-+	case NAND_CMD_RNDOUT:
- 		addr_len_bytes = flctl->rw_ADRCNT;
- 		flcmdcr_val |= CDSRC_E;
- 		if (flctl->chip.options & NAND_BUSWIDTH_16)
-@@ -558,6 +559,18 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
- 		flctl->read_bytes = mtd->oobsize;
- 		goto read_normal_exit;
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index dd288d6..e916d87 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -100,6 +100,16 @@ static int sh_mobile_sdhi_write16_hook(struct tmio_mmc_host *host, int addr)
+ 	return 0;
+ }
  
-+	case NAND_CMD_RNDOUT:
-+		if (flctl->page_size)
-+			set_cmd_regs(mtd, command, (NAND_CMD_RNDOUTSTART << 8)
-+				| command);
-+		else
-+			set_cmd_regs(mtd, command, command);
++static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
++{
++	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
++	tmio_mmc_cd_wakeup(p->pdata);
++}
 +
-+		set_addr(mtd, column, 0);
++static const struct sh_mobile_sdhi_ops sdhi_ops = {
++	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
++};
 +
-+		flctl->read_bytes = mtd->writesize + mtd->oobsize - column;
-+		goto read_normal_exit;
+ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_sdhi *priv;
+@@ -121,7 +131,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	p->pdata = mmc_data;
+ 
+ 	if (p->init) {
+-		ret = p->init(pdev);
++		ret = p->init(pdev, &sdhi_ops);
+ 		if (ret)
+ 			goto einit;
+ 	}
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index 686b85b..eb13fdd 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -10,6 +10,10 @@ struct tmio_mmc_data;
+ #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
+ #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
+ 
++struct sh_mobile_sdhi_ops {
++	void (*cd_wakeup)(const struct platform_device *pdev);
++};
 +
- 	case NAND_CMD_READID:
- 		set_cmd_regs(mtd, command, command);
+ struct sh_mobile_sdhi_info {
+ 	int dma_slave_tx;
+ 	int dma_slave_rx;
+@@ -22,7 +26,8 @@ struct sh_mobile_sdhi_info {
+ 	int (*get_cd)(struct platform_device *pdev);
+ 
+ 	/* callbacks for board specific setup code */
+-	int (*init)(struct platform_device *pdev);
++	int (*init)(struct platform_device *pdev,
++		    const struct sh_mobile_sdhi_ops *ops);
+ 	void (*cleanup)(struct platform_device *pdev);
+ };
  
 -- 
-1.7.5.4
+1.7.2.5
 
