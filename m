@@ -1,55 +1,71 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 22 Feb 2012 12:16:09 +0000
-Subject: [PATCH] mmc: tmio_mmc: do not enable card hotplug interrupts, if unused
-Message-Id: <alpine.DEB.2.00.1202221314351.3136@axis700.grange>
+From: Rob Lee <rob.lee@linaro.org>
+Date: Mon, 27 Feb 2012 15:13:59 +0000
+Subject: Re: [PATCH v5 2/9] SH: shmobile: cpuidle consolidation
+Message-Id: <CAMXH7KHZH5wMHLOvhQe22K8+7s+yvCVtOvrNw0-ogjFArt-ZNQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1330318063-25460-1-git-send-email-rob.lee@linaro.org>
+ <1330318063-25460-3-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1330318063-25460-3-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-If TMIO MMC is used in polling mode, or the card is non-removable, or
-card-detection is performed, using an external interrupt, there is no
-need to enable controller native card hotplug interrupts.
+Adding sh mailing list and sh contributors I missed on the original
+submission.  SH folks, full patchset submission can be found here:
+http://www.spinics.net/lists/arm-kernel/msg161596.html
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/tmio_mmc_pio.c |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+Best Regards,
+Rob
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 69b826a..6294c91 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -302,6 +302,7 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
- {
- 	struct mmc_data *data = host->data;
- 	int c = cmd->opcode;
-+	u32 irq_mask = TMIO_MASK_CMD;
- 
- 	/* Command 12 is handled by hardware */
- 	if (cmd->opcode = 12 && !cmd->arg) {
-@@ -337,7 +338,9 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
- 			c |= TRANSFER_READ;
- 	}
- 
--	tmio_mmc_enable_mmc_irqs(host, TMIO_MASK_CMD);
-+	if (!host->native_hotplug)
-+		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
-+	tmio_mmc_enable_mmc_irqs(host, irq_mask);
- 
- 	/* Fire off the command */
- 	sd_ctrl_write32(host, CTL_ARG_REG, cmd->arg);
-@@ -966,6 +969,8 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 		irq_mask |= TMIO_MASK_READOP;
- 	if (!_host->chan_tx)
- 		irq_mask |= TMIO_MASK_WRITEOP;
-+	if (!_host->native_hotplug)
-+		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
- 
- 	tmio_mmc_enable_mmc_irqs(_host, irq_mask);
- 
--- 
-1.7.2.5
-
+On Sun, Feb 26, 2012 at 10:47 PM, Robert Lee <rob.lee@linaro.org> wrote:
+> Enable core cpuidle timekeeping and irq enabling and remove that
+> handling from this code.
+>
+> Signed-off-by: Robert Lee <rob.lee@linaro.org>
+> ---
+> =A0arch/sh/kernel/cpu/shmobile/cpuidle.c | =A0 10 +++-------
+> =A01 files changed, 3 insertions(+), 7 deletions(-)
+>
+> diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/s=
+hmobile/cpuidle.c
+> index 6d62eb4..1ddc876 100644
+> --- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
+> +++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+> @@ -29,7 +29,6 @@ static int cpuidle_sleep_enter(struct cpuidle_device *d=
+ev,
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0int index)
+> =A0{
+> =A0 =A0 =A0 =A0unsigned long allowed_mode =3D SUSP_SH_SLEEP;
+> - =A0 =A0 =A0 ktime_t before, after;
+> =A0 =A0 =A0 =A0int requested_state =3D index;
+> =A0 =A0 =A0 =A0int allowed_state;
+> =A0 =A0 =A0 =A0int k;
+> @@ -47,19 +46,16 @@ static int cpuidle_sleep_enter(struct cpuidle_device =
+*dev,
+> =A0 =A0 =A0 =A0 */
+> =A0 =A0 =A0 =A0k =3D min_t(int, allowed_state, requested_state);
+>
+> - =A0 =A0 =A0 before =3D ktime_get();
+> =A0 =A0 =A0 =A0sh_mobile_call_standby(cpuidle_mode[k]);
+> - =A0 =A0 =A0 after =3D ktime_get();
+> -
+> - =A0 =A0 =A0 dev->last_residency =3D (int)ktime_to_ns(ktime_sub(after, b=
+efore)) >> 10;
+>
+> =A0 =A0 =A0 =A0return k;
+> =A0}
+>
+> =A0static struct cpuidle_device cpuidle_dev;
+> =A0static struct cpuidle_driver cpuidle_driver =3D {
+> - =A0 =A0 =A0 .name =3D =A0 =A0 =A0 =A0 "sh_idle",
+> - =A0 =A0 =A0 .owner =3D =A0 =A0 =A0 =A0THIS_MODULE,
+> + =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =3D "sh_idle",
+> + =A0 =A0 =A0 .owner =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=3D THIS_MODULE,
+> + =A0 =A0 =A0 .en_core_tk_irqen =A0 =A0 =A0 =3D 1,
+> =A0};
+>
+> =A0void sh_mobile_setup_cpuidle(void)
+> --
+> 1.7.1
+>
