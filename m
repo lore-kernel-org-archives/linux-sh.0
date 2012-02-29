@@ -1,94 +1,49 @@
-From: Cong Wang <amwang@redhat.com>
-Date: Fri, 10 Feb 2012 05:39:27 +0000
-Subject: [PATCH 06/60] sh: remove the second argument of k[un]map_atomic()
-Message-Id: <1328852421-19678-7-git-send-email-amwang@redhat.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 13:17:00 +0000
+Subject: [PATCH 07/17] ARM: mach-shmobile: r8a7740 sh_clk_ops rename
+Message-Id: <20120229131700.29154.67438.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328852421-19678-1-git-send-email-amwang@redhat.com>
-In-Reply-To: <1328852421-19678-1-git-send-email-amwang@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>, Cong Wang <amwang@redhat.com>, Paul Mundt <lethal@linux-sh.org>, Stuart Menefy <stuart.menefy@st.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Cong Wang <amwang@redhat.com>
+From: Magnus Damm <damm@opensource.se>
+
+Convert r8a7740 to use sh_clk_ops.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/mm/cache-sh4.c |    4 ++--
- arch/sh/mm/cache.c     |   12 ++++++------
- 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
-index 92eb986..112fea1 100644
---- a/arch/sh/mm/cache-sh4.c
-+++ b/arch/sh/mm/cache-sh4.c
-@@ -244,7 +244,7 @@ static void sh4_flush_cache_page(void *args)
- 		if (map_coherent)
- 			vaddr = kmap_coherent(page, address);
- 		else
--			vaddr = kmap_atomic(page, KM_USER0);
-+			vaddr = kmap_atomic(page);
- 
- 		address = (unsigned long)vaddr;
- 	}
-@@ -259,7 +259,7 @@ static void sh4_flush_cache_page(void *args)
- 		if (map_coherent)
- 			kunmap_coherent(vaddr);
- 		else
--			kunmap_atomic(vaddr, KM_USER0);
-+			kunmap_atomic(vaddr);
- 	}
- }
- 
-diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
-index 5a580ea..616966a 100644
---- a/arch/sh/mm/cache.c
-+++ b/arch/sh/mm/cache.c
-@@ -95,7 +95,7 @@ void copy_user_highpage(struct page *to, struct page *from,
- {
- 	void *vfrom, *vto;
- 
--	vto = kmap_atomic(to, KM_USER1);
-+	vto = kmap_atomic(to);
- 
- 	if (boot_cpu_data.dcache.n_aliases && page_mapped(from) &&
- 	    test_bit(PG_dcache_clean, &from->flags)) {
-@@ -103,16 +103,16 @@ void copy_user_highpage(struct page *to, struct page *from,
- 		copy_page(vto, vfrom);
- 		kunmap_coherent(vfrom);
- 	} else {
--		vfrom = kmap_atomic(from, KM_USER0);
-+		vfrom = kmap_atomic(from);
- 		copy_page(vto, vfrom);
--		kunmap_atomic(vfrom, KM_USER0);
-+		kunmap_atomic(vfrom);
- 	}
- 
- 	if (pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK) ||
- 	    (vma->vm_flags & VM_EXEC))
- 		__flush_purge_region(vto, PAGE_SIZE);
- 
--	kunmap_atomic(vto, KM_USER1);
-+	kunmap_atomic(vto);
- 	/* Make sure this page is cleared on other CPU's too before using it */
- 	smp_wmb();
- }
-@@ -120,14 +120,14 @@ EXPORT_SYMBOL(copy_user_highpage);
- 
- void clear_user_highpage(struct page *page, unsigned long vaddr)
- {
--	void *kaddr = kmap_atomic(page, KM_USER0);
-+	void *kaddr = kmap_atomic(page);
- 
- 	clear_page(kaddr);
- 
- 	if (pages_do_alias((unsigned long)kaddr, vaddr & PAGE_MASK))
- 		__flush_purge_region(kaddr, PAGE_SIZE);
- 
--	kunmap_atomic(kaddr, KM_USER0);
-+	kunmap_atomic(kaddr);
- }
- EXPORT_SYMBOL(clear_user_highpage);
- 
--- 
-1.7.7.6
+ arch/arm/mach-shmobile/clock-r8a7740.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/clock-r8a7740.c
++++ work/arch/arm/mach-shmobile/clock-r8a7740.c	2012-02-28 22:14:45.000000000 +0900
+@@ -93,7 +93,7 @@ static unsigned long div_recalc(struct c
+ 	return clk->parent->rate / (int)(clk->priv);
+ }
+ 
+-static struct clk_ops div_clk_ops = {
++static struct sh_clk_ops div_clk_ops = {
+ 	.recalc	= div_recalc,
+ };
+ 
+@@ -125,7 +125,7 @@ static struct clk extal2_div2_clk = {
+ 	.parent	= &extal2_clk,
+ };
+ 
+-static struct clk_ops followparent_clk_ops = {
++static struct sh_clk_ops followparent_clk_ops = {
+ 	.recalc	= followparent_recalc,
+ };
+ 
+@@ -156,7 +156,7 @@ static unsigned long pllc01_recalc(struc
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops pllc01_clk_ops = {
++static struct sh_clk_ops pllc01_clk_ops = {
+ 	.recalc		= pllc01_recalc,
+ };
+ 
