@@ -1,79 +1,351 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 09 Feb 2012 21:57:11 +0000
-Subject: [PATCH 05/10 v3] ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
-Message-Id: <1328824636-10553-6-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 13:17:55 +0000
+Subject: [PATCH 14/17] sh: sh4a sh_clk_ops rename
+Message-Id: <20120229131755.29154.56752.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
+
+Convert sh4a SoCs to use sh_clk_ops.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   22 ++--------------------
- 1 files changed, 2 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 9c5e598..9501a7a 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1004,21 +1004,12 @@ static int slot_cn7_get_cd(struct platform_device *pdev)
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c |    4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7366.c |    4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |    4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    6 +++---
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7763.c |   14 +++++++-------
+ arch/sh/kernel/cpu/sh4a/clock-sh7770.c |   12 ++++++------
+ arch/sh/kernel/cpu/sh4a/clock-sh7780.c |   14 +++++++-------
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c |    2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c |    2 +-
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c   |    2 +-
+ 12 files changed, 35 insertions(+), 35 deletions(-)
+
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7343.c	2012-02-29 20:12:51.000000000 +0900
+@@ -61,7 +61,7 @@ static unsigned long dll_recalc(struct c
+ 	return clk->parent->rate * mult;
  }
  
- /* SDHI0 */
--static irqreturn_t mackerel_sdhi0_gpio_cd(int irq, void *arg)
--{
--	struct device *dev = arg;
--	struct sh_mobile_sdhi_info *info = dev->platform_data;
--	struct tmio_mmc_data *pdata = info->pdata;
--
--	tmio_mmc_cd_wakeup(pdata);
--
--	return IRQ_HANDLED;
--}
--
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-+	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.cd_gpio	= GPIO_PORT172,
+-static struct clk_ops dll_clk_ops = {
++static struct sh_clk_ops dll_clk_ops = {
+ 	.recalc		= dll_recalc,
  };
  
- static struct resource sdhi0_resources[] = {
-@@ -1408,7 +1399,6 @@ static void __init mackerel_init(void)
+@@ -81,7 +81,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7366.c	2012-02-29 20:17:49.000000000 +0900
+@@ -61,7 +61,7 @@ static unsigned long dll_recalc(struct c
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops dll_clk_ops = {
++static struct sh_clk_ops dll_clk_ops = {
+ 	.recalc		= dll_recalc,
+ };
+ 
+@@ -84,7 +84,7 @@ static unsigned long pll_recalc(struct c
+ 	return (clk->parent->rate * mult) / div;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7722.c	2012-02-29 20:17:14.000000000 +0900
+@@ -64,7 +64,7 @@ static unsigned long dll_recalc(struct c
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops dll_clk_ops = {
++static struct sh_clk_ops dll_clk_ops = {
+ 	.recalc		= dll_recalc,
+ };
+ 
+@@ -87,7 +87,7 @@ static unsigned long pll_recalc(struct c
+ 	return (clk->parent->rate * mult) / div;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7723.c	2012-02-29 20:14:24.000000000 +0900
+@@ -65,7 +65,7 @@ static unsigned long dll_recalc(struct c
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops dll_clk_ops = {
++static struct sh_clk_ops dll_clk_ops = {
+ 	.recalc		= dll_recalc,
+ };
+ 
+@@ -88,7 +88,7 @@ static unsigned long pll_recalc(struct c
+ 	return (clk->parent->rate * mult) / div;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7724.c	2012-02-29 20:10:48.000000000 +0900
+@@ -70,7 +70,7 @@ static unsigned long fll_recalc(struct c
+ 	return (clk->parent->rate * mult) / div;
+ }
+ 
+-static struct clk_ops fll_clk_ops = {
++static struct sh_clk_ops fll_clk_ops = {
+ 	.recalc		= fll_recalc,
+ };
+ 
+@@ -90,7 +90,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+@@ -105,7 +105,7 @@ static unsigned long div3_recalc(struct
+ 	return clk->parent->rate / 3;
+ }
+ 
+-static struct clk_ops div3_clk_ops = {
++static struct sh_clk_ops div3_clk_ops = {
+ 	.recalc		= div3_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7757.c	2012-02-29 20:18:07.000000000 +0900
+@@ -33,7 +33,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * multiplier;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7763.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7763.c	2012-02-29 20:23:19.000000000 +0900
+@@ -27,7 +27,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= p0fc_divisors[(__raw_readl(FRQCR) >> 4) & 0x07];
+ }
+ 
+-static struct clk_ops sh7763_master_clk_ops = {
++static struct sh_clk_ops sh7763_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -37,7 +37,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / p0fc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7763_module_clk_ops = {
++static struct sh_clk_ops sh7763_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -47,22 +47,22 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / bfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7763_bus_clk_ops = {
++static struct sh_clk_ops sh7763_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+-static struct clk_ops sh7763_cpu_clk_ops = {
++static struct sh_clk_ops sh7763_cpu_clk_ops = {
+ 	.recalc		= followparent_recalc,
+ };
+ 
+-static struct clk_ops *sh7763_clk_ops[] = {
++static struct sh_clk_ops *sh7763_clk_ops[] = {
+ 	&sh7763_master_clk_ops,
+ 	&sh7763_module_clk_ops,
+ 	&sh7763_bus_clk_ops,
+ 	&sh7763_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
  {
- 	u32 srcr4;
- 	struct clk *clk;
--	int ret;
+ 	if (idx < ARRAY_SIZE(sh7763_clk_ops))
+ 		*ops = sh7763_clk_ops[idx];
+@@ -74,7 +74,7 @@ static unsigned long shyway_clk_recalc(s
+ 	return clk->parent->rate / cfc_divisors[idx];
+ }
  
- 	sh7372_pinmux_init();
+-static struct clk_ops sh7763_shyway_clk_ops = {
++static struct sh_clk_ops sh7763_shyway_clk_ops = {
+ 	.recalc		= shyway_clk_recalc,
+ };
  
-@@ -1505,7 +1495,6 @@ static void __init mackerel_init(void)
- 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7770.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7770.c	2012-02-29 20:23:50.000000000 +0900
+@@ -24,7 +24,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= pfc_divisors[(__raw_readl(FRQCR) >> 28) & 0x000f];
+ }
  
- 	/* enable SDHI0 */
--	gpio_request(GPIO_FN_SDHICD0, NULL);
- 	gpio_request(GPIO_FN_SDHIWP0, NULL);
- 	gpio_request(GPIO_FN_SDHICMD0, NULL);
- 	gpio_request(GPIO_FN_SDHICLK0, NULL);
-@@ -1514,13 +1503,6 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1, NULL);
- 	gpio_request(GPIO_FN_SDHID0_0, NULL);
+-static struct clk_ops sh7770_master_clk_ops = {
++static struct sh_clk_ops sh7770_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
  
--	ret = request_irq(evt2irq(0x3340), mackerel_sdhi0_gpio_cd,
--			  IRQF_TRIGGER_FALLING, "sdhi0 cd", &sdhi0_device.dev);
--	if (!ret)
--		sdhi0_info.tmio_flags |= TMIO_MMC_HAS_COLD_CD;
--	else
--		pr_err("Cannot get IRQ #%d: %d\n", evt2irq(0x3340), ret);
--
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 	/* enable SDHI1 */
- 	gpio_request(GPIO_FN_SDHICMD1, NULL);
--- 
-1.7.2.5
-
+@@ -34,7 +34,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7770_module_clk_ops = {
++static struct sh_clk_ops sh7770_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -44,7 +44,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / bfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7770_bus_clk_ops = {
++static struct sh_clk_ops sh7770_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -54,18 +54,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / ifc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7770_cpu_clk_ops = {
++static struct sh_clk_ops sh7770_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7770_clk_ops[] = {
++static struct sh_clk_ops *sh7770_clk_ops[] = {
+ 	&sh7770_master_clk_ops,
+ 	&sh7770_module_clk_ops,
+ 	&sh7770_bus_clk_ops,
+ 	&sh7770_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7770_clk_ops))
+ 		*ops = sh7770_clk_ops[idx];
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7780.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7780.c	2012-02-29 20:24:36.000000000 +0900
+@@ -27,7 +27,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= pfc_divisors[__raw_readl(FRQCR) & 0x0003];
+ }
+ 
+-static struct clk_ops sh7780_master_clk_ops = {
++static struct sh_clk_ops sh7780_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -37,7 +37,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7780_module_clk_ops = {
++static struct sh_clk_ops sh7780_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -47,7 +47,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / bfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7780_bus_clk_ops = {
++static struct sh_clk_ops sh7780_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -57,18 +57,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / ifc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7780_cpu_clk_ops = {
++static struct sh_clk_ops sh7780_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7780_clk_ops[] = {
++static struct sh_clk_ops *sh7780_clk_ops[] = {
+ 	&sh7780_master_clk_ops,
+ 	&sh7780_module_clk_ops,
+ 	&sh7780_bus_clk_ops,
+ 	&sh7780_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7780_clk_ops))
+ 		*ops = sh7780_clk_ops[idx];
+@@ -80,7 +80,7 @@ static unsigned long shyway_clk_recalc(s
+ 	return clk->parent->rate / cfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7780_shyway_clk_ops = {
++static struct sh_clk_ops sh7780_shyway_clk_ops = {
+ 	.recalc		= shyway_clk_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7785.c	2012-02-29 20:26:08.000000000 +0900
+@@ -36,7 +36,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * multiplier;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-sh7786.c	2012-02-29 20:27:05.000000000 +0900
+@@ -38,7 +38,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * multiplier;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+--- 0001/arch/sh/kernel/cpu/sh4a/clock-shx3.c
++++ work/arch/sh/kernel/cpu/sh4a/clock-shx3.c	2012-02-29 20:27:48.000000000 +0900
+@@ -32,7 +32,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * 72;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
