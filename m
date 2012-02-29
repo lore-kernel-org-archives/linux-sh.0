@@ -1,52 +1,76 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 02 Feb 2012 22:12:35 +0000
-Subject: [PATCH] PM: provide a dummy dev_gpd_data() when generic domains are not used
-Message-Id: <Pine.LNX.4.64.1202022258581.13860@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 13:16:52 +0000
+Subject: [PATCH 06/17] ARM: mach-shmobile: sh73a0 sh_clk_ops rename
+Message-Id: <20120229131652.29154.26200.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-dev_gpd_data() is a generic macro, also useful for drivers. Hence it should
-be available also when CONFIG_PM_GENERIC_DOMAINS is not selected. OTOH,
-to_gpd_data() is so far unused outside of the generic PM domain code and
-does not seem to be very useful without CONFIG_PM_GENERIC_DOMAINS.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Convert sh73a0 to use sh_clk_ops.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- include/linux/pm_domain.h |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
-index a03a0ad..f1a5f8b 100644
---- a/include/linux/pm_domain.h
-+++ b/include/linux/pm_domain.h
-@@ -99,12 +99,12 @@ struct generic_pm_domain_data {
- 	bool need_restore;
+ arch/arm/mach-shmobile/clock-sh73a0.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2012-02-28 21:41:05.000000000 +0900
+@@ -88,7 +88,7 @@ static unsigned long div2_recalc(struct
+ 	return clk->parent->rate / 2;
+ }
+ 
+-static struct clk_ops div2_clk_ops = {
++static struct sh_clk_ops div2_clk_ops = {
+ 	.recalc		= div2_recalc,
  };
  
-+#ifdef CONFIG_PM_GENERIC_DOMAINS
- static inline struct generic_pm_domain_data *to_gpd_data(struct pm_domain_data *pdd)
- {
- 	return container_of(pdd, struct generic_pm_domain_data, base);
+@@ -97,7 +97,7 @@ static unsigned long div7_recalc(struct
+ 	return clk->parent->rate / 7;
  }
  
--#ifdef CONFIG_PM_GENERIC_DOMAINS
- static inline struct generic_pm_domain_data *dev_gpd_data(struct device *dev)
- {
- 	return to_gpd_data(dev->power.subsys_data->domain_data);
-@@ -195,6 +195,10 @@ static inline bool default_stop_ok(struct device *dev)
- 	return false;
- }
- #define pm_domain_always_on_gov NULL
-+static inline struct generic_pm_domain_data *dev_gpd_data(struct device *dev)
-+{
-+	return NULL;
-+}
- #endif
+-static struct clk_ops div7_clk_ops = {
++static struct sh_clk_ops div7_clk_ops = {
+ 	.recalc		= div7_recalc,
+ };
  
- static inline int pm_genpd_remove_callbacks(struct device *dev)
--- 
-1.7.2.5
-
+@@ -106,7 +106,7 @@ static unsigned long div13_recalc(struct
+ 	return clk->parent->rate / 13;
+ }
+ 
+-static struct clk_ops div13_clk_ops = {
++static struct sh_clk_ops div13_clk_ops = {
+ 	.recalc		= div13_recalc,
+ };
+ 
+@@ -122,7 +122,7 @@ static struct clk extal2_div2_clk = {
+ 	.parent		= &sh73a0_extal2_clk,
+ };
+ 
+-static struct clk_ops main_clk_ops = {
++static struct sh_clk_ops main_clk_ops = {
+ 	.recalc		= followparent_recalc,
+ };
+ 
+@@ -156,7 +156,7 @@ static unsigned long pll_recalc(struct c
+ 	return clk->parent->rate * mult;
+ }
+ 
+-static struct clk_ops pll_clk_ops = {
++static struct sh_clk_ops pll_clk_ops = {
+ 	.recalc		= pll_recalc,
+ };
+ 
+@@ -438,7 +438,7 @@ static int dsiphy_set_rate(struct clk *c
+ 	return 0;
+ }
+ 
+-static struct clk_ops dsiphy_clk_ops = {
++static struct sh_clk_ops dsiphy_clk_ops = {
+ 	.recalc		= dsiphy_recalc,
+ 	.round_rate	= dsiphy_round_rate,
+ 	.set_rate	= dsiphy_set_rate,
