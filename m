@@ -1,55 +1,129 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 01 Feb 2012 17:14:28 +0000
-Subject: Re: [PATCH 1/2] dma: sh_dma: not all SH DMAC implementations support MEMCPY
-Message-Id: <1328115748.1610.34.camel@vkoul-udesk3>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Wed, 29 Feb 2012 03:11:43 +0000
+Subject: [PATCH v6 3/9] ARM: exynos: Consolidate time keeping and irq enable
+Message-Id: <1330485109-7327-4-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201181012130.28782@axis700.grange>
+References: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 2012-01-18 at 10:14 +0100, Guennadi Liakhovetski wrote:
-> Add a flag to allow platforms to specify, whether a DMAC instance supports
-> the MEMCPY operation. To avoid regressions, preserve the current default.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Applied both, Thanks
-> ---
->  drivers/dma/shdma.c    |    3 ++-
->  include/linux/sh_dma.h |    1 +
->  2 files changed, 3 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/dma/shdma.c b/drivers/dma/shdma.c
-> index cabcfe8..e4ed4da 100644
-> --- a/drivers/dma/shdma.c
-> +++ b/drivers/dma/shdma.c
-> @@ -1267,7 +1267,8 @@ static int __init sh_dmae_probe(struct platform_device *pdev)
->  
->  	INIT_LIST_HEAD(&shdev->common.channels);
->  
-> -	dma_cap_set(DMA_MEMCPY, shdev->common.cap_mask);
-> +	if (!pdata->slave_only)
-> +		dma_cap_set(DMA_MEMCPY, shdev->common.cap_mask);
->  	if (pdata->slave && pdata->slave_num)
->  		dma_cap_set(DMA_SLAVE, shdev->common.cap_mask);
->  
-> diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-> index e11e171..db637b9 100644
-> --- a/include/linux/sh_dma.h
-> +++ b/include/linux/sh_dma.h
-> @@ -70,6 +70,7 @@ struct sh_dmae_pdata {
->  	unsigned int needs_tend_set:1;
->  	unsigned int no_dmars:1;
->  	unsigned int chclr_present:1;
-> +	unsigned int slave_only:1;
->  };
->  
->  /* DMA register */
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
+---
+ arch/arm/mach-exynos/cpuidle.c |   53 ++++-----------------------------------
+ 1 files changed, 6 insertions(+), 47 deletions(-)
 
+diff --git a/arch/arm/mach-exynos/cpuidle.c b/arch/arm/mach-exynos/cpuidle.c
+index 9bf6743..75bb88b 100644
+--- a/arch/arm/mach-exynos/cpuidle.c
++++ b/arch/arm/mach-exynos/cpuidle.c
+@@ -20,6 +20,7 @@
+ #include <asm/smp_scu.h>
+ #include <asm/suspend.h>
+ #include <asm/unified.h>
++#include <asm/cpuidle.h>
+ #include <mach/regs-pmu.h>
+ #include <mach/pmu.h>
+ 
+@@ -34,22 +35,12 @@
+ 
+ #define S5P_CHECK_AFTR		0xFCBA0D10
+ 
+-static int exynos4_enter_idle(struct cpuidle_device *dev,
+-			struct cpuidle_driver *drv,
+-			      int index);
+ static int exynos4_enter_lowpower(struct cpuidle_device *dev,
+ 				struct cpuidle_driver *drv,
+ 				int index);
+ 
+ static struct cpuidle_state exynos4_cpuidle_set[] = {
+-	[0] = {
+-		.enter			= exynos4_enter_idle,
+-		.exit_latency		= 1,
+-		.target_residency	= 100000,
+-		.flags			= CPUIDLE_FLAG_TIME_VALID,
+-		.name			= "C0",
+-		.desc			= "ARM clock gating(WFI)",
+-	},
++	[0] = CPUIDLE_ARM_WFI_STATE,
+ 	[1] = {
+ 		.enter			= exynos4_enter_lowpower,
+ 		.exit_latency		= 300,
+@@ -63,8 +54,9 @@ static struct cpuidle_state exynos4_cpuidle_set[] = {
+ static DEFINE_PER_CPU(struct cpuidle_device, exynos4_cpuidle_device);
+ 
+ static struct cpuidle_driver exynos4_idle_driver = {
+-	.name		= "exynos4_idle",
+-	.owner		= THIS_MODULE,
++	.name			= "exynos4_idle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
+ };
+ 
+ /* Ext-GIC nIRQ/nFIQ is the only wakeup source in AFTR */
+@@ -103,13 +95,8 @@ static int exynos4_enter_core0_aftr(struct cpuidle_device *dev,
+ 				struct cpuidle_driver *drv,
+ 				int index)
+ {
+-	struct timeval before, after;
+-	int idle_time;
+ 	unsigned long tmp;
+ 
+-	local_irq_disable();
+-	do_gettimeofday(&before);
+-
+ 	exynos4_set_wakeupmask();
+ 
+ 	/* Set value of power down register for aftr mode */
+@@ -148,34 +135,6 @@ static int exynos4_enter_core0_aftr(struct cpuidle_device *dev,
+ 	/* Clear wakeup state register */
+ 	__raw_writel(0x0, S5P_WAKEUP_STAT);
+ 
+-	do_gettimeofday(&after);
+-
+-	local_irq_enable();
+-	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
+-		    (after.tv_usec - before.tv_usec);
+-
+-	dev->last_residency = idle_time;
+-	return index;
+-}
+-
+-static int exynos4_enter_idle(struct cpuidle_device *dev,
+-				struct cpuidle_driver *drv,
+-				int index)
+-{
+-	struct timeval before, after;
+-	int idle_time;
+-
+-	local_irq_disable();
+-	do_gettimeofday(&before);
+-
+-	cpu_do_idle();
+-
+-	do_gettimeofday(&after);
+-	local_irq_enable();
+-	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
+-		    (after.tv_usec - before.tv_usec);
+-
+-	dev->last_residency = idle_time;
+ 	return index;
+ }
+ 
+@@ -190,7 +149,7 @@ static int exynos4_enter_lowpower(struct cpuidle_device *dev,
+ 		new_index = drv->safe_state_index;
+ 
+ 	if (new_index = 0)
+-		return exynos4_enter_idle(dev, drv, new_index);
++		return cpuidle_simple_enter(dev, drv, new_index);
+ 	else
+ 		return exynos4_enter_core0_aftr(dev, drv, new_index);
+ }
 -- 
-~Vinod
+1.7.1
 
