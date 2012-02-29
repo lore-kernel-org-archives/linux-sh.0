@@ -1,47 +1,44 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sun, 05 Feb 2012 01:36:08 +0000
-Subject: Re: [PATCH 00/11 v2] mmc: tmio/sdhi: hotplug & PM
-Message-Id: <Pine.LNX.4.64.1202050235050.3770@axis700.grange>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 29 Feb 2012 13:46:24 +0000
+Subject: [PATCH] sh: bonito: Fix compile breakage
+Message-Id: <1330523184-8540-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1327406500-7233-1-git-send-email-g.liakhovetski@gmx.de>
- <m2wr82885d.fsf@bob.laptop.org> <Pine.LNX.4.64.1202050147520.3770@axis700.grange>
- <m2ehua84xf.fsf@bob.laptop.org>
-In-Reply-To: <m2ehua84xf.fsf@bob.laptop.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: linux-mmc@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Sat, 4 Feb 2012, Chris Ball wrote:
+arch/arm/mach-shmobile/board-bonito.c:244:3: error: unknown field 'bpp' specified in initializer
+make[2]: *** [arch/arm/mach-shmobile/board-bonito.o] Error 1
 
-> Hi,
-> 
-> On Sat, Feb 04 2012, Guennadi Liakhovetski wrote:
-> > Thanks. Actually, it recently occurred to me, that patches 3 and 10 should 
-> > actually be merged into one. So, if you like, I can produce a v3 with that 
-> > taken into account. The result would be exactly the same, I literally 
-> > would just apply #10 on top of #3 and commit the result with the same 
-> > commit description as the v2 of #3.
-> 
-> Sure.
+caused by commit "fbdev: sh_mobile_lcdc: Support FOURCC-based format API"
 
-Ok, will do asap.
-
-> > Shall I also rebase v3 on top of mmx-next and fix the failing patch? The 
-> > two ARM patches can be applied separately, but they have to go in after 
-> > this series then. Either way is ok with me, pulling all via mmc has the 
-> > advantage of not having to synchronise the pulls, but then the conflict 
-> > probability rises of course.
-> 
-> I'm happy to take the ARM patches, but I'll need ACKs from the relevant
-> arch maintainers to do that.
-
-Sure, that's what I meant. Sorry for not mentioning explicitly.
-
-Thanks
-Guennadi
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/board-bonito.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index 4d22016..4bd1162 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -27,6 +27,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/smsc911x.h>
++#include <linux/videodev2.h>
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -241,7 +242,7 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 	.clock_source	= LCDC_CLK_BUS,
+ 	.ch[0] = {
+ 		.chan			= LCDC_CHAN_MAINLCD,
+-		.bpp			= 16,
++		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type		= RGB24,
+ 		.clock_divider		= 5,
+ 		.flags			= 0,
+-- 
+1.7.0.4
+
