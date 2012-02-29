@@ -1,49 +1,42 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 13 Feb 2012 12:17:35 +0000
-Subject: Re: [PATCH 2/2] usb: fix renesas_usbhs to not schedule in atomic context
-Message-Id: <Pine.LNX.4.64.1202131316220.8277@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 12:36:56 +0000
+Subject: [PATCH 00/06] ARM: mach-shmobile: map_io and init_early update
+Message-Id: <20120229123656.28584.90874.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1202092313560.18719@axis700.grange>
- <Pine.LNX.4.64.1202092316180.18719@axis700.grange>
- <20120213120814.GP6614@legolas.emea.dhcp.ti.com>
-In-Reply-To: <20120213120814.GP6614@legolas.emea.dhcp.ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Felipe Balbi <balbi@ti.com>
-Cc: linux-usb@vger.kernel.org, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, 13 Feb 2012, Felipe Balbi wrote:
+ ARM: mach-shmobile: map_io and init_early update
 
-> Hi,
-> 
-> On Thu, Feb 09, 2012 at 11:17:51PM +0100, Guennadi Liakhovetski wrote:
-> > @@ -997,7 +991,7 @@ static bool usbhsf_dma_filter(struct dma_chan *chan, void *param)
-> >  	 *
-> >  	 * usbhs doesn't recognize id = 0 as valid DMA
-> >  	 */
-> > -	if (0 = slave->slave_id)
-> > +	if (0 = slave->simple_slave.slave_id)
-> >  		return false;
-> >  
-> >  	chan->private = slave;
-> > @@ -1176,8 +1170,8 @@ int usbhs_fifo_probe(struct usbhs_priv *priv)
-> >  	fifo->port	= D0FIFO;
-> >  	fifo->sel	= D0FIFOSEL;
-> >  	fifo->ctr	= D0FIFOCTR;
-> > -	fifo->tx_slave.slave_id	= usbhs_get_dparam(priv, d0_tx_id);
-> > -	fifo->rx_slave.slave_id	= usbhs_get_dparam(priv, d0_rx_id);
-> > +	fifo->tx_slave.simple_slave.slave_id	= usbhs_get_dparam(priv, d0_tx_id);
-> > +	fifo->rx_slave.simple_slave.slave_id	= usbhs_get_dparam(priv, d0_rx_id);
-> 
-> what are these "simple_slave" changes ? They have nothing to do with
-> $SUBJECT ? In fact, breaks my gadget branch.
+[PATCH 01/06] ARM: mach-shmobile: sh7367 map_io and init_early update
+[PATCH 02/06] ARM: mach-shmobile: sh7377 map_io and init_early update
+[PATCH 03/06] ARM: mach-shmobile: sh7372 map_io and init_early update
+[PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
+[PATCH 05/06] ARM: mach-shmobile: r8a7740 map_io and init_early update
+[PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
 
-Hrrrm... Right, sorry, that's clearly unrelated...
+This patch series converts the mach-shmobile subarch to properly
+make use of a per-soc map_io and a separate init_early callback for
+early serial console support on platforms where that is possible.
 
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ arch/arm/mach-shmobile/board-ag5evm.c        |   25 +------------
+ arch/arm/mach-shmobile/board-ap4evb.c        |   25 +------------
+ arch/arm/mach-shmobile/board-bonito.c        |   28 +--------------
+ arch/arm/mach-shmobile/board-g3evm.c         |   25 +------------
+ arch/arm/mach-shmobile/board-g4evm.c         |   25 +------------
+ arch/arm/mach-shmobile/board-kota2.c         |   25 +------------
+ arch/arm/mach-shmobile/board-mackerel.c      |   25 +------------
+ arch/arm/mach-shmobile/board-marzen.c        |   48 +-------------------------
+ arch/arm/mach-shmobile/include/mach/common.h |    6 +++
+ arch/arm/mach-shmobile/setup-r8a7740.c       |   35 ++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c       |   39 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh7367.c        |   22 +++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   22 +++++++++++
+ arch/arm/mach-shmobile/setup-sh7377.c        |   22 +++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |   22 +++++++++++
+ 15 files changed, 184 insertions(+), 210 deletions(-)
