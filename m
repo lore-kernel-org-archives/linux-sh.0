@@ -1,58 +1,33 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 09 Feb 2012 21:57:14 +0000
-Subject: [PATCH 08/10 v3] mmc: tmio_mmc: remove unused sdio_irq_enabled flag
-Message-Id: <1328824636-10553-9-git-send-email-g.liakhovetski@gmx.de>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 29 Feb 2012 13:50:46 +0000
+Subject: [PATCH v2] sh: Fix sh2a vbr table for more than 255 irqs
+Message-Id: <1330523446-8646-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-The sdio_irq_enabled member of struct tmio_mmc_host is a left-over from the
-previously removed SDIO IRQ workaround. It is no longer needed and can now
-be removed too.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc.h     |    1 -
- drivers/mmc/host/tmio_mmc_pio.c |    2 --
- 2 files changed, 0 insertions(+), 3 deletions(-)
+v2:
+  Included SoB
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index edfcfd7..d857f5c 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -47,7 +47,6 @@ struct tmio_mmc_host {
- 	struct mmc_request      *mrq;
- 	struct mmc_data         *data;
- 	struct mmc_host         *mmc;
--	unsigned int		sdio_irq_enabled;
- 
- 	/* Controller power state */
- 	bool			power;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 2deb676..64f6c99 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -127,7 +127,6 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
- 
- 	if (enable) {
--		host->sdio_irq_enabled = 1;
- 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL &
- 					~TMIO_SDIO_STAT_IOIRQ;
- 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0001);
-@@ -136,7 +135,6 @@ static void tmio_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
- 		host->sdio_irq_mask = TMIO_SDIO_MASK_ALL;
- 		sd_ctrl_write16(host, CTL_SDIO_IRQ_MASK, host->sdio_irq_mask);
- 		sd_ctrl_write16(host, CTL_TRANSACTION_CTL, 0x0000);
--		host->sdio_irq_enabled = 0;
- 	}
- }
- 
+ arch/sh/kernel/cpu/sh2a/ex.S |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh2a/ex.S b/arch/sh/kernel/cpu/sh2a/ex.S
+index 3ead9e6..4568066 100644
+--- a/arch/sh/kernel/cpu/sh2a/ex.S
++++ b/arch/sh/kernel/cpu/sh2a/ex.S
+@@ -66,6 +66,7 @@ vector	=	0
+ 	.long	exception_entry0 + vector * 6
+ vector	=	vector + 1
+ 	.endr
++vector	=	0
+ 	.rept	256
+ 	.long	exception_entry1 + vector * 6
+ vector	=	vector + 1
 -- 
-1.7.2.5
+1.7.0.4
 
