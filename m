@@ -1,104 +1,169 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 09 Feb 2012 21:57:13 +0000
-Subject: [PATCH 07/10 v3] mmc: tmio_mmc: power status flag doesn't have to be exposed in platform data
-Message-Id: <1328824636-10553-8-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 12:37:27 +0000
+Subject: [PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
+Message-Id: <20120229123727.28584.79600.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-The controller power status flag does not have to be accessed from the
-hot-plug detection code any more, it can now be removed from the platform
-data and put in the controller private struct.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Update the sh73a0 SoC and the AG5EVM and Kota2 boards to make use
+of the functions sh73a0_map_io() and sh73a0_add_early_devices().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/tmio_mmc.h     |    3 +++
- drivers/mmc/host/tmio_mmc_pio.c |   13 ++++++-------
- include/linux/mfd/tmio.h        |    1 -
- 3 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index ede2f4e5..edfcfd7 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -49,6 +49,9 @@ struct tmio_mmc_host {
- 	struct mmc_host         *mmc;
- 	unsigned int		sdio_irq_enabled;
+ arch/arm/mach-shmobile/board-ag5evm.c        |   25 ++-----------------------
+ arch/arm/mach-shmobile/board-kota2.c         |   25 ++-----------------------
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c        |   22 ++++++++++++++++++++++
+ 4 files changed, 27 insertions(+), 46 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-ag5evm.c
++++ work/arch/arm/mach-shmobile/board-ag5evm.c	2012-02-29 16:54:35.000000000 +0900
+@@ -46,7 +46,6 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/hardware/cache-l2x0.h>
+@@ -486,27 +485,6 @@ static struct platform_device *ag5evm_de
+ 	&sdhi1_device,
+ };
  
-+	/* Controller power state */
-+	bool			power;
-+
- 	/* Callbacks for clock / power control */
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 3a28c62..2deb676 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -758,7 +758,6 @@ fail:
- static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+-static struct map_desc ag5evm_io_desc[] __initdata = {
+-	/* create a 1:1 entity map for 0xe6xxxxxx
+-	 * used by CPGA, INTC and PFC.
+-	 */
+-	{
+-		.virtual	= 0xe6000000,
+-		.pfn		= __phys_to_pfn(0xe6000000),
+-		.length		= 256 << 20,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
+-};
+-
+-static void __init ag5evm_map_io(void)
+-{
+-	iotable_init(ag5evm_io_desc, ARRAY_SIZE(ag5evm_io_desc));
+-
+-	/* setup early devices and console here as well */
+-	sh73a0_add_early_devices();
+-	shmobile_setup_console();
+-}
+-
+ static void __init ag5evm_init(void)
  {
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct tmio_mmc_data *pdata = host->pdata;
- 	unsigned long flags;
+ 	sh73a0_pinmux_init();
+@@ -634,7 +612,8 @@ struct sys_timer ag5evm_timer = {
+ };
  
- 	mutex_lock(&host->ios_lock);
-@@ -788,15 +787,15 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	spin_unlock_irqrestore(&host->lock, flags);
+ MACHINE_START(AG5EVM, "ag5evm")
+-	.map_io		= ag5evm_map_io,
++	.map_io		= sh73a0_map_io,
++	.init_early	= sh73a0_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh73a0_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+--- 0001/arch/arm/mach-shmobile/board-kota2.c
++++ work/arch/arm/mach-shmobile/board-kota2.c	2012-02-29 16:54:51.000000000 +0900
+@@ -43,7 +43,6 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/hardware/cache-l2x0.h>
+@@ -409,27 +408,6 @@ static struct platform_device *kota2_dev
+ 	&sdhi1_device,
+ };
  
- 	/*
--	 * pdata->power toggles between false and true in both cases - either
-+	 * host->power toggles between false and true in both cases - either
- 	 * or not the controller can be runtime-suspended during inactivity. But
- 	 * if the controller has to be kept on, the runtime-pm usage_count is
- 	 * kept positive, so no suspending actually takes place.
- 	 */
- 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
--		if (!pdata->power) {
-+		if (!host->power) {
- 			pm_runtime_get_sync(&host->pdev->dev);
--			pdata->power = true;
-+			host->power = true;
- 		}
- 		tmio_mmc_set_clock(host, ios->clock);
- 		/* power up SD bus */
-@@ -807,8 +806,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	} else if (ios->power_mode != MMC_POWER_UP) {
- 		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
- 			host->set_pwr(host->pdev, 0);
--		if (pdata->power) {
--			pdata->power = false;
-+		if (host->power) {
-+			host->power = false;
- 			pm_runtime_put(&host->pdev->dev);
- 		}
- 		tmio_mmc_clk_stop(host);
-@@ -919,7 +918,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  pdata->flags & TMIO_MMC_USE_GPIO_CD ||
- 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
- 				  mmc->caps & MMC_CAP_NONREMOVABLE);
--	pdata->power = false;
-+	_host->power = false;
- 	pm_runtime_enable(&pdev->dev);
- 	ret = pm_runtime_resume(&pdev->dev);
- 	if (ret < 0)
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 5a197de..f5171db 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -105,7 +105,6 @@ struct tmio_mmc_data {
- 	u32				ocr_mask;	/* available voltages */
- 	struct tmio_mmc_dma		*dma;
- 	struct device			*dev;
--	bool				power;
- 	unsigned int			cd_gpio;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--- 
-1.7.2.5
-
+-static struct map_desc kota2_io_desc[] __initdata = {
+-	/* create a 1:1 entity map for 0xe6xxxxxx
+-	 * used by CPGA, INTC and PFC.
+-	 */
+-	{
+-		.virtual	= 0xe6000000,
+-		.pfn		= __phys_to_pfn(0xe6000000),
+-		.length		= 256 << 20,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
+-};
+-
+-static void __init kota2_map_io(void)
+-{
+-	iotable_init(kota2_io_desc, ARRAY_SIZE(kota2_io_desc));
+-
+-	/* setup early devices and console here as well */
+-	sh73a0_add_early_devices();
+-	shmobile_setup_console();
+-}
+-
+ static void __init kota2_init(void)
+ {
+ 	sh73a0_pinmux_init();
+@@ -547,7 +525,8 @@ struct sys_timer kota2_timer = {
+ };
+ 
+ MACHINE_START(KOTA2, "kota2")
+-	.map_io		= kota2_map_io,
++	.map_io		= sh73a0_map_io,
++	.init_early	= sh73a0_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh73a0_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-02-29 16:55:52.000000000 +0900
+@@ -41,6 +41,7 @@ extern struct clk sh7372_extal1_clk;
+ extern struct clk sh7372_extal2_clk;
+ 
+ extern void sh73a0_init_irq(void);
++extern void sh73a0_map_io(void);
+ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+ extern void sh73a0_clock_init(void);
+--- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2012-02-29 16:55:05.000000000 +0900
+@@ -32,9 +32,28 @@
+ #include <linux/sh_timer.h>
+ #include <mach/hardware.h>
+ #include <mach/sh73a0.h>
++#include <mach/common.h>
+ #include <asm/mach-types.h>
++#include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ 
++static struct map_desc sh73a0_io_desc[] __initdata = {
++	/* create a 1:1 entity map for 0xe6xxxxxx
++	 * used by CPGA, INTC and PFC.
++	 */
++	{
++		.virtual	= 0xe6000000,
++		.pfn		= __phys_to_pfn(0xe6000000),
++		.length		= 256 << 20,
++		.type		= MT_DEVICE_NONSHARED
++	},
++};
++
++void __init sh73a0_map_io(void)
++{
++	iotable_init(sh73a0_io_desc, ARRAY_SIZE(sh73a0_io_desc));
++}
++
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xe6c40000,
+ 	.flags		= UPF_BOOT_AUTOCONF,
+@@ -671,4 +690,7 @@ void __init sh73a0_add_early_devices(voi
+ {
+ 	early_platform_add_devices(sh73a0_early_devices,
+ 				   ARRAY_SIZE(sh73a0_early_devices));
++
++	/* setup early console here as well */
++	shmobile_setup_console();
+ }
