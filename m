@@ -1,138 +1,116 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Sun, 19 Feb 2012 11:04:08 +0000
-Subject: Re: [PATCH v2 6/7] mtd: sh_flctl: Add FLHOLDCR register
-Message-Id: <CABYn4syza6kL04SkWqgDYBp91hXJzLiAL2V6q+Dno6HDVzyQug@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 12:41:30 +0000
+Subject: [PATCH] ARM: mach-shmobile: rename clk_init() to shmobile_clk_init()
+Message-Id: <20120229124130.29066.74120.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
- <1328960705-18699-7-git-send-email-hechtb@gmail.com>
- <2427717.Or3gUAU8Yx@avalon>
-In-Reply-To: <2427717.Or3gUAU8Yx@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hello Laurent,
+From: Magnus Damm <damm@opensource.se>
 
-2012/2/18 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> Hi Bastian,
->
-> Thanks for the patch.
->
-> On Saturday 11 February 2012 12:45:04 Bastian Hecht wrote:
->> Add a register used in new FLCTL hardware and a feature flag for it.
->>
->> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
->> ---
->> changelog: the write to the register has been moved due to patch 5.
->>
->> =A0drivers/mtd/nand/sh_flctl.c =A0| =A0 =A03 +++
->> =A0include/linux/mtd/sh_flctl.h | =A0 12 ++++++++++++
->> =A02 files changed, 15 insertions(+), 0 deletions(-)
->>
->> diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
->> index 1af41fd..40dda26 100644
->> --- a/drivers/mtd/nand/sh_flctl.c
->> +++ b/drivers/mtd/nand/sh_flctl.c
->> @@ -688,6 +688,8 @@ static void flctl_select_chip(struct mtd_info *mtd, =
-int
->> chipnr) break;
->> =A0 =A0 =A0 case 0:
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 writel(flctl->flcmncr_val | CE0_ENABLE, FLCM=
-NCR(flctl));
->> + =A0 =A0 =A0 =A0 =A0 =A0 if (flctl->holden)
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 writel(HOLDEN, FLHOLDCR(flctl)=
-);
->
-> Can't this be done at probe time (maybe in flctl_chip_init_tail()) ? You =
-could
-> then get rid of the flctl->holden field and use platform data directly.
+Rename clk_init() to shmobile_clk_init() to avoid a potential
+future name space collision with the common clock framework.
 
-I need this information for runtime pm. I reworked this patch series
-to be without rtpm, but from the next patch on (that's only waiting to
-be posted), I'll want to have it like this.
-In fact this is a design question:
-I can either have a resume/runtime_resume callback whose only job is
-to set FLHOLDCR. or I integrate this into select_chip. The first
-variation saves 1 register write in case of no rtpm activated - the
-second variation makes the code a bit slimmer.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-What do you think?
-1. Leave it like this and save the callbacks in the future
-2. Rework it to be set at probe time() and postpone the design decision?
-3. Rework it to be set at probe time() and implement callbacks in the
-upcoming patches?
+ arch/arm/mach-shmobile/clock-r8a7740.c       |    2 +-
+ arch/arm/mach-shmobile/clock-r8a7779.c       |    2 +-
+ arch/arm/mach-shmobile/clock-sh7367.c        |    2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c        |    2 +-
+ arch/arm/mach-shmobile/clock-sh7377.c        |    2 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c        |    2 +-
+ arch/arm/mach-shmobile/clock.c               |    2 +-
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+ 8 files changed, 8 insertions(+), 8 deletions(-)
 
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
->> =A0 =A0 =A0 default:
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 BUG();
->> @@ -845,6 +847,7 @@ static int __devinit flctl_probe(struct platform_dev=
-ice
->> *pdev) flctl->pdev =3D pdev;
->> =A0 =A0 =A0 flctl->flcmncr_val =3D pdata->flcmncr_val;
->> =A0 =A0 =A0 flctl->hwecc =3D pdata->has_hwecc;
->> + =A0 =A0 flctl->holden =3D pdata->use_holden;
->>
->> =A0 =A0 =A0 nand->options =3D NAND_NO_AUTOINCR;
->>
->> diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
->> index 107fd8a..6046443 100644
->> --- a/include/linux/mtd/sh_flctl.h
->> +++ b/include/linux/mtd/sh_flctl.h
->> @@ -38,6 +38,7 @@
->> =A0#define FLDTFIFO(f) =A0 =A0 =A0 =A0 =A0(f->reg + 0x24)
->> =A0#define FLECFIFO(f) =A0 =A0 =A0 =A0 =A0(f->reg + 0x28)
->> =A0#define FLTRCR(f) =A0 =A0 =A0 =A0 =A0 =A0(f->reg + 0x2C)
->> +#define FLHOLDCR(f) =A0 =A0 =A0 =A0 =A0(f->reg + 0x38)
->> =A0#define =A0 =A0 =A0FL4ECCRESULT0(f) =A0 =A0 =A0 =A0(f->reg + 0x80)
->> =A0#define =A0 =A0 =A0FL4ECCRESULT1(f) =A0 =A0 =A0 =A0(f->reg + 0x84)
->> =A0#define =A0 =A0 =A0FL4ECCRESULT2(f) =A0 =A0 =A0 =A0(f->reg + 0x88)
->> @@ -109,6 +110,15 @@
->> =A0#define TRSTRT =A0 =A0 =A0 =A0 =A0 =A0 =A0 (0x1 << 0) =A0 =A0 =A0/* t=
-ranslation start */
->> =A0#define TREND =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(0x1 << 1) =A0 =A0 =A0/*=
- translation end */
->>
->> +/*
->> + * FLHOLDCR control bits
->> + *
->> + * HOLDEN: Bus Occupancy Enable (inverted)
->> + * Enable this bit when the external bus might be used in between
->> transfers. + * If not set and the bus gets used by other modules, a
->> deadlock occurs. + */
->> +#define HOLDEN =A0 =A0 =A0 =A0 =A0 =A0 =A0 (0x1 << 0)
->> +
->> =A0/* FL4ECCCR control bits */
->> =A0#define =A0 =A0 =A0_4ECCFA =A0 =A0 =A0 =A0 (0x1 << 2) =A0 =A0 =A0/* 4=
- symbols correct fault */
->> =A0#define =A0 =A0 =A0_4ECCEND =A0 =A0 =A0 =A0(0x1 << 1) =A0 =A0 =A0/* 4=
- symbols end */
->> @@ -138,6 +148,7 @@ struct sh_flctl {
->>
->> =A0 =A0 =A0 unsigned page_size:1; =A0 /* NAND page size (0 =3D 512, 1 =
-=3D 2048) */
->> =A0 =A0 =A0 unsigned hwecc:1; =A0 =A0 =A0 /* Hardware ECC (0 =3D disable=
-d, 1 =3D enabled) */
->> + =A0 =A0 unsigned holden:1; =A0 =A0 =A0/* Hardware has FLHOLDCR and HOL=
-DEN is set */
->> =A0};
->>
->> =A0struct sh_flctl_platform_data {
->> @@ -146,6 +157,7 @@ struct sh_flctl_platform_data {
->> =A0 =A0 =A0 unsigned long =A0 =A0 =A0 =A0 =A0 flcmncr_val;
->>
->> =A0 =A0 =A0 unsigned has_hwecc:1;
->> + =A0 =A0 unsigned use_holden:1;
->> =A0};
->>
->> =A0static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
->
-> --
-> Regards,
->
-> Laurent Pinchart
-
-thanks for all the reviews!
-
- Bastian
+--- 0015/arch/arm/mach-shmobile/clock-r8a7740.c
++++ work/arch/arm/mach-shmobile/clock-r8a7740.c	2012-02-29 20:59:39.000000000 +0900
+@@ -376,7 +376,7 @@ void __init r8a7740_clock_init(u8 md_ck)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+-		clk_init();
++		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup r8a7740 clocks\n");
+ }
+--- 0016/arch/arm/mach-shmobile/clock-r8a7779.c
++++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2012-02-29 20:59:53.000000000 +0900
+@@ -170,7 +170,7 @@ void __init r8a7779_clock_init(void)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+-		clk_init();
++		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup r8a7779 clocks\n");
+ }
+--- 0014/arch/arm/mach-shmobile/clock-sh7367.c
++++ work/arch/arm/mach-shmobile/clock-sh7367.c	2012-02-29 21:00:12.000000000 +0900
+@@ -349,7 +349,7 @@ void __init sh7367_clock_init(void)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+-		clk_init();
++		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup sh7367 clocks\n");
+ }
+--- 0012/arch/arm/mach-shmobile/clock-sh7372.c
++++ work/arch/arm/mach-shmobile/clock-sh7372.c	2012-02-29 21:00:34.000000000 +0900
+@@ -710,7 +710,7 @@ void __init sh7372_clock_init(void)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+-		clk_init();
++		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup sh7372 clocks\n");
+ 
+--- 0013/arch/arm/mach-shmobile/clock-sh7377.c
++++ work/arch/arm/mach-shmobile/clock-sh7377.c	2012-02-29 21:00:25.000000000 +0900
+@@ -360,7 +360,7 @@ void __init sh7377_clock_init(void)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+-		clk_init();
++		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup sh7377 clocks\n");
+ }
+--- 0011/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2012-02-29 21:00:48.000000000 +0900
+@@ -620,7 +620,7 @@ void __init sh73a0_clock_init(void)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+-		clk_init();
++		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup sh73a0 clocks\n");
+ }
+--- 0001/arch/arm/mach-shmobile/clock.c
++++ work/arch/arm/mach-shmobile/clock.c	2012-02-29 20:58:43.000000000 +0900
+@@ -24,7 +24,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/export.h>
+ 
+-int __init clk_init(void)
++int __init shmobile_clk_init(void)
+ {
+ 	/* Kick the child clocks.. */
+ 	recalculate_root_clocks();
+--- 0008/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-02-29 20:59:15.000000000 +0900
+@@ -6,7 +6,7 @@ extern void shmobile_setup_console(void)
+ extern void shmobile_secondary_vector(void);
+ extern int shmobile_platform_cpu_kill(unsigned int cpu);
+ struct clk;
+-extern int clk_init(void);
++extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
+ struct cpuidle_driver;
