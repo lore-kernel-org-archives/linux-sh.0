@@ -1,87 +1,321 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Thu, 02 Feb 2012 00:43:24 +0000
-Subject: [PATCH RFC idle 3/3] sh: Avoid invoking RCU when CPU is idle
-Message-Id: <1328143404-11038-3-git-send-email-paulmck@linux.vnet.ibm.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 13:17:40 +0000
+Subject: [PATCH 12/17] sh: sh3 sh_clk_ops rename
+Message-Id: <20120229131740.29154.874.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120202004253.GA10946@linux.vnet.ibm.com>
- <1328143404-11038-1-git-send-email-paulmck@linux.vnet.ibm.com>
-In-Reply-To: <1328143404-11038-1-git-send-email-paulmck@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: mingo@elte.hu, laijs@cn.fujitsu.com, dipankar@in.ibm.com, akpm@linux-foundation.org, mathieu.desnoyers@polymtl.ca, josh@joshtriplett.org, niv@us.ibm.com, tglx@linutronix.de, peterz@infradead.org, rostedt@goodmis.org, Valdis.Kletnieks@vt.edu, dhowells@redhat.com, eric.dumazet@gmail.com, darren@dvhart.com, fweisbec@gmail.com, patches@linaro.org, "Paul E. McKenney" <paul.mckenney@linaro.org>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, Paul Mundt <lethal@linux-sh.org>, Mike Frysinger <vapier@gentoo.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: "Paul E. McKenney" <paul.mckenney@linaro.org>
+From: Magnus Damm <damm@opensource.se>
 
-The idle loop is a quiscent state for RCU, which means that RCU ignores
-CPUs that have told RCU that they are idle via rcu_idle_enter().
-There are nevertheless quite a few places where idle CPUs use RCU, most
-commonly indirectly via tracing.  This patch fixes these problems for SH.
+Convert sh3 SoCs to use sh_clk_ops.
 
-Many of these bugs have been in the kernel for quite some time, but
-Frederic's recent change now gives warnings.
-
-This patch takes the straightforward approach of pushing the
-rcu_idle_enter()/rcu_idle_exit() pair further down into the core of the
-idle loop.
-
-Signed-off-by: Paul E. McKenney <paul.mckenney@linaro.org>
-Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Mike Frysinger <vapier@gentoo.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/kernel/idle.c |   11 ++++++++---
- 1 files changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
-index 406508d..d125668 100644
---- a/arch/sh/kernel/idle.c
-+++ b/arch/sh/kernel/idle.c
-@@ -53,8 +53,10 @@ static inline int hlt_works(void)
- static void poll_idle(void)
- {
- 	local_irq_enable();
-+	rcu_idle_enter();
- 	while (!need_resched())
- 		cpu_relax();
-+	rcu_idle_exit();
+ arch/sh/kernel/cpu/sh3/clock-sh3.c    |   12 ++++++------
+ arch/sh/kernel/cpu/sh3/clock-sh7705.c |   12 ++++++------
+ arch/sh/kernel/cpu/sh3/clock-sh7706.c |   12 ++++++------
+ arch/sh/kernel/cpu/sh3/clock-sh7709.c |   12 ++++++------
+ arch/sh/kernel/cpu/sh3/clock-sh7710.c |   12 ++++++------
+ arch/sh/kernel/cpu/sh3/clock-sh7712.c |   10 +++++-----
+ 6 files changed, 35 insertions(+), 35 deletions(-)
+
+--- 0001/arch/sh/kernel/cpu/sh3/clock-sh3.c
++++ work/arch/sh/kernel/cpu/sh3/clock-sh3.c	2012-02-29 20:36:21.000000000 +0900
+@@ -34,7 +34,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= pfc_divisors[idx];
  }
  
- void default_idle(void)
-@@ -66,9 +68,14 @@ void default_idle(void)
- 		set_bl_bit();
- 		if (!need_resched()) {
- 			local_irq_enable();
-+			rcu_idle_enter();
- 			cpu_sleep();
--		} else
-+			rcu_idle_exit();
-+		} else {
- 			local_irq_enable();
-+			rcu_idle_enter();
-+			rcu_idle_exit();
-+		}
+-static struct clk_ops sh3_master_clk_ops = {
++static struct sh_clk_ops sh3_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
  
- 		set_thread_flag(TIF_POLLING_NRFLAG);
- 		clear_bl_bit();
-@@ -90,7 +97,6 @@ void cpu_idle(void)
- 	/* endless idle loop with no priority at all */
- 	while (1) {
- 		tick_nohz_idle_enter();
--		rcu_idle_enter();
+@@ -46,7 +46,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / pfc_divisors[idx];
+ }
  
- 		while (!need_resched()) {
- 			check_pgt_cache();
-@@ -112,7 +118,6 @@ void cpu_idle(void)
- 			start_critical_timings();
- 		}
+-static struct clk_ops sh3_module_clk_ops = {
++static struct sh_clk_ops sh3_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
  
--		rcu_idle_exit();
- 		tick_nohz_idle_exit();
- 		preempt_enable_no_resched();
- 		schedule();
--- 
-1.7.8
-
+@@ -58,7 +58,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / stc_multipliers[idx];
+ }
+ 
+-static struct clk_ops sh3_bus_clk_ops = {
++static struct sh_clk_ops sh3_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -70,18 +70,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / ifc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh3_cpu_clk_ops = {
++static struct sh_clk_ops sh3_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh3_clk_ops[] = {
++static struct sh_clk_ops *sh3_clk_ops[] = {
+ 	&sh3_master_clk_ops,
+ 	&sh3_module_clk_ops,
+ 	&sh3_bus_clk_ops,
+ 	&sh3_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh3_clk_ops))
+ 		*ops = sh3_clk_ops[idx];
+--- 0001/arch/sh/kernel/cpu/sh3/clock-sh7705.c
++++ work/arch/sh/kernel/cpu/sh3/clock-sh7705.c	2012-02-29 20:39:15.000000000 +0900
+@@ -35,7 +35,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= pfc_divisors[__raw_readw(FRQCR) & 0x0003];
+ }
+ 
+-static struct clk_ops sh7705_master_clk_ops = {
++static struct sh_clk_ops sh7705_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -45,7 +45,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7705_module_clk_ops = {
++static struct sh_clk_ops sh7705_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -55,7 +55,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / stc_multipliers[idx];
+ }
+ 
+-static struct clk_ops sh7705_bus_clk_ops = {
++static struct sh_clk_ops sh7705_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -65,18 +65,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / ifc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7705_cpu_clk_ops = {
++static struct sh_clk_ops sh7705_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7705_clk_ops[] = {
++static struct sh_clk_ops *sh7705_clk_ops[] = {
+ 	&sh7705_master_clk_ops,
+ 	&sh7705_module_clk_ops,
+ 	&sh7705_bus_clk_ops,
+ 	&sh7705_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7705_clk_ops))
+ 		*ops = sh7705_clk_ops[idx];
+--- 0001/arch/sh/kernel/cpu/sh3/clock-sh7706.c
++++ work/arch/sh/kernel/cpu/sh3/clock-sh7706.c	2012-02-29 20:40:26.000000000 +0900
+@@ -30,7 +30,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7706_master_clk_ops = {
++static struct sh_clk_ops sh7706_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -42,7 +42,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7706_module_clk_ops = {
++static struct sh_clk_ops sh7706_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -54,7 +54,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / stc_multipliers[idx];
+ }
+ 
+-static struct clk_ops sh7706_bus_clk_ops = {
++static struct sh_clk_ops sh7706_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -66,18 +66,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / ifc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7706_cpu_clk_ops = {
++static struct sh_clk_ops sh7706_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7706_clk_ops[] = {
++static struct sh_clk_ops *sh7706_clk_ops[] = {
+ 	&sh7706_master_clk_ops,
+ 	&sh7706_module_clk_ops,
+ 	&sh7706_bus_clk_ops,
+ 	&sh7706_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7706_clk_ops))
+ 		*ops = sh7706_clk_ops[idx];
+--- 0001/arch/sh/kernel/cpu/sh3/clock-sh7709.c
++++ work/arch/sh/kernel/cpu/sh3/clock-sh7709.c	2012-02-29 20:40:48.000000000 +0900
+@@ -30,7 +30,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7709_master_clk_ops = {
++static struct sh_clk_ops sh7709_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -42,7 +42,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / pfc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7709_module_clk_ops = {
++static struct sh_clk_ops sh7709_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -55,7 +55,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate * stc_multipliers[idx];
+ }
+ 
+-static struct clk_ops sh7709_bus_clk_ops = {
++static struct sh_clk_ops sh7709_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -67,18 +67,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / ifc_divisors[idx];
+ }
+ 
+-static struct clk_ops sh7709_cpu_clk_ops = {
++static struct sh_clk_ops sh7709_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7709_clk_ops[] = {
++static struct sh_clk_ops *sh7709_clk_ops[] = {
+ 	&sh7709_master_clk_ops,
+ 	&sh7709_module_clk_ops,
+ 	&sh7709_bus_clk_ops,
+ 	&sh7709_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7709_clk_ops))
+ 		*ops = sh7709_clk_ops[idx];
+--- 0001/arch/sh/kernel/cpu/sh3/clock-sh7710.c
++++ work/arch/sh/kernel/cpu/sh3/clock-sh7710.c	2012-02-29 20:42:17.000000000 +0900
+@@ -29,7 +29,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= md_table[__raw_readw(FRQCR) & 0x0007];
+ }
+ 
+-static struct clk_ops sh7710_master_clk_ops = {
++static struct sh_clk_ops sh7710_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -39,7 +39,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / md_table[idx];
+ }
+ 
+-static struct clk_ops sh7710_module_clk_ops = {
++static struct sh_clk_ops sh7710_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -49,7 +49,7 @@ static unsigned long bus_clk_recalc(stru
+ 	return clk->parent->rate / md_table[idx];
+ }
+ 
+-static struct clk_ops sh7710_bus_clk_ops = {
++static struct sh_clk_ops sh7710_bus_clk_ops = {
+ 	.recalc		= bus_clk_recalc,
+ };
+ 
+@@ -59,18 +59,18 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / md_table[idx];
+ }
+ 
+-static struct clk_ops sh7710_cpu_clk_ops = {
++static struct sh_clk_ops sh7710_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7710_clk_ops[] = {
++static struct sh_clk_ops *sh7710_clk_ops[] = {
+ 	&sh7710_master_clk_ops,
+ 	&sh7710_module_clk_ops,
+ 	&sh7710_bus_clk_ops,
+ 	&sh7710_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7710_clk_ops))
+ 		*ops = sh7710_clk_ops[idx];
+--- 0001/arch/sh/kernel/cpu/sh3/clock-sh7712.c
++++ work/arch/sh/kernel/cpu/sh3/clock-sh7712.c	2012-02-29 20:43:32.000000000 +0900
+@@ -29,7 +29,7 @@ static void master_clk_init(struct clk *
+ 	clk->rate *= multipliers[idx];
+ }
+ 
+-static struct clk_ops sh7712_master_clk_ops = {
++static struct sh_clk_ops sh7712_master_clk_ops = {
+ 	.init		= master_clk_init,
+ };
+ 
+@@ -41,7 +41,7 @@ static unsigned long module_clk_recalc(s
+ 	return clk->parent->rate / divisors[idx];
+ }
+ 
+-static struct clk_ops sh7712_module_clk_ops = {
++static struct sh_clk_ops sh7712_module_clk_ops = {
+ 	.recalc		= module_clk_recalc,
+ };
+ 
+@@ -53,17 +53,17 @@ static unsigned long cpu_clk_recalc(stru
+ 	return clk->parent->rate / divisors[idx];
+ }
+ 
+-static struct clk_ops sh7712_cpu_clk_ops = {
++static struct sh_clk_ops sh7712_cpu_clk_ops = {
+ 	.recalc		= cpu_clk_recalc,
+ };
+ 
+-static struct clk_ops *sh7712_clk_ops[] = {
++static struct sh_clk_ops *sh7712_clk_ops[] = {
+ 	&sh7712_master_clk_ops,
+ 	&sh7712_module_clk_ops,
+ 	&sh7712_cpu_clk_ops,
+ };
+ 
+-void __init arch_init_clk_ops(struct clk_ops **ops, int idx)
++void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
+ {
+ 	if (idx < ARRAY_SIZE(sh7712_clk_ops))
+ 		*ops = sh7712_clk_ops[idx];
