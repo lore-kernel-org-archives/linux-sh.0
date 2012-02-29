@@ -1,128 +1,157 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Wed, 29 Feb 2012 03:11:42 +0000
-Subject: [PATCH v6 2/9] ARM: at91: Consolidate time keeping and irq enable
-Message-Id: <1330485109-7327-3-git-send-email-rob.lee@linaro.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Feb 2012 12:37:43 +0000
+Subject: [PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
+Message-Id: <20120229123743.28584.65308.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1330485109-7327-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Update the r8a7779 SoC and the Marzen board to make use of
+the functions r8a7779_map_io() and r8a7779_add_early_devices().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-at91/cpuidle.c |   67 +++++++++++++++---------------------------
- 1 files changed, 24 insertions(+), 43 deletions(-)
 
-diff --git a/arch/arm/mach-at91/cpuidle.c b/arch/arm/mach-at91/cpuidle.c
-index a851e6c..324f802 100644
---- a/arch/arm/mach-at91/cpuidle.c
-+++ b/arch/arm/mach-at91/cpuidle.c
-@@ -17,9 +17,10 @@
- #include <linux/init.h>
- #include <linux/platform_device.h>
- #include <linux/cpuidle.h>
--#include <asm/proc-fns.h>
- #include <linux/io.h>
- #include <linux/export.h>
-+#include <asm/proc-fns.h>
-+#include <asm/cpuidle.h>
+ arch/arm/mach-shmobile/board-marzen.c        |   48 +-------------------------
+ arch/arm/mach-shmobile/include/mach/common.h |    1 
+ arch/arm/mach-shmobile/setup-r8a7779.c       |   39 +++++++++++++++++++++
+ 3 files changed, 42 insertions(+), 46 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2012-02-29 17:25:26.000000000 +0900
+@@ -33,7 +33,6 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/traps.h>
+@@ -72,49 +71,6 @@ static struct platform_device *marzen_de
+ 	&eth_device,
+ };
  
- #include "pm.h"
- 
-@@ -27,66 +28,46 @@
- 
- static DEFINE_PER_CPU(struct cpuidle_device, at91_cpuidle_device);
- 
--static struct cpuidle_driver at91_idle_driver = {
--	.name =         "at91_idle",
--	.owner =        THIS_MODULE,
+-static struct map_desc marzen_io_desc[] __initdata = {
+-	/* 2M entity map for 0xf0000000 (MPCORE) */
+-	{
+-		.virtual	= 0xf0000000,
+-		.pfn		= __phys_to_pfn(0xf0000000),
+-		.length		= SZ_2M,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
+-	/* 16M entity map for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
+-	{
+-		.virtual	= 0xfe000000,
+-		.pfn		= __phys_to_pfn(0xfe000000),
+-		.length		= SZ_16M,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
 -};
 -
- /* Actual code that puts the SoC in different idle states */
- static int at91_enter_idle(struct cpuidle_device *dev,
- 			struct cpuidle_driver *drv,
- 			       int index)
+-static void __init marzen_map_io(void)
+-{
+-	iotable_init(marzen_io_desc, ARRAY_SIZE(marzen_io_desc));
+-}
+-
+-static void __init marzen_init_early(void)
+-{
+-	r8a7779_add_early_devices();
+-
+-	/* Early serial console setup is not included here due to
+-	 * memory map collisions. The SCIF serial ports in r8a7779
+-	 * are difficult to entity map 1:1 due to collision with the
+-	 * virtual memory range used by the coherent DMA code on ARM.
+-	 *
+-	 * Anyone wanting to debug early can remove UPF_IOREMAP from
+-	 * the sh-sci serial console platform data, adjust mapbase
+-	 * to a static M:N virt:phys mapping that needs to be added to
+-	 * the mappings passed with iotable_init() above.
+-	 *
+-	 * Then add a call to shmobile_setup_console() from this function.
+-	 *
+-	 * As a final step pass earlyprint=sh-sci.2,115200 on the kernel
+-	 * command line.
+-	 */
+-}
+-
+ static void __init marzen_init(void)
  {
--	struct timeval before, after;
--	int idle_time;
- 	u32 saved_lpr;
+ 	r8a7779_pinmux_init();
+@@ -147,8 +103,8 @@ struct sys_timer marzen_timer = {
+ };
  
--	local_irq_disable();
--	do_gettimeofday(&before);
--	if (index = 0)
--		/* Wait for interrupt state */
--		cpu_do_idle();
--	else if (index = 1) {
--		asm("b 1f; .align 5; 1:");
--		asm("mcr p15, 0, r0, c7, c10, 4");	/* drain write buffer */
--		saved_lpr = sdram_selfrefresh_enable();
--		cpu_do_idle();
--		sdram_selfrefresh_disable(saved_lpr);
--	}
--	do_gettimeofday(&after);
--	local_irq_enable();
--	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
--			(after.tv_usec - before.tv_usec);
-+	__asm__("b 1f; .align 5; 1:\n"
-+	"	mcr p15, 0, r0, c7, c10, 4");	/* drain write buffer */
+ MACHINE_START(MARZEN, "marzen")
+-	.map_io		= marzen_map_io,
+-	.init_early	= marzen_init_early,
++	.map_io		= r8a7779_map_io,
++	.init_early	= r8a7779_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+--- 0006/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-02-29 17:23:50.000000000 +0900
+@@ -66,6 +66,7 @@ extern void r8a7740_clock_init(u8 md_ck)
+ extern void r8a7740_pinmux_init(void);
+ 
+ extern void r8a7779_init_irq(void);
++extern void r8a7779_map_io(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_clock_init(void);
+--- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2012-02-29 17:25:28.000000000 +0900
+@@ -33,6 +33,29 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/mach/map.h>
 +
-+	saved_lpr = sdram_selfrefresh_enable();
-+	cpu_do_idle();
-+	sdram_selfrefresh_disable(saved_lpr);
- 
--	dev->last_residency = idle_time;
- 	return index;
- }
- 
-+static struct cpuidle_driver at91_idle_driver = {
-+	.name			= "at91_idle",
-+	.owner			= THIS_MODULE,
-+	.en_core_tk_irqen	= 1,
-+	.states[0] = CPUIDLE_ARM_WFI_STATE,
-+	.states[1] = {
-+		.enter			= at91_enter_idle,
-+		.exit_latency		= 10,
-+		.target_residency	= 100000,
-+		.flags			= CPUIDLE_FLAG_TIME_VALID,
-+		.name			= "RAM_SR",
-+		.desc			= "WFI and DDR Self Refresh",
++static struct map_desc r8a7779_io_desc[] __initdata = {
++	/* 2M entity map for 0xf0000000 (MPCORE) */
++	{
++		.virtual	= 0xf0000000,
++		.pfn		= __phys_to_pfn(0xf0000000),
++		.length		= SZ_2M,
++		.type		= MT_DEVICE_NONSHARED
 +	},
-+	.state_count = AT91_MAX_STATES,
++	/* 16M entity map for 0xfexxxxxx (DMAC-S/HPBREG/INTC2/LRAM/DBSC) */
++	{
++		.virtual	= 0xfe000000,
++		.pfn		= __phys_to_pfn(0xfe000000),
++		.length		= SZ_16M,
++		.type		= MT_DEVICE_NONSHARED
++	},
 +};
 +
- /* Initialize CPU idle by registering the idle states */
- static int at91_init_cpuidle(void)
++void __init r8a7779_map_io(void)
++{
++	iotable_init(r8a7779_io_desc, ARRAY_SIZE(r8a7779_io_desc));
++}
+ 
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xffe40000,
+@@ -236,4 +259,20 @@ void __init r8a7779_add_early_devices(vo
  {
- 	struct cpuidle_device *device;
--	struct cpuidle_driver *driver = &at91_idle_driver;
- 
- 	device = &per_cpu(at91_cpuidle_device, smp_processor_id());
- 	device->state_count = AT91_MAX_STATES;
--	driver->state_count = AT91_MAX_STATES;
--
--	/* Wait for interrupt state */
--	driver->states[0].enter = at91_enter_idle;
--	driver->states[0].exit_latency = 1;
--	driver->states[0].target_residency = 10000;
--	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[0].name, "WFI");
--	strcpy(driver->states[0].desc, "Wait for interrupt");
--
--	/* Wait for interrupt and RAM self refresh state */
--	driver->states[1].enter = at91_enter_idle;
--	driver->states[1].exit_latency = 10;
--	driver->states[1].target_residency = 10000;
--	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[1].name, "RAM_SR");
--	strcpy(driver->states[1].desc, "WFI and RAM Self Refresh");
- 
- 	cpuidle_register_driver(&at91_idle_driver);
- 
--- 
-1.7.1
-
+ 	early_platform_add_devices(r8a7779_early_devices,
+ 				   ARRAY_SIZE(r8a7779_early_devices));
++
++	/* Early serial console setup is not included here due to
++	 * memory map collisions. The SCIF serial ports in r8a7779
++	 * are difficult to entity map 1:1 due to collision with the
++	 * virtual memory range used by the coherent DMA code on ARM.
++	 *
++	 * Anyone wanting to debug early can remove UPF_IOREMAP from
++	 * the sh-sci serial console platform data, adjust mapbase
++	 * to a static M:N virt:phys mapping that needs to be added to
++	 * the mappings passed with iotable_init() above.
++	 *
++	 * Then add a call to shmobile_setup_console() from this function.
++	 *
++	 * As a final step pass earlyprint=sh-sci.2,115200 on the kernel
++	 * command line in case of the marzen board.
++	 */
+ }
