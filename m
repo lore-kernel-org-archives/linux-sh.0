@@ -1,86 +1,129 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:45 +0000
-Subject: [PATCH v2 32/57] fbdev: sh_mobile_lcdc: Reorganize the sh_mobile_lcdc_chan structure
-Message-Id: <1330614490-14149-33-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:53 +0000
+Subject: [PATCH v2 40/57] fbdev: sh_mobile_meram: Request memory regions for memory resources
+Message-Id: <1330614490-14149-41-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Group fields by purpose, and make the separation between core fields and
-FB-related fields clear.
+Make sure the registers and MERAM spaces are reserved before using them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.h |   39 ++++++++++++++++++++++---------------
- 1 files changed, 23 insertions(+), 16 deletions(-)
+ drivers/video/sh_mobile_meram.c |   53 +++++++++++++++++++++++++++-----------
+ 1 files changed, 37 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index c175387..8e0d009 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -53,30 +53,22 @@ struct sh_mobile_lcdc_entity {
- struct sh_mobile_lcdc_chan {
- 	struct sh_mobile_lcdc_priv *lcdc;
- 	struct sh_mobile_lcdc_entity *tx_dev;
-+	struct sh_mobile_lcdc_chan_cfg cfg;
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index f45d83e..dbf5c43 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -596,13 +596,12 @@ static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
+  * initialize MERAM
+  */
  
- 	unsigned long *reg_offs;
- 	unsigned long ldmt1r_value;
- 	unsigned long enabled; /* ME and SE in LDCNT2R */
--	struct sh_mobile_lcdc_chan_cfg cfg;
--	u32 pseudo_palette[PALETTE_NR];
--	struct fb_info *info;
--	struct backlight_device *bl;
-+	int meram_enabled;
-+
-+	struct mutex open_lock;		/* protects the use counter */
-+	int use_count;
-+
- 	dma_addr_t dma_handle;
--	struct fb_deferred_io defio;
--	struct scatterlist *sglist;
--	unsigned long frame_end;
- 	unsigned long pan_offset;
-+
-+	unsigned long frame_end;
- 	wait_queue_head_t frame_end_wait;
- 	struct completion vsync_completion;
--	struct {
--		unsigned int width;
--		unsigned int height;
--		struct fb_videomode mode;
--	} display;
--	int use_count;
--	int blank_status;
--	struct mutex open_lock;		/* protects the use counter */
--	int meram_enabled;
+-static int sh_mobile_meram_remove(struct platform_device *pdev);
+-
+ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_meram_priv *priv;
+ 	struct sh_mobile_meram_info *pdata = pdev->dev.platform_data;
+-	struct resource *res;
++	struct resource *regs;
++	struct resource *meram;
+ 	int error;
  
- 	unsigned long base_addr_y;
- 	unsigned long base_addr_c;
-@@ -86,6 +78,21 @@ struct sh_mobile_lcdc_chan {
- 		      enum sh_mobile_lcdc_entity_event event,
- 		      const struct fb_videomode *mode,
- 		      const struct fb_monspecs *monspec);
-+
-+	/* Backlight */
-+	struct backlight_device *bl;
-+
-+	/* FB */
-+	struct fb_info *info;
-+	u32 pseudo_palette[PALETTE_NR];
-+	struct {
-+		unsigned int width;
-+		unsigned int height;
-+		struct fb_videomode mode;
-+	} display;
-+	struct fb_deferred_io defio;
-+	struct scatterlist *sglist;
-+	int blank_status;
- };
+ 	if (!pdata) {
+@@ -610,8 +609,9 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ 		return -EINVAL;
+ 	}
  
- #endif
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!res) {
++	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	meram = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (regs = NULL || meram = NULL) {
+ 		dev_err(&pdev->dev, "cannot get platform resources\n");
+ 		return -ENOENT;
+ 	}
+@@ -622,32 +622,50 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	platform_set_drvdata(pdev, priv);
+-
+ 	/* initialize private data */
+ 	mutex_init(&priv->lock);
+-	priv->base = ioremap_nocache(res->start, resource_size(res));
++	pdata->ops = &sh_mobile_meram_ops;
++	pdata->priv = priv;
++	pdata->pdev = pdev;
++
++	if (!request_mem_region(regs->start, resource_size(regs), pdev->name)) {
++		dev_err(&pdev->dev, "MERAM registers region already claimed\n");
++		error = -EBUSY;
++		goto err_req_regs;
++	}
++
++	if (!request_mem_region(meram->start, resource_size(meram),
++				pdev->name)) {
++		dev_err(&pdev->dev, "MERAM memory region already claimed\n");
++		error = -EBUSY;
++		goto err_req_meram;
++	}
++
++	priv->base = ioremap_nocache(regs->start, resource_size(regs));
+ 	if (!priv->base) {
+ 		dev_err(&pdev->dev, "ioremap failed\n");
+ 		error = -EFAULT;
+-		goto err;
++		goto err_ioremap;
+ 	}
+-	pdata->ops = &sh_mobile_meram_ops;
+-	pdata->priv = priv;
+-	pdata->pdev = pdev;
+ 
+ 	/* initialize ICB addressing mode */
+ 	if (pdata->addr_mode = SH_MOBILE_MERAM_MODE1)
+ 		meram_write_reg(priv->base, MEVCR1, MEVCR1_AMD1);
+ 
++	platform_set_drvdata(pdev, priv);
+ 	pm_runtime_enable(&pdev->dev);
+ 
+ 	dev_info(&pdev->dev, "sh_mobile_meram initialized.");
+ 
+ 	return 0;
+ 
+-err:
+-	sh_mobile_meram_remove(pdev);
++err_ioremap:
++	release_mem_region(meram->start, resource_size(meram));
++err_req_meram:
++	release_mem_region(regs->start, resource_size(regs));
++err_req_regs:
++	mutex_destroy(&priv->lock);
++	kfree(priv);
+ 
+ 	return error;
+ }
+@@ -656,11 +674,14 @@ err:
+ static int sh_mobile_meram_remove(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
++	struct resource *regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	struct resource *meram = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+ 
+ 	pm_runtime_disable(&pdev->dev);
+ 
+-	if (priv->base)
+-		iounmap(priv->base);
++	iounmap(priv->base);
++	release_mem_region(meram->start, resource_size(meram));
++	release_mem_region(regs->start, resource_size(regs));
+ 
+ 	mutex_destroy(&priv->lock);
+ 
 -- 
 1.7.3.4
 
