@@ -1,81 +1,103 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Date: Sat, 31 Mar 2012 22:34:09 +0000
-Subject: Re: [PATCH RFC] Simplify the Linux kernel by reducing its state space
-Message-Id: <20120331223409.GM2450@linux.vnet.ibm.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 01 Mar 2012 02:32:40 +0000
+Subject: [PATCH 1/3] usb: ehci-sh: Add PHY init function with platform data
+Message-Id: <1330569162-9485-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120331163321.GA15809@linux.vnet.ibm.com>
- <1333227608.2325.4054.camel@edumazet-glaptop>
- <20120331212149.GI2450@linux.vnet.ibm.com>
- <4F7782ED.7050407@lkmail.de>
-In-Reply-To: <4F7782ED.7050407@lkmail.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sun, Apr 01, 2012 at 12:19:25AM +0200, Lorenz Kolb wrote:
-> With that patchset in mind, I am working on a really huge patch,
-> which will greatly simplify the Linux kernel  for the real problem
-> of having that number of CPUs.
-> 
-> That patch will have a lot of changes all over the architectures, so
-> what will be the best way to post it? Should I split it architecture
-> dependend and into one generic part.
-> 
-> Currently it is a large blob of millions of changes, but will
-> greatly simplify the Linux kernel.
+In devices using ehci-sh, initialization of the PHY may be necessary.
+This adds platform data to ehci-sh and provide function to initialize PHY.
 
-Perhaps a branch on a public git tree?  If you are doing what I suspect
-you are, you will end up with a very large patch set.  ;-)
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+CC: Shimoda, Yoshihiro <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/host/ehci-sh.c  |   12 ++++++++++++
+ include/linux/usb/ehci-sh.h |   29 +++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 0 deletions(-)
+ create mode 100644 include/linux/usb/ehci-sh.h
 
-							Thanx, Paul
-
-> Regards,
-> 
-> Lorenz Kolb
-> 
-> Am 31.03.2012 23:21, schrieb Paul E. McKenney:
-> >On Sat, Mar 31, 2012 at 11:00:08PM +0200, Eric Dumazet wrote:
-> >>On Sun, 2012-04-01 at 00:33 +0800, Paul E. McKenney wrote:
-> >>>Although there have been numerous complaints about the complexity of
-> >>>parallel programming (especially over the past 5-10 years), the plain
-> >>>truth is that the incremental complexity of parallel programming over
-> >>>that of sequential programming is not as large as is commonly believed.
-> >>>Despite that you might have heard, the mind-numbing complexity of modern
-> >>>computer systems is not due so much to there being multiple CPUs, but
-> >>>rather to there being any CPUs at all.  In short, for the ultimate in
-> >>>computer-system simplicity, the optimal choice is NR_CPUS=0.
-> >>>
-> >>>This commit therefore limits kernel builds to zero CPUs.  This change
-> >>>has the beneficial side effect of rendering all kernel bugs harmless.
-> >>>Furthermore, this commit enables additional beneficial changes, for
-> >>>example, the removal of those parts of the kernel that are not needed
-> >>>when there are zero CPUs.
-> >>>
-> >>>Signed-off-by: Paul E. McKenney<paulmck@linux.vnet.ibm.com>
-> >>>Reviewed-by: Thomas Gleixner<tglx@linutronix.de>
-> >>>---
-> >>Hmm... I believe you could go one step forward and allow negative values
-> >>as well. Antimatter was proven to exist after all.
-> >>
-> >>Hint : nr_cpu_ids is an "int", not an "unsigned int"
-> >>
-> >>Bonus: Existing bugs become "must have" features.
-> >;-) ;-) ;-)
-> >
-> >>Of course there is no hurry and this can wait 365 days.
-> >James Bottomley suggested imaginary numbers of CPUs some time back,
-> >and I suppose there is no reason you cannot have fractional numbers of
-> >CPUs, and perhaps irrational numbers as well.  Of course, these last two
-> >would require use of floating-point arithmetic (or something similar)
-> >in the kernel.  So I guess we have at several years worth.  Over to you
-> >for the negative numbers.  ;-)
-> >
-> >							Thanx, Paul
-> >
-> >_______________________________________________
-> >Linuxppc-dev mailing list
-> >Linuxppc-dev@lists.ozlabs.org
-> >https://lists.ozlabs.org/listinfo/linuxppc-dev
-> 
+diff --git a/drivers/usb/host/ehci-sh.c b/drivers/usb/host/ehci-sh.c
+index 9d9cf47..787b07e 100644
+--- a/drivers/usb/host/ehci-sh.c
++++ b/drivers/usb/host/ehci-sh.c
+@@ -11,6 +11,7 @@
+  */
+ #include <linux/platform_device.h>
+ #include <linux/clk.h>
++#include <linux/usb/ehci-sh.h>
+ 
+ struct ehci_sh_priv {
+ 	struct clk *iclk, *fclk;
+@@ -100,6 +101,7 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
+ 	const struct hc_driver *driver = &ehci_sh_hc_driver;
+ 	struct resource *res;
+ 	struct ehci_sh_priv *priv;
++	struct ehci_sh_platdata *pdata;
+ 	struct usb_hcd *hcd;
+ 	int irq, ret;
+ 
+@@ -124,6 +126,13 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
+ 		goto fail_create_hcd;
+ 	}
+ 
++	if (pdev->dev.platform_data = NULL) {
++		dev_err(&pdev->dev, "no platform data\n");
++		ret = -ENODEV;
++		goto fail_create_hcd;
++	}
++	pdata = pdev->dev.platform_data;
++
+ 	/* initialize hcd */
+ 	hcd = usb_create_hcd(&ehci_sh_hc_driver, &pdev->dev,
+ 			     dev_name(&pdev->dev));
+@@ -168,6 +177,9 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
+ 	clk_enable(priv->fclk);
+ 	clk_enable(priv->iclk);
+ 
++	if (pdata->phy_init)
++		pdata->phy_init(pdata->clkmode);
++
+ 	ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
+ 	if (ret != 0) {
+ 		dev_err(&pdev->dev, "Failed to add hcd");
+diff --git a/include/linux/usb/ehci-sh.h b/include/linux/usb/ehci-sh.h
+new file mode 100644
+index 0000000..73a2307
+--- /dev/null
++++ b/include/linux/usb/ehci-sh.h
+@@ -0,0 +1,29 @@
++/*
++ * EHCI SuperH driver platform data
++ *
++ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#ifndef __LINUX_USB_EHCI_SH_H
++#define __LINUX_USB_EHCI_SH_H
++
++struct ehci_sh_platdata {
++	void (*phy_init)(int); /* Phy init function */
++	int clkmode; /* Set clock mode / 0: internal, 1: external */
++};
++
++#endif /* __LINUX_USB_EHCI_SH_H */
+-- 
+1.7.9.1
 
