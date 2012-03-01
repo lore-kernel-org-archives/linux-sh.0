@@ -1,126 +1,48 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Thu, 01 Mar 2012 00:42:53 +0000
-Subject: [PATCH v7 4/9] ARM: kirkwood: Consolidate time keeping and irq enable
-Message-Id: <1330562578-3410-5-git-send-email-rob.lee@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:19 +0000
+Subject: [PATCH v2 06/57] fbdev: sh_mobile_hdmi: Don't access LCDC channel in notifier callback
+Message-Id: <1330614490-14149-7-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+Instead of relying on info->par being a pointer to an LCDC channel, cast
+the notifier block pointer to an sh_hdmi pointer.
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-kirkwood/cpuidle.c |   72 +++++++++++---------------------------
- 1 files changed, 21 insertions(+), 51 deletions(-)
+ drivers/video/sh_mobile_hdmi.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-kirkwood/cpuidle.c b/arch/arm/mach-kirkwood/cpuidle.c
-index 7088180..0f17109 100644
---- a/arch/arm/mach-kirkwood/cpuidle.c
-+++ b/arch/arm/mach-kirkwood/cpuidle.c
-@@ -20,77 +20,47 @@
- #include <linux/io.h>
- #include <linux/export.h>
- #include <asm/proc-fns.h>
-+#include <asm/cpuidle.h>
- #include <mach/kirkwood.h>
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index 647ba98..a77bbc3 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -225,6 +225,8 @@ struct sh_hdmi {
+ 	struct notifier_block notifier;
+ };
  
- #define KIRKWOOD_MAX_STATES	2
- 
--static struct cpuidle_driver kirkwood_idle_driver = {
--	.name =         "kirkwood_idle",
--	.owner =        THIS_MODULE,
--};
--
--static DEFINE_PER_CPU(struct cpuidle_device, kirkwood_cpuidle_device);
--
- /* Actual code that puts the SoC in different idle states */
- static int kirkwood_enter_idle(struct cpuidle_device *dev,
- 				struct cpuidle_driver *drv,
- 			       int index)
- {
--	struct timeval before, after;
--	int idle_time;
--
--	local_irq_disable();
--	do_gettimeofday(&before);
--	if (index = 0)
--		/* Wait for interrupt state */
--		cpu_do_idle();
--	else if (index = 1) {
--		/*
--		 * Following write will put DDR in self refresh.
--		 * Note that we have 256 cycles before DDR puts it
--		 * self in self-refresh, so the wait-for-interrupt
--		 * call afterwards won't get the DDR from self refresh
--		 * mode.
--		 */
--		writel(0x7, DDR_OPERATION_BASE);
--		cpu_do_idle();
--	}
--	do_gettimeofday(&after);
--	local_irq_enable();
--	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
--			(after.tv_usec - before.tv_usec);
--
--	/* Update last residency */
--	dev->last_residency = idle_time;
-+	writel(0x7, DDR_OPERATION_BASE);
-+	cpu_do_idle();
- 
- 	return index;
- }
- 
-+static struct cpuidle_driver kirkwood_idle_driver = {
-+	.name			= "kirkwood_idle",
-+	.owner			= THIS_MODULE,
-+	.en_core_tk_irqen	= 1,
-+	.states[0]		= ARM_CPUIDLE_WFI_STATE,
-+	.states[1]		= {
-+		.enter			= kirkwood_enter_idle,
-+		.exit_latency		= 10,
-+		.target_residency	= 100000,
-+		.flags			= CPUIDLE_FLAG_TIME_VALID,
-+		.name			= "DDR SR",
-+		.desc			= "WFI and DDR Self Refresh",
-+	},
-+	.state_count = KIRKWOOD_MAX_STATES,
-+};
++#define notifier_to_hdmi(n)	container_of(n, struct sh_hdmi, notifier)
 +
-+static DEFINE_PER_CPU(struct cpuidle_device, kirkwood_cpuidle_device);
-+
- /* Initialize CPU idle by registering the idle states */
- static int kirkwood_init_cpuidle(void)
+ static void hdmi_write(struct sh_hdmi *hdmi, u8 data, u8 reg)
  {
- 	struct cpuidle_device *device;
--	struct cpuidle_driver *driver = &kirkwood_idle_driver;
+ 	iowrite8(data, hdmi->base + reg);
+@@ -1204,11 +1206,9 @@ static int sh_hdmi_notify(struct notifier_block *nb,
+ {
+ 	struct fb_event *event = data;
+ 	struct fb_info *info = event->info;
+-	struct sh_mobile_lcdc_chan *ch = info->par;
+-	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+-	struct sh_hdmi *hdmi = board_cfg->board_data;
++	struct sh_hdmi *hdmi = notifier_to_hdmi(nb);
  
- 	device = &per_cpu(kirkwood_cpuidle_device, smp_processor_id());
- 	device->state_count = KIRKWOOD_MAX_STATES;
--	driver->state_count = KIRKWOOD_MAX_STATES;
--
--	/* Wait for interrupt state */
--	driver->states[0].enter = kirkwood_enter_idle;
--	driver->states[0].exit_latency = 1;
--	driver->states[0].target_residency = 10000;
--	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[0].name, "WFI");
--	strcpy(driver->states[0].desc, "Wait for interrupt");
--
--	/* Wait for interrupt and DDR self refresh state */
--	driver->states[1].enter = kirkwood_enter_idle;
--	driver->states[1].exit_latency = 10;
--	driver->states[1].target_residency = 10000;
--	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[1].name, "DDR SR");
--	strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
+-	if (!hdmi || nb != &hdmi->notifier || hdmi->info != info)
++	if (hdmi->info != info)
+ 		return NOTIFY_DONE;
  
- 	cpuidle_register_driver(&kirkwood_idle_driver);
- 	if (cpuidle_register_device(device)) {
+ 	switch(action) {
 -- 
-1.7.1
+1.7.3.4
 
