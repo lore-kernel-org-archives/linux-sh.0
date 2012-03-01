@@ -1,114 +1,96 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:20 +0000
-Subject: [PATCH v2 07/57] sh_mobile_hdmi: Remove platform data lcd_dev field
-Message-Id: <1330614490-14149-8-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:36 +0000
+Subject: [PATCH v2 23/57] fbdev: sh_mobile_lcdc: Remove fb_info parameter to display_on operation
+Message-Id: <1330614490-14149-24-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The field is used to print debug messages only. Remove it.
+The parameter is unused, remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    1 -
- arch/arm/mach-shmobile/board-mackerel.c |    1 -
- drivers/video/sh_mobile_hdmi.c          |   17 +++++------------
- include/video/sh_mobile_hdmi.h          |    1 -
- 4 files changed, 5 insertions(+), 15 deletions(-)
+ drivers/video/sh_mipi_dsi.c      |    3 +--
+ drivers/video/sh_mobile_hdmi.c   |   11 +++--------
+ drivers/video/sh_mobile_lcdcfb.c |    2 +-
+ drivers/video/sh_mobile_lcdcfb.h |    3 +--
+ 4 files changed, 6 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index aab0a34..091b681 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -864,7 +864,6 @@ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index ad09a05..1ede247 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -394,8 +394,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	return 0;
+ }
  
- static struct sh_mobile_hdmi_info hdmi_info = {
- 	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
--	.lcd_dev = &lcdc1_device.dev,
- 	.flags = HDMI_SND_SRC_SPDIF,
- 	.clk_optimize_parent = ap4evb_clk_optimize,
- };
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 2202987..34d777d 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -485,7 +485,6 @@ static struct platform_device hdmi_lcdc_device = {
- 
- static struct sh_mobile_hdmi_info hdmi_info = {
- 	.lcd_chan	= &hdmi_lcdc_info.ch[0],
--	.lcd_dev	= &hdmi_lcdc_device.dev,
- 	.flags		= HDMI_SND_SRC_SPDIF,
- };
- 
+-static int mipi_display_on(struct sh_mobile_lcdc_entity *entity,
+-			   struct fb_info *info)
++static int mipi_display_on(struct sh_mobile_lcdc_entity *entity)
+ {
+ 	struct sh_mipi *mipi = to_sh_mipi(entity);
+ 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
 diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index a77bbc3..ebd0651 100644
+index bd885ee..c22e123 100644
 --- a/drivers/video/sh_mobile_hdmi.c
 +++ b/drivers/video/sh_mobile_hdmi.c
-@@ -1008,11 +1008,9 @@ static void sh_hdmi_display_on(void *arg, struct fb_info *info)
- 	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
- 	 */
- 	struct sh_hdmi *hdmi = arg;
--	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 
--	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__,
--		pdata->lcd_dev, info->state);
-+	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
- 
- 	/* No need to lock */
- 	hdmi->info = info;
-@@ -1040,9 +1038,8 @@ static void sh_hdmi_display_on(void *arg, struct fb_info *info)
- static void sh_hdmi_display_off(void *arg)
- {
- 	struct sh_hdmi *hdmi = arg;
--	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
- 
--	dev_dbg(hdmi->dev, "%s(%p)\n", __func__, pdata->lcd_dev);
-+	dev_dbg(hdmi->dev, "%s(%p)\n", __func__, hdmi);
- 	/* PS mode e->a */
- 	hdmi_write(hdmi, 0x10, HDMI_SYSTEM_CTRL);
- }
-@@ -1114,15 +1111,11 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- {
- 	struct sh_hdmi *hdmi = container_of(work, struct sh_hdmi, edid_work.work);
- 	struct fb_info *info;
--	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
- 	struct sh_mobile_lcdc_chan *ch;
- 	int ret;
- 
--	dev_dbg(hdmi->dev, "%s(%p): begin, hotplug status %d\n", __func__,
--		pdata->lcd_dev, hdmi->hp_state);
--
--	if (!pdata->lcd_dev)
--		return;
-+	dev_dbg(hdmi->dev, "%s(%p): begin, hotplug status %d\n", __func__, hdmi,
-+		hdmi->hp_state);
- 
- 	mutex_lock(&hdmi->mutex);
- 
-@@ -1198,7 +1191,7 @@ out:
- 		hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED;
- 	mutex_unlock(&hdmi->mutex);
- 
--	dev_dbg(hdmi->dev, "%s(%p): end\n", __func__, pdata->lcd_dev);
-+	dev_dbg(hdmi->dev, "%s(%p): end\n", __func__, hdmi);
+@@ -1000,16 +1000,11 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
  }
  
- static int sh_hdmi_notify(struct notifier_block *nb,
-diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
-index b569329..0b8d2cf 100644
---- a/include/video/sh_mobile_hdmi.h
-+++ b/include/video/sh_mobile_hdmi.h
-@@ -32,7 +32,6 @@ struct clk;
+-/* locking:	called with info->lock held, or before register_framebuffer() */
+-static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
+-			      struct fb_info *info)
++static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
+ {
+-	/*
+-	 * info is guaranteed to be valid, when we are called, because our
+-	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
+-	 */
+ 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+ 	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
++	struct fb_info *info = ch->info;
  
- struct sh_mobile_hdmi_info {
- 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
--	struct device			*lcd_dev;
- 	unsigned int			 flags;
- 	long (*clk_optimize_parent)(unsigned long target, unsigned long *best_freq,
- 				    unsigned long *parent_freq);
+ 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
+ 
+@@ -1156,7 +1151,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ 				 */
+ 				info->var.width = hdmi->var.width;
+ 				info->var.height = hdmi->var.height;
+-				sh_hdmi_display_on(&hdmi->entity, info);
++				sh_hdmi_display_on(&hdmi->entity);
+ 			} else {
+ 				/* New monitor or have to wake up */
+ 				fb_set_suspend(info, 0);
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 1ecc71e..03ee382 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -338,7 +338,7 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ 	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
+ 
+ 	if (ch->tx_dev) {
+-		if (ch->tx_dev->ops->display_on(ch->tx_dev, ch->info) < 0)
++		if (ch->tx_dev->ops->display_on(ch->tx_dev) < 0)
+ 			return;
+ 	}
+ 
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index 36cd564..b2cb8e6 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -23,8 +23,7 @@ struct sh_mobile_lcdc_chan;
+ 
+ struct sh_mobile_lcdc_entity_ops {
+ 	/* Display */
+-	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
+-			  struct fb_info *info);
++	int (*display_on)(struct sh_mobile_lcdc_entity *entity);
+ 	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
+ };
+ 
 -- 
 1.7.3.4
 
