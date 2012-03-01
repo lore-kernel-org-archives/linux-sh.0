@@ -1,120 +1,217 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:24 +0000
-Subject: [PATCH v2 11/57] fbdev: sh_mobile_lcdc: Handle HDMI/MIPI transmitter device directly
-Message-Id: <1330614490-14149-12-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:55 +0000
+Subject: [PATCH v2 42/57] fbdev: sh_mobile_meram: Make variables unsigned where applicable
+Message-Id: <1330614490-14149-43-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Pass a pointer to the transmitter device through platform data, retrieve
-the corresponding sh_mobile_lcdc_entity structure in the probe method
-and call the transmitter display_on/off methods directly.
+Many variables, such as loop counters, sizes and offsets, should be
+unsigned integers. Make them so.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   31 ++++++++++++++++++++++++++-----
- drivers/video/sh_mobile_lcdcfb.h |    2 ++
- include/video/sh_mobile_lcdc.h   |    2 ++
- 3 files changed, 30 insertions(+), 5 deletions(-)
+ drivers/video/sh_mobile_meram.c |   80 +++++++++++++++++++++------------------
+ include/video/sh_mobile_meram.h |    6 ++-
+ 2 files changed, 47 insertions(+), 39 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index bd725a4..a2e0903 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -339,6 +339,11 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
- {
- 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 2ad5a45..548f700 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -104,7 +104,7 @@ struct sh_mobile_meram_priv {
+ 	void __iomem	*base;
+ 	struct mutex	lock;
+ 	unsigned long	used_icb;
+-	int		used_meram_cache_regions;
++	unsigned int	used_meram_cache_regions;
+ 	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
+ 	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
+ 	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
+@@ -120,24 +120,25 @@ struct sh_mobile_meram_priv {
  
-+	if (ch->tx_dev) {
-+		if (ch->tx_dev->ops->display_on(ch->tx_dev, ch->info) < 0)
-+			return;
-+	}
-+
- 	/* HDMI must be enabled before LCDC configuration */
- 	if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
- 		board_cfg->display_on(board_cfg->board_data, ch->info);
-@@ -354,6 +359,9 @@ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
- 		board_cfg->display_off(board_cfg->board_data);
- 		module_put(board_cfg->owner);
- 	}
-+
-+	if (ch->tx_dev)
-+		ch->tx_dev->ops->display_off(ch->tx_dev);
+ #define MERAM_ICB_OFFSET(base, idx, off)	((base) + (off) + (idx) * 0x20)
+ 
+-static inline void meram_write_icb(void __iomem *base, int idx, int off,
+-	unsigned long val)
++static inline void meram_write_icb(void __iomem *base, unsigned int idx,
++				   unsigned int off, unsigned long val)
+ {
+ 	iowrite32(val, MERAM_ICB_OFFSET(base, idx, off));
  }
  
- /* -----------------------------------------------------------------------------
-@@ -1490,18 +1498,21 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
- 	sh_mobile_lcdc_stop(priv);
+-static inline unsigned long meram_read_icb(void __iomem *base, int idx, int off)
++static inline unsigned long meram_read_icb(void __iomem *base, unsigned int idx,
++					   unsigned int off)
+ {
+ 	return ioread32(MERAM_ICB_OFFSET(base, idx, off));
+ }
  
- 	for (i = 0; i < ARRAY_SIZE(priv->ch); i++) {
--		info = priv->ch[i].info;
-+		struct sh_mobile_lcdc_chan *ch = &priv->ch[i];
+-static inline void meram_write_reg(void __iomem *base, int off,
+-		unsigned long val)
++static inline void meram_write_reg(void __iomem *base, unsigned int off,
++				   unsigned long val)
+ {
+ 	iowrite32(val, base + off);
+ }
  
-+		info = ch->info;
- 		if (!info || !info->device)
+-static inline unsigned long meram_read_reg(void __iomem *base, int off)
++static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+ {
+ 	return ioread32(base + off);
+ }
+@@ -158,8 +159,8 @@ static inline unsigned long meram_read_reg(void __iomem *base, int off)
+ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+ 				      struct sh_mobile_meram_icb_cfg *new)
+ {
+-	int i;
+-	int used_start, used_end, meram_start, meram_end;
++	unsigned int used_start, used_end, meram_start, meram_end;
++	unsigned int i;
+ 
+ 	/* valid ICB? */
+ 	if (new->marker_icb & ~0x1f || new->cache_icb & ~0x1f)
+@@ -190,7 +191,7 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
+ 			      struct sh_mobile_meram_icb_cfg *new)
+ {
+-	int n;
++	unsigned int n;
+ 
+ 	if (new->marker_icb < 0 || new->cache_icb < 0)
+ 		return;
+@@ -213,8 +214,8 @@ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
+ static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
+ 				struct sh_mobile_meram_icb_cfg *icb)
+ {
+-	int i;
+ 	unsigned long pattern;
++	unsigned int i;
+ 
+ 	if (icb->marker_icb < 0 || icb->cache_icb < 0)
+ 		return;
+@@ -304,12 +305,15 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+ 
+ static int meram_init(struct sh_mobile_meram_priv *priv,
+ 		      struct sh_mobile_meram_icb_cfg *icb,
+-		      int xres, int yres, int *out_pitch)
++		      unsigned int xres, unsigned int yres,
++		      unsigned int *out_pitch)
+ {
+ 	unsigned long total_byte_count = MERAM_CALC_BYTECOUNT(xres, yres);
+ 	unsigned long bnm;
+-	int lcdc_pitch, xpitch, line_cnt;
+-	int save_lines;
++	unsigned int lcdc_pitch;
++	unsigned int xpitch;
++	unsigned int line_cnt;
++	unsigned int save_lines;
+ 
+ 	/* adjust pitch to 1024, 2048, 4096 or 8192 */
+ 	lcdc_pitch = (xres - 1) | 1023;
+@@ -386,16 +390,18 @@ static void meram_deinit(struct sh_mobile_meram_priv *priv,
+ 
+ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 				    struct sh_mobile_meram_cfg *cfg,
+-				    int xres, int yres, int pixelformat,
++				    unsigned int xres, unsigned int yres,
++				    unsigned int pixelformat,
+ 				    unsigned long base_addr_y,
+ 				    unsigned long base_addr_c,
+ 				    unsigned long *icb_addr_y,
+ 				    unsigned long *icb_addr_c,
+-				    int *pitch)
++				    unsigned int *pitch)
+ {
+ 	struct platform_device *pdev;
+ 	struct sh_mobile_meram_priv *priv;
+-	int n, out_pitch;
++	unsigned int out_pitch;
++	unsigned int n;
+ 	int error = 0;
+ 
+ 	if (!pdata || !pdata->priv || !pdata->pdev || !cfg)
+@@ -538,21 +544,21 @@ static int sh_mobile_meram_runtime_suspend(struct device *dev)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
+-	int k, j;
++	unsigned int i, j;
+ 
+-	for (k = 0; k < CMN_REGS_SIZE; k++)
+-		priv->cmn_saved_regs[k] = meram_read_reg(priv->base,
+-			common_regs[k]);
++	for (i = 0; i < CMN_REGS_SIZE; i++)
++		priv->cmn_saved_regs[i] = meram_read_reg(priv->base,
++			common_regs[i]);
+ 
+-	for (j = 0; j < 32; j++) {
+-		if (!test_bit(j, &priv->used_icb))
++	for (i = 0; i < 32; i++) {
++		if (!test_bit(i, &priv->used_icb))
  			continue;
- 
--		if (priv->ch[i].sglist)
--			vfree(priv->ch[i].sglist);
-+		if (ch->tx_dev)
-+			module_put(ch->cfg.tx_dev->dev.driver->owner);
-+
-+		if (ch->sglist)
-+			vfree(ch->sglist);
- 
- 		if (info->screen_base)
- 			dma_free_coherent(&pdev->dev, info->fix.smem_len,
--					  info->screen_base,
--					  priv->ch[i].dma_handle);
-+					  info->screen_base, ch->dma_handle);
- 		fb_dealloc_cmap(&info->cmap);
- 		framebuffer_release(info);
+-		for (k = 0; k < ICB_REGS_SIZE; k++) {
+-			priv->icb_saved_regs[j * ICB_REGS_SIZE + k] -				meram_read_icb(priv->base, j, icb_regs[k]);
++		for (j = 0; j < ICB_REGS_SIZE; j++) {
++			priv->icb_saved_regs[i * ICB_REGS_SIZE + j] +				meram_read_icb(priv->base, i, icb_regs[j]);
+ 			/* Reset ICB on resume */
+-			if (icb_regs[k] = MExxCTL)
+-				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] |+			if (icb_regs[j] = MExxCTL)
++				priv->icb_saved_regs[i * ICB_REGS_SIZE + j] | 					MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF;
+ 		}
  	}
-@@ -1595,6 +1606,16 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 	info->pseudo_palette = &ch->pseudo_palette;
- 	info->flags = FBINFO_FLAG_DEFAULT;
+@@ -563,20 +569,20 @@ static int sh_mobile_meram_runtime_resume(struct device *dev)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
+-	int k, j;
++	unsigned int i, j;
  
-+	if (cfg->tx_dev) {
-+		if (!cfg->tx_dev->dev.driver ||
-+		    !try_module_get(cfg->tx_dev->dev.driver->owner)) {
-+			dev_warn(priv->dev,
-+				 "unable to get transmitter device\n");
-+			return -EINVAL;
-+		}
-+		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
-+	}
-+
- 	/* Iterate through the modes to validate them and find the highest
- 	 * resolution.
- 	 */
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index d79e5aa..9601b92 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -41,6 +41,8 @@ struct sh_mobile_lcdc_entity {
-  */
- struct sh_mobile_lcdc_chan {
- 	struct sh_mobile_lcdc_priv *lcdc;
-+	struct sh_mobile_lcdc_entity *tx_dev;
-+
- 	unsigned long *reg_offs;
- 	unsigned long ldmt1r_value;
- 	unsigned long enabled; /* ME and SE in LDCNT2R */
-diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index fe30b75..3681cf6 100644
---- a/include/video/sh_mobile_lcdc.h
-+++ b/include/video/sh_mobile_lcdc.h
-@@ -186,6 +186,8 @@ struct sh_mobile_lcdc_chan_cfg {
- 	struct sh_mobile_lcdc_bl_info bl_info;
- 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
- 	struct sh_mobile_meram_cfg *meram_cfg;
-+
-+	struct platform_device *tx_dev;	/* HDMI/DSI transmitter device */
- };
+-	for (j = 0; j < 32; j++) {
+-		if (!test_bit(j, &priv->used_icb))
++	for (i = 0; i < 32; i++) {
++		if (!test_bit(i, &priv->used_icb))
+ 			continue;
+-		for (k = 0; k < ICB_REGS_SIZE; k++) {
+-			meram_write_icb(priv->base, j, icb_regs[k],
+-			priv->icb_saved_regs[j * ICB_REGS_SIZE + k]);
++		for (j = 0; j < ICB_REGS_SIZE; j++) {
++			meram_write_icb(priv->base, i, icb_regs[j],
++			priv->icb_saved_regs[i * ICB_REGS_SIZE + j]);
+ 		}
+ 	}
  
- struct sh_mobile_lcdc_info {
+-	for (k = 0; k < CMN_REGS_SIZE; k++)
+-		meram_write_reg(priv->base, common_regs[k],
+-			priv->cmn_saved_regs[k]);
++	for (i = 0; i < CMN_REGS_SIZE; i++)
++		meram_write_reg(priv->base, common_regs[i],
++				priv->cmn_saved_regs[i]);
+ 	return 0;
+ }
+ 
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index caae558..6755e3f 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -46,11 +46,13 @@ struct sh_mobile_meram_ops {
+ 	/* register usage of meram */
+ 	int (*meram_register)(struct sh_mobile_meram_info *meram_dev,
+ 			      struct sh_mobile_meram_cfg *cfg,
+-			      int xres, int yres, int pixelformat,
++			      unsigned int xres, unsigned int yres,
++			      unsigned int pixelformat,
+ 			      unsigned long base_addr_y,
+ 			      unsigned long base_addr_c,
+ 			      unsigned long *icb_addr_y,
+-			      unsigned long *icb_addr_c, int *pitch);
++			      unsigned long *icb_addr_c,
++			      unsigned int *pitch);
+ 
+ 	/* unregister usage of meram */
+ 	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
 -- 
 1.7.3.4
 
