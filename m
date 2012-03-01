@@ -1,57 +1,128 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 30 Mar 2012 05:32:08 +0000
-Subject: [PATCH] net: sh_eth: fix endian check for architecture independent
-Message-Id: <4F754558.1070001@renesas.com>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Thu, 01 Mar 2012 00:42:51 +0000
+Subject: [PATCH v7 2/9] ARM: at91: Consolidate time keeping and irq enable
+Message-Id: <1330562578-3410-3-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-SuperH has the "CONFIG_CPU_LITTLE_ENDIAN" and the "__LITTLE_ENDIAN__".
-But, other architecture doesn't have them. So, this patch fixes it.
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    2 +-
- drivers/net/ethernet/renesas/sh_eth.h |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/mach-at91/cpuidle.c |   67 +++++++++++++++---------------------------
+ 1 files changed, 24 insertions(+), 43 deletions(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 8bdf070..d63e09b 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -804,7 +804,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
- 	/* all sh_eth int mask */
- 	sh_eth_write(ndev, 0, EESIPR);
-
--#if defined(__LITTLE_ENDIAN__)
-+#if defined(__LITTLE_ENDIAN)
- 	if (mdp->cd->hw_swap)
- 		sh_eth_write(ndev, EDMR_EL, EDMR);
- 	else
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index e66de18..0fa14af 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -693,7 +693,7 @@ enum TSU_FWSLC_BIT {
-  */
- struct sh_eth_txdesc {
- 	u32 status;		/* TD0 */
--#if defined(CONFIG_CPU_LITTLE_ENDIAN)
-+#if defined(__LITTLE_ENDIAN)
- 	u16 pad0;		/* TD1 */
- 	u16 buffer_length;	/* TD1 */
- #else
-@@ -710,7 +710,7 @@ struct sh_eth_txdesc {
-  */
- struct sh_eth_rxdesc {
- 	u32 status;		/* RD0 */
--#if defined(CONFIG_CPU_LITTLE_ENDIAN)
-+#if defined(__LITTLE_ENDIAN)
- 	u16 frame_length;	/* RD1 */
- 	u16 buffer_length;	/* RD1 */
- #else
+diff --git a/arch/arm/mach-at91/cpuidle.c b/arch/arm/mach-at91/cpuidle.c
+index a851e6c..d40b3f3 100644
+--- a/arch/arm/mach-at91/cpuidle.c
++++ b/arch/arm/mach-at91/cpuidle.c
+@@ -17,9 +17,10 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/cpuidle.h>
+-#include <asm/proc-fns.h>
+ #include <linux/io.h>
+ #include <linux/export.h>
++#include <asm/proc-fns.h>
++#include <asm/cpuidle.h>
+ 
+ #include "pm.h"
+ 
+@@ -27,66 +28,46 @@
+ 
+ static DEFINE_PER_CPU(struct cpuidle_device, at91_cpuidle_device);
+ 
+-static struct cpuidle_driver at91_idle_driver = {
+-	.name =         "at91_idle",
+-	.owner =        THIS_MODULE,
+-};
+-
+ /* Actual code that puts the SoC in different idle states */
+ static int at91_enter_idle(struct cpuidle_device *dev,
+ 			struct cpuidle_driver *drv,
+ 			       int index)
+ {
+-	struct timeval before, after;
+-	int idle_time;
+ 	u32 saved_lpr;
+ 
+-	local_irq_disable();
+-	do_gettimeofday(&before);
+-	if (index = 0)
+-		/* Wait for interrupt state */
+-		cpu_do_idle();
+-	else if (index = 1) {
+-		asm("b 1f; .align 5; 1:");
+-		asm("mcr p15, 0, r0, c7, c10, 4");	/* drain write buffer */
+-		saved_lpr = sdram_selfrefresh_enable();
+-		cpu_do_idle();
+-		sdram_selfrefresh_disable(saved_lpr);
+-	}
+-	do_gettimeofday(&after);
+-	local_irq_enable();
+-	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
+-			(after.tv_usec - before.tv_usec);
++	__asm__("b 1f; .align 5; 1:\n"
++	"	mcr p15, 0, r0, c7, c10, 4");	/* drain write buffer */
++
++	saved_lpr = sdram_selfrefresh_enable();
++	cpu_do_idle();
++	sdram_selfrefresh_disable(saved_lpr);
+ 
+-	dev->last_residency = idle_time;
+ 	return index;
+ }
+ 
++static struct cpuidle_driver at91_idle_driver = {
++	.name			= "at91_idle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
++	.states[0]		= ARM_CPUIDLE_WFI_STATE,
++	.states[1]		= {
++		.enter			= at91_enter_idle,
++		.exit_latency		= 10,
++		.target_residency	= 100000,
++		.flags			= CPUIDLE_FLAG_TIME_VALID,
++		.name			= "RAM_SR",
++		.desc			= "WFI and DDR Self Refresh",
++	},
++	.state_count = AT91_MAX_STATES,
++};
++
+ /* Initialize CPU idle by registering the idle states */
+ static int at91_init_cpuidle(void)
+ {
+ 	struct cpuidle_device *device;
+-	struct cpuidle_driver *driver = &at91_idle_driver;
+ 
+ 	device = &per_cpu(at91_cpuidle_device, smp_processor_id());
+ 	device->state_count = AT91_MAX_STATES;
+-	driver->state_count = AT91_MAX_STATES;
+-
+-	/* Wait for interrupt state */
+-	driver->states[0].enter = at91_enter_idle;
+-	driver->states[0].exit_latency = 1;
+-	driver->states[0].target_residency = 10000;
+-	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
+-	strcpy(driver->states[0].name, "WFI");
+-	strcpy(driver->states[0].desc, "Wait for interrupt");
+-
+-	/* Wait for interrupt and RAM self refresh state */
+-	driver->states[1].enter = at91_enter_idle;
+-	driver->states[1].exit_latency = 10;
+-	driver->states[1].target_residency = 10000;
+-	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
+-	strcpy(driver->states[1].name, "RAM_SR");
+-	strcpy(driver->states[1].desc, "WFI and RAM Self Refresh");
+ 
+ 	cpuidle_register_driver(&at91_idle_driver);
+ 
 -- 
 1.7.1
+
