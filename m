@@ -1,157 +1,114 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:08:07 +0000
-Subject: [PATCH v2 54/57] fbdev: sh_mobile_meram: Remove unneeded sanity checks
-Message-Id: <1330614490-14149-55-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:20 +0000
+Subject: [PATCH v2 07/57] sh_mobile_hdmi: Remove platform data lcd_dev field
+Message-Id: <1330614490-14149-8-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The meram_register(), meram_unregister() and meram_update() operations
-check that the pointers they get from the caller are not NULL. Those
-checks can be remove, as the caller already ensures that the pointers
-are valid.
-
-The platform sanity checks can also be removed, as the operations can't
-be accessed without valid platform data anyway.
+The field is used to print debug messages only. Remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    5 +----
- drivers/video/sh_mobile_meram.c  |   32 ++++++--------------------------
- include/video/sh_mobile_meram.h  |   15 +++++++--------
- 3 files changed, 14 insertions(+), 38 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    1 -
+ arch/arm/mach-shmobile/board-mackerel.c |    1 -
+ drivers/video/sh_mobile_hdmi.c          |   17 +++++------------
+ include/video/sh_mobile_hdmi.h          |    1 -
+ 4 files changed, 5 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 4b54cd5..7a0b301 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1072,14 +1072,11 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index aab0a34..091b681 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -864,7 +864,6 @@ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
  
- 	if (ch->meram) {
- 		struct sh_mobile_meram_info *mdev;
--		int ret;
+ static struct sh_mobile_hdmi_info hdmi_info = {
+ 	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
+-	.lcd_dev = &lcdc1_device.dev,
+ 	.flags = HDMI_SND_SRC_SPDIF,
+ 	.clk_optimize_parent = ap4evb_clk_optimize,
+ };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 2202987..34d777d 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -485,7 +485,6 @@ static struct platform_device hdmi_lcdc_device = {
  
- 		mdev = priv->meram_dev;
--		ret = mdev->ops->meram_update(mdev, ch->meram,
-+		mdev->ops->meram_update(mdev, ch->meram,
- 					base_addr_y, base_addr_c,
- 					&base_addr_y, &base_addr_c);
--		if (ret)
--			return ret;
- 	}
- 
- 	ch->base_addr_y = base_addr_y;
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 2ce0d8f..d9f7a44 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -451,21 +451,15 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 				      unsigned int *pitch)
- {
- 	struct sh_mobile_meram_fb_cache *cache;
--	struct sh_mobile_meram_priv *priv;
--	struct platform_device *pdev;
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
-+	struct platform_device *pdev = pdata->pdev;
- 	unsigned int out_pitch;
- 
--	if (!pdata || !pdata->priv || !pdata->pdev || !cfg)
--		return ERR_PTR(-EINVAL);
--
- 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
- 		return ERR_PTR(-EINVAL);
- 
--	priv = pdata->priv;
--	pdev = pdata->pdev;
--
- 	dev_dbg(&pdev->dev, "registering %dx%d (%s)", xres, yres,
- 		!pixelformat ? "yuv" : "rgb");
- 
-@@ -500,16 +494,11 @@ err:
- 	return cache;
- }
- 
--static int
-+static void
- sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata, void *data)
- {
- 	struct sh_mobile_meram_fb_cache *cache = data;
--	struct sh_mobile_meram_priv *priv;
--
--	if (!pdata || !pdata->priv || !data)
--		return -EINVAL;
--
--	priv = pdata->priv;
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
- 
- 	mutex_lock(&priv->lock);
- 
-@@ -521,22 +510,15 @@ sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata, void *data)
- 	meram_free(priv, cache);
- 
- 	mutex_unlock(&priv->lock);
--
--	return 0;
- }
- 
--static int
-+static void
- sh_mobile_meram_update(struct sh_mobile_meram_info *pdata, void *data,
- 		       unsigned long base_addr_y, unsigned long base_addr_c,
- 		       unsigned long *icb_addr_y, unsigned long *icb_addr_c)
- {
- 	struct sh_mobile_meram_fb_cache *cache = data;
--	struct sh_mobile_meram_priv *priv;
--
--	if (!pdata || !pdata->priv || !data)
--		return -EINVAL;
--
--	priv = pdata->priv;
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
- 
- 	mutex_lock(&priv->lock);
- 
-@@ -544,8 +526,6 @@ sh_mobile_meram_update(struct sh_mobile_meram_info *pdata, void *data,
- 	meram_get_next_icb_addr(pdata, cache, icb_addr_y, icb_addr_c);
- 
- 	mutex_unlock(&priv->lock);
--
--	return 0;
- }
- 
- static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index 553335c..29b2fd3 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -49,16 +49,15 @@ struct sh_mobile_meram_ops {
- 				unsigned int *pitch);
- 
- 	/* unregister usage of meram */
--	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
--				void *data);
-+	void (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
-+				 void *data);
- 
- 	/* update meram settings */
--	int (*meram_update)(struct sh_mobile_meram_info *meram_dev,
--			    void *data,
--			    unsigned long base_addr_y,
--			    unsigned long base_addr_c,
--			    unsigned long *icb_addr_y,
--			    unsigned long *icb_addr_c);
-+	void (*meram_update)(struct sh_mobile_meram_info *meram_dev, void *data,
-+			     unsigned long base_addr_y,
-+			     unsigned long base_addr_c,
-+			     unsigned long *icb_addr_y,
-+			     unsigned long *icb_addr_c);
+ static struct sh_mobile_hdmi_info hdmi_info = {
+ 	.lcd_chan	= &hdmi_lcdc_info.ch[0],
+-	.lcd_dev	= &hdmi_lcdc_device.dev,
+ 	.flags		= HDMI_SND_SRC_SPDIF,
  };
  
- #endif /* __VIDEO_SH_MOBILE_MERAM_H__  */
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index a77bbc3..ebd0651 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -1008,11 +1008,9 @@ static void sh_hdmi_display_on(void *arg, struct fb_info *info)
+ 	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
+ 	 */
+ 	struct sh_hdmi *hdmi = arg;
+-	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 
+-	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__,
+-		pdata->lcd_dev, info->state);
++	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
+ 
+ 	/* No need to lock */
+ 	hdmi->info = info;
+@@ -1040,9 +1038,8 @@ static void sh_hdmi_display_on(void *arg, struct fb_info *info)
+ static void sh_hdmi_display_off(void *arg)
+ {
+ 	struct sh_hdmi *hdmi = arg;
+-	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
+ 
+-	dev_dbg(hdmi->dev, "%s(%p)\n", __func__, pdata->lcd_dev);
++	dev_dbg(hdmi->dev, "%s(%p)\n", __func__, hdmi);
+ 	/* PS mode e->a */
+ 	hdmi_write(hdmi, 0x10, HDMI_SYSTEM_CTRL);
+ }
+@@ -1114,15 +1111,11 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
+ {
+ 	struct sh_hdmi *hdmi = container_of(work, struct sh_hdmi, edid_work.work);
+ 	struct fb_info *info;
+-	struct sh_mobile_hdmi_info *pdata = hdmi->dev->platform_data;
+ 	struct sh_mobile_lcdc_chan *ch;
+ 	int ret;
+ 
+-	dev_dbg(hdmi->dev, "%s(%p): begin, hotplug status %d\n", __func__,
+-		pdata->lcd_dev, hdmi->hp_state);
+-
+-	if (!pdata->lcd_dev)
+-		return;
++	dev_dbg(hdmi->dev, "%s(%p): begin, hotplug status %d\n", __func__, hdmi,
++		hdmi->hp_state);
+ 
+ 	mutex_lock(&hdmi->mutex);
+ 
+@@ -1198,7 +1191,7 @@ out:
+ 		hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED;
+ 	mutex_unlock(&hdmi->mutex);
+ 
+-	dev_dbg(hdmi->dev, "%s(%p): end\n", __func__, pdata->lcd_dev);
++	dev_dbg(hdmi->dev, "%s(%p): end\n", __func__, hdmi);
+ }
+ 
+ static int sh_hdmi_notify(struct notifier_block *nb,
+diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
+index b569329..0b8d2cf 100644
+--- a/include/video/sh_mobile_hdmi.h
++++ b/include/video/sh_mobile_hdmi.h
+@@ -32,7 +32,6 @@ struct clk;
+ 
+ struct sh_mobile_hdmi_info {
+ 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
+-	struct device			*lcd_dev;
+ 	unsigned int			 flags;
+ 	long (*clk_optimize_parent)(unsigned long target, unsigned long *best_freq,
+ 				    unsigned long *parent_freq);
 -- 
 1.7.3.4
 
