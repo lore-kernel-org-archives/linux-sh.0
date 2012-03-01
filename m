@@ -1,59 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 16 Mar 2012 00:03:29 +0000
-Subject: Re: [Replacement][PATCH 2/6] PM / Domains: Fix hibernation restore of devices, v2
-Message-Id: <20120316000328.GE18690@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 01 Mar 2012 04:25:06 +0000
+Subject: [PATCH 1/2] ARM: mach-shmobile: sh7372: Add FSI DMAEngine support
+Message-Id: <87linlrlr5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203130123.16268.rjw@sisk.pl>
- <201203132232.42915.rjw@sisk.pl>
- <20120315093921.GA15294@verge.net.au>
- <201203152200.09546.rjw@sisk.pl>
-In-Reply-To: <201203152200.09546.rjw@sisk.pl>
+References: <87ei22dg7q.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ei22dg7q.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Thu, Mar 15, 2012 at 10:00:09PM +0100, Rafael J. Wysocki wrote:
-> On Thursday, March 15, 2012, Simon Horman wrote:
-> > On Tue, Mar 13, 2012 at 10:32:42PM +0100, Rafael J. Wysocki wrote:
-> > > On Tuesday, March 13, 2012, Rafael J. Wysocki wrote:
-> > > > From: Rafael J. Wysocki <rjw@sisk.pl>
-> > > > 
-> > > > During resume from hibernation pm_genpd_restore_noirq() has to
-> > > > deal with software state left by pm_genpd_suspend_noirq() and
-> > > > unknown hardware state (the boot kernel may leave all PM domains and
-> > > > devices in arbitrary states).  For this reason, make it attempt to
-> > > > power cycle each domain when before resuming its first device to
-> > > > possibly get rid of any unwanted hardware state that may interfere
-> > > > with genpd_start_dev() later on.
-> > > > 
-> > > > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> > > 
-> > > I realized that this wasn't a good idea because of patch [3/6] (we
-> > > can't power cycle domains containing "always on" devices), so I
-> > > decided to only fix the really broken things in pm_genpd_restore_noirq().
-> > > 
-> > > Of course, patch [3/6] also needs to be updated on top of the below to
-> > > avoid starting "always on" devices in pm_genpd_restore_noirq() (it has
-> > > to assume that they will be "always on" in the boot kernel too, but that
-> > > seems to be a reasonable expectation).
-> > > 
-> > > Please note that those changes only affect resume from hibernation, so
-> > > they don't invalidate the testing that has already been carried out.
-> > 
-> > Hi Rafael,
-> > 
-> > sorry for such a naeive question, but if I was to test
-> > hibernate on the Mackerel how would I achieve resume?
-> > Is there a button I should press?
-> 
-> Hibernation is not supported on Mackerel at the moment, so you'd need to add
-> some platform hooks first.  Then, you'd need some persistent storage with
-> a swap patrition (or swap file at least) to save the image.  You'd need
-> to point your kernel to the image storage using the resume= and resume_offset> command line switches.  Then, you should be able to create an image and the
-> kernel would look for it automatically on the next boot.
-> 
-> Still, I'm not sure if doing all that at this point is worth the effort.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   10 ++++++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
-Point taken.
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 84532f9..26bf8ad 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -457,6 +457,8 @@ enum {
+ 	SHDMA_SLAVE_SDHI1_TX,
+ 	SHDMA_SLAVE_SDHI2_RX,
+ 	SHDMA_SLAVE_SDHI2_TX,
++	SHDMA_SLAVE_FSIA_RX,
++	SHDMA_SLAVE_FSIA_TX,
+ 	SHDMA_SLAVE_MMCIF_RX,
+ 	SHDMA_SLAVE_MMCIF_TX,
+ 	SHDMA_SLAVE_USB0_TX,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 2380389..780f638 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -433,6 +433,16 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xce,
+ 	}, {
++		.slave_id	= SHDMA_SLAVE_FSIA_TX,
++		.addr		= 0xfe1f0024,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.mid_rid	= 0xb1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FSIA_RX,
++		.addr		= 0xfe1f0020,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.mid_rid	= 0xb2,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+ 		.addr		= 0xe6bd0034,
+ 		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
+-- 
+1.7.5.4
+
