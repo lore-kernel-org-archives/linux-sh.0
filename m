@@ -1,52 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Mar 2012 08:36:14 +0000
-Subject: [PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()
-Message-Id: <20120306083614.8131.7386.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:28 +0000
+Subject: [PATCH v2 15/57] arm: mach-shmobile: Don't initialize the hdmi_info lcd_chan field
+Message-Id: <1330614490-14149-16-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The field is unused and will be removed. Don't initialize it.
 
-Add shmobile_earlytimer_init() that can be used to
-enable the earlytimer probing from the SoC code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/board-ap4evb.c   |    3 ---
+ arch/arm/mach-shmobile/board-mackerel.c |    3 ---
+ 2 files changed, 0 insertions(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/timer.c               |    7 ++++++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
-
---- 0026/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-03-06 12:40:16.000000000 +0900
-@@ -1,6 +1,7 @@
- #ifndef __ARCH_MACH_COMMON_H
- #define __ARCH_MACH_COMMON_H
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 407a4b6..21f4fa8 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -816,10 +816,7 @@ static struct platform_device fsi_ak4643_device = {
+ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+ 				unsigned long *parent_freq);
  
-+extern void shmobile_earlytimer_init(void);
- extern struct sys_timer shmobile_timer;
- extern void shmobile_setup_console(void);
- extern void shmobile_secondary_vector(void);
---- 0001/arch/arm/mach-shmobile/timer.c
-+++ work/arch/arm/mach-shmobile/timer.c	2012-03-06 12:40:02.000000000 +0900
-@@ -36,11 +36,16 @@ static void __init shmobile_late_time_in
- 	early_platform_driver_probe("earlytimer", 2, 0);
- }
- 
--static void __init shmobile_timer_init(void)
-+void __init shmobile_earlytimer_init(void)
- {
- 	late_time_init = shmobile_late_time_init;
- }
- 
-+static void __init shmobile_timer_init(void)
-+{
-+	shmobile_earlytimer_init();
-+}
-+
- struct sys_timer shmobile_timer = {
- 	.init		= shmobile_timer_init,
+-static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info;
+-
+ static struct sh_mobile_hdmi_info hdmi_info = {
+-	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
+ 	.flags = HDMI_SND_SRC_SPDIF,
+ 	.clk_optimize_parent = ap4evb_clk_optimize,
  };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 5a96d81..52b7cb7 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -432,10 +432,7 @@ static struct platform_device lcdc_device = {
+ };
+ 
+ /* HDMI */
+-static struct sh_mobile_lcdc_info hdmi_lcdc_info;
+-
+ static struct sh_mobile_hdmi_info hdmi_info = {
+-	.lcd_chan	= &hdmi_lcdc_info.ch[0],
+ 	.flags		= HDMI_SND_SRC_SPDIF,
+ };
+ 
+-- 
+1.7.3.4
+
