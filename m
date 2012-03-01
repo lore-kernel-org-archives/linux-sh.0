@@ -1,34 +1,50 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 13 Mar 2012 08:56:03 +0000
-Subject: Re: [PATCH 4/4] ARM: __io abuse cleanup
-Message-Id: <CACRpkdZ_y3=vcj99C34SZ=hKQUmXdqoj0mqKJg2MLGqyUFsB0g@mail.gmail.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 01 Mar 2012 02:32:41 +0000
+Subject: [PATCH 2/3] sh: sh7757: Add echi-sh of platform data
+Message-Id: <1330569162-9485-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1331500100-31351-1-git-send-email-robherring2@gmail.com>
- <1331500100-31351-5-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1331500100-31351-5-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sun, Mar 11, 2012 at 10:08 PM, Rob Herring <robherring2@gmail.com> wrote:
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-> From: Rob Herring <rob.herring@calxeda.com>
->
-> Several platforms incorrectly use __io() for casting to 'void __iomem *'.
-> This converts all of those uses to use the common IOMEM macro.
->
-> Reported-by: Arnd Bergmann <arnd@arndb.de>
-> Signed-off-by: Rob Herring <rob.herring@calxeda.com>
-> Cc: Anton Vorontsov <avorontsov@mvista.com>
-> Cc: Russell King <linux@arm.linux.org.uk>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Cc: Srinidhi Kasagar <srinidhi.kasagar@stericsson.com>
-> Cc: Linus Walleij <linus.walleij@stericsson.com>
-> Cc: linux-sh@vger.kernel.org
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 2875e8b..d791d64 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -18,6 +18,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
++#include <linux/usb/ehci-sh.h>
+ 
+ #include <cpu/dma-register.h>
+ #include <cpu/sh7757.h>
+@@ -680,6 +681,11 @@ static struct platform_device spi1_device = {
+ 	.resource	= spi1_resources,
+ };
+ 
++static struct ehci_sh_platdata usb_ehci_pdata = {
++	.phy_init = NULL,
++	.clkmode = 0,
++};
++
+ static struct resource usb_ehci_resources[] = {
+ 	[0] = {
+ 		.start	= 0xfe4f1000,
+@@ -699,6 +705,7 @@ static struct platform_device usb_ehci_device = {
+ 	.dev = {
+ 		.dma_mask = &usb_ehci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask = DMA_BIT_MASK(32),
++		.platform_data      = &usb_ehci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ehci_resources),
+ 	.resource	= usb_ehci_resources,
+-- 
+1.7.9.1
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-
-Thanks Rob!
-Linus Walleij
