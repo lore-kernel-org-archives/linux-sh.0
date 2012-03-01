@@ -1,82 +1,49 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 01 Mar 2012 05:56:54 +0000
-Subject: Re: [PATCH 1/3] usb: ehci-sh: Add PHY init function with platform data
-Message-Id: <4F4F0FA6.6010409@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 01 Mar 2012 04:25:28 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: mackerel: Add FSI DMAEngine support
+Message-Id: <87k435rlqj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330569162-9485-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1330569162-9485-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <w3phbc5yjly.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3phbc5yjly.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+We needs un-manualed address to use DMA
 
-Shimoda, Yoshihiro wrote:
-> Hi,
-> 
-> 2012/03/01 11:32, Nobuhiro Iwamatsu wrote:
->> In devices using ehci-sh, initialization of the PHY may be necessary.
->> This adds platform data to ehci-sh and provide function to initialize PHY.
->>
->> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> CC: Shimoda, Yoshihiro <yoshihiro.shimoda.uh@renesas.com>
->> ---
->>  drivers/usb/host/ehci-sh.c  |   12 ++++++++++++
->>  include/linux/usb/ehci-sh.h |   29 +++++++++++++++++++++++++++++
->>  2 files changed, 41 insertions(+), 0 deletions(-)
->>  create mode 100644 include/linux/usb/ehci-sh.h
->>
->> diff --git a/drivers/usb/host/ehci-sh.c b/drivers/usb/host/ehci-sh.c
->> index 9d9cf47..787b07e 100644
->> --- a/drivers/usb/host/ehci-sh.c
->> +++ b/drivers/usb/host/ehci-sh.c
->> @@ -11,6 +11,7 @@
->>   */
->>  #include <linux/platform_device.h>
->>  #include <linux/clk.h>
->> +#include <linux/usb/ehci-sh.h>
->>  
->>  struct ehci_sh_priv {
->>  	struct clk *iclk, *fclk;
->> @@ -100,6 +101,7 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
->>  	const struct hc_driver *driver = &ehci_sh_hc_driver;
->>  	struct resource *res;
->>  	struct ehci_sh_priv *priv;
->> +	struct ehci_sh_platdata *pdata;
->>  	struct usb_hcd *hcd;
->>  	int irq, ret;
->>  
->> @@ -124,6 +126,13 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
->>  		goto fail_create_hcd;
->>  	}
->>  
->> +	if (pdev->dev.platform_data = NULL) {
->> +		dev_err(&pdev->dev, "no platform data\n");
->> +		ret = -ENODEV;
->> +		goto fail_create_hcd;
->> +	}
->> +	pdata = pdev->dev.platform_data;
->> +
->>  	/* initialize hcd */
->>  	hcd = usb_create_hcd(&ehci_sh_hc_driver, &pdev->dev,
->>  			     dev_name(&pdev->dev));
->> @@ -168,6 +177,9 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
->>  	clk_enable(priv->fclk);
->>  	clk_enable(priv->iclk);
->>  
->> +	if (pdata->phy_init)
->> +		pdata->phy_init(pdata->clkmode);
-> 
-> The clkmode is only used by the phy_init(). So, I think that we can remove the
-> clkmode. (In other words, the ehci-sh doesn't use the clkmode actually.)
-> 
-> And then, According to your other 2 patches, the current platforms don't
-> use the phy_init(). So, if a platform_device doesn't have the platform_data,
-> it is better for ehci-sh to ignore the parameter, I think.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-OK, I'll fix these.
-
-Thanks,
-  Nobuhiro
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 6e21194..4926fdc 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -955,6 +955,8 @@ fsi_set_rate_end:
+ static struct sh_fsi_platform_info fsi_info = {
+ 	.port_a = {
+ 		.flags = SH_FSI_BRS_INV,
++		.tx_id = SHDMA_SLAVE_FSIA_TX,
++		.rx_id = SHDMA_SLAVE_FSIA_RX,
+ 	},
+ 	.port_b = {
+ 		.flags = SH_FSI_BRS_INV	|
+@@ -967,9 +969,11 @@ static struct sh_fsi_platform_info fsi_info = {
+ 
+ static struct resource fsi_resources[] = {
+ 	[0] = {
++		/* we need 0xFE1F0000 to access DMA
++		 * instead of 0xFE3C0000 */
+ 		.name	= "FSI",
+-		.start	= 0xFE3C0000,
+-		.end	= 0xFE3C0400 - 1,
++		.start  = 0xFE1F0000,
++		.end    = 0xFE1F0400 - 1,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-- 
+1.7.5.4
 
