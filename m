@@ -1,52 +1,131 @@
-From: Thomas Schwinge <thomas@codesourcery.com>
-Date: Fri, 09 Mar 2012 16:38:48 +0000
-Subject: [PATCH 2/7] SH: heartbeat: restore big-endian operation.
-Message-Id: <1331311133-26937-2-git-send-email-thomas@codesourcery.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:26 +0000
+Subject: [PATCH v2 13/57] fbdev: sh_mipi_dsi: Don't hook up into board_cfg display operations
+Message-Id: <1330614490-14149-14-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-As of 37b7a97884ba64bf7d403351ac2a9476ab4f1bba we have to use the
-endianess-agnostic I/O accessor functions.
+The display_on/off operations are now accessed through the
+sh_mobile_lcdc_entity operations.
 
-I have not tested this -- the board is situated in a remote data center.
-
-Signed-off-by: Thomas Schwinge <thomas@codesourcery.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/drivers/heartbeat.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ drivers/video/sh_mipi_dsi.c |   56 ++++---------------------------------------
+ 1 files changed, 5 insertions(+), 51 deletions(-)
 
-diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
-index 7efc9c3..b8803fd 100644
---- a/arch/sh/drivers/heartbeat.c
-+++ b/arch/sh/drivers/heartbeat.c
-@@ -45,16 +45,16 @@ static inline void heartbeat_toggle_bit(struct heartbeat_data *hd,
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 58744fe..ad09a05 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -58,10 +58,6 @@ struct sh_mipi {
+ 	void __iomem	*linkbase;
+ 	struct clk	*dsit_clk;
+ 	struct platform_device *pdev;
+-
+-	void	*next_board_data;
+-	void	(*next_display_on)(void *board_data, struct fb_info *info);
+-	void	(*next_display_off)(void *board_data);
+ };
  
- 	switch (hd->regsize) {
- 	case 32:
--		new |= ioread32(hd->base) & ~hd->mask;
--		iowrite32(new, hd->base);
-+		new |= __raw_readl(hd->base) & ~hd->mask;
-+		__raw_writel(new, hd->base);
- 		break;
- 	case 16:
--		new |= ioread16(hd->base) & ~hd->mask;
--		iowrite16(new, hd->base);
-+		new |= __raw_readw(hd->base) & ~hd->mask;
-+		__raw_writew(new, hd->base);
- 		break;
- 	default:
--		new |= ioread8(hd->base) & ~hd->mask;
--		iowrite8(new, hd->base);
-+		new |= __raw_readb(hd->base) & ~hd->mask;
-+		__raw_writeb(new, hd->base);
- 		break;
- 	}
+ #define to_sh_mipi(e)	container_of(e, struct sh_mipi, entity)
+@@ -398,8 +394,8 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	return 0;
  }
+ 
+-static int __mipi_display_on(struct sh_mobile_lcdc_entity *entity,
+-			     struct fb_info *info)
++static int mipi_display_on(struct sh_mobile_lcdc_entity *entity,
++			   struct fb_info *info)
+ {
+ 	struct sh_mipi *mipi = to_sh_mipi(entity);
+ 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+@@ -427,21 +423,7 @@ mipi_display_on_fail2:
+ 	return ret;
+ }
+ 
+-static void mipi_display_on(void *arg, struct fb_info *info)
+-{
+-	struct sh_mobile_lcdc_entity *entity = arg;
+-	struct sh_mipi *mipi = to_sh_mipi(entity);
+-	int ret;
+-
+-	ret = __mipi_display_on(entity, info);
+-	if (ret < 0)
+-		return;
+-
+-	if (mipi->next_display_on)
+-		mipi->next_display_on(mipi->next_board_data, info);
+-}
+-
+-static void __mipi_display_off(struct sh_mobile_lcdc_entity *entity)
++static void mipi_display_off(struct sh_mobile_lcdc_entity *entity)
+ {
+ 	struct sh_mipi *mipi = to_sh_mipi(entity);
+ 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+@@ -453,20 +435,9 @@ static void __mipi_display_off(struct sh_mobile_lcdc_entity *entity)
+ 	pm_runtime_put_sync(&mipi->pdev->dev);
+ }
+ 
+-static void mipi_display_off(void *arg)
+-{
+-	struct sh_mobile_lcdc_entity *entity = arg;
+-	struct sh_mipi *mipi = to_sh_mipi(entity);
+-
+-	if (mipi->next_display_off)
+-		mipi->next_display_off(mipi->next_board_data);
+-
+-	__mipi_display_off(entity);
+-}
+-
+ static const struct sh_mobile_lcdc_entity_ops mipi_ops = {
+-	.display_on = __mipi_display_on,
+-	.display_off = __mipi_display_off,
++	.display_on = mipi_display_on,
++	.display_off = mipi_display_off,
+ };
+ 
+ static int __init sh_mipi_probe(struct platform_device *pdev)
+@@ -559,17 +530,6 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
+ 	mutex_unlock(&array_lock);
+ 	platform_set_drvdata(pdev, &mipi->entity);
+ 
+-	/* Save original LCDC callbacks */
+-	mipi->next_board_data = pdata->lcd_chan->board_cfg.board_data;
+-	mipi->next_display_on = pdata->lcd_chan->board_cfg.display_on;
+-	mipi->next_display_off = pdata->lcd_chan->board_cfg.display_off;
+-
+-	/* Set up LCDC callbacks */
+-	pdata->lcd_chan->board_cfg.board_data = &mipi->entity;
+-	pdata->lcd_chan->board_cfg.display_on = mipi_display_on;
+-	pdata->lcd_chan->board_cfg.display_off = mipi_display_off;
+-	pdata->lcd_chan->board_cfg.owner = THIS_MODULE;
+-
+ 	return 0;
+ 
+ eclkton:
+@@ -594,7 +554,6 @@ efindslot:
+ 
+ static int __exit sh_mipi_remove(struct platform_device *pdev)
+ {
+-	struct sh_mipi_dsi_info *pdata = pdev->dev.platform_data;
+ 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	struct resource *res2 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+ 	struct sh_mipi *mipi = to_sh_mipi(platform_get_drvdata(pdev));
+@@ -617,11 +576,6 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	pdata->lcd_chan->board_cfg.owner = NULL;
+-	pdata->lcd_chan->board_cfg.display_on = NULL;
+-	pdata->lcd_chan->board_cfg.display_off = NULL;
+-	pdata->lcd_chan->board_cfg.board_data = NULL;
+-
+ 	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(mipi->dsit_clk);
+ 	clk_put(mipi->dsit_clk);
 -- 
-1.7.4.1
+1.7.3.4
 
