@@ -1,62 +1,40 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Wed, 07 Mar 2012 03:42:18 +0000
-Subject: [RFC PATCH] cpuidle: avoid unnecessary expensive governor processing
-Message-Id: <1331091738-26322-1-git-send-email-rob.lee@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:49 +0000
+Subject: [PATCH v2 36/57] fbdev: sh_mobile_lcdc: Pass physical device pointer to DMA functions
+Message-Id: <1330614490-14149-37-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-There a few cases when a platform's cpuidle_device will only have one
-cpuidle state.  e.g., when a single idle state system uses cpuidle
-to provide sysfs staticstics for profiling (powertop, etc).  This can
-also be the case for coupled smp system implementations that keep
-all but one cpuidle_device at a state_count of 1, but they still want
-to export idle statistics for these states using cpuidle.
+The dma_map_sg() and dma_unmap_sg() functions need a pointer to the
+physical device.
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/cpuidle/governors/ladder.c |    7 +++++--
- drivers/cpuidle/governors/menu.c   |    7 +++++--
- 2 files changed, 10 insertions(+), 4 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/cpuidle/governors/ladder.c b/drivers/cpuidle/governors/ladder.c
-index b6a09ea..13abdba 100644
---- a/drivers/cpuidle/governors/ladder.c
-+++ b/drivers/cpuidle/governors/ladder.c
-@@ -71,8 +71,11 @@ static int ladder_select_state(struct cpuidle_driver *drv,
- 	int last_residency, last_idx = ldev->last_state_idx;
- 	int latency_req = pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 1f8dd83..fc12e37 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -313,11 +313,12 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
+ 		unsigned int nr_pages = sh_mobile_lcdc_sginit(info, pagelist);
  
--	/* Special case when user has set very strict latency requirement */
--	if (unlikely(latency_req = 0)) {
-+	/*
-+	 * Special case when user has set very strict latency requirement or
-+	 * there is currently only one state for this device.
-+	 */
-+	if ((latency_req = 0) || (dev->state_count = 1)) {
- 		ladder_do_selection(ldev, last_idx, 0);
- 		return 0;
- 	}
-diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index ad09526..80eb606 100644
---- a/drivers/cpuidle/governors/menu.c
-+++ b/drivers/cpuidle/governors/menu.c
-@@ -249,8 +249,11 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
- 	data->last_state_idx = 0;
- 	data->exit_us = 0;
- 
--	/* Special case when user has set very strict latency requirement */
--	if (unlikely(latency_req = 0))
-+	/*
-+	 * Special case when user has set very strict latency requirement or
-+	 * there is currently only one state for this device.
-+	 */
-+	if ((latency_req = 0) || (dev->state_count = 1))
- 		return 0;
- 
- 	/* determine the expected residency time, round up */
+ 		/* trigger panel update */
+-		dma_map_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
++		dma_map_sg(ch->lcdc->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
+ 		if (panel->start_transfer)
+ 			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
+-		dma_unmap_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
++		dma_unmap_sg(ch->lcdc->dev, ch->sglist, nr_pages,
++			     DMA_TO_DEVICE);
+ 	} else {
+ 		if (panel->start_transfer)
+ 			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
 -- 
-1.7.1
+1.7.3.4
 
