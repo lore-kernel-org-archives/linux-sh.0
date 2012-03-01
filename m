@@ -1,54 +1,128 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 14 Mar 2012 09:03:22 +0000
-Subject: Re: [GIT PULL] Renesas SoC updates for v3.4, take 2
-Message-Id: <201203141003.22901.rjw@sisk.pl>
+Date: Thu, 01 Mar 2012 21:21:14 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: rename clk_init() to shmobile_clk_init()
+Message-Id: <201203012221.14287.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203092155.04731.rjw@sisk.pl> <201203140116.40344.rjw@sisk.pl> <CAOesGMgsRDgiyfNTdC9KCPd4BJ-EsPK6=noVp=EVx-TMT7Hv7A@mail.gmail.com>
-In-Reply-To: <CAOesGMgsRDgiyfNTdC9KCPd4BJ-EsPK6=noVp=EVx-TMT7Hv7A@mail.gmail.com>
+References: <20120229124130.29066.74120.sendpatchset@w520>
+In-Reply-To: <20120229124130.29066.74120.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Olof Johansson <olof@lixom.net>
-Cc: Arnd Bergmann <arnd@arndb.de>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "arm@kernel.org" <arm@kernel.org>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-On Wednesday, March 14, 2012, Olof Johansson wrote:
-> On Tue, Mar 13, 2012 at 5:16 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > On Wednesday, March 14, 2012, Olof Johansson wrote:
-> >> On Tue, Mar 13, 2012 at 2:42 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> >> > On Tuesday, March 13, 2012, Rafael J. Wysocki wrote:
-> >> >> On Tuesday, March 13, 2012, Arnd Bergmann wrote:
-> >> >> > On Tuesday 13 March 2012, Rafael J. Wysocki wrote:
-> >> >> > > > Note that the __io() issue has turned out to be more urgent than I first
-> >> >> > > > thought when we discussed it, so it would be good to apply the patch below
-> >> >> > > > on top of your series.
-> >> >> > >
-> >> >> > > Do you want me to apply it now or will you do that in your tree?
-> >> >> >
-> >> >> > Doesn't matter to me, as long as one of you applies it ;-)
-> >> >>
-> >> >> OK, so I will add it to the soc branch in the Renesas tree.
-> >> >
-> >> > Applied and pushed back the updated tree.
-> >>
-> >> Seems like you applied the patch but without the subject line,
-> >
-> > I didn't notice that, sorry.
-> >
-> >> so now git thinks the whole first paragraph is the patch subject. That's a
-> >> bit messy and I'd prefer if you could fix it up.
-> >
-> > I've just replaced the broken commit with a new fixed one.
-> >
-> >> Do you have downstream users of your tree that you'll mess up if you
-> >> rebase the last commit though? Alternatively I can take everything on
-> >> the branch but the last patch and apply it myself, but that will still
-> >> cause trouble for your downstream developers once things go upstream
-> >> and come down.
-> >
-> > Hopefully, no one has pulled from the tree yet. :-)
+On Wednesday, February 29, 2012, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
 > 
-> Cool. Pulled into next/soc. Thanks!!
+> Rename clk_init() to shmobile_clk_init() to avoid a potential
+> future name space collision with the common clock framework.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Great, thanks a lot!
+Paul, would you mind if I took this patchset into the renesas tree for v3.4?
 
 Rafael
+
+
+> ---
+> 
+>  arch/arm/mach-shmobile/clock-r8a7740.c       |    2 +-
+>  arch/arm/mach-shmobile/clock-r8a7779.c       |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7367.c        |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7372.c        |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7377.c        |    2 +-
+>  arch/arm/mach-shmobile/clock-sh73a0.c        |    2 +-
+>  arch/arm/mach-shmobile/clock.c               |    2 +-
+>  arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+>  8 files changed, 8 insertions(+), 8 deletions(-)
+> 
+> --- 0015/arch/arm/mach-shmobile/clock-r8a7740.c
+> +++ work/arch/arm/mach-shmobile/clock-r8a7740.c	2012-02-29 20:59:39.000000000 +0900
+> @@ -376,7 +376,7 @@ void __init r8a7740_clock_init(u8 md_ck)
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+>  	if (!ret)
+> -		clk_init();
+> +		shmobile_clk_init();
+>  	else
+>  		panic("failed to setup r8a7740 clocks\n");
+>  }
+> --- 0016/arch/arm/mach-shmobile/clock-r8a7779.c
+> +++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2012-02-29 20:59:53.000000000 +0900
+> @@ -170,7 +170,7 @@ void __init r8a7779_clock_init(void)
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+>  	if (!ret)
+> -		clk_init();
+> +		shmobile_clk_init();
+>  	else
+>  		panic("failed to setup r8a7779 clocks\n");
+>  }
+> --- 0014/arch/arm/mach-shmobile/clock-sh7367.c
+> +++ work/arch/arm/mach-shmobile/clock-sh7367.c	2012-02-29 21:00:12.000000000 +0900
+> @@ -349,7 +349,7 @@ void __init sh7367_clock_init(void)
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+>  	if (!ret)
+> -		clk_init();
+> +		shmobile_clk_init();
+>  	else
+>  		panic("failed to setup sh7367 clocks\n");
+>  }
+> --- 0012/arch/arm/mach-shmobile/clock-sh7372.c
+> +++ work/arch/arm/mach-shmobile/clock-sh7372.c	2012-02-29 21:00:34.000000000 +0900
+> @@ -710,7 +710,7 @@ void __init sh7372_clock_init(void)
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+>  	if (!ret)
+> -		clk_init();
+> +		shmobile_clk_init();
+>  	else
+>  		panic("failed to setup sh7372 clocks\n");
+>  
+> --- 0013/arch/arm/mach-shmobile/clock-sh7377.c
+> +++ work/arch/arm/mach-shmobile/clock-sh7377.c	2012-02-29 21:00:25.000000000 +0900
+> @@ -360,7 +360,7 @@ void __init sh7377_clock_init(void)
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+>  	if (!ret)
+> -		clk_init();
+> +		shmobile_clk_init();
+>  	else
+>  		panic("failed to setup sh7377 clocks\n");
+>  }
+> --- 0011/arch/arm/mach-shmobile/clock-sh73a0.c
+> +++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2012-02-29 21:00:48.000000000 +0900
+> @@ -620,7 +620,7 @@ void __init sh73a0_clock_init(void)
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+>  	if (!ret)
+> -		clk_init();
+> +		shmobile_clk_init();
+>  	else
+>  		panic("failed to setup sh73a0 clocks\n");
+>  }
+> --- 0001/arch/arm/mach-shmobile/clock.c
+> +++ work/arch/arm/mach-shmobile/clock.c	2012-02-29 20:58:43.000000000 +0900
+> @@ -24,7 +24,7 @@
+>  #include <linux/sh_clk.h>
+>  #include <linux/export.h>
+>  
+> -int __init clk_init(void)
+> +int __init shmobile_clk_init(void)
+>  {
+>  	/* Kick the child clocks.. */
+>  	recalculate_root_clocks();
+> --- 0008/arch/arm/mach-shmobile/include/mach/common.h
+> +++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-02-29 20:59:15.000000000 +0900
+> @@ -6,7 +6,7 @@ extern void shmobile_setup_console(void)
+>  extern void shmobile_secondary_vector(void);
+>  extern int shmobile_platform_cpu_kill(unsigned int cpu);
+>  struct clk;
+> -extern int clk_init(void);
+> +extern int shmobile_clk_init(void);
+>  extern void shmobile_handle_irq_intc(struct pt_regs *);
+>  extern struct platform_suspend_ops shmobile_suspend_ops;
+>  struct cpuidle_driver;
+> 
+> 
+
