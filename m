@@ -1,60 +1,73 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Thu, 01 Mar 2012 09:48:38 +0000
-Subject: [PATCH v3 4/7] mtd: sh_flctl: Implement NAND_CMD_RNDOUT command
-Message-Id: <1330595321-2728-4-git-send-email-hechtb@gmail.com>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Thu, 01 Mar 2012 00:42:56 +0000
+Subject: [PATCH v7 7/9] ARM: omap: Consolidate OMAP4 time keeping and irq enable
+Message-Id: <1330562578-3410-8-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
+References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Implements the command to seek and read in pages.
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
 ---
-changelog: the code only works for software ecc. Make this explicit in
-the code
+ arch/arm/mach-omap2/cpuidle44xx.c |   21 +++------------------
+ 1 files changed, 3 insertions(+), 18 deletions(-)
 
- drivers/mtd/nand/sh_flctl.c |   16 ++++++++++++++++
- 1 files changed, 16 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 407acb5..655ff2d 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -303,6 +303,7 @@ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_va
- 		break;
- 	case NAND_CMD_READ0:
- 	case NAND_CMD_READOOB:
-+	case NAND_CMD_RNDOUT:
- 		addr_len_bytes = flctl->rw_ADRCNT;
- 		flcmdcr_val |= CDSRC_E;
- 		if (flctl->chip.options & NAND_BUSWIDTH_16)
-@@ -558,6 +559,21 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
- 		flctl->read_bytes = mtd->oobsize;
- 		goto read_normal_exit;
+diff --git a/arch/arm/mach-omap2/cpuidle44xx.c b/arch/arm/mach-omap2/cpuidle44xx.c
+index cfdbb86..e2ff9f6 100644
+--- a/arch/arm/mach-omap2/cpuidle44xx.c
++++ b/arch/arm/mach-omap2/cpuidle44xx.c
+@@ -62,16 +62,10 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
+ {
+ 	struct omap4_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
+-	struct timespec ts_preidle, ts_postidle, ts_idle;
+ 	u32 cpu1_state;
+-	int idle_time;
+ 	int new_state_idx;
+ 	int cpu_id = smp_processor_id();
  
-+	case NAND_CMD_RNDOUT:
-+		if (flctl->hwecc)
-+			break;
-+
-+		if (flctl->page_size)
-+			set_cmd_regs(mtd, command, (NAND_CMD_RNDOUTSTART << 8)
-+				| command);
-+		else
-+			set_cmd_regs(mtd, command, command);
-+
-+		set_addr(mtd, column, 0);
-+
-+		flctl->read_bytes = mtd->writesize + mtd->oobsize - column;
-+		goto read_normal_exit;
-+
- 	case NAND_CMD_READID:
- 		set_cmd_regs(mtd, command, command);
+-	/* Used to keep track of the total time in idle */
+-	getnstimeofday(&ts_preidle);
+-
+-	local_irq_disable();
+ 	local_fiq_disable();
  
+ 	/*
+@@ -129,26 +123,17 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
+ 	if (index > 0)
+ 		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu_id);
+ 
+-	getnstimeofday(&ts_postidle);
+-	ts_idle = timespec_sub(ts_postidle, ts_preidle);
+-
+-	local_irq_enable();
+ 	local_fiq_enable();
+ 
+-	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
+-								USEC_PER_SEC;
+-
+-	/* Update cpuidle counters */
+-	dev->last_residency = idle_time;
+-
+ 	return index;
+ }
+ 
+ DEFINE_PER_CPU(struct cpuidle_device, omap4_idle_dev);
+ 
+ struct cpuidle_driver omap4_idle_driver = {
+-	.name =		"omap4_idle",
+-	.owner =	THIS_MODULE,
++	.name				= "omap4_idle",
++	.owner				= THIS_MODULE,
++	.en_core_tk_irqen		= 1,
+ };
+ 
+ static inline void _fill_cstate(struct cpuidle_driver *drv,
 -- 
-1.7.5.4
+1.7.1
 
