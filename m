@@ -1,146 +1,91 @@
-From: Adrian McMenamin <lkmladrian@gmail.com>
-Date: Wed, 21 Mar 2012 04:37:08 +0000
-Subject: Re: [PATCH] VMUFAT filesystem [4/4]
-Message-Id: <CAN628AFiRxGEYHBbahYgnUpr-M3cKmh4T=copKif=jesCSBYkA@mail.gmail.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Thu, 01 Mar 2012 09:48:40 +0000
+Subject: [PATCH v3 6/7] mtd: sh_flctl: Add FLHOLDCR register
+Message-Id: <1330595321-2728-6-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: viro@zeniv.linux.org.uk, LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org
-Cc: Linux-sh <linux-sh@vger.kernel.org>, Adrian McMenamin <adrianmcmenamin@gmail.com>
+To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-diff --git a/fs/vmufat/vmufat.h b/fs/vmufat/vmufat.h
-new file mode 100644
-index 0000000..8d4b714
---- /dev/null
-+++ b/fs/vmufat/vmufat.h
-@@ -0,0 +1,115 @@
-+/* Header file for VMUFAT filesystem */
-+#ifndef _VMUFAT_H_
-+#define _VMUFAT_H_
-+
-+/* maximum length of file name */
-+#define VMUFAT_NAMELEN			12
-+
-+/* GNU utils won't list files with inode num 0 */
-+#define VMUFAT_ZEROBLOCK		0x10000
-+#define VMU_BLK_SZ			512
-+#define	VMU_BLK_SZ16			256
-+
-+/* file allocation table markers */
-+#define VMUFAT_FILE_END			0xFFFA
-+#define VMUFAT_UNALLOCATED		0xFFFC
-+#define VMUFAT_ERROR			0xFFFF
-+
-+/* parameters for possible VMU volume sizes */
-+#define VMUFAT_MIN_BLK			0x04
-+#define VMUFAT_MAX_BLK			0x10000
-+#define VMUFAT_START_ALLOC		199
-+
-+/* specifcations for directory entries */
-+#define VMU_DIR_RECORD_LEN		0x20
-+#define VMU_DIR_RECORD_LEN16		0x10
-+#define VMU_DIR_ENTRIES_PER_BLOCK	0x10
-+#define VMUFAT_NAME_OFFSET		0x04
-+#define VMUFAT_FIRSTBLOCK_OFFSET16	0x01
-+#define VMUFAT_START_OFFSET16		0x01
-+#define VMUFAT_SIZE_OFFSET16		0x0C
-+#define VMUFAT_HEADER_OFFSET16		0x0D
-+
-+/* File types used in directory */
-+#define VMU_GAME			0xCC
-+#define VMU_DATA			0x33
-+
-+/* filesystem locations marked in the root block */
-+#define VMU_LOCATION_FAT		0x23
-+#define VMU_LOCATION_FATLEN		0x24
-+#define VMU_LOCATION_DIR		0x25
-+#define VMU_LOCATION_DIRLEN		0x26
-+#define VMU_LOCATION_USRLEN		0x28 /* reports false figure */
-+
-+/* date offsets */
-+#define VMUFAT_SB_DATEOFFSET		0x30
-+#define VMUFAT_FILE_DATEOFFSET		0x10
-+
-+#define EXEC				0111
-+#define NOCOPY				0xFF
-+#define CANCOPY				0x00
-+
-+u16 vmufat_get_fat(struct super_block *sb, long block);
-+void vmufat_save_bcd(struct inode *in, char *bh, int index_to_dir);
-+struct inode *vmufat_get_inode(struct super_block *sb, long ino);
-+int vmufat_list_blocks(struct inode *in);
-+
-+enum vmufat_date {
-+	VMUFAT_DIR_CENT	=		0x10,
-+	VMUFAT_DIR_YEAR,
-+	VMUFAT_DIR_MONTH,
-+	VMUFAT_DIR_DAY,
-+	VMUFAT_DIR_HOUR,
-+	VMUFAT_DIR_MIN,
-+	VMUFAT_DIR_SEC,
-+	VMUFAT_DIR_DOW
-+};
-+
-+/* constants for BCD conversion */
-+#define SECONDS_PER_DAY			86400
-+#define DAYS_PER_YEAR			365
-+#define SECONDS_PER_HOUR		3600
-+#define HOURS_PER_DAY			24
-+#define SIXTY_MINS_OR_SECS		60
-+#define FEB28				59
-+
-+struct memcard {
-+	unsigned int sb_bnum;
-+	unsigned int fat_bnum;
-+	unsigned int fat_len;
-+	unsigned int dir_bnum;
-+	unsigned int dir_len;
-+	unsigned int numblocks;
-+	struct semaphore vmu_sem;
-+};
-+
-+struct vmufat_block_list {
-+	struct list_head b_list;
-+	int bno;
-+};
-+
-+struct vmufat_inode {
-+	struct vmufat_block_list blocks;
-+	unsigned int nblcks;
-+	struct inode vfs_inode;
-+};
-+
-+static inline struct vmufat_inode *VMUFAT_I(struct inode *in)
-+{
-+	return container_of(in, struct vmufat_inode, vfs_inode);
-+}
-+
-+struct vmufat_file_info {
-+	u8 ftype;
-+	int fblk;
-+	char fname[VMUFAT_NAMELEN];
-+};
-+
-+static inline struct buffer_head *vmufat_sb_bread(struct super_block *sb,
-+	sector_t block)
-+{
-+	if (!sb)
-+		return NULL;
-+	return sb_bread(sb, block);
-+}
-+#endif
-diff --git a/include/linux/magic.h b/include/linux/magic.h
-index 2d4beab..f285512 100644
---- a/include/linux/magic.h
-+++ b/include/linux/magic.h
-@@ -29,6 +29,7 @@
- #define JFFS2_SUPER_MAGIC	0x72b6
- #define ANON_INODE_FS_MAGIC	0x09041934
- #define PSTOREFS_MAGIC		0x6165676C
-+#define VMUFAT_MAGIC		0x55555555	/* opening bytes of root */
+Add a register used in new FLCTL hardware and a feature flag for it.
 
- #define MINIX_SUPER_MAGIC	0x137F		/* minix v1 fs, 14 char names */
- #define MINIX_SUPER_MAGIC2	0x138F		/* minix v1 fs, 30 char names */
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+changelog: stays the same, only the patch meta info changed.
+
+ drivers/mtd/nand/sh_flctl.c  |    3 +++
+ include/linux/mtd/sh_flctl.h |   12 ++++++++++++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 73398f7..956e18d 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -690,6 +690,8 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
+ 	case 0:
+ 		flctl->flcmncr_base |= CE0_ENABLE;
+ 		writel(flctl->flcmncr_base, FLCMNCR(flctl));
++		if (flctl->holden)
++			writel(HOLDEN, FLHOLDCR(flctl));
+ 		break;
+ 	default:
+ 		BUG();
+@@ -846,6 +848,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 	flctl->pdev = pdev;
+ 	flctl->flcmncr_base = pdata->flcmncr_val;
+ 	flctl->hwecc = pdata->has_hwecc;
++	flctl->holden = pdata->use_holden;
+ 
+ 	nand->options = NAND_NO_AUTOINCR;
+ 
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index c708282..8bcf299 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -38,6 +38,7 @@
+ #define FLDTFIFO(f)		(f->reg + 0x24)
+ #define FLECFIFO(f)		(f->reg + 0x28)
+ #define FLTRCR(f)		(f->reg + 0x2C)
++#define FLHOLDCR(f)		(f->reg + 0x38)
+ #define	FL4ECCRESULT0(f)	(f->reg + 0x80)
+ #define	FL4ECCRESULT1(f)	(f->reg + 0x84)
+ #define	FL4ECCRESULT2(f)	(f->reg + 0x88)
+@@ -109,6 +110,15 @@
+ #define TRSTRT		(0x1 << 0)	/* translation start */
+ #define TREND		(0x1 << 1)	/* translation end */
+ 
++/*
++ * FLHOLDCR control bits
++ *
++ * HOLDEN: Bus Occupancy Enable (inverted)
++ * Enable this bit when the external bus might be used in between transfers.
++ * If not set and the bus gets used by other modules, a deadlock occurs.
++ */
++#define HOLDEN		(0x1 << 0)
++
+ /* FL4ECCCR control bits */
+ #define	_4ECCFA		(0x1 << 2)	/* 4 symbols correct fault */
+ #define	_4ECCEND	(0x1 << 1)	/* 4 symbols end */
+@@ -138,6 +148,7 @@ struct sh_flctl {
+ 
+ 	unsigned page_size:1;	/* NAND page size (0 = 512, 1 = 2048) */
+ 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
++	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
+ };
+ 
+ struct sh_flctl_platform_data {
+@@ -146,6 +157,7 @@ struct sh_flctl_platform_data {
+ 	unsigned long		flcmncr_val;
+ 
+ 	unsigned has_hwecc:1;
++	unsigned use_holden:1;
+ };
+ 
+ static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
 -- 
 1.7.5.4
+
