@@ -1,75 +1,457 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Tue, 20 Mar 2012 20:22:47 +0000
-Subject: [PATCH v8 6/8] ARM: omap: Consolidate OMAP4 time keeping and irq enable
-Message-Id: <1332274969-15782-7-git-send-email-rob.lee@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:25 +0000
+Subject: [PATCH v2 12/57] arm: mach-shmobile: Add LCDC tx_dev field to platform data
+Message-Id: <1330614490-14149-13-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+Make sure the transmitter devices get registered before the associated
+LCDC devices.
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Acked-by: Jean Pihet<j-pihet@ti.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-omap2/cpuidle44xx.c |   21 +++------------------
- 1 file changed, 3 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |  271 ++++++++++++++++---------------
+ arch/arm/mach-shmobile/board-mackerel.c |   66 ++++----
+ 2 files changed, 175 insertions(+), 162 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/cpuidle44xx.c b/arch/arm/mach-omap2/cpuidle44xx.c
-index 72e018b..f386cbe 100644
---- a/arch/arm/mach-omap2/cpuidle44xx.c
-+++ b/arch/arm/mach-omap2/cpuidle44xx.c
-@@ -62,15 +62,9 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
- {
- 	struct omap4_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
--	struct timespec ts_preidle, ts_postidle, ts_idle;
- 	u32 cpu1_state;
--	int idle_time;
- 	int cpu_id = smp_processor_id();
- 
--	/* Used to keep track of the total time in idle */
--	getnstimeofday(&ts_preidle);
--
--	local_irq_disable();
- 	local_fiq_disable();
- 
- 	/*
-@@ -128,26 +122,17 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
- 	if (index > 0)
- 		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu_id);
- 
--	getnstimeofday(&ts_postidle);
--	ts_idle = timespec_sub(ts_postidle, ts_preidle);
--
--	local_irq_enable();
- 	local_fiq_enable();
- 
--	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
--								USEC_PER_SEC;
--
--	/* Update cpuidle counters */
--	dev->last_residency = idle_time;
--
- 	return index;
- }
- 
- DEFINE_PER_CPU(struct cpuidle_device, omap4_idle_dev);
- 
- struct cpuidle_driver omap4_idle_driver = {
--	.name =		"omap4_idle",
--	.owner =	THIS_MODULE,
-+	.name				= "omap4_idle",
-+	.owner				= THIS_MODULE,
-+	.en_core_tk_irqen		= 1,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 091b681..407a4b6 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -445,82 +445,6 @@ static struct platform_device usb1_host_device = {
+ 	.resource	= usb1_host_resources,
  };
  
- static inline void _fill_cstate(struct cpuidle_driver *drv,
+-static const struct fb_videomode ap4evb_lcdc_modes[] = {
+-	{
+-#ifdef CONFIG_AP4EVB_QHD
+-		.name		= "R63302(QHD)",
+-		.xres		= 544,
+-		.yres		= 961,
+-		.left_margin	= 72,
+-		.right_margin	= 600,
+-		.hsync_len	= 16,
+-		.upper_margin	= 8,
+-		.lower_margin	= 8,
+-		.vsync_len	= 2,
+-		.sync		= FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
+-#else
+-		.name		= "WVGA Panel",
+-		.xres		= 800,
+-		.yres		= 480,
+-		.left_margin	= 220,
+-		.right_margin	= 110,
+-		.hsync_len	= 70,
+-		.upper_margin	= 20,
+-		.lower_margin	= 5,
+-		.vsync_len	= 5,
+-		.sync		= 0,
+-#endif
+-	},
+-};
+-static struct sh_mobile_meram_cfg lcd_meram_cfg = {
+-	.icb[0] = {
+-		.marker_icb     = 28,
+-		.cache_icb      = 24,
+-		.meram_offset   = 0x0,
+-		.meram_size     = 0x40,
+-	},
+-	.icb[1] = {
+-		.marker_icb     = 29,
+-		.cache_icb      = 25,
+-		.meram_offset   = 0x40,
+-		.meram_size     = 0x40,
+-	},
+-};
+-
+-static struct sh_mobile_lcdc_info lcdc_info = {
+-	.meram_dev = &meram_info,
+-	.ch[0] = {
+-		.chan = LCDC_CHAN_MAINLCD,
+-		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_cfg = ap4evb_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
+-		.meram_cfg = &lcd_meram_cfg,
+-	}
+-};
+-
+-static struct resource lcdc_resources[] = {
+-	[0] = {
+-		.name	= "LCDC",
+-		.start	= 0xfe940000, /* P4-only space */
+-		.end	= 0xfe943fff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= intcs_evt2irq(0x580),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device lcdc_device = {
+-	.name		= "sh_mobile_lcdc_fb",
+-	.num_resources	= ARRAY_SIZE(lcdc_resources),
+-	.resource	= lcdc_resources,
+-	.dev	= {
+-		.platform_data	= &lcdc_info,
+-		.coherent_dma_mask = ~0,
+-	},
+-};
+-
+ /*
+  * QHD display
+  */
+@@ -601,6 +525,8 @@ static struct resource mipidsi0_resources[] = {
+ 	},
+ };
+ 
++static struct sh_mobile_lcdc_info lcdc_info;
++
+ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.data_format	= MIPI_RGB888,
+ 	.lcd_chan	= &lcdc_info.ch[0],
+@@ -627,6 +553,86 @@ static struct platform_device *qhd_devices[] __initdata = {
+ };
+ #endif /* CONFIG_AP4EVB_QHD */
+ 
++/* LCDC0 */
++static const struct fb_videomode ap4evb_lcdc_modes[] = {
++	{
++#ifdef CONFIG_AP4EVB_QHD
++		.name		= "R63302(QHD)",
++		.xres		= 544,
++		.yres		= 961,
++		.left_margin	= 72,
++		.right_margin	= 600,
++		.hsync_len	= 16,
++		.upper_margin	= 8,
++		.lower_margin	= 8,
++		.vsync_len	= 2,
++		.sync		= FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
++#else
++		.name		= "WVGA Panel",
++		.xres		= 800,
++		.yres		= 480,
++		.left_margin	= 220,
++		.right_margin	= 110,
++		.hsync_len	= 70,
++		.upper_margin	= 20,
++		.lower_margin	= 5,
++		.vsync_len	= 5,
++		.sync		= 0,
++#endif
++	},
++};
++static struct sh_mobile_meram_cfg lcd_meram_cfg = {
++	.icb[0] = {
++		.marker_icb     = 28,
++		.cache_icb      = 24,
++		.meram_offset   = 0x0,
++		.meram_size     = 0x40,
++	},
++	.icb[1] = {
++		.marker_icb     = 29,
++		.cache_icb      = 25,
++		.meram_offset   = 0x40,
++		.meram_size     = 0x40,
++	},
++};
++
++static struct sh_mobile_lcdc_info lcdc_info = {
++	.meram_dev = &meram_info,
++	.ch[0] = {
++		.chan = LCDC_CHAN_MAINLCD,
++		.fourcc = V4L2_PIX_FMT_RGB565,
++		.lcd_cfg = ap4evb_lcdc_modes,
++		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
++		.meram_cfg = &lcd_meram_cfg,
++#ifdef CONFIG_AP4EVB_QHD
++		.tx_dev = &mipidsi0_device,
++#endif
++	}
++};
++
++static struct resource lcdc_resources[] = {
++	[0] = {
++		.name	= "LCDC",
++		.start	= 0xfe940000, /* P4-only space */
++		.end	= 0xfe943fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x580),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc_resources),
++	.resource	= lcdc_resources,
++	.dev	= {
++		.platform_data	= &lcdc_info,
++		.coherent_dma_mask = ~0,
++	},
++};
++
+ /* FSI */
+ #define IRQ_FSI		evt2irq(0x1840)
+ static int __fsi_set_rate(struct clk *clk, long rate, int enable)
+@@ -806,6 +812,61 @@ static struct platform_device fsi_ak4643_device = {
+ 	},
+ };
+ 
++/* LCDC1 */
++static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
++				unsigned long *parent_freq);
++
++static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info;
++
++static struct sh_mobile_hdmi_info hdmi_info = {
++	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
++	.flags = HDMI_SND_SRC_SPDIF,
++	.clk_optimize_parent = ap4evb_clk_optimize,
++};
++
++static struct resource hdmi_resources[] = {
++	[0] = {
++		.name	= "HDMI",
++		.start	= 0xe6be0000,
++		.end	= 0xe6be00ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
++		.start	= evt2irq(0x17e0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device hdmi_device = {
++	.name		= "sh-mobile-hdmi",
++	.num_resources	= ARRAY_SIZE(hdmi_resources),
++	.resource	= hdmi_resources,
++	.id             = -1,
++	.dev	= {
++		.platform_data	= &hdmi_info,
++	},
++};
++
++static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
++				unsigned long *parent_freq)
++{
++	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
++	long error;
++
++	if (IS_ERR(hdmi_ick)) {
++		int ret = PTR_ERR(hdmi_ick);
++		pr_err("Cannot get HDMI ICK: %d\n", ret);
++		return ret;
++	}
++
++	error = clk_round_parent(hdmi_ick, target, best_freq, parent_freq, 1, 64);
++
++	clk_put(hdmi_ick);
++
++	return error;
++}
++
+ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+ 		.marker_icb     = 30,
+@@ -831,6 +892,7 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info = {
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
+ 		.meram_cfg = &hdmi_meram_cfg,
++		.tx_dev = &hdmi_device,
+ 	}
+ };
+ 
+@@ -858,63 +920,10 @@ static struct platform_device lcdc1_device = {
+ 	},
+ };
+ 
+-static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+-				unsigned long *parent_freq);
+-
+-
+-static struct sh_mobile_hdmi_info hdmi_info = {
+-	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
+-	.flags = HDMI_SND_SRC_SPDIF,
+-	.clk_optimize_parent = ap4evb_clk_optimize,
+-};
+-
+-static struct resource hdmi_resources[] = {
+-	[0] = {
+-		.name	= "HDMI",
+-		.start	= 0xe6be0000,
+-		.end	= 0xe6be00ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
+-		.start	= evt2irq(0x17e0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device hdmi_device = {
+-	.name		= "sh-mobile-hdmi",
+-	.num_resources	= ARRAY_SIZE(hdmi_resources),
+-	.resource	= hdmi_resources,
+-	.id             = -1,
+-	.dev	= {
+-		.platform_data	= &hdmi_info,
+-	},
+-};
+-
+ static struct platform_device fsi_hdmi_device = {
+ 	.name		= "sh_fsi2_b_hdmi",
+ };
+ 
+-static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+-				unsigned long *parent_freq)
+-{
+-	struct clk *hdmi_ick = clk_get(&hdmi_device.dev, "ick");
+-	long error;
+-
+-	if (IS_ERR(hdmi_ick)) {
+-		int ret = PTR_ERR(hdmi_ick);
+-		pr_err("Cannot get HDMI ICK: %d\n", ret);
+-		return ret;
+-	}
+-
+-	error = clk_round_parent(hdmi_ick, target, best_freq, parent_freq, 1, 64);
+-
+-	clk_put(hdmi_ick);
+-
+-	return error;
+-}
+-
+ static struct gpio_led ap4evb_leds[] = {
+ 	{
+ 		.name			= "led4",
+@@ -1049,9 +1058,9 @@ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&fsi_ak4643_device,
+ 	&fsi_hdmi_device,
+ 	&sh_mmcif_device,
+-	&lcdc1_device,
+-	&lcdc_device,
+ 	&hdmi_device,
++	&lcdc_device,
++	&lcdc1_device,
+ 	&ceu_device,
+ 	&ap4evb_camera,
+ 	&meram_device,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 34d777d..5a96d81 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -431,6 +431,38 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
+ 
++/* HDMI */
++static struct sh_mobile_lcdc_info hdmi_lcdc_info;
++
++static struct sh_mobile_hdmi_info hdmi_info = {
++	.lcd_chan	= &hdmi_lcdc_info.ch[0],
++	.flags		= HDMI_SND_SRC_SPDIF,
++};
++
++static struct resource hdmi_resources[] = {
++	[0] = {
++		.name	= "HDMI",
++		.start	= 0xe6be0000,
++		.end	= 0xe6be00ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
++		.start	= evt2irq(0x17e0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device hdmi_device = {
++	.name		= "sh-mobile-hdmi",
++	.num_resources	= ARRAY_SIZE(hdmi_resources),
++	.resource	= hdmi_resources,
++	.id             = -1,
++	.dev	= {
++		.platform_data	= &hdmi_info,
++	},
++};
++
+ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+ 		.marker_icb     = 30,
+@@ -445,7 +477,7 @@ static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 		.meram_size     = 0x100,
+ 	},
+ };
+-/* HDMI */
++
+ static struct sh_mobile_lcdc_info hdmi_lcdc_info = {
+ 	.meram_dev = &mackerel_meram_info,
+ 	.clock_source = LCDC_CLK_EXTERNAL,
+@@ -456,6 +488,7 @@ static struct sh_mobile_lcdc_info hdmi_lcdc_info = {
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
+ 		.meram_cfg = &hdmi_meram_cfg,
++		.tx_dev = &hdmi_device,
+ 	}
+ };
+ 
+@@ -483,35 +516,6 @@ static struct platform_device hdmi_lcdc_device = {
+ 	},
+ };
+ 
+-static struct sh_mobile_hdmi_info hdmi_info = {
+-	.lcd_chan	= &hdmi_lcdc_info.ch[0],
+-	.flags		= HDMI_SND_SRC_SPDIF,
+-};
+-
+-static struct resource hdmi_resources[] = {
+-	[0] = {
+-		.name	= "HDMI",
+-		.start	= 0xe6be0000,
+-		.end	= 0xe6be00ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		/* There's also an HDMI interrupt on INTCS @ 0x18e0 */
+-		.start	= evt2irq(0x17e0),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device hdmi_device = {
+-	.name		= "sh-mobile-hdmi",
+-	.num_resources	= ARRAY_SIZE(hdmi_resources),
+-	.resource	= hdmi_resources,
+-	.id             = -1,
+-	.dev	= {
+-		.platform_data	= &hdmi_info,
+-	},
+-};
+-
+ static struct platform_device fsi_hdmi_device = {
+ 	.name		= "sh_fsi2_b_hdmi",
+ };
+@@ -1325,8 +1329,8 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&sh_mmcif_device,
+ 	&ceu_device,
+ 	&mackerel_camera,
+-	&hdmi_lcdc_device,
+ 	&hdmi_device,
++	&hdmi_lcdc_device,
+ 	&meram_device,
+ };
+ 
 -- 
-1.7.9.4
+1.7.3.4
 
