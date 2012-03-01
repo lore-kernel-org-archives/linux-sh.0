@@ -1,33 +1,66 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 07 Mar 2012 00:14:15 +0000
-Subject: [PATCH] ARM: mach-shmobile: ap4evb: fixup fsi2_ak4643_info typo
-Message-Id: <871up5p8rv.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:34 +0000
+Subject: [PATCH v2 21/57] sh_mobile_lcdc: Add an lcdc channel pointer to sh_mobile_lcdc_entity
+Message-Id: <1330614490-14149-22-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The field will be used by the transmitter drivers to access
+sh_mobile_lcdc_chan fields such as fb_info.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-This is for linus/master
+ drivers/video/sh_mobile_lcdcfb.c |    5 ++++-
+ drivers/video/sh_mobile_lcdcfb.h |    2 ++
+ 2 files changed, 6 insertions(+), 1 deletions(-)
 
- arch/arm/mach-shmobile/board-ap4evb.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index eeb4d96..b4718b0 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -794,7 +794,7 @@ static struct fsi_ak4642_info fsi2_ak4643_info = {
- static struct platform_device fsi_ak4643_device = {
- 	.name	= "fsi-ak4642-audio",
- 	.dev	= {
--		.platform_data	= &fsi_info,
-+		.platform_data	= &fsi2_ak4643_info,
- 	},
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 9e44988..1ecc71e 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1495,8 +1495,10 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
+ 		if (!info || !info->device)
+ 			continue;
+ 
+-		if (ch->tx_dev)
++		if (ch->tx_dev) {
++			ch->tx_dev->lcdc = NULL;
+ 			module_put(ch->cfg.tx_dev->dev.driver->owner);
++		}
+ 
+ 		if (ch->sglist)
+ 			vfree(ch->sglist);
+@@ -1605,6 +1607,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 			return -EINVAL;
+ 		}
+ 		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
++		ch->tx_dev->lcdc = ch;
+ 	}
+ 
+ 	/* Iterate through the modes to validate them and find the highest
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index 9601b92..36cd564 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -19,6 +19,7 @@ struct fb_info;
+ struct module;
+ struct sh_mobile_lcdc_entity;
+ struct sh_mobile_lcdc_priv;
++struct sh_mobile_lcdc_chan;
+ 
+ struct sh_mobile_lcdc_entity_ops {
+ 	/* Display */
+@@ -30,6 +31,7 @@ struct sh_mobile_lcdc_entity_ops {
+ struct sh_mobile_lcdc_entity {
+ 	struct module *owner;
+ 	const struct sh_mobile_lcdc_entity_ops *ops;
++	struct sh_mobile_lcdc_chan *lcdc;
  };
  
+ /*
 -- 
-1.7.5.4
+1.7.3.4
 
