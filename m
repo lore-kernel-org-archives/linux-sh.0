@@ -1,91 +1,169 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Thu, 01 Mar 2012 09:48:40 +0000
-Subject: [PATCH v3 6/7] mtd: sh_flctl: Add FLHOLDCR register
-Message-Id: <1330595321-2728-6-git-send-email-hechtb@gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:08:09 +0000
+Subject: [PATCH v2 56/57] fbdev: sh_mobile_lcdc: Rename fb operation handlers with a common prefix
+Message-Id: <1330614490-14149-57-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-fbdev@vger.kernel.org
 
-Add a register used in new FLCTL hardware and a feature flag for it.
+Make all fb operation handlers start with sh_mobile_lcdc_ in preparation
+for the multi-plane support.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-changelog: stays the same, only the patch meta info changed.
+ drivers/video/sh_mobile_lcdcfb.c |   48 +++++++++++++++++++------------------
+ 1 files changed, 25 insertions(+), 23 deletions(-)
 
- drivers/mtd/nand/sh_flctl.c  |    3 +++
- include/linux/mtd/sh_flctl.h |   12 ++++++++++++
- 2 files changed, 15 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 73398f7..956e18d 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -690,6 +690,8 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
- 	case 0:
- 		flctl->flcmncr_base |= CE0_ENABLE;
- 		writel(flctl->flcmncr_base, FLCMNCR(flctl));
-+		if (flctl->holden)
-+			writel(HOLDEN, FLHOLDCR(flctl));
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index b6fb8a4..36dad2f 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -384,8 +384,8 @@ sh_mobile_lcdc_must_reconfigure(struct sh_mobile_lcdc_chan *ch,
+ 	return true;
+ }
+ 
+-static int sh_mobile_check_var(struct fb_var_screeninfo *var,
+-			       struct fb_info *info);
++static int sh_mobile_lcdc_check_var(struct fb_var_screeninfo *var,
++				    struct fb_info *info);
+ 
+ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+ 					 enum sh_mobile_lcdc_entity_event event,
+@@ -439,7 +439,7 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+ 		fb_videomode_to_var(&var, mode);
+ 		var.bits_per_pixel = info->var.bits_per_pixel;
+ 		var.grayscale = info->var.grayscale;
+-		ret = sh_mobile_check_var(&var, info);
++		ret = sh_mobile_lcdc_check_var(&var, info);
  		break;
+ 	}
+ 
+@@ -585,7 +585,7 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
+-static int sh_mobile_wait_for_vsync(struct sh_mobile_lcdc_chan *ch)
++static int sh_mobile_lcdc_wait_for_vsync(struct sh_mobile_lcdc_chan *ch)
+ {
+ 	unsigned long ldintr;
+ 	int ret;
+@@ -686,7 +686,7 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
+ }
+ 
+ /*
+- * __sh_mobile_lcdc_start - Configure and tart the LCDC
++ * __sh_mobile_lcdc_start - Configure and start the LCDC
+  * @priv: LCDC device
+  *
+  * Configure all enabled channels and start the LCDC device. All external
+@@ -1034,8 +1034,8 @@ static void sh_mobile_lcdc_imageblit(struct fb_info *info,
+ 	sh_mobile_lcdc_deferred_io_touch(info);
+ }
+ 
+-static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+-				     struct fb_info *info)
++static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
++			      struct fb_info *info)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 	struct sh_mobile_lcdc_priv *priv = ch->lcdc;
+@@ -1098,14 +1098,15 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 	return 0;
+ }
+ 
+-static int sh_mobile_ioctl(struct fb_info *info, unsigned int cmd,
+-		       unsigned long arg)
++static int sh_mobile_lcdc_ioctl(struct fb_info *info, unsigned int cmd,
++				unsigned long arg)
+ {
++	struct sh_mobile_lcdc_chan *ch = info->par;
+ 	int retval;
+ 
+ 	switch (cmd) {
+ 	case FBIO_WAITFORVSYNC:
+-		retval = sh_mobile_wait_for_vsync(info->par);
++		retval = sh_mobile_lcdc_wait_for_vsync(ch);
+ 		break;
+ 
  	default:
- 		BUG();
-@@ -846,6 +848,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	flctl->pdev = pdev;
- 	flctl->flcmncr_base = pdata->flcmncr_val;
- 	flctl->hwecc = pdata->has_hwecc;
-+	flctl->holden = pdata->use_holden;
+@@ -1157,7 +1158,7 @@ static void sh_mobile_fb_reconfig(struct fb_info *info)
+  * Locking: both .fb_release() and .fb_open() are called with info->lock held if
+  * user = 1, or with console sem held, if user = 0.
+  */
+-static int sh_mobile_release(struct fb_info *info, int user)
++static int sh_mobile_lcdc_release(struct fb_info *info, int user)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
  
- 	nand->options = NAND_NO_AUTOINCR;
+@@ -1178,7 +1179,7 @@ static int sh_mobile_release(struct fb_info *info, int user)
+ 	return 0;
+ }
  
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index c708282..8bcf299 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -38,6 +38,7 @@
- #define FLDTFIFO(f)		(f->reg + 0x24)
- #define FLECFIFO(f)		(f->reg + 0x28)
- #define FLTRCR(f)		(f->reg + 0x2C)
-+#define FLHOLDCR(f)		(f->reg + 0x38)
- #define	FL4ECCRESULT0(f)	(f->reg + 0x80)
- #define	FL4ECCRESULT1(f)	(f->reg + 0x84)
- #define	FL4ECCRESULT2(f)	(f->reg + 0x88)
-@@ -109,6 +110,15 @@
- #define TRSTRT		(0x1 << 0)	/* translation start */
- #define TREND		(0x1 << 1)	/* translation end */
+-static int sh_mobile_open(struct fb_info *info, int user)
++static int sh_mobile_lcdc_open(struct fb_info *info, int user)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
  
-+/*
-+ * FLHOLDCR control bits
-+ *
-+ * HOLDEN: Bus Occupancy Enable (inverted)
-+ * Enable this bit when the external bus might be used in between transfers.
-+ * If not set and the bus gets used by other modules, a deadlock occurs.
-+ */
-+#define HOLDEN		(0x1 << 0)
-+
- /* FL4ECCCR control bits */
- #define	_4ECCFA		(0x1 << 2)	/* 4 symbols correct fault */
- #define	_4ECCEND	(0x1 << 1)	/* 4 symbols end */
-@@ -138,6 +148,7 @@ struct sh_flctl {
+@@ -1191,7 +1192,8 @@ static int sh_mobile_open(struct fb_info *info, int user)
+ 	return 0;
+ }
  
- 	unsigned page_size:1;	/* NAND page size (0 = 512, 1 = 2048) */
- 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
-+	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
+-static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
++static int sh_mobile_lcdc_check_var(struct fb_var_screeninfo *var,
++				    struct fb_info *info)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 	struct sh_mobile_lcdc_priv *p = ch->lcdc;
+@@ -1312,7 +1314,7 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	return 0;
+ }
+ 
+-static int sh_mobile_set_par(struct fb_info *info)
++static int sh_mobile_lcdc_set_par(struct fb_info *info)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+ 	int ret;
+@@ -1382,8 +1384,8 @@ static int sh_mobile_lcdc_blank(int blank, struct fb_info *info)
+ 		 * mode will reenable the clocks and update the screen in time,
+ 		 * so it does not need this. */
+ 		if (!info->fbdefio) {
+-			sh_mobile_wait_for_vsync(ch);
+-			sh_mobile_wait_for_vsync(ch);
++			sh_mobile_lcdc_wait_for_vsync(ch);
++			sh_mobile_lcdc_wait_for_vsync(ch);
+ 		}
+ 		sh_mobile_lcdc_clk_off(p);
+ 	}
+@@ -1401,12 +1403,12 @@ static struct fb_ops sh_mobile_lcdc_ops = {
+ 	.fb_copyarea	= sh_mobile_lcdc_copyarea,
+ 	.fb_imageblit	= sh_mobile_lcdc_imageblit,
+ 	.fb_blank	= sh_mobile_lcdc_blank,
+-	.fb_pan_display = sh_mobile_fb_pan_display,
+-	.fb_ioctl       = sh_mobile_ioctl,
+-	.fb_open	= sh_mobile_open,
+-	.fb_release	= sh_mobile_release,
+-	.fb_check_var	= sh_mobile_check_var,
+-	.fb_set_par	= sh_mobile_set_par,
++	.fb_pan_display = sh_mobile_lcdc_pan,
++	.fb_ioctl       = sh_mobile_lcdc_ioctl,
++	.fb_open	= sh_mobile_lcdc_open,
++	.fb_release	= sh_mobile_lcdc_release,
++	.fb_check_var	= sh_mobile_lcdc_check_var,
++	.fb_set_par	= sh_mobile_lcdc_set_par,
  };
  
- struct sh_flctl_platform_data {
-@@ -146,6 +157,7 @@ struct sh_flctl_platform_data {
- 	unsigned long		flcmncr_val;
+ static void
+@@ -1536,7 +1538,7 @@ sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
+ 	else
+ 		var->grayscale = ch->format->fourcc;
  
- 	unsigned has_hwecc:1;
-+	unsigned use_holden:1;
- };
+-	ret = sh_mobile_check_var(var, info);
++	ret = sh_mobile_lcdc_check_var(var, info);
+ 	if (ret)
+ 		return ret;
  
- static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
 -- 
-1.7.5.4
+1.7.3.4
 
