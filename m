@@ -1,121 +1,280 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Mar 2012 08:36:45 +0000
-Subject: [PATCH 05/08] ARM: mach-shmobile: sh73a0, AG5EVM and Kota2 timer rework
-Message-Id: <20120306083645.8131.86727.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:50 +0000
+Subject: [PATCH v2 37/57] fbdev: sh_mobile_lcdc: Store configuration in channel structure
+Message-Id: <1330614490-14149-38-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Store the frame buffer configuration (colorspace, visible/virtual
+horizontal and vertical resolutions and line pitch) in the
+sh_mobile_lcdc_chan structure, and use it instead of accessing fb_info.
 
-Move the SoC specific timer code from AG5EVM and Kota2
-to sh73a0 setup code. This makes is possible to share
-the SoC specific timer code across boards and it also
-removes the need for a board specific timer structure.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/video/sh_mobile_lcdcfb.c |  109 +++++++++++++++++++-------------------
+ drivers/video/sh_mobile_lcdcfb.h |    8 +++-
+ 2 files changed, 61 insertions(+), 56 deletions(-)
 
- Depends on the patch:
- "[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()"
-
- arch/arm/mach-shmobile/board-ag5evm.c |   14 +-------------
- arch/arm/mach-shmobile/board-kota2.c  |   13 +------------
- arch/arm/mach-shmobile/setup-sh73a0.c |   10 ++++++++++
- 3 files changed, 12 insertions(+), 25 deletions(-)
-
---- 0003/arch/arm/mach-shmobile/board-ag5evm.c
-+++ work/arch/arm/mach-shmobile/board-ag5evm.c	2012-03-06 13:08:33.000000000 +0900
-@@ -46,7 +46,6 @@
- #include <mach/common.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
--#include <asm/mach/time.h>
- #include <asm/hardware/gic.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <asm/traps.h>
-@@ -600,17 +599,6 @@ static void __init ag5evm_init(void)
- 	platform_add_devices(ag5evm_devices, ARRAY_SIZE(ag5evm_devices));
- }
- 
--static void __init ag5evm_timer_init(void)
--{
--	sh73a0_clock_init();
--	shmobile_timer.init();
--	return;
--}
--
--struct sys_timer ag5evm_timer = {
--	.init	= ag5evm_timer_init,
--};
--
- MACHINE_START(AG5EVM, "ag5evm")
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_add_early_devices,
-@@ -618,5 +606,5 @@ MACHINE_START(AG5EVM, "ag5evm")
- 	.init_irq	= sh73a0_init_irq,
- 	.handle_irq	= gic_handle_irq,
- 	.init_machine	= ag5evm_init,
--	.timer		= &ag5evm_timer,
-+	.timer		= &shmobile_timer,
- MACHINE_END
---- 0003/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2012-03-06 13:08:29.000000000 +0900
-@@ -513,17 +513,6 @@ static void __init kota2_init(void)
- 	platform_add_devices(kota2_devices, ARRAY_SIZE(kota2_devices));
- }
- 
--static void __init kota2_timer_init(void)
--{
--	sh73a0_clock_init();
--	shmobile_timer.init();
--	return;
--}
--
--struct sys_timer kota2_timer = {
--	.init	= kota2_timer_init,
--};
--
- MACHINE_START(KOTA2, "kota2")
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_add_early_devices,
-@@ -531,5 +520,5 @@ MACHINE_START(KOTA2, "kota2")
- 	.init_irq	= sh73a0_init_irq,
- 	.handle_irq	= gic_handle_irq,
- 	.init_machine	= kota2_init,
--	.timer		= &kota2_timer,
-+	.timer		= &shmobile_timer,
- MACHINE_END
---- 0003/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2012-03-06 13:08:38.000000000 +0900
-@@ -36,6 +36,7 @@
- #include <asm/mach-types.h>
- #include <asm/mach/map.h>
- #include <asm/mach/arch.h>
-+#include <asm/mach/time.h>
- 
- static struct map_desc sh73a0_io_desc[] __initdata = {
- 	/* create a 1:1 entity map for 0xe6xxxxxx
-@@ -686,6 +687,12 @@ void __init sh73a0_add_standard_devices(
- 			    ARRAY_SIZE(sh73a0_late_devices));
- }
- 
-+static void __init sh73a0_earlytimer_init(void)
-+{
-+	sh73a0_clock_init();
-+	shmobile_earlytimer_init();
-+}
-+
- void __init sh73a0_add_early_devices(void)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index fc12e37..6d377b4 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -273,7 +273,7 @@ static int sh_mobile_lcdc_sginit(struct fb_info *info,
+ 				  struct list_head *pagelist)
  {
- 	early_platform_add_devices(sh73a0_early_devices,
-@@ -693,4 +700,7 @@ void __init sh73a0_add_early_devices(voi
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+-	unsigned int nr_pages_max = info->fix.smem_len >> PAGE_SHIFT;
++	unsigned int nr_pages_max = ch->fb_size >> PAGE_SHIFT;
+ 	struct page *page;
+ 	int nr_pages = 0;
  
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-+
-+	/* override timer setup with soc-specific code */
-+	shmobile_timer.init = sh73a0_earlytimer_init;
+@@ -541,17 +541,6 @@ static int sh_mobile_format_is_fourcc(const struct fb_var_screeninfo *var)
+ 	return var->grayscale > 1;
  }
+ 
+-static bool sh_mobile_format_is_yuv(const struct fb_var_screeninfo *var)
+-{
+-	const struct sh_mobile_lcdc_format_info *format;
+-
+-	if (var->grayscale <= 1)
+-		return false;
+-
+-	format = sh_mobile_format_info(var->grayscale);
+-	return format ? format->yuv : false;
+-}
+-
+ /* -----------------------------------------------------------------------------
+  * Start, stop and IRQ
+  */
+@@ -650,7 +639,7 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
+ 	h_total = mode->xres + mode->hsync_len + mode->left_margin
+ 		+ mode->right_margin;
+ 	tmp = h_total / 8; /* HTCN */
+-	tmp |= (min(mode->xres, var->xres) / 8) << 16; /* HDCN */
++	tmp |= (min(mode->xres, ch->xres) / 8) << 16; /* HDCN */
+ 	lcdc_write_chan(ch, LDHCNR, tmp);
+ 
+ 	hsync_pos = mode->xres + mode->right_margin;
+@@ -661,7 +650,7 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
+ 	/* vertical configuration */
+ 	tmp = mode->yres + mode->vsync_len + mode->upper_margin
+ 	    + mode->lower_margin; /* VTLN */
+-	tmp |= min(mode->yres, var->yres) << 16; /* VDLN */
++	tmp |= min(mode->yres, ch->yres) << 16; /* VDLN */
+ 	lcdc_write_chan(ch, LDVLNR, tmp);
+ 
+ 	tmp = mode->yres + mode->lower_margin; /* VSYNP */
+@@ -738,7 +727,7 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		tmp = ch->format->lddfr;
+ 
+ 		if (ch->format->yuv) {
+-			switch (ch->info->var.colorspace) {
++			switch (ch->colorspace) {
+ 			case V4L2_COLORSPACE_REC709:
+ 				tmp |= LDDFR_CF1;
+ 				break;
+@@ -836,11 +825,8 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		if (!ch->enabled)
+ 			continue;
+ 
+-		ch->base_addr_y = ch->info->fix.smem_start;
+-		ch->base_addr_c = ch->base_addr_y
+-				+ ch->info->var.xres
+-				* ch->info->var.yres_virtual;
+-		ch->pitch = ch->info->fix.line_length;
++		ch->base_addr_y = ch->dma_handle;
++		ch->base_addr_c = ch->base_addr_y + ch->xres * ch->yres_virtual;
+ 
+ 		/* Enable MERAM if possible. */
+ 		cfg = ch->cfg.meram_cfg;
+@@ -875,7 +861,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		}
+ 
+ 		ret = mdev->ops->meram_register(mdev, cfg, ch->pitch,
+-					ch->info->var.yres, pixelformat,
++					ch->yres, pixelformat,
+ 					ch->base_addr_y, ch->base_addr_c,
+ 					&ch->base_addr_y, &ch->base_addr_c,
+ 					&ch->pitch);
+@@ -1037,14 +1023,12 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 	unsigned long new_pan_offset;
+ 	unsigned long base_addr_y, base_addr_c;
+ 	unsigned long c_offset;
+-	bool yuv = sh_mobile_format_is_yuv(&info->var);
+ 
+-	if (!yuv)
+-		new_pan_offset = var->yoffset * info->fix.line_length
+-			       + var->xoffset * (info->var.bits_per_pixel / 8);
++	if (!ch->format->yuv)
++		new_pan_offset = var->yoffset * ch->pitch
++			       + var->xoffset * (ch->format->bpp / 8);
+ 	else
+-		new_pan_offset = var->yoffset * info->fix.line_length
+-			       + var->xoffset;
++		new_pan_offset = var->yoffset * ch->pitch + var->xoffset;
+ 
+ 	if (new_pan_offset = ch->pan_offset)
+ 		return 0;	/* No change, do nothing */
+@@ -1053,12 +1037,11 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 
+ 	/* Set the source address for the next refresh */
+ 	base_addr_y = ch->dma_handle + new_pan_offset;
+-	if (yuv) {
++	if (ch->format->yuv) {
+ 		/* Set y offset */
+-		c_offset = var->yoffset * info->fix.line_length
+-			 * (info->var.bits_per_pixel - 8) / 8;
+-		base_addr_c = ch->dma_handle
+-			    + info->var.xres * info->var.yres_virtual
++		c_offset = var->yoffset * ch->pitch
++			 * (ch->format->bpp - 8) / 8;
++		base_addr_c = ch->dma_handle + ch->xres * ch->yres_virtual
+ 			    + c_offset;
+ 		/* Set x offset */
+ 		if (ch->format->fourcc = V4L2_PIX_FMT_NV24)
+@@ -1085,7 +1068,7 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 	ch->base_addr_c = base_addr_c;
+ 
+ 	lcdc_write_chan_mirror(ch, LDSA1R, base_addr_y);
+-	if (yuv)
++	if (ch->format->yuv)
+ 		lcdc_write_chan_mirror(ch, LDSA2R, base_addr_c);
+ 
+ 	if (lcdc_chan_is_sublcd(ch))
+@@ -1338,24 +1321,28 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ static int sh_mobile_set_par(struct fb_info *info)
+ {
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+-	u32 line_length = info->fix.line_length;
+ 	int ret;
+ 
+ 	sh_mobile_lcdc_stop(ch->lcdc);
+ 
+-	if (sh_mobile_format_is_yuv(&info->var))
+-		info->fix.line_length = info->var.xres;
+-	else
+-		info->fix.line_length = info->var.xres
+-				      * info->var.bits_per_pixel / 8;
+-
+ 	ch->format = sh_mobile_format_info(sh_mobile_format_fourcc(&info->var));
++	ch->colorspace = info->var.colorspace;
++
++	ch->xres = info->var.xres;
++	ch->xres_virtual = info->var.xres_virtual;
++	ch->yres = info->var.yres;
++	ch->yres_virtual = info->var.yres_virtual;
++
++	if (ch->format->yuv)
++		ch->pitch = info->var.xres;
++	else
++		ch->pitch = info->var.xres * ch->format->bpp / 8;
+ 
+ 	ret = sh_mobile_lcdc_start(ch->lcdc);
+-	if (ret < 0) {
++	if (ret < 0)
+ 		dev_err(info->dev, "%s: unable to restart LCDC\n", __func__);
+-		info->fix.line_length = line_length;
+-	}
++
++	info->fix.line_length = ch->pitch;
+ 
+ 	if (sh_mobile_format_is_fourcc(&info->var)) {
+ 		info->fix.type = FB_TYPE_FOURCC;
+@@ -1384,8 +1371,8 @@ static int sh_mobile_lcdc_blank(int blank, struct fb_info *info)
+ 	/* blank the screen? */
+ 	if (blank > FB_BLANK_UNBLANK && ch->blank_status = FB_BLANK_UNBLANK) {
+ 		struct fb_fillrect rect = {
+-			.width = info->var.xres,
+-			.height = info->var.yres,
++			.width = ch->xres,
++			.height = ch->yres,
+ 		};
+ 		sh_mobile_lcdc_fillrect(info, &rect);
+ 	}
+@@ -1525,6 +1512,13 @@ sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
+ 	info->fix = sh_mobile_lcdc_fix;
+ 	info->fix.smem_start = ch->dma_handle;
+ 	info->fix.smem_len = ch->fb_size;
++	info->fix.line_length = ch->pitch;
++
++	if (ch->format->yuv)
++		info->fix.visual = FB_VISUAL_FOURCC;
++	else
++		info->fix.visual = FB_VISUAL_TRUECOLOR;
++
+ 	if (ch->format->fourcc = V4L2_PIX_FMT_NV12 ||
+ 	    ch->format->fourcc = V4L2_PIX_FMT_NV21)
+ 		info->fix.ypanstep = 2;
+@@ -1552,14 +1546,6 @@ sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
+ 	if (ret)
+ 		return ret;
+ 
+-	if (ch->format->yuv) {
+-		info->fix.line_length = var->xres;
+-		info->fix.visual = FB_VISUAL_FOURCC;
+-	} else {
+-		info->fix.line_length = var->xres * ch->format->bpp / 8;
+-		info->fix.visual = FB_VISUAL_TRUECOLOR;
+-	}
+-
+ 	return 0;
+ }
+ 
+@@ -1836,8 +1822,6 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 		return -EINVAL;
+ 	}
+ 
+-	ch->format = format;
+-
+ 	/* Iterate through the modes to validate them and find the highest
+ 	 * resolution.
+ 	 */
+@@ -1875,6 +1859,21 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 		num_modes = cfg->num_modes;
+ 	}
+ 
++	/* Use the first mode as default. */
++	ch->format = format;
++	ch->xres = mode->xres;
++	ch->xres_virtual = mode->xres;
++	ch->yres = mode->yres;
++	ch->yres_virtual = mode->yres * 2;
++
++	if (!format->yuv) {
++		ch->colorspace = V4L2_COLORSPACE_SRGB;
++		ch->pitch = ch->xres * format->bpp / 8;
++	} else {
++		ch->colorspace = V4L2_COLORSPACE_REC709;
++		ch->pitch = ch->xres;
++	}
++
+ 	ch->display.width = cfg->panel_cfg.width;
+ 	ch->display.height = cfg->panel_cfg.height;
+ 	ch->display.mode = *mode;
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index cc22b9e..19a4cd7 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -74,9 +74,15 @@ struct sh_mobile_lcdc_chan {
+ 	struct completion vsync_completion;
+ 
+ 	const struct sh_mobile_lcdc_format_info *format;
++	u32 colorspace;
++	unsigned int xres;
++	unsigned int xres_virtual;
++	unsigned int yres;
++	unsigned int yres_virtual;
++	unsigned int pitch;
++
+ 	unsigned long base_addr_y;
+ 	unsigned long base_addr_c;
+-	unsigned int pitch;
+ 
+ 	int (*notify)(struct sh_mobile_lcdc_chan *ch,
+ 		      enum sh_mobile_lcdc_entity_event event,
+-- 
+1.7.3.4
+
